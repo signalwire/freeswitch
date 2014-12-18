@@ -472,6 +472,42 @@ static void do_2833(switch_rtp_t *rtp_session);
 #define rtp_type(rtp_session) rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] ? "video" : "audio"
 
 
+static void switch_rtp_change_ice_dest(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, const char *host, switch_port_t port)
+{
+	int is_rtcp = ice == &rtp_session->rtcp_ice;
+	const char *err = "";
+
+	ice->ice_params->cands[ice->ice_params->chosen[ice->proto]][ice->proto].con_addr = switch_core_strdup(rtp_session->pool, host);
+	ice->ice_params->cands[ice->ice_params->chosen[ice->proto]][ice->proto].con_port = port;
+	ice->missed_count = 0;
+	
+	switch_sockaddr_info_get(&ice->addr, host, SWITCH_UNSPEC, port, 0, rtp_session->pool);
+	
+	if (!is_rtcp || rtp_session->flags[SWITCH_RTP_FLAG_RTCP_MUX]) {
+		switch_rtp_set_remote_address(rtp_session, host, port, 0, SWITCH_FALSE, &err);
+	}
+	
+	if (rtp_session->dtls) {
+		
+		if (!is_rtcp || rtp_session->flags[SWITCH_RTP_FLAG_RTCP_MUX]) {
+			switch_sockaddr_info_get(&rtp_session->dtls->remote_addr, host, SWITCH_UNSPEC, port, 0, rtp_session->pool);
+		}
+		
+		if (is_rtcp && !rtp_session->flags[SWITCH_RTP_FLAG_RTCP_MUX]) {
+			
+			switch_sockaddr_info_get(&rtp_session->rtcp_remote_addr, host, SWITCH_UNSPEC, port, 0, rtp_session->pool);
+			if (rtp_session->rtcp_dtls) {
+				//switch_sockaddr_info_get(&rtp_session->rtcp_dtls->remote_addr, host, SWITCH_UNSPEC, port, 0, rtp_session->pool);
+				rtp_session->rtcp_dtls->remote_addr = rtp_session->rtcp_remote_addr;
+				rtp_session->rtcp_dtls->sock_output = rtp_session->rtcp_sock_output;
+			}
+			
+		}
+	}
+	
+}
+
+
 
 static handle_rfc2833_result_t handle_rfc2833(switch_rtp_t *rtp_session, switch_size_t bytes, int *do_cng)
 {
@@ -1053,7 +1089,6 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 		switch_port_t port = 0, port2 = 0;
 		char buf[80] = "";
 		char buf2[80] = "";
-		const char *err = "";
 
 		if (packet->header.type == SWITCH_STUN_BINDING_REQUEST) {
 			uint8_t stunbuf[512];
@@ -1096,27 +1131,19 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 			if ((ice->type & ICE_VANILLA)) {
 				switch_stun_packet_attribute_add_integrity(rpacket, ice->pass);
 				switch_stun_packet_attribute_add_fingerprint(rpacket);
-			} else {
-				if (hosts_set) {
-					switch_sockaddr_info_get(&ice->addr, host, SWITCH_UNSPEC, port, 0, rtp_session->pool);
-					
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_NOTICE,
-									  "ICE Auto Changing %s media address from %s:%u to %s:%u\n", is_rtcp ? "rtcp" : "rtp", 
-									  host2, port2,
-									  host, port);
-
-					if (!is_rtcp || rtp_session->flags[SWITCH_RTP_FLAG_RTCP_MUX]) {
-						switch_rtp_set_remote_address(rtp_session, host, port, 0, SWITCH_FALSE, &err);
-					}
-
-					if (is_rtcp && !rtp_session->flags[SWITCH_RTP_FLAG_RTCP_MUX]) {
-						ice->addr = rtp_session->rtcp_remote_addr;
-					} else {
-						ice->addr = rtp_session->remote_addr;
-					}
-
-				}
 			}
+
+			if (hosts_set) {
+				switch_sockaddr_info_get(&ice->addr, host, SWITCH_UNSPEC, port, 0, rtp_session->pool);
+				 
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_NOTICE,
+								  "Auto Changing stun/%s/dtls port from %s:%u to %s:%u\n", is_rtcp ? "rtcp" : "rtp", 
+								  host2, port2,
+								  host, port);
+
+				switch_rtp_change_ice_dest(rtp_session, ice, host, port);
+			}
+		
 
 			bytes = switch_stun_packet_length(rpacket);
 
@@ -1133,7 +1160,7 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 					if (ice->ice_params->cands[i][ice->proto].con_port == port) {
 						if (!strcmp(ice->ice_params->cands[i][ice->proto].con_addr, host) && 
 							!strcmp(ice->ice_params->cands[i][ice->proto].cand_type, "relay")) {
-
+							
 							if (rtp_session->last_stun && elapsed < 5000) {
 								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING,
 												  "Skiping RELAY stun/%s/dtls port change from %s:%u to %s:%u\n", is_rtcp ? "rtcp" : "rtp", 
@@ -1152,35 +1179,8 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 								  "Auto Changing stun/%s/dtls port from %s:%u to %s:%u\n", is_rtcp ? "rtcp" : "rtp", 
 								  host2, port2,
 								  host, port);
-				
-				ice->ice_params->cands[ice->ice_params->chosen[ice->proto]][ice->proto].con_addr = switch_core_strdup(rtp_session->pool, host);
-				ice->ice_params->cands[ice->ice_params->chosen[ice->proto]][ice->proto].con_port = port;
-				ice->missed_count = 0;
 
-				switch_sockaddr_info_get(&ice->addr, host, SWITCH_UNSPEC, port, 0, rtp_session->pool);
-
-				if (!is_rtcp || rtp_session->flags[SWITCH_RTP_FLAG_RTCP_MUX]) {
-					switch_rtp_set_remote_address(rtp_session, host, port, 0, SWITCH_FALSE, &err);
-				}
-
-				if (rtp_session->dtls) {
-
-					if (!is_rtcp || rtp_session->flags[SWITCH_RTP_FLAG_RTCP_MUX]) {
-						switch_sockaddr_info_get(&rtp_session->dtls->remote_addr, host, SWITCH_UNSPEC, port, 0, rtp_session->pool);
-					}
-					
-					if (is_rtcp && !rtp_session->flags[SWITCH_RTP_FLAG_RTCP_MUX]) {
-
-						switch_sockaddr_info_get(&rtp_session->rtcp_remote_addr, host, SWITCH_UNSPEC, port, 0, rtp_session->pool);
-						if (rtp_session->rtcp_dtls) {
-							//switch_sockaddr_info_get(&rtp_session->rtcp_dtls->remote_addr, host, SWITCH_UNSPEC, port, 0, rtp_session->pool);
-							rtp_session->rtcp_dtls->remote_addr = rtp_session->rtcp_remote_addr;
-							rtp_session->rtcp_dtls->sock_output = rtp_session->rtcp_sock_output;
-						}
-						
-					}
-				}
-				
+				switch_rtp_change_ice_dest(rtp_session, ice, host, port);
 			}
 
 			switch_socket_sendto(sock_output, from_addr, 0, (void *) rpacket, &bytes);
