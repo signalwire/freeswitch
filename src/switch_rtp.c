@@ -5049,7 +5049,7 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 			stfu_n_destroy(&rtp_session->jb);
 		}
 	}
-
+	
 	if (rtp_session->recv_msg.header.version == 2 && *bytes) {
 	
 		if (rtp_session->vb) {
@@ -5122,22 +5122,24 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 		switch(vstatus) {
 		case SWITCH_STATUS_RESTART:
 			switch_core_session_request_video_refresh(rtp_session->session);
-			*bytes = 0;
+			status = SWITCH_STATUS_FALSE;
 			break;
 		case SWITCH_STATUS_MORE_DATA:
 			status = SWITCH_STATUS_FALSE;
-			*bytes = 0;
 			break;
-		case SWITCH_STATUS_SUCCESS:
+		case SWITCH_STATUS_BREAK:
+			switch_core_session_request_video_refresh(rtp_session->session);
+		default:
 			status = SWITCH_STATUS_SUCCESS;
+			break;
+		}
+		
+		if (status == SWITCH_STATUS_SUCCESS) {
 			switch_cp_addr(rtp_session->from_addr, rtp_session->remote_addr);
 			if (!xcheck_jitter) {
 				check_jitter(rtp_session);
 				xcheck_jitter = *bytes;
 			}
-			break;
-		default:
-			break;
 		}
 	}
 
