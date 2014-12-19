@@ -303,7 +303,7 @@ end:
 SWITCH_STANDARD_API(list_users_function)
 {
 	int argc;
-	char *pdata, *argv[8];
+	char *pdata, *argv[9];
 	int32_t arg = 0;
 	switch_xml_t xml_root, x_domains, x_domain_tag;
 	switch_xml_t gts, gt, uts, ut;
@@ -313,7 +313,7 @@ SWITCH_STANDARD_API(list_users_function)
 	if ((pdata = strdup(cmd))) {
 		argc = switch_separate_string(pdata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 
-		if (argc >= 8) {
+		if (argc >= 9) {
 			stream->write_function(stream, "-USAGE: %s\n", LIST_USERS_SYNTAX);
 			goto done;
 		}
