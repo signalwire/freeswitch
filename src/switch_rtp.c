@@ -5107,6 +5107,7 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 			rtp_session->recv_msg.header.pt = jb_frame->pt;
 			rtp_session->recv_msg.header.seq = htons(jb_frame->seq);
 			status = SWITCH_STATUS_SUCCESS;
+			switch_cp_addr(rtp_session->from_addr, rtp_session->remote_addr);
 			if (!xcheck_jitter) {
 				check_jitter(rtp_session);
 				xcheck_jitter = *bytes;
@@ -5121,17 +5122,21 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 		switch(vstatus) {
 		case SWITCH_STATUS_RESTART:
 			switch_core_session_request_video_refresh(rtp_session->session);
+			*bytes = 0;
 			break;
 		case SWITCH_STATUS_MORE_DATA:
 			status = SWITCH_STATUS_FALSE;
 			*bytes = 0;
 			break;
-		default:
+		case SWITCH_STATUS_SUCCESS:
 			status = SWITCH_STATUS_SUCCESS;
+			switch_cp_addr(rtp_session->from_addr, rtp_session->remote_addr);
 			if (!xcheck_jitter) {
 				check_jitter(rtp_session);
 				xcheck_jitter = *bytes;
 			}
+			break;
+		default:
 			break;
 		}
 	}

@@ -9831,10 +9831,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_video_frame(switch_core
 	loops++;
 
 	if (switch_channel_down_nosig(session->channel)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "FUCKING DOWN\n");
 		return SWITCH_STATUS_FALSE;
 	}
 
 	if (switch_channel_test_flag(session->channel, CF_VIDEO_PAUSE)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "FUCKING VID PAUSED\n");
 		*frame = &runtime.dummy_cng_frame;
 		switch_yield(20000);
 		return SWITCH_STATUS_SUCCESS;
@@ -9853,14 +9855,17 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_video_frame(switch_core
 	if (status == SWITCH_STATUS_INUSE) {
 		*frame = &runtime.dummy_cng_frame;
 		switch_yield(20000);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "FUCKING DUMMY\n");
 		return SWITCH_STATUS_SUCCESS;
 	}
 
 	if (status != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "FUCKING BAD STATUS %d\n", status);
 		goto done;
 	}
 
 	if (!(*frame)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "FUCKING NO FRAME\n");
 		goto done;
 	}
 	
@@ -9882,6 +9887,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_video_frame(switch_core
 
 
 	if (switch_test_flag(*frame, SFF_CNG)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "FUCKING CNG\n");
 		status = SWITCH_STATUS_SUCCESS;
 		goto done;
 	}
