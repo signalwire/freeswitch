@@ -517,6 +517,7 @@ static switch_status_t switch_vpx_decode(switch_codec_t *codec, switch_frame_t *
 		(!frame->m) && (!context->last_received_complete_picture)) {
 		// possible packet loss
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Packet Loss, skip previous received frame (to avoid crash?)\n");
+		usleep(500000);abort();
 		switch_goto_status(SWITCH_STATUS_RESTART, end);
 	}
 
@@ -563,7 +564,7 @@ static switch_status_t switch_vpx_decode(switch_codec_t *codec, switch_frame_t *
 		frame->img = (switch_image_t *) vpx_codec_get_frame(decoder, &iter);
 
 		if (!(frame->img) || corrupted) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "VPX invalid packet\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "VPX invalid packet image: %d corrupted: %d\n", !!frame->img, corrupted);
 			switch_goto_status(SWITCH_STATUS_RESTART, end);
 		}
 

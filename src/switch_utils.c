@@ -1976,6 +1976,55 @@ SWITCH_DECLARE(int) switch_cmp_addr(switch_sockaddr_t *sa1, switch_sockaddr_t *s
 	return 0;
 }
 
+
+SWITCH_DECLARE(int) switch_cp_addr(switch_sockaddr_t *sa1, switch_sockaddr_t *sa2)
+{
+	struct sockaddr_in *s1;
+	struct sockaddr_in *s2;
+
+	struct sockaddr_in6 *s16;
+	struct sockaddr_in6 *s26;
+
+	struct sockaddr *ss1;
+	struct sockaddr *ss2;
+
+	if (!(sa1 && sa2))
+		return 0;
+
+	s1 = (struct sockaddr_in *) &sa1->sa;
+	s2 = (struct sockaddr_in *) &sa2->sa;
+
+	s16 = (struct sockaddr_in6 *) &sa1->sa;
+	s26 = (struct sockaddr_in6 *) &sa2->sa;
+
+	ss1 = (struct sockaddr *) &sa1->sa;
+	ss2 = (struct sockaddr *) &sa2->sa;
+
+	if (ss1->sa_family != ss2->sa_family)
+		return 0;
+
+	switch (ss1->sa_family) {
+	case AF_INET:
+		s1->sin_addr.s_addr = s2->sin_addr.s_addr;
+		s1->sin_port = s2->sin_port;
+		return 1;
+	case AF_INET6:
+		if (s16->sin6_addr.s6_addr && s26->sin6_addr.s6_addr) {
+			int i;
+
+			s16->sin6_port = s26->sin6_port;
+
+			for (i = 0; i < 4; i++) {
+				*((int32_t *) s16->sin6_addr.s6_addr + i) = *((int32_t *) s26->sin6_addr.s6_addr + i);
+			}
+
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
 SWITCH_DECLARE(char *) get_addr6(char *buf, switch_size_t len, struct sockaddr_in6 *sa, socklen_t salen)
 {
 	switch_assert(buf);
