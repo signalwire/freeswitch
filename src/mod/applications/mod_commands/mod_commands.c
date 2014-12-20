@@ -2965,6 +2965,10 @@ SWITCH_STANDARD_API(uuid_drop_dtmf)
 	dup = strdup(cmd);
 	argc = switch_split(dup, ' ', argv);
 
+	if ( argc < 4 ) {
+		stream->write_function(stream, "-USAGE: %s\n", UUID_DROP_DTMF_SYNTAX);
+		goto end;
+	}
 
 	if (argv[0]) {
 		uuid = argv[0];
