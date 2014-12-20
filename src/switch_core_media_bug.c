@@ -185,9 +185,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *b
 	uint32_t blen;
 	switch_codec_implementation_t read_impl = { 0 };
 	int16_t *tp;
-	switch_size_t do_read = 0, do_write = 0;
-	int fill_read = 0, fill_write = 0;
-
+	switch_size_t do_read = 0, do_write = 0, has_read = 0, has_write = 0, fill_read = 0, fill_write = 0;
 
 	switch_core_session_get_read_impl(bug->session, &read_impl);
 
@@ -213,16 +211,19 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *b
 	frame->datalen = 0;
 
 	if (switch_test_flag(bug, SMBF_READ_STREAM)) {
+		has_read = 1;
 		switch_mutex_lock(bug->read_mutex);
 		do_read = switch_buffer_inuse(bug->raw_read_buffer);
 		switch_mutex_unlock(bug->read_mutex);
 	}
 
 	if (switch_test_flag(bug, SMBF_WRITE_STREAM)) {
+		has_write = 1;
 		switch_mutex_lock(bug->write_mutex);
 		do_write = switch_buffer_inuse(bug->raw_write_buffer);
 		switch_mutex_unlock(bug->write_mutex);
 	}
+
 
 	if (bug->record_frame_size && bug->record_pre_buffer_max && (do_read || do_write) && bug->record_pre_buffer_count < bug->record_pre_buffer_max) {
 		bug->record_pre_buffer_count++;
@@ -230,33 +231,27 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *b
 	} else {
 		uint32_t frame_size;
 		switch_codec_implementation_t read_impl = { 0 };
-		//switch_codec_implementation_t other_read_impl = { 0 };
-		//switch_core_session_t *other_session;
-			
+		
 		switch_core_session_get_read_impl(bug->session, &read_impl);
 		frame_size = read_impl.decoded_bytes_per_packet;
 		bug->record_frame_size = frame_size;
-		
-#if 0
-		if (do_read && do_write) {			
-			if (switch_core_session_get_partner(bug->session, &other_session) == SWITCH_STATUS_SUCCESS) {
-				switch_core_session_get_read_impl(other_session, &other_read_impl);
-				switch_core_session_rwunlock(other_session);
+	}
 
-				if (read_impl.actual_samples_per_second == other_read_impl.actual_samples_per_second) {
-					if (read_impl.decoded_bytes_per_packet < other_read_impl.decoded_bytes_per_packet) {
-						frame_size = read_impl.decoded_bytes_per_packet;
-					}					
-				} else {
-					if (read_impl.decoded_bytes_per_packet > other_read_impl.decoded_bytes_per_packet) {
-						frame_size = read_impl.decoded_bytes_per_packet;
-					}
-				}
-			}
+	if (bug->record_frame_size && do_write > do_read && do_write > (bug->record_frame_size * 2)) {
+		switch_mutex_lock(bug->write_mutex);
+		switch_buffer_toss(bug->raw_write_buffer, bug->record_frame_size);
+		do_write = switch_buffer_inuse(bug->raw_write_buffer);
+		switch_mutex_unlock(bug->write_mutex);
+	}
 
-			bug->record_frame_size = bytes = frame_size;
-		}
-#endif
+
+
+	if ((has_read && !do_read)) {
+		fill_read = 1;
+	}
+
+	if ((has_write && !do_write)) {
+		fill_write = 1;
 	}
 
 
@@ -274,10 +269,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *b
 		}
 	}
 
-	fill_read = !do_read;
-	fill_write = !do_write;
-
-	if ((fill_read && fill_write) || (!fill && fill_read)) {
+	if ((fill_read && fill_write) || (fill && (fill_read || fill_write))) {
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -384,17 +376,26 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *b
 	frame->rate = read_impl.actual_samples_per_second;
 	frame->codec = NULL;
 
-	if (fill_read && fill_write) {
-		return SWITCH_STATUS_BREAK;
-	}
-
-	if (fill_read || fill_write) {
-		return SWITCH_STATUS_BREAK;
+	if (switch_test_flag(bug, SMBF_STEREO)) {
+		frame->datalen *= 2;
+		frame->channels = 2;
 	}
 
 	memcpy(bug->session->recur_buffer, frame->data, frame->datalen);
 	bug->session->recur_buffer_len = frame->datalen;
-	
+
+	if (has_read) {
+		switch_mutex_lock(bug->read_mutex);
+		do_read = switch_buffer_inuse(bug->raw_read_buffer);
+		switch_mutex_unlock(bug->read_mutex);
+	}
+
+	if (has_write) {
+		switch_mutex_lock(bug->write_mutex);
+		do_write = switch_buffer_inuse(bug->raw_write_buffer);
+		switch_mutex_unlock(bug->write_mutex);
+	}
+
 	return SWITCH_STATUS_SUCCESS;
 }
 

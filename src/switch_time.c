@@ -1046,6 +1046,8 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 				tfd = -1;
 			}
 		}
+
+		if (tfd > -1) MATRIX = 0;
 	}
 #else
 	tfd = -1;
