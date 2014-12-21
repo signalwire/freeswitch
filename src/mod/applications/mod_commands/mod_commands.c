@@ -2948,7 +2948,89 @@ SWITCH_STANDARD_API(uuid_chat)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+#define UUID_DROP_DTMF_SYNTAX "<uuid> [on | off ] [ mask_digits <digits> | mask_file <file>]"
+SWITCH_STANDARD_API(uuid_drop_dtmf)
+{
+	switch_core_session_t *tsession = NULL;
+	char *uuid = NULL, *action = NULL, *mask_action = NULL, *mask_arg = NULL;
+	char *argv[5] = { 0 };
+	char *dup;
+	int argc = 0;
 
+	if (zstr(cmd)) {
+		stream->write_function(stream, "-USAGE: %s\n", UUID_DROP_DTMF_SYNTAX);
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	dup = strdup(cmd);
+	argc = switch_split(dup, ' ', argv);
+
+
+	if (argv[0]) {
+		uuid = argv[0];
+	}
+	
+	if (argv[1]) {
+		action = argv[1];
+	}
+
+	if (argv[2]) {
+		mask_action = argv[2];
+	}
+
+	if (argv[3]) {
+		mask_arg = argv[3];
+	}
+
+	if (zstr(uuid)) {
+		stream->write_function(stream, "-USAGE: %s\n", UUID_DROP_DTMF_SYNTAX);
+	} else {
+		if ((tsession = switch_core_session_locate(uuid))) {
+			switch_channel_t *channel = switch_core_session_get_channel(tsession);
+			int is_on = 0;
+			const char *file, *digits;
+
+			if (!zstr(mask_action) && !zstr(mask_arg)) {
+				if (!strcasecmp(mask_action, "mask_digits")) {
+					switch_channel_set_variable(channel, "drop_dtmf_masking_digits", mask_arg);
+				} else if (!strcasecmp(mask_action, "mask_file")) {
+					switch_channel_set_variable(channel, "drop_dtmf_masking_file", mask_arg);
+				} else {
+					stream->write_function(stream, "-USAGE: %s\n", UUID_DROP_DTMF_SYNTAX);
+					goto end;
+				}
+			}
+
+			if (!zstr(action)) {
+				if (!strcasecmp(action, "on")) {
+					switch_channel_set_flag(channel, CF_DROP_DTMF);
+					switch_channel_set_variable(channel, "drop_dtmf", "true");
+				} else {
+					switch_channel_clear_flag(channel, CF_DROP_DTMF);
+					switch_channel_set_variable(channel, "drop_dtmf", "false");
+				}
+			}
+			
+			is_on = switch_channel_test_flag(channel, CF_DROP_DTMF);
+			file = switch_channel_get_variable_dup(channel, "drop_dtmf_masking_file", SWITCH_FALSE, -1);
+			digits = switch_channel_get_variable_dup(channel, "drop_dtmf_masking_digits", SWITCH_FALSE, -1);
+
+			stream->write_function(stream, "+OK %s is %s DTMF. mask_file: %s mask_digits: %s\n", uuid, is_on ? "dropping" : "not dropping", 
+								   file ? file : "NONE",
+								   digits ? digits : "NONE");
+								   
+			switch_core_session_rwunlock(tsession);
+		} else {
+			stream->write_function(stream, "-ERR No such channel %s!\n", uuid);
+		}
+	}
+
+ end:
+
+	switch_safe_free(dup);
+	return SWITCH_STATUS_SUCCESS;
+
+}
 
 #define UUID_DEFLECT_SYNTAX "<uuid> <uri>"
 SWITCH_STANDARD_API(uuid_deflect)
@@ -6700,6 +6782,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "uuid_deflect", "Send a deflect", uuid_deflect, UUID_DEFLECT_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_displace", "Displace audio", session_displace_function, "<uuid> [start|stop] <path> [<limit>] [mux]");
 	SWITCH_ADD_API(commands_api_interface, "uuid_display", "Update phone display", uuid_display_function, DISPLAY_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "uuid_drop_dtmf", "Drop all DTMF or replace it with a mask", uuid_drop_dtmf, UUID_DROP_DTMF_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_dump", "Dump session vars", uuid_dump_function, DUMP_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_exists", "Check if a uuid exists", uuid_exists_function, EXISTS_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_fileman", "Manage session audio", uuid_fileman_function, FILEMAN_SYNTAX);
@@ -6872,6 +6955,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add uuid_deflect ::console::list_uuid");
 	switch_console_set_complete("add uuid_displace ::console::list_uuid");
 	switch_console_set_complete("add uuid_display ::console::list_uuid");
+	switch_console_set_complete("add uuid_drop_dtmf ::console::list_uuid");
 	switch_console_set_complete("add uuid_dump ::console::list_uuid");
 	switch_console_set_complete("add uuid_answer ::console::list_uuid");
 	switch_console_set_complete("add uuid_ring_ready ::console::list_uuid queued");
