@@ -309,7 +309,7 @@ int ws_handshake(wsh_t *wsh)
 			 "%s\r\n",
 			 b64,
 			 proto_buf);
-
+	respond[511] = 0;
 
 	ws_raw_write(wsh, respond, strlen(respond));
 	wsh->handshake = 1;
@@ -322,6 +322,7 @@ int ws_handshake(wsh_t *wsh)
 
 		snprintf(respond, sizeof(respond), "HTTP/1.1 400 Bad Request\r\n"
 				 "Sec-WebSocket-Version: 13\r\n\r\n");
+		respond[511] = 0;
 
 		ws_raw_write(wsh, respond, strlen(respond));
 
