@@ -45,7 +45,7 @@ class McastHandle {
  private:
 	mcast_handle_t handle;
  public:
-	McastHandle(const char *host, int port, int flags);
+	McastHandle(const char *host, int16_t port, int flags);
 	virtual ~McastHandle();
 	int send(const char *data);
 	char *recv(int ms = 0);

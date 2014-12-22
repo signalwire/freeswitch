@@ -38,7 +38,7 @@
 #include <poll.h>
 #endif
 
-McastHandle::McastHandle(const char *host, int port, int flags)
+McastHandle::McastHandle(const char *host, int16_t port, int flags)
 {
 	mcast_socket_create(host, port, &handle, (mcast_flag_t) flags);
 }
