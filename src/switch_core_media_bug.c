@@ -379,6 +379,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *b
 	if (switch_test_flag(bug, SMBF_STEREO)) {
 		frame->datalen *= 2;
 		frame->channels = 2;
+	} else {
+		frame->channels = 1;
 	}
 
 	memcpy(bug->session->recur_buffer, frame->data, frame->datalen);
