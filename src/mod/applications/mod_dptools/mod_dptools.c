@@ -4483,25 +4483,33 @@ SWITCH_STANDARD_APP(limit_hash_execute_function)
 /* for apr_pstrcat */
 #define DEFAULT_PREBUFFER_SIZE 1024 * 64
 
-struct file_string_source;
+struct file_string_audio_col {
+	switch_audio_col_t col;
+	char *value;
+	struct file_string_audio_col *next;
+};
+
+typedef struct file_string_audio_col file_string_audio_col_t;
 
 struct file_string_context {
+	char *file;
 	char *argv[128];
 	int argc;
 	int index;
 	int samples;
 	switch_file_handle_t fh;
+	file_string_audio_col_t *audio_cols;
 };
 
 typedef struct file_string_context file_string_context_t;
-
 
 static switch_status_t next_file(switch_file_handle_t *handle)
 {
 	file_string_context_t *context = handle->private_info;
 	char *file;
 	const char *prefix = handle->prefix;
-
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	
   top:
 
 	context->index++;
@@ -4544,6 +4552,11 @@ static switch_status_t next_file(switch_file_handle_t *handle)
 	}
 
 	if (switch_core_file_open(&context->fh, file, handle->channels, handle->samplerate, handle->flags, NULL) != SWITCH_STATUS_SUCCESS) {
+
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't open file %s\n", file);
+		if (switch_test_flag(handle, SWITCH_FILE_FLAG_WRITE)) {
+			switch_file_remove(file, handle->memory_pool);
+		}
 		goto top;
 	}
 
@@ -4552,6 +4565,39 @@ static switch_status_t next_file(switch_file_handle_t *handle)
 		handle->dbuflen = 0;
 		handle->dbuf = NULL;
 	}
+
+	if (switch_test_flag(handle, SWITCH_FILE_FLAG_WRITE)) {
+		file_string_audio_col_t *col_ptr = context->audio_cols;
+
+		while (col_ptr) {
+			switch_core_file_set_string(&context->fh, col_ptr->col, col_ptr->value);
+			col_ptr = col_ptr->next;
+		}
+
+		if (context->file && switch_test_flag(handle, SWITCH_FILE_DATA_SHORT)) { /* TODO handle other data type flags */
+			switch_size_t len;			
+			uint16_t buf[SWITCH_RECOMMENDED_BUFFER_SIZE] = { 0 };
+			switch_status_t status;
+			switch_file_handle_t fh = { 0 };
+
+			if ((status = switch_core_file_open(&fh, context->file, handle->channels, handle->samplerate, 
+												SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, NULL)) == SWITCH_STATUS_SUCCESS) {
+					do {
+						len = SWITCH_RECOMMENDED_BUFFER_SIZE / handle->channels;
+						if ((status = switch_core_file_read(&fh, buf, &len)) == SWITCH_STATUS_SUCCESS) {
+							status = switch_core_file_write(&context->fh, buf, &len);
+						}
+					} while (status == SWITCH_STATUS_SUCCESS);
+
+					switch_core_file_close(&fh);				
+					switch_file_remove(context->file, handle->memory_pool);
+
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't open %s\n", context->file);
+			}
+		}
+	}
+	context->file = file;
 
 	handle->samples = context->fh.samples;
 	handle->cur_samplerate = context->fh.samplerate;
@@ -4577,7 +4623,7 @@ static switch_status_t next_file(switch_file_handle_t *handle)
 		}
 	}
 
-	return SWITCH_STATUS_SUCCESS;
+	return status;
 }
 
 
@@ -4625,6 +4671,36 @@ static switch_status_t file_string_file_close(switch_file_handle_t *handle)
 
 	return SWITCH_STATUS_SUCCESS;
 }
+
+static switch_status_t file_string_file_set_string(switch_file_handle_t *handle, switch_audio_col_t col, const char *string)
+{
+	file_string_context_t *context = handle->private_info;
+	file_string_audio_col_t *col_ptr = context->audio_cols;
+
+	while (col_ptr && col != col_ptr->col) { 
+		col_ptr = col_ptr->next;
+	}
+
+	if (col_ptr) {
+		col_ptr->value = switch_core_strdup(handle->memory_pool, string);
+	} else {
+		col_ptr = switch_core_alloc(handle->memory_pool, sizeof(*col_ptr));
+		col_ptr->value = switch_core_strdup(handle->memory_pool, string);
+		col_ptr->col = col;
+		col_ptr->next = context->audio_cols;
+		context->audio_cols = col_ptr;
+	}
+	
+	return switch_core_file_set_string(&context->fh, col, string);
+}
+
+static switch_status_t file_string_file_get_string(switch_file_handle_t *handle, switch_audio_col_t col, const char **string)
+{
+	file_string_context_t *context = handle->private_info;
+
+	return switch_core_file_get_string(&context->fh, col, string);
+}
+
 
 static switch_status_t file_string_file_read(switch_file_handle_t *handle, void *data, size_t *len)
 {
@@ -5644,6 +5720,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	file_interface->file_read = file_string_file_read;
 	file_interface->file_write = file_string_file_write;
 	file_interface->file_seek = file_string_file_seek;
+	file_interface->file_set_string = file_string_file_set_string;
+	file_interface->file_get_string = file_string_file_get_string;
 
 	file_url_supported_formats[0] = "file";
 
