@@ -3680,7 +3680,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 	int found_proto = 0;
 	const char *use_to_tag;
 	char to_tag[13] = "";
-	char buf[80] = "";
+	char buf[1025] = "";
 	char *orig_to_user = NULL;
 	char *p;
 
