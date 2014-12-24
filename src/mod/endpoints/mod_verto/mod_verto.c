@@ -1538,7 +1538,7 @@ new_req:
 		while(bytes < request.content_length) {
 			len = request.content_length - bytes;
 
-			if ((len = ws_raw_read(&jsock->ws, buffer + bytes, len, jsock->ws.block)) < 0) {
+			if ((switch_ssize_t)(len = ws_raw_read(&jsock->ws, buffer + bytes, len, jsock->ws.block)) < 0) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Read error %" SWITCH_SIZE_T_FMT"\n", len);
 				goto done;
 			}
