@@ -363,7 +363,7 @@ default_distros () {
   case "$host_distro" in
     Debian) echo "sid jessie wheezy" ;;
     Ubuntu) echo "utopic trusty" ;;
-    *) err "Unknown distribution" ;;
+    *) err "Unknown host distribution \"$host_distro\"" ;;
   esac
 }
 
