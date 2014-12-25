@@ -386,18 +386,23 @@ build_all () {
   shift $(($OPTIND-1))
   [ -n "$archs" ] || archs="amd64 i386"
   if [ -z "$distros" ]; then
-    case "$(lsb_release -is)" in
-      Debian)
-        distros="sid jessie wheezy"
-        ;;
-      Ubuntu)
-        distros="utopic trusty"
-        ;;
-      *)
-        echo "Unknown distribution"
-        exit -1
-        ;;
-    esac
+    local default_distros="sid jessie wheezy"
+    if [ -z "$(which lsb_release)" ]; then
+      distros="$default_distros"
+    else
+      case "$(lsb_release -is)" in
+        Debian)
+          distros="$default_distros"
+          ;;
+        Ubuntu)
+          distros="utopic trusty"
+          ;;
+        *)
+          echo "Unknown distribution"
+          exit -1
+          ;;
+      esac
+    fi
   fi
   ! $depinst || aptitude install -y \
     rsync git less cowbuilder ccache \
