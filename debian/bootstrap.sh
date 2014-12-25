@@ -9,7 +9,7 @@ fs_description="FreeSWITCH is a scalable open source cross-platform telephony pl
 mod_build_depends="." mod_depends="." mod_recommends="." mod_suggests="."
 supported_debian_distros="squeeze wheezy jessie sid"
 supported_ubuntu_distros="trusty utopic"
-supported_distros=" $supported_debian_distros $supported_ubuntu_distros "
+supported_distros="$supported_debian_distros $supported_ubuntu_distros"
 avoid_mods=(
   applications/mod_limit
   applications/mod_mongo
@@ -285,9 +285,7 @@ list_freeswitch_all_dbg_replaces () {
 print_source_control () {
   local libtool_dep="libtool, libtool-bin"
   case "$codename" in
-    squeeze|wheezy|trusty)
-      libtool_dep="libtool"
-      ;;
+    squeeze|wheezy|trusty) libtool_dep="libtool" ;;
   esac
 cat <<EOF
 Source: freeswitch
