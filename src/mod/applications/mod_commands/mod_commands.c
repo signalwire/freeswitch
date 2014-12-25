@@ -1893,13 +1893,13 @@ typedef enum {
 SWITCH_STANDARD_API(cond_function)
 {
 	int argc;
-	char *mydata = NULL, *argv[2];
+	char *mydata = NULL, *argv[3];
 	char *expr;
 	char *a, *b;
 	double a_f = 0.0, b_f = 0.0;
+	int a_is_quoted = 0, b_is_quoted = 0;
 	o_t o = O_NONE;
 	int is_true = 0;
-	char *p = NULL;
 
 	if (!cmd) {
 		goto error;
@@ -1911,37 +1911,38 @@ SWITCH_STANDARD_API(cond_function)
 	a = mydata;
 
 	if (*a == '\'') {
-		for (expr = ++a; expr && *expr; expr++) {
+		a_is_quoted = 1;
+		for (expr = ++a; *expr; expr++) {
 			if (*expr == '\\') {
-				if (expr + 1 && (*(expr + 1) == '\\' || *(expr + 1) == '\'')) {
+				if (*(expr + 1) == '\\' || *(expr + 1) == '\'') {
 					expr++;
 				}
 			} else if (*expr == '\'') {
 				break;
 			}
 		}
-		if (!expr) {
-			stream->write_function(stream, "-ERR while looking for closing quote near %s \n", a);
+		if (!*expr) {
+			stream->write_function(stream, "-ERR while looking for closing quote near < %s > \n", a);
 			goto end;
 		}
 		*expr++ = '\0';
 
-		if (expr && *expr != ' ' && *expr != '\t') {
-			stream->write_function(stream, "-ERR, Syntax error near  %s \n", expr);
+		if (!switch_isspace(*expr)) {
+			stream->write_function(stream, "-ERR, Syntax error near  < %s > \n", expr);
 			goto end;
 		}
 	} else {
 		if ((expr = strchr(a, ' '))) {
 			*expr++ = '\0';
 		} else {
-			stream->write_function(stream, "-ERR, Syntax error near  %s \n", a);
+			stream->write_function(stream, "-ERR, Syntax error near < %s > \n", a);
 			goto end;
 		}
 	}
 
-	while (expr && (*expr == ' ' || *expr == '\t')) expr++;
+	while (switch_isspace(*expr)) expr++;
 
-	while (expr && *expr) {
+	while (*expr) {
 		switch (*expr) {
 			case '!':
 			case '<':
@@ -2003,57 +2004,58 @@ operator:
 		int a_is_num, b_is_num;
 
 		expr++;
-		while (expr && (*expr == ' ' || *expr == '\t')) expr++;
+		while (switch_isspace(*expr)) expr++;
 
 		b = expr;
-		if (b && *b == '\'') {
-			for (expr = ++b; expr && *expr; expr++) {
-			if (*expr == '\\') {
-				if (expr + 1 && (*(expr + 1) == '\\' || *(expr + 1) == '\'')) {
-					expr++;
+		if (*b == '\'') {
+			b_is_quoted = 1;
+			for (expr = ++b; *expr; expr++) {
+				if (*expr == '\\') {
+					if (*(expr + 1) == '\\' || *(expr + 1) == '\'') {
+						expr++;
+					}
+				} else if (*expr == '\'') {
+					break;
 				}
-			} else if (*expr == '\'') {
-				break;
 			}
-		}
-			if (!expr) {
+			if (!*expr) {
 				stream->write_function(stream, "-ERR while looking for closing quote near < %s >!\n", b);
 				goto end;
 			}
 			*expr++ = '\0';
 
-			if (expr && *expr != ' ' && *expr != '\t') {
-				stream->write_function(stream, "-ERR, Syntax error near  %s \n", expr);
+			if (!switch_isspace(*expr)) {
+				stream->write_function(stream, "-ERR, Syntax error near  < %s > \n", expr);
 				goto end;
 			}
-
 		} else {
 			if ((expr = strchr(b, ' '))) {
 				*expr++ = '\0';
 			} else {
-				stream->write_function(stream, "-ERR, Syntax error near  %s  \n", b);
+				stream->write_function(stream, "-ERR, Syntax error near < %s > \n", b);
 				goto end;
 			}
 		}
 
-		if ((p = strchr(expr, '?'))) {
-			expr = ++p;
-			while (expr && (*expr == ' ' || *expr == '\t')) expr++;
-		} else {
-			stream->write_function(stream, "-ERR, Syntax error near  %s , no expression found.\n", expr);
+		while (switch_isspace(*expr)) expr++;
+
+		if (*expr != '?') {
+			stream->write_function(stream, "-ERR, Syntax error near < %s > no expression found.\n", expr);
 			goto end;
 		}
 
-		argc = switch_separate_string(expr, ':', argv, (sizeof (argv) / sizeof (argv[0])));
+		*expr = ':';
+
+		argc = switch_separate_string(expr, ':', argv, (sizeof(argv) / sizeof(argv[0])));
 		if (!(argc >= 2 && argc <= 3)) {
-			stream->write_function(stream, "-ERR, Syntax error near  %s , Invalid expression.\n", expr);
+			stream->write_function(stream, "-ERR, Syntax error near < %s > , Invalid expression.\n", ++expr);
 			goto end;
 		}
 
 		s_a = a;
 		s_b = b;
-		a_is_num = switch_is_number(s_a);
-		b_is_num = switch_is_number(s_b);
+		a_is_num = (switch_is_number(s_a) && !a_is_quoted);
+		b_is_num = (switch_is_number(s_b) && !b_is_quoted);
 
 		a_f = a_is_num ? atof(s_a) : (float) strlen(s_a);
 		b_f = b_is_num ? atof(s_b) : (float) strlen(s_b);
@@ -2089,10 +2091,10 @@ operator:
 				break;
 		}
 
-		if ((argc == 1 && !is_true)) {
+		if ((argc == 2 && !is_true)) {
 			stream->write_function(stream, "");
 		} else {
-			stream->write_function(stream, "%s", is_true ? argv[0] : argv[1]);
+			stream->write_function(stream, "%s", is_true ? argv[1] : argv[2]);
 		}
 		goto end;
 	}
