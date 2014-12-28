@@ -1922,9 +1922,9 @@ SWITCH_STANDARD_API(cond_function)
 			}
 		}
 		if (!*expr) {
-                        goto error;
-                }
-			*expr++ = '\0';
+			goto error;
+		}
+		*expr++ = '\0';
 
 		if (!switch_isspace(*expr)) {
 			goto error;
@@ -1934,20 +1934,20 @@ SWITCH_STANDARD_API(cond_function)
 			*expr++ = '\0';
 		} else {
 			goto error;
-                }
+		}
 	}
 
 	while (switch_isspace(*expr)) expr++;
 
-        switch (*expr) {
-        case '!':
-        case '<':
-        case '>':
-        case '=':
-                goto operator;
-        default:
-                goto error;
-        }
+	switch (*expr) {
+	case '!':
+	case '<':
+	case '>':
+	case '=':
+		goto operator;
+	default:
+		goto error;
+	}
 
 operator:
 
