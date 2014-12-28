@@ -1922,9 +1922,9 @@ SWITCH_STANDARD_API(cond_function)
 			}
 		}
 		if (!*expr) {
-			goto error;
-		}
-		*expr++ = '\0';
+                        goto error;
+                }
+			*expr++ = '\0';
 
 		if (!switch_isspace(*expr)) {
 			goto error;
@@ -1934,65 +1934,62 @@ SWITCH_STANDARD_API(cond_function)
 			*expr++ = '\0';
 		} else {
 			goto error;
-		}
+                }
 	}
 
 	while (switch_isspace(*expr)) expr++;
 
-	while (*expr) {
-		switch (*expr) {
-			case '!':
-			case '<':
-			case '>':
-			case '=':
-				goto operator;
-			default:
-				goto error;
-				break;
-		}
-	}
+        switch (*expr) {
+        case '!':
+        case '<':
+        case '>':
+        case '=':
+                goto operator;
+        default:
+                goto error;
+        }
 
 operator:
 
 	switch (*expr) {
-		case '!':
+	case '!':
+		*expr++ = '\0';
+		if (*expr == '=') {
+			o = O_NE;
 			*expr++ = '\0';
-			if (*expr == '=') {
-				o = O_NE;
-				*expr++ = '\0';
-			}
-			break;
+		}
+		break;
 
-		case '>':
+	case '>':
+		*expr++ = '\0';
+		if (*expr == '=') {
+			o = O_GE;
 			*expr++ = '\0';
-			if (*expr == '=') {
-				o = O_GE;
-				*expr++ = '\0';
-			} else {
-				o = O_GT;
-			}
-			break;
+		} else {
+			o = O_GT;
+		}
+		break;
 
-		case '<':
+	case '<':
+		*expr++ = '\0';
+		if (*expr == '=') {
+			o = O_LE;
 			*expr++ = '\0';
-			if (*expr == '=') {
-				o = O_LE;
-				*expr++ = '\0';
-			} else {
-				o = O_LT;
-			}
-			break;
+		} else {
+			o = O_LT;
+		}
+		break;
 
-		case '=':
+	case '=':
+		*expr++ = '\0';
+		if (*expr == '=') {
+			o = O_EQ;
 			*expr++ = '\0';
-			if (*expr == '=') {
-				o = O_EQ;
-				*expr++ = '\0';
-			}
-			break;
+		}
+		break;
 
-		default:
-			goto error;
+	default:
+		goto error;
 	}
 
 	if (o) {
@@ -2052,34 +2049,34 @@ operator:
 		b_f = b_is_num ? atof(s_b) : (float) strlen(s_b);
 
 		switch (o) {
-			case O_EQ:
-				if (!a_is_num && !b_is_num) {
-					is_true = !strcmp(s_a, s_b);
-				} else {
-					is_true = a_f == b_f;
-				}
-				break;
-			case O_NE:
-				if (!a_is_num && !b_is_num) {
-					is_true = strcmp(s_a, s_b);
-				} else {
-					is_true = a_f != b_f;
-				}
-				break;
-			case O_GT:
-				is_true = a_f > b_f;
-				break;
-			case O_GE:
-				is_true = a_f >= b_f;
-				break;
-			case O_LT:
-				is_true = a_f < b_f;
-				break;
-			case O_LE:
-				is_true = a_f <= b_f;
-				break;
-			default:
-				break;
+		case O_EQ:
+			if (!a_is_num && !b_is_num) {
+				is_true = !strcmp(s_a, s_b);
+			} else {
+				is_true = a_f == b_f;
+			}
+			break;
+		case O_NE:
+			if (!a_is_num && !b_is_num) {
+				is_true = strcmp(s_a, s_b);
+			} else {
+				is_true = a_f != b_f;
+			}
+			break;
+		case O_GT:
+			is_true = a_f > b_f;
+			break;
+		case O_GE:
+			is_true = a_f >= b_f;
+			break;
+		case O_LT:
+			is_true = a_f < b_f;
+			break;
+		case O_LE:
+			is_true = a_f <= b_f;
+			break;
+		default:
+			break;
 		}
 
 		if ((argc == 2 && !is_true)) {
