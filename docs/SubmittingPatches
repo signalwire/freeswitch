@@ -45,7 +45,7 @@ Create a Pull Request
     # navigate to FreeSWITCH Stash
     chromium https://freeswitch.org/stash
 
-    # Using the saem credentials as Jira, login to Stash; create a forked FS repository; read
+    # Using the same credentials as Jira, login to Stash; create a forked FS repository; read
     # the details here:
     chromium https://freeswitch.org/confluence/display/FREESWITCH/Pull+Requests
 
@@ -214,4 +214,4 @@ Finally, feel free to join us in our weekly conference call.  Many of
 the core developers are often on the call and you'll have an
 opportunity at the beginning or end of the call to ask your questions:
 
-> https://wiki.freeswitch.org/wiki/Weekly_Conference_Call
+> https://freeswitch.org/confluence/display/FREESWITCH/ClueCon+Weekly+Conference+call

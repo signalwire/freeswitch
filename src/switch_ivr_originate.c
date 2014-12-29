@@ -1789,7 +1789,7 @@ static void *SWITCH_THREAD_FUNC early_thread_run(switch_thread_t *thread, void *
 						switch_core_session_set_read_codec(session, &read_codecs[i]);
 					}
 					status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
-					if (SWITCH_READ_ACCEPTABLE(status)) {
+					if (SWITCH_READ_ACCEPTABLE(status) && !switch_test_flag(read_frame, SFF_CNG)) {
 						data = (int16_t *) read_frame->data;
 						if (datalen < read_frame->datalen) {
 							datalen = read_frame->datalen;
@@ -1802,7 +1802,7 @@ static void *SWITCH_THREAD_FUNC early_thread_run(switch_thread_t *thread, void *
 					}
 				} else {
 					status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
-					if (SWITCH_READ_ACCEPTABLE(status)) {
+					if (SWITCH_READ_ACCEPTABLE(status) && !switch_test_flag(read_frame, SFF_CNG)) {
 						datalen = read_frame->datalen;
 					}
 					break;
@@ -3239,7 +3239,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 						silence = 600;
 					}
 
-					if ((ringback.fh || silence || ringback.audio_buffer || oglobals.bridge_early_media > -1) && write_frame.codec && write_frame.datalen) {
+					if ((ringback.fh || silence || ringback.audio_buffer || oglobals.bridge_early_media > -1) && write_frame.codec && write_frame.codec->implementation && write_frame.datalen) {
 						if (silence) {
 							write_frame.datalen = read_impl.decoded_bytes_per_packet;
 							switch_generate_sln_silence((int16_t *) write_frame.data, write_frame.datalen / 2, write_frame.codec->implementation->number_of_channels, silence);

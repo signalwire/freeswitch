@@ -357,6 +357,16 @@ build_debs () {
   echo ${dsc%.dsc}_${arch}.changes
 }
 
+default_distros () {
+  local host_distro="Debian"
+  test -z "$(which lsb_release)" || host_distro="$(lsb_release -is)"
+  case "$host_distro" in
+    Debian) echo "sid jessie wheezy" ;;
+    Ubuntu) echo "utopic trusty" ;;
+    *) err "Unknown host distribution \"$host_distro\"" ;;
+  esac
+}
+
 build_all () {
   local OPTIND OPTARG
   local orig_opts="" dsc_opts="" deb_opts="" modlist=""
@@ -385,20 +395,7 @@ build_all () {
   done
   shift $(($OPTIND-1))
   [ -n "$archs" ] || archs="amd64 i386"
-  if [ -z "$distros" ]; then
-    case "$(lsb_release -is)" in
-      Debian)
-        distros="sid jessie wheezy"
-        ;;
-      Ubuntu)
-        distros="utopic trusty"
-        ;;
-      *)
-        echo "Unknown distribution"
-        exit -1
-        ;;
-    esac
-  fi
+  [ -n "$distros" ] || distros="$(default_distros)"
   ! $depinst || aptitude install -y \
     rsync git less cowbuilder ccache \
     devscripts equivs build-essential

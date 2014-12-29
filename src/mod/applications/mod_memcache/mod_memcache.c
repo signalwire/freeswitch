@@ -283,7 +283,7 @@ SWITCH_STANDARD_API(memcache_function)
 
 			val = memcached_get(memcached, key, strlen(key), &string_length, &flags, &rc);
 			if (rc == MEMCACHED_SUCCESS) {
-				stream->write_function(stream, "%.*s", (int) string_length, val);
+				stream->raw_write_function(stream, (uint8_t*)val, (int)string_length);
 			} else {
 				switch_safe_free(val);
 				switch_goto_status(SWITCH_STATUS_SUCCESS, mcache_error);
