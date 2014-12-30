@@ -400,7 +400,7 @@ ssize_t ws_raw_read(wsh_t *wsh, void *data, size_t bytes, int block)
 
 ssize_t ws_raw_write(wsh_t *wsh, void *data, size_t bytes)
 {
-	size_t r;
+	ssize_t r;
 	int sanity = 2000;
 	int ssl_err = 0;
 
