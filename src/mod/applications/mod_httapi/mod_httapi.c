@@ -149,6 +149,8 @@ static struct {
 	hash_node_t *hash_root;
 	hash_node_t *hash_tail;
 	switch_hash_t *profile_hash;
+	switch_hash_t *request_hash;
+	switch_mutex_t *request_mutex;
 	switch_hash_t *parse_hash;
 	char cache_path[128];
 	int debug;
@@ -170,7 +172,6 @@ struct http_file_context {
 	char *cache_file;
 	char *cache_file_base;
 	char *meta_file;
-	char *lock_file;
 	char *metadata;
 	time_t expires;
 	switch_file_t *lock_fd;
@@ -192,6 +193,8 @@ struct http_file_context {
 		char *name;
 		char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
 	} write;
+
+	switch_mutex_t *mutex;
 };
 
 typedef struct http_file_context http_file_context_t;
@@ -2381,7 +2384,6 @@ static char *load_cache_data(http_file_context_t *context, const char *url)
 
 	context->cache_file_base = switch_core_sprintf(context->pool, "%s%s%s", globals.cache_path, SWITCH_PATH_SEPARATOR, digest);
 	context->meta_file = switch_core_sprintf(context->pool, "%s%s%s.meta", globals.cache_path, SWITCH_PATH_SEPARATOR, digest);
-	context->lock_file = switch_core_sprintf(context->pool, "%s%s%s.lock", globals.cache_path, SWITCH_PATH_SEPARATOR, digest);
 
 	if (switch_file_exists(context->meta_file, context->pool) == SWITCH_STATUS_SUCCESS && ((fd = open(context->meta_file, O_RDONLY, 0)) > -1)) {
 		if ((bytes = read(fd, meta_buffer, sizeof(meta_buffer))) > 0) {
@@ -2703,27 +2705,29 @@ static switch_status_t lock_file(http_file_context_t *context, switch_bool_t loc
 {
 
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-
+	http_file_context_t *xcontext = NULL;
 
 	if (lock) {
-		if (switch_file_open(&context->lock_fd,
-							 context->lock_file,
-							 SWITCH_FOPEN_WRITE | SWITCH_FOPEN_CREATE | SWITCH_FOPEN_TRUNCATE,
-							 SWITCH_FPROT_UREAD | SWITCH_FPROT_UWRITE, context->pool) != SWITCH_STATUS_SUCCESS) {
-			return SWITCH_STATUS_FALSE;
+		switch_mutex_lock(globals.request_mutex);
+		if (!(xcontext = switch_core_hash_find(globals.request_hash, context->dest_url))) {
+			switch_core_hash_insert(globals.request_hash, context->dest_url, context);
+			xcontext = context;
 		}
+		switch_mutex_lock(context->mutex);
+		switch_mutex_unlock(globals.request_mutex);
 		
-
-		if (switch_file_lock(context->lock_fd, SWITCH_FLOCK_EXCLUSIVE) != SWITCH_STATUS_SUCCESS) {
-			return SWITCH_STATUS_FALSE;
+		if (context != xcontext) {
+			switch_mutex_lock(xcontext->mutex);
+			switch_mutex_unlock(xcontext->mutex);
 		}
+
 	} else {
-		if (context->lock_fd){ 
-			switch_file_close(context->lock_fd);
-			status = SWITCH_STATUS_SUCCESS;
+		switch_mutex_lock(globals.request_mutex);
+		if ((xcontext = switch_core_hash_find(globals.request_hash, context->dest_url)) && xcontext == context) {
+			switch_core_hash_delete(globals.request_hash, context->dest_url);
 		}
-
-		unlink(context->lock_file);
+		switch_mutex_unlock(context->mutex);
+		switch_mutex_unlock(globals.request_mutex);
 	}
 
 	return status;
@@ -2744,8 +2748,6 @@ static switch_status_t locate_url_file(http_file_context_t *context, const char 
 	if (context->expires > 1 && now < context->expires) {
 		return SWITCH_STATUS_SUCCESS;
 	}
-
-	lock_file(context, SWITCH_TRUE);
 
 	if (context->url_params) {
 		ext = switch_event_get_header(context->url_params, "ext");
@@ -2837,8 +2839,6 @@ static switch_status_t locate_url_file(http_file_context_t *context, const char 
 		unlink(context->cache_file);
 	}
 
-	lock_file(context, SWITCH_FALSE);
-
 	switch_event_destroy(&headers);
 	
 	return status;
@@ -2875,6 +2875,7 @@ static switch_status_t file_open(switch_file_handle_t *handle, const char *path,
 
 	context = switch_core_alloc(handle->memory_pool, sizeof(*context));
 	context->pool = handle->memory_pool;
+	switch_mutex_init(&context->mutex, SWITCH_MUTEX_NESTED, handle->memory_pool);
 
 	pdup = switch_core_strdup(context->pool, pa);
 
@@ -2953,10 +2954,14 @@ static switch_status_t file_open(switch_file_handle_t *handle, const char *path,
 			context->read.ext = switch_event_get_header(context->url_params, "ext");
 		}
 
+		lock_file(context, SWITCH_TRUE);
+		
 		if ((status = locate_url_file(context, context->dest_url)) != SWITCH_STATUS_SUCCESS) {
 			return status;
 		}
 	
+		lock_file(context, SWITCH_FALSE);
+
 		if ((status = switch_core_file_open(&context->fh,
 											context->cache_file, 
 											handle->channels, 
@@ -2965,7 +2970,6 @@ static switch_status_t file_open(switch_file_handle_t *handle, const char *path,
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid cache file %s opening url %s Discarding file.\n", context->cache_file, path);
 			unlink(context->cache_file);
 			unlink(context->meta_file);
-			unlink(context->lock_file);
 			return status;
 		}
 	}
@@ -3000,6 +3004,9 @@ static switch_status_t https_file_file_open(switch_file_handle_t *handle, const 
 static switch_status_t http_file_file_close(switch_file_handle_t *handle)
 {
 	http_file_context_t *context = handle->private_info;
+
+	switch_mutex_lock(context->mutex);
+	switch_mutex_unlock(context->mutex);
 
 	if (switch_test_flag((&context->fh), SWITCH_FILE_OPEN)) {
 		switch_core_file_close(&context->fh);
@@ -3041,7 +3048,6 @@ static switch_status_t http_file_file_close(switch_file_handle_t *handle)
 		if (context->cache_file) {
 			unlink(context->cache_file);
 			unlink(context->meta_file);
-			unlink(context->lock_file);
 		}
 	}
 
@@ -3105,6 +3111,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_httapi_load)
 	globals.cache_ttl = 300;
 	globals.not_found_expires = 300;
 
+	switch_mutex_init(&globals.request_mutex, SWITCH_MUTEX_NESTED, pool);
 
 	http_file_supported_formats[0] = "http";
 
@@ -3133,6 +3140,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_httapi_load)
 
 	
 	switch_core_hash_init(&globals.profile_hash);
+	switch_core_hash_init(&globals.request_hash);
 	switch_core_hash_init_case(&globals.parse_hash, SWITCH_FALSE);
 
 	bind_parser("execute", parse_execute);
