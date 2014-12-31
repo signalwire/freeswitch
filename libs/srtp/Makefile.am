@@ -1,4 +1,4 @@
-AUTOMAKE_OPTIONS = gnu
+AUTOMAKE_OPTIONS = gnu subdir-objects
 NAME=srtp
 
 AM_CFLAGS    = $(new_AM_CFLAGS) -I./src -Icrypto/include -I$(srcdir)/include -I$(srcdir)/crypto/include

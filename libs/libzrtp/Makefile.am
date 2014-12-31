@@ -4,6 +4,7 @@
 # 
 # Viktor Krikun <v.krikun@soft-industry.com> <v.krikun@gmail.com>
 #
+AUTOMAKE_OPTIONS = subdir-objects
 
 libzrtp_includedir=$(includedir)/libzrtp
 libzrtp_include_HEADERS = \

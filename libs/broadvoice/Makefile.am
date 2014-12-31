@@ -20,6 +20,7 @@
 
 AM_CFLAGS = $(COMP_VENDOR_CFLAGS)
 AM_LDFLAGS = $(COMP_VENDOR_LDFLAGS)
+AUTOMAKE_OPTIONS = subdir-objects
 
 noinst_SCRIPTS = broadvoice.spec
 

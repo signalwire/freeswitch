@@ -1,4 +1,4 @@
-AUTOMAKE_OPTIONS = gnu
+AUTOMAKE_OPTIONS = gnu subdir-objects
 AM_CFLAGS    = $(new_AM_CFLAGS) -I$(top_srcdir)/include -I$(top_srcdir)/crypto/include
 AM_CPPFLAGS  = $(AM_CFLAGS)
 AM_LDFLAGS   = $(new_AM_LDFLAGS) -L$(srcdir) -lsrtp

@@ -1,5 +1,5 @@
 AM_CFLAGS = -I../src -fPIC -Wall -O3 -g
-AUTOMAKE_OPTS = gnu
+AUTOMAKE_OPTIONS = gnu subdir-objects
 NAME = codec2
 AM_CPPFLAGS = $(AM_CFLAGS)
 
