@@ -431,13 +431,13 @@
         var iceServers = null;
 
         if (options.iceServers) {
-            var tmp = options.iceServers;;
+            var tmp = options.iceServers;
 
             if (typeof(tmp) === "boolean") {
                 tmp = null;
             }
 
-            if (tmp && typeof(tmp) !== "array") {
+            if (!(tmp && typeof(tmp) == "object" && tmp.constructor === Array)) {
                 console.warn("iceServers must be an array, reverting to default ice servers");
                 tmp = null;
             }

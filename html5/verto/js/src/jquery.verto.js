@@ -1137,7 +1137,7 @@
 
     $.verto.confMan = function(verto, params) {
         var confMan = this;
-        conf
+
         confMan.params = $.extend({
             tableID: null,
             statusID: null,
@@ -1164,9 +1164,8 @@
             "<button class='ctlbtn' id='" + play_id + "'>Play</button>" +
             "<button class='ctlbtn' id='" + stop_id + "'>Stop</button>" +
             "<button class='ctlbtn' id='" + recording_id + "'>Record</button>" +
-            "<button class='ctlbtn' id='" + rec_stop_id + "'>Record Stop</button>"
-
-            + "<br><br></div>";
+            "<button class='ctlbtn' id='" + rec_stop_id + "'>Record Stop</button>" +
+            "<br><br></div>";
 
             jq.html(html);
 
@@ -1260,7 +1259,7 @@
 
             if (confMan.params.mainModID) {
                 genMainMod($(confMan.params.mainModID));
-                $(confMan.params.displayID).html("Moderator Controls Ready<br><br>")
+                $(confMan.params.displayID).html("Moderator Controls Ready<br><br>");
             } else {
                 $(confMan.params.mainModID).html("");
             }
@@ -1277,7 +1276,7 @@
                             clearTimeout(confMan.lastTimeout);
                             confMan.lastTimeout = 0;
                         }
-                        confMan.lastTimeout = setTimeout(function() { $(confMan.params.displayID).html(confMan.destroyed ? "" : "Moderator Controls Ready<br><br>")}, 4000);
+                        confMan.lastTimeout = setTimeout(function() { $(confMan.params.displayID).html(confMan.destroyed ? "" : "Moderator Controls Ready<br><br>");}, 4000);
                     }
                 }
             });
@@ -1349,7 +1348,7 @@
             "fnRowCallback": row_callback
 
         });
-    }
+    };
 
     $.verto.confMan.prototype.modCommand = function(cmd, id, value) {
         var confMan = this;
@@ -1363,7 +1362,7 @@
             "value": value
             }
         });
-    }
+    };
 
     $.verto.confMan.prototype.destroy = function() {
         var confMan = this;
@@ -1381,7 +1380,7 @@
         if (confMan.params.mainModID) {
             $(confMan.params.mainModID).html("");
         }
-    }
+    };
 
     $.verto.dialog = function(direction, verto, params) {
         var dialog = this;
