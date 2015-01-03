@@ -5,4 +5,5 @@ Do not base it on the demo because it was just tossed together.
 To run jshint:
 
 	cd js
+	npm install
 	grunt
