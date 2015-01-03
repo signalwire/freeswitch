@@ -1674,6 +1674,8 @@ int main(int argc, char *argv[])
 		goto done;
 	}
 	history(myhistory, &ev, H_SETSIZE, 800);
+	/* Ignore duplicate lines */
+	history(myhistory, &ev, H_SETUNIQUE, 1);
 	el_set(el, EL_HIST, history, myhistory);
 	if (use_history_file) history(myhistory, &ev, H_LOAD, hfile);
 	el_source(el, NULL);
