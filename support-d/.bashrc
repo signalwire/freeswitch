@@ -1,5 +1,5 @@
 #
-# /etc/profile: system-wide defaults for bash(1) login shells
+# FreeSWITCH Dev .bashrc
 #
 export UNAME=`uname -s`
 
@@ -60,7 +60,6 @@ alias mecas='emacs'
 alias bgit='git commit --author "Brian West <brian@freeswitch.org>"'
 alias mgit='git commit --author "Mike Jerris <mike@freeswitch.org>"'
 alias tgit='git commit --author "Anthony Minessale <anthm@freeswitch.org>"'
-alias igit='git commit --author "Raymond Chandler <intralanman@freeswitch.org>"'
 alias dp='emacs /usr/local/freeswitch/conf/dialplan/default.xml'
 alias go='/usr/local/freeswitch/bin/freeswitch -nonat'
 alias fstop='top -p `cat /usr/local/freeswitch/run/freeswitch.pid`'
@@ -69,4 +68,18 @@ alias fscore='gdb /usr/local/freeswitch/bin/freeswitch `ls -rt core.* | tail -n1
 alias emacs='emacs -nw'
 alias jitteron='tc qdisc add dev eth0 root handle 1: netem delay 40ms 20ms ; tc qdisc add dev eth0 parent 1:1 pfifo limit 1000'
 alias jitteroff='tc qdisc del dev eth0 root netem'
+
+# Auto Update the .bashrc if hostname contains freeswitch.org
+if [[ $(hostname) =~ "freeswitch.org" ]]; then
+    if [ -f /usr/src/freeswitch.git/support-d/.bashrc ]; then  
+	/usr/bin/diff --brief <(sort /usr/src/freeswitch.git/support-d/.bashrc) <(sort ~/.bashrc) >/dev/null
+	if [ $? -eq 1 ]; then
+	    /bin/cp -f /usr/src/freeswitch.git/support-d/.bashrc ~/
+	    echo ".bashrc updated."
+	    source ~/.bashrc
+	fi
+    fi
+fi
+# End Auto Update
+
 # End of file
