@@ -274,6 +274,8 @@ static void vlc_video_display_callback(void *data, void *id)
 		context->img = NULL;
 	} else {
 		context->vid_frame->img = context->img;
+		context->vid_frame->packet = context->video_packet;
+		context->vid_frame->data = context->video_packet + 12;
 		switch_core_session_write_video_frame(context->session, context->vid_frame, SWITCH_IO_FLAG_NONE, 0);
 	}
 
