@@ -40,7 +40,8 @@ if [ ! -f ~/.inputrc ]; then
 fi
 
 set -o emacs
-
+export PROMPT_COMMAND="history -a; history -c; history -r; ${PROMPT_COMMAND}"
+export HISTSIZE=5000
 export TERM=xterm-256color
 export LESSCHARSET="latin1"
 export LESS="-R"
