@@ -2578,6 +2578,7 @@ static void conference_set_floor_holder(conference_obj_t *conference, conference
 		}
 
 		if (conference->floor_holder) {
+ 			conference_add_event_member_data(conference->floor_holder, event);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-ID", "%d", conference->floor_holder->id);
 		} else {
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "New-ID", "none");
