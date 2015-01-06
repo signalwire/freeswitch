@@ -305,6 +305,8 @@ static uint32_t jsock_unsub_head(jsock_t *jsock, jsock_sub_node_head_t *head)
 	return x;
 }
 
+static void detach_calls(jsock_t *jsock);
+
 static void unsub_all_jsock(void)
 {
 	switch_hash_index_t *hi;
@@ -1059,8 +1061,30 @@ static jsock_t *get_jsock(const char *uuid)
 
 static void attach_jsock(jsock_t *jsock)
 {
+	jsock_t *jp;
+	int proceed = 1;
+
 	switch_mutex_lock(globals.jsock_mutex);
-	switch_core_hash_insert(globals.jsock_hash, jsock->uuid_str, jsock);
+
+	if ((jp = switch_core_hash_find(globals.jsock_hash, jsock->uuid_str))) {
+		if (jp == jsock) {
+			proceed = 0;
+		} else {
+			cJSON *params = NULL;
+			cJSON *msg = NULL;
+			msg = jrpc_new_req("verto.punt", NULL, &params);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "New connection for session %s dropping previous connection.\n", jsock->uuid_str);
+			switch_core_hash_delete(globals.jsock_hash, jsock->uuid_str);
+			ws_write_json(jp, &msg, SWITCH_TRUE);
+			cJSON_Delete(msg);
+			jp->drop = 1;
+		}
+	}
+
+	if (proceed) {
+		switch_core_hash_insert(globals.jsock_hash, jsock->uuid_str, jsock);
+	}
+
 	switch_mutex_unlock(globals.jsock_mutex);
 }
 

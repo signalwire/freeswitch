@@ -132,6 +132,9 @@
     $.verto.prototype.logout = function(msg) {
         var verto = this;
         verto.rpcClient.closeSocket();
+        if (verto.callbacks.onWSClose) {
+            verto.callbacks.onWSClose(verto, false);
+        }
         verto.purge();
     };
 
@@ -490,6 +493,10 @@
             };
         } else {
             switch (data.method) {
+            case 'verto.punt':
+                verto.purge();
+		verto.logout();
+		break;
             case 'verto.event':
                 var list = null;
                 var key = null;
