@@ -2066,6 +2066,15 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				const char *call_info = switch_channel_get_variable(channel, "presence_call_info_full");
 				char *cid = generate_pai_str(tech_pvt);
 
+				/* Set sip_to_tag to local tag for inbound channels. */
+				if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_INBOUND) {
+					const char* to_tag = "";
+					to_tag = switch_str_nil(nta_leg_get_tag(tech_pvt->nh->nh_ds->ds_leg));
+					if(to_tag) {
+						switch_channel_set_variable(channel, "sip_to_tag", to_tag);
+					}
+				}
+
 				switch (ring_ready_val) {
 
 				case SWITCH_RING_READY_QUEUED:
