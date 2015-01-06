@@ -1,0 +1,137 @@
+#!/usr/bin/perl
+# Copyright (c) 2007-2014, Anthony Minessale II
+# All rights reserved.
+# 
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+# 
+# Redistributions of source code must retain the above copyright
+# notice, this list of conditions and the following disclaimer.
+# 
+# Redistributions in binary form must reproduce the above copyright
+# notice, this list of conditions and the following disclaimer in the
+# documentation and/or other materials provided with the distribution.
+# 
+# Neither the name of the original author; nor the names of any contributors
+# may be used to endorse or promote products derived from this software
+# without specific prior written permission.
+# 
+# 
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+# A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER
+# OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+# PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# 
+# Contributors: 
+# 
+# hashfinder - Find origin of a particular line of code
+#
+
+
+my $file = shift;
+my $regex = shift;
+my $delim = "  ";
+
+$file and $regex or die "missing params.  Syntax: <file> <regex>";
+
+sub doit($$) {
+  my $rev = shift;
+  my $pattern = shift;
+  my $loops = shift || 0;
+  my $linematch = 0;
+
+  $pattern =~ s/\(/\\\(/g;
+  $pattern =~ s/\)/\\\)/g;
+
+  if ($pattern =~ /^(\d+)$/) {
+    $linematch = 1;
+  }
+
+  open GIT, "git blame -n $file $rev|";
+
+  my $mc = 0;
+  my @matches = ();
+
+  while (<GIT>) {
+    my $matched = 0;
+
+    if ($linematch) {
+      $matched = (/^\S+\s+$pattern\s+/);
+    } else {
+      $matched = (/$pattern/);
+    }
+
+    if ($matched) {
+      s/[\r\n]//g;
+      push @matches, $_;
+      $mc++;
+    }
+  }
+
+  close(GIT);
+
+
+  if ($mc > 5) {
+    print $delim x $loops;
+    print "$mc matches; Maybe more specific?\n";
+    
+    foreach (@matches) {
+      print "$_\n";
+    }
+
+	return;
+
+  }
+
+  my $x = 0;
+
+  foreach (@matches) {
+    my ($hash, $lno, $author, $line);
+    my $done = 0;
+
+    if (/$file/) {
+      ($hash, $lno, $author, $line) = /(\S+)\s+\S+\s+(\S+)\s+(\([^\)]+\))\s*(.*)/;
+      $done = 1;
+    } else {
+      ($hash, $lno, $author, $line) = /(\S+)\s+(\S+)\s+(\([^\)]+\))\s*(.*)/;
+    }
+
+    if ($hash) {
+		$line =~ s/^\s+//g;
+
+		print "\n";
+		print $delim x $loops;
+		my $msg = `git log -1 --pretty=format:%B $hash`;
+		print "[$hash] [$lno] [$author] [$line]\n";
+		print $delim x $loops;
+		print ":: $msg\n";
+		doit("$hash" . "^", $line, $loops+1);
+		print "\n";
+    }
+
+    last if $done;
+
+  }
+}
+
+doit(undef, $regex);
+
+
+# For Emacs:
+# Local Variables:
+# mode:perl
+# indent-tabs-mode:t
+# tab-width:4
+# c-basic-offset:4
+# End:
+# For VIM:
+# vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet:
+
