@@ -48,8 +48,11 @@ sub doit($$) {
   my $loops = shift || 0;
   my $linematch = 0;
 
-  $pattern =~ s/\(/\\\(/g;
-  $pattern =~ s/\)/\\\)/g;
+  if ($pattern =~ /^\~(.*)/) {
+	  $pattern = $1;
+  } else {
+	  $pattern = quotemeta $pattern;
+  }
 
   if ($pattern =~ /^(\d+)$/) {
     $linematch = 1;
