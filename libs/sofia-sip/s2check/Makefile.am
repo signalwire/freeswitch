@@ -5,6 +5,8 @@
 # Contact: Pekka Pessi <pekka.pessi@nokia.com>
 # Licensed under LGPL. See file COPYING.
 
+AUTOMAKE_OPTIONS = subdir-objects
+
 # ----------------------------------------------------------------------
 # Header paths
 
