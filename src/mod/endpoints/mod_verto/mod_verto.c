@@ -1480,9 +1480,6 @@ static void http_static_handler(switch_http_request_t *request, verto_vhost_t *v
 
 		for (;;) {
 			switch_status_t status;
-			ssize_t written = 0;
-			ssize_t ret = 0;
-			int sanity = 3;
 
 			flen = sizeof(chunk);
 			status = switch_file_read(fd, chunk, &flen);
@@ -1491,17 +1488,7 @@ static void http_static_handler(switch_http_request_t *request, verto_vhost_t *v
 				break;
 			}
 
-again:
-			ret = ws_raw_write(&jsock->ws, chunk + written, flen);
-			if (ret == -1) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "error write %" SWITCH_SIZE_T_FMT " bytes!\n", flen);
-				ws_close(&jsock->ws, WS_NONE);
-			} else if (ret > 0 && ret < flen && sanity > 0) {
-				switch_yield(1000);
-				flen -= ret;
-				written += ret;
-				goto again;
-			}
+			ws_raw_write(&jsock->ws, chunk, flen);
 		}
 		switch_file_close(fd);
 	} else {
