@@ -3906,8 +3906,8 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 		
 		if (strstr(buf, "fs_path=") && !strstr(contact_str, "fs_path=")) {
 			char *e = strchr(buf,';');
-			size_t l = e ? buf-e : strlen(buf);
-			if (strncmp(contact_str,buf,l)) {
+			size_t l = e ? e-buf : strlen(buf);
+			if (!strncmp(contact_str,buf,l)) {
 				contact = buf;
 			}
 		}
