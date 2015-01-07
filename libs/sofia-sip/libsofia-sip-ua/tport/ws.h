@@ -11,11 +11,11 @@
 #include <arpa/inet.h>
 #include <sys/wait.h> 
 #include <sys/socket.h>
+#include <unistd.h>
 #else
 #pragma warning(disable:4996)
 #endif
 #include <string.h>
-#include <unistd.h>
 #include <string.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -26,7 +26,9 @@
 #include <openssl/ssl.h>
 
 #ifdef _MSC_VER
+#ifndef strncasecmp
 #define strncasecmp _strnicmp
+#endif
 #define snprintf _snprintf
 #ifdef _WIN64
 #define WS_SSIZE_T __int64
@@ -48,8 +50,12 @@ struct ws_globals_s {
 
 extern struct ws_globals_s ws_globals;
 
+#ifndef WIN32
 typedef int ws_socket_t;
-#define ws_sock_invalid -1
+#else
+typedef SOCKET ws_socket_t;
+#endif
+#define ws_sock_invalid (ws_socket_t)-1
 
 
 typedef enum {

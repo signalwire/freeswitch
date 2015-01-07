@@ -309,7 +309,7 @@ int ws_handshake(wsh_t *wsh)
 			 "%s\r\n",
 			 b64,
 			 proto_buf);
-
+	respond[511] = 0;
 
 	ws_raw_write(wsh, respond, strlen(respond));
 	wsh->handshake = 1;
@@ -322,6 +322,7 @@ int ws_handshake(wsh_t *wsh)
 
 		snprintf(respond, sizeof(respond), "HTTP/1.1 400 Bad Request\r\n"
 				 "Sec-WebSocket-Version: 13\r\n\r\n");
+		respond[511] = 0;
 
 		ws_raw_write(wsh, respond, strlen(respond));
 
@@ -399,7 +400,7 @@ ssize_t ws_raw_read(wsh_t *wsh, void *data, size_t bytes, int block)
 
 ssize_t ws_raw_write(wsh_t *wsh, void *data, size_t bytes)
 {
-	size_t r;
+	ssize_t r;
 	int sanity = 2000;
 	int ssl_err = 0;
 
@@ -656,7 +657,11 @@ ssize_t ws_close(wsh_t *wsh, int16_t reason)
 	restore_socket(wsh->sock);
 
 	if (wsh->close_sock && wsh->sock != ws_sock_invalid) {
+#ifndef WIN32
 		close(wsh->sock);
+#else
+		closesocket(wsh->sock);
+#endif
 	}
 
 	wsh->sock = ws_sock_invalid;
