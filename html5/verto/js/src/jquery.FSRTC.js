@@ -493,7 +493,7 @@
                 tmp = null;
             }
 
-            if (!(tmp && typeof(tmp) == "object" && tmp.constructor === Array)) {
+            if (tmp && !(typeof(tmp) == "object" && tmp.constructor === Array)) {
                 console.warn("iceServers must be an array, reverting to default ice servers");
                 tmp = null;
             }
