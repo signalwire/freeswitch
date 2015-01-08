@@ -3583,15 +3583,14 @@ static switch_bool_t jsapi_func(const char *method, cJSON *params, jsock_t *jsoc
 
 				if (jsock->allowed_fsapi && !strcmp(function, "fsapi")) {
 					cJSON *data = cJSON_GetObjectItem(params, "data");
-					cJSON *cmd;
-					cJSON *arg;
+					if (data) {
+						cJSON *cmd = cJSON_GetObjectItem(data, "cmd");
+						cJSON *arg = cJSON_GetObjectItem(data, "arg");
 
-					if (data &&
-						(cmd = cJSON_GetObjectItem(data, "cmd")) &&
-						(arg = cJSON_GetObjectItem(data, "arg")) &&
-						cmd->type == cJSON_String && cmd->valuestring &&
-						!auth_api_command(jsock, cmd->valuestring, arg ? arg->valuestring : NULL)) {
-						return SWITCH_FALSE;
+						if (cmd  && cmd->type == cJSON_String && cmd->valuestring &&
+							!auth_api_command(jsock, cmd->valuestring, arg ? arg->valuestring : NULL)) {
+							return SWITCH_FALSE;
+						}
 					}
 				}
 			}
