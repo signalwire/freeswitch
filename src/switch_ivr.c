@@ -2065,7 +2065,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_del_event(switch_
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
 	if (parser != NULL && digits != NULL && *digits) {
-		status = switch_core_hash_delete(parser->hash, digits);
+		status = switch_core_hash_delete(parser->hash, digits) ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
 	}
 
 	if (status != SWITCH_STATUS_SUCCESS) {

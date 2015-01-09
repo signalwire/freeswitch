@@ -197,6 +197,19 @@ SWITCH_DECLARE(switch_hashtable_iterator_t*) switch_hashtable_first_iter(switch_
 SWITCH_DECLARE(switch_hashtable_iterator_t*) switch_hashtable_next(switch_hashtable_iterator_t **iP);
 SWITCH_DECLARE(void) switch_hashtable_this(switch_hashtable_iterator_t *i, const void **key, switch_ssize_t *klen, void **val);
 
+static inline uint32_t switch_hash_default_int(void *ky) {
+	uint32_t x = *((uint32_t *)ky);
+	x = ((x >> 16) ^ x) * 0x45d9f3b;
+	x = ((x >> 16) ^ x) * 0x45d9f3b;
+	x = ((x >> 16) ^ x);
+	return x;
+}
+
+static inline int switch_hash_equalkeys_int(void *k1, void *k2)
+{
+    return *(uint32_t *)k1 == *(uint32_t *)k2;
+}
+
 static inline int switch_hash_equalkeys(void *k1, void *k2)
 {
     return strcmp((char *) k1, (char *) k2) ? 0 : 1;

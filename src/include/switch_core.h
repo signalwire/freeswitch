@@ -1400,9 +1400,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_hash_insert_wrlock(switch_hash_t *ha
   \brief Delete data from a hash based on desired key
   \param hash the hash to delete from
   \param key the key from which to delete the data
-  \return SWITCH_STATUS_SUCCESS if the data is deleted
+  \return The value stored if the data is deleted otherwise NULL
 */
-SWITCH_DECLARE(switch_status_t) switch_core_hash_delete(_In_ switch_hash_t *hash, _In_z_ const char *key);
+SWITCH_DECLARE(void *) switch_core_hash_delete(_In_ switch_hash_t *hash, _In_z_ const char *key);
 
 /*! 
   \brief Delete data from a hash based on desired key
@@ -1491,6 +1491,11 @@ SWITCH_DECLARE(void) switch_core_hash_this(_In_ switch_hash_index_t *hi, _Out_op
 									  const void **key, _Out_opt_ switch_ssize_t *klen, _Out_ void **val);
 
 
+SWITCH_DECLARE(switch_status_t) switch_core_inthash_init(switch_inthash_t **hash);
+SWITCH_DECLARE(switch_status_t) switch_core_inthash_destroy(switch_inthash_t **hash);
+SWITCH_DECLARE(switch_status_t) switch_core_inthash_insert(switch_inthash_t *hash, uint32_t key, const void *data);
+SWITCH_DECLARE(void *) switch_core_inthash_delete(switch_inthash_t *hash, uint32_t key);
+SWITCH_DECLARE(void *) switch_core_inthash_find(switch_inthash_t *hash, uint32_t key);
 
 ///\}
 

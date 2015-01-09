@@ -735,6 +735,7 @@ typedef enum {
 	SWITCH_RTP_FLAG_PLI,
 	SWITCH_RTP_FLAG_RESET,
 	SWITCH_RTP_FLAG_MUTE,
+	SWITCH_RTP_FLAG_NACK,
 	SWITCH_RTP_FLAG_INVALID
 } switch_rtp_flag_t;
 
@@ -2340,6 +2341,7 @@ typedef switch_xml_t(*switch_xml_search_function_t) (const char *section,
 struct switch_hashtable;
 struct switch_hashtable_iterator;
 typedef struct switch_hashtable switch_hash_t;
+typedef struct switch_hashtable switch_inthash_t;
 typedef struct switch_hashtable_iterator switch_hash_index_t;
 
 struct switch_network_list;
