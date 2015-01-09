@@ -240,15 +240,15 @@ static int switch_events_match(switch_event_t *event, switch_event_node_t *node)
 			if (!strncasecmp(node->subclass_name, "file:", 5)) {
 				char *file_header;
 				if ((file_header = switch_event_get_header(event, "file")) != 0) {
-					match = strstr(node->subclass_name + 5, file_header) ? 1 : 0;
+					match = !strcmp(node->subclass_name + 5, file_header) ? 1 : 0;
 				}
 			} else if (!strncasecmp(node->subclass_name, "func:", 5)) {
 				char *func_header;
 				if ((func_header = switch_event_get_header(event, "function")) != 0) {
-					match = strstr(node->subclass_name + 5, func_header) ? 1 : 0;
+					match = !strcmp(node->subclass_name + 5, func_header) ? 1 : 0;
 				}
 			} else if (event->subclass_name && node->subclass_name) {
-				match = strstr(event->subclass_name, node->subclass_name) ? 1 : 0;
+				match = !strcmp(event->subclass_name, node->subclass_name) ? 1 : 0;
 			}
 		} else if ((event->subclass_name && !node->subclass_name) || (!event->subclass_name && !node->subclass_name)) {
 			match = 1;
