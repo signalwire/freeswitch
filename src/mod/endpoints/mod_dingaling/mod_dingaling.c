@@ -2025,7 +2025,7 @@ static switch_status_t channel_on_destroy(switch_core_session_t *session)
 			
 			if (tech_pvt->profile->purge) {
 				mdl_profile_t *profile = tech_pvt->profile;
-				if (switch_core_hash_delete(globals.profile_hash, profile->name) == SWITCH_STATUS_SUCCESS) {
+				if (switch_core_hash_delete(globals.profile_hash, profile->name)) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Profile %s deleted successfully\n", profile->name);
 				}
 			}
@@ -3261,7 +3261,7 @@ static switch_status_t destroy_profile(char *name)
 				ldl_handle_stop(profile->handle);
 			}
 
-			if (switch_core_hash_delete(globals.profile_hash, profile->name) == SWITCH_STATUS_SUCCESS) {
+			if (switch_core_hash_delete(globals.profile_hash, profile->name)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Profile %s deleted successfully\n", profile->name);
 			}
 		}

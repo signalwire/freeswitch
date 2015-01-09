@@ -92,11 +92,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_hash_insert_wrlock(switch_hash_t *ha
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_hash_delete(switch_hash_t *hash, const char *key)
+SWITCH_DECLARE(void *) switch_core_hash_delete(switch_hash_t *hash, const char *key)
 {
-	switch_hashtable_remove(hash, (void *)key);
-
-	return SWITCH_STATUS_SUCCESS;
+	return switch_hashtable_remove(hash, (void *)key);
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_hash_delete_locked(switch_hash_t *hash, const char *key, switch_mutex_t *mutex)
@@ -154,7 +152,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_hash_delete_multi(switch_hash_t *has
 	
 	/* now delete them */
 	for (header = event->headers; header; header = header->next) {
-		if (switch_core_hash_delete(hash, header->value) == SWITCH_STATUS_SUCCESS) {
+		if (switch_core_hash_delete(hash, header->value)) {
 			status = SWITCH_STATUS_SUCCESS;
 		}
 	}
@@ -231,6 +229,40 @@ SWITCH_DECLARE(switch_hash_index_t *) switch_core_hash_next(switch_hash_index_t 
 SWITCH_DECLARE(void) switch_core_hash_this(switch_hash_index_t *hi, const void **key, switch_ssize_t *klen, void **val)
 {
 	switch_hashtable_this(hi, key, klen, val);
+}
+
+
+SWITCH_DECLARE(switch_status_t) switch_core_inthash_init(switch_inthash_t **hash)
+{
+	return switch_create_hashtable(hash, 16, switch_hash_default_int, switch_hash_equalkeys_int);
+}
+
+SWITCH_DECLARE(switch_status_t) switch_core_inthash_destroy(switch_inthash_t **hash)
+{
+	switch_hashtable_destroy(hash);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_core_inthash_insert(switch_inthash_t *hash, uint32_t key, const void *data)
+{
+	uint32_t *k = NULL;
+
+	switch_zmalloc(k, sizeof(k));
+	*k = key;
+	switch_hashtable_insert_destructor(hash, k, (void *)data, HASHTABLE_FLAG_FREE_KEY | HASHTABLE_DUP_CHECK, NULL);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_DECLARE(void *) switch_core_inthash_delete(switch_inthash_t *hash, uint32_t key)
+{
+	return switch_hashtable_remove(hash, (void *)&key);
+}
+
+SWITCH_DECLARE(void *) switch_core_inthash_find(switch_inthash_t *hash, uint32_t key)
+{
+	return switch_hashtable_search(hash, (void *)&key);
 }
 
 
