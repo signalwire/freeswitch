@@ -672,11 +672,6 @@ switch_call_cause_t rtmp_outgoing_channel(switch_core_session_t *session, switch
 	rtmp_set_channel_variables(*newsession);
 
 	switch_core_hash_insert_wrlock(rsession->session_hash, switch_core_session_get_uuid(*newsession), tech_pvt, rsession->session_rwlock);
-		
-	if (switch_core_session_thread_launch(tech_pvt->session) == SWITCH_STATUS_FALSE) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't spawn thread\n");	
-		goto fail;
-	}
 
 	if (rsession) {
 		rtmp_session_rwunlock(rsession);
