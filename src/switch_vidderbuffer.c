@@ -34,54 +34,44 @@
 #define MAX_MISSING_SEQ 20
 #define vb_debug(_vb, _level, _format, ...) if (_vb->debug_level >= _level) switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ALERT, "VB:%p level:%d line:%d ->" _format, (void *) _vb, _level, __LINE__,  __VA_ARGS__)
 
+struct switch_vb_s;
+
 typedef struct switch_vb_node_s {
-	struct switch_vb_frame_s *parent;
+	struct switch_vb_s *parent;
 	switch_rtp_packet_t packet;
 	uint32_t len;
 	uint8_t visible;
 	struct switch_vb_node_s *next;
 } switch_vb_node_t;
 
-typedef struct switch_vb_frame_s {
-	struct switch_vb_s *parent;
-	struct switch_vb_node_s *node_list;
-	uint32_t ts;
-	uint32_t visible_nodes;
-	uint8_t visible;
-	uint8_t complete;
-	uint8_t mark;
-	struct switch_vb_frame_s *next;
-	uint16_t min_seq;
-	uint16_t max_seq;
-} switch_vb_frame_t;
-
 struct switch_vb_s {
-	struct switch_vb_frame_s *frame_list;
-	struct switch_vb_frame_s *cur_read_frame;
-	struct switch_vb_frame_s *cur_write_frame;
-	uint32_t last_read_ts;
-	uint32_t last_read_seq;
+	struct switch_vb_node_s *node_list;
 	uint32_t last_target_seq;
-	uint32_t last_wrote_ts;
-	uint32_t last_wrote_seq;
+	uint32_t highest_read_ts;
+	uint32_t highest_read_seq;
+	uint32_t highest_wrote_ts;
+	uint32_t highest_wrote_seq;
 	uint16_t target_seq;
 	uint16_t seq_out;
-	uint32_t visible_frames;
+	uint32_t visible_nodes;
 	uint32_t total_frames;
 	uint32_t complete_frames;
 	uint32_t frame_len;
 	uint32_t min_frame_len;
 	uint32_t max_frame_len;
+	uint8_t write_init;
+	uint8_t read_init;
 	uint8_t debug_level;
-	switch_timer_t timer;
-	int cur_errs;
+	uint16_t next_seq;
+	switch_inthash_t *missing_seq_hash;
+	switch_inthash_t *node_hash;
 };
 
-static inline switch_vb_node_t *new_node(switch_vb_frame_t *frame)
+static inline switch_vb_node_t *new_node(switch_vb_t *vb)
 {
 	switch_vb_node_t *np, *last = NULL;
 
-	for (np = frame->node_list; np; np = np->next) {
+	for (np = vb->node_list; np; np = np->next) {
 		if (!np->visible) {
 			break;
 		}
@@ -91,12 +81,11 @@ static inline switch_vb_node_t *new_node(switch_vb_frame_t *frame)
 	if (!np) {
 		
 		switch_zmalloc(np, sizeof(*np));
-		np->parent = frame;
 	
 		if (last) {
 			last->next = np;
 		} else {
-			frame->node_list = np;
+			vb->node_list = np;
 		}
 
 	}
@@ -104,167 +93,113 @@ static inline switch_vb_node_t *new_node(switch_vb_frame_t *frame)
 	switch_assert(np);
 
 	np->visible = 1;
-	np->parent->visible_nodes++;
+	vb->visible_nodes++;
+	np->parent = vb;
 
 	return np;
 }
 
-static inline void add_node(switch_vb_frame_t *frame, switch_rtp_packet_t *packet, switch_size_t len)
+static inline switch_vb_node_t *find_seq(switch_vb_t *vb, uint16_t seq)
 {
-	switch_vb_node_t *node = new_node(frame);
-	uint16_t seq = ntohs(packet->header.seq);
+	switch_vb_node_t *np;
+	for (np = vb->node_list; np; np = np->next) {
+		if (!np->visible) continue;
+			
+		if (ntohs(np->packet.header.seq) == ntohs(seq)) {
+			return np;
+		}
+	}
+
+	return NULL;
+}
+
+static inline void hide_node(switch_vb_node_t *node)
+{
+	node->visible = 0;
+	node->parent->visible_nodes--;
+	switch_core_inthash_delete(node->parent->node_hash, node->packet.header.seq);
+}
+
+static inline void hide_nodes(switch_vb_t *vb)
+{
+	switch_vb_node_t *np;
+
+	for (np = vb->node_list; np; np = np->next) {
+		hide_node(np);
+	}
+}
+
+static inline void drop_ts(switch_vb_t *vb, uint32_t ts)
+{
+	switch_vb_node_t *np;
+	int x = 0;
+
+	for (np = vb->node_list; np; np = np->next) {
+		if (!np->visible) continue;
+
+		if (ts == np->packet.header.ts) {
+			hide_node(np);
+			x++;
+		}
+	}
+
+	if (x) vb->complete_frames--;
+}
+
+static inline uint32_t vb_find_lowest_ts(switch_vb_t *vb)
+{
+	switch_vb_node_t *np, *lowest = NULL;
+	
+	for (np = vb->node_list; np; np = np->next) {
+		if (!np->visible) continue;
+
+		if (!lowest || ntohl(lowest->packet.header.ts) > ntohl(np->packet.header.ts)) {
+			lowest = np;
+		}
+	}
+
+	return lowest ? lowest->packet.header.ts : 0;
+}
+
+static inline void drop_oldest_frame(switch_vb_t *vb)
+{
+	uint32_t ts = vb_find_lowest_ts(vb);
+
+	drop_ts(vb, ts);
+	vb_debug(vb, 1, "Dropping oldest frame ts:%u\n", ntohl(ts));
+}
+
+static inline void add_node(switch_vb_t *vb, switch_rtp_packet_t *packet, switch_size_t len)
+{
+	switch_vb_node_t *node = new_node(vb);
 
 	node->packet = *packet;
 	node->len = len;
 	memcpy(node->packet.body, packet->body, len);
 
-	if (!frame->min_seq ||seq < ntohs(frame->min_seq)) {
-		frame->min_seq = packet->header.seq;
+	switch_core_inthash_insert(vb->node_hash, node->packet.header.seq, node);
+
+	vb_debug(vb, (packet->header.m ? 1 : 2), "PUT packet last_ts:%u ts:%u seq:%u%s\n", 
+			 ntohl(vb->highest_wrote_ts), ntohl(node->packet.header.ts), ntohs(node->packet.header.seq), packet->header.m ? " <MARK>" : "");
+
+	if (!vb->write_init || ntohs(packet->header.seq) > ntohs(vb->highest_wrote_seq) || 
+		(ntohs(vb->highest_wrote_seq) > USHRT_MAX - 10 && ntohs(packet->header.seq) <= 10) ) {
+		vb->highest_wrote_seq = packet->header.seq;
 	}
 
-	if (seq > ntohs(frame->max_seq)) {
-		frame->max_seq = packet->header.seq;
-	}
-
-	vb_debug(frame->parent, (packet->header.m ? 1 : 2), "PUT packet last_ts:%u ts:%u seq:%u%s\n", 
-			 ntohl(frame->parent->last_wrote_ts), ntohl(node->packet.header.ts), ntohs(node->packet.header.seq), packet->header.m ? " <MARK>" : "");
-
-
-	if (packet->header.m) {
-		frame->mark = 1;
+	if (vb->write_init && htons(packet->header.seq) >= htons(vb->highest_wrote_seq) && (ntohl(node->packet.header.ts) > ntohl(vb->highest_wrote_ts))) {
+		vb->complete_frames++;
+		vb_debug(vb, 2, "WRITE frame ts: %u complete=%u/%u n:%u\n", ntohl(node->packet.header.ts), vb->complete_frames , vb->frame_len, vb->visible_nodes);
+		vb->highest_wrote_ts = packet->header.ts;
+	} else if (!vb->write_init) {
+		vb->highest_wrote_ts = packet->header.ts;
 	}
 	
-	if ((frame->parent->last_wrote_ts && frame->parent->last_wrote_ts != node->packet.header.ts)) {
-		frame->complete = 1;
-		frame->parent->complete_frames++;
+	if (!vb->write_init) vb->write_init = 1;
+
+	if (vb->complete_frames > vb->max_frame_len) {
+		drop_oldest_frame(vb);
 	}
-
-	frame->parent->last_wrote_ts = packet->header.ts;
-	frame->parent->last_wrote_seq = packet->header.seq;
-}
-
-static inline void hide_node(switch_vb_node_t *node)
-{
-	if (node->visible) {
-		node->visible = 0;
-		node->parent->visible_nodes--;
-	}
-}
-
-static inline void hide_nodes(switch_vb_frame_t *frame)
-{
-	switch_vb_node_t *np;
-
-	for (np = frame->node_list; np; np = np->next) {
-		hide_node(np);
-	}
-}
-
-static inline void hide_frame(switch_vb_frame_t *frame)
-{
-	vb_debug(frame->parent, 2, "Hide frame ts: %u\n", ntohl(frame->ts));
-
-	if (frame->visible) {
-		frame->visible = 0;
-		frame->parent->visible_frames--;
-	}
-
-	if (frame->complete) {
-		frame->parent->complete_frames--;
-		frame->complete = 0;
-	}
-
-	frame->min_seq = frame->max_seq = 0;
-
-	hide_nodes(frame);
-}
-
-static inline switch_vb_frame_t *new_frame(switch_vb_t *vb, switch_rtp_packet_t *packet)
-{
-	switch_vb_frame_t *fp = NULL, *last = NULL;
-	int new = 1;
-
-	if (vb->cur_write_frame) {
-		if (!vb->cur_write_frame->visible) {
-			vb->cur_write_frame = NULL;
-			return NULL;
-		} else if (vb->cur_write_frame->ts == packet->header.ts) {
-			fp = vb->cur_write_frame;
-			new = 0;
-		}
-	}
-
-	if (!fp) {
-		for (fp = vb->frame_list; fp; fp = fp->next) {
-			if (fp->ts == packet->header.ts) {
-				if (!fp->visible) {
-					return NULL;
-				} else {
-					new = 0;
-					break;
-				}
-			}
-		}
-	}
-
-	if (!fp) {
-		for (fp = vb->frame_list; fp; fp = fp->next) {
-			if (!fp->visible) {
-				break;
-			}
-			last = fp;
-		}
-	}
-
-	if (!fp) {
-		switch_zmalloc(fp, sizeof(*fp));
-		fp->parent = vb;
-		vb->total_frames++;
-
-		if (last) {
-			last->next = fp;
-		} else {
-			vb->frame_list = fp;
-		}
-	}
-
-	switch_assert(fp);
-
-	if (new) {
-		vb->visible_frames++;
-		fp->visible = 1;
-		fp->complete = 0;
-		fp->ts = packet->header.ts;
-		fp->min_seq = fp->max_seq = 0;
-		fp->mark = 0;
-	}
-
-	vb->cur_write_frame = fp;
-	
-	return fp;
-
-}
-
-static inline int frame_contains_seq(switch_vb_frame_t *frame, uint16_t target_seq, switch_vb_node_t **nodep)
-{
-	uint16_t seq = ntohs(target_seq);
-	switch_vb_node_t *np;
-		
-	for (np = frame->node_list; np; np = np->next) {
-		if (!np->visible) {
-			continue;
-		}
-		//vb_debug(frame->parent, 10, "    CMP %u %u/%u\n", ntohl(frame->ts), ntohs(np->packet.header.seq), seq);
-		if (ntohs(np->packet.header.seq) == seq) {
-			//vb_debug(frame->parent, 10, "      MATCH %u %u v:%d\n", ntohs(np->packet.header.seq), seq, np->visible);
-			if (nodep) {
-				*nodep = np;
-			}
-			return 1;
-		}
-	}
-
-	return 0;
 }
 
 static inline void increment_seq(switch_vb_t *vb)
@@ -278,155 +213,56 @@ static inline void set_read_seq(switch_vb_t *vb, uint16_t seq)
 	vb->target_seq = htons((ntohs(vb->last_target_seq) + 1));
 }
 
-static inline switch_status_t next_frame(switch_vb_t *vb, switch_vb_node_t **nodep)
-{
-	switch_vb_frame_t *fp = NULL, *oldest = NULL, *frame_containing_seq = NULL;
-
-	if ((fp = vb->cur_read_frame)) {
-		if (fp->visible_nodes == 0) {
-			hide_frame(fp);
-			vb->cur_read_frame = NULL;
-		}
-	}
-
-
-	if ((fp = vb->cur_read_frame)) {
-		int ok = 1;
-
-		if (!fp->visible || fp->visible_nodes == 0) {
-			ok = 0;
-		} else {
-			if (vb->target_seq) {
-				if (frame_contains_seq(fp, vb->target_seq, nodep)) {
-					vb_debug(vb, 2, "CUR FRAME %u CONTAINS REQUESTED SEQ %d\n", ntohl(fp->ts), ntohs(vb->target_seq));
-					frame_containing_seq = fp;
-					goto end;
-				} else {
-					ok = 0;
-				}
-			}
-		}
-
-		if (!ok) {
-			vb_debug(vb, 2, "DONE WITH CUR FRAME %u v: %d c: %d\n", ntohl(fp->ts), fp->visible, fp->complete);
-			vb->cur_read_frame = NULL;
-		}
-	}
-
-	do {
-		*nodep = NULL;
-
-		for (fp = vb->frame_list; fp; fp = fp->next) {
-			if (!fp->visible || !fp->complete) {
-				continue;
-			}
-
-			if (vb->target_seq) {
-				if (frame_contains_seq(fp, vb->target_seq, nodep)) {
-					vb_debug(vb, 2, "FOUND FRAME %u CONTAINING SEQ %d\n", ntohl(fp->ts), ntohs(vb->target_seq));
-					frame_containing_seq = fp;
-					goto end;
-				}
-			}
-			
-			if ((!oldest || htonl(oldest->ts) > htonl(fp->ts))) {
-				oldest = fp;
-			}
-		}
-
-		if (!frame_containing_seq && vb->target_seq) {
-			if (ntohs(vb->target_seq) - ntohs(vb->last_target_seq) > MAX_MISSING_SEQ) {
-				vb_debug(vb, 1, "FOUND NO FRAMES CONTAINING SEQ %d. Too many failures....\n", ntohs(vb->target_seq));
-				switch_vb_reset(vb, SWITCH_FALSE);
-			} else {
-				vb_debug(vb, 2, "FOUND NO FRAMES CONTAINING SEQ %d. Try next one\n", ntohs(vb->target_seq));
-				increment_seq(vb);
-				vb->cur_errs++;
-			}
-		}
-	} while (!frame_containing_seq && vb->target_seq);
-	
- end:
-
-	if (frame_containing_seq) {
-		vb->cur_read_frame = frame_containing_seq;
-		if (nodep && *nodep) {
-			hide_node(*nodep);
-			set_read_seq(vb, (*nodep)->packet.header.seq);
-		}
-	} else if (oldest) {
-		vb->cur_read_frame = oldest;
-	} else {
-		vb->cur_read_frame = NULL;
-	}
-
-	if (vb->cur_read_frame) {
-		return SWITCH_STATUS_SUCCESS;
-	}
-
-	return SWITCH_STATUS_NOTFOUND;
-}
-
-static inline switch_vb_node_t *frame_find_next_seq(switch_vb_frame_t *frame)
-{
-	switch_vb_node_t *np;
-	
-	for (np = frame->node_list; np; np = np->next) {
-		if (!np->visible) continue;
-
-		if (ntohs(np->packet.header.seq) == ntohs(frame->parent->target_seq)) {
-			hide_node(np);
-			set_read_seq(frame->parent, np->packet.header.seq);
-			return np;
-		}
-	}
-
-	return NULL;
-}
-
-
-static inline switch_vb_node_t *frame_find_lowest_seq(switch_vb_frame_t *frame)
+static inline switch_vb_node_t *vb_find_lowest_seq(switch_vb_t *vb)
 {
 	switch_vb_node_t *np, *lowest = NULL;
 	
-	for (np = frame->node_list; np; np = np->next) {
+	for (np = vb->node_list; np; np = np->next) {
 		if (!np->visible) continue;
 
 		if (!lowest || ntohs(lowest->packet.header.seq) > ntohs(np->packet.header.seq)) {
-			hide_node(np);
 			lowest = np;
 		}
-	}
-
-	if (lowest) {
-		set_read_seq(frame->parent, lowest->packet.header.seq);
 	}
 
 	return lowest;
 }
 
-static inline switch_status_t next_frame_packet(switch_vb_t *vb, switch_vb_node_t **nodep)
+static inline switch_status_t vb_next_packet(switch_vb_t *vb, switch_vb_node_t **nodep)
 {
-	switch_vb_node_t *node = NULL;
+	switch_vb_node_t *np = NULL, *node = NULL;
 	switch_status_t status;
 
-	if ((status = next_frame(vb, &node) != SWITCH_STATUS_SUCCESS)) {
-		return status;
-	}
-	
-	if (!node) {
-		if (vb->target_seq) {
-			vb_debug(vb, 2, "Search for next packet %u cur ts: %u\n", htons(vb->target_seq), htonl(vb->cur_read_frame->ts));
-			node = frame_find_next_seq(vb->cur_read_frame);
+	if (np) status = 0, status++;
+
+	if (!vb->target_seq) {
+		if ((node = vb_find_lowest_seq(vb))) {
+			vb_debug(vb, 2, "No target seq using seq: %u as a starting point\n", ntohs(node->packet.header.seq));
 		} else {
-			node = frame_find_lowest_seq(vb->cur_read_frame);
-			vb_debug(vb, 2, "Find lowest seq frame ts: %u seq: %u\n", ntohl(vb->cur_read_frame->ts), ntohs(node->packet.header.seq));
+			vb_debug(vb, 1, "%s", "No nodes available....\n");
+		}
+	} else if ((node = switch_core_inthash_find(vb->node_hash, vb->target_seq))) {
+		vb_debug(vb, 2, "FOUND desired seq: %u\n", ntohs(vb->target_seq));
+	} else {
+		int x;
+
+		vb_debug(vb, 2, "MISSING desired seq: %u\n", ntohs(vb->target_seq));
+
+		for (x = 0; x < 10; x++) {
+			increment_seq(vb);
+			if ((node = switch_core_inthash_find(vb->node_hash, vb->target_seq))) {
+				vb_debug(vb, 2, "FOUND incremental seq: %u\n", ntohs(vb->target_seq));
+				break;
+			} else {
+				vb_debug(vb, 2, "MISSING incremental seq: %u\n", ntohs(vb->target_seq));
+			}
 		}
 	}
 
 	*nodep = node;
 	
 	if (node) {
+		set_read_seq(vb, node->packet.header.seq);
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -434,9 +270,9 @@ static inline switch_status_t next_frame_packet(switch_vb_t *vb, switch_vb_node_
 	
 }
 
-static inline void free_nodes(switch_vb_frame_t *frame)
+static inline void free_nodes(switch_vb_t *vb)
 {
-	switch_vb_node_t *np = frame->node_list, *cur;
+	switch_vb_node_t *np = vb->node_list, *cur;
 
 	while(np) {
 		cur = np;
@@ -444,32 +280,9 @@ static inline void free_nodes(switch_vb_frame_t *frame)
 		free(cur);
 	}
 	
-	frame->node_list = NULL;
+	vb->node_list = NULL;
 }
 
-static inline void free_frames(switch_vb_t *vb)
-{
-	switch_vb_frame_t *fp = vb->frame_list, *cur = NULL;
-
-	while(fp) {
-		cur = fp;
-		fp = fp->next;
-		free_nodes(cur);
-		free(cur);
-	}
-
-	vb->frame_list = NULL;
-}
-
-static inline void do_flush(switch_vb_t *vb)
-{
-	switch_vb_frame_t *fp = vb->frame_list;
-
-	while(fp) {
-		hide_frame(fp);
-		fp = fp->next;
-	}
-}
 
 SWITCH_DECLARE(int) switch_vb_poll(switch_vb_t *vb)
 {
@@ -490,21 +303,15 @@ SWITCH_DECLARE(void) switch_vb_reset(switch_vb_t *vb, switch_bool_t flush)
 {
 	vb_debug(vb, 2, "RESET BUFFER flush: %d\n", (int)flush);
 
-
-	if (vb->cur_read_frame) {
-		vb->cur_read_frame = NULL;
-	}
-
-	vb->last_read_ts = 0;
 	vb->last_target_seq = 0;
 	vb->target_seq = 0;
 
 	if (flush) {
-		do_flush(vb);
+		//do_flush(vb);
 	}
 }
 
-SWITCH_DECLARE(switch_status_t) switch_vb_create(switch_vb_t **vbp, uint32_t min_frame_len, uint32_t max_frame_len, switch_bool_t timer_compensation)
+SWITCH_DECLARE(switch_status_t) switch_vb_create(switch_vb_t **vbp, uint32_t min_frame_len, uint32_t max_frame_len)
 {
 	switch_vb_t *vb;
 	switch_zmalloc(vb, sizeof(*vb));
@@ -512,10 +319,8 @@ SWITCH_DECLARE(switch_status_t) switch_vb_create(switch_vb_t **vbp, uint32_t min
 	vb->min_frame_len = vb->frame_len = min_frame_len;
 	vb->max_frame_len = max_frame_len;
 	//vb->seq_out = (uint16_t) rand();
-
-	if (timer_compensation) { /* rewrite timestamps and seq as they are read to hide packet loss */
-		switch_core_timer_init(&vb->timer, "soft", 1, 90, NULL);
-	}
+	switch_core_inthash_init(&vb->missing_seq_hash);
+	switch_core_inthash_init(&vb->node_hash);
 
 	*vbp = vb;
 
@@ -526,35 +331,105 @@ SWITCH_DECLARE(switch_status_t) switch_vb_destroy(switch_vb_t **vbp)
 {
 	switch_vb_t *vb = *vbp;
 	*vbp = NULL;
+	
+	switch_core_inthash_destroy(&vb->missing_seq_hash);
+	switch_core_inthash_destroy(&vb->node_hash);
 
-	if (vb->timer.timer_interface) {
-		switch_core_timer_destroy(&vb->timer);
+	free_nodes(vb);
+	free(vb);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_DECLARE(uint32_t) switch_vb_pop_nack(switch_vb_t *vb)
+{
+	switch_hash_index_t *hi = NULL;
+	uint32_t nack = 0;
+	uint16_t least = 0;
+	int i = 0;
+
+	void *val;
+	const void *var;
+
+	for (hi = switch_core_hash_first(vb->missing_seq_hash); hi; hi = switch_core_hash_next(&hi)) {
+		uint16_t seq;
+		
+		switch_core_hash_this(hi, &var, NULL, &val);
+		seq = ntohs(*((uint16_t *) var));
+
+		vb_debug(vb, 3, "WTF ENTRY %u\n", seq);
+		
+		if (!least || seq < least) {
+			least = seq;
+		}
 	}
 
-	free_frames(vb);
-	free(vb);
+	if (least && switch_core_inthash_delete(vb->missing_seq_hash, (uint32_t)htons(least))) {
+		vb_debug(vb, 3, "Found smallest NACKABLE seq %u\n", least);
+		nack = (uint32_t) htons(least);
+	
+		for (i = 1; i > 17; i++) {
+			if (switch_core_inthash_delete(vb->missing_seq_hash, (uint32_t)htons(least + i))) {
+				vb_debug(vb, 3, "Found addtl NACKABLE seq %u\n", least + i);
+				nack |= (1 << (16 + i));
+			} else {
+				break;
+			}
+		}
+	}
+
+	return nack;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_vb_push_packet(switch_vb_t *vb, switch_rtp_packet_t *packet, switch_size_t len)
+{
+	add_node(vb, packet, len);
 
 	return SWITCH_STATUS_SUCCESS;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_vb_put_packet(switch_vb_t *vb, switch_rtp_packet_t *packet, switch_size_t len)
 {
-	switch_vb_frame_t *frame;
+	uint32_t i;
+	uint16_t want = ntohs(vb->next_seq), got = ntohs(packet->header.seq);
+
+	if (!want) want = got;
 	
-#ifdef VB_PLOSS
-	int r = (rand() % 10000) + 1;
-	if (r <= 200) {
-		vb_debug(vb, 1, "Simulate dropped packet ......... ts: %u seq: %u\n", ntohl(packet->header.ts), ntohs(packet->header.seq));
-		return SWITCH_STATUS_SUCCESS;
-	}
-#endif
-	
-	if ((frame = new_frame(vb, packet))) {
-		add_node(frame, packet, len);
-		return SWITCH_STATUS_SUCCESS;
+	if (got > want) {
+		for (i = want; i < got; i++) {
+			vb_debug(vb, 2, "MARK SEQ MISSING %u\n", i);
+			switch_core_inthash_insert(vb->missing_seq_hash, (uint32_t)htons(i), (void *)SWITCH_TRUE);
+		}
+	} else {
+		if (switch_core_inthash_delete(vb->missing_seq_hash, (uint32_t)htons(got))) {
+			vb_debug(vb, 2, "MARK SEQ FOUND %u\n", got);
+		}
 	}
 
-	return SWITCH_STATUS_IGNORE;
+	if (got >= want) {
+		vb->next_seq = htons(ntohs(packet->header.seq) + 1);
+	}
+
+	add_node(vb, packet, len);
+	
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_vb_get_packet_by_seq(switch_vb_t *vb, uint16_t seq, switch_rtp_packet_t *packet, switch_size_t *len)
+{
+	switch_vb_node_t *node;
+	
+	if ((node = switch_core_inthash_find(vb->node_hash, seq))) {
+		vb_debug(vb, 2, "Found buffered seq: %u\n", ntohs(seq));
+		*packet = node->packet;
+		*len = node->len;
+		memcpy(packet->body, node->packet.body, node->len);
+		return SWITCH_STATUS_SUCCESS;
+	} else {
+		vb_debug(vb, 2, "Missing buffered seq: %u\n", ntohs(seq));
+	}
+
+	return SWITCH_STATUS_NOTFOUND;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_vb_get_packet(switch_vb_t *vb, switch_rtp_packet_t *packet, switch_size_t *len)
@@ -562,15 +437,32 @@ SWITCH_DECLARE(switch_status_t) switch_vb_get_packet(switch_vb_t *vb, switch_rtp
 	switch_vb_node_t *node = NULL;
 	switch_status_t status;
 	
-	vb->cur_errs = 0;
+	vb_debug(vb, 2, "GET PACKET %u/%u n:%d\n", vb->complete_frames , vb->frame_len, vb->visible_nodes);
 
 	if (vb->complete_frames < vb->frame_len) {
 		vb_debug(vb, 2, "BUFFERING %u/%u\n", vb->complete_frames , vb->frame_len);
 		return SWITCH_STATUS_MORE_DATA;
 	}
 
-	if ((status = next_frame_packet(vb, &node)) == SWITCH_STATUS_SUCCESS) {
-		vb_debug(vb, 2, "Found next frame cur ts: %u seq: %u\n", htonl(vb->cur_read_frame->ts), htons(node->packet.header.seq));
+	if ((status = vb_next_packet(vb, &node)) == SWITCH_STATUS_SUCCESS) {
+		vb_debug(vb, 2, "Found next frame cur ts: %u seq: %u\n", htonl(node->packet.header.ts), htons(node->packet.header.seq));
+
+		if (!vb->read_init || ntohs(node->packet.header.seq) > ntohs(vb->highest_read_seq) || 
+			(ntohs(vb->highest_read_seq) > USHRT_MAX - 10 && ntohs(node->packet.header.seq) <= 10) ) {
+			vb->highest_read_seq = node->packet.header.seq;
+		}
+		
+		if (vb->read_init && htons(node->packet.header.seq) >= htons(vb->highest_read_seq) && (ntohl(node->packet.header.ts) > ntohl(vb->highest_read_ts))) {
+			vb->complete_frames--;
+			vb_debug(vb, 2, "READ frame ts: %u complete=%u/%u n:%u\n", ntohl(node->packet.header.ts), vb->complete_frames , vb->frame_len, vb->visible_nodes);
+			vb->highest_read_ts = node->packet.header.ts;
+		} else if (!vb->read_init) {
+			vb->highest_read_ts = node->packet.header.ts;
+		}
+		
+		if (!vb->read_init) vb->read_init = 1;
+
+
 	} else {
 		switch_vb_reset(vb, SWITCH_FALSE);
 
@@ -591,35 +483,11 @@ SWITCH_DECLARE(switch_status_t) switch_vb_get_packet(switch_vb_t *vb, switch_rtp
 		*packet = node->packet;
 		*len = node->len;
 		memcpy(packet->body, node->packet.body, node->len);
-		
-		if (vb->cur_errs) {
-			vb_debug(vb, 1, "One or more Missing SEQ TS %u\n", ntohl(packet->header.ts));
-			status = SWITCH_STATUS_BREAK;
-		}
-
-		vb->last_read_ts = packet->header.ts;
-		vb->last_read_seq = packet->header.seq;
-
-		if (vb->timer.timer_interface) {
-			if (packet->header.m || !vb->timer.samplecount) {
-				switch_core_timer_sync(&vb->timer);
-			}
-		}
-
-		if (vb->cur_read_frame && vb->cur_read_frame->visible_nodes == 0 && !packet->header.m) {
-			/* force mark bit */
-			vb_debug(vb, 1, "LAST PACKET %u WITH NO MARK BIT, ADDIONG MARK BIT\n", ntohl(packet->header.ts));
-			packet->header.m = 1;
-			status = SWITCH_STATUS_BREAK;
-		}
+		hide_node(node);
 
 		vb_debug(vb, 1, "GET packet ts:%u seq:%u~%u%s\n", ntohl(packet->header.ts), ntohs(packet->header.seq), vb->seq_out, packet->header.m ? " <MARK>" : "");
 		//packet->header.seq = htons(vb->seq_out++);
 
-		if (vb->timer.timer_interface) {
-			packet->header.ts = htonl(vb->timer.samplecount);
-		}
-		
 		return status;
 	}
 

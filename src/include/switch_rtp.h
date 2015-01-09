@@ -474,6 +474,8 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_fra
 SWITCH_DECLARE(int) switch_rtp_write_manual(switch_rtp_t *rtp_session,
 											void *data, uint32_t datalen, uint8_t m, switch_payload_t payload, uint32_t ts, switch_frame_flag_t *flags);
 
+SWITCH_DECLARE(switch_status_t) switch_rtp_write_raw(switch_rtp_t *rtp_session, void *data, switch_size_t *bytes, switch_bool_t process_encryption);
+
 /*! 
   \brief Retrieve the SSRC from a given RTP session
   \param rtp_session the RTP session to retrieve from
