@@ -48,7 +48,7 @@ static void switch_core_media_set_r_sdp_codec_string(switch_core_session_t *sess
 #define MAX_CODEC_CHECK_FRAMES 50//x:mod_sofia.h
 #define MAX_MISMATCH_FRAMES 5//x:mod_sofia.h
 #define type2str(type) type == SWITCH_MEDIA_TYPE_VIDEO ? "video" : "audio"
-#define VIDEO_REFRESH_FREQ 1000000
+#define VIDEO_REFRESH_FREQ 250000
 
 typedef enum {
 	SMF_INIT = (1 << 0),
@@ -5855,6 +5855,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 				flags[SWITCH_RTP_FLAG_PLI]++;
 			}
 
+			if (v_engine->nack) {
+				flags[SWITCH_RTP_FLAG_NACK]++;
+			}
+
 			v_engine->rtp_session = switch_rtp_new(a_engine->local_sdp_ip,
 														 v_engine->local_sdp_port,
 														 v_engine->cur_payload_map->remote_sdp_ip,
@@ -7278,7 +7282,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 				}
 
 				/* DFF nack pli etc */
-				nack = v_engine->nack = 0;
+				//nack = v_engine->nack = 0;
 				//pli = v_engine->pli = 0;
 				
 				
