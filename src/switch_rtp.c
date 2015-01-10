@@ -3938,6 +3938,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_activate_ice(switch_rtp_t *rtp_sessio
 	switch_port_t port = 0;
 	char bufc[30];
 				 
+	READ_INC(rtp_session);
 
 	if (proto == IPR_RTP) {
 		ice = &rtp_session->ice;
@@ -4005,6 +4006,8 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_activate_ice(switch_rtp_t *rtp_sessio
 		rtp_session->flags[SWITCH_RTP_FLAG_VIDEO_BREAK] = 1;
 		switch_rtp_break(rtp_session);
 	}
+
+	READ_DEC(rtp_session);
 
 	return SWITCH_STATUS_SUCCESS;
 }
