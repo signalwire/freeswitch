@@ -235,6 +235,7 @@ typedef struct {
 	uint8_t rready;
 	int missed_count;
 	char last_sent_id[13];
+	switch_time_t last_ok;
 } switch_rtp_ice_t;
 
 struct switch_rtp;
@@ -1014,7 +1015,7 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 				//ice->ice_params->cands[ice->ice_params->chosen][ice->proto].priority;
 				for (j = 0; j < 2; j++) {
 					for (i = 0; i < icep[j]->ice_params->cand_idx; i++) {
-						if (icep[j]->ice_params->cands[i][icep[j]->proto].priority == *pri) {
+						if (icep[j]->ice_params &&  icep[j]->ice_params->cands[i][icep[j]->proto].priority == *pri) {
 							if (j == IPR_RTP) {
 								icep[j]->ice_params->chosen[j] = i;
 								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_INFO, "Change candidate index to %d\n", i);
@@ -1099,6 +1100,7 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 			switch_sockaddr_t *from_addr = rtp_session->from_addr;
 			switch_socket_t *sock_output = rtp_session->sock_output;
 			uint8_t hosts_set = 0;
+			switch_time_t now = switch_micro_time_now();
 
 			if (is_rtcp) {
 				from_addr = rtp_session->rtcp_from_addr;
@@ -1120,12 +1122,16 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 			remote_ip = switch_get_addr(ipbuf, sizeof(ipbuf), from_addr);
 			switch_stun_packet_attribute_add_xor_binded_address(rpacket, (char *) remote_ip, switch_sockaddr_get_port(from_addr));
 
-			if (!switch_cmp_addr(from_addr, ice->addr)) {
-				hosts_set++;
-				host = switch_get_addr(buf, sizeof(buf), from_addr);
-				port = switch_sockaddr_get_port(from_addr);
-				host2 = switch_get_addr(buf2, sizeof(buf2), ice->addr);
-				port2 = switch_sockaddr_get_port(ice->addr);
+			if (switch_cmp_addr(from_addr, ice->addr)) {
+				ice->last_ok = now;
+			} else {
+				if (!ice->last_ok || (now - ice->last_ok) > 1000000) {
+					hosts_set++;
+					host = switch_get_addr(buf, sizeof(buf), from_addr);
+					port = switch_sockaddr_get_port(from_addr);
+					host2 = switch_get_addr(buf2, sizeof(buf2), ice->addr);
+					port2 = switch_sockaddr_get_port(ice->addr);
+				}
 			}
 
 			if ((ice->type & ICE_VANILLA)) {
