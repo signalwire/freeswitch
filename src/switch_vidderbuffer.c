@@ -357,8 +357,6 @@ SWITCH_DECLARE(uint32_t) switch_vb_pop_nack(switch_vb_t *vb)
 		switch_core_hash_this(hi, &var, NULL, &val);
 		seq = ntohs(*((uint16_t *) var));
 
-		vb_debug(vb, 3, "WTF ENTRY %u\n", seq);
-		
 		if (!least || seq < least) {
 			least = seq;
 		}
