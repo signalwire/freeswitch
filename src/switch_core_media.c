@@ -458,7 +458,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_check_autoadj(switch_core_sess
 	
 	if (!switch_media_handle_test_media_flag(smh, SCMF_DISABLE_RTP_AUTOADJ) &&
 		!((val = switch_channel_get_variable(session->channel, "disable_rtp_auto_adjust")) && switch_true(val)) && 
-		!switch_channel_test_flag(session->channel, CF_WEBRTC)) {
+		!switch_channel_test_flag(session->channel, CF_AVPF)) {
 		/* Reactivate the NAT buster flag. */
 		
 		if (a_engine->rtp_session) {
@@ -941,7 +941,7 @@ static switch_status_t switch_core_media_build_crypto(switch_media_handle_t *smh
 
 //#define SAME_KEY
 #ifdef SAME_KEY
-	if (switch_channel_test_flag(channel, CF_WEBRTC) && type == SWITCH_MEDIA_TYPE_VIDEO) {
+	if (switch_channel_test_flag(channel, CF_AVPF) && type == SWITCH_MEDIA_TYPE_VIDEO) {
 		if (direction == SWITCH_RTP_CRYPTO_SEND) {
 			memcpy(engine->ssec[ctype].local_raw_key, smh->engines[SWITCH_MEDIA_TYPE_AUDIO].ssec.local_raw_key, SUITES[ctype].keylen);
 			key = engine->ssec[ctype].local_raw_key;
@@ -1144,7 +1144,7 @@ static void switch_core_session_parse_crypto_prefs(switch_core_session_t *sessio
 		return;
 	}
 
-	if (switch_channel_test_flag(session->channel, CF_WEBRTC)) {
+	if (switch_channel_test_flag(session->channel, CF_AVPF)) {
 		return;
 	}
 
@@ -2815,7 +2815,7 @@ SWITCH_DECLARE(switch_call_direction_t) switch_ice_direction(switch_core_session
 	}
 
 	if ((switch_channel_test_flag(session->channel, CF_REINVITE) || switch_channel_test_flag(session->channel, CF_RECOVERING)) 
-		&& switch_channel_test_flag(session->channel, CF_WEBRTC)) {
+		&& switch_channel_test_flag(session->channel, CF_AVPF)) {
 		r = SWITCH_CALL_DIRECTION_OUTBOUND;
 	}
 
@@ -3203,7 +3203,7 @@ SWITCH_DECLARE(void) switch_core_session_set_ice(switch_core_session_t *session)
 	}
 
 	switch_channel_set_flag(session->channel, CF_VERBOSE_SDP);
-	switch_channel_set_flag(session->channel, CF_WEBRTC);
+	switch_channel_set_flag(session->channel, CF_AVPF);
 	switch_channel_set_flag(session->channel, CF_ICE);
 	smh->mparams->rtcp_audio_interval_msec = SWITCH_RTCP_AUDIO_INTERVAL_MSEC;
 	smh->mparams->rtcp_video_interval_msec = SWITCH_RTCP_VIDEO_INTERVAL_MSEC;
@@ -3384,13 +3384,17 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 		ptime = dptime;
 		maxptime = dmaxptime;
 
-		if (m->m_proto == sdp_proto_extended_srtp) {
+		if (m->m_proto == sdp_proto_extended_srtp || m->m_proto == sdp_proto_extended_rtp) {
 			got_webrtc++;
 			switch_core_session_set_ice(session);
 		}
 		
 		if (m->m_proto_name && !strcasecmp(m->m_proto_name, "UDP/TLS/RTP/SAVPF")) {
-			switch_channel_set_flag(session->channel, CF_WEBRTC_MOZ);
+			switch_channel_set_flag(session->channel, CF_AVPF_MOZ);
+		}
+
+		if (m->m_proto_name && !strcasecmp(m->m_proto_name, "UDP/RTP/AVPF")) {
+			switch_channel_set_flag(session->channel, CF_AVPF_MOZ);
 		}
 
 		if (m->m_proto == sdp_proto_srtp || m->m_proto == sdp_proto_extended_srtp) {
@@ -4770,7 +4774,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_proxy_remote_addr(switch_core_
 									  v_engine->cur_payload_map->remote_sdp_ip, v_engine->cur_payload_map->remote_sdp_port);
 					if (!switch_media_handle_test_media_flag(smh, SCMF_DISABLE_RTP_AUTOADJ) && !switch_channel_test_flag(session->channel, CF_PROXY_MODE) &&
 						!((val = switch_channel_get_variable(session->channel, "disable_rtp_auto_adjust")) && switch_true(val)) && 
-						!switch_channel_test_flag(session->channel, CF_WEBRTC)) {
+						!switch_channel_test_flag(session->channel, CF_AVPF)) {
 						/* Reactivate the NAT buster flag. */
 						switch_rtp_set_flag(v_engine->rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
 						switch_core_session_start_video_thread(session);
@@ -4816,7 +4820,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_proxy_remote_addr(switch_core_
 							  a_engine->cur_payload_map->remote_sdp_ip, a_engine->cur_payload_map->remote_sdp_port);
 			if (!switch_media_handle_test_media_flag(smh, SCMF_DISABLE_RTP_AUTOADJ) &&
 				!((val = switch_channel_get_variable(session->channel, "disable_rtp_auto_adjust")) && switch_true(val)) && 
-				!switch_channel_test_flag(session->channel, CF_WEBRTC)) {
+				!switch_channel_test_flag(session->channel, CF_AVPF)) {
 				/* Reactivate the NAT buster flag. */
 				switch_rtp_set_flag(a_engine->rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
 			}
@@ -5292,7 +5296,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 	memset(flags, 0, sizeof(flags));
 	flags[SWITCH_RTP_FLAG_DATAWAIT]++;
 
-	if (!switch_media_handle_test_media_flag(smh, SCMF_DISABLE_RTP_AUTOADJ) && !switch_channel_test_flag(session->channel, CF_WEBRTC) &&
+	if (!switch_media_handle_test_media_flag(smh, SCMF_DISABLE_RTP_AUTOADJ) && !switch_channel_test_flag(session->channel, CF_AVPF) &&
 		!((val = switch_channel_get_variable(session->channel, "disable_rtp_auto_adjust")) && switch_true(val))) {
 		flags[SWITCH_RTP_FLAG_AUTOADJ]++;
 	}
@@ -5393,7 +5397,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 
 			if (!switch_media_handle_test_media_flag(smh, SCMF_DISABLE_RTP_AUTOADJ) &&
 				!((val = switch_channel_get_variable(session->channel, "disable_rtp_auto_adjust")) && switch_true(val)) &&
-				!switch_channel_test_flag(session->channel, CF_WEBRTC)) {
+				!switch_channel_test_flag(session->channel, CF_AVPF)) {
 				/* Reactivate the NAT buster flag. */
 				switch_rtp_set_flag(a_engine->rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
 			}
@@ -5413,7 +5417,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 		flags[SWITCH_RTP_FLAG_DATAWAIT]++;
 		flags[SWITCH_RTP_FLAG_PROXY_MEDIA]++;
 
-		if (!switch_media_handle_test_media_flag(smh, SCMF_DISABLE_RTP_AUTOADJ) && !switch_channel_test_flag(session->channel, CF_WEBRTC) &&
+		if (!switch_media_handle_test_media_flag(smh, SCMF_DISABLE_RTP_AUTOADJ) && !switch_channel_test_flag(session->channel, CF_AVPF) &&
 			!((val = switch_channel_get_variable(session->channel, "disable_rtp_auto_adjust")) && switch_true(val))) {
 			flags[SWITCH_RTP_FLAG_AUTOADJ]++;
 		}
@@ -5510,7 +5514,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 			switch_core_media_parse_rtp_bugs(&a_engine->rtp_bugs, val);
 		}
 		
-		if (switch_channel_test_flag(session->channel, CF_WEBRTC)) {
+		if (switch_channel_test_flag(session->channel, CF_AVPF)) {
 			smh->mparams->manual_rtp_bugs = RTP_BUG_SEND_LINEAR_TIMESTAMPS;
 		}
 
@@ -5774,7 +5778,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "VIDEO RTP CHANGING DEST TO: [%s:%d]\n",
 									  v_engine->cur_payload_map->remote_sdp_ip, v_engine->cur_payload_map->remote_sdp_port);
-					if (!switch_media_handle_test_media_flag(smh, SCMF_DISABLE_RTP_AUTOADJ) && !switch_channel_test_flag(session->channel, CF_WEBRTC) &&
+					if (!switch_media_handle_test_media_flag(smh, SCMF_DISABLE_RTP_AUTOADJ) && !switch_channel_test_flag(session->channel, CF_AVPF) &&
 						!((val = switch_channel_get_variable(session->channel, "disable_rtp_auto_adjust")) && switch_true(val))) {
 						/* Reactivate the NAT buster flag. */
 						switch_rtp_set_flag(v_engine->rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
@@ -5792,7 +5796,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 				flags[SWITCH_RTP_FLAG_PROXY_MEDIA]++;
 				flags[SWITCH_RTP_FLAG_DATAWAIT]++;
 
-				if (!switch_media_handle_test_media_flag(smh, SCMF_DISABLE_RTP_AUTOADJ) && !switch_channel_test_flag(session->channel, CF_WEBRTC) &&
+				if (!switch_media_handle_test_media_flag(smh, SCMF_DISABLE_RTP_AUTOADJ) && !switch_channel_test_flag(session->channel, CF_AVPF) &&
 					!((val = switch_channel_get_variable(session->channel, "disable_rtp_auto_adjust")) && switch_true(val))) {
 					flags[SWITCH_RTP_FLAG_AUTOADJ]++;
 				}
@@ -5834,7 +5838,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 
 			if (!switch_media_handle_test_media_flag(smh, SCMF_DISABLE_RTP_AUTOADJ) && !switch_channel_test_flag(session->channel, CF_PROXY_MODE) &&
 				!((val = switch_channel_get_variable(session->channel, "disable_rtp_auto_adjust")) && switch_true(val)) && 
-				!switch_channel_test_flag(session->channel, CF_WEBRTC)) {
+				!switch_channel_test_flag(session->channel, CF_AVPF)) {
 				flags[SWITCH_RTP_FLAG_AUTOADJ]++;				
 			}
 
@@ -6060,8 +6064,8 @@ static const char *get_media_profile_name(switch_core_session_t *session, int se
 {
 	switch_assert(session);
 
-	if (switch_channel_test_flag(session->channel, CF_WEBRTC)) {
-		if (switch_channel_test_flag(session->channel, CF_WEBRTC_MOZ)) {
+	if (switch_channel_test_flag(session->channel, CF_AVPF)) {
+		if (switch_channel_test_flag(session->channel, CF_AVPF_MOZ)) {
 			return "UDP/TLS/RTP/SAVPF";
 		} else {
 			return "RTP/SAVPF";
@@ -6108,7 +6112,7 @@ static void generate_m(switch_core_session_t *session, char *buf, size_t buflen,
 	a_engine = &smh->engines[SWITCH_MEDIA_TYPE_AUDIO];
 
 	//switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "m=audio %d RTP/%sAVP%s", 
-	//port, secure ? "S" : "", switch_channel_test_flag(session->channel, CF_WEBRTC) ? "F" : "");
+	//port, secure ? "S" : "", switch_channel_test_flag(session->channel, CF_AVPF) ? "F" : "");
 
 	switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "m=audio %d %s", port, 
 					get_media_profile_name(session, secure || a_engine->crypto_type != CRYPTO_INVALID));
@@ -6232,7 +6236,7 @@ static void generate_m(switch_core_session_t *session, char *buf, size_t buflen,
 	if ((smh->mparams->dtmf_type == DTMF_2833 || switch_media_handle_test_media_flag(smh, SCMF_LIBERAL_DTMF) || 
 		 switch_channel_test_flag(session->channel, CF_LIBERAL_DTMF)) && smh->mparams->te > 95) {
 
-		if (switch_channel_test_flag(session->channel, CF_WEBRTC)) {
+		if (switch_channel_test_flag(session->channel, CF_AVPF)) {
 			switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=rtpmap:%d telephone-event/8000\n", smh->mparams->te);
 		} else {
 			switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=rtpmap:%d telephone-event/8000\na=fmtp:%d 0-16\n", smh->mparams->te, smh->mparams->te);
@@ -6545,16 +6549,16 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 
 	if (is_outbound || switch_channel_test_flag(session->channel, CF_RECOVERING) ||
 		switch_channel_test_flag(session->channel, CF_3PCC)) {
-		if (!switch_channel_test_flag(session->channel, CF_WEBRTC) && 
+		if (!switch_channel_test_flag(session->channel, CF_AVPF) && 
 			switch_true(switch_channel_get_variable(session->channel, "media_webrtc"))) {
-			switch_channel_set_flag(session->channel, CF_WEBRTC);
+			switch_channel_set_flag(session->channel, CF_AVPF);
 			switch_channel_set_flag(session->channel, CF_ICE);
 			smh->mparams->rtcp_audio_interval_msec = SWITCH_RTCP_AUDIO_INTERVAL_MSEC;
 			smh->mparams->rtcp_video_interval_msec = SWITCH_RTCP_VIDEO_INTERVAL_MSEC;
 		}
 
 		if ( switch_rtp_has_dtls() && dtls_ok(session)) {
-			if (switch_channel_test_flag(session->channel, CF_WEBRTC) ||
+			if (switch_channel_test_flag(session->channel, CF_AVPF) ||
 				switch_true(switch_channel_get_variable(smh->session->channel, "rtp_use_dtls"))) {
 				switch_channel_set_flag(smh->session->channel, CF_DTLS);
 				switch_channel_set_flag(smh->session->channel, CF_SECURE);
@@ -6813,7 +6817,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 		if ((smh->mparams->dtmf_type == DTMF_2833 || switch_media_handle_test_media_flag(smh, SCMF_LIBERAL_DTMF) || 
 			 switch_channel_test_flag(session->channel, CF_LIBERAL_DTMF))
 			&& smh->mparams->te > 95) {
-			if (switch_channel_test_flag(session->channel, CF_WEBRTC)) {
+			if (switch_channel_test_flag(session->channel, CF_AVPF)) {
 				switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtpmap:%d telephone-event/8000\n", smh->mparams->te);
 			} else {
 				switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtpmap:%d telephone-event/8000\na=fmtp:%d 0-16\n", smh->mparams->te, smh->mparams->te);
@@ -6960,9 +6964,9 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 		
 		mult = switch_channel_get_variable(session->channel, "sdp_m_per_ptime");
 
-		if (switch_channel_test_flag(session->channel, CF_WEBRTC) || (mult && switch_false(mult))) {
+		if (switch_channel_test_flag(session->channel, CF_AVPF) || (mult && switch_false(mult))) {
 			char *bp = buf;
-			int both = (switch_channel_test_flag(session->channel, CF_WEBRTC) || switch_channel_test_flag(session->channel, CF_DTLS)) ? 0 : 1;
+			int both = (switch_channel_test_flag(session->channel, CF_AVPF) || switch_channel_test_flag(session->channel, CF_DTLS)) ? 0 : 1;
 
 			if ((!a_engine->no_crypto && switch_channel_test_flag(session->channel, CF_SECURE)) || 
 				switch_channel_test_flag(session->channel, CF_DTLS)) {
@@ -7010,7 +7014,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 						}
 					}
 
-					if (switch_channel_test_flag(session->channel, CF_WEBRTC) || switch_channel_test_flag(session->channel, CF_DTLS)) {
+					if (switch_channel_test_flag(session->channel, CF_AVPF) || switch_channel_test_flag(session->channel, CF_DTLS)) {
 						both = 0;
 					}
 
@@ -7036,7 +7040,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 			switch_core_media_choose_port(session, SWITCH_MEDIA_TYPE_VIDEO, 0);
 		}
 
-		//if (switch_channel_test_flag(session->channel, CF_WEBRTC)) {
+		//if (switch_channel_test_flag(session->channel, CF_AVPF)) {
 		//	switch_media_handle_set_media_flag(smh, SCMF_MULTI_ANSWER_VIDEO);
 		//}
 
@@ -7988,7 +7992,7 @@ SWITCH_DECLARE(void) switch_core_media_start_udptl(switch_core_session_t *sessio
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "IMAGE UDPTL CHANGING DEST TO: [%s:%d]\n",
 							  t38_options->remote_ip, t38_options->remote_port);
-			if (!switch_media_handle_test_media_flag(smh, SCMF_DISABLE_RTP_AUTOADJ) && !switch_channel_test_flag(session->channel, CF_WEBRTC) &&
+			if (!switch_media_handle_test_media_flag(smh, SCMF_DISABLE_RTP_AUTOADJ) && !switch_channel_test_flag(session->channel, CF_AVPF) &&
 				!((val = switch_channel_get_variable(session->channel, "disable_udptl_auto_adjust")) && switch_true(val))) {
 				/* Reactivate the NAT buster flag. */
 				switch_rtp_set_flag(a_engine->rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
