@@ -1141,6 +1141,7 @@ static void *SWITCH_THREAD_FUNC recording_thread(switch_thread_t *thread, void *
 			switch_yield(20000);
 			continue;
 		} else if ((!rh->thread_ready || switch_channel_down_nosig(channel)) && !inuse) {
+			switch_mutex_unlock(rh->buffer_mutex);
 			break;
 		}
 
