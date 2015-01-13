@@ -3173,8 +3173,13 @@ SWITCH_STANDARD_JSON_API(json_stats_function)
 		audio_stats = switch_core_media_get_stats(tsession, SWITCH_MEDIA_TYPE_AUDIO, switch_core_session_get_pool(tsession));
 		video_stats = switch_core_media_get_stats(tsession, SWITCH_MEDIA_TYPE_VIDEO, switch_core_session_get_pool(tsession));
 		
-		jsonify_stats(reply, "audio", audio_stats);
-		jsonify_stats(reply, "video", video_stats);
+		if (audio_stats) {
+			jsonify_stats(reply, "audio", audio_stats);
+		}
+		
+		if (video_stats) {
+			jsonify_stats(reply, "video", video_stats);
+		}
 		
 		if (true_enough(cdata) && switch_ivr_generate_json_cdr(tsession, &jevent, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
 			cJSON_AddItemToObject(reply, "channelData", jevent);
