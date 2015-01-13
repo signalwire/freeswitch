@@ -235,6 +235,8 @@ static struct {
 	int offline_logged;
 	/** if true, channel variables are added to offer */
 	int add_variables_to_offer;
+	/** if true, channel variables are added to answered, ringing, end events */
+	int add_variables_to_events;
 } globals;
 
 /**
@@ -469,6 +471,54 @@ static void add_header(iks *node, const char *name, const char *value)
 		iks_insert_attrib(header, "name", name);
 		iks_insert_attrib(header, "value", value);
 	}
+}
+
+/**
+ * Add SIP <header>s to node
+ * @param node to add <header> to
+ * @param event source
+ * @param add_variables true if channel variables should be added
+ */
+static void add_headers_to_event(iks *node, switch_event_t *event, int add_variables)
+{
+	switch_event_header_t *header;
+	/* get all variables prefixed with sip_h_ */
+	for (header = event->headers; header; header = header->next) {
+		if (!strncmp("variable_sip_h_", header->name, 15)) {
+			if (!zstr(header->name)) {
+				add_header(node, header->name + 15, header->value);
+			}
+		} else if (add_variables && !strncmp("variable_", header->name, 9)) {
+			if (!zstr(header->name)) {
+				char header_name[1024];
+				snprintf(header_name, 1024, "variable-%s", header->name + 9);
+				add_header(node, header_name, header->value);
+			}
+		}
+	}
+}
+
+/**
+ * Add SIP <header>s to node
+ * @param node to add <header> to
+ * @param add_variables true if channel variables should be added
+ */
+static void add_channel_headers_to_event(iks *node, switch_channel_t *channel, int add_variables)
+{
+	switch_event_header_t *var;
+
+	/* add all SIP header variables and (if configured) all other variables */
+	for (var = switch_channel_variable_first(channel); var; var = var->next) {
+		if (!strncmp("sip_h_", var->name, 6)) {
+			add_header(node, var->name + 6, var->value);
+		}
+		if (add_variables) {
+			char var_name[1024];
+			snprintf(var_name, 1024, "variable-%s", var->name);
+			add_header(node, var_name, var->value);
+		}
+	}
+	switch_channel_variable_last(channel);
 }
 
 static void pause_inbound_calling(void)
@@ -1093,13 +1143,7 @@ static void rayo_call_send_end(struct rayo_call *call, switch_event_t *event, in
 
 	/* add signaling headers */
 	if (event) {
-		switch_event_header_t *header;
-		/* get all variables prefixed with sip_h_ */
-		for (header = event->headers; header; header = header->next) {
-			if (!strncmp("variable_sip_h_", header->name, 15)) {
-				add_header(end, header->name + 15, header->value);
-			}
-		}
+		add_headers_to_event(end, event, globals.add_variables_to_events);
 	}
 
 	/* send <end> to all offered clients */
@@ -3403,6 +3447,7 @@ static void on_call_answer_event(struct rayo_client *rclient, switch_event_t *ev
 			iks *revent = iks_new_presence("answered", RAYO_NS,
 				switch_event_get_header(event, "variable_rayo_call_jid"),
 				switch_event_get_header(event, "variable_rayo_dcp_jid"));
+			add_headers_to_event(iks_find(revent, "answered"), event, globals.add_variables_to_events);
 			RAYO_SEND_MESSAGE(call, RAYO_JID(rclient), revent);
 		} else if (!call->answer_event) {
 			/* delay sending this event until the rayo APP has started */
@@ -3429,6 +3474,7 @@ static void on_call_ringing_event(struct rayo_client *rclient, switch_event_t *e
 				iks *revent = iks_new_presence("ringing", RAYO_NS,
 					switch_event_get_header(event, "variable_rayo_call_jid"),
 					switch_event_get_header(event, "variable_rayo_dcp_jid"));
+				add_headers_to_event(iks_find(revent, "ringing"), event, globals.add_variables_to_events);
 				call->ringing_sent = 1;
 				RAYO_SEND_MESSAGE(call, RAYO_JID(rclient), revent);
 			}
@@ -3710,26 +3756,10 @@ static iks *rayo_create_offer(struct rayo_call *call, switch_core_session_t *ses
 		iks_insert_attrib(offer, "to", profile->destination_number);
 	}
 
-	/* add headers to offer */
-	{
-		switch_event_header_t *var;
-		add_header(offer, "from", switch_channel_get_variable(channel, "sip_full_from"));
-		add_header(offer, "to", switch_channel_get_variable(channel, "sip_full_to"));
-		add_header(offer, "via", switch_channel_get_variable(channel, "sip_full_via"));
-
-		/* add all SIP header variables and (if configured) all other variables */
-		for (var = switch_channel_variable_first(channel); var; var = var->next) {
-			if (!strncmp("sip_h_", var->name, 6)) {
-				add_header(offer, var->name + 6, var->value);
-			}
-			if (globals.add_variables_to_offer) {
-				char var_name[1024];
-				snprintf(var_name, 1024, "variable-%s", var->name);
-				add_header(offer, var_name, var->value);
-			}
-		}
-		switch_channel_variable_last(channel);
-	}
+	add_header(offer, "from", switch_channel_get_variable(channel, "sip_full_from"));
+	add_header(offer, "to", switch_channel_get_variable(channel, "sip_full_to"));
+	add_header(offer, "via", switch_channel_get_variable(channel, "sip_full_via"));
+	add_channel_headers_to_event(offer, channel, globals.add_variables_to_offer);
 
 	return presence;
 }
@@ -4127,6 +4157,7 @@ static switch_status_t do_config(switch_memory_pool_t *pool, const char *config_
 	globals.offer_uri = 1;
 	globals.pause_when_offline = 0;
 	globals.add_variables_to_offer = 0;
+	globals.add_variables_to_events = 0;
 
 	/* get params */
 	{
@@ -4166,6 +4197,11 @@ static switch_status_t do_config(switch_memory_pool_t *pool, const char *config_
 				} else if (!strcasecmp(var, "add-variables-to-offer")) {
 					if (switch_true(val)) {
 						globals.add_variables_to_offer = 1;
+					}
+				} else if (!strcasecmp(var, "add-variables-to-events")) {
+					if (switch_true(val)) {
+						globals.add_variables_to_offer = 1;
+						globals.add_variables_to_events = 1;
 					}
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unsupported param: %s\n", var);
