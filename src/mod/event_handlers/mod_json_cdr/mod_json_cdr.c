@@ -399,8 +399,9 @@ static void process_cdr(cdr_data_t *data)
 				switch_assert(globals.url_count <= MAX_URLS);
 				if (globals.url_index >= globals.url_count) {
 					globals.url_index = 0;
-				}
-				switch_log_printf(SWITCH_CHANNEL_UUID_LOG(data->uuid), SWITCH_LOG_ERROR, "Retry will be with url [%s]\n", globals.urls[globals.url_index]);
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_UUID_LOG(data->uuid), SWITCH_LOG_ERROR, "Retry will be with url [%s]\n", globals.urls[globals.url_index]);
+					}
 			}
 		}
 		switch_curl_easy_cleanup(curl_handle);
