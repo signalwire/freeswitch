@@ -359,19 +359,19 @@ static switch_status_t my_on_reporting_cb(switch_core_session_t *session, cdr_pr
 			switch_curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, slist);
 		}
 
-		if (profile->ssl_cert_file) {
+		if (!zstr(profile->ssl_cert_file)) {
 			switch_curl_easy_setopt(curl_handle, CURLOPT_SSLCERT, profile->ssl_cert_file);
 		}
 
-		if (profile->ssl_key_file) {
+		if (!zstr(profile->ssl_key_file)) {
 			switch_curl_easy_setopt(curl_handle, CURLOPT_SSLKEY, profile->ssl_key_file);
 		}
 
-		if (profile->ssl_key_password) {
+		if (!zstr(profile->ssl_key_password)) {
 			switch_curl_easy_setopt(curl_handle, CURLOPT_SSLKEYPASSWD, profile->ssl_key_password);
 		}
 
-		if (profile->ssl_version) {
+		if (!zstr(profile->ssl_version)) {
 			if (!strcasecmp(profile->ssl_version, "SSLv3")) {
 				switch_curl_easy_setopt(curl_handle, CURLOPT_SSLVERSION, CURL_SSLVERSION_SSLv3);
 			} else if (!strcasecmp(profile->ssl_version, "TLSv1")) {
@@ -379,7 +379,7 @@ static switch_status_t my_on_reporting_cb(switch_core_session_t *session, cdr_pr
 			}
 		}
 
-		if (profile->ssl_cacert_file) {
+		if (!zstr(profile->ssl_cacert_file)) {
 			switch_curl_easy_setopt(curl_handle, CURLOPT_CAINFO, profile->ssl_cacert_file);
 		}
 		
