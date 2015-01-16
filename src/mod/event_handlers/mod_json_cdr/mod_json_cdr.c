@@ -337,19 +337,19 @@ static void process_cdr(cdr_data_t *data)
 			switch_curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, slist);
 		}
 
-		if (globals.ssl_cert_file) {
+		if (!zstr(globals.ssl_cert_file)) {
 			switch_curl_easy_setopt(curl_handle, CURLOPT_SSLCERT, globals.ssl_cert_file);
 		}
 
-		if (globals.ssl_key_file) {
+		if (!zstr(globals.ssl_key_file)) {
 			switch_curl_easy_setopt(curl_handle, CURLOPT_SSLKEY, globals.ssl_key_file);
 		}
 
-		if (globals.ssl_key_password) {
+		if (!zstr(globals.ssl_key_password)) {
 			switch_curl_easy_setopt(curl_handle, CURLOPT_SSLKEYPASSWD, globals.ssl_key_password);
 		}
 
-		if (globals.ssl_version) {
+		if (!zstr(globals.ssl_version)) {
 			if (!strcasecmp(globals.ssl_version, "SSLv3")) {
 				switch_curl_easy_setopt(curl_handle, CURLOPT_SSLVERSION, CURL_SSLVERSION_SSLv3);
 			} else if (!strcasecmp(globals.ssl_version, "TLSv1")) {
@@ -357,7 +357,7 @@ static void process_cdr(cdr_data_t *data)
 			}
 		}
 
-		if (globals.ssl_cacert_file) {
+		if (!zstr(globals.ssl_cacert_file)) {
 			switch_curl_easy_setopt(curl_handle, CURLOPT_CAINFO, globals.ssl_cacert_file);
 		}
 
