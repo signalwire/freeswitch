@@ -5693,7 +5693,6 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		
 		if (!rtp_session->flags[SWITCH_RTP_FLAG_USE_TIMER] && rtp_session->read_pollfd) {
 			int pt = poll_sec * 1000000;
-			int force = 0;
 
 			do_2833(rtp_session);
 
@@ -5711,15 +5710,14 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 				pt = 200000;
 			}
 
-			//if (rtp_session->vb && switch_vb_poll(rtp_session->vb)) {
-			//	pt = 1000;
-			//	force = 1;
-			//}
+			if (rtp_session->vb && switch_vb_poll(rtp_session->vb)) {
+				pt = 1000;
+			}
 
-			poll_status = switch_poll(rtp_session->read_pollfd, 1, &fdr, pt);
-
-			if (rtp_session->vb && force) {
-				poll_status = SWITCH_STATUS_SUCCESS;
+			if ((poll_status = switch_poll(rtp_session->read_pollfd, 1, &fdr, pt)) != SWITCH_STATUS_SUCCESS) {
+				if (rtp_session->vb && switch_vb_poll(rtp_session->vb)) {
+					poll_status = SWITCH_STATUS_SUCCESS;
+				}
 			}
 
 			if (!rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] && rtp_session->dtmf_data.out_digit_dur > 0) {
