@@ -3612,7 +3612,7 @@ static switch_bool_t fsapi_func(const char *method, cJSON *params, jsock_t *jsoc
 	arg = cJSON_GetObjectItem(params, "arg");
 
 
-	if (jsock->allowed_fsapi) {
+	if (cmd && jsock->allowed_fsapi) {
 		if (cmd->type == cJSON_String && cmd->valuestring && !auth_api_command(jsock, cmd->valuestring, arg ? arg->valuestring : NULL)) {
 			return SWITCH_FALSE;
 		}
