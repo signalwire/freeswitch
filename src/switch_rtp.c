@@ -1014,6 +1014,9 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 
 				//ice->ice_params->cands[ice->ice_params->chosen][ice->proto].priority;
 				for (j = 0; j < 2; j++) {
+					if (!icep[j] || !icep[j]->ice_params) {
+						continue;
+					}
 					for (i = 0; i < icep[j]->ice_params->cand_idx; i++) {
 						if (icep[j]->ice_params &&  icep[j]->ice_params->cands[i][icep[j]->proto].priority == *pri) {
 							if (j == IPR_RTP) {
