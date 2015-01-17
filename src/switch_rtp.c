@@ -3807,12 +3807,21 @@ static void jb_logger(const char *file, const char *func, int line, int level, c
 SWITCH_DECLARE(switch_status_t) switch_rtp_debug_jitter_buffer(switch_rtp_t *rtp_session, const char *name)
 {
 
-	if (!switch_rtp_ready(rtp_session) || !rtp_session->jb) {
+	if (!switch_rtp_ready(rtp_session)) {
 		return SWITCH_STATUS_FALSE;
 	}
 	
-	stfu_n_debug(rtp_session->jb, name);
-	stfu_global_set_logger(jb_logger);
+	if (rtp_session->jb) {
+		stfu_n_debug(rtp_session->jb, name);
+		stfu_global_set_logger(jb_logger);
+	} else if (rtp_session->vb) {
+		int x = 0;
+
+		if (name) x = atoi(name);
+		if (x < 0) x = 0;
+
+		switch_vb_debug_level(rtp_session->vb, x);
+	}
 
 	return SWITCH_STATUS_SUCCESS;
 }

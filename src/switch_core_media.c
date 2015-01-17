@@ -1692,7 +1692,7 @@ static void check_jb(switch_core_session_t *session, const char *input)
 {
 	const char *val;
 	switch_media_handle_t *smh;
-	switch_rtp_engine_t *a_engine;
+	switch_rtp_engine_t *a_engine = NULL, *v_engine = NULL;
 
 	switch_assert(session);
 
@@ -1701,32 +1701,44 @@ static void check_jb(switch_core_session_t *session, const char *input)
 	}
 
 	a_engine = &smh->engines[SWITCH_MEDIA_TYPE_AUDIO];
-
-	if (!a_engine->rtp_session) return;
+	v_engine = &smh->engines[SWITCH_MEDIA_TYPE_VIDEO];
 
 
 	if (!zstr(input)) {
 		const char *s;
-
-		if (!strcasecmp(input, "pause")) {
-			switch_rtp_pause_jitter_buffer(a_engine->rtp_session, SWITCH_TRUE);
-			return;
-		} else if (!strcasecmp(input, "resume")) {
-			switch_rtp_pause_jitter_buffer(a_engine->rtp_session, SWITCH_FALSE);
-			return;
-		} else if (!strcasecmp(input, "stop")) {
-			switch_rtp_deactivate_jitter_buffer(a_engine->rtp_session);
-			return;
-		} else if (!strncasecmp(input, "debug:", 6)) {
-			s = input + 6;
-			if (s && !strcmp(s, "off")) {
-				s = NULL;
+		if (a_engine->rtp_session) {
+			if (!strcasecmp(input, "pause")) {
+				switch_rtp_pause_jitter_buffer(a_engine->rtp_session, SWITCH_TRUE);
+				return;
+			} else if (!strcasecmp(input, "resume")) {
+				switch_rtp_pause_jitter_buffer(a_engine->rtp_session, SWITCH_FALSE);
+				return;
+			} else if (!strcasecmp(input, "stop")) {
+				switch_rtp_deactivate_jitter_buffer(a_engine->rtp_session);
+				return;
+			} else if (!strncasecmp(input, "debug:", 6)) {
+				s = input + 6;
+				if (s && !strcmp(s, "off")) {
+					s = NULL;
+				}
+				switch_rtp_debug_jitter_buffer(a_engine->rtp_session, s);
+				return;
 			}
-			switch_rtp_debug_jitter_buffer(a_engine->rtp_session, s);
-			return;
-		}
 
-		switch_channel_set_variable(session->channel, "jitterbuffer_msec", input);
+			switch_channel_set_variable(session->channel, "jitterbuffer_msec", input);
+		}
+		
+		if (v_engine->rtp_session) {
+			if (!strncasecmp(input, "vdebug:", 7)) {
+				s = input + 7;
+				
+				if (s && !strcmp(s, "off")) {
+					s = NULL;
+				}
+				switch_rtp_debug_jitter_buffer(v_engine->rtp_session, s);
+				return;
+			}
+		}
 	}
 	
 
