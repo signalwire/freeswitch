@@ -78,7 +78,6 @@
 #endif
 #endif
 
-
 /* #define DEBUG_ALLOC */
 #define DO_EVENTS
 
@@ -188,6 +187,8 @@ struct switch_core_session {
 
 	switch_media_handle_t *media_handle;
 	uint32_t decoder_errors;
+	switch_core_video_thread_callback_func_t *video_read_callback;
+	void *video_read_user_data;
 	switch_slin_data_t *sdata;
 };
 

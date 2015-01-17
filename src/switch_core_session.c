@@ -3069,6 +3069,31 @@ SWITCH_DECLARE(void) switch_core_session_raw_read(switch_core_session_t *session
 }
 
 
+SWITCH_DECLARE(switch_status_t) switch_core_session_set_video_read_callback(switch_core_session_t *session, 
+																			switch_core_video_thread_callback_func_t func, void *user_data)
+{
+	if (!func) {
+		session->video_read_callback = NULL;
+		session->video_read_user_data = NULL;
+		return SWITCH_STATUS_SUCCESS;
+	} else if (session->video_read_callback) {
+		return SWITCH_STATUS_FALSE;
+	} else {
+		session->video_read_callback = func;
+		session->video_read_user_data = user_data;
+		return SWITCH_STATUS_SUCCESS;
+	}
+}
+
+SWITCH_DECLARE(switch_status_t) switch_core_session_video_read_callback(switch_core_session_t *session, switch_frame_t *frame)
+{
+	if (session->video_read_callback) {
+		return session->video_read_callback(session, frame, session->video_read_user_data);
+	}
+
+	return SWITCH_STATUS_CONTINUE;
+}
+
 /* For Emacs:
  * Local Variables:
  * mode:c

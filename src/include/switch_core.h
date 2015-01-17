@@ -2313,6 +2313,11 @@ SWITCH_DECLARE(uint8_t) switch_core_session_compare(switch_core_session_t *a, sw
 */
 SWITCH_DECLARE(uint8_t) switch_core_session_check_interface(switch_core_session_t *session, const switch_endpoint_interface_t *endpoint_interface);
 
+SWITCH_DECLARE(switch_status_t) switch_core_session_set_video_read_callback(switch_core_session_t *session, 
+																			switch_core_video_thread_callback_func_t func, void *user_data);
+
+SWITCH_DECLARE(switch_status_t) switch_core_session_video_read_callback(switch_core_session_t *session, switch_frame_t *frame);
+
 SWITCH_DECLARE(switch_hash_index_t *) switch_core_mime_index(void);
 SWITCH_DECLARE(const char *) switch_core_mime_ext2type(const char *ext);
 SWITCH_DECLARE(const char *) switch_core_mime_type2ext(const char *type);

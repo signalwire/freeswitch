@@ -9969,6 +9969,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_video_frame(switch_core
 
   done:
 
+	if (status == SWITCH_STATUS_SUCCESS) {
+		switch_core_session_video_read_callback(session, *frame);
+	}
+
 	return status;
 }
 
