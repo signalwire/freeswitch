@@ -202,6 +202,18 @@ SWITCH_DECLARE(int) switch_img_set_rect(switch_image_t  *img,
 				   unsigned int  w,
 				   unsigned int  h);
 
+/*!\brief Copy image to a new image
+*
+* if new_img is NULL, a new image is allocated
+* if new_img is not NULL but not the same size as img,
+*    new_img is destroyed and a new new_img is allocated
+* else, copy the img data to the new_img
+*
+* \param[in]    img       Image descriptor
+*/
+
+SWITCH_DECLARE(void) switch_img_copy(switch_image_t *img, switch_image_t **new_img);
+
 
 /*!\brief Flip the image vertically (top for bottom)
 *

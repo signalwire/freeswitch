@@ -73,6 +73,24 @@ SWITCH_DECLARE(void) switch_img_free(switch_image_t **img)
 	*img = NULL;
 }
 
+SWITCH_DECLARE(void) switch_img_copy(switch_image_t *img, switch_image_t **new_img)
+{
+	switch_assert(img);
+
+	if (!img->fmt == SWITCH_IMG_FMT_I420) return;
+
+	if (img->d_w != (*new_img)->d_w || img->d_h != (*new_img)->d_w) {
+		vpx_img_free((vpx_image_t *)*new_img);
+	}
+
+	if (*new_img == NULL) {
+		*new_img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, img->d_w, img->d_h, 0);
+	}
+
+	switch_assert(*new_img);
+	memcpy((*new_img)->img_data, img->img_data, img->d_w * img->d_h * 3 / 2);
+}
+
 /* For Emacs:
  * Local Variables:
  * mode:c
