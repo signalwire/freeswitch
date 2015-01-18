@@ -217,7 +217,7 @@ typedef enum {
 	CFLAG_INHASH = (1 << 11),
 	CFLAG_EXIT_SOUND = (1 << 12),
 	CFLAG_ENTER_SOUND = (1 << 13),
-	CFLAG_VIDEO_BRIDGE = (1 << 14),
+	CFLAG_USE_ME = (1 << 14),
 	CFLAG_AUDIO_ALWAYS = (1 << 15),
 	CFLAG_ENDCONF_FORCED = (1 << 16),
 	CFLAG_RFC4579 = (1 << 17),
@@ -597,7 +597,6 @@ static switch_status_t chat_send(switch_event_t *message_event);
 								 
 
 static void launch_conference_record_thread(conference_obj_t *conference, char *path, switch_bool_t autorec);
-static int launch_conference_video_bridge_thread(conference_member_t *member_a, conference_member_t *member_b);
 
 typedef switch_status_t (*conf_api_args_cmd_t) (conference_obj_t *, switch_stream_handle_t *, int, char **);
 typedef switch_status_t (*conf_api_member_cmd_t) (conference_member_t *, switch_stream_handle_t *, void *);
@@ -2307,9 +2306,6 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 		switch_channel_set_variable(channel, CONFERENCE_UUID_VARIABLE, conference->uuid_str);
 
 		if (switch_channel_test_flag(channel, CF_VIDEO)) {
-			if (switch_test_flag(conference, CFLAG_VIDEO_BRIDGE)) {
-				switch_channel_clear_flag(channel, CF_VIDEO_PASSIVE);
-			}
 			/* Tell the channel to request a fresh vid frame */
 			switch_core_session_video_reinit(member->session);
 		}
@@ -2505,7 +2501,7 @@ static void conference_set_video_floor_holder(conference_obj_t *conference, conf
 		switch_clear_flag(conference, CFLAG_VID_FLOOR_LOCK);
 	}
 
-	if (switch_test_flag(conference, CFLAG_VIDEO_BRIDGE) || (!force && switch_test_flag(conference, CFLAG_VID_FLOOR_LOCK))) {
+	if ((!force && switch_test_flag(conference, CFLAG_VID_FLOOR_LOCK))) {
 		return;
 	}
 	
@@ -2514,6 +2510,15 @@ static void conference_set_video_floor_holder(conference_obj_t *conference, conf
 			return;
 		} else {			
 			conference->last_video_floor_holder = conference->video_floor_holder;
+			
+			if (conference->last_video_floor_holder && (imember = conference_member_get(conference, conference->last_video_floor_holder))) {
+				if (switch_test_flag(imember, MFLAG_VIDEO_BRIDGE)) {
+					switch_set_flag(conference, CFLAG_VID_FLOOR_LOCK);
+				}		
+				switch_thread_rwlock_unlock(imember->rwlock);
+				imember = NULL;
+			}
+			
 			old_member = conference->video_floor_holder;
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Dropping video floor %d\n", old_member);
 
@@ -2590,12 +2595,12 @@ static void conference_set_floor_holder(conference_obj_t *conference, conference
 	conference_member_t *old_member = NULL;
 	int old_id = 0;
 
-	if (!switch_test_flag(conference, CFLAG_VIDEO_BRIDGE) && 
-		((conference->video_floor_holder && !member && !switch_test_flag(conference, CFLAG_VID_FLOOR_LOCK)) ||
-			(member && member->channel && switch_channel_test_flag(member->channel, CF_VIDEO)))) {
+	
+	if (((conference->video_floor_holder && !member && !switch_test_flag(conference, CFLAG_VID_FLOOR_LOCK)) ||
+		 (member && member->channel && switch_channel_test_flag(member->channel, CF_VIDEO)))) {
 		conference_set_video_floor_holder(conference, member, SWITCH_FALSE);
 	}
-
+	
 	if (conference->floor_holder) {
 		if (conference->floor_holder == member) {
 			return;
@@ -2909,65 +2914,6 @@ static switch_status_t conference_del_member(conference_obj_t *conference, confe
 	return status;
 }
 
-/* Thread bridging video between two members, there will be two threads if video briding is used */
-static void *SWITCH_THREAD_FUNC conference_video_bridge_thread_run(switch_thread_t *thread, void *obj)
-{
-	struct vid_helper *vh = obj;
-	switch_core_session_t *session_a = vh->member_a->session;
-	switch_core_session_t *session_b = vh->member_b->session;
-	switch_channel_t *channel_a = switch_core_session_get_channel(session_a);
-	switch_channel_t *channel_b = switch_core_session_get_channel(session_b);
-	switch_status_t status;
-	switch_frame_t *read_frame;
-	conference_obj_t *conference = vh->member_a->conference;
-	
-	switch_thread_rwlock_rdlock(conference->rwlock);
-	switch_thread_rwlock_rdlock(vh->member_a->rwlock);
-	switch_thread_rwlock_rdlock(vh->member_b->rwlock);
-	
-
-	switch_channel_set_flag(channel_a, CF_VIDEO_PASSIVE);
-
-	/* Acquire locks for both sessions so the helper object and member structures don't get destroyed before we exit */
-	switch_core_session_read_lock(session_a);
-	switch_core_session_read_lock(session_b);
-	
-	vh->up = 1;
-	while (vh->up == 1 && switch_test_flag(vh->member_a, MFLAG_RUNNING) && switch_test_flag(vh->member_b, MFLAG_RUNNING) &&
-		   switch_channel_ready(channel_a) && switch_channel_ready(channel_b))  {
-
-		if (switch_channel_test_flag(channel_a, CF_VIDEO_REFRESH_REQ)) {
-			switch_core_session_request_video_refresh(session_b);
-			switch_channel_clear_flag(channel_a, CF_VIDEO_REFRESH_REQ);
-		}
-
-		status = switch_core_session_read_video_frame(session_a, &read_frame, SWITCH_IO_FLAG_NONE, 0);
-		if (!SWITCH_READ_ACCEPTABLE(status)) {
-			break;
-		}
-
-		if (!switch_test_flag(read_frame, SFF_CNG)) {
-			if (switch_core_session_write_video_frame(session_b, read_frame, SWITCH_IO_FLAG_NONE, 0) != SWITCH_STATUS_SUCCESS) {
-				break;
-			}
-		}
-	}
-	switch_channel_clear_flag(channel_a, CF_VIDEO_PASSIVE);
-
-	switch_thread_rwlock_unlock(vh->member_b->rwlock);
-	switch_thread_rwlock_unlock(vh->member_a->rwlock);
-
-	switch_core_session_rwunlock(session_a);
-	switch_core_session_rwunlock(session_b);
-
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s video thread ended.\n", switch_channel_get_name(channel_a));
-
-	switch_thread_rwlock_unlock(conference->rwlock);
-	
-	vh->up = 0;
-	return NULL;
-}
-
 static void conference_write_video_frame(conference_obj_t *conference, conference_member_t *floor_holder, switch_frame_t *vid_frame)
 {
 	conference_member_t *imember;
@@ -3067,7 +3013,7 @@ switch_status_t video_thread_callback(switch_core_session_t *session, switch_fra
 	}
 	unlock_member(member);
 
-	if (member && !switch_test_flag(member->conference, CFLAG_VIDEO_BRIDGE)) {
+	if (member) {
 		if (member->id == member->conference->video_floor_holder) {
 			conference_write_video_frame(member->conference, member, frame);
 		} else if (!switch_test_flag(member->conference, CFLAG_VID_FLOOR_LOCK) && member->id == member->conference->last_video_floor_holder) {
@@ -3162,7 +3108,7 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 		int has_file_data = 0, members_with_video = 0;
 		uint32_t conf_energy = 0;
 		int nomoh = 0;
-		conference_member_t *floor_holder, *video_bridge_members[2] = { 0 };		
+		conference_member_t *floor_holder;
 
 		/* Sync the conference to a single timing source */
 		if (switch_core_timer_next(&timer) != SWITCH_STATUS_SUCCESS) {
@@ -3191,14 +3137,6 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 				
 				if (switch_channel_ready(channel) && switch_channel_test_flag(channel, CF_VIDEO)) {
 					members_with_video++;
-					
-					if (switch_test_flag(conference, CFLAG_VIDEO_BRIDGE) && switch_test_flag(imember, MFLAG_VIDEO_BRIDGE)) {
-						if (!video_bridge_members[0]) {
-							video_bridge_members[0] = imember;
-						} else {
-							video_bridge_members[1] = imember;
-						}
-					}
 				}
 
 				if (switch_test_flag(imember, MFLAG_NOMOH)) {
@@ -3272,26 +3210,6 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 				}
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Auto Record Failed.  No members in conference.\n");
-			}
-		}
-
-
-		if (members_with_video) {
-			if (conference->vh[0].up == 0 && 
-				conference->vh[1].up == 0 && 
-				video_bridge_members[0] && 
-				video_bridge_members[1] &&
-				switch_test_flag(video_bridge_members[0], MFLAG_RUNNING) && 
-				switch_test_flag(video_bridge_members[1], MFLAG_RUNNING) && 
-				switch_channel_ready(switch_core_session_get_channel(video_bridge_members[0]->session)) &&
-				switch_channel_ready(switch_core_session_get_channel(video_bridge_members[1]->session)) 
-				) {
-				conference->mh.up = 2;
-				if (launch_conference_video_bridge_thread(video_bridge_members[0], video_bridge_members[1])) {
-					conference->mh.up = 1;
-				} else {
-					conference->mh.up = -1;
-				}
 			}
 		}
 
@@ -6820,11 +6738,6 @@ static switch_status_t conf_api_sub_list(conference_obj_t *conference, switch_st
 				fcount++;
 			}
 
-			if (switch_test_flag(conference, CFLAG_VIDEO_BRIDGE)) {
-				stream->write_function(stream, "%svideo_bridge", fcount ? "|" : "");
-				fcount++;
-			}
-
 			if (switch_test_flag(conference, CFLAG_VID_FLOOR)) {
 				stream->write_function(stream, "%svideo_floor_only", fcount ? "|" : "");
 				fcount++;
@@ -6903,12 +6816,6 @@ static switch_status_t conf_api_sub_floor(conference_member_t *member, switch_st
 static switch_status_t conf_api_sub_clear_vid_floor(conference_obj_t *conference, switch_stream_handle_t *stream, void *data)
 {
 
-	if (switch_test_flag(conference, CFLAG_VIDEO_BRIDGE)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, 
-						  "conference %s is in video bridge mode, this functionality is not compatible\n", conference->name);
-		return SWITCH_STATUS_FALSE;
-	}
-
 	switch_mutex_lock(conference->mutex);
 	switch_clear_flag(conference, CFLAG_VID_FLOOR_LOCK);
 	//conference_set_video_floor_holder(conference, NULL);
@@ -6926,12 +6833,6 @@ static switch_status_t conf_api_sub_vid_floor(conference_member_t *member, switc
 
 	if (!switch_channel_test_flag(member->channel, CF_VIDEO)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Channel %s does not have video capability!\n", switch_channel_get_name(member->channel));
-		return SWITCH_STATUS_FALSE;
-	}
-
-	if (switch_test_flag(member->conference, CFLAG_VIDEO_BRIDGE)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
-						  "conference %s is in video bridge mode, this functionality is not compatible\n", member->conference->name);
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -7075,10 +6976,6 @@ static void conference_xlist(conference_obj_t *conference, switch_xml_t x_confer
 	if (conference->endconf_grace_time > 0) {
 		switch_snprintf(i, sizeof(i), "%u", conference->endconf_grace_time);
 		switch_xml_set_attr_d(x_conference, "endconf_grace_time", ival);
-	}
-
-	if (switch_test_flag(conference, CFLAG_VIDEO_BRIDGE)) {
-		switch_xml_set_attr_d(x_conference, "video_bridge", "true");
 	}
 
 	if (switch_test_flag(conference, CFLAG_VID_FLOOR)) {
@@ -8980,8 +8877,6 @@ static void set_cflags(const char *flags, uint32_t *f)
 				*f |= CFLAG_WAIT_MOD;
 			} else if (!strcasecmp(argv[i], "video-floor-only")) {
 				*f |= CFLAG_VID_FLOOR;
-			} else if (!strcasecmp(argv[i], "video-bridge")) {
-				*f |= CFLAG_VIDEO_BRIDGE;
 			} else if (!strcasecmp(argv[i], "audio-always")) {
 				*f |= CFLAG_AUDIO_ALWAYS;
 			} else if (!strcasecmp(argv[i], "restart-auto-record")) {
@@ -9900,55 +9795,6 @@ static void launch_conference_thread(conference_obj_t *conference)
 	switch_mutex_lock(globals.hash_mutex);
 	switch_mutex_unlock(globals.hash_mutex);
 	switch_thread_create(&thread, thd_attr, conference_thread_run, conference, conference->pool);
-}
-
-static switch_thread_t *launch_thread_detached(switch_thread_start_t func, switch_memory_pool_t *pool, void *data)
-{
-	switch_thread_t *thread;
-	switch_threadattr_t *thd_attr = NULL;
-
-	switch_threadattr_create(&thd_attr, pool);
-	switch_threadattr_detach_set(thd_attr, 1);
-	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
-	switch_thread_create(&thread, thd_attr, func, data, pool);
-	
-	return thread;
-}
-
-/* Create a video thread for the conference and launch it */
-static int launch_conference_video_bridge_thread(conference_member_t *member_a, conference_member_t *member_b)
-{
-	conference_obj_t *conference = member_a->conference;
-	switch_memory_pool_t *pool = conference->pool;
-	int sanity = 10000, r = 0;
-
-	memset(conference->vh, 0, sizeof(conference->vh));
-
-	conference->vh[0].member_a = member_a;
-	conference->vh[0].member_b = member_b;
-	
-	conference->vh[1].member_a = member_b;
-	conference->vh[1].member_b = member_a;
-	
-	launch_thread_detached(conference_video_bridge_thread_run, pool, &conference->vh[0]);
-	launch_thread_detached(conference_video_bridge_thread_run, pool, &conference->vh[1]);
-
-	while(!(conference->vh[0].up && conference->vh[1].up) && --sanity > 0) {
-		switch_cond_next();
-	}
-	
-	if (conference->vh[0].up == 1 && conference->vh[1].up != 1) {
-		conference->vh[0].up = -1;
-		r = -1;
-	}
-
-	if (conference->vh[1].up == 1 && conference->vh[0].up != 1) {
-		conference->vh[1].up = -1;
-		r = -1;
-	}
-
-	return r;
-	
 }
 
 static void launch_conference_record_thread(conference_obj_t *conference, char *path, switch_bool_t autorec)
