@@ -5284,7 +5284,7 @@ static switch_status_t process_rtcp_report(switch_rtp_t *rtp_session, rtcp_msg_t
 		
 		if (msg->header.type == 206 && (extp->header.fmt == 4 || extp->header.fmt == 1)) { /* FIR || PLI */
 			switch_core_media_gen_key_frame(rtp_session->session);
-			switch_channel_set_flag(switch_core_session_get_channel(rtp_session->session), CF_VIDEO_REFRESH_REQ);
+			//switch_channel_set_flag(switch_core_session_get_channel(rtp_session->session), CF_VIDEO_REFRESH_REQ);
 		}
 
 		if (msg->header.type == 205 && extp->header.fmt == 1) { /*NACK*/
@@ -5292,7 +5292,7 @@ static switch_status_t process_rtcp_report(switch_rtp_t *rtp_session, rtcp_msg_t
 			int i;
 			
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG, "Got NACK count %d\n", ntohs(extp->header.length) - 2);
-
+			switch_core_media_gen_key_frame(rtp_session->session);
 			for (i = 0; i < ntohs(extp->header.length) - 2; i++) {
 				handle_nack(rtp_session, *nack);
 				nack++;
