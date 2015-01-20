@@ -518,17 +518,15 @@ AC_SUBST(SYS_XMLRPC_LDFLAGS)
 AM_CONDITIONAL([SYSTEM_XMLRPCC],[test "${enable_xmlrpcc}" = "yes"])
 
 AC_ARG_ENABLE([system-lua],[AS_HELP_STRING([--enable-system-lua],[use system lib for lua])],,[enable_system_lua="no"])
-if test "${enable_system_lua}" = "yes" ; then
-   PKG_CHECK_MODULES([LUA],[lua5.2],[have_lua=yes],[have_lua=no])
-   if test "${have_lua}" = "no" ; then
-      PKG_CHECK_MODULES([LUA],[lua5.1],[have_lua=yes],[have_lua=no])
-   fi
-   if test "${have_lua}" = "no" ; then
-      PKG_CHECK_MODULES([LUA],[lua],[have_lua=yes],[have_lua=no])
-   fi
-   if test x"${LUA_LIBS}" = x"" ; then
-      LUA_LIBS="-llua"
-   fi
+PKG_CHECK_MODULES([LUA],[lua5.2],[have_lua=yes],[have_lua=no])
+if test "${have_lua}" = "no" ; then
+   PKG_CHECK_MODULES([LUA],[lua5.1],[have_lua=yes],[have_lua=no])
+fi
+if test "${have_lua}" = "no" ; then
+   PKG_CHECK_MODULES([LUA],[lua],[have_lua=yes],[have_lua=no])
+fi
+if test x"${LUA_LIBS}" = x"" ; then
+   LUA_LIBS="-llua"
 fi
 AM_CONDITIONAL([SYSTEM_LUA],[test "${enable_system_lua}" = "yes"])
 
