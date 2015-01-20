@@ -2986,6 +2986,11 @@ switch_status_t video_thread_callback(switch_core_session_t *session, switch_fra
 	switch_assert(member);
 
 	lock_member(member);
+	
+	if (switch_thread_rwlock_tryrdlock(member->conference->rwlock) != SWITCH_STATUS_SUCCESS) {
+		unlock_member(member);
+		return SWITCH_STATUS_FALSE;
+	}
 
 	for (rel = member->relationships; rel; rel = rel->next) {
 		conference_member_t *imember;
@@ -3011,7 +3016,7 @@ switch_status_t video_thread_callback(switch_core_session_t *session, switch_fra
 
 		last = rel;
 	}
-	unlock_member(member);
+
 
 	if (member) {
 		if (member->id == member->conference->video_floor_holder) {
@@ -3025,6 +3030,9 @@ switch_status_t video_thread_callback(switch_core_session_t *session, switch_fra
 			}
 		}
 	}
+
+	unlock_member(member);
+	switch_thread_rwlock_unlock(member->conference->rwlock);
 
 	return SWITCH_STATUS_SUCCESS;
 }
