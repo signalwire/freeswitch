@@ -18,7 +18,11 @@ mod_lua_la_CFLAGS = -I$(LUA_DIR) $(AM_CPPFLAGS) -DLUA_USE_LINUX
 endif
 
 mod_lua_la_LIBADD = $(switch_builddir)/libfreeswitch.la 
-mod_lua_la_LDFLAGS = -avoid-version -module -no-undefined -shared -lm -llua $(AM_LDFLAGS) $(SOLINK)
+mod_lua_la_LDFLAGS = -avoid-version -module -no-undefined -shared -lm $(AM_LDFLAGS) $(SOLINK)
+
+if SYSTEM_LUA
+mod_lua_la_LDFLAGS += -llua
+endif
 
 reswig: swigclean lua_wrap
 
