@@ -517,6 +517,9 @@ AC_SUBST(SYS_XMLRPC_CFLAGS)
 AC_SUBST(SYS_XMLRPC_LDFLAGS)
 AM_CONDITIONAL([SYSTEM_XMLRPCC],[test "${enable_xmlrpcc}" = "yes"])
 
+AC_ARG_ENABLE([system-lua],[AS_HELP_STRING([--enable-system-lua],[use system lib for lua])],,[enable_system_lua="no"])
+AM_CONDITIONAL([SYSTEM_LUA],[test "${enable_system_lua}" = "yes"])
+
 AC_ARG_ENABLE(srtp,
 [AC_HELP_STRING([--disable-srtp],[build without srtp support])],[enable_srtp="$enableval"],[enable_srtp="yes"])
 
