@@ -1122,7 +1122,7 @@ static void *SWITCH_THREAD_FUNC recording_thread(switch_thread_t *thread, void *
 	struct record_helper *rh;
 	switch_size_t bsize = SWITCH_RECOMMENDED_BUFFER_SIZE, samples = 0, inuse = 0;
 	unsigned char *data = switch_core_session_alloc(session, bsize);
-	int channels = switch_core_media_bug_test_flag(bug, SMBF_STEREO) ? 2 : 1;
+	int channels = switch_core_media_bug_test_flag(bug, SMBF_STEREO) ? 2 : rh->read_impl.number_of_channels;
 
 	if (switch_core_session_read_lock(session) != SWITCH_STATUS_SUCCESS) {
 		return NULL;
@@ -2125,16 +2125,18 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 		flags |= SMBF_READ_STREAM;
 	}
 
-	if ((p = switch_channel_get_variable(channel, "RECORD_STEREO")) && switch_true(p)) {
-		flags |= SMBF_STEREO;
-		flags &= ~SMBF_STEREO_SWAP;
-		channels = 2;
-	}
+	if (channels == 1) { /* if leg is already stereo this feature is not available */
+		if ((p = switch_channel_get_variable(channel, "RECORD_STEREO")) && switch_true(p)) {
+			flags |= SMBF_STEREO;
+			flags &= ~SMBF_STEREO_SWAP;
+			channels = 2;
+		}
 
-	if ((p = switch_channel_get_variable(channel, "RECORD_STEREO_SWAP")) && switch_true(p)) {
-		flags |= SMBF_STEREO;
-		flags |= SMBF_STEREO_SWAP;
-		channels = 2;
+		if ((p = switch_channel_get_variable(channel, "RECORD_STEREO_SWAP")) && switch_true(p)) {
+			flags |= SMBF_STEREO;
+			flags |= SMBF_STEREO_SWAP;
+			channels = 2;
+		}
 	}
 
 	if ((p = switch_channel_get_variable(channel, "RECORD_ANSWER_REQ")) && switch_true(p)) {
@@ -2230,6 +2232,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 
 	if ((ext = strrchr(file, '.'))) {
 		ext++;
+
 		if (switch_core_file_open(fh, file, channels, read_impl.actual_samples_per_second, file_flags, NULL) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error opening %s\n", file);
 			if (hangup_on_error) {

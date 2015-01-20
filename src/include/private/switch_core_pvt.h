@@ -174,8 +174,6 @@ struct switch_core_session {
 	uint32_t soft_lock;
 	switch_ivr_dmachine_t *dmachine[2];
 	plc_state_t *plc;
-	uint8_t recur_buffer[SWITCH_RECOMMENDED_BUFFER_SIZE];
-	switch_size_t recur_buffer_len;
 
 	switch_media_handle_t *media_handle;
 	uint32_t decoder_errors;
