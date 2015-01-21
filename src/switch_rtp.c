@@ -1128,7 +1128,7 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 			if (switch_cmp_addr(from_addr, ice->addr)) {
 				ice->last_ok = now;
 			} else {
-				if (!ice->last_ok || (now - ice->last_ok) > 1000000) {
+				if (!ice->last_ok || (now - ice->last_ok) > 3000000) {
 					hosts_set++;
 					host = switch_get_addr(buf, sizeof(buf), from_addr);
 					port = switch_sockaddr_get_port(from_addr);
