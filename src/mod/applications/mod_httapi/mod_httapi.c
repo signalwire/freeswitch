@@ -195,6 +195,7 @@ struct http_file_context {
 	} write;
 
 	switch_mutex_t *mutex;
+	switch_thread_rwlock_t *rwlock;
 };
 
 typedef struct http_file_context http_file_context_t;
@@ -2418,24 +2419,31 @@ static size_t save_file_callback(void *ptr, size_t size, size_t nmemb, void *dat
 {
 	register unsigned int realsize = (unsigned int) (size * nmemb);
 	client_t *client = data;
-	int x;
+	int x, wrote = 0, sanity = 1000;
+	unsigned char *buffer = (unsigned char *) ptr;
 
 	client->bytes += realsize;
 	
-	
-
 	if (client->bytes > client->max_bytes) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Oversized file detected [%d bytes]\n", (int) client->bytes);
 		client->err = 1;
 		return 0;
 	}
 
-	x = write(client->fd, ptr, realsize);
+	do {
+		x = write(client->fd, buffer + wrote, realsize - wrote);
+		if (x > 0) {
+			wrote += x;
+		} else {
+			switch_cond_next();
+		}
+	} while (wrote != realsize && (x == -1 && (errno == EAGAIN || errno == EINTR)) && --sanity);
 
-	if (x != (int) realsize) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Short write! %d out of %d\n", x, realsize);
+	if (wrote != (int) realsize) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Short write! fd:%d %d out of %d [%s]\n", client->fd, wrote, realsize, strerror(errno));
 	}
-	return x;
+
+	return wrote;
 }
 
 
@@ -2449,7 +2457,7 @@ static switch_status_t fetch_cache_data(http_file_context_t *context, const char
 	char *dup_creds = NULL, *dynamic_url = NULL, *use_url;
 	char *ua = NULL;
 	const char *profile_name = NULL;
-
+	int tries = 10;
 
 	if (context->url_params) { 
 		profile_name = switch_event_get_header(context->url_params, "profile_name");
@@ -2467,9 +2475,15 @@ static switch_status_t fetch_cache_data(http_file_context_t *context, const char
 		return SWITCH_STATUS_FALSE;
 	}
 
+	client->fd = -1;
 
 	if (save_path) {
-		if ((client->fd = open(save_path, O_CREAT | O_RDWR | O_TRUNC, S_IRUSR | S_IWUSR)) < 0) {
+		while(--tries && (client->fd == 0 || client->fd == -1)) {
+			client->fd = open(save_path, O_CREAT | O_WRONLY | O_TRUNC, S_IRUSR | S_IWUSR);
+		}
+
+		if (client->fd < 0) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "ERROR OPENING FILE %s [%s]\n", save_path, strerror(errno));
 			return SWITCH_STATUS_FALSE;
 		}
 	}
@@ -2602,6 +2616,7 @@ static switch_status_t fetch_cache_data(http_file_context_t *context, const char
 	
 	if (client->fd > -1) {
 		close(client->fd);
+		client->fd = -1;
 	}
 
 	if (headers && client->headers) {
@@ -2701,36 +2716,28 @@ static switch_status_t write_meta_file(http_file_context_t *context, const char 
 }
 
 
-static switch_status_t lock_file(http_file_context_t *context, switch_bool_t lock)
+static void lock_file(http_file_context_t *context, switch_bool_t lock)
 {
-
-	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	http_file_context_t *xcontext = NULL;
+	void *x = NULL;
 
 	if (lock) {
-		switch_mutex_lock(globals.request_mutex);
-		if (!(xcontext = switch_core_hash_find(globals.request_hash, context->dest_url))) {
-			switch_core_hash_insert(globals.request_hash, context->dest_url, context);
-			xcontext = context;
-		}
-		switch_mutex_lock(context->mutex);
-		switch_mutex_unlock(globals.request_mutex);
+		do {
+			switch_mutex_lock(globals.request_mutex);
+			if ((x = switch_core_hash_find(globals.request_hash, context->dest_url))) {
+				switch_mutex_unlock(globals.request_mutex);
+				switch_yield(100000);
+			}
+		} while(x);
 		
-		if (context != xcontext) {
-			switch_mutex_lock(xcontext->mutex);
-			switch_mutex_unlock(xcontext->mutex);
-		}
-
+		switch_core_hash_insert(globals.request_hash, context->dest_url, (void *)1);
+		switch_mutex_unlock(globals.request_mutex);
 	} else {
 		switch_mutex_lock(globals.request_mutex);
-		if ((xcontext = switch_core_hash_find(globals.request_hash, context->dest_url)) && xcontext == context) {
-			switch_core_hash_delete(globals.request_hash, context->dest_url);
-		}
-		switch_mutex_unlock(context->mutex);
+		switch_core_hash_delete(globals.request_hash, context->dest_url);
 		switch_mutex_unlock(globals.request_mutex);
 	}
 
-	return status;
+	return;
 }
 
 
@@ -2875,7 +2882,6 @@ static switch_status_t file_open(switch_file_handle_t *handle, const char *path,
 
 	context = switch_core_alloc(handle->memory_pool, sizeof(*context));
 	context->pool = handle->memory_pool;
-	switch_mutex_init(&context->mutex, SWITCH_MUTEX_NESTED, handle->memory_pool);
 
 	pdup = switch_core_strdup(context->pool, pa);
 
@@ -2955,13 +2961,13 @@ static switch_status_t file_open(switch_file_handle_t *handle, const char *path,
 		}
 
 		lock_file(context, SWITCH_TRUE);
-		
-		if ((status = locate_url_file(context, context->dest_url)) != SWITCH_STATUS_SUCCESS) {
-			return status;
-		}
-	
+		status = locate_url_file(context, context->dest_url);
 		lock_file(context, SWITCH_FALSE);
 
+		if (status != SWITCH_STATUS_SUCCESS) {
+			return status;
+		}
+		
 		if ((status = switch_core_file_open(&context->fh,
 											context->cache_file, 
 											handle->channels, 
@@ -3004,9 +3010,6 @@ static switch_status_t https_file_file_open(switch_file_handle_t *handle, const 
 static switch_status_t http_file_file_close(switch_file_handle_t *handle)
 {
 	http_file_context_t *context = handle->private_info;
-
-	switch_mutex_lock(context->mutex);
-	switch_mutex_unlock(context->mutex);
 
 	if (switch_test_flag((&context->fh), SWITCH_FILE_OPEN)) {
 		switch_core_file_close(&context->fh);
