@@ -4731,7 +4731,8 @@ static int check_recv_payload(switch_rtp_t *rtp_session)
 
 #define return_cng_frame() do_cng = 1; goto timer_check
 
-static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t *bytes, switch_frame_flag_t *flags, switch_bool_t return_jb_packet)
+static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t *bytes, switch_frame_flag_t *flags, 
+									   switch_status_t poll_status, switch_bool_t return_jb_packet)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	stfu_frame_t *jb_frame;
@@ -4747,7 +4748,11 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 	*bytes = sizeof(rtp_msg_t);
 	sync = 0;
 
-	status = switch_socket_recvfrom(rtp_session->from_addr, rtp_session->sock_input, 0, (void *) &rtp_session->recv_msg, bytes);
+	if (poll_status == SWITCH_STATUS_SUCCESS) {
+		status = switch_socket_recvfrom(rtp_session->from_addr, rtp_session->sock_input, 0, (void *) &rtp_session->recv_msg, bytes);
+	} else {
+		*bytes = 0;
+	}
 
 	if (*bytes) {
 		rtp_session->missed_count = 0;
@@ -5588,7 +5593,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			
 			if (rtp_session->jb && !rtp_session->pause_jb && jb_valid(rtp_session)) {
 				while (switch_poll(rtp_session->read_pollfd, 1, &fdr, 0) == SWITCH_STATUS_SUCCESS) {
-					status = read_rtp_packet(rtp_session, &bytes, flags, SWITCH_FALSE);
+					status = read_rtp_packet(rtp_session, &bytes, flags, SWITCH_STATUS_SUCCESS, SWITCH_FALSE);
 
 					if (status == SWITCH_STATUS_GENERR) {
 						ret = -1;
@@ -5611,7 +5616,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			} else if ((rtp_session->flags[SWITCH_RTP_FLAG_AUTOFLUSH] || rtp_session->flags[SWITCH_RTP_FLAG_STICKY_FLUSH])) {
 				
 				if (switch_poll(rtp_session->read_pollfd, 1, &fdr, 0) == SWITCH_STATUS_SUCCESS) {
-					status = read_rtp_packet(rtp_session, &bytes, flags, SWITCH_FALSE);
+					status = read_rtp_packet(rtp_session, &bytes, flags, SWITCH_STATUS_SUCCESS, SWITCH_FALSE);
 					if (status == SWITCH_STATUS_GENERR) {
 						ret = -1;
 						goto end;
@@ -5722,15 +5727,13 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 				pt = 200000;
 			}
 
-			if (rtp_session->vb && switch_vb_poll(rtp_session->vb)) {
-				pt = 1000;
-			}
-
-			if ((poll_status = switch_poll(rtp_session->read_pollfd, 1, &fdr, pt)) != SWITCH_STATUS_SUCCESS) {
-				if (rtp_session->vb && switch_vb_poll(rtp_session->vb)) {
-					poll_status = SWITCH_STATUS_SUCCESS;
+			if (rtp_session->vb) {
+				if (switch_vb_poll(rtp_session->vb)) {
+					pt = 0;
 				}
 			}
+			
+			poll_status = switch_poll(rtp_session->read_pollfd, 1, &fdr, pt);
 
 			if (!rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] && rtp_session->dtmf_data.out_digit_dur > 0) {
 				return_cng_frame();
@@ -5746,12 +5749,12 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		}
 		
 			
-		if (poll_status == SWITCH_STATUS_SUCCESS) {
+		if (poll_status == SWITCH_STATUS_SUCCESS || (rtp_session->vb && switch_vb_poll(rtp_session->vb))) {
 			if (read_pretriggered) {
 				read_pretriggered = 0;
 			} else {
 
-				status = read_rtp_packet(rtp_session, &bytes, flags, SWITCH_TRUE);
+				status = read_rtp_packet(rtp_session, &bytes, flags, poll_status, SWITCH_TRUE);
 
 				if (status == SWITCH_STATUS_GENERR) {
 					ret = -1;
