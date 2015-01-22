@@ -5813,7 +5813,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
  video_up:
 
 	if (session && v_engine) {
-		printf("WTFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF?????\n");
 		check_dtls_reinvite(session, v_engine);
 	}
 
