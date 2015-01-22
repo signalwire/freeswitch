@@ -26,6 +26,7 @@
  * Anthony Minessale II <anthm@freeswitch.org>
  * Luke Dashjr <luke@openmethods.com> (OpenMethods, LLC)
  * Joseph Sullivan <jossulli@amazon.com>
+ * Emmanuel Schmidbauer <eschmidbauer@gmail.com>
  *
  * switch_core.h -- Core Library
  *
@@ -2437,6 +2438,13 @@ SWITCH_DECLARE(switch_status_t) _switch_cache_db_get_db_handle_dsn(switch_cache_
 																   const char *file, const char *func, int line);
 #define switch_cache_db_get_db_handle_dsn(_a, _b) _switch_cache_db_get_db_handle_dsn(_a, _b, __FILE__, __SWITCH_FUNC__, __LINE__)
 
+/*! 
+ \brief Executes the create schema sql
+ \param [in] dbh The handle
+ \param [in] sql - sql to run
+ \param [out] err - Error if it exists
+*/
+SWITCH_DECLARE(switch_status_t) switch_cache_db_create_schema(switch_cache_db_handle_t *dbh, char *sql, char **err);
 /*! 
  \brief Executes the sql and returns the result as a string
  \param [in] dbh The handle
