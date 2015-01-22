@@ -28,6 +28,7 @@
  * Mathieu Rene <mathieu.rene@gmail.com>
  * Bret McDanel <trixter AT 0xdecafbad.com>
  * Rupa Schomaker <rupa@rupa.com>
+ * Emmanuel Schmidbauer <eschmidbauer@gmail.com>
  *
  * mod_db.c -- Implements simple db API, group support, and limit db backend
  *
@@ -325,7 +326,7 @@ static switch_status_t do_config()
 		switch_cache_db_test_reactive(dbh, "select * from group_data", NULL, group_sql);
 
 		for (x = 0; indexes[x]; x++) {
-			switch_cache_db_execute_sql(dbh, indexes[x], NULL);
+			switch_cache_db_create_schema(dbh, indexes[x], NULL);
 		}
 
 		switch_cache_db_release_db_handle(&dbh);

@@ -2271,7 +2271,7 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 	free(test_sql);
 
 	for (x = 0; indexes[x]; x++) {
-		switch_cache_db_execute_sql(dbh, indexes[x], NULL);
+		switch_cache_db_create_schema(dbh, indexes[x], NULL);
 	}
 
 	switch_cache_db_release_db_handle(&dbh);

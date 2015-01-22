@@ -782,7 +782,7 @@ static vm_profile_t *load_profile(const char *profile_name)
 
 		for (x = 0; vm_index_list[x]; x++) {
 			errmsg = NULL;
-			switch_cache_db_execute_sql(dbh, vm_index_list[x], &errmsg);
+			switch_cache_db_create_schema(dbh, vm_index_list[x], &errmsg);
 			switch_safe_free(errmsg);
 		}
 

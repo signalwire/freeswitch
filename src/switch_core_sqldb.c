@@ -26,6 +26,7 @@
  * Anthony Minessale II <anthm@freeswitch.org>
  * Michael Jerris <mike@jerris.com>
  * Paul D. Tinsley <pdt at jackhammer.org>
+ * Emmanuel Schmidbauer <eschmidbauer@gmail.com>
  *
  *
  * switch_core_sqldb.c -- Main Core Library (statistics tracker)
@@ -1265,6 +1266,19 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_execute_sql_callback_err(switch_
 	if (io_mutex) switch_mutex_unlock(io_mutex);
 
 	return status;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_cache_db_create_schema(switch_cache_db_handle_t *dbh, char *sql, char **err)
+{
+	switch_status_t r = SWITCH_STATUS_SUCCESS;
+
+	switch_assert(sql != NULL);
+
+	if (switch_test_flag((&runtime), SCF_AUTO_SCHEMAS)) {
+		r = switch_cache_db_execute_sql(dbh, sql, err);
+	}
+
+	return r;
 }
 
 /*!
@@ -3399,10 +3413,10 @@ switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_
 
 
 	switch_cache_db_test_reactive(sql_manager.dbh, "select hostname from recovery", "DROP TABLE recovery", recovery_sql);
-	switch_cache_db_execute_sql(sql_manager.dbh, "create index recovery1 on recovery(technology)", NULL);
-	switch_cache_db_execute_sql(sql_manager.dbh, "create index recovery2 on recovery(profile_name)", NULL);
-	switch_cache_db_execute_sql(sql_manager.dbh, "create index recovery3 on recovery(uuid)", NULL);
-	switch_cache_db_execute_sql(sql_manager.dbh, "create index recovery3 on recovery(runtime_uuid)", NULL);
+	switch_cache_db_create_schema(sql_manager.dbh, "create index recovery1 on recovery(technology)", NULL);
+	switch_cache_db_create_schema(sql_manager.dbh, "create index recovery2 on recovery(profile_name)", NULL);
+	switch_cache_db_create_schema(sql_manager.dbh, "create index recovery3 on recovery(uuid)", NULL);
+	switch_cache_db_create_schema(sql_manager.dbh, "create index recovery3 on recovery(runtime_uuid)", NULL);
 
 
 
@@ -3536,30 +3550,30 @@ switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_
 		switch_cache_db_execute_sql(sql_manager.dbh, sql, NULL);
 	}
 
-	switch_cache_db_execute_sql(sql_manager.dbh, "create index alias1 on aliases (alias)", NULL);
-	switch_cache_db_execute_sql(sql_manager.dbh, "create index tasks1 on tasks (hostname,task_id)", NULL);
-	switch_cache_db_execute_sql(sql_manager.dbh, "create index complete1 on complete (a1,hostname)", NULL);
-	switch_cache_db_execute_sql(sql_manager.dbh, "create index complete2 on complete (a2,hostname)", NULL);
-	switch_cache_db_execute_sql(sql_manager.dbh, "create index complete3 on complete (a3,hostname)", NULL);
-	switch_cache_db_execute_sql(sql_manager.dbh, "create index complete4 on complete (a4,hostname)", NULL);
-	switch_cache_db_execute_sql(sql_manager.dbh, "create index complete5 on complete (a5,hostname)", NULL);
-	switch_cache_db_execute_sql(sql_manager.dbh, "create index complete6 on complete (a6,hostname)", NULL);
-	switch_cache_db_execute_sql(sql_manager.dbh, "create index complete7 on complete (a7,hostname)", NULL);
-	switch_cache_db_execute_sql(sql_manager.dbh, "create index complete8 on complete (a8,hostname)", NULL);
-	switch_cache_db_execute_sql(sql_manager.dbh, "create index complete9 on complete (a9,hostname)", NULL);
-	switch_cache_db_execute_sql(sql_manager.dbh, "create index complete10 on complete (a10,hostname)", NULL);
-	switch_cache_db_execute_sql(sql_manager.dbh, "create index complete11 on complete (a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,hostname)", NULL);
-	switch_cache_db_execute_sql(sql_manager.dbh, "create index nat_map_port_proto on nat (port,proto,hostname)", NULL);
-	switch_cache_db_execute_sql(sql_manager.dbh, "create index channels1 on channels(hostname)", NULL);
-	switch_cache_db_execute_sql(sql_manager.dbh, "create index calls1 on calls(hostname)", NULL);
-	switch_cache_db_execute_sql(sql_manager.dbh, "create index chidx1 on channels (hostname)", NULL);
-	switch_cache_db_execute_sql(sql_manager.dbh, "create index uuindex on channels (uuid, hostname)", NULL);
-	switch_cache_db_execute_sql(sql_manager.dbh, "create index uuindex2 on channels (call_uuid)", NULL);
-	switch_cache_db_execute_sql(sql_manager.dbh, "create index callsidx1 on calls (hostname)", NULL);
-	switch_cache_db_execute_sql(sql_manager.dbh, "create index eruuindex on calls (caller_uuid, hostname)", NULL);
-	switch_cache_db_execute_sql(sql_manager.dbh, "create index eeuuindex on calls (callee_uuid)", NULL);
-	switch_cache_db_execute_sql(sql_manager.dbh, "create index eeuuindex2 on calls (call_uuid)", NULL);
-	switch_cache_db_execute_sql(sql_manager.dbh, "create index regindex1 on registrations (reg_user,realm,hostname)", NULL);
+	switch_cache_db_create_schema(sql_manager.dbh, "create index alias1 on aliases (alias)", NULL);
+	switch_cache_db_create_schema(sql_manager.dbh, "create index tasks1 on tasks (hostname,task_id)", NULL);
+	switch_cache_db_create_schema(sql_manager.dbh, "create index complete1 on complete (a1,hostname)", NULL);
+	switch_cache_db_create_schema(sql_manager.dbh, "create index complete2 on complete (a2,hostname)", NULL);
+	switch_cache_db_create_schema(sql_manager.dbh, "create index complete3 on complete (a3,hostname)", NULL);
+	switch_cache_db_create_schema(sql_manager.dbh, "create index complete4 on complete (a4,hostname)", NULL);
+	switch_cache_db_create_schema(sql_manager.dbh, "create index complete5 on complete (a5,hostname)", NULL);
+	switch_cache_db_create_schema(sql_manager.dbh, "create index complete6 on complete (a6,hostname)", NULL);
+	switch_cache_db_create_schema(sql_manager.dbh, "create index complete7 on complete (a7,hostname)", NULL);
+	switch_cache_db_create_schema(sql_manager.dbh, "create index complete8 on complete (a8,hostname)", NULL);
+	switch_cache_db_create_schema(sql_manager.dbh, "create index complete9 on complete (a9,hostname)", NULL);
+	switch_cache_db_create_schema(sql_manager.dbh, "create index complete10 on complete (a10,hostname)", NULL);
+	switch_cache_db_create_schema(sql_manager.dbh, "create index complete11 on complete (a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,hostname)", NULL);
+	switch_cache_db_create_schema(sql_manager.dbh, "create index nat_map_port_proto on nat (port,proto,hostname)", NULL);
+	switch_cache_db_create_schema(sql_manager.dbh, "create index channels1 on channels(hostname)", NULL);
+	switch_cache_db_create_schema(sql_manager.dbh, "create index calls1 on calls(hostname)", NULL);
+	switch_cache_db_create_schema(sql_manager.dbh, "create index chidx1 on channels (hostname)", NULL);
+	switch_cache_db_create_schema(sql_manager.dbh, "create index uuindex on channels (uuid, hostname)", NULL);
+	switch_cache_db_create_schema(sql_manager.dbh, "create index uuindex2 on channels (call_uuid)", NULL);
+	switch_cache_db_create_schema(sql_manager.dbh, "create index callsidx1 on calls (hostname)", NULL);
+	switch_cache_db_create_schema(sql_manager.dbh, "create index eruuindex on calls (caller_uuid, hostname)", NULL);
+	switch_cache_db_create_schema(sql_manager.dbh, "create index eeuuindex on calls (callee_uuid)", NULL);
+	switch_cache_db_create_schema(sql_manager.dbh, "create index eeuuindex2 on calls (call_uuid)", NULL);
+	switch_cache_db_create_schema(sql_manager.dbh, "create index regindex1 on registrations (reg_user,realm,hostname)", NULL);
 
 
  skip:
