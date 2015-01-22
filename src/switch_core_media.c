@@ -3916,7 +3916,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 			const char *rm_encoding;
 			const switch_codec_implementation_t *mimp = NULL;
 			int vmatch = 0, i;
-
+			
 			nm_idx = 0;
 			m_idx = 0;
 			memset(matches, 0, sizeof(matches[0]) * MAX_MATCHES);
@@ -3991,7 +3991,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 				if (!(rm_encoding = map->rm_encoding)) {
 					rm_encoding = "";
 				}
-
+				
 				for (i = 0; i < total_codecs; i++) {
 					const switch_codec_implementation_t *imp = codec_array[i];
 
@@ -4078,7 +4078,8 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 					pmap->rm_fmtp = switch_core_session_strdup(session, (char *) map->rm_fmtp);
 
 					pmap->agreed_pt = (switch_payload_t) map->rm_pt;
-					
+
+					smh->negotiated_codecs[smh->num_negotiated_codecs++] = mimp;					
 						
 #if 0
 					if (j == 0 && (!switch_true(mirror) && switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND)) {
@@ -5812,6 +5813,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
  video_up:
 
 	if (session && v_engine) {
+		printf("WTFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF?????\n");
 		check_dtls_reinvite(session, v_engine);
 	}
 

@@ -379,6 +379,7 @@ struct switch_rtp {
 	switch_mutex_t *flag_mutex;
 	switch_mutex_t *read_mutex;
 	switch_mutex_t *write_mutex;
+	switch_mutex_t *ice_mutex;
 	switch_timer_t timer;
 	uint8_t ready;
 	uint8_t cn;
@@ -842,6 +843,8 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 		return;
 	}
 
+	switch_mutex_lock(rtp_session->ice_mutex);
+
 	READ_INC(rtp_session);
 	WRITE_INC(rtp_session);
 
@@ -1213,7 +1216,7 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 
 
  end:
-
+	switch_mutex_unlock(rtp_session->ice_mutex);
 	READ_DEC(rtp_session);
 	WRITE_DEC(rtp_session);
 }
@@ -3499,6 +3502,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 	switch_mutex_init(&rtp_session->flag_mutex, SWITCH_MUTEX_NESTED, pool);
 	switch_mutex_init(&rtp_session->read_mutex, SWITCH_MUTEX_NESTED, pool);
 	switch_mutex_init(&rtp_session->write_mutex, SWITCH_MUTEX_NESTED, pool);
+	switch_mutex_init(&rtp_session->ice_mutex, SWITCH_MUTEX_NESTED, pool);
 	switch_mutex_init(&rtp_session->dtmf_data.dtmf_mutex, SWITCH_MUTEX_NESTED, pool);
 	switch_queue_create(&rtp_session->dtmf_data.dtmf_queue, 100, rtp_session->pool);
 	switch_queue_create(&rtp_session->dtmf_data.dtmf_inqueue, 100, rtp_session->pool);
@@ -3947,7 +3951,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_activate_ice(switch_rtp_t *rtp_sessio
 	switch_port_t port = 0;
 	char bufc[30];
 				 
-	READ_INC(rtp_session);
+	switch_mutex_lock(rtp_session->ice_mutex);
 
 	if (proto == IPR_RTP) {
 		ice = &rtp_session->ice;
@@ -4016,7 +4020,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_activate_ice(switch_rtp_t *rtp_sessio
 		switch_rtp_break(rtp_session);
 	}
 
-	READ_DEC(rtp_session);
+	switch_mutex_unlock(rtp_session->ice_mutex);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -6630,11 +6634,13 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 				srtp_dealloc(rtp_session->send_ctx[rtp_session->srtp_idx_rtp]);
 				rtp_session->send_ctx[rtp_session->srtp_idx_rtp] = NULL;
 				if ((stat = srtp_create(&rtp_session->send_ctx[rtp_session->srtp_idx_rtp], &rtp_session->send_policy[rtp_session->srtp_idx_rtp]))) {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Error! RE-Activating Secure RTP SEND\n");
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, 
+									  "Error! RE-Activating %s Secure RTP SEND\n", rtp_type(rtp_session));
 					ret = -1;
 					goto end;
 				} else {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_INFO, "RE-Activating Secure RTP SEND\n");
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_INFO, 
+									  "RE-Activating %s Secure RTP SEND\n", rtp_type(rtp_session));
 				}
 			}
 
@@ -6642,7 +6648,8 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 			stat = srtp_protect(rtp_session->send_ctx[rtp_session->srtp_idx_rtp], &send_msg->header, &sbytes);
 			
 			if (stat) {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Error: SRTP protection failed with code %d\n", stat);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, 
+								  "Error: %s SRTP protection failed with code %d\n", rtp_type(rtp_session), stat);
 			}
 
 			bytes = sbytes;
