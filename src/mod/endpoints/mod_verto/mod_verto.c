@@ -2203,7 +2203,7 @@ static void verto_set_media_options(verto_pvt_t *tech_pvt, verto_profile_t *prof
 		profile->rtpip_cur = 0;
 	}
 
-	tech_pvt->mparams->extrtpip = profile->extrtpip;
+	tech_pvt->mparams->extrtpip = tech_pvt->mparams->extsipip = profile->extrtpip;
 
 	//tech_pvt->mparams->dtmf_type = tech_pvt->profile->dtmf_type;
 	switch_channel_set_flag(tech_pvt->channel, CF_TRACKABLE);

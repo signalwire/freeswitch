@@ -2926,6 +2926,11 @@ static void check_ice(switch_media_handle_t *smh, switch_media_type_t type, sdp_
 
 		engine->cur_payload_map->remote_sdp_ip = switch_core_session_strdup(smh->session, (char *) engine->ice_in.cands[engine->ice_in.chosen[0]][0].con_addr);
 		engine->cur_payload_map->remote_sdp_port = (switch_port_t) engine->ice_in.cands[engine->ice_in.chosen[0]][0].con_port;
+		
+		if (!smh->mparams->remote_ip) {
+			smh->mparams->remote_ip = engine->cur_payload_map->remote_sdp_ip;
+		}
+
 		if (engine->remote_rtcp_port) {
 			engine->remote_rtcp_port = engine->cur_payload_map->remote_sdp_port;
 		}
