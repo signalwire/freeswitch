@@ -1653,6 +1653,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_nomedia(const char *uuid, switch_medi
 		status = SWITCH_STATUS_SUCCESS;
 		channel = switch_core_session_get_channel(session);
 
+		if (switch_channel_test_flag(channel, CF_SECURE)) {
+			switch_core_session_rwunlock(session);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, 
+							  "Cannot bypass %s due to secure connection.\n", switch_channel_get_name(channel));
+			return SWITCH_STATUS_FALSE;
+		}
+
 		if (switch_channel_test_flag(channel, CF_MEDIA_TRANS)) {
 			switch_core_session_rwunlock(session);
 			return SWITCH_STATUS_INUSE;
