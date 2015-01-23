@@ -43,6 +43,9 @@
 
 SWITCH_BEGIN_EXTERN_C 
 
+#define SWITCH_URL_UNSAFE "\r\n \"#%&+:;<=>?@[\\]^`{|}"
+
+
 /* https://code.google.com/p/stringencoders/wiki/PerformanceAscii 
    http://www.azillionmonkeys.com/qed/asmexample.html
 */
@@ -971,6 +974,29 @@ SWITCH_DECLARE(char *) switch_util_quote_shell_arg_pool(const char *string, swit
 
 
 #define SWITCH_READ_ACCEPTABLE(status) (status == SWITCH_STATUS_SUCCESS || status == SWITCH_STATUS_BREAK || status == SWITCH_STATUS_INUSE)
+
+static inline int switch_needs_url_encode(const char *s)
+{
+	const char hex[] = "0123456789ABCDEF";
+	const char *p, *e = end_of_p(s);
+
+	
+	for(p = s; p && *p; p++) {
+		if (*p == '%' && e-p > 1) {
+			if (strchr(hex, *(p+1)) && strchr(hex, *(p+2))) {
+				p++;
+				continue;
+			}
+		}
+
+		if (strchr(SWITCH_URL_UNSAFE, *p)) {
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
 SWITCH_DECLARE(char *) switch_url_encode(const char *url, char *buf, size_t len);
 SWITCH_DECLARE(char *) switch_url_decode(char *s);
 SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to,

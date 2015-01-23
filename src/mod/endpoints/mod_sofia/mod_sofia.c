@@ -4247,6 +4247,54 @@ static switch_status_t sofia_manage(char *relative_oid, switch_management_action
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static void protect_dest_uri(switch_caller_profile_t *cp)
+{
+	char *p = cp->destination_number, *o = p;
+	char *q = NULL, *e = NULL, *qenc = NULL;
+	switch_size_t enclen = 0;
+
+	while((p = strchr(p, '/'))) {
+		q = p++;
+	}
+
+	if (q) {
+		const char *i;
+		int go = 0;
+
+		for (i = q+1; i && *i && *i != '@'; i++) {
+			if (strchr(SWITCH_URL_UNSAFE, *i)) {
+				go = 1;
+			}
+		}
+		
+		if (!go) return;
+		
+		*q++ = '\0';
+	} else {
+		return;
+	}
+	
+	if (!strncasecmp(q, "sips:", 5)) {
+		q += 5;
+	} else if (!strncasecmp(q, "sip:", 4)) {
+		q += 4;
+	}
+
+	if (!(e = strchr(q, '@'))) {
+		return;
+	}
+
+	*e++ = '\0';
+
+	if (switch_needs_url_encode(q)) {
+		enclen = (strlen(q) * 2)  + 2;
+		qenc = switch_core_alloc(cp->pool, enclen);
+		switch_url_encode(q, qenc, enclen);
+	}
+	
+	cp->destination_number = switch_core_sprintf(cp->pool, "%s/%s@%s", o, qenc ? qenc : q, e);
+}
+
 static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session, switch_event_t *var_event,
 												  switch_caller_profile_t *outbound_profile, switch_core_session_t **new_session,
 												  switch_memory_pool_t **pool, switch_originate_flag_t flags, switch_call_cause_t *cancel_cause)
@@ -4270,6 +4318,10 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 	if (!outbound_profile || zstr(outbound_profile->destination_number)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Invalid Empty Destination\n");
 		goto error;
+	}
+
+	if (!switch_true(switch_event_get_header(var_event, "sofia_suppress_url_encoding"))) {
+		protect_dest_uri(outbound_profile);
 	}
 
 	if (!(nsession = switch_core_session_request_uuid(sofia_endpoint_interface, SWITCH_CALL_DIRECTION_OUTBOUND,
