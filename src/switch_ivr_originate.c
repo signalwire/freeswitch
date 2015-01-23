@@ -1655,13 +1655,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_enterprise_originate(switch_core_sess
 
 	for (i = 0; i < x_argc; i++) {
 
-		if (channel) {
-			switch_channel_handle_cause(channel, handles[i].cause);
-		}
-
 		if (hp == &handles[i]) {
 			continue;
 		}
+
+		if (channel && handles[i].cause && handles[i].cause != SWITCH_CAUSE_SUCCESS) {
+			switch_channel_handle_cause(channel, handles[i].cause);
+		}
+
 		switch_mutex_unlock(handles[i].mutex);
 
 		if (getcause && *cause != handles[i].cause && handles[i].cause != SWITCH_CAUSE_LOSE_RACE && handles[i].cause != SWITCH_CAUSE_NO_PICKUP) {
