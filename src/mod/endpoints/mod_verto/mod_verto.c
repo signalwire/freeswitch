@@ -1210,7 +1210,7 @@ static void detach_calls(jsock_t *jsock)
 				switch_channel_hangup(tech_pvt->channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 				continue;
 			}
-			
+			switch_core_session_stop_media(tech_pvt->session);
 			tech_pvt->detach_time = switch_epoch_time_now(NULL);
 			globals.detached++;
 			attach_wake();

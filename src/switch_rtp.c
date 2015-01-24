@@ -2974,6 +2974,14 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_del_dtls(switch_rtp_t *rtp_session, d
 			stfu_n_reset(rtp_session->jb);
 		}
 
+		if (rtp_session->vb) {
+			switch_vb_reset(rtp_session->vb);
+		}
+
+		if (rtp_session->vbw) {
+			switch_vb_reset(rtp_session->vbw);
+		}
+
 	}
 
 	if ((type & DTLS_TYPE_RTCP) && rtp_session->rtcp_dtls) {
@@ -3941,6 +3949,11 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_activate_ice(switch_rtp_t *rtp_sessio
 
 	if (proto == IPR_RTP) {
 		ice = &rtp_session->ice;
+
+		rtp_session->flags[SWITCH_RTP_FLAG_PAUSE] = 0;
+		rtp_session->flags[SWITCH_RTP_FLAG_MUTE] = 0;
+		
+		switch_core_session_video_reinit(rtp_session->session);
 		
 		if (ice->ready) {
 			if (rtp_session->vb) {

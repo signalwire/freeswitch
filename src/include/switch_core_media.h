@@ -319,6 +319,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_lock_unlock(switch_core_s
 #define switch_core_media_read_lock(_s, _t) switch_core_media_read_lock_unlock(_s, _t, SWITCH_TRUE) 
 #define switch_core_media_read_unlock(_s, _t) switch_core_media_read_lock_unlock(_s, _t, SWITCH_FALSE)
 
+SWITCH_DECLARE(void) switch_core_session_stop_media(switch_core_session_t *session);
 
 SWITCH_END_EXTERN_C
 #endif
