@@ -2208,6 +2208,7 @@ static void find_video_floor(conference_member_t *member, switch_bool_t entering
 	conference_member_t *imember;
 	conference_obj_t *conference = member->conference;
 
+
 	if (!entering) {
 		if (member->id == conference->video_floor_holder) {
 			conference_set_video_floor_holder(conference, NULL, 1);
@@ -2246,9 +2247,11 @@ static void find_video_floor(conference_member_t *member, switch_bool_t entering
 		}
 
 	}
-
 	switch_mutex_unlock(conference->member_mutex);	
 
+	if (conference->last_video_floor_holder == conference->video_floor_holder) {
+		conference->last_video_floor_holder = 0;
+	}
 }
 
 
