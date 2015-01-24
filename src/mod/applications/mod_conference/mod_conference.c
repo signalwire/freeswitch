@@ -2203,12 +2203,21 @@ static switch_status_t member_parse_position(conference_member_t *member, const 
 }
 #endif
 
-static void find_video_floor(conference_obj_t *conference, uint32_t member_id, switch_bool_t entering)
+static void find_video_floor(conference_member_t *member, switch_bool_t entering)
 {
 	conference_member_t *imember;
+	conference_obj_t *conference = member->conference;
+
+	if (!entering) {
+		if (member->id == conference->video_floor_holder) {
+			conference_set_video_floor_holder(conference, NULL, 1);
+		} else if (member->id == conference->last_video_floor_holder) {
+			conference->last_video_floor_holder = 0;
+		}
+	}
 
 	switch_mutex_lock(conference->member_mutex);	
-	for (imember = conference->members; imember && !conference->video_floor_holder && !conference->last_video_floor_holder; imember = imember->next) {
+	for (imember = conference->members; imember; imember = imember->next) {
 		switch_channel_t *ichannel;
 
 		if (!(imember->session)) {
@@ -2221,21 +2230,23 @@ static void find_video_floor(conference_obj_t *conference, uint32_t member_id, s
 			continue;
 		}
 
-		if (imember->id == member_id && !entering) {
+		if (!entering && imember->id == member->id) {
 			continue;
 		}
 
-		if (!conference->video_floor_holder && imember->id != conference->video_floor_holder) {
-			conference->video_floor_holder = imember->id;
+		if (!conference->video_floor_holder) {
+			conference_set_video_floor_holder(conference, imember, 0);
 			continue;
 		}
 
-		if (!conference->last_video_floor_holder && imember->id != conference->last_video_floor_holder) {
+		if (!conference->last_video_floor_holder) {
 			conference->last_video_floor_holder = imember->id;
+			switch_core_session_request_video_refresh(imember->session);
 			continue;
 		}
 
 	}
+
 	switch_mutex_unlock(conference->member_mutex);	
 
 }
@@ -2473,9 +2484,9 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 	switch_mutex_unlock(conference->mutex);
 	status = SWITCH_STATUS_SUCCESS;
 
-	if (!member->conference->video_floor_holder) {
-		find_video_floor(member->conference, member->id, SWITCH_TRUE);
-	}
+
+	find_video_floor(member, SWITCH_TRUE);
+
 
 	if (switch_test_flag(member, MFLAG_JOIN_VID_FLOOR)) {
 		conference_set_video_floor_holder(conference, member, SWITCH_TRUE);
@@ -2512,6 +2523,8 @@ static void conference_set_video_floor_holder(conference_obj_t *conference, conf
 			conference->last_video_floor_holder = conference->video_floor_holder;
 			
 			if (conference->last_video_floor_holder && (imember = conference_member_get(conference, conference->last_video_floor_holder))) {
+				switch_core_session_request_video_refresh(imember->session);
+
 				if (switch_test_flag(imember, MFLAG_VIDEO_BRIDGE)) {
 					switch_set_flag(conference, CFLAG_VID_FLOOR_LOCK);
 				}		
@@ -2820,14 +2833,6 @@ static switch_status_t conference_del_member(conference_obj_t *conference, confe
 		switch_core_speech_close(&member->lsh, &flags);
 	}
 
-	if (member == member->conference->floor_holder) {
-		conference_set_floor_holder(member->conference, NULL);
-	}
-
-	if (member->id == member->conference->last_video_floor_holder) {
-		member->conference->last_video_floor_holder = 0;
-	}
-
 	if (member->id == member->conference->video_floor_holder) {
 		if (member->conference->last_video_floor_holder) {
 			member->conference->video_floor_holder = member->conference->last_video_floor_holder;
@@ -2836,9 +2841,7 @@ static switch_status_t conference_del_member(conference_obj_t *conference, confe
 		member->conference->video_floor_holder = 0;
 	}
 
-	if (!member->conference->video_floor_holder) {
-		find_video_floor(member->conference, member->id, SWITCH_FALSE);
-	}
+	find_video_floor(member, SWITCH_FALSE);
 
 	member->conference = NULL;
 
