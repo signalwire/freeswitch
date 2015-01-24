@@ -9,6 +9,9 @@ var chatting_with = false;
 var vid_width = 320;
 var vid_height = 180;
 
+var local_vid_width = 320;
+var local_vid_height = 180;
+
 
 $( ".selector" ).pagecontainer({ "theme": "a" });
 
@@ -75,34 +78,95 @@ function setupChat() {
 
 }
 
+function full_screen(name) {
+    var elem = document.getElementById(name);
+    if (!elem) return;
+    if (elem.requestFullscreen) {
+	elem.requestFullscreen();
+    } else if (elem.msRequestFullscreen) {
+	elem.msRequestFullscreen();
+    } else if (elem.mozRequestFullScreen) {
+	elem.mozRequestFullScreen();
+    } else if (elem.webkitRequestFullscreen) {
+	elem.webkitRequestFullscreen();
+    }
+}
+
+$("#webcam").resize(function(e) { 
+    console.log("video size changed to " + $("#webcam").width() + "x" + $("#webcam").height());
+
+    if ($("#webcam").width() > $(window).width()) {
+	//resize(false);
+	$("#webcam").width("100%");
+	$("#webcam").height("100%"); 
+    }
+
+});
+		   
+
+function resize(up) {
+    var width = $("#webcam").width();
+    var height = $("#webcam").height();
+
+    if (up) {
+	$("#webcam").width(width * 1.20);
+	$("#webcam").height(height * 1.20);
+    } else {
+	$("#webcam").width(width * .80);
+	$("#webcam").height(height * .80);
+    }
+
+    console.log("video size changed to " + $("#webcam").width() + "x" + $("#webcam").height());
+
+}
+
+function real_size() {
+
+
+    $("#webcam").width("");
+    $("#webcam").height("");
+
+    console.log("video size changed to natural default");
+
+}
+
 function check_vid_res()
 {
     if ($("#vqual_qvga").is(':checked')) {
 	vid_width = 320;
 	vid_height = 240;
+	local_vid_width = 160;
+	local_vid_height = 120;
     } else if ($("#vqual_vga").is(':checked')) {
 	vid_width = 640;
 	vid_height = 480;
+	local_vid_width = 160;
+	local_vid_height = 120;
     } else if ($("#vqual_hd").is(':checked')) {
 	vid_width = 1280;
 	vid_height = 720;
+	local_vid_width = 320;
+	local_vid_height = 180;
     } else if ($("#vqual_hhd").is(':checked')) {
 	vid_width = 1920;
 	vid_height = 1080;
+	local_vid_width = 320;
+	local_vid_height = 180;
     }
 
-    $("#webcam").width(vid_width);
-    $("#webcam").height(vid_height);
+    $("#local_webcam").width(local_vid_width);
+    $("#local_webcam").height(local_vid_height);
+
+    real_size();
 
     if (verto) {
-	verto.videoParams({"minWidth": vid_width, 
-			   "minHeight": vid_height,
-			   "maxWidth": vid_width,
-			   "maxHeight": vid_height,
-			   "minFrameRate": 30, 
-			   //chromeMediaSource: 'screen', 
-			   //mediaSource: 'screen'
-			  });
+	verto.videoParams({
+	    "minWidth": vid_width,
+	    "minHeight": vid_height,
+	    "minFrameRate": 30, 
+	    //chromeMediaSource: 'screen', 
+	    //mediaSource: 'screen'
+	});
     }
 
 }
@@ -304,7 +368,7 @@ var callbacks = {
         case $.verto.enum.state.destroy:
 	    $("#hangup_cause").html("");
             clearConfMan();
-
+	    real_size();
             cur_call = null;
             break;
         case $.verto.enum.state.held:
@@ -401,6 +465,18 @@ $(".dtmf").click(function(e) {
 $("#hupbtn").click(function() {
     verto.hangup();
     cur_call = null;
+});
+
+$("#fullbtn").click(function() {
+    full_screen("webcam");
+});
+
+$("#biggerbtn").click(function() {
+    resize(true);
+});
+
+$("#smallerbtn").click(function() {
+    resize(false);
 });
 
 $("#webcam").click(function() {
@@ -556,12 +632,11 @@ function init() {
         passwd: $("#passwd").val(),
         socketUrl: $("#wsURL").val(),
         tag: "webcam",
+        localTag: "local_webcam",
         ringFile: "sounds/bell_ring2.wav",
         videoParams: {
             "minWidth": vid_width,
             "minHeight": vid_height,
-            "maxWidth": vid_width,
-            "maxHeight": vid_height,
 	    "minFrameRate": 30,
 	    //chromeMediaSource: 'screen',
 	    //mediaSource: 'screen'
@@ -605,7 +680,7 @@ function init() {
     });
 
     $("#xferdiv").hide();
-    $("#webcam").hide();
+//    $("#webcam").hide();
 
     online(false);
 

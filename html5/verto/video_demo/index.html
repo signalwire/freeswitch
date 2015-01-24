@@ -120,8 +120,20 @@
 <!--      <button data-inline="true" class="startxferbtn">Transfer</button>-->
 	<br><br>
 	<img src="img/verto_black_web.gif" width="300"><br><br>
+
+
+
 	<div id="media">	
-	  <video id="webcam" autoplay="autoplay" hidden="true"></video>
+
+	  <button data-inline="true" id="smallerbtn">Smaller - </button>
+	  <button data-inline="true" id="biggerbtn">Bigger +</button>
+  	  <button data-inline="true" id="fullbtn">Full Screen</button>
+	  <table border=1 cellspacing=0 cellpadding=0 width=95%><tr>
+	  <td valign=top align=center><video id="webcam" autoplay="autoplay"></video></td>
+	  </tr><tr>
+	  <td valign=top align=left><video id="local_webcam" autoplay="autoplay" style="transform: scale(-1, 1);webkit-transform: scale(-1, 1);"></video></td>
+
+	  </tr></table>
 	</div>
 
 
