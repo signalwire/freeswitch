@@ -8995,6 +8995,36 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_codec_chosen(switch_core_sessi
 	return SWITCH_STATUS_FALSE;
 }
 
+SWITCH_DECLARE(void) switch_core_session_stop_media(switch_core_session_t *session)
+{
+	switch_rtp_engine_t *a_engine, *v_engine;
+	switch_media_handle_t *smh;
+
+	switch_assert(session);
+
+	if (!(smh = session->media_handle)) {
+		return;
+	}
+
+	a_engine = &smh->engines[SWITCH_MEDIA_TYPE_AUDIO];
+	v_engine = &smh->engines[SWITCH_MEDIA_TYPE_VIDEO];
+
+	if (a_engine->rtp_session) {
+		switch_rtp_del_dtls(a_engine->rtp_session, DTLS_TYPE_RTP|DTLS_TYPE_RTCP);
+		switch_rtp_set_flag(a_engine->rtp_session, SWITCH_RTP_FLAG_PAUSE);
+		switch_rtp_set_flag(a_engine->rtp_session, SWITCH_RTP_FLAG_MUTE);
+	}
+
+	if (v_engine->rtp_session) {
+		switch_rtp_del_dtls(v_engine->rtp_session, DTLS_TYPE_RTP|DTLS_TYPE_RTCP);
+		switch_rtp_set_flag(v_engine->rtp_session, SWITCH_RTP_FLAG_PAUSE);
+		switch_rtp_set_flag(v_engine->rtp_session, SWITCH_RTP_FLAG_MUTE);
+	}
+
+	
+}
+
+
 
 //?
 SWITCH_DECLARE(void) switch_core_media_check_outgoing_proxy(switch_core_session_t *session, switch_core_session_t *o_session)
