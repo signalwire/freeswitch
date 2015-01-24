@@ -52,9 +52,7 @@ struct switch_vb_s {
 	uint32_t highest_wrote_ts;
 	uint32_t highest_wrote_seq;
 	uint16_t target_seq;
-	uint16_t seq_out;
 	uint32_t visible_nodes;
-	uint32_t total_frames;
 	uint32_t complete_frames;
 	uint32_t frame_len;
 	uint32_t min_frame_len;
@@ -65,6 +63,9 @@ struct switch_vb_s {
 	uint16_t next_seq;
 	switch_inthash_t *missing_seq_hash;
 	switch_inthash_t *node_hash;
+	switch_mutex_t *mutex;
+	switch_memory_pool_t *pool;
+	int free_pool;
 };
 
 static inline switch_vb_node_t *new_node(switch_vb_t *vb)
@@ -80,7 +81,7 @@ static inline switch_vb_node_t *new_node(switch_vb_t *vb)
 
 	if (!np) {
 		
-		switch_zmalloc(np, sizeof(*np));
+		np = switch_core_alloc(vb->pool, sizeof(*np));
 	
 		if (last) {
 			last->next = np;
@@ -115,8 +116,10 @@ static inline switch_vb_node_t *find_seq(switch_vb_t *vb, uint16_t seq)
 
 static inline void hide_node(switch_vb_node_t *node)
 {
-	node->visible = 0;
-	node->parent->visible_nodes--;
+	if (node->visible) {
+		node->visible = 0;
+		node->parent->visible_nodes--;
+	}
 	switch_core_inthash_delete(node->parent->node_hash, node->packet.header.seq);
 }
 
@@ -181,6 +184,19 @@ static inline void add_node(switch_vb_t *vb, switch_rtp_packet_t *packet, switch
 
 	vb_debug(vb, (packet->header.m ? 1 : 2), "PUT packet last_ts:%u ts:%u seq:%u%s\n", 
 			 ntohl(vb->highest_wrote_ts), ntohl(node->packet.header.ts), ntohs(node->packet.header.seq), packet->header.m ? " <MARK>" : "");
+
+
+
+
+
+	if (vb->write_init && ((abs(htons(packet->header.seq) - htons(vb->highest_wrote_seq)) > 10) || 
+						   (abs(ntohl(node->packet.header.ts) - ntohl(vb->highest_wrote_ts)) > 270000))) {
+		vb_debug(vb, 2, "%s", "CHANGE DETECTED, PUNT\n");
+		switch_vb_reset(vb);
+	}
+ 
+	 
+	 
 
 	if (!vb->write_init || ntohs(packet->header.seq) > ntohs(vb->highest_wrote_seq) || 
 		(ntohs(vb->highest_wrote_seq) > USHRT_MAX - 10 && ntohs(packet->header.seq) <= 10) ) {
@@ -272,14 +288,6 @@ static inline switch_status_t vb_next_packet(switch_vb_t *vb, switch_vb_node_t *
 
 static inline void free_nodes(switch_vb_t *vb)
 {
-	switch_vb_node_t *np = vb->node_list, *cur;
-
-	while(np) {
-		cur = np;
-		np = np->next;
-		free(cur);
-	}
-	
 	vb->node_list = NULL;
 }
 
@@ -299,28 +307,53 @@ SWITCH_DECLARE(void) switch_vb_debug_level(switch_vb_t *vb, uint8_t level)
 	vb->debug_level = level;
 }
 
-SWITCH_DECLARE(void) switch_vb_reset(switch_vb_t *vb, switch_bool_t flush)
+SWITCH_DECLARE(void) switch_vb_reset(switch_vb_t *vb)
 {
-	vb_debug(vb, 2, "RESET BUFFER flush: %d\n", (int)flush);
+
+	switch_mutex_lock(vb->mutex);
+	switch_core_inthash_destroy(&vb->missing_seq_hash);
+	switch_core_inthash_init(&vb->missing_seq_hash);
+	switch_mutex_unlock(vb->mutex);
+
+	vb_debug(vb, 2, "%s", "RESET BUFFER\n");
+
 
 	vb->last_target_seq = 0;
 	vb->target_seq = 0;
+	vb->write_init = 0;
+	vb->highest_wrote_seq = 0;
+	vb->highest_wrote_ts = 0;
+	vb->next_seq = 0;
+	vb->highest_read_ts = 0;
+	vb->highest_read_seq = 0;
+	vb->complete_frames = 0;
+	vb->read_init = 0;
+	vb->next_seq = 0;
+	vb->complete_frames = 0;
 
-	if (flush) {
-		//do_flush(vb);
-	}
+	hide_nodes(vb);
 }
 
-SWITCH_DECLARE(switch_status_t) switch_vb_create(switch_vb_t **vbp, uint32_t min_frame_len, uint32_t max_frame_len)
+SWITCH_DECLARE(switch_status_t) switch_vb_create(switch_vb_t **vbp, uint32_t min_frame_len, uint32_t max_frame_len, switch_memory_pool_t *pool)
 {
 	switch_vb_t *vb;
-	switch_zmalloc(vb, sizeof(*vb));
-	
+	int free_pool = 0;
+
+	if (!pool) {
+		switch_core_new_memory_pool(&pool);
+		free_pool = 1;
+	}
+
+	vb = switch_core_alloc(pool, sizeof(*vb));
+	vb->free_pool = free_pool;
 	vb->min_frame_len = vb->frame_len = min_frame_len;
 	vb->max_frame_len = max_frame_len;
-	//vb->seq_out = (uint16_t) rand();
+	vb->pool = pool;
+
 	switch_core_inthash_init(&vb->missing_seq_hash);
 	switch_core_inthash_init(&vb->node_hash);
+	switch_mutex_init(&vb->mutex, SWITCH_MUTEX_NESTED, pool);
+
 
 	*vbp = vb;
 
@@ -336,7 +369,10 @@ SWITCH_DECLARE(switch_status_t) switch_vb_destroy(switch_vb_t **vbp)
 	switch_core_inthash_destroy(&vb->node_hash);
 
 	free_nodes(vb);
-	free(vb);
+
+	if (vb->free_pool) {
+		switch_core_destroy_memory_pool(&vb->pool);
+	}
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -350,6 +386,8 @@ SWITCH_DECLARE(uint32_t) switch_vb_pop_nack(switch_vb_t *vb)
 
 	void *val;
 	const void *var;
+
+	switch_mutex_lock(vb->mutex);
 
 	for (hi = switch_core_hash_first(vb->missing_seq_hash); hi; hi = switch_core_hash_next(&hi)) {
 		uint16_t seq;
@@ -375,6 +413,9 @@ SWITCH_DECLARE(uint32_t) switch_vb_pop_nack(switch_vb_t *vb)
 			}
 		}
 	}
+	
+	switch_mutex_unlock(vb->mutex);
+
 
 	return nack;
 }
@@ -390,6 +431,8 @@ SWITCH_DECLARE(switch_status_t) switch_vb_put_packet(switch_vb_t *vb, switch_rtp
 {
 	uint32_t i;
 	uint16_t want = ntohs(vb->next_seq), got = ntohs(packet->header.seq);
+
+	switch_mutex_lock(vb->mutex);
 
 	if (!want) want = got;
 	
@@ -410,6 +453,8 @@ SWITCH_DECLARE(switch_status_t) switch_vb_put_packet(switch_vb_t *vb, switch_rtp
 
 	add_node(vb, packet, len);
 	
+	switch_mutex_unlock(vb->mutex);
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -462,7 +507,7 @@ SWITCH_DECLARE(switch_status_t) switch_vb_get_packet(switch_vb_t *vb, switch_rtp
 
 
 	} else {
-		switch_vb_reset(vb, SWITCH_FALSE);
+		switch_vb_reset(vb);
 
 		switch(status) {
 		case SWITCH_STATUS_RESTART:
@@ -483,8 +528,7 @@ SWITCH_DECLARE(switch_status_t) switch_vb_get_packet(switch_vb_t *vb, switch_rtp
 		memcpy(packet->body, node->packet.body, node->len);
 		hide_node(node);
 
-		vb_debug(vb, 1, "GET packet ts:%u seq:%u~%u%s\n", ntohl(packet->header.ts), ntohs(packet->header.seq), vb->seq_out, packet->header.m ? " <MARK>" : "");
-		//packet->header.seq = htons(vb->seq_out++);
+		vb_debug(vb, 1, "GET packet ts:%u seq:%u %s\n", ntohl(packet->header.ts), ntohs(packet->header.seq), packet->header.m ? " <MARK>" : "");
 
 		return status;
 	}
