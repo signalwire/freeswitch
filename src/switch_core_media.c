@@ -48,7 +48,7 @@ static void switch_core_media_set_r_sdp_codec_string(switch_core_session_t *sess
 #define MAX_CODEC_CHECK_FRAMES 50//x:mod_sofia.h
 #define MAX_MISMATCH_FRAMES 5//x:mod_sofia.h
 #define type2str(type) type == SWITCH_MEDIA_TYPE_VIDEO ? "video" : "audio"
-#define VIDEO_REFRESH_FREQ 250000
+#define VIDEO_REFRESH_FREQ 1000000
 
 typedef enum {
 	SMF_INIT = (1 << 0),
@@ -8107,10 +8107,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_receive_message(switch_core_se
 	case SWITCH_MESSAGE_INDICATE_VIDEO_REFRESH_REQ:
 		{
 			if (v_engine->rtp_session) {
-				if (switch_rtp_test_flag(v_engine->rtp_session, SWITCH_RTP_FLAG_FIR)) {
-					switch_rtp_video_refresh(v_engine->rtp_session);
-				} else if (switch_rtp_test_flag(v_engine->rtp_session, SWITCH_RTP_FLAG_PLI)) {
+				if (switch_rtp_test_flag(v_engine->rtp_session, SWITCH_RTP_FLAG_PLI)) {
 					switch_rtp_video_loss(v_engine->rtp_session);
+				} else if (switch_rtp_test_flag(v_engine->rtp_session, SWITCH_RTP_FLAG_FIR)) {
+					switch_rtp_video_refresh(v_engine->rtp_session);
 				}
 			}
 		}
@@ -9950,7 +9950,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_video_frame(switch_core
 	}
 
 	if (switch_channel_test_flag(session->channel, CF_VIDEO_DECODED_READ)) {
-		switch_status_t decode_status = switch_core_codec_decode_video((*frame)->codec, *frame);
+		switch_status_t decode_status;
+
+		(*frame)->img = NULL;
+
+		decode_status = switch_core_codec_decode_video((*frame)->codec, *frame);
 		
 		if ((*frame)->img && switch_channel_test_flag(session->channel, CF_VIDEO_DEBUG_READ)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "IMAGE %dx%d %dx%d\n", 
@@ -9962,7 +9966,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_video_frame(switch_core
 			switch_clear_flag((*frame), SFF_WAIT_KEY_FRAME);
 		}
 
-		if (decode_status == SWITCH_STATUS_MORE_DATA) {
+		if (decode_status == SWITCH_STATUS_MORE_DATA || !(*frame)->img) {
 			goto top;
 		}
 	}

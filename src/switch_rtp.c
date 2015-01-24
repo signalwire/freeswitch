@@ -1919,7 +1919,7 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 			
 				ext_hdr->length = htons((uint8_t)(sizeof(switch_rtcp_ext_hdr_t) / 4) - 1); 
 				rtcp_bytes += sizeof(switch_rtcp_ext_hdr_t);
-				rtp_session->pli_count = 0;
+				rtp_session->pli_count--;
 			}
 
 			if (rtp_session->flags[SWITCH_RTP_FLAG_NACK] && rtp_session->cur_nack) {
@@ -1963,17 +1963,19 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 				ext_hdr->pt = 206;
 			
 				ext_hdr->send_ssrc = htonl(rtp_session->ssrc);
-				ext_hdr->recv_ssrc = htonl(rtp_session->remote_ssrc);
+				ext_hdr->recv_ssrc = 0;
 			
 				fir->ssrc = htonl(rtp_session->remote_ssrc);
-				fir->seq = ++rtp_session->fir_seq;
+				fir->seq = rtp_session->fir_seq;
 				fir->r1 = fir->r2 = fir->r3 = 0;
 
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG, "Sending RTCP FIR SEQ %d\n\n", rtp_session->fir_seq - 1);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG, "Sending RTCP FIR SEQ %d\n", rtp_session->fir_seq);
+
+				rtp_session->fir_seq++;
 			
 				ext_hdr->length = htons((uint8_t)((sizeof(switch_rtcp_ext_hdr_t) + sizeof(rtcp_fir_t)) / 4) - 1); 
 				rtcp_bytes += sizeof(switch_rtcp_ext_hdr_t) + sizeof(rtcp_fir_t);
-				rtp_session->fir_count = 0;
+				rtp_session->fir_count--;
 			}
 		}
 
@@ -3520,7 +3522,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG, "Starting video timer.\n");
 			}
 
-			switch_vb_create(&rtp_session->vb, 5, 30);
+			switch_vb_create(&rtp_session->vb, 5, 30, rtp_session->pool);
 			//switch_vb_debug_level(rtp_session->vb, 10);
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG, "Starting video buffer.\n");
 
@@ -3822,6 +3824,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_debug_jitter_buffer(switch_rtp_t *rtp
 		if (x < 0) x = 0;
 
 		switch_vb_debug_level(rtp_session->vb, x);
+
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -3938,6 +3941,16 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_activate_ice(switch_rtp_t *rtp_sessio
 
 	if (proto == IPR_RTP) {
 		ice = &rtp_session->ice;
+		
+		if (ice->ready) {
+			if (rtp_session->vb) {
+				switch_vb_reset(rtp_session->vb);
+			}
+			if (rtp_session->vbw) {
+				switch_vb_reset(rtp_session->vbw);
+			}
+		}
+		
 	} else {
 		ice = &rtp_session->rtcp_ice;
 	}
@@ -4025,10 +4038,8 @@ SWITCH_DECLARE(void) switch_rtp_video_refresh(switch_rtp_t *rtp_session)
 		return;
 	}
 
-	if (rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] && 
-		(rtp_session->ice.ice_user || rtp_session->flags[SWITCH_RTP_FLAG_FIR])) {
+	if (rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] && (rtp_session->ice.ice_user || rtp_session->flags[SWITCH_RTP_FLAG_FIR])) {
 		rtp_session->fir_count++;
-
 	}
 }
 
@@ -4038,8 +4049,7 @@ SWITCH_DECLARE(void) switch_rtp_video_loss(switch_rtp_t *rtp_session)
 		return;
 	}
 
-	if (rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] && 
-		(rtp_session->ice.ice_user || rtp_session->flags[SWITCH_RTP_FLAG_PLI])) {
+	if (rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] && (rtp_session->ice.ice_user || rtp_session->flags[SWITCH_RTP_FLAG_PLI])) {
 		rtp_session->pli_count++;
 	}
 }
@@ -6943,7 +6953,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 		
 		if (rtp_session->flags[SWITCH_RTP_FLAG_NACK]) {
 			if (!rtp_session->vbw) {
-				switch_vb_create(&rtp_session->vbw, 5, 5);
+				switch_vb_create(&rtp_session->vbw, 5, 5, rtp_session->pool);
 				//switch_vb_debug_level(rtp_session->vbw, 10);
 			}
 			switch_vb_put_packet(rtp_session->vbw, (switch_rtp_packet_t *)send_msg, bytes);
