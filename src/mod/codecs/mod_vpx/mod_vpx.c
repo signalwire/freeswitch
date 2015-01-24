@@ -477,13 +477,15 @@ static switch_status_t buffer_vpx_packets(vpx_context_t *context, switch_frame_t
 	if (S && (PID == 0)) {
 		int is_keyframe = ((*data) & 0x01) ? 0 : 1;
 
-		if (is_keyframe && !context->got_key_frame) {
+		if (is_keyframe && context->got_key_frame <= 0) {
 			context->got_key_frame = 1;
 		}
 	}
 
-	if (!context->got_key_frame) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Waiting for key frame\n");
+	if (context->got_key_frame <= 0) {
+		if ((context->got_key_frame-- % 200) == 0) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Waiting for key frame\n");
+		}
 		return SWITCH_STATUS_RESTART;
 	}
 
@@ -516,7 +518,7 @@ static switch_status_t switch_vpx_decode(switch_codec_t *codec, switch_frame_t *
 	if (context->last_received_timestamp && context->last_received_timestamp != frame->timestamp && 
 		(!frame->m) && (!context->last_received_complete_picture)) {
 		// possible packet loss
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Packet Loss, skip previous received frame (to avoid crash?)\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Reset\n");
 		switch_goto_status(SWITCH_STATUS_RESTART, end);
 	}
 
@@ -573,17 +575,19 @@ static switch_status_t switch_vpx_decode(switch_codec_t *codec, switch_frame_t *
 end:
 
 	if (status == SWITCH_STATUS_RESTART) {
-		context->got_key_frame = 0;
+		if (context->got_key_frame > 0) {
+			context->got_key_frame = 0;
+		}
 		switch_buffer_zero(context->vpx_packet_buffer);
 	}
 
-	if (!frame->img) {
+	if (!frame->img || status == SWITCH_STATUS_RESTART) {
 		//switch_set_flag(frame, SFF_USE_VIDEO_TIMESTAMP);
 		//} else {
 		status = SWITCH_STATUS_MORE_DATA;
 	}
 
-	if (!context->got_key_frame) {
+	if (context->got_key_frame <= 0) {
 		switch_set_flag(frame, SFF_WAIT_KEY_FRAME);
 	}
 
