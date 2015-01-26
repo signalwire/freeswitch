@@ -501,7 +501,8 @@ static switch_status_t switch_vpx_decode(switch_codec_t *codec, switch_frame_t *
 	switch_size_t len;
 	vpx_codec_ctx_t *decoder = NULL;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-
+	int is_keyframe = ((*(unsigned char *)frame->data) & 0x01) ? 0 : 1;
+	
 	if (!context->decoder_init) {
 		init_codec(codec);
 	}
@@ -515,10 +516,11 @@ static switch_status_t switch_vpx_decode(switch_codec_t *codec, switch_frame_t *
 
 	// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "len: %d ts: %" SWITCH_SIZE_T_FMT " mark:%d\n", frame->datalen, frame->timestamp, frame->m);
 
-	if (context->last_received_timestamp && context->last_received_timestamp != frame->timestamp && 
+	if (!is_keyframe && context->last_received_timestamp && context->last_received_timestamp != frame->timestamp && 
 		(!frame->m) && (!context->last_received_complete_picture)) {
 		// possible packet loss
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Reset\n");
+		context->need_key_frame = 1;
 		switch_goto_status(SWITCH_STATUS_RESTART, end);
 	}
 
