@@ -152,7 +152,7 @@
 
     <param name="rtp-enable-zrtp" value="true"/>
 
-    <!-- <param name="core-db-dsn" value="pgsql://hostaddr=127.0.0.1 dbname=freeswitch user=freeswitch password='' options='-c client_min_messages=NOTICE' application_name='freeswitch'" /> -->
+    <!-- <param name="core-db-dsn" value="pgsql://hostaddr=127.0.0.1 dbname=freeswitch user=freeswitch password='' options='-c client_min_messages=NOTICE'" /> -->
     <!-- <param name="core-db-dsn" value="dsn:username:password" /> -->
     <!-- 
 	 Allow to specify the sqlite db at a different location (In this example, move it to ramdrive for
