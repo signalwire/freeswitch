@@ -9010,18 +9010,12 @@ SWITCH_DECLARE(void) switch_core_session_stop_media(switch_core_session_t *sessi
 	v_engine = &smh->engines[SWITCH_MEDIA_TYPE_VIDEO];
 
 	if (a_engine->rtp_session) {
-		switch_rtp_del_dtls(a_engine->rtp_session, DTLS_TYPE_RTP|DTLS_TYPE_RTCP);
-		switch_rtp_set_flag(a_engine->rtp_session, SWITCH_RTP_FLAG_PAUSE);
-		switch_rtp_set_flag(a_engine->rtp_session, SWITCH_RTP_FLAG_MUTE);
+		switch_rtp_reset(a_engine->rtp_session);
 	}
 
 	if (v_engine->rtp_session) {
-		switch_rtp_del_dtls(v_engine->rtp_session, DTLS_TYPE_RTP|DTLS_TYPE_RTCP);
-		switch_rtp_set_flag(v_engine->rtp_session, SWITCH_RTP_FLAG_PAUSE);
-		switch_rtp_set_flag(v_engine->rtp_session, SWITCH_RTP_FLAG_MUTE);
+		switch_rtp_reset(v_engine->rtp_session);
 	}
-
-	
 }
 
 

@@ -2542,6 +2542,22 @@ SWITCH_DECLARE(void) switch_rtp_reset(switch_rtp_t *rtp_session)
 	rtp_session->ts = 0;
 	memset(&rtp_session->ts_norm, 0, sizeof(rtp_session->ts_norm));
 
+
+	switch_rtp_del_dtls(rtp_session, DTLS_TYPE_RTP|DTLS_TYPE_RTCP);
+	switch_rtp_set_flag(rtp_session, SWITCH_RTP_FLAG_PAUSE);
+	switch_rtp_set_flag(rtp_session, SWITCH_RTP_FLAG_MUTE);
+	
+	
+	if (rtp_session->ice.ready) {
+		if (rtp_session->vb) {
+			switch_vb_reset(rtp_session->vb);
+		}
+		if (rtp_session->vbw) {
+			switch_vb_reset(rtp_session->vbw);
+		}
+		rtp_session->ice.ready = rtp_session->ice.rready = 0;
+	}
+
 }
 
 SWITCH_DECLARE(void) switch_rtp_reset_media_timer(switch_rtp_t *rtp_session)
@@ -3948,22 +3964,10 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_activate_ice(switch_rtp_t *rtp_sessio
 	switch_mutex_lock(rtp_session->ice_mutex);
 
 	if (proto == IPR_RTP) {
-		ice = &rtp_session->ice;
-
+		ice = &rtp_session->ice;		
 		rtp_session->flags[SWITCH_RTP_FLAG_PAUSE] = 0;
 		rtp_session->flags[SWITCH_RTP_FLAG_MUTE] = 0;
-		
 		switch_core_session_video_reinit(rtp_session->session);
-		
-		if (ice->ready) {
-			if (rtp_session->vb) {
-				switch_vb_reset(rtp_session->vb);
-			}
-			if (rtp_session->vbw) {
-				switch_vb_reset(rtp_session->vbw);
-			}
-		}
-		
 	} else {
 		ice = &rtp_session->rtcp_ice;
 	}
