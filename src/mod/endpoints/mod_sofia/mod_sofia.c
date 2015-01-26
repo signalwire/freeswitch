@@ -4247,11 +4247,12 @@ static switch_status_t sofia_manage(char *relative_oid, switch_management_action
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static void protect_dest_uri(switch_caller_profile_t *cp)
+static int protect_dest_uri(switch_caller_profile_t *cp)
 {
 	char *p = cp->destination_number, *o = p;
 	char *q = NULL, *e = NULL, *qenc = NULL;
 	switch_size_t enclen = 0;
+	int mod = 0;
 
 	while((p = strchr(p, '/'))) {
 		q = p++;
@@ -4267,11 +4268,11 @@ static void protect_dest_uri(switch_caller_profile_t *cp)
 			}
 		}
 		
-		if (!go) return;
+		if (!go) return 0;
 		
 		*q++ = '\0';
 	} else {
-		return;
+		return 0;
 	}
 	
 	if (!strncasecmp(q, "sips:", 5)) {
@@ -4281,7 +4282,7 @@ static void protect_dest_uri(switch_caller_profile_t *cp)
 	}
 
 	if (!(e = strchr(q, '@'))) {
-		return;
+		return 0;
 	}
 
 	*e++ = '\0';
@@ -4290,9 +4291,12 @@ static void protect_dest_uri(switch_caller_profile_t *cp)
 		enclen = (strlen(q) * 2)  + 2;
 		qenc = switch_core_alloc(cp->pool, enclen);
 		switch_url_encode(q, qenc, enclen);
+		mod = 1;
 	}
 	
 	cp->destination_number = switch_core_sprintf(cp->pool, "%s/%s@%s", o, qenc ? qenc : q, e);
+
+	return mod;
 }
 
 static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session, switch_event_t *var_event,
@@ -4312,6 +4316,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 	int cid_locked = 0;
 	switch_channel_t *o_channel = NULL;
 	sofia_gateway_t *gateway_ptr = NULL;
+	int mod = 0;
 
 	*new_session = NULL;
 
@@ -4321,7 +4326,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 	}
 
 	if (!switch_true(switch_event_get_header(var_event, "sofia_suppress_url_encoding"))) {
-		protect_dest_uri(outbound_profile);
+		mod = protect_dest_uri(outbound_profile);
 	}
 
 	if (!(nsession = switch_core_session_request_uuid(sofia_endpoint_interface, SWITCH_CALL_DIRECTION_OUTBOUND,
@@ -4509,7 +4514,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 				c++;
 				tech_pvt->e_dest = switch_core_session_strdup(nsession, c);
 			}
-		} else if ((host = strchr(dest, '%'))) {
+		} else if (!mod && (host = strchr(dest, '%'))) {
 			char buf[1024];
 			*host = '@';
 			tech_pvt->e_dest = switch_core_session_strdup(nsession, dest);
