@@ -1154,6 +1154,7 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 								  host, port);
 
 				switch_rtp_change_ice_dest(rtp_session, ice, host, port);
+				ice->last_ok = now;
 			}
 		
 
