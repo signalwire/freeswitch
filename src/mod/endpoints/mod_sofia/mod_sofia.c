@@ -4254,6 +4254,10 @@ static int protect_dest_uri(switch_caller_profile_t *cp)
 	switch_size_t enclen = 0;
 	int mod = 0;
 
+	if (!(e = strchr(p, '@'))) {
+		return 0;
+	}
+
 	while((p = strchr(p, '/'))) {
 		q = p++;
 	}
