@@ -1713,14 +1713,28 @@ done:
 			if (pflags & SWITCH_POLL_READ) {
 				ssize_t bytes;
 
-				bytes = ws_raw_read(wsh, wsh->buffer + wsh->datalen, wsh->buflen - wsh->datalen, wsh->block);
+				bytes = ws_raw_read(wsh, wsh->buffer + wsh->datalen, wsh->buflen - wsh->datalen - 1, wsh->block);
 
 				if (bytes < 0) {
 					die("BAD READ %" SWITCH_SIZE_T_FMT "\n", bytes);
 					break;
 				}
 
+				if (bytes == 0) {
+					bytes = ws_raw_read(wsh, wsh->buffer + wsh->datalen, wsh->buflen - wsh->datalen - 1, wsh->block);
+
+					if (bytes < 0) {
+						die("BAD READ %" SWITCH_SIZE_T_FMT "\n", bytes);
+						break;
+					}
+
+					if (bytes == 0) { // socket broken ?
+						break;
+					}
+				}
+
 				wsh->datalen += bytes;
+				*(wsh->buffer + wsh->datalen) = '\0';
 
 				if (strstr(wsh->buffer, "\r\n\r\n") || strstr(wsh->buffer, "\n\n")) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "socket %s is going to handle a new request\n", jsock->name);
