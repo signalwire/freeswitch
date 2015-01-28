@@ -75,9 +75,10 @@ SWITCH_DECLARE(void) switch_img_free(switch_image_t **img)
 
 SWITCH_DECLARE(void) switch_img_copy(switch_image_t *img, switch_image_t **new_img)
 {
+	int i, j, k = 1;
+
 	switch_assert(img);
 	switch_assert(new_img);
-	int i, j, k = 1;
 
 	if (!img->fmt == SWITCH_IMG_FMT_I420) return;
 
