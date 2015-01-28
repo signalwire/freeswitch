@@ -2709,7 +2709,8 @@ static ftdm_status_t ftdm_libpri_stop(ftdm_span_t *span)
 	ftdm_libpri_data_t *isdn_data = span->signal_data;
 
 	if (!ftdm_test_flag(isdn_data, FTMOD_LIBPRI_RUNNING)) {
-		return FTDM_FAIL;
+		ftdm_log(FTDM_LOG_DEBUG, "Span %d already stopped, continuing anyway...\n", ftdm_span_get_id(span));
+		return FTDM_SUCCESS;
 	}
 
 	ftdm_log(FTDM_LOG_INFO, "Stopping span [s%d][%s]\n",
