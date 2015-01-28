@@ -3330,9 +3330,9 @@ static video_mixer_t *create_video_mixer(const char *layout_name)
 	video_mixer->max_layers = MAX_LAYERS;
 	video_mixer->total_layers = 0;
 	video_mixer->current_layers = 0;
-	video_mixer->height = height;
-	video_mixer->width = width;
-	video_mixer->img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, width, height, 0);
+	video_mixer->height = height * rows;
+	video_mixer->width = width * cols;
+	video_mixer->img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, video_mixer->width, video_mixer->height, 0);
 	video_mixer->packet = switch_core_alloc(video_mixer->pool, SWITCH_RECOMMENDED_BUFFER_SIZE);
 	video_mixer->packetlen = SWITCH_RECOMMENDED_BUFFER_SIZE;
 	switch_thread_cond_create(&video_mixer->cond, video_mixer->pool);
@@ -3347,8 +3347,8 @@ static video_mixer_t *create_video_mixer(const char *layout_name)
 			mcu_layer_t *layer = NULL;
 			layer = &video_mixer->layers[video_mixer->total_layers];
 
-			layer->w = (int)(width / rows);
-			layer->h = (int)(height / cols);
+			layer->w = (int)width;//(int)(width / rows);
+			layer->h = (int)height;//(int)(height / cols);
 			layer->x = j * layer->w;
 			layer->y = i * layer->h;
 
@@ -3401,7 +3401,37 @@ skip:
 	return video_mixer;
 }
 
+// simple implementation to patch a small img to a big IMG at position x,y
+void patch(switch_image_t *IMG, switch_image_t *img, int x, int y)
+{
+       int i, j, k;
+       int W = IMG->d_w;
+       int H = IMG->d_h;
+       int w = img->d_w;
+       int h = img->d_h;
 
+       switch_assert(img->fmt = SWITCH_IMG_FMT_I420);
+       switch_assert(IMG->fmt = SWITCH_IMG_FMT_I420);
+
+       for (i = y; i < (y + h) && i < H; i++) {
+               for (j = x; j < (x + w) && j < W; j++) {
+                       IMG->planes[0][i * IMG->stride[0] + j] = img->planes[0][(i - y) * img->stride[0] + (j - x)];
+               }
+       }
+
+       for (i = y; i < (y + h) && i < H; i+=4) {
+               for (j = x; j < (x + w) && j < W; j+=4) {
+                       for (k = 1; k <= 2; k++) {
+                               IMG->planes[k][i/2 * IMG->stride[k] + j/2]         = img->planes[k][(i-y)/2 * img->stride[k] + (j-x)/2];
+                               IMG->planes[k][i/2 * IMG->stride[k] + j/2 + 1]     = img->planes[k][(i-y)/2 * img->stride[k] + (j-x)/2 + 1];
+                               IMG->planes[k][(i+2)/2 * IMG->stride[k] + j/2]     = img->planes[k][(i+2-y)/2 * img->stride[k] + (j-x)/2];
+                               IMG->planes[k][(i+2)/2 * IMG->stride[k] + j/2 + 1] = img->planes[k][(i+2-y)/2 * img->stride[k] + (j-x)/2 + 1];
+                       }
+               }
+       }
+}
+
+#if 0
 void patch(switch_image_t *IMG, switch_image_t *img, int x, int y)
 {
 	int i, j, k;
@@ -3427,6 +3457,7 @@ void patch(switch_image_t *IMG, switch_image_t *img, int x, int y)
 		}
 	}
 }
+#endif
 
 static void scale_and_patch(video_mixer_t *video_mixer, switch_image_t *img, mcu_layer_t *layer)
 {
@@ -3462,7 +3493,7 @@ static void scale_and_patch(video_mixer_t *video_mixer, switch_image_t *img, mcu
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ret: %d\n", ret);
 		} else {
 			switch_mutex_lock(video_mixer->mutex);
-			printf("SCALE and PATCH at %dx%d to %dx%d\n", width, height, layer->x, layer->y);
+			printf("SCALE and PATCH at %dx%d to %dx%d at %dx%d\n", width, height, layer->w, layer->h, layer->x, layer->y);
 			patch(video_mixer->img, layer->scaled_img, layer->x, layer->y);
 			switch_mutex_unlock(video_mixer->mutex);
 		}
@@ -3510,8 +3541,7 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 				int i;
 
 				remaining += switch_queue_size(imember->video_queue);
-				printf("yay pop img layer %d\n", imember->video_layer_id);
-
+				
 				if (imember->video_layer_id > -1) {
 					layer = &conference->video_mixer->layers[imember->video_layer_id];
 				}
@@ -3532,12 +3562,16 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 				}
 				
 				if (layer) {
+					printf("yay pop img layer %d w:%d h:%d x:%d y:%d\n", imember->video_layer_id, layer->w, layer->h, layer->x, layer->y);
+
 					if (!layer->scaled_img) {
 						layer->scaled_img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, layer->w, layer->h, 0);
 						switch_assert(layer->scaled_img);
 					}
 					
 					scale_and_patch(conference->video_mixer, img, layer);
+				} else {
+					printf("fuck no layer\n");
 				}
 
 				switch_img_free(&img);
