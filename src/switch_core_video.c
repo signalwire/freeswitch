@@ -75,7 +75,7 @@ SWITCH_DECLARE(void) switch_img_free(switch_image_t **img)
 
 SWITCH_DECLARE(void) switch_img_copy(switch_image_t *img, switch_image_t **new_img)
 {
-	int i, j, k = 1;
+	int i;
 
 	switch_assert(img);
 	switch_assert(new_img);
@@ -91,16 +91,12 @@ SWITCH_DECLARE(void) switch_img_copy(switch_image_t *img, switch_image_t **new_i
 	if (*new_img == NULL) {
 		*new_img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, img->d_w, img->d_h, 1);
 	}
-
+	
 	switch_assert(*new_img);
 
 	for (i = 0; i < 3; i++) {
-		if (!img->planes[i] || !img->stride[i]) break;
-		if (i > 0) k = 2;
-
-		for (j = 0; j < (*new_img)->h; j++) {
-			memcpy((*new_img)->planes[i] + (*new_img)->stride[i] * j / k, img->planes[i] + img->stride[i] * j / k, img->d_w);
-		}
+		(*new_img)->stride[i] = img->stride[i];
+		(*new_img)->planes[i] = img->planes[i];
 	}
 }
 
