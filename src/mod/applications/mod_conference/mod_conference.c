@@ -89,7 +89,10 @@ static int EC = 0;
 #define SCORE_IIR_SPEAKING_MAX 300
 /* the threshold below which you cede the floor to someone loud (see above value). */
 #define SCORE_IIR_SPEAKING_MIN 100
-
+/* the FPS of the conference canvas */
+#define FPS 30
+/* max supported layers in one mcu */
+#define MCU_MAX_LAYERS 16
 
 #define test_eflag(conference, flag) ((conference)->eflags & flag)
 
@@ -333,6 +336,28 @@ struct vid_helper {
 	int up;
 };
 
+typedef struct mcu_bgcolor_s {
+	uint8_t y;
+	uint8_t u;
+	uint8_t v;
+} mcu_bgcolor_t;
+
+typedef struct mcu_layer_s {
+	int x;
+	int y;
+	int w;
+	int h;
+	switch_image_t *img;
+} mcu_layer_t;
+
+typedef struct mcu_canvas_s {
+	int width;
+	int height;
+	mcu_bgcolor_t bgcolor;
+	switch_image_t *img;
+	mcu_layer_t layers[MCU_MAX_LAYERS];
+} mcu_canvas_t;
+
 struct conference_obj;
 
 /* Record Node */
@@ -343,8 +368,6 @@ typedef struct conference_record {
 	switch_bool_t autorec;
 	struct conference_record *next;
 } conference_record_t;
-
-struct video_mixer;
 
 /* Conference Object */
 typedef struct conference_obj {
@@ -460,7 +483,7 @@ typedef struct conference_obj {
 	switch_file_handle_t *record_fh;
 	int video_recording;
 	switch_thread_t *video_muxing_thread;
-	struct video_mixer *video_mixer;
+	mcu_canvas_t canvas;
 } conference_obj_t;
 
 /* Relationship with another member */
@@ -537,6 +560,7 @@ struct conference_member {
 	al_handle_t *al;
 	int last_speech_channels;
 	int video_layer_id;
+	switch_image_t *img;
 };
 
 typedef enum {
@@ -556,53 +580,12 @@ typedef struct api_command {
 	char *psyntax;
 } api_command_t;
 
-
-#define FPS 15 / 2
-#define WIDTH 352
-#define HEIGHT 288
-#define SIZE WIDTH * HEIGHT
-#define MAX_LAYERS 64
-
-typedef struct mcu_layer_s {
-	int id;
-	char *name;
-	char *description;
-	int w;
-	int h;
-	int x;
-	int y;
-	int location_id;
-	const char *channel_uuid;
-	switch_mutex_t *mutex;
-	switch_memory_pool_t *pool;
-	switch_image_t *scaled_img;
-} mcu_layer_t;
-
 typedef struct bgcolor_yuv_s
 {
 	uint8_t y;
 	uint8_t u;
 	uint8_t v;
 } bgcolor_yuv_t;
-
-typedef struct video_mixer {
-	int max_layers;
-	int total_layers;
-	int width;
-	int height;
-	int current_layers;
-	char *name;
-	bgcolor_yuv_t bgcolor;
-	switch_image_t *img;
-	mcu_layer_t layers[MAX_LAYERS];
-	switch_memory_pool_t *pool;
-	switch_mutex_t *mutex;
-	switch_mutex_t *cond_mutex;
-	switch_mutex_t *cond2_mutex;
-	unsigned char *packet;
-	switch_size_t packetlen;
-	switch_thread_cond_t *cond;
-} video_mixer_t;
 
 /* Function Prototypes */
 static int setup_media(conference_member_t *member, conference_obj_t *conference);
@@ -672,7 +655,6 @@ static switch_status_t conference_add_event_member_data(conference_member_t *mem
 static switch_status_t conf_api_sub_floor(conference_member_t *member, switch_stream_handle_t *stream, void *data);
 static switch_status_t conf_api_sub_vid_floor(conference_member_t *member, switch_stream_handle_t *stream, void *data);
 static switch_status_t conf_api_sub_clear_vid_floor(conference_obj_t *conference, switch_stream_handle_t *stream, void *data);
-static int video_mixer_wake(video_mixer_t *video_mixer);
 
 #define lock_member(_member) switch_mutex_lock(_member->write_mutex); switch_mutex_lock(_member->read_mutex)
 #define unlock_member(_member) switch_mutex_unlock(_member->read_mutex); switch_mutex_unlock(_member->write_mutex)
@@ -2811,64 +2793,6 @@ static switch_status_t conference_file_close(conference_obj_t *conference, confe
 	return switch_core_file_close(&node->fh);
 }
 
-void reset_mixer_node(video_mixer_t *video_mixer, mcu_layer_t *mcu_layer_node)
-{
-	int i, j, k;
-	int H = video_mixer->height;
-	int W = video_mixer->width;
-	int h = mcu_layer_node->h;
-	int w = mcu_layer_node->w;
-	int x = mcu_layer_node->x;
-	int y = mcu_layer_node->y;
-	uint8_t *LS[3] = { 0 };
-	uint8_t *ls[3] = { 0 };
-
-	LS[0] = video_mixer->img->planes[0];
-	LS[1] = video_mixer->img->planes[1];
-	LS[2] = video_mixer->img->planes[2];
-
-	for (i = y; i < (y + h) && i < H; i++) {
-		for (j = x; j < (x + w) && j < W; j++) {
-			LS[0][i * W + j] = video_mixer->bgcolor.y;
-		}
-	}
-
-	for (i = y; i < (y + h) && i < H; i+=4) {
-		for (j = x; j < (x + w) && j < W; j+=4) {
-			for (k = 1; k <= 2; k++) {
-				uint8_t tag;
-				if (k == 1){
-					tag = video_mixer->bgcolor.u;
-				} else {
-					tag = video_mixer->bgcolor.v;
-				}
-				LS[k][i/4 * W + j/2]                 = tag;
-				LS[k][i/4 * W + j/2 + 1]             = tag;
-				LS[k][(i+2)/4 * W + j/2 + W / 2]     = tag;
-				LS[k][(i+2)/4 * W + j/2 + W / 2 + 1] = tag;
-			}
-		}
-	}
-
-	if (mcu_layer_node->scaled_img != NULL) {
-		ls[0] = mcu_layer_node->scaled_img->planes[0];
-		ls[1] = mcu_layer_node->scaled_img->planes[1];
-		ls[2] = mcu_layer_node->scaled_img->planes[2];
-
-		for (i = 0; i < h; i++) {
-			for (j = 0; j < w; j++) {
-				ls[0][i * w + j] = video_mixer->bgcolor.y;
-			}
-		}
-
-		for (i = 0; i < w * h / 4 ; i++) {
-			ls[1][i] = video_mixer->bgcolor.u;
-			ls[2][i] = video_mixer->bgcolor.v;
-		}
-	}
-}
-
-
 /* Gain exclusive access and remove the member from the list */
 static switch_status_t conference_del_member(conference_obj_t *conference, conference_member_t *member)
 {
@@ -2891,14 +2815,6 @@ static switch_status_t conference_del_member(conference_obj_t *conference, confe
 
 
 	lock_member(member);
-
-	if (member->video_layer_id > -1 && member->conference->video_mixer) {
-		switch_mutex_lock(conference->video_mixer->mutex);
-		conference->video_mixer->current_layers--;
-		conference->video_mixer->layers[member->video_layer_id].channel_uuid = NULL;
-		reset_mixer_node(conference->video_mixer, &conference->video_mixer->layers[member->video_layer_id]);
-		switch_mutex_unlock(conference->video_mixer->mutex);
-	}
 
 	member_del_relationship(member, 0);
 
@@ -3128,15 +3044,11 @@ switch_status_t video_thread_callback(switch_core_session_t *session, switch_fra
 	}
 
 	if (switch_test_flag(member->conference, CFLAG_VIDEO_MUXING) && frame->img) {
-		switch_image_t *img_copy = NULL;
-
-		switch_img_copy(frame->img, &img_copy);
-		switch_queue_push(member->video_queue, img_copy);
+		switch_img_copy(frame->img, &member->img);
+		switch_thread_rwlock_unlock(member->conference->rwlock);
 		unlock_member(member);
-		video_mixer_wake(member->conference->video_mixer);
 		return SWITCH_STATUS_SUCCESS;
 	}
-
 
 	for (rel = member->relationships; rel; rel = rel->next) {
 		conference_member_t *imember;
@@ -3187,43 +3099,21 @@ static void conference_command_handler(switch_live_array_t *la, const char *cmd,
 {
 }
 
-void init_video_buff(video_mixer_t *video_mixer)
+void reset_image(switch_image_t *img, bgcolor_yuv_t *color)
 {
-	uint8_t *buff = video_mixer->img->img_data;
-	uint8_t y = video_mixer->bgcolor.y;
-	uint8_t u = video_mixer->bgcolor.u;
-	uint8_t v = video_mixer->bgcolor.v;
-	int width = video_mixer->width;
-	int height = video_mixer->height;
+	int i;
 
-	memset(buff, y, width * height);
-	buff = buff + width * height;
-
-	memset(buff, u, width * height / 4);
-	buff = buff + width * height / 4;
-
-	memset(buff, v, width * height / 4);
-}
-
-
-static void destroy_video_mixer(video_mixer_t **video_mixer)
-{
-	switch_memory_pool_t *pool;
-
-	if (!video_mixer || !*video_mixer) {
-		return;
+	for (i = 0; i < img->h; i++) {
+		memset(img->planes[SWITCH_PLANE_Y] + img->stride[SWITCH_PLANE_Y] * i, color->y, img->d_w);
 	}
 
-	if ((*video_mixer)->img) switch_img_free(&(*video_mixer)->img);
-
-	pool = (*video_mixer)->pool;
-	switch_core_destroy_memory_pool(&pool);
-	
-	*video_mixer = NULL;
+	for (i = 0; i < img->h / 2; i++) {
+		memset(img->planes[SWITCH_PLANE_U] + img->stride[SWITCH_PLANE_U] * i, color->u, img->d_w);
+		memset(img->planes[SWITCH_PLANE_V] + img->stride[SWITCH_PLANE_U] * i, color->v, img->d_w);
+	}
 }
 
-
-void analy_bgcolor(bgcolor_yuv_t *bgcolor, char *bgcolor_str)
+void set_bgcolor(bgcolor_yuv_t *bgcolor, char *bgcolor_str)
 {
 	uint8_t y = 134;
 	uint8_t u = 128;
@@ -3249,196 +3139,17 @@ void analy_bgcolor(bgcolor_yuv_t *bgcolor, char *bgcolor_str)
 	bgcolor->v = v;
 }
 
-
-static int video_mixer_wake(video_mixer_t *video_mixer)
-{
-	switch_status_t status;
-	int tries = 0;
-
- top:
-	
-	status = switch_mutex_trylock(video_mixer->cond_mutex);
-	if (status == SWITCH_STATUS_SUCCESS) {
-		switch_thread_cond_signal(video_mixer->cond);
-		switch_mutex_unlock(video_mixer->cond_mutex);
-		return 1;
-	} else {
-		if (switch_mutex_trylock(video_mixer->cond2_mutex) == SWITCH_STATUS_SUCCESS) {
-			switch_mutex_unlock(video_mixer->cond2_mutex);
-		} else {
-			if (++tries < 10) {
-				switch_cond_next();
-				goto top;
-			}
-		}
-	}
-
-	return 0;
-}
-
-#define MIX_CONF "video_layouts.conf"
-static video_mixer_t *create_video_mixer(const char *layout_name)
-{
-	video_mixer_t *video_mixer;
-	int i, j;
-	int width = 352;
-	int height = 288;
-	int rows = 2; // to do, read from profile
-	int cols = 2;
-	int id = 0;
-	//char *bgcolor = NULL;
-	bgcolor_yuv_t bgcolor;
-	char *layers_name = NULL;
-	switch_xml_t cfg, xml, x_layers, x_group, x_layer;
-	switch_xml_t x_profiles, x_profile, x_param = NULL;
-	switch_memory_pool_t *pool;
-
-	switch_core_new_memory_pool(&pool);
-
-
-	if (!(xml = switch_xml_open_cfg(MIX_CONF, &cfg, NULL))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Opening of video layouts failed, using builtin default profile values\n");
-	} else if ((x_profiles = switch_xml_child(cfg, "profiles"))) {
-		if ((x_profile = switch_xml_find_child(x_profiles, "profile", "name", layout_name))) {
-			for (x_param = switch_xml_child(x_profile, "param"); x_param; x_param = x_param->next) {
-				char *var = (char *)switch_xml_attr_soft(x_param, "name");
-				char *val = (char *)switch_xml_attr_soft(x_param, "value");
-
-				if (!strcmp(var, "width")) {
-					width = atoi(val);
-				} else if (!strcmp(var, "height")) {
-					height = atoi(val);
-				} else if (!strcmp(var, "rows")) {
-					rows = atoi(val);
-				} else if (!strcmp(var, "cols")) {
-					cols = atoi(val);
-				} else if (!strcmp(var, "bgcolor")) {
-					analy_bgcolor(&bgcolor, val);
-				} else if (!strcmp(var, "layers")) {
-					layers_name = val;
-				}
-			}
-		}
-	}
-
-	video_mixer = (video_mixer_t *)switch_core_alloc(pool, sizeof(video_mixer_t));
-
-	switch_core_new_memory_pool(&(video_mixer->pool));
-	video_mixer->pool = pool;
-	video_mixer->name = switch_core_strdup(video_mixer->pool, layout_name);
-	video_mixer->bgcolor = bgcolor;
-	video_mixer->max_layers = MAX_LAYERS;
-	video_mixer->total_layers = 0;
-	video_mixer->current_layers = 0;
-	video_mixer->height = height * rows;
-	video_mixer->width = width * cols;
-	video_mixer->img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, video_mixer->width, video_mixer->height, 0);
-	video_mixer->packet = switch_core_alloc(video_mixer->pool, SWITCH_RECOMMENDED_BUFFER_SIZE);
-	video_mixer->packetlen = SWITCH_RECOMMENDED_BUFFER_SIZE;
-	switch_thread_cond_create(&video_mixer->cond, video_mixer->pool);
-	switch_mutex_init(&video_mixer->cond_mutex, SWITCH_MUTEX_NESTED, video_mixer->pool);
-	switch_mutex_init(&video_mixer->cond2_mutex, SWITCH_MUTEX_NESTED, video_mixer->pool);
-
-	init_video_buff(video_mixer);
-	switch_mutex_init(&video_mixer->mutex, SWITCH_MUTEX_NESTED, video_mixer->pool);
-
-	for (i = 0; i < rows; i++) {
-		for (j = 0; j < cols; j++) {
-			mcu_layer_t *layer = NULL;
-			layer = &video_mixer->layers[video_mixer->total_layers];
-
-			layer->w = (int)width;//(int)(width / rows);
-			layer->h = (int)height;//(int)(height / cols);
-			layer->x = j * layer->w;
-			layer->y = i * layer->h;
-
-			if ((cols % 2) && (j > 0)) layer->x += j;
-			if ((rows % 2) && (i > 0)) layer->y += i;
-			layer->location_id = ++id;
-			video_mixer->total_layers++;
-		}
-	}
-
-	if (NULL != layers_name) {
-
-		if (!(xml = switch_xml_open_cfg(MIX_CONF, &cfg, NULL))) {
-			goto skip;
-		}
-
-		if ((x_layers = switch_xml_child(cfg, "layers"))) {
-			x_group = switch_xml_find_child(x_layers, "group", "name", layers_name);
-
-			if (x_group) {
-				for (x_layer = switch_xml_child(x_group, "layer"); x_layer; x_layer = x_layer->next) {
-					char *x = (char *)switch_xml_attr_soft(x_layer, "x");
-					char *y = (char *)switch_xml_attr_soft(x_layer, "y");
-					char *w = (char *)switch_xml_attr_soft(x_layer, "w");
-					char *h = (char *)switch_xml_attr_soft(x_layer, "h");
-					mcu_layer_t *layer = NULL;
-					layer = &video_mixer->layers[video_mixer->total_layers];
-
-					if (!x || !y || !w || !h) continue;
-
-					layer->w = atoi(w);
-					layer->h = atoi(h);
-					layer->x = atoi(x);
-					layer->y = atoi(y);
-
-					layer->location_id = ++id;
-					video_mixer->total_layers++;
-				}
-			}
-		}
-	}
-
-	if (video_mixer->total_layers == 0) {
-		destroy_video_mixer(&video_mixer);
-		return video_mixer;
-	}
-
-skip:
-
-	return video_mixer;
-}
-
 // simple implementation to patch a small img to a big IMG at position x,y
-void patch(switch_image_t *IMG, switch_image_t *img, int x, int y)
-{
-       int i, j, k;
-       int W = IMG->d_w;
-       int H = IMG->d_h;
-       int w = img->d_w;
-       int h = img->d_h;
-
-       switch_assert(img->fmt = SWITCH_IMG_FMT_I420);
-       switch_assert(IMG->fmt = SWITCH_IMG_FMT_I420);
-
-       for (i = y; i < (y + h) && i < H; i++) {
-               for (j = x; j < (x + w) && j < W; j++) {
-                       IMG->planes[0][i * IMG->stride[0] + j] = img->planes[0][(i - y) * img->stride[0] + (j - x)];
-               }
-       }
-
-       for (i = y; i < (y + h) && i < H; i+=4) {
-               for (j = x; j < (x + w) && j < W; j+=4) {
-                       for (k = 1; k <= 2; k++) {
-                               IMG->planes[k][i/2 * IMG->stride[k] + j/2]         = img->planes[k][(i-y)/2 * img->stride[k] + (j-x)/2];
-                               IMG->planes[k][i/2 * IMG->stride[k] + j/2 + 1]     = img->planes[k][(i-y)/2 * img->stride[k] + (j-x)/2 + 1];
-                               IMG->planes[k][(i+2)/2 * IMG->stride[k] + j/2]     = img->planes[k][(i+2-y)/2 * img->stride[k] + (j-x)/2];
-                               IMG->planes[k][(i+2)/2 * IMG->stride[k] + j/2 + 1] = img->planes[k][(i+2-y)/2 * img->stride[k] + (j-x)/2 + 1];
-                       }
-               }
-       }
-}
-
-#if 0
-void patch(switch_image_t *IMG, switch_image_t *img, int x, int y)
+void patch_image(switch_image_t *IMG, switch_image_t *img, int x, int y)
 {
 	int i, j, k;
 	int W = IMG->d_w;
 	int H = IMG->d_h;
 	int w = img->d_w;
 	int h = img->d_h;
+
+	switch_assert(img->fmt = SWITCH_IMG_FMT_I420);
+	switch_assert(IMG->fmt = SWITCH_IMG_FMT_I420);
 
 	for (i = y; i < (y + h) && i < H; i++) {
 		for (j = x; j < (x + w) && j < W; j++) {
@@ -3457,15 +3168,16 @@ void patch(switch_image_t *IMG, switch_image_t *img, int x, int y)
 		}
 	}
 }
-#endif
 
-static void scale_and_patch(video_mixer_t *video_mixer, switch_image_t *img, mcu_layer_t *layer)
+static void scale_and_patch(switch_image_t *IMG, switch_image_t *img, mcu_layer_t *layer)
 {
 	int width = img->d_w;
 	int height = img->d_h;
 	int ret;
 	FilterModeEnum filtermode;
-	
+
+	switch_assert(layer->img);
+
 	if (width != layer->w || height != layer->h) {
 		filtermode = kFilterBox;
 		/*int I420Scale(const uint8* src_y, int src_stride_y,
@@ -3483,50 +3195,78 @@ static void scale_and_patch(video_mixer_t *video_mixer, switch_image_t *img, mcu
 						img->planes[1], img->stride[1],
 						img->planes[2], img->stride[2],
 						width, height,
-						layer->scaled_img->planes[0], layer->scaled_img->stride[0],
-						layer->scaled_img->planes[1], layer->scaled_img->stride[1],
-						layer->scaled_img->planes[2], layer->scaled_img->stride[2],
+						layer->img->planes[0], layer->img->stride[0],
+						layer->img->planes[1], layer->img->stride[1],
+						layer->img->planes[2], layer->img->stride[2],
 						layer->w, layer->h,
 						filtermode);
 		
 		if (ret != 0) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ret: %d\n", ret);
 		} else {
-			switch_mutex_lock(video_mixer->mutex);
-			printf("SCALE and PATCH at %dx%d to %dx%d at %dx%d\n", width, height, layer->w, layer->h, layer->x, layer->y);
-			patch(video_mixer->img, layer->scaled_img, layer->x, layer->y);
-			switch_mutex_unlock(video_mixer->mutex);
+			printf("SCALE and PATCH at %dx%d to %dx%d\n", width, height, layer->x, layer->y);
+			patch_image(IMG, layer->img, layer->x, layer->y);
 		}
 	} else {
-		switch_mutex_lock(video_mixer->mutex);
 		printf("PATCH at %d %d\n", layer->x, layer->y);
-		patch(video_mixer->img, img, layer->x, layer->y);
-		switch_mutex_unlock(video_mixer->mutex);
+		patch_image(IMG, img, layer->x, layer->y);
 	}
 }
 
+void reset_canvas(mcu_canvas_t *canvas, char *color)
+{
+	bgcolor_yuv_t bgcolor;
+
+	set_bgcolor(&bgcolor, color);
+	reset_image(canvas->img, &bgcolor);
+}
+
+static void init_canvas(mcu_canvas_t *canvas)
+{
+	int i;
+	canvas->img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, 1920, 1080, 0);
+	switch_assert(canvas->img);
+
+	reset_canvas(canvas, "#0000FF");
+
+	for (i = 0; i < 4; i++) {
+		int w = 800;
+		int h = 600;
+		canvas->layers[i].x = 0 + i * 300;
+		canvas->layers[i].y = 0 + i * 300;
+		canvas->layers[i].w = w;
+		canvas->layers[i].h = h;
+		canvas->layers[i].img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, w, h, 1);
+		switch_assert(canvas->layers[i].img);
+	}
+}
+
+static void destroy_canvas(mcu_canvas_t *canvas) {
+	int i;
+
+	if (canvas->img) {
+		switch_img_free(&canvas->img);
+	}
+
+	for (i = 0; i < MCU_MAX_LAYERS; i++) {
+		switch_img_free(&canvas->layers[i].img);
+	}
+}
 
 static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thread, void *obj)
 {
 	conference_obj_t *conference = (conference_obj_t *) obj;
 	conference_member_t *imember;
 	switch_frame_t write_frame = { 0 };
-	
-	if (!(conference->video_mixer = create_video_mixer(conference->video_layout_name))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot open video layout %s\n", conference->video_layout_name);
-		switch_yield(1000000);
-		return NULL;
-	}
+	uint8_t packet[SWITCH_RECOMMENDED_BUFFER_SIZE];
 
-	switch_mutex_lock(conference->video_mixer->cond_mutex);	
-	
+	init_canvas(&conference->canvas);
+
 	while (globals.running && !switch_test_flag(conference, CFLAG_DESTRUCT) && switch_test_flag(conference, CFLAG_VIDEO_MUXING)) {
-		int remaining = 0;
 
 		switch_mutex_lock(conference->member_mutex);
 		for (imember = conference->members; imember; imember = imember->next) {
 			switch_channel_t *ichannel = switch_core_session_get_channel(imember->session);
-			void *pop;
 
 			printf("MEMBER %d\n", imember->id);
 
@@ -3535,53 +3275,17 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 				continue;
 			}
 
-			if (switch_queue_trypop(imember->video_queue, &pop) == SWITCH_STATUS_SUCCESS) {
-				switch_image_t *img = (switch_image_t *)pop;				
-				mcu_layer_t *layer = NULL;
-				int i;
+			if (imember->img) {
+				int which_layer = imember->id % 4; //random layer
+				mcu_canvas_t *canvas = &conference->canvas;
 
-				remaining += switch_queue_size(imember->video_queue);
-				
-				if (imember->video_layer_id > -1) {
-					layer = &conference->video_mixer->layers[imember->video_layer_id];
-				}
-
-				if (!layer) {
-					/* find an empty layer */
-					switch_mutex_lock(conference->video_mixer->mutex);
-					for (i = 0; i < conference->video_mixer->total_layers; i++) {
-						layer = &conference->video_mixer->layers[i];
-						if (!layer->channel_uuid) {
-							conference->video_mixer->layers[i].channel_uuid = switch_core_session_get_uuid(imember->session);
-							conference->video_mixer->current_layers++;
-							imember->video_layer_id = i;
-							break;
-						}
-					}
-					switch_mutex_unlock(conference->video_mixer->mutex);
-				}
-				
-				if (layer) {
-					printf("yay pop img layer %d w:%d h:%d x:%d y:%d\n", imember->video_layer_id, layer->w, layer->h, layer->x, layer->y);
-
-					if (!layer->scaled_img) {
-						layer->scaled_img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, layer->w, layer->h, 0);
-						switch_assert(layer->scaled_img);
-					}
-					
-					scale_and_patch(conference->video_mixer, img, layer);
-				} else {
-					printf("fuck no layer\n");
-				}
-
-				switch_img_free(&img);
+				scale_and_patch(conference->canvas.img, imember->img, &canvas->layers[which_layer]);
 			}
 
 			if (imember->session) {
 				switch_core_session_rwunlock(imember->session);
 			}
 		}
-
 
 		for (imember = conference->members; imember; imember = imember->next) {
 			switch_channel_t *ichannel = switch_core_session_get_channel(imember->session);
@@ -3593,33 +3297,29 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 
 			printf("WRITE TO %d\n", imember->id);
 			switch_set_flag(&write_frame, SFF_RAW_RTP);
-			write_frame.img = conference->video_mixer->img;
-			write_frame.packet = conference->video_mixer->packet;
-			write_frame.data = conference->video_mixer->packet + 12;
-			write_frame.datalen = conference->video_mixer->packetlen - 12;
+			write_frame.img = conference->canvas.img;
+			write_frame.packet = packet;
+			write_frame.data = packet + 12;
+			write_frame.datalen = SWITCH_RECOMMENDED_BUFFER_SIZE - 12;
 			write_frame.buflen = write_frame.datalen;
-			write_frame.packetlen = conference->video_mixer->packetlen;
+			write_frame.packetlen = SWITCH_RECOMMENDED_BUFFER_SIZE;
 
 			switch_core_session_write_video_frame(imember->session, &write_frame, SWITCH_IO_FLAG_NONE, 0);			
 			
-			switch_core_session_rwunlock(imember->session);
-			
+			if (imember->session) {
+				switch_core_session_rwunlock(imember->session);
+			}
 		}
 
 		switch_mutex_unlock(conference->member_mutex);
-		
-		if (!remaining) {
-			printf("SLEEP\n");
-			switch_mutex_lock(conference->video_mixer->cond2_mutex);
-			switch_thread_cond_wait(conference->video_mixer->cond, conference->video_mixer->cond_mutex);
-			switch_mutex_unlock(conference->video_mixer->cond2_mutex);
-		}
-		
+
+		printf("SLEEP\n");
+		switch_yield(1000000/FPS);
 	}
 
 	printf("END MUX THREAD ???????\n");
 
-	destroy_video_mixer(&conference->video_mixer);
+	destroy_canvas(&conference->canvas);
 
 	return NULL;
 }
