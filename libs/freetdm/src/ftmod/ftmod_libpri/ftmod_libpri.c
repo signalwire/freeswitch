@@ -1915,8 +1915,16 @@ static int on_ring(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_event 
 	ftdm_set_string(caller_data->dnis.digits, (char *)pevent->ring.callednum);
 	ftdm_set_string(caller_data->rdnis.digits, (char *)pevent->ring.redirectingnum);
 
-	caller_data->ani.type = pevent->ring.callingplanani >> 4;
-	caller_data->ani.plan = pevent->ring.callingplanani & 0x0F;
+	if (pevent->ring.callingplanani != -1) {
+		caller_data->ani.type = pevent->ring.callingplanani >> 4;
+		caller_data->ani.plan = pevent->ring.callingplanani & 0x0F;
+	} else {
+		/* the remote party did not sent a valid (according to libpri) ANI ton,
+ 		 * so let's use the callingplan ton/type and hope is correct.
+ 		 */
+		caller_data->ani.type = pevent->ring.callingplan >> 4;
+		caller_data->ani.plan = pevent->ring.callingplan & 0x0F;
+	}
 	
 	caller_data->cid_num.type = pevent->ring.callingplan >> 4;
 	caller_data->cid_num.plan = pevent->ring.callingplan & 0x0F;
