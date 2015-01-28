@@ -4518,7 +4518,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 				c++;
 				tech_pvt->e_dest = switch_core_session_strdup(nsession, c);
 			}
-		} else if (!mod && (host = strchr(dest, '%'))) {
+		} else if (!mod && !strchr(dest, '@') && (host = strchr(dest, '%'))) {
 			char buf[1024];
 			*host = '@';
 			tech_pvt->e_dest = switch_core_session_strdup(nsession, dest);
