@@ -92,7 +92,7 @@ static int EC = 0;
 /* the FPS of the conference canvas */
 #define FPS 30
 /* max supported layers in one mcu */
-#define MCU_MAX_LAYERS 16
+#define MCU_MAX_LAYERS 64
 
 #define test_eflag(conference, flag) ((conference)->eflags & flag)
 
@@ -336,26 +336,34 @@ struct vid_helper {
 	int up;
 };
 
-typedef struct mcu_bgcolor_s {
-	uint8_t y;
-	uint8_t u;
-	uint8_t v;
-} mcu_bgcolor_t;
-
 typedef struct mcu_layer_s {
 	int x;
 	int y;
-	int w;
-	int h;
+	int scale;
+	int member_id;
 	switch_image_t *img;
 } mcu_layer_t;
+
+typedef struct bgcolor_yuv_s
+{
+	uint8_t y;
+	uint8_t u;
+	uint8_t v;
+} bgcolor_yuv_t;
 
 typedef struct mcu_canvas_s {
 	int width;
 	int height;
-	mcu_bgcolor_t bgcolor;
 	switch_image_t *img;
 	mcu_layer_t layers[MCU_MAX_LAYERS];
+	int total_layers;
+	int layers_used;
+	bgcolor_yuv_t bgcolor;
+	switch_mutex_t *mutex;
+	switch_mutex_t *cond_mutex;
+	switch_mutex_t *cond2_mutex;
+	switch_thread_cond_t *cond;
+	switch_memory_pool_t *pool;
 } mcu_canvas_t;
 
 struct conference_obj;
@@ -483,7 +491,7 @@ typedef struct conference_obj {
 	switch_file_handle_t *record_fh;
 	int video_recording;
 	switch_thread_t *video_muxing_thread;
-	mcu_canvas_t canvas;
+	mcu_canvas_t *canvas;
 } conference_obj_t;
 
 /* Relationship with another member */
@@ -560,7 +568,6 @@ struct conference_member {
 	al_handle_t *al;
 	int last_speech_channels;
 	int video_layer_id;
-	switch_image_t *img;
 };
 
 typedef enum {
@@ -579,13 +586,6 @@ typedef struct api_command {
 	char *pcommand;
 	char *psyntax;
 } api_command_t;
-
-typedef struct bgcolor_yuv_s
-{
-	uint8_t y;
-	uint8_t u;
-	uint8_t v;
-} bgcolor_yuv_t;
 
 /* Function Prototypes */
 static int setup_media(conference_member_t *member, conference_obj_t *conference);
@@ -661,6 +661,373 @@ static switch_status_t conf_api_sub_clear_vid_floor(conference_obj_t *conference
 
 //#define lock_member(_member) switch_mutex_lock(_member->write_mutex)
 //#define unlock_member(_member) switch_mutex_unlock(_member->write_mutex)
+
+
+static int mcu_canvas_wake(mcu_canvas_t *mcu_canvas)
+{
+	switch_status_t status;
+	int tries = 0;
+
+ top:
+	
+	status = switch_mutex_trylock(mcu_canvas->cond_mutex);
+	if (status == SWITCH_STATUS_SUCCESS) {
+		switch_thread_cond_signal(mcu_canvas->cond);
+		switch_mutex_unlock(mcu_canvas->cond_mutex);
+		return 1;
+	} else {
+		if (switch_mutex_trylock(mcu_canvas->cond2_mutex) == SWITCH_STATUS_SUCCESS) {
+			switch_mutex_unlock(mcu_canvas->cond2_mutex);
+		} else {
+			if (++tries < 10) {
+				switch_cond_next();
+				goto top;
+			}
+		}
+	}
+
+	return 0;
+}
+
+static void reset_image(switch_image_t *img, bgcolor_yuv_t *color)
+{
+	int i;
+
+	for (i = 0; i < img->h; i++) {
+		memset(img->planes[SWITCH_PLANE_Y] + img->stride[SWITCH_PLANE_Y] * i, color->y, img->d_w);
+	}
+
+	for (i = 0; i < img->h / 2; i++) {
+		memset(img->planes[SWITCH_PLANE_U] + img->stride[SWITCH_PLANE_U] * i, color->u, img->d_w / 2);
+		memset(img->planes[SWITCH_PLANE_V] + img->stride[SWITCH_PLANE_U] * i, color->v, img->d_w / 2);
+	}
+}
+
+static void set_bgcolor(bgcolor_yuv_t *bgcolor, char *bgcolor_str)
+{
+	uint8_t y = 134;
+	uint8_t u = 128;
+	uint8_t v = 124;
+
+	if (bgcolor_str != NULL && strlen(bgcolor_str) == 7) {
+		uint8_t red, green, blue;
+		char str[7];
+		bgcolor_str ++;
+		strncpy(str, bgcolor_str, 6);
+		red = (str[0] >= 'A' ? (str[0] - 'A' + 10) * 16 : (str[0] - '0') * 16) + (str[1] >= 'A' ? (str[1] - 'A' + 10) : (str[0] - '0'));
+		green = (str[2] >= 'A' ? (str[2] - 'A' + 10) * 16 : (str[2] - '0') * 16) + (str[3] >= 'A' ? (str[3] - 'A' + 10) : (str[0] - '0'));
+		blue = (str[4] >= 'A' ? (str[4] - 'A' + 10) * 16 : (str[4] - '0') * 16) + (str[5] >= 'A' ? (str[5] - 'A' + 10) : (str[0] - '0'));
+
+		y = (uint8_t)(((red * 4897) >> 14) + ((green * 9611) >> 14) + ((blue * 1876) >> 14));
+		u = (uint8_t)(- ((red * 2766) >> 14)  - ((5426 * green) >> 14) + blue / 2 + 128);
+		v = (uint8_t)(red / 2 -((6855 * green) >> 14) - ((blue * 1337) >> 14) + 128);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "analy_bgcolor, red = %u, green = %u, blue = %u, y = %u, u = %u, v = %u\n", red, green, blue, y, u, v);
+	}
+
+	bgcolor->y = y;
+	bgcolor->u = u;
+	bgcolor->v = v;
+}
+
+// simple implementation to patch a small img to a big IMG at position x,y
+static void patch_image(switch_image_t *IMG, switch_image_t *img, int x, int y)
+{
+	int i, j, k;
+	int W = IMG->d_w;
+	int H = IMG->d_h;
+	int w = img->d_w;
+	int h = img->d_h;
+
+	switch_assert(img->fmt = SWITCH_IMG_FMT_I420);
+	switch_assert(IMG->fmt = SWITCH_IMG_FMT_I420);
+
+	for (i = y; i < (y + h) && i < H; i++) {
+		for (j = x; j < (x + w) && j < W; j++) {
+			IMG->planes[0][i * IMG->stride[0] + j] = img->planes[0][(i - y) * img->stride[0] + (j - x)];
+		}
+	}
+
+	for (i = y; i < (y + h) && i < H; i+=4) {
+		for (j = x; j < (x + w) && j < W; j+=4) {
+			for (k = 1; k <= 2; k++) {
+				IMG->planes[k][i/2 * IMG->stride[k] + j/2]         = img->planes[k][(i-y)/2 * img->stride[k] + (j-x)/2];
+				IMG->planes[k][i/2 * IMG->stride[k] + j/2 + 1]     = img->planes[k][(i-y)/2 * img->stride[k] + (j-x)/2 + 1];
+				IMG->planes[k][(i+2)/2 * IMG->stride[k] + j/2]     = img->planes[k][(i+2-y)/2 * img->stride[k] + (j-x)/2];
+				IMG->planes[k][(i+2)/2 * IMG->stride[k] + j/2 + 1] = img->planes[k][(i+2-y)/2 * img->stride[k] + (j-x)/2 + 1];
+			}
+		}
+	}
+}
+
+#define SCALE_FACTOR 360
+
+static void scale_and_patch(switch_image_t *IMG, switch_image_t *img, mcu_layer_t *layer)
+{
+	int ret;
+	int x = 0, y = 0;
+
+
+	if (layer->scale) {
+		int screen_w = 0, screen_h = 0, img_w = 0, img_h = 0;
+		double screen_aspect = 0, img_aspect = 0;
+
+		img_w = screen_w = IMG->d_w * layer->scale / SCALE_FACTOR;
+		img_h = screen_h = IMG->d_h * layer->scale / SCALE_FACTOR;
+
+		x = IMG->d_w * layer->x / SCALE_FACTOR;
+		y = IMG->d_h * layer->y / SCALE_FACTOR;
+
+		screen_aspect = (double) screen_w / screen_h;
+		img_aspect = (double) img->d_w / img->d_h;
+		
+		if (screen_aspect > img_aspect) {
+			img_w = img_aspect * screen_h;
+			x += (screen_w - img_w) / 2;
+		} else if (screen_aspect < img_aspect) {
+			img_h = screen_w / img_aspect;
+			y += (screen_h - img_h) / 2;
+		}
+
+
+		/*int I420Scale(const uint8* src_y, int src_stride_y,
+		  const uint8* src_u, int src_stride_u,
+		  const uint8* src_v, int src_stride_v,
+		  int src_width, int src_height,
+		  uint8* dst_y, int dst_stride_y,
+		  uint8* dst_u, int dst_stride_u,
+		  uint8* dst_v, int dst_stride_v,
+		  int dst_width, int dst_height,
+		  enum FilterMode filtering)
+		*/
+
+		if (layer->img && (layer->img->d_w != img_w || layer->img->d_h != img_h)) {
+			switch_img_free(&layer->img);
+		}
+
+		if (!layer->img) {
+			layer->img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, img_w, img_h, 1);
+		}
+		
+		switch_assert(layer->img);
+
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "RESIZE %dx%d to %dx%d to fit in %dx%d and insert at %d,%d\n", 
+						  img->d_w, img->d_h, img_w, img_h, screen_w, screen_h, x, y);
+
+		ret = I420Scale(img->planes[0], img->stride[0],
+						img->planes[1], img->stride[1],
+						img->planes[2], img->stride[2],
+						img->d_w, img->d_h,
+						layer->img->planes[0], layer->img->stride[0],
+						layer->img->planes[1], layer->img->stride[1],
+						layer->img->planes[2], layer->img->stride[2],
+						img_w, img_h,
+						kFilterBox);
+		
+		if (ret != 0) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Scaling Error: ret: %d\n", ret);
+		} else {
+			patch_image(IMG, layer->img, x, y);
+		}
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "insert at %d,%d\n", x, y);
+		patch_image(IMG, img, x, y);
+	}
+}
+
+static void set_canvas_bgcolor(mcu_canvas_t *canvas, char *color)
+{
+	set_bgcolor(&canvas->bgcolor, color);
+	reset_image(canvas->img, &canvas->bgcolor);
+}
+
+static void init_canvas(mcu_canvas_t **canvasP, switch_memory_pool_t *pool, uint32_t width, uint32_t height)
+{
+	int i = 0;
+	mcu_canvas_t *canvas;
+
+	switch_assert(pool);
+
+	if (*canvasP) {
+		canvas = *canvasP;
+	} else {
+		canvas = switch_core_alloc(pool, sizeof(*canvas));
+		canvas->pool = pool;
+		switch_thread_cond_create(&canvas->cond, canvas->pool);
+		switch_mutex_init(&canvas->mutex, SWITCH_MUTEX_NESTED, canvas->pool);
+		switch_mutex_init(&canvas->cond_mutex, SWITCH_MUTEX_NESTED, canvas->pool);
+		switch_mutex_init(&canvas->cond2_mutex, SWITCH_MUTEX_NESTED, canvas->pool);
+	}
+
+	if (canvas->img) {
+		switch_img_free(&canvas->img);
+	}
+
+	canvas->img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, width, height, 0);
+
+	switch_assert(canvas->img);
+
+	set_canvas_bgcolor(canvas, "#000000");
+
+	canvas->layers[i].x = 0;
+	canvas->layers[i].y = 0;
+	canvas->layers[i].scale = 180;
+
+	i++;
+
+	canvas->layers[i].x = 180;
+	canvas->layers[i].y = 0;
+	canvas->layers[i].scale = 180;
+
+	i++;
+
+	canvas->layers[i].x = 0;
+	canvas->layers[i].y = 180;
+	canvas->layers[i].scale = 180;
+
+	i++;
+
+	canvas->layers[i].x = 180;
+	canvas->layers[i].y = 180;
+	canvas->layers[i].scale = 180;
+	
+	i++;
+
+	canvas->total_layers = i;
+
+#if 0
+	for (i = 0; i < 4; i++) {
+		int w = 800;
+		int h = 600;
+		canvas->layers[i].x = 0 + i * 300;
+		canvas->layers[i].y = 0 + i * 300;
+		canvas->layers[i].w = w;
+		canvas->layers[i].h = h;
+		canvas->layers[i].img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, w, h, 1);
+		switch_assert(canvas->layers[i].img);
+	}
+#endif
+
+	*canvasP = canvas;
+}
+
+static void destroy_canvas(mcu_canvas_t **canvasP) {
+	int i;
+	mcu_canvas_t *canvas = *canvasP;
+
+	if (canvas->img) {
+		switch_img_free(&canvas->img);
+	}
+
+	for (i = 0; i < MCU_MAX_LAYERS; i++) {
+		switch_img_free(&canvas->layers[i].img);
+	}
+
+	*canvasP = NULL;
+}
+
+static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thread, void *obj)
+{
+	conference_obj_t *conference = (conference_obj_t *) obj;
+	conference_member_t *imember;
+	switch_frame_t write_frame = { 0 };
+	uint8_t *packet = switch_core_alloc(conference->pool, SWITCH_RECOMMENDED_BUFFER_SIZE);
+
+	init_canvas(&conference->canvas, conference->pool, 1280, 720);
+
+	switch_mutex_lock(conference->canvas->cond_mutex);
+
+	while (globals.running && !switch_test_flag(conference, CFLAG_DESTRUCT) && switch_test_flag(conference, CFLAG_VIDEO_MUXING)) {
+		int remaining = 0;
+
+		switch_mutex_lock(conference->member_mutex);
+		for (imember = conference->members; imember; imember = imember->next) {
+			switch_channel_t *ichannel = switch_core_session_get_channel(imember->session);
+			void *pop;
+
+			if (!imember->session || !switch_channel_test_flag(ichannel, CF_VIDEO) || 
+				switch_core_session_read_lock(imember->session) != SWITCH_STATUS_SUCCESS) {
+				continue;
+			}
+
+
+			if (switch_queue_trypop(imember->video_queue, &pop) == SWITCH_STATUS_SUCCESS) {
+				switch_image_t *img = (switch_image_t *)pop;				
+				mcu_layer_t *layer = NULL;
+				int i;
+
+				remaining += switch_queue_size(imember->video_queue);
+				
+				if (imember->video_layer_id > -1) {
+					layer = &conference->canvas->layers[imember->video_layer_id];
+				}
+
+				if (!layer) {
+					/* find an empty layer */
+					switch_mutex_lock(conference->canvas->mutex);
+					for (i = 0; i < conference->canvas->total_layers; i++) {
+						layer = &conference->canvas->layers[i];
+						if (!layer->member_id) {
+							conference->canvas->layers[i].member_id = imember->id;
+							conference->canvas->layers_used++;
+							imember->video_layer_id = i;
+							break;
+						}
+					}
+					switch_mutex_unlock(conference->canvas->mutex);
+				}
+				
+				if (layer) {
+					scale_and_patch(conference->canvas->img, img, layer);
+				}
+
+				switch_img_free(&img);
+			}
+
+			if (imember->session) {
+				switch_core_session_rwunlock(imember->session);
+			}
+		}
+
+		for (imember = conference->members; imember; imember = imember->next) {
+			switch_channel_t *ichannel = switch_core_session_get_channel(imember->session);
+
+			if (!imember->session || !switch_channel_test_flag(ichannel, CF_VIDEO) || 
+				switch_core_session_read_lock(imember->session) != SWITCH_STATUS_SUCCESS) {
+				continue;
+			}
+
+			switch_set_flag(&write_frame, SFF_RAW_RTP);
+			write_frame.img = conference->canvas->img;
+			write_frame.packet = packet;
+			write_frame.data = packet + 12;
+			write_frame.datalen = SWITCH_RECOMMENDED_BUFFER_SIZE - 12;
+			write_frame.buflen = write_frame.datalen;
+			write_frame.packetlen = SWITCH_RECOMMENDED_BUFFER_SIZE;
+
+			switch_core_session_write_video_frame(imember->session, &write_frame, SWITCH_IO_FLAG_NONE, 0);			
+			
+			if (imember->session) {
+				switch_core_session_rwunlock(imember->session);
+			}
+		}
+
+		switch_mutex_unlock(conference->member_mutex);
+		
+		if (!remaining) {
+			switch_mutex_lock(conference->canvas->cond2_mutex);
+			switch_thread_cond_wait(conference->canvas->cond, conference->canvas->cond_mutex);
+			switch_mutex_unlock(conference->canvas->cond2_mutex);
+		}
+	}
+
+	switch_mutex_unlock(conference->canvas->cond_mutex);
+
+	destroy_canvas(&conference->canvas);
+
+	return NULL;
+}
+
+
 
 static al_handle_t *create_al(switch_memory_pool_t *pool)
 {
@@ -2816,6 +3183,17 @@ static switch_status_t conference_del_member(conference_obj_t *conference, confe
 
 	lock_member(member);
 
+	if (member->video_layer_id > -1 && member->conference->canvas) {
+		mcu_layer_t *layer = &conference->canvas->layers[member->video_layer_id];
+
+		reset_image(layer->img, &conference->canvas->bgcolor);
+		scale_and_patch(conference->canvas->img, layer->img, layer);
+		switch_mutex_lock(conference->canvas->mutex);
+		conference->canvas->layers_used--;
+		conference->canvas->layers[member->video_layer_id].member_id = 0;
+		switch_mutex_unlock(conference->canvas->mutex);
+	}
+
 	member_del_relationship(member, 0);
 
 	conference_cdr_del(member);
@@ -2879,6 +3257,10 @@ static switch_status_t conference_del_member(conference_obj_t *conference, confe
 	if (member_sh) {
 		switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_NONE;
 		switch_core_speech_close(&member->lsh, &flags);
+	}
+
+	if (member == member->conference->floor_holder) {
+		conference_set_floor_holder(member->conference, NULL);
 	}
 
 	if (member->id == member->conference->video_floor_holder) {
@@ -3027,7 +3409,7 @@ static void conference_write_video_frame(conference_obj_t *conference, conferenc
 	}
 }
 
-switch_status_t video_thread_callback(switch_core_session_t *session, switch_frame_t *frame, void *user_data)
+static switch_status_t video_thread_callback(switch_core_session_t *session, switch_frame_t *frame, void *user_data)
 {
 	//switch_channel_t *channel = switch_core_session_get_channel(session);
 	//char *name = switch_channel_get_name(channel);
@@ -3044,7 +3426,11 @@ switch_status_t video_thread_callback(switch_core_session_t *session, switch_fra
 	}
 
 	if (switch_test_flag(member->conference, CFLAG_VIDEO_MUXING) && frame->img) {
-		switch_img_copy(frame->img, &member->img);
+		switch_image_t *img_copy = NULL;
+		
+		switch_img_copy(frame->img, &img_copy);
+		switch_queue_push(member->video_queue, img_copy);
+		mcu_canvas_wake(member->conference->canvas);
 		switch_thread_rwlock_unlock(member->conference->rwlock);
 		unlock_member(member);
 		return SWITCH_STATUS_SUCCESS;
@@ -3097,231 +3483,6 @@ switch_status_t video_thread_callback(switch_core_session_t *session, switch_fra
 
 static void conference_command_handler(switch_live_array_t *la, const char *cmd, const char *sessid, cJSON *jla, void *user_data)
 {
-}
-
-void reset_image(switch_image_t *img, bgcolor_yuv_t *color)
-{
-	int i;
-
-	for (i = 0; i < img->h; i++) {
-		memset(img->planes[SWITCH_PLANE_Y] + img->stride[SWITCH_PLANE_Y] * i, color->y, img->d_w);
-	}
-
-	for (i = 0; i < img->h / 2; i++) {
-		memset(img->planes[SWITCH_PLANE_U] + img->stride[SWITCH_PLANE_U] * i, color->u, img->d_w);
-		memset(img->planes[SWITCH_PLANE_V] + img->stride[SWITCH_PLANE_U] * i, color->v, img->d_w);
-	}
-}
-
-void set_bgcolor(bgcolor_yuv_t *bgcolor, char *bgcolor_str)
-{
-	uint8_t y = 134;
-	uint8_t u = 128;
-	uint8_t v = 124;
-
-	if (bgcolor_str != NULL && strlen(bgcolor_str) == 7) {
-		uint8_t red, green, blue;
-		char str[7];
-		bgcolor_str ++;
-		strncpy(str, bgcolor_str, 6);
-		red = (str[0] >= 'A' ? (str[0] - 'A' + 10) * 16 : (str[0] - '0') * 16) + (str[1] >= 'A' ? (str[1] - 'A' + 10) : (str[0] - '0'));
-		green = (str[2] >= 'A' ? (str[2] - 'A' + 10) * 16 : (str[2] - '0') * 16) + (str[3] >= 'A' ? (str[3] - 'A' + 10) : (str[0] - '0'));
-		blue = (str[4] >= 'A' ? (str[4] - 'A' + 10) * 16 : (str[4] - '0') * 16) + (str[5] >= 'A' ? (str[5] - 'A' + 10) : (str[0] - '0'));
-
-		y = (uint8_t)(((red * 4897) >> 14) + ((green * 9611) >> 14) + ((blue * 1876) >> 14));
-		u = (uint8_t)(- ((red * 2766) >> 14)  - ((5426 * green) >> 14) + blue / 2 + 128);
-		v = (uint8_t)(red / 2 -((6855 * green) >> 14) - ((blue * 1337) >> 14) + 128);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "analy_bgcolor, red = %u, green = %u, blue = %u, y = %u, u = %u, v = %u\n", red, green, blue, y, u, v);
-	}
-
-	bgcolor->y = y;
-	bgcolor->u = u;
-	bgcolor->v = v;
-}
-
-// simple implementation to patch a small img to a big IMG at position x,y
-void patch_image(switch_image_t *IMG, switch_image_t *img, int x, int y)
-{
-	int i, j, k;
-	int W = IMG->d_w;
-	int H = IMG->d_h;
-	int w = img->d_w;
-	int h = img->d_h;
-
-	switch_assert(img->fmt = SWITCH_IMG_FMT_I420);
-	switch_assert(IMG->fmt = SWITCH_IMG_FMT_I420);
-
-	for (i = y; i < (y + h) && i < H; i++) {
-		for (j = x; j < (x + w) && j < W; j++) {
-			IMG->planes[0][i * IMG->stride[0] + j] = img->planes[0][(i - y) * img->stride[0] + (j - x)];
-		}
-	}
-
-	for (i = y; i < (y + h) && i < H; i+=4) {
-		for (j = x; j < (x + w) && j < W; j+=4) {
-			for (k = 1; k <= 2; k++) {
-				IMG->planes[k][i/2 * IMG->stride[k] + j/2]         = img->planes[k][(i-y)/2 * img->stride[k] + (j-x)/2];
-				IMG->planes[k][i/2 * IMG->stride[k] + j/2 + 1]     = img->planes[k][(i-y)/2 * img->stride[k] + (j-x)/2 + 1];
-				IMG->planes[k][(i+2)/2 * IMG->stride[k] + j/2]     = img->planes[k][(i+2-y)/2 * img->stride[k] + (j-x)/2];
-				IMG->planes[k][(i+2)/2 * IMG->stride[k] + j/2 + 1] = img->planes[k][(i+2-y)/2 * img->stride[k] + (j-x)/2 + 1];
-			}
-		}
-	}
-}
-
-static void scale_and_patch(switch_image_t *IMG, switch_image_t *img, mcu_layer_t *layer)
-{
-	int width = img->d_w;
-	int height = img->d_h;
-	int ret;
-	FilterModeEnum filtermode;
-
-	switch_assert(layer->img);
-
-	if (width != layer->w || height != layer->h) {
-		filtermode = kFilterBox;
-		/*int I420Scale(const uint8* src_y, int src_stride_y,
-		  const uint8* src_u, int src_stride_u,
-		  const uint8* src_v, int src_stride_v,
-		  int src_width, int src_height,
-		  uint8* dst_y, int dst_stride_y,
-		  uint8* dst_u, int dst_stride_u,
-		  uint8* dst_v, int dst_stride_v,
-		  int dst_width, int dst_height,
-		  enum FilterMode filtering)
-		*/
-		
-		ret = I420Scale(img->planes[0], img->stride[0],
-						img->planes[1], img->stride[1],
-						img->planes[2], img->stride[2],
-						width, height,
-						layer->img->planes[0], layer->img->stride[0],
-						layer->img->planes[1], layer->img->stride[1],
-						layer->img->planes[2], layer->img->stride[2],
-						layer->w, layer->h,
-						filtermode);
-		
-		if (ret != 0) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ret: %d\n", ret);
-		} else {
-			printf("SCALE and PATCH at %dx%d to %dx%d\n", width, height, layer->x, layer->y);
-			patch_image(IMG, layer->img, layer->x, layer->y);
-		}
-	} else {
-		printf("PATCH at %d %d\n", layer->x, layer->y);
-		patch_image(IMG, img, layer->x, layer->y);
-	}
-}
-
-void reset_canvas(mcu_canvas_t *canvas, char *color)
-{
-	bgcolor_yuv_t bgcolor;
-
-	set_bgcolor(&bgcolor, color);
-	reset_image(canvas->img, &bgcolor);
-}
-
-static void init_canvas(mcu_canvas_t *canvas)
-{
-	int i;
-	canvas->img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, 1920, 1080, 0);
-	switch_assert(canvas->img);
-
-	reset_canvas(canvas, "#0000FF");
-
-	for (i = 0; i < 4; i++) {
-		int w = 800;
-		int h = 600;
-		canvas->layers[i].x = 0 + i * 300;
-		canvas->layers[i].y = 0 + i * 300;
-		canvas->layers[i].w = w;
-		canvas->layers[i].h = h;
-		canvas->layers[i].img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, w, h, 1);
-		switch_assert(canvas->layers[i].img);
-	}
-}
-
-static void destroy_canvas(mcu_canvas_t *canvas) {
-	int i;
-
-	if (canvas->img) {
-		switch_img_free(&canvas->img);
-	}
-
-	for (i = 0; i < MCU_MAX_LAYERS; i++) {
-		switch_img_free(&canvas->layers[i].img);
-	}
-}
-
-static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thread, void *obj)
-{
-	conference_obj_t *conference = (conference_obj_t *) obj;
-	conference_member_t *imember;
-	switch_frame_t write_frame = { 0 };
-	uint8_t packet[SWITCH_RECOMMENDED_BUFFER_SIZE];
-
-	init_canvas(&conference->canvas);
-
-	while (globals.running && !switch_test_flag(conference, CFLAG_DESTRUCT) && switch_test_flag(conference, CFLAG_VIDEO_MUXING)) {
-
-		switch_mutex_lock(conference->member_mutex);
-		for (imember = conference->members; imember; imember = imember->next) {
-			switch_channel_t *ichannel = switch_core_session_get_channel(imember->session);
-
-			printf("MEMBER %d\n", imember->id);
-
-			if (!imember->session || !switch_channel_test_flag(ichannel, CF_VIDEO) || 
-				switch_core_session_read_lock(imember->session) != SWITCH_STATUS_SUCCESS) {
-				continue;
-			}
-
-			if (imember->img) {
-				int which_layer = imember->id % 4; //random layer
-				mcu_canvas_t *canvas = &conference->canvas;
-
-				scale_and_patch(conference->canvas.img, imember->img, &canvas->layers[which_layer]);
-			}
-
-			if (imember->session) {
-				switch_core_session_rwunlock(imember->session);
-			}
-		}
-
-		for (imember = conference->members; imember; imember = imember->next) {
-			switch_channel_t *ichannel = switch_core_session_get_channel(imember->session);
-
-			if (!imember->session || !switch_channel_test_flag(ichannel, CF_VIDEO) || 
-				switch_core_session_read_lock(imember->session) != SWITCH_STATUS_SUCCESS) {
-				continue;
-			}
-
-			printf("WRITE TO %d\n", imember->id);
-			switch_set_flag(&write_frame, SFF_RAW_RTP);
-			write_frame.img = conference->canvas.img;
-			write_frame.packet = packet;
-			write_frame.data = packet + 12;
-			write_frame.datalen = SWITCH_RECOMMENDED_BUFFER_SIZE - 12;
-			write_frame.buflen = write_frame.datalen;
-			write_frame.packetlen = SWITCH_RECOMMENDED_BUFFER_SIZE;
-
-			switch_core_session_write_video_frame(imember->session, &write_frame, SWITCH_IO_FLAG_NONE, 0);			
-			
-			if (imember->session) {
-				switch_core_session_rwunlock(imember->session);
-			}
-		}
-
-		switch_mutex_unlock(conference->member_mutex);
-
-		printf("SLEEP\n");
-		switch_yield(1000000/FPS);
-	}
-
-	printf("END MUX THREAD ???????\n");
-
-	destroy_canvas(&conference->canvas);
-
-	return NULL;
 }
 
 /* Main monitor thread (1 per distinct conference room) */
@@ -3885,6 +4046,9 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 	switch_clear_flag(conference, CFLAG_VIDEO_MUXING);
 	if (conference->video_muxing_thread) {
 		switch_status_t st = 0;
+		if (conference->canvas) {
+			mcu_canvas_wake(conference->canvas);
+		}
 		switch_thread_join(&st, conference->video_muxing_thread);
 	}
 
@@ -10087,14 +10251,17 @@ SWITCH_STANDARD_APP(conference_function)
 static void launch_conference_video_muxing_thread(conference_obj_t *conference)
 {
 	switch_threadattr_t *thd_attr = NULL;
-
-	switch_set_flag_locked(conference, CFLAG_RUNNING);
-	switch_threadattr_create(&thd_attr, conference->pool);
-	switch_threadattr_detach_set(thd_attr, 1);
-	switch_threadattr_priority_set(thd_attr, SWITCH_PRI_REALTIME);
-	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
-	switch_set_flag(conference, CFLAG_VIDEO_MUXING);
-	switch_thread_create(&conference->video_muxing_thread, thd_attr, conference_video_muxing_thread_run, conference, conference->pool);
+	switch_mutex_lock(globals.hash_mutex);
+	if (!conference->video_muxing_thread) { 
+		switch_set_flag_locked(conference, CFLAG_RUNNING);
+		switch_threadattr_create(&thd_attr, conference->pool);
+		switch_threadattr_detach_set(thd_attr, 1);
+		switch_threadattr_priority_set(thd_attr, SWITCH_PRI_REALTIME);
+		switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
+		switch_set_flag(conference, CFLAG_VIDEO_MUXING);
+		switch_thread_create(&conference->video_muxing_thread, thd_attr, conference_video_muxing_thread_run, conference, conference->pool);
+	}
+	switch_mutex_unlock(globals.hash_mutex);
 }
 
 /* Create a thread for the conference and launch it */
