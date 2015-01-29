@@ -38,7 +38,6 @@
 #include <vpx/vp8dx.h>
 #include <vpx/vp8.h>
 
-#define FPS 15
 #define SLICE_SIZE SWITCH_DEFAULT_VIDEO_SIZE
 #define KEY_FRAME_MIN_FREQ 1000000
 
@@ -64,12 +63,12 @@ struct vpx_context {
 	int fps;
 	int format;
 	int intra_period;
-	int pts;
 	int num;
 	int partition_index;
 	const vpx_codec_cx_pkt_t *pkt;
 	int pkt_pos;
 	vpx_codec_iter_t iter;
+	uint32_t last_ts;
 	vpx_codec_ctx_t	decoder;
 	uint8_t decoder_init;
 	switch_buffer_t *vpx_packet_buffer;
@@ -99,14 +98,12 @@ static switch_status_t init_codec(switch_codec_t *codec)
 	if (context->codec_settings.video.bandwidth) {
 		context->bandwidth = context->codec_settings.video.bandwidth;
 	} else {
-		int x = (context->codec_settings.video.width / 100) + 1;
-		context->bandwidth = context->codec_settings.video.width * context->codec_settings.video.height * x;
+		context->bandwidth = context->codec_settings.video.width * context->codec_settings.video.height / 1024;
 	}
 
-	if (context->bandwidth > 1250000) {
-		context->bandwidth = 1250000;
+	if (context->bandwidth > 5120) {
+		context->bandwidth = 5120;
 	}
-
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(codec->session), SWITCH_LOG_NOTICE, 
 					  "VPX reset encoder picture from %dx%d to %dx%d %u BW\n", 
@@ -119,7 +116,7 @@ static switch_status_t init_codec(switch_codec_t *codec)
 	config->g_h = context->codec_settings.video.height;
 	config->rc_target_bitrate = context->bandwidth;
 	config->g_timebase.num = 1;
-	config->g_timebase.den = 1000;
+	config->g_timebase.den = 90000;
 	config->g_error_resilient = VPX_ERROR_RESILIENT_PARTITIONS;
 	config->g_lag_in_frames = 0; // 0- no frame lagging
 
@@ -374,11 +371,10 @@ static switch_status_t consume_partition(vpx_context_t *context, switch_frame_t 
 static switch_status_t switch_vpx_encode(switch_codec_t *codec, switch_frame_t *frame)
 {
 	vpx_context_t *context = (vpx_context_t *)codec->private_info;
-	uint32_t duration = 90000 / FPS;
 	int width = 0;
 	int height = 0;
 	vpx_enc_frame_flags_t vpx_flags = 0;
-
+	int32_t dur = 0;
 
 	if (frame->flags & SFF_SAME_IMAGE) {
 		return consume_partition(context, frame);
@@ -423,7 +419,20 @@ static switch_status_t switch_vpx_encode(switch_codec_t *codec, switch_frame_t *
 		}
 	}
 
-	if (vpx_codec_encode(&context->encoder, (vpx_image_t *) frame->img, context->pts, duration, vpx_flags, VPX_DL_REALTIME) != VPX_CODEC_OK) {
+	if (context->last_ts) {
+		dur = frame->timestamp - context->last_ts;
+		if (dur < 0 || dur > 90000) {
+			dur = 0;
+		}
+	}
+
+
+	if (!dur) {
+		dur = 1;
+	}
+
+
+	if (vpx_codec_encode(&context->encoder, (vpx_image_t *) frame->img, frame->timestamp, dur, vpx_flags, VPX_DL_REALTIME) != VPX_CODEC_OK) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "VP8 encode error %d:%s\n",
 			context->encoder.err, context->encoder.err_detail);
 		
@@ -431,8 +440,8 @@ static switch_status_t switch_vpx_encode(switch_codec_t *codec, switch_frame_t *
 		return SWITCH_STATUS_FALSE;
 	}
 
-	context->pts += duration;
 	context->iter = NULL;
+	context->last_ts = frame->timestamp;
 
 	return consume_partition(context, frame);
 }
@@ -521,6 +530,7 @@ static switch_status_t switch_vpx_decode(switch_codec_t *codec, switch_frame_t *
 		// possible packet loss
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Reset\n");
 		context->need_key_frame = 1;
+		context->last_ts = 0;
 		switch_goto_status(SWITCH_STATUS_RESTART, end);
 	}
 

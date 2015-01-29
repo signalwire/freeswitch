@@ -39,7 +39,7 @@
 #include "codec_api.h"
 //#include "inc/logging.h"     // for debug
 
-#define FPS 30.0f // frame rate
+#define FPS 15.0f // frame rate
 #define H264_NALU_BUFFER_SIZE 65536
 #define SLICE_SIZE SWITCH_DEFAULT_VIDEO_SIZE //NALU Slice Size
 
@@ -70,66 +70,90 @@ typedef struct h264_codec_context_s {
 	int need_key_frame;
 	switch_size_t last_received_timestamp;
 	switch_bool_t last_received_complete_picture;
+	switch_codec_settings_t codec_settings;
+	unsigned int bandwidth;
 } h264_codec_context_t;
 
-int FillSpecificParameters(SEncParamExt& param) {
+int FillSpecificParameters(h264_codec_context_t *context) {
+	SEncParamExt *param;
+	
+	param = &context->encoder_params;
+
+	if (!context->codec_settings.video.width) {
+		context->codec_settings.video.width = 1280;
+	}
+
+	if (!context->codec_settings.video.height) {
+		context->codec_settings.video.height = 720;
+	}
+
+	if (context->codec_settings.video.bandwidth) {
+		context->bandwidth = context->codec_settings.video.bandwidth;
+	} else {
+		context->bandwidth = context->codec_settings.video.width * context->codec_settings.video.height / 1024;
+	}
+
+	if (context->bandwidth > 5120) {
+		context->bandwidth = 5120;
+	}
+
 	/* Test for temporal, spatial, SNR scalability */
-	param.iPicWidth		        = 1280;		 // width of picture in samples
-	param.iPicHeight	        = 720;		 // height of picture in samples
-	param.iTargetBitrate        = 1250000;//1280 * 720 * 8; // target bitrate desired
-	param.iRCMode               = RC_QUALITY_MODE;         //  rc mode control
-	param.iTemporalLayerNum     = 1;         // layer number at temporal level
-	param.iSpatialLayerNum      = 1;         // layer number at spatial level
-	param.bEnableDenoise        = 0;         // denoise control
-	param.bEnableBackgroundDetection = 1;    // background detection control
-	param.bEnableSceneChangeDetect= 1;
-	//param.bEnableFrameSkip = 1;
-	param.iMultipleThreadIdc= 1;
-	param.bEnableAdaptiveQuant       = 1;    // adaptive quantization control
-	param.bEnableLongTermReference   = 0;    // long term reference control
-	param.iLtrMarkPeriod        = 30;
-	param.iLoopFilterAlphaC0Offset= 0;
-	param.iLoopFilterBetaOffset= 0;
-	param.iComplexityMode = MEDIUM_COMPLEXITY;
-	param.uiIntraPeriod		    = FPS * 3;       // period of Intra frame
+	param->iPicWidth		        = 1280;		 // width of picture in samples
+	param->iPicHeight	        = 720;		 // height of picture in samples
+	param->iTargetBitrate        = context->bandwidth;
+	param->iRCMode               = RC_QUALITY_MODE;         //  rc mode control
+	param->iTemporalLayerNum     = 1;         // layer number at temporal level
+	param->iSpatialLayerNum      = 1;         // layer number at spatial level
+	param->bEnableDenoise        = 0;         // denoise control
+	param->bEnableBackgroundDetection = 1;    // background detection control
+	param->bEnableSceneChangeDetect= 1;
+	//param->bEnableFrameSkip = 1;
+	param->iMultipleThreadIdc= 1;
+	param->bEnableAdaptiveQuant       = 1;    // adaptive quantization control
+	param->bEnableLongTermReference   = 0;    // long term reference control
+	param->iLtrMarkPeriod        = 30;
+	param->iLoopFilterAlphaC0Offset= 0;
+	param->iLoopFilterBetaOffset= 0;
+	param->iComplexityMode = MEDIUM_COMPLEXITY;
+	param->uiIntraPeriod		    = FPS * 3;       // period of Intra frame
 #ifdef MT_ENABLED
-	param.bEnableSpsPpsIdAddition = 1;
+	param->bEnableSpsPpsIdAddition = 1;
 #else
-	param.bEnableSpsPpsIdAddition = 0;
+	param->bEnableSpsPpsIdAddition = 0;
 #endif
-	param.bPrefixNalAddingCtrl    = 0;
+	param->bPrefixNalAddingCtrl    = 0;
 
 	int iIndexLayer = 0;
-	param.sSpatialLayers[iIndexLayer].iVideoWidth	= 1280;
-	param.sSpatialLayers[iIndexLayer].iVideoHeight	= 720;
-	param.sSpatialLayers[iIndexLayer].fFrameRate	= (double) (FPS * 1.0f);
-	// param.sSpatialLayers[iIndexLayer].iQualityLayerNum = 1;
-	param.sSpatialLayers[iIndexLayer].iSpatialBitrate  = param.iTargetBitrate;
-	//param.sSpatialLayers[iIndexLayer].iMaxSpatialBitrate  = param.iTargetBitrate;
-	//param.sSpatialLayers[iIndexLayer].uiLevelIdc = LEVEL_1_3;
-	param.sSpatialLayers[iIndexLayer].uiProfileIdc = PRO_BASELINE;
+	param->sSpatialLayers[iIndexLayer].iVideoWidth	= 1280;
+	param->sSpatialLayers[iIndexLayer].iVideoHeight	= 720;
+	param->sSpatialLayers[iIndexLayer].fFrameRate	= (double) (FPS * 1.0f);
+	// param->sSpatialLayers[iIndexLayer].iQualityLayerNum = 1;
+	param->sSpatialLayers[iIndexLayer].iSpatialBitrate  = param->iTargetBitrate;
+	//param->sSpatialLayers[iIndexLayer].iMaxSpatialBitrate  = param->iTargetBitrate;
+	//param->sSpatialLayers[iIndexLayer].uiLevelIdc = LEVEL_1_3;
+	param->sSpatialLayers[iIndexLayer].uiProfileIdc = PRO_BASELINE;
 
 
-	param.iUsageType = CAMERA_VIDEO_REAL_TIME;
-	param.bEnableFrameCroppingFlag = 1;
-	//param.iMaxBitrate = 1250000;
-	//param.iTargetBitrate = 1250000;
+	param->iUsageType = CAMERA_VIDEO_REAL_TIME;
+	param->bEnableFrameCroppingFlag = 1;
+	//param->iMaxBitrate = 1250000;
+	//param->iTargetBitrate = 1250000;
 
 #ifdef MT_ENABLED
-	param.sSpatialLayers[iIndexLayer].sSliceCfg.uiSliceMode = SM_DYN_SLICE;
-	param.sSpatialLayers[iIndexLayer].sSliceCfg.sSliceArgument.uiSliceSizeConstraint = SLICE_SIZE;
-	param.uiMaxNalSize = SLICE_SIZE;
+	param->sSpatialLayers[iIndexLayer].sSliceCfg.uiSliceMode = SM_DYN_SLICE;
+	param->sSpatialLayers[iIndexLayer].sSliceCfg.sSliceArgument.uiSliceSizeConstraint = SLICE_SIZE;
+	param->uiMaxNalSize = SLICE_SIZE;
 #else
-	param.sSpatialLayers[iIndexLayer].sSliceCfg.uiSliceMode = SM_SINGLE_SLICE;
+	param->sSpatialLayers[iIndexLayer].sSliceCfg.uiSliceMode = SM_SINGLE_SLICE;
 #endif
 
-	float fMaxFr = param.sSpatialLayers[param.iSpatialLayerNum - 1].fFrameRate;
-	for (int32_t i = param.iSpatialLayerNum - 2; i >= 0; --i) {
-		if (param.sSpatialLayers[i].fFrameRate > fMaxFr + EPSN) {
-			fMaxFr = param.sSpatialLayers[i].fFrameRate;
+	float fMaxFr = param->sSpatialLayers[param->iSpatialLayerNum - 1].fFrameRate;
+	for (int32_t i = param->iSpatialLayerNum - 2; i >= 0; --i) {
+		if (param->sSpatialLayers[i].fFrameRate > fMaxFr + EPSN) {
+			fMaxFr = param->sSpatialLayers[i].fFrameRate;
 		}
 	}
-	param.fMaxFrameRate = fMaxFr;
+	param->fMaxFrameRate = fMaxFr;
 
 	return 0;
 }
@@ -376,6 +400,10 @@ static switch_status_t switch_h264_init(switch_codec_t *codec, switch_codec_flag
 	context = (h264_codec_context_t*)switch_core_alloc(codec->memory_pool, sizeof(h264_codec_context_t));
 	memset(context, 0, sizeof(*context));
 
+	if (codec_settings) {
+		context->codec_settings = *codec_settings;
+	}
+
 	if (decoding) {
 		WelsCreateDecoder(&context->decoder);
 
@@ -407,7 +435,7 @@ static switch_status_t switch_h264_init(switch_codec_t *codec, switch_codec_flag
 			goto error;
 		}
 
-		FillSpecificParameters(context->encoder_params);
+		FillSpecificParameters(context);
 	}
 
 	//if (encoding | decoding) WelsStderrSetTraceLevel(10);
@@ -627,9 +655,9 @@ end:
 		switch_set_flag(frame, SFF_WAIT_KEY_FRAME);
 	}
 
-	if (frame->img) {
-		switch_set_flag(frame, SFF_USE_VIDEO_TIMESTAMP);
-	} else {
+	if (!frame->img) {
+		//switch_set_flag(frame, SFF_USE_VIDEO_TIMESTAMP);
+		//} else {
 		status = SWITCH_STATUS_MORE_DATA;
 	}
 
