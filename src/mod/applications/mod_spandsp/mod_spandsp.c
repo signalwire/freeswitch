@@ -628,9 +628,17 @@ switch_status_t load_configuration(switch_bool_t reload)
 						spandsp_globals.enable_t38_request = 0;
 					}
 				} else if (!strcmp(name, "ident")) {
-					spandsp_globals.ident = switch_core_strdup(spandsp_globals.config_pool, value);
+                    if (!strcmp(value, "_undef_")) {
+                        spandsp_globals.ident = "";
+                    } else {
+                        spandsp_globals.ident = switch_core_strdup(spandsp_globals.config_pool, value);
+                    }
 				} else if (!strcmp(name, "header")) {
-					spandsp_globals.header = switch_core_strdup(spandsp_globals.config_pool, value);
+                    if (!strcmp(value, "_undef_")) {
+                        spandsp_globals.header = "";
+                    } else {
+                        spandsp_globals.header = switch_core_strdup(spandsp_globals.config_pool, value);
+                    }
 				} else if (!strcmp(name, "spool-dir")) {
 					spandsp_globals.spool = switch_core_strdup(spandsp_globals.config_pool, value);
 				} else if (!strcmp(name, "file-prefix")) {
