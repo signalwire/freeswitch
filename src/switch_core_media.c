@@ -1515,7 +1515,7 @@ SWITCH_DECLARE(switch_status_t) switch_media_handle_create(switch_media_handle_t
 		session->media_handle->mparams = params;
 		
 		if (!session->media_handle->mparams->video_key_freq) {
-			session->media_handle->mparams->video_key_freq = 30000000;
+			session->media_handle->mparams->video_key_freq = 5000000;
 		}
 
 		if (!session->media_handle->mparams->video_key_first) {

@@ -68,9 +68,8 @@ SWITCH_DECLARE(void) switch_img_free(switch_image_t **img)
 {
 	if (img && *img) {
 		vpx_img_free((vpx_image_t *)*img);
+		*img = NULL;
 	}
-
-	*img = NULL;
 }
 
 SWITCH_DECLARE(void) switch_img_copy(switch_image_t *img, switch_image_t **new_img)
