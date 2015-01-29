@@ -761,11 +761,35 @@ static void patch_image(switch_image_t *IMG, switch_image_t *img, int x, int y)
 
 #define SCALE_FACTOR 360
 
+static void reset_layer(mcu_canvas_t *canvas, mcu_layer_t *layer)
+{
+	int x = 0, y = 0;
+	int screen_w = 0, screen_h = 0;
+
+	screen_w = canvas->img->d_w * layer->scale / SCALE_FACTOR;
+	screen_h = canvas->img->d_h * layer->scale / SCALE_FACTOR;
+
+	x = canvas->img->d_w * layer->x / SCALE_FACTOR;
+	y = canvas->img->d_h * layer->y / SCALE_FACTOR;
+
+	if (layer->img && (layer->img->d_w != screen_w || layer->img->d_h != screen_h)) {
+		switch_img_free(&layer->img);
+	}
+
+	if (!layer->img) {
+		layer->img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, screen_w, screen_h, 1);
+	}
+		
+	switch_assert(layer->img);
+
+	reset_image(layer->img, &canvas->bgcolor);
+	patch_image(canvas->img, layer->img, x, y);
+}
+
 static void scale_and_patch(switch_image_t *IMG, switch_image_t *img, mcu_layer_t *layer)
 {
 	int ret;
 	int x = 0, y = 0;
-
 
 	if (layer->scale) {
 		int screen_w = 0, screen_h = 0, img_w = 0, img_h = 0;
@@ -937,9 +961,15 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 	switch_mutex_lock(conference->canvas->cond_mutex);
 
 	while (globals.running && !switch_test_flag(conference, CFLAG_DESTRUCT) && switch_test_flag(conference, CFLAG_VIDEO_MUXING)) {
-		int remaining = 0;
+		int remaining;
+
 
 		switch_mutex_lock(conference->member_mutex);
+
+		top:
+
+		remaining = 0;
+
 		for (imember = conference->members; imember; imember = imember->next) {
 			switch_channel_t *ichannel = switch_core_session_get_channel(imember->session);
 			void *pop;
@@ -1011,15 +1041,16 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 			}
 		}
 
-		switch_mutex_unlock(conference->member_mutex);
-		
-		if (!remaining) {
-			switch_mutex_lock(conference->canvas->cond2_mutex);
-			switch_thread_cond_wait(conference->canvas->cond, conference->canvas->cond_mutex);
-			switch_mutex_unlock(conference->canvas->cond2_mutex);
-		}
-	}
+		if (remaining) goto top;
 
+		switch_mutex_unlock(conference->member_mutex);
+
+		switch_mutex_lock(conference->canvas->cond2_mutex);
+		switch_thread_cond_wait(conference->canvas->cond, conference->canvas->cond_mutex);
+		switch_mutex_unlock(conference->canvas->cond2_mutex);
+		
+	}
+	
 	switch_mutex_unlock(conference->canvas->cond_mutex);
 
 	destroy_canvas(&conference->canvas);
@@ -3184,10 +3215,7 @@ static switch_status_t conference_del_member(conference_obj_t *conference, confe
 	lock_member(member);
 
 	if (member->video_layer_id > -1 && member->conference->canvas) {
-		mcu_layer_t *layer = &conference->canvas->layers[member->video_layer_id];
-
-		reset_image(layer->img, &conference->canvas->bgcolor);
-		scale_and_patch(conference->canvas->img, layer->img, layer);
+		reset_layer(conference->canvas, &conference->canvas->layers[member->video_layer_id]);
 		switch_mutex_lock(conference->canvas->mutex);
 		conference->canvas->layers_used--;
 		conference->canvas->layers[member->video_layer_id].member_id = 0;
