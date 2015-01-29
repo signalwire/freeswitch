@@ -40,6 +40,7 @@
 
 #include <switch.h>
 #include <switch_json.h>
+#include <switch_core_video.h>
 
 SWITCH_BEGIN_EXTERN_C
 #define SWITCH_ENT_ORIGINATE_DELIM ":_:"
@@ -2111,7 +2112,6 @@ typedef struct switch_caller_extension switch_caller_extension_t;
 typedef struct switch_caller_application switch_caller_application_t;
 typedef struct switch_state_handler_table switch_state_handler_table_t;
 typedef struct switch_timer switch_timer_t;
-typedef struct switch_image switch_image_t;
 typedef struct switch_codec switch_codec_t;
 typedef struct switch_core_thread_session switch_core_thread_session_t;
 typedef struct switch_codec_implementation switch_codec_implementation_t;

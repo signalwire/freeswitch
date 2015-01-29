@@ -47,6 +47,13 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_IMG_FMT_UV_FLIP   VPX_IMG_FMT_UV_FLIP
 #define SWITCH_IMG_FMT_HAS_ALPHA VPX_IMG_FMT_HAS_ALPHA
 
+
+#define SWITCH_PLANE_PACKED VPX_PLANE_PACKED
+#define SWITCH_PLANE_Y      VPX_PLANE_Y
+#define SWITCH_PLANE_U      VPX_PLANE_U
+#define SWITCH_PLANE_V      VPX_PLANE_V
+#define SWITCH_PLANE_ALPHA  VPX_PLANE_ALPHA
+
 #ifndef VPX_IMG_FMT_HIGH         /* not available in libvpx 1.3.0 (see commit hash e97aea28) */
 #define VPX_IMG_FMT_HIGH         0x800  /**< Image uses 16bit framebuffer */
 #endif
@@ -81,48 +88,7 @@ typedef enum switch_img_fmt {
 	SWITCH_IMG_FMT_I44416    = SWITCH_IMG_FMT_I444 | SWITCH_IMG_FMT_HIGH
 } switch_img_fmt_t; /**< alias for enum vpx_img_fmt */
 
-  /**\brief Image Descriptor */
-struct switch_image {
-	switch_img_fmt_t fmt; /**< Image Format */
-
-	/* Image storage dimensions */
-	unsigned int  w;           /**< Stored image width */
-	unsigned int  h;           /**< Stored image height */
-	unsigned int  bit_depth;   /**< Stored image bit-depth */
-
-	/* Image display dimensions */
-	unsigned int  d_w;   /**< Displayed image width */
-	unsigned int  d_h;   /**< Displayed image height */
-
-	/* Chroma subsampling info */
-	unsigned int  x_chroma_shift;   /**< subsampling order, X */
-	unsigned int  y_chroma_shift;   /**< subsampling order, Y */
-
-	/* Image data pointers. */
-#define SWITCH_PLANE_PACKED VPX_PLANE_PACKED
-#define SWITCH_PLANE_Y      VPX_PLANE_Y
-#define SWITCH_PLANE_U      VPX_PLANE_U
-#define SWITCH_PLANE_V      VPX_PLANE_V
-#define SWITCH_PLANE_ALPHA  VPX_PLANE_ALPHA
-
-	unsigned char *planes[4];  /**< pointer to the top left pixel for each plane */
-	int      stride[4];  /**< stride between rows for each plane */
-
-	int     bps; /**< bits per sample (for packed formats) */
-
-	/* The following member may be set by the application to associate data
-	 * with this image.
-	 */
-	void    *user_priv; /**< may be set by the application to associate data
-						 *   with this image. */
-
-	/* The following members should be treated as private. */
-	unsigned char *img_data;       /**< private */
-	int      img_data_owner; /**< private */
-	int      self_allocd;    /**< private */
-
-	void    *fb_priv; /**< Frame buffer data associated with the image. */
-};
+typedef vpx_image_t switch_image_t;
 
 /**\brief Representation of a rectangle on a surface */
 typedef struct switch_image_rect {
