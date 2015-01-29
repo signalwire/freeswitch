@@ -1515,7 +1515,7 @@ SWITCH_DECLARE(switch_status_t) switch_media_handle_create(switch_media_handle_t
 		session->media_handle->mparams = params;
 		
 		if (!session->media_handle->mparams->video_key_freq) {
-			session->media_handle->mparams->video_key_freq = 5000000;
+			session->media_handle->mparams->video_key_freq = 30000000;
 		}
 
 		if (!session->media_handle->mparams->video_key_first) {
@@ -2366,14 +2366,21 @@ static void switch_core_session_parse_codec_settings(switch_core_session_t *sess
 		break;
 	case SWITCH_MEDIA_TYPE_VIDEO:
 		{
-			const char *bwv = switch_channel_get_variable(session->channel, "video_codec_bandwidth");
+			const char *bwv = switch_channel_get_variable(session->channel, "rtp_video_max_bandwidth");
 			uint32_t bw = 0;
+			
+			if (!bwv) {
+				bwv = switch_channel_get_variable(session->channel, "rtp_video_max_bandwidth_out");
+			}
+
 
 			if (bwv && (bw = (uint32_t) atol(bwv))) {
-				if (switch_stristr("kb", bwv)) {
-					bw *= 125;
+				if (switch_stristr("KB", bwv)) {
+					bw *= 8;
 				} else if (switch_stristr("mb", bwv)) {
-					bw *= 125000;
+					bw *= 1024;
+				} else if (switch_stristr("MB", bwv)) {
+					bw *= 8192;
 				}
 				engine->codec_settings.video.bandwidth = bw;
 			}
