@@ -525,7 +525,7 @@ SWITCH_DECLARE(switch_pgsql_status_t) switch_pgsql_handle_exec_string_detailed(c
 		goto error;
 	}
 
-	if (!result) {
+	if (result) {
 		switch (result->status) {
 #if POSTGRESQL_MAJOR_VERSION >= 9 && POSTGRESQL_MINOR_VERSION >= 2
 		case PGRES_SINGLE_TUPLE:
