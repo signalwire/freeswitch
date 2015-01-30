@@ -3657,11 +3657,15 @@ static void select_from_profile(sofia_profile_t *profile,
 
 	if (exclude_contact) {
 		sql = switch_mprintf("select contact, profile_name, '%q' "
-							 "from sip_registrations where profile_name='%q' and sip_user='%q' and (sip_host='%q' or presence_hosts like '%%%q%%') "
+							 "from sip_registrations where profile_name='%q' "
+							 "and upper(sip_user)=upper('%q') " 
+							 "and (sip_host='%q' or presence_hosts like '%%%q%%') "
 							 "and contact not like '%%%s%%'", (concat != NULL) ? concat : "", profile->name, user, domain, domain, exclude_contact);
 	} else {
 		sql = switch_mprintf("select contact, profile_name, '%q' "
-							 "from sip_registrations where profile_name='%q' and sip_user='%q' and (sip_host='%q' or presence_hosts like '%%%q%%')",
+							 "from sip_registrations where profile_name='%q' "
+							 "and upper(sip_user)=upper('%q') "
+							 "and (sip_host='%q' or presence_hosts like '%%%q%%')",
 							 (concat != NULL) ? concat : "", profile->name, user, domain, domain);
 	}
 
