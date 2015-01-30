@@ -100,6 +100,36 @@
       <image x="240" y="300" scale="60"/>
       <image x="300" y="300" scale="60"/>
     </layout>
+    <layout name="1up_top_left+5">
+      <image x="0" y="0" scale="240" floor="true" reservation_id="primary"/>
+      <image x="240" y="0" scale="120"/>
+      <image x="240" y="120" scale="120"/>
+      <image x="0" y="240" scale="120"/>
+      <image x="120" y="240" scale="120"/>
+      <image x="240" y="240" scale="120"/>
+    </layout>
+    <layout name="1up_top_left+7">
+      <image x="0" y="0" scale="270" floor="true" reservation_id="primary"/>
+      <image x="270" y="0" scale="90"/>
+      <image x="270" y="90" scale="90"/>
+      <image x="270" y="180" scale="90"/>
+      <image x="0" y="270" scale="90"/>
+      <image x="90" y="270" scale="90"/>
+      <image x="180" y="270" scale="90"/>
+      <image x="270" y="270" scale="90"/>
+    </layout>
+    <layout name="1up_top_left+9">
+      <image x="0" y="0" scale="288" floor="true" reservation_id="primary"/>
+      <image x="288" y="0" scale="72"/>
+      <image x="288" y="72" scale="72"/>
+      <image x="288" y="144" scale="72"/>
+      <image x="288" y="216" scale="72"/>
+      <image x="0" y="288" scale="72"/>
+      <image x="72" y="288" scale="72"/>
+      <image x="144" y="288" scale="72"/>
+      <image x="216" y="288" scale="72"/>
+      <image x="288" y="288" scale="72"/>
+    </layout>
   </layouts>
   <groups>
     <group name="grid">
@@ -109,7 +139,11 @@
       <layout>5x5</layout>
       <layout>6x6</layout>
     </group>
+    <group name="1up_top_left_plus">
+      <layout>1up_top_left+5</layout>
+      <layout>1up_top_left+7</layout>
+      <layout>1up_top_left+9</layout>
+    </group>
   </groups>
 </layout-settings>
 
-<!-- floor="true" reservation_id="primary" -->
