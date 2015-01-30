@@ -1121,14 +1121,21 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 				int i;
 
 				remaining += switch_queue_size(imember->video_queue);
+
+				switch_mutex_lock(conference->canvas->mutex);
 				
 				if (imember->video_layer_id > -1) {
-					layer = &conference->canvas->layers[imember->video_layer_id];
+					if (imember->video_layer_id >= conference->canvas->total_layers) {
+						conference->canvas->layers[imember->video_layer_id].member_id = 0;
+						imember->video_layer_id = -1;
+						conference->canvas->layers_used--;
+					} else {
+						layer = &conference->canvas->layers[imember->video_layer_id];
+					}
 				}
-
-				if (!layer) {
+				
+				if (!layer && conference->canvas->layers_used < conference->canvas->total_layers) {
 					/* find an empty layer */
-					switch_mutex_lock(conference->canvas->mutex);
 					for (i = 0; i < conference->canvas->total_layers; i++) {
 						layer = &conference->canvas->layers[i];
 						if (!layer->member_id) {
@@ -1138,8 +1145,8 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 							break;
 						}
 					}
-					switch_mutex_unlock(conference->canvas->mutex);
 				}
+				switch_mutex_unlock(conference->canvas->mutex);
 				
 				if (layer) {
 					scale_and_patch(conference->canvas->img, img, layer);
@@ -1152,6 +1159,9 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 				switch_core_session_rwunlock(imember->session);
 			}
 		}
+
+		if (remaining) goto top;
+
 
 		for (imember = conference->members; imember; imember = imember->next) {
 			switch_channel_t *ichannel = switch_core_session_get_channel(imember->session);
@@ -1175,8 +1185,6 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 				switch_core_session_rwunlock(imember->session);
 			}
 		}
-
-		if (remaining) goto top;
 
 		switch_mutex_unlock(conference->member_mutex);
 
