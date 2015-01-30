@@ -1,6 +1,9 @@
 <configuration name="conference_layouts.conf" description="Audio Conference">
   <layout-settings>
     <layouts>
+      <layout name="1x1">
+	<image x="0" y="0" scale="360"/>
+      </layout>
       <layout name="2x2">
 	<image x="0" y="0" scale="180"/>
 	<image x="180" y="0" scale="180"/>
@@ -193,6 +196,7 @@
     </layouts>
     <groups>
       <group name="grid">
+	<layout>1x1</layout>
 	<layout>2x2</layout>
 	<layout>3x3</layout>
 	<layout>4x4</layout>
