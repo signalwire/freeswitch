@@ -59,34 +59,9 @@ SWITCH_BEGIN_EXTERN_C
 #endif
 
 #define SWITCH_IMG_FMT_HIGH      VPX_IMG_FMT_HIGH
+#define SWITCH_IMG_FMT_I420	     VPX_IMG_FMT_I420
 
-/*!\brief List of supported image formats */
-typedef enum switch_img_fmt {
-	SWITCH_IMG_FMT_NONE,
-	SWITCH_IMG_FMT_RGB24,   /**< 24 bit per pixel packed RGB */
-	SWITCH_IMG_FMT_RGB32,   /**< 32 bit per pixel packed 0RGB */
-	SWITCH_IMG_FMT_RGB565,  /**< 16 bit per pixel, 565 */
-	SWITCH_IMG_FMT_RGB555,  /**< 16 bit per pixel, 555 */
-	SWITCH_IMG_FMT_UYVY,    /**< UYVY packed YUV */
-	SWITCH_IMG_FMT_YUY2,    /**< YUYV packed YUV */
-	SWITCH_IMG_FMT_YVYU,    /**< YVYU packed YUV */
-	SWITCH_IMG_FMT_BGR24,   /**< 24 bit per pixel packed BGR */
-	SWITCH_IMG_FMT_RGB32_LE, /**< 32 bit packed BGR0 */
-	SWITCH_IMG_FMT_ARGB,     /**< 32 bit packed ARGB, alpha=255 */
-	SWITCH_IMG_FMT_ARGB_LE,  /**< 32 bit packed BGRA, alpha=255 */
-	SWITCH_IMG_FMT_RGB565_LE,  /**< 16 bit per pixel, gggbbbbb rrrrrggg */
-	SWITCH_IMG_FMT_RGB555_LE,  /**< 16 bit per pixel, gggbbbbb 0rrrrrgg */
-	SWITCH_IMG_FMT_YV12    = SWITCH_IMG_FMT_PLANAR | SWITCH_IMG_FMT_UV_FLIP | 1, /**< planar YVU */
-	SWITCH_IMG_FMT_I420    = SWITCH_IMG_FMT_PLANAR | 2,
-	SWITCH_IMG_FMT_VPXYV12 = SWITCH_IMG_FMT_PLANAR | SWITCH_IMG_FMT_UV_FLIP | 3, /** < planar 4:2:0 format with vpx color space */
-	SWITCH_IMG_FMT_VPXI420 = SWITCH_IMG_FMT_PLANAR | 4,
-	SWITCH_IMG_FMT_I422    = SWITCH_IMG_FMT_PLANAR | 5,
-	SWITCH_IMG_FMT_I444    = SWITCH_IMG_FMT_PLANAR | 6,
-	SWITCH_IMG_FMT_444A    = SWITCH_IMG_FMT_PLANAR | SWITCH_IMG_FMT_HAS_ALPHA | 7,
-	SWITCH_IMG_FMT_I42016    = SWITCH_IMG_FMT_I420 | SWITCH_IMG_FMT_HIGH,
-	SWITCH_IMG_FMT_I42216    = SWITCH_IMG_FMT_I422 | SWITCH_IMG_FMT_HIGH,
-	SWITCH_IMG_FMT_I44416    = SWITCH_IMG_FMT_I444 | SWITCH_IMG_FMT_HIGH
-} switch_img_fmt_t; /**< alias for enum vpx_img_fmt */
+typedef vpx_img_fmt_t switch_img_fmt_t;
 
 typedef vpx_image_t switch_image_t;
 
