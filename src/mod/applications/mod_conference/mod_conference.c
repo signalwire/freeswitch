@@ -738,8 +738,8 @@ static void patch_image(switch_image_t *IMG, switch_image_t *img, int x, int y)
 	int w = img->d_w;
 	int h = img->d_h;
 
-	switch_assert(img->fmt = SWITCH_IMG_FMT_I420);
-	switch_assert(IMG->fmt = SWITCH_IMG_FMT_I420);
+	switch_assert(img->fmt == SWITCH_IMG_FMT_I420);
+	switch_assert(IMG->fmt == SWITCH_IMG_FMT_I420);
 
 	for (i = y; i < (y + h) && i < H; i++) {
 		for (j = x; j < (x + w) && j < W; j++) {
