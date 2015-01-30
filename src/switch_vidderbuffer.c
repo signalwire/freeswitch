@@ -100,6 +100,7 @@ static inline switch_vb_node_t *new_node(switch_vb_t *vb)
 	return np;
 }
 
+#if 0
 static inline switch_vb_node_t *find_seq(switch_vb_t *vb, uint16_t seq)
 {
 	switch_vb_node_t *np;
@@ -113,6 +114,7 @@ static inline switch_vb_node_t *find_seq(switch_vb_t *vb, uint16_t seq)
 
 	return NULL;
 }
+#endif
 
 static inline void hide_node(switch_vb_node_t *node)
 {
