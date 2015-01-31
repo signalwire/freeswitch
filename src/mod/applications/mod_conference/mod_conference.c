@@ -864,7 +864,7 @@ static void reset_image(switch_image_t *img, bgcolor_yuv_t *color)
 
 	for (i = 0; i < img->h / 2; i++) {
 		memset(img->planes[SWITCH_PLANE_U] + img->stride[SWITCH_PLANE_U] * i, color->u, img->d_w / 2);
-		memset(img->planes[SWITCH_PLANE_V] + img->stride[SWITCH_PLANE_U] * i, color->v, img->d_w / 2);
+		memset(img->planes[SWITCH_PLANE_V] + img->stride[SWITCH_PLANE_V] * i, color->v, img->d_w / 2);
 	}
 }
 
