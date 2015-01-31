@@ -789,10 +789,11 @@ static void conference_parse_layouts(conference_obj_t *conference)
 				}
 
 				lg = switch_core_alloc(conference->pool, sizeof(*lg));
+				memset(lg, 0, sizeof(*lg));
 
 				while(x_layout) {
 					const char *name = x_layout->txt;
-					layout_node_t *lnode, *last_lnode;
+					layout_node_t *lnode, *last_lnode = NULL;
 
 					if ((lnode = switch_core_hash_find(conference->layout_hash, name))) {
 						
