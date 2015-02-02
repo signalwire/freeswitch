@@ -1292,6 +1292,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 
 	switch (msg->message_id) {
 
+#if 0
 	case SWITCH_MESSAGE_INDICATE_VIDEO_REFRESH_REQ:
 		{
 			const char *pl = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n<media_control>\n<vc_primitive>\n<to_encoder>\n<picture_fast_update>\n</picture_fast_update>\n</to_encoder>\n</vc_primitive>\n</media_control>";
@@ -1310,6 +1311,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 
 		}
 		break;
+#endif
 	case SWITCH_MESSAGE_INDICATE_BROADCAST:
 		{
 			const char *ip = NULL, *port = NULL;
