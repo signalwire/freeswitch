@@ -76,6 +76,8 @@ struct vpx_context {
 	switch_size_t last_received_timestamp;
 	switch_bool_t last_received_complete_picture;
 	int need_key_frame;
+	uint64_t framecount;
+	uint64_t framesum;
 };
 typedef struct vpx_context vpx_context_t;
 
@@ -374,7 +376,7 @@ static switch_status_t switch_vpx_encode(switch_codec_t *codec, switch_frame_t *
 	int width = 0;
 	int height = 0;
 	vpx_enc_frame_flags_t vpx_flags = 0;
-	int32_t dur = 0;
+	int32_t diff = 0, dur = 0;
 
 	if (frame->flags & SFF_SAME_IMAGE) {
 		return consume_partition(context, frame);
@@ -419,18 +421,27 @@ static switch_status_t switch_vpx_encode(switch_codec_t *codec, switch_frame_t *
 		}
 	}
 
+	context->framecount++;
+
 	if (context->last_ts) {
-		dur = frame->timestamp - context->last_ts;
-		if (dur < 0 || dur > 90000) {
-			dur = 0;
+		diff = frame->timestamp - context->last_ts;
+		
+		if (diff < 0 || diff > 90000) {
+			diff = 0;
 		}
 	}
 
 
-	if (!dur) {
-		dur = 1;
+	
+	if (diff) {
+		context->framesum += diff;
 	}
 
+	if (context->framesum && context->framecount) {
+		dur = context->framesum / context->framecount;
+	} else {
+		dur = 1;
+	}
 
 	if (vpx_codec_encode(&context->encoder, (vpx_image_t *) frame->img, frame->timestamp, dur, vpx_flags, VPX_DL_REALTIME) != VPX_CODEC_OK) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "VP8 encode error %d:%s\n",
@@ -443,6 +454,7 @@ static switch_status_t switch_vpx_encode(switch_codec_t *codec, switch_frame_t *
 	context->iter = NULL;
 	context->last_ts = frame->timestamp;
 
+		
 	return consume_partition(context, frame);
 }
 
