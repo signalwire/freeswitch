@@ -11,7 +11,7 @@
 #
 # This file is part of:
 # FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
-# Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
+# Copyright (C) 2005-2015, Anthony Minessale II <anthm@freeswitch.org>
 #
 # This file and all modifications and additions to the pristine package are under the same license as the package itself.
 #
