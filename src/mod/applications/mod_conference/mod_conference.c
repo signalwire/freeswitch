@@ -1097,31 +1097,32 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 	switch_mutex_lock(conference->canvas->cond_mutex);
 
 	while (globals.running && !switch_test_flag(conference, CFLAG_DESTRUCT) && switch_test_flag(conference, CFLAG_VIDEO_MUXING)) {
-		int remaining;
-
-
 		switch_mutex_lock(conference->member_mutex);
-
-		top:
-
-		remaining = 0;
 
 		for (imember = conference->members; imember; imember = imember->next) {
 			switch_channel_t *ichannel = switch_core_session_get_channel(imember->session);
 			void *pop;
+			switch_image_t *img = NULL;
+			int size = 0;
 
 			if (!imember->session || !switch_channel_test_flag(ichannel, CF_VIDEO) || 
 				switch_core_session_read_lock(imember->session) != SWITCH_STATUS_SUCCESS) {
 				continue;
 			}
 
+			do {
+				if (switch_queue_trypop(imember->video_queue, &pop) == SWITCH_STATUS_SUCCESS) {
+					if (img) switch_img_free(&img);
+					img = (switch_image_t *)pop;
+				} else {
+					break;
+				}
+				size = switch_queue_size(imember->video_queue);
+			} while(size > 1);
 
-			if (switch_queue_trypop(imember->video_queue, &pop) == SWITCH_STATUS_SUCCESS) {
-				switch_image_t *img = (switch_image_t *)pop;				
+			if (img) {
 				mcu_layer_t *layer = NULL;
 				int i;
-
-				remaining += switch_queue_size(imember->video_queue);
 
 				switch_mutex_lock(conference->canvas->mutex);
 				
@@ -1160,9 +1161,6 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 				switch_core_session_rwunlock(imember->session);
 			}
 		}
-
-		if (remaining) goto top;
-
 
 		for (imember = conference->members; imember; imember = imember->next) {
 			switch_channel_t *ichannel = switch_core_session_get_channel(imember->session);
