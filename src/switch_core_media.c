@@ -7295,6 +7295,15 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 				if (vbw) {
 					int v = atoi(vbw);
 					bw = v;
+
+					if (switch_stristr("KB", vbw)) {
+						bw *= 8;
+					} else if (switch_stristr("mb", vbw)) {
+						bw *= 1024;
+					} else if (switch_stristr("MB", vbw)) {
+						bw *= 8192;
+					}
+
 				}
 				
 				if (bw > 0) {
