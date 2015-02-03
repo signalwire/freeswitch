@@ -789,7 +789,6 @@ static void conference_parse_layouts(conference_obj_t *conference)
 				}
 
 				lg = switch_core_alloc(conference->pool, sizeof(*lg));
-				memset(lg, 0, sizeof(*lg));
 
 				while(x_layout) {
 					const char *name = x_layout->txt;
