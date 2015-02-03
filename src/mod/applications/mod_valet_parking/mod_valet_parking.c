@@ -25,6 +25,7 @@
  * 
  * Anthony Minessale II <anthm@freeswitch.org>
  * William King <william.king@quentustech.com>
+ * Emmanuel Schmidbauer <eschmidbauer@gmail.com>
  *
  * mod_valet_parking.c -- Valet Parking Module
  *
@@ -314,7 +315,7 @@ static void valet_send_presence(const char *lot_name, valet_lot_t *lot, valet_to
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "unique-id", lot_name);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "channel-state", "CS_ROUTING");
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "answer-state", "confirmed");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call-direction", "inbound");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "presence-call-direction", "inbound");
 			switch_event_fire(&event);
 		}
 	} else {
@@ -332,7 +333,7 @@ static void valet_send_presence(const char *lot_name, valet_lot_t *lot, valet_to
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "unique-id", lot_name);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "channel-state", "CS_HANGUP");
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "answer-state", "terminated");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call-direction", "inbound");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "presence-call-direction", "inbound");
 			switch_event_fire(&event);
 		}		
 	}
@@ -352,7 +353,7 @@ static void valet_send_presence(const char *lot_name, valet_lot_t *lot, valet_to
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "unique-id", token->ext);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "channel-state", "CS_ROUTING");
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "answer-state", "confirmed");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call-direction", token->bridged == 0 ? "outbound" : "inbound");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "presence-call-direction", token->bridged == 0 ? "outbound" : "inbound");
 			switch_event_fire(&event);
 		}
 	} else {
@@ -368,7 +369,7 @@ static void valet_send_presence(const char *lot_name, valet_lot_t *lot, valet_to
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "unique-id", token->ext);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "channel-state", "CS_HANGUP");
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "answer-state", "terminated");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call-direction", "inbound");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "presence-call-direction", "inbound");
 			switch_event_fire(&event);
 		}		
 	}
@@ -819,7 +820,7 @@ static void pres_event_handler(switch_event_t *event)
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "unique-id", lot_name);
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "channel-state", "CS_ROUTING");
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "answer-state", "confirmed");
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call-direction", "inbound");
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "presence-call-direction", "inbound");
 				switch_event_fire(&event);
 			}
 			found++;
@@ -836,7 +837,7 @@ static void pres_event_handler(switch_event_t *event)
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "unique-id", lot_name);
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "channel-state", "CS_HANGUP");
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "answer-state", "terminated");
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call-direction", "inbound");
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "presence-call-direction", "inbound");
 				switch_event_fire(&event);
 			}		
 		}
@@ -881,7 +882,7 @@ static void pres_event_handler(switch_event_t *event)
 						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "unique-id", lot_name);
 						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "channel-state", "CS_ROUTING");
 						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "answer-state", "confirmed");
-						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call-direction", token->bridged == 0 ? "outbound" : "inbound");
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "presence-call-direction", token->bridged == 0 ? "outbound" : "inbound");
 						switch_event_fire(&event);
 					}
 				}
@@ -906,7 +907,7 @@ static void pres_event_handler(switch_event_t *event)
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "unique-id", lot_name);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "channel-state", "CS_HANGUP");
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "answer-state", "terminated");
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call-direction", "inbound");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "presence-call-direction", "inbound");
 		switch_event_fire(&event);
 	}
 
