@@ -880,6 +880,14 @@ static switch_status_t setup_tech_pvt(switch_core_session_t *osession, switch_co
 
 	if (osession) {
 		switch_core_session_get_read_impl(osession, &tech_pvt->read_impl);
+	} else {
+		/* hard coded values, could also be set according to var_event if we want to support HD audio or stereo */
+		tech_pvt->read_impl.microseconds_per_packet = 20000;
+		tech_pvt->read_impl.samples_per_packet = 8000;
+		tech_pvt->read_impl.actual_samples_per_second = tech_pvt->read_impl.samples_per_packet;
+		tech_pvt->read_impl.number_of_channels = 1;
+		tech_pvt->read_impl.iananame = "L16";
+		tech_pvt->read_impl.decoded_bytes_per_packet = 320 * tech_pvt->read_impl.number_of_channels;
 	}
 
 	tech_pvt->session = session;
@@ -1115,8 +1123,8 @@ static switch_call_cause_t vlc_outgoing_channel(switch_core_session_t *session, 
 	}
 
 	if (!codec_str) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No video codec?\n");
-		goto fail;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "No video codec set, default to VP8\n");
+		codec_str = "VP8";
 	}
 
 	if (switch_core_codec_init(&tech_pvt->video_codec,
@@ -1154,11 +1162,6 @@ static switch_call_cause_t vlc_outgoing_channel(switch_core_session_t *session, 
 
 	switch_core_session_start_video_thread(*new_session);
 	switch_channel_set_state(channel, CS_INIT);
-
-	if (switch_core_session_thread_launch(*new_session) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't start session thread.\n");
-		goto fail;
-	}
 
 	switch_channel_mark_answered(channel);
 
@@ -1209,14 +1212,12 @@ static switch_status_t vlc_read_frame(switch_core_session_t *session, switch_fra
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
-	switch_yield(20000);
+	switch_yield(tech_pvt->read_impl.microseconds_per_packet);
 
 	audio_datalen = tech_pvt->read_impl.decoded_bytes_per_packet;
 
-	// goto cng;
-
 	context = tech_pvt->context;
-	assert(context);
+	switch_assert(context);
 
 	vlc_status = libvlc_media_get_state(context->m);
 
@@ -1230,7 +1231,6 @@ static switch_status_t vlc_read_frame(switch_core_session_t *session, switch_fra
 
 	if (switch_buffer_inuse(context->audio_buffer) >= audio_datalen) {
 		tech_pvt->read_frame.data = tech_pvt->audio_data;
-		//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%d %d\n", (int)switch_buffer_inuse(context->audio_buffer), (int)audio_datalen);
 		switch_buffer_read(context->audio_buffer, tech_pvt->read_frame.data, audio_datalen);
 		tech_pvt->read_frame.datalen = audio_datalen;
 		tech_pvt->read_frame.buflen = audio_datalen;
