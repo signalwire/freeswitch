@@ -2367,23 +2367,12 @@ static void switch_core_session_parse_codec_settings(switch_core_session_t *sess
 	case SWITCH_MEDIA_TYPE_VIDEO:
 		{
 			const char *bwv = switch_channel_get_variable(session->channel, "rtp_video_max_bandwidth");
-			uint32_t bw = 0;
-			
+
 			if (!bwv) {
 				bwv = switch_channel_get_variable(session->channel, "rtp_video_max_bandwidth_out");
 			}
-
-
-			if (bwv && (bw = (uint32_t) atol(bwv))) {
-				if (switch_stristr("KB", bwv)) {
-					bw *= 8;
-				} else if (switch_stristr("mb", bwv)) {
-					bw *= 1024;
-				} else if (switch_stristr("MB", bwv)) {
-					bw *= 8192;
-				}
-				engine->codec_settings.video.bandwidth = bw;
-			}
+			
+			engine->codec_settings.video.bandwidth = switch_parse_bandwidth_string(bwv);
 		}
 		break;
 	default:
@@ -7291,26 +7280,12 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 					vbw = switch_channel_get_variable(smh->session->channel, "rtp_video_max_bandwidth_in");
 				}
 
-
-				if (vbw) {
-					int v = atoi(vbw);
-					bw = v;
-
-					if (switch_stristr("KB", vbw)) {
-						bw *= 8;
-					} else if (switch_stristr("mb", vbw)) {
-						bw *= 1024;
-					} else if (switch_stristr("MB", vbw)) {
-						bw *= 8192;
-					}
-
-				}
+				bw = switch_parse_bandwidth_string(vbw);
 				
 				if (bw > 0) {
 					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "b=AS:%d\n", bw);
 					//switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "b=TIAS:%d\n", bw);
 				}
-				
 
 				if (sdp_type == SDP_TYPE_REQUEST) {
 					fir++;

@@ -231,8 +231,9 @@ typedef enum {
 	CFLAG_LIVEARRAY_SYNC = (1 << 21),
 	CFLAG_CONF_RESTART_AUTO_RECORD = (1 << 22),
 	CFLAG_POSITIONAL = (1 << 23),
-	CFLAG_DECODE_VIDEO = (1 << 24),
-	CFLAG_VIDEO_MUXING = (1 << 25)
+	CFLAG_TRANSCODE_VIDEO = (1 << 24),
+	CFLAG_VIDEO_MUXING = (1 << 25),
+	CFLAG_MINIMIZE_VIDEO_ENCODING = (1 << 26)
 } conf_flag_t;
 
 typedef enum {
@@ -342,6 +343,7 @@ typedef struct mcu_layer_geometry_s {
 	int scale;
 	int floor;
 	char *res_id;
+	char *audio_position;
 } mcu_layer_geometry_t;
 
 typedef struct mcu_layer_def_s {
@@ -352,6 +354,7 @@ typedef struct mcu_layer_def_s {
 typedef struct mcu_layer_s {
 	mcu_layer_geometry_t geometry;
 	int member_id;
+	int idx;
 	switch_image_t *img;
 	switch_image_t *cur_img;
 } mcu_layer_t;
@@ -370,6 +373,7 @@ typedef struct mcu_canvas_s {
 	mcu_layer_t layers[MCU_MAX_LAYERS];
 	int total_layers;
 	int layers_used;
+	int layout_floor_id;
 	bgcolor_yuv_t bgcolor;
 	switch_mutex_t *mutex;
 	switch_mutex_t *cond_mutex;
@@ -423,6 +427,7 @@ typedef struct conference_obj {
 	char *outcall_templ;
 	char *video_layout_name;
 	char *video_canvas_bgcolor;
+	uint32_t video_codec_bandwidth;
 	uint32_t canvas_width;
 	uint32_t canvas_height;
 	uint32_t terminate_on_silence;
@@ -674,7 +679,7 @@ static switch_status_t conference_add_event_member_data(conference_member_t *mem
 static switch_status_t conf_api_sub_floor(conference_member_t *member, switch_stream_handle_t *stream, void *data);
 static switch_status_t conf_api_sub_vid_floor(conference_member_t *member, switch_stream_handle_t *stream, void *data);
 static switch_status_t conf_api_sub_clear_vid_floor(conference_obj_t *conference, switch_stream_handle_t *stream, void *data);
-
+static switch_status_t conf_api_sub_position(conference_member_t *member, switch_stream_handle_t *stream, void *data);
 
 #define lock_member(_member) switch_mutex_lock(_member->write_mutex); switch_mutex_lock(_member->read_mutex)
 #define unlock_member(_member) switch_mutex_unlock(_member->read_mutex); switch_mutex_unlock(_member->write_mutex)
@@ -684,6 +689,7 @@ static switch_status_t conf_api_sub_clear_vid_floor(conference_obj_t *conference
 
 typedef struct layout_node_s {
 	char *name;
+	char *audio_position;
 	mcu_layer_geometry_t images[MCU_MAX_LAYERS];
 	struct layout_node_s *next;
 	int layers;
@@ -718,14 +724,13 @@ static void conference_parse_layouts(conference_obj_t *conference)
 	if ((x_layout_settings = switch_xml_child(cfg, "layout-settings"))) {
 		if ((x_layouts = switch_xml_child(x_layout_settings, "layouts"))) {
 			for (x_layout = switch_xml_child(x_layouts, "layout"); x_layout; x_layout = x_layout->next) {
-				layout_node_t *lnode;
-				int x = -1, y = -1, scale = -1, floor = 0;
-				const char *val, *res_id = NULL, *name = NULL;
+				layout_node_t *lnode;				
+				const char *val = NULL, *name = NULL;
 
 				if ((val = switch_xml_attr(x_layout, "name"))) {
 					name = val;
 				}
-				
+
 				if (!name) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "invalid layout\n");
 					continue;
@@ -735,7 +740,9 @@ static void conference_parse_layouts(conference_obj_t *conference)
 				lnode->name = switch_core_strdup(conference->pool, name);
 
 				for (x_image = switch_xml_child(x_layout, "image"); x_image; x_image = x_image->next) {
-				
+					const char *res_id = NULL, *audio_position = NULL;
+					int x = -1, y = -1, scale = -1, floor = 0;
+
 					if ((val = switch_xml_attr(x_image, "x"))) {
 						x = atoi(val);
 					}
@@ -755,7 +762,13 @@ static void conference_parse_layouts(conference_obj_t *conference)
 					if ((val = switch_xml_attr(x_image, "reservation_id"))) {
 						res_id = val;
 					}
-									
+				
+					if ((val = switch_xml_attr(x_image, "audio-position"))) {
+						audio_position = val;
+					}
+				
+
+					
 					if (x < 0 || y < 0 || scale < 0 || !name) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "invalid image\n");
 						continue;
@@ -770,7 +783,11 @@ static void conference_parse_layouts(conference_obj_t *conference)
 					if (res_id) {
 						lnode->images[lnode->layers].res_id = switch_core_strdup(conference->pool, res_id);
 					}
-					
+
+					if (audio_position) {
+						lnode->images[lnode->layers].audio_position = switch_core_strdup(conference->pool, audio_position);
+					}
+
 					lnode->layers++;
 				}
 
@@ -1005,15 +1022,99 @@ static void set_canvas_bgcolor(mcu_canvas_t *canvas, char *color)
 	reset_image(canvas->img, &canvas->bgcolor);
 }
 
+static void detach_video_layer(conference_member_t *member)
+{
+	mcu_layer_t *layer = NULL;
+
+	if (!member->conference->canvas || member->video_layer_id < 0) {
+		return;
+	}
+
+	layer = &member->conference->canvas->layers[member->video_layer_id];
+
+	if (layer->geometry.audio_position) {
+		conf_api_sub_position(member, NULL, "0:0:0");
+	}
+
+	switch_mutex_lock(member->conference->canvas->mutex);
+	reset_layer(member->conference->canvas, layer);
+	member->conference->canvas->layers_used--;
+	layer->member_id = 0;
+	member->video_layer_id = -1;
+	switch_mutex_unlock(member->conference->canvas->mutex);
+}
+
+static switch_status_t attach_video_layer(conference_member_t *member, int idx)
+{
+	mcu_layer_t *layer = NULL;
+	conference_member_t *imember = NULL;
+	switch_channel_t *channel = NULL;
+	const char *res_id = NULL;
+	if (!member->session) abort();
+	
+	channel = switch_core_session_get_channel(member->session);
+	res_id = switch_channel_get_variable(channel, "video_reservation_id");
+	
+
+	layer = &member->conference->canvas->layers[idx];
+
+	if (layer->member_id && layer->member_id == member->id) return SWITCH_STATUS_BREAK; /* no op */
+
+	if (layer->geometry.res_id || res_id) {
+		if (!layer->geometry.res_id || !res_id || strcmp(layer->geometry.res_id, res_id)) {
+			return SWITCH_STATUS_FALSE;
+		}
+	}
+	
+	switch_mutex_lock(member->conference->canvas->mutex);
+
+	if (layer->member_id && (imember = conference_member_get(member->conference, layer->member_id))) {
+		detach_video_layer(imember);
+		switch_thread_rwlock_unlock(imember->rwlock);
+	}
+
+	layer->member_id = member->id;
+	member->conference->canvas->layers_used++;
+	member->video_layer_id = idx;
+	switch_mutex_unlock(member->conference->canvas->mutex);
+
+	if (layer->geometry.audio_position) {
+		conf_api_sub_position(member, NULL, layer->geometry.audio_position);
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
 
 static void init_canvas_layers(conference_obj_t *conference, layout_node_t *lnode)
 {
 	int i = 0;	
+	conference_member_t *member = NULL;
 
+	conference->canvas->layout_floor_id = -1;
+	
 	for (i = 0; i < lnode->layers; i++) {
-		conference->canvas->layers[i].geometry.x = lnode->images[i].x;
-		conference->canvas->layers[i].geometry.y = lnode->images[i].y;
-		conference->canvas->layers[i].geometry.scale = lnode->images[i].scale;
+		mcu_layer_t *layer = &conference->canvas->layers[i];
+
+		layer->geometry.x = lnode->images[i].x;
+		layer->geometry.y = lnode->images[i].y;
+		layer->geometry.scale = lnode->images[i].scale;
+		layer->geometry.floor = lnode->images[i].floor;
+		layer->idx = i;
+
+		if (layer->geometry.floor) {
+			conference->canvas->layout_floor_id = i;			
+		}
+
+		/* if we ever decided to reload layers config on demand the pointer assignment below  will lead to segs but we 
+		   only load them once forever per conference so these pointers are valid for the life of the conference */
+		layer->geometry.res_id = lnode->images[i].res_id;
+		layer->geometry.audio_position = lnode->images[i].audio_position;
+	}
+
+	if (conference->canvas->layout_floor_id > -1 && 
+		conference->video_floor_holder && (member = conference_member_get(conference, conference->video_floor_holder))) {
+		attach_video_layer(member, conference->canvas->layout_floor_id);
+		switch_thread_rwlock_unlock(member->rwlock);
 	}
 
 	conference->canvas->total_layers = lnode->layers;
@@ -1028,6 +1129,7 @@ static void init_canvas(conference_obj_t *conference, layout_node_t *lnode)
 		switch_mutex_init(&conference->canvas->mutex, SWITCH_MUTEX_NESTED, conference->pool);
 		switch_mutex_init(&conference->canvas->cond_mutex, SWITCH_MUTEX_NESTED, conference->pool);
 		switch_mutex_init(&conference->canvas->cond2_mutex, SWITCH_MUTEX_NESTED, conference->pool);
+		conference->canvas->layout_floor_id = -1;
 	}
 
 	switch_img_free(&conference->canvas->img);
@@ -1036,9 +1138,10 @@ static void init_canvas(conference_obj_t *conference, layout_node_t *lnode)
 
 	switch_assert(conference->canvas->img);
 
+	switch_mutex_lock(conference->canvas->mutex);
 	set_canvas_bgcolor(conference->canvas, conference->video_canvas_bgcolor);
-
 	init_canvas_layers(conference, lnode);
+	switch_mutex_unlock(conference->canvas->mutex);
 }
 
 static void destroy_canvas(mcu_canvas_t **canvasP) {
@@ -1136,9 +1239,11 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 	switch_timer_t timer = { 0 };
 	int i = 0;
 	int used = 0, remaining = 0;
-	uint32_t video_key_freq = 10000000;
+	uint32_t video_key_freq = 30000000;
 	switch_time_t last_key_time = 0;
 	mcu_layer_t *layer = NULL;
+	switch_frame_t write_frame = { 0 };
+	uint8_t *packet = switch_core_alloc(conference->pool, SWITCH_RECOMMENDED_BUFFER_SIZE);
 #ifdef TRACK_FPS
 	uint64_t frames = 0;
 	switch_time_t started = switch_micro_time_now();
@@ -1172,44 +1277,46 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 				continue;
 			}
 
+			if (switch_test_flag(conference, CFLAG_MINIMIZE_VIDEO_ENCODING)) {
 
-			if (switch_channel_test_flag(ichannel, CF_VIDEO_REFRESH_REQ)) {
-				switch_channel_clear_flag(ichannel, CF_VIDEO_REFRESH_REQ);
-				need_refresh = SWITCH_TRUE;
-			}
+				if (switch_channel_test_flag(ichannel, CF_VIDEO_REFRESH_REQ)) {
+					switch_channel_clear_flag(ichannel, CF_VIDEO_REFRESH_REQ);
+					need_refresh = SWITCH_TRUE;
+				}
 
-			if (imember->video_codec_index < 0 && (check_codec = switch_core_session_get_video_write_codec(imember->session))) {
-				for (i = 0; write_codecs[i] && switch_core_codec_ready(&write_codecs[i]->codec) && i < MAX_MUX_CODECS; i++) {
-					if (check_codec->implementation->codec_id == write_codecs[i]->codec.implementation->codec_id) {
-						imember->video_codec_index = i;
-						imember->video_codec_id = check_codec->implementation->codec_id;
-						break;
+				if (imember->video_codec_index < 0 && (check_codec = switch_core_session_get_video_write_codec(imember->session))) {
+					for (i = 0; write_codecs[i] && switch_core_codec_ready(&write_codecs[i]->codec) && i < MAX_MUX_CODECS; i++) {
+						if (check_codec->implementation->codec_id == write_codecs[i]->codec.implementation->codec_id) {
+							imember->video_codec_index = i;
+							imember->video_codec_id = check_codec->implementation->codec_id;
+							break;
+						}
+					}
+
+					if (imember->video_codec_index < 0) {
+						write_codecs[i] = switch_core_alloc(conference->pool, sizeof(codec_set_t));
+					
+						if (switch_core_codec_copy(check_codec, &write_codecs[i]->codec, conference->pool) == SWITCH_STATUS_SUCCESS) {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+											  "Setting up video write codec %s at slot %d\n", write_codecs[i]->codec.implementation->iananame, i);
+						
+							imember->video_codec_index = i;
+							imember->video_codec_id = check_codec->implementation->codec_id;
+
+							write_codecs[i]->frame.packet = switch_core_alloc(conference->pool, buflen);
+							write_codecs[i]->frame.data = ((uint8_t *)write_codecs[i]->frame.packet) + 12;
+							write_codecs[i]->frame.packetlen = 0;
+							write_codecs[i]->frame.buflen = buflen - 12;
+							switch_set_flag((&write_codecs[i]->frame), SFF_RAW_RTP);
+
+						}
 					}
 				}
 
 				if (imember->video_codec_index < 0) {
-					write_codecs[i] = switch_core_alloc(conference->pool, sizeof(codec_set_t));
-					
-					if (switch_core_codec_copy(check_codec, &write_codecs[i]->codec, conference->pool) == SWITCH_STATUS_SUCCESS) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
-										  "Setting up video write codec %s at slot %d\n", write_codecs[i]->codec.implementation->iananame, i);
-						
-						imember->video_codec_index = i;
-						imember->video_codec_id = check_codec->implementation->codec_id;
-
-						write_codecs[i]->frame.packet = switch_core_alloc(conference->pool, buflen);
-						write_codecs[i]->frame.data = ((uint8_t *)write_codecs[i]->frame.packet) + 12;
-						write_codecs[i]->frame.packetlen = 0;
-						write_codecs[i]->frame.buflen = buflen - 12;
-						switch_set_flag((&write_codecs[i]->frame), SFF_RAW_RTP);
-
-					}
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Write Codec Error\n");
+					continue;
 				}
-			}
-
-			if (imember->video_codec_index < 0) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Write Codec Error\n");
-				continue;
 			}
 
 			img = NULL;
@@ -1234,13 +1341,9 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 				used++;
 
 				switch_mutex_lock(conference->canvas->mutex);
-				
 				if (imember->video_layer_id > -1) {
 					if (imember->video_layer_id >= conference->canvas->total_layers) {
-						conference->canvas->layers[imember->video_layer_id].member_id = 0;
-						reset_layer(conference->canvas, &conference->canvas->layers[imember->video_layer_id]);
-						imember->video_layer_id = -1;
-						conference->canvas->layers_used--;
+						detach_video_layer(imember);
 					} else {
 						layer = &conference->canvas->layers[imember->video_layer_id];
 					}
@@ -1251,10 +1354,10 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 					for (i = 0; i < conference->canvas->total_layers; i++) {
 						layer = &conference->canvas->layers[i];
 						if (!layer->member_id) {
-							conference->canvas->layers[i].member_id = imember->id;
-							conference->canvas->layers_used++;
-							imember->video_layer_id = i;
-							break;
+							switch_status_t lstatus = attach_video_layer(imember, i);
+							if (lstatus == SWITCH_STATUS_SUCCESS || lstatus == SWITCH_STATUS_BREAK) {
+								break;
+							}
 						}
 					}
 				}
@@ -1266,8 +1369,6 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 					layer->cur_img = img;
 					scale_and_patch(conference, layer);
 				}
-
-
 			}
 
 			if (imember->session) {
@@ -1298,9 +1399,36 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 
 			switch_core_timer_sync(&timer);
 			
-			for (i = 0; write_codecs[i] && switch_core_codec_ready(&write_codecs[i]->codec) && i < MAX_MUX_CODECS; i++) {
-				write_codecs[i]->frame.img = conference->canvas->img;
-				write_canvas_image_to_codec_group(conference, write_codecs[i], i, timer.samplecount, need_refresh, need_keyframe);
+			if (switch_test_flag(conference, CFLAG_MINIMIZE_VIDEO_ENCODING)) {
+				for (i = 0; write_codecs[i] && switch_core_codec_ready(&write_codecs[i]->codec) && i < MAX_MUX_CODECS; i++) {
+					write_codecs[i]->frame.img = conference->canvas->img;
+					write_canvas_image_to_codec_group(conference, write_codecs[i], i, timer.samplecount, need_refresh, need_keyframe);
+				}
+			} else {
+				switch_mutex_lock(conference->member_mutex);
+				for (imember = conference->members; imember; imember = imember->next) {
+					switch_channel_t *ichannel = switch_core_session_get_channel(imember->session);
+
+					if (!imember->session || !switch_channel_test_flag(ichannel, CF_VIDEO) || 
+						switch_core_session_read_lock(imember->session) != SWITCH_STATUS_SUCCESS) {
+						continue;
+					}
+
+					switch_set_flag(&write_frame, SFF_RAW_RTP);
+					write_frame.img = conference->canvas->img;
+					write_frame.packet = packet;
+					write_frame.data = packet + 12;
+					write_frame.datalen = SWITCH_RECOMMENDED_BUFFER_SIZE - 12;
+					write_frame.buflen = write_frame.datalen;
+					write_frame.packetlen = SWITCH_RECOMMENDED_BUFFER_SIZE;
+
+					switch_core_session_write_video_frame(imember->session, &write_frame, SWITCH_IO_FLAG_NONE, 0);			
+			
+					if (imember->session) {
+						switch_core_session_rwunlock(imember->session);
+					}
+				}
+				switch_mutex_unlock(conference->member_mutex);
 			}
 		}
 
@@ -3023,7 +3151,7 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 			switch_set_flag_locked(member, MFLAG_ACK_VIDEO);
 		}
 
-		if (switch_test_flag(conference, CFLAG_DECODE_VIDEO)) {
+		if (switch_test_flag(conference, CFLAG_TRANSCODE_VIDEO)) {
 			switch_channel_set_flag(channel, CF_VIDEO_DECODED_READ);
 		}
 
@@ -3240,6 +3368,15 @@ static void conference_set_video_floor_holder(conference_obj_t *conference, conf
 			conference->last_video_floor_holder = conference->video_floor_holder;
 			
 			if (conference->last_video_floor_holder && (imember = conference_member_get(conference, conference->last_video_floor_holder))) {
+
+				if (member->conference->canvas) {
+					switch_mutex_lock(member->conference->canvas->mutex);
+					detach_video_layer(member);
+					detach_video_layer(imember);
+					attach_video_layer(member, conference->canvas->layout_floor_id);
+					switch_mutex_unlock(member->conference->canvas->mutex);
+				}
+
 				switch_core_session_request_video_refresh(imember->session);
 
 				if (switch_test_flag(imember, MFLAG_VIDEO_BRIDGE)) {
@@ -3247,7 +3384,7 @@ static void conference_set_video_floor_holder(conference_obj_t *conference, conf
 				}		
 				switch_thread_rwlock_unlock(imember->rwlock);
 				imember = NULL;
-			}
+			} 
 			
 			old_member = conference->video_floor_holder;
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Dropping video floor %d\n", old_member);
@@ -3265,6 +3402,10 @@ static void conference_set_video_floor_holder(conference_obj_t *conference, conf
 		}
 	}
 
+	if (member && conference->canvas && conference->canvas->layout_floor_id > -1) {
+		attach_video_layer(member, conference->canvas->layout_floor_id);
+	}
+	
 	if (member) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Adding video floor %s\n",
 						  switch_channel_get_name(member->channel));
@@ -3485,13 +3626,7 @@ static switch_status_t conference_del_member(conference_obj_t *conference, confe
 
 	lock_member(member);
 
-	if (member->video_layer_id > -1 && member->conference->canvas) {
-		reset_layer(conference->canvas, &conference->canvas->layers[member->video_layer_id]);
-		switch_mutex_lock(conference->canvas->mutex);
-		conference->canvas->layers_used--;
-		conference->canvas->layers[member->video_layer_id].member_id = 0;
-		switch_mutex_unlock(conference->canvas->mutex);
-	}
+	detach_video_layer(member);
 
 	member_del_relationship(member, 0);
 
@@ -7278,7 +7413,7 @@ static switch_status_t conf_api_sub_auto_position(conference_obj_t *conference, 
 static switch_status_t conf_api_sub_position(conference_member_t *member, switch_stream_handle_t *stream, void *data)
 {
 #ifndef OPENAL_POSITIONING
-	stream->write_function(stream, "-ERR not supported\n");
+	if (stream) stream->write_function(stream, "-ERR not supported\n");
 #else
 	switch_event_t *event;
 
@@ -9685,8 +9820,12 @@ static void set_cflags(const char *flags, uint32_t *f)
 				*f |= CFLAG_RFC4579;
 			} else if (!strcasecmp(argv[i], "auto-3d-position")) {
 				*f |= CFLAG_POSITIONAL;
-			} else if (!strcasecmp(argv[i], "decode-video")) {
-				*f |= CFLAG_DECODE_VIDEO;
+			} else if (!strcasecmp(argv[i], "decode-video") || !strcasecmp(argv[i], "transcode-video")) {
+				*f |= CFLAG_TRANSCODE_VIDEO;
+			} else if (!strcasecmp(argv[i], "minimize-video-encoding")) {
+				*f |= CFLAG_MINIMIZE_VIDEO_ENCODING;
+			} else if (!strcasecmp(argv[i], "mix-video")) {
+				*f |= CFLAG_VIDEO_MUXING;
 			}
 
 			
@@ -10780,6 +10919,7 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 	char *video_layout_name = NULL;
 	char *video_canvas_size = NULL;
 	char *video_canvas_bgcolor = NULL;
+	char *video_codec_bandwidth = NULL;
 	uint32_t max_members = 0;
 	uint32_t announce_count = 0;
 	char *maxmember_sound = NULL;
@@ -10933,6 +11073,8 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 				video_canvas_bgcolor= val;
 			} else if (!strcasecmp(var, "video-canvas-size") && !zstr(val)) {
 				video_canvas_size = val;
+			} else if (!strcasecmp(var, "video-codec-bandwidth") && !zstr(val)) {
+				video_codec_bandwidth = val;
 			} else if (!strcasecmp(var, "exit-sound") && !zstr(val)) {
 				exit_sound = val;
 			} else if (!strcasecmp(var, "alone-sound") && !zstr(val)) {
@@ -11116,6 +11258,10 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 	conference->broadcast_chat_messages = broadcast_chat_messages;
 	conference_parse_layouts(conference);
 	
+	if (video_codec_bandwidth) {
+		conference->video_codec_bandwidth = switch_parse_bandwidth_string(video_codec_bandwidth);
+	}
+
 	if (video_layout_name && !switch_core_hash_find(conference->layout_hash, video_layout_name)) {
 		video_layout_name = NULL;
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "invalid conference layout settings\n"); 
