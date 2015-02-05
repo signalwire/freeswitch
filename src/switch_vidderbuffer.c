@@ -191,8 +191,8 @@ static inline void add_node(switch_vb_t *vb, switch_rtp_packet_t *packet, switch
 
 
 
-	if (vb->write_init && ((abs(htons(packet->header.seq) - htons(vb->highest_wrote_seq)) > 10) || 
-						   (abs(ntohl(node->packet.header.ts) - ntohl(vb->highest_wrote_ts)) > 270000))) {
+	if (vb->write_init && ((abs(htons(packet->header.seq) - htons(vb->highest_wrote_seq)) > 16) || 
+						   (abs(ntohl(node->packet.header.ts) - ntohl(vb->highest_wrote_ts)) > 900000))) {
 		vb_debug(vb, 2, "%s", "CHANGE DETECTED, PUNT\n");
 		switch_vb_reset(vb);
 	}
@@ -408,11 +408,9 @@ SWITCH_DECLARE(uint32_t) switch_vb_pop_nack(switch_vb_t *vb)
 		nack = (uint32_t) htons(least);
 		
 		for(i = 0; i < 16; i++) {
-			if (switch_core_inthash_delete(vb->missing_seq_hash, (uint32_t)htons(least + i))) {
+			if (switch_core_inthash_delete(vb->missing_seq_hash, (uint32_t)htons(least + i + 1))) {
 				vb_debug(vb, 3, "Found addtl NACKABLE seq %u\n", least + i + 1);
 				blp |= (1 << i);
-			} else {
-				break;
 			}
 		}
 
@@ -443,18 +441,17 @@ SWITCH_DECLARE(switch_status_t) switch_vb_put_packet(switch_vb_t *vb, switch_rtp
 	if (!want) want = got;
 	
 	if (got > want) {
+		vb_debug(vb, 2, "GOT %u WANTED %u; MARK SEQS MISSING %u - %u\n", got, want, want, got - 1);
+
 		for (i = want; i < got; i++) {
-			vb_debug(vb, 2, "MARK SEQ MISSING %u\n", i);
 			switch_core_inthash_insert(vb->missing_seq_hash, (uint32_t)htons(i), (void *)SWITCH_TRUE);
 		}
 	} else {
-		if (switch_core_inthash_delete(vb->missing_seq_hash, (uint32_t)htons(got))) {
-			vb_debug(vb, 2, "MARK SEQ FOUND %u\n", got);
-		}
+		switch_core_inthash_delete(vb->missing_seq_hash, (uint32_t)htons(got));
 	}
 
 	if (got >= want) {
-		vb->next_seq = htons(ntohs(packet->header.seq) + 1);
+		vb->next_seq = htons(got + 1);
 	}
 
 	add_node(vb, packet, len);

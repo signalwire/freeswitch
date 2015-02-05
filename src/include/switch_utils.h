@@ -976,6 +976,27 @@ SWITCH_DECLARE(char *) switch_util_quote_shell_arg_pool(const char *string, swit
 
 #define SWITCH_READ_ACCEPTABLE(status) (status == SWITCH_STATUS_SUCCESS || status == SWITCH_STATUS_BREAK || status == SWITCH_STATUS_INUSE)
 
+static inline uint32_t switch_parse_bandwidth_string(const char *bwv)
+{
+	uint32_t bw = 0;
+
+	if (!bwv) return 0;
+	
+	if (bwv && (bw = (uint32_t) atol(bwv))) {
+		if (bw < 0) return 0;
+
+		if (switch_stristr("KB", bwv)) {
+			bw *= 8;
+		} else if (switch_stristr("mb", bwv)) {
+			bw *= 1024;
+		} else if (switch_stristr("MB", bwv)) {
+			bw *= 8192;
+		}
+	}
+
+	return bw;
+}
+
 static inline int switch_needs_url_encode(const char *s)
 {
 	const char hex[] = "0123456789ABCDEF";
