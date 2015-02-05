@@ -7319,8 +7319,8 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 				}
 
 				/* DFF nack pli etc */
-				//nack = v_engine->nack = 0;
-				//pli = v_engine->pli = 0;
+				nack = v_engine->nack = 0;
+				pli = v_engine->pli = 0;
 				
 				
 				for (pmap = v_engine->cur_payload_map; pmap && pmap->allocated; pmap = pmap->next) {
@@ -8130,7 +8130,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_receive_message(switch_core_se
 			if (v_engine->rtp_session) {
 				if (switch_rtp_test_flag(v_engine->rtp_session, SWITCH_RTP_FLAG_PLI)) {
 					switch_rtp_video_loss(v_engine->rtp_session);
-				} else if (switch_rtp_test_flag(v_engine->rtp_session, SWITCH_RTP_FLAG_FIR)) {
+				}
+
+				if (switch_rtp_test_flag(v_engine->rtp_session, SWITCH_RTP_FLAG_FIR)) {
 					switch_rtp_video_refresh(v_engine->rtp_session);
 				}
 			}
@@ -9744,6 +9746,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_codec_control(switch_core_sess
 
 			smh->last_codec_refresh = now;
 		}
+
+		switch_channel_set_flag(session->channel, CF_VIDEO_REFRESH_REQ);
 		return switch_core_codec_control(codec, cmd, ctype, cmd_data, rtype, ret_data);
 	}
 
@@ -9751,7 +9755,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_codec_control(switch_core_sess
 }
 
 
-static switch_status_t raw_write_video(switch_core_session_t *session, switch_frame_t *frame, switch_io_flag_t flags, int stream_id) 
+SWITCH_DECLARE(switch_status_t) switch_core_session_write_encoded_video_frame(switch_core_session_t *session, 
+																		switch_frame_t *frame, switch_io_flag_t flags, int stream_id)
 {
 	switch_io_event_hook_video_write_frame_t *ptr;
 	switch_status_t status = SWITCH_STATUS_FALSE;
@@ -9835,7 +9840,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_video_frame(switch_cor
 	}	
 
 	if (!img) {
-		return raw_write_video(session, frame, flags, stream_id);
+		return switch_core_session_write_encoded_video_frame(session, frame, flags, stream_id);
 	}
 
 	write_frame = *frame;
@@ -9849,7 +9854,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_video_frame(switch_cor
 			if (!smh->video_timer.timer_interface) {
 				switch_core_timer_init(&smh->video_timer, "soft", 1, 90, switch_core_session_get_pool(session));
 			}
-			
+			switch_core_timer_sync(&smh->video_timer);
 			timer = &smh->video_timer;
 		}
 
@@ -9873,7 +9878,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_video_frame(switch_cor
 			}
 			
 			switch_set_flag(frame, SFF_RAW_RTP_PARSE_FRAME);
-			status = raw_write_video(session, frame, flags, stream_id);
+			status = switch_core_session_write_encoded_video_frame(session, frame, flags, stream_id);
 		}
 		
 	} while(status == SWITCH_STATUS_SUCCESS && encode_status == SWITCH_STATUS_MORE_DATA);

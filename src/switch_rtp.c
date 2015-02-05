@@ -5242,6 +5242,7 @@ static void handle_nack(switch_rtp_t *rtp_session, uint32_t nack)
 	switch_size_t bytes = 0;
 	rtp_msg_t send_msg[1] = {{{0}}};
 	uint16_t seq = (uint16_t) (nack & 0xFFFF);
+	uint16_t blp = (uint16_t) (nack >> 16);
 	int i;
 	const char *tx_host = NULL;
 	const char *old_host = NULL;
@@ -5278,10 +5279,11 @@ static void handle_nack(switch_rtp_t *rtp_session, uint32_t nack)
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG, "Cannot send NACK for seq %u\n", ntohs(seq));
 	}
 
+	blp = ntohs(blp);
 	for (i = 0; i < 16; i++) {
-		if ((nack & (1 << (16 + i)))) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG, "Also Got NACK for seq %u\n", ntohs(seq) + i);
-			if (switch_vb_get_packet_by_seq(rtp_session->vbw, htons(ntohs(seq) + i), (switch_rtp_packet_t *) &send_msg, &bytes) == SWITCH_STATUS_SUCCESS) {
+		if (blp & (1 << i)) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG, "Also Got NACK for seq %u\n", ntohs(seq) + i + 1);
+			if (switch_vb_get_packet_by_seq(rtp_session->vbw, htons(ntohs(seq) + i + 1), (switch_rtp_packet_t *) &send_msg, &bytes) == SWITCH_STATUS_SUCCESS) {
 				if (rtp_session->flags[SWITCH_RTP_FLAG_DEBUG_RTP_WRITE]) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(rtp_session->session), SWITCH_LOG_CONSOLE,
 									  "X %s b=%4ld %s:%u %s:%u %s:%u pt=%d ts=%u seq=%u m=%d\n",

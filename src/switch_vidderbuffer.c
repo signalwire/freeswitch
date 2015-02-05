@@ -383,6 +383,7 @@ SWITCH_DECLARE(uint32_t) switch_vb_pop_nack(switch_vb_t *vb)
 {
 	switch_hash_index_t *hi = NULL;
 	uint32_t nack = 0;
+	uint16_t blp = 0;
 	uint16_t least = 0;
 	int i = 0;
 
@@ -405,15 +406,18 @@ SWITCH_DECLARE(uint32_t) switch_vb_pop_nack(switch_vb_t *vb)
 	if (least && switch_core_inthash_delete(vb->missing_seq_hash, (uint32_t)htons(least))) {
 		vb_debug(vb, 3, "Found smallest NACKABLE seq %u\n", least);
 		nack = (uint32_t) htons(least);
-	
-		for (i = 1; i > 17; i++) {
+		
+		for(i = 0; i < 16; i++) {
 			if (switch_core_inthash_delete(vb->missing_seq_hash, (uint32_t)htons(least + i))) {
-				vb_debug(vb, 3, "Found addtl NACKABLE seq %u\n", least + i);
-				nack |= (1 << (16 + i));
+				vb_debug(vb, 3, "Found addtl NACKABLE seq %u\n", least + i + 1);
+				blp |= (1 << i);
 			} else {
 				break;
 			}
 		}
+
+		blp = htons(blp);
+		nack |= (uint32_t) blp << 16;
 	}
 	
 	switch_mutex_unlock(vb->mutex);
