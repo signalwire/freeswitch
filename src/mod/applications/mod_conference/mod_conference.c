@@ -8958,9 +8958,10 @@ SWITCH_STANDARD_APP(conference_auto_function)
 
 static int setup_media(conference_member_t *member, conference_obj_t *conference)
 {
+	switch_codec_implementation_t read_impl = { 0 };
+
 	switch_mutex_lock(member->audio_out_mutex);
 
-	switch_codec_implementation_t read_impl = { 0 };
 	switch_core_session_get_read_impl(member->session, &read_impl);
 
 	if (switch_core_codec_ready(&member->read_codec)) {
