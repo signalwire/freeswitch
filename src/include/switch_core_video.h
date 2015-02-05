@@ -143,6 +143,9 @@ SWITCH_DECLARE(int) switch_img_set_rect(switch_image_t  *img,
 				   unsigned int  w,
 				   unsigned int  h);
 
+
+SWITCH_DECLARE(void) switch_img_patch(switch_image_t *IMG, switch_image_t *img, int x, int y);
+
 /*!\brief Copy image to a new image
 *
 * if new_img is NULL, a new image is allocated

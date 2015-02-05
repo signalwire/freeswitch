@@ -72,9 +72,41 @@ SWITCH_DECLARE(void) switch_img_free(switch_image_t **img)
 	}
 }
 
+// simple implementation to patch a small img to a big IMG at position x,y
+SWITCH_DECLARE(void) switch_img_patch(switch_image_t *IMG, switch_image_t *img, int x, int y)
+{
+	int i, j, k;
+	int W = IMG->d_w;
+	int H = IMG->d_h;
+	int w = img->d_w;
+	int h = img->d_h;
+
+	switch_assert(img->fmt == SWITCH_IMG_FMT_I420);
+	switch_assert(IMG->fmt == SWITCH_IMG_FMT_I420);
+
+	for (i = y; i < (y + h) && i < H; i++) {
+		for (j = x; j < (x + w) && j < W; j++) {
+			IMG->planes[0][i * IMG->stride[0] + j] = img->planes[0][(i - y) * img->stride[0] + (j - x)];
+		}
+	}
+
+	for (i = y; i < (y + h) && i < H; i+=4) {
+		for (j = x; j < (x + w) && j < W; j+=4) {
+			for (k = 1; k <= 2; k++) {
+				IMG->planes[k][i/2 * IMG->stride[k] + j/2]         = img->planes[k][(i-y)/2 * img->stride[k] + (j-x)/2];
+				IMG->planes[k][i/2 * IMG->stride[k] + j/2 + 1]     = img->planes[k][(i-y)/2 * img->stride[k] + (j-x)/2 + 1];
+				IMG->planes[k][(i+2)/2 * IMG->stride[k] + j/2]     = img->planes[k][(i+2-y)/2 * img->stride[k] + (j-x)/2];
+				IMG->planes[k][(i+2)/2 * IMG->stride[k] + j/2 + 1] = img->planes[k][(i+2-y)/2 * img->stride[k] + (j-x)/2 + 1];
+			}
+		}
+	}
+}
+
+
+
 SWITCH_DECLARE(void) switch_img_copy(switch_image_t *img, switch_image_t **new_img)
 {
-	int i;
+	int i = 0;
 
 	switch_assert(img);
 	switch_assert(new_img);
@@ -101,6 +133,7 @@ SWITCH_DECLARE(void) switch_img_copy(switch_image_t *img, switch_image_t **new_i
 		memcpy((*new_img)->planes[SWITCH_PLANE_U] + (*new_img)->stride[SWITCH_PLANE_U] * i, img->planes[SWITCH_PLANE_U] + img->stride[SWITCH_PLANE_U] * i, img->d_w / 2);
 		memcpy((*new_img)->planes[SWITCH_PLANE_V] + (*new_img)->stride[SWITCH_PLANE_V] * i, img->planes[SWITCH_PLANE_V] + img->stride[SWITCH_PLANE_V] * i, img->d_w /2);
 	}
+
 }
 
 /* For Emacs:
