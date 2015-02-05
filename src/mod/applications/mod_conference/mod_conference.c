@@ -8958,6 +8958,8 @@ SWITCH_STANDARD_APP(conference_auto_function)
 
 static int setup_media(conference_member_t *member, conference_obj_t *conference)
 {
+	switch_mutex_lock(member->audio_out_mutex);
+
 	switch_codec_implementation_t read_impl = { 0 };
 	switch_core_session_get_read_impl(member->session, &read_impl);
 
@@ -9052,6 +9054,8 @@ static int setup_media(conference_member_t *member, conference_obj_t *conference
 		goto codec_done1;
 	}
 
+	switch_mutex_unlock(member->audio_out_mutex);
+
 	return 0;
 
   codec_done1:
@@ -9059,6 +9063,8 @@ static int setup_media(conference_member_t *member, conference_obj_t *conference
   codec_done2:
 	switch_core_codec_destroy(&member->write_codec);
   done:
+
+	switch_mutex_unlock(member->audio_out_mutex);
 
 	return -1;
 
