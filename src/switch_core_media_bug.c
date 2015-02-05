@@ -581,7 +581,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_transfer_recordings(switch
 		const char *new_stereo = orig_stereo;
 		
 		switch_thread_rwlock_wrlock(orig_session->bug_rwlock);
-		
+		switch_channel_set_variable(new_channel, "RECORD_MIN_SEC", "0");
 		switch_channel_set_variable(new_channel, "record_append", "true");
 		switch_channel_set_variable(new_channel, "record_stereo", new_stereo);
 
