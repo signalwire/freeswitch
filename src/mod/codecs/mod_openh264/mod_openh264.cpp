@@ -62,6 +62,7 @@ typedef struct h264_codec_context_s {
 	int last_nalu_data_pos;
 	int nalu_eat;
 	int nalu_28_start;
+	int change_bandwidth;
 	SSourcePicture pic;
 
 	ISVCDecoder *decoder;
@@ -459,19 +460,24 @@ static switch_status_t init_encoder(h264_codec_context_t *context, uint32_t widt
 {
 	int i;
 
-	context->encoder_params.iPicWidth = width;
-	context->encoder_params.iPicHeight = height;
+	if (width) context->encoder_params.iPicWidth = width;
+	if (height) context->encoder_params.iPicHeight = height;
 	//context->encoder_params.iTargetBitrate = width * height * 8;
 	for (int i=0; i<context->encoder_params.iSpatialLayerNum; i++) {
 		context->encoder_params.sSpatialLayers[i].iVideoWidth = width;
 		context->encoder_params.sSpatialLayers[i].iVideoHeight = height;
 	}
+	FillSpecificParameters(context);
 
 	/* just do it, the encoder will Uninitialize first by itself if already initialized */
 	if (cmResultSuccess != context->encoder->InitializeExt(&context->encoder_params)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Encoder Init Error\n");
 		return SWITCH_STATUS_FALSE;
 	}
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Codec ready; picture size %dx%d Bandwidth: %d\n",
+					  context->encoder_params.iPicWidth, context->encoder_params.iPicHeight, context->codec_settings.video.bandwidth);
+
 
 	context->encoder_initialized = SWITCH_TRUE;
 	return SWITCH_STATUS_SUCCESS;
@@ -514,9 +520,17 @@ static switch_status_t switch_h264_encode(switch_codec_t *codec, switch_frame_t 
 		init_encoder(context, width, height);
 	}
 
+
+	if (context->change_bandwidth) {
+		context->codec_settings.video.bandwidth = context->change_bandwidth;
+		context->change_bandwidth = 0;
+		init_encoder(context, 0, 0);
+	}
+
 	if (width != context->encoder_params.iPicWidth || height != context->encoder_params.iPicHeight ) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "picture size changed from %dx%d to %dx%d, reinitializing encoder",
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "picture size changed from %dx%d to %dx%d, reinitializing encoder\n",
 			context->encoder_params.iPicWidth, context->encoder_params.iPicHeight, width, height);
+
 		init_encoder(context, width, height);
 	}
 
@@ -682,6 +696,23 @@ static switch_status_t switch_h264_control(switch_codec_t *codec,
 	switch(cmd) {
 	case SCC_VIDEO_REFRESH:
 		context->need_key_frame = 1;		
+		break;
+	case SCC_VIDEO_BANDWIDTH:
+		{
+			switch(ctype) {
+			case SCCT_INT:
+				context->change_bandwidth = *((int *) cmd_data);
+				break;
+			case SCCT_STRING:
+				{
+					char *bwv = (char *) cmd_data;
+					context->change_bandwidth = switch_parse_bandwidth_string(bwv);
+				}
+				break;
+			default:
+				break;
+			}
+		}
 		break;
 	default:
 		break;

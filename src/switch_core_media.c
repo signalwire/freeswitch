@@ -9720,9 +9720,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_codec_control(switch_core_sess
 			}
 
 			smh->last_codec_refresh = now;
+			switch_channel_set_flag(session->channel, CF_VIDEO_REFRESH_REQ);
 		}
 
-		switch_channel_set_flag(session->channel, CF_VIDEO_REFRESH_REQ);
 		return switch_core_codec_control(codec, cmd, ctype, cmd_data, rtype, ret_data);
 	}
 
