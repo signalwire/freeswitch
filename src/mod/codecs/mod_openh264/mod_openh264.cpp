@@ -38,6 +38,9 @@
 
 #include "codec_api.h"
 //#include "inc/logging.h"     // for debug
+#ifndef NAL_HEADER_ADD_0X30BYTES
+#define NAL_HEADER_ADD_0X30BYTES 50
+#endif
 
 #define FPS 15.0f // frame rate
 #define H264_NALU_BUFFER_SIZE 65536
@@ -107,7 +110,7 @@ int FillSpecificParameters(h264_codec_context_t *context) {
 	param->bEnableDenoise        = 0;         // denoise control
 	param->bEnableBackgroundDetection = 1;    // background detection control
 	param->bEnableSceneChangeDetect= 1;
-	//param->bEnableFrameSkip = 1;
+	param->bEnableFrameSkip = 1;
 	param->iMultipleThreadIdc= 1;
 	param->bEnableAdaptiveQuant       = 1;    // adaptive quantization control
 	param->bEnableLongTermReference   = 0;    // long term reference control
@@ -116,10 +119,11 @@ int FillSpecificParameters(h264_codec_context_t *context) {
 	param->iLoopFilterBetaOffset= 0;
 	param->iComplexityMode = MEDIUM_COMPLEXITY;
 	param->uiIntraPeriod		    = FPS * 3;       // period of Intra frame
+	param->iNumRefFrame = AUTO_REF_PIC_COUNT; // encoder selects the number of reference frame automatically
 #ifdef MT_ENABLED
-	param->bEnableSpsPpsIdAddition = 1;
+	param->eSpsPpsIdStrategy = INCREASING_ID;
 #else
-	param->bEnableSpsPpsIdAddition = 0;
+	param->eSpsPpsIdStrategy = CONSTANT_ID;
 #endif
 	param->bPrefixNalAddingCtrl    = 0;
 
@@ -142,7 +146,7 @@ int FillSpecificParameters(h264_codec_context_t *context) {
 #ifdef MT_ENABLED
 	param->sSpatialLayers[iIndexLayer].sSliceCfg.uiSliceMode = SM_DYN_SLICE;
 	param->sSpatialLayers[iIndexLayer].sSliceCfg.sSliceArgument.uiSliceSizeConstraint = SLICE_SIZE;
-	param->uiMaxNalSize = SLICE_SIZE;
+	param->uiMaxNalSize = SLICE_SIZE + NAL_HEADER_ADD_0X30BYTES;
 #else
 	param->sSpatialLayers[iIndexLayer].sSliceCfg.uiSliceMode = SM_SINGLE_SLICE;
 #endif
