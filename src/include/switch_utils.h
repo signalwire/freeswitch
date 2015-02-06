@@ -978,7 +978,7 @@ SWITCH_DECLARE(char *) switch_util_quote_shell_arg_pool(const char *string, swit
 
 static inline uint32_t switch_parse_bandwidth_string(const char *bwv)
 {
-	uint32_t bw = 0;
+	int32_t bw = 0;
 
 	if (!bwv) return 0;
 	
