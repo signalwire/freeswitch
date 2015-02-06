@@ -7633,11 +7633,15 @@ static switch_status_t conf_api_sub_vid_layout(conference_obj_t *conference, swi
 		}
 	}
 
-	if (!vlayout && !(vlayout = switch_core_hash_find(conference->layout_hash, argv[2]))) {
+	if (!vlayout && (vlayout = switch_core_hash_find(conference->layout_hash, argv[2]))) {
+		conference->video_layout_group = NULL;
+	}
+
+	if (!vlayout) {
 		stream->write_function(stream, "Invalid layout [%s]\n", argv[2]);
 		return SWITCH_STATUS_SUCCESS;
 	}
-
+	
 	stream->write_function(stream, "Change to layout [%s]\n", vlayout->name);
 
 	switch_mutex_lock(conference->member_mutex);
