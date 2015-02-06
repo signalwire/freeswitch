@@ -113,15 +113,15 @@
 	<image x="300" y="300" scale="60"/>
       </layout>
       <layout name="1up_top_left+5">
-	<image x="0" y="0" scale="240" floor="true" reservation_id="primary"/>
-	<image x="240" y="0" scale="120"/>
-	<image x="240" y="120" scale="120"/>
-	<image x="0" y="240" scale="120"/>
-	<image x="120" y="240" scale="120"/>
-	<image x="240" y="240" scale="120"/>
+	<image x="0" y="0" scale="240" floor="true" audio-position="-.5:0:0"/>
+	<image x="240" y="0" scale="120" audio-position=".25:0:0"/>
+	<image x="240" y="120" scale="120" audio-position=".25:0:-.25"/>
+	<image x="0" y="240" scale="120" audio-position="-.5:0:-1"/>
+	<image x="120" y="240" scale="120" audio-position="0:0:-1"/>
+	<image x="240" y="240" scale="120" audio-position=".25:0:-1"/>
       </layout>
       <layout name="1up_top_left+7">
-	<image x="0" y="0" scale="270" floor="true" reservation_id="primary"/>
+	<image x="0" y="0" scale="270" floor="true"/>
 	<image x="270" y="0" scale="90"/>
 	<image x="270" y="90" scale="90"/>
 	<image x="270" y="180" scale="90"/>
@@ -131,7 +131,7 @@
 	<image x="270" y="270" scale="90"/>
       </layout>
       <layout name="1up_top_left+9">
-	<image x="0" y="0" scale="288" floor="true" reservation_id="primary"/>
+	<image x="0" y="0" scale="288" floor="true"/>
 	<image x="288" y="0" scale="72"/>
 	<image x="288" y="72" scale="72"/>
 	<image x="288" y="144" scale="72"/>
@@ -143,7 +143,7 @@
 	<image x="288" y="288" scale="72"/>
       </layout>
       <layout name="2up_top+8">
-	<image x="0" y="0" scale="180" floor="true" reservation_id="primary"/>
+	<image x="0" y="0" scale="180" floor="true"/>
 	<image x="180" y="0" scale="180" reservation_id="secondary"/>
 	<image x="0" y="180" scale="90"/>
 	<image x="90" y="180" scale="90"/>
@@ -155,7 +155,7 @@
 	<image x="270" y="270" scale="90"/>
       </layout>
       <layout name="2up_middle+8">
-	<image x="0" y="90" scale="180" floor="true" reservation_id="primary"/>
+	<image x="0" y="90" scale="180" floor="true"/>
 	<image x="180" y="90" scale="180" reservation_id="secondary"/>
 	<image x="0" y="0" scale="90"/>
 	<image x="90" y="0" scale="90"/>
@@ -167,7 +167,7 @@
 	<image x="270" y="270" scale="90"/>
       </layout>
       <layout name="2up_bottom+8">
-	<image x="0" y="180" scale="180" floor="true" reservation_id="primary"/>
+	<image x="0" y="180" scale="180" floor="true"/>
 	<image x="180" y="180" scale="180" reservation_id="secondary"/>
 	<image x="0" y="0" scale="90"/>
 	<image x="90" y="0" scale="90"/>
@@ -179,7 +179,7 @@
 	<image x="270" y="90" scale="90"/>
       </layout>
       <layout name="3up+4">
-	<image x="0" y="0" scale="180" floor="true" reservation_id="primary"/>
+	<image x="0" y="0" scale="180" floor="true"/>
 	<image x="180" y="0" scale="180" reservation_id="secondary"/>
 	<image x="0" y="180" scale="180" reservation_id="third"/>
 	<image x="180" y="180" scale="90"/>
@@ -188,7 +188,7 @@
 	<image x="270" y="270" scale="90"/>
       </layout>
       <layout name="3up+9">
-	<image x="0" y="0" scale="180" floor="true" reservation_id="primary"/>
+	<image x="0" y="0" scale="180" floor="true"/>
 	<image x="180" y="0" scale="180" reservation_id="secondary"/>
 	<image x="0" y="180" scale="180" reservation_id="third"/>
 	<image x="180" y="180" scale="60"/>
