@@ -76,6 +76,7 @@ struct vpx_context {
 	switch_size_t last_received_timestamp;
 	switch_bool_t last_received_complete_picture;
 	int need_key_frame;
+	int32_t change_bandwidth;
 	uint64_t framecount;
 	uint64_t framesum;
 };
@@ -95,6 +96,10 @@ static switch_status_t init_codec(switch_codec_t *codec)
 
 	if (!context->codec_settings.video.height) {
 		context->codec_settings.video.height = 720;
+	}
+
+	if (context->codec_settings.video.bandwidth == -1) {
+		context->codec_settings.video.bandwidth = 0;
 	}
 
 	if (context->codec_settings.video.bandwidth) {
@@ -409,6 +414,13 @@ static switch_status_t switch_vpx_encode(switch_codec_t *codec, switch_frame_t *
 		init_codec(codec);
 	}
 
+	if (context->change_bandwidth) {
+		context->codec_settings.video.bandwidth = context->change_bandwidth;
+		context->change_bandwidth = 0;
+		init_codec(codec);
+	}
+
+
 	if (context->need_key_frame != 0) {
 		// force generate a key frame
 		switch_time_t now = switch_micro_time_now();
@@ -633,6 +645,23 @@ static switch_status_t switch_vpx_control(switch_codec_t *codec,
 	switch(cmd) {
 	case SCC_VIDEO_REFRESH:
 		context->need_key_frame = 1;		
+		break;
+	case SCC_VIDEO_BANDWIDTH:
+		{
+			switch(ctype) {
+			case SCCT_INT:
+				context->change_bandwidth = *((int *) cmd_data);
+				break;
+			case SCCT_STRING:
+				{
+					char *bwv = (char *) cmd_data;
+					context->change_bandwidth = switch_parse_bandwidth_string(bwv);
+				}
+				break;
+			default:
+				break;
+			}
+		}
 		break;
 	default:
 		break;

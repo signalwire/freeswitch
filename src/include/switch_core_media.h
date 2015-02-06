@@ -307,6 +307,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_codec_control(switch_core_sess
 #define switch_core_media_gen_key_frame(_session) switch_core_media_codec_control(_session, SWITCH_MEDIA_TYPE_VIDEO, SWITCH_IO_WRITE, \
 																				  SCC_VIDEO_REFRESH, SCCT_NONE, NULL, NULL, NULL) \
 
+#define switch_core_media_write_bandwidth(_session, _val) switch_core_media_codec_control(_session, SWITCH_MEDIA_TYPE_VIDEO, SWITCH_IO_WRITE, \
+																						  SCC_VIDEO_BANDWIDTH, SCCT_STRING, _val, NULL, NULL) \
+
 
 SWITCH_DECLARE(switch_timer_t *) switch_core_media_get_timer(switch_core_session_t *session, switch_media_type_t mtype);
 SWITCH_DECLARE(void) switch_core_media_start_video_function(switch_core_session_t *session, switch_video_function_t video_function, void *user_data);

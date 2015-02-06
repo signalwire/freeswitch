@@ -428,7 +428,8 @@ typedef struct conference_obj {
 	char *video_layout_name;
 	char *video_layout_group;
 	char *video_canvas_bgcolor;
-	uint32_t video_codec_bandwidth;
+	int32_t video_write_bandwidth;
+	switch_codec_settings_t video_codec_settings;
 	uint32_t canvas_width;
 	uint32_t canvas_height;
 	uint32_t terminate_on_silence;
@@ -1368,7 +1369,8 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 					if (imember->video_codec_index < 0) {
 						write_codecs[i] = switch_core_alloc(conference->pool, sizeof(codec_set_t));
 						
-						if (switch_core_codec_copy(check_codec, &write_codecs[i]->codec, conference->pool) == SWITCH_STATUS_SUCCESS) {
+						if (switch_core_codec_copy(check_codec, &write_codecs[i]->codec, 
+												   &conference->video_codec_settings, conference->pool) == SWITCH_STATUS_SUCCESS) {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
 											  "Setting up video write codec %s at slot %d\n", write_codecs[i]->codec.implementation->iananame, i);
 
@@ -1478,6 +1480,12 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 				for (i = 0; write_codecs[i] && switch_core_codec_ready(&write_codecs[i]->codec) && i < MAX_MUX_CODECS; i++) {
 					write_codecs[i]->frame.img = conference->canvas->img;
 					write_canvas_image_to_codec_group(conference, write_codecs[i], i, timer.samplecount, need_refresh, need_keyframe);
+
+					if (conference->video_write_bandwidth) {
+						switch_core_codec_control(&write_codecs[i]->codec, SCC_VIDEO_BANDWIDTH, SCCT_INT, &conference->video_write_bandwidth, NULL, NULL);
+						conference->video_write_bandwidth = 0;
+					}
+
 				}
 			} else {
 				switch_mutex_lock(conference->member_mutex);
@@ -7616,6 +7624,24 @@ static switch_status_t conf_api_sub_volume_out(conference_member_t *member, swit
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static switch_status_t conf_api_sub_vid_bandwidth(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv)
+{
+	if (!switch_test_flag(conference, CFLAG_MINIMIZE_VIDEO_ENCODING)) {
+		stream->write_function(stream, "Bandwidth control not available.\n");
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	if (!argv[2]) {
+		stream->write_function(stream, "Invalid input\n");
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	conference->video_write_bandwidth = switch_parse_bandwidth_string(argv[2]);
+	stream->write_function(stream, "Set Bandwidth %d\n", conference->video_write_bandwidth);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 static switch_status_t conf_api_sub_vid_layout(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv)
 {
 	video_layout_t *vlayout = NULL;
@@ -9282,7 +9308,8 @@ static api_command_t conf_api_sub_commands[] = {
 	{"floor", (void_fn_t) & conf_api_sub_floor, CONF_API_SUB_MEMBER_TARGET, "floor", "<member_id|last>"},
 	{"vid-floor", (void_fn_t) & conf_api_sub_vid_floor, CONF_API_SUB_MEMBER_TARGET, "vid-floor", "<member_id|last> [force]"},
 	{"clear-vid-floor", (void_fn_t) & conf_api_sub_clear_vid_floor, CONF_API_SUB_ARGS_AS_ONE, "clear-vid-floor", ""},
-	{"vid-layout", (void_fn_t) & conf_api_sub_vid_layout, CONF_API_SUB_ARGS_SPLIT, "vid-layout", "<layout name>"}
+	{"vid-layout", (void_fn_t) & conf_api_sub_vid_layout, CONF_API_SUB_ARGS_SPLIT, "vid-layout", "<layout name>"},
+	{"vid-bandwidth", (void_fn_t) & conf_api_sub_vid_bandwidth, CONF_API_SUB_ARGS_SPLIT, "vid-bandwidth", "<BW>"}
 };
 
 #define CONFFUNCAPISIZE (sizeof(conf_api_sub_commands)/sizeof(conf_api_sub_commands[0]))
@@ -11364,7 +11391,7 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 	conference_parse_layouts(conference);
 	
 	if (video_codec_bandwidth) {
-		conference->video_codec_bandwidth = switch_parse_bandwidth_string(video_codec_bandwidth);
+		conference->video_codec_settings.video.bandwidth = switch_parse_bandwidth_string(video_codec_bandwidth);
 	}
 
 	if (video_layout_name) {

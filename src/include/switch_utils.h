@@ -985,7 +985,9 @@ static inline uint32_t switch_parse_bandwidth_string(const char *bwv)
 	if (bwv && (bw = (int32_t) atol(bwv))) {
 		if (bw < 0) return 0;
 
-		if (switch_stristr("KB", bwv)) {
+		if (!strcasecmp(bwv, "auto")) {
+			return -1;
+		} else if (switch_stristr("KB", bwv)) {
 			bw *= 8;
 		} else if (switch_stristr("mb", bwv)) {
 			bw *= 1024;
