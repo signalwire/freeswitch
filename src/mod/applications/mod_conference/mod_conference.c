@@ -7627,6 +7627,9 @@ static switch_status_t conf_api_sub_vid_layout(conference_obj_t *conference, swi
 				stream->write_function(stream, "Invalid group layout [%s]\n", argv[3]);
 				return SWITCH_STATUS_SUCCESS;
 			}
+
+			stream->write_function(stream, "Change to layout group [%s]\n", argv[3]);
+			conference->video_layout_group = switch_core_strdup(conference->pool, argv[3]);
 		}
 	}
 
