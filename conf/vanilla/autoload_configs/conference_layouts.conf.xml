@@ -4,6 +4,14 @@
       <layout name="1x1">
 	<image x="0" y="0" scale="360"/>
       </layout>
+      <layout name="1x2">
+	<image x="90" y="0" scale="180"/>
+	<image x="90" y="180" scale="180"/>
+      </layout>
+      <layout name="2x1">
+	<image x="0" y="90" scale="180"/>
+	<image x="180" y="9" scale="180"/>
+      </layout>
       <layout name="2x2">
 	<image x="0" y="0" scale="180"/>
 	<image x="180" y="0" scale="180"/>
@@ -193,10 +201,20 @@
 	<image x="240" y="300" scale="60"/>
 	<image x="300" y="300" scale="60"/>
       </layout>
+      <layout name="overlaps" overlaps="true">
+	<image x="0" y="0" scale="360"/>
+	<image x="300" y="300" scale="60"/>
+	<image x="240" y="300" scale="60"/>
+	<image x="180" y="300" scale="60"/>
+	<image x="120" y="300" scale="60"/>
+	<image x="60" y="300" scale="60"/>
+	<image x="0" y="300" scale="60"/>
+      </layout>
     </layouts>
     <groups>
       <group name="grid">
 	<layout>1x1</layout>
+	<layout>2x1</layout>
 	<layout>2x2</layout>
 	<layout>3x3</layout>
 	<layout>4x4</layout>
