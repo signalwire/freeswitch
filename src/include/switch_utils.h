@@ -976,7 +976,7 @@ SWITCH_DECLARE(char *) switch_util_quote_shell_arg_pool(const char *string, swit
 
 #define SWITCH_READ_ACCEPTABLE(status) (status == SWITCH_STATUS_SUCCESS || status == SWITCH_STATUS_BREAK || status == SWITCH_STATUS_INUSE)
 
-static inline uint32_t switch_parse_bandwidth_string(const char *bwv)
+static inline int32_t switch_parse_bandwidth_string(const char *bwv)
 {
 	int32_t bw = 0;
 

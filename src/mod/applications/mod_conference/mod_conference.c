@@ -355,6 +355,7 @@ typedef struct mcu_layer_s {
 	mcu_layer_geometry_t geometry;
 	int member_id;
 	int idx;
+	int tagged;
 	switch_image_t *img;
 	switch_image_t *cur_img;
 } mcu_layer_t;
@@ -931,8 +932,11 @@ static void set_bgcolor(bgcolor_yuv_t *bgcolor, char *bgcolor_str)
 
 static void reset_layer(mcu_canvas_t *canvas, mcu_layer_t *layer)
 {
+
 	int x = 0, y = 0;
 	int screen_w = 0, screen_h = 0;
+
+	layer->tagged = 0;
 
 	screen_w = canvas->img->d_w * layer->geometry.scale / SCALE_FACTOR;
 	screen_h = canvas->img->d_h * layer->geometry.scale / SCALE_FACTOR;
@@ -1085,6 +1089,7 @@ static switch_status_t attach_video_layer(conference_member_t *member, int idx)
 	switch_mutex_lock(member->conference->canvas->mutex);
 
 	layer = &member->conference->canvas->layers[idx];
+	layer->tagged = 0;
 
 	if (layer->member_id && layer->member_id == member->id) {
 		member->video_layer_id = idx;
@@ -1094,6 +1099,8 @@ static switch_status_t attach_video_layer(conference_member_t *member, int idx)
 	if (member->video_layer_id > -1) {
 		detach_video_layer(member);
 	}
+
+	reset_layer(member->conference->canvas, layer);
 
 	channel = switch_core_session_get_channel(member->session);
 	res_id = switch_channel_get_variable_dup(channel, "video_reservation_id", SWITCH_FALSE, -1);
@@ -1150,6 +1157,7 @@ static void init_canvas_layers(conference_obj_t *conference, video_layout_t *vla
 	for (i = 0; i < MCU_MAX_LAYERS; i++) {
 		mcu_layer_t *layer = &conference->canvas->layers[i];
 		layer->member_id = 0;
+		layer->tagged = 0;
 	}
 
 	conference->canvas->layers_used = 0;
@@ -1444,7 +1452,7 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 				if (layer) {
 					switch_img_free(&layer->cur_img);
 					layer->cur_img = img;
-					scale_and_patch(conference, layer);
+					layer->tagged = 1;
 				}
 			}
 
@@ -1456,6 +1464,17 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 		switch_mutex_unlock(conference->member_mutex);
 
 		if (remaining) goto top;
+
+		
+		for (i = 0; i < conference->canvas->total_layers; i++) {
+			mcu_layer_t *layer = &conference->canvas->layers[i];
+			
+			if (layer->member_id > -1 && layer->cur_img && layer->tagged) {
+				scale_and_patch(conference, layer);
+				layer->tagged = 0;
+			}
+		}
+
 
 		if (used) {
 			switch_time_t now = switch_micro_time_now();
