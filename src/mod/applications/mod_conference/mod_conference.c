@@ -288,6 +288,7 @@ typedef enum {
 
 #ifdef OPENAL_POSITIONING
 typedef struct al_handle_s {
+	switch_mutex_t *mutex;
 	ALCdevice *device;
 	ALCcontext *context;
 	ALuint source;
@@ -1564,7 +1565,8 @@ static al_handle_t *create_al(switch_memory_pool_t *pool)
 	al_handle_t *al;
 
 	al = switch_core_alloc(pool, sizeof(al_handle_t));
-	
+	switch_mutex_init(&al->mutex, SWITCH_MUTEX_NESTED, pool);
+
 	return al;
 }
 
@@ -1601,6 +1603,7 @@ static void gen_arc(conference_obj_t *conference, switch_stream_handle_t *stream
 	if (count < 3) {
 		for (member = conference->members; member; member = member->next) {
 			if (member->channel && !switch_test_flag(member, MFLAG_NO_POSITIONAL) && member->al) {
+
 				member->al->pos_x = 0;
 				member->al->pos_y = 0;
 				member->al->pos_z = 0;
@@ -3130,11 +3133,11 @@ static switch_status_t member_parse_position(conference_member_t *member, const 
 #else
 static switch_status_t member_parse_position(conference_member_t *member, const char *data)
 {
-	switch_status_t status;
+	switch_status_t status = SWITCH_STATUS_FALSE;
 
-	lock_member(member);
-	status = parse_position(member->al, data);
-	unlock_member(member);
+	if (member->al) {
+		status = parse_position(member->al, data);
+	}
 
 	return status;
 	
