@@ -301,6 +301,7 @@ typedef struct al_handle_s {
 #else 
 typedef struct al_handle_s {
 	int unsupported;
+	switch_mutex_t *mutex;
 } al_handle_t;
 #endif
 
@@ -1011,7 +1012,7 @@ static void scale_and_patch(conference_obj_t *conference, mcu_layer_t *layer)
 		
 		switch_assert(layer->img);
 
-		//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "RESIZE %dx%d to %dx%d to fit in %dx%d and insert at %d,%d\n", 
+		//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "RESIZE %dx%d to %dx%d to fit in %dx%d and insert at %d,%d\n",
 		//				  img->d_w, img->d_h, img_w, img_h, screen_w, screen_h, x, y);
 
 		ret = I420Scale(img->planes[0], img->stride[0],
@@ -1466,10 +1467,10 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 
 		if (remaining) goto top;
 
-		
+
 		for (i = 0; i < conference->canvas->total_layers; i++) {
 			mcu_layer_t *layer = &conference->canvas->layers[i];
-			
+
 			if (layer->member_id > -1 && layer->cur_img && layer->tagged) {
 				scale_and_patch(conference, layer);
 				layer->tagged = 0;
