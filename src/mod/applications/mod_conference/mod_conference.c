@@ -943,6 +943,9 @@ static void reset_layer(mcu_canvas_t *canvas, mcu_layer_t *layer)
 	screen_w = canvas->img->d_w * layer->geometry.scale / SCALE_FACTOR;
 	screen_h = canvas->img->d_h * layer->geometry.scale / SCALE_FACTOR;
 
+	if (screen_w % 2) screen_w++; // round to even
+	if (screen_h % 2) screen_h++; // round to even
+
 	x = canvas->img->d_w * layer->geometry.x / SCALE_FACTOR;
 	y = canvas->img->d_h * layer->geometry.y / SCALE_FACTOR;
 
