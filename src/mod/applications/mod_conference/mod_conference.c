@@ -939,8 +939,8 @@ static void reset_layer(mcu_canvas_t *canvas, mcu_layer_t *layer)
 
 	layer->tagged = 0;
 
-	screen_w = ceil(canvas->img->d_w * layer->geometry.scale / SCALE_FACTOR);
-	screen_h = ceil(canvas->img->d_h * layer->geometry.scale / SCALE_FACTOR);
+	screen_w = canvas->img->d_w * layer->geometry.scale / SCALE_FACTOR;
+	screen_h = canvas->img->d_h * layer->geometry.scale / SCALE_FACTOR;
 
 	x = canvas->img->d_w * layer->geometry.x / SCALE_FACTOR;
 	y = canvas->img->d_h * layer->geometry.y / SCALE_FACTOR;
@@ -972,8 +972,8 @@ static void scale_and_patch(conference_obj_t *conference, mcu_layer_t *layer)
 		int screen_w = 0, screen_h = 0, img_w = 0, img_h = 0;
 		double screen_aspect = 0, img_aspect = 0;
 
-		img_w = screen_w = ceil(IMG->d_w * layer->geometry.scale / SCALE_FACTOR);
-		img_h = screen_h = ceil(IMG->d_h * layer->geometry.scale / SCALE_FACTOR);
+		img_w = screen_w = IMG->d_w * layer->geometry.scale / SCALE_FACTOR;
+		img_h = screen_h = IMG->d_h * layer->geometry.scale / SCALE_FACTOR;
 
 		x = IMG->d_w * layer->geometry.x / SCALE_FACTOR;
 		y = IMG->d_h * layer->geometry.y / SCALE_FACTOR;
@@ -982,10 +982,10 @@ static void scale_and_patch(conference_obj_t *conference, mcu_layer_t *layer)
 		img_aspect = (double) img->d_w / img->d_h;
 		
 		if (screen_aspect > img_aspect) {
-			img_w = ceil(img_aspect * screen_h);
+			img_w = img_aspect * screen_h;
 			x += (screen_w - img_w) / 2;
 		} else if (screen_aspect < img_aspect) {
-			img_h = ceil(screen_w / img_aspect);
+			img_h = screen_w / img_aspect;
 			y += (screen_h - img_h) / 2;
 		}
 
