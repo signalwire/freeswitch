@@ -19,17 +19,10 @@ dst_dir="/tmp/$dst_name"
 cd $src_repo
 cp -a src_dist/* rpmbuild/SOURCES/ || true
 
-rpmbuild --define "VERSION_NUMBER $cver" \
-  --define "BUILD_NUMBER $build" \
-  --define "_topdir %(pwd)/rpmbuild" \
+rpmbuild --define "_topdir %(pwd)/rpmbuild" \
   --define "_rpmdir %{_topdir}" \
   --define "_srcrpmdir %{_topdir}" \
   -ba freeswitch.spec
-
-# --define '_rpmfilename %%{NAME}-%%{VERSION}-%%{RELEASE}.%%{ARCH}.rpm' \
-# --define "_sourcedir  %{_topdir}" \
-# --define "_builddir %{_topdir}" \
-
 
 mkdir $src_repo/RPMS
 mv $src_repo/rpmbuild/*/*.rpm $src_repo/RPMS/.

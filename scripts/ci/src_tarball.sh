@@ -6,14 +6,16 @@ sdir="."
 . $sdir/common.sh
 
 check_pwd
-check_input_ver_build $@
-eval $(parse_version "$1")
+version=`cat build/next-release.txt`
+check_input_ver_build $version
+eval $(parse_version "$version")
 if [ -n "$grev" ]; then 
 	dst_name="freeswitch-$cmajor.$cminor.$cmicro.$grev"
 else
 	dst_name="freeswitch-$cmajor.$cminor.$cmicro"
 fi
 
+#This should be a RAM Drive
 dst_dir="${tmp_dir}/jenkins.$$/$dst_name"
 
 if [ -d "$dst_dir" ]; then

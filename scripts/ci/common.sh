@@ -2,7 +2,7 @@
 ##### -*- mode:shell-script; indent-tabs-mode:nil; sh-basic-offset:2 -*-
 
 src_repo="$(pwd)"
-tmp_dir=${TMP_DIR:="/tmp"}
+tmp_dir=${TMP_DIR:=".."}
 
 zgrep () { (echo "$2" | grep -e "$1" >/dev/null); }
 
@@ -99,10 +99,11 @@ parse_version () {
 
 set_fs_ver () {
   local ver="$1" major="$2" minor="$3" micro="$4" rev="$5" hrev="$6"
-  sed -e "s|\(AC_SUBST(SWITCH_VERSION_MAJOR, \[\).*\(\])\)|\1$major\2|" \
+  sed  \
+    -e "s|\(AC_SUBST(SWITCH_VERSION_MAJOR, \[\).*\(\])\)|\1$major\2|" \
     -e "s|\(AC_SUBST(SWITCH_VERSION_MINOR, \[\).*\(\])\)|\1$minor\2|" \
     -e "s|\(AC_SUBST(SWITCH_VERSION_MICRO, \[\).*\(\])\)|\1$micro\2|" \
-    -e "s|\(AC_INIT(\[freeswitch\], \[\).*\(\], BUG-REPORT-ADDRESS)\)|\1$ver\2|" \
+    -e "s|\(AC_INIT(\[freeswitch\], \[\).*\(\], bugs@freeswitch.org)\)|\1$ver\2|" \
     configure.ac > configure.ac.$$
     mv configure.ac.$$ configure.ac
   if [ -n "$rev" ]; then
@@ -114,6 +115,13 @@ set_fs_ver () {
       configure.ac > configure.ac.$$
       mv configure.ac.$$ configure.ac
   fi
+
+  sed -e "s|\(%define version \).*|\1$major.$minor.$micro|"  \
+       freeswitch.spec > freeswitch.spec.$$
+  mv freeswitch.spec.$$ freeswitch.spec
+
+#%define version 1.5.16
+
 }
 
 gnuize () {
