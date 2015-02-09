@@ -9578,12 +9578,6 @@ SWITCH_STANDARD_APP(conference_function)
 	member.channel = switch_core_session_get_channel(session);
 	member.pool = switch_core_session_get_pool(session);
 
-	if (setup_media(&member, conference)) {
-		//flags = 0;
-		goto done;
-	}
-
-
 	if (!(mid = switch_channel_get_private(channel, "__confmid"))) {
 		mid = switch_core_session_alloc(session, sizeof(*mid));
 		*mid = next_member_id();
@@ -9605,6 +9599,10 @@ SWITCH_STANDARD_APP(conference_function)
 	/* Install our Signed Linear codec so we get the audio in that format */
 	switch_core_session_set_read_codec(member.session, &member.read_codec);
 
+	if (setup_media(&member, conference)) {
+		//flags = 0;
+		goto done;
+	}
 
 	mflags = conference->mflags;
 	set_mflags(flags_str, &mflags);
