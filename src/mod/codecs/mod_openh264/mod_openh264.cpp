@@ -102,8 +102,8 @@ int FillSpecificParameters(h264_codec_context_t *context) {
 	}
 
 	/* Test for temporal, spatial, SNR scalability */
-	param->iPicWidth		        = 1280;		 // width of picture in samples
-	param->iPicHeight	        = 720;		 // height of picture in samples
+	param->iPicWidth             = context->codec_settings.video.width; // width of picture in samples
+	param->iPicHeight            = context->codec_settings.video.height;		 // height of picture in samples
 	param->iTargetBitrate        = context->bandwidth;
 	param->iRCMode               = RC_QUALITY_MODE;         //  rc mode control
 	param->iTemporalLayerNum     = 1;         // layer number at temporal level
@@ -129,8 +129,8 @@ int FillSpecificParameters(h264_codec_context_t *context) {
 	param->bPrefixNalAddingCtrl    = 0;
 
 	int iIndexLayer = 0;
-	param->sSpatialLayers[iIndexLayer].iVideoWidth	= 1280;
-	param->sSpatialLayers[iIndexLayer].iVideoHeight	= 720;
+	param->sSpatialLayers[iIndexLayer].iVideoWidth	= context->codec_settings.video.width;
+	param->sSpatialLayers[iIndexLayer].iVideoHeight	= context->codec_settings.video.height;
 	param->sSpatialLayers[iIndexLayer].fFrameRate	= (double) (FPS * 1.0f);
 	// param->sSpatialLayers[iIndexLayer].iQualityLayerNum = 1;
 	param->sSpatialLayers[iIndexLayer].iSpatialBitrate  = param->iTargetBitrate;
@@ -460,8 +460,8 @@ static switch_status_t init_encoder(h264_codec_context_t *context, uint32_t widt
 {
 	int i;
 
-	if (width) context->encoder_params.iPicWidth = width;
-	if (height) context->encoder_params.iPicHeight = height;
+	if (width) context->codec_settings.video.width = width;
+	if (height) context->codec_settings.video.height = height;
 	//context->encoder_params.iTargetBitrate = width * height * 8;
 	for (int i=0; i<context->encoder_params.iSpatialLayerNum; i++) {
 		context->encoder_params.sSpatialLayers[i].iVideoWidth = width;
