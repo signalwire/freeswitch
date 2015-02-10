@@ -187,7 +187,7 @@ SWITCH_STANDARD_APP(java_function)
 static switch_status_t load_config(JavaVMOption **javaOptions, int *optionCount, vm_control_t * vmControl)
 {
     switch_xml_t cfg, xml;
-    switch_status_t status;
+    switch_status_t status = SWITCH_STATUS_SUCCESS;
 	char *derr = NULL;
 
     xml = switch_xml_open_cfg("java.conf", &cfg, NULL);
