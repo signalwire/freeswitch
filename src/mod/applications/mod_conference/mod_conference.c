@@ -701,6 +701,31 @@ typedef struct layout_group_s {
 	video_layout_node_t *layouts;
 } layout_group_t;
 
+
+#include "utf8.h"
+
+static const u_int32_t offsetsFromUTF8[6] = {
+	0x00000000UL, 0x00003080UL, 0x000E2080UL,
+	0x03C82080UL, 0xFA082080UL, 0x82082080UL
+};
+
+/* reads the next utf-8 sequence out of a string, updating an index */
+uint32_t get_utf8_char(char *s, int *i)
+{
+	u_int32_t ch = 0;
+	int sz = 0;
+
+	do {
+		ch <<= 6;
+		ch += (unsigned char)s[(*i)++];
+		sz++;
+	} while (s[*i] && !isutf(s[*i]));
+
+	ch -= offsetsFromUTF8[sz-1];
+
+	return ch;
+}
+
 #include <ft2build.h>
 #include FT_FREETYPE_H
 #include FT_GLYPH_H
@@ -735,13 +760,13 @@ SWITCH_DECLARE(void) switch_img_draw_text(switch_image_t *img, int x, int y, cha
 	int           font_size = 64;
 	double        angle;
 	int           target_height;
-	int           n, num_chars;
+	int           index = 0;
+	FT_ULong      ch;
 	switch_yuv_color_t color;
 
 	if (zstr(text)) return;
 	switch_color_set(&color, "#FFFFFF");
 
-	num_chars     = strlen(text);
 	angle         = 0; // (45.0 / 360 ) * 3.14159 * 2;
 	target_height = img->d_h;
 
@@ -768,12 +793,14 @@ SWITCH_DECLARE(void) switch_img_draw_text(switch_image_t *img, int x, int y, cha
 	pen.x = x * 64;
 	pen.y = (target_height - y) * 64;
 
-	for(n = 0; n < num_chars; n++) {
+	while(*(text + index)) {
+		ch = get_utf8_char(text, &index);
+
 		/* set transformation */
 		FT_Set_Transform(face, &matrix, &pen);
 
 		/* load glyph image into the slot (erase previous one) */
-		error = FT_Load_Char(face, text[n], FT_LOAD_RENDER);
+		error = FT_Load_Char(face, ch, FT_LOAD_RENDER);
 		if (error) continue;
 
 		/* now, draw to our target surface (convert position) */
