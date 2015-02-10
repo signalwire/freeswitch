@@ -2726,7 +2726,7 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 		free(sql);
 
 		//if (!sofia_glue_execute_sql2str(profile, profile->dbh_mutex, sql, np, nplen)) {
-		if (zstr(np)) {
+		if (zstr(np) || (profile->max_auth_validity != 0 && cb.last_nc >= profile->max_auth_validity )) {
 			sql = switch_mprintf("delete from sip_authentication where nonce='%q'", nonce);
 			sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
 			ret = AUTH_STALE;

@@ -4971,6 +4971,8 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 						}
 					} else if (!strcasecmp(var, "nonce-ttl")) {
 						profile->nonce_ttl = atoi(val);
+					} else if (!strcasecmp(var, "max-auth-validity")) {
+						profile->max_auth_validity = atoi(val);
 					} else if (!strcasecmp(var, "accept-blind-reg")) {
 						if (switch_true(val)) {
 							sofia_set_pflag(profile, PFLAG_BLIND_REG);
@@ -5389,6 +5391,11 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 				if (profile->nonce_ttl < 60) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Setting nonce TTL to 60 seconds\n");
 					profile->nonce_ttl = 60;
+				}
+				
+				if (!profile->max_auth_validity) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Setting MAX Auth Validity to 0 Attempts\n");
+					profile->max_auth_validity = 0;
 				}
 
 				if (!profile->sdp_username) {
