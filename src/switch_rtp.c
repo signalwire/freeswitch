@@ -5234,6 +5234,24 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 		}
 	}
 
+	/* recalculate body length in case rtp extension used */
+	if (!rtp_session->flags[SWITCH_RTP_FLAG_PROXY_MEDIA] && !rtp_session->flags[SWITCH_RTP_FLAG_UDPTL] &&
+		rtp_session->recv_msg.header.version == 2 && rtp_session->recv_msg.header.x) { /* header extensions */
+		uint16_t length;
+
+		rtp_session->recv_msg.ext = (switch_rtp_hdr_ext_t *) rtp_session->recv_msg.body;
+		length = ntohs((uint16_t)rtp_session->recv_msg.ext->length);
+
+		if (length < SWITCH_RTP_MAX_BUF_LEN_WORDS) {
+			rtp_session->recv_msg.ebody = rtp_session->recv_msg.body + (length * 4) + 4;
+			if (*bytes > (length * 4 + 4)) {
+				*bytes -= (length * 4 + 4);
+			} else {
+				*bytes = 0;
+			}
+		}
+	}
+
 	return status;
 }
 
