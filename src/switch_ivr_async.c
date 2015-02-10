@@ -1758,6 +1758,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 		char cid_buf[1024] = "";
 		switch_caller_profile_t *cp = NULL;
 		uint32_t sanity = 600;
+		switch_media_bug_flag_t read_flags = 0, write_flags = 0;
 
 		if (!switch_channel_media_up(channel)) {
 			goto end;
@@ -1847,6 +1848,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 		write_frame.buflen = sizeof(buf);
 		write_frame.rate = codec.implementation->actual_samples_per_second;
 
+		/* Make sure that at least one leg is bridged, default to both */
+		if (! (flags & (ED_BRIDGE_READ | ED_BRIDGE_WRITE))) {
+			flags |= ED_BRIDGE_READ | ED_BRIDGE_WRITE;
+		}
+
 		ep->eavesdropper = session;
 		ep->flags = flags;
 		switch_mutex_init(&ep->mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(tsession));
@@ -1862,10 +1868,16 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 		switch_buffer_add_mutex(ep->r_buffer, ep->r_mutex);
 
 
+		if (flags & ED_BRIDGE_READ) {
+			read_flags = SMBF_READ_STREAM | SMBF_READ_REPLACE;
+		}
+		if (flags & ED_BRIDGE_WRITE) {
+			write_flags = SMBF_WRITE_STREAM | SMBF_WRITE_REPLACE;
+		}
+
 		if (switch_core_media_bug_add(tsession, "eavesdrop", uuid,
 									  eavesdrop_callback, ep, 0,
-									  SMBF_READ_STREAM | SMBF_WRITE_STREAM | SMBF_READ_REPLACE | SMBF_WRITE_REPLACE | 
-									  SMBF_READ_PING | SMBF_THREAD_LOCK | SMBF_NO_PAUSE,
+									  read_flags | write_flags | SMBF_READ_PING | SMBF_THREAD_LOCK | SMBF_NO_PAUSE,
 									  &bug) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot attach bug\n");
 			goto end;

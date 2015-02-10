@@ -818,9 +818,19 @@ SWITCH_STANDARD_APP(eavesdrop_function)
 		switch_channel_t *channel = switch_core_session_get_channel(session);
 		const char *require_group = switch_channel_get_variable(channel, "eavesdrop_require_group");
 		const char *enable_dtmf = switch_channel_get_variable(channel, "eavesdrop_enable_dtmf");
+		const char *bridge_aleg = switch_channel_get_variable(channel, "eavesdrop_bridge_aleg");
+		const char *bridge_bleg = switch_channel_get_variable(channel, "eavesdrop_bridge_bleg");
 
 		if (enable_dtmf) {
 			flags = switch_true(enable_dtmf) ? ED_DTMF : ED_NONE;
+		}
+
+		/* Defaults to both, if neither is set */
+		if (switch_true(bridge_aleg)) {
+			flags |= ED_BRIDGE_READ;
+		}
+		if (switch_true(bridge_bleg)) {
+			flags |= ED_BRIDGE_WRITE;
 		}
 
 		if (!strcasecmp((char *) data, "all")) {
