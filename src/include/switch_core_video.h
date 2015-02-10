@@ -61,6 +61,13 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_IMG_FMT_HIGH      VPX_IMG_FMT_HIGH
 #define SWITCH_IMG_FMT_I420	     VPX_IMG_FMT_I420
 
+typedef struct switch_yuv_color_s {
+	uint8_t y;
+	uint8_t u;
+	uint8_t v;
+} switch_yuv_color_t;
+
+
 typedef vpx_img_fmt_t switch_img_fmt_t;
 
 typedef vpx_image_t switch_image_t;
@@ -176,7 +183,15 @@ SWITCH_DECLARE(void) switch_img_flip(switch_image_t *img);
 */
 SWITCH_DECLARE(void) switch_img_free(switch_image_t **img);
 
+SWITCH_DECLARE(void) switch_img_draw_text(switch_image_t *IMG, int x, int y, char *text);
+
 SWITCH_DECLARE(void) switch_img_add_text(void *buffer, int w, int x, int y, char *s);
+
+SWITCH_DECLARE(switch_image_t *) switch_img_copy_rect(switch_image_t *img, int x, int y, int w, int h);
+
+SWITCH_DECLARE(void) switch_image_draw_pixel(switch_image_t *img, int x, int y, switch_yuv_color_t color);
+
+SWITCH_DECLARE(void) switch_color_set(switch_yuv_color_t *color, char *color_str);
 
 /** @} */
 

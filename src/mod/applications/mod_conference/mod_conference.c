@@ -362,13 +362,6 @@ typedef struct mcu_layer_s {
 	switch_image_t *cur_img;
 } mcu_layer_t;
 
-typedef struct bgcolor_yuv_s
-{
-	uint8_t y;
-	uint8_t u;
-	uint8_t v;
-} bgcolor_yuv_t;
-
 typedef struct mcu_canvas_s {
 	int width;
 	int height;
@@ -377,7 +370,7 @@ typedef struct mcu_canvas_s {
 	int total_layers;
 	int layers_used;
 	int layout_floor_id;
-	bgcolor_yuv_t bgcolor;
+	switch_yuv_color_t bgcolor;
 	switch_mutex_t *mutex;
 	switch_mutex_t *cond_mutex;
 	switch_mutex_t *cond2_mutex;
@@ -708,6 +701,93 @@ typedef struct layout_group_s {
 	video_layout_node_t *layouts;
 } layout_group_t;
 
+#include <ft2build.h>
+#include FT_FREETYPE_H
+#include FT_GLYPH_H
+
+static void draw_bitmap(switch_image_t *img, FT_Bitmap* bitmap, FT_Int x, FT_Int y, switch_yuv_color_t color)
+{
+	FT_Int  i, j, p, q;
+	FT_Int  x_max = x + bitmap->width;
+	FT_Int  y_max = y + bitmap->rows;
+
+	for ( i = x, p = 0; i < x_max; i++, p++ ) {
+		for ( j = y, q = 0; j < y_max; j++, q++ ) {
+			if ( i < 0 || j < 0 || i >= img->d_w || j >= img->d_h) continue;
+
+			if (bitmap->buffer[q * bitmap->width + p]) {
+				// TODO the value ranges from 1 - 255, maybe we should reset the color based on that
+				switch_image_draw_pixel(img, i, j, color);
+			}
+		}
+	}
+}
+
+SWITCH_DECLARE(void) switch_img_draw_text(switch_image_t *img, int x, int y, char *text)
+{
+	FT_Library    library;
+	FT_Face       face;
+	FT_GlyphSlot  slot;
+	FT_Matrix     matrix; /* transformation matrix */
+	FT_Vector     pen;    /* untransformed origin  */
+	FT_Error      error;
+	char*         font_family = "/usr/local/freeswitch/SimHei.ttf";
+	int           font_size = 64;
+	double        angle;
+	int           target_height;
+	int           n, num_chars;
+	switch_yuv_color_t color;
+
+	if (zstr(text)) return;
+	switch_color_set(&color, "#FFFFFF");
+
+	num_chars     = strlen(text);
+	angle         = 0; // (45.0 / 360 ) * 3.14159 * 2;
+	target_height = img->d_h;
+
+	error = FT_Init_FreeType( &library ); /* initialize library */
+	if (error) return;
+
+	error = FT_New_Face(library, font_family, 0, &face); /* create face object */
+	if (error) return;
+
+	/* use 50pt at 100dpi */
+	error = FT_Set_Char_Size(face, 50 * font_size, 0, 100, 0); /* set character size */
+	if (error) return;
+
+	slot = face->glyph;
+
+	/* set up matrix */
+	matrix.xx = (FT_Fixed)( cos( angle ) * 0x10000L );
+	matrix.xy = (FT_Fixed)(-sin( angle ) * 0x10000L );
+	matrix.yx = (FT_Fixed)( sin( angle ) * 0x10000L );
+	matrix.yy = (FT_Fixed)( cos( angle ) * 0x10000L );
+
+	/* the pen position in 26.6 cartesian space coordinates; */
+	/* start at (300,200) relative to the upper left corner  */
+	pen.x = x * 64;
+	pen.y = (target_height - y) * 64;
+
+	for(n = 0; n < num_chars; n++) {
+		/* set transformation */
+		FT_Set_Transform(face, &matrix, &pen);
+
+		/* load glyph image into the slot (erase previous one) */
+		error = FT_Load_Char(face, text[n], FT_LOAD_RENDER);
+		if (error) continue;
+
+		/* now, draw to our target surface (convert position) */
+		draw_bitmap(img, &slot->bitmap, slot->bitmap_left, target_height - slot->bitmap_top + font_size, color);
+
+		/* increment pen position */
+		pen.x += slot->advance.x;
+		pen.y += slot->advance.y;
+	}
+
+	FT_Done_Face(face);
+	FT_Done_FreeType(library);
+}
+
 static void conference_parse_layouts(conference_obj_t *conference)
 {
 	switch_event_t *params;
@@ -890,7 +970,7 @@ static int mcu_canvas_wake(mcu_canvas_t *mcu_canvas)
 	return 0;
 }
 
-static void reset_image(switch_image_t *img, bgcolor_yuv_t *color)
+static void reset_image(switch_image_t *img, switch_yuv_color_t *color)
 {
 	int i;
 
@@ -902,32 +982,6 @@ static void reset_image(switch_image_t *img, bgcolor_yuv_t *color)
 		memset(img->planes[SWITCH_PLANE_U] + img->stride[SWITCH_PLANE_U] * i, color->u, img->d_w / 2);
 		memset(img->planes[SWITCH_PLANE_V] + img->stride[SWITCH_PLANE_V] * i, color->v, img->d_w / 2);
 	}
-}
-
-static void set_bgcolor(bgcolor_yuv_t *bgcolor, char *bgcolor_str)
-{
-	uint8_t y = 134;
-	uint8_t u = 128;
-	uint8_t v = 124;
-
-	if (bgcolor_str != NULL && strlen(bgcolor_str) == 7) {
-		uint8_t red, green, blue;
-		char str[7];
-		bgcolor_str ++;
-		strncpy(str, bgcolor_str, 6);
-		red = (str[0] >= 'A' ? (str[0] - 'A' + 10) * 16 : (str[0] - '0') * 16) + (str[1] >= 'A' ? (str[1] - 'A' + 10) : (str[0] - '0'));
-		green = (str[2] >= 'A' ? (str[2] - 'A' + 10) * 16 : (str[2] - '0') * 16) + (str[3] >= 'A' ? (str[3] - 'A' + 10) : (str[0] - '0'));
-		blue = (str[4] >= 'A' ? (str[4] - 'A' + 10) * 16 : (str[4] - '0') * 16) + (str[5] >= 'A' ? (str[5] - 'A' + 10) : (str[0] - '0'));
-
-		y = (uint8_t)(((red * 4897) >> 14) + ((green * 9611) >> 14) + ((blue * 1876) >> 14));
-		u = (uint8_t)(- ((red * 2766) >> 14)  - ((5426 * green) >> 14) + blue / 2 + 128);
-		v = (uint8_t)(red / 2 -((6855 * green) >> 14) - ((blue * 1337) >> 14) + 128);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "analy_bgcolor, red = %u, green = %u, blue = %u, y = %u, u = %u, v = %u\n", red, green, blue, y, u, v);
-	}
-
-	bgcolor->y = y;
-	bgcolor->u = u;
-	bgcolor->v = v;
 }
 
 #define SCALE_FACTOR 360.0f
@@ -1041,7 +1095,7 @@ static void scale_and_patch(conference_obj_t *conference, mcu_layer_t *layer)
 
 static void set_canvas_bgcolor(mcu_canvas_t *canvas, char *color)
 {
-	set_bgcolor(&canvas->bgcolor, color);
+	switch_color_set(&canvas->bgcolor, color);
 	reset_image(canvas->img, &canvas->bgcolor);
 }
 
@@ -1480,6 +1534,7 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 			}
 		}
 
+		// switch_img_draw_text(conference->canvas->img, 10, 10, "AVA 123 你好 FreeSWITCH");
 
 		if (used) {
 			switch_time_t now = switch_micro_time_now();

@@ -131,6 +131,47 @@ SWITCH_DECLARE(void) switch_img_copy(switch_image_t *img, switch_image_t **new_i
 
 }
 
+SWITCH_DECLARE(switch_image_t *) switch_img_copy_rect(switch_image_t *img, int x, int y, int w, int h)
+{
+	switch_image_t *new_img = NULL;
+	int i = 0;
+	int len;
+
+	switch_assert(img);
+	switch_assert(x >= 0 && y >= 0 && w >= 0 && h >= 0);
+
+	if (!img->fmt == SWITCH_IMG_FMT_I420) return NULL;
+
+	new_img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, w, h, 1);
+	if (new_img == NULL) return NULL;
+
+	len = MIN(img->d_w - x, w);
+	if (len <= 0) return NULL;
+
+	for (i = 0; i < (img->d_h - y) && i < h; i++) {
+		memcpy(new_img->planes[SWITCH_PLANE_Y] + new_img->stride[SWITCH_PLANE_Y] * i, img->planes[SWITCH_PLANE_Y] + img->stride[SWITCH_PLANE_Y] * (y + i) + x, len);
+	}
+
+	len /= 2;
+
+	for (i = 0; i < (img->d_h - y) && i < h; i += 2) {
+		memcpy(new_img->planes[SWITCH_PLANE_U] + new_img->stride[SWITCH_PLANE_U] * i / 2, img->planes[SWITCH_PLANE_U] + img->stride[SWITCH_PLANE_U] * (y + i) / 2 + x / 2, len);
+		memcpy(new_img->planes[SWITCH_PLANE_V] + new_img->stride[SWITCH_PLANE_V] * i / 2, img->planes[SWITCH_PLANE_V] + img->stride[SWITCH_PLANE_V] * (y + i) / 2 + x / 2, len);
+	}
+	return new_img;
+}
+
+SWITCH_DECLARE(void) switch_image_draw_pixel(switch_image_t *img, int x, int y, switch_yuv_color_t color)
+{
+	if (x < 0 || y < 0 || x >= img->d_w || y >= img->d_h) return;
+
+	img->planes[SWITCH_PLANE_Y][y * img->stride[SWITCH_PLANE_Y] + x] = color.y;
+
+	if (((x & 0x1) == 0) && ((y & 0x1) == 0)) {// only draw on even position
+		img->planes[SWITCH_PLANE_U][y / 2 * img->stride[SWITCH_PLANE_U] + x / 2] = color.u;
+		img->planes[SWITCH_PLANE_V][y / 2 * img->stride[SWITCH_PLANE_V] + x / 2] = color.v;
+	}
+}
 
 static uint8_t scv_art[14][16] = {
 	{0x00, 0x7E, 0x42, 0x42, 0x42, 0x42, 0x42, 0x42, 0x42, 0x42, 0x42, 0x42, 0x42, 0x42, 0x7E, 0x00},
@@ -185,6 +226,31 @@ SWITCH_DECLARE(void) switch_img_add_text(void *buffer, int w, int x, int y, char
 	}
 }
 
+SWITCH_DECLARE(void) switch_color_set(switch_yuv_color_t *color, char *color_str)
+{
+	uint8_t y = 134;
+	uint8_t u = 128;
+	uint8_t v = 124;
+
+	if (color_str != NULL && strlen(color_str) == 7) {
+		uint8_t red, green, blue;
+		char str[7];
+		color_str++;
+		strncpy(str, color_str, 6);
+		red = (str[0] >= 'A' ? (str[0] - 'A' + 10) * 16 : (str[0] - '0') * 16) + (str[1] >= 'A' ? (str[1] - 'A' + 10) : (str[0] - '0'));
+		green = (str[2] >= 'A' ? (str[2] - 'A' + 10) * 16 : (str[2] - '0') * 16) + (str[3] >= 'A' ? (str[3] - 'A' + 10) : (str[0] - '0'));
+		blue = (str[4] >= 'A' ? (str[4] - 'A' + 10) * 16 : (str[4] - '0') * 16) + (str[5] >= 'A' ? (str[5] - 'A' + 10) : (str[0] - '0'));
+
+		y = (uint8_t)(((red * 4897) >> 14) + ((green * 9611) >> 14) + ((blue * 1876) >> 14));
+		u = (uint8_t)(- ((red * 2766) >> 14)  - ((5426 * green) >> 14) + blue / 2 + 128);
+		v = (uint8_t)(red / 2 -((6855 * green) >> 14) - ((blue * 1337) >> 14) + 128);
+		// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "set color, red = %u, green = %u, blue = %u, y = %u, u = %u, v = %u\n", red, green, blue, y, u, v);
+	}
+
+	color->y = y;
+	color->u = u;
+	color->v = v;
+}
 
 /* For Emacs:
  * Local Variables:
