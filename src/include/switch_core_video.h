@@ -22,6 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
+ * Anthony Minessale II <anthm@freeswitch.org>
  *
  *
  * switch_core_video.h -- Core Video header
@@ -35,31 +36,13 @@
 	opportunity to thank libvpx for all the awesome stuff it does and for making my life much easier.
 
 */
+
 #ifndef SWITCH_VIDEO_H
 #define SWITCH_VIDEO_H
 
-#include "vpx/vpx_image.h"
-#include "vpx/vpx_integer.h"
+#include <switch.h>
 
 SWITCH_BEGIN_EXTERN_C
-
-#define SWITCH_IMG_FMT_PLANAR    VPX_IMG_FMT_PLANAR
-#define SWITCH_IMG_FMT_UV_FLIP   VPX_IMG_FMT_UV_FLIP
-#define SWITCH_IMG_FMT_HAS_ALPHA VPX_IMG_FMT_HAS_ALPHA
-
-
-#define SWITCH_PLANE_PACKED VPX_PLANE_PACKED
-#define SWITCH_PLANE_Y      VPX_PLANE_Y
-#define SWITCH_PLANE_U      VPX_PLANE_U
-#define SWITCH_PLANE_V      VPX_PLANE_V
-#define SWITCH_PLANE_ALPHA  VPX_PLANE_ALPHA
-
-#ifndef VPX_IMG_FMT_HIGH         /* not available in libvpx 1.3.0 (see commit hash e97aea28) */
-#define VPX_IMG_FMT_HIGH         0x800  /**< Image uses 16bit framebuffer */
-#endif
-
-#define SWITCH_IMG_FMT_HIGH      VPX_IMG_FMT_HIGH
-#define SWITCH_IMG_FMT_I420	     VPX_IMG_FMT_I420
 
 typedef struct switch_yuv_color_s {
 	uint8_t y;
@@ -68,9 +51,6 @@ typedef struct switch_yuv_color_s {
 } switch_yuv_color_t;
 
 
-typedef vpx_img_fmt_t switch_img_fmt_t;
-
-typedef vpx_image_t switch_image_t;
 
 /**\brief Representation of a rectangle on a surface */
 typedef struct switch_image_rect {
@@ -79,6 +59,7 @@ typedef struct switch_image_rect {
 	unsigned int w; /**< width */
 	unsigned int h; /**< height */
 } switch_image_rect_t;
+
 
 /*!\brief Open a descriptor, allocating storage for the underlying image
 *
@@ -193,7 +174,16 @@ SWITCH_DECLARE(void) switch_img_fill(switch_image_t *img, int x, int y, int w, i
 
 SWITCH_DECLARE(void) switch_img_draw_pixel(switch_image_t *img, int x, int y, switch_yuv_color_t color);
 
-SWITCH_DECLARE(void) switch_color_set(switch_yuv_color_t *color, char *color_str);
+SWITCH_DECLARE(void) switch_color_set(switch_yuv_color_t *color, const char *color_str);
+
+SWITCH_DECLARE(switch_status_t) switch_img_txt_handle_create(switch_img_txt_handle_t **handleP, const char *font_family, 
+															 const char *font_color, uint16_t font_size, double angle, switch_memory_pool_t *pool);
+
+SWITCH_DECLARE(void) switch_img_txt_handle_destroy(switch_img_txt_handle_t **handleP);
+
+SWITCH_DECLARE(switch_status_t) switch_img_txt_handle_render(switch_img_txt_handle_t *handle, switch_image_t *img, 
+															 int x, int y, const char *text, 
+															 const char *font_family, const char *font_color, uint16_t font_size, double angle);
 
 /** @} */
 

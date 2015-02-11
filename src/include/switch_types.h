@@ -40,7 +40,7 @@
 
 #include <switch.h>
 #include <switch_json.h>
-#include <switch_core_video.h>
+#include <switch_vpx.h>
 
 SWITCH_BEGIN_EXTERN_C
 #define SWITCH_ENT_ORIGINATE_DELIM ":_:"
@@ -2215,8 +2215,6 @@ typedef switch_status_t (*switch_core_codec_control_func_t) (switch_codec_t *cod
 																   void **ret_data);
 																   
 
-typedef switch_status_t (*switch_image_write_callback_t) (switch_core_session_t *session, switch_frame_t *frame, switch_image_t *img, void *user_data);
-
 typedef switch_status_t (*switch_core_codec_init_func_t) (switch_codec_t *, switch_codec_flag_t, const switch_codec_settings_t *codec_settings);
 typedef switch_status_t (*switch_core_codec_fmtp_parse_func_t) (const char *fmtp, switch_codec_fmtp_t *codec_fmtp);
 typedef switch_status_t (*switch_core_codec_destroy_func_t) (switch_codec_t *);
@@ -2501,6 +2499,8 @@ typedef struct switch_waitlist_s {
 struct switch_vb_s;
 typedef struct switch_vb_s switch_vb_t;
 
+struct switch_img_txt_handle_s;
+typedef struct switch_img_txt_handle_s switch_img_txt_handle_t;
 
 SWITCH_END_EXTERN_C
 #endif

@@ -358,8 +358,14 @@ typedef struct mcu_layer_s {
 	int member_id;
 	int idx;
 	int tagged;
+	int screen_w;
+	int screen_h;
+	int x_pos;
+	int y_pos;
 	switch_image_t *img;
 	switch_image_t *cur_img;
+	switch_image_t *banner_img;
+	switch_img_txt_handle_t *txthandle;
 } mcu_layer_t;
 
 typedef struct mcu_canvas_s {
@@ -702,132 +708,6 @@ typedef struct layout_group_s {
 } layout_group_t;
 
 
-#include "utf8.h"
-
-static const u_int32_t offsetsFromUTF8[6] = {
-	0x00000000UL, 0x00003080UL, 0x000E2080UL,
-	0x03C82080UL, 0xFA082080UL, 0x82082080UL
-};
-
-/* reads the next utf-8 sequence out of a string, updating an index */
-uint32_t get_utf8_char(char *s, int *i)
-{
-	u_int32_t ch = 0;
-	int sz = 0;
-
-	do {
-		ch <<= 6;
-		ch += (unsigned char)s[(*i)++];
-		sz++;
-	} while (s[*i] && !isutf(s[*i]));
-
-	ch -= offsetsFromUTF8[sz-1];
-
-	return ch;
-}
-
-#include <ft2build.h>
-#include FT_FREETYPE_H
-#include FT_GLYPH_H
-
-static void draw_bitmap(switch_image_t *img, FT_Bitmap* bitmap, FT_Int x, FT_Int y, switch_yuv_color_t color)
-{
-	FT_Int  i, j, p, q;
-	FT_Int  x_max = x + bitmap->width;
-	FT_Int  y_max = y + bitmap->rows;
-
-	switch (bitmap->pixel_mode) {
-		case FT_PIXEL_MODE_GRAY: // it should always be GRAY since we use FT_LOAD_RENDER?
-			break;
-		case FT_PIXEL_MODE_NONE:
-		case FT_PIXEL_MODE_MONO:
-		case FT_PIXEL_MODE_GRAY2:
-		case FT_PIXEL_MODE_GRAY4:
-		case FT_PIXEL_MODE_LCD:
-		case FT_PIXEL_MODE_LCD_V:
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "unsupported pixel mode %d\n", bitmap->pixel_mode);
-			return;
-    }
-
-	for ( i = x, p = 0; i < x_max; i++, p++ ) {
-		for ( j = y, q = 0; j < y_max; j++, q++ ) {
-			if ( i < 0 || j < 0 || i >= img->d_w || j >= img->d_h) continue;
-
-			if (bitmap->buffer[q * bitmap->width + p] > 128) {
-				switch_img_draw_pixel(img, i, j, color);
-			}
-		}
-	}
-}
-
-SWITCH_DECLARE(void) switch_img_draw_text(switch_image_t *img, int x, int y, switch_yuv_color_t color, uint16_t font_size, char *text)
-{
-	FT_Library    library;
-	FT_Face       face;
-	FT_GlyphSlot  slot;
-	FT_Matrix     matrix; /* transformation matrix */
-	FT_Vector     pen;    /* untransformed origin  */
-	FT_Error      error;
-	// char*         font_family = "/usr/local/freeswitch/SimHei.ttf";
-	char*         font_family = "/usr/local/freeswitch/Arial.ttf";
-	double        angle;
-	int           target_height;
-	int           index = 0;
-	FT_ULong      ch;
-
-	if (zstr(text)) return;
-
-	angle         = 0; // (45.0 / 360 ) * 3.14159 * 2;
-	target_height = img->d_h;
-
-	error = FT_Init_FreeType( &library ); /* initialize library */
-	if (error) return;
-
-	error = FT_New_Face(library, font_family, 0, &face); /* create face object */
-	if (error) return;
-
-	/* use 50pt at 100dpi */
-	error = FT_Set_Char_Size(face, 64 * font_size, 0, 96, 96); /* set character size */
-	if (error) return;
-
-	slot = face->glyph;
-
-	/* set up matrix */
-	matrix.xx = (FT_Fixed)( cos( angle ) * 0x10000L );
-	matrix.xy = (FT_Fixed)(-sin( angle ) * 0x10000L );
-	matrix.yx = (FT_Fixed)( sin( angle ) * 0x10000L );
-	matrix.yy = (FT_Fixed)( cos( angle ) * 0x10000L );
-
-	pen.x = x * 64;
-	pen.y = (target_height - y) * 64;
-
-	while(*(text + index)) {
-		ch = get_utf8_char(text, &index);
-
-		if (ch == '\n') {
-			pen.x = x * 64;
-			pen.y -= (font_size + font_size / 4) * 64;
-			continue;
-		}
-
-		/* set transformation */
-		FT_Set_Transform(face, &matrix, &pen);
-
-		/* load glyph image into the slot (erase previous one) */
-		error = FT_Load_Char(face, ch, FT_LOAD_RENDER);
-		if (error) continue;
-
-		/* now, draw to our target surface (convert position) */
-		draw_bitmap(img, &slot->bitmap, slot->bitmap_left, target_height - slot->bitmap_top + font_size, color);
-
-		/* increment pen position */
-		pen.x += slot->advance.x;
-		pen.y += slot->advance.y;
-	}
-
-	FT_Done_Face(face);
-	FT_Done_FreeType(library);
-}
 
 static void conference_parse_layouts(conference_obj_t *conference)
 {
@@ -1021,32 +901,22 @@ static void reset_image(switch_image_t *img, switch_yuv_color_t *color)
 static void reset_layer(mcu_canvas_t *canvas, mcu_layer_t *layer)
 {
 
-	int x = 0, y = 0;
-	int screen_w = 0, screen_h = 0;
-
 	layer->tagged = 0;
 
-	screen_w = canvas->img->d_w * layer->geometry.scale / SCALE_FACTOR;
-	screen_h = canvas->img->d_h * layer->geometry.scale / SCALE_FACTOR;
+	switch_img_free(&layer->banner_img);
 
-	if (screen_w % 2) screen_w++; // round to even
-	if (screen_h % 2) screen_h++; // round to even
-
-	x = canvas->img->d_w * layer->geometry.x / SCALE_FACTOR;
-	y = canvas->img->d_h * layer->geometry.y / SCALE_FACTOR;
-
-	if (layer->img && (layer->img->d_w != screen_w || layer->img->d_h != screen_h)) {
+	if (layer->img && (layer->img->d_w != layer->screen_w || layer->img->d_h != layer->screen_h)) {
 		switch_img_free(&layer->img);
 	}
 
 	if (!layer->img) {
-		layer->img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, screen_w, screen_h, 1);
+		layer->img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, layer->screen_w, layer->screen_h, 1);
 	}
 
 	switch_assert(layer->img);
 
 	reset_image(layer->img, &canvas->bgcolor);
-	switch_img_patch(canvas->img, layer->img, x, y);
+	switch_img_patch(canvas->img, layer->img, layer->x_pos, layer->y_pos);
 	switch_img_free(&layer->cur_img);
 
 }
@@ -1054,29 +924,27 @@ static void reset_layer(mcu_canvas_t *canvas, mcu_layer_t *layer)
 static void scale_and_patch(conference_obj_t *conference, mcu_layer_t *layer)
 {
 	int ret;
-	int x = 0, y = 0;
 	switch_image_t *IMG = conference->canvas->img, *img = layer->cur_img;
 
-
 	if (layer->geometry.scale) {
-		int screen_w = 0, screen_h = 0, img_w = 0, img_h = 0;
+		int img_w = 0, img_h = 0;
 		double screen_aspect = 0, img_aspect = 0;
+		
+		img_w = layer->screen_w = IMG->d_w * layer->geometry.scale / SCALE_FACTOR;
+		img_h = layer->screen_h = IMG->d_h * layer->geometry.scale / SCALE_FACTOR;
 
-		img_w = screen_w = IMG->d_w * layer->geometry.scale / SCALE_FACTOR;
-		img_h = screen_h = IMG->d_h * layer->geometry.scale / SCALE_FACTOR;
+		layer->x_pos = IMG->d_w * layer->geometry.x / SCALE_FACTOR;
+		layer->y_pos = IMG->d_h * layer->geometry.y / SCALE_FACTOR;
 
-		x = IMG->d_w * layer->geometry.x / SCALE_FACTOR;
-		y = IMG->d_h * layer->geometry.y / SCALE_FACTOR;
-
-		screen_aspect = (double) screen_w / screen_h;
+		screen_aspect = (double) layer->screen_w / layer->screen_h;
 		img_aspect = (double) img->d_w / img->d_h;
 		
 		if (screen_aspect > img_aspect) {
-			img_w = img_aspect * screen_h;
-			x += (screen_w - img_w) / 2;
+			img_w = img_aspect * layer->screen_h;
+			layer->x_pos += (layer->screen_w - img_w) / 2;
 		} else if (screen_aspect < img_aspect) {
-			img_h = screen_w / img_aspect;
-			y += (screen_h - img_h) / 2;
+			img_h = layer->screen_w / img_aspect;
+			layer->y_pos += (layer->screen_h - img_h) / 2;
 		}
 
 
@@ -1121,11 +989,15 @@ static void scale_and_patch(conference_obj_t *conference, mcu_layer_t *layer)
 				// reserv the bottom room for text, e.g. caller id
 				// switch_img_set_rect(layer->img, 0, 0, layer->img->d_w, layer->img->d_h - 20);
 			}
-			switch_img_patch(IMG, layer->img, x, y);
+			switch_img_patch(IMG, layer->img, layer->x_pos, layer->y_pos);
 		}
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "insert at %d,%d\n", x, y);
-		switch_img_patch(IMG, img, x, y);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "insert at %d,%d\n", 0, 0);
+		switch_img_patch(IMG, img, 0, 0);
+	}
+
+	if (layer->banner_img) {
+		switch_img_patch(IMG, layer->banner_img, layer->x_pos, layer->y_pos + (layer->screen_h - layer->banner_img->d_h));
 	}
 }
 
@@ -1165,11 +1037,75 @@ static void detach_video_layer(conference_member_t *member)
 		conf_api_sub_position(member, NULL, "0:0:0");
 	}
 
+	if (layer->txthandle) {
+		switch_img_txt_handle_destroy(&layer->txthandle);
+	}
+
 	reset_layer(member->conference->canvas, layer);
 	layer->member_id = 0;
 	member->video_layer_id = -1;
 	check_used_layers(member->conference);
 	switch_mutex_unlock(member->conference->canvas->mutex);
+}
+
+static void layer_set_banner(mcu_layer_t *layer, const char *text)
+{
+	switch_yuv_color_t fgcolor, bgcolor;
+	int font_size = 24;
+	const char *fg = "#cccccc";
+	const char *bg = "#142e55";
+	char *parsed = NULL;
+	switch_event_t *params = NULL;
+	const char *font_face = "/usr/share/fonts/truetype/freefont/FreeSansOblique.ttf";
+	const char *var;
+
+	if (*text == '{') {
+		if (switch_event_create_brackets((char *)text, '{', '}', ',', &params, &parsed, SWITCH_FALSE) != SWITCH_STATUS_SUCCESS || !parsed) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Parse Error!\n");
+		} else {
+			text = parsed;
+		}
+	}
+
+	if (params) {
+		if ((var = switch_event_get_header(params, "fg"))) {
+			fg = var;
+		}
+
+		if ((var = switch_event_get_header(params, "bg"))) {
+			bg = var;
+		}
+
+		if ((var = switch_event_get_header(params, "font_face"))) {
+			font_face = var;
+		}
+
+		if ((var = switch_event_get_header(params, "font_size"))) {
+			int tmp = atoi(var);
+			if (tmp >= 5 && tmp <= 50) {
+				font_size = tmp;
+			}
+		}
+	}
+
+	switch_color_set(&fgcolor, fg);
+	switch_color_set(&bgcolor, bg);
+
+	switch_img_free(&layer->banner_img);
+	layer->banner_img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, layer->screen_w, font_size * 2, 1);
+	
+
+	if (layer->txthandle) {
+		switch_img_txt_handle_destroy(&layer->txthandle);
+	}
+
+	switch_img_txt_handle_create(&layer->txthandle, font_face, fg, font_size, 0, NULL);
+
+	reset_image(layer->banner_img, &bgcolor);
+	switch_img_txt_handle_render(layer->txthandle, layer->banner_img, font_size / 2, font_size / 2, text, NULL, NULL, 0, 0);
+
+	switch_safe_free(parsed);
+	if (params) switch_event_destroy(&params);
 }
 
 static switch_status_t attach_video_layer(conference_member_t *member, int idx)
@@ -1178,7 +1114,8 @@ static switch_status_t attach_video_layer(conference_member_t *member, int idx)
 	switch_channel_t *channel = NULL;
 	const char *res_id = NULL;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-
+	const char *banner = NULL;
+	
 	if (!member->session) abort();
 
 	switch_mutex_lock(member->conference->canvas->mutex);
@@ -1206,6 +1143,10 @@ static switch_status_t attach_video_layer(conference_member_t *member, int idx)
 		}
 	}
 	
+	if ((banner = switch_channel_get_variable_dup(channel, "video_banner_text", SWITCH_FALSE, -1))) {
+		layer_set_banner(layer, banner);
+	}
+
 	layer->member_id = member->id;
 	member->video_layer_id = idx;
 	check_used_layers(member->conference);
@@ -1238,6 +1179,17 @@ static void init_canvas_layers(conference_obj_t *conference, video_layout_t *vla
 		layer->geometry.scale = vlayout->images[i].scale;
 		layer->geometry.floor = vlayout->images[i].floor;
 		layer->idx = i;
+
+
+		layer->screen_w = conference->canvas->img->d_w * layer->geometry.scale / SCALE_FACTOR;
+		layer->screen_h = conference->canvas->img->d_h * layer->geometry.scale / SCALE_FACTOR;
+		
+		if (layer->screen_w % 2) layer->screen_w++; // round to even
+		if (layer->screen_h % 2) layer->screen_h++; // round to even
+		
+		layer->x_pos = conference->canvas->img->d_w * layer->geometry.x / SCALE_FACTOR;
+		layer->y_pos = conference->canvas->img->d_h * layer->geometry.y / SCALE_FACTOR;
+
 
 		if (layer->geometry.floor) {
 			conference->canvas->layout_floor_id = i;
@@ -1570,18 +1522,24 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 			}
 		}
 
-		if (1) {
+		if (0) {
+			switch_img_txt_handle_t *txthandle = NULL;
 			switch_yuv_color_t color;
-			switch_color_set(&color, "#FFFFFF");
-			switch_img_draw_text(conference->canvas->img, 10, 10, color, 12, "AVA 123 你好 FreeSWITCH\nFreeSWITCH Rocks!");
-			switch_img_draw_text(conference->canvas->img, 10, 40, color, 16, "AVA 123 你好 FreeSWITCH\nFreeSWITCH Rocks!");
-			switch_img_draw_text(conference->canvas->img, 10, 80, color, 24, "AVA 123 你好 FreeSWITCH\nFreeSWITCH Rocks!");
-			switch_img_draw_text(conference->canvas->img, 10, 160, color, 36, "AVA 123 你好 FreeSWITCH\nFreeSWITCH Rocks!");
-			switch_img_draw_text(conference->canvas->img, 10, 300, color, 72, "AVA 123 你好 FreeSWITCH\nFreeSWITCH Rocks!");
 
-			switch_img_fill(conference->canvas->img, 300, 10, 400, 40, color);
+			switch_img_txt_handle_create(&txthandle, "/usr/share/fonts/truetype/Microsoft/Verdana.ttf",
+										 "#FFFFFF", 24, 0, NULL);
+
+			switch_img_txt_handle_render(txthandle, conference->canvas->img, 10, 10, "W00t this works!", NULL, NULL, 0, 0);
+
 			switch_color_set(&color, "#FF0000");
-			switch_img_draw_text(conference->canvas->img, 300, 10, color, 32, "FreeSWITCH");
+			switch_img_fill(conference->canvas->img, 300, 10, 400, 40, color);
+			
+			switch_img_txt_handle_render(txthandle, conference->canvas->img, 300, 22, "W00t this works!", NULL, NULL, 0, 0);
+			
+			switch_img_txt_handle_destroy(&txthandle);
+
+
+			//switch_img_draw_text(conference->canvas->img, 300, 10, color, 32, "FreeSWITCH");
 		}
 
 		if (used) {
@@ -1654,6 +1612,11 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 
 		switch_img_free(&layer->cur_img);
 		switch_img_free(&layer->img);
+		switch_img_free(&layer->banner_img);
+
+		if (layer->txthandle) {
+			switch_img_txt_handle_destroy(&layer->txthandle);
+		}
 	}
 
 	for (i = 0; write_codecs[i] && switch_core_codec_ready(&write_codecs[i]->codec) && i < MAX_MUX_CODECS; i++) {

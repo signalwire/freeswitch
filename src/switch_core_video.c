@@ -22,6 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
+ * Anthony Minessale II <anthm@freeswitch.org>
  *
  *
  * switch_core_video.c -- Core Video
@@ -29,6 +30,7 @@
  */
 
 #include <switch.h>
+#include <switch_utf8.h>
 
 
 SWITCH_DECLARE(switch_image_t *)switch_img_alloc(switch_image_t  *img,
@@ -247,7 +249,7 @@ SWITCH_DECLARE(void) switch_img_add_text(void *buffer, int w, int x, int y, char
 	}
 }
 
-SWITCH_DECLARE(void) switch_color_set(switch_yuv_color_t *color, char *color_str)
+SWITCH_DECLARE(void) switch_color_set(switch_yuv_color_t *color, const char *color_str)
 {
 	uint8_t y = 134;
 	uint8_t u = 128;
@@ -256,8 +258,13 @@ SWITCH_DECLARE(void) switch_color_set(switch_yuv_color_t *color, char *color_str
 	if (color_str != NULL && strlen(color_str) == 7) {
 		uint8_t red, green, blue;
 		char str[7];
+		int i;
+
 		color_str++;
 		strncpy(str, color_str, 6);
+		for(i = 0; i < 6; i++) {
+			str[i] = switch_toupper(str[i]);
+		}
 		red = (str[0] >= 'A' ? (str[0] - 'A' + 10) * 16 : (str[0] - '0') * 16) + (str[1] >= 'A' ? (str[1] - 'A' + 10) : (str[0] - '0'));
 		green = (str[2] >= 'A' ? (str[2] - 'A' + 10) * 16 : (str[2] - '0') * 16) + (str[3] >= 'A' ? (str[3] - 'A' + 10) : (str[0] - '0'));
 		blue = (str[4] >= 'A' ? (str[4] - 'A' + 10) * 16 : (str[4] - '0') * 16) + (str[5] >= 'A' ? (str[5] - 'A' + 10) : (str[0] - '0'));
@@ -272,6 +279,194 @@ SWITCH_DECLARE(void) switch_color_set(switch_yuv_color_t *color, char *color_str
 	color->u = u;
 	color->v = v;
 }
+
+#include <ft2build.h>
+#include FT_FREETYPE_H
+#include FT_GLYPH_H
+
+struct switch_img_txt_handle_s {
+	FT_Library library;
+	FT_Face face;
+	char *font_family;
+	double angle;
+	uint16_t font_size;
+	switch_yuv_color_t color;
+	switch_image_t *img;
+	switch_memory_pool_t *pool;
+	int free_pool;
+};
+
+
+SWITCH_DECLARE(switch_status_t) switch_img_txt_handle_create(switch_img_txt_handle_t **handleP, const char *font_family, 
+															 const char *font_color, uint16_t font_size, double angle, switch_memory_pool_t *pool)
+{
+	int free_pool = 0;
+	switch_img_txt_handle_t *new_handle;
+
+	if (!pool) {
+		free_pool = 1;
+		switch_core_new_memory_pool(&pool);
+	}
+
+	new_handle = switch_core_alloc(pool, sizeof(*new_handle));
+
+	if (FT_Init_FreeType(&new_handle->library)) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	new_handle->pool = pool;
+	new_handle->free_pool = free_pool;
+	new_handle->font_family = switch_core_strdup(new_handle->pool, font_family);
+	new_handle->font_size = font_size;
+	new_handle->angle = angle;
+
+	switch_color_set(&new_handle->color, font_color);
+	
+	*handleP = new_handle;
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
+SWITCH_DECLARE(void) switch_img_txt_handle_destroy(switch_img_txt_handle_t **handleP)
+{
+	switch_img_txt_handle_t *old_handle = *handleP;
+	switch_memory_pool_t *pool;
+
+	*handleP = NULL;
+	
+	if (old_handle->library) {
+		FT_Done_FreeType(old_handle->library);
+		old_handle->library = NULL;
+	}
+
+	pool = old_handle->pool;
+
+	if (old_handle->free_pool) {
+		switch_core_destroy_memory_pool(&pool);
+		pool = NULL;
+		old_handle = NULL;
+	}
+
+}
+
+static void draw_bitmap(switch_image_t *img, FT_Bitmap* bitmap, FT_Int x, FT_Int y, switch_yuv_color_t color)
+{
+	FT_Int  i, j, p, q;
+	FT_Int  x_max = x + bitmap->width;
+	FT_Int  y_max = y + bitmap->rows;
+
+	switch (bitmap->pixel_mode) {
+		case FT_PIXEL_MODE_GRAY: // it should always be GRAY since we use FT_LOAD_RENDER?
+			break;
+		case FT_PIXEL_MODE_NONE:
+		case FT_PIXEL_MODE_MONO:
+		case FT_PIXEL_MODE_GRAY2:
+		case FT_PIXEL_MODE_GRAY4:
+		case FT_PIXEL_MODE_LCD:
+		case FT_PIXEL_MODE_LCD_V:
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "unsupported pixel mode %d\n", bitmap->pixel_mode);
+			return;
+    }
+
+	for ( i = x, p = 0; i < x_max; i++, p++ ) {
+		for ( j = y, q = 0; j < y_max; j++, q++ ) {
+			if ( i < 0 || j < 0 || i >= img->d_w || j >= img->d_h) continue;
+
+			if (bitmap->buffer[q * bitmap->width + p] > 128) {
+				switch_img_draw_pixel(img, i, j, color);
+			}
+		}
+	}
+}
+
+
+SWITCH_DECLARE(switch_status_t) switch_img_txt_handle_render(switch_img_txt_handle_t *handle, switch_image_t *img, 
+															 int x, int y, const char *text, 
+															 const char *font_family, const char *font_color, uint16_t font_size, double angle)
+{
+	FT_GlyphSlot  slot;
+	FT_Matrix     matrix; /* transformation matrix */
+	FT_Vector     pen;    /* untransformed origin  */
+	FT_Error      error;
+	int           target_height;
+	int           index = 0;
+	FT_ULong      ch;
+	FT_Face face;
+
+	if (zstr(text)) return SWITCH_STATUS_FALSE;
+
+	if (font_family) {
+		handle->font_family = switch_core_strdup(handle->pool, font_family);
+	} else {
+		font_family = handle->font_family;
+	}
+
+	if (font_size) {
+		handle->font_size = font_size;
+	} else {
+		font_size = handle->font_size;
+	}
+	
+	if (font_color) {
+		switch_color_set(&handle->color, font_color);
+	}
+
+	handle->angle = angle;
+
+	//angle         = 0; (45.0 / 360 ) * 3.14159 * 2;
+
+	target_height = img->d_h;
+
+	error = FT_New_Face(handle->library, font_family, 0, &face); /* create face object */
+	if (error) {printf("WTF %s %d\n", font_family, __LINE__); return SWITCH_STATUS_FALSE;}
+
+	/* use 50pt at 100dpi */
+	error = FT_Set_Char_Size(face, 64 * font_size, 0, 96, 96); /* set character size */
+	if (error) {printf("WTF %d\n", __LINE__); return SWITCH_STATUS_FALSE;}
+
+	slot = face->glyph;
+
+	/* set up matrix */
+	matrix.xx = (FT_Fixed)( cos( angle ) * 0x10000L );
+	matrix.xy = (FT_Fixed)(-sin( angle ) * 0x10000L );
+	matrix.yx = (FT_Fixed)( sin( angle ) * 0x10000L );
+	matrix.yy = (FT_Fixed)( cos( angle ) * 0x10000L );
+
+	pen.x = x * 64;
+	pen.y = (target_height - y) * 64;
+
+	while(*(text + index)) {
+		ch = switch_u8_get_char((char *)text, &index);
+
+		if (ch == '\n') {
+			pen.x = x * 64;
+			pen.y -= (font_size + font_size / 4) * 64;
+			continue;
+		}
+
+		/* set transformation */
+		FT_Set_Transform(face, &matrix, &pen);
+
+		/* load glyph image into the slot (erase previous one) */
+		error = FT_Load_Char(face, ch, FT_LOAD_RENDER);
+		if (error) continue;
+
+		/* now, draw to our target surface (convert position) */
+		draw_bitmap(img, &slot->bitmap, slot->bitmap_left, target_height - slot->bitmap_top + font_size, handle->color);
+
+		/* increment pen position */
+		pen.x += slot->advance.x;
+		pen.y += slot->advance.y;
+	}
+
+	FT_Done_Face(face);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
+
 
 /* For Emacs:
  * Local Variables:
