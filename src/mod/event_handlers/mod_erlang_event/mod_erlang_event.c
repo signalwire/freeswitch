@@ -1508,6 +1508,9 @@ session_elem_t *attach_call_to_spawned_process(listener_t *listener, char *modul
 
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Timed out when waiting for outbound pid %s %s\n", hash, session_element->uuid_str);
 		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+		/* Destroy erlang session elements when the outbound erlang process gets killed for some unknown reason */
+        remove_session_elem_from_listener(listener, session_element);
+        destroy_session_elem(session_element);
 		return NULL;
 	}
 
