@@ -929,23 +929,24 @@ static void scale_and_patch(conference_obj_t *conference, mcu_layer_t *layer)
 	if (layer->geometry.scale) {
 		int img_w = 0, img_h = 0;
 		double screen_aspect = 0, img_aspect = 0;
-		
+		int x_pos = layer->x_pos;
+		int y_pos = layer->y_pos;
+
 		img_w = layer->screen_w = IMG->d_w * layer->geometry.scale / SCALE_FACTOR;
 		img_h = layer->screen_h = IMG->d_h * layer->geometry.scale / SCALE_FACTOR;
-
-		layer->x_pos = IMG->d_w * layer->geometry.x / SCALE_FACTOR;
-		layer->y_pos = IMG->d_h * layer->geometry.y / SCALE_FACTOR;
 
 		screen_aspect = (double) layer->screen_w / layer->screen_h;
 		img_aspect = (double) img->d_w / img->d_h;
 		
 		if (screen_aspect > img_aspect) {
 			img_w = img_aspect * layer->screen_h;
-			layer->x_pos += (layer->screen_w - img_w) / 2;
+			x_pos += (layer->screen_w - img_w) / 2;
 		} else if (screen_aspect < img_aspect) {
 			img_h = layer->screen_w / img_aspect;
-			layer->y_pos += (layer->screen_h - img_h) / 2;
+			y_pos += (layer->screen_h - img_h) / 2;
 		}
+
+
 
 
 		/*int I420Scale(const uint8* src_y, int src_stride_y,
@@ -989,7 +990,7 @@ static void scale_and_patch(conference_obj_t *conference, mcu_layer_t *layer)
 				// reserv the bottom room for text, e.g. caller id
 				// switch_img_set_rect(layer->img, 0, 0, layer->img->d_w, layer->img->d_h - 20);
 			}
-			switch_img_patch(IMG, layer->img, layer->x_pos, layer->y_pos);
+			switch_img_patch(IMG, layer->img, x_pos, y_pos);
 		}
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "insert at %d,%d\n", 0, 0);
@@ -1048,10 +1049,11 @@ static void detach_video_layer(conference_member_t *member)
 	switch_mutex_unlock(member->conference->canvas->mutex);
 }
 
-static void layer_set_banner(mcu_layer_t *layer, const char *text)
+static void layer_set_banner(mcu_canvas_t *canvas, mcu_layer_t *layer, const char *text)
 {
 	switch_yuv_color_t fgcolor, bgcolor;
-	int font_size = 24;
+	int font_scale = 4;
+	int font_size = 0;
 	const char *fg = "#cccccc";
 	const char *bg = "#142e55";
 	char *parsed = NULL;
@@ -1080,13 +1082,17 @@ static void layer_set_banner(mcu_layer_t *layer, const char *text)
 			font_face = var;
 		}
 
-		if ((var = switch_event_get_header(params, "font_size"))) {
+		if ((var = switch_event_get_header(params, "font_scale"))) {
 			int tmp = atoi(var);
+
 			if (tmp >= 5 && tmp <= 50) {
-				font_size = tmp;
+				font_scale = tmp;
 			}
 		}
 	}
+
+	font_size = (double)(font_scale / 100.0f) * layer->screen_h;
+
 
 	switch_color_set(&fgcolor, fg);
 	switch_color_set(&bgcolor, bg);
@@ -1115,6 +1121,7 @@ static switch_status_t attach_video_layer(conference_member_t *member, int idx)
 	const char *res_id = NULL;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	const char *banner = NULL;
+	switch_yuv_color_t color;
 	
 	if (!member->session) abort();
 
@@ -1144,7 +1151,7 @@ static switch_status_t attach_video_layer(conference_member_t *member, int idx)
 	}
 	
 	if ((banner = switch_channel_get_variable_dup(channel, "video_banner_text", SWITCH_FALSE, -1))) {
-		layer_set_banner(layer, banner);
+		layer_set_banner(member->conference->canvas, layer, banner);
 	}
 
 	layer->member_id = member->id;
@@ -1155,6 +1162,11 @@ static switch_status_t attach_video_layer(conference_member_t *member, int idx)
 	if (layer->geometry.audio_position) {
 		conf_api_sub_position(member, NULL, layer->geometry.audio_position);
 	}
+	
+
+	switch_color_set(&color, "#000000");
+	switch_img_fill(member->conference->canvas->img, layer->x_pos, layer->y_pos, layer->screen_w, layer->screen_h, color);
+
 
  end:
 
