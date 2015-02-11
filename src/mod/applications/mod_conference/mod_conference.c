@@ -736,19 +736,31 @@ static void draw_bitmap(switch_image_t *img, FT_Bitmap* bitmap, FT_Int x, FT_Int
 	FT_Int  x_max = x + bitmap->width;
 	FT_Int  y_max = y + bitmap->rows;
 
+	switch (bitmap->pixel_mode) {
+		case FT_PIXEL_MODE_GRAY: // it should always be GRAY since we use FT_LOAD_RENDER?
+			break;
+		case FT_PIXEL_MODE_NONE:
+		case FT_PIXEL_MODE_MONO:
+		case FT_PIXEL_MODE_GRAY2:
+		case FT_PIXEL_MODE_GRAY4:
+		case FT_PIXEL_MODE_LCD:
+		case FT_PIXEL_MODE_LCD_V:
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "unsupported pixel mode %d\n", bitmap->pixel_mode);
+			return;
+    }
+
 	for ( i = x, p = 0; i < x_max; i++, p++ ) {
 		for ( j = y, q = 0; j < y_max; j++, q++ ) {
 			if ( i < 0 || j < 0 || i >= img->d_w || j >= img->d_h) continue;
 
-			if (bitmap->buffer[q * bitmap->width + p]) {
-				// TODO the value ranges from 1 - 255, maybe we should reset the color based on that
+			if (bitmap->buffer[q * bitmap->width + p] > 128) {
 				switch_image_draw_pixel(img, i, j, color);
 			}
 		}
 	}
 }
 
-SWITCH_DECLARE(void) switch_img_draw_text(switch_image_t *img, int x, int y, char *text)
+SWITCH_DECLARE(void) switch_img_draw_text(switch_image_t *img, int x, int y, switch_yuv_color_t color, uint16_t font_size, char *text)
 {
 	FT_Library    library;
 	FT_Face       face;
@@ -756,16 +768,14 @@ SWITCH_DECLARE(void) switch_img_draw_text(switch_image_t *img, int x, int y, cha
 	FT_Matrix     matrix; /* transformation matrix */
 	FT_Vector     pen;    /* untransformed origin  */
 	FT_Error      error;
-	char*         font_family = "/usr/local/freeswitch/SimHei.ttf";
-	int           font_size = 64;
+	// char*         font_family = "/usr/local/freeswitch/SimHei.ttf";
+	char*         font_family = "/usr/local/freeswitch/Arial.ttf";
 	double        angle;
 	int           target_height;
 	int           index = 0;
 	FT_ULong      ch;
-	switch_yuv_color_t color;
 
 	if (zstr(text)) return;
-	switch_color_set(&color, "#FFFFFF");
 
 	angle         = 0; // (45.0 / 360 ) * 3.14159 * 2;
 	target_height = img->d_h;
@@ -777,7 +787,7 @@ SWITCH_DECLARE(void) switch_img_draw_text(switch_image_t *img, int x, int y, cha
 	if (error) return;
 
 	/* use 50pt at 100dpi */
-	error = FT_Set_Char_Size(face, 50 * font_size, 0, 100, 0); /* set character size */
+	error = FT_Set_Char_Size(face, 64 * font_size, 0, 96, 96); /* set character size */
 	if (error) return;
 
 	slot = face->glyph;
@@ -788,13 +798,17 @@ SWITCH_DECLARE(void) switch_img_draw_text(switch_image_t *img, int x, int y, cha
 	matrix.yx = (FT_Fixed)( sin( angle ) * 0x10000L );
 	matrix.yy = (FT_Fixed)( cos( angle ) * 0x10000L );
 
-	/* the pen position in 26.6 cartesian space coordinates; */
-	/* start at (300,200) relative to the upper left corner  */
 	pen.x = x * 64;
 	pen.y = (target_height - y) * 64;
 
 	while(*(text + index)) {
 		ch = get_utf8_char(text, &index);
+
+		if (ch == '\n') {
+			pen.x = x * 64;
+			pen.y -= (font_size + font_size / 4) * 64;
+			continue;
+		}
 
 		/* set transformation */
 		FT_Set_Transform(face, &matrix, &pen);
@@ -1561,7 +1575,15 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 			}
 		}
 
-		// switch_img_draw_text(conference->canvas->img, 10, 10, "AVA 123 你好 FreeSWITCH");
+		if (1) {
+			switch_yuv_color_t color;
+			switch_color_set(&color, "#FFFFFF");
+			switch_img_draw_text(conference->canvas->img, 10, 10, color, 12, "AVA 123 你好 FreeSWITCH\nFreeSWITCH Rocks!");
+			switch_img_draw_text(conference->canvas->img, 10, 40, color, 16, "AVA 123 你好 FreeSWITCH\nFreeSWITCH Rocks!");
+			switch_img_draw_text(conference->canvas->img, 10, 80, color, 24, "AVA 123 你好 FreeSWITCH\nFreeSWITCH Rocks!");
+			switch_img_draw_text(conference->canvas->img, 10, 160, color, 36, "AVA 123 你好 FreeSWITCH\nFreeSWITCH Rocks!");
+			switch_img_draw_text(conference->canvas->img, 10, 300, color, 72, "AVA 123 你好 FreeSWITCH\nFreeSWITCH Rocks!");
+		}
 
 		if (used) {
 			switch_time_t now = switch_micro_time_now();
@@ -7756,6 +7778,11 @@ static switch_status_t conf_api_sub_vid_layout(conference_obj_t *conference, swi
 
 	if (!argv[2]) {
 		stream->write_function(stream, "Invalid input\n");
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	if (!conference->canvas) {
+		stream->write_function(stream, "Conference is not in mixing mode\n");
 		return SWITCH_STATUS_SUCCESS;
 	}
 

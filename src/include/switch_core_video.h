@@ -183,7 +183,7 @@ SWITCH_DECLARE(void) switch_img_flip(switch_image_t *img);
 */
 SWITCH_DECLARE(void) switch_img_free(switch_image_t **img);
 
-SWITCH_DECLARE(void) switch_img_draw_text(switch_image_t *IMG, int x, int y, char *text);
+SWITCH_DECLARE(void) switch_img_draw_text(switch_image_t *IMG, int x, int y, switch_yuv_color_t color, uint16_t font_size, char *text);
 
 SWITCH_DECLARE(void) switch_img_add_text(void *buffer, int w, int x, int y, char *s);
 
