@@ -87,7 +87,7 @@ if not exist "$(ProjectDir)$(IntDir)\auth_client.obj" "autogen.cmd"
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>..\..\sofia-sip\win32;..\..\sofia-sip\libsofia-sip-ua\su;..\..\sofia-sip\libsofia-sip-ua\ipt;..\..\sofia-sip\libsofia-sip-ua\sresolv;..\..\sofia-sip\libsofia-sip-ua\bnf;..\..\sofia-sip\libsofia-sip-ua\url;..\..\sofia-sip\libsofia-sip-ua\msg;..\..\sofia-sip\libsofia-sip-ua\sip;..\..\sofia-sip\libsofia-sip-ua\nta;..\..\sofia-sip\libsofia-sip-ua\nua;..\..\sofia-sip\libsofia-sip-ua\iptsec;..\..\sofia-sip\libsofia-sip-ua\http;..\..\sofia-sip\libsofia-sip-ua\nth;..\..\sofia-sip\libsofia-sip-ua\nea;..\..\sofia-sip\libsofia-sip-ua\sdp;..\..\sofia-sip\libsofia-sip-ua\soa;..\..\sofia-sip\libsofia-sip-ua\stun;..\..\sofia-sip\libsofia-sip-ua\tport;..\..\sofia-sip\libsofia-sip-ua\features;..\..\pthreads-w32-2-9-1;.;..\..\openssl-$(OpenSSLVersion)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;IN_LIBSOFIA_SIP_UA_STATIC;LIBSOFIA_SIP_UA_STATIC;LIBSRES_STATIC;PTW32_STATIC_LIB;HAVE_IPHLPAPI_H;SU_DEBUG=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;IN_LIBSOFIA_SIP_UA_STATIC;LIBSOFIA_SIP_UA_STATIC;LIBSRES_STATIC;PTW32_STATIC_LIB;HAVE_IPHLPAPI_H;SU_DEBUG=0;_WINSOCK_DEPRECATED_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -124,7 +124,7 @@ if not exist "$(ProjectDir)$(IntDir)\auth_client.obj" "autogen.cmd"
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>..\..\sofia-sip\win32;..\..\sofia-sip\libsofia-sip-ua\su;..\..\sofia-sip\libsofia-sip-ua\ipt;..\..\sofia-sip\libsofia-sip-ua\sresolv;..\..\sofia-sip\libsofia-sip-ua\bnf;..\..\sofia-sip\libsofia-sip-ua\url;..\..\sofia-sip\libsofia-sip-ua\msg;..\..\sofia-sip\libsofia-sip-ua\sip;..\..\sofia-sip\libsofia-sip-ua\nta;..\..\sofia-sip\libsofia-sip-ua\nua;..\..\sofia-sip\libsofia-sip-ua\iptsec;..\..\sofia-sip\libsofia-sip-ua\http;..\..\sofia-sip\libsofia-sip-ua\nth;..\..\sofia-sip\libsofia-sip-ua\nea;..\..\sofia-sip\libsofia-sip-ua\sdp;..\..\sofia-sip\libsofia-sip-ua\soa;..\..\sofia-sip\libsofia-sip-ua\stun;..\..\sofia-sip\libsofia-sip-ua\tport;..\..\sofia-sip\libsofia-sip-ua\features;..\..\pthreads-w32-2-9-1;.;..\..\openssl-$(OpenSSLVersion)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_WIN64;WIN32;_DEBUG;_LIB;IN_LIBSOFIA_SIP_UA_STATIC;LIBSOFIA_SIP_UA_STATIC;LIBSRES_STATIC;PTW32_STATIC_LIB;HAVE_IPHLPAPI_H;SU_DEBUG=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_WIN64;WIN32;_DEBUG;_LIB;IN_LIBSOFIA_SIP_UA_STATIC;LIBSOFIA_SIP_UA_STATIC;LIBSRES_STATIC;PTW32_STATIC_LIB;HAVE_IPHLPAPI_H;SU_DEBUG=0;_WINSOCK_DEPRECATED_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -159,7 +159,7 @@ if not exist "$(ProjectDir)$(IntDir)\auth_client.obj" "autogen.cmd"
       <Optimization>MaxSpeed</Optimization>
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
       <AdditionalIncludeDirectories>..\..\sofia-sip\win32;..\..\sofia-sip\libsofia-sip-ua\su;..\..\sofia-sip\libsofia-sip-ua\ipt;..\..\sofia-sip\libsofia-sip-ua\sresolv;..\..\sofia-sip\libsofia-sip-ua\bnf;..\..\sofia-sip\libsofia-sip-ua\url;..\..\sofia-sip\libsofia-sip-ua\msg;..\..\sofia-sip\libsofia-sip-ua\sip;..\..\sofia-sip\libsofia-sip-ua\nta;..\..\sofia-sip\libsofia-sip-ua\nua;..\..\sofia-sip\libsofia-sip-ua\iptsec;..\..\sofia-sip\libsofia-sip-ua\http;..\..\sofia-sip\libsofia-sip-ua\nth;..\..\sofia-sip\libsofia-sip-ua\nea;..\..\sofia-sip\libsofia-sip-ua\sdp;..\..\sofia-sip\libsofia-sip-ua\soa;..\..\sofia-sip\libsofia-sip-ua\stun;..\..\sofia-sip\libsofia-sip-ua\tport;..\..\sofia-sip\libsofia-sip-ua\features;..\..\pthreads-w32-2-9-1;.;..\..\openssl-$(OpenSSLVersion)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;IN_LIBSOFIA_SIP_UA_STATIC;LIBSOFIA_SIP_UA_STATIC;LIBSRES_STATIC;PTW32_STATIC_LIB;HAVE_IPHLPAPI_H;SU_DEBUG=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;IN_LIBSOFIA_SIP_UA_STATIC;LIBSOFIA_SIP_UA_STATIC;LIBSRES_STATIC;PTW32_STATIC_LIB;HAVE_IPHLPAPI_H;SU_DEBUG=0;_WINSOCK_DEPRECATED_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
@@ -197,7 +197,7 @@ if not exist "$(ProjectDir)$(IntDir)\auth_client.obj" "autogen.cmd"
       <Optimization>MaxSpeed</Optimization>
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
       <AdditionalIncludeDirectories>..\..\sofia-sip\win32;..\..\sofia-sip\libsofia-sip-ua\su;..\..\sofia-sip\libsofia-sip-ua\ipt;..\..\sofia-sip\libsofia-sip-ua\sresolv;..\..\sofia-sip\libsofia-sip-ua\bnf;..\..\sofia-sip\libsofia-sip-ua\url;..\..\sofia-sip\libsofia-sip-ua\msg;..\..\sofia-sip\libsofia-sip-ua\sip;..\..\sofia-sip\libsofia-sip-ua\nta;..\..\sofia-sip\libsofia-sip-ua\nua;..\..\sofia-sip\libsofia-sip-ua\iptsec;..\..\sofia-sip\libsofia-sip-ua\http;..\..\sofia-sip\libsofia-sip-ua\nth;..\..\sofia-sip\libsofia-sip-ua\nea;..\..\sofia-sip\libsofia-sip-ua\sdp;..\..\sofia-sip\libsofia-sip-ua\soa;..\..\sofia-sip\libsofia-sip-ua\stun;..\..\sofia-sip\libsofia-sip-ua\tport;..\..\sofia-sip\libsofia-sip-ua\features;..\..\pthreads-w32-2-9-1;.;..\..\openssl-$(OpenSSLVersion)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_WIN64;WIN32;NDEBUG;_LIB;IN_LIBSOFIA_SIP_UA_STATIC;LIBSOFIA_SIP_UA_STATIC;LIBSRES_STATIC;PTW32_STATIC_LIB;HAVE_IPHLPAPI_H;SU_DEBUG=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_WIN64;WIN32;NDEBUG;_LIB;IN_LIBSOFIA_SIP_UA_STATIC;LIBSOFIA_SIP_UA_STATIC;LIBSRES_STATIC;PTW32_STATIC_LIB;HAVE_IPHLPAPI_H;SU_DEBUG=0;_WINSOCK_DEPRECATED_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
