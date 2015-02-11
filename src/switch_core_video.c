@@ -161,7 +161,7 @@ SWITCH_DECLARE(switch_image_t *) switch_img_copy_rect(switch_image_t *img, int x
 	return new_img;
 }
 
-SWITCH_DECLARE(void) switch_image_draw_pixel(switch_image_t *img, int x, int y, switch_yuv_color_t color)
+SWITCH_DECLARE(void) switch_img_draw_pixel(switch_image_t *img, int x, int y, switch_yuv_color_t color)
 {
 	if (x < 0 || y < 0 || x >= img->d_w || y >= img->d_h) return;
 
@@ -170,6 +170,27 @@ SWITCH_DECLARE(void) switch_image_draw_pixel(switch_image_t *img, int x, int y, 
 	if (((x & 0x1) == 0) && ((y & 0x1) == 0)) {// only draw on even position
 		img->planes[SWITCH_PLANE_U][y / 2 * img->stride[SWITCH_PLANE_U] + x / 2] = color.u;
 		img->planes[SWITCH_PLANE_V][y / 2 * img->stride[SWITCH_PLANE_V] + x / 2] = color.v;
+	}
+}
+
+SWITCH_DECLARE(void) switch_img_fill(switch_image_t *img, int x, int y, int w, int h, switch_yuv_color_t color)
+{
+	int len, i;
+
+	if (x < 0 || y < 0 || x >= img->d_w || y >= img->d_h) return;
+
+	len = MIN(w, img->d_w - x);
+	if (len <= 0) return;
+
+	for (i = y; i < (y + h) && i < img->d_h; i++) {
+		memset(img->planes[SWITCH_PLANE_Y] + img->stride[SWITCH_PLANE_Y] * i + x, color.y, len);
+	}
+
+	len /= 2;
+
+	for (i = y; i < (y + h) && i < img->d_h; i += 2) {
+		memset(img->planes[SWITCH_PLANE_U] + img->stride[SWITCH_PLANE_U] * i / 2 + x / 2, color.u, len);
+		memset(img->planes[SWITCH_PLANE_V] + img->stride[SWITCH_PLANE_V] * i / 2 + x / 2, color.v, len);
 	}
 }
 
