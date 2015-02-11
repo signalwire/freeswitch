@@ -1110,7 +1110,6 @@ static void layer_set_banner(mcu_canvas_t *canvas, mcu_layer_t *layer, const cha
 	reset_image(layer->banner_img, &bgcolor);
 	switch_img_txt_handle_render(layer->txthandle, layer->banner_img, font_size / 2, font_size / 2, text, NULL, NULL, 0, 0);
 
-	switch_safe_free(parsed);
 	if (params) switch_event_destroy(&params);
 }
 
