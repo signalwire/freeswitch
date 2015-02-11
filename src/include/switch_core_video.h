@@ -189,7 +189,9 @@ SWITCH_DECLARE(void) switch_img_add_text(void *buffer, int w, int x, int y, char
 
 SWITCH_DECLARE(switch_image_t *) switch_img_copy_rect(switch_image_t *img, int x, int y, int w, int h);
 
-SWITCH_DECLARE(void) switch_image_draw_pixel(switch_image_t *img, int x, int y, switch_yuv_color_t color);
+SWITCH_DECLARE(void) switch_img_fill(switch_image_t *img, int x, int y, int w, int h, switch_yuv_color_t color);
+
+SWITCH_DECLARE(void) switch_img_draw_pixel(switch_image_t *img, int x, int y, switch_yuv_color_t color);
 
 SWITCH_DECLARE(void) switch_color_set(switch_yuv_color_t *color, char *color_str);
 

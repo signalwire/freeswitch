@@ -754,7 +754,7 @@ static void draw_bitmap(switch_image_t *img, FT_Bitmap* bitmap, FT_Int x, FT_Int
 			if ( i < 0 || j < 0 || i >= img->d_w || j >= img->d_h) continue;
 
 			if (bitmap->buffer[q * bitmap->width + p] > 128) {
-				switch_image_draw_pixel(img, i, j, color);
+				switch_img_draw_pixel(img, i, j, color);
 			}
 		}
 	}
@@ -1013,16 +1013,7 @@ static int mcu_canvas_wake(mcu_canvas_t *mcu_canvas)
 
 static void reset_image(switch_image_t *img, switch_yuv_color_t *color)
 {
-	int i;
-
-	for (i = 0; i < img->h; i++) {
-		memset(img->planes[SWITCH_PLANE_Y] + img->stride[SWITCH_PLANE_Y] * i, color->y, img->d_w);
-	}
-
-	for (i = 0; i < img->h / 2; i++) {
-		memset(img->planes[SWITCH_PLANE_U] + img->stride[SWITCH_PLANE_U] * i, color->u, img->d_w / 2);
-		memset(img->planes[SWITCH_PLANE_V] + img->stride[SWITCH_PLANE_V] * i, color->v, img->d_w / 2);
-	}
+	switch_img_fill(img, 0, 0, img->w, img->h, *color);
 }
 
 #define SCALE_FACTOR 360.0f
@@ -1126,6 +1117,10 @@ static void scale_and_patch(conference_obj_t *conference, mcu_layer_t *layer)
 		if (ret != 0) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Scaling Error: ret: %d\n", ret);
 		} else {
+			if (layer->img->d_h > 20) {
+				// reserv the bottom room for text, e.g. caller id
+				// switch_img_set_rect(layer->img, 0, 0, layer->img->d_w, layer->img->d_h - 20);
+			}
 			switch_img_patch(IMG, layer->img, x, y);
 		}
 	} else {
@@ -1583,6 +1578,10 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 			switch_img_draw_text(conference->canvas->img, 10, 80, color, 24, "AVA 123 你好 FreeSWITCH\nFreeSWITCH Rocks!");
 			switch_img_draw_text(conference->canvas->img, 10, 160, color, 36, "AVA 123 你好 FreeSWITCH\nFreeSWITCH Rocks!");
 			switch_img_draw_text(conference->canvas->img, 10, 300, color, 72, "AVA 123 你好 FreeSWITCH\nFreeSWITCH Rocks!");
+
+			switch_img_fill(conference->canvas->img, 300, 10, 400, 40, color);
+			switch_color_set(&color, "#FF0000");
+			switch_img_draw_text(conference->canvas->img, 300, 10, color, 32, "FreeSWITCH");
 		}
 
 		if (used) {
