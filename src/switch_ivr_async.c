@@ -1183,7 +1183,7 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 		{
 			const char *var = switch_channel_get_variable(channel, "RECORD_USE_THREAD");
 
-			if (zstr(var) || switch_true(var)) {
+			if (!rh->native && rh->fh && (zstr(var) || switch_true(var))) {
 				switch_threadattr_t *thd_attr = NULL;
 				switch_memory_pool_t *pool = switch_core_session_get_pool(session);
 				int sanity = 200;
