@@ -874,6 +874,7 @@ static void reset_image(switch_image_t *img, switch_rgb_color_t *color)
 
 static void reset_layer(mcu_canvas_t *canvas, mcu_layer_t *layer)
 {
+	/* called inside lock always */
 
 	layer->tagged = 0;
 
@@ -897,6 +898,8 @@ static void scale_and_patch(conference_obj_t *conference, mcu_layer_t *layer)
 {
 	int ret;
 	switch_image_t *IMG = conference->canvas->img, *img = layer->cur_img;
+
+	switch_mutex_lock(conference->canvas->mutex);
 
 	if (layer->geometry.scale) {
 		int img_w = 0, img_h = 0;
@@ -937,7 +940,7 @@ static void scale_and_patch(conference_obj_t *conference, mcu_layer_t *layer)
 		if (!layer->img) {
 			layer->img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, img_w, img_h, 1);
 		}
-
+		
 		if (layer->banner_img && !layer->banner_patched) {
 			switch_img_patch(IMG, layer->banner_img, layer->x_pos, layer->y_pos + (layer->screen_h - layer->banner_img->d_h));
 			switch_img_set_rect(layer->img, 0, 0, layer->img->d_w, layer->img->d_h - layer->banner_img->d_h);
@@ -973,6 +976,8 @@ static void scale_and_patch(conference_obj_t *conference, mcu_layer_t *layer)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "insert at %d,%d\n", 0, 0);
 		switch_img_patch(IMG, img, 0, 0);
 	}
+
+	switch_mutex_unlock(conference->canvas->mutex);
 }
 
 static void set_canvas_bgcolor(mcu_canvas_t *canvas, char *color)
@@ -1530,14 +1535,14 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 						}
 					}
 				}
-				switch_mutex_unlock(conference->canvas->mutex);
-
 				
 				if (layer) {
 					switch_img_free(&layer->cur_img);
 					layer->cur_img = img;
 					layer->tagged = 1;
 				}
+
+				switch_mutex_unlock(conference->canvas->mutex);
 			}
 
 			if (imember->session) {
@@ -1633,11 +1638,13 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 	for (i = 0; i < MCU_MAX_LAYERS; i++) {
 		layer = &conference->canvas->layers[i];
 
+		switch_mutex_lock(conference->canvas->mutex);
 		switch_img_free(&layer->cur_img);
 		switch_img_free(&layer->img);
 		layer->banner_patched = 0;
 		switch_img_free(&layer->banner_img);
 		switch_img_free(&layer->logo_img);
+		switch_mutex_unlock(conference->canvas->mutex);
 
 		if (layer->txthandle) {
 			switch_img_txt_handle_destroy(&layer->txthandle);
