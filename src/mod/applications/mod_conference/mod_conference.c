@@ -1097,8 +1097,14 @@ static switch_status_t attach_video_layer(conference_member_t *member, int idx)
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	const char *banner = NULL;
 	switch_rgb_color_t color;
-
+	
 	if (!member->session) abort();
+
+	channel = switch_core_session_get_channel(member->session);
+
+	if (!switch_channel_test_flag(channel, CF_VIDEO)) {
+		return SWITCH_STATUS_FALSE;
+	}
 
 	switch_mutex_lock(member->conference->canvas->mutex);
 
@@ -1116,7 +1122,7 @@ static switch_status_t attach_video_layer(conference_member_t *member, int idx)
 
 	reset_layer(member->conference->canvas, layer);
 
-	channel = switch_core_session_get_channel(member->session);
+
 	res_id = switch_channel_get_variable_dup(channel, "video_reservation_id", SWITCH_FALSE, -1);
 	
 	if (layer->geometry.res_id || res_id) {
