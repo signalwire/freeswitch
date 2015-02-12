@@ -1356,7 +1356,7 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 	switch_timer_t timer = { 0 };
 	int i = 0;
 	int used = 0, remaining = 0;
-	uint32_t video_key_freq = 30000000;
+	uint32_t video_key_freq = 10000000;
 	switch_time_t last_key_time = 0;
 	mcu_layer_t *layer = NULL;
 	switch_frame_t write_frame = { 0 };
