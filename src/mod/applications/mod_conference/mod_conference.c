@@ -1061,7 +1061,7 @@ static void layer_set_banner(mcu_canvas_t *canvas, mcu_layer_t *layer, const cha
 	const char *font_face = "/usr/share/fonts/truetype/freefont/FreeSansOblique.ttf";
 	const char *var;
 	char *dup = NULL;
-	
+
 
 	if (*text == '{') {
 		dup = strdup(text);
@@ -1110,10 +1110,10 @@ static void layer_set_banner(mcu_canvas_t *canvas, mcu_layer_t *layer, const cha
 		switch_img_txt_handle_destroy(&layer->txthandle);
 	}
 
-	switch_img_txt_handle_create(&layer->txthandle, font_face, fg, "#000000", font_size, 0, NULL);
+	switch_img_txt_handle_create(&layer->txthandle, font_face, fg, bg, font_size, 0, NULL);
 
 	reset_image(layer->banner_img, &bgcolor);
-	switch_img_txt_handle_render(layer->txthandle, layer->banner_img, font_size / 2, font_size / 2, text, NULL, NULL, NULL, 0, 0);
+	switch_img_txt_handle_render(layer->txthandle, layer->banner_img, font_size / 2, font_size / 2, text, NULL, fg, bg, 0, 0);
 
 	if (params) switch_event_destroy(&params);
 	switch_safe_free(dup);
@@ -1541,6 +1541,7 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 			}
 		}
 
+#if 0
 		if (1) {
 			switch_img_txt_handle_t *txthandle = NULL;
 			switch_rgb_color_t color;
@@ -1556,10 +1557,8 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 			switch_img_txt_handle_render(txthandle, conference->canvas->img, 300, 22, "W00t this works!", NULL, NULL, "#FF0000", 0, 0);
 
 			switch_img_txt_handle_destroy(&txthandle);
-
-
-			//switch_img_draw_text(conference->canvas->img, 300, 10, color, 32, "FreeSWITCH");
 		}
+#endif
 
 		if (used) {
 			switch_time_t now = switch_micro_time_now();
