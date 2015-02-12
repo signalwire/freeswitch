@@ -297,7 +297,7 @@ struct switch_img_txt_handle_s {
 };
 
 
-SWITCH_DECLARE(switch_status_t) switch_img_txt_handle_create(switch_img_txt_handle_t **handleP, const char *font_family, 
+SWITCH_DECLARE(switch_status_t) switch_img_txt_handle_create(switch_img_txt_handle_t **handleP, const char *font_family,
 															 const char *font_color, uint16_t font_size, double angle, switch_memory_pool_t *pool)
 {
 	int free_pool = 0;
@@ -321,7 +321,7 @@ SWITCH_DECLARE(switch_status_t) switch_img_txt_handle_create(switch_img_txt_hand
 	new_handle->angle = angle;
 
 	switch_color_set(&new_handle->color, font_color);
-	
+
 	*handleP = new_handle;
 
 	return SWITCH_STATUS_SUCCESS;
@@ -334,7 +334,7 @@ SWITCH_DECLARE(void) switch_img_txt_handle_destroy(switch_img_txt_handle_t **han
 	switch_memory_pool_t *pool;
 
 	*handleP = NULL;
-	
+
 	if (old_handle->library) {
 		FT_Done_FreeType(old_handle->library);
 		old_handle->library = NULL;
@@ -356,11 +356,27 @@ static void draw_bitmap(switch_image_t *img, FT_Bitmap* bitmap, FT_Int x, FT_Int
 	FT_Int  x_max = x + bitmap->width;
 	FT_Int  y_max = y + bitmap->rows;
 
+	if (bitmap->width == 0) return;
+
 	switch (bitmap->pixel_mode) {
 		case FT_PIXEL_MODE_GRAY: // it should always be GRAY since we use FT_LOAD_RENDER?
 			break;
 		case FT_PIXEL_MODE_NONE:
 		case FT_PIXEL_MODE_MONO:
+			for ( j = y, q = 0; j < y_max; j++, q++ ) {
+				for ( i = x, p = 0; i < x_max; i++, p++ ) {
+					uint8_t byte;
+					int linesize = ((bitmap->width - 1) / 8 + 1) * 8;
+
+					if ( i < 0 || j < 0 || i >= img->d_w || j >= img->d_h) continue;
+
+					byte = bitmap->buffer[(q * linesize + p) / 8];
+					if ((byte >> (7 - (p % 8))) & 0x1) {
+						switch_img_draw_pixel(img, i, j, color);
+					}
+				}
+			}
+			return;
 		case FT_PIXEL_MODE_GRAY2:
 		case FT_PIXEL_MODE_GRAY4:
 		case FT_PIXEL_MODE_LCD:
@@ -381,8 +397,8 @@ static void draw_bitmap(switch_image_t *img, FT_Bitmap* bitmap, FT_Int x, FT_Int
 }
 
 
-SWITCH_DECLARE(switch_status_t) switch_img_txt_handle_render(switch_img_txt_handle_t *handle, switch_image_t *img, 
-															 int x, int y, const char *text, 
+SWITCH_DECLARE(switch_status_t) switch_img_txt_handle_render(switch_img_txt_handle_t *handle, switch_image_t *img,
+															 int x, int y, const char *text,
 															 const char *font_family, const char *font_color, uint16_t font_size, double angle)
 {
 	FT_GlyphSlot  slot;
@@ -407,7 +423,7 @@ SWITCH_DECLARE(switch_status_t) switch_img_txt_handle_render(switch_img_txt_hand
 	} else {
 		font_size = handle->font_size;
 	}
-	
+
 	if (font_color) {
 		switch_color_set(&handle->color, font_color);
 	}
@@ -419,7 +435,10 @@ SWITCH_DECLARE(switch_status_t) switch_img_txt_handle_render(switch_img_txt_hand
 	target_height = img->d_h;
 
 	error = FT_New_Face(handle->library, font_family, 0, &face); /* create face object */
-	if (error) {printf("WTF %s %d\n", font_family, __LINE__); return SWITCH_STATUS_FALSE;}
+	if (error) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to open font %s\n", font_family);
+		return SWITCH_STATUS_FALSE;
+	}
 
 	/* use 50pt at 100dpi */
 	error = FT_Set_Char_Size(face, 64 * font_size, 0, 96, 96); /* set character size */
@@ -433,15 +452,15 @@ SWITCH_DECLARE(switch_status_t) switch_img_txt_handle_render(switch_img_txt_hand
 	matrix.yx = (FT_Fixed)( sin( angle ) * 0x10000L );
 	matrix.yy = (FT_Fixed)( cos( angle ) * 0x10000L );
 
-	pen.x = x * 64;
-	pen.y = (target_height - y) * 64;
+	pen.x = x;
+	pen.y = y;
 
 	while(*(text + index)) {
 		ch = switch_u8_get_char((char *)text, &index);
 
 		if (ch == '\n') {
-			pen.x = x * 64;
-			pen.y -= (font_size + font_size / 4) * 64;
+			pen.x = x;
+			pen.y += (font_size + font_size / 4);
 			continue;
 		}
 
@@ -453,11 +472,11 @@ SWITCH_DECLARE(switch_status_t) switch_img_txt_handle_render(switch_img_txt_hand
 		if (error) continue;
 
 		/* now, draw to our target surface (convert position) */
-		draw_bitmap(img, &slot->bitmap, slot->bitmap_left, target_height - slot->bitmap_top + font_size, handle->color);
+		draw_bitmap(img, &slot->bitmap, pen.x + slot->bitmap_left, pen.y - slot->bitmap_top + font_size, handle->color);
 
 		/* increment pen position */
-		pen.x += slot->advance.x;
-		pen.y += slot->advance.y;
+		pen.x += slot->advance.x >> 6;
+		pen.y += slot->advance.y >> 6;
 	}
 
 	FT_Done_Face(face);
