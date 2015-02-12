@@ -605,7 +605,7 @@ SWITCH_DECLARE(void) switch_img_patch_hole(switch_image_t *IMG, switch_image_t *
 // http://www.libpng.org/pub/png/libpng-1.2.5-manual.html
 // ftp://ftp.oreilly.com/examples/9781565920583/CDROM/SOFTWARE/SOURCE/LIBPNG/EXAMPLE.C
 
-SWITCH_DECLARE(switch_image_t *) switch_img_read_png(char* file_name)
+SWITCH_DECLARE(switch_image_t *) switch_img_read_png(const char* file_name)
 {
 	png_byte header[8];    // 8 is the maximum size that can be checked
 	png_bytep *row_pointers = NULL;
