@@ -1412,7 +1412,8 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 
 	init_canvas(conference, vlayout);
 
-	switch_core_timer_init(&timer, "soft", 33, 3000, conference->pool);
+	/* 25 FPS */
+	switch_core_timer_init(&timer, "soft", 40, 3600, conference->pool);
 
 	if (!switch_test_flag(conference, CFLAG_MINIMIZE_VIDEO_ENCODING)) {
 		packet = switch_core_alloc(conference->pool, SWITCH_RECOMMENDED_BUFFER_SIZE);
