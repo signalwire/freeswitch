@@ -163,36 +163,39 @@ SWITCH_DECLARE(switch_image_t *) switch_img_copy_rect(switch_image_t *img, int x
 	return new_img;
 }
 
-SWITCH_DECLARE(void) switch_img_draw_pixel(switch_image_t *img, int x, int y, switch_yuv_color_t color)
+SWITCH_DECLARE(void) switch_img_draw_pixel(switch_image_t *img, int x, int y, switch_yuv_color_t *color)
 {
 	if (x < 0 || y < 0 || x >= img->d_w || y >= img->d_h) return;
 
-	img->planes[SWITCH_PLANE_Y][y * img->stride[SWITCH_PLANE_Y] + x] = color.y;
+	img->planes[SWITCH_PLANE_Y][y * img->stride[SWITCH_PLANE_Y] + x] = color->y;
 
 	if (((x & 0x1) == 0) && ((y & 0x1) == 0)) {// only draw on even position
-		img->planes[SWITCH_PLANE_U][y / 2 * img->stride[SWITCH_PLANE_U] + x / 2] = color.u;
-		img->planes[SWITCH_PLANE_V][y / 2 * img->stride[SWITCH_PLANE_V] + x / 2] = color.v;
+		img->planes[SWITCH_PLANE_U][y / 2 * img->stride[SWITCH_PLANE_U] + x / 2] = color->u;
+		img->planes[SWITCH_PLANE_V][y / 2 * img->stride[SWITCH_PLANE_V] + x / 2] = color->v;
 	}
 }
 
-SWITCH_DECLARE(void) switch_img_fill(switch_image_t *img, int x, int y, int w, int h, switch_yuv_color_t color)
+SWITCH_DECLARE(void) switch_img_fill(switch_image_t *img, int x, int y, int w, int h, switch_rgb_color_t *color)
 {
 	int len, i;
+	switch_yuv_color_t yuv_color;
 
 	if (x < 0 || y < 0 || x >= img->d_w || y >= img->d_h) return;
+
+	switch_color_rgb2yuv(color, &yuv_color);
 
 	len = MIN(w, img->d_w - x);
 	if (len <= 0) return;
 
 	for (i = y; i < (y + h) && i < img->d_h; i++) {
-		memset(img->planes[SWITCH_PLANE_Y] + img->stride[SWITCH_PLANE_Y] * i + x, color.y, len);
+		memset(img->planes[SWITCH_PLANE_Y] + img->stride[SWITCH_PLANE_Y] * i + x, yuv_color.y, len);
 	}
 
 	len /= 2;
 
 	for (i = y; i < (y + h) && i < img->d_h; i += 2) {
-		memset(img->planes[SWITCH_PLANE_U] + img->stride[SWITCH_PLANE_U] * i / 2 + x / 2, color.u, len);
-		memset(img->planes[SWITCH_PLANE_V] + img->stride[SWITCH_PLANE_V] * i / 2 + x / 2, color.v, len);
+		memset(img->planes[SWITCH_PLANE_U] + img->stride[SWITCH_PLANE_U] * i / 2 + x / 2, yuv_color.u, len);
+		memset(img->planes[SWITCH_PLANE_V] + img->stride[SWITCH_PLANE_V] * i / 2 + x / 2, yuv_color.v, len);
 	}
 }
 
@@ -249,40 +252,53 @@ SWITCH_DECLARE(void) switch_img_add_text(void *buffer, int w, int x, int y, char
 	}
 }
 
-SWITCH_DECLARE(void) switch_color_set(switch_yuv_color_t *color, const char *color_str)
+SWITCH_DECLARE(void) switch_color_set_rgb(switch_rgb_color_t *color, const char *str)
 {
-	uint8_t y = 134;
-	uint8_t u = 128;
-	uint8_t v = 124;
+	if (zstr(str)) return;
 
-	if (color_str != NULL && strlen(color_str) == 7) {
-		uint8_t red, green, blue;
-		char str[7];
-		int i;
-
-		color_str++;
-		strncpy(str, color_str, 6);
-		for(i = 0; i < 6; i++) {
-			str[i] = switch_toupper(str[i]);
+	if ((*str) == '#' && strlen(str) == 7) {
+		unsigned int r, g, b;
+		sscanf(str, "#%02x%02x%02x", &r, &g, &b);
+		color->r = r;
+		color->g = g;
+		color->b = b;
+	} else {
+		if (!strcmp(str, "red")) {
+			color->r = 255;
+			color->g = 0;
+			color->b = 0;
+		} else if (!strcmp(str, "green")) {
+			color->r = 0;
+			color->g = 255;
+			color->b = 0;
+		} else if (!strcmp(str, "blue")) {
+			color->r = 0;
+			color->g = 0;
+			color->b = 255;
 		}
-		red = (str[0] >= 'A' ? (str[0] - 'A' + 10) * 16 : (str[0] - '0') * 16) + (str[1] >= 'A' ? (str[1] - 'A' + 10) : (str[0] - '0'));
-		green = (str[2] >= 'A' ? (str[2] - 'A' + 10) * 16 : (str[2] - '0') * 16) + (str[3] >= 'A' ? (str[3] - 'A' + 10) : (str[0] - '0'));
-		blue = (str[4] >= 'A' ? (str[4] - 'A' + 10) * 16 : (str[4] - '0') * 16) + (str[5] >= 'A' ? (str[5] - 'A' + 10) : (str[0] - '0'));
-
-		y = (uint8_t)(((red * 4897) >> 14) + ((green * 9611) >> 14) + ((blue * 1876) >> 14));
-		u = (uint8_t)(- ((red * 2766) >> 14)  - ((5426 * green) >> 14) + blue / 2 + 128);
-		v = (uint8_t)(red / 2 -((6855 * green) >> 14) - ((blue * 1337) >> 14) + 128);
-		// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "set color, red = %u, green = %u, blue = %u, y = %u, u = %u, v = %u\n", red, green, blue, y, u, v);
 	}
+}
 
-	color->y = y;
-	color->u = u;
-	color->v = v;
+SWITCH_DECLARE(void) switch_color_rgb2yuv(switch_rgb_color_t *rgb, switch_yuv_color_t *yuv)
+{
+	yuv->y = (uint8_t)(((rgb->r * 4897) >> 14) + ((rgb->g * 9611) >> 14) + ((rgb->b * 1876) >> 14));
+	yuv->u = (uint8_t)(- ((rgb->r * 2766) >> 14)  - ((5426 * rgb->g) >> 14) + rgb->b / 2 + 128);
+	yuv->v = (uint8_t)(rgb->r / 2 -((6855 * rgb->b) >> 14) - ((rgb->b * 1337) >> 14) + 128);
+}
+
+SWITCH_DECLARE(void) switch_color_set_yuv(switch_yuv_color_t *color, const char *str)
+{
+	switch_rgb_color_t rgb = { 0 };
+
+	switch_color_set_rgb(&rgb, str);
+	switch_color_rgb2yuv(&rgb, color);
 }
 
 #include <ft2build.h>
 #include FT_FREETYPE_H
 #include FT_GLYPH_H
+
+#define MAX_GRADIENT 8
 
 struct switch_img_txt_handle_s {
 	FT_Library library;
@@ -290,15 +306,34 @@ struct switch_img_txt_handle_s {
 	char *font_family;
 	double angle;
 	uint16_t font_size;
-	switch_yuv_color_t color;
+	switch_rgb_color_t color;
+	switch_rgb_color_t bgcolor;
 	switch_image_t *img;
 	switch_memory_pool_t *pool;
 	int free_pool;
+	switch_yuv_color_t gradient_table[MAX_GRADIENT];
+	switch_bool_t use_bgcolor;
 };
 
+static void init_gradient_table(switch_img_txt_handle_t *handle)
+{
+	int i;
+	switch_rgb_color_t color;
+
+	switch_rgb_color_t *c1 = &handle->bgcolor;
+	switch_rgb_color_t *c2 = &handle->color;
+
+	for (i = 0; i < MAX_GRADIENT; i++) {
+		color.r = c1->r + (c2->r - c1->r) * i / MAX_GRADIENT;
+		color.g = c1->g + (c2->g - c1->g) * i / MAX_GRADIENT;
+		color.b = c1->b + (c2->b - c1->b) * i / MAX_GRADIENT;
+
+		switch_color_rgb2yuv(&color, &handle->gradient_table[i]);
+	}
+}
 
 SWITCH_DECLARE(switch_status_t) switch_img_txt_handle_create(switch_img_txt_handle_t **handleP, const char *font_family,
-															 const char *font_color, uint16_t font_size, double angle, switch_memory_pool_t *pool)
+															 const char *font_color, const char *bgcolor, uint16_t font_size, double angle, switch_memory_pool_t *pool)
 {
 	int free_pool = 0;
 	switch_img_txt_handle_t *new_handle;
@@ -320,7 +355,10 @@ SWITCH_DECLARE(switch_status_t) switch_img_txt_handle_create(switch_img_txt_hand
 	new_handle->font_size = font_size;
 	new_handle->angle = angle;
 
-	switch_color_set(&new_handle->color, font_color);
+	switch_color_set_rgb(&new_handle->color, font_color);
+	switch_color_set_rgb(&new_handle->bgcolor, bgcolor);
+
+	init_gradient_table(new_handle);
 
 	*handleP = new_handle;
 
@@ -350,19 +388,24 @@ SWITCH_DECLARE(void) switch_img_txt_handle_destroy(switch_img_txt_handle_t **han
 
 }
 
-static void draw_bitmap(switch_image_t *img, FT_Bitmap* bitmap, FT_Int x, FT_Int y, switch_yuv_color_t color)
+static void draw_bitmap(switch_img_txt_handle_t *handle, switch_image_t *img, FT_Bitmap* bitmap, FT_Int x, FT_Int y)
 {
 	FT_Int  i, j, p, q;
 	FT_Int  x_max = x + bitmap->width;
 	FT_Int  y_max = y + bitmap->rows;
+	switch_yuv_color_t yuv_color;
 
 	if (bitmap->width == 0) return;
+
+	switch_color_rgb2yuv(&handle->color, &yuv_color);
 
 	switch (bitmap->pixel_mode) {
 		case FT_PIXEL_MODE_GRAY: // it should always be GRAY since we use FT_LOAD_RENDER?
 			break;
 		case FT_PIXEL_MODE_NONE:
 		case FT_PIXEL_MODE_MONO:
+		{
+
 			for ( j = y, q = 0; j < y_max; j++, q++ ) {
 				for ( i = x, p = 0; i < x_max; i++, p++ ) {
 					uint8_t byte;
@@ -372,11 +415,12 @@ static void draw_bitmap(switch_image_t *img, FT_Bitmap* bitmap, FT_Int x, FT_Int
 
 					byte = bitmap->buffer[(q * linesize + p) / 8];
 					if ((byte >> (7 - (p % 8))) & 0x1) {
-						switch_img_draw_pixel(img, i, j, color);
+						switch_img_draw_pixel(img, i, j, &yuv_color);
 					}
 				}
 			}
 			return;
+		}
 		case FT_PIXEL_MODE_GRAY2:
 		case FT_PIXEL_MODE_GRAY4:
 		case FT_PIXEL_MODE_LCD:
@@ -387,10 +431,15 @@ static void draw_bitmap(switch_image_t *img, FT_Bitmap* bitmap, FT_Int x, FT_Int
 
 	for ( i = x, p = 0; i < x_max; i++, p++ ) {
 		for ( j = y, q = 0; j < y_max; j++, q++ ) {
+			int gradient = bitmap->buffer[q * bitmap->width + p];
 			if ( i < 0 || j < 0 || i >= img->d_w || j >= img->d_h) continue;
 
-			if (bitmap->buffer[q * bitmap->width + p] > 128) {
-				switch_img_draw_pixel(img, i, j, color);
+			if (handle->use_bgcolor) {
+				switch_img_draw_pixel(img, i, j, &handle->gradient_table[gradient * MAX_GRADIENT / 256]);
+			} else {
+				if (gradient > 128) {
+					switch_img_draw_pixel(img, i, j, &yuv_color);
+				}
 			}
 		}
 	}
@@ -399,13 +448,13 @@ static void draw_bitmap(switch_image_t *img, FT_Bitmap* bitmap, FT_Int x, FT_Int
 
 SWITCH_DECLARE(switch_status_t) switch_img_txt_handle_render(switch_img_txt_handle_t *handle, switch_image_t *img,
 															 int x, int y, const char *text,
-															 const char *font_family, const char *font_color, uint16_t font_size, double angle)
+															 const char *font_family, const char *font_color, const char *bgcolor, uint16_t font_size, double angle)
 {
 	FT_GlyphSlot  slot;
 	FT_Matrix     matrix; /* transformation matrix */
 	FT_Vector     pen;    /* untransformed origin  */
 	FT_Error      error;
-	int           target_height;
+	//int           target_height;
 	int           index = 0;
 	FT_ULong      ch;
 	FT_Face face;
@@ -425,14 +474,21 @@ SWITCH_DECLARE(switch_status_t) switch_img_txt_handle_render(switch_img_txt_hand
 	}
 
 	if (font_color) {
-		switch_color_set(&handle->color, font_color);
+		switch_color_set_rgb(&handle->color, font_color);
+	}
+
+	if (bgcolor) {
+		switch_color_set_rgb(&handle->bgcolor, bgcolor);
+		handle->use_bgcolor = SWITCH_TRUE;
+	} else {
+		handle->use_bgcolor = SWITCH_FALSE;
 	}
 
 	handle->angle = angle;
 
 	//angle         = 0; (45.0 / 360 ) * 3.14159 * 2;
 
-	target_height = img->d_h;
+	//target_height = img->d_h;
 
 	error = FT_New_Face(handle->library, font_family, 0, &face); /* create face object */
 	if (error) {
@@ -445,6 +501,10 @@ SWITCH_DECLARE(switch_status_t) switch_img_txt_handle_render(switch_img_txt_hand
 	if (error) {printf("WTF %d\n", __LINE__); return SWITCH_STATUS_FALSE;}
 
 	slot = face->glyph;
+
+	if (handle->use_bgcolor && slot->bitmap.pixel_mode != FT_PIXEL_MODE_MONO) {
+		init_gradient_table(handle);
+	}
 
 	/* set up matrix */
 	matrix.xx = (FT_Fixed)( cos( angle ) * 0x10000L );
@@ -472,7 +532,7 @@ SWITCH_DECLARE(switch_status_t) switch_img_txt_handle_render(switch_img_txt_hand
 		if (error) continue;
 
 		/* now, draw to our target surface (convert position) */
-		draw_bitmap(img, &slot->bitmap, pen.x + slot->bitmap_left, pen.y - slot->bitmap_top + font_size, handle->color);
+		draw_bitmap(handle, img, &slot->bitmap, pen.x + slot->bitmap_left, pen.y - slot->bitmap_top + font_size);
 
 		/* increment pen position */
 		pen.x += slot->advance.x >> 6;

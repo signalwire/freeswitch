@@ -50,7 +50,11 @@ typedef struct switch_yuv_color_s {
 	uint8_t v;
 } switch_yuv_color_t;
 
-
+typedef struct switch_rgb_color_s {
+	uint8_t r;
+	uint8_t g;
+	uint8_t b;
+} switch_rgb_color_t;
 
 /**\brief Representation of a rectangle on a surface */
 typedef struct switch_image_rect {
@@ -164,26 +168,28 @@ SWITCH_DECLARE(void) switch_img_flip(switch_image_t *img);
 */
 SWITCH_DECLARE(void) switch_img_free(switch_image_t **img);
 
-SWITCH_DECLARE(void) switch_img_draw_text(switch_image_t *IMG, int x, int y, switch_yuv_color_t color, uint16_t font_size, char *text);
+SWITCH_DECLARE(void) switch_img_draw_text(switch_image_t *IMG, int x, int y, switch_rgb_color_t color, uint16_t font_size, char *text);
 
 SWITCH_DECLARE(void) switch_img_add_text(void *buffer, int w, int x, int y, char *s);
 
 SWITCH_DECLARE(switch_image_t *) switch_img_copy_rect(switch_image_t *img, int x, int y, int w, int h);
 
-SWITCH_DECLARE(void) switch_img_fill(switch_image_t *img, int x, int y, int w, int h, switch_yuv_color_t color);
+SWITCH_DECLARE(void) switch_img_fill(switch_image_t *img, int x, int y, int w, int h, switch_rgb_color_t *color);
 
-SWITCH_DECLARE(void) switch_img_draw_pixel(switch_image_t *img, int x, int y, switch_yuv_color_t color);
+SWITCH_DECLARE(void) switch_img_draw_pixel(switch_image_t *img, int x, int y, switch_yuv_color_t *color);
 
-SWITCH_DECLARE(void) switch_color_set(switch_yuv_color_t *color, const char *color_str);
+SWITCH_DECLARE(void) switch_color_set_rgb(switch_rgb_color_t *color, const char *color_str);
+SWITCH_DECLARE(void) switch_color_set_yuv(switch_yuv_color_t *color, const char *color_str);
+SWITCH_DECLARE(void) switch_color_rgb2yuv(switch_rgb_color_t *rgb, switch_yuv_color_t *yuv);
 
-SWITCH_DECLARE(switch_status_t) switch_img_txt_handle_create(switch_img_txt_handle_t **handleP, const char *font_family, 
-															 const char *font_color, uint16_t font_size, double angle, switch_memory_pool_t *pool);
+SWITCH_DECLARE(switch_status_t) switch_img_txt_handle_create(switch_img_txt_handle_t **handleP, const char *font_family,
+															 const char *font_color, const char *bgcolor, uint16_t font_size, double angle, switch_memory_pool_t *pool);
 
 SWITCH_DECLARE(void) switch_img_txt_handle_destroy(switch_img_txt_handle_t **handleP);
 
-SWITCH_DECLARE(switch_status_t) switch_img_txt_handle_render(switch_img_txt_handle_t *handle, switch_image_t *img, 
-															 int x, int y, const char *text, 
-															 const char *font_family, const char *font_color, uint16_t font_size, double angle);
+SWITCH_DECLARE(switch_status_t) switch_img_txt_handle_render(switch_img_txt_handle_t *handle, switch_image_t *img,
+															 int x, int y, const char *text,
+															 const char *font_family, const char *font_color, const char *bgcolor, uint16_t font_size, double angle);
 
 /** @} */
 
