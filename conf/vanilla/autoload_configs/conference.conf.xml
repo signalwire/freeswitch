@@ -180,7 +180,8 @@
       <!-- <param name="video-layout-name" value="3x3"/> -->
       <!-- <param name="video-layout-name" value="group:grid"/> -->
       <!-- <param name="video-canvas-size" value="1280x720"/> -->
-      <!-- <param name="video-canvas-bgcolor" value="#0000FF"/> -->
+      <!-- <param name="video-canvas-bgcolor" value="#333333"/> -->
+      <!-- <param name="video-layout-bgcolor" value="#000000"/> -->
       <!-- <param name="video-codec-bandwidth" value="2mb"/> -->
 
 
