@@ -1104,7 +1104,7 @@ static void layer_set_banner(mcu_canvas_t *canvas, mcu_layer_t *layer, const cha
 
 	switch_img_free(&layer->banner_img);
 	layer->banner_img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, layer->screen_w, font_size * 2, 1);
-	
+
 
 	if (layer->txthandle) {
 		switch_img_txt_handle_destroy(&layer->txthandle);
@@ -1127,7 +1127,7 @@ static switch_status_t attach_video_layer(conference_member_t *member, int idx)
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	const char *banner = NULL;
 	switch_yuv_color_t color;
-	
+
 	if (!member->session) abort();
 
 	switch_mutex_lock(member->conference->canvas->mutex);
@@ -1167,7 +1167,7 @@ static switch_status_t attach_video_layer(conference_member_t *member, int idx)
 	if (layer->geometry.audio_position) {
 		conf_api_sub_position(member, NULL, layer->geometry.audio_position);
 	}
-	
+
 
 	switch_color_set(&color, "#000000");
 	switch_img_fill(member->conference->canvas->img, layer->x_pos, layer->y_pos, layer->screen_w, layer->screen_h, color);
@@ -1200,10 +1200,10 @@ static void init_canvas_layers(conference_obj_t *conference, video_layout_t *vla
 
 		layer->screen_w = conference->canvas->img->d_w * layer->geometry.scale / SCALE_FACTOR;
 		layer->screen_h = conference->canvas->img->d_h * layer->geometry.scale / SCALE_FACTOR;
-		
+
 		if (layer->screen_w % 2) layer->screen_w++; // round to even
 		if (layer->screen_h % 2) layer->screen_h++; // round to even
-		
+
 		layer->x_pos = conference->canvas->img->d_w * layer->geometry.x / SCALE_FACTOR;
 		layer->y_pos = conference->canvas->img->d_h * layer->geometry.y / SCALE_FACTOR;
 
@@ -1552,9 +1552,9 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 
 			switch_color_set(&color, "#FF0000");
 			switch_img_fill(conference->canvas->img, 300, 10, 400, 40, color);
-			
+
 			switch_img_txt_handle_render(txthandle, conference->canvas->img, 300, 22, "W00t this works!", NULL, NULL, 0, 0);
-			
+
 			switch_img_txt_handle_destroy(&txthandle);
 
 
@@ -3399,7 +3399,7 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 					if (!zstr(enter_sound)) {
 				     	conference_play_file(conference, (char *)enter_sound, CONF_DEFAULT_LEADIN,
 							switch_core_session_get_channel(member->session), 0);
-			        } else {	
+			        } else {
 						conference_play_file(conference, conference->enter_sound, CONF_DEFAULT_LEADIN, switch_core_session_get_channel(member->session), 0);
 					}
 				}
