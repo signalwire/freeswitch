@@ -1060,8 +1060,13 @@ static void layer_set_banner(mcu_canvas_t *canvas, mcu_layer_t *layer, const cha
 	switch_event_t *params = NULL;
 	const char *font_face = "/usr/share/fonts/truetype/freefont/FreeSansOblique.ttf";
 	const char *var;
+	char *dup = NULL;
+	
 
 	if (*text == '{') {
+		dup = strdup(text);
+		text = dup;
+
 		if (switch_event_create_brackets((char *)text, '{', '}', ',', &params, &parsed, SWITCH_FALSE) != SWITCH_STATUS_SUCCESS || !parsed) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Parse Error!\n");
 		} else {
@@ -1111,6 +1116,7 @@ static void layer_set_banner(mcu_canvas_t *canvas, mcu_layer_t *layer, const cha
 	switch_img_txt_handle_render(layer->txthandle, layer->banner_img, font_size / 2, font_size / 2, text, NULL, NULL, 0, 0);
 
 	if (params) switch_event_destroy(&params);
+	switch_safe_free(dup);
 }
 
 static switch_status_t attach_video_layer(conference_member_t *member, int idx)
