@@ -615,8 +615,8 @@ SWITCH_DECLARE(switch_image_t *) switch_img_read_png(const char* file_name)
 	png_byte color_type;
 	png_byte bit_depth;
 
-	png_structp png_ptr;
-	png_infop info_ptr;
+	png_structp png_ptr = NULL;
+	png_infop info_ptr = NULL;
 	//int number_of_passes;
 	int row_bytes;
 	png_color_8p sig_bit;
