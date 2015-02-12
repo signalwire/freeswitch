@@ -366,6 +366,7 @@ typedef struct mcu_layer_s {
 	switch_image_t *img;
 	switch_image_t *cur_img;
 	switch_image_t *banner_img;
+	switch_image_t *logo_img;
 	switch_img_txt_handle_t *txthandle;
 } mcu_layer_t;
 
@@ -877,6 +878,8 @@ static void reset_layer(mcu_canvas_t *canvas, mcu_layer_t *layer)
 	layer->tagged = 0;
 
 	switch_img_free(&layer->banner_img);
+	switch_img_free(&layer->logo_img);
+
 	layer->banner_patched = 0;
 
 	switch_img_free(&layer->img);
@@ -940,6 +943,11 @@ static void scale_and_patch(conference_obj_t *conference, mcu_layer_t *layer)
 			switch_img_set_rect(layer->img, 0, 0, layer->img->d_w, layer->img->d_h - layer->banner_img->d_h);
 			layer->banner_patched = 1;
 		}
+
+		if (layer->logo_img) {
+			switch_img_patch(img, layer->logo_img, img->d_w - layer->logo_img->d_w, 0);
+		}
+
 		
 		switch_assert(layer->img);
 
@@ -1023,10 +1031,10 @@ static void layer_set_banner(conference_member_t *member, mcu_layer_t *layer, co
 	const char *bg = "#142e55";
 	char *parsed = NULL;
 	switch_event_t *params = NULL;
-	const char *font_face = "/usr/share/fonts/truetype/freefont/FreeSansOblique.ttf";
-	const char *var;
+	const char *font_face = "/usr/share/fonts/truetype/freefont/FreeSansOblique.ttf", *logo_png = NULL;
+	const char *var, *tmp = NULL;
 	char *dup = NULL;
-
+	
 
 	switch_mutex_lock(member->conference->canvas->mutex);
 
@@ -1037,23 +1045,6 @@ static void layer_set_banner(conference_member_t *member, mcu_layer_t *layer, co
 	if (!text) {
 		goto end;
 	}
-
-	if (!strcasecmp(text, "reset")) {	
-		text = switch_channel_get_variable_dup(member->channel, "video_banner_text", SWITCH_FALSE, -1);
-	}
-
-	if (zstr(text) || !strcasecmp(text, "clear")) {
-		switch_rgb_color_t color;
-
-		switch_img_free(&layer->banner_img);
-		layer->banner_patched = 0;
-		
-		switch_color_set_rgb(&color, member->conference->video_layout_bgcolor);
-		switch_img_fill(member->conference->canvas->img, layer->x_pos, layer->y_pos, layer->screen_w, layer->screen_h, &color);
-
-		goto end;
-	}
-
 
 	if (*text == '{') {
 		dup = strdup(text);
@@ -1066,6 +1057,28 @@ static void layer_set_banner(conference_member_t *member, mcu_layer_t *layer, co
 		}
 	}
 
+	if (zstr(text) || !strcasecmp(text, "reset")) {	
+		text = switch_channel_get_variable_dup(member->channel, "video_banner_text", SWITCH_FALSE, -1);
+	}
+	
+	if (zstr(text) || !strcasecmp(text, "clear")) {
+		switch_rgb_color_t color;
+
+		switch_img_free(&layer->banner_img);
+		switch_img_free(&layer->logo_img);
+		layer->banner_patched = 0;
+		
+		switch_color_set_rgb(&color, member->conference->video_layout_bgcolor);
+		switch_img_fill(member->conference->canvas->img, layer->x_pos, layer->y_pos, layer->screen_w, layer->screen_h, &color);
+
+		goto end;
+	}
+
+	if ((tmp = strchr(text, '}'))) {
+		text = tmp + 1;
+	}
+
+
 	if (params) {
 		if ((var = switch_event_get_header(params, "fg"))) {
 			fg = var;
@@ -1077,6 +1090,10 @@ static void layer_set_banner(conference_member_t *member, mcu_layer_t *layer, co
 
 		if ((var = switch_event_get_header(params, "font_face"))) {
 			font_face = var;
+		}
+
+		if ((var = switch_event_get_header(params, "logo_png"))) {
+			logo_png = var;
 		}
 
 		if ((var = switch_event_get_header(params, "font_scale"))) {
@@ -1095,8 +1112,12 @@ static void layer_set_banner(conference_member_t *member, mcu_layer_t *layer, co
 	switch_color_set_rgb(&bgcolor, bg);
 
 	switch_img_free(&layer->banner_img);
+	switch_img_free(&layer->logo_img);
 	layer->banner_img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, layer->screen_w, font_size * 2, 1);
 
+	if (logo_png) {
+		layer->logo_img = switch_img_read_png(logo_png);
+	}
 
 	if (layer->txthandle) {
 		switch_img_txt_handle_destroy(&layer->txthandle);
@@ -1615,6 +1636,7 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 		switch_img_free(&layer->img);
 		layer->banner_patched = 0;
 		switch_img_free(&layer->banner_img);
+		switch_img_free(&layer->logo_img);
 
 		if (layer->txthandle) {
 			switch_img_txt_handle_destroy(&layer->txthandle);
@@ -8003,6 +8025,7 @@ static switch_status_t conf_api_sub_vid_banner(conference_member_t *member, swit
 	layer = &member->conference->canvas->layers[member->video_layer_id];
 
 	member->video_banner_text = switch_core_strdup(member->pool, text);
+
 	layer_set_banner(member, layer, NULL);
 
 	stream->write_function(stream, "+OK\n");
