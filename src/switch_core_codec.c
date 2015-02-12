@@ -619,36 +619,19 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_reset(switch_codec_t *codec)
 SWITCH_DECLARE(switch_status_t) switch_core_codec_copy(switch_codec_t *codec, switch_codec_t *new_codec, 
 													   const switch_codec_settings_t *codec_settings, switch_memory_pool_t *pool)
 {
-	switch_status_t status;
-
 	switch_assert(codec != NULL);
 	switch_assert(new_codec != NULL);
-
-	if (pool) {
-		new_codec->memory_pool = pool;
-	} else {
-		if ((status = switch_core_new_memory_pool(&new_codec->memory_pool)) != SWITCH_STATUS_SUCCESS) {
-			return status;
-		}
-	}
-
-	new_codec->codec_interface = codec->codec_interface;
-	new_codec->implementation = codec->implementation;
-	new_codec->flags = codec->flags;
-
-	if (!pool) {
-		switch_set_flag(new_codec, SWITCH_CODEC_FLAG_FREE_POOL);
-	}
-
-	if (codec->fmtp_in) {
-		new_codec->fmtp_in = switch_core_strdup(new_codec->memory_pool, codec->fmtp_in);
-	}
-
-	new_codec->implementation->init(new_codec, new_codec->flags, codec_settings);
 	
-	switch_mutex_init(&new_codec->mutex, SWITCH_MUTEX_NESTED, new_codec->memory_pool);
-
-	return SWITCH_STATUS_SUCCESS;
+	return switch_core_codec_init(new_codec, 
+								  codec->implementation->iananame,
+								  codec->fmtp_in,
+								  codec->implementation->actual_samples_per_second,
+								  codec->implementation->microseconds_per_packet / 1000,
+								  codec->implementation->number_of_channels,
+								  codec->flags,
+								  codec_settings,
+								  pool);
+	
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_codec_init_with_bitrate(switch_codec_t *codec, const char *codec_name, const char *fmtp,
