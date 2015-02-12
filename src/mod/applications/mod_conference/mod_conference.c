@@ -376,7 +376,7 @@ typedef struct mcu_canvas_s {
 	int total_layers;
 	int layers_used;
 	int layout_floor_id;
-	switch_yuv_color_t bgcolor;
+	switch_rgb_color_t bgcolor;
 	switch_mutex_t *mutex;
 	switch_mutex_t *cond_mutex;
 	switch_mutex_t *cond2_mutex;
@@ -891,9 +891,9 @@ static int mcu_canvas_wake(mcu_canvas_t *mcu_canvas)
 	return 0;
 }
 
-static void reset_image(switch_image_t *img, switch_yuv_color_t *color)
+static void reset_image(switch_image_t *img, switch_rgb_color_t *color)
 {
-	switch_img_fill(img, 0, 0, img->w, img->h, *color);
+	switch_img_fill(img, 0, 0, img->w, img->h, color);
 }
 
 #define SCALE_FACTOR 360.0f
@@ -1004,7 +1004,7 @@ static void scale_and_patch(conference_obj_t *conference, mcu_layer_t *layer)
 
 static void set_canvas_bgcolor(mcu_canvas_t *canvas, char *color)
 {
-	switch_color_set(&canvas->bgcolor, color);
+	switch_color_set_rgb(&canvas->bgcolor, color);
 	reset_image(canvas->img, &canvas->bgcolor);
 }
 
@@ -1051,7 +1051,7 @@ static void detach_video_layer(conference_member_t *member)
 
 static void layer_set_banner(mcu_canvas_t *canvas, mcu_layer_t *layer, const char *text)
 {
-	switch_yuv_color_t fgcolor, bgcolor;
+	switch_rgb_color_t fgcolor, bgcolor;
 	int font_scale = 4;
 	int font_size = 0;
 	const char *fg = "#cccccc";
@@ -1099,8 +1099,8 @@ static void layer_set_banner(mcu_canvas_t *canvas, mcu_layer_t *layer, const cha
 	font_size = (double)(font_scale / 100.0f) * layer->screen_h;
 
 
-	switch_color_set(&fgcolor, fg);
-	switch_color_set(&bgcolor, bg);
+	switch_color_set_rgb(&fgcolor, fg);
+	switch_color_set_rgb(&bgcolor, bg);
 
 	switch_img_free(&layer->banner_img);
 	layer->banner_img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, layer->screen_w, font_size * 2, 1);
@@ -1110,10 +1110,10 @@ static void layer_set_banner(mcu_canvas_t *canvas, mcu_layer_t *layer, const cha
 		switch_img_txt_handle_destroy(&layer->txthandle);
 	}
 
-	switch_img_txt_handle_create(&layer->txthandle, font_face, fg, font_size, 0, NULL);
+	switch_img_txt_handle_create(&layer->txthandle, font_face, fg, "#000000", font_size, 0, NULL);
 
 	reset_image(layer->banner_img, &bgcolor);
-	switch_img_txt_handle_render(layer->txthandle, layer->banner_img, font_size / 2, font_size / 2, text, NULL, NULL, 0, 0);
+	switch_img_txt_handle_render(layer->txthandle, layer->banner_img, font_size / 2, font_size / 2, text, NULL, NULL, NULL, 0, 0);
 
 	if (params) switch_event_destroy(&params);
 	switch_safe_free(dup);
@@ -1126,7 +1126,7 @@ static switch_status_t attach_video_layer(conference_member_t *member, int idx)
 	const char *res_id = NULL;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	const char *banner = NULL;
-	switch_yuv_color_t color;
+	switch_rgb_color_t color;
 
 	if (!member->session) abort();
 
@@ -1169,8 +1169,8 @@ static switch_status_t attach_video_layer(conference_member_t *member, int idx)
 	}
 
 
-	switch_color_set(&color, "#000000");
-	switch_img_fill(member->conference->canvas->img, layer->x_pos, layer->y_pos, layer->screen_w, layer->screen_h, color);
+	switch_color_set_rgb(&color, "#000000");
+	switch_img_fill(member->conference->canvas->img, layer->x_pos, layer->y_pos, layer->screen_w, layer->screen_h, &color);
 
 
  end:
@@ -1541,19 +1541,19 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 			}
 		}
 
-		if (0) {
+		if (1) {
 			switch_img_txt_handle_t *txthandle = NULL;
-			switch_yuv_color_t color;
+			switch_rgb_color_t color;
 
 			switch_img_txt_handle_create(&txthandle, "/usr/share/fonts/truetype/Microsoft/Verdana.ttf",
-										 "#FFFFFF", 24, 0, NULL);
+										 "#FFFFFF", "#000000", 24, 0, NULL);
 
-			switch_img_txt_handle_render(txthandle, conference->canvas->img, 10, 10, "W00t this works!", NULL, NULL, 0, 0);
+			switch_img_txt_handle_render(txthandle, conference->canvas->img, 10, 10, "W00t this works!", NULL, NULL, NULL, 0, 0);
 
-			switch_color_set(&color, "#FF0000");
-			switch_img_fill(conference->canvas->img, 300, 10, 400, 40, color);
+			switch_color_set_rgb(&color, "#FF0000");
+			switch_img_fill(conference->canvas->img, 300, 10, 400, 40, &color);
 
-			switch_img_txt_handle_render(txthandle, conference->canvas->img, 300, 22, "W00t this works!", NULL, NULL, 0, 0);
+			switch_img_txt_handle_render(txthandle, conference->canvas->img, 300, 22, "W00t this works!", NULL, NULL, "#FF0000", 0, 0);
 
 			switch_img_txt_handle_destroy(&txthandle);
 
