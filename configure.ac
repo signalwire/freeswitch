@@ -755,6 +755,11 @@ if test "x$have_libz" = "xyes"  ; then
 APR_ADDTO([PLATFORM_CORE_LIBS], [-lz])
 fi
 
+AC_CHECK_LIB(yuv, I420Scale, have_libyuv=yes, AC_MSG_ERROR([no usable libyuv; please install libyuv devel package or equivalent]))
+if test "x$have_libyuv" = "xyes"  ; then
+APR_ADDTO([PLATFORM_CORE_LIBS], [-lyuv])
+fi
+
 AC_CHECK_LIB(apr-1, apr_pool_mutex_set, use_system_apr=yes, use_system_apr=no)
 AM_CONDITIONAL([SYSTEM_APR],[test "${use_system_apr}" = "yes"])
 AC_CHECK_LIB(aprutil-1, apr_queue_pop_timeout, use_system_aprutil=yes, use_system_aprutil=no)
@@ -1192,6 +1197,7 @@ module_enabled() {
   grep -v -e "\#" -e "^\$" modules.conf | sed -e "s|^.*/||" | grep "^${1}\$" >/dev/null
 }
 
+PKG_CHECK_MODULES([LIBPNG], [libpng12 >= 1.2.49])
 PKG_CHECK_MODULES([FREETYPE], [freetype2 >= 2.4.9])
 PKG_CHECK_MODULES([SQLITE], [sqlite3 >= 3.6.20])
 PKG_CHECK_MODULES([CURL], [libcurl >= 7.19])
