@@ -362,6 +362,7 @@ typedef struct mcu_layer_s {
 	int screen_h;
 	int x_pos;
 	int y_pos;
+	int banner_patched;
 	switch_image_t *img;
 	switch_image_t *cur_img;
 	switch_image_t *banner_img;
@@ -874,14 +875,10 @@ static void reset_layer(mcu_canvas_t *canvas, mcu_layer_t *layer)
 	layer->tagged = 0;
 
 	switch_img_free(&layer->banner_img);
+	layer->banner_patched = 0;
 
-	if (layer->img && (layer->img->d_w != layer->screen_w || layer->img->d_h != layer->screen_h)) {
-		switch_img_free(&layer->img);
-	}
-
-	if (!layer->img) {
-		layer->img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, layer->screen_w, layer->screen_h, 1);
-	}
+	switch_img_free(&layer->img);
+	layer->img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, layer->screen_w, layer->screen_h, 1);
 
 	switch_assert(layer->img);
 
@@ -916,9 +913,6 @@ static void scale_and_patch(conference_obj_t *conference, mcu_layer_t *layer)
 			y_pos += (layer->screen_h - img_h) / 2;
 		}
 
-
-
-
 		/*int I420Scale(const uint8* src_y, int src_stride_y,
 		  const uint8* src_u, int src_stride_u,
 		  const uint8* src_v, int src_stride_v,
@@ -932,10 +926,17 @@ static void scale_and_patch(conference_obj_t *conference, mcu_layer_t *layer)
 
 		if (layer->img && (layer->img->d_w != img_w || layer->img->d_h != img_h)) {
 			switch_img_free(&layer->img);
+			layer->banner_patched = 0;
 		}
 
 		if (!layer->img) {
 			layer->img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, img_w, img_h, 1);
+		}
+
+		if (layer->banner_img && !layer->banner_patched) {
+			switch_img_patch(IMG, layer->banner_img, layer->x_pos, layer->y_pos + (layer->screen_h - layer->banner_img->d_h));
+			switch_img_set_rect(layer->img, 0, 0, layer->img->d_w, layer->img->d_h - layer->banner_img->d_h);
+			layer->banner_patched = 1;
 		}
 		
 		switch_assert(layer->img);
@@ -956,19 +957,11 @@ static void scale_and_patch(conference_obj_t *conference, mcu_layer_t *layer)
 		if (ret != 0) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Scaling Error: ret: %d\n", ret);
 		} else {
-			if (layer->img->d_h > 20) {
-				// reserv the bottom room for text, e.g. caller id
-				// switch_img_set_rect(layer->img, 0, 0, layer->img->d_w, layer->img->d_h - 20);
-			}
 			switch_img_patch(IMG, layer->img, x_pos, y_pos);
 		}
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "insert at %d,%d\n", 0, 0);
 		switch_img_patch(IMG, img, 0, 0);
-	}
-
-	if (layer->banner_img) {
-		switch_img_patch(IMG, layer->banner_img, layer->x_pos, layer->y_pos + (layer->screen_h - layer->banner_img->d_h));
 	}
 }
 
@@ -1086,6 +1079,7 @@ static void layer_set_banner(mcu_canvas_t *canvas, mcu_layer_t *layer, const cha
 	switch_img_txt_handle_render(layer->txthandle, layer->banner_img, font_size / 2, font_size / 2, text, NULL, fg, bg, 0, 0);
 
 	if (params) switch_event_destroy(&params);
+
 	switch_safe_free(dup);
 }
 
@@ -1196,8 +1190,10 @@ static void init_canvas_layers(conference_obj_t *conference, video_layout_t *vla
 
 	for (i = 0; i < MCU_MAX_LAYERS; i++) {
 		mcu_layer_t *layer = &conference->canvas->layers[i];
+
 		layer->member_id = 0;
 		layer->tagged = 0;
+		layer->banner_patched = 0;
 	}
 
 	conference->canvas->layers_used = 0;
@@ -1587,6 +1583,7 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 
 		switch_img_free(&layer->cur_img);
 		switch_img_free(&layer->img);
+		layer->banner_patched = 0;
 		switch_img_free(&layer->banner_img);
 
 		if (layer->txthandle) {
