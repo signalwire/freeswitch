@@ -428,6 +428,7 @@ typedef struct conference_obj {
 	char *video_layout_name;
 	char *video_layout_group;
 	char *video_canvas_bgcolor;
+	char *video_layout_bgcolor;
 	int32_t video_write_bandwidth;
 	switch_codec_settings_t video_codec_settings;
 	uint32_t canvas_width;
@@ -594,6 +595,7 @@ struct conference_member {
 	int video_layer_id;
 	int video_codec_index;
 	int video_codec_id;
+	char *video_banner_text;
 };
 
 typedef enum {
@@ -1012,7 +1014,7 @@ static void detach_video_layer(conference_member_t *member)
 	switch_mutex_unlock(member->conference->canvas->mutex);
 }
 
-static void layer_set_banner(mcu_canvas_t *canvas, mcu_layer_t *layer, const char *text)
+static void layer_set_banner(conference_member_t *member, mcu_layer_t *layer, const char *text)
 {
 	switch_rgb_color_t fgcolor, bgcolor;
 	int font_scale = 4;
@@ -1024,6 +1026,33 @@ static void layer_set_banner(mcu_canvas_t *canvas, mcu_layer_t *layer, const cha
 	const char *font_face = "/usr/share/fonts/truetype/freefont/FreeSansOblique.ttf";
 	const char *var;
 	char *dup = NULL;
+
+
+	switch_mutex_lock(member->conference->canvas->mutex);
+
+	if (!text) {
+		text = member->video_banner_text;
+	}
+	
+	if (!text) {
+		goto end;
+	}
+
+	if (!strcasecmp(text, "reset")) {	
+		text = switch_channel_get_variable_dup(member->channel, "video_banner_text", SWITCH_FALSE, -1);
+	}
+
+	if (zstr(text) || !strcasecmp(text, "clear")) {
+		switch_rgb_color_t color;
+
+		switch_img_free(&layer->banner_img);
+		layer->banner_patched = 0;
+		
+		switch_color_set_rgb(&color, member->conference->video_layout_bgcolor);
+		switch_img_fill(member->conference->canvas->img, layer->x_pos, layer->y_pos, layer->screen_w, layer->screen_h, &color);
+
+		goto end;
+	}
 
 
 	if (*text == '{') {
@@ -1081,6 +1110,11 @@ static void layer_set_banner(mcu_canvas_t *canvas, mcu_layer_t *layer, const cha
 	if (params) switch_event_destroy(&params);
 
 	switch_safe_free(dup);
+
+ end:
+
+	switch_mutex_unlock(member->conference->canvas->mutex);
+
 }
 
 static switch_status_t attach_video_layer(conference_member_t *member, int idx)
@@ -1125,8 +1159,8 @@ static switch_status_t attach_video_layer(conference_member_t *member, int idx)
 		}
 	}
 	
-	if ((banner = switch_channel_get_variable_dup(channel, "video_banner_text", SWITCH_FALSE, -1))) {
-		layer_set_banner(member->conference->canvas, layer, banner);
+	if (member->video_banner_text || (banner = switch_channel_get_variable_dup(channel, "video_banner_text", SWITCH_FALSE, -1))) {
+		layer_set_banner(member, layer, banner);
 	}
 
 	layer->member_id = member->id;
@@ -1139,7 +1173,7 @@ static switch_status_t attach_video_layer(conference_member_t *member, int idx)
 	}
 
 
-	switch_color_set_rgb(&color, "#000000");
+	switch_color_set_rgb(&color, member->conference->video_layout_bgcolor);
 	switch_img_fill(member->conference->canvas->img, layer->x_pos, layer->y_pos, layer->screen_w, layer->screen_h, &color);
 
 
@@ -1277,13 +1311,11 @@ static void write_canvas_image_to_codec_group(conference_obj_t *conference, code
 
 			switch_mutex_lock(conference->member_mutex);
 			for (imember = conference->members; imember; imember = imember->next) {
-				switch_channel_t *ichannel = switch_core_session_get_channel(imember->session);
-
 				if (imember->video_codec_index != codec_index) {
 					continue;
 				}
 
-				if (!imember->session || !switch_channel_test_flag(ichannel, CF_VIDEO) ||
+				if (!imember->session || !switch_channel_test_flag(imember->channel, CF_VIDEO) ||
 					switch_core_session_read_lock(imember->session) != SWITCH_STATUS_SUCCESS) {
 					continue;
 				}
@@ -1377,12 +1409,11 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 		used = 0;
 
 		for (imember = conference->members; imember; imember = imember->next) {
-			switch_channel_t *ichannel = switch_core_session_get_channel(imember->session);
 			void *pop;
 			switch_image_t *img = NULL;
 			int size = 0;
 
-			if (!imember->session || !switch_channel_test_flag(ichannel, CF_VIDEO) || 
+			if (!imember->session || !switch_channel_test_flag(imember->channel, CF_VIDEO) || 
 				switch_core_session_read_lock(imember->session) != SWITCH_STATUS_SUCCESS) {
 				continue;
 			}			
@@ -1393,8 +1424,8 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 			}
 			
 			if (switch_test_flag(conference, CFLAG_MINIMIZE_VIDEO_ENCODING)) {
-				if (switch_channel_test_flag(ichannel, CF_VIDEO_REFRESH_REQ)) {
-					switch_channel_clear_flag(ichannel, CF_VIDEO_REFRESH_REQ);
+				if (switch_channel_test_flag(imember->channel, CF_VIDEO_REFRESH_REQ)) {
+					switch_channel_clear_flag(imember->channel, CF_VIDEO_REFRESH_REQ);
 					need_refresh = SWITCH_TRUE;
 				}
 
@@ -1552,9 +1583,8 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 		} else {
 			switch_mutex_lock(conference->member_mutex);
 			for (imember = conference->members; imember; imember = imember->next) {
-				switch_channel_t *ichannel = switch_core_session_get_channel(imember->session);
 
-				if (!imember->session || !switch_channel_test_flag(ichannel, CF_VIDEO) ||
+				if (!imember->session || !switch_channel_test_flag(imember->channel, CF_VIDEO) ||
 					switch_core_session_read_lock(imember->session) != SWITCH_STATUS_SUCCESS) {
 					continue;
 				}
@@ -3207,15 +3237,12 @@ static void find_video_floor(conference_member_t *member, switch_bool_t entering
 
 	switch_mutex_lock(conference->member_mutex);	
 	for (imember = conference->members; imember; imember = imember->next) {
-		switch_channel_t *ichannel;
 
 		if (!(imember->session)) {
 			continue;
 		}
 
-		ichannel = switch_core_session_get_channel(imember->session);
-
-		if (!switch_channel_test_flag(ichannel, CF_VIDEO)) {
+		if (!switch_channel_test_flag(imember->channel, CF_VIDEO)) {
 			continue;
 		}
 
@@ -3946,20 +3973,17 @@ static void conference_write_video_frame(conference_obj_t *conference, conferenc
 	switch_mutex_lock(conference->member_mutex);	
 	for (imember = conference->members; imember; imember = imember->next) {
 		switch_core_session_t *isession = imember->session;
-		switch_channel_t *ichannel;
 		
 		if (!isession || switch_core_session_read_lock(isession) != SWITCH_STATUS_SUCCESS) {
 			continue;
 		}
 		
-		ichannel = switch_core_session_get_channel(imember->session);
-		
-		if (switch_channel_test_flag(ichannel, CF_VIDEO_REFRESH_REQ)) {
+		if (switch_channel_test_flag(imember->channel, CF_VIDEO_REFRESH_REQ)) {
 			want_refresh++;
-			switch_channel_clear_flag(ichannel, CF_VIDEO_REFRESH_REQ);
+			switch_channel_clear_flag(imember->channel, CF_VIDEO_REFRESH_REQ);
 		}
 		
-		if (isession && switch_channel_test_flag(ichannel, CF_VIDEO)) {
+		if (isession && switch_channel_test_flag(imember->channel, CF_VIDEO)) {
 			//switch_test_flag(conference, CFLAG_VID_FLOOR_LOCK) || 
 
 			if (!switch_test_flag(imember, MFLAG_RECEIVING_VIDEO) && 
@@ -7953,6 +7977,39 @@ static switch_status_t conf_api_sub_clear_vid_floor(conference_obj_t *conference
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static switch_status_t conf_api_sub_vid_banner(conference_member_t *member, switch_stream_handle_t *stream, void *data)
+{
+	mcu_layer_t *layer = NULL;
+	char *text = (char *) data;
+
+	if (member == NULL)
+		return SWITCH_STATUS_GENERR;
+
+	if (!switch_channel_test_flag(member->channel, CF_VIDEO)) {
+		stream->write_function(stream, "Channel %s does not have video capability!\n", switch_channel_get_name(member->channel));
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (member->video_layer_id == -1 || !member->conference->canvas) {
+		stream->write_function(stream, "Channel %s is not in a video layer\n", switch_channel_get_name(member->channel));
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (zstr(text)) {
+		stream->write_function(stream, "No text supplied\n", switch_channel_get_name(member->channel));
+		return SWITCH_STATUS_FALSE;
+	}
+
+	layer = &member->conference->canvas->layers[member->video_layer_id];
+
+	member->video_banner_text = switch_core_strdup(member->pool, text);
+	layer_set_banner(member, layer, NULL);
+
+	stream->write_function(stream, "+OK\n");
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 static switch_status_t conf_api_sub_vid_floor(conference_member_t *member, switch_stream_handle_t *stream, void *data)
 {
 	int force = 0;
@@ -9376,6 +9433,7 @@ static api_command_t conf_api_sub_commands[] = {
 	{"file-vol", (void_fn_t) & conf_api_sub_file_vol, CONF_API_SUB_ARGS_SPLIT, "file-vol", "<vol#>"},
 	{"floor", (void_fn_t) & conf_api_sub_floor, CONF_API_SUB_MEMBER_TARGET, "floor", "<member_id|last>"},
 	{"vid-floor", (void_fn_t) & conf_api_sub_vid_floor, CONF_API_SUB_MEMBER_TARGET, "vid-floor", "<member_id|last> [force]"},
+	{"vid-banner", (void_fn_t) & conf_api_sub_vid_banner, CONF_API_SUB_MEMBER_TARGET, "vid-banner", "<member_id|last> <text>"},
 	{"clear-vid-floor", (void_fn_t) & conf_api_sub_clear_vid_floor, CONF_API_SUB_ARGS_AS_ONE, "clear-vid-floor", ""},
 	{"vid-layout", (void_fn_t) & conf_api_sub_vid_layout, CONF_API_SUB_ARGS_SPLIT, "vid-layout", "<layout name>"},
 	{"vid-bandwidth", (void_fn_t) & conf_api_sub_vid_bandwidth, CONF_API_SUB_ARGS_SPLIT, "vid-bandwidth", "<BW>"}
@@ -11120,6 +11178,7 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 	char *video_layout_group = NULL;
 	char *video_canvas_size = NULL;
 	char *video_canvas_bgcolor = NULL;
+	char *video_layout_bgcolor = NULL;
 	char *video_codec_bandwidth = NULL;
 	uint32_t max_members = 0;
 	uint32_t announce_count = 0;
@@ -11272,6 +11331,8 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 				video_layout_name = val;
 			} else if (!strcasecmp(var, "video-canvas-bgcolor") && !zstr(val)) {
 				video_canvas_bgcolor= val;
+			} else if (!strcasecmp(var, "video-layout-bgcolor") && !zstr(val)) {
+				video_layout_bgcolor= val;
 			} else if (!strcasecmp(var, "video-canvas-size") && !zstr(val)) {
 				video_canvas_size = val;
 			} else if (!strcasecmp(var, "video-codec-bandwidth") && !zstr(val)) {
@@ -11478,10 +11539,15 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 	}
 	
 	if (!video_canvas_bgcolor) {
-		video_canvas_bgcolor = "#000000";
+		video_canvas_bgcolor = "#333333";
+	}
+
+	if (!video_layout_bgcolor) {
+		video_layout_bgcolor = "#000000";
 	}
 
 	conference->video_canvas_bgcolor = switch_core_strdup(conference->pool, video_canvas_bgcolor);
+	conference->video_layout_bgcolor = switch_core_strdup(conference->pool, video_layout_bgcolor);
 	
 	if (video_canvas_size && video_layout_name) {
 		int w = 0, h = 0;
