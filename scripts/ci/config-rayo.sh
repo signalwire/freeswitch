@@ -1,19 +1,39 @@
 #!/bin/sh
 ##### -*- mode:shell-script; indent-tabs-mode:nil; sh-basic-offset:2 -*-
 
-src_repo="$(pwd)"
+sdir="."
+[ -n "${0%/*}" ] && sdir="${0%/*}"
+. $sdir/common.sh
 
-if [ ! -d .git ]; then
-  echo "error: must be run from within the top level of a FreeSWITCH git tree." 1>&2
-  exit 1;
+check_pwd
+check_input_ver_build $@
+eval $(parse_version "$1")
+
+if [ -n "$rev" ]; then
+  dst_name="freeswitch-$cmajor.$cminor.$cmicro.$rev"
+else
+  dst_name="freeswitch-$cmajor.$cminor.$cmicro"
+fi
+dst_parent="/tmp/"
+dst_dir="/tmp/$dst_name"
+release="1"
+if [ $# -gt 1 ]; then
+  release="$2"
 fi
 
-rpmbuild --define "VERSION_NUMBER $1" \
-  --define "BUILD_NUMBER $2" \
-  --define "_topdir %(pwd)/rpmbuild" \
+(mkdir -p rpmbuild && cd rpmbuild && mkdir -p SOURCES BUILD BUILDROOT i386 x86_64 SPECS)
+
+cd $src_repo
+cp -a src_dist/*.spec rpmbuild/SPECS/ || true
+cp -a src_dist/* rpmbuild/SOURCES/ || true
+cd rpmbuild/SPECS
+set_fs_release "$release"
+cd ../../
+
+rpmbuild --define "_topdir %(pwd)/rpmbuild" \
   --define "_rpmdir %{_topdir}" \
   --define "_srcrpmdir %{_topdir}" \
-  -ba freeswitch-config-rayo.spec
+  -ba rpmbuild/SPECS/freeswitch-config-rayo.spec
 
 mkdir -p $src_repo/RPMS
 mv $src_repo/rpmbuild/*/freeswitch-config-rayo*.rpm $src_repo/RPMS/.

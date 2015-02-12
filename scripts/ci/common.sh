@@ -116,12 +116,36 @@ set_fs_ver () {
       mv configure.ac.$$ configure.ac
   fi
 
-  sed -e "s|\(%define version \).*|\1$major.$minor.$micro|"  \
+  local rpm_version
+  if [ -n "$rev" ]; then
+    rpm_version="$major.$minor.$micro.$rev"
+  else
+    rpm_version="$major.$minor.$micro"
+  fi
+
+  sed -e "s|\(%define version \).*|\1$rpm_version|"  \
        freeswitch.spec > freeswitch.spec.$$
   mv freeswitch.spec.$$ freeswitch.spec
 
+  sed -e "s|\(%define version \).*|\1$rpm_version|"  \
+       freeswitch-config-rayo.spec > freeswitch-config-rayo.spec.$$
+  mv freeswitch-config-rayo.spec.$$ freeswitch-config-rayo.spec
+
 #%define version 1.5.16
 
+}
+
+set_fs_release () {
+  local release="$1"
+  if [ -n "$release" ]; then
+    sed -e "s|\(%define release \).*|\1$release|"  \
+         freeswitch.spec > freeswitch.spec.$$
+    mv freeswitch.spec.$$ freeswitch.spec
+
+    sed -e "s|\(%define release \).*|\1$release|"  \
+         freeswitch-config-rayo.spec > freeswitch-config-rayo.spec.$$
+    mv freeswitch-config-rayo.spec.$$ freeswitch-config-rayo.spec
+  fi
 }
 
 gnuize () {

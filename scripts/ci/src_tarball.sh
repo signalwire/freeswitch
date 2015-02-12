@@ -7,13 +7,16 @@ sdir="."
 
 check_pwd
 version=`cat build/next-release.txt`
-check_input_ver_build $version
+if [ $# -gt 0 ]; then
+	version="$version.$1"
+fi
 eval $(parse_version "$version")
 if [ -n "$grev" ]; then 
 	dst_name="freeswitch-$cmajor.$cminor.$cmicro.$grev"
 else
 	dst_name="freeswitch-$cmajor.$cminor.$cmicro"
 fi
+check_input_ver_build $version
 
 #This should be a RAM Drive
 build_dir="jenkins.$$"
@@ -40,11 +43,13 @@ bzip2 -z -k ${dst_name}.tar || echo "bzip2 not available"
 xz -z -9 -k ${dst_name}.tar || echo "xz / xz-utils not available"
 zip -r $dst_name.zip $dst_name
 
-rm -rf ${dst_name}.tar $dst_dir
-
 mkdir -p ${src_repo}/../src_dist
 mv -f ${dst_name}.tar.* ${src_repo}/../src_dist
 mv -f $dst_name.zip ${src_repo}/../src_dist
+cp -f ${dst_dir}/freeswitch.spec ${src_repo}/../src_dist
+cp -f ${dst_dir}/freeswitch-config-rayo.spec ${src_repo}/../src_dist
+
+rm -rf ${dst_name}.tar $dst_dir
 
 cd ${tmp_dir}
 ls -al 
