@@ -1384,7 +1384,9 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 
 	init_canvas(conference, vlayout);
 
-	switch_core_timer_init(&timer, "soft", 1, 90, conference->pool);
+	if (switch_test_flag(conference, CFLAG_MINIMIZE_VIDEO_ENCODING)) {
+		switch_core_timer_init(&timer, "soft", 1, 90, conference->pool);
+	}
 
 	switch_mutex_lock(conference->canvas->cond_mutex);
 
@@ -1568,11 +1570,10 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 				need_keyframe = SWITCH_TRUE;
 				last_key_time = now;
 			}
-
-
-			switch_core_timer_sync(&timer);
 			
 			if (switch_test_flag(conference, CFLAG_MINIMIZE_VIDEO_ENCODING)) {
+				switch_core_timer_sync(&timer);
+
 				for (i = 0; write_codecs[i] && switch_core_codec_ready(&write_codecs[i]->codec) && i < MAX_MUX_CODECS; i++) {
 					write_codecs[i]->frame.img = conference->canvas->img;
 					write_canvas_image_to_codec_group(conference, write_codecs[i], i, timer.samplecount, need_refresh, need_keyframe);
@@ -1633,6 +1634,11 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 	for (i = 0; write_codecs[i] && switch_core_codec_ready(&write_codecs[i]->codec) && i < MAX_MUX_CODECS; i++) {
 		switch_core_codec_destroy(&write_codecs[i]->codec);
 	}
+
+	if (switch_test_flag(conference, CFLAG_MINIMIZE_VIDEO_ENCODING)) {
+		switch_core_timer_destroy(&timer);
+	}
+
 
 	destroy_canvas(&conference->canvas);
 
