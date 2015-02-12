@@ -1197,7 +1197,7 @@ module_enabled() {
   grep -v -e "\#" -e "^\$" modules.conf | sed -e "s|^.*/||" | grep "^${1}\$" >/dev/null
 }
 
-PKG_CHECK_MODULES([LIBPNG], [libpng12 >= 1.2.49])
+PKG_CHECK_MODULES([LIBPNG], [libpng >= 1.2.49])
 PKG_CHECK_MODULES([FREETYPE], [freetype2 >= 2.4.9])
 PKG_CHECK_MODULES([SQLITE], [sqlite3 >= 3.6.20])
 PKG_CHECK_MODULES([CURL], [libcurl >= 7.19])
