@@ -31,7 +31,7 @@
 
 #include <switch.h>
 #include <switch_utf8.h>
-
+#include <libyuv.h>
 
 SWITCH_DECLARE(switch_image_t *)switch_img_alloc(switch_image_t  *img,
 						 switch_img_fmt_t fmt,
@@ -545,6 +545,394 @@ SWITCH_DECLARE(switch_status_t) switch_img_txt_handle_render(switch_img_txt_hand
 }
 
 
+/* WARNING:
+   patch a big IMG with a rect hole, note this function is WIP ......
+   It ONLY works when the hole is INSIDE the big IMG and the place the small img will patch to,
+   more sanity checks need to be decided
+*/
+SWITCH_DECLARE(void) switch_img_patch_hole(switch_image_t *IMG, switch_image_t *img, int x, int y, switch_image_rect_t *rect)
+{
+	int i, len;
+
+	switch_assert(img->fmt == SWITCH_IMG_FMT_I420);
+	switch_assert(IMG->fmt == SWITCH_IMG_FMT_I420);
+
+	len = MIN(img->d_w, IMG->d_w - x);
+	if (len <= 0) return;
+
+	for (i = y; i < (y + img->d_h) && i < IMG->d_h; i++) {
+		if (rect && i >= rect->y && i < (rect->y + rect->h)) {
+			int size = rect->x > x ? rect->x - x : 0;
+			memcpy(IMG->planes[SWITCH_PLANE_Y] + IMG->stride[SWITCH_PLANE_Y] * i + x, img->planes[SWITCH_PLANE_Y] + img->stride[SWITCH_PLANE_Y] * (i - y), size);
+			size = MIN(img->d_w - rect->w - size, IMG->d_w - (rect->x + rect->w));
+			memcpy(IMG->planes[SWITCH_PLANE_Y] + IMG->stride[SWITCH_PLANE_Y] * i + rect->x + rect->w, img->planes[SWITCH_PLANE_Y] + img->stride[SWITCH_PLANE_Y] * (i - y) + rect->w + (rect->x - x), size);
+		} else {
+			memcpy(IMG->planes[SWITCH_PLANE_Y] + IMG->stride[SWITCH_PLANE_Y] * i + x, img->planes[SWITCH_PLANE_Y] + img->stride[SWITCH_PLANE_Y] * (i - y), len);
+		}
+	}
+
+	len /= 2;
+
+	for (i = y; i < (y + img->d_h) && i < IMG->d_h; i += 2) {
+		if (rect && i > rect->y && i < (rect->y + rect->h)) {
+			int size = rect->x > x ? rect->x - x : 0;
+
+			size /= 2;
+			memcpy(IMG->planes[SWITCH_PLANE_U] + IMG->stride[SWITCH_PLANE_U] * i / 2 + x / 2, img->planes[SWITCH_PLANE_U] + img->stride[SWITCH_PLANE_U] * (i - y) / 2, size);
+			memcpy(IMG->planes[SWITCH_PLANE_V] + IMG->stride[SWITCH_PLANE_V] * i / 2 + x / 2, img->planes[SWITCH_PLANE_V] + img->stride[SWITCH_PLANE_V] * (i - y) / 2, size);
+			size = MIN(img->d_w - rect->w - size, IMG->d_w - (rect->x + rect->w)) / 2;
+			memcpy(IMG->planes[SWITCH_PLANE_U] + IMG->stride[SWITCH_PLANE_U] * i / 2 + (rect->x + rect->w) / 2, img->planes[SWITCH_PLANE_U] + img->stride[SWITCH_PLANE_U] * (i - y) / 2 + (rect->w + (rect->x - x)) / 2, size);
+			memcpy(IMG->planes[SWITCH_PLANE_V] + IMG->stride[SWITCH_PLANE_V] * i / 2 + (rect->x + rect->w) / 2, img->planes[SWITCH_PLANE_V] + img->stride[SWITCH_PLANE_V] * (i - y) / 2 + (rect->w + (rect->x - x)) / 2, size);
+		} else {
+			memcpy(IMG->planes[SWITCH_PLANE_U] + IMG->stride[SWITCH_PLANE_U] * i / 2 + x / 2, img->planes[SWITCH_PLANE_U] + img->stride[SWITCH_PLANE_U] * (i - y) / 2, len);
+			memcpy(IMG->planes[SWITCH_PLANE_V] + IMG->stride[SWITCH_PLANE_V] * i / 2 + x / 2, img->planes[SWITCH_PLANE_V] + img->stride[SWITCH_PLANE_V] * (i - y) / 2, len);
+		}
+	}
+}
+
+#define SWITCH_IMG_MAX_WIDTH  1920 * 2
+#define SWITCH_IMG_MAX_HEIGHT 1080 * 2
+
+// WIP png functions, need furthur tweak/check to make sure it works on all png files and errors are properly detected and reported
+// #define PNG_DEBUG 3
+#define PNG_SKIP_SETJMP_CHECK
+#include <png.h>
+
+// ref: most are out-dated, man libpng :)
+// http://zarb.org/~gc/html/libpng.html
+// http://www.libpng.org/pub/png/book/toc.html
+// http://www.vias.org/pngguide/chapter01_03_02.html
+// http://www.libpng.org/pub/png/libpng-1.2.5-manual.html
+// ftp://ftp.oreilly.com/examples/9781565920583/CDROM/SOFTWARE/SOURCE/LIBPNG/EXAMPLE.C
+
+SWITCH_DECLARE(switch_image_t *) switch_img_read_png(char* file_name)
+{
+	png_byte header[8];    // 8 is the maximum size that can be checked
+	png_bytep *row_pointers = NULL;
+	int y;
+
+	int width, height;
+	png_byte color_type;
+	png_byte bit_depth;
+
+	png_structp png_ptr;
+	png_infop info_ptr;
+	//int number_of_passes;
+	int row_bytes;
+	png_color_8p sig_bit;
+    // png_color_16 my_background = { 0 }; //{index,r, g, b, grey}
+    png_color_16 my_background = {0, 99, 99, 99, 0};
+
+	png_byte *buffer = NULL;
+	switch_image_t *img = NULL;
+
+	/* open file and test for it being a png */
+	FILE *fp = fopen(file_name, "rb");
+	if (!fp) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "File %s could not be opened for reading", file_name);
+		goto end;
+	}
+
+	fread(header, 1, 8, fp);
+	if (png_sig_cmp(header, 0, 8)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "File %s is not recognized as a PNG file", file_name);
+		goto end;
+	}
+
+	png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+	if (!png_ptr) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "png_create_read_struct failed");
+		goto end;
+	}
+
+	info_ptr = png_create_info_struct(png_ptr);
+	if (!info_ptr) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "png_create_info_struct failed");
+		goto end;
+	}
+
+	if (setjmp(png_jmpbuf(png_ptr))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error during init_io");
+		goto end;
+	}
+
+	png_init_io(png_ptr, fp);
+
+	png_set_sig_bytes(png_ptr, 8);
+	png_read_info(png_ptr, info_ptr);
+
+	width = png_get_image_width(png_ptr, info_ptr);
+	height = png_get_image_height(png_ptr, info_ptr);
+	color_type = png_get_color_type(png_ptr, info_ptr);
+	bit_depth = png_get_bit_depth(png_ptr, info_ptr);
+	//number_of_passes = png_set_interlace_handling(png_ptr);
+
+	/* set up the transformations you want.  Note that these are
+	all optional.  Only call them if you want them */
+
+	/* expand paletted colors into true rgb */
+	if (color_type == PNG_COLOR_TYPE_PALETTE) {
+		png_set_expand(png_ptr);
+	}
+
+	/* expand grayscale images to the full 8 bits */
+	if (color_type == PNG_COLOR_TYPE_GRAY && bit_depth < 8) {
+		png_set_expand(png_ptr);
+	}
+
+	/* expand images with transparency to full alpha channels */
+	if (png_get_valid(png_ptr, info_ptr, PNG_INFO_tRNS)) {
+		png_set_expand(png_ptr);
+	}
+
+	/* Set the background color to draw transparent and alpha
+	images over */
+	if (png_get_valid(png_ptr, info_ptr, PNG_INFO_bKGD)) {
+		// png_get_bKGD(png_ptr, info_ptr, &my_background);
+		// png_set_background(png_ptr, &my_background, PNG_BACKGROUND_GAMMA_FILE, 1, 1.0);
+	} else {
+		png_set_background(png_ptr, &my_background, PNG_BACKGROUND_GAMMA_SCREEN, 0, 1.0);
+	}
+
+	/* tell libpng to handle the gamma conversion for you */
+	if (png_get_valid(png_ptr, info_ptr, PNG_INFO_gAMA)) {
+		// png_set_gamma(png_ptr, screen_gamma, info_ptr->gamma);
+	} else {
+		// png_set_gamma(png_ptr, screen_gamma, 0.45);
+	}
+
+	/* tell libpng to strip 16 bit depth files down to 8 bits */
+	if (bit_depth == 16) {
+		png_set_strip_16(png_ptr);
+	}
+
+#if 0
+	/* dither rgb files down to 8 bit palettes & reduce palettes
+	   to the number of colors available on your screen */
+	if (0 && color_type & PNG_COLOR_MASK_COLOR) {
+		if (png_get_valid(png_ptr, info_ptr, & PNG_INFO_PLTE)) {
+			png_set_dither(png_ptr, info_ptr->palette,
+						info_ptr->num_palette, max_screen_colors,
+						info_ptr->histogram);
+		} else {
+			png_color std_color_cube[MAX_SCREEN_COLORS] =
+						{/* ... colors ... */};
+
+			png_set_dither(png_ptr, std_color_cube, MAX_SCREEN_COLORS,
+						MAX_SCREEN_COLORS, NULL);
+		}
+	}
+#endif
+
+	/* invert monocrome files */
+	if (bit_depth == 1 && color_type == PNG_COLOR_TYPE_GRAY) {
+	// png_set_invert(png_ptr);
+	}
+
+	png_get_sBIT(png_ptr, info_ptr, &sig_bit);
+
+	/* shift the pixels down to their true bit depth */
+	// if (png_get_valid(png_ptr, info_ptr, PNG_INFO_sBIT) && (bit_depth > (*sig_bit).red)) {
+	//	png_set_shift(png_ptr, sig_bit);
+	// }
+
+	/* pack pixels into bytes */
+	if (bit_depth < 8) {
+		png_set_packing(png_ptr);
+	}
+
+	/* flip the rgb pixels to bgr */
+	if (color_type == PNG_COLOR_TYPE_RGB || color_type == PNG_COLOR_TYPE_RGB_ALPHA) {
+		// png_set_bgr(png_ptr);
+	}
+
+	/* swap bytes of 16 bit files to least significant bit first */
+	if (bit_depth == 16) {
+		png_set_swap(png_ptr);
+	}
+
+	if (color_type & PNG_COLOR_MASK_ALPHA) {
+		if (setjmp(png_jmpbuf(png_ptr))) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error!!!!\n");
+			goto end;
+		}
+
+		png_set_strip_alpha(png_ptr);
+	}
+
+	png_read_update_info(png_ptr, info_ptr);
+
+	if (width > SWITCH_IMG_MAX_WIDTH || height > SWITCH_IMG_MAX_HEIGHT) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "PNG is too large! %dx%d\n", width, height);
+	}
+
+	row_bytes = png_get_rowbytes(png_ptr, info_ptr);
+	//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "size: %dx%d row_bytes:%d color_type:%d bit_dept:%d\n", width, height, row_bytes, color_type, bit_depth);
+
+	row_pointers = (png_bytep*)malloc(sizeof(png_bytep) * height);
+	switch_assert(row_pointers);
+
+	buffer = (png_byte *)malloc(row_bytes * height);
+	switch_assert(buffer);
+
+	for (y = 0; y< height; y++) {
+		row_pointers[y] = buffer + row_bytes * y;
+	}
+
+	if (color_type == PNG_COLOR_TYPE_PALETTE) {
+		png_set_palette_to_rgb(png_ptr);
+	}
+
+	img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, width, height, 1);
+	switch_assert(img);
+
+	/* read file */
+	if (setjmp(png_jmpbuf(png_ptr))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error during read_image");
+		goto end;
+	}
+
+	png_read_image(png_ptr, row_pointers);
+
+	if (png_get_color_type(png_ptr, info_ptr) == PNG_COLOR_TYPE_RGBA) {
+		// should never get here since we already use png_set_strip_alpha() ?
+		switch_assert(1 == 2);
+
+		switch_assert(row_bytes >= width * 4);
+
+		for(y = 1; y < height; y++) {
+			memcpy(buffer + y * width * 4, row_pointers[y], width * 4);
+		}
+
+		// ABGRToI420(buffer, width * 4,
+		RGBAToI420(buffer, width * 4,
+				img->planes[SWITCH_PLANE_Y], img->stride[SWITCH_PLANE_Y],
+				img->planes[SWITCH_PLANE_U], img->stride[SWITCH_PLANE_U],
+				img->planes[SWITCH_PLANE_V], img->stride[SWITCH_PLANE_V],
+				width, height);
+	} else if (png_get_color_type(png_ptr, info_ptr) == PNG_COLOR_TYPE_RGB) {
+		switch_assert(row_bytes >= width * 3);
+
+		for(y = 1; y < height; y++) {
+			memcpy(buffer + y * width * 3, row_pointers[y], width * 3);
+		}
+		RAWToI420(buffer, width * 3,
+				img->planes[SWITCH_PLANE_Y], img->stride[SWITCH_PLANE_Y],
+				img->planes[SWITCH_PLANE_U], img->stride[SWITCH_PLANE_U],
+				img->planes[SWITCH_PLANE_V], img->stride[SWITCH_PLANE_V],
+				width, height);
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "unsupported color type: %d\n", png_get_color_type(png_ptr, info_ptr));
+	}
+
+end:
+	switch_safe_free(buffer);
+	switch_safe_free(row_pointers);
+	if (fp) fclose(fp);
+	if (info_ptr) png_destroy_read_struct(&png_ptr, &info_ptr, NULL);
+
+	return img;
+}
+
+SWITCH_DECLARE(void) switch_img_write_png(switch_image_t *img, char* file_name)
+{
+	int width, height;
+	png_byte color_type;
+	png_byte bit_depth;
+	png_structp png_ptr;
+	png_infop info_ptr;
+	png_bytep *row_pointers = NULL;
+	int row_bytes;
+	int y;
+	png_byte *buffer = NULL;
+	FILE *fp = NULL;
+
+	width = img->d_w;
+	height = img->d_h;
+	bit_depth = 8;
+	color_type = PNG_COLOR_TYPE_RGB;
+
+	fp = fopen(file_name, "wb");
+	if (!fp) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "File %s could not be opened for writing", file_name);
+		goto end;
+	}
+
+	png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+	if (!png_ptr) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "png_create_write_struct failed");
+		goto end;
+	}
+
+	info_ptr = png_create_info_struct(png_ptr);
+	if (!info_ptr) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "png_create_info_struct failed");
+		goto end;
+	}
+
+	if (setjmp(png_jmpbuf(png_ptr))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error during init_io");
+		goto end;
+	}
+
+	png_init_io(png_ptr, fp);
+
+	if (setjmp(png_jmpbuf(png_ptr))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error during writing header");
+		goto end;
+	}
+
+	png_set_IHDR(png_ptr, info_ptr, width, height,
+				 bit_depth, color_type, PNG_INTERLACE_NONE,
+				 PNG_COMPRESSION_TYPE_BASE, PNG_FILTER_TYPE_BASE);
+
+	png_write_info(png_ptr, info_ptr);
+
+	row_bytes = png_get_rowbytes(png_ptr, info_ptr);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "size: %dx%d row_bytes:%d color_type:%d bit_dept:%d\n", width, height, row_bytes, color_type, bit_depth);
+
+	row_pointers = (png_bytep*)malloc(sizeof(png_bytep) * height);
+	switch_assert(row_pointers);
+
+	buffer = (png_byte *)malloc(row_bytes * height);
+	switch_assert(buffer);
+
+	for (y = 0; y < height; y++) {
+		row_pointers[y] = buffer + row_bytes * y;
+	}
+
+	I420ToRAW(  img->planes[SWITCH_PLANE_Y], img->stride[SWITCH_PLANE_Y],
+				img->planes[SWITCH_PLANE_U], img->stride[SWITCH_PLANE_U],
+				img->planes[SWITCH_PLANE_V], img->stride[SWITCH_PLANE_V],
+				buffer, width * 3,
+				width, height);
+
+	for(y = height - 1; y > 0; y--) {
+		// todo, check overlaps
+		memcpy(row_pointers[y], buffer + row_bytes * y, width * 3);
+	}
+
+	if (setjmp(png_jmpbuf(png_ptr))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error during writing bytes");
+		goto end;
+	}
+
+	png_write_image(png_ptr, row_pointers);
+
+	if (setjmp(png_jmpbuf(png_ptr))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error during end of write");
+		goto end;
+	}
+
+	png_write_end(png_ptr, NULL);
+
+end:
+
+	switch_safe_free(buffer);
+	switch_safe_free(row_pointers);
+	fclose(fp);
+	png_destroy_write_struct(&png_ptr, &info_ptr);
+}
 
 
 /* For Emacs:
