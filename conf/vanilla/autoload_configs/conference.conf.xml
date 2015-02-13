@@ -183,6 +183,7 @@
       <!-- <param name="video-canvas-bgcolor" value="#333333"/> -->
       <!-- <param name="video-layout-bgcolor" value="#000000"/> -->
       <!-- <param name="video-codec-bandwidth" value="2mb"/> -->
+      <!-- <param name="video-fps" value="15"/> -->
 
 
       <!--<param name="tts-engine" value="flite"/>-->

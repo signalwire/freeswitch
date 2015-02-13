@@ -6747,6 +6747,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 
 		if (ntohl(send_msg->header.ts) != rtp_session->ts_norm.last_frame) {
 			rtp_session->ts_norm.delta = ntohl(send_msg->header.ts) - rtp_session->ts_norm.last_frame;
+			//printf("WTF %d\n", rtp_session->ts_norm.delta);
 			rtp_session->ts_norm.ts += rtp_session->ts_norm.delta;
 			//switch_core_timer_sync(&rtp_session->timer);
 			//printf("W00t %d\n", rtp_session->timer.samplecount);

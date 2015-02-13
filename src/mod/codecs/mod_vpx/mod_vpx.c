@@ -76,6 +76,8 @@ struct vpx_context {
 	switch_size_t last_received_timestamp;
 	switch_bool_t last_received_complete_picture;
 	int need_key_frame;
+	int need_encoder_reset;
+	int need_decoder_reset;
 	int32_t change_bandwidth;
 	uint64_t framecount;
 	uint64_t framesum;
@@ -387,6 +389,15 @@ static switch_status_t switch_vpx_encode(switch_codec_t *codec, switch_frame_t *
 		return consume_partition(context, frame);
 	}
 
+	if (context->need_encoder_reset != 0) {
+		vpx_codec_destroy(&context->encoder);
+		context->framesum = 0;
+		context->framecount = 0;
+		context->encoder_init = 0;
+		init_codec(codec);
+		context->need_encoder_reset = 0;
+	}
+
 	//d_w and d_h are messed up
 	//printf("WTF %d %d\n", frame->img->d_w, frame->img->d_h);
 
@@ -419,7 +430,6 @@ static switch_status_t switch_vpx_encode(switch_codec_t *codec, switch_frame_t *
 		context->change_bandwidth = 0;
 		init_codec(codec);
 	}
-
 
 	if (context->need_key_frame != 0) {
 		// force generate a key frame
@@ -535,6 +545,15 @@ static switch_status_t switch_vpx_decode(switch_codec_t *codec, switch_frame_t *
 	vpx_codec_ctx_t *decoder = NULL;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	int is_keyframe = ((*(unsigned char *)frame->data) & 0x01) ? 0 : 1;
+
+
+
+	if (context->need_decoder_reset != 0) {
+		vpx_codec_destroy(&context->decoder);
+		context->decoder_init = 0;
+		init_codec(codec);
+		context->need_decoder_reset = 0;
+	}
 	
 	if (!context->decoder_init) {
 		init_codec(codec);
@@ -585,6 +604,7 @@ static switch_status_t switch_vpx_decode(switch_codec_t *codec, switch_frame_t *
 		//keyframe = (*data & 0x01) ? 0 : 1;
 
 		//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "buffered: %" SWITCH_SIZE_T_FMT ", key: %d\n", len, keyframe);
+
 
 		err = vpx_codec_decode(decoder, data, (unsigned int)len, NULL, 0);
 
@@ -643,6 +663,17 @@ static switch_status_t switch_vpx_control(switch_codec_t *codec,
 	vpx_context_t *context = (vpx_context_t *)codec->private_info;
 
 	switch(cmd) {
+	case SCC_VIDEO_RESET:
+		{
+			int mask = *((int *) cmd_data);
+			if (mask & 1) {
+				context->need_encoder_reset = 1;
+			}
+			if (mask & 2) {
+				context->need_decoder_reset = 1;
+			}
+		}
+		break;
 	case SCC_VIDEO_REFRESH:
 		context->need_key_frame = 1;		
 		break;
