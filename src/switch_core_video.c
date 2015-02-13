@@ -97,11 +97,11 @@ SWITCH_DECLARE(void) switch_img_patch(switch_image_t *IMG, switch_image_t *img, 
 	if (y & 0x1) y++;
 	if (len <= 0) return;
 
-	for (i = y; i < (y + img->d_h) && i < IMG->d_h; i++) {
+	for (i = y; i < max_h; i++) {
 		memcpy(IMG->planes[SWITCH_PLANE_Y] + IMG->stride[SWITCH_PLANE_Y] * i + x, img->planes[SWITCH_PLANE_Y] + img->stride[SWITCH_PLANE_Y] * (i - y), len);
 	}
 
-	if ((len & 1) && (x + len) < img->d_w) len++;
+	if ((len & 1) && (x + len) < img->d_w - 1) len++;
 
 	len /= 2;
 
@@ -201,11 +201,11 @@ SWITCH_DECLARE(void) switch_img_fill(switch_image_t *img, int x, int y, int w, i
 	if (y & 1) y++;
 	if (len <= 0) return;
 
-	for (i = y; i < (y + h) && i < img->d_h; i++) {
+	for (i = y; i < max_h; i++) {
 		memset(img->planes[SWITCH_PLANE_Y] + img->stride[SWITCH_PLANE_Y] * i + x, yuv_color.y, len);
 	}
 
-	if ((len & 1) && (x + len) < img->d_w) len++;
+	if ((len & 1) && (x + len) < img->d_w - 1) len++;
 
 	len /= 2;
 
