@@ -295,7 +295,7 @@ SWITCH_DECLARE(void) switch_color_rgb2yuv(switch_rgb_color_t *rgb, switch_yuv_co
 {
 	yuv->y = (uint8_t)(((rgb->r * 4897) >> 14) + ((rgb->g * 9611) >> 14) + ((rgb->b * 1876) >> 14));
 	yuv->u = (uint8_t)(- ((rgb->r * 2766) >> 14)  - ((5426 * rgb->g) >> 14) + rgb->b / 2 + 128);
-	yuv->v = (uint8_t)(rgb->r / 2 -((6855 * rgb->b) >> 14) - ((rgb->b * 1337) >> 14) + 128);
+	yuv->v = (uint8_t)(rgb->r / 2 -((6855 * rgb->g) >> 14) - ((rgb->b * 1337) >> 14) + 128);
 }
 
 SWITCH_DECLARE(void) switch_color_set_yuv(switch_yuv_color_t *color, const char *str)
