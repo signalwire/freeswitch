@@ -197,6 +197,13 @@ SWITCH_DECLARE(void) switch_img_patch_hole(switch_image_t *IMG, switch_image_t *
 SWITCH_DECLARE(switch_image_t *) switch_img_read_png(const char* file_name);
 SWITCH_DECLARE(void) switch_img_write_png(switch_image_t *img, char* file_name);
 
+SWITCH_DECLARE(void) switch_img_get_yuv_pixel(switch_image_t *img, switch_yuv_color_t *yuv, int x, int y);
+
+SWITCH_DECLARE(void) switch_img_get_rgb_pixel(switch_image_t *img, switch_rgb_color_t *rgb, int x, int y);
+
+SWITCH_DECLARE(void) switch_img_overlay(switch_image_t *IMG, switch_image_t *img, int x, int y, uint8_t alpha);
+
+
 /** @} */
 
 SWITCH_END_EXTERN_C
