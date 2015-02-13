@@ -864,10 +864,10 @@ static void conference_parse_layouts(conference_obj_t *conference)
 
 }
 
-
+/* do not use this on an img cropped with switch_img_set_rect() */
 static void reset_image(switch_image_t *img, switch_rgb_color_t *color)
 {
-	switch_img_fill(img, 0, 0, img->w, img->h, color);
+	switch_img_fill(img, 0, 0, img->d_w, img->d_h, color);
 }
 
 #define SCALE_FACTOR 360.0f
@@ -885,13 +885,10 @@ static void reset_layer(mcu_canvas_t *canvas, mcu_layer_t *layer)
 
 	switch_img_free(&layer->img);
 	layer->img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, layer->screen_w, layer->screen_h, 1);
-
 	switch_assert(layer->img);
 
-	reset_image(layer->img, &canvas->bgcolor);
-	switch_img_patch(canvas->img, layer->img, layer->x_pos, layer->y_pos);
+	switch_img_fill(canvas->img, layer->x_pos, layer->y_pos, layer->screen_w, layer->screen_h, &canvas->bgcolor);
 	switch_img_free(&layer->cur_img);
-
 }
 
 static void scale_and_patch(conference_obj_t *conference, mcu_layer_t *layer)
@@ -1235,8 +1232,8 @@ static void init_canvas_layers(conference_obj_t *conference, video_layout_t *vla
 		layer->screen_w = conference->canvas->img->d_w * layer->geometry.scale / SCALE_FACTOR;
 		layer->screen_h = conference->canvas->img->d_h * layer->geometry.scale / SCALE_FACTOR;
 
-		if (layer->screen_w % 2) layer->screen_w++; // round to even
-		if (layer->screen_h % 2) layer->screen_h++; // round to even
+		// if (layer->screen_w % 2) layer->screen_w++; // round to even
+		// if (layer->screen_h % 2) layer->screen_h++; // round to even
 
 		layer->x_pos = conference->canvas->img->d_w * layer->geometry.x / SCALE_FACTOR;
 		layer->y_pos = conference->canvas->img->d_h * layer->geometry.y / SCALE_FACTOR;
@@ -1278,6 +1275,9 @@ static void init_canvas(conference_obj_t *conference, video_layout_t *vlayout)
 	conference->canvas->img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, conference->canvas_width, conference->canvas_height, 0);
 
 	switch_assert(conference->canvas->img);
+
+	conference->canvas->width = conference->canvas_width;
+	conference->canvas->height = conference->canvas_height;
 
 	switch_mutex_lock(conference->canvas->mutex);
 	set_canvas_bgcolor(conference->canvas, conference->video_canvas_bgcolor);
