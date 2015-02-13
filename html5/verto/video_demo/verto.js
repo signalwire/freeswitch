@@ -142,6 +142,16 @@ function check_vid_res()
 	vid_height = 480;
 	local_vid_width = 160;
 	local_vid_height = 120;
+    } else if ($("#vqual_qvga_wide").is(':checked')) {
+	vid_width = 320;
+	vid_height = 180;
+	local_vid_width = 160;
+	local_vid_height = 90;
+    } else if ($("#vqual_vga_wide").is(':checked')) {
+	vid_width = 640;
+	vid_height = 360;
+	local_vid_width = 160;
+	local_vid_height = 90;
     } else if ($("#vqual_hd").is(':checked')) {
 	vid_width = 1280;
 	vid_height = 720;
@@ -163,7 +173,9 @@ function check_vid_res()
 	verto.videoParams({
 	    "minWidth": vid_width,
 	    "minHeight": vid_height,
-	    "minFrameRate": 30, 
+	    "maxWidth": vid_width,
+	    "maxHeight": vid_height,
+	    //"minFrameRate": 30, 
 	    //chromeMediaSource: 'screen', 
 	    //mediaSource: 'screen'
 	});
@@ -576,6 +588,26 @@ function init() {
     });
 
 
+    $("#vqual_qvga_wide").prop("checked", vqual === "qvga_wide").change(function(e) {
+        if ($("#vqual_qvga_wide").is(':checked')) {
+	    vqual = "qvga_wide";
+	    $.cookie("verto_demo_vqual", vqual, {
+		expires: 365
+	    });
+	}
+    });
+
+
+    $("#vqual_vga").prop("checked", vqual === "vga_wide").change(function(e) {
+        if ($("#vqual_vga_wide").is(':checked')) {
+	    vqual = "vga_wide";
+	    $.cookie("verto_demo_vqual", vqual, {
+		expires: 365
+	    });
+	}
+    });
+
+
     $("#vqual_hd").prop("checked", vqual === "hd").change(function(e) {
         if ($("#vqual_hd").is(':checked')) {
 	    vqual = "hd";
@@ -653,7 +685,9 @@ function init() {
         videoParams: {
             "minWidth": vid_width,
             "minHeight": vid_height,
-	    "minFrameRate": 30,
+	    "maxWidth": vid_width,
+	    "maxHeight": vid_height,
+	    //"minFrameRate": 30,
 	    //chromeMediaSource: 'screen',
 	    //mediaSource: 'screen'
         },
