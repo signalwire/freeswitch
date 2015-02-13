@@ -55,6 +55,27 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_conference_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_conference_shutdown);
 SWITCH_MODULE_DEFINITION(mod_conference, mod_conference_load, mod_conference_shutdown, NULL);
 
+struct conf_fps {
+	float fps;
+	int ms;
+	int samples;
+};
+
+static struct conf_fps FPS_VALS[] = { 
+	{1.0f, 1000, 90},
+	{5.0f, 200, 450},
+	{10.0f, 100, 900},
+	{15.0f, 66, 1364},
+	{16.60f, 60, 1500},
+	{25.0f, 40, 2250},
+	{30.0f, 33, 2700},
+	{33.0f, 30, 2790},
+	{66.60f, 15, 6000},
+	{100.0f, 10, 9000},
+	{0,0,0}
+};
+
+
 typedef enum {
 	CONF_SILENT_REQ = (1 << 0),
 	CONF_SILENT_DONE = (1 << 1)
@@ -380,6 +401,7 @@ typedef struct mcu_canvas_s {
 	int layout_floor_id;
 	switch_rgb_color_t bgcolor;
 	switch_mutex_t *mutex;
+	switch_timer_t timer;
 	switch_memory_pool_t *pool;
 } mcu_canvas_t;
 
@@ -430,6 +452,7 @@ typedef struct conference_obj {
 	char *video_layout_group;
 	char *video_canvas_bgcolor;
 	char *video_layout_bgcolor;
+	int video_timer_reset;
 	int32_t video_write_bandwidth;
 	switch_codec_settings_t video_codec_settings;
 	uint32_t canvas_width;
@@ -518,6 +541,7 @@ typedef struct conference_obj {
 	mcu_canvas_t *canvas;
 	switch_hash_t *layout_hash;
 	switch_hash_t *layout_group_hash;
+	struct conf_fps video_fps;
 } conference_obj_t;
 
 /* Relationship with another member */
@@ -639,6 +663,22 @@ static void conference_send_presence(conference_obj_t *conference);
 static void conference_set_video_floor_holder(conference_obj_t *conference, conference_member_t *member, switch_bool_t force);
 
 SWITCH_STANDARD_API(conf_api_main);
+
+
+static int conference_set_fps(conference_obj_t *conference, float fps)
+{
+	int i = 0;
+
+	for (i = 0; FPS_VALS[i].ms; i++) {
+		if (FPS_VALS[i].fps == fps) {
+			conference->video_fps = FPS_VALS[i];
+			conference->video_timer_reset = 1;
+			return 1;
+		}
+	}
+
+	return 0;
+}
 
 static switch_status_t conference_outcall(conference_obj_t *conference,
 										  char *conference_name,
@@ -1303,7 +1343,8 @@ typedef struct codec_set_s {
 } codec_set_t;
 
 static void write_canvas_image_to_codec_group(conference_obj_t *conference, codec_set_t *codec_set,
-											  int codec_index, uint32_t timestamp, switch_bool_t need_refresh, switch_bool_t need_keyframe)
+											  int codec_index, uint32_t timestamp, switch_bool_t need_refresh, 
+											  switch_bool_t need_keyframe, switch_bool_t need_reset)
 
 {
 	conference_member_t *imember;
@@ -1318,6 +1359,12 @@ static void write_canvas_image_to_codec_group(conference_obj_t *conference, code
 	switch_clear_flag(frame, SFF_SAME_IMAGE);
 	frame->m = 0;
 	frame->timestamp = timestamp;
+
+	if (need_reset) {
+		int type = 1; // sum flags: 1 encoder; 2; decoder
+		switch_core_codec_control(&codec_set->codec, SCC_VIDEO_RESET, SCCT_INT, (void *)&type, NULL, NULL);
+		need_refresh = SWITCH_TRUE;
+	}
 
 	if (need_refresh || need_keyframe) {
 		switch_core_codec_control(&codec_set->codec, SCC_VIDEO_REFRESH, SCCT_NONE, NULL, NULL, NULL);
@@ -1388,7 +1435,6 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 	switch_codec_t *check_codec = NULL;
 	codec_set_t *write_codecs[MAX_MUX_CODECS] = { 0 };
 	int buflen = SWITCH_RECOMMENDED_BUFFER_SIZE * 2;
-	switch_timer_t timer = { 0 };
 	int i = 0;
 	int used = 0;
 	uint32_t video_key_freq = 30000000;
@@ -1419,17 +1465,23 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 
 	init_canvas(conference, vlayout);
 
-	switch_core_timer_init(&timer, "soft", 33, 3000, conference->pool);
-
+	conference->video_timer_reset = 1;
+	
 	if (!switch_test_flag(conference, CFLAG_MINIMIZE_VIDEO_ENCODING)) {
 		packet = switch_core_alloc(conference->pool, SWITCH_RECOMMENDED_BUFFER_SIZE);
 	}
 
 	while (globals.running && !switch_test_flag(conference, CFLAG_DESTRUCT) && switch_test_flag(conference, CFLAG_VIDEO_MUXING)) {
-		switch_bool_t need_refresh = SWITCH_FALSE, need_keyframe = SWITCH_FALSE;
+		switch_bool_t need_refresh = SWITCH_FALSE, need_keyframe = SWITCH_FALSE, need_reset = SWITCH_FALSE;
 		switch_time_t now;
-			
-		switch_core_timer_next(&timer);
+
+		if (conference->video_timer_reset) {
+			conference->video_timer_reset = 0;
+			switch_core_timer_init(&conference->canvas->timer, "soft", conference->video_fps.ms, conference->video_fps.samples, NULL);
+			need_reset = SWITCH_TRUE;
+		}
+		
+		switch_core_timer_next(&conference->canvas->timer);
 
 		now = switch_micro_time_now();
 
@@ -1600,7 +1652,8 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 		if (switch_test_flag(conference, CFLAG_MINIMIZE_VIDEO_ENCODING)) {
 			for (i = 0; write_codecs[i] && switch_core_codec_ready(&write_codecs[i]->codec) && i < MAX_MUX_CODECS; i++) {
 				write_codecs[i]->frame.img = conference->canvas->img;
-				write_canvas_image_to_codec_group(conference, write_codecs[i], i, timer.samplecount, need_refresh, need_keyframe);
+				write_canvas_image_to_codec_group(conference, write_codecs[i], i, 
+												  conference->canvas->timer.samplecount, need_refresh, need_keyframe, need_reset);
 
 				if (conference->video_write_bandwidth) {
 					switch_core_codec_control(&write_codecs[i]->codec, SCC_VIDEO_BANDWIDTH, SCCT_INT, &conference->video_write_bandwidth, NULL, NULL);
@@ -1658,7 +1711,7 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 		}
 	}
 
-	switch_core_timer_destroy(&timer);
+	switch_core_timer_destroy(&conference->canvas->timer);
 
 	destroy_canvas(&conference->canvas);
 
@@ -7761,6 +7814,32 @@ static switch_status_t conf_api_sub_vid_bandwidth(conference_obj_t *conference, 
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static switch_status_t conf_api_sub_vid_fps(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv)
+{
+	float fps = 0;
+
+	if (!argv[2]) {
+		stream->write_function(stream, "Invalid input\n");
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	if (!conference->canvas) {
+		stream->write_function(stream, "Conference is not in mixing mode\n");
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	fps = atof(argv[2]);
+
+	if (conference_set_fps(conference, fps)) {
+		stream->write_function(stream, "FPS set to [%s]\n", argv[2]);
+	} else {
+		stream->write_function(stream, "Invalid FPS [%s]\n", argv[2]);
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+	
+}
+
 static switch_status_t conf_api_sub_vid_layout(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv)
 {
 	video_layout_t *vlayout = NULL;
@@ -9468,6 +9547,7 @@ static api_command_t conf_api_sub_commands[] = {
 	{"vid-banner", (void_fn_t) & conf_api_sub_vid_banner, CONF_API_SUB_MEMBER_TARGET, "vid-banner", "<member_id|last> <text>"},
 	{"clear-vid-floor", (void_fn_t) & conf_api_sub_clear_vid_floor, CONF_API_SUB_ARGS_AS_ONE, "clear-vid-floor", ""},
 	{"vid-layout", (void_fn_t) & conf_api_sub_vid_layout, CONF_API_SUB_ARGS_SPLIT, "vid-layout", "<layout name>"},
+	{"vid-fps", (void_fn_t) & conf_api_sub_vid_fps, CONF_API_SUB_ARGS_SPLIT, "vid-fps", "<fps>"},
 	{"vid-bandwidth", (void_fn_t) & conf_api_sub_vid_bandwidth, CONF_API_SUB_ARGS_SPLIT, "vid-bandwidth", "<BW>"}
 };
 
@@ -11212,6 +11292,7 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 	char *video_canvas_bgcolor = NULL;
 	char *video_layout_bgcolor = NULL;
 	char *video_codec_bandwidth = NULL;
+	float fps = 15.0f;
 	uint32_t max_members = 0;
 	uint32_t announce_count = 0;
 	char *maxmember_sound = NULL;
@@ -11367,6 +11448,8 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 				video_layout_bgcolor= val;
 			} else if (!strcasecmp(var, "video-canvas-size") && !zstr(val)) {
 				video_canvas_size = val;
+			} else if (!strcasecmp(var, "video-fps") && !zstr(val)) {
+				fps = atof(val);
 			} else if (!strcasecmp(var, "video-codec-bandwidth") && !zstr(val)) {
 				video_codec_bandwidth = val;
 			} else if (!strcasecmp(var, "exit-sound") && !zstr(val)) {
@@ -11580,6 +11663,14 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 
 	conference->video_canvas_bgcolor = switch_core_strdup(conference->pool, video_canvas_bgcolor);
 	conference->video_layout_bgcolor = switch_core_strdup(conference->pool, video_layout_bgcolor);
+
+	if (fps) {
+		conference_set_fps(conference, fps);
+	}
+
+	if (!conference->video_fps.ms) {
+		conference_set_fps(conference, 30);
+	}
 	
 	if (video_canvas_size && video_layout_name) {
 		int w = 0, h = 0;

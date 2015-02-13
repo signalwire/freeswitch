@@ -2193,7 +2193,8 @@ typedef switch_status_t (*switch_core_codec_video_decode_func_t) (switch_codec_t
 
 typedef enum {
 	SCC_VIDEO_REFRESH = 0,
-	SCC_VIDEO_BANDWIDTH
+	SCC_VIDEO_BANDWIDTH,
+	SCC_VIDEO_RESET
 } switch_codec_control_command_t;
 
 typedef enum {
