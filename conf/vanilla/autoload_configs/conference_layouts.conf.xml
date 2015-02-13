@@ -10,7 +10,7 @@
       </layout>
       <layout name="2x1">
 	<image x="0" y="90" scale="180"/>
-	<image x="180" y="9" scale="180"/>
+	<image x="180" y="90" scale="180"/>
       </layout>
       <layout name="2x2">
 	<image x="0" y="0" scale="180"/>
