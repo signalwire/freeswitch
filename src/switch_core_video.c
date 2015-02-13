@@ -81,21 +81,27 @@ SWITCH_DECLARE(void) switch_img_free(switch_image_t **img)
 // simple implementation to patch a small img to a big IMG at position x,y
 SWITCH_DECLARE(void) switch_img_patch(switch_image_t *IMG, switch_image_t *img, int x, int y)
 {
-	int i, len;
+	int i, len, max_h;
 
 	switch_assert(img->fmt == SWITCH_IMG_FMT_I420);
 	switch_assert(IMG->fmt == SWITCH_IMG_FMT_I420);
 
+	max_h = MIN(y + img->d_h, IMG->d_h);
 	len = MIN(img->d_w, IMG->d_w - x);
+
+	if (x & 0x1) { x++; len--; }
+	if (y & 0x1) y++;
 	if (len <= 0) return;
 
 	for (i = y; i < (y + img->d_h) && i < IMG->d_h; i++) {
 		memcpy(IMG->planes[SWITCH_PLANE_Y] + IMG->stride[SWITCH_PLANE_Y] * i + x, img->planes[SWITCH_PLANE_Y] + img->stride[SWITCH_PLANE_Y] * (i - y), len);
 	}
 
+	if ((len & 1) && (x + len) < img->d_w) len++;
+
 	len /= 2;
 
-	for (i = y; i < (y + img->d_h) && i < IMG->d_h; i += 2) {
+	for (i = y; i < max_h; i += 2) {
 		memcpy(IMG->planes[SWITCH_PLANE_U] + IMG->stride[SWITCH_PLANE_U] * i / 2 + x / 2, img->planes[SWITCH_PLANE_U] + img->stride[SWITCH_PLANE_U] * (i - y) / 2, len);
 		memcpy(IMG->planes[SWITCH_PLANE_V] + IMG->stride[SWITCH_PLANE_V] * i / 2 + x / 2, img->planes[SWITCH_PLANE_V] + img->stride[SWITCH_PLANE_V] * (i - y) / 2, len);
 	}
@@ -177,23 +183,29 @@ SWITCH_DECLARE(void) switch_img_draw_pixel(switch_image_t *img, int x, int y, sw
 
 SWITCH_DECLARE(void) switch_img_fill(switch_image_t *img, int x, int y, int w, int h, switch_rgb_color_t *color)
 {
-	int len, i;
+	int len, i, max_h;
 	switch_yuv_color_t yuv_color;
 
 	if (x < 0 || y < 0 || x >= img->d_w || y >= img->d_h) return;
 
 	switch_color_rgb2yuv(color, &yuv_color);
 
+	max_h = MIN(y + h, img->d_h);
 	len = MIN(w, img->d_w - x);
+
+	if (x & 1) { x++; len--; }
+	if (y & 1) y++;
 	if (len <= 0) return;
 
 	for (i = y; i < (y + h) && i < img->d_h; i++) {
 		memset(img->planes[SWITCH_PLANE_Y] + img->stride[SWITCH_PLANE_Y] * i + x, yuv_color.y, len);
 	}
 
+	if ((len & 1) && (x + len) < img->d_w) len++;
+
 	len /= 2;
 
-	for (i = y; i < (y + h) && i < img->d_h; i += 2) {
+	for (i = y; i < max_h; i += 2) {
 		memset(img->planes[SWITCH_PLANE_U] + img->stride[SWITCH_PLANE_U] * i / 2 + x / 2, yuv_color.u, len);
 		memset(img->planes[SWITCH_PLANE_V] + img->stride[SWITCH_PLANE_V] * i / 2 + x / 2, yuv_color.v, len);
 	}
