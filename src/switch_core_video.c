@@ -78,6 +78,10 @@ SWITCH_DECLARE(void) switch_img_free(switch_image_t **img)
 #define MIN(a,b) ((a) < (b) ? (a) : (b))
 #endif
 
+#ifndef MAX
+#define MAX(a,b) ((a) > (b) ? (a) : (b))
+#endif
+
 // simple implementation to patch a small img to a big IMG at position x,y
 SWITCH_DECLARE(void) switch_img_patch(switch_image_t *IMG, switch_image_t *img, int x, int y)
 {
@@ -296,6 +300,25 @@ SWITCH_DECLARE(void) switch_color_rgb2yuv(switch_rgb_color_t *rgb, switch_yuv_co
 	yuv->y = (uint8_t)(((rgb->r * 4897) >> 14) + ((rgb->g * 9611) >> 14) + ((rgb->b * 1876) >> 14));
 	yuv->u = (uint8_t)(- ((rgb->r * 2766) >> 14)  - ((5426 * rgb->g) >> 14) + rgb->b / 2 + 128);
 	yuv->v = (uint8_t)(rgb->r / 2 -((6855 * rgb->g) >> 14) - ((rgb->b * 1337) >> 14) + 128);
+}
+
+#define CLAMP(val) MAX(0, MIN(val, 255))
+
+SWITCH_DECLARE(void) switch_color_yuv2rgb(switch_yuv_color_t *yuv, switch_rgb_color_t *rgb)
+{
+#if 0
+	int C = yuv->y - 16;
+	int D = yuv->u - 128;
+	int E = yuv->v - 128;
+
+	rgb->r = CLAMP((298 * C           + 409 * E + 128) >> 8);
+	rgb->g = CLAMP((298 * C - 100 * D - 208 * E + 128) >> 8);
+	rgb->b = CLAMP((298 * C + 516 * D           + 128) >> 8);
+#endif
+
+	rgb->r = CLAMP( yuv->y + ((22457 * (yuv->v-128)) >> 14));
+	rgb->g = CLAMP((yuv->y - ((715   * (yuv->v-128)) >> 10) - ((5532 * (yuv->u-128)) >> 14)));
+	rgb->b = CLAMP((yuv->y + ((28384 * (yuv->u-128)) >> 14)));
 }
 
 SWITCH_DECLARE(void) switch_color_set_yuv(switch_yuv_color_t *color, const char *str)
