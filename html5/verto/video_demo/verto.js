@@ -624,6 +624,22 @@ function init() {
 	    verto.iceServers(tmp);
 	}
     });
+
+
+    tmp = $.cookie("verto_demo_local_video_checked") || "true";
+    $.cookie("verto_demo_local_video_checked", tmp, {
+        expires: 365
+    });
+
+    $("#local_video").prop("checked", tmp === "true").change(function(e) {
+        tmp = $("#local_video").is(':checked');
+        $.cookie("verto_demo_local_video_checked", tmp ? "true" : "false", {
+            expires: 365
+        });
+	if (verto) {
+	    verto.iceServers(tmp);
+	}
+    });
     
     check_vid_res();
 
@@ -632,7 +648,7 @@ function init() {
         passwd: $("#passwd").val(),
         socketUrl: $("#wsURL").val(),
         tag: "webcam",
-        localTag: "local_webcam",
+        localTag: $("#local_video").is(':checked') ? "local_webcam" : null,
         ringFile: "sounds/bell_ring2.wav",
         videoParams: {
             "minWidth": vid_width,
