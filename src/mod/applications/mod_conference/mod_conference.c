@@ -1192,7 +1192,6 @@ static switch_status_t attach_video_layer(conference_member_t *member, int idx)
 	layer->member_id = member->id;
 	member->video_layer_id = idx;
 	check_used_layers(member->conference);
-	switch_mutex_unlock(member->conference->canvas->mutex);
 
 	if (layer->geometry.audio_position) {
 		conf_api_sub_position(member, NULL, layer->geometry.audio_position);
@@ -1200,7 +1199,6 @@ static switch_status_t attach_video_layer(conference_member_t *member, int idx)
 
 
 	switch_color_set_rgb(&color, member->conference->video_layout_bgcolor);
-	switch_mutex_lock(member->conference->canvas->mutex);
 	switch_img_fill(member->conference->canvas->img, layer->x_pos, layer->y_pos, layer->screen_w, layer->screen_h, &color);
 
 
