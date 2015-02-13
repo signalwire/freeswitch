@@ -897,9 +897,12 @@ static void reset_layer(mcu_canvas_t *canvas, mcu_layer_t *layer)
 static void scale_and_patch(conference_obj_t *conference, mcu_layer_t *layer)
 {
 	int ret;
-	switch_image_t *IMG = conference->canvas->img, *img = layer->cur_img;
+	switch_image_t *IMG, *img;
 
 	switch_mutex_lock(conference->canvas->mutex);
+
+	IMG = conference->canvas->img;
+	img = layer->cur_img;
 
 	if (layer->geometry.scale) {
 		int img_w = 0, img_h = 0;
@@ -1200,6 +1203,7 @@ static switch_status_t attach_video_layer(conference_member_t *member, int idx)
 
 
 	switch_color_set_rgb(&color, member->conference->video_layout_bgcolor);
+	switch_mutex_lock(member->conference->canvas->mutex);
 	switch_img_fill(member->conference->canvas->img, layer->x_pos, layer->y_pos, layer->screen_w, layer->screen_h, &color);
 
 
