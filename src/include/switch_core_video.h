@@ -181,6 +181,7 @@ SWITCH_DECLARE(void) switch_img_draw_pixel(switch_image_t *img, int x, int y, sw
 SWITCH_DECLARE(void) switch_color_set_rgb(switch_rgb_color_t *color, const char *color_str);
 SWITCH_DECLARE(void) switch_color_set_yuv(switch_yuv_color_t *color, const char *color_str);
 SWITCH_DECLARE(void) switch_color_rgb2yuv(switch_rgb_color_t *rgb, switch_yuv_color_t *yuv);
+SWITCH_DECLARE(void) switch_color_yuv2rgb(switch_yuv_color_t *yuv, switch_rgb_color_t *rgb);
 
 SWITCH_DECLARE(switch_status_t) switch_img_txt_handle_create(switch_img_txt_handle_t **handleP, const char *font_family,
 															 const char *font_color, const char *bgcolor, uint16_t font_size, double angle, switch_memory_pool_t *pool);
