@@ -87,6 +87,9 @@ SWITCH_DECLARE(void) switch_img_patch(switch_image_t *IMG, switch_image_t *img, 
 {
 	int i, len, max_h;
 
+	switch_assert(x > -1);
+	switch_assert(y > -1);
+
 	switch_assert(img->fmt == SWITCH_IMG_FMT_I420);
 	switch_assert(IMG->fmt == SWITCH_IMG_FMT_I420);
 
