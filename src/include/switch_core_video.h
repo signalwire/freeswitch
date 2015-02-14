@@ -44,6 +44,20 @@
 
 SWITCH_BEGIN_EXTERN_C
 
+typedef enum {
+	POS_LEFT_TOP = 0,
+	POS_LEFT_MID,
+	POS_LEFT_BOT,
+	POS_CENTER_TOP,
+	POS_CENTER_MID,
+	POS_CENTER_BOT,
+	POS_RIGHT_TOP,
+	POS_RIGHT_MID,
+	POS_RIGHT_BOT,
+	POS_NONE
+} switch_img_position_t;
+
+
 typedef struct switch_yuv_color_s {
 	uint8_t y;
 	uint8_t u;
@@ -195,7 +209,7 @@ SWITCH_DECLARE(switch_status_t) switch_img_txt_handle_render(switch_img_txt_hand
 
 SWITCH_DECLARE(void) switch_img_patch_hole(switch_image_t *IMG, switch_image_t *img, int x, int y, switch_image_rect_t *rect);
 SWITCH_DECLARE(switch_image_t *) switch_img_read_png(const char* file_name);
-SWITCH_DECLARE(void) switch_img_write_png(switch_image_t *img, char* file_name);
+SWITCH_DECLARE(switch_status_t) switch_img_write_png(switch_image_t *img, char* file_name);
 
 SWITCH_DECLARE(void) switch_img_get_yuv_pixel(switch_image_t *img, switch_yuv_color_t *yuv, int x, int y);
 
@@ -203,6 +217,10 @@ SWITCH_DECLARE(void) switch_img_get_rgb_pixel(switch_image_t *img, switch_rgb_co
 
 SWITCH_DECLARE(void) switch_img_overlay(switch_image_t *IMG, switch_image_t *img, int x, int y, uint8_t alpha);
 
+SWITCH_DECLARE(switch_status_t) switch_img_scale(switch_image_t *src, switch_image_t **destP, int width, int height);
+SWITCH_DECLARE(switch_status_t) switch_img_fit(switch_image_t **srcP, int width, int height);
+SWITCH_DECLARE(switch_img_position_t) parse_img_position(const char *name);
+SWITCH_DECLARE(void) switch_img_find_position(switch_img_position_t pos, int sw, int sh, int iw, int ih, int *xP, int *yP);
 
 /** @} */
 

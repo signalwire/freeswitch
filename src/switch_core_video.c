@@ -33,6 +33,46 @@
 #include <switch_utf8.h>
 #include <libyuv.h>
 
+struct pos_el {
+	switch_img_position_t pos;
+	const char *name;
+};
+
+
+static struct pos_el POS_TABLE[] = {
+	{POS_LEFT_TOP, "left-top"},
+	{POS_LEFT_MID, "left-mid"},
+	{POS_LEFT_BOT, "left-bot"},
+	{POS_CENTER_TOP, "center-top"},
+	{POS_CENTER_MID, "center-mid"},
+	{POS_CENTER_BOT, "center-bot"},
+	{POS_RIGHT_TOP, "right-top"},
+	{POS_RIGHT_MID, "right-mid"},
+	{POS_RIGHT_BOT, "right-bot"},
+	{POS_NONE, NULL}
+};
+
+
+SWITCH_DECLARE(switch_img_position_t) parse_img_position(const char *name)
+{
+	switch_img_position_t r = POS_LEFT_TOP;
+	int i;
+
+	switch_assert(name);
+
+	for(i = 0; POS_TABLE[i].name; i++) {
+		if (!strcasecmp(POS_TABLE[i].name, name)) {
+			r = POS_TABLE[i].pos;
+			break;
+		}
+	}
+	
+	return r;
+}
+
+
+
+
 SWITCH_DECLARE(switch_image_t *)switch_img_alloc(switch_image_t  *img,
 						 switch_img_fmt_t fmt,
 						 unsigned int d_w,
@@ -582,7 +622,7 @@ SWITCH_DECLARE(switch_status_t) switch_img_txt_handle_render(switch_img_txt_hand
 
 	/* use 50pt at 100dpi */
 	error = FT_Set_Char_Size(face, 64 * font_size, 0, 96, 96); /* set character size */
-	if (error) {printf("WTF %d\n", __LINE__); return SWITCH_STATUS_FALSE;}
+	if (error) return SWITCH_STATUS_FALSE;
 
 	slot = face->glyph;
 
@@ -918,7 +958,7 @@ end:
 	return img;
 }
 
-SWITCH_DECLARE(void) switch_img_write_png(switch_image_t *img, char* file_name)
+SWITCH_DECLARE(switch_status_t) switch_img_write_png(switch_image_t *img, char* file_name)
 {
 	int width, height;
 	png_byte color_type;
@@ -930,6 +970,7 @@ SWITCH_DECLARE(void) switch_img_write_png(switch_image_t *img, char* file_name)
 	int y;
 	png_byte *buffer = NULL;
 	FILE *fp = NULL;
+	switch_status_t status = SWITCH_STATUS_FALSE;
 
 	width = img->d_w;
 	height = img->d_h;
@@ -1010,12 +1051,135 @@ SWITCH_DECLARE(void) switch_img_write_png(switch_image_t *img, char* file_name)
 
 	png_write_end(png_ptr, NULL);
 
+	status = SWITCH_STATUS_SUCCESS;
+
 end:
 
 	switch_safe_free(buffer);
 	switch_safe_free(row_pointers);
 	fclose(fp);
 	png_destroy_write_struct(&png_ptr, &info_ptr);
+
+	return status;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_img_fit(switch_image_t **srcP, int width, int height)
+{
+	switch_image_t *src, *tmp = NULL;
+	int new_w = 0, new_h = 0;
+	double img_aspect;
+
+	switch_assert(srcP);
+	switch_assert(width && height);
+
+	img_aspect = (double) src->d_w / src->d_h;
+
+	src = *srcP;
+
+	if (!src || (src->d_w <= width && src->d_h <= height)) {
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	new_w = src->d_w;
+	new_h = src->d_h;
+	
+	while(new_w > width || new_h > height) { 
+		if (new_w >= new_h) {
+			double m = (double) width / new_w;
+			new_w = width;
+			new_h = (int) (new_h * m * img_aspect);
+		} else {
+			double m = (double) height / new_h;
+			new_h = height;
+			new_w = (int) (new_w * m * img_aspect);
+		}
+	}
+
+	if (new_w && new_h) {
+		if (switch_img_scale(src, &tmp, new_w, new_h) == SWITCH_STATUS_SUCCESS) {
+			switch_img_free(&src);
+			*srcP = tmp;
+			return SWITCH_STATUS_SUCCESS;
+		}
+	}
+
+	return SWITCH_STATUS_FALSE;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_img_scale(switch_image_t *src, switch_image_t **destP, int width, int height)
+{
+	switch_image_t *dest = NULL;
+	int ret = 0;
+
+	if (destP) {
+		dest = *destP;
+	}
+
+	if (!dest) dest = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, width, height, 1);
+	
+	ret = I420Scale(src->planes[0], src->stride[0],
+					src->planes[1], src->stride[1],
+					src->planes[2], src->stride[2],
+					src->d_w, src->d_h,
+					dest->planes[0], dest->stride[0],
+					dest->planes[1], dest->stride[1],
+					dest->planes[2], dest->stride[2],
+					width, height,
+					kFilterBox);
+		
+
+	if (ret != 0) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Scaling Error: ret: %d\n", ret);
+		return SWITCH_STATUS_FALSE;
+	}
+
+	*destP = dest;
+	
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_DECLARE(void) switch_img_find_position(switch_img_position_t pos, int sw, int sh, int iw, int ih, int *xP, int *yP)
+{
+	switch(pos) {
+	case POS_NONE:
+	case POS_LEFT_TOP:
+		*xP = 0;
+		*yP = 0;
+		break;
+	case POS_LEFT_MID:
+		*xP = 0;
+		*yP = (sh - ih) / 2;
+		break;
+	case POS_LEFT_BOT:
+		*xP = 0;
+		*yP = (sh - ih);
+		break;
+	case POS_CENTER_TOP:
+		*xP = (sw - iw) / 2;
+		*yP = 0;
+		break;
+	case POS_CENTER_MID:
+		*xP = (sw - iw) / 2;
+		*yP = (sh - ih) / 2;
+		break;
+	case POS_CENTER_BOT:
+		*xP = (sw - iw) / 2;
+		*yP = (sh - ih);
+		break;
+	case POS_RIGHT_TOP:
+		*xP = (sw - iw);
+		*yP = 0;
+		break;
+	case POS_RIGHT_MID:
+		*xP = (sw - iw);
+		*yP = (sh - ih) / 2;
+		break;
+	case POS_RIGHT_BOT:	
+		*xP = (sw - iw);
+		*yP = (sh - ih);
+		break;
+	};
+
 }
 
 
