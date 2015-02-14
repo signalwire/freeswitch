@@ -224,7 +224,7 @@ typedef enum {
 	MFLAG_NO_POSITIONAL = (1 << 27),
 	MFLAG_JOIN_VID_FLOOR = (1 << 28),
 	MFLAG_RECEIVING_VIDEO = (1 << 29),
-	MFLAG_CAN_SEE = (1 << 30)
+	MFLAG_CAN_BE_SEEN = (1 << 30)
 } member_flag_t;
 
 typedef enum {
@@ -1673,7 +1673,7 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 				if (layer) {
 					switch_img_free(&layer->cur_img);
 
-					if (switch_test_flag(imember, MFLAG_CAN_SEE)) {
+					if (switch_test_flag(imember, MFLAG_CAN_BE_SEEN)) {
 						layer->mute_patched = 0;
 					} else {
 						switch_img_free(&img);
@@ -2936,7 +2936,7 @@ static switch_status_t conference_add_event_member_data(conference_member_t *mem
 	}
 
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Hear", "%s", switch_test_flag(member, MFLAG_CAN_HEAR) ? "true" : "false" );
-	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "See", "%s", switch_test_flag(member, MFLAG_CAN_SEE) ? "true" : "false" );
+	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "See", "%s", switch_test_flag(member, MFLAG_CAN_BE_SEEN) ? "true" : "false" );
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Speak", "%s", switch_test_flag(member, MFLAG_CAN_SPEAK) ? "true" : "false" );
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Talking", "%s", switch_test_flag(member, MFLAG_TALKING) ? "true" : "false" );
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Mute-Detect", "%s", switch_test_flag(member, MFLAG_MUTE_DETECT) ? "true" : "false" );
@@ -3310,7 +3310,7 @@ static void member_update_status_field(conference_member_t *member)
 	}
 	
 	if (switch_channel_test_flag(member->channel, CF_VIDEO)) {
-		if (!switch_test_flag(member, MFLAG_CAN_SEE)) {
+		if (!switch_test_flag(member, MFLAG_CAN_BE_SEEN)) {
 			vstr = " VIDEO (BLIND)";
 		} else {
 			vstr = " VIDEO";
@@ -4966,7 +4966,7 @@ static void conference_loop_fn_vmute_toggle(conference_member_t *member, caller_
 	if (member == NULL)
 		return;
 
-	if (switch_test_flag(member, MFLAG_CAN_SEE)) {
+	if (switch_test_flag(member, MFLAG_CAN_BE_SEEN)) {
 		conf_api_sub_vmute(member, NULL, NULL);
 	} else {
 		conf_api_sub_unvmute(member, NULL, NULL);
@@ -4975,14 +4975,14 @@ static void conference_loop_fn_vmute_toggle(conference_member_t *member, caller_
 
 static void conference_loop_fn_vmute_on(conference_member_t *member, caller_control_action_t *action)
 {
-	if (switch_test_flag(member, MFLAG_CAN_SEE)) {
+	if (switch_test_flag(member, MFLAG_CAN_BE_SEEN)) {
 		conf_api_sub_vmute(member, NULL, NULL);
 	}
 }
 
 static void conference_loop_fn_vmute_off(conference_member_t *member, caller_control_action_t *action)
 {
-	if (!switch_test_flag(member, MFLAG_CAN_SEE)) {
+	if (!switch_test_flag(member, MFLAG_CAN_BE_SEEN)) {
 		conf_api_sub_unvmute(member, NULL, NULL);
 	}
 }
@@ -7634,7 +7634,7 @@ static switch_status_t conf_api_sub_vmute(conference_member_t *member, switch_st
 	if (member == NULL)
 		return SWITCH_STATUS_GENERR;
 
-	switch_clear_flag_locked(member, MFLAG_CAN_SEE);
+	switch_clear_flag_locked(member, MFLAG_CAN_BE_SEEN);
 
 	if (!(data) || !strstr((char *) data, "quiet")) {
 		switch_set_flag(member, MFLAG_INDICATE_MUTE);
@@ -7663,7 +7663,7 @@ static switch_status_t conf_api_sub_tvmute(conference_member_t *member, switch_s
 	if (member == NULL)
 		return SWITCH_STATUS_GENERR;
 
-	if (switch_test_flag(member, MFLAG_CAN_SEE)) {
+	if (switch_test_flag(member, MFLAG_CAN_BE_SEEN)) {
 		return conf_api_sub_vmute(member, stream, data);
 	}
 
@@ -7678,7 +7678,7 @@ static switch_status_t conf_api_sub_unvmute(conference_member_t *member, switch_
 	if (member == NULL)
 		return SWITCH_STATUS_GENERR;
 
-	switch_set_flag_locked(member, MFLAG_CAN_SEE);
+	switch_set_flag_locked(member, MFLAG_CAN_BE_SEEN);
 
 	if (!(data) || !strstr((char *) data, "quiet")) {
 		switch_set_flag(member, MFLAG_INDICATE_UNMUTE);
@@ -10468,7 +10468,7 @@ static void set_mflags(const char *flags, member_flag_t *f)
 		char *argv[10] = { 0 };
 		int i, argc = 0;
 
-		*f |= MFLAG_CAN_SPEAK | MFLAG_CAN_HEAR | MFLAG_CAN_SEE;
+		*f |= MFLAG_CAN_SPEAK | MFLAG_CAN_HEAR | MFLAG_CAN_BE_SEEN;
 
 		for (p = dup; p && *p; p++) {
 			if (*p == ',') {
@@ -12102,7 +12102,7 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 		conference->perpetual_sound = switch_core_strdup(conference->pool, perpetual_sound);
 	}
 
-	conference->mflags = MFLAG_CAN_SPEAK | MFLAG_CAN_HEAR | MFLAG_CAN_SEE;
+	conference->mflags = MFLAG_CAN_SPEAK | MFLAG_CAN_HEAR | MFLAG_CAN_BE_SEEN;
 
 	if (!zstr(moh_sound) && switch_is_moh(moh_sound)) {
 		conference->moh_sound = switch_core_strdup(conference->pool, moh_sound);
