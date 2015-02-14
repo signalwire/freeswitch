@@ -39,7 +39,6 @@
  *
  */
 #include <switch.h>
-#include <libyuv.h>
 
 #ifdef OPENAL_POSITIONING
 #define AL_ALEXT_PROTOTYPES
@@ -361,6 +360,7 @@ struct vid_helper {
 	int up;
 };
 
+
 typedef struct mcu_layer_geometry_s {
 	int x;
 	int y;
@@ -386,6 +386,7 @@ typedef struct mcu_layer_s {
 	int y_pos;
 	int banner_patched;
 	int mute_patched;
+	switch_img_position_t logo_pos;
 	switch_image_t *img;
 	switch_image_t *cur_img;
 	switch_image_t *banner_img;
@@ -624,6 +625,7 @@ struct conference_member {
 	int video_codec_index;
 	int video_codec_id;
 	char *video_banner_text;
+	char *video_logo;
 	char *video_mute_png;
 };
 
@@ -643,6 +645,7 @@ typedef struct api_command {
 	char *pcommand;
 	char *psyntax;
 } api_command_t;
+
 
 /* Function Prototypes */
 static int setup_media(conference_member_t *member, conference_obj_t *conference);
@@ -754,7 +757,6 @@ typedef struct video_layout_node_s {
 typedef struct layout_group_s {
 	video_layout_node_t *layouts;
 } layout_group_t;
-
 
 
 static void conference_parse_layouts(conference_obj_t *conference)
@@ -940,7 +942,6 @@ static void reset_layer(mcu_canvas_t *canvas, mcu_layer_t *layer)
 
 static void scale_and_patch(conference_obj_t *conference, mcu_layer_t *layer, switch_image_t *ximg)
 {
-	int ret;
 	switch_image_t *IMG, *img;
 
 	switch_mutex_lock(conference->canvas->mutex);
@@ -968,17 +969,6 @@ static void scale_and_patch(conference_obj_t *conference, mcu_layer_t *layer, sw
 			y_pos += (layer->screen_h - img_h) / 2;
 		}
 
-		/*int I420Scale(const uint8* src_y, int src_stride_y,
-		  const uint8* src_u, int src_stride_u,
-		  const uint8* src_v, int src_stride_v,
-		  int src_width, int src_height,
-		  uint8* dst_y, int dst_stride_y,
-		  uint8* dst_u, int dst_stride_u,
-		  uint8* dst_v, int dst_stride_v,
-		  int dst_width, int dst_height,
-		  enum FilterMode filtering)
-		*/
-
 		if (layer->img && (layer->img->d_w != img_w || layer->img->d_h != img_h)) {
 			switch_img_free(&layer->img);
 			layer->banner_patched = 0;
@@ -994,30 +984,19 @@ static void scale_and_patch(conference_obj_t *conference, mcu_layer_t *layer, sw
 			layer->banner_patched = 1;
 		}
 
-		if (layer->logo_img) {
-			switch_img_patch(img, layer->logo_img, img->d_w - layer->logo_img->d_w, 0);
-		}
-
-		
 		switch_assert(layer->img);
 
-		//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "RESIZE %dx%d to %dx%d to fit in %dx%d and insert at %d,%d\n",
-		//				  img->d_w, img->d_h, img_w, img_h, screen_w, screen_h, x, y);
-
-		ret = I420Scale(img->planes[0], img->stride[0],
-						img->planes[1], img->stride[1],
-						img->planes[2], img->stride[2],
-						img->d_w, img->d_h,
-						layer->img->planes[0], layer->img->stride[0],
-						layer->img->planes[1], layer->img->stride[1],
-						layer->img->planes[2], layer->img->stride[2],
-						img_w, img_h,
-						kFilterBox);
-		
-		if (ret != 0) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Scaling Error: ret: %d\n", ret);
-		} else {
+		if (switch_img_scale(img, &layer->img, img_w, img_h) == SWITCH_STATUS_SUCCESS) {
 			switch_img_patch(IMG, layer->img, x_pos, y_pos);
+		}
+
+		if (layer->logo_img) {
+			int ew = layer->screen_w, eh = layer->screen_h - (layer->banner_img ? layer->banner_img->d_h : 0);
+			int ex = 0, ey = 0;
+
+			switch_img_fit(&layer->logo_img, ew, eh);
+			switch_img_find_position(layer->logo_pos, ew, eh, layer->logo_img->d_w, layer->logo_img->d_h, &ex, &ey);
+			switch_img_patch(IMG, layer->logo_img, x_pos + ex, y_pos + ey);
 		}
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "insert at %d,%d\n", 0, 0);
@@ -1074,6 +1053,87 @@ static void detach_video_layer(conference_member_t *member)
 	switch_mutex_unlock(member->conference->canvas->mutex);
 }
 
+
+static void layer_set_logo(conference_member_t *member, mcu_layer_t *layer, const char *path)
+{
+	const char *var = NULL;
+	char *dup = NULL;
+	switch_event_t *params = NULL;
+	char *parsed = NULL;
+	char *tmp;
+	switch_img_position_t pos = POS_LEFT_TOP;
+
+	switch_mutex_lock(member->conference->canvas->mutex);
+
+	if (!path) {
+		path = member->video_logo;
+	}
+	
+	if (!path) {
+		goto end;
+	}
+
+	if (*path == '{') {
+		dup = strdup(path);
+		path = dup;
+
+		if (switch_event_create_brackets((char *)path, '{', '}', ',', &params, &parsed, SWITCH_FALSE) != SWITCH_STATUS_SUCCESS || !parsed) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Parse Error!\n");
+		} else {
+			path = parsed;
+		}
+	}
+
+
+	if (zstr(path) || !strcasecmp(path, "reset")) {	
+		path = switch_channel_get_variable_dup(member->channel, "video_logo_path", SWITCH_FALSE, -1);
+	}
+	
+	if (zstr(path) || !strcasecmp(path, "clear")) {
+		switch_rgb_color_t color;
+
+		switch_img_free(&layer->banner_img);
+		layer->banner_patched = 0;
+		
+		switch_color_set_rgb(&color, member->conference->video_layout_bgcolor);
+		switch_img_fill(member->conference->canvas->img, layer->x_pos, layer->y_pos, layer->screen_w, layer->screen_h, &color);
+
+		goto end;
+	}
+
+	if ((tmp = strchr(path, '}'))) {
+		path = tmp + 1;
+	}
+
+
+	if (params) {
+		if ((var = switch_event_get_header(params, "position"))) {
+			pos = parse_img_position(var);
+		}
+	}
+
+
+	if (path) {
+		switch_img_free(&layer->logo_img);
+	}
+
+
+	if (path && strcasecmp(path, "clear")) {
+		layer->logo_img = switch_img_read_png(path);
+	}
+
+	layer->logo_pos = pos;
+	
+	if (params) switch_event_destroy(&params);
+
+	switch_safe_free(dup);
+
+ end:
+
+	switch_mutex_unlock(member->conference->canvas->mutex);
+
+}
+
 static void layer_set_banner(conference_member_t *member, mcu_layer_t *layer, const char *text)
 {
 	switch_rgb_color_t fgcolor, bgcolor;
@@ -1083,7 +1143,7 @@ static void layer_set_banner(conference_member_t *member, mcu_layer_t *layer, co
 	const char *bg = "#142e55";
 	char *parsed = NULL;
 	switch_event_t *params = NULL;
-	const char *font_face = "/usr/share/fonts/truetype/freefont/FreeSansOblique.ttf", *logo_png = NULL;
+	const char *font_face = "/usr/share/fonts/truetype/freefont/FreeSansOblique.ttf";
 	const char *var, *tmp = NULL;
 	char *dup = NULL;
 	
@@ -1117,8 +1177,6 @@ static void layer_set_banner(conference_member_t *member, mcu_layer_t *layer, co
 		switch_rgb_color_t color;
 
 		switch_img_free(&layer->banner_img);
-		switch_img_free(&layer->logo_img);
-		switch_img_free(&layer->mute_img);
 		layer->banner_patched = 0;
 		
 		switch_color_set_rgb(&color, member->conference->video_layout_bgcolor);
@@ -1145,10 +1203,6 @@ static void layer_set_banner(conference_member_t *member, mcu_layer_t *layer, co
 			font_face = var;
 		}
 
-		if ((var = switch_event_get_header(params, "logo_png"))) {
-			logo_png = var;
-		}
-
 		if ((var = switch_event_get_header(params, "font_scale"))) {
 			int tmp = atoi(var);
 
@@ -1167,10 +1221,6 @@ static void layer_set_banner(conference_member_t *member, mcu_layer_t *layer, co
 	switch_img_free(&layer->banner_img);
 	switch_img_free(&layer->logo_img);
 	layer->banner_img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, layer->screen_w, font_size * 2, 1);
-
-	if (logo_png) {
-		layer->logo_img = switch_img_read_png(logo_png);
-	}
 
 	if (layer->txthandle) {
 		switch_img_txt_handle_destroy(&layer->txthandle);
@@ -1197,7 +1247,7 @@ static switch_status_t attach_video_layer(conference_member_t *member, int idx)
 	switch_channel_t *channel = NULL;
 	const char *res_id = NULL;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	const char *banner = NULL;
+	const char *var = NULL;
 	switch_rgb_color_t color;
 	
 	if (!member->session) abort();
@@ -1233,8 +1283,14 @@ static switch_status_t attach_video_layer(conference_member_t *member, int idx)
 		}
 	}
 	
-	if (member->video_banner_text || (banner = switch_channel_get_variable_dup(channel, "video_banner_text", SWITCH_FALSE, -1))) {
-		layer_set_banner(member, layer, banner);
+	var = NULL;
+	if (member->video_banner_text || (var = switch_channel_get_variable_dup(channel, "video_banner_text", SWITCH_FALSE, -1))) {
+		layer_set_banner(member, layer, var);
+	}
+
+	var = NULL;
+	if (member->video_logo || (var = switch_channel_get_variable_dup(channel, "video_logo_path", SWITCH_FALSE, -1))) {
+		layer_set_logo(member, layer, var);
 	}
 
 	layer->member_id = member->id;
@@ -1444,7 +1500,7 @@ static void vmute_snap(conference_member_t *member, switch_bool_t clear)
 		layer = &member->conference->canvas->layers[member->video_layer_id];
 		switch_img_free(&layer->mute_img);
 		
-		if (!clear) {
+		if (!clear && layer->cur_img) {
 			switch_img_copy(layer->cur_img, &layer->mute_img);
 		}
 
@@ -1621,7 +1677,7 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 						layer->mute_patched = 0;
 					} else {
 						switch_img_free(&img);
-						if (imember->video_mute_png && !layer->mute_patched) {
+						if (!layer->mute_patched) {
 
 							if (imember->video_mute_png || layer->mute_img) {
 								reset_layer(conference->canvas, layer);
@@ -8034,6 +8090,29 @@ static switch_status_t conf_api_sub_vid_fps(conference_obj_t *conference, switch
 	
 }
 
+static switch_status_t conf_api_sub_write_png(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv)
+{
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	if (!argv[2]) {
+		stream->write_function(stream, "Invalid input\n");
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	if (!conference->canvas) {
+		stream->write_function(stream, "Conference is not in mixing mode\n");
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	switch_mutex_lock(conference->canvas->mutex);
+	status = switch_img_write_png(conference->canvas->img, argv[2]);
+	switch_mutex_unlock(conference->canvas->mutex);
+
+	stream->write_function(stream, "%s\n", status == SWITCH_STATUS_SUCCESS ? "+OK" : "-ERR");
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 static switch_status_t conf_api_sub_vid_layout(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv)
 {
 	video_layout_t *vlayout = NULL;
@@ -8293,13 +8372,14 @@ static switch_status_t conf_api_sub_vid_mute_img(conference_member_t *member, sw
 		return SWITCH_STATUS_FALSE;
 	}
 
-	switch_mutex_lock(member->conference->mutex);
+	switch_mutex_lock(member->conference->canvas->mutex);
 
 	if (member->video_layer_id == -1 || !member->conference->canvas) {
 		goto end;
 	}
 
 	member->video_mute_png = NULL;
+	layer = &member->conference->canvas->layers[member->video_layer_id];
 
 	if (text) {
 		switch_img_free(&layer->mute_img);
@@ -8307,14 +8387,49 @@ static switch_status_t conf_api_sub_vid_mute_img(conference_member_t *member, sw
 
 	if (text && strcasecmp(text, "clear")) {
 		member->video_mute_png = switch_core_strdup(member->pool, text);
-		layer = &member->conference->canvas->layers[member->video_layer_id];
 	}
 
  end:
 
 	stream->write_function(stream, "%s\n", member->video_mute_png ? member->video_mute_png : "_undef_");
 
-	switch_mutex_lock(member->conference->mutex);
+	switch_mutex_unlock(member->conference->canvas->mutex);
+
+	return SWITCH_STATUS_SUCCESS;
+
+}
+
+
+static switch_status_t conf_api_sub_vid_logo_img(conference_member_t *member, switch_stream_handle_t *stream, void *data)
+{
+	char *text = (char *) data;
+	mcu_layer_t *layer = NULL;
+
+	if (member == NULL)
+		return SWITCH_STATUS_GENERR;
+
+	if (!switch_channel_test_flag(member->channel, CF_VIDEO)) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	switch_mutex_lock(member->conference->canvas->mutex);
+
+	if (member->video_layer_id == -1 || !member->conference->canvas) {
+		goto end;
+	}
+
+	layer = &member->conference->canvas->layers[member->video_layer_id];
+
+	member->video_logo = switch_core_strdup(member->pool, text);
+
+	layer_set_logo(member, layer, text);
+
+ end:
+
+	stream->write_function(stream, "+OK\n");
+
+	switch_mutex_unlock(member->conference->canvas->mutex);
+
 	return SWITCH_STATUS_SUCCESS;
 
 }
@@ -9788,8 +9903,10 @@ static api_command_t conf_api_sub_commands[] = {
 	{"vid-floor", (void_fn_t) & conf_api_sub_vid_floor, CONF_API_SUB_MEMBER_TARGET, "vid-floor", "<member_id|last> [force]"},
 	{"vid-banner", (void_fn_t) & conf_api_sub_vid_banner, CONF_API_SUB_MEMBER_TARGET, "vid-banner", "<member_id|last> <text>"},
 	{"vid-mute-img", (void_fn_t) & conf_api_sub_vid_mute_img, CONF_API_SUB_MEMBER_TARGET, "vid-mute-img", "<member_id|last> [<path>|clear]"},
+	{"vid-logo-img", (void_fn_t) & conf_api_sub_vid_logo_img, CONF_API_SUB_MEMBER_TARGET, "vid-logo-img", "<member_id|last> [<path>|clear]"},
 	{"clear-vid-floor", (void_fn_t) & conf_api_sub_clear_vid_floor, CONF_API_SUB_ARGS_AS_ONE, "clear-vid-floor", ""},
 	{"vid-layout", (void_fn_t) & conf_api_sub_vid_layout, CONF_API_SUB_ARGS_SPLIT, "vid-layout", "<layout name>"},
+	{"vid-write-png", (void_fn_t) & conf_api_sub_write_png, CONF_API_SUB_ARGS_SPLIT, "vid-write-png", "<path>"},
 	{"vid-fps", (void_fn_t) & conf_api_sub_vid_fps, CONF_API_SUB_ARGS_SPLIT, "vid-fps", "<fps>"},
 	{"vid-bandwidth", (void_fn_t) & conf_api_sub_vid_bandwidth, CONF_API_SUB_ARGS_SPLIT, "vid-bandwidth", "<BW>"}
 };
