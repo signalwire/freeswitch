@@ -1072,14 +1072,13 @@ SWITCH_DECLARE(switch_status_t) switch_img_fit(switch_image_t **srcP, int width,
 	switch_assert(srcP);
 	switch_assert(width && height);
 
-	img_aspect = (double) src->d_w / src->d_h;
-
 	src = *srcP;
 
 	if (!src || (src->d_w <= width && src->d_h <= height)) {
 		return SWITCH_STATUS_SUCCESS;
 	}
 
+	img_aspect = (double) src->d_w / src->d_h;
 	new_w = src->d_w;
 	new_h = src->d_h;
 	
