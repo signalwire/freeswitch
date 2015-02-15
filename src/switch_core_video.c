@@ -722,6 +722,109 @@ SWITCH_DECLARE(void) switch_img_patch_hole(switch_image_t *IMG, switch_image_t *
 #define PNG_SKIP_SETJMP_CHECK
 #include <png.h>
 
+#ifdef PNG_SIMPLIFIED_READ_SUPPORTED /* available from libpng 1.6.0 */
+
+SWITCH_DECLARE(switch_status_t) switch_img_patch_png(switch_image_t *img, int x, int y, const char *file_name)
+{
+	png_image png = { 0 };
+	png_bytep buffer = NULL;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	switch_rgb_color_t *rgb_color;
+	switch_yuv_color_t yuv_color;
+	uint8_t alpha;
+	int i, j;
+
+	png.version = PNG_IMAGE_VERSION;
+
+	if (!png_image_begin_read_from_file(&png, file_name)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error read PNG %s\n", file_name);
+		switch_goto_status(SWITCH_STATUS_FALSE, end);
+	}
+
+	// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "png format: %d, size: %dx%d\n", png.format, png.width, png.height);
+	// if (png.format | PNG_FORMAT_FLAG_ALPHA) {
+	// 	printf("Alpha\n");
+	// }
+
+	png.format = PNG_FORMAT_RGBA;
+
+	buffer = malloc(PNG_IMAGE_SIZE(png));
+	switch_assert(buffer);
+
+	if (!png_image_finish_read(&png, NULL/*background*/, buffer, 0, NULL)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error read PNG %s\n", file_name);
+		switch_goto_status(SWITCH_STATUS_FALSE, end);
+	}
+
+	for (i = 0; i < png.height; i++) {
+		for (j = 0; j < png.width; j++) {
+			alpha = buffer[i * png.width * 4 + j * 4 + 3];
+			// printf("%d, %d alpha: %d\n", j, i, alpha);
+
+			if (alpha) { // todo, mux alpha with the underlying pixel
+				rgb_color = (switch_rgb_color_t *)(buffer + i * png.width * 4 + j * 4);
+				switch_color_rgb2yuv(rgb_color, &yuv_color);
+				switch_img_draw_pixel(img, x + j, i, &yuv_color);
+			}
+		}
+	}
+
+end:
+	png_image_free(&png);
+	switch_safe_free(buffer);
+	return status;
+}
+
+SWITCH_DECLARE(switch_image_t *) switch_img_read_png(const char* file_name)
+{
+	png_image png = { 0 };
+	png_bytep buffer = NULL;
+	switch_image_t *img = NULL;
+
+	png.version = PNG_IMAGE_VERSION;
+
+	if (!png_image_begin_read_from_file(&png, file_name)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error open png: %s\n", file_name);
+		goto err;
+	}
+
+	png.format = PNG_FORMAT_RGB;
+	buffer = malloc(PNG_IMAGE_SIZE(png));
+	switch_assert(buffer);
+
+	if (!png_image_finish_read(&png, NULL/*background*/, buffer, 0, NULL)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error read png: %s\n", file_name);
+		goto err;
+	}
+
+	if (png.width > SWITCH_IMG_MAX_WIDTH || png.height > SWITCH_IMG_MAX_HEIGHT) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "PNG is too large! %dx%d\n", png.width, png.height);
+		goto err;
+	}
+
+	img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, png.width, png.height, 1);
+	switch_assert(img);
+
+	RAWToI420(buffer, png.width * 3,
+		img->planes[SWITCH_PLANE_Y], img->stride[SWITCH_PLANE_Y],
+		img->planes[SWITCH_PLANE_U], img->stride[SWITCH_PLANE_U],
+		img->planes[SWITCH_PLANE_V], img->stride[SWITCH_PLANE_V],
+		png.width, png.height);
+
+err:
+	png_image_free(&png);
+	switch_safe_free(buffer);
+	return img;
+}
+
+#else /* libpng < 1.6.0 */
+
+SWITCH_DECLARE(switch_status_t) switch_img_patch_png(switch_image_t *img, int x, int y, const char *file_name)
+{
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "This function is not implemented on libpng < 1.6.0\n");
+	return SWITCH_STATUS_FALSE;
+}
+
 // ref: most are out-dated, man libpng :)
 // http://zarb.org/~gc/html/libpng.html
 // http://www.libpng.org/pub/png/book/toc.html
@@ -958,6 +1061,42 @@ end:
 	return img;
 }
 
+#endif
+
+
+#ifdef PNG_SIMPLIFIED_WRITE_SUPPORTED /* available from libpng 1.6.0 */
+
+SWITCH_DECLARE(switch_status_t) switch_img_write_png(switch_image_t *img, char* file_name)
+{
+	png_image png = { 0 };
+	png_bytep buffer = NULL;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+
+	buffer = malloc(img->d_w * img->d_h * 3);
+	switch_assert(buffer);
+
+	I420ToRAW(  img->planes[SWITCH_PLANE_Y], img->stride[SWITCH_PLANE_Y],
+				img->planes[SWITCH_PLANE_U], img->stride[SWITCH_PLANE_U],
+				img->planes[SWITCH_PLANE_V], img->stride[SWITCH_PLANE_V],
+				buffer, img->d_w * 3,
+				img->d_w, img->d_h);
+
+	png.version = PNG_IMAGE_VERSION;
+	png.format = PNG_FORMAT_RGB;
+	png.width = img->d_w;
+	png.height = img->d_h;
+
+	if (!png_image_write_to_file(&png, file_name, 0, buffer, 0, NULL)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error write PNG %s\n", file_name);
+		status = SWITCH_STATUS_FALSE;
+	}
+
+	switch_safe_free(buffer);
+	return status;
+}
+
+#else
+
 SWITCH_DECLARE(switch_status_t) switch_img_write_png(switch_image_t *img, char* file_name)
 {
 	int width, height;
@@ -1062,6 +1201,8 @@ end:
 
 	return status;
 }
+
+#endif
 
 SWITCH_DECLARE(switch_status_t) switch_img_fit(switch_image_t **srcP, int width, int height)
 {
