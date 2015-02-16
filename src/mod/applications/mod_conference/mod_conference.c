@@ -921,10 +921,15 @@ static void reset_image(switch_image_t *img, switch_rgb_color_t *color)
 
 #define SCALE_FACTOR 360.0f
 
+/* clear layer and reset_layer called inside lock always */
+
+static void clear_layer(mcu_canvas_t *canvas, mcu_layer_t *layer)
+{
+	switch_img_fill(canvas->img, layer->x_pos, layer->y_pos, layer->screen_w, layer->screen_h, &canvas->bgcolor);
+}
+
 static void reset_layer(mcu_canvas_t *canvas, mcu_layer_t *layer)
 {
-	/* called inside lock always */
-
 	layer->tagged = 0;
 
 	switch_img_free(&layer->banner_img);
@@ -936,7 +941,7 @@ static void reset_layer(mcu_canvas_t *canvas, mcu_layer_t *layer)
 	layer->img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, layer->screen_w, layer->screen_h, 1);
 	switch_assert(layer->img);
 
-	switch_img_fill(canvas->img, layer->x_pos, layer->y_pos, layer->screen_w, layer->screen_h, &canvas->bgcolor);
+	clear_layer(canvas, layer);
 	switch_img_free(&layer->cur_img);
 }
 
@@ -7674,9 +7679,17 @@ static switch_status_t conf_api_sub_tvmute(conference_member_t *member, switch_s
 static switch_status_t conf_api_sub_unvmute(conference_member_t *member, switch_stream_handle_t *stream, void *data)
 {
 	switch_event_t *event;
+	mcu_layer_t *layer = NULL;
 
 	if (member == NULL)
 		return SWITCH_STATUS_GENERR;
+
+	if (member->conference->canvas) {
+		switch_mutex_lock(member->conference->canvas->mutex);
+		layer = &member->conference->canvas->layers[member->video_layer_id];
+		clear_layer(member->conference->canvas, layer);
+		switch_mutex_unlock(member->conference->canvas->mutex);
+	}
 
 	switch_set_flag_locked(member, MFLAG_CAN_BE_SEEN);
 
