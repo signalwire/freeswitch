@@ -85,7 +85,39 @@ struct vpx_context {
 typedef struct vpx_context vpx_context_t;
 
 
-static switch_status_t init_codec(switch_codec_t *codec)
+static switch_status_t init_decoder(switch_codec_t *codec)
+{
+	vpx_context_t *context = (vpx_context_t *)codec->private_info;
+	if (context->flags & SWITCH_CODEC_FLAG_DECODE && !context->decoder_init) {
+		vp8_postproc_cfg_t ppcfg;
+		
+		//if (context->decoder_init) {
+		//	vpx_codec_destroy(&context->decoder);
+		//	context->decoder_init = 0;
+		//}
+
+		if (vpx_codec_dec_init(&context->decoder, decoder_interface, NULL, VPX_CODEC_USE_POSTPROC) != VPX_CODEC_OK) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec init error: [%d:%s]\n", context->encoder.err, context->encoder.err_detail);
+			return SWITCH_STATUS_FALSE;
+		}
+
+		context->decoder_init = 1;
+
+		// the types of post processing to be done, should be combination of "vp8_postproc_level"
+		ppcfg.post_proc_flag = VP8_DEMACROBLOCK | VP8_DEBLOCK;
+		// the strength of deblocking, valid range [0, 16]
+		ppcfg.deblocking_level = 3;
+		// Set deblocking settings
+		vpx_codec_control(&context->decoder, VP8_SET_POSTPROC, &ppcfg);
+
+		switch_buffer_create_dynamic(&context->vpx_packet_buffer, 512, 512, 1024000);
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
+static switch_status_t init_encoder(switch_codec_t *codec)
 {
 	vpx_context_t *context = (vpx_context_t *)codec->private_info;
 	vpx_codec_enc_cfg_t *config = &context->config;
@@ -215,31 +247,6 @@ static switch_status_t init_codec(switch_codec_t *codec)
 		//vpx_codec_control(&context->encoder, VP8E_SET_MAX_INTRA_BITRATE_PCT, 0);
 	}
 
-	if (context->flags & SWITCH_CODEC_FLAG_DECODE && !context->decoder_init) {
-		vp8_postproc_cfg_t ppcfg;
-
-		//if (context->decoder_init) {
-		//	vpx_codec_destroy(&context->decoder);
-		//	context->decoder_init = 0;
-		//}
-
-		if (vpx_codec_dec_init(&context->decoder, decoder_interface, NULL, VPX_CODEC_USE_POSTPROC) != VPX_CODEC_OK) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec init error: [%d:%s]\n", context->encoder.err, context->encoder.err_detail);
-			return SWITCH_STATUS_FALSE;
-		}
-
-		context->decoder_init = 1;
-
-		// the types of post processing to be done, should be combination of "vp8_postproc_level"
-		ppcfg.post_proc_flag = VP8_DEMACROBLOCK | VP8_DEBLOCK;
-		// the strength of deblocking, valid range [0, 16]
-		ppcfg.deblocking_level = 3;
-		// Set deblocking settings
-		vpx_codec_control(&context->decoder, VP8_SET_POSTPROC, &ppcfg);
-
-		switch_buffer_create_dynamic(&context->vpx_packet_buffer, 512, 512, 1024000);
-	}
-
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -274,9 +281,8 @@ static switch_status_t switch_vpx_init(switch_codec_t *codec, switch_codec_flag_
 	}
 
 	/* start with 4k res cos otherwise you can't reset without re-init the whole codec */
-	context->codec_settings.video.width = 3840;
-	context->codec_settings.video.height = 2160;
-	init_codec(codec);
+	context->codec_settings.video.width = 320;
+	context->codec_settings.video.height = 240;
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -377,6 +383,19 @@ static switch_status_t consume_partition(vpx_context_t *context, switch_frame_t 
 	}
 }
 
+static void reset_codec_encoder(switch_codec_t *codec)
+{
+	vpx_context_t *context = (vpx_context_t *)codec->private_info;
+
+	if (context->encoder_init) {
+		vpx_codec_destroy(&context->encoder);
+	}
+	context->framesum = 0;
+	context->framecount = 0;
+	context->encoder_init = 0;
+	init_encoder(codec);
+}
+
 static switch_status_t switch_vpx_encode(switch_codec_t *codec, switch_frame_t *frame)
 {
 	vpx_context_t *context = (vpx_context_t *)codec->private_info;
@@ -390,16 +409,9 @@ static switch_status_t switch_vpx_encode(switch_codec_t *codec, switch_frame_t *
 	}
 
 	if (context->need_encoder_reset != 0) {
-		vpx_codec_destroy(&context->encoder);
-		context->framesum = 0;
-		context->framecount = 0;
-		context->encoder_init = 0;
-		init_codec(codec);
+		reset_codec_encoder(codec);
 		context->need_encoder_reset = 0;
 	}
-
-	//d_w and d_h are messed up
-	//printf("WTF %d %d\n", frame->img->d_w, frame->img->d_h);
 
 	if (frame->img->d_h > 1) {
 		width = frame->img->d_w;
@@ -409,26 +421,23 @@ static switch_status_t switch_vpx_encode(switch_codec_t *codec, switch_frame_t *
 		height = frame->img->h;
 	}
 
-	//switch_assert(width > 0 && (width % 4 == 0));
-	//switch_assert(height > 0 && (height % 4 == 0));
-
 	if (context->config.g_w != width || context->config.g_h != height) {
 		context->codec_settings.video.width = width;
 		context->codec_settings.video.height = height;
-		init_codec(codec);
+		reset_codec_encoder(codec);
 		frame->flags |= SFF_PICTURE_RESET;
 		context->need_key_frame = 1;
 	}
 
 	
 	if (!context->encoder_init) {
-		init_codec(codec);
+		init_encoder(codec);
 	}
 
 	if (context->change_bandwidth) {
 		context->codec_settings.video.bandwidth = context->change_bandwidth;
 		context->change_bandwidth = 0;
-		init_codec(codec);
+		init_encoder(codec);
 	}
 
 	if (context->need_key_frame != 0) {
@@ -546,17 +555,15 @@ static switch_status_t switch_vpx_decode(switch_codec_t *codec, switch_frame_t *
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	int is_keyframe = ((*(unsigned char *)frame->data) & 0x01) ? 0 : 1;
 
-
-
 	if (context->need_decoder_reset != 0) {
 		vpx_codec_destroy(&context->decoder);
 		context->decoder_init = 0;
-		init_codec(codec);
+		init_decoder(codec);
 		context->need_decoder_reset = 0;
 	}
 	
 	if (!context->decoder_init) {
-		init_codec(codec);
+		init_decoder(codec);
 	}
 
 	if (!context->decoder_init) {
