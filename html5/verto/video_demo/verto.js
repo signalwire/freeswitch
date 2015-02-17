@@ -554,18 +554,13 @@ function doshare(on) {
     if (share_call) {
         return;
     }
-
-
-    console.error("WTF???");
+    console.log("Attempting Screen Capture....");
     getScreenId(function (error, sourceId, screen_constraints) {
-	console.error(error, sourceId, screen_constraints);
-
-	verto.videoParams(screen_constraints.video.mandatory);
-
 	share_call = verto.newCall({
             destination_number: $("#ext").val(),
-            caller_id_name: $("#name").val(),
-            caller_id_number: $("#cid").val(),
+            caller_id_name: $("#name").val() + " (Screen)",
+            caller_id_number: "screen",
+	    videoParams: screen_constraints.video.mandatory,
             useVideo: true,
 	    screenShare: true
 	});
