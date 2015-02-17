@@ -270,7 +270,7 @@ static void print_session(sdp_printer_t *p, sdp_session_t const *sdp)
 {
   p->pr_ok = 1;
 
-  if (p->pr_ok && sdp->sdp_version)
+  if (p->pr_ok)
     print_version(p, sdp->sdp_version);
   if (p->pr_ok && sdp->sdp_origin)
     print_origin(p, sdp->sdp_origin);
