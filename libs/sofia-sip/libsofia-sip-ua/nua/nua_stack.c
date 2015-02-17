@@ -877,7 +877,7 @@ void nua_stack_shutdown(nua_t *nua)
   if (status >= 200) {
     for (nh = nua->nua_handles; nh; nh = nh_next) {
       nh_next = nh->nh_next;
-      while (nh->nh_ds && nh->nh_ds->ds_usage) {
+      while (nh->nh_ds->ds_usage) {
 	nua_dialog_usage_remove(nh, nh->nh_ds, nh->nh_ds->ds_usage, NULL, NULL);
       }
     }
@@ -1096,7 +1096,7 @@ sip_replaces_t *nua_stack_handle_make_replaces(nua_handle_t *nh,
 					       su_home_t *home,
 					       int early_only)
 {
-  if (nh && nh->nh_ds && nh->nh_ds->ds_leg)
+  if (nh && nh->nh_ds->ds_leg)
     return nta_leg_make_replaces(nh->nh_ds->ds_leg, home, early_only);
   else
     return NULL;
