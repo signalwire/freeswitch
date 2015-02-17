@@ -90,24 +90,6 @@ static void handle_SIGILL(int sig)
 	return;
 }
 
-#ifndef WIN32
-
-static void handle_SIGCHLD(int sig)
-{
-	int status = 0;
-	int pid = 0;
-
-	if (sig) {};
-
-	pid = wait(&status);
-	if (pid > 0) {
-		system_ready = -1;
-	}
-
-	return;
-}
-#endif
-
 /* kill a freeswitch process running in background mode */
 static int freeswitch_kill_background()
 {
@@ -1088,8 +1070,6 @@ int main(int argc, char *argv[])
 			fprintf(stderr, "System Error!\n");
 			exit(-1);
 		}
-
-		signal(SIGCHLD, handle_SIGCHLD);
 	}
 #endif
 
