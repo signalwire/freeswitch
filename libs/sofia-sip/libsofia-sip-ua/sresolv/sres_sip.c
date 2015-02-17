@@ -516,7 +516,7 @@ sres_sip_url_transport(url_t const *uri)
   if (len >= sizeof parameter)
     return -1;
 
-  for (i = 0; sres_sip_tports[i].stp_name; i++) {
+  for (i = 0; *sres_sip_tports[i].stp_name; i++) {
     if (su_casematch(parameter, sres_sip_tports[i].stp_name))
       return sres_sip_tports[i].stp_number;
   }
