@@ -35,6 +35,21 @@ if [ "`id -u`" = "0" ]; then
     fi
 fi
 
+if [ "${UNAME}" = "Darwin" ]; then
+    if [ -d ~/src/depot_tools ]; then
+	export PATH=$PATH:~/src/depot_tools
+    fi
+    if [ -d "/Applications/Chromium.app" ]; then
+	alias chromium='CHROME_LOG_FILE=chrome.log /Applications/Chromium.app/Contents/MacOS/Chromium --args --enable-usermedia-screen-capturing --usermedia-screen-capturing  --enable-logging --v=1 --vmodule=*source*/talk/*=5 2>&1 | tee console.log'
+    fi
+    if [ -d "/Applications/Google Chrome Canary.app" ]; then
+	alias canary='CHROME_LOG_FILE=chrome.log /Applications/Google\ Chrome\ Canary.app/Contents/MacOS/Google\ Chrome\ Canary --args --enable-usermedia-screen-capturing --usermedia-screen-capturing  --enable-logging --v=1 --vmodule=*source*/talk/*=5 2>&1 | tee console.log'
+    fi
+    if [ -d "/Applications/Google Chrome.app" ]; then
+	alias chrome='CHROME_LOG_FILE=chrome.log /Applications/Google\ Chrome.app/Concd outtents/MacOS/Google\ Chrome --args --enable-usermedia-screen-capturing --usermedia-screen-capturing  --enable-logging --v=1 --vmodule=*source*/talk/*=5 2>&1 | tee console.log'
+    fi
+fi
+
 if [ ! -f ~/.inputrc ]; then
     export INPUTRC="/etc/inputrc"
 fi
@@ -66,8 +81,11 @@ alias fstop='top -p `cat /usr/local/freeswitch/run/freeswitch.pid`'
 alias fsgdb='gdb /usr/local/freeswitch/bin/freeswitch `cat /usr/local/freeswitch/run/freeswitch.pid`'
 alias fscore='gdb /usr/local/freeswitch/bin/freeswitch `ls -rt core.* | tail -n1`'
 alias emacs='emacs -nw'
-alias jitteron='tc qdisc add dev eth0 root handle 1: netem delay 40ms 20ms ; tc qdisc add dev eth0 parent 1:1 pfifo limit 1000'
-alias jitteroff='tc qdisc del dev eth0 root netem'
+
+if [ "${UNAME}" = "Linux" ]; then
+    alias jitteron='tc qdisc add dev eth0 root handle 1: netem delay 40ms 20ms ; tc qdisc add dev eth0 parent 1:1 pfifo limit 1000'
+    alias jitteroff='tc qdisc del dev eth0 root netem'
+fi
 
 # Auto Update the .bashrc if hostname contains freeswitch.org
 if [[ $(hostname) =~ "freeswitch.org" ]]; then
