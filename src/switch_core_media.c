@@ -2253,6 +2253,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_write_frame(switch_core_sessio
 
 	engine = &smh->engines[type];
 
+
+	if (switch_channel_test_flag(session->channel, CF_VIDEO_ONLY) && type == SWITCH_MEDIA_TYPE_AUDIO) {
+		return SWITCH_STATUS_SUCCESS;
+	}  
+
 	while (!(engine->read_codec.implementation && switch_rtp_ready(engine->rtp_session))) {
 		if (switch_channel_ready(session->channel)) {
 			switch_yield(10000);
@@ -6754,7 +6759,6 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 		switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=msid-semantic: WMS %s\n", smh->msid);
 	}
 
-
 	if (a_engine->codec_negotiated) {
 		switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "m=audio %d %s", port, 
 						get_media_profile_name(session, !a_engine->no_crypto && 
@@ -7035,7 +7039,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 		}
 
 	}
-	
+
 	if (switch_channel_test_flag(session->channel, CF_VIDEO_POSSIBLE)) {
 		if (switch_channel_direction(session->channel) == SWITCH_CALL_DIRECTION_INBOUND) {
 			if (switch_channel_test_flag(smh->session->channel, CF_DTLS)) {

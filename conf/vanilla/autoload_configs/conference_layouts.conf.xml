@@ -2,7 +2,7 @@
   <layout-settings>
     <layouts>
       <layout name="1x1">
-	<image x="0" y="0" scale="360"/>
+	<image x="0" y="0" scale="360" floor="true"/>
       </layout>
       <layout name="1x2">
 	<image x="90" y="0" scale="180"/>
