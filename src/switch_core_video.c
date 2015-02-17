@@ -856,30 +856,30 @@ SWITCH_DECLARE(switch_image_t *) switch_img_read_png(const char* file_name)
 	/* open file and test for it being a png */
 	FILE *fp = fopen(file_name, "rb");
 	if (!fp) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "File %s could not be opened for reading", file_name);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "File %s could not be opened for reading\n", file_name);
 		goto end;
 	}
 
 	fread(header, 1, 8, fp);
 	if (png_sig_cmp(header, 0, 8)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "File %s is not recognized as a PNG file", file_name);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "File %s is not recognized as a PNG file\n", file_name);
 		goto end;
 	}
 
 	png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
 	if (!png_ptr) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "png_create_read_struct failed");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "png_create_read_struct failed\n");
 		goto end;
 	}
 
 	info_ptr = png_create_info_struct(png_ptr);
 	if (!info_ptr) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "png_create_info_struct failed");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "png_create_info_struct failed\n");
 		goto end;
 	}
 
 	if (setjmp(png_jmpbuf(png_ptr))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error during init_io");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error during init_io\n");
 		goto end;
 	}
 

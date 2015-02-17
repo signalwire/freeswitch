@@ -1078,6 +1078,10 @@ static void layer_set_logo(conference_member_t *member, mcu_layer_t *layer, cons
 		goto end;
 	}
 
+	if (path) {
+		switch_img_free(&layer->logo_img);
+	}
+
 	if (*path == '{') {
 		dup = strdup(path);
 		path = dup;
@@ -1116,12 +1120,6 @@ static void layer_set_logo(conference_member_t *member, mcu_layer_t *layer, cons
 			pos = parse_img_position(var);
 		}
 	}
-
-
-	if (path) {
-		switch_img_free(&layer->logo_img);
-	}
-
 
 	if (path && strcasecmp(path, "clear")) {
 		layer->logo_img = switch_img_read_png(path);
@@ -8432,8 +8430,10 @@ static switch_status_t conf_api_sub_vid_logo_img(conference_member_t *member, sw
 	}
 
 	layer = &member->conference->canvas->layers[member->video_layer_id];
-
-	member->video_logo = switch_core_strdup(member->pool, text);
+	
+	if (!strcasecmp(text, "clear")) {
+		member->video_logo = switch_core_strdup(member->pool, text);
+	}
 
 	layer_set_logo(member, layer, text);
 
