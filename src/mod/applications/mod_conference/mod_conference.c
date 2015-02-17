@@ -11363,10 +11363,17 @@ SWITCH_STANDARD_APP(conference_function)
 	/* Chime in the core video thread */
 	switch_core_session_set_video_read_callback(session, video_thread_callback, (void *)&member);
 
-	/* Run the conference loop */
-	do {
-		conference_loop_output(&member);
-	} while (member.loop_loop);
+	if (switch_channel_test_flag(channel, CF_VIDEO_ONLY)) {
+		while(switch_test_flag((&member), MFLAG_RUNNING) && switch_channel_ready(channel)) {
+			switch_yield(100000);
+		}
+	} else {
+
+		/* Run the conference loop */
+		do {
+			conference_loop_output(&member);
+		} while (member.loop_loop);
+	}
 
 	switch_core_session_set_video_read_callback(session, NULL, NULL);
 

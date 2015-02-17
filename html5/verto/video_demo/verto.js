@@ -1,5 +1,6 @@
 'use strict';
 var cur_call = null;
+var share_call = null;
 var confMan = null;
 var verto;
 var ringing = false;
@@ -318,8 +319,30 @@ var callbacks = {
     },
 
     onDialogState: function(d) {
-        cur_call = d;
 
+	//console.error(d, share_call, d == share_call, d.state);
+
+	if (d == share_call) {
+            switch (d.state) {
+            case $.verto.enum.state.early:
+            case $.verto.enum.state.active:
+		$("#nosharebtn").show();
+		$("#sharebtn").hide();
+		break;
+            case $.verto.enum.state.destroy:
+		$("#nosharebtn").hide();
+		$("#sharebtn").show();
+		share_call = null;
+		break;
+	    }
+
+	    return;
+	}
+
+	if (!cur_call) {
+            cur_call = d;
+	}
+	
 	if (d.state == $.verto.enum.state.ringing) {
 	    ringing = true;
 	} else {
@@ -515,9 +538,68 @@ function docall() {
     });
 }
 
+
+function doshare(on) {
+    //$('#ext').trigger('change');
+
+    if (!on) {
+	if (share_call) {
+	    share_call.hangup();
+	    share_call = null;
+	    return;
+	}
+    }
+
+
+    if (share_call) {
+        return;
+    }
+
+
+    console.error("WTF???");
+    getScreenId(function (error, sourceId, screen_constraints) {
+	console.error(error, sourceId, screen_constraints);
+
+	verto.videoParams(screen_constraints.video.mandatory);
+
+	share_call = verto.newCall({
+            destination_number: $("#ext").val(),
+            caller_id_name: $("#name").val(),
+            caller_id_number: $("#cid").val(),
+            useVideo: true,
+	    screenShare: true
+	});
+
+    });
+
+
+
+    //$("#main_info").html("Trying");
+
+    //check_vid_res();
+
+    //cur_share = verto.newCall({
+    //    destination_number: $("#ext").val(),
+    //    caller_id_name: $("#name").val(),
+    //    caller_id_number: $("#cid").val(),
+    //    useVideo: check_vid(),
+    //    useStereo: $("#use_stereo").is(':checked')
+    //});
+}
+
 $("#callbtn").click(function() {
     docall();
 });
+
+$("#sharebtn").click(function() {
+    doshare(true);
+});
+
+$("#nosharebtn").click(function() {
+    doshare(false);
+});
+
+$("#nosharebtn").hide();
 
 function pop(id, cname, dft) {
     var tmp = $.cookie(cname) || dft;
