@@ -1,6 +1,6 @@
 /*
  * mod_rayo for FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2013-2014, Grasshopper
+ * Copyright (C) 2013-2015, Grasshopper
  *
  * Version: MPL 1.1
  *
@@ -383,6 +383,8 @@ static int validate_call_input(iks *input, const char **error)
 {
 	iks *grammar;
 	const char *content_type;
+	int has_grammar = 0;
+	int use_mrcp = 0;
 
 	/* validate input attributes */
 	if (!VALIDATE_RAYO_INPUT(input)) {
@@ -390,23 +392,45 @@ static int validate_call_input(iks *input, const char **error)
 		return 0;
 	}
 
-	/* missing grammar */
-	grammar = iks_find(input, "grammar");
-	if (!grammar) {
+	use_mrcp = !strncmp("unimrcp", iks_find_attrib(input, "recognizer") ? iks_find_attrib(input, "recognizer") : globals.default_recognizer, 7);
+
+	/* validate grammar elements */
+	for (grammar = iks_find(input, "grammar"); grammar; grammar = iks_next_tag(grammar)) {
+		/* is this a grammar? */
+		if (strcmp("grammar", iks_name(grammar))) {
+			continue;
+		}
+		content_type = iks_find_attrib(grammar, "content-type");
+		if (zstr(content_type)) {
+			/* grammar URL */
+			if (zstr(iks_find_attrib(grammar, "url"))) {
+				*error = "url or content-type must be set";
+				return 0;
+			} else if (!use_mrcp) {
+				*error = "url only supported with unimrcp recognizer";
+				return 0;
+			}
+		} else {
+			/* inline grammar / only support srgs */
+			if (!zstr(iks_find_attrib(grammar, "url"))) {
+				*error = "url not allowed with content-type";
+				return 0;
+			} else if (strcmp("application/srgs+xml", content_type)) {
+				*error = "Unsupported content type";
+				return 0;
+			}
+
+			/* missing inline grammar body */
+			if (zstr(iks_find_cdata(input, "grammar"))) {
+				*error = "Grammar content is missing";
+				return 0;
+			}
+		}
+		has_grammar = 1;
+	}
+
+	if (!has_grammar) {
 		*error = "Missing <grammar>";
-		return 0;
-	}
-
-	/* only support srgs */
-	content_type = iks_find_attrib(grammar, "content-type");
-	if (!zstr(content_type) && strcmp("application/srgs+xml", content_type)) {
-		*error = "Unsupported content type";
-		return 0;
-	}
-
-	/* missing grammar body */
-	if (zstr(iks_find_cdata(input, "grammar"))) {
-		*error = "Grammar content is missing";
 		return 0;
 	}
 
@@ -512,30 +536,35 @@ static char *setup_grammars_unimrcp(struct input_component *component, switch_co
 			continue;
 		}
 
-		/* get the srgs contained in this grammar */
-		if (!(grammar_cdata = iks_child(grammar_tag)) || iks_type(grammar_cdata) != IKS_CDATA) {
-			*stanza_error = STANZA_ERROR_BAD_REQUEST;
-			*error_detail = "Missing grammar";
-			switch_safe_free(grammar_uri_list.data);
-			return NULL;
-		}
+		if (!zstr(iks_find_attrib_soft(grammar_tag, "content-type"))) {
+			/* get the srgs contained in this grammar */
+			if (!(grammar_cdata = iks_child(grammar_tag)) || iks_type(grammar_cdata) != IKS_CDATA) {
+				*stanza_error = STANZA_ERROR_BAD_REQUEST;
+				*error_detail = "Missing grammar";
+				switch_safe_free(grammar_uri_list.data);
+				return NULL;
+			}
 
-		/* load the grammar */
-		grammar = switch_core_sprintf(RAYO_POOL(component), "inline:%s", iks_cdata(grammar_cdata));
-		grammar_name = switch_core_sprintf(RAYO_POOL(component), "grammar-%d", rayo_actor_seq_next(RAYO_ACTOR(component)));
-		/* unlock handler mutex, otherwise deadlock will happen if switch_ivr_detect_speech_load_grammar removes the media bug */
-		switch_mutex_unlock(component->handler->mutex);
-		if (switch_ivr_detect_speech_load_grammar(session, grammar, grammar_name) != SWITCH_STATUS_SUCCESS) {
+			/* load the grammar */
+			grammar = switch_core_sprintf(RAYO_POOL(component), "inline:%s", iks_cdata(grammar_cdata));
+			grammar_name = switch_core_sprintf(RAYO_POOL(component), "grammar-%d", rayo_actor_seq_next(RAYO_ACTOR(component)));
+			/* unlock handler mutex, otherwise deadlock will happen if switch_ivr_detect_speech_load_grammar removes the media bug */
+			switch_mutex_unlock(component->handler->mutex);
+			if (switch_ivr_detect_speech_load_grammar(session, grammar, grammar_name) != SWITCH_STATUS_SUCCESS) {
+				switch_mutex_lock(component->handler->mutex);
+				*stanza_error = STANZA_ERROR_INTERNAL_SERVER_ERROR;
+				*error_detail = "Failed to load grammar";
+				switch_safe_free(grammar_uri_list.data);
+				return NULL;
+			}
 			switch_mutex_lock(component->handler->mutex);
-			*stanza_error = STANZA_ERROR_INTERNAL_SERVER_ERROR;
-			*error_detail = "Failed to load grammar";
-			switch_safe_free(grammar_uri_list.data);
-			return NULL;
-		}
-		switch_mutex_lock(component->handler->mutex);
 
-		/* add grammar to uri-list */
-		grammar_uri_list.write_function(&grammar_uri_list, "session:%s\r\n", grammar_name);
+			/* add grammar to uri-list */
+			grammar_uri_list.write_function(&grammar_uri_list, "session:%s\r\n", grammar_name);
+		} else {
+			/* add URI to uri-list */
+			grammar_uri_list.write_function(&grammar_uri_list, "%s\r\n", iks_find_attrib_soft(grammar_tag, "url"));
+		}
 	}
 	switch_core_asr_text_param(ah, "start-recognize", "true");
 
