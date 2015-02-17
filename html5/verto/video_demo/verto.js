@@ -735,7 +735,7 @@ function init() {
     });
 
 
-    tmp = $.cookie("verto_demo_local_video_checked") || "true";
+    tmp = $.cookie("verto_demo_local_video_checked") || "false";
     $.cookie("verto_demo_local_video_checked", tmp, {
         expires: 365
     });
