@@ -1680,8 +1680,8 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 						layer->mute_patched = 0;
 					} else {
 						switch_img_free(&img);
-						if (!layer->mute_patched) {
 
+						if (!layer->mute_patched) {
 							if (imember->video_mute_png || layer->mute_img) {
 								reset_layer(conference->canvas, layer);
 
@@ -1697,11 +1697,13 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 					
 					if (img) {
 						layer->cur_img = img;
+						img = NULL;
 						layer->tagged = 1;
 					}
 				}
 
 				switch_mutex_unlock(conference->canvas->mutex);
+				switch_img_free(&img);
 			}
 
 			if (imember->session) {
