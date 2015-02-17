@@ -1205,7 +1205,7 @@ struct color_map_el color_map[] = {
 
 static const char* match_color(const char *s) {
 	struct color_map_el *map = color_map;
-	while (map->name) {
+	while (*map->name) {
 		if (!(strcasecmp(s, map->name))) {
 			return map->seq;
 		}
