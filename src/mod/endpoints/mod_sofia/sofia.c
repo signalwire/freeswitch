@@ -299,15 +299,15 @@ static void extract_vars(sofia_profile_t *profile, sip_t const *sip,
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 
 	if (sip) {
-		if (sip->sip_from && sip->sip_from->a_url)
+		if (sip->sip_from)
 			url_set_chanvars(session, sip->sip_from->a_url, sip_from);
-		if (sip->sip_request && sip->sip_request->rq_url)
+		if (sip->sip_request)
 			url_set_chanvars(session, sip->sip_request->rq_url, sip_req);
-		if (sip->sip_to && sip->sip_to->a_url)
+		if (sip->sip_to)
 			url_set_chanvars(session, sip->sip_to->a_url, sip_to);
-		if (sip->sip_contact && sip->sip_contact->m_url)
+		if (sip->sip_contact)
 			url_set_chanvars(session, sip->sip_contact->m_url, sip_contact);
-		if (sip->sip_referred_by && sip->sip_referred_by->b_url)
+		if (sip->sip_referred_by)
 			url_set_chanvars(session, sip->sip_referred_by->b_url, sip_referred_by);
 		if (sip->sip_to && sip->sip_to->a_tag) {
 			switch_channel_set_variable(channel, "sip_to_tag", sip->sip_to->a_tag);
@@ -585,7 +585,7 @@ void sofia_handle_sip_i_notify(switch_core_session_t *session, int status,
 		switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "event-package", sip->sip_event->o_type);
 		switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "event-id", sip->sip_event->o_id);
 
-		if (sip->sip_contact && sip->sip_contact->m_url) {
+		if (sip->sip_contact) {
 			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "contact", "%s@%s",
 									sip->sip_contact->m_url->url_user, sip->sip_contact->m_url->url_host);
 		}
@@ -748,7 +748,7 @@ void sofia_handle_sip_i_notify(switch_core_session_t *session, int status,
 			int acl_ok = 1;
 			char *last_acl = NULL;
 
-			if (sip->sip_to && sip->sip_to->a_url && sip->sip_to->a_url->url_user && sip->sip_to->a_url->url_host
+			if (sip->sip_to && sip->sip_to->a_url->url_user && sip->sip_to->a_url->url_host
 				&& sip->sip_payload && sip->sip_payload->pl_data ) {
 
 				sofia_glue_get_addr(de->data->e_msg, network_ip, sizeof(network_ip), NULL);
@@ -1137,7 +1137,7 @@ void sofia_update_callee_id(switch_core_session_t *session, sofia_profile_t *pro
 
 	if (!fs) {
 		if ((passerted = sip_p_asserted_identity(sip))) {
-			if (passerted->paid_url && passerted->paid_url->url_user) {
+			if (passerted->paid_url->url_user) {
 				number = passerted->paid_url->url_user;
 			}
 			if (!zstr(passerted->paid_display)) {
@@ -1574,14 +1574,12 @@ static void our_sofia_event_callback(nua_event_t event,
 			if (sip->sip_referred_by) {
 				referred_by = sofia_glue_get_url_from_contact(sip_header_as_string(nua_handle_home(nh), (void *) sip->sip_referred_by), 0);
 				ref_by_user = sip->sip_referred_by->b_url->url_user;
-			}
-			else if(sip->sip_to && sip->sip_to->a_url)
-			{
+			} else if(sip->sip_to){
 				referred_by = sofia_glue_get_url_from_contact(sip_header_as_string(nua_handle_home(nh), (void *) sip->sip_to), 0);
 				ref_by_user = sip->sip_to->a_url->url_user;
 			}
 
-			if (sip->sip_to && sip->sip_to->a_url) {
+			if (sip->sip_to) {
 				req_user = sip->sip_to->a_url->url_user;
 				req_host = sip->sip_to->a_url->url_host;
 			}
@@ -2050,7 +2048,7 @@ void sofia_event_callback(nua_event_t event,
 
 	switch(event) {
 	case nua_i_terminated:
-		if ((status == 401 || status == 407 || status == 403) && sofia_private && sofia_private->uuid) {
+		if ((status == 401 || status == 407 || status == 403) && sofia_private) {
 			switch_core_session_t *session;
 
 			if ((session = switch_core_session_locate(sofia_private->uuid))) {
@@ -2219,7 +2217,7 @@ void sofia_event_callback(nua_event_t event,
 			if (sip->sip_from) {
 				channel_name = url_set_chanvars(session, sip->sip_from->a_url, sip_from);
 			}
-			if (!channel_name && sip->sip_contact && sip->sip_contact->m_url) {
+			if (!channel_name && sip->sip_contact) {
 				channel_name = url_set_chanvars(session, sip->sip_contact->m_url, sip_contact);
 			}
 			if (sip->sip_referred_by) {
@@ -5896,8 +5894,8 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 				}
 
 				if (sip &&
-					sip->sip_from && sip->sip_from->a_url && sip->sip_from->a_url->url_user && sip->sip_from->a_url->url_host &&
-					sip->sip_to && sip->sip_to->a_url && sip->sip_to->a_url->url_user && sip->sip_to->a_url->url_host) {
+					sip->sip_from && sip->sip_from->a_url->url_user && sip->sip_from->a_url->url_host &&
+					sip->sip_to && sip->sip_to->a_url->url_user && sip->sip_to->a_url->url_host) {
 					sql =
 						switch_mprintf("select 'appearance-index=1' from sip_subscriptions where expires > -1 and hostname='%q' and event='call-info' and "
 									   "sub_to_user='%q' and sub_to_host='%q'", mod_sofia_globals.hostname, sip->sip_to->a_url->url_user,
@@ -6046,41 +6044,39 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 					}
 
 					for (p_contact = sip->sip_contact; p_contact; p_contact = p_contact->m_next) {
-						if (p_contact->m_url) {
-							full_contact = sip_header_as_string(home, (void *) p_contact);
-							invite_contact = sofia_glue_strip_uri(full_contact);
+						full_contact = sip_header_as_string(home, (void *) p_contact);
+						invite_contact = sofia_glue_strip_uri(full_contact);
 
-							switch_snprintf(var_name, sizeof(var_name), "sip_redirect_contact_%d", i);
-							switch_channel_set_variable(a_channel, var_name, full_contact);
+						switch_snprintf(var_name, sizeof(var_name), "sip_redirect_contact_%d", i);
+						switch_channel_set_variable(a_channel, var_name, full_contact);
 
-							if (i == 0) {
-								switch_channel_set_variable(channel, "sip_redirected_to", full_contact);
-								switch_channel_set_variable(a_channel, "sip_redirected_to", full_contact);
-							}
-
-							if (p_contact->m_url->url_user) {
-								switch_snprintf(var_name, sizeof(var_name), "sip_redirect_contact_user_%d", i);
-								switch_channel_set_variable(channel, var_name, p_contact->m_url->url_user);
-								switch_channel_set_variable(a_channel, var_name, p_contact->m_url->url_user);
-							}
-							if (p_contact->m_url->url_host) {
-								switch_snprintf(var_name, sizeof(var_name), "sip_redirect_contact_host_%d", i);
-								switch_channel_set_variable(channel, var_name, p_contact->m_url->url_host);
-								switch_channel_set_variable(a_channel, var_name, p_contact->m_url->url_host);
-							}
-							if (p_contact->m_url->url_params) {
-								switch_snprintf(var_name, sizeof(var_name), "sip_redirect_contact_params_%d", i);
-								switch_channel_set_variable(channel, var_name, p_contact->m_url->url_params);
-								switch_channel_set_variable(a_channel, var_name, p_contact->m_url->url_params);
-							}
-
-							switch_snprintf(var_name, sizeof(var_name), "sip_redirect_dialstring_%d", i);
-							switch_channel_set_variable_printf(channel, var_name, "sofia/%s/%s", sip_redirect_profile, invite_contact);
-							switch_channel_set_variable_printf(a_channel, var_name, "sofia/%s/%s", sip_redirect_profile, invite_contact);
-							stream.write_function(&stream, "%ssofia/%s/%s", i ? separator : "", sip_redirect_profile, invite_contact);
-							free(invite_contact);
-							i++;
+						if (i == 0) {
+							switch_channel_set_variable(channel, "sip_redirected_to", full_contact);
+							switch_channel_set_variable(a_channel, "sip_redirected_to", full_contact);
 						}
+
+						if (p_contact->m_url->url_user) {
+							switch_snprintf(var_name, sizeof(var_name), "sip_redirect_contact_user_%d", i);
+							switch_channel_set_variable(channel, var_name, p_contact->m_url->url_user);
+							switch_channel_set_variable(a_channel, var_name, p_contact->m_url->url_user);
+						}
+						if (p_contact->m_url->url_host) {
+							switch_snprintf(var_name, sizeof(var_name), "sip_redirect_contact_host_%d", i);
+							switch_channel_set_variable(channel, var_name, p_contact->m_url->url_host);
+							switch_channel_set_variable(a_channel, var_name, p_contact->m_url->url_host);
+						}
+						if (p_contact->m_url->url_params) {
+							switch_snprintf(var_name, sizeof(var_name), "sip_redirect_contact_params_%d", i);
+							switch_channel_set_variable(channel, var_name, p_contact->m_url->url_params);
+							switch_channel_set_variable(a_channel, var_name, p_contact->m_url->url_params);
+						}
+
+						switch_snprintf(var_name, sizeof(var_name), "sip_redirect_dialstring_%d", i);
+						switch_channel_set_variable_printf(channel, var_name, "sofia/%s/%s", sip_redirect_profile, invite_contact);
+						switch_channel_set_variable_printf(a_channel, var_name, "sofia/%s/%s", sip_redirect_profile, invite_contact);
+						stream.write_function(&stream, "%ssofia/%s/%s", i ? separator : "", sip_redirect_profile, invite_contact);
+						free(invite_contact);
+						i++;
 					}
 
 					redirect_dialstring = stream.data;
@@ -7795,7 +7791,7 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 		switch_channel_set_variable(tech_pvt->channel, "transfer_disposition", "recv_replace");
 
 
-		if (refer_to->r_url &&  refer_to->r_url->url_headers) {
+		if (refer_to->r_url->url_headers) {
 			rep = (char *) switch_stristr("Replaces=", refer_to->r_url->url_headers);
 		}
 
@@ -8118,7 +8114,7 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 							const char *port = NULL;
 							const char *rep_h = NULL;
 
-							if (refer_to && refer_to->r_url && refer_to->r_url->url_port) {
+							if (refer_to && refer_to->r_url->url_port) {
 								port = refer_to->r_url->url_port;
 							}
 
@@ -8132,7 +8128,7 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 							nightmare_xfer_helper = switch_core_alloc(npool, sizeof(*nightmare_xfer_helper));
 							nightmare_xfer_helper->exten = switch_core_strdup(npool, exten);
 
-							if (refer_to->r_url && (refer_to->r_url->url_params || refer_to->r_url->url_headers)) {
+							if (refer_to->r_url->url_params || refer_to->r_url->url_headers) {
 								if (refer_to->r_url->url_headers) {
 									nightmare_xfer_helper->exten_with_params = switch_core_sprintf(npool,
 																								   "{sip_invite_params=%s?%s}%s",
@@ -8153,7 +8149,7 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 							nightmare_xfer_helper->bridge_to_uuid = switch_core_strdup(npool, br_a);
 							nightmare_xfer_helper->pool = npool;
 
-							if (refer_to->r_url && refer_to->r_url->url_headers) {
+							if (refer_to->r_url->url_headers) {
 								char *h, *v, *hp;
 								p = switch_core_session_strdup(session, refer_to->r_url->url_headers);
 								while (p && *p) {
@@ -8323,7 +8319,7 @@ static switch_status_t create_info_event(sip_t const *sip,
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "SIP-Content-Type", sip->sip_content_type->c_type);
 	}
 
-	if (sip->sip_from && sip->sip_from->a_url) {
+	if (sip->sip_from) {
 		if (sip->sip_from->a_url->url_user) {
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "SIP-From-User", sip->sip_from->a_url->url_user);
 		}
@@ -8333,7 +8329,7 @@ static switch_status_t create_info_event(sip_t const *sip,
 		}
 	}
 
-	if (sip->sip_to && sip->sip_to->a_url) {
+	if (sip->sip_to) {
 		if (sip->sip_to->a_url->url_user) {
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "SIP-To-User", sip->sip_to->a_url->url_user);
 		}
@@ -8344,7 +8340,7 @@ static switch_status_t create_info_event(sip_t const *sip,
 	}
 
 
-	if (sip->sip_contact && sip->sip_contact->m_url) {
+	if (sip->sip_contact) {
 		if (sip->sip_contact->m_url->url_user) {
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "SIP-Contact-User", sip->sip_contact->m_url->url_user);
 		}
@@ -8793,9 +8789,10 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 	int is_tcp = 0, is_tls = 0;
 	const char *uparams = NULL;
 	char *name_params = NULL;
+	const char *req_uri = NULL;
+	char *req_user = NULL;
 
-
-	if (sip && sip->sip_contact && sip->sip_contact->m_url && sip->sip_contact->m_url->url_params) {
+	if (sip && sip->sip_contact && sip->sip_contact->m_url->url_params) {
 		uparams = sip->sip_contact->m_url->url_params;
 	} else {
 		uparams = NULL;
@@ -8829,7 +8826,7 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 		goto fail;
 	}
 
-	if (!(sip->sip_contact && sip->sip_contact->m_url)) {
+	if (!(sip->sip_contact)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "NO CONTACT!\n");
 		nua_respond(nh, 400, "Missing Contact Header", TAG_END());
 		goto fail;
@@ -8880,7 +8877,7 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 		char *last_acl = NULL;
 		const char *contact_host = NULL;
 
-		if (sip && sip->sip_contact && sip->sip_contact->m_url) {
+		if (sip && sip->sip_contact) {
 			contact_host = sip->sip_contact->m_url->url_host;
 		}
 
@@ -9088,7 +9085,7 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 		}
 	}
 
-	if (sip->sip_via || (sip->sip_contact && sip->sip_contact->m_url)) {
+	if (sip->sip_via || sip->sip_contact) {
 		char tmp[35] = "";
 		const char *ipv6 = strchr(tech_pvt->mparams.remote_ip, ':');
 
@@ -9169,7 +9166,7 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 		switch_event_destroy(&v_event);
 	}
 
-	if (sip->sip_from && sip->sip_from->a_url) {
+	if (sip->sip_from) {
 		from_user = sip->sip_from->a_url->url_user;
 		from_host = sip->sip_from->a_url->url_host;
 		//channel_name = url_set_chanvars(session, sip->sip_from->a_url, sip_from);
@@ -9204,7 +9201,7 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 	}
 
 	if ((rpid = sip_remote_party_id(sip))) {
-		if (rpid->rpid_url && rpid->rpid_url->url_user) {
+		if (rpid->rpid_url->url_user) {
 			char *full_rpid_header = sip_header_as_string(nh->nh_home, (void *) rpid);
 			from_user = rpid->rpid_url->url_user;
 			if (!zstr(full_rpid_header)) {
@@ -9220,7 +9217,7 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 	}
 
 	if ((passerted = sip_p_asserted_identity(sip))) {
-		if (passerted->paid_url && passerted->paid_url->url_user) {
+		if (passerted->paid_url->url_user) {
 			char *full_paid_header = sip_header_as_string(nh->nh_home, (void *) passerted);
 			//char *full_paid_header = (char *)(passerted->paid_common->h_data);
 			from_user = passerted->paid_url->url_user;
@@ -9243,7 +9240,7 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 	}
 
 	if ((ppreferred = sip_p_preferred_identity(sip))) {
-		if (ppreferred->ppid_url && ppreferred->ppid_url->url_user) {
+		if (ppreferred->ppid_url->url_user) {
 			char *full_ppid_header = sip_header_as_string(nh->nh_home, (void *) ppreferred);
 			from_user = ppreferred->ppid_url->url_user;
 			if (!zstr(full_ppid_header)) {
@@ -9269,58 +9266,55 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 
 	extract_header_vars(profile, sip, session, nh);
 
-	if (sip->sip_request->rq_url) {
-		const char *req_uri = url_set_chanvars(session, sip->sip_request->rq_url, sip_req);
-		char *user = NULL;
-		if (sip->sip_request->rq_url->url_user) {
+	req_uri = url_set_chanvars(session, sip->sip_request->rq_url, sip_req);
+	if (sip->sip_request->rq_url->url_user) {
 
-			user = switch_core_session_strdup(session, sip->sip_request->rq_url->url_user);
-			if (profile->parse_invite_tel_params) {
-				if (strchr(user, ';')) {
-					int argc1, x1 = 0;
-					char *argv1[32] = { 0 };
+		req_user = switch_core_session_strdup(session, sip->sip_request->rq_url->url_user);
+		if (profile->parse_invite_tel_params) {
+			if (strchr(req_user, ';')) {
+				int argc1, x1 = 0;
+				char *argv1[32] = { 0 };
 
-					if ((argc1 = switch_separate_string(user, ';', argv1, (sizeof(argv1) / sizeof(argv1[0]))))) {
-						for (x1 = 0; x1 < argc1; x1++) {
-							if (x1 == 0) {
-								switch_channel_set_variable(channel, "sip_req_user", argv1[0]);
+				if ((argc1 = switch_separate_string(req_user, ';', argv1, (sizeof(argv1) / sizeof(argv1[0]))))) {
+					for (x1 = 0; x1 < argc1; x1++) {
+						if (x1 == 0) {
+							switch_channel_set_variable(channel, "sip_req_user", argv1[0]);
+						} else {
+							int argc2 = 0;
+							char *argv2[2] = { 0 };
+							if ((argc2 = switch_separate_string(argv1[x1], '=', argv2, (sizeof(argv2) / sizeof(argv2[0])))) == 2) {
+								char *var_name = NULL;
+								var_name = switch_mprintf("sip_invite_%s", argv2[0]);
+								switch_channel_set_variable(channel, var_name, argv2[1]);
+								switch_safe_free( var_name );
 							} else {
-								int argc2 = 0;
-								char *argv2[2] = { 0 };
-								if ((argc2 = switch_separate_string(argv1[x1], '=', argv2, (sizeof(argv2) / sizeof(argv2[0])))) == 2) {
-									char *var_name = NULL;
-									var_name = switch_mprintf("sip_invite_%s", argv2[0]);
-									switch_channel_set_variable(channel, var_name, argv2[1]);
-									switch_safe_free( var_name );
-								} else {
-									char *var_name = NULL;
-									var_name = switch_mprintf("sip_invite_%s", argv1[x1]);
-									switch_channel_set_variable(channel, var_name, "true");
-									switch_safe_free( var_name );									
-								}
+								char *var_name = NULL;
+								var_name = switch_mprintf("sip_invite_%s", argv1[x1]);
+								switch_channel_set_variable(channel, var_name, "true");
+								switch_safe_free( var_name );									
 							}
 						}
 					}
 				}
 			}
 		}
-
-		if (sofia_test_pflag(profile, PFLAG_FULL_ID)) {
-			destination_number = req_uri;
-		} else {
-			destination_number = user;
-		}
-		if (sip->sip_request->rq_url->url_params && (sofia_glue_find_parameter(sip->sip_request->rq_url->url_params, "intercom=true"))) {
-			switch_channel_set_variable(channel, "sip_auto_answer_detected", "true");
-		}
 	}
 
-	if (!destination_number && sip->sip_to && sip->sip_to->a_url) {
+	if (sofia_test_pflag(profile, PFLAG_FULL_ID)) {
+		destination_number = req_uri;
+	} else {
+		destination_number = req_user;
+	}
+	if (sip->sip_request->rq_url->url_params && (sofia_glue_find_parameter(sip->sip_request->rq_url->url_params, "intercom=true"))) {
+		switch_channel_set_variable(channel, "sip_auto_answer_detected", "true");
+	}
+
+	if (!destination_number && sip->sip_to) {
 		destination_number = sip->sip_to->a_url->url_user;
 	}
 
 	/* The human network, OH THE HUMANITY!!! lets send invites with no number! */
-	if (!destination_number && sip->sip_from && sip->sip_from->a_url) {
+	if (!destination_number && sip->sip_from) {
 		destination_number = sip->sip_from->a_url->url_user;
 	}
 
@@ -9330,12 +9324,12 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 		destination_number = "service";
 	}
 
-	if (sip->sip_to && sip->sip_to->a_url) {
+	if (sip->sip_to) {
 		const char *host, *user;
 		int port, check_nat = 0;
 		url_t *transport_url;
 
-		if (sip->sip_record_route && sip->sip_record_route->r_url) {
+		if (sip->sip_record_route) {
 			transport_url = sip->sip_record_route->r_url;
 		} else {
 			transport_url = sip->sip_contact->m_url;
@@ -9437,7 +9431,7 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 		nua_set_hparams(tech_pvt->nh, SIPTAG_VIA_STR(tech_pvt->user_via), TAG_END());
 	}
 
-	if (sip->sip_contact && sip->sip_contact->m_url) {
+	if (sip->sip_contact) {
 		url_set_chanvars(session, sip->sip_contact->m_url, sip_contact);
 	}
 
@@ -9581,8 +9575,8 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 		char *state = "progressing";
 
 		if (sip &&
-			sip->sip_from && sip->sip_from->a_url && sip->sip_from->a_url->url_user && sip->sip_from->a_url->url_host &&
-			sip->sip_to && sip->sip_to->a_url && sip->sip_to->a_url->url_user && sip->sip_to->a_url->url_host) {
+			sip->sip_from && sip->sip_from->a_url->url_user && sip->sip_from->a_url->url_host &&
+			sip->sip_to && sip->sip_to->a_url->url_user && sip->sip_to->a_url->url_host) {
 			sql =
 				switch_mprintf("select 'appearance-index=1' from sip_subscriptions where expires > -1 and hostname='%q' and event='call-info' and "
 							   "sub_to_user='%q' and sub_to_host='%q'", mod_sofia_globals.hostname, sip->sip_to->a_url->url_user,
@@ -9700,12 +9694,12 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 		char *p = NULL;
 		const char *user = NULL, *host = NULL, *from_user = NULL, *from_host = NULL;
 
-		if (sip->sip_to && sip->sip_to->a_url) {
+		if (sip->sip_to) {
 			user = sip->sip_to->a_url->url_user;
 			host = sip->sip_to->a_url->url_host;
 		}
 
-		if (sip->sip_from && sip->sip_from->a_url) {
+		if (sip->sip_from) {
 			from_user = sip->sip_from->a_url->url_user;
 			from_host = sip->sip_from->a_url->url_host;
 		}

@@ -1269,7 +1269,7 @@ uint8_t sofia_reg_handle_register_token(nua_t *nua, sofia_profile_t *profile, nu
 		sofia_private = *sofia_private_p;
 	}
 
-	if (sip && sip->sip_contact && sip->sip_contact->m_url && sip->sip_contact->m_url->url_params) {
+	if (sip && sip->sip_contact && sip->sip_contact->m_url->url_params) {
 		uparams = sip->sip_contact->m_url->url_params;
 	} else {
 		uparams = NULL;
@@ -2189,7 +2189,7 @@ void sofia_reg_handle_sip_i_register(nua_t *nua, sofia_profile_t *profile, nua_h
 	sofia_glue_get_addr(de->data->e_msg, network_ip, sizeof(network_ip), &network_port);
 
 	/* backwards compatibility */
-	if (mod_sofia_globals.reg_deny_binding_fetch_and_no_lookup && !(sip->sip_contact && sip->sip_contact->m_url)) {
+	if (mod_sofia_globals.reg_deny_binding_fetch_and_no_lookup && !sip->sip_contact) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "NO CONTACT! ip: %s, port: %i\n", network_ip, network_port);
 		nua_respond(nh, 400, "Missing Contact Header", TAG_END());
 		goto end;
@@ -2226,7 +2226,7 @@ void sofia_reg_handle_sip_i_register(nua_t *nua, sofia_profile_t *profile, nua_h
 		char *last_acl = NULL;
 		const char *contact_host = NULL;
 
-		if (sip && sip->sip_contact && sip->sip_contact->m_url) {
+		if (sip && sip->sip_contact) {
 			contact_host = sip->sip_contact->m_url->url_host;
 		}
 
@@ -2492,7 +2492,7 @@ void sofia_reg_handle_sip_r_challenge(int status,
 		}
 	}
 
-	if (!gateway && !sip_auth_username && sip && sip->sip_to && sip->sip_to->a_url && sip->sip_to->a_url->url_user && sip->sip_to->a_url->url_host) {
+	if (!gateway && !sip_auth_username && sip && sip->sip_to && sip->sip_to->a_url->url_user && sip->sip_to->a_url->url_host) {
 		switch_xml_t x_user, x_param, x_params;
 		switch_event_t *locate_params;
 

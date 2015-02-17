@@ -2463,12 +2463,10 @@ SWITCH_DECLARE(void) switch_ivr_clear_speech_cache(switch_core_session_t *sessio
 		if (cache_obj->timer.interval) {
 			switch_core_timer_destroy(&cache_obj->timer);
 		}
-		if (&cache_obj->sh && cache_obj->sh.speech_interface) {
+		if (cache_obj->sh.speech_interface) {
 			switch_core_speech_close(&cache_obj->sh, &flags);
 		}
-		if (&cache_obj->codec) {
-			switch_core_codec_destroy(&cache_obj->codec);
-		}
+		switch_core_codec_destroy(&cache_obj->codec);
 		switch_channel_set_private(channel, SWITCH_CACHE_SPEECH_HANDLES_OBJ_NAME, NULL);
 	}
 }

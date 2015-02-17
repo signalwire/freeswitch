@@ -2010,14 +2010,14 @@ static int rtcp_stats(switch_rtp_t *rtp_session)
                  stats->period_pkt_count, pkt_seq, stats->cycle, stats->ssrc, rtp_session->timer.samplecount);
 #endif
 	/* Interarrival jitter calculation */
-	pkt_tsdiff = rtp_session->timer.samplecount - ntohl(hdr->ts) ;  /* relative transit times for this packet */
+	pkt_tsdiff = abs((int)rtp_session->timer.samplecount - (int)ntohl(hdr->ts));  /* relative transit times for this packet */
 	if (stats->pkt_count < 2) { /* Can not compute Jitter with only one packet */
 		stats->last_pkt_tsdiff = pkt_tsdiff;
 	} else {
-		packet_spacing_diff = pkt_tsdiff - stats->last_pkt_tsdiff;    /* Jitter : difference of relative transit times for the two packets */
+		packet_spacing_diff = abs((int)pkt_tsdiff - (int)stats->last_pkt_tsdiff);    /* Jitter : difference of relative transit times for the two packets */
 		stats->last_pkt_tsdiff = pkt_tsdiff;
 		/* Interarrival jitter estimation, "J(i) = J(i-1) + ( |D(i-1,i)| - J(i-1) )/16" */
-		stats->inter_jitter = (stats->inter_jitter + (((double)abs(packet_spacing_diff) - stats->inter_jitter) /16.));
+		stats->inter_jitter = (stats->inter_jitter + (((double)packet_spacing_diff - stats->inter_jitter) /16.));
 	}
 
 #ifdef DEBUG_RTCP

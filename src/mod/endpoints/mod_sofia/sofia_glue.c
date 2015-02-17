@@ -2852,7 +2852,7 @@ char *sofia_glue_gen_contact_str(sofia_profile_t *profile, sip_t const *sip, nua
 	const char *ipv6;
 	sip_from_t const *from;
 
-	if (!sip || !sip->sip_contact || !sip->sip_contact->m_url) {
+	if (!sip || !sip->sip_contact) {
 		return NULL;
 	}
 
@@ -2933,7 +2933,7 @@ char *sofia_glue_gen_contact_str(sofia_profile_t *profile, sip_t const *sip, nua
 		np->is_nat = NULL;
 	}
 
-	if (sip->sip_record_route && sip->sip_record_route->r_url) {
+	if (sip->sip_record_route) {
 		char *full_contact = sip_header_as_string(nh->nh_home, (void *) contact);
 		char *route = sofia_glue_strip_uri(sip_header_as_string(nh->nh_home, (void *) sip->sip_record_route));
 		char *full_contact_dup;

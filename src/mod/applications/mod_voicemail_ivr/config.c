@@ -169,7 +169,7 @@ static void populate_dtmfa_from_event(vmivr_menu_t *menu) {
 			}
 		}
 	}
-	menu->dtmfa[i++] = '\0';
+	menu->dtmfa[i++] = NULL;
 }
 
 vmivr_profile_t *get_profile(switch_core_session_t *session, const char *profile_name)
