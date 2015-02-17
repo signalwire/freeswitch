@@ -128,6 +128,7 @@ static switch_status_t exec_user_method(user_method_t * userMethod) {
 
     if (class == NULL) {
         (*env)->ExceptionDescribe(env);
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s Class not found\n",userMethod->class);
         status =  SWITCH_STATUS_FALSE;
         goto done;
     }
@@ -136,6 +137,7 @@ static switch_status_t exec_user_method(user_method_t * userMethod) {
 
     if (method == NULL) {
         (*env)->ExceptionDescribe(env);
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s Method not found\n",userMethod->method);
         status =  SWITCH_STATUS_FALSE;
         goto done;
     }
@@ -145,6 +147,7 @@ static switch_status_t exec_user_method(user_method_t * userMethod) {
 
         if (arg == NULL) {
             (*env)->ExceptionDescribe(env);
+            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Args not found\n");
             status =  SWITCH_STATUS_FALSE;
             goto done;
         }

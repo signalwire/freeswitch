@@ -1,6 +1,6 @@
 EXTRA_DIST =
 SUBDIRS = 
-AUTOMAKE_OPTIONS = foreign subdir-objects
+AUTOMAKE_OPTIONS = foreign
 NAME=dingaling
 PREFIX=$(prefix)
 TOUCH_TARGET=@if test -f "$@" ; then touch "$@" ; fi ;

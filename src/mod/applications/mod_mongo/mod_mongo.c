@@ -1,6 +1,6 @@
 /*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2015, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -44,6 +44,7 @@
 
 #define DELIMITER ';'
 #define FIND_ONE_SYNTAX  "mongo_find_one ns; query; fields; options"
+#define FIND_N_SYNTAX "mongo_find_n ns; query; fields; options; n"
 #define MAPREDUCE_SYNTAX "mongo_mapreduce ns; query"
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_mongo_load);
@@ -184,6 +185,102 @@ SWITCH_STANDARD_API(mongo_mapreduce_function)
 	return status;
 }
 
+SWITCH_STANDARD_API(mongo_find_n_function)
+{
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	char *db = NULL, *collection = NULL, *json_query = NULL, *json_fields = NULL, *query_options_str = NULL;
+	int query_options = 0;
+	int n = 1;
+
+	db = strdup(cmd);
+	switch_assert(db != NULL);
+
+	if ((collection = strchr(db, '.'))) {
+		*collection++ = '\0';
+		if ((json_query = strchr(collection, DELIMITER))) {
+			*json_query++ = '\0';
+			if ((json_fields = strchr(json_query, DELIMITER))) {
+				*json_fields++ = '\0';
+				if ((query_options_str = strchr(json_fields, DELIMITER))) {
+					char *n_str;
+					*query_options_str++ = '\0';
+					if (!zstr(query_options_str)) {
+						query_options = parse_query_options(query_options_str);
+					}
+					if ((n_str = strchr(query_options_str, DELIMITER))) {
+						*n_str++ = '\0';
+						if (switch_is_number(n_str)) {
+							n = atoi(n_str);
+							if (n < 1) {
+								n = 1;
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	if (!zstr(db) && !zstr(collection) && !zstr(json_query) && !zstr(json_fields)) {
+		bson_error_t error;
+		mongoc_client_t *conn = get_connection();
+		if (conn) {
+			mongoc_collection_t *col = mongoc_client_get_collection(conn, db, collection);
+			if (col) {
+				bson_t *query = bson_new_from_json((uint8_t *)json_query, strlen(json_query), &error);
+				bson_t *fields = bson_new_from_json((uint8_t *)json_fields, strlen(json_fields), &error);
+				if (query && fields) {
+					/* send query */
+					mongoc_cursor_t *cursor = mongoc_collection_find(col, query_options, 0, n, 0, query, fields, NULL);
+					if (cursor && !mongoc_cursor_error(cursor, &error)) {
+						/* get results from cursor */
+						const bson_t *result;
+						stream->write_function(stream, "-OK\n[");
+						if (mongoc_cursor_more(cursor) && mongoc_cursor_next(cursor, &result)) {
+							char *json_result;
+							json_result = bson_as_json(result, NULL);
+							stream->write_function(stream, "%s", json_result);
+							bson_free(json_result);
+						}
+						while (mongoc_cursor_more(cursor) && mongoc_cursor_next(cursor, &result)) {
+							char *json_result;
+							json_result = bson_as_json(result, NULL);
+							stream->write_function(stream, ",%s", json_result);
+							bson_free(json_result);
+						}
+						stream->write_function(stream, "]\n");
+					} else {
+						stream->write_function(stream, "-ERR\nquery failed!\n");
+					}
+					if (cursor) {
+						mongoc_cursor_destroy(cursor);
+					}
+				} else {
+					stream->write_function(stream, "-ERR\nmissing query or fields!\n%s\n", FIND_ONE_SYNTAX);
+				}
+				if (query) {
+					bson_destroy(query);
+				}
+				if (fields) {
+					bson_destroy(fields);
+				}
+				mongoc_collection_destroy(col);
+			} else {
+				stream->write_function(stream, "-ERR\nunknown collection: %s\n", collection);
+			}
+			connection_done(conn);
+		} else {
+			stream->write_function(stream, "-ERR\nfailed to get connection!\n");
+		}
+	} else {
+		stream->write_function(stream, "-ERR\n%s\n", FIND_N_SYNTAX);
+	}
+
+	switch_safe_free(db);
+
+	return status;
+}
+
 SWITCH_STANDARD_API(mongo_find_one_function)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
@@ -218,21 +315,21 @@ SWITCH_STANDARD_API(mongo_find_one_function)
 				bson_t *query = bson_new_from_json((uint8_t *)json_query, strlen(json_query), &error);
 				bson_t *fields = bson_new_from_json((uint8_t *)json_fields, strlen(json_fields), &error);
 				if (query && fields) {
-					int ok = 0;
 					/* send query */
 					mongoc_cursor_t *cursor = mongoc_collection_find(col, query_options, 0, 1, 0, query, fields, NULL);
-					if (cursor && mongoc_cursor_more(cursor) && !mongoc_cursor_error(cursor, &error)) {
+					if (cursor && !mongoc_cursor_error(cursor, &error)) {
 						/* get result from cursor */
 						const bson_t *result;
-						if (mongoc_cursor_next(cursor, &result)) {
+						if (mongoc_cursor_more(cursor) && mongoc_cursor_next(cursor, &result)) {
 							char *json_result;
 							json_result = bson_as_json(result, NULL);
 							stream->write_function(stream, "-OK\n%s\n", json_result);
 							bson_free(json_result);
-							ok = 1;
+						} else {
+							/* empty set */
+							stream->write_function(stream, "-OK\n{}\n");
 						}
-					}
-					if (!ok) {
+					} else {
 						stream->write_function(stream, "-ERR\nquery failed!\n");
 					}
 					if (cursor) {
@@ -256,7 +353,7 @@ SWITCH_STANDARD_API(mongo_find_one_function)
 			stream->write_function(stream, "-ERR\nfailed to get connection!\n");
 		}
 	} else {
-		stream->write_function(stream, "-ERR\n%s\n", FIND_ONE_SYNTAX);	  
+		stream->write_function(stream, "-ERR\n%s\n", FIND_ONE_SYNTAX);
 	}
 
 	switch_safe_free(db);
@@ -349,6 +446,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_mongo_load)
 	}
 
 	SWITCH_ADD_API(api_interface, "mongo_find_one", "findOne", mongo_find_one_function, FIND_ONE_SYNTAX);
+	SWITCH_ADD_API(api_interface, "mongo_find_n", "find", mongo_find_n_function, FIND_N_SYNTAX);
 	SWITCH_ADD_API(api_interface, "mongo_mapreduce", "Map/Reduce", mongo_mapreduce_function, MAPREDUCE_SYNTAX);
 
 	return SWITCH_STATUS_SUCCESS;

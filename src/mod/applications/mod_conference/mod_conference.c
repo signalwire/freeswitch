@@ -9578,16 +9578,7 @@ SWITCH_STANDARD_APP(conference_function)
 	member.channel = switch_core_session_get_channel(session);
 	member.pool = switch_core_session_get_pool(session);
 
-	if (!(mid = switch_channel_get_private(channel, "__confmid"))) {
-		mid = switch_core_session_alloc(session, sizeof(*mid));
-		*mid = next_member_id();
-		switch_channel_set_private(channel, "__confmid", mid);
-	}
-
-	switch_channel_set_variable_printf(channel, "conference_member_id", "%u", *mid);
-
 	/* Prepare MUTEXS */
-	member.id = *mid;
 	switch_mutex_init(&member.flag_mutex, SWITCH_MUTEX_NESTED, member.pool);
 	switch_mutex_init(&member.write_mutex, SWITCH_MUTEX_NESTED, member.pool);
 	switch_mutex_init(&member.read_mutex, SWITCH_MUTEX_NESTED, member.pool);
@@ -9596,13 +9587,25 @@ SWITCH_STANDARD_APP(conference_function)
 	switch_mutex_init(&member.audio_out_mutex, SWITCH_MUTEX_NESTED, member.pool);
 	switch_thread_rwlock_create(&member.rwlock, member.pool);
 
-	/* Install our Signed Linear codec so we get the audio in that format */
-	switch_core_session_set_read_codec(member.session, &member.read_codec);
-
 	if (setup_media(&member, conference)) {
 		//flags = 0;
 		goto done;
 	}
+
+
+	if (!(mid = switch_channel_get_private(channel, "__confmid"))) {
+		mid = switch_core_session_alloc(session, sizeof(*mid));
+		*mid = next_member_id();
+		switch_channel_set_private(channel, "__confmid", mid);
+	}
+
+	switch_channel_set_variable_printf(channel, "conference_member_id", "%u", *mid);
+	member.id = *mid;
+
+
+	/* Install our Signed Linear codec so we get the audio in that format */
+	switch_core_session_set_read_codec(member.session, &member.read_codec);
+
 
 	mflags = conference->mflags;
 	set_mflags(flags_str, &mflags);

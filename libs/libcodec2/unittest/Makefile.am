@@ -1,5 +1,5 @@
 AM_CFLAGS = -I../src -I$(abs_srcdir)/../src -fPIC -g  -DFLOATING_POINT -DVAR_ARRAYS -O2 -Wall
-AUTOMAKE_OPTIONS = gnu subdir-objects
+AUTOMAKE_OPTIONS = gnu 
 NAME = libcodec2
 AM_CPPFLAGS = $(AM_CFLAGS)
 
