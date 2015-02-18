@@ -3427,7 +3427,7 @@ static void find_video_floor(conference_member_t *member, switch_bool_t entering
 
 	if (!entering) {
 		if (member->id == conference->video_floor_holder) {
-			conference_set_video_floor_holder(conference, NULL, 1);
+			conference_set_video_floor_holder(conference, NULL, SWITCH_FALSE);
 		} else if (member->id == conference->last_video_floor_holder) {
 			conference->last_video_floor_holder = 0;
 		}
