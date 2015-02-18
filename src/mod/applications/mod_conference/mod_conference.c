@@ -4534,6 +4534,7 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 				member->loop_loop = 1;
 
 				if (setup_media(member, member->conference)) {
+					switch_mutex_unlock(member->read_mutex);
 					break;
 				}
 			}
