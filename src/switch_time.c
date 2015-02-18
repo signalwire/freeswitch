@@ -416,7 +416,7 @@ static switch_status_t timerfd_start_interval(interval_timer_t *it, int interval
 	val.it_interval.tv_sec = interval / 1000;
 	val.it_interval.tv_nsec = (interval % 1000) * 1000000;
 	val.it_value.tv_sec = 0;
-	val.it_value.tv_nsec = 100000;
+	val.it_value.tv_nsec = val.it_interval.tv_nsec;
 
 	if (timerfd_settime(fd, TFD_TIMER_ABSTIME, &val, NULL) < 0) {
 		close(fd);
