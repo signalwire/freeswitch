@@ -9828,7 +9828,9 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 
 						if (b_call_id) {
 							char *sql = switch_mprintf("update sip_dialogs set call_info_state='idle' where call_id='%q'", b_call_id);
-							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "SQL: %s\n", sql);
+							if (mod_sofia_globals.debug_sla > 1) {
+								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "QUERY SQL %s\n", sql);
+							}
 							sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
 
 							switch_channel_presence(b_channel, "unknown", "idle", NULL);
