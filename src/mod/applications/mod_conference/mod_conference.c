@@ -366,6 +366,7 @@ typedef struct mcu_layer_geometry_s {
 	int y;
 	int scale;
 	int floor;
+	int overlap;
 	char *res_id;
 	char *audio_position;
 } mcu_layer_geometry_t;
@@ -627,6 +628,7 @@ struct conference_member {
 	char *video_banner_text;
 	char *video_logo;
 	char *video_mute_png;
+	char *video_reservation_id;
 };
 
 typedef enum {
@@ -763,6 +765,7 @@ static void conference_parse_layouts(conference_obj_t *conference)
 {
 	switch_event_t *params;
 	switch_xml_t cxml = NULL, cfg = NULL, x_layouts, x_layout, x_layout_settings, x_group, x_groups, x_image;
+	char cmd_str[256] = "";
 
 	if (!conference->layout_hash) {
 		switch_core_hash_init(&conference->layout_hash);
@@ -801,7 +804,7 @@ static void conference_parse_layouts(conference_obj_t *conference)
 
 				for (x_image = switch_xml_child(x_layout, "image"); x_image; x_image = x_image->next) {
 					const char *res_id = NULL, *audio_position = NULL;
-					int x = -1, y = -1, scale = -1, floor = 0;
+					int x = -1, y = -1, scale = -1, floor = 0, overlap = 0;
 
 					if ((val = switch_xml_attr(x_image, "x"))) {
 						x = atoi(val);
@@ -817,6 +820,10 @@ static void conference_parse_layouts(conference_obj_t *conference)
 					
 					if ((val = switch_xml_attr(x_image, "floor"))) {
 						floor = switch_true(val);
+					}
+
+					if ((val = switch_xml_attr(x_image, "overlap"))) {
+						overlap = switch_true(val);
 					}
 					
 					if ((val = switch_xml_attr(x_image, "reservation_id"))) {
@@ -838,6 +845,7 @@ static void conference_parse_layouts(conference_obj_t *conference)
 					vlayout->images[vlayout->layers].y = y;
 					vlayout->images[vlayout->layers].scale = scale;
 					vlayout->images[vlayout->layers].floor = floor;
+					vlayout->images[vlayout->layers].overlap = overlap;
 					
 					if (res_id) {
 						vlayout->images[vlayout->layers].res_id = switch_core_strdup(conference->pool, res_id);
@@ -851,6 +859,8 @@ static void conference_parse_layouts(conference_obj_t *conference)
 				}
 
 				switch_core_hash_insert(conference->layout_hash, name, vlayout);
+				switch_snprintf(cmd_str, sizeof(cmd_str), "add conference ::conference::list_conferences vid-layout %s", name);
+				switch_console_set_complete(cmd_str);
 			}
 			
 		}
@@ -1248,7 +1258,6 @@ static switch_status_t attach_video_layer(conference_member_t *member, int idx)
 {
 	mcu_layer_t *layer = NULL;
 	switch_channel_t *channel = NULL;
-	const char *res_id = NULL;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	const char *var = NULL;
 	switch_rgb_color_t color;
@@ -1257,6 +1266,7 @@ static switch_status_t attach_video_layer(conference_member_t *member, int idx)
 
 	channel = switch_core_session_get_channel(member->session);
 
+
 	if (!switch_channel_test_flag(channel, CF_VIDEO)) {
 		return SWITCH_STATUS_FALSE;
 	}
@@ -1264,11 +1274,23 @@ static switch_status_t attach_video_layer(conference_member_t *member, int idx)
 	switch_mutex_lock(member->conference->canvas->mutex);
 
 	layer = &member->conference->canvas->layers[idx];
+
 	layer->tagged = 0;
+	if (layer->geometry.res_id) {
+		if (!member->video_reservation_id || strcmp(layer->geometry.res_id, member->video_reservation_id)) {
+			switch_goto_status(SWITCH_STATUS_FALSE, end);
+		}
+	}
 
 	if (layer->member_id && layer->member_id == member->id) {
 		member->video_layer_id = idx;
 		switch_goto_status(SWITCH_STATUS_BREAK, end);
+	}
+	
+	if (layer->geometry.res_id || member->video_reservation_id) {
+		if (!layer->geometry.res_id || !member->video_reservation_id || strcmp(layer->geometry.res_id, member->video_reservation_id)) {
+			switch_goto_status(SWITCH_STATUS_FALSE, end);
+		}
 	}
 
 	if (member->video_layer_id > -1) {
@@ -1277,14 +1299,6 @@ static switch_status_t attach_video_layer(conference_member_t *member, int idx)
 
 	reset_layer(member->conference->canvas, layer);
 	switch_img_free(&layer->mute_img);
-
-	res_id = switch_channel_get_variable_dup(channel, "video_reservation_id", SWITCH_FALSE, -1);
-	
-	if (layer->geometry.res_id || res_id) {
-		if (!layer->geometry.res_id || !res_id || strcmp(layer->geometry.res_id, res_id)) {
-			switch_goto_status(SWITCH_STATUS_FALSE, end);
-		}
-	}
 	
 	var = NULL;
 	if (member->video_banner_text || (var = switch_channel_get_variable_dup(channel, "video_banner_text", SWITCH_FALSE, -1))) {
@@ -1331,6 +1345,7 @@ static void init_canvas_layers(conference_obj_t *conference, video_layout_t *vla
 		layer->geometry.y = vlayout->images[i].y;
 		layer->geometry.scale = vlayout->images[i].scale;
 		layer->geometry.floor = vlayout->images[i].floor;
+		layer->geometry.overlap = vlayout->images[i].overlap;
 		layer->idx = i;
 
 
@@ -1651,7 +1666,7 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 				switch_mutex_lock(conference->canvas->mutex);
 				//printf("MEMBER %d layer_id %d canvas: %d/%d\n", imember->id, imember->video_layer_id,
 				//	   conference->canvas->layers_used, conference->canvas->total_layers);
-
+				
 				if (imember->video_layer_id > -1) {
 					layer = &conference->canvas->layers[imember->video_layer_id];
 					if (layer->member_id != imember->id) {
@@ -1663,10 +1678,21 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 				if (!layer && conference->canvas->layers_used < conference->canvas->total_layers) {
 					/* find an empty layer */
 					for (i = 0; i < conference->canvas->total_layers; i++) {
-						layer = &conference->canvas->layers[i];
-						if (!layer->member_id) {
-							switch_status_t lstatus = attach_video_layer(imember, i);
+						mcu_layer_t *xlayer = &conference->canvas->layers[i];
+
+						if (xlayer->geometry.res_id) {
+							if (imember->video_reservation_id && !strcmp(xlayer->geometry.res_id, imember->video_reservation_id)) {
+								layer = xlayer;
+								attach_video_layer(imember, i);
+								break;
+							}
+						} else if (!xlayer->member_id) {
+							switch_status_t lstatus;
+
+							lstatus = attach_video_layer(imember, i);
+
 							if (lstatus == SWITCH_STATUS_SUCCESS || lstatus == SWITCH_STATUS_BREAK) {
+								layer = xlayer;
 								break;
 							}
 						}
@@ -1716,7 +1742,7 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 		for (i = 0; i < conference->canvas->total_layers; i++) {
 			mcu_layer_t *layer = &conference->canvas->layers[i];
 
-			if (layer->member_id > -1 && layer->cur_img && layer->tagged) {
+			if (layer->member_id > -1 && layer->cur_img && (layer->tagged || layer->geometry.overlap)) {
 				scale_and_patch(conference, layer, NULL);
 				layer->tagged = 0;
 			}
@@ -3545,6 +3571,10 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 
 		if ((var = switch_channel_get_variable_dup(member->channel, "video_mute_png", SWITCH_FALSE, -1))) {
 			member->video_mute_png = switch_core_strdup(member->pool, var);
+		}
+
+		if ((var = switch_channel_get_variable_dup(member->channel, "video_reservation_id", SWITCH_FALSE, -1))) {
+			member->video_reservation_id = switch_core_strdup(member->pool, var);
 		}
 
 		switch_channel_set_variable_printf(channel, "conference_member_id", "%d", member->id);
@@ -8140,6 +8170,17 @@ static switch_status_t conf_api_sub_vid_layout(conference_obj_t *conference, swi
 		return SWITCH_STATUS_SUCCESS;
 	}
 
+	if (!strcasecmp(argv[2], "list")) {
+		switch_hash_index_t *hi;
+		void *val;
+		const void *vvar;
+		for (hi = switch_core_hash_first(conference->layout_hash); hi; hi = switch_core_hash_next(&hi)) {
+			switch_core_hash_this(hi, &vvar, NULL, &val);
+			stream->write_function(stream, "%s\n", (char *)vvar);
+		}
+		return SWITCH_STATUS_SUCCESS;
+	}
+
 	if (!strcasecmp(argv[2], "group")) {
 		layout_group_t *lg = NULL;
 
@@ -8425,15 +8466,15 @@ static switch_status_t conf_api_sub_vid_logo_img(conference_member_t *member, sw
 		return SWITCH_STATUS_FALSE;
 	}
 
-	switch_mutex_lock(member->conference->canvas->mutex);
-
 	if (member->video_layer_id == -1 || !member->conference->canvas) {
 		goto end;
 	}
 
+	switch_mutex_lock(member->conference->canvas->mutex);
+
 	layer = &member->conference->canvas->layers[member->video_layer_id];
 	
-	if (!strcasecmp(text, "clear")) {
+	if (strcasecmp(text, "clear")) {
 		member->video_logo = switch_core_strdup(member->pool, text);
 	}
 
@@ -8442,6 +8483,43 @@ static switch_status_t conf_api_sub_vid_logo_img(conference_member_t *member, sw
  end:
 
 	stream->write_function(stream, "+OK\n");
+
+	switch_mutex_unlock(member->conference->canvas->mutex);
+
+	return SWITCH_STATUS_SUCCESS;
+
+}
+
+static switch_status_t conf_api_sub_vid_res_id(conference_member_t *member, switch_stream_handle_t *stream, void *data)
+{
+	char *text = (char *) data;
+	//mcu_layer_t *layer = NULL;
+
+	if (member == NULL)
+		return SWITCH_STATUS_GENERR;
+
+	if (!switch_channel_test_flag(member->channel, CF_VIDEO)) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (!member->conference->canvas) {
+		stream->write_function(stream, "-ERR conference is not in mixing mode\n");
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	switch_mutex_lock(member->conference->canvas->mutex);
+
+	//layer = &member->conference->canvas->layers[member->video_layer_id];
+	
+	if (!strcasecmp(text, "clear")) {
+		member->video_reservation_id = NULL;
+		stream->write_function(stream, "+OK reservation_id cleared\n");
+	} else {
+		member->video_reservation_id = switch_core_strdup(member->pool, text);
+		stream->write_function(stream, "+OK reservation_id %s\n", text);
+	}
+
+	detach_video_layer(member);
 
 	switch_mutex_unlock(member->conference->canvas->mutex);
 
@@ -9919,6 +9997,7 @@ static api_command_t conf_api_sub_commands[] = {
 	{"vid-banner", (void_fn_t) & conf_api_sub_vid_banner, CONF_API_SUB_MEMBER_TARGET, "vid-banner", "<member_id|last> <text>"},
 	{"vid-mute-img", (void_fn_t) & conf_api_sub_vid_mute_img, CONF_API_SUB_MEMBER_TARGET, "vid-mute-img", "<member_id|last> [<path>|clear]"},
 	{"vid-logo-img", (void_fn_t) & conf_api_sub_vid_logo_img, CONF_API_SUB_MEMBER_TARGET, "vid-logo-img", "<member_id|last> [<path>|clear]"},
+	{"vid-res-id", (void_fn_t) & conf_api_sub_vid_res_id, CONF_API_SUB_MEMBER_TARGET, "vid-res-id", "<member_id|last> <val>|clear"},
 	{"clear-vid-floor", (void_fn_t) & conf_api_sub_clear_vid_floor, CONF_API_SUB_ARGS_AS_ONE, "clear-vid-floor", ""},
 	{"vid-layout", (void_fn_t) & conf_api_sub_vid_layout, CONF_API_SUB_ARGS_SPLIT, "vid-layout", "<layout name>"},
 	{"vid-write-png", (void_fn_t) & conf_api_sub_write_png, CONF_API_SUB_ARGS_SPLIT, "vid-write-png", "<path>"},
