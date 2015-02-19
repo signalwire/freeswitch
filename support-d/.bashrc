@@ -78,12 +78,13 @@ alias tgit='git commit --author "Anthony Minessale <anthm@freeswitch.org>"'
 alias dp='emacs /usr/local/freeswitch/conf/dialplan/default.xml'
 alias go='/usr/local/freeswitch/bin/freeswitch -nonat'
 alias fstop='top -p `cat /usr/local/freeswitch/run/freeswitch.pid`'
+alias fsgcore='gcore `cat /usr/local/freeswitch/run/freeswitch.pid`'
 alias fsgdb='gdb /usr/local/freeswitch/bin/freeswitch `cat /usr/local/freeswitch/run/freeswitch.pid`'
 alias fscore='gdb /usr/local/freeswitch/bin/freeswitch `ls -rt core.* | tail -n1`'
 alias emacs='emacs -nw'
 
 if [ "${UNAME}" = "Linux" ]; then
-    alias govg='valgrind --tool=memcheck --log-file-exactly=vg.log --leak-check=full --leak-resolution=high --show-reachable=yes .libs/freeswitch -vg'
+    alias govg='valgrind --tool=memcheck --log-file=vg.log --leak-check=full --leak-resolution=high --show-reachable=yes .libs/freeswitch -vg'
     alias jitteron='tc qdisc add dev eth0 root handle 1: netem delay 40ms 20ms ; tc qdisc add dev eth0 parent 1:1 pfifo limit 1000'
     alias jitteroff='tc qdisc del dev eth0 root netem'
 fi
