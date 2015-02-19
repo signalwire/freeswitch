@@ -82,6 +82,8 @@ struct spandsp_globals {
 	char *modem_directory;
 	switch_hash_t *tones;
 	int tonedebug;
+    int t38_tx_reinvite_packet_count;
+    int t38_rx_reinvite_packet_count;
 };
 
 extern struct spandsp_globals spandsp_globals;

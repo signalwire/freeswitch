@@ -34,6 +34,9 @@
 
 	<param name="spool-dir"		value="$${temp_dir}"/>
 	<param name="file-prefix"	value="faxrx"/>
+	<!-- How many packets to process before sending the re-invite on tx/rx -->
+	<!-- <param name="t38-rx-reinvite-packet-count" value="50"/> -->
+	<!-- <param name="t38-tx-reinvite-packet-count" value="100"/> -->
     </fax-settings>
 
     <descriptors>

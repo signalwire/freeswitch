@@ -1483,9 +1483,9 @@ void mod_spandsp_fax_process_fax(switch_core_session_t *session, const char *dat
 	switch_ivr_sleep(session, 250, SWITCH_TRUE, NULL);
 
 	if (pvt->app_mode == FUNCTION_TX) {
-		req_counter = 100;
+		req_counter = spandsp_globals.t38_tx_reinvite_packet_count;
 	} else {
-		req_counter = 50;
+		req_counter = spandsp_globals.t38_rx_reinvite_packet_count;
 	}
 
 	while (switch_channel_ready(channel)) {
