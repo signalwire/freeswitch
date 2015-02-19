@@ -243,7 +243,18 @@ So if you have Chrome handy, try it with that too.
 <br><br>
 
 
-<div class="ui-field-contain">
+<legend><b>Camera</b>:</legend><select data-theme="a" data-overlay-theme="a" data-native-menu="false" id="usecamera">
+</select>
+<br><br>
+
+<legend><b>Microphone</b>:</legend><select data-theme="a" data-overlay-theme="a" data-native-menu="false" id="usemic">
+</select>
+
+<Br clear="all"><Br>
+<center><button data-inline="true" id="refreshbtn">Refresh Device List</button></center>
+<Br clear="all"><Br><br>
+
+<div >
   <fieldset data-role="controlgroup" data-type="horizontal">
     <legend><b>Video Quality</b>:</legend>
     <input type="radio" name="vqual" id="vqual_qvga" value="qvga">
@@ -266,8 +277,8 @@ So if you have Chrome handy, try it with that too.
 
   </fieldset>
 </div>
-<br>
-
+<br clear="all">
+<Br><br>
 <h2>Video Streaming (USE STEREO HEADPHONES IF POSSIBLE)</h2>
 <div style="text-align:left">
 This may look similar to playing video like you would on YouTube, however, these are mp4 files decoded by mod_vlc then re-encoded to the negotiated video codec and streamed over RTP in real-time to test transcoding.<br><br>
@@ -306,8 +317,7 @@ FireFox is pretty much stuck on 640x480 for now.  Chrome even when put into the 
 
 
 <br><br>
-	  <input type="text" id="ext"/><br>
-
+	  <input type="text" id="ext" style="width:200px"/>	
 	  <button data-inline="true" id="callbtn">Call</button>
 	  <br><br>
 	  <div style="color:blue" id="main_info">&nbsp;</div><br><br>

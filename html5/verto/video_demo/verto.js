@@ -360,6 +360,8 @@ var callbacks = {
 		    useStereo: $("#use_stereo").is(':checked'),
 		    callee_id_name: $("#name").val(),
 		    callee_id_number: $("#cid").val(),
+		    useCamera: $("#usecamera").find(":selected").val(),
+		    useMic: $("#usemic").find(":selected").val()
 		});
                 $('#dialog-incoming-call').dialog('close');
             });
@@ -377,7 +379,9 @@ var callbacks = {
                     $("#use_vid").prop("checked", true);
                     cur_call.answer({
                         useVideo: true,
-			useStereo: $("#use_stereo").is(':checked')
+			useStereo: $("#use_stereo").is(':checked'),
+			useCamera: $("#usecamera").find(":selected").val(),
+			useMic: $("#usemic").find(":selected").val()
                     });
                 });
                 // the buttons in this jquery mobile wont hide .. gotta wrap them in a div as a workaround
@@ -534,7 +538,9 @@ function docall() {
         caller_id_name: $("#name").val(),
         caller_id_number: $("#cid").val(),
         useVideo: check_vid(),
-        useStereo: $("#use_stereo").is(':checked')
+        useStereo: $("#use_stereo").is(':checked'),
+	useCamera: $("#usecamera").find(":selected").val(),
+	useMic: $("#usemic").find(":selected").val()
     });
 }
 
@@ -545,9 +551,9 @@ function doshare(on) {
     if (!on) {
 	if (share_call) {
 	    share_call.hangup();
-	    share_call = null;
-	    return;
 	}
+
+	return;
     }
 
 
@@ -586,6 +592,10 @@ $("#callbtn").click(function() {
     docall();
 });
 
+$("#refreshbtn").click(function() {
+    refresh_devices();
+});
+
 $("#sharebtn").click(function() {
     doshare(true);
 });
@@ -608,7 +618,42 @@ function pop(id, cname, dft) {
     });
 }
 
+function refresh_devices()
+{
+    $("#usecamera").empty();
+    $("#usemic").empty();
 
+    $.verto.findDevices(function() {
+	var x = 0;
+	$("#usecamera").append(new Option("No Camera", "none"));
+	for (var i in $.verto.videoDevices) {
+	    var source = $.verto.videoDevices[i];
+	    var o = new Option(source.label, source.id);
+	    if (!x++) {
+		o.selected = true;
+	    }
+	    $("#usecamera").append(o);
+	}
+
+	x = 0;
+	
+	for (var i in $.verto.audioDevices) {
+	    var source = $.verto.audioDevices[i];
+	    var o = new Option(source.label, source.id);
+	    if (!x++) {
+		o.selected = true;
+	    }
+	    $("#usemic").append(o);
+	}
+	
+	$("#usecamera").selectmenu('refresh', true);
+	$("#usemic").selectmenu('refresh', true);
+
+	//console.error($("#usecamera").find(":selected").val());
+
+    });
+
+}
 
 function init() {
     cur_call = null;
@@ -776,6 +821,7 @@ function init() {
 	iceServers: $("#use_stun").is(':checked')
     },callbacks);
 
+
     $("#login").change(function(e) {
         $("#cid").val(e.currentTarget.value);
         $.cookie("verto_demo_cid", e.currentTarget.value, {
@@ -833,6 +879,8 @@ function init() {
     if (window.location.hostname !== "webrtc.freeswitch.org") {
 	$("#directory").hide();
     }
+
+    refresh_devices();
 }
 
 $(document).ready(function() {
@@ -848,9 +896,7 @@ $(document).ready(function() {
     if (hash && (a = hash.split("&"))) {
 	window.location.hash = a[0];
     }
-
     init();
-
 });
 
 
