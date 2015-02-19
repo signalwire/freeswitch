@@ -629,6 +629,7 @@ struct conference_member {
 	char *video_logo;
 	char *video_mute_png;
 	char *video_reservation_id;
+	switch_media_flow_t video_flow;
 };
 
 typedef enum {
@@ -1271,6 +1272,10 @@ static switch_status_t attach_video_layer(conference_member_t *member, int idx)
 		return SWITCH_STATUS_FALSE;
 	}
 
+	if (member->video_flow == SWITCH_MEDIA_FLOW_SENDONLY) {
+		return SWITCH_STATUS_FALSE;
+	}
+
 	switch_mutex_lock(member->conference->canvas->mutex);
 
 	layer = &member->conference->canvas->layers[idx];
@@ -1677,7 +1682,7 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 					}
 				}
 				
-				if (!layer && conference->canvas->layers_used < conference->canvas->total_layers) {
+				if (!layer && conference->canvas->layers_used < conference->canvas->total_layers && imember->video_flow != SWITCH_MEDIA_FLOW_SENDONLY) {
 					/* find an empty layer */
 					for (i = 0; i < conference->canvas->total_layers; i++) {
 						mcu_layer_t *xlayer = &conference->canvas->layers[i];
@@ -3468,6 +3473,10 @@ static void find_video_floor(conference_member_t *member, switch_bool_t entering
 			continue;
 		}
 
+		if (imember->video_flow == SWITCH_MEDIA_FLOW_SENDONLY) {
+			continue;
+		}
+
 		if (!switch_channel_test_flag(imember->channel, CF_VIDEO)) {
 			continue;
 		}
@@ -3561,6 +3570,7 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 		conference_send_presence(conference);
 
 		channel = switch_core_session_get_channel(member->session);
+		member->video_flow = switch_core_session_media_flow(member->session, SWITCH_MEDIA_TYPE_VIDEO);
 
 		if (switch_channel_test_flag(channel, CF_VIDEO)) {
 			switch_set_flag_locked(member, MFLAG_ACK_VIDEO);
@@ -3753,7 +3763,6 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 	switch_mutex_unlock(conference->mutex);
 	status = SWITCH_STATUS_SUCCESS;
 
-
 	find_video_floor(member, SWITCH_TRUE);
 
 
@@ -3785,6 +3794,10 @@ static void conference_set_video_floor_holder(conference_obj_t *conference, conf
 		return;
 	}
 	
+	if (member && member->video_flow == SWITCH_MEDIA_FLOW_SENDONLY) {
+		return;
+	}
+
 	if (conference->video_floor_holder) {
 		if (member && conference->video_floor_holder == member->id) {
 			return;
