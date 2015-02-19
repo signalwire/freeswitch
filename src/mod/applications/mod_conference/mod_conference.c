@@ -1375,6 +1375,8 @@ static void init_canvas_layers(conference_obj_t *conference, video_layout_t *vla
 		layer->member_id = 0;
 		layer->tagged = 0;
 		layer->banner_patched = 0;
+		reset_layer(conference->canvas, layer);
+
 	}
 
 	conference->canvas->layers_used = 0;
