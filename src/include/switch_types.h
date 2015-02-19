@@ -2476,6 +2476,13 @@ typedef struct payload_map_s {
 } payload_map_t;
 
 typedef enum {
+	SWITCH_MEDIA_FLOW_SENDRECV = 0,
+	SWITCH_MEDIA_FLOW_SENDONLY,
+	SWITCH_MEDIA_FLOW_RECVONLY,
+	SWITCH_MEDIA_FLOW_INACTIVE
+} switch_media_flow_t;
+
+typedef enum {
 	ICE_GOOGLE_JINGLE = (1 << 0),
 	ICE_VANILLA = (1 << 1),
 	ICE_CONTROLLED = (1 << 2)
