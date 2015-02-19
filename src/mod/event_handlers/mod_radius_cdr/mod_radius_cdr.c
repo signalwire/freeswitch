@@ -53,6 +53,7 @@ static char *my_deadtime;		/* 0 */
 static char *my_timeout;		/* 5 */
 static char *my_retries;		/* 3 */
 static char my_servers[SERVER_MAX][255];
+static const char *my_timezone="";		/* Asia/Tokyo */
 
 static rc_handle *my_radius_init(void)
 {
@@ -151,6 +152,7 @@ static switch_status_t my_on_routing(switch_core_session_t *session)
 	char *uuid_str;
 
 	switch_time_exp_t tm;
+	switch_time_exp_t requested_tm;
 	char buffer[32];
 
 	char *radius_avpair_data;
@@ -184,6 +186,13 @@ static switch_status_t my_on_routing(switch_core_session_t *session)
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "[mod_radius_cdr] Error Generating Data!\n");
 		goto end;
+	}
+
+	/* GMT offset may change according daylight saving rules. Evaluating GMT offset each time */
+	if (zstr(my_timezone)) {
+		switch_time_exp_lt(&requested_tm, switch_micro_time_now());
+	} else {
+		switch_time_exp_tz_name(my_timezone, &requested_tm, switch_micro_time_now());
 	}
 
 	/* Create the radius packet */
@@ -314,7 +323,7 @@ static switch_status_t my_on_routing(switch_core_session_t *session)
 				}
 			}
 			if (callstartdate > 0) {
-				switch_time_exp_lt(&tm, callstartdate);
+				switch_time_exp_tz(&tm, callstartdate, requested_tm.tm_gmtoff);
 				switch_snprintf(buffer, sizeof(buffer), "%04u-%02u-%02uT%02u:%02u:%02u.%06u%+03d%02d",
 								tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
 								tm.tm_hour, tm.tm_min, tm.tm_sec, tm.tm_usec, tm.tm_gmtoff / 3600, tm.tm_gmtoff % 3600);
@@ -326,7 +335,7 @@ static switch_status_t my_on_routing(switch_core_session_t *session)
 			}
 
 			if (callanswerdate > 0) {
-				switch_time_exp_lt(&tm, callanswerdate);
+				switch_time_exp_tz(&tm, callanswerdate, requested_tm.tm_gmtoff);
 				switch_snprintf(buffer, sizeof(buffer), "%04u-%02u-%02uT%02u:%02u:%02u.%06u%+03d%02d",
 								tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
 								tm.tm_hour, tm.tm_min, tm.tm_sec, tm.tm_usec, tm.tm_gmtoff / 3600, tm.tm_gmtoff % 3600);
@@ -338,7 +347,7 @@ static switch_status_t my_on_routing(switch_core_session_t *session)
 			}
 
 			if (calltransferdate > 0) {
-				switch_time_exp_lt(&tm, calltransferdate);
+				switch_time_exp_tz(&tm, calltransferdate, requested_tm.tm_gmtoff);
 				switch_snprintf(buffer, sizeof(buffer), "%04u-%02u-%02uT%02u:%02u:%02u.%06u%+03d%02d",
 								tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
 								tm.tm_hour, tm.tm_min, tm.tm_sec, tm.tm_usec, tm.tm_gmtoff / 3600, tm.tm_gmtoff % 3600);
@@ -350,7 +359,7 @@ static switch_status_t my_on_routing(switch_core_session_t *session)
 			}
 
 			if (callenddate > 0) {
-				switch_time_exp_lt(&tm, callenddate);
+				switch_time_exp_tz(&tm, callenddate, requested_tm.tm_gmtoff);
 				switch_snprintf(buffer, sizeof(buffer), "%04u-%02u-%02uT%02u:%02u:%02u.%06u%+03d%02d",
 								tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
 								tm.tm_hour, tm.tm_min, tm.tm_sec, tm.tm_usec, tm.tm_gmtoff / 3600, tm.tm_gmtoff % 3600);
@@ -431,6 +440,8 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 	char *uuid_str;
 
 	switch_time_exp_t tm;
+	switch_time_exp_t requested_tm;
+
 	char buffer[32] = "";
 
 	char *radius_avpair_data;
@@ -465,6 +476,13 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "[mod_radius_cdr] Error Generating Data!\n");
 		goto end;
+	}
+
+	/* GMT offset may change according daylight saving rules. Evaluating GMT offset each time */
+	if (zstr(my_timezone)) {
+		switch_time_exp_lt(&requested_tm, time(NULL));
+	} else {
+		switch_time_exp_tz_name(my_timezone, &requested_tm, time(NULL));
 	}
 
 	/* Create the radius packet */
@@ -617,7 +635,7 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 			}
 
 			if (callstartdate > 0) {
-				switch_time_exp_lt(&tm, callstartdate);
+				switch_time_exp_tz(&tm, callstartdate, requested_tm.tm_gmtoff);
 				switch_snprintf(buffer, sizeof(buffer), "%04u-%02u-%02uT%02u:%02u:%02u.%06u%+03d%02d",
 								tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
 								tm.tm_hour, tm.tm_min, tm.tm_sec, tm.tm_usec, tm.tm_gmtoff / 3600, tm.tm_gmtoff % 3600);
@@ -629,7 +647,7 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 			}
 
 			if (callanswerdate > 0) {
-				switch_time_exp_lt(&tm, callanswerdate);
+				switch_time_exp_tz(&tm, callanswerdate, requested_tm.tm_gmtoff);
 				switch_snprintf(buffer, sizeof(buffer), "%04u-%02u-%02uT%02u:%02u:%02u.%06u%+03d%02d",
 								tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
 								tm.tm_hour, tm.tm_min, tm.tm_sec, tm.tm_usec, tm.tm_gmtoff / 3600, tm.tm_gmtoff % 3600);
@@ -641,7 +659,7 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 			}
 
 			if (calltransferdate > 0) {
-				switch_time_exp_lt(&tm, calltransferdate);
+				switch_time_exp_tz(&tm, calltransferdate, requested_tm.tm_gmtoff);
 				switch_snprintf(buffer, sizeof(buffer), "%04u-%02u-%02uT%02u:%02u:%02u.%06u%+03d%02d",
 								tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
 								tm.tm_hour, tm.tm_min, tm.tm_sec, tm.tm_usec, tm.tm_gmtoff / 3600, tm.tm_gmtoff % 3600);
@@ -653,7 +671,7 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 			}
 
 			if (callenddate > 0) {
-				switch_time_exp_lt(&tm, callenddate);
+				switch_time_exp_tz(&tm, callenddate, requested_tm.tm_gmtoff);
 				switch_snprintf(buffer, sizeof(buffer), "%04u-%02u-%02uT%02u:%02u:%02u.%06u%+03d%02d",
 								tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
 								tm.tm_hour, tm.tm_min, tm.tm_sec, tm.tm_usec, tm.tm_gmtoff / 3600, tm.tm_gmtoff % 3600);
@@ -729,6 +747,7 @@ static switch_status_t load_config(void)
 
 	int num_servers = 0;
 	int i = 0;
+	static char *tz_name;
 
 	my_timeout = "5";
 	my_retries = "3";
@@ -768,6 +787,8 @@ static switch_status_t load_config(void)
 				my_retries = strdup(val);
 			} else if (!strcmp(var, "radius_deadtime")) {
 				my_deadtime = strdup(val);
+			} else if (!strcmp(var, "timezone")) {
+				tz_name = strdup(val);
 			}
 		}
 	}
@@ -777,6 +798,15 @@ static switch_status_t load_config(void)
 	if (num_servers < 1) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "you must specify at least 1 radius server\n");
 		return SWITCH_STATUS_TERM;
+	}
+
+	if (!zstr(tz_name)) {
+		if (switch_lookup_timezone(tz_name)) {
+			my_timezone= tz_name;
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot find timezone %s\n, Setting timezone to GMT", tz_name);
+			my_timezone= "GMT";
+		}
 	}
 
 	/* If we made it this far, we succeeded */
