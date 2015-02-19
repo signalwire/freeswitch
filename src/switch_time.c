@@ -416,9 +416,9 @@ static switch_status_t timerfd_start_interval(interval_timer_t *it, int interval
 	val.it_interval.tv_sec = interval / 1000;
 	val.it_interval.tv_nsec = (interval % 1000) * 1000000;
 	val.it_value.tv_sec = 0;
-	val.it_value.tv_nsec = val.it_interval.tv_nsec;
+	val.it_value.tv_nsec = 100000;
 
-	if (timerfd_settime(fd, TFD_TIMER_ABSTIME, &val, NULL) < 0) {
+	if (timerfd_settime(fd, 0, &val, NULL) < 0) {
 		close(fd);
 		return SWITCH_STATUS_GENERR;
 	}
@@ -1038,10 +1038,10 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 		if (tfd > -1) {
 			spec.it_interval.tv_sec = 0;
 			spec.it_interval.tv_nsec = runtime.microseconds_per_tick * 1000;
-			spec.it_value.tv_sec = spec.it_interval.tv_sec;
-			spec.it_value.tv_nsec = spec.it_interval.tv_nsec;
+			spec.it_value.tv_sec = 0;
+			spec.it_value.tv_nsec = 100000;
 		
-			if (timerfd_settime(tfd, TFD_TIMER_ABSTIME, &spec, NULL)) {
+			if (timerfd_settime(tfd, 0, &spec, NULL)) {
 				close(tfd);
 				tfd = -1;
 			}
@@ -1109,7 +1109,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 #ifdef HAVE_TIMERFD_CREATE
 		if (last_MICROSECONDS_PER_TICK != runtime.microseconds_per_tick) {
 			spec.it_interval.tv_nsec = runtime.microseconds_per_tick * 1000;
-			timerfd_settime(tfd, TFD_TIMER_ABSTIME, &spec, NULL);
+			timerfd_settime(tfd, 0, &spec, NULL);
 		}
 		
 		last_MICROSECONDS_PER_TICK = runtime.microseconds_per_tick;

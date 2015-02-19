@@ -1794,8 +1794,9 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 	} else {
 		/* Agent didn't answer or originate failed */
 		int delay_next_agent_call = 0;
-		sql = switch_mprintf("UPDATE members SET state = '%q', serving_agent = '', serving_system = ''"
+		sql = switch_mprintf("UPDATE members SET state = case state when '%q' then '%q' else state end, serving_agent = '', serving_system = ''"
 				" WHERE serving_agent = '%q' AND serving_system = '%q' AND uuid = '%q' AND system = 'single_box'",
+				cc_member_state2str(CC_MEMBER_STATE_TRYING),	/* Only switch to Waiting from Trying (state may be set to Abandoned in callcenter_function()) */
 				cc_member_state2str(CC_MEMBER_STATE_WAITING),
 				h->agent_name, h->agent_system, h->member_uuid);
 		cc_execute_sql(NULL, sql, NULL);
