@@ -8979,6 +8979,9 @@ static int setup_media(conference_member_t *member, conference_obj_t *conference
 		switch_resample_destroy(&member->read_resampler);
 	}
 
+	switch_buffer_destroy(&member->resample_buffer);
+	switch_buffer_destroy(&member->audio_buffer);
+	switch_buffer_destroy(&member->mux_buffer);
 
 	switch_core_session_get_read_impl(member->session, &member->orig_read_impl);
 	member->native_rate = read_impl.samples_per_second;
