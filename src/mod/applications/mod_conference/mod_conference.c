@@ -3328,7 +3328,7 @@ static void member_update_status_field(conference_member_t *member)
 {
 	char *str, *vstr = "", display[128] = "";
 
-	if (!member->conference->la || !member->json || !member->status_field) {
+	if (!member->conference->la || !member->json || !member->status_field || switch_channel_test_flag(member->channel, CF_VIDEO_ONLY)) {
 		return;
 	}
 
@@ -3373,7 +3373,7 @@ static void member_update_status_field(conference_member_t *member)
 
 static void adv_la(conference_obj_t *conference, conference_member_t *member, switch_bool_t join)
 {
-	if (conference && conference->la && member->session) {
+	if (conference && conference->la && member->session && !switch_channel_test_flag(member->channel, CF_VIDEO_ONLY)) {
 		cJSON *msg, *data;
 		const char *uuid = switch_core_session_get_uuid(member->session);
 		const char *cookie = switch_channel_get_variable(member->channel, "event_channel_cookie");
@@ -3728,7 +3728,7 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 	switch_mutex_unlock(member->audio_out_mutex);
 	switch_mutex_unlock(member->audio_in_mutex);
 
-	if (conference->la && member->channel) {
+	if (conference->la && member->channel && !switch_channel_test_flag(member->channel, CF_VIDEO_ONLY)) {
 		member->json = cJSON_CreateArray();
 		cJSON_AddItemToArray(member->json, cJSON_CreateStringPrintf("%0.4d", member->id));
 		cJSON_AddItemToArray(member->json, cJSON_CreateString(switch_channel_get_variable(member->channel, "caller_id_number")));
@@ -3805,7 +3805,9 @@ static void conference_set_video_floor_holder(conference_obj_t *conference, conf
 		if (member && conference->video_floor_holder == member->id) {
 			return;
 		} else {			
-			conference->last_video_floor_holder = conference->video_floor_holder;
+			if (member) {
+				conference->last_video_floor_holder = conference->video_floor_holder;
+			}
 			
 			if (conference->last_video_floor_holder && (imember = conference_member_get(conference, conference->last_video_floor_holder))) {
 				switch_core_session_request_video_refresh(imember->session);
@@ -3819,7 +3821,6 @@ static void conference_set_video_floor_holder(conference_obj_t *conference, conf
 			
 			old_member = conference->video_floor_holder;
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Dropping video floor %d\n", old_member);
-
 		}
 	}
 
@@ -4127,6 +4128,7 @@ static switch_status_t conference_del_member(conference_obj_t *conference, confe
 	}
 
 	if (member->id == member->conference->video_floor_holder) {
+		switch_clear_flag(member->conference, CFLAG_VID_FLOOR_LOCK);
 		if (member->conference->last_video_floor_holder) {
 			member->conference->video_floor_holder = member->conference->last_video_floor_holder;
 			member->conference->last_video_floor_holder = 0;
@@ -4189,7 +4191,7 @@ static switch_status_t conference_del_member(conference_obj_t *conference, confe
 	switch_mutex_unlock(member->audio_in_mutex);
 
 
-	if (conference->la && member->session) {
+	if (conference->la && member->session && !switch_channel_test_flag(member->channel, CF_VIDEO_ONLY)) {
 		switch_live_array_del(conference->la, switch_core_session_get_uuid(member->session));
 		//switch_live_array_clear_alias(conference->la, switch_core_session_get_uuid(member->session), "conference");
 		adv_la(conference, member, SWITCH_FALSE);
