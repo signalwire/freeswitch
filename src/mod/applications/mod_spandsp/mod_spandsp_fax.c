@@ -138,7 +138,7 @@ static int add_pvt(pvt_t *pvt)
 {
 	int r = 0;
 
-	if (t38_state_list.thread_running) {
+	if (t38_state_list.thread_running > 0) {
 		switch_mutex_lock(t38_state_list.mutex);
 		pvt->next = t38_state_list.head;
 		t38_state_list.head = pvt;
@@ -199,12 +199,13 @@ static void *SWITCH_THREAD_FUNC timer_thread_run(switch_thread_t *thread, void *
 
 	if (switch_core_timer_init(&timer, "soft", ms, samples, NULL) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "timer init failed.\n");
+        t38_state_list.thread_running = -1;
 		goto end;
 	}
 
 	switch_mutex_lock(spandsp_globals.cond_mutex);
 
-	while(t38_state_list.thread_running) {
+	while(t38_state_list.thread_running > 0) {
 
 		switch_mutex_lock(t38_state_list.mutex);
 
