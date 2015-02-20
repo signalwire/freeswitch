@@ -202,27 +202,27 @@
 	<image x="300" y="300" scale="60"/>
       </layout>
       <layout name="presenter-dual-vertical">
-	<image x="90" y="0" scale="180" floor="true"/>
+	<image x="90" y="0" scale="180" floor-only="true"/>
 	<image x="90" y="180" scale="180" reservation_id="presenter"/>
       </layout>
       <layout name="presenter-dual-horizontal">
-	<image x="0" y="90" scale="180" floor="true"/>
+	<image x="0" y="90" scale="180" floor-only="true"/>
 	<image x="180" y="90" scale="180" reservation_id="presenter"/>
       </layout>
       <layout name="presenter-overlap-small-top-right">
-	<image x="0" y="0" scale="360" floor="true"/>
+	<image x="0" y="0" scale="360" floor-only="true"/>
 	<image x="300" y="0" scale="60" overlap="true" reservation_id="presenter"/>
       </layout>
       <layout name="presenter-overlap-small-bot-right">
-	<image x="0" y="0" scale="360" floor="true"/>
+	<image x="0" y="0" scale="360" floor-only="true"/>
 	<image x="300" y="300" scale="60" overlap="true" reservation_id="presenter"/>
       </layout>
       <layout name="presenter-overlap-large-top-right">
-	<image x="0" y="0" scale="360" floor="true"/>
+	<image x="0" y="0" scale="360" floor-only="true"/>
 	<image x="180" y="0" scale="180" overlap="true" reservation_id="presenter"/>
       </layout>
       <layout name="presenter-overlap-large-bot-right">
-	<image x="0" y="0" scale="360" floor="true"/>
+	<image x="0" y="0" scale="360" floor-only="true"/>
 	<image x="180" y="180" scale="180" overlap="true" reservation_id="presenter"/>
       </layout>
       <layout name="overlaps">
