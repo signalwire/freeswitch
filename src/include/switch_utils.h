@@ -987,11 +987,11 @@ static inline int32_t switch_parse_bandwidth_string(const char *bwv)
 
 		if (!strcasecmp(bwv, "auto")) {
 			return -1;
-		} else if (switch_stristr("KB", bwv)) {
+		} else if (strstr(bwv, "KB")) {
 			bw *= 8;
-		} else if (switch_stristr("mb", bwv)) {
+		} else if (strstr(bwv, "mb")) {
 			bw *= 1024;
-		} else if (switch_stristr("MB", bwv)) {
+		} else if (strstr(bwv, "MB")) {
 			bw *= 8192;
 		}
 	}
