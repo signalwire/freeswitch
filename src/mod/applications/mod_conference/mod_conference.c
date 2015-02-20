@@ -387,6 +387,7 @@ typedef struct mcu_layer_s {
 	int y_pos;
 	int banner_patched;
 	int mute_patched;
+	int refresh;
 	switch_img_position_t logo_pos;
 	switch_image_t *img;
 	switch_image_t *cur_img;
@@ -404,6 +405,7 @@ typedef struct mcu_canvas_s {
 	int total_layers;
 	int layers_used;
 	int layout_floor_id;
+	int refresh;
 	switch_rgb_color_t bgcolor;
 	switch_mutex_t *mutex;
 	switch_timer_t timer;
@@ -948,6 +950,10 @@ static void reset_layer(mcu_canvas_t *canvas, mcu_layer_t *layer)
 
 	layer->banner_patched = 0;
 
+	if (layer->geometry.overlap) {
+		canvas->refresh = 1;
+	}
+
 	switch_img_free(&layer->img);
 	layer->img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, layer->screen_w, layer->screen_h, 1);
 	switch_assert(layer->img);
@@ -964,6 +970,13 @@ static void scale_and_patch(conference_obj_t *conference, mcu_layer_t *layer, sw
 
 	IMG = conference->canvas->img;
 	img = ximg ? ximg : layer->cur_img;
+
+	if (layer->refresh) {
+		switch_rgb_color_t color;
+		switch_color_set_rgb(&color, conference->video_layout_bgcolor);
+		switch_img_fill(conference->canvas->img, layer->x_pos, layer->y_pos, layer->screen_w, layer->screen_h, &color);
+		layer->refresh = 0;
+	}
 
 	if (layer->geometry.scale) {
 		int img_w = 0, img_h = 0;
@@ -1753,9 +1766,18 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 			mcu_layer_t *layer = &conference->canvas->layers[i];
 
 			if (layer->member_id > -1 && layer->cur_img && (layer->tagged || layer->geometry.overlap)) {
+				if (conference->canvas->refresh) {
+					layer->refresh = 1;
+					conference->canvas->refresh++;
+				}
+
 				scale_and_patch(conference, layer, NULL);
 				layer->tagged = 0;
 			}
+		}
+
+		if (conference->canvas->refresh > 1) {
+			conference->canvas->refresh = 0;
 		}
 
 #if 0
