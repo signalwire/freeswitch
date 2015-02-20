@@ -22,17 +22,17 @@
 	 font-face: arial;
 	 height:18px;
 	 font-size:7pt;
-										}     	      
-
-.vidbtn {
-	font-face: arial;
-        font-size:7pt;
-};
+}
 
 .ctlbtn:hover {
 	 color: #ffffae;
 	 cursor: pointer;
- }	
+}
+
+.vidbtn {
+	font-face: arial;
+        font-size:7pt;
+}
 
 #chatwin
 {
@@ -92,7 +92,7 @@
 
       <div id="conf">
 	<div style="color:black;font-family: verdana" align="center" id="conf_count"></div>
-	<table width="800" cellspacing="0" cellpadding="0" border="0" align="center" id="conf_list" class="jsDataTable">
+	<table width="1000" cellspacing="0" cellpadding="0" border="0" align="center" id="conf_list" class="jsDataTable">
 	</table>
       </div>
 
@@ -115,25 +115,30 @@
       	<div id="conf_mod"></div>
 	<div style="color:blue" id="conf_display"></div>
 
-<!--      <button data-inline="true" id="hold">HOLD</button>-->
+      <button data-inline="true" id="hold">HOLD</button>
       <button data-inline="true" id="hupbtn">End Call</button>
+<!--      <button data-inline="true" class="startxferbtn">Transfer</button>-->
+      <span class="sharediv">
 	  <button data-inline="true" id="sharebtn">Share</button>
 	  <button data-inline="true" id="nosharebtn">End Share</button>
-<!--      <button data-inline="true" class="startxferbtn">Transfer</button>-->
-	<br><br>
+      </span>
+
+	<br><br><br>
 	<img src="img/verto_black_web.gif" width="300"><br><br>
-
-
 
 	<div id="media">	
 
+      <div class="sharediv">
 	  <button data-inline="true" id="smallerbtn">Smaller - </button>
 	  <button data-inline="true" id="biggerbtn">Bigger +</button>
   	  <button data-inline="true" id="fullbtn">Full Screen</button>
-	  <table border=1 cellspacing=0 cellpadding=0 width=95%><tr>
+      </div>
+	  <table border=0 cellspacing=0 cellpadding=0 width=95%><tr>
 	  <td valign=top align=center><video id="webcam" autoplay="autoplay"></video></td>
 	  </tr><tr>
-	  <td valign=top align=left><video id="local_webcam" autoplay="autoplay" style="transform: scale(-1, 1);webkit-transform: scale(-1, 1);"></video></td>
+
+<!--	  <td valign=top align=left>
+	  <br><br><video id="local_webcam" autoplay="autoplay" style="transform: scale(-1, 1);webkit-transform: scale(-1, 1);"></video></td>-->
 
 	  </tr></table>
 	</div>
@@ -232,27 +237,19 @@ function dial(ext)
       <div id="online" align="center" style="width:75%">
 	<div class="ui-field-contain">
 
-<div style="font-face:arial;font-size:12pt;text-align:left;width:750px">
-Demo of the Work-In-Progress Video work in FreeSWITCH.  Press one of the buttons below.<br>
-This is still under heavy development but this is a little taste what is coming.<br>
+<div id="devices">
 
-Chrome 38.0.2125.122 currently has better results than FireFox 33.1.1 <br>
-So if you have Chrome handy, try it with that too.
-</div>
+<div id="camdiv">
+<legend><b>Camera</b>:</legend><select data-theme="a" data-overlay-theme="a" data-native-menu="false" id="usecamera"></select>
+<br><br></div>
 
-<br><br>
-
-
-<legend><b>Camera</b>:</legend><select data-theme="a" data-overlay-theme="a" data-native-menu="false" id="usecamera">
-</select>
-<br><br>
-
-<legend><b>Microphone</b>:</legend><select data-theme="a" data-overlay-theme="a" data-native-menu="false" id="usemic">
-</select>
+<legend><b>Microphone</b>:</legend><select data-theme="a" data-overlay-theme="a" data-native-menu="false" id="usemic"></select>
 
 <Br clear="all"><Br>
-<center><button data-inline="true" id="refreshbtn">Refresh Device List</button></center>
-<Br clear="all"><Br><br>
+<center><button data-inline="true" id="refreshbtn">Refresh Device List</button>
+<button data-inline="true" id="hidedevices" onclick="$('#devices').hide();$('#showdevices').show()">Save Device Settings</button>
+</center>
+<Br clear="all"><hr><br>
 
 <div >
   <fieldset data-role="controlgroup" data-type="horizontal">
@@ -276,14 +273,18 @@ So if you have Chrome handy, try it with that too.
     <label for="vqual_hhd">HHD 1920x1080</label>
 
   </fieldset>
-</div>
+</div><Br>
+
 <br clear="all">
-<Br><br>
-<h2>Video Streaming (USE STEREO HEADPHONES IF POSSIBLE)</h2>
-<div style="text-align:left">
-This may look similar to playing video like you would on YouTube, however, these are mp4 files decoded by mod_vlc then re-encoded to the negotiated video codec and streamed over RTP in real-time to test transcoding.<br><br>
 </div>
-<div style="border-style:outset;border-width:1px;background-color:#eeeeee">
+	<button data-inline="true" id="showdemo" onclick="$('#demos').show();$('#showdemo').hide()">View Demo Extensions</button>
+<button data-inline="true" id="showdevices" onclick="$('#devices').show();$('#showdevices').hide()">View Device Settings</button>
+
+<br><br>
+<div id="demos" style="border-style:outset">
+
+<h2>Video Streaming (USE STEREO HEADPHONES IF POSSIBLE)</h2>
+<div style="border-style:inset;border-width:1px;background-color:#eeeeee">
 	<button class="vidbtn" data-inline="true" onclick="playvid('vuc.mp4')">FreeSWITCH Team on VUC (Summer 2014)</button>
 	<button class="vidbtn" data-inline="true" onclick="playvid('briancc.mp4')">Brian West ClueCon Spot (Summer 2010)</button>
 	<button class="vidbtn" data-inline="true" onclick="playvid('bin1.mp4')">Binaural Audio Demo</button>
@@ -303,22 +304,20 @@ This may look similar to playing video like you would on YouTube, however, these
 </div>
 <br>
 <h2>Codec Test and Conference</h2>
-<div style="text-align:left">
-Conference is similar to previous behavior but now it can support differing video codecs.
-There is still a considerable amount of work to do with the codecs and video RTP reliability.  Again, Chrome is way ahead of FireFox so far in this area.
-<br><br>
-FireFox is pretty much stuck on 640x480 for now.  Chrome even when put into the hd mode and above takes some time to kick into gear as it does some kind of step up to full speed and we still are missing the RTCP code to communicate with them.<br><br>
-</div>
-<div style="border-style:outset;border-width:1px;background-color:#eeeeee">
+
+<div style="border-style:inset;border-width:1px;background-color:#eeeeee">
 	<button class="vidbtn" data-inline="true" onclick="dial('decode')">Video from your Webcam decoded then re-encoded w/ MOH</button>
 	<button class="vidbtn" data-inline="true" onclick="dial('3500')">Video Transcoded Conference</button>
+	<button class="vidbtn" id="hidedemo" data-inline="true" onclick="$('#demos').hide();$('#showdemo').show();">Hide Demos</button>
 
+</div>
 </div>
 
 
-<br><br>
-	  <input type="text" id="ext" style="width:200px"/>	
-	  <button data-inline="true" id="callbtn">Call</button>
+
+<br><br><br>
+	  <input type="text" id="ext""/>
+	  <button data-inline="true" id="callbtn">Call Extension</button>
 	  <br><br>
 	  <div style="color:blue" id="main_info">&nbsp;</div><br><br>
 	  <img src="img/verto_black_web.gif" width="300"><br><br>
@@ -330,7 +329,7 @@ FireFox is pretty much stuck on 640x480 for now.  Chrome even when put into the 
 	<label><input id="use_vid" type="checkbox" value="foo" > Use Video</label>
 	<label><input id="use_stereo" type="checkbox" value="foo" > Stereo Audio</label>
 	<label><input id="use_stun" type="checkbox" value="foo" > Use STUN</label>
-	<label><input id="local_video" type="checkbox" value="foo" > Local Video</label>
+<!--	<label><input id="local_video" type="checkbox" value="foo" > Local Video</label>-->
 </div>
 
 	<br>

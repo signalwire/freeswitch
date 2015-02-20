@@ -165,8 +165,8 @@ function check_vid_res()
 	local_vid_height = 180;
     }
 
-    $("#local_webcam").width(local_vid_width);
-    $("#local_webcam").height(local_vid_height);
+    //$("#local_webcam").width(local_vid_width);
+    //$("#local_webcam").height(local_vid_height);
 
     real_size();
 
@@ -562,6 +562,7 @@ function doshare(on) {
     }
     console.log("Attempting Screen Capture....");
     getScreenId(function (error, sourceId, screen_constraints) {
+	
 	share_call = verto.newCall({
             destination_number: $("#ext").val() + "-screen",
             caller_id_name: $("#name").val() + " (Screen)",
@@ -676,9 +677,25 @@ function init() {
     $.cookie("verto_demo_vid_checked", tmp, {
         expires: 365
     });
+    console.error(tmp);
+    if (tmp !== "true") {
+	$("#camdiv").hide();
+	$(".sharediv").hide();
+    } else {
+	$(".sharediv").show();
+	$("#camdiv").show();
+    }
 
     $("#use_vid").prop("checked", tmp === "true").change(function(e) {
         tmp = $("#use_vid").is(':checked');
+
+	if (!tmp) {
+	    $("#camdiv").hide();
+	    $(".sharediv").hide();
+	} else {
+	    $("#camdiv").show();
+	    $(".sharediv").show();
+	}
         $.cookie("verto_demo_vid_checked", tmp ? "true" : "false", {
             expires: 365
         });
@@ -802,7 +819,7 @@ function init() {
         passwd: $("#passwd").val(),
         socketUrl: $("#wsURL").val(),
         tag: "webcam",
-        localTag: $("#local_video").is(':checked') ? "local_webcam" : null,
+        //localTag: $("#local_video").is(':checked') ? "local_webcam" : null,
         ringFile: "sounds/bell_ring2.wav",
         videoParams: {
             "minWidth": vid_width,
@@ -815,8 +832,8 @@ function init() {
         },
 	audioParams: {
 	    googAutoGainControl: false,
-	    googNoiseSuppression: false,
-	    googHighpassFilter: false
+	    googNoiseSuppression: true,
+	    googHighpassFilter: true
 	},
 	iceServers: $("#use_stun").is(':checked')
     },callbacks);
@@ -896,7 +913,17 @@ $(document).ready(function() {
     if (hash && (a = hash.split("&"))) {
 	window.location.hash = a[0];
     }
+
+    $("#webcam").hide();
+    $("#camdiv").hide();
+    $('#demos').hide();
+    $('#devices').hide();
+    $('#showdemo').show();
+
     init();
+
+
+
 });
 
 
