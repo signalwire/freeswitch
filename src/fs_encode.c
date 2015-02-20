@@ -46,6 +46,13 @@
 #pragma warning (disable:167)
 #endif
 
+static void fs_encode_cleanup()
+{
+	switch_safe_free(SWITCH_GLOBAL_dirs.conf_dir);
+	switch_safe_free(SWITCH_GLOBAL_dirs.mod_dir);
+	switch_safe_free(SWITCH_GLOBAL_dirs.log_dir);
+}
+
 int main(int argc, char *argv[]) 
 {
 	int r = 1;
@@ -75,6 +82,27 @@ int main(int argc, char *argv[])
 	for (i = 1; i < argc; i++) {
 		if (argv[i][0] == '-') {
 			switch(argv[i][1]) {
+				case 'c':
+					i++;
+					if((SWITCH_GLOBAL_dirs.conf_dir = (char *) malloc(strlen(argv[i]) + 1)) == NULL) {
+						return 255;
+					}
+					strcpy(SWITCH_GLOBAL_dirs.conf_dir, argv[i]);
+					break;
+				case 'k':
+					i++;
+					if((SWITCH_GLOBAL_dirs.log_dir = (char *) malloc(strlen(argv[i]) + 1)) == NULL) {
+						return 255;
+					}
+					strcpy(SWITCH_GLOBAL_dirs.log_dir, argv[i]);
+					break;
+				case 'm':
+					i++;
+					if((SWITCH_GLOBAL_dirs.mod_dir = (char *) malloc(strlen(argv[i]) + 1)) == NULL) {
+						return 255;
+					}
+					strcpy(SWITCH_GLOBAL_dirs.mod_dir, argv[i]);
+					break;
 				case 'l':
 					i++;
 					/* Load extra modules */
@@ -288,6 +316,8 @@ end:
 	if (pool) {
 		switch_core_destroy_memory_pool(&pool);
 	}
+	
+	fs_encode_cleanup();
 
 	//switch_core_destroy();
 
@@ -295,12 +325,16 @@ end:
 usage:
 	printf("Usage: %s [options] input output\n\n", argv[0]);
 	printf("The output must end in the format, e.g., myfile.SPEEX\n");
+	printf("\t\t -c path\t\t Path to the FS configurations.\n");
+	printf("\t\t -k path\t\t Path to the FS log directory\n");
 	printf("\t\t -l module[,module]\t Load additional modules (comma-separated)\n");
+	printf("\t\t -m path\t\t Path to the modules.\n");
 	printf("\t\t -f format\t\t fmtp to pass to the codec\n");
 	printf("\t\t -p ptime\t\t ptime to use while encoding\n");
 	printf("\t\t -r rate\t\t sampling rate\n");
 	printf("\t\t -b bitrate\t\t codec bitrate (if supported)\n");
 	printf("\t\t -v\t\t\t verbose\n");
+	fs_encode_cleanup();
 	return 1;
 }
 
