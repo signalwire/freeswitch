@@ -2872,6 +2872,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 
 	nua_set_params(profile->nua,
 				   SIPTAG_ALLOW_STR("INVITE, ACK, BYE, CANCEL, OPTIONS, MESSAGE, INFO"),
+				   SIPTAG_USER_AGENT(SIP_NONE),
 				   NUTAG_AUTOANSWER(0),
 				   NUTAG_AUTOACK(0),
 				   NUTAG_AUTOALERT(0),
@@ -2911,7 +2912,9 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 				   TAG_IF(profile->pres_type, NUTAG_ALLOW_EVENTS("presence.winfo")),
 				   TAG_IF(profile->pres_type, NUTAG_ALLOW_EVENTS("message-summary")),
 				   TAG_IF(profile->pres_type == PRES_TYPE_PNP, NUTAG_ALLOW_EVENTS("ua-profile")),
-				   NUTAG_ALLOW_EVENTS("refer"), SIPTAG_SUPPORTED_STR(supported), SIPTAG_USER_AGENT_STR(profile->user_agent), TAG_END());
+				   NUTAG_ALLOW_EVENTS("refer"), SIPTAG_SUPPORTED_STR(supported),
+				   TAG_IF(strcasecmp(profile->user_agent, "_undef_"), SIPTAG_USER_AGENT_STR(profile->user_agent)),
+				   TAG_END());
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Set params for %s\n", profile->name);
 
@@ -2943,6 +2946,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 							   NTATAG_SERVER_RPORT(profile->server_rport_level), NUTAG_URL(node->url), TAG_END());	/* Last tag should always finish the sequence */
 
 		nua_set_params(node->nua,
+					   SIPTAG_USER_AGENT(SIP_NONE),
 					   NUTAG_APPL_METHOD("OPTIONS"),
 					   NUTAG_APPL_METHOD("REFER"),
 					   NUTAG_APPL_METHOD("SUBSCRIBE"),
@@ -2954,7 +2958,9 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 					   NUTAG_ALLOW("INFO"),
 					   TAG_IF(profile->pres_type, NUTAG_ALLOW("PUBLISH")),
 					   TAG_IF(profile->pres_type, NUTAG_ENABLEMESSAGE(1)),
-					   SIPTAG_SUPPORTED_STR(supported), SIPTAG_USER_AGENT_STR(profile->user_agent), TAG_END());
+					   SIPTAG_SUPPORTED_STR(supported),
+					   TAG_IF(strcasecmp(profile->user_agent, "_undef_"), SIPTAG_USER_AGENT_STR(profile->user_agent)),
+					   TAG_END());
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Activated db for %s\n", profile->name);
