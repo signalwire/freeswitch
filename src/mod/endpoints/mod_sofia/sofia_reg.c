@@ -2548,7 +2548,7 @@ void sofia_reg_handle_sip_r_challenge(int status,
 	tl_gets(tags, NUTAG_CALLSTATE_REF(ss_state), SIPTAG_WWW_AUTHENTICATE_REF(authenticate), TAG_END());
 
 	nua_authenticate(nh, 
-					 TAG_IF(gateway, SIPTAG_EXPIRES_STR(gateway ? gateway->expires_str : "3600")), 
+					 TAG_IF(sofia_private && !zstr(sofia_private->gateway_name), SIPTAG_EXPIRES_STR(gateway ? gateway->expires_str : "3600")), 
 					 NUTAG_AUTH(authentication), TAG_END());
 
 	goto end;
