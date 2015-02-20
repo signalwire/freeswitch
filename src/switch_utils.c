@@ -3464,42 +3464,21 @@ SWITCH_DECLARE(switch_bool_t) switch_dow_cmp(const char *exp, int val)
 
 SWITCH_DECLARE(int) switch_number_cmp(const char *exp, int val)
 {
-	char *p;
-
-	if ((p = strchr(exp, '-'))) {
-		int min;
-		int max;
-
-		min = atol(exp);
-		p++;
-		max = atol(p);
-
-		if (val >= min && val <= max) {
-			return 1;
-		}
-	} else if ((p = strchr(exp, ','))) {
-		const char *cur = exp;
-		p++;
-		while (cur) {
-			if (atol(cur) == val) {
+	// Expression exp must be a comma separated list of numbers or ranges.
+	// To match numbers not in range 9-17, enter the reversed range 18-8.
+	for (;; ++exp) {
+		int a = strtol(exp, (char **)&exp, 10);
+		if (*exp != '-') {
+			if (a == val)
 				return 1;
-			}
-
-			cur = p;
-			if (p && p + 1) {
-				if ((p = strchr((p + 1), ','))) {
-					p++;
-				}
-			}
+		} else {
+			int b = strtol(++exp, (char **)&exp, 10);
+			if (a <= b ? (val >= a && val <=b ) : (val >= a || val <= b))
+				return 1;
 		}
-	} else {
-		if (atol(exp) == val) {
-			return 1;
-		}
+		if (*exp != ',')
+			return 0;
 	}
-
-	return 0;
-
 }
 
 SWITCH_DECLARE(int) switch_tod_cmp(const char *exp, int val)
