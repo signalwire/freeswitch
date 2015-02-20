@@ -1341,6 +1341,7 @@ static void init_canvas_layers(conference_obj_t *conference, video_layout_t *vla
 
 	if (!conference->canvas) return;
 
+	switch_mutex_lock(conference->canvas->mutex);	
 	conference->canvas->layout_floor_id = -1;
 
 	for (i = 0; i < vlayout->layers; i++) {
@@ -1386,6 +1387,8 @@ static void init_canvas_layers(conference_obj_t *conference, video_layout_t *vla
 
 	conference->canvas->layers_used = 0;
 	conference->canvas->total_layers = vlayout->layers;
+	switch_mutex_unlock(conference->canvas->mutex);	
+
 }
 
 static void init_canvas(conference_obj_t *conference, video_layout_t *vlayout)
@@ -1829,7 +1832,7 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 		}
 
 	}
-	
+
 	for (i = 0; i < MCU_MAX_LAYERS; i++) {
 		layer = &conference->canvas->layers[i];
 
