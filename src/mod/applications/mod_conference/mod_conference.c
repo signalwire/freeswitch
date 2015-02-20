@@ -366,6 +366,7 @@ typedef struct mcu_layer_geometry_s {
 	int y;
 	int scale;
 	int floor;
+	int flooronly;
 	int overlap;
 	char *res_id;
 	char *audio_position;
@@ -807,7 +808,7 @@ static void conference_parse_layouts(conference_obj_t *conference)
 
 				for (x_image = switch_xml_child(x_layout, "image"); x_image; x_image = x_image->next) {
 					const char *res_id = NULL, *audio_position = NULL;
-					int x = -1, y = -1, scale = -1, floor = 0, overlap = 0;
+					int x = -1, y = -1, scale = -1, floor = 0, flooronly = 0, overlap = 0;
 
 					if ((val = switch_xml_attr(x_image, "x"))) {
 						x = atoi(val);
@@ -823,6 +824,10 @@ static void conference_parse_layouts(conference_obj_t *conference)
 					
 					if ((val = switch_xml_attr(x_image, "floor"))) {
 						floor = switch_true(val);
+					}
+
+					if ((val = switch_xml_attr(x_image, "floor-only"))) {
+						flooronly = floor = switch_true(val);
 					}
 
 					if ((val = switch_xml_attr(x_image, "overlap"))) {
@@ -848,6 +853,7 @@ static void conference_parse_layouts(conference_obj_t *conference)
 					vlayout->images[vlayout->layers].y = y;
 					vlayout->images[vlayout->layers].scale = scale;
 					vlayout->images[vlayout->layers].floor = floor;
+					vlayout->images[vlayout->layers].flooronly = flooronly;
 					vlayout->images[vlayout->layers].overlap = overlap;
 					
 					if (res_id) {
@@ -1294,6 +1300,11 @@ static switch_status_t attach_video_layer(conference_member_t *member, int idx)
 	layer = &member->conference->canvas->layers[idx];
 
 	layer->tagged = 0;
+
+	if (layer->geometry.flooronly && member->id != member->conference->video_floor_holder) {
+		switch_goto_status(SWITCH_STATUS_FALSE, end);
+	}
+
 	if (layer->geometry.res_id) {
 		if (!member->video_reservation_id || strcmp(layer->geometry.res_id, member->video_reservation_id)) {
 			switch_goto_status(SWITCH_STATUS_FALSE, end);
@@ -1705,6 +1716,12 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 
 						if (xlayer->geometry.res_id) {
 							if (imember->video_reservation_id && !strcmp(xlayer->geometry.res_id, imember->video_reservation_id)) {
+								layer = xlayer;
+								attach_video_layer(imember, i);
+								break;
+							}
+						} else if (xlayer->geometry.flooronly) {
+							if (imember->id == conference->video_floor_holder) {
 								layer = xlayer;
 								attach_video_layer(imember, i);
 								break;
@@ -2793,7 +2810,7 @@ static cJSON *conference_json_render(conference_obj_t *conference, cJSON *req)
 
 static void conference_mod_event_channel_handler(const char *event_channel, cJSON *json, const char *key, switch_event_channel_id_t id)
 {
-	cJSON *data; 
+	cJSON *data, *addobj = NULL; 
 	const char *action = NULL;
 	char *value = NULL;
 	cJSON *jid = 0;
@@ -2844,13 +2861,23 @@ static void conference_mod_event_channel_handler(const char *event_channel, cJSO
 
 	SWITCH_STANDARD_STREAM(stream);
 	
-	if (!strcasecmp(action, "kick") || !strcasecmp(action, "mute") || !strcasecmp(action, "unmute") || !strcasecmp(action, "tmute")) {
+	if (!strcasecmp(action, "kick") || 
+		!strcasecmp(action, "mute") || 
+		!strcasecmp(action, "unmute") || 
+		!strcasecmp(action, "tmute") ||
+		!strcasecmp(action, "vmute") || 
+		!strcasecmp(action, "unvmute") || 
+		!strcasecmp(action, "tvmute") 
+		) {
 		exec = switch_mprintf("%s %s %d", conf_name, action, cid);
-	} else if (!strcasecmp(action, "volume_in") || !strcasecmp(action, "volume_out")) {
+	} else if (!strcasecmp(action, "volume_in") || 
+			   !strcasecmp(action, "volume_out") || 
+			   !strcasecmp(action, "vid-res-id") || 
+			   !strcasecmp(action, "vid-banner")) {
 		exec = switch_mprintf("%s %s %d %s", conf_name, action, cid, argv[0]);
 	} else if (!strcasecmp(action, "play") || !strcasecmp(action, "stop")) {
 		exec = switch_mprintf("%s %s %s", conf_name, action, argv[0]);
-	} else if (!strcasecmp(action, "recording")) {
+	} else if (!strcasecmp(action, "recording") || !strcasecmp(action, "vid-layout")) {
 		if (!argv[1]) {
 			argv[1] = "all";
 		}
@@ -2871,6 +2898,20 @@ static void conference_mod_event_channel_handler(const char *event_channel, cJSO
 			switch_thread_rwlock_unlock(conference->rwlock); 
 		}
 		goto end;
+	} else if (!strcasecmp(action, "list-videoLayouts")) {
+		switch_hash_index_t *hi;
+		void *val;
+		const void *vvar;
+		cJSON *array = cJSON_CreateArray();
+		conference_obj_t *conference = NULL;
+		if ((conference = conference_find(conf_name, NULL))) {
+			for (hi = switch_core_hash_first(conference->layout_hash); hi; hi = switch_core_hash_next(&hi)) {
+				switch_core_hash_this(hi, &vvar, NULL, &val);
+				cJSON_AddItemToArray(array, cJSON_CreateString((char *)vvar));
+			}
+			switch_thread_rwlock_unlock(conference->rwlock);
+		}
+		addobj = array;
 	}
 
 	if (exec) {
@@ -2885,7 +2926,11 @@ static void conference_mod_event_channel_handler(const char *event_channel, cJSO
 	cJSON_AddItemToObject(msg, "eventChannel", cJSON_CreateString(event_channel));
 	cJSON_AddItemToObject(jdata, "action", cJSON_CreateString("response"));
 	
-	if (exec) {
+	if (addobj) {
+		cJSON_AddItemToObject(jdata, "conf-command", cJSON_CreateString(action));
+		cJSON_AddItemToObject(jdata, "response", cJSON_CreateString("OK"));
+		cJSON_AddItemToObject(jdata, "responseData", addobj);
+	} else if (exec) {
 		cJSON_AddItemToObject(jdata, "conf-command", cJSON_CreateString(exec));
 		cJSON_AddItemToObject(jdata, "response", cJSON_CreateString((char *)stream.data));
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ALERT,"RES [%s][%s]\n", exec, (char *)stream.data);
@@ -8549,11 +8594,16 @@ static switch_status_t conf_api_sub_vid_res_id(conference_member_t *member, swit
 		return SWITCH_STATUS_SUCCESS;
 	}
 
+	if (zstr(text)) {
+		stream->write_function(stream, "-ERR missing arg\n");
+		return SWITCH_STATUS_SUCCESS;
+	}
+
 	switch_mutex_lock(member->conference->canvas->mutex);
 
 	//layer = &member->conference->canvas->layers[member->video_layer_id];
 	
-	if (!strcasecmp(text, "clear")) {
+	if (!strcasecmp(text, "clear") || (member->video_reservation_id && !strcasecmp(text, member->video_reservation_id))) {
 		member->video_reservation_id = NULL;
 		stream->write_function(stream, "+OK reservation_id cleared\n");
 	} else {
@@ -8576,6 +8626,8 @@ static switch_status_t conf_api_sub_vid_banner(conference_member_t *member, swit
 
 	if (member == NULL)
 		return SWITCH_STATUS_GENERR;
+
+	switch_url_decode(text);
 
 	if (!switch_channel_test_flag(member->channel, CF_VIDEO)) {
 		stream->write_function(stream, "Channel %s does not have video capability!\n", switch_channel_get_name(member->channel));
