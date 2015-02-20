@@ -137,13 +137,13 @@ static switch_status_t init_encoder(switch_codec_t *codec)
 	}
 
 	if (context->codec_settings.video.bandwidth) {
-		context->bandwidth = context->codec_settings.video.bandwidth;
+		context->bandwidth = context->codec_settings.video.bandwidth * 4;
 	} else {
-		context->bandwidth = context->codec_settings.video.width * context->codec_settings.video.height / 512;
+		context->bandwidth = ((context->codec_settings.video.width * context->codec_settings.video.height) / 900) * 4;
 	}
 
-	if (context->bandwidth > 5120) {
-		context->bandwidth = 5120;
+	if (context->bandwidth > 40960) {
+		context->bandwidth = 40960;
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(codec->session), SWITCH_LOG_NOTICE, 
