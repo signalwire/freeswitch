@@ -66,6 +66,6 @@
     <!-- <param name="ssl-version" value="TLSv1"/> -->
 
     <!-- optional: enables cookies and stores them in the specified file. -->
-    <!-- <param name="cookie-file" value="/$${temp_dir}/cookie-mod_xml_curl.txt"/> -->
+    <!-- <param name="cookie-file" value="$${run_dir}/mod_xml_cdr-cookie.txt"/> -->
   </settings>
 </configuration>
