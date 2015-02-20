@@ -5,6 +5,7 @@
 <profile name="internal-ipv6">
   <!--aliases are other names that will work as a valid profile name for this profile-->
   <settings>
+    <!-- Can be set to "_undef_" to remove the User-Agent header -->
     <!-- <param name="user-agent-string" value="FreeSWITCH Rocks!"/> -->
     <param name="debug" value="0"/>
     <param name="sip-trace" value="no"/>
