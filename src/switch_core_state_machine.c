@@ -501,6 +501,9 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 			case CS_HANGUP:	/* Deactivate and end the thread */
 				{
 					switch_core_session_hangup_state(session, SWITCH_TRUE);
+					if (switch_channel_test_flag(session->channel, CF_VIDEO)) {
+						switch_core_session_wake_video_thread(session);
+					}
 					switch_channel_set_state(session->channel, CS_REPORTING);
 				}
 
