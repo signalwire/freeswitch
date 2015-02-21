@@ -827,6 +827,7 @@ function init() {
         tag: "webcam",
         //localTag: $("#local_video").is(':checked') ? "local_webcam" : null,
         ringFile: "sounds/bell_ring2.wav",
+	loginParams: {foo: true, bar: "yes"},
         videoParams: {
             "minWidth": vid_width,
             "minHeight": vid_height,
