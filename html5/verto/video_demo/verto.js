@@ -619,10 +619,16 @@ function pop(id, cname, dft) {
     });
 }
 
+var devinit = false;
+
 function refresh_devices()
 {
-    $("#usecamera").empty();
-    $("#usemic").empty();
+    if (devinit) {
+	$("#usecamera").empty();
+	$("#usemic").empty();
+    }
+
+    devinit = true;
 
     $.verto.findDevices(function() {
 	var x = 0;
