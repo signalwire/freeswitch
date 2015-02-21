@@ -3661,9 +3661,9 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 			}
 
 			if (sendonly) {
-				a_engine->smode = sdp_sendonly;
+				a_engine->smode = sdp_media_flow(sdp_sendonly);
 			} else if (recvonly) {
-				a_engine->smode = sdp_recvonly;
+				a_engine->smode = sdp_media_flow(sdp_recvonly);
 			}
 
 
