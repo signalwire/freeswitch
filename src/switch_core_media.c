@@ -5311,6 +5311,10 @@ SWITCH_DECLARE(void) switch_core_session_wake_video_thread(switch_core_session_t
 		return;
 	}
 
+	if (!v_engine->media_thread) {
+		return;
+	}
+
 	if (!v_engine->mh.cond_mutex) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Channel %s has no cond?\n",
 						  switch_channel_get_name(session->channel));
