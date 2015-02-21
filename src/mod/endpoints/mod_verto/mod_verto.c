@@ -885,6 +885,7 @@ static switch_bool_t check_auth(jsock_t *jsock, cJSON *params, int *code, char *
 	switch_bool_t r = SWITCH_FALSE;
 	const char *passwd = NULL;
 	const char *login = NULL;
+	cJSON *login_params = NULL;
 
 	if (!params) {
 		*code = CODE_AUTH_FAILED;
@@ -939,6 +940,23 @@ static switch_bool_t check_auth(jsock_t *jsock, cJSON *params, int *code, char *
 
 		switch_event_create(&req_params, SWITCH_EVENT_REQUEST_PARAMS);
 		switch_assert(req_params);
+
+		if ((login_params = cJSON_GetObjectItem(params, "loginParams"))) {
+			cJSON * i;
+
+			for(i = login_params->child; i; i = i->next) {
+				if (i->type == cJSON_True) {
+					switch_event_add_header_string(req_params, SWITCH_STACK_BOTTOM, i->string, "true");
+				} else if (i->type == cJSON_False) {
+					switch_event_add_header_string(req_params, SWITCH_STACK_BOTTOM, i->string, "false");
+				} else if (!zstr(i->string) && !zstr(i->valuestring)) {
+					switch_event_add_header_string(req_params, SWITCH_STACK_BOTTOM, i->string, i->valuestring);
+				}
+			}
+
+			DUMP_EVENT(req_params);
+
+		}
 
 		switch_event_add_header_string(req_params, SWITCH_STACK_BOTTOM, "action", "jsonrpc-authenticate");
 		
