@@ -2877,7 +2877,7 @@ static void conference_mod_event_channel_handler(const char *event_channel, cJSO
 		exec = switch_mprintf("%s %s %d %s", conf_name, action, cid, argv[0]);
 	} else if (!strcasecmp(action, "play") || !strcasecmp(action, "stop")) {
 		exec = switch_mprintf("%s %s %s", conf_name, action, argv[0]);
-	} else if (!strcasecmp(action, "recording") || !strcasecmp(action, "vid-layout")) {
+	} else if (!strcasecmp(action, "recording") || !strcasecmp(action, "vid-layout") || !strcasecmp(action, "vid-write-png")) {
 		if (!argv[1]) {
 			argv[1] = "all";
 		}
