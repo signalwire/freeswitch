@@ -95,8 +95,29 @@
 	<table width="1000" cellspacing="0" cellpadding="0" border="0" align="center" id="conf_list" class="jsDataTable">
 	</table>
       </div>
+	<br clear=all>
 
-      <br>
+      <button data-inline="true" id="hold">HOLD</button>
+      <button data-inline="true" id="hupbtn">End Call</button>
+<!--      <button data-inline="true" class="startxferbtn">Transfer</button>-->
+      <span class="sharediv">
+	  <button data-inline="true" id="sharebtn">Share</button>
+	  <button data-inline="true" id="nosharebtn">End Share</button>
+      </span>
+
+      	     <span class="sharediv">
+	     	  <button data-inline="true" id="smallerbtn">Smaller - </button>
+	     	  <button data-inline="true" id="biggerbtn">Bigger +</button>
+  	     	  <button data-inline="true" id="fullbtn">Full Screen</button>
+      	     </span>
+
+      	<div id="media">	
+	      <video id="webcam" autoplay="autoplay"></video>
+
+      	</div>
+
+<br><br>
+
       <div id="message" hidden="true">
 	<hr class="l1" width="500"/>
 	<div id="chatwin"></div>
@@ -115,33 +136,8 @@
       	<div id="conf_mod"></div>
 	<div style="color:blue" id="conf_display"></div>
 
-      <button data-inline="true" id="hold">HOLD</button>
-      <button data-inline="true" id="hupbtn">End Call</button>
-<!--      <button data-inline="true" class="startxferbtn">Transfer</button>-->
-      <span class="sharediv">
-	  <button data-inline="true" id="sharebtn">Share</button>
-	  <button data-inline="true" id="nosharebtn">End Share</button>
-      </span>
 
-	<br><br><br>
 	<img src="img/verto_black_web.gif" width="300"><br><br>
-
-	<div id="media">	
-
-      <div class="sharediv">
-	  <button data-inline="true" id="smallerbtn">Smaller - </button>
-	  <button data-inline="true" id="biggerbtn">Bigger +</button>
-  	  <button data-inline="true" id="fullbtn">Full Screen</button>
-      </div>
-	  <table border=0 cellspacing=0 cellpadding=0 width=95%><tr>
-	  <td valign=top align=center><video id="webcam" autoplay="autoplay"></video></td>
-	  </tr><tr>
-
-<!--	  <td valign=top align=left>
-	  <br><br><video id="local_webcam" autoplay="autoplay" style="transform: scale(-1, 1);webkit-transform: scale(-1, 1);"></video></td>-->
-
-	  </tr></table>
-	</div>
 
 
       <div id=keypad>
@@ -259,13 +255,12 @@ function dial(ext)
  
     <input type="radio" name="vqual" id="vqual_vga" value="vga">
     <label for="vqual_vga">VGA 640x480</label>
-
     <input type="radio" name="vqual" id="vqual_qvga_wide" value="qvga_wide">
     <label for="vqual_qvga_wide">QVGA WIDE 320x180</label>
  
     <input type="radio" name="vqual" id="vqual_vga_wide" value="vga_wide">
     <label for="vqual_vga_wide">VGA WIDE 640x360</label>
- 
+
     <input type="radio" name="vqual" id="vqual_hd" value="hd">
     <label for="vqual_hd">HD 1280x720</label>
 
@@ -273,9 +268,75 @@ function dial(ext)
     <label for="vqual_hhd">HHD 1920x1080</label>
 
   </fieldset>
-</div><Br>
+</div><br clear="all"><br>
 
-<br clear="all">
+
+<div >
+  <fieldset data-role="controlgroup" data-type="horizontal">
+    <legend><b>Max Outgoing Bandwidth</b>:</legend>
+
+    <input type="radio" name="outgoingBandwidth" id="outgoingBandwidth_250kb" value="250">
+    <label for="outgoingBandwidth_250kb">250kb</label>
+
+    <input type="radio" name="outgoingBandwidth" id="outgoingBandwidth_500kb" value="500">
+    <label for="outgoingBandwidth_500kb">500kb</label>
+
+    <input type="radio" name="outgoingBandwidth" id="outgoingBandwidth_1024kb" value="1024">
+    <label for="outgoingBandwidth_1024kb">1mb</label>
+
+    <input type="radio" name="outgoingBandwidth" id="outgoingBandwidth_1536kb" value="1536">
+    <label for="outgoingBandwidth_1536kb">1.5mb</label>
+
+    <input type="radio" name="outgoingBandwidth" id="outgoingBandwidth_2048kb" value="2048">
+    <label for="outgoingBandwidth_2048kb">2mb</label>
+
+    <input type="radio" name="outgoingBandwidth" id="outgoingBandwidth_5120kb" value="5120">
+    <label for="outgoingBandwidth_5120kb">5mb</label>
+
+    <input type="radio" name="outgoingBandwidth" id="outgoingBandwidth_0kb" value="0">
+    <label for="outgoingBandwidth_0kb">No Limit</label>
+
+    <input type="radio" name="outgoingBandwidth" id="outgoingBandwidth_default" value="default">
+    <label for="outgoingBandwidth_default">Server Default</label>
+
+ 
+  </fieldset>
+</div><br clear="all"><br>
+
+
+<div >
+  <fieldset data-role="controlgroup" data-type="horizontal">
+    <legend><b>Max Incoming Bandwidth</b>:</legend>
+
+    <input type="radio" name="incomingBandwidth" id="incomingBandwidth_250kb" value="250">
+    <label for="incomingBandwidth_250kb">250kb</label>
+
+    <input type="radio" name="incomingBandwidth" id="incomingBandwidth_500kb" value="500">
+    <label for="incomingBandwidth_500kb">500kb</label>
+
+    <input type="radio" name="incomingBandwidth" id="incomingBandwidth_1024kb" value="1024">
+    <label for="incomingBandwidth_1024kb">1mb</label>
+
+    <input type="radio" name="incomingBandwidth" id="incomingBandwidth_1536kb" value="1536">
+    <label for="incomingBandwidth_1536kb">1.5mb</label>
+
+    <input type="radio" name="incomingBandwidth" id="incomingBandwidth_2048kb" value="2048">
+    <label for="incomingBandwidth_2048kb">2mb</label>
+
+    <input type="radio" name="incomingBandwidth" id="incomingBandwidth_5120kb" value="5120">
+    <label for="incomingBandwidth_5120kb">5mb</label>
+
+    <input type="radio" name="incomingBandwidth" id="incomingBandwidth_0kb" value="0">
+    <label for="incomingBandwidth_0kb">No Limit</label>
+
+    <input type="radio" name="incomingBandwidth" id="incomingBandwidth_default" value="default">
+    <label for="incomingBandwidth_default">Server Default</label>
+ 
+  </fieldset>
+</div><br clear="all"><br>
+
+
+
 </div>
 	<button data-inline="true" id="showdemo" onclick="$('#demos').show();$('#showdemo').hide()">View Demo Extensions</button>
 <button data-inline="true" id="showdevices" onclick="$('#devices').show();$('#showdevices').hide()">View Device Settings</button>

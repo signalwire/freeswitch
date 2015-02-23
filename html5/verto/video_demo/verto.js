@@ -13,6 +13,8 @@ var vid_height = 180;
 var local_vid_width = 320;
 var local_vid_height = 180;
 
+var outgoingBandwidth;
+var incomingBandwidth;
 
 $( ".selector" ).pagecontainer({ "theme": "a" });
 
@@ -537,6 +539,8 @@ function docall() {
         destination_number: $("#ext").val(),
         caller_id_name: $("#name").val(),
         caller_id_number: $("#cid").val(),
+	outgoingBandwidth: outgoingBandwidth,
+	incomingBandwidth: incomingBandwidth,
         useVideo: check_vid(),
         useStereo: $("#use_stereo").is(':checked'),
 	useCamera: $("#usecamera").find(":selected").val(),
@@ -567,6 +571,8 @@ function doshare(on) {
             destination_number: $("#ext").val() + "-screen",
             caller_id_name: $("#name").val() + " (Screen)",
             caller_id_number: $("#cid").val() + " (screen)",
+	    outgoingBandwidth: outgoingBandwidth,
+	    incomingBandwidth: incomingBandwidth,
 	    videoParams: screen_constraints.video.mandatory,
             useVideo: true,
 	    screenShare: true
@@ -707,6 +713,162 @@ function init() {
         });
     });
 
+//
+    outgoingBandwidth = $.cookie("verto_demo_outgoingBandwidth") || "default";
+    $.cookie("verto_demo_outgoingBandwidth", outgoingBandwidth, {
+        expires: 365
+    });
+
+    $("#outgoingBandwidth_250kb").prop("checked", outgoingBandwidth === "250").change(function(e) {
+        if ($("#outgoingBandwidth_250kb").is(':checked')) {
+	    outgoingBandwidth = "250";
+	    $.cookie("verto_demo_outgoingBandwidth", outgoingBandwidth, {
+		expires: 365
+	    });
+	}
+    });
+
+    $("#outgoingBandwidth_500kb").prop("checked", outgoingBandwidth === "500").change(function(e) {
+        if ($("#outgoingBandwidth_500kb").is(':checked')) {
+	    outgoingBandwidth = "500";
+	    $.cookie("verto_demo_outgoingBandwidth", outgoingBandwidth, {
+		expires: 365
+	    });
+	}
+    });
+
+    $("#outgoingBandwidth_1024kb").prop("checked", outgoingBandwidth === "1024").change(function(e) {
+        if ($("#outgoingBandwidth_1024kb").is(':checked')) {
+	    outgoingBandwidth = "1024";
+	    $.cookie("verto_demo_outgoingBandwidth", outgoingBandwidth, {
+		expires: 365
+	    });
+	}
+    });
+
+    $("#outgoingBandwidth_1536kb").prop("checked", outgoingBandwidth === "1536").change(function(e) {
+        if ($("#outgoingBandwidth_1536kb").is(':checked')) {
+	    outgoingBandwidth = "1536";
+	    $.cookie("verto_demo_outgoingBandwidth", outgoingBandwidth, {
+		expires: 365
+	    });
+	}
+    });
+
+    $("#outgoingBandwidth_2048kb").prop("checked", outgoingBandwidth === "2048").change(function(e) {
+        if ($("#outgoingBandwidth_2048kb").is(':checked')) {
+	    outgoingBandwidth = "2048";
+	    $.cookie("verto_demo_outgoingBandwidth", outgoingBandwidth, {
+		expires: 365
+	    });
+	}
+    });
+
+    $("#outgoingBandwidth_5120kb").prop("checked", outgoingBandwidth === "5120").change(function(e) {
+        if ($("#outgoingBandwidth_5120kb").is(':checked')) {
+	    outgoingBandwidth = "5120";
+	    $.cookie("verto_demo_outgoingBandwidth", outgoingBandwidth, {
+		expires: 365
+	    });
+	}
+    });
+
+    $("#outgoingBandwidth_0kb").prop("checked", outgoingBandwidth === "0").change(function(e) {
+        if ($("#outgoingBandwidth_0kb").is(':checked')) {
+	    outgoingBandwidth = "0";
+	    $.cookie("verto_demo_outgoingBandwidth", outgoingBandwidth, {
+		expires: 365
+	    });
+	}
+    });
+
+    $("#outgoingBandwidth_default").prop("checked", outgoingBandwidth === "default").change(function(e) {
+        if ($("#outgoingBandwidth_default").is(':checked')) {
+	    outgoingBandwidth = "default";
+	    $.cookie("verto_demo_outgoingBandwidth", outgoingBandwidth, {
+		expires: 365
+	    });
+	}
+    });
+//
+
+    incomingBandwidth = $.cookie("verto_demo_incomingBandwidth") || "default";
+    $.cookie("verto_demo_incomingBandwidth", incomingBandwidth, {
+        expires: 365
+    });
+
+    $("#incomingBandwidth_250kb").prop("checked", incomingBandwidth === "250").change(function(e) {
+        if ($("#incomingBandwidth_250kb").is(':checked')) {
+	    incomingBandwidth = "250";
+	    $.cookie("verto_demo_incomingBandwidth", incomingBandwidth, {
+		expires: 365
+	    });
+	}
+    });
+
+    $("#incomingBandwidth_500kb").prop("checked", incomingBandwidth === "500").change(function(e) {
+        if ($("#incomingBandwidth_500kb").is(':checked')) {
+	    incomingBandwidth = "500";
+	    $.cookie("verto_demo_incomingBandwidth", incomingBandwidth, {
+		expires: 365
+	    });
+	}
+    });
+
+    $("#incomingBandwidth_1024kb").prop("checked", incomingBandwidth === "1024").change(function(e) {
+        if ($("#incomingBandwidth_1024kb").is(':checked')) {
+	    incomingBandwidth = "1024";
+	    $.cookie("verto_demo_incomingBandwidth", incomingBandwidth, {
+		expires: 365
+	    });
+	}
+    });
+
+    $("#incomingBandwidth_1536kb").prop("checked", incomingBandwidth === "1536").change(function(e) {
+        if ($("#incomingBandwidth_1536kb").is(':checked')) {
+	    incomingBandwidth = "1536";
+	    $.cookie("verto_demo_incomingBandwidth", incomingBandwidth, {
+		expires: 365
+	    });
+	}
+    });
+
+    $("#incomingBandwidth_2048kb").prop("checked", incomingBandwidth === "2048").change(function(e) {
+        if ($("#incomingBandwidth_2048kb").is(':checked')) {
+	    incomingBandwidth = "2048";
+	    $.cookie("verto_demo_incomingBandwidth", incomingBandwidth, {
+		expires: 365
+	    });
+	}
+    });
+
+    $("#incomingBandwidth_5120kb").prop("checked", incomingBandwidth === "5120").change(function(e) {
+        if ($("#incomingBandwidth_5120kb").is(':checked')) {
+	    incomingBandwidth = "5120";
+	    $.cookie("verto_demo_incomingBandwidth", incomingBandwidth, {
+		expires: 365
+	    });
+	}
+    });
+
+    $("#incomingBandwidth_0kb").prop("checked", incomingBandwidth === "0").change(function(e) {
+        if ($("#incomingBandwidth_0kb").is(':checked')) {
+	    incomingBandwidth = "0";
+	    $.cookie("verto_demo_incomingBandwidth", incomingBandwidth, {
+		expires: 365
+	    });
+	}
+    });
+
+    $("#incomingBandwidth_default").prop("checked", incomingBandwidth === "default").change(function(e) {
+        if ($("#incomingBandwidth_default").is(':checked')) {
+	    incomingBandwidth = "default";
+	    $.cookie("verto_demo_incomingBandwidth", incomingBandwidth, {
+		expires: 365
+	    });
+	}
+    });
+//
 
     var vqual = $.cookie("verto_demo_vqual") || "qvga";
     $.cookie("verto_demo_vqual", vqual, {
