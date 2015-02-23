@@ -112,7 +112,7 @@ static switch_status_t load_config(void)
 	return status;
 }
 
-static void translate_number(char *number, char *profile, char **translated, switch_core_session_t *session, switch_event_t *event)
+static void translate_number(char *number, char *profile, char **translated, switch_core_session_t *session, switch_event_t *event, switch_memory_pool_t *pool)
 {
 	translate_rule_t *hi = NULL;
 	translate_rule_t *rule = NULL;
@@ -153,9 +153,11 @@ static void translate_number(char *number, char *profile, char **translated, swi
 				} else if (event) {
 					subbed = switch_event_expand_headers(event, substituted);
 				}
-
-				substituted = switch_core_session_strdup(session, subbed);
-
+				if (session) {
+					substituted = switch_core_session_strdup(session, subbed);
+				} else {
+					substituted = switch_core_strdup(pool, subbed);
+				}
 				if (subbed != substituted) {
 					switch_safe_free(subbed);
 				}
@@ -255,7 +257,7 @@ SWITCH_STANDARD_APP(translate_app_function)
 			}
 		}
 
-		translate_number(argv[0], argv[1], &translated, session, event);
+		translate_number(argv[0], argv[1], &translated, session, event, NULL);
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Translated: %s\n", translated);
 
@@ -307,8 +309,8 @@ SWITCH_STANDARD_DIALPLAN(translate_dialplan_hunt)
 		}
 	}
 
-	translate_number((char *) caller_profile->destination_number, translate_profile, &translated_dest, session, event);
-	translate_number((char *) caller_profile->caller_id_number, translate_profile, &translated_cid_num, session, event);
+	translate_number((char *) caller_profile->destination_number, translate_profile, &translated_dest, session, event, NULL);
+	translate_number((char *) caller_profile->caller_id_number, translate_profile, &translated_cid_num, session, event, NULL);
 	/* maybe we should translate ani/aniii here too? */
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO,
 					  "Profile: [%s] Translated Destination: [%s] Translated CID: [%s]\n", translate_profile, translated_dest, translated_cid_num);
@@ -340,12 +342,12 @@ SWITCH_STANDARD_API(translate_function)
 	}
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s\n", cmd);
 
-	mydata = switch_core_strdup(globals.pool, cmd);
+	mydata = strdup(cmd);
 
 	if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
 		if (!session) {
 			char *areacode = switch_core_get_variable("default_areacode");
-
+			switch_core_new_memory_pool(&pool);
 			switch_event_create(&event, SWITCH_EVENT_REQUEST_PARAMS);
 
 			if (zstr(areacode)) {
@@ -355,19 +357,21 @@ SWITCH_STANDARD_API(translate_function)
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "areacode", areacode);
 			}
 		}
-		translate_number(argv[0], argv[1], &translated, session, event);
+		translate_number(argv[0], argv[1], &translated, session, event, pool);
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Translated: %s\n", translated);
 
 		stream->write_function(stream, "%s", translated);
 	}
 
+	free(mydata);
 end:
 	if (!session) {
 		if (pool) {
 			switch_core_destroy_memory_pool(&pool);
 		}
 	}
+
 	return SWITCH_STATUS_SUCCESS;
 
 usage:
