@@ -3214,7 +3214,7 @@ static switch_bool_t verto__invite_func(const char *method, cJSON *params, jsock
 	cJSON *dialog;
 	verto_pvt_t *tech_pvt;
 	char name[512];
-	const char *var, *destination_number, *call_id = NULL, *sdp = NULL, 
+	const char *var, *destination_number, *call_id = NULL, *sdp = NULL, *bandwidth = NULL, 
 		*caller_id_name = NULL, *caller_id_number = NULL, *remote_caller_id_name = NULL, *remote_caller_id_number = NULL,*context = NULL;
 	
 	*response = obj;
@@ -3274,6 +3274,17 @@ static switch_bool_t verto__invite_func(const char *method, cJSON *params, jsock
 		switch_channel_set_flag(channel, CF_VIDEO_ONLY);
 	}
 
+	if ((bandwidth = cJSON_GetObjectCstr(dialog, "outgoingBandwidth"))) {
+		if (strcasecmp(bandwidth, "default")) {
+			switch_channel_set_variable(channel, "rtp_video_max_bandwidth_in", bandwidth);
+		}
+	}
+
+	if ((bandwidth = cJSON_GetObjectCstr(dialog, "incomingBandwidth"))) {
+		if (strcasecmp(bandwidth, "default")) {
+			switch_channel_set_variable(channel, "rtp_video_max_bandwidth_out", bandwidth);
+		}
+	}
 
 	switch_snprintf(name, sizeof(name), "verto.rtc/%s", destination_number);
 	switch_channel_set_name(channel, name);
