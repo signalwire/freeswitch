@@ -5712,7 +5712,7 @@ SWITCH_STANDARD_API(vm_fsdb_auth_login_function)
 
 	switch_event_create(&params, SWITCH_EVENT_GENERAL);
 	if (switch_xml_locate_user_merged("id:number-alias", id, domain, NULL, &x_user, params) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Can't find user [%s@%s]\n", id, domain);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Can't find user [%s@%s]\n", id, domain);
 		stream->write_function(stream, "-ERR User not found\n");
 	} else {
 		switch_xml_t x_param, x_params;
@@ -6080,7 +6080,7 @@ SWITCH_STANDARD_API(vm_fsdb_msg_email_function)
 		}
 
 		switch_simple_email(email, from, header_string, body, switch_event_get_header(cbt.my_params, "VM-Message-File-Path"), profile->convert_cmd, profile->convert_ext);
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Sending message to %s\n", email);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Sending message to %s\n", email);
 		switch_safe_free(body);
 
 		switch_event_fire(&cbt.my_params);
