@@ -5953,6 +5953,7 @@ SWITCH_STANDARD_API(vm_fsdb_msg_email_function)
 	msg_get_callback_t cbt = { 0 };
 	char *sql;
 	switch_memory_pool_t *pool;
+	switch_xml_t x_user = NULL;
 
 	switch_core_new_memory_pool(&pool);
 
@@ -5972,8 +5973,15 @@ SWITCH_STANDARD_API(vm_fsdb_msg_email_function)
 	if (argv[4])
 		email = argv[4];
 
+
 	if (!profile_name || !domain || !id || !uuid || !email) {
 		stream->write_function(stream, "-ERR Missing Arguments\n");
+		goto done;
+	}
+
+	if (switch_xml_locate_user_merged("id", id, domain, NULL, &x_user, NULL) != SWITCH_STATUS_SUCCESS) {
+		stream->write_function(stream, "-ERR Can't locate user.\n");
+		switch_xml_free(x_user);
 		goto done;
 	}
 
@@ -5998,6 +6006,7 @@ SWITCH_STANDARD_API(vm_fsdb_msg_email_function)
 		switch_core_time_duration_t duration;
 		char duration_str[80];
 		char *formatted_cid_num = NULL;
+		char *msg_uuid = NULL;
 
 		sql = switch_mprintf("select created_epoch, read_epoch, username, domain, uuid, cid_name, cid_number, in_folder, file_path, message_len, flags, read_flags, forwarded_by from voicemail_msgs WHERE username = '%q' AND domain = '%q' AND uuid = '%q' ORDER BY read_flags, created_epoch", id, domain, uuid);
 		memset(&cbt, 0, sizeof(cbt));
@@ -6005,6 +6014,13 @@ SWITCH_STANDARD_API(vm_fsdb_msg_email_function)
 		vm_execute_sql_callback(profile, profile->mutex, sql, message_get_callback, &cbt);
 		switch_safe_free(sql);
 
+		msg_uuid = switch_event_get_header(cbt.my_params, "VM-Message-UUID");
+
+		if (!msg_uuid) {
+			profile_rwunlock(profile);
+			stream->write_function(stream, "-ERR Invalid Message UUID\n");
+			goto done;
+		}
 		if (!strcasecmp(switch_event_get_header(cbt.my_params, "VM-Message-Read-Flags"), URGENT_FLAG_STRING)) {
 			priority = 1;
 		}
