@@ -717,6 +717,7 @@ SWITCH_DECLARE(void) switch_img_patch_hole(switch_image_t *IMG, switch_image_t *
 #define SWITCH_IMG_MAX_WIDTH  1920 * 2
 #define SWITCH_IMG_MAX_HEIGHT 1080 * 2
 
+#ifdef SWITCH_HAVE_PNG
 // WIP png functions, need furthur tweak/check to make sure it works on all png files and errors are properly detected and reported
 // #define PNG_DEBUG 3
 #define PNG_SKIP_SETJMP_CHECK
@@ -1200,6 +1201,28 @@ end:
 	png_destroy_write_struct(&png_ptr, &info_ptr);
 
 	return status;
+}
+
+#endif
+
+#else
+
+SWITCH_DECLARE(switch_status_t) switch_img_patch_png(switch_image_t *img, int x, int y, const char *file_name)
+{
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "This function is not available, libpng not installed\n");
+	return SWITCH_STATUS_FALSE;
+}
+
+SWITCH_DECLARE(switch_image_t *) switch_img_read_png(const char* file_name)
+{
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "This function is not available, libpng not installed\n");
+	return NULL;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_img_write_png(switch_image_t *img, char* file_name)
+{
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "This function is not available, libpng not installed\n");
+	return SWITCH_STATUS_FALSE;
 }
 
 #endif
