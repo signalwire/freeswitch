@@ -15,6 +15,7 @@ var local_vid_height = 180;
 
 var outgoingBandwidth;
 var incomingBandwidth;
+var vqual;
 
 $( ".selector" ).pagecontainer({ "theme": "a" });
 
@@ -689,7 +690,7 @@ function init() {
     $.cookie("verto_demo_vid_checked", tmp, {
         expires: 365
     });
-    console.error(tmp);
+
     if (tmp !== "true") {
 	$("#camdiv").hide();
 	$(".sharediv").hide();
@@ -870,10 +871,12 @@ function init() {
     });
 //
 
-    var vqual = $.cookie("verto_demo_vqual") || "qvga";
+    vqual = $.cookie("verto_demo_vqual") || "qvga";
     $.cookie("verto_demo_vqual", vqual, {
         expires: 365
     });
+
+
 
     $("#vqual_qvga").prop("checked", vqual === "qvga").change(function(e) {
         if ($("#vqual_qvga").is(':checked')) {
@@ -905,7 +908,7 @@ function init() {
     });
 
 
-    $("#vqual_vga").prop("checked", vqual === "vga_wide").change(function(e) {
+    $("#vqual_vga_wide").prop("checked", vqual === "vga_wide").change(function(e) {
         if ($("#vqual_vga_wide").is(':checked')) {
 	    vqual = "vga_wide";
 	    $.cookie("verto_demo_vqual", vqual, {
@@ -934,8 +937,6 @@ function init() {
 	}
     });
     
-
-
     
     tmp = $.cookie("verto_demo_stereo_checked") || "true";
     $.cookie("verto_demo_stereo_checked", tmp, {
