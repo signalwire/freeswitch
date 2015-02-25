@@ -36,7 +36,7 @@
 #define PESN (0.000001f) // (1e-6)	// desired float precision
 #define MT_ENABLED
 
-#include "codec_api.h"
+#include "wels/codec_api.h"
 //#include "inc/logging.h"     // for debug
 #ifndef NAL_HEADER_ADD_0X30BYTES
 #define NAL_HEADER_ADD_0X30BYTES 50
