@@ -202,6 +202,7 @@ struct switch_media_handle_s {
 	switch_video_function_t video_function;
 	void *video_user_data;
 	int8_t video_function_running;
+	switch_vid_params_t vid_params; 
 };
 
 
@@ -490,7 +491,20 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_check_autoadj(switch_core_sess
 	return x ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_core_media_get_vid_params(switch_core_session_t *session, switch_vid_params_t *vid_params)
+{
+	switch_media_handle_t *smh;
 
+	switch_assert(session);
+
+	if (!(smh = session->media_handle)) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	*vid_params = smh->vid_params;
+
+	return SWITCH_STATUS_SUCCESS;
+}
 
 SWITCH_DECLARE(switch_t38_options_t *) switch_core_media_extract_t38_options(switch_core_session_t *session, const char *r_sdp)
 {
@@ -4652,6 +4666,14 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 
 		if (switch_test_flag(read_frame, SFF_CNG)) {
 			continue;
+		}
+
+
+
+		if (read_frame->img) {
+			switch_channel_set_flag(channel, CF_VIDEO_READY);
+			smh->vid_params.width = read_frame->img->d_w;
+			smh->vid_params.height = read_frame->img->d_h;
 		}
 
 		if (switch_channel_test_flag(channel, CF_VIDEO_ECHO)) {

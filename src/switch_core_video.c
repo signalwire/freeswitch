@@ -1269,6 +1269,30 @@ SWITCH_DECLARE(switch_status_t) switch_img_fit(switch_image_t **srcP, int width,
 	return SWITCH_STATUS_FALSE;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_img_convert(switch_image_t *src, switch_convert_fmt_t fmt, void *dest, switch_size_t *size)
+{
+	switch (fmt) {
+	case SWITCH_CONVERT_FMT_YUYV:
+		{
+			switch_size_t size_in = *size;
+			ConvertFromI420(src->planes[0], src->stride[0],
+							src->planes[1], src->stride[1],
+							src->planes[2], src->stride[2],
+							dest, size_in,
+							src->d_w, src->d_h,
+							FOURCC_YUY2);  
+			*size = src->d_w * src->d_h * 2;
+
+			return SWITCH_STATUS_SUCCESS;
+		}
+	default:
+		abort();
+		break;
+	}
+
+
+}
+
 SWITCH_DECLARE(switch_status_t) switch_img_scale(switch_image_t *src, switch_image_t **destP, int width, int height)
 {
 	switch_image_t *dest = NULL;

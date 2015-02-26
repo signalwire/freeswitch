@@ -1465,10 +1465,17 @@ typedef enum {
 	CF_VIDEO_DEBUG_READ,
 	CF_VIDEO_DEBUG_WRITE,
 	CF_VIDEO_ONLY,
+	CF_VIDEO_READY,
 	/* WARNING: DO NOT ADD ANY FLAGS BELOW THIS LINE */
 	/* IF YOU ADD NEW ONES CHECK IF THEY SHOULD PERSIST OR ZERO THEM IN switch_core_session.c switch_core_session_request_xml() */
 	CF_FLAG_MAX
 } switch_channel_flag_t;
+
+typedef struct switch_vid_params_s {
+	int width;
+	int height;
+} switch_vid_params_t;
+
 
 
 typedef enum {
