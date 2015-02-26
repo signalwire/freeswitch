@@ -1,6 +1,6 @@
 /*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2013, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2015, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -24,8 +24,9 @@
  * Contributor(s):
  *
  * Seven Du <dujinfang@gmail.com>
+ * Anthony Minessale II <anthm@freeswitch.org>
  *
- * mod_openh264 -- H264 Coded Using Cisco OpenH264
+ * mod_openh264 -- H264 Codec Using Cisco OpenH264
  *
  */
 
