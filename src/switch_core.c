@@ -2374,6 +2374,7 @@ SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, void *
 
 				if (!strcasecmp(tech, "flush")) {
 					flush++;
+					tech = NULL;
 
 					if (prof) {
 						tech = prof;
