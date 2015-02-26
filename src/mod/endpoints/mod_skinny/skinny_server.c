@@ -112,6 +112,8 @@ switch_status_t skinny_create_incoming_session(listener_t *listener, uint32_t *l
 
 	skinny_line_get(listener, *line_instance_p, &button);
 
+	skinny_log_l(listener, SWITCH_LOG_INFO, "Attempting to create incoming session on Line %d\n", *line_instance_p);
+
 	if (!button || !button->shortname[0]) {
 		skinny_log_l(listener, SWITCH_LOG_CRIT, "Line %d not found on device\n", *line_instance_p);
 		goto error;
@@ -1075,6 +1077,58 @@ switch_status_t skinny_hold_active_calls(listener_t *listener)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+struct skinny_hangup_active_calls_helper {
+    listener_t *listener;
+};
+
+int skinny_hangup_active_calls_callback(void *pArg, int argc, char **argv, char **columnNames)
+{
+    struct skinny_hangup_active_calls_helper *helper = pArg;
+    switch_core_session_t *session;
+
+    /* char *device_name = argv[0]; */
+    /* uint32_t device_instance = atoi(argv[1]); */
+    /* uint32_t position = atoi(argv[2]); */
+    uint32_t line_instance = atoi(argv[3]);
+    /* char *label = argv[4]; */
+    /* char *value = argv[5]; */
+    /* char *caller_name = argv[6]; */
+    /* uint32_t ring_on_idle = atoi(argv[7]); */
+    /* uint32_t ring_on_active = atoi(argv[8]); */
+    /* uint32_t busy_trigger = atoi(argv[9]); */
+    /* char *forward_all = argv[10]; */
+    /* char *forward_busy = argv[11]; */
+    /* char *forward_noanswer = argv[12]; */
+    /* uint32_t noanswer_duration = atoi(argv[13]); */
+    /* char *channel_uuid = argv[14]; */
+    uint32_t call_id = atoi(argv[15]);
+    uint32_t call_state = atoi(argv[16]);
+
+    session = skinny_profile_find_session(helper->listener->profile, helper->listener, &line_instance, call_id);
+
+    if(session) {
+        switch_channel_t *channel = NULL;
+        private_t *tech_pvt = NULL;
+
+        channel = switch_core_session_get_channel(session);
+        tech_pvt = switch_core_session_get_private(session);
+
+        if (tech_pvt->transfer_from_call_id) { /* Perform a blind transfer, instead of hanging up */
+            skinny_session_transfer(session, helper->listener, line_instance);
+        } else {
+            /* Hangup on an active call that is not in one of the states listed */
+            if ((call_state != SKINNY_ON_HOOK)&&(call_state != SKINNY_HOLD)&&(call_state != SKINNY_CALL_WAITING)&&(call_state != SKINNY_CALL_PARK)&&(call_state != SKINNY_IN_USE_REMOTELY)&&(call_state != SKINNY_RING_IN)) {
+                skinny_log_l(helper->listener, SWITCH_LOG_DEBUG, "Hangup Line Instance (%d), Call ID (%d), Line State (%d)\n", line_instance, tech_pvt->call_id, skinny_line_get_state(helper->listener,line_instance, call_id));
+                switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
+            }
+        }
+
+        switch_core_session_rwunlock(session);
+    }
+
+    return 0;
+}
+
 /*****************************************************************************/
 /* SKINNY MESSAGE HANDLERS */
 /*****************************************************************************/
@@ -1537,18 +1591,13 @@ switch_status_t skinny_handle_stimulus_message(listener_t *listener, skinny_mess
 
 switch_status_t skinny_handle_off_hook_message(listener_t *listener, skinny_message_t *request)
 {
-	uint32_t line_instance = 1;
+	uint32_t line_instance = 0;
 	uint32_t call_id = 0;
 	switch_core_session_t *session = NULL;
 	private_t *tech_pvt = NULL;
 	uint32_t line_state;
 
-	if(skinny_check_data_length_soft(request, sizeof(request->data.off_hook))) {
-		if (request->data.off_hook.line_instance > 0) {
-			line_instance = request->data.off_hook.line_instance;
-		}
-		call_id = request->data.off_hook.call_id;
-	}
+	skinny_log_l(listener, SWITCH_LOG_INFO, "Attempting to handle off hook message for call_id %d and line_instance %d.\n", call_id, line_instance);
 
 	session = skinny_profile_find_session(listener->profile, listener, &line_instance, call_id);
 
@@ -1557,6 +1606,18 @@ switch_status_t skinny_handle_off_hook_message(listener_t *listener, skinny_mess
 	if(session && line_state == SKINNY_RING_IN ) { /*answering a call */
 		skinny_session_answer(session, listener, line_instance);
 	} else { /* start a new call */
+
+		/*  If we went off hook to make a call, establish the call with the appropriate line instance 
+			I'm not sure this actually makes any sense - plain off-hook with speaker or handset would 
+			always use the first line on device */
+
+		if(skinny_check_data_length_soft(request, sizeof(request->data.off_hook))) {
+			if (request->data.off_hook.line_instance > 0) {
+				line_instance = request->data.off_hook.line_instance;
+			}
+			call_id = request->data.off_hook.call_id;
+		}
+
 		skinny_create_incoming_session(listener, &line_instance, &session);
 		if ( ! session ) {
 			skinny_log_l_msg(listener, SWITCH_LOG_CRIT, "Unable to handle off hook message, could not create session.\n");
@@ -1580,34 +1641,31 @@ switch_status_t skinny_handle_on_hook_message(listener_t *listener, skinny_messa
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	uint32_t line_instance = 0;
 	uint32_t call_id = 0;
-	switch_core_session_t *session = NULL;
+	struct skinny_hangup_active_calls_helper helper = {0};
+	char *sql;
 
 	if(skinny_check_data_length_soft(request, sizeof(request->data.on_hook))) {
 		line_instance = request->data.on_hook.line_instance;
 		call_id = request->data.on_hook.call_id;
 	}
+    skinny_log_l(listener, SWITCH_LOG_INFO, "Attempting to handle on hook message for Call ID (%d), Line Instance (%d).\n", call_id, line_instance);
 
-	session = skinny_profile_find_session(listener->profile, listener, &line_instance, call_id);
+    /* Walk through all active calls for this device. The callback should hangup any active calls that should be terminated when the device goes on-hook */
 
-	if(session) {
-		switch_channel_t *channel = NULL;
-		private_t *tech_pvt = NULL;
+    helper.listener = listener;
 
-		channel = switch_core_session_get_channel(session);
-		tech_pvt = switch_core_session_get_private(session);
-
-		if (tech_pvt->transfer_from_call_id) { /* blind transfer */
-			status = skinny_session_transfer(session, listener, line_instance);
-		} else {
-			if (skinny_line_get_state(listener, line_instance, call_id) != SKINNY_IN_USE_REMOTELY) {
-				switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
-			}
-		}
-	}
-
-	if(session) {
-		switch_core_session_rwunlock(session);
-	}
+    if ((sql = switch_mprintf(
+                    "SELECT skinny_lines.*, channel_uuid, call_id, call_state "
+                    "FROM skinny_active_lines "
+                    "INNER JOIN skinny_lines "
+                    "ON skinny_active_lines.device_name = skinny_lines.device_name "
+                    "AND skinny_active_lines.device_instance = skinny_lines.device_instance "
+                    "AND skinny_active_lines.line_instance = skinny_lines.line_instance "
+                    "WHERE skinny_lines.device_name='%s' AND skinny_lines.device_instance=%d",
+                    listener->device_name, listener->device_instance))) {
+        skinny_execute_sql_callback(listener->profile, listener->profile->sql_mutex, sql, skinny_hangup_active_calls_callback, &helper);
+        switch_safe_free(sql);
+    }
 
 	return status;
 }
@@ -2137,6 +2195,10 @@ switch_status_t skinny_handle_soft_key_event_message(listener_t *listener, skinn
 			}
 			break;
 		case SOFTKEY_ANSWER:
+			/* find first ringing line - ccm behavior */
+			line_instance = 0;
+			call_id = 0;
+
 			session = skinny_profile_find_session(listener->profile, listener, &line_instance, call_id);
 			if(session) {
 				status = skinny_session_answer(session, listener, line_instance);

@@ -303,11 +303,16 @@ char * skinny_profile_find_session_uuid(skinny_profile_t *profile, listener_t *l
 		call_id_condition = switch_mprintf("1=1");
 	}
 	switch_assert(call_id_condition);
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,
+					"Attempting to find active call with criteria (%s and %s and %s)\n",
+					device_condition, line_instance_condition, call_id_condition);
+
 	if((sql = switch_mprintf(
 					"SELECT channel_uuid, line_instance "
 					"FROM skinny_active_lines "
 					"WHERE %s AND %s AND %s "
-					"ORDER BY call_state, channel_uuid", /* off hook first */
+					"ORDER BY call_state, line_instance, channel_uuid", /* off hook first */
 					device_condition, line_instance_condition, call_id_condition
 				))) {
 		skinny_execute_sql_callback(profile, profile->sql_mutex, sql,
@@ -917,6 +922,79 @@ switch_status_t channel_on_destroy(switch_core_session_t *session)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+struct skinny_ring_active_calls_helper {
+    private_t *tech_pvt;
+    listener_t *listener;
+};
+
+int skinny_ring_active_calls_callback(void *pArg, int argc, char **argv, char **columnNames)
+{
+    struct skinny_ring_active_calls_helper *helper = pArg;
+    switch_core_session_t *session;
+
+    /* char *device_name = argv[0]; */
+    /* uint32_t device_instance = atoi(argv[1]); */
+    /* uint32_t position = atoi(argv[2]); */
+    uint32_t line_instance = atoi(argv[3]);
+    /* char *label = argv[4]; */
+    /* char *value = argv[5]; */
+    /* char *caller_name = argv[6]; */
+    uint32_t ring_on_idle = atoi(argv[7]);
+    /* uint32_t ring_on_active = atoi(argv[8]); */
+    /* uint32_t busy_trigger = atoi(argv[9]); */
+    /* char *forward_all = argv[10]; */
+    /* char *forward_busy = argv[11]; */
+    /* char *forward_noanswer = argv[12]; */
+    /* uint32_t noanswer_duration = atoi(argv[13]); */
+    /* char *channel_uuid = argv[14]; */
+    uint32_t call_id = atoi(argv[15]);
+    /* uint32_t call_state = atoi(argv[16]); */
+
+    session = skinny_profile_find_session(helper->listener->profile, helper->listener, &line_instance, call_id);
+
+    if(session) {
+        /* After going on-hook, start ringing if there is an active call in the SKINNY_RING_IN state */
+        skinny_log_l(helper->listener, SWITCH_LOG_DEBUG, "Start Ringer for active Call ID (%d), Line Instance (%d), Line State (%d).\n", call_id, line_instance, skinny_line_get_state(helper->listener,line_instance, call_id));
+
+        send_set_lamp(helper->listener, SKINNY_BUTTON_LINE, line_instance, SKINNY_LAMP_BLINK);
+
+        if ( ring_on_idle ) {
+            send_set_ringer(helper->listener, SKINNY_RING_INSIDE, SKINNY_RING_FOREVER, line_instance, call_id);
+        } else {
+            send_set_ringer(helper->listener, SKINNY_RING_FLASHONLY, SKINNY_RING_FOREVER, line_instance, call_id);
+        }
+
+        switch_core_session_rwunlock(session);
+    }
+
+    return 0;
+}
+
+switch_status_t skinny_ring_active_calls(listener_t *listener)
+/* Look for all SKINNY active calls in the SKINNY_RING_IN state and tell them to start ringing */
+{
+    struct skinny_ring_active_calls_helper helper = {0};
+    char *sql;
+
+    helper.listener = listener;
+
+    if ((sql = switch_mprintf(
+                    "SELECT skinny_lines.*, channel_uuid, call_id, call_state "
+                    "FROM skinny_active_lines "
+                    "INNER JOIN skinny_lines "
+                    "ON skinny_active_lines.device_name = skinny_lines.device_name "
+                    "AND skinny_active_lines.device_instance = skinny_lines.device_instance "
+                    "AND skinny_active_lines.line_instance = skinny_lines.line_instance "
+                    "WHERE skinny_lines.device_name='%s' AND skinny_lines.device_instance=%d "
+                    "AND (call_state=%d)",
+                    listener->device_name, listener->device_instance, SKINNY_RING_IN))) {
+        skinny_execute_sql_callback(listener->profile, listener->profile->sql_mutex, sql, skinny_ring_active_calls_callback, &helper);
+        switch_safe_free(sql);
+    }
+
+    return SWITCH_STATUS_SUCCESS;
+}
+
 struct channel_on_hangup_helper {
 	private_t *tech_pvt;
 	switch_call_cause_t cause;
@@ -1002,6 +1080,9 @@ int channel_on_hangup_callback(void *pArg, int argc, char **argv, char **columnN
 			send_set_speaker_mode(listener, SKINNY_SPEAKER_OFF);
 		}
 		send_set_ringer(listener, SKINNY_RING_OFF, SKINNY_RING_FOREVER, line_instance, call_id);
+
+        /* After hanging up this call, activate the ringer for any other active incoming calls */
+        skinny_ring_active_calls(listener);
 	}
 	return 0;
 }
