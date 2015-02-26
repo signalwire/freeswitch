@@ -105,6 +105,7 @@ struct vlc_video_context {
 	switch_queue_t *video_queue;
 	int playing;
 	int ending;
+	uint32_t sync_offset;
 	switch_mutex_t *video_mutex;
 
 	switch_core_session_t *session;
@@ -819,7 +820,7 @@ int  vlc_write_video_imem_get_callback(void *data, const char *cookie, int64_t *
 		}
 		switch_mutex_unlock(context->video_mutex); 
 	}
-
+	
 	if (*cookie == 'v') {
 		switch_image_t *img = NULL;
 		vlc_frame_data_t *fdata = NULL;
@@ -891,6 +892,11 @@ int  vlc_write_video_imem_get_callback(void *data, const char *cookie, int64_t *
 			}
 		}
 	}
+
+	switch_cond_next();
+
+	switch_core_timer_sync(&context->timer);
+	*dts = *pts = context->timer.samplecount;
 
 	*size = 0;
 	*output = NULL;
@@ -1063,6 +1069,7 @@ SWITCH_STANDARD_APP(capture_video_function)
 		uint32_t off_frames = offset / read_impl.microseconds_per_packet;
 		int i = 0;
 
+		context->sync_offset = offset;
 		switch_mutex_lock(context->audio_mutex);
 		switch_core_timer_sync(&context->timer);
 		pts = context->timer.samplecount;
