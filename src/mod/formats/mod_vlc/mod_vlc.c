@@ -956,7 +956,7 @@ SWITCH_STANDARD_APP(capture_video_function)
     unsigned char audio_data_buf[SWITCH_RECOMMENDED_BUFFER_SIZE] = { 0 };
 	void *audio_data;
 	switch_size_t audio_datalen;
-
+	uint32_t offset = 500000;
 	const char *tmp;
 	const char * opts[25] = {
 		*vlc_args,
@@ -968,12 +968,9 @@ SWITCH_STANDARD_APP(capture_video_function)
 	switch_assert(context);
 	memset(context, 0, sizeof(vlc_file_context_t));
 
-	if ((tmp = switch_channel_get_variable(channel, "vlc_force_width"))) {
-		context->force_width = atoi(tmp);
-	}
-
-	if ((tmp = switch_channel_get_variable(channel, "vlc_force_height"))) {
-		context->force_height = atoi(tmp);
+	if ((tmp = switch_channel_get_variable(channel, "vlc_capture_offset"))) {
+		int x = atoi(tmp);
+		if (x > 0) offset = x;
 	}
 
 	switch_channel_pre_answer(channel);
@@ -1059,6 +1056,28 @@ SWITCH_STANDARD_APP(capture_video_function)
 		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 	};
 
+
+	switch_channel_audio_sync(channel);
+
+	if (offset) {
+		uint32_t off_frames = offset / read_impl.microseconds_per_packet;
+		int i = 0;
+
+		switch_mutex_lock(context->audio_mutex);
+		switch_core_timer_sync(&context->timer);
+		pts = context->timer.samplecount;
+		switch_buffer_write(context->audio_buffer, &pts, sizeof(pts));
+
+		audio_data = audio_data_buf;
+		audio_datalen = read_impl.decoded_bytes_per_packet;
+
+		for (i = 0; i < off_frames; i++) {
+			switch_buffer_write(context->audio_buffer, audio_data, audio_datalen);
+		}
+		switch_mutex_unlock(context->audio_mutex);
+	}
+
+
 	while (switch_channel_ready(channel)) {
 
 		status = switch_core_session_read_frame(context->session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
@@ -1078,7 +1097,7 @@ SWITCH_STANDARD_APP(capture_video_function)
 		switch_mutex_lock(context->audio_mutex);
 		if (!switch_buffer_inuse(context->audio_buffer)) {
 			switch_core_timer_sync(&context->timer);
-			pts = context->timer.samplecount;
+			pts = context->timer.samplecount - offset;
 			switch_buffer_write(context->audio_buffer, &pts, sizeof(pts));
 		}
 		switch_buffer_write(context->audio_buffer, audio_data, audio_datalen);
