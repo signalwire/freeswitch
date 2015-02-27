@@ -154,6 +154,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 	fh->func = func;
 	fh->line = line;
 
+	if (switch_test_flag(fh, SWITCH_FILE_FLAG_VIDEO) && !fh->file_interface->file_read_video) {
+		switch_clear_flag(fh, SWITCH_FILE_FLAG_VIDEO);
+	}
 
 	if (spool_path) {
 		char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
@@ -382,6 +385,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_read(switch_file_handle_t *fh, 
 	return status;
 }
 
+SWITCH_DECLARE(switch_bool_t) switch_core_file_has_video(switch_file_handle_t *fh)
+{
+	return switch_test_flag(fh, SWITCH_FILE_FLAG_VIDEO) ? SWITCH_TRUE : SWITCH_FALSE;
+}
 
 SWITCH_DECLARE(switch_status_t) switch_core_file_write(switch_file_handle_t *fh, void *data, switch_size_t *len)
 {
@@ -464,7 +471,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_write(switch_file_handle_t *fh,
 	}
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_file_write_video(switch_file_handle_t *fh, void *data, switch_size_t *len)
+SWITCH_DECLARE(switch_status_t) switch_core_file_write_video(switch_file_handle_t *fh, switch_frame_t *frame)
 {
 	switch_assert(fh != NULL);
 	switch_assert(fh->file_interface != NULL);
@@ -477,8 +484,24 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_write_video(switch_file_handle_
 		return SWITCH_STATUS_FALSE;
 	}
 
-	return fh->file_interface->file_write_video(fh, data, len);
+	return fh->file_interface->file_write_video(fh, frame);
 
+}
+
+SWITCH_DECLARE(switch_status_t) switch_core_file_read_video(switch_file_handle_t *fh, switch_frame_t *frame)
+{
+	switch_assert(fh != NULL);
+	switch_assert(fh->file_interface != NULL);
+
+	if (!switch_test_flag(fh, SWITCH_FILE_OPEN)) {
+		return SWITCH_STATUS_GENERR;
+	}
+
+	if (!fh->file_interface->file_read_video) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	return fh->file_interface->file_read_video(fh, frame);
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_file_seek(switch_file_handle_t *fh, unsigned int *cur_pos, int64_t samples, int whence)

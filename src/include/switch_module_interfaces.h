@@ -280,9 +280,9 @@ struct switch_file_interface {
 	/*! function to write from the file */
 	switch_status_t (*file_write) (switch_file_handle_t *, void *data, switch_size_t *len);
 	/*! function to seek to a certian position in the file */
-	switch_status_t (*file_read_video) (switch_file_handle_t *, void *data, switch_size_t *len);
+	switch_status_t (*file_read_video) (switch_file_handle_t *, switch_frame_t *frame);
 	/*! function to write from the file */
-	switch_status_t (*file_write_video) (switch_file_handle_t *, void *data, switch_size_t *len);
+	switch_status_t (*file_write_video) (switch_file_handle_t *, switch_frame_t *frame);
 	/*! function to seek to a certian position in the file */
 	switch_status_t (*file_seek) (switch_file_handle_t *, unsigned int *cur_pos, int64_t samples, int whence);
 	/*! function to set meta data */

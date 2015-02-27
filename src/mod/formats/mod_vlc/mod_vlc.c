@@ -65,12 +65,14 @@ typedef void (*imem_release_t)(void *data, const char *cookie, size_t, void *);
 const char *vlc_args[] = {""};
 // const char *vlc_args[] = {"--network-caching", "500"};
 
-libvlc_instance_t *read_inst;
+
 switch_endpoint_interface_t *vlc_endpoint_interface = NULL;
 
 typedef struct vlc_frame_data_s {
 	int64_t pts;
 } vlc_frame_data_t;
+
+struct vlc_video_context;
 
 struct vlc_file_context {
 	libvlc_media_player_t *mp;
@@ -90,6 +92,8 @@ struct vlc_file_context {
 	libvlc_instance_t *inst_out;
 	void *frame_buffer;
 	switch_size_t frame_buffer_len;
+	libvlc_instance_t *vlc_handle;
+	struct vlc_video_context *vcontext;
 };
 
 typedef struct vlc_file_context vlc_file_context_t;
@@ -124,6 +128,7 @@ struct vlc_video_context {
 	int channels;
 	int samplerate;
 	int samples;
+	int err;
 	//int pts;
 	void *video_frame_buffer;
 	switch_size_t video_frame_buffer_len;
@@ -131,6 +136,7 @@ struct vlc_video_context {
 	switch_size_t audio_frame_buffer_len;
 	switch_timer_t timer;
 	int64_t pts;
+	libvlc_instance_t *vlc_handle;
 };
 
 typedef struct vlc_video_context vlc_video_context_t;
@@ -138,6 +144,10 @@ typedef struct vlc_video_context vlc_video_context_t;
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_vlc_shutdown);
 SWITCH_MODULE_LOAD_FUNCTION(mod_vlc_load);
 SWITCH_MODULE_DEFINITION(mod_vlc, mod_vlc_load, mod_vlc_shutdown, NULL);
+
+static int vlc_write_video_imem_get_callback(void *data, const char *cookie, int64_t *dts, int64_t *pts, unsigned *flags, size_t *size, void **output);
+void vlc_write_video_imem_release_callback(void *data, const char *cookie, size_t size, void *unknown);
+static switch_status_t av_init_handle(switch_file_handle_t *handle, switch_image_t *img);
 
 void yuyv_to_i420(uint8_t *pixels, void *out_buffer, int src_width, int src_height)
 {
@@ -171,10 +181,14 @@ static void vlc_mediaplayer_error_callback(const libvlc_event_t * event, void * 
         int status = libvlc_media_get_state(context->m);
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Got a libvlc_MediaPlayerEncounteredError callback. mediaPlayer Status: %d\n", status);
         if (status == libvlc_Error) {
-               context->err = 1;
-               switch_thread_cond_signal(context->cond);
-	     }
+			context->err = 1;
+			if (switch_mutex_lock(context->audio_mutex) == SWITCH_STATUS_SUCCESS) {
+				switch_thread_cond_signal(context->cond);
+				switch_mutex_unlock(context->audio_mutex);
+			}
+		}
 }
+
 static void vlc_media_state_callback(const libvlc_event_t * event, void * data)
 {
         vlc_file_context_t *context = (vlc_file_context_t *) data;
@@ -182,8 +196,41 @@ static void vlc_media_state_callback(const libvlc_event_t * event, void * data)
 
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Got a libvlc_MediaStateChanged callback. New state: %d\n", new_state);
         if (new_state == libvlc_Ended || new_state == libvlc_Error) {
-                switch_thread_cond_signal(context->cond);
+			if (switch_mutex_lock(context->audio_mutex) == SWITCH_STATUS_SUCCESS) {
+				switch_thread_cond_signal(context->cond);
+				switch_mutex_unlock(context->audio_mutex);
+			}
         }
+}
+
+
+
+static void vlc_mediaplayer_av_error_callback(const libvlc_event_t * event, void * data)
+{
+	vlc_video_context_t *context = (vlc_video_context_t *) data;
+	int status = libvlc_media_get_state(context->m);
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Got a libvlc_MediaPlayerEncounteredError callback. mediaPlayer Status: %d\n", status);
+	if (status == libvlc_Error) {
+		context->err = 1;
+		if (switch_mutex_lock(context->audio_mutex) == SWITCH_STATUS_SUCCESS) {
+			switch_thread_cond_signal(context->cond);
+			switch_mutex_unlock(context->audio_mutex);
+		}
+	}
+}
+static void vlc_media_av_state_callback(const libvlc_event_t * event, void * data)
+{
+	vlc_video_context_t *context = (vlc_video_context_t *) data;
+	int new_state = event->u.media_state_changed.new_state;
+	
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Got a libvlc_MediaStateChanged callback. New state: %d\n", new_state);
+	if (new_state == libvlc_Ended || new_state == libvlc_Error) {
+		if (switch_mutex_lock(context->audio_mutex) == SWITCH_STATUS_SUCCESS) {
+			switch_thread_cond_signal(context->cond);
+			switch_mutex_unlock(context->audio_mutex);
+		}
+	}
 }
 
 
@@ -230,6 +277,19 @@ void vlc_play_audio_callback(void *data, const void *samples, unsigned count, in
 	switch_mutex_unlock(context->audio_mutex);
 
 	// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "VLC callback, play audio: %d \n", count);
+}
+
+static void vlc_video_av_unlock_callback(void *data, void *id, void *const *p_pixels)
+{
+	vlc_video_context_t *context = (vlc_video_context_t *) data;
+
+	if (!context->img) context->img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, context->width, context->height, 0);
+
+	switch_assert(context->img);
+
+	yuyv_to_i420(*p_pixels, context->img->img_data, context->width, context->height);
+
+	switch_mutex_unlock(context->video_mutex);
 }
 
 static void *vlc_video_lock_callback(void *data, void **p_pixels)
@@ -354,7 +414,7 @@ static int i420_size(int width, int height)
 #endif
 
 
-int  vlc_imem_get_callback(void *data, const char *cookie, int64_t *dts, int64_t *pts, unsigned *flags, size_t *size, void **output)
+static int vlc_imem_get_callback(void *data, const char *cookie, int64_t *dts, int64_t *pts, unsigned *flags, size_t *size, void **output)
 {
 	vlc_file_context_t *context = (vlc_file_context_t *) data;
 	//int samples = 0;
@@ -396,6 +456,196 @@ void vlc_imem_release_callback(void *data, const char *cookie, size_t size, void
 	//free(unknown);
 }
 
+static switch_status_t av_init_handle(switch_file_handle_t *handle, switch_image_t *img) 
+{
+	vlc_file_context_t *acontext = (vlc_file_context_t *) handle->private_info;
+	vlc_video_context_t *vcontext = acontext->vcontext;
+	switch_memory_pool_t *pool = acontext->pool;
+	int64_t pts = 0;
+	char *imem_main, *imem_slave;
+    unsigned char audio_data_buf[SWITCH_RECOMMENDED_BUFFER_SIZE] = { 0 };
+	void *audio_data;
+	switch_size_t audio_datalen;
+	uint32_t offset = 500;
+	const char *tmp;
+	const char * opts[25] = {
+		*vlc_args,
+		switch_core_sprintf(acontext->pool, "--sout=%s", acontext->path)
+	};
+	int argc = 2;
+
+	vcontext = switch_core_alloc(acontext->pool, sizeof(vlc_video_context_t));
+
+	if (handle->params && (tmp = switch_event_get_header(handle->params, "vlc_capture_offset"))) {
+		int x = atoi(tmp);
+		if (x >= 0) offset = x;
+	}
+
+	vcontext->channels = handle->channels;
+	vcontext->pool = pool;
+	vcontext->playing = 0;
+	vcontext->samplerate = handle->samplerate;
+
+	switch_queue_create(&vcontext->video_queue, SWITCH_CORE_QUEUE_LEN, vcontext->pool);
+
+	switch_buffer_create_dynamic(&(vcontext->audio_buffer), VLC_BUFFER_SIZE, VLC_BUFFER_SIZE * 8, 0);
+	switch_mutex_init(&vcontext->audio_mutex, SWITCH_MUTEX_NESTED, vcontext->pool);
+	switch_mutex_init(&vcontext->video_mutex, SWITCH_MUTEX_NESTED, vcontext->pool);
+	switch_thread_cond_create(&vcontext->cond, vcontext->pool);
+
+	switch_core_timer_init(&vcontext->timer, "soft", 1, 1000, vcontext->pool);
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "VLC open %s for writing\n", acontext->path);
+
+	opts[argc++] = switch_core_sprintf(vcontext->pool, "--imem-get=%ld", vlc_write_video_imem_get_callback);
+	opts[argc++] = switch_core_sprintf(vcontext->pool, "--imem-release=%ld", vlc_write_video_imem_release_callback);
+	opts[argc++] = switch_core_sprintf(vcontext->pool, "--imem-data=%ld", vcontext);
+
+	acontext->inst_out = libvlc_new(argc, opts);
+	
+	imem_main = switch_core_sprintf(vcontext->pool,
+											"imem://cookie=video:"
+											"fps=15.0/1:"
+											"width=%d:"
+											"height=%d:"
+											"codec=YUYV:"
+											"cat=2:"
+											"id=2:"
+											"caching=0",
+											img->d_w, img->d_h);
+
+	imem_slave = switch_core_sprintf(vcontext->pool,
+											 ":input-slave=imem://cookie=audio:"
+											 "cat=1:"
+											 "codec=s16l:"
+											 "samplerate=%d:"
+											 "channels=%d:"
+											 "id=1:"
+											 "caching=0", 
+											 vcontext->samplerate, vcontext->channels);
+	
+	vcontext->m = libvlc_media_new_location(acontext->inst_out, imem_main);
+	
+	libvlc_media_add_option_flag( vcontext->m, imem_slave, libvlc_media_option_trusted );                                                                       
+
+	if (vcontext->m == NULL) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "VLC error opening %s for writing\n", acontext->path);
+		return SWITCH_STATUS_FALSE;
+	}
+	
+	vcontext->mp = libvlc_media_player_new_from_media(vcontext->m);
+
+	vcontext->samples = 0;
+	vcontext->pts = 0;
+
+	if (offset) {
+		uint32_t need = (handle->samplerate / 1000) * offset * handle->channels;
+		uint32_t off_frames = need / SWITCH_RECOMMENDED_BUFFER_SIZE;
+		uint32_t rem = need % SWITCH_RECOMMENDED_BUFFER_SIZE;
+		int i = 0;
+
+		vcontext->sync_offset = offset;
+		switch_mutex_lock(vcontext->audio_mutex);
+
+		switch_core_timer_sync(&vcontext->timer);
+		pts = vcontext->timer.samplecount;
+		switch_buffer_write(vcontext->audio_buffer, &pts, sizeof(pts));
+
+		audio_data = audio_data_buf;
+
+		if (off_frames) {
+			audio_datalen = SWITCH_RECOMMENDED_BUFFER_SIZE;
+
+			for (i = 0; i < off_frames; i++) {
+				switch_buffer_write(vcontext->audio_buffer, audio_data, audio_datalen);
+			}
+		}
+
+		if (rem) {
+			audio_datalen = rem;
+			switch_buffer_write(vcontext->audio_buffer, audio_data, audio_datalen);
+		}
+
+		switch_mutex_unlock(vcontext->audio_mutex);
+	}
+	
+	acontext->vcontext = vcontext;
+	
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t vlc_file_av_open(switch_file_handle_t *handle, const char *path)
+{
+	vlc_file_context_t *acontext = (vlc_file_context_t *) handle->private_info;
+	vlc_video_context_t *vcontext;
+	libvlc_event_manager_t *mp_event_manager, *m_event_manager;
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "VLC open %s for reading\n", acontext->path);
+
+	vcontext = switch_core_alloc(acontext->pool, sizeof(vlc_video_context_t));
+	vcontext->pool = acontext->pool;
+	acontext->vcontext = vcontext;
+
+	/* Determine if this is a url or a path */
+	/* TODO: Change this so that it tries local files first, and then if it fails try location. */
+	if(! strncmp(acontext->path, "http", 4)){
+		vcontext->m = libvlc_media_new_location(acontext->vlc_handle, acontext->path);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "VLC Path is http %s\n", acontext->path);
+	} else if (! strncmp(acontext->path, "rtp", 3)){
+		vcontext->m = libvlc_media_new_path(acontext->vlc_handle, acontext->path);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "VLC Path is rtp %s\n", acontext->path);
+	} else if (! strncmp(acontext->path, "mms", 3)){
+		vcontext->m = libvlc_media_new_path(acontext->vlc_handle, acontext->path);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "VLC Path is mms %s\n", acontext->path);
+	} else if (! strncmp(acontext->path, "/", 1)){
+		vcontext->m = libvlc_media_new_path(acontext->vlc_handle, acontext->path);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "VLC Path is file %s\n", acontext->path);
+	} else {
+		vcontext->m = libvlc_media_new_location(acontext->vlc_handle, acontext->path);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "VLC Path is unknown type %s\n", acontext->path);
+	}
+
+	if (vcontext->m == NULL) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "VLC error opening %s for reading\n", path);
+		return SWITCH_STATUS_GENERR;
+	}
+
+	vcontext->playing = 0;
+	vcontext->err = 0;
+	
+	vcontext->mp = libvlc_media_player_new_from_media(vcontext->m);
+
+	if (!handle->samplerate) {
+		handle->samplerate = 16000;
+	}
+
+	switch_mutex_init(&vcontext->audio_mutex, SWITCH_MUTEX_NESTED, vcontext->pool);
+	switch_mutex_init(&vcontext->video_mutex, SWITCH_MUTEX_NESTED, vcontext->pool);
+	switch_queue_create(&vcontext->video_queue, SWITCH_CORE_QUEUE_LEN, vcontext->pool);
+	switch_thread_cond_create(&vcontext->cond, vcontext->pool);
+	switch_buffer_create_dynamic(&vcontext->audio_buffer, VLC_BUFFER_SIZE, VLC_BUFFER_SIZE * 8, 0);
+
+	vcontext->samplerate = handle->samplerate;
+	vcontext->channels = handle->channels;
+
+	libvlc_audio_set_format(vcontext->mp, "S16N", vcontext->samplerate, handle->channels);
+		
+	m_event_manager = libvlc_media_event_manager(vcontext->m);
+	libvlc_event_attach(m_event_manager, libvlc_MediaStateChanged, vlc_media_av_state_callback, (void *) vcontext);
+
+	mp_event_manager = libvlc_media_player_event_manager(vcontext->mp);
+	libvlc_event_attach(mp_event_manager, libvlc_MediaPlayerEncounteredError, vlc_mediaplayer_av_error_callback, (void *) vcontext);
+		
+	libvlc_audio_set_callbacks(vcontext->mp, vlc_play_audio_callback, NULL,NULL,NULL,NULL, (void *) vcontext);
+	
+	libvlc_video_set_format_callbacks(vcontext->mp, video_format_setup_callback, video_format_clean_callback);
+	libvlc_video_set_callbacks(vcontext->mp, vlc_video_lock_callback, vlc_video_av_unlock_callback, vlc_video_display_callback, vcontext);
+
+	libvlc_media_player_play(vcontext->mp);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 static switch_status_t vlc_file_open(switch_file_handle_t *handle, const char *path)
 {
 	vlc_file_context_t *context;
@@ -403,33 +653,40 @@ static switch_status_t vlc_file_open(switch_file_handle_t *handle, const char *p
 	
 	context = switch_core_alloc(handle->memory_pool, sizeof(*context));
 	context->pool = handle->memory_pool;
-
 	context->path = switch_core_strdup(context->pool, path);
+	context->vlc_handle = libvlc_new(sizeof(vlc_args)/sizeof(char *), vlc_args);
 
-	switch_buffer_create_dynamic(&(context->audio_buffer), VLC_BUFFER_SIZE, VLC_BUFFER_SIZE * 8, 0);
-	switch_mutex_init(&context->audio_mutex, SWITCH_MUTEX_NESTED, context->pool);
-	switch_thread_cond_create(&(context->cond), context->pool);
+	if (!switch_test_flag(handle, SWITCH_FILE_FLAG_VIDEO)) {
+		switch_buffer_create_dynamic(&(context->audio_buffer), VLC_BUFFER_SIZE, VLC_BUFFER_SIZE * 8, 0);
+		switch_mutex_init(&context->audio_mutex, SWITCH_MUTEX_NESTED, context->pool);
+		switch_thread_cond_create(&(context->cond), context->pool);
+	}
+
+	handle->private_info = context;
 
 	if (switch_test_flag(handle, SWITCH_FILE_FLAG_READ)) {
+		if (switch_test_flag(handle, SWITCH_FILE_FLAG_VIDEO)) {
+			return vlc_file_av_open(handle, path);
+		}
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "VLC open %s for reading\n", path);
 
 		/* Determine if this is a url or a path */
 		/* TODO: Change this so that it tries local files first, and then if it fails try location. */
 		if(! strncmp(context->path, "http", 4)){
-			context->m = libvlc_media_new_location(read_inst, context->path);
+			context->m = libvlc_media_new_location(context->vlc_handle, context->path);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "VLC Path is http %s\n", context->path);
 		} else if (! strncmp(context->path, "rtp", 3)){
-			context->m = libvlc_media_new_path(read_inst, context->path);
+			context->m = libvlc_media_new_path(context->vlc_handle, context->path);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "VLC Path is rtp %s\n", context->path);
 		} else if (! strncmp(context->path, "mms", 3)){
-			context->m = libvlc_media_new_path(read_inst, context->path);
+			context->m = libvlc_media_new_path(context->vlc_handle, context->path);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "VLC Path is mms %s\n", context->path);
 		} else if (! strncmp(context->path, "/", 1)){
-			context->m = libvlc_media_new_path(read_inst, context->path);
+			context->m = libvlc_media_new_path(context->vlc_handle, context->path);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "VLC Path is file %s\n", context->path);
 		} else {
-			context->m = libvlc_media_new_location(read_inst, context->path);
+			context->m = libvlc_media_new_location(context->vlc_handle, context->path);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "VLC Path is unknown type %s\n", context->path);
 		}
 
@@ -462,7 +719,7 @@ static switch_status_t vlc_file_open(switch_file_handle_t *handle, const char *p
 
 		libvlc_media_player_play(context->mp);
 
-	} else if (switch_test_flag(handle, SWITCH_FILE_FLAG_WRITE)) {
+	} else if (switch_test_flag(handle, SWITCH_FILE_FLAG_WRITE) && !switch_test_flag(handle, SWITCH_FILE_FLAG_VIDEO)) {
 		const char * opts[25] = {
 			*vlc_args,
 			switch_core_sprintf(context->pool, "--sout=%s", path)
@@ -498,12 +755,59 @@ static switch_status_t vlc_file_open(switch_file_handle_t *handle, const char *p
 		context->mp = libvlc_media_player_new_from_media(context->m);
 		context->samples = 0;
 		context->pts = 0;
-	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "VLC tried to open %s for unknown reason\n", path);
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t vlc_file_av_read(switch_file_handle_t *handle, void *data, size_t *len)
+{
+	vlc_file_context_t *acontext = handle->private_info;
+	vlc_video_context_t *vcontext = acontext->vcontext;
+
+	size_t bytes = *len * sizeof(int16_t) * handle->channels, read;
+	libvlc_state_t status;
+
+	if (vcontext->err) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "VLC error\n");
 		return SWITCH_STATUS_GENERR;
 	}
 
-	handle->private_info = context;
+	status = libvlc_media_get_state(vcontext->m);
+	
+	if (status == libvlc_Error) {
+		return SWITCH_STATUS_GENERR;
+	}
+
+	switch_mutex_lock(vcontext->audio_mutex); 
+	while (vcontext->playing == 0 && status != libvlc_Ended && status != libvlc_Error) {
+		switch_thread_cond_wait(vcontext->cond, vcontext->audio_mutex);		
+		status = libvlc_media_get_state(vcontext->m);
+	}
+
+	if (vcontext->err == 1) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "VLC error\n");
+		return SWITCH_STATUS_FALSE;
+	}
+
+	switch_mutex_unlock(vcontext->audio_mutex);
+
+	switch_mutex_lock(vcontext->audio_mutex);
+	read = switch_buffer_read(vcontext->audio_buffer, data, bytes);
+	switch_mutex_unlock(vcontext->audio_mutex);
+	
+	status = libvlc_media_get_state(vcontext->m);
+
+	if (!read && (status == libvlc_Stopped || status == libvlc_Ended || status == libvlc_Error)) {
+		return SWITCH_STATUS_FALSE;
+	} else if (!read) {
+		read = 2;
+		memset(data, 0, read);
+	}
+
+	if (read) {
+		*len = read / 2 / handle->channels;
+	}
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -513,6 +817,10 @@ static switch_status_t vlc_file_read(switch_file_handle_t *handle, void *data, s
 	vlc_file_context_t *context = handle->private_info;
 	size_t bytes = *len * sizeof(int16_t) * handle->channels, read;
 	libvlc_state_t status;
+
+	if (switch_test_flag(handle, SWITCH_FILE_FLAG_VIDEO)) {
+		return vlc_file_av_read(handle, data, len);
+	}
 
 	if (!context) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "VLC read handle context is NULL\n");
@@ -547,7 +855,7 @@ static switch_status_t vlc_file_read(switch_file_handle_t *handle, void *data, s
 	read = switch_buffer_read(context->audio_buffer, data, bytes);
 	switch_mutex_unlock(context->audio_mutex);
 	
-        status = libvlc_media_get_state(context->m);
+	status = libvlc_media_get_state(context->m);
 
 	if (!read && (status == libvlc_Stopped || status == libvlc_Ended || status == libvlc_Error)) {
 		return SWITCH_STATUS_FALSE;
@@ -563,11 +871,107 @@ static switch_status_t vlc_file_read(switch_file_handle_t *handle, void *data, s
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static switch_status_t vlc_file_read_video(switch_file_handle_t *handle, switch_frame_t *frame)
+{
+	vlc_file_context_t *acontext = (vlc_file_context_t *) handle->private_info;
+	vlc_video_context_t *vcontext = acontext->vcontext;
+	void *pop;
+
+	if (switch_queue_pop(vcontext->video_queue, &pop) == SWITCH_STATUS_SUCCESS && pop) {
+		frame->img = (switch_image_t *) pop;
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	return SWITCH_STATUS_BREAK;
+}
+
+static switch_status_t vlc_file_write_video(switch_file_handle_t *handle, switch_frame_t *frame)
+{
+	vlc_file_context_t *acontext = (vlc_file_context_t *) handle->private_info;
+	vlc_video_context_t *vcontext = acontext->vcontext;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+
+	if (!frame->img) {
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	if (!vcontext) {
+		if ((status = av_init_handle(handle, frame->img)) != SWITCH_STATUS_SUCCESS) {
+			return status;
+		}
+		vcontext = acontext->vcontext;
+
+		switch_mutex_lock(vcontext->audio_mutex);
+		switch_buffer_zero(vcontext->audio_buffer);
+		switch_mutex_unlock(vcontext->audio_mutex);
+	}
+
+	if (frame->img) {
+		unsigned int size = switch_queue_size(vcontext->video_queue);
+		switch_image_t *img_copy = NULL;
+		vlc_frame_data_t *fdata = NULL;
+
+		switch_img_copy(frame->img, &img_copy);
+		switch_zmalloc(fdata, sizeof(*fdata));
+
+		switch_mutex_lock(vcontext->audio_mutex);
+		switch_core_timer_sync(&vcontext->timer);
+		fdata->pts = vcontext->timer.samplecount;
+		switch_mutex_unlock(vcontext->audio_mutex);
+		
+		img_copy->user_priv = (void *) fdata;
+		switch_queue_push(vcontext->video_queue, img_copy);
+
+		if (!size) { /* was empty before this push */
+			if (switch_mutex_trylock(vcontext->video_mutex) == SWITCH_STATUS_SUCCESS) {
+				switch_thread_cond_signal(vcontext->cond);
+				switch_mutex_unlock(vcontext->video_mutex);
+			}
+		}
+	}
+
+	return status;
+}
+
+static switch_status_t vlc_file_av_write(switch_file_handle_t *handle, void *data, size_t *len)
+{
+	vlc_file_context_t *acontext = handle->private_info;
+	vlc_video_context_t *vcontext = acontext->vcontext;
+	size_t bytes = *len * sizeof(int16_t) * handle->channels;
+	int64_t pts;
+
+	if (!vcontext) {
+		return SWITCH_STATUS_SUCCESS;
+	}	
+
+	switch_mutex_lock(vcontext->audio_mutex);
+	if (!switch_buffer_inuse(vcontext->audio_buffer)) {
+		switch_core_timer_sync(&vcontext->timer);
+		pts = vcontext->timer.samplecount - vcontext->sync_offset;
+		switch_buffer_write(vcontext->audio_buffer, &pts, sizeof(pts));
+	}
+
+	switch_buffer_write(vcontext->audio_buffer, data, bytes);
+	switch_mutex_unlock(vcontext->audio_mutex);
+
+
+	if (!vcontext->playing) {
+		vcontext->playing = 1;		
+		libvlc_media_player_play(vcontext->mp);
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 static switch_status_t vlc_file_write(switch_file_handle_t *handle, void *data, size_t *len)
 {
 	vlc_file_context_t *context = handle->private_info;
 	size_t bytes = *len * sizeof(int16_t) * handle->channels;
-	
+
+	if (switch_test_flag(handle, SWITCH_FILE_FLAG_VIDEO)) {
+		return vlc_file_av_write(handle, data, len);
+	}
+
 	switch_mutex_lock(context->audio_mutex);
 	context->samples += *len;
 	switch_buffer_write(context->audio_buffer, data, bytes);
@@ -581,9 +985,60 @@ static switch_status_t vlc_file_write(switch_file_handle_t *handle, void *data, 
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static switch_status_t vlc_file_av_close(switch_file_handle_t *handle)
+{
+	vlc_file_context_t *acontext = handle->private_info;
+	vlc_video_context_t *vcontext = acontext->vcontext;
+
+	vcontext->ending = 1;
+	
+	if (switch_test_flag(handle, SWITCH_FILE_FLAG_WRITE) && switch_test_flag(handle, SWITCH_FILE_FLAG_VIDEO)) {
+
+		if (switch_mutex_trylock(vcontext->video_mutex) == SWITCH_STATUS_SUCCESS) {
+			switch_thread_cond_signal(vcontext->cond);
+			switch_mutex_unlock(vcontext->video_mutex);
+		}
+
+		while(switch_buffer_inuse(vcontext->audio_buffer) || switch_queue_size(vcontext->video_queue)) {
+			libvlc_state_t status = libvlc_media_get_state(vcontext->m);
+			
+			if (status == libvlc_Ended || status == libvlc_Error || status == libvlc_Stopped ) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "VLC done. status = %d\n", status);
+				break;
+			}
+
+			switch_yield(10000);
+		}
+	}
+
+	vcontext->playing = 0;
+	acontext->playing = 0;
+
+
+	if (vcontext->mp) libvlc_media_player_stop(vcontext->mp);
+	if (vcontext->m) libvlc_media_release(vcontext->m);
+	if (acontext->inst_out) libvlc_release(acontext->inst_out);
+
+	switch_img_free(&vcontext->img);
+
+	if (vcontext->timer.interval) switch_core_timer_destroy(&vcontext->timer);
+
+	if (vcontext->audio_buffer) {
+		switch_buffer_destroy(&vcontext->audio_buffer);
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 static switch_status_t vlc_file_close(switch_file_handle_t *handle)
 {
 	vlc_file_context_t *context = handle->private_info;
+
+	if (context->vlc_handle) libvlc_release(context->vlc_handle);
+
+	if (switch_test_flag(handle, SWITCH_FILE_FLAG_VIDEO)) {
+		return vlc_file_av_close(handle);
+	}
 	
 	context->playing = 0;
 
@@ -613,8 +1068,10 @@ SWITCH_STANDARD_APP(play_video_function)
 	vlc_video_context_t *context;
 	char *path = (char *)data;
 	const char *tmp;
-
 	switch_size_t audio_datalen;
+	libvlc_instance_t *vlc_handle;
+
+	vlc_handle = libvlc_new(sizeof(vlc_args)/sizeof(char *), vlc_args);
 
 	context = switch_core_session_alloc(session, sizeof(vlc_video_context_t));
 	switch_assert(context);
@@ -687,22 +1144,22 @@ SWITCH_STANDARD_APP(play_video_function)
 	/* Determine if this is a url or a path */
 	/* TODO: Change this so that it tries local files first, and then if it fails try location. */
 	if(! strncmp(path, "http", 4)){
-		context->m = libvlc_media_new_location(read_inst, path);
+		context->m = libvlc_media_new_location(vlc_handle, path);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "VLC Path is http %s\n", path);
 	} else if (! strncmp(path, "rtp", 3)){
-		context->m = libvlc_media_new_path(read_inst, path);
+		context->m = libvlc_media_new_path(vlc_handle, path);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "VLC Path is rtp %s\n", path);
 	} else if (! strncmp(path, "mms", 3)){
-		context->m = libvlc_media_new_path(read_inst, path);
+		context->m = libvlc_media_new_path(vlc_handle, path);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "VLC Path is mms %s\n", path);
 	} else if (! strncmp(path, "rtsp", 3)){
-		context->m = libvlc_media_new_path(read_inst, path);
+		context->m = libvlc_media_new_path(vlc_handle, path);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "VLC Path is rtsp %s\n", path);
 	} else if (! strncmp(path, "/", 1)){
-		context->m = libvlc_media_new_path(read_inst, path);
+		context->m = libvlc_media_new_path(vlc_handle, path);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "VLC Path is file %s\n", path);
 	} else {
-		context->m = libvlc_media_new_location(read_inst, path);
+		context->m = libvlc_media_new_location(vlc_handle, path);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "VLC Path is unknown type %s\n", path);
 	}
 
@@ -805,6 +1262,8 @@ end:
 	}
 
 	switch_core_session_video_reset(session);
+
+	if (vlc_handle) libvlc_release(vlc_handle);
 }
 
 int  vlc_write_video_imem_get_callback(void *data, const char *cookie, int64_t *dts, int64_t *pts, unsigned *flags, size_t *size, void **output)
@@ -847,7 +1306,6 @@ int  vlc_write_video_imem_get_callback(void *data, const char *cookie, int64_t *
 		*size = 0;
 		switch_img_convert(img, SWITCH_CONVERT_FMT_YUYV, *output, size);
 		switch_img_free(&img);
-
 		return 0;
 	}
 
@@ -962,7 +1420,7 @@ SWITCH_STANDARD_APP(capture_video_function)
     unsigned char audio_data_buf[SWITCH_RECOMMENDED_BUFFER_SIZE] = { 0 };
 	void *audio_data;
 	switch_size_t audio_datalen;
-	uint32_t offset = 500000;
+	uint32_t offset = 500;
 	const char *tmp;
 	const char * opts[25] = {
 		*vlc_args,
@@ -976,7 +1434,7 @@ SWITCH_STANDARD_APP(capture_video_function)
 
 	if ((tmp = switch_channel_get_variable(channel, "vlc_capture_offset"))) {
 		int x = atoi(tmp);
-		if (x > 0) offset = x;
+		if (x >= 0) offset = x;
 	}
 
 	switch_channel_pre_answer(channel);
@@ -1046,7 +1504,7 @@ SWITCH_STANDARD_APP(capture_video_function)
 	libvlc_media_add_option_flag( context->m, imem_slave, libvlc_media_option_trusted );                                                                       
 
 	if ( context->m == NULL ) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "VLC error opening %s for reading\n", data);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "VLC error opening %s for writing\n", data);
 		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 		return ;
 	}
@@ -1064,12 +1522,12 @@ SWITCH_STANDARD_APP(capture_video_function)
 
 
 	switch_channel_audio_sync(channel);
-
+	
 	if (offset) {
-		uint32_t off_frames = offset / read_impl.microseconds_per_packet;
+		uint32_t off_frames = (offset * 1000) / read_impl.microseconds_per_packet;
 		int i = 0;
 
-		context->sync_offset = offset;
+		context->sync_offset = offset * 1000;
 		switch_mutex_lock(context->audio_mutex);
 		switch_core_timer_sync(&context->timer);
 		pts = context->timer.samplecount;
@@ -1104,7 +1562,7 @@ SWITCH_STANDARD_APP(capture_video_function)
 		switch_mutex_lock(context->audio_mutex);
 		if (!switch_buffer_inuse(context->audio_buffer)) {
 			switch_core_timer_sync(&context->timer);
-			pts = context->timer.samplecount - offset;
+			pts = context->timer.samplecount - context->sync_offset;
 			switch_buffer_write(context->audio_buffer, &pts, sizeof(pts));
 		}
 		switch_buffer_write(context->audio_buffer, audio_data, audio_datalen);
@@ -1143,7 +1601,7 @@ SWITCH_STANDARD_APP(capture_video_function)
 
 	switch_core_session_set_video_read_callback(session, NULL, NULL);
 	context->ending = 1;
-
+	
 	if (switch_mutex_trylock(context->video_mutex) == SWITCH_STATUS_SUCCESS) {
 		switch_thread_cond_signal(context->cond);
 		switch_mutex_unlock(context->video_mutex);
@@ -1283,7 +1741,7 @@ static switch_status_t setup_tech_pvt(switch_core_session_t *osession, switch_co
 	switch_assert(context);
 	memset(context, 0, sizeof(vlc_file_context_t));
 	tech_pvt->context = context;
-
+	context->vlc_handle = libvlc_new(sizeof(vlc_args)/sizeof(char *), vlc_args);
 
 	switch_buffer_create_dynamic(&(context->audio_buffer), VLC_BUFFER_SIZE, VLC_BUFFER_SIZE * 8, 0);
 	switch_queue_create(&context->video_queue, SWITCH_CORE_QUEUE_LEN, switch_core_session_get_pool(session));
@@ -1315,22 +1773,22 @@ static switch_status_t setup_tech_pvt(switch_core_session_t *osession, switch_co
 	/* Determine if this is a url or a path */
 	/* TODO: Change this so that it tries local files first, and then if it fails try location. */
 	if(! strncmp(path, "http", 4)){
-		context->m = libvlc_media_new_location(read_inst, path);
+		context->m = libvlc_media_new_location(context->vlc_handle, path);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "VLC Path is http %s\n", path);
 	} else if (! strncmp(path, "rtp", 3)){
-		context->m = libvlc_media_new_path(read_inst, path);
+		context->m = libvlc_media_new_path(context->vlc_handle, path);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "VLC Path is rtp %s\n", path);
 	} else if (! strncmp(path, "mms", 3)){
-		context->m = libvlc_media_new_path(read_inst, path);
+		context->m = libvlc_media_new_path(context->vlc_handle, path);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "VLC Path is mms %s\n", path);
 	} else if (! strncmp(path, "rtsp", 3)){
-		context->m = libvlc_media_new_path(read_inst, path);
+		context->m = libvlc_media_new_path(context->vlc_handle, path);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "VLC Path is rtsp %s\n", path);
 	} else if (! strncmp(path, "/", 1)){
-		context->m = libvlc_media_new_path(read_inst, path);
+		context->m = libvlc_media_new_path(context->vlc_handle, path);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "VLC Path is file %s\n", path);
 	} else {
-		context->m = libvlc_media_new_location(read_inst, path);
+		context->m = libvlc_media_new_location(context->vlc_handle, path);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "VLC Path is unknown type %s\n", path);
 	}
 
@@ -1429,6 +1887,8 @@ static switch_status_t channel_on_destroy(switch_core_session_t *session)
 	}
 
 	switch_img_free(&tech_pvt->read_video_frame.img);
+
+	if (tech_pvt->context->vlc_handle) libvlc_release(tech_pvt->context->vlc_handle);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -1752,19 +2212,13 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_vlc_load)
 	file_interface->file_close = vlc_file_close;
 	file_interface->file_read = vlc_file_read;
 	file_interface->file_write = vlc_file_write;
+	file_interface->file_read_video = vlc_file_read_video;
+	file_interface->file_write_video = vlc_file_write_video;
 
 	vlc_endpoint_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_ENDPOINT_INTERFACE);
 	vlc_endpoint_interface->interface_name = "vlc";
 	vlc_endpoint_interface->io_routines = &vlc_io_routines;
 	vlc_endpoint_interface->state_handler = &vlc_state_handlers;
-
-	/* load the vlc engine. */
-	read_inst = libvlc_new(sizeof(vlc_args)/sizeof(char *), vlc_args);
-
-	if ( ! read_inst ) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "FAILED TO LOAD\n");
-			return SWITCH_STATUS_GENERR;
-	}
 
 	SWITCH_ADD_APP(app_interface, "play_video", "play a videofile", "play a video file", play_video_function, "<file>", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "capture_video", "capture a videofile", "capture a video file", capture_video_function, "<file>", SAF_NONE);
@@ -1780,8 +2234,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_vlc_load)
   Macro expands to: switch_status_t mod_vlc_shutdown() */
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_vlc_shutdown)
 {
-	if ( read_inst != NULL )
-		libvlc_release(read_inst);
 	return SWITCH_STATUS_SUCCESS;
 }
 

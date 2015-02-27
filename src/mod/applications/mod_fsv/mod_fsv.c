@@ -951,6 +951,7 @@ static switch_status_t fsv_file_write(switch_file_handle_t *handle, void *data, 
 	return status;
 }
 
+#if 0
 static switch_status_t fsv_file_write_video(switch_file_handle_t *handle, void *data, size_t *len)
 {
 	uint32_t datalen = (uint32_t)*len;
@@ -978,6 +979,7 @@ static switch_status_t fsv_file_write_video(switch_file_handle_t *handle, void *
 
 	return status;
 }
+#endif
 
 static switch_status_t fsv_file_set_string(switch_file_handle_t *handle, switch_audio_col_t col, const char *string)
 {
@@ -1011,7 +1013,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_fsv_load)
 	file_interface->file_truncate = fsv_file_truncate;
 	file_interface->file_read = fsv_file_read;
 	file_interface->file_write = fsv_file_write;
+#if 0
 	file_interface->file_write_video = fsv_file_write_video;
+#endif
 	file_interface->file_seek = fsv_file_seek;
 	file_interface->file_set_string = fsv_file_set_string;
 	file_interface->file_get_string = fsv_file_get_string;

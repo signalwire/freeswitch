@@ -1043,6 +1043,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 	switch_event_t *event;
 	uint32_t test_native = 0, last_native = 0;
 	uint32_t buflen = 0;
+	int flags;
 
 	if (switch_channel_pre_answer(channel) != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_FALSE;
@@ -1237,10 +1238,16 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 			fh->prefix = prefix;
 		}
 
+		flags = SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT;
+
+		if (switch_channel_test_flag(channel, CF_VIDEO)) {
+			flags |= SWITCH_FILE_FLAG_VIDEO;
+		}
+
 		if (switch_core_file_open(fh,
 								  file,
 								  read_impl.number_of_channels,
-								  read_impl.actual_samples_per_second, SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, NULL) != SWITCH_STATUS_SUCCESS) {
+								  read_impl.actual_samples_per_second, flags, NULL) != SWITCH_STATUS_SUCCESS) {
 			switch_core_session_reset(session, SWITCH_TRUE, SWITCH_FALSE);
 			status = SWITCH_STATUS_NOTFOUND;
 			continue;
@@ -1251,6 +1258,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 		switch_channel_set_private(channel, "__fh", fh);
 		switch_core_session_io_rwunlock(session);
 
+		if (switch_core_file_has_video(fh)) {
+			switch_core_media_set_video_file(session, fh);
+		}
 
 		if (!abuf) {
 			buflen = write_frame.buflen = FILE_STARTSAMPLES * sizeof(*abuf) * fh->channels;
@@ -1324,6 +1334,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 				switch_channel_set_private(channel, "__fh", NULL);
 				switch_core_session_io_rwunlock(session);
 
+				if (switch_core_file_has_video(fh)) {
+					switch_core_media_set_video_file(session, NULL);
+				}
 				switch_core_file_close(fh);
 
 				switch_core_session_reset(session, SWITCH_TRUE, SWITCH_FALSE);
@@ -1345,6 +1358,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 				switch_channel_set_private(channel, "__fh", NULL);
 				switch_core_session_io_rwunlock(session);
 
+				if (switch_core_file_has_video(fh)) {
+					switch_core_media_set_video_file(session, NULL);
+				}
 				switch_core_file_close(fh);
 
 				switch_core_session_reset(session, SWITCH_TRUE, SWITCH_FALSE);
@@ -1370,6 +1386,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 				switch_core_session_io_write_lock(session);
 				switch_channel_set_private(channel, "__fh", NULL);
 				switch_core_session_io_rwunlock(session);
+				if (switch_core_file_has_video(fh)) {
+					switch_core_media_set_video_file(session, NULL);
+				}
 				switch_core_file_close(fh);
 				switch_core_session_reset(session, SWITCH_TRUE, SWITCH_FALSE);
 				status = SWITCH_STATUS_GENERR;
@@ -1777,6 +1796,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 		switch_channel_set_private(channel, "__fh", NULL);
 		switch_core_session_io_rwunlock(session);
 
+		if (switch_core_file_has_video(fh)) {
+			switch_core_media_set_video_file(session, NULL);
+		}
 		switch_core_file_close(fh);
 
 		if (fh->audio_buffer) {

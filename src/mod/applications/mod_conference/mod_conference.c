@@ -201,7 +201,7 @@ typedef enum {
 	MFLAG_ITHREAD = (1 << 4),
 	MFLAG_NOCHANNEL = (1 << 5),
 	MFLAG_INTREE = (1 << 6),
-	MFLAG_WASTE_FLAG = (1 << 7),
+	MFLAG_NO_MINIMIZE_ENCODING = (1 << 7),
 	MFLAG_FLUSH_BUFFER = (1 << 8),
 	MFLAG_ENDCONF = (1 << 9),
 	MFLAG_HAS_AUDIO = (1 << 10),
@@ -460,6 +460,7 @@ typedef struct conference_obj {
 	char *video_layout_group;
 	char *video_canvas_bgcolor;
 	char *video_layout_bgcolor;
+	int members_with_video;
 	int video_timer_reset;
 	int32_t video_write_bandwidth;
 	switch_codec_settings_t video_codec_settings;
@@ -544,7 +545,6 @@ typedef struct conference_obj {
 	conference_record_t *rec_node_head;
 	int last_speech_channels;
 	switch_file_handle_t *record_fh;
-	int video_recording;
 	switch_thread_t *video_muxing_thread;
 	mcu_canvas_t *canvas;
 	switch_hash_t *layout_hash;
@@ -1502,6 +1502,10 @@ static void write_canvas_image_to_codec_group(conference_obj_t *conference, code
 
 			switch_mutex_lock(conference->member_mutex);
 			for (imember = conference->members; imember; imember = imember->next) {
+				if (switch_test_flag(imember, MFLAG_NO_MINIMIZE_ENCODING)) {
+					continue;
+				}
+
 				if (imember->video_codec_index != codec_index) {
 					continue;
 				}
@@ -1576,6 +1580,7 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 	switch_frame_t write_frame = { 0 };
 	uint8_t *packet = NULL;
 	layout_group_t *lg = NULL;
+	switch_image_t *write_img = NULL, *free_img = NULL;
 
 #ifdef TRACK_FPS
 	uint64_t frames = 0;
@@ -1600,13 +1605,12 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 
 	conference->video_timer_reset = 1;
 	
-	if (!switch_test_flag(conference, CFLAG_MINIMIZE_VIDEO_ENCODING)) {
-		packet = switch_core_alloc(conference->pool, SWITCH_RECOMMENDED_BUFFER_SIZE);
-	}
+	packet = switch_core_alloc(conference->pool, SWITCH_RECOMMENDED_BUFFER_SIZE);
 
 	while (globals.running && !switch_test_flag(conference, CFLAG_DESTRUCT) && switch_test_flag(conference, CFLAG_VIDEO_MUXING)) {
 		switch_bool_t need_refresh = SWITCH_FALSE, need_keyframe = SWITCH_FALSE, need_reset = SWITCH_FALSE;
 		switch_time_t now;
+		int min_members = 0;
 
 		if (conference->video_timer_reset) {
 			conference->video_timer_reset = 0;
@@ -1630,6 +1634,10 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 				switch_core_session_read_lock(imember->session) != SWITCH_STATUS_SUCCESS) {
 				continue;
 			}			
+
+			if (switch_test_flag(imember, MFLAG_NO_MINIMIZE_ENCODING)) {
+				min_members++;
+			}
 
 			if (conference->canvas->layout_floor_id > -1 && imember->id == conference->video_floor_holder && 
 				imember->video_layer_id != conference->canvas->layout_floor_id) {
@@ -1832,9 +1840,22 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 			last_key_time = now;
 		}
 			
-		if (switch_test_flag(conference, CFLAG_MINIMIZE_VIDEO_ENCODING)) {
+		write_img = conference->canvas->img;
+
+		if (conference->fnode) {
+			if (switch_core_file_read_video(&conference->fnode->fh, &write_frame) == SWITCH_STATUS_SUCCESS) {
+				write_img = free_img = write_frame.img;
+			}
+		}
+
+		if (conference->record_fh) {
+			write_frame.img = write_img;
+			switch_core_file_write_video(conference->record_fh, &write_frame);
+		}
+
+		if (min_members && switch_test_flag(conference, CFLAG_MINIMIZE_VIDEO_ENCODING)) {
 			for (i = 0; write_codecs[i] && switch_core_codec_ready(&write_codecs[i]->codec) && i < MAX_MUX_CODECS; i++) {
-				write_codecs[i]->frame.img = conference->canvas->img;
+				write_codecs[i]->frame.img = write_img;
 				write_canvas_image_to_codec_group(conference, write_codecs[i], i, 
 												  conference->canvas->timer.samplecount, need_refresh, need_keyframe, need_reset);
 
@@ -1844,32 +1865,39 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 				}
 
 			}
-		} else {
-			switch_mutex_lock(conference->member_mutex);
-			for (imember = conference->members; imember; imember = imember->next) {
-
-				if (!imember->session || !switch_channel_test_flag(imember->channel, CF_VIDEO) ||
-					switch_core_session_read_lock(imember->session) != SWITCH_STATUS_SUCCESS) {
-					continue;
-				}
-
-				switch_set_flag(&write_frame, SFF_RAW_RTP);
-				write_frame.img = conference->canvas->img;
-				write_frame.packet = packet;
-				write_frame.data = packet + 12;
-				write_frame.datalen = SWITCH_RECOMMENDED_BUFFER_SIZE - 12;
-				write_frame.buflen = write_frame.datalen;
-				write_frame.packetlen = SWITCH_RECOMMENDED_BUFFER_SIZE;
-
-				switch_core_session_write_video_frame(imember->session, &write_frame, SWITCH_IO_FLAG_NONE, 0);
-
-				if (imember->session) {
-					switch_core_session_rwunlock(imember->session);
-				}
-			}
-			switch_mutex_unlock(conference->member_mutex);
 		}
 
+		switch_mutex_lock(conference->member_mutex);
+		for (imember = conference->members; imember; imember = imember->next) {
+
+			if (switch_test_flag(conference, CFLAG_MINIMIZE_VIDEO_ENCODING) && !switch_test_flag(imember, MFLAG_NO_MINIMIZE_ENCODING)) {
+				continue;
+			}
+
+			if (!imember->session || !switch_channel_test_flag(imember->channel, CF_VIDEO) ||
+				switch_core_session_read_lock(imember->session) != SWITCH_STATUS_SUCCESS) {
+				continue;
+			}
+
+
+			switch_set_flag(&write_frame, SFF_RAW_RTP);
+			write_frame.img = write_img;
+			write_frame.packet = packet;
+			write_frame.data = packet + 12;
+			write_frame.datalen = SWITCH_RECOMMENDED_BUFFER_SIZE - 12;
+			write_frame.buflen = write_frame.datalen;
+			write_frame.packetlen = SWITCH_RECOMMENDED_BUFFER_SIZE;
+
+			switch_core_session_write_video_frame(imember->session, &write_frame, SWITCH_IO_FLAG_NONE, 0);
+
+			if (imember->session) {
+				switch_core_session_rwunlock(imember->session);
+			}
+		}
+		switch_mutex_unlock(conference->member_mutex);
+		
+
+		switch_img_free(&free_img);
 	}
 
 	for (i = 0; i < MCU_MAX_LAYERS; i++) {
@@ -4317,24 +4345,6 @@ static void conference_write_video_frame(conference_obj_t *conference, conferenc
 	}
 	switch_mutex_unlock(conference->member_mutex);
 
-	/* seems we are recording a video file */
-	switch_mutex_lock(conference->mutex);
-	if (conference->record_fh) {
-		switch_size_t len = vid_frame->packetlen;
-		if (!conference->video_recording) {
-			want_refresh++;
-			conference->video_recording++;
-		} else {
-			if (len > 14) { // 14 = 12(rtp) + 2(cng?)
-				switch_core_file_write_video(conference->record_fh, vid_frame->packet, &len);
-			}
-		}
-	} else {
-		conference->video_recording = 0;
-	}
-
-	switch_mutex_unlock(conference->mutex);
-
 	if (want_refresh && floor_holder->session) {
 		switch_core_session_request_video_refresh(floor_holder->session);
 	}
@@ -4395,6 +4405,9 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
 	if (member) {
 		if (member->id == member->conference->video_floor_holder) {
 			conference_write_video_frame(member->conference, member, frame);
+			if (frame->img && member->conference->record_fh) {
+				switch_core_file_write_video(member->conference->record_fh, frame);
+			}
 		} else if (!switch_test_flag(member->conference, CFLAG_VID_FLOOR_LOCK) && member->id == member->conference->last_video_floor_holder) {
 			conference_member_t *fmember;
 
@@ -4541,6 +4554,8 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 			switch_mutex_unlock(imember->audio_in_mutex);
 		}
 		
+		conference->members_with_video = members_with_video;
+
 		if (floor_holder != conference->floor_holder) {
 			conference_set_floor_holder(conference, floor_holder);
 		}
@@ -6494,6 +6509,7 @@ static void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *th
 	switch_event_t *event;
 	switch_size_t len = 0;
 	char *ext;
+	int flags = 0;
 
 	data_buf_len = samples * sizeof(int16_t);
 
@@ -6565,11 +6581,14 @@ static void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *th
 		}
 	}
 
-	if (switch_core_file_open(&fh,
-							  rec->path, (uint8_t) conference->channels, conference->rate, SWITCH_FILE_FLAG_WRITE | SWITCH_FILE_DATA_SHORT,
-							  rec->pool) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening File [%s]\n", rec->path);
+	flags = SWITCH_FILE_FLAG_WRITE | SWITCH_FILE_DATA_SHORT;
 
+	if (conference->members_with_video && switch_test_flag(conference, CFLAG_TRANSCODE_VIDEO)) {
+		flags |= SWITCH_FILE_FLAG_VIDEO;
+	}
+
+	if (switch_core_file_open(&fh, rec->path, (uint8_t) conference->channels, conference->rate, flags, rec->pool) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening File [%s]\n", rec->path);
 
 		if (test_eflag(conference, EFLAG_RECORD) &&
 			switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
@@ -6850,6 +6869,7 @@ static switch_status_t conference_play_file(conference_obj_t *conference, char *
 	int say = 0;
 	uint8_t channels = (uint8_t) conference->channels;
 	int bad_params = 0;
+	int flags = 0;
 
 	switch_assert(conference != NULL);
 
@@ -6933,9 +6953,15 @@ static switch_status_t conference_play_file(conference_obj_t *conference, char *
 	
  retry:
 
+	flags = SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT;
+
+	if (conference->members_with_video && switch_test_flag(conference, CFLAG_TRANSCODE_VIDEO)) {
+		flags |= SWITCH_FILE_FLAG_VIDEO;
+	}
+
 	/* Open the file */
 	fnode->fh.pre_buffer_datalen = SWITCH_DEFAULT_FILE_BUFFER_LEN;
-	if (switch_core_file_open(&fnode->fh, file, channels, conference->rate, SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, pool) !=
+	if (switch_core_file_open(&fnode->fh, file, channels, conference->rate, flags, pool) !=
 		SWITCH_STATUS_SUCCESS) {
 		switch_event_t *event;
 
@@ -10696,6 +10722,8 @@ static void set_mflags(const char *flags, member_flag_t *f)
 				*f |= MFLAG_NO_POSITIONAL;
 			} else if (!strcasecmp(argv[i], "join-vid-floor")) {
 				*f |= MFLAG_JOIN_VID_FLOOR;
+			} else if (!strcasecmp(argv[i], "no-minimize-encoding")) {
+				*f |= MFLAG_NO_MINIMIZE_ENCODING;
 			}
 		}
 

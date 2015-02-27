@@ -1756,7 +1756,8 @@ typedef enum {
 	SWITCH_FILE_WRITE_APPEND = (1 << 15),
 	SWITCH_FILE_WRITE_OVER = (1 << 16),
 	SWITCH_FILE_NOMUX = (1 << 17),
-	SWITCH_FILE_BREAK_ON_CHANGE = (1 << 18)
+	SWITCH_FILE_BREAK_ON_CHANGE = (1 << 18),
+	SWITCH_FILE_FLAG_VIDEO = (1 << 19)
 } switch_file_flag_enum_t;
 typedef uint32_t switch_file_flag_t;
 

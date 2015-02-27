@@ -203,6 +203,7 @@ struct switch_media_handle_s {
 	void *video_user_data;
 	int8_t video_function_running;
 	switch_vid_params_t vid_params; 
+	switch_file_handle_t *video_fh;
 };
 
 
@@ -4581,6 +4582,32 @@ SWITCH_DECLARE(int) switch_core_media_toggle_hold(switch_core_session_t *session
 	return changed;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_core_media_set_video_file(switch_core_session_t *session, switch_file_handle_t *fh)
+{
+	switch_media_handle_t *smh;
+	switch_rtp_engine_t *v_engine;
+
+	switch_assert(session);
+
+	if (!switch_channel_test_flag(session->channel, CF_VIDEO)) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (!(smh = session->media_handle)) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	v_engine = &smh->engines[SWITCH_MEDIA_TYPE_VIDEO];	
+
+	if (!v_engine->media_thread) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	smh->video_fh = fh;
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, void *obj)
 {
 	struct media_helper *mh = obj;
@@ -4590,6 +4617,8 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 	switch_frame_t *read_frame;
 	switch_media_handle_t *smh;
 	uint32_t loops = 0, xloops = 0;
+	switch_frame_t fr = { 0 };
+	unsigned char *buf = NULL;
 
 	if (!(smh = session->media_handle)) {
 		return NULL;
@@ -4676,7 +4705,21 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 			smh->vid_params.height = read_frame->img->d_h;
 		}
 
-		if (switch_channel_test_flag(channel, CF_VIDEO_ECHO)) {
+		if (smh->video_fh) {
+			if (!buf) {
+				int buflen = SWITCH_RECOMMENDED_BUFFER_SIZE * 2;
+				buf = switch_core_session_alloc(session, buflen);
+				fr.packet = buf;
+				fr.packetlen = buflen;
+				fr.data = buf + 12;
+				fr.buflen = buflen - 12;
+			}
+			if (switch_core_file_read_video(smh->video_fh, &fr) == SWITCH_STATUS_SUCCESS) {
+				switch_core_session_write_video_frame(session, &fr, SWITCH_IO_FLAG_NONE, 0);
+				switch_img_free(&fr.img);
+			}
+			
+		} else if (switch_channel_test_flag(channel, CF_VIDEO_ECHO)) {
 			switch_core_session_write_video_frame(session, read_frame, SWITCH_IO_FLAG_NONE, 0);
 		}
 
@@ -10074,6 +10117,30 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_video_frame(switch_core
 		goto done;
 	}
 
+	if (switch_channel_test_flag(session->channel, CF_VIDEO_DECODED_READ) && (*frame)->img == NULL) {
+		switch_status_t decode_status;
+
+		(*frame)->img = NULL;
+
+		decode_status = switch_core_codec_decode_video((*frame)->codec, *frame);
+		
+		if ((*frame)->img && switch_channel_test_flag(session->channel, CF_VIDEO_DEBUG_READ)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "IMAGE %dx%d %dx%d\n", 
+							  (*frame)->img->w, (*frame)->img->h, (*frame)->img->d_w, (*frame)->img->d_h);
+		}
+
+		if (switch_test_flag((*frame), SFF_WAIT_KEY_FRAME)) {
+			switch_core_session_request_video_refresh(session);
+			switch_clear_flag((*frame), SFF_WAIT_KEY_FRAME);
+		}
+
+		if (decode_status == SWITCH_STATUS_MORE_DATA || !(*frame)->img) {
+			goto top;
+		}
+	}
+
+  done:
+
 	if (session->bugs) {
 		switch_media_bug_t *bp;
 		switch_bool_t ok = SWITCH_TRUE;
@@ -10117,29 +10184,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_video_frame(switch_core
 		}
 	}
 
-	if (switch_channel_test_flag(session->channel, CF_VIDEO_DECODED_READ) && (*frame)->img == NULL) {
-		switch_status_t decode_status;
 
-		(*frame)->img = NULL;
-
-		decode_status = switch_core_codec_decode_video((*frame)->codec, *frame);
-		
-		if ((*frame)->img && switch_channel_test_flag(session->channel, CF_VIDEO_DEBUG_READ)) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "IMAGE %dx%d %dx%d\n", 
-							  (*frame)->img->w, (*frame)->img->h, (*frame)->img->d_w, (*frame)->img->d_h);
-		}
-
-		if (switch_test_flag((*frame), SFF_WAIT_KEY_FRAME)) {
-			switch_core_session_request_video_refresh(session);
-			switch_clear_flag((*frame), SFF_WAIT_KEY_FRAME);
-		}
-
-		if (decode_status == SWITCH_STATUS_MORE_DATA || !(*frame)->img) {
-			goto top;
-		}
-	}
-
-  done:
 
 	if (status == SWITCH_STATUS_SUCCESS) {
 		switch_core_session_video_read_callback(session, *frame);
