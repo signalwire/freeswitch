@@ -1851,7 +1851,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_write(_In_ switch_file_handle_t
   \param len the amount of data to write from the buffer
   \return SWITCH_STATUS_SUCCESS with len adjusted to the bytes written if successful
 */
-SWITCH_DECLARE(switch_status_t) switch_core_file_write_video(_In_ switch_file_handle_t *fh, void *data, switch_size_t *len);
+SWITCH_DECLARE(switch_status_t) switch_core_file_write_video(_In_ switch_file_handle_t *fh, switch_frame_t *frame);
+SWITCH_DECLARE(switch_status_t) switch_core_file_read_video(switch_file_handle_t *fh, switch_frame_t *frame);
 
 /*!
   \brief Seek a position in a file
@@ -1890,6 +1891,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_get_string(_In_ switch_file_han
 SWITCH_DECLARE(switch_status_t) switch_core_file_close(_In_ switch_file_handle_t *fh);
 
 SWITCH_DECLARE(switch_status_t) switch_core_file_truncate(switch_file_handle_t *fh, int64_t offset);
+SWITCH_DECLARE(switch_bool_t) switch_core_file_has_video(switch_file_handle_t *fh);
 
 
 ///\}
