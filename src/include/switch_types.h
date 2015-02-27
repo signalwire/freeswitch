@@ -553,6 +553,11 @@ SWITCH_DECLARE_DATA extern switch_filenames SWITCH_GLOBAL_filenames;
 #define SWITCH_ACCEPTABLE_INTERVAL(_i) (_i && _i <= SWITCH_MAX_INTERVAL && (_i % 10) == 0)
 
 typedef enum {
+	SWITCH_RW_READ,
+	SWITCH_RW_WRITE
+} switch_rw_t;
+
+typedef enum {
 	SWITCH_CPF_NONE = 0,
 	SWITCH_CPF_SCREEN = (1 << 0),
 	SWITCH_CPF_HIDE_NAME = (1 << 1),

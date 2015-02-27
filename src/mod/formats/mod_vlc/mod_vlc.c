@@ -283,6 +283,12 @@ static void vlc_video_av_unlock_callback(void *data, void *id, void *const *p_pi
 {
 	vlc_video_context_t *context = (vlc_video_context_t *) data;
 
+	if (context->img) {
+		if (context->img->d_w != context->width || context->img->d_h != context->height) {
+			switch_img_free(&context->img);
+		}
+	}
+
 	if (!context->img) context->img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, context->width, context->height, 0);
 
 	switch_assert(context->img);
@@ -344,10 +350,13 @@ static void vlc_video_display_callback(void *data, void *id)
 	vlc_video_context_t *context = (vlc_video_context_t *) data;
 
 	if (context->channel && !switch_channel_test_flag(context->channel, CF_VIDEO)) return;
+	if (!context->img) return;
 
 	if (context->video_queue) {
-		switch_queue_push(context->video_queue, context->img);
-		context->img = NULL;
+		switch_image_t *img_copy = NULL;
+		switch_img_copy(context->img, &img_copy);
+		switch_queue_push(context->video_queue, img_copy);
+
 	} else {
 		context->vid_frame->img = context->img;
 		context->vid_frame->packet = context->video_packet;
@@ -650,11 +659,20 @@ static switch_status_t vlc_file_open(switch_file_handle_t *handle, const char *p
 {
 	vlc_file_context_t *context;
 	libvlc_event_manager_t *mp_event_manager, *m_event_manager;
-	
+	char *ext = NULL;
+
 	context = switch_core_alloc(handle->memory_pool, sizeof(*context));
 	context->pool = handle->memory_pool;
-	context->path = switch_core_strdup(context->pool, path);
 	context->vlc_handle = libvlc_new(sizeof(vlc_args)/sizeof(char *), vlc_args);
+
+
+	if (switch_test_flag(handle, SWITCH_FILE_FLAG_VIDEO) && switch_test_flag(handle, SWITCH_FILE_FLAG_WRITE) && 
+		(ext = strrchr(path, '.')) && !strcasecmp(ext, ".mp4")) {
+		path = switch_core_sprintf(context->pool, "#transcode{vcodec=h264,acodec=mp3}:std{access=file,mux=mp4,dst=%s}", path);
+	}
+
+	context->path = switch_core_strdup(context->pool, path);
+
 
 	if (!switch_test_flag(handle, SWITCH_FILE_FLAG_VIDEO)) {
 		switch_buffer_create_dynamic(&(context->audio_buffer), VLC_BUFFER_SIZE, VLC_BUFFER_SIZE * 8, 0);
@@ -2202,8 +2220,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_vlc_load)
 
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
-
+	
 	vlc_file_supported_formats[0] = "vlc";
+	vlc_file_supported_formats[1] = "mp4"; /* maybe add config for this mod to enable or disable */
 
 	file_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_FILE_INTERFACE);
 	file_interface->interface_name = modname;

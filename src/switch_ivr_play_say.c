@@ -378,7 +378,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 	int file_flags = SWITCH_FILE_FLAG_WRITE | SWITCH_FILE_DATA_SHORT;
 	int restart_limit_on_dtmf = 0;
 	const char *prefix, *var;
-
+	
 
 	if (switch_channel_pre_answer(channel) != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_FALSE;
@@ -523,11 +523,20 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 		fh->prefix = prefix;
 	}
 
+	if (switch_channel_test_flag(channel, CF_VIDEO)) {
+		file_flags |= SWITCH_FILE_FLAG_VIDEO;
+	}
+
 	if (switch_core_file_open(fh, file, fh->channels, read_impl.actual_samples_per_second, file_flags, NULL) != SWITCH_STATUS_SUCCESS) {
 		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 		switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
 		arg_recursion_check_stop(args);
 		return SWITCH_STATUS_GENERR;
+	}
+	
+	if (switch_core_file_has_video(fh)) {
+		switch_channel_set_flag(channel, CF_VIDEO_ECHO);
+		switch_core_media_set_video_file(session, fh, SWITCH_RW_READ);
 	}
 
 	if (sample_start > 0) {
@@ -596,7 +605,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR,
 							  "Raw Codec Activation Failed %s@%uhz %u channels %dms\n", codec_name, fh->samplerate,
 							  fh->channels, read_impl.microseconds_per_packet / 1000);
+			if (switch_core_file_has_video(fh)) {
+				switch_channel_set_flag(channel, CF_VIDEO_ECHO);
+				switch_core_media_set_video_file(session, NULL, SWITCH_RW_READ);
+			}
 			switch_core_file_close(fh);
+
 			switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
 			arg_recursion_check_stop(args);
 			return SWITCH_STATUS_GENERR;
@@ -761,13 +775,16 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 				break;
 			}
 		}
-
 	}
 
 	if (fill_cng || waste_resources) {
 		switch_core_codec_destroy(&write_codec);
 	}
 
+	if (switch_core_file_has_video(fh)) {
+		switch_channel_set_flag(channel, CF_VIDEO_ECHO);
+		switch_core_media_set_video_file(session, NULL, SWITCH_RW_READ);
+	}
 	switch_core_file_close(fh);
 
 
@@ -1259,7 +1276,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 		switch_core_session_io_rwunlock(session);
 
 		if (switch_core_file_has_video(fh)) {
-			switch_core_media_set_video_file(session, fh);
+			switch_core_media_set_video_file(session, fh, SWITCH_RW_WRITE);
 		}
 
 		if (!abuf) {
@@ -1335,8 +1352,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 				switch_core_session_io_rwunlock(session);
 
 				if (switch_core_file_has_video(fh)) {
-					switch_core_media_set_video_file(session, NULL);
+					switch_core_media_set_video_file(session, NULL, SWITCH_RW_WRITE);
 				}
+
 				switch_core_file_close(fh);
 
 				switch_core_session_reset(session, SWITCH_TRUE, SWITCH_FALSE);
@@ -1359,7 +1377,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 				switch_core_session_io_rwunlock(session);
 
 				if (switch_core_file_has_video(fh)) {
-					switch_core_media_set_video_file(session, NULL);
+					switch_core_media_set_video_file(session, NULL, SWITCH_RW_WRITE);
 				}
 				switch_core_file_close(fh);
 
@@ -1387,7 +1405,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 				switch_channel_set_private(channel, "__fh", NULL);
 				switch_core_session_io_rwunlock(session);
 				if (switch_core_file_has_video(fh)) {
-					switch_core_media_set_video_file(session, NULL);
+					switch_core_media_set_video_file(session, NULL, SWITCH_RW_WRITE);
 				}
 				switch_core_file_close(fh);
 				switch_core_session_reset(session, SWITCH_TRUE, SWITCH_FALSE);
@@ -1797,7 +1815,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 		switch_core_session_io_rwunlock(session);
 
 		if (switch_core_file_has_video(fh)) {
-			switch_core_media_set_video_file(session, NULL);
+			switch_core_media_set_video_file(session, NULL, SWITCH_RW_WRITE);
 		}
 		switch_core_file_close(fh);
 
