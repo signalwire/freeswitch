@@ -1580,7 +1580,7 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 	switch_frame_t write_frame = { 0 };
 	uint8_t *packet = NULL;
 	layout_group_t *lg = NULL;
-	switch_image_t *write_img = NULL, *free_img = NULL;
+	switch_image_t *write_img = NULL, *file_img = NULL;
 
 #ifdef TRACK_FPS
 	uint64_t frames = 0;
@@ -1617,8 +1617,10 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 			switch_core_timer_init(&conference->canvas->timer, "soft", conference->video_fps.ms, conference->video_fps.samples, NULL);
 			need_reset = SWITCH_TRUE;
 		}
-		
-		switch_core_timer_next(&conference->canvas->timer);
+
+		if (!conference->record_fh) { 		
+			switch_core_timer_next(&conference->canvas->timer);
+		}
 
 		now = switch_micro_time_now();
 
@@ -1635,7 +1637,7 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 				continue;
 			}			
 
-			if (switch_test_flag(imember, MFLAG_NO_MINIMIZE_ENCODING)) {
+			if (!switch_test_flag(imember, MFLAG_NO_MINIMIZE_ENCODING)) {
 				min_members++;
 			}
 
@@ -1844,8 +1846,11 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 
 		if (conference->fnode) {
 			if (switch_core_file_read_video(&conference->fnode->fh, &write_frame) == SWITCH_STATUS_SUCCESS) {
-				write_img = free_img = write_frame.img;
+				switch_img_free(&file_img);
+				write_img = file_img = write_frame.img;
 			}
+		} else if (file_img) {
+			switch_img_free(&file_img);
 		}
 
 		if (conference->record_fh) {
@@ -1894,10 +1899,9 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 				switch_core_session_rwunlock(imember->session);
 			}
 		}
+
 		switch_mutex_unlock(conference->member_mutex);
 		
-
-		switch_img_free(&free_img);
 	}
 
 	for (i = 0; i < MCU_MAX_LAYERS; i++) {

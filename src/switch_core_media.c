@@ -203,7 +203,8 @@ struct switch_media_handle_s {
 	void *video_user_data;
 	int8_t video_function_running;
 	switch_vid_params_t vid_params; 
-	switch_file_handle_t *video_fh;
+	switch_file_handle_t *video_read_fh;
+	switch_file_handle_t *video_write_fh;
 };
 
 
@@ -4582,7 +4583,7 @@ SWITCH_DECLARE(int) switch_core_media_toggle_hold(switch_core_session_t *session
 	return changed;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_media_set_video_file(switch_core_session_t *session, switch_file_handle_t *fh)
+SWITCH_DECLARE(switch_status_t) switch_core_media_set_video_file(switch_core_session_t *session, switch_file_handle_t *fh, switch_rw_t rw)
 {
 	switch_media_handle_t *smh;
 	switch_rtp_engine_t *v_engine;
@@ -4603,7 +4604,17 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_set_video_file(switch_core_ses
 		return SWITCH_STATUS_FALSE;
 	}
 
-	smh->video_fh = fh;
+	if (rw == SWITCH_RW_READ) {
+		smh->video_read_fh = fh;
+		if (fh) {
+			switch_channel_set_flag_recursive(session->channel, CF_VIDEO_DECODED_READ);
+		} else {
+			switch_channel_clear_flag_recursive(session->channel, CF_VIDEO_DECODED_READ);
+			switch_core_session_video_reset(session);
+		}
+	} else {
+		smh->video_write_fh = fh;
+	}
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -4619,10 +4630,13 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 	uint32_t loops = 0, xloops = 0;
 	switch_frame_t fr = { 0 };
 	unsigned char *buf = NULL;
+	//switch_rtp_engine_t *v_engine = NULL;
 
 	if (!(smh = session->media_handle)) {
 		return NULL;
 	}
+
+	//v_engine = &smh->engines[SWITCH_MEDIA_TYPE_VIDEO];
 
 	switch_core_session_read_lock(session);
 
@@ -4685,46 +4699,51 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 				switch_mutex_unlock(smh->control_mutex);
 			}
 		}
+
+		if (!smh->video_write_fh || !switch_channel_test_flag(channel, CF_VIDEO_READY)) {
+			status = switch_core_session_read_video_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 		
-		status = switch_core_session_read_video_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
+			if (!SWITCH_READ_ACCEPTABLE(status)) {
+				switch_cond_next();
+				continue;
+			}
+
+			if (switch_test_flag(read_frame, SFF_CNG)) {
+				continue;
+			}
 		
-		if (!SWITCH_READ_ACCEPTABLE(status)) {
-			switch_cond_next();
-			continue;
+			if (read_frame->img) {
+				switch_channel_set_flag(channel, CF_VIDEO_READY);
+				smh->vid_params.width = read_frame->img->d_w;
+				smh->vid_params.height = read_frame->img->d_h;
+			} else if (read_frame->datalen > 2 && !switch_channel_test_flag(channel, CF_VIDEO_DECODED_READ)) {
+				switch_channel_set_flag(channel, CF_VIDEO_READY);
+			}
 		}
 
-		if (switch_test_flag(read_frame, SFF_CNG)) {
-			continue;
-		}
-
-
-
-		if (read_frame->img) {
-			switch_channel_set_flag(channel, CF_VIDEO_READY);
-			smh->vid_params.width = read_frame->img->d_w;
-			smh->vid_params.height = read_frame->img->d_h;
-		}
-
-		if (smh->video_fh) {
+		if (smh->video_write_fh) {
 			if (!buf) {
-				int buflen = SWITCH_RECOMMENDED_BUFFER_SIZE * 2;
+				int buflen = SWITCH_RECOMMENDED_BUFFER_SIZE * 4;
 				buf = switch_core_session_alloc(session, buflen);
 				fr.packet = buf;
 				fr.packetlen = buflen;
 				fr.data = buf + 12;
 				fr.buflen = buflen - 12;
 			}
-			if (switch_core_file_read_video(smh->video_fh, &fr) == SWITCH_STATUS_SUCCESS) {
+			
+			if (switch_core_file_read_video(smh->video_write_fh, &fr) == SWITCH_STATUS_SUCCESS) {
 				switch_core_session_write_video_frame(session, &fr, SWITCH_IO_FLAG_NONE, 0);
 				switch_img_free(&fr.img);
 			}
-			
-		} else if (switch_channel_test_flag(channel, CF_VIDEO_ECHO)) {
+
+		} else if (smh->video_read_fh && read_frame->img) {
+			switch_core_file_write_video(smh->video_read_fh, read_frame);
+		} 
+
+		if (read_frame && switch_channel_test_flag(channel, CF_VIDEO_ECHO)) {
 			switch_core_session_write_video_frame(session, read_frame, SWITCH_IO_FLAG_NONE, 0);
 		}
-
 	}
-
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Video thread ended\n", switch_channel_get_name(session->channel));
 
