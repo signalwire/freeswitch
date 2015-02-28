@@ -1873,7 +1873,7 @@ switch_io_routines_t vlc_io_routines = {
 	/*state_run*/ NULL
 };
 
-static switch_status_t setup_tech_pvt(switch_core_session_t *osession, switch_core_session_t *session, const char *path)
+static switch_status_t setup_tech_pvt(switch_core_session_t *osession, switch_core_session_t *session, switch_event_t *var_event, const char *path)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_memory_pool_t *pool = switch_core_session_get_pool(session);
@@ -1890,13 +1890,29 @@ static switch_status_t setup_tech_pvt(switch_core_session_t *osession, switch_co
 	if (osession) {
 		switch_core_session_get_read_impl(osession, &tech_pvt->read_impl);
 	} else {
-		/* hard coded values, could also be set according to var_event if we want to support HD audio or stereo */
+		const char *val;
+		int tmp = 0;
+
 		tech_pvt->read_impl.microseconds_per_packet = 20000;
-		tech_pvt->read_impl.samples_per_packet = 8000;
-		tech_pvt->read_impl.actual_samples_per_second = tech_pvt->read_impl.samples_per_packet;
-		tech_pvt->read_impl.number_of_channels = 1;
 		tech_pvt->read_impl.iananame = "L16";
-		tech_pvt->read_impl.decoded_bytes_per_packet = 320 * tech_pvt->read_impl.number_of_channels;
+
+		val = switch_event_get_header(var_event, "vlc_rate");
+		if (val) tmp = atoi(val);
+		if (tmp == 0) tmp = 8000;
+		tech_pvt->read_impl.samples_per_second = tmp;
+		tech_pvt->read_impl.actual_samples_per_second = tmp;
+		tech_pvt->read_impl.samples_per_packet = tech_pvt->read_impl.samples_per_second / (tech_pvt->read_impl.microseconds_per_packet / 1000);
+
+		tmp = 0;
+		val = switch_event_get_header(var_event, "vlc_channels");
+		if (val) tmp = atoi(val);
+		if (tmp == 0) {
+			tmp = 1;
+		} else if (tmp > 2) {
+			tmp = 2;
+		}
+		tech_pvt->read_impl.number_of_channels = tmp;
+		tech_pvt->read_impl.decoded_bytes_per_packet = tech_pvt->read_impl.samples_per_packet * 2 * tech_pvt->read_impl.number_of_channels;
 	}
 
 	tech_pvt->session = session;
@@ -1907,7 +1923,6 @@ static switch_status_t setup_tech_pvt(switch_core_session_t *osession, switch_co
 	switch_core_session_set_private(session, tech_pvt);
 
 	context = switch_core_session_alloc(session, sizeof(vlc_video_context_t));
-	switch_assert(context);
 	memset(context, 0, sizeof(vlc_file_context_t));
 	tech_pvt->context = context;
 	context->vlc_handle = libvlc_new(sizeof(vlc_args)/sizeof(char *), vlc_args);
@@ -2094,7 +2109,7 @@ static switch_call_cause_t vlc_outgoing_channel(switch_core_session_t *session, 
 	switch_channel_set_name(channel, name);
 	switch_channel_set_flag(channel, CF_VIDEO);
 
-	if (setup_tech_pvt(session, *new_session, outbound_profile->destination_number) != SWITCH_STATUS_SUCCESS) {
+	if (setup_tech_pvt(session, *new_session, var_event, outbound_profile->destination_number) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error steup tech_pvt!\n");
 		goto fail;
 	}
