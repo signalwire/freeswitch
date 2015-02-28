@@ -9910,6 +9910,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_codec_control(switch_core_sess
 		codec = &engine->write_codec;
 	}
 
+	if (!switch_core_codec_ready(codec)) {
+		return SWITCH_STATUS_FALSE;
+	}
+
 	if (mtype == SWITCH_MEDIA_TYPE_VIDEO) {
 		if (!switch_channel_test_flag(session->channel, CF_VIDEO)) {
 			return SWITCH_STATUS_FALSE;

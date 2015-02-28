@@ -407,7 +407,7 @@ typedef struct mcu_canvas_s {
 	int layers_used;
 	int layout_floor_id;
 	int refresh;
-	int reset_video;
+	int send_keyframe;
 	int play_file;
 	switch_rgb_color_t bgcolor;
 	switch_mutex_t *mutex;
@@ -1414,6 +1414,7 @@ static void init_canvas_layers(conference_obj_t *conference, video_layout_t *vla
 
 	conference->canvas->layers_used = 0;
 	conference->canvas->total_layers = vlayout->layers;
+	conference->canvas->send_keyframe = 1;
 	switch_mutex_unlock(conference->canvas->mutex);	
 
 }
@@ -1619,7 +1620,7 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 			}
 			
 			switch_core_timer_init(&conference->canvas->timer, "soft", conference->video_fps.ms, conference->video_fps.samples, NULL);
-			conference->canvas->reset_video = 1;
+			conference->canvas->send_keyframe = 1;
 		}
 
 		if (!conference->playing_video_file) {
@@ -1817,11 +1818,9 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 			conference->canvas->refresh = 0;
 		}
 
-		if (conference->canvas->reset_video) {
-			//need_refresh = SWITCH_TRUE;
-			//need_reset = SWITCH_TRUE;
+		if (conference->canvas->send_keyframe) {
 			need_keyframe = SWITCH_TRUE;
-			conference->canvas->reset_video = 0;
+			conference->canvas->send_keyframe = 0;
 		}
 
 		if (video_key_freq && (now - last_key_time) > video_key_freq) {
@@ -1837,7 +1836,7 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 				switch_img_free(&file_img);
 
 				if (conference->canvas->play_file) {
-					conference->canvas->reset_video = 1;
+					conference->canvas->send_keyframe = 1;
 					conference->canvas->play_file = 0;
 					
 					conference->canvas->timer.interval = 1;
@@ -4142,7 +4141,7 @@ static switch_status_t conference_file_close(conference_obj_t *conference, confe
 		conference->canvas->timer.interval = conference->video_fps.ms;
 		conference->canvas->timer.samples = conference->video_fps.samples;
 		switch_core_timer_sync(&conference->canvas->timer);
-		conference->canvas->reset_video = 1;
+		conference->canvas->send_keyframe = 1;
 		conference->playing_video_file = 0;
 	}
 	return switch_core_file_close(&node->fh);
@@ -6589,6 +6588,10 @@ static void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *th
 		goto end;
 	}
 
+	if (conference->canvas) {
+		conference->canvas->send_keyframe = 1;
+	}
+
 	fh.pre_buffer_datalen = SWITCH_DEFAULT_FILE_BUFFER_LEN;
 
 	flags = SWITCH_FILE_FLAG_WRITE | SWITCH_FILE_DATA_SHORT;
@@ -6722,6 +6725,10 @@ static void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *th
 	switch_safe_free(data_buf);
 	switch_core_timer_destroy(&timer);
 	conference_del_member(conference, member);
+
+	if (conference->canvas) {
+		conference->canvas->send_keyframe = 1;
+	}
 
 	switch_buffer_destroy(&member->audio_buffer);
 	switch_buffer_destroy(&member->mux_buffer);
@@ -6966,7 +6973,6 @@ static switch_status_t conference_play_file(conference_obj_t *conference, char *
 	flags = SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT;
 
 	if (conference->members_with_video && switch_test_flag(conference, CFLAG_TRANSCODE_VIDEO)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Vido FLAG\n");
 		flags |= SWITCH_FILE_FLAG_VIDEO;
 	}
 
@@ -9620,12 +9626,19 @@ static switch_status_t conf_api_sub_enter_sound(conference_obj_t *conference, sw
 static switch_status_t conf_api_sub_dial(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv)
 {
 	switch_call_cause_t cause;
+	char *tmp;
 
 	switch_assert(stream != NULL);
 
 	if (argc <= 2) {
 		stream->write_function(stream, "Bad Args\n");
 		return SWITCH_STATUS_GENERR;
+	}
+
+	if (conference && argv[2] && strstr(argv[2], "vlc/")) {
+		tmp = switch_core_sprintf(conference->pool, "{vlc_rate=%d,vlc_channels=%d,vlc_interval=%d}%s", 
+								  conference->rate, conference->channels, conference->interval, argv[2]);
+		argv[2] = tmp;
 	}
 
 	if (conference) {
