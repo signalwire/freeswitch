@@ -361,7 +361,7 @@ var callbacks = {
             $("#ansbtn").click(function() {
                 cur_call.answer({
 		    useStereo: $("#use_stereo").is(':checked'),
-		    callee_id_name: $("#name").val(),
+		    callee_id_name: $("#cidname").val(),
 		    callee_id_number: $("#cid").val(),
 		    useCamera: $("#usecamera").find(":selected").val(),
 		    useMic: $("#usemic").find(":selected").val()
@@ -538,7 +538,7 @@ function docall() {
 
     cur_call = verto.newCall({
         destination_number: $("#ext").val(),
-        caller_id_name: $("#name").val(),
+        caller_id_name: $("#cidname").val(),
         caller_id_number: $("#cid").val(),
 	outgoingBandwidth: outgoingBandwidth,
 	incomingBandwidth: incomingBandwidth,
@@ -570,7 +570,7 @@ function doshare(on) {
 	
 	share_call = verto.newCall({
             destination_number: $("#ext").val() + "-screen",
-            caller_id_name: $("#name").val() + " (Screen)",
+            caller_id_name: $("#cidname").val() + " (Screen)",
             caller_id_number: $("#cid").val() + " (screen)",
 	    outgoingBandwidth: outgoingBandwidth,
 	    incomingBandwidth: incomingBandwidth,
@@ -589,7 +589,7 @@ function doshare(on) {
 
     //cur_share = verto.newCall({
     //    destination_number: $("#ext").val(),
-    //    caller_id_name: $("#name").val(),
+    //    caller_id_name: $("#cidname").val(),
     //    caller_id_number: $("#cid").val(),
     //    useVideo: check_vid(),
     //    useStereo: $("#use_stereo").is(':checked')
@@ -676,7 +676,7 @@ function init() {
 	pop("#ext", "verto_demo_ext", "3500");
     }
 
-    pop("#name", "verto_demo_name", "FreeSWITCH User");
+    pop("#cidname", "verto_demo_name", "FreeSWITCH User");
     pop("#cid", "verto_demo_cid", "1008");
     pop("#textto", "verto_demo_textto", "1000");
 
