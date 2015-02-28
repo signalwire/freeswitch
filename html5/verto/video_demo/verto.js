@@ -509,6 +509,14 @@ $("#hupbtn").click(function() {
     cur_call = null;
 });
 
+$("#mutebtn").click(function() {
+    cur_call.dtmf("0");
+});
+
+$("#vmutebtn").click(function() {
+    cur_call.dtmf("*0");
+});
+
 $("#fullbtn").click(function() {
     full_screen("webcam");
 });

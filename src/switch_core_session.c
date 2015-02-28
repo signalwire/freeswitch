@@ -2691,6 +2691,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_execute_application_get_flag
 	switch_application_interface_t *application_interface;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
+	switch_core_session_request_video_refresh(session);
+	switch_core_media_gen_key_frame(session);
+
 	if (switch_channel_down_nosig(session->channel)) {
 		char *p;
 		if (!arg && (p = strstr(app, "::"))) {

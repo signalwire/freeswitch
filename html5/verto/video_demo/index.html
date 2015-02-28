@@ -99,6 +99,7 @@
 
       <button data-inline="true" id="hold">HOLD</button>
       <button data-inline="true" id="hupbtn">End Call</button>
+      <button data-inline="true" id="mutebtn">Toggle Audio Mute</button>
 <!--      <button data-inline="true" class="startxferbtn">Transfer</button>-->
       <span class="sharediv">
 	  <button data-inline="true" id="sharebtn">Share</button>
@@ -109,7 +110,8 @@
 	     	  <button data-inline="true" id="smallerbtn">Smaller - </button>
 	     	  <button data-inline="true" id="biggerbtn">Bigger +</button>
   	     	  <button data-inline="true" id="fullbtn">Full Screen</button>
-      	     </span>
+                  <button data-inline="true" id="vmutebtn">Toggle Video Mute</button>
+      </span>
 
       	<div id="media">	
 	      <video id="webcam" autoplay="autoplay"></video>
@@ -168,8 +170,12 @@
 	  FreeSWITCH Verto&trade; Video Transcoding Demo
 	</div>
 	<br>
-      <a target="_CC2104" href="https://www.cluecon.com"><img border="0" width="300" src="img/cc_banner.gif"></a>
-      
+<center>	<table width="1024" border="0">
+<tr><td>      <center><a target="_CC2104" href="https://www.cluecon.com"><img border="0" width="300" src="img/cc_banner.gif"></a></center></td>
+<td><center>	  <img src="img/verto_black_web.gif" width="300"></center>
+	</td></tr>
+	</table></center><br><br>
+	
       <div id="offline">
         <div id="errordisplay" style="font-weight:bold;font-size:18px;color:#ae0000"></div>
 
@@ -234,20 +240,60 @@ function dial(ext)
       <div id="online" align="center" style="width:75%">
 	<div class="ui-field-contain">
 
-<div id="devices">
+<script>
+function toggle_demo() {
+
+if ($('#demos').is(':visible')) {
+    $('#demos').hide();
+    $('#showdemo').text("Show Demo Extensions");
+} else {
+    $('#devices').hide();$('#showdevices').show();$('#demos').show();
+    $('#showdemo').text("Hide Demo Extensions");
+}
+
+}
+
+function toggle_device() {
+
+if ($('#devices').is(':visible')) {
+    $('#devices').hide();
+    $('#showdevices').text("View Device Settings");
+} else {
+    $('#devices').show();$('#demos').hide();
+    $('#showdevices').text("Hide Device Settings");
+}
+
+}
+
+</script>
+
+<button data-inline="true" id="showdemo" onclick="toggle_demo();">View Demo Extensions</button>
+<button data-inline="true" id="showdevices" onclick="toggle_device();">View Device Settings</button>
+ <button data-inline="true"id="logoutbtn">Log Out</button>
+<br><br>
+
+	  
+<div id="devices" style="border-style:outset;border-width:2px">
 
 <div id="camdiv">
-<legend><b>Camera</b>:</legend><select data-theme="a" data-overlay-theme="a" data-native-menu="false" id="usecamera"></select>
+
+  <legend><b>Camera</b>:</legend><select data-theme="a" data-overlay-theme="a" data-native-menu="false" id="usecamera"></select>
 <br><br></div>
 
 <legend><b>Microphone</b>:</legend><select data-theme="a" data-overlay-theme="a" data-native-menu="false" id="usemic"></select>
 
 <Br clear="all"><Br>
-<center><button data-inline="true" id="refreshbtn">Refresh Device List</button>
-<button data-inline="true" id="hidedevices" onclick="$('#devices').hide();$('#showdevices').show()">Save Device Settings</button>
-</center>
-<Br clear="all"><hr><br>
 
+<div style="xvisibility:hidden">
+	<label><input id="use_vid" type="checkbox" value="foo" > Use Video</label>
+	<label><input id="use_stereo" type="checkbox" value="foo" > Stereo Audio</label>
+	<label><input id="use_stun" type="checkbox" value="foo" > Use STUN</label>
+<!--	<label><input id="local_video" type="checkbox" value="foo" > Local Video</label>-->
+</div>
+
+
+<Br clear="all">
+<br><br>
 <div >
   <fieldset data-role="controlgroup" data-type="horizontal">
     <legend><b>Video Quality</b>:</legend>
@@ -336,12 +382,16 @@ function dial(ext)
  
   </fieldset>
 </div><br clear="all"><br>
+<br><br>
+<center><button data-inline="true" id="refreshbtn">Refresh Device List</button>
+<button data-inline="true" id="hidedevices" onclick="$('#devices').hide();$('#showdevices').show()">Save Device Settings</button>
+
+</center>
+<Br clear="all"><br>
 
 
 
 </div>
-	<button data-inline="true" id="showdemo" onclick="$('#demos').show();$('#showdemo').hide()">View Demo Extensions</button>
-<button data-inline="true" id="showdevices" onclick="$('#devices').show();$('#showdevices').hide()">View Device Settings</button>
 
 <br><br>
 <div id="demos" style="border-style:outset">
@@ -371,14 +421,13 @@ function dial(ext)
 <div style="border-style:inset;border-width:1px;background-color:#eeeeee">
 	<button class="vidbtn" data-inline="true" onclick="dial('decode')">Video from your Webcam decoded then re-encoded w/ MOH</button>
 	<button class="vidbtn" data-inline="true" onclick="dial('3500')">Video Transcoded Conference</button>
-	<button class="vidbtn" id="hidedemo" data-inline="true" onclick="$('#demos').hide();$('#showdemo').show();">Hide Demos</button>
 
 </div>
 </div>
 
 
 
-<br><br><br>
+<br><br><br><hr><br>
       <div class="ui-field-contain" style="text-align:right;">
 	<label for="name">Name</label>  
 	<input type="text" size="30" id="cidname"/>
@@ -392,20 +441,15 @@ function dial(ext)
 	  <input type="text" id="ext""/>
 </div>
 	  <button data-inline="true" id="callbtn">Call Extension</button>
-	  <br><br>
+<br>
+<hr>
+<br><br>
 	  <div style="color:blue" id="main_info">&nbsp;</div><br><br>
-	  <img src="img/verto_black_web.gif" width="300"><br><br>
-	  <button data-inline="true"id="logoutbtn">Log Out</button>
+
 	</div>
+
+
 	<br>
-
-<div style="xvisibility:hidden">
-	<label><input id="use_vid" type="checkbox" value="foo" > Use Video</label>
-	<label><input id="use_stereo" type="checkbox" value="foo" > Stereo Audio</label>
-	<label><input id="use_stun" type="checkbox" value="foo" > Use STUN</label>
-<!--	<label><input id="local_video" type="checkbox" value="foo" > Local Video</label>-->
-</div>
-
 	<br>
 <!--
 	<b>TEXT</b><br>To: <input type="text" size="20" id="textto"/> MSG: <input type="text" size="40" id="textmsg"/>
