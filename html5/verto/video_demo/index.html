@@ -183,16 +183,17 @@
 	<input type="password" size="20" id="passwd"/>
       </div>
 
+<!--
       <div class="ui-field-contain">
 	<label for="name">CID Name</label>  
-	<input type="text" size="30" id="name"/>
+	<input type="text" size="30" class="name"/>
       </div>
 
       <div class="ui-field-contain">
 	<label for="name">CID Number</label>  
-	<input type="text" size="20" id="cid"/>
+	<input type="text" size="20" class="cid"/>
       </div>
-
+-->
       <div class="ui-field-contain">
 	<label for="name">Hostname</label>
 	<input type="text" size="20" id="hostName"/>
@@ -378,7 +379,18 @@ function dial(ext)
 
 
 <br><br><br>
+      <div class="ui-field-contain" style="text-align:right;">
+	<label for="name">Name</label>  
+	<input type="text" size="30" id="cidname"/>
+      </div>
+      <div class="ui-field-contain" style="text-align:right;">
+	<label for="name">CID Number</label>  
+	<input type="text" size="20" id="cid"/>
+      </div>
+      <div class="ui-field-contain" style="text-align:right;">
+	<label for="name">Extension</label>  
 	  <input type="text" id="ext""/>
+</div>
 	  <button data-inline="true" id="callbtn">Call Extension</button>
 	  <br><br>
 	  <div style="color:blue" id="main_info">&nbsp;</div><br><br>
