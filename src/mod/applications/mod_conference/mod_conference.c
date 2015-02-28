@@ -407,6 +407,8 @@ typedef struct mcu_canvas_s {
 	int layers_used;
 	int layout_floor_id;
 	int refresh;
+	int reset_video;
+	int play_file;
 	switch_rgb_color_t bgcolor;
 	switch_mutex_t *mutex;
 	switch_timer_t timer;
@@ -550,6 +552,7 @@ typedef struct conference_obj {
 	switch_hash_t *layout_hash;
 	switch_hash_t *layout_group_hash;
 	struct conf_fps video_fps;
+	int playing_video_file;
 } conference_obj_t;
 
 /* Relationship with another member */
@@ -1496,8 +1499,9 @@ static void write_canvas_image_to_codec_group(conference_obj_t *conference, code
 		if (encode_status == SWITCH_STATUS_SUCCESS || encode_status == SWITCH_STATUS_MORE_DATA) {
 
 			switch_assert((encode_status == SWITCH_STATUS_SUCCESS && frame->m) || !frame->m);
-
-			switch_set_flag(frame, SFF_RAW_RTP_PARSE_FRAME);
+			if (frame->timestamp) {
+				switch_set_flag(frame, SFF_RAW_RTP_PARSE_FRAME);
+			}
 			frame->packetlen = frame->datalen + 12;
 
 			switch_mutex_lock(conference->member_mutex);
@@ -1530,7 +1534,6 @@ static void write_canvas_image_to_codec_group(conference_obj_t *conference, code
 }
 
 #define MAX_MUX_CODECS 10
-//#define TRACK_FPS
 
 static video_layout_t *find_best_layout(conference_obj_t *conference, layout_group_t *lg)
 {
@@ -1574,18 +1577,15 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 	int buflen = SWITCH_RECOMMENDED_BUFFER_SIZE * 2;
 	int i = 0;
 	int used = 0;
-	uint32_t video_key_freq = 30000000;
+	uint32_t video_key_freq = 10000000;
 	switch_time_t last_key_time = 0;
 	mcu_layer_t *layer = NULL;
 	switch_frame_t write_frame = { 0 };
 	uint8_t *packet = NULL;
 	layout_group_t *lg = NULL;
 	switch_image_t *write_img = NULL, *file_img = NULL;
-
-#ifdef TRACK_FPS
-	uint64_t frames = 0;
-	switch_time_t started = switch_micro_time_now();
-#endif
+	uint32_t timestamp = 0;
+	switch_timer_t file_timer = { 0 };
 
 	if (conference->video_layout_group) {
 		lg = switch_core_hash_find(conference->layout_group_hash, conference->video_layout_group);
@@ -1606,6 +1606,7 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 	conference->video_timer_reset = 1;
 	
 	packet = switch_core_alloc(conference->pool, SWITCH_RECOMMENDED_BUFFER_SIZE);
+	switch_core_timer_init(&file_timer, "soft", 1, 90, NULL);
 
 	while (globals.running && !switch_test_flag(conference, CFLAG_DESTRUCT) && switch_test_flag(conference, CFLAG_VIDEO_MUXING)) {
 		switch_bool_t need_refresh = SWITCH_FALSE, need_keyframe = SWITCH_FALSE, need_reset = SWITCH_FALSE;
@@ -1614,18 +1615,24 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 
 		if (conference->video_timer_reset) {
 			conference->video_timer_reset = 0;
+
+			if (conference->canvas->timer.interval) {
+				switch_core_timer_destroy(&conference->canvas->timer);
+			}
+			
 			switch_core_timer_init(&conference->canvas->timer, "soft", conference->video_fps.ms, conference->video_fps.samples, NULL);
-			need_reset = SWITCH_TRUE;
+			conference->canvas->reset_video = 1;
 		}
 
-		if (!conference->record_fh) { 		
+		if (!conference->playing_video_file) {
 			switch_core_timer_next(&conference->canvas->timer);
 		}
 
 		now = switch_micro_time_now();
-
+		
 		switch_mutex_lock(conference->member_mutex);
 		used = 0;
+		
 
 		for (imember = conference->members; imember; imember = imember->next) {
 			void *pop;
@@ -1640,6 +1647,8 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 			if (!switch_test_flag(imember, MFLAG_NO_MINIMIZE_ENCODING)) {
 				min_members++;
 			}
+
+			if (conference->playing_video_file) continue;
 
 			if (conference->canvas->layout_floor_id > -1 && imember->id == conference->video_floor_holder && 
 				imember->video_layer_id != conference->canvas->layout_floor_id) {
@@ -1701,6 +1710,7 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 				size = switch_queue_size(imember->video_queue);
 			} while(size > 0);
 
+								
 			if (img) {
 				int i;
 
@@ -1788,18 +1798,20 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 		}
 
 		switch_mutex_unlock(conference->member_mutex);
+		
+		if (!conference->playing_video_file) {
+			for (i = 0; i < conference->canvas->total_layers; i++) {
+				mcu_layer_t *layer = &conference->canvas->layers[i];
 
-		for (i = 0; i < conference->canvas->total_layers; i++) {
-			mcu_layer_t *layer = &conference->canvas->layers[i];
+				if (layer->member_id > -1 && layer->cur_img && (layer->tagged || layer->geometry.overlap)) {
+					if (conference->canvas->refresh) {
+						layer->refresh = 1;
+						conference->canvas->refresh++;
+					}
 
-			if (layer->member_id > -1 && layer->cur_img && (layer->tagged || layer->geometry.overlap)) {
-				if (conference->canvas->refresh) {
-					layer->refresh = 1;
-					conference->canvas->refresh++;
+					scale_and_patch(conference, layer, NULL);
+					layer->tagged = 0;
 				}
-
-				scale_and_patch(conference, layer, NULL);
-				layer->tagged = 0;
 			}
 		}
 
@@ -1807,35 +1819,12 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 			conference->canvas->refresh = 0;
 		}
 
-#if 0
-		if (1) {
-			switch_img_txt_handle_t *txthandle = NULL;
-			switch_rgb_color_t color;
-
-			switch_img_txt_handle_create(&txthandle, "/usr/share/fonts/truetype/Microsoft/Verdana.ttf",
-										 "#FFFFFF", "#000000", 24, 0, NULL);
-
-			switch_img_txt_handle_render(txthandle, conference->canvas->img, 10, 10, "W00t this works!", NULL, NULL, NULL, 0, 0);
-
-			switch_color_set_rgb(&color, "#FF0000");
-			switch_img_fill(conference->canvas->img, 300, 10, 400, 40, &color);
-
-			switch_img_txt_handle_render(txthandle, conference->canvas->img, 300, 22, "W00t this works!", NULL, NULL, "#FF0000", 0, 0);
-
-			switch_img_txt_handle_destroy(&txthandle);
+		if (conference->canvas->reset_video) {
+			//need_refresh = SWITCH_TRUE;
+			//need_reset = SWITCH_TRUE;
+			need_keyframe = SWITCH_TRUE;
+			conference->canvas->reset_video = 0;
 		}
-#endif
-
-
-#ifdef TRACK_FPS
-		{
-			uint64_t diff = ((now - started) / 1000000);
-				
-			if (!diff) diff = 1;
-			frames++;
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "fps %ld %ld %ld\n", frames, diff, frames / diff);
-		}
-#endif
 
 		if (video_key_freq && (now - last_key_time) > video_key_freq) {
 			need_keyframe = SWITCH_TRUE;
@@ -1843,11 +1832,29 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 		}
 			
 		write_img = conference->canvas->img;
+		timestamp = conference->canvas->timer.samplecount;
 
-		if (conference->fnode) {
+		if (conference->playing_video_file) {
 			if (switch_core_file_read_video(&conference->fnode->fh, &write_frame) == SWITCH_STATUS_SUCCESS) {
 				switch_img_free(&file_img);
+
+				if (conference->canvas->play_file) {
+					conference->canvas->reset_video = 1;
+					conference->canvas->play_file = 0;
+
+					//if (file_timer.interval) {
+					//	switch_core_timer_destroy(&file_timer);
+					//}
+
+					conference->canvas->timer.interval = 1;
+					conference->canvas->timer.samples = 90;
+				}
+
 				write_img = file_img = write_frame.img;
+				//switch_core_timer_sync(&file_timer);
+				//timestamp = file_timer.samplecount;
+				switch_core_timer_sync(&conference->canvas->timer);
+				timestamp = conference->canvas->timer.samplecount;
 			}
 		} else if (file_img) {
 			switch_img_free(&file_img);
@@ -1862,7 +1869,7 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 			for (i = 0; write_codecs[i] && switch_core_codec_ready(&write_codecs[i]->codec) && i < MAX_MUX_CODECS; i++) {
 				write_codecs[i]->frame.img = write_img;
 				write_canvas_image_to_codec_group(conference, write_codecs[i], i, 
-												  conference->canvas->timer.samplecount, need_refresh, need_keyframe, need_reset);
+												  timestamp, need_refresh, need_keyframe, need_reset);
 
 				if (conference->video_write_bandwidth) {
 					switch_core_codec_control(&write_codecs[i]->codec, SCC_VIDEO_BANDWIDTH, SCCT_INT, &conference->video_write_bandwidth, NULL, NULL);
@@ -1874,7 +1881,7 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 
 		switch_mutex_lock(conference->member_mutex);
 		for (imember = conference->members; imember; imember = imember->next) {
-
+			
 			if (switch_test_flag(conference, CFLAG_MINIMIZE_VIDEO_ENCODING) && !switch_test_flag(imember, MFLAG_NO_MINIMIZE_ENCODING)) {
 				continue;
 			}
@@ -1884,6 +1891,13 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 				continue;
 			}
 
+			if (need_refresh) {
+				switch_core_session_request_video_refresh(imember->session);
+			}
+
+			if (need_keyframe) {
+				switch_core_media_gen_key_frame(imember->session);
+			}
 
 			switch_set_flag(&write_frame, SFF_RAW_RTP);
 			write_frame.img = write_img;
@@ -1900,9 +1914,10 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 			}
 		}
 
-		switch_mutex_unlock(conference->member_mutex);
-		
+		switch_mutex_unlock(conference->member_mutex);	
 	}
+
+	switch_img_free(&file_img);
 
 	for (i = 0; i < MCU_MAX_LAYERS; i++) {
 		layer = &conference->canvas->layers[i];
@@ -1928,6 +1943,10 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 	}
 
 	switch_core_timer_destroy(&conference->canvas->timer);
+
+	if (file_timer.interval) {
+		switch_core_timer_destroy(&file_timer);
+	}
 
 	destroy_canvas(&conference->canvas);
 
@@ -4130,7 +4149,13 @@ static switch_status_t conference_file_close(conference_obj_t *conference, confe
 		close_al(node->al);
 	}
 #endif
-
+	if (switch_core_file_has_video(&node->fh) && conference->canvas) {
+		conference->canvas->timer.interval = conference->video_fps.ms;
+		conference->canvas->timer.samples = conference->video_fps.samples;
+		switch_core_timer_sync(&conference->canvas->timer);
+		conference->canvas->reset_video = 1;
+		conference->playing_video_file = 0;
+	}
 	return switch_core_file_close(&node->fh);
 }
 
@@ -4372,11 +4397,13 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
 
 	if (switch_test_flag(member->conference, CFLAG_VIDEO_MUXING) && frame->img) {
 		switch_image_t *img_copy = NULL;
-		
-		switch_img_copy(frame->img, &img_copy);
-		switch_queue_push(member->video_queue, img_copy);
-		switch_thread_rwlock_unlock(member->conference->rwlock);
-		unlock_member(member);
+
+		if (!member->conference->playing_video_file) {
+			switch_img_copy(frame->img, &img_copy);
+			switch_queue_push(member->video_queue, img_copy);
+			switch_thread_rwlock_unlock(member->conference->rwlock);
+		}
+			unlock_member(member);
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -6512,7 +6539,6 @@ static void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *th
 	switch_size_t data_buf_len;
 	switch_event_t *event;
 	switch_size_t len = 0;
-	char *ext;
 	int flags = 0;
 
 	data_buf_len = samples * sizeof(int16_t);
@@ -6575,15 +6601,6 @@ static void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *th
 	}
 
 	fh.pre_buffer_datalen = SWITCH_DEFAULT_FILE_BUFFER_LEN;
-
-	/* video recording, only for testing at this time*/
-	if ((ext = strrchr(rec->path, '.')) != NULL) {
-		ext++;
-		if (!strncasecmp(ext, "fsv", 3) || !strncasecmp(ext, "mp4", 3)) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Disable buffer for video recording\n");
-			fh.pre_buffer_datalen = 0;
-		}
-	}
 
 	flags = SWITCH_FILE_FLAG_WRITE | SWITCH_FILE_DATA_SHORT;
 
@@ -6965,6 +6982,7 @@ static switch_status_t conference_play_file(conference_obj_t *conference, char *
 
 	/* Open the file */
 	fnode->fh.pre_buffer_datalen = SWITCH_DEFAULT_FILE_BUFFER_LEN;
+
 	if (switch_core_file_open(&fnode->fh, file, channels, conference->rate, flags, pool) !=
 		SWITCH_STATUS_SUCCESS) {
 		switch_event_t *event;
@@ -7013,6 +7031,11 @@ static switch_status_t conference_play_file(conference_obj_t *conference, char *
 	fnode->pool = pool;
 	fnode->async = async;
 	fnode->file = switch_core_strdup(fnode->pool, file);
+
+	if (switch_core_file_has_video(&fnode->fh)) {
+		conference->canvas->play_file = 1;
+		conference->playing_video_file = 1;
+	}
 
 	/* Queue the node */
 	switch_mutex_lock(conference->mutex);
