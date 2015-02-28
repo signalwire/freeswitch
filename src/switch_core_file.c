@@ -391,7 +391,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_read(switch_file_handle_t *fh, 
 
 SWITCH_DECLARE(switch_bool_t) switch_core_file_has_video(switch_file_handle_t *fh)
 {
-	return switch_test_flag(fh, SWITCH_FILE_FLAG_VIDEO) ? SWITCH_TRUE : SWITCH_FALSE;
+	return (switch_test_flag(fh, SWITCH_FILE_OPEN) && switch_test_flag(fh, SWITCH_FILE_FLAG_VIDEO)) ? SWITCH_TRUE : SWITCH_FALSE;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_file_write(switch_file_handle_t *fh, void *data, switch_size_t *len)

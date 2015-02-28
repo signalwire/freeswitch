@@ -1585,7 +1585,6 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 	layout_group_t *lg = NULL;
 	switch_image_t *write_img = NULL, *file_img = NULL;
 	uint32_t timestamp = 0;
-	switch_timer_t file_timer = { 0 };
 
 	if (conference->video_layout_group) {
 		lg = switch_core_hash_find(conference->layout_group_hash, conference->video_layout_group);
@@ -1606,7 +1605,6 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 	conference->video_timer_reset = 1;
 	
 	packet = switch_core_alloc(conference->pool, SWITCH_RECOMMENDED_BUFFER_SIZE);
-	switch_core_timer_init(&file_timer, "soft", 1, 90, NULL);
 
 	while (globals.running && !switch_test_flag(conference, CFLAG_DESTRUCT) && switch_test_flag(conference, CFLAG_VIDEO_MUXING)) {
 		switch_bool_t need_refresh = SWITCH_FALSE, need_keyframe = SWITCH_FALSE, need_reset = SWITCH_FALSE;
@@ -1841,18 +1839,13 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 				if (conference->canvas->play_file) {
 					conference->canvas->reset_video = 1;
 					conference->canvas->play_file = 0;
-
-					//if (file_timer.interval) {
-					//	switch_core_timer_destroy(&file_timer);
-					//}
-
+					
 					conference->canvas->timer.interval = 1;
 					conference->canvas->timer.samples = 90;
 				}
 
 				write_img = file_img = write_frame.img;
-				//switch_core_timer_sync(&file_timer);
-				//timestamp = file_timer.samplecount;
+
 				switch_core_timer_sync(&conference->canvas->timer);
 				timestamp = conference->canvas->timer.samplecount;
 			}
@@ -1943,10 +1936,6 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 	}
 
 	switch_core_timer_destroy(&conference->canvas->timer);
-
-	if (file_timer.interval) {
-		switch_core_timer_destroy(&file_timer);
-	}
 
 	destroy_canvas(&conference->canvas);
 
@@ -6977,14 +6966,14 @@ static switch_status_t conference_play_file(conference_obj_t *conference, char *
 	flags = SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT;
 
 	if (conference->members_with_video && switch_test_flag(conference, CFLAG_TRANSCODE_VIDEO)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Vido FLAG\n");
 		flags |= SWITCH_FILE_FLAG_VIDEO;
 	}
 
 	/* Open the file */
 	fnode->fh.pre_buffer_datalen = SWITCH_DEFAULT_FILE_BUFFER_LEN;
 
-	if (switch_core_file_open(&fnode->fh, file, channels, conference->rate, flags, pool) !=
-		SWITCH_STATUS_SUCCESS) {
+	if (switch_core_file_open(&fnode->fh, file, channels, conference->rate, flags, pool) != SWITCH_STATUS_SUCCESS) {
 		switch_event_t *event;
 
 		if (test_eflag(conference, EFLAG_PLAY_FILE) &&
