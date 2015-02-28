@@ -1820,6 +1820,7 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 
 		if (conference->canvas->send_keyframe) {
 			need_keyframe = SWITCH_TRUE;
+			need_refresh = SWITCH_TRUE;
 			conference->canvas->send_keyframe = 0;
 		}
 
