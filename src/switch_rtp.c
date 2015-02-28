@@ -6733,6 +6733,8 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 		}
 
 		if (!rtp_session->ts_norm.last_ssrc || send_msg->header.ssrc != rtp_session->ts_norm.last_ssrc) {
+			//#define USE_DELTA
+#ifdef USE_DELTA
 			if (rtp_session->ts_norm.last_ssrc) {
 				rtp_session->ts_norm.delta_ct = 1;
 				rtp_session->ts_norm.delta_ttl = 0;
@@ -6740,18 +6742,24 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 					rtp_session->ts_norm.ts += rtp_session->ts_norm.delta;
 				}
 			}
+#endif
 			rtp_session->ts_norm.last_ssrc = send_msg->header.ssrc;
 			rtp_session->ts_norm.last_frame = ntohl(send_msg->header.ts);
 		}
 		
 
 		if (ntohl(send_msg->header.ts) != rtp_session->ts_norm.last_frame) {
-			rtp_session->ts_norm.delta = ntohl(send_msg->header.ts) - rtp_session->ts_norm.last_frame;
+#ifdef USE_DELTA
+			int32_t delta = (int32_t) (ntohl(send_msg->header.ts) - rtp_session->ts_norm.last_frame);
+			if (delta > 0 && delta < 90000) {
+				rtp_session->ts_norm.delta = delta;
+			}
 			//printf("WTF %d\n", rtp_session->ts_norm.delta);
 			rtp_session->ts_norm.ts += rtp_session->ts_norm.delta;
-			//switch_core_timer_sync(&rtp_session->timer);
-			//printf("W00t %d\n", rtp_session->timer.samplecount);
-			//rtp_session->ts_norm.ts = rtp_session->timer.samplecount;
+#else
+			switch_core_timer_sync(&rtp_session->timer);
+			rtp_session->ts_norm.ts = rtp_session->timer.samplecount;
+#endif
 		}
 		
 		rtp_session->ts_norm.last_frame = ntohl(send_msg->header.ts);

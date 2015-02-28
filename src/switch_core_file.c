@@ -222,6 +222,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 		}
 	}
 
+	if (switch_test_flag(fh, SWITCH_FILE_FLAG_VIDEO) && (flags & SWITCH_FILE_FLAG_WRITE)) {
+		fh->pre_buffer_datalen = 0;
+	}
+
 	if (fh->pre_buffer_datalen) {
 		//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Prebuffering %d bytes\n", (int)fh->pre_buffer_datalen);
 		switch_buffer_create_dynamic(&fh->pre_buffer, fh->pre_buffer_datalen * fh->channels, fh->pre_buffer_datalen * fh->channels, 0);
