@@ -2392,6 +2392,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_vlc_load)
 	
 	vlc_file_supported_formats[0] = "vlc";
 	vlc_file_supported_formats[1] = "mp4"; /* maybe add config for this mod to enable or disable */
+	vlc_file_supported_formats[1] = "mov"; /* maybe add config for this mod to enable or disable */
 
 	file_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_FILE_INTERFACE);
 	file_interface->interface_name = modname;
