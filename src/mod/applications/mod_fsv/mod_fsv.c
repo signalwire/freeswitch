@@ -524,6 +524,7 @@ SWITCH_STANDARD_APP(play_yuv_function)
 
 	done = switch_micro_time_now() + (to * 1000);
 
+	switch_channel_set_flag(channel, CF_VIDEO_DECODED_READ);
 
 	while (switch_channel_ready(channel) && !switch_channel_test_flag(channel, CF_VIDEO)) {
 		if ((++loops % 100) == 0) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Waiting for video......\n");
@@ -536,6 +537,8 @@ SWITCH_STANDARD_APP(play_yuv_function)
 	}
 
 
+	switch_channel_wait_for_flag(channel, CF_VIDEO_READY, SWITCH_TRUE, 10000, NULL);
+	
 
 	width = width ? width : 352;
 	height = height ? height : 288;
@@ -645,6 +648,7 @@ SWITCH_STANDARD_APP(play_yuv_function)
  done:
 
 	switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
+	switch_core_session_video_reset(session);
 	// switch_channel_clear_flag(channel, CF_VIDEO_PASSIVE);
 }
 
