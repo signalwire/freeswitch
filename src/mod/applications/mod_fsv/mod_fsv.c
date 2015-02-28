@@ -498,17 +498,14 @@ SWITCH_STANDARD_APP(play_yuv_function)
 	switch_image_t *img = NULL;
 	switch_byte_t *yuv = NULL;
 	int argc;
-	char *argv[3] = { 0 };
+	int to  = 0;
+	char *argv[5] = { 0 };
 	char *mydata = switch_core_session_strdup(session, data);
 	uint32_t loops = 0;
+	switch_time_t done = 0;
+	int nots = 0;
 
 	switch_channel_answer(channel);
-
-	while (switch_channel_ready(channel) && !switch_channel_test_flag(channel, CF_VIDEO)) {
-		if ((++loops % 100) == 0) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Waiting for video......\n");
-		switch_ivr_sleep(session, 20, SWITCH_TRUE, NULL);
-		continue;
-	}
 
 	switch_channel_audio_sync(channel);
 	switch_core_session_raw_read(session);
@@ -522,6 +519,23 @@ SWITCH_STANDARD_APP(play_yuv_function)
 
 	if (argc > 1) width = atoi(argv[1]);
 	if (argc > 2) height = atoi(argv[2]);
+	if (argc > 3) to = atoi(argv[3]);
+	if (argc > 4) nots = atoi(argv[4]);
+
+	done = switch_micro_time_now() + (to * 1000);
+
+
+	while (switch_channel_ready(channel) && !switch_channel_test_flag(channel, CF_VIDEO)) {
+		if ((++loops % 100) == 0) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Waiting for video......\n");
+		switch_ivr_sleep(session, 20, SWITCH_TRUE, NULL);
+
+		if (switch_micro_time_now() > done) {
+			goto done;
+		}
+		continue;
+	}
+
+
 
 	width = width ? width : 352;
 	height = height ? height : 288;
@@ -568,6 +582,9 @@ SWITCH_STANDARD_APP(play_yuv_function)
 	switch_set_flag((&vid_frame), SFF_RAW_RTP);
 	// switch_set_flag((&vid_frame), SFF_PROXY_PACKET);
 
+	switch_core_session_request_video_refresh(session);
+	switch_core_media_gen_key_frame(session);
+
 	while (switch_channel_ready(channel)) {
 		char ts_str[64];
 
@@ -577,6 +594,11 @@ SWITCH_STANDARD_APP(play_yuv_function)
 			switch_channel_clear_flag(channel, CF_BREAK);
 			break;
 		}
+
+		if (switch_micro_time_now() > done) {
+			goto done;
+		}
+
 
 		switch_ivr_parse_all_events(session);
 
@@ -597,10 +619,14 @@ SWITCH_STANDARD_APP(play_yuv_function)
 			}
 		}
 		
+		memset(read_frame->data, 0, read_frame->datalen);
 		if (read_frame) switch_core_session_write_frame(session, read_frame, SWITCH_IO_FLAG_NONE, 0);
 
-		sprintf(ts_str, "%" SWITCH_TIME_T_FMT, switch_micro_time_now() / 1000);
-		switch_img_add_text(img->planes[SWITCH_PLANE_PACKED], width, 20, 20, ts_str);
+		if (!nots) {
+			sprintf(ts_str, "%" SWITCH_TIME_T_FMT, switch_micro_time_now() / 1000);
+			switch_img_add_text(img->planes[SWITCH_PLANE_PACKED], width, 20, 20, ts_str);
+		}
+
 		vid_frame.img = img;
 		switch_core_session_write_video_frame(session, &vid_frame, SWITCH_IO_FLAG_NONE, 0);
 	}
