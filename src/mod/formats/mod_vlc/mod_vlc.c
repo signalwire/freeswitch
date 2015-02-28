@@ -1906,8 +1906,8 @@ typedef struct {
     switch_codec_t video_codec;
     switch_frame_t read_frame;
     switch_frame_t read_video_frame;
-    void *audio_data[SWITCH_RECOMMENDED_BUFFER_SIZE];
-    void *video_data[SWITCH_RECOMMENDED_BUFFER_SIZE * 20];
+    unsigned char *audio_data;
+	switch_size_t audio_datalen;
     const char *destination_number;
     vlc_video_context_t *context;
     switch_timer_t timer;
@@ -1960,21 +1960,34 @@ static switch_status_t setup_tech_pvt(switch_core_session_t *osession, switch_co
 	memset(tech_pvt, 0, sizeof(*tech_pvt));
 
 
+	tech_pvt->audio_datalen = SWITCH_RECOMMENDED_BUFFER_SIZE;
+	tech_pvt->audio_data = switch_core_session_alloc(session, tech_pvt->audio_datalen);
+	
 	if (osession) {
 		switch_core_session_get_read_impl(osession, &tech_pvt->read_impl);
 	} else {
 		const char *val;
 		int tmp = 0;
+		int packets;
 
-		tech_pvt->read_impl.microseconds_per_packet = 20000;
+
+		val = switch_event_get_header(var_event, "vlc_interval");
+		if (val) tmp = atoi(val);
+		if (tmp == 0) tmp = 20;
+		tech_pvt->read_impl.microseconds_per_packet = tmp * 1000;
+		
 		tech_pvt->read_impl.iananame = "L16";
 
+		tmp = 0;
 		val = switch_event_get_header(var_event, "vlc_rate");
 		if (val) tmp = atoi(val);
 		if (tmp == 0) tmp = 8000;
+
+		packets = 1000 / (tech_pvt->read_impl.microseconds_per_packet / 1000);
+
 		tech_pvt->read_impl.samples_per_second = tmp;
 		tech_pvt->read_impl.actual_samples_per_second = tmp;
-		tech_pvt->read_impl.samples_per_packet = tech_pvt->read_impl.samples_per_second / (tech_pvt->read_impl.microseconds_per_packet / 1000);
+		tech_pvt->read_impl.samples_per_packet = tech_pvt->read_impl.samples_per_second / packets;
 
 		tmp = 0;
 		val = switch_event_get_header(var_event, "vlc_channels");
@@ -1986,6 +1999,8 @@ static switch_status_t setup_tech_pvt(switch_core_session_t *osession, switch_co
 		}
 		tech_pvt->read_impl.number_of_channels = tmp;
 		tech_pvt->read_impl.decoded_bytes_per_packet = tech_pvt->read_impl.samples_per_packet * 2 * tech_pvt->read_impl.number_of_channels;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "No BLAH %d %d\n", tech_pvt->read_impl.samples_per_second, tech_pvt->read_impl.number_of_channels);
+
 	}
 
 	tech_pvt->session = session;
@@ -2329,26 +2344,19 @@ static switch_status_t vlc_read_frame(switch_core_session_t *session, switch_fra
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	switch_mutex_lock(context->audio_mutex);
-
-	if (switch_buffer_inuse(context->audio_buffer) >= audio_datalen) {
-		tech_pvt->read_frame.data = tech_pvt->audio_data;
-		switch_buffer_read(context->audio_buffer, tech_pvt->read_frame.data, audio_datalen);
-		tech_pvt->read_frame.datalen = audio_datalen;
-		tech_pvt->read_frame.buflen = audio_datalen;
-		tech_pvt->read_frame.flags &= ~SFF_CNG;
-		tech_pvt->read_frame.codec = &tech_pvt->read_codec;
-		*frame = &tech_pvt->read_frame;
-		switch_mutex_unlock(context->audio_mutex);
-		return SWITCH_STATUS_SUCCESS;
-	}
-
-	switch_mutex_unlock(context->audio_mutex);
-
 	*frame = &tech_pvt->read_frame;
 	tech_pvt->read_frame.codec = &tech_pvt->read_codec;
-	tech_pvt->read_frame.flags |= SFF_CNG;
-	tech_pvt->read_frame.datalen = 0;
+	tech_pvt->read_frame.data = tech_pvt->audio_data;
+	tech_pvt->read_frame.datalen = audio_datalen;
+	tech_pvt->read_frame.buflen = tech_pvt->audio_datalen;
+
+	switch_mutex_lock(context->audio_mutex);
+	if (switch_buffer_inuse(context->audio_buffer) >= audio_datalen) {
+		switch_buffer_read(context->audio_buffer, tech_pvt->audio_data, audio_datalen);
+	} else {
+		memset(tech_pvt->audio_data, 0, audio_datalen);
+	}
+	switch_mutex_unlock(context->audio_mutex);
 
 	//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "read cng frame\n");
 	return SWITCH_STATUS_SUCCESS;

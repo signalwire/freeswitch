@@ -868,6 +868,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_control(switch_codec_t *codec,
 	
 	if (!codec->implementation || !switch_core_codec_ready(codec)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec is not initialized!\n");
+		abort();
 		return SWITCH_STATUS_NOT_INITALIZED;
 	}
 
