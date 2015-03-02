@@ -1647,7 +1647,10 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 				min_members++;
 			}
 
-			if (conference->playing_video_file) continue;
+			if (conference->playing_video_file) {
+				switch_core_session_rwunlock(imember->session);
+				continue;
+			}
 
 			if (conference->canvas->layout_floor_id > -1 && imember->id == conference->video_floor_holder && 
 				imember->video_layer_id != conference->canvas->layout_floor_id) {
