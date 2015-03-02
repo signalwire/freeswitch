@@ -89,7 +89,7 @@ struct vlc_file_context {
 	int samplerate;
 	int channels;
 	int err;
-	int pts;
+	int64_t pts;
 	libvlc_instance_t *inst_out;
 	void *frame_buffer;
 	switch_size_t frame_buffer_len;
@@ -112,7 +112,8 @@ struct vlc_video_context {
 	int playing;
 	int ending;
 	int vid_ready;
-	uint32_t sync_offset;
+	int sync_ready;
+	int32_t sync_offset;
 	switch_mutex_t *video_mutex;
 
 	switch_core_session_t *session;
@@ -566,12 +567,8 @@ void vlc_imem_release_callback(void *data, const char *cookie, size_t size, void
 static switch_status_t av_init_handle(switch_file_handle_t *handle, switch_image_t *img) 
 {
 	switch_memory_pool_t *pool;
-	int64_t pts = 0;
 	char *imem_main, *imem_slave;
-    unsigned char audio_data_buf[SWITCH_RECOMMENDED_BUFFER_SIZE] = { 0 };
-	void *audio_data;
-	switch_size_t audio_datalen;
-	uint32_t offset = 500;
+	int32_t offset = 500;
 	const char *tmp;
     vlc_file_context_t *acontext = handle->private_info;
 	const char * opts[25] = {
@@ -598,6 +595,10 @@ static switch_status_t av_init_handle(switch_file_handle_t *handle, switch_image
 	vcontext->pool = pool;
 	vcontext->playing = 0;
 	vcontext->samplerate = handle->samplerate;
+
+	if (offset) {
+		vcontext->sync_offset = offset * 1000;
+	}
 
 	switch_queue_create(&vcontext->video_queue, SWITCH_CORE_QUEUE_LEN, vcontext->pool);
 
@@ -653,37 +654,6 @@ static switch_status_t av_init_handle(switch_file_handle_t *handle, switch_image
 
 	vcontext->samples = 0;
 	vcontext->pts = 0;
-
-	if (offset) {
-		uint32_t need = (handle->samplerate / 1000) * offset * handle->channels;
-		uint32_t off_frames = need / SWITCH_RECOMMENDED_BUFFER_SIZE;
-		uint32_t rem = need % SWITCH_RECOMMENDED_BUFFER_SIZE;
-		int i = 0;
-
-		vcontext->sync_offset = offset;
-		switch_mutex_lock(vcontext->audio_mutex);
-
-		switch_core_timer_sync(&vcontext->timer);
-		pts = vcontext->timer.samplecount;
-		switch_buffer_write(vcontext->audio_buffer, &pts, sizeof(pts));
-
-		audio_data = audio_data_buf;
-
-		if (off_frames) {
-			audio_datalen = SWITCH_RECOMMENDED_BUFFER_SIZE;
-
-			for (i = 0; i < off_frames; i++) {
-				switch_buffer_write(vcontext->audio_buffer, audio_data, audio_datalen);
-			}
-		}
-
-		if (rem) {
-			audio_datalen = rem;
-			switch_buffer_write(vcontext->audio_buffer, audio_data, audio_datalen);
-		}
-
-		switch_mutex_unlock(vcontext->audio_mutex);
-	}
 	
 	acontext->vcontext = vcontext;
 	
@@ -1103,17 +1073,21 @@ static switch_status_t vlc_file_write_video(switch_file_handle_t *handle, switch
 			return status;
 		}
 		vcontext = acontext->vcontext;
-
-		switch_mutex_lock(vcontext->audio_mutex);
-		switch_buffer_zero(vcontext->audio_buffer);
-		switch_mutex_unlock(vcontext->audio_mutex);
 	}
 
 	if (frame->img) {
-		unsigned int size = switch_queue_size(vcontext->video_queue);
 		switch_image_t *img_copy = NULL;
 		vlc_frame_data_t *fdata = NULL;
+		
+		switch_img_copy(frame->img, &img_copy);
+		switch_zmalloc(fdata, sizeof(*fdata));
 
+		switch_mutex_lock(vcontext->audio_mutex);
+		switch_core_timer_sync(&vcontext->timer);
+		fdata->pts = vcontext->timer.samplecount;
+		switch_mutex_unlock(vcontext->audio_mutex);
+		img_copy->user_priv = (void *) fdata;
+		switch_queue_push(vcontext->video_queue, img_copy);
 
 		if (!vcontext->vid_ready) {
 			vcontext->vid_ready = 1;
@@ -1123,23 +1097,7 @@ static switch_status_t vlc_file_write_video(switch_file_handle_t *handle, switch
 			}
 		}
 
-		switch_img_copy(frame->img, &img_copy);
-		switch_zmalloc(fdata, sizeof(*fdata));
 
-		switch_mutex_lock(vcontext->audio_mutex);
-		switch_core_timer_sync(&vcontext->timer);
-		fdata->pts = vcontext->timer.samplecount;
-		switch_mutex_unlock(vcontext->audio_mutex);
-		
-		img_copy->user_priv = (void *) fdata;
-		switch_queue_push(vcontext->video_queue, img_copy);
-
-		if (!size) { /* was empty before this push */
-			if (switch_mutex_trylock(vcontext->video_mutex) == SWITCH_STATUS_SUCCESS) {
-				switch_thread_cond_signal(vcontext->cond);
-				switch_mutex_unlock(vcontext->video_mutex);
-			}
-		}
 	}
 
 	return status;
@@ -1151,6 +1109,7 @@ static switch_status_t vlc_file_av_write(switch_file_handle_t *handle, void *dat
 	int64_t pts;
     vlc_file_context_t *acontext = handle->private_info;
 	vlc_video_context_t *vcontext = NULL;
+	uint32_t head_bytes;
 
 	if (acontext) {
 		vcontext = acontext->vcontext;
@@ -1166,15 +1125,16 @@ static switch_status_t vlc_file_av_write(switch_file_handle_t *handle, void *dat
 			switch_thread_cond_wait(vcontext->cond, vcontext->cond_mutex);
 		}
 		switch_mutex_unlock(vcontext->cond_mutex); 
+		switch_core_timer_sync(&vcontext->timer);
+		vcontext->pts = vcontext->timer.samplecount;
 	}
 
 	switch_mutex_lock(vcontext->audio_mutex);
-	if (!switch_buffer_inuse(vcontext->audio_buffer)) {
-		switch_core_timer_sync(&vcontext->timer);
-		pts = vcontext->timer.samplecount - vcontext->sync_offset;
-		switch_buffer_write(vcontext->audio_buffer, &pts, sizeof(pts));
-	}
-
+	head_bytes = bytes;
+	switch_core_timer_sync(&vcontext->timer);
+	pts = vcontext->timer.samplecount + vcontext->sync_offset;
+	switch_buffer_write(vcontext->audio_buffer, &pts, sizeof(pts));
+	switch_buffer_write(vcontext->audio_buffer, &head_bytes, sizeof(head_bytes));
 	switch_buffer_write(vcontext->audio_buffer, data, bytes);
 	switch_mutex_unlock(vcontext->audio_mutex);
 
@@ -1515,9 +1475,9 @@ int  vlc_write_video_imem_get_callback(void *data, const char *cookie, int64_t *
 
 	if (!context->ending) {
 		switch_mutex_lock(context->cond_mutex); 
-		if (!switch_queue_size(context->video_queue)) {
-			switch_thread_cond_wait(context->cond, context->cond_mutex);	
-		}
+		//if (!switch_queue_size(context->video_queue)) {
+		//	switch_thread_cond_wait(context->cond, context->cond_mutex);	
+		//}
 		switch_mutex_unlock(context->cond_mutex); 
 	}
 	
@@ -1551,11 +1511,31 @@ int  vlc_write_video_imem_get_callback(void *data, const char *cookie, int64_t *
 	}
 
 	switch_mutex_lock(context->audio_mutex);
+	if (context->sync_offset < 0 && !context->sync_ready) {
+		uint32_t need = (context->samplerate / 1000) * abs(context->sync_offset / 1000) * context->channels * 2;
+		
+		if (context->audio_frame_buffer_len < need) {
+			context->audio_frame_buffer_len = need;
+			context->audio_frame_buffer = switch_core_alloc(context->pool, context->audio_frame_buffer_len);
+		}
+	
+		memset(context->audio_frame_buffer, 0, need);
+		*pts = *dts = context->pts;
+		*size = need;
+		*output = context->audio_frame_buffer;
+		context->sync_ready = 1;
+		switch_mutex_unlock(context->audio_mutex);
+		return 0;
+	}
+	switch_mutex_unlock(context->audio_mutex);
 
 	if ((blen = switch_buffer_inuse(context->audio_buffer))) {
-		switch_buffer_read(context->audio_buffer, &context->pts, sizeof(context->pts));
-		blen = switch_buffer_inuse(context->audio_buffer);
-		*pts = *dts = context->pts;
+		uint32_t read_bytes = 0;
+		int64_t lpts;
+		switch_buffer_read(context->audio_buffer, &lpts, sizeof(lpts));
+		switch_buffer_read(context->audio_buffer, &read_bytes, sizeof(read_bytes));
+		blen = (int)read_bytes;//switch_buffer_inuse(context->audio_buffer);
+		*pts = *dts = lpts + context->sync_offset;
 	}
 
 	if (!(bytes = blen)) {
@@ -1615,8 +1595,6 @@ static switch_status_t video_read_callback(switch_core_session_t *session, switc
 	vlc_frame_data_t *fdata = NULL;
 
 	if (frame->img) {
-		unsigned int size = switch_queue_size(context->video_queue);
-
 		switch_img_copy(frame->img, &img_copy);
 		switch_zmalloc(fdata, sizeof(*fdata));
 
@@ -1628,17 +1606,9 @@ static switch_status_t video_read_callback(switch_core_session_t *session, switc
 		img_copy->user_priv = (void *) fdata;
 		switch_queue_push(context->video_queue, img_copy);
 
-		if (!size) { /* was empty before this push */
-			if (switch_mutex_trylock(context->cond_mutex) == SWITCH_STATUS_SUCCESS) {
-				switch_thread_cond_signal(context->cond);
-				switch_mutex_unlock(context->cond_mutex);
-			}
-		}
 	}
 
-
 	return SWITCH_STATUS_SUCCESS;
-
 }
 
 SWITCH_STANDARD_APP(capture_video_function)
@@ -1662,6 +1632,7 @@ SWITCH_STANDARD_APP(capture_video_function)
 	void *audio_data;
 	switch_size_t audio_datalen;
 	uint32_t offset = 500;
+	uint32_t bytes;
 	const char *tmp;
 	const char * opts[25] = {
 		*vlc_args,
@@ -1766,24 +1737,8 @@ SWITCH_STANDARD_APP(capture_video_function)
 	switch_channel_audio_sync(channel);
 	
 	if (offset) {
-		uint32_t off_frames = (offset * 1000) / read_impl.microseconds_per_packet;
-		int i = 0;
-
 		context->sync_offset = offset * 1000;
-		switch_mutex_lock(context->audio_mutex);
-		switch_core_timer_sync(&context->timer);
-		pts = context->timer.samplecount;
-		switch_buffer_write(context->audio_buffer, &pts, sizeof(pts));
-
-		audio_data = audio_data_buf;
-		audio_datalen = read_impl.decoded_bytes_per_packet;
-
-		for (i = 0; i < off_frames; i++) {
-			switch_buffer_write(context->audio_buffer, audio_data, audio_datalen);
-		}
-		switch_mutex_unlock(context->audio_mutex);
 	}
-
 
 	while (switch_channel_ready(channel)) {
 
@@ -1802,11 +1757,11 @@ SWITCH_STANDARD_APP(capture_video_function)
 		}
 
 		switch_mutex_lock(context->audio_mutex);
-		if (!switch_buffer_inuse(context->audio_buffer)) {
-			switch_core_timer_sync(&context->timer);
-			pts = context->timer.samplecount - context->sync_offset;
-			switch_buffer_write(context->audio_buffer, &pts, sizeof(pts));
-		}
+		switch_core_timer_sync(&context->timer);
+		pts = context->timer.samplecount + context->sync_offset;
+		bytes = audio_datalen;
+		switch_buffer_write(context->audio_buffer, &pts, sizeof(pts));
+		switch_buffer_write(context->audio_buffer, &bytes, sizeof(bytes));
 		switch_buffer_write(context->audio_buffer, audio_data, audio_datalen);
 		switch_mutex_unlock(context->audio_mutex);
 
