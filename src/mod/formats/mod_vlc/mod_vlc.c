@@ -2422,13 +2422,15 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_vlc_load)
 {
 	switch_file_interface_t *file_interface;
 	switch_application_interface_t *app_interface;
+	int argc = 0;
 
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 	
-	vlc_file_supported_formats[0] = "vlc";
-	vlc_file_supported_formats[1] = "mp4"; /* maybe add config for this mod to enable or disable */
-	vlc_file_supported_formats[2] = "mov"; /* maybe add config for this mod to enable or disable */
+	vlc_file_supported_formats[argc++] = "vlc";
+	vlc_file_supported_formats[argc++] = "mp4"; /* maybe add config for this mod to enable or disable these */
+	vlc_file_supported_formats[argc++] = "mov";
+	vlc_file_supported_formats[argc++] = "mv4";
 
 	file_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_FILE_INTERFACE);
 	file_interface->interface_name = modname;
