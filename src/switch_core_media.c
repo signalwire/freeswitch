@@ -10046,7 +10046,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_video_frame(switch_cor
 	}
 
 	//v_engine = &smh->engines[SWITCH_MEDIA_TYPE_VIDEO];	
-	if (smh->write_mutex[SWITCH_MEDIA_TYPE_VIDEO] && switch_mutex_lock(smh->write_mutex[SWITCH_MEDIA_TYPE_VIDEO]) != SWITCH_STATUS_SUCCESS) {
+	if (smh->write_mutex[SWITCH_MEDIA_TYPE_VIDEO] && switch_mutex_trylock(smh->write_mutex[SWITCH_MEDIA_TYPE_VIDEO]) != SWITCH_STATUS_SUCCESS) {
 		/* return CNG, another thread is already writing  */
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG1, "%s is already being written to for %s\n", 
 						  switch_channel_get_name(session->channel), type2str(SWITCH_MEDIA_TYPE_VIDEO));
