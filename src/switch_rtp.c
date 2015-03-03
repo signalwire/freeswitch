@@ -7145,7 +7145,8 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_fra
 	uint32_t len, ts = 0;
 	switch_payload_t payload = 0;
 	rtp_msg_t *send_msg = NULL;
-	rtp_msg_t local_send_msg = { {0} };
+	srtp_hdr_t local_header;
+	int r = 0;
 
 	if (!switch_rtp_ready(rtp_session) || !rtp_session->remote_addr) {
 		return -1;
@@ -7300,8 +7301,7 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_fra
 
 	if (fwd) {
 		send_msg = frame->packet;
-		local_send_msg = *send_msg;
-		send_msg = &local_send_msg;
+		local_header = send_msg->header;
 		len = frame->packetlen;
 		ts = 0;
 
@@ -7330,7 +7330,14 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_fra
 	  }
 	*/
 
-	return rtp_common_write(rtp_session, send_msg, data, len, payload, ts, &frame->flags);
+	r = rtp_common_write(rtp_session, send_msg, data, len, payload, ts, &frame->flags);
+
+	if (send_msg) {
+		send_msg->header = local_header;
+	}
+
+	return r;
+
 }
 
 SWITCH_DECLARE(switch_rtp_stats_t *) switch_rtp_get_stats(switch_rtp_t *rtp_session, switch_memory_pool_t *pool)

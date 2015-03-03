@@ -323,7 +323,7 @@ SWITCH_STANDARD_APP(play_fsv_function)
 
 	vid_frame.codec = &vid_codec;
 	vid_frame.packet = vid_buffer;
-	vid_frame.data = vid_buffer + 12;
+	vid_frame.data = ((uint8_t *)vid_buffer) + 12;
 	vid_frame.buflen = SWITCH_RECOMMENDED_BUFFER_SIZE - 12;
 	switch_set_flag((&vid_frame), SFF_RAW_RTP);
 	// switch_set_flag((&vid_frame), SFF_PROXY_PACKET);
@@ -397,7 +397,7 @@ SWITCH_STANDARD_APP(play_fsv_function)
 
 				vid_frame.m = hdr->m;
 				vid_frame.timestamp = ts;
-				vid_frame.data = data + 12;
+				vid_frame.data = ((uint8_t *)data) + 12;
 				vid_frame.datalen = vid_frame.packetlen - 12;
 				switch_core_session_write_video_frame(session, &vid_frame, SWITCH_IO_FLAG_NONE, 0);
 			}
@@ -577,7 +577,7 @@ SWITCH_STANDARD_APP(play_yuv_function)
 
 	vid_frame.codec = codec;
 	vid_frame.packet = vid_buffer;
-	vid_frame.data = vid_buffer + 12;
+	vid_frame.data = ((uint8_t *)vid_buffer) + 12;
 	vid_frame.buflen = SWITCH_RECOMMENDED_BUFFER_SIZE - 12;
 	switch_set_flag((&vid_frame), SFF_RAW_RTP);
 	// switch_set_flag((&vid_frame), SFF_PROXY_PACKET);

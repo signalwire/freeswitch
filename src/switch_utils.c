@@ -93,6 +93,143 @@ SWITCH_DECLARE(switch_status_t) switch_frame_alloc(switch_frame_t **frame, switc
 }
 
 
+typedef struct switch_frame_node_s {
+	switch_frame_t *frame;
+	int inuse;
+	struct switch_frame_node_s *next;
+} switch_frame_node_t;
+
+struct switch_frame_buffer_s {
+	switch_frame_node_t *head;
+	switch_memory_pool_t *pool;
+	switch_mutex_t *mutex;
+};
+
+static switch_frame_t *find_free_frame(switch_frame_buffer_t *fb, switch_frame_t *orig)
+{
+	switch_frame_node_t *np;
+
+	switch_mutex_lock(fb->mutex);
+	for (np = fb->head; np; np = np->next) {
+		if (!np->inuse && ((orig->packet && np->frame->packet) || (!orig->packet && !np->frame->packet))) {
+			break;
+		}
+	}
+
+	if (!np) {
+		np = switch_core_alloc(fb->pool, sizeof(*np));
+		np->frame = switch_core_alloc(fb->pool, sizeof(*np->frame));
+		
+		if (orig->packet) {
+			np->frame->packet = switch_core_alloc(fb->pool, SWITCH_RTP_MAX_BUF_LEN);
+		} else {
+			np->frame->data = switch_core_alloc(fb->pool, SWITCH_RTP_MAX_BUF_LEN);
+			np->frame->buflen = SWITCH_RTP_MAX_BUF_LEN;
+		}
+		np->next = fb->head;
+		fb->head = np;
+	}
+
+
+	np->frame->samples = orig->samples;
+	np->frame->rate = orig->rate;
+	np->frame->channels = orig->channels;
+	np->frame->payload = orig->payload;
+	np->frame->timestamp = orig->timestamp;
+	np->frame->seq = orig->seq;
+	np->frame->ssrc = orig->ssrc;
+	np->frame->m = orig->m;
+	np->frame->flags = orig->flags;
+	np->frame->codec = NULL;
+	np->frame->pmap = NULL;
+	np->frame->img = NULL;
+	np->frame->extra_data = np;
+	np->inuse = 1;
+
+	switch_set_flag(np->frame, SFF_DYNAMIC);
+
+	if (orig->packet) {
+		memcpy(np->frame->packet, orig->packet, orig->packetlen);
+		np->frame->packetlen = orig->packetlen;
+		np->frame->data = ((unsigned char *)np->frame->packet) + 12;
+		np->frame->datalen = orig->datalen;
+	} else {
+		np->frame->packetlen = 0;
+		memcpy(np->frame->data, orig->data, orig->datalen);
+		np->frame->datalen = orig->datalen;
+	}
+
+	if (orig->img && !switch_test_flag(orig, SFF_ENCODED)) {
+		switch_img_copy(orig->img, &np->frame->img);
+	}
+	
+	switch_mutex_unlock(fb->mutex);
+
+	return np->frame;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_frame_buffer_free(switch_frame_buffer_t *fb, switch_frame_t **frameP)
+{
+	switch_frame_t *old_frame;
+	switch_frame_node_t *node;
+
+	switch_mutex_lock(fb->mutex);
+
+	old_frame = *frameP;
+	*frameP = NULL;
+
+	node = (switch_frame_node_t *) old_frame->extra_data;
+	node->inuse = 0;
+	switch_img_free(&node->frame->img);
+
+	switch_mutex_unlock(fb->mutex);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_frame_buffer_dup(switch_frame_buffer_t *fb, switch_frame_t *orig, switch_frame_t **clone)
+{
+	switch_frame_t *new_frame;
+
+	if (!orig) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	switch_assert(orig->buflen);
+
+	new_frame = find_free_frame(fb, orig);
+		
+	*clone = new_frame;
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_frame_buffer_destroy(switch_frame_buffer_t **fbP)
+{
+	switch_frame_buffer_t *fb = *fbP;
+	switch_memory_pool_t *pool;
+	*fbP = NULL;
+	pool = fb->pool;
+	switch_core_destroy_memory_pool(&pool);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_frame_buffer_create(switch_frame_buffer_t **fbP)
+{
+	switch_frame_buffer_t *fb;
+	switch_memory_pool_t *pool;
+
+	switch_core_new_memory_pool(&pool);
+	fb = switch_core_alloc(pool, sizeof(*fb));
+	fb->pool = pool;
+	switch_mutex_init(&fb->mutex, SWITCH_MUTEX_NESTED, pool);
+	*fbP = fb;
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
 SWITCH_DECLARE(switch_status_t) switch_frame_dup(switch_frame_t *orig, switch_frame_t **clone)
 {
 	switch_frame_t *new_frame;
@@ -104,18 +241,28 @@ SWITCH_DECLARE(switch_status_t) switch_frame_dup(switch_frame_t *orig, switch_fr
 	switch_assert(orig->buflen);
 
 	new_frame = malloc(sizeof(*new_frame));
-
 	switch_assert(new_frame);
 
 	*new_frame = *orig;
 	switch_set_flag(new_frame, SFF_DYNAMIC);
 
-	new_frame->data = malloc(new_frame->buflen);
-	switch_assert(new_frame->data);
+	if (orig->packet) {
+		new_frame->packet = malloc(SWITCH_RTP_MAX_BUF_LEN);
+		memcpy(new_frame->packet, orig->packet, orig->packetlen);
+		new_frame->data = ((unsigned char *)new_frame->packet) + 12;
+	} else {
+		new_frame->data = malloc(new_frame->buflen);
+		switch_assert(new_frame->data);
+		memcpy(new_frame->data, orig->data, orig->datalen);
+	}
 
-	memcpy(new_frame->data, orig->data, orig->datalen);
+
 	new_frame->codec = NULL;
 	new_frame->pmap = NULL;
+	new_frame->img = NULL;
+	if (orig->img && !switch_test_flag(orig, SFF_ENCODED)) {
+		switch_img_copy(orig->img, &new_frame->img);
+	}
 	*clone = new_frame;
 
 	return SWITCH_STATUS_SUCCESS;
@@ -127,7 +274,17 @@ SWITCH_DECLARE(switch_status_t) switch_frame_free(switch_frame_t **frame)
 		return SWITCH_STATUS_FALSE;
 	}
 
-	switch_safe_free((*frame)->data);
+	if ((*frame)->img) {
+		switch_img_free(&(*frame)->img);
+	}
+
+	if ((*frame)->packet) {
+		free((*frame)->packet);
+		(*frame)->packet = NULL;
+	} else {
+		switch_safe_free((*frame)->data);
+	}
+	
 	free(*frame);
 	*frame = NULL;
 
