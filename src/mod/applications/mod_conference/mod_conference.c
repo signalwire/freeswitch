@@ -3642,7 +3642,7 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 	switch_assert(member != NULL);
 
 	if (member->session && switch_test_flag(conference, CFLAG_TRANSCODE_VIDEO)) {
-		switch_channel_set_flag(channel, CF_VIDEO_DECODED_READ);
+		switch_channel_set_flag(member->channel, CF_VIDEO_DECODED_READ);
 		switch_core_media_gen_key_frame(member->session);
 	}
 
