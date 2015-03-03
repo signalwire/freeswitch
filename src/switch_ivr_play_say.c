@@ -525,6 +525,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 
 	if (switch_channel_test_flag(channel, CF_VIDEO)) {
 		file_flags |= SWITCH_FILE_FLAG_VIDEO;
+		switch_channel_set_flag_recursive(channel, CF_VIDEO_DECODED_READ);
+		switch_channel_wait_for_flag(channel, CF_VIDEO_READY, SWITCH_TRUE, 10000, NULL);
 	}
 
 	if (switch_core_file_open(fh, file, fh->channels, read_impl.actual_samples_per_second, file_flags, NULL) != SWITCH_STATUS_SUCCESS) {
@@ -606,7 +608,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 							  "Raw Codec Activation Failed %s@%uhz %u channels %dms\n", codec_name, fh->samplerate,
 							  fh->channels, read_impl.microseconds_per_packet / 1000);
 			if (switch_core_file_has_video(fh)) {
-				switch_channel_set_flag(channel, CF_VIDEO_ECHO);
+				switch_channel_clear_flag(channel, CF_VIDEO_ECHO);
+				switch_channel_clear_flag_recursive(channel, CF_VIDEO_DECODED_READ);
 				switch_core_media_set_video_file(session, NULL, SWITCH_RW_READ);
 			}
 			switch_core_file_close(fh);
@@ -782,7 +785,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 	}
 
 	if (switch_core_file_has_video(fh)) {
-		switch_channel_set_flag(channel, CF_VIDEO_ECHO);
+		switch_channel_clear_flag(channel, CF_VIDEO_ECHO);
+		switch_channel_clear_flag_recursive(channel, CF_VIDEO_DECODED_READ);
 		switch_core_media_set_video_file(session, NULL, SWITCH_RW_READ);
 	}
 	switch_core_file_close(fh);
@@ -1259,6 +1263,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 
 		if (switch_channel_test_flag(channel, CF_VIDEO)) {
 			flags |= SWITCH_FILE_FLAG_VIDEO;
+			switch_channel_set_flag_recursive(channel, CF_VIDEO_DECODED_READ);
+			switch_channel_wait_for_flag(channel, CF_VIDEO_READY, SWITCH_TRUE, 10000, NULL);
 		}
 
 		if (switch_core_file_open(fh,
@@ -1352,6 +1358,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 				switch_core_session_io_rwunlock(session);
 
 				if (switch_core_file_has_video(fh)) {
+					switch_channel_clear_flag_recursive(channel, CF_VIDEO_DECODED_READ);
 					switch_core_media_set_video_file(session, NULL, SWITCH_RW_WRITE);
 				}
 
@@ -1377,6 +1384,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 				switch_core_session_io_rwunlock(session);
 
 				if (switch_core_file_has_video(fh)) {
+					switch_channel_clear_flag_recursive(channel, CF_VIDEO_DECODED_READ);
 					switch_core_media_set_video_file(session, NULL, SWITCH_RW_WRITE);
 				}
 				switch_core_file_close(fh);
@@ -1405,6 +1413,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 				switch_channel_set_private(channel, "__fh", NULL);
 				switch_core_session_io_rwunlock(session);
 				if (switch_core_file_has_video(fh)) {
+					switch_channel_clear_flag_recursive(channel, CF_VIDEO_DECODED_READ);
 					switch_core_media_set_video_file(session, NULL, SWITCH_RW_WRITE);
 				}
 				switch_core_file_close(fh);
@@ -1565,7 +1574,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 					olen /= 2;
 				}
 				switch_set_flag(fh, SWITCH_FILE_BREAK_ON_CHANGE);
-				
+
 				if ((rstatus = switch_core_file_read(fh, abuf, &olen)) == SWITCH_STATUS_BREAK) {
 					continue;
 				}
@@ -1815,6 +1824,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 		switch_core_session_io_rwunlock(session);
 
 		if (switch_core_file_has_video(fh)) {
+			switch_channel_clear_flag_recursive(channel, CF_VIDEO_DECODED_READ);
 			switch_core_media_set_video_file(session, NULL, SWITCH_RW_WRITE);
 		}
 		switch_core_file_close(fh);

@@ -222,7 +222,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 		}
 	}
 
-	if (switch_test_flag(fh, SWITCH_FILE_FLAG_VIDEO) && (flags & SWITCH_FILE_FLAG_WRITE)) {
+	if (switch_test_flag(fh, SWITCH_FILE_FLAG_VIDEO)) {
 		fh->pre_buffer_datalen = 0;
 	}
 
