@@ -147,7 +147,7 @@ typedef struct switch_rtp_engine_s {
 
 	struct media_helper mh;
 	switch_thread_t *media_thread;
-	switch_mutex_t *read_mutex[2];
+
 
 	uint8_t reset_codec;
 	uint8_t codec_negotiated;
@@ -167,7 +167,8 @@ struct switch_media_handle_s {
 	switch_core_media_flag_t media_flags[SCMF_MAX];
 	smh_flag_t flags;
 	switch_rtp_engine_t engines[SWITCH_MEDIA_TYPE_TOTAL];
-
+	switch_mutex_t *read_mutex[2];
+	switch_mutex_t *write_mutex[2];
 	char *codec_order[SWITCH_MAX_CODECS];
     int codec_order_last;
     const switch_codec_implementation_t *codecs[SWITCH_MAX_CODECS];
@@ -1893,14 +1894,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_lock_unlock(switch_core_s
 	}
 
 	if (lock) {
-		if (engine->read_mutex[type] && switch_mutex_trylock(engine->read_mutex[type]) != SWITCH_STATUS_SUCCESS) {
+		if (smh->read_mutex[type] && switch_mutex_trylock(smh->read_mutex[type]) != SWITCH_STATUS_SUCCESS) {
 			/* return CNG, another thread is already reading  */
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG1, "%s is already being read for %s\n", 
 							  switch_channel_get_name(session->channel), type2str(type));
 			return SWITCH_STATUS_INUSE;
 		}
 	} else {
-		switch_mutex_unlock(engine->read_mutex[type]);
+		switch_mutex_unlock(smh->read_mutex[type]);
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -1940,7 +1941,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (engine->read_mutex[type] && switch_mutex_trylock(engine->read_mutex[type]) != SWITCH_STATUS_SUCCESS) {
+	if (smh->read_mutex[type] && switch_mutex_trylock(smh->read_mutex[type]) != SWITCH_STATUS_SUCCESS) {
 		/* return CNG, another thread is already reading  */
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG1, "%s is already being read for %s\n", 
 						  switch_channel_get_name(session->channel), type2str(type));
@@ -2288,8 +2289,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 
  end:
 
-	if (engine->read_mutex[type]) {
-		switch_mutex_unlock(engine->read_mutex[type]);
+	if (smh->read_mutex[type]) {
+		switch_mutex_unlock(smh->read_mutex[type]);
 	}
 
 	return status;
@@ -4812,7 +4813,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_start_video_thread(switch_co
 	switch_thread_cond_create(&v_engine->mh.cond, pool);
 	switch_mutex_init(&v_engine->mh.cond_mutex, SWITCH_MUTEX_NESTED, pool);
 	switch_mutex_init(&v_engine->mh.file_mutex, SWITCH_MUTEX_NESTED, pool);
-	switch_mutex_init(&v_engine->read_mutex[SWITCH_MEDIA_TYPE_VIDEO], SWITCH_MUTEX_NESTED, pool);
+	switch_mutex_init(&smh->read_mutex[SWITCH_MEDIA_TYPE_VIDEO], SWITCH_MUTEX_NESTED, pool);
+	switch_mutex_init(&smh->write_mutex[SWITCH_MEDIA_TYPE_VIDEO], SWITCH_MUTEX_NESTED, pool);
 	switch_thread_create(&v_engine->media_thread, thd_attr, video_helper_thread, &v_engine->mh, switch_core_session_get_pool(session));
 
 	return SWITCH_STATUS_SUCCESS;
@@ -5695,7 +5697,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 		uint8_t inb = switch_channel_direction(session->channel) == SWITCH_CALL_DIRECTION_INBOUND;
 		const char *ssrc;
 
-		switch_mutex_init(&a_engine->read_mutex[SWITCH_MEDIA_TYPE_AUDIO], SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
+		switch_mutex_init(&smh->read_mutex[SWITCH_MEDIA_TYPE_AUDIO], SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
+		switch_mutex_init(&smh->write_mutex[SWITCH_MEDIA_TYPE_AUDIO], SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
 
 		//switch_core_media_set_rtp_session(session, SWITCH_MEDIA_TYPE_AUDIO, a_engine->rtp_session);
 
@@ -10017,6 +10020,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_video_frame(switch_cor
 	switch_image_t *img = frame->img;
 	switch_status_t encode_status;
 	switch_frame_t write_frame = {0};
+	//switch_rtp_engine_t *v_engine;
 
 	switch_assert(session);
 
@@ -10041,6 +10045,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_video_frame(switch_cor
 		return SWITCH_STATUS_SUCCESS;
 	}
 
+	//v_engine = &smh->engines[SWITCH_MEDIA_TYPE_VIDEO];	
+	if (smh->write_mutex[SWITCH_MEDIA_TYPE_VIDEO] && switch_mutex_lock(smh->write_mutex[SWITCH_MEDIA_TYPE_VIDEO]) != SWITCH_STATUS_SUCCESS) {
+		/* return CNG, another thread is already writing  */
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG1, "%s is already being written to for %s\n", 
+						  switch_channel_get_name(session->channel), type2str(SWITCH_MEDIA_TYPE_VIDEO));
+		return SWITCH_STATUS_INUSE;
+	}
+
 	if (!smh->video_init && smh->mparams->video_key_first && (now - smh->video_last_key_time) > smh->mparams->video_key_first) {
 		switch_core_media_gen_key_frame(session);
 
@@ -10057,7 +10069,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_video_frame(switch_cor
 	}	
 
 	if (!img) {
-		return switch_core_session_write_encoded_video_frame(session, frame, flags, stream_id);
+		switch_status_t vstatus = switch_core_session_write_encoded_video_frame(session, frame, flags, stream_id);
+		switch_goto_status(vstatus, done);
 	}
 
 	write_frame = *frame;
@@ -10100,6 +10113,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_video_frame(switch_cor
 		
 	} while(status == SWITCH_STATUS_SUCCESS && encode_status == SWITCH_STATUS_MORE_DATA);
 
+ done:
+
+	if (smh->write_mutex[SWITCH_MEDIA_TYPE_VIDEO]) {
+		switch_mutex_unlock(smh->write_mutex[SWITCH_MEDIA_TYPE_VIDEO]);
+	}
 
 	return status;
 }
