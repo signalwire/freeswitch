@@ -1025,6 +1025,14 @@ static switch_status_t vlc_file_read_video(switch_file_handle_t *handle, switch_
 		return SWITCH_STATUS_FALSE;
 	}
 	
+	while(switch_queue_size(vcontext->video_queue) > 1) {
+		if (switch_queue_trypop(vcontext->video_queue, &pop) == SWITCH_STATUS_SUCCESS) {
+			switch_image_t *img = (switch_image_t *) pop;
+			switch_img_free(&img);
+		}
+	}
+
+	
 	if (switch_queue_pop(vcontext->video_queue, &pop) == SWITCH_STATUS_SUCCESS) {
 		if (!pop) {
 			vcontext->err = 1;
