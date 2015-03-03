@@ -146,6 +146,9 @@ static switch_status_t init_encoder(switch_codec_t *codec)
 		context->bandwidth = 40960;
 	}
 
+	context->pkt = NULL;
+	context->pkt_pos = 0;
+
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(codec->session), SWITCH_LOG_NOTICE, 
 					  "VPX reset encoder picture from %dx%d to %dx%d %u BW\n", 
 					  config->g_w, config->g_h, context->codec_settings.video.width, context->codec_settings.video.height, context->bandwidth);
@@ -393,6 +396,8 @@ static void reset_codec_encoder(switch_codec_t *codec)
 	context->framesum = 0;
 	context->framecount = 0;
 	context->encoder_init = 0;
+	context->pkt_pos = 0;
+	context->pkt = NULL;
 	init_encoder(codec);
 }
 
