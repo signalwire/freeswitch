@@ -1136,12 +1136,28 @@ void sofia_update_callee_id(switch_core_session_t *session, sofia_profile_t *pro
 	}
 
 	if (!fs) {
+		sip_remote_party_id_t *rpid;
 		if ((passerted = sip_p_asserted_identity(sip))) {
 			if (passerted->paid_url->url_user) {
 				number = passerted->paid_url->url_user;
 			}
 			if (!zstr(passerted->paid_display)) {
 				dup = strdup(passerted->paid_display);
+				if (*dup == '"') {
+					name = dup + 1;
+				} else {
+					name = dup;
+				}
+				if (end_of(name) == '"') {
+					end_of(name) = '\0';
+				}
+			}
+		} else if ((rpid = sip_remote_party_id(sip))) {
+			if (rpid->rpid_url->url_user) {
+				number = rpid->rpid_url->url_user;
+			}
+			if (!zstr(rpid->rpid_display)) {
+				dup = strdup(rpid->rpid_display);
 				if (*dup == '"') {
 					name = dup + 1;
 				} else {
@@ -1510,6 +1526,7 @@ static void our_sofia_event_callback(nua_event_t event,
 		sofia_handle_sip_i_info(nua, profile, nh, session, sip, de, tags);
 		break;
 	case nua_i_update:
+		sofia_update_callee_id(session, profile, sip, SWITCH_TRUE);
 		break;
 	case nua_r_update:
 		if (session && tech_pvt && locked) {
