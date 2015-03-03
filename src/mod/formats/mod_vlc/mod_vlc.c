@@ -450,7 +450,7 @@ static void vlc_video_display_callback(void *data, void *id)
 	} else {
 		context->vid_frame->img = context->img;
 		context->vid_frame->packet = context->video_packet;
-		context->vid_frame->data = context->video_packet + 12;
+		context->vid_frame->data = ((uint8_t *)context->video_packet) + 12;
 		switch_core_session_write_video_frame(context->session, context->vid_frame, SWITCH_IO_FLAG_NONE, 0);
 	}
 
@@ -1304,7 +1304,7 @@ SWITCH_STANDARD_APP(play_video_function)
 	audio_frame.codec = &codec;
 	video_frame.codec = read_vid_codec;
 	video_frame.packet = context->video_packet;
-	video_frame.data = context->video_packet + 12;
+	video_frame.data = ((uint8_t *)context->video_packet) + 12;
 
 	switch_channel_set_variable(channel, SWITCH_PLAYBACK_TERMINATOR_USED, "");
 
@@ -1994,7 +1994,7 @@ static switch_status_t setup_tech_pvt(switch_core_session_t *osession, switch_co
 	context->aud_frame = &tech_pvt->read_frame;
 	context->vid_frame = &tech_pvt->read_video_frame;
 	context->vid_frame->packet = context->video_packet;
-	context->vid_frame->data = context->video_packet + 12;
+	context->vid_frame->data = ((uint8_t *)context->video_packet) + 12;
 
 	context->playing = 0;
 	// context->err = 0;

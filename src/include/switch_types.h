@@ -1525,7 +1525,8 @@ typedef enum {
 	SFF_RAW_RTP_PARSE_FRAME = (1 << 13),
 	SFF_PICTURE_RESET = (1 << 14),
 	SFF_SAME_IMAGE = (1 << 15),
-	SFF_USE_VIDEO_TIMESTAMP = (1 << 16)
+	SFF_USE_VIDEO_TIMESTAMP = (1 << 16),
+	SFF_ENCODED = (1 << 17)
 } switch_frame_flag_enum_t;
 typedef uint32_t switch_frame_flag_t;
 
@@ -2524,6 +2525,9 @@ typedef struct switch_vb_s switch_vb_t;
 
 struct switch_img_txt_handle_s;
 typedef struct switch_img_txt_handle_s switch_img_txt_handle_t;
+
+struct switch_frame_buffer_s;
+typedef struct switch_frame_buffer_s switch_frame_buffer_t;
 
 SWITCH_END_EXTERN_C
 #endif
