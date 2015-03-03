@@ -952,6 +952,7 @@ static void reset_image(switch_image_t *img, switch_rgb_color_t *color)
 static void clear_layer(mcu_canvas_t *canvas, mcu_layer_t *layer)
 {
 	switch_img_fill(canvas->img, layer->x_pos, layer->y_pos, layer->screen_w, layer->screen_h, &canvas->bgcolor);
+	layer->banner_patched = 0;
 }
 
 static void reset_layer(mcu_canvas_t *canvas, mcu_layer_t *layer)
@@ -975,7 +976,7 @@ static void reset_layer(mcu_canvas_t *canvas, mcu_layer_t *layer)
 	switch_img_free(&layer->cur_img);
 }
 
-static void scale_and_patch(conference_obj_t *conference, mcu_layer_t *layer, switch_image_t *ximg)
+static void scale_and_patch(conference_obj_t *conference, mcu_layer_t *layer, switch_image_t *ximg, switch_bool_t freeze)
 {
 	switch_image_t *IMG, *img;
 
@@ -996,12 +997,16 @@ static void scale_and_patch(conference_obj_t *conference, mcu_layer_t *layer, sw
 		double screen_aspect = 0, img_aspect = 0;
 		int x_pos = layer->x_pos;
 		int y_pos = layer->y_pos;
-
+		
 		img_w = layer->screen_w = IMG->d_w * layer->geometry.scale / SCALE_FACTOR;
 		img_h = layer->screen_h = IMG->d_h * layer->geometry.scale / SCALE_FACTOR;
 
 		screen_aspect = (double) layer->screen_w / layer->screen_h;
 		img_aspect = (double) img->d_w / img->d_h;
+
+		if (freeze) {
+			switch_img_free(&layer->img);
+		}
 		
 		if (screen_aspect > img_aspect) {
 			img_w = img_aspect * layer->screen_h;
@@ -1022,7 +1027,9 @@ static void scale_and_patch(conference_obj_t *conference, mcu_layer_t *layer, sw
 		
 		if (layer->banner_img && !layer->banner_patched) {
 			switch_img_patch(IMG, layer->banner_img, layer->x_pos, layer->y_pos + (layer->screen_h - layer->banner_img->d_h));
-			switch_img_set_rect(layer->img, 0, 0, layer->img->d_w, layer->img->d_h - layer->banner_img->d_h);
+			if (!freeze) {
+				switch_img_set_rect(layer->img, 0, 0, layer->img->d_w, layer->img->d_h - layer->banner_img->d_h);
+			}
 			layer->banner_patched = 1;
 		}
 
@@ -1046,6 +1053,7 @@ static void scale_and_patch(conference_obj_t *conference, mcu_layer_t *layer, sw
 	}
 
 	switch_mutex_unlock(conference->canvas->mutex);
+
 }
 
 static void set_canvas_bgcolor(mcu_canvas_t *canvas, char *color)
@@ -1587,6 +1595,7 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_write_thread_run(switch_
 {
 	conference_member_t *member = (conference_member_t *) obj;
 	void *pop;
+	int loops = 0;
 
 	while(switch_test_flag(member, MFLAG_RUNNING) || switch_queue_size(member->mux_out_queue)) {
 		switch_frame_t *frame;
@@ -1594,6 +1603,11 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_write_thread_run(switch_
 		if (switch_test_flag(member, MFLAG_RUNNING)) {
 			if (switch_queue_pop(member->mux_out_queue, &pop) == SWITCH_STATUS_SUCCESS) {
 				if (!pop) continue;
+
+				if (!loops++) {
+					switch_core_media_gen_key_frame(member->session);
+					switch_core_session_request_video_refresh(member->session);
+				}
 
 				frame = (switch_frame_t *) pop;
 				if (switch_test_flag(frame, SFF_ENCODED)) {
@@ -1821,13 +1835,13 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 
 						if (!layer->mute_patched) {
 							if (imember->video_mute_png || layer->mute_img) {
-								reset_layer(conference->canvas, layer);
+								clear_layer(conference->canvas, layer);
 
 								if (!layer->mute_img && imember->video_mute_png) {
 									layer->mute_img = switch_img_read_png(imember->video_mute_png);
 								}
 
-								scale_and_patch(conference, layer, layer->mute_img);
+								scale_and_patch(conference, layer, layer->mute_img, SWITCH_TRUE);
 								layer->mute_patched = 1;
 							}
 						}
@@ -1861,7 +1875,7 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 						conference->canvas->refresh++;
 					}
 
-					scale_and_patch(conference, layer, NULL);
+					scale_and_patch(conference, layer, NULL, SWITCH_FALSE);
 					layer->tagged = 0;
 				}
 			}
@@ -4441,15 +4455,15 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (switch_test_flag(member->conference, CFLAG_VIDEO_MUXING) && frame->img) {
+	if (switch_test_flag(member->conference, CFLAG_VIDEO_MUXING)) {
 		switch_image_t *img_copy = NULL;
 
-		if (!member->conference->playing_video_file) {
+		if (frame->img && !member->conference->playing_video_file) {
 			switch_img_copy(frame->img, &img_copy);
 			switch_queue_push(member->video_queue, img_copy);
-			switch_thread_rwlock_unlock(member->conference->rwlock);
 		}
-			unlock_member(member);
+		switch_thread_rwlock_unlock(member->conference->rwlock);
+		unlock_member(member);
 		return SWITCH_STATUS_SUCCESS;
 	}
 
