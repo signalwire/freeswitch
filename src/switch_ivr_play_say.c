@@ -526,7 +526,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 	if (switch_channel_test_flag(channel, CF_VIDEO)) {
 		file_flags |= SWITCH_FILE_FLAG_VIDEO;
 		switch_channel_set_flag_recursive(channel, CF_VIDEO_DECODED_READ);
-		switch_channel_wait_for_flag(channel, CF_VIDEO_READY, SWITCH_TRUE, 10000, NULL);
 	}
 
 	if (switch_core_file_open(fh, file, fh->channels, read_impl.actual_samples_per_second, file_flags, NULL) != SWITCH_STATUS_SUCCESS) {
@@ -1264,7 +1263,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 		if (switch_channel_test_flag(channel, CF_VIDEO)) {
 			flags |= SWITCH_FILE_FLAG_VIDEO;
 			switch_channel_set_flag_recursive(channel, CF_VIDEO_DECODED_READ);
-			switch_channel_wait_for_flag(channel, CF_VIDEO_READY, SWITCH_TRUE, 10000, NULL);
 		}
 
 		if (switch_core_file_open(fh,

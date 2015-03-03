@@ -1377,7 +1377,6 @@ SWITCH_STANDARD_APP(play_video_function)
 	libvlc_video_set_callbacks(context->mp, vlc_video_lock_callback, vlc_video_unlock_callback, vlc_video_display_callback, context);
 
 	switch_channel_set_flag(channel, CF_VIDEO_DECODED_READ);
-	switch_channel_wait_for_flag(channel, CF_VIDEO_READY, SWITCH_TRUE, 10000, NULL);
 
 	// start play
 	if (-1 == libvlc_media_player_play(context->mp)) {
@@ -1680,7 +1679,6 @@ SWITCH_STANDARD_APP(capture_video_function)
 	switch_core_timer_init(&context->timer, "soft", 1, 1000, context->pool);
 
 	switch_channel_set_flag(channel, CF_VIDEO_DECODED_READ);	
-	switch_channel_wait_for_flag(channel, CF_VIDEO_READY, SWITCH_TRUE, 10000, NULL);
 	switch_core_media_get_vid_params(session, &vid_params);
 	switch_channel_set_flag(channel, CF_VIDEO_ECHO);
 	switch_core_session_raw_read(session);

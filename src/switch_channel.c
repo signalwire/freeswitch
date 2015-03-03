@@ -1830,6 +1830,9 @@ SWITCH_DECLARE(void) switch_channel_set_flag_value(switch_channel_t *channel, sw
 		switch_channel_set_variable(channel, "recovered", "true");
 	}
 
+	if (flag == CF_VIDEO_DECODED_READ) {
+		switch_channel_wait_for_flag(channel, CF_VIDEO_READY, SWITCH_TRUE, 10000, NULL);
+	}
 }
 
 SWITCH_DECLARE(void) switch_channel_set_flag_recursive(switch_channel_t *channel, switch_channel_flag_t flag)

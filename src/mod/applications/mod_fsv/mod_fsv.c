@@ -537,9 +537,6 @@ SWITCH_STANDARD_APP(play_yuv_function)
 	}
 
 
-	switch_channel_wait_for_flag(channel, CF_VIDEO_READY, SWITCH_TRUE, 10000, NULL);
-	
-
 	width = width ? width : 352;
 	height = height ? height : 288;
 	size = width * height * 3 / 2;
