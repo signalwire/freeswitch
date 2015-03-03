@@ -4639,7 +4639,7 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 	switch_rgb_color_t bgcolor;
 
 	switch_color_set_rgb(&bgcolor, "#000000");
-	blank_img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, 640, 480, 1);
+	blank_img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, 320, 240, 1);
 	switch_img_fill(blank_img, 0, 0, blank_img->d_w, blank_img->d_h, &bgcolor);
 	
 	//switch_rtp_engine_t *v_engine = NULL;
@@ -4729,10 +4729,6 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 					switch_channel_set_flag(channel, CF_VIDEO_READY);
 					smh->vid_params.width = read_frame->img->d_w;
 					smh->vid_params.height = read_frame->img->d_h;
-				} else {
-					switch_img_free(&blank_img);
-					blank_img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, read_frame->img->d_w, read_frame->img->d_h, 1);
-					switch_img_fill(blank_img, 0, 0, blank_img->d_w, blank_img->d_h, &bgcolor);
 				}
 			} else if (read_frame->datalen > 2 && !switch_channel_test_flag(channel, CF_VIDEO_DECODED_READ) && ++vloops > 20) {
 				switch_channel_set_flag(channel, CF_VIDEO_READY);
