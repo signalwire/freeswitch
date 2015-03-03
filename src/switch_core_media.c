@@ -4763,7 +4763,7 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 			switch_mutex_unlock(mh->file_mutex);
 		} else if (switch_channel_test_flag(channel, CF_VIDEO_DECODED_READ)) {
 			fr.img = blank_img;
-			switch_core_session_write_video_frame(session, &fr, SWITCH_IO_FLAG_NONE, 0);
+			switch_core_session_write_video_frame(session, &fr, SWITCH_IO_FLAG_NONE, SWITCH_IO_FLAG_FORCE);
 		}
 
 		if (read_frame && (switch_channel_test_flag(channel, CF_VIDEO_ECHO))) {
@@ -10034,6 +10034,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_video_frame(switch_cor
 	}
 
 	if (switch_channel_test_flag(session->channel, CF_VIDEO_PAUSE)) {
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	if (!(switch_channel_test_flag(session->channel, CF_VIDEO_READY) || (flags & SWITCH_IO_FLAG_FORCE))) {
 		return SWITCH_STATUS_SUCCESS;
 	}
 
