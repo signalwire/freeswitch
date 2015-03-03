@@ -3641,6 +3641,11 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 	switch_assert(conference != NULL);
 	switch_assert(member != NULL);
 
+	if (member->session && switch_test_flag(conference, CFLAG_TRANSCODE_VIDEO)) {
+		switch_channel_set_flag(channel, CF_VIDEO_DECODED_READ);
+		switch_core_media_gen_key_frame(member->session);
+	}
+
 	switch_mutex_lock(conference->mutex);
 	switch_mutex_lock(member->audio_in_mutex);
 	switch_mutex_lock(member->audio_out_mutex);
@@ -3688,13 +3693,6 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 		if (switch_channel_test_flag(channel, CF_VIDEO)) {
 			switch_set_flag_locked(member, MFLAG_ACK_VIDEO);
 		}
-
-		if (switch_test_flag(conference, CFLAG_TRANSCODE_VIDEO)) {
-			switch_channel_set_flag(channel, CF_VIDEO_DECODED_READ);
-			switch_core_media_gen_key_frame(member->session);
-		}
-
-
 
 		if ((var = switch_channel_get_variable_dup(member->channel, "video_mute_png", SWITCH_FALSE, -1))) {
 			member->video_mute_png = switch_core_strdup(member->pool, var);
