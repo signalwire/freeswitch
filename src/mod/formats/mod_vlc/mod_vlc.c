@@ -930,10 +930,6 @@ static switch_status_t vlc_file_av_read(switch_file_handle_t *handle, void *data
 		}
 		switch_mutex_unlock(vcontext->cond_mutex); 
 	}
-
-	while(!switch_buffer_inuse(vcontext->audio_buffer) && !vcontext->err && vcontext->playing) {
-		switch_cond_next();
-	}
 	
 	switch_mutex_lock(vcontext->audio_mutex);
 	read = switch_buffer_read(vcontext->audio_buffer, data, bytes);
@@ -944,7 +940,7 @@ static switch_status_t vlc_file_av_read(switch_file_handle_t *handle, void *data
 	if (!read && (status == libvlc_Stopped || status == libvlc_Ended || status == libvlc_Error)) {
 		return SWITCH_STATUS_FALSE;
 	} else if (!read) {
-		read = 2;
+		read = bytes;
 		memset(data, 0, read);
 	}
 
@@ -1030,6 +1026,11 @@ static switch_status_t vlc_file_read_video(switch_file_handle_t *handle, switch_
 	}
 	
 	if (switch_queue_pop(vcontext->video_queue, &pop) == SWITCH_STATUS_SUCCESS) {
+		if (!pop) {
+			vcontext->err = 1;
+			return SWITCH_STATUS_FALSE;
+		}
+
 		if (!vcontext->vid_ready) {
 			vcontext->vid_ready = 1;
 			
@@ -1039,10 +1040,7 @@ static switch_status_t vlc_file_read_video(switch_file_handle_t *handle, switch_
 			}
 		}
 
-		if (!pop) {
-			vcontext->err = 1;
-			return SWITCH_STATUS_FALSE;
-		}
+
 		frame->img = (switch_image_t *) pop;
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -1377,6 +1375,9 @@ SWITCH_STANDARD_APP(play_video_function)
 
 	libvlc_video_set_format_callbacks(context->mp, video_format_setup_callback, video_format_clean_callback);
 	libvlc_video_set_callbacks(context->mp, vlc_video_lock_callback, vlc_video_unlock_callback, vlc_video_display_callback, context);
+
+	switch_channel_set_flag(channel, CF_VIDEO_DECODED_READ);
+	switch_channel_wait_for_flag(channel, CF_VIDEO_READY, SWITCH_TRUE, 10000, NULL);
 
 	// start play
 	if (-1 == libvlc_media_player_play(context->mp)) {
