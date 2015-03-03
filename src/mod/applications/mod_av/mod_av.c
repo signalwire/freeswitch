@@ -1122,7 +1122,6 @@ SWITCH_STANDARD_APP(record_av_function)
 	}
 
 	switch_channel_set_flag(channel, CF_VIDEO_DECODED_READ);
-	switch_channel_wait_for_flag(channel, CF_VIDEO_READY, SWITCH_TRUE, 10000, NULL);
 	switch_core_media_get_vid_params(session, &vid_params);
 	switch_channel_set_flag(channel, CF_VIDEO_ECHO);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "video size: %dx%d\n", vid_params.width, vid_params.height);
