@@ -5089,7 +5089,7 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 					stat = srtp_unprotect(rtp_session->recv_ctx[rtp_session->srtp_idx_rtp], &rtp_session->recv_msg.header, &sbytes);
 					if (rtp_session->flags[SWITCH_RTP_FLAG_NACK] && stat == err_status_replay_fail) {
 						/* false alarm nack */
-						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG, "REPLAY ERR, FALSE NACK");
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG, "REPLAY ERR, FALSE NACK\n");
 						stat = 0;
 						sbytes = 0;
 						*bytes = 0;
