@@ -1595,7 +1595,6 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_write_thread_run(switch_
 {
 	conference_member_t *member = (conference_member_t *) obj;
 	void *pop;
-	int loops = 0;
 
 	while(switch_test_flag(member, MFLAG_RUNNING) || switch_queue_size(member->mux_out_queue)) {
 		switch_frame_t *frame;
@@ -1603,12 +1602,6 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_write_thread_run(switch_
 		if (switch_test_flag(member, MFLAG_RUNNING)) {
 			if (switch_queue_pop(member->mux_out_queue, &pop) == SWITCH_STATUS_SUCCESS) {
 				if (!pop) continue;
-
-				if (loops == 0 || loops == 50) {
-					switch_core_media_gen_key_frame(member->session);
-					switch_core_session_request_video_refresh(member->session);
-				}
-				loops++;
 
 				frame = (switch_frame_t *) pop;
 				if (switch_test_flag(frame, SFF_ENCODED)) {
