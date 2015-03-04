@@ -1759,6 +1759,7 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 
 				if (imember->video_codec_index < 0) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Write Codec Error\n");
+					switch_core_session_rwunlock(imember->session);
 					continue;
 				}
 			}
@@ -4622,9 +4623,6 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 				}
 				
 				if (switch_channel_ready(channel) && switch_channel_test_flag(channel, CF_VIDEO)) {
-					if (conference->video_layout_name && !conference->video_muxing_thread) {
-						launch_conference_video_muxing_thread(conference);
-					}
 					members_with_video++;
 				}
 
@@ -12642,6 +12640,10 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 	switch_set_flag(conference, CFLAG_INHASH);
 	switch_core_hash_insert(globals.conference_hash, conference->name, conference);
 	switch_mutex_unlock(globals.hash_mutex);
+
+	if (conference->video_layout_name && !conference->video_muxing_thread) {
+		launch_conference_video_muxing_thread(conference);
+	}
 
   end:
 
