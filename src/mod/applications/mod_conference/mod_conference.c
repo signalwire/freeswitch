@@ -8979,10 +8979,6 @@ static int setup_media(conference_member_t *member, conference_obj_t *conference
 		switch_resample_destroy(&member->read_resampler);
 	}
 
-	switch_buffer_destroy(&member->resample_buffer);
-	switch_buffer_destroy(&member->audio_buffer);
-	switch_buffer_destroy(&member->mux_buffer);
-
 	switch_core_session_get_read_impl(member->session, &member->orig_read_impl);
 	member->native_rate = read_impl.samples_per_second;
 
@@ -9022,7 +9018,7 @@ static int setup_media(conference_member_t *member, conference_obj_t *conference
 		member->resample_out_len = member->frame_size;
 
 		/* Setup an audio buffer for the resampled audio */
-		if (switch_buffer_create_dynamic(&member->resample_buffer, CONF_DBLOCK_SIZE, CONF_DBUFFER_SIZE, CONF_DBUFFER_MAX)
+		if (!member->resample_buffer && switch_buffer_create_dynamic(&member->resample_buffer, CONF_DBLOCK_SIZE, CONF_DBUFFER_SIZE, CONF_DBUFFER_MAX)
 			!= SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session), SWITCH_LOG_CRIT, "Memory Error Creating Audio Buffer!\n");
 			goto done;
@@ -9048,13 +9044,13 @@ static int setup_media(conference_member_t *member, conference_obj_t *conference
 	}
 
 	/* Setup an audio buffer for the incoming audio */
-	if (switch_buffer_create_dynamic(&member->audio_buffer, CONF_DBLOCK_SIZE, CONF_DBUFFER_SIZE, CONF_DBUFFER_MAX) != SWITCH_STATUS_SUCCESS) {
+	if (!member->audio_buffer && switch_buffer_create_dynamic(&member->audio_buffer, CONF_DBLOCK_SIZE, CONF_DBUFFER_SIZE, CONF_DBUFFER_MAX) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session), SWITCH_LOG_CRIT, "Memory Error Creating Audio Buffer!\n");
 		goto codec_done1;
 	}
 
 	/* Setup an audio buffer for the outgoing audio */
-	if (switch_buffer_create_dynamic(&member->mux_buffer, CONF_DBLOCK_SIZE, CONF_DBUFFER_SIZE, CONF_DBUFFER_MAX) != SWITCH_STATUS_SUCCESS) {
+	if (!member->mux_buffer && switch_buffer_create_dynamic(&member->mux_buffer, CONF_DBLOCK_SIZE, CONF_DBUFFER_SIZE, CONF_DBUFFER_MAX) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session), SWITCH_LOG_CRIT, "Memory Error Creating Audio Buffer!\n");
 		goto codec_done1;
 	}
