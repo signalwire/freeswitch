@@ -33,7 +33,6 @@
 
 #include <switch.h>
 #include <switch_curl.h>
-#include <json.h>
 #ifdef  _MSC_VER
 #include <WinSock2.h>
 #else
@@ -269,21 +268,28 @@ static http_data_t *do_lookup_url(switch_memory_pool_t *pool, const char *url, c
 
 static char *print_json(switch_memory_pool_t *pool, http_data_t *http_data)
 {
-	struct json_object *top = NULL;
-	struct json_object *headers = NULL;
+	cJSON *top = cJSON_CreateObject(),
+	      *headers = cJSON_CreateObject();
 	char *data = NULL;
+	char tmp[32], *f = NULL;
 	switch_curl_slist_t *header = http_data->headers;
-
-	top = json_object_new_object();
-	headers = json_object_new_array();
-	json_object_object_add(top, "status_code", json_object_new_int(http_data->http_response_code));
+	
+	if(!top || !headers) {
+		cJSON_Delete(headers);
+		
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to alloc memory for cJSON structures.\n");
+		goto curl_json_output_end;
+	}
+	
+	switch_snprintf(tmp, sizeof(tmp), "%ld", http_data->http_response_code);
+	cJSON_AddItemToObject(top, "status_code", cJSON_CreateString(tmp));
 	if (http_data->http_response) {
-		json_object_object_add(top, "body", json_object_new_string(http_data->http_response));
+		cJSON_AddItemToObject(top, "body", cJSON_CreateString(http_data->http_response));
 	}
 
 	/* parse header data */
 	while (header) {
-		struct json_object *obj = NULL;
+		cJSON *obj = NULL;
 		/* remove trailing \r */
 		if ((data =  strrchr(header->data, '\r'))) {
 			*data = '\0';
@@ -300,18 +306,18 @@ static char *print_json(switch_memory_pool_t *pool, http_data_t *http_data)
 			while (*data == ' ' && *data != '\0') {
 				data++;
 			}
-			obj = json_object_new_object();
-			json_object_object_add(obj, "key", json_object_new_string(header->data));
-			json_object_object_add(obj, "value", json_object_new_string(data));
-			json_object_array_add(headers, obj);
+			obj = cJSON_CreateObject();
+			cJSON_AddItemToObject(obj, "key", cJSON_CreateString(header->data));
+			cJSON_AddItemToObject(obj, "value", cJSON_CreateString(data));
+			cJSON_AddItemToArray(headers, obj);
 		} else {
 			if (!strncmp("HTTP", header->data, 4)) {
 				char *argv[3] = { 0 };
 				int argc;
 				if ((argc = switch_separate_string(header->data, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
 					if (argc > 2) {
-						json_object_object_add(top, "version", json_object_new_string(argv[0]));
-						json_object_object_add(top, "phrase", json_object_new_string(argv[2]));
+						cJSON_AddItemToObject(top, "version", cJSON_CreateString(argv[0]));
+						cJSON_AddItemToObject(top, "phrase", cJSON_CreateString(argv[2]));
 					} else {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unparsable header: argc: %d\n", argc);
 					}
@@ -324,10 +330,13 @@ static char *print_json(switch_memory_pool_t *pool, http_data_t *http_data)
 		}
 		header = header->next;
 	}
-	json_object_object_add(top, "headers", headers);
-	data = switch_core_strdup(pool, json_object_to_json_string(top));
-	json_object_put(top);		/* should free up all children */
-
+	cJSON_AddItemToObject(top, "headers", headers);
+	f = cJSON_PrintUnformatted(top);
+	data = switch_core_strdup(pool, f);
+	switch_safe_free(f);
+	
+curl_json_output_end:
+	cJSON_Delete(top);		/* should free up all children */
 	return data;
 }
 
