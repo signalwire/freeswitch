@@ -2985,6 +2985,7 @@ static void conference_mod_event_channel_handler(const char *event_channel, cJSO
 	} else if (!strcasecmp(action, "volume_in") || 
 			   !strcasecmp(action, "volume_out") || 
 			   !strcasecmp(action, "vid-res-id") || 
+			   !strcasecmp(action, "vid-floor") || 
 			   !strcasecmp(action, "vid-banner")) {
 		exec = switch_mprintf("%s %s %d %s", conf_name, action, cid, argv[0]);
 	} else if (!strcasecmp(action, "play") || !strcasecmp(action, "stop")) {
