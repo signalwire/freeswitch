@@ -573,9 +573,31 @@ function doshare(on) {
     if (share_call) {
         return;
     }
+
+    var sharedev = $("#useshare").find(":selected").val();
+
+    if (sharedev !== "screen") {
+
+	share_call = verto.newCall({
+            destination_number: $("#ext").val() + "-screen",
+            caller_id_name: $("#cidname").val() + " (Screen)",
+            caller_id_number: $("#cid").val() + " (screen)",
+	    outgoingBandwidth: outgoingBandwidth,
+	    incomingBandwidth: incomingBandwidth,
+	    useCamera: sharedev,
+            useVideo: true,
+	    screenShare: true
+	});
+
+	return;
+    }
+
+
     console.log("Attempting Screen Capture....");
     getScreenId(function (error, sourceId, screen_constraints) {
 	
+
+
 	share_call = verto.newCall({
             destination_number: $("#ext").val() + "-screen",
             caller_id_name: $("#cidname").val() + " (Screen)",
@@ -639,6 +661,7 @@ var devinit = false;
 function refresh_devices()
 {
     if (devinit) {
+	$("#useshare").empty();
 	$("#usecamera").empty();
 	$("#usemic").empty();
     }
@@ -647,14 +670,22 @@ function refresh_devices()
 
     $.verto.findDevices(function() {
 	var x = 0;
+
 	$("#usecamera").append(new Option("No Camera", "none"));
 	for (var i in $.verto.videoDevices) {
 	    var source = $.verto.videoDevices[i];
 	    var o = new Option(source.label, source.id);
-	    if (!x++) {
+	    if (!x) {
 		o.selected = true;
 	    }
 	    $("#usecamera").append(o);
+
+	    var oo = new Option(source.label, source.id);
+	    if (!x++) {
+		o.selected = true;
+	    }
+
+	    $("#useshare").append(oo);
 	}
 
 	x = 0;
@@ -667,9 +698,17 @@ function refresh_devices()
 	    }
 	    $("#usemic").append(o);
 	}
+
+
+	var o = new Option("Screen", "screen");
+	o.selected = true;
+
+	$("#useshare").append(o);
+
 	
 	$("#usecamera").selectmenu('refresh', true);
 	$("#usemic").selectmenu('refresh', true);
+	$("#useshare").selectmenu('refresh', true);
 
 	//console.error($("#usecamera").find(":selected").val());
 
