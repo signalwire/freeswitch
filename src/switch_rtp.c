@@ -4849,7 +4849,7 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 
 		do_dtls(rtp_session, rtp_session->dtls);
 
-		if (rtp_session->dtls->bytes) {
+		if (rtp_session->dtls && rtp_session->dtls->bytes) {
 			*bytes = 0;
 			sync = 1;
 		}
