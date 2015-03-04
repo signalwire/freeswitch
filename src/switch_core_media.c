@@ -4726,15 +4726,22 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 			}
 		
 			if (read_frame->img) {
-				if (++vloops > 5) {
+				if (vloops > 5) {
 					switch_channel_set_flag(channel, CF_VIDEO_READY);
 					smh->vid_params.width = read_frame->img->d_w;
 					smh->vid_params.height = read_frame->img->d_h;
 				}
-			} else if (read_frame->datalen > 2 && !switch_channel_test_flag(channel, CF_VIDEO_DECODED_READ) && ++vloops > 20) {
+			} else if (read_frame->datalen > 2 && !switch_channel_test_flag(channel, CF_VIDEO_DECODED_READ) && vloops > 20) {
 				switch_channel_set_flag(channel, CF_VIDEO_READY);
 			}
 		}
+
+		if (vloops < 300 && (vloops % 100) == 0) {
+			switch_core_media_gen_key_frame(session);
+			switch_core_session_request_video_refresh(session);
+		}
+		
+		vloops++;
 
 		if (!buf) {
 			int buflen = SWITCH_RECOMMENDED_BUFFER_SIZE * 4;
