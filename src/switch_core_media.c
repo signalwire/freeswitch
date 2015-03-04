@@ -4638,18 +4638,19 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 	unsigned char *buf = NULL;
 	switch_image_t *blank_img = NULL;
 	switch_rgb_color_t bgcolor;
+	switch_rtp_engine_t *v_engine = NULL;
 
 	switch_color_set_rgb(&bgcolor, "#000000");
 	blank_img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, 320, 240, 1);
 	switch_img_fill(blank_img, 0, 0, blank_img->d_w, blank_img->d_h, &bgcolor);
 	
-	//switch_rtp_engine_t *v_engine = NULL;
+
 	
 	if (!(smh = session->media_handle)) {
 		return NULL;
 	}
 	
-	//v_engine = &smh->engines[SWITCH_MEDIA_TYPE_VIDEO];
+	v_engine = &smh->engines[SWITCH_MEDIA_TYPE_VIDEO];
 
 	switch_core_session_read_lock(session);
 
@@ -4711,6 +4712,10 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 				smh->video_function_running = 0;
 				switch_mutex_unlock(smh->control_mutex);
 			}
+		}
+
+		if (v_engine->smode == SWITCH_MEDIA_FLOW_SENDONLY) {
+			switch_channel_set_flag(channel, CF_VIDEO_READY);
 		}
 
 		if (!smh->video_write_fh || !switch_channel_test_flag(channel, CF_VIDEO_READY)) {
