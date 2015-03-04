@@ -126,10 +126,9 @@ Source7:	http://files.freeswitch.org/downloads/libs/soundtouch-1.7.1.tar.gz
 Source8:	http://files.freeswitch.org/downloads/libs/sphinxbase-0.8.tar.gz
 Source9:	http://files.freeswitch.org/downloads/libs/communicator_semi_6000_20080321.tar.gz
 Source10:	http://files.freeswitch.org/downloads/libs/libmemcached-0.32.tar.gz
-Source11:       http://files.freeswitch.org/downloads/libs/json-c-0.9.tar.gz
-Source12:       http://files.freeswitch.org/downloads/libs/opus-1.1-p2.tar.gz
-Source13:       http://files.freeswitch.org/downloads/libs/v8-3.24.14.tar.bz2
-Source14:       http://files.freeswitch.org/downloads/libs/mongo-c-driver-1.1.0.tar.gz
+Source11:       http://files.freeswitch.org/downloads/libs/opus-1.1-p2.tar.gz
+Source12:       http://files.freeswitch.org/downloads/libs/v8-3.24.14.tar.bz2
+Source13:       http://files.freeswitch.org/downloads/libs/mongo-c-driver-1.1.0.tar.gz
 Prefix:        	%{prefix}
 
 

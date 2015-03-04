@@ -42,7 +42,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\curl\include&quot;;&quot;$(InputDir)..\..\..\..\libs\json-c-0.9&quot;"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\curl\include&quot;"
 				PreprocessorDefinitions="CURL_STATICLIB"
 				UsePrecompiledHeader="0"
 			/>
@@ -106,7 +106,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\curl\include&quot;;&quot;$(InputDir)..\..\..\..\libs\json-c-0.9&quot;"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\curl\include&quot;"
 				PreprocessorDefinitions="CURL_STATICLIB"
 				UsePrecompiledHeader="0"
 			/>
@@ -171,7 +171,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\curl\include&quot;;&quot;$(InputDir)..\..\..\..\libs\json-c-0.9&quot;"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\curl\include&quot;"
 				PreprocessorDefinitions="CURL_STATICLIB"
 				UsePrecompiledHeader="0"
 			/>
@@ -235,7 +235,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\curl\include&quot;;&quot;$(InputDir)..\..\..\..\libs\json-c-0.9&quot;"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\curl\include&quot;"
 				PreprocessorDefinitions="CURL_STATICLIB"
 				UsePrecompiledHeader="0"
 			/>

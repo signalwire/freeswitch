@@ -42,7 +42,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\json-c-0.9&quot;"
+				AdditionalIncludeDirectories=""
 				UsePrecompiledHeader="0"
 			/>
 			<Tool
@@ -104,7 +104,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\json-c-0.9&quot;"
+				AdditionalIncludeDirectories=""
 				UsePrecompiledHeader="0"
 			/>
 			<Tool
