@@ -3204,7 +3204,7 @@ static switch_bool_t verto__info_func(const char *method, cJSON *params, jsock_t
 
 static switch_bool_t verto__invite_func(const char *method, cJSON *params, jsock_t *jsock, cJSON **response)
 {
-	cJSON *obj = cJSON_CreateObject(), *screenShare = NULL;
+	cJSON *obj = cJSON_CreateObject(), *screenShare = NULL, *dedEnc = NULL, *mirrorInput;
 	switch_core_session_t *session = NULL;
 	switch_channel_t *channel;
 	switch_event_t *var_event;
@@ -3272,6 +3272,15 @@ static switch_bool_t verto__invite_func(const char *method, cJSON *params, jsock
 
 	if ((screenShare = cJSON_GetObjectItem(dialog, "screenShare")) && screenShare->type == cJSON_True) {
 		switch_channel_set_flag(channel, CF_VIDEO_ONLY);
+	}
+
+	if ((dedEnc = cJSON_GetObjectItem(dialog, "dedEnc")) && dedEnc->type == cJSON_True) {
+		switch_channel_set_variable(channel, "video_use_dedicated_encoder", "true");
+	}
+
+	if ((mirrorInput = cJSON_GetObjectItem(dialog, "mirrorInput")) && mirrorInput->type == cJSON_True) {
+		switch_channel_set_variable(channel, "video_mirror_input", "true");
+		switch_channel_set_flag(channel, CF_VIDEO_MIRROR_INPUT);
 	}
 
 	if ((bandwidth = cJSON_GetObjectCstr(dialog, "outgoingBandwidth"))) {

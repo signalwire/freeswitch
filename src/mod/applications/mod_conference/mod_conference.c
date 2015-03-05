@@ -3771,6 +3771,10 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 			member->video_reservation_id = switch_core_strdup(member->pool, var);
 		}
 
+		if ((var = switch_channel_get_variable(channel, "video_use_dedicated_encoder")) && switch_true(var)) {
+			switch_set_flag_locked(member, MFLAG_NO_MINIMIZE_ENCODING);
+		}
+
 		switch_channel_set_variable_printf(channel, "conference_member_id", "%d", member->id);
 		switch_channel_set_variable_printf(channel, "conference_moderator", "%s", switch_test_flag(member, MFLAG_MOD) ? "true" : "false");
 		switch_channel_set_variable_printf(channel, "conference_ghost", "%s", switch_test_flag(member, MFLAG_GHOST) ? "true" : "false");

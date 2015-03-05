@@ -521,17 +521,6 @@ var is_full = false;
 var usrto;
 function noop() { return; }
 
-$("#nofullbtn").click(function() {
-
-   if (document.webkitFullscreenEnabled) {
-	document.webkitExitFullscreen();
-   } else if (document.mozFullScreenEnabled) {
-	document.mozExitFullScreen();
-   }
-
-
-});
-
 function on_full(which)
 {
     is_full = which;
@@ -558,7 +547,18 @@ $(document).on('webkitfullscreenchange mozfullscreenchange fullscreenchange MSFu
 
 $("#fullbtn").click(function() {
 
-    full_screen("fs");
+    if (!is_full) {
+	full_screen("fs");
+	$("#fullbtn").text("Exit Full Screen");
+    } else {
+	$("#fullbtn").text("Enter Full Screen");
+	if (document.webkitFullscreenEnabled) {
+	    document.webkitExitFullscreen();
+	} else if (document.mozFullScreenEnabled) {
+	    document.mozExitFullScreen();
+	}
+	
+    }
 
 
 //    $("#mod1").css("position", "absolute").css("z-index", "2");
@@ -597,7 +597,9 @@ function docall() {
         useVideo: check_vid(),
         useStereo: $("#use_stereo").is(':checked'),
 	useCamera: $("#usecamera").find(":selected").val(),
-	useMic: $("#usemic").find(":selected").val()
+	useMic: $("#usemic").find(":selected").val(),
+	dedEnc: $("#use_dedenc").is(':checked'),
+	mirrorInput: $("#mirror_input").is(':checked')
     });
 }
 
@@ -630,7 +632,9 @@ function doshare(on) {
 	    incomingBandwidth: incomingBandwidth,
 	    useCamera: sharedev,
             useVideo: true,
-	    screenShare: true
+	    screenShare: true,
+	    dedEnc: $("#use_dedenc").is(':checked'),
+	    mirrorInput: $("#mirror_input").is(':checked')
 	});
 
 	return;
@@ -650,7 +654,9 @@ function doshare(on) {
 	    incomingBandwidth: incomingBandwidth,
 	    videoParams: screen_constraints.video.mandatory,
             useVideo: true,
-	    screenShare: true
+	    screenShare: true,
+	    dedEnc: $("#use_dedenc").is(':checked'),
+	    mirrorInput: $("#mirror_input").is(':checked')
 	});
 
     });
@@ -801,6 +807,40 @@ function init() {
 	    $(".sharediv").show();
 	}
         $.cookie("verto_demo_vid_checked", tmp ? "true" : "false", {
+            expires: 365
+        });
+    });
+
+
+    tmp = $.cookie("verto_demo_dedenc_checked") || "false";
+    $.cookie("verto_demo_dedenc_checked", tmp, {
+        expires: 365
+    });
+
+    $("#use_dedenc").prop("checked", tmp === "true").change(function(e) {
+        tmp = $("#use_dedenc").is(':checked');
+
+	if (!tmp && $("#mirror_input").is(':checked')) {
+	    $("#mirror_input").click();
+	}
+	
+        $.cookie("verto_demo_dedenc_checked", tmp ? "true" : "false", {
+            expires: 365
+        });
+    });
+
+
+    tmp = $.cookie("verto_demo_mirror_input_checked") || "false";
+    $.cookie("verto_demo_mirror_input_checked", tmp, {
+        expires: 365
+    });
+
+    $("#mirror_input").prop("checked", tmp === "true").change(function(e) {
+        tmp = $("#mirror_input").is(':checked');
+	if (tmp && !$("#use_dedenc").is(':checked')) {
+	    $("#use_dedenc").click();
+	}
+        $.cookie("verto_demo_mirror_input_checked", tmp ? "true" : "false", {
             expires: 365
         });
     });
