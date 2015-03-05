@@ -12,7 +12,7 @@ var vid_height = 180;
 
 var local_vid_width = 320;
 var local_vid_height = 180;
-
+var is_full_screen = false;
 var outgoingBandwidth;
 var incomingBandwidth;
 var vqual;
@@ -517,8 +517,52 @@ $("#vmutebtn").click(function() {
     cur_call.dtmf("*0");
 });
 
+var is_full = false;
+var usrto;
+function noop() { return; }
+
+$("#nofullbtn").click(function() {
+
+   if (document.webkitFullscreenEnabled) {
+	document.webkitExitFullscreen();
+   } else if (document.mozFullScreenEnabled) {
+	document.mozExitFullScreen();
+   }
+
+
+});
+
+function on_full(which)
+{
+    is_full = which;
+    if (is_full) {
+	$("#rows").css("position", "absolute").css("z-index", "2");    
+    } else {
+	$("#rows").css("position", "static").css("z-index", "2");
+
+	clearTimeout(usrto);    
+    }
+
+}
+
+
+$(document).on('webkitfullscreenchange mozfullscreenchange fullscreenchange MSFullscreenChange', 
+	       function(e) {
+		   if (!is_full) {
+		       on_full(true);
+		   } else {
+		       on_full(false);
+		   }
+	       });
+
+
 $("#fullbtn").click(function() {
-    full_screen("webcam");
+
+    full_screen("fs");
+
+
+//    $("#mod1").css("position", "absolute").css("z-index", "2");
+
 });
 
 $("#biggerbtn").click(function() {
@@ -1136,6 +1180,26 @@ $(document).ready(function() {
     $('#demos').hide();
     $('#devices').hide();
     $('#showdemo').show();
+
+//    $("#rows").css("position", "absolute").css("z-index", "2");
+
+    $("#usrctl").show();
+    $("#usr2").hide();
+
+    $("#usrctl").mouseover(function() {
+	$("#mod2").hide();
+	$("#usr2").show();
+    });
+
+    $("#usr2").mouseover(function() {
+	$("#mod2").hide();
+	clearTimeout(usrto);
+    });
+
+    $("#usr2").mouseleave(function() {
+	usrto = setTimeout(function() { $("#usr2").hide(); }, 2000);
+    });
+
 
     init();
 
