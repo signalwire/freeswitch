@@ -405,6 +405,21 @@ elif test "x${ax_cv_c_compiler_vendor}" = "xgnu" ; then
     fi
 fi
 
+#  Enable clang address sanitizer bit build
+AC_ARG_ENABLE(address_sanitizer,
+  [AC_HELP_STRING([--enable-address-sanitizer],[build with address sanitizer])],
+  [enable_address_sanitizer="$enable_address_sanitizer"],
+  [enable_address_sanitizer="no"])
+
+if test "${enable_address_sanitizer}" = "yes"; then
+  if test "x${ax_cv_c_compiler_vendor}"  =  "xclang" ; then
+    APR_ADDTO(CFLAGS, -fsanitize=address -fno-omit-frame-pointer)
+    APR_ADDTO(CXXFLAGS, -fsanitize=address -fno-omit-frame-pointer)
+    APR_ADDTO(LDFLAGS, -fsanitize=address)
+  fi
+fi
+
+
 #
 # gcc visibility cflag checks
 #
