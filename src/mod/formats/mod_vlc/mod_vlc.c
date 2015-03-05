@@ -2345,15 +2345,25 @@ static switch_status_t vlc_read_video_frame(switch_core_session_t *session, swit
 	
 	switch_img_free(&tech_pvt->read_video_frame.img);
 
-	if (tech_pvt->context->video_queue && switch_queue_pop(tech_pvt->context->video_queue, &pop) == SWITCH_STATUS_SUCCESS) {
-		switch_image_t *img = (switch_image_t *) pop;			
-		if (!img) return SWITCH_STATUS_FALSE;
+	if (tech_pvt->context->video_queue) {
+		while(switch_queue_size(tech_pvt->context->video_queue) > 1) {
+			if (switch_queue_trypop(tech_pvt->context->video_queue, &pop) == SWITCH_STATUS_SUCCESS) { 
+				switch_image_t *img = (switch_image_t *) pop;
+				switch_img_free(&img);
+			} else {
+				break;
+			}
+		}
+		if (switch_queue_pop(tech_pvt->context->video_queue, &pop) == SWITCH_STATUS_SUCCESS) {
+			switch_image_t *img = (switch_image_t *) pop;			
+			if (!img) return SWITCH_STATUS_FALSE;
 		
-		tech_pvt->read_video_frame.img = img;
-		*frame = &tech_pvt->read_video_frame;
-		switch_set_flag(*frame, SFF_RAW_RTP);
-		switch_clear_flag(*frame, SFF_CNG);
-		(*frame)->codec = &tech_pvt->video_codec;
+			tech_pvt->read_video_frame.img = img;
+			*frame = &tech_pvt->read_video_frame;
+			switch_set_flag(*frame, SFF_RAW_RTP);
+			switch_clear_flag(*frame, SFF_CNG);
+			(*frame)->codec = &tech_pvt->video_codec;
+		}
 	} else {
 		*frame = &tech_pvt->read_frame;
 		tech_pvt->read_frame.codec = &tech_pvt->video_codec;
