@@ -519,18 +519,30 @@ $("#vmutebtn").click(function() {
 
 var is_full = false;
 var usrto;
+var rs;
 function noop() { return; }
 
 function on_full(which)
 {
     is_full = which;
     if (is_full) {
+	clearTimeout(rs);
+	$("#usr2").hide();
+	rs = setTimeout(function() {
+	    $("#webcam").width($(window).width());
+	    $("#webcam").height($(window).height());
+	}, 1500);
 	$("#rows").css("position", "absolute").css("z-index", "2");    
 	$("#fullbtn").text("Exit Full Screen");
     } else {
 	$("#rows").css("position", "static").css("z-index", "2");
 	$("#fullbtn").text("Enter Full Screen");
-	clearTimeout(usrto);    
+	clearTimeout(usrto);
+	clearTimeout(rs);
+	rs = setTimeout(function() { 
+	    $("#webcam").width("100%");
+	    $("#webcam").height("100%");
+	}, 1500);
     }
 
 }
@@ -1226,12 +1238,10 @@ $(document).ready(function() {
     $("#usr2").hide();
 
     $("#usrctl").mouseover(function() {
-	$("#mod2").hide();
 	$("#usr2").show();
     });
 
     $("#usr2").mouseover(function() {
-	$("#mod2").hide();
 	clearTimeout(usrto);
     });
 
