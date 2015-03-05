@@ -505,6 +505,7 @@ $(".dtmf").click(function(e) {
 });
 
 $("#hupbtn").click(function() {
+    exit_full_screen();
     verto.hangup();
     cur_call = null;
 });
@@ -558,17 +559,21 @@ $(document).on('webkitfullscreenchange mozfullscreenchange fullscreenchange MSFu
 	       });
 
 
+function exit_full_screen()
+{
+    if (document.webkitFullscreenEnabled) {
+	document.webkitExitFullscreen();
+    } else if (document.mozFullScreenEnabled) {
+	document.mozExitFullScreen();
+    }
+}
+
 $("#fullbtn").click(function() {
 
     if (!is_full) {
 	full_screen("fs");
     } else {
-	if (document.webkitFullscreenEnabled) {
-	    document.webkitExitFullscreen();
-	} else if (document.mozFullScreenEnabled) {
-	    document.mozExitFullScreen();
-	}
-	
+	exit_full_screen();
     }
 
 
