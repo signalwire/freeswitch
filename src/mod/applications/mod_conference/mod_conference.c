@@ -1019,6 +1019,7 @@ static void scale_and_patch(conference_obj_t *conference, mcu_layer_t *layer, sw
 		if (layer->img && (layer->img->d_w != img_w || layer->img->d_h != img_h)) {
 			switch_img_free(&layer->img);
 			layer->banner_patched = 0;
+			clear_layer(conference->canvas, layer);
 		}
 
 		if (!layer->img) {
