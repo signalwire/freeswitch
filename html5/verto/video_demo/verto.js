@@ -1242,7 +1242,7 @@ $(document).ready(function() {
     $("#usrctl").show();
     $("#usr2").hide();
 
-    $("#usrctl").mouseover(function() {
+    $("#rows").mouseover(function() {
 	$("#usr2").show();
     });
 
