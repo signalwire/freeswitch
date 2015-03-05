@@ -526,9 +526,10 @@ function on_full(which)
     is_full = which;
     if (is_full) {
 	$("#rows").css("position", "absolute").css("z-index", "2");    
+	$("#fullbtn").text("Exit Full Screen");
     } else {
 	$("#rows").css("position", "static").css("z-index", "2");
-
+	$("#fullbtn").text("Enter Full Screen");
 	clearTimeout(usrto);    
     }
 
@@ -549,9 +550,7 @@ $("#fullbtn").click(function() {
 
     if (!is_full) {
 	full_screen("fs");
-	$("#fullbtn").text("Exit Full Screen");
     } else {
-	$("#fullbtn").text("Enter Full Screen");
 	if (document.webkitFullscreenEnabled) {
 	    document.webkitExitFullscreen();
 	} else if (document.mozFullScreenEnabled) {
