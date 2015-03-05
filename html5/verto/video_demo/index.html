@@ -85,17 +85,21 @@
 
     </div>
 
+
     <div data-role="page" id="page-incall" align="center">
       <div data-role="header" id="calltitle" class="pageheader">
 	Verto&trade; IN CALL
       </div>
 
-      <div id="conf">
-	<div style="color:black;font-family: verdana" align="center" id="conf_count"></div>
-	<table width="1000" cellspacing="0" cellpadding="0" border="0" align="center" id="conf_list" class="jsDataTable">
-	</table>
-      </div>
-	<br clear=all>
+
+
+
+<div id="fs" style="width:100%;height:100%">
+<div id="rows" style="background-color:#f9f9f9">
+
+<span id=usrinner style="margin:25px">
+  <span id=usrctl>User Controls</span>
+      <div id=usr2>
 
       <button data-inline="true" id="hold">HOLD</button>
       <button data-inline="true" id="hupbtn">End Call</button>
@@ -106,19 +110,25 @@
 	  <button data-inline="true" id="nosharebtn">End Share</button>
       </span>
 
+
+
       	     <span class="sharediv">
 	     	  <button data-inline="true" id="smallerbtn">Smaller - </button>
 	     	  <button data-inline="true" id="biggerbtn">Bigger +</button>
   	     	  <button data-inline="true" id="fullbtn">Full Screen</button>
+  	     	  <button data-inline="true" id="nofullbtn">Exit Full Screen</button>
                   <button data-inline="true" id="vmutebtn">Toggle Video Mute</button>
-      </span>
-
-      	<div id="media">	
-	      <video id="webcam" autoplay="autoplay"></video>
-
-      	</div>
+             </span>
 
 <br><br>
+      <div id="conf" style="width:100%;height:100%">
+	<div style="color:black;font-family: verdana" align="center" id="conf_count"></div><br>
+	<table width="1000" cellspacing="0" cellpadding="0" border="0" align="center" id="conf_list" class="jsDataTable">
+	</table>
+
+	</div><!---conf-->
+
+
 
       <div id="message" hidden="true">
 	<hr class="l1" width="500"/>
@@ -135,8 +145,8 @@
       </div>
 
 
-      	<div id="conf_mod"></div>
-	<div style="color:blue" id="conf_display"></div>
+
+
 
 
 	<img src="img/verto_black_web.gif" width="300"><br><br>
@@ -160,6 +170,29 @@
 	<button class="dtmf" data-inline="true">#</button>
       </div>
 	<br><br>
+
+      	<div id="conf_mod" style="width:450px"></div>
+	<div style="color:blue" id="conf_display"></div>
+
+</span>
+</div>
+
+</div><!-- fs -->
+
+
+
+
+
+      <video id="webcam" autoplay="autoplay" style="width:100%;height:100%"></video>
+
+</div><!-- rows -->
+
+
+
+
+
+<br><br>
+
 	</div>
 
 
