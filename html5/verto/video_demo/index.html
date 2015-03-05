@@ -115,8 +115,7 @@
       	     <span class="sharediv">
 	     	  <button data-inline="true" id="smallerbtn">Smaller - </button>
 	     	  <button data-inline="true" id="biggerbtn">Bigger +</button>
-  	     	  <button data-inline="true" id="fullbtn">Full Screen</button>
-  	     	  <button data-inline="true" id="nofullbtn">Exit Full Screen</button>
+  	     	  <button data-inline="true" id="fullbtn">Enter Full Screen</button>
                   <button data-inline="true" id="vmutebtn">Toggle Video Mute</button>
              </span>
 
@@ -418,6 +417,8 @@ if ($('#devices').is(':visible')) {
  
   </fieldset>
 </div><br clear="all"><br>
+	<label><input id="use_dedenc" type="checkbox" value="foo" > Use Dedicated Remote Encoder</label>
+	<label><input id="mirror_input" type="checkbox" value="foo" >Scale Remote Video To Match Camera</label>
 <br><br>
 <center><button data-inline="true" id="refreshbtn">Refresh Device List</button>
 <button data-inline="true" id="hidedevices" onclick="$('#devices').hide();$('#showdevices').show()">Save Device Settings</button>

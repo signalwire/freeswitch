@@ -10029,7 +10029,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_video_frame(switch_cor
 	switch_codec_t *codec = switch_core_session_get_video_write_codec(session);
 	switch_timer_t *timer;
 	switch_media_handle_t *smh;
-	switch_image_t *img = frame->img;
+	switch_image_t *dup_img = NULL, *img = frame->img;
 	switch_status_t encode_status;
 	switch_frame_t write_frame = {0};
 	//switch_rtp_engine_t *v_engine;
@@ -10085,6 +10085,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_video_frame(switch_cor
 		switch_goto_status(vstatus, done);
 	}
 
+	/* When desired, scale video to match the input signal (if output is bigger) */
+	if (switch_channel_test_flag(session->channel, CF_VIDEO_READY) && smh->vid_params.width && 
+		switch_channel_test_flag(session->channel, CF_VIDEO_MIRROR_INPUT) && 
+		(smh->vid_params.width * smh->vid_params.height) < (img->d_w * img->d_h)) {
+		switch_img_scale(img, &dup_img, smh->vid_params.width, smh->vid_params.height);
+		img = dup_img;
+	}
+
 	write_frame = *frame;
 	frame = &write_frame;
 	frame->img = img;
@@ -10131,6 +10139,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_video_frame(switch_cor
 		switch_mutex_unlock(smh->write_mutex[SWITCH_MEDIA_TYPE_VIDEO]);
 	}
 
+	switch_img_free(&dup_img);
+	
 	return status;
 }
 
