@@ -1639,7 +1639,7 @@ SWITCH_STANDARD_APP(capture_video_function)
     unsigned char audio_data_buf[SWITCH_RECOMMENDED_BUFFER_SIZE] = { 0 };
 	void *audio_data;
 	switch_size_t audio_datalen;
-	uint32_t offset = 500;
+	uint32_t offset = 250;
 	uint32_t bytes;
 	const char *tmp;
 	const char * opts[25] = {
