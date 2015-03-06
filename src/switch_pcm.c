@@ -292,6 +292,44 @@ static void mod_g711_load(switch_loadable_module_interface_t ** module_interface
 											 switch_g711u_encode,	/* function to encode raw data into encoded data */
 											 switch_g711u_decode,	/* function to decode encoded data into raw data */
 											 switch_g711u_destroy);	/* deinitalize a codec handle using this implementation */
+
+		if (count > 4) continue;
+
+		switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
+											 0,	/* the IANA code number */
+											 "PCMU",	/* the IANA code name */
+											 NULL,	/* default fmtp to send (can be overridden by the init function) */
+											 48000,	/* samples transferred per second */
+											 48000,	/* actual samples transferred per second */
+											 64000 * 6,	/* bits transferred per second */
+											 mpf * count,	/* number of microseconds per frame */
+											 spf * count * 6,	/* number of samples per frame */
+											 bpf * count * 6,	/* number of bytes per frame decompressed */
+											 ebpf * count * 6,	/* number of bytes per frame compressed */
+											 1,	/* number of channels represented */
+											 spf * count * 6,	/* number of frames per network packet */
+											 switch_g711u_init,	/* function to initialize a codec handle using this implementation */
+											 switch_g711u_encode,	/* function to encode raw data into encoded data */
+											 switch_g711u_decode,	/* function to decode encoded data into raw data */
+											 switch_g711u_destroy);	/* deinitalize a codec handle using this implementation */
+
+		switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
+											 0,	/* the IANA code number */
+											 "PCMU",	/* the IANA code name */
+											 NULL,	/* default fmtp to send (can be overridden by the init function) */
+											 48000,	/* samples transferred per second */
+											 48000,	/* actual samples transferred per second */
+											 64000 * 6 * 2,	/* bits transferred per second */
+											 mpf * count,	/* number of microseconds per frame */
+											 spf * count * 6 * 2,	/* number of samples per frame */
+											 bpf * count * 6 * 2,	/* number of bytes per frame decompressed */
+											 ebpf * count * 6 * 2,	/* number of bytes per frame compressed */
+											 2,	/* number of channels represented */
+											 spf * count * 6 * 2,	/* number of frames per network packet */
+											 switch_g711u_init,	/* function to initialize a codec handle using this implementation */
+											 switch_g711u_encode,	/* function to encode raw data into encoded data */
+											 switch_g711u_decode,	/* function to decode encoded data into raw data */
+											 switch_g711u_destroy);	/* deinitalize a codec handle using this implementation */
 	}
 
 	SWITCH_ADD_CODEC(codec_interface, "G.711 alaw");
