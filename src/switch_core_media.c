@@ -10089,7 +10089,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_video_frame(switch_cor
 	if (switch_channel_test_flag(session->channel, CF_VIDEO_READY) && smh->vid_params.width && 
 		switch_channel_test_flag(session->channel, CF_VIDEO_MIRROR_INPUT) && 
 		(smh->vid_params.width * smh->vid_params.height) < (img->d_w * img->d_h)) {
-		switch_img_scale(img, &dup_img, smh->vid_params.width, smh->vid_params.height);
+		
+		switch_img_copy(img, &dup_img);
+		switch_img_fit(&dup_img, smh->vid_params.width, smh->vid_params.height);
 		img = dup_img;
 	}
 

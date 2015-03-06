@@ -1232,7 +1232,6 @@ SWITCH_DECLARE(switch_status_t) switch_img_fit(switch_image_t **srcP, int width,
 {
 	switch_image_t *src, *tmp = NULL;
 	int new_w = 0, new_h = 0;
-	double img_aspect;
 
 	switch_assert(srcP);
 	switch_assert(width && height);
@@ -1243,19 +1242,18 @@ SWITCH_DECLARE(switch_status_t) switch_img_fit(switch_image_t **srcP, int width,
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	img_aspect = (double) src->d_w / src->d_h;
 	new_w = src->d_w;
 	new_h = src->d_h;
 	
 	while(new_w > width || new_h > height) { 
-		if (new_w >= new_h) {
+		if (new_w > width) {
 			double m = (double) width / new_w;
 			new_w = width;
-			new_h = (int) (new_h * m * img_aspect);
+			new_h = (int) (new_h * m);
 		} else {
 			double m = (double) height / new_h;
 			new_h = height;
-			new_w = (int) (new_w * m * img_aspect);
+			new_w = (int) (new_w * m);
 		}
 	}
 
