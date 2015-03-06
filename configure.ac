@@ -1537,6 +1537,7 @@ AC_CONFIG_FILES([Makefile
 		src/mod/applications/mod_memcache/Makefile
 		src/mod/applications/mod_mongo/Makefile
 		src/mod/applications/mod_mp4/Makefile
+		src/mod/applications/mod_mp4v2/Makefile
 		src/mod/applications/mod_nibblebill/Makefile
 		src/mod/applications/mod_oreka/Makefile
 		src/mod/applications/mod_osp/Makefile
