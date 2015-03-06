@@ -28,6 +28,7 @@ applications/mod_httapi
 #applications/mod_memcache
 #applications/mod_mongo
 #applications/mod_mp4
+#applications/mod_mp4v2
 #applications/mod_nibblebill
 #applications/mod_oreka
 #applications/mod_osp
