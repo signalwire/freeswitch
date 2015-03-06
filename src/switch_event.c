@@ -529,6 +529,10 @@ SWITCH_DECLARE(switch_status_t) switch_event_shutdown(void)
 	const void *var;
 	void *val;
 
+	if (switch_core_test_flag(SCF_MINIMAL)) {
+		return SWITCH_STATUS_SUCCESS;
+	}
+
 	switch_mutex_lock(EVENT_QUEUE_MUTEX);
 	SYSTEM_RUNNING = 0;
 	switch_mutex_unlock(EVENT_QUEUE_MUTEX);
@@ -659,6 +663,7 @@ SWITCH_DECLARE(void) switch_event_launch_dispatch_threads(uint32_t max)
 
 SWITCH_DECLARE(switch_status_t) switch_event_init(switch_memory_pool_t *pool)
 {
+
 	/* don't need any more dispatch threads than we have CPU's*/
 	MAX_DISPATCH = (switch_core_cpu_count() / 2) + 1;
 	if (MAX_DISPATCH < 2) {
@@ -667,12 +672,17 @@ SWITCH_DECLARE(switch_status_t) switch_event_init(switch_memory_pool_t *pool)
 
 	switch_assert(pool != NULL);
 	THRUNTIME_POOL = RUNTIME_POOL = pool;
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Activate Eventing Engine.\n");
 	switch_thread_rwlock_create(&RWLOCK, RUNTIME_POOL);
 	switch_mutex_init(&BLOCK, SWITCH_MUTEX_NESTED, RUNTIME_POOL);
 	switch_mutex_init(&POOL_LOCK, SWITCH_MUTEX_NESTED, RUNTIME_POOL);
 	switch_mutex_init(&EVENT_QUEUE_MUTEX, SWITCH_MUTEX_NESTED, RUNTIME_POOL);
 	switch_core_hash_init(&CUSTOM_HASH);
+
+	if (switch_core_test_flag(SCF_MINIMAL)) {
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Activate Eventing Engine.\n");
 
 	switch_core_hash_init(&event_channel_manager.lahash);
 	switch_mutex_init(&event_channel_manager.lamutex, SWITCH_MUTEX_NESTED, RUNTIME_POOL);
