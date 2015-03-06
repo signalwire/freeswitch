@@ -513,7 +513,7 @@ SWITCH_STANDARD_APP(db_function)
 static int group_callback(void *pArg, int argc, char **argv, char **columnNames)
 {
 	callback_t *cbt = (callback_t *) pArg;
-	switch_snprintf(cbt->buf + strlen(cbt->buf), cbt->len - strlen(cbt->buf), "%s%c", argv[0], *argv[1]);
+	switch_snprintf(cbt->buf + strlen(cbt->buf), cbt->len - strlen(cbt->buf), "%s%s", argv[0], argv[1]);
 	cbt->matches++;
 	return 0;
 }
@@ -574,6 +574,9 @@ SWITCH_STANDARD_API(group_api_function)
 			if (!strcasecmp(argv[2], "order")) {
 				how = "|";
 			}
+			if (!strcasecmp(argv[2], "multi")) {
+				how = ":_:";
+			}
 		}
 
 		sql = switch_mprintf("select url,'%q' from group_data where groupname='%q'", how, argv[1]);
@@ -583,8 +586,8 @@ SWITCH_STANDARD_API(group_api_function)
 		switch_safe_free(sql);
 
 		if (!zstr(buf)) {
-			*(buf + (strlen(buf) - 1)) = '\0';
-    }
+			*(buf + (strlen(buf) - strlen(how))) = '\0';
+		}
 
 		stream->write_function(stream, "%s", buf);
 
