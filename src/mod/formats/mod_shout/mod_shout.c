@@ -1549,10 +1549,137 @@ static switch_status_t load_config(void)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+/* codec interface */
+
+struct mp3_context {
+	lame_global_flags *gfp;
+};
+
+static switch_status_t switch_mp3_init(switch_codec_t *codec, switch_codec_flag_t flags, const switch_codec_settings_t *codec_settings)
+{
+	struct mp3_context *context = NULL;
+	int encoding, decoding;
+
+	encoding = (flags & SWITCH_CODEC_FLAG_ENCODE);
+	decoding = (flags & SWITCH_CODEC_FLAG_DECODE);
+
+	if (!(encoding || decoding) || (!(context = switch_core_alloc(codec->memory_pool, sizeof(struct mp3_context))))) {
+		return SWITCH_STATUS_FALSE;
+	} else {
+		const switch_codec_implementation_t *impl = codec->implementation;
+
+		if (codec->fmtp_in) {
+			codec->fmtp_out = switch_core_strdup(codec->memory_pool, codec->fmtp_in);
+		}
+
+		memset(context, 0, sizeof(struct mp3_context));
+
+		context->gfp = lame_init();
+
+		id3tag_init(context->gfp);
+		id3tag_v2_only(context->gfp);
+		id3tag_pad_v2(context->gfp);
+
+		lame_set_num_channels(context->gfp, 1);
+		lame_set_in_samplerate(context->gfp, impl->actual_samples_per_second);
+		lame_set_out_samplerate(context->gfp, impl->actual_samples_per_second);
+
+		if (impl->number_of_channels == 2) {
+			lame_set_mode(context->gfp, STEREO);
+		} else if (impl->number_of_channels == 1) {
+			lame_set_mode(context->gfp, MONO);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "%d channels not supported\n", impl->number_of_channels);
+		}
+
+		lame_set_brate(context->gfp, 16 * (impl->actual_samples_per_second / 8000) * impl->number_of_channels);
+		lame_set_quality(context->gfp, 2);
+		lame_set_errorf(context->gfp, log_error);
+		lame_set_debugf(context->gfp, log_debug);
+		lame_set_msgf(context->gfp, log_msg);
+
+		lame_init_params(context->gfp);
+		lame_print_config(context->gfp);
+
+		if (encoding) {
+			lame_set_bWriteVbrTag(context->gfp, 0);
+			lame_mp3_tags_fid(context->gfp, NULL);
+			lame_set_disable_reservoir(context->gfp, 1);
+		}
+
+		if (decoding) {
+		}
+
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "MP3 framesize: %d\n", lame_get_framesize(context->gfp));
+
+		codec->private_info = context;
+
+		return SWITCH_STATUS_SUCCESS;
+	}
+}
+
+static switch_status_t switch_mp3_destroy(switch_codec_t *codec)
+{
+	struct mp3_context *context = codec->private_info;
+
+	if (context && context->gfp) lame_close(context->gfp);
+
+	codec->private_info = NULL;
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t switch_mp3_encode(switch_codec_t *codec,
+										switch_codec_t *other_codec,
+										void *decoded_data,
+										uint32_t decoded_data_len,
+										uint32_t decoded_rate,
+										void *encoded_data, uint32_t *encoded_data_len,
+										uint32_t *encoded_rate,
+										unsigned int *flag)
+{
+	struct mp3_context *context = codec->private_info;
+	int len;
+
+	if (!context) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (codec->implementation->number_of_channels == 2) {
+		len = lame_encode_buffer_interleaved(context->gfp, decoded_data, decoded_data_len / 4, encoded_data, *encoded_data_len);
+	} else {
+		len = lame_encode_buffer(context->gfp, decoded_data, NULL, decoded_data_len / 2, encoded_data, *encoded_data_len);
+	}
+
+	if (len < 0) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "encode error %d\n", len);
+		return SWITCH_STATUS_FALSE;
+	}
+
+	*encoded_data_len = len;
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t switch_mp3_decode(switch_codec_t *codec,
+										  switch_codec_t *other_codec,
+										  void *encoded_data,
+										  uint32_t encoded_data_len,
+										  uint32_t encoded_rate, void *decoded_data, uint32_t *decoded_data_len, uint32_t *decoded_rate,
+										  unsigned int *flag)
+{
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "decode not implemented!\n");
+	return SWITCH_STATUS_FALSE;
+}
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_shout_load)
 {
 	switch_api_interface_t *shout_api_interface;
 	switch_file_interface_t *file_interface;
+	switch_codec_interface_t *codec_interface;
+	int mpf = 10000, spf = 80, bpf = 160, count = 1;
+	int RATES[] = {8000, 11025, 16000, 22050, 32000, 44100, 48000};
+	int i;
 
 	supported_formats[0] = "shout";
 	supported_formats[1] = "mp3";
@@ -1575,6 +1702,42 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_shout_load)
 	load_config();
 
 	SWITCH_ADD_API(shout_api_interface, "telecast", "telecast", telecast_api_function, TELECAST_SYNTAX);
+
+	SWITCH_ADD_CODEC(codec_interface, "MP3");
+
+	for (count = 1; count <=4; count++) {
+		for (i = 0; i < sizeof(RATES) / sizeof(RATES[0]); i++) {
+			switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,
+												 98, 	 /* the IANA code number */
+												 "MP3",  /* the IANA code name */
+												 NULL,   /* default fmtp to send (can be overridden by the init function) */
+												 RATES[i], /* samples transferred per second */
+												 RATES[i], /* actual samples transferred per second */
+												 16 * RATES[i] / 8000, /* bits transferred per second */
+												 mpf * count,  /* number of microseconds per frame */
+												 spf * count * RATES[i] / 8000, /* number of samples per frame */
+												 bpf * count * RATES[i] / 8000, /* number of bytes per frame decompressed */
+												 0,	/* number of bytes per frame compressed */
+												 1, /* number of channels represented */
+												 1,	/* number of frames per network packet */
+												switch_mp3_init, switch_mp3_encode, switch_mp3_decode, switch_mp3_destroy);
+
+			switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,
+												 98, 	 /* the IANA code number */
+												 "MP3",  /* the IANA code name */
+												 NULL,   /* default fmtp to send (can be overridden by the init function) */
+												 RATES[i], /* samples transferred per second */
+												 RATES[i], /* actual samples transferred per second */
+												 16 * RATES[i] / 8000 * 2, /* bits transferred per second */
+												 mpf * count,  /* number of microseconds per frame */
+												 spf * count * RATES[i] / 8000, /* number of samples per frame */
+												 bpf * count * RATES[i] / 8000 * 2, /* number of bytes per frame decompressed */
+												 0,	/* number of bytes per frame compressed */
+												 2, /* number of channels represented */
+												 1,	/* number of frames per network packet */
+												switch_mp3_init, switch_mp3_encode, switch_mp3_decode, switch_mp3_destroy);
+		}
+	}
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
