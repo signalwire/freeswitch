@@ -142,6 +142,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session,
 
 	arg_recursion_check_start(args);
 
+	switch_channel_set_flag(channel, CF_VIDEO_BLANK);
+
 	switch_core_session_get_read_impl(session, &imp);
 
 	/*
@@ -309,6 +311,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session,
 
 
  end:
+
+	switch_channel_clear_flag(channel, CF_VIDEO_BLANK);
 
 	arg_recursion_check_stop(args);
 

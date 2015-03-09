@@ -4617,6 +4617,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_set_video_file(switch_core_ses
 			switch_core_session_video_reset(session);
 		}
 	} else {
+		switch_core_media_gen_key_frame(session);
 		smh->video_write_fh = fh;
 	}
 
@@ -4663,6 +4664,7 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 
 	while (switch_channel_up_nosig(channel)) {
 		int do_sleep = 0;
+		int send_blank = 0;
 
 		if (!switch_channel_test_flag(channel, CF_VIDEO)) {
 			if ((++loops % 100) == 0) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Waiting for video......\n");
@@ -4731,7 +4733,7 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 			}
 		
 			if (read_frame->img) {
-				if (vloops > 5) {
+				if (vloops > 10) {
 					switch_channel_set_flag(channel, CF_VIDEO_READY);
 					smh->vid_params.width = read_frame->img->d_w;
 					smh->vid_params.height = read_frame->img->d_h;
@@ -4760,26 +4762,23 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 
 		if (switch_channel_test_flag(channel, CF_VIDEO_READY)) {
 			switch_mutex_lock(mh->file_mutex);
-			if (smh->video_write_fh) {
-				switch_core_media_gen_key_frame(session);
-				while (smh->video_write_fh && 
-					   switch_channel_ready(session->channel) && switch_core_file_read_video(smh->video_write_fh, &fr) == SWITCH_STATUS_SUCCESS) {
-					switch_core_session_write_video_frame(session, &fr, SWITCH_IO_FLAG_NONE, 0);
-					switch_img_free(&fr.img);
-					switch_mutex_unlock(mh->file_mutex);
-					switch_mutex_lock(mh->file_mutex);
-				}
-				
-			} else if (smh->video_read_fh && read_frame->img) {
+			if (smh->video_write_fh && 
+				switch_channel_ready(session->channel) && switch_test_flag(smh->video_write_fh, SWITCH_FILE_OPEN) && 
+				switch_core_file_read_video(smh->video_write_fh, &fr, SVR_BLOCK) == SWITCH_STATUS_SUCCESS) {
+				switch_core_session_write_video_frame(session, &fr, SWITCH_IO_FLAG_NONE, 0);
+				switch_img_free(&fr.img);
+			} else if (smh->video_read_fh && switch_test_flag(smh->video_read_fh, SWITCH_FILE_OPEN) && read_frame->img) {
 				switch_core_file_write_video(smh->video_read_fh, read_frame);
 			} 
 			switch_mutex_unlock(mh->file_mutex);
 		} else if (switch_channel_test_flag(channel, CF_VIDEO_DECODED_READ)) {
-			fr.img = blank_img;
-			switch_core_session_write_video_frame(session, &fr, SWITCH_IO_FLAG_NONE, SWITCH_IO_FLAG_FORCE);
+			send_blank = 1;
 		}
 
-		if (read_frame && (switch_channel_test_flag(channel, CF_VIDEO_ECHO))) {
+		if (send_blank || switch_channel_test_flag(channel, CF_VIDEO_BLANK)) {
+			fr.img = blank_img;
+			switch_core_session_write_video_frame(session, &fr, SWITCH_IO_FLAG_NONE, SWITCH_IO_FLAG_FORCE);
+		} else if (read_frame && (switch_channel_test_flag(channel, CF_VIDEO_ECHO))) {
 			switch_core_session_write_video_frame(session, read_frame, SWITCH_IO_FLAG_NONE, 0);
 		}
 	}

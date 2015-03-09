@@ -1852,7 +1852,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_write(_In_ switch_file_handle_t
   \return SWITCH_STATUS_SUCCESS with len adjusted to the bytes written if successful
 */
 SWITCH_DECLARE(switch_status_t) switch_core_file_write_video(_In_ switch_file_handle_t *fh, switch_frame_t *frame);
-SWITCH_DECLARE(switch_status_t) switch_core_file_read_video(switch_file_handle_t *fh, switch_frame_t *frame);
+SWITCH_DECLARE(switch_status_t) switch_core_file_read_video(switch_file_handle_t *fh, switch_frame_t *frame, switch_video_read_flag_t flags);
 
 /*!
   \brief Seek a position in a file
