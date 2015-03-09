@@ -492,8 +492,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_write_video(switch_file_handle_
 
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_file_read_video(switch_file_handle_t *fh, switch_frame_t *frame)
+SWITCH_DECLARE(switch_status_t) switch_core_file_read_video(switch_file_handle_t *fh, switch_frame_t *frame, switch_video_read_flag_t flags)
 {
+	switch_status_t status;
+
 	switch_assert(fh != NULL);
 	switch_assert(fh->file_interface != NULL);
 
@@ -505,7 +507,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_read_video(switch_file_handle_t
 		return SWITCH_STATUS_FALSE;
 	}
 
-	return fh->file_interface->file_read_video(fh, frame);
+	status = fh->file_interface->file_read_video(fh, frame, flags);
+
+	if (status == SWITCH_STATUS_FALSE) {
+		switch_cond_next();
+	}
+
+	return status;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_file_seek(switch_file_handle_t *fh, unsigned int *cur_pos, int64_t samples, int whence)

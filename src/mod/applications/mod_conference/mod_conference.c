@@ -1922,7 +1922,7 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 		timestamp = conference->canvas->timer.samplecount;
 
 		if (conference->playing_video_file) {
-			if (switch_core_file_read_video(&conference->fnode->fh, &write_frame) == SWITCH_STATUS_SUCCESS) {
+			if (switch_core_file_read_video(&conference->fnode->fh, &write_frame, SVR_BLOCK | SVR_FLUSH) == SWITCH_STATUS_SUCCESS) {
 				switch_img_free(&file_img);
 
 				if (conference->canvas->play_file) {

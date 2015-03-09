@@ -1459,6 +1459,7 @@ typedef enum {
 	CF_VIDEO_PASSIVE,
 	CF_NOVIDEO,
 	CF_VIDEO_ECHO,
+	CF_VIDEO_BLANK,
 	CF_SLA_INTERCEPT,
 	CF_VIDEO_BREAK,
 	CF_AUDIO_PAUSE,
@@ -2529,6 +2530,12 @@ typedef struct switch_img_txt_handle_s switch_img_txt_handle_t;
 
 struct switch_frame_buffer_s;
 typedef struct switch_frame_buffer_s switch_frame_buffer_t;
+
+typedef enum {
+	SVR_BLOCK = (1 << 0),
+	SVR_FLUSH = (1 << 1)
+} switch_video_read_flag_t;
+
 
 SWITCH_END_EXTERN_C
 #endif
