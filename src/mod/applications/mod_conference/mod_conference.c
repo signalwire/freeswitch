@@ -398,6 +398,22 @@ typedef struct mcu_layer_s {
 	switch_img_txt_handle_t *txthandle;
 } mcu_layer_t;
 
+typedef struct video_layout_s {
+	char *name;
+	char *audio_position;
+	mcu_layer_geometry_t images[MCU_MAX_LAYERS];
+	int layers;
+} video_layout_t;
+
+typedef struct video_layout_node_s {
+	video_layout_t *vlayout;
+	struct video_layout_node_s *next;
+} video_layout_node_t;
+
+typedef struct layout_group_s {
+	video_layout_node_t *layouts;
+} layout_group_t;
+
 typedef struct mcu_canvas_s {
 	int width;
 	int height;
@@ -413,6 +429,8 @@ typedef struct mcu_canvas_s {
 	switch_mutex_t *mutex;
 	switch_timer_t timer;
 	switch_memory_pool_t *pool;
+	video_layout_t *vlayout;
+	video_layout_t *new_vlayout;
 } mcu_canvas_t;
 
 struct conference_obj;
@@ -754,23 +772,6 @@ static switch_status_t conf_api_sub_position(conference_member_t *member, switch
 
 //#define lock_member(_member) switch_mutex_lock(_member->write_mutex)
 //#define unlock_member(_member) switch_mutex_unlock(_member->write_mutex)
-
-typedef struct video_layout_s {
-	char *name;
-	char *audio_position;
-	mcu_layer_geometry_t images[MCU_MAX_LAYERS];
-	int layers;
-} video_layout_t;
-
-typedef struct video_layout_node_s {
-	video_layout_t *vlayout;
-	struct video_layout_node_s *next;
-} video_layout_node_t;
-
-typedef struct layout_group_s {
-	video_layout_node_t *layouts;
-} layout_group_t;
-
 
 static void conference_parse_layouts(conference_obj_t *conference)
 {
@@ -1384,6 +1385,17 @@ static void init_canvas_layers(conference_obj_t *conference, video_layout_t *vla
 	switch_mutex_lock(conference->canvas->mutex);	
 	conference->canvas->layout_floor_id = -1;
 
+	if (!vlayout) {
+		vlayout = conference->canvas->new_vlayout;
+		conference->canvas->new_vlayout = NULL;
+	}
+
+	if (!vlayout) {
+		return;
+	}
+
+	conference->canvas->vlayout = vlayout;
+	
 	for (i = 0; i < vlayout->layers; i++) {
 		mcu_layer_t *layer = &conference->canvas->layers[i];
 
@@ -1428,6 +1440,7 @@ static void init_canvas_layers(conference_obj_t *conference, video_layout_t *vla
 	conference->canvas->layers_used = 0;
 	conference->canvas->total_layers = vlayout->layers;
 	conference->canvas->send_keyframe = 1;
+	reset_image(conference->canvas->img, &conference->canvas->bgcolor);
 	switch_mutex_unlock(conference->canvas->mutex);	
 
 }
@@ -1676,6 +1689,13 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 		switch_bool_t need_refresh = SWITCH_FALSE, need_keyframe = SWITCH_FALSE, need_reset = SWITCH_FALSE;
 		switch_time_t now;
 		int min_members = 0;
+
+
+		switch_mutex_lock(conference->canvas->mutex);
+		if (conference->canvas->new_vlayout) {
+			init_canvas_layers(conference, NULL);
+		}
+		switch_mutex_unlock(conference->canvas->mutex);
 
 		if (conference->video_timer_reset) {
 			conference->video_timer_reset = 0;
@@ -3691,8 +3711,7 @@ static void find_video_floor(conference_member_t *member, switch_bool_t entering
 	if (conference->canvas && conference->video_layout_group && (lg = switch_core_hash_find(conference->layout_group_hash, conference->video_layout_group))) {
 		if ((vlayout = find_best_layout(conference, lg))) {
 			switch_mutex_lock(conference->member_mutex);
-			init_canvas_layers(conference, vlayout);
-			reset_image(conference->canvas->img, &conference->canvas->bgcolor);
+			conference->canvas->new_vlayout = vlayout;
 			switch_mutex_unlock(conference->member_mutex);
 		}
 	}
@@ -8429,8 +8448,7 @@ static switch_status_t conf_api_sub_vid_layout(conference_obj_t *conference, swi
 	stream->write_function(stream, "Change to layout [%s]\n", vlayout->name);
 
 	switch_mutex_lock(conference->member_mutex);
-	init_canvas_layers(conference, vlayout);
-	reset_image(conference->canvas->img, &conference->canvas->bgcolor);
+	conference->canvas->new_vlayout = vlayout;
 	switch_mutex_unlock(conference->member_mutex);
 
 	return SWITCH_STATUS_SUCCESS;
