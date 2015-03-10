@@ -718,6 +718,7 @@ static switch_status_t vlc_file_open(switch_file_handle_t *handle, const char *p
 	char *ext = NULL;
 	switch_file_t *fd = NULL;
 	const char *realpath = NULL;
+	int is_stream = 0;
 
 	context = switch_core_alloc(handle->memory_pool, sizeof(*context));
 	context->pool = handle->memory_pool;
@@ -725,10 +726,22 @@ static switch_status_t vlc_file_open(switch_file_handle_t *handle, const char *p
 
 	realpath = path;
 
-	if (switch_test_flag(handle, SWITCH_FILE_FLAG_VIDEO) && switch_test_flag(handle, SWITCH_FILE_FLAG_WRITE) && 
-		(ext = strrchr(path, '.')) && !strcasecmp(ext, ".mp4")) {
-		realpath = path;
-		path = switch_core_sprintf(context->pool, "#transcode{vcodec=h264,acodec=mp3}:std{access=file,mux=mp4,dst=%s}", path);
+	if (switch_test_flag(handle, SWITCH_FILE_FLAG_VIDEO) && switch_test_flag(handle, SWITCH_FILE_FLAG_WRITE)) {
+		if ((ext = strrchr(path, '.')) && !strcasecmp(ext, ".mp4")) {
+			realpath = path;
+			path = switch_core_sprintf(context->pool, "#transcode{vcodec=h264,acodec=mp3}:std{access=file,mux=mp4,dst=%s}", path);
+		} else if (handle->stream_name && !strcasecmp(handle->stream_name, "rtmp")) {
+			path = switch_core_sprintf(context->pool, 
+									   "#transcode{venc=x264{keyint=25},"
+									   "vcodec=h264,"
+									   "scale=1,"
+									   "acodec=mp3,"
+									   "ab=16,"
+									   "channels=2,"
+									   "samplerate=44100}:standard{access=avio,"
+									   "mux=flv,"
+									   "dst=rtmp://%s}", path);
+		}
 	}
 
 	context->path = switch_core_strdup(context->pool, path);
@@ -739,6 +752,10 @@ static switch_status_t vlc_file_open(switch_file_handle_t *handle, const char *p
 					  switch_test_flag(handle, SWITCH_FILE_FLAG_VIDEO) ? "video" : ""
 					  );
 
+
+	if (switch_stristr("://", context->path)) {
+		is_stream = 1;
+	}
 
 	if (!switch_test_flag(handle, SWITCH_FILE_FLAG_VIDEO)) {
 		switch_buffer_create_dynamic(&(context->audio_buffer), VLC_BUFFER_SIZE, VLC_BUFFER_SIZE * 8, 0);
@@ -842,7 +859,7 @@ static switch_status_t vlc_file_open(switch_file_handle_t *handle, const char *p
 		context->pts = 0;
 	}
 
-	if (switch_test_flag(handle, SWITCH_FILE_FLAG_VIDEO)) {
+	if (!is_stream && switch_test_flag(handle, SWITCH_FILE_FLAG_VIDEO)) {
 		if (switch_file_open(&fd, realpath, SWITCH_FOPEN_WRITE | SWITCH_FOPEN_CREATE | SWITCH_FOPEN_TRUNCATE, 
 							 SWITCH_FPROT_UREAD | SWITCH_FPROT_UWRITE, handle->memory_pool) == SWITCH_STATUS_SUCCESS) {
 			switch_file_close(fd);
@@ -1645,11 +1662,14 @@ SWITCH_STANDARD_APP(capture_video_function)
 	uint32_t offset = 250;
 	uint32_t bytes;
 	const char *tmp;
-	const char * opts[25] = {
-		*vlc_args,
-		switch_core_session_sprintf(session, "--sout=%s", path + 6)
-	};
+	const char * opts[25] = { *vlc_args };
 	int argc = 2;
+
+	if (!strncasecmp(path, "vlc://", 6)) {
+		opts[1] = switch_core_session_sprintf(session, "--sout=%s", path + 6);
+	} else {
+		opts[1] = switch_core_session_sprintf(session, "--sout=%s", path);
+	}
 
 	context = switch_core_session_alloc(session, sizeof(vlc_video_context_t));
 	switch_assert(context);
@@ -2446,6 +2466,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_vlc_load)
 	vlc_file_supported_formats[argc++] = "mp4"; /* maybe add config for this mod to enable or disable these */
 	vlc_file_supported_formats[argc++] = "mov";
 	vlc_file_supported_formats[argc++] = "m4v";
+	vlc_file_supported_formats[argc++] = "rtmp";
 
 	file_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_FILE_INTERFACE);
 	file_interface->interface_name = modname;
