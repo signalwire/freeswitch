@@ -62,9 +62,9 @@ typedef int  (*imem_get_t)(void *data, const char *cookie,
 typedef void (*imem_release_t)(void *data, const char *cookie, size_t, void *);
 
 /* Change value to -vvv for vlc related debug. Be careful since vlc is at least as verbose as FS about logging */
-const char *vlc_args[] = {""};
-// const char *vlc_args[] = {"--network-caching", "500"};
-
+//const char *vlc_args[] = {""};
+const char *vlc_args[] = {"--network-caching=0"};
+//--sout-mux-caching
 
 switch_endpoint_interface_t *vlc_endpoint_interface = NULL;
 
@@ -541,7 +541,7 @@ static switch_status_t av_init_handle(switch_file_handle_t *handle, switch_image
 {
 	switch_memory_pool_t *pool;
 	char *imem_main, *imem_slave;
-	int32_t offset = 500;
+	int32_t offset = 250;
 	const char *tmp;
     vlc_file_context_t *acontext = handle->private_info;
 	const char * opts[25] = {
@@ -584,6 +584,8 @@ static switch_status_t av_init_handle(switch_file_handle_t *handle, switch_image
 	switch_thread_cond_create(&acontext->cond, acontext->pool);
 	
 	switch_core_timer_init(&vcontext->timer, "soft", 1, 1000, vcontext->pool);
+	vcontext->timer.start -= 60000000;
+	switch_core_timer_sync(&vcontext->timer);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "VLC open %s for writing\n", acontext->path);
 
@@ -718,7 +720,17 @@ static switch_status_t vlc_file_open(switch_file_handle_t *handle, const char *p
 	char *ext = NULL;
 	switch_file_t *fd = NULL;
 	const char *realpath = NULL;
+	float fps = 0.0f;
 	int is_stream = 0;
+	int samplerate = 44100;
+	int channels = 1;
+	int keyint = 60;
+	int ab = 0;
+	int vb = 0;
+	int vw = 0;
+	int vh = 0;
+	int tmp;
+	const char *val;
 
 	context = switch_core_alloc(handle->memory_pool, sizeof(*context));
 	context->pool = handle->memory_pool;
@@ -726,11 +738,57 @@ static switch_status_t vlc_file_open(switch_file_handle_t *handle, const char *p
 
 	realpath = path;
 
+	if (handle->params) {
+		if ((val = switch_event_get_header(handle->params, "samplerate"))) {
+			tmp = atoi(val);
+			if (tmp > 8000) {
+				samplerate = tmp;
+			}
+		}
+
+		if ((val = switch_event_get_header(handle->params, "channels"))) {
+			tmp = atoi(val);
+			if (tmp == 1 || tmp == 2) {
+				channels = tmp;
+			}
+		}
+
+		if ((val = switch_event_get_header(handle->params, "ab"))) {
+			tmp = atoi(val);
+			if (tmp > 16) {
+				ab = tmp;
+			}
+		}
+
+		if ((val = switch_event_get_header(handle->params, "vw"))) {
+			tmp = atoi(val);
+			if (tmp > 0) {
+				vw = tmp;
+			}
+		}
+
+		if ((val = switch_event_get_header(handle->params, "vh"))) {
+			tmp = atoi(val);
+			if (tmp > 0) {
+				vh = tmp;
+			}
+		}
+
+		if ((val = switch_event_get_header(handle->params, "fps"))) {
+			float ftmp = atof(val);
+			if (ftmp > 0.0f) {
+				fps = ftmp;
+			}
+		}
+	}
+
+
 	if (switch_test_flag(handle, SWITCH_FILE_FLAG_VIDEO) && switch_test_flag(handle, SWITCH_FILE_FLAG_WRITE)) {
 		if ((ext = strrchr(path, '.')) && !strcasecmp(ext, ".mp4")) {
 			realpath = path;
 			path = switch_core_sprintf(context->pool, "#transcode{vcodec=h264,acodec=mp3}:std{access=file,mux=mp4,dst=%s}", path);
 		} else if (handle->stream_name && !strcasecmp(handle->stream_name, "rtmp")) {
+
 			path = switch_core_sprintf(context->pool,
 									   "#transcode{venc=x264{keyint=25},"
 									   "vcodec=h264,"
@@ -741,6 +799,54 @@ static switch_status_t vlc_file_open(switch_file_handle_t *handle, const char *p
 									   "samplerate=44100}:standard{access=avio,"
 									   "mux=flv,"
 									   "dst=rtmp://%s}", path);
+
+			samplerate = 44100;
+			ab = 128;
+
+			if (vw && vh) {
+				switch(vh) {
+				case 240:
+					vb = 400;
+					break;
+				case 360:
+					vb = 750;
+					break;
+				case 480:
+					vb = 1000;
+					break;
+				case 720:
+					vb = 2500;
+					break;
+				case 1080:
+					vb = 4500;
+					break;
+				default:
+					vb = (vw * vh) / 175;
+					break;
+				}
+			}
+
+			if (fps > 0.0f) {
+				keyint = (int) 2.0f * fps;
+			}
+			
+			path = switch_core_sprintf(context->pool, 
+									   "#transcode{"
+									    "venc=x264{keyint=%d},"
+									    "vcodec=h264,"
+									    "acodec=mp3,"
+									    "ab=%d,"
+									    "vb=%d,"
+									    "channels=%d,"
+									    "samplerate=%d"
+									   "}"
+									   ":standard{"
+									    "access=avio,"
+									    "mux=flv,"
+									    "dst=rtmp://%s"
+									   "}", 
+									   keyint, ab, vb, channels, samplerate, path);
+>>>>>>> add file params to set some optimal settings from conference into recording handle and make streaming better
 		}
 	}
 
@@ -1067,10 +1173,7 @@ static switch_status_t vlc_file_read_video(switch_file_handle_t *handle, switch_
 			return SWITCH_STATUS_FALSE;
 		}
 
-		if (!vcontext->vid_ready) {
-			vcontext->vid_ready = 1;
-		}
-
+		vcontext->vid_ready = 1;
 
 		frame->img = (switch_image_t *) pop;
 		return SWITCH_STATUS_SUCCESS;
@@ -1117,6 +1220,7 @@ static switch_status_t vlc_file_write_video(switch_file_handle_t *handle, switch
 		switch_mutex_unlock(vcontext->audio_mutex);
 		img_copy->user_priv = (void *) fdata;
 		switch_queue_push(vcontext->video_queue, img_copy);
+		vcontext->vid_ready = 1;
 	}
 
 	return status;
@@ -1139,8 +1243,11 @@ static switch_status_t vlc_file_av_write(switch_file_handle_t *handle, void *dat
 	}	
 
 	if (!vcontext->vid_ready) {
-		vcontext->vid_ready = 1;
-		switch_core_timer_sync(&vcontext->timer);
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	switch_core_timer_sync(&vcontext->timer);
+	if (!vcontext->pts) {
 		vcontext->pts = vcontext->timer.samplecount;
 	}
 
@@ -1148,6 +1255,7 @@ static switch_status_t vlc_file_av_write(switch_file_handle_t *handle, void *dat
 	head_bytes = bytes;
 	switch_core_timer_sync(&vcontext->timer);
 	pts = vcontext->timer.samplecount + vcontext->sync_offset;
+	//printf("WRITE BUFFER %d %d %ld %d\n", vcontext->timer.samplecount, vcontext->sync_offset, pts, head_bytes);
 	switch_buffer_write(vcontext->audio_buffer, &pts, sizeof(pts));
 	switch_buffer_write(vcontext->audio_buffer, &head_bytes, sizeof(head_bytes));
 	switch_buffer_write(vcontext->audio_buffer, data, bytes);
@@ -1526,6 +1634,8 @@ int  vlc_write_video_imem_get_callback(void *data, const char *cookie, int64_t *
 
 		*size = img->d_w * img->d_h * 2;
 
+		//printf("WTF %s VIDEO %ld %ld\n", cookie, *pts, *size);
+
 		if (context->video_frame_buffer_len < *size) {
 			context->video_frame_buffer_len = *size;
 			context->video_frame_buffer = switch_core_alloc(context->pool, context->video_frame_buffer_len);
@@ -1551,6 +1661,7 @@ int  vlc_write_video_imem_get_callback(void *data, const char *cookie, int64_t *
 		*pts = *dts = context->pts;
 		*size = need;
 		*output = context->audio_frame_buffer;
+		//printf("WTF %s AUDIOSYNC %ld %ld\n", cookie, *pts, *size);
 		context->sync_ready = 1;
 		switch_mutex_unlock(context->audio_mutex);
 		return 0;
@@ -1562,6 +1673,7 @@ int  vlc_write_video_imem_get_callback(void *data, const char *cookie, int64_t *
 		int64_t lpts;
 		switch_buffer_read(context->audio_buffer, &lpts, sizeof(lpts));
 		switch_buffer_read(context->audio_buffer, &read_bytes, sizeof(read_bytes));
+		//printf("WTF READ BUFFER %ld %d\n", lpts, read_bytes);
 		blen = (int)read_bytes;//switch_buffer_inuse(context->audio_buffer);
 		*pts = *dts = lpts + context->sync_offset;
 	}
@@ -1582,11 +1694,15 @@ int  vlc_write_video_imem_get_callback(void *data, const char *cookie, int64_t *
 
 	*size = (size_t) bread;
 
+	//printf("WTF %s AUDIO %ld %ld\n", cookie, *pts, *size);
+
 	switch_mutex_unlock(context->audio_mutex);
 
 	return 0;
 
  nada:
+
+	//printf("WTF %s NADA\n", cookie);
 
 	if (context->ending) {
 		if (*cookie == 'a') {
@@ -1855,7 +1971,9 @@ SWITCH_STANDARD_APP(capture_video_function)
 
 	switch_img_free(&context->img);
 
-	switch_core_timer_destroy(&context->timer);
+	if (context->timer.interval) {
+		switch_core_timer_destroy(&context->timer);
+	}
 
 	if (context->audio_buffer) {
 		switch_buffer_destroy(&context->audio_buffer);
