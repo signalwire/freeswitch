@@ -787,7 +787,7 @@ static switch_status_t vlc_file_open(switch_file_handle_t *handle, const char *p
 		if ((ext = strrchr(path, '.')) && !strcasecmp(ext, ".mp4")) {
 			realpath = path;
 			path = switch_core_sprintf(context->pool, "#transcode{vcodec=h264,acodec=mp3}:std{access=file,mux=mp4,dst=%s}", path);
-		} else if (handle->stream_name && !strcasecmp(handle->stream_name, "rtmp")) {
+		} else if (handle->stream_name && (!strcasecmp(handle->stream_name, "rtmp") || !strcasecmp(handle->stream_name, "youtube"))) {
 
 			samplerate = 44100;
 			ab = 128;
@@ -2574,6 +2574,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_vlc_load)
 	vlc_file_supported_formats[argc++] = "mov";
 	vlc_file_supported_formats[argc++] = "m4v";
 	vlc_file_supported_formats[argc++] = "rtmp";
+	vlc_file_supported_formats[argc++] = "youtube";
 
 	file_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_FILE_INTERFACE);
 	file_interface->interface_name = modname;
