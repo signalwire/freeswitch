@@ -108,6 +108,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 		switch_copy_string(stream_name, file_path, (rhs + 1) - file_path);
 		ext = stream_name;
 		file_path = rhs + 3;
+		fh->stream_name = switch_core_strdup(fh->memory_pool, stream_name);
 		fh->file_path = switch_core_strdup(fh->memory_pool, file_path);
 		is_stream = 1;
 	} else {

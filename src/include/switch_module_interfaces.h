@@ -359,6 +359,7 @@ struct switch_file_handle {
 	switch_event_t *params;
 	uint32_t cur_channels;
 	uint32_t cur_samplerate;
+	char *stream_name;
 };
 
 /*! \brief Abstract interface to an asr module */
