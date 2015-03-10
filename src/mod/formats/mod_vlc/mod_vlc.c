@@ -1662,6 +1662,13 @@ int  vlc_write_video_imem_get_callback(void *data, const char *cookie, int64_t *
 		int64_t lpts;
 		switch_buffer_read(context->audio_buffer, &lpts, sizeof(lpts));
 		switch_buffer_read(context->audio_buffer, &read_bytes, sizeof(read_bytes));
+		if (read_bytes > 50000) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Framing error");
+			switch_buffer_zero(context->audio_buffer);
+			switch_mutex_unlock(context->audio_mutex);
+			goto nada;
+		}
+
 		//printf("WTF READ BUFFER %ld %d\n", lpts, read_bytes);
 		blen = (int)read_bytes;//switch_buffer_inuse(context->audio_buffer);
 		*pts = *dts = lpts + context->sync_offset;
