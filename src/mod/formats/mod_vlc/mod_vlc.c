@@ -731,7 +731,7 @@ static switch_status_t vlc_file_open(switch_file_handle_t *handle, const char *p
 			realpath = path;
 			path = switch_core_sprintf(context->pool, "#transcode{vcodec=h264,acodec=mp3}:std{access=file,mux=mp4,dst=%s}", path);
 		} else if (handle->stream_name && !strcasecmp(handle->stream_name, "rtmp")) {
-			path = switch_core_sprintf(context->pool, 
+			path = switch_core_sprintf(context->pool,
 									   "#transcode{venc=x264{keyint=25},"
 									   "vcodec=h264,"
 									   "scale=1,"
@@ -1044,7 +1044,7 @@ static switch_status_t vlc_file_read_video(switch_file_handle_t *handle, switch_
 		return SWITCH_STATUS_FALSE;
 	}
 	
-	while((flags && SVR_FLUSH) && switch_queue_size(vcontext->video_queue) > 1) {
+	while((flags & SVR_FLUSH) && switch_queue_size(vcontext->video_queue) > 1) {
 		if (switch_queue_trypop(vcontext->video_queue, &pop) == SWITCH_STATUS_SUCCESS) {
 			switch_image_t *img = (switch_image_t *) pop;
 			switch_img_free(&img);
@@ -1076,7 +1076,7 @@ static switch_status_t vlc_file_read_video(switch_file_handle_t *handle, switch_
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	return (flags && SVR_FLUSH) ? SWITCH_STATUS_BREAK : status;
+	return (flags & SVR_FLUSH) ? SWITCH_STATUS_BREAK : status;
 }
 
 static switch_status_t vlc_file_write_video(switch_file_handle_t *handle, switch_frame_t *frame)
