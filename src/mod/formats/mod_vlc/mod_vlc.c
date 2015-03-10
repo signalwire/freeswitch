@@ -62,8 +62,8 @@ typedef int  (*imem_get_t)(void *data, const char *cookie,
 typedef void (*imem_release_t)(void *data, const char *cookie, size_t, void *);
 
 /* Change value to -vvv for vlc related debug. Be careful since vlc is at least as verbose as FS about logging */
-//const char *vlc_args[] = {""};
-const char *vlc_args[] = {"--network-caching=0"};
+const char *vlc_args[] = {""};
+//const char *vlc_args[] = {"--network-caching=0"};
 //--sout-mux-caching
 
 switch_endpoint_interface_t *vlc_endpoint_interface = NULL;
@@ -846,7 +846,7 @@ static switch_status_t vlc_file_open(switch_file_handle_t *handle, const char *p
 									    "dst=rtmp://%s"
 									   "}", 
 									   keyint, ab, vb, channels, samplerate, path);
->>>>>>> add file params to set some optimal settings from conference into recording handle and make streaming better
+
 		}
 	}
 
