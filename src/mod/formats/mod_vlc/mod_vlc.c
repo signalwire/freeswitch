@@ -789,17 +789,6 @@ static switch_status_t vlc_file_open(switch_file_handle_t *handle, const char *p
 			path = switch_core_sprintf(context->pool, "#transcode{vcodec=h264,acodec=mp3}:std{access=file,mux=mp4,dst=%s}", path);
 		} else if (handle->stream_name && !strcasecmp(handle->stream_name, "rtmp")) {
 
-			path = switch_core_sprintf(context->pool,
-									   "#transcode{venc=x264{keyint=25},"
-									   "vcodec=h264,"
-									   "scale=1,"
-									   "acodec=mp3,"
-									   "ab=16,"
-									   "channels=2,"
-									   "samplerate=44100}:standard{access=avio,"
-									   "mux=flv,"
-									   "dst=rtmp://%s}", path);
-
 			samplerate = 44100;
 			ab = 128;
 
