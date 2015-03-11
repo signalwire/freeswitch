@@ -683,7 +683,6 @@ static void decode_video_thread(switch_core_session_t *session, void *obj)
 		}
 
 		if (frame && frame->datalen > 0) {
-			printf("WTF %p\n", (void *)frame->img);
 			switch_core_session_write_video_frame(session, frame, SWITCH_IO_FLAG_NONE, 0);
 		} else {
 			continue;
