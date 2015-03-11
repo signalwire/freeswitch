@@ -35,7 +35,8 @@
 static uint32_t buffer_id = 0;
 
 typedef enum {
-	SWITCH_BUFFER_FLAG_DYNAMIC = (1 << 0)
+	SWITCH_BUFFER_FLAG_DYNAMIC = (1 << 0),
+	SWITCH_BUFFER_FLAG_PARTITION = (1 << 1)
 } switch_buffer_flag_t;
 
 struct switch_buffer {
@@ -51,6 +52,43 @@ struct switch_buffer {
 	uint32_t id;
 	int32_t loops;
 };
+
+SWITCH_DECLARE(switch_status_t) switch_buffer_reset_partition_data(switch_buffer_t *buffer)
+{
+	if (!switch_test_flag(buffer, SWITCH_BUFFER_FLAG_PARTITION)) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	buffer->head = buffer->data;
+	buffer->used = buffer->actually_used = buffer->datalen;
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_buffer_set_partition_data(switch_buffer_t *buffer, void *data, switch_size_t datalen)
+{
+	if (!switch_test_flag(buffer, SWITCH_BUFFER_FLAG_PARTITION)) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	buffer->data = data;
+	buffer->datalen = datalen;
+	return switch_buffer_reset_partition_data(buffer);
+}
+
+SWITCH_DECLARE(switch_status_t) switch_buffer_create_partition(switch_memory_pool_t *pool, switch_buffer_t **buffer, void *data, switch_size_t datalen)
+{
+	switch_buffer_t *new_buffer;
+
+	if ((new_buffer = switch_core_alloc(pool, sizeof(switch_buffer_t))) != 0) {
+		new_buffer->id = buffer_id++;
+		switch_set_flag(new_buffer, SWITCH_BUFFER_FLAG_PARTITION);
+		switch_buffer_set_partition_data(new_buffer, data, datalen);
+		*buffer = new_buffer;
+		return SWITCH_STATUS_SUCCESS;
+	}
+	return SWITCH_STATUS_MEMERR;
+}
 
 SWITCH_DECLARE(switch_status_t) switch_buffer_create(switch_memory_pool_t *pool, switch_buffer_t **buffer, switch_size_t max_len)
 {
@@ -244,6 +282,10 @@ SWITCH_DECLARE(switch_size_t) switch_buffer_write(switch_buffer_t *buffer, const
 {
 	switch_size_t freespace, actual_freespace;
 
+	if (switch_test_flag(buffer, SWITCH_BUFFER_FLAG_PARTITION)) {
+		return 0;
+	}
+
 	switch_assert(buffer->data != NULL);
 
 	if (!datalen) {
@@ -306,6 +348,10 @@ SWITCH_DECLARE(switch_size_t) switch_buffer_zwrite(switch_buffer_t *buffer, cons
 {
 	switch_size_t w;
 
+	if (switch_test_flag(buffer, SWITCH_BUFFER_FLAG_PARTITION)) {
+		return 0;
+	}
+
 	if (!(w = switch_buffer_write(buffer, data, datalen))) {
 		switch_buffer_zero(buffer);
 		return switch_buffer_write(buffer, data, datalen);
@@ -317,6 +363,10 @@ SWITCH_DECLARE(switch_size_t) switch_buffer_zwrite(switch_buffer_t *buffer, cons
 SWITCH_DECLARE(switch_size_t) switch_buffer_slide_write(switch_buffer_t *buffer, const void *data, switch_size_t datalen)
 {
 	switch_size_t w;
+
+	if (switch_test_flag(buffer, SWITCH_BUFFER_FLAG_PARTITION)) {
+		return 0;
+	}
 
 	if (!(w = switch_buffer_write(buffer, data, datalen))) {
 		switch_buffer_toss(buffer, datalen);

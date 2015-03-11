@@ -52,6 +52,10 @@ SWITCH_BEGIN_EXTERN_C
 	struct switch_buffer;
 
 
+SWITCH_DECLARE(switch_status_t) switch_buffer_create_partition(switch_memory_pool_t *pool, switch_buffer_t **buffer, void *data, switch_size_t datalen);
+SWITCH_DECLARE(switch_status_t) switch_buffer_set_partition_data(switch_buffer_t *buffer, void *data, switch_size_t datalen);
+SWITCH_DECLARE(switch_status_t) switch_buffer_reset_partition_data(switch_buffer_t *buffer);
+
 /*! \brief Allocate a new switch_buffer 
  * \param pool Pool to allocate the buffer from
  * \param buffer returned pointer to the new buffer
