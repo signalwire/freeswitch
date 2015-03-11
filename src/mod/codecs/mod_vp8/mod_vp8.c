@@ -88,6 +88,12 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_vp8_load)
 										 SWITCH_CODEC_TYPE_VIDEO, 99, "VP8", NULL, 90000, 90000, 0,
 										 0, 0, 0, 0, 1, 1, switch_vp8_init, switch_vp8_encode, switch_vp8_decode, switch_vp8_destroy);
 
+	SWITCH_ADD_CODEC(codec_interface, "VP9 Video (passthru)");
+
+	switch_core_codec_add_implementation(pool, codec_interface,
+										 SWITCH_CODEC_TYPE_VIDEO, 99, "VP9", NULL, 90000, 90000, 0,
+										 0, 0, 0, 0, 1, 1, switch_vp8_init, switch_vp8_encode, switch_vp8_decode, switch_vp8_destroy);
+
 	SWITCH_ADD_CODEC(codec_interface, "red Video (passthru)");
 	switch_core_codec_add_implementation(pool, codec_interface,
 										 SWITCH_CODEC_TYPE_VIDEO, 103, "red", NULL, 90000, 90000, 0,
