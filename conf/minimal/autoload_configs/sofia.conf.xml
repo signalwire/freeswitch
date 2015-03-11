@@ -1,0 +1,10 @@
+<configuration name="sofia.conf" description="sofia Endpoint">
+  <global_settings>
+    <param name="log-level" value="0"/>
+    <param name="tracelevel" value="DEBUG"/>
+  </global_settings>
+
+  <profiles>
+    <X-PRE-PROCESS cmd="include" data="../sip_profiles/*.xml"/>
+  </profiles>
+</configuration>

@@ -1,0 +1,5 @@
+<configuration name="conference.conf" description="Audio Conference">
+  <profiles>
+    <profile name="default"/>
+  </profiles>
+</configuration>

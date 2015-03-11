@@ -1,0 +1,9 @@
+<include>
+  <X-PRE-PROCESS cmd="set" data="global_codec_prefs=PCMU,PCMA"/>
+
+  <!-- NOTE: CHANGE THIS BEFORE USE -->
+  <X-PRE-PROCESS cmd="set" data="xml_rpc_password=worksnot"/>
+
+  <X-PRE-PROCESS cmd="set" data="internal_sip_port=5060"/>
+  <X-PRE-PROCESS cmd="set" data="external_sip_port=5080"/>
+</include>

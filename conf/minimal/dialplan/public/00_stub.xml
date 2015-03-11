@@ -1,0 +1,7 @@
+<include>
+  <extension name="sample">
+    <condition>
+      <action application="info"/>
+    </condition>
+  </extension>
+</include>

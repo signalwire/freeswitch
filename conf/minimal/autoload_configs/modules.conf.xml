@@ -1,0 +1,40 @@
+<configuration name="modules.conf" description="Modules">
+  <modules>
+
+    <!-- Loggers (I'd load these first) -->
+    <load module="mod_console"/>
+    <load module="mod_logfile"/>
+
+    <!-- XML Interfaces -->
+    <load module="mod_xml_rpc"/>
+
+    <!-- Event Handlers -->
+    <load module="mod_cdr_csv"/>
+    <load module="mod_event_socket"/>
+
+    <!-- Endpoints -->
+    <load module="mod_sofia"/>
+    <load module="mod_loopback"/>
+
+    <!-- Applications -->
+    <load module="mod_commands"/>
+    <load module="mod_conference"/>
+    <load module="mod_db"/>
+    <load module="mod_dptools"/>
+    <load module="mod_expr"/>
+    <load module="mod_hash"/>
+    <load module="mod_esf"/>
+
+    <!-- Dialplan Interfaces -->
+    <load module="mod_dialplan_xml"/>
+
+    <!-- Codec Interfaces -->
+
+    <!-- File Format Interfaces -->
+    <load module="mod_sndfile"/>
+    <load module="mod_native_file"/>
+
+    <!-- Third party modules -->
+
+  </modules>
+</configuration>
