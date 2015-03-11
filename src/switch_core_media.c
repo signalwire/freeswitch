@@ -159,6 +159,7 @@ typedef struct switch_rtp_engine_s {
 	switch_codec_settings_t codec_settings;
 	switch_media_flow_t rmode;
 	switch_media_flow_t smode;
+	switch_thread_id_t thread_id;
 } switch_rtp_engine_t;
 
 struct switch_media_handle_s {
@@ -4634,7 +4635,7 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 	switch_status_t status;
 	switch_frame_t *read_frame;
 	switch_media_handle_t *smh;
-	uint32_t loops = 0, xloops = 0, vloops = 0;
+	uint32_t loops = 0, xloops = 0, vloops = 0, viloops = 0;
 	switch_frame_t fr = { 0 };
 	unsigned char *buf = NULL;
 	switch_image_t *blank_img = NULL;
@@ -4645,13 +4646,12 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 	blank_img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, 320, 240, 1);
 	switch_img_fill(blank_img, 0, 0, blank_img->d_w, blank_img->d_h, &bgcolor);
 	
-
-	
 	if (!(smh = session->media_handle)) {
 		return NULL;
 	}
 	
 	v_engine = &smh->engines[SWITCH_MEDIA_TYPE_VIDEO];
+	v_engine->thread_id = switch_thread_self();
 
 	switch_core_session_read_lock(session);
 
@@ -4731,9 +4731,9 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 			if (switch_test_flag(read_frame, SFF_CNG)) {
 				continue;
 			}
-		
+			
 			if (read_frame->img) {
-				if (vloops > 10) {
+				if (++viloops > 10) {
 					switch_channel_set_flag(channel, CF_VIDEO_READY);
 					smh->vid_params.width = read_frame->img->d_w;
 					smh->vid_params.height = read_frame->img->d_h;
@@ -4883,6 +4883,23 @@ SWITCH_DECLARE(void) switch_core_media_end_video_function(switch_core_session_t 
 		switch_yield(10000);
 	}
 }
+
+SWITCH_DECLARE(switch_bool_t) switch_core_session_in_video_thread(switch_core_session_t *session)
+{
+	switch_rtp_engine_t *v_engine;
+	switch_media_handle_t *smh;
+
+	switch_assert(session);
+	
+	if (!(smh = session->media_handle)) {
+		return SWITCH_FALSE;
+	}
+
+	v_engine = &smh->engines[SWITCH_MEDIA_TYPE_VIDEO];
+	
+	return switch_thread_equal(switch_thread_self(), v_engine->thread_id) ? SWITCH_TRUE : SWITCH_FALSE;
+}
+
 
 //?
 #define RA_PTR_LEN 512
