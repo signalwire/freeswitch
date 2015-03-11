@@ -3467,8 +3467,8 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 	}
 
 	rtp_session->pool = pool;
-	rtp_session->te = 0;
-	rtp_session->recv_te = 0;
+	rtp_session->te = 101;
+	rtp_session->recv_te = 101;
 	rtp_session->session = session;
 	
 	switch_mutex_init(&rtp_session->flag_mutex, SWITCH_MUTEX_NESTED, pool);

@@ -44,11 +44,12 @@
 SWITCH_MODULE_LOAD_FUNCTION(mod_vpx_load);
 SWITCH_MODULE_DEFINITION(mod_vpx, mod_vpx_load, NULL, NULL);
 
+
+#define encoder_interface (vpx_codec_vp8_cx())
+#define decoder_interface (vpx_codec_vp8_dx())
+
 struct vpx_context {
 	switch_codec_t *codec;
-	int is_vp9;
-	vpx_codec_iface_t *encoder_interface;
-	vpx_codec_iface_t *decoder_interface;
 	unsigned int flags;
 	switch_codec_settings_t codec_settings;
 	unsigned int bandwidth;
@@ -87,9 +88,6 @@ typedef struct vpx_context vpx_context_t;
 static switch_status_t init_decoder(switch_codec_t *codec)
 {
 	vpx_context_t *context = (vpx_context_t *)codec->private_info;
-	vpx_codec_dec_cfg_t cfg = {0, 0, 0};
-	vpx_codec_flags_t dec_flags = 0;
-
 	if (context->flags & SWITCH_CODEC_FLAG_DECODE && !context->decoder_init) {
 		vp8_postproc_cfg_t ppcfg;
 		
@@ -98,13 +96,7 @@ static switch_status_t init_decoder(switch_codec_t *codec)
 		//	context->decoder_init = 0;
 		//}
 
-		cfg.threads = switch_core_cpu_count();
-
-		if (!context->is_vp9) { // vp8 only
-			dec_flags = VPX_CODEC_USE_POSTPROC;
-		}
-
-		if (vpx_codec_dec_init(&context->decoder, context->decoder_interface, &cfg, dec_flags) != VPX_CODEC_OK) {
+		if (vpx_codec_dec_init(&context->decoder, decoder_interface, NULL, VPX_CODEC_USE_POSTPROC) != VPX_CODEC_OK) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec init error: [%d:%s]\n", context->encoder.err, context->encoder.err_detail);
 			return SWITCH_STATUS_FALSE;
 		}
@@ -234,7 +226,7 @@ static switch_status_t init_encoder(switch_codec_t *codec)
 		}
 	} else if (context->flags & SWITCH_CODEC_FLAG_ENCODE) {
 
-		if (vpx_codec_enc_init(&context->encoder, context->encoder_interface, config, 0 & VPX_CODEC_USE_OUTPUT_PARTITION) != VPX_CODEC_OK) {
+		if (vpx_codec_enc_init(&context->encoder, encoder_interface, config, 0 & VPX_CODEC_USE_OUTPUT_PARTITION) != VPX_CODEC_OK) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec init error: [%d:%s]\n", context->encoder.err, context->encoder.err_detail);
 			return SWITCH_STATUS_FALSE;
 		}
@@ -266,6 +258,7 @@ static switch_status_t switch_vpx_init(switch_codec_t *codec, switch_codec_flag_
 	vpx_context_t *context = NULL;
 	int encoding, decoding;
 
+
 	encoding = (flags & SWITCH_CODEC_FLAG_ENCODE);
 	decoding = (flags & SWITCH_CODEC_FLAG_DECODE);
 
@@ -281,23 +274,11 @@ static switch_status_t switch_vpx_init(switch_codec_t *codec, switch_codec_flag_
 		context->codec_settings = *codec_settings;
 	}
 
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s\n", codec->implementation->iananame);
-
-	if (!strcmp(codec->implementation->iananame, "VP9")) {
-		context->is_vp9 = 1;
-		context->encoder_interface = vpx_codec_vp9_cx();
-		context->decoder_interface = vpx_codec_vp9_dx();
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "is vp9\n");
-	} else {
-		context->encoder_interface = vpx_codec_vp8_cx();
-		context->decoder_interface = vpx_codec_vp8_dx();
-	}
-
 	if (codec->fmtp_in) {
 		codec->fmtp_out = switch_core_strdup(codec->memory_pool, codec->fmtp_in);
 	}
 
-	if (vpx_codec_enc_config_default(context->encoder_interface, &context->config, 0) != VPX_CODEC_OK) {
+	if (vpx_codec_enc_config_default(encoder_interface, &context->config, 0) != VPX_CODEC_OK) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Encoder config Error\n");
 		return SWITCH_STATUS_FALSE;
 	}
@@ -347,16 +328,6 @@ static switch_status_t switch_vpx_init(switch_codec_t *codec, switch_codec_flag_
 	+-+-+-+-+-+-+-+-+
 */
 
-	typedef struct {
-		unsigned extended:1;
-		unsigned reserved1:1;
-		unsigned non_referenced:1;
-		unsigned start:1;
-		unsigned reserved2:1;
-		unsigned pid:1;
-	} vp8_payload_descriptor_t;
-
-
 static switch_status_t consume_partition(vpx_context_t *context, switch_frame_t *frame)
 {
 	if (!context->pkt) {
@@ -382,14 +353,9 @@ static switch_status_t consume_partition(vpx_context_t *context, switch_frame_t 
 	}
 
 	if (context->pkt->data.frame.sz < SLICE_SIZE) {
-				uint8_t hdr = 0x10;
-				memcpy(frame->data, &hdr, 1);
-				//		((uint8_t *)frame->data)[0] = 0x10;
-		//vp8_payload_descriptor_t *hdr = (vp8_payload_descriptor_t *)frame->data;
-		//hdr->start = 1;
+		uint8_t hdr = 0x10;
 
-		//printf("WTF [%x] [%x]\n", *(unsigned char *)hdr, 0x10);
-
+		memcpy(frame->data, &hdr, 1);
 		memcpy((uint8_t *)frame->data + 1, context->pkt->data.frame.buf, context->pkt->data.frame.sz);
 		frame->datalen = context->pkt->data.frame.sz + 1;
 		frame->m = 1;
@@ -528,7 +494,7 @@ static switch_status_t switch_vpx_encode(switch_codec_t *codec, switch_frame_t *
 	return consume_partition(context, frame);
 }
 
-static switch_status_t buffer_vp8_packets(vpx_context_t *context, switch_frame_t *frame)
+static switch_status_t buffer_vpx_packets(vpx_context_t *context, switch_frame_t *frame)
 {
 	uint8_t *data = frame->data;
 	uint8_t S;
@@ -586,27 +552,6 @@ static switch_status_t buffer_vp8_packets(vpx_context_t *context, switch_frame_t
 
 }
 
-static switch_status_t buffer_vp9_packets(vpx_context_t *context, switch_frame_t *frame)
-{
-	uint8_t *data = frame->data;
-	uint8_t *vp9;
-	int len = 0;
-
-	if (!frame) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "no frame in codec!!\n");
-		return SWITCH_STATUS_RESTART;
-	}
-
-	vp9 = data + 1;
-
-	len = frame->datalen - (vp9 - data);
-	switch_buffer_write(context->vpx_packet_buffer, vp9, len);
-
-	// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "buffered %d bytes, buffer size: %" SWITCH_SIZE_T_FMT "\n", len, switch_buffer_inuse(context->vpx_packet_buffer));
-
-	return SWITCH_STATUS_SUCCESS;
-}
-
 static switch_status_t switch_vpx_decode(switch_codec_t *codec, switch_frame_t *frame)
 {
 	vpx_context_t *context = (vpx_context_t *)codec->private_info;
@@ -614,8 +559,6 @@ static switch_status_t switch_vpx_decode(switch_codec_t *codec, switch_frame_t *
 	vpx_codec_ctx_t *decoder = NULL;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	int is_keyframe = ((*(unsigned char *)frame->data) & 0x01) ? 0 : 1;
-
-	if (context->is_vp9) is_keyframe = 1; // don't know how to get it yet
 
 	if (context->need_decoder_reset != 0) {
 		vpx_codec_destroy(&context->decoder);
@@ -635,7 +578,7 @@ static switch_status_t switch_vpx_decode(switch_codec_t *codec, switch_frame_t *
 
 	decoder = &context->decoder;
 
-	// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "len: %d ts: %u mark:%d\n", frame->datalen, frame->timestamp, frame->m);
+	// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "len: %d ts: %" SWITCH_SIZE_T_FMT " mark:%d\n", frame->datalen, frame->timestamp, frame->m);
 
 	if (!is_keyframe && context->last_received_timestamp && context->last_received_timestamp != frame->timestamp && 
 		(!frame->m) && (!context->last_received_complete_picture)) {
@@ -649,7 +592,7 @@ static switch_status_t switch_vpx_decode(switch_codec_t *codec, switch_frame_t *
 	context->last_received_timestamp = frame->timestamp;
 	context->last_received_complete_picture = frame->m ? SWITCH_TRUE : SWITCH_FALSE;
 
-	status = context->is_vp9 ? buffer_vp9_packets(context, frame) : buffer_vp8_packets(context, frame);
+	status = buffer_vpx_packets(context, frame);
 
 	//printf("READ buf:%ld got_key:%d st:%d m:%d\n", switch_buffer_inuse(context->vpx_packet_buffer), context->got_key_frame, status, frame->m);
 
@@ -678,8 +621,7 @@ static switch_status_t switch_vpx_decode(switch_codec_t *codec, switch_frame_t *
 		err = vpx_codec_decode(decoder, data, (unsigned int)len, NULL, 0);
 
 		if (err != VPX_CODEC_OK) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error decoding %" SWITCH_SIZE_T_FMT " bytes, [%d:%s:%s]\n",
-				len, err, vpx_codec_error(decoder), vpx_codec_error_detail(decoder));
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error decoding %" SWITCH_SIZE_T_FMT " bytes, [%d:%d:%s]\n", len, err, decoder->err, decoder->err_detail);
 			switch_goto_status(SWITCH_STATUS_RESTART, end);
 		}
 
@@ -806,9 +748,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_vpx_load)
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 	SWITCH_ADD_CODEC(codec_interface, "VP8 Video");
 	switch_core_codec_add_video_implementation(pool, codec_interface, 99, "VP8", NULL,
-											   switch_vpx_init, switch_vpx_encode, switch_vpx_decode, switch_vpx_control, switch_vpx_destroy);
-	SWITCH_ADD_CODEC(codec_interface, "VP9 Video");
-	switch_core_codec_add_video_implementation(pool, codec_interface, 99, "VP9", NULL,
 											   switch_vpx_init, switch_vpx_encode, switch_vpx_decode, switch_vpx_control, switch_vpx_destroy);
 
 	/* indicate that the module should continue to be loaded */

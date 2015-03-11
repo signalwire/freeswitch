@@ -326,7 +326,6 @@ SWITCH_DECLARE(void) switch_core_session_stop_media(switch_core_session_t *sessi
 SWITCH_DECLARE(switch_media_flow_t) switch_core_session_media_flow(switch_core_session_t *session, switch_media_type_t type);
 SWITCH_DECLARE(switch_status_t) switch_core_media_get_vid_params(switch_core_session_t *session, switch_vid_params_t *vid_params);
 SWITCH_DECLARE(switch_status_t) switch_core_media_set_video_file(switch_core_session_t *session, switch_file_handle_t *fh, switch_rw_t rw);
-SWITCH_DECLARE(switch_bool_t) switch_core_session_in_video_thread(switch_core_session_t *session);
 
 SWITCH_END_EXTERN_C
 #endif
