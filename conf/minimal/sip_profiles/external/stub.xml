@@ -1,0 +1,6 @@
+<include>
+ <!--  <gateway name="itsp-name"> -->
+ <!--    <param name="proxy" value="1.2.3.4"/> -->
+ <!--    <param name="register" value="false"/> -->
+ <!-- </gateway> -->
+</include>
