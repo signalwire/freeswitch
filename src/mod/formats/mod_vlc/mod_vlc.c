@@ -62,7 +62,7 @@ typedef int  (*imem_get_t)(void *data, const char *cookie,
 typedef void (*imem_release_t)(void *data, const char *cookie, size_t, void *);
 
 /* Change value to -vvv for vlc related debug. Be careful since vlc is at least as verbose as FS about logging */
-const char *vlc_args[] = {""};
+const char *vlc_args[] = {"-vvvv"};
 //const char *vlc_args[] = {"--network-caching=0"};
 //--sout-mux-caching
 
@@ -90,10 +90,9 @@ struct vlc_file_context {
 	int channels;
 	int err;
 	int64_t pts;
-	libvlc_instance_t *inst_out;
+	libvlc_instance_t *vlc_handle;
 	void *frame_buffer;
 	switch_size_t frame_buffer_len;
-	libvlc_instance_t *vlc_handle;
 	struct vlc_video_context *vcontext;
 };
 
@@ -152,6 +151,39 @@ SWITCH_MODULE_DEFINITION(mod_vlc, mod_vlc_load, mod_vlc_shutdown, NULL);
 static int vlc_write_video_imem_get_callback(void *data, const char *cookie, int64_t *dts, int64_t *pts, unsigned *flags, size_t *size, void **output);
 void vlc_write_video_imem_release_callback(void *data, const char *cookie, size_t size, void *unknown);
 static switch_status_t av_init_handle(switch_file_handle_t *handle, switch_image_t *img);
+
+void log_cb(void *data, int level, const libvlc_log_t *ctx, const char *fmt, va_list args)
+{
+	char *ldata;
+	switch_log_level_t fslevel = SWITCH_LOG_DEBUG;
+	int ret;
+
+	ret = switch_vasprintf(&ldata, fmt, args);
+
+	if (ret == -1) return;
+
+	switch(level) {
+	case LIBVLC_NOTICE:
+		fslevel = SWITCH_LOG_NOTICE;
+		break;
+	case LIBVLC_WARNING:
+		fslevel = SWITCH_LOG_WARNING;
+		break;
+	case LIBVLC_ERROR:
+		fslevel = SWITCH_LOG_ERROR;
+		break;
+	case LIBVLC_DEBUG:
+	default:
+		fslevel = SWITCH_LOG_DEBUG;
+		break;
+	}
+	
+	switch_log_printf(SWITCH_CHANNEL_LOG, fslevel, "%s\n", ldata);
+
+	switch_safe_free(ldata);
+}
+	
+
 
 void yuyv_to_i420(uint8_t *pixels, void *out_buffer, int src_width, int src_height)
 {
@@ -593,8 +625,9 @@ static switch_status_t av_init_handle(switch_file_handle_t *handle, switch_image
 	opts[argc++] = switch_core_sprintf(vcontext->pool, "--imem-release=%ld", vlc_write_video_imem_release_callback);
 	opts[argc++] = switch_core_sprintf(vcontext->pool, "--imem-data=%ld", vcontext);
 
-	acontext->inst_out = libvlc_new(argc, opts);
-	
+	acontext->vlc_handle = libvlc_new(argc, opts);
+	libvlc_log_set(acontext->vlc_handle, log_cb, NULL);
+
 	imem_main = switch_core_sprintf(vcontext->pool,
 											"imem://cookie=video:"
 											"fps=15.0/1:"
@@ -616,7 +649,7 @@ static switch_status_t av_init_handle(switch_file_handle_t *handle, switch_image
 											 "caching=0", 
 											 vcontext->samplerate, vcontext->channels);
 	
-	vcontext->m = libvlc_media_new_location(acontext->inst_out, imem_main);
+	vcontext->m = libvlc_media_new_location(acontext->vlc_handle, imem_main);
 	
 	libvlc_media_add_option_flag( vcontext->m, imem_slave, libvlc_media_option_trusted );                                                                       
 
@@ -735,6 +768,7 @@ static switch_status_t vlc_file_open(switch_file_handle_t *handle, const char *p
 	context = switch_core_alloc(handle->memory_pool, sizeof(*context));
 	context->pool = handle->memory_pool;
 	context->vlc_handle = libvlc_new(sizeof(vlc_args)/sizeof(char *), vlc_args);
+	libvlc_log_set(context->vlc_handle, log_cb, NULL);
 
 	realpath = path;
 
@@ -945,10 +979,11 @@ static switch_status_t vlc_file_open(switch_file_handle_t *handle, const char *p
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "VLC open %s for writing\n", path);
 
 		/* load the vlc engine. */
-		context->inst_out = libvlc_new(opts_count, opts);
-		
+		context->vlc_handle = libvlc_new(opts_count, opts);
+		libvlc_log_set(context->vlc_handle, log_cb, NULL);
+
 		/* Tell VLC the audio will come from memory, and to use the callbacks to fetch it. */
-		context->m = libvlc_media_new_location(context->inst_out, "imem/rawaud://");
+		context->m = libvlc_media_new_location(context->vlc_handle, "imem/rawaud://");
 		context->mp = libvlc_media_player_new_from_media(context->m);
 		context->samples = 0;
 		context->pts = 0;
@@ -1328,7 +1363,7 @@ static switch_status_t vlc_file_av_close(switch_file_handle_t *handle)
 
 	if (vcontext->mp) libvlc_media_player_stop(vcontext->mp);
 	if (vcontext->m) libvlc_media_release(vcontext->m);
-	if (acontext->inst_out) libvlc_release(acontext->inst_out);
+	if (acontext->vlc_handle) libvlc_release(acontext->vlc_handle);
 
 	switch_img_free(&vcontext->img);
 
@@ -1359,7 +1394,7 @@ static switch_status_t vlc_file_close(switch_file_handle_t *handle)
 
 	if (context->m) libvlc_media_release(context->m);
 	
-	if (context->inst_out) libvlc_release(context->inst_out);
+	if (context->vlc_handle) libvlc_release(context->vlc_handle);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -1384,6 +1419,7 @@ SWITCH_STANDARD_APP(play_video_function)
 
 
 	vlc_handle = libvlc_new(sizeof(vlc_args)/sizeof(char *), vlc_args);
+	libvlc_log_set(vlc_handle, log_cb, NULL);
 
 	context = switch_core_session_alloc(session, sizeof(vlc_video_context_t));
 	switch_assert(context);
@@ -1600,6 +1636,10 @@ int  vlc_write_video_imem_get_callback(void *data, const char *cookie, int64_t *
 
 	if (!context->ending) {
 		switch_mutex_lock(context->cond_mutex); 
+		//while (!switch_queue_size(context->video_queue)) {
+		//	switch_yield(20000);
+		//}
+
 		//if (!switch_queue_size(context->video_queue)) {
 		//	switch_thread_cond_wait(context->cond, context->cond_mutex);	
 		//}
@@ -1623,7 +1663,7 @@ int  vlc_write_video_imem_get_callback(void *data, const char *cookie, int64_t *
 
 		*size = img->d_w * img->d_h * 2;
 
-		//printf("WTF %s VIDEO %ld %ld\n", cookie, *pts, *size);
+		//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "WTF %s RT\t%ld\t%ld\n", cookie, *pts, *size);
 
 		if (context->video_frame_buffer_len < *size) {
 			context->video_frame_buffer_len = *size;
@@ -1650,7 +1690,7 @@ int  vlc_write_video_imem_get_callback(void *data, const char *cookie, int64_t *
 		*pts = *dts = context->pts;
 		*size = need;
 		*output = context->audio_frame_buffer;
-		//printf("WTF %s AUDIOSYNC %ld %ld\n", cookie, *pts, *size);
+		//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "WTF %s AS\t%ld\t%ld\n", cookie, *pts, *size);
 		context->sync_ready = 1;
 		switch_mutex_unlock(context->audio_mutex);
 		return 0;
@@ -1669,7 +1709,7 @@ int  vlc_write_video_imem_get_callback(void *data, const char *cookie, int64_t *
 			goto nada;
 		}
 
-		//printf("WTF READ BUFFER %ld %d\n", lpts, read_bytes);
+		//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "WTF %s RB\t%ld\t%d\n", cookie, lpts, read_bytes);
 		blen = (int)read_bytes;//switch_buffer_inuse(context->audio_buffer);
 		*pts = *dts = lpts + context->sync_offset;
 	}
@@ -1690,7 +1730,7 @@ int  vlc_write_video_imem_get_callback(void *data, const char *cookie, int64_t *
 
 	*size = (size_t) bread;
 
-	//printf("WTF %s AUDIO %ld %ld\n", cookie, *pts, *size);
+	//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "WTF %s RT\t%ld\t%ld\n", cookie, *pts, *size);
 
 	switch_mutex_unlock(context->audio_mutex);
 
@@ -1698,7 +1738,7 @@ int  vlc_write_video_imem_get_callback(void *data, const char *cookie, int64_t *
 
  nada:
 
-	//printf("WTF %s NADA\n", cookie);
+	//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "WTF %s NADA\n", cookie);
 
 	if (context->ending) {
 		if (*cookie == 'a') {
@@ -1761,7 +1801,7 @@ SWITCH_STANDARD_APP(capture_video_function)
 	switch_codec_implementation_t read_impl = { 0 };
 	vlc_video_context_t *context;
 	char *path = (char *)data;
-	libvlc_instance_t *inst_out;
+	libvlc_instance_t *vlc_handle;
 	switch_status_t status;
 	switch_frame_t *read_frame;
 	switch_vid_params_t vid_params = { 0 };
@@ -1831,8 +1871,9 @@ SWITCH_STANDARD_APP(capture_video_function)
 	opts[argc++] = switch_core_session_sprintf(session, "--imem-release=%ld", vlc_write_video_imem_release_callback);
 	opts[argc++] = switch_core_session_sprintf(session, "--imem-data=%ld", context);
 
-	inst_out = libvlc_new(argc, opts);
-	
+	vlc_handle = libvlc_new(argc, opts);
+	libvlc_log_set(vlc_handle, log_cb, NULL);
+
 	imem_main = switch_core_session_sprintf(session,
 											"imem://cookie=video:"
 											"fps=15.0/1:"
@@ -1854,7 +1895,7 @@ SWITCH_STANDARD_APP(capture_video_function)
 											 "caching=0", 
 											 context->samplerate, context->channels);
 	
-	context->m = libvlc_media_new_location(inst_out, imem_main);
+	context->m = libvlc_media_new_location(vlc_handle, imem_main);
 	
 	libvlc_media_add_option_flag( context->m, imem_slave, libvlc_media_option_trusted );                                                                       
 
@@ -1961,7 +2002,7 @@ SWITCH_STANDARD_APP(capture_video_function)
 
 	if (context->mp) libvlc_media_player_stop(context->mp);
 	if (context->m) libvlc_media_release(context->m);
-	if (inst_out) libvlc_release(inst_out);
+	if (vlc_handle) libvlc_release(vlc_handle);
 
 	switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "OK");
 
@@ -2108,6 +2149,7 @@ static switch_status_t setup_tech_pvt(switch_core_session_t *osession, switch_co
 	memset(context, 0, sizeof(vlc_file_context_t));
 	tech_pvt->context = context;
 	context->vlc_handle = libvlc_new(sizeof(vlc_args)/sizeof(char *), vlc_args);
+	libvlc_log_set(context->vlc_handle, log_cb, NULL);
 
 	switch_buffer_create_dynamic(&(context->audio_buffer), VLC_BUFFER_SIZE, VLC_BUFFER_SIZE * 8, 0);
 	switch_queue_create(&context->video_queue, SWITCH_CORE_QUEUE_LEN, switch_core_session_get_pool(session));
