@@ -670,6 +670,9 @@ static void decode_video_thread(switch_core_session_t *session, void *obj)
 		goto done;
 	}
 
+	switch_channel_set_flag(channel, CF_VIDEO_DEBUG_READ);
+	switch_channel_set_flag(channel, CF_VIDEO_DEBUG_WRITE);
+
 	while (switch_channel_ready(channel)) {
 		switch_status_t status = switch_core_session_read_video_frame(session, &frame, SWITCH_IO_FLAG_NONE, 0);
 
@@ -731,8 +734,6 @@ SWITCH_STANDARD_APP(decode_video_function)
 	switch_core_session_request_video_refresh(session);
 
 	switch_channel_set_flag(channel, CF_VIDEO_DECODED_READ);
-	switch_channel_set_flag(channel, CF_VIDEO_DEBUG_READ);
-	switch_channel_set_flag(channel, CF_VIDEO_DEBUG_WRITE);
 
 	switch_core_media_start_video_function(session, decode_video_thread, &max_pictures);
 
