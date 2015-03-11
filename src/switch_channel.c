@@ -1831,9 +1831,7 @@ SWITCH_DECLARE(void) switch_channel_set_flag_value(switch_channel_t *channel, sw
 	}
 
 	if (flag == CF_VIDEO_DECODED_READ) {
-		if (!switch_core_session_in_video_thread(channel->session)) {
-			switch_channel_wait_for_flag(channel, CF_VIDEO_READY, SWITCH_TRUE, 10000, NULL);
-		}
+		switch_channel_wait_for_flag(channel, CF_VIDEO_READY, SWITCH_TRUE, 10000, NULL);
 	}
 }
 
