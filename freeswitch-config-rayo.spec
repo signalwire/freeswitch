@@ -1,7 +1,7 @@
 ######################################################################################################################
 #
 # freeswitch-config-rayo for FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
-# Copyright (C) 2013-2014, Grasshopper
+# Copyright (C) 2013-2015, Grasshopper
 #
 # Version: MPL 1.1
 #
@@ -28,8 +28,8 @@
 #
 ######################################################################################################################
 
-%define version %{VERSION_NUMBER}
-%define release %{BUILD_NUMBER}
+%define version 1.5.16
+%define release 1
 
 %define fsname freeswitch
 

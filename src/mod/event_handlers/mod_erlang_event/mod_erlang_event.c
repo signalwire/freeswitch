@@ -215,6 +215,70 @@ static void event_handler(switch_event_t *event)
 			}
 		}
 
+		if (send) {
+			switch_mutex_lock(l->filter_mutex);
+
+			if (l->filters && l->filters->headers) {
+				switch_event_header_t *hp;
+				const char *hval;
+
+				for (hp = l->filters->headers; hp; hp = hp->next) {
+					if ((hval = switch_event_get_header(event, hp->name))) {
+						const char *comp_to = hp->value;
+						int pos = 1, cmp = 0;
+
+						while (comp_to && *comp_to) {
+							if (*comp_to == '+') {
+								pos = 1;
+							} else if (*comp_to == '-') {
+								pos = 0;
+							} else if (*comp_to != ' ') {
+								break;
+							}
+							comp_to++;
+						}
+
+						if (!(comp_to && *comp_to)) {
+							if (pos) {
+								send = 1;
+								continue;
+							} else {
+								send = 0;
+								break;
+							}
+						}
+
+						if (*hp->value == '/') {
+							switch_regex_t *re = NULL;
+							int ovector[30];
+							cmp = !!switch_regex_perform(hval, comp_to, &re, ovector, sizeof(ovector) / sizeof(ovector[0]));
+							switch_regex_safe_free(re);
+						} else {
+							cmp = !strcasecmp(hval, comp_to);
+						}
+
+						if (cmp) {
+							if (pos) {
+								send = 1;
+							} else {
+								send = 0;
+								break;
+							}
+						} else {
+							if (pos) {
+								send = 0;
+								break;
+							} else {
+								send = 1;
+							}
+						}
+					}
+				}
+			}
+
+			switch_mutex_unlock(l->filter_mutex);
+		}
+
 		switch_thread_rwlock_unlock(l->event_rwlock);
 
 		if (send) {
@@ -1273,6 +1337,7 @@ static listener_t *new_listener(struct ei_cnode_s *ec, int clientfd)
 	listener->level = SWITCH_LOG_DEBUG;
 	switch_mutex_init(&listener->flag_mutex, SWITCH_MUTEX_NESTED, listener->pool);
 	switch_mutex_init(&listener->sock_mutex, SWITCH_MUTEX_NESTED, listener->pool);
+	switch_mutex_init(&listener->filter_mutex, SWITCH_MUTEX_NESTED, listener->pool);
 
 	switch_thread_rwlock_create(&listener->rwlock, pool);
 	switch_thread_rwlock_create(&listener->event_rwlock, pool);
@@ -1508,6 +1573,9 @@ session_elem_t *attach_call_to_spawned_process(listener_t *listener, char *modul
 
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Timed out when waiting for outbound pid %s %s\n", hash, session_element->uuid_str);
 		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+		/* Destroy erlang session elements when the outbound erlang process gets killed for some unknown reason */
+        remove_session_elem_from_listener(listener, session_element);
+        destroy_session_elem(session_element);
 		return NULL;
 	}
 

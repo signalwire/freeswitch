@@ -1745,7 +1745,7 @@
     $.verto.dialog.prototype.transfer = function(dest, params) {
         var dialog = this;
         if (dest) {
-            cur_call.sendMethod("verto.modify", {
+            dialog.sendMethod("verto.modify", {
                 action: "transfer",
                 destination: dest,
                 params: params
@@ -1756,7 +1756,7 @@
     $.verto.dialog.prototype.hold = function(params) {
         var dialog = this;
 
-        cur_call.sendMethod("verto.modify", {
+        dialog.sendMethod("verto.modify", {
             action: "hold",
             params: params
         });
@@ -1765,7 +1765,7 @@
     $.verto.dialog.prototype.unhold = function(params) {
         var dialog = this;
 
-        cur_call.sendMethod("verto.modify", {
+        dialog.sendMethod("verto.modify", {
             action: "unhold",
             params: params
         });
@@ -1774,7 +1774,7 @@
     $.verto.dialog.prototype.toggleHold = function(params) {
         var dialog = this;
 
-        cur_call.sendMethod("verto.modify", {
+        dialog.sendMethod("verto.modify", {
             action: "toggleHold",
             params: params
         });

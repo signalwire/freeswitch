@@ -1,0 +1,19 @@
+<profile name="internal">
+  <settings>
+    <param name="auth-calls" value="true"/>
+    <param name="apply-nat-acl" value="nat.auto"/>
+
+    <param name="debug" value="0"/>
+    <param name="sip-trace" value="yes"/>
+
+    <param name="dialplan" value="XML"/>
+    <param name="context" value="default"/>
+    <param name="codec-prefs" value="$${global_codec_prefs}"/>
+
+    <param name="rtp-ip" value="$${local_ip_v4}"/>
+    <param name="sip-ip" value="$${local_ip_v4}"/>
+    <param name="ext-rtp-ip" value="auto-nat"/>
+    <param name="ext-sip-ip" value="auto-nat"/>
+    <param name="sip-port" value="$${internal_sip_port}"/>
+  </settings>
+</profile>

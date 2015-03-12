@@ -138,7 +138,7 @@ static int add_pvt(pvt_t *pvt)
 {
 	int r = 0;
 
-	if (t38_state_list.thread_running > 0) {
+	if (t38_state_list.thread_running == 1) {
 		switch_mutex_lock(t38_state_list.mutex);
 		pvt->next = t38_state_list.head;
 		t38_state_list.head = pvt;
@@ -190,18 +190,14 @@ static void *SWITCH_THREAD_FUNC timer_thread_run(switch_thread_t *thread, void *
 	pvt_t *pvt;
 	int samples = 160;
 	int ms = 20;
-    int r = 0;
 
 	if (switch_core_timer_init(&timer, "soft", ms, samples, NULL) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "timer init failed.\n");
-        r = -1;
+		t38_state_list.thread_running = -1;
 		goto end;
 	}
 
-	switch_mutex_lock(t38_state_list.mutex);
 	t38_state_list.thread_running = 1;
-	switch_mutex_unlock(t38_state_list.mutex);
-
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "FAX timer thread started.\n");
 
 	switch_mutex_lock(spandsp_globals.cond_mutex);
@@ -231,12 +227,7 @@ static void *SWITCH_THREAD_FUNC timer_thread_run(switch_thread_t *thread, void *
 	switch_mutex_unlock(spandsp_globals.cond_mutex);
 
  end:
-
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "FAX timer thread ended.\n");
-
-	switch_mutex_lock(t38_state_list.mutex);
-	t38_state_list.thread_running = r;
-	switch_mutex_unlock(t38_state_list.mutex);
 
 	if (timer.timer_interface) {
 		switch_core_timer_destroy(&timer);
@@ -1641,6 +1632,10 @@ void mod_spandsp_fax_load(switch_memory_pool_t *pool)
 	switch_mutex_init(&spandsp_globals.cond_mutex, SWITCH_MUTEX_NESTED, spandsp_globals.pool);
 	switch_thread_cond_create(&spandsp_globals.cond, spandsp_globals.pool);
 
+	if (switch_core_test_flag(SCF_MINIMAL)) {
+		return;
+	}
+
 	launch_timer_thread();
 
 	while(--sanity && !t38_state_list.thread_running) {
@@ -1651,6 +1646,10 @@ void mod_spandsp_fax_load(switch_memory_pool_t *pool)
 void mod_spandsp_fax_shutdown(void)
 {
 	switch_status_t tstatus = SWITCH_STATUS_SUCCESS;
+
+	if (switch_core_test_flag(SCF_MINIMAL)) {
+        return;
+    }
 
 	t38_state_list.thread_running = 0;
 	wake_thread(1);

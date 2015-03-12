@@ -1,0 +1,11 @@
+<include>
+  <context name="default">
+
+    <extension name="sample">
+      <condition>
+        <action application="info"/>
+      </condition>
+    </extension>
+
+  </context>
+</include>

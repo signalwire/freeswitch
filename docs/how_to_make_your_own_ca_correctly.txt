@@ -2,7 +2,7 @@ Someone should probably turn this into a nice how-to:
 
 Here is how I did it.
 
-wget http://www.openssl.org/contrib/ssl.ca-0.1.tar.gz
+wget http://files.freeswitch.org/downloads/ssl.ca-0.1.tar.gz
 tar zxfv ssl.ca-0.1.tar.gz
 cd ssl.ca-0.1/
 perl -i -pe 's/md5/sha2/g' *.sh

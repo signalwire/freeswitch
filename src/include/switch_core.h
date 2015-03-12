@@ -914,6 +914,7 @@ SWITCH_DECLARE(char *) switch_core_get_domain(switch_bool_t dup);
   \brief Add a global variable to the core
   \param varname the name of the variable
   \param value the value of the variable
+  \     If \p value is NULL, then \p varname is deleted.
 */
 SWITCH_DECLARE(void) switch_core_set_variable(_In_z_ const char *varname, _In_opt_z_ const char *value);
 SWITCH_DECLARE(switch_status_t) switch_core_get_variables(switch_event_t **event);

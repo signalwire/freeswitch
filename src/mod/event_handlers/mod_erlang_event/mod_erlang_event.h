@@ -126,6 +126,8 @@ struct listener {
 	switch_memory_pool_t *pool;
 	switch_mutex_t *flag_mutex;
 	switch_mutex_t *sock_mutex;
+	switch_mutex_t *filter_mutex;
+	switch_event_t *filters;
 	char *ebuf;
 	uint32_t flags;
 	switch_log_level_t level;

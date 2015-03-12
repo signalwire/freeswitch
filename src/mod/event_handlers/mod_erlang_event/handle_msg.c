@@ -313,6 +313,87 @@ static switch_status_t handle_msg_event(listener_t *listener, int arity, ei_x_bu
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static switch_status_t handle_msg_filter(listener_t *listener, int arity, ei_x_buff * buf, ei_x_buff * rbuf)
+{
+	char atom[MAXATOMLEN];
+	char reply[MAXATOMLEN]= "";
+	char *header_name = NULL;
+	char *header_val = NULL;
+
+	if (arity == 1) {
+		ei_x_encode_tuple_header(rbuf, 2);
+		ei_x_encode_atom(rbuf, "error");
+		ei_x_encode_atom(rbuf, "badarg");
+	} else {
+		int i = 0;
+
+		ei_x_encode_tuple_header(rbuf, 2);
+		ei_x_encode_atom(rbuf, "filter_command_processing_log");
+		ei_x_encode_list_header(rbuf, arity - 1);
+
+		switch_thread_rwlock_wrlock(listener->event_rwlock);
+
+		switch_mutex_lock(listener->filter_mutex);
+		if (!listener->filters) {
+			switch_event_create_plain(&listener->filters, SWITCH_EVENT_CLONE);
+			switch_clear_flag(listener->filters, EF_UNIQ_HEADERS);
+		}
+
+		for (i = 1; i < arity; i++) {
+			if (!ei_decode_atom(buf->buff, &buf->index, atom)) {
+				header_name=atom;
+
+				while (header_name && *header_name && *header_name == ' ')
+				header_name++;
+
+				if ((header_val = strchr(atom, ' '))) {
+					*header_val++ = '\0';
+				}
+
+				if (!strcasecmp(header_name, "delete") && header_val) {
+					header_name = header_val;
+					if ((header_val = strchr(header_name, ' '))) {
+						*header_val++ = '\0';
+					}
+					if (!strcasecmp(header_name, "all")) {
+						switch_event_destroy(&listener->filters);
+						switch_event_create_plain(&listener->filters, SWITCH_EVENT_CLONE);
+					} else {
+						switch_event_del_header_val(listener->filters, header_name, header_val);
+					}
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "+OK filter deleted. [%s]=[%s]", header_name, switch_str_nil(header_val));
+					ei_x_encode_tuple_header(rbuf, 3);
+					_ei_x_encode_string(rbuf, "deleted");
+					_ei_x_encode_string(rbuf, header_name);
+					_ei_x_encode_string(rbuf, switch_str_nil(header_val));
+				} else if (header_val) {
+					if (!strcasecmp(header_name, "add")) {
+						header_name = header_val;
+						if ((header_val = strchr(header_name, ' '))) {
+							*header_val++ = '\0';
+						}
+					}
+					switch_event_add_header_string(listener->filters, SWITCH_STACK_BOTTOM, header_name, header_val);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "+OK filter added. [%s]=[%s]", header_name, header_val);
+					ei_x_encode_tuple_header(rbuf, 3);
+					_ei_x_encode_string(rbuf, "added");
+					_ei_x_encode_string(rbuf, header_name);
+					_ei_x_encode_string(rbuf, header_val);
+				} else {
+					switch_snprintf(reply, MAXATOMLEN, "-ERR invalid syntax");
+					ei_x_encode_atom(rbuf, "-ERR invalid syntax");
+				}
+			}
+		}
+
+		switch_mutex_unlock(listener->filter_mutex);
+		switch_thread_rwlock_unlock(listener->event_rwlock);
+
+		ei_x_encode_empty_list(rbuf);
+	}
+	return SWITCH_STATUS_SUCCESS;
+}
+
 static switch_status_t handle_msg_session_event(listener_t *listener, erlang_msg *msg, int arity, ei_x_buff * buf, ei_x_buff * rbuf)
 {
 	char atom[MAXATOMLEN];
@@ -975,6 +1056,8 @@ static switch_status_t handle_msg_tuple(listener_t *listener, erlang_msg * msg, 
 			ret = handle_msg_set_log_level(listener, arity, buf, rbuf);
 		} else if (!strncmp(tupletag, "event", MAXATOMLEN)) {
 			ret = handle_msg_event(listener, arity, buf, rbuf);
+		} else if (!strncmp(tupletag, "filter", MAXATOMLEN)) {
+			ret = handle_msg_filter(listener, arity, buf, rbuf);
 		} else if (!strncmp(tupletag, "session_event", MAXATOMLEN)) {
 			ret = handle_msg_session_event(listener, msg, arity, buf, rbuf);
 		} else if (!strncmp(tupletag, "nixevent", MAXATOMLEN)) {

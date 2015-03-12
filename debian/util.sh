@@ -99,7 +99,6 @@ getlib () {
 getlibs () {
   # get pinned libraries
   getlib http://downloads.mongodb.org/cxx-driver/mongodb-linux-x86_64-v1.8-latest.tgz
-  getlib http://files.freeswitch.org/downloads/libs/json-c-0.9.tar.gz
   getlib http://files.freeswitch.org/downloads/libs/soundtouch-1.7.1.tar.gz
   getlib http://files.freeswitch.org/downloads/libs/flite-2.0.0-release.tar.bz2
   getlib http://files.freeswitch.org/downloads/libs/sphinxbase-0.8.tar.gz

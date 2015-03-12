@@ -67,15 +67,15 @@
     <CustomBuild Include="cleancount">
       <FileType>Document</FileType>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Downloading Flite.</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">if not exist "$(ProjectDir)..\flite-1.5.4" cscript /nologo "$(ProjectDir)util.vbs" GetUnzip http://files.freeswitch.org/downloads/libs/flite-1.5.4-current.tar.bz2 "$(ProjectDir).."
-if exist "$(ProjectDir)..\flite-1.5.4-current" move "$(ProjectDir)..\flite-1.5.4-current" "$(ProjectDir)..\flite-1.5.4"
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">if not exist "$(ProjectDir)..\flite-2.0.0" cscript /nologo "$(ProjectDir)util.vbs" GetUnzip http://files.freeswitch.org/downloads/libs/flite-2.0.0-release.tar.bz2 "$(ProjectDir).."
+if exist "$(ProjectDir)..\flite-2.0.0-release" move "$(ProjectDir)..\flite-2.0.0-release" "$(ProjectDir)..\flite-2.0.0"
 </Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ProjectDir)..\flite-1.5.4;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ProjectDir)..\flite-2.0.0;%(Outputs)</Outputs>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Downloading Flite.</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">if not exist "$(ProjectDir)..\flite-1.5.4" cscript /nologo "$(ProjectDir)util.vbs" GetUnzip http://files.freeswitch.org/downloads/libs/flite-1.5.4-current.tar.bz2 "$(ProjectDir).."
-if exist "$(ProjectDir)..\flite-1.5.4-current" move "$(ProjectDir)..\flite-1.5.4-current" "$(ProjectDir)..\flite-1.5.4"
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">if not exist "$(ProjectDir)..\flite-2.0.0" cscript /nologo "$(ProjectDir)util.vbs" GetUnzip http://files.freeswitch.org/downloads/libs/flite-2.0.0-release.tar.bz2 "$(ProjectDir).."
+if exist "$(ProjectDir)..\flite-2.0.0-release" move "$(ProjectDir)..\flite-2.0.0-release" "$(ProjectDir)..\flite-2.0.0"
 </Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(ProjectDir)..\flite-1.5.4;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(ProjectDir)..\flite-2.0.0;%(Outputs)</Outputs>
     </CustomBuild>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

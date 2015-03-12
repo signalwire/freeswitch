@@ -3,7 +3,7 @@ include $(top_srcdir)/build/modmake.rulesam
 AUTOMAKE_OPTIONS += foreign
 MODNAME=mod_mongo
 
-MONGOC=mongo-c-driver-0.92.2
+MONGOC=mongo-c-driver-1.1.0
 MONGOC_DIR=$(switch_srcdir)/libs/$(MONGOC)
 MONGOC_BUILDDIR=$(switch_builddir)/libs/$(MONGOC)
 MONGOC_LA=$(MONGOC_BUILDDIR)/libmongoc-priv.la

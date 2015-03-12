@@ -1,6 +1,6 @@
 /*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2015, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -47,6 +47,7 @@ SWITCH_STANDARD_API(http_cache_get);
 SWITCH_STANDARD_API(http_cache_put);
 SWITCH_STANDARD_API(http_cache_tryget);
 SWITCH_STANDARD_API(http_cache_clear);
+SWITCH_STANDARD_API(http_cache_remove);
 SWITCH_STANDARD_API(http_cache_prefetch);
 
 #define DOWNLOAD_NEEDED "download"
@@ -192,7 +193,7 @@ struct url_cache {
 };
 static url_cache_t gcache;
 
-static char *url_cache_get(url_cache_t *cache, http_profile_t *profile, switch_core_session_t *session, const char *url, int download, switch_memory_pool_t *pool);
+static char *url_cache_get(url_cache_t *cache, http_profile_t *profile, switch_core_session_t *session, const char *url, int download, int refresh, switch_memory_pool_t *pool);
 static switch_status_t url_cache_add(url_cache_t *cache, switch_core_session_t *session, cached_url_t *url);
 static void url_cache_remove(url_cache_t *cache, switch_core_session_t *session, cached_url_t *url);
 static void url_cache_remove_soft(url_cache_t *cache, switch_core_session_t *session, cached_url_t *url);
@@ -574,10 +575,11 @@ static void url_cache_clear(url_cache_t *cache, switch_core_session_t *session)
  * @param session the (optional) session requesting the URL
  * @param url The URL
  * @param download If true, the file will be downloaded if it does not exist in the cache.
+ * @param refresh If true, existing cache entry is invalidated
  * @param pool The pool to use for allocating the filename
  * @return The filename or NULL if there is an error
  */
-static char *url_cache_get(url_cache_t *cache, http_profile_t *profile, switch_core_session_t *session, const char *url, int download, switch_memory_pool_t *pool)
+static char *url_cache_get(url_cache_t *cache, http_profile_t *profile, switch_core_session_t *session, const char *url, int download, int refresh, switch_memory_pool_t *pool)
 {
 	char *filename = NULL;
 	cached_url_t *u = NULL;
@@ -595,6 +597,10 @@ static char *url_cache_get(url_cache_t *cache, http_profile_t *profile, switch_c
 			u = NULL;
 		} else if (switch_file_exists(u->filename, pool) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Cached URL file is missing.\n");
+			url_cache_remove_soft(cache, session, u); /* will get permanently deleted upon replacement */
+			u = NULL;
+		} else if (refresh) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Cached URL manually expired.\n");
 			url_cache_remove_soft(cache, session, u); /* will get permanently deleted upon replacement */
 			u = NULL;
 		}
@@ -1122,7 +1128,7 @@ SWITCH_STANDARD_API(http_cache_get)
 		profile = url_cache_http_profile_find(&gcache, switch_event_get_header(params, "profile"));
 	}
 
-	filename = url_cache_get(&gcache, profile, session, url, 1, pool);
+	filename = url_cache_get(&gcache, profile, session, url, 1, params ? switch_true(switch_event_get_header(params, "refresh")) : SWITCH_FALSE, pool);
 	if (filename) {
 		stream->write_function(stream, "%s", filename);
 
@@ -1151,7 +1157,6 @@ SWITCH_STANDARD_API(http_cache_tryget)
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_memory_pool_t *lpool = NULL;
 	switch_memory_pool_t *pool = NULL;
-	http_profile_t *profile = NULL;
 	char *filename;
 	switch_event_t *params = NULL;
 	char *url;
@@ -1168,16 +1173,13 @@ SWITCH_STANDARD_API(http_cache_tryget)
 		pool = lpool;
 	}
 
-	/* parse params and get profile */
+	/* parse params */
 	url = switch_core_strdup(pool, cmd);
 	if (*url == '{') {
 		switch_event_create_brackets(url, '{', '}', ',', &params, &url, SWITCH_FALSE);
 	}
-	if (params) {
-		profile = url_cache_http_profile_find(&gcache, switch_event_get_header(params, "profile"));
-	}
 
-	filename = url_cache_get(&gcache, profile, session, url, 0, pool);
+	filename = url_cache_get(&gcache, NULL, session, url, 0, params ? switch_true(switch_event_get_header(params, "refresh")) : SWITCH_FALSE, pool);
 	if (filename) {
 		if (!strcmp(DOWNLOAD_NEEDED, filename)) {
 			stream->write_function(stream, "-ERR %s\n", DOWNLOAD_NEEDED);
@@ -1282,6 +1284,48 @@ SWITCH_STANDARD_API(http_cache_clear)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+#define HTTP_CACHE_REMOVE_SYNTAX "<url>"
+/**
+ * Invalidate a cached URL
+ */
+SWITCH_STANDARD_API(http_cache_remove)
+{
+	switch_memory_pool_t *lpool = NULL;
+	switch_memory_pool_t *pool = NULL;
+	switch_event_t *params = NULL;
+	char *url;
+
+	if (zstr(cmd)) {
+		stream->write_function(stream, "USAGE: %s\n", HTTP_CACHE_REMOVE_SYNTAX);
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	if (session) {
+		pool = switch_core_session_get_pool(session);
+	} else {
+		switch_core_new_memory_pool(&lpool);
+		pool = lpool;
+	}
+
+	/* parse params */
+	url = switch_core_strdup(pool, cmd);
+	if (*url == '{') {
+		switch_event_create_brackets(url, '{', '}', ',', &params, &url, SWITCH_FALSE);
+	}
+
+	url_cache_get(&gcache, NULL, session, url, 0, 1, pool);
+	stream->write_function(stream, "+OK\n");
+
+	if (lpool) {
+		switch_core_destroy_memory_pool(&lpool);
+	}
+
+	if (params) {
+		switch_event_destroy(&params);
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
 
 /**
  * Thread to prefetch URLs
@@ -1524,7 +1568,7 @@ static switch_status_t http_cache_file_open(switch_file_handle_t *handle, const 
 	} else {
 		/* READ = HTTP GET */
 		file_flags |= SWITCH_FILE_FLAG_READ;
-		context->local_path = url_cache_get(&gcache, context->profile, NULL, path, 1, handle->memory_pool);
+		context->local_path = url_cache_get(&gcache, context->profile, NULL, path, 1, handle->params ? switch_true(switch_event_get_header(handle->params, "refresh")) : 0, handle->memory_pool);
 		if (!context->local_path) {
 			return SWITCH_STATUS_FALSE;
 		}
@@ -1647,6 +1691,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_http_cache_load)
 	SWITCH_ADD_API(api, "http_tryget", "HTTP GET from cache only", http_cache_tryget, HTTP_GET_SYNTAX);
 	SWITCH_ADD_API(api, "http_put", "HTTP PUT", http_cache_put, HTTP_PUT_SYNTAX);
 	SWITCH_ADD_API(api, "http_clear_cache", "Clear the cache", http_cache_clear, HTTP_CACHE_CLEAR_SYNTAX);
+	SWITCH_ADD_API(api, "http_remove_cache", "Remove URL from cache", http_cache_remove, HTTP_CACHE_REMOVE_SYNTAX);
 	SWITCH_ADD_API(api, "http_prefetch", "Prefetch document in a background thread.  Use http_get to get the prefetched document", http_cache_prefetch, HTTP_PREFETCH_SYNTAX);
 
 	memset(&gcache, 0, sizeof(url_cache_t));

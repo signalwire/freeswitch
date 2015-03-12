@@ -1,0 +1,21 @@
+<profile name="external">
+  <gateways>
+    <X-PRE-PROCESS cmd="include" data="external/*.xml"/>
+  </gateways>
+
+  <settings>
+    <param name="auth-calls" value="false"/>
+
+    <param name="debug" value="0"/>
+
+    <param name="dialplan" value="XML"/>
+    <param name="context" value="public"/>
+    <param name="codec-prefs" value="$${global_codec_prefs}"/>
+
+    <param name="rtp-ip" value="$${local_ip_v4}"/>
+    <param name="sip-ip" value="$${local_ip_v4}"/>
+    <param name="ext-rtp-ip" value="auto-nat"/>
+    <param name="ext-sip-ip" value="auto-nat"/>
+    <param name="sip-port" value="$${external_sip_port}"/>
+  </settings>
+</profile>

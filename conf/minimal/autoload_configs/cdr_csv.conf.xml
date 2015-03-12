@@ -1,0 +1,11 @@
+<configuration name="cdr_csv.conf" description="CDR CSV Format">
+  <settings>
+    <param name="default-template" value="example"/>
+    <param name="rotate-on-hup" value="true"/>
+    <param name="legs" value="ab"/>
+  </settings>
+
+  <templates>
+    <template name="example">"${caller_id_name}","${caller_id_number}","${destination_number}","${context}","${start_stamp}","${answer_stamp}","${end_stamp}","${duration}","${billsec}","${hangup_cause}","${uuid}","${bleg_uuid}","${accountcode}","${read_codec}","${write_codec}"</template>
+  </templates>
+</configuration>
