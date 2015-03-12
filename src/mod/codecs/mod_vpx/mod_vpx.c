@@ -41,6 +41,10 @@
 #define SLICE_SIZE SWITCH_DEFAULT_VIDEO_SIZE
 #define KEY_FRAME_MIN_FREQ 1000000
 
+#define IS_VP8_KEY_FRAME(byte) (((byte) & 0x01) ^ 0x01)
+#define IS_VP9_KEY_FRAME(byte) ((byte) & 0x01)
+#define IS_VP9_START_PKT(byte) ((byte) & 0x02)
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_vpx_load);
 SWITCH_MODULE_DEFINITION(mod_vpx, mod_vpx_load, NULL, NULL);
 
@@ -329,13 +333,10 @@ static switch_status_t switch_vpx_init(switch_codec_t *codec, switch_codec_flag_
 		context->codec_settings = *codec_settings;
 	}
 
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s\n", codec->implementation->iananame);
-
 	if (!strcmp(codec->implementation->iananame, "VP9")) {
 		context->is_vp9 = 1;
 		context->encoder_interface = vpx_codec_vp9_cx();
 		context->decoder_interface = vpx_codec_vp9_dx();
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "is vp9\n");
 	} else {
 		context->encoder_interface = vpx_codec_vp8_cx();
 		context->decoder_interface = vpx_codec_vp8_dx();
@@ -687,7 +688,7 @@ static switch_status_t buffer_vp8_packets(vpx_context_t *context, switch_frame_t
 	}
 	
 	if (S && (PID == 0)) {
-		int is_keyframe = ((*data) & 0x01) ? 0 : 1;
+		int is_keyframe = IS_VP8_KEY_FRAME(*data);
 
 		if (is_keyframe && context->got_key_frame <= 0) {
 			context->got_key_frame = 1;
@@ -709,13 +710,24 @@ static switch_status_t buffer_vp8_packets(vpx_context_t *context, switch_frame_t
 
 static switch_status_t buffer_vp9_packets(vpx_context_t *context, switch_frame_t *frame)
 {
-	uint8_t *data = frame->data;
-	uint8_t *vp9;
+	uint8_t *data = (uint8_t *)frame->data;
+	uint8_t *vp9  = (uint8_t *)frame->data;
 	int len = 0;
 
 	if (!frame) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "no frame in codec!!\n");
 		return SWITCH_STATUS_RESTART;
+	}
+
+	if (switch_buffer_inuse(context->vpx_packet_buffer)) { // middle packet
+		if (IS_VP9_START_PKT(*vp9)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "got invalid vp9 packet, packet loss? resetting buffer\n");
+			switch_buffer_zero(context->vpx_packet_buffer);
+		}
+	} else { // start packet
+		if (!IS_VP9_START_PKT(*vp9)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "got invalid vp9 packet, packet loss? waiting for a start packet\n");
+		}
 	}
 
 	vp9 = data + 1;
@@ -734,9 +746,13 @@ static switch_status_t switch_vpx_decode(switch_codec_t *codec, switch_frame_t *
 	switch_size_t len;
 	vpx_codec_ctx_t *decoder = NULL;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	int is_keyframe = ((*(unsigned char *)frame->data) & 0x01) ? 0 : 1;
+	int is_keyframe = 0;
 
-	if (context->is_vp9) is_keyframe = 1; // don't know how to get it yet
+	if (context->is_vp9) {
+		is_keyframe = IS_VP9_KEY_FRAME(*(unsigned char *)frame->data);
+	} else { // vp8
+		is_keyframe = IS_VP8_KEY_FRAME(*(unsigned char *)frame->data);
+	}
 
 	if (context->need_decoder_reset != 0) {
 		vpx_codec_destroy(&context->decoder);
