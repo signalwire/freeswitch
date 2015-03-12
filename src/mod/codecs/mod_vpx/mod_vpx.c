@@ -51,6 +51,7 @@ SWITCH_MODULE_DEFINITION(mod_vpx, mod_vpx_load, NULL, NULL);
 struct vpx_context {
 	switch_codec_t *codec;
 	int is_vp9;
+	int lossless;
 	vpx_codec_iface_t *encoder_interface;
 	vpx_codec_iface_t *decoder_interface;
 	unsigned int flags;
@@ -82,9 +83,9 @@ struct vpx_context {
 	int need_decoder_reset;
 	int32_t change_bandwidth;
 	uint64_t framecount;
-	uint64_t framesum;
 	switch_memory_pool_t *pool;
 	switch_buffer_t *pbuffer;
+	switch_time_t start_time;
 };
 typedef struct vpx_context vpx_context_t;
 
@@ -165,67 +166,48 @@ static switch_status_t init_encoder(switch_codec_t *codec)
 					  "VPX reset encoder picture from %dx%d to %dx%d %u BW\n", 
 					  config->g_w, config->g_h, context->codec_settings.video.width, context->codec_settings.video.height, context->bandwidth);
 
+	context->start_time = switch_micro_time_now();
+	
+	config->g_timebase.num = 1;
+	config->g_timebase.den = 1000;
+	config->g_pass = VPX_RC_ONE_PASS;
+	config->g_w = context->codec_settings.video.width;
+	config->g_h = context->codec_settings.video.height;	
+	config->rc_target_bitrate = context->bandwidth;
+	config->g_lag_in_frames = 0;
+	config->kf_max_dist = 2000;
+	config->g_threads = (cpus > 1) ? 2 : 1;
+	
 	if (context->is_vp9) {
-		config->g_w = context->codec_settings.video.width;
-		config->g_h = context->codec_settings.video.height;
-		config->g_timebase.num = 1;
-		config->g_timebase.den = 90000;
-		config->rc_target_bitrate = context->bandwidth;
-		config->rc_dropframe_thresh = 2;
-		config->g_pass = VPX_RC_ONE_PASS;
-		config->g_threads = (cpus > 1) ? cpus / 2 : 1;		
+		//config->rc_dropframe_thresh = 2;
 		token_parts = (cpus > 1) ? 3 : 0;
 
-#if 0
-		config->g_lag_in_frames = 0; // 0- no frame lagging
-
-
-
-		// rate control settings
-		config->rc_end_usage = VPX_CBR;
-
-		config->kf_mode = VPX_KF_AUTO;
-		config->kf_max_dist = 1000;
-
-
-		config->rc_resize_allowed = 1;
-		config->rc_min_quantizer = 0;
-		config->rc_max_quantizer = 63;
-
-
-		config->rc_undershoot_pct = 100;
-		config->rc_overshoot_pct = 15;
-		config->rc_buf_sz = 5000;
-		config->rc_buf_initial_sz = 1000;
-		config->rc_buf_optimal_sz = 1000;
-#endif
+		if (context->lossless) {
+			config->rc_min_quantizer = 0;
+			config->rc_max_quantizer = 0;
+		} else {
+			config->rc_min_quantizer = 0;
+			config->rc_max_quantizer = 63;
+		}
 
 	} else {
 
 		// settings
-		config->g_profile = 0;
-		config->g_w = context->codec_settings.video.width;
-		config->g_h = context->codec_settings.video.height;
-		config->rc_target_bitrate = context->bandwidth;
-		config->g_timebase.num = 1;
-		config->g_timebase.den = 90000;
+		config->g_profile = 2;
 		config->g_error_resilient = VPX_ERROR_RESILIENT_PARTITIONS;
-		config->g_lag_in_frames = 0; // 0- no frame lagging
-
-
-
-		config->g_threads = (cpus > 1) ? 2 : 1;
 		token_parts = (cpus > 1) ? 3 : 0;
 
 		// rate control settings
 		config->rc_dropframe_thresh = 0;
 		config->rc_end_usage = VPX_CBR;
-		config->g_pass = VPX_RC_ONE_PASS;
+		//config->g_pass = VPX_RC_ONE_PASS;
 		config->kf_mode = VPX_KF_AUTO;
 		config->kf_max_dist = 1000;
 
 		//config->kf_mode = VPX_KF_DISABLED;
 		config->rc_resize_allowed = 1;
+		//config->rc_min_quantizer = 0;
+		//config->rc_max_quantizer = 63;
 		config->rc_min_quantizer = 0;
 		config->rc_max_quantizer = 63;
 		//Rate control adaptation undershoot control.
@@ -279,16 +261,20 @@ static switch_status_t init_encoder(switch_codec_t *codec)
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec init error: [%d:%s]\n", context->encoder.err, context->encoder.err_detail);
 			return SWITCH_STATUS_FALSE;
 		}
-
+		
 		context->encoder_init = 1;
 
 		if (context->is_vp9) {
-			//vpx_codec_control(&context->encoder, VP9E_SET_LOSSLESS, 1);
+			if (context->lossless) {
+				vpx_codec_control(&context->encoder, VP9E_SET_LOSSLESS, 1);
+				vpx_codec_control(&context->encoder, VP8E_SET_CPUUSED, -6);
+			} else {
+				vpx_codec_control(&context->encoder, VP8E_SET_CPUUSED, -8);
+			}
+
 			vpx_codec_control(&context->encoder, VP8E_SET_STATIC_THRESHOLD, 100);
-			vpx_codec_control(&context->encoder, VP8E_SET_CPUUSED, -8);
 			vpx_codec_control(&context->encoder, VP8E_SET_TOKEN_PARTITIONS, token_parts);
-			// Enable noise reduction
-			//vpx_codec_control(&context->encoder, VP8E_SET_NOISE_SENSITIVITY, 1);
+			vpx_codec_control(&context->encoder, VP9E_SET_TUNE_CONTENT, VP9E_CONTENT_SCREEN);
 
 		} else {
 			// The static threshold imposes a change threshold on blocks below which they will be skipped by the encoder.
@@ -483,7 +469,6 @@ static switch_status_t consume_partition(vpx_context_t *context, switch_frame_t 
 	if (!context->pkt) {
 		if ((context->pkt = vpx_codec_get_cx_data(&context->encoder, &context->iter))) {
 			start = 1;
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "NEW PACKET %ld\n", context->pkt->data.frame.sz);
 			if (!context->pbuffer) {
 				switch_buffer_create_partition(context->pool, &context->pbuffer, context->pkt->data.frame.buf, context->pkt->data.frame.sz);
 			} else {
@@ -497,7 +482,6 @@ static switch_status_t consume_partition(vpx_context_t *context, switch_frame_t 
 	}
 
 	if (!context->pkt || context->pkt->kind != VPX_CODEC_CX_FRAME_PKT || !remaining_bytes) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "PUNT\n");
 		frame->datalen = 0;
 		frame->m = 1;
 		context->pkt = NULL;
@@ -531,14 +515,11 @@ static switch_status_t consume_partition(vpx_context_t *context, switch_frame_t 
 		context->pkt = NULL;
 		frame->datalen += remaining_bytes;
 		frame->m = 1;
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "END %d H:%.2x\n", frame->datalen, *(uint8_t *)frame->data);
 		return SWITCH_STATUS_SUCCESS;
 	} else {
 		switch_buffer_read(context->pbuffer, body, payload_size);
 		frame->datalen += payload_size;
 		frame->m = 0;
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "%s DATA %d H:.2%x\n", start ? "start" : "middle", frame->datalen, *(uint8_t *)frame->data);
-
 		return SWITCH_STATUS_MORE_DATA;
 	}
 }
@@ -550,7 +531,6 @@ static void reset_codec_encoder(switch_codec_t *codec)
 	if (context->encoder_init) {
 		vpx_codec_destroy(&context->encoder);
 	}
-	context->framesum = 0;
 	context->framecount = 0;
 	context->encoder_init = 0;
 	context->pkt = NULL;
@@ -563,7 +543,6 @@ static switch_status_t switch_vpx_encode(switch_codec_t *codec, switch_frame_t *
 	int width = 0;
 	int height = 0;
 	vpx_enc_frame_flags_t vpx_flags = 0;
-	int32_t diff = 0, dur = 0;
 
 	if (frame->flags & SFF_SAME_IMAGE) {
 		return consume_partition(context, frame);
@@ -605,7 +584,7 @@ static switch_status_t switch_vpx_encode(switch_codec_t *codec, switch_frame_t *
 		// force generate a key frame
 		switch_time_t now = switch_micro_time_now();
 
-		if (1 || !context->last_key_frame || (now - context->last_key_frame) > KEY_FRAME_MIN_FREQ) {
+		if (!context->last_key_frame || (now - context->last_key_frame) > KEY_FRAME_MIN_FREQ) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "VPX KEYFRAME GENERATED\n");
 			vpx_flags |= VPX_EFLAG_FORCE_KF;
 			context->need_key_frame = 0;
@@ -615,27 +594,13 @@ static switch_status_t switch_vpx_encode(switch_codec_t *codec, switch_frame_t *
 
 	context->framecount++;
 
-	if (context->last_ts) {
-		diff = frame->timestamp - context->last_ts;
-		
-		if (diff < 0 || diff > 90000) {
-			diff = 0;
-		}
-	}
-
-
 	
-	if (diff) {
-		context->framesum += diff;
-	}
-
-	if (context->framesum && context->framecount) {
-		dur = context->framesum / context->framecount;
-	} else {
-		dur = 1;
-	}
-
-	if (vpx_codec_encode(&context->encoder, (vpx_image_t *) frame->img, frame->timestamp, dur, vpx_flags, VPX_DL_REALTIME) != VPX_CODEC_OK) {
+	if (vpx_codec_encode(&context->encoder,
+						 (vpx_image_t *) frame->img,
+						 switch_micro_time_now() - context->start_time, 
+						 1, 
+						 vpx_flags,
+						 VPX_DL_REALTIME) != VPX_CODEC_OK) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "VPX encode error %d:%s\n",
 			context->encoder.err, context->encoder.err_detail);
 		
