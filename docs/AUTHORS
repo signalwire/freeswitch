@@ -18,6 +18,8 @@ that much better:
 
  Brian K. West - For countless hours of work on BSD and Mac support, finding countless bugs, 
   and moral support.  Xcode project files.
+ Ken Rice - <krice AT freeswitch.org> - Stable Branch Maintainer, xmlcdr, sofia improvements, load testing, 1 liners here and there.
+ Travis Cross <tc@traviscross.com> - git migration, Debian packaging, ZRTP integration, mod_prefix, and many other improvements
  Joshua Colp - For his help making mod_exosip possible (which we are now getting rid of but oh well), 
                and for just being a swell guy!
  Michal "cypromis" Bielicki (michal.bielicki  AT voiceworks.pl) - Solaris porting, and autotools enhancements, debian, rpm and solaris packaging.
@@ -27,8 +29,6 @@ that much better:
  Stefan Knoblich - Sofia TLS, various patches and support.  Thanks.
  Justin Unger - <justinunger at gmail dot com> Lots of help with patches and SIP testing. Thanks! 
  Paul D. Tinsley - Various patches and support. <pdt at jackhammer.org> 
- Ken Rice - <krice AT freeswitch.org> - xmlcdr, sofia improvements, load testing, 1 liners here and there.
- Travis Cross <tc@traviscross.com> - git migration, Debian packaging, ZRTP integration, mod_prefix, and many other improvements
  Neal Horman <neal at wanlink dot com> - conference improvements, switch_ivr menu additions and other tweaks.
  Johny Kadarisman <jkr888 at gmail.com> - mod_python fixups.
  Michael Murdock <mike at mmurdock dot org> - testing, documentation, bug finding and usability enhancements.

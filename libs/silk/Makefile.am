@@ -1,5 +1,5 @@
 AM_CFLAGS = -Isrc -I$(abs_srcdir)/src -Iinterface -I$(abs_srcdir)/interface -fPIC -O3
-AUTOMAKE_OPTIONS = gnu subdir-objects
+AUTOMAKE_OPTIONS = gnu 
 NAME = libSKP_SILK_SDK
 AM_CPPFLAGS = $(AM_CFLAGS)
 

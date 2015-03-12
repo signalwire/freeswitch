@@ -317,7 +317,7 @@ sip_payload_t *sip_payload_create(su_home_t *, void const *data, isize_t len);
  * @HIDE
  */
 #define SIP_PAYLOAD_INIT2(data, length) \
-  {{{ 0, 0, sip_payload_class, data, length }, NULL, data, length }}
+  {{{ 0, 0, sip_payload_class, data, length }}, NULL, data, length }
 
 /** Create a SIP separator line structure. */
 SOFIAPUBFUN sip_separator_t *sip_separator_create(su_home_t *home);

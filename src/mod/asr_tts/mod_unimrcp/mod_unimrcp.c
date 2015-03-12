@@ -1,6 +1,6 @@
 /*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2009-2014, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2009-2015, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -212,6 +212,7 @@ static int get_next_speech_channel_number(void);
 #define BUILTIN_ID "builtin:"
 #define SESSION_ID "session:"
 #define HTTP_ID "http://"
+#define HTTPS_ID "https://"
 #define FILE_ID "file://"
 #define INLINE_ID "inline:"
 static int text_starts_with(const char *text, const char *match);
@@ -3207,7 +3208,7 @@ static switch_status_t recog_asr_load_grammar(switch_asr_handle_t *ah, const cha
 	}
 
 	/* figure out what type of grammar this is */
-	if (text_starts_with(grammar, HTTP_ID) || text_starts_with(grammar, FILE_ID) || text_starts_with(grammar, SESSION_ID)
+	if (text_starts_with(grammar, HTTP_ID) || text_starts_with(grammar, HTTPS_ID) || text_starts_with(grammar, FILE_ID) || text_starts_with(grammar, SESSION_ID)
 		|| text_starts_with(grammar, BUILTIN_ID)) {
 		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_DEBUG, "(%s) Grammar is URI\n", schannel->name);
 		type = GRAMMAR_TYPE_URI;

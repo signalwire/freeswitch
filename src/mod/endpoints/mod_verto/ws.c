@@ -311,7 +311,7 @@ int ws_handshake(wsh_t *wsh)
 			 proto_buf);
 	respond[511] = 0;
 
-	if (ws_raw_write(wsh, respond, strlen(respond)) != strlen(respond)) {
+	if (ws_raw_write(wsh, respond, strlen(respond)) != (ssize_t)strlen(respond)) {
 		goto err;
 	}
 
@@ -406,7 +406,7 @@ ssize_t ws_raw_write(wsh_t *wsh, void *data, size_t bytes)
 	ssize_t r;
 	int sanity = 2000;
 	int ssl_err = 0;
-	ssize_t wrote = 0;
+	size_t wrote = 0;
 
 	if (wsh->ssl) {
 		do {

@@ -57,10 +57,19 @@
 
 #include "sha1.h"
 
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-const-variable"
+#endif
+
 #ifndef lint
 static const char rcsid[] =
 	"$Id: sha1.c 680 2003-07-25 21:57:38Z asaddi $";
 #endif /* !lint */
+
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
 
 #define ROTL(x, n) (((x) << (n)) | ((x) >> (32 - (n))))
 #define ROTR(x, n) (((x) >> (n)) | ((x) << (32 - (n))))

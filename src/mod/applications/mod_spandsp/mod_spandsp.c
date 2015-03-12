@@ -519,6 +519,8 @@ switch_status_t load_configuration(switch_bool_t reload)
 	spandsp_globals.header = "SpanDSP Fax Header";
 	spandsp_globals.timezone = "";
 	spandsp_globals.tonedebug = 0;
+	spandsp_globals.t38_tx_reinvite_packet_count = 100;
+	spandsp_globals.t38_rx_reinvite_packet_count = 50;
 
 	if ((xml = switch_xml_open_cfg("spandsp.conf", &cfg, NULL)) || (xml = switch_xml_open_cfg("fax.conf", &cfg, NULL))) {
 		status = SWITCH_STATUS_SUCCESS;
@@ -627,10 +629,34 @@ switch_status_t load_configuration(switch_bool_t reload)
 					} else {
 						spandsp_globals.enable_t38_request = 0;
 					}
+				} else if (!strcmp(name, "t38-tx-reinvite-packet-count")) {
+                    int delay = atoi(value);
+
+                    if (delay >= 0 && delay < 1000) {
+						spandsp_globals.t38_tx_reinvite_packet_count = delay;
+					} else {
+						spandsp_globals.t38_tx_reinvite_packet_count = 100;
+					}
+				} else if (!strcmp(name, "t38-rx-reinvite-packet-count")) {
+                    int delay = atoi(value);
+
+					if (delay >= 0 && delay < 1000) {
+						spandsp_globals.t38_rx_reinvite_packet_count = delay;
+					} else {
+						spandsp_globals.t38_rx_reinvite_packet_count = 0;
+					}
 				} else if (!strcmp(name, "ident")) {
-					spandsp_globals.ident = switch_core_strdup(spandsp_globals.config_pool, value);
+                    if (!strcmp(value, "_undef_")) {
+                        spandsp_globals.ident = "";
+                    } else {
+                        spandsp_globals.ident = switch_core_strdup(spandsp_globals.config_pool, value);
+                    }
 				} else if (!strcmp(name, "header")) {
-					spandsp_globals.header = switch_core_strdup(spandsp_globals.config_pool, value);
+                    if (!strcmp(value, "_undef_")) {
+                        spandsp_globals.header = "";
+                    } else {
+                        spandsp_globals.header = switch_core_strdup(spandsp_globals.config_pool, value);
+                    }
 				} else if (!strcmp(name, "spool-dir")) {
 					spandsp_globals.spool = switch_core_strdup(spandsp_globals.config_pool, value);
 				} else if (!strcmp(name, "file-prefix")) {

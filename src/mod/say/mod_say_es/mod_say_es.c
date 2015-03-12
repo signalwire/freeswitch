@@ -335,8 +335,10 @@ static switch_status_t es_say_time(switch_core_session_t *session, char *tosay, 
 
 	if (say_date) {
 		say_file("time/day-%d.wav", tm.tm_wday);
-		say_file("time/mon-%d.wav", tm.tm_mon);
 		say_num(tm.tm_mday, SSM_PRONOUNCED);
+		say_file("time/of.wav");
+		say_file("time/mon-%d.wav", tm.tm_mon);
+		say_file("time/of.wav");
 		say_num(tm.tm_year + 1900, SSM_PRONOUNCED);
 	}
 

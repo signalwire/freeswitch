@@ -90,24 +90,6 @@ static void handle_SIGILL(int sig)
 	return;
 }
 
-#ifndef WIN32
-
-static void handle_SIGCHLD(int sig)
-{
-	int status = 0;
-	int pid = 0;
-
-	if (sig) {};
-
-	pid = wait(&status);
-	if (pid > 0) {
-		system_ready = -1;
-	}
-
-	return;
-}
-#endif
-
 /* kill a freeswitch process running in background mode */
 static int freeswitch_kill_background()
 {
@@ -519,7 +501,7 @@ int main(int argc, char *argv[])
 	char *local_argv[1024] = { 0 };
 	int local_argc = argc;
 	char *arg_argv[128] = { 0 };
-	int alt_dirs = 0, log_set = 0, run_set = 0, do_kill = 0;
+	int alt_dirs = 0, alt_base = 0, log_set = 0, run_set = 0, do_kill = 0;
 	int priority = 0;
 #ifdef __sun
 	switch_core_flag_t flags = SCF_USE_SQL;
@@ -898,6 +880,7 @@ int main(int argc, char *argv[])
 				return 255;
 			}
 			strcpy(SWITCH_GLOBAL_dirs.base_dir, local_argv[x]);
+			alt_base = 1;
 		}
 
 		else if (!strcmp(local_argv[x], "-temp")) {
@@ -1046,7 +1029,7 @@ int main(int argc, char *argv[])
 		return 255;
 	}
 
-	if (alt_dirs && alt_dirs != 3) {
+	if (alt_dirs && alt_dirs != 3 && !alt_base) {
 		fprintf(stderr, "You must specify all or none of -conf, -log, and -db\n");
 		return 255;
 	}
@@ -1088,8 +1071,6 @@ int main(int argc, char *argv[])
 			fprintf(stderr, "System Error!\n");
 			exit(-1);
 		}
-
-		signal(SIGCHLD, handle_SIGCHLD);
 	}
 #endif
 

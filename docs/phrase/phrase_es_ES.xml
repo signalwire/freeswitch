@@ -171,6 +171,7 @@
       <prompt phrase="Noviembre" filename="mon-10.wav"/>
       <prompt phrase="Diciembre" filename="mon-11.wav"/>
       <prompt phrase="En punto" filename="oclock.wav"/>
+      <prompt phrase="de" filename="of.wav"/>
       <prompt phrase="P.M." filename="p-m.wav"/>
       <prompt phrase="Segundo" filename="second.wav"/>
       <prompt phrase="Segundos" filename="seconds.wav"/>

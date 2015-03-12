@@ -129,6 +129,8 @@
 	  </gateways>
 	  <settings>
 	    <!--<param name="media-option" value="bypass-media-after-att-xfer"/>-->
+
+            <!-- Can be set to "_undef_" to remove the User-Agent header -->
 	    <param name="user-agent-string" value="FreeSWITCH/SoftPhone"/>
 	    <!-- <param name="user-agent-string" value="FreeSWITCH Rocks!"/> -->
 	    <param name="debug" value="0"/>

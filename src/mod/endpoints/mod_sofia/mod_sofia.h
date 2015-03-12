@@ -639,6 +639,7 @@ struct sofia_profile {
 	unsigned int mndlb;
 	uint32_t max_calls;
 	uint32_t nonce_ttl;
+	uint32_t max_auth_validity;
 	nua_t *nua;
 	switch_memory_pool_t *pool;
 	su_root_t *s_root;

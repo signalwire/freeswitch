@@ -176,7 +176,7 @@ int nua_client_create(nua_handle_t *nh,
 
       if (tags) {
 	nua_move_signal(cr->cr_signal, nh->nh_nua->nua_signal);
-	if (cr->cr_signal) {
+	if (cr->cr_signal[0]) {
 	  /* Steal reference from signal */
 	  cr->cr_owner = e->e_nh, e->e_nh = NULL;
 	  cr->cr_tags = tags;

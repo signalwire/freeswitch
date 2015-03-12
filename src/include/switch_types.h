@@ -331,7 +331,9 @@ typedef enum {
 	ED_MUX_READ = (1 << 0),
 	ED_MUX_WRITE = (1 << 1),
 	ED_DTMF = (1 << 2),
-	ED_COPY_DISPLAY = (1 << 3)
+	ED_COPY_DISPLAY = (1 << 3),
+	ED_BRIDGE_READ = (1 << 4),
+	ED_BRIDGE_WRITE = (1 << 5)
 } switch_eavesdrop_flag_enum_t;
 typedef uint32_t switch_eavesdrop_flag_t;
 

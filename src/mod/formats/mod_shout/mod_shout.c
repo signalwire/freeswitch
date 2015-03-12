@@ -181,9 +181,6 @@ static inline void free_context(shout_context_t *context)
 
 			while ((len = lame_encode_flush(context->gfp, mp3buffer, sizeof(mp3buffer))) > 0) {
 				ret = fwrite(mp3buffer, 1, len, context->fp);
-				if (ret < 0) {
-					break;
-				}
 			}
 
 			lame_mp3_tags_fid(context->gfp, context->fp);
@@ -899,7 +896,8 @@ static switch_status_t shout_file_close(switch_file_handle_t *handle)
 static switch_status_t shout_file_seek(switch_file_handle_t *handle, unsigned int *cur_sample, int64_t samples, int whence)
 {
 	shout_context_t *context = handle->private_info;
-	
+	off_t seek_samples;
+
 	if (handle->handler || switch_test_flag(handle, SWITCH_FILE_FLAG_WRITE)) {
 		return SWITCH_STATUS_FALSE;
 	} else {
@@ -908,10 +906,10 @@ static switch_status_t shout_file_seek(switch_file_handle_t *handle, unsigned in
 		}
 
 		switch_buffer_zero(context->audio_buffer);
-		*cur_sample = mpg123_seek(context->mh, (off_t) samples, whence);
+		seek_samples = mpg123_seek(context->mh, (off_t) samples, whence);
 
-		if (*cur_sample >= 0) {
-			handle->pos = *cur_sample;
+		if (seek_samples >= 0) {
+			handle->pos = *cur_sample = seek_samples;
 			return SWITCH_STATUS_SUCCESS;
 		}
 

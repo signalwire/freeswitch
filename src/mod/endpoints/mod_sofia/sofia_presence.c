@@ -3704,7 +3704,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 		use_to_tag = to_tag;
 	}
 
-	if ( sip->sip_contact && sip->sip_contact->m_url ) {
+	if (sip->sip_contact) {
 		contact_host = sip->sip_contact->m_url->url_host;
 		contact_port = sip->sip_contact->m_url->url_port;
 		contact_user = sip->sip_contact->m_url->url_user;
@@ -4062,7 +4062,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 		}
 
 
-		if (nh && nh->nh_ds && nh->nh_ds->ds_usage) {
+		if (nh && nh->nh_ds->ds_usage) {
 			/* nua_dialog_usage_set_refresh_range(nh->nh_ds->ds_usage, exp_delta + SUB_OVERLAP, exp_delta + SUB_OVERLAP); */
 			nua_dialog_usage_set_refresh_range(nh->nh_ds->ds_usage, exp_delta, exp_delta);
 		}
@@ -5029,8 +5029,7 @@ void sofia_presence_set_chat_hash(private_object_t *tech_pvt, sip_t const *sip)
 	char buf[512];
 	su_home_t *home = NULL;
 
-	if (!tech_pvt || tech_pvt->hash_key || !sip || !sip->sip_from || !sip->sip_from->a_url ||
-		!sip->sip_from->a_url->url_user || !sip->sip_from->a_url->url_host) {
+	if (!tech_pvt || tech_pvt->hash_key || !sip || !sip->sip_from || !sip->sip_from->a_url->url_user || !sip->sip_from->a_url->url_host) {
 		return;
 	}
 

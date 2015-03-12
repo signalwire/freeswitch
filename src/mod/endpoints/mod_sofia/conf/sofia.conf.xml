@@ -80,7 +80,10 @@
         <!-- <param name="media-option" value="bypass-media-after-att-xfer"/> -->
         <!-- bypass again when hold is complete -->
         <!-- <param name="media-option" value="bypass-media-after-hold"/> -->
+
+        <!-- Can be set to "_undef_" to remove the User-Agent header -->
         <!-- <param name="user-agent-string" value="FreeSWITCH Rocks!"/> -->
+
         <param name="debug" value="0"/>
         <!-- If you want FreeSWITCH to shutdown if this profile fails to load,
              uncomment the next line. -->

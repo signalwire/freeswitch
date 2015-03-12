@@ -23,7 +23,13 @@ IF "%1-%2" == "%LAST_BUILD_INFO%" (
 
 SET LIB_DEST_DIR=
 
-IF NOT "%4" == "" (
+IF "%VisualStudioVersion%" == "11.0" (
+	SET VS_VERSION=-Gmsvs_version=2012
+	ECHO Forcing build to use Visual Studio 2012
+) ELSE IF "%VisualStudioVersion%" == "12.0" (
+	SET VS_VERSION=-Gmsvs_version=2013
+	ECHO Forcing build to use Visual Studio 2013
+) ELSE IF NOT "%4" == "" (
 	SET VS_VERSION=-Gmsvs_version=%4
 	ECHO Forcing build to use Visual Studio %4
 )

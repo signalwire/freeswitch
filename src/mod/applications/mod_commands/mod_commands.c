@@ -3455,7 +3455,11 @@ SWITCH_STANDARD_API(uuid_pre_answer_function)
 
 	if (uuid && (xsession = switch_core_session_locate(uuid))) {
 		switch_channel_t *channel = switch_core_session_get_channel(xsession);
-		switch_channel_pre_answer(channel);
+		if (switch_channel_pre_answer(channel) == SWITCH_STATUS_SUCCESS) {
+			stream->write_function(stream, "+OK\n");
+		} else {
+			stream->write_function(stream, "-ERROR\n");
+		}
 		switch_core_session_rwunlock(xsession);
 	} else {
 		stream->write_function(stream, "-ERROR\n");

@@ -885,6 +885,7 @@ static switch_bool_t check_auth(jsock_t *jsock, cJSON *params, int *code, char *
 	switch_bool_t r = SWITCH_FALSE;
 	const char *passwd = NULL;
 	const char *login = NULL;
+	cJSON *login_params = NULL;
 
 	if (!params) {
 		*code = CODE_AUTH_FAILED;
@@ -939,6 +940,23 @@ static switch_bool_t check_auth(jsock_t *jsock, cJSON *params, int *code, char *
 
 		switch_event_create(&req_params, SWITCH_EVENT_REQUEST_PARAMS);
 		switch_assert(req_params);
+
+		if ((login_params = cJSON_GetObjectItem(params, "loginParams"))) {
+			cJSON * i;
+
+			for(i = login_params->child; i; i = i->next) {
+				if (i->type == cJSON_True) {
+					switch_event_add_header_string(req_params, SWITCH_STACK_BOTTOM, i->string, "true");
+				} else if (i->type == cJSON_False) {
+					switch_event_add_header_string(req_params, SWITCH_STACK_BOTTOM, i->string, "false");
+				} else if (!zstr(i->string) && !zstr(i->valuestring)) {
+					switch_event_add_header_string(req_params, SWITCH_STACK_BOTTOM, i->string, i->valuestring);
+				}
+			}
+
+			DUMP_EVENT(req_params);
+
+		}
 
 		switch_event_add_header_string(req_params, SWITCH_STACK_BOTTOM, "action", "jsonrpc-authenticate");
 		
@@ -1664,7 +1682,7 @@ authed:
 			char *expression = rule->name;
 
 			if ((proceed = switch_regex_perform(request.uri, expression, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
 								  "%d request [%s] matched expr [%s]\n", proceed, request.uri, expression);
 				request.uri = rule->value;
 				break;
@@ -1713,14 +1731,28 @@ done:
 			if (pflags & SWITCH_POLL_READ) {
 				ssize_t bytes;
 
-				bytes = ws_raw_read(wsh, wsh->buffer + wsh->datalen, wsh->buflen - wsh->datalen, wsh->block);
+				bytes = ws_raw_read(wsh, wsh->buffer + wsh->datalen, wsh->buflen - wsh->datalen - 1, wsh->block);
 
 				if (bytes < 0) {
 					die("BAD READ %" SWITCH_SIZE_T_FMT "\n", bytes);
 					break;
 				}
 
+				if (bytes == 0) {
+					bytes = ws_raw_read(wsh, wsh->buffer + wsh->datalen, wsh->buflen - wsh->datalen - 1, wsh->block);
+
+					if (bytes < 0) {
+						die("BAD READ %" SWITCH_SIZE_T_FMT "\n", bytes);
+						break;
+					}
+
+					if (bytes == 0) { // socket broken ?
+						break;
+					}
+				}
+
 				wsh->datalen += bytes;
+				*(wsh->buffer + wsh->datalen) = '\0';
 
 				if (strstr(wsh->buffer, "\r\n\r\n") || strstr(wsh->buffer, "\n\n")) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "socket %s is going to handle a new request\n", jsock->name);

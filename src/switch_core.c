@@ -1813,16 +1813,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 }
 
 
-#ifndef WIN32
-static void handle_SIGCHLD(int sig)
-{
-	int status = 0;
-
-	wait(&status);
-	return;
-}
-#endif
-
 #ifdef TRAP_BUS
 static void handle_SIGBUS(int sig)
 {
@@ -2311,13 +2301,6 @@ SWITCH_DECLARE(void) switch_core_set_signal_handlers(void)
 {
 	/* set signal handlers */
 	signal(SIGINT, SIG_IGN);
-#ifndef WIN32
-	if (switch_test_flag((&runtime), SCF_THREADED_SYSTEM_EXEC)) {
-		signal(SIGCHLD, SIG_DFL);
-	} else {
-		signal(SIGCHLD, handle_SIGCHLD);
-	}
-#endif
 #ifdef SIGPIPE
 	signal(SIGPIPE, SIG_IGN);
 #endif

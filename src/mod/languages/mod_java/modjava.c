@@ -128,6 +128,7 @@ static switch_status_t exec_user_method(user_method_t * userMethod) {
 
     if (class == NULL) {
         (*env)->ExceptionDescribe(env);
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s Class not found\n",userMethod->class);
         status =  SWITCH_STATUS_FALSE;
         goto done;
     }
@@ -136,6 +137,7 @@ static switch_status_t exec_user_method(user_method_t * userMethod) {
 
     if (method == NULL) {
         (*env)->ExceptionDescribe(env);
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s Method not found\n",userMethod->method);
         status =  SWITCH_STATUS_FALSE;
         goto done;
     }
@@ -145,6 +147,7 @@ static switch_status_t exec_user_method(user_method_t * userMethod) {
 
         if (arg == NULL) {
             (*env)->ExceptionDescribe(env);
+            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Args not found\n");
             status =  SWITCH_STATUS_FALSE;
             goto done;
         }
@@ -187,7 +190,7 @@ SWITCH_STANDARD_APP(java_function)
 static switch_status_t load_config(JavaVMOption **javaOptions, int *optionCount, vm_control_t * vmControl)
 {
     switch_xml_t cfg, xml;
-    switch_status_t status;
+    switch_status_t status = SWITCH_STATUS_SUCCESS;
 	char *derr = NULL;
 
     xml = switch_xml_open_cfg("java.conf", &cfg, NULL);

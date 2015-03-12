@@ -4534,6 +4534,7 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 				member->loop_loop = 1;
 
 				if (setup_media(member, member->conference)) {
+					switch_mutex_unlock(member->read_mutex);
 					break;
 				}
 			}
@@ -8959,6 +8960,9 @@ SWITCH_STANDARD_APP(conference_auto_function)
 static int setup_media(conference_member_t *member, conference_obj_t *conference)
 {
 	switch_codec_implementation_t read_impl = { 0 };
+
+	switch_mutex_lock(member->audio_out_mutex);
+
 	switch_core_session_get_read_impl(member->session, &read_impl);
 
 	if (switch_core_codec_ready(&member->read_codec)) {
@@ -8975,6 +8979,9 @@ static int setup_media(conference_member_t *member, conference_obj_t *conference
 		switch_resample_destroy(&member->read_resampler);
 	}
 
+	switch_buffer_destroy(&member->resample_buffer);
+	switch_buffer_destroy(&member->audio_buffer);
+	switch_buffer_destroy(&member->mux_buffer);
 
 	switch_core_session_get_read_impl(member->session, &member->orig_read_impl);
 	member->native_rate = read_impl.samples_per_second;
@@ -9052,6 +9059,8 @@ static int setup_media(conference_member_t *member, conference_obj_t *conference
 		goto codec_done1;
 	}
 
+	switch_mutex_unlock(member->audio_out_mutex);
+
 	return 0;
 
   codec_done1:
@@ -9059,6 +9068,8 @@ static int setup_media(conference_member_t *member, conference_obj_t *conference
   codec_done2:
 	switch_core_codec_destroy(&member->write_codec);
   done:
+
+	switch_mutex_unlock(member->audio_out_mutex);
 
 	return -1;
 
@@ -9571,6 +9582,15 @@ SWITCH_STANDARD_APP(conference_function)
 	member.channel = switch_core_session_get_channel(session);
 	member.pool = switch_core_session_get_pool(session);
 
+	/* Prepare MUTEXS */
+	switch_mutex_init(&member.flag_mutex, SWITCH_MUTEX_NESTED, member.pool);
+	switch_mutex_init(&member.write_mutex, SWITCH_MUTEX_NESTED, member.pool);
+	switch_mutex_init(&member.read_mutex, SWITCH_MUTEX_NESTED, member.pool);
+	switch_mutex_init(&member.fnode_mutex, SWITCH_MUTEX_NESTED, member.pool);
+	switch_mutex_init(&member.audio_in_mutex, SWITCH_MUTEX_NESTED, member.pool);
+	switch_mutex_init(&member.audio_out_mutex, SWITCH_MUTEX_NESTED, member.pool);
+	switch_thread_rwlock_create(&member.rwlock, member.pool);
+
 	if (setup_media(&member, conference)) {
 		//flags = 0;
 		goto done;
@@ -9584,16 +9604,8 @@ SWITCH_STANDARD_APP(conference_function)
 	}
 
 	switch_channel_set_variable_printf(channel, "conference_member_id", "%u", *mid);
-
-	/* Prepare MUTEXS */
 	member.id = *mid;
-	switch_mutex_init(&member.flag_mutex, SWITCH_MUTEX_NESTED, member.pool);
-	switch_mutex_init(&member.write_mutex, SWITCH_MUTEX_NESTED, member.pool);
-	switch_mutex_init(&member.read_mutex, SWITCH_MUTEX_NESTED, member.pool);
-	switch_mutex_init(&member.fnode_mutex, SWITCH_MUTEX_NESTED, member.pool);
-	switch_mutex_init(&member.audio_in_mutex, SWITCH_MUTEX_NESTED, member.pool);
-	switch_mutex_init(&member.audio_out_mutex, SWITCH_MUTEX_NESTED, member.pool);
-	switch_thread_rwlock_create(&member.rwlock, member.pool);
+
 
 	/* Install our Signed Linear codec so we get the audio in that format */
 	switch_core_session_set_read_codec(member.session, &member.read_codec);

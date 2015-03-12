@@ -11,10 +11,10 @@ FSPREFIX=/usr/local/freeswitch
 PREFIX=/usr/local/freeswitch
 DOWNLOAD=http://files.freeswitch.org/downloads/libs
 JPEG=v8d
-OPENSSL=1.0.1j
+OPENSSL=1.0.1l
 SQLITE=autoconf-3080403
 PCRE=8.35
-CURL=7.35.0
+CURL=7.40.0
 SPEEX=1.2rc1
 LIBEDIT=20140618-3.1
 LDNS=1.6.17
@@ -76,7 +76,7 @@ curl: curl-$(CURL)/.done
 curl-$(CURL)/.done: curl-$(CURL)
 curl-$(CURL):
 	(test -d $@) || (wget -4 -O $@.tar.gz $(DOWNLOAD)/$@.tar.gz && tar zxfv $@.tar.gz)
-	(cd $@ && ./configure --prefix=$(PREFIX) && make && sudo make install && touch .done)
+	(cd $@ && ./configure LDFLAGS='-L$(PREFIX)/lib -Wl,-rpath=$(PREFIX)/lib' CFLAGS='-I$(PREFIX)/include' --prefix=$(PREFIX) && make && sudo make install && touch .done)
 
 speex: speex-$(SPEEX)/.done
 speex-$(SPEEX)/.done: speex-$(SPEEX)

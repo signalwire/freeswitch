@@ -71,6 +71,7 @@
             login       : null, /// auth login
             passwd      : null, /// auth passwd
             sessid : null,
+	    loginParams : null,
             getSocket   : function(onmessage_cb) { return self._getSocket(onmessage_cb); }
         }, options);
 
@@ -250,15 +251,18 @@
     };
 
     $.JsonRpcClient.prototype.closeSocket = function() {
+	var self = this;
         if (self.socketReady()) {
-            this._ws_socket.onclose = function (w) {console.log("Closing Socket");};
-            this._ws_socket.close();
+            self._ws_socket.onclose = function (w) {console.log("Closing Socket");};
+            self._ws_socket.close();
         }
     };
 
     $.JsonRpcClient.prototype.loginData = function(params) {
+	var self = this;
         self.options.login = params.login;
         self.options.passwd = params.passwd;
+	self.options.loginParams = params.loginParams;
     };
 
     $.JsonRpcClient.prototype.connectSocket = function(onmessage_cb) {
@@ -418,7 +422,7 @@
                     if (!self.authing && response.error.code == -32000 && self.options.login && self.options.passwd) {
                         self.authing = true;
 
-                        this.call("login", { login: self.options.login, passwd: self.options.passwd},
+                        this.call("login", { login: self.options.login, passwd: self.options.passwd, loginParams: self.options.loginParams},
                             this._ws_callbacks[response.id].request_obj.method == "login" ?
                             function(e) {
                                 self.authing = false;

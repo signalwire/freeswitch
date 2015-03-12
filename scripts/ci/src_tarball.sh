@@ -6,15 +6,18 @@ sdir="."
 . $sdir/common.sh
 
 check_pwd
-check_input_ver_build $@
-eval $(parse_version "$1")
+version=`cat build/next-release.txt`
+check_input_ver_build $version
+eval $(parse_version "$version")
 if [ -n "$grev" ]; then 
 	dst_name="freeswitch-$cmajor.$cminor.$cmicro.$grev"
 else
 	dst_name="freeswitch-$cmajor.$cminor.$cmicro"
 fi
 
-dst_dir="${tmp_dir}/jenkins.$$/$dst_name"
+#This should be a RAM Drive
+build_dir="jenkins.$$"
+dst_dir="${tmp_dir}/${build_dir}/$dst_name"
 
 if [ -d "$dst_dir" ]; then
   echo "error: destination directory $dst_dir already exists." 1>&2
@@ -39,9 +42,14 @@ zip -r $dst_name.zip $dst_name
 
 rm -rf ${dst_name}.tar $dst_dir
 
-mkdir -p ${src_repo}/src_dist
-mv -f ${dst_name}.tar.* ${src_repo}/src_dist
-mv -f $dst_name.zip ${src_repo}/src_dist
+mkdir -p ${src_repo}/../src_dist
+mv -f ${dst_name}.tar.* ${src_repo}/../src_dist
+mv -f $dst_name.zip ${src_repo}/../src_dist
+
+cd ${tmp_dir}
+ls -al 
+rm -rf ${build_dir}
+ls -al 
 
 cat 1>&2 <<EOF
 ----------------------------------------------------------------------

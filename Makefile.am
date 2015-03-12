@@ -57,7 +57,11 @@ MY_DEFAULT_ARGS= --build=$(build) --host=$(host) --target=$(target) --prefix="$(
 	     if test "$$target" = "install"; then \
 	        $(MAKE) $(AM_MAKEFLAGS) core_install && cd src/mod && $(MAKE) $(AM_MAKEFLAGS) $@ ; \
 	     else \
-	        $(MAKE) $(AM_MAKEFLAGS) core && cd src/mod && $(MAKE) $(AM_MAKEFLAGS) $@ ;\
+		if test "$$target" = "clean"; then \
+		        cd src/mod && $(MAKE) $(AM_MAKEFLAGS) $@ ;\
+		else \
+		        $(MAKE) $(AM_MAKEFLAGS) core && cd src/mod && $(MAKE) $(AM_MAKEFLAGS) $@ ;\
+		fi; \
 	     fi; \
 	   fi; fi
 

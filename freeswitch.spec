@@ -11,7 +11,7 @@
 #
 # This file is part of:
 # FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
-# Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
+# Copyright (C) 2005-2015, Anthony Minessale II <anthm@freeswitch.org>
 #
 # This file and all modifications and additions to the pristine package are under the same license as the package itself.
 #
@@ -45,8 +45,8 @@
 %{?with_timerfd:%define build_timerfd 1 }
 %{?with_mod_esl:%define build_mod_esl 1 }
 
-%define version %{VERSION_NUMBER}
-%define release %{BUILD_NUMBER}
+%define version 1.5.16
+%define release 1
 
 ######################################################################################################################
 #
@@ -116,7 +116,7 @@ Vendor:       	http://www.freeswitch.org/
 ######################################################################################################################
 Source0:        http://files.freeswitch.org/%{name}-%{version}.tar.bz2
 Source1:	http://files.freeswitch.org/downloads/libs/celt-0.10.0.tar.gz
-Source2:	http://files.freeswitch.org/downloads/libs/flite-1.5.4-current.tar.bz2
+Source2:	http://files.freeswitch.org/downloads/libs/flite-2.0.0-release.tar.bz2
 Source3:	http://files.freeswitch.org/downloads/libs/lame-3.98.4.tar.gz
 Source4:	http://files.freeswitch.org/downloads/libs/libshout-2.2.2.tar.gz
 Source5:	http://files.freeswitch.org/downloads/libs/mpg123-1.13.2.tar.gz

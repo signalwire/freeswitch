@@ -732,9 +732,18 @@ int soa_sdp_upgrade(soa_session_t *ss,
   if (session == NULL || user == NULL)
     return (errno = EFAULT), -1;
 
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wnon-literal-null-conversion"
+#endif
+
   Ns = sdp_media_count(session, sdp_media_any, (sdp_text_t)0, (sdp_proto_e)0, (sdp_text_t)0);
   Nu = sdp_media_count(user, sdp_media_any, (sdp_text_t)0, (sdp_proto_e)0, (sdp_text_t)0);
   Nr = sdp_media_count(remote, sdp_media_any, (sdp_text_t)0, (sdp_proto_e)0, (sdp_text_t)0);
+
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
 
   if (remote == NULL)
     Nmax = Ns + Nu;
@@ -1144,6 +1153,11 @@ static int offer_answer_step(soa_session_t *ss,
   else if (remote == NULL)
     return soa_set_status(ss, 500, "No remote SDP");
 
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wnon-literal-null-conversion"
+#endif
+
   /* Pre-negotiation Step: Expand truncated remote SDP */
   if (local && remote) switch (action) {
   case generate_answer:
@@ -1159,6 +1173,11 @@ static int offer_answer_step(soa_session_t *ss,
   default:
     break;
   }
+
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+
 
   /* Step A: Create local SDP session (based on user-supplied SDP) */
   if (local == NULL) switch (action) {

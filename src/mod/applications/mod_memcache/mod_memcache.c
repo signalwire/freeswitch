@@ -357,7 +357,7 @@ SWITCH_STANDARD_API(memcache_function)
 		} else if (!strcasecmp(subcmd, "delete") && argc > 1) {
 			key = argv[1];
 			if (argc > 2) {
-				expires_str = argv[3];
+				expires_str = argv[2];
 				expires = (time_t) strtol(expires_str, NULL, 10);
 			}
 			rc = memcached_delete(memcached, key, strlen(key), expires);
@@ -368,7 +368,7 @@ SWITCH_STANDARD_API(memcache_function)
 			}
 		} else if (!strcasecmp(subcmd, "flush")) {
 			if (argc > 1) {
-				expires_str = argv[3];
+				expires_str = argv[1];
 				expires = (time_t) strtol(expires_str, NULL, 10);
 			}
 			rc = memcached_flush(memcached, expires);

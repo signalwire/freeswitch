@@ -375,6 +375,7 @@ if test "x${ax_cv_c_compiler_vendor}"  =  "xsun" ; then
 elif test "x${ax_cv_c_compiler_vendor}" = "xclang" ; then
     APR_ADDTO(SWITCH_AM_CFLAGS, -fPIC)
     APR_ADDTO(SWITCH_AM_CXXFLAGS, -fPIC)
+    APR_ADDTO(SWITCH_AM_CFLAGS, -Werror)
 elif test "x${ax_cv_c_compiler_vendor}" = "xgnu" ; then
     APR_ADDTO(SWITCH_AM_CFLAGS, -fPIC)
     APR_ADDTO(SWITCH_AM_CXXFLAGS, -fPIC)

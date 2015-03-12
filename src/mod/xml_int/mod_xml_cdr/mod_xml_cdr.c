@@ -70,6 +70,7 @@ static struct {
 	int timeout;
 	switch_memory_pool_t *pool;
 	switch_event_node_t *node;
+	char *cookie_file;
 } globals;
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load);
@@ -330,6 +331,11 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 			switch_curl_easy_setopt(curl_handle, CURLOPT_CAINFO, globals.ssl_cacert_file);
 		}
 		
+		if (globals.cookie_file) {
+			switch_curl_easy_setopt(curl_handle, CURLOPT_COOKIEJAR, globals.cookie_file);
+			switch_curl_easy_setopt(curl_handle, CURLOPT_COOKIEFILE, globals.cookie_file);
+		}
+
 		switch_curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, globals.timeout);
 
 		/* these were used for testing, optionally they may be enabled if someone desires
@@ -582,6 +588,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load)
 				} else if (!strcasecmp(val, "any")) {
 					globals.auth_scheme = (long)CURLAUTH_ANY;
 				}
+			} else if (!strcasecmp(var, "cookie-file")) {
+				globals.cookie_file = switch_core_strdup(globals.pool, val);
 			}
 		}
 		

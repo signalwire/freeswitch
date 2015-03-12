@@ -271,9 +271,10 @@ static void event_handler(switch_event_t *event)
 		return;
 	}
 
+	switch_mutex_lock(globals.listener_mutex);
+
 	lp = listen_list.listeners;
 
-	switch_mutex_lock(globals.listener_mutex);
 	while (lp) {
 		int send = 0;
 

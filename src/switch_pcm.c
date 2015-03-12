@@ -393,12 +393,12 @@ SWITCH_MODULE_LOAD_FUNCTION(core_pcm_load)
 		}
 		for (; countb > 0; countb--) {
 			switch_core_codec_add_implementation(pool, codec_interface,
-												 SWITCH_CODEC_TYPE_AUDIO, 70, "L16", NULL, rate, rate, bps,
+												 SWITCH_CODEC_TYPE_AUDIO, 100, "L16", NULL, rate, rate, bps,
 												 mpf * countb, spf * countb, bpf * countb, ebpf * countb, 1, spf * countb,
 												 switch_raw_init, switch_raw_encode, switch_raw_decode, switch_raw_destroy);
 
 			switch_core_codec_add_implementation(pool, codec_interface,
-												 SWITCH_CODEC_TYPE_AUDIO, 70, "L16", NULL, rate, rate, bps,
+												 SWITCH_CODEC_TYPE_AUDIO, 100, "L16", NULL, rate, rate, bps,
 												 mpf * countb, spf * countb, bpf * countb * 2, ebpf * countb, 2, spf * countb,
 												 switch_raw_init, switch_raw_encode, switch_raw_decode, switch_raw_destroy);
 		}
@@ -415,7 +415,7 @@ SWITCH_MODULE_LOAD_FUNCTION(core_pcm_load)
 
 	for (x = 0; x < 5; x++) {
 		switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
-											 70,	/* the IANA code number */
+											 100,	/* the IANA code number */
 											 "L16",	/* the IANA code name */
 											 NULL,	/* default fmtp to send (can be overridden by the init function) */
 											 12000,	/* samples transferred per second */
@@ -433,7 +433,7 @@ SWITCH_MODULE_LOAD_FUNCTION(core_pcm_load)
 											 switch_raw_destroy);	/* deinitalize a codec handle using this implementation */
 
     switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,  /* enumeration defining the type of the codec */
-                       70,  /* the IANA code number */
+                       100,  /* the IANA code number */
                        "L16", /* the IANA code name */
                        NULL,  /* default fmtp to send (can be overridden by the init function) */
                        12000, /* samples transferred per second */
@@ -462,7 +462,7 @@ SWITCH_MODULE_LOAD_FUNCTION(core_pcm_load)
 
 	for (x = 0; x < 3; x++) {
 		switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
-											 70,	/* the IANA code number */
+											 100,	/* the IANA code number */
 											 "L16",	/* the IANA code name */
 											 NULL,	/* default fmtp to send (can be overridden by the init function) */
 											 24000,	/* samples transferred per second */
@@ -480,7 +480,7 @@ SWITCH_MODULE_LOAD_FUNCTION(core_pcm_load)
 											 switch_raw_destroy);	/* deinitalize a codec handle using this implementation */
 
     switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,  /* enumeration defining the type of the codec */
-                       70,  /* the IANA code number */
+                       100,  /* the IANA code number */
                        "L16", /* the IANA code name */
                        NULL,  /* default fmtp to send (can be overridden by the init function) */
                        24000, /* samples transferred per second */
@@ -511,7 +511,7 @@ SWITCH_MODULE_LOAD_FUNCTION(core_pcm_load)
 
 	for (x = 0; x < 5; x++) {
 		switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
-											 70,	/* the IANA code number */
+											 100,	/* the IANA code number */
 											 "L16",	/* the IANA code name */
 											 NULL,	/* default fmtp to send (can be overridden by the init function) */
 											 48000,	/* samples transferred per second */
@@ -529,7 +529,7 @@ SWITCH_MODULE_LOAD_FUNCTION(core_pcm_load)
 											 switch_raw_destroy);	/* deinitalize a codec handle using this implementation */
 
 		switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
-											 70,	/* the IANA code number */
+											 100,	/* the IANA code number */
 											 "L16",	/* the IANA code name */
 											 NULL,	/* default fmtp to send (can be overridden by the init function) */
 											 48000,	/* samples transferred per second */
@@ -559,7 +559,7 @@ SWITCH_MODULE_LOAD_FUNCTION(core_pcm_load)
 
 	for (x = 0; x < 4; x++) {
 		switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
-											 70,	/* the IANA code number */
+											 100,	/* the IANA code number */
 											 "L16",	/* the IANA code name */
 											 NULL,	/* default fmtp to send (can be overridden by the init function) */
 											 8000,	/* samples transferred per second */
@@ -577,7 +577,7 @@ SWITCH_MODULE_LOAD_FUNCTION(core_pcm_load)
 											 switch_raw_destroy);	/* deinitalize a codec handle using this implementation */
 
     switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,  /* enumeration defining the type of the codec */
-                       70,  /* the IANA code number */
+                       100,  /* the IANA code number */
                        "L16", /* the IANA code name */
                        NULL,  /* default fmtp to send (can be overridden by the init function) */
                        8000,  /* samples transferred per second */
@@ -606,7 +606,7 @@ SWITCH_MODULE_LOAD_FUNCTION(core_pcm_load)
 
 	for (x = 0; x < 4; x++) {
 		switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
-											 70,	/* the IANA code number */
+											 100,	/* the IANA code number */
 											 "L16",	/* the IANA code name */
 											 NULL,	/* default fmtp to send (can be overridden by the init function) */
 											 16000,	/* samples transferred per second */
@@ -624,7 +624,7 @@ SWITCH_MODULE_LOAD_FUNCTION(core_pcm_load)
 											 switch_raw_destroy);	/* deinitalize a codec handle using this implementation */
 
     switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,  /* enumeration defining the type of the codec */
-                       70,  /* the IANA code number */
+                       100,  /* the IANA code number */
                        "L16", /* the IANA code name */
                        NULL,  /* default fmtp to send (can be overridden by the init function) */
                        16000, /* samples transferred per second */
@@ -654,7 +654,7 @@ SWITCH_MODULE_LOAD_FUNCTION(core_pcm_load)
 
 	for (x = 0; x < 4; x++) {
 		switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
-											 70,	/* the IANA code number */
+											 100,	/* the IANA code number */
 											 "L16",	/* the IANA code name */
 											 NULL,	/* default fmtp to send (can be overridden by the init function) */
 											 32000,	/* samples transferred per second */
@@ -672,7 +672,7 @@ SWITCH_MODULE_LOAD_FUNCTION(core_pcm_load)
 											 switch_raw_destroy);	/* deinitalize a codec handle using this implementation */
 
     switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,  /* enumeration defining the type of the codec */
-                       70,  /* the IANA code number */
+                       100,  /* the IANA code number */
                        "L16", /* the IANA code name */
                        NULL,  /* default fmtp to send (can be overridden by the init function) */
                        32000, /* samples transferred per second */
@@ -701,7 +701,7 @@ SWITCH_MODULE_LOAD_FUNCTION(core_pcm_load)
 	/* 10ms is already registered */
 	for (x = 0; x < 3; x++) {
 		switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
-											 70,	/* the IANA code number */
+											 100,	/* the IANA code number */
 											 "L16",	/* the IANA code name */
 											 NULL,	/* default fmtp to send (can be overridden by the init function) */
 											 48000,	/* samples transferred per second */
@@ -719,7 +719,7 @@ SWITCH_MODULE_LOAD_FUNCTION(core_pcm_load)
 											 switch_raw_destroy);	/* deinitalize a codec handle using this implementation */
 
 		switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
-											 70,	/* the IANA code number */
+											 100,	/* the IANA code number */
 											 "L16",	/* the IANA code name */
 											 NULL,	/* default fmtp to send (can be overridden by the init function) */
 											 48000,	/* samples transferred per second */
@@ -747,7 +747,7 @@ SWITCH_MODULE_LOAD_FUNCTION(core_pcm_load)
 
 	for (x = 0; x < 3; x++) {
 		switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
-											 70,	/* the IANA code number */
+											 100,	/* the IANA code number */
 											 "L16",	/* the IANA code name */
 											 NULL,	/* default fmtp to send (can be overridden by the init function) */
 											 44100,	/* samples transferred per second */
@@ -765,7 +765,7 @@ SWITCH_MODULE_LOAD_FUNCTION(core_pcm_load)
 											 switch_raw_destroy);	/* deinitalize a codec handle using this implementation */
 
 		switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
-											 70,	/* the IANA code number */
+											 100,	/* the IANA code number */
 											 "L16",	/* the IANA code name */
 											 NULL,	/* default fmtp to send (can be overridden by the init function) */
 											 44100,	/* samples transferred per second */
@@ -791,7 +791,7 @@ SWITCH_MODULE_LOAD_FUNCTION(core_pcm_load)
 
 
 	switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
-										 70,	/* the IANA code number */
+										 100,	/* the IANA code number */
 										 "L16",	/* the IANA code name */
 										 NULL,	/* default fmtp to send (can be overridden by the init function) */
 										 22050,	/* samples transferred per second */
@@ -809,7 +809,7 @@ SWITCH_MODULE_LOAD_FUNCTION(core_pcm_load)
 										 switch_raw_destroy);	/* deinitalize a codec handle using this implementation */
 
   switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,  /* enumeration defining the type of the codec */
-                     70,  /* the IANA code number */
+                     100,  /* the IANA code number */
                      "L16", /* the IANA code name */
                      NULL,  /* default fmtp to send (can be overridden by the init function) */
                      22050, /* samples transferred per second */
@@ -827,7 +827,7 @@ SWITCH_MODULE_LOAD_FUNCTION(core_pcm_load)
                      switch_raw_destroy); /* deinitalize a codec handle using this implementation */
 
 	switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
-										 70,	/* the IANA code number */
+										 100,	/* the IANA code number */
 										 "L16",	/* the IANA code name */
 										 NULL,	/* default fmtp to send (can be overridden by the init function) */
 										 11025,	/* samples transferred per second */
@@ -845,7 +845,7 @@ SWITCH_MODULE_LOAD_FUNCTION(core_pcm_load)
 										 switch_raw_destroy);	/* deinitalize a codec handle using this implementation */
 
   switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,  /* enumeration defining the type of the codec */
-                     70,  /* the IANA code number */
+                     100,  /* the IANA code number */
                      "L16", /* the IANA code name */
                      NULL,  /* default fmtp to send (can be overridden by the init function) */
                      11025, /* samples transferred per second */
@@ -864,7 +864,7 @@ SWITCH_MODULE_LOAD_FUNCTION(core_pcm_load)
 
 
 	switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
-										 70,	/* the IANA code number */
+										 100,	/* the IANA code number */
 										 "L16",	/* the IANA code name */
 										 NULL,	/* default fmtp to send (can be overridden by the init function) */
 										 11025,	/* samples transferred per second */
@@ -882,7 +882,7 @@ SWITCH_MODULE_LOAD_FUNCTION(core_pcm_load)
 										 switch_raw_destroy);	/* deinitalize a codec handle using this implementation */
 
   switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,  /* enumeration defining the type of the codec */
-                     70,  /* the IANA code number */
+                     100,  /* the IANA code number */
                      "L16", /* the IANA code name */
                      NULL,  /* default fmtp to send (can be overridden by the init function) */
                      11025, /* samples transferred per second */
