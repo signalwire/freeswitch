@@ -51,6 +51,9 @@
 #endif
 #include <errno.h>
 #include <sqlite3.h>
+#ifdef HAVE_SYS_PRCTL_H
+#include <sys/prctl.h>
+#endif
 
 
 SWITCH_DECLARE_DATA switch_directories SWITCH_GLOBAL_dirs = { 0 };
@@ -1029,6 +1032,12 @@ SWITCH_DECLARE(int32_t) change_user_group(const char *user, const char *group)
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failed to change uid!\n");
 			return -1;
 		}
+#ifdef HAVE_SYS_PRCTL_H
+		if (prctl(PR_SET_DUMPABLE, 1) < 0) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failed to enable core dumps!\n");
+			return -1;
+		}
+#endif
 	}
 #endif
 	return 0;

@@ -305,6 +305,8 @@ static uint32_t jsock_unsub_head(jsock_t *jsock, jsock_sub_node_head_t *head)
 	return x;
 }
 
+static void detach_calls(jsock_t *jsock);
+
 static void unsub_all_jsock(void)
 {
 	switch_hash_index_t *hi;
@@ -1059,8 +1061,30 @@ static jsock_t *get_jsock(const char *uuid)
 
 static void attach_jsock(jsock_t *jsock)
 {
+	jsock_t *jp;
+	int proceed = 1;
+
 	switch_mutex_lock(globals.jsock_mutex);
-	switch_core_hash_insert(globals.jsock_hash, jsock->uuid_str, jsock);
+
+	if ((jp = switch_core_hash_find(globals.jsock_hash, jsock->uuid_str))) {
+		if (jp == jsock) {
+			proceed = 0;
+		} else {
+			cJSON *params = NULL;
+			cJSON *msg = NULL;
+			msg = jrpc_new_req("verto.punt", NULL, &params);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "New connection for session %s dropping previous connection.\n", jsock->uuid_str);
+			switch_core_hash_delete(globals.jsock_hash, jsock->uuid_str);
+			ws_write_json(jp, &msg, SWITCH_TRUE);
+			cJSON_Delete(msg);
+			jp->drop = 1;
+		}
+	}
+
+	if (proceed) {
+		switch_core_hash_insert(globals.jsock_hash, jsock->uuid_str, jsock);
+	}
+
 	switch_mutex_unlock(globals.jsock_mutex);
 }
 
@@ -2179,7 +2203,7 @@ static void verto_set_media_options(verto_pvt_t *tech_pvt, verto_profile_t *prof
 		profile->rtpip_cur = 0;
 	}
 
-	tech_pvt->mparams->extrtpip = profile->extrtpip;
+	tech_pvt->mparams->extrtpip = tech_pvt->mparams->extsipip = profile->extrtpip;
 
 	//tech_pvt->mparams->dtmf_type = tech_pvt->profile->dtmf_type;
 	switch_channel_set_flag(tech_pvt->channel, CF_TRACKABLE);
@@ -3558,11 +3582,15 @@ static switch_bool_t jsapi_func(const char *method, cJSON *params, jsock_t *jsoc
 				}
 
 				if (jsock->allowed_fsapi && !strcmp(function, "fsapi")) {
-					cJSON *cmd = cJSON_GetObjectItem(params, "cmd");
-					cJSON *arg = cJSON_GetObjectItem(params, "arg");
+					cJSON *data = cJSON_GetObjectItem(params, "data");
+					if (data) {
+						cJSON *cmd = cJSON_GetObjectItem(data, "cmd");
+						cJSON *arg = cJSON_GetObjectItem(data, "arg");
 
-					if (cmd->type == cJSON_String && cmd->valuestring && !auth_api_command(jsock, cmd->valuestring, arg ? arg->valuestring : NULL)) {
-						return SWITCH_FALSE;
+						if (cmd  && cmd->type == cJSON_String && cmd->valuestring &&
+							!auth_api_command(jsock, cmd->valuestring, arg ? arg->valuestring : NULL)) {
+							return SWITCH_FALSE;
+						}
 					}
 				}
 			}
@@ -3584,7 +3612,7 @@ static switch_bool_t fsapi_func(const char *method, cJSON *params, jsock_t *jsoc
 	arg = cJSON_GetObjectItem(params, "arg");
 
 
-	if (jsock->allowed_fsapi) {
+	if (cmd && jsock->allowed_fsapi) {
 		if (cmd->type == cJSON_String && cmd->valuestring && !auth_api_command(jsock, cmd->valuestring, arg ? arg->valuestring : NULL)) {
 			return SWITCH_FALSE;
 		}

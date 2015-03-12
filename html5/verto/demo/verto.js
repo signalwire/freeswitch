@@ -308,10 +308,8 @@ var callbacks = {
 
     },
     onWSClose: function(v, success) {
-        if ($('#online').is(':visible')) {
-            display("");
-            online(false);
-        }
+        display("");
+        online(false);
         var today = new Date();
         $("#errordisplay").html("Connection Error.<br>Last Attempt: " + today);
         goto_page("main");

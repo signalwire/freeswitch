@@ -29,14 +29,16 @@ define hash_it_str
 	set $i = 0
 	set $idx = 0
 	set $len = $arg0->tablelength
+	printf "len: %d\n", $arg0->tablelength
 
 	while($idx < $len)
-	  set $x=$arg0->table->[$idx]
+	  set $x = $arg0->table[$idx]
 	  while($x != 0x0)
 	    printf "key: %s valueptr: %p\n", $x->k, $x->v
 	    set $x = $x->next
 	    set $i = $i + 1
 	  end
+	  set $idx = $idx + 1
 	end
 end
 document hash_it_str 

@@ -372,7 +372,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *b
 	}
 
 	frame->datalen = (uint32_t)bytes;
-	frame->samples = (uint32_t)(bytes / sizeof(int16_t));
+	frame->samples = (uint32_t)(bytes / sizeof(int16_t) / read_impl.number_of_channels);
 	frame->rate = read_impl.actual_samples_per_second;
 	frame->codec = NULL;
 
@@ -380,22 +380,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *b
 		frame->datalen *= 2;
 		frame->channels = 2;
 	} else {
-		frame->channels = 1;
-	}
-
-	memcpy(bug->session->recur_buffer, frame->data, frame->datalen);
-	bug->session->recur_buffer_len = frame->datalen;
-
-	if (has_read) {
-		switch_mutex_lock(bug->read_mutex);
-		do_read = switch_buffer_inuse(bug->raw_read_buffer);
-		switch_mutex_unlock(bug->read_mutex);
-	}
-
-	if (has_write) {
-		switch_mutex_lock(bug->write_mutex);
-		do_write = switch_buffer_inuse(bug->raw_write_buffer);
-		switch_mutex_unlock(bug->write_mutex);
+		frame->channels = read_impl.number_of_channels;
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -589,11 +574,16 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_transfer_recordings(switch
 
 	if (orig_session->bugs) {
 		switch_channel_t *new_channel = switch_core_session_get_channel(new_session);
-		const char *save = switch_channel_get_variable(new_channel, "record_append");
-
+		switch_channel_t *orig_channel = switch_core_session_get_channel(orig_session);
+		const char *save_append = switch_channel_get_variable(new_channel, "record_append");
+		const char *save_stereo = switch_channel_get_variable(new_channel, "record_stereo");
+		const char *orig_stereo = switch_channel_get_variable(orig_channel, "record_stereo");
+		const char *new_stereo = orig_stereo;
+		
 		switch_thread_rwlock_wrlock(orig_session->bug_rwlock);
 		
 		switch_channel_set_variable(new_channel, "record_append", "true");
+		switch_channel_set_variable(new_channel, "record_stereo", new_stereo);
 
 		for (bp = orig_session->bugs; bp; bp = bp->next) {
 			if (!strcmp(bp->function, "session_record")) {
@@ -614,7 +604,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_transfer_recordings(switch
 			switch_ivr_record_session(new_session, list[i], stop_times[i], NULL);
 		}
 
-		switch_channel_set_variable(new_channel, "record_append", save);
+		switch_channel_set_variable(new_channel, "record_append", save_append);
+		switch_channel_set_variable(new_channel, "record_stereo", save_stereo);
 
 	}
 

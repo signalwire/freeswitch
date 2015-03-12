@@ -309,9 +309,12 @@ int ws_handshake(wsh_t *wsh)
 			 "%s\r\n",
 			 b64,
 			 proto_buf);
+	respond[511] = 0;
 
+	if (ws_raw_write(wsh, respond, strlen(respond)) != strlen(respond)) {
+		goto err;
+	}
 
-	ws_raw_write(wsh, respond, strlen(respond));
 	wsh->handshake = 1;
 
 	return 0;
@@ -322,6 +325,7 @@ int ws_handshake(wsh_t *wsh)
 
 		snprintf(respond, sizeof(respond), "HTTP/1.1 400 Bad Request\r\n"
 				 "Sec-WebSocket-Version: 13\r\n\r\n");
+		respond[511] = 0;
 
 		ws_raw_write(wsh, respond, strlen(respond));
 
@@ -399,13 +403,19 @@ ssize_t ws_raw_read(wsh_t *wsh, void *data, size_t bytes, int block)
 
 ssize_t ws_raw_write(wsh_t *wsh, void *data, size_t bytes)
 {
-	size_t r;
+	ssize_t r;
 	int sanity = 2000;
 	int ssl_err = 0;
+	ssize_t wrote = 0;
 
 	if (wsh->ssl) {
 		do {
-			r = SSL_write(wsh->ssl, data, bytes);
+			r = SSL_write(wsh->ssl, (void *)((unsigned char *)data + wrote), bytes - wrote);
+
+			if (r > 0) {
+				wrote += r;
+			}
+
 			if (sanity < 2000) {
 				ms_sleep(1);
 			}
@@ -414,7 +424,7 @@ ssize_t ws_raw_write(wsh_t *wsh, void *data, size_t bytes)
 				ssl_err = SSL_get_error(wsh->ssl, r);
 			}
 
-		} while (--sanity > 0 && r == -1 && ssl_err == SSL_ERROR_WANT_WRITE);
+		} while (--sanity > 0 && ((r == -1 && ssl_err == SSL_ERROR_WANT_WRITE) || (wsh->block && wrote < bytes)));
 
 		if (ssl_err) {
 			r = ssl_err * -1;
@@ -424,12 +434,18 @@ ssize_t ws_raw_write(wsh_t *wsh, void *data, size_t bytes)
 	}
 
 	do {
-		r = send(wsh->sock, data, bytes, 0);
+		r = send(wsh->sock, (void *)((unsigned char *)data + wrote), bytes - wrote, 0);
+		
+		if (r > 0) {
+			wrote += r;
+		}
+
 		if (sanity < 2000) {
 			ms_sleep(1);
 		}
-	} while (--sanity > 0 && r == -1 && xp_is_blocking(xp_errno()));
-
+		
+	} while (--sanity > 0 && ((r == -1 && xp_is_blocking(xp_errno())) || (wsh->block && wrote < bytes)));
+	
 	//if (r<0) {
 		//printf("wRITE FAIL: %s\n", strerror(errno));
 	//}
@@ -656,7 +672,11 @@ ssize_t ws_close(wsh_t *wsh, int16_t reason)
 	restore_socket(wsh->sock);
 
 	if (wsh->close_sock && wsh->sock != ws_sock_invalid) {
+#ifndef WIN32
 		close(wsh->sock);
+#else
+		closesocket(wsh->sock);
+#endif
 	}
 
 	wsh->sock = ws_sock_invalid;

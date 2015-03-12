@@ -308,7 +308,7 @@ Build-Depends:
  libogg-dev, libspeex-dev, libspeexdsp-dev,
 # configure options
  libssl-dev, unixodbc-dev, libpq-dev,
- libncurses5-dev, libjpeg62-dev | libjpeg8-dev,
+ libncurses5-dev, libjpeg62-turbo-dev | libjpeg62-dev | libjpeg8-dev,
  python-dev, erlang-dev,
 # documentation
  doxygen,

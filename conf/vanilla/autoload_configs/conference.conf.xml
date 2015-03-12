@@ -181,7 +181,7 @@
     <profile name="cdquality">
       <param name="domain" value="$${domain}"/>
       <param name="rate" value="48000"/>
-      <param name="interval" value="10"/>
+      <param name="interval" value="20"/>
       <param name="energy-level" value="300"/>
       <!--<param name="sound-prefix" value="$${sounds_dir}/en/us/callie"/>-->
       <param name="muted-sound" value="conference/conf-muted.wav"/>

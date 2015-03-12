@@ -3906,8 +3906,8 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 		
 		if (strstr(buf, "fs_path=") && !strstr(contact_str, "fs_path=")) {
 			char *e = strchr(buf,';');
-			size_t l = e ? buf-e : strlen(buf);
-			if (strncmp(contact_str,buf,l)) {
+			size_t l = e ? e-buf : strlen(buf);
+			if (!strncmp(contact_str,buf,l)) {
 				contact = buf;
 			}
 		}
@@ -4283,9 +4283,9 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 								  "full_via,expires,user_agent,accept,profile_name,network_ip"
 								  " from sip_subscriptions where hostname='%q' and profile_name='%q' and "
 								  "event='message-summary' and sub_to_user='%q' "
-								  "and (sip_host='%q' or presence_hosts like '%%%q%%')",
+								  "and (sip_host='%q' or presence_hosts like '%%%q%%') and call_id='%q'",
 								  to_host, mod_sofia_globals.hostname, profile->name,
-								  to_user, to_host, to_host))) {
+								  to_user, to_host, to_host, call_id))) {
 
 			if (mod_sofia_globals.debug_presence > 0) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,

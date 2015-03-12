@@ -93,15 +93,22 @@
             candidateList: []
         };
 
-        this.constraints = {
-            optional: [{
-                'DtlsSrtpKeyAgreement': 'true'
-            }],
-            mandatory: {
-                OfferToReceiveAudio: true,
-                OfferToReceiveVideo: this.options.useVideo ? true : false,
-            }
-        };
+
+	if (moz) {
+            this.constraints = {
+		offerToReceiveAudio: true,
+		offerToReceiveVideo: this.options.useVideo ? true : false,
+            };
+	} else {
+            this.constraints = {
+		optional: [{
+		    'DtlsSrtpKeyAgreement': 'true'
+		}],mandatory: {
+		    OfferToReceiveAudio: true,
+		    OfferToReceiveVideo: this.options.useVideo ? true : false,
+		}
+            };
+	}
 
         if (self.options.useVideo) {
             self.options.useVideo.style.display = 'none';
@@ -116,10 +123,18 @@
 
         if (obj) {
             self.options.useVideo = obj;
-            self.constraints.mandatory.OfferToReceiveVideo = true;
+	    if (moz) {
+		self.constraints.offerToReceiveVideo = true;
+	    } else {
+		self.constraints.mandatory.OfferToReceiveVideo = true;
+	    }
         } else {
             self.options.useVideo = null;
-            self.constraints.mandatory.OfferToReceiveVideo = false;
+            if (moz) {
+		self.constraints.offerToReceiveVideo = false;
+	    } else {
+		self.constraints.mandatory.OfferToReceiveVideo = false;
+	    }
         }
 
         if (self.options.useVideo) {
@@ -176,8 +191,8 @@
         return true;
     }
 
-    function onStreamError(self) {
-        console.log('There has been a problem retrieving the streams - did you allow access?');
+    function onStreamError(self, e) {
+        console.log('There has been a problem retrieving the streams - did you allow access?', e);
 
     }
 
@@ -317,16 +332,36 @@
             onStreamSuccess(self);
         }
 
-        function onError() {
-            onStreamError(self);
+        function onError(e) {
+            onStreamError(self, e);
         }
+
+
+	var audio;
+
+	if (this.options.videoParams && this.options.videoParams.chromeMediaSource == 'screen') {
+
+	    this.options.videoParams = {
+		chromeMediaSource: 'screen',
+		maxWidth:screen.width,
+		maxHeight:screen.height
+	    };
+
+	    console.error("SCREEN SHARE");
+	    audio = false;
+	} else {
+	    audio = {
+		mandatory: this.options.audioParams,
+		optional: []
+	    };
+	}
+
+	console.log("Mandatory audio constraints", this.options.audioParams);
+	console.log("Mandatory video constraints", this.options.videoParams);
 
         getUserMedia({
             constraints: {
-                audio: {
-                    mandatory: this.options.audioParams,
-                    optional: []
-                },
+		audio: audio,
                 video: this.options.useVideo ? {
                     mandatory: this.options.videoParams,
                     optional: []
@@ -377,16 +412,37 @@
             onStreamSuccess(self);
         }
 
-        function onError() {
-            onStreamError(self);
+        function onError(e) {
+            onStreamError(self, e);
         }
+
+
+	var audio;
+
+	if (this.options.videoParams && this.options.videoParams.chromeMediaSource == 'screen') {
+
+	    this.options.videoParams = {
+		chromeMediaSource: 'screen',
+		maxWidth:screen.width,
+		maxHeight:screen.height
+	    };
+
+	    console.error("SCREEN SHARE");
+	    audio = false;
+	} else {
+	    audio = {
+		mandatory: this.options.audioParams,
+		optional: []
+	    };
+	}
+
+	console.log("Mandatory audio constraints", this.options.audioParams);
+	console.log("Mandatory video constraints", this.options.videoParams);
+
 
         getUserMedia({
             constraints: {
-                audio: {
-                    mandatory: this.options.audioParams,
-                    optional: []
-                },
+                audio: audio,
                 video: this.options.useVideo ? {
                     mandatory: this.options.videoParams,
                     optional: []
@@ -431,13 +487,13 @@
         var iceServers = null;
 
         if (options.iceServers) {
-            var tmp = options.iceServers;;
+            var tmp = options.iceServers;
 
             if (typeof(tmp) === "boolean") {
                 tmp = null;
             }
 
-            if (tmp && typeof(tmp) !== "array") {
+            if (tmp && !(typeof(tmp) == "object" && tmp.constructor === Array)) {
                 console.warn("iceServers must be an array, reverting to default ice servers");
                 tmp = null;
             }
@@ -484,7 +540,11 @@
                 }
 
                 if (options.type == "offer") {
-                    if (!moz && !x && options.onICESDP) {
+		    /* new mozilla now tries to be like chrome but it takes them 10 seconds to complete the ICE 
+		       Booooooooo! This trickle thing is a waste of time...... We'll all have to re-code our engines 
+		       to handle partial setups to maybe save 100m
+		     */
+                    if ((!moz || (!options.sentICESDP && peer.localDescription.sdp.match(/a=candidate/)) && !x && options.onICESDP)) {
                         options.onICESDP(peer.localDescription);
                         //x = 1;
                         /*
@@ -545,11 +605,8 @@
         };
 
         var constraints = options.constraints || {
-            optional: [],
-            mandatory: {
-                OfferToReceiveAudio: true,
-                OfferToReceiveVideo: true
-            }
+	    offerToReceiveAudio: true,
+	    offerToReceiveVideo: true   
         };
 
         // onOfferSDP(RTCSessionDescription)
@@ -560,8 +617,10 @@
                 sessionDescription.sdp = serializeSdp(sessionDescription.sdp);
                 peer.setLocalDescription(sessionDescription);
                 options.onOfferSDP(sessionDescription);
-                if (moz && options.onICESDP) {
+		/* old mozilla behaviour the SDP was already great right away */
+                if (moz && options.onICESDP && sessionDescription.sdp.match(/a=candidate/)) {
                     options.onICESDP(sessionDescription);
+		    options.sentICESDP = 1;
                 }
             },
             onSdpError, constraints);

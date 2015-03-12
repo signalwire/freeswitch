@@ -1655,13 +1655,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_enterprise_originate(switch_core_sess
 
 	for (i = 0; i < x_argc; i++) {
 
-		if (channel) {
-			switch_channel_handle_cause(channel, handles[i].cause);
-		}
-
 		if (hp == &handles[i]) {
 			continue;
 		}
+
+		if (channel && handles[i].cause && handles[i].cause != SWITCH_CAUSE_SUCCESS) {
+			switch_channel_handle_cause(channel, handles[i].cause);
+		}
+
 		switch_mutex_unlock(handles[i].mutex);
 
 		if (getcause && *cause != handles[i].cause && handles[i].cause != SWITCH_CAUSE_LOSE_RACE && handles[i].cause != SWITCH_CAUSE_NO_PICKUP) {
@@ -1753,11 +1754,7 @@ static void *SWITCH_THREAD_FUNC early_thread_run(switch_thread_t *thread, void *
 			switch_core_session_t *session = originate_status[i].peer_session;
 			switch_channel_t *channel = originate_status[i].peer_channel;
 
-			if (!session) {
-				break;
-			}
-			
-			if (!channel || !switch_channel_up(channel)) {
+			if (!session || !channel || !switch_channel_up(channel)) {
 				continue;
 			}
 			
@@ -1836,7 +1833,7 @@ static void *SWITCH_THREAD_FUNC early_thread_run(switch_thread_t *thread, void *
 		switch_core_session_t *session = originate_status[i].peer_session;
 		switch_channel_t *channel = originate_status[i].peer_channel;
 		
-		if (!session) break;
+		if (!session) continue;
 
 		if (switch_core_codec_ready((&read_codecs[i]))) {
 			switch_core_codec_destroy(&read_codecs[i]);

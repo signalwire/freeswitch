@@ -1,14 +1,14 @@
 LOCAL_CFLAGS=
-LOCAL_LDFLAGS=-llua -lpthread
+LOCAL_LDFLAGS=$(LUA_LIBS) -lpthread
 WRAP_GCC_WARNING_SILENCE=-Wno-unused-function
 
 all: ESL.so
 
 esl_wrap.cpp:
-	swig -module ESL -lua -c++ -DMULTIPLICITY -I../src/include -o esl_wrap.cpp ../ESL.i
+	swig2.0 -module ESL -lua -c++ -DMULTIPLICITY -I../src/include -o esl_wrap.cpp ../ESL.i
 
 esl_wrap.o: esl_wrap.cpp
-	$(CXX) $(CXX_CFLAGS) $(CXXFLAGS) $(LOCAL_CFLAGS) $(WRAP_GCC_WARNING_SILENCE) -c esl_wrap.cpp -o esl_wrap.o
+	$(CXX) $(CXX_CFLAGS) $(LUA_CFLAGS) $(CXXFLAGS) $(LOCAL_CFLAGS) $(WRAP_GCC_WARNING_SILENCE) -c esl_wrap.cpp -o esl_wrap.o
 
 ESL.so: esl_wrap.o
 	$(CXX) $(SOLINK) esl_wrap.o $(MYLIB) $(LOCAL_LDFLAGS) -o ESL.so -L. $(LIBS)

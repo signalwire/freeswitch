@@ -5,6 +5,8 @@
 # Contact: Pekka Pessi <pekka.pessi@nokia.com>
 # Licensed under LGPL. See file COPYING.
 
+AUTOMAKE_OPTIONS = subdir-objects
+
 # ----------------------------------------------------------------------
 # Header paths
 
@@ -28,7 +30,7 @@ libs2_a_SOURCES = 	s2check.h s2tcase.c \
 # ----------------------------------------------------------------------
 # Install and distribution rules
 
-EXTRA_DIST =		exit77.c
+EXTRA_DIST =
 
 # ----------------------------------------------------------------------
 # Tests

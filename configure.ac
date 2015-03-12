@@ -517,6 +517,19 @@ AC_SUBST(SYS_XMLRPC_CFLAGS)
 AC_SUBST(SYS_XMLRPC_LDFLAGS)
 AM_CONDITIONAL([SYSTEM_XMLRPCC],[test "${enable_xmlrpcc}" = "yes"])
 
+AC_ARG_ENABLE([system-lua],[AS_HELP_STRING([--enable-system-lua],[use system lib for lua])],,[enable_system_lua="no"])
+PKG_CHECK_MODULES([LUA],[lua5.2],[have_lua=yes],[have_lua=no])
+if test "${have_lua}" = "no" ; then
+   PKG_CHECK_MODULES([LUA],[lua5.1],[have_lua=yes],[have_lua=no])
+fi
+if test "${have_lua}" = "no" ; then
+   PKG_CHECK_MODULES([LUA],[lua],[have_lua=yes],[have_lua=no])
+fi
+if test x"${LUA_LIBS}" = x"" ; then
+   LUA_LIBS="-llua"
+fi
+AM_CONDITIONAL([SYSTEM_LUA],[test "${enable_system_lua}" = "yes"])
+
 AC_ARG_ENABLE(srtp,
 [AC_HELP_STRING([--disable-srtp],[build without srtp support])],[enable_srtp="$enableval"],[enable_srtp="yes"])
 
@@ -766,7 +779,7 @@ AC_SUBST(LIBTOOL_LIB_EXTEN)
 # Checks for header files.
 AC_HEADER_DIRENT
 AC_HEADER_STDC
-AC_CHECK_HEADERS([sys/types.h sys/resource.h sched.h wchar.h sys/filio.h sys/ioctl.h sys/select.h netdb.h execinfo.h])
+AC_CHECK_HEADERS([sys/types.h sys/resource.h sched.h wchar.h sys/filio.h sys/ioctl.h sys/prctl.h sys/select.h netdb.h execinfo.h])
 
 if test x"$ac_cv_header_wchar_h" = xyes; then
   HAVE_WCHAR_H_DEFINE=1

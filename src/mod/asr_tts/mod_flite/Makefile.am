@@ -1,10 +1,10 @@
 include $(top_srcdir)/build/modmake.rulesam
 MODNAME=mod_flite
 
-FLITE=flite-1.5.4
+FLITE=flite-2.0.0
 
-FLITE_DIR=$(switch_srcdir)/libs/$(FLITE)-current
-FLITE_BUILDDIR=$(switch_builddir)/libs/$(FLITE)-current
+FLITE_DIR=$(switch_srcdir)/libs/$(FLITE)-release
+FLITE_BUILDDIR=$(switch_builddir)/libs/$(FLITE)-release
 
 FLITE_LIBDIR=$(FLITE_BUILDDIR)/build/libs
 FLITE_A=$(FLITE_LIBDIR)/libflite_cmu_us_awb.a \
@@ -23,7 +23,7 @@ mod_flite_la_LDFLAGS  = -avoid-version -module -no-undefined -shared
 BUILT_SOURCES= $(FLITE_A)
 
 $(FLITE_DIR):
-	$(GETLIB) $(FLITE)-current.tar.bz2
+	$(GETLIB) $(FLITE)-release.tar.bz2
 
 $(FLITE_BUILDDIR)/.stamp-configure: $(FLITE_DIR)
 	mkdir -p $(FLITE_BUILDDIR)

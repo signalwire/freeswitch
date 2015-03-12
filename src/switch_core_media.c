@@ -2926,6 +2926,11 @@ static void check_ice(switch_media_handle_t *smh, switch_media_type_t type, sdp_
 
 		engine->cur_payload_map->remote_sdp_ip = switch_core_session_strdup(smh->session, (char *) engine->ice_in.cands[engine->ice_in.chosen[0]][0].con_addr);
 		engine->cur_payload_map->remote_sdp_port = (switch_port_t) engine->ice_in.cands[engine->ice_in.chosen[0]][0].con_port;
+		
+		if (!smh->mparams->remote_ip) {
+			smh->mparams->remote_ip = engine->cur_payload_map->remote_sdp_ip;
+		}
+
 		if (engine->remote_rtcp_port) {
 			engine->remote_rtcp_port = engine->cur_payload_map->remote_sdp_port;
 		}
@@ -3916,7 +3921,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 			const char *rm_encoding;
 			const switch_codec_implementation_t *mimp = NULL;
 			int vmatch = 0, i;
-
+			
 			nm_idx = 0;
 			m_idx = 0;
 			memset(matches, 0, sizeof(matches[0]) * MAX_MATCHES);
@@ -3991,7 +3996,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 				if (!(rm_encoding = map->rm_encoding)) {
 					rm_encoding = "";
 				}
-
+				
 				for (i = 0; i < total_codecs; i++) {
 					const switch_codec_implementation_t *imp = codec_array[i];
 
@@ -4078,7 +4083,8 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 					pmap->rm_fmtp = switch_core_session_strdup(session, (char *) map->rm_fmtp);
 
 					pmap->agreed_pt = (switch_payload_t) map->rm_pt;
-					
+
+					smh->negotiated_codecs[smh->num_negotiated_codecs++] = mimp;					
 						
 #if 0
 					if (j == 0 && (!switch_true(mirror) && switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND)) {
@@ -5875,10 +5881,7 @@ static void generate_m(switch_core_session_t *session, char *buf, size_t buflen,
 	//port, secure ? "S" : "", switch_channel_test_flag(session->channel, CF_WEBRTC) ? "F" : "");
 
 	switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "m=audio %d %s", port, 
-					get_media_profile_name(session, 
-										   (secure && switch_channel_direction(session->channel) == SWITCH_CALL_DIRECTION_OUTBOUND) || 
-										   a_engine->crypto_type != CRYPTO_INVALID));
-	
+					get_media_profile_name(session, secure || a_engine->crypto_type != CRYPTO_INVALID));
 
 	for (i = 0; i < smh->mparams->num_codecs; i++) {
 		const switch_codec_implementation_t *imp = smh->codecs[i];
@@ -6301,6 +6304,12 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 		switch_channel_clear_flag(smh->session->channel, CF_DTLS);
 	}
 
+	if (switch_channel_test_flag(session->channel, CF_PROXY_OFF) && (tmp = switch_channel_get_variable(smh->session->channel, "uuid_media_secure_media"))) {
+		switch_channel_set_variable(smh->session->channel, "rtp_secure_media", tmp);
+		switch_core_session_parse_crypto_prefs(session);
+		switch_core_session_check_outgoing_crypto(session);
+	}
+
 	if (is_outbound || switch_channel_test_flag(session->channel, CF_RECOVERING) ||
 		switch_channel_test_flag(session->channel, CF_3PCC)) {
 		if (!switch_channel_test_flag(session->channel, CF_WEBRTC) && 
@@ -6718,7 +6727,6 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 		
 		mult = switch_channel_get_variable(session->channel, "sdp_m_per_ptime");
 
-		
 		if (switch_channel_test_flag(session->channel, CF_WEBRTC) || (mult && switch_false(mult))) {
 			char *bp = buf;
 			int both = (switch_channel_test_flag(session->channel, CF_WEBRTC) || switch_channel_test_flag(session->channel, CF_DTLS)) ? 0 : 1;

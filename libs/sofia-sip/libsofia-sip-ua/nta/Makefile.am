@@ -76,7 +76,7 @@ check_nta_SOURCES =	check_nta.c check_nta.h \
 check_nta_LDADD = 	${LDADD} @CHECK_LIBS@
 
 else
-check_nta_SOURCES = 	$(top_srcdir)/s2check/exit77.c
+check_nta_SOURCES = 	exit77.c
 endif
 
 # ----------------------------------------------------------------------

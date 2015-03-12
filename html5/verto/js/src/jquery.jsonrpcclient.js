@@ -247,19 +247,19 @@
         }
 
         return true;
-    }
+    };
 
     $.JsonRpcClient.prototype.closeSocket = function() {
         if (self.socketReady()) {
-            this._ws_socket.onclose = function (w) {console.log("Closing Socket")}
+            this._ws_socket.onclose = function (w) {console.log("Closing Socket");};
             this._ws_socket.close();
         }
-    }
+    };
 
     $.JsonRpcClient.prototype.loginData = function(params) {
         self.options.login = params.login;
         self.options.passwd = params.passwd;
-    }
+    };
 
     $.JsonRpcClient.prototype.connectSocket = function(onmessage_cb) {
         var self = this;
@@ -299,10 +299,10 @@
 
                     self.ws_cnt++;
 
-                    if (self.ws_sleep < 3000 && (self.ws_cnt % 10) == 0) {
+                    if (self.ws_sleep < 3000 && (self.ws_cnt % 10) === 0) {
                         self.ws_sleep += 1000;
                     }
-                }
+                };
 
                 // Set up sending of message for when the socket is open.
                 self._ws_socket.onopen = function() {
@@ -317,15 +317,15 @@
 
                     var req;
                     // Send the requests.
-                    while (req = $.JsonRpcClient.q.pop()) {
+                    while ((req = $.JsonRpcClient.q.pop())) {
                         self._ws_socket.send(req);
                     }
-                }
+                };
             }
         }
 
         return self._ws_socket ? true : false;
-    }
+    };
 
     $.JsonRpcClient.prototype._getSocket = function(onmessage_cb) {
         // If there is no ws url set, we don't have a socket.
@@ -381,9 +381,9 @@
 
             /// @todo Make using the jsonrcp 2.0 check optional, to use this on JSON-RPC 1 backends.
 
-            if (typeof response === 'object'
-                && 'jsonrpc' in response
-                && response.jsonrpc === '2.0') {
+            if (typeof response === 'object' &&
+                'jsonrpc' in response &&
+                response.jsonrpc === '2.0') {
 
                 /// @todo Handle bad response (without id).
 
@@ -419,8 +419,7 @@
                         self.authing = true;
 
                         this.call("login", { login: self.options.login, passwd: self.options.passwd},
-                            this._ws_callbacks[response.id].request_obj.method == "login"
-                            ?
+                            this._ws_callbacks[response.id].request_obj.method == "login" ?
                             function(e) {
                                 self.authing = false;
                                 console.log("logged in");
@@ -575,14 +574,18 @@
         // Collect all request data and sort handlers by request id.
         var batch_request = [];
         var handlers = {};
+        var i = 0;
+        var call;
+        var success_cb;
+        var error_cb;
 
         // If we have a WebSocket, just send the requests individually like normal calls.
         var socket = self.jsonrpcclient.options.getSocket(self.jsonrpcclient.wsOnMessage);
         if (socket !== null) {
-            for (var i = 0; i < this._requests.length; i++) {
-                var call = this._requests[i];
-                var success_cb = ('success_cb' in call) ? call.success_cb : undefined;
-                var error_cb   = ('error_cb'   in call) ? call.error_cb   : undefined;
+            for (i = 0; i < this._requests.length; i++) {
+                call = this._requests[i];
+                success_cb = ('success_cb' in call) ? call.success_cb : undefined;
+                error_cb   = ('error_cb'   in call) ? call.error_cb   : undefined;
                 self.jsonrpcclient._wsCall(socket, call.request, success_cb, error_cb);
             }
 
@@ -590,8 +593,8 @@
             return;
         }
 
-        for (var i = 0; i < this._requests.length; i++) {
-            var call = this._requests[i];
+        for (i = 0; i < this._requests.length; i++) {
+            call = this._requests[i];
             batch_request.push(call.request);
 
             // If the request has an id, it should handle returns (otherwise it's a notify).
@@ -603,7 +606,7 @@
             }
         }
 
-        var success_cb = function(data) { self._batchCb(data, handlers, self.all_done_cb); };
+        success_cb = function(data) { self._batchCb(data, handlers, self.all_done_cb); };
 
         // No WebSocket, and no HTTP backend?  This won't work.
         if (self.jsonrpcclient.options.ajaxUrl === null) {

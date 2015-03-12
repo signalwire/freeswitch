@@ -10,6 +10,8 @@
 		<param name="offer-uri" value="true"/>
 		<!-- if true, channel variables are added to rayo client offer -->
 		<param name="add-variables-to-offer" value="false"/>
+                <!-- if true, channel variables are added to offer, ringing, answered, and end events sent to rayo clients -->
+		<param name="add-variables-to-events" value="false"/>
 	</settings>
 
 	<!-- record component params -->

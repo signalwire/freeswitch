@@ -2923,9 +2923,8 @@ SWITCH_DECLARE(int) switch_socket_waitfor(switch_pollfd_t *poll, int ms)
 
 SWITCH_DECLARE(char *) switch_url_encode(const char *url, char *buf, size_t len)
 {
-	const char *p;
+	const char *p, *e = end_of_p(url);
 	size_t x = 0;
-	const char urlunsafe[] = "\r\n \"#%&+:;<=>?@[\\]^`{|}";
 	const char hex[] = "0123456789ABCDEF";
 
 	if (!buf) {
@@ -2939,10 +2938,19 @@ SWITCH_DECLARE(char *) switch_url_encode(const char *url, char *buf, size_t len)
 	len--;
 
 	for (p = url; *p; p++) {
+		int ok = 0;
+
 		if (x >= len) {
 			break;
 		}
-		if (*p < ' ' || *p > '~' || strchr(urlunsafe, *p)) {
+
+		if (*p == '%' && e-p > 1) {
+			if (strchr(hex, *(p+1)) && strchr(hex, *(p+2))) {
+				ok = 1;
+			}
+		}
+
+		if (!ok && (*p < ' ' || *p > '~' || strchr(SWITCH_URL_UNSAFE, *p))) {
 			if ((x + 3) > len) {
 				break;
 			}

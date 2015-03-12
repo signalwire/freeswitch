@@ -9,6 +9,9 @@ extern "C" {
 }
 #include <switch_cpp.h>
 
+#ifndef lua_pushglobaltable
+#define lua_pushglobaltable(L) lua_pushvalue(L,LUA_GLOBALSINDEX)
+#endif
 
 typedef struct{
   lua_State* L;

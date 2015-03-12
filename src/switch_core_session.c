@@ -808,6 +808,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_perform_receive_message(swit
 		switch_channel_clear_flag(session->channel, CF_EARLY_MEDIA);
 	}
 
+	if (message->message_id == SWITCH_MESSAGE_INDICATE_MEDIA) {
+		switch_channel_set_flag(session->channel, CF_PROXY_OFF);
+	}
+
 	if (message->message_id == SWITCH_MESSAGE_INDICATE_DISPLAY) {
 		char *arg = NULL;
 
@@ -913,6 +917,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_perform_receive_message(swit
 	}
 
   end:
+
+	if (message->message_id == SWITCH_MESSAGE_INDICATE_MEDIA) {
+		switch_channel_clear_flag(session->channel, CF_PROXY_OFF);
+	}
 
 	switch_core_session_free_message(&message);
 	switch_core_session_rwunlock(session);

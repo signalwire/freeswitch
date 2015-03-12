@@ -57,6 +57,8 @@ typedef struct {
 	char pass[128];
 	int debug;
 	const char *console_fnkeys[12];
+	const char *console_fnkeys_toggle[12];
+	int console_fnkeys_state[12];
 	char loglevel[128];
 	int log_uuid;
 	int log_uuid_length;
@@ -158,8 +160,15 @@ static void screen_size(int *x, int *y)
 static unsigned char console_fnkey_pressed(int i)
 {
 	const char *c;
+	int fnkey;
 	assert((i > 0) && (i <= 12));
-	if (!(c = global_profile->console_fnkeys[i - 1])) {
+	fnkey = i - 1;
+
+	if ((c = global_profile->console_fnkeys_toggle[fnkey]) && global_profile->console_fnkeys_state[fnkey]) {
+		global_profile->console_fnkeys_state[fnkey] = 0;
+	} else if ((c = global_profile->console_fnkeys[fnkey])) {
+		global_profile->console_fnkeys_state[fnkey] = 1;
+	} else {
 		printf("\n");
 		esl_log(ESL_LOG_ERROR, "FUNCTION KEY F%d IS NOT BOUND, please edit your config.\n", i);
 		return CC_REDISPLAY;
@@ -1278,6 +1287,14 @@ static void read_config(const char *dft_cfile, const char *cfile) {
 						profiles[pcount-1].console_fnkeys[i - 1] = strdup(val);
 					}
 				}
+			} else if (!strncasecmp(var, "key_toggle_F", 12)) {
+				char *key = var + 12;
+				if (key) {
+					int i = atoi(key);
+					if (i > 0 && i < 13) {
+						profiles[pcount-1].console_fnkeys_toggle[i - 1] = strdup(val);
+					}
+				}
 			} else if (!strcasecmp(var, "timeout")) {
 				timeout = atoi(val);
 			} else if (!strcasecmp(var, "connect-timeout")) {
@@ -1674,6 +1691,8 @@ int main(int argc, char *argv[])
 		goto done;
 	}
 	history(myhistory, &ev, H_SETSIZE, 800);
+	/* Ignore duplicate lines */
+	history(myhistory, &ev, H_SETUNIQUE, 1);
 	el_set(el, EL_HIST, history, myhistory);
 	if (use_history_file) history(myhistory, &ev, H_LOAD, hfile);
 	el_source(el, NULL);
