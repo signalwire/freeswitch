@@ -72,7 +72,8 @@ static opus_codec_settings_t default_codec_settings = {
 struct opus_context {
 	OpusEncoder *encoder_object;
 	OpusDecoder *decoder_object;
-	int frame_size;
+	uint32_t enc_frame_size;
+	uint32_t dec_frame_size;
 };
 
 struct {
@@ -237,7 +238,8 @@ static switch_status_t switch_opus_init(switch_codec_t *codec, switch_codec_flag
 		return SWITCH_STATUS_FALSE;
 	}
     
-	context->frame_size = codec->implementation->samples_per_packet;
+	context->enc_frame_size = codec->implementation->actual_samples_per_second * (codec->implementation->microseconds_per_packet / 1000) / 1000;
+
 
 	memset(&codec_fmtp, '\0', sizeof(struct switch_codec_fmtp));
 	codec_fmtp.private_info = &opus_codec_settings;
@@ -373,16 +375,13 @@ static switch_status_t switch_opus_encode(switch_codec_t *codec,
 	struct opus_context *context = codec->private_info;
 	int bytes = 0;
 	int len = (int) *encoded_data_len;
-    
+
 	if (!context) {
 		return SWITCH_STATUS_FALSE;
 	}
-
-	if (len > 2880) len = 2880;
-
-	bytes = opus_encode(context->encoder_object, (void *) decoded_data, 
-						decoded_data_len / 2 / codec->implementation->number_of_channels, (unsigned char *) encoded_data, len);
-
+	
+	bytes = opus_encode(context->encoder_object, (void *) decoded_data, context->enc_frame_size, (unsigned char *) encoded_data, len);
+	
 	if (bytes > 0) {
 		*encoded_data_len = (uint32_t) bytes;
 		return SWITCH_STATUS_SUCCESS;
