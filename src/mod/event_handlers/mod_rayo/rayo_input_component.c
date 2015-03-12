@@ -526,6 +526,7 @@ static char *setup_grammars_unimrcp(struct input_component *component, switch_co
 	}
 
 	switch_core_asr_text_param(ah, "start-recognize", "false");
+	switch_core_asr_text_param(ah, "define-grammar", "true");
 	for (grammar_tag = iks_find(input, "grammar"); grammar_tag; grammar_tag = iks_next_tag(grammar_tag)) {
 		const char *grammar_name;
 		iks *grammar_cdata;
@@ -544,29 +545,42 @@ static char *setup_grammars_unimrcp(struct input_component *component, switch_co
 				switch_safe_free(grammar_uri_list.data);
 				return NULL;
 			}
-
-			/* load the grammar */
 			grammar = switch_core_sprintf(RAYO_POOL(component), "inline:%s", iks_cdata(grammar_cdata));
-			grammar_name = switch_core_sprintf(RAYO_POOL(component), "grammar-%d", rayo_actor_seq_next(RAYO_ACTOR(component)));
-			/* unlock handler mutex, otherwise deadlock will happen if switch_ivr_detect_speech_load_grammar removes the media bug */
-			switch_mutex_unlock(component->handler->mutex);
-			if (switch_ivr_detect_speech_load_grammar(session, grammar, grammar_name) != SWITCH_STATUS_SUCCESS) {
-				switch_mutex_lock(component->handler->mutex);
-				*stanza_error = STANZA_ERROR_INTERNAL_SERVER_ERROR;
-				*error_detail = "Failed to load grammar";
+		} else {
+			/* Grammar is at a URL */
+			grammar = iks_find_attrib_soft(grammar_tag, "url");
+			if (zstr(grammar)) {
+				*stanza_error = STANZA_ERROR_BAD_REQUEST;
+				*error_detail = "Missing grammar";
 				switch_safe_free(grammar_uri_list.data);
 				return NULL;
 			}
-			switch_mutex_lock(component->handler->mutex);
-
-			/* add grammar to uri-list */
-			grammar_uri_list.write_function(&grammar_uri_list, "session:%s\r\n", grammar_name);
-		} else {
-			/* add URI to uri-list */
-			grammar_uri_list.write_function(&grammar_uri_list, "%s\r\n", iks_find_attrib_soft(grammar_tag, "url"));
+			if (strncasecmp(grammar, "http", 4) && strncasecmp(grammar, "file", 4)) {
+				*stanza_error = STANZA_ERROR_BAD_REQUEST;
+				*error_detail = "Bad URL";
+				switch_safe_free(grammar_uri_list.data);
+				return NULL;
+			}
 		}
+		grammar_name = switch_core_sprintf(RAYO_POOL(component), "grammar-%d", rayo_actor_seq_next(RAYO_ACTOR(component)));
+
+		/* DEFINE-GRAMMAR */
+		/* unlock handler mutex, otherwise deadlock will happen if switch_ivr_detect_speech_load_grammar removes the media bug */
+		switch_mutex_unlock(component->handler->mutex);
+		if (switch_ivr_detect_speech_load_grammar(session, grammar, grammar_name) != SWITCH_STATUS_SUCCESS) {
+			switch_mutex_lock(component->handler->mutex);
+			*stanza_error = STANZA_ERROR_INTERNAL_SERVER_ERROR;
+			*error_detail = "Failed to load grammar";
+			switch_safe_free(grammar_uri_list.data);
+			return NULL;
+		}
+		switch_mutex_lock(component->handler->mutex);
+
+		/* add grammar to uri-list */
+		grammar_uri_list.write_function(&grammar_uri_list, "session:%s\r\n", grammar_name);
 	}
 	switch_core_asr_text_param(ah, "start-recognize", "true");
+	switch_core_asr_text_param(ah, "define-grammar", "false");
 
 	return (char *)grammar_uri_list.data;
 }
@@ -880,9 +894,11 @@ static void on_detected_speech_event(switch_event_t *event)
 		switch_safe_free(component_id);
 		if (component) {
 			const char *result = switch_event_get_body(event);
+
 			switch_mutex_lock(INPUT_COMPONENT(component)->handler->mutex);
 			INPUT_COMPONENT(component)->handler->voice_component = NULL;
 			switch_mutex_unlock(INPUT_COMPONENT(component)->handler->mutex);
+
 			if (zstr(result)) {
 				rayo_component_send_complete(component, INPUT_NOMATCH);
 			} else {
@@ -914,8 +930,29 @@ static void on_detected_speech_event(switch_event_t *event)
 				} else if (strstr(result, "002")) {
 					/* Completion-Cause: 002 no-input-timeout */
 					rayo_component_send_complete(component, INPUT_NOINPUT);
+				} else if (strstr(result, "004") || strstr(result, "005") || strstr(result, "006") || strstr(result, "009") || strstr(result, "010")) {
+					/* Completion-Cause: 004 gram-load-failure */
+					/* Completion-Cause: 005 gram-comp-failure */
+					/* Completion-Cause: 006 error */
+					/* Completion-Cause: 009 uri-failure */
+					/* Completion-Cause: 010 language-unsupported */
+					iks *response = rayo_component_create_complete_event(component, COMPONENT_COMPLETE_ERROR);
+					const char *error_reason = switch_event_get_header(event, "ASR-Completion-Reason");
+					if (!zstr(error_reason)) {
+						iks *error;
+						if ((error = iks_find(response, "complete"))) {
+							if ((error = iks_find(error, "error"))) {
+								iks_insert_cdata(error, error_reason, strlen(error_reason));
+							}
+						}
+					}
+					rayo_component_send_complete_event(component, response);
 				} else {
 					/* assume no match */
+					/* Completion-Cause: 001 no-match */
+					/* Completion-Cause: 003 recognition-timeout */
+					/* Completion-Cause: 007 speech-too-early */
+					/* Completion-Cause: 008 too-much-speech-timeout */
 					rayo_component_send_complete(component, INPUT_NOMATCH);
 				}
 			}
