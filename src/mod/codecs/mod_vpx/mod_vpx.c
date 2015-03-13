@@ -72,6 +72,7 @@ struct vpx_context {
 	const vpx_codec_cx_pkt_t *pkt;
 	vpx_codec_iter_t iter;
 	uint32_t last_ts;
+	switch_time_t last_ms;
 	vpx_codec_ctx_t	decoder;
 	uint8_t decoder_init;
 	switch_buffer_t *vpx_packet_buffer;
@@ -531,6 +532,8 @@ static void reset_codec_encoder(switch_codec_t *codec)
 	if (context->encoder_init) {
 		vpx_codec_destroy(&context->encoder);
 	}
+	context->last_ts = 0;
+	context->last_ms = 0;
 	context->framecount = 0;
 	context->encoder_init = 0;
 	context->pkt = NULL;
@@ -542,7 +545,10 @@ static switch_status_t switch_vpx_encode(switch_codec_t *codec, switch_frame_t *
 	vpx_context_t *context = (vpx_context_t *)codec->private_info;
 	int width = 0;
 	int height = 0;
+	uint32_t dur;
+	int64_t pts;
 	vpx_enc_frame_flags_t vpx_flags = 0;
+	switch_time_t now;
 
 	if (frame->flags & SFF_SAME_IMAGE) {
 		return consume_partition(context, frame);
@@ -580,9 +586,10 @@ static switch_status_t switch_vpx_encode(switch_codec_t *codec, switch_frame_t *
 		init_encoder(codec);
 	}
 
+	now = switch_time_now();
+
 	if (context->need_key_frame != 0) {
 		// force generate a key frame
-		switch_time_t now = switch_micro_time_now();
 
 		if (!context->last_key_frame || (now - context->last_key_frame) > KEY_FRAME_MIN_FREQ) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "VPX KEYFRAME GENERATED\n");
@@ -594,11 +601,14 @@ static switch_status_t switch_vpx_encode(switch_codec_t *codec, switch_frame_t *
 
 	context->framecount++;
 
-	
+	pts = (now - context->start_time) / 1000;
+
+	dur = context->last_ms ? (now - context->last_ms) / 1000 : pts;
+
 	if (vpx_codec_encode(&context->encoder,
 						 (vpx_image_t *) frame->img,
-						 switch_micro_time_now() - context->start_time, 
-						 1, 
+						 pts,
+						 dur, 
 						 vpx_flags,
 						 VPX_DL_REALTIME) != VPX_CODEC_OK) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "VPX encode error %d:%s\n",
@@ -610,7 +620,7 @@ static switch_status_t switch_vpx_encode(switch_codec_t *codec, switch_frame_t *
 
 	context->iter = NULL;
 	context->last_ts = frame->timestamp;
-
+	context->last_ms = now;
 		
 	return consume_partition(context, frame);
 }
