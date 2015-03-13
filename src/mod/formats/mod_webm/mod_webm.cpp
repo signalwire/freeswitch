@@ -37,6 +37,7 @@
 
 // using mkvmuxer::int64;
 // using mkvmuxer::uint64;
+#include "mod_webm.h"
 
 #ifdef _MSC_VER
 // Disable MSVC warnings that suggest making code non-portable.
@@ -49,8 +50,8 @@ SWITCH_MODULE_DEFINITION(mod_webm, mod_webm_load, NULL, NULL);
 #define IS_VP8_KEY_FRAME(byte) ((((byte) & 0x01) ^ 0x01) ? true : false)
 #define IS_VP9_KEY_FRAME(byte) (((byte) & 0x01) ? true : false)
 
-#define AUDIO_CODEC "OPUS"
-// #define AUDIO_CODEC "VORBIS"
+// #define AUDIO_CODEC "OPUS"
+#define AUDIO_CODEC "VORBIS"
 
 struct webm_file_context {
 	switch_memory_pool_t *pool;
@@ -188,6 +189,14 @@ static switch_status_t webm_file_open(switch_file_handle_t *handle, const char *
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Video Codec H264 Activation Fail\n");
 			goto end;
 		}
+	}
+
+	if (!strcmp(AUDIO_CODEC, "VORBIS")) {
+		uint16_t size = 0;
+		uint8_t *codec_private_data = NULL;
+		switch_core_codec_control(&context->audio_codec, SCC_GET_CODEC_PRIVATE, SCCT_INT, (void *)&size, NULL, (void **)&codec_private_data);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "======codec_private_data size: %d data: %p\n", size, codec_private_data);
+		context->audio->SetCodecPrivate(codec_private_data, size);
 	}
 
 	if (1) { // for better quality?
@@ -473,6 +482,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_webm_load)
 	file_interface->file_seek = webm_file_seek;
 	file_interface->file_set_string = webm_file_set_string;
 	file_interface->file_get_string = webm_file_get_string;
+
+	mod_vorbis_load(module_interface, pool);
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
