@@ -77,8 +77,9 @@ static switch_status_t webm_file_open(switch_file_handle_t *handle, const char *
 	char *ext;
 	unsigned int flags = 0;
 	const char *tmp = NULL;
+	char *fmtp;
 
-	if ((ext = strrchr(path, '.')) == 0) {
+	if ((ext = strrchr((char *)path, '.')) == 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Format\n");
 		return SWITCH_STATUS_GENERR;
 	}
@@ -155,9 +156,12 @@ static switch_status_t webm_file_open(switch_file_handle_t *handle, const char *
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Opening File [%s] %dhz %s\n",
 		path, handle->samplerate, switch_test_flag(handle, SWITCH_FILE_FLAG_VIDEO) ? " with VIDEO" : "");
 
+	fmtp = switch_core_sprintf(context->pool, 
+							   "useinbandfec=1;minptime=20;ptime=20;samplerate=%d%s", handle->samplerate, handle->channels == 2 ? ",stereo=1" : "");
+
 	if (switch_core_codec_init(&context->audio_codec,
 							   "OPUS",
-							   NULL, //"useinbandfec=1; minptime=10; stereo=1",
+							   fmtp,
 							   handle->samplerate,
 							   20,//ms
 							   handle->channels, SWITCH_CODEC_FLAG_ENCODE,
@@ -256,16 +260,18 @@ static switch_status_t webm_file_write(switch_file_handle_t *handle, void *data,
 		size = datalen;
 		memcpy(buf, data, datalen);
 	} else {
+		size = SWITCH_RECOMMENDED_BUFFER_SIZE;
 		switch_core_codec_encode(&context->audio_codec, NULL,
 								data, datalen,
 								handle->samplerate,
 								buf, &size, &encoded_rate, NULL);
+
 	}
 
 	switch_mutex_lock(context->mutex);
 
 	if (!context->timer.interval) {
-		switch_core_timer_init(&context->timer, "soft", 1, 1, context->pool);
+		switch_core_timer_init(&context->timer, "soft", 1, 1000, context->pool);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "init timer\n");
 	} else if(!context->audio_start) { // try make up some sampels if the video already start
 
@@ -274,7 +280,7 @@ static switch_status_t webm_file_write(switch_file_handle_t *handle, void *data,
 	if (size > 0) {
 		// timecode still need to figure out for sync
 		switch_core_timer_sync(&context->timer);
-		bool ret = context->segment->AddFrame(buf, size, context->audio_track_id, context->timer.samplecount * 1000000, true);
+		bool ret = context->segment->AddFrame(buf, size, context->audio_track_id, context->timer.samplecount, true);
 		// bool ret = context->segment->AddFrame((const uint8_t *)data, used, context->audio_track_id, context->audio_duration * 1000000, is_key);
 
 		if (!ret) {
@@ -384,10 +390,10 @@ static switch_status_t do_write_video(switch_file_handle_t *handle, switch_frame
 		// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "samplecount: %u\n", context->timer.samplecount);
 
 		bool ret = false;
-		ret = context->segment->AddFrame((const uint8_t *)data, used, context->video_track_id, context->timer.samplecount * 1000000LL, is_key);
+		ret = context->segment->AddFrame((const uint8_t *)data, used, context->video_track_id, context->timer.samplecount, is_key);
 
 		if (!ret) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error add frame %d bytes, timecode: %llu\n", used, context->timer.samplecount * 1000000LL);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error add frame %d bytes, timecode: %llu\n", used, context->timer.samplecount);
 			switch_goto_status(SWITCH_STATUS_FALSE, end);
 		}
 
