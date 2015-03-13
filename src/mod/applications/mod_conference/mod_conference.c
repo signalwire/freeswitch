@@ -10209,7 +10209,7 @@ static api_command_t conf_api_sub_commands[] = {
 	{"energy", (void_fn_t) & conf_api_sub_energy, CONF_API_SUB_MEMBER_TARGET, "energy", "<member_id|all|last|non_moderator> [<newval>]"},
 	{"volume_in", (void_fn_t) & conf_api_sub_volume_in, CONF_API_SUB_MEMBER_TARGET, "volume_in", "<member_id|all|last|non_moderator> [<newval>]"},
 	{"volume_out", (void_fn_t) & conf_api_sub_volume_out, CONF_API_SUB_MEMBER_TARGET, "volume_out", "<member_id|all|last|non_moderator> [<newval>]"},
-	{"position", (void_fn_t) & conf_api_sub_position, CONF_API_SUB_MEMBER_TARGET, "position", "<member_id> <x>,<y>,<z>"},
+	{"position", (void_fn_t) & conf_api_sub_position, CONF_API_SUB_MEMBER_TARGET, "position", "<member_id> <x>:<y>:<z>"},
 	{"auto-3d-position", (void_fn_t) & conf_api_sub_auto_position, CONF_API_SUB_ARGS_SPLIT, "auto-3d-position", "[on|off]"},
 	{"play", (void_fn_t) & conf_api_sub_play, CONF_API_SUB_ARGS_SPLIT, "play", "<file_path> [async|<member_id> [nomux]]"},
 	{"pause_play", (void_fn_t) & conf_api_sub_pause_play, CONF_API_SUB_ARGS_SPLIT, "pause", "[<member_id>]"},
