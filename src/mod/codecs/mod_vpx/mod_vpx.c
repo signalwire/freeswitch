@@ -623,11 +623,6 @@ static switch_status_t buffer_vp8_packets(vpx_context_t *context, switch_frame_t
 	uint8_t PID;
 	int len;
 
-	if (!frame) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "no frame in codec!!\n");
-		return SWITCH_STATUS_RESTART;
-	}
-
 	DES = *data;
 	data++;
 	S = DES & 0x10;
@@ -679,10 +674,7 @@ static switch_status_t buffer_vp9_packets(vpx_context_t *context, switch_frame_t
 	uint8_t *vp9  = (uint8_t *)frame->data;
 	int len = 0;
 
-	if (!frame) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "no frame in codec!!\n");
-		return SWITCH_STATUS_RESTART;
-	}
+	// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%02x %02x %02x %02x %d %d\n", *data, *(data+1), *(data+2), *(data+3), frame->m, frame->datalen);
 
 	if (switch_buffer_inuse(context->vpx_packet_buffer)) { // middle packet
 		if (IS_VP9_START_PKT(*vp9)) {
@@ -692,6 +684,7 @@ static switch_status_t buffer_vp9_packets(vpx_context_t *context, switch_frame_t
 	} else { // start packet
 		if (!IS_VP9_START_PKT(*vp9)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "got invalid vp9 packet, packet loss? waiting for a start packet\n");
+			goto end;
 		}
 	}
 
@@ -700,6 +693,7 @@ static switch_status_t buffer_vp9_packets(vpx_context_t *context, switch_frame_t
 	len = frame->datalen - (vp9 - data);
 	switch_buffer_write(context->vpx_packet_buffer, vp9, len);
 
+end:
 	// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "buffered %d bytes, buffer size: %" SWITCH_SIZE_T_FMT "\n", len, switch_buffer_inuse(context->vpx_packet_buffer));
 
 	return SWITCH_STATUS_SUCCESS;
