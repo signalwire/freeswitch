@@ -37,6 +37,7 @@
 // SWITCH_MODULE_DEFINITION(mod_vorbis, mod_vorbis_load, NULL, NULL);
 
 #define SCC_GET_CODEC_PRIVATE SCC_VIDEO_BANDWIDTH
+// #define OGG_DEBUG // dump to a file
 
 typedef struct vorbis_context_s {
 	ogg_stream_state os; /* take physical pages, weld into a logical stream of packets */
@@ -53,6 +54,11 @@ typedef struct vorbis_context_s {
 
 	uint8_t *codec_private_data;
 	uint16_t codec_private_data_len;
+
+#ifdef OGG_DEBUG
+	int fd;
+#endif
+
 } vorbis_context_t;
 
 static void xiph_lacing(uint x, uint8_t **buffer)
@@ -202,12 +208,37 @@ static switch_status_t switch_vorbis_init(switch_codec_t *codec, switch_codec_fl
 	// headers
 	vorbis_analysis_headerout(&context->vd, &context->vc, &context->header, &context->header_comm, &context->header_code);
 
-	ogg_stream_init(&context->os, rand());
-
 	{//hack so we can use the codec control
 		switch_codec_implementation_t **impl = (switch_codec_implementation_t **)&codec->implementation;
 		(*impl)->codec_control = switch_vorbis_control;
 	}
+
+#ifdef OGG_DEBUG
+	ogg_stream_init(&context->os, rand());
+
+	context->fd = open("/tmp/test.ogg", O_CREAT | O_RDWR | O_TRUNC, 0644);
+
+	if (context->fd < 0) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error open file to write\n");
+		goto error;
+	}
+
+	ogg_stream_packetin(&context->os,&context->header); /* automatically placed in its own page */
+	ogg_stream_packetin(&context->os,&context->header_comm);
+	ogg_stream_packetin(&context->os,&context->header_code);
+
+	/* This ensures the actual
+	 * audio data will start on a new page, as per spec
+	 */
+	while(1){
+		int result = ogg_stream_flush(&context->os,&context->og);
+		if (result == 0) break;
+
+		write(context->fd, context->og.header, context->og.header_len);
+		write(context->fd, context->og.body, context->og.body_len);
+	}
+
+#endif
 
 	return SWITCH_STATUS_SUCCESS;
 
@@ -228,22 +259,23 @@ static switch_status_t switch_vorbis_encode(switch_codec_t *codec,
 										  unsigned int *flag)
 {
 	vorbis_context_t *context = (vorbis_context_t *)codec->private_info;
-	int i;
+	int i, j;
 	uint32_t len = 0;
-    uint16_t *data = (uint16_t *)decoded_data;
+	int16_t *data = (int16_t *)decoded_data;
 	int channels = codec->implementation->number_of_channels;
-    float **buffer = vorbis_analysis_buffer(&context->vd, decoded_data_len);
+	uint32_t samples = decoded_data_len / 2 / channels;
+	float **buffer = vorbis_analysis_buffer(&context->vd, samples);
 
 	// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%u\n", decoded_data_len);
 
-	for (i = 0; i < decoded_data_len * channels; i += channels) {
-		buffer[0][i] = *(data + i) / 32768.f;
-		if (channels > 1) {
-			buffer[1][i] = *(data + i + 1) / 32768.f;
+	/* uninterleave samples */
+	for (i = 0; i < samples; i++) {
+		for (j = 0; j < channels; j++) {
+			buffer[j][i] = *(data + i) / 32768.f;
 		}
 	}
 
-	vorbis_analysis_wrote(&context->vd, decoded_data_len);
+	vorbis_analysis_wrote(&context->vd, samples);
 
 	while (vorbis_analysis_blockout(&context->vd, &context->vb) == 1) {
 		/* analysis, assume we want to use bitrate management */
@@ -251,14 +283,27 @@ static switch_status_t switch_vorbis_encode(switch_codec_t *codec,
 		vorbis_bitrate_addblock(&context->vb);
 
 		while (vorbis_bitrate_flushpacket(&context->vd, &context->op)){
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "got %ld bytes pts: %lld\n", context->op.bytes, context->op.granulepos);
+			// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "got %ld bytes pts: %lld\n", context->op.bytes, context->op.granulepos);
+
+#ifdef OGG_DEBUG
+			ogg_stream_packetin(&context->os, &context->op);
+
+			/* write out pages (if any) */
+			while(1){
+				int result=ogg_stream_pageout(&context->os, &context->og);
+				if (result == 0) break;
+
+				write(context->fd, context->og.header,context->og.header_len);
+				write(context->fd, context->og.body, context->og.body_len);
+			}
+#endif
 
 			if (len + context->op.bytes > *encoded_data_len) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "buffer overflow %u\n", *encoded_data_len);
 				break;
 			}
 
-			memcpy((uint8_t *)decoded_data + len, context->op.packet, context->op.bytes);
+			memcpy((uint8_t *)encoded_data + len, context->op.packet, context->op.bytes);
 			len += context->op.bytes;
 		}
 	}
@@ -286,6 +331,10 @@ static switch_status_t switch_vorbis_destroy(switch_codec_t *codec)
 	vorbis_dsp_clear(&context->vd);
 	vorbis_comment_clear(&context->vc);
 	vorbis_info_clear(&context->vi);
+
+#ifdef OGG_DEBUG
+	if (context->fd > -1) close(context->fd);
+#endif
 
 	return SWITCH_STATUS_SUCCESS;
 }
