@@ -271,7 +271,7 @@ static switch_status_t switch_vorbis_encode(switch_codec_t *codec,
 	/* uninterleave samples */
 	for (i = 0; i < samples; i++) {
 		for (j = 0; j < channels; j++) {
-			buffer[j][i] = *(data + i) / 32768.f;
+			buffer[j][i] = *(data + channels * i + j) / 32768.f;
 		}
 	}
 
