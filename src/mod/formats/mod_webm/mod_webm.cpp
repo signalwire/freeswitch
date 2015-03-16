@@ -28,6 +28,7 @@
  */
 
 #include <switch.h>
+
 // #include "mkvreader.hpp"
 // #include "mkvparser.hpp"
 // #include "mkvmuxer.hpp"
@@ -63,12 +64,14 @@ struct webm_file_context {
 	switch_codec_t video_codec;
 	switch_mutex_t *mutex;
 	switch_buffer_t *buf;
+	switch_buffer_t *audio_buffer;
 	switch_timer_t timer;
 	// uint64_t last_pts;
 	int offset;
 	uint64_t audio_duration;
 	int audio_start;
-
+	int vid_ready;
+	int audio_ready;
 	mkvmuxer::MkvWriter *writer;
 	mkvmuxer::Segment *segment;
 };
@@ -101,6 +104,8 @@ static switch_status_t webm_file_open(switch_file_handle_t *handle, const char *
 	}
 
 	switch_mutex_init(&context->mutex, SWITCH_MUTEX_NESTED, handle->memory_pool);
+	switch_core_timer_init(&context->timer, "soft", 1, 1000, context->pool);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "init timer\n");
 
 	if (switch_test_flag(handle, SWITCH_FILE_FLAG_WRITE)) {
 		flags |= SWITCH_FOPEN_WRITE | SWITCH_FOPEN_CREATE;
@@ -145,6 +150,7 @@ static switch_status_t webm_file_open(switch_file_handle_t *handle, const char *
 	}
 	context->audio = static_cast<mkvmuxer::AudioTrack*>(context->segment->GetTrackByNumber(context->audio_track_id));
 	context->audio->set_codec_id("A_" AUDIO_CODEC);
+	switch_buffer_create_dynamic(&context->audio_buffer, 512, 512, 0);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "sample rate: %d, channels: %d\n", handle->samplerate, handle->channels);
 
@@ -240,6 +246,7 @@ static switch_status_t webm_file_close(switch_file_handle_t *handle)
 	}
 
 	switch_buffer_destroy(&context->buf);
+	switch_buffer_destroy(&context->audio_buffer);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -261,10 +268,15 @@ static switch_status_t webm_file_write(switch_file_handle_t *handle, void *data,
 
 	uint32_t datalen = *len * 2 * handle->channels;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	uint8_t buf[SWITCH_RECOMMENDED_BUFFER_SIZE];
+	uint8_t buf[SWITCH_RECOMMENDED_BUFFER_SIZE] = { 0 }, *bp = buf;
 	uint32_t encoded_rate;
 	webm_file_context_t *context = (webm_file_context_t *)handle->private_info;
 	uint32_t size = 0;
+
+
+	if (!context->vid_ready) {
+		return status;
+	}
 
 	context->audio_duration += *len;
 
@@ -272,6 +284,22 @@ static switch_status_t webm_file_write(switch_file_handle_t *handle, void *data,
 		size = datalen;
 		memcpy(buf, data, datalen);
 	} else {
+		uint32_t rb;
+
+		if (!context->audio_ready) {
+			int offset = 1200;
+			int fps = handle->samplerate / *len;
+			int lead_frames = (offset * fps) / 1000;
+
+			for (int x = 0; x < lead_frames; x++) {
+				switch_buffer_write(context->audio_buffer, buf, datalen);
+			}
+			context->audio_ready = 1;
+		}
+
+		switch_buffer_write(context->audio_buffer, data, datalen);
+		rb = switch_buffer_read(context->audio_buffer, data, datalen);
+		datalen = rb;
 		size = SWITCH_RECOMMENDED_BUFFER_SIZE;
 		switch_core_codec_encode(&context->audio_codec, NULL,
 								data, datalen,
@@ -279,31 +307,21 @@ static switch_status_t webm_file_write(switch_file_handle_t *handle, void *data,
 								buf, &size, &encoded_rate, NULL);
 	}
 
-	switch_mutex_lock(context->mutex);
-
-	if (!context->timer.interval) {
-		goto end; // block audio before video is there
-		switch_core_timer_init(&context->timer, "soft", 1, 1000, context->pool);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "init timer\n");
-	} else if(!context->audio_start) { // try make up some sampels if the video already start
-
-	}
-
+	
 	if (size > 0) {
 		// timecode still need to figure out for sync
+
+		switch_mutex_lock(context->mutex);
 		switch_core_timer_sync(&context->timer);
-		// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Writing audio %d bytes, ts: %lld\n", size, context->timer.samplecount * 1000LL);
-		bool ret = context->segment->AddFrame(buf, size, context->audio_track_id, context->timer.samplecount * 1000LL, true);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Writing audio %d bytes, ts: %lld\n", size, context->timer.samplecount);
+		bool ret = context->segment->AddFrame(bp, size, context->audio_track_id, context->timer.samplecount * 1000LL, true);
 		// bool ret = context->segment->AddFrame((const uint8_t *)buf, size, context->audio_track_id, context->audio_duration, true);
+		switch_mutex_unlock(context->mutex);
 
 		if (!ret) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error writing audio %d bytes, pts: %lld or %lld\n", size, context->timer.samplecount * 1000LL, context->audio_duration);
 		}
 	}
-
-end:
-
-	switch_mutex_unlock(context->mutex);
 
 	return status;
 }
@@ -371,7 +389,7 @@ static switch_status_t do_write_video(switch_file_handle_t *handle, switch_frame
 
 	// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%02x %02x %02x | len:%d m:%d st:%d i:%d\n", hdr[0], hdr[1], hdr[2], datalen, frame->m, start_bit, is_iframe);
 
-	switch_mutex_lock(context->mutex);
+	
 
 	if (!context->video) {
 		context->video_track_id = context->segment->AddVideoTrack(frame->img->d_w, frame->img->d_h, 0);
@@ -391,19 +409,15 @@ static switch_status_t do_write_video(switch_file_handle_t *handle, switch_frame
 		const void *data;
 		int duration = 0;
 
-		if (!context->timer.interval) {
-			switch_core_timer_init(&context->timer, "soft", 1, 1000, context->pool);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "init timer\n");
-		} else {
-			switch_core_timer_sync(&context->timer);
-		}
-
+		
 		switch_buffer_peek_zerocopy(context->buf, &data);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "VID samplecount: %u\n", context->timer.samplecount);
 
-		// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "samplecount: %u\n", context->timer.samplecount);
-
+		switch_mutex_lock(context->mutex);
+		switch_core_timer_sync(&context->timer);
 		bool ret = false;
 		ret = context->segment->AddFrame((const uint8_t *)data, used, context->video_track_id, context->timer.samplecount * 1000LL, is_key);
+		switch_mutex_unlock(context->mutex);
 
 		if (!ret) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error add frame %d bytes, timecode: %llu\n", used, context->timer.samplecount * 1000LL);
@@ -414,7 +428,7 @@ static switch_status_t do_write_video(switch_file_handle_t *handle, switch_frame
 	}
 
 end:
-	switch_mutex_unlock(context->mutex);
+	
 
 	return status;
 }
@@ -426,7 +440,7 @@ static switch_status_t webm_file_write_video(switch_file_handle_t *handle, switc
 	webm_file_context_t *context = (webm_file_context_t *)handle->private_info;
 
 	if (!frame->img) {
-		return do_write_video(handle, frame);
+		status = do_write_video(handle, frame);
 	} else {
 		switch_frame_t eframe = { 0 };
 		uint8_t data[SWITCH_RTP_MAX_BUF_LEN];
@@ -443,6 +457,10 @@ static switch_status_t webm_file_write_video(switch_file_handle_t *handle, switc
 				if (eframe.datalen > 0) status = do_write_video(handle, &eframe);
 			}
 		} while(status == SWITCH_STATUS_SUCCESS && encode_status == SWITCH_STATUS_MORE_DATA);
+	}
+
+	if (status == SWITCH_STATUS_SUCCESS) {
+		context->vid_ready = 1;
 	}
 
 	return status;
