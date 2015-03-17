@@ -11833,7 +11833,6 @@ static void launch_conference_video_muxing_thread(conference_obj_t *conference)
 	if (!conference->video_muxing_thread) { 
 		switch_set_flag_locked(conference, CFLAG_RUNNING);
 		switch_threadattr_create(&thd_attr, conference->pool);
-		switch_threadattr_detach_set(thd_attr, 1);
 		switch_threadattr_priority_set(thd_attr, SWITCH_PRI_REALTIME);
 		switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
 		switch_set_flag(conference, CFLAG_VIDEO_MUXING);
