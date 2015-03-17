@@ -953,9 +953,6 @@ static switch_bool_t check_auth(jsock_t *jsock, cJSON *params, int *code, char *
 					switch_event_add_header_string(req_params, SWITCH_STACK_BOTTOM, i->string, i->valuestring);
 				}
 			}
-
-			DUMP_EVENT(req_params);
-
 		}
 
 		switch_event_add_header_string(req_params, SWITCH_STACK_BOTTOM, "action", "jsonrpc-authenticate");
