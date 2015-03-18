@@ -298,6 +298,17 @@ struct switch_file_interface {
 	struct switch_file_interface *next;
 };
 
+typedef struct switch_mm_s {
+	int samplerate;
+	int channels;
+	int keyint;
+	int ab;
+	int vb;
+	int vw;
+	int vh;
+	float fps;
+} switch_mm_t;
+
 /*! an abstract representation of a file handle (some parameters based on compat with libsndfile) */
 struct switch_file_handle {
 	/*! the interface of the module that implemented the current file type */
@@ -360,6 +371,8 @@ struct switch_file_handle {
 	uint32_t cur_channels;
 	uint32_t cur_samplerate;
 	char *stream_name;
+	char *modname;
+	switch_mm_t mm;
 };
 
 /*! \brief Abstract interface to an asr module */

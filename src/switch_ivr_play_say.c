@@ -477,17 +477,22 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 			char *tfile = NULL;
 			char *e;
 
-			if (*file == '[') {
+			if (*file == '{') {
 				tfile = switch_core_session_strdup(session, file);
-				if ((e = switch_find_end_paren(tfile, '[', ']'))) {
-					*e = '\0';
-					file = e + 1;
-				} else {
-					tfile = NULL;
+				
+				while (*file == '{') {
+					if ((e = switch_find_end_paren(tfile, '{', '}'))) {
+						*e = '\0';
+						file = e + 1;
+						while(*file == ' ') file++;
+					} else {
+						tfile = NULL;
+						break;
+					}
 				}
 			}
-
-			file = switch_core_session_sprintf(session, "%s%s%s%s%s", switch_str_nil(tfile), tfile ? "]" : "", prefix, SWITCH_PATH_SEPARATOR, file);
+			
+			file = switch_core_session_sprintf(session, "%s%s%s%s%s", switch_str_nil(tfile), tfile ? "}" : "", prefix, SWITCH_PATH_SEPARATOR, file);
 		}
 		if ((ext = strrchr(file, '.'))) {
 			ext++;
@@ -1210,33 +1215,25 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 
 		if (!strstr(file, SWITCH_URL_SEPARATOR)) {
 			if (!switch_is_file_path(file)) {
-				char *tfile = NULL, *tfile2 = NULL;
+				char *tfile = NULL;
 				char *e;
-				int x;
 
-				for (x = 0; x < 2; x++) {
-					if (*file == '[') {
-						tfile = switch_core_session_strdup(session, file);
-						if ((e = switch_find_end_paren(tfile, '[', ']'))) {
+				if (*file == '{') {
+					tfile = switch_core_session_strdup(session, file);
+
+					while (*file == '{') {
+						if ((e = switch_find_end_paren(tfile, '{', '}'))) {
 							*e = '\0';
 							file = e + 1;
+							while(*file == ' ') file++;
 						} else {
 							tfile = NULL;
+							break;
 						}
-					} else if (*file == '{') {
-						tfile2 = switch_core_session_strdup(session, file);
-						if ((e = switch_find_end_paren(tfile2, '{', '}'))) {
-							*e = '\0';
-							file = e + 1;
-						} else {
-							tfile2 = NULL;
-						}
-					} else {
-						break;
 					}
 				}
 
-				file = switch_core_session_sprintf(session, "%s%s%s%s%s%s%s", switch_str_nil(tfile), tfile ? "]" : "", switch_str_nil(tfile2), tfile2 ? "}" : "", prefix, SWITCH_PATH_SEPARATOR, file);
+				file = switch_core_session_sprintf(session, "%s%s%s%s%s", switch_str_nil(tfile), tfile ? "}" : "", prefix, SWITCH_PATH_SEPARATOR, file);
 			}
 			if ((ext = strrchr(file, '.'))) {
 				ext++;

@@ -41,6 +41,13 @@
 /* for apr file and directory handling */
 #include <apr_file_io.h>
 
+typedef struct switch_file_node_s {
+	const switch_file_interface_t *ptr;
+	const char *interface_name;
+	struct switch_file_node_s *next;
+} switch_file_node_t;
+				
+
 struct switch_loadable_module {
 	char *key;
 	char *filename;
@@ -361,6 +368,8 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failed to load file interface from %s due to no file extensions.\n", key);
 			} else {
 				int i;
+				switch_file_node_t *node, *head;
+
 				for (i = 0; ptr->extens[i]; i++) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding File Format '%s'\n", ptr->extens[i]);
 					if (switch_event_create(&event, SWITCH_EVENT_MODULE_LOAD) == SWITCH_STATUS_SUCCESS) {
@@ -368,10 +377,18 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "name", ptr->extens[i]);
 						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "key", new_module->key);
 						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "filename", new_module->filename);
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "module", new_module->module_interface->module_name);
 						switch_event_fire(&event);
 						added++;
 					}
-					switch_core_hash_insert(loadable_modules.file_hash, ptr->extens[i], (const void *) ptr);
+					node = switch_core_alloc(new_module->pool, sizeof(*node));
+					node->ptr = ptr;
+					node->interface_name = switch_core_strdup(new_module->pool, new_module->module_interface->module_name);
+					if ((head = switch_core_hash_find(loadable_modules.file_hash, ptr->extens[i]))) {
+						node->next = head;
+					}
+
+					switch_core_hash_insert(loadable_modules.file_hash, ptr->extens[i], (const void *) node);
 				}
 			}
 		}
@@ -1112,6 +1129,7 @@ static switch_status_t switch_loadable_module_unprocess(switch_loadable_module_t
 
 	if (old_module->module_interface->file_interface) {
 		const switch_file_interface_t *ptr;
+		switch_file_node_t *node, *head, *last = NULL;
 
 		for (ptr = old_module->module_interface->file_interface; ptr; ptr = ptr->next) {
 			if (ptr->interface_name) {
@@ -1131,10 +1149,30 @@ static switch_status_t switch_loadable_module_unprocess(switch_loadable_module_t
 					if (switch_event_create(&event, SWITCH_EVENT_MODULE_UNLOAD) == SWITCH_STATUS_SUCCESS) {
 						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "type", "file");
 						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "name", ptr->extens[i]);
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "module", old_module->module_interface->module_name);
 						switch_event_fire(&event);
 						removed++;
 					}
-					switch_core_hash_delete(loadable_modules.file_hash, ptr->extens[i]);
+
+					if ((head = switch_core_hash_find(loadable_modules.file_hash, ptr->extens[i]))) {
+						for(node = head; node; node = node->next) {
+							if (!strcmp(node->interface_name, old_module->module_interface->module_name)) {
+								if (node == head) {
+									if ((node = node->next)) {
+										switch_core_hash_insert(loadable_modules.file_hash, ptr->extens[i], (const void *) node);
+									} else {
+										switch_core_hash_delete(loadable_modules.file_hash, ptr->extens[i]);
+									}
+								} else {
+									if (last) {
+										last->next = node->next;
+									}
+								}
+								break;
+							}
+							last = node;
+						}
+					}
 				}
 			}
 		}
@@ -2041,6 +2079,33 @@ SWITCH_DECLARE(switch_endpoint_interface_t *) switch_loadable_module_get_endpoin
 	return ptr;
 }
 
+SWITCH_DECLARE(switch_file_interface_t *) switch_loadable_module_get_file_interface(const char *name, const char *modname)
+{
+	switch_file_interface_t *i = NULL;
+	switch_file_node_t *node, *head;
+
+	switch_mutex_lock(loadable_modules.mutex);
+
+	if ((head = switch_core_hash_find(loadable_modules.file_hash, name))) {
+		if (modname) {
+			for (node = head; node; node = node->next) {
+				if (!strcasecmp(node->interface_name, modname)) {
+					i = (switch_file_interface_t *) node->ptr;
+					break;
+				}
+			}
+		} else {
+			i = (switch_file_interface_t *) head->ptr;
+		}
+	}
+
+	switch_mutex_unlock(loadable_modules.mutex);
+	
+	if (i) PROTECT_INTERFACE(i);
+
+	return i;
+}
+
 SWITCH_DECLARE(switch_codec_interface_t *) switch_loadable_module_get_codec_interface(const char *name)
 {
 	char altname[256] = "";
@@ -2083,7 +2148,6 @@ HASH_FUNC(application)
 HASH_FUNC(chat_application)
 HASH_FUNC(api)
 HASH_FUNC(json_api)
-HASH_FUNC(file)
 HASH_FUNC(speech)
 HASH_FUNC(asr)
 HASH_FUNC(directory)
