@@ -3854,6 +3854,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_bind_dtmf_meta_session(switch_core_se
 	return SWITCH_STATUS_SUCCESS;
 }
 
+#define PLAY_AND_DETECT_DONE 1
+#define PLAY_AND_DETECT_DONE_RECOGNIZING 2
 typedef struct {
 	int done;
 	char *result;
@@ -3862,28 +3864,53 @@ typedef struct {
 static switch_status_t play_and_detect_input_callback(switch_core_session_t *session, void *input, switch_input_type_t input_type, void *data, unsigned int len)
 {
 	play_and_detect_speech_state_t *state = (play_and_detect_speech_state_t *)data;
-	switch_event_t *event;
-	switch_channel_t *channel = switch_core_session_get_channel(session);
-	if (input_type == SWITCH_INPUT_TYPE_EVENT) {
-		event = (switch_event_t *)input;
-		if (event->event_id == SWITCH_EVENT_DETECTED_SPEECH && !state->done) {
-			const char *speech_type = switch_event_get_header(event, "Speech-Type");
-			if (!zstr(speech_type)) {
-				if (!strcasecmp(speech_type, "detected-speech")) {
-					const char *result;
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "(%s) DETECTED SPEECH\n", switch_channel_get_name(channel));
-					result = switch_event_get_body(event);
-					if (!zstr(result)) {
-						state->result = switch_core_session_strdup(session, result);
-					} else {
+	if (!state->done) {
+		switch_channel_t *channel = switch_core_session_get_channel(session);
+		if (input_type == SWITCH_INPUT_TYPE_EVENT) {
+			switch_event_t *event;
+			event = (switch_event_t *)input;
+			if (event->event_id == SWITCH_EVENT_DETECTED_SPEECH) {
+				const char *speech_type = switch_event_get_header(event, "Speech-Type");
+				if (!zstr(speech_type)) {
+					if (!strcasecmp(speech_type, "detected-speech")) {
+						const char *result;
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "(%s) DETECTED SPEECH\n", switch_channel_get_name(channel));
+						result = switch_event_get_body(event);
+						if (!zstr(result)) {
+							state->result = switch_core_session_strdup(session, result);
+						} else {
+							state->result = "";
+						}
+						state->done = PLAY_AND_DETECT_DONE_RECOGNIZING;
+						return SWITCH_STATUS_BREAK;
+					} else if (!strcasecmp(speech_type, "begin-speaking")) {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "(%s) START OF SPEECH\n", switch_channel_get_name(channel));
+						return SWITCH_STATUS_BREAK;
+					} else if (!strcasecmp("closed", speech_type)) {
+						state->done = PLAY_AND_DETECT_DONE_RECOGNIZING;
 						state->result = "";
+						return SWITCH_STATUS_BREAK;
 					}
-					state->done = 1;
-					return SWITCH_STATUS_BREAK;
-				} else if (!strcasecmp(speech_type, "begin-speaking")) {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "(%s) START OF SPEECH\n", switch_channel_get_name(channel));
-					return SWITCH_STATUS_BREAK;
 				}
+			}
+		} else if (input_type == SWITCH_INPUT_TYPE_DTMF) {
+			switch_dtmf_t *dtmf = (switch_dtmf_t *) input;
+			const char *terminators = switch_channel_get_variable(channel, SWITCH_PLAYBACK_TERMINATORS_VARIABLE);
+			if (terminators) {
+				if (!strcasecmp(terminators, "any")) {
+					terminators = "1234567890*#";
+				} else if (!strcasecmp(terminators, "none")) {
+					terminators = NULL;
+				}
+			}
+			if (terminators && strchr(terminators, dtmf->digit)) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "(%s) ACCEPT TERMINATOR %c\n", switch_channel_get_name(channel), dtmf->digit);
+				switch_channel_set_variable_printf(channel, SWITCH_PLAYBACK_TERMINATOR_USED, "%c", dtmf->digit);
+				state->result = switch_core_session_sprintf(session, "DIGIT: %c", dtmf->digit);
+				state->done = PLAY_AND_DETECT_DONE;
+				return SWITCH_STATUS_BREAK;
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "(%s) IGNORE NON-TERMINATOR DIGIT %c\n", switch_channel_get_name(channel), dtmf->digit);
 			}
 		}
 	}
@@ -3901,7 +3928,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_and_detect_speech(switch_core_se
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	int recognizing = 0;
 	switch_input_args_t myargs = { 0 };
-	play_and_detect_speech_state_t state = { 0, "" };
+	play_and_detect_speech_state_t state = { 0 };
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 
 	arg_recursion_check_start(args);
@@ -3929,7 +3956,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_and_detect_speech(switch_core_se
 	status = switch_ivr_play_file(session, NULL, file, args);
 
 	if (args->dmachine && switch_ivr_dmachine_last_ping(args->dmachine) != SWITCH_STATUS_SUCCESS) {
-		state.done = 1;
+		state.done |= PLAY_AND_DETECT_DONE;
 		goto done;
 	}
 
@@ -3943,22 +3970,24 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_and_detect_speech(switch_core_se
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "(%s) WAITING FOR RESULT\n", switch_channel_get_name(channel));
 		while (!state.done && switch_channel_ready(channel)) {
 			status = switch_ivr_sleep(session, input_timeout, SWITCH_FALSE, args);
-			
+
 			if (args->dmachine && switch_ivr_dmachine_last_ping(args->dmachine) != SWITCH_STATUS_SUCCESS) {
-				state.done = 1;
+				state.done |= PLAY_AND_DETECT_DONE;
 				goto done;
-			}			
+			}
 
 			if (status != SWITCH_STATUS_BREAK && status != SWITCH_STATUS_SUCCESS) {
 				goto done;
 			}
 		}
 	}
-	recognizing = !state.done;
 
 done:
-	if (recognizing) {
+	if (recognizing && !(state.done & PLAY_AND_DETECT_DONE_RECOGNIZING)) {
 		switch_ivr_pause_detect_speech(session);
+	}
+	if (recognizing && switch_true(switch_channel_get_variable(channel, "play_and_detect_speech_close_asr"))) {
+		switch_ivr_stop_detect_speech(session);
 	}
 
 	*result = state.result;
@@ -3969,7 +3998,7 @@ done:
 
 	arg_recursion_check_stop(args);
 
-	return status;;
+	return status;
 }
 
 struct speech_thread_handle {
