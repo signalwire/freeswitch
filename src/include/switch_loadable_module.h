@@ -203,7 +203,7 @@ SWITCH_DECLARE(switch_json_api_interface_t *) switch_loadable_module_get_json_ap
   \param name the name of the file format
   \return the desired file format interface
  */
-SWITCH_DECLARE(switch_file_interface_t *) switch_loadable_module_get_file_interface(const char *name);
+SWITCH_DECLARE(switch_file_interface_t *) switch_loadable_module_get_file_interface(const char *name, const char *modname);
 
 /*!
   \brief Retrieve the speech interface by it's registered name

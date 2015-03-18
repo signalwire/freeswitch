@@ -1032,7 +1032,6 @@ SWITCH_DECLARE(char *) switch_find_end_paren(const char *s, char open, char clos
 static inline void switch_separate_file_params(const char *file, char **file_portion, char **params_portion)
 {
 	char *e = NULL;
-	int x;
 	char *space = strdup(file);
 
 	file = space;
@@ -1040,18 +1039,14 @@ static inline void switch_separate_file_params(const char *file, char **file_por
 	*file_portion = NULL;
 	*params_portion = NULL;
 	
-	for (x = 0; x < 2; x++) {
-		if (*file == '[' && *(file + 1) == *SWITCH_PATH_SEPARATOR) {
-			e = switch_find_end_paren(file, '[', ']');
-		} else if (*file == '{') {
-			e = switch_find_end_paren(file, '{', '}');
-		} else {
-			break;
-		}
+	while (*file == '{') {
+		e = switch_find_end_paren(file, '{', '}');
+		file = e + 1;
+		while(*file == ' ') file++;
 	}
 
+
 	if (e) {
-		file = e + 1;
 		*file_portion = strdup((char *)file);
 		*++e = '\0';
 		*params_portion = (char *)space;
@@ -1065,19 +1060,12 @@ static inline void switch_separate_file_params(const char *file, char **file_por
 static inline switch_bool_t switch_is_file_path(const char *file)
 {
 	const char *e;
-	int r, x;
+	int r;
 
-	for (x = 0; x < 2; x++) {
-		if (*file == '[' && *(file + 1) == *SWITCH_PATH_SEPARATOR) {
-			if ((e = switch_find_end_paren(file, '[', ']'))) {
-				file = e + 1;
-			}
-		} else if (*file == '{') {
-			if ((e = switch_find_end_paren(file, '{', '}'))) {
-				file = e + 1;
-			}
-		} else {
-			break;
+	while(*file == '{') {
+		if ((e = switch_find_end_paren(file, '{', '}'))) {
+			file = e + 1;
+			while(*file == ' ') file++;
 		}
 	}
 

@@ -62,7 +62,7 @@ typedef int  (*imem_get_t)(void *data, const char *cookie,
 typedef void (*imem_release_t)(void *data, const char *cookie, size_t, void *);
 
 /* Change value to -vvv for vlc related debug. Be careful since vlc is at least as verbose as FS about logging */
-const char *vlc_args[] = {"-vvvv"};
+const char *vlc_args[] = {"-v"};
 //const char *vlc_args[] = {"--network-caching=0"};
 //--sout-mux-caching
 
@@ -158,9 +158,10 @@ void log_cb(void *data, int level, const libvlc_log_t *ctx, const char *fmt, va_
 	switch_log_level_t fslevel = SWITCH_LOG_DEBUG;
 	int ret;
 
-	ret = switch_vasprintf(&ldata, fmt, args);
-
-	if (ret == -1) return;
+	/* vlc abuses logging too much these leves spew nonsense (comment to do deep testing) */
+	if (level == LIBVLC_DEBUG || level == LIBVLC_WARNING) {
+		return;
+	}
 
 	switch(level) {
 	case LIBVLC_NOTICE:
@@ -174,11 +175,19 @@ void log_cb(void *data, int level, const libvlc_log_t *ctx, const char *fmt, va_
 		break;
 	case LIBVLC_DEBUG:
 	default:
-		fslevel = SWITCH_LOG_DEBUG;
+		fslevel = SWITCH_LOG_DEBUG1;
 		break;
 	}
+
+	ret = switch_vasprintf(&ldata, fmt, args);
+
+	if (ret == -1) return;
 	
-	switch_log_printf(SWITCH_CHANNEL_LOG, fslevel, "%s\n", ldata);
+	if (end_of(ldata) == '\n') {
+		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, fslevel, "VLC: %s", ldata);
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, fslevel, "VLC: %s\n", ldata);
+	}
 
 	switch_safe_free(ldata);
 }
@@ -753,17 +762,8 @@ static switch_status_t vlc_file_open(switch_file_handle_t *handle, const char *p
 	char *ext = NULL;
 	switch_file_t *fd = NULL;
 	const char *realpath = NULL;
-	float fps = 0.0f;
 	int is_stream = 0;
-	int samplerate = 44100;
-	int channels = 1;
-	int keyint = 60;
-	int ab = 0;
-	int vb = 0;
-	int vw = 0;
-	int vh = 0;
-	int tmp;
-	const char *val;
+
 
 	context = switch_core_alloc(handle->memory_pool, sizeof(*context));
 	context->pool = handle->memory_pool;
@@ -772,50 +772,6 @@ static switch_status_t vlc_file_open(switch_file_handle_t *handle, const char *p
 
 	realpath = path;
 
-	if (handle->params) {
-		if ((val = switch_event_get_header(handle->params, "samplerate"))) {
-			tmp = atoi(val);
-			if (tmp > 8000) {
-				samplerate = tmp;
-			}
-		}
-
-		if ((val = switch_event_get_header(handle->params, "channels"))) {
-			tmp = atoi(val);
-			if (tmp == 1 || tmp == 2) {
-				channels = tmp;
-			}
-		}
-
-		if ((val = switch_event_get_header(handle->params, "ab"))) {
-			tmp = atoi(val);
-			if (tmp > 16) {
-				ab = tmp;
-			}
-		}
-
-		if ((val = switch_event_get_header(handle->params, "vw"))) {
-			tmp = atoi(val);
-			if (tmp > 0) {
-				vw = tmp;
-			}
-		}
-
-		if ((val = switch_event_get_header(handle->params, "vh"))) {
-			tmp = atoi(val);
-			if (tmp > 0) {
-				vh = tmp;
-			}
-		}
-
-		if ((val = switch_event_get_header(handle->params, "fps"))) {
-			float ftmp = atof(val);
-			if (ftmp > 0.0f) {
-				fps = ftmp;
-			}
-		}
-	}
-
 
 	if (switch_test_flag(handle, SWITCH_FILE_FLAG_VIDEO) && switch_test_flag(handle, SWITCH_FILE_FLAG_WRITE)) {
 		if ((ext = strrchr(path, '.')) && !strcasecmp(ext, ".mp4")) {
@@ -823,34 +779,34 @@ static switch_status_t vlc_file_open(switch_file_handle_t *handle, const char *p
 			path = switch_core_sprintf(context->pool, "#transcode{vcodec=h264,acodec=mp3}:std{access=file,mux=mp4,dst=%s}", path);
 		} else if (handle->stream_name && (!strcasecmp(handle->stream_name, "rtmp") || !strcasecmp(handle->stream_name, "youtube"))) {
 
-			samplerate = 44100;
-			ab = 128;
+			handle->mm.samplerate = 44100;
+			handle->mm.ab = 128;
 
-			if (vw && vh) {
-				switch(vh) {
+			if (handle->mm.vw && handle->mm.vh) {
+				switch(handle->mm.vh) {
 				case 240:
-					vb = 400;
+					handle->mm.vb = 400;
 					break;
 				case 360:
-					vb = 750;
+					handle->mm.vb = 750;
 					break;
 				case 480:
-					vb = 1000;
+					handle->mm.vb = 1000;
 					break;
 				case 720:
-					vb = 2500;
+					handle->mm.vb = 2500;
 					break;
 				case 1080:
-					vb = 4500;
+					handle->mm.vb = 4500;
 					break;
 				default:
-					vb = (vw * vh) / 175;
+					handle->mm.vb = (handle->mm.vw * handle->mm.vh) / 175;
 					break;
 				}
 			}
 
-			if (fps > 0.0f) {
-				keyint = (int) 2.0f * fps;
+			if (handle->mm.fps > 0.0f) {
+				handle->mm.keyint = (int) 2.0f * handle->mm.fps;
 			}
 			
 			path = switch_core_sprintf(context->pool, 
@@ -868,7 +824,7 @@ static switch_status_t vlc_file_open(switch_file_handle_t *handle, const char *p
 									    "mux=flv,"
 									    "dst=rtmp://%s"
 									   "}", 
-									   keyint, ab, vb, channels, samplerate, path);
+									   handle->mm.keyint, handle->mm.ab, handle->mm.vb, handle->mm.channels, handle->mm.samplerate, path);
 
 		}
 	}
