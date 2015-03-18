@@ -3928,7 +3928,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_and_detect_speech(switch_core_se
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	int recognizing = 0;
 	switch_input_args_t myargs = { 0 };
-	play_and_detect_speech_state_t state = { 0 };
+	play_and_detect_speech_state_t state = { 0, "" };
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 
 	arg_recursion_check_start(args);

@@ -515,7 +515,9 @@ SWITCH_STANDARD_APP(play_and_detect_speech_function)
 		char *grammar = argv[1];
 		char *result = NULL;
 		switch_ivr_play_and_detect_speech(session, file, engine, grammar, &result, 0, NULL);
-		switch_channel_set_variable(channel, "detect_speech_result", result);
+		if (!zstr(result)) {
+			switch_channel_set_variable(channel, "detect_speech_result", result);
+		}
 	} else {
 		/* bad input */
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Usage: %s\n", PLAY_AND_DETECT_SPEECH_SYNTAX);
