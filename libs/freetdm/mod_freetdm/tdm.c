@@ -435,6 +435,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 	if (switch_core_codec_init(&tech_pvt->read_codec,
 							   dname,
 							   NULL,
+							   NULL,
 							   8000,
 							   interval,
 							   1,
@@ -445,6 +446,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 	} else {
 		if (switch_core_codec_init(&tech_pvt->write_codec,
 								   dname,
+								   NULL,
 								   NULL,
 								   8000,
 								   interval,

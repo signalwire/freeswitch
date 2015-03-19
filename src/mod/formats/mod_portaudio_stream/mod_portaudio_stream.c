@@ -174,7 +174,7 @@ static switch_status_t engage_device(portaudio_stream_source_t *source, int rest
 	if (!switch_core_codec_ready(&source->read_codec)) {
 		if (switch_core_codec_init(&source->read_codec,
 								   "L16",
-								   NULL, sample_rate, codec_ms, 1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL,
+								   NULL, NULL, sample_rate, codec_ms, 1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL,
 								   NULL) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't load codec?\n");
 			return SWITCH_STATUS_FALSE;
@@ -186,7 +186,7 @@ static switch_status_t engage_device(portaudio_stream_source_t *source, int rest
 	if (!switch_core_codec_ready(&source->write_codec)) {
 		if (switch_core_codec_init(&source->write_codec,
 								   "L16",
-								   NULL,
+								   NULL, NULL,
 								   sample_rate, codec_ms, 1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, NULL) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't load codec?\n");
 			switch_core_codec_destroy(&source->read_codec);

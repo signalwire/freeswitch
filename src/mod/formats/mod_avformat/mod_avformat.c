@@ -550,6 +550,7 @@ SWITCH_STANDARD_APP(record_av_function)
 	if (switch_core_codec_init(&codec,
 							   "L16",
 							   NULL,
+							   NULL,
 							   force_sample_rate,
 							   read_impl.microseconds_per_packet / 1000,
 							   read_impl.number_of_channels, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,

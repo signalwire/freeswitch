@@ -756,6 +756,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_openh264_load)
 	switch_core_codec_add_video_implementation(pool, codec_interface, 99, "H264", NULL,
 											   switch_h264_init, switch_h264_encode, switch_h264_decode, switch_h264_control, switch_h264_destroy);
 
+
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
 }

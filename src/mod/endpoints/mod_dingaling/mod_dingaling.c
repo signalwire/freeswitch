@@ -1167,6 +1167,7 @@ static int activate_audio_rtp(struct private_object *tech_pvt)
 		if (switch_core_codec_init(&tech_pvt->transports[LDL_TPORT_RTP].read_codec,
 								   tech_pvt->transports[LDL_TPORT_RTP].codec_name,
 								   NULL,
+								   NULL,
 								   tech_pvt->transports[LDL_TPORT_RTP].codec_rate,
 								   ms,
 								   1,
@@ -1187,6 +1188,7 @@ static int activate_audio_rtp(struct private_object *tech_pvt)
 
 		if (switch_core_codec_init(&tech_pvt->transports[LDL_TPORT_RTP].write_codec,
 								   tech_pvt->transports[LDL_TPORT_RTP].codec_name,
+								   NULL,
 								   NULL,
 								   tech_pvt->transports[LDL_TPORT_RTP].codec_rate,
 								   ms,
@@ -1366,6 +1368,7 @@ static int activate_video_rtp(struct private_object *tech_pvt)
 		if (switch_core_codec_init(&tech_pvt->transports[LDL_TPORT_VIDEO_RTP].read_codec,
 								   tech_pvt->transports[LDL_TPORT_VIDEO_RTP].codec_name,
 								   NULL,
+								   NULL,
 								   tech_pvt->transports[LDL_TPORT_VIDEO_RTP].codec_rate,
 								   ms,
 								   1,
@@ -1383,6 +1386,7 @@ static int activate_video_rtp(struct private_object *tech_pvt)
 
 		if (switch_core_codec_init(&tech_pvt->transports[LDL_TPORT_VIDEO_RTP].write_codec,
 								   tech_pvt->transports[LDL_TPORT_VIDEO_RTP].codec_name,
+								   NULL,
 								   NULL,
 								   tech_pvt->transports[LDL_TPORT_VIDEO_RTP].codec_rate,
 								   ms,

@@ -246,7 +246,7 @@ int vgo(int i, switch_core_session_t *session)
 
 	if (switch_core_codec_init(&codec,
 							   "L16",
-							   NULL, (int) read_impl.samples_per_second, read_impl.microseconds_per_packet / 1000,
+							   NULL, NULL, (int) read_impl.samples_per_second, read_impl.microseconds_per_packet / 1000,
 							   1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL,
 							   switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
 		return -1;

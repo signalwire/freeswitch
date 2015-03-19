@@ -453,6 +453,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 		if (switch_core_codec_init(&write_codec,
 								   "L16",
 								   NULL,
+								   NULL,
 								   read_impl.actual_samples_per_second,
 								   read_impl.microseconds_per_packet / 1000,
 								   read_impl.number_of_channels,
@@ -599,6 +600,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 		codec_name = "L16";
 		if (switch_core_codec_init(&codec,
 								   codec_name,
+								   NULL,
 								   NULL,
 								   read_impl.actual_samples_per_second,
 								   read_impl.microseconds_per_packet / 1000,
@@ -872,6 +874,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_gentones(switch_core_session_t *sessi
 
 	if (switch_core_codec_init(&write_codec,
 							   "L16",
+							   NULL,
 							   NULL,
 							   read_impl.actual_samples_per_second,
 							   read_impl.microseconds_per_packet / 1000,
@@ -1335,6 +1338,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 		if (!switch_core_codec_ready((&codec))) {
 			if (switch_core_codec_init(&codec,
 									   codec_name,
+									   NULL,
 									   NULL,
 									   fh->samplerate,
 									   interval, read_impl.number_of_channels, 
@@ -1895,6 +1899,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_silence(switch_core_session_
 
 	if (switch_core_codec_init(&raw_codec,
 							   "L16",
+							   NULL,
 							   NULL,
 							   read_impl.actual_samples_per_second,
 							   read_impl.microseconds_per_packet / 1000,
@@ -2605,6 +2610,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *ses
 	if (need_create) {
 		if (switch_core_codec_init(codec,
 								   codec_name,
+								   NULL,
 								   NULL, (int) rate, interval, channels, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL,
 								   pool) == SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Raw Codec Activated\n");

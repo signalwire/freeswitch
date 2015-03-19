@@ -2071,12 +2071,12 @@ PBoolean FSH323_ExternalRTPChannel::Start()
 	
 	tech_pvt->read_frame.codec = &tech_pvt->read_codec; /* Set codec here - no need to set it every time a frame is read */
 
-	if (switch_core_codec_init(codec, GetH245CodecName(m_capability), NULL, // FMTP
+	if (switch_core_codec_init(codec, GetH245CodecName(m_capability), NULL, NULL, // FMTP
 		8000, m_codec_ms, 1,  // Channels
 		SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL,   // Settings
 		switch_core_session_get_pool(m_fsSession)) != SWITCH_STATUS_SUCCESS) {
         
-		if (switch_core_codec_init(codec, GetH245CodecName(m_capability), NULL, // FMTP
+		if (switch_core_codec_init(codec, GetH245CodecName(m_capability), NULL, NULL, // FMTP
 			8000, 0, 1,  // Channels
 			SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL,   // Settings
 			switch_core_session_get_pool(m_fsSession)) != SWITCH_STATUS_SUCCESS) {

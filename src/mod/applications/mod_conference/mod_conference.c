@@ -11049,7 +11049,7 @@ static int setup_media(conference_member_t *member, conference_obj_t *conference
 	/* Setup a Signed Linear codec for reading audio. */
 	if (switch_core_codec_init(&member->read_codec,
 							   "L16",
-							   NULL, read_impl.actual_samples_per_second, read_impl.microseconds_per_packet / 1000,
+							   NULL, NULL, read_impl.actual_samples_per_second, read_impl.microseconds_per_packet / 1000,
 							   read_impl.number_of_channels, 
 							   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, member->pool) == SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session), SWITCH_LOG_DEBUG,
@@ -11093,6 +11093,7 @@ static int setup_media(conference_member_t *member, conference_obj_t *conference
 	/* Setup a Signed Linear codec for writing audio. */
 	if (switch_core_codec_init(&member->write_codec,
 							   "L16",
+							   NULL,
 							   NULL,
 							   conference->rate,
 							   read_impl.microseconds_per_packet / 1000,

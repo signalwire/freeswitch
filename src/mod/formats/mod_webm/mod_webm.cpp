@@ -171,6 +171,7 @@ static switch_status_t webm_file_open(switch_file_handle_t *handle, const char *
 
 	if (switch_core_codec_init(&context->audio_codec,
 							   AUDIO_CODEC,
+							   NULL,
 							   fmtp,
 							   handle->samplerate,
 							   20,//ms
@@ -185,6 +186,7 @@ static switch_status_t webm_file_open(switch_file_handle_t *handle, const char *
 	if (switch_test_flag(handle, SWITCH_FILE_FLAG_VIDEO)) {
 		if (switch_core_codec_init(&context->video_codec,
 							   "VP8",
+							   NULL,
 							   NULL,
 							   90000,
 							   0,//ms

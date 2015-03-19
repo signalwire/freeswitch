@@ -562,6 +562,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 				if (switch_core_codec_init(&tech_pvt->write_codec,
 										   "L16",
 										   NULL,
+										   NULL,
 										   sample_rate,
 										   codec_ms,
 										   1,
@@ -989,13 +990,13 @@ static switch_status_t engage_device(unsigned int sample_rate, int codec_ms)
 
 	if (switch_core_codec_init(&globals.read_codec,
 							   "L16",
-							   NULL, sample_rate, codec_ms, 1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, NULL) != SWITCH_STATUS_SUCCESS) {
+							   NULL, NULL, sample_rate, codec_ms, 1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, NULL) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't load codec?\n");
 		return SWITCH_STATUS_FALSE;
 	} else {
 		if (switch_core_codec_init(&globals.write_codec,
 								   "L16",
-								   NULL,
+								   NULL, NULL,
 								   sample_rate, codec_ms, 1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, NULL) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't load codec?\n");
 			switch_core_codec_destroy(&globals.read_codec);

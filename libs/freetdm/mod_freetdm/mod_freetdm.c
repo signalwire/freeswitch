@@ -378,6 +378,7 @@ init_codecs:
 	if (switch_core_codec_init(&tech_pvt->read_codec,
 							   dname,
 							   NULL,
+							   NULL,
 							   srate,
 							   interval,
 							   1,
@@ -388,6 +389,7 @@ init_codecs:
 	} else {
 		if (switch_core_codec_init(&tech_pvt->write_codec,
 								   dname,
+								   NULL,
 								   NULL,
 								   srate,
 								   interval,

@@ -1567,17 +1567,20 @@ SWITCH_DECLARE(switch_status_t) switch_core_timer_destroy(switch_timer_t *timer)
   \param pool the memory pool to use
   \return SWITCH_STATUS_SUCCESS if the handle is allocated
 */
-#define switch_core_codec_init(_codec, _codec_name, _fmtp, _rate, _ms, _channels, _flags, _codec_settings, _pool) \
-	switch_core_codec_init_with_bitrate(_codec, _codec_name, _fmtp, _rate, _ms, _channels, 0, _flags, _codec_settings, _pool)
+#define switch_core_codec_init(_codec, _codec_name, _modname, _fmtp, _rate, _ms, _channels, _flags, _codec_settings, _pool) \
+	switch_core_codec_init_with_bitrate(_codec, _codec_name, _modname, _fmtp, _rate, _ms, _channels, 0, _flags, _codec_settings, _pool)
 SWITCH_DECLARE(switch_status_t) switch_core_codec_init_with_bitrate(switch_codec_t *codec,
-													   const char *codec_name,
-													   const char *fmtp,
-													   uint32_t rate,
-													   int ms,
-													   int channels,
-													   uint32_t bitrate,
-													   uint32_t flags, const switch_codec_settings_t *codec_settings, switch_memory_pool_t *pool);
-
+																	const char *codec_name,
+																	const char *fmtp,
+																	const char *modname,
+																	uint32_t rate,
+																	int ms,
+																	int channels,
+																	uint32_t bitrate,
+																	uint32_t flags, 
+																	const switch_codec_settings_t *codec_settings, 
+																	switch_memory_pool_t *pool);
+								
 SWITCH_DECLARE(switch_status_t) switch_core_codec_copy(switch_codec_t *codec, switch_codec_t *new_codec, 
 													   const switch_codec_settings_t *codec_settings, switch_memory_pool_t *pool);
 SWITCH_DECLARE(switch_status_t) switch_core_codec_parse_fmtp(const char *codec_name, const char *fmtp, uint32_t rate, switch_codec_fmtp_t *codec_fmtp);

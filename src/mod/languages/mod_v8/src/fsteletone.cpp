@@ -137,6 +137,7 @@ void *FSTeleTone::Construct(const v8::FunctionCallbackInfo<Value>& info)
 	if (switch_core_codec_init(&tto->_codec,
 							   "L16",
 							   NULL,
+							   NULL,
 							   read_impl.actual_samples_per_second,
 							   read_impl.microseconds_per_packet / 1000,
 							   read_impl.number_of_channels, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, pool) == SWITCH_STATUS_SUCCESS) {

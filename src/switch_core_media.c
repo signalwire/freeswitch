@@ -656,6 +656,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_get_payload_code(switch_core
 SWITCH_DECLARE(payload_map_t *) switch_core_media_add_payload_map(switch_core_session_t *session, 
 																  switch_media_type_t type,
 																  const char *name, 
+																  const char *modname, 
 																  const char *fmtp,
 																  switch_sdp_type_t sdp_type,
 																  uint32_t pt, 
@@ -728,6 +729,10 @@ SWITCH_DECLARE(payload_map_t *) switch_core_media_add_payload_map(switch_core_se
 		pmap->channels = channels;
 	}
 
+	if (modname) {
+		pmap->modname = switch_core_strdup(session->pool, modname);
+	}
+
 	if (!zstr(fmtp) && (zstr(pmap->rm_fmtp) || strcmp(pmap->rm_fmtp, fmtp))) {
 		pmap->rm_fmtp = switch_core_strdup(session->pool, fmtp);
 	}
@@ -780,7 +785,7 @@ SWITCH_DECLARE(const char *)switch_core_media_get_codec_string(switch_core_sessi
 		if (!(preferred = switch_channel_get_variable(session->channel, "absolute_codec_string"))) {
 			preferred = switch_channel_get_variable(session->channel, "codec_string");
 		}
-	
+
 		if (!preferred) {
 			if (switch_channel_direction(session->channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
 				preferred = smh->mparams->outbound_codec_string;
@@ -2491,6 +2496,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_set_video_codec(switch_core_se
 
 	if (switch_core_codec_init(&v_engine->read_codec,
 							   v_engine->cur_payload_map->rm_encoding,
+							   v_engine->cur_payload_map->modname,
 							   v_engine->cur_payload_map->rm_fmtp,
 							   v_engine->cur_payload_map->rm_rate,
 							   0,
@@ -2502,6 +2508,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_set_video_codec(switch_core_se
 	} else {
 		if (switch_core_codec_init(&v_engine->write_codec,
 								   v_engine->cur_payload_map->rm_encoding,
+								   v_engine->cur_payload_map->modname,
 								   v_engine->cur_payload_map->rm_fmtp,
 								   v_engine->cur_payload_map->rm_rate,
 								   0,
@@ -2628,6 +2635,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_set_codec(switch_core_session_
 
 	if (switch_core_codec_init_with_bitrate(&a_engine->read_codec,
 											a_engine->cur_payload_map->iananame,
+											a_engine->cur_payload_map->modname,
 											a_engine->cur_payload_map->rm_fmtp,
 											a_engine->cur_payload_map->rm_rate,
 											a_engine->cur_payload_map->codec_ms,
@@ -2645,6 +2653,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_set_codec(switch_core_session_
 
 	if (switch_core_codec_init_with_bitrate(&a_engine->write_codec,
 											a_engine->cur_payload_map->iananame,
+											a_engine->cur_payload_map->modname,
 											a_engine->cur_payload_map->rm_fmtp,
 											a_engine->cur_payload_map->rm_rate,
 											a_engine->cur_payload_map->codec_ms,
@@ -4030,6 +4039,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 					payload_map_t *pmap = switch_core_media_add_payload_map(session, 
 																			SWITCH_MEDIA_TYPE_AUDIO,
 																			matches[j].map->rm_encoding,
+																			matches[j].imp->modname,
 																			matches[j].map->rm_fmtp,
 																			sdp_type, 
 																			matches[j].map->rm_pt,
@@ -4342,6 +4352,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 					payload_map_t *pmap = switch_core_media_add_payload_map(session, 
 																			SWITCH_MEDIA_TYPE_VIDEO,
 																			matches[j].map->rm_encoding, 
+																			matches[j].imp->modname,
 																			matches[j].map->rm_fmtp,
 																			sdp_type, 
 																			matches[j].map->rm_pt,
@@ -4349,6 +4360,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 																			matches[j].imp->microseconds_per_packet / 1000,
 																			matches[j].imp->number_of_channels,
 																			SWITCH_TRUE);
+
 					if (j == 0) {
 						v_engine->cur_payload_map = pmap;
 						v_engine->cur_payload_map->current = 1;
@@ -6900,6 +6912,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 				switch_core_media_add_payload_map(session,
 												  imp->codec_type == SWITCH_CODEC_TYPE_AUDIO ? SWITCH_MEDIA_TYPE_AUDIO : SWITCH_MEDIA_TYPE_VIDEO,
 												  imp->iananame,
+												  imp->modname,
 												  NULL,
 												  sdp_type,
 												  smh->ianacodes[i],
@@ -7957,6 +7970,7 @@ SWITCH_DECLARE(void) switch_core_media_patch_sdp(switch_core_session_t *session)
 												 SWITCH_MEDIA_TYPE_AUDIO,
 												 "PROXY",
 												 NULL,
+												 NULL,
 												 SDP_TYPE_RESPONSE,
 												 0,
 												 8000,
@@ -8112,6 +8126,7 @@ SWITCH_DECLARE(void) switch_core_media_patch_sdp(switch_core_session_t *session)
 				pmap = switch_core_media_add_payload_map(session,
 														 SWITCH_MEDIA_TYPE_AUDIO,
 														 "PROXY-VID",
+														 NULL,
 														 NULL,
 														 SDP_TYPE_RESPONSE,
 														 0,
@@ -8949,7 +8964,7 @@ SWITCH_DECLARE(void) switch_core_media_set_sdp_codec_string(switch_core_session_
 }
 
 
-static void add_audio_codec(sdp_rtpmap_t *map, int ptime, char *buf, switch_size_t buflen)
+static void add_audio_codec(sdp_rtpmap_t *map, const switch_codec_implementation_t *imp, int ptime, char *buf, switch_size_t buflen)
 {
 	int codec_ms = ptime;
 	uint32_t map_bit_rate = 0, map_channels = 1;
@@ -9004,7 +9019,7 @@ static void add_audio_codec(sdp_rtpmap_t *map, int ptime, char *buf, switch_size
 		switch_snprintf(bitstr, sizeof(bitstr), "@%dc", map_channels);
 	}
 
-	switch_snprintf(buf + strlen(buf), buflen - strlen(buf), ",%s%s%s%s", map->rm_encoding, ratestr, ptstr, bitstr);
+	switch_snprintf(buf + strlen(buf), buflen - strlen(buf), ",%s.%s%s%s%s", imp->modname, map->rm_encoding, ratestr, ptstr, bitstr);
 
 }
 
@@ -9084,6 +9099,7 @@ static void switch_core_media_set_r_sdp_codec_string(switch_core_session_t *sess
 				switch_core_media_add_payload_map(session, 
 												  m->m_type == sdp_media_audio ? SWITCH_MEDIA_TYPE_AUDIO : SWITCH_MEDIA_TYPE_VIDEO,
 												  map->rm_encoding,
+												  NULL,
 												  map->rm_fmtp,
 												  sdp_type,
 												  map->rm_pt,
@@ -9141,7 +9157,7 @@ static void switch_core_media_set_r_sdp_codec_string(switch_core_session_t *sess
 						}
 
 						if (match) {
-							add_audio_codec(map, ptime, buf, sizeof(buf));
+							add_audio_codec(map, imp, ptime, buf, sizeof(buf));
 							break;
 						}
 					
@@ -9171,7 +9187,7 @@ static void switch_core_media_set_r_sdp_codec_string(switch_core_session_t *sess
 						}
 
 						if (match) {
-							add_audio_codec(map, ptime, buf, sizeof(buf));
+							add_audio_codec(map, imp, ptime, buf, sizeof(buf));
 							break;
 						}
 					}
@@ -9190,7 +9206,6 @@ static void switch_core_media_set_r_sdp_codec_string(switch_core_session_t *sess
 			}
 			for (i = 0; i < num_codecs; i++) {
 				const switch_codec_implementation_t *imp = codecs[i];
-				int channels;
 
 				if (imp->codec_type != SWITCH_CODEC_TYPE_VIDEO || imp->ianacode > 127 || already_did[imp->ianacode]) {
 					continue;
@@ -9218,13 +9233,7 @@ static void switch_core_media_set_r_sdp_codec_string(switch_core_session_t *sess
 					}
 
 					if (match) {
-						channels = map->rm_params ? atoi(map->rm_params) : 1;
-						if (ptime > 0) {
-							switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), ",%s@%uh@%di@%dc", imp->iananame, (unsigned int) map->rm_rate,
-											ptime, channels);
-						} else {
-							switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), ",%s@%uh@%dc", imp->iananame, (unsigned int) map->rm_rate, channels);
-						}
+						switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), ",%s.%s", imp->modname, imp->iananame);
 						already_did[imp->ianacode] = 1;
 						break;
 					}
@@ -9315,6 +9324,7 @@ SWITCH_DECLARE(void) switch_core_media_check_outgoing_proxy(switch_core_session_
 											 SWITCH_MEDIA_TYPE_AUDIO,
 											 "PROXY",
 											 NULL,
+											 NULL,
 											 SDP_TYPE_RESPONSE,
 											 0,
 											 8000,
@@ -9329,6 +9339,7 @@ SWITCH_DECLARE(void) switch_core_media_check_outgoing_proxy(switch_core_session_
 		pmap = switch_core_media_add_payload_map(session,
 												 SWITCH_MEDIA_TYPE_AUDIO,
 												 "PROXY-VID",
+												 NULL,
 												 NULL,
 												 SDP_TYPE_RESPONSE,
 												 0,
