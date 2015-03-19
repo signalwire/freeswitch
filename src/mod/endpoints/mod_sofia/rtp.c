@@ -229,6 +229,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 	if (switch_core_codec_init(&tech_pvt->read_codec,
 							   codec,
 							   NULL,
+							   NULL,
 							   rate,
 							   ptime,
 							   1,
@@ -239,6 +240,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 	} else {
 		if (switch_core_codec_init(&tech_pvt->write_codec,
 								   codec,
+								   NULL,
 								   NULL,
 								   rate,
 								   ptime,
@@ -479,24 +481,26 @@ static switch_status_t channel_receive_event(switch_core_session_t *session, swi
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Switching codec updating \n");
 
 		if (switch_core_codec_init(&tech_pvt->read_codec,
-					codec,
-					NULL,
-					rate,
-					ptime,
-					1,
+								   codec,
+								   NULL,
+								   NULL,
+								   rate,
+								   ptime,
+								   1,
 					/*SWITCH_CODEC_FLAG_ENCODE |*/ SWITCH_CODEC_FLAG_DECODE,
 					NULL, switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't load codec?\n");
 			goto fail;
 		} else {
 			if (switch_core_codec_init(&tech_pvt->write_codec,
-						codec,
-						NULL,
-						rate,
-						ptime,
-						1,
-						SWITCH_CODEC_FLAG_ENCODE /*| SWITCH_CODEC_FLAG_DECODE*/, 
-						NULL, switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
+									   codec,
+									   NULL,
+									   NULL,
+									   rate,
+									   ptime,
+									   1,
+									   SWITCH_CODEC_FLAG_ENCODE /*| SWITCH_CODEC_FLAG_DECODE*/, 
+									   NULL, switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't load codec?\n");
 				goto fail;
 			}

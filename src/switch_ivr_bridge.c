@@ -312,6 +312,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 			if (switch_core_codec_init(&silence_codec,
 									   "L16",
 									   NULL,
+									   NULL,
 									   read_impl.actual_samples_per_second,
 									   read_impl.microseconds_per_packet / 1000,
 									   1,

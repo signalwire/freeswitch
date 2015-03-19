@@ -109,7 +109,7 @@ switch_status_t rtmp_tech_init(rtmp_private_t *tech_pvt, rtmp_session_t *rsessio
 	tech_pvt->channel = switch_core_session_get_channel(session);
 
 	/* Initialize read & write codecs */
-	if (switch_core_codec_init(&tech_pvt->read_codec, /* name */ "SPEEX", 
+	if (switch_core_codec_init(&tech_pvt->read_codec, /* name */ "SPEEX", /* modname */ NULL,
 		 /* fmtp */ NULL,  /* rate */ 16000, /* ms */ 20, /* channels */ 1, 
 		/* flags */ SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, 
 		/* codec settings */ NULL, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
@@ -118,7 +118,7 @@ switch_status_t rtmp_tech_init(rtmp_private_t *tech_pvt, rtmp_session_t *rsessio
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (switch_core_codec_init(&tech_pvt->write_codec, /* name */ "SPEEX", 
+	if (switch_core_codec_init(&tech_pvt->write_codec, /* name */ "SPEEX", /* modname */ NULL,
 		 /* fmtp */ NULL,  /* rate */ 16000, /* ms */ 20, /* channels */ 1, 
 		/* flags */ SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, 
 		/* codec settings */ NULL, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {

@@ -168,12 +168,13 @@ SWITCH_STANDARD_APP(record_mp4_function)
 	MP4::Context ctx(reinterpret_cast<char*>(data), true);
 
 	if (switch_core_codec_init(&codec,
-			"L16",
-			NULL,
-			read_impl.samples_per_second,
-			read_impl.microseconds_per_packet / 1000,
-			1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
-			NULL, switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS)
+							   "L16",
+							   NULL,
+							   NULL,
+							   read_impl.samples_per_second,
+							   read_impl.microseconds_per_packet / 1000,
+							   1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
+							   NULL, switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS)
 	{
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Audio Codec Activation Success\n");
 	} else {
@@ -440,24 +441,26 @@ SWITCH_STANDARD_APP(play_mp4_function)
 		}
 
 		if (switch_core_codec_init(&codec,
-									vc.audioTrack().codecName,
-									NULL,
-									vc.audioTrack().clock,
-									vc.audioTrack().packetLength,
-									1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
-									NULL, switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
+								   vc.audioTrack().codecName,
+								   NULL,
+								   NULL,
+								   vc.audioTrack().clock,
+								   vc.audioTrack().packetLength,
+								   1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
+								   NULL, switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Audio Codec Activation Success\n");
 		} else {
 			throw Exception("Audio Codec Activation Fail");
 		}
 
 		if (switch_core_codec_init(&vid_codec,
-									vc.videoTrack().track.codecName,
-									NULL,
-									0,
-									0,
-									1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
-									NULL, switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
+								   vc.videoTrack().track.codecName,
+								   NULL,
+								   NULL,
+								   0,
+								   0,
+								   1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
+								   NULL, switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Video Codec Activation Success\n");
 		} else
 		{

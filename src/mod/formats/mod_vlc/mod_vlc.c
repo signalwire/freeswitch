@@ -1417,6 +1417,7 @@ SWITCH_STANDARD_APP(play_video_function)
 	if (switch_core_codec_init(&codec,
 							   "L16",
 							   NULL,
+							   NULL,
 							   read_impl.actual_samples_per_second,
 							   read_impl.microseconds_per_packet/1000,
 							   read_impl.number_of_channels, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
@@ -2301,6 +2302,7 @@ static switch_call_cause_t vlc_outgoing_channel(switch_core_session_t *session, 
 	if (switch_core_codec_init(&tech_pvt->read_codec,
 							   "L16",
 							   NULL,
+							   NULL,
 							   tech_pvt->read_impl.actual_samples_per_second,
 							   tech_pvt->read_impl.microseconds_per_packet / 1000,
 							   tech_pvt->read_impl.number_of_channels,
@@ -2312,6 +2314,7 @@ static switch_call_cause_t vlc_outgoing_channel(switch_core_session_t *session, 
 
 	if (switch_core_codec_init(&tech_pvt->write_codec,
 							   tech_pvt->read_impl.iananame,
+							   tech_pvt->read_impl.modname,
 							   NULL,
 							   tech_pvt->read_impl.actual_samples_per_second,
 							   tech_pvt->read_impl.microseconds_per_packet / 1000,
@@ -2337,12 +2340,13 @@ static switch_call_cause_t vlc_outgoing_channel(switch_core_session_t *session, 
 	}
 
 	if (switch_core_codec_init(&tech_pvt->video_codec,
-				codec_str,
-				NULL,
-				90000,
-				0,
-				1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
-				NULL, switch_core_session_get_pool(tech_pvt->session)) == SWITCH_STATUS_SUCCESS) {
+							   codec_str,
+							   NULL,
+							   NULL,
+							   90000,
+							   0,
+							   1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
+							   NULL, switch_core_session_get_pool(tech_pvt->session)) == SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(*new_session), SWITCH_LOG_DEBUG, "Video Codec Activation Success\n");
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(*new_session), SWITCH_LOG_ERROR, "Video Codec Activation Fail\n");

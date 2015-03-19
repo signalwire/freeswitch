@@ -1129,6 +1129,7 @@ SWITCH_STANDARD_APP(record_av_function)
 	if (switch_core_codec_init(&codec,
 							   "L16",
 							   NULL,
+							   NULL,
 							   // read_impl.samples_per_second,
 							   44100, // todo: not hard coded?
 							   read_impl.microseconds_per_packet / 1000,

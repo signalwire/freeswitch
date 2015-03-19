@@ -593,7 +593,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_parse_fmtp(const char *codec_n
 
 	memset(codec_fmtp, 0, sizeof(*codec_fmtp));
 	
-	if ((codec_interface = switch_loadable_module_get_codec_interface(codec_name))) {
+	if ((codec_interface = switch_loadable_module_get_codec_interface(codec_name, NULL))) {
 		if (codec_interface->parse_fmtp) {
 			codec_fmtp->actual_samples_per_second = rate;
 			status = codec_interface->parse_fmtp(fmtp, codec_fmtp);
@@ -624,6 +624,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_copy(switch_codec_t *codec, sw
 	
 	return switch_core_codec_init(new_codec, 
 								  codec->implementation->iananame,
+								  codec->implementation->modname,
 								  codec->fmtp_in,
 								  codec->implementation->samples_per_second,
 								  codec->implementation->microseconds_per_packet / 1000,
@@ -634,7 +635,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_copy(switch_codec_t *codec, sw
 	
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_codec_init_with_bitrate(switch_codec_t *codec, const char *codec_name, const char *fmtp,
+SWITCH_DECLARE(switch_status_t) switch_core_codec_init_with_bitrate(switch_codec_t *codec, const char *codec_name, const char *modname, const char *fmtp,
 													   uint32_t rate, int ms, int channels, uint32_t bitrate, uint32_t flags,
 													   const switch_codec_settings_t *codec_settings, switch_memory_pool_t *pool)
 {
@@ -650,7 +651,17 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_init_with_bitrate(switch_codec
 		codec->session = switch_core_memory_pool_get_data(pool, "__session");
 	}
 
-	if ((codec_interface = switch_loadable_module_get_codec_interface(codec_name)) == 0) {
+	if (strchr(codec_name, '.')) {
+		char *p = NULL;
+		codec_name = switch_core_strdup(pool, codec_name);
+		if ((p = strchr(codec_name, '.'))) {
+			*p++ = '\0';
+			modname = codec_name;
+			codec_name = p;
+		}
+	}
+
+	if ((codec_interface = switch_loadable_module_get_codec_interface(codec_name, modname)) == 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid codec %s!\n", codec_name);
 		return SWITCH_STATUS_GENERR;
 	}

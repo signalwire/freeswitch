@@ -278,6 +278,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_get_payload_code(switch_core
 SWITCH_DECLARE(payload_map_t *) switch_core_media_add_payload_map(switch_core_session_t *session, 
 																  switch_media_type_t type,
 																  const char *name, 
+																  const char *modname, 
 																  const char *fmtp,
 																  switch_sdp_type_t sdp_type,
 																  uint32_t pt, 

@@ -2469,6 +2469,7 @@ typedef struct payload_map_s {
 
 	char *rm_encoding;
 	char *iananame;
+	char *modname;
 	switch_payload_t pt;
 	unsigned long rm_rate;
 	unsigned long adv_rm_rate;

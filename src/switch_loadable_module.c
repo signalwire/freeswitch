@@ -46,6 +46,12 @@ typedef struct switch_file_node_s {
 	const char *interface_name;
 	struct switch_file_node_s *next;
 } switch_file_node_t;
+
+typedef struct switch_codec_node_s {
+	const switch_codec_interface_t *ptr;
+	const char *interface_name;
+	struct switch_codec_node_s *next;
+} switch_codec_node_t;
 				
 
 struct switch_loadable_module {
@@ -176,6 +182,8 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failed to load codec interface from %s due to no interface name.\n", key);
 			} else {
 				unsigned load_interface = 1;
+				switch_codec_node_t *node, *head;
+
 				for (impl = ptr->implementations; impl; impl = impl->next) {
 					if (!impl->iananame) {
 						load_interface = 0;
@@ -207,15 +215,23 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 											  impl->iananame, impl->ianacode,
 											  ptr->interface_name, impl->actual_samples_per_second, impl->microseconds_per_packet / 1000);
 						}
-						if (!switch_core_hash_find(loadable_modules.codec_hash, impl->iananame)) {
-							switch_core_hash_insert(loadable_modules.codec_hash, impl->iananame, (const void *) ptr);
+
+						node = switch_core_alloc(new_module->pool, sizeof(*node));
+						node->ptr = ptr;
+						node->interface_name = switch_core_strdup(new_module->pool, new_module->module_interface->module_name);
+						if ((head = switch_core_hash_find(loadable_modules.codec_hash, impl->iananame))) {
+							node->next = head;
 						}
+
+						switch_core_hash_insert(loadable_modules.codec_hash, impl->iananame, (const void *) node);
 					}
+
 					if (switch_event_create(&event, SWITCH_EVENT_MODULE_LOAD) == SWITCH_STATUS_SUCCESS) {
 						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "type", "codec");
 						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "name", ptr->interface_name);
 						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "key", new_module->key);
 						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "filename", new_module->filename);
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "module", new_module->module_interface->module_name);
 						switch_event_fire(&event);
 						added++;
 					}
@@ -946,6 +962,7 @@ static switch_status_t switch_loadable_module_unprocess(switch_loadable_module_t
 	if (old_module->module_interface->codec_interface) {
 		const switch_codec_implementation_t *impl;
 		const switch_codec_interface_t *ptr;
+		switch_codec_node_t *node, *head, *last = NULL;
 
 		for (ptr = old_module->module_interface->codec_interface; ptr; ptr = ptr->next) {
 			if (ptr->interface_name) {
@@ -964,13 +981,31 @@ static switch_status_t switch_loadable_module_unprocess(switch_loadable_module_t
 										  ptr->interface_name, impl->actual_samples_per_second, impl->microseconds_per_packet / 1000);
 						switch_core_session_hupall_matching_var("read_codec", impl->iananame, SWITCH_CAUSE_MANAGER_REQUEST);
 						switch_core_session_hupall_matching_var("write_codec", impl->iananame, SWITCH_CAUSE_MANAGER_REQUEST);
-						if (switch_core_hash_find(loadable_modules.codec_hash, impl->iananame)) {
-							switch_core_hash_delete(loadable_modules.codec_hash, impl->iananame);
+
+						if ((head = switch_core_hash_find(loadable_modules.codec_hash, impl->iananame))) {
+							for(node = head; node; node = node->next) {
+								if (!strcmp(node->interface_name, old_module->module_interface->module_name)) {
+									if (node == head) {
+										if ((node = node->next)) {
+											switch_core_hash_insert(loadable_modules.codec_hash, impl->iananame, (const void *) node);
+										} else {
+											switch_core_hash_delete(loadable_modules.codec_hash, impl->iananame);
+										}
+									} else {
+										if (last) {
+											last->next = node->next;
+										}
+									}
+									break;
+								}
+								last = node;
+							}
 						}
 					}
 					if (switch_event_create(&event, SWITCH_EVENT_MODULE_UNLOAD) == SWITCH_STATUS_SUCCESS) {
 						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "type", "codec");
 						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "name", ptr->interface_name);
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "module", old_module->module_interface->module_name);
 						switch_event_fire(&event);
 						removed++;
 					}
@@ -2106,24 +2141,26 @@ SWITCH_DECLARE(switch_file_interface_t *) switch_loadable_module_get_file_interf
 	return i;
 }
 
-SWITCH_DECLARE(switch_codec_interface_t *) switch_loadable_module_get_codec_interface(const char *name)
+SWITCH_DECLARE(switch_codec_interface_t *) switch_loadable_module_get_codec_interface(const char *name, const char *modname)
 {
-	char altname[256] = "";
-	switch_codec_interface_t *codec;
-	switch_size_t x;
+	switch_codec_interface_t *codec = NULL;
+	switch_codec_node_t *node, *head;
 
 	switch_mutex_lock(loadable_modules.mutex);
-	if (!(codec = switch_core_hash_find(loadable_modules.codec_hash, name))) {
-		for (x = 0; x < strlen(name); x++) {
-			altname[x] = (char) toupper((int) name[x]);
-		}
-		if (!(codec = switch_core_hash_find(loadable_modules.codec_hash, altname))) {
-			for (x = 0; x < strlen(name); x++) {
-				altname[x] = (char) tolower((int) name[x]);
+	
+	if ((head = switch_core_hash_find(loadable_modules.codec_hash, name))) {
+		if (modname) {
+			for (node = head; node; node = node->next) {
+				if (!strcasecmp(node->interface_name, modname)) {
+					codec = (switch_codec_interface_t *) node->ptr;
+					break;
+				}
 			}
-			codec = switch_core_hash_find(loadable_modules.codec_hash, altname);
+		} else {
+			codec = (switch_codec_interface_t *) head->ptr;
 		}
 	}
+
 	switch_mutex_unlock(loadable_modules.mutex);
 
 	if (codec) {
@@ -2259,29 +2296,35 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs(const switch_codec_impleme
 	switch_codec_interface_t *codec_interface;
 	int i = 0;
 	const switch_codec_implementation_t *imp;
+	switch_codec_node_t *node, *head;
 
 	switch_mutex_lock(loadable_modules.mutex);
 	for (hi = switch_core_hash_first(loadable_modules.codec_hash); hi; hi = switch_core_hash_next(&hi)) {
 		switch_core_hash_this(hi, NULL, NULL, &val);
-		codec_interface = (switch_codec_interface_t *) val;
+		head = (switch_codec_node_t *) val;
 		
-		/* Look for the default ptime of the codec because it's the safest choice */
-		for (imp = codec_interface->implementations; imp; imp = imp->next) {
-			uint32_t default_ptime = switch_default_ptime(imp->iananame, imp->ianacode);
+		for (node = head; node; node = node->next) {
+			codec_interface = (switch_codec_interface_t *) node->ptr;
 
-			if (imp->microseconds_per_packet / 1000 == (int)default_ptime) {
-				array[i++] = imp;
-				goto found;
+			/* Look for the default ptime of the codec because it's the safest choice */
+			for (imp = codec_interface->implementations; imp; imp = imp->next) {
+				uint32_t default_ptime = switch_default_ptime(imp->iananame, imp->ianacode);
+				
+				if (imp->microseconds_per_packet / 1000 == (int)default_ptime) {
+					array[i++] = imp;
+					goto found;
+				}
 			}
+			/* oh well we will use what we have */
+			array[i++] = codec_interface->implementations;
 		}
-		/* oh well we will use what we have */
-		array[i++] = codec_interface->implementations;
 
-	  found:
-
+	found:
+			
 		if (i > arraylen) {
 			break;
 		}
+		
 	}
 	switch_safe_free(hi);
 
@@ -2293,7 +2336,7 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs(const switch_codec_impleme
 
 }
 
-SWITCH_DECLARE(char *) switch_parse_codec_buf(char *buf, uint32_t *interval, uint32_t *rate, uint32_t *bit, uint32_t *channels)
+SWITCH_DECLARE(char *) switch_parse_codec_buf(char *buf, uint32_t *interval, uint32_t *rate, uint32_t *bit, uint32_t *channels, char **modname)
 {
 	char *cur, *next = NULL, *name, *p;
 
@@ -2327,6 +2370,12 @@ SWITCH_DECLARE(char *) switch_parse_codec_buf(char *buf, uint32_t *interval, uin
 		cur = next;
 	}
 	
+	if ((p = strchr(name, '.'))) {
+		*p++ = '\0';
+		*modname = name;
+		name = p;
+	}
+
 	return name;
 }
 
@@ -2339,14 +2388,14 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
 	switch_mutex_lock(loadable_modules.mutex);
 
 	for (x = 0; x < preflen; x++) {
-		char *name, buf[256], jbuf[256];
+		char *name, buf[256], jbuf[256], *modname = NULL;
 		uint32_t interval = 0, rate = 0, bit = 0, channels = 1;
 
 		switch_copy_string(buf, prefs[x], sizeof(buf));
-		name = switch_parse_codec_buf(buf, &interval, &rate, &bit, &channels);
+		name = switch_parse_codec_buf(buf, &interval, &rate, &bit, &channels, &modname);
 
 		for(j = 0; j < x; j++) {
-			char *jname;
+			char *jname, *jmodname = NULL;
 			uint32_t jinterval = 0, jrate = 0, jbit = 0, jchannels = 1;
 			uint32_t ointerval = interval, orate = rate, ochannels = channels;
 
@@ -2363,7 +2412,7 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
 			}
 			
 			switch_copy_string(jbuf, prefs[j], sizeof(jbuf));
-			jname = switch_parse_codec_buf(jbuf, &jinterval, &jrate, &jbit, &jchannels);
+			jname = switch_parse_codec_buf(jbuf, &jinterval, &jrate, &jbit, &jchannels, &jmodname);
 
 			if (jinterval == 0) {
 				jinterval = switch_default_ptime(jname, 0);
@@ -2382,7 +2431,7 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
 			}
 		}
 
-		if ((codec_interface = switch_loadable_module_get_codec_interface(name)) != 0) {
+		if ((codec_interface = switch_loadable_module_get_codec_interface(name, modname)) != 0) {
 			/* If no specific codec interval is requested opt for the default above all else because lots of stuff assumes it */
 			for (imp = codec_interface->implementations; imp; imp = imp->next) {
 				uint32_t default_ptime = switch_default_ptime(imp->iananame, imp->ianacode);

@@ -97,6 +97,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_codec_slin(switch_core_s
 	if (switch_core_codec_init(&data->codec,
 							   "L16",
 							   NULL,
+							   NULL,
 							   read_impl.actual_samples_per_second,
 							   interval,
 							   read_impl.number_of_channels, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, NULL) == SWITCH_STATUS_SUCCESS) {

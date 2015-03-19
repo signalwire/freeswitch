@@ -189,18 +189,19 @@ switch_status_t spandsp_tdd_send_session(switch_core_session_t *session, const c
 	switch_core_session_get_read_impl(session, &read_impl);
 
 	if (switch_core_codec_init(&write_codec,
-				"L16",
-				NULL,
-				read_impl.actual_samples_per_second,
-				read_impl.microseconds_per_packet / 1000,
-				read_impl.number_of_channels,
-				SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL,
-				switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
-				write_frame.data = write_buf;
-				write_frame.buflen = sizeof(write_buf);
-				write_frame.datalen = read_impl.decoded_bytes_per_packet;
-				write_frame.samples = write_frame.datalen / 2;
-				write_frame.codec = &write_codec;
+                               "L16",
+                               NULL,
+                               NULL,
+                               read_impl.actual_samples_per_second,
+                               read_impl.microseconds_per_packet / 1000,
+                               read_impl.number_of_channels,
+                               SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL,
+                               switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
+        write_frame.data = write_buf;
+        write_frame.buflen = sizeof(write_buf);
+        write_frame.datalen = read_impl.decoded_bytes_per_packet;
+        write_frame.samples = write_frame.datalen / 2;
+        write_frame.codec = &write_codec;
 		switch_core_session_set_read_codec(session, &write_codec);
 	} else {
 		return SWITCH_STATUS_FALSE;

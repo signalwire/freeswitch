@@ -147,6 +147,7 @@ SWITCH_STANDARD_APP(record_fsv_function)
 	if (switch_core_codec_init(&codec,
 							   "L16",
 							   NULL,
+							   NULL,
 							   read_impl.samples_per_second,
 							   read_impl.microseconds_per_packet / 1000,
 							   1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
@@ -339,6 +340,7 @@ SWITCH_STANDARD_APP(play_fsv_function)
 	if (switch_core_codec_init(&codec,
 							   "L16",
 							   NULL,
+							   NULL,
 							   h.audio_rate,
 							   h.audio_ptime,
 							   1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
@@ -352,6 +354,7 @@ SWITCH_STANDARD_APP(play_fsv_function)
 
 	if (switch_core_codec_init(&vid_codec,
 							   h.video_codec_name,
+							   NULL,
 							   NULL,
 							   0,
 							   0,

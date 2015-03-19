@@ -352,6 +352,7 @@ SWITCH_STANDARD_APP(bcast_function)
 			if (switch_core_codec_init(&codec,
 									   "L16",
 									   NULL,
+									   NULL,
 									   read_rate,
 									   20,
 									   1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
@@ -365,6 +366,7 @@ SWITCH_STANDARD_APP(bcast_function)
 
 			if (switch_core_codec_init(&write_codec,
 									   codec_name,
+									   NULL,
 									   NULL,
 									   8000,
 									   20,

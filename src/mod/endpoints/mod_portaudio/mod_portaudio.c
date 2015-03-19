@@ -1217,15 +1217,15 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		}
 
 		if (switch_core_codec_init(&endpoint->read_codec,
-					"L16", NULL, sample_rate, codec_ms, 1, 
-					SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, NULL) != SWITCH_STATUS_SUCCESS) {
+								   "L16", NULL, NULL, sample_rate, codec_ms, 1, 
+								   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, NULL) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't load codec?\n");
 			goto error;
 		}
 
 		if (switch_core_codec_init(&endpoint->write_codec,
-					 "L16", NULL, sample_rate, codec_ms, 1, 
-					 SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, NULL) != SWITCH_STATUS_SUCCESS) {
+								   "L16", NULL, NULL, sample_rate, codec_ms, 1, 
+								   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, NULL) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't load codec?\n");
 			goto error;
 		}
@@ -2222,6 +2222,7 @@ static switch_status_t create_codecs(int restart)
 	if (!switch_core_codec_ready(&globals.read_codec)) {
 		if (switch_core_codec_init(&globals.read_codec,
 								   "L16",
+								   NULL,
 								   NULL, sample_rate, codec_ms, 1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL,
 								   NULL) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't load codec?\n");
@@ -2234,6 +2235,7 @@ static switch_status_t create_codecs(int restart)
 	if (!switch_core_codec_ready(&globals.write_codec)) {
 		if (switch_core_codec_init(&globals.write_codec,
 								   "L16",
+								   NULL,
 								   NULL,
 								   sample_rate, codec_ms, 1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, NULL) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't load codec?\n");

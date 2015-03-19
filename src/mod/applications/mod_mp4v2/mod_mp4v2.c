@@ -369,6 +369,7 @@ SWITCH_STANDARD_APP(record_mp4_function)
 		if (switch_core_codec_init(&codec,
 								   "PCMU",
 								   NULL,
+								   NULL,
 								   read_impl.samples_per_second,
 								   read_impl.microseconds_per_packet / 1000,
 								   read_impl.number_of_channels, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
@@ -669,6 +670,7 @@ static switch_status_t mp4_file_open(switch_file_handle_t *handle, const char *p
 	if (switch_core_codec_init(&context->audio_codec,
 							   get_audio_codec_name(context->audio_type),
 							   NULL,
+							   NULL,
 							   handle->samplerate,
 							   20,//ms
 							   handle->channels, SWITCH_CODEC_FLAG_ENCODE,
@@ -681,12 +683,13 @@ static switch_status_t mp4_file_open(switch_file_handle_t *handle, const char *p
 
 	if (switch_test_flag(handle, SWITCH_FILE_FLAG_VIDEO)) {
 		if (switch_core_codec_init(&context->video_codec,
-							   "H264",
-							   NULL,
-							   90000,
-							   0,//ms
-							   1, SWITCH_CODEC_FLAG_ENCODE,
-							   NULL, handle->memory_pool) == SWITCH_STATUS_SUCCESS) {
+								   "H264",
+								   NULL,
+								   NULL,
+								   90000,
+								   0,//ms
+								   1, SWITCH_CODEC_FLAG_ENCODE,
+								   NULL, handle->memory_pool) == SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Video Codec H264 Activation Success\n");
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Video Codec H264 Activation Fail\n");

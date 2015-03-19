@@ -709,6 +709,7 @@ struct switch_codec_implementation {
 	switch_core_codec_destroy_func_t destroy;
 	uint32_t codec_id;
 	uint32_t impl_id;
+	char *modname;
 	struct switch_codec_implementation *next;
 };
 
@@ -724,6 +725,7 @@ struct switch_codec_interface {
 	switch_thread_rwlock_t *rwlock;
 	int refs;
 	switch_mutex_t *reflock;
+	char *modname;
 	switch_loadable_module_interface_t *parent;
 	struct switch_codec_interface *next;
 };
