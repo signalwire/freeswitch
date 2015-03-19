@@ -177,7 +177,7 @@ static switch_status_t init_encoder(switch_codec_t *codec)
 	config->rc_target_bitrate = context->bandwidth;
 	config->g_lag_in_frames = 0;
 	config->kf_max_dist = 2000;
-	config->g_threads = (cpus > 1) ? 2 : 1;
+	config->g_threads = cpus;//(cpus > 1) ? 2 : 1;
 	
 	if (context->is_vp9) {
 		//config->rc_dropframe_thresh = 2;
