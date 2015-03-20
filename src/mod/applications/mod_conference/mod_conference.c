@@ -459,8 +459,6 @@ typedef struct conference_obj {
 	char *alone_sound;
 	char *perpetual_sound;
 	char *moh_sound;
-	char *ack_sound;
-	char *nack_sound;
 	char *muted_sound;
 	char *mute_detect_sound;
 	char *unmuted_sound;
@@ -11999,8 +11997,6 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 	char *sound_prefix = NULL;
 	char *exit_sound = NULL;
 	char *alone_sound = NULL;
-	char *ack_sound = NULL;
-	char *nack_sound = NULL;
 	char *muted_sound = NULL;
 	char *mute_detect_sound = NULL;
 	char *unmuted_sound = NULL;
@@ -12198,10 +12194,6 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 				perpetual_sound = val;
 			} else if (!strcasecmp(var, "moh-sound") && !zstr(val)) {
 				moh_sound = val;
-			} else if (!strcasecmp(var, "ack-sound") && !zstr(val)) {
-				ack_sound = val;
-			} else if (!strcasecmp(var, "nack-sound") && !zstr(val)) {
-				nack_sound = val;
 			} else if (!strcasecmp(var, "muted-sound") && !zstr(val)) {
 				muted_sound = val;
 			} else if (!strcasecmp(var, "mute-detect-sound") && !zstr(val)) {
@@ -12511,14 +12503,6 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 
 	if (!zstr(exit_sound)) {
 		conference->exit_sound = switch_core_strdup(conference->pool, exit_sound);
-	}
-
-	if (!zstr(ack_sound)) {
-		conference->ack_sound = switch_core_strdup(conference->pool, ack_sound);
-	}
-
-	if (!zstr(nack_sound)) {
-		conference->nack_sound = switch_core_strdup(conference->pool, nack_sound);
 	}
 
 	if (!zstr(muted_sound)) {
