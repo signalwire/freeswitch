@@ -112,6 +112,72 @@
 	<image x="240" y="300" scale="60"/>
 	<image x="300" y="300" scale="60"/>
       </layout>
+      <layout name="8x8">
+	<image x="0" y="0" scale="45"/>
+	<image x="45" y="0" scale="45"/>
+	<image x="90" y="0" scale="45"/>
+	<image x="135" y="0" scale="45"/>
+	<image x="180" y="0" scale="45"/>
+	<image x="225" y="0" scale="45"/>
+	<image x="270" y="0" scale="45"/>
+	<image x="315" y="0" scale="45"/>
+	<image x="0" y="45" scale="45"/>
+	<image x="45" y="45" scale="45"/>
+	<image x="90" y="45" scale="45"/>
+	<image x="135" y="45" scale="45"/>
+	<image x="180" y="45" scale="45"/>
+	<image x="225" y="45" scale="45"/>
+	<image x="270" y="45" scale="45"/>
+	<image x="315" y="45" scale="45"/>
+	<image x="0" y="90" scale="45"/>
+	<image x="45" y="90" scale="45"/>
+	<image x="90" y="90" scale="45"/>
+	<image x="135" y="90" scale="45"/>
+	<image x="180" y="90" scale="45"/>
+	<image x="225" y="90" scale="45"/>
+	<image x="270" y="90" scale="45"/>
+	<image x="315" y="90" scale="45"/>
+	<image x="0" y="135" scale="45"/>
+	<image x="45" y="135" scale="45"/>
+	<image x="90" y="135" scale="45"/>
+	<image x="135" y="135" scale="45"/>
+	<image x="180" y="135" scale="45"/>
+	<image x="225" y="135" scale="45"/>
+	<image x="270" y="135" scale="45"/>
+	<image x="315" y="135" scale="45"/>
+	<image x="0" y="180" scale="45"/>
+	<image x="45" y="180" scale="45"/>
+	<image x="90" y="180" scale="45"/>
+	<image x="135" y="180" scale="45"/>
+	<image x="180" y="180" scale="45"/>
+	<image x="225" y="180" scale="45"/>
+	<image x="270" y="180" scale="45"/>
+	<image x="315" y="180" scale="45"/>
+	<image x="0" y="225" scale="45"/>
+	<image x="45" y="225" scale="45"/>
+	<image x="90" y="225" scale="45"/>
+	<image x="135" y="225" scale="45"/>
+	<image x="180" y="225" scale="45"/>
+	<image x="225" y="225" scale="45"/>
+	<image x="270" y="225" scale="45"/>
+	<image x="315" y="225" scale="45"/>
+	<image x="0" y="270" scale="45"/>
+	<image x="45" y="270" scale="45"/>
+	<image x="90" y="270" scale="45"/>
+	<image x="135" y="270" scale="45"/>
+	<image x="180" y="270" scale="45"/>
+	<image x="225" y="270" scale="45"/>
+	<image x="270" y="270" scale="45"/>
+	<image x="315" y="270" scale="45"/>
+	<image x="0" y="315" scale="45"/>
+	<image x="45" y="315" scale="45"/>
+	<image x="90" y="315" scale="45"/>
+	<image x="135" y="315" scale="45"/>
+	<image x="180" y="315" scale="45"/>
+	<image x="225" y="315" scale="45"/>
+	<image x="270" y="315" scale="45"/>
+	<image x="315" y="315" scale="45"/>
+      </layout>
       <layout name="1up_top_left+5">
 	<image x="0" y="0" scale="240" floor="true" audio-position="-.5:0:0"/>
 	<image x="240" y="0" scale="120" audio-position=".25:0:0"/>
@@ -244,6 +310,7 @@
 	<layout>4x4</layout>
 	<layout>5x5</layout>
 	<layout>6x6</layout>
+	<layout>8x8</layout>
       </group>
       <group name="1up_top_left_plus">
 	<layout>1up_top_left+5</layout>
