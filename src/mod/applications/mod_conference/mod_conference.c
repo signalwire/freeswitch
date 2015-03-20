@@ -1861,7 +1861,9 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 									layer->mute_img = switch_img_read_png(imember->video_mute_png);
 								}
 
-								scale_and_patch(conference, layer, layer->mute_img, SWITCH_TRUE);
+								if (layer->mute_img) {
+									scale_and_patch(conference, layer, layer->mute_img, SWITCH_TRUE);
+								}
 								layer->mute_patched = 1;
 							}
 						}
