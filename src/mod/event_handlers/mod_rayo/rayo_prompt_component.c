@@ -1,6 +1,6 @@
 /*
  * mod_rayo for FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2013-2014, Grasshopper
+ * Copyright (C) 2013-2015, Grasshopper
  *
  * Version: MPL 1.1
  *
@@ -283,6 +283,7 @@ static iks *prompt_component_handle_input_error(struct rayo_actor *prompt, struc
 			iq = PROMPT_COMPONENT(prompt)->iq;
 			iks_insert_attrib(iq, "from", RAYO_JID(prompt->parent));
 			iks_insert_attrib(iq, "to", RAYO_COMPONENT(prompt)->client_jid);
+			iks_insert_attrib(iq, "type", "error");
 			iks_insert_node(iq, iks_copy_within(error, iks_stack(iq)));
 			RAYO_SEND_REPLY(prompt, RAYO_COMPONENT(prompt)->client_jid, iq);
 
@@ -311,6 +312,7 @@ static iks *prompt_component_handle_input_error(struct rayo_actor *prompt, struc
 			iq = PROMPT_COMPONENT(prompt)->iq;
 			iks_insert_attrib(iq, "from", RAYO_JID(prompt->parent));
 			iks_insert_attrib(iq, "to", RAYO_COMPONENT(prompt)->client_jid);
+			iks_insert_attrib(iq, "type", "error");
 			iks_insert_node(iq, iks_copy_within(error, iks_stack(iq)));
 			PROMPT_COMPONENT(prompt)->complete = iks_copy(iq);
 
@@ -352,6 +354,7 @@ static iks *prompt_component_handle_output_error(struct rayo_actor *prompt, stru
 			iq = PROMPT_COMPONENT(prompt)->iq;
 			iks_insert_attrib(iq, "from", RAYO_JID(prompt->parent));
 			iks_insert_attrib(iq, "to", RAYO_COMPONENT(prompt)->client_jid);
+			iks_insert_attrib(iq, "type", "error");
 			iks_insert_node(iq, iks_copy_within(error, iks_stack(iq)));
 			RAYO_SEND_REPLY(prompt, RAYO_COMPONENT(prompt)->client_jid, iq);
 
