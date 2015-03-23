@@ -605,6 +605,33 @@ static void dump_trie(void)
 }
 /*- End of function --------------------------------------------------------*/
 
+
+static void trie_recursive_free(trie_node_t *t)
+{
+	int i;
+	if (t)
+	{
+		if (t->first <= t->last)
+		{
+			for (i = t->first;  i <= t->last;  i++)
+				trie_recursive_free(t->child_list[i]);
+		}
+		free(t);
+	}
+}
+/*- End of function --------------------------------------------------------*/
+
+static void trie_free(trie_t *s)
+{
+	if(s)
+	{
+		if(s->root)
+			trie_recursive_free(s->root);
+		free(s);
+	}
+}
+/*- End of function --------------------------------------------------------*/
+
 int main(int argc, char *argv[])
 {
     trie_t *s;
@@ -627,6 +654,8 @@ int main(int argc, char *argv[])
     trie_recursive_build_packed_trie(s->root);
 
     dump_trie();
+     
+    trie_free(s);
 
     return 0;
 }
