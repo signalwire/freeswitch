@@ -1490,7 +1490,7 @@
 
         RTCcallbacks.onError = function(e) {
             console.error("ERROR:", e);
-            dialog.hangup();
+            dialog.hangup({cause: "Device or Permission Error"});
         };
 
         dialog.rtc = new $.FSRTC({
@@ -1666,15 +1666,15 @@
 
         if (params) {
             if (params.causeCode) {
-            dialog.causeCode = params.causeCode;
+		dialog.causeCode = params.causeCode;
             }
 
             if (params.cause) {
-            dialog.cause = params.cause;
+		dialog.cause = params.cause;
             }
         }
 
-        if (dialog.state.val > $.verto.enum.state.new.val && dialog.state.val < $.verto.enum.state.hangup.val) {
+        if (dialog.state.val >= $.verto.enum.state.new.val && dialog.state.val < $.verto.enum.state.hangup.val) {
             dialog.setState($.verto.enum.state.hangup);
         } else if (dialog.state.val < $.verto.enum.state.destroy) {
             dialog.setState($.verto.enum.state.destroy);
@@ -1927,7 +1927,8 @@
             recovering: 1,
             ringing: 1,
             destroy: 1,
-            answering: 1
+            answering: 1,
+	    hangup: 1
         },
         requesting: {
             trying: 1,

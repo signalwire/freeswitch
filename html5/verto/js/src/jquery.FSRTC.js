@@ -192,8 +192,8 @@
     }
 
     function onStreamError(self, e) {
-        console.log('There has been a problem retrieving the streams - did you allow access?', e);
-
+        console.log('There has been a problem retrieving the streams - did you allow access? Check Device Resolution', e);
+        doCallback(self, "onError", e);
     }
 
     function onStreamSuccess(self) {
