@@ -1152,6 +1152,13 @@ static void tech_reattach(verto_pvt_t *tech_pvt, jsock_t *jsock)
 	switch_set_flag(tech_pvt, TFLAG_ATTACH_REQ);
 	msg = jrpc_new_req("verto.attach", tech_pvt->call_id, &params);
 
+	switch_channel_set_flag(tech_pvt->channel, CF_REINVITE);
+	switch_channel_set_flag(tech_pvt->channel, CF_RECOVERING);
+	switch_core_media_gen_local_sdp(tech_pvt->session, SDP_TYPE_RESPONSE, NULL, 0, NULL, 0);
+	switch_channel_clear_flag(tech_pvt->channel, CF_REINVITE);
+	switch_channel_clear_flag(tech_pvt->channel, CF_RECOVERING);
+	switch_core_session_request_video_refresh(tech_pvt->session);
+
 	cJSON_AddItemToObject(params, "sdp", cJSON_CreateString(tech_pvt->mparams->local_sdp_str));
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Local attach SDP %s:\n%s\n", 
 					  switch_channel_get_name(tech_pvt->channel),
@@ -2395,6 +2402,18 @@ static switch_status_t messagehook (switch_core_session_t *session, switch_core_
 				switch_thread_rwlock_unlock(jsock->rwlock);
 			}
 
+		}
+		break;
+	case SWITCH_MESSAGE_INDICATE_MEDIA_RENEG:
+		{
+			jsock_t *jsock = NULL;
+
+			if ((jsock = get_jsock(tech_pvt->jsock_uuid))) {
+				switch_core_session_stop_media(session);
+				detach_calls(jsock);
+				tech_reattach(tech_pvt, jsock);
+				switch_thread_rwlock_unlock(jsock->rwlock);
+			}
 		}
 		break;
 	case SWITCH_MESSAGE_INDICATE_ANSWER:
