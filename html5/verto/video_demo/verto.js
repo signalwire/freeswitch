@@ -514,6 +514,17 @@ $("#mutebtn").click(function() {
     cur_call.dtmf("0");
 });
 
+$("#localmutebtn").click(function() {
+    var muted = cur_call.setMute("toggle");
+
+    if (muted) {
+	display("Talking to: " + cur_call.cidString() + " [LOCALLY MUTED]");
+    } else {
+	display("Talking to: " + cur_call.cidString());
+    }
+
+});
+
 $("#vmutebtn").click(function() {
     cur_call.dtmf("*0");
 });
