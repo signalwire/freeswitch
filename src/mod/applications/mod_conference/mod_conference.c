@@ -1553,7 +1553,7 @@ static void write_canvas_image_to_codec_group(conference_obj_t *conference, code
 				
 				//switch_core_session_write_encoded_video_frame(imember->session, frame, 0, 0);
 				switch_set_flag(frame, SFF_ENCODED);
-				
+
 				if (switch_frame_buffer_dup(imember->fb, frame, &dupframe) == SWITCH_STATUS_SUCCESS) {
 					switch_queue_push(imember->mux_out_queue, dupframe);
 					dupframe = NULL;
@@ -6591,7 +6591,6 @@ static void conference_loop_output(conference_member_t *member)
 		if (member->video_muxing_write_thread) {
 			switch_queue_push(member->mux_out_queue, NULL);
 			switch_thread_join(&st, member->video_muxing_write_thread);
-			switch_frame_buffer_destroy(&member->fb);
 		}
 	}
 
@@ -11753,6 +11752,10 @@ SWITCH_STANDARD_APP(conference_function)
 	switch_buffer_destroy(&member.resample_buffer);
 	switch_buffer_destroy(&member.audio_buffer);
 	switch_buffer_destroy(&member.mux_buffer);
+
+	if (member.fb) {
+		switch_frame_buffer_destroy(&member.fb);
+	}
 
 	if (conference) {
 		switch_mutex_lock(conference->mutex);
