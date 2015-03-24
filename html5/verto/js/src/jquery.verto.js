@@ -1726,6 +1726,16 @@
 
     };
 
+    $.verto.dialog.prototype.setMute = function(what) {
+	var dialog = this;
+	return dialog.rtc.setMute(what);
+    };
+
+    $.verto.dialog.prototype.getMute = function(what) {
+	var dialog = this; 
+	return dialog.rtc.getMute(what);
+    };
+
     $.verto.dialog.prototype.useStereo = function(on) {
         var dialog = this;
 

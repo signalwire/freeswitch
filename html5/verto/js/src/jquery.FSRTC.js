@@ -77,6 +77,9 @@
             useVideo: null,
             useStereo: false,
             userData: null,
+	    localVideo: null,
+	    screenShare: false,
+	    useCamera: "any",
             iceServers: false,
             videoParams: {},
             audioParams: {},
@@ -84,8 +87,10 @@
                 onICEComplete: function() {},
                 onICE: function() {},
                 onOfferSDP: function() {}
-            }
+            },
         }, options);
+
+	this.enabled = true;
 
         this.mediaData = {
             SDP: null,
@@ -118,11 +123,12 @@
         checkCompat();
     };
 
-    $.FSRTC.prototype.useVideo = function(obj) {
+    $.FSRTC.prototype.useVideo = function(obj, local) {
         var self = this;
 
         if (obj) {
             self.options.useVideo = obj;
+	    self.options.localVideo = local;
 	    if (moz) {
 		self.constraints.offerToReceiveVideo = true;
 	    } else {
@@ -130,6 +136,7 @@
 	    }
         } else {
             self.options.useVideo = null;
+	    self.options.localVideo = null;
             if (moz) {
 		self.constraints.offerToReceiveVideo = false;
 	    } else {
@@ -196,8 +203,9 @@
         doCallback(self, "onError", e);
     }
 
-    function onStreamSuccess(self) {
+    function onStreamSuccess(self, stream) {
         console.log("Stream Success");
+        doCallback(self, "onStream", stream);
     }
 
     function onICE(self, candidate) {
@@ -281,11 +289,21 @@
 
         if (self.options.useVideo) {
             self.options.useVideo.style.display = 'none';
+	    self.options.useVideo[moz ? 'mozSrcObject' : 'src'] = "";
         }
 
         if (self.localStream) {
             self.localStream.stop();
             self.localStream = null;
+        }
+
+        if (self.options.localVideo) {
+            self.options.localVideo.style.display = 'none';
+	    self.options.localVideo[moz ? 'mozSrcObject' : 'src'] = "";
+        }
+
+	if (self.options.localVideoStream) {
+	    self.options.localVideoStream.stop();
         }
 
         if (self.peer) {
@@ -294,11 +312,43 @@
         }
     };
 
-    $.FSRTC.prototype.createAnswer = function(sdp) {
+    $.FSRTC.prototype.getMute = function() {
+	var self = this;
+	return self.enabled;
+    }
+
+    $.FSRTC.prototype.setMute = function(what) {
+	var self = this;
+	var audioTracks = self.localStream.getAudioTracks();	
+
+	for (var i = 0, len = audioTracks.length; i < len; i++ ) {
+	    switch(what) {
+	    case "on":
+		audioTracks[i].enabled = true;
+		break;
+	    case "off":
+		audioTracks[i].enabled = false;
+		break;
+	    case "toggle":
+		audioTracks[i].enabled = !audioTracks[i].enabled;
+	    default:
+		break;
+	    }
+
+	    self.enabled = audioTracks[i].enabled;
+	}
+
+	return !self.enabled;
+    }
+
+    $.FSRTC.prototype.createAnswer = function(params) {
         var self = this;
         self.type = "answer";
-        self.remoteSDP = sdp;
-        console.debug("inbound sdp: ", sdp);
+        self.remoteSDP = params.sdp;
+        console.debug("inbound sdp: ", params.sdp);
+
+	self.options.useCamera = params.useCamera || "any";
+	self.options.useMic = params.useMic || "any";
 
         function onSuccess(stream) {
             self.localStream = stream;
@@ -336,53 +386,117 @@
             onStreamError(self, e);
         }
 
+	var mediaParams = getMediaParams(self);
+
+	console.log("Audio constraints", mediaParams.audio);
+	console.log("Video constraints", mediaParams.video);
+
+	if (self.options.useVideo && self.options.localVideo) {
+            getUserMedia({
+		constraints: {
+                    audio: false,
+                    video: {
+			mandatory: self.options.videoParams,
+			optional: []
+                    },
+		},
+		localVideo: self.options.localVideo,
+		onsuccess: function(e) {self.options.localVideoStream = e; console.log("local video ready");},
+		onerror: function(e) {console.error("local video error!");}
+            });
+	}
+
+        getUserMedia({
+            constraints: {
+		audio: mediaParams.audio,
+		video: mediaParams.video
+            },
+            video: mediaParams.useVideo,
+            onsuccess: onSuccess,
+            onerror: onError
+        });
+
+
+
+    };
+
+    function getMediaParams(obj) {
 
 	var audio;
 
-	if (this.options.videoParams && this.options.videoParams.chromeMediaSource == 'screen') {
+	if (obj.options.videoParams && obj.options.screenShare) {//obj.options.videoParams.chromeMediaSource == 'desktop') {
 
-	    this.options.videoParams = {
-		chromeMediaSource: 'screen',
-		maxWidth:screen.width,
-		maxHeight:screen.height
-	    };
+	    //obj.options.videoParams = {
+	//	chromeMediaSource: 'screen',
+	//	maxWidth:screen.width,
+	//	maxHeight:screen.height
+	//	chromeMediaSourceId = sourceId;
+	  //  };
 
 	    console.error("SCREEN SHARE");
 	    audio = false;
 	} else {
 	    audio = {
-		mandatory: this.options.audioParams,
+		mandatory: obj.options.audioParams,
 		optional: []
 	    };
+
+	    if (obj.options.useMic !== "any") {
+		audio.optional = [{sourceId: obj.options.useMic}]
+	    }
+
 	}
 
-	console.log("Mandatory audio constraints", this.options.audioParams);
-	console.log("Mandatory video constraints", this.options.videoParams);
+	if (obj.options.useVideo && obj.options.localVideo) {
+            getUserMedia({
+		constraints: {
+                    audio: false,
+                    video: {
+			mandatory: obj.options.videoParams,
+			optional: []
+                    },
+		},
+		localVideo: obj.options.localVideo,
+		onsuccess: function(e) {self.options.localVideoStream = e; console.log("local video ready");},
+		onerror: function(e) {console.error("local video error!");}
+            });
+	}
 
-        getUserMedia({
-            constraints: {
-		audio: audio,
-                video: this.options.useVideo ? {
-                    mandatory: this.options.videoParams,
-                    optional: []
-                } : null
-            },
-            video: this.options.useVideo ? true : false,
-            onsuccess: onSuccess,
-            onerror: onError
-        });
+	var video = {
+            mandatory: obj.options.videoParams,
+            optional: []
+        }
 
-    };
+	var useVideo = obj.options.useVideo;
+
+	if (useVideo && obj.options.useCamera && obj.options.useCamera !== "none") {
+	    if (obj.options.useCamera !== "any") {
+		video.optional = [{sourceId: obj.options.useCamera}]
+	    }
+	} else {
+	    video = null;
+	    useVideo = null;
+	}
+
+	return {audio: audio, video: video, useVideo: useVideo};
+    }
+    
+
 
     $.FSRTC.prototype.call = function(profile) {
         checkCompat();
-
+	
         var self = this;
+	var screen = false;
 
         self.type = "offer";
 
+	if (self.options.videoParams && self.options.screenShare) { //self.options.videoParams.chromeMediaSource == 'desktop') {
+	    screen = true;
+	}
+
         function onSuccess(stream) {
-            self.localStream = stream;
+	    self.localStream = stream;
 
             self.peer = RTCPeerConnection({
                 type: self.type,
@@ -393,7 +507,7 @@
                 onICEComplete: function() {
                     return onICEComplete(self);
                 },
-                onRemoteStream: function(stream) {
+                onRemoteStream: screen ? function(stream) {console.error("SKIP");} : function(stream) {
                     return onRemoteStream(self, stream);
                 },
                 onOfferSDP: function(sdp) {
@@ -409,53 +523,35 @@
                 iceServers: self.options.iceServers,
             });
 
-            onStreamSuccess(self);
+            onStreamSuccess(self, stream);
         }
 
         function onError(e) {
             onStreamError(self, e);
         }
 
+	var mediaParams = getMediaParams(self);
 
-	var audio;
-
-	if (this.options.videoParams && this.options.videoParams.chromeMediaSource == 'screen') {
-
-	    this.options.videoParams = {
-		chromeMediaSource: 'screen',
-		maxWidth:screen.width,
-		maxHeight:screen.height
-	    };
-
-	    console.error("SCREEN SHARE");
-	    audio = false;
-	} else {
-	    audio = {
-		mandatory: this.options.audioParams,
-		optional: []
-	    };
-	}
-
-	console.log("Mandatory audio constraints", this.options.audioParams);
-	console.log("Mandatory video constraints", this.options.videoParams);
+	console.log("Audio constraints", mediaParams.audio);
+	console.log("Video constraints", mediaParams.video);
 
 
         getUserMedia({
             constraints: {
-                audio: audio,
-                video: this.options.useVideo ? {
-                    mandatory: this.options.videoParams,
-                    optional: []
-                } : null
+                audio: mediaParams.audio,
+                video: mediaParams.video
             },
-            video: this.options.useVideo ? true : false,
+            video: mediaParams.useVideo,
             onsuccess: onSuccess,
             onerror: onError
         });
 
+
+
+
         /*
         navigator.getUserMedia({
-            video: this.options.useVideo,
+            video: self.options.useVideo,
             audio: true
         }, onSuccess, onError);
         */
@@ -823,14 +919,22 @@
         });
 
         function streaming(stream) {
-            var video = options.video;
-            if (video) {
-                video[moz ? 'mozSrcObject' : 'src'] = moz ? stream : window.webkitURL.createObjectURL(stream);
+            //var video = options.video;
+            //var localVideo = options.localVideo;
+            //if (video) {
+              //  video[moz ? 'mozSrcObject' : 'src'] = moz ? stream : window.webkitURL.createObjectURL(stream);
                 //video.play();
+            //}
+
+            if (options.localVideo) {
+                options.localVideo[moz ? 'mozSrcObject' : 'src'] = moz ? stream : window.webkitURL.createObjectURL(stream);
+		options.localVideo.style.display = 'block';
             }
+
             if (options.onsuccess) {
                 options.onsuccess(stream);
             }
+
             media = stream;
         }
 
