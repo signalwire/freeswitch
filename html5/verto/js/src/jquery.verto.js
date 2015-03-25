@@ -31,6 +31,7 @@
  */
 
 (function($) {
+    var sources = [];
 
     var generateGUID = (typeof(window.crypto) !== 'undefined' && typeof(window.crypto.getRandomValues) !== 'undefined') ?
     function() {
@@ -71,6 +72,7 @@
             passwd: null,
             socketUrl: null,
             tag: null,
+	    localTag: null,
             videoParams: {},
             audioParams: {},
 	    loginParams: {},
@@ -436,6 +438,12 @@
 
         if (data.params.callID) {
             var dialog = verto.dialogs[data.params.callID];
+	    
+	    if (data.method === "verto.attach" && dialog) {
+		delete dialog.verto.dialogs[dialog.callID];
+		dialog.rtc.stop();
+		dialog = null;
+	    }
 
             if (dialog) {
 
@@ -1171,21 +1179,51 @@
             var play_id = "play_" + confMan.serno;
             var stop_id = "stop_" + confMan.serno;
             var recording_id = "recording_" + confMan.serno;
+            var snapshot_id = "snapshot_" + confMan.serno;
             var rec_stop_id = "recording_stop" + confMan.serno;
             var div_id = "confman_" + confMan.serno;
 
+
+
             var html =  "<div id='" + div_id + "'><br>" +
-            "<button class='ctlbtn' id='" + play_id + "'>Play</button>" +
-            "<button class='ctlbtn' id='" + stop_id + "'>Stop</button>" +
-            "<button class='ctlbtn' id='" + recording_id + "'>Record</button>" +
-            "<button class='ctlbtn' id='" + rec_stop_id + "'>Record Stop</button>" +
-            "<br><br></div>";
+		"<button class='ctlbtn' id='" + play_id + "'>Play</button>" +
+		"<button class='ctlbtn' id='" + stop_id + "'>Stop</button>" +
+		"<button class='ctlbtn' id='" + recording_id + "'>Record</button>" +
+		"<button class='ctlbtn' id='" + rec_stop_id + "'>Record Stop</button>" +
+		(confMan.params.hasVid ? "<button class='ctlbtn' id='" + snapshot_id + "'>PNG Snapshot</button>" : "") +
+		"<br><br></div>";
 
             jq.html(html);
 
+	    if (confMan.params.hasVid) {
+		var vlayout_id = "confman_vid_layout_" + confMan.serno;
+		var vlselect_id = "confman_vl_select_" + confMan.serno;
+		
+		var vlhtml =  "<div id='" + vlayout_id + "'><br>" +
+		    "<b>Video Layout</b> <select id='" + vlselect_id + "'></select> " +
+		    "<br><br></div>";
+		jq.append(vlhtml);
+
+		$("#" + vlselect_id).change(function() {
+		    var val = $("#" + vlselect_id).find(":selected").val();
+		    if (val !== "none") {
+			confMan.modCommand("vid-layout", null, val);
+		    }
+		});
+
+		$("#" + snapshot_id).click(function() {
+                    var file = prompt("Please enter file name", "");
+		    if (file) {
+			confMan.modCommand("vid-write-png", null, file);
+		    }
+		});
+	    }
+
             $("#" + play_id).click(function() {
                 var file = prompt("Please enter file name", "");
-                confMan.modCommand("play", null, file);
+		if (file) {
+                    confMan.modCommand("play", null, file);
+		}
             });
 
             $("#" + stop_id).click(function() {
@@ -1194,7 +1232,9 @@
 
             $("#" + recording_id).click(function() {
                 var file = prompt("Please enter file name", "");
-                confMan.modCommand("recording", null, ["start", file]);
+		if (file) {
+                    confMan.modCommand("recording", null, ["start", file]);
+		}
             });
 
             $("#" + rec_stop_id).click(function() {
@@ -1207,15 +1247,23 @@
             var x = parseInt(rowid);
             var kick_id = "kick_" + x;
             var tmute_id = "tmute_" + x;
+            var tvmute_id = "tvmute_" + x;
+            var vbanner_id = "vbanner_" + x;
+            var tvpresenter_id = "tvpresenter_" + x;
+            var tvfloor_id = "tvfloor_" + x;
             var box_id = "box_" + x;
             var volup_id = "volume_in_up" + x;
             var voldn_id = "volume_in_dn" + x;
             var transfer_id = "transfer" + x;
-
+	    
 
             var html = "<div id='" + box_id + "'>" +
                 "<button class='ctlbtn' id='" + kick_id + "'>Kick</button>" +
                 "<button class='ctlbtn' id='" + tmute_id + "'>Mute</button>" +
+                (confMan.params.hasVid ? "<button class='ctlbtn' id='" + tvmute_id + "'>VMute</button>" : "") +
+                (confMan.params.hasVid ? "<button class='ctlbtn' id='" + tvpresenter_id + "'>Presenter</button>" : "") +
+                (confMan.params.hasVid ? "<button class='ctlbtn' id='" + tvfloor_id + "'>Vid Floor</button>" : "") +
+                (confMan.params.hasVid ? "<button class='ctlbtn' id='" + vbanner_id + "'>Banner</button>" : "") +
                 "<button class='ctlbtn' id='" + voldn_id + "'>Vol -</button>" +
                 "<button class='ctlbtn' id='" + volup_id + "'>Vol +</button>" +
                 "<button class='ctlbtn' id='" + transfer_id + "'>Transfer</button>" +
@@ -1240,7 +1288,9 @@
 
             $("#" + transfer_id).click(function() {
                 var xten = prompt("Enter Extension");
-                confMan.modCommand("transfer", x, xten);
+		if (xten) {
+                    confMan.modCommand("transfer", x, xten);
+		}
             });
 
             $("#" + kick_id).click(function() {
@@ -1250,6 +1300,24 @@
             $("#" + tmute_id).click(function() {
                 confMan.modCommand("tmute", x);
             });
+
+	    if (confMan.params.hasVid) {
+		$("#" + tvmute_id).click(function() {
+                    confMan.modCommand("tvmute", x);
+		});
+		$("#" + tvpresenter_id).click(function() {
+                    confMan.modCommand("vid-res-id", x, "presenter");
+		});
+		$("#" + tvfloor_id).click(function() {
+                    confMan.modCommand("vid-floor", x, "force");
+		});
+		$("#" + vbanner_id).click(function() {
+                    var text = prompt("Please enter text", "");
+		    if (text) {
+			confMan.modCommand("vid-banner", x, escape(text));
+		    }
+		});
+	    }
 
             $("#" + volup_id).click(function() {
                 confMan.modCommand("volume_in", x, "up");
@@ -1269,7 +1337,7 @@
 
         if (confMan.params.laData.role === "moderator") {
             atitle = "Action";
-            awidth = 200;
+            awidth = 300;
 
             if (confMan.params.mainModID) {
                 genMainMod($(confMan.params.mainModID));
@@ -1284,16 +1352,47 @@
                     if (confMan.params.onBroadcast) {
                         confMan.params.onBroadcast(verto, confMan, e.data);
                     }
-                    if (!confMan.destroyed && confMan.params.displayID) {
-                        $(confMan.params.displayID).html(e.data.response + "<br><br>");
-                        if (confMan.lastTimeout) {
-                            clearTimeout(confMan.lastTimeout);
-                            confMan.lastTimeout = 0;
-                        }
-                        confMan.lastTimeout = setTimeout(function() { $(confMan.params.displayID).html(confMan.destroyed ? "" : "Moderator Controls Ready<br><br>");}, 4000);
-                    }
+
+		    if (e.data["conf-command"] === "list-videoLayouts") {
+			var vlselect_id = "#confman_vl_select_" + confMan.serno;
+			var vlayout_id = "#confman_vid_layout_" + confMan.serno;
+			var x = 0;
+			var options;
+
+			$(vlselect_id).append(new Option("Choose a Layout", "none"));
+
+			if (e.data.responseData) {
+			    options = e.data.responseData.sort();
+
+			    for (var i in options) {
+				$(vlselect_id).append(new Option(options[i], options[i]));
+				x++;
+			    }
+			}
+
+			if (x) {
+			    $(vlselect_id).selectmenu('refresh', true);
+			} else {
+			    $(vlayout_id).hide();
+			}
+		    } else {
+
+			if (!confMan.destroyed && confMan.params.displayID) {
+                            $(confMan.params.displayID).html(e.data.response + "<br><br>");
+                            if (confMan.lastTimeout) {
+				clearTimeout(confMan.lastTimeout);
+				confMan.lastTimeout = 0;
+                            }
+                            confMan.lastTimeout = setTimeout(function() { $(confMan.params.displayID).html(confMan.destroyed ? "" : "Moderator Controls Ready<br><br>");}, 4000);
+			}
+		    }
                 }
             });
+
+
+	    if (confMan.params.hasVid) {
+		confMan.modCommand("list-videoLayouts", null, null);
+	    }
         }
 
         var row_callback = null;
@@ -1339,7 +1438,7 @@
                 },
                 {
                     "sTitle": "Status",
-                    "sWidth": confMan.params.hasVid ? "300px" : "150px"
+                    "sWidth": confMan.params.hasVid ? "200px" : "150px"
                 },
                 {
                     "sTitle": atitle,
@@ -1367,16 +1466,18 @@
     $.verto.confMan.prototype.modCommand = function(cmd, id, value) {
         var confMan = this;
 
-        confMan.verto.sendMethod("verto.broadcast", {
+        confMan.verto.rpcClient.call("verto.broadcast", {
             "eventChannel": confMan.params.laData.modChannel,
             "data": {
-            "application": "conf-control",
-            "command": cmd,
-            "id": id,
-            "value": value
+		"application": "conf-control",
+		"command": cmd,
+		"id": id,
+		"value": value
             }
-        });
+	});
     };
+				    
+
 
     $.verto.confMan.prototype.destroy = function() {
         var confMan = this;
@@ -1402,10 +1503,15 @@
         dialog.params = $.extend({
             useVideo: verto.options.useVideo,
             useStereo: verto.options.useStereo,
+	    screenShare: false,
+	    useCamera: "any",
+	    useMic: "any",
             tag: verto.options.tag,
-            login: verto.options.login
+            localTag: verto.options.localTag,
+            login: verto.options.login,
+	    videoParams: verto.options.videoParams
         }, params);
-
+	
         dialog.verto = verto;
         dialog.direction = direction;
         dialog.lastState = null;
@@ -1413,13 +1519,16 @@
         dialog.callbacks = verto.callbacks;
         dialog.answered = false;
         dialog.attach = params.attach || false;
+	dialog.screenShare = params.screenShare || false;
+	dialog.useCamera = params.useCamera;
+	dialog.useMic = params.useMic;
 
         if (dialog.params.callID) {
             dialog.callID = dialog.params.callID;
         } else {
             dialog.callID = dialog.params.callID = generateGUID();
         }
-
+	
         if (dialog.params.tag) {
             dialog.audioStream = document.getElementById(dialog.params.tag);
 
@@ -1427,6 +1536,10 @@
                 dialog.videoStream = dialog.audioStream;
             }
         } //else conjure one TBD
+
+        if (dialog.params.localTag) {
+	    dialog.localVideo = document.getElementById(dialog.params.localTag);
+	}
 
         dialog.verto.dialogs[dialog.callID] = dialog;
 
@@ -1488,6 +1601,10 @@
             }
         };
 
+        RTCcallbacks.onStream = function(rtc, stream) {
+            console.log("stream started");
+        };
+
         RTCcallbacks.onError = function(e) {
             console.error("ERROR:", e);
             dialog.hangup({cause: "Device or Permission Error"});
@@ -1495,12 +1612,16 @@
 
         dialog.rtc = new $.FSRTC({
             callbacks: RTCcallbacks,
+	    localVideo: dialog.localVideo,
             useVideo: dialog.videoStream,
             useAudio: dialog.audioStream,
             useStereo: dialog.params.useStereo,
-            videoParams: verto.options.videoParams,
+            videoParams: dialog.params.videoParams,
             audioParams: verto.options.audioParams,
-            iceServers: verto.options.iceServers
+            iceServers: verto.options.iceServers,
+	    screenShare: dialog.screenShare,
+	    useCamera: dialog.useCamera,
+	    useMic: dialog.useMic
         });
 
         dialog.rtc.verto = dialog.verto;
@@ -1604,7 +1725,9 @@
             break;
         case $.verto.enum.state.destroy:
             delete dialog.verto.dialogs[dialog.callID];
-            dialog.rtc.stop();
+	    if (!dialog.params.screenShare) {
+		dialog.rtc.stop();
+	    }
             break;
         }
 
@@ -1722,7 +1845,7 @@
             dialog.videoStream = null;
         }
 
-        dialog.rtc.useVideo(dialog.videoStream);
+        dialog.rtc.useVideo(dialog.videoStream, dialog.localVideo);
 
     };
 
@@ -1819,16 +1942,23 @@
 
     $.verto.dialog.prototype.answer = function(params) {
         var dialog = this;
-
+	
         if (!dialog.answered) {
+	    if (!params) {
+		params = {};
+	    }
+
+	    params.sdp = dialog.params.sdp;
+
             if (params) {
                 if (params.useVideo) {
                     dialog.useVideo(true);
                 }
-        dialog.params.callee_id_name = params.callee_id_name;
-        dialog.params.callee_id_number = params.callee_id_number;
+		dialog.params.callee_id_name = params.callee_id_name;
+		dialog.params.callee_id_number = params.callee_id_number;
             }
-            dialog.rtc.createAnswer(dialog.params.sdp);
+	    
+            dialog.rtc.createAnswer(params);
             dialog.answered = true;
         }
     };
@@ -1846,9 +1976,9 @@
             dialog.setState($.verto.enum.state.active);
         } else {
             if (dialog.gotEarly) {
-                console.log("Dialog " + dialog.callID + "Got answer while still establishing early media, delaying...");
+                console.log("Dialog " + dialog.callID + " Got answer while still establishing early media, delaying...");
             } else {
-                console.log("Dialog " + dialog.callID + "Answering Channel");
+                console.log("Dialog " + dialog.callID + " Answering Channel");
                 dialog.rtc.answer(params.sdp, function() {
                     dialog.setState($.verto.enum.state.active);
                 }, function(e) {
@@ -1858,6 +1988,8 @@
                 console.log("Dialog " + dialog.callID + "ANSWER SDP", params.sdp);
             }
         }
+
+
     };
 
     $.verto.dialog.prototype.cidString = function(enc) {
@@ -1996,11 +2128,39 @@
         for (var i in $.verto.saved) {
             var verto = $.verto.saved[i];
             if (verto) {
-                verto.logout();
                 verto.purge();
+                verto.logout();
             }
         }
         return $.verto.warnOnUnload;
     });
+
+    $.verto.videoDevices = [];
+    $.verto.audioDevices = [];
+
+    $.verto.findDevices = function(runtime) {
+	var aud = [], vid = [];
+
+	MediaStreamTrack.getSources(function (media_sources) {
+	    for (var i = 0; i < media_sources.length; i++) {
+
+		if (media_sources[i].kind == 'video') {
+		    vid.push(media_sources[i]);
+		} else {
+		    aud.push(media_sources[i]);
+		}
+	    }
+
+	    $.verto.videoDevices = vid;
+	    $.verto.audioDevices = aud;
+
+	    console.info("Audio Devices", $.verto.audioDevices);
+	    console.info("Video Devices", $.verto.videoDevices);
+	    runtime();
+	});
+    }
+
+
+
 
 })(jQuery);

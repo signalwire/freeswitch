@@ -469,7 +469,8 @@ function init() {
         ringFile: "sounds/bell_ring2.wav",
         videoParams: {
             "minWidth": "1280",
-            "minHeight": "720"
+            "minHeight": "720",
+	    "minFrameRate": 30
         },
 	audioParams: {
 	    googAutoGainControl: false,
