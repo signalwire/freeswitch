@@ -283,6 +283,13 @@ static switch_status_t process_node(const switch_log_node_t *node, switch_log_le
 			ok = switch_log_check_mask(mask, level);
 		}
 
+		if (!ok) {
+			char tmp[256] = "";
+			switch_snprintf(tmp, sizeof(tmp), "%s:%s", node->file, node->func);
+			mask = (size_t) switch_core_hash_find(profile->log_hash, tmp);
+			ok = switch_log_check_mask(mask, level);
+		}
+
 		if (ok) {
 			if (profile->log_uuid && !zstr(node->userdata)) {
 				char buf[2048];
