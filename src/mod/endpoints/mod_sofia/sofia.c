@@ -6111,6 +6111,10 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 							switch_ivr_session_transfer(a_session, p_contact->m_url->url_user, sip_redirect_dialplan, sip_redirect_context);
 						}
 						switch_channel_hangup(channel, SWITCH_CAUSE_REDIRECTION_TO_NEW_DESTINATION);
+					} else if( !p_contact->m_url->url_host ) {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Received redirect with invalid URI\n");
+						switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "REDIRECT_ERROR");
+						switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 					} else if ((!strcmp(profile->sipip, p_contact->m_url->url_host))
 							   || (profile->extsipip && !strcmp(profile->extsipip, p_contact->m_url->url_host))
 							   || (switch_xml_locate_domain(p_contact->m_url->url_host, NULL, &root, &domain) == SWITCH_STATUS_SUCCESS)) {
