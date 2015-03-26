@@ -282,7 +282,7 @@ SWITCH_DECLARE(payload_map_t *) switch_core_media_add_payload_map(switch_core_se
 																  uint32_t channels,
 																  uint8_t negotiated);
 
-
+SWITCH_DECLARE(switch_status_t) switch_core_media_check_autoadj(switch_core_session_t *session);
 SWITCH_DECLARE(switch_rtp_crypto_key_type_t) switch_core_media_crypto_str2type(const char *str);
 SWITCH_DECLARE(const char *) switch_core_media_crypto_type2str(switch_rtp_crypto_key_type_t type);
 SWITCH_DECLARE(int) switch_core_media_crypto_keylen(switch_rtp_crypto_key_type_t type);

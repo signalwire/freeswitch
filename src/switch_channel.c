@@ -3400,6 +3400,8 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_pre_answered(switch_
 
 		send_ind(channel, SWITCH_MESSAGE_PROGRESS_EVENT, file, func, line);
 
+		switch_core_media_check_autoadj(channel->session);
+
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -3689,7 +3691,8 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_answered(switch_chan
 	switch_channel_set_callstate(channel, CCS_ACTIVE);
 
 	send_ind(channel, SWITCH_MESSAGE_ANSWER_EVENT, file, func, line);
-
+	
+	switch_core_media_check_autoadj(channel->session);
 
 	return SWITCH_STATUS_SUCCESS;
 }
