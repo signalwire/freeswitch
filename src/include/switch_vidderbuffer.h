@@ -33,6 +33,11 @@
 #ifndef SWITCH_VIDDERBUFFER_H
 #define SWITCH_VIDDERBUFFER_H
 
+typedef enum {
+	SVB_QUEUE_ONLY = (1 << 0)
+} switch_vb_flag_t;
+
+
 SWITCH_BEGIN_EXTERN_C
 SWITCH_DECLARE(switch_status_t) switch_vb_create(switch_vb_t **vbp, uint32_t min_frame_len, uint32_t max_frame_len, switch_memory_pool_t *pool);
 SWITCH_DECLARE(switch_status_t) switch_vb_destroy(switch_vb_t **vbp);
@@ -44,6 +49,8 @@ SWITCH_DECLARE(switch_status_t) switch_vb_put_packet(switch_vb_t *vb, switch_rtp
 SWITCH_DECLARE(switch_status_t) switch_vb_get_packet(switch_vb_t *vb, switch_rtp_packet_t *packet, switch_size_t *len);
 SWITCH_DECLARE(uint32_t) switch_vb_pop_nack(switch_vb_t *vb);
 SWITCH_DECLARE(switch_status_t) switch_vb_get_packet_by_seq(switch_vb_t *vb, uint16_t seq, switch_rtp_packet_t *packet, switch_size_t *len);
+SWITCH_DECLARE(void) switch_vb_set_flag(switch_vb_t *vb, switch_vb_flag_t flag);
+SWITCH_DECLARE(void) switch_vb_clear_flag(switch_vb_t *vb, switch_vb_flag_t flag);
 
 SWITCH_END_EXTERN_C
 #endif

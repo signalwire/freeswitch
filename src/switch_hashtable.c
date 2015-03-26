@@ -332,7 +332,12 @@ SWITCH_DECLARE(switch_hashtable_iterator_t *) switch_hashtable_first_iter(switch
 	return switch_hashtable_next(&iterator);
 }
 
-
+SWITCH_DECLARE(void) switch_hashtable_this_val(switch_hashtable_iterator_t *i, void *val)
+{
+	if (i->e) {
+		i->e->v = val;
+	}
+}
 
 SWITCH_DECLARE(void) switch_hashtable_this(switch_hashtable_iterator_t *i, const void **key, switch_ssize_t *klen, void **val)
 {

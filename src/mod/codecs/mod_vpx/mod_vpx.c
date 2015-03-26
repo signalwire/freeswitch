@@ -41,7 +41,155 @@
 #define SLICE_SIZE SWITCH_DEFAULT_VIDEO_SIZE
 #define KEY_FRAME_MIN_FREQ 1000000
 
-#define IS_VP8_KEY_FRAME(byte) (((byte) & 0x01) ^ 0x01)
+
+/*	http://tools.ietf.org/html/draft-ietf-payload-vp8-10
+
+	The first octets after the RTP header are the VP8 payload descriptor, with the following structure.
+
+	     0 1 2 3 4 5 6 7
+	    +-+-+-+-+-+-+-+-+
+	    |X|R|N|S|R| PID | (REQUIRED)
+	    +-+-+-+-+-+-+-+-+
+	X:  |I|L|T|K| RSV   | (OPTIONAL)
+	    +-+-+-+-+-+-+-+-+
+	I:  |M| PictureID   | (OPTIONAL)
+	    +-+-+-+-+-+-+-+-+
+	L:  |   TL0PICIDX   | (OPTIONAL)
+	    +-+-+-+-+-+-+-+-+
+	T/K:|TID|Y| KEYIDX  | (OPTIONAL)
+	    +-+-+-+-+-+-+-+-+
+
+
+	VP8 Payload Header
+
+	 0 1 2 3 4 5 6 7
+	+-+-+-+-+-+-+-+-+
+	|Size0|H| VER |P|
+	+-+-+-+-+-+-+-+-+
+	|     Size1     |
+	+-+-+-+-+-+-+-+-+
+	|     Size2     |
+	+-+-+-+-+-+-+-+-+
+	| Bytes 4..N of |
+	| VP8 payload   |
+	:               :
+	+-+-+-+-+-+-+-+-+
+	| OPTIONAL RTP  |
+	| padding       |
+	:               :
+	+-+-+-+-+-+-+-+-+
+*/
+
+
+#ifdef _MSC_VER
+#pragma pack(push, r1, 1)
+#endif
+
+#if SWITCH_BYTE_ORDER == __BIG_ENDIAN
+
+typedef struct {
+	unsigned extended:1;
+	unsigned reserved1:1;
+	unsigned non_referenced:1;
+	unsigned start:1;
+	unsigned reserved2:1;
+	unsigned pid:3;
+} vp8_payload_descriptor_t;
+
+#ifdef WHAT_THEY_FUCKING_SAY
+typedef struct {
+	unsigned have_pid:1;
+	unsigned have_layer_ind:1;
+	unsigned have_ref_ind:1;
+	unsigned start:1;
+	unsigned end:1;
+	unsigned have_ss:1;
+	unsigned have_su:1;
+	unsigned zero:1;
+} vp9_payload_descriptor_t;
+
+#else
+typedef struct {
+	unsigned dunno:6;
+	unsigned start:1;
+	unsigned key:1;
+} vp9_payload_descriptor_t;
+#endif
+
+
+#else /* ELSE LITTLE */
+
+typedef struct {
+	unsigned pid:3;
+	unsigned reserved2:1;
+	unsigned start:1;
+	unsigned non_referenced:1;
+	unsigned reserved1:1;
+	unsigned extended:1;
+} vp8_payload_descriptor_t;
+
+#ifdef WHAT_THEY_FUCKING_SAY
+typedef struct {
+	unsigned zero:1;
+	unsigned have_su:1;
+	unsigned have_ss:1;
+	unsigned end:1;
+	unsigned start:1;
+	unsigned have_ref_ind:1;
+	unsigned have_layer_ind:1;
+	unsigned have_pid:1;
+} vp9_payload_descriptor_t;
+#else
+typedef struct {
+	unsigned key:1;
+	unsigned start:1;
+	unsigned dunno:6;
+} vp9_payload_descriptor_t;
+#endif
+
+#endif
+
+typedef union {
+	vp8_payload_descriptor_t vp8;
+	vp9_payload_descriptor_t vp9;
+} vpx_payload_descriptor_t;
+
+#ifdef _MSC_VER
+#pragma pack(pop, r1)
+#endif
+
+
+#define __IS_VP8_KEY_FRAME(byte) (((byte) & 0x01) ^ 0x01)
+static inline int IS_VP8_KEY_FRAME(uint8_t *data) 
+{
+	uint8_t S;
+	uint8_t DES;
+	uint8_t PID;
+
+	DES = *data;
+	data++;
+	S = DES & 0x10;
+	PID = DES & 0x07;
+
+	if (DES & 0x80) { // X
+		uint8_t X = *data;
+		data++;
+		if (X & 0x80) { // I
+			uint8_t M = (*data) & 0x80;
+			data++;
+			if (M) data++;
+		}
+		if (X & 0x40) data++; // L
+		if (X & 0x30) data++; // T/K
+	}
+	
+	if (S && PID == 0) {
+		return __IS_VP8_KEY_FRAME(*data);
+	} else {
+		return 0;
+	}
+}
+
 #define IS_VP9_KEY_FRAME(byte) ((byte) & 0x01)
 #define IS_VP9_START_PKT(byte) ((byte) & 0x02)
 
@@ -116,16 +264,24 @@ static switch_status_t init_decoder(switch_codec_t *codec)
 			return SWITCH_STATUS_FALSE;
 		}
 
+		
+		context->last_ts = 0;
+		context->last_received_timestamp = 0;
+		context->last_received_complete_picture = 0;
 		context->decoder_init = 1;
-
+		context->got_key_frame = 0;
 		// the types of post processing to be done, should be combination of "vp8_postproc_level"
-		ppcfg.post_proc_flag = VP8_DEMACROBLOCK | VP8_DEBLOCK;
+		ppcfg.post_proc_flag = VP8_DEBLOCK;//VP8_DEMACROBLOCK | VP8_DEBLOCK;
 		// the strength of deblocking, valid range [0, 16]
-		ppcfg.deblocking_level = 3;
+		ppcfg.deblocking_level = 1;
 		// Set deblocking settings
 		vpx_codec_control(&context->decoder, VP8_SET_POSTPROC, &ppcfg);
 
-		switch_buffer_create_dynamic(&context->vpx_packet_buffer, 512, 512, 1024000);
+		if (context->vpx_packet_buffer) {
+			switch_buffer_zero(context->vpx_packet_buffer);
+		} else {
+			switch_buffer_create_dynamic(&context->vpx_packet_buffer, 512, 512, 0);
+		}
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -177,7 +333,7 @@ static switch_status_t init_encoder(switch_codec_t *codec)
 	config->rc_target_bitrate = context->bandwidth;
 	config->g_lag_in_frames = 0;
 	config->kf_max_dist = 2000;
-	config->g_threads = cpus;//(cpus > 1) ? 2 : 1;
+	config->g_threads = (cpus > 1) ? 2 : 1;
 	
 	if (context->is_vp9) {
 		//config->rc_dropframe_thresh = 2;
@@ -344,122 +500,6 @@ static switch_status_t switch_vpx_init(switch_codec_t *codec, switch_codec_flag_
 	return SWITCH_STATUS_SUCCESS;
 }
 
-/*	http://tools.ietf.org/html/draft-ietf-payload-vp8-10
-
-	The first octets after the RTP header are the VP8 payload descriptor, with the following structure.
-
-	     0 1 2 3 4 5 6 7
-	    +-+-+-+-+-+-+-+-+
-	    |X|R|N|S|R| PID | (REQUIRED)
-	    +-+-+-+-+-+-+-+-+
-	X:  |I|L|T|K| RSV   | (OPTIONAL)
-	    +-+-+-+-+-+-+-+-+
-	I:  |M| PictureID   | (OPTIONAL)
-	    +-+-+-+-+-+-+-+-+
-	L:  |   TL0PICIDX   | (OPTIONAL)
-	    +-+-+-+-+-+-+-+-+
-	T/K:|TID|Y| KEYIDX  | (OPTIONAL)
-	    +-+-+-+-+-+-+-+-+
-
-
-	VP8 Payload Header
-
-	 0 1 2 3 4 5 6 7
-	+-+-+-+-+-+-+-+-+
-	|Size0|H| VER |P|
-	+-+-+-+-+-+-+-+-+
-	|     Size1     |
-	+-+-+-+-+-+-+-+-+
-	|     Size2     |
-	+-+-+-+-+-+-+-+-+
-	| Bytes 4..N of |
-	| VP8 payload   |
-	:               :
-	+-+-+-+-+-+-+-+-+
-	| OPTIONAL RTP  |
-	| padding       |
-	:               :
-	+-+-+-+-+-+-+-+-+
-*/
-
-
-#ifdef _MSC_VER
-#pragma pack(push, r1, 1)
-#endif
-
-#if SWITCH_BYTE_ORDER == __BIG_ENDIAN
-
-typedef struct {
-	unsigned extended:1;
-	unsigned reserved1:1;
-	unsigned non_referenced:1;
-	unsigned start:1;
-	unsigned reserved2:1;
-	unsigned pid:3;
-} vp8_payload_descriptor_t;
-
-#ifdef WHAT_THEY_FUCKING_SAY
-typedef struct {
-	unsigned have_pid:1;
-	unsigned have_layer_ind:1;
-	unsigned have_ref_ind:1;
-	unsigned start:1;
-	unsigned end:1;
-	unsigned have_ss:1;
-	unsigned have_su:1;
-	unsigned zero:1;
-} vp9_payload_descriptor_t;
-
-#else
-typedef struct {
-	unsigned dunno:6;
-	unsigned start:1;
-	unsigned key:1;
-} vp9_payload_descriptor_t;
-#endif
-
-
-#else /* ELSE LITTLE */
-
-typedef struct {
-	unsigned pid:3;
-	unsigned reserved2:1;
-	unsigned start:1;
-	unsigned non_referenced:1;
-	unsigned reserved1:1;
-	unsigned extended:1;
-} vp8_payload_descriptor_t;
-
-#ifdef WHAT_THEY_FUCKING_SAY
-typedef struct {
-	unsigned zero:1;
-	unsigned have_su:1;
-	unsigned have_ss:1;
-	unsigned end:1;
-	unsigned start:1;
-	unsigned have_ref_ind:1;
-	unsigned have_layer_ind:1;
-	unsigned have_pid:1;
-} vp9_payload_descriptor_t;
-#else
-typedef struct {
-	unsigned key:1;
-	unsigned start:1;
-	unsigned dunno:6;
-} vp9_payload_descriptor_t;
-#endif
-
-#endif
-
-typedef union {
-	vp8_payload_descriptor_t vp8;
-	vp9_payload_descriptor_t vp9;
-} vpx_payload_descriptor_t;
-
-#ifdef _MSC_VER
-#pragma pack(pop, r1)
-#endif
-
 static switch_status_t consume_partition(vpx_context_t *context, switch_frame_t *frame)
 {
 	vpx_payload_descriptor_t *payload_descriptor;
@@ -611,9 +651,7 @@ static switch_status_t switch_vpx_encode(switch_codec_t *codec, switch_frame_t *
 						 dur, 
 						 vpx_flags,
 						 VPX_DL_REALTIME) != VPX_CODEC_OK) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "VPX encode error %d:%s\n",
-			context->encoder.err, context->encoder.err_detail);
-		
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "VPX encode error %d:%s\n", context->encoder.err, context->encoder.err_detail);
 		frame->datalen = 0;
 		return SWITCH_STATUS_FALSE;
 	}
@@ -630,13 +668,13 @@ static switch_status_t buffer_vp8_packets(vpx_context_t *context, switch_frame_t
 	uint8_t *data = frame->data;
 	uint8_t S;
 	uint8_t DES;
-	uint8_t PID;
+	//uint8_t PID;
 	int len;
 
 	DES = *data;
 	data++;
 	S = DES & 0x10;
-	PID = DES & 0x07;
+	//PID = DES & 0x07;
 
 	if (DES & 0x80) { // X
 		uint8_t X = *data;
@@ -650,32 +688,26 @@ static switch_status_t buffer_vp8_packets(vpx_context_t *context, switch_frame_t
 		if (X & 0x30) data++; // T/K
 	}
 
+	if (!switch_buffer_inuse(context->vpx_packet_buffer) && !S) {
+		if (context->got_key_frame > 0) {
+			context->got_key_frame = 0;
+		}
+		return SWITCH_STATUS_MORE_DATA;
+	}
+
+	if (S) {
+		switch_buffer_zero(context->vpx_packet_buffer);
+	}
+
 	len = frame->datalen - (data - (uint8_t *)frame->data);
 
 	if (len <= 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid packet %d\n", len);
 		return SWITCH_STATUS_RESTART;
 	}
-	
-	if (S && (PID == 0)) {
-		int is_keyframe = IS_VP8_KEY_FRAME(*data);
-
-		if (is_keyframe && context->got_key_frame <= 0) {
-			context->got_key_frame = 1;
-		}
-	}
-
-	if (context->got_key_frame <= 0) {
-		if ((context->got_key_frame-- % 200) == 0) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Waiting for key frame\n");
-		}
-		return SWITCH_STATUS_RESTART;
-	}
 
 	switch_buffer_write(context->vpx_packet_buffer, data, len);
-
 	return SWITCH_STATUS_SUCCESS;
-
 }
 
 static switch_status_t buffer_vp9_packets(vpx_context_t *context, switch_frame_t *frame)
@@ -720,7 +752,7 @@ static switch_status_t switch_vpx_decode(switch_codec_t *codec, switch_frame_t *
 	if (context->is_vp9) {
 		is_keyframe = IS_VP9_KEY_FRAME(*(unsigned char *)frame->data);
 	} else { // vp8
-		is_keyframe = IS_VP8_KEY_FRAME(*(unsigned char *)frame->data);
+		is_keyframe = IS_VP8_KEY_FRAME((uint8_t *)frame->data);
 	}
 
 	if (context->need_decoder_reset != 0) {
@@ -740,20 +772,25 @@ static switch_status_t switch_vpx_decode(switch_codec_t *codec, switch_frame_t *
 	}
 
 	decoder = &context->decoder;
-
+	
 	// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "len: %d ts: %u mark:%d\n", frame->datalen, frame->timestamp, frame->m);
-
-	if (!is_keyframe && context->last_received_timestamp && context->last_received_timestamp != frame->timestamp && 
-		(!frame->m) && (!context->last_received_complete_picture)) {
-		// possible packet loss
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Reset\n");
-		context->need_key_frame = 1;
-		context->last_ts = 0;
-		switch_goto_status(SWITCH_STATUS_RESTART, end);
-	}
 
 	context->last_received_timestamp = frame->timestamp;
 	context->last_received_complete_picture = frame->m ? SWITCH_TRUE : SWITCH_FALSE;
+
+	if (is_keyframe) {
+		if (context->got_key_frame <= 0) {
+			context->got_key_frame = 1;
+		} else {
+			context->got_key_frame++;
+		}
+	} else if (context->got_key_frame <= 0) {
+		if ((--context->got_key_frame % 200) == 0) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Waiting for key frame\n");
+		}
+		switch_goto_status(SWITCH_STATUS_MORE_DATA, end);
+	}
+
 
 	status = context->is_vp9 ? buffer_vp9_packets(context, frame) : buffer_vp8_packets(context, frame);
 
@@ -785,7 +822,7 @@ static switch_status_t switch_vpx_decode(switch_codec_t *codec, switch_frame_t *
 
 		if (err != VPX_CODEC_OK) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error decoding %" SWITCH_SIZE_T_FMT " bytes, [%d:%s:%s]\n",
-				len, err, vpx_codec_error(decoder), vpx_codec_error_detail(decoder));
+							  len, err, vpx_codec_error(decoder), vpx_codec_error_detail(decoder));
 			switch_goto_status(SWITCH_STATUS_RESTART, end);
 		}
 
@@ -793,36 +830,34 @@ static switch_status_t switch_vpx_decode(switch_codec_t *codec, switch_frame_t *
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "VPX control error!\n");
 			switch_goto_status(SWITCH_STATUS_RESTART, end);
 		}
-
-		frame->img = (switch_image_t *) vpx_codec_get_frame(decoder, &iter);
-
-		if (!(frame->img) || corrupted) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "VPX invalid packet\n");
-			switch_goto_status(SWITCH_STATUS_RESTART, end);
+		
+		if (corrupted) {
+			frame->img = NULL;
+		} else {
+			frame->img = (switch_image_t *) vpx_codec_get_frame(decoder, &iter);
 		}
-
+		
 		switch_buffer_zero(context->vpx_packet_buffer);
+		
+		if (!frame->img) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "VPX invalid packet\n");
+			status = SWITCH_STATUS_RESTART;
+		}
 	}
 
 end:
 
 	if (status == SWITCH_STATUS_RESTART) {
-		if (context->got_key_frame > 0) {
-			context->got_key_frame = 0;
-		}
-		switch_buffer_zero(context->vpx_packet_buffer);
+		context->need_decoder_reset = 1;
 	}
 
 	if (!frame->img || status == SWITCH_STATUS_RESTART) {
-		//switch_set_flag(frame, SFF_USE_VIDEO_TIMESTAMP);
-		//} else {
 		status = SWITCH_STATUS_MORE_DATA;
 	}
 
 	if (context->got_key_frame <= 0) {
 		switch_set_flag(frame, SFF_WAIT_KEY_FRAME);
 	}
-
 
 	return status;
 }

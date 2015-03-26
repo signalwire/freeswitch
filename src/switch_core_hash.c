@@ -231,6 +231,11 @@ SWITCH_DECLARE(void) switch_core_hash_this(switch_hash_index_t *hi, const void *
 	switch_hashtable_this(hi, key, klen, val);
 }
 
+SWITCH_DECLARE(void) switch_core_hash_this_val(switch_hash_index_t *hi, void *val)
+{
+	switch_hashtable_this_val(hi, val);
+}
+
 
 SWITCH_DECLARE(switch_status_t) switch_core_inthash_init(switch_inthash_t **hash)
 {
