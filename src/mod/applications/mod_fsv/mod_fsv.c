@@ -525,7 +525,9 @@ SWITCH_STANDARD_APP(play_yuv_function)
 	if (argc > 3) to = atoi(argv[3]);
 	if (argc > 4) nots = atoi(argv[4]);
 
-	done = switch_micro_time_now() + (to * 1000);
+	if (to) {
+		done = switch_micro_time_now() + (to * 1000);
+	}
 
 	switch_channel_set_flag(channel, CF_VIDEO_DECODED_READ);
 
@@ -533,7 +535,7 @@ SWITCH_STANDARD_APP(play_yuv_function)
 		if ((++loops % 100) == 0) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Waiting for video......\n");
 		switch_ivr_sleep(session, 20, SWITCH_TRUE, NULL);
 
-		if (switch_micro_time_now() > done) {
+		if (done && switch_micro_time_now() > done) {
 			goto done;
 		}
 		continue;
@@ -598,7 +600,7 @@ SWITCH_STANDARD_APP(play_yuv_function)
 			break;
 		}
 
-		if (switch_micro_time_now() > done) {
+		if (done && switch_micro_time_now() > done) {
 			goto done;
 		}
 
@@ -622,8 +624,10 @@ SWITCH_STANDARD_APP(play_yuv_function)
 			}
 		}
 		
-		memset(read_frame->data, 0, read_frame->datalen);
-		if (read_frame) switch_core_session_write_frame(session, read_frame, SWITCH_IO_FLAG_NONE, 0);
+		if (read_frame) {
+			memset(read_frame->data, 0, read_frame->datalen);
+			switch_core_session_write_frame(session, read_frame, SWITCH_IO_FLAG_NONE, 0);
+		}
 
 		if (!nots) {
 			sprintf(ts_str, "%" SWITCH_TIME_T_FMT, switch_micro_time_now() / 1000);
