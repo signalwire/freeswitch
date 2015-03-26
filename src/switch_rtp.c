@@ -488,25 +488,6 @@ static void switch_rtp_change_ice_dest(switch_rtp_t *rtp_session, switch_rtp_ice
 	if (!is_rtcp || rtp_session->flags[SWITCH_RTP_FLAG_RTCP_MUX]) {
 		switch_rtp_set_remote_address(rtp_session, host, port, 0, SWITCH_FALSE, &err);
 	}
-	
-	if (rtp_session->dtls) {
-		
-		if (!is_rtcp || rtp_session->flags[SWITCH_RTP_FLAG_RTCP_MUX]) {
-			switch_sockaddr_info_get(&rtp_session->dtls->remote_addr, host, SWITCH_UNSPEC, port, 0, rtp_session->pool);
-		}
-		
-		if (is_rtcp && !rtp_session->flags[SWITCH_RTP_FLAG_RTCP_MUX]) {
-			
-			switch_sockaddr_info_get(&rtp_session->rtcp_remote_addr, host, SWITCH_UNSPEC, port, 0, rtp_session->pool);
-			if (rtp_session->rtcp_dtls) {
-				//switch_sockaddr_info_get(&rtp_session->rtcp_dtls->remote_addr, host, SWITCH_UNSPEC, port, 0, rtp_session->pool);
-				rtp_session->rtcp_dtls->remote_addr = rtp_session->rtcp_remote_addr;
-				rtp_session->rtcp_dtls->sock_output = rtp_session->rtcp_sock_output;
-			}
-			
-		}
-	}
-	
 }
 
 
@@ -2769,7 +2750,16 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_set_remote_address(switch_rtp_t *rtp_
 		if ((status = switch_socket_create(&rtp_session->sock_output,
 										   switch_sockaddr_get_family(rtp_session->remote_addr),
 										   SOCK_DGRAM, 0, rtp_session->pool)) != SWITCH_STATUS_SUCCESS) {
+
 			*err = "Socket Error!";
+		}
+	}
+
+	if (rtp_session->dtls) {
+		rtp_session->dtls->sock_output = rtp_session->sock_output;
+
+		if (rtp_session->flags[SWITCH_RTP_FLAG_RTCP_MUX]) {
+			switch_sockaddr_info_get(&rtp_session->dtls->remote_addr, host, SWITCH_UNSPEC, port, 0, rtp_session->pool);
 		}
 	}
 
@@ -2781,6 +2771,12 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_set_remote_address(switch_rtp_t *rtp_
 			rtp_session->remote_rtcp_port = rtp_session->eff_remote_port + 1;
 		}
 		status = enable_remote_rtcp_socket(rtp_session, err);
+		
+		if (rtp_session->rtcp_dtls) {
+			//switch_sockaddr_info_get(&rtp_session->rtcp_dtls->remote_addr, host, SWITCH_UNSPEC, port, 0, rtp_session->pool);
+			rtp_session->rtcp_dtls->remote_addr = rtp_session->rtcp_remote_addr;
+			rtp_session->rtcp_dtls->sock_output = rtp_session->rtcp_sock_output;
+		}
 	}
 
 	if (rtp_session->flags[SWITCH_RTP_FLAG_ENABLE_RTCP] && rtp_session->flags[SWITCH_RTP_FLAG_RTCP_MUX]) {	
