@@ -958,7 +958,6 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 				if (rtp_session->flags[SWITCH_RTP_FLAG_VIDEO]) {
 					switch_core_session_video_reinit(rtp_session->session);
 				}
-				switch_rtp_set_flag(rtp_session, SWITCH_RTP_FLAG_FLUSH);
 			}
 		}
 
@@ -1109,7 +1108,6 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 				if (rtp_session->flags[SWITCH_RTP_FLAG_VIDEO]) {
 					switch_core_session_video_reinit(rtp_session->session);
 				}
-				switch_rtp_set_flag(rtp_session, SWITCH_RTP_FLAG_FLUSH);
 			}
 
 			memset(stunbuf, 0, sizeof(stunbuf));
@@ -2413,7 +2411,12 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_set_local_address(switch_rtp_t *rtp_s
 		*err = "Socket Error!";
 		goto done;
 	}
-	
+
+	if (rtp_session->flags[SWITCH_RTP_FLAG_VIDEO]) {
+		switch_socket_opt_set(new_sock, SWITCH_SO_RCVBUF, 786432);
+		switch_socket_opt_set(new_sock, SWITCH_SO_SNDBUF, 786432);
+	}
+
 	if (switch_socket_bind(new_sock, rtp_session->local_addr) != SWITCH_STATUS_SUCCESS) {
 		char *em = switch_core_sprintf(rtp_session->pool, "Bind Error! %s:%d", host, port);
 		*err = em;
@@ -3961,6 +3964,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_activate_ice(switch_rtp_t *rtp_sessio
 	switch_port_t port = 0;
 	char bufc[30];
 				 
+
 	switch_mutex_lock(rtp_session->ice_mutex);
 
 	if (proto == IPR_RTP) {
@@ -4045,7 +4049,9 @@ SWITCH_DECLARE(void) switch_rtp_flush(switch_rtp_t *rtp_session)
 		return;
 	}
 
-	switch_rtp_set_flag(rtp_session, SWITCH_RTP_FLAG_FLUSH);
+	if (!rtp_session->flags[SWITCH_RTP_FLAG_VIDEO]) {
+		switch_rtp_set_flag(rtp_session, SWITCH_RTP_FLAG_FLUSH);
+	}
 }
 
 SWITCH_DECLARE(void) switch_rtp_video_refresh(switch_rtp_t *rtp_session)
@@ -4370,6 +4376,10 @@ SWITCH_DECLARE(void) switch_rtp_clear_flags(switch_rtp_t *rtp_session, switch_rt
 SWITCH_DECLARE(void) switch_rtp_set_flag(switch_rtp_t *rtp_session, switch_rtp_flag_t flag)
 {
 
+	if (flag == SWITCH_RTP_FLAG_FLUSH && rtp_session->flags[SWITCH_RTP_FLAG_VIDEO]) {
+		return;
+	}
+
 	switch_mutex_lock(rtp_session->flag_mutex);
 	rtp_session->flags[flag] = 1;
 	switch_mutex_unlock(rtp_session->flag_mutex);
@@ -4605,6 +4615,7 @@ SWITCH_DECLARE(void) rtp_flush_read_buffer(switch_rtp_t *rtp_session, switch_rtp
 {
 
 	if (rtp_session->flags[SWITCH_RTP_FLAG_PROXY_MEDIA] ||
+		rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] ||
 		rtp_session->flags[SWITCH_RTP_FLAG_UDPTL]) {
 		return;
 	}
@@ -5300,6 +5311,7 @@ static void handle_nack(switch_rtp_t *rtp_session, uint32_t nack)
 							  send_msg->header.pt, ntohl(send_msg->header.ts), ntohs(send_msg->header.seq), send_msg->header.m);
 
 		}
+		//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "RE----SEND %u\n", ntohs(send_msg->header.seq));
 		switch_rtp_write_raw(rtp_session, (void *) send_msg, &bytes, SWITCH_FALSE);
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG, "Cannot send NACK for seq %u\n", ntohs(seq));
@@ -5321,6 +5333,7 @@ static void handle_nack(switch_rtp_t *rtp_session, uint32_t nack)
 									  send_msg->header.pt, ntohl(send_msg->header.ts), ntohs(send_msg->header.seq), send_msg->header.m);
 					
 				}
+				//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "RE----SEND %u\n", ntohs(send_msg->header.seq));
 				switch_rtp_write_raw(rtp_session, (void *) &send_msg, &bytes, SWITCH_FALSE);
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG, "Cannot send NACK for seq %u\n", ntohs(seq) + i);
@@ -7005,7 +7018,8 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 		
 		if (rtp_session->flags[SWITCH_RTP_FLAG_NACK]) {
 			if (!rtp_session->vbw) {
-				switch_vb_create(&rtp_session->vbw, 5, 5, rtp_session->pool);
+				switch_vb_create(&rtp_session->vbw, 500, 500, rtp_session->pool);
+				switch_vb_set_flag(rtp_session->vbw, SVB_QUEUE_ONLY);
 				//switch_vb_debug_level(rtp_session->vbw, 10);
 			}
 			switch_vb_put_packet(rtp_session->vbw, (switch_rtp_packet_t *)send_msg, bytes);
@@ -7027,7 +7041,12 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 			}
 		}
 #else
-		
+		//if (rtp_session->flags[SWITCH_RTP_FLAG_VIDEO]) {
+		//
+		//	rtp_session->flags[SWITCH_RTP_FLAG_DEBUG_RTP_READ]++;
+		//
+		//	//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "SEND %u\n", ntohs(send_msg->header.seq));
+		//}
 		if (switch_socket_sendto(rtp_session->sock_output, rtp_session->remote_addr, 0, (void *) send_msg, &bytes) != SWITCH_STATUS_SUCCESS) {
 			rtp_session->seq--;
 			ret = -1;

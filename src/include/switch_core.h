@@ -1493,6 +1493,7 @@ SWITCH_DECLARE(switch_hash_index_t *) switch_core_hash_next(_In_ switch_hash_ind
 SWITCH_DECLARE(void) switch_core_hash_this(_In_ switch_hash_index_t *hi, _Out_opt_ptrdiff_cap_(klen)
 									  const void **key, _Out_opt_ switch_ssize_t *klen, _Out_ void **val);
 
+SWITCH_DECLARE(void) switch_core_hash_this_val(switch_hash_index_t *hi, void *val);
 
 SWITCH_DECLARE(switch_status_t) switch_core_inthash_init(switch_inthash_t **hash);
 SWITCH_DECLARE(switch_status_t) switch_core_inthash_destroy(switch_inthash_t **hash);

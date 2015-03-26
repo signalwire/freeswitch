@@ -34,6 +34,9 @@
 #define MAX_MISSING_SEQ 20
 #define vb_debug(_vb, _level, _format, ...) if (_vb->debug_level >= _level) switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ALERT, "VB:%p level:%d line:%d ->" _format, (void *) _vb, _level, __LINE__,  __VA_ARGS__)
 
+const char *TOKEN_1 = "ONE";
+const char *TOKEN_2 = "TWO";
+
 struct switch_vb_s;
 
 typedef struct switch_vb_node_s {
@@ -66,6 +69,7 @@ struct switch_vb_s {
 	switch_mutex_t *mutex;
 	switch_memory_pool_t *pool;
 	int free_pool;
+	switch_vb_flag_t flags;
 };
 
 static inline switch_vb_node_t *new_node(switch_vb_t *vb)
@@ -293,6 +297,15 @@ static inline void free_nodes(switch_vb_t *vb)
 	vb->node_list = NULL;
 }
 
+SWITCH_DECLARE(void) switch_vb_set_flag(switch_vb_t *vb, switch_vb_flag_t flag)
+{
+	switch_set_flag(vb, flag);
+}
+
+SWITCH_DECLARE(void) switch_vb_clear_flag(switch_vb_t *vb, switch_vb_flag_t flag)
+{
+	switch_clear_flag(vb, flag);
+}
 
 SWITCH_DECLARE(int) switch_vb_poll(switch_vb_t *vb)
 {
@@ -394,10 +407,17 @@ SWITCH_DECLARE(uint32_t) switch_vb_pop_nack(switch_vb_t *vb)
 
 	for (hi = switch_core_hash_first(vb->missing_seq_hash); hi; hi = switch_core_hash_next(&hi)) {
 		uint16_t seq;
-		
-		switch_core_hash_this(hi, &var, NULL, &val);
-		seq = ntohs(*((uint16_t *) var));
+		const char *token;
 
+		switch_core_hash_this(hi, &var, NULL, &val);
+		token = (const char *) val;
+
+		if (token == TOKEN_2) {
+			//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "SKIP %u %s\n", ntohs(*((uint16_t *) var)), token);
+			continue;
+		}
+		seq = ntohs(*((uint16_t *) var));
+			                                             
 		if (!least || seq < least) {
 			least = seq;
 		}
@@ -406,9 +426,12 @@ SWITCH_DECLARE(uint32_t) switch_vb_pop_nack(switch_vb_t *vb)
 	if (least && switch_core_inthash_delete(vb->missing_seq_hash, (uint32_t)htons(least))) {
 		vb_debug(vb, 3, "Found smallest NACKABLE seq %u\n", least);
 		nack = (uint32_t) htons(least);
-		
+
+		switch_core_inthash_insert(vb->missing_seq_hash, nack, (void *) TOKEN_2);
+
 		for(i = 0; i < 16; i++) {
 			if (switch_core_inthash_delete(vb->missing_seq_hash, (uint32_t)htons(least + i + 1))) {
+				switch_core_inthash_insert(vb->missing_seq_hash, (uint32_t)htons(least + i + 1), (void *) TOKEN_2);
 				vb_debug(vb, 3, "Found addtl NACKABLE seq %u\n", least + i + 1);
 				blp |= (1 << i);
 			}
@@ -435,23 +458,37 @@ SWITCH_DECLARE(switch_status_t) switch_vb_put_packet(switch_vb_t *vb, switch_rtp
 {
 	uint32_t i;
 	uint16_t want = ntohs(vb->next_seq), got = ntohs(packet->header.seq);
+	int missing = 0;
 
 	switch_mutex_lock(vb->mutex);
 
 	if (!want) want = got;
-	
-	if (got > want) {
-		vb_debug(vb, 2, "GOT %u WANTED %u; MARK SEQS MISSING %u - %u\n", got, want, want, got - 1);
 
-		for (i = want; i < got; i++) {
-			switch_core_inthash_insert(vb->missing_seq_hash, (uint32_t)htons(i), (void *)SWITCH_TRUE);
-		}
-	} else {
-		switch_core_inthash_delete(vb->missing_seq_hash, (uint32_t)htons(got));
-	}
-
-	if (got >= want) {
+	if (switch_test_flag(vb, SVB_QUEUE_ONLY)) {
 		vb->next_seq = htons(got + 1);
+	} else {
+		//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "WTF %u\n", got);
+
+		if (switch_core_inthash_delete(vb->missing_seq_hash, (uint32_t)htons(got))) {
+			//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "POPPED RESEND %u\n", got);	
+			missing = 1;
+		} 
+
+		if (!missing || want == got) {
+			if (got > want) {
+				//vb_debug(vb, 2, "GOT %u WANTED %u; MARK SEQS MISSING %u - %u\n", got, want, want, got - 1);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "XXXXXXXXXXXXXXXXXX   WTF GOT %u WANTED %u; MARK SEQS MISSING %u - %u\n", got, want, want, got - 1);
+				for (i = want; i < got; i++) {
+					//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "MISSING %u\n", i);
+					switch_core_inthash_insert(vb->missing_seq_hash, (uint32_t)htons(i), (void *)TOKEN_1);
+				}
+			
+			}
+
+			if (got >= want || (want - got) > 1000) {
+				vb->next_seq = htons(got + 1);
+			}
+		}
 	}
 
 	add_node(vb, packet, len);
