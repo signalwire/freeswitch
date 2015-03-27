@@ -477,7 +477,7 @@ SWITCH_DECLARE(switch_status_t) switch_vb_put_packet(switch_vb_t *vb, switch_rtp
 		if (!missing || want == got) {
 			if (got > want) {
 				//vb_debug(vb, 2, "GOT %u WANTED %u; MARK SEQS MISSING %u - %u\n", got, want, want, got - 1);
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "XXXXXXXXXXXXXXXXXX   WTF GOT %u WANTED %u; MARK SEQS MISSING %u - %u\n", got, want, want, got - 1);
+				//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "XXXXXXXXXXXXXXXXXX   WTF GOT %u WANTED %u; MARK SEQS MISSING %u - %u\n", got, want, want, got - 1);
 				for (i = want; i < got; i++) {
 					//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "MISSING %u\n", i);
 					switch_core_inthash_insert(vb->missing_seq_hash, (uint32_t)htons(i), (void *)TOKEN_1);
