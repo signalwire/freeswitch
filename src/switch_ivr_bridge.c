@@ -63,7 +63,6 @@ static void video_bridge_thread(switch_core_session_t *session, void *obj)
 	switch_core_session_request_video_refresh(vh->session_b);
 
 	while (switch_channel_up_nosig(channel) && switch_channel_up_nosig(b_channel) && vh->up == 1) {
-
 		if (switch_channel_media_up(channel)) {
 			switch_codec_t *a_codec = switch_core_session_get_video_read_codec(vh->session_a);
 			switch_codec_t *b_codec = switch_core_session_get_video_write_codec(vh->session_b);
@@ -92,7 +91,6 @@ static void video_bridge_thread(switch_core_session_t *session, void *obj)
 				continue;
 			}
 		}
-
 	}
 
 	switch_core_session_kill_channel(vh->session_b, SWITCH_SIG_BREAK);
