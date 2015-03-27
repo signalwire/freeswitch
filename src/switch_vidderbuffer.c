@@ -346,7 +346,9 @@ SWITCH_DECLARE(void) switch_vb_reset(switch_vb_t *vb)
 	vb->next_seq = 0;
 	vb->complete_frames = 0;
 
+	switch_mutex_lock(vb->mutex);
 	hide_nodes(vb);
+	switch_mutex_unlock(vb->mutex);
 }
 
 SWITCH_DECLARE(switch_status_t) switch_vb_create(switch_vb_t **vbp, uint32_t min_frame_len, uint32_t max_frame_len, switch_memory_pool_t *pool)
@@ -520,11 +522,12 @@ SWITCH_DECLARE(switch_status_t) switch_vb_get_packet(switch_vb_t *vb, switch_rtp
 	switch_vb_node_t *node = NULL;
 	switch_status_t status;
 	
+	switch_mutex_lock(vb->mutex);
 	vb_debug(vb, 2, "GET PACKET %u/%u n:%d\n", vb->complete_frames , vb->frame_len, vb->visible_nodes);
 
 	if (vb->complete_frames < vb->frame_len) {
 		vb_debug(vb, 2, "BUFFERING %u/%u\n", vb->complete_frames , vb->frame_len);
-		return SWITCH_STATUS_MORE_DATA;
+		switch_goto_status(SWITCH_STATUS_MORE_DATA, end);
 	}
 
 	if ((status = vb_next_packet(vb, &node)) == SWITCH_STATUS_SUCCESS) {
@@ -552,11 +555,11 @@ SWITCH_DECLARE(switch_status_t) switch_vb_get_packet(switch_vb_t *vb, switch_rtp
 		switch(status) {
 		case SWITCH_STATUS_RESTART:
 			vb_debug(vb, 2, "%s", "Error encountered ask for new keyframe\n");
-			return SWITCH_STATUS_RESTART;
+			switch_goto_status(SWITCH_STATUS_RESTART, end);
 		case SWITCH_STATUS_NOTFOUND:
 		default:
 			vb_debug(vb, 2, "%s", "No frames found wait for more\n");
-			return SWITCH_STATUS_MORE_DATA;
+			switch_goto_status(SWITCH_STATUS_MORE_DATA, end);
 		}
 	}
 	
@@ -570,10 +573,15 @@ SWITCH_DECLARE(switch_status_t) switch_vb_get_packet(switch_vb_t *vb, switch_rtp
 
 		vb_debug(vb, 1, "GET packet ts:%u seq:%u %s\n", ntohl(packet->header.ts), ntohs(packet->header.seq), packet->header.m ? " <MARK>" : "");
 
-		return status;
+	} else {
+		status = SWITCH_STATUS_MORE_DATA;
 	}
 
-	return SWITCH_STATUS_MORE_DATA;
+ end:
+
+	switch_mutex_unlock(vb->mutex);
+
+	return status;
 
 }
 
