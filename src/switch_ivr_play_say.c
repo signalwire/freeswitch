@@ -1262,7 +1262,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 
 		if (switch_channel_test_flag(channel, CF_VIDEO)) {
 			flags |= SWITCH_FILE_FLAG_VIDEO;
-			switch_channel_set_flag_recursive(channel, CF_VIDEO_DECODED_READ);
+			//switch_channel_set_flag_recursive(channel, CF_VIDEO_DECODED_READ);
 		}
 
 		if (switch_core_file_open(fh,
@@ -1357,7 +1357,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 				switch_core_session_io_rwunlock(session);
 
 				if (switch_core_file_has_video(fh)) {
-					switch_channel_clear_flag_recursive(channel, CF_VIDEO_DECODED_READ);
+					//switch_channel_clear_flag_recursive(channel, CF_VIDEO_DECODED_READ);
 					switch_core_media_set_video_file(session, NULL, SWITCH_RW_WRITE);
 				}
 
@@ -1383,7 +1383,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 				switch_core_session_io_rwunlock(session);
 
 				if (switch_core_file_has_video(fh)) {
-					switch_channel_clear_flag_recursive(channel, CF_VIDEO_DECODED_READ);
+					//switch_channel_clear_flag_recursive(channel, CF_VIDEO_DECODED_READ);
 					switch_core_media_set_video_file(session, NULL, SWITCH_RW_WRITE);
 				}
 				switch_core_file_close(fh);
@@ -1412,7 +1412,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 				switch_channel_set_private(channel, "__fh", NULL);
 				switch_core_session_io_rwunlock(session);
 				if (switch_core_file_has_video(fh)) {
-					switch_channel_clear_flag_recursive(channel, CF_VIDEO_DECODED_READ);
+					//switch_channel_clear_flag_recursive(channel, CF_VIDEO_DECODED_READ);
 					switch_core_media_set_video_file(session, NULL, SWITCH_RW_WRITE);
 				}
 				switch_core_file_close(fh);
@@ -1823,7 +1823,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 		switch_core_session_io_rwunlock(session);
 
 		if (switch_core_file_has_video(fh)) {
-			switch_channel_clear_flag_recursive(channel, CF_VIDEO_DECODED_READ);
+			//switch_channel_clear_flag_recursive(channel, CF_VIDEO_DECODED_READ);
 			switch_core_media_set_video_file(session, NULL, SWITCH_RW_WRITE);
 		}
 		switch_core_file_close(fh);
