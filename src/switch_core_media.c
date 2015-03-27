@@ -445,7 +445,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_check_autoadj(switch_core_sess
 	
 	if (!switch_media_handle_test_media_flag(smh, SCMF_DISABLE_RTP_AUTOADJ) &&
 		!((val = switch_channel_get_variable(session->channel, "disable_rtp_auto_adjust")) && switch_true(val)) && 
-		!switch_channel_test_flag(session->channel, CF_AVPF)) {
+		!switch_channel_test_flag(session->channel, CF_WEBRTC)) {
 		/* Reactivate the NAT buster flag. */
 		
 		if (a_engine->rtp_session) {
