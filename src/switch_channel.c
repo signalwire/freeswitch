@@ -1966,8 +1966,11 @@ SWITCH_DECLARE(void) switch_channel_clear_flag(switch_channel_t *channel, switch
 		ACTIVE = 1;
 	}
 
-	if (flag == CF_VIDEO_PASSIVE && channel->flags[flag]) {
-		CLEAR = 1;
+	if (flag == CF_VIDEO_PASSIVE) {
+		channel->flags[CF_VIDEO_READY] = 1;
+		if (channel->flags[flag]) {
+			CLEAR = 1;
+		}
 	}
 
 	channel->flags[flag] = 0;

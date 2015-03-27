@@ -4698,6 +4698,10 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 			xloops = 0;
 		}
 
+		if (!switch_channel_test_flag(channel, CF_VIDEO_DECODED_READ) && (xloops > 20 || switch_channel_test_flag(channel, CF_VIDEO_PASSIVE))) {
+			switch_channel_set_flag(channel, CF_VIDEO_READY);
+		}
+	
 		if (switch_channel_test_flag(channel, CF_VIDEO_PASSIVE) || do_sleep) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Video thread paused. Echo is %s\n", 
 							  switch_channel_get_name(session->channel), switch_channel_test_flag(channel, CF_VIDEO_ECHO) ? "on" : "off");
@@ -4742,24 +4746,22 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 
 		if (!smh->video_write_fh || !switch_channel_test_flag(channel, CF_VIDEO_READY)) {
 			status = switch_core_session_read_video_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
-		
+
 			if (!SWITCH_READ_ACCEPTABLE(status)) {
 				switch_cond_next();
 				continue;
 			}
-
+			
 			if (switch_test_flag(read_frame, SFF_CNG)) {
 				continue;
 			}
-			
+
 			if (read_frame->img) {
 				if (++viloops > 10) {
 					switch_channel_set_flag(channel, CF_VIDEO_READY);
 					smh->vid_params.width = read_frame->img->d_w;
 					smh->vid_params.height = read_frame->img->d_h;
 				}
-			} else if (read_frame->datalen > 2 && !switch_channel_test_flag(channel, CF_VIDEO_DECODED_READ) && vloops > 20) {
-				switch_channel_set_flag(channel, CF_VIDEO_READY);
 			}
 		}
 
@@ -4770,7 +4772,7 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 		
 		vloops++;
 
-		if (!buf) {
+		if (!buf && switch_channel_test_flag(channel, CF_VIDEO_DECODED_READ)) {
 			int buflen = SWITCH_RECOMMENDED_BUFFER_SIZE * 4;
 			buf = switch_core_session_alloc(session, buflen);
 			fr.packet = buf;
