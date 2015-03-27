@@ -67,7 +67,8 @@ static void video_bridge_thread(switch_core_session_t *session, void *obj)
 			switch_codec_t *a_codec = switch_core_session_get_video_read_codec(vh->session_a);
 			switch_codec_t *b_codec = switch_core_session_get_video_write_codec(vh->session_b);
 
-			if (!b_codec || !a_codec || a_codec->implementation->impl_id == b_codec->implementation->impl_id) {
+			if ((!b_codec || !a_codec || a_codec->implementation->impl_id == b_codec->implementation->impl_id) && 
+				!switch_channel_test_flag(b_channel, CF_VIDEO_DECODED_READ)) {
 				switch_channel_clear_flag(channel, CF_VIDEO_DECODED_READ);
 			} else {
 				switch_channel_set_flag(channel, CF_VIDEO_DECODED_READ);

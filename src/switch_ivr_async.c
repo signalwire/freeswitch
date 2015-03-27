@@ -1332,8 +1332,15 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 					}
 				}
 
+				
+				if (switch_core_file_has_video(rh->fh)) {
+					switch_core_media_set_video_file(session, NULL, SWITCH_RW_READ);
+				}
 
 				switch_core_file_close(rh->fh);
+
+				
+
 				if (rh->fh->samples_out < rh->fh->samplerate * rh->min_sec) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Discarding short file %s\n", rh->file);
 					switch_channel_set_variable(channel, "RECORD_DISCARDED", "true");
@@ -2269,6 +2276,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 	if ((ext = strrchr(file, '.'))) {
 		ext++;
 
+		if (switch_channel_test_flag(channel, CF_VIDEO)) {
+			file_flags |= SWITCH_FILE_FLAG_VIDEO;
+		}
+
 		if (switch_core_file_open(fh, file, channels, read_impl.actual_samples_per_second, file_flags, NULL) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error opening %s\n", file);
 			if (hangup_on_error) {
@@ -2277,6 +2288,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 			}
 			return SWITCH_STATUS_GENERR;
 		}
+
+		if (switch_core_file_has_video(fh)) {
+			switch_core_media_set_video_file(session, fh, SWITCH_RW_READ);
+		}
+
 	} else {
 		int tflags = 0;
 
