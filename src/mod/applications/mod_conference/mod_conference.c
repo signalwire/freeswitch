@@ -114,6 +114,10 @@ static int EC = 0;
 /* max supported layers in one mcu */
 #define MCU_MAX_LAYERS 64
 
+#define CONFERENCE_MUX_DEFAULT_LAYOUT "group:grid"
+#define CONFERENCE_CANVAS_DEFAULT_WIDTH 1280
+#define CONFERENCE_CANVAS_DEFAULT_HIGHT 720
+
 #define test_eflag(conference, flag) ((conference)->eflags & flag)
 
 typedef enum {
@@ -444,6 +448,12 @@ typedef struct conference_record {
 	struct conference_record *next;
 } conference_record_t;
 
+typedef enum {
+	CONF_VIDEO_MODE_PASSTHROUGH,
+	CONF_VIDEO_MODE_TRANSCODE,
+	CONF_VIDEO_MODE_MUX
+} conf_video_mode_t;
+
 /* Conference Object */
 typedef struct conference_obj {
 	char *name;
@@ -478,6 +488,7 @@ typedef struct conference_obj {
 	char *video_layout_group;
 	char *video_canvas_bgcolor;
 	char *video_layout_bgcolor;
+	conf_video_mode_t conf_video_mode;
 	int members_with_video;
 	int video_timer_reset;
 	int32_t video_write_bandwidth;
@@ -1586,6 +1597,21 @@ static video_layout_t *find_best_layout(conference_obj_t *conference, layout_gro
 	return vlnode? vlnode->vlayout : last ? last->vlayout : NULL;
 }
 
+static video_layout_t *get_layout(conference_obj_t *conference)
+{
+	layout_group_t *lg = NULL;
+	video_layout_t *vlayout = NULL;
+
+	if (conference->video_layout_group) {
+		lg = switch_core_hash_find(conference->layout_group_hash, conference->video_layout_group);
+		vlayout = find_best_layout(conference, lg);
+	} else {
+		vlayout = switch_core_hash_find(conference->layout_hash, conference->video_layout_name);
+	}
+
+	return vlayout;
+}
+
 static void vmute_snap(conference_member_t *member, switch_bool_t clear)
 {
 	if (member->conference->canvas && member->video_layer_id > -1) {
@@ -1647,7 +1673,6 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 {
 	conference_obj_t *conference = (conference_obj_t *) obj;
 	conference_member_t *imember;
-	video_layout_t *vlayout = NULL;
 	switch_codec_t *check_codec = NULL;
 	codec_set_t *write_codecs[MAX_MUX_CODECS] = { 0 };
 	int buflen = SWITCH_RTP_MAX_BUF_LEN;
@@ -1658,17 +1683,9 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 	mcu_layer_t *layer = NULL;
 	switch_frame_t write_frame = { 0 };
 	uint8_t *packet = NULL;
-	layout_group_t *lg = NULL;
 	switch_image_t *write_img = NULL, *file_img = NULL;
 	uint32_t timestamp = 0;
-
-
-	if (conference->video_layout_group) {
-		lg = switch_core_hash_find(conference->layout_group_hash, conference->video_layout_group);
-		vlayout = find_best_layout(conference, lg);
-	} else {
-		vlayout = switch_core_hash_find(conference->layout_hash, conference->video_layout_name);
-	}
+	video_layout_t *vlayout = get_layout(conference);
 
 	if (!vlayout) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot find layout\n");
@@ -10902,12 +10919,8 @@ static void set_cflags(const char *flags, uint32_t *f)
 				*f |= CFLAG_RFC4579;
 			} else if (!strcasecmp(argv[i], "auto-3d-position")) {
 				*f |= CFLAG_POSITIONAL;
-			} else if (!strcasecmp(argv[i], "decode-video") || !strcasecmp(argv[i], "transcode-video")) {
-				*f |= CFLAG_TRANSCODE_VIDEO;
 			} else if (!strcasecmp(argv[i], "minimize-video-encoding")) {
 				*f |= CFLAG_MINIMIZE_VIDEO_ENCODING;
-			} else if (!strcasecmp(argv[i], "mix-video")) {
-				*f |= CFLAG_VIDEO_MUXING;
 			}
 
 			
@@ -11688,7 +11701,7 @@ SWITCH_STANDARD_APP(conference_function)
 		conference->min = 2;
 	}
 
-	if (conference->video_layout_name) {
+	if (conference->conf_video_mode == CONF_VIDEO_MODE_MUX) {
 		switch_queue_create(&member.video_queue, 2000, member.pool);
 		switch_queue_create(&member.mux_out_queue, 2000, member.pool);
 		switch_frame_buffer_create(&member.fb);
@@ -12031,6 +12044,7 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 	char *video_canvas_bgcolor = NULL;
 	char *video_layout_bgcolor = NULL;
 	char *video_codec_bandwidth = NULL;
+	conf_video_mode_t conf_video_mode = CONF_VIDEO_MODE_PASSTHROUGH;
 	float fps = 15.0f;
 	uint32_t max_members = 0;
 	uint32_t announce_count = 0;
@@ -12310,6 +12324,16 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 				terminate_on_silence = val;
 			} else if (!strcasecmp(var, "endconf-grace-time") && !zstr(val)) {
 				endconf_grace_time = val;
+			} else if (!strcasecmp(var, "video-mode") && !zstr(val)) {
+				if (!strcasecmp(val, "passthrough")) {
+					conf_video_mode = CONF_VIDEO_MODE_PASSTHROUGH;
+				} else if (!strcasecmp(val, "transcode")) {
+					conf_video_mode = CONF_VIDEO_MODE_TRANSCODE;
+				} else if (!strcasecmp(val, "mux")) {
+					conf_video_mode = CONF_VIDEO_MODE_MUX;
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "video-mode invalid, valid settings are 'passthrough', 'transcode' and 'mux'\n");
+				}
 			}
 		}
 
@@ -12374,67 +12398,84 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 		conference->video_codec_settings.video.bandwidth = switch_parse_bandwidth_string(video_codec_bandwidth);
 	}
 
-	if (video_layout_name) {
-		if (!strncasecmp(video_layout_name, "group:", 6)) {
-			if (!switch_core_hash_find(conference->layout_group_hash, video_layout_name + 6)) {
-				video_layout_name = NULL;
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "invalid conference layout group settings\n");
-			} else {
-				video_layout_group = video_layout_name + 6;
-			}
-		} else if (!switch_core_hash_find(conference->layout_hash, video_layout_name)) {
-			video_layout_name = NULL;
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "invalid conference layout settings\n");
+	conference->conf_video_mode = conf_video_mode;
+
+	if (conference->conf_video_mode == CONF_VIDEO_MODE_MUX) {
+		if (!video_canvas_bgcolor) {
+			video_canvas_bgcolor = "#333333";
 		}
-	}
-	
-	if (!video_canvas_bgcolor) {
-		video_canvas_bgcolor = "#333333";
-	}
 
-	if (!video_layout_bgcolor) {
-		video_layout_bgcolor = "#000000";
-	}
+		if (!video_layout_bgcolor) {
+			video_layout_bgcolor = "#000000";
+		}
 
-	conference->video_canvas_bgcolor = switch_core_strdup(conference->pool, video_canvas_bgcolor);
-	conference->video_layout_bgcolor = switch_core_strdup(conference->pool, video_layout_bgcolor);
+		conference->video_canvas_bgcolor = switch_core_strdup(conference->pool, video_canvas_bgcolor);
+		conference->video_layout_bgcolor = switch_core_strdup(conference->pool, video_layout_bgcolor);
 
-	if (fps) {
-		conference_set_fps(conference, fps);
-	}
+		if (fps) {
+			conference_set_fps(conference, fps);
+		}
 
-	if (!conference->video_fps.ms) {
-		conference_set_fps(conference, 30);
-	}
-	
-	if (video_canvas_size && video_layout_name) {
-		int w = 0, h = 0;
-		char *p;
+		if (!conference->video_fps.ms) {
+			conference_set_fps(conference, 30);
+		}
 
-		if ((w = atoi(video_canvas_size))) {
-			if ((p = strchr(video_canvas_size, 'x'))) {
-				p++;
-				if (*p) {
-					h = atoi(p);
+		if (zstr(video_layout_name)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "No video-layout-name specified, using " CONFERENCE_MUX_DEFAULT_LAYOUT "\n");
+			video_layout_name = CONFERENCE_MUX_DEFAULT_LAYOUT;
+		}
+
+		if (!strncasecmp(video_layout_name, "group:", 6)) {
+			video_layout_group = video_layout_name + 6;
+		}
+		if (video_layout_name) {
+			conference->video_layout_name = switch_core_strdup(conference->pool, video_layout_name);
+		}
+		if (video_layout_group) {
+			conference->video_layout_group = switch_core_strdup(conference->pool, video_layout_group);
+		}
+
+		if (!get_layout(conference)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid video-layout-name specified, using " CONFERENCE_MUX_DEFAULT_LAYOUT "\n");
+			video_layout_name = CONFERENCE_MUX_DEFAULT_LAYOUT;
+			video_layout_group = video_layout_name + 6;
+			conference->video_layout_name = switch_core_strdup(conference->pool, video_layout_name);
+			conference->video_layout_group = switch_core_strdup(conference->pool, video_layout_group);
+		}
+
+		if (!get_layout(conference)) {
+			conference->video_layout_name = conference->video_layout_group = video_layout_group = video_layout_name = NULL;
+			conference->conf_video_mode = CONF_VIDEO_MODE_TRANSCODE;
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid conference layout settings, falling back to transcode mode\n");
+		} else {
+			int w = 0, h = 0;
+			if (video_canvas_size) {
+				char *p;
+
+				if ((w = atoi(video_canvas_size))) {
+					if ((p = strchr(video_canvas_size, 'x'))) {
+						p++;
+						if (*p) {
+							h = atoi(p);
+						}
+					}
 				}
 			}
-		}
 
-		if (w > 0 && h > 0) {
-			conference->canvas_width = w;
-			conference->canvas_height = h;
-			if (video_layout_name) {
-				conference->video_layout_name = switch_core_strdup(conference->pool, video_layout_name);
+			if (w > 0 && h > 0) {
+				conference->canvas_width = w;
+				conference->canvas_height = h;
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "%s video-canvas-size, falling back to %ux%u\n",
+								  video_canvas_size ? "Invalid" : "Unspecified", CONFERENCE_CANVAS_DEFAULT_WIDTH, CONFERENCE_CANVAS_DEFAULT_HIGHT);
+				conference->canvas_width = CONFERENCE_CANVAS_DEFAULT_WIDTH;
+				conference->canvas_height = CONFERENCE_CANVAS_DEFAULT_HIGHT;
 			}
-			if (video_layout_group) {
-				conference->video_layout_group = switch_core_strdup(conference->pool, video_layout_group);
-			}
-		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "invalid conference dimensions\n"); 
 		}
+	}
 
-	} else if (video_canvas_size || video_layout_name || video_layout_group) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "invalid conference layout settings\n"); 
+	if (conference->conf_video_mode == CONF_VIDEO_MODE_TRANSCODE || conference->conf_video_mode == CONF_VIDEO_MODE_MUX) {
+		switch_set_flag(conference, CFLAG_TRANSCODE_VIDEO);
 	}
 
 	if (outcall_templ) {
@@ -12663,7 +12704,7 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 	switch_core_hash_insert(globals.conference_hash, conference->name, conference);
 	switch_mutex_unlock(globals.hash_mutex);
 
-	if (conference->video_layout_name && !conference->video_muxing_thread) {
+	if (conference->conf_video_mode == CONF_VIDEO_MODE_MUX && !conference->video_muxing_thread) {
 		launch_conference_video_muxing_thread(conference);
 	}
 

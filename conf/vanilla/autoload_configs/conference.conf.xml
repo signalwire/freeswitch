@@ -177,6 +177,7 @@
 
       <!-- <param name="conference-flags" value="video-floor-only|rfc-4579|livearray-sync|auto-3d-position|transcode-video|minimize-video-encoding"/> -->
 
+      <!-- <param name="video-mode" value="mux"/> -->
       <!-- <param name="video-layout-name" value="3x3"/> -->
       <!-- <param name="video-layout-name" value="group:grid"/> -->
       <!-- <param name="video-canvas-size" value="1280x720"/> -->
@@ -212,8 +213,9 @@
       <param name="caller-id-number" value="$${outbound_caller_id}"/>
       <param name="comfort-noise" value="true"/>
 
-      <!-- <param name="conference-flags" value="video-floor-only|rfc-4579|livearray-sync|auto-3d-position|transcode-video|minimize-video-encoding"/> -->
+      <!-- <param name="conference-flags" value="video-floor-only|rfc-4579|livearray-sync|auto-3d-position|minimize-video-encoding"/> -->
 
+      <!-- <param name="video-mode" value="mux"/> -->
       <!-- <param name="video-layout-name" value="3x3"/> -->
       <!-- <param name="video-layout-name" value="group:grid"/> -->
       <!-- <param name="video-canvas-size" value="1920x1080"/> -->
