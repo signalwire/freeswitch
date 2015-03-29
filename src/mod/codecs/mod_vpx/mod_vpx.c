@@ -183,9 +183,10 @@ static inline int IS_VP8_KEY_FRAME(uint8_t *data)
 		if (X & 0x30) data++; // T/K
 	}
 	
-	if (S && PID == 0) {
+	if (S && (PID == 0)) {
 		return __IS_VP8_KEY_FRAME(*data);
 	} else {
+		if (PID > 0) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "PID: %d\n", PID);
 		return 0;
 	}
 }
@@ -225,7 +226,7 @@ struct vpx_context {
 	uint8_t decoder_init;
 	switch_buffer_t *vpx_packet_buffer;
 	int got_key_frame;
-	switch_size_t last_received_timestamp;
+	uint32_t last_received_timestamp;
 	switch_bool_t last_received_complete_picture;
 	int need_key_frame;
 	int need_encoder_reset;
@@ -691,18 +692,26 @@ static switch_status_t buffer_vp8_packets(vpx_context_t *context, switch_frame_t
 	if (!switch_buffer_inuse(context->vpx_packet_buffer) && !S) {
 		if (context->got_key_frame > 0) {
 			context->got_key_frame = 0;
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "packet loss?\n");
 		}
 		return SWITCH_STATUS_MORE_DATA;
 	}
 
 	if (S) {
 		switch_buffer_zero(context->vpx_packet_buffer);
+		context->last_received_timestamp = frame->timestamp;
 	}
 
 	len = frame->datalen - (data - (uint8_t *)frame->data);
 
 	if (len <= 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid packet %d\n", len);
+		return SWITCH_STATUS_RESTART;
+	}
+
+	if (context->last_received_timestamp != frame->timestamp) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "wrong timestamp %u, expect %u, packet loss?\n", frame->timestamp, context->last_received_timestamp);
+		switch_buffer_zero(context->vpx_packet_buffer);
 		return SWITCH_STATUS_RESTART;
 	}
 
@@ -755,6 +764,8 @@ static switch_status_t switch_vpx_decode(switch_codec_t *codec, switch_frame_t *
 		is_keyframe = IS_VP8_KEY_FRAME((uint8_t *)frame->data);
 	}
 
+	// if (is_keyframe) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "got key %d\n", is_keyframe);
+
 	if (context->need_decoder_reset != 0) {
 		vpx_codec_destroy(&context->decoder);
 		context->decoder_init = 0;
@@ -775,7 +786,7 @@ static switch_status_t switch_vpx_decode(switch_codec_t *codec, switch_frame_t *
 	
 	// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "len: %d ts: %u mark:%d\n", frame->datalen, frame->timestamp, frame->m);
 
-	context->last_received_timestamp = frame->timestamp;
+	// context->last_received_timestamp = frame->timestamp;
 	context->last_received_complete_picture = frame->m ? SWITCH_TRUE : SWITCH_FALSE;
 
 	if (is_keyframe) {
@@ -786,7 +797,7 @@ static switch_status_t switch_vpx_decode(switch_codec_t *codec, switch_frame_t *
 		}
 	} else if (context->got_key_frame <= 0) {
 		if ((--context->got_key_frame % 200) == 0) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Waiting for key frame\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Waiting for key frame %d\n", context->got_key_frame);
 		}
 		switch_goto_status(SWITCH_STATUS_MORE_DATA, end);
 	}
