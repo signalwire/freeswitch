@@ -527,11 +527,17 @@ static switch_status_t consume_partition(vpx_context_t *context, switch_frame_t 
 		frame->datalen = 0;
 		frame->m = 1;
 		context->pkt = NULL;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "writing 0 bytes\n");
 		return SWITCH_STATUS_SUCCESS;
 	}
 
 	key = (context->pkt->data.frame.flags & VPX_FRAME_IS_KEY);
-	
+
+#if 0
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "flags: %x pts: %lld duration:%lu partition_id: %d\n",
+		context->pkt->data.frame.flags, context->pkt->data.frame.pts, context->pkt->data.frame.duration, context->pkt->data.frame.partition_id);
+#endif
+
 	/* reset header */
 	*(uint8_t *)frame->data = 0;
 	payload_descriptor = (vpx_payload_descriptor_t *) frame->data;
