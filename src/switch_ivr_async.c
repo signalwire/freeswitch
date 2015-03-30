@@ -1184,12 +1184,11 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 				switch_threadattr_create(&thd_attr, pool);
 				switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
 				switch_thread_create(&rh->thread, thd_attr, recording_thread, bug, pool);
-
+				
 				while(--sanity > 0 && !rh->thread_ready) {
 					switch_yield(10000);
 				}
 			}
-
 
 			if (switch_event_create(&event, SWITCH_EVENT_RECORD_START) == SWITCH_STATUS_SUCCESS) {
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Record-File-Path", rh->file);
@@ -1334,7 +1333,8 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 
 				
 				if (switch_core_file_has_video(rh->fh)) {
-					switch_core_media_set_video_file(session, NULL, SWITCH_RW_READ);
+					//switch_core_media_set_video_file(session, NULL, SWITCH_RW_READ);
+					switch_channel_clear_flag_recursive(session->channel, CF_VIDEO_DECODED_READ);
 				}
 
 				switch_core_file_close(rh->fh);
@@ -1476,11 +1476,11 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 		}
 		break;
 	case SWITCH_ABC_TYPE_READ_VIDEO_PING:
-
+	case SWITCH_ABC_TYPE_STREAM_VIDEO_PING:
 		if (rh->fh) {
 			if (!bug->ping_frame) break;
-
-			if (len && switch_core_file_write_video(rh->fh, bug->ping_frame) != SWITCH_STATUS_SUCCESS && rh->hangup_on_error) {
+			
+			if ((len || bug->ping_frame->img) && switch_core_file_write_video(rh->fh, bug->ping_frame) != SWITCH_STATUS_SUCCESS && rh->hangup_on_error) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error writing video to %s\n", rh->file);
 				switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 				switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
@@ -1488,6 +1488,7 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 			}
 		}
 		break;
+
 	case SWITCH_ABC_TYPE_WRITE:
 	default:
 		break;
@@ -2290,7 +2291,19 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 		}
 
 		if (switch_core_file_has_video(fh)) {
-			switch_core_media_set_video_file(session, fh, SWITCH_RW_READ);
+			//switch_core_media_set_video_file(session, fh, SWITCH_RW_READ);
+			switch_channel_set_flag_recursive(session->channel, CF_VIDEO_DECODED_READ);
+			
+			if ((vval = switch_channel_get_variable(channel, "record_concat_video")) && switch_true(vval)) { 
+				flags |= SMBF_READ_VIDEO_STREAM;
+				flags |= SMBF_WRITE_VIDEO_STREAM;
+			} else {
+				flags |= SMBF_READ_VIDEO_PING;
+			}
+		} else {
+			flags &= ~SMBF_READ_VIDEO_PING;
+			flags &= ~SMBF_READ_VIDEO_STREAM;
+			flags &= ~SMBF_WRITE_VIDEO_STREAM;
 		}
 
 	} else {
