@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <ProductVersion>3.5</ProductVersion>
@@ -403,15 +403,6 @@
     <ProjectReference Include="..\..\src\mod\codecs\mod_amr\mod_amr.2010.vcxproj">
       <Name>mod_amr</Name>
       <Project>{8deb383c-4091-4f42-a56f-c9e46d552d79}</Project>
-      <Private>True</Private>
-      <DoNotHarvest>
-      </DoNotHarvest>
-      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
-      <RefTargetDir>MODLOCATION</RefTargetDir>
-    </ProjectReference>
-    <ProjectReference Include="..\..\src\mod\codecs\mod_celt\mod_celt.vcxproj">
-      <Name>mod_celt</Name>
-      <Project>{4d418176-3b33-47e6-a63e-01ba34add21c}</Project>
       <Private>True</Private>
       <DoNotHarvest>
       </DoNotHarvest>

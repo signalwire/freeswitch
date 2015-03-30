@@ -27,7 +27,6 @@
 
     <!-- Codec Interfaces -->
     <load module="mod_spandsp"/>
-    <load module="mod_celt"/>
     <load module="mod_opus"/>
     <load module="mod_ilbc"/>
     <load module="mod_h26x"/>

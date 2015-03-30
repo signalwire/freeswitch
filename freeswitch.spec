@@ -115,20 +115,18 @@ Vendor:       	http://www.freeswitch.org/
 #
 ######################################################################################################################
 Source0:        http://files.freeswitch.org/%{name}-%{version}.tar.bz2
-Source1:	http://files.freeswitch.org/downloads/libs/celt-0.10.0.tar.gz
-Source2:	http://files.freeswitch.org/downloads/libs/flite-2.0.0-release.tar.bz2
-Source3:	http://files.freeswitch.org/downloads/libs/lame-3.98.4.tar.gz
-Source4:	http://files.freeswitch.org/downloads/libs/libshout-2.2.2.tar.gz
-Source5:	http://files.freeswitch.org/downloads/libs/mpg123-1.13.2.tar.gz
-#Source6:	http://files.freeswitch.org/downloads/libs/openldap-2.4.11.tar.gz
-Source6:	http://files.freeswitch.org/downloads/libs/pocketsphinx-0.8.tar.gz
-Source7:	http://files.freeswitch.org/downloads/libs/soundtouch-1.7.1.tar.gz
-Source8:	http://files.freeswitch.org/downloads/libs/sphinxbase-0.8.tar.gz
-Source9:	http://files.freeswitch.org/downloads/libs/communicator_semi_6000_20080321.tar.gz
-Source10:	http://files.freeswitch.org/downloads/libs/libmemcached-0.32.tar.gz
-Source11:       http://files.freeswitch.org/downloads/libs/opus-1.1-p2.tar.gz
-Source12:       http://files.freeswitch.org/downloads/libs/v8-3.24.14.tar.bz2
-Source13:       http://files.freeswitch.org/downloads/libs/mongo-c-driver-1.1.0.tar.gz
+Source1:	http://files.freeswitch.org/downloads/libs/flite-2.0.0-release.tar.bz2
+Source2:	http://files.freeswitch.org/downloads/libs/lame-3.98.4.tar.gz
+Source3:	http://files.freeswitch.org/downloads/libs/libshout-2.2.2.tar.gz
+Source4:	http://files.freeswitch.org/downloads/libs/mpg123-1.13.2.tar.gz
+Source5:	http://files.freeswitch.org/downloads/libs/pocketsphinx-0.8.tar.gz
+Source6:	http://files.freeswitch.org/downloads/libs/soundtouch-1.7.1.tar.gz
+Source7:	http://files.freeswitch.org/downloads/libs/sphinxbase-0.8.tar.gz
+Source8:	http://files.freeswitch.org/downloads/libs/communicator_semi_6000_20080321.tar.gz
+Source9:	http://files.freeswitch.org/downloads/libs/libmemcached-0.32.tar.gz
+Source10:       http://files.freeswitch.org/downloads/libs/opus-1.1-p2.tar.gz
+Source11:       http://files.freeswitch.org/downloads/libs/v8-3.24.14.tar.bz2
+Source12:       http://files.freeswitch.org/downloads/libs/mongo-c-driver-1.1.0.tar.gz
 Prefix:        	%{prefix}
 
 
@@ -188,6 +186,7 @@ BuildRequires: bison
 BuildRequires: net-snmp-devel
 BuildRequires: libmemcached-devel
 BuildRequires: portaudio-devel
+BuildRequires: libsndfile-devel
 %if %{build_py26_esl}
 BuildRequires: python26-devel
 Requires: python26
@@ -212,6 +211,7 @@ Requires: libtiff
 Requires: python
 Requires: libtheora
 Requires: libxml2
+Requires: libsndfile
 
 %if %{?suse_version:1}0
 %if 0%{?suse_version} > 910
@@ -670,14 +670,6 @@ Requires:       %{name} = %{version}-%{release}
 
 %description codec-bv
 BroadVoice16 and BroadVoice32 WideBand Codec support for FreeSWITCH open source telephony platform
-
-%package codec-celt
-Summary:        CELT ultra low delay Codec support for FreeSWITCH open source telephony platform
-Group:          System/Libraries
-Requires:       %{name} = %{version}-%{release}
-
-%description codec-celt
-CELT ultra low delay Codec support for FreeSWITCH open source telephony platform
 
 %package codec-codec2
 Summary:        Codec2 Narrow Band Codec support for FreeSWITCH open source telephony platform
@@ -1413,7 +1405,7 @@ ASR_TTS_MODULES="asr_tts/mod_flite asr_tts/mod_pocketsphinx asr_tts/mod_tts_comm
 #						Codecs
 #
 ######################################################################################################################
-CODECS_MODULES="codecs/mod_amr codecs/mod_amrwb codecs/mod_bv codecs/mod_celt codecs/mod_codec2 codecs/mod_g723_1 \
+CODECS_MODULES="codecs/mod_amr codecs/mod_amrwb codecs/mod_bv codecs/mod_codec2 codecs/mod_g723_1 \
 		codecs/mod_g729 codecs/mod_h26x codecs/mod_ilbc codecs/mod_isac codecs/mod_mp4v codecs/mod_opus codecs/mod_silk \
 		codecs/mod_siren codecs/mod_theora codecs/mod_vp8"
 #
@@ -2063,9 +2055,6 @@ fi
 
 %files codec-bv
 %{MODINSTDIR}/mod_bv.so*
-
-%files codec-celt
-%{MODINSTDIR}/mod_celt.so*
 
 %files codec-codec2
 %{MODINSTDIR}/mod_codec2.so*
