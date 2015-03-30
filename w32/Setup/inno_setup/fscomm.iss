@@ -114,7 +114,6 @@ Source: {#FreeSWITCH_64bit}\mod\mod_sofia.dll; DestDir: {app}\mod; Flags: 64bit 
 Source: {#FreeSWITCH_64bit}\mod\mod_speex.dll; DestDir: {app}\mod; Flags: 64bit ignoreversion  onlyifdoesntexist; Check: Is64BitInstallMode
 Source: {#FreeSWITCH_64bit}\mod\mod_tone_stream.dll; DestDir: {app}\mod; Flags: 64bit ignoreversion  onlyifdoesntexist; Check: Is64BitInstallMode
 Source: {#FreeSWITCH_64bit}\mod\mod_voipcodecs.dll; DestDir: {app}\mod; Flags: 64bit ignoreversion  onlyifdoesntexist; Check: Is64BitInstallMode
-Source: {#FreeSWITCH_64bit}\mod\mod_celt.dll; DestDir: {app}\mod; Flags: 64bit ignoreversion  onlyifdoesntexist; Check: Is64BitInstallMode
 
 ; required FreeSWICTCH dlls for 64bit build
 Source: {#FreeSWITCH_64bit}\pthreadVC2.dll; DestDir: {app}; Flags: 64bit ignoreversion  onlyifdoesntexist; Check: Is64BitInstallMode

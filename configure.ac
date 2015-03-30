@@ -550,7 +550,6 @@ AC_SUBST(SYS_XMLRPC_CFLAGS)
 AC_SUBST(SYS_XMLRPC_LDFLAGS)
 AM_CONDITIONAL([SYSTEM_XMLRPCC],[test "${enable_xmlrpcc}" = "yes"])
 
-AC_ARG_ENABLE([system-lua],[AS_HELP_STRING([--enable-system-lua],[use system lib for lua])],,[enable_system_lua="no"])
 PKG_CHECK_MODULES([LUA],[lua5.2],[have_lua=yes],[have_lua=no])
 if test "${have_lua}" = "no" ; then
    PKG_CHECK_MODULES([LUA],[lua5.1],[have_lua=yes],[have_lua=no])
@@ -561,6 +560,8 @@ fi
 if test x"${LUA_LIBS}" = x"" ; then
    LUA_LIBS="-llua"
 fi
+#AC_ARG_ENABLE([system-lua],[AS_HELP_STRING([--enable-system-lua],[use system lib for lua])],,[enable_system_lua="no"])
+enable_system_lua=yes
 AM_CONDITIONAL([SYSTEM_LUA],[test "${enable_system_lua}" = "yes"])
 
 AC_ARG_ENABLE(srtp,
@@ -1247,6 +1248,9 @@ PKG_CHECK_MODULES([LDNS], [libldns >= 1.6.6],[
       AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_LDNS],[false])
     fi],[
     AM_CONDITIONAL([HAVE_LDNS],[true])])])
+PKG_CHECK_MODULES([SNDFILE], [sndfile >= 1.0.20],[
+  AM_CONDITIONAL([HAVE_SNDFILE],[true])],[
+  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_SNDFILE],[false])])
 
 PKG_CHECK_MODULES([VPX], [vpx >= 1.3.0],[
   AM_CONDITIONAL([HAVE_VPX],[true])],[
@@ -1279,6 +1283,42 @@ PKG_CHECK_MODULES([MAGICK], [ImageMagick >= 6.0.0],[
   AM_CONDITIONAL([HAVE_MAGICK],[true])],[
   AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_MAGICK],[false])])
 
+PKG_CHECK_MODULES([SILK], [silk >= 1.0.8],[
+  AM_CONDITIONAL([HAVE_SILK],[true])],[
+  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_SILK],[false])])
+
+PKG_CHECK_MODULES([BROADVOICE], [broadvoice >= 0.1.0],[
+  AM_CONDITIONAL([HAVE_BROADVOICE],[true])],[
+  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_BROADVOICE],[false])])
+
+PKG_CHECK_MODULES([ILBC], [ilbc >= 0.0.1],[
+  AM_CONDITIONAL([HAVE_ILBC],[true])],[
+  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_ILBC],[false])])
+
+PKG_CHECK_MODULES([G7221], [g722_1 >= 0.2.0],[
+  AM_CONDITIONAL([HAVE_G7221],[true])],[
+  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_G7221],[false])])
+
+PKG_CHECK_MODULES([CODEC2], [codec2 >= 0.2],[
+  AM_CONDITIONAL([HAVE_CODEC2],[true])],[
+  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_CODEC2],[false])])
+
+PKG_CHECK_MODULES([OPUS], [opus >= 1.1],[
+  AM_CONDITIONAL([HAVE_OPUS],[true])],[
+  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_OPUS],[false])])
+
+PKG_CHECK_MODULES([SOUNDTOUCH], [soundtouch >= 1.8.0],[
+  AM_CONDITIONAL([HAVE_SOUNDTOUCH],[true])],[
+  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_SOUNDTOUCH],[false])])
+
+PKG_CHECK_MODULES([FLITE], [flite >= 2.0.0],[
+  AM_CONDITIONAL([HAVE_FLITE],[true])],[
+  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_FLITE],[false])])
+
+PKG_CHECK_MODULES([MONGOC], [libmongoc-1.0 >= 1.0.8],[
+  AM_CONDITIONAL([HAVE_MONGOC],[true])],[
+  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_MONGOC],[false])])
+
 PKG_CHECK_MODULES([MEMCACHED], [libmemcached >= 0.31],[
   AM_CONDITIONAL([HAVE_MEMCACHED],[true])
   MEMCACHED_LIBS="${MEMCACHED_LIBS} -lpthread"
@@ -1310,6 +1350,34 @@ AS_IF([test "x$enable_core_libedit_support" != "xno"],[
     AS_IF([test "x$LIBEDIT_LIBS" = "x"], [
       AC_MSG_ERROR([You need to either install libedit-dev (>= 2.11) or configure with --disable-core-libedit-support])
       ])])])
+
+dnl ---------------------------------------------------------------------------
+dnl - OpenLDAP SDK
+dnl ---------------------------------------------------------------------------
+
+AC_CHECK_LIB(ldap, ldap_search, with_ldap=yes)
+dnl Check for other libraries we need to link with to get the main routines.
+test "$with_ldap" != "yes" && { AC_CHECK_LIB(ldap, ldap_open, [with_ldap=yes with_ldap_lber=yes], , -llber) }
+test "$with_ldap" != "yes" && { AC_CHECK_LIB(ldap, ldap_open, [with_ldap=yes with_ldap_lber=yes with_ldap_krb=yes], , -llber -lkrb) }
+test "$with_ldap" != "yes" && { AC_CHECK_LIB(ldap, ldap_open, [with_ldap=yes with_ldap_lber=yes with_ldap_krb=yes with_ldap_des=yes], , -llber -lkrb -ldes) }
+test "$with_ldap_lber" != "yes" && { AC_CHECK_LIB(lber, ber_pvt_opt_on, with_ldap_lber=yes) }
+
+if test "$with_ldap" = "yes"; then
+   if test "$with_ldap_des" = "yes" ; then
+      OPENLDAP_LIBS="${OPENLDAP_LIBS} -ldes"
+   fi
+   if test "$with_ldap_krb" = "yes" ; then
+      OPENLDAP_LIBS="${OPENLDAP_LIBS} -lkrb"
+   fi
+   if test "$with_ldap_lber" = "yes" ; then
+      OPENLDAP_LIBS="${OPENLDAP_LIBS} -llber"
+   fi
+   OPENLDAP_LIBS="${OPENLDAP_LIBS} -lldap"
+fi
+
+AM_CONDITIONAL([HAVE_LDAP],[test "x$with_ldap" == "xyes"])
+
+AC_SUBST(OPENLDAP_LIBS)
 
 AS_IF([test "x$enable_core_libedit_support" != "xno"], [
   # If making changes here, don't forget to run autoheader and
@@ -1588,7 +1656,6 @@ AC_CONFIG_FILES([Makefile
 		src/mod/applications/mod_skel/Makefile
 		src/mod/applications/mod_sms/Makefile
 		src/mod/applications/mod_snapshot/Makefile
-		src/mod/applications/mod_snipe_hunt/Makefile
 		src/mod/applications/mod_snom/Makefile
 		src/mod/applications/mod_sonar/Makefile
 		src/mod/applications/mod_soundtouch/Makefile
@@ -1610,7 +1677,6 @@ AC_CONFIG_FILES([Makefile
 		src/mod/codecs/mod_avcodec/Makefile
 		src/mod/codecs/mod_b64/Makefile
 		src/mod/codecs/mod_bv/Makefile
-		src/mod/codecs/mod_celt/Makefile
 		src/mod/codecs/mod_codec2/Makefile
 		src/mod/codecs/mod_com_g729/Makefile
 		src/mod/codecs/mod_dahdi_codec/Makefile
@@ -1787,19 +1853,13 @@ fi
 if test "$use_system_aprutil" != "yes"; then
    AC_CONFIG_SUBDIRS([libs/apr-util])
 fi
-AC_CONFIG_SUBDIRS([libs/ilbc])
 AC_CONFIG_SUBDIRS([libs/iksemel])
 AC_CONFIG_SUBDIRS([libs/libdingaling])
-AC_CONFIG_SUBDIRS([libs/libsndfile])
 AC_CONFIG_SUBDIRS([libs/sofia-sip])
 AC_CONFIG_SUBDIRS([libs/freetdm])
 AC_CONFIG_SUBDIRS([libs/unimrcp])
 AC_CONFIG_SUBDIRS([libs/tiff-4.0.2])
 AC_CONFIG_SUBDIRS([libs/spandsp])
-AC_CONFIG_SUBDIRS([libs/broadvoice])
-AC_CONFIG_SUBDIRS([libs/libg722_1])
-AC_CONFIG_SUBDIRS([libs/silk])
-AC_CONFIG_SUBDIRS([libs/libcodec2])
 if test "x${enable_zrtp}" = "xyes"; then
    AC_CONFIG_SUBDIRS([libs/libzrtp])
 fi

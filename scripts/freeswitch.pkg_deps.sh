@@ -1,6 +1,5 @@
 #!/bin/sh
 
-wget -c http://svn.freeswitch.org/downloads/libs/celt-0.6.1.tar.gz
 wget -c http://svn.freeswitch.org/downloads/libs/flite-1.3.99-latest.tar.gz
 wget -c http://svn.freeswitch.org/downloads/libs/lame-3.97.tar.gz
 wget -c http://svn.freeswitch.org/downloads/libs/libshout-2.2.2.tar.gz

@@ -83,7 +83,6 @@ Requires: freeswitch-application-fsv
 Requires: freeswitch-application-http-cache
 Requires: freeswitch-asrtts-flite
 Requires: freeswitch-asrtts-pocketsphinx
-Requires: freeswitch-codec-celt
 Requires: freeswitch-codec-h26x
 Requires: freeswitch-codec-ilbc
 Requires: freeswitch-codec-opus

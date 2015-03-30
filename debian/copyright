@@ -1363,10 +1363,6 @@ Files: src/mod/applications/mod_stress/FFTReal.h
 Copyright: 1999 Laurent de Soras
 License: unclear
 
-Files: libs/win32/celt/float_cast.h
-Copyright: 2001 Erik de Castro Lopo <erikd AT mega-nerd DOT com>
-License: MPL-1.1
-
 Files: src/mod/loggers/mod_syslog/mod_syslog.c
 Copyright: 2005-2010, James Martelletti <james@nerdc0re.com>
 License: MPL-1.1

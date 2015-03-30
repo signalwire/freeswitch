@@ -136,8 +136,7 @@ Build-Depends: libmemcached-dev
 Module: applications/mod_mongo
 Description: MongoDB
  This module provides an interface to MongoDB.
-Build-Depends: scons, libboost-dev, libboost-system-dev,
- libboost-date-time-dev, libboost-thread-dev, libboost-filesystem-dev
+Build-Depends: libmongoc-dev
 
 Module: applications/mod_mp4
 Section: contrib/comm
@@ -183,10 +182,6 @@ Module: applications/mod_rss
 Description: RSS browser
  This module provides an RSS browser.
 
-Module: applications/mod_skel
-Description: Framework demo module
- This module demonstrates how to build an add-on module.
-
 Module: applications/mod_sms
 Description: Astract SMS
  This module provides an abstract facility for interfacing with SMS
@@ -196,10 +191,6 @@ Module: applications/mod_snapshot
 Description: Snapshot
  This module can record a sliding window of audio and take snapshots
  to disk.
-
-Module: applications/mod_snipe_hunt
-Description: Snipe hunt
- This is a framework demo module.
 
 Module: applications/mod_snom
 Description: SNOM specific features
@@ -213,6 +204,7 @@ Description: Sonar ping timer
 Module: applications/mod_soundtouch
 Description: Soundtouch
  This module implements example media bugs.
+Build-Depends: libsoundtouch-dev
 
 Module: applications/mod_spandsp
 Description: SpanDSP
@@ -256,6 +248,7 @@ Description: mod_cepstral
 Module: asr_tts/mod_flite
 Description: mod_flite
  Adds mod_flite.
+Build-Depends: libflite-dev
 
 Module: asr_tts/mod_pocketsphinx
 Description: mod_pocketsphinx
@@ -286,14 +279,12 @@ Description: mod_b64
 Module: codecs/mod_bv
 Description: mod_bv
  Adds mod_bv.
-
-Module: codecs/mod_celt
-Description: mod_celt
- Adds mod_celt.
+Build-Depends: libbroadvoice-dev
 
 Module: codecs/mod_codec2
 Description: mod_codec2
  Adds mod_codec2.
+Build-Depends: libcodec2-dev
 
 Module: codecs/mod_com_g729
 Description: mod_com_g729
@@ -319,6 +310,7 @@ Module: codecs/mod_ilbc
 Section: non-free/comm
 Description: mod_ilbc
  Adds mod_ilbc.
+Build-Depends: libilbc-dev
 
 Module: codecs/mod_isac
 Description: mod_isac
@@ -331,6 +323,7 @@ Description: mod_mp4v
 Module: codecs/mod_opus
 Description: mod_opus
  Adds mod_opus.
+Build-Depends: libopus-dev
 
 Module: codecs/mod_sangoma_codec
 Description: mod_sangoma_codec
@@ -340,15 +333,13 @@ Build-Depends: libsngtc-dev
 Module: codecs/mod_silk
 Description: mod_silk
  Adds mod_silk.
+Build-Depends: libsilk-dev
 
 Module: codecs/mod_siren
 Section: non-free/comm
 Description: mod_siren
  Adds mod_siren.
-
-Module: codecs/mod_skel_codec
-Description: mod_skel_codec
- Adds mod_skel_codec.
+Build-Depends: libg7221-dev
 
 Module: codecs/mod_theora
 Description: mod_theora
@@ -377,6 +368,7 @@ Description: mod_dialplan_xml
 Module: directories/mod_ldap
 Description: mod_ldap
  Adds mod_ldap.
+Build-Depends: libldap2-dev
 
 ## mod/endpoints
 
@@ -550,7 +542,7 @@ Build-Depends: libogg-dev, libvorbis-dev
 Module: formats/mod_sndfile
 Description: mod_sndfile
  Adds mod_sndfile.
-Build-Depends: libflac-dev, libogg-dev, libvorbis-dev
+Build-Depends: libsndfile1-dev, libflac-dev, libogg-dev, libvorbis-dev
 
 Module: formats/mod_ssml
 Description: mod_ssml
@@ -728,7 +720,7 @@ Description: mod_xml_curl
 Module: xml_int/mod_xml_ldap
 Description: mod_xml_ldap
  Adds mod_xml_ldap.
-Build-Depends: libsasl2-dev
+Build-Depends: libldap2-dev, libsasl2-dev
 
 Module: xml_int/mod_xml_radius
 Description: mod_xml_radius
