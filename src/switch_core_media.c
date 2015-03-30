@@ -10218,6 +10218,39 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_video_frame(switch_cor
 		img = dup_img;
 	}
 
+
+	if (session->bugs) {
+		switch_media_bug_t *bp;
+		//switch_bool_t ok = SWITCH_TRUE;
+		int prune = 0;
+		switch_thread_rwlock_rdlock(session->bug_rwlock);
+		for (bp = session->bugs; bp; bp = bp->next) {
+			if (switch_channel_test_flag(session->channel, CF_PAUSE_BUGS) && !switch_core_media_bug_test_flag(bp, SMBF_NO_PAUSE)) {
+				continue;
+			}
+		
+			if (!switch_channel_test_flag(session->channel, CF_ANSWERED) && switch_core_media_bug_test_flag(bp, SMBF_ANSWER_REQ)) {
+				continue;
+			}
+		
+			if (switch_test_flag(bp, SMBF_PRUNE)) {
+				prune++;
+				continue;
+			}
+		
+			if (bp->ready && switch_test_flag(bp, SMBF_WRITE_VIDEO_STREAM)) {
+				switch_image_t *dimg = NULL;
+				switch_img_copy(img, &dimg);
+				switch_queue_push(bp->write_video_queue, dimg);
+				
+			}
+			switch_thread_rwlock_unlock(session->bug_rwlock);
+			if (prune) {
+				switch_core_media_bug_prune(session);
+			}
+		}
+	}
+
 	write_frame = *frame;
 	frame = &write_frame;
 	frame->img = img;
@@ -10381,7 +10414,15 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_video_frame(switch_core
 				continue;
 			}
 
-			if (bp->ready && switch_test_flag(bp, SMBF_READ_PING)) {
+			if (bp->ready && switch_test_flag(bp, SMBF_READ_VIDEO_STREAM)) {
+				if ((*frame)->img) {
+					switch_image_t *img = NULL;
+					switch_img_copy((*frame)->img, &img);
+					switch_queue_push(bp->read_video_queue, img);
+				}
+			}
+
+			if (bp->ready && switch_test_flag(bp, SMBF_READ_VIDEO_PING)) {
 				switch_mutex_lock(bp->read_mutex);
 				bp->ping_frame = *frame;
 				if (bp->callback) {

@@ -488,7 +488,8 @@ typedef enum {
 	SWITCH_ABC_TYPE_TAP_NATIVE_READ,
 	SWITCH_ABC_TYPE_TAP_NATIVE_WRITE,
 	SWITCH_ABC_TYPE_CLOSE,
-	SWITCH_ABC_TYPE_READ_VIDEO_PING
+	SWITCH_ABC_TYPE_READ_VIDEO_PING,
+	SWITCH_ABC_TYPE_STREAM_VIDEO_PING
 } switch_abc_type_t;
 
 typedef struct {
@@ -1723,7 +1724,10 @@ typedef enum {
 	SMBF_TAP_NATIVE_READ = (1 << 13),
 	SMBF_TAP_NATIVE_WRITE = (1 << 14),
 	SMBF_ONE_ONLY = (1 << 15),
-	SMBF_MASK = (1 << 16)
+	SMBF_MASK = (1 << 16),
+	SMBF_READ_VIDEO_PING = (1 << 17),
+	SMBF_READ_VIDEO_STREAM = (1 << 18),
+	SMBF_WRITE_VIDEO_STREAM = (1 << 19)
 } switch_media_bug_flag_enum_t;
 typedef uint32_t switch_media_bug_flag_t;
 
