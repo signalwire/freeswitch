@@ -2988,6 +2988,7 @@ static switch_status_t generate_on_dtmf(switch_core_session_t *session, const sw
 						switch_channel_event_set_data(channel, event);
 						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "DTMF-Digit", "%c", dtmf->digit);
 						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "DTMF-Duration", "%u", dtmf->duration);
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "DTMF-Source", "APP");
 						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "DTMF-Conversion", "native:inband");
 						if (switch_channel_test_flag(channel, CF_DIVERT_EVENTS)) {
 							switch_core_session_queue_event(session, &event);

@@ -631,9 +631,29 @@ SWITCH_DECLARE(switch_status_t) switch_channel_dequeue_dtmf(switch_channel_t *ch
 	switch_mutex_unlock(channel->dtmf_mutex);
 
 	if (!sensitive && status == SWITCH_STATUS_SUCCESS && switch_event_create(&event, SWITCH_EVENT_DTMF) == SWITCH_STATUS_SUCCESS) {
+		const char *dtmf_source_str = NULL;
 		switch_channel_event_set_data(channel, event);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "DTMF-Digit", "%c", dtmf->digit);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "DTMF-Duration", "%u", dtmf->duration);
+		switch(dtmf->source) {
+			case SWITCH_DTMF_INBAND_AUDIO:	/* From audio */
+				dtmf_source_str = "INBAND_AUDIO";
+				break;
+			case SWITCH_DTMF_RTP:			/* From RTP as a telephone event */
+				dtmf_source_str = "RTP";
+				break;
+			case SWITCH_DTMF_ENDPOINT:		/* From endpoint signaling */
+				dtmf_source_str = "ENDPOINT";
+				break;
+			case SWITCH_DTMF_APP:			/* Injected by application */
+				dtmf_source_str = "APP";
+				break;
+			case SWITCH_DTMF_UNKNOWN:		/* Unknown source */
+			default:
+				dtmf_source_str = "UNKNOWN";
+				break;
+		}
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "DTMF-Source", "%s", dtmf_source_str);
 		if (switch_channel_test_flag(channel, CF_DIVERT_EVENTS)) {
 			switch_core_session_queue_event(channel->session, &event);
 		} else {
