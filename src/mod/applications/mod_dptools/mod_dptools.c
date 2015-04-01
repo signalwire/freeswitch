@@ -5669,7 +5669,112 @@ SWITCH_STANDARD_API(page_api_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+/**
+ * Convert DTMF source to human readable string
+ */
+static const char *to_dtmf_source_string(switch_dtmf_source_t source)
+{
+	switch(source) {
+		case SWITCH_DTMF_ENDPOINT: return "SIP INFO";
+		case SWITCH_DTMF_INBAND_AUDIO: return "INBAND";
+		case SWITCH_DTMF_RTP: return "2833";
+		case SWITCH_DTMF_UNKNOWN: return "UNKNOWN";
+		case SWITCH_DTMF_APP: return "APP";
+	}
+	return "UNKNOWN";
+}
 
+struct deduplicate_dtmf_filter {
+	int only_rtp;
+	char last_dtmf;
+	switch_dtmf_source_t last_dtmf_source;
+};
+
+/**
+ * Filter incoming DTMF and ignore any duplicates
+ */
+static switch_status_t deduplicate_recv_dtmf_hook(switch_core_session_t *session, const switch_dtmf_t *dtmf, switch_dtmf_direction_t direction)
+{
+	switch_status_t status = SWITCH_STATUS_FALSE;
+	int only_rtp = 0;
+	struct deduplicate_dtmf_filter *filter = switch_channel_get_private(switch_core_session_get_channel(session), "deduplicate_dtmf_filter");
+
+	if (!filter) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Accept %s digit %c: deduplicate filter missing!\n", to_dtmf_source_string(dtmf->source), dtmf->digit);
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	/* remember current state as it might change */
+	only_rtp = filter->only_rtp;
+
+	/* RTP DTMF is preferred over all others- and if it's demonstrated to be available, inband / info detection is disabled */
+	if (only_rtp) {
+		switch (dtmf->source) {
+			case SWITCH_DTMF_ENDPOINT:
+				switch_channel_set_variable(switch_core_session_get_channel(session), "deduplicate_dtmf_seen_endpoint", "true");
+				break;
+			case SWITCH_DTMF_INBAND_AUDIO:
+				switch_channel_set_variable(switch_core_session_get_channel(session), "deduplicate_dtmf_seen_inband", "true");
+				break;
+			case SWITCH_DTMF_RTP:
+				switch_channel_set_variable(switch_core_session_get_channel(session), "deduplicate_dtmf_seen_rtp", "true");
+				/* pass through */
+			case SWITCH_DTMF_UNKNOWN:
+			case SWITCH_DTMF_APP:
+				/* always allow */
+				status = SWITCH_STATUS_SUCCESS;
+				break;
+		}
+	} else {
+		/* accept everything except duplicates until RTP digit is detected */
+		switch (dtmf->source) {
+			case SWITCH_DTMF_INBAND_AUDIO:
+				switch_channel_set_variable(switch_core_session_get_channel(session), "deduplicate_dtmf_seen_inband", "true");
+				break;
+			case SWITCH_DTMF_RTP:
+				switch_channel_set_variable(switch_core_session_get_channel(session), "deduplicate_dtmf_seen_rtp", "true");
+				/* change state to only allow RTP events */
+				filter->only_rtp = 1;
+
+				/* stop inband detector */
+				switch_ivr_broadcast(switch_core_session_get_uuid(session), "spandsp_stop_dtmf::", SMF_ECHO_ALEG);
+				break;
+			case SWITCH_DTMF_ENDPOINT:
+				switch_channel_set_variable(switch_core_session_get_channel(session), "deduplicate_dtmf_seen_endpoint", "true");
+				break;
+			case SWITCH_DTMF_UNKNOWN:
+			case SWITCH_DTMF_APP:
+				/* always allow */
+				status = SWITCH_STATUS_SUCCESS;
+				break;
+		}
+
+		/* make sure not a duplicate DTMF */
+		if (filter->last_dtmf_source == dtmf->source || filter->last_dtmf != dtmf->digit) {
+			status = SWITCH_STATUS_SUCCESS;
+		}
+		filter->last_dtmf = dtmf->digit;
+		filter->last_dtmf_source = dtmf->source;
+	}
+
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "(%s) %s %s digit %c\n",
+		(only_rtp) ? "ALLOW 2833" : "ALLOW ALL",
+		(status == SWITCH_STATUS_SUCCESS) ? "Accept" : "Ignore", to_dtmf_source_string(dtmf->source), dtmf->digit);
+
+	return status;
+}
+
+SWITCH_STANDARD_APP(deduplicate_dtmf_app_function)
+{
+	struct deduplicate_dtmf_filter *filter = switch_channel_get_private(switch_core_session_get_channel(session), "deduplicate_dtmf_filter");
+	if (!filter) {
+		filter = switch_core_session_alloc(session, sizeof(*filter));
+		filter->only_rtp = !zstr(data) && !strcmp("only_rtp", data);
+		filter->last_dtmf = 0;
+		switch_channel_set_private(switch_core_session_get_channel(session), "deduplicate_dtmf_filter", filter);
+		switch_core_event_hook_add_recv_dtmf(session, deduplicate_recv_dtmf_hook);
+	}
+}
 
 #define SPEAK_DESC "Speak text to a channel via the tts interface"
 #define DISPLACE_DESC "Displace audio from a file to the channels input"
@@ -5968,6 +6073,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	SWITCH_ADD_APP(app_interface, "limit_hash_execute", "Limit", LIMITHASHEXECUTE_DESC, limit_hash_execute_function, LIMITHASHEXECUTE_USAGE, SAF_SUPPORT_NOMEDIA);
 
 	SWITCH_ADD_APP(app_interface, "pickup", "Pickup", "Pickup a call", pickup_function, PICKUP_SYNTAX, SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_APP(app_interface, "deduplicate_dtmf", "Prevent duplicate inband + 2833 dtmf", "", deduplicate_dtmf_app_function, "[only_rtp]", SAF_SUPPORT_NOMEDIA);
 
 
 	SWITCH_ADD_DIALPLAN(dp_interface, "inline", inline_dialplan_hunt);
