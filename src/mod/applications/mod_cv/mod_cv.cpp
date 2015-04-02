@@ -483,6 +483,8 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
                     }
 
                     switch_channel_execute_on(channel, "execute_on_cv_detect_off_primary");
+                    reset_stats(&context->nestDetected);
+                    reset_stats(&context->detected);
                 }
 
                 context->detect_event = 0;
@@ -525,6 +527,7 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
                             switch_event_fire(&event);
                         }
                         switch_channel_execute_on(channel, "execute_on_cv_detect_off_nested");
+                        reset_stats(&context->nestDetected);
                     }
                     
                     context->nest_detect_event = 0;
