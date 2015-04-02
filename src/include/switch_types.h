@@ -571,9 +571,9 @@ typedef enum {
 	SWITCH_XML_SECTION_DIALPLAN = (1 << 2),
 	SWITCH_XML_SECTION_LANGUAGES = (1 << 3),
 	SWITCH_XML_SECTION_CHATPLAN = (1 << 4),
-
+	SWITCH_XML_SECTION_CHANNELS = (1 << 5),
 	/* Nothing after this line */
-	SWITCH_XML_SECTION_MAX = (1 << 4)
+	SWITCH_XML_SECTION_MAX = (1 << 5)
 } switch_xml_section_enum_t;
 typedef uint32_t switch_xml_section_t;
 
