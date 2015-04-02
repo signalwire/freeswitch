@@ -490,7 +490,7 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
             }
 
             if (context->nestedCascade && context->detected.simo_count > 20) {
-                printf("WTF %d %d %f %d\n", context->nestDetected.itr, context->nestDetected.last_score, context->nestDetected.avg, context->nestDetected.above_avg_simo_count);
+                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "CHECKING: %d %d %f %d\n", context->nestDetected.itr, context->nestDetected.last_score, context->nestDetected.avg, context->nestDetected.above_avg_simo_count);
 
                 if (context->nestDetected.simo_count > 20 && context->nestDetected.last_score > context->nestDetected.avg && 
                     context->nestDetected.above_avg_simo_count > 5) {
