@@ -301,6 +301,8 @@ SWITCH_DECLARE(switch_frame_t *) switch_core_media_bug_get_native_read_frame(swi
 SWITCH_DECLARE(switch_frame_t *) switch_core_media_bug_get_native_write_frame(switch_media_bug_t *bug);
 
 
+SWITCH_DECLARE(switch_frame_t *) switch_core_media_bug_get_video_ping_frame(switch_media_bug_t *bug);
+
 /*!
   \brief Set a return replace frame
   \param bug the bug to set the frame on
