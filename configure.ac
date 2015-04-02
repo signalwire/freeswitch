@@ -1238,8 +1238,13 @@ PKG_CHECK_MODULES([VPX], [vpx >= 1.3.0],[
     fi],[
     AM_CONDITIONAL([HAVE_VPX],[true])])])
 
-#PKG_CHECK_MODULES([AVCODEC], [avcodec >= 53.35.0])
-#PKG_CHECK_MODULES([AVFORMAT], [avformat >= 53.21.1])
+PKG_CHECK_MODULES([AVCODEC], [libavcodec >= 53.35.0],[
+  AM_CONDITIONAL([HAVE_AVCODEC],[true])],[
+  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_AVCODEC],[false])])
+
+PKG_CHECK_MODULES([AVFORMAT], [libavformat >= 53.21.1],[
+  AM_CONDITIONAL([HAVE_AVFORMAT],[true])],[
+  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_AVFORMAT],[false])])
 
 PKG_CHECK_MODULES([MEMCACHED], [libmemcached >= 0.31],[
   AM_CONDITIONAL([HAVE_MEMCACHED],[true])
@@ -1568,6 +1573,7 @@ AC_CONFIG_FILES([Makefile
 		src/mod/asr_tts/mod_unimrcp/Makefile
 		src/mod/codecs/mod_amr/Makefile
 		src/mod/codecs/mod_amrwb/Makefile
+		src/mod/codecs/mod_avcodec/Makefile
 		src/mod/codecs/mod_b64/Makefile
 		src/mod/codecs/mod_bv/Makefile
 		src/mod/codecs/mod_celt/Makefile
@@ -1625,6 +1631,7 @@ AC_CONFIG_FILES([Makefile
 		src/mod/event_handlers/mod_rayo/Makefile
 		src/mod/event_handlers/mod_snmp/Makefile
 		src/mod/event_handlers/mod_event_zmq/Makefile
+		src/mod/formats/mod_avformat/Makefile
 		src/mod/formats/mod_local_stream/Makefile
 		src/mod/formats/mod_native_file/Makefile
 		src/mod/formats/mod_shell_stream/Makefile
