@@ -10423,7 +10423,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_video_frame(switch_core
 			}
 
 			if (bp->ready && switch_test_flag(bp, SMBF_READ_VIDEO_PING)) {
-				switch_mutex_lock(bp->read_mutex);
 				bp->ping_frame = *frame;
 				if (bp->callback) {
 					if (bp->callback(bp, bp->user_data, SWITCH_ABC_TYPE_READ_VIDEO_PING) == SWITCH_FALSE
@@ -10432,7 +10431,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_video_frame(switch_core
 					}
 				}
 				bp->ping_frame = NULL;
-				switch_mutex_unlock(bp->read_mutex);
 			}
 
 			if (ok == SWITCH_FALSE) {

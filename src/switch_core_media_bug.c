@@ -88,6 +88,11 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_media_bug_get_session(switch
 	return bug->session;
 }
 
+SWITCH_DECLARE(switch_frame_t *) switch_core_media_bug_get_video_ping_frame(switch_media_bug_t *bug)
+{
+	return bug->ping_frame;
+}
+
 SWITCH_DECLARE(switch_frame_t *) switch_core_media_bug_get_write_replace_frame(switch_media_bug_t *bug)
 {
 	return bug->write_replace_frame_in;
