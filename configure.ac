@@ -1205,7 +1205,9 @@ PKG_CHECK_MODULES([LIBPNG], [libpng >= 1.6.16],[
         PKG_CHECK_MODULES([LIBPNG], [libpng >= 1.2.49],[
           AM_CONDITIONAL([HAVE_PNG],[true])],[
           AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_PNG],[false])])])])
-PKG_CHECK_MODULES([FREETYPE], [freetype2 >= 2.4.9])
+PKG_CHECK_MODULES([FREETYPE], [freetype2 >= 2.4.9],[
+  AM_CONDITIONAL([HAVE_FREETYPE],[true])],[
+  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_FREETYPE],[false])])
 PKG_CHECK_MODULES([SQLITE], [sqlite3 >= 3.6.20])
 PKG_CHECK_MODULES([CURL], [libcurl >= 7.19])
 PKG_CHECK_MODULES([PCRE], [libpcre >= 7.8])

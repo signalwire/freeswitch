@@ -419,15 +419,19 @@ SWITCH_DECLARE(void) switch_color_set_yuv(switch_yuv_color_t *color, const char 
 	switch_color_rgb2yuv(&rgb, color);
 }
 
+#if SWITCH_HAVE_FREETYPE
 #include <ft2build.h>
 #include FT_FREETYPE_H
 #include FT_GLYPH_H
+#endif
 
 #define MAX_GRADIENT 8
 
 struct switch_img_txt_handle_s {
+#if SWITCH_HAVE_FREETYPE
 	FT_Library library;
 	FT_Face face;
+#endif
 	char *font_family;
 	double angle;
 	uint16_t font_size;
@@ -470,9 +474,13 @@ SWITCH_DECLARE(switch_status_t) switch_img_txt_handle_create(switch_img_txt_hand
 
 	new_handle = switch_core_alloc(pool, sizeof(*new_handle));
 
+#if SWITCH_HAVE_FREETYPE
 	if (FT_Init_FreeType(&new_handle->library)) {
 		return SWITCH_STATUS_FALSE;
 	}
+#else
+	return SWITCH_STATUS_FALSE;
+#endif
 
 	new_handle->pool = pool;
 	new_handle->free_pool = free_pool;
@@ -498,11 +506,12 @@ SWITCH_DECLARE(void) switch_img_txt_handle_destroy(switch_img_txt_handle_t **han
 
 	*handleP = NULL;
 
+#if SWITCH_HAVE_FREETYPE
 	if (old_handle->library) {
 		FT_Done_FreeType(old_handle->library);
 		old_handle->library = NULL;
 	}
-
+#endif
 	pool = old_handle->pool;
 
 	if (old_handle->free_pool) {
@@ -513,6 +522,7 @@ SWITCH_DECLARE(void) switch_img_txt_handle_destroy(switch_img_txt_handle_t **han
 
 }
 
+#if SWITCH_HAVE_FREETYPE
 static void draw_bitmap(switch_img_txt_handle_t *handle, switch_image_t *img, FT_Bitmap* bitmap, FT_Int x, FT_Int y)
 {
 	FT_Int  i, j, p, q;
@@ -569,12 +579,14 @@ static void draw_bitmap(switch_img_txt_handle_t *handle, switch_image_t *img, FT
 		}
 	}
 }
+#endif
 
 
 SWITCH_DECLARE(switch_status_t) switch_img_txt_handle_render(switch_img_txt_handle_t *handle, switch_image_t *img,
 															 int x, int y, const char *text,
 															 const char *font_family, const char *font_color, const char *bgcolor, uint16_t font_size, double angle)
 {
+#if SWITCH_HAVE_FREETYPE
 	FT_GlyphSlot  slot;
 	FT_Matrix     matrix; /* transformation matrix */
 	FT_Vector     pen;    /* untransformed origin  */
@@ -667,6 +679,9 @@ SWITCH_DECLARE(switch_status_t) switch_img_txt_handle_render(switch_img_txt_hand
 	FT_Done_Face(face);
 
 	return SWITCH_STATUS_SUCCESS;
+#else
+	return SWITCH_STATUS_FALSE;
+#endif
 }
 
 
