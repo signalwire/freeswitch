@@ -1772,6 +1772,7 @@ AC_CONFIG_FILES([Makefile
 		src/mod/event_handlers/mod_event_test/Makefile
 		src/mod/event_handlers/mod_format_cdr/Makefile
 		src/mod/event_handlers/mod_json_cdr/Makefile
+		src/mod/event_handlers/mod_kazoo/Makefile
 		src/mod/event_handlers/mod_radius_cdr/Makefile
 		src/mod/event_handlers/mod_odbc_cdr/Makefile
 		src/mod/event_handlers/mod_rayo/Makefile
