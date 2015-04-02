@@ -1,0 +1,7 @@
+LOCAL_LDFLAGS=-lopencv_core -lopencv_objdetect -lopencv_imgproc -lopencv_highgui -lopencv_legacy -lyuv
+LOCAL_CFLAGS=-I/usr/include/opencv 
+
+
+BASE=../../../..
+include $(BASE)/build/modmake.rules
+

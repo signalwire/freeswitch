@@ -51,6 +51,7 @@ applications/mod_valet_parking
 applications/mod_voicemail
 #applications/mod_voicemail_ivr
 #applications/mod_random
+#applications/mod_cv
 #asr_tts/mod_cepstral
 #asr_tts/mod_flite
 #asr_tts/mod_pocketsphinx
