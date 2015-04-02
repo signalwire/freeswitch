@@ -1250,6 +1250,10 @@ PKG_CHECK_MODULES([VLC], [libvlc >= 2.1.0],[
   AM_CONDITIONAL([HAVE_VLC],[true])],[
   AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_VLC],[false])])
 
+PKG_CHECK_MODULES([OPENCV], [opencv >= 2.4.9.1],[
+  AM_CONDITIONAL([HAVE_OPENCV],[true])],[
+  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_OPENCV],[false])])
+
 PKG_CHECK_MODULES([MEMCACHED], [libmemcached >= 0.31],[
   AM_CONDITIONAL([HAVE_MEMCACHED],[true])
   MEMCACHED_LIBS="${MEMCACHED_LIBS} -lpthread"
@@ -1525,6 +1529,7 @@ AC_CONFIG_FILES([Makefile
 		src/mod/applications/mod_commands/Makefile
 		src/mod/applications/mod_conference/Makefile
 		src/mod/applications/mod_curl/Makefile
+		src/mod/applications/mod_cv/Makefile
 		src/mod/applications/mod_db/Makefile
 		src/mod/applications/mod_directory/Makefile
 		src/mod/applications/mod_distributor/Makefile
