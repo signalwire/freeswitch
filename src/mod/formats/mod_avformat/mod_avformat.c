@@ -1118,13 +1118,16 @@ static switch_status_t av_file_open(switch_file_handle_t *handle, const char *pa
 	char file[1024];
 
 	switch_set_string(file, path);
-
+	
+	if (switch_test_flag(handle, SWITCH_FILE_FLAG_READ)) {
+		return SWITCH_STATUS_FALSE;
+	}
+	
 	if ((ext = strrchr((char *)path, '.')) == 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Format\n");
 		return SWITCH_STATUS_GENERR;
 	} else if (handle->stream_name && (!strcasecmp(handle->stream_name, "rtmp") || !strcasecmp(handle->stream_name, "youtube"))) {
 		format = "flv";
-		handle->samplerate = 44100;
 		switch_snprintf(file, sizeof(file), "rtmp://%s", path);
 	}
 
@@ -1158,7 +1161,7 @@ static switch_status_t av_file_open(switch_file_handle_t *handle, const char *pa
 		flags |= SWITCH_FOPEN_READ;
 	}
 
-	switch_buffer_create_dynamic(&context->audio_buffer, 512, 512, 1024000);
+	switch_buffer_create_dynamic(&context->audio_buffer, 512, 512, 0);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "sample rate: %d, channels: %d\n", handle->samplerate, handle->channels);
 
@@ -1183,6 +1186,14 @@ static switch_status_t av_file_open(switch_file_handle_t *handle, const char *pa
 		avformat_network_init();
 	}
 
+	if (handle->mm.samplerate) {
+		handle->mm.samplerate = handle->samplerate;
+	}
+
+	if (!handle->mm.ab) {
+		handle->mm.ab = 128;
+	}
+
 	if (fmt->video_codec != AV_CODEC_ID_NONE) {
 		const AVCodecDescriptor *desc;
 
@@ -1194,6 +1205,7 @@ static switch_status_t av_file_open(switch_file_handle_t *handle, const char *pa
 			if (fmt->audio_codec != AV_CODEC_ID_AAC) {
 				fmt->audio_codec = AV_CODEC_ID_AAC;  // force AAC
 			}
+
 
 
 			handle->mm.samplerate = 44100;
@@ -1356,7 +1368,7 @@ static switch_status_t av_file_write(switch_file_handle_t *handle, void *data, s
 	//inuse = switch_buffer_inuse(context->audio_buffer);
 	//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "inuse: %d samples: %d bytes: %d\n", inuse, context->audio_st.frame->nb_samples, bytes);
 
-	while ((inuse = switch_buffer_inuse(context->audio_buffer)) >= bytes) {
+	while ((inuse = switch_buffer_inuse(context->audio_buffer)) >= bytes * 5) {
 		AVPacket pkt = { 0 };
 		int got_packet = 0;
 		int ret;
@@ -1407,6 +1419,8 @@ static switch_status_t av_file_write(switch_file_handle_t *handle, void *data, s
 				switch_goto_status(SWITCH_STATUS_FALSE, end);
 			}
 		}
+
+		break;
 	}
 
 
