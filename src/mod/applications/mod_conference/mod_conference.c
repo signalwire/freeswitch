@@ -446,6 +446,7 @@ typedef struct conference_record {
 	switch_memory_pool_t *pool;
 	switch_bool_t autorec;
 	struct conference_record *next;
+	switch_file_handle_t fh;
 } conference_record_t;
 
 typedef enum {
@@ -573,13 +574,13 @@ typedef struct conference_obj {
 	struct vid_helper mh;
 	conference_record_t *rec_node_head;
 	int last_speech_channels;
-	switch_file_handle_t *record_fh;
 	switch_thread_t *video_muxing_thread;
 	mcu_canvas_t *canvas;
 	switch_hash_t *layout_hash;
 	switch_hash_t *layout_group_hash;
 	struct conf_fps video_fps;
 	int playing_video_file;
+	int recording_members;
 } conference_obj_t;
 
 /* Relationship with another member */
@@ -1669,6 +1670,29 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_write_thread_run(switch_
 	return NULL;
 }
 
+static void check_video_recording(conference_obj_t *conference, switch_frame_t *frame)
+{
+	conference_member_t *imember;
+	
+	if (!conference->recording_members) {
+		return;
+	}
+
+	switch_mutex_lock(conference->member_mutex);
+		
+	for (imember = conference->members; imember; imember = imember->next) {
+		if (!imember->rec) {
+			continue;
+		}			
+		if (switch_test_flag((&imember->rec->fh), SWITCH_FILE_OPEN) && switch_core_file_has_video(&imember->rec->fh)) {
+			switch_core_file_write_video(&imember->rec->fh, frame);
+		}
+	}
+
+	switch_mutex_unlock(conference->member_mutex);
+
+}
+
 static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thread, void *obj)
 {
 	conference_obj_t *conference = (conference_obj_t *) obj;
@@ -1959,10 +1983,8 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 			switch_img_free(&file_img);
 		}
 
-		if (conference->record_fh) {
-			write_frame.img = write_img;
-			switch_core_file_write_video(conference->record_fh, &write_frame);
-		}
+		write_frame.img = write_img;
+		check_video_recording(conference, &write_frame);
 
 		if (min_members && switch_test_flag(conference, CFLAG_MINIMIZE_VIDEO_ENCODING)) {
 			for (i = 0; write_codecs[i] && switch_core_codec_ready(&write_codecs[i]->codec) && i < MAX_MUX_CODECS; i++) {
@@ -2255,9 +2277,11 @@ static void conference_cdr_del(conference_member_t *member)
 	if (member->channel) {
 		switch_channel_get_variables(member->channel, &member->cdr_node->var_event);
 	}
-	member->cdr_node->leave_time = switch_epoch_time_now(NULL);
-	member->cdr_node->flags = member->flags;
-	member->cdr_node->member = NULL;
+	if (member->cdr_node) {
+		member->cdr_node->leave_time = switch_epoch_time_now(NULL);
+		member->cdr_node->flags = member->flags;
+		member->cdr_node->member = NULL;
+	}
 }
 
 static void conference_cdr_add(conference_member_t *member)
@@ -3760,6 +3784,9 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 	lock_member(member);
 	switch_mutex_lock(conference->member_mutex);
 
+	if (member->rec) {
+		conference->recording_members++;
+	}
 
 	member->join_time = switch_epoch_time_now(NULL);
 	member->conference = conference;
@@ -4311,6 +4338,10 @@ static switch_status_t conference_del_member(conference_obj_t *conference, confe
 	lock_member(member);
 	switch_clear_flag(member, MFLAG_INTREE);
 
+	if (member->rec) {
+		conference->recording_members--;
+	}
+	
 	for (imember = conference->members; imember; imember = imember->next) {
 		if (imember == member) {
 			if (last) {
@@ -4538,9 +4569,7 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
 	if (member) {
 		if (member->id == member->conference->video_floor_holder) {
 			conference_write_video_frame(member->conference, member, frame);
-			if (frame->img && member->conference->record_fh) {
-				switch_core_file_write_video(member->conference->record_fh, frame);
-			}
+			check_video_recording(member->conference, frame);
 		} else if (!switch_test_flag(member->conference, CFLAG_VID_FLOOR_LOCK) && member->id == member->conference->last_video_floor_holder) {
 			conference_member_t *fmember;
 
@@ -6630,7 +6659,6 @@ static void conference_loop_output(conference_member_t *member)
 static void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *thread, void *obj)
 {
 	int16_t *data_buf;
-	switch_file_handle_t fh = { 0 };
 	conference_member_t smember = { 0 }, *member;
 	conference_record_t *rp, *last = NULL, *rec = (conference_record_t *) obj;
 	conference_obj_t *conference = rec->conference;
@@ -6666,13 +6694,14 @@ static void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *th
 
 	member->conference = conference;
 	member->native_rate = conference->rate;
+	member->rec = rec;
 	member->rec_path = rec->path;
 	member->rec_time = switch_epoch_time_now(NULL);
-	fh.channels = 1;
-	fh.samplerate = conference->rate;
+	member->rec->fh.channels = 1;
+	member->rec->fh.samplerate = conference->rate;
 	member->id = next_member_id();
 	member->pool = rec->pool;
-	member->rec = rec;
+
 	member->frame_size = SWITCH_RECOMMENDED_BUFFER_SIZE;
 	member->frame = switch_core_alloc(member->pool, member->frame_size);
 	member->mux_frame = switch_core_alloc(member->pool, member->frame_size);
@@ -6698,16 +6727,11 @@ static void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *th
 		goto end;
 	}
 
-	if (conference_add_member(conference, member) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Joining Conference\n");
-		goto end;
-	}
-
 	if (conference->canvas) {
 		conference->canvas->send_keyframe = 1;
 	}
 
-	fh.pre_buffer_datalen = SWITCH_DEFAULT_FILE_BUFFER_LEN;
+	member->rec->fh.pre_buffer_datalen = SWITCH_DEFAULT_FILE_BUFFER_LEN;
 
 	flags = SWITCH_FILE_FLAG_WRITE | SWITCH_FILE_DATA_SHORT;
 
@@ -6725,7 +6749,7 @@ static void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *th
 		}
 	}
 
-	if (switch_core_file_open(&fh, rec->path, (uint8_t) conference->channels, conference->rate, flags, rec->pool) != SWITCH_STATUS_SUCCESS) {
+	if (switch_core_file_open(&member->rec->fh, rec->path, (uint8_t) conference->channels, conference->rate, flags, rec->pool) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening File [%s]\n", rec->path);
 
 		if (test_eflag(conference, EFLAG_RECORD) &&
@@ -6741,7 +6765,6 @@ static void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *th
 	}
 
 	switch_mutex_lock(conference->mutex);
-	if (!conference->record_fh) conference->record_fh = &fh;
 	if (conference->video_floor_holder) {
 		conference_member_t *member;
 		if ((member = conference_member_get(conference, conference->video_floor_holder))) {
@@ -6761,11 +6784,11 @@ static void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *th
 	}
 
 	if ((vval = switch_mprintf("Conference %s", conference->name))) {
-		switch_core_file_set_string(&fh, SWITCH_AUDIO_COL_STR_TITLE, vval);
+		switch_core_file_set_string(&member->rec->fh, SWITCH_AUDIO_COL_STR_TITLE, vval);
 		switch_safe_free(vval);
 	}
 
-	switch_core_file_set_string(&fh, SWITCH_AUDIO_COL_STR_ARTIST, "FreeSWITCH mod_conference Software Conference Module");
+	switch_core_file_set_string(&member->rec->fh, SWITCH_AUDIO_COL_STR_ARTIST, "FreeSWITCH mod_conference Software Conference Module");
 
 	if (test_eflag(conference, EFLAG_RECORD) &&
 			switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
@@ -6773,6 +6796,11 @@ static void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *th
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "start-recording");
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Path", rec->path);
 		switch_event_fire(&event);
+	}
+
+	if (conference_add_member(conference, member) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Joining Conference\n");
+		goto end;
 	}
 
 	while (switch_test_flag(member, MFLAG_RUNNING) && switch_test_flag(conference, CFLAG_RUNNING) && (conference->count + conference->count_ghosts)) {
@@ -6793,7 +6821,7 @@ static void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *th
 
 	again:
 
-		if (switch_test_flag((&fh), SWITCH_FILE_PAUSE)) {
+		if (switch_test_flag((&member->rec->fh), SWITCH_FILE_PAUSE)) {
 			switch_set_flag_locked(member, MFLAG_FLUSH_BUFFER);
 			goto loop;
 		}
@@ -6821,7 +6849,7 @@ static void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *th
 		}
 
 		if (!switch_test_flag(member, MFLAG_PAUSE_RECORDING)) {
-			if (!len || switch_core_file_write(&fh, data_buf, &len) != SWITCH_STATUS_SUCCESS) {
+			if (!len || switch_core_file_write(&member->rec->fh, data_buf, &len) != SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Write Failed\n");
 				switch_clear_flag_locked(member, MFLAG_RUNNING);
 			}
@@ -6841,7 +6869,7 @@ static void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *th
 		
 		if (rlen > 0) {
 			len = (switch_size_t) rlen / sizeof(int16_t)/ conference->channels;
-			switch_core_file_write(&fh, data_buf, &len); 
+			switch_core_file_write(&member->rec->fh, data_buf, &len); 
 		} else {
 			break;
 		}
@@ -6858,20 +6886,19 @@ static void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *th
 	switch_buffer_destroy(&member->audio_buffer);
 	switch_buffer_destroy(&member->mux_buffer);
 	switch_clear_flag_locked(member, MFLAG_RUNNING);
-	if (switch_test_flag((&fh), SWITCH_FILE_OPEN)) {
+	if (switch_test_flag((&member->rec->fh), SWITCH_FILE_OPEN)) {
 		switch_mutex_lock(conference->mutex);
-		conference->record_fh = NULL;
 		switch_mutex_unlock(conference->mutex);
-		switch_core_file_close(&fh);
+		switch_core_file_close(&member->rec->fh);
 	}
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Recording of %s Stopped\n", rec->path);
 	if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_add_event_data(conference, event);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "stop-recording");
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Path", rec->path);
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Samples-Out", "%ld", (long) fh.samples_out);  
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Samplerate", "%ld", (long) fh.samplerate);  
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Milliseconds-Elapsed", "%ld", (long) fh.samples_out / (fh.samplerate / 1000));  
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Samples-Out", "%ld", (long) member->rec->fh.samples_out);  
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Samplerate", "%ld", (long) member->rec->fh.samplerate);  
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Milliseconds-Elapsed", "%ld", (long) member->rec->fh.samples_out / (member->rec->fh.samplerate / 1000));  
 		switch_event_fire(&event);
 	}
 
