@@ -1227,6 +1227,10 @@ PKG_CHECK_MODULES([MEMCACHED], [libmemcached >= 0.31],[
   AM_CONDITIONAL([HAVE_MEMCACHED],[false])
 ])
 
+PKG_CHECK_MODULES([AMQP], [librabbitmq >= 0.5.2],[
+  AM_CONDITIONAL([HAVE_AMQP],[true])],[
+  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_AMQP],[false])])
+
 AC_ARG_ENABLE(core-libedit-support,     
   [AS_HELP_STRING([--disable-core-libedit-support], [Compile without libedit Support])])
 
@@ -1572,6 +1576,7 @@ AC_CONFIG_FILES([Makefile
 		src/mod/endpoints/mod_unicall/Makefile
 		src/mod/endpoints/mod_rtc/Makefile
 		src/mod/endpoints/mod_verto/Makefile
+		src/mod/event_handlers/mod_amqp/Makefile
 		src/mod/event_handlers/mod_cdr_csv/Makefile
 		src/mod/event_handlers/mod_cdr_mongodb/Makefile
 		src/mod/event_handlers/mod_cdr_pg_csv/Makefile
