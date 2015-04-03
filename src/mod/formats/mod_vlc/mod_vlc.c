@@ -119,7 +119,7 @@ struct vlc_video_context {
 	switch_channel_t *channel;
 	switch_frame_t *aud_frame;
 	switch_frame_t *vid_frame;
-	uint8_t video_packet[SWITCH_RECOMMENDED_BUFFER_SIZE];
+	uint8_t video_packet[SWITCH_RTP_MAX_BUF_LEN];
 	void *raw_yuyv_data;
 	switch_image_t *img;
 	switch_payload_t pt;
@@ -277,19 +277,19 @@ static void vlc_media_av_state_callback(const libvlc_event_t * event, void * dat
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Got a libvlc_MediaStateChanged callback. New state: %d\n", new_state);
-	
-	if (switch_mutex_lock(acontext->cond_mutex) == SWITCH_STATUS_SUCCESS) {
-		switch_thread_cond_signal(acontext->cond);
-		switch_mutex_unlock(acontext->cond_mutex);
-	}
 
-	if ((new_state == 6 || new_state == 5) && vcontext->playing) {
+	if ((new_state == 6 || new_state == 5 || new_state == 7)) {
 		vcontext->playing = 0;
 		vcontext->err = 1;
 		switch_queue_push(vcontext->video_queue, NULL);
 	}
 
-	if (switch_mutex_lock(vcontext->cond_mutex) == SWITCH_STATUS_SUCCESS) {
+	if (switch_mutex_trylock(acontext->cond_mutex) == SWITCH_STATUS_SUCCESS) {
+		switch_thread_cond_signal(acontext->cond);
+		switch_mutex_unlock(acontext->cond_mutex);
+	}
+
+	if (switch_mutex_trylock(vcontext->cond_mutex) == SWITCH_STATUS_SUCCESS) {
 		switch_thread_cond_signal(vcontext->cond);
 		switch_mutex_unlock(vcontext->cond_mutex);
 	}
@@ -750,8 +750,6 @@ static switch_status_t vlc_file_av_open(switch_file_handle_t *handle, const char
 	libvlc_video_set_format_callbacks(vcontext->mp, video_format_setup_callback, video_format_clean_callback);
 	libvlc_video_set_callbacks(vcontext->mp, vlc_video_lock_callback, vlc_video_av_unlock_callback, vlc_video_display_callback, vcontext);
 
-	libvlc_media_player_play(vcontext->mp);
-
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -776,7 +774,7 @@ static switch_status_t vlc_file_open(switch_file_handle_t *handle, const char *p
 	if (switch_test_flag(handle, SWITCH_FILE_FLAG_VIDEO) && switch_test_flag(handle, SWITCH_FILE_FLAG_WRITE)) {
 		if ((ext = strrchr(path, '.')) && !strcasecmp(ext, ".mp4")) {
 			realpath = path;
-			path = switch_core_sprintf(context->pool, "#transcode{vcodec=h264,acodec=mp3}:std{access=file,mux=mp4,dst=%s}", path);
+			path = switch_core_sprintf(context->pool, "#transcode{vcodec=h264,acodec=aac}:std{access=file,mux=mp4,dst=%s}", path);
 		} else if (handle->stream_name && (!strcasecmp(handle->stream_name, "rtmp") || !strcasecmp(handle->stream_name, "youtube"))) {
 
 			handle->mm.samplerate = 44100;
@@ -976,6 +974,10 @@ static switch_status_t vlc_file_av_read(switch_file_handle_t *handle, void *data
 		return SWITCH_STATUS_GENERR;
 	}
 
+	if (!vcontext->playing) {
+		libvlc_media_player_play(vcontext->mp);
+	}
+
 	status = libvlc_media_get_state(vcontext->m);
 	
 	if (status == libvlc_Error) {
@@ -1020,7 +1022,7 @@ static switch_status_t vlc_file_av_read(switch_file_handle_t *handle, void *data
 				if (vcontext && vcontext->video_queue) {
 					switch_queue_push(vcontext->video_queue, NULL);
 				}
-				if (switch_mutex_lock(vcontext->cond_mutex) == SWITCH_STATUS_SUCCESS) {
+				if (switch_mutex_trylock(vcontext->cond_mutex) == SWITCH_STATUS_SUCCESS) {
 					switch_thread_cond_signal(vcontext->cond);
 					switch_mutex_unlock(vcontext->cond_mutex);
 				}
@@ -1301,7 +1303,7 @@ static switch_status_t vlc_file_av_close(switch_file_handle_t *handle)
 			switch_mutex_unlock(acontext->cond_mutex);
 		}
 
-		while(switch_buffer_inuse(vcontext->audio_buffer) || switch_queue_size(vcontext->video_queue)) {
+		while((vcontext->audio_buffer && switch_buffer_inuse(vcontext->audio_buffer)) || switch_queue_size(vcontext->video_queue)) {
 			libvlc_state_t status = libvlc_media_get_state(vcontext->m);
 			
 			if (status == libvlc_Ended || status == libvlc_Error || status == libvlc_Stopped ) {
@@ -1325,9 +1327,11 @@ static switch_status_t vlc_file_av_close(switch_file_handle_t *handle)
 
 	if (vcontext->timer.interval) switch_core_timer_destroy(&vcontext->timer);
 
+	switch_mutex_lock(vcontext->audio_mutex);
 	if (vcontext->audio_buffer) {
 		switch_buffer_destroy(&vcontext->audio_buffer);
 	}
+	switch_mutex_unlock(vcontext->audio_mutex);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -1346,7 +1350,11 @@ static switch_status_t vlc_file_close(switch_file_handle_t *handle)
 
 	libvlc_media_player_stop(context->mp);
 
-	switch_buffer_zero(context->audio_buffer);
+	switch_mutex_lock(context->audio_mutex);
+	if (context->audio_buffer) {
+		switch_buffer_zero(context->audio_buffer);
+	}
+	switch_mutex_unlock(context->audio_mutex);
 
 	if (context->m) libvlc_media_release(context->m);
 	
@@ -1379,7 +1387,7 @@ SWITCH_STANDARD_APP(play_video_function)
 
 	context = switch_core_session_alloc(session, sizeof(vlc_video_context_t));
 	switch_assert(context);
-	memset(context, 0, sizeof(vlc_file_context_t));
+	memset(context, 0, sizeof(vlc_video_context_t));
 
 	if ((tmp = switch_channel_get_variable(channel, "vlc_force_width"))) {
 		context->force_width = atoi(tmp);
@@ -1534,6 +1542,7 @@ SWITCH_STANDARD_APP(play_video_function)
 			}
 		}
 
+		switch_mutex_lock(context->audio_mutex);
 		if (switch_buffer_inuse(context->audio_buffer) >= audio_datalen) {
 			const void *decoded_data;
 			//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%d %d\n", (int)switch_buffer_inuse(context->audio_buffer), (int)audio_datalen);
@@ -1544,6 +1553,7 @@ SWITCH_STANDARD_APP(play_video_function)
 			switch_core_session_write_frame(context->session, &audio_frame, SWITCH_IO_FLAG_NONE, 0);
 			switch_buffer_toss(context->audio_buffer, audio_datalen);
 		}
+		switch_mutex_unlock(context->audio_mutex);
 
 	}
 
@@ -1652,8 +1662,7 @@ int  vlc_write_video_imem_get_callback(void *data, const char *cookie, int64_t *
 		switch_mutex_unlock(context->audio_mutex);
 		return 0;
 	}
-	switch_mutex_unlock(context->audio_mutex);
-
+	
 	if ((blen = switch_buffer_inuse(context->audio_buffer))) {
 		uint32_t read_bytes = 0;
 		int64_t lpts;
@@ -1944,6 +1953,7 @@ SWITCH_STANDARD_APP(capture_video_function)
 		switch_mutex_unlock(context->cond_mutex);
 	}
 
+	switch_mutex_lock(context->audio_mutex);
 	while(switch_buffer_inuse(context->audio_buffer) || switch_queue_size(context->video_queue)) {
 		libvlc_state_t status = libvlc_media_get_state(context->m);
 
@@ -1954,6 +1964,7 @@ SWITCH_STANDARD_APP(capture_video_function)
 
 		switch_yield(10000);
 	}
+	switch_mutex_unlock(context->audio_mutex);
 
 	context->playing = 0;
 
@@ -1970,7 +1981,9 @@ SWITCH_STANDARD_APP(capture_video_function)
 	}
 
 	if (context->audio_buffer) {
+		switch_mutex_lock(context->audio_mutex);
 		switch_buffer_destroy(&context->audio_buffer);
+		switch_mutex_unlock(context->audio_mutex);
 	}
 
 	switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
@@ -2237,9 +2250,11 @@ static switch_status_t channel_on_destroy(switch_core_session_t *session)
 
 	tech_pvt->context->playing = 0;
 
+	switch_mutex_lock(tech_pvt->context->audio_mutex);
 	if (tech_pvt->context->audio_buffer) {
 		switch_buffer_destroy(&tech_pvt->context->audio_buffer);
 	}
+	switch_mutex_unlock(tech_pvt->context->audio_mutex);
 
 	if (tech_pvt->context->video_queue) {
 		void *pop;
@@ -2447,7 +2462,7 @@ static switch_status_t vlc_read_frame(switch_core_session_t *session, switch_fra
 	tech_pvt->read_frame.buflen = tech_pvt->audio_datalen;
 
 	switch_mutex_lock(context->audio_mutex);
-	if (switch_buffer_inuse(context->audio_buffer) >= audio_datalen) {
+	if (context->audio_buffer && switch_buffer_inuse(context->audio_buffer) >= audio_datalen) {
 		switch_buffer_read(context->audio_buffer, tech_pvt->audio_data, audio_datalen);
 	} else {
 		memset(tech_pvt->audio_data, 0, audio_datalen);
