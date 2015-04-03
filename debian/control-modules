@@ -453,6 +453,11 @@ Build-Depends: libperl-dev
 
 ## mod/event_handlers
 
+Module: event_handler/mod_amqp
+Description: Event handler to send events to an amqp server
+ AMQP event handler
+Build-Depends: librabbitmq-dev
+
 Module: event_handlers/mod_cdr_csv
 Description: mod_cdr_csv
  Adds mod_cdr_csv.
