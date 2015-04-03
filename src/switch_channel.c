@@ -3381,6 +3381,10 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_pre_answered(switch_
 		
 		switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "EARLY MEDIA");
 
+		if (switch_true(switch_channel_get_variable(channel, "video_mirror_input"))) {
+			switch_channel_set_flag(channel, CF_VIDEO_MIRROR_INPUT);
+		}
+		
 		if (channel->caller_profile && channel->caller_profile->times) {
 			switch_mutex_lock(channel->profile_mutex);
 			channel->caller_profile->times->progress_media = switch_micro_time_now();
@@ -3651,6 +3655,11 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_answered(switch_chan
 	switch_channel_check_zrtp(channel);
 	switch_channel_set_flag(channel, CF_ANSWERED);
 
+	if (switch_true(switch_channel_get_variable(channel, "video_mirror_input"))) {
+		switch_channel_set_flag(channel, CF_VIDEO_MIRROR_INPUT);
+		//switch_channel_set_flag(channel, CF_VIDEO_DECODED_READ);
+	}
+	
 
 	if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_ANSWER) == SWITCH_STATUS_SUCCESS) {
 		switch_channel_event_set_data(channel, event);

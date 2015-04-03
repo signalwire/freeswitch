@@ -4655,15 +4655,15 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 	switch_status_t status;
 	switch_frame_t *read_frame;
 	switch_media_handle_t *smh;
-	uint32_t loops = 0, xloops = 0, vloops = 0, viloops = 0;
+	uint32_t loops = 0, xloops = 0, vloops = 0;
 	switch_frame_t fr = { 0 };
 	unsigned char *buf = NULL;
 	switch_image_t *blank_img = NULL;
 	switch_rgb_color_t bgcolor;
 	switch_rtp_engine_t *v_engine = NULL;
 
-	switch_color_set_rgb(&bgcolor, "#000000");
-	blank_img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, 320, 240, 1);
+	switch_color_set_rgb(&bgcolor, "#0000FF");
+	blank_img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, 352, 288, 1);
 	switch_img_fill(blank_img, 0, 0, blank_img->d_w, blank_img->d_h, &bgcolor);
 	
 	if (!(smh = session->media_handle)) {
@@ -4756,12 +4756,10 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 				continue;
 			}
 
-			if (read_frame->img) {
-				if (++viloops > 10) {
-					switch_channel_set_flag(channel, CF_VIDEO_READY);
-					smh->vid_params.width = read_frame->img->d_w;
-					smh->vid_params.height = read_frame->img->d_h;
-				}
+			if (read_frame->img && read_frame->img->d_w && read_frame->img->d_h) {
+				switch_channel_set_flag(channel, CF_VIDEO_READY);
+				smh->vid_params.width = read_frame->img->d_w;
+				smh->vid_params.height = read_frame->img->d_h;
 			}
 		}
 
@@ -10212,9 +10210,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_video_frame(switch_cor
 	if (switch_channel_test_flag(session->channel, CF_VIDEO_READY) && smh->vid_params.width && 
 		switch_channel_test_flag(session->channel, CF_VIDEO_MIRROR_INPUT) && 
 		(smh->vid_params.width * smh->vid_params.height) < (img->d_w * img->d_h)) {
-		
+
 		switch_img_copy(img, &dup_img);
 		switch_img_fit(&dup_img, smh->vid_params.width, smh->vid_params.height);
+
 		img = dup_img;
 	}
 
