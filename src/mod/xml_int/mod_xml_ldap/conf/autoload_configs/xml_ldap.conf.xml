@@ -1,0 +1,54 @@
+<configuration name="xml_ldap.conf" description=" XML LDAP Gateway">
+<bindings>
+   <binding name="directory">
+	<!--%s is populated with the extension -->
+	<!--filter example with custom objectClass -->
+	<param name="filter" value="(&amp;(objectClass=FSAccount)(fsuid=%s))" bindings="directory"/>
+	<!--basedn for the searches %s is replaced with domain-->
+	<param name="basedn" value="ou=%s,ou=customers,o=example" />
+	<param name="url" value="ldap://1.2.3.4" />
+	<param name="binddn" value="cn=admin,o=example" />
+	<param name="bindpass" value="secret" />
+	<trans>
+		<!-- mapping of ldap attrs into FS attrs - fsaccount.schema -->
+		<tran name="id" mapfrom="fsUid" />
+		<tran name="cidr" mapfrom="fsCIDR" />
+		<tran name="number-alias" mapfrom="fsNumberAlias" />
+		<tran name="dial-string" mapfrom="fsDialString" />
+		<tran name="password" mapfrom="fsPassword" />
+		<tran name="a1-hash" mapfrom="fsA1Hash" />
+		<tran name="reverse-auth-user" mapfrom="fsReverseAuthUser" />
+		<tran name="reverse-auth-pass" mapfrom="fsReverseAuthPass" />
+		<tran name="vm-enabled" mapfrom="fsVmEnabled" />
+		<tran name="vm-password" mapfrom="fsVmPassword" />
+		<tran name="vm-mailto" mapfrom="fsVmMailTo" />
+		<tran name="vm-notify-mailto" mapfrom="fsVmNotifyMailTo" />
+		<tran name="vm-attach-file" mapfrom="fsVmAttachFile" />
+		<tran name="vm-message-ext" mapfrom="fsVmMessageExt" />
+		<tran name="vm-email-all-messages" mapfrom="fsVmEmailAllMessages" />
+		<tran name="vm-keep-local-after-email" mapfrom="fsVmKeepLocalAfterEmail" />
+		<tran name="vm-notify-email-all-messages" mapfrom="fsVmNotifyEmailAllMessages" />
+		<tran name="vm-skip-instructions" mapfrom="fsVmSkipInstructions" />
+		<tran name="vm-cc" mapfrom="fsVmCc" />
+		<tran name="vm-disk-quota" mapfrom="fsVmDiskQuota" />
+		<tran name="accountcode" mapfrom="fsAccountCode" />
+		<tran name="user_context" mapfrom="fsUserContext" />
+		<tran name="vm_mailbox" mapfrom="fsVmMailbox" />
+		<tran name="callgroup" mapfrom="fsCallGroup" />
+		<tran name="toll_allow" mapfrom="fsTollAllow" />
+		<tran name="effective_caller_id_number" mapfrom="fsEffectiveCallerIDNumber" />
+		<tran name="effective_caller_id_name" mapfrom="fsEffectiveCallerIDName" />
+		<tran name="outbound_caller_id_number" mapfrom="fsOutboundCallerIDNumber" />
+		<tran name="outbound_caller_id_name" mapfrom="fsOutboundCallerIDName" />
+	</trans>
+   </binding>
+<!--  <binding name="configuration">
+       <param name="filter" value="(%s=%s)" bindings="configuration"/>
+       <param name="basedn" value=",ou=config,o=example" />
+       <param name="url" value="ldap://ldapuri" />
+       <param name="binddn" value="cn=admin,o=example" />
+       <param name="bindpass" value="secret" />
+   </binding>
+-->
+</bindings>
+</configuration>

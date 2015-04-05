@@ -65,19 +65,36 @@ typedef struct xml_binding {
 typedef enum exten_types {
         LDAP_EXTEN_ID = 0,
         LDAP_EXTEN_CIDR,
+        LDAP_EXTEN_NUMBER_ALIAS,
+        LDAP_EXTEN_DIAL_STRING,
         LDAP_EXTEN_PASSWORD,
-        LDAP_EXTEN_VM_ENABLED,
+        LDAP_EXTEN_REV_AUTH_USER,
+        LDAP_EXTEN_REV_AUTH_PASS,
+        LDAP_EXTEN_A1_HASH,
         LDAP_EXTEN_VM_PASSWORD,
+        LDAP_EXTEN_VM_ENABLED,
         LDAP_EXTEN_VM_MAILFROM,
         LDAP_EXTEN_VM_MAILTO,
-        LDAP_EXTEN_VM_EMAILMSG,
-        LDAP_EXTEN_VM_NOTEMAILMSG,
-        LDAP_EXTEN_VM_ATTACHFILE,
-        LDAP_EXTEN_USER_CONTEXT,
-        LDAP_EXTEN_EFF_CLIDNAME,
-        LDAP_EXTEN_EFF_CLIDNUM,
+        LDAP_EXTEN_VM_NOTIFY_MAILTO,
+        LDAP_EXTEN_VM_ATTACH_FILE,
+        LDAP_EXTEN_VM_MESSAGE_EXT,
+        LDAP_EXTEN_VM_EMAIL_ALL_MSGS,
+        LDAP_EXTEN_VM_KEEP_LOCAL_AFTER_MAIL,
+        LDAP_EXTEN_VM_NOTIFY_EMAIL_ALL_MSGS,
+        LDAP_EXTEN_VM_SKIP_INSTRUCTIONS,
+        LDAP_EXTEN_VM_CC,
+        LDAP_EXTEN_VM_DISK_QUOTA,
         LDAP_EXTEN_ACCOUNTCODE,
-        LDAP_EXTEN_RULESET,
+        LDAP_EXTEN_USER_CONTEXT,
+        LDAP_EXTEN_VM_MAILBOX,
+        LDAP_EXTEN_CALLGROUP,
+        LDAP_EXTEN_TOLL_ALLOW,
+        LDAP_EXTEN_EFF_CLIDNUM,
+        LDAP_EXTEN_EFF_CLIDNAME,
+        LDAP_EXTEN_OUT_CLIDNUM,
+        LDAP_EXTEN_OUT_CLIDNAME,
+        LDAP_EXTEN_DOMAIN_NAME
+/* not used now
         LDAP_EXTEN_AREACODE,
         LDAP_EXTEN_CID_EXTNAME,
         LDAP_EXTEN_CID_EXTNUM,
@@ -99,6 +116,7 @@ typedef enum exten_types {
         LDAP_EXTEN_HOTLINE_ACTIVE,
         LDAP_EXTEN_HOTLINE_DEST,
         LDAP_EXTEN_CLASSOFSERVICE
+*/
 } exten_type_t;
 
 struct xml_ldap_attribute {
@@ -236,6 +254,20 @@ static switch_status_t do_config(void)
                                        attr_list->next = malloc(sizeof(*attr_list));
                                        attr_list->next = memset(attr_list->next, 0, sizeof(*attr_list));
                                        attr_list = attr_list->next;
+                               } else if (!strncasecmp("number-alias", n, strlen(n))) {
+                                       attr_list->type = LDAP_EXTEN_NUMBER_ALIAS;
+                                       attr_list->len = strlen(m);
+                                       attr_list->val = strdup(m);
+                                       attr_list->next = malloc(sizeof(*attr_list));
+                                       attr_list->next = memset(attr_list->next, 0, sizeof(*attr_list));
+                                       attr_list = attr_list->next;
+                               } else if (!strncasecmp("dial-string", n, strlen(n))) {
+                                       attr_list->type = LDAP_EXTEN_DIAL_STRING;
+                                       attr_list->len = strlen(m);
+                                       attr_list->val = strdup(m);
+                                       attr_list->next = malloc(sizeof(*attr_list));
+                                       attr_list->next = memset(attr_list->next, 0, sizeof(*attr_list));
+                                       attr_list = attr_list->next;
                                } else if (!strncasecmp("password", n, strlen(n))) {
                                        attr_list->type = LDAP_EXTEN_PASSWORD;
                                        attr_list->len = strlen(m);
@@ -243,8 +275,22 @@ static switch_status_t do_config(void)
                                        attr_list->next = malloc(sizeof(*attr_list));
                                        attr_list->next = memset(attr_list->next, 0, sizeof(*attr_list));
                                        attr_list = attr_list->next;
-                               } else if (!strncasecmp("vm-enabled", n, strlen(n))) {
-                                       attr_list->type = LDAP_EXTEN_VM_ENABLED;
+                               } else if (!strncasecmp("reverse-auth-user", n, strlen(n))) {
+                                       attr_list->type = LDAP_EXTEN_REV_AUTH_USER;
+                                       attr_list->len = strlen(m);
+                                       attr_list->val = strdup(m);
+                                       attr_list->next = malloc(sizeof(*attr_list));
+                                       attr_list->next = memset(attr_list->next, 0, sizeof(*attr_list));
+                                       attr_list = attr_list->next;
+                               } else if (!strncasecmp("reverse-auth-pass", n, strlen(n))) {
+                                       attr_list->type = LDAP_EXTEN_REV_AUTH_PASS;
+                                       attr_list->len = strlen(m);
+                                       attr_list->val = strdup(m);
+                                       attr_list->next = malloc(sizeof(*attr_list));
+                                       attr_list->next = memset(attr_list->next, 0, sizeof(*attr_list));
+                                       attr_list = attr_list->next;
+                               } else if (!strncasecmp("a1-hash", n, strlen(n))) {
+                                       attr_list->type = LDAP_EXTEN_A1_HASH;
                                        attr_list->len = strlen(m);
                                        attr_list->val = strdup(m);
                                        attr_list->next = malloc(sizeof(*attr_list));
@@ -252,6 +298,13 @@ static switch_status_t do_config(void)
                                        attr_list = attr_list->next;
                                } else if (!strncasecmp("vm-password", n, strlen(n))) {
                                        attr_list->type = LDAP_EXTEN_VM_PASSWORD;
+                                       attr_list->len = strlen(m);
+                                       attr_list->val = strdup(m);
+                                       attr_list->next = malloc(sizeof(*attr_list));
+                                       attr_list->next = memset(attr_list->next, 0, sizeof(*attr_list));
+                                       attr_list = attr_list->next;
+                               } else if (!strncasecmp("vm-enabled", n, strlen(n))) {
+                                       attr_list->type = LDAP_EXTEN_VM_ENABLED;
                                        attr_list->len = strlen(m);
                                        attr_list->val = strdup(m);
                                        attr_list->next = malloc(sizeof(*attr_list));
@@ -271,28 +324,77 @@ static switch_status_t do_config(void)
                                        attr_list->next = malloc(sizeof(*attr_list));
                                        attr_list->next = memset(attr_list->next, 0, sizeof(*attr_list));
                                        attr_list = attr_list->next;
-                               } else if (!strncasecmp("vm-email-all-messages", n, strlen(n))) {
-                                       attr_list->type = LDAP_EXTEN_VM_EMAILMSG;
-                                       attr_list->len = strlen(m);
-                                       attr_list->val = strdup(m);
-                                       attr_list->next = malloc(sizeof(*attr_list));
-                                       attr_list->next = memset(attr_list->next, 0, sizeof(*attr_list));
-                                       attr_list = attr_list->next;
-                               } else if (!strncasecmp("vm-notify-email-all-messages", n, strlen(n))) {
-                                       attr_list->type = LDAP_EXTEN_VM_NOTEMAILMSG;
+                               } else if (!strncasecmp("vm-notify-mailto", n, strlen(n))) {
+                                       attr_list->type = LDAP_EXTEN_VM_NOTIFY_MAILTO;
                                        attr_list->len = strlen(m);
                                        attr_list->val = strdup(m);
                                        attr_list->next = malloc(sizeof(*attr_list));
                                        attr_list->next = memset(attr_list->next, 0, sizeof(*attr_list));
                                        attr_list = attr_list->next;
                                } else if (!strncasecmp("vm-attach-file", n, strlen(n))) {
-                                       attr_list->type = LDAP_EXTEN_VM_ATTACHFILE;
+                                       attr_list->type = LDAP_EXTEN_VM_ATTACH_FILE;
+                                       attr_list->len = strlen(m);
+                                       attr_list->val = strdup(m);
+                                       attr_list->next = malloc(sizeof(*attr_list));
+                                       attr_list->next = memset(attr_list->next, 0, sizeof(*attr_list));
+                                       attr_list = attr_list->next;
+                               } else if (!strncasecmp("vm-message-ext", n, strlen(n))) {
+                                       attr_list->type = LDAP_EXTEN_VM_MESSAGE_EXT;
+                                       attr_list->len = strlen(m);
+                                       attr_list->val = strdup(m);
+                                       attr_list->next = malloc(sizeof(*attr_list));
+                                       attr_list->next = memset(attr_list->next, 0, sizeof(*attr_list));
+                                       attr_list = attr_list->next;
+                               } else if (!strncasecmp("vm-email-all-messages", n, strlen(n))) {
+                                       attr_list->type = LDAP_EXTEN_VM_EMAIL_ALL_MSGS;
+                                       attr_list->len = strlen(m);
+                                       attr_list->val = strdup(m);
+                                       attr_list->next = malloc(sizeof(*attr_list));
+                                       attr_list->next = memset(attr_list->next, 0, sizeof(*attr_list));
+                                       attr_list = attr_list->next;
+                               } else if (!strncasecmp("vm-keep-local-after-mail", n, strlen(n))) {
+                                       attr_list->type = LDAP_EXTEN_VM_KEEP_LOCAL_AFTER_MAIL;
+                                       attr_list->len = strlen(m);
+                                       attr_list->val = strdup(m);
+                                       attr_list->next = malloc(sizeof(*attr_list));
+                                       attr_list->next = memset(attr_list->next, 0, sizeof(*attr_list));
+                                       attr_list = attr_list->next;
+                               } else if (!strncasecmp("vm-notify-email-all-messages", n, strlen(n))) {
+                                       attr_list->type = LDAP_EXTEN_VM_NOTIFY_EMAIL_ALL_MSGS;
+                                       attr_list->len = strlen(m);
+                                       attr_list->val = strdup(m);
+                                       attr_list->next = malloc(sizeof(*attr_list));
+                                       attr_list->next = memset(attr_list->next, 0, sizeof(*attr_list));
+                                       attr_list = attr_list->next;
+                               } else if (!strncasecmp("vm-skip-instructions", n, strlen(n))) {
+                                       attr_list->type = LDAP_EXTEN_VM_SKIP_INSTRUCTIONS;
+                                       attr_list->len = strlen(m);
+                                       attr_list->val = strdup(m);
+                                       attr_list->next = malloc(sizeof(*attr_list));
+                                       attr_list->next = memset(attr_list->next, 0, sizeof(*attr_list));
+                                       attr_list = attr_list->next;
+                               } else if (!strncasecmp("vm-cc", n, strlen(n))) {
+                                       attr_list->type = LDAP_EXTEN_VM_CC;
+                                       attr_list->len = strlen(m);
+                                       attr_list->val = strdup(m);
+                                       attr_list->next = malloc(sizeof(*attr_list));
+                                       attr_list->next = memset(attr_list->next, 0, sizeof(*attr_list));
+                                       attr_list = attr_list->next;
+                               } else if (!strncasecmp("vm-disk-quota", n, strlen(n))) {
+                                       attr_list->type = LDAP_EXTEN_VM_DISK_QUOTA;
                                        attr_list->len = strlen(m);
                                        attr_list->val = strdup(m);
                                        attr_list->next = malloc(sizeof(*attr_list));
                                        attr_list->next = memset(attr_list->next, 0, sizeof(*attr_list));
                                        attr_list = attr_list->next;
                                /* Variables */
+                               } else if (!strncasecmp("accountcode", n, strlen(n))) {
+                                       attr_list->type = LDAP_EXTEN_ACCOUNTCODE;
+                                       attr_list->len = strlen(m);
+                                       attr_list->val = strdup(m);
+                                       attr_list->next = malloc(sizeof(*attr_list));
+                                       attr_list->next = memset(attr_list->next, 0, sizeof(*attr_list));
+                                       attr_list = attr_list->next;
                                } else if (!strncasecmp("user_context", n, strlen(n))) {
                                        attr_list->type = LDAP_EXTEN_USER_CONTEXT;
                                        attr_list->len = strlen(m);
@@ -300,8 +402,22 @@ static switch_status_t do_config(void)
                                        attr_list->next = malloc(sizeof(*attr_list));
                                        attr_list->next = memset(attr_list->next, 0, sizeof(*attr_list));
                                        attr_list = attr_list->next;
-                               } else if (!strncasecmp("effective_caller_id_name", n, strlen(n))) {
-                                       attr_list->type = LDAP_EXTEN_EFF_CLIDNAME;
+                               } else if (!strncasecmp("vm_mailbox", n, strlen(n))) {
+                                       attr_list->type = LDAP_EXTEN_VM_MAILBOX;
+                                       attr_list->len = strlen(m);
+                                       attr_list->val = strdup(m);
+                                       attr_list->next = malloc(sizeof(*attr_list));
+                                       attr_list->next = memset(attr_list->next, 0, sizeof(*attr_list));
+                                       attr_list = attr_list->next;
+                               } else if (!strncasecmp("callgroup", n, strlen(n))) {
+                                       attr_list->type = LDAP_EXTEN_CALLGROUP;
+                                       attr_list->len = strlen(m);
+                                       attr_list->val = strdup(m);
+                                       attr_list->next = malloc(sizeof(*attr_list));
+                                       attr_list->next = memset(attr_list->next, 0, sizeof(*attr_list));
+                                       attr_list = attr_list->next;
+                               } else if (!strncasecmp("toll_allow", n, strlen(n))) {
+                                       attr_list->type = LDAP_EXTEN_TOLL_ALLOW;
                                        attr_list->len = strlen(m);
                                        attr_list->val = strdup(m);
                                        attr_list->next = malloc(sizeof(*attr_list));
@@ -314,15 +430,22 @@ static switch_status_t do_config(void)
                                        attr_list->next = malloc(sizeof(*attr_list));
                                        attr_list->next = memset(attr_list->next, 0, sizeof(*attr_list));
                                        attr_list = attr_list->next;
-                               } else if (!strncasecmp("accountcode", n, strlen(n))) {
-                                       attr_list->type = LDAP_EXTEN_ACCOUNTCODE;
+                               } else if (!strncasecmp("effective_caller_id_name", n, strlen(n))) {
+                                       attr_list->type = LDAP_EXTEN_EFF_CLIDNAME;
                                        attr_list->len = strlen(m);
                                        attr_list->val = strdup(m);
                                        attr_list->next = malloc(sizeof(*attr_list));
                                        attr_list->next = memset(attr_list->next, 0, sizeof(*attr_list));
                                        attr_list = attr_list->next;
-                               } else if (!strncasecmp("ruleset", n, strlen(n))) {
-                                       attr_list->type = LDAP_EXTEN_RULESET;
+                               } else if (!strncasecmp("outbound_caller_id_number", n, strlen(n))) {
+                                       attr_list->type = LDAP_EXTEN_OUT_CLIDNUM;
+                                       attr_list->len = strlen(m);
+                                       attr_list->val = strdup(m);
+                                       attr_list->next = malloc(sizeof(*attr_list));
+                                       attr_list->next = memset(attr_list->next, 0, sizeof(*attr_list));
+                                       attr_list = attr_list->next;
+                               } else if (!strncasecmp("outbound_caller_id_name", n, strlen(n))) {
+                                       attr_list->type = LDAP_EXTEN_OUT_CLIDNAME;
                                        attr_list->len = strlen(m);
                                        attr_list->val = strdup(m);
                                        attr_list->next = malloc(sizeof(*attr_list));
@@ -365,10 +488,13 @@ static switch_status_t trydir(switch_xml_t *pxml, int *xoff, LDAP * ld, char *di
         LDAPMessage *msg, *entry;
         xml_ldap_attribute_t *attr = NULL;
         static char *fsattr[] =
-                { "id", "cidr", "password", "vm-enabled", "vm-password", "vm-mailfrom", "vm-mailto", 
-                   "vm-email-all-messages", "vm-notify-email-all-messages", "vm-attach-file",
-                   "user_context", "effective_caller_id_name", "effective_caller_id_number",
-                   "accountcode", "ruleset", NULL };
+                { "id", "cidr", "number-alias", "dial-string", "password", "reverse-auth-user",
+                   "reverse-auth-pass", "a1-hash", "vm-password", "vm-enabled", "vm-mailfrom",
+                   "vm-mailto", "vm-notify-mailto", "vm-attach-file", "vm-message-ext",
+                   "vm-email-all-messages", "vm-keep-local-after-mail", "vm-notify-email-all-messages",
+                   "vm-skip-instructions", "vm-cc", "vm-disk-quota", "accountcode", "user_context",
+                   "vm_mailbox", "callgroup", "effective_caller_id_number", "effective_caller_id_name",
+                   "outbound_caller_id_number", "outbound_caller_id_name", "toll_allow", NULL };
  
         basedn = switch_mprintf(binding->basedn, dir_domain);
         filter = switch_mprintf(binding->filter, dir_exten);
