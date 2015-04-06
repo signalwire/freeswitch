@@ -400,7 +400,7 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
     }
 
     if (frame->img) {
-        if (frame->img->d_w != context->w || frame->img->d_h != context->h && context->rawImage) {
+        if ((frame->img->d_w != context->w || frame->img->d_h != context->h) && context->rawImage) {
             cvReleaseImage(&context->rawImage);
             cvReleaseImage(&context->yuvImage);
         }
@@ -456,9 +456,9 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
                     if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, MY_EVENT_VIDEO_DETECT) == SWITCH_STATUS_SUCCESS) {
                         switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Detect-Type", "primary");
                         switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Detect-Disposition", "start");
-                        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Detect-Simo-Count", "%d", context->detected.simo_count);
+                        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Detect-Simo-Count", "%u", context->detected.simo_count);
                         switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Detect-Average", "%f", context->detected.avg);
-                        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Detect-Last-Score", "%f", context->detected.last_score);
+                        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Detect-Last-Score", "%u", context->detected.last_score);
                         switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Unique-ID", switch_core_session_get_uuid(session));
                         //switch_channel_event_set_data(channel, event);
                         DUMP_EVENT(event);
@@ -473,9 +473,9 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
                     if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, MY_EVENT_VIDEO_DETECT) == SWITCH_STATUS_SUCCESS) {
                         switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Detect-Type", "primary");
                         switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Detect-Disposition", "stop");
-                        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Detect-Simo-Count", "%d", context->detected.simo_count);
+                        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Detect-Simo-Count", "%u", context->detected.simo_count);
                         switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Detect-Average", "%f", context->detected.avg);
-                        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Detect-Last-Score", "%f", context->detected.last_score);
+                        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Detect-Last-Score", "%u", context->detected.last_score);
                         switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Unique-ID", switch_core_session_get_uuid(session));
                         //switch_channel_event_set_data(channel, event);
                         DUMP_EVENT(event);
@@ -504,7 +504,7 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
                             switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Detect-Disposition", "start");
                             switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Detect-Simo-Count", "%d", context->nestDetected.simo_count);
                             switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Detect-Average", "%f", context->nestDetected.avg);
-                            switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Detect-Last-Score", "%f", context->nestDetected.last_score);
+                            switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Detect-Last-Score", "%u", context->nestDetected.last_score);
                             switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Unique-ID", switch_core_session_get_uuid(session));
                             //switch_channel_event_set_data(channel, event);
                             DUMP_EVENT(event);
@@ -520,7 +520,7 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
                             switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Detect-Disposition", "stop");
                             switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Detect-Simo-Count", "%d", context->nestDetected.simo_count);
                             switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Detect-Average", "%f", context->nestDetected.avg);
-                            switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Detect-Last-Score", "%f", context->nestDetected.last_score);
+                            switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Detect-Last-Score", "%u", context->nestDetected.last_score);
                             switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Unique-ID", switch_core_session_get_uuid(session));
                             //switch_channel_event_set_data(channel, event);
                             DUMP_EVENT(event);
@@ -545,6 +545,8 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
                             context->rawImage->width, context->rawImage->height);
                             
     }
+
+    return SWITCH_STATUS_SUCCESS;
 }
 
 
