@@ -344,6 +344,7 @@ typedef struct conference_file_node {
 	switch_bool_t mux;
 	uint32_t member_id;
 	al_handle_t *al;
+	int layer_id;
 } conference_file_node_t;
 
 typedef enum {
@@ -371,6 +372,7 @@ typedef struct mcu_layer_geometry_s {
 	int scale;
 	int floor;
 	int flooronly;
+	int fileonly;
 	int overlap;
 	char *res_id;
 	char *audio_position;
@@ -400,6 +402,7 @@ typedef struct mcu_layer_s {
 	switch_image_t *logo_img;
 	switch_image_t *mute_img;
 	switch_img_txt_handle_t *txthandle;
+	conference_file_node_t *fnode;
 } mcu_layer_t;
 
 typedef struct video_layout_s {
@@ -708,6 +711,8 @@ static conference_obj_t *conference_find(char *name, char *domain);
 static void member_bind_controls(conference_member_t *member, const char *controls);
 static void conference_send_presence(conference_obj_t *conference);
 static void conference_set_video_floor_holder(conference_obj_t *conference, conference_member_t *member, switch_bool_t force);
+static void canvas_del_fnode_layer(conference_obj_t *conference, conference_file_node_t *fnode);
+static void canvas_set_fnode_layer(conference_obj_t *conference, conference_file_node_t *fnode, int idx);
 
 SWITCH_STANDARD_API(conf_api_main);
 
@@ -826,7 +831,7 @@ static void conference_parse_layouts(conference_obj_t *conference)
 
 				for (x_image = switch_xml_child(x_layout, "image"); x_image; x_image = x_image->next) {
 					const char *res_id = NULL, *audio_position = NULL;
-					int x = -1, y = -1, scale = -1, floor = 0, flooronly = 0, overlap = 0;
+					int x = -1, y = -1, scale = -1, floor = 0, flooronly = 0, fileonly = 0, overlap = 0;
 
 					if ((val = switch_xml_attr(x_image, "x"))) {
 						x = atoi(val);
@@ -846,6 +851,10 @@ static void conference_parse_layouts(conference_obj_t *conference)
 
 					if ((val = switch_xml_attr(x_image, "floor-only"))) {
 						flooronly = floor = switch_true(val);
+					}
+
+					if ((val = switch_xml_attr(x_image, "file-only"))) {
+						fileonly = floor = switch_true(val);
 					}
 
 					if ((val = switch_xml_attr(x_image, "overlap"))) {
@@ -872,6 +881,7 @@ static void conference_parse_layouts(conference_obj_t *conference)
 					vlayout->images[vlayout->layers].scale = scale;
 					vlayout->images[vlayout->layers].floor = floor;
 					vlayout->images[vlayout->layers].flooronly = flooronly;
+					vlayout->images[vlayout->layers].fileonly = fileonly;
 					vlayout->images[vlayout->layers].overlap = overlap;
 					
 					if (res_id) {
@@ -1327,6 +1337,10 @@ static switch_status_t attach_video_layer(conference_member_t *member, int idx)
 	layer = &member->conference->canvas->layers[idx];
 
 	layer->tagged = 0;
+
+	if (layer->fnode || layer->geometry.fileonly) {
+		switch_goto_status(SWITCH_STATUS_FALSE, end);
+	}
 
 	if (layer->geometry.flooronly && member->id != member->conference->video_floor_holder) {
 		switch_goto_status(SWITCH_STATUS_FALSE, end);
@@ -1867,13 +1881,13 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 								attach_video_layer(imember, i);
 								break;
 							}
-						} else if (xlayer->geometry.flooronly) {
+						} else if (xlayer->geometry.flooronly && !xlayer->fnode) {
 							if (imember->id == conference->video_floor_holder) {
 								layer = xlayer;
 								attach_video_layer(imember, i);
 								break;
 							}
-						} else if (!xlayer->member_id) {
+						} else if (!xlayer->member_id && !xlayer->fnode && !xlayer->geometry.fileonly) {
 							switch_status_t lstatus;
 
 							lstatus = attach_video_layer(imember, i);
@@ -1927,12 +1941,23 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 		}
 
 		switch_mutex_unlock(conference->member_mutex);
-		
+
+		if (conference->fnode && 
+			conference->fnode->layer_id > -1) {
+			mcu_layer_t *layer = &conference->canvas->layers[conference->fnode->layer_id];
+			
+			if (switch_core_file_read_video(&conference->fnode->fh, &write_frame, SVR_FLUSH) == SWITCH_STATUS_SUCCESS) {
+				switch_img_free(&layer->cur_img);
+				layer->cur_img = write_frame.img;
+				layer->tagged = 1;
+			}
+		}
+
 		if (!conference->playing_video_file) {
 			for (i = 0; i < conference->canvas->total_layers; i++) {
 				mcu_layer_t *layer = &conference->canvas->layers[i];
 
-				if (layer->member_id > -1 && layer->cur_img && (layer->tagged || layer->geometry.overlap)) {
+				if ((layer->member_id > -1 || layer->fnode) && layer->cur_img && (layer->tagged || layer->geometry.overlap)) {
 					if (conference->canvas->refresh) {
 						layer->refresh = 1;
 						conference->canvas->refresh++;
@@ -5025,6 +5050,10 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 			conference_file_node_t *fnode;
 			switch_memory_pool_t *pool;
 
+			if (conference->canvas && conference->fnode->layer_id > -1 ) {
+				canvas_del_fnode_layer(conference, conference->fnode);
+			}
+			
 			if (conference->fnode->type != NODE_TYPE_SPEECH) {
 				conference_file_close(conference, conference->fnode);
 			}
@@ -7027,6 +7056,66 @@ static void conference_send_all_dtmf(conference_member_t *member, conference_obj
 	switch_mutex_unlock(conference->mutex);
 }
 
+static void canvas_del_fnode_layer(conference_obj_t *conference, conference_file_node_t *fnode)
+{
+
+	switch_mutex_lock(conference->canvas->mutex);
+	if (fnode->layer_id > -1) {
+		mcu_layer_t *xlayer = &conference->canvas->layers[fnode->layer_id];
+		
+		fnode->layer_id = -1;
+		xlayer->fnode = NULL;
+		reset_layer(conference->canvas, xlayer);
+	}
+	switch_mutex_unlock(conference->canvas->mutex);
+}
+
+static void canvas_set_fnode_layer(conference_obj_t *conference, conference_file_node_t *fnode, int idx)
+{
+	mcu_layer_t *layer = NULL;
+
+	switch_mutex_lock(conference->canvas->mutex);
+
+	if (idx == -1) {
+		int i;
+
+		if (conference->canvas->layout_floor_id > -1) {
+			idx = conference->canvas->layout_floor_id;
+		} else {
+			for (i = 0; i < conference->canvas->total_layers; i++) {
+				mcu_layer_t *xlayer = &conference->canvas->layers[i];
+
+				if (xlayer->geometry.res_id || xlayer->member_id) {
+					continue;
+				}
+				
+				idx = i;
+				break;
+			}
+		}
+	}
+
+	if (idx < 0) return;
+	
+	layer = &conference->canvas->layers[idx];
+
+	layer->fnode = fnode;
+	fnode->layer_id = idx;
+
+	if (layer->member_id > -1) {
+		conference_member_t *member;
+
+		if ((member = conference_member_get(conference, layer->member_id))) {
+			detach_video_layer(member);
+			switch_thread_rwlock_unlock(member->rwlock);
+		}
+	}
+	
+	switch_mutex_unlock(conference->canvas->mutex);
+}
+
+
+
 /* Play a file in the conference room */
 static switch_status_t conference_play_file(conference_obj_t *conference, char *file, uint32_t leadin, switch_channel_t *channel, uint8_t async)
 {
@@ -7112,6 +7201,7 @@ static switch_status_t conference_play_file(conference_obj_t *conference, char *
 		goto done;
 	}
 
+	fnode->layer_id = -1;
 	fnode->type = NODE_TYPE_FILE;
 	fnode->leadin = leadin;
 
@@ -7180,8 +7270,18 @@ static switch_status_t conference_play_file(conference_obj_t *conference, char *
 	fnode->file = switch_core_strdup(fnode->pool, file);
 
 	if (switch_core_file_has_video(&fnode->fh)) {
-		conference->canvas->play_file = 1;
-		conference->playing_video_file = 1;
+		int full_screen = 0;
+
+		if (fnode->fh.params) {
+			full_screen = switch_true(switch_event_get_header(fnode->fh.params, "full-screen"));
+		}
+		
+		if (full_screen) {
+			conference->canvas->play_file = 1;
+			conference->playing_video_file = 1;
+		} else {
+			canvas_set_fnode_layer(conference, fnode, -1);
+		}
 	}
 
 	/* Queue the node */
@@ -7268,6 +7368,8 @@ static switch_status_t conference_member_play_file(conference_member_t *member, 
 		status = SWITCH_STATUS_MEMERR;
 		goto done;
 	}
+
+	fnode->layer_id = -1;
 	fnode->type = NODE_TYPE_FILE;
 	fnode->leadin = leadin;
 	fnode->mux = mux;
@@ -7362,6 +7464,8 @@ static switch_status_t conference_member_say(conference_member_t *member, char *
 		switch_core_destroy_memory_pool(&pool);
 		return SWITCH_STATUS_MEMERR;
 	}
+
+	fnode->layer_id = -1;
 
 	if (*text == '{') {
 		char *new_fp;
@@ -7503,6 +7607,7 @@ static switch_status_t conference_say(conference_obj_t *conference, const char *
 		return SWITCH_STATUS_MEMERR;
 	}
 
+	fnode->layer_id = -1;
 
 	if (*text == '{') {
 		char *new_fp;
