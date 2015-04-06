@@ -679,7 +679,7 @@ SWITCH_STANDARD_APP(cv_bug_start_function)
     }
 
     if (nested_cascade_name) {
-        cvh->cascade_name = switch_core_session_strdup(session, nested_cascade_name);
+        cvh->nested_cascade_name = switch_core_session_strdup(session, nested_cascade_name);
     }
 
 	if ((status = switch_core_media_bug_add(session, "cv_bug", NULL, cv_bug_callback, cvh, 0, SMBF_READ_VIDEO_PING, &bug)) != SWITCH_STATUS_SUCCESS) {
