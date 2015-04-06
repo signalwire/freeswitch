@@ -289,7 +289,7 @@ SWITCH_STANDARD_APP(play_fsv_function)
 	switch_core_session_get_read_impl(session, &read_impl);
 
 	aud_buffer = switch_core_session_alloc(session, SWITCH_RECOMMENDED_BUFFER_SIZE);
-	vid_buffer = switch_core_session_alloc(session, SWITCH_RECOMMENDED_BUFFER_SIZE);
+	vid_buffer = switch_core_session_alloc(session, SWITCH_RTP_MAX_BUF_LEN);
 
 	switch_channel_set_variable(channel, SWITCH_PLAYBACK_TERMINATOR_USED, "");
 
@@ -325,7 +325,7 @@ SWITCH_STANDARD_APP(play_fsv_function)
 	vid_frame.codec = &vid_codec;
 	vid_frame.packet = vid_buffer;
 	vid_frame.data = ((uint8_t *)vid_buffer) + 12;
-	vid_frame.buflen = SWITCH_RECOMMENDED_BUFFER_SIZE - 12;
+	vid_frame.buflen = SWITCH_RTP_MAX_BUF_LEN - 12;
 	switch_set_flag((&vid_frame), SFF_RAW_RTP);
 	// switch_set_flag((&vid_frame), SFF_PROXY_PACKET);
 	switch_set_flag((&vid_frame), SFF_RAW_RTP_PARSE_FRAME);
@@ -556,8 +556,8 @@ SWITCH_STANDARD_APP(play_yuv_function)
 	yuv = img->planes[SWITCH_PLANE_PACKED];
 
 	// switch_channel_set_flag(channel, CF_VIDEO_PASSIVE);
-
-	vid_buffer = switch_core_session_alloc(session, SWITCH_RECOMMENDED_BUFFER_SIZE);
+	//SWITCH_RTP_MAX_BUF_LEN
+	vid_buffer = switch_core_session_alloc(session, SWITCH_RTP_MAX_BUF_LEN);
 
 	switch_channel_set_variable(channel, SWITCH_PLAYBACK_TERMINATOR_USED, "");
 
@@ -583,7 +583,7 @@ SWITCH_STANDARD_APP(play_yuv_function)
 	vid_frame.codec = codec;
 	vid_frame.packet = vid_buffer;
 	vid_frame.data = ((uint8_t *)vid_buffer) + 12;
-	vid_frame.buflen = SWITCH_RECOMMENDED_BUFFER_SIZE - 12;
+	vid_frame.buflen = SWITCH_RTP_MAX_BUF_LEN - 12;
 	switch_set_flag((&vid_frame), SFF_RAW_RTP);
 	// switch_set_flag((&vid_frame), SFF_PROXY_PACKET);
 
