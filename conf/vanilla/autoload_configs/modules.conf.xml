@@ -98,6 +98,7 @@
     <!-- File Format Interfaces -->
     <load module="mod_sndfile"/>
     <load module="mod_native_file"/>
+    <load module="mod_png"/>
     <!-- <load module="mod_shell_stream"/> -->
     <!--For icecast/mp3 streams/files-->
     <!--<load module="mod_shout"/>-->
