@@ -575,7 +575,7 @@ function exit_full_screen()
     if (document.webkitFullscreenEnabled) {
 	document.webkitExitFullscreen();
     } else if (document.mozFullScreenEnabled) {
-	document.mozExitFullScreen();
+	document.mozCancelFullScreen();
     }
 }
 
