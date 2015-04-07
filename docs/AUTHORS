@@ -39,6 +39,7 @@ that much better:
  Dale Thatcher <freeswitch at dalethatcher dot com> - Additions to mod_conference.
  Simon Perreault & Marc Blanchet from Viagenie.ca - IPv6 Support.
  Peter Olsson <peter@olssononline.se> - mod_v8, and other various patches.
+ Seven Du <dujinfang@gmail.com> - core video stuff and video transcoding related modules, and other patches here and there.
 
 A big THANK YOU goes to:
 
