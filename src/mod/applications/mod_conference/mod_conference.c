@@ -4655,6 +4655,24 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static void fnode_check_video(conference_obj_t *conference, conference_file_node_t *fnode) {
+
+	if (switch_core_file_has_video(&fnode->fh)) {
+		int full_screen = 0;
+		
+		if (fnode->fh.params) {
+			full_screen = switch_true(switch_event_get_header(fnode->fh.params, "full-screen"));
+		}
+		
+		if (full_screen) {
+			conference->canvas->play_file = 1;
+			conference->playing_video_file = 1;
+		} else {
+			canvas_set_fnode_layer(conference, fnode, -1);
+		}
+	}
+}
+
 static void conference_command_handler(switch_live_array_t *la, const char *cmd, const char *sessid, cJSON *jla, void *user_data)
 {
 }
@@ -5104,6 +5122,11 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 
 			fnode = conference->fnode;
 			conference->fnode = conference->fnode->next;
+
+			if (conference->fnode) {
+				fnode_check_video(conference, conference->fnode);
+			}
+
 
 			pool = fnode->pool;
 			fnode = NULL;
@@ -7158,8 +7181,6 @@ static void canvas_set_fnode_layer(conference_obj_t *conference, conference_file
 	switch_mutex_unlock(conference->canvas->mutex);
 }
 
-
-
 /* Play a file in the conference room */
 static switch_status_t conference_play_file(conference_obj_t *conference, char *file, uint32_t leadin, switch_channel_t *channel, uint8_t async)
 {
@@ -7312,20 +7333,9 @@ static switch_status_t conference_play_file(conference_obj_t *conference, char *
 	fnode->pool = pool;
 	fnode->async = async;
 	fnode->file = switch_core_strdup(fnode->pool, file);
-
-	if (switch_core_file_has_video(&fnode->fh)) {
-		int full_screen = 0;
-
-		if (fnode->fh.params) {
-			full_screen = switch_true(switch_event_get_header(fnode->fh.params, "full-screen"));
-		}
-		
-		if (full_screen) {
-			conference->canvas->play_file = 1;
-			conference->playing_video_file = 1;
-		} else {
-			canvas_set_fnode_layer(conference, fnode, -1);
-		}
+	
+	if (!conference->fnode || (async && !conference->async_fnode)) {
+		fnode_check_video(conference, fnode);
 	}
 
 	/* Queue the node */
