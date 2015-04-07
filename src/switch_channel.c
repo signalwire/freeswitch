@@ -3771,6 +3771,10 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_answer(switch_channel_t *
 	if (switch_core_session_in_thread(channel->session)) {
 		const char *delay;
 
+		if (switch_channel_test_flag(channel, CF_VIDEO)) {
+			switch_channel_wait_for_flag(channel, CF_VIDEO_READY, SWITCH_TRUE, 10000, NULL);
+		}
+		
 		if ((delay = switch_channel_get_variable(channel, "answer_delay"))) {
 			uint32_t msec = atoi(delay);
 			
