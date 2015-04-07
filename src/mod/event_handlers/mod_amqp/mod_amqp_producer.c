@@ -394,15 +394,14 @@ void * SWITCH_THREAD_FUNC mod_amqp_producer_thread(switch_thread_t *thread, void
 									  amqp_empty_table);
 
 				if (mod_amqp_log_if_amqp_error(amqp_get_rpc_reply(profile->conn_active->state), "Declaring exchange")) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Amqp reconnect successful- connected\n");
 					continue;
 				}
-			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Profile[%s] failed to connect with code(%d), sleeping for %dms\n",
-								  profile->name, status, profile->reconnect_interval_ms);
-				switch_sleep(profile->reconnect_interval_ms * 1000);
 			}
 
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Amqp reconnect successful- connected\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Profile[%s] failed to connect with code(%d), sleeping for %dms\n",
+							  profile->name, status, profile->reconnect_interval_ms);
+			switch_sleep(profile->reconnect_interval_ms * 1000);
 			continue;
 		}
 
