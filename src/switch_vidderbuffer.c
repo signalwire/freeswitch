@@ -44,6 +44,7 @@ typedef struct switch_vb_node_s {
 	switch_rtp_packet_t packet;
 	uint32_t len;
 	uint8_t visible;
+	struct switch_vb_node_s *prev;
 	struct switch_vb_node_s *next;
 } switch_vb_node_t;
 
@@ -67,6 +68,7 @@ struct switch_vb_s {
 	switch_inthash_t *missing_seq_hash;
 	switch_inthash_t *node_hash;
 	switch_mutex_t *mutex;
+	switch_mutex_t *list_mutex;
 	switch_memory_pool_t *pool;
 	int free_pool;
 	switch_vb_flag_t flags;
@@ -74,25 +76,26 @@ struct switch_vb_s {
 
 static inline switch_vb_node_t *new_node(switch_vb_t *vb)
 {
-	switch_vb_node_t *np, *last = NULL;
+	switch_vb_node_t *np;
+
+	switch_mutex_lock(vb->list_mutex);
 
 	for (np = vb->node_list; np; np = np->next) {
 		if (!np->visible) {
 			break;
 		}
-		last = np;
 	}
 
 	if (!np) {
 		
 		np = switch_core_alloc(vb->pool, sizeof(*np));
-	
-		if (last) {
-			last->next = np;
-		} else {
-			vb->node_list = np;
+		
+		np->next = vb->node_list;
+		if (np->next) {
+			np->next->prev = np;
 		}
-
+		vb->node_list = np;
+		
 	}
 
 	switch_assert(np);
@@ -101,41 +104,89 @@ static inline switch_vb_node_t *new_node(switch_vb_t *vb)
 	vb->visible_nodes++;
 	np->parent = vb;
 
+	switch_mutex_unlock(vb->list_mutex);
+
 	return np;
 }
 
-#if 0
-static inline switch_vb_node_t *find_seq(switch_vb_t *vb, uint16_t seq)
+static inline void push_to_top(switch_vb_t *vb, switch_vb_node_t *node)
 {
-	switch_vb_node_t *np;
-	for (np = vb->node_list; np; np = np->next) {
-		if (!np->visible) continue;
+	if (node == vb->node_list) {
+		vb->node_list = node->next;
+	} else if (node->prev) {
+		node->prev->next = node->next;
+	}
 			
-		if (ntohs(np->packet.header.seq) == ntohs(seq)) {
-			return np;
+	if (node->next) {
+		node->next->prev = node->prev;
+	}
+
+	node->next = vb->node_list;
+	node->prev = NULL;
+
+	if (node->next) {
+		node->next->prev = node;
+	}
+
+	vb->node_list = node;
+
+	switch_assert(node->next != node);
+	switch_assert(node->prev != node);
+}
+
+static inline void hide_node(switch_vb_node_t *node, switch_bool_t pop)
+{
+	switch_vb_t *vb = node->parent;
+
+	switch_mutex_lock(vb->list_mutex);
+
+	if (node->visible) {
+		node->visible = 0;
+		vb->visible_nodes--;
+
+		if (pop) {
+			push_to_top(vb, node);
 		}
 	}
 
-	return NULL;
-}
-#endif
+	switch_core_inthash_delete(vb->node_hash, node->packet.header.seq);
 
-static inline void hide_node(switch_vb_node_t *node)
+	switch_mutex_unlock(vb->list_mutex);
+}
+
+static inline void sort_free_nodes(switch_vb_t *vb)
 {
-	if (node->visible) {
-		node->visible = 0;
-		node->parent->visible_nodes--;
+	switch_vb_node_t *np, *this_np;
+	int start = 0;
+
+	switch_mutex_lock(vb->list_mutex);
+	np = vb->node_list;
+
+	while(np) {
+		this_np = np;
+		np = np->next;
+
+		if (this_np->visible) {
+			start++;
+		}
+
+		if (start && !this_np->visible) {
+			push_to_top(vb, this_np);
+		}		
 	}
-	switch_core_inthash_delete(node->parent->node_hash, node->packet.header.seq);
+
+	switch_mutex_unlock(vb->list_mutex);
 }
 
 static inline void hide_nodes(switch_vb_t *vb)
 {
 	switch_vb_node_t *np;
 
+	switch_mutex_lock(vb->list_mutex);
 	for (np = vb->node_list; np; np = np->next) {
-		hide_node(np);
+		hide_node(np, SWITCH_FALSE);
 	}
+	switch_mutex_unlock(vb->list_mutex);
 }
 
 static inline void drop_ts(switch_vb_t *vb, uint32_t ts)
@@ -143,15 +194,22 @@ static inline void drop_ts(switch_vb_t *vb, uint32_t ts)
 	switch_vb_node_t *np;
 	int x = 0;
 
+	switch_mutex_lock(vb->list_mutex);
 	for (np = vb->node_list; np; np = np->next) {
 		if (!np->visible) continue;
 
 		if (ts == np->packet.header.ts) {
-			hide_node(np);
+			hide_node(np, SWITCH_FALSE);
 			x++;
 		}
 	}
 
+	if (x) {
+		sort_free_nodes(vb);
+	}
+
+	switch_mutex_unlock(vb->list_mutex);
+	
 	if (x) vb->complete_frames--;
 }
 
@@ -159,6 +217,7 @@ static inline uint32_t vb_find_lowest_ts(switch_vb_t *vb)
 {
 	switch_vb_node_t *np, *lowest = NULL;
 	
+	switch_mutex_lock(vb->list_mutex);
 	for (np = vb->node_list; np; np = np->next) {
 		if (!np->visible) continue;
 
@@ -166,6 +225,7 @@ static inline uint32_t vb_find_lowest_ts(switch_vb_t *vb)
 			lowest = np;
 		}
 	}
+	switch_mutex_unlock(vb->list_mutex);
 
 	return lowest ? lowest->packet.header.ts : 0;
 }
@@ -239,6 +299,7 @@ static inline switch_vb_node_t *vb_find_lowest_seq(switch_vb_t *vb)
 {
 	switch_vb_node_t *np, *lowest = NULL;
 	
+	switch_mutex_lock(vb->list_mutex);
 	for (np = vb->node_list; np; np = np->next) {
 		if (!np->visible) continue;
 
@@ -246,6 +307,7 @@ static inline switch_vb_node_t *vb_find_lowest_seq(switch_vb_t *vb)
 			lowest = np;
 		}
 	}
+	switch_mutex_unlock(vb->list_mutex);
 
 	return lowest;
 }
@@ -294,7 +356,9 @@ static inline switch_status_t vb_next_packet(switch_vb_t *vb, switch_vb_node_t *
 
 static inline void free_nodes(switch_vb_t *vb)
 {
+	switch_mutex_lock(vb->list_mutex);
 	vb->node_list = NULL;
+	switch_mutex_unlock(vb->list_mutex);
 }
 
 SWITCH_DECLARE(void) switch_vb_set_flag(switch_vb_t *vb, switch_vb_flag_t flag)
@@ -370,7 +434,7 @@ SWITCH_DECLARE(switch_status_t) switch_vb_create(switch_vb_t **vbp, uint32_t min
 	switch_core_inthash_init(&vb->missing_seq_hash);
 	switch_core_inthash_init(&vb->node_hash);
 	switch_mutex_init(&vb->mutex, SWITCH_MUTEX_NESTED, pool);
-
+	switch_mutex_init(&vb->list_mutex, SWITCH_MUTEX_NESTED, pool);
 
 	*vbp = vb;
 
@@ -569,7 +633,7 @@ SWITCH_DECLARE(switch_status_t) switch_vb_get_packet(switch_vb_t *vb, switch_rtp
 		*packet = node->packet;
 		*len = node->len;
 		memcpy(packet->body, node->packet.body, node->len);
-		hide_node(node);
+		hide_node(node, SWITCH_TRUE);
 
 		vb_debug(vb, 1, "GET packet ts:%u seq:%u %s\n", ntohl(packet->header.ts), ntohs(packet->header.seq), packet->header.m ? " <MARK>" : "");
 
