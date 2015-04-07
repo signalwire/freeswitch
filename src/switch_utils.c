@@ -96,6 +96,7 @@ SWITCH_DECLARE(switch_status_t) switch_frame_alloc(switch_frame_t **frame, switc
 typedef struct switch_frame_node_s {
 	switch_frame_t *frame;
 	int inuse;
+	struct switch_frame_node_s *prev;
 	struct switch_frame_node_s *next;
 } switch_frame_node_t;
 
@@ -103,19 +104,37 @@ struct switch_frame_buffer_s {
 	switch_frame_node_t *head;
 	switch_memory_pool_t *pool;
 	switch_mutex_t *mutex;
+	uint32_t total;
 };
 
 static switch_frame_t *find_free_frame(switch_frame_buffer_t *fb, switch_frame_t *orig)
 {
 	switch_frame_node_t *np;
+	int x = 0;
 
 	switch_mutex_lock(fb->mutex);
-	for (np = fb->head; np; np = np->next) {
-		if (!np->inuse && ((orig->packet && np->frame->packet) || (!orig->packet && !np->frame->packet))) {
-			break;
-		}
-	}
 
+	for (np = fb->head; np; np = np->next) {
+		x++;
+		
+		if (!np->inuse && ((orig->packet && np->frame->packet) || (!orig->packet && !np->frame->packet))) {
+
+			if (np == fb->head) {
+				fb->head = np->next;
+			} else if (np->prev) {
+				np->prev->next = np->next;
+			}
+
+			if (np->next) {
+				np->next->prev = np->prev;
+			}
+
+			fb->total--;
+			np->prev = np->next = NULL;
+			break;
+		}		
+	}
+	
 	if (!np) {
 		np = switch_core_alloc(fb->pool, sizeof(*np));
 		np->frame = switch_core_alloc(fb->pool, sizeof(*np->frame));
@@ -126,10 +145,7 @@ static switch_frame_t *find_free_frame(switch_frame_buffer_t *fb, switch_frame_t
 			np->frame->data = switch_core_alloc(fb->pool, SWITCH_RTP_MAX_BUF_LEN);
 			np->frame->buflen = SWITCH_RTP_MAX_BUF_LEN;
 		}
-		np->next = fb->head;
-		fb->head = np;
 	}
-
 
 	np->frame->samples = orig->samples;
 	np->frame->rate = orig->rate;
@@ -177,10 +193,24 @@ SWITCH_DECLARE(switch_status_t) switch_frame_buffer_free(switch_frame_buffer_t *
 
 	old_frame = *frameP;
 	*frameP = NULL;
-
+	
 	node = (switch_frame_node_t *) old_frame->extra_data;
 	node->inuse = 0;
 	switch_img_free(&node->frame->img);
+	
+	fb->total++;
+
+	if (fb->head) {
+		fb->head->prev = node;
+	}
+
+	node->next = fb->head;
+	node->prev = NULL;
+	fb->head = node;
+
+	switch_assert(node->next != node);
+	switch_assert(node->prev != node);
+	
 
 	switch_mutex_unlock(fb->mutex);
 

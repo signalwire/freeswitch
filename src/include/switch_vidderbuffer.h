@@ -45,6 +45,7 @@ SWITCH_DECLARE(void) switch_vb_reset(switch_vb_t *vb);
 SWITCH_DECLARE(void) switch_vb_debug_level(switch_vb_t *vb, uint8_t level);
 SWITCH_DECLARE(int) switch_vb_frame_count(switch_vb_t *vb);
 SWITCH_DECLARE(int) switch_vb_poll(switch_vb_t *vb);
+SWITCH_DECLARE(switch_status_t) switch_vb_push_packet(switch_vb_t *vb, switch_rtp_packet_t *packet, switch_size_t len);
 SWITCH_DECLARE(switch_status_t) switch_vb_put_packet(switch_vb_t *vb, switch_rtp_packet_t *packet, switch_size_t len);
 SWITCH_DECLARE(switch_status_t) switch_vb_get_packet(switch_vb_t *vb, switch_rtp_packet_t *packet, switch_size_t *len);
 SWITCH_DECLARE(uint32_t) switch_vb_pop_nack(switch_vb_t *vb);

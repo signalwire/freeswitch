@@ -7018,11 +7018,10 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 		
 		if (rtp_session->flags[SWITCH_RTP_FLAG_NACK]) {
 			if (!rtp_session->vbw) {
-				switch_vb_create(&rtp_session->vbw, 500, 500, rtp_session->pool);
-				switch_vb_set_flag(rtp_session->vbw, SVB_QUEUE_ONLY);
+				switch_vb_create(&rtp_session->vbw, 150, 150, rtp_session->pool);
 				//switch_vb_debug_level(rtp_session->vbw, 10);
 			}
-			switch_vb_put_packet(rtp_session->vbw, (switch_rtp_packet_t *)send_msg, bytes);
+			switch_vb_push_packet(rtp_session->vbw, (switch_rtp_packet_t *)send_msg, bytes);
 		}
 
 #ifdef RTP_WRITE_PLOSS
