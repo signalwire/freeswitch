@@ -596,6 +596,7 @@ static switch_status_t switch_vpx_encode(switch_codec_t *codec, switch_frame_t *
 	int64_t pts;
 	vpx_enc_frame_flags_t vpx_flags = 0;
 	switch_time_t now;
+	int err;
 
 	if (frame->flags & SFF_SAME_IMAGE) {
 		return consume_partition(context, frame);
@@ -652,13 +653,14 @@ static switch_status_t switch_vpx_encode(switch_codec_t *codec, switch_frame_t *
 
 	dur = context->last_ms ? (now - context->last_ms) / 1000 : pts;
 
-	if (vpx_codec_encode(&context->encoder,
+	if ((err = vpx_codec_encode(&context->encoder,
 						 (vpx_image_t *) frame->img,
 						 pts,
 						 dur, 
 						 vpx_flags,
-						 VPX_DL_REALTIME) != VPX_CODEC_OK) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "VPX encode error %d:%s\n", context->encoder.err, context->encoder.err_detail);
+						 VPX_DL_REALTIME)) != VPX_CODEC_OK) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "VPX encode error %d:%s:%s\n",
+			err, vpx_codec_error(&context->encoder), vpx_codec_error_detail(&context->encoder));
 		frame->datalen = 0;
 		return SWITCH_STATUS_FALSE;
 	}
