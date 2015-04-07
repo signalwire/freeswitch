@@ -48,8 +48,8 @@
 	</connection>
       </connections>
       <params>
-	<param name="eventExchange" value="TAP.Events"/>
-	<param name="eventExchangetype" value="topic"/>
+	<param name="exchange" value="TAP.Commands"/>
+	<param name="reconnect_interval_ms" value="1000"/>
       </params>
     </profile>
   </commands>

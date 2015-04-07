@@ -83,8 +83,10 @@ switch_status_t mod_amqp_command_destroy(mod_amqp_command_profile_t **prof)
 switch_status_t mod_amqp_command_create(char *name, switch_xml_t cfg)
 {
 	mod_amqp_command_profile_t *profile = NULL;
+	switch_xml_t params, param, connections, connection;
 	switch_threadattr_t *thd_attr = NULL;
 	switch_memory_pool_t *pool;
+	char *exchange = NULL;
 
 	if (switch_core_new_memory_pool(&pool) != SWITCH_STATUS_SUCCESS) {
 		goto err;
@@ -95,6 +97,61 @@ switch_status_t mod_amqp_command_create(char *name, switch_xml_t cfg)
 	profile->pool = pool;
 	profile->name = switch_core_strdup(profile->pool, name);
 	profile->running = 1;
+	profile->reconnect_interval_ms = 1000;
+
+	if ((params = switch_xml_child(cfg, "params")) != NULL) {
+		for (param = switch_xml_child(params, "param"); param; param = param->next) {
+			char *var = (char *) switch_xml_attr_soft(param, "name");
+			char *val = (char *) switch_xml_attr_soft(param, "value");
+
+			if (!var) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Profile[%s] param missing 'name' attribute\n", profile->name);
+				continue;
+			}
+
+			if (!val) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Profile[%s] param[%s] missing 'value' attribute\n", profile->name, var);
+				continue;
+			}
+
+			if (!strncmp(var, "reconnect_interval_ms", 21)) {
+				int interval = atoi(val);
+				if ( interval && interval > 0 ) {
+					profile->reconnect_interval_ms = interval;
+				}
+			} else if (!strncmp(var, "exchange", 8)) {
+				exchange = switch_core_strdup(profile->pool, "TAP.Commands");
+			}
+		}
+	}
+
+	/* Handle defaults of string types */
+	profile->exchange = exchange ? exchange : switch_core_strdup(profile->pool, "TAP.Commands");
+
+	if ((connections = switch_xml_child(cfg, "connections")) != NULL) {
+		for (connection = switch_xml_child(connections, "connection"); connection; connection = connection->next) {
+			if ( ! profile->conn_root ) { /* Handle first root node */
+				if (mod_amqp_connection_create(&(profile->conn_root), connection, profile->pool) != SWITCH_STATUS_SUCCESS) {
+					/* Handle connection create failure */
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Profile[%s] failed to create connection\n", profile->name);
+					continue;
+				}
+				profile->conn_active = profile->conn_root;
+			} else {
+				if (mod_amqp_connection_create(&(profile->conn_active->next), connection, profile->pool) != SWITCH_STATUS_SUCCESS) {
+					/* Handle connection create failure */
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Profile[%s] failed to create connection\n", profile->name);
+					continue;
+				}
+				profile->conn_active = profile->conn_active->next;
+			}
+		}
+	}
+	profile->conn_active = NULL;
+
+	if ( mod_amqp_connection_open(profile->conn_root, &(profile->conn_active), profile->name, profile->custom_attr) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Profile[%s] was unable to connect to any connection\n", profile->name);
+	}
 
 	/* Start the worker threads */
 	switch_threadattr_create(&thd_attr, profile->pool);

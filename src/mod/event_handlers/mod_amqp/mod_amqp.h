@@ -114,14 +114,7 @@ typedef struct {
   char *name;
   
   char *exchange;
-  char *exchange_type;
   char *binding_key;
-
-  /* Array to store the possible event subscriptions */
-  char *event_filter;
-  unsigned int number_of_event_filters;
-  switch_event_node_t *event_nodes[SWITCH_EVENT_ALL];
-  switch_event_types_t event_ids[SWITCH_EVENT_ALL];
 
   /* Note: The AMQP channel is not reentrant this MUTEX serializes sending events. */
   mod_amqp_connection_t *conn_root;
