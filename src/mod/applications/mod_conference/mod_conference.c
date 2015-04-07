@@ -1330,7 +1330,7 @@ static switch_status_t attach_video_layer(conference_member_t *member, int idx)
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (member->video_flow == SWITCH_MEDIA_FLOW_SENDONLY) {
+	if (member->video_flow == SWITCH_MEDIA_FLOW_SENDONLY && !member->avatar_png_img) {
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -1876,7 +1876,7 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 					}
 				}
 				
-				if (!layer && conference->canvas->layers_used < conference->canvas->total_layers && imember->video_flow != SWITCH_MEDIA_FLOW_SENDONLY) {
+				if (!layer && conference->canvas->layers_used < conference->canvas->total_layers && (imember->avatar_png_img || imember->video_flow != SWITCH_MEDIA_FLOW_SENDONLY)) {
 					/* find an empty layer */
 					for (i = 0; i < conference->canvas->total_layers; i++) {
 						mcu_layer_t *xlayer = &conference->canvas->layers[i];
@@ -3768,11 +3768,11 @@ static void find_video_floor(conference_member_t *member, switch_bool_t entering
 			continue;
 		}
 
-		if (imember->video_flow == SWITCH_MEDIA_FLOW_SENDONLY) {
+		if (imember->video_flow == SWITCH_MEDIA_FLOW_SENDONLY && !imember->avatar_png_img) {
 			continue;
 		}
 
-		if (!switch_channel_test_flag(imember->channel, CF_VIDEO)) {
+		if (!switch_channel_test_flag(imember->channel, CF_VIDEO) && !imember->avatar_png_img) {
 			continue;
 		}
 
@@ -3874,7 +3874,7 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 		channel = switch_core_session_get_channel(member->session);
 		member->video_flow = switch_core_session_media_flow(member->session, SWITCH_MEDIA_TYPE_VIDEO);
 
-		if (switch_channel_test_flag(channel, CF_VIDEO)) {
+		if (switch_channel_test_flag(channel, CF_VIDEO) && member->video_flow != SWITCH_MEDIA_FLOW_SENDONLY) {
 			switch_set_flag_locked(member, MFLAG_ACK_VIDEO);
 		} else {
 			if (conference->no_video_avatar) {
@@ -4111,7 +4111,7 @@ static void conference_set_video_floor_holder(conference_obj_t *conference, conf
 		return;
 	}
 	
-	if (member && member->video_flow == SWITCH_MEDIA_FLOW_SENDONLY) {
+	if (member && member->video_flow == SWITCH_MEDIA_FLOW_SENDONLY && !member->avatar_png_img) {
 		return;
 	}
 
@@ -4214,7 +4214,7 @@ static void conference_set_floor_holder(conference_obj_t *conference, conference
 
 	
 	if (((conference->video_floor_holder && !member && !switch_test_flag(conference, CFLAG_VID_FLOOR_LOCK)) ||
-		 (member && member->channel && switch_channel_test_flag(member->channel, CF_VIDEO)))) {
+		 (member && member->channel && (switch_channel_test_flag(member->channel, CF_VIDEO) || member->avatar_png_img)))) {
 		conference_set_video_floor_holder(conference, member, SWITCH_FALSE);
 	}
 	
@@ -5963,7 +5963,7 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 			break;
 		}
 
-		if (switch_channel_test_flag(channel, CF_VIDEO) && !switch_test_flag(member, MFLAG_ACK_VIDEO)) {
+		if ((switch_channel_test_flag(channel, CF_VIDEO) || member->avatar_png_img) && !switch_test_flag(member, MFLAG_ACK_VIDEO)) {
 			switch_set_flag_locked(member, MFLAG_ACK_VIDEO);
 			switch_core_session_video_reinit(member->session);
 			conference_set_video_floor_holder(member->conference, member, SWITCH_FALSE);
@@ -9016,7 +9016,7 @@ static switch_status_t conf_api_sub_vid_floor(conference_member_t *member, switc
 	if (member == NULL)
 		return SWITCH_STATUS_GENERR;
 
-	if (!switch_channel_test_flag(member->channel, CF_VIDEO)) {
+	if (!switch_channel_test_flag(member->channel, CF_VIDEO) && !member->avatar_png_img) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Channel %s does not have video capability!\n", switch_channel_get_name(member->channel));
 		return SWITCH_STATUS_FALSE;
 	}
