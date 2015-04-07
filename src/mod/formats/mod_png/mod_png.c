@@ -23,7 +23,9 @@
  *
  * Contributor(s):
  *
- * mod_png -- play a png as video
+ * Seven Du <dujinfang@gmail.com>
+ *
+ * mod_png -- play a png as video, optionally with audio
  *
  */
 
@@ -44,6 +46,7 @@ struct png_file_context {
 	int sent;
 	int max;
 	int samples;
+	switch_file_handle_t *audio_fh;
 };
 
 typedef struct png_file_context png_file_context_t;
@@ -87,12 +90,28 @@ static switch_status_t png_file_open(switch_file_handle_t *handle, const char *p
 	context->max = 10000;
 
 	if (handle->params) {
+		const char *audio_file = switch_event_get_header(handle->params, "audio_file");
 		const char *max = switch_event_get_header(handle->params, "png_ms");
 		int tmp;
 
 		if (max) {
 			tmp = atol(max);
 			context->max = tmp;
+		}
+
+		if (audio_file) {
+			context->audio_fh = switch_core_alloc(handle->memory_pool, sizeof(*context->audio_fh));
+			switch_assert(context->audio_fh);
+
+			if (switch_core_file_open(context->audio_fh,
+									  audio_file,
+									  handle->channels,
+									  handle->samplerate,
+									  SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT,
+									  NULL) != SWITCH_STATUS_SUCCESS) {
+									  switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Failed to open audio file %s\n", audio_file);
+									  context->audio_fh = NULL;
+			}
 		}
 	}
 
@@ -120,6 +139,8 @@ static switch_status_t png_file_close(switch_file_handle_t *handle)
 
 	switch_img_free(&context->img);
 	
+	if (context->audio_fh) switch_core_file_close(context->audio_fh);
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -127,6 +148,10 @@ static switch_status_t png_file_read(switch_file_handle_t *handle, void *data, s
 {
 
 	png_file_context_t *context = (png_file_context_t *)handle->private_info;
+
+	if (context->audio_fh) {
+		return switch_core_file_read(context->audio_fh, data, len);
+	}
 
 	if (!context->img || !context->samples) {
 		return SWITCH_STATUS_FALSE;
