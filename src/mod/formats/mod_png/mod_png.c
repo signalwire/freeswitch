@@ -163,6 +163,9 @@ static switch_status_t png_file_read_video(switch_file_handle_t *handle, switch_
 		frame->img = dup;
 		context->sent++;
 	} else {
+		if ((flags && SVR_BLOCK)) {
+			switch_yield(5000);
+		}
 		return SWITCH_STATUS_BREAK;
 	}
 
