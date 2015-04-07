@@ -4661,14 +4661,24 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 	switch_image_t *blank_img = NULL;
 	switch_rgb_color_t bgcolor;
 	switch_rtp_engine_t *v_engine = NULL;
+	int ready_loops = 0;
+	const char *var;
 
-	switch_color_set_rgb(&bgcolor, "#0000FF");
-	blank_img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, 352, 288, 1);
-	switch_img_fill(blank_img, 0, 0, blank_img->d_w, blank_img->d_h, &bgcolor);
-	
 	if (!(smh = session->media_handle)) {
 		return NULL;
 	}
+
+	if ((var = switch_channel_get_variable(session->channel, "core_video_blank_image"))) {
+		blank_img = switch_img_read_png(var);
+	}
+
+	if (!blank_img) {
+		switch_color_set_rgb(&bgcolor, "#000000");
+		blank_img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, 320, 240, 1);
+		switch_img_fill(blank_img, 0, 0, blank_img->d_w, blank_img->d_h, &bgcolor);
+	}
+	
+
 	
 	v_engine = &smh->engines[SWITCH_MEDIA_TYPE_VIDEO];
 	v_engine->thread_id = switch_thread_self();
@@ -4756,7 +4766,7 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 				continue;
 			}
 
-			if (read_frame->img && read_frame->img->d_w && read_frame->img->d_h) {
+			if (read_frame->img && read_frame->img->d_w && read_frame->img->d_h && ++ready_loops > 5) {
 				switch_channel_set_flag(channel, CF_VIDEO_READY);
 				smh->vid_params.width = read_frame->img->d_w;
 				smh->vid_params.height = read_frame->img->d_h;
@@ -4797,6 +4807,7 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 
 		if (send_blank || switch_channel_test_flag(channel, CF_VIDEO_BLANK)) {
 			fr.img = blank_img;
+			switch_yield(100000);
 			switch_core_session_write_video_frame(session, &fr, SWITCH_IO_FLAG_NONE, SWITCH_IO_FLAG_FORCE);
 		} else if (read_frame && (switch_channel_test_flag(channel, CF_VIDEO_ECHO))) {
 			switch_core_session_write_video_frame(session, read_frame, SWITCH_IO_FLAG_NONE, 0);
