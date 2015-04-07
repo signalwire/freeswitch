@@ -3321,7 +3321,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_crypto_key(switch_rtp_t *rtp_sess
 		if (rtp_session->flags[SWITCH_RTP_FLAG_SECURE_RECV] && idx == 0 && rtp_session->recv_ctx[idx]) {
 			rtp_session->flags[SWITCH_RTP_FLAG_SECURE_RECV_RESET] = 1;
 		} else {
-			if ((stat = srtp_create(&rtp_session->recv_ctx[idx], policy))) {
+			if ((stat = srtp_create(&rtp_session->recv_ctx[idx], policy)) || !rtp_session->recv_ctx[idx]) {
 				status = SWITCH_STATUS_FALSE;
 			}
 
@@ -3343,7 +3343,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_crypto_key(switch_rtp_t *rtp_sess
 		if (rtp_session->flags[SWITCH_RTP_FLAG_SECURE_SEND] && idx == 0 && rtp_session->send_ctx[idx]) {
 			rtp_session->flags[SWITCH_RTP_FLAG_SECURE_SEND_RESET] = 1;
 		} else {
-			if ((stat = srtp_create(&rtp_session->send_ctx[idx], policy))) {
+			if ((stat = srtp_create(&rtp_session->send_ctx[idx], policy)) || !rtp_session->send_ctx[idx]) {
 				status = SWITCH_STATUS_FALSE;
 			}
 
@@ -5081,13 +5081,16 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 				int sbytes = (int) *bytes;
 				err_status_t stat = 0;
 
-				if (rtp_session->flags[SWITCH_RTP_FLAG_SECURE_RECV_RESET]) {
+				if (rtp_session->flags[SWITCH_RTP_FLAG_SECURE_RECV_RESET] || !rtp_session->recv_ctx[rtp_session->srtp_idx_rtp]) {
 					switch_rtp_clear_flag(rtp_session, SWITCH_RTP_FLAG_SECURE_RECV_RESET);
 					srtp_dealloc(rtp_session->recv_ctx[rtp_session->srtp_idx_rtp]);
 					rtp_session->recv_ctx[rtp_session->srtp_idx_rtp] = NULL;
-					if ((stat = srtp_create(&rtp_session->recv_ctx[rtp_session->srtp_idx_rtp], &rtp_session->recv_policy[rtp_session->srtp_idx_rtp]))) {
+					if ((stat = srtp_create(&rtp_session->recv_ctx[rtp_session->srtp_idx_rtp], 
+											&rtp_session->recv_policy[rtp_session->srtp_idx_rtp])) || !rtp_session->recv_ctx[rtp_session->srtp_idx_rtp]) {
 						
+						rtp_session->flags[SWITCH_RTP_FLAG_SECURE_RECV] = 0;
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Error! RE-Activating Secure RTP RECV\n");
+						rtp_session->flags[SWITCH_RTP_FLAG_SECURE_RECV] = 0;
 						return SWITCH_STATUS_FALSE;
 					} else {
 						
@@ -6929,14 +6932,16 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 			err_status_t stat;
 
 
-			if (rtp_session->flags[SWITCH_RTP_FLAG_SECURE_SEND_RESET]) {
+			if (rtp_session->flags[SWITCH_RTP_FLAG_SECURE_SEND_RESET] || !rtp_session->send_ctx[rtp_session->srtp_idx_rtp]) {
 				
 				switch_rtp_clear_flag(rtp_session, SWITCH_RTP_FLAG_SECURE_SEND_RESET);
 				srtp_dealloc(rtp_session->send_ctx[rtp_session->srtp_idx_rtp]);
 				rtp_session->send_ctx[rtp_session->srtp_idx_rtp] = NULL;
-				if ((stat = srtp_create(&rtp_session->send_ctx[rtp_session->srtp_idx_rtp], &rtp_session->send_policy[rtp_session->srtp_idx_rtp]))) {
+				if ((stat = srtp_create(&rtp_session->send_ctx[rtp_session->srtp_idx_rtp], 
+										&rtp_session->send_policy[rtp_session->srtp_idx_rtp])) || !rtp_session->send_ctx[rtp_session->srtp_idx_rtp]) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, 
 									  "Error! RE-Activating %s Secure RTP SEND\n", rtp_type(rtp_session));
+					rtp_session->flags[SWITCH_RTP_FLAG_SECURE_SEND] = 0;
 					ret = -1;
 					goto end;
 				} else {
@@ -7459,8 +7464,10 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_write_raw(switch_rtp_t *rtp_session, 
 				switch_rtp_clear_flag(rtp_session, SWITCH_RTP_FLAG_SECURE_SEND_RESET);
 				srtp_dealloc(rtp_session->send_ctx[rtp_session->srtp_idx_rtp]);
 				rtp_session->send_ctx[rtp_session->srtp_idx_rtp] = NULL;
-				if ((stat = srtp_create(&rtp_session->send_ctx[rtp_session->srtp_idx_rtp], &rtp_session->send_policy[rtp_session->srtp_idx_rtp]))) {
+				if ((stat = srtp_create(&rtp_session->send_ctx[rtp_session->srtp_idx_rtp], 
+										&rtp_session->send_policy[rtp_session->srtp_idx_rtp])) || !rtp_session->send_ctx[rtp_session->srtp_idx_rtp]) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Error! RE-Activating Secure RTP SEND\n");
+					rtp_session->flags[SWITCH_RTP_FLAG_SECURE_SEND] = 0;
 					status = SWITCH_STATUS_FALSE;
 					goto end;
 				} else {
