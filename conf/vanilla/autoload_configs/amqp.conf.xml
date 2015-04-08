@@ -49,6 +49,7 @@
       </connections>
       <params>
 	<param name="exchange" value="TAP.Commands"/>
+	<param name="binding_key" value="commandBindingKey"/>
 	<param name="reconnect_interval_ms" value="1000"/>
       </params>
     </profile>

@@ -86,7 +86,7 @@ switch_status_t mod_amqp_command_create(char *name, switch_xml_t cfg)
 	switch_xml_t params, param, connections, connection;
 	switch_threadattr_t *thd_attr = NULL;
 	switch_memory_pool_t *pool;
-	char *exchange = NULL;
+	char *exchange = NULL, *binding_key = NULL;
 
 	if (switch_core_new_memory_pool(&pool) != SWITCH_STATUS_SUCCESS) {
 		goto err;
@@ -120,13 +120,16 @@ switch_status_t mod_amqp_command_create(char *name, switch_xml_t cfg)
 					profile->reconnect_interval_ms = interval;
 				}
 			} else if (!strncmp(var, "exchange", 8)) {
-				exchange = switch_core_strdup(profile->pool, "TAP.Commands");
+				exchange = switch_core_strdup(profile->pool, val);
+			} else if (!strncmp(var, "binding_key", 11)) {
+				binding_key = switch_core_strdup(profile->pool, val);
 			}
 		}
 	}
 
 	/* Handle defaults of string types */
 	profile->exchange = exchange ? exchange : switch_core_strdup(profile->pool, "TAP.Commands");
+	profile->binding_key = binding_key ? binding_key : switch_core_strdup(profile->pool, "commandBindingKey");
 
 	if ((connections = switch_xml_child(cfg, "connections")) != NULL) {
 		for (connection = switch_xml_child(connections, "connection"); connection; connection = connection->next) {
