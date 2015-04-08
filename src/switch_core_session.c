@@ -2182,7 +2182,8 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_xml(switch_e
 	flags[CF_LAZY_ATTENDED_TRANSFER] = 0;
 	flags[CF_SIGNAL_DATA] = 0;
 	flags[CF_SIMPLIFY] = 0;
-
+	flags[CF_VIDEO_READY] = 0;
+	flags[CF_VIDEO_DECODED_READ] = 0;
 
 	if (!(session = switch_core_session_request_uuid(endpoint_interface, direction, SOF_NO_LIMITS, pool, uuid))) {
 		return NULL;
