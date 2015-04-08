@@ -4805,7 +4805,8 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 			send_blank = 1;
 		}
 
-		if (send_blank || switch_channel_test_flag(channel, CF_VIDEO_BLANK)) {
+		if ((send_blank || switch_channel_test_flag(channel, CF_VIDEO_BLANK)) && 
+			!session->video_read_callback && !switch_channel_test_flag(session->channel, CF_BRIDGED)) {
 			fr.img = blank_img;
 			switch_yield(100000);
 			switch_core_session_write_video_frame(session, &fr, SWITCH_IO_FLAG_NONE, SWITCH_IO_FLAG_FORCE);
