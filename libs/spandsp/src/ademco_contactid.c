@@ -755,7 +755,7 @@ SPAN_DECLARE(ademco_contactid_receiver_state_t *) ademco_contactid_receiver_init
 {
     if (s == NULL)
     {
-        if ((s = (ademco_contactid_receiver_state_t *) span_alloc(sizeof (*s))) == NULL)
+        if ((s = (ademco_contactid_receiver_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
     }
     memset(s, 0, sizeof(*s));
@@ -1090,7 +1090,7 @@ SPAN_DECLARE(ademco_contactid_sender_state_t *) ademco_contactid_sender_init(ade
 {
     if (s == NULL)
     {
-        if ((s = (ademco_contactid_sender_state_t *) span_alloc(sizeof (*s))) == NULL)
+        if ((s = (ademco_contactid_sender_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
     }
     memset(s, 0, sizeof(*s));

@@ -662,8 +662,8 @@ static void monitor_control_messages(t38_gateway_state_t *s,
                 /*endif*/
             }
             /*endfor*/
-            /* If we are processing a message from the modem side, the contents determine the fast receive modem.
-               we are to use. If it comes from the T.38 side the contents do not. */
+            /* If we are processing a message from the modem side, the contents determine the fast
+               receive modem we are to use. If it comes from the T.38 side the contents do not. */
             s->core.fast_bit_rate = modem_codes[i].bit_rate;
             if (from_modem)
                 s->core.fast_rx_modem = modem_codes[i].modem_type;
@@ -700,8 +700,9 @@ static void monitor_control_messages(t38_gateway_state_t *s,
                 /*endif*/
             }
             /*endfor*/
-            /* If we are processing a message from the modem side, the contents determine the fast receive modem.
-               we are to use. If it comes from the T.38 side the contents do not. */
+            /* If we are processing a DCS message from the modem side, the contents determine the fast
+               receive modem we are to use. If it comes from the T.38 side the contents do not. For a
+               DTC message this is reversed. */
             s->core.fast_bit_rate = modem_codes[i].bit_rate;
             if ((buf[2] == T30_DTC  &&  !from_modem)  ||  (buf[2] != T30_DTC  &&  from_modem))
                 s->core.fast_rx_modem = modem_codes[i].modem_type;

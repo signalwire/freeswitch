@@ -173,7 +173,6 @@ SPAN_DECLARE(void) at_set_class1_handler(at_state_t *s, at_class1_handler_t hand
     \return A pointer to the logging context */
 SPAN_DECLARE(logging_state_t *) at_get_logging_state(at_state_t *s);
 
-
 SPAN_DECLARE(void) at_set_modem_control_handler(at_state_t *s,
                                                 at_modem_control_handler_t modem_control_handler,
                                                 void *modem_control_user_data);

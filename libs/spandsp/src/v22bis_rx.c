@@ -579,7 +579,7 @@ static __inline__ void process_half_baud(v22bis_state_t *s, const complexf_t *sa
             s->rx.gardner_step = 32;
         break;
     case V22BIS_RX_TRAINING_STAGE_UNSCRAMBLED_ONES:
-        /* Calling modem only */
+        /* Calling modem only. */
         /* The calling modem should initially receive unscrambled ones at 1200bps */
         target = &v22bis_constellation[nearest];
         track_carrier(s, &z, target);
@@ -621,7 +621,7 @@ static __inline__ void process_half_baud(v22bis_state_t *s, const complexf_t *sa
         }
         break;
     case V22BIS_RX_TRAINING_STAGE_UNSCRAMBLED_ONES_SUSTAINING:
-        /* Calling modem only */
+        /* Calling modem only. */
         /* Wait for the end of the unscrambled ones at 1200bps. */
         target = &v22bis_constellation[nearest];
         track_carrier(s, &z, target);
@@ -682,7 +682,7 @@ static __inline__ void process_half_baud(v22bis_state_t *s, const complexf_t *sa
                     /* The transmit side needs to sustain the scrambled ones for a timed period. */
                     s->tx.training_count = 0;
                     s->tx.training = V22BIS_TX_TRAINING_STAGE_TIMED_S11;
-                    /* Normal reception starts immediately */
+                    /* Normal reception starts immediately. */
                     s->rx.training = V22BIS_RX_TRAINING_STAGE_NORMAL_OPERATION;
 #if defined(SPANDSP_USE_FIXED_POINT)
                     s->rx.carrier_track_i = 8;

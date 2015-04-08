@@ -417,7 +417,7 @@ SPAN_DECLARE(dtmf_rx_state_t *) dtmf_rx_init(dtmf_rx_state_t *s,
 
     if (s == NULL)
     {
-        if ((s = (dtmf_rx_state_t *) span_alloc(sizeof (*s))) == NULL)
+        if ((s = (dtmf_rx_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
     }
     memset(s, 0, sizeof(*s));
@@ -578,7 +578,7 @@ SPAN_DECLARE(dtmf_tx_state_t *) dtmf_tx_init(dtmf_tx_state_t *s,
 {
     if (s == NULL)
     {
-        if ((s = (dtmf_tx_state_t *) span_alloc(sizeof (*s))) == NULL)
+        if ((s = (dtmf_tx_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
     }
     memset(s, 0, sizeof(*s));

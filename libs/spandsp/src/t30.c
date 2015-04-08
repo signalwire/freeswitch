@@ -436,6 +436,7 @@ static void decode_20digit_msg(t30_state_t *s, char *msg, const uint8_t *pkt, in
 static void decode_url_msg(t30_state_t *s, char *msg, const uint8_t *pkt, int len);
 static int decode_nsf_nss_nsc(t30_state_t *s, uint8_t *msg[], const uint8_t *pkt, int len);
 static void set_min_scan_time(t30_state_t *s);
+static int send_cfr_sequence(t30_state_t *s, int start);
 static int build_dcs(t30_state_t *s);
 static void timer_t2_start(t30_state_t *s);
 static void timer_t2a_start(t30_state_t *s);
@@ -1309,7 +1310,6 @@ int t30_build_dis_or_dtc(t30_state_t *s)
     /* No Document transfer mode (DTM) */
     /* No Electronic data interchange (EDI) */
     /* No Basic transfer mode (BTM) */
-
     /* No mixed mode (polling) */
     /* No character mode */
     /* No mixed mode (T.4/Annex E) */
@@ -5492,9 +5492,9 @@ static void timer_t2_expired(t30_state_t *s)
             /* We didn't receive a response to our T30_MCF after T30_EOM, so we must be OK
                to proceed to phase B, and pretty much act like its the beginning of a call. */
             span_log(&s->logging, SPAN_LOG_FLOW, "Returning to phase B after %s\n", t30_frametype(s->next_rx_step));
+            s->dis_received = false;
             set_phase(s, T30_PHASE_B_TX);
             timer_t2_start(s);
-            s->dis_received = false;
             send_dis_or_dtc_sequence(s, true);
             return;
         }
@@ -5548,6 +5548,13 @@ static void timer_t2a_expired(t30_state_t *s)
 {
     span_log(&s->logging, SPAN_LOG_FLOW, "T2A expired in phase %s, state %s. An HDLC frame lasted too long.\n", phase_names[s->phase], state_names[s->state]);
     t30_set_status(s, T30_ERR_HDLC_CARRIER);
+    /* T.30 says we should retry at this point, but we can't. We would need to
+       wait for the far end to go quiet before sending. Experience says you only
+       get here when the far end is buggy, and it will not go quiet unless you
+       hang up. If we were to retry, how long should we wait for the line to go
+       quiet? T.30 doesn't specify things like that. The only effective strategy,
+       when trying to deal with problems found in logs from real world systems,
+       is to abandon the call. */
     terminate_call(s);
 }
 /*- End of function --------------------------------------------------------*/
@@ -5571,7 +5578,8 @@ static void timer_t4_expired(t30_state_t *s)
 {
     /* There was no response (or only a corrupt response) to a command,
        within the T4 timeout period. */
-    span_log(&s->logging, SPAN_LOG_FLOW, "T4 expired in phase %s, state %s\n", phase_names[s->phase], state_names[s->state]);
+    if (s->timer_t2_t4_is == TIMER_IS_T4)
+        span_log(&s->logging, SPAN_LOG_FLOW, "T4 expired in phase %s, state %s\n", phase_names[s->phase], state_names[s->state]);
     /* Of course, things might just be a little late, especially if there are T.38
        links in the path. There is no point in simply timing out, and resending,
        if we are currently receiving something from the far end - its a half-duplex
@@ -6143,9 +6151,9 @@ SPAN_DECLARE(void) t30_front_end_status(void *user_data, int status)
         {
         case T30_STATE_ANSWERING:
             span_log(&s->logging, SPAN_LOG_FLOW, "Starting answer mode\n");
+            s->dis_received = false;
             set_phase(s, T30_PHASE_B_TX);
             timer_t2_start(s);
-            s->dis_received = false;
             send_dis_or_dtc_sequence(s, true);
             break;
         case T30_STATE_R:

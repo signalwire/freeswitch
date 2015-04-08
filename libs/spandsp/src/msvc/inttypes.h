@@ -33,7 +33,7 @@ typedef __int16		        int16_t;
 typedef __int32		        int32_t;
 typedef __int64		        int64_t;
 
-#if !defined(INFINITY)
+#if !defined(INFINITY)  &&  _MSC_VER < 1800
 #define INFINITY 0x7FFFFFFF
 #endif
 

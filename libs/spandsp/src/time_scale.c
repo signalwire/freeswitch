@@ -78,12 +78,15 @@ static __inline__ int amdf_pitch(int min_pitch, int max_pitch, int16_t amp[], in
         acc = 0;
         for (j = 0;  j < len;  j++)
             acc += abs(amp[i + j] - amp[j]);
+        /*endfor*/
         if (acc < min_acc)
         {
             min_acc = acc;
             pitch = i;
         }
+        /*endif*/
     }
+    /*endfor*/
     return pitch;
 }
 /*- End of function --------------------------------------------------------*/
@@ -102,6 +105,7 @@ static __inline__ void overlap_add(int16_t amp1[], int16_t amp2[], int len)
         amp2[i] = (int16_t) ((float) amp1[i]*(1.0f - weight) + (float) amp2[i]*weight);
         weight += step;
     }
+    /*endfor*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -130,52 +134,6 @@ SPAN_DECLARE(int) time_scale_rate(time_scale_state_t *s, float playout_rate)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(time_scale_state_t *) time_scale_init(time_scale_state_t *s, int sample_rate, float playout_rate)
-{
-    bool alloced;
-
-    if (sample_rate > TIME_SCALE_MAX_SAMPLE_RATE)
-        return NULL;
-    alloced = false;
-    if (s == NULL)
-    {
-        if ((s = (time_scale_state_t *) span_alloc(sizeof (*s))) == NULL)
-            return NULL;
-        /*endif*/
-        alloced = true;
-    }
-    /*endif*/
-    s->sample_rate = sample_rate;
-    s->min_pitch = sample_rate/TIME_SCALE_MIN_PITCH;
-    s->max_pitch = sample_rate/TIME_SCALE_MAX_PITCH;
-    s->buf_len = 2*sample_rate/TIME_SCALE_MIN_PITCH;
-    if (time_scale_rate(s, playout_rate))
-    {
-        if (alloced)
-            span_free(s);
-        return NULL;
-    }
-    /*endif*/
-    s->rate_nudge = 0.0f;
-    s->fill = 0;
-    s->lcp = 0;
-    return s;
-}
-/*- End of function --------------------------------------------------------*/
-
-SPAN_DECLARE(int) time_scale_release(time_scale_state_t *s)
-{
-    return 0;
-}
-/*- End of function --------------------------------------------------------*/
-
-SPAN_DECLARE(int) time_scale_free(time_scale_state_t *s)
-{
-    span_free(s);
-    return 0;
-}
-/*- End of function --------------------------------------------------------*/
-
 SPAN_DECLARE(int) time_scale(time_scale_state_t *s, int16_t out[], int16_t in[], int len)
 {
     double lcpf;
@@ -191,10 +149,12 @@ SPAN_DECLARE(int) time_scale(time_scale_state_t *s, int16_t out[], int16_t in[],
     if (s->fill + len < s->buf_len)
     {
         /* Cannot continue without more samples */
+        /* Save the residual signal for next time. */
         vec_copyi16(&s->buf[s->fill], in, len);
         s->fill += len;
         return out_len;
     }
+    /*endif*/
     k = s->buf_len - s->fill;
     vec_copyi16(&s->buf[s->fill], in, k);
     in_len += k;
@@ -208,15 +168,18 @@ SPAN_DECLARE(int) time_scale(time_scale_state_t *s, int16_t out[], int16_t in[],
             if (len - in_len < s->buf_len)
             {
                 /* Cannot continue without more samples */
+                /* Save the residual signal for next time. */
                 vec_copyi16(s->buf, &in[in_len], len - in_len);
                 s->fill = len - in_len;
                 s->lcp -= s->buf_len;
                 return out_len;
             }
+            /*endif*/
             vec_copyi16(s->buf, &in[in_len], s->buf_len);
             in_len += s->buf_len;
             s->lcp -= s->buf_len;
         }
+        /*endwhile*/
         if (s->lcp > 0)
         {
             vec_copyi16(&out[out_len], s->buf, s->lcp);
@@ -225,15 +188,18 @@ SPAN_DECLARE(int) time_scale(time_scale_state_t *s, int16_t out[], int16_t in[],
             if (len - in_len < s->lcp)
             {
                 /* Cannot continue without more samples */
+                /* Save the residual signal for next time. */
                 vec_copyi16(&s->buf[s->buf_len - s->lcp], &in[in_len], len - in_len);
                 s->fill = s->buf_len - s->lcp + len - in_len;
                 s->lcp = 0;
                 return out_len;
             }
+            /*endif*/
             vec_copyi16(&s->buf[s->buf_len - s->lcp], &in[in_len], s->lcp);
             in_len += s->lcp;
             s->lcp = 0;
         }
+        /*endif*/
         if (s->playout_rate == 1.0f)
         {
             s->lcp = 0x7FFFFFFF;
@@ -256,6 +222,7 @@ SPAN_DECLARE(int) time_scale(time_scale_state_t *s, int16_t out[], int16_t in[],
                 s->lcp++;
                 s->rate_nudge += 1.0f;
             }
+            /*endif*/
             if (s->playout_rate < 1.0f)
             {
                 /* Speed up - drop a chunk of data */
@@ -264,10 +231,12 @@ SPAN_DECLARE(int) time_scale(time_scale_state_t *s, int16_t out[], int16_t in[],
                 if (len - in_len < pitch)
                 {
                     /* Cannot continue without more samples */
+                    /* Save the residual signal for next time. */
                     vec_copyi16(&s->buf[s->buf_len - pitch], &in[in_len], len - in_len);
                     s->fill += (len - in_len - pitch);
                     return out_len;
                 }
+                /*endif*/
                 vec_copyi16(&s->buf[s->buf_len - pitch], &in[in_len], pitch);
                 in_len += pitch;
             }
@@ -278,15 +247,88 @@ SPAN_DECLARE(int) time_scale(time_scale_state_t *s, int16_t out[], int16_t in[],
                 out_len += pitch;
                 overlap_add(&s->buf[pitch], s->buf, pitch);
             }
+            /*endif*/
         }
+        /*endif*/
     }
+    /*endwhile*/
     return out_len;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) time_scale_flush(time_scale_state_t *s, int16_t out[])
+{
+    int len;
+    int pad;
+
+    if (s->playout_rate < 1.0f)
+        return 0;
+    /*endif*/
+    vec_copyi16(out, s->buf, s->fill);
+    len = s->fill;
+    if (s->playout_rate > 1.0f)
+    {
+        pad = s->fill*(s->playout_rate - 1.0f);
+        vec_zeroi16(&out[len], pad);
+        len += pad;
+    }
+    /*endif*/
+    s->fill = 0;
+    return len;
 }
 /*- End of function --------------------------------------------------------*/
 
 SPAN_DECLARE(int) time_scale_max_output_len(time_scale_state_t *s, int input_len)
 {
     return (int) (input_len*s->playout_rate + s->min_pitch + 1);
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(time_scale_state_t *) time_scale_init(time_scale_state_t *s, int sample_rate, float playout_rate)
+{
+    bool alloced;
+
+    if (sample_rate > TIME_SCALE_MAX_SAMPLE_RATE)
+        return NULL;
+    /*endif*/
+    alloced = false;
+    if (s == NULL)
+    {
+        if ((s = (time_scale_state_t *) span_alloc(sizeof(*s))) == NULL)
+            return NULL;
+        /*endif*/
+        alloced = true;
+    }
+    /*endif*/
+    s->sample_rate = sample_rate;
+    s->min_pitch = sample_rate/TIME_SCALE_MIN_PITCH;
+    s->max_pitch = sample_rate/TIME_SCALE_MAX_PITCH;
+    s->buf_len = 2*sample_rate/TIME_SCALE_MIN_PITCH;
+    if (time_scale_rate(s, playout_rate))
+    {
+        if (alloced)
+            span_free(s);
+        /*endif*/
+        return NULL;
+    }
+    /*endif*/
+    s->rate_nudge = 0.0f;
+    s->fill = 0;
+    s->lcp = 0;
+    return s;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) time_scale_release(time_scale_state_t *s)
+{
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) time_scale_free(time_scale_state_t *s)
+{
+    span_free(s);
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 /*- End of file ------------------------------------------------------------*/

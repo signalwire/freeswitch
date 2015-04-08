@@ -28,10 +28,32 @@
 #if !defined(_SPANDSP_T30_API_H_)
 #define _SPANDSP_T30_API_H_
 
+enum
+{
+    T33_NONE = 0,
+    T33_SST = 1,
+    T33_EXT = 2
+};
+
 #if defined(__cplusplus)
 extern "C"
 {
 #endif
+
+/*! Get the specified field from a T.33 formatted string.
+    \brief Get the specified field from a T.33 formatted string.
+    \param field The extracted field.
+    \param t33 The T.33 formatted string.
+    \param field_no The field number to extract. The first field is 0.
+    \return The extracted field type. -1 indicates a over length or badly formatted field. */
+SPAN_DECLARE(int) t33_sub_address_extract_field(uint8_t field[21], const uint8_t t33[], int field_no);
+
+/*! Append the specified field to a T.33 formatted string.
+    \brief Append the specified field to a T.33 formatted string.
+    \param t33 The T.33 formatted string.
+    \param field The field to be adppended.
+    \param type The type of the field to be appended. */
+SPAN_DECLARE(void) t33_sub_address_add_field(uint8_t t33[], const uint8_t field[], int type);
 
 /*! Set the transmitted NSF frame to be associated with a T.30 context.
     \brief Set the transmitted NSF frame to be associated with a T.30 context.
