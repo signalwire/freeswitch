@@ -1913,7 +1913,7 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 				ext_hdr->send_ssrc = htonl(rtp_session->ssrc);
 				ext_hdr->recv_ssrc = htonl(rtp_session->remote_ssrc);
 			
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG, "Sending RTCP PLI\n");
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "Sending RTCP PLI\n");
 			
 				ext_hdr->length = htons((uint8_t)(sizeof(switch_rtcp_ext_hdr_t) / 4) - 1); 
 				rtcp_bytes += sizeof(switch_rtcp_ext_hdr_t);
@@ -1937,7 +1937,7 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 				nack = (uint32_t *) p;
 				*nack = rtp_session->cur_nack;
 
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG, "Sending RTCP NACK %u\n", 
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "Sending RTCP NACK %u\n", 
 								  ntohs(*nack & 0xFFFF));
 				
 				rtcp_bytes += sizeof(switch_rtcp_ext_hdr_t) + sizeof(rtp_session->cur_nack);
@@ -1967,7 +1967,7 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 				fir->seq = rtp_session->fir_seq;
 				fir->r1 = fir->r2 = fir->r3 = 0;
 
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG, "Sending RTCP FIR SEQ %d\n", rtp_session->fir_seq);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "Sending RTCP FIR SEQ %d\n", rtp_session->fir_seq);
 
 				rtp_session->fir_seq++;
 			
@@ -5103,7 +5103,7 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 					stat = srtp_unprotect(rtp_session->recv_ctx[rtp_session->srtp_idx_rtp], &rtp_session->recv_msg.header, &sbytes);
 					if (rtp_session->flags[SWITCH_RTP_FLAG_NACK] && stat == err_status_replay_fail) {
 						/* false alarm nack */
-						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG, "REPLAY ERR, FALSE NACK\n");
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "REPLAY ERR, FALSE NACK\n");
 						stat = 0;
 						sbytes = 0;
 						*bytes = 0;
@@ -5299,7 +5299,7 @@ static void handle_nack(switch_rtp_t *rtp_session, uint32_t nack)
 		my_host = switch_get_addr(bufc, sizeof(bufc), rtp_session->local_addr);
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG, "Got NACK [%u][0x%x] for seq %u\n", nack, nack, ntohs(seq));
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "Got NACK [%u][0x%x] for seq %u\n", nack, nack, ntohs(seq));
 	
 	if (switch_vb_get_packet_by_seq(rtp_session->vbw, seq, (switch_rtp_packet_t *) send_msg, &bytes) == SWITCH_STATUS_SUCCESS) {
 
@@ -5317,13 +5317,13 @@ static void handle_nack(switch_rtp_t *rtp_session, uint32_t nack)
 		//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "RE----SEND %u\n", ntohs(send_msg->header.seq));
 		switch_rtp_write_raw(rtp_session, (void *) send_msg, &bytes, SWITCH_FALSE);
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG, "Cannot send NACK for seq %u\n", ntohs(seq));
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "Cannot send NACK for seq %u\n", ntohs(seq));
 	}
 
 	blp = ntohs(blp);
 	for (i = 0; i < 16; i++) {
 		if (blp & (1 << i)) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG, "Also Got NACK for seq %u\n", ntohs(seq) + i + 1);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "Also Got NACK for seq %u\n", ntohs(seq) + i + 1);
 			if (switch_vb_get_packet_by_seq(rtp_session->vbw, htons(ntohs(seq) + i + 1), (switch_rtp_packet_t *) &send_msg, &bytes) == SWITCH_STATUS_SUCCESS) {
 				if (rtp_session->flags[SWITCH_RTP_FLAG_DEBUG_RTP_WRITE]) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(rtp_session->session), SWITCH_LOG_CONSOLE,
@@ -5339,7 +5339,7 @@ static void handle_nack(switch_rtp_t *rtp_session, uint32_t nack)
 				//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "RE----SEND %u\n", ntohs(send_msg->header.seq));
 				switch_rtp_write_raw(rtp_session, (void *) &send_msg, &bytes, SWITCH_FALSE);
 			} else {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG, "Cannot send NACK for seq %u\n", ntohs(seq) + i);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "Cannot send NACK for seq %u\n", ntohs(seq) + i);
 			}
 		}
 	}
@@ -5356,7 +5356,7 @@ static switch_status_t process_rtcp_report(switch_rtp_t *rtp_session, rtcp_msg_t
 	
 	if (rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] && (msg->header.type == RTCP_PT_RTPFB || msg->header.type == RTCP_PT_PSFB)) {
 		rtcp_ext_msg_t *extp = (rtcp_ext_msg_t *) msg;			
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG, "PICKED UP XRTCP type: %d fmt: %d\n", 
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "PICKED UP XRTCP type: %d fmt: %d\n", 
 						  msg->header.type, extp->header.fmt);
 		
 		if (msg->header.type == RTCP_PT_PSFB && (extp->header.fmt == RTCP_PSFB_FIR || extp->header.fmt == RTCP_PSFB_PLI)) {

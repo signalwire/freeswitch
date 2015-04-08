@@ -320,7 +320,7 @@ static switch_status_t init_encoder(switch_codec_t *codec)
 
 	context->pkt = NULL;
 
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(codec->session), SWITCH_LOG_NOTICE, 
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(codec->session), SWITCH_LOG_DEBUG1, 
 					  "VPX reset encoder picture from %dx%d to %dx%d %u BW\n", 
 					  config->g_w, config->g_h, context->codec_settings.video.width, context->codec_settings.video.height, context->bandwidth);
 
@@ -640,7 +640,7 @@ static switch_status_t switch_vpx_encode(switch_codec_t *codec, switch_frame_t *
 		// force generate a key frame
 
 		if (!context->last_key_frame || (now - context->last_key_frame) > KEY_FRAME_MIN_FREQ) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "VPX KEYFRAME GENERATED\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "VPX KEYFRAME GENERATED\n");
 			vpx_flags |= VPX_EFLAG_FORCE_KF;
 			context->need_key_frame = 0;
 			context->last_key_frame = now;
@@ -700,7 +700,7 @@ static switch_status_t buffer_vp8_packets(vpx_context_t *context, switch_frame_t
 	if (!switch_buffer_inuse(context->vpx_packet_buffer) && !S) {
 		if (context->got_key_frame > 0) {
 			context->got_key_frame = 0;
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "packet loss?\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG2, "packet loss?\n");
 		}
 		return SWITCH_STATUS_MORE_DATA;
 	}
@@ -718,7 +718,7 @@ static switch_status_t buffer_vp8_packets(vpx_context_t *context, switch_frame_t
 	}
 
 	if (context->last_received_timestamp != frame->timestamp) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "wrong timestamp %u, expect %u, packet loss?\n", frame->timestamp, context->last_received_timestamp);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG2, "wrong timestamp %u, expect %u, packet loss?\n", frame->timestamp, context->last_received_timestamp);
 		switch_buffer_zero(context->vpx_packet_buffer);
 		return SWITCH_STATUS_RESTART;
 	}
@@ -737,12 +737,12 @@ static switch_status_t buffer_vp9_packets(vpx_context_t *context, switch_frame_t
 
 	if (switch_buffer_inuse(context->vpx_packet_buffer)) { // middle packet
 		if (IS_VP9_START_PKT(*vp9)) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "got invalid vp9 packet, packet loss? resetting buffer\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "got invalid vp9 packet, packet loss? resetting buffer\n");
 			switch_buffer_zero(context->vpx_packet_buffer);
 		}
 	} else { // start packet
 		if (!IS_VP9_START_PKT(*vp9)) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "got invalid vp9 packet, packet loss? waiting for a start packet\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "got invalid vp9 packet, packet loss? waiting for a start packet\n");
 			goto end;
 		}
 	}
@@ -805,7 +805,7 @@ static switch_status_t switch_vpx_decode(switch_codec_t *codec, switch_frame_t *
 		}
 	} else if (context->got_key_frame <= 0) {
 		if ((--context->got_key_frame % 200) == 0) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Waiting for key frame %d\n", context->got_key_frame);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Waiting for key frame %d\n", context->got_key_frame);
 		}
 		switch_goto_status(SWITCH_STATUS_MORE_DATA, end);
 	}
