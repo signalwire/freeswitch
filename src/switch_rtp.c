@@ -5368,7 +5368,7 @@ static switch_status_t process_rtcp_report(switch_rtp_t *rtp_session, rtcp_msg_t
 			uint32_t *nack = (uint32_t *) extp->body;
 			int i;
 			
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG, "Got NACK count %d\n", ntohs(extp->header.length) - 2);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "Got NACK count %d\n", ntohs(extp->header.length) - 2);
 			switch_core_media_gen_key_frame(rtp_session->session);
 			for (i = 0; i < ntohs(extp->header.length) - 2; i++) {
 				handle_nack(rtp_session, *nack);
