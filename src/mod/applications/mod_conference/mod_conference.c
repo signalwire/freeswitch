@@ -114,6 +114,9 @@ static int EC = 0;
 /* max supported layers in one mcu */
 #define MCU_MAX_LAYERS 64
 
+/* video layout scale factor */
+#define VIDEO_LAYOUT_SCALE 360.0f
+
 #define CONFERENCE_MUX_DEFAULT_LAYOUT "group:grid"
 #define CONFERENCE_CANVAS_DEFAULT_WIDTH 1280
 #define CONFERENCE_CANVAS_DEFAULT_HIGHT 720
@@ -790,7 +793,7 @@ static switch_status_t conf_api_sub_position(conference_member_t *member, switch
 //#define lock_member(_member) switch_mutex_lock(_member->write_mutex)
 //#define unlock_member(_member) switch_mutex_unlock(_member->write_mutex)
 
-static void conference_parse_layouts(conference_obj_t *conference)
+static void conference_parse_layouts(conference_obj_t *conference, int WIDTH, int HEIGHT)
 {
 	switch_event_t *params;
 	switch_xml_t cxml = NULL, cfg = NULL, x_layouts, x_layout, x_layout_settings, x_group, x_groups, x_image;
@@ -818,7 +821,8 @@ static void conference_parse_layouts(conference_obj_t *conference)
 			for (x_layout = switch_xml_child(x_layouts, "layout"); x_layout; x_layout = x_layout->next) {
 				video_layout_t *vlayout;
 				const char *val = NULL, *name = NULL;
-
+				switch_bool_t auto_3d = SWITCH_FALSE;
+				
 				if ((val = switch_xml_attr(x_layout, "name"))) {
 					name = val;
 				}
@@ -828,6 +832,8 @@ static void conference_parse_layouts(conference_obj_t *conference)
 					continue;
 				}
 
+				auto_3d = switch_true(switch_xml_attr(x_layout, "auto-3d-position"));
+				
 				vlayout = switch_core_alloc(conference->pool, sizeof(*vlayout));
 				vlayout->name = switch_core_strdup(conference->pool, name);
 
@@ -890,8 +896,35 @@ static void conference_parse_layouts(conference_obj_t *conference)
 						vlayout->images[vlayout->layers].res_id = switch_core_strdup(conference->pool, res_id);
 					}
 
-					if (audio_position) {
-						vlayout->images[vlayout->layers].audio_position = switch_core_strdup(conference->pool, audio_position);
+					if (auto_3d || audio_position) {
+						if (auto_3d || !strcasecmp(audio_position, "auto")) {
+							int x_pos = WIDTH * x / VIDEO_LAYOUT_SCALE;
+							int y_pos = HEIGHT * y / VIDEO_LAYOUT_SCALE;
+							int width = WIDTH * scale / VIDEO_LAYOUT_SCALE;
+							int height = HEIGHT * scale / VIDEO_LAYOUT_SCALE;
+							int center_x = x_pos + width / 2;
+							int center_y = y_pos + height / 2;
+							int half_x = WIDTH / 2;
+							int half_y = HEIGHT / 2;
+							float xv = 0, yv = 0;
+
+							if (center_x > half_x) {
+								xv = (float)(center_x - half_x) / half_x;
+							} else {
+								xv = (float) -1 - (center_x / half_x) * -1;
+							}
+
+							if (center_y > half_y) {
+								yv = -1 - ((center_y - half_y) / half_y) * -1;
+							} else {
+								yv = center_y / half_y;
+							}
+
+							vlayout->images[vlayout->layers].audio_position = switch_core_sprintf(conference->pool, "%02f:0.0:%02f", xv, yv);
+
+						} else {
+							vlayout->images[vlayout->layers].audio_position = switch_core_strdup(conference->pool, audio_position);
+						}
 					}
 
 					vlayout->layers++;
@@ -968,8 +1001,6 @@ static void reset_image(switch_image_t *img, switch_rgb_color_t *color)
 	switch_img_fill(img, 0, 0, img->d_w, img->d_h, color);
 }
 
-#define SCALE_FACTOR 360.0f
-
 /* clear layer and reset_layer called inside lock always */
 
 static void clear_layer(mcu_canvas_t *canvas, mcu_layer_t *layer)
@@ -1021,8 +1052,8 @@ static void scale_and_patch(conference_obj_t *conference, mcu_layer_t *layer, sw
 		int x_pos = layer->x_pos;
 		int y_pos = layer->y_pos;
 		
-		img_w = layer->screen_w = IMG->d_w * layer->geometry.scale / SCALE_FACTOR;
-		img_h = layer->screen_h = IMG->d_h * layer->geometry.scale / SCALE_FACTOR;
+		img_w = layer->screen_w = IMG->d_w * layer->geometry.scale / VIDEO_LAYOUT_SCALE;
+		img_h = layer->screen_h = IMG->d_h * layer->geometry.scale / VIDEO_LAYOUT_SCALE;
 
 		screen_aspect = (double) layer->screen_w / layer->screen_h;
 		img_aspect = (double) img->d_w / img->d_h;
@@ -1433,14 +1464,14 @@ static void init_canvas_layers(conference_obj_t *conference, video_layout_t *vla
 		layer->idx = i;
 
 
-		layer->screen_w = conference->canvas->img->d_w * layer->geometry.scale / SCALE_FACTOR;
-		layer->screen_h = conference->canvas->img->d_h * layer->geometry.scale / SCALE_FACTOR;
+		layer->screen_w = conference->canvas->img->d_w * layer->geometry.scale / VIDEO_LAYOUT_SCALE;
+		layer->screen_h = conference->canvas->img->d_h * layer->geometry.scale / VIDEO_LAYOUT_SCALE;
 
 		// if (layer->screen_w % 2) layer->screen_w++; // round to even
 		// if (layer->screen_h % 2) layer->screen_h++; // round to even
 
-		layer->x_pos = conference->canvas->img->d_w * layer->geometry.x / SCALE_FACTOR;
-		layer->y_pos = conference->canvas->img->d_h * layer->geometry.y / SCALE_FACTOR;
+		layer->x_pos = conference->canvas->img->d_w * layer->geometry.x / VIDEO_LAYOUT_SCALE;
+		layer->y_pos = conference->canvas->img->d_h * layer->geometry.y / VIDEO_LAYOUT_SCALE;
 
 
 		if (layer->geometry.floor) {
@@ -12581,7 +12612,7 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 	conference->caller_controls = switch_core_strdup(conference->pool, caller_controls);
 	conference->moderator_controls = switch_core_strdup(conference->pool, moderator_controls);
 	conference->broadcast_chat_messages = broadcast_chat_messages;
-	conference_parse_layouts(conference);
+
 	
 	if (video_codec_bandwidth) {
 		conference->video_codec_settings.video.bandwidth = switch_parse_bandwidth_string(video_codec_bandwidth);
@@ -12590,6 +12621,30 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 	conference->conf_video_mode = conf_video_mode;
 
 	if (conference->conf_video_mode == CONF_VIDEO_MODE_MUX) {
+		int canvas_w = 0, canvas_h = 0;
+		if (video_canvas_size) {
+			char *p;
+			
+			if ((canvas_w = atoi(video_canvas_size))) {
+				if ((p = strchr(video_canvas_size, 'x'))) {
+					p++;
+					if (*p) {
+						canvas_h = atoi(p);
+					}
+				}
+			}
+		}
+
+		if (canvas_w < 320 || canvas_h < 180) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "%s video-canvas-size, falling back to %ux%u\n",
+							  video_canvas_size ? "Invalid" : "Unspecified", CONFERENCE_CANVAS_DEFAULT_WIDTH, CONFERENCE_CANVAS_DEFAULT_HIGHT);
+			canvas_w = CONFERENCE_CANVAS_DEFAULT_WIDTH;
+			canvas_h = CONFERENCE_CANVAS_DEFAULT_HIGHT;
+		}
+		
+		
+		conference_parse_layouts(conference, canvas_w, canvas_h);
+		
 		if (!video_canvas_bgcolor) {
 			video_canvas_bgcolor = "#333333";
 		}
@@ -12641,29 +12696,8 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 			conference->conf_video_mode = CONF_VIDEO_MODE_TRANSCODE;
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid conference layout settings, falling back to transcode mode\n");
 		} else {
-			int w = 0, h = 0;
-			if (video_canvas_size) {
-				char *p;
-
-				if ((w = atoi(video_canvas_size))) {
-					if ((p = strchr(video_canvas_size, 'x'))) {
-						p++;
-						if (*p) {
-							h = atoi(p);
-						}
-					}
-				}
-			}
-
-			if (w > 0 && h > 0) {
-				conference->canvas_width = w;
-				conference->canvas_height = h;
-			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "%s video-canvas-size, falling back to %ux%u\n",
-								  video_canvas_size ? "Invalid" : "Unspecified", CONFERENCE_CANVAS_DEFAULT_WIDTH, CONFERENCE_CANVAS_DEFAULT_HIGHT);
-				conference->canvas_width = CONFERENCE_CANVAS_DEFAULT_WIDTH;
-				conference->canvas_height = CONFERENCE_CANVAS_DEFAULT_HIGHT;
-			}
+			conference->canvas_width = canvas_w;
+			conference->canvas_height = canvas_h;
 		}
 	}
 
