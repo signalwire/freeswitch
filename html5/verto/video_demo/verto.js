@@ -733,17 +733,23 @@ function pop(id, cname, dft) {
     });
 }
 
-var devinit = false;
+
 
 function refresh_devices()
 {
-    if (devinit) {
-	$("#useshare").empty();
-	$("#usecamera").empty();
-	$("#usemic").empty();
-    }
 
-    devinit = true;
+    $("#useshare").selectmenu({});
+    $("#useshare").selectmenu({});
+    $("#usemic").selectmenu({});
+
+    $("#useshare").selectmenu("enable");
+    $("#useshare").selectmenu("enable");
+    $("#usemic").selectmenu("enable");
+
+    $("#useshare").empty();
+    $("#usecamera").empty();
+    $("#usemic").empty();
+    
 
     $.verto.findDevices(function() {
 	var x = 0;
