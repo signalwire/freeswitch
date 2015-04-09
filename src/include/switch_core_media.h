@@ -192,6 +192,7 @@ SWITCH_DECLARE(int) switch_core_session_check_incoming_crypto(switch_core_sessio
 															  switch_media_type_t type, const char *crypto, int crypto_tag, switch_sdp_type_t sdp_type);
 
 
+SWITCH_DECLARE(uint32_t) switch_core_media_get_video_fps(switch_core_session_t *session);
 SWITCH_DECLARE(void) switch_core_media_set_rtp_session(switch_core_session_t *session, switch_media_type_t type, switch_rtp_t *rtp_session);
 
 SWITCH_DECLARE(const char *)switch_core_media_get_codec_string(switch_core_session_t *session);

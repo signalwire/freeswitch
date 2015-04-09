@@ -3549,9 +3549,12 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG, "Starting video timer.\n");
 			}
 
-			switch_vb_create(&rtp_session->vb, 5, 30, rtp_session->pool);
+			//switch_vb_create(&rtp_session->vb, 5, 30, rtp_session->pool);
 			//switch_vb_debug_level(rtp_session->vb, 10);
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG, "Starting video buffer.\n");
+			
+			
+			
+
 
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG, "Not using a timer\n");
@@ -3832,6 +3835,23 @@ static void jb_logger(const char *file, const char *func, int line, int level, c
 
 	//switch_log_printf(SWITCH_CHANNEL_ID_LOG_CLEAN, file, func, line, NULL, level, fmt, ap);
 	va_end(ap);
+}
+
+SWITCH_DECLARE(switch_status_t) switch_rtp_set_video_buffer_size(switch_rtp_t *rtp_session, uint32_t frames)
+{
+	if (!switch_rtp_ready(rtp_session)) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (!rtp_session->vb) {  
+		switch_vb_create(&rtp_session->vb, frames, frames * 3, rtp_session->pool);
+	} else {
+		switch_vb_set_frames(rtp_session->vb, frames, frames * 3);
+	}
+
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG, "Setting video buffer %u Frames.\n", frames);
+	
+	return SWITCH_STATUS_SUCCESS;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_rtp_debug_jitter_buffer(switch_rtp_t *rtp_session, const char *name)

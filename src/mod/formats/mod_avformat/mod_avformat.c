@@ -38,6 +38,7 @@
 #include <libavutil/channel_layout.h>
 // #include <libavutil/timestamp.h>
 #include <libavresample/avresample.h>
+#define DFT_RECORD_OFFSET 350
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_avformat_load);
 SWITCH_MODULE_DEFINITION(mod_avformat, mod_avformat_load, NULL, NULL);
@@ -665,7 +666,7 @@ SWITCH_STANDARD_APP(record_av_function)
 		char buf[SWITCH_RECOMMENDED_BUFFER_SIZE] = {0};
 		switch_size_t datalen = codec.implementation->decoded_bytes_per_packet;
 		switch_size_t samples = datalen / 2 / codec.implementation->number_of_channels;
-		int offset = 1200;
+		int offset = DFT_RECORD_OFFSET;
 		int fps = codec.implementation->actual_samples_per_second / samples;
 		int lead_frames = (offset * fps) / 1000;
 		
@@ -1139,7 +1140,7 @@ static switch_status_t av_file_open(switch_file_handle_t *handle, const char *pa
 
 	memset(context, 0, sizeof(av_file_context_t));
 
-	context->offset = 1200;
+	context->offset = DFT_RECORD_OFFSET;
 	if (handle->params && (tmp = switch_event_get_header(handle->params, "av_video_offset"))) {
 		context->offset = atoi(tmp);
 	}
