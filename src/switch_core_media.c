@@ -208,6 +208,9 @@ struct switch_media_handle_s {
 	switch_vid_params_t vid_params; 
 	switch_file_handle_t *video_read_fh;
 	switch_file_handle_t *video_write_fh;
+
+	uint64_t vid_frames;
+	time_t vid_started;
 };
 
 
@@ -307,6 +310,46 @@ static void _switch_core_media_pass_zrtp_hash2(switch_core_session_t *aleg_sessi
 		aleg_engine->local_sdp_zrtp_hash = switch_core_session_strdup(aleg_session, bleg_engine->remote_sdp_zrtp_hash);
 		switch_channel_set_variable(aleg_session->channel, "l_sdp_audio_zrtp_hash", aleg_engine->local_sdp_zrtp_hash);
 	}
+}
+
+static uint32_t round_to_step(uint32_t num, uint32_t step)
+{
+	uint32_t r;
+	uint32_t x;
+
+	if (!num) return 0;
+	
+	r = (num % step);
+	x = num - r;
+	
+	if (r > step / 2) {
+		x += step;
+	}
+	
+	return x;
+}
+SWITCH_DECLARE(uint32_t) switch_core_media_get_video_fps(switch_core_session_t *session)
+{
+	switch_media_handle_t *smh;
+	time_t now;
+
+	switch_assert(session);
+	
+	if (!(smh = session->media_handle)) {
+		return SWITCH_STATUS_FALSE;
+	}               
+
+	if (!switch_channel_test_flag(session->channel, CF_VIDEO)) {
+		return 0;
+	}
+
+	now = switch_epoch_time_now(NULL);
+
+	if (!(smh->vid_started && smh->vid_frames && smh->vid_started < now)) {
+		return 0;
+	}
+	
+	return round_to_step(smh->vid_frames / (now - smh->vid_started), 5);
 }
 
 SWITCH_DECLARE(void) switch_core_media_pass_zrtp_hash2(switch_core_session_t *aleg_session, switch_core_session_t *bleg_session)
@@ -1766,7 +1809,8 @@ SWITCH_DECLARE(void) switch_core_media_prepare_codecs(switch_core_session_t *ses
 }
 
 
-static void check_jb(switch_core_session_t *session, const char *input)
+
+static void check_jb(switch_core_session_t *session, const char *input, int32_t jb_msec, int32_t maxlen)
 {
 	const char *val;
 	switch_media_handle_t *smh;
@@ -1820,18 +1864,20 @@ static void check_jb(switch_core_session_t *session, const char *input)
 	}
 	
 
-	if ((val = switch_channel_get_variable(session->channel, "jitterbuffer_msec")) || (val = smh->mparams->jb_msec)) {
-		int jb_msec = atoi(val);
-		int maxlen = 0, max_drift = 0;
+	if (jb_msec || (val = switch_channel_get_variable(session->channel, "jitterbuffer_msec")) || (val = smh->mparams->jb_msec)) {
+		int max_drift = 0;
 		char *p, *q;
 
+		if (!jb_msec) {
+			jb_msec = atoi(val);
 					
-		if ((p = strchr(val, ':'))) {
-			p++;
-			maxlen = atoi(p);
-			if ((q = strchr(p, ':'))) {
-				q++;
-				max_drift = abs(atoi(q));
+			if ((p = strchr(val, ':'))) {
+				p++;
+				maxlen = atoi(p);
+				if ((q = strchr(p, ':'))) {
+					q++;
+					max_drift = abs(atoi(q));
+				}
 			}
 		}
 
@@ -1877,6 +1923,61 @@ static void check_jb(switch_core_session_t *session, const char *input)
 	}
 
 }
+
+static void check_jb_sync(switch_core_session_t *session)
+{
+	int32_t jb_sync_msec = 200;
+	uint32_t fps, frames = 0;
+	switch_media_handle_t *smh;
+	switch_rtp_engine_t *v_engine = NULL;
+	const char *var;
+
+	switch_assert(session);
+
+	if (!switch_channel_test_flag(session->channel, CF_VIDEO)) {
+		return;
+	}
+
+	if (!(smh = session->media_handle)) {
+		return;
+	}
+
+	v_engine = &smh->engines[SWITCH_MEDIA_TYPE_VIDEO];
+	
+	if ((var = switch_channel_get_variable(session->channel, "jb_sync_msec"))) {
+		int tmp;
+
+		if (!strcasecmp(var, "disabled")) {
+			return;
+		}
+
+		tmp = atol(var);
+
+		if (tmp > -50 && tmp < 10000) {
+			jb_sync_msec = tmp;
+		}
+	}
+
+	fps = switch_core_media_get_video_fps(session);
+		
+	if (!fps) return;
+
+	if (jb_sync_msec < 0) {
+		frames = abs(jb_sync_msec);
+		jb_sync_msec = 1000 / (fps / frames);
+	} else {
+		frames = fps / (1000 / jb_sync_msec);
+	}
+
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), 
+					  SWITCH_LOG_DEBUG, "%s Sync Audio and Video Jitterbuffer to %dms %u Video Frames FPS %u\n", 
+					  switch_channel_get_name(session->channel),
+					  jb_sync_msec, frames, fps);
+	
+	switch_rtp_set_video_buffer_size(v_engine->rtp_session, frames);
+	check_jb(session, NULL, jb_sync_msec, jb_sync_msec);
+}
+
 
 //?
 SWITCH_DECLARE(switch_status_t) switch_core_media_read_lock_unlock(switch_core_session_t *session, switch_media_type_t type, switch_bool_t lock)
@@ -1991,6 +2092,18 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 			goto end;
 		}
 
+		if (type == SWITCH_MEDIA_TYPE_VIDEO && engine->read_frame.m) {
+			if (!smh->vid_started) {
+				smh->vid_started = switch_epoch_time_now(NULL);
+			}
+			smh->vid_frames++;
+
+			if (smh->vid_frames == 45) {
+				check_jb_sync(session);
+			}
+		}
+
+
 		/* re-set codec if necessary */
 		if (engine->reset_codec > 0) {
 			const char *val;
@@ -2039,7 +2152,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 				}
 			}
 
-			check_jb(session, NULL);
+			check_jb(session, NULL, 0, 0);
 
 			engine->check_frames = 0;
 			engine->last_ts = 0;
@@ -5919,7 +6032,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 
 		}
 
-		check_jb(session, NULL);
+		check_jb(session, NULL, 0, 0);
 
 		if ((val = switch_channel_get_variable(session->channel, "rtp_timeout_sec"))) {
 			int v = atoi(val);
@@ -8467,7 +8580,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_receive_message(switch_core_se
 	case SWITCH_MESSAGE_INDICATE_JITTER_BUFFER:
 		{
 			if (switch_rtp_ready(a_engine->rtp_session)) {
-				check_jb(session, msg->string_arg);
+				check_jb(session, msg->string_arg, 0, 0);
 			}
 		}
 		break;
