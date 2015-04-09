@@ -1348,7 +1348,7 @@
 
             verto.subscribe(confMan.params.laData.modChannel, {
                 handler: function(v, e) {
-                    console.error("MODDATA:", e.data);
+                    //console.error("MODDATA:", e.data);
                     if (confMan.params.onBroadcast) {
                         confMan.params.onBroadcast(verto, confMan, e.data);
                     }
@@ -1358,7 +1358,11 @@
 			var vlayout_id = "#confman_vid_layout_" + confMan.serno;
 			var x = 0;
 			var options;
-
+			
+			$(vlselect_id).selectmenu({});
+			$(vlselect_id).selectmenu("enable");
+			$(vlselect_id).empty();
+			
 			$(vlselect_id).append(new Option("Choose a Layout", "none"));
 
 			if (e.data.responseData) {
