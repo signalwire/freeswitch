@@ -398,6 +398,7 @@ typedef struct mcu_layer_s {
 	int banner_patched;
 	int mute_patched;
 	int refresh;
+	int is_avatar;
 	switch_img_position_t logo_pos;
 	switch_image_t *img;
 	switch_image_t *cur_img;
@@ -1017,6 +1018,7 @@ static void reset_layer(mcu_canvas_t *canvas, mcu_layer_t *layer)
 	switch_img_free(&layer->logo_img);
 
 	layer->banner_patched = 0;
+	layer->is_avatar = 0;
 
 	if (layer->geometry.overlap) {
 		canvas->refresh = 1;
@@ -1402,6 +1404,10 @@ static switch_status_t attach_video_layer(conference_member_t *member, int idx)
 
 	reset_layer(member->conference->canvas, layer);
 	switch_img_free(&layer->mute_img);
+
+	if (member->avatar_png_img) {
+		layer->is_avatar = 1;
+	}
 	
 	var = NULL;
 	if (member->video_banner_text || (var = switch_channel_get_variable_dup(channel, "video_banner_text", SWITCH_FALSE, -1))) {
@@ -1907,7 +1913,8 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 					}
 				}
 				
-				if (!layer && conference->canvas->layers_used < conference->canvas->total_layers && (imember->avatar_png_img || imember->video_flow != SWITCH_MEDIA_FLOW_SENDONLY)) {
+				if (!layer && conference->canvas->layers_used < conference->canvas->total_layers && 
+					(imember->avatar_png_img || imember->video_flow != SWITCH_MEDIA_FLOW_SENDONLY)) {
 					/* find an empty layer */
 					for (i = 0; i < conference->canvas->total_layers; i++) {
 						mcu_layer_t *xlayer = &conference->canvas->layers[i];
@@ -1924,7 +1931,10 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 								attach_video_layer(imember, i);
 								break;
 							}
-						} else if (!xlayer->member_id && !xlayer->fnode && !xlayer->geometry.fileonly) {
+						} else if ((!xlayer->member_id || (!imember->avatar_png_img && 
+														   xlayer->is_avatar && 
+														   xlayer->member_id != conference->video_floor_holder)) &&
+								   !xlayer->fnode && !xlayer->geometry.fileonly) {
 							switch_status_t lstatus;
 
 							lstatus = attach_video_layer(imember, i);
@@ -3811,6 +3821,11 @@ static void find_video_floor(conference_member_t *member, switch_bool_t entering
 			continue;
 		}
 
+		if (conference->floor_holder && imember == conference->floor_holder) {
+			conference_set_video_floor_holder(conference, imember, 0);
+			continue;
+		}
+
 		if (!conference->video_floor_holder) {
 			conference_set_video_floor_holder(conference, imember, 0);
 			continue;
@@ -4246,7 +4261,10 @@ static void conference_set_floor_holder(conference_obj_t *conference, conference
 	
 	if (((conference->video_floor_holder && !member && !switch_test_flag(conference, CFLAG_VID_FLOOR_LOCK)) ||
 		 (member && member->channel && (switch_channel_test_flag(member->channel, CF_VIDEO) || member->avatar_png_img)))) {
-		conference_set_video_floor_holder(conference, member, SWITCH_FALSE);
+		
+		if (member && member->id != conference->video_floor_holder) {
+			conference_set_video_floor_holder(conference, member, SWITCH_FALSE);
+		}
 	}
 	
 	if (conference->floor_holder) {
@@ -6167,6 +6185,10 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 			if (member->score_iir > SCORE_MAX_IIR) {
 				member->score_iir = SCORE_MAX_IIR;
 			}
+			
+			if (member == member->conference->floor_holder && member->id != member->conference->video_floor_holder) {
+				conference_set_video_floor_holder(member->conference, member, SWITCH_FALSE);
+			}
 
 			if (noise_gate_check(member)) {
 				uint32_t diff = member->score - member->energy_level;
@@ -6183,9 +6205,11 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 					hangover_hits = hangunder_hits = 0;
 					member->last_talking = switch_epoch_time_now(NULL);
 
+					
 					if (!switch_test_flag(member, MFLAG_TALKING)) {
 						switch_set_flag_locked(member, MFLAG_TALKING);
 						member_update_status_field(member);
+						
 						if (test_eflag(member->conference, EFLAG_START_TALKING) && switch_test_flag(member, MFLAG_CAN_SPEAK) &&
 							switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 							conference_add_event_member_data(member, event);
