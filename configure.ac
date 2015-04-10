@@ -1256,6 +1256,10 @@ PKG_CHECK_MODULES([OPENCV], [opencv >= 2.4.9.1],[
   AM_CONDITIONAL([HAVE_OPENCV],[true])],[
   AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_OPENCV],[false])])
 
+PKG_CHECK_MODULES([MAGICK], [ImageMagick >= 6.0.0],[
+  AM_CONDITIONAL([HAVE_MAGICK],[true])],[
+  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_MAGICK],[false])])
+
 PKG_CHECK_MODULES([MEMCACHED], [libmemcached >= 0.31],[
   AM_CONDITIONAL([HAVE_MEMCACHED],[true])
   MEMCACHED_LIBS="${MEMCACHED_LIBS} -lpthread"
@@ -1643,6 +1647,7 @@ AC_CONFIG_FILES([Makefile
 		src/mod/event_handlers/mod_snmp/Makefile
 		src/mod/event_handlers/mod_event_zmq/Makefile
 		src/mod/formats/mod_avformat/Makefile
+		src/mod/formats/mod_imagick/Makefile
 		src/mod/formats/mod_local_stream/Makefile
 		src/mod/formats/mod_native_file/Makefile
 		src/mod/formats/mod_shell_stream/Makefile

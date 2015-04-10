@@ -111,6 +111,7 @@ event_handlers/mod_event_socket
 #event_handlers/mod_odbc_cdr
 #event_handlers/mod_rayo
 #event_handlers/mod_snmp
+#formats/mod_imagick
 formats/mod_local_stream
 formats/mod_native_file
 #formats/mod_portaudio_stream
