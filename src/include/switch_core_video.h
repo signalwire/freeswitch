@@ -82,6 +82,16 @@ typedef enum {
 	SWITCH_CONVERT_FMT_YUYV = 0
 } switch_convert_fmt_t;
 
+struct switch_png_opaque_s;
+typedef struct switch_png_opaque_s switch_png_opaque_t;
+typedef struct switch_png_s {
+	switch_png_opaque_t *pvt;
+	int w;
+	int h;
+} switch_png_t;
+
+
+
 /*!\brief Open a descriptor, allocating storage for the underlying image
 *
 * Returns a descriptor for storing an image of the given format. The
@@ -211,9 +221,12 @@ SWITCH_DECLARE(switch_status_t) switch_img_txt_handle_render(switch_img_txt_hand
 
 
 SWITCH_DECLARE(void) switch_img_patch_hole(switch_image_t *IMG, switch_image_t *img, int x, int y, switch_image_rect_t *rect);
-SWITCH_DECLARE(switch_image_t *) switch_img_read_png(const char* file_name);
-SWITCH_DECLARE(switch_status_t) switch_img_write_png(switch_image_t *img, char* file_name);
-SWITCH_DECLARE(switch_status_t) switch_img_patch_png(switch_image_t *img, int x, int y, const char *file_name);
+
+SWITCH_DECLARE(switch_status_t) switch_png_patch_img(switch_png_t *use_png, switch_image_t *img, int x, int y);
+SWITCH_DECLARE(switch_image_t *) switch_img_read_png(const char *file_name);
+SWITCH_DECLARE(switch_status_t) switch_img_write_png(switch_image_t *img, char *file_name);
+SWITCH_DECLARE(switch_status_t) switch_png_open(switch_png_t **pngP, const char *file_name);
+SWITCH_DECLARE(void) switch_png_free(switch_png_t **pngP);
 
 SWITCH_DECLARE(void) switch_img_get_yuv_pixel(switch_image_t *img, switch_yuv_color_t *yuv, int x, int y);
 

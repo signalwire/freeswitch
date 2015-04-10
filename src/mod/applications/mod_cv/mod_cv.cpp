@@ -65,6 +65,20 @@ struct detect_stats {
     float avg;
 };
 
+struct shape {
+    int x;
+    int y;
+    int x2;
+    int y2;
+    int w;
+    int h;
+    int cx;
+    int cy;
+    int radius;
+};
+
+#define MAX_SHAPES 32
+
 typedef struct cv_context_s {
     CvBGCodeBookModel* model;
     bool ch[NCHANNELS];
@@ -81,6 +95,11 @@ typedef struct cv_context_s {
     struct detect_stats nestDetected;
     int detect_event;
     int nest_detect_event;
+    switch_png_t *png;
+    struct shape shape[MAX_SHAPES];
+    int shapeidx;
+    int x_off;
+    int y_off;
 } cv_context_t;
 
 
@@ -99,9 +118,13 @@ static void uninit_context(cv_context_t *context)
     if (context->nestedCascade) {
         delete context->nestedCascade;
     }
+
+    if (context->png) {
+        switch_png_free(&context->png);
+    }
 }
 
-static void init_context(cv_context_t *context, const char *cascade_name, const char *nested_cascade_name)
+static void init_context(cv_context_t *context, const char *cascade_name, const char *nested_cascade_name, int x_off, int y_off)
 {
     for (int i = 0; i < NCHANNELS; i++) {
         context->ch[i] = true;
@@ -112,8 +135,14 @@ static void init_context(cv_context_t *context, const char *cascade_name, const 
         context->cascade->load(cascade_name);
 
         if (nested_cascade_name) {
-            context->nestedCascade = new CascadeClassifier;
-            context->nestedCascade->load(nested_cascade_name);
+            if (switch_stristr(".png", nested_cascade_name)) {
+                switch_png_open(&context->png, nested_cascade_name);
+                context->x_off = x_off;
+                context->y_off = y_off;
+            } else {
+                context->nestedCascade = new CascadeClassifier;
+                context->nestedCascade->load(nested_cascade_name);
+            }
         }
     } else {
         context->model = cvCreateBGCodeBookModel();
@@ -207,6 +236,9 @@ void detectAndDraw(cv_context_t *context)
     parse_stats(&context->detected, detectedObjs.size());
 
     //printf("SCORE: %d %f %d\n", context->detected.simo_count, context->detected.avg, context->detected.last_score);
+    
+    context->shapeidx = 0;
+    memset(context->shape, 0, sizeof(context->shape[0]) * MAX_SHAPES);
 
     for( vector<Rect>::iterator r = detectedObjs.begin(); r != detectedObjs.end(); r++, i++ ) {
         Mat smallImgROI;
@@ -214,17 +246,46 @@ void detectAndDraw(cv_context_t *context)
         Point center;
         Scalar color = colors[i%8];
         int radius;
-
+        
         double aspect_ratio = (double)r->width/r->height;
+
+        if (context->shapeidx >= MAX_SHAPES) {
+            break;
+        }
+        
         if(0.75 < aspect_ratio && aspect_ratio < 1.3 ) {
             center.x = cvRound((r->x + r->width*0.5)*scale);
             center.y = cvRound((r->y + r->height*0.5)*scale);
             radius = cvRound((r->width + r->height)*0.25*scale);
-            circle( img, center, radius, color, 3, 8, 0 );
+
+            if (!context->png) {
+                circle( img, center, radius, color, 3, 8, 0 );
+            }
+
+            context->shape[context->shapeidx].x = center.x - radius;
+            context->shape[context->shapeidx].y = center.y - radius;
+            context->shape[context->shapeidx].cx = center.x;
+            context->shape[context->shapeidx].cy = center.y;
+            context->shape[context->shapeidx].radius = radius;
+            context->shapeidx++;
+
         } else {
-            rectangle( img, cvPoint(cvRound(r->x*scale), cvRound(r->y*scale)),
-                       cvPoint(cvRound((r->x + r->width-1)*scale), cvRound((r->y + r->height-1)*scale)),
-                       color, 3, 8, 0);
+            context->shape[context->shapeidx].x = cvRound(r->x*scale);
+            context->shape[context->shapeidx].y = cvRound(r->y*scale);
+            context->shape[context->shapeidx].x2 = cvRound((r->x + r->width-1)*scale);
+            context->shape[context->shapeidx].y2 = cvRound((r->y + r->height-1)*scale);
+            context->shape[context->shapeidx].w = context->shape[context->shapeidx].x2 - context->shape[context->shapeidx].x;
+            context->shape[context->shapeidx].h = context->shape[context->shapeidx].y2 - context->shape[context->shapeidx].y;
+            context->shape[context->shapeidx].cx = context->shape[context->shapeidx].x + (context->shape[context->shapeidx].w / 2);
+            context->shape[context->shapeidx].cy = context->shape[context->shapeidx].y + (context->shape[context->shapeidx].h / 2);
+            
+            if (!context->png) {
+                rectangle( img, cvPoint(context->shape[context->shapeidx].x, context->shape[context->shapeidx].y),
+                           cvPoint(context->shape[context->shapeidx].x2, context->shape[context->shapeidx].y2),
+                           color, 3, 8, 0);
+            }
+
+            context->shapeidx++;
         }
 
         if(!context->nestedCascade || context->nestedCascade->empty() ) {
@@ -538,12 +599,21 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
         int w = context->rawImage->width;
         int h = context->rawImage->height;
 
-        libyuv::RGB24ToI420((uint8_t *)context->rawImage->imageData, w * 3,
-                            frame->img->planes[0], frame->img->stride[0],
-                            frame->img->planes[1], frame->img->stride[1],
-                            frame->img->planes[2], frame->img->stride[2],
-                            context->rawImage->width, context->rawImage->height);
-                            
+        if (context->png && context->shapeidx && context->shape[0].x) {
+            int x = 0, y = 0;
+
+            x = context->shape[0].cx - (context->png->w / 2) + context->x_off;
+            y = context->shape[0].cy - (context->png->h / 2) + context->y_off;
+
+            switch_png_patch_img(context->png, frame->img, x, y);
+        } else {
+            libyuv::RGB24ToI420((uint8_t *)context->rawImage->imageData, w * 3,
+                                frame->img->planes[0], frame->img->stride[0],
+                                frame->img->planes[1], frame->img->stride[1],
+                                frame->img->planes[2], frame->img->stride[2],
+                                context->rawImage->width, context->rawImage->height);
+        }
+        
     }
 
     return SWITCH_STATUS_SUCCESS;
@@ -560,15 +630,23 @@ SWITCH_STANDARD_APP(cv_start_function)
     char *nested_cascade_name;
 	char *argv[6];
 	int argc;
-    
+    int x_off = 0, y_off = 0;
 
 	if (data && (lbuf = switch_core_session_strdup(session, data))
 		&& (argc = switch_separate_string(lbuf, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
         cascade_name = argv[0];
         nested_cascade_name = argv[1];
+
+        if (argv[2]) {
+            x_off = atoi(argv[2]);
+        }
+
+        if (argv[3]) {
+            y_off = atoi(argv[3]);
+        }
     }
 
-    init_context(&context, cascade_name, nested_cascade_name);
+    init_context(&context, cascade_name, nested_cascade_name, x_off, y_off);
     
     switch_channel_answer(channel);
     switch_channel_set_flag_recursive(channel, CF_VIDEO_DECODED_READ);
@@ -607,6 +685,8 @@ struct cv_bug_helper {
     cv_context_t context;
     char *cascade_name;
     char *nested_cascade_name;
+    int x_off;
+    int y_off;
 };
 
 static switch_bool_t cv_bug_callback(switch_media_bug_t *bug, void *user_data, switch_abc_type_t type)
@@ -618,7 +698,7 @@ static switch_bool_t cv_bug_callback(switch_media_bug_t *bug, void *user_data, s
 	case SWITCH_ABC_TYPE_INIT:
 		{
             switch_channel_set_flag_recursive(channel, CF_VIDEO_DECODED_READ);
-            init_context(&cvh->context, cvh->cascade_name, cvh->nested_cascade_name);
+            init_context(&cvh->context, cvh->cascade_name, cvh->nested_cascade_name, cvh->x_off, cvh->y_off);
 		}
 		break;
 	case SWITCH_ABC_TYPE_CLOSE:
@@ -670,6 +750,15 @@ SWITCH_STANDARD_APP(cv_bug_start_function)
 		&& (argc = switch_separate_string(lbuf, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
         cascade_name = argv[1];
         nested_cascade_name = argv[2];
+
+        if (argv[3]) {
+            cvh->x_off = atoi(argv[3]);
+        }
+
+        if (argv[4]) {
+            cvh->y_off = atoi(argv[4]);
+        }
+
     }
 
 	cvh->session = session;
