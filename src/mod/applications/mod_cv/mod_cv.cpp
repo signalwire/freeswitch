@@ -59,6 +59,7 @@ static const int NCHANNELS = 3;
 struct detect_stats {
     uint32_t last_score;
     uint32_t simo_count;
+    uint32_t simo_miss_count;
     uint32_t above_avg_simo_count;
     uint32_t sum;
     uint32_t itr;
@@ -180,10 +181,12 @@ static void parse_stats(struct detect_stats *stats, uint32_t size)
 
 
     if (size) {
+        stats->simo_miss_count = 0;
         stats->simo_count++;
         stats->last_score = size;
         stats->sum += size;
     } else {
+        stats->simo_miss_count++;
         stats->simo_count = 0;
         stats->itr = 0;
         stats->avg = 0;
@@ -238,7 +241,7 @@ void detectAndDraw(cv_context_t *context)
     //printf("SCORE: %d %f %d\n", context->detected.simo_count, context->detected.avg, context->detected.last_score);
     
     context->shapeidx = 0;
-    memset(context->shape, 0, sizeof(context->shape[0]) * MAX_SHAPES);
+    //memset(context->shape, 0, sizeof(context->shape[0]) * MAX_SHAPES);
 
     for( vector<Rect>::iterator r = detectedObjs.begin(); r != detectedObjs.end(); r++, i++ ) {
         Mat smallImgROI;
@@ -530,25 +533,30 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
                     
                 }
             } else {
-                if (context->detect_event) {
-                    if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, MY_EVENT_VIDEO_DETECT) == SWITCH_STATUS_SUCCESS) {
-                        switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Detect-Type", "primary");
-                        switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Detect-Disposition", "stop");
-                        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Detect-Simo-Count", "%u", context->detected.simo_count);
-                        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Detect-Average", "%f", context->detected.avg);
-                        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Detect-Last-Score", "%u", context->detected.last_score);
-                        switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Unique-ID", switch_core_session_get_uuid(session));
-                        //switch_channel_event_set_data(channel, event);
-                        DUMP_EVENT(event);
-                        switch_event_fire(&event);
+                if (context->detected.simo_miss_count >= 20) {
+                    if (context->detect_event) {
+                        if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, MY_EVENT_VIDEO_DETECT) == SWITCH_STATUS_SUCCESS) {
+                            switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Detect-Type", "primary");
+                            switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Detect-Disposition", "stop");
+                            switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Detect-Simo-Count", "%u", context->detected.simo_count);
+                            switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Detect-Average", "%f", context->detected.avg);
+                            switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Detect-Last-Score", "%u", context->detected.last_score);
+                            switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Unique-ID", switch_core_session_get_uuid(session));
+                            //switch_channel_event_set_data(channel, event);
+                            DUMP_EVENT(event);
+                            switch_event_fire(&event);
+                        }
+
+                    
+                        memset(context->shape, 0, sizeof(context->shape[0]) * MAX_SHAPES);
+
+                        switch_channel_execute_on(channel, "execute_on_cv_detect_off_primary");
+                        reset_stats(&context->nestDetected);
+                        reset_stats(&context->detected);
                     }
 
-                    switch_channel_execute_on(channel, "execute_on_cv_detect_off_primary");
-                    reset_stats(&context->nestDetected);
-                    reset_stats(&context->detected);
+                    context->detect_event = 0;
                 }
-
-                context->detect_event = 0;
 
             }
 
@@ -599,7 +607,7 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
         int w = context->rawImage->width;
         int h = context->rawImage->height;
 
-        if (context->png && context->shapeidx && context->shape[0].x) {
+        if (context->png && context->detect_event && context->shape[0].cx) {
             int x = 0, y = 0;
 
             x = context->shape[0].cx - (context->png->w / 2) + context->x_off;
