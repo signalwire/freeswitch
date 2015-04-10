@@ -800,13 +800,16 @@ static void conference_parse_layouts(conference_obj_t *conference, int WIDTH, in
 	switch_xml_t cxml = NULL, cfg = NULL, x_layouts, x_layout, x_layout_settings, x_group, x_groups, x_image;
 	char cmd_str[256] = "";
 
+	switch_mutex_lock(globals.setup_mutex);
 	if (!conference->layout_hash) {
 		switch_core_hash_init(&conference->layout_hash);
 	}
 
+
 	if (!conference->layout_group_hash) {
 		switch_core_hash_init(&conference->layout_group_hash);
 	}
+	switch_mutex_unlock(globals.setup_mutex);
 
 	switch_event_create(&params, SWITCH_EVENT_COMMAND);
 	switch_assert(params);
@@ -3171,10 +3174,14 @@ static void conference_mod_event_channel_handler(const char *event_channel, cJSO
 		cJSON *array = cJSON_CreateArray();
 		conference_obj_t *conference = NULL;
 		if ((conference = conference_find(conf_name, NULL))) {
-			for (hi = switch_core_hash_first(conference->layout_hash); hi; hi = switch_core_hash_next(&hi)) {
-				switch_core_hash_this(hi, &vvar, NULL, &val);
-				cJSON_AddItemToArray(array, cJSON_CreateString((char *)vvar));
+			switch_mutex_lock(globals.setup_mutex);
+			if (conference->layout_hash) {
+				for (hi = switch_core_hash_first(conference->layout_hash); hi; hi = switch_core_hash_next(&hi)) {
+					switch_core_hash_this(hi, &vvar, NULL, &val);
+					cJSON_AddItemToArray(array, cJSON_CreateString((char *)vvar));
+				}
 			}
+			switch_mutex_unlock(globals.setup_mutex);
 			switch_thread_rwlock_unlock(conference->rwlock);
 		}
 		addobj = array;
@@ -5318,9 +5325,11 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 	conference->end_time = switch_epoch_time_now(NULL);
 	conference_cdr_render(conference);
 
+	switch_mutex_lock(globals.setup_mutex);
 	if (conference->layout_hash) {
 		switch_core_hash_destroy(&conference->layout_hash);
 	}
+	switch_mutex_unlock(globals.setup_mutex);
 
 	if (conference->layout_group_hash) {
 		switch_core_hash_destroy(&conference->layout_group_hash);
