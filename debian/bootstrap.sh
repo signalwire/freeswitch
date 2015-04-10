@@ -30,6 +30,7 @@ avoid_mods=(
   endpoints/mod_opal
   endpoints/mod_reference
   endpoints/mod_unicall
+  event_handlers/mod_amqp
   languages/mod_managed
   sdk/autotools
   xml_int/mod_xml_ldap
@@ -46,9 +47,11 @@ avoid_mods_jessie=(
   formats/mod_shout
 )
 avoid_mods_wheezy=(
+  event_handlers/mod_amqp
   languages/mod_java
 )
 avoid_mods_squeeze=(
+  event_handlers/mod_amqp
   formats/mod_vlc
   languages/mod_managed
 )
