@@ -739,58 +739,120 @@ SWITCH_DECLARE(void) switch_img_patch_hole(switch_image_t *IMG, switch_image_t *
 #define PNG_SKIP_SETJMP_CHECK
 #include <png.h>
 
+
 #ifdef PNG_SIMPLIFIED_READ_SUPPORTED /* available from libpng 1.6.0 */
 
-SWITCH_DECLARE(switch_status_t) switch_img_patch_png(switch_image_t *img, int x, int y, const char *file_name)
+struct switch_png_opaque_s {
+	png_image png;
+	png_bytep buffer;	
+};
+
+
+
+SWITCH_DECLARE(switch_status_t) switch_png_open(switch_png_t **pngP, const char *file_name)
 {
-	png_image png = { 0 };
-	png_bytep buffer = NULL;
+	switch_png_t *use_png;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+
+	switch_zmalloc(use_png, sizeof(*use_png));
+	switch_zmalloc(use_png->pvt, sizeof(struct switch_png_opaque_s));
+	use_png->pvt->png.version = PNG_IMAGE_VERSION;
+		
+	if (!png_image_begin_read_from_file(&use_png->pvt->png, file_name)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error read PNG %s\n", file_name);
+		switch_goto_status(SWITCH_STATUS_FALSE, end);
+	}
+		
+	use_png->pvt->png.format = PNG_FORMAT_RGBA;
+
+	use_png->pvt->buffer = malloc(PNG_IMAGE_SIZE(use_png->pvt->png));
+	switch_assert(use_png->pvt->buffer);
+
+	if (!png_image_finish_read(&use_png->pvt->png, NULL/*background*/, use_png->pvt->buffer, 0, NULL)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error read PNG %s\n", file_name);
+		switch_goto_status(SWITCH_STATUS_FALSE, end);
+	}
+
+
+	use_png->w = use_png->pvt->png.width;
+	use_png->h = use_png->pvt->png.height;
+
+end:
+
+	if (status == SWITCH_STATUS_SUCCESS) {
+		*pngP = use_png;
+	} else {
+		switch_png_free(&use_png);
+		*pngP = NULL;
+	}
+
+	return status;
+}
+
+SWITCH_DECLARE(void) switch_png_free(switch_png_t **pngP)
+{
+	switch_png_t *use_png;
+
+	if (pngP) {
+		use_png = *pngP;
+		*pngP = NULL;
+		png_image_free(&use_png->pvt->png);
+		switch_safe_free(use_png->pvt->buffer);
+		switch_safe_free(use_png->pvt);
+		switch_safe_free(use_png);
+	}
+}
+
+
+SWITCH_DECLARE(switch_status_t) switch_png_patch_img(switch_png_t *use_png, switch_image_t *img, int x, int y)
+{
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_rgb_color_t *rgb_color;
 	switch_yuv_color_t yuv_color;
 	uint8_t alpha;
 	int i, j;
+	
+	switch_assert(use_png);
 
-	png.version = PNG_IMAGE_VERSION;
-
-	if (!png_image_begin_read_from_file(&png, file_name)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error read PNG %s\n", file_name);
-		switch_goto_status(SWITCH_STATUS_FALSE, end);
-	}
-
-	// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "png format: %d, size: %dx%d\n", png.format, png.width, png.height);
-	// if (png.format | PNG_FORMAT_FLAG_ALPHA) {
-	// 	printf("Alpha\n");
-	// }
-
-	png.format = PNG_FORMAT_RGBA;
-
-	buffer = malloc(PNG_IMAGE_SIZE(png));
-	switch_assert(buffer);
-
-	if (!png_image_finish_read(&png, NULL/*background*/, buffer, 0, NULL)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error read PNG %s\n", file_name);
-		switch_goto_status(SWITCH_STATUS_FALSE, end);
-	}
-
-	for (i = 0; i < png.height; i++) {
-		for (j = 0; j < png.width; j++) {
-			alpha = buffer[i * png.width * 4 + j * 4 + 3];
+	for (i = 0; i < use_png->pvt->png.height; i++) {
+		for (j = 0; j < use_png->pvt->png.width; j++) {
+			alpha = use_png->pvt->buffer[i * use_png->pvt->png.width * 4 + j * 4 + 3];
 			// printf("%d, %d alpha: %d\n", j, i, alpha);
 
 			if (alpha) { // todo, mux alpha with the underlying pixel
-				rgb_color = (switch_rgb_color_t *)(buffer + i * png.width * 4 + j * 4);
+				rgb_color = (switch_rgb_color_t *)(use_png->pvt->buffer + i * use_png->pvt->png.width * 4 + j * 4);
 				switch_color_rgb2yuv(rgb_color, &yuv_color);
-				switch_img_draw_pixel(img, x + j, i, &yuv_color);
+				switch_img_draw_pixel(img, x + j, y + i, &yuv_color);
 			}
 		}
 	}
 
-end:
-	png_image_free(&png);
-	switch_safe_free(buffer);
 	return status;
 }
+
+#else /* libpng < 1.6.0 */
+
+SWITCH_DECLARE(switch_status_t) switch_png_open(switch_png_t **pngP, const char *file_name)
+{
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "NOT IMPLEMENTED\n");
+	return SWITCH_STATUS_FALSE;
+}
+
+SWITCH_DECLARE(void) switch_png_free(switch_png_t **pngP) 
+{
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "NOT IMPLEMENTED\n");
+}
+
+SWITCH_DECLARE(switch_status_t) switch_png_patch_img(switch_png_t *use_png, switch_image_t *img, int x, int y) 
+{
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "NOT IMPLEMENTED\n");
+	return SWITCH_STATUS_FALSE;
+}
+
+#endif
+
+
+#ifdef PNG_SIMPLIFIED_READ_SUPPORTED /* available from libpng 1.6.0 */
 
 SWITCH_DECLARE(switch_image_t *) switch_img_read_png(const char* file_name)
 {
@@ -835,12 +897,6 @@ err:
 }
 
 #else /* libpng < 1.6.0 */
-
-SWITCH_DECLARE(switch_status_t) switch_img_patch_png(switch_image_t *img, int x, int y, const char *file_name)
-{
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "This function is not implemented on libpng < 1.6.0\n");
-	return SWITCH_STATUS_FALSE;
-}
 
 // ref: most are out-dated, man libpng :)
 // http://zarb.org/~gc/html/libpng.html
