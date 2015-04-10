@@ -766,7 +766,6 @@ SWITCH_STANDARD_APP(cv_bug_start_function)
         if (argv[4]) {
             cvh->y_off = atoi(argv[4]);
         }
-
     }
 
 	cvh->session = session;
@@ -824,6 +823,7 @@ SWITCH_STANDARD_API(cv_bug_api_function)
     cascade_name = argv[2];
     nested_cascade_name = argv[3];
 
+
 	if (!(rsession = switch_core_session_locate(uuid))) {
 		stream->write_function(stream, "-ERR Cannot locate session!\n");
 		goto done;
@@ -849,10 +849,20 @@ SWITCH_STANDARD_API(cv_bug_api_function)
 	cvh = (struct cv_bug_helper *) switch_core_session_alloc(rsession, sizeof(*cvh));
 	assert(cvh != NULL);
 
+    if (argv[4]) {
+        cvh->x_off = atoi(argv[4]);
+    }
+    
+    if (argv[5]) {
+        cvh->y_off = atoi(argv[5]);
+    }
+
 	cvh->session = rsession;
+
     if (cascade_name) {
         cvh->cascade_name = switch_core_session_strdup(rsession, cascade_name);
     }
+
     if (nested_cascade_name) {
         cvh->nested_cascade_name = switch_core_session_strdup(rsession, nested_cascade_name);
     }
