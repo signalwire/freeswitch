@@ -255,8 +255,8 @@ static inline void add_node(switch_vb_t *vb, switch_rtp_packet_t *packet, switch
 
 
 
-	if (vb->write_init && ((abs(htons(packet->header.seq) - htons(vb->highest_wrote_seq)) > 16) || 
-						   (abs(ntohl(node->packet.header.ts) - ntohl(vb->highest_wrote_ts)) > 900000))) {
+	if (vb->write_init && ((abs(((int)htons(packet->header.seq) - htons(vb->highest_wrote_seq))) > 16) || 
+						   (abs((int)((int64_t)ntohl(node->packet.header.ts) - (int64_t)ntohl(vb->highest_wrote_ts))) > 900000))) {
 		vb_debug(vb, 2, "%s", "CHANGE DETECTED, PUNT\n");
 		switch_vb_reset(vb);
 	}
