@@ -162,7 +162,7 @@ SWITCH_DECLARE(void) switch_img_copy(switch_image_t *img, switch_image_t **new_i
 	switch_assert(img);
 	switch_assert(new_img);
 
-	if (!img->fmt == SWITCH_IMG_FMT_I420) return;
+	if (!(img->fmt == SWITCH_IMG_FMT_I420)) return;
 
 	if (*new_img != NULL) {
 		if (img->d_w != (*new_img)->d_w || img->d_h != (*new_img)->d_w) {
@@ -196,7 +196,7 @@ SWITCH_DECLARE(switch_image_t *) switch_img_copy_rect(switch_image_t *img, int x
 	switch_assert(img);
 	switch_assert(x >= 0 && y >= 0 && w >= 0 && h >= 0);
 
-	if (!img->fmt == SWITCH_IMG_FMT_I420) return NULL;
+	if (!(img->fmt == SWITCH_IMG_FMT_I420)) return NULL;
 
 	new_img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, w, h, 1);
 	if (new_img == NULL) return NULL;
