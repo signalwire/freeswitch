@@ -1227,7 +1227,7 @@ static void layer_set_logo(conference_member_t *member, mcu_layer_t *layer, cons
 	}
 
 	if (path && strcasecmp(path, "clear")) {
-		layer->logo_img = switch_img_read_png(path);
+		layer->logo_img = switch_img_read_png(path, SWITCH_IMG_FMT_ARGB);
 	}
 
 	layer->logo_pos = pos;
@@ -1967,7 +1967,7 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 								clear_layer(conference->canvas, layer);
 
 								if (!layer->mute_img && imember->video_mute_png) {
-									layer->mute_img = switch_img_read_png(imember->video_mute_png);
+									layer->mute_img = switch_img_read_png(imember->video_mute_png, SWITCH_IMG_FMT_I420);
 								}
 
 								if (layer->mute_img) {
@@ -3944,7 +3944,7 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 		}
 		
 		if (avatar) {
-			member->avatar_png_img = switch_img_read_png(avatar);
+			member->avatar_png_img = switch_img_read_png(avatar, SWITCH_IMG_FMT_I420);
 		}
 
 		if ((var = switch_channel_get_variable_dup(member->channel, "video_mute_png", SWITCH_FALSE, -1))) {

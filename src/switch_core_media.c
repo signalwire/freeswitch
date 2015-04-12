@@ -4782,7 +4782,7 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 	}
 
 	if ((var = switch_channel_get_variable(session->channel, "core_video_blank_image"))) {
-		blank_img = switch_img_read_png(var);
+		blank_img = switch_img_read_png(var, SWITCH_IMG_FMT_I420);
 	}
 
 	if (!blank_img) {
