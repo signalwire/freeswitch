@@ -74,7 +74,7 @@ static switch_status_t png_file_open(switch_file_handle_t *handle, const char *p
 
 	memset(context, 0, sizeof(png_file_context_t));
 
-	if (!(context->img = switch_img_read_png(path))) {
+	if (!(context->img = switch_img_read_png(path, SWITCH_IMG_FMT_I420))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening %s\n", path);
 		return SWITCH_STATUS_GENERR;
 	}
