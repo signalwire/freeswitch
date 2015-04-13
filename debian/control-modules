@@ -453,7 +453,7 @@ Build-Depends: libperl-dev
 
 ## mod/event_handlers
 
-Module: event_handler/mod_amqp
+Module: event_handlers/mod_amqp
 Description: Event handler to send events to an amqp server
  AMQP event handler
 Build-Depends: librabbitmq-dev
