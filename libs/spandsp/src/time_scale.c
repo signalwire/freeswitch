@@ -102,7 +102,7 @@ static __inline__ void overlap_add(int16_t amp1[], int16_t amp2[], int len)
     for (i = 0;  i < len;  i++)
     {
         /* TODO: saturate */
-        amp2[i] = (int16_t) ((float) amp1[i]*(1.0f - weight) + (float) amp2[i]*weight);
+        amp1[i] = (int16_t) ((float) amp2[i]*(1.0f - weight) + (float) amp1[i]*weight);
         weight += step;
     }
     /*endfor*/
@@ -145,6 +145,13 @@ SPAN_DECLARE(int) time_scale(time_scale_state_t *s, int16_t out[], int16_t in[],
     out_len = 0;
     in_len = 0;
 
+    if (s->playout_rate == 1.0f)
+    {
+        vec_copyi16(out, in, len);
+        return len;
+    }
+    /*endif*/
+
     /* Top up the buffer */
     if (s->fill + len < s->buf_len)
     {
@@ -152,7 +159,7 @@ SPAN_DECLARE(int) time_scale(time_scale_state_t *s, int16_t out[], int16_t in[],
         /* Save the residual signal for next time. */
         vec_copyi16(&s->buf[s->fill], in, len);
         s->fill += len;
-        return out_len;
+        return 0;
     }
     /*endif*/
     k = s->buf_len - s->fill;
@@ -200,54 +207,46 @@ SPAN_DECLARE(int) time_scale(time_scale_state_t *s, int16_t out[], int16_t in[],
             s->lcp = 0;
         }
         /*endif*/
-        if (s->playout_rate == 1.0f)
+        pitch = amdf_pitch(s->min_pitch, s->max_pitch, s->buf, s->min_pitch);
+        lcpf = (double) pitch*s->rcomp;
+        /* Nudge around to compensate for fractional samples */
+        s->lcp = (int) lcpf;
+        /* Note that s->lcp and lcpf are not the same, as lcpf has a fractional part, and s->lcp doesn't */
+        s->rate_nudge += s->lcp - lcpf;
+        if (s->rate_nudge >= 0.5f)
         {
-            s->lcp = 0x7FFFFFFF;
+            s->lcp--;
+            s->rate_nudge -= 1.0f;
+        }
+        else if (s->rate_nudge <= -0.5f)
+        {
+            s->lcp++;
+            s->rate_nudge += 1.0f;
+        }
+        /*endif*/
+        if (s->playout_rate < 1.0f)
+        {
+            /* Speed up - drop a pitch period of signal */
+            overlap_add(&s->buf[pitch], s->buf, pitch);
+            vec_copyi16(&s->buf[pitch], &s->buf[2*pitch], s->buf_len - 2*pitch);
+            if (len - in_len < pitch)
+            {
+                /* Cannot continue without more samples */
+                /* Save the residual signal for next time. */
+                vec_copyi16(&s->buf[s->buf_len - pitch], &in[in_len], len - in_len);
+                s->fill += (len - in_len - pitch);
+                return out_len;
+            }
+            /*endif*/
+            vec_copyi16(&s->buf[s->buf_len - pitch], &in[in_len], pitch);
+            in_len += pitch;
         }
         else
         {
-            pitch = amdf_pitch(s->min_pitch, s->max_pitch, s->buf, s->min_pitch);
-            lcpf = (double) pitch*s->rcomp;
-            /* Nudge around to compensate for fractional samples */
-            s->lcp = (int) lcpf;
-            /* Note that s->lcp and lcpf are not the same, as lcpf has a fractional part, and s->lcp doesn't */
-            s->rate_nudge += s->lcp - lcpf;
-            if (s->rate_nudge >= 0.5f)
-            {
-                s->lcp--;
-                s->rate_nudge -= 1.0f;
-            }
-            else if (s->rate_nudge <= -0.5f)
-            {
-                s->lcp++;
-                s->rate_nudge += 1.0f;
-            }
-            /*endif*/
-            if (s->playout_rate < 1.0f)
-            {
-                /* Speed up - drop a chunk of data */
-                overlap_add(s->buf, &s->buf[pitch], pitch);
-                vec_copyi16(&s->buf[pitch], &s->buf[2*pitch], s->buf_len - 2*pitch);
-                if (len - in_len < pitch)
-                {
-                    /* Cannot continue without more samples */
-                    /* Save the residual signal for next time. */
-                    vec_copyi16(&s->buf[s->buf_len - pitch], &in[in_len], len - in_len);
-                    s->fill += (len - in_len - pitch);
-                    return out_len;
-                }
-                /*endif*/
-                vec_copyi16(&s->buf[s->buf_len - pitch], &in[in_len], pitch);
-                in_len += pitch;
-            }
-            else
-            {
-                /* Slow down - insert a chunk of data */
-                vec_copyi16(&out[out_len], s->buf, pitch);
-                out_len += pitch;
-                overlap_add(&s->buf[pitch], s->buf, pitch);
-            }
-            /*endif*/
+            /* Slow down - insert a pitch period of signal */
+            vec_copyi16(&out[out_len], s->buf, pitch);
+            out_len += pitch;
+            overlap_add(s->buf, &s->buf[pitch], pitch);
         }
         /*endif*/
     }

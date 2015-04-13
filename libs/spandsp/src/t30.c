@@ -2506,9 +2506,12 @@ static void set_min_scan_time(t30_state_t *s)
        and the codes for what we say will be used. We need 0 minimum. */
     static const uint8_t translate_min_scan_time[3][8] =
     {
-        {T30_MIN_SCAN_20MS, T30_MIN_SCAN_5MS, T30_MIN_SCAN_10MS, T30_MIN_SCAN_20MS, T30_MIN_SCAN_40MS, T30_MIN_SCAN_40MS, T30_MIN_SCAN_10MS, T30_MIN_SCAN_0MS}, /* normal */
-        {T30_MIN_SCAN_20MS, T30_MIN_SCAN_5MS, T30_MIN_SCAN_10MS, T30_MIN_SCAN_10MS, T30_MIN_SCAN_40MS, T30_MIN_SCAN_20MS, T30_MIN_SCAN_5MS,  T30_MIN_SCAN_0MS}, /* fine */
-        {T30_MIN_SCAN_10MS, T30_MIN_SCAN_5MS, T30_MIN_SCAN_5MS,  T30_MIN_SCAN_5MS,  T30_MIN_SCAN_20MS, T30_MIN_SCAN_10MS, T30_MIN_SCAN_5MS,  T30_MIN_SCAN_0MS}  /* superfine, when half fine time is selected */
+        /* Normal */
+        {T30_MIN_SCAN_20MS, T30_MIN_SCAN_5MS, T30_MIN_SCAN_10MS, T30_MIN_SCAN_20MS, T30_MIN_SCAN_40MS, T30_MIN_SCAN_40MS, T30_MIN_SCAN_10MS, T30_MIN_SCAN_0MS},
+        /* Fine */
+        {T30_MIN_SCAN_20MS, T30_MIN_SCAN_5MS, T30_MIN_SCAN_10MS, T30_MIN_SCAN_10MS, T30_MIN_SCAN_40MS, T30_MIN_SCAN_20MS, T30_MIN_SCAN_5MS,  T30_MIN_SCAN_0MS},
+        /* Superfine, when half fine time is selected */
+        {T30_MIN_SCAN_10MS, T30_MIN_SCAN_5MS, T30_MIN_SCAN_5MS,  T30_MIN_SCAN_5MS,  T30_MIN_SCAN_20MS, T30_MIN_SCAN_10MS, T30_MIN_SCAN_5MS,  T30_MIN_SCAN_0MS}
     };
     /* Translation between the codes for the minimum scan time we will use, and milliseconds. */
     static const int min_scan_times[8] =
@@ -5313,6 +5316,14 @@ static void repeat_last_command(t30_state_t *s)
         s->short_train = false;
         queue_phase(s, T30_PHASE_B_TX);
         send_dcs_sequence(s, true);
+        break;
+    case T30_STATE_F_POST_RCP_PPR:
+        queue_phase(s, T30_PHASE_D_TX);
+        send_frame(s, s->ecm_frame_map, 3 + 32);
+        break;
+    case T30_STATE_F_POST_RCP_MCF:
+        queue_phase(s, T30_PHASE_D_TX);
+        send_simple_frame(s, T30_MCF);
         break;
     case T30_STATE_F_POST_RCP_RNR:
         /* Just ignore */
