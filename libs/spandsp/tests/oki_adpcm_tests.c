@@ -275,7 +275,6 @@ int main(int argc, char *argv[])
             }
         }
 
-
         oki_adpcm_free(oki_enc_state);
         if (sf_close_telephony(inhandle))
         {

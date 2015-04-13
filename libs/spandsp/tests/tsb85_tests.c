@@ -60,8 +60,8 @@
 #include "spandsp.h"
 #include "spandsp-sim.h"
 
-#include "fax_tester.h"
 #include "fax_utils.h"
+#include "fax_tester.h"
 
 #define OUTPUT_TIFF_FILE_NAME   "tsb85.tif"
 

@@ -33,6 +33,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <ctype.h>
 #if defined(HAVE_TGMATH_H)
 #include <tgmath.h>
 #endif
@@ -59,9 +60,101 @@
 
 #include "spandsp.h"
 
+#include "fax_utils.h"
 #include "fax_tester.h"
 
 #define HDLC_FRAMING_OK_THRESHOLD       5
+
+extern const char *output_tiff_file_name;
+
+struct xml_node_parms_s
+{
+    xmlChar *dir;
+    xmlChar *type;
+    xmlChar *modem;
+    xmlChar *value;
+    xmlChar *tag;
+    xmlChar *bad_rows;
+    xmlChar *crc_error;
+    xmlChar *pattern;
+    xmlChar *timein;
+    xmlChar *timeout;
+    xmlChar *min_bits;
+    xmlChar *frame_size;
+    xmlChar *block;
+    xmlChar *compression;
+};
+
+static struct
+{
+    const char *tag;
+    int code;
+} t30_status[] =
+{
+    {"OK", T30_ERR_OK},
+    {"CEDTONE", T30_ERR_CEDTONE},
+    {"T0_EXPIRED", T30_ERR_T0_EXPIRED},
+    {"T1_EXPIRED", T30_ERR_T1_EXPIRED},
+    {"T3_EXPIRED", T30_ERR_T3_EXPIRED},
+    {"HDLC_CARRIER", T30_ERR_HDLC_CARRIER},
+    {"CANNOT_TRAIN", T30_ERR_CANNOT_TRAIN},
+    {"OPER_INT_FAIL", T30_ERR_OPER_INT_FAIL},
+    {"INCOMPATIBLE", T30_ERR_INCOMPATIBLE},
+    {"RX_INCAPABLE", T30_ERR_RX_INCAPABLE},
+    {"TX_INCAPABLE", T30_ERR_TX_INCAPABLE},
+    {"NORESSUPPORT", T30_ERR_NORESSUPPORT},
+    {"NOSIZESUPPORT", T30_ERR_NOSIZESUPPORT},
+    {"UNEXPECTED", T30_ERR_UNEXPECTED},
+    {"TX_BADDCS", T30_ERR_TX_BADDCS},
+    {"TX_BADPG", T30_ERR_TX_BADPG},
+    {"TX_ECMPHD", T30_ERR_TX_ECMPHD},
+    {"TX_GOTDCN", T30_ERR_TX_GOTDCN},
+    {"TX_INVALRSP", T30_ERR_TX_INVALRSP},
+    {"TX_NODIS", T30_ERR_TX_NODIS},
+    {"TX_PHBDEAD", T30_ERR_TX_PHBDEAD},
+    {"TX_PHDDEAD", T30_ERR_TX_PHDDEAD},
+    {"TX_T5EXP", T30_ERR_TX_T5EXP},
+    {"RX_ECMPHD", T30_ERR_RX_ECMPHD},
+    {"RX_GOTDCS", T30_ERR_RX_GOTDCS},
+    {"RX_INVALCMD", T30_ERR_RX_INVALCMD},
+    {"RX_NOCARRIER", T30_ERR_RX_NOCARRIER},
+    {"RX_NOEOL", T30_ERR_RX_NOEOL},
+    {"RX_NOFAX", T30_ERR_RX_NOFAX},
+    {"RX_T2EXPDCN", T30_ERR_RX_T2EXPDCN},
+    {"RX_T2EXPD", T30_ERR_RX_T2EXPD},
+    {"RX_T2EXPFAX", T30_ERR_RX_T2EXPFAX},
+    {"RX_T2EXPMPS", T30_ERR_RX_T2EXPMPS},
+    {"RX_T2EXPRR", T30_ERR_RX_T2EXPRR},
+    {"RX_T2EXP", T30_ERR_RX_T2EXP},
+    {"RX_DCNWHY", T30_ERR_RX_DCNWHY},
+    {"RX_DCNDATA", T30_ERR_RX_DCNDATA},
+    {"RX_DCNFAX", T30_ERR_RX_DCNFAX},
+    {"RX_DCNPHD", T30_ERR_RX_DCNPHD},
+    {"RX_DCNRRD", T30_ERR_RX_DCNRRD},
+    {"RX_DCNNORTN", T30_ERR_RX_DCNNORTN},
+    {"FILEERROR", T30_ERR_FILEERROR},
+    {"NOPAGE", T30_ERR_NOPAGE},
+    {"BADTIFF", T30_ERR_BADTIFF},
+    {"BADPAGE", T30_ERR_BADPAGE},
+    {"BADTAG", T30_ERR_BADTAG},
+    {"BADTIFFHDR", T30_ERR_BADTIFFHDR},
+    {"NOMEM", T30_ERR_NOMEM},
+    {"RETRYDCN", T30_ERR_RETRYDCN},
+    {"CALLDROPPED", T30_ERR_CALLDROPPED},
+    {"NOPOLL", T30_ERR_NOPOLL},
+    {"IDENT_UNACCEPTABLE", T30_ERR_IDENT_UNACCEPTABLE},
+    {"SUB_UNACCEPTABLE", T30_ERR_SUB_UNACCEPTABLE},
+    {"SEP_UNACCEPTABLE", T30_ERR_SEP_UNACCEPTABLE},
+    {"PSA_UNACCEPTABLE", T30_ERR_PSA_UNACCEPTABLE},
+    {"SID_UNACCEPTABLE", T30_ERR_SID_UNACCEPTABLE},
+    {"PWD_UNACCEPTABLE", T30_ERR_PWD_UNACCEPTABLE},
+    {"TSA_UNACCEPTABLE", T30_ERR_TSA_UNACCEPTABLE},
+    {"IRA_UNACCEPTABLE", T30_ERR_IRA_UNACCEPTABLE},
+    {"CIA_UNACCEPTABLE", T30_ERR_CIA_UNACCEPTABLE},
+    {"ISP_UNACCEPTABLE", T30_ERR_ISP_UNACCEPTABLE},
+    {"CSA_UNACCEPTABLE", T30_ERR_CSA_UNACCEPTABLE},
+    {NULL, -1}
+};
 
 static void timer_update(faxtester_state_t *s, int len)
 {

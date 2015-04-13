@@ -17,7 +17,7 @@
 
 run_tsb85_test()
 {
-    rm -f fax_tests_1.tif
+    rm -f tsb85_tests.tif
     echo ./tsb85_tests ${TEST}
     ./tsb85_tests -x ../spandsp/fax-tests.xml ${TEST} 2>xyzzy2
     RETVAL=$?
@@ -28,7 +28,7 @@ run_tsb85_test()
     fi
 }
 
-for TEST in PPS-MPS-lost-PPS V17-12000-V29-9600 Phase-D-collision Modem-change-at-CTC
+for TEST in PPS-MPS-lost-PPS V17-12000-V29-9600 Phase-D-collision Modem-change-at-CTC ECM-DCN-clipped Non-ECM-DCN-clipped
 do
     run_tsb85_test
 done

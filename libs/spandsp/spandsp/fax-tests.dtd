@@ -19,12 +19,16 @@
   name      CDATA   #IMPLIED
   >
 
-<!ELEMENT test (step|possible-step)* >
+<!ELEMENT test (repeat|step)* >
 <!ATTLIST test
   name      CDATA   #IMPLIED
   >
 
-<!ELEMENT possible-step (step)* >
+<!ELEMENT repeat (step)* >
+<!ATTLIST repeat
+  min       CDATA   #IMPLIED
+  max       CDATA   #IMPLIED
+  >
 
 <!ELEMENT step (check|EMPTY)* >
 <!ATTLIST step
@@ -49,5 +53,6 @@
 <!ATTLIST check
   name      CDATA   #IMPLIED
   desc      CDATA   #IMPLIED
+  cond      CDATA   #IMPLIED
   >
 
