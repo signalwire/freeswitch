@@ -864,10 +864,10 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 	rtp_session->last_stun = switch_micro_time_now();
 
 	switch_stun_packet_first_attribute(packet, attr);
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "STUN PACKET TYPE: %s\n", 
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG8, "STUN PACKET TYPE: %s\n", 
 					  switch_stun_value_to_name(SWITCH_STUN_TYPE_PACKET_TYPE, packet->header.type));
 	do {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "|---: STUN ATTR %s\n",
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG8, "|---: STUN ATTR %s\n",
 						  switch_stun_value_to_name(SWITCH_STUN_TYPE_ATTRIBUTE, attr->type));
 
 		switch (attr->type) {
@@ -905,13 +905,13 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 				char ip[16];
 				uint16_t port;
 				switch_stun_packet_attribute_get_mapped_address(attr, ip, &port);
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "|------: %s:%d\n", ip, port);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG8, "|------: %s:%d\n", ip, port);
 			}
 			break;
 		case SWITCH_STUN_ATTR_USERNAME:
 			if (attr->type) {
 				switch_stun_packet_attribute_get_username(attr, username, sizeof(username));
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "|------: %s\n", username);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG8, "|------: %s\n", username);
 			}
 			break;
 			
@@ -920,7 +920,7 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 				uint32_t priority = 0;
 				pri = (uint32_t *) attr->value;
 				priority = ntohl(*pri);
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "|------: %u\n", priority);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG8, "|------: %u\n", priority);
 				ok = priority == ice->ice_params->cands[ice->ice_params->chosen[ice->proto]][ice->proto].priority;
 			}
 			break;
@@ -1461,7 +1461,7 @@ static void do_mos(switch_rtp_t *rtp_session, int force) {
 
 			penalty = diff * 2;
 			
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "%s %s %d consecutive flaws, adding %d flaw penalty\n", 
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG3, "%s %s %d consecutive flaws, adding %d flaw penalty\n", 
 							  rtp_session_name(rtp_session), rtp_type(rtp_session), 
 							  rtp_session->consecutive_flaws, penalty);
 
@@ -1475,7 +1475,7 @@ static void do_mos(switch_rtp_t *rtp_session, int force) {
 		rtp_session->stats.inbound.R = R;
 		rtp_session->stats.inbound.mos = 1 + (0.035) * R + (.000007) * R * (R-60) * (100-R);
 		rtp_session->stats.inbound.last_flaw = rtp_session->stats.inbound.flaws;
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "%s %s stat %0.2f %ld/%d flaws: %ld mos: %0.2f v: %0.2f %0.2f/%0.2f\n",
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG3, "%s %s stat %0.2f %ld/%d flaws: %ld mos: %0.2f v: %0.2f %0.2f/%0.2f\n",
 						  rtp_session_name(rtp_session),
 						  rtp_type(rtp_session),
 						  rtp_session->stats.inbound.R,
@@ -1611,7 +1611,7 @@ static void check_jitter(switch_rtp_t *rtp_session)
 		ipdv = rtp_session->old_mean - rtp_session->stats.inbound.mean_interval;
 
 		if ( ipdv > IPDV_THRESHOLD ) { /* It shows Increasing Delays */
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Calculated Instantaneous Packet Delay Variation: %s packet %lf\n",
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG3, "Calculated Instantaneous Packet Delay Variation: %s packet %lf\n",
 							  rtp_type(rtp_session), ipdv);
 		}
 
@@ -5370,7 +5370,7 @@ static switch_status_t process_rtcp_report(switch_rtp_t *rtp_session, rtcp_msg_t
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
 
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1,
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG3,
 					  "RTCP packet bytes %" SWITCH_SIZE_T_FMT " type %d pad %d\n", 
 					  bytes, msg->header.type, msg->header.p);
 	
@@ -5448,7 +5448,7 @@ static switch_status_t process_rtcp_report(switch_rtp_t *rtp_session, rtcp_msg_t
 			if (report_block->lsr && !rtp_session->flags[SWITCH_RTP_FLAG_RTCP_PASSTHRU]) {
 				switch_time_exp_gmt(&now_hr,now);
 				/* Calculating RTT = A - DLSR - LSR */
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1,
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG3,
 								  "Receiving an RTCP packet\n[%04d-%02d-%02d %02d:%02d:%02d.%d] SSRC[%u]\n"
 								  "RTT[%f] A[%u] - DLSR[%u] - LSR[%u]\n",
 								  1900 + now_hr.tm_year, now_hr.tm_mday, now_hr.tm_mon, now_hr.tm_hour, now_hr.tm_min, now_hr.tm_sec, now_hr.tm_usec,
@@ -5759,7 +5759,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 									  rtp_session_name(rtp_session),
 									  rtp_session->sync_packets, (rtp_session->ms_per_packet * rtp_session->sync_packets) / 1000);
 					if (!rtp_session->flags[SWITCH_RTP_FLAG_PAUSE]) {
-						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "%s syncing %d %s packet(s)\n", 
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG3, "%s syncing %d %s packet(s)\n", 
 										 rtp_session_name(rtp_session),
 										  rtp_session->sync_packets, rtp_type(rtp_session));
 
