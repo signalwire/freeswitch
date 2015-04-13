@@ -755,9 +755,11 @@ if test "x$have_libz" = "xyes"  ; then
 APR_ADDTO([PLATFORM_CORE_LIBS], [-lz])
 fi
 
+PKG_CHECK_MODULES([YUV], [libyuv >= 0.0.1280],[AC_MSG_RESULT([yes])],[AC_MSG_ERROR([You need to install libyuv-dev. Required library])])
+
 AC_CHECK_LIB(yuv, I420Scale, have_libyuv=yes, AC_MSG_ERROR([no usable libyuv; please install libyuv devel package or equivalent]))
 if test "x$have_libyuv" = "xyes"  ; then
-APR_ADDTO([PLATFORM_CORE_LIBS], [-lyuv])
+APR_ADDTO([PLATFORM_CORE_LIBS], [${YUV_LIBS}])
 fi
 
 AC_CHECK_LIB(apr-1, apr_pool_mutex_set, use_system_apr=yes, use_system_apr=no)
