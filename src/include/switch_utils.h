@@ -46,6 +46,23 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_URL_UNSAFE "\r\n #%&+:;<=>?@[\\]^`{|}\""
 
 
+static inline uint32_t switch_round_to_step(uint32_t num, uint32_t step)
+{
+	uint32_t r;
+	uint32_t x;
+
+	if (!num) return 0;
+	
+	r = (num % step);
+	x = num - r;
+	
+	if (r > step / 2) {
+		x += step;
+	}
+	
+	return x;
+}
+
 /* https://code.google.com/p/stringencoders/wiki/PerformanceAscii 
    http://www.azillionmonkeys.com/qed/asmexample.html
 */

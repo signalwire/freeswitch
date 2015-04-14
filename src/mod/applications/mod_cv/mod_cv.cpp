@@ -81,81 +81,34 @@ struct shape {
 #define MAX_SHAPES 32
 
 typedef struct cv_context_s {
-    CvBGCodeBookModel* model;
-    bool ch[NCHANNELS];
-    IplImage *ImaskCodeBook;
-    IplImage *ImaskCodeBookCC;
     IplImage *rawImage;
     IplImage *yuvImage;
     CascadeClassifier *cascade;
     CascadeClassifier *nestedCascade;
-    int train_frames;
     int w;
     int h;
     struct detect_stats detected;
     struct detect_stats nestDetected;
     int detect_event;
     int nest_detect_event;
-    switch_png_t *png;
+    switch_image_t *png;
     struct shape shape[MAX_SHAPES];
     int shapeidx;
-    int x_off;
-    int y_off;
+    float x_off;
+    float y_off;
+    float shape_scale;
+    int32_t skip;
+    int32_t skip_count;
+    uint32_t debug;
+	switch_core_session_t *session;
+    char *cascade_path;
+    char *nested_cascade_path;
+    char *png_path;
+    switch_memory_pool_t *pool;
+    switch_mutex_t *mutex;
 } cv_context_t;
 
-
-static void uninit_context(cv_context_t *context)
-{
-    cvReleaseBGCodeBookModel(&context->model);
-    cvReleaseImage(&context->rawImage);
-    cvReleaseImage(&context->yuvImage);
-    cvReleaseImage(&context->ImaskCodeBook);
-    cvReleaseImage(&context->ImaskCodeBookCC);
-
-    if (context->cascade) {
-        delete context->cascade;
-    }
-
-    if (context->nestedCascade) {
-        delete context->nestedCascade;
-    }
-
-    if (context->png) {
-        switch_png_free(&context->png);
-    }
-}
-
-static void init_context(cv_context_t *context, const char *cascade_name, const char *nested_cascade_name, int x_off, int y_off)
-{
-    for (int i = 0; i < NCHANNELS; i++) {
-        context->ch[i] = true;
-    }
-
-    if (cascade_name) {
-        context->cascade = new CascadeClassifier;
-        context->cascade->load(cascade_name);
-
-        if (nested_cascade_name) {
-            if (switch_stristr(".png", nested_cascade_name)) {
-                switch_png_open(&context->png, nested_cascade_name);
-                context->x_off = x_off;
-                context->y_off = y_off;
-            } else {
-                context->nestedCascade = new CascadeClassifier;
-                context->nestedCascade->load(nested_cascade_name);
-            }
-        }
-    } else {
-        context->model = cvCreateBGCodeBookModel();
-        context->model->modMin[0] = 3;
-        context->model->modMin[1] = context->model->modMin[2] = 3;
-        context->model->modMax[0] = 10;
-        context->model->modMax[1] = context->model->modMax[2] = 10;
-        context->model->cbBounds[0] = context->model->cbBounds[1] = context->model->cbBounds[2] = 10;
-        context->train_frames = 300;
-    }
-    
-}
+static void uninit_context(cv_context_t *context);
 
 static const float coef1 = 0.3190;
 static const float coef2 = -48.7187;
@@ -165,15 +118,79 @@ static void reset_stats(struct detect_stats *stats)
     memset(stats, 0, sizeof(*stats));
 }
 
-static void parse_stats(struct detect_stats *stats, uint32_t size)
+
+static void reset_context(cv_context_t *context)
+{
+
+    CascadeClassifier *cascade = context->cascade;
+    CascadeClassifier *nestedCascade = context->nestedCascade;
+
+    context->cascade = NULL;
+    context->nestedCascade = NULL;
+
+    if (cascade) {
+        delete cascade;
+    }
+
+    if (nestedCascade) {
+        delete nestedCascade;
+    }
+
+    switch_img_free(&context->png);
+}
+
+static void uninit_context(cv_context_t *context)
+{
+    reset_context(context);
+    switch_core_destroy_memory_pool(&context->pool);
+}
+
+
+static void init_context(cv_context_t *context)
+{
+    int create = 0;
+
+    if (!context->pool) {
+        switch_core_new_memory_pool(&context->pool);
+        switch_mutex_init(&context->mutex, SWITCH_MUTEX_NESTED, context->pool);
+        create = 1;
+    }
+
+    switch_mutex_lock(context->mutex);
+
+    if (!create) {
+        reset_context(context);
+    }
+
+    if (context->cascade_path) {
+        context->cascade = new CascadeClassifier;
+        context->cascade->load(context->cascade_path);
+
+        if (context->nested_cascade_path) {
+            context->nestedCascade = new CascadeClassifier;
+            context->nestedCascade->load(context->nested_cascade_path);
+        }
+    }
+
+    if (context->png_path) {
+        context->png = switch_img_read_png(context->png_path, SWITCH_IMG_FMT_ARGB);
+    }
+
+    switch_mutex_unlock(context->mutex);
+    
+}
+
+
+
+static void parse_stats(struct detect_stats *stats, uint32_t size, uint64_t skip)
 {
     if (stats->itr >= 500) {
         reset_stats(stats);
     }
-
+    
     if (stats->itr >= 60) {
         if (stats->last_score > stats->avg + 10) {
-            stats->above_avg_simo_count++;
+            stats->above_avg_simo_count += skip;
         } else if (stats->above_avg_simo_count) {
             stats->above_avg_simo_count = 0;
         }
@@ -182,11 +199,11 @@ static void parse_stats(struct detect_stats *stats, uint32_t size)
 
     if (size) {
         stats->simo_miss_count = 0;
-        stats->simo_count++;
+        stats->simo_count += skip;
         stats->last_score = size;
         stats->sum += size;
     } else {
-        stats->simo_miss_count++;
+        stats->simo_miss_count += skip;
         stats->simo_count = 0;
         stats->itr = 0;
         stats->avg = 0;
@@ -200,6 +217,16 @@ void detectAndDraw(cv_context_t *context)
 {
     double scale = 1;
     Mat img(context->rawImage);
+
+    switch_mutex_lock(context->mutex);
+
+
+    if (context->shape[0].cx && context->skip > 1 && context->skip_count++ < context->skip) {
+        switch_mutex_unlock(context->mutex);
+        return;
+    }
+
+    context->skip_count = 0;
 
     if (context->rawImage->width >= 1080) {
         scale = 2;
@@ -236,10 +263,10 @@ void detectAndDraw(cv_context_t *context)
                                         Size(20, 20) );
 
 
-    parse_stats(&context->detected, detectedObjs.size());
+    parse_stats(&context->detected, detectedObjs.size(), context->skip);
 
     //printf("SCORE: %d %f %d\n", context->detected.simo_count, context->detected.avg, context->detected.last_score);
-    
+
     context->shapeidx = 0;
     //memset(context->shape, 0, sizeof(context->shape[0]) * MAX_SHAPES);
 
@@ -256,12 +283,13 @@ void detectAndDraw(cv_context_t *context)
             break;
         }
         
-        if(0.75 < aspect_ratio && aspect_ratio < 1.3 ) {
-            center.x = cvRound((r->x + r->width*0.5)*scale);
-            center.y = cvRound((r->y + r->height*0.5)*scale);
-            radius = cvRound((r->width + r->height)*0.25*scale);
 
-            if (!context->png) {
+        if(0.75 < aspect_ratio && aspect_ratio < 1.3 ) {
+            center.x = switch_round_to_step(cvRound((r->x + r->width*0.5)*scale), 20);
+            center.y = switch_round_to_step(cvRound((r->y + r->height*0.5)*scale), 20);
+            radius = switch_round_to_step(cvRound((r->width + r->height)*0.25*scale), 20);
+
+            if (context->debug || !context->png) {
                 circle( img, center, radius, color, 3, 8, 0 );
             }
 
@@ -270,19 +298,20 @@ void detectAndDraw(cv_context_t *context)
             context->shape[context->shapeidx].cx = center.x;
             context->shape[context->shapeidx].cy = center.y;
             context->shape[context->shapeidx].radius = radius;
+            context->shape[context->shapeidx].w = context->shape[context->shapeidx].h = radius * 2;
             context->shapeidx++;
 
         } else {
-            context->shape[context->shapeidx].x = cvRound(r->x*scale);
-            context->shape[context->shapeidx].y = cvRound(r->y*scale);
-            context->shape[context->shapeidx].x2 = cvRound((r->x + r->width-1)*scale);
-            context->shape[context->shapeidx].y2 = cvRound((r->y + r->height-1)*scale);
+            context->shape[context->shapeidx].x = switch_round_to_step(cvRound(r->x*scale), 40);
+            context->shape[context->shapeidx].y = switch_round_to_step(cvRound(r->y*scale), 20);
+            context->shape[context->shapeidx].x2 = switch_round_to_step(cvRound((r->x + r->width-1)*scale), 40);
+            context->shape[context->shapeidx].y2 = switch_round_to_step(cvRound((r->y + r->height-1)*scale), 20);
             context->shape[context->shapeidx].w = context->shape[context->shapeidx].x2 - context->shape[context->shapeidx].x;
             context->shape[context->shapeidx].h = context->shape[context->shapeidx].y2 - context->shape[context->shapeidx].y;
             context->shape[context->shapeidx].cx = context->shape[context->shapeidx].x + (context->shape[context->shapeidx].w / 2);
             context->shape[context->shapeidx].cy = context->shape[context->shapeidx].y + (context->shape[context->shapeidx].h / 2);
             
-            if (!context->png) {
+            if (context->debug || !context->png) {
                 rectangle( img, cvPoint(context->shape[context->shapeidx].x, context->shape[context->shapeidx].y),
                            cvPoint(context->shape[context->shapeidx].x2, context->shape[context->shapeidx].y2),
                            color, 3, 8, 0);
@@ -318,140 +347,14 @@ void detectAndDraw(cv_context_t *context)
         CvScalar col = CV_RGB((float)255 * object_neighbors / max_neighbors, 0, 0);
         rectangle(img, cvPoint(0, img.rows), cvPoint(img.cols/10, img.rows - rect_height), col, -1);
 
-        parse_stats(&context->nestDetected, nestedObjects.size());
+        parse_stats(&context->nestDetected, nestedObjects.size(), context->skip);
         
         
         //printf("NEST: %d %f %d\n", context->nestDetected.simo_count, context->nestDetected.avg, context->nestDetected.last_score);
     }
     
+    switch_mutex_unlock(context->mutex);
 }
-
-
-void  detect(IplImage* img_8uc1,IplImage* img_8uc3) {
-    
-	//cvThreshold( img_8uc1, img_edge, 128, 255, CV_THRESH_BINARY );
-	CvMemStorage* storage = cvCreateMemStorage();
-	CvSeq* first_contour = NULL;
-	CvSeq* maxitem=NULL;
-	double area=0,areamax=0;
-	int maxn=0;
-	int Nc = cvFindContours(
-							img_8uc1,
-							storage,
-							&first_contour,
-							sizeof(CvContour),
-							CV_RETR_LIST // Try all four values and see what happens
-							);
-	int n=0;
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Total Contours Detected: %d\n", Nc );
-    
-	if (Nc > 0) {
-		
-        for( CvSeq* c=first_contour; c!=NULL; c=c->h_next ) {
-            //cvCvtColor( img_8uc1, img_8uc3, CV_GRAY2BGR );
-
-            area=cvContourArea(c,CV_WHOLE_SEQ );
-
-            if(area>areamax)
-                {areamax=area;
-                    maxitem=c;
-                    maxn=n;
-                }
-
-            n++;
-
-        }
-
-        CvMemStorage* storage3 = cvCreateMemStorage(0);
-        //if (maxitem) maxitem = cvApproxPoly( maxitem, sizeof(maxitem), storage3, CV_POLY_APPROX_DP, 3, 1 );  
-
-
-
-        if (areamax>5000) {
-				
-            maxitem = cvApproxPoly( maxitem, sizeof(CvContour), storage3, CV_POLY_APPROX_DP, 10, 1 );
-                
-            CvPoint pt0;
-
-            CvMemStorage* storage1 = cvCreateMemStorage(0);
-            CvMemStorage* storage2 = cvCreateMemStorage(0);
-            CvSeq* ptseq = cvCreateSeq( CV_SEQ_KIND_GENERIC|CV_32SC2, sizeof(CvContour),
-                                        sizeof(CvPoint), storage1 );
-            CvSeq* hull;
-            CvSeq* defects;
-
-            for(int i = 0; i < maxitem->total; i++ ) {
-                CvPoint* p = CV_GET_SEQ_ELEM( CvPoint, maxitem, i );
-                pt0.x = p->x;
-                pt0.y = p->y;
-                cvSeqPush( ptseq, &pt0 );
-            }
-            hull = cvConvexHull2( ptseq, 0, CV_CLOCKWISE, 0 );
-            int hullcount = hull->total;
-        
-            defects= cvConvexityDefects(ptseq,hull,storage2  );
-
-            //printf(" defect no %d \n",defects->total);
-
-
-        
-
-            CvConvexityDefect* defectArray;  
-
-    
-            int j=0;  
-            //int m_nomdef=0;
-            // This cycle marks all defects of convexity of current contours.  
-            for(;defects;defects = defects->h_next)  {
-                  
-                int nomdef = defects->total; // defect amount  
-                //outlet_float( m_nomdef, nomdef );  
-            
-                //printf(" defect no %d \n",nomdef);
-              
-                if(nomdef == 0)  
-                    continue;  
-               
-                // Alloc memory for defect set.     
-                //fprintf(stderr,"malloc\n");  
-                defectArray = (CvConvexityDefect*)malloc(sizeof(CvConvexityDefect)*nomdef);  
-              
-                // Get defect set.  
-                //fprintf(stderr,"cvCvtSeqToArray\n");  
-                cvCvtSeqToArray(defects,defectArray, CV_WHOLE_SEQ);  
-            
-                // Draw marks for all defects.  
-                for(int i=0; i<nomdef; i++)  {
-                    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, " defect depth for defect %d %f \n",i,defectArray[i].depth);
-                    cvLine(img_8uc3, *(defectArray[i].start), *(defectArray[i].depth_point),CV_RGB(255,255,0),1, CV_AA, 0 );  
-                    cvCircle( img_8uc3, *(defectArray[i].depth_point), 5, CV_RGB(0,0,164), 2, 8,0);  
-                    cvCircle( img_8uc3, *(defectArray[i].start), 5, CV_RGB(0,0,164), 2, 8,0);  
-                    cvLine(img_8uc3, *(defectArray[i].depth_point), *(defectArray[i].end),CV_RGB(255,255,0),1, CV_AA, 0 );  
-       
-                } 
-                char txt[]="0";
-                txt[0]='0'+nomdef-1;
-                CvFont font;
-                cvInitFont(&font, CV_FONT_HERSHEY_SIMPLEX, 1.0, 1.0, 0, 5, CV_AA);
-                cvPutText(img_8uc3, txt, cvPoint(50, 50), &font, cvScalar(0, 0, 255, 0)); 
-  
-                j++;  
-               
-                // Free memory.         
-                free(defectArray);  
-            } 
-
-
-            cvReleaseMemStorage( &storage );
-            cvReleaseMemStorage( &storage1 );
-            cvReleaseMemStorage( &storage2 );
-            cvReleaseMemStorage( &storage3 );
-            //return 0;
-        }
-    }
-}
-
-
 
 
 static switch_status_t video_thread_callback(switch_core_session_t *session, switch_frame_t *frame, void *user_data)
@@ -474,11 +377,6 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
             context->yuvImage = cvCreateImage(cvSize(frame->img->d_w, frame->img->d_h), IPL_DEPTH_8U, 3);
             switch_assert(context->rawImage);
             switch_assert(context->rawImage->width * 3 == context->rawImage->widthStep);
-
-
-            context->ImaskCodeBook = cvCreateImage( cvGetSize(context->rawImage), IPL_DEPTH_8U, 1 );
-            context->ImaskCodeBookCC = cvCreateImage( cvGetSize(context->rawImage), IPL_DEPTH_8U, 1 );
-            cvSet(context->ImaskCodeBook, cvScalar(255));
         }
 
         //printf("context->rawImage: %dx%d stride: %d size: %d color:%s\n", context->rawImage->width, context->rawImage->height, context->rawImage->widthStep, context->rawImage->imageSize, context->rawImage->colorModel);
@@ -490,24 +388,6 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
                             context->rawImage->width, context->rawImage->height);
 
 
-        if (context->model) {
-            cvCvtColor(context->rawImage, context->yuvImage, CV_RGB2YCrCb);
-        
-            if (context->train_frames > 0) {
-                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "training please wait %d\n", context->train_frames);
-                cvBGCodeBookUpdate( context->model, context->yuvImage );
-                context->train_frames--;
-            } else if (context->train_frames == 0) {
-                cvBGCodeBookClearStale( context->model, context->model->t/2 );
-                context->train_frames--;
-            } else {
-                cvBGCodeBookDiff(context->model, context->yuvImage, context->ImaskCodeBook);
-                cvCopy(context->ImaskCodeBook, context->ImaskCodeBookCC);	
-                cvSegmentFGMask( context->ImaskCodeBookCC );
-                detect(context->ImaskCodeBookCC, context->rawImage);
-            }
-        }
-        
         if (context->cascade) {
             switch_event_t *event;
 
@@ -607,14 +487,55 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
         int w = context->rawImage->width;
         int h = context->rawImage->height;
 
+        if (context->debug) {
+            libyuv::RGB24ToI420((uint8_t *)context->rawImage->imageData, w * 3,
+                                frame->img->planes[0], frame->img->stride[0],
+                                frame->img->planes[1], frame->img->stride[1],
+                                frame->img->planes[2], frame->img->stride[2],
+                                context->rawImage->width, context->rawImage->height);
+        }
+
         if (context->png && context->detect_event && context->shape[0].cx) {
             int x = 0, y = 0;
+            switch_image_t *img = NULL;
+            int scale_w = 0, scale_h = 0;
+            int x_off = 0, y_off = 0;
+            int shape_w, shape_h;
+            int cx, cy;
 
-            x = context->shape[0].cx - (context->png->w / 2) + context->x_off;
-            y = context->shape[0].cy - (context->png->h / 2) + context->y_off;
+            shape_w = context->shape[0].w;
+            shape_h = context->shape[0].h;
+            
+            cx = context->shape[0].cx;
+            cy = context->shape[0].cy;
+            
+            scale_w = shape_w * context->shape_scale;
+            if (scale_w > frame->img->d_w) {
+                scale_w = frame->img->d_w;
+            }
+            scale_h = ((context->png->d_h * scale_w) / context->png->d_w);
 
-            switch_png_patch_img(context->png, frame->img, x, y);
-        } else {
+            if (context->x_off) {
+                x_off = context->x_off * shape_w;
+            }
+            
+            if (context->y_off) {
+                y_off = context->y_off * context->shape[0].h;
+            }
+
+            x = cx - ((scale_w / 2) + x_off);
+            y = cy - ((scale_h / 2) + y_off);
+            
+
+            switch_img_scale(context->png, &img, scale_w, scale_h);
+
+            if (img) {
+                switch_img_patch(frame->img, img, x, y);
+                switch_img_free(&img);
+            }
+
+            // switch_png_patch_img(context->png, frame->img, x, y);
+        } else if (!context->debug) {
             libyuv::RGB24ToI420((uint8_t *)context->rawImage->imageData, w * 3,
                                 frame->img->planes[0], frame->img->stride[0],
                                 frame->img->planes[1], frame->img->stride[1],
@@ -627,6 +548,55 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
     return SWITCH_STATUS_SUCCESS;
 }
 
+static void parse_params(cv_context_t *context, int start, int argc, char **argv)
+{
+    int i, changed = 0;
+
+    for (i = start; i < argc ; i ++) {
+        char *name = strdup(argv[i]);
+        char *val = NULL;
+
+        if ((val = strchr(name, '='))) {
+            *val++ = '\0';
+        }
+
+        if (name && val) {
+
+            if (!strcasecmp(name, "x_off")) {
+                context->x_off = atof(val);
+            } else if (!strcasecmp(name, "y_off")) {
+                context->y_off = atof(val);
+            } else if (!strcasecmp(name, "scale")) {
+                context->shape_scale = atof(val);
+            } else if (!strcasecmp(name, "skip")) {
+                context->skip = atoi(val);
+            } else if (!strcasecmp(name, "debug")) {
+                context->debug = atoi(val);
+            } else if (!strcasecmp(name, "cascade")) {
+                context->cascade_path = switch_core_strdup(context->pool, val);
+                changed++;
+            } else if (!strcasecmp(name, "nested_cascade")) {
+                context->nested_cascade_path = switch_core_strdup(context->pool, val);
+                changed++;
+            } else if (!strcasecmp(name, "png")) {
+                context->png_path = switch_core_strdup(context->pool, val);
+                changed++;
+            }
+        }
+
+        free(name);
+    }
+
+    if (!context->skip) context->skip = 1;
+    if (!context->shape_scale) context->shape_scale = 1;
+
+    if (changed) {
+        init_context(context);
+    }
+}
+
+
+
 
 SWITCH_STANDARD_APP(cv_start_function)
 {
@@ -634,27 +604,20 @@ SWITCH_STANDARD_APP(cv_start_function)
     switch_frame_t *read_frame;
     cv_context_t context = { 0 };
     char *lbuf;
-    char *cascade_name;
-    char *nested_cascade_name;
-	char *argv[6];
+    char *cascade_path;
+    char *nested_cascade_path;
+	char *argv[25];
 	int argc;
-    int x_off = 0, y_off = 0;
+
+    init_context(&context);
 
 	if (data && (lbuf = switch_core_session_strdup(session, data))
 		&& (argc = switch_separate_string(lbuf, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
-        cascade_name = argv[0];
-        nested_cascade_name = argv[1];
+        context.cascade_path = argv[0];
+        context.nested_cascade_path = argv[1];
 
-        if (argv[2]) {
-            x_off = atoi(argv[2]);
-        }
-
-        if (argv[3]) {
-            y_off = atoi(argv[3]);
-        }
+        parse_params(&context, 2, argc, argv);
     }
-
-    init_context(&context, cascade_name, nested_cascade_name, x_off, y_off);
     
     switch_channel_answer(channel);
     switch_channel_set_flag_recursive(channel, CF_VIDEO_DECODED_READ);
@@ -688,37 +651,30 @@ SWITCH_STANDARD_APP(cv_start_function)
 
 
 ///////
-struct cv_bug_helper {
-	switch_core_session_t *session;
-    cv_context_t context;
-    char *cascade_name;
-    char *nested_cascade_name;
-    int x_off;
-    int y_off;
-};
+
 
 static switch_bool_t cv_bug_callback(switch_media_bug_t *bug, void *user_data, switch_abc_type_t type)
 {
-	struct cv_bug_helper *cvh = (struct cv_bug_helper *) user_data;
-    switch_channel_t *channel = switch_core_session_get_channel(cvh->session);
+    cv_context_t *context = (cv_context_t *) user_data;
+
+    switch_channel_t *channel = switch_core_session_get_channel(context->session);
 
 	switch (type) {
 	case SWITCH_ABC_TYPE_INIT:
 		{
             switch_channel_set_flag_recursive(channel, CF_VIDEO_DECODED_READ);
-            init_context(&cvh->context, cvh->cascade_name, cvh->nested_cascade_name, cvh->x_off, cvh->y_off);
 		}
 		break;
 	case SWITCH_ABC_TYPE_CLOSE:
 		{
             switch_channel_clear_flag_recursive(channel, CF_VIDEO_DECODED_READ);
-            uninit_context(&cvh->context);
+            uninit_context(context);
 		}
 		break;
 	case SWITCH_ABC_TYPE_READ_VIDEO_PING: 
         {
             switch_frame_t *frame = switch_core_media_bug_get_video_ping_frame(bug);
-            video_thread_callback(cvh->session, frame, &cvh->context);
+            video_thread_callback(context->session, frame, context);
         }
         break;
 	default:
@@ -733,12 +689,10 @@ SWITCH_STANDARD_APP(cv_bug_start_function)
 	switch_media_bug_t *bug;
 	switch_status_t status;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-	struct cv_bug_helper *cvh;
+    cv_context_t *context;
 	char *lbuf = NULL;
 	int x, n;
-    char *cascade_name;
-    char *nested_cascade_name;
-	char *argv[6];
+	char *argv[25] = { 0 };
 	int argc;
 
 	if ((bug = (switch_media_bug_t *) switch_channel_get_private(channel, "_cv_bug_"))) {
@@ -751,34 +705,18 @@ SWITCH_STANDARD_APP(cv_bug_start_function)
 		return;
 	}
 
-	cvh = (struct cv_bug_helper *) switch_core_session_alloc(session, sizeof(*cvh));
-	assert(cvh != NULL);
+	context = (cv_context_t *) switch_core_session_alloc(session, sizeof(*context));
+	assert(context != NULL);
+    context->session = session;
 
+    init_context(context);
+    
 	if (data && (lbuf = switch_core_session_strdup(session, data))
 		&& (argc = switch_separate_string(lbuf, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
-        cascade_name = argv[1];
-        nested_cascade_name = argv[2];
-
-        if (argv[3]) {
-            cvh->x_off = atoi(argv[3]);
-        }
-
-        if (argv[4]) {
-            cvh->y_off = atoi(argv[4]);
-        }
+        parse_params(context, 1, argc, argv);
     }
 
-	cvh->session = session;
-
-    if (cascade_name) {
-        cvh->cascade_name = switch_core_session_strdup(session, cascade_name);
-    }
-
-    if (nested_cascade_name) {
-        cvh->nested_cascade_name = switch_core_session_strdup(session, nested_cascade_name);
-    }
-
-	if ((status = switch_core_media_bug_add(session, "cv_bug", NULL, cv_bug_callback, cvh, 0, SMBF_READ_VIDEO_PING, &bug)) != SWITCH_STATUS_SUCCESS) {
+	if ((status = switch_core_media_bug_add(session, "cv_bug", NULL, cv_bug_callback, context, 0, SMBF_READ_VIDEO_PING, &bug)) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failure!\n");
 		return;
 	}
@@ -795,16 +733,16 @@ SWITCH_STANDARD_API(cv_bug_api_function)
 	switch_channel_t *channel = NULL;
 	switch_media_bug_t *bug;
 	switch_status_t status;
-	struct cv_bug_helper *cvh;
+    cv_context_t *context;
 	char *mycmd = NULL;
 	int argc = 0;
-	char *argv[10] = { 0 };
+	char *argv[25] = { 0 };
 	char *uuid = NULL;
 	char *action = NULL;
-    char *cascade_name = NULL;
-    char *nested_cascade_name = NULL;
+    char *cascade_path = NULL;
+    char *nested_cascade_path = NULL;
 	char *lbuf = NULL;
-	int x, n;
+	int x, n, i;
 
 	if (zstr(cmd)) {
 		goto usage;
@@ -820,9 +758,6 @@ SWITCH_STANDARD_API(cv_bug_api_function)
 
 	uuid = argv[0];
 	action = argv[1];
-    cascade_name = argv[2];
-    nested_cascade_name = argv[3];
-
 
 	if (!(rsession = switch_core_session_locate(uuid))) {
 		stream->write_function(stream, "-ERR Cannot locate session!\n");
@@ -832,42 +767,35 @@ SWITCH_STANDARD_API(cv_bug_api_function)
 	channel = switch_core_session_get_channel(rsession);
 
 	if ((bug = (switch_media_bug_t *) switch_channel_get_private(channel, "_cv_bug_"))) {
-		if (!zstr(action) && !strcasecmp(action, "stop")) {
-			switch_channel_set_private(channel, "_cv_bug_", NULL);
-			switch_core_media_bug_remove(rsession, &bug);
-			stream->write_function(stream, "+OK Success\n");
-		} else {
-			stream->write_function(stream, "-ERR Cannot run 2 at once on the same channel!\n");
-		}
-		goto done;
+		if (!zstr(action)) {
+            if (!strcasecmp(action, "stop")) {
+                switch_channel_set_private(channel, "_cv_bug_", NULL);
+                switch_core_media_bug_remove(rsession, &bug);
+                stream->write_function(stream, "+OK Success\n");
+            } else if (!strcasecmp(action, "start") || !strcasecmp(action, "mod")) {
+                context = (cv_context_t *) switch_core_media_bug_get_user_data(bug);
+                switch_assert(context);
+                parse_params(context, 2, argc, argv);
+                stream->write_function(stream, "+OK Success\n");
+            }
+        } else {
+            stream->write_function(stream, "-ERR Invalid action\n");
+        }
+        goto done;
 	}
 
 	if (!zstr(action) && strcasecmp(action, "start")) {
 		goto usage;
 	}
 
-	cvh = (struct cv_bug_helper *) switch_core_session_alloc(rsession, sizeof(*cvh));
-	assert(cvh != NULL);
+	context = (cv_context_t *) switch_core_session_alloc(rsession, sizeof(*context));
+	assert(context != NULL);
+	context->session = rsession;
 
-    if (argv[4]) {
-        cvh->x_off = atoi(argv[4]);
-    }
-    
-    if (argv[5]) {
-        cvh->y_off = atoi(argv[5]);
-    }
+    init_context(context);
+    parse_params(context, 2, argc, argv);
 
-	cvh->session = rsession;
-
-    if (cascade_name) {
-        cvh->cascade_name = switch_core_session_strdup(rsession, cascade_name);
-    }
-
-    if (nested_cascade_name) {
-        cvh->nested_cascade_name = switch_core_session_strdup(rsession, nested_cascade_name);
-    }
-    
-	if ((status = switch_core_media_bug_add(rsession, "cv_bug", NULL, cv_bug_callback, cvh, 0, SMBF_READ_VIDEO_PING, &bug)) != SWITCH_STATUS_SUCCESS) {
+	if ((status = switch_core_media_bug_add(rsession, "cv_bug", NULL, cv_bug_callback, context, 0, SMBF_READ_VIDEO_PING, &bug)) != SWITCH_STATUS_SUCCESS) {
 		stream->write_function(stream, "-ERR Failure!\n");
 		goto done;
 	} else {

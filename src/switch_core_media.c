@@ -312,22 +312,6 @@ static void _switch_core_media_pass_zrtp_hash2(switch_core_session_t *aleg_sessi
 	}
 }
 
-static uint32_t round_to_step(uint32_t num, uint32_t step)
-{
-	uint32_t r;
-	uint32_t x;
-
-	if (!num) return 0;
-	
-	r = (num % step);
-	x = num - r;
-	
-	if (r > step / 2) {
-		x += step;
-	}
-	
-	return x;
-}
 SWITCH_DECLARE(uint32_t) switch_core_media_get_video_fps(switch_core_session_t *session)
 {
 	switch_media_handle_t *smh;
@@ -349,7 +333,7 @@ SWITCH_DECLARE(uint32_t) switch_core_media_get_video_fps(switch_core_session_t *
 		return 0;
 	}
 	
-	return round_to_step(smh->vid_frames / (now - smh->vid_started), 5);
+	return switch_round_to_step(smh->vid_frames / (now - smh->vid_started), 5);
 }
 
 SWITCH_DECLARE(void) switch_core_media_pass_zrtp_hash2(switch_core_session_t *aleg_session, switch_core_session_t *bleg_session)
@@ -10546,7 +10530,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_video_frame(switch_core
 				}
 			}
 
-			if (bp->ready && switch_test_flag(bp, SMBF_READ_VIDEO_PING)) {
+			if (bp->ready && (*frame)->img && switch_test_flag(bp, SMBF_READ_VIDEO_PING)) {
 				bp->ping_frame = *frame;
 				if (bp->callback) {
 					if (bp->callback(bp, bp->user_data, SWITCH_ABC_TYPE_READ_VIDEO_PING) == SWITCH_FALSE
