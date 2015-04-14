@@ -48,10 +48,15 @@ static switch_status_t silence_stream_file_open(switch_file_handle_t *handle, co
 	int ms;
 	char *p;
 
-	sh = switch_core_alloc(handle->memory_pool, sizeof(*sh));
-
 	ms = atoi(path);
 
+	if (ms == 0) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid Input [%s] Expect <msec>[,<silence_factor>]\n", path);
+		return SWITCH_STATUS_FALSE;
+	}
+
+	sh = switch_core_alloc(handle->memory_pool, sizeof(*sh));
+	
 	if (ms > 0) {
 		sh->samples = (handle->samplerate / 1000) * ms;
 	} else {
