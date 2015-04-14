@@ -293,12 +293,12 @@
       </layout>
       <layout name="overlaps" auto-3d-position="true">
 	<image x="0" y="0" scale="360"/>
-	<image x="300" y="300" scale="60"/>
-	<image x="240" y="300" scale="60"/>
-	<image x="180" y="300" scale="60"/>
-	<image x="120" y="300" scale="60"/>
-	<image x="60" y="300" scale="60"/>
-	<image x="0" y="300" scale="60"/>
+	<image x="300" y="300" scale="60" overlap="true"/>
+	<image x="240" y="300" scale="60" overlap="true"/>
+	<image x="180" y="300" scale="60" overlap="true"/>
+	<image x="120" y="300" scale="60" overlap="true"/>
+	<image x="60" y="300" scale="60" overlap="true"/>
+	<image x="0" y="300" scale="60" overlap="true"/>
       </layout>
     </layouts>
     <groups>
