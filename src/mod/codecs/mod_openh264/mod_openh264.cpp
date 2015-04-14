@@ -136,7 +136,7 @@ int FillSpecificParameters(h264_codec_context_t *context) {
 	// param->sSpatialLayers[iIndexLayer].iQualityLayerNum = 1;
 	param->sSpatialLayers[iIndexLayer].iSpatialBitrate  = param->iTargetBitrate;
 	//param->sSpatialLayers[iIndexLayer].iMaxSpatialBitrate  = param->iTargetBitrate;
-	//param->sSpatialLayers[iIndexLayer].uiLevelIdc = LEVEL_1_3;
+	//param->sSpatialLayers[iIndexLayer].uiLevelIdc = LEVEL_3_1;
 	param->sSpatialLayers[iIndexLayer].uiProfileIdc = PRO_BASELINE;
 
 
@@ -249,7 +249,7 @@ static switch_size_t buffer_h264_nalu(h264_codec_context_t *context, switch_fram
 	if (frame->m) context->nalu_28_start = 0;
 
 #ifdef DEBUG_H264
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "ts: %ld len: %4d %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x mark=%d size=%" SWITCH_SIZE_T_FMT "\n",
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "ts: %u len: %4d %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x mark=%d size=%" SWITCH_SIZE_T_FMT "\n",
 		(frame)->timestamp, (frame)->datalen,
 		*((uint8_t *)(frame)->data), *((uint8_t *)(frame)->data + 1),
 		*((uint8_t *)(frame)->data + 2), *((uint8_t *)(frame)->data + 3),
@@ -573,7 +573,7 @@ static switch_status_t switch_h264_decode(switch_codec_t *codec, switch_frame_t 
 	uint32_t error_code;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
-	// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "len: %d ts: %u mark:%d\n", frame->datalen, ntohl(frame->timestamp), frame->m);
+	// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "len: %d ts: %u mark:%d nalu:0x%x\n", frame->datalen, frame->timestamp, frame->m, *(uint8_t *)frame->data);
 
 	if (context->last_received_timestamp && context->last_received_timestamp != frame->timestamp &&
 		(!frame->m) && (!context->last_received_complete_picture)) {
