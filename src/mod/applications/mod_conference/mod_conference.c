@@ -1593,6 +1593,11 @@ static void write_canvas_image_to_codec_group(conference_obj_t *conference, code
 		if (encode_status == SWITCH_STATUS_SUCCESS || encode_status == SWITCH_STATUS_MORE_DATA) {
 
 			switch_assert((encode_status == SWITCH_STATUS_SUCCESS && frame->m) || !frame->m);
+
+			if (frame->datalen == 0) {
+				continue;
+			}
+
 			if (frame->timestamp) {
 				switch_set_flag(frame, SFF_RAW_RTP_PARSE_FRAME);
 			}
