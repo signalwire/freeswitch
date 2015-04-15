@@ -10563,6 +10563,50 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_video_frame(switch_core
 	return status;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_core_session_set_video_read_callback(switch_core_session_t *session, 
+																			switch_core_video_thread_callback_func_t func, void *user_data)
+{
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	switch_media_handle_t *smh;
+
+	if (!(smh = session->media_handle)) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	switch_mutex_lock(smh->control_mutex);
+	if (!func) {
+		session->video_read_callback = NULL;
+		session->video_read_user_data = NULL;
+	} else if (session->video_read_callback) {
+		status = SWITCH_STATUS_FALSE;
+	} else {
+		session->video_read_callback = func;
+		session->video_read_user_data = user_data;
+	}
+	switch_mutex_unlock(smh->control_mutex);
+
+	return status;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_core_session_video_read_callback(switch_core_session_t *session, switch_frame_t *frame)
+{
+	switch_media_handle_t *smh;
+	switch_status_t status = SWITCH_STATUS_CONTINUE;
+
+	if (!(smh = session->media_handle)) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	switch_mutex_lock(smh->control_mutex);
+
+	if (session->video_read_callback) {
+		status = session->video_read_callback(session, frame, session->video_read_user_data);
+	}
+
+	switch_mutex_unlock(smh->control_mutex);
+
+	return status;
+}
 
 
 /* For Emacs:
