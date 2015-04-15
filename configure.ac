@@ -598,7 +598,7 @@ SWITCH_AM_LDFLAGS="$LIBUUID_LIBS $SWITCH_AM_LDFLAGS"
 SWITCH_AM_CFLAGS="$LIBUUID_CFLAGS $SWITCH_AM_CFLAGS"
 
 AC_ARG_ENABLE(core-pgsql-support,     
-	[AS_HELP_STRING([--enable-core-pgsql-support], [Compile with PGSQL Support])],,[enable_core_pgsql_support="no"])
+	[AS_HELP_STRING([--disable-core-pgsql-support], [Compile without PGSQL Support])],[enable_core_pgsql_support="no"],[enable_core_pgsql_support="yes"])
 AC_ARG_ENABLE(core-pgsql-pkgconfig,
 	[AS_HELP_STRING([--disable-core-pgsql-pkgconfig], [Use pg_config to get PGQSL build options])],[enable_core_pgsql_pkgconfig="$enableval"],[enable_core_pgsql_pkgconfig="yes"])
 
