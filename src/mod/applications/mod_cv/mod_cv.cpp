@@ -79,6 +79,16 @@ struct shape {
 };
 
 #define MAX_SHAPES 32
+#define MAX_OVERLAY 32
+
+struct overlay {
+    char *png_path;
+    char *nick;
+    switch_image_t *png;
+    float x_off;
+    float y_off;
+    float shape_scale;
+};
 
 typedef struct cv_context_s {
     IplImage *rawImage;
@@ -91,22 +101,84 @@ typedef struct cv_context_s {
     struct detect_stats nestDetected;
     int detect_event;
     int nest_detect_event;
-    switch_image_t *png;
     struct shape shape[MAX_SHAPES];
-    int shapeidx;
-    float x_off;
-    float y_off;
-    float shape_scale;
+    int shape_idx;
     int32_t skip;
     int32_t skip_count;
     uint32_t debug;
+    struct overlay overlay[MAX_OVERLAY];
+    uint32_t overlay_idx;
+    uint32_t overlay_count;
 	switch_core_session_t *session;
     char *cascade_path;
     char *nested_cascade_path;
-    char *png_path;
     switch_memory_pool_t *pool;
     switch_mutex_t *mutex;
+    char *png_prefix;
 } cv_context_t;
+
+
+static int clear_overlay(cv_context_t *context, int idx)
+{
+    uint32_t i = context->overlay_count;
+    switch_image_t *png;
+    int r = -1, x;
+
+    context->overlay[idx].png_path = NULL;
+    context->overlay[idx].nick = NULL;
+    switch_img_free(&context->overlay[idx].png);
+    memset(&context->overlay[idx], 0, sizeof(struct overlay));
+    context->overlay_count--;
+
+    for (x = idx + 1; x < i; x++) {
+        context->overlay[x-1] = context->overlay[x];
+        memset(&context->overlay[x], 0, sizeof(struct overlay));
+    }
+
+    return idx - 1 > 0 ? idx -1 : 0;
+}
+
+static int add_overlay(cv_context_t *context, const char *png_path, const char *nick)
+{
+    uint32_t i = context->overlay_count;
+    switch_image_t *png;
+    int r = -1, x;
+
+    for (x = 0; x < i; x++) {
+        if (context->overlay[x].png_path) {
+            if (!zstr(nick)) {
+                if (!zstr(context->overlay[x].nick) && !strcmp(context->overlay[x].nick, nick)) {
+                    return x;
+                }
+            } else {
+                if (strstr(context->overlay[x].png_path, png_path)) {
+                    return x;
+                }
+            }
+        }
+    }
+
+    if (context->png_prefix) {
+        context->overlay[i].png_path = switch_core_sprintf(context->pool, "%s%s%s", context->png_prefix, SWITCH_PATH_SEPARATOR, png_path);
+    } else {
+        context->overlay[i].png_path = switch_core_strdup(context->pool, png_path);
+    }
+
+    if ((png = switch_img_read_png(context->overlay[i].png_path, SWITCH_IMG_FMT_ARGB))) {
+        context->overlay[i].png = png;
+        if (!zstr(nick)) {
+            context->overlay[i].nick = switch_core_strdup(context->pool, nick);
+        }
+        if (!context->overlay[i].shape_scale) context->overlay[i].shape_scale = 1;
+        context->overlay_count++;
+        r = (int) i;
+    } else {
+        context->overlay[i].png_path = NULL;
+    }
+
+    return r;
+}
+
 
 static void uninit_context(cv_context_t *context);
 
@@ -136,12 +208,21 @@ static void reset_context(cv_context_t *context)
         delete nestedCascade;
     }
 
-    switch_img_free(&context->png);
 }
 
 static void uninit_context(cv_context_t *context)
 {
+    int i = 0;
+
     reset_context(context);
+
+    for (i = 0; i < context->overlay_count; i++) {
+        switch_img_free(&context->overlay[i].png);
+        context->overlay[i].png_path = NULL;
+        context->overlay_count = 0;
+        memset(&context->overlay[i], 0, sizeof(struct overlay));
+    }
+
     switch_core_destroy_memory_pool(&context->pool);
 }
 
@@ -153,6 +234,7 @@ static void init_context(cv_context_t *context)
     if (!context->pool) {
         switch_core_new_memory_pool(&context->pool);
         switch_mutex_init(&context->mutex, SWITCH_MUTEX_NESTED, context->pool);
+        context->png_prefix = switch_core_get_variable_pdup("cv_png_prefix", context->pool);
         create = 1;
     }
 
@@ -172,12 +254,7 @@ static void init_context(cv_context_t *context)
         }
     }
 
-    if (context->png_path) {
-        context->png = switch_img_read_png(context->png_path, SWITCH_IMG_FMT_ARGB);
-    }
-
     switch_mutex_unlock(context->mutex);
-    
 }
 
 
@@ -267,7 +344,7 @@ void detectAndDraw(cv_context_t *context)
 
     //printf("SCORE: %d %f %d\n", context->detected.simo_count, context->detected.avg, context->detected.last_score);
 
-    context->shapeidx = 0;
+    context->shape_idx = 0;
     //memset(context->shape, 0, sizeof(context->shape[0]) * MAX_SHAPES);
 
     for( vector<Rect>::iterator r = detectedObjs.begin(); r != detectedObjs.end(); r++, i++ ) {
@@ -279,7 +356,7 @@ void detectAndDraw(cv_context_t *context)
         
         double aspect_ratio = (double)r->width/r->height;
 
-        if (context->shapeidx >= MAX_SHAPES) {
+        if (context->shape_idx >= MAX_SHAPES) {
             break;
         }
         
@@ -289,35 +366,35 @@ void detectAndDraw(cv_context_t *context)
             center.y = switch_round_to_step(cvRound((r->y + r->height*0.5)*scale), 20);
             radius = switch_round_to_step(cvRound((r->width + r->height)*0.25*scale), 20);
 
-            if (context->debug || !context->png) {
+            if (context->debug || !context->overlay_count) {
                 circle( img, center, radius, color, 3, 8, 0 );
             }
 
-            context->shape[context->shapeidx].x = center.x - radius;
-            context->shape[context->shapeidx].y = center.y - radius;
-            context->shape[context->shapeidx].cx = center.x;
-            context->shape[context->shapeidx].cy = center.y;
-            context->shape[context->shapeidx].radius = radius;
-            context->shape[context->shapeidx].w = context->shape[context->shapeidx].h = radius * 2;
-            context->shapeidx++;
+            context->shape[context->shape_idx].x = center.x - radius;
+            context->shape[context->shape_idx].y = center.y - radius;
+            context->shape[context->shape_idx].cx = center.x;
+            context->shape[context->shape_idx].cy = center.y;
+            context->shape[context->shape_idx].radius = radius;
+            context->shape[context->shape_idx].w = context->shape[context->shape_idx].h = radius * 2;
+            context->shape_idx++;
 
         } else {
-            context->shape[context->shapeidx].x = switch_round_to_step(cvRound(r->x*scale), 40);
-            context->shape[context->shapeidx].y = switch_round_to_step(cvRound(r->y*scale), 20);
-            context->shape[context->shapeidx].x2 = switch_round_to_step(cvRound((r->x + r->width-1)*scale), 40);
-            context->shape[context->shapeidx].y2 = switch_round_to_step(cvRound((r->y + r->height-1)*scale), 20);
-            context->shape[context->shapeidx].w = context->shape[context->shapeidx].x2 - context->shape[context->shapeidx].x;
-            context->shape[context->shapeidx].h = context->shape[context->shapeidx].y2 - context->shape[context->shapeidx].y;
-            context->shape[context->shapeidx].cx = context->shape[context->shapeidx].x + (context->shape[context->shapeidx].w / 2);
-            context->shape[context->shapeidx].cy = context->shape[context->shapeidx].y + (context->shape[context->shapeidx].h / 2);
+            context->shape[context->shape_idx].x = switch_round_to_step(cvRound(r->x*scale), 40);
+            context->shape[context->shape_idx].y = switch_round_to_step(cvRound(r->y*scale), 20);
+            context->shape[context->shape_idx].x2 = switch_round_to_step(cvRound((r->x + r->width-1)*scale), 40);
+            context->shape[context->shape_idx].y2 = switch_round_to_step(cvRound((r->y + r->height-1)*scale), 20);
+            context->shape[context->shape_idx].w = context->shape[context->shape_idx].x2 - context->shape[context->shape_idx].x;
+            context->shape[context->shape_idx].h = context->shape[context->shape_idx].y2 - context->shape[context->shape_idx].y;
+            context->shape[context->shape_idx].cx = context->shape[context->shape_idx].x + (context->shape[context->shape_idx].w / 2);
+            context->shape[context->shape_idx].cy = context->shape[context->shape_idx].y + (context->shape[context->shape_idx].h / 2);
             
-            if (context->debug || !context->png) {
-                rectangle( img, cvPoint(context->shape[context->shapeidx].x, context->shape[context->shapeidx].y),
-                           cvPoint(context->shape[context->shapeidx].x2, context->shape[context->shapeidx].y2),
+            if (context->debug || !context->overlay_count) {
+                rectangle( img, cvPoint(context->shape[context->shape_idx].x, context->shape[context->shape_idx].y),
+                           cvPoint(context->shape[context->shape_idx].x2, context->shape[context->shape_idx].y2),
                            color, 3, 8, 0);
             }
 
-            context->shapeidx++;
+            context->shape_idx++;
         }
 
         if(!context->nestedCascade || context->nestedCascade->empty() ) {
@@ -495,46 +572,50 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
                                 context->rawImage->width, context->rawImage->height);
         }
 
-        if (context->png && context->detect_event && context->shape[0].cx) {
-            int x = 0, y = 0;
-            switch_image_t *img = NULL;
-            int scale_w = 0, scale_h = 0;
-            int x_off = 0, y_off = 0;
-            int shape_w, shape_h;
-            int cx, cy;
+        if (context->overlay_count && context->detect_event && context->shape[0].cx) {
+            int i;
 
-            shape_w = context->shape[0].w;
-            shape_h = context->shape[0].h;
+            for (i = 0; i < context->overlay_count; i++) {
+                struct overlay *overlay = &context->overlay[i];
+                int x = 0, y = 0;
+                switch_image_t *img = NULL;
+                int scale_w = 0, scale_h = 0;
+                int x_off = 0, y_off = 0;
+                int shape_w, shape_h;
+                int cx, cy;
+
+                shape_w = context->shape[0].w;
+                shape_h = context->shape[0].h;
             
-            cx = context->shape[0].cx;
-            cy = context->shape[0].cy;
+                cx = context->shape[0].cx;
+                cy = context->shape[0].cy;
             
-            scale_w = shape_w * context->shape_scale;
-            if (scale_w > frame->img->d_w) {
-                scale_w = frame->img->d_w;
-            }
-            scale_h = ((context->png->d_h * scale_w) / context->png->d_w);
+                scale_w = shape_w * overlay->shape_scale;
+                if (scale_w > frame->img->d_w) {
+                    scale_w = frame->img->d_w;
+                }
+                scale_h = ((overlay->png->d_h * scale_w) / overlay->png->d_w);
+                
+                if (overlay->x_off) {
+                    x_off = overlay->x_off * shape_w;
+                }
+                
+                if (overlay->y_off) {
+                    y_off = overlay->y_off * context->shape[0].h;
+                }
 
-            if (context->x_off) {
-                x_off = context->x_off * shape_w;
-            }
+                x = cx - ((scale_w / 2) + x_off);
+                y = cy - ((scale_h / 2) + y_off);
             
-            if (context->y_off) {
-                y_off = context->y_off * context->shape[0].h;
+
+                switch_img_scale(overlay->png, &img, scale_w, scale_h);
+
+                if (img) {
+                    switch_img_patch(frame->img, img, x, y);
+                    switch_img_free(&img);
+                }
             }
 
-            x = cx - ((scale_w / 2) + x_off);
-            y = cy - ((scale_h / 2) + y_off);
-            
-
-            switch_img_scale(context->png, &img, scale_w, scale_h);
-
-            if (img) {
-                switch_img_patch(frame->img, img, x, y);
-                switch_img_free(&img);
-            }
-
-            // switch_png_patch_img(context->png, frame->img, x, y);
         } else if (!context->debug) {
             libyuv::RGB24ToI420((uint8_t *)context->rawImage->imageData, w * 3,
                                 frame->img->planes[0], frame->img->stride[0],
@@ -550,8 +631,11 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
 
 static void parse_params(cv_context_t *context, int start, int argc, char **argv)
 {
-    int i, changed = 0;
+    int i, changed = 0, png_idx = 0, png_count = 0;
+    char *nick = NULL;
 
+    png_count = context->overlay_count;
+    
     for (i = start; i < argc ; i ++) {
         char *name = strdup(argv[i]);
         char *val = NULL;
@@ -563,11 +647,14 @@ static void parse_params(cv_context_t *context, int start, int argc, char **argv
         if (name && val) {
 
             if (!strcasecmp(name, "x_off")) {
-                context->x_off = atof(val);
+                context->overlay[png_idx].x_off = atof(val);
+            } else if (!strcasecmp(name, "nick")) {
+                switch_safe_free(nick);
+                nick = strdup(val);
             } else if (!strcasecmp(name, "y_off")) {
-                context->y_off = atof(val);
+                context->overlay[png_idx].y_off = atof(val);
             } else if (!strcasecmp(name, "scale")) {
-                context->shape_scale = atof(val);
+                context->overlay[png_idx].shape_scale = atof(val);
             } else if (!strcasecmp(name, "skip")) {
                 context->skip = atoi(val);
             } else if (!strcasecmp(name, "debug")) {
@@ -579,16 +666,24 @@ static void parse_params(cv_context_t *context, int start, int argc, char **argv
                 context->nested_cascade_path = switch_core_strdup(context->pool, val);
                 changed++;
             } else if (!strcasecmp(name, "png")) {
-                context->png_path = switch_core_strdup(context->pool, val);
-                changed++;
+                png_idx = add_overlay(context, val, nick);
+            }
+        } else if (name) {
+            if (!strcasecmp(name, "clear")) {
+                png_idx = clear_overlay(context, png_idx);
             }
         }
 
         free(name);
     }
 
+    switch_safe_free(nick);
+
+    if (context->overlay_count != png_count) {
+        changed++;
+    }
+
     if (!context->skip) context->skip = 1;
-    if (!context->shape_scale) context->shape_scale = 1;
 
     if (changed) {
         init_context(context);
