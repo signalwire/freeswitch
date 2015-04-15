@@ -49,17 +49,18 @@ static struct pos_el POS_TABLE[] = {
 	{POS_RIGHT_TOP, "right-top"},
 	{POS_RIGHT_MID, "right-mid"},
 	{POS_RIGHT_BOT, "right-bot"},
+	{POS_NONE, "none"},
 	{POS_NONE, NULL}
 };
 
 
 SWITCH_DECLARE(switch_img_position_t) parse_img_position(const char *name)
 {
-	switch_img_position_t r = POS_LEFT_TOP;
+	switch_img_position_t r = POS_NONE;
 	int i;
 
 	switch_assert(name);
-
+	
 	for(i = 0; POS_TABLE[i].name; i++) {
 		if (!strcasecmp(POS_TABLE[i].name, name)) {
 			r = POS_TABLE[i].pos;
