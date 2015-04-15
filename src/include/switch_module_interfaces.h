@@ -307,6 +307,7 @@ typedef struct switch_mm_s {
 	int vw;
 	int vh;
 	float fps;
+	int vbuf;
 } switch_mm_t;
 
 /*! an abstract representation of a file handle (some parameters based on compat with libsndfile) */

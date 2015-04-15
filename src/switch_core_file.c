@@ -157,6 +157,22 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 				fh->mm.fps = ftmp;
 			}
 		}
+
+		if ((val = switch_event_get_header(fh->params, "vbuf"))) {
+			tmp = atoi(val);
+
+			if (strrchr(val, 'k')) {
+				tmp *= 1024;
+			} else if (strrchr(val, 'm')) {
+				tmp *= 1048576;
+			}
+			
+			if (tmp > 0 && tmp < 52428800 /*50mb*/) {
+				fh->mm.vbuf = tmp;
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid buffer size: %d\n", tmp);
+			}
+		}
 	}
 
 	if (switch_directory_exists(file_path, fh->memory_pool) == SWITCH_STATUS_SUCCESS) {

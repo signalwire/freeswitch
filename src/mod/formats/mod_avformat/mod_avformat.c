@@ -177,6 +177,8 @@ static switch_status_t add_stream(OutputStream *ost, AVFormatContext *oc, AVCode
 	AVCodecContext *c;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	int threads = switch_core_cpu_count();
+	int buffer_bytes = 2097152; /* 2 mb */
+
 	/* find the encoder */
 	*codec = avcodec_find_encoder(codec_id);
 	if (!(*codec)) {
@@ -217,6 +219,13 @@ static switch_status_t add_stream(OutputStream *ost, AVFormatContext *oc, AVCode
 		break;
 
 	case AVMEDIA_TYPE_VIDEO:
+
+		if (mm) {
+			if (mm->vbuf) {
+				buffer_bytes = mm->vbuf;
+			}
+		}
+
 		c->codec_id = codec_id;
 		c->bit_rate = 1000000;
 		/* Resolution must be a multiple of two. */
@@ -227,7 +236,8 @@ static switch_status_t add_stream(OutputStream *ost, AVFormatContext *oc, AVCode
 		c->gop_size      = 25; /* emit one intra frame every x frames at most */
 		c->pix_fmt       = AV_PIX_FMT_YUV420P;
 		c->thread_count  = threads;
-		c->rc_initial_buffer_occupancy = 1024 * 1024 * 8;
+		c->rc_initial_buffer_occupancy = buffer_bytes * 8;
+
 		if (codec_id == AV_CODEC_ID_VP8) {
 			av_set_options_string(c, "quality=realtime", "=", ":");
 		}
