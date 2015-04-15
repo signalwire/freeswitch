@@ -627,6 +627,28 @@ SWITCH_STANDARD_APP(rename_function)
 	}
 }
 
+#define TRANSFER_VARS_SYNTAX "<~variable_prefix|variable>"
+SWITCH_STANDARD_APP(transfer_vars_function)
+{
+	char *argv[1] = { 0 };
+	int argc;
+	char *lbuf = NULL;
+	
+	if (!zstr(data) && (lbuf = switch_core_session_strdup(session, data))
+		&& (argc = switch_separate_string(lbuf, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) >= 1) {
+		switch_core_session_t *nsession = NULL;
+
+		switch_core_session_get_partner(session, &nsession);
+
+		if (nsession) {
+			switch_ivr_transfer_variable(session, nsession, argv[0]);
+			switch_core_session_rwunlock(nsession);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Usage: %s\n", RENAME_SYNTAX);
+		}
+	}
+}
+
 #define SOFT_HOLD_SYNTAX "<unhold key> [<moh_a>] [<moh_b>]"
 SWITCH_STANDARD_APP(soft_hold_function)
 {
@@ -6004,6 +6026,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	SWITCH_ADD_APP(app_interface, "media_reset", "Reset all bypass/proxy media flags", "Reset all bypass/proxy media flags", media_reset_function, "", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "mkdir", "Create a directory", "Create a directory", mkdir_function, MKDIR_SYNTAX, SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "rename", "Rename file", "Rename file", rename_function, RENAME_SYNTAX, SAF_SUPPORT_NOMEDIA | SAF_ZOMBIE_EXEC);
+	SWITCH_ADD_APP(app_interface, "transfer_vars", "Transfer variables", "Transfer variables", transfer_vars_function, TRANSFER_VARS_SYNTAX,
+				   SAF_SUPPORT_NOMEDIA | SAF_ZOMBIE_EXEC);
 	SWITCH_ADD_APP(app_interface, "soft_hold", "Put a bridged channel on hold", "Put a bridged channel on hold", soft_hold_function, SOFT_HOLD_SYNTAX,
 				   SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "bind_meta_app", "Bind a key to an application", "Bind a key to an application", dtmf_bind_function, BIND_SYNTAX,
