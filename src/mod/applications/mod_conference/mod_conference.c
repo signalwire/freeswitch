@@ -4661,10 +4661,8 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
 
 	switch_assert(member);
 
-	lock_member(member);
 	
 	if (switch_thread_rwlock_tryrdlock(member->conference->rwlock) != SWITCH_STATUS_SUCCESS) {
-		unlock_member(member);
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -4676,7 +4674,6 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
 			switch_queue_push(member->video_queue, img_copy);
 		}
 		switch_thread_rwlock_unlock(member->conference->rwlock);
-		unlock_member(member);
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -4720,7 +4717,6 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
 		}
 	}
 
-	unlock_member(member);
 	switch_thread_rwlock_unlock(member->conference->rwlock);
 
 	return SWITCH_STATUS_SUCCESS;
