@@ -1764,7 +1764,7 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 	switch_frame_t write_frame = { 0 };
 	uint8_t *packet = NULL;
 	switch_image_t *write_img = NULL, *file_img = NULL;
-	uint32_t timestamp = 0;
+	uint32_t timestamp = 0, avatar_layers = 0;
 	video_layout_t *vlayout = get_layout(conference);
 
 	if (!vlayout) {
@@ -1915,8 +1915,18 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 						imember->video_layer_id = -1;
 					}
 				}
-				
-				if (!layer && conference->canvas->layers_used < conference->canvas->total_layers && 
+
+				avatar_layers = 0;
+				for (i = 0; i < conference->canvas->total_layers; i++) {
+					mcu_layer_t *xlayer = &conference->canvas->layers[i];
+					
+					if (xlayer->is_avatar && xlayer->member_id != conference->video_floor_holder) {
+						avatar_layers++;
+					}
+				}
+
+				if (!layer && (conference->canvas->layers_used < conference->canvas->total_layers || 
+							   (avatar_layers && !imember->avatar_png_img)) && 
 					(imember->avatar_png_img || imember->video_flow != SWITCH_MEDIA_FLOW_SENDONLY)) {
 					/* find an empty layer */
 					for (i = 0; i < conference->canvas->total_layers; i++) {
