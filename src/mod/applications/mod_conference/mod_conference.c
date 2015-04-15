@@ -9740,7 +9740,7 @@ static switch_status_t conf_api_sub_relate(conference_obj_t *conference, switch_
 	if (argc <= 3) {
 		conference_member_t *member;
 
-		switch_mutex_unlock(conference->mutex);
+		switch_mutex_lock(conference->mutex);
 
 		if (conference->relationship_total) {
 			int member_id = 0;
