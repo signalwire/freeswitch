@@ -85,9 +85,11 @@ struct overlay {
     char *png_path;
     char *nick;
     switch_image_t *png;
-    float x_off;
-    float y_off;
+    float xo;
+    float yo;
     float shape_scale;
+    int zidx;
+    switch_img_position_t abs;
 };
 
 typedef struct cv_context_s {
@@ -106,7 +108,7 @@ typedef struct cv_context_s {
     int32_t skip;
     int32_t skip_count;
     uint32_t debug;
-    struct overlay overlay[MAX_OVERLAY];
+    struct overlay *overlay[MAX_OVERLAY];
     uint32_t overlay_idx;
     uint32_t overlay_count;
 	switch_core_session_t *session;
@@ -124,15 +126,19 @@ static int clear_overlay(cv_context_t *context, int idx)
     switch_image_t *png;
     int r = -1, x;
 
-    context->overlay[idx].png_path = NULL;
-    context->overlay[idx].nick = NULL;
-    switch_img_free(&context->overlay[idx].png);
-    memset(&context->overlay[idx], 0, sizeof(struct overlay));
+    if (!context->overlay[idx]) {
+        return 0;
+    }
+
+    context->overlay[idx]->png_path = NULL;
+    context->overlay[idx]->nick = NULL;
+    switch_img_free(&context->overlay[idx]->png);
+    memset(context->overlay[idx], 0, sizeof(struct overlay));
     context->overlay_count--;
 
     for (x = idx + 1; x < i; x++) {
         context->overlay[x-1] = context->overlay[x];
-        memset(&context->overlay[x], 0, sizeof(struct overlay));
+        memset(context->overlay[x], 0, sizeof(struct overlay));
     }
 
     return idx - 1 > 0 ? idx -1 : 0;
@@ -143,37 +149,44 @@ static int add_overlay(cv_context_t *context, const char *png_path, const char *
     uint32_t i = context->overlay_count;
     switch_image_t *png;
     int r = -1, x;
+    char *new_png_path = NULL;
 
     for (x = 0; x < i; x++) {
-        if (context->overlay[x].png_path) {
+        if (context->overlay[x] && context->overlay[x]->png) {
             if (!zstr(nick)) {
-                if (!zstr(context->overlay[x].nick) && !strcmp(context->overlay[x].nick, nick)) {
+                if (!zstr(context->overlay[x]->nick) && !strcmp(context->overlay[x]->nick, nick)) {
                     return x;
                 }
             } else {
-                if (strstr(context->overlay[x].png_path, png_path)) {
+                if (strstr(context->overlay[x]->png_path, png_path)) {
                     return x;
                 }
             }
         }
     }
 
-    if (context->png_prefix) {
-        context->overlay[i].png_path = switch_core_sprintf(context->pool, "%s%s%s", context->png_prefix, SWITCH_PATH_SEPARATOR, png_path);
-    } else {
-        context->overlay[i].png_path = switch_core_strdup(context->pool, png_path);
+    if (context->overlay_count == MAX_OVERLAY) {
+        return 0;
     }
 
-    if ((png = switch_img_read_png(context->overlay[i].png_path, SWITCH_IMG_FMT_ARGB))) {
-        context->overlay[i].png = png;
-        if (!zstr(nick)) {
-            context->overlay[i].nick = switch_core_strdup(context->pool, nick);
-        }
-        if (!context->overlay[i].shape_scale) context->overlay[i].shape_scale = 1;
+    if (context->png_prefix) {
+        new_png_path = switch_core_sprintf(context->pool, "%s%s%s", context->png_prefix, SWITCH_PATH_SEPARATOR, png_path);
+    } else {
+        new_png_path = switch_core_strdup(context->pool, png_path);
+    }
+
+    if ((png = switch_img_read_png(new_png_path, SWITCH_IMG_FMT_ARGB))) {
         context->overlay_count++;
+        context->overlay[i]->png = png;
+        context->overlay[i]->png_path = new_png_path;
+        if (!zstr(nick)) {
+            context->overlay[i]->nick = switch_core_strdup(context->pool, nick);
+        }
+        if (!context->overlay[i]->shape_scale) context->overlay[i]->shape_scale = 1;
+            
         r = (int) i;
     } else {
-        context->overlay[i].png_path = NULL;
+        context->overlay[i]->png_path = NULL;
     }
 
     return r;
@@ -217,10 +230,12 @@ static void uninit_context(cv_context_t *context)
     reset_context(context);
 
     for (i = 0; i < context->overlay_count; i++) {
-        switch_img_free(&context->overlay[i].png);
-        context->overlay[i].png_path = NULL;
+        if (!context->overlay[i]) continue;
+
+        switch_img_free(&context->overlay[i]->png);
+        context->overlay[i]->png_path = NULL;
         context->overlay_count = 0;
-        memset(&context->overlay[i], 0, sizeof(struct overlay));
+        memset(context->overlay[i], 0, sizeof(struct overlay));
     }
 
     switch_core_destroy_memory_pool(&context->pool);
@@ -235,6 +250,14 @@ static void init_context(cv_context_t *context)
         switch_core_new_memory_pool(&context->pool);
         switch_mutex_init(&context->mutex, SWITCH_MUTEX_NESTED, context->pool);
         context->png_prefix = switch_core_get_variable_pdup("cv_png_prefix", context->pool);
+        context->cascade_path = switch_core_get_variable_pdup("cv_default_cascade", context->pool);
+        context->nested_cascade_path = switch_core_get_variable_pdup("cv_default_nested_cascade", context->pool);
+
+        for (int i = 0; i < MAX_OVERLAY; i++) {
+            context->overlay[i] = (struct overlay *) switch_core_alloc(context->pool, sizeof(struct overlay));
+            context->overlay[i]->abs = POS_NONE;
+        }
+
         create = 1;
     }
 
@@ -574,13 +597,13 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
 
         if (context->overlay_count && context->detect_event && context->shape[0].cx) {
             int i;
-
+            
             for (i = 0; i < context->overlay_count; i++) {
-                struct overlay *overlay = &context->overlay[i];
+                struct overlay *overlay = context->overlay[i];
                 int x = 0, y = 0;
                 switch_image_t *img = NULL;
                 int scale_w = 0, scale_h = 0;
-                int x_off = 0, y_off = 0;
+                int xo = 0, yo = 0;
                 int shape_w, shape_h;
                 int cx, cy;
 
@@ -590,24 +613,40 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
                 cx = context->shape[0].cx;
                 cy = context->shape[0].cy;
             
-                scale_w = shape_w * overlay->shape_scale;
-                if (scale_w > frame->img->d_w) {
-                    scale_w = frame->img->d_w;
-                }
-                scale_h = ((overlay->png->d_h * scale_w) / overlay->png->d_w);
-                
-                if (overlay->x_off) {
-                    x_off = overlay->x_off * shape_w;
-                }
-                
-                if (overlay->y_off) {
-                    y_off = overlay->y_off * context->shape[0].h;
-                }
 
-                x = cx - ((scale_w / 2) + x_off);
-                y = cy - ((scale_h / 2) + y_off);
-            
+                if (overlay->abs != POS_NONE) {
+                    if (overlay->shape_scale != 1) {
+                        scale_w = overlay->png->d_w * overlay->shape_scale;
+                        if (scale_w > frame->img->d_w) {
+                            scale_w = frame->img->d_w;
+                        }
+                        scale_h = ((overlay->png->d_h * scale_w) / overlay->png->d_w);
+                    } else {
+                        scale_w = overlay->png->d_w;
+                        scale_h = overlay->png->d_h;
+                    }
 
+                    switch_img_find_position(overlay->abs, frame->img->d_w, frame->img->d_h, scale_w, scale_h, &x, &y);
+                } else {
+
+                    scale_w = shape_w * overlay->shape_scale;
+                    if (scale_w > frame->img->d_w) {
+                        scale_w = frame->img->d_w;
+                    }
+                    scale_h = ((overlay->png->d_h * scale_w) / overlay->png->d_w);
+
+                    if (overlay->xo) {
+                        xo = overlay->xo * shape_w;
+                    }
+                    
+                    if (overlay->yo) {
+                        yo = overlay->yo * context->shape[0].h;
+                    }
+                    
+                    x = cx - ((scale_w / 2) + xo);
+                    y = cy - ((scale_h / 2) + yo);
+                }
+                
                 switch_img_scale(overlay->png, &img, scale_w, scale_h);
 
                 if (img) {
@@ -629,9 +668,33 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
     return SWITCH_STATUS_SUCCESS;
 }
 
+static int do_sort(cv_context_t *context)
+{
+    int i, j, pos;
+    int n = context->overlay_count;
+
+    for (i = 0; i < (n - 1); i++) {
+        pos = i;
+
+        for (j = i + 1; j < n; j++) {
+            if (context->overlay[pos]->zidx > context->overlay[j]->zidx) {
+                pos = j;
+            }
+        }
+
+        if (pos != i) {
+            struct overlay *swap = context->overlay[i];
+            context->overlay[i] = context->overlay[pos];
+            context->overlay[pos] = swap;
+        }
+    }
+    
+    return 0;
+}
+
 static void parse_params(cv_context_t *context, int start, int argc, char **argv)
 {
-    int i, changed = 0, png_idx = 0, png_count = 0;
+    int i, changed = 0, png_idx = 0, png_count = 0, sort = 0;
     char *nick = NULL;
 
     png_count = context->overlay_count;
@@ -646,15 +709,20 @@ static void parse_params(cv_context_t *context, int start, int argc, char **argv
 
         if (name && val) {
 
-            if (!strcasecmp(name, "x_off")) {
-                context->overlay[png_idx].x_off = atof(val);
+            if (!strcasecmp(name, "xo")) {
+                context->overlay[png_idx]->xo = atof(val);
             } else if (!strcasecmp(name, "nick")) {
                 switch_safe_free(nick);
                 nick = strdup(val);
-            } else if (!strcasecmp(name, "y_off")) {
-                context->overlay[png_idx].y_off = atof(val);
+            } else if (!strcasecmp(name, "yo")) {
+                context->overlay[png_idx]->yo = atof(val);
+            } else if (!strcasecmp(name, "zidx")) {
+                context->overlay[png_idx]->zidx = atof(val);
+                sort++;
+            } else if (!strcasecmp(name, "abs")) {
+                context->overlay[png_idx]->abs = parse_img_position(val);
             } else if (!strcasecmp(name, "scale")) {
-                context->overlay[png_idx].shape_scale = atof(val);
+                context->overlay[png_idx]->shape_scale = atof(val);
             } else if (!strcasecmp(name, "skip")) {
                 context->skip = atoi(val);
             } else if (!strcasecmp(name, "debug")) {
@@ -671,6 +739,18 @@ static void parse_params(cv_context_t *context, int start, int argc, char **argv
         } else if (name) {
             if (!strcasecmp(name, "clear")) {
                 png_idx = clear_overlay(context, png_idx);
+            } else if (!strcasecmp(name, "home")) {
+                context->overlay[png_idx]->xo = context->overlay[png_idx]->yo = context->overlay[png_idx]->shape_scale = 0.0f;
+                context->overlay[png_idx]->zidx = 0;
+            } else if (!strcasecmp(name, "allhome")) {
+                for (int x = 0; x < context->overlay_count; x++) {
+                    context->overlay[x]->xo = context->overlay[x]->yo = context->overlay[x]->shape_scale = 0.0f;
+                    context->overlay[x]->zidx = 0;
+                }
+            } else if (!strcasecmp(name, "allflat")) {
+                for (int x = 0; x < context->overlay_count; x++) {
+                    context->overlay[x]->zidx = 0;
+                }
             }
         }
 
@@ -687,6 +767,10 @@ static void parse_params(cv_context_t *context, int start, int argc, char **argv
 
     if (changed) {
         init_context(context);
+    }
+
+    if (sort) {
+        do_sort(context);
     }
 }
 
