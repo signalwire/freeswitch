@@ -185,7 +185,7 @@ static switch_size_t buffer_h264_nalu(h264_codec_context_t *context, switch_fram
 	uint8_t nalu_hdr = *data;
 	uint8_t sync_bytes[] = {0, 0, 0, 1};
 	switch_buffer_t *buffer = context->nalu_buffer;
-	switch_size_t size = 0;
+	switch_size_t size = switch_buffer_inuse(buffer);
 
 	switch_assert(frame);
 
@@ -193,15 +193,14 @@ static switch_size_t buffer_h264_nalu(h264_codec_context_t *context, switch_fram
 	nalu_type = nalu_hdr & 0x1f;
 
 	if (!context->got_sps && nalu_type != 7) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Waiting SPS/PPS, Got %d\n", nalu_type);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Waiting SPS/PPS, Got %d\n", nalu_type);
 		return 0;
 	}
 
-	//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "XXX GOT %d\n", nalu_type);
+	//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "XXX GOT %d len:%d\n", nalu_type, frame->datalen);
 
 	if (!context->got_sps) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Found SPS/PPS\n");
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "=========================================================================================\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "===============Found SPS/PPS===============\n");
 		context->got_sps = 1;
 	}
 
@@ -249,8 +248,8 @@ static switch_size_t buffer_h264_nalu(h264_codec_context_t *context, switch_fram
 	if (frame->m) context->nalu_28_start = 0;
 
 #ifdef DEBUG_H264
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "ts: %u len: %4d %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x mark=%d size=%" SWITCH_SIZE_T_FMT "\n",
-		(frame)->timestamp, (frame)->datalen,
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "seq: %u ts: %u len: %4d %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x mark=%d size=%" SWITCH_SIZE_T_FMT "\n",
+		(frame)->seq, (frame)->timestamp, (frame)->datalen,
 		*((uint8_t *)(frame)->data), *((uint8_t *)(frame)->data + 1),
 		*((uint8_t *)(frame)->data + 2), *((uint8_t *)(frame)->data + 3),
 		*((uint8_t *)(frame)->data + 4), *((uint8_t *)(frame)->data + 5),
@@ -573,12 +572,17 @@ static switch_status_t switch_h264_decode(switch_codec_t *codec, switch_frame_t 
 	uint32_t error_code;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
-	// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "len: %d ts: %u mark:%d nalu:0x%x\n", frame->datalen, frame->timestamp, frame->m, *(uint8_t *)frame->data);
+#ifdef DEBUG_H264
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "len: %d seq: %u ts: %u mark:%d nalu:0x%x\n", frame->datalen, frame->seq, frame->timestamp, frame->m, *(uint8_t *)frame->data);
+#endif
 
 	if (context->last_received_timestamp && context->last_received_timestamp != frame->timestamp &&
-		(!frame->m) && (!context->last_received_complete_picture)) {
+		(!context->last_received_complete_picture)) {
 		// possible packet loss
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Packet Loss, skip privousely received packets\n");
+		if (frame->m) {
+			context->last_received_complete_picture = SWITCH_TRUE;
+		}
 		switch_goto_status(SWITCH_STATUS_RESTART, end);
 	}
 
@@ -586,7 +590,10 @@ static switch_status_t switch_h264_decode(switch_codec_t *codec, switch_frame_t 
 	context->last_received_complete_picture = frame->m ? SWITCH_TRUE : SWITCH_FALSE;
 
 	size = buffer_h264_nalu(context, frame);
-	// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "READ buf:%ld got_key:%d st:%d m:%d size:%" SWITCH_SIZE_T_FMT "\n", size, context->got_sps, status, frame->m, size);
+
+#ifdef DEBUG_H264
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "READ buf:%ld got_key:%d st:%d m:%d size:%" SWITCH_SIZE_T_FMT "\n", size, context->got_sps, status, frame->m, size);
+#endif
 
 	if (size == 1) {
 		switch_goto_status(SWITCH_STATUS_RESTART, end);
@@ -639,7 +646,7 @@ static switch_status_t switch_h264_decode(switch_codec_t *codec, switch_frame_t 
 			// pDecoder->DecodeFrame (NULL, 0, pData, &sDstBufInfo);
 		} else {
 			if (error_code) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Decode error: 0x%x\n", error_code);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Decode error: 0x%x\n", error_code);
 				switch_goto_status(SWITCH_STATUS_RESTART, end);
 			}
 		}
@@ -651,9 +658,11 @@ static switch_status_t switch_h264_decode(switch_codec_t *codec, switch_frame_t 
 
 end:
 
+#if 0
 	if (size == 0) {
 		status = SWITCH_STATUS_MORE_DATA;
 	}
+#endif
 
 	if (status == SWITCH_STATUS_RESTART) {
 		context->got_sps = 0;
