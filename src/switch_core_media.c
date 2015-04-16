@@ -10393,7 +10393,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_video_frame(switch_cor
 				frame->flags &= ~SFF_PICTURE_RESET;
 			}
 
-			if (frame->datalen == 0) continue;
+			if (frame->datalen == 0) break;
 
 			switch_set_flag(frame, SFF_RAW_RTP_PARSE_FRAME);
 			status = switch_core_session_write_encoded_video_frame(session, frame, flags, stream_id);
