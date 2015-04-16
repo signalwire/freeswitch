@@ -644,7 +644,7 @@ SWITCH_STANDARD_APP(transfer_vars_function)
 			switch_ivr_transfer_variable(session, nsession, argv[0]);
 			switch_core_session_rwunlock(nsession);
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Usage: %s\n", RENAME_SYNTAX);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Usage: %s\n", TRANSFER_VARS_SYNTAX);
 		}
 	}
 }
