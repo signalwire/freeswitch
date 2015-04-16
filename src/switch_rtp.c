@@ -328,6 +328,7 @@ struct switch_rtp {
 	uint16_t seq;
 	uint32_t ssrc;
 	uint32_t remote_ssrc;
+	uint32_t last_read_ssrc;
 	int8_t sending_dtmf;
 	uint8_t need_mark;
 	switch_payload_t payload;
@@ -5067,10 +5068,14 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 
 
 	if (rtp_session->jb && !rtp_session->pause_jb && jb_valid(rtp_session) && rtp_session->recv_msg.header.version == 2 && *bytes) {
+		uint32_t read_ssrc = ntohl((uint32_t)rtp_session->recv_msg.header.ssrc);
 		if (rtp_session->recv_msg.header.m && rtp_session->recv_msg.header.pt != rtp_session->recv_te && 
 			!rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] && !(rtp_session->rtp_bugs & RTP_BUG_IGNORE_MARK_BIT)) {
 			stfu_n_reset(rtp_session->jb);
+		} else if (rtp_session->last_read_ssrc && rtp_session->last_read_ssrc != read_ssrc) {
+			stfu_n_reset(rtp_session->jb);
 		}
+		rtp_session->last_read_ssrc = read_ssrc;
 
 		if (!rtp_session->flags[SWITCH_RTP_FLAG_USE_TIMER] && rtp_session->timer.interval) {
 			switch_core_timer_sync(&rtp_session->timer);
