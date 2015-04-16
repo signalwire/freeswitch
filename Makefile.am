@@ -552,6 +552,8 @@ samples-htdocs:
 	done
 
 
+fonts_DATA = fonts/FreeMono.ttf fonts/FreeMonoOblique.ttf fonts/FreeSansBoldOblique.ttf fonts/FreeSerifBold.ttf fonts/OFL.txt fonts/FreeMonoBold.ttf fonts/FreeSans.ttf fonts/FreeSansOblique.ttf fonts/FreeSerifBoldItalic.ttf fonts/README.fonts fonts/FreeMonoBoldOblique.ttf fonts/FreeSansBold.ttf fonts/FreeSerif.ttf fonts/FreeSerifItalic.ttf
+
 samples: samples-conf samples-htdocs
 
 install-exec-local:
@@ -559,7 +561,7 @@ install-exec-local:
 
 install-data-local:
 	@echo Installing $(NAME)
-	@for x in $(modulesdir) $(runtimedir) $(dbdir) $(logfiledir) $(logfiledir)/xml_cdr $(bindir) $(scriptdir) $(recordingsdir) $(grammardir); do \
+	@for x in $(modulesdir) $(runtimedir) $(dbdir) $(logfiledir) $(logfiledir)/xml_cdr $(bindir) $(scriptdir) $(recordingsdir) $(grammardir) $(imagesdir) $(fontsdir); do \
 		$(mkinstalldirs) $(DESTDIR)$$x ; \
 	 done
 	test -d $(DESTDIR)$(sysconfdir) || $(MAKE) samples-conf

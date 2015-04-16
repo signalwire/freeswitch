@@ -526,6 +526,10 @@ struct switch_directories {
 	char *sounds_dir;
 	char *lib_dir;
 	char *certs_dir;
+	char *fonts_dir;
+	char *images_dir;
+	char *data_dir;
+	char *localstate_dir;
 };
 
 typedef struct switch_directories switch_directories;

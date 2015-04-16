@@ -785,6 +785,50 @@ SWITCH_DECLARE(void) switch_core_set_globals(void)
 #endif
 	}
 
+	if (!SWITCH_GLOBAL_dirs.fonts_dir && (SWITCH_GLOBAL_dirs.fonts_dir = (char *) malloc(BUFSIZE))) {
+		if (SWITCH_GLOBAL_dirs.base_dir)
+			switch_snprintf(SWITCH_GLOBAL_dirs.fonts_dir, BUFSIZE, "%s%sfonts", SWITCH_GLOBAL_dirs.base_dir, SWITCH_PATH_SEPARATOR);
+		else
+#ifdef SWITCH_FONT_DIR
+			switch_snprintf(SWITCH_GLOBAL_dirs.fonts_dir, BUFSIZE, "%s", SWITCH_FONT_DIR);
+#else
+			switch_snprintf(SWITCH_GLOBAL_dirs.fonts_dir, BUFSIZE, "%s%sfonts", base_dir, SWITCH_PATH_SEPARATOR);
+#endif
+	}
+
+	if (!SWITCH_GLOBAL_dirs.images_dir && (SWITCH_GLOBAL_dirs.images_dir = (char *) malloc(BUFSIZE))) {
+		if (SWITCH_GLOBAL_dirs.base_dir)
+			switch_snprintf(SWITCH_GLOBAL_dirs.images_dir, BUFSIZE, "%s%simages", SWITCH_GLOBAL_dirs.base_dir, SWITCH_PATH_SEPARATOR);
+		else
+#ifdef SWITCH_IMAGE_DIR
+			switch_snprintf(SWITCH_GLOBAL_dirs.images_dir, BUFSIZE, "%s", SWITCH_IMAGE_DIR);
+#else
+			switch_snprintf(SWITCH_GLOBAL_dirs.images_dir, BUFSIZE, "%s%simages", base_dir, SWITCH_PATH_SEPARATOR);
+#endif
+	}
+
+	if (!SWITCH_GLOBAL_dirs.data_dir && (SWITCH_GLOBAL_dirs.data_dir = (char *) malloc(BUFSIZE))) {
+		if (SWITCH_GLOBAL_dirs.base_dir)
+			switch_snprintf(SWITCH_GLOBAL_dirs.data_dir, BUFSIZE, "%s", SWITCH_GLOBAL_dirs.base_dir);
+		else
+#ifdef SWITCH_DATA_DIR
+			switch_snprintf(SWITCH_GLOBAL_dirs.data_dir, BUFSIZE, "%s", SWITCH_DATA_DIR);
+#else
+			switch_snprintf(SWITCH_GLOBAL_dirs.data_dir, BUFSIZE, "%s", base_dir);
+#endif
+	}
+
+	if (!SWITCH_GLOBAL_dirs.localstate_dir && (SWITCH_GLOBAL_dirs.localstate_dir = (char *) malloc(BUFSIZE))) {
+		if (SWITCH_GLOBAL_dirs.base_dir)
+			switch_snprintf(SWITCH_GLOBAL_dirs.localstate_dir, BUFSIZE, "%s", SWITCH_GLOBAL_dirs.base_dir);
+		else
+#ifdef SWITCH_LOCALSTATE_DIR
+			switch_snprintf(SWITCH_GLOBAL_dirs.localstate_dir, BUFSIZE, "%s", SWITCH_LOCALSTATE_DIR);
+#else
+			switch_snprintf(SWITCH_GLOBAL_dirs.localstate_dir, BUFSIZE, "%s", base_dir);
+#endif
+	}
+
 	if (!SWITCH_GLOBAL_dirs.certs_dir && (SWITCH_GLOBAL_dirs.certs_dir = (char *) malloc(BUFSIZE))) {
 		if (SWITCH_GLOBAL_dirs.base_dir)
 			switch_snprintf(SWITCH_GLOBAL_dirs.certs_dir, BUFSIZE, "%s%scert", SWITCH_GLOBAL_dirs.base_dir, SWITCH_PATH_SEPARATOR);
@@ -832,10 +876,14 @@ SWITCH_DECLARE(void) switch_core_set_globals(void)
 	switch_assert(SWITCH_GLOBAL_dirs.script_dir);
 	switch_assert(SWITCH_GLOBAL_dirs.htdocs_dir);
 	switch_assert(SWITCH_GLOBAL_dirs.grammar_dir);
+	switch_assert(SWITCH_GLOBAL_dirs.fonts_dir);
+	switch_assert(SWITCH_GLOBAL_dirs.images_dir);
 	switch_assert(SWITCH_GLOBAL_dirs.recordings_dir);
 	switch_assert(SWITCH_GLOBAL_dirs.sounds_dir);
 	switch_assert(SWITCH_GLOBAL_dirs.certs_dir);
 	switch_assert(SWITCH_GLOBAL_dirs.temp_dir);
+	switch_assert(SWITCH_GLOBAL_dirs.data_dir);
+	switch_assert(SWITCH_GLOBAL_dirs.localstate_dir);
 
 	switch_assert(SWITCH_GLOBAL_filenames.conf_name);
 }
@@ -1714,6 +1762,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	switch_dir_make_recursive(SWITCH_GLOBAL_dirs.script_dir, SWITCH_DEFAULT_DIR_PERMS, runtime.memory_pool);
 	switch_dir_make_recursive(SWITCH_GLOBAL_dirs.htdocs_dir, SWITCH_DEFAULT_DIR_PERMS, runtime.memory_pool);
 	switch_dir_make_recursive(SWITCH_GLOBAL_dirs.grammar_dir, SWITCH_DEFAULT_DIR_PERMS, runtime.memory_pool);
+	switch_dir_make_recursive(SWITCH_GLOBAL_dirs.fonts_dir, SWITCH_DEFAULT_DIR_PERMS, runtime.memory_pool);
+	switch_dir_make_recursive(SWITCH_GLOBAL_dirs.images_dir, SWITCH_DEFAULT_DIR_PERMS, runtime.memory_pool);
 	switch_dir_make_recursive(SWITCH_GLOBAL_dirs.recordings_dir, SWITCH_DEFAULT_DIR_PERMS, runtime.memory_pool);
 	switch_dir_make_recursive(SWITCH_GLOBAL_dirs.sounds_dir, SWITCH_DEFAULT_DIR_PERMS, runtime.memory_pool);
 	switch_dir_make_recursive(SWITCH_GLOBAL_dirs.temp_dir, SWITCH_DEFAULT_DIR_PERMS, runtime.memory_pool);
@@ -1769,9 +1819,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	switch_core_set_variable("script_dir", SWITCH_GLOBAL_dirs.script_dir);
 	switch_core_set_variable("temp_dir", SWITCH_GLOBAL_dirs.temp_dir);
 	switch_core_set_variable("grammar_dir", SWITCH_GLOBAL_dirs.grammar_dir);
+	switch_core_set_variable("fonts_dir", SWITCH_GLOBAL_dirs.fonts_dir);
+	switch_core_set_variable("images_dir", SWITCH_GLOBAL_dirs.images_dir);
 	switch_core_set_variable("certs_dir", SWITCH_GLOBAL_dirs.certs_dir);
 	switch_core_set_variable("storage_dir", SWITCH_GLOBAL_dirs.storage_dir);
 	switch_core_set_variable("cache_dir", SWITCH_GLOBAL_dirs.cache_dir);
+	switch_core_set_variable("data_dir", SWITCH_GLOBAL_dirs.data_dir);
+	switch_core_set_variable("localstate_dir", SWITCH_GLOBAL_dirs.localstate_dir);
 #ifdef ENABLE_ZRTP
 	switch_core_set_serial();
 #endif
@@ -2751,12 +2805,16 @@ SWITCH_DECLARE(switch_status_t) switch_core_destroy(void)
 	switch_safe_free(SWITCH_GLOBAL_dirs.script_dir);
 	switch_safe_free(SWITCH_GLOBAL_dirs.htdocs_dir);
 	switch_safe_free(SWITCH_GLOBAL_dirs.grammar_dir);
+	switch_safe_free(SWITCH_GLOBAL_dirs.fonts_dir);
+	switch_safe_free(SWITCH_GLOBAL_dirs.images_dir);
 	switch_safe_free(SWITCH_GLOBAL_dirs.storage_dir);
 	switch_safe_free(SWITCH_GLOBAL_dirs.cache_dir);
 	switch_safe_free(SWITCH_GLOBAL_dirs.recordings_dir);
 	switch_safe_free(SWITCH_GLOBAL_dirs.sounds_dir);
 	switch_safe_free(SWITCH_GLOBAL_dirs.run_dir);
 	switch_safe_free(SWITCH_GLOBAL_dirs.temp_dir);
+	switch_safe_free(SWITCH_GLOBAL_dirs.data_dir);
+	switch_safe_free(SWITCH_GLOBAL_dirs.localstate_dir);
 
 	switch_event_destroy(&runtime.global_vars);
 	switch_core_hash_destroy(&runtime.ptimes);
