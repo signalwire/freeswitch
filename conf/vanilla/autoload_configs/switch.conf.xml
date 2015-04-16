@@ -150,7 +150,7 @@
     <!-- Test each port to make sure it is not in use by some other process before allocating it to RTP -->
     <!-- <param name="rtp-port-usage-robustness" value="true"/> -->
 
-    <param name="rtp-enable-zrtp" value="true"/>
+    <param name="rtp-enable-zrtp" value="false"/>
 
     <!-- <param name="core-db-dsn" value="pgsql://hostaddr=127.0.0.1 dbname=freeswitch user=freeswitch password='' options='-c client_min_messages=NOTICE'" /> -->
     <!-- <param name="core-db-dsn" value="dsn:username:password" /> -->
