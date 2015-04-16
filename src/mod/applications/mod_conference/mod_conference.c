@@ -1595,7 +1595,7 @@ static void write_canvas_image_to_codec_group(conference_obj_t *conference, code
 			switch_assert((encode_status == SWITCH_STATUS_SUCCESS && frame->m) || !frame->m);
 
 			if (frame->datalen == 0) {
-				continue;
+				break;
 			}
 
 			if (frame->timestamp) {
