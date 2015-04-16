@@ -20,12 +20,6 @@ AC_CONFIG_HEADER([src/include/switch_private.h])
 AC_CONFIG_HEADER([libs/esl/src/include/esl_config_auto.h])
 AC_CONFIG_HEADER([libs/xmlrpc-c/xmlrpc_amconfig.h])
 
-AC_PREFIX_DEFAULT(/usr/local/freeswitch)
-# AC_PREFIX_DEFAULT does not get expanded until too late so we need to do this to use prefix in this script
-if test "x$prefix" = "xNONE" ; then
-    prefix='/usr/local/freeswitch'
-fi
-
 AC_CANONICAL_HOST
 
 # Absolute source/build directory
@@ -58,53 +52,68 @@ if test "${enable_64}" = "yes"; then
 fi
 
 # Whether to follow FHS
-AC_ARG_ENABLE([fhs],
-  [AS_HELP_STRING([--enable-fhs],
-    [Follow the FHS when placing files and directories])],,
-  [enable_fhs="no"])
-AM_CONDITIONAL([ENABLE_FHS],[test "${enable_fhs}" = "yes"])
+AC_ARG_ENABLE([fhs],[AS_HELP_STRING([--disable-fhs],
+	[Do Not follow the FHS when placing files and directories (default only when not specifying prefix])],[enable_fhs="$enableval"],[enable_fhs="yes"])
 
-if test "$localstatedir" = "\${prefix}/var" ; then
-    rundir="$prefix/run"
-    logdir="${prefix}/log"
-else
-    rundir="$localstatedir/run/freeswitch"
-    logdir="$localstatedir/log/freeswitch"
+AC_PREFIX_DEFAULT(/usr/local/freeswitch)
+# AC_PREFIX_DEFAULT does not get expanded until too late so we need to do this to use prefix in this script
+
+if test "x$prefix" = "xNONE" ; then
+    enable_fhs=no
+    prefix='/usr/local/freeswitch'
 fi
 
-default_certsdir="$prefix/certs"
-default_dbdir="$prefix/db"
-default_grammardir="$prefix/grammar"
-default_htdocsdir="$prefix/htdocs"
-default_logfiledir="$logdir"
-default_modulesdir="$prefix/mod"
-default_pkgconfigdir="$libdir/pkgconfig"
-default_recordingsdir="$prefix/recordings"
-default_runtimedir="$rundir"
 default_scriptdir="$prefix/scripts"
+default_grammardir="$prefix/grammar"
 default_soundsdir="$prefix/sounds"
+default_htdocsdir="$prefix/htdocs"
+default_modulesdir="$prefix/mod"
+default_dbdir="$prefix/db"
 default_storagedir="$prefix/storage"
 default_cachedir="$prefix/cache"
+default_recordingsdir="$prefix/recordings"
+rundir="$prefix/run"
+logdir="${prefix}/log"
+confdir="$prefix/conf"
+default_certsdir="$prefix/certs"
+default_fontsdir="$prefix/fonts"
+default_imagesdir="$prefix/images"
 
-if test "$enable_fhs" = yes; then
-  prefix="/usr" exec_prefix="$prefix"
-  libdir="$(eval echo "$libdir")"
-  sysconfdir="/etc/freeswitch"
-  localstatedir="/var"
-  default_certsdir="/etc/freeswitch/tls"
-  default_dbdir="/var/lib/freeswitch/db"
-  default_grammardir="/usr/share/freeswitch/grammar"
-  default_htdocsdir="/usr/share/freeswitch/htdocs"
-  default_logfiledir="/var/log/freeswitch"
-  default_modulesdir="$libdir/freeswitch/mod"
-  default_pkgconfigdir="$libdir/pkgconfig"
-  default_recordingsdir="/var/lib/freeswitch/recordings"
-  default_runtimedir="/var/run/freeswitch"
-  default_scriptdir="/usr/share/freeswitch/scripts"
-  default_soundsdir="/usr/share/freeswitch/sounds"
-  default_storagedir="/var/lib/freeswitch/storage"
-  default_cachedir="/var/cache/freeswitch"
+if test "${enable_fhs}" = "yes"; then
+    eval full_datadir="${datadir}/freeswitch"
+    eval datadir=$full_datadir
+    default_cachedir="$localstatedir/cache/freeswitch"
+    localstatedir="${localstatedir}/lib/freeswitch"
+    default_scriptdir="${datadir}/scripts"
+    default_grammardir="${datadir}/grammar"
+    default_soundsdir="${datadir}/sounds"
+    default_htdocsdir="${datadir}/htdocs"
+    default_fontsdir="${datadir}/fonts"
+    default_modulesdir="$libdir/freeswitch/mod"
+    default_dbdir="$localstatedir/db"
+    default_storagedir="$localstatedir/storage"
+    default_recordingsdir="$localstatedir/recordings"
+    default_imagesdir="$localstatedir/images"
+    rundir="$localstatedir/run/freeswitch"
+    logdir="$localstatedir/log/freeswitch"
+    confdir="$sysconfdir/freeswitch"
+    default_certsdir="$confdir/tls"
+else
+    if test "$datadir" = "\${datarootdir}" ; then
+        datadir="${prefix}"
+    fi
+    if test "$localstatedir" = "\${prefix}/var" ; then
+        localstatedir="${prefix}"
+    fi
 fi
+
+if test "$includedir" = "\${prefix}/include" ; then
+   includedir="${prefix}/include/freeswitch"
+fi
+
+default_pkgconfigdir="$libdir/pkgconfig"
+default_runtimedir="$rundir"
+default_logfiledir="$logdir"
 
 # Where to install the modules
 AC_ARG_WITH([modinstdir],
@@ -133,6 +142,11 @@ AC_ARG_WITH([htdocsdir],
 AC_SUBST(htdocsdir)
 AC_DEFINE_UNQUOTED([SWITCH_HTDOCS_DIR],"${htdocsdir}",[where to put htdocs files])
 
+AC_ARG_WITH([fontsdir],
+	[AS_HELP_STRING([--with-fontsdir=DIR], [Put font files into this location (default: $prefix/fonts)])], [fontsdir="$withval"], [fontsdir="${default_fontsdir}"])
+AC_SUBST(fontsdir)
+AC_DEFINE_UNQUOTED([SWITCH_FONTS_DIR],"${fontsdir}",[where to put font files])
+
 AC_ARG_WITH([soundsdir],
 	[AS_HELP_STRING([--with-soundsdir=DIR], [Put sound files into this location (default: $prefix/sounds)])], [soundsdir="$withval"], [soundsdir="${default_soundsdir}"])
 AC_SUBST(soundsdir)
@@ -158,6 +172,11 @@ AC_ARG_WITH([recordingsdir],
 AC_SUBST(recordingsdir)
 AC_DEFINE_UNQUOTED([SWITCH_RECORDINGS_DIR],"${recordingsdir}",[where to put recording files])
 
+AC_ARG_WITH([imagesdir],
+	[AS_HELP_STRING([--with-imagesdir=DIR], [Put images files into this location (default: $prefix/images)])], [imagesdir="$withval"], [imagesdir="${default_imagesdir}"])
+AC_SUBST(imagesdir)
+AC_DEFINE_UNQUOTED([SWITCH_IMAGES_DIR],"${imagesdir}",[where to put image files])
+
 AC_ARG_WITH([storagedir],
 	[AS_HELP_STRING([--with-storagedir=DIR], [Put storage files into this location (default: $prefix/storage)])], [storagedir="$withval"], [storagedir="${default_storagedir}"])
 AC_SUBST(storagedir)
@@ -168,16 +187,14 @@ AC_ARG_WITH([cachedir],
 AC_SUBST(cachedir)
 AC_DEFINE_UNQUOTED([SWITCH_CACHE_DIR],"${cachedir}",[where to put cache files])
 
-if test "$sysconfdir" = "\${prefix}/etc" ; then
-    confdir="$prefix/conf"
-else
-    confdir="$sysconfdir"
-fi
-
-sysconfdir="$confdir"
-
 AC_SUBST(confdir)
 AC_DEFINE_UNQUOTED([SWITCH_CONF_DIR],"${confdir}",[directory for configuration files])
+
+AC_SUBST(datadir)
+AC_DEFINE_UNQUOTED([SWITCH_DATA_DIR],"${datadir}",[directory for data files])
+
+AC_SUBST(localstatedir)
+AC_DEFINE_UNQUOTED([SWITCH_LOCALSTATE_DIR],"${localstatedir}",[directory for local state files])
 
 AC_SUBST(libdir)
 AC_SUBST(bindir)
@@ -1800,7 +1817,7 @@ AC_OUTPUT
 ##
 ## Registering for ClueCon
 ##
-if ! test -f noreg ; then
+if ! test -f noreg -o -f /noreg; then
 echo ""
 echo ""
 echo $ECHO_N "Registering you for ClueCon http://www.cluecon.com $ECHO_C" 1>&6
@@ -1821,22 +1838,26 @@ echo
 echo "-------------------------- FreeSWITCH configuration --------------------------"
 echo ""
 echo "  Locations:"
-echo "      FHS enabled:     ${enable_fhs}"
 echo ""
 echo "      prefix:          ${prefix}"
 echo "      exec_prefix:     ${exec_prefix}"
 echo "      bindir:          ${bindir}"
-echo "      sysconfdir:      ${sysconfdir}"
+echo "      confdir:         ${confdir}"
 echo "      libdir:          ${libdir}"
+echo "      datadir:         ${datadir}"
+echo "      localstatedir:   ${localstatedir}"
+echo "      includedir:      ${includedir}"
 echo ""
 echo "      certsdir:        ${certsdir}"
 echo "      dbdir:           ${dbdir}"
 echo "      grammardir:      ${grammardir}"
 echo "      htdocsdir:       ${htdocsdir}"
+echo "      fontsdir:        ${fontsdir}"
 echo "      logfiledir:      ${logfiledir}"
 echo "      modulesdir:      ${modulesdir}"
 echo "      pkgconfigdir:    ${pkgconfigdir}"
 echo "      recordingsdir:   ${recordingsdir}"
+echo "      imagesdir:       ${imagesdir}"
 echo "      runtimedir:      ${runtimedir}"
 echo "      scriptdir:       ${scriptdir}"
 echo "      soundsdir:       ${soundsdir}"
