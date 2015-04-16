@@ -1405,7 +1405,7 @@ SWITCH_DECLARE(switch_status_t) switch_img_fit(switch_image_t **srcP, int width,
 
 SWITCH_DECLARE(switch_status_t) switch_img_convert(switch_image_t *src, switch_convert_fmt_t fmt, void *dest, switch_size_t *size)
 {
-	switch_assert(src->fmt = SWITCH_IMG_FMT_I420);
+	switch_assert(src->fmt == SWITCH_IMG_FMT_I420);
 
 	switch (fmt) {
 	case SWITCH_CONVERT_FMT_YUYV:
