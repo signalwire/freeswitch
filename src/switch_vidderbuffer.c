@@ -314,10 +314,7 @@ static inline switch_vb_node_t *vb_find_lowest_seq(switch_vb_t *vb)
 
 static inline switch_status_t vb_next_packet(switch_vb_t *vb, switch_vb_node_t **nodep)
 {
-	switch_vb_node_t *np = NULL, *node = NULL;
-	switch_status_t status;
-
-	if (np) status = 0, status++;
+	switch_vb_node_t *node = NULL;
 
 	if (!vb->target_seq) {
 		if ((node = vb_find_lowest_seq(vb))) {
