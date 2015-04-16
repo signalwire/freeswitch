@@ -350,7 +350,7 @@ static void scv_tag(void *buffer, int w, int x, int y, uint8_t n)
 	int i = 0, j=0;
 	uint8_t *p = buffer;
 
-	if (n < 0 || n > 13) return;
+	if (n > 13) return;
 
 	for(i=0; i<8; i++) {
 		for (j=0; j<16; j++) {
