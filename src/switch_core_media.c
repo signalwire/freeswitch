@@ -3132,6 +3132,7 @@ static void clear_pmaps(switch_rtp_engine_t *engine)
 SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *session, const char *r_sdp, uint8_t *proceed, switch_sdp_type_t sdp_type)
 {
 	uint8_t match = 0;
+	uint8_t vmatch = 0;
 	switch_payload_t best_te = 0, te = 0, cng_pt = 0;
 	sdp_media_t *m;
 	sdp_attribute_t *attr;
@@ -3796,7 +3797,12 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 				smh->num_negotiated_codecs = 0;
 
 				for(j = 0; j < m_idx; j++) {
-					payload_map_t *pmap = switch_core_media_add_payload_map(session, 
+					payload_map_t *pmap;
+					if (matches[j].imp->codec_type != SWITCH_CODEC_TYPE_AUDIO) {
+						continue;
+					}
+
+					pmap = switch_core_media_add_payload_map(session, 
 																			SWITCH_MEDIA_TYPE_AUDIO,
 																			matches[j].map->rm_encoding,
 																			matches[j].map->rm_fmtp,
@@ -3954,8 +3960,9 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 			sdp_rtpmap_t *map;
 			const char *rm_encoding;
 			const switch_codec_implementation_t *mimp = NULL;
-			int vmatch = 0, i;
-			
+			int i;
+
+			vmatch = 0;
 			nm_idx = 0;
 			m_idx = 0;
 			memset(matches, 0, sizeof(matches[0]) * MAX_MATCHES);
@@ -4138,7 +4145,6 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 				switch_core_media_check_video_codecs(session);
 				switch_snprintf(tmp, sizeof(tmp), "%d", v_engine->cur_payload_map->recv_pt);
 				switch_channel_set_variable(session->channel, "rtp_video_recv_pt", tmp);
-				if (!match && vmatch) match = 1;
 
 				if (switch_core_codec_ready(&v_engine->read_codec) && strcasecmp(matches[0].imp->iananame, v_engine->read_codec.implementation->iananame)) {
 					v_engine->reset_codec = 1;
@@ -4150,6 +4156,8 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 			}
 		}
 	}
+
+	if (!match && vmatch) match = 1;
 
  done:
 
