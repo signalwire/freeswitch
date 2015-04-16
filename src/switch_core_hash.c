@@ -253,7 +253,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_inthash_insert(switch_inthash_t *has
 {
 	uint32_t *k = NULL;
 
-	switch_zmalloc(k, sizeof(k));
+	switch_zmalloc(k, sizeof(*k));
 	*k = key;
 	switch_hashtable_insert_destructor(hash, k, (void *)data, HASHTABLE_FLAG_FREE_KEY | HASHTABLE_DUP_CHECK, NULL);
 
