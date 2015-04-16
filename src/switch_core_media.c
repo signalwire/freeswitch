@@ -3742,6 +3742,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 				case SWITCH_MEDIA_FLOW_SENDONLY:
 					switch_channel_set_variable(smh->session->channel, "audio_media_flow", "recvonly");
 					a_engine->smode = SWITCH_MEDIA_FLOW_RECVONLY;
+					break;
 				default:
 					switch_channel_set_variable(smh->session->channel, "audio_media_flow", "sendrecv");
 					a_engine->smode = SWITCH_MEDIA_FLOW_SENDRECV;
