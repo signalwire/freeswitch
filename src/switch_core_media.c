@@ -1937,7 +1937,7 @@ static void check_jb_sync(switch_core_session_t *session)
 
 		tmp = atol(var);
 
-		if (tmp > -50 && tmp < 10000) {
+		if (tmp && tmp > -50 && tmp < 10000) {
 			jb_sync_msec = tmp;
 		}
 	}
