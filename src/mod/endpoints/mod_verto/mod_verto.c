@@ -3238,7 +3238,9 @@ static switch_bool_t verto__invite_func(const char *method, cJSON *params, jsock
 	
 	*response = obj;
 
-	switch_event_create_plain(&var_event, SWITCH_EVENT_CHANNEL_DATA);
+	if (switch_event_create_plain(&var_event, SWITCH_EVENT_CHANNEL_DATA) != SWITCH_STATUS_SUCCESS) {
+		err=1; goto cleanup;
+	}
 
 	if (!(dialog = cJSON_GetObjectItem(params, "dialogParams"))) {
 		cJSON_AddItemToObject(obj, "message", cJSON_CreateString("Dialog data missing"));
