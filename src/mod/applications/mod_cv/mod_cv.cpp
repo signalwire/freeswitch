@@ -587,7 +587,7 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
         int w = context->rawImage->width;
         int h = context->rawImage->height;
 
-        if (context->debug) {
+        if (context->debug || !context->overlay_count) {
             libyuv::RGB24ToI420((uint8_t *)context->rawImage->imageData, w * 3,
                                 frame->img->planes[0], frame->img->stride[0],
                                 frame->img->planes[1], frame->img->stride[1],
@@ -654,13 +654,6 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
                     switch_img_free(&img);
                 }
             }
-
-        } else if (!context->debug) {
-            libyuv::RGB24ToI420((uint8_t *)context->rawImage->imageData, w * 3,
-                                frame->img->planes[0], frame->img->stride[0],
-                                frame->img->planes[1], frame->img->stride[1],
-                                frame->img->planes[2], frame->img->stride[2],
-                                context->rawImage->width, context->rawImage->height);
         }
         
     }
