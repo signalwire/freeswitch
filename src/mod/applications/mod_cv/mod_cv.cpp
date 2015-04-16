@@ -88,13 +88,14 @@ struct overlay {
     float xo;
     float yo;
     float shape_scale;
+    int scale_w;
+    int scale_h;
     int zidx;
     switch_img_position_t abs;
 };
 
 typedef struct cv_context_s {
     IplImage *rawImage;
-    IplImage *yuvImage;
     CascadeClassifier *cascade;
     CascadeClassifier *nestedCascade;
     int w;
@@ -130,19 +131,92 @@ static int clear_overlay(cv_context_t *context, int idx)
         return 0;
     }
 
+
     context->overlay[idx]->png_path = NULL;
     context->overlay[idx]->nick = NULL;
     switch_img_free(&context->overlay[idx]->png);
     memset(context->overlay[idx], 0, sizeof(struct overlay));
+    context->overlay[idx]->shape_scale = 1;
     context->overlay_count--;
+
 
     for (x = idx + 1; x < i; x++) {
         context->overlay[x-1] = context->overlay[x];
         memset(context->overlay[x], 0, sizeof(struct overlay));
+        context->overlay[x]->shape_scale = 1;
     }
 
     return idx - 1 > 0 ? idx -1 : 0;
 }
+
+static int add_text(cv_context_t *context, const char *nick, const char *fg, const char *bg, const char *font_face, int font_size, const char *text)
+{
+    uint32_t i = context->overlay_count;
+ 	switch_rgb_color_t fgcolor, bgcolor;
+    int x = 0, width = 0, is_new = 1;
+	switch_img_txt_handle_t *txthandle = NULL;
+    
+    for (x = 0; x < i; x++) {
+        if (context->overlay[x] && context->overlay[x]->png) {
+            if (!zstr(nick)) {
+                if (!zstr(context->overlay[x]->nick) && !strcmp(context->overlay[x]->nick, nick)) {
+                    i = x;
+                    is_new = 0;
+                    break;
+                }
+            } else {
+                if (strstr(context->overlay[x]->png_path, text)) {
+                    if (!zstr(nick) && (zstr(context->overlay[x]->nick) || strcmp(nick, context->overlay[x]->nick))) {
+                        context->overlay[x]->nick = switch_core_strdup(context->pool, nick);
+                    }
+                    i = x;
+                    is_new = 0;
+                    break;
+                }
+            }
+        }
+    }
+
+
+    if (is_new) {
+        context->overlay_count++;
+        if (!zstr(nick)) {
+            context->overlay[i]->nick = switch_core_strdup(context->pool, nick);
+        }
+    }
+
+    if (!font_size) {
+        font_size = 24;
+    }
+
+    if (!font_face) {
+        font_face = "FreeMono.ttf";
+    }
+
+    if (!fg) {
+        fg = "#cccccc";
+    }
+
+    if (!bg) {
+        bg = "#142e55";
+    }
+
+    width = (int) (float)(font_size * 0.75f * strlen(text));
+    
+	switch_color_set_rgb(&fgcolor, fg);
+	switch_color_set_rgb(&bgcolor, bg);
+
+    switch_img_free(&context->overlay[i]->png);
+    context->overlay[i]->png = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, width, font_size * 2, 1);
+    switch_img_fill(context->overlay[i]->png, 0, 0, context->overlay[i]->png->d_w, context->overlay[i]->png->d_h, &bgcolor);
+    switch_img_txt_handle_create(&txthandle, font_face, fg, bg, font_size, 0, NULL);
+    switch_img_txt_handle_render(txthandle, context->overlay[i]->png, font_size / 2, font_size / 2, text, NULL, fg, bg, 0, 0);
+    switch_img_txt_handle_destroy(&txthandle);
+
+    return i;
+
+}
+
 
 static int add_overlay(cv_context_t *context, const char *png_path, const char *nick)
 {
@@ -159,6 +233,9 @@ static int add_overlay(cv_context_t *context, const char *png_path, const char *
                 }
             } else {
                 if (strstr(context->overlay[x]->png_path, png_path)) {
+                    if (!zstr(nick) && (zstr(context->overlay[x]->nick) || strcmp(nick, context->overlay[x]->nick))) {
+                        context->overlay[x]->nick = switch_core_strdup(context->pool, nick);
+                    }
                     return x;
                 }
             }
@@ -181,9 +258,7 @@ static int add_overlay(cv_context_t *context, const char *png_path, const char *
         context->overlay[i]->png_path = new_png_path;
         if (!zstr(nick)) {
             context->overlay[i]->nick = switch_core_strdup(context->pool, nick);
-        }
-        if (!context->overlay[i]->shape_scale) context->overlay[i]->shape_scale = 1;
-            
+        }            
         r = (int) i;
     } else {
         context->overlay[i]->png_path = NULL;
@@ -236,6 +311,7 @@ static void uninit_context(cv_context_t *context)
         context->overlay[i]->png_path = NULL;
         context->overlay_count = 0;
         memset(context->overlay[i], 0, sizeof(struct overlay));
+        context->overlay[i]->shape_scale = 1;
     }
 
     switch_core_destroy_memory_pool(&context->pool);
@@ -256,6 +332,7 @@ static void init_context(cv_context_t *context)
         for (int i = 0; i < MAX_OVERLAY; i++) {
             context->overlay[i] = (struct overlay *) switch_core_alloc(context->pool, sizeof(struct overlay));
             context->overlay[i]->abs = POS_NONE;
+            context->overlay[i]->shape_scale = 1;
         }
 
         create = 1;
@@ -461,25 +538,29 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
 {
     cv_context_t *context = (cv_context_t *) user_data;
     switch_channel_t *channel = switch_core_session_get_channel(session);
+    int i;
 
     if (!switch_channel_ready(channel)) {
         return SWITCH_STATUS_FALSE;
     }
 
-    if (frame->img) {
+    if (!frame->img) {
+        return SWITCH_STATUS_SUCCESS;
+    }
+
+
+    if (context->cascade) {
+        switch_event_t *event;
+
         if ((frame->img->d_w != context->w || frame->img->d_h != context->h) && context->rawImage) {
             cvReleaseImage(&context->rawImage);
-            cvReleaseImage(&context->yuvImage);
         }
-
+            
         if (!context->rawImage) {
             context->rawImage = cvCreateImage(cvSize(frame->img->d_w, frame->img->d_h), IPL_DEPTH_8U, 3);
-            context->yuvImage = cvCreateImage(cvSize(frame->img->d_w, frame->img->d_h), IPL_DEPTH_8U, 3);
             switch_assert(context->rawImage);
             switch_assert(context->rawImage->width * 3 == context->rawImage->widthStep);
         }
-
-        //printf("context->rawImage: %dx%d stride: %d size: %d color:%s\n", context->rawImage->width, context->rawImage->height, context->rawImage->widthStep, context->rawImage->imageSize, context->rawImage->colorModel);
 
         libyuv::I420ToRGB24(frame->img->planes[0], frame->img->stride[0],
                             frame->img->planes[1], frame->img->stride[1],
@@ -487,19 +568,33 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
                             (uint8_t *)context->rawImage->imageData, context->rawImage->widthStep,
                             context->rawImage->width, context->rawImage->height);
 
-
-        if (context->cascade) {
-            switch_event_t *event;
-
-            detectAndDraw(context);
+        detectAndDraw(context);
             
-            if (context->detected.simo_count > 20) {
-                if (!context->detect_event) {
-                    context->detect_event = 1;
+        if (context->detected.simo_count > 20) {
+            if (!context->detect_event) {
+                context->detect_event = 1;
                     
+                if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, MY_EVENT_VIDEO_DETECT) == SWITCH_STATUS_SUCCESS) {
+                    switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Detect-Type", "primary");
+                    switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Detect-Disposition", "start");
+                    switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Detect-Simo-Count", "%u", context->detected.simo_count);
+                    switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Detect-Average", "%f", context->detected.avg);
+                    switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Detect-Last-Score", "%u", context->detected.last_score);
+                    switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Unique-ID", switch_core_session_get_uuid(session));
+                    //switch_channel_event_set_data(channel, event);
+                    DUMP_EVENT(event);
+                    switch_event_fire(&event);
+                }
+                    
+                switch_channel_execute_on(channel, "execute_on_cv_detect_primary");
+                    
+            }
+        } else {
+            if (context->detected.simo_miss_count >= 20) {
+                if (context->detect_event) {
                     if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, MY_EVENT_VIDEO_DETECT) == SWITCH_STATUS_SUCCESS) {
                         switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Detect-Type", "primary");
-                        switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Detect-Disposition", "start");
+                        switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Detect-Disposition", "stop");
                         switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Detect-Simo-Count", "%u", context->detected.simo_count);
                         switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Detect-Average", "%f", context->detected.avg);
                         switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Detect-Last-Score", "%u", context->detected.last_score);
@@ -508,154 +603,157 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
                         DUMP_EVENT(event);
                         switch_event_fire(&event);
                     }
-                    
-                    switch_channel_execute_on(channel, "execute_on_cv_detect_primary");
-                    
-                }
-            } else {
-                if (context->detected.simo_miss_count >= 20) {
-                    if (context->detect_event) {
-                        if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, MY_EVENT_VIDEO_DETECT) == SWITCH_STATUS_SUCCESS) {
-                            switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Detect-Type", "primary");
-                            switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Detect-Disposition", "stop");
-                            switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Detect-Simo-Count", "%u", context->detected.simo_count);
-                            switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Detect-Average", "%f", context->detected.avg);
-                            switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Detect-Last-Score", "%u", context->detected.last_score);
-                            switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Unique-ID", switch_core_session_get_uuid(session));
-                            //switch_channel_event_set_data(channel, event);
-                            DUMP_EVENT(event);
-                            switch_event_fire(&event);
-                        }
 
                     
-                        memset(context->shape, 0, sizeof(context->shape[0]) * MAX_SHAPES);
+                    memset(context->shape, 0, sizeof(context->shape[0]) * MAX_SHAPES);
 
-                        switch_channel_execute_on(channel, "execute_on_cv_detect_off_primary");
-                        reset_stats(&context->nestDetected);
-                        reset_stats(&context->detected);
-                    }
-
-                    context->detect_event = 0;
+                    switch_channel_execute_on(channel, "execute_on_cv_detect_off_primary");
+                    reset_stats(&context->nestDetected);
+                    reset_stats(&context->detected);
                 }
 
+                context->detect_event = 0;
             }
 
-            if (context->nestedCascade && context->detected.simo_count > 20) {
-                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "CHECKING: %d %d %f %d\n", context->nestDetected.itr, context->nestDetected.last_score, context->nestDetected.avg, context->nestDetected.above_avg_simo_count);
+        }
 
-                if (context->nestDetected.simo_count > 20 && context->nestDetected.last_score > context->nestDetected.avg && 
-                    context->nestDetected.above_avg_simo_count > 5) {
-                    if (!context->nest_detect_event) {
-                        context->nest_detect_event = 1;
+        if (context->nestedCascade && context->detected.simo_count > 20) {
+            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "CHECKING: %d %d %f %d\n", context->nestDetected.itr, context->nestDetected.last_score, context->nestDetected.avg, context->nestDetected.above_avg_simo_count);
 
-                        if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, MY_EVENT_VIDEO_DETECT) == SWITCH_STATUS_SUCCESS) {
-                            switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Detect-Type", "nested");
-                            switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Detect-Disposition", "start");
-                            switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Detect-Simo-Count", "%d", context->nestDetected.simo_count);
-                            switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Detect-Average", "%f", context->nestDetected.avg);
-                            switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Detect-Last-Score", "%u", context->nestDetected.last_score);
-                            switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Unique-ID", switch_core_session_get_uuid(session));
-                            //switch_channel_event_set_data(channel, event);
-                            DUMP_EVENT(event);
-                            switch_event_fire(&event);
-                        }
+            if (context->nestDetected.simo_count > 20 && context->nestDetected.last_score > context->nestDetected.avg && 
+                context->nestDetected.above_avg_simo_count > 5) {
+                if (!context->nest_detect_event) {
+                    context->nest_detect_event = 1;
 
-                        switch_channel_execute_on(channel, "execute_on_cv_detect_nested");
+                    if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, MY_EVENT_VIDEO_DETECT) == SWITCH_STATUS_SUCCESS) {
+                        switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Detect-Type", "nested");
+                        switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Detect-Disposition", "start");
+                        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Detect-Simo-Count", "%d", context->nestDetected.simo_count);
+                        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Detect-Average", "%f", context->nestDetected.avg);
+                        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Detect-Last-Score", "%u", context->nestDetected.last_score);
+                        switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Unique-ID", switch_core_session_get_uuid(session));
+                        //switch_channel_event_set_data(channel, event);
+                        DUMP_EVENT(event);
+                        switch_event_fire(&event);
                     }
-                } else if (context->nestDetected.above_avg_simo_count == 0) {
-                    if (context->nest_detect_event) {
-                        if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, MY_EVENT_VIDEO_DETECT) == SWITCH_STATUS_SUCCESS) {
-                            switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Detect-Type", "nested");
-                            switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Detect-Disposition", "stop");
-                            switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Detect-Simo-Count", "%d", context->nestDetected.simo_count);
-                            switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Detect-Average", "%f", context->nestDetected.avg);
-                            switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Detect-Last-Score", "%u", context->nestDetected.last_score);
-                            switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Unique-ID", switch_core_session_get_uuid(session));
-                            //switch_channel_event_set_data(channel, event);
-                            DUMP_EVENT(event);
-                            switch_event_fire(&event);
-                        }
-                        switch_channel_execute_on(channel, "execute_on_cv_detect_off_nested");
-                        reset_stats(&context->nestDetected);
-                    }
-                    
-                    context->nest_detect_event = 0;
+
+                    switch_channel_execute_on(channel, "execute_on_cv_detect_nested");
                 }
+            } else if (context->nestDetected.above_avg_simo_count == 0) {
+                if (context->nest_detect_event) {
+                    if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, MY_EVENT_VIDEO_DETECT) == SWITCH_STATUS_SUCCESS) {
+                        switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Detect-Type", "nested");
+                        switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Detect-Disposition", "stop");
+                        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Detect-Simo-Count", "%d", context->nestDetected.simo_count);
+                        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Detect-Average", "%f", context->nestDetected.avg);
+                        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Detect-Last-Score", "%u", context->nestDetected.last_score);
+                        switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Unique-ID", switch_core_session_get_uuid(session));
+                        //switch_channel_event_set_data(channel, event);
+                        DUMP_EVENT(event);
+                        switch_event_fire(&event);
+                    }
+                    switch_channel_execute_on(channel, "execute_on_cv_detect_off_nested");
+                    reset_stats(&context->nestDetected);
+                }
+                    
+                context->nest_detect_event = 0;
             }
         }
+    }
 
-        int w = context->rawImage->width;
-        int h = context->rawImage->height;
+    int w = context->rawImage->width;
+    int h = context->rawImage->height;
 
-        if (context->debug || !context->overlay_count) {
-            libyuv::RGB24ToI420((uint8_t *)context->rawImage->imageData, w * 3,
-                                frame->img->planes[0], frame->img->stride[0],
-                                frame->img->planes[1], frame->img->stride[1],
-                                frame->img->planes[2], frame->img->stride[2],
-                                context->rawImage->width, context->rawImage->height);
+    if (context->debug || !context->overlay_count) {
+        libyuv::RGB24ToI420((uint8_t *)context->rawImage->imageData, w * 3,
+                            frame->img->planes[0], frame->img->stride[0],
+                            frame->img->planes[1], frame->img->stride[1],
+                            frame->img->planes[2], frame->img->stride[2],
+                            context->rawImage->width, context->rawImage->height);
+    }
+
+    int abs = 0;
+
+    for (i = 0; i < context->overlay_count; i++) {
+        if (context->overlay[i]->abs != POS_NONE) {
+            abs++;
         }
+    }
 
-        if (context->overlay_count && context->detect_event && context->shape[0].cx) {
-            int i;
-            
-            for (i = 0; i < context->overlay_count; i++) {
-                struct overlay *overlay = context->overlay[i];
-                int x = 0, y = 0;
-                switch_image_t *img = NULL;
-                int scale_w = 0, scale_h = 0;
-                int xo = 0, yo = 0;
-                int shape_w, shape_h;
-                int cx, cy;
+    if (context->overlay_count && (abs || context->detect_event && context->shape[0].cx)) {
+        for (i = 0; i < context->overlay_count; i++) {
+            struct overlay *overlay = context->overlay[i];
+            int x = 0, y = 0;
+            switch_image_t *img = NULL;
+            int scale_w = 0, scale_h = 0;
+            int xo = 0, yo = 0;
+            int shape_w, shape_h;
+            int cx, cy;
 
-                shape_w = context->shape[0].w;
-                shape_h = context->shape[0].h;
+            if (context->overlay[i]->abs == POS_NONE && !context->detect_event && !context->shape[0].cx) {
+                continue;
+            }
+
+            shape_w = context->shape[0].w;
+            shape_h = context->shape[0].h;
             
-                cx = context->shape[0].cx;
-                cy = context->shape[0].cy;
+            cx = context->shape[0].cx;
+            cy = context->shape[0].cy;
             
 
-                if (overlay->abs != POS_NONE) {
-                    if (overlay->shape_scale != 1) {
-                        scale_w = overlay->png->d_w * overlay->shape_scale;
-                        if (scale_w > frame->img->d_w) {
-                            scale_w = frame->img->d_w;
-                        }
+            if (overlay->abs != POS_NONE) {
+                if (overlay->scale_w || overlay->scale_h) {
+                    if (overlay->scale_w && !overlay->scale_h) {
+                        scale_w = frame->img->d_w;
                         scale_h = ((overlay->png->d_h * scale_w) / overlay->png->d_w);
+                    } else if (overlay->scale_h && !overlay->scale_w) {
+                        scale_h = frame->img->d_h;
+                        scale_w = ((overlay->png->d_w * scale_h) / overlay->png->d_h);
                     } else {
-                        scale_w = overlay->png->d_w;
-                        scale_h = overlay->png->d_h;
+                        scale_w = frame->img->d_w;
+                        scale_h = frame->img->d_h;
                     }
+                } else if (overlay->shape_scale != 1) {
+                    scale_w = overlay->png->d_w * overlay->shape_scale;
 
-                    switch_img_find_position(overlay->abs, frame->img->d_w, frame->img->d_h, scale_w, scale_h, &x, &y);
-                } else {
-
-                    scale_w = shape_w * overlay->shape_scale;
                     if (scale_w > frame->img->d_w) {
                         scale_w = frame->img->d_w;
                     }
+
                     scale_h = ((overlay->png->d_h * scale_w) / overlay->png->d_w);
-
-                    if (overlay->xo) {
-                        xo = overlay->xo * shape_w;
-                    }
-                    
-                    if (overlay->yo) {
-                        yo = overlay->yo * context->shape[0].h;
-                    }
-                    
-                    x = cx - ((scale_w / 2) + xo);
-                    y = cy - ((scale_h / 2) + yo);
+                } else {
+                    scale_w = overlay->png->d_w;
+                    scale_h = overlay->png->d_h;
                 }
-                
-                switch_img_scale(overlay->png, &img, scale_w, scale_h);
 
-                if (img) {
-                    switch_img_patch(frame->img, img, x, y);
-                    switch_img_free(&img);
+                switch_img_find_position(overlay->abs, frame->img->d_w, frame->img->d_h, scale_w, scale_h, &x, &y);
+            } else {
+
+                scale_w = shape_w * overlay->shape_scale;
+                if (scale_w > frame->img->d_w) {
+                    scale_w = frame->img->d_w;
                 }
+                scale_h = ((overlay->png->d_h * scale_w) / overlay->png->d_w);
+
+                if (overlay->xo) {
+                    xo = overlay->xo * shape_w;
+                }
+                    
+                if (overlay->yo) {
+                    yo = overlay->yo * context->shape[0].h;
+                }
+                    
+                x = cx - ((scale_w / 2) + xo);
+                y = cy - ((scale_h / 2) + yo);
+            }
+
+            switch_img_scale(overlay->png, &img, scale_w, scale_h);
+
+            if (img) {
+                switch_img_patch(frame->img, img, x, y);
+                switch_img_free(&img);
             }
         }
-        
     }
 
     return SWITCH_STATUS_SUCCESS;
@@ -701,7 +799,6 @@ static void parse_params(cv_context_t *context, int start, int argc, char **argv
         }
 
         if (name && val) {
-
             if (!strcasecmp(name, "xo")) {
                 context->overlay[png_idx]->xo = atof(val);
             } else if (!strcasecmp(name, "nick")) {
@@ -714,8 +811,27 @@ static void parse_params(cv_context_t *context, int start, int argc, char **argv
                 sort++;
             } else if (!strcasecmp(name, "abs")) {
                 context->overlay[png_idx]->abs = parse_img_position(val);
+                if (context->overlay[png_idx]->abs == POS_NONE) {
+                    context->overlay[png_idx]->scale_w = context->overlay[png_idx]->scale_h = 0;
+                }
+            } else if (!strcasecmp(name, "scaleto") && context->overlay[png_idx]->abs != POS_NONE) {
+                if (strchr(val, 'W')) {
+                    context->overlay[png_idx]->scale_w = 1;
+                }
+
+                if (strchr(val, 'H')) {
+                    context->overlay[png_idx]->scale_h = 1;
+                }
+
+                if (strchr(val, 'w')) {
+                    context->overlay[png_idx]->scale_w = 0;
+                }
+
+                if (strchr(val, 'h')) {
+                    context->overlay[png_idx]->scale_h = 0;
+                }
             } else if (!strcasecmp(name, "scale")) {
-                context->overlay[png_idx]->shape_scale = atof(val);
+                context->overlay[png_idx]->shape_scale = atof(val);                
             } else if (!strcasecmp(name, "skip")) {
                 context->skip = atoi(val);
             } else if (!strcasecmp(name, "debug")) {
@@ -728,10 +844,26 @@ static void parse_params(cv_context_t *context, int start, int argc, char **argv
                 changed++;
             } else if (!strcasecmp(name, "png")) {
                 png_idx = add_overlay(context, val, nick);
+            } else if (!strcasecmp(name, "txt")) {
+                int iargc = 0;
+                char *iargv[10] = { 0 };
+
+                iargc = switch_split(val, ':', iargv);
+                if (iargc >= 5) {
+                    png_idx = add_text(context, nick, iargv[0], iargv[1], iargv[2], atoi(iargv[3]), iargv[4]);
+                }
             }
         } else if (name) {
             if (!strcasecmp(name, "clear")) {
                 png_idx = clear_overlay(context, png_idx);
+            } else if (!strcasecmp(name, "allclear")) {
+                for (int x = context->overlay_count - 1; x >= 0; x--) {
+                    png_idx = clear_overlay(context, x);
+                    context->overlay[x]->xo = context->overlay[x]->yo = context->overlay[x]->shape_scale = 0.0f;
+                    context->overlay[x]->zidx = 0;
+                    context->overlay[x]->scale_w = context->overlay[x]->scale_h = 0;
+                    context->overlay[x]->shape_scale = 1;
+                }
             } else if (!strcasecmp(name, "home")) {
                 context->overlay[png_idx]->xo = context->overlay[png_idx]->yo = context->overlay[png_idx]->shape_scale = 0.0f;
                 context->overlay[png_idx]->zidx = 0;

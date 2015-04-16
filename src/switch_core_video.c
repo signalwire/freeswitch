@@ -507,7 +507,22 @@ SWITCH_DECLARE(switch_status_t) switch_img_txt_handle_create(switch_img_txt_hand
 
 	new_handle->pool = pool;
 	new_handle->free_pool = free_pool;
-	new_handle->font_family = switch_core_strdup(new_handle->pool, font_family);
+
+	if (!switch_is_file_path(font_family)) {
+		new_handle->font_family = switch_core_sprintf(new_handle->pool, "%s%s%s",SWITCH_GLOBAL_dirs.fonts_dir, SWITCH_PATH_SEPARATOR, font_family);
+	} else {
+		new_handle->font_family = switch_core_strdup(new_handle->pool, font_family);
+	}
+
+	if (switch_file_exists(new_handle->font_family, new_handle->pool) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Font %s does not exist\n", new_handle->font_family);
+		if (free_pool) {
+			switch_core_destroy_memory_pool(&pool);
+		}
+		*handleP = NULL;
+		return SWITCH_STATUS_FALSE;
+	}
+
 	new_handle->font_size = font_size;
 	new_handle->angle = angle;
 
