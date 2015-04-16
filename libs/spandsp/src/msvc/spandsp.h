@@ -53,6 +53,7 @@
 #include <spandsp/stdbool.h>
 #endif
 #include <spandsp/telephony.h>
+#include <spandsp/alloc.h>
 #include <spandsp/fast_convert.h>
 #include <spandsp/logging.h>
 #include <spandsp/complex.h>
@@ -96,8 +97,6 @@
 #include <spandsp/modem_connect_tones.h>
 #include <spandsp/silence_gen.h>
 #include <spandsp/v8.h>
-#include <spandsp/v42.h>
-#include <spandsp/v42bis.h>
 #include <spandsp/v29rx.h>
 #include <spandsp/v29tx.h>
 #include <spandsp/v17rx.h>
@@ -105,9 +104,14 @@
 #include <spandsp/v22bis.h>
 #include <spandsp/v27ter_rx.h>
 #include <spandsp/v27ter_tx.h>
+#if defined(SPANDSP_SUPPORT_V32BIS)
+#include <spandsp/v32bis.h>
+#endif
 #if defined(SPANDSP_SUPPORT_V34)
 #include <spandsp/v34.h>
 #endif
+#include <spandsp/v42.h>
+#include <spandsp/v42bis.h>
 #include <spandsp/v18.h>
 #include <spandsp/timezone.h>
 #include <spandsp/t4_rx.h>
@@ -125,6 +129,7 @@
 #include <spandsp/t30_logging.h>
 #include <spandsp/t35.h>
 #include <spandsp/at_interpreter.h>
+#include <spandsp/data_modems.h>
 #include <spandsp/fax_modems.h>
 #include <spandsp/fax.h>
 #include <spandsp/t38_core.h>
