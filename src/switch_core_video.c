@@ -539,10 +539,15 @@ SWITCH_DECLARE(switch_status_t) switch_img_txt_handle_create(switch_img_txt_hand
 
 SWITCH_DECLARE(void) switch_img_txt_handle_destroy(switch_img_txt_handle_t **handleP)
 {
-	switch_img_txt_handle_t *old_handle = *handleP;
+	switch_img_txt_handle_t *old_handle;
 	switch_memory_pool_t *pool;
 
+	switch_assert(handleP);
+	
+	old_handle = *handleP;
 	*handleP = NULL;
+	if (!old_handle) return;
+	
 
 #if SWITCH_HAVE_FREETYPE
 	if (old_handle->library) {
