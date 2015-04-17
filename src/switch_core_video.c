@@ -508,6 +508,10 @@ SWITCH_DECLARE(switch_status_t) switch_img_txt_handle_create(switch_img_txt_hand
 	new_handle->pool = pool;
 	new_handle->free_pool = free_pool;
 
+    if (zstr(font_family)) {
+		font_family = switch_core_sprintf(new_handle->pool, "%s%s%s",SWITCH_GLOBAL_dirs.fonts_dir, SWITCH_PATH_SEPARATOR, "FreeMono.ttf");
+    }
+
 	if (!switch_is_file_path(font_family)) {
 		new_handle->font_family = switch_core_sprintf(new_handle->pool, "%s%s%s",SWITCH_GLOBAL_dirs.fonts_dir, SWITCH_PATH_SEPARATOR, font_family);
 	} else {
