@@ -24,6 +24,7 @@
  * Contributor(s):
  * 
  * Anthony Minessale II <anthm@freeswitch.org>
+ * Seven Du <dujinfang@gmail.com>
  *
  * mod_cv.cpp -- Detect Video motion
  *
@@ -165,7 +166,7 @@ static int add_text(cv_context_t *context, const char *nick, const char *fg, con
                     break;
                 }
             } else {
-                if (strstr(context->overlay[x]->png_path, text)) {
+                if (context->overlay[x]->png_path && strstr(context->overlay[x]->png_path, text)) {
                     if (!zstr(nick) && (zstr(context->overlay[x]->nick) || strcmp(nick, context->overlay[x]->nick))) {
                         context->overlay[x]->nick = switch_core_strdup(context->pool, nick);
                     }
@@ -189,15 +190,15 @@ static int add_text(cv_context_t *context, const char *nick, const char *fg, con
         font_size = 24;
     }
 
-    if (!font_face) {
+    if (zstr(font_face)) {
         font_face = "FreeMono.ttf";
     }
 
-    if (!fg) {
+    if (zstr(fg)) {
         fg = "#cccccc";
     }
 
-    if (!bg) {
+    if (zstr(bg)) {
         bg = "#142e55";
     }
 
@@ -680,7 +681,7 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
         }
     }
 
-    if (context->overlay_count && (abs || context->detect_event && context->shape[0].cx)) {
+    if (context->overlay_count && (abs || (context->detect_event && context->shape[0].cx))) {
         for (i = 0; i < context->overlay_count; i++) {
             struct overlay *overlay = context->overlay[i];
             int x = 0, y = 0;
