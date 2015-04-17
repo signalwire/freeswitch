@@ -287,10 +287,6 @@ static void stop_ticker(cv_context_t *context)
 static void set_ticker(cv_context_t *context, const char *fg, const char *bg, const char *font_face, const char *fontsz, int speed, switch_img_position_t pos, const char *text)
 {
 
-    if (zstr(font_face)) {
-        font_face = "FreeMono.ttf";
-    }
-
     if (zstr(fg)) {
         fg = "#cccccc";
     }
@@ -360,11 +356,6 @@ static int add_text(cv_context_t *context, const char *nick, const char *fg, con
         if (!zstr(nick)) {
             overlay->nick = switch_core_strdup(context->pool, nick);
         }
-    }
-
-
-    if (zstr(font_face)) {
-        font_face = "FreeMono.ttf";
     }
 
     if (zstr(fg)) {

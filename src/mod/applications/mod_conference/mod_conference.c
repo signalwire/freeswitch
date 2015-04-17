@@ -1251,7 +1251,7 @@ static void layer_set_banner(conference_member_t *member, mcu_layer_t *layer, co
 	const char *bg = "#142e55";
 	char *parsed = NULL;
 	switch_event_t *params = NULL;
-	const char *font_face = "/usr/share/fonts/truetype/freefont/FreeSansOblique.ttf";
+	const char *font_face = NULL;
 	const char *var, *tmp = NULL;
 	char *dup = NULL;
 	
