@@ -93,6 +93,16 @@ struct overlay {
     int scale_h;
     int zidx;
     switch_img_position_t abs;
+    switch_img_txt_handle_t *txthandle;
+    char *text;
+    char *ticker_text;
+    char *tpos;
+    char *fontsz;
+    char *font_face;
+    char *fg;
+    char *bg;
+    int font_size;
+    switch_rgb_color_t bgcolor;
 };
 
 typedef struct cv_context_s {
@@ -111,6 +121,11 @@ typedef struct cv_context_s {
     int32_t skip_count;
     uint32_t debug;
     struct overlay *overlay[MAX_OVERLAY];
+    struct overlay *ticker;
+    switch_image_t *ticker_img;
+    int ticker_ready;
+    switch_img_position_t tick_pos;
+    int tick_x;
     uint32_t overlay_idx;
     uint32_t overlay_count;
 	switch_core_session_t *session;
@@ -119,6 +134,7 @@ typedef struct cv_context_s {
     switch_memory_pool_t *pool;
     switch_mutex_t *mutex;
     char *png_prefix;
+    int tick_speed;
 } cv_context_t;
 
 
@@ -136,6 +152,7 @@ static int clear_overlay(cv_context_t *context, int idx)
     context->overlay[idx]->png_path = NULL;
     context->overlay[idx]->nick = NULL;
     switch_img_free(&context->overlay[idx]->png);
+    switch_img_txt_handle_destroy(&context->overlay[idx]->txthandle);
     memset(context->overlay[idx], 0, sizeof(struct overlay));
     context->overlay[idx]->shape_scale = 1;
     context->overlay_count--;
@@ -143,6 +160,7 @@ static int clear_overlay(cv_context_t *context, int idx)
 
     for (x = idx + 1; x < i; x++) {
         context->overlay[x-1] = context->overlay[x];
+        switch_img_txt_handle_destroy(&context->overlay[x]->txthandle);
         memset(context->overlay[x], 0, sizeof(struct overlay));
         context->overlay[x]->shape_scale = 1;
     }
@@ -150,13 +168,170 @@ static int clear_overlay(cv_context_t *context, int idx)
     return idx - 1 > 0 ? idx -1 : 0;
 }
 
-static int add_text(cv_context_t *context, const char *nick, const char *fg, const char *bg, const char *font_face, int font_size, const char *text)
+static void context_render_text(cv_context_t *context, struct overlay *overlay, char *text)
+{
+    switch_rgb_color_t bgcolor = { 0 };
+    int width, font_size = 0;
+    int w, h;
+    
+    if (!(context->w && context->h)) return;
+
+    w = context->w;
+    h = context->h;
+
+    if (overlay->fontsz) {
+        if (strrchr(overlay->fontsz, '%')) {
+            font_size = 1 + ((int) (float)h * (atof(overlay->fontsz) / 100.0f));
+        } else {
+            font_size = atoi(overlay->fontsz);
+        }
+    }
+
+    if (font_size <= 0) {
+        font_size = 24;
+    }
+
+    if (!text) text = overlay->text;
+
+    int len = strlen(text);
+    if (len < 5) len = 5;
+
+
+    width = (int) (float)(font_size * 0.75f * len);
+
+
+	switch_color_set_rgb(&bgcolor, overlay->bg);
+
+    if (!overlay->png || (overlay->png->d_w != width || overlay->png->d_h != font_size * 2)) {
+        switch_img_free(&overlay->png);
+        overlay->png = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, width, font_size * 2, 1);
+    }
+    
+    switch_img_txt_handle_destroy(&overlay->txthandle);
+    switch_img_txt_handle_create(&overlay->txthandle, overlay->font_face, overlay->fg, overlay->bg, font_size, 0, NULL);
+
+
+    switch_img_fill(overlay->png, 0, 0, overlay->png->d_w, overlay->png->d_h, &bgcolor);
+    switch_img_txt_handle_render(overlay->txthandle, 
+                                 overlay->png,
+                                 font_size / 2, font_size / 2,
+                                 text, NULL, overlay->fg, overlay->bg, 0, 0);
+
+    overlay->font_size = font_size;
+
+}
+
+static void check_text(cv_context_t *context)
+{
+    int i;
+    
+    for (i = 0; i < context->overlay_count; i++) {
+        struct overlay *overlay = context->overlay[i];
+
+        if (overlay->text) {
+            context_render_text(context, overlay, NULL);
+        }
+    }
+
+    if (context->ticker) {
+        context_render_text(context, context->ticker, NULL);
+    }
+}
+
+static void ticker_tick(cv_context_t *context, switch_image_t *IMG)
+{
+    int x = 0, y = 0;
+    switch_image_t *img;
+
+    if (!context->ticker || !context->ticker->text) return;
+
+
+    if ((!context->ticker_img || context->ticker_img->d_w != context->w || context->ticker_img->d_h != context->ticker->font_size * 2)) {
+        switch_img_free(&context->ticker_img);
+        context->ticker_img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, context->w, context->ticker->font_size * 2, 1);
+        switch_color_set_rgb(&context->ticker->bgcolor, context->ticker->bg);
+        switch_img_fill(context->ticker_img, 0, 0, context->ticker_img->d_w, context->ticker_img->d_h, &context->ticker->bgcolor);
+    }
+
+    if (context->tick_x < 0 && context->tick_x < (context->ticker->png->d_w * -1)) {
+        context->tick_x = context->ticker_img->d_w;
+    }
+
+    switch_img_find_position(context->tick_pos, context->w, context->h, context->ticker_img->d_w, context->ticker_img->d_h, &x, &y);
+    switch_img_patch(IMG, context->ticker_img, x, y);
+
+    if (context->tick_x < 0) {
+        img = switch_img_copy_rect(context->ticker->png,
+                                   abs(context->tick_x), 0, 
+                                   context->ticker->png->d_w - abs(context->tick_x), context->ticker->png->d_h);
+    }
+
+    if (img) {
+        switch_img_patch(IMG, img, 0, y);
+        switch_img_free(&img);
+    } else {
+        switch_img_patch(IMG, context->ticker->png, context->tick_x, y);
+    }
+
+    context->tick_x -= context->tick_speed;
+}
+
+static void stop_ticker(cv_context_t *context)
+{
+    context->ticker_ready = 0;
+    switch_img_free(&context->ticker->png);
+    switch_img_free(&context->ticker_img);
+    switch_img_txt_handle_destroy(&context->ticker->txthandle);
+}
+
+static void set_ticker(cv_context_t *context, const char *fg, const char *bg, const char *font_face, const char *fontsz, int speed, switch_img_position_t pos, const char *text)
+{
+
+    if (zstr(font_face)) {
+        font_face = "FreeMono.ttf";
+    }
+
+    if (zstr(fg)) {
+        fg = "#cccccc";
+    }
+
+    if (zstr(bg)) {
+        bg = "#142e55";
+    }
+
+    if (zstr(fontsz)) {
+        fontsz = "4%";
+    }
+
+    if (!text) {
+        text = "Value Optimized Out!";
+    }
+
+    if (!context->ticker) {
+        context->ticker = (struct overlay *) switch_core_alloc(context->pool, sizeof(struct overlay));
+    }
+
+    if (speed <= 0 || speed > 30) speed = 5;
+
+    context->tick_pos = pos;
+    context->tick_speed = speed;
+    context->ticker->fg = switch_core_strdup(context->pool, fg);
+    context->ticker->bg = switch_core_strdup(context->pool, bg);
+    context->ticker->fontsz = switch_core_strdup(context->pool, fontsz);
+    context->ticker->text = switch_core_sprintf(context->pool, text);
+    context->ticker->font_face = switch_core_strdup(context->pool, font_face);
+    context->ticker->tpos = NULL;
+    context_render_text(context, context->ticker, context->ticker->text);
+    context->tick_x = context->w;
+    context->ticker_ready = 1;
+}
+
+static int add_text(cv_context_t *context, const char *nick, const char *fg, const char *bg, const char *font_face, const char *fontsz, const char *text)
 {
     uint32_t i = context->overlay_count;
- 	switch_rgb_color_t fgcolor, bgcolor;
     int x = 0, width = 0, is_new = 1;
-	switch_img_txt_handle_t *txthandle = NULL;
-    
+    struct overlay *overlay;
+
     for (x = 0; x < i; x++) {
         if (context->overlay[x] && context->overlay[x]->png) {
             if (!zstr(nick)) {
@@ -178,17 +353,15 @@ static int add_text(cv_context_t *context, const char *nick, const char *fg, con
         }
     }
 
+    overlay = context->overlay[i];
 
     if (is_new) {
         context->overlay_count++;
         if (!zstr(nick)) {
-            context->overlay[i]->nick = switch_core_strdup(context->pool, nick);
+            overlay->nick = switch_core_strdup(context->pool, nick);
         }
     }
 
-    if (!font_size) {
-        font_size = 24;
-    }
 
     if (zstr(font_face)) {
         font_face = "FreeMono.ttf";
@@ -202,17 +375,13 @@ static int add_text(cv_context_t *context, const char *nick, const char *fg, con
         bg = "#142e55";
     }
 
-    width = (int) (float)(font_size * 0.75f * strlen(text));
-    
-	switch_color_set_rgb(&fgcolor, fg);
-	switch_color_set_rgb(&bgcolor, bg);
+    overlay->fg = switch_core_strdup(context->pool, fg);
+    overlay->bg = switch_core_strdup(context->pool, bg);
+    overlay->fontsz = switch_core_strdup(context->pool, fontsz);
+    overlay->text = switch_core_strdup(context->pool, text);
+    overlay->font_face = switch_core_strdup(context->pool, font_face);
 
-    switch_img_free(&context->overlay[i]->png);
-    context->overlay[i]->png = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, width, font_size * 2, 1);
-    switch_img_fill(context->overlay[i]->png, 0, 0, context->overlay[i]->png->d_w, context->overlay[i]->png->d_h, &bgcolor);
-    switch_img_txt_handle_create(&txthandle, font_face, fg, bg, font_size, 0, NULL);
-    switch_img_txt_handle_render(txthandle, context->overlay[i]->png, font_size / 2, font_size / 2, text, NULL, fg, bg, 0, 0);
-    switch_img_txt_handle_destroy(&txthandle);
+    context_render_text(context, overlay, NULL);
 
     return i;
 
@@ -311,10 +480,11 @@ static void uninit_context(cv_context_t *context)
         switch_img_free(&context->overlay[i]->png);
         context->overlay[i]->png_path = NULL;
         context->overlay_count = 0;
+        switch_img_txt_handle_destroy(&context->overlay[i]->txthandle);
         memset(context->overlay[i], 0, sizeof(struct overlay));
         context->overlay[i]->shape_scale = 1;
     }
-
+    switch_img_free(&context->ticker_img);
     switch_core_destroy_memory_pool(&context->pool);
 }
 
@@ -549,16 +719,21 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
         return SWITCH_STATUS_SUCCESS;
     }
 
+    if ((frame->img->d_w != context->w || frame->img->d_h != context->h)) {
+        if (context->rawImage) {
+            cvReleaseImage(&context->rawImage);
+        }
+
+        context->w = frame->img->d_w;
+        context->h = frame->img->d_h;
+        check_text(context);
+    }
 
     if (context->cascade) {
         switch_event_t *event;
-
-        if ((frame->img->d_w != context->w || frame->img->d_h != context->h) && context->rawImage) {
-            cvReleaseImage(&context->rawImage);
-        }
             
         if (!context->rawImage) {
-            context->rawImage = cvCreateImage(cvSize(frame->img->d_w, frame->img->d_h), IPL_DEPTH_8U, 3);
+            context->rawImage = cvCreateImage(cvSize(context->w, context->h), IPL_DEPTH_8U, 3);
             switch_assert(context->rawImage);
             switch_assert(context->rawImage->width * 3 == context->rawImage->widthStep);
         }
@@ -662,11 +837,8 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
         }
     }
 
-    int w = frame->img->d_w;//context->rawImage->width;
-    int h = frame->img->d_h;//context->rawImage->height;
-
     if (context->debug || !context->overlay_count) {
-        libyuv::RGB24ToI420((uint8_t *)context->rawImage->imageData, w * 3,
+        libyuv::RGB24ToI420((uint8_t *)context->rawImage->imageData, context->w * 3,
                             frame->img->planes[0], frame->img->stride[0],
                             frame->img->planes[1], frame->img->stride[1],
                             frame->img->planes[2], frame->img->stride[2],
@@ -701,24 +873,23 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
             cx = context->shape[0].cx;
             cy = context->shape[0].cy;
             
-
             if (overlay->abs != POS_NONE) {
                 if (overlay->scale_w || overlay->scale_h) {
                     if (overlay->scale_w && !overlay->scale_h) {
-                        scale_w = frame->img->d_w;
+                        scale_w = context->w;
                         scale_h = ((overlay->png->d_h * scale_w) / overlay->png->d_w);
                     } else if (overlay->scale_h && !overlay->scale_w) {
-                        scale_h = frame->img->d_h;
+                        scale_h = context->h;
                         scale_w = ((overlay->png->d_w * scale_h) / overlay->png->d_h);
                     } else {
-                        scale_w = frame->img->d_w;
-                        scale_h = frame->img->d_h;
+                        scale_w = context->w;
+                        scale_h = context->h;
                     }
                 } else if (overlay->shape_scale != 1) {
                     scale_w = overlay->png->d_w * overlay->shape_scale;
 
-                    if (scale_w > frame->img->d_w) {
-                        scale_w = frame->img->d_w;
+                    if (scale_w > context->w) {
+                        scale_w = context->w;
                     }
 
                     scale_h = ((overlay->png->d_h * scale_w) / overlay->png->d_w);
@@ -727,12 +898,12 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
                     scale_h = overlay->png->d_h;
                 }
 
-                switch_img_find_position(overlay->abs, frame->img->d_w, frame->img->d_h, scale_w, scale_h, &x, &y);
+                switch_img_find_position(overlay->abs, context->w, context->h, scale_w, scale_h, &x, &y);
             } else {
 
                 scale_w = shape_w * overlay->shape_scale;
-                if (scale_w > frame->img->d_w) {
-                    scale_w = frame->img->d_w;
+                if (scale_w > context->w) {
+                    scale_w = context->w;
                 }
                 scale_h = ((overlay->png->d_h * scale_w) / overlay->png->d_w);
 
@@ -747,14 +918,22 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
                 x = cx - ((scale_w / 2) + xo);
                 y = cy - ((scale_h / 2) + yo);
             }
+            
+            if (scale_w && scale_h && (overlay->png->d_w != scale_w || overlay->png->d_h != scale_h)) {
+                switch_img_scale(overlay->png, &img, scale_w, scale_h);
 
-            switch_img_scale(overlay->png, &img, scale_w, scale_h);
-
-            if (img) {
-                switch_img_patch(frame->img, img, x, y);
-                switch_img_free(&img);
+                if (img) {
+                    switch_img_patch(frame->img, img, x, y);
+                    switch_img_free(&img);
+                }
+            } else {
+                switch_img_patch(frame->img, overlay->png, x, y);
             }
         }
+    }
+    
+    if (context->ticker_ready) {
+        ticker_tick(context, frame->img);
     }
 
     return SWITCH_STATUS_SUCCESS;
@@ -851,7 +1030,21 @@ static void parse_params(cv_context_t *context, int start, int argc, char **argv
 
                 iargc = switch_split(val, ':', iargv);
                 if (iargc >= 5) {
-                    png_idx = add_text(context, nick, iargv[0], iargv[1], iargv[2], atoi(iargv[3]), iargv[4]);
+                    png_idx = add_text(context, nick, iargv[0], iargv[1], iargv[2], iargv[3], iargv[4]);
+                }
+            } else if (!strcasecmp(name, "ticker")) {
+                int iargc = 0;
+                char *iargv[10] = { 0 };
+
+                iargc = switch_split(val, ':', iargv);
+                if (iargc >= 7) {
+                    switch_img_position_t pos = parse_img_position(iargv[5]);
+                    if (pos != POS_LEFT_BOT && pos != POS_LEFT_TOP) {
+                        pos = POS_LEFT_BOT;
+                    }
+                    set_ticker(context, iargv[0], iargv[1], iargv[2], iargv[3], atoi(iargv[4]), pos, iargv[6]);
+                } else {
+                    stop_ticker(context);
                 }
             }
         } else if (name) {
@@ -1009,6 +1202,8 @@ SWITCH_STANDARD_APP(cv_bug_start_function)
 		}
 		return;
 	}
+
+    switch_channel_wait_for_flag(channel, CF_VIDEO_READY, SWITCH_TRUE, 10000, NULL);
 
 	context = (cv_context_t *) switch_core_session_alloc(session, sizeof(*context));
 	assert(context != NULL);
