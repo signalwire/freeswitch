@@ -164,7 +164,7 @@ switch_status_t spandsp_tdd_send_session(switch_core_session_t *session, const c
 /* For Emacs:
  * Local Variables:
  * mode:c
- * indent-tabs-mode:nil
+ * indent-tabs-mode:t
  * tab-width:4
  * c-basic-offset:4
  * End:

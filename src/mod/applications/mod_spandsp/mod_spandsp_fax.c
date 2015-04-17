@@ -2359,7 +2359,7 @@ switch_status_t spandsp_fax_detect_session(switch_core_session_t *session,
 /* For Emacs:
  * Local Variables:
  * mode:c
- * indent-tabs-mode:nil
+ * indent-tabs-mode:t
  * tab-width:4
  * c-basic-offset:4
  * End:
