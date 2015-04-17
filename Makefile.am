@@ -412,7 +412,7 @@ scripts/fsxs: scripts/fsxs.in
 	    -e "s,@LIB_DIR\@,@libdir@," \
 	    -e "s,@BIN_DIR\@,@bindir@," \
 	    -e "s,@INC_DIR\@,@includedir@," \
-	    -e "s,@CFG_DIR\@,@sysconfdir@," \
+	    -e "s,@CFG_DIR\@,@confdir@," \
 	    -e "s,@DB_DIR\@,@dbdir@," \
 	    -e "s,@PREFIX\@,@prefix@," \
 	    -e "s,@CC\@,$(CC)," \
@@ -517,27 +517,27 @@ libs/srtp/libsrtp.la: libs/srtp libs/srtp/.update $(SRTP_SRC)
 ## helper targets
 ##
 yaml-files:
-	@echo `mkdir $(DESTDIR)$(sysconfdir)/yaml 2>/dev/null`
-	$(INSTALL) -m 644 $(switch_srcdir)/conf/default/yaml/*.yaml $(DESTDIR)$(sysconfdir)/yaml
+	@echo `mkdir $(DESTDIR)$(confdir)/yaml 2>/dev/null`
+	$(INSTALL) -m 644 $(switch_srcdir)/conf/default/yaml/*.yaml $(DESTDIR)$(confdir)/yaml
 
 vm-sync:
-	test -d $(DESTDIR)$(sysconfdir) || $(mkinstalldirs) $(DESTDIR)$(sysconfdir)
-	test -d $(DESTDIR)$(sysconfdir)/lang || $(mkinstalldirs) $(DESTDIR)$(sysconfdir)/lang
-	test -d $(DESTDIR)$(sysconfdir)/lang/en || $(mkinstalldirs) $(DESTDIR)$(sysconfdir)/lang/en
-	test -d $(DESTDIR)$(sysconfdir)/lang/en/demo || $(mkinstalldirs) $(DESTDIR)$(sysconfdir)/lang/en/demo
-	test -d $(DESTDIR)$(sysconfdir)/lang/en/vm || $(mkinstalldirs) $(DESTDIR)$(sysconfdir)/lang/en/vm
-	$(INSTALL) -m 644 $(switch_srcdir)/conf/vanilla/lang/en/vm/* $(DESTDIR)$(sysconfdir)/lang/en/vm
-	$(INSTALL) -m 644 $(switch_srcdir)/conf/vanilla/lang/en/demo/* $(DESTDIR)$(sysconfdir)/lang/en/demo
+	test -d $(DESTDIR)$(confdir) || $(mkinstalldirs) $(DESTDIR)$(confdir)
+	test -d $(DESTDIR)$(confdir)/lang || $(mkinstalldirs) $(DESTDIR)$(confdir)/lang
+	test -d $(DESTDIR)$(confdir)/lang/en || $(mkinstalldirs) $(DESTDIR)$(confdir)/lang/en
+	test -d $(DESTDIR)$(confdir)/lang/en/demo || $(mkinstalldirs) $(DESTDIR)$(confdir)/lang/en/demo
+	test -d $(DESTDIR)$(confdir)/lang/en/vm || $(mkinstalldirs) $(DESTDIR)$(confdir)/lang/en/vm
+	$(INSTALL) -m 644 $(switch_srcdir)/conf/vanilla/lang/en/vm/* $(DESTDIR)$(confdir)/lang/en/vm
+	$(INSTALL) -m 644 $(switch_srcdir)/conf/vanilla/lang/en/demo/* $(DESTDIR)$(confdir)/lang/en/demo
 
 config-%:
-	test -d $(DESTDIR)$(sysconfdir) || $(mkinstalldirs) $(DESTDIR)$(sysconfdir)
+	test -d $(DESTDIR)$(confdir) || $(mkinstalldirs) $(DESTDIR)$(confdir)
 	for conffile in `cd $(switch_srcdir)/conf/$* && find . -name \*.xml && find . -name \*.conf && find . -name \*.tpl  && find . -name \*.ttml && find . -name mime.types` ; do \
 		dir=`echo $$conffile | sed -e 's|^\.||' | sed -e 's|/[^/]*$$||'`; \
 		filename=`echo $$conffile | sed -e 's|^\.||' | sed -e 's|^.*/||'`; \
-		test -d $(DESTDIR)$(sysconfdir)$$dir || $(mkinstalldirs) $(DESTDIR)$(sysconfdir)$$dir ; \
-		test -f $(DESTDIR)$(sysconfdir)$$dir/$$filename || \
-		test -f $(DESTDIR)$(sysconfdir)$$dir/$$filename.noload || \
-			$(INSTALL) -m 644 $(switch_srcdir)/conf/$*/$$dir/$$filename $(DESTDIR)$(sysconfdir)$$dir; \
+		test -d $(DESTDIR)$(confdir)$$dir || $(mkinstalldirs) $(DESTDIR)$(confdir)$$dir ; \
+		test -f $(DESTDIR)$(confdir)$$dir/$$filename || \
+		test -f $(DESTDIR)$(confdir)$$dir/$$filename.noload || \
+			$(INSTALL) -m 644 $(switch_srcdir)/conf/$*/$$dir/$$filename $(DESTDIR)$(confdir)$$dir; \
 	done
 
 samples-conf: config-vanilla
@@ -564,7 +564,7 @@ install-data-local:
 	@for x in $(modulesdir) $(runtimedir) $(dbdir) $(logfiledir) $(logfiledir)/xml_cdr $(bindir) $(scriptdir) $(recordingsdir) $(grammardir) $(imagesdir) $(fontsdir); do \
 		$(mkinstalldirs) $(DESTDIR)$$x ; \
 	 done
-	test -d $(DESTDIR)$(sysconfdir) || $(MAKE) samples-conf
+	test -d $(DESTDIR)$(confdir) || $(MAKE) samples-conf
 	test -d $(DESTDIR)$(htdocsdir) || $(MAKE) samples-htdocs
 
 is-scm:
