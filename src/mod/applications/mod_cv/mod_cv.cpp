@@ -319,6 +319,7 @@ static void set_ticker(cv_context_t *context, const char *fg, const char *bg, co
     context->ticker->tpos = NULL;
     context_render_text(context, context->ticker, context->ticker->text);
     context->tick_x = context->w;
+    switch_img_free(&context->ticker_img);
     context->ticker_ready = 1;
 }
 
