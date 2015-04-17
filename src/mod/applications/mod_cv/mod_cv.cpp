@@ -50,10 +50,11 @@ using namespace cv;
 #include <ctype.h>
 #define MY_EVENT_VIDEO_DETECT "cv::video_detect"
 
+switch_loadable_module_interface_t *MODULE_INTERFACE;
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_cv_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_cv_shutdown);
 SWITCH_MODULE_DEFINITION(mod_cv, mod_cv_load, mod_cv_shutdown, NULL);
-
 
 static const int NCHANNELS = 3;
 
@@ -1157,6 +1158,7 @@ static switch_bool_t cv_bug_callback(switch_media_bug_t *bug, void *user_data, s
 		break;
 	case SWITCH_ABC_TYPE_CLOSE:
 		{
+            switch_thread_rwlock_unlock(MODULE_INTERFACE->rwlock);
             switch_channel_clear_flag_recursive(channel, CF_VIDEO_DECODED_READ);
             uninit_context(context);
 		}
@@ -1208,8 +1210,11 @@ SWITCH_STANDARD_APP(cv_bug_start_function)
         parse_params(context, 1, argc, argv);
     }
 
+    switch_thread_rwlock_rdlock(MODULE_INTERFACE->rwlock);
+
 	if ((status = switch_core_media_bug_add(session, "cv_bug", NULL, cv_bug_callback, context, 0, SMBF_READ_VIDEO_PING, &bug)) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failure!\n");
+        switch_thread_rwlock_unlock(MODULE_INTERFACE->rwlock);
 		return;
 	}
 
@@ -1287,8 +1292,11 @@ SWITCH_STANDARD_API(cv_bug_api_function)
     init_context(context);
     parse_params(context, 2, argc, argv);
 
+    switch_thread_rwlock_rdlock(MODULE_INTERFACE->rwlock);
+    
 	if ((status = switch_core_media_bug_add(rsession, "cv_bug", NULL, cv_bug_callback, context, 0, SMBF_READ_VIDEO_PING, &bug)) != SWITCH_STATUS_SUCCESS) {
 		stream->write_function(stream, "-ERR Failure!\n");
+        switch_thread_rwlock_unlock(MODULE_INTERFACE->rwlock);
 		goto done;
 	} else {
 		switch_channel_set_private(channel, "_cv_bug_", bug);
@@ -1319,17 +1327,18 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_cv_load)
 
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
+	MODULE_INTERFACE = *module_interface;
+
 	SWITCH_ADD_APP(app_interface, "cv", "", "", cv_start_function, "", SAF_NONE);
 
 	SWITCH_ADD_APP(app_interface, "cv_bug", "connect cv", "connect cv", 
-                   cv_bug_start_function, "[</path/to/haar.xml>]", SAF_NONE);
+				   cv_bug_start_function, "[</path/to/haar.xml>]", SAF_NONE);
 
 	SWITCH_ADD_API(api_interface, "cv_bug", "cv_bug", cv_bug_api_function, CV_BUG_API_SYNTAX);
 
 	switch_console_set_complete("add cv_bug ::console::list_uuid ::[start:stop");
 
-
-    
+	
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
 }
