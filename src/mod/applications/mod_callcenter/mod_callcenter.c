@@ -1506,19 +1506,18 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 		const char *cid_number = NULL;
 		const char *cid_name_prefix = NULL;
 
-		if ((cid_name_prefix = switch_channel_get_variable(member_channel, "cc_outbound_cid_name_prefix"))) {
-			cid_name_freeable = switch_mprintf("%s%s", cid_name_prefix, h->member_cid_name);
-			cid_name = cid_name_freeable;
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_DEBUG, "Setting outbound caller_id_name to: %s\n", cid_name);
-		} else {
-			if (!(cid_name = switch_channel_get_variable(member_channel, "effective_caller_id_name"))) {
-				cid_name = h->member_cid_name;
-			}
-
-			if (!(cid_number = switch_channel_get_variable(member_channel, "effective_caller_id_number"))) {
-				cid_number = h->member_cid_number;
-			}
+		if (!(cid_name = switch_channel_get_variable(member_channel, "effective_caller_id_name"))) {
+			cid_name = h->member_cid_name;
 		}
+		if (!(cid_number = switch_channel_get_variable(member_channel, "effective_caller_id_number"))) {
+			cid_number = h->member_cid_number;
+		}
+		if ((cid_name_prefix = switch_channel_get_variable(member_channel, "cc_outbound_cid_name_prefix"))) {
+			cid_name_freeable = switch_mprintf("%s%s", cid_name_prefix, cid_name);
+			cid_name = cid_name_freeable;
+		}
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_DEBUG, "Setting outbound caller_id_name to: %s\n", cid_name);
+
 		switch_event_create(&ovars, SWITCH_EVENT_REQUEST_PARAMS);
 		switch_event_add_header(ovars, SWITCH_STACK_BOTTOM, "cc_queue", "%s", h->queue_name);
 		switch_event_add_header(ovars, SWITCH_STACK_BOTTOM, "cc_member_uuid", "%s", h->member_uuid);
