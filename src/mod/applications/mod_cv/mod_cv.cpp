@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  * Seven Du <dujinfang@gmail.com>
  *
@@ -129,7 +129,7 @@ typedef struct cv_context_s {
     int tick_x;
     uint32_t overlay_idx;
     uint32_t overlay_count;
-	switch_core_session_t *session;
+    switch_core_session_t *session;
     char *cascade_path;
     char *nested_cascade_path;
     switch_memory_pool_t *pool;
@@ -174,7 +174,7 @@ static void context_render_text(cv_context_t *context, struct overlay *overlay, 
     switch_rgb_color_t bgcolor = { 0 };
     int width, font_size = 0;
     int w, h;
-    
+
     if (!(context->w && context->h)) return;
 
     w = context->w;
@@ -201,19 +201,19 @@ static void context_render_text(cv_context_t *context, struct overlay *overlay, 
     width = (int) (float)(font_size * 0.75f * len);
 
 
-	switch_color_set_rgb(&bgcolor, overlay->bg);
+    switch_color_set_rgb(&bgcolor, overlay->bg);
 
     if (!overlay->png || (overlay->png->d_w != width || overlay->png->d_h != font_size * 2)) {
         switch_img_free(&overlay->png);
         overlay->png = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, width, font_size * 2, 1);
     }
-    
+
     switch_img_txt_handle_destroy(&overlay->txthandle);
     switch_img_txt_handle_create(&overlay->txthandle, overlay->font_face, overlay->fg, overlay->bg, font_size, 0, NULL);
 
 
     switch_img_fill(overlay->png, 0, 0, overlay->png->d_w, overlay->png->d_h, &bgcolor);
-    switch_img_txt_handle_render(overlay->txthandle, 
+    switch_img_txt_handle_render(overlay->txthandle,
                                  overlay->png,
                                  font_size / 2, font_size / 2,
                                  text, NULL, overlay->fg, overlay->bg, 0, 0);
@@ -225,7 +225,7 @@ static void context_render_text(cv_context_t *context, struct overlay *overlay, 
 static void check_text(cv_context_t *context)
 {
     int i;
-    
+
     for (i = 0; i < context->overlay_count; i++) {
         struct overlay *overlay = context->overlay[i];
 
@@ -263,7 +263,7 @@ static void ticker_tick(cv_context_t *context, switch_image_t *IMG)
 
     if (context->tick_x < 0) {
         img = switch_img_copy_rect(context->ticker->png,
-                                   abs(context->tick_x), 0, 
+                                   abs(context->tick_x), 0,
                                    context->ticker->png->d_w - abs(context->tick_x), context->ticker->png->d_h);
     }
 
@@ -421,7 +421,7 @@ static int add_overlay(cv_context_t *context, const char *png_path, const char *
         context->overlay[i]->png_path = new_png_path;
         if (!zstr(nick)) {
             context->overlay[i]->nick = switch_core_strdup(context->pool, nick);
-        }            
+        }
         r = (int) i;
     } else {
         context->overlay[i]->png_path = NULL;
@@ -528,7 +528,7 @@ static void parse_stats(struct detect_stats *stats, uint32_t size, uint64_t skip
     if (stats->itr >= 500) {
         reset_stats(stats);
     }
-    
+
     if (stats->itr >= 60) {
         if (stats->last_score > stats->avg + 10) {
             stats->above_avg_simo_count += skip;
@@ -578,7 +578,7 @@ void detectAndDraw(cv_context_t *context)
 
     int i = 0;
     vector<Rect> detectedObjs, detectedObjs2;
-    const static Scalar colors[] =  { CV_RGB(0,0,255),
+    const static Scalar colors[] =	{ CV_RGB(0,0,255),
                                       CV_RGB(0,128,255),
                                       CV_RGB(0,255,255),
                                       CV_RGB(0,255,0),
@@ -617,13 +617,13 @@ void detectAndDraw(cv_context_t *context)
         Point center;
         Scalar color = colors[i%8];
         int radius;
-        
+
         double aspect_ratio = (double)r->width/r->height;
 
         if (context->shape_idx >= MAX_SHAPES) {
             break;
         }
-        
+
 
         if(0.75 < aspect_ratio && aspect_ratio < 1.3 ) {
             center.x = switch_round_to_step(cvRound((r->x + r->width*0.5)*scale), 20);
@@ -651,7 +651,7 @@ void detectAndDraw(cv_context_t *context)
             context->shape[context->shape_idx].h = context->shape[context->shape_idx].y2 - context->shape[context->shape_idx].y;
             context->shape[context->shape_idx].cx = context->shape[context->shape_idx].x + (context->shape[context->shape_idx].w / 2);
             context->shape[context->shape_idx].cy = context->shape[context->shape_idx].y + (context->shape[context->shape_idx].h / 2);
-            
+
             if (context->debug || !context->overlay_count) {
                 rectangle( img, cvPoint(context->shape[context->shape_idx].x, context->shape[context->shape_idx].y),
                            cvPoint(context->shape[context->shape_idx].x2, context->shape[context->shape_idx].y2),
@@ -678,7 +678,7 @@ void detectAndDraw(cv_context_t *context)
                                                   |CV_HAAR_SCALE_IMAGE
                                                   ,
                                                   Size(30, 30) );
-        
+
 
 
         // Draw rectangle reflecting confidence
@@ -689,11 +689,11 @@ void detectAndDraw(cv_context_t *context)
         rectangle(img, cvPoint(0, img.rows), cvPoint(img.cols/10, img.rows - rect_height), col, -1);
 
         parse_stats(&context->nestDetected, nestedObjects.size(), context->skip);
-        
-        
+
+
         //printf("NEST: %d %f %d\n", context->nestDetected.simo_count, context->nestDetected.avg, context->nestDetected.last_score);
     }
-    
+
     switch_mutex_unlock(context->mutex);
 }
 
@@ -724,7 +724,7 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
 
     if (context->cascade) {
         switch_event_t *event;
-            
+
         if (!context->rawImage) {
             context->rawImage = cvCreateImage(cvSize(context->w, context->h), IPL_DEPTH_8U, 3);
             switch_assert(context->rawImage);
@@ -738,11 +738,11 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
                             context->rawImage->width, context->rawImage->height);
 
         detectAndDraw(context);
-            
+
         if (context->detected.simo_count > 20) {
             if (!context->detect_event) {
                 context->detect_event = 1;
-                    
+
                 if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, MY_EVENT_VIDEO_DETECT) == SWITCH_STATUS_SUCCESS) {
                     switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Detect-Type", "primary");
                     switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Detect-Disposition", "start");
@@ -754,9 +754,9 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
                     DUMP_EVENT(event);
                     switch_event_fire(&event);
                 }
-                    
+
                 switch_channel_execute_on(channel, "execute_on_cv_detect_primary");
-                    
+
             }
         } else {
             if (context->detected.simo_miss_count >= 20) {
@@ -773,7 +773,7 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
                         switch_event_fire(&event);
                     }
 
-                    
+
                     memset(context->shape, 0, sizeof(context->shape[0]) * MAX_SHAPES);
 
                     switch_channel_execute_on(channel, "execute_on_cv_detect_off_primary");
@@ -789,7 +789,7 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
         if (context->nestedCascade && context->detected.simo_count > 20) {
             switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "CHECKING: %d %d %f %d\n", context->nestDetected.itr, context->nestDetected.last_score, context->nestDetected.avg, context->nestDetected.above_avg_simo_count);
 
-            if (context->nestDetected.simo_count > 20 && context->nestDetected.last_score > context->nestDetected.avg && 
+            if (context->nestDetected.simo_count > 20 && context->nestDetected.last_score > context->nestDetected.avg &&
                 context->nestDetected.above_avg_simo_count > 5) {
                 if (!context->nest_detect_event) {
                     context->nest_detect_event = 1;
@@ -824,7 +824,7 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
                     switch_channel_execute_on(channel, "execute_on_cv_detect_off_nested");
                     reset_stats(&context->nestDetected);
                 }
-                    
+
                 context->nest_detect_event = 0;
             }
         }
@@ -862,10 +862,10 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
 
             shape_w = context->shape[0].w;
             shape_h = context->shape[0].h;
-            
+
             cx = context->shape[0].cx;
             cy = context->shape[0].cy;
-            
+
             if (overlay->abs != POS_NONE) {
                 if (overlay->scale_w || overlay->scale_h) {
                     if (overlay->scale_w && !overlay->scale_h) {
@@ -903,15 +903,15 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
                 if (overlay->xo) {
                     xo = overlay->xo * shape_w;
                 }
-                    
+
                 if (overlay->yo) {
                     yo = overlay->yo * context->shape[0].h;
                 }
-                    
+
                 x = cx - ((scale_w / 2) + xo);
                 y = cy - ((scale_h / 2) + yo);
             }
-            
+
             if (scale_w && scale_h && (overlay->png->d_w != scale_w || overlay->png->d_h != scale_h)) {
                 switch_img_scale(overlay->png, &img, scale_w, scale_h);
 
@@ -924,7 +924,7 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
             }
         }
     }
-    
+
     if (context->ticker_ready) {
         ticker_tick(context, frame->img);
     }
@@ -952,7 +952,7 @@ static int do_sort(cv_context_t *context)
             context->overlay[pos] = swap;
         }
     }
-    
+
     return 0;
 }
 
@@ -962,7 +962,7 @@ static void parse_params(cv_context_t *context, int start, int argc, char **argv
     char *nick = NULL;
 
     png_count = context->overlay_count;
-    
+
     for (i = start; i < argc ; i ++) {
         char *name = strdup(argv[i]);
         char *val = NULL;
@@ -1004,7 +1004,7 @@ static void parse_params(cv_context_t *context, int start, int argc, char **argv
                     context->overlay[png_idx]->scale_h = 0;
                 }
             } else if (!strcasecmp(name, "scale")) {
-                context->overlay[png_idx]->shape_scale = atof(val);                
+                context->overlay[png_idx]->shape_scale = atof(val);
             } else if (!strcasecmp(name, "skip")) {
                 context->skip = atoi(val);
             } else if (!strcasecmp(name, "debug")) {
@@ -1097,19 +1097,19 @@ SWITCH_STANDARD_APP(cv_start_function)
     char *lbuf;
     char *cascade_path;
     char *nested_cascade_path;
-	char *argv[25];
-	int argc;
+    char *argv[25];
+    int argc;
 
     init_context(&context);
 
-	if (data && (lbuf = switch_core_session_strdup(session, data))
-		&& (argc = switch_separate_string(lbuf, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
+    if (data && (lbuf = switch_core_session_strdup(session, data))
+        && (argc = switch_separate_string(lbuf, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
         context.cascade_path = argv[0];
         context.nested_cascade_path = argv[1];
 
         parse_params(&context, 2, argc, argv);
     }
-    
+
     switch_channel_answer(channel);
     switch_channel_set_flag_recursive(channel, CF_VIDEO_DECODED_READ);
     switch_channel_set_flag_recursive(channel, CF_VIDEO_ECHO);
@@ -1118,23 +1118,23 @@ SWITCH_STANDARD_APP(cv_start_function)
 
     switch_core_session_set_video_read_callback(session, video_thread_callback, &context);
 
-	while (switch_channel_ready(channel)) {
-		switch_status_t status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
+    while (switch_channel_ready(channel)) {
+        switch_status_t status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 
-		if (!SWITCH_READ_ACCEPTABLE(status)) {
-			break;
-		}
+        if (!SWITCH_READ_ACCEPTABLE(status)) {
+            break;
+        }
 
-		if (switch_test_flag(read_frame, SFF_CNG)) {
-			continue;
-		}
+        if (switch_test_flag(read_frame, SFF_CNG)) {
+            continue;
+        }
 
         memset(read_frame->data, 0, read_frame->datalen);
         switch_core_session_write_frame(session, read_frame, SWITCH_IO_FLAG_NONE, 0);
     }
 
     switch_core_session_set_video_read_callback(session, NULL, NULL);
-    
+
     uninit_context(&context);
 
     switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
@@ -1150,75 +1150,75 @@ static switch_bool_t cv_bug_callback(switch_media_bug_t *bug, void *user_data, s
 
     switch_channel_t *channel = switch_core_session_get_channel(context->session);
 
-	switch (type) {
-	case SWITCH_ABC_TYPE_INIT:
-		{
+    switch (type) {
+    case SWITCH_ABC_TYPE_INIT:
+        {
             switch_channel_set_flag_recursive(channel, CF_VIDEO_DECODED_READ);
-		}
-		break;
-	case SWITCH_ABC_TYPE_CLOSE:
-		{
+        }
+        break;
+    case SWITCH_ABC_TYPE_CLOSE:
+        {
             switch_thread_rwlock_unlock(MODULE_INTERFACE->rwlock);
             switch_channel_clear_flag_recursive(channel, CF_VIDEO_DECODED_READ);
             uninit_context(context);
-		}
-		break;
-	case SWITCH_ABC_TYPE_READ_VIDEO_PING: 
+        }
+        break;
+    case SWITCH_ABC_TYPE_READ_VIDEO_PING:
         {
             switch_frame_t *frame = switch_core_media_bug_get_video_ping_frame(bug);
             video_thread_callback(context->session, frame, context);
         }
         break;
-	default:
-		break;
-	}
+    default:
+        break;
+    }
 
-	return SWITCH_TRUE;
+    return SWITCH_TRUE;
 }
 
 SWITCH_STANDARD_APP(cv_bug_start_function)
 {
-	switch_media_bug_t *bug;
-	switch_status_t status;
-	switch_channel_t *channel = switch_core_session_get_channel(session);
+    switch_media_bug_t *bug;
+    switch_status_t status;
+    switch_channel_t *channel = switch_core_session_get_channel(session);
     cv_context_t *context;
-	char *lbuf = NULL;
-	int x, n;
-	char *argv[25] = { 0 };
-	int argc;
+    char *lbuf = NULL;
+    int x, n;
+    char *argv[25] = { 0 };
+    int argc;
 
-	if ((bug = (switch_media_bug_t *) switch_channel_get_private(channel, "_cv_bug_"))) {
-		if (!zstr(data) && !strcasecmp(data, "stop")) {
-			switch_channel_set_private(channel, "_cv_bug_", NULL);
-			switch_core_media_bug_remove(session, &bug);
-		} else {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Cannot run 2 at once on the same channel!\n");
-		}
-		return;
-	}
+    if ((bug = (switch_media_bug_t *) switch_channel_get_private(channel, "_cv_bug_"))) {
+        if (!zstr(data) && !strcasecmp(data, "stop")) {
+            switch_channel_set_private(channel, "_cv_bug_", NULL);
+            switch_core_media_bug_remove(session, &bug);
+        } else {
+            switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Cannot run 2 at once on the same channel!\n");
+        }
+        return;
+    }
 
     switch_channel_wait_for_flag(channel, CF_VIDEO_READY, SWITCH_TRUE, 10000, NULL);
 
-	context = (cv_context_t *) switch_core_session_alloc(session, sizeof(*context));
-	assert(context != NULL);
+    context = (cv_context_t *) switch_core_session_alloc(session, sizeof(*context));
+    assert(context != NULL);
     context->session = session;
 
     init_context(context);
-    
-	if (data && (lbuf = switch_core_session_strdup(session, data))
-		&& (argc = switch_separate_string(lbuf, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
+
+    if (data && (lbuf = switch_core_session_strdup(session, data))
+        && (argc = switch_separate_string(lbuf, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
         parse_params(context, 1, argc, argv);
     }
 
     switch_thread_rwlock_rdlock(MODULE_INTERFACE->rwlock);
 
-	if ((status = switch_core_media_bug_add(session, "cv_bug", NULL, cv_bug_callback, context, 0, SMBF_READ_VIDEO_PING, &bug)) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failure!\n");
+    if ((status = switch_core_media_bug_add(session, "cv_bug", NULL, cv_bug_callback, context, 0, SMBF_READ_VIDEO_PING, &bug)) != SWITCH_STATUS_SUCCESS) {
+        switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failure!\n");
         switch_thread_rwlock_unlock(MODULE_INTERFACE->rwlock);
-		return;
-	}
+        return;
+    }
 
-	switch_channel_set_private(channel, "_cv_bug_", bug);
+    switch_channel_set_private(channel, "_cv_bug_", bug);
 
 }
 
@@ -1226,45 +1226,45 @@ SWITCH_STANDARD_APP(cv_bug_start_function)
 #define CV_BUG_API_SYNTAX "<uuid> [start|stop]"
 SWITCH_STANDARD_API(cv_bug_api_function)
 {
-	switch_core_session_t *rsession = NULL;
-	switch_channel_t *channel = NULL;
-	switch_media_bug_t *bug;
-	switch_status_t status;
+    switch_core_session_t *rsession = NULL;
+    switch_channel_t *channel = NULL;
+    switch_media_bug_t *bug;
+    switch_status_t status;
     cv_context_t *context;
-	char *mycmd = NULL;
-	int argc = 0;
-	char *argv[25] = { 0 };
-	char *uuid = NULL;
-	char *action = NULL;
+    char *mycmd = NULL;
+    int argc = 0;
+    char *argv[25] = { 0 };
+    char *uuid = NULL;
+    char *action = NULL;
     char *cascade_path = NULL;
     char *nested_cascade_path = NULL;
-	char *lbuf = NULL;
-	int x, n, i;
+    char *lbuf = NULL;
+    int x, n, i;
 
-	if (zstr(cmd)) {
-		goto usage;
-	}
+    if (zstr(cmd)) {
+        goto usage;
+    }
 
-	if (!(mycmd = strdup(cmd))) {
-		goto usage;
-	}
+    if (!(mycmd = strdup(cmd))) {
+        goto usage;
+    }
 
-	if ((argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) < 2) {
-		goto usage;
-	}
+    if ((argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) < 2) {
+        goto usage;
+    }
 
-	uuid = argv[0];
-	action = argv[1];
+    uuid = argv[0];
+    action = argv[1];
 
-	if (!(rsession = switch_core_session_locate(uuid))) {
-		stream->write_function(stream, "-ERR Cannot locate session!\n");
-		goto done;
-	}
+    if (!(rsession = switch_core_session_locate(uuid))) {
+        stream->write_function(stream, "-ERR Cannot locate session!\n");
+        goto done;
+    }
 
-	channel = switch_core_session_get_channel(rsession);
+    channel = switch_core_session_get_channel(rsession);
 
-	if ((bug = (switch_media_bug_t *) switch_channel_get_private(channel, "_cv_bug_"))) {
-		if (!zstr(action)) {
+    if ((bug = (switch_media_bug_t *) switch_channel_get_private(channel, "_cv_bug_"))) {
+        if (!zstr(action)) {
             if (!strcasecmp(action, "stop")) {
                 switch_channel_set_private(channel, "_cv_bug_", NULL);
                 switch_core_media_bug_remove(rsession, &bug);
@@ -1279,42 +1279,42 @@ SWITCH_STANDARD_API(cv_bug_api_function)
             stream->write_function(stream, "-ERR Invalid action\n");
         }
         goto done;
-	}
+    }
 
-	if (!zstr(action) && strcasecmp(action, "start")) {
-		goto usage;
-	}
+    if (!zstr(action) && strcasecmp(action, "start")) {
+        goto usage;
+    }
 
-	context = (cv_context_t *) switch_core_session_alloc(rsession, sizeof(*context));
-	assert(context != NULL);
-	context->session = rsession;
+    context = (cv_context_t *) switch_core_session_alloc(rsession, sizeof(*context));
+    assert(context != NULL);
+    context->session = rsession;
 
     init_context(context);
     parse_params(context, 2, argc, argv);
 
     switch_thread_rwlock_rdlock(MODULE_INTERFACE->rwlock);
-    
-	if ((status = switch_core_media_bug_add(rsession, "cv_bug", NULL, cv_bug_callback, context, 0, SMBF_READ_VIDEO_PING, &bug)) != SWITCH_STATUS_SUCCESS) {
-		stream->write_function(stream, "-ERR Failure!\n");
+
+    if ((status = switch_core_media_bug_add(rsession, "cv_bug", NULL, cv_bug_callback, context, 0, SMBF_READ_VIDEO_PING, &bug)) != SWITCH_STATUS_SUCCESS) {
+        stream->write_function(stream, "-ERR Failure!\n");
         switch_thread_rwlock_unlock(MODULE_INTERFACE->rwlock);
-		goto done;
-	} else {
-		switch_channel_set_private(channel, "_cv_bug_", bug);
-		stream->write_function(stream, "+OK Success\n");
-		goto done;
-	}
+        goto done;
+    } else {
+        switch_channel_set_private(channel, "_cv_bug_", bug);
+        stream->write_function(stream, "+OK Success\n");
+        goto done;
+    }
 
 
  usage:
-	stream->write_function(stream, "-USAGE: %s\n", CV_BUG_API_SYNTAX);
+    stream->write_function(stream, "-USAGE: %s\n", CV_BUG_API_SYNTAX);
 
  done:
-	if (rsession) {
-		switch_core_session_rwunlock(rsession);
-	}
+    if (rsession) {
+        switch_core_session_rwunlock(rsession);
+    }
 
-	switch_safe_free(mycmd);
-	return SWITCH_STATUS_SUCCESS;
+    switch_safe_free(mycmd);
+    return SWITCH_STATUS_SUCCESS;
 }
 
 ///////
@@ -1323,24 +1323,24 @@ SWITCH_STANDARD_API(cv_bug_api_function)
 SWITCH_MODULE_LOAD_FUNCTION(mod_cv_load)
 {
     switch_application_interface_t *app_interface;
-	switch_api_interface_t *api_interface;
+    switch_api_interface_t *api_interface;
 
-	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
+    *module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
-	MODULE_INTERFACE = *module_interface;
+    MODULE_INTERFACE = *module_interface;
 
-	SWITCH_ADD_APP(app_interface, "cv", "", "", cv_start_function, "", SAF_NONE);
+    SWITCH_ADD_APP(app_interface, "cv", "", "", cv_start_function, "", SAF_NONE);
 
-	SWITCH_ADD_APP(app_interface, "cv_bug", "connect cv", "connect cv", 
-				   cv_bug_start_function, "[</path/to/haar.xml>]", SAF_NONE);
+    SWITCH_ADD_APP(app_interface, "cv_bug", "connect cv", "connect cv",
+                   cv_bug_start_function, "[</path/to/haar.xml>]", SAF_NONE);
 
-	SWITCH_ADD_API(api_interface, "cv_bug", "cv_bug", cv_bug_api_function, CV_BUG_API_SYNTAX);
+    SWITCH_ADD_API(api_interface, "cv_bug", "cv_bug", cv_bug_api_function, CV_BUG_API_SYNTAX);
 
-	switch_console_set_complete("add cv_bug ::console::list_uuid ::[start:stop");
+    switch_console_set_complete("add cv_bug ::console::list_uuid ::[start:stop");
 
-	
-	/* indicate that the module should continue to be loaded */
-	return SWITCH_STATUS_SUCCESS;
+
+    /* indicate that the module should continue to be loaded */
+    return SWITCH_STATUS_SUCCESS;
 }
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_cv_shutdown)
@@ -1348,13 +1348,15 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_cv_shutdown)
     return SWITCH_STATUS_UNLOAD;
 }
 
+
 /* For Emacs:
- * Local Variables:
- * mode:c
- * indent-tabs-mode:nil
- * tab-width:4
- * c-basic-offset:4
- * End:
- * For VIM:
- * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet:
- */
+* Local Variables:
+* mode:c
+* indent-tabs-mode:t
+* tab-width:4
+* c-basic-offset:4
+* End:
+* For VIM:
+* vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet:
+*/
+

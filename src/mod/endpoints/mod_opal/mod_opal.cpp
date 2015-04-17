@@ -1508,7 +1508,7 @@ switch_status_t FSMediaStream::write_frame(const switch_frame_t *frame, switch_i
 /* For Emacs:
  * Local Variables:
  * mode:c
- * indent-tabs-mode:nil
+ * indent-tabs-mode:t
  * tab-width:4
  * c-basic-offset:4
  * End:
