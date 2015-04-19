@@ -125,6 +125,7 @@ SWITCH_DECLARE(void) switch_img_free(switch_image_t **img)
 SWITCH_DECLARE(void) switch_img_patch(switch_image_t *IMG, switch_image_t *img, int x, int y)
 {
 	int i, len, max_h;
+	int xoff = 0, yoff = 0;
 
 	switch_assert(IMG->fmt == SWITCH_IMG_FMT_I420);
 
@@ -152,15 +153,26 @@ SWITCH_DECLARE(void) switch_img_patch(switch_image_t *IMG, switch_image_t *img, 
 		return;
 	}
 
-	max_h = MIN(y + img->d_h, IMG->d_h);
-	len = MIN(img->d_w, IMG->d_w - x);
+	if (x < 0) {
+		xoff = -x;
+		x = 0;
+	}
+
+	if (y < 0) {
+		yoff = -y;
+		y = 0;
+	}
+
+	max_h = MIN(y + img->d_h - yoff, IMG->d_h);
+	len = MIN(img->d_w - xoff, IMG->d_w - x);
+
 
 	if (x & 0x1) { x++; len--; }
 	if (y & 0x1) y++;
 	if (len <= 0) return;
 
 	for (i = y; i < max_h; i++) {
-		memcpy(IMG->planes[SWITCH_PLANE_Y] + IMG->stride[SWITCH_PLANE_Y] * i + x, img->planes[SWITCH_PLANE_Y] + img->stride[SWITCH_PLANE_Y] * (i - y), len);
+		memcpy(IMG->planes[SWITCH_PLANE_Y] + IMG->stride[SWITCH_PLANE_Y] * i + x, img->planes[SWITCH_PLANE_Y] + img->stride[SWITCH_PLANE_Y] * (i - y + yoff) + xoff, len);
 	}
 
 	if ((len & 1) && (x + len) < img->d_w - 1) len++;
@@ -168,8 +180,8 @@ SWITCH_DECLARE(void) switch_img_patch(switch_image_t *IMG, switch_image_t *img, 
 	len /= 2;
 
 	for (i = y; i < max_h; i += 2) {
-		memcpy(IMG->planes[SWITCH_PLANE_U] + IMG->stride[SWITCH_PLANE_U] * i / 2 + x / 2, img->planes[SWITCH_PLANE_U] + img->stride[SWITCH_PLANE_U] * (i - y) / 2, len);
-		memcpy(IMG->planes[SWITCH_PLANE_V] + IMG->stride[SWITCH_PLANE_V] * i / 2 + x / 2, img->planes[SWITCH_PLANE_V] + img->stride[SWITCH_PLANE_V] * (i - y) / 2, len);
+		memcpy(IMG->planes[SWITCH_PLANE_U] + IMG->stride[SWITCH_PLANE_U] * i / 2 + x / 2, img->planes[SWITCH_PLANE_U] + img->stride[SWITCH_PLANE_U] * (i - y + yoff) / 2 + xoff / 2, len);
+		memcpy(IMG->planes[SWITCH_PLANE_V] + IMG->stride[SWITCH_PLANE_V] * i / 2 + x / 2, img->planes[SWITCH_PLANE_V] + img->stride[SWITCH_PLANE_V] * (i - y + yoff) / 2 + xoff / 2, len);
 	}
 }
 
