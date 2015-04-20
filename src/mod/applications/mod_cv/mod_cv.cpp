@@ -242,7 +242,6 @@ static void check_text(cv_context_t *context)
 static void ticker_tick(cv_context_t *context, switch_image_t *IMG)
 {
     int x = 0, y = 0;
-    switch_image_t *img;
 
     if (!context->ticker || !context->ticker->text) return;
 
@@ -260,19 +259,7 @@ static void ticker_tick(cv_context_t *context, switch_image_t *IMG)
 
     switch_img_find_position(context->tick_pos, context->w, context->h, context->ticker_img->d_w, context->ticker_img->d_h, &x, &y);
     switch_img_patch(IMG, context->ticker_img, x, y);
-
-    if (context->tick_x < 0) {
-        img = switch_img_copy_rect(context->ticker->png,
-                                   abs(context->tick_x), 0,
-                                   context->ticker->png->d_w - abs(context->tick_x), context->ticker->png->d_h);
-    }
-
-    if (img) {
-        switch_img_patch(IMG, img, 0, y);
-        switch_img_free(&img);
-    } else {
-        switch_img_patch(IMG, context->ticker->png, context->tick_x, y);
-    }
+	switch_img_patch(IMG, context->ticker->png, context->tick_x, y);
 
     context->tick_x -= context->tick_speed;
 }
