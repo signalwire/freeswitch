@@ -1044,6 +1044,8 @@ static void scale_and_patch(conference_obj_t *conference, mcu_layer_t *layer, sw
 	IMG = conference->canvas->img;
 	img = ximg ? ximg : layer->cur_img;
 
+	switch_assert(IMG && img);
+
 	if (layer->refresh) {
 		switch_rgb_color_t color;
 		switch_color_set_rgb(&color, conference->video_layout_bgcolor);
@@ -2002,17 +2004,20 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 							if (img != imember->avatar_png_img) {
 								switch_img_free(&img);
 							}
-
-						} else {
-							layer->cur_img = img;
+							
 						}
 
+						if (img && !layer->cur_img) {
+							layer->cur_img = img;
+						}
+						
 						img = NULL;
 						layer->tagged = 1;
 					}
 				}
 
 				switch_mutex_unlock(conference->canvas->mutex);
+
 				if (img && img != imember->avatar_png_img) {
 					switch_img_free(&img);
 				}
@@ -2045,8 +2050,10 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 						layer->refresh = 1;
 						conference->canvas->refresh++;
 					}
-
-					scale_and_patch(conference, layer, NULL, SWITCH_FALSE);
+					
+					if (layer->cur_img) {
+						scale_and_patch(conference, layer, NULL, SWITCH_FALSE);
+					}
 					layer->tagged = 0;
 				}
 			}
