@@ -126,15 +126,15 @@ switch_status_t mod_amqp_connection_open(mod_amqp_connection_t *connections, mod
 		}
 	}
 
+	*active = connection_attempt;
+
 	if (!connection_attempt) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Profile[%s] could not connect to any AMQP brokers\n", profile_name);
-		*active = NULL;
 		return SWITCH_STATUS_GENERR;
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Profile[%s] opened socket connection to AMQP broker %s:%d\n",
 					  profile_name, connection_attempt->hostname, connection_attempt->port);
-	*active = connection_attempt;
 
 	/* We have a connection, now log in */
 	status = amqp_login_with_properties(newConnection,
@@ -148,6 +148,8 @@ switch_status_t mod_amqp_connection_open(mod_amqp_connection_t *connections, mod
 										connection_attempt->password);
 
 	if (mod_amqp_log_if_amqp_error(status, "Logging in")) {
+		mod_amqp_close_connection(*active);
+		*active = NULL;
 		return SWITCH_STATUS_GENERR;
 	}
 
@@ -181,6 +183,7 @@ switch_status_t mod_amqp_connection_create(mod_amqp_connection_t **conn, switch_
 
 	new_con->name = switch_core_strdup(pool, name);
 	new_con->state = NULL;
+	new_con->next = NULL;
 
 	for (param = switch_xml_child(cfg, "param"); param; param = param->next) {
 		char *var = (char *) switch_xml_attr_soft(param, "name");
