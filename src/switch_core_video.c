@@ -130,8 +130,8 @@ SWITCH_DECLARE(void) switch_img_patch(switch_image_t *IMG, switch_image_t *img, 
 	switch_assert(IMG->fmt == SWITCH_IMG_FMT_I420);
 
 	if (img->fmt == SWITCH_IMG_FMT_ARGB) {
-		int max_w = MIN(img->d_w, IMG->d_w - x);
-		int max_h = MIN(img->d_h, IMG->d_h - y);
+		int max_w = MIN(img->d_w, IMG->d_w - abs(x));
+		int max_h = MIN(img->d_h, IMG->d_h - abs(y));
 		int j;
 		uint8_t alpha;
 		switch_rgb_color_t *rgb_color;
