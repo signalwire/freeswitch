@@ -316,7 +316,8 @@ SWITCH_DECLARE(uint32_t) switch_core_media_get_video_fps(switch_core_session_t *
 {
 	switch_media_handle_t *smh;
 	time_t now;
-
+	uint32_t fps;
+	
 	switch_assert(session);
 	
 	if (!(smh = session->media_handle)) {
@@ -333,7 +334,10 @@ SWITCH_DECLARE(uint32_t) switch_core_media_get_video_fps(switch_core_session_t *
 		return 0;
 	}
 	
-	return switch_round_to_step(smh->vid_frames / (now - smh->vid_started), 5);
+	fps = switch_round_to_step(smh->vid_frames / (now - smh->vid_started), 5);
+	if (fps < 15) fps = 15;
+
+	return fps;
 }
 
 SWITCH_DECLARE(void) switch_core_media_pass_zrtp_hash2(switch_core_session_t *aleg_session, switch_core_session_t *bleg_session)
