@@ -167,7 +167,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 				tmp *= 1048576;
 			}
 			
-			if (tmp > 0 && tmp < 52428800 /*50mb*/) {
+			if (tmp > 0 && tmp < 104857600 /*100mb*/) {
 				fh->mm.vbuf = tmp;
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid buffer size: %d\n", tmp);
