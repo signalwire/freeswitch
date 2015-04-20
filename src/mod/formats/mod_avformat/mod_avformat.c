@@ -604,13 +604,8 @@ SWITCH_STANDARD_APP(record_av_function)
 		const AVCodecDescriptor *desc;
 
 		if (!strncmp(data, "rtmp://", 7)) {
-		 	if (fmt->video_codec != AV_CODEC_ID_H264 ) {
-				fmt->video_codec = AV_CODEC_ID_H264; // force H264
-			}
-
-			if (fmt->audio_codec != AV_CODEC_ID_AAC) {
-				fmt->audio_codec = AV_CODEC_ID_AAC;  // force AAC
-			}
+			fmt->video_codec = AV_CODEC_ID_H264;
+			fmt->audio_codec = AV_CODEC_ID_AAC;
 		}
 
 		desc = avcodec_descriptor_get(fmt->video_codec);
@@ -1212,17 +1207,13 @@ static switch_status_t av_file_open(switch_file_handle_t *handle, const char *pa
 			if (fmt->video_codec != AV_CODEC_ID_H264 ) {
 				fmt->video_codec = AV_CODEC_ID_H264; // force H264
 			}
-
-			if (fmt->audio_codec != AV_CODEC_ID_AAC) {
-				fmt->audio_codec = AV_CODEC_ID_AAC;  // force AAC
-			}
-
-
-
+			
+			fmt->audio_codec = AV_CODEC_ID_AAC;
+			
 			handle->mm.samplerate = 44100;
 			handle->mm.ab = 128;
 
-			if (handle->mm.vw && handle->mm.vh) {
+			if (!handle->mm.vb && handle->mm.vw && handle->mm.vh) {
 				switch(handle->mm.vh) {
 				case 240:
 					handle->mm.vb = 400;
@@ -1248,7 +1239,6 @@ static switch_status_t av_file_open(switch_file_handle_t *handle, const char *pa
 			if (handle->mm.fps > 0.0f) {
 				handle->mm.keyint = (int) 2.0f * handle->mm.fps;
 			}
-
 		}
 
 		desc = avcodec_descriptor_get(fmt->video_codec);
