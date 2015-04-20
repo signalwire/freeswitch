@@ -137,6 +137,19 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 			}
 		}
 
+
+		if ((val = switch_event_get_header(fh->params, "vb"))) {
+			tmp = atoi(val);
+			
+			if (strrchr(val, 'k')) {
+				tmp *= 1024;
+			} else if (strrchr(val, 'm')) {
+				tmp *= 1048576;
+			}
+
+			fh->mm.vb = tmp;
+		}
+
 		if ((val = switch_event_get_header(fh->params, "vw"))) {
 			tmp = atoi(val);
 			if (tmp > 0) {
