@@ -4146,12 +4146,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 				smh->num_negotiated_codecs = 0;
 
 				for(j = 0; j < m_idx; j++) {
-					payload_map_t *pmap;
-					if (matches[j].imp->codec_type != SWITCH_CODEC_TYPE_AUDIO) {
-						continue;
-					}
-
-					pmap = switch_core_media_add_payload_map(session, 
+					payload_map_t *pmap = switch_core_media_add_payload_map(session, 
 																			SWITCH_MEDIA_TYPE_AUDIO,
 																			matches[j].map->rm_encoding,
 																			matches[j].imp->modname,
