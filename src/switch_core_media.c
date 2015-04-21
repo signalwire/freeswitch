@@ -3404,6 +3404,11 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 			sdp_rtpmap_t *map;
 			int ice = 0;
 
+			nm_idx = 0;
+			m_idx = 0;
+			memset(matches, 0, sizeof(matches[0]) * MAX_MATCHES);
+			memset(near_matches, 0, sizeof(near_matches[0]) * MAX_MATCHES);
+
 			if (!sendonly && (m->m_mode == sdp_sendonly || m->m_mode == sdp_inactive)) {
 				sendonly = 1;
 			}
@@ -3797,12 +3802,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 				smh->num_negotiated_codecs = 0;
 
 				for(j = 0; j < m_idx; j++) {
-					payload_map_t *pmap;
-					if (matches[j].imp->codec_type != SWITCH_CODEC_TYPE_AUDIO) {
-						continue;
-					}
-
-					pmap = switch_core_media_add_payload_map(session, 
+					payload_map_t *pmap = switch_core_media_add_payload_map(session, 
 																			SWITCH_MEDIA_TYPE_AUDIO,
 																			matches[j].map->rm_encoding,
 																			matches[j].map->rm_fmtp,
