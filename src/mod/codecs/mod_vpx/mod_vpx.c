@@ -498,6 +498,9 @@ static switch_status_t switch_vpx_init(switch_codec_t *codec, switch_codec_flag_
 	context->codec_settings.video.width = 320;
 	context->codec_settings.video.height = 240;
 
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "VPX VER:%s VPX_IMAGE_ABI_VERSION:%d VPX_CODEC_ABI_VERSION:%d\n",
+		vpx_codec_version_str(), VPX_IMAGE_ABI_VERSION, VPX_CODEC_ABI_VERSION);
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
