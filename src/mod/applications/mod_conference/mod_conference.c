@@ -404,6 +404,7 @@ typedef struct mcu_layer_s {
 	switch_image_t *cur_img;
 	switch_image_t *banner_img;
 	switch_image_t *logo_img;
+	switch_image_t *logo_text_img;
 	switch_image_t *mute_img;
 	switch_img_txt_handle_t *txthandle;
 	conference_file_node_t *fnode;
@@ -1019,6 +1020,7 @@ static void reset_layer(mcu_canvas_t *canvas, mcu_layer_t *layer)
 
 	switch_img_free(&layer->banner_img);
 	switch_img_free(&layer->logo_img);
+	switch_img_free(&layer->logo_text_img);
 
 	layer->banner_patched = 0;
 	layer->is_avatar = 0;
@@ -1108,6 +1110,13 @@ static void scale_and_patch(conference_obj_t *conference, mcu_layer_t *layer, sw
 			switch_img_fit(&layer->logo_img, ew, eh);
 			switch_img_find_position(layer->logo_pos, ew, eh, layer->logo_img->d_w, layer->logo_img->d_h, &ex, &ey);
 			switch_img_patch(IMG, layer->logo_img, x_pos + ex, y_pos + ey);
+			if (layer->logo_text_img) {
+				int tx = 0, ty = 0;
+				switch_img_find_position(POS_LEFT_BOT, 
+										 layer->logo_img->d_w, layer->logo_img->d_h, layer->logo_text_img->d_w, layer->logo_text_img->d_h, &tx, &ty);
+				switch_img_patch(IMG, layer->logo_text_img, x_pos + ex + tx, y_pos + ey + ty);
+			}
+
 		}
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "insert at %d,%d\n", 0, 0);
@@ -1187,6 +1196,7 @@ static void layer_set_logo(conference_member_t *member, mcu_layer_t *layer, cons
 
 	if (path) {
 		switch_img_free(&layer->logo_img);
+		switch_img_free(&layer->logo_text_img);
 	}
 
 	if (*path == '{') {
@@ -1232,7 +1242,13 @@ static void layer_set_logo(conference_member_t *member, mcu_layer_t *layer, cons
 		layer->logo_img = switch_img_read_png(path, SWITCH_IMG_FMT_ARGB);
 	}
 
-	layer->logo_pos = pos;
+	if (layer->logo_img) {
+		layer->logo_pos = pos;
+
+		if ((var = switch_event_get_header(params, "text"))) {
+			layer->logo_text_img = switch_img_write_text_img(layer->screen_w, layer->screen_h, var);
+		}
+	}
 	
 	if (params) switch_event_destroy(&params);
 
@@ -1330,6 +1346,7 @@ static void layer_set_banner(conference_member_t *member, mcu_layer_t *layer, co
 
 	switch_img_free(&layer->banner_img);
 	switch_img_free(&layer->logo_img);
+	switch_img_free(&layer->logo_text_img);
 	layer->banner_img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, layer->screen_w, font_size * 2, 1);
 
 	if (layer->txthandle) {
@@ -2170,6 +2187,7 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 		layer->banner_patched = 0;
 		switch_img_free(&layer->banner_img);
 		switch_img_free(&layer->logo_img);
+		switch_img_free(&layer->logo_text_img);
 		switch_img_free(&layer->mute_img);
 		switch_mutex_unlock(conference->canvas->mutex);
 

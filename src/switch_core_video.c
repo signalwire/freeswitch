@@ -744,6 +744,73 @@ SWITCH_DECLARE(switch_status_t) switch_img_txt_handle_render(switch_img_txt_hand
 #endif
 }
 
+SWITCH_DECLARE(switch_image_t *) switch_img_write_text_img(int w, int h, const char *text)
+{
+	const char *fg ="#cccccc";
+	const char *bg = "#142e55";
+	const char *font_face = NULL;
+	const char *fontsz = "4%";
+	const char *txt = "Value Optimized Out!";
+	int argc = 0;
+	char *argv[6] = { 0 };
+    switch_rgb_color_t bgcolor = { 0 };
+    int width, font_size = 0;
+	int len = 0;
+	char *duptxt = strdup(text);
+    switch_img_txt_handle_t *txthandle = NULL;
+	switch_image_t *txtimg = NULL;
+
+	if (strchr(text, ':')) {
+		argc = switch_split(duptxt, ':', argv);
+		
+		if (argc > 0) {
+			fg = argv[0];
+		}
+
+		if (argc > 1) {
+			bg = argv[1];
+		}
+		
+		if (argc > 2) {
+			font_face = argv[2];
+		}
+		
+		if (argc > 3) {
+			fontsz = argv[3];
+		}
+
+		if (argc > 4) {
+			txt = argv[4];
+		}
+	}
+
+	if (!txt) txt = duptxt;
+
+	if (strrchr(fontsz, '%')) {
+		font_size = 1 + ((int) (float)h * (atof(fontsz) / 100.0f));
+	} else {
+		font_size = atoi(fontsz);
+	}
+
+    len = strlen(txt);
+
+    if (len < 5) len = 5;
+
+    width = (int) (float)(font_size * 0.75f * len);
+	
+	txtimg = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, width, font_size * 2, 1);
+
+	switch_img_txt_handle_create(&txthandle, font_face, fg, bg, font_size, 0, NULL);
+	switch_color_set_rgb(&bgcolor, bg);
+	
+    switch_img_fill(txtimg, 0, 0, txtimg->d_w, txtimg->d_h, &bgcolor);
+    switch_img_txt_handle_render(txthandle,
+                                 txtimg,
+                                 font_size / 2, font_size / 2,
+                                 txt, NULL, fg, bg, 0, 0);
+	switch_img_txt_handle_destroy(&txthandle);
+	return txtimg;
+}
 
 /* WARNING:
    patch a big IMG with a rect hole, note this function is WIP ......

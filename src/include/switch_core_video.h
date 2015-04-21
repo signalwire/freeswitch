@@ -239,6 +239,7 @@ SWITCH_DECLARE(switch_status_t) switch_img_fit(switch_image_t **srcP, int width,
 SWITCH_DECLARE(switch_img_position_t) parse_img_position(const char *name);
 SWITCH_DECLARE(void) switch_img_find_position(switch_img_position_t pos, int sw, int sh, int iw, int ih, int *xP, int *yP);
 SWITCH_DECLARE(switch_status_t) switch_img_convert(switch_image_t *src, switch_convert_fmt_t fmt, void *dest, switch_size_t *size);
+SWITCH_DECLARE(switch_image_t *) switch_img_write_text_img(int w, int h, const char *text);
 
 /** @} */
 
