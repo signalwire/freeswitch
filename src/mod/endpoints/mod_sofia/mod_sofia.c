@@ -647,7 +647,6 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-
 	b_sdp = switch_channel_get_variable(channel, SWITCH_B_SDP_VARIABLE);
 	is_proxy = (switch_channel_test_flag(channel, CF_PROXY_MODE) || switch_channel_test_flag(channel, CF_PROXY_MEDIA));
 	is_3pcc = (sofia_test_pflag(tech_pvt->profile, PFLAG_3PCC_PROXY) && sofia_test_flag(tech_pvt, TFLAG_3PCC));
@@ -665,15 +664,16 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 		/* This if statement check and handles the 3pcc proxy mode */
 		if (is_3pcc) {
 
-			switch_channel_set_flag(channel, CF_3PCC);
+			if (!(sofia_test_pflag(tech_pvt->profile, PFLAG_3PCC_PROXY))) {
+				switch_channel_set_flag(channel, CF_3PCC);
+			}
 
-			if(!is_proxy) {
-			switch_core_media_prepare_codecs(tech_pvt->session, SWITCH_TRUE);
-			tech_pvt->mparams.local_sdp_str = NULL;
+			if (!is_proxy) {
+				switch_core_media_prepare_codecs(tech_pvt->session, SWITCH_TRUE);
+				tech_pvt->mparams.local_sdp_str = NULL;
 
-			switch_core_media_choose_port(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO, 0);
-			switch_core_session_set_ice(session);
-			switch_core_media_gen_local_sdp(session, SDP_TYPE_RESPONSE, NULL, 0, NULL, 0);
+				switch_core_media_choose_port(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO, 0);
+				switch_core_media_gen_local_sdp(session, SDP_TYPE_RESPONSE, NULL, 0, NULL, 0);
 			} else {
 				switch_core_media_set_local_sdp(session, b_sdp, SWITCH_TRUE);
 
