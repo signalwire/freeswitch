@@ -231,12 +231,18 @@ static switch_status_t add_stream(OutputStream *ost, AVFormatContext *oc, AVCode
 		/* Resolution must be a multiple of two. */
 		c->width    = ost->width;
 		c->height   = ost->height;
+		ost->st->time_base.den = 1000;
+		ost->st->time_base.num = 1;
 		c->time_base.den = 1000;
 		c->time_base.num = 1;
 		c->gop_size      = 25; /* emit one intra frame every x frames at most */
 		c->pix_fmt       = AV_PIX_FMT_YUV420P;
 		c->thread_count  = threads;
 		c->rc_initial_buffer_occupancy = buffer_bytes * 8;
+
+		if (codec_id == AV_CODEC_ID_H264) {
+			c->ticks_per_frame = 2;
+		}
 
 		if (codec_id == AV_CODEC_ID_VP8) {
 			av_set_options_string(c, "quality=realtime", "=", ":");
@@ -1209,7 +1215,7 @@ static switch_status_t av_file_open(switch_file_handle_t *handle, const char *pa
 			}
 			
 			fmt->audio_codec = AV_CODEC_ID_AAC;
-			
+			handle->samplerate = 44100;
 			handle->mm.samplerate = 44100;
 			handle->mm.ab = 128;
 
