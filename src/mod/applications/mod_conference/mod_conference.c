@@ -391,6 +391,7 @@ typedef struct mcu_layer_s {
 	int member_id;
 	int idx;
 	int tagged;
+	int bugged;
 	int screen_w;
 	int screen_h;
 	int x_pos;
@@ -1100,6 +1101,15 @@ static void scale_and_patch(conference_obj_t *conference, mcu_layer_t *layer, sw
 		switch_assert(layer->img);
 
 		if (switch_img_scale(img, &layer->img, img_w, img_h) == SWITCH_STATUS_SUCCESS) {
+			if (layer->bugged && layer->member_id > -1) {
+				conference_member_t *member;
+				if ((member = conference_member_get(conference, layer->member_id))) {
+					switch_frame_t write_frame = { 0 };
+					write_frame.img = layer->img;
+					switch_core_media_bug_patch_video(member->session, &write_frame);
+					switch_thread_rwlock_unlock(member->rwlock);
+				}
+			}
 			switch_img_patch(IMG, layer->img, x_pos, y_pos);
 		}
 
@@ -1921,11 +1931,12 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 			} else {
 				img = imember->avatar_png_img;
 			}
-								
+			
+			layer = NULL;
+					
 			if (img) {
 				int i;
 
-				layer = NULL;
 				used++;
 
 				switch_mutex_lock(conference->canvas->mutex);
@@ -2030,6 +2041,10 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 						
 						img = NULL;
 						layer->tagged = 1;
+
+						if (switch_core_media_bug_count(imember->session, "patch:video")) {
+							layer->bugged = 1;
+						}
 					}
 				}
 
@@ -2073,6 +2088,7 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 					}
 					layer->tagged = 0;
 				}
+				layer->bugged = 0;
 			}
 		}
 
@@ -2162,14 +2178,14 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 			write_frame.packetlen = 0;
 			
 			//switch_core_session_write_video_frame(imember->session, &write_frame, SWITCH_IO_FLAG_NONE, 0);
-
+			
 			if (switch_frame_buffer_dup(imember->fb, &write_frame, &dupframe) == SWITCH_STATUS_SUCCESS) {
 				switch_queue_push(imember->mux_out_queue, dupframe);
 				dupframe = NULL;
 			}
 
 			if (imember->session) {
-				switch_core_session_rwunlock(imember->session);
+				switch_core_session_rwunlock(imember->session);					
 			}
 		}
 

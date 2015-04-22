@@ -836,7 +836,7 @@ SWITCH_DECLARE(switch_image_t *) switch_img_write_text_img(int w, int h, const c
 
     if (len < 5) len = 5;
 
-    width = (int) (float)(font_size * 0.75f * len);
+    width = (int) (float)(font_size * 0.95f * len);
 	
 	txtimg = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, width, font_size * 2, 1);
 

@@ -832,6 +832,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_pop(switch_core_session_t 
 	return SWITCH_STATUS_FALSE;
 }
 
+
 SWITCH_DECLARE(uint32_t) switch_core_media_bug_count(switch_core_session_t *orig_session, const char *function)
 {
 	switch_media_bug_t *bp;
@@ -845,6 +846,41 @@ SWITCH_DECLARE(uint32_t) switch_core_media_bug_count(switch_core_session_t *orig
 			}
 		}
 		switch_thread_rwlock_unlock(orig_session->bug_rwlock);
+	}
+
+	return x;
+}
+
+SWITCH_DECLARE(uint32_t) switch_core_media_bug_patch_video(switch_core_session_t *orig_session, switch_frame_t *frame)
+{
+	switch_media_bug_t *bp;
+	uint32_t x = 0, ok = SWITCH_TRUE, prune = 0;
+
+	if (orig_session->bugs) {
+		switch_thread_rwlock_rdlock(orig_session->bug_rwlock);
+		for (bp = orig_session->bugs; bp; bp = bp->next) {
+			if (!switch_test_flag(bp, SMBF_PRUNE) && !switch_test_flag(bp, SMBF_LOCK) && !strcmp(bp->function, "patch:video")) {
+				if (bp->ready && frame->img && switch_test_flag(bp, SMBF_VIDEO_PATCH)) {
+					bp->ping_frame = frame;
+					if (bp->callback) {
+						if (bp->callback(bp, bp->user_data, SWITCH_ABC_TYPE_VIDEO_PATCH) == SWITCH_FALSE
+							|| (bp->stop_time && bp->stop_time <= switch_epoch_time_now(NULL))) {
+							ok = SWITCH_FALSE;
+						}
+					}
+					bp->ping_frame = NULL;
+				}
+
+				if (ok == SWITCH_FALSE) {
+					switch_set_flag(bp, SMBF_PRUNE);
+					prune++;
+				} else x++;
+			}
+		}
+		switch_thread_rwlock_unlock(orig_session->bug_rwlock);
+		if (prune) {
+			switch_core_media_bug_prune(orig_session);
+		}
 	}
 
 	return x;
