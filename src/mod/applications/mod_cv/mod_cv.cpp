@@ -195,11 +195,10 @@ static void context_render_text(cv_context_t *context, struct overlay *overlay, 
     if (!text) text = overlay->text;
 
     int len = strlen(text);
+
     if (len < 5) len = 5;
 
-
-    width = (int) (float)(font_size * 0.75f * len);
-
+    width = (int) (float)(font_size * .95f * len);
 
     switch_color_set_rgb(&bgcolor, overlay->bg);
 
@@ -817,7 +816,7 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
         }
     }
 
-    if (context->debug || !context->overlay_count) {
+    if (context->rawImage && (context->debug || !context->overlay_count)) {
         libyuv::RGB24ToI420((uint8_t *)context->rawImage->imageData, context->w * 3,
                             frame->img->planes[0], frame->img->stride[0],
                             frame->img->planes[1], frame->img->stride[1],
@@ -1151,6 +1150,7 @@ static switch_bool_t cv_bug_callback(switch_media_bug_t *bug, void *user_data, s
         }
         break;
     case SWITCH_ABC_TYPE_READ_VIDEO_PING:
+	case SWITCH_ABC_TYPE_VIDEO_PATCH:
         {
             switch_frame_t *frame = switch_core_media_bug_get_video_ping_frame(bug);
             video_thread_callback(context->session, frame, context);
@@ -1173,6 +1173,8 @@ SWITCH_STANDARD_APP(cv_bug_start_function)
     int x, n;
     char *argv[25] = { 0 };
     int argc;
+	switch_media_bug_flag_t flags = SMBF_READ_VIDEO_PING;
+	const char *function = "mod_cv";
 
     if ((bug = (switch_media_bug_t *) switch_channel_get_private(channel, "_cv_bug_"))) {
         if (!zstr(data) && !strcasecmp(data, "stop")) {
@@ -1197,9 +1199,14 @@ SWITCH_STANDARD_APP(cv_bug_start_function)
         parse_params(context, 1, argc, argv);
     }
 
+	if (!strcasecmp(argv[0], "patch") || !strcasecmp(argv[1], "patch")) {
+		function = "patch:video";
+		flags = SMBF_VIDEO_PATCH;
+	}
+
     switch_thread_rwlock_rdlock(MODULE_INTERFACE->rwlock);
 
-    if ((status = switch_core_media_bug_add(session, "cv_bug", NULL, cv_bug_callback, context, 0, SMBF_READ_VIDEO_PING, &bug)) != SWITCH_STATUS_SUCCESS) {
+    if ((status = switch_core_media_bug_add(session, function, NULL, cv_bug_callback, context, 0, flags, &bug)) != SWITCH_STATUS_SUCCESS) {
         switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failure!\n");
         switch_thread_rwlock_unlock(MODULE_INTERFACE->rwlock);
         return;
@@ -1227,6 +1234,8 @@ SWITCH_STANDARD_API(cv_bug_api_function)
     char *nested_cascade_path = NULL;
     char *lbuf = NULL;
     int x, n, i;
+	switch_media_bug_flag_t flags = SMBF_READ_VIDEO_PING;
+	const char *function = "mod_cv";
 
     if (zstr(cmd)) {
         goto usage;
@@ -1256,7 +1265,7 @@ SWITCH_STANDARD_API(cv_bug_api_function)
                 switch_channel_set_private(channel, "_cv_bug_", NULL);
                 switch_core_media_bug_remove(rsession, &bug);
                 stream->write_function(stream, "+OK Success\n");
-            } else if (!strcasecmp(action, "start") || !strcasecmp(action, "mod")) {
+            } else if (!strcasecmp(action, "start") || !strcasecmp(action, "mod") || !strcasecmp(action, "patch")) {
                 context = (cv_context_t *) switch_core_media_bug_get_user_data(bug);
                 switch_assert(context);
                 parse_params(context, 2, argc, argv);
@@ -1268,7 +1277,7 @@ SWITCH_STANDARD_API(cv_bug_api_function)
         goto done;
     }
 
-    if (!zstr(action) && strcasecmp(action, "start")) {
+    if (!zstr(action) && strcasecmp(action, "start") && strcasecmp(action, "patch")) {
         goto usage;
     }
 
@@ -1281,7 +1290,13 @@ SWITCH_STANDARD_API(cv_bug_api_function)
 
     switch_thread_rwlock_rdlock(MODULE_INTERFACE->rwlock);
 
-    if ((status = switch_core_media_bug_add(rsession, "cv_bug", NULL, cv_bug_callback, context, 0, SMBF_READ_VIDEO_PING, &bug)) != SWITCH_STATUS_SUCCESS) {
+	if (!strcasecmp(action, "patch")) {
+		function = "patch:video";
+		flags = SMBF_VIDEO_PATCH;
+	}
+
+    if ((status = switch_core_media_bug_add(rsession, function, NULL, 
+											cv_bug_callback, context, 0, flags, &bug)) != SWITCH_STATUS_SUCCESS) {
         stream->write_function(stream, "-ERR Failure!\n");
         switch_thread_rwlock_unlock(MODULE_INTERFACE->rwlock);
         goto done;
