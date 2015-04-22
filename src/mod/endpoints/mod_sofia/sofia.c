@@ -5932,24 +5932,6 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 			}
 		}
 
-#if 0
-		if (status == 200 && switch_channel_test_flag(channel, CF_PROXY_MEDIA) &&
-			sip->sip_payload && sip->sip_payload->pl_data && !strcasecmp(tech_pvt->iananame, "PROXY")) {
-			switch_core_session_t *other_session;
-
-			switch_core_media_proxy_codec(session, sip->sip_payload->pl_data);
-
-			if (switch_core_session_get_partner(session, &other_session) == SWITCH_STATUS_SUCCESS) {
-				if (switch_core_session_compare(session, other_session)) {
-					switch_core_media_proxy_codec(other_session, sip->sip_payload->pl_data);
-				}
-				switch_core_session_rwunlock(other_session);
-			}
-		}
-#endif
-
-
-
 		if ((status == 180 || status == 183 || status > 199)) {
 			const char *vval;
 
