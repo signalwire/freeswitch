@@ -490,8 +490,14 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_opus_load)
 	codec_interface->parse_fmtp = switch_opus_fmtp_parse;
     
 	settings = default_codec_settings;
-    
-    
+   
+    if (opus_prefs.maxaveragebitrate){
+        settings.maxaveragebitrate = opus_prefs.maxaveragebitrate;
+    }
+    if (opus_prefs.maxplaybackrate) {
+        settings.maxplaybackrate = opus_prefs.maxplaybackrate;
+    }
+
 	for (x = 0; x < 3; x++) {
         
 		settings.ptime = mss / 1000;
