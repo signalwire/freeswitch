@@ -1608,7 +1608,9 @@ SWITCH_DECLARE(switch_status_t) switch_img_scale(switch_image_t *src, switch_ima
 		return SWITCH_STATUS_FALSE;
 	}
 
-	*destP = dest;
+	if (destP) {
+		*destP = dest;
+	}
 	
 	return SWITCH_STATUS_SUCCESS;
 }
