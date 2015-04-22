@@ -6512,9 +6512,6 @@ SWITCH_DECLARE(switch_status_t) switch_rtcp_zerocopy_read_frame(switch_rtp_t *rt
 			frame->reports[i].jitter = ntohl(report->jitter);
 			frame->reports[i].lsr = ntohl(report->lsr);
 			frame->reports[i].dlsr = ntohl(report->dlsr);
-			if (i >= MAX_REPORT_BLOCKS) {
-				break;
-			}
 		}
 		frame->report_count = (uint16_t)i;
 
