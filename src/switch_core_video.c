@@ -983,12 +983,12 @@ SWITCH_DECLARE(switch_status_t) switch_png_patch_img(switch_png_t *use_png, swit
 
 	for (i = 0; i < use_png->pvt->png.height; i++) {
 		for (j = 0; j < use_png->pvt->png.width; j++) {
-			alpha = use_png->pvt->buffer[i * use_png->pvt->png.width * 4 + j * 4 + 3];
+			//alpha = use_png->pvt->buffer[i * use_png->pvt->png.width * 4 + j * 4 + 3];
 			alpha = use_png->pvt->buffer[i * use_png->pvt->png.width * 4 + j * 4];
 			// printf("%d, %d alpha: %d\n", j, i, alpha);
 
 			if (alpha) { // todo, mux alpha with the underlying pixel
-				rgb_color = (switch_rgb_color_t *)(use_png->pvt->buffer + i * use_png->pvt->png.width * 4 + j * 4);
+				//rgb_color = (switch_rgb_color_t *)(use_png->pvt->buffer + i * use_png->pvt->png.width * 4 + j * 4);
 				rgb_color = (switch_rgb_color_t *)(use_png->pvt->buffer + i * use_png->pvt->png.width * 4 + j * 4 + 1);
 				switch_color_rgb2yuv(rgb_color, &yuv_color);
 				switch_img_draw_pixel(img, x + j, y + i, &yuv_color);
