@@ -431,6 +431,8 @@ static switch_t38_options_t * switch_core_media_process_udptl(switch_core_sessio
 	switch_t38_options_t *t38_options = switch_channel_get_private(session->channel, "t38_options");
 	sdp_attribute_t *attr;
 
+	switch_assert(sdp);
+	
 	if (!t38_options) {
 		t38_options = switch_core_session_alloc(session, sizeof(switch_t38_options_t));
 
@@ -453,7 +455,7 @@ static switch_t38_options_t * switch_core_media_process_udptl(switch_core_sessio
 	
 	if (m->m_connections && m->m_connections->c_address) {
 		t38_options->remote_ip = switch_core_session_strdup(session, m->m_connections->c_address);
-	} else if (sdp && sdp->sdp_connection && sdp->sdp_connection->c_address) {
+	} else if (sdp->sdp_connection && sdp->sdp_connection->c_address) {
 		t38_options->remote_ip = switch_core_session_strdup(session, sdp->sdp_connection->c_address);
 	}
 
