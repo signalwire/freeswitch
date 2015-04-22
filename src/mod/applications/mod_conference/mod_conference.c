@@ -3917,6 +3917,41 @@ static void find_video_floor(conference_member_t *member, switch_bool_t entering
 
 }
 
+static void check_avatar(conference_member_t *member)
+{
+	const char *avatar = NULL, *var = NULL;
+
+	if (member->conference->canvas) {
+		switch_mutex_lock(member->conference->canvas->mutex);
+	}
+
+	if (switch_channel_test_flag(member->channel, CF_VIDEO) && member->video_flow != SWITCH_MEDIA_FLOW_SENDONLY) {
+		switch_set_flag_locked(member, MFLAG_ACK_VIDEO);
+	} else {
+		if (member->conference->no_video_avatar) {
+			avatar = member->conference->no_video_avatar;
+		}
+		
+		if ((var = switch_channel_get_variable_dup(member->channel, "video_no_video_avatar_png", SWITCH_FALSE, -1))) {
+			avatar = var;
+		}
+	}
+	
+	if ((var = switch_channel_get_variable_dup(member->channel, "video_avatar_png", SWITCH_FALSE, -1))) {
+		avatar = var;
+	}
+	
+	switch_img_free(&member->avatar_png_img);
+	
+	if (avatar) {
+		member->avatar_png_img = switch_img_read_png(avatar, SWITCH_IMG_FMT_I420);
+	}
+
+	if (member->conference->canvas) {
+		switch_mutex_unlock(member->conference->canvas->mutex);
+	}
+}
+
 
 /* Gain exclusive access and add the member to the list */
 static switch_status_t conference_add_member(conference_obj_t *conference, conference_member_t *member)
@@ -3927,7 +3962,6 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 	call_list_t *call_list = NULL;
 	switch_channel_t *channel;
 	const char *controls = NULL, *position = NULL, *var = NULL;
-	const char *avatar = NULL;
 
 
 	switch_assert(conference != NULL);
@@ -3983,25 +4017,7 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 		channel = switch_core_session_get_channel(member->session);
 		member->video_flow = switch_core_session_media_flow(member->session, SWITCH_MEDIA_TYPE_VIDEO);
 
-		if (switch_channel_test_flag(channel, CF_VIDEO) && member->video_flow != SWITCH_MEDIA_FLOW_SENDONLY) {
-			switch_set_flag_locked(member, MFLAG_ACK_VIDEO);
-		} else {
-			if (conference->no_video_avatar) {
-				avatar = conference->no_video_avatar;
-			}
-
-			if ((var = switch_channel_get_variable_dup(member->channel, "video_no_video_avatar_png", SWITCH_FALSE, -1))) {
-				avatar = var;
-			}
-		}
-
-		if ((var = switch_channel_get_variable_dup(member->channel, "video_avatar_png", SWITCH_FALSE, -1))) {
-			avatar = var;
-		}
-		
-		if (avatar) {
-			member->avatar_png_img = switch_img_read_png(avatar, SWITCH_IMG_FMT_I420);
-		}
+		check_avatar(member);
 
 		if ((var = switch_channel_get_variable_dup(member->channel, "video_mute_png", SWITCH_FALSE, -1))) {
 			member->video_mute_png = switch_core_strdup(member->pool, var);
@@ -6045,7 +6061,6 @@ static void member_check_channels(switch_frame_t *frame, conference_member_t *me
 	}
 }
 
-
 /* marshall frames from the call leg to the conference thread for muxing to other call legs */
 static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, void *obj)
 {
@@ -6096,10 +6111,13 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 			break;
 		}
 
-		if ((switch_channel_test_flag(channel, CF_VIDEO) || member->avatar_png_img) && !switch_test_flag(member, MFLAG_ACK_VIDEO)) {
+		if (switch_channel_test_flag(channel, CF_VIDEO) && !switch_test_flag(member, MFLAG_ACK_VIDEO)) {
 			switch_set_flag_locked(member, MFLAG_ACK_VIDEO);
+			check_avatar(member);
 			switch_core_session_video_reinit(member->session);
 			conference_set_video_floor_holder(member->conference, member, SWITCH_FALSE);
+		} else if (switch_test_flag(member, MFLAG_ACK_VIDEO) && !switch_channel_test_flag(channel, CF_VIDEO)) {
+			check_avatar(member);
 		}
 
 		/* if we have caller digits, feed them to the parser to find an action */
