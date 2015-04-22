@@ -1700,8 +1700,6 @@ static void *SWITCH_THREAD_FUNC switch_core_session_thread_pool_worker(switch_th
 
 		if (check_status == SWITCH_STATUS_SUCCESS && pop) {
 			switch_thread_data_t *td = (switch_thread_data_t *) pop;
-			
-			if (!td) break;
 
 			switch_mutex_lock(session_manager.mutex);
 			session_manager.busy++;
