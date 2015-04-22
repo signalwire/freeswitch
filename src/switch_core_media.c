@@ -10451,14 +10451,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_video_frame(switch_core
 			}
 
 			if (bp->ready && switch_test_flag(bp, SMBF_READ_VIDEO_STREAM)) {
-				if ((*frame)->img) {
+				if ((*frame) && (*frame)->img) {
 					switch_image_t *img = NULL;
 					switch_img_copy((*frame)->img, &img);
 					switch_queue_push(bp->read_video_queue, img);
 				}
 			}
 
-			if (bp->ready && (*frame)->img && switch_test_flag(bp, SMBF_READ_VIDEO_PING)) {
+			if (bp->ready && (*frame) && (*frame)->img && switch_test_flag(bp, SMBF_READ_VIDEO_PING)) {
 				bp->ping_frame = *frame;
 				if (bp->callback) {
 					if (bp->callback(bp, bp->user_data, SWITCH_ABC_TYPE_READ_VIDEO_PING) == SWITCH_FALSE
