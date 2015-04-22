@@ -140,7 +140,7 @@ SWITCH_DECLARE(switch_image_t *)switch_img_wrap(switch_image_t  *img,
 						unsigned int d_w,
 						unsigned int d_h,
 						unsigned int align,
-						unsigned char      *img_data);
+						unsigned char *img_data);
 
 
 /*!\brief Set the rectangle identifying the displayed portion of the image
@@ -162,8 +162,33 @@ SWITCH_DECLARE(int) switch_img_set_rect(switch_image_t  *img,
 				   unsigned int  w,
 				   unsigned int  h);
 
-
+/*!\brief patch a small img to a big IMG at position x,y
+*
+* Both IMG and img must be non-NULL
+*
+* \param[in]    IMG       The BIG Image descriptor
+* \param[in]    img       The small Image descriptor
+* \param[in]    x         Leftmost pos to patch to
+* \param[in]    y         Topmost pos to patch to
+*/
 SWITCH_DECLARE(void) switch_img_patch(switch_image_t *IMG, switch_image_t *img, int x, int y);
+
+
+/*!\brief patch part of a small img (x,y,w,h) to a big IMG at position X,Y
+*
+* Both IMG and img must be non-NULL
+*
+* \param[in]    IMG       The BIG Image descriptor
+* \param[in]    X         Leftmost pos to patch to IMG
+* \param[in]    Y         Topmost pos to patch to IMG
+* \param[in]    img       The small Image descriptor
+* \param[in]    x         Leftmost pos to be read from img
+* \param[in]    y         Topmost pos to be read from
+* \param[in]    w         Max width to be read from img
+* \param[in]    h         Max height to be read from img
+*/
+
+SWITCH_DECLARE(void) switch_img_patch_rect(switch_image_t *IMG, int X, int Y, switch_image_t *img, uint32_t x, uint32_t y, uint32_t w, uint32_t h);
 
 /*!\brief Copy image to a new image
 *
@@ -173,6 +198,7 @@ SWITCH_DECLARE(void) switch_img_patch(switch_image_t *IMG, switch_image_t *img, 
 * else, copy the img data to the new_img
 *
 * \param[in]    img       Image descriptor
+* \param[out]   new_img   New Image descriptor, NULL if out of memory
 */
 
 SWITCH_DECLARE(void) switch_img_copy(switch_image_t *img, switch_image_t **new_img);
@@ -184,6 +210,8 @@ SWITCH_DECLARE(void) switch_img_copy(switch_image_t *img, switch_image_t **new_i
 * be referenced upside-down.
 *
 * \param[in]    img       Image descriptor
+*
+* \return 0 if the requested rectangle is valid, nonzero otherwise.
 */
 SWITCH_DECLARE(void) switch_img_flip(switch_image_t *img);
 
@@ -199,21 +227,103 @@ SWITCH_DECLARE(void) switch_img_draw_text(switch_image_t *IMG, int x, int y, swi
 
 SWITCH_DECLARE(void) switch_img_add_text(void *buffer, int w, int x, int y, char *s);
 
-SWITCH_DECLARE(switch_image_t *) switch_img_copy_rect(switch_image_t *img, int x, int y, int w, int h);
+/*!\brief Copy part of an image to a new image
+*
+*
+* \param[in]    img       Image descriptor
+* \param[in]    x         Leftmost pos to be read from
+* \param[in]    y         Topmost pos to be read from
+* \param[in]    w         Max width to be read from
+* \param[in]    h         Max height to be read from
+*
+* \return NULL if failed to copy, otherwise a valid image descriptor.
+*/
+SWITCH_DECLARE(switch_image_t *) switch_img_copy_rect(switch_image_t *img, uint32_t x, uint32_t y, uint32_t w, uint32_t h);
 
+/*!\brief Fill image with color
+*
+* \param[in]    img       Image descriptor
+* \param[in]    x         Leftmost pos to be read from
+* \param[in]    y         Topmost pos to be read from
+* \param[in]    w         Max width to be read from
+* \param[in]    h         Max height to be read from
+* \param[in]    color     RGB color
+*/
 SWITCH_DECLARE(void) switch_img_fill(switch_image_t *img, int x, int y, int w, int h, switch_rgb_color_t *color);
 
+/*!\brief Draw a pixel on an image
+*
+* \param[in]    img       Image descriptor
+* \param[in]    x         leftmost pos
+* \param[in]    y         topmost pos
+* \param[in]    color     YUV color
+*/
 SWITCH_DECLARE(void) switch_img_draw_pixel(switch_image_t *img, int x, int y, switch_yuv_color_t *color);
 
+/*!\brief Set RGB color with a string
+*
+* Color string should be in #RRGGBB format
+*
+* \param[out]   color     RGB color pointer
+* \param[in]    color_str Color string in #RRGGBB format
+*/
 SWITCH_DECLARE(void) switch_color_set_rgb(switch_rgb_color_t *color, const char *color_str);
+
+/*!\brief Set YUV color with a string
+*
+* Color string should be in #RRGGBB format
+*
+* \param[out]   color     YUV color pointer
+* \param[in]    color_str Color string in #RRGGBB format
+*/
 SWITCH_DECLARE(void) switch_color_set_yuv(switch_yuv_color_t *color, const char *color_str);
+
+/*!\brief Convert RGB color to YUV
+*
+* \param[in]    rgb       RGB color pointer
+* \param[out]   yuv       YUV color pointer
+*/
 SWITCH_DECLARE(void) switch_color_rgb2yuv(switch_rgb_color_t *rgb, switch_yuv_color_t *yuv);
+
+/*!\brief Convert YUV color to RGB
+*
+* \param[in]    yuv       YUV color pointer
+* \param[out]   rgb       RGB color pointer
+*/
 SWITCH_DECLARE(void) switch_color_yuv2rgb(switch_yuv_color_t *yuv, switch_rgb_color_t *rgb);
 
+/*!\brief Created a text handle
+*
+* \param[out]   handleP     Pointer to the text handle pointer
+* \param[in]    font_family Font family
+* \param[in]    font_color  Font color in #RRGGBB format
+* \param[in]    bgcolor     Background color in #RRGGBB format
+* \param[in]    font_size   Font size in point
+* \param[in]    angle       Angle to rotate
+* \param[in]    pool        APR memory pool
+*/
 SWITCH_DECLARE(switch_status_t) switch_img_txt_handle_create(switch_img_txt_handle_t **handleP, const char *font_family,
 															 const char *font_color, const char *bgcolor, uint16_t font_size, double angle, switch_memory_pool_t *pool);
 
+/*!\brief Free a text handle
+*
+* \param[in]   handleP     Pointer to the text handle pointer
+*/
 SWITCH_DECLARE(void) switch_img_txt_handle_destroy(switch_img_txt_handle_t **handleP);
+
+/*!\brief Render text to an img
+*
+* \param[in]    handle      Pointer to the text handle pointer
+* \param[in]    img         The image to be render text on
+* \param[in]    x           Leftmost position
+* \param[in]    y           Topmost position
+* \param[in]    text        Text to render
+* \param[in]    font_family Font to use, NULL to use the handle font
+* \param[in]    font_color  Font color, NULL to use the handle color
+* \param[in]    bgcolor     Background color, NULL for transparency
+* \param[in]    font_size   Font size in point
+* \param[in]    angle       Angle to rotate
+*/
 
 SWITCH_DECLARE(switch_status_t) switch_img_txt_handle_render(switch_img_txt_handle_t *handle, switch_image_t *img,
 															 int x, int y, const char *text,
@@ -232,6 +342,16 @@ SWITCH_DECLARE(void) switch_img_get_yuv_pixel(switch_image_t *img, switch_yuv_co
 
 SWITCH_DECLARE(void) switch_img_get_rgb_pixel(switch_image_t *img, switch_rgb_color_t *rgb, int x, int y);
 
+/*!\brief put a small img over a big IMG at position x,y, with alpha transparency
+*
+* Both IMG and img must be non-NULL
+*
+* \param[in]    IMG       The BIG Image descriptor
+* \param[in]    img       The small Image descriptor
+* \param[in]    x         Leftmost pos
+* \param[in]    y         Topmost pos
+* \param[in]    alpha     Alaha value from 0(completely transparent) to 255(opaque)
+*/
 SWITCH_DECLARE(void) switch_img_overlay(switch_image_t *IMG, switch_image_t *img, int x, int y, uint8_t alpha);
 
 SWITCH_DECLARE(switch_status_t) switch_img_scale(switch_image_t *src, switch_image_t **destP, int width, int height);
