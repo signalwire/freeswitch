@@ -4757,7 +4757,7 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 	switch_core_session_t *session = mh->session;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_status_t status;
-	switch_frame_t *read_frame;
+	switch_frame_t *read_frame = NULL;
 	switch_media_handle_t *smh;
 	uint32_t loops = 0, xloops = 0, vloops = 0;
 	switch_frame_t fr = { 0 };
