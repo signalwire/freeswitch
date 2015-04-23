@@ -1164,11 +1164,12 @@ function init() {
 	    //chromeMediaSource: 'screen',
 	    //mediaSource: 'screen'
         },
-	audioParams: {
-	    googAutoGainControl: false,
-	    googNoiseSuppression: true,
-	    googHighpassFilter: true
-	},
+//	audioParams: {
+//	    googAutoGainControl: false,
+//	    googNoiseSuppression: false,
+//	    googHighpassFilter: false
+//	},
+
 	iceServers: $("#use_stun").is(':checked')
     },callbacks);
 
