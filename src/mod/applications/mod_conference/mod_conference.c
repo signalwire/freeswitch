@@ -439,6 +439,7 @@ typedef struct mcu_canvas_s {
 	int send_keyframe;
 	int play_file;
 	switch_rgb_color_t bgcolor;
+	switch_rgb_color_t letterbox_bgcolor;
 	switch_mutex_t *mutex;
 	switch_timer_t timer;
 	switch_memory_pool_t *pool;
@@ -497,7 +498,7 @@ typedef struct conference_obj {
 	char *video_layout_name;
 	char *video_layout_group;
 	char *video_canvas_bgcolor;
-	char *video_layout_bgcolor;
+	char *video_letterbox_bgcolor;
 	char *no_video_avatar;
 	conf_video_mode_t conf_video_mode;
 	int members_with_video;
@@ -1013,6 +1014,7 @@ static void clear_layer(mcu_canvas_t *canvas, mcu_layer_t *layer)
 {
 	switch_img_fill(canvas->img, layer->x_pos, layer->y_pos, layer->screen_w, layer->screen_h, &canvas->bgcolor);
 	layer->banner_patched = 0;
+	layer->refresh = 1;
 }
 
 static void reset_layer(mcu_canvas_t *canvas, mcu_layer_t *layer)
@@ -1050,9 +1052,7 @@ static void scale_and_patch(conference_obj_t *conference, mcu_layer_t *layer, sw
 	switch_assert(IMG && img);
 
 	if (layer->refresh) {
-		switch_rgb_color_t color;
-		switch_color_set_rgb(&color, conference->video_layout_bgcolor);
-		switch_img_fill(conference->canvas->img, layer->x_pos, layer->y_pos, layer->screen_w, layer->screen_h, &color);
+		switch_img_fill(conference->canvas->img, layer->x_pos, layer->y_pos, layer->screen_w, layer->screen_h, &conference->canvas->letterbox_bgcolor);
 		layer->refresh = 0;
 	}
 
@@ -1091,10 +1091,13 @@ static void scale_and_patch(conference_obj_t *conference, mcu_layer_t *layer, sw
 		}
 		
 		if (layer->banner_img && !layer->banner_patched) {
+			switch_img_fill(conference->canvas->img, layer->x_pos, layer->y_pos, layer->screen_w, layer->screen_h, &conference->canvas->letterbox_bgcolor);
 			switch_img_patch(IMG, layer->banner_img, layer->x_pos, layer->y_pos + (layer->screen_h - layer->banner_img->d_h));
+
 			if (!freeze) {
 				switch_img_set_rect(layer->img, 0, 0, layer->img->d_w, layer->img->d_h - layer->banner_img->d_h);
 			}
+
 			layer->banner_patched = 1;
 		}
 
@@ -1119,12 +1122,12 @@ static void scale_and_patch(conference_obj_t *conference, mcu_layer_t *layer, sw
 
 			switch_img_fit(&layer->logo_img, ew, eh);
 			switch_img_find_position(layer->logo_pos, ew, eh, layer->logo_img->d_w, layer->logo_img->d_h, &ex, &ey);
-			switch_img_patch(IMG, layer->logo_img, x_pos + ex, y_pos + ey);
+			switch_img_patch(IMG, layer->logo_img, layer->x_pos + ex, layer->y_pos + ey);
 			if (layer->logo_text_img) {
 				int tx = 0, ty = 0;
 				switch_img_find_position(POS_LEFT_BOT, 
 										 layer->logo_img->d_w, layer->logo_img->d_h, layer->logo_text_img->d_w, layer->logo_text_img->d_h, &tx, &ty);
-				switch_img_patch(IMG, layer->logo_text_img, x_pos + ex + tx, y_pos + ey + ty);
+				switch_img_patch(IMG, layer->logo_text_img, layer->x_pos + ex + tx, layer->y_pos + ey + ty);
 			}
 
 		}
@@ -1141,6 +1144,11 @@ static void set_canvas_bgcolor(mcu_canvas_t *canvas, char *color)
 {
 	switch_color_set_rgb(&canvas->bgcolor, color);
 	reset_image(canvas->img, &canvas->bgcolor);
+}
+
+static void set_canvas_letterbox_bgcolor(mcu_canvas_t *canvas, char *color)
+{
+	switch_color_set_rgb(&canvas->letterbox_bgcolor, color);
 }
 
 static void check_used_layers(conference_obj_t *conference)
@@ -1226,13 +1234,11 @@ static void layer_set_logo(conference_member_t *member, mcu_layer_t *layer, cons
 	}
 	
 	if (zstr(path) || !strcasecmp(path, "clear")) {
-		switch_rgb_color_t color;
-
 		switch_img_free(&layer->banner_img);
 		layer->banner_patched = 0;
 		
-		switch_color_set_rgb(&color, member->conference->video_layout_bgcolor);
-		switch_img_fill(member->conference->canvas->img, layer->x_pos, layer->y_pos, layer->screen_w, layer->screen_h, &color);
+		switch_img_fill(member->conference->canvas->img, layer->x_pos, layer->y_pos, layer->screen_w, layer->screen_h, 
+						&member->conference->canvas->letterbox_bgcolor);
 
 		goto end;
 	}
@@ -1310,13 +1316,11 @@ static void layer_set_banner(conference_member_t *member, mcu_layer_t *layer, co
 	}
 	
 	if (zstr(text) || !strcasecmp(text, "clear")) {
-		switch_rgb_color_t color;
-
 		switch_img_free(&layer->banner_img);
 		layer->banner_patched = 0;
 		
-		switch_color_set_rgb(&color, member->conference->video_layout_bgcolor);
-		switch_img_fill(member->conference->canvas->img, layer->x_pos, layer->y_pos, layer->screen_w, layer->screen_h, &color);
+		switch_img_fill(member->conference->canvas->img, layer->x_pos, layer->y_pos, layer->screen_w, layer->screen_h, 
+						&member->conference->canvas->letterbox_bgcolor);
 
 		goto end;
 	}
@@ -1384,7 +1388,6 @@ static switch_status_t attach_video_layer(conference_member_t *member, int idx)
 	switch_channel_t *channel = NULL;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	const char *var = NULL;
-	switch_rgb_color_t color;
 	
 	if (!member->session) abort();
 
@@ -1460,9 +1463,8 @@ static switch_status_t attach_video_layer(conference_member_t *member, int idx)
 	}
 
 
-	switch_color_set_rgb(&color, member->conference->video_layout_bgcolor);
-	switch_img_fill(member->conference->canvas->img, layer->x_pos, layer->y_pos, layer->screen_w, layer->screen_h, &color);
-
+	switch_img_fill(member->conference->canvas->img, layer->x_pos, layer->y_pos, layer->screen_w, layer->screen_h, 
+					&member->conference->canvas->letterbox_bgcolor);
 
  end:
 
@@ -1500,7 +1502,7 @@ static void init_canvas_layers(conference_obj_t *conference, video_layout_t *vla
 		layer->geometry.floor = vlayout->images[i].floor;
 		layer->geometry.overlap = vlayout->images[i].overlap;
 		layer->idx = i;
-
+		layer->refresh = 1;
 
 		layer->screen_w = conference->canvas->img->d_w * layer->geometry.scale / VIDEO_LAYOUT_SCALE;
 		layer->screen_h = conference->canvas->img->d_h * layer->geometry.scale / VIDEO_LAYOUT_SCALE;
@@ -1522,12 +1524,15 @@ static void init_canvas_layers(conference_obj_t *conference, video_layout_t *vla
 		layer->geometry.audio_position = vlayout->images[i].audio_position;
 	}
 
+	reset_image(conference->canvas->img, &conference->canvas->bgcolor);
+
 	for (i = 0; i < MCU_MAX_LAYERS; i++) {
 		mcu_layer_t *layer = &conference->canvas->layers[i];
 
 		layer->member_id = 0;
 		layer->tagged = 0;
 		layer->banner_patched = 0;
+		layer->refresh = 1;
 		reset_layer(conference->canvas, layer);
 
 	}
@@ -1535,7 +1540,7 @@ static void init_canvas_layers(conference_obj_t *conference, video_layout_t *vla
 	conference->canvas->layers_used = 0;
 	conference->canvas->total_layers = vlayout->layers;
 	conference->canvas->send_keyframe = 1;
-	reset_image(conference->canvas->img, &conference->canvas->bgcolor);
+
 	switch_mutex_unlock(conference->canvas->mutex);	
 
 }
@@ -1560,6 +1565,7 @@ static void init_canvas(conference_obj_t *conference, video_layout_t *vlayout)
 
 	switch_mutex_lock(conference->canvas->mutex);
 	set_canvas_bgcolor(conference->canvas, conference->video_canvas_bgcolor);
+	set_canvas_letterbox_bgcolor(conference->canvas, conference->video_letterbox_bgcolor);
 	init_canvas_layers(conference, vlayout);
 	switch_mutex_unlock(conference->canvas->mutex);
 }
@@ -12362,7 +12368,7 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 	char *video_layout_group = NULL;
 	char *video_canvas_size = NULL;
 	char *video_canvas_bgcolor = NULL;
-	char *video_layout_bgcolor = NULL;
+	char *video_letterbox_bgcolor = NULL;
 	char *video_codec_bandwidth = NULL;
 	char *no_video_avatar = NULL;
 	conf_video_mode_t conf_video_mode = CONF_VIDEO_MODE_PASSTHROUGH;
@@ -12518,8 +12524,8 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 				video_layout_name = val;
 			} else if (!strcasecmp(var, "video-canvas-bgcolor") && !zstr(val)) {
 				video_canvas_bgcolor= val;
-			} else if (!strcasecmp(var, "video-layout-bgcolor") && !zstr(val)) {
-				video_layout_bgcolor= val;
+			} else if (!strcasecmp(var, "video-letterbox-bgcolor") && !zstr(val)) {
+				video_letterbox_bgcolor= val;
 			} else if (!strcasecmp(var, "video-canvas-size") && !zstr(val)) {
 				video_canvas_size = val;
 			} else if (!strcasecmp(var, "video-fps") && !zstr(val)) {
@@ -12752,8 +12758,8 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 			video_canvas_bgcolor = "#333333";
 		}
 
-		if (!video_layout_bgcolor) {
-			video_layout_bgcolor = "#000000";
+		if (!video_letterbox_bgcolor) {
+			video_letterbox_bgcolor = "#000000";
 		}
 
 		if (no_video_avatar) {
@@ -12761,7 +12767,7 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 		}
 
 		conference->video_canvas_bgcolor = switch_core_strdup(conference->pool, video_canvas_bgcolor);
-		conference->video_layout_bgcolor = switch_core_strdup(conference->pool, video_layout_bgcolor);
+		conference->video_letterbox_bgcolor = switch_core_strdup(conference->pool, video_letterbox_bgcolor);
 
 		if (fps) {
 			conference_set_fps(conference, fps);
