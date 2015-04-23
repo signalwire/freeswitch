@@ -148,7 +148,7 @@ switch_status_t mod_amqp_connection_open(mod_amqp_connection_t *connections, mod
 										connection_attempt->password);
 
 	if (mod_amqp_log_if_amqp_error(status, "Logging in")) {
-		mod_amqp_close_connection(*active);
+		mod_amqp_connection_close(*active);
 		*active = NULL;
 		return SWITCH_STATUS_GENERR;
 	}
