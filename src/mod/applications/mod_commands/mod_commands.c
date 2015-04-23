@@ -2172,7 +2172,7 @@ SWITCH_STANDARD_API(uptime_function)
 SWITCH_STANDARD_API(ctl_function)
 {
 	int argc;
-	char *mydata, *argv[5];
+	char *mydata, *argv[6];
 	int32_t arg = 0;
 
 	if (zstr(cmd)) {
