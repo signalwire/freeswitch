@@ -1693,7 +1693,6 @@ AC_CONFIG_FILES([Makefile
 		src/mod/codecs/mod_siren/Makefile
 		src/mod/codecs/mod_skel_codec/Makefile
 		src/mod/codecs/mod_theora/Makefile
-		src/mod/codecs/mod_vp8/Makefile
 		src/mod/codecs/mod_vpx/Makefile
 		src/mod/dialplans/mod_dialplan_asterisk/Makefile
 		src/mod/dialplans/mod_dialplan_directory/Makefile

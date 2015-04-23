@@ -66,7 +66,7 @@ codecs/mod_b64
 codecs/mod_g723_1
 codecs/mod_g729
 codecs/mod_h26x
-codecs/mod_vp8
+codecs/mod_vpx
 #codecs/mod_ilbc
 #codecs/mod_isac
 #codecs/mod_mp4v

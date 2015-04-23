@@ -345,8 +345,8 @@ Module: codecs/mod_theora
 Description: mod_theora
  Adds mod_theora.
 
-Module: codecs/mod_vp8
-Description: VP8 video codec
+Module: codecs/mod_vpx
+Description: VP8/VP9 video codec
  This module adds the VP8 video codec, also known as WebM.
 
 ## mod/dialplans
