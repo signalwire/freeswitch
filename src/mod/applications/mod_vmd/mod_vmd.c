@@ -206,19 +206,11 @@ static switch_bool_t vmd_callback(switch_media_bug_t *bug, void *user_data, swit
 		vmd_info->vmd_codec.channels = read_codec->implementation->number_of_channels;
 		break;
 
-	case SWITCH_ABC_TYPE_READ_PING:
-	case SWITCH_ABC_TYPE_CLOSE:
-	case SWITCH_ABC_TYPE_READ:
-	case SWITCH_ABC_TYPE_WRITE:
-	case SWITCH_ABC_TYPE_TAP_NATIVE_READ:
-	case SWITCH_ABC_TYPE_TAP_NATIVE_WRITE:
-		break;
-
 	case SWITCH_ABC_TYPE_READ_REPLACE:
 		frame = switch_core_media_bug_get_read_replace_frame(bug);
 		return process_data(vmd_info, frame);
 
-	case SWITCH_ABC_TYPE_WRITE_REPLACE:
+	default:
 		break;
 	}
 
