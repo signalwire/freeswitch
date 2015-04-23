@@ -434,7 +434,6 @@ SWITCH_STANDARD_API(reg_url_function)
 	char *reply = "error/facility_not_subscribed";
 	switch_stream_handle_t mystream = { 0 };
 
-
 	if (!cmd) {
 		stream->write_function(stream, "%s", "");
 		return SWITCH_STATUS_SUCCESS;
@@ -444,7 +443,6 @@ SWITCH_STANDARD_API(reg_url_function)
 		switch_channel_t *channel = switch_core_session_get_channel(session);
 		exclude_contact = switch_channel_get_variable(channel, "sip_exclude_contact");
 	}
-
 
 	data = strdup(cmd);
 	switch_assert(data);
@@ -467,17 +465,11 @@ SWITCH_STANDARD_API(reg_url_function)
 		domain = dup_domain;
 	}
 
-	if (!user) goto end;
-
-
 	SWITCH_STANDARD_STREAM(mystream);
 	switch_assert(mystream.data);
 
 	select_url(user, domain, concat, exclude_contact, &mystream);
 	reply = mystream.data;
-
-
-  end:
 
 	if (zstr(reply)) {
 		reply = "error/user_not_registered";
@@ -489,7 +481,6 @@ SWITCH_STANDARD_API(reg_url_function)
 	reply = NULL;
 
 	switch_safe_free(mystream.data);
-
 	switch_safe_free(data);
 	switch_safe_free(dup_domain);
 
