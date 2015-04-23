@@ -1079,6 +1079,10 @@ static inline switch_bool_t switch_is_file_path(const char *file)
 	const char *e;
 	int r;
 
+	if (zstr(file)) {
+		return SWITCH_FALSE;
+	}
+
 	while(*file == '{') {
 		if ((e = switch_find_end_paren(file, '{', '}'))) {
 			file = e + 1;
@@ -1087,13 +1091,12 @@ static inline switch_bool_t switch_is_file_path(const char *file)
 	}
 
 #ifdef WIN32
-	r = (file && (*file == '\\' || *(file + 1) == ':' || *file == '/' || strstr(file, SWITCH_URL_SEPARATOR)));
+	r = (*file == '\\' || *(file + 1) == ':' || *file == '/' || strstr(file, SWITCH_URL_SEPARATOR));
 #else
-	r = (file && ((*file == '/') || strstr(file, SWITCH_URL_SEPARATOR)));
+	r = ((*file == '/') || strstr(file, SWITCH_URL_SEPARATOR));
 #endif
 
 	return r ? SWITCH_TRUE : SWITCH_FALSE;
-
 }
 
 
