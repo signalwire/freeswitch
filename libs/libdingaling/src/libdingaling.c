@@ -3028,7 +3028,7 @@ ldl_status ldl_session_get_candidates(ldl_session_t *session, ldl_transport_type
 {
 	assert(tport < LDL_TPORT_MAX);
 	
-	if (session->candidate_len) {
+	if (session->candidate_len[tport]) {
 		*candidates = session->candidates[tport];
 		*len = session->candidate_len[tport];
 		return LDL_STATUS_SUCCESS;
