@@ -722,12 +722,12 @@ Requires:       %{name} = %{version}-%{release}
 %description codec-isac
 iSAC Codec support for FreeSWITCH open source telephony platform
 
-%package codec-vp8
+%package codec-vpx
 Summary:        vp8 Codec support for FreeSWITCH open source telephony platform
 Group:          System/Libraries
 Requires:       %{name} = %{version}-%{release}
 
-%description codec-vp8
+%description codec-vpx
 iSAC Codec support for FreeSWITCH open source telephony platform
 
 %package codec-mp4v
@@ -1407,7 +1407,7 @@ ASR_TTS_MODULES="asr_tts/mod_flite asr_tts/mod_pocketsphinx asr_tts/mod_tts_comm
 ######################################################################################################################
 CODECS_MODULES="codecs/mod_amr codecs/mod_amrwb codecs/mod_bv codecs/mod_codec2 codecs/mod_g723_1 \
 		codecs/mod_g729 codecs/mod_h26x codecs/mod_ilbc codecs/mod_isac codecs/mod_mp4v codecs/mod_opus codecs/mod_silk \
-		codecs/mod_siren codecs/mod_theora codecs/mod_vp8"
+		codecs/mod_siren codecs/mod_theora codecs/mod_vpx"
 #
 %if %{build_sng_tc}
 CODECS_MODULES+="codecs/mod_sangoma_codec"
@@ -2078,8 +2078,8 @@ fi
 %files codec-mp4v
 %{MODINSTDIR}/mod_mp4v.so*
 
-%files codec-vp8
-%{MODINSTDIR}/mod_vp8.so*
+%files codec-vpx
+%{MODINSTDIR}/mod_vpx.so*
 
 %files codec-opus
 %{MODINSTDIR}/mod_opus.so*
