@@ -6468,24 +6468,29 @@ SWITCH_STANDARD_JSON_API(json_channel_data_function)
 
 SWITCH_STANDARD_JSON_API(json_execute_function)
 {
-	cJSON *reply, *data = cJSON_GetObjectItem(json, "data");
 	switch_status_t status = SWITCH_STATUS_FALSE;
-	const char *uuid = cJSON_GetObjectCstr(data, "uuid");
-	const char *app = cJSON_GetObjectCstr(data, "app");
-	const char *arg = cJSON_GetObjectCstr(data, "arg");
-	const char *einline = cJSON_GetObjectCstr(data, "inline");
-	const char *edata = cJSON_GetObjectCstr(data, "extendedData");
+	cJSON *reply, *data = cJSON_GetObjectItem(json, "data");
+	const char *uuid, *app, *arg, *einline, *edata;
 	switch_core_session_t *tsession;
-
 
 	reply = cJSON_CreateObject();
 	*json_reply = reply;	
+
+	if (!data) {
+		cJSON_AddItemToObject(reply, "response", cJSON_CreateString("INVALID INPUT"));
+		goto end;
+	}
+
+	uuid = cJSON_GetObjectCstr(data, "uuid");
+	app = cJSON_GetObjectCstr(data, "app");
+	arg = cJSON_GetObjectCstr(data, "arg");
+	einline = cJSON_GetObjectCstr(data, "inline");
+	edata = cJSON_GetObjectCstr(data, "extendedData");
 
 	if (!(uuid && app)) {
 		cJSON_AddItemToObject(reply, "response", cJSON_CreateString("INVALID INPUT"));
 		goto end;
 	}
-
 	
 	if ((tsession = switch_core_session_locate(uuid))) {
 		if (switch_true(edata)) {
