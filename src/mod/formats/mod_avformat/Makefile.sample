@@ -1,4 +1,4 @@
-LOCAL_LDFLAGS=-L/opt/av/lib -lavformat -lavcodec -lavutil -lavresample
+LOCAL_LDFLAGS=-L/opt/av/lib -lavformat -lavcodec -lavutil -lavresample -lswscale
 LOCAL_CFLAGS=-I/opt/av/include
 LOCAL_LIBADD=
 
