@@ -932,6 +932,10 @@ static switch_bool_t check_auth(jsock_t *jsock, cJSON *params, int *code, char *
 
 		}
 
+		if (jsock->profile->register_domain) {
+			domain = jsock->profile->register_domain;
+		}
+
 		if (!(id && domain)) {
 			*code = CODE_AUTH_FAILED;
 			switch_snprintf(message, mlen, "Missing or improper credentials");
@@ -4223,6 +4227,8 @@ static switch_status_t parse_config(const char *cf)
 					profile->mcast_port = (switch_port_t) atoi(val);
 				} else if (!strcasecmp(var, "timer-name") && !zstr(var)) {
 					profile->timer_name = switch_core_strdup(profile->pool, val);
+				} else if (!strcasecmp(var, "force-register-domain") && !zstr(val)) {
+					profile->register_domain = switch_core_strdup(profile->pool, val);
 				} else if (!strcasecmp(var, "local-network") && !zstr(val)) {
 					profile->local_network = switch_core_strdup(profile->pool, val);
 				} else if (!strcasecmp(var, "apply-candidate-acl")) {

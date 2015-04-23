@@ -249,6 +249,8 @@ struct verto_profile_s {
 
 	verto_vhost_t *vhosts;
 
+	char *register_domain;
+
 	struct verto_profile_s *next;
 };
 
