@@ -412,14 +412,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_write(switch_file_handle_t *fh,
 		switch_resample_process(fh->resampler, data, (uint32_t) * len);
 
 		if (fh->resampler->to_len > orig_len) {
-			if (!fh->dbuf) {
+			if (!fh->dbuf || (fh->dbuflen < fh->resampler->to_len * 2 * fh->channels)) {
 				void *mem;
 				fh->dbuflen = fh->resampler->to_len * 2 * fh->channels;
 				mem = realloc(fh->dbuf, fh->dbuflen);
 				switch_assert(mem);
 				fh->dbuf = mem;
 			}
-			switch_assert(fh->resampler->to_len * 2 *fh->channels <= fh->dbuflen);
+			switch_assert(fh->resampler->to_len * 2 * fh->channels <= fh->dbuflen);
 			memcpy(fh->dbuf, fh->resampler->to, fh->resampler->to_len * 2 * fh->channels);
 			data = fh->dbuf;
 		} else {
