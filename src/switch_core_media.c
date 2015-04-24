@@ -2557,6 +2557,10 @@ static void switch_core_session_parse_codec_settings(switch_core_session_t *sess
 			if (!bwv) {
 				bwv = switch_channel_get_variable(session->channel, "rtp_video_max_bandwidth_out");
 			}
+
+			if (!bwv) {
+				bwv = "1mb";
+			}
 			
 			engine->codec_settings.video.bandwidth = switch_parse_bandwidth_string(bwv);
 		}
@@ -7699,6 +7703,10 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 
 				if (!(vbw = switch_channel_get_variable(smh->session->channel, "rtp_video_max_bandwidth"))) {
 					vbw = switch_channel_get_variable(smh->session->channel, "rtp_video_max_bandwidth_in");
+				}
+
+				if (!vbw) {
+					vbw = "1mb";
 				}
 
 				bw = switch_parse_bandwidth_string(vbw);
