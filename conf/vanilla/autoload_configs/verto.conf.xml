@@ -8,6 +8,7 @@
     <profile name="mine">
       <param name="bind-local" value="0.0.0.0:8081"/>
       <param name="bind-local" value="0.0.0.0:8082" secure="true"/>
+      <param name="force-register-domain" value="$${domain}"/>
       <param name="secure-combined" value="$${certs_dir}/wss.pem"/>
       <param name="secure-chain" value="$${certs_dir}/wss.pem"/>
       <param name="userauth" value="true"/>

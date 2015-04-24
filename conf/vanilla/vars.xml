@@ -255,8 +255,8 @@
        127 - BV32
 
   -->
-  <X-PRE-PROCESS cmd="set" data="global_codec_prefs=OPUS,G722,PCMU,PCMA,GSM"/>
-  <X-PRE-PROCESS cmd="set" data="outbound_codec_prefs=PCMU,PCMA,GSM"/>
+  <X-PRE-PROCESS cmd="set" data="global_codec_prefs=OPUS,G722,PCMU,PCMA,VP8"/>
+  <X-PRE-PROCESS cmd="set" data="outbound_codec_prefs=OPUS,G722,PCMU,PCMA,VP8"/>
 
   <!--
       xmpp_client_profile and xmpp_server_profile
@@ -424,11 +424,23 @@
   <X-PRE-PROCESS cmd="set" data="internal_tls_port=5061"/>
   <X-PRE-PROCESS cmd="set" data="internal_ssl_enable=false"/>
 
-
   <!-- External SIP Profile -->
   <X-PRE-PROCESS cmd="set" data="external_auth_calls=false"/>
   <X-PRE-PROCESS cmd="set" data="external_sip_port=5080"/>
   <X-PRE-PROCESS cmd="set" data="external_tls_port=5081"/>
   <X-PRE-PROCESS cmd="set" data="external_ssl_enable=false"/>
 
+  <!-- Video Settings -->
+  <!-- Setting the max bandwdith -->
+  <X-PRE-PROCESS cmd="set" data="rtp_video_max_bandwidth_in=1mb"/>
+  <X-PRE-PROCESS cmd="set" data="rtp_video_max_bandwidth_out=1mb"/>
+
+  <!-- WebRTC Video -->
+  <!-- Suppress CNG for WebRTC Audio -->
+  <X-PRE-PROCESS cmd="set" data="suppress_cng=true"/>
+  <!-- Enable liberal DTMF for those that can't get it right -->
+  <X-PRE-PROCESS cmd="set" data="rtp_liberal_dtmf=true"/>
+  <!-- Helps with WebRTC Audio -->
+  <X-PRE-PROCESS cmd="set" data="answer_delay=4000"/>
+  
 </include>

@@ -380,7 +380,15 @@
 	<action application="conference" data="$1-${domain_name}@cdquality"/>
       </condition>
     </extension>
-    
+
+    <!-- STEREO 48kHz conferences / Video MCU -->
+    <extension name="cdquality_conferences">
+      <condition field="destination_number" expression="^(35\d{2})$">
+	<action application="answer"/>
+	<action application="conference" data="$1-${domain_name}@video-mcu-stereo"/>
+      </condition>
+    </extension>
+
     <!-- dial the FreeSWITCH conference via SIP-->
     <extension name="freeswitch_public_conf_via_sip">
       <condition field="destination_number" expression="^9(888|8888|1616|3232)$">
