@@ -65,14 +65,15 @@
     $.JsonRpcClient = function(options) {
         var self = this;
         this.options = $.extend({
-            ajaxUrl     : null,
-            socketUrl   : null, ///< The ws-url for default getSocket.
-            onmessage   : null, ///< Other onmessage-handler.
-            login       : null, /// auth login
-            passwd      : null, /// auth passwd
-            sessid : null,
-	    loginParams : null,
-            getSocket   : function(onmessage_cb) { return self._getSocket(onmessage_cb); }
+            ajaxUrl       : null,
+            socketUrl     : null, ///< The ws-url for default getSocket.
+            onmessage     : null, ///< Other onmessage-handler.
+            login         : null, /// auth login
+            passwd        : null, /// auth passwd
+            sessid        : null,
+	    loginParams   : null,
+	    userVariables : null,
+            getSocket     : function(onmessage_cb) { return self._getSocket(onmessage_cb); }
         }, options);
 
         self.ws_cnt = 0;
@@ -263,6 +264,7 @@
         self.options.login = params.login;
         self.options.passwd = params.passwd;
 	self.options.loginParams = params.loginParams;
+	self.options.userVariables = params.userVariables;
     };
 
     $.JsonRpcClient.prototype.connectSocket = function(onmessage_cb) {
@@ -422,7 +424,8 @@
                     if (!self.authing && response.error.code == -32000 && self.options.login && self.options.passwd) {
                         self.authing = true;
 
-                        this.call("login", { login: self.options.login, passwd: self.options.passwd, loginParams: self.options.loginParams},
+                        this.call("login", { login: self.options.login, passwd: self.options.passwd, loginParams: self.options.loginParams,
+					     userVariables: self.options.userVariables},
                             this._ws_callbacks[response.id].request_obj.method == "login" ?
                             function(e) {
                                 self.authing = false;

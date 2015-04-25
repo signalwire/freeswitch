@@ -885,7 +885,7 @@ static switch_bool_t check_auth(jsock_t *jsock, cJSON *params, int *code, char *
 	switch_bool_t r = SWITCH_FALSE;
 	const char *passwd = NULL;
 	const char *login = NULL;
-	cJSON *login_params = NULL;
+	cJSON *json_ptr = NULL;
 
 	if (!params) {
 		*code = CODE_AUTH_FAILED;
@@ -945,16 +945,31 @@ static switch_bool_t check_auth(jsock_t *jsock, cJSON *params, int *code, char *
 		switch_event_create(&req_params, SWITCH_EVENT_REQUEST_PARAMS);
 		switch_assert(req_params);
 
-		if ((login_params = cJSON_GetObjectItem(params, "loginParams"))) {
+		if ((json_ptr = cJSON_GetObjectItem(params, "loginParams"))) {
 			cJSON * i;
-
-			for(i = login_params->child; i; i = i->next) {
+			
+			for(i = json_ptr->child; i; i = i->next) {
 				if (i->type == cJSON_True) {
 					switch_event_add_header_string(req_params, SWITCH_STACK_BOTTOM, i->string, "true");
 				} else if (i->type == cJSON_False) {
 					switch_event_add_header_string(req_params, SWITCH_STACK_BOTTOM, i->string, "false");
 				} else if (!zstr(i->string) && !zstr(i->valuestring)) {
 					switch_event_add_header_string(req_params, SWITCH_STACK_BOTTOM, i->string, i->valuestring);
+				}
+			}
+		}
+
+
+		if ((json_ptr = cJSON_GetObjectItem(params, "userVariables"))) {
+			cJSON * i;
+			
+			for(i = json_ptr->child; i; i = i->next) {
+				if (i->type == cJSON_True) {
+					switch_event_add_header_string(jsock->user_vars, SWITCH_STACK_BOTTOM, i->string, "true");
+				} else if (i->type == cJSON_False) {
+					switch_event_add_header_string(jsock->user_vars, SWITCH_STACK_BOTTOM, i->string, "false");
+				} else if (!zstr(i->string) && !zstr(i->valuestring)) {
+					switch_event_add_header_string(jsock->user_vars, SWITCH_STACK_BOTTOM, i->string, i->valuestring);
 				}
 			}
 		}
@@ -1884,6 +1899,7 @@ static void *SWITCH_THREAD_FUNC client_thread(switch_thread_t *thread, void *obj
 
 	switch_event_create(&jsock->params, SWITCH_EVENT_CHANNEL_DATA);
 	switch_event_create(&jsock->vars, SWITCH_EVENT_CHANNEL_DATA);
+	switch_event_create(&jsock->user_vars, SWITCH_EVENT_CHANNEL_DATA);
 
 
 	add_jsock(jsock);
@@ -1902,6 +1918,7 @@ static void *SWITCH_THREAD_FUNC client_thread(switch_thread_t *thread, void *obj
 
 	switch_event_destroy(&jsock->params);
 	switch_event_destroy(&jsock->vars);
+	switch_event_destroy(&jsock->user_vars);
 
 	if (jsock->client_socket > -1) {
 		close_socket(&jsock->client_socket);
@@ -2062,14 +2079,19 @@ static switch_status_t verto_connect(switch_core_session_t *session, const char 
         cJSON *msg = NULL;
 		const char *var = NULL;
 		switch_caller_profile_t *caller_profile = switch_channel_get_caller_profile(tech_pvt->channel);
+		switch_event_header_t *hp;
 
-		DUMP_EVENT(jsock->params);
+		//DUMP_EVENT(jsock->params);
 
 		switch_channel_set_variable(tech_pvt->channel, "verto_user", jsock->uid);
 		switch_channel_set_variable(tech_pvt->channel, "presence_id", jsock->uid);
 		switch_channel_set_variable(tech_pvt->channel, "chat_proto", VERTO_CHAT_PROTO);
 		switch_channel_set_variable(tech_pvt->channel, "verto_host", jsock->domain);
 
+		for (hp = jsock->user_vars->headers; hp; hp = hp->next) {
+			switch_channel_set_variable(tech_pvt->channel, hp->name, hp->value);
+		}
+		
 		if ((var = switch_event_get_header(jsock->params, "caller-id-name"))) {
 			caller_profile->callee_id_name = switch_core_strdup(caller_profile->pool, var);
 		}
@@ -3235,6 +3257,7 @@ static switch_bool_t verto__invite_func(const char *method, cJSON *params, jsock
 	char name[512];
 	const char *var, *destination_number, *call_id = NULL, *sdp = NULL, *bandwidth = NULL, 
 		*caller_id_name = NULL, *caller_id_number = NULL, *remote_caller_id_name = NULL, *remote_caller_id_number = NULL,*context = NULL;
+	switch_event_header_t *hp;
 	
 	*response = obj;
 
@@ -3364,6 +3387,12 @@ static switch_bool_t verto__invite_func(const char *method, cJSON *params, jsock
 		switch_channel_set_caller_profile(channel, caller_profile);
 		
 	}
+
+
+	for (hp = jsock->user_vars->headers; hp; hp = hp->next) {
+		switch_channel_set_variable(channel, hp->name, hp->value);
+	}
+
 
 	switch_channel_set_profile_var(channel, "callee_id_name", remote_caller_id_name);
 	switch_channel_set_profile_var(channel, "callee_id_number", remote_caller_id_number);

@@ -76,6 +76,7 @@
             videoParams: {},
             audioParams: {},
 	    loginParams: {},
+	    userVariables: {},
             iceServers: false,
             ringSleep: 6000
         }, options);
@@ -94,6 +95,7 @@
             passwd: verto.options.passwd,
             socketUrl: verto.options.socketUrl,
 	    loginParams: verto.options.loginParams,
+	    userVariables: verto.options.userVariables,
             sessid: verto.sessid,
             onmessage: function(e) {
                 return verto.handleMessage(e.eventData);
