@@ -1574,7 +1574,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_init_with_bitrate(switch_codec
 													   uint32_t bitrate,
 													   uint32_t flags, const switch_codec_settings_t *codec_settings, switch_memory_pool_t *pool);
 
-SWITCH_DECLARE(switch_status_t) switch_core_codec_copy(switch_codec_t *codec, switch_codec_t *new_codec, switch_memory_pool_t *pool);
+SWITCH_DECLARE(switch_status_t) switch_core_codec_copy(switch_codec_t *codec, switch_codec_t *new_codec, 
+													   const switch_codec_settings_t *codec_settings, switch_memory_pool_t *pool);
 SWITCH_DECLARE(switch_status_t) switch_core_codec_parse_fmtp(const char *codec_name, const char *fmtp, uint32_t rate, switch_codec_fmtp_t *codec_fmtp);
 SWITCH_DECLARE(switch_status_t) switch_core_codec_reset(switch_codec_t *codec);
 

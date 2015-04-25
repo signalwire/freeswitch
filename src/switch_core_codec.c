@@ -616,7 +616,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_reset(switch_codec_t *codec)
 }
 
 
-SWITCH_DECLARE(switch_status_t) switch_core_codec_copy(switch_codec_t *codec, switch_codec_t *new_codec, switch_memory_pool_t *pool)
+SWITCH_DECLARE(switch_status_t) switch_core_codec_copy(switch_codec_t *codec, switch_codec_t *new_codec, 
+													   const switch_codec_settings_t *codec_settings, switch_memory_pool_t *pool)
 {
 	switch_status_t status;
 
@@ -643,8 +644,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_copy(switch_codec_t *codec, sw
 		new_codec->fmtp_in = switch_core_strdup(new_codec->memory_pool, codec->fmtp_in);
 	}
 
-	new_codec->implementation->init(new_codec, new_codec->flags, NULL);
-
+	new_codec->implementation->init(new_codec, new_codec->flags, codec_settings);
+	
 	switch_mutex_init(&new_codec->mutex, SWITCH_MUTEX_NESTED, new_codec->memory_pool);
 
 	return SWITCH_STATUS_SUCCESS;
