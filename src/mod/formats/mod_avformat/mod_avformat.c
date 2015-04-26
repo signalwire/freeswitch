@@ -1175,7 +1175,7 @@ typedef struct av_file_context av_file_context_t;
 
 static switch_status_t open_input_file(av_file_context_t *context, switch_file_handle_t *handle, const char *filename)
 {
-	AVCodec *audio_codec;
+	AVCodec *audio_codec = NULL;
 	AVCodec *video_codec;
 	int error;
 	int i;
@@ -1235,9 +1235,10 @@ static switch_status_t open_input_file(av_file_context_t *context, switch_file_h
 	}
 
 	if (context->has_audio) {
+		AVCodecContext *c = context->audio_st.st->codec;
+
 		context->audio_st.frame = av_frame_alloc();
 		switch_assert(context->audio_st.frame);
-		AVCodecContext *c = context->audio_st.st->codec;
 
 		handle->channels = c->channels > 2 ? 2 : c->channels;
 		context->audio_st.channels = handle->channels;
@@ -1864,7 +1865,7 @@ static switch_status_t av_file_read_video(switch_file_handle_t *handle, switch_f
 	}
 
 	if (!context->video_start_time) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "start: %lld ticks: %d ticks_per_frame: %d st num:%d st den:%d codec num:%d codec den:%d start: %lld, duration:%lld nb_frames:%lld q2d:%f\n",
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "start: %" SWITCH_INT64_T_FMT " ticks: %d ticks_per_frame: %d st num:%d st den:%d codec num:%d codec den:%d start: %" SWITCH_TIME_T_FMT ", duration:%" SWITCH_INT64_T_FMT " nb_frames:%" SWITCH_INT64_T_FMT " q2d:%f\n",
 			context->video_start_time, ticks, st->codec->ticks_per_frame, st->time_base.num, st->time_base.den, st->codec->time_base.num, st->codec->time_base.den,
 			st->start_time, st->duration, st->nb_frames, av_q2d(st->time_base));
 	}
@@ -1899,14 +1900,14 @@ again: if (0) goto again;
 		} else {
 			// uint64_t last_pts = mst->next_pts;
 			mst->next_pts = context->video_start_time + pts;
-			// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "pts: %lld last_pts: %lld delta: %lld frame_pts: %lld nextpts: %lld, num: %d, den:%d num:%d den:%d sleep: %lld\n",
+			// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "pts: %" SWITCH_INT64_T_FMT " last_pts: %" SWITCH_INT64_T_FMT " delta: %" SWITCH_INT64_T_FMT " frame_pts: %" SWITCH_INT64_T_FMT " nextpts: %" SWITCH_INT64_T_FMT ", num: %d, den:%d num:%d den:%d sleep: %" SWITCH_INT64_T_FMT "\n",
 				// pts, last_pts, mst->next_pts - last_pts, *((uint64_t *)img->user_priv), mst->next_pts, st->time_base.num, st->time_base.den, st->codec->time_base.num, st->codec->time_base.den, mst->next_pts - now);
 		}
 
 		if (pts == 0) mst->next_pts = 0;
 
 		if (mst->next_pts && switch_micro_time_now() - mst->next_pts > AV_TIME_BASE) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "picture is too late, diff: %lld %u\n", switch_micro_time_now() - mst->next_pts, switch_queue_size(context->eh.video_queue));
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "picture is too late, diff: %ld queue size:%u\n", switch_micro_time_now() - mst->next_pts, switch_queue_size(context->eh.video_queue));
 			switch_img_free(&img);
 			// return SWITCH_STATUS_BREAK;
 			goto again;
