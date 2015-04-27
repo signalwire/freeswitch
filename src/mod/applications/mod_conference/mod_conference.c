@@ -66,6 +66,7 @@ static struct conf_fps FPS_VALS[] = {
 	{10.0f, 100, 900},
 	{15.0f, 66, 1364},
 	{16.60f, 60, 1500},
+	{20.0f, 50, 4500},
 	{25.0f, 40, 2250},
 	{30.0f, 33, 2700},
 	{33.0f, 30, 2790},
@@ -8697,13 +8698,13 @@ static switch_status_t conf_api_sub_vid_fps(conference_obj_t *conference, switch
 {
 	float fps = 0;
 
-	if (!argv[2]) {
-		stream->write_function(stream, "Invalid input\n");
+	if (!conference->canvas) {
+		stream->write_function(stream, "Conference is not in mixing mode\n");
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	if (!conference->canvas) {
-		stream->write_function(stream, "Conference is not in mixing mode\n");
+	if (!argv[2]) {
+		stream->write_function(stream, "Current FPS [%0.2f]\n", conference->video_fps.fps);
 		return SWITCH_STATUS_SUCCESS;
 	}
 
