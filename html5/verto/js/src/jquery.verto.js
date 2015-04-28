@@ -2146,7 +2146,13 @@
 
     $.verto.findDevices = function(runtime) {
 	var aud = [], vid = [];
-
+	
+	$.FSRTC.checkPerms();
+	
+	setTimeout(function() {
+	    $.FSRTC.getValidRes(null);
+	}, 2000);
+	
 	MediaStreamTrack.getSources(function (media_sources) {
 	    for (var i = 0; i < media_sources.length; i++) {
 
