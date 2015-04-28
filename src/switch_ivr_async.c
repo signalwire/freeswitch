@@ -2263,7 +2263,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 
 		in_file = switch_core_session_sprintf(session, "%s-in.%s", file, ext);
 		out_file = switch_core_session_sprintf(session, "%s-out.%s", file, ext);
-
+		rh->in_fh.pre_buffer_datalen = rh->out_fh.pre_buffer_datalen = fh->pre_buffer_datalen;
+		channels = 1;
+		switch_set_flag(&rh->in_fh, SWITCH_FILE_NATIVE);
+		switch_set_flag(&rh->out_fh, SWITCH_FILE_NATIVE);
 
 		if (switch_core_file_open(&rh->in_fh, in_file, channels, read_impl.actual_samples_per_second, file_flags, NULL) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error opening %s\n", in_file);
