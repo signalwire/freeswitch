@@ -4819,7 +4819,7 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 		}
 	}
 
-	if (!rtp_session->jb || rtp_session->pause_jb || !jb_valid(rtp_session)) {
+	if (!rtp_session->vb && (!rtp_session->jb || rtp_session->pause_jb || !jb_valid(rtp_session))) {
 		if (*bytes > rtp_header_len && (rtp_session->recv_msg.header.version == 2 && check_recv_payload(rtp_session))) {
 			xcheck_jitter = *bytes;
 			check_jitter(rtp_session);
@@ -5252,23 +5252,23 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 
 	if (rtp_session->vb) {
 		switch_status_t vstatus = switch_vb_get_packet(rtp_session->vb, (switch_rtp_packet_t *) &rtp_session->recv_msg, bytes);
+		status = vstatus;
 
 		switch(vstatus) {
 		case SWITCH_STATUS_RESTART:
 			switch_core_session_request_video_refresh(rtp_session->session);
-			status = SWITCH_STATUS_FALSE;
+			status = SWITCH_STATUS_BREAK;
 			break;
 		case SWITCH_STATUS_MORE_DATA:
-			status = SWITCH_STATUS_FALSE;
+			status = SWITCH_STATUS_BREAK;
 			break;
 		case SWITCH_STATUS_BREAK:
 			switch_core_session_request_video_refresh(rtp_session->session);
 		default:
-			status = SWITCH_STATUS_SUCCESS;
 			break;
 		}
 		
-		if (status == SWITCH_STATUS_SUCCESS) {
+		if (vstatus == SWITCH_STATUS_SUCCESS) {
 			if (!xcheck_jitter) {
 				check_jitter(rtp_session);
 				xcheck_jitter = *bytes;
