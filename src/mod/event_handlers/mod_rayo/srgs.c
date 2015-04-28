@@ -1,6 +1,6 @@
 /*
  * mod_rayo for FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2013-2014, Grasshopper
+ * Copyright (C) 2013-2015, Grasshopper
  *
  * Version: MPL 1.1
  *
@@ -1005,7 +1005,7 @@ static int create_regexes(struct srgs_grammar *grammar, struct srgs_node *node, 
 				struct srgs_node *item = node->child;
 				if (node->value.item.repeat_min != 1 || node->value.item.repeat_max != 1 || node->value.item.tag) {
 					if (node->value.item.tag) {
-						stream->write_function(stream, "(?P<%d>", node->value.item.tag);
+						stream->write_function(stream, "(?P<tag%d>", node->value.item.tag);
 					} else {
 						stream->write_function(stream, "%s", "(?:");
 					}
@@ -1310,7 +1310,7 @@ enum srgs_match_type srgs_grammar_match(struct srgs_grammar *grammar, const char
 		for (i = 1; i <= grammar->tag_count; i++) {
 			char substring_name[16] = { 0 };
 			buffer[0] = '\0';
-			snprintf(substring_name, 16, "%d", i);
+			snprintf(substring_name, 16, "tag%d", i);
 			if (pcre_copy_named_substring(compiled_regex, input, ovector, result, substring_name, buffer, MAX_INPUT_SIZE) != PCRE_ERROR_NOSUBSTRING && !zstr_buf(buffer)) {
 				*interpretation = grammar->tags[i];
 				break;
