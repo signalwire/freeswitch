@@ -167,6 +167,9 @@ void sofia_glue_attach_private(switch_core_session_t *session, sofia_profile_t *
 	tech_pvt->mparams.rtp_timeout_sec = profile->rtp_timeout_sec;
 	tech_pvt->mparams.rtp_hold_timeout_sec = profile->rtp_hold_timeout_sec;
 	
+	if (profile->rtp_digit_delay) {
+		tech_pvt->mparams.dtmf_delay = profile->rtp_digit_delay;
+	}
 
 	switch_media_handle_create(&tech_pvt->media_handle, session, &tech_pvt->mparams);
 	switch_media_handle_set_media_flags(tech_pvt->media_handle, tech_pvt->profile->media_flags);
