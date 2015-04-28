@@ -17201,9 +17201,7 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_SWITCH_URL_UNSAFE_get() {
   char * jresult ;
   char *result = 0 ;
   
-  result = (char *)("\r\n \"#%&+:;<=>?@[\\]^`{
-    |
-}");
+result = (char *)("\r\n #%&+:;<=>?@[\\]^`{|}\"");
  jresult = SWIG_csharp_string_callback((const char *)result); 
     return jresult;
 }

@@ -43,7 +43,7 @@
 
 SWITCH_BEGIN_EXTERN_C 
 
-#define SWITCH_URL_UNSAFE "\r\n \"#%&+:;<=>?@[\\]^`{|}"
+#define SWITCH_URL_UNSAFE "\r\n #%&+:;<=>?@[\\]^`{|}\""
 
 
 /* https://code.google.com/p/stringencoders/wiki/PerformanceAscii 

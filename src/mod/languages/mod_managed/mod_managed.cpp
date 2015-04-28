@@ -100,7 +100,7 @@ SWITCH_MOD_DECLARE_NONSTD(void) InitManagedSession(ManagedSession *session, inpu
 	if (!session) {
 		return;
 	}
-	session->setDTMFCallback(NULL, "");
+	session->setDTMFCallback(NULL, (char *)"");
 	session->setHangupHook(NULL);
 	session->dtmfDelegate = dtmfDelegate;
 	session->hangupDelegate = hangupDelegate;
