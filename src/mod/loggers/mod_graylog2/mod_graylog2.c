@@ -1,6 +1,6 @@
 /* 
  * mod_graylog2 for FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2014, Grasshopper
+ * Copyright (C) 2014-2015, Grasshopper
  *
  * Version: MPL 1.1
  *
@@ -101,7 +101,7 @@ static char *to_gelf(const switch_log_node_t *node, switch_log_level_t log_level
 	} else if ((hostname = switch_core_get_variable("local_ip_v4")) && !zstr(hostname)) {
 		cJSON_AddItemToObject(gelf, "host", cJSON_CreateString(hostname));
 	}
-	switch_snprintf(timestamp, 32, "%"SWITCH_UINT64_T_FMT".%d", (uint64_t)(node->timestamp / 1000000), node->timestamp % 1000000);
+	switch_snprintf(timestamp, 32, "%"SWITCH_UINT64_T_FMT".%d", (uint64_t)(node->timestamp / 1000000), (node->timestamp % 1000000) / 1000);
 	cJSON_AddItemToObject(gelf, "timestamp", cJSON_CreateString(timestamp));
 	cJSON_AddItemToObject(gelf, "_microtimestamp", cJSON_CreateNumber(node->timestamp));
 	cJSON_AddItemToObject(gelf, "level", cJSON_CreateNumber(to_graylog2_level(log_level)));
