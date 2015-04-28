@@ -941,4 +941,78 @@
         return media;
     }
 
+    $.FSRTC.validRes = [];
+
+    $.FSRTC.resSupported = function(w, h) {
+	for (var i in $.FSRTC.validRes) {
+	    if ($.FSRTC.validRes[i][0] == w && $.FSRTC.validRes[i][1] == h) {
+		return true;
+	    }
+	}
+
+	return false;
+    }
+
+    $.FSRTC.bestResSupported = function() {
+	var w = 0, h = 0;
+
+	for (var i in $.FSRTC.validRes) {
+	    if ($.FSRTC.validRes[i][0] > w && $.FSRTC.validRes[i][1] > h) {
+		w = $.FSRTC.validRes[i][0];
+		h = $.FSRTC.validRes[i][1];
+	    }
+	}
+
+	return [w, h];
+    }
+
+    var checkRes = function (cam, w, h) {
+	var video = {
+            mandatory: {},
+            optional: []
+        }	
+
+	if (cam) {
+	    video.optional = [{sourceId: obj.options.useCamera}];
+	}
+	
+	video.mandatory = {
+	    "minWidth": w,
+	    "minHeight": h,
+	    "maxWidth": w,
+	    "maxHeight": h
+	};
+
+	getUserMedia({
+	    constraints: {
+                audio: false,
+                video: video	    
+	    },
+	    onsuccess: function(e) {e.stop(); console.info(w + "x" + h + " supported."); $.FSRTC.validRes.push([w, h])},
+	    onerror: function(e) {console.error( w + "x" + h + " not supported.");}
+        });
+    }
+    
+
+    $.FSRTC.getValidRes = function (cam) {
+	var used = [[320, 180], [320, 240], [640, 360], [640, 480], [1280, 720], [1920, 1080]];
+
+	$.FSRTC.validRes = [];
+
+	for (var i in used) {
+	    checkRes(cam, used[i][0], used[i][1]);
+	}
+    }
+
+    $.FSRTC.checkPerms = function () {
+	getUserMedia({
+	    constraints: {
+		audio: true,
+		video: true,
+	    },
+	    onsuccess: function(e) {e.stop(); console.info("media perm init complete");},
+	    onerror: function(e) {console.error("media perm init error");}
+	});
+    }
+
 })(jQuery);
