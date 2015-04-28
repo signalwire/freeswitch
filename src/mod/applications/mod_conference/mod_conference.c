@@ -1262,8 +1262,10 @@ static void layer_set_logo(conference_member_t *member, mcu_layer_t *layer, cons
 	if (layer->logo_img) {
 		layer->logo_pos = pos;
 
-		if ((var = switch_event_get_header(params, "text"))) {
-			layer->logo_text_img = switch_img_write_text_img(layer->screen_w, layer->screen_h, var);
+		if (params) {
+			if ((var = switch_event_get_header(params, "text"))) {
+				layer->logo_text_img = switch_img_write_text_img(layer->screen_w, layer->screen_h, var);
+			}
 		}
 	}
 	
