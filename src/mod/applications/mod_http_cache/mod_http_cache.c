@@ -844,14 +844,15 @@ static const char *find_extension(const char *url)
  * @param extension the filename extension
  * @return the cached URL filename.  Free when done.
  */
-static char *cached_url_filename_create(url_cache_t *cache, const char *extension)
+static char *cached_url_filename_create(url_cache_t *cache, const char *url)
 {
 	char *filename;
 	char *dirname;
 	char uuid_dir[3] = { 0 };
 	switch_uuid_t uuid;
 	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1] = { 0 };
-
+	const char *extension = find_extension(url);
+	
 	/* filename is constructed from UUID and is stored in cache dir (first 2 characters of UUID) */
 	switch_uuid_get(&uuid);
 	switch_uuid_format(uuid_str, &uuid);
@@ -861,9 +862,16 @@ static char *cached_url_filename_create(url_cache_t *cache, const char *extensio
 	/* create sub-directory if it doesn't exist */
 	switch_dir_make_recursive(dirname, SWITCH_DEFAULT_DIR_PERMS, cache->pool);
 
-	if (!zstr(extension)) {
+    if (!zstr(extension)) {
+        char *p;
 		filename = switch_mprintf("%s%s%s.%s", dirname, SWITCH_PATH_SEPARATOR, &uuid_str[2], extension);
-	} else {
+	    if ((p = strchr(filename, '?'))) {
+			*p = '\0';
+		}
+	    if ((p = strchr(filename, '#'))) {
+			*p = '\0';
+		}
+ 	} else {
 		filename = switch_mprintf("%s%s%s", dirname, SWITCH_PATH_SEPARATOR, &uuid_str[2]);
 	}
 	free(dirname);
@@ -889,7 +897,7 @@ static cached_url_t *cached_url_create(url_cache_t *cache, const char *url, cons
 
 	/* intialize cached URL */
 	if (zstr(filename)) {
-		u->filename = cached_url_filename_create(cache, find_extension(url));
+		u->filename = cached_url_filename_create(cache, url);
 	} else {
 		u->filename = strdup(filename);
 	}
@@ -1095,7 +1103,7 @@ SWITCH_STANDARD_API(http_cache_prefetch)
 
 #define HTTP_GET_SYNTAX "{param=val}<url>"
 /**
- * Get a file from the cache, download if it isn't cached
+ * Get a file from the cache, download if it isn' cached
  */
 SWITCH_STANDARD_API(http_cache_get)
 {
@@ -1564,7 +1572,7 @@ static switch_status_t http_cache_file_open(switch_file_handle_t *handle, const 
 		file_flags |= SWITCH_FILE_FLAG_WRITE;
 		context->write_url = switch_core_strdup(handle->memory_pool, path);
 		/* allocate local file in cache */
-		context->local_path = cached_url_filename_create(&gcache, find_extension(context->write_url));
+		context->local_path = cached_url_filename_create(&gcache, context->write_url);
 	} else {
 		/* READ = HTTP GET */
 		file_flags |= SWITCH_FILE_FLAG_READ;
