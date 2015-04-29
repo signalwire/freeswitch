@@ -772,7 +772,7 @@ static switch_status_t switch_vpx_decode(switch_codec_t *codec, switch_frame_t *
 	if (context->is_vp9) {
 		is_keyframe = IS_VP9_KEY_FRAME(*(unsigned char *)frame->data);
 	} else { // vp8
-		is_keyframe = IS_VP8_KEY_FRAME((uint8_t *)frame->data);
+		is_keyframe = (*(unsigned char *)frame->data & 0x10) || IS_VP8_KEY_FRAME((uint8_t *)frame->data);
 	}
 
 	// if (is_keyframe) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "got key %d\n", is_keyframe);
