@@ -1629,7 +1629,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_perform_kill_channel(switch_
 	switch_io_event_hook_kill_channel_t *ptr;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
-	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, switch_core_session_get_uuid(session), SWITCH_LOG_DEBUG, "Send signal %s [%s]\n",
+	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, switch_core_session_get_uuid(session), SWITCH_LOG_DEBUG10, "Send signal %s [%s]\n",
 					  switch_channel_get_name(session->channel), SIG_NAMES[sig]);
 
 	if (session->endpoint_interface->io_routines->kill_channel) {
