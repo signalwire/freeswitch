@@ -554,6 +554,8 @@ samples-htdocs:
 
 fonts_DATA = fonts/FreeMono.ttf fonts/FreeMonoOblique.ttf fonts/FreeSansBoldOblique.ttf fonts/FreeSerifBold.ttf fonts/OFL.txt fonts/FreeMonoBold.ttf fonts/FreeSans.ttf fonts/FreeSansOblique.ttf fonts/FreeSerifBoldItalic.ttf fonts/README.fonts fonts/FreeMonoBoldOblique.ttf fonts/FreeSansBold.ttf fonts/FreeSerif.ttf fonts/FreeSerifItalic.ttf
 
+images_DATA = images/default-avatar.png	images/default-mute.png
+
 samples: samples-conf samples-htdocs
 
 install-exec-local:

@@ -442,5 +442,9 @@
   <X-PRE-PROCESS cmd="set" data="rtp_liberal_dtmf=true"/>
   <!-- Helps with WebRTC Audio -->
   <X-PRE-PROCESS cmd="set" data="answer_delay=4000"/>
-  
+
+  <!-- Stock Video Avatars -->
+  <X-PRE-PROCESS cmd="set" data="video_mute_png=$${images_dir}/default-mute.png"/>
+  <X-PRE-PROCESS cmd="set" data="video_no_avatar_png=$${images_dir}/default-avatar.png"/>
+
 </include>
