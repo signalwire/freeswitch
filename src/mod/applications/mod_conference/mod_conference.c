@@ -1050,7 +1050,12 @@ static void scale_and_patch(conference_obj_t *conference, mcu_layer_t *layer, sw
 	IMG = conference->canvas->img;
 	img = ximg ? ximg : layer->cur_img;
 
-	switch_assert(IMG && img);
+	switch_assert(IMG);
+
+	if (!img) {
+		switch_mutex_unlock(conference->canvas->mutex);
+		return;
+	}
 
 	if (layer->refresh) {
 		switch_img_fill(conference->canvas->img, layer->x_pos, layer->y_pos, layer->screen_w, layer->screen_h, &conference->canvas->letterbox_bgcolor);
