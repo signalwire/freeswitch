@@ -1122,7 +1122,7 @@ static void scale_and_patch(conference_obj_t *conference, mcu_layer_t *layer, sw
 			switch_img_patch(IMG, layer->img, x_pos, y_pos);
 		}
 
-		if (layer->logo_img && !ximg) {
+		if (layer->logo_img) {
 			int ew = layer->screen_w, eh = layer->screen_h - (layer->banner_img ? layer->banner_img->d_h : 0);
 			int ex = 0, ey = 0;
 
