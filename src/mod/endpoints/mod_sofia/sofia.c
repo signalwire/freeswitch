@@ -4303,9 +4303,9 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 						}
 					} else if (!strcasecmp(var, "tls-always-nat")) {
 						if (switch_true(val)) {
-							sofia_set_pflag(profile, PFLAG_TCP_ALWAYS_NAT);
+							sofia_set_pflag(profile, PFLAG_TLS_ALWAYS_NAT);
 						} else {
-							sofia_clear_pflag(profile, PFLAG_TCP_ALWAYS_NAT);
+							sofia_clear_pflag(profile, PFLAG_TLS_ALWAYS_NAT);
 						}
 					} else if (!strcasecmp(var, "presence-proto-lookup")) {
 						if (switch_true(val)) {
