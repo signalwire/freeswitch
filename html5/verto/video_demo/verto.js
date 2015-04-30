@@ -751,7 +751,7 @@ function refresh_devices()
     $("#usemic").empty();
     
 
-    $.verto.findDevices(function() {
+    $.verto.init({camera: null}, function() {
 	var x = 0;
 
 	$("#usecamera").append(new Option("No Camera", "none"));
@@ -1273,7 +1273,7 @@ $(document).ready(function() {
     });
 
 
-    $.verto.init(init);
+    init();
 
 });
 

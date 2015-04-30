@@ -2144,10 +2144,10 @@
     $.verto.videoDevices = [];
     $.verto.audioDevices = [];
 
-    $.verto.findDevices = function(runtime) {
+    $.verto.init = function(obj, runtime) {
 	var aud = [], vid = [];
 	
-	$.FSRTC.getValidRes(null, function() {
+	$.FSRTC.getValidRes(obj.camera, function() {
 	    console.info("enumerating devices");
 
 	    MediaStreamTrack.getSources(function (media_sources) {
@@ -2169,10 +2169,5 @@
 	    });
 	});
     }
-
-    $.verto.init = function(runtime) {
-	$.verto.findDevices(runtime);
-    };
-
 
 })(jQuery);
