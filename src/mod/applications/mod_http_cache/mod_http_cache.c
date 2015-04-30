@@ -87,6 +87,12 @@ struct cached_url {
 	char *url;
 	/** The path and name of the cached URL */
 	char *filename;
+	/** File extension */
+	char *extension;
+	/** Content-Type of this URL (audio/3gpp) */
+	char *content_type;
+	/** Content-Type parameters  (codecs=samr) */
+	const char *content_type_params;
 	/** The size of the cached URL, in bytes */
 	size_t size;
 	/** URL use flag */
@@ -120,6 +126,7 @@ static switch_status_t http_get(url_cache_t *cache, http_profile_t *profile, cac
 static size_t get_file_callback(void *ptr, size_t size, size_t nmemb, void *get);
 static size_t get_header_callback(void *ptr, size_t size, size_t nmemb, void *url);
 static void process_cache_control_header(cached_url_t *url, char *data);
+static void process_content_type_header(cached_url_t *url, char *data);
 
 static switch_status_t http_put(url_cache_t *cache, http_profile_t *profile, switch_core_session_t *session, const char *url, const char *filename, int cache_local_file);
 
@@ -479,8 +486,32 @@ static void process_cache_control_header(cached_url_t *url, char *data)
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "setting max age to %u seconds from now\n", (int)max_age);
 }
 
+/**
+ * Content-Type: audio/mpeg; foo=bar
+ */
+static void process_content_type_header(cached_url_t *url, char *data)
+{
+	char *params;
+
+	/* trim whitespace and check if empty */
+	data = trim(data);
+	if (zstr(data)) {
+		return;
+	}
+
+	/* copy header, removing any params */
+	url->content_type = strdup(data);
+	params = strchr(url->content_type, ';');
+	if (params) {
+		*params = '\0';
+		url->content_type_params = trim(++params);
+	}
+}
+
 #define CACHE_CONTROL_HEADER "cache-control:"
 #define CACHE_CONTROL_HEADER_LEN (sizeof(CACHE_CONTROL_HEADER) - 1)
+#define CONTENT_TYPE_HEADER "content-type:"
+#define CONTENT_TYPE_HEADER_LEN (sizeof(CONTENT_TYPE_HEADER) - 1)
 /**
  * Called by libcurl to process headers from HTTP GET response
  * @param ptr the header data
@@ -508,6 +539,8 @@ static size_t get_header_callback(void *ptr, size_t size, size_t nmemb, void *ge
 	/* check which header this is and process it */
 	if (!strncasecmp(CACHE_CONTROL_HEADER, header, CACHE_CONTROL_HEADER_LEN)) {
 		process_cache_control_header(url, header + CACHE_CONTROL_HEADER_LEN);
+	} else if (!strncasecmp(CONTENT_TYPE_HEADER, header, CONTENT_TYPE_HEADER_LEN)) {
+		process_content_type_header(url, header + CONTENT_TYPE_HEADER_LEN);
 	}
 
 	switch_safe_free(header);
@@ -819,40 +852,52 @@ static http_profile_t *url_cache_http_profile_add(url_cache_t *cache, const char
 
 /**
  * Find file extension at end of URL.
- * @return file extension or NULL if it doesn't exist
+ * @param url to search
+ * @param found_extension
+ * @param found_extension_len
  */
-static const char *find_extension(const char *url)
+static void find_extension(const char *url, const char **found_extension, size_t *found_extension_len)
 {
 	const char *ext;
+	size_t ext_len = 0;
 
 	/* find extension on the end of URL */
 	for (ext = &url[strlen(url) - 1]; ext != url; ext--) {
 		if (*ext == '/' || *ext == '\\') {
 			break;
 		}
-		if (*ext == '.') {
+		if (*ext == '?' || *ext == '#') {
+			ext_len = 0;
+		} else if (*ext == '.') {
 			/* found it */
-			return ++ext;
+			*found_extension_len = ext_len;
+			*found_extension = ++ext;
+			break;
+		} else {
+			ext_len++;
 		}
 	}
-	return NULL;
 }
 
 /**
  * Create a cached URL filename.
- * @param cache the cache
- * @param extension the filename extension
+ * @param cache
+ * @param url
+ * @param extension if set, extension is duplicated here
  * @return the cached URL filename.  Free when done.
  */
-static char *cached_url_filename_create(url_cache_t *cache, const char *url)
+static char *cached_url_filename_create(url_cache_t *cache, const char *url, char **extension)
 {
 	char *filename;
 	char *dirname;
 	char uuid_dir[3] = { 0 };
 	switch_uuid_t uuid;
 	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1] = { 0 };
-	const char *extension = find_extension(url);
-	
+	const char *found_extension = NULL;
+	size_t found_extension_len = 0;
+
+	find_extension(url, &found_extension, &found_extension_len);
+
 	/* filename is constructed from UUID and is stored in cache dir (first 2 characters of UUID) */
 	switch_uuid_get(&uuid);
 	switch_uuid_format(uuid_str, &uuid);
@@ -862,20 +907,45 @@ static char *cached_url_filename_create(url_cache_t *cache, const char *url)
 	/* create sub-directory if it doesn't exist */
 	switch_dir_make_recursive(dirname, SWITCH_DEFAULT_DIR_PERMS, cache->pool);
 
-    if (!zstr(extension)) {
-        char *p;
-		filename = switch_mprintf("%s%s%s.%s", dirname, SWITCH_PATH_SEPARATOR, &uuid_str[2], extension);
-	    if ((p = strchr(filename, '?'))) {
-			*p = '\0';
-		}
-	    if ((p = strchr(filename, '#'))) {
-			*p = '\0';
+	if (!zstr(found_extension) && found_extension_len > 0) {
+		char *found_extension_dup = strndup(found_extension, found_extension_len);
+		filename = switch_mprintf("%s%s%s.%s", dirname, SWITCH_PATH_SEPARATOR, &uuid_str[2], found_extension_dup);
+		if (extension) {
+			*extension = found_extension_dup;
+		} else {
+			free(found_extension_dup);
 		}
  	} else {
 		filename = switch_mprintf("%s%s%s", dirname, SWITCH_PATH_SEPARATOR, &uuid_str[2]);
+		if (extension) {
+			*extension = NULL;
+		}
 	}
 	free(dirname);
 	return filename;
+}
+
+/**
+ * Rename cached URL with filename extension if one can be determined
+ * @param url the cached URL
+ */
+static void cached_url_set_extension_from_content_type(cached_url_t *url, switch_core_session_t *session)
+{
+	if (!url->extension && url->content_type) {
+		const char *new_extension = switch_core_mime_type2ext(url->content_type);
+		if (new_extension) {
+			char *new_filename = switch_mprintf("%s.%s", url->filename, new_extension);
+			if (rename(url->filename, new_filename) != -1) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "renamed cached URL to %s\n", new_filename);
+				free(url->filename);
+				url->filename = new_filename;
+				url->extension = strdup(new_extension);
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "rename(%s): %s\n", new_filename, strerror(errno));
+				free(new_filename);
+			}
+		}
+	}
 }
 
 /**
@@ -897,7 +967,7 @@ static cached_url_t *cached_url_create(url_cache_t *cache, const char *url, cons
 
 	/* intialize cached URL */
 	if (zstr(filename)) {
-		u->filename = cached_url_filename_create(cache, url);
+		u->filename = cached_url_filename_create(cache, url, &u->extension);
 	} else {
 		u->filename = strdup(filename);
 	}
@@ -922,6 +992,8 @@ static void cached_url_destroy(cached_url_t *url, switch_memory_pool_t *pool)
 		switch_file_remove(url->filename, pool);
 	}
 	switch_safe_free(url->filename);
+	switch_safe_free(url->extension);
+	switch_safe_free(url->content_type);
 	switch_safe_free(url->url);
 	switch_safe_free(url);
 }
@@ -1029,6 +1101,9 @@ static switch_status_t http_get(url_cache_t *cache, http_profile_t *profile, cac
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "URL %s downloaded in %d ms\n", url->url, duration_ms);
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "URL %s downloaded in %d ms\n", url->url, duration_ms);
+		}
+		if (!url->extension) {
+			cached_url_set_extension_from_content_type(url, session);
 		}
 	} else {
 		url->size = 0; // nothing downloaded or download interrupted
@@ -1572,7 +1647,7 @@ static switch_status_t http_cache_file_open(switch_file_handle_t *handle, const 
 		file_flags |= SWITCH_FILE_FLAG_WRITE;
 		context->write_url = switch_core_strdup(handle->memory_pool, path);
 		/* allocate local file in cache */
-		context->local_path = cached_url_filename_create(&gcache, context->write_url);
+		context->local_path = cached_url_filename_create(&gcache, context->write_url, NULL);
 	} else {
 		/* READ = HTTP GET */
 		file_flags |= SWITCH_FILE_FLAG_READ;
