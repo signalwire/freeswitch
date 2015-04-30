@@ -2147,32 +2147,32 @@
     $.verto.findDevices = function(runtime) {
 	var aud = [], vid = [];
 	
-	$.FSRTC.checkPerms();
-	
-	setTimeout(function() {
-	    $.FSRTC.getValidRes(null);
-	}, 2000);
-	
-	MediaStreamTrack.getSources(function (media_sources) {
-	    for (var i = 0; i < media_sources.length; i++) {
+	$.FSRTC.getValidRes(null, function() {
+	    console.info("enumerating devices");
 
-		if (media_sources[i].kind == 'video') {
-		    vid.push(media_sources[i]);
-		} else {
-		    aud.push(media_sources[i]);
+	    MediaStreamTrack.getSources(function (media_sources) {
+		for (var i = 0; i < media_sources.length; i++) {
+		    
+		    if (media_sources[i].kind == 'video') {
+			vid.push(media_sources[i]);
+		    } else {
+			aud.push(media_sources[i]);
+		    }
 		}
-	    }
-
-	    $.verto.videoDevices = vid;
-	    $.verto.audioDevices = aud;
-
-	    console.info("Audio Devices", $.verto.audioDevices);
-	    console.info("Video Devices", $.verto.videoDevices);
-	    runtime();
+		
+		$.verto.videoDevices = vid;
+		$.verto.audioDevices = aud;
+		
+		console.info("Audio Devices", $.verto.audioDevices);
+		console.info("Video Devices", $.verto.videoDevices);
+		runtime();
+	    });
 	});
     }
 
-
+    $.verto.init = function(runtime) {
+	$.verto.findDevices(runtime);
+    };
 
 
 })(jQuery);
