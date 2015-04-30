@@ -8265,6 +8265,10 @@ static switch_status_t conf_api_sub_vmute(conference_member_t *member, switch_st
 
 	switch_clear_flag_locked(member, MFLAG_CAN_BE_SEEN);
 
+	if (member->channel) {
+		switch_channel_set_flag(member->channel, CF_VIDEO_PAUSE);
+	}
+
 	if (!(data) || !strstr((char *) data, "quiet")) {
 		switch_set_flag(member, MFLAG_INDICATE_MUTE);
 	}
@@ -8316,6 +8320,10 @@ static switch_status_t conf_api_sub_unvmute(conference_member_t *member, switch_
 	}
 
 	switch_set_flag_locked(member, MFLAG_CAN_BE_SEEN);
+
+	if (member->channel) {
+		switch_channel_clear_flag(member->channel, CF_VIDEO_PAUSE);
+	}
 
 	if (!(data) || !strstr((char *) data, "quiet")) {
 		switch_set_flag(member, MFLAG_INDICATE_UNMUTE);
