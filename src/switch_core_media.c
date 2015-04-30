@@ -1947,9 +1947,9 @@ static void check_jb_sync(switch_core_session_t *session)
 			jb_sync_msec = tmp;
 		}
 	}
-
-	fps = switch_core_media_get_video_fps(session);
-		
+	// TBD IMPROVE get_fps func
+	fps = 15; //switch_core_media_get_video_fps(session);
+	
 	if (!fps) return;
 
 	if (jb_sync_msec < 0) {
