@@ -1273,9 +1273,7 @@ $(document).ready(function() {
     });
 
 
-    init();
-
-
+    $.verto.init(init);
 
 });
 

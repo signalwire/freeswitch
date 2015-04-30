@@ -966,7 +966,16 @@
 	return [w, h];
     }
 
-    var checkRes = function (cam, w, h) {
+    var resList = [[320, 180], [320, 240], [640, 360], [640, 480], [1280, 720], [1920, 1080]];
+    var resI = 0;
+
+    var checkRes = function (cam, func) {
+
+	if (resI >= resList.length) {
+	    if (func) return func();
+	    return;
+	}
+
 	var video = {
             mandatory: {},
             optional: []
@@ -976,6 +985,10 @@
 	    video.optional = [{sourceId: obj.options.useCamera}];
 	}
 	
+	w = resList[resI][0];
+	h = resList[resI][1];
+	resI++;
+
 	video.mandatory = {
 	    "minWidth": w,
 	    "minHeight": h,
@@ -988,20 +1001,19 @@
                 audio: false,
                 video: video	    
 	    },
-	    onsuccess: function(e) {e.stop(); console.info(w + "x" + h + " supported."); $.FSRTC.validRes.push([w, h])},
-	    onerror: function(e) {console.error( w + "x" + h + " not supported.");}
+	    onsuccess: function(e) {e.stop(); console.info(w + "x" + h + " supported."); $.FSRTC.validRes.push([w, h]); checkRes(cam, func);},
+	    onerror: function(e) {console.error( w + "x" + h + " not supported."); checkRes(cam, func);}
         });
     }
     
 
-    $.FSRTC.getValidRes = function (cam) {
-	var used = [[320, 180], [320, 240], [640, 360], [640, 480], [1280, 720], [1920, 1080]];
+    $.FSRTC.getValidRes = function (cam, func) {
+	var used = [];
 
 	$.FSRTC.validRes = [];
+	resI = 0;
 
-	for (var i in used) {
-	    checkRes(cam, used[i][0], used[i][1]);
-	}
+	checkRes(cam, func);
     }
 
     $.FSRTC.checkPerms = function () {
