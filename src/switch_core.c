@@ -1076,6 +1076,13 @@ SWITCH_DECLARE(const char *) switch_core_mime_ext2type(const char *ext)
 	return (const char *) switch_core_hash_find(runtime.mime_types, ext);
 }
 
+SWITCH_DECLARE(const char *) switch_core_mime_type2ext(const char *mime)
+{
+	if (!mime) {
+		return NULL;
+	}
+	return (const char *) switch_core_hash_find(runtime.mime_type_exts, mime);
+}
 
 SWITCH_DECLARE(switch_hash_index_t *) switch_core_mime_index(void)
 {
@@ -1084,36 +1091,40 @@ SWITCH_DECLARE(switch_hash_index_t *) switch_core_mime_index(void)
 
 SWITCH_DECLARE(switch_status_t) switch_core_mime_add_type(const char *type, const char *ext)
 {
-	const char *check;
+	char *ptype = NULL;
+	char *ext_list = NULL;
+	int argc = 0;
+	char *argv[20] = { 0 };
+	int x;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
 	switch_assert(type);
 	switch_assert(ext);
 
-	check = (const char *) switch_core_hash_find(runtime.mime_types, ext);
+	ptype = switch_core_permanent_strdup(type);
+	ext_list = strdup(ext);
 
-	if (!check) {
-		char *ptype = switch_core_permanent_strdup(type);
-		char *ext_list = strdup(ext);
-		int argc = 0;
-		char *argv[20] = { 0 };
-		int x;
+	switch_assert(ext_list);
 
-		switch_assert(ext_list);
-
-		if ((argc = switch_separate_string(ext_list, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
-
-			for (x = 0; x < argc; x++) {
-				if (argv[x] && ptype) {
+	/* Map each file extension to this MIME type if not already mapped.  Map the MIME type to the first file extension in the list if not already mapped. */
+	if ((argc = switch_separate_string(ext_list, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
+		int is_mapped_type = switch_core_hash_find(runtime.mime_type_exts, ptype) != NULL;
+		for (x = 0; x < argc; x++) {
+			if (argv[x] && ptype) {
+				if (!switch_core_hash_find(runtime.mime_types, ext)) {
 					switch_core_hash_insert(runtime.mime_types, argv[x], ptype);
 				}
+				if (!is_mapped_type) {
+					switch_core_hash_insert(runtime.mime_type_exts, ptype, switch_core_permanent_strdup(argv[x]));
+					is_mapped_type = 1;
+				}
 			}
-
-			status = SWITCH_STATUS_SUCCESS;
 		}
 
-		free(ext_list);
+		status = SWITCH_STATUS_SUCCESS;
 	}
+
+	free(ext_list);
 
 	return status;
 }
@@ -1719,7 +1730,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	switch_core_set_globals();
 	switch_core_session_init(runtime.memory_pool);
 	switch_event_create_plain(&runtime.global_vars, SWITCH_EVENT_CHANNEL_DATA);
-	switch_core_hash_init(&runtime.mime_types);
+	switch_core_hash_init_case(&runtime.mime_types, SWITCH_FALSE);
+	switch_core_hash_init_case(&runtime.mime_type_exts, SWITCH_FALSE);
 	switch_core_hash_init_case(&runtime.ptimes, SWITCH_FALSE);
 	load_mime_types();
 	runtime.flags |= flags;
@@ -2748,6 +2760,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_destroy(void)
 	switch_event_destroy(&runtime.global_vars);
 	switch_core_hash_destroy(&runtime.ptimes);
 	switch_core_hash_destroy(&runtime.mime_types);
+	switch_core_hash_destroy(&runtime.mime_type_exts);
 
 	if (IP_LIST.hash) {
 		switch_core_hash_destroy(&IP_LIST.hash);
