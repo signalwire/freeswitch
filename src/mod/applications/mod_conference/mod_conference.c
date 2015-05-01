@@ -2074,12 +2074,19 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 				} else {
 					imember->blanks++;
 
-					if (imember->video_mute_img && (imember->blanks == conference->video_fps.fps * 2 || 
-													imember->blanks >= conference->video_fps.fps * 2) && !layer->blanked) {
-						switch_img_free(&layer->cur_img);
-						switch_img_copy(imember->video_mute_img, &layer->cur_img);
-						layer->tagged = 1;
-						layer->blanked = 1;
+					if ((imember->avatar_png_img || imember->video_mute_img) && (imember->blanks == conference->video_fps.fps * 2 || 
+																				imember->blanks >= conference->video_fps.fps * 2) && !layer->blanked) {
+						switch_image_t *img = imember->avatar_png_img;
+
+						if (!img) img = imember->video_mute_img;
+
+						if (img) {
+							switch_img_free(&layer->cur_img);
+							switch_img_copy(img, &layer->cur_img);
+							layer->refresh = 1;
+							layer->tagged = 1;
+							layer->blanked = 1;
+						}
 					}
 				}
 			}
