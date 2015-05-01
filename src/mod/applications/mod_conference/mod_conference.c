@@ -401,6 +401,7 @@ typedef struct mcu_layer_s {
 	int mute_patched;
 	int refresh;
 	int is_avatar;
+	int blanked;
 	switch_img_position_t logo_pos;
 	switch_image_t *img;
 	switch_image_t *cur_img;
@@ -410,7 +411,6 @@ typedef struct mcu_layer_s {
 	switch_image_t *mute_img;
 	switch_img_txt_handle_t *txthandle;
 	conference_file_node_t *fnode;
-	int blanks;
 } mcu_layer_t;
 
 typedef struct video_layout_s {
@@ -682,6 +682,7 @@ struct conference_member {
 	switch_frame_buffer_t *fb;
 	switch_image_t *avatar_png_img;
 	switch_image_t *video_mute_img;
+	int blanks;
 };
 
 typedef enum {
@@ -1030,7 +1031,7 @@ static void reset_layer(mcu_canvas_t *canvas, mcu_layer_t *layer)
 
 	layer->banner_patched = 0;
 	layer->is_avatar = 0;
-	layer->blanks = 0;
+	layer->blanked = 0;
 
 	if (layer->geometry.overlap) {
 		canvas->refresh = 1;
@@ -2069,16 +2070,16 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 					if (switch_core_media_bug_count(imember->session, "patch:video")) {
 						layer->bugged = 1;
 					}
-					layer->blanks = 0;
+					imember->blanks = 0;
 				} else {
-					layer->blanks++;
+					imember->blanks++;
 
-					if (layer->blanks == 15 && imember->video_mute_img) {
+					if (imember->video_mute_img && (imember->blanks == conference->video_fps.fps * 2 || 
+													imember->blanks >= conference->video_fps.fps * 2) && !layer->blanked) {
 						switch_img_free(&layer->cur_img);
 						switch_img_copy(imember->video_mute_img, &layer->cur_img);
 						layer->tagged = 1;
-					} else if (layer->cur_img) {
-						layer->tagged = 1;
+						layer->blanked = 1;
 					}
 				}
 			}
