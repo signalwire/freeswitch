@@ -325,10 +325,10 @@ SWITCH_DECLARE(void) switch_img_txt_handle_destroy(switch_img_txt_handle_t **han
 * \param[in]    angle       Angle to rotate
 */
 
-SWITCH_DECLARE(switch_status_t) switch_img_txt_handle_render(switch_img_txt_handle_t *handle, switch_image_t *img,
-															 int x, int y, const char *text,
-															 const char *font_family, const char *font_color, const char *bgcolor, uint16_t font_size, double angle);
-
+SWITCH_DECLARE(uint32_t) switch_img_txt_handle_render(switch_img_txt_handle_t *handle, switch_image_t *img,
+													  int x, int y, const char *text,
+													  const char *font_family, const char *font_color, const char *bgcolor, uint16_t font_size, double angle);
+						 
 
 SWITCH_DECLARE(void) switch_img_patch_hole(switch_image_t *IMG, switch_image_t *img, int x, int y, switch_image_rect_t *rect);
 

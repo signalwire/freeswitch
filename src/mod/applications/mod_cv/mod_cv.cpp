@@ -198,17 +198,24 @@ static void context_render_text(cv_context_t *context, struct overlay *overlay, 
 
     if (len < 5) len = 5;
 
-    width = (int) (float)(font_size * .95f * len);
+    //width = (int) (float)(font_size * .95f * len);
 
     switch_color_set_rgb(&bgcolor, overlay->bg);
+
+
+
+    switch_img_txt_handle_destroy(&overlay->txthandle);
+    switch_img_txt_handle_create(&overlay->txthandle, overlay->font_face, overlay->fg, overlay->bg, font_size, 0, NULL);
+
+    width = switch_img_txt_handle_render(overlay->txthandle,
+										 NULL,
+										 font_size / 2, font_size / 2,
+										 text, NULL, overlay->fg, overlay->bg, 0, 0);
 
     if (!overlay->png || (overlay->png->d_w != width || overlay->png->d_h != font_size * 2)) {
         switch_img_free(&overlay->png);
         overlay->png = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, width, font_size * 2, 1);
     }
-
-    switch_img_txt_handle_destroy(&overlay->txthandle);
-    switch_img_txt_handle_create(&overlay->txthandle, overlay->font_face, overlay->fg, overlay->bg, font_size, 0, NULL);
 
 
     switch_img_fill(overlay->png, 0, 0, overlay->png->d_w, overlay->png->d_h, &bgcolor);

@@ -681,9 +681,10 @@ static void draw_bitmap(switch_img_txt_handle_t *handle, switch_image_t *img, FT
 #endif
 
 
-SWITCH_DECLARE(switch_status_t) switch_img_txt_handle_render(switch_img_txt_handle_t *handle, switch_image_t *img,
+SWITCH_DECLARE(uint32_t) switch_img_txt_handle_render(switch_img_txt_handle_t *handle, switch_image_t *img,
 															 int x, int y, const char *text,
-															 const char *font_family, const char *font_color, const char *bgcolor, uint16_t font_size, double angle)
+															 const char *font_family, const char *font_color, 
+															 const char *bgcolor, uint16_t font_size, double angle)
 {
 #if SWITCH_HAVE_FREETYPE
 	FT_GlyphSlot  slot;
@@ -694,9 +695,12 @@ SWITCH_DECLARE(switch_status_t) switch_img_txt_handle_render(switch_img_txt_hand
 	int           index = 0;
 	FT_ULong      ch;
 	FT_Face face;
+	uint32_t width = 0;
+	int this_x = 0, last_x = 0, space = 0;
 
-	if (zstr(text)) return SWITCH_STATUS_FALSE;
-	switch_assert(img->fmt == SWITCH_IMG_FMT_I420);
+	if (zstr(text)) return 0;
+
+	switch_assert(!img || img->fmt == SWITCH_IMG_FMT_I420);
 
 	if (font_family) {
 		handle->font_family = switch_core_strdup(handle->pool, font_family);
@@ -730,12 +734,12 @@ SWITCH_DECLARE(switch_status_t) switch_img_txt_handle_render(switch_img_txt_hand
 	error = FT_New_Face(handle->library, font_family, 0, &face); /* create face object */
 	if (error) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to open font %s\n", font_family);
-		return SWITCH_STATUS_FALSE;
+		return 0;
 	}
 
 	/* use 50pt at 100dpi */
 	error = FT_Set_Char_Size(face, 64 * font_size, 0, 96, 96); /* set character size */
-	if (error) return SWITCH_STATUS_FALSE;
+	if (error) return 0;
 
 	slot = face->glyph;
 
@@ -766,10 +770,25 @@ SWITCH_DECLARE(switch_status_t) switch_img_txt_handle_render(switch_img_txt_hand
 
 		/* load glyph image into the slot (erase previous one) */
 		error = FT_Load_Char(face, ch, FT_LOAD_RENDER);
+
 		if (error) continue;
 
-		/* now, draw to our target surface (convert position) */
-		draw_bitmap(handle, img, &slot->bitmap, pen.x + slot->bitmap_left, pen.y - slot->bitmap_top + font_size);
+		this_x = pen.x + slot->bitmap_left;
+		
+		if (img) {
+			/* now, draw to our target surface (convert position) */
+			draw_bitmap(handle, img, &slot->bitmap, this_x, pen.y - slot->bitmap_top + font_size);
+		}
+
+		if (last_x) {
+			space = this_x - last_x;
+		} else {
+			space = 0;
+		}
+
+		last_x = this_x;
+
+		width += space;
 
 		/* increment pen position */
 		pen.x += slot->advance.x >> 6;
@@ -778,9 +797,9 @@ SWITCH_DECLARE(switch_status_t) switch_img_txt_handle_render(switch_img_txt_hand
 
 	FT_Done_Face(face);
 
-	return SWITCH_STATUS_SUCCESS;
+	return width + slot->bitmap.width * 3;
 #else
-	return SWITCH_STATUS_FALSE;
+	return 0;
 #endif
 }
 
@@ -836,13 +855,16 @@ SWITCH_DECLARE(switch_image_t *) switch_img_write_text_img(int w, int h, const c
 
     if (len < 5) len = 5;
 
-    width = (int) (float)(font_size * 0.75f * len);
+	switch_img_txt_handle_create(&txthandle, font_face, fg, bg, font_size, 0, NULL);
+	switch_color_set_rgb(&bgcolor, bg);
+
+    width = switch_img_txt_handle_render(txthandle,
+										 NULL,
+										 font_size / 2, font_size / 2,
+										 txt, NULL, fg, bg, 0, 0);
 	
 	txtimg = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, width, font_size * 2, 1);
 
-	switch_img_txt_handle_create(&txthandle, font_face, fg, bg, font_size, 0, NULL);
-	switch_color_set_rgb(&bgcolor, bg);
-	
     switch_img_fill(txtimg, 0, 0, txtimg->d_w, txtimg->d_h, &bgcolor);
     switch_img_txt_handle_render(txthandle,
                                  txtimg,
