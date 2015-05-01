@@ -772,7 +772,7 @@ static switch_status_t switch_vpx_decode(switch_codec_t *codec, switch_frame_t *
 	if (context->is_vp9) {
 		is_keyframe = IS_VP9_KEY_FRAME(*(unsigned char *)frame->data);
 	} else { // vp8
-		is_keyframe = IS_VP8_KEY_FRAME((uint8_t *)frame->data);
+		is_keyframe = (*(unsigned char *)frame->data & 0x10) || IS_VP8_KEY_FRAME((uint8_t *)frame->data);
 	}
 
 	// if (is_keyframe) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "got key %d\n", is_keyframe);
@@ -843,7 +843,7 @@ static switch_status_t switch_vpx_decode(switch_codec_t *codec, switch_frame_t *
 		err = vpx_codec_decode(decoder, data, (unsigned int)len, NULL, 0);
 
 		if (err != VPX_CODEC_OK) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error decoding %" SWITCH_SIZE_T_FMT " bytes, [%d:%s:%s]\n",
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Error decoding %" SWITCH_SIZE_T_FMT " bytes, [%d:%s:%s]\n",
 							  len, err, vpx_codec_error(decoder), vpx_codec_error_detail(decoder));
 			switch_goto_status(SWITCH_STATUS_RESTART, end);
 		}
@@ -869,9 +869,9 @@ static switch_status_t switch_vpx_decode(switch_codec_t *codec, switch_frame_t *
 
 end:
 
-	if (status == SWITCH_STATUS_RESTART) {
-		context->need_decoder_reset = 1;
-	}
+	//if (status == SWITCH_STATUS_RESTART) {
+	//	context->need_decoder_reset = 1;
+	//}
 
 	if (!frame->img || status == SWITCH_STATUS_RESTART) {
 		status = SWITCH_STATUS_MORE_DATA;

@@ -4069,9 +4069,7 @@ SWITCH_DECLARE(void) switch_rtp_flush(switch_rtp_t *rtp_session)
 		return;
 	}
 
-	if (!rtp_session->flags[SWITCH_RTP_FLAG_VIDEO]) {
-		switch_rtp_set_flag(rtp_session, SWITCH_RTP_FLAG_FLUSH);
-	}
+	switch_rtp_set_flag(rtp_session, SWITCH_RTP_FLAG_FLUSH);
 }
 
 SWITCH_DECLARE(void) switch_rtp_video_refresh(switch_rtp_t *rtp_session)
@@ -4396,10 +4394,6 @@ SWITCH_DECLARE(void) switch_rtp_clear_flags(switch_rtp_t *rtp_session, switch_rt
 SWITCH_DECLARE(void) switch_rtp_set_flag(switch_rtp_t *rtp_session, switch_rtp_flag_t flag)
 {
 
-	if (flag == SWITCH_RTP_FLAG_FLUSH && rtp_session->flags[SWITCH_RTP_FLAG_VIDEO]) {
-		return;
-	}
-
 	switch_mutex_lock(rtp_session->flag_mutex);
 	rtp_session->flags[flag] = 1;
 	switch_mutex_unlock(rtp_session->flag_mutex);
@@ -4423,7 +4417,11 @@ SWITCH_DECLARE(void) switch_rtp_set_flag(switch_rtp_t *rtp_session, switch_rtp_f
 				}
 			}
 		}
+
+
 		rtp_flush_read_buffer(rtp_session, SWITCH_RTP_FLUSH_ONCE);
+
+
 		if (rtp_session->jb) {
 			stfu_n_reset(rtp_session->jb);
 		}
@@ -4635,7 +4633,6 @@ SWITCH_DECLARE(void) rtp_flush_read_buffer(switch_rtp_t *rtp_session, switch_rtp
 {
 
 	if (rtp_session->flags[SWITCH_RTP_FLAG_PROXY_MEDIA] ||
-		rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] ||
 		rtp_session->flags[SWITCH_RTP_FLAG_UDPTL]) {
 		return;
 	}
@@ -4684,11 +4681,11 @@ static void do_flush(switch_rtp_t *rtp_session, int force)
 	if (!switch_rtp_ready(rtp_session)) {
 		return;
 	}
+
 	reset_jitter_seq(rtp_session);
 
 	if (!force) {
 		if (rtp_session->flags[SWITCH_RTP_FLAG_PROXY_MEDIA] || 
-			rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] ||
 			rtp_session->flags[SWITCH_RTP_FLAG_UDPTL] ||
 			rtp_session->flags[SWITCH_RTP_FLAG_DTMF_ON]
 			) {
@@ -4701,14 +4698,22 @@ static void do_flush(switch_rtp_t *rtp_session, int force)
 	if (switch_rtp_ready(rtp_session) ) {
 
 		if (rtp_session->jb && !rtp_session->pause_jb && jb_valid(rtp_session)) {
-			goto end;
+			stfu_n_reset(rtp_session->jb);
+		}
+
+		if (rtp_session->vb) {
+			switch_vb_reset(rtp_session->vb);
+		}
+
+		if (rtp_session->vbw) {
+			switch_vb_reset(rtp_session->vbw);
 		}
 
 		if (rtp_session->flags[SWITCH_RTP_FLAG_DEBUG_RTP_READ]) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session),
-				  SWITCH_LOG_CONSOLE, "%s FLUSH\n",
-				  rtp_session->session ? switch_channel_get_name(switch_core_session_get_channel(rtp_session->session)) : "NoName"
-				  );
+							  SWITCH_LOG_CONSOLE, "%s FLUSH\n",
+							  rtp_session->session ? switch_channel_get_name(switch_core_session_get_channel(rtp_session->session)) : "NoName"
+							  );
 		}
 
 		if (!rtp_session->flags[SWITCH_RTP_FLAG_NOBLOCK]) {
@@ -4756,8 +4761,6 @@ static void do_flush(switch_rtp_t *rtp_session, int force)
 			switch_socket_opt_set(rtp_session->sock_input, SWITCH_SO_NONBLOCK, FALSE);
 		}
 	}
-
- end:
 
 	READ_DEC(rtp_session);
 }
@@ -6076,10 +6079,8 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		check = !bytes;
 
 		if (rtp_session->flags[SWITCH_RTP_FLAG_FLUSH]) {
-			if (!rtp_session->flags[SWITCH_RTP_FLAG_VIDEO]) {
-				do_flush(rtp_session, SWITCH_FALSE);
-				bytes = 0;
-			}
+			do_flush(rtp_session, SWITCH_FALSE);
+			bytes = 0;
 			switch_rtp_clear_flag(rtp_session, SWITCH_RTP_FLAG_FLUSH);
 		}
 		
@@ -6104,7 +6105,8 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		}
 
 		if (bytes && rtp_session->recv_msg.header.m && rtp_session->recv_msg.header.pt != rtp_session->recv_te && 
-			!rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] && !(rtp_session->rtp_bugs & RTP_BUG_IGNORE_MARK_BIT)) {
+			!rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] &&
+			!(rtp_session->rtp_bugs & RTP_BUG_IGNORE_MARK_BIT)) {
 			rtp_flush_read_buffer(rtp_session, SWITCH_RTP_FLUSH_ONCE);
 		}
 

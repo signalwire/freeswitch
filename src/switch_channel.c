@@ -361,6 +361,20 @@ SWITCH_DECLARE(void) switch_channel_perform_audio_sync(switch_channel_t *channel
 }
 
 
+SWITCH_DECLARE(void) switch_channel_perform_video_sync(switch_channel_t *channel, const char *file, const char *func, int line)
+{
+	if (switch_channel_media_up(channel)) {
+		switch_core_session_message_t msg = { 0 };
+		msg.message_id = SWITCH_MESSAGE_INDICATE_VIDEO_SYNC;
+		msg.from = channel->name;
+		msg._file = file;
+		msg._func = func;
+		msg._line = line;
+		switch_core_session_receive_message(channel->session, &msg);
+	}
+}
+
+
 
 SWITCH_DECLARE(switch_call_cause_t) switch_channel_cause_q850(switch_call_cause_t cause)
 {
