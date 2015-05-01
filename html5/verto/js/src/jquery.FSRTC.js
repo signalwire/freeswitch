@@ -982,7 +982,7 @@
         }	
 
 	if (cam) {
-	    video.optional = [{sourceId: obj.options.useCamera}];
+	    video.optional = [{sourceId: cam}];
 	}
 	
 	w = resList[resI][0];
