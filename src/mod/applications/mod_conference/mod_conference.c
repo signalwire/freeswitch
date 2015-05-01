@@ -2004,7 +2004,7 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 					imember->blanks++;
 					if (imember->blanks == conference->video_fps.fps * 2) {
 						check_avatar(imember, SWITCH_TRUE);
-						if (imember->avatar_png_img) {
+						if (layer && imember->avatar_png_img) {
 							layer->is_avatar = 1;
 						}
 					}
