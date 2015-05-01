@@ -2413,8 +2413,8 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_set_local_address(switch_rtp_t *rtp_s
 	}
 
 	if (rtp_session->flags[SWITCH_RTP_FLAG_VIDEO]) {
-		switch_socket_opt_set(new_sock, SWITCH_SO_RCVBUF, 786432);
-		switch_socket_opt_set(new_sock, SWITCH_SO_SNDBUF, 786432);
+		switch_socket_opt_set(new_sock, SWITCH_SO_RCVBUF, 1572864);
+		switch_socket_opt_set(new_sock, SWITCH_SO_SNDBUF, 1572864);
 	}
 
 	if (switch_socket_bind(new_sock, rtp_session->local_addr) != SWITCH_STATUS_SUCCESS) {
