@@ -3935,6 +3935,7 @@ SWITCH_STANDARD_API(uuid_video_refresh_function)
 
 		if ((lsession = switch_core_session_locate(argv[0]))) {
 			switch_core_session_video_reinit(lsession);
+			switch_channel_video_sync(switch_core_session_get_channel(lsession));
 			status = SWITCH_STATUS_SUCCESS;
 			switch_core_session_rwunlock(lsession);
 		}

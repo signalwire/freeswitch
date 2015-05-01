@@ -8748,6 +8748,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_receive_message(switch_core_se
 		}
 		goto end;
 
+	case SWITCH_MESSAGE_INDICATE_VIDEO_SYNC:
+		if (switch_rtp_ready(v_engine->rtp_session)) {
+			switch_rtp_flush(v_engine->rtp_session);
+		}
+		goto end;
+
 	case SWITCH_MESSAGE_INDICATE_MEDIA:
 		{
 

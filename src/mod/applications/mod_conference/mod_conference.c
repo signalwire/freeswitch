@@ -1806,6 +1806,8 @@ static int flush_video_queue(switch_queue_t *q)
 	void *pop;
 	int r = 0;
 
+	if (!q) return 0;
+
 	while (switch_queue_trypop(q, &pop) == SWITCH_STATUS_SUCCESS && pop) {
 		img = (switch_image_t *)pop;
 		switch_img_free(&img);
@@ -2000,8 +2002,13 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 					}
 					size = switch_queue_size(imember->video_queue);
 				} while(size > 0);
-				if (!img) {
+				if (!img && switch_test_flag(imember, MFLAG_CAN_BE_SEEN)) {
 					imember->blanks++;
+
+					if (imember->blanks == conference->video_fps.fps || (imember->blanks % (int)(conference->video_fps.fps * 10)) == 0) {
+						switch_core_session_request_video_refresh(imember->session);
+					}
+
 					if (imember->blanks == conference->video_fps.fps * 2) {
 						check_avatar(imember, SWITCH_TRUE);
 						if (layer && imember->avatar_png_img) {
@@ -2015,6 +2022,8 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 				if (flushed && imember->blanks) {
 					switch_img_free(&imember->avatar_png_img);
 					imember->blanks = 0;
+					switch_core_session_request_video_refresh(imember->session);
+					switch_channel_video_sync(imember->channel);
 				}
 						
 				img = imember->avatar_png_img;
@@ -4775,7 +4784,7 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
 	if (switch_test_flag(member->conference, CFLAG_VIDEO_MUXING)) {
 		switch_image_t *img_copy = NULL;
 
-		if (frame->img && !member->conference->playing_video_file) {
+		if (frame->img && !member->conference->playing_video_file && switch_queue_size(member->video_queue) < 3) {
 			switch_img_copy(frame->img, &img_copy);
 			switch_queue_push(member->video_queue, img_copy);
 		}
@@ -8302,6 +8311,8 @@ static switch_status_t conf_api_sub_vmute(conference_member_t *member, switch_st
 
 	if (member->channel) {
 		switch_channel_set_flag(member->channel, CF_VIDEO_PAUSE_READ);
+		switch_core_session_request_video_refresh(member->session);
+		switch_channel_video_sync(member->channel);
 	}
 
 	if (!(data) || !strstr((char *) data, "quiet")) {
@@ -8358,6 +8369,8 @@ static switch_status_t conf_api_sub_unvmute(conference_member_t *member, switch_
 
 	if (member->channel) {
 		switch_channel_clear_flag(member->channel, CF_VIDEO_PAUSE_READ);
+		switch_core_session_request_video_refresh(member->session);
+		switch_channel_video_sync(member->channel);
 	}
 
 	if (!(data) || !strstr((char *) data, "quiet")) {
