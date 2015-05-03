@@ -119,7 +119,8 @@ typedef enum {
 	CC_AGENT_STATE_WAITING = 1,
 	CC_AGENT_STATE_RECEIVING = 2,
 	CC_AGENT_STATE_IN_A_QUEUE_CALL = 3,
-	CC_AGENT_STATE_IDLE = 4
+	CC_AGENT_STATE_IDLE = 4,
+	CC_AGENT_STATE_RESERVED = 5
 } cc_agent_state_t;
 
 static struct cc_state_table AGENT_STATE_CHART[] = {
@@ -128,6 +129,7 @@ static struct cc_state_table AGENT_STATE_CHART[] = {
 	{"Receiving", CC_AGENT_STATE_RECEIVING},
 	{"In a queue call", CC_AGENT_STATE_IN_A_QUEUE_CALL},
 	{"Idle", CC_AGENT_STATE_IDLE},
+	{"Reserved", CC_AGENT_STATE_RESERVED},
 	{NULL, 0}
 
 };
@@ -412,6 +414,7 @@ static struct {
 	int debug;
 	char *odbc_dsn;
 	char *dbname;
+	switch_bool_t reserve_agents;
 	int32_t threads;
 	int32_t running;
 	switch_mutex_t *mutex;
@@ -555,6 +558,15 @@ cc_queue_t *queue_set_config(cc_queue_t *queue)
 
 }
 
+static int cc_execute_sql_affected_rows(char *sql) {
+	switch_cache_db_handle_t *dbh = NULL;
+	if (!(dbh = cc_get_db_handle())) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB\n");
+		return -1;
+	}
+	switch_cache_db_execute_sql(dbh, sql, NULL);
+	return switch_cache_db_affected_rows(dbh);
+}
 
 char *cc_execute_sql2str(cc_queue_t *queue, switch_mutex_t *mutex, char *sql, char *resbuf, size_t len)
 {
@@ -1060,6 +1072,31 @@ cc_status_t cc_agent_update(const char *key, const char *value, const char *agen
 
 		result = CC_STATUS_SUCCESS;
 
+	} else if (!strcasecmp(key, "state_if_waiting")) {
+		if (cc_agent_str2state(value) == CC_AGENT_STATE_UNKNOWN) {
+			result = CC_STATUS_AGENT_INVALID_STATE;
+			goto done;
+		} else {
+			sql = switch_mprintf("UPDATE agents SET state = '%q' WHERE name = '%q' AND state = '%q' AND status IN ('%q', '%q')",
+					value, agent,
+					cc_agent_state2str(CC_AGENT_STATE_WAITING),
+					cc_agent_status2str(CC_AGENT_STATUS_AVAILABLE),
+					cc_agent_status2str(CC_AGENT_STATUS_AVAILABLE_ON_DEMAND));
+
+			if (cc_execute_sql_affected_rows(sql) > 0) {
+				result = CC_STATUS_SUCCESS;
+				if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CALLCENTER_EVENT) == SWITCH_STATUS_SUCCESS) {
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent", agent);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Action", "agent-state-change");
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent-State", value);
+					switch_event_fire(&event);
+				}
+			} else {
+				result = CC_STATUS_AGENT_NOT_FOUND;
+			}
+			switch_safe_free(sql);
+		}
+
 	} else {
 		result = CC_STATUS_INVALID_KEY;
 		goto done;
@@ -1367,13 +1404,19 @@ static switch_status_t load_config(void)
 				globals.dbname = strdup(val);
 			} else if (!strcasecmp(var, "odbc-dsn")) {
 				globals.odbc_dsn = strdup(val);
+			} else if(!strcasecmp(var, "reserve-agents")) {
+				globals.reserve_agents = switch_true(val);
 			}
 		}
 	}
 	if (!globals.dbname) {
 		globals.dbname = strdup(CC_SQLITE_DB_NAME);
 	}
-
+	if (!globals.reserve_agents) {
+		globals.reserve_agents = SWITCH_FALSE;
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Reserving Agents before offering calls.\n");
+	}
 	/* Initialize database */
 	if (!(dbh = cc_get_db_handle())) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot open DB!\n");
@@ -2007,6 +2050,18 @@ static int agents_callback(void *pArg, int argc, char **argv, char **columnNames
 			return 1; /* Abort finding agent for member if we found a match but for a different Server */
 		} else {
 			return 0; /* Skip this Agents only, so we can ring the other one */
+		}
+	}
+
+	if (globals.reserve_agents) {
+		/* Updating agent state to Reserved only if it was Waiting previously, this is done to avoid race conditions
+		   when updating agents table with external applications */
+		if (cc_agent_update("state_if_waiting", cc_agent_state2str(CC_AGENT_STATE_RESERVED), agent_name) == CC_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Reserved Agent %s\n", agent_name);
+		} else {
+			/* Agent changed state just before we tried to update his state to Reserved. */
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Failed to Reserve Agent: %s. Skipping...\n", agent_name);
+			return 0;
 		}
 	}
 
