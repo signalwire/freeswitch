@@ -104,6 +104,7 @@ typedef struct {
   int reconnect_interval_ms;
   int circuit_breaker_ms;
   switch_time_t circuit_breaker_reset_time;
+  switch_bool_t enable_fallback_format_fields;
 
   switch_bool_t running;
   switch_memory_pool_t *pool;
@@ -156,7 +157,8 @@ void * SWITCH_THREAD_FUNC mod_amqp_command_thread(switch_thread_t *thread, void 
 
 /* producer */
 void mod_amqp_producer_event_handler(switch_event_t* evt);
-switch_status_t mod_amqp_producer_routing_key(char routingKey[MAX_AMQP_ROUTING_KEY_LENGTH],switch_event_t* evt, char* routingKeyEventHeaderNames[]);
+switch_status_t mod_amqp_producer_routing_key(mod_amqp_producer_profile_t *profile, char routingKey[MAX_AMQP_ROUTING_KEY_LENGTH],
+					      switch_event_t* evt, char* routingKeyEventHeaderNames[]);
 switch_status_t mod_amqp_producer_destroy(mod_amqp_producer_profile_t **profile);
 switch_status_t mod_amqp_producer_create(char *name, switch_xml_t cfg);
 void * SWITCH_THREAD_FUNC mod_amqp_producer_thread(switch_thread_t *thread, void *data);
