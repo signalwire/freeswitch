@@ -155,7 +155,7 @@ static void log_packet(const AVFormatContext *fmt_ctx, const AVPacket *pkt)
 	// 	   pkt->stream_index);
 }
 
-static int avformat_alloc_output_context2(AVFormatContext **avctx, AVOutputFormat *oformat,
+static int mod_avformat_alloc_output_context2(AVFormatContext **avctx, AVOutputFormat *oformat,
 								   const char *format, const char *filename)
 {
 	AVFormatContext *s = avformat_alloc_context();
@@ -633,7 +633,7 @@ SWITCH_STANDARD_APP(record_av_function)
 	switch_buffer_create_dynamic(&buffer, 8192, 65536, 0);
 
 	av_register_all();
-	avformat_alloc_output_context2(&fc, NULL, format, data);
+	mod_avformat_alloc_output_context2(&fc, NULL, format, data);
 
 	if (!fc) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Could not deduce output format from file extension\n");
@@ -1536,7 +1536,7 @@ static switch_status_t av_file_open(switch_file_handle_t *handle, const char *pa
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	avformat_alloc_output_context2(&context->fc, NULL, format, (char *)file);
+	mod_avformat_alloc_output_context2(&context->fc, NULL, format, (char *)file);
 
 	if (!context->fc) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Could not deduce output format from file extension\n");
