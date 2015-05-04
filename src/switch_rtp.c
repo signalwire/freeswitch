@@ -3127,8 +3127,10 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_dtls(switch_rtp_t *rtp_session, d
 	bio = BIO_new_file(dtls->pem, "r");
 	dh = PEM_read_bio_DHparams(bio, NULL, NULL, NULL);
 	BIO_free(bio);
-	SSL_CTX_set_tmp_dh(dtls->ssl_ctx, dh);
-	DH_free(dh);
+	if (dh) {
+		SSL_CTX_set_tmp_dh(dtls->ssl_ctx, dh);
+		DH_free(dh);
+	}
 
 	SSL_CTX_set_mode(dtls->ssl_ctx, SSL_MODE_AUTO_RETRY);
 
