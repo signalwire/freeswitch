@@ -1277,18 +1277,26 @@ static switch_status_t load_tier(const char *queue, const char *agent, const cha
 {
 	/* Hack to check if an tier already exist */
 	if (cc_tier_update("unknown", "unknown", queue, agent) == CC_STATUS_TIER_NOT_FOUND) {
-			if (level && position) {
+			if (!zstr(level) && !zstr(position)) {
 				cc_tier_add(queue, agent, cc_tier_state2str(CC_TIER_STATE_READY), atoi(level), atoi(position));
+			} else if (!zstr(level) && zstr(position)) {
+				cc_tier_add(queue, agent, cc_tier_state2str(CC_TIER_STATE_READY), atoi(level), 1);
+			} else if (zstr(level) && !zstr(position)) {
+				cc_tier_add(queue, agent, cc_tier_state2str(CC_TIER_STATE_READY), 1, atoi(position));
 			} else {
 				/* default to level 1 and position 1 within the level */
-				cc_tier_add(queue, agent, cc_tier_state2str(CC_TIER_STATE_READY), 0, 0);
+				cc_tier_add(queue, agent, cc_tier_state2str(CC_TIER_STATE_READY), 1, 1);
 			}
 	} else {
-		if (level) {
+		if (!zstr(level)) {
 			cc_tier_update("level", level, queue, agent);
+		} else {
+			cc_tier_update("level", "1", queue, agent);
 		}
-		if (position) {
+		if (!zstr(position)) {
 			cc_tier_update("position", position, queue, agent);
+		} else {
+			cc_tier_update("position", "1", queue, agent);
 		}
 	}
 	return SWITCH_STATUS_SUCCESS;
@@ -2856,7 +2864,7 @@ static int list_result_callback(void *pArg, int argc, char **argv, char **column
 "\tcallcenter_config agent get state [agent_name] | \n" \
 "\tcallcenter_config agent get uuid [agent_name] | \n" \
 "\tcallcenter_config agent list [[agent_name]] | \n" \
-"\tcallcenter_config tier add [queue_name] [agent_name] [level] [position] | \n" \
+"\tcallcenter_config tier add [queue_name] [agent_name] [[level]] [[position]] | \n" \
 "\tcallcenter_config tier set state [queue_name] [agent_name] [state] | \n" \
 "\tcallcenter_config tier set level [queue_name] [agent_name] [level] | \n" \
 "\tcallcenter_config tier set position [queue_name] [agent_name] [position] | \n" \
@@ -3043,16 +3051,23 @@ SWITCH_STANDARD_API(cc_config_api_function)
 
 	} else if (section && !strcasecmp(section, "tier")) {
 		if (action && !strcasecmp(action, "add")) {
-			if (argc-initial_argc < 4) {
+			if (argc-initial_argc < 2) {
 				stream->write_function(stream, "%s", "-ERR Invalid!\n");
 				goto done;
 			} else {
+				int i_level=1, i_position=1;
 				const char *queue_name = argv[0 + initial_argc];
 				const char *agent = argv[1 + initial_argc];
 				const char *level = argv[2 + initial_argc];
 				const char *position = argv[3 + initial_argc];
+				if (!zstr(level)) {
+					i_level=atoi(level);
+				}
+				if (!zstr(position)) {
+					i_position=atoi(position);
+				}
 
-				switch(cc_tier_add(queue_name, agent, cc_tier_state2str(CC_TIER_STATE_READY), atoi(level), atoi(position))) {
+				switch(cc_tier_add(queue_name, agent, cc_tier_state2str(CC_TIER_STATE_READY), i_level, i_position)) {
 					case CC_STATUS_SUCCESS:
 						stream->write_function(stream, "%s", "+OK\n");
 						break;
