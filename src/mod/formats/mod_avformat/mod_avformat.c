@@ -1907,7 +1907,7 @@ again: if (0) goto again;
 		if (pts == 0) mst->next_pts = 0;
 
 		if (mst->next_pts && switch_micro_time_now() - mst->next_pts > AV_TIME_BASE) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "picture is too late, diff: %ld queue size:%u\n", switch_micro_time_now() - mst->next_pts, switch_queue_size(context->eh.video_queue));
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "picture is too late, diff: %" SWITCH_INT64_T_FMT " queue size:%u\n", (int64_t)(switch_micro_time_now() - mst->next_pts), switch_queue_size(context->eh.video_queue));
 			switch_img_free(&img);
 			// return SWITCH_STATUS_BREAK;
 			goto again;
