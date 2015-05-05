@@ -28,7 +28,7 @@ run_tsb85_test()
     fi
 }
 
-for TEST in PPS-MPS-lost-PPS V17-12000-V29-9600 Phase-D-collision Modem-change-at-CTC ECM-DCN-clipped Non-ECM-DCN-clipped
+for TEST in PPS-MPS-lost-PPS V17-12000-V29-9600 Phase-D-collision Modem-change-at-CTC ECM-DCN-clipped Non-ECM-DCN-clipped Tx-EOP-echo Tx-PPS-echo
 do
     run_tsb85_test
 done

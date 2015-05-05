@@ -479,5 +479,115 @@
         <step dir="R" type="CLEAR" timein="0" timeout="100"/>
         <step type="STATUS" value="OK"/>
     </test>
+    <test name="Tx-EOP-echo">
+        <!-- DUT calls tester and sends 1 IMPRESS and 1 WHITE page. -->
+        <step type="ANSWER" value="etsi_300_242_a4_impress_white.tif"/>
+        <step dir="T" type="SET" tag="IDENT" value="+0123456789"/>
+
+        <step dir="R" type="CNG"/>
+
+        <step dir="T" type="CED"/>
+        <step type="WAIT" value="75"/>
+        <step dir="T" type="PREAMBLE" modem="V.21"/>
+        <step dir="T" type="HDLC" tag="DIS" value="FF C8 01 00 50 00"/>
+        <step dir="T" type="POSTAMBLE"/>
+
+        <step dir="R" type="HDLC" modem="V.21" tag="TSI+" value="FF C0 C2 9C 1C EC 6C AC 2C CC 4C 8C 0C D4 04 04 04 04 04 04 04 04 04 ..."/>
+        <step dir="R" type="HDLC" tag="DCS+" value="FF C8 C1 ..."/>
+        <step dir="R" type="TCF" modem="V.27ter/4800" timeout="60000"/>
+
+        <step type="WAIT" value="75"/>
+        <step dir="T" type="PREAMBLE" modem="V.21"/>
+        <step dir="T" type="HDLC" tag="CFR" value="FF C8 21"/>
+        <step dir="T" type="POSTAMBLE"/>
+
+        <step dir="R" type="MSG" modem="V.27ter/4800" timeout="180000"/>
+        <step dir="R" type="HDLC" modem="V.21" tag="MPS+" value="FF C8 F2"/>
+
+        <step type="WAIT" value="75"/>
+        <step dir="T" type="PREAMBLE" modem="V.21"/>
+        <step dir="T" type="HDLC" tag="MCF" value="FF C8 31"/>
+        <step dir="T" type="POSTAMBLE"/>
+
+        <step dir="R" type="MSG" modem="V.27ter/4800"  timeout="60000"/>
+        <step dir="R" type="HDLC" modem="V.21" tag="EOP+" value="FF C8 F4"/>
+
+        <!-- Erroneous echo of EOP -->
+        <step type="WAIT" value="75"/>
+        <step dir="T" type="PREAMBLE" modem="V.21" />
+        <step dir="T" type="HDLC" tag="EOP" value="FF C8 F4"/>
+        <step dir="T" type="POSTAMBLE"/>
+
+        <step type="WAIT" value="75"/>
+        <step dir="T" type="PREAMBLE" modem="V.21"/>
+        <step dir="T" type="HDLC" tag="MCF" value="FF C8 31"/>
+        <step dir="T" type="POSTAMBLE"/>
+
+        <step dir="R" type="HDLC" modem="V.21" tag="DCN+" value="FF C8 DF"/>
+
+        <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
+        <step type="STATUS" value="OK"/>
+    </test>
+    <test name="Tx-PPS-echo">
+        <!-- DUT calls tester and sends 1 IMPRESS and 1 WHITE page. -->
+        <step type="ANSWER" value="etsi_300_242_a4_impress_white.tif"/>
+
+        <step dir="R" type="CNG"/>
+
+        <step dir="T" type="CED"/>
+        <step type="WAIT" value="75"/>
+        <step dir="T" type="PREAMBLE" modem="V.21"/>
+        <step dir="T" type="HDLC" tag="DIS" value="FF C8 01 00 50 1F 20"/>
+        <step dir="T" type="POSTAMBLE"/>
+
+        <step dir="R" type="HDLC" modem="V.21" tag="DCS+" value="FF C8 C1 ..."/>
+        <step dir="R" type="TCF" modem="V.27ter/4800" timeout="10000"/>
+
+        <step type="WAIT" value="75"/>
+        <step dir="T" type="PREAMBLE" modem="V.21"/>
+        <step dir="T" type="HDLC" tag="CFR" value="FF C8 21"/>
+        <step dir="T" type="POSTAMBLE"/>
+
+        <step dir="R" type="PP" modem="V.27ter/4800" frame_size="64" timeout="180000"/>
+        <step dir="R" type="HDLC" modem="V.21" tag="PPS-NULL+" value="FF C8 FD 00 ..."/>
+
+        <!-- Erroneous echo of PPS-NULL -->
+        <step type="WAIT" value="75"/>
+        <step dir="T" type="PREAMBLE" modem="V.21"/>
+        <step dir="T" type="HDLC" tag="PPS-NULL" value="FF C8 7D 00 00 00 FF"/>
+        <step dir="T" type="POSTAMBLE"/>
+
+        <step type="WAIT" value="75"/>
+        <step dir="T" type="PREAMBLE" modem="V.21"/>
+        <step dir="T" type="HDLC" tag="MCF" value="FF C8 31"/>
+        <step dir="T" type="POSTAMBLE"/>
+
+        <step dir="R" type="PP" modem="V.27ter/4800" frame_size="64" timeout="180000"/>
+        <step dir="R" type="HDLC" modem="V.21" tag="PPS-MPS+" value="FF C8 FD F2 ..."/>
+
+        <!-- Erroneous echo of PPS-MPS -->
+        <step type="WAIT" value="75"/>
+        <step dir="T" type="PREAMBLE" modem="V.21"/>
+        <step dir="T" type="HDLC" tag="PPS-MPS" value="FF C8 7D 72 00 80 3B"/>
+        <step dir="T" type="POSTAMBLE"/>
+
+        <step type="WAIT" value="75"/>
+        <step dir="T" type="PREAMBLE" modem="V.21"/>
+        <step dir="T" type="HDLC" tag="MCF" value="FF C8 31"/>
+        <step dir="T" type="POSTAMBLE"/>
+
+        <step dir="R" type="PP" modem="V.27ter/4800" frame_size="64" timeout="60000"/>
+        <step dir="R" type="HDLC" modem="V.21" tag="PPS-EOP+" value="FF C8 FD F4 ..."/>
+
+        <step type="WAIT" value="75"/>
+        <step dir="T" type="PREAMBLE" modem="V.21"/>
+        <step dir="T" type="HDLC" tag="MCF" value="FF C8 31"/>
+        <step dir="T" type="POSTAMBLE"/>
+
+        <step dir="R" type="HDLC" modem="V.21" tag="DCN+" value="FF C8 DF"/>
+
+        <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
+        <step type="STATUS" value="OK"/>
+    </test>
 </test-group>
 </fax-tests>
