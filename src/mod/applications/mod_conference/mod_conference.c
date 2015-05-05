@@ -1666,9 +1666,9 @@ static void write_canvas_image_to_codec_group(conference_obj_t *conference, code
 					continue;
 				}
 
-				if (need_refresh) {
-					switch_core_session_request_video_refresh(imember->session);
-				}
+				//if (need_refresh) {
+				//	switch_core_session_request_video_refresh(imember->session);
+				//}
 				
 				//switch_core_session_write_encoded_video_frame(imember->session, frame, 0, 0);
 				switch_set_flag(frame, SFF_ENCODED);
@@ -1754,9 +1754,11 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_write_thread_run(switch_
 					switch_core_media_gen_key_frame(member->session);
 					switch_core_session_request_video_refresh(member->session);
 				}
-				loops++;
 
+				loops++;
+				
 				frame = (switch_frame_t *) pop;
+
 				if (switch_test_flag(frame, SFF_ENCODED)) {
 					switch_core_session_write_encoded_video_frame(member->session, frame, 0, 0);
 				} else {
@@ -1874,6 +1876,7 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 	switch_image_t *write_img = NULL, *file_img = NULL;
 	uint32_t timestamp = 0, avatar_layers = 0;
 	video_layout_t *vlayout = get_layout(conference);
+	switch_time_t last_refresh_req = 0;
 
 	if (!vlayout) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot find layout\n");
@@ -1948,9 +1951,13 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 			if (switch_test_flag(conference, CFLAG_MINIMIZE_VIDEO_ENCODING) && switch_channel_test_flag(imember->channel, CF_VIDEO)) {
 				if (switch_channel_test_flag(imember->channel, CF_VIDEO_REFRESH_REQ)) {
 					switch_channel_clear_flag(imember->channel, CF_VIDEO_REFRESH_REQ);
-					need_refresh = SWITCH_TRUE;
+					
+					if (!last_refresh_req || (now - last_refresh_req) > 1000) {
+						need_refresh = SWITCH_TRUE;
+						last_refresh_req = now;
+					}
 				}
-
+				
 				if (imember->video_codec_index < 0 && (check_codec = switch_core_session_get_video_write_codec(imember->session))) {
 					for (i = 0; write_codecs[i] && switch_core_codec_ready(&write_codecs[i]->codec) && i < MAX_MUX_CODECS; i++) {
 						if (check_codec->implementation->codec_id == write_codecs[i]->codec.implementation->codec_id) {
@@ -2021,6 +2028,11 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 
 				if (flushed && imember->blanks) {
 					switch_img_free(&imember->avatar_png_img);
+
+					if (layer) {
+						layer->is_avatar = 0;
+					}
+
 					imember->blanks = 0;
 					switch_core_session_request_video_refresh(imember->session);
 					switch_channel_video_sync(imember->channel);
