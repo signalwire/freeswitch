@@ -1947,8 +1947,11 @@ static void check_jb_sync(switch_core_session_t *session)
 			jb_sync_msec = tmp;
 		}
 	}
-	// TBD IMPROVE get_fps func
-	fps = 15; //switch_core_media_get_video_fps(session);
+	if (smh->vid_frames < 10) {
+		fps = 15; 
+	} else {
+		fps = switch_core_media_get_video_fps(session);
+	}
 	
 	if (!fps) return;
 
@@ -1959,13 +1962,20 @@ static void check_jb_sync(switch_core_session_t *session)
 		frames = fps / (1000 / jb_sync_msec);
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), 
-					  SWITCH_LOG_DEBUG, "%s Sync Audio and Video Jitterbuffer to %dms %u Video Frames FPS %u\n", 
-					  switch_channel_get_name(session->channel),
-					  jb_sync_msec, frames, fps);
-	
-	switch_rtp_set_video_buffer_size(v_engine->rtp_session, frames);
-	check_jb(session, NULL, jb_sync_msec, jb_sync_msec);
+	if (frames == switch_rtp_get_video_buffer_size(v_engine->rtp_session)) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), 
+						  SWITCH_LOG_DEBUG1, "%s Audio and Video Jitterbuffer settings not changed %dms %u Video Frames FPS %u\n", 
+						  switch_channel_get_name(session->channel),
+						  jb_sync_msec, frames, fps);
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), 
+						  SWITCH_LOG_INFO, "%s Sync Audio and Video Jitterbuffer to %dms %u Video Frames FPS %u\n", 
+						  switch_channel_get_name(session->channel),
+						  jb_sync_msec, frames, fps);
+		
+		switch_rtp_set_video_buffer_size(v_engine->rtp_session, frames);
+		check_jb(session, NULL, jb_sync_msec, jb_sync_msec);
+	}
 }
 
 
@@ -2088,7 +2098,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 			}
 			smh->vid_frames++;
 
-			if (smh->vid_frames == 45) {
+			if (smh->vid_frames == 1 || ((smh->vid_frames % 300) == 0)) {
 				check_jb_sync(session);
 			}
 		}
