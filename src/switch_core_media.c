@@ -6668,7 +6668,9 @@ static void generate_m(switch_core_session_t *session, char *buf, size_t buflen,
 		char tmp1[11] = "";
 		char tmp2[11] = "";
 		uint32_t c1 = (2^24)*126 + (2^8)*65535 + (2^0)*(256 - 1);
-		uint32_t c2 = (2^24)*126 + (2^8)*65535 + (2^0)*(256 - 2);
+		uint32_t c2 = c1 - 1;
+
+		//uint32_t c2 = (2^24)*126 + (2^8)*65535 + (2^0)*(256 - 2);
 		//uint32_t c3 = (2^24)*126 + (2^8)*65534 + (2^0)*(256 - 1);
 		//uint32_t c4 = (2^24)*126 + (2^8)*65534 + (2^0)*(256 - 2);
 		ice_t *ice_out;
@@ -6708,7 +6710,7 @@ static void generate_m(switch_core_session_t *session, char *buf, size_t buflen,
 							);
 		}
 
-		if (a_engine->rtcp_mux < 1 || switch_channel_direction(session->channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
+		if (a_engine->rtcp_mux < 1 || switch_channel_direction(session->channel) == SWITCH_CALL_DIRECTION_OUTBOUND || switch_channel_test_flag(session->channel, CF_RECOVERING)) {
 			
 
 			switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=candidate:%s 2 %s %u %s %d typ host generation 0\n", 
@@ -7302,9 +7304,13 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 			char tmp1[11] = "";
 			char tmp2[11] = "";
 			uint32_t c1 = (2^24)*126 + (2^8)*65535 + (2^0)*(256 - 1);
-			uint32_t c2 = (2^24)*126 + (2^8)*65535 + (2^0)*(256 - 2);
-			uint32_t c3 = (2^24)*126 + (2^8)*65534 + (2^0)*(256 - 1);
-			uint32_t c4 = (2^24)*126 + (2^8)*65534 + (2^0)*(256 - 2);
+			//uint32_t c2 = (2^24)*126 + (2^8)*65535 + (2^0)*(256 - 2);
+			//uint32_t c3 = (2^24)*126 + (2^8)*65534 + (2^0)*(256 - 1);
+			//uint32_t c4 = (2^24)*126 + (2^8)*65534 + (2^0)*(256 - 2);
+
+			uint32_t c2 = c1 - 1;
+			uint32_t c3 = c1 - 2;
+			uint32_t c4 = c1 - 3;
 
 			tmp1[10] = '\0';
 			tmp2[10] = '\0';
@@ -7341,8 +7347,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 			}
 
 
-			if (a_engine->rtcp_mux < 1 || is_outbound || 
-				switch_channel_test_flag(session->channel, CF_RECOVERING)) {
+			if (a_engine->rtcp_mux < 1 || is_outbound || switch_channel_test_flag(session->channel, CF_RECOVERING)) {
 
 				switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=candidate:%s 2 %s %u %s %d typ host generation 0\n", 
 								tmp1, ice_out->cands[0][0].transport, c2,
@@ -7774,10 +7779,13 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 					char tmp1[11] = "";
 					char tmp2[11] = "";
 					uint32_t c1 = (2^24)*126 + (2^8)*65535 + (2^0)*(256 - 1);
-					uint32_t c2 = (2^24)*126 + (2^8)*65535 + (2^0)*(256 - 2);
-					uint32_t c3 = (2^24)*126 + (2^8)*65534 + (2^0)*(256 - 1);
-					uint32_t c4 = (2^24)*126 + (2^8)*65534 + (2^0)*(256 - 2);
-					
+					//uint32_t c2 = (2^24)*126 + (2^8)*65535 + (2^0)*(256 - 2);
+					//uint32_t c3 = (2^24)*126 + (2^8)*65534 + (2^0)*(256 - 1);
+					//uint32_t c4 = (2^24)*126 + (2^8)*65534 + (2^0)*(256 - 2);
+
+					uint32_t c2 = c1 - 1;
+					uint32_t c3 = c1 - 2;
+					uint32_t c4 = c1 - 3;
 				
 					tmp1[10] = '\0';
 					tmp2[10] = '\0';
@@ -7815,8 +7823,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 					}
 
 
-					if (v_engine->rtcp_mux < 1 || is_outbound || 
-						switch_channel_test_flag(session->channel, CF_RECOVERING)) {
+					if (v_engine->rtcp_mux < 1 || is_outbound || switch_channel_test_flag(session->channel, CF_RECOVERING)) {
 
 						switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=candidate:%s 2 %s %u %s %d typ host generation 0\n", 
 										tmp1, ice_out->cands[0][0].transport, c2,
@@ -9501,6 +9508,9 @@ SWITCH_DECLARE(void) switch_core_session_stop_media(switch_core_session_t *sessi
 	
 	a_engine->local_dtls_fingerprint.len = 0;
 	v_engine->local_dtls_fingerprint.len = 0;
+
+	a_engine->remote_ssrc = 0;
+	v_engine->remote_ssrc = 0;
 
 	switch_channel_clear_flag(smh->session->channel, CF_VIDEO_READY);
 	switch_core_session_wake_video_thread(smh->session);
