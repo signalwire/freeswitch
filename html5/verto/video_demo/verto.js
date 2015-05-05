@@ -751,56 +751,57 @@ function refresh_devices()
     $("#usemic").empty();
     
 
-    $.verto.init({camera: null}, function() {
-	var x = 0;
 
-	$("#usecamera").append(new Option("No Camera", "none"));
-	for (var i in $.verto.videoDevices) {
-	    var source = $.verto.videoDevices[i];
-	    var o = new Option(source.label, source.id);
-	    if (!x) {
-		o.selected = true;
-	    }
-	    $("#usecamera").append(o);
+    var x = 0;
 
-	    var oo = new Option(source.label, source.id);
-	    if (!x++) {
-		o.selected = true;
-	    }
+    $("#usecamera").append(new Option("No Camera", "none"));
+    for (var i in $.verto.videoDevices) {
+	var source = $.verto.videoDevices[i];
+	var o = new Option(source.label, source.id);
+	if (!x) {
+	    o.selected = true;
+	}
+	$("#usecamera").append(o);
 
-	    $("#useshare").append(oo);
+	var oo = new Option(source.label, source.id);
+	if (!x++) {
+	    o.selected = true;
 	}
 
-	x = 0;
-	
-	for (var i in $.verto.audioDevices) {
-	    var source = $.verto.audioDevices[i];
-	    var o = new Option(source.label, source.id);
-	    if (!x++) {
-		o.selected = true;
-	    }
-	    $("#usemic").append(o);
+	$("#useshare").append(oo);
+    }
+
+    x = 0;
+    
+    for (var i in $.verto.audioDevices) {
+	var source = $.verto.audioDevices[i];
+	var o = new Option(source.label, source.id);
+	if (!x++) {
+	    o.selected = true;
 	}
+	$("#usemic").append(o);
+    }
 
 
-	var o = new Option("Screen", "screen");
-	o.selected = true;
+    var o = new Option("Screen", "screen");
+    o.selected = true;
 
-	$("#useshare").append(o);
+    $("#useshare").append(o);
 
-	
-	$("#usecamera").selectmenu('refresh', true);
-	$("#usemic").selectmenu('refresh', true);
-	$("#useshare").selectmenu('refresh', true);
+    
+    $("#usecamera").selectmenu('refresh', true);
+    $("#usemic").selectmenu('refresh', true);
+    $("#useshare").selectmenu('refresh', true);
 
-	//console.error($("#usecamera").find(":selected").val());
-
-    });
-
+    //console.error($("#usecamera").find(":selected").val());
 }
 
 function init() {
     cur_call = null;
+
+    $("#usecamera").selectmenu({});
+    $("#usemic").selectmenu({});
+    $("#useshare").selectmenu({});
 
     if (!autocall) {
 	pop("#ext", "verto_demo_ext", "3500");
@@ -1257,8 +1258,10 @@ $(document).ready(function() {
 
 //    $("#rows").css("position", "absolute").css("z-index", "2");
 
-    $("#usrctl").show();
-    $("#usr2").hide();
+    //$("#usrctl").show();
+    //$("#usr2").hide();
+
+    $("#usrctl").hide();
 
     $("#rows").mouseover(function() {
 	$("#usr2").show();
@@ -1269,11 +1272,13 @@ $(document).ready(function() {
     });
 
     $("#usr2").mouseleave(function() {
-	usrto = setTimeout(function() { $("#usr2").hide(); }, 2000);
+	if (is_full) {
+	    usrto = setTimeout(function() { $("#usr2").hide(); }, 2000);
+	}
     });
 
 
-    init();
+    $.verto.init({}, init);
 
 });
 
