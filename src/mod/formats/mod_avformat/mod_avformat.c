@@ -1168,6 +1168,7 @@ struct av_file_context {
 	switch_thread_t *file_read_thread;
 	int file_read_thread_running;
 	switch_time_t video_start_time;
+	switch_image_t *last_img;
 };
 
 typedef struct av_file_context av_file_context_t;
@@ -1202,7 +1203,9 @@ static switch_status_t open_input_file(av_file_context_t *context, switch_file_h
 			context->has_audio = 1;
 		} else if (context->fc->streams[i]->codec->codec_type == AVMEDIA_TYPE_VIDEO && !context->has_video) {
 			context->video_st.st = context->fc->streams[i];
-			context->has_video = 1;
+			if (switch_test_flag(handle, SWITCH_FILE_FLAG_VIDEO)) {
+				context->has_video = 1;
+			}
 		}
 	}
 
@@ -1687,6 +1690,8 @@ static switch_status_t av_file_close(switch_file_handle_t *handle)
 		switch_core_timer_destroy(&context->timer);
 	}
 
+	switch_img_free(&context->last_img);
+
 	switch_buffer_destroy(&context->audio_buffer);
 
 	return SWITCH_STATUS_SUCCESS;
@@ -1838,25 +1843,27 @@ static switch_status_t av_file_read_video(switch_file_handle_t *handle, switch_f
 	MediaStream *mst = &context->video_st;
 	AVStream *st = mst->st;
 	int ticks = 0;
+	int max_delta = 1 * AV_TIME_BASE; // 1 second
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
 	if (!context->has_video) return SWITCH_STATUS_FALSE;
 
-	if (!context->file_read_thread_running && switch_queue_size(context->eh.video_queue) == 0) {
-		return SWITCH_STATUS_FALSE;
-	}
+	if (flags & SVR_FLUSH) max_delta = 0.02 * AV_TIME_BASE;
 
-	if (flags & SVR_FLUSH) {
-		while(switch_queue_size(context->eh.video_queue) > 1) {
-			if (switch_queue_trypop(context->eh.video_queue, &pop) == SWITCH_STATUS_SUCCESS) {
-				if (pop) {
-					switch_image_t *img = (switch_image_t *)pop;
-					switch_img_free(&img);
-				}
-			}
+	if (context->last_img) {
+		if (mst->next_pts && (switch_micro_time_now() - mst->next_pts > max_delta)) {
+			switch_img_free(&context->last_img); // too late
+		} else if (mst->next_pts && (switch_micro_time_now() - mst->next_pts > -10000)) {
+			frame->img = context->last_img;
+			context->last_img = NULL;
+			return SWITCH_STATUS_SUCCESS;
 		}
 
-		return SWITCH_STATUS_BREAK;
+		if (!(flags & SVR_BLOCK)) return SWITCH_STATUS_BREAK;
+	}
+
+	if (!context->file_read_thread_running && switch_queue_size(context->eh.video_queue) == 0) {
+		return SWITCH_STATUS_FALSE;
 	}
 
 	if (st->codec->time_base.num) {
@@ -1884,6 +1891,7 @@ again: if (0) goto again;
 // #define YIELD 60000 // use a constant FPS
 #ifdef YIELD
 		switch_yield(YIELD);
+		frame->img = img;
 #else
 
 		uint64_t pts;
@@ -1906,25 +1914,33 @@ again: if (0) goto again;
 
 		if (pts == 0) mst->next_pts = 0;
 
-		if (mst->next_pts && switch_micro_time_now() - mst->next_pts > AV_TIME_BASE) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "picture is too late, diff: %" SWITCH_INT64_T_FMT " queue size:%u\n", (int64_t)(switch_micro_time_now() - mst->next_pts), switch_queue_size(context->eh.video_queue));
+		if (mst->next_pts && switch_micro_time_now() - mst->next_pts > max_delta) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "picture is too late, off: %" SWITCH_INT64_T_FMT " queue size:%u\n", (int64_t)(switch_micro_time_now() - mst->next_pts), switch_queue_size(context->eh.video_queue));
 			switch_img_free(&img);
-			// return SWITCH_STATUS_BREAK;
-			goto again;
-		}
 
-		while (switch_micro_time_now() - mst->next_pts < -10000LL / 2) {
-			if (!(flags & SVR_BLOCK)) {
-				switch_img_free(&img);
+			if (switch_queue_size(context->eh.video_queue) > 0) {
+				goto again;
+			} else {
 				return SWITCH_STATUS_BREAK;
 			}
-			// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "yield\n");
-			switch_yield(10000);
 		}
 
+		if (flags & SVR_BLOCK) {
+			while (switch_micro_time_now() - mst->next_pts < -10000 / 2) {
+				// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "yield\n");
+				switch_yield(10000);
+			}
+			frame->img = img;
+		} else {
+			if (switch_micro_time_now() - mst->next_pts > -10000 / 2) {
+				frame->img = img;
+			} else {
+				context->last_img = img;
+				return SWITCH_STATUS_BREAK;
+			}
+		}
 #endif
 
-		frame->img = img;
 	} else {
 		if ((flags & SVR_BLOCK)) {
 			switch_yield(10000);
