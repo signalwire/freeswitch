@@ -412,6 +412,24 @@ SWITCH_DECLARE(void) switch_vb_reset(switch_vb_t *vb)
 	switch_mutex_unlock(vb->mutex);
 }
 
+SWITCH_DECLARE(switch_status_t) switch_vb_get_frames(switch_vb_t *vb, uint32_t *min_frame_len, uint32_t *max_frame_len) 
+{
+
+	switch_mutex_lock(vb->mutex);
+
+	if (min_frame_len) {
+		*min_frame_len = vb->min_frame_len;
+	}
+
+	if (max_frame_len) {
+		*max_frame_len = vb->max_frame_len;
+	}
+
+	switch_mutex_unlock(vb->mutex);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_vb_set_frames(switch_vb_t *vb, uint32_t min_frame_len, uint32_t max_frame_len)
 {
 	switch_mutex_lock(vb->mutex);

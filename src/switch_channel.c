@@ -1785,7 +1785,8 @@ SWITCH_DECLARE(char *) switch_channel_get_cap_string(switch_channel_t *channel)
 SWITCH_DECLARE(void) switch_channel_set_flag_value(switch_channel_t *channel, switch_channel_flag_t flag, uint32_t value)
 {
 	int HELD = 0;
-	
+	int just_set = 0;
+
 	switch_assert(channel);
 	switch_assert(channel->flag_mutex);
 
@@ -1793,8 +1794,15 @@ SWITCH_DECLARE(void) switch_channel_set_flag_value(switch_channel_t *channel, sw
 	if (flag == CF_LEG_HOLDING && !channel->flags[flag] && channel->flags[CF_ANSWERED]) {
 		HELD = 1;
 	}
-	channel->flags[flag] = value;
+	if (channel->flags[flag] != value) {
+		just_set = 1;
+		channel->flags[flag] = value;
+	}
 	switch_mutex_unlock(channel->flag_mutex);
+
+	if (flag == CF_VIDEO_READY && just_set) {
+		switch_core_session_request_video_refresh(channel->session);
+	}
 
 	if (flag == CF_ORIGINATOR && switch_channel_test_flag(channel, CF_ANSWERED) && switch_channel_up_nosig(channel)) {
 		switch_channel_set_callstate(channel, CCS_RING_WAIT);

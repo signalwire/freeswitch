@@ -3855,6 +3855,17 @@ static void jb_logger(const char *file, const char *func, int line, int level, c
 	va_end(ap);
 }
 
+SWITCH_DECLARE(uint32_t) switch_rtp_get_video_buffer_size(switch_rtp_t *rtp_session)
+{
+	uint32_t frames = 0;
+
+	if (rtp_session->vb) {
+		switch_vb_get_frames(rtp_session->vb, &frames, NULL);
+	}
+
+	return frames;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_rtp_set_video_buffer_size(switch_rtp_t *rtp_session, uint32_t frames)
 {
 	if (!switch_rtp_ready(rtp_session)) {
@@ -5415,7 +5426,9 @@ static switch_status_t process_rtcp_report(switch_rtp_t *rtp_session, rtcp_msg_t
 		
 		if (msg->header.type == RTCP_PT_PSFB && (extp->header.fmt == RTCP_PSFB_FIR || extp->header.fmt == RTCP_PSFB_PLI)) {
 			switch_core_media_gen_key_frame(rtp_session->session);
-			//switch_channel_set_flag(switch_core_session_get_channel(rtp_session->session), CF_VIDEO_REFRESH_REQ);
+			if (rtp_session->vbw) {
+				switch_vb_reset(rtp_session->vbw);
+			}
 		}
 
 		if (msg->header.type == RTCP_PT_RTPFB && extp->header.fmt == RTCP_RTPFB_NACK) {
@@ -5423,11 +5436,14 @@ static switch_status_t process_rtcp_report(switch_rtp_t *rtp_session, rtcp_msg_t
 			int i;
 			
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "Got NACK count %d\n", ntohs(extp->header.length) - 2);
-			switch_core_media_gen_key_frame(rtp_session->session);
+
+
 			for (i = 0; i < ntohs(extp->header.length) - 2; i++) {
 				handle_nack(rtp_session, *nack);
 				nack++;
 			}
+
+			switch_core_media_gen_key_frame(rtp_session->session);
 		}
 
 	} else

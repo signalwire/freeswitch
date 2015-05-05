@@ -328,6 +328,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_activate_rtcp(switch_rtp_t *rtp_sessi
 SWITCH_DECLARE(switch_timer_t *) switch_rtp_get_media_timer(switch_rtp_t *rtp_session);
 
 SWITCH_DECLARE(switch_status_t) switch_rtp_set_video_buffer_size(switch_rtp_t *rtp_session, uint32_t frames);
+SWITCH_DECLARE(uint32_t) switch_rtp_get_video_buffer_size(switch_rtp_t *rtp_session);
 
 /*! 
   \brief Acvite a jitter buffer on an RTP session
