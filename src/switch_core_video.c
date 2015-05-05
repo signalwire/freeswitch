@@ -336,6 +336,9 @@ SWITCH_DECLARE(void) switch_img_fill(switch_image_t *img, int x, int y, int w, i
 SWITCH_DECLARE(void) switch_img_get_yuv_pixel(switch_image_t *img, switch_yuv_color_t *yuv, int x, int y)
 {
 	// switch_assert(img->fmt == SWITCH_IMG_FMT_I420);
+
+	if (x < 0 || y < 0 || x >= img->d_w || y >= img->d_h) return;
+
 	yuv->y = *(img->planes[SWITCH_PLANE_Y] + img->stride[SWITCH_PLANE_Y] * y + x);
 	yuv->u = *(img->planes[SWITCH_PLANE_U] + img->stride[SWITCH_PLANE_U] * y / 2 + x / 2);
 	yuv->v = *(img->planes[SWITCH_PLANE_V] + img->stride[SWITCH_PLANE_V] * y / 2 + x / 2);
@@ -343,10 +346,19 @@ SWITCH_DECLARE(void) switch_img_get_yuv_pixel(switch_image_t *img, switch_yuv_co
 
 SWITCH_DECLARE(void) switch_img_get_rgb_pixel(switch_image_t *img, switch_rgb_color_t *rgb, int x, int y)
 {
-	switch_yuv_color_t yuv;
+	if (x < 0 || y < 0 || x >= img->d_w || y >= img->d_h) return;
 
-	switch_img_get_yuv_pixel(img, &yuv, x, y);
-	switch_color_yuv2rgb(&yuv, rgb);
+	if (img->fmt == SWITCH_IMG_FMT_I420) {
+		switch_yuv_color_t yuv;
+
+		switch_img_get_yuv_pixel(img, &yuv, x, y);
+		switch_color_yuv2rgb(&yuv, rgb);
+	} else if (img->fmt == SWITCH_IMG_FMT_ARGB) {
+		uint8_t *a = img->planes[SWITCH_PLANE_PACKED] + img->d_w * 4 * y + 4 * x;
+		rgb->r = *(++a);
+		rgb->g = *(++a);
+		rgb->b = *(++a);
+	}
 }
 
 SWITCH_DECLARE(void) switch_img_overlay(switch_image_t *IMG, switch_image_t *img, int x, int y, uint8_t alpha)
@@ -354,12 +366,22 @@ SWITCH_DECLARE(void) switch_img_overlay(switch_image_t *IMG, switch_image_t *img
 	int i, j, len, max_h;
 	switch_rgb_color_t RGB, rgb, c;
 	switch_yuv_color_t yuv;
+	int xoff = 0, yoff = 0;
 
-	switch_assert(img->fmt == SWITCH_IMG_FMT_I420);
 	switch_assert(IMG->fmt == SWITCH_IMG_FMT_I420);
 
-	max_h = MIN(y + img->d_h, IMG->d_h);
-	len = MIN(img->d_w, IMG->d_w - x);
+	if (x < 0) {
+		xoff = -x;
+		x = 0;
+	}
+
+	if (y < 0) {
+		yoff = -y;
+		y = 0;
+	}
+
+	max_h = MIN(y + img->d_h - yoff, IMG->d_h);
+	len = MIN(img->d_w - xoff, IMG->d_w - x);
 
 	if (x & 1) { x++; len--; }
 	if (y & 1) y++;
@@ -368,11 +390,11 @@ SWITCH_DECLARE(void) switch_img_overlay(switch_image_t *IMG, switch_image_t *img
 	for (i = y; i < max_h; i++) {
 		for (j = 0; j < len; j++) {
 			switch_img_get_rgb_pixel(IMG, &RGB, x + j, i);
-			switch_img_get_rgb_pixel(img, &rgb, j, i - y);
+			switch_img_get_rgb_pixel(img, &rgb, j + xoff, i - y + yoff);
 
-			c.r = ((RGB.r * alpha) >> 8) + ((rgb.r * (255 - alpha)) >> 8);
-			c.g = ((RGB.g * alpha) >> 8) + ((rgb.g * (255 - alpha)) >> 8);
-			c.b = ((RGB.b * alpha) >> 8) + ((rgb.b * (255 - alpha)) >> 8);
+			c.r = ((RGB.r * (255 - alpha)) >> 8) + ((rgb.r * alpha) >> 8);
+			c.g = ((RGB.g * (255 - alpha)) >> 8) + ((rgb.g * alpha) >> 8);
+			c.b = ((RGB.b * (255 - alpha)) >> 8) + ((rgb.b * alpha) >> 8);
 
 			switch_color_rgb2yuv(&c, &yuv);
 			switch_img_draw_pixel(IMG, x + j, i, &yuv);
