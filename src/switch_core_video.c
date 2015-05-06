@@ -825,21 +825,22 @@ SWITCH_DECLARE(uint32_t) switch_img_txt_handle_render(switch_img_txt_handle_t *h
 #endif
 }
 
-SWITCH_DECLARE(switch_image_t *) switch_img_write_text_img(int w, int h, const char *text)
+SWITCH_DECLARE(switch_image_t *) switch_img_write_text_img(int w, int h, switch_bool_t full, const char *text)
 {
 	const char *fg ="#cccccc";
 	const char *bg = "#142e55";
 	const char *font_face = NULL;
 	const char *fontsz = "4%";
-	const char *txt = "Value Optimized Out!";
+	char *txt = "Value Optimized Out!";
 	int argc = 0;
 	char *argv[6] = { 0 };
     switch_rgb_color_t bgcolor = { 0 };
-    int width, font_size = 0;
+    int pre_width = 0, width = 0, font_size = 0, height = 0;
 	int len = 0;
 	char *duptxt = strdup(text);
     switch_img_txt_handle_t *txthandle = NULL;
 	switch_image_t *txtimg = NULL;
+	int x = 0, y = 0;
 
 	if (strchr(text, ':')) {
 		argc = switch_split(duptxt, ':', argv);
@@ -863,8 +864,8 @@ SWITCH_DECLARE(switch_image_t *) switch_img_write_text_img(int w, int h, const c
 		if (argc > 4) {
 			txt = argv[4];
 		}
-	}
-
+	} else txt = duptxt;
+	
 	if (!txt) txt = duptxt;
 
 	if (strrchr(fontsz, '%')) {
@@ -873,6 +874,9 @@ SWITCH_DECLARE(switch_image_t *) switch_img_write_text_img(int w, int h, const c
 		font_size = atoi(fontsz);
 	}
 
+	while (*txt == ' ') txt++;
+	while (end_of(txt) == ' ') end_of(txt) = '\0';
+	
     len = strlen(txt);
 
     if (len < 5) len = 5;
@@ -880,17 +884,35 @@ SWITCH_DECLARE(switch_image_t *) switch_img_write_text_img(int w, int h, const c
 	switch_img_txt_handle_create(&txthandle, font_face, fg, bg, font_size, 0, NULL);
 	switch_color_set_rgb(&bgcolor, bg);
 
-    width = switch_img_txt_handle_render(txthandle,
-										 NULL,
-										 font_size / 2, font_size / 2,
-										 txt, NULL, fg, bg, 0, 0);
+    pre_width = switch_img_txt_handle_render(txthandle,
+											 NULL,
+											 font_size / 2, font_size / 2,
+											 txt, NULL, fg, bg, 0, 0);
 	
-	txtimg = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, width, font_size * 2, 1);
+	height = font_size * 2;
+	
+	if (full && w > width) {
+		width = w;
+	} else {
+		width = pre_width;
+	}
+
+
+	txtimg = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, width, height, 1);
+
+
+	x = font_size / 2;
+	y = font_size / 2;
+
+	if (full) {
+		x = (txtimg->d_w / 2) - (pre_width / 2);
+	}
+
 
     switch_img_fill(txtimg, 0, 0, txtimg->d_w, txtimg->d_h, &bgcolor);
     switch_img_txt_handle_render(txthandle,
                                  txtimg,
-                                 font_size / 2, font_size / 2,
+                                 x, y,
                                  txt, NULL, fg, bg, 0, 0);
 	switch_img_txt_handle_destroy(&txthandle);
 	return txtimg;
