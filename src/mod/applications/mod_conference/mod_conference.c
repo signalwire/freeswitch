@@ -1271,7 +1271,7 @@ static void layer_set_logo(conference_member_t *member, mcu_layer_t *layer, cons
 
 		if (params) {
 			if ((var = switch_event_get_header(params, "text"))) {
-				layer->logo_text_img = switch_img_write_text_img(layer->screen_w, layer->screen_h, var);
+				layer->logo_text_img = switch_img_write_text_img(layer->screen_w, layer->screen_h, SWITCH_FALSE, var);
 			}
 		}
 	}
@@ -1728,8 +1728,10 @@ static void vmute_snap(conference_member_t *member, switch_bool_t clear)
 		switch_mutex_lock(member->conference->canvas->mutex);
 		layer = &member->conference->canvas->layers[member->video_layer_id];
 		switch_img_free(&layer->mute_img);
-		
+		switch_img_free(&member->video_mute_img);
+
 		if (!clear && layer->cur_img) {
+			switch_img_copy(layer->cur_img, &member->video_mute_img);
 			switch_img_copy(layer->cur_img, &layer->mute_img);
 		}
 
@@ -2101,24 +2103,33 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 				if (switch_test_flag(imember, MFLAG_CAN_BE_SEEN)) {
 					layer->mute_patched = 0;
 				} else {
+					switch_image_t *tmp;
+
 					if (img && img != imember->avatar_png_img) {
 						switch_img_free(&img);
 					}
 					
 					if (!layer->mute_patched) {
-						if (imember->video_mute_png || layer->mute_img) {
-							clear_layer(conference->canvas, layer);
 
+						if (imember->video_mute_img || layer->mute_img) {
+							clear_layer(conference->canvas, layer);
+							
 							if (!layer->mute_img && imember->video_mute_img) {
 								//layer->mute_img = switch_img_read_png(imember->video_mute_png, SWITCH_IMG_FMT_I420);
 								switch_img_copy(imember->video_mute_img, &layer->mute_img);
 							}
 
 							if (layer->mute_img) {
-								scale_and_patch(conference, layer, layer->mute_img, SWITCH_TRUE);
+								scale_and_patch(conference, layer, layer->mute_img, SWITCH_FALSE);
 							}
-							layer->mute_patched = 1;
-						}
+						} 
+
+						
+						tmp = switch_img_write_text_img(layer->screen_w, layer->screen_h, SWITCH_TRUE, "VIDEO MUTED");
+						switch_img_patch(conference->canvas->img, tmp, layer->x_pos, layer->y_pos);
+						switch_img_free(&tmp);
+
+						layer->mute_patched = 1;
 					}
 				}
 
