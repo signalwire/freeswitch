@@ -39,7 +39,7 @@
 #include <vpx/vp8.h>
 
 #define SLICE_SIZE SWITCH_DEFAULT_VIDEO_SIZE
-#define KEY_FRAME_MIN_FREQ 1000000
+#define KEY_FRAME_MIN_FREQ 250000
 
 
 /*	http://tools.ietf.org/html/draft-ietf-payload-vp8-10
@@ -219,7 +219,8 @@ struct vpx_context {
 	int num;
 	int partition_index;
 	const vpx_codec_cx_pkt_t *pkt;
-	vpx_codec_iter_t iter;
+	vpx_codec_iter_t enc_iter;
+	vpx_codec_iter_t dec_iter;
 	uint32_t last_ts;
 	switch_time_t last_ms;
 	vpx_codec_ctx_t	decoder;
@@ -512,7 +513,7 @@ static switch_status_t consume_partition(vpx_context_t *context, switch_frame_t 
 	switch_size_t remaining_bytes = 0;
 
 	if (!context->pkt) {
-		if ((context->pkt = vpx_codec_get_cx_data(&context->encoder, &context->iter))) {
+		if ((context->pkt = vpx_codec_get_cx_data(&context->encoder, &context->enc_iter))) {
 			start = 1;
 			if (!context->pbuffer) {
 				switch_buffer_create_partition(context->pool, &context->pbuffer, context->pkt->data.frame.buf, context->pkt->data.frame.sz);
@@ -668,7 +669,7 @@ static switch_status_t switch_vpx_encode(switch_codec_t *codec, switch_frame_t *
 		return SWITCH_STATUS_FALSE;
 	}
 
-	context->iter = NULL;
+	context->enc_iter = NULL;
 	context->last_ts = frame->timestamp;
 	context->last_ms = now;
 		
@@ -767,11 +768,12 @@ static switch_status_t switch_vpx_decode(switch_codec_t *codec, switch_frame_t *
 	switch_size_t len;
 	vpx_codec_ctx_t *decoder = NULL;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	int is_keyframe = 0;
+	int is_start = 0, is_keyframe = 0, get_refresh = 0;
 
 	if (context->is_vp9) {
-		is_keyframe = IS_VP9_KEY_FRAME(*(unsigned char *)frame->data);
+		is_start = is_keyframe = IS_VP9_KEY_FRAME(*(unsigned char *)frame->data);
 	} else { // vp8
+		is_start = (*(unsigned char *)frame->data & 0x10);
 		is_keyframe = IS_VP8_KEY_FRAME((uint8_t *)frame->data);
 	}
 
@@ -800,9 +802,12 @@ static switch_status_t switch_vpx_decode(switch_codec_t *codec, switch_frame_t *
 	// context->last_received_timestamp = frame->timestamp;
 	context->last_received_complete_picture = frame->m ? SWITCH_TRUE : SWITCH_FALSE;
 
-	if (is_keyframe) {
+	if (is_keyframe || is_start) {
 		if (context->got_key_frame <= 0) {
 			context->got_key_frame = 1;
+			if (!is_keyframe) {
+				get_refresh = 1;
+			}
 		} else {
 			context->got_key_frame++;
 		}
@@ -816,6 +821,11 @@ static switch_status_t switch_vpx_decode(switch_codec_t *codec, switch_frame_t *
 
 	status = context->is_vp9 ? buffer_vp9_packets(context, frame) : buffer_vp8_packets(context, frame);
 
+
+	if (context->dec_iter && (frame->img = (switch_image_t *) vpx_codec_get_frame(decoder, &context->dec_iter))) {
+		switch_goto_status(SWITCH_STATUS_SUCCESS, end);
+	}
+
 	//printf("READ buf:%ld got_key:%d st:%d m:%d\n", switch_buffer_inuse(context->vpx_packet_buffer), context->got_key_frame, status, frame->m);
 
 	len = switch_buffer_inuse(context->vpx_packet_buffer);
@@ -827,7 +837,6 @@ static switch_status_t switch_vpx_decode(switch_codec_t *codec, switch_frame_t *
 
 	if (status == SWITCH_STATUS_SUCCESS && frame->m && len) {
 		uint8_t *data;
-		vpx_codec_iter_t iter = NULL;
 		int corrupted = 0;
 		int err;
 		//int keyframe = 0;
@@ -839,7 +848,7 @@ static switch_status_t switch_vpx_decode(switch_codec_t *codec, switch_frame_t *
 
 		//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "buffered: %" SWITCH_SIZE_T_FMT ", key: %d\n", len, keyframe);
 
-
+		context->dec_iter = NULL;
 		err = vpx_codec_decode(decoder, data, (unsigned int)len, NULL, 0);
 
 		if (err != VPX_CODEC_OK) {
@@ -856,13 +865,14 @@ static switch_status_t switch_vpx_decode(switch_codec_t *codec, switch_frame_t *
 		if (corrupted) {
 			frame->img = NULL;
 		} else {
-			frame->img = (switch_image_t *) vpx_codec_get_frame(decoder, &iter);
+			frame->img = (switch_image_t *) vpx_codec_get_frame(decoder, &context->dec_iter);
 		}
 		
 		switch_buffer_zero(context->vpx_packet_buffer);
 		
 		if (!frame->img) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "VPX invalid packet\n");
+			context->need_decoder_reset = 1;
+			context->got_key_frame = 0;
 			status = SWITCH_STATUS_RESTART;
 		}
 	}
@@ -877,7 +887,7 @@ end:
 		status = SWITCH_STATUS_MORE_DATA;
 	}
 
-	if (context->got_key_frame <= 0) {
+	if (context->got_key_frame <= 0 || get_refresh) {
 		switch_set_flag(frame, SFF_WAIT_KEY_FRAME);
 	}
 

@@ -1810,13 +1810,13 @@ static int flush_video_queue(switch_queue_t *q)
 
 	if (!q) return 0;
 
-	while (switch_queue_trypop(q, &pop) == SWITCH_STATUS_SUCCESS && pop) {
+	while (switch_queue_size(q) > 1 && switch_queue_trypop(q, &pop) == SWITCH_STATUS_SUCCESS && pop) {
 		img = (switch_image_t *)pop;
 		switch_img_free(&img);
 		r++;
 	}
 
-	return r;
+	return r + switch_queue_size(q);
 }
 
 static void check_avatar(conference_member_t *member, switch_bool_t force)
@@ -1876,7 +1876,6 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 	switch_image_t *write_img = NULL, *file_img = NULL;
 	uint32_t timestamp = 0, avatar_layers = 0;
 	video_layout_t *vlayout = get_layout(conference);
-	switch_time_t last_refresh_req = 0;
 
 	if (!vlayout) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot find layout\n");
@@ -1951,11 +1950,7 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 			if (switch_test_flag(conference, CFLAG_MINIMIZE_VIDEO_ENCODING) && switch_channel_test_flag(imember->channel, CF_VIDEO)) {
 				if (switch_channel_test_flag(imember->channel, CF_VIDEO_REFRESH_REQ)) {
 					switch_channel_clear_flag(imember->channel, CF_VIDEO_REFRESH_REQ);
-					
-					if (!last_refresh_req || (now - last_refresh_req) > 1000) {
-						need_refresh = SWITCH_TRUE;
-						last_refresh_req = now;
-					}
+					need_refresh = SWITCH_TRUE;
 				}
 				
 				if (imember->video_codec_index < 0 && (check_codec = switch_core_session_get_video_write_codec(imember->session))) {
@@ -2011,7 +2006,7 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 				} while(size > 0);
 				if (!img && switch_test_flag(imember, MFLAG_CAN_BE_SEEN)) {
 					imember->blanks++;
-
+					
 					if (imember->blanks == conference->video_fps.fps || (imember->blanks % (int)(conference->video_fps.fps * 10)) == 0) {
 						switch_core_session_request_video_refresh(imember->session);
 					}
@@ -4796,10 +4791,13 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
 	if (switch_test_flag(member->conference, CFLAG_VIDEO_MUXING)) {
 		switch_image_t *img_copy = NULL;
 
-		if (frame->img && !member->conference->playing_video_file && switch_queue_size(member->video_queue) < 3) {
+		
+
+		if (frame->img && !member->conference->playing_video_file && switch_queue_size(member->video_queue) < member->conference->video_fps.fps) {
 			switch_img_copy(frame->img, &img_copy);
 			switch_queue_push(member->video_queue, img_copy);
 		}
+
 		switch_thread_rwlock_unlock(member->conference->rwlock);
 		return SWITCH_STATUS_SUCCESS;
 	}
