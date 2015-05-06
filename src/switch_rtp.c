@@ -4791,6 +4791,12 @@ static void do_flush(switch_rtp_t *rtp_session, int force)
 		}
 	}
 
+	if (rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] && rtp_session->session) {
+		int type = 1; // sum flags: 1 encoder; 2; decoder
+		switch_core_media_codec_control(rtp_session->session, SWITCH_MEDIA_TYPE_VIDEO, SWITCH_IO_READ, SCC_VIDEO_RESET, SCCT_INT, (void *)&type, NULL, NULL);
+		switch_core_session_request_video_refresh(rtp_session->session);
+	}
+
 	READ_DEC(rtp_session);
 }
 
