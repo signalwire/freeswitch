@@ -128,6 +128,27 @@ typedef struct {
 #endif
 
 #if SWITCH_BYTE_ORDER == __BIG_ENDIAN
+
+typedef struct {
+	uint32_t ssrc;
+	unsigned exp:6;
+	unsigned mantissa:17;
+	unsigned overhead:9;
+} rtcp_tmmbx_t;
+
+#else
+
+typedef struct {
+	uint32_t ssrc;
+	unsigned overhead:9;
+	unsigned mantissa:17;
+	unsigned exp:6;
+} rtcp_tmmbx_t;
+
+#endif
+
+#if SWITCH_BYTE_ORDER == __BIG_ENDIAN
+
 typedef struct {
 	unsigned version:2;
 	unsigned p:1;
@@ -301,6 +322,9 @@ struct switch_rtp {
 	uint16_t fir_count;
 	uint16_t pli_count;
 	uint32_t cur_nack;
+	uint32_t tmmbr;
+	uint32_t tmmbn;
+
 	ts_normalize_t ts_norm;
 	switch_sockaddr_t *remote_addr, *rtcp_remote_addr;
 	rtp_msg_t recv_msg;
@@ -420,7 +444,6 @@ struct switch_rtp {
 	switch_core_session_t *session;
 	payload_map_t **pmaps;
 	payload_map_t *pmap_tail;
-
 #ifdef ENABLE_ZRTP
 	zrtp_session_t *zrtp_session;
 	zrtp_profile_t *zrtp_profile;
@@ -1870,7 +1893,8 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 
 	if (rtp_session->rtcp_sock_output && rtp_session->flags[SWITCH_RTP_FLAG_ENABLE_RTCP] && rtp_session->remote_ssrc && 
 		!rtp_session->flags[SWITCH_RTP_FLAG_RTCP_PASSTHRU] && 
-		((now - rtp_session->rtcp_last_sent) > rtp_session->rtcp_send_rate * 1000000 || rtp_session->pli_count || rtp_session->fir_count || rtp_session->cur_nack)) {
+		((now - rtp_session->rtcp_last_sent) > rtp_session->rtcp_send_rate * 1000000 || 
+		 rtp_session->pli_count || rtp_session->fir_count || rtp_session->cur_nack || rtp_session->tmmbr || rtp_session->tmmbn)) {
 		switch_rtcp_numbers_t * stats = &rtp_session->stats.rtcp;
 		struct switch_rtcp_receiver_report *rr;
 		struct switch_rtcp_sender_report *sr;
@@ -1993,6 +2017,40 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 				rtcp_bytes += sizeof(switch_rtcp_ext_hdr_t) + sizeof(rtcp_fir_t);
 				rtp_session->fir_count--;
 			}
+
+			while (rtp_session->tmmbr || rtp_session->tmmbn) {
+				switch_rtcp_ext_hdr_t *ext_hdr;
+				rtcp_tmmbx_t *tmmbx;
+				uint32_t body = 0;
+				p = (uint8_t *) (&rtp_session->rtcp_send_msg) + rtcp_bytes;
+				ext_hdr = (switch_rtcp_ext_hdr_t *) p;
+
+				p += sizeof(switch_rtcp_ext_hdr_t);
+				tmmbx = (rtcp_tmmbx_t *) p;
+
+				ext_hdr->version = 2;
+				ext_hdr->p = 0;
+				ext_hdr->pt = RTCP_PT_PSFB;
+				ext_hdr->send_ssrc = htonl(rtp_session->ssrc);
+				ext_hdr->recv_ssrc = 0;
+
+				if (rtp_session->tmmbr) {
+					ext_hdr->fmt = RTCP_RTPFB_TMMBR;
+					body = rtp_session->tmmbr;
+					rtp_session->tmmbr = 0;
+				} else {
+					ext_hdr->fmt = RTCP_RTPFB_TMMBN;
+					body = rtp_session->tmmbn;
+					rtp_session->tmmbn = 0;
+				}
+
+				tmmbx->ssrc = htonl(rtp_session->remote_ssrc);
+				memcpy(p+4, &body, sizeof(body));
+				
+				ext_hdr->length = htons((uint8_t)((sizeof(switch_rtcp_ext_hdr_t) + sizeof(rtcp_fir_t)) / 4) - 1);
+				rtcp_bytes += sizeof(switch_rtcp_ext_hdr_t) + sizeof(rtcp_tmmbx_t);
+			}
+
 		}
 
 		//SDES + CNAME
@@ -4099,6 +4157,42 @@ SWITCH_DECLARE(void) switch_rtp_flush(switch_rtp_t *rtp_session)
 	}
 
 	switch_rtp_set_flag(rtp_session, SWITCH_RTP_FLAG_FLUSH);
+}
+
+static uint32_t calc_bw_exp(uint32_t bps, uint8_t bits)
+{
+	uint32_t r = 0;
+	rtcp_tmmbx_t *tmmbx;
+	uint32_t mantissa_max, i = 0;
+	
+	tmmbx = (rtcp_tmmbx_t *) &r;
+
+	mantissa_max = (1 << bits) - 1;
+
+	for (i = 0; i < 64; ++i) {
+		if (bps <= (mantissa_max << i)) {
+			tmmbx->exp = i;
+			break;
+		}
+	}
+
+	tmmbx->mantissa = (bps >> tmmbx->exp);
+	
+
+	
+	return r;
+}
+
+
+SWITCH_DECLARE(switch_status_t) switch_rtp_req_bandwidth(switch_rtp_t *rtp_session, uint32_t bps)
+{
+	if (!rtp_write_ready(rtp_session, 0, __LINE__) || rtp_session->tmmbr) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	rtp_session->tmmbr = calc_bw_exp(bps, 17);
+
+	return SWITCH_STATUS_SUCCESS;
 }
 
 SWITCH_DECLARE(void) switch_rtp_video_refresh(switch_rtp_t *rtp_session)
