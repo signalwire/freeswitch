@@ -1028,9 +1028,10 @@ static void reset_layer(mcu_canvas_t *canvas, mcu_layer_t *layer)
 	switch_img_free(&layer->logo_img);
 	switch_img_free(&layer->logo_text_img);
 
+	layer->mute_patched = 0;
 	layer->banner_patched = 0;
 	layer->is_avatar = 0;
-
+	
 	if (layer->geometry.overlap) {
 		canvas->refresh = 1;
 	}
@@ -2186,7 +2187,7 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 			for (i = 0; i < conference->canvas->total_layers; i++) {
 				mcu_layer_t *layer = &conference->canvas->layers[i];
 
-				if ((layer->member_id > -1 || layer->fnode) && layer->cur_img && (layer->tagged || layer->geometry.overlap)) {
+				if (!layer->mute_patched && (layer->member_id > -1 || layer->fnode) && layer->cur_img && (layer->tagged || layer->geometry.overlap)) {
 					if (conference->canvas->refresh) {
 						layer->refresh = 1;
 						conference->canvas->refresh++;
@@ -2195,6 +2196,7 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 					if (layer->cur_img) {
 						scale_and_patch(conference, layer, NULL, SWITCH_FALSE);
 					}
+					
 					layer->tagged = 0;
 				}
 				layer->bugged = 0;
