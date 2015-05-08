@@ -4339,14 +4339,16 @@ static void conference_set_video_floor_holder(conference_obj_t *conference, conf
 		}
 	}
 
-	switch_mutex_lock(conference->mutex);
+
 	if (!member) {
+		switch_mutex_lock(conference->member_mutex);
 		for (imember = conference->members; imember; imember = imember->next) {
 			if (imember->id != conference->video_floor_holder && imember->channel && switch_channel_test_flag(imember->channel, CF_VIDEO)) {
 				member = imember;
 				break;
 			}
 		}
+		switch_mutex_unlock(conference->member_mutex);
 	}
 
 	if (member && conference->canvas && conference->canvas->layout_floor_id > -1) {
@@ -4375,6 +4377,7 @@ static void conference_set_video_floor_holder(conference_obj_t *conference, conf
 		}
 	}
 
+	switch_mutex_lock(conference->member_mutex);
 	for (imember = conference->members; imember; imember = imember->next) {
 		if (!imember->channel || !switch_channel_test_flag(imember->channel, CF_VIDEO)) {
 			continue;
@@ -4384,9 +4387,9 @@ static void conference_set_video_floor_holder(conference_obj_t *conference, conf
 		switch_core_session_kill_channel(imember->session, SWITCH_SIG_BREAK);
 		switch_core_session_video_reinit(imember->session);
 	}
+	switch_mutex_unlock(conference->member_mutex);
 
 	switch_set_flag(conference, CFLAG_FLOOR_CHANGE);
-	switch_mutex_unlock(conference->mutex);
 
 	if (test_eflag(conference, EFLAG_FLOOR_CHANGE)) {
 		switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT);
