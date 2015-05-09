@@ -1390,6 +1390,10 @@ PKG_CHECK_MODULES([SMPP34], [libsmpp34 >= 1.10],[
   AM_CONDITIONAL([HAVE_SMPP34],[true])],[
   AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_SMPP34],[false])])
 
+PKG_CHECK_MODULES([HIREDIS], [hiredis >= 0.11.0],[
+  AM_CONDITIONAL([HAVE_HIREDIS],[true])],[
+  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_HIREDIS],[false])])
+
 AC_ARG_ENABLE(core-libedit-support,     
   [AS_HELP_STRING([--disable-core-libedit-support], [Compile without libedit Support])])
 
@@ -1688,6 +1692,7 @@ AC_CONFIG_FILES([Makefile
 		src/mod/applications/mod_fsk/Makefile
 		src/mod/applications/mod_fsv/Makefile
 		src/mod/applications/mod_hash/Makefile
+		src/mod/applications/mod_hiredis/Makefile
 		src/mod/applications/mod_httapi/Makefile
 		src/mod/applications/mod_http_cache/Makefile
 		src/mod/applications/mod_ladspa/Makefile
