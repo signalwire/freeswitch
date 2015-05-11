@@ -547,7 +547,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_opus_load)
 	}
 	
     
-	samples = 80;
+	samples = 480;
 	bytes = 160;
 	mss = 10000;
 	rate = 8000;
@@ -599,7 +599,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_opus_load)
 											 switch_opus_destroy);	/* deinitalize a codec handle using this implementation */
         
 		bytes += 160;
-		samples += 80;
+		samples += 480;
 		mss += 10000;
 		
 	}
