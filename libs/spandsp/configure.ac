@@ -37,6 +37,27 @@ m4_include(m4/ax_c99_features.m4)
 m4_include(m4/ax_check_export_capability.m4)
 m4_include(m4/ax_check_arm_neon.m4)
 
+AC_DEFUN([AC_FUNC_ALIGNED_ALLOC],[
+saved_CFLAGS="$CFLAGS"
+CFLAGS="$CFLAGS -Werror"
+  AC_CACHE_CHECK([checking for aligned_alloc],
+               [ac_cv_func_aligned_alloc],
+               [AC_LINK_IFELSE([AC_LANG_PROGRAM([
+												 #define _ISOC11_SOURCE
+                                                 #include <stdlib.h>
+                                                ],
+                                                [
+                                                   aligned_alloc(0,0);
+                                                ])],
+                               [ac_cv_func_aligned_alloc=yes],
+                               [ac_cv_func_aligned_alloc=no])])
+
+  if test "x${ac_cv_func_aligned_alloc}" = "xyes" ; then
+    AC_DEFINE([HAVE_ALIGNED_ALLOC], [1], [Define to 1 if you have the aligned_alloc() function.])
+  fi
+CFLAGS="$saved_CFLAGS"
+])
+
 AC_CONFIG_SRCDIR([src/tone_generate.c])
 AC_CONFIG_AUX_DIR([config])
 AC_CONFIG_MACRO_DIR([m4])
@@ -174,7 +195,7 @@ fi
 
 AX_C99_FLEXIBLE_ARRAY
 
-AC_CHECK_FUNCS([aligned_alloc])
+AC_FUNC_ALIGNED_ALLOC
 AC_CHECK_FUNCS([memalign])
 AC_CHECK_FUNCS([posix_memalign])
 AC_CHECK_FUNCS([memmove])
