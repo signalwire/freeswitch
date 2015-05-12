@@ -211,6 +211,8 @@ struct switch_media_handle_s {
 
 	uint64_t vid_frames;
 	time_t vid_started;
+	int ready_loops;
+
 };
 
 
@@ -4779,7 +4781,6 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 	switch_image_t *blank_img = NULL;
 	switch_rgb_color_t bgcolor;
 	switch_rtp_engine_t *v_engine = NULL;
-	int ready_loops = 0;
 	const char *var;
 
 	if (!(smh = session->media_handle)) {
@@ -4882,12 +4883,6 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 			
 			if (switch_test_flag(read_frame, SFF_CNG)) {
 				continue;
-			}
-
-			if (read_frame->img && read_frame->img->d_w && read_frame->img->d_h && ++ready_loops > 5) {
-				switch_channel_set_flag(channel, CF_VIDEO_READY);
-				smh->vid_params.width = read_frame->img->d_w;
-				smh->vid_params.height = read_frame->img->d_h;
 			}
 		}
 
@@ -10377,8 +10372,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_video_frame(switch_core
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	switch_io_event_hook_video_read_frame_t *ptr;
 	uint32_t loops = 0;
+	switch_media_handle_t *smh;
 
 	switch_assert(session != NULL);
+
+	if (!(smh = session->media_handle)) {
+		return SWITCH_STATUS_FALSE;
+	}
+
 
  top:
 
@@ -10450,6 +10451,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_video_frame(switch_core
 		if ((*frame)->img && switch_channel_test_flag(session->channel, CF_VIDEO_DEBUG_READ)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "IMAGE %dx%d %dx%d\n", 
 							  (*frame)->img->w, (*frame)->img->h, (*frame)->img->d_w, (*frame)->img->d_h);
+		}
+
+
+		if ((*frame)->img && (*frame)->img->d_w && (*frame)->img->d_h && ++smh->ready_loops > 5) {
+			switch_channel_set_flag(session->channel, CF_VIDEO_READY);
+			smh->vid_params.width = (*frame)->img->d_w;
+			smh->vid_params.height = (*frame)->img->d_h;
 		}
 
 		if (switch_test_flag((*frame), SFF_WAIT_KEY_FRAME)) {
