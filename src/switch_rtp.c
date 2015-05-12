@@ -1891,7 +1891,7 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 		rtp_session->cur_nack = switch_vb_pop_nack(rtp_session->vb);
 	}
 
-	if (rtp_session->rtcp_sock_output && rtp_session->flags[SWITCH_RTP_FLAG_ENABLE_RTCP] && rtp_session->remote_ssrc && 
+	if (rtp_session->rtcp_sock_output && rtp_session->flags[SWITCH_RTP_FLAG_ENABLE_RTCP] && //rtp_session->remote_ssrc && 
 		!rtp_session->flags[SWITCH_RTP_FLAG_RTCP_PASSTHRU] && 
 		((now - rtp_session->rtcp_last_sent) > rtp_session->rtcp_send_rate * 1000000 || 
 		 rtp_session->pli_count || rtp_session->fir_count || rtp_session->cur_nack || rtp_session->tmmbr || rtp_session->tmmbn)) {
