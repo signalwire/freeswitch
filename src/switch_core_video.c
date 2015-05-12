@@ -141,7 +141,7 @@ SWITCH_DECLARE(void) switch_img_patch(switch_image_t *IMG, switch_image_t *img, 
 				// printf("%d, %d alpha: %d\n", j, i, alpha);
 
 				if (alpha > 127) { // todo: mux alpha with the underlying pixel ?
-					rgb_color = (switch_rgb_color_t *)(img->planes[SWITCH_PLANE_PACKED] + i * img->stride[SWITCH_PLANE_PACKED] + j * 4 + 1);
+					rgb_color = (switch_rgb_color_t *)(img->planes[SWITCH_PLANE_PACKED] + i * img->stride[SWITCH_PLANE_PACKED] + j * 4);
 					switch_img_draw_pixel(IMG, x + j, y + i, rgb_color);
 				}
 			}
@@ -293,15 +293,23 @@ SWITCH_DECLARE(void) switch_img_draw_pixel(switch_image_t *img, int x, int y, sw
 {
 	switch_yuv_color_t yuv;
 
-	if (img->fmt != SWITCH_IMG_FMT_I420 || x < 0 || y < 0 || x >= img->d_w || y >= img->d_h) return;
+	if (x < 0 || y < 0 || x >= img->d_w || y >= img->d_h) return;
 
-	switch_color_rgb2yuv(color, &yuv);
+	if (img->fmt == SWITCH_IMG_FMT_I420) {
+		switch_color_rgb2yuv(color, &yuv);
 
-	img->planes[SWITCH_PLANE_Y][y * img->stride[SWITCH_PLANE_Y] + x] = yuv.y;
+		img->planes[SWITCH_PLANE_Y][y * img->stride[SWITCH_PLANE_Y] + x] = yuv.y;
 
-	if (((x & 0x1) == 0) && ((y & 0x1) == 0)) {// only draw on even position
-		img->planes[SWITCH_PLANE_U][y / 2 * img->stride[SWITCH_PLANE_U] + x / 2] = yuv.u;
-		img->planes[SWITCH_PLANE_V][y / 2 * img->stride[SWITCH_PLANE_V] + x / 2] = yuv.v;
+		if (((x & 0x1) == 0) && ((y & 0x1) == 0)) {// only draw on even position
+			img->planes[SWITCH_PLANE_U][y / 2 * img->stride[SWITCH_PLANE_U] + x / 2] = yuv.u;
+			img->planes[SWITCH_PLANE_V][y / 2 * img->stride[SWITCH_PLANE_V] + x / 2] = yuv.v;
+		}
+	} else if (img->fmt == SWITCH_IMG_FMT_ARGB) {
+		uint8_t *alpha = img->planes[SWITCH_PLANE_PACKED] + img->d_w * 4 * y + x * 4;
+		*(alpha    ) = color->a;
+		*(alpha + 1) = color->r;
+		*(alpha + 2) = color->g;
+		*(alpha + 3) = color->b;
 	}
 }
 
@@ -310,28 +318,42 @@ SWITCH_DECLARE(void) switch_img_fill(switch_image_t *img, int x, int y, int w, i
 	int len, i, max_h;
 	switch_yuv_color_t yuv_color;
 
-	if (img->fmt != SWITCH_IMG_FMT_I420 || x < 0 || y < 0 || x >= img->d_w || y >= img->d_h) return;
+	if (x < 0 || y < 0 || x >= img->d_w || y >= img->d_h) return;
 
-	switch_color_rgb2yuv(color, &yuv_color);
+	if (img->fmt == SWITCH_IMG_FMT_I420) {
+		switch_color_rgb2yuv(color, &yuv_color);
 
-	max_h = MIN(y + h, img->d_h);
-	len = MIN(w, img->d_w - x);
+		max_h = MIN(y + h, img->d_h);
+		len = MIN(w, img->d_w - x);
 
-	if (x & 1) { x++; len--; }
-	if (y & 1) y++;
-	if (len <= 0) return;
+		if (x & 1) { x++; len--; }
+		if (y & 1) y++;
+		if (len <= 0) return;
 
-	for (i = y; i < max_h; i++) {
-		memset(img->planes[SWITCH_PLANE_Y] + img->stride[SWITCH_PLANE_Y] * i + x, yuv_color.y, len);
-	}
+		for (i = y; i < max_h; i++) {
+			memset(img->planes[SWITCH_PLANE_Y] + img->stride[SWITCH_PLANE_Y] * i + x, yuv_color.y, len);
+		}
 
-	if ((len & 1) && (x + len) < img->d_w - 1) len++;
+		if ((len & 1) && (x + len) < img->d_w - 1) len++;
 
-	len /= 2;
+		len /= 2;
 
-	for (i = y; i < max_h; i += 2) {
-		memset(img->planes[SWITCH_PLANE_U] + img->stride[SWITCH_PLANE_U] * i / 2 + x / 2, yuv_color.u, len);
-		memset(img->planes[SWITCH_PLANE_V] + img->stride[SWITCH_PLANE_V] * i / 2 + x / 2, yuv_color.v, len);
+		for (i = y; i < max_h; i += 2) {
+			memset(img->planes[SWITCH_PLANE_U] + img->stride[SWITCH_PLANE_U] * i / 2 + x / 2, yuv_color.u, len);
+			memset(img->planes[SWITCH_PLANE_V] + img->stride[SWITCH_PLANE_V] * i / 2 + x / 2, yuv_color.v, len);
+		}
+	} else if (img->fmt == SWITCH_IMG_FMT_ARGB) {
+		for (i = 0; i < img->d_w; i++) {
+			*(img->planes[SWITCH_PLANE_PACKED] + i * 4    ) = color->a;
+			*(img->planes[SWITCH_PLANE_PACKED] + i * 4 + 1) = color->r;
+			*(img->planes[SWITCH_PLANE_PACKED] + i * 4 + 2) = color->g;
+			*(img->planes[SWITCH_PLANE_PACKED] + i * 4 + 3) = color->b;
+		}
+
+		for (i = 1; i < img->d_h; i++) {
+			memcpy( img->planes[SWITCH_PLANE_PACKED] + i * img->d_w * 4,
+					img->planes[SWITCH_PLANE_PACKED], img->d_w * 4);
+		}
 	}
 }
 
@@ -357,6 +379,7 @@ SWITCH_DECLARE(void) switch_img_get_rgb_pixel(switch_image_t *img, switch_rgb_co
 		switch_color_yuv2rgb(&yuv, rgb);
 	} else if (img->fmt == SWITCH_IMG_FMT_ARGB) {
 		uint8_t *a = img->planes[SWITCH_PLANE_PACKED] + img->d_w * 4 * y + 4 * x;
+		rgb->a = *a;
 		rgb->r = *(++a);
 		rgb->g = *(++a);
 		rgb->b = *(++a);
@@ -503,6 +526,7 @@ SWITCH_DECLARE(void) switch_color_yuv2rgb(switch_yuv_color_t *yuv, switch_rgb_co
 	rgb->b = CLAMP((298 * C + 516 * D           + 128) >> 8);
 #endif
 
+	rgb->a = 255;
 	rgb->r = CLAMP( yuv->y + ((22457 * (yuv->v-128)) >> 14));
 	rgb->g = CLAMP((yuv->y - ((715   * (yuv->v-128)) >> 10) - ((5532 * (yuv->u-128)) >> 14)));
 	rgb->b = CLAMP((yuv->y + ((28384 * (yuv->u-128)) >> 14)));
@@ -692,9 +716,17 @@ static void draw_bitmap(switch_img_txt_handle_t *handle, switch_image_t *img, FT
 				switch_rgb_color_t c;
 				switch_img_get_rgb_pixel(img, &rgb_color, i, j);
 
-				c.r = ((rgb_color.r * (255 - gradient)) >> 8) + ((handle->color.r * gradient) >> 8);
-				c.g = ((rgb_color.g * (255 - gradient)) >> 8) + ((handle->color.g * gradient) >> 8);
-				c.b = ((rgb_color.b * (255 - gradient)) >> 8) + ((handle->color.b * gradient) >> 8);
+				if (rgb_color.a > 0) {
+					c.a = rgb_color.a * gradient / 255;
+					c.r = ((rgb_color.r * (255 - gradient)) >> 8) + ((handle->color.r * gradient) >> 8);
+					c.g = ((rgb_color.g * (255 - gradient)) >> 8) + ((handle->color.g * gradient) >> 8);
+					c.b = ((rgb_color.b * (255 - gradient)) >> 8) + ((handle->color.b * gradient) >> 8);
+				} else {
+					c.a = gradient;
+					c.r = handle->color.r;
+					c.g = handle->color.g;
+					c.b = handle->color.b;
+				}
 
 				switch_img_draw_pixel(img, i, j, &c);
 			}
@@ -723,7 +755,7 @@ SWITCH_DECLARE(uint32_t) switch_img_txt_handle_render(switch_img_txt_handle_t *h
 
 	if (zstr(text)) return 0;
 
-	switch_assert(!img || img->fmt == SWITCH_IMG_FMT_I420);
+	switch_assert(!img || img->fmt == SWITCH_IMG_FMT_I420 || img->fmt == SWITCH_IMG_FMT_ARGB);
 
 	if (font_family) {
 		handle->font_family = switch_core_strdup(handle->pool, font_family);
@@ -830,6 +862,7 @@ SWITCH_DECLARE(switch_image_t *) switch_img_write_text_img(int w, int h, switch_
 {
 	const char *fg ="#cccccc";
 	const char *bg = "#142e55";
+	// const char *bg = NULL; // use a NULL bg for transparent
 	const char *font_face = NULL;
 	const char *fontsz = "4%";
 	char *txt = "Value Optimized Out!";
@@ -898,9 +931,15 @@ SWITCH_DECLARE(switch_image_t *) switch_img_write_text_img(int w, int h, switch_
 		width = pre_width;
 	}
 
-
-	txtimg = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, width, height, 1);
-
+	if (bg) {
+		txtimg = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, width, height, 1);
+		switch_assert(txtimg);
+		switch_img_fill(txtimg, 0, 0, txtimg->d_w, txtimg->d_h, &bgcolor);
+	} else {
+		txtimg = switch_img_alloc(NULL, SWITCH_IMG_FMT_ARGB, width, height, 1);
+		switch_assert(txtimg);
+		memset(txtimg->planes[SWITCH_PLANE_PACKED], 0, width * height * 4);
+	}
 
 	x = font_size / 2;
 	y = font_size / 2;
@@ -909,8 +948,6 @@ SWITCH_DECLARE(switch_image_t *) switch_img_write_text_img(int w, int h, switch_
 		x = (txtimg->d_w / 2) - (pre_width / 2);
 	}
 
-
-    switch_img_fill(txtimg, 0, 0, txtimg->d_w, txtimg->d_h, &bgcolor);
     switch_img_txt_handle_render(txthandle,
                                  txtimg,
                                  x, y,
@@ -1054,8 +1091,7 @@ SWITCH_DECLARE(switch_status_t) switch_png_patch_img(switch_png_t *use_png, swit
 			// printf("%d, %d alpha: %d\n", j, i, alpha);
 
 			if (alpha) { // todo, mux alpha with the underlying pixel
-				//rgb_color = (switch_rgb_color_t *)(use_png->pvt->buffer + i * use_png->pvt->png.width * 4 + j * 4);
-				rgb_color = (switch_rgb_color_t *)(use_png->pvt->buffer + i * use_png->pvt->png.width * 4 + j * 4 + 1);
+				rgb_color = (switch_rgb_color_t *)(use_png->pvt->buffer + i * use_png->pvt->png.width * 4 + j * 4);
 				switch_img_draw_pixel(img, x + j, y + i, rgb_color);
 			}
 		}
