@@ -5613,9 +5613,13 @@ static switch_status_t process_rtcp_report(switch_rtp_t *rtp_session, rtcp_msg_t
 			rtp_session->rtcp_fresh_frame = 1;
 			rtp_session->stats.rtcp.peer_ssrc = ntohl(packet_ssrc);
 
-			status = SWITCH_STATUS_SUCCESS;
+			
 		}
+	
 
+	if (msg->header.type > 194 && msg->header.type < 255) {
+		status = SWITCH_STATUS_SUCCESS;
+	}
 
 	return status;
 }
@@ -5694,18 +5698,18 @@ static switch_status_t read_rtcp_packet(switch_rtp_t *rtp_session, switch_size_t
 	}
 
 	if (rtp_session->rtcp_dtls) {
-		char *b = (char *) &rtp_session->rtcp_recv_msg;
+		char *b = (char *) rtp_session->rtcp_recv_msg_p;
 		
 		if (*b == 0 || *b == 1) {
 			if (rtp_session->rtcp_ice.ice_user) {
-				handle_ice(rtp_session, &rtp_session->rtcp_ice, (void *) &rtp_session->rtcp_recv_msg, *bytes);
+				handle_ice(rtp_session, &rtp_session->rtcp_ice, (void *) rtp_session->rtcp_recv_msg_p, *bytes);
 			}
 			*bytes = 0;
 		}
 		
 		if (*bytes && (*b >= 20) && (*b <= 64)) {
 			rtp_session->rtcp_dtls->bytes = *bytes;
-			rtp_session->rtcp_dtls->data = (void *) &rtp_session->rtcp_recv_msg;
+			rtp_session->rtcp_dtls->data = (void *) rtp_session->rtcp_recv_msg_p;
 		} else {
 			rtp_session->rtcp_dtls->bytes = 0;
 			rtp_session->rtcp_dtls->data = NULL;
@@ -5826,6 +5830,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		int do_cng = 0;
 		int read_pretriggered = 0;
 		int has_rtcp = 0;
+		int got_rtp_poll = 0;
 
 		bytes = 0;
 
@@ -5994,6 +5999,9 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		
 			
 		if (poll_status == SWITCH_STATUS_SUCCESS || (rtp_session->vb && switch_vb_poll(rtp_session->vb))) {
+
+			got_rtp_poll = 1;
+
 			if (read_pretriggered) {
 				read_pretriggered = 0;
 			} else {
@@ -6069,9 +6077,9 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 					goto end;
 				}
 			}
-			
+		
 			if ((!(io_flags & SWITCH_IO_FLAG_NOBLOCK)) && 
-				(rtp_session->dtmf_data.out_digit_dur == 0)) {
+				(rtp_session->dtmf_data.out_digit_dur == 0) && !rtp_session->flags[SWITCH_RTP_FLAG_ENABLE_RTCP]) {
 				return_cng_frame();
 			}
 		}
@@ -6183,7 +6191,13 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 				}
 			}
 		}
-		
+
+		if ((!(io_flags & SWITCH_IO_FLAG_NOBLOCK)) && 
+			(rtp_session->dtmf_data.out_digit_dur == 0) && !got_rtp_poll) {
+			return_cng_frame();
+		}
+
+
 		if (bytes && rtp_session->recv_msg.header.version == 2 && 
 			!rtp_session->flags[SWITCH_RTP_FLAG_PROXY_MEDIA] && !rtp_session->flags[SWITCH_RTP_FLAG_UDPTL] &&
 			rtp_session->recv_msg.header.pt != 13 && 
