@@ -134,7 +134,6 @@ SWITCH_DECLARE(void) switch_img_patch(switch_image_t *IMG, switch_image_t *img, 
 		int j;
 		uint8_t alpha;
 		switch_rgb_color_t *rgb_color;
-		switch_yuv_color_t yuv_color;
 
 		for (i = 0; i < max_h; i++) {
 			for (j = 0; j < max_w; j++) {
@@ -143,8 +142,7 @@ SWITCH_DECLARE(void) switch_img_patch(switch_image_t *IMG, switch_image_t *img, 
 
 				if (alpha > 127) { // todo: mux alpha with the underlying pixel ?
 					rgb_color = (switch_rgb_color_t *)(img->planes[SWITCH_PLANE_PACKED] + i * img->stride[SWITCH_PLANE_PACKED] + j * 4 + 1);
-					switch_color_rgb2yuv(rgb_color, &yuv_color);
-					switch_img_draw_pixel(IMG, x + j, y + i, &yuv_color);
+					switch_img_draw_pixel(IMG, x + j, y + i, rgb_color);
 				}
 			}
 		}
@@ -291,15 +289,19 @@ SWITCH_DECLARE(switch_image_t *) switch_img_copy_rect(switch_image_t *img, uint3
 	return new_img;
 }
 
-SWITCH_DECLARE(void) switch_img_draw_pixel(switch_image_t *img, int x, int y, switch_yuv_color_t *color)
+SWITCH_DECLARE(void) switch_img_draw_pixel(switch_image_t *img, int x, int y, switch_rgb_color_t *color)
 {
+	switch_yuv_color_t yuv;
+
 	if (img->fmt != SWITCH_IMG_FMT_I420 || x < 0 || y < 0 || x >= img->d_w || y >= img->d_h) return;
 
-	img->planes[SWITCH_PLANE_Y][y * img->stride[SWITCH_PLANE_Y] + x] = color->y;
+	switch_color_rgb2yuv(color, &yuv);
+
+	img->planes[SWITCH_PLANE_Y][y * img->stride[SWITCH_PLANE_Y] + x] = yuv.y;
 
 	if (((x & 0x1) == 0) && ((y & 0x1) == 0)) {// only draw on even position
-		img->planes[SWITCH_PLANE_U][y / 2 * img->stride[SWITCH_PLANE_U] + x / 2] = color->u;
-		img->planes[SWITCH_PLANE_V][y / 2 * img->stride[SWITCH_PLANE_V] + x / 2] = color->v;
+		img->planes[SWITCH_PLANE_U][y / 2 * img->stride[SWITCH_PLANE_U] + x / 2] = yuv.u;
+		img->planes[SWITCH_PLANE_V][y / 2 * img->stride[SWITCH_PLANE_V] + x / 2] = yuv.v;
 	}
 }
 
@@ -365,7 +367,6 @@ SWITCH_DECLARE(void) switch_img_overlay(switch_image_t *IMG, switch_image_t *img
 {
 	int i, j, len, max_h;
 	switch_rgb_color_t RGB, rgb, c;
-	switch_yuv_color_t yuv;
 	int xoff = 0, yoff = 0;
 
 	switch_assert(IMG->fmt == SWITCH_IMG_FMT_I420);
@@ -396,8 +397,7 @@ SWITCH_DECLARE(void) switch_img_overlay(switch_image_t *IMG, switch_image_t *img
 			c.g = ((RGB.g * (255 - alpha)) >> 8) + ((rgb.g * alpha) >> 8);
 			c.b = ((RGB.b * (255 - alpha)) >> 8) + ((rgb.b * alpha) >> 8);
 
-			switch_color_rgb2yuv(&c, &yuv);
-			switch_img_draw_pixel(IMG, x + j, i, &yuv);
+			switch_img_draw_pixel(IMG, x + j, i, &c);
 		}
 	}
 }
@@ -537,24 +537,23 @@ struct switch_img_txt_handle_s {
 	switch_image_t *img;
 	switch_memory_pool_t *pool;
 	int free_pool;
-	switch_yuv_color_t gradient_table[MAX_GRADIENT];
+	switch_rgb_color_t gradient_table[MAX_GRADIENT];
 	switch_bool_t use_bgcolor;
 };
 
 static void init_gradient_table(switch_img_txt_handle_t *handle)
 {
 	int i;
-	switch_rgb_color_t color;
+	switch_rgb_color_t *color;
 
 	switch_rgb_color_t *c1 = &handle->bgcolor;
 	switch_rgb_color_t *c2 = &handle->color;
 
 	for (i = 0; i < MAX_GRADIENT; i++) {
-		color.r = c1->r + (c2->r - c1->r) * i / MAX_GRADIENT;
-		color.g = c1->g + (c2->g - c1->g) * i / MAX_GRADIENT;
-		color.b = c1->b + (c2->b - c1->b) * i / MAX_GRADIENT;
-
-		switch_color_rgb2yuv(&color, &handle->gradient_table[i]);
+		color = &handle->gradient_table[i];
+		color->r = c1->r + (c2->r - c1->r) * i / MAX_GRADIENT;
+		color->g = c1->g + (c2->g - c1->g) * i / MAX_GRADIENT;
+		color->b = c1->b + (c2->b - c1->b) * i / MAX_GRADIENT;
 	}
 }
 
@@ -649,7 +648,6 @@ static void draw_bitmap(switch_img_txt_handle_t *handle, switch_image_t *img, FT
 	FT_Int  i, j, p, q;
 	FT_Int  x_max = x + bitmap->width;
 	FT_Int  y_max = y + bitmap->rows;
-	switch_yuv_color_t yuv_color;
 
 	if (bitmap->width == 0) return;
 
@@ -659,8 +657,6 @@ static void draw_bitmap(switch_img_txt_handle_t *handle, switch_image_t *img, FT
 		case FT_PIXEL_MODE_NONE:
 		case FT_PIXEL_MODE_MONO:
 		{
-			switch_color_rgb2yuv(&handle->color, &yuv_color);
-
 			for ( j = y, q = 0; j < y_max; j++, q++ ) {
 				for ( i = x, p = 0; i < x_max; i++, p++ ) {
 					uint8_t byte;
@@ -670,7 +666,7 @@ static void draw_bitmap(switch_img_txt_handle_t *handle, switch_image_t *img, FT
 
 					byte = bitmap->buffer[(q * linesize + p) / 8];
 					if ((byte >> (7 - (p % 8))) & 0x1) {
-						switch_img_draw_pixel(img, i, j, &yuv_color);
+						switch_img_draw_pixel(img, i, j, &handle->color);
 					}
 				}
 			}
@@ -700,8 +696,7 @@ static void draw_bitmap(switch_img_txt_handle_t *handle, switch_image_t *img, FT
 				c.g = ((rgb_color.g * (255 - gradient)) >> 8) + ((handle->color.g * gradient) >> 8);
 				c.b = ((rgb_color.b * (255 - gradient)) >> 8) + ((handle->color.b * gradient) >> 8);
 
-				switch_color_rgb2yuv(&c, &yuv_color);
-				switch_img_draw_pixel(img, i, j, &yuv_color);
+				switch_img_draw_pixel(img, i, j, &c);
 			}
 		}
 	}
@@ -1047,7 +1042,6 @@ SWITCH_DECLARE(switch_status_t) switch_png_patch_img(switch_png_t *use_png, swit
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_rgb_color_t *rgb_color;
-	switch_yuv_color_t yuv_color;
 	uint8_t alpha;
 	int i, j;
 
@@ -1062,8 +1056,7 @@ SWITCH_DECLARE(switch_status_t) switch_png_patch_img(switch_png_t *use_png, swit
 			if (alpha) { // todo, mux alpha with the underlying pixel
 				//rgb_color = (switch_rgb_color_t *)(use_png->pvt->buffer + i * use_png->pvt->png.width * 4 + j * 4);
 				rgb_color = (switch_rgb_color_t *)(use_png->pvt->buffer + i * use_png->pvt->png.width * 4 + j * 4 + 1);
-				switch_color_rgb2yuv(rgb_color, &yuv_color);
-				switch_img_draw_pixel(img, x + j, y + i, &yuv_color);
+				switch_img_draw_pixel(img, x + j, y + i, rgb_color);
 			}
 		}
 	}
