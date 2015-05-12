@@ -256,9 +256,9 @@ SWITCH_DECLARE(void) switch_img_fill(switch_image_t *img, int x, int y, int w, i
 * \param[in]    img       Image descriptor
 * \param[in]    x         leftmost pos
 * \param[in]    y         topmost pos
-* \param[in]    color     YUV color
+* \param[in]    color     RGB color
 */
-SWITCH_DECLARE(void) switch_img_draw_pixel(switch_image_t *img, int x, int y, switch_yuv_color_t *color);
+SWITCH_DECLARE(void) switch_img_draw_pixel(switch_image_t *img, int x, int y, switch_rgb_color_t *color);
 
 /*!\brief Set RGB color with a string
 *
