@@ -223,6 +223,9 @@ int udptl_rx_packet(udptl_state_t *s, const uint8_t buf[], int len)
 			if ((stat = decode_length(buf, len, &ptr, &count)) < 0)
 				return -1;
 			for (i = 0; i < count; i++) {
+				if (total_count + i >= 16) {
+					return -1;
+				}
 				if (decode_open_type(buf, len, &ptr, &bufs[total_count + i], &lengths[total_count + i]) != 0)
 					return -1;
 			}
