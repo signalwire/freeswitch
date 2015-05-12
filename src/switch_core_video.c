@@ -653,14 +653,13 @@ static void draw_bitmap(switch_img_txt_handle_t *handle, switch_image_t *img, FT
 
 	if (bitmap->width == 0) return;
 
-	switch_color_rgb2yuv(&handle->color, &yuv_color);
-
 	switch (bitmap->pixel_mode) {
 		case FT_PIXEL_MODE_GRAY: // it should always be GRAY since we use FT_LOAD_RENDER?
 			break;
 		case FT_PIXEL_MODE_NONE:
 		case FT_PIXEL_MODE_MONO:
 		{
+			switch_color_rgb2yuv(&handle->color, &yuv_color);
 
 			for ( j = y, q = 0; j < y_max; j++, q++ ) {
 				for ( i = x, p = 0; i < x_max; i++, p++ ) {
@@ -693,9 +692,16 @@ static void draw_bitmap(switch_img_txt_handle_t *handle, switch_image_t *img, FT
 			if (handle->use_bgcolor) {
 				switch_img_draw_pixel(img, i, j, &handle->gradient_table[gradient * MAX_GRADIENT / 256]);
 			} else {
-				if (gradient > 128) {
-					switch_img_draw_pixel(img, i, j, &yuv_color);
-				}
+				switch_rgb_color_t rgb_color;
+				switch_rgb_color_t c;
+				switch_img_get_rgb_pixel(img, &rgb_color, i, j);
+
+				c.r = ((rgb_color.r * (255 - gradient)) >> 8) + ((handle->color.r * gradient) >> 8);
+				c.g = ((rgb_color.g * (255 - gradient)) >> 8) + ((handle->color.g * gradient) >> 8);
+				c.b = ((rgb_color.b * (255 - gradient)) >> 8) + ((handle->color.b * gradient) >> 8);
+
+				switch_color_rgb2yuv(&c, &yuv_color);
+				switch_img_draw_pixel(img, i, j, &yuv_color);
 			}
 		}
 	}
