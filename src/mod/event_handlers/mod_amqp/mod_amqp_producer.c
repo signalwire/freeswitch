@@ -311,6 +311,7 @@ switch_status_t mod_amqp_producer_create(char *name, switch_xml_t cfg)
 
 	if ( mod_amqp_connection_open(profile->conn_root, &(profile->conn_active), profile->name, profile->custom_attr) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Profile[%s] was unable to connect to any connection\n", profile->name);
+		goto err;
 	}
 
 	amqp_exchange_declare(profile->conn_active->state, 1,

@@ -88,12 +88,12 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_amqp_shutdown)
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Mod starting shutting down\n");
 	switch_event_unbind_callback(mod_amqp_producer_event_handler);
 
-	for (hi = switch_core_hash_first(globals.producer_hash); hi; hi = switch_core_hash_next(&hi)) {
+	while ((hi = switch_core_hash_first(globals.producer_hash))) {
 		switch_core_hash_this(hi, NULL, NULL, (void **)&producer);
 		mod_amqp_producer_destroy(&producer);
 	}
 
-	for (hi = switch_core_hash_first(globals.command_hash); hi; hi = switch_core_hash_next(&hi)) {
+	while ((hi = switch_core_hash_first(globals.command_hash))) {
 		switch_core_hash_this(hi, NULL, NULL, (void **)&command);
 		mod_amqp_command_destroy(&command);
 	}
