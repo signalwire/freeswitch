@@ -1909,7 +1909,7 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 		}
 	}
 	
-	if (!rtcp_ok && (int)((now - rtp_session->rtcp_last_sent) / 1000) > rate) {
+	if (!rtcp_ok && (!rtp_session->rtcp_last_sent || (int)((now - rtp_session->rtcp_last_sent) / 1000) > rate)) {
 		rtcp_ok = 1;
 	}
 	
@@ -2664,7 +2664,10 @@ SWITCH_DECLARE(void) switch_rtp_reset(switch_rtp_t *rtp_session)
 	memset(&rtp_session->ts_norm, 0, sizeof(rtp_session->ts_norm));
 
 
-	switch_rtp_del_dtls(rtp_session, DTLS_TYPE_RTP|DTLS_TYPE_RTCP);
+	rtp_session->rtcp_sent_packets = 0;
+	rtp_session->rtcp_last_sent = 0;
+
+	//switch_rtp_del_dtls(rtp_session, DTLS_TYPE_RTP|DTLS_TYPE_RTCP);
 	switch_rtp_set_flag(rtp_session, SWITCH_RTP_FLAG_PAUSE);
 	switch_rtp_set_flag(rtp_session, SWITCH_RTP_FLAG_MUTE);
 	rtcp_stats_init(rtp_session);
