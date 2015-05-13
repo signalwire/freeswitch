@@ -312,7 +312,7 @@ static switch_status_t init_encoder(switch_codec_t *codec)
 	if (context->codec_settings.video.bandwidth) {
 		context->bandwidth = context->codec_settings.video.bandwidth;
 	} else {
-		context->bandwidth = ((context->codec_settings.video.width * context->codec_settings.video.height) / 900);
+		context->bandwidth = switch_calc_bitrate(context->codec_settings.video.width, context->codec_settings.video.height, 0, 0);
 	}
 
 	if (context->bandwidth > 40960) {

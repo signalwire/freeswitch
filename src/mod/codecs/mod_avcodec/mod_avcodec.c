@@ -132,7 +132,7 @@ static switch_status_t init_x264(h264_codec_context_t *context, uint32_t width, 
 	if (context->codec_settings.video.bandwidth) {
 		context->bandwidth = context->codec_settings.video.bandwidth;
 	} else {
-		context->bandwidth = context->codec_settings.video.width * context->codec_settings.video.height / 1024;
+		context->bandwidth = switch_calc_bitrate(context->codec_settings.video.width, context->codec_settings.video.height, 0, 0);
 	}
 
 	if (context->bandwidth > 5120) {

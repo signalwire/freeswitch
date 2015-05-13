@@ -40,6 +40,7 @@
 #define SWITCH_UTILS_H
 
 #include <switch.h>
+#include <math.h>
 
 SWITCH_BEGIN_EXTERN_C 
 
@@ -993,18 +994,31 @@ SWITCH_DECLARE(char *) switch_util_quote_shell_arg_pool(const char *string, swit
 
 #define SWITCH_READ_ACCEPTABLE(status) (status == SWITCH_STATUS_SUCCESS || status == SWITCH_STATUS_BREAK || status == SWITCH_STATUS_INUSE)
 
+
+static inline int32_t switch_calc_bitrate(int w, int h, int quality, int fps)
+{
+	/* KUSH GAUGE*/
+
+	if (!fps) fps = 15;
+	if (!quality) quality = 2;
+	
+	return (int32_t)((float)(w * h * fps * quality) * 0.07) / 1000;
+}
+
 static inline int32_t switch_parse_bandwidth_string(const char *bwv)
 {
-	int32_t bw = 0;
+	float bw = 0;
 
 	if (!bwv) return 0;
-	
-	if (bwv && (bw = (int32_t) atol(bwv))) {
+
+	if (!strcasecmp(bwv, "auto")) {
+		return -1;
+	}	
+
+	if ((bw = (float) atof(bwv))) {
 		if (bw < 0) return 0;
 
-		if (!strcasecmp(bwv, "auto")) {
-			return -1;
-		} else if (strstr(bwv, "KB")) {
+		if (strstr(bwv, "KB")) {
 			bw *= 8;
 		} else if (strstr(bwv, "mb")) {
 			bw *= 1024;
@@ -1013,7 +1027,7 @@ static inline int32_t switch_parse_bandwidth_string(const char *bwv)
 		}
 	}
 
-	return bw;
+	return (int32_t) roundf(bw);
 }
 
 static inline int switch_needs_url_encode(const char *s)
