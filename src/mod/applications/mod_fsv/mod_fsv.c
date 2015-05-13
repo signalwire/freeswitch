@@ -665,6 +665,7 @@ static void decode_video_thread(switch_core_session_t *session, void *obj)
 	switch_frame_t *frame;
 	uint32_t width = 0, height = 0;
 	uint32_t decoded_pictures = 0;
+	int count = 0;
 
 	if (!switch_channel_ready(channel)) {
 		goto done;
@@ -691,6 +692,12 @@ static void decode_video_thread(switch_core_session_t *session, void *obj)
 		if (!SWITCH_READ_ACCEPTABLE(status)) {
 			break;
 		}
+
+		if (!count || ++count == 101) {
+			switch_core_session_request_video_refresh(session);
+			count = 1;
+		}
+			
 
 		if (frame && frame->datalen > 0) {
 			switch_core_session_write_video_frame(session, frame, SWITCH_IO_FLAG_NONE, 0);
