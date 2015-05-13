@@ -8564,11 +8564,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_receive_message(switch_core_se
 	case SWITCH_MESSAGE_INDICATE_VIDEO_REFRESH_REQ:
 		{
 			if (v_engine->rtp_session) {
-				
+				if (switch_rtp_test_flag(v_engine->rtp_session, SWITCH_RTP_FLAG_PLI)) {
+					switch_rtp_video_loss(v_engine->rtp_session);
+				}
+
 				if (switch_rtp_test_flag(v_engine->rtp_session, SWITCH_RTP_FLAG_FIR)) {
 					switch_rtp_video_refresh(v_engine->rtp_session);
-				} else if (switch_rtp_test_flag(v_engine->rtp_session, SWITCH_RTP_FLAG_PLI)) {
-					switch_rtp_video_loss(v_engine->rtp_session);
 				}
 			}
 		}
