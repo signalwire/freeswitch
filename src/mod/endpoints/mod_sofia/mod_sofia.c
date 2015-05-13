@@ -1300,9 +1300,9 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 
 				//const char *pl = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n<media_control>\n<vc_primitive>\n<to_encoder>\n<picture_fast_update>\n</picture_fast_update>\n</to_encoder>\n</vc_primitive>\n</media_control>";
 				const char *pl = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n<media_control><vc_primitive><to_encoder><picture_fast_update /></to_encoder></vc_primitive></media_control>\n";
-				time_t now = switch_epoch_time_now(NULL);
+				switch_time_t now = switch_micro_time_now();
 				
-				if (!tech_pvt->last_vid_info || (now - tech_pvt->last_vid_info) > 1) {
+				if (!tech_pvt->last_vid_info || (now - tech_pvt->last_vid_info) > 500000) {
 					
 					tech_pvt->last_vid_info = now;
 					
