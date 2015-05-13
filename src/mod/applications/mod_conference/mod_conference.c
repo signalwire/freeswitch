@@ -2056,13 +2056,14 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 			for (i = 0; i < conference->canvas->total_layers; i++) {
 				mcu_layer_t *xlayer = &conference->canvas->layers[i];
 					
-				if (xlayer->is_avatar && xlayer->member_id != conference->video_floor_holder) {
+				if (xlayer->is_avatar && xlayer->member_id != conference->video_floor_holder && !switch_test_flag(imember, MFLAG_MOD)) {
 					avatar_layers++;
 				}
 			}
 
-			if (!layer && (conference->canvas->layers_used < conference->canvas->total_layers || 
-						   (avatar_layers && !imember->avatar_png_img)) && 
+			if (!layer && 
+				(conference->canvas->layers_used < conference->canvas->total_layers || 
+				 (avatar_layers && !imember->avatar_png_img) || switch_test_flag(imember, MFLAG_MOD)) &&
 				(imember->avatar_png_img || imember->video_flow != SWITCH_MEDIA_FLOW_SENDONLY)) {
 				/* find an empty layer */
 				for (i = 0; i < conference->canvas->total_layers; i++) {
