@@ -808,7 +808,7 @@ struct private_object {
 	char *respond_phrase;
 	int respond_code;
 	char *respond_dest;
-	time_t last_vid_info;
+	switch_time_t last_vid_info;
 	uint32_t keepalive;
 	uint32_t sent_invites;
 	uint32_t recv_invites;
