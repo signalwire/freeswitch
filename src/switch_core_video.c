@@ -33,6 +33,12 @@
 #include <switch_utf8.h>
 #include <libyuv.h>
 
+// #define HAVE_LIBGD
+#ifdef HAVE_LIBGD
+#include <gd.h>
+#endif
+
+
 struct pos_el {
 	switch_img_position_t pos;
 	const char *name;
@@ -77,6 +83,28 @@ SWITCH_DECLARE(switch_image_t *)switch_img_alloc(switch_image_t  *img,
 						 unsigned int d_h,
 						 unsigned int align)
 {
+#ifdef HAVE_LIBGD
+	if (fmt == SWITCH_IMG_FMT_GD) {
+		gdImagePtr gd = gdImageCreateTrueColor(d_w, d_h);
+
+		if (!gd) return NULL;
+
+		switch_img_free(&img);
+		img = (switch_image_t *)vpx_img_alloc(NULL, SWITCH_IMG_FMT_ARGB, 1, 1, 1);
+
+		if (!img) {
+			gdImageDestroy(gd);
+			return NULL;
+		}
+
+		img->user_priv = gd;
+		img->d_w = d_w;
+		img->d_h = d_h;
+		img->fmt = SWITCH_IMG_FMT_GD;
+		return img;
+	}
+#endif
+
 	return (switch_image_t *)vpx_img_alloc((vpx_image_t *)img, (vpx_img_fmt_t)fmt, d_w, d_h, align);
 }
 
@@ -107,7 +135,13 @@ SWITCH_DECLARE(void) switch_img_flip(switch_image_t *img)
 SWITCH_DECLARE(void) switch_img_free(switch_image_t **img)
 {
 	if (img && *img) {
-		switch_safe_free((*img)->user_priv);
+		if ((*img)->fmt == SWITCH_IMG_FMT_GD) {
+#ifdef HAVE_LIBGD
+			gdImageDestroy((gdImagePtr)(*img)->user_priv);
+#endif
+		} else {
+			switch_safe_free((*img)->user_priv);
+		}
 		vpx_img_free((vpx_image_t *)*img);
 		*img = NULL;
 	}
@@ -148,6 +182,36 @@ SWITCH_DECLARE(void) switch_img_patch(switch_image_t *IMG, switch_image_t *img, 
 		}
 
 		return;
+
+#ifdef HAVE_LIBGD
+	} else if (img->fmt == SWITCH_IMG_FMT_GD) {
+		gdImagePtr gd = (gdImagePtr)img->user_priv;
+		switch_rgb_color_t rgb_color;
+		int pixel;
+		int i, j;
+
+		switch_assert(gd);
+
+		if (!gd->trueColor) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "GD is experimental, only true color image is supported\n");
+			return;
+		}
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "truecolor: %d alpha: %d, transparent? %d\n", gd->trueColor, gd->saveAlphaFlag, gd->transparent);
+
+		for(i = 0; i < img->d_h; i++) {
+			for(j = 0; j < img->d_w; j++) {
+				pixel = gd->tpixels[i][j];
+				rgb_color.a = 255; // TODO: handle transparent
+				rgb_color.r = gdTrueColorGetRed(pixel);
+				rgb_color.g = gdTrueColorGetGreen(pixel);
+				rgb_color.b = gdTrueColorGetBlue(pixel);
+				switch_img_draw_pixel(IMG, x + j, y + i, &rgb_color);
+			}
+		}
+
+		return;
+#endif
+
 	}
 
 	if (x < 0) {
@@ -1760,6 +1824,53 @@ SWITCH_DECLARE(void) switch_img_find_position(switch_img_position_t pos, int sw,
 
 }
 
+#ifdef HAVE_LIBGD
+SWITCH_DECLARE(switch_image_t *) switch_img_read_file(const char* file_name)
+{
+	switch_image_t *img = switch_img_alloc(NULL, SWITCH_IMG_FMT_ARGB, 1, 1, 1);
+	gdImagePtr gd = NULL;
+	char *ext;
+	FILE *fp;
+
+	if (!img) return NULL;
+
+	// gd = gdImageCreateFromFile(file_name); // only available in 2.1.1
+
+	ext = strrchr(file_name, '.');
+	if (!ext) goto err;
+
+	fp = fopen(file_name, "rb");
+	if (!fp) goto err;
+
+	if (!strcmp(ext, ".png")) {
+		gd = gdImageCreateFromPng(fp);
+	} else if (!strcmp(ext, ".gif")) {
+		gd = gdImageCreateFromGif(fp);
+	} else if (!strcmp(ext, ".jpg") || !strcmp(ext, ".jpeg")) {
+		gd = gdImageCreateFromJpeg(fp);
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Not supported file type: %s\n", ext);
+	}
+
+	fclose(fp);
+	if (!gd) goto err;
+
+	img->fmt = SWITCH_IMG_FMT_GD;
+	img->d_w = gd->sx;
+	img->d_h = gd->sy;
+	img->user_priv = gd;
+	return img;
+
+err:
+	switch_img_free(&img);
+	return NULL;
+}
+#else
+SWITCH_DECLARE(switch_image_t *) switch_img_read_file(const char* file_name)
+{
+	return NULL;
+}
+#endif
 
 /* For Emacs:
  * Local Variables:

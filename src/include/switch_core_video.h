@@ -362,6 +362,8 @@ SWITCH_DECLARE(void) switch_img_find_position(switch_img_position_t pos, int sw,
 SWITCH_DECLARE(switch_status_t) switch_img_convert(switch_image_t *src, switch_convert_fmt_t fmt, void *dest, switch_size_t *size);
 SWITCH_DECLARE(switch_image_t *) switch_img_write_text_img(int w, int h, switch_bool_t full, const char *text);
 
+SWITCH_DECLARE(switch_image_t *) switch_img_read_file(const char* file_name);
+
 /** @} */
 
 SWITCH_END_EXTERN_C
