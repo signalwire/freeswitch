@@ -43,7 +43,7 @@
 #include <x264.h>
 #endif
 
-#define FPS 15 // frame rate
+#define FPS 30 // frame rate
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_avcodec_load);
 SWITCH_MODULE_DEFINITION(mod_avcodec, mod_avcodec_load, NULL, NULL);
@@ -99,6 +99,11 @@ typedef struct h264_codec_context_s {
 	x264_nal_t *x264_nals;
 	int x264_nal_count;
 	int cur_nalu_index;
+
+	int change_bandwidth;
+	unsigned int bandwidth;
+	switch_codec_settings_t codec_settings;
+
 #endif
 
 } h264_codec_context_t;
@@ -109,17 +114,47 @@ static switch_status_t init_x264(h264_codec_context_t *context, uint32_t width, 
 {
 	x264_t *xh = context->x264_handle;
 	x264_param_t *xp = &context->x264_params;
-	int ret = 0;
+	//int ret = 0;
+
+	if (width && height) {
+		context->codec_settings.video.width = width;
+		context->codec_settings.video.height = height;
+	}
+
+	if (!context->codec_settings.video.width) {
+		context->codec_settings.video.width = 1280;
+	}
+
+	if (!context->codec_settings.video.height) {
+		context->codec_settings.video.height = 720;
+	}
+
+	if (context->codec_settings.video.bandwidth) {
+		context->bandwidth = context->codec_settings.video.bandwidth;
+	} else {
+		context->bandwidth = context->codec_settings.video.width * context->codec_settings.video.height / 1024;
+	}
+
+	if (context->bandwidth > 5120) {
+		context->bandwidth = 5120;
+	}
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "initializing x264 handle %dx%d bw:%d\n", width, height, context->bandwidth);
+
 
 	if (xh) {
-		xp->i_width = width;
-		xp->i_height = height;
-		ret = x264_encoder_reconfig(xh, xp);
+		x264_encoder_close(context->x264_handle);
+		context->x264_handle = xh = NULL;
+		switch_buffer_zero(context->nalu_buffer);
+		
+		//xp->i_width = width;
+		//xp->i_height = height;
+		//ret = x264_encoder_reconfig(xh, xp);
 
-		if (ret == 0) return SWITCH_STATUS_SUCCESS;
+		//if (ret == 0) return SWITCH_STATUS_SUCCESS;
 
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Cannot Reset error:%d\n", ret);
-		return SWITCH_STATUS_FALSE;
+		//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Cannot Reset error:%d\n", ret);
+		//return SWITCH_STATUS_FALSE;
 	}
 
 	// x264_param_default(xp);
@@ -129,8 +164,8 @@ static switch_status_t init_x264(h264_codec_context_t *context, uint32_t width, 
 	// xp->i_threads  = 1;//X264_SYNC_LOOKAHEAD_AUTO;
 	// xp->i_lookahead_threads = X264_SYNC_LOOKAHEAD_AUTO;
 	// Video Properties
-	xp->i_width	  = width;
-	xp->i_height  = height;
+	xp->i_width	  = context->codec_settings.video.width;
+	xp->i_height  = context->codec_settings.video.height;
 	xp->i_frame_total = 0;
 	xp->i_keyint_max = FPS * 10;
 	// Bitstream parameters
@@ -145,10 +180,10 @@ static switch_status_t init_x264(h264_codec_context_t *context, uint32_t width, 
 	// xp->i_log_level	 = X264_LOG_DEBUG;
 	xp->i_log_level	 = X264_LOG_NONE;
 	// Rate control Parameters
-	xp->rc.i_bitrate = 378;//kbps
+	xp->rc.i_bitrate = context->bandwidth;
 	// Muxing parameters
-	xp->i_fps_den  = 1;
-	xp->i_fps_num  = FPS;
+	//xp->i_fps_den  = 1;
+	//xp->i_fps_num  = FPS;
 	xp->i_timebase_den = xp->i_fps_num;
 	xp->i_timebase_num = xp->i_fps_den;
 	xp->i_slice_max_size = SLICE_SIZE;
@@ -210,7 +245,7 @@ static switch_status_t nalu_slice(h264_codec_context_t *context, switch_frame_t 
 
 static uint8_t ff_input_buffer_padding[FF_INPUT_BUFFER_PADDING_SIZE] = { 0 };
 
-static void buffer_h264_nalu(h264_codec_context_t *context, switch_frame_t *frame)
+static switch_status_t buffer_h264_nalu(h264_codec_context_t *context, switch_frame_t *frame)
 {
 	uint8_t nalu_type = 0;
 	uint8_t *data = frame->data;
@@ -224,8 +259,7 @@ static void buffer_h264_nalu(h264_codec_context_t *context, switch_frame_t *fram
 
 	if (!context->got_pps && nalu_type != 7) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "waiting pps\n");
-		switch_set_flag(frame, SFF_WAIT_KEY_FRAME);
-		return;
+		return SWITCH_STATUS_RESTART;
 	}
 
 	if (!context->got_pps) context->got_pps = 1;
@@ -239,7 +273,7 @@ static void buffer_h264_nalu(h264_codec_context_t *context, switch_frame_t *fram
 
 		nalu_type = *(data + 1) & 0x1f;
 
-		if (start && end) return;
+		if (start && end) return SWITCH_STATUS_RESTART;
 
 		if (start) {
 			if (context->nalu_28_start) {
@@ -249,7 +283,7 @@ static void buffer_h264_nalu(h264_codec_context_t *context, switch_frame_t *fram
 		} else if (end) {
 			context->nalu_28_start = 0;
 		} else if (!context->nalu_28_start) {
-			return;
+			return SWITCH_STATUS_RESTART;
 		}
 
 		if (start) {
@@ -272,6 +306,8 @@ static void buffer_h264_nalu(h264_codec_context_t *context, switch_frame_t *fram
 		switch_buffer_write(buffer, ff_input_buffer_padding, sizeof(ff_input_buffer_padding));
 		context->nalu_28_start = 0;
 	}
+
+	return SWITCH_STATUS_SUCCESS;
 }
 
 #ifndef H264_CODEC_USE_LIBX264
@@ -356,7 +392,7 @@ static switch_status_t open_encoder(h264_codec_context_t *context, uint32_t widt
 	context->encoder_ctx->width = width;
 	context->encoder_ctx->height = height;
 	/* frames per second */
-	context->encoder_ctx->time_base= (AVRational){1, FPS};
+	context->encoder_ctx->time_base = (AVRational){1, 90000};
 	context->encoder_ctx->gop_size = FPS * 3; /* emit one intra frame every 3 seconds */
 	context->encoder_ctx->max_b_frames = 0;
 	context->encoder_ctx->pix_fmt = AV_PIX_FMT_YUV420P;
@@ -393,6 +429,11 @@ static switch_status_t switch_h264_init(switch_codec_t *codec, switch_codec_flag
 		context = switch_core_alloc(codec->memory_pool, sizeof(h264_codec_context_t));
 		switch_assert(context);
 		memset(context, 0, sizeof(*context));
+
+		if (codec_settings) {
+			context->codec_settings = *codec_settings;
+		}
+
 
 		if (decoding) {
 			context->decoder = avcodec_find_decoder(AV_CODEC_ID_H264);
@@ -589,17 +630,25 @@ static switch_status_t switch_h264_encode(switch_codec_t *codec,
 	switch_image_t *img = frame->img;
 	void *encoded_data = frame->data;
 	uint32_t *encoded_data_len = &frame->datalen;
-	unsigned int *flag = &frame->flags;
+	//unsigned int *flag = &frame->flags;
 
-	if (*flag & SFF_WAIT_KEY_FRAME) context->need_key_frame = 1;
+	//if (*flag & SFF_WAIT_KEY_FRAME) context->need_key_frame = 1;
 
 	//if (*encoded_data_len < SWITCH_DEFAULT_VIDEO_SIZE) return SWITCH_STATUS_FALSE;
 
 	if (!context) return SWITCH_STATUS_FALSE;
 
+
+	if (context->change_bandwidth) {
+		context->codec_settings.video.bandwidth = context->change_bandwidth;
+		context->change_bandwidth = 0;
+		init_x264(context, 0, 0);
+		switch_set_flag(frame, SFF_WAIT_KEY_FRAME);
+	}
+
 	if (!context->x264_handle) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "initializing x264 handle %dx%d\n", width, height);
 		init_x264(context, width, height);
+		switch_set_flag(frame, SFF_WAIT_KEY_FRAME);
 	}
 
 	if (frame->flags & SFF_SAME_IMAGE) {
@@ -611,8 +660,9 @@ static switch_status_t switch_h264_encode(switch_codec_t *codec,
 
 	if (context->x264_params.i_width != width || context->x264_params.i_height != height) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "picture size changed from %dx%d to %dx%d, reinitializing encoder\n",
-			context->x264_params.i_width, context->x264_params.i_width, width, height);
+						  context->x264_params.i_width, context->x264_params.i_width, width, height);
 		init_x264(context, width, height);
+		switch_set_flag(frame, SFF_WAIT_KEY_FRAME);
 	}
 
 	switch_assert(encoded_data);
@@ -673,6 +723,7 @@ static switch_status_t switch_h264_decode(switch_codec_t *codec, switch_frame_t 
 {
 	h264_codec_context_t *context = (h264_codec_context_t *)codec->private_info;
 	AVCodecContext *avctx= context->decoder_ctx;
+	switch_status_t status;
 
 	switch_assert(frame);
 
@@ -688,7 +739,14 @@ static switch_status_t switch_h264_decode(switch_codec_t *codec, switch_frame_t 
 	context->last_received_timestamp = frame->timestamp;
 	context->last_received_complete_picture = frame->m ? SWITCH_TRUE : SWITCH_FALSE;
 
-	buffer_h264_nalu(context, frame);
+	status = buffer_h264_nalu(context, frame);
+
+	if (status == SWITCH_STATUS_RESTART) {
+		switch_set_flag(frame, SFF_WAIT_KEY_FRAME);
+		switch_buffer_zero(context->nalu_buffer);
+		context->nalu_28_start = 0;
+		return SWITCH_STATUS_MORE_DATA;
+	}
 
 	if (frame->m) {
 		uint32_t size = switch_buffer_inuse(context->nalu_buffer);
@@ -759,6 +817,23 @@ static switch_status_t switch_h264_control(switch_codec_t *codec,
 	switch(cmd) {
 	case SCC_VIDEO_REFRESH:
 		context->need_key_frame = 1;
+		break;
+	case SCC_VIDEO_BANDWIDTH:
+		{
+			switch(ctype) {
+			case SCCT_INT:
+				context->change_bandwidth = *((int *) cmd_data);
+				break;
+			case SCCT_STRING:
+				{
+					char *bwv = (char *) cmd_data;
+					context->change_bandwidth = switch_parse_bandwidth_string(bwv);
+				}
+				break;
+			default:
+				break;
+			}
+		}
 		break;
 	default:
 		break;
