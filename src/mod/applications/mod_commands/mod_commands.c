@@ -3952,6 +3952,49 @@ SWITCH_STANDARD_API(uuid_video_refresh_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+#define VIDEO_BITRATE_SYNTAX "<uuid> <bitrate>"
+SWITCH_STANDARD_API(uuid_video_bitrate_function)
+{
+	switch_status_t status = SWITCH_STATUS_FALSE;
+	char *mycmd = NULL, *argv[2] = { 0 };
+	int argc = 0;
+
+	if (!zstr(cmd) && (mycmd = strdup(cmd))) {
+		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+	}
+
+	if (argc < 2) {
+		stream->write_function(stream, "-USAGE: %s\n", VIDEO_REFRESH_SYNTAX);
+	} else {
+		switch_core_session_t *lsession = NULL;
+
+		if ((lsession = switch_core_session_locate(argv[0]))) {
+			int kps = switch_parse_bandwidth_string(argv[1]);
+			switch_core_session_message_t msg = { 0 };
+
+			msg.message_id = SWITCH_MESSAGE_INDICATE_BITRATE_REQ;
+			msg.numeric_arg = kps * 1024;
+			msg.from = __FILE__;
+			
+			switch_core_session_receive_message(lsession, &msg);
+			switch_core_session_video_reinit(lsession);
+			switch_channel_video_sync(switch_core_session_get_channel(lsession));
+			status = SWITCH_STATUS_SUCCESS;
+			switch_core_session_rwunlock(lsession);
+		}
+	}
+
+	if (status == SWITCH_STATUS_SUCCESS) {
+		stream->write_function(stream, "+OK Success\n");
+	} else {
+		stream->write_function(stream, "-ERR Operation Failed\n");
+	}
+
+	switch_safe_free(mycmd);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 
 #define DEBUG_MEDIA_SYNTAX "<uuid> <read|write|both|vread|vwrite|vboth|all> <on|off>"
 SWITCH_STANDARD_API(uuid_debug_media_function)
@@ -6799,6 +6842,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "uuid_send_message", "Send MESSAGE to the endpoint", uuid_send_message_function, SEND_MESSAGE_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_send_info", "Send info to the endpoint", uuid_send_info_function, INFO_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_set_media_stats", "Set media stats", uuid_set_media_stats, UUID_MEDIA_STATS_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "uuid_video_bitrate", "Send video bitrate req.", uuid_video_bitrate_function, VIDEO_BITRATE_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_video_refresh", "Send video refresh.", uuid_video_refresh_function, VIDEO_REFRESH_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_outgoing_answer", "Answer outgoing channel", outgoing_answer_function, OUTGOING_ANSWER_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_limit", "Increase limit resource", uuid_limit_function, LIMIT_SYNTAX);
@@ -7004,6 +7048,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add uuid_transfer ::console::list_uuid");
 	switch_console_set_complete("add uuid_dual_transfer ::console::list_uuid");
 	switch_console_set_complete("add uuid_video_refresh ::console::list_uuid");
+	switch_console_set_complete("add uuid_video_bitrate ::console::list_uuid");
 	switch_console_set_complete("add version");
 	switch_console_set_complete("add uuid_warning ::console::list_uuid");
 	switch_console_set_complete("add ...");

@@ -48,7 +48,7 @@ static void gen_ice(switch_core_session_t *session, switch_media_type_t type, co
 #define MAX_CODEC_CHECK_FRAMES 50//x:mod_sofia.h
 #define MAX_MISMATCH_FRAMES 5//x:mod_sofia.h
 #define type2str(type) type == SWITCH_MEDIA_TYPE_VIDEO ? "video" : "audio"
-#define VIDEO_REFRESH_FREQ 1000000
+#define VIDEO_REFRESH_FREQ 100000
 
 typedef enum {
 	SMF_INIT = (1 << 0),
@@ -8614,6 +8614,22 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_receive_message(switch_core_se
 
 		break;
 
+	case SWITCH_MESSAGE_INDICATE_BITRATE_REQ:
+		{
+			if (v_engine->rtp_session) {
+				switch_rtp_req_bitrate(v_engine->rtp_session, msg->numeric_arg);
+			}
+		}
+		break;
+
+	case SWITCH_MESSAGE_INDICATE_BITRATE_ACK:
+		{
+			if (v_engine->rtp_session) {
+				switch_rtp_ack_bitrate(v_engine->rtp_session, msg->numeric_arg);
+			}
+		}
+		break;
+
 	case SWITCH_MESSAGE_INDICATE_DEBUG_MEDIA:
 		{
 			switch_rtp_t *rtp = a_engine->rtp_session;
@@ -10269,6 +10285,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_video_frame(switch_cor
 		switch_status_t vstatus = switch_core_session_write_encoded_video_frame(session, frame, flags, stream_id);
 		switch_goto_status(vstatus, done);
 	}
+
 
 	/* When desired, scale video to match the input signal (if output is bigger) */
 	if (switch_channel_test_flag(session->channel, CF_VIDEO_READY) && smh->vid_params.width && 

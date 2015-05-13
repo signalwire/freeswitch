@@ -127,25 +127,12 @@ typedef struct {
 #pragma pack(push, r1, 1)
 #endif
 
-#if SWITCH_BYTE_ORDER == __BIG_ENDIAN
+
 
 typedef struct {
 	uint32_t ssrc;
-	unsigned exp:6;
-	unsigned mantissa:17;
-	unsigned overhead:9;
+	uint8_t parts[4];
 } rtcp_tmmbx_t;
-
-#else
-
-typedef struct {
-	uint32_t ssrc;
-	unsigned overhead:9;
-	unsigned mantissa:17;
-	unsigned exp:6;
-} rtcp_tmmbx_t;
-
-#endif
 
 #if SWITCH_BYTE_ORDER == __BIG_ENDIAN
 
@@ -322,6 +309,7 @@ struct switch_rtp {
 	uint16_t fir_count;
 	uint16_t pli_count;
 	uint32_t cur_nack;
+	uint32_t cur_tmmbr;
 	uint32_t tmmbr;
 	uint32_t tmmbn;
 
@@ -1854,6 +1842,31 @@ static int rtcp_stats(switch_rtp_t *rtp_session)
 	return 1;
 }
 
+static void calc_bw_exp(uint32_t bps, uint8_t bits, rtcp_tmmbx_t *tmmbx)
+{
+	uint32_t mantissa_max, i = 0;
+	uint8_t exp = 0;
+	uint32_t mantissa = 0;
+	uint16_t overhead = 0;
+
+	mantissa_max = (1 << bits) - 1;
+
+	for (i = 0; i < 64; ++i) {
+		if (bps <= (mantissa_max << i)) {
+			exp = i;
+			break;
+		}
+	}
+	
+	mantissa = (bps >> exp);
+
+	tmmbx->parts[0] = (uint8_t) ((exp << 2) + ((mantissa >> 15) & 0x03));
+	tmmbx->parts[1] = (uint8_t) (mantissa >> 7);
+	tmmbx->parts[2] = (uint8_t) ((mantissa >> 1) + ((overhead >> 8) & 0x01));
+	tmmbx->parts[3] = (uint8_t) (overhead);
+}
+
+
 static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 {
 	int ret = 0;
@@ -2018,10 +2031,14 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 				rtp_session->fir_count--;
 			}
 
+			//if (!rtp_session->tmmbr && rtp_session->cur_tmmbr) {
+			//	rtp_session->tmmbr = rtp_session->cur_tmmbr;
+			//}
+
 			while (rtp_session->tmmbr || rtp_session->tmmbn) {
 				switch_rtcp_ext_hdr_t *ext_hdr;
 				rtcp_tmmbx_t *tmmbx;
-				uint32_t body = 0;
+				uint32_t bps = 0;
 				p = (uint8_t *) (&rtp_session->rtcp_send_msg) + rtcp_bytes;
 				ext_hdr = (switch_rtcp_ext_hdr_t *) p;
 
@@ -2030,25 +2047,27 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 
 				ext_hdr->version = 2;
 				ext_hdr->p = 0;
-				ext_hdr->pt = RTCP_PT_PSFB;
+				ext_hdr->pt = RTCP_PT_RTPFB;
 				ext_hdr->send_ssrc = htonl(rtp_session->ssrc);
 				ext_hdr->recv_ssrc = 0;
 
 				if (rtp_session->tmmbr) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "Sending RTCP TMMBR %u\n", rtp_session->tmmbr);
 					ext_hdr->fmt = RTCP_RTPFB_TMMBR;
-					body = rtp_session->tmmbr;
+					bps = rtp_session->tmmbr;
 					rtp_session->tmmbr = 0;
 				} else {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "Sending RTCP TMMBN %u\n", rtp_session->tmmbr);
 					ext_hdr->fmt = RTCP_RTPFB_TMMBN;
-					body = rtp_session->tmmbn;
+					bps = rtp_session->tmmbn;
 					rtp_session->tmmbn = 0;
 				}
 
 				tmmbx->ssrc = htonl(rtp_session->remote_ssrc);
-				memcpy(p+4, &body, sizeof(body));
+				calc_bw_exp(bps, 17, tmmbx);
 				
-				ext_hdr->length = htons((uint8_t)((sizeof(switch_rtcp_ext_hdr_t) + sizeof(rtcp_fir_t)) / 4) - 1);
-				rtcp_bytes += sizeof(switch_rtcp_ext_hdr_t) + sizeof(rtcp_tmmbx_t);
+				ext_hdr->length = htons((uint8_t)((sizeof(switch_rtcp_ext_hdr_t) + sizeof(rtcp_tmmbx_t)) / 4) - 1);
+				rtcp_bytes += sizeof(switch_rtcp_ext_hdr_t) + sizeof(rtcp_tmmbx_t);			
 			}
 
 		}
@@ -4162,38 +4181,24 @@ SWITCH_DECLARE(void) switch_rtp_flush(switch_rtp_t *rtp_session)
 	switch_rtp_set_flag(rtp_session, SWITCH_RTP_FLAG_FLUSH);
 }
 
-static uint32_t calc_bw_exp(uint32_t bps, uint8_t bits)
-{
-	uint32_t r = 0;
-	rtcp_tmmbx_t *tmmbx;
-	uint32_t mantissa_max, i = 0;
-	
-	tmmbx = (rtcp_tmmbx_t *) &r;
-
-	mantissa_max = (1 << bits) - 1;
-
-	for (i = 0; i < 64; ++i) {
-		if (bps <= (mantissa_max << i)) {
-			tmmbx->exp = i;
-			break;
-		}
-	}
-
-	tmmbx->mantissa = (bps >> tmmbx->exp);
-	
-
-	
-	return r;
-}
-
-
-SWITCH_DECLARE(switch_status_t) switch_rtp_req_bandwidth(switch_rtp_t *rtp_session, uint32_t bps)
+SWITCH_DECLARE(switch_status_t) switch_rtp_req_bitrate(switch_rtp_t *rtp_session, uint32_t bps)
 {
 	if (!rtp_write_ready(rtp_session, 0, __LINE__) || rtp_session->tmmbr) {
 		return SWITCH_STATUS_FALSE;
 	}
 
-	rtp_session->tmmbr = calc_bw_exp(bps, 17);
+	rtp_session->tmmbr = bps;
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_rtp_ack_bitrate(switch_rtp_t *rtp_session, uint32_t bps)
+{
+	if (!rtp_write_ready(rtp_session, 0, __LINE__) || rtp_session->tmmbn) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	rtp_session->tmmbn = bps;
 
 	return SWITCH_STATUS_SUCCESS;
 }
