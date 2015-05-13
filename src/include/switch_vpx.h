@@ -64,6 +64,7 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_IMG_FMT_HIGH      VPX_IMG_FMT_HIGH
 #define SWITCH_IMG_FMT_I420	     VPX_IMG_FMT_I420
 #define SWITCH_IMG_FMT_ARGB	     VPX_IMG_FMT_ARGB
+#define SWITCH_IMG_FMT_GD	     VPX_IMG_FMT_NONE
 
 typedef vpx_img_fmt_t switch_img_fmt_t;
 
