@@ -229,7 +229,7 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_CORE_SESSION_MAX_PRIVATES 2
 #define SWITCH_DEFAULT_VIDEO_SIZE 1200
 #define SWITCH_RTCP_AUDIO_INTERVAL_MSEC "5000"
-#define SWITCH_RTCP_VIDEO_INTERVAL_MSEC "1000"
+#define SWITCH_RTCP_VIDEO_INTERVAL_MSEC "2000"
 
 /* Jitter */
 #define JITTER_VARIANCE_THRESHOLD 400.0
@@ -661,6 +661,7 @@ typedef struct {
 	uint16_t last_rpt_cycle;      /* Packet loss calculation, sequence number cycle at the begining of the current RTCP report interval */
 	uint16_t period_pkt_count;    /* Packet loss calculation, packet count received during this RTCP report interval */
 	uint16_t pkt_count;           /* Packet loss calculation, packet count received during this session */
+	uint16_t sent_pkt_count;
 	uint32_t rtcp_rtp_count;      /* RTCP report generated count */
 	uint32_t high_ext_seq_recv;   /* Packet loss calculation, highest extended sequence number received and processed for stats */
 	uint16_t cycle;               /* Packet loss calculation, sequence number cycle of the current RTCP report interval */

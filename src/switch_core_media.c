@@ -48,7 +48,7 @@ static void gen_ice(switch_core_session_t *session, switch_media_type_t type, co
 #define MAX_CODEC_CHECK_FRAMES 50//x:mod_sofia.h
 #define MAX_MISMATCH_FRAMES 5//x:mod_sofia.h
 #define type2str(type) type == SWITCH_MEDIA_TYPE_VIDEO ? "video" : "audio"
-#define VIDEO_REFRESH_FREQ 100000
+#define VIDEO_REFRESH_FREQ 1000000
 
 typedef enum {
 	SMF_INIT = (1 << 0),
