@@ -793,6 +793,9 @@ function refresh_devices()
     $("#usemic").selectmenu('refresh', true);
     $("#useshare").selectmenu('refresh', true);
 
+    //$("input[type='radio']).checkboxradio({});
+    $("input[type='radio']").checkboxradio("refresh");
+
     //console.error($("#usecamera").find(":selected").val());
 }
 
