@@ -155,6 +155,7 @@ typedef struct switch_rtp_engine_s {
 	uint8_t fir;
 	uint8_t pli;
 	uint8_t nack;
+	uint8_t tmmbr;
 	uint8_t no_crypto;
 	switch_codec_settings_t codec_settings;
 	switch_media_flow_t rmode;
@@ -4399,6 +4400,10 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 							if (switch_stristr("nack", attr->a_value)) {
 								v_engine->nack++;
 							}
+
+							if (switch_stristr("tmmbr", attr->a_value)) {
+								v_engine->tmmbr++;
+							}
 							
 							smh->mparams->rtcp_video_interval_msec = SWITCH_RTCP_VIDEO_INTERVAL_MSEC;
 						}
@@ -6278,6 +6283,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 				flags[SWITCH_RTP_FLAG_NACK]++;
 			}
 
+			if (v_engine->tmmbr) {
+				flags[SWITCH_RTP_FLAG_TMMBR]++;
+			}
+
 			v_engine->rtp_session = switch_rtp_new(a_engine->local_sdp_ip,
 														 v_engine->local_sdp_port,
 														 v_engine->cur_payload_map->remote_sdp_ip,
@@ -6896,10 +6905,26 @@ SWITCH_DECLARE(void)switch_core_media_set_local_sdp(switch_core_session_t *sessi
 	if (smh->sdp_mutex) switch_mutex_unlock(smh->sdp_mutex);
 }
 
-void add_fb(char *buf, uint32_t buflen, int pt, int fir, int nack, int pli)
+static void add_fb(char *buf, uint32_t buflen, int pt, int fir, int nack, int pli, int tmmbr)
 {
+	const char *zfir = "";
+	const char *ztmmbr = "";
+	char *sp = "";
+
 	if (fir) {
-		switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=rtcp-fb:%d ccm fir\n", pt);
+		zfir = "fir";
+	}
+
+	if (tmmbr) {
+		ztmmbr = "tmmbr";
+	}
+
+	if (fir && tmmbr) {
+		sp = " ";
+	}
+
+	if (fir) {
+		switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=rtcp-fb:%d ccm %s%s%s\n", pt, zfir, sp, ztmmbr);
 	}
 
 	if (nack) {
@@ -6947,7 +6972,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 	int is_outbound = switch_channel_direction(session->channel) == SWITCH_CALL_DIRECTION_OUTBOUND;
 	const char *vbw;
 	int bw = 256;
-	uint8_t fir = 0, nack = 0, pli = 0;
+	uint8_t fir = 0, nack = 0, pli = 0, tmmbr = 0;
 
 	switch_assert(session);
 
@@ -7739,6 +7764,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 					fir++;
 					pli++;
 					nack++;
+					tmmbr++;
 				}
 
 				/* DFF nack pli etc */
@@ -7747,13 +7773,14 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 
 
 				if (v_engine->codec_negotiated) {
-					add_fb(buf, SDPBUFLEN, v_engine->cur_payload_map->agreed_pt, v_engine->fir || fir, v_engine->nack || nack, v_engine->pli || pli);
+					add_fb(buf, SDPBUFLEN, v_engine->cur_payload_map->agreed_pt, v_engine->fir || fir, 
+						   v_engine->nack || nack, v_engine->pli || pli, v_engine->tmmbr || tmmbr);
 
 					if (switch_media_handle_test_media_flag(smh, SCMF_MULTI_ANSWER_VIDEO)) {
 						switch_mutex_lock(smh->sdp_mutex);
 						for (pmap = v_engine->cur_payload_map; pmap && pmap->allocated; pmap = pmap->next) {
 							if (pmap->pt != v_engine->cur_payload_map->pt && pmap->negotiated) {
-								add_fb(buf, SDPBUFLEN, pmap->pt, v_engine->fir || fir, v_engine->nack || nack, v_engine->pli || pli);
+								add_fb(buf, SDPBUFLEN, pmap->pt, v_engine->fir || fir, v_engine->nack || nack, v_engine->pli || pli, v_engine->tmmbr || tmmbr);
 							}
 						}
 						switch_mutex_unlock(smh->sdp_mutex);
@@ -7782,7 +7809,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 							already_did[smh->ianacodes[i]] = 1;
 						}
 
-						add_fb(buf, SDPBUFLEN, smh->ianacodes[i], v_engine->fir || fir, v_engine->nack || nack, v_engine->pli || pli);
+						add_fb(buf, SDPBUFLEN, smh->ianacodes[i], v_engine->fir || fir, v_engine->nack || nack, v_engine->pli || pli, v_engine->pli || pli);
 					}
 					
 				}
