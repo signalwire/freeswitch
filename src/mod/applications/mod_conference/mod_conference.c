@@ -262,7 +262,8 @@ typedef enum {
 	CFLAG_POSITIONAL = (1 << 23),
 	CFLAG_TRANSCODE_VIDEO = (1 << 24),
 	CFLAG_VIDEO_MUXING = (1 << 25),
-	CFLAG_MINIMIZE_VIDEO_ENCODING = (1 << 26)
+	CFLAG_MINIMIZE_VIDEO_ENCODING = (1 << 26),
+	CFLAG_MANAGE_INBOUND_VIDEO_BITRATE = (1 << 27)
 } conf_flag_t;
 
 typedef enum {
@@ -1442,6 +1443,21 @@ static switch_status_t attach_video_layer(conference_member_t *member, int idx)
 		if (!layer->geometry.res_id || !member->video_reservation_id || strcmp(layer->geometry.res_id, member->video_reservation_id)) {
 			switch_goto_status(SWITCH_STATUS_FALSE, end);
 		}
+	}
+
+	
+	if (switch_test_flag(member->conference, CFLAG_MANAGE_INBOUND_VIDEO_BITRATE)) {
+		switch_core_session_message_t msg = { 0 };
+		int kps = switch_calc_bitrate(layer->screen_w, layer->screen_h, 2, member->conference->video_fps.fps);
+
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "%s auto-setting bitrate to %dkps to accomidate %dx%d resolution\n", 
+						  switch_channel_get_name(member->channel), kps, layer->screen_w, layer->screen_h);
+
+		msg.message_id = SWITCH_MESSAGE_INDICATE_BITRATE_REQ;
+		msg.numeric_arg = kps * 1024;
+		msg.from = __FILE__;
+		
+		switch_core_session_receive_message(member->session, &msg);
 	}
 
 	if (member->video_layer_id > -1) {
@@ -11336,6 +11352,8 @@ static void set_cflags(const char *flags, uint32_t *f)
 				*f |= CFLAG_POSITIONAL;
 			} else if (!strcasecmp(argv[i], "minimize-video-encoding")) {
 				*f |= CFLAG_MINIMIZE_VIDEO_ENCODING;
+			} else if (!strcasecmp(argv[i], "manage-inbound-video-bitrate")) {
+				*f |= CFLAG_MANAGE_INBOUND_VIDEO_BITRATE;
 			}
 
 			
