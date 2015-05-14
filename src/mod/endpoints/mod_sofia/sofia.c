@@ -9885,16 +9885,7 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 																						   "%sanswer,sofia_sla:%s", codec_str, b_private->uuid);
 					}
 				} else {
-					char *aleg = NULL;
-
-					if (sip->sip_replaces && sip->sip_replaces->rp_params && sip->sip_replaces->rp_call_id) {
-						aleg = switch_find_parameter(sip->sip_replaces->rp_params, "a-leg", switch_core_session_get_pool(session));
-					} 
-
-					if (aleg) {
-						switch_channel_mark_hold(b_channel, SWITCH_FALSE);
-						tech_pvt->caller_profile->destination_number = switch_core_sprintf(tech_pvt->caller_profile->pool, "answer,intercept:%s", sip->sip_replaces->rp_call_id);
-					} else if (!zstr(bridge_uuid)) {
+					if (!zstr(bridge_uuid)) {
 						switch_channel_mark_hold(b_channel, SWITCH_FALSE);
 						tech_pvt->caller_profile->destination_number = switch_core_sprintf(tech_pvt->caller_profile->pool, "answer,intercept:%s", bridge_uuid);
 					} else {
