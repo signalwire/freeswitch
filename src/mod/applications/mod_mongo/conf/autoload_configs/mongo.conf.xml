@@ -1,11 +1,17 @@
 <configuration name="mongo.conf">
   <settings>
-    <!-- 
+    <!--
       connection-string handles different ways to connect to mongo
       mongodb://[username:password@]host1[:port1][,host2[:port2],...[,hostN[:portN]]][/[database][?options]]
     -->
-    <param name="connection-string" value="mongodb://127.0.0.1:27017/?connectTimeoutMS=5000"/>
-
+    <!-- connection for queries and limit backend -->
+    <param name="connection-string" value="mongodb://127.0.0.1:27017/?connecttimetoutms=5000"/>
+    <!-- connection for limit backend, if different than connection-string (default is value set in connection-string) -->
+    <!--param name="limit-connection-string" value="mongodb://127.0.0.1:27019/?connecttimeoutms=5000"/-->
+    <!-- database name for limit backend (default is limit) -->
+    <!--param name="limit-database" value="limit"/-->
+    <!-- collection name for limit backend (default is mod_mongo) -->
+    <!--param name="limit-collection" value="mod_mongo"/-->
 <!--
     <param name="map" value="function() { emit(this.a, 1); }"/>
     <param name="reduce" value="function(key, values) { return Array.sum(values); }"/>
