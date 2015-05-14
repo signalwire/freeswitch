@@ -1843,7 +1843,16 @@ static void check_jb(switch_core_session_t *session, const char *input, int32_t 
 		}
 		
 		if (v_engine->rtp_session) {
-			if (!strncasecmp(input, "vdebug:", 7)) {
+			if (!strncasecmp(input, "vbsize:", 7)) {
+				int frames = 0;
+				s = input + 7;
+				
+				frames = atoi(s);
+				if (frames > 0) {
+					switch_rtp_set_video_buffer_size(v_engine->rtp_session, frames);
+				}
+				return;
+			} else if (!strncasecmp(input, "vdebug:", 7)) {
 				s = input + 7;
 				
 				if (s && !strcmp(s, "off")) {
