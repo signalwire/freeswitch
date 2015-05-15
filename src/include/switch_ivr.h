@@ -41,6 +41,7 @@
 #define SWITCH_IVR_H
 
 #include <switch.h>
+#include <switch_core_video.h>
 #include "switch_json.h"
 
 SWITCH_BEGIN_EXTERN_C struct switch_unicast_conninfo {
@@ -1002,6 +1003,12 @@ SWITCH_DECLARE(char *) switch_ivr_check_presence_mapping(const char *exten_name,
 SWITCH_DECLARE(switch_status_t) switch_ivr_kill_uuid(const char *uuid, switch_call_cause_t cause);
 SWITCH_DECLARE(switch_status_t) switch_ivr_blind_transfer_ack(switch_core_session_t *session, switch_bool_t success);
 SWITCH_DECLARE(switch_status_t) switch_ivr_record_session_mask(switch_core_session_t *session, const char *file, switch_bool_t on);
+
+
+SWITCH_DECLARE(switch_status_t) switch_ivr_stop_video_write_overlay_session(switch_core_session_t *session);
+SWITCH_DECLARE(switch_status_t) switch_ivr_video_write_overlay_session(switch_core_session_t *session, const char *img_path, 
+																	   switch_img_position_t pos, uint8_t alpha);
+
 
 /** @} */
 

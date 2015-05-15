@@ -10307,11 +10307,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_video_frame(switch_cor
 		img = dup_img;
 	}
 
-
 	if (session->bugs) {
 		switch_media_bug_t *bp;
-		//switch_bool_t ok = SWITCH_TRUE;
+		switch_bool_t ok = SWITCH_TRUE;
 		int prune = 0;
+
 		switch_thread_rwlock_rdlock(session->bug_rwlock);
 		for (bp = session->bugs; bp; bp = bp->next) {
 			if (switch_channel_test_flag(session->channel, CF_PAUSE_BUGS) && !switch_core_media_bug_test_flag(bp, SMBF_NO_PAUSE)) {
@@ -10333,6 +10333,28 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_video_frame(switch_cor
 				switch_queue_push(bp->write_video_queue, dimg);
 				
 			}
+
+			if (bp->ready && img && switch_test_flag(bp, SMBF_WRITE_VIDEO_PING)) {
+				switch_frame_t bug_frame = { 0 };
+
+				bug_frame.img = img;
+				bp->ping_frame = &bug_frame;
+				
+				if (bp->callback) {
+					if (bp->callback(bp, bp->user_data, SWITCH_ABC_TYPE_WRITE_VIDEO_PING) == SWITCH_FALSE
+						|| (bp->stop_time && bp->stop_time <= switch_epoch_time_now(NULL))) {
+						ok = SWITCH_FALSE;
+					}
+				}
+				bp->ping_frame = NULL;
+			}
+
+			if (ok == SWITCH_FALSE) {
+				switch_set_flag(bp, SMBF_PRUNE);
+				prune++;
+			}
+
+
 			switch_thread_rwlock_unlock(session->bug_rwlock);
 			if (prune) {
 				switch_core_media_bug_prune(session);
