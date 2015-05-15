@@ -480,9 +480,15 @@ SWITCH_DECLARE(void) switch_img_overlay(switch_image_t *IMG, switch_image_t *img
 			switch_img_get_rgb_pixel(IMG, &RGB, x + j, i);
 			switch_img_get_rgb_pixel(img, &rgb, j + xoff, i - y + yoff);
 
-			c.r = ((RGB.r * (255 - alpha)) >> 8) + ((rgb.r * alpha) >> 8);
-			c.g = ((RGB.g * (255 - alpha)) >> 8) + ((rgb.g * alpha) >> 8);
-			c.b = ((RGB.b * (255 - alpha)) >> 8) + ((rgb.b * alpha) >> 8);
+			if (rgb.a > 0) {
+				c.r = ((RGB.r * (255 - alpha)) >> 8) + ((rgb.r * alpha) >> 8);
+				c.g = ((RGB.g * (255 - alpha)) >> 8) + ((rgb.g * alpha) >> 8);
+				c.b = ((RGB.b * (255 - alpha)) >> 8) + ((rgb.b * alpha) >> 8);
+			} else {
+				c.r = RGB.r;
+				c.g = RGB.g;
+				c.b = RGB.b;
+			}
 
 			switch_img_draw_pixel(IMG, x + j, i, &c);
 		}
