@@ -41,10 +41,10 @@ License:	MPL
 Group:		Productivity/Telephony/Servers
 Packager:	Joseph L. Casale <jcasale@activenetwerx.com>
 URL:		http://www.freeswitch.org
-Source0:	http://files.freeswitch.org/%{name}-8000-%{version}.tar.gz
-Source1:        http://files.freeswitch.org/%{name}-16000-%{version}.tar.gz
-Source2:        http://files.freeswitch.org/%{name}-32000-%{version}.tar.gz
-Source3:        http://files.freeswitch.org/%{name}-48000-%{version}.tar.gz
+Source0:	http://files.freeswitch.org/releases/sounds/%{name}-8000-%{version}.tar.gz
+Source1:        http://files.freeswitch.org/releases/sounds/%{name}-16000-%{version}.tar.gz
+Source2:        http://files.freeswitch.org/releases/sounds/%{name}-32000-%{version}.tar.gz
+Source3:        http://files.freeswitch.org/releases/sounds/%{name}-48000-%{version}.tar.gz
 BuildArch:	noarch
 BuildRequires:	bash
 Requires:	freeswitch

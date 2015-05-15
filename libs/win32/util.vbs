@@ -55,7 +55,7 @@ End If
 ' *******************
 
 Sub WgetSounds(PrimaryName, Freq, DestFolder, VersionFile)
-	BaseURL = "http://files.freeswitch.org/freeswitch-sounds"
+	BaseURL = "http://files.freeswitch.org/releases/sounds/freeswitch-sounds"
 	Set objFSO = CreateObject("Scripting.FileSystemObject")
 	Set objTextFile = objFSO.OpenTextFile(VersionFile,1)
 	Do Until objTextFile.AtEndOfStream

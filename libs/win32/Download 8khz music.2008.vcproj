@@ -75,7 +75,7 @@
 				<Tool
 					Name="VCCustomBuildTool"
 					Description="Downloading 8khzsound."
-					CommandLine="set /P SOUND_VERSION=&lt;&quot;$(ProjectDir)..\..\build\moh_version.txt&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\sounds\music\8000&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://files.freeswitch.org/freeswitch-sounds-music-8000-%SOUND_VERSION%.tar.gz &quot;$(ProjectDir)..\sounds&quot;&#x0D;&#x0A;"
+					CommandLine="set /P SOUND_VERSION=&lt;&quot;$(ProjectDir)..\..\build\moh_version.txt&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\sounds\music\8000&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://files.freeswitch.org/releases/sounds/freeswitch-sounds-music-8000-%SOUND_VERSION%.tar.gz &quot;$(ProjectDir)..\sounds&quot;&#x0D;&#x0A;"
 					Outputs="$(ProjectDir)..\sounds\music\8000"
 				/>
 			</FileConfiguration>
@@ -85,7 +85,7 @@
 				<Tool
 					Name="VCCustomBuildTool"
 					Description="Downloading 8khzsound."
-					CommandLine="set /P SOUND_VERSION=&lt;&quot;$(ProjectDir)..\..\build\moh_version.txt&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\sounds\music\8000&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://files.freeswitch.org/freeswitch-sounds-music-8000-%SOUND_VERSION%.tar.gz &quot;$(ProjectDir)..\sounds&quot;&#x0D;&#x0A;"
+					CommandLine="set /P SOUND_VERSION=&lt;&quot;$(ProjectDir)..\..\build\moh_version.txt&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\sounds\music\8000&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://files.freeswitch.org/releases/sounds/freeswitch-sounds-music-8000-%SOUND_VERSION%.tar.gz &quot;$(ProjectDir)..\sounds&quot;&#x0D;&#x0A;"
 					Outputs="$(ProjectDir)..\sounds\music\8000"
 				/>
 			</FileConfiguration>

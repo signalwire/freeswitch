@@ -111,15 +111,15 @@ Filename: {app}\wamp\uninstall_services.bat; Components: FreePBX_WAMP; Flags: ru
 Filename: {app}\freeswitch.exe; Flags: runhidden; Parameters: -stop; WorkingDir: {app}
 
 [_ISToolDownload]
-Source: http://files.freeswitch.org/freeswitch-sounds-en-us-callie-8000-1.0.11.tar.gz; DestDir: {tmp}; DestName: freeswitch-sounds-en-us-callie-8000-1.0.11.tar.gz; Components: sound_files_8khz
-Source: http://files.freeswitch.org/freeswitch-sounds-en-us-callie-16000-1.0.11.tar.gz; DestDir: {tmp}; DestName: freeswitch-sounds-en-us-callie-16000-1.0.11.tar.gz; Components: sound_files_16khz
-Source: http://files.freeswitch.org/freeswitch-sounds-en-us-callie-32000-1.0.11.tar.gz; DestDir: {tmp}; DestName: freeswitch-sounds-en-us-callie-32000-1.0.11.tar.gz; Components: sound_files_32khz
-Source: http://files.freeswitch.org/freeswitch-sounds-en-us-callie-48000-1.0.11.tar.gz; DestDir: {tmp}; DestName: freeswitch-sounds-en-us-callie-48000-1.0.11.tar.gz; Components: sound_files_48khz
+Source: http://files.freeswitch.org/releases/sounds/freeswitch-sounds-en-us-callie-8000-1.0.11.tar.gz; DestDir: {tmp}; DestName: freeswitch-sounds-en-us-callie-8000-1.0.11.tar.gz; Components: sound_files_8khz
+Source: http://files.freeswitch.org/releases/sounds/freeswitch-sounds-en-us-callie-16000-1.0.11.tar.gz; DestDir: {tmp}; DestName: freeswitch-sounds-en-us-callie-16000-1.0.11.tar.gz; Components: sound_files_16khz
+Source: http://files.freeswitch.org/releases/sounds/freeswitch-sounds-en-us-callie-32000-1.0.11.tar.gz; DestDir: {tmp}; DestName: freeswitch-sounds-en-us-callie-32000-1.0.11.tar.gz; Components: sound_files_32khz
+Source: http://files.freeswitch.org/releases/sounds/freeswitch-sounds-en-us-callie-48000-1.0.11.tar.gz; DestDir: {tmp}; DestName: freeswitch-sounds-en-us-callie-48000-1.0.11.tar.gz; Components: sound_files_48khz
 
-Source: http://files.freeswitch.org/freeswitch-sounds-music-8000-1.0.8.tar.gz; DestDir: {tmp}; DestName: freeswitch-sounds-music-8000-1.0.8.tar.gz; Components: sound_files_8khz
-Source: http://files.freeswitch.org/freeswitch-sounds-music-16000-1.0.8.tar.gz; DestDir: {tmp}; DestName: freeswitch-sounds-music-16000-1.0.8.tar.gz; Components: sound_files_16khz
-Source: http://files.freeswitch.org/freeswitch-sounds-music-32000-1.0.8.tar.gz; DestDir: {tmp}; DestName: freeswitch-sounds-music-32000-1.0.8.tar.gz; Components: sound_files_32khz
-Source: http://files.freeswitch.org/freeswitch-sounds-music-48000-1.0.8.tar.gz; DestDir: {tmp}; DestName: freeswitch-sounds-music-48000-1.0.8.tar.gz; Components: sound_files_48khz
+Source: http://files.freeswitch.org/releases/sounds/freeswitch-sounds-music-8000-1.0.8.tar.gz; DestDir: {tmp}; DestName: freeswitch-sounds-music-8000-1.0.8.tar.gz; Components: sound_files_8khz
+Source: http://files.freeswitch.org/releases/sounds/freeswitch-sounds-music-16000-1.0.8.tar.gz; DestDir: {tmp}; DestName: freeswitch-sounds-music-16000-1.0.8.tar.gz; Components: sound_files_16khz
+Source: http://files.freeswitch.org/releases/sounds/freeswitch-sounds-music-32000-1.0.8.tar.gz; DestDir: {tmp}; DestName: freeswitch-sounds-music-32000-1.0.8.tar.gz; Components: sound_files_32khz
+Source: http://files.freeswitch.org/releases/sounds/freeswitch-sounds-music-48000-1.0.8.tar.gz; DestDir: {tmp}; DestName: freeswitch-sounds-music-48000-1.0.8.tar.gz; Components: sound_files_48khz
 
 Source: http://files.freeswitch.org/downloads/win32/7za.exe; DestDir: {tmp}; DestName: 7za.exe; Components: sound_files_8khz
 [Components]
