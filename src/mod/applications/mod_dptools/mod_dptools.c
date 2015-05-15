@@ -3024,6 +3024,41 @@ SWITCH_STANDARD_APP(stop_record_session_function)
 	switch_ivr_stop_record_session(session, data);
 }
 
+
+SWITCH_STANDARD_APP(video_write_overlay_session_function)
+{
+	char *mydata;
+	char *argv[3] = { 0 };
+	int argc = 0;
+	switch_img_position_t pos = POS_LEFT_BOT;
+	uint8_t alpha = 255;
+
+	if (zstr(data)) {
+		return;
+	}
+
+	mydata = switch_core_session_strdup(session, data);
+	argc = switch_split(mydata, ' ', argv);
+
+	if (argc > 1) {
+		pos = parse_img_position(argv[1]);
+	}
+
+	if (argc > 2) {
+		int x = atoi(argv[2]);
+		if (x > 0 && x < 256) {
+			alpha = (uint8_t) x;
+		}
+	}
+
+	switch_ivr_video_write_overlay_session(session, argv[0], pos, alpha);
+}
+
+SWITCH_STANDARD_APP(stop_video_write_overlay_session_function)
+{
+	switch_ivr_stop_video_write_overlay_session(session);
+}
+
 /********************************************************************************/
 /*								Bridge Functions								*/
 /********************************************************************************/
@@ -6065,6 +6100,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	SWITCH_ADD_APP(app_interface, "play_and_get_digits", "Play and get Digits", "Play and get Digits",
 				   play_and_get_digits_function, 
 				   "\n\t<min> <max> <tries> <timeout> <terminators> <file> <invalid_file> <var_name> <regexp> [<digit_timeout>] ['<failure_ext> [failure_dp [failure_context]]']", SAF_NONE);
+
+	SWITCH_ADD_APP(app_interface, "stop_video_write_overlay", "Stop video write overlay", "Stop video write overlay", stop_video_write_overlay_session_function, "<path>", SAF_NONE);
+	SWITCH_ADD_APP(app_interface, "video_write_overlay", "Video write overlay", "Video write overlay", video_write_overlay_session_function, "<path> [<pos>] [<alpha>]", SAF_MEDIA_TAP);
+
 	SWITCH_ADD_APP(app_interface, "stop_record_session", "Stop Record Session", STOP_SESS_REC_DESC, stop_record_session_function, "<path>", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "record_session", "Record Session", SESS_REC_DESC, record_session_function, "<path> [+<timeout>]", SAF_MEDIA_TAP);
 	SWITCH_ADD_APP(app_interface, "record_session_mask", "Mask audio in recording", SESS_REC_MASK_DESC, record_session_mask_function, "<path>", SAF_MEDIA_TAP);

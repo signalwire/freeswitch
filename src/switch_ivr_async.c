@@ -3612,6 +3612,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_tone_detect_session(switch_core_sessi
 	return SWITCH_STATUS_SUCCESS;
 }
 
+
 typedef struct {
 	const char *app;
 	uint32_t flags;
@@ -4810,6 +4811,107 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_broadcast(const char *uuid, const cha
 	switch_core_session_rwunlock(session);
 	switch_safe_free(mypath);
 
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
+typedef struct oht_s {
+	switch_image_t *img;
+	switch_img_position_t pos;
+	uint8_t alpha;
+} overly_helper_t;
+
+static switch_bool_t video_write_overlay_callback(switch_media_bug_t *bug, void *user_data, switch_abc_type_t type)
+{
+	overly_helper_t *oht = (overly_helper_t *) user_data;
+	switch_core_session_t *session = switch_core_media_bug_get_session(bug);
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	
+    switch (type) {
+    case SWITCH_ABC_TYPE_INIT:
+        {			
+        }
+        break;
+    case SWITCH_ABC_TYPE_CLOSE:
+        {
+			switch_img_free(&oht->img);
+        }
+        break;
+	case SWITCH_ABC_TYPE_WRITE_VIDEO_PING:
+		if (switch_channel_test_flag(channel, CF_VIDEO_DECODED_READ)) {
+			switch_frame_t *frame = switch_core_media_bug_get_video_ping_frame(bug);
+			int x = 0, y = 0;
+			switch_image_t *oimg = NULL;
+
+			if (frame->img && oht->img) {
+				switch_img_copy(oht->img, &oimg);
+				switch_img_fit(&oimg, frame->img->d_w, frame->img->d_h);
+				switch_img_find_position(oht->pos, frame->img->d_w, frame->img->d_h, oimg->d_w, oimg->d_h, &x, &y);
+				switch_img_overlay(frame->img, oimg, x, y, oht->alpha);
+				//switch_img_patch(frame->img, oimg, x, y);
+				switch_img_free(&oimg);
+			}
+		}
+        break;
+    default:
+        break;
+    }
+
+    return SWITCH_TRUE;
+}
+
+
+SWITCH_DECLARE(switch_status_t) switch_ivr_stop_video_write_overlay_session(switch_core_session_t *session)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_media_bug_t *bug = switch_channel_get_private(channel, "_video_write_overlay_bug_");
+
+	if (bug) {
+		switch_channel_set_private(channel, "_video_write_overlay_bug_", NULL);
+		switch_core_media_bug_remove(session, &bug);
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	return SWITCH_STATUS_FALSE;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_ivr_video_write_overlay_session(switch_core_session_t *session, const char *img_path, 
+																	   switch_img_position_t pos, uint8_t alpha)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_status_t status;
+	switch_media_bug_flag_t bflags = SMBF_WRITE_VIDEO_PING;
+    switch_media_bug_t *bug;
+	overly_helper_t *oht;
+	switch_image_t *img;
+
+	bflags |= SMBF_NO_PAUSE;
+
+	if (switch_channel_get_private(channel, "_video_write_overlay_bug_")) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Only one of this type of bug per channel\n");
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (!(img = switch_img_read_png(img_path, SWITCH_IMG_FMT_ARGB))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error opening file: %s\n", img_path);
+		return SWITCH_STATUS_FALSE;
+	}
+
+	oht = switch_core_session_alloc(session, sizeof(*oht));
+	oht->img = img;
+	oht->pos = pos;
+	oht->alpha = alpha;
+
+	if ((status = switch_core_media_bug_add(session, "video_write_overlay", NULL,
+											video_write_overlay_callback, oht, 0, bflags, &bug)) != SWITCH_STATUS_SUCCESS) {
+
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error creating bug, file: %s\n", img_path);
+		switch_img_free(&oht->img);
+		return status;
+	}
+
+	switch_channel_set_private(channel, "_video_write_overlay_bug_", bug);
+	
 	return SWITCH_STATUS_SUCCESS;
 }
 
