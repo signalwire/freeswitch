@@ -496,7 +496,7 @@ static switch_status_t mod_mongo_get_usage(const char *resource, int *usage)
 		mongoc_collection_t *col = mongoc_client_get_collection(conn, globals.limit_database, globals.limit_collection);
 		if (col) {
 			bson_t *query = BCON_NEW("_id", resource);
-			bson_t *fields = BCON_NEW("{", "total", BCON_INT32(1), "}");
+			bson_t *fields = BCON_NEW("total", BCON_INT32(1));
 			bson_error_t error;
 			mongoc_cursor_t *cursor = mongoc_collection_find(col, 0, 0, 1, 0, query, fields, NULL);
 			if (cursor) {
