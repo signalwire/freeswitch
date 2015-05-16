@@ -1252,16 +1252,11 @@ PKG_CHECK_MODULES([SNDFILE], [sndfile >= 1.0.20],[
   AM_CONDITIONAL([HAVE_SNDFILE],[true])],[
   AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_SNDFILE],[false])])
 
-PKG_CHECK_MODULES([VPX], [vpx >= 1.3.0],[
+PKG_CHECK_MODULES([VPX], [vpx2 >= 1.4.0],[
   AM_CONDITIONAL([HAVE_VPX],[true])],[
-  AC_CHECK_LIB([vpx], [vpx_img_set_rect], [VPX_LIBS=-lvpx])
-  AS_IF([test -z "$VPX_LIBS"],[
-    if module_enabled mod_vpx; then
-      AC_MSG_ERROR([You need to either install libvpx-dev or disable mod_vpx in modules.conf])
-    else
-      AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_VPX],[false])
-    fi],[
-    AM_CONDITIONAL([HAVE_VPX],[true])])])
+    PKG_CHECK_MODULES([VPX], [vpx >= 1.4.0],[
+      AM_CONDITIONAL([HAVE_VPX],[true])],[
+      AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_VPX],[false])])])
 
 PKG_CHECK_MODULES([AVCODEC], [libavcodec >= 53.35.0],[
   AM_CONDITIONAL([HAVE_AVCODEC],[true])],[
