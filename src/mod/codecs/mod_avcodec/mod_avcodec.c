@@ -83,6 +83,7 @@ typedef struct h264_codec_context_s {
 	switch_size_t last_received_timestamp;
 	switch_bool_t last_received_complete_picture;
 	switch_image_t *img;
+	switch_image_t *encimg;
 	int need_key_frame;
 	switch_bool_t nalu_28_start;
 
@@ -255,14 +256,18 @@ static switch_status_t buffer_h264_nalu(h264_codec_context_t *context, switch_fr
 
 	nalu_type = nalu_hdr & 0x1f;
 
-	// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "nalu=%02x mark=%d seq=%d ts=%" SWITCH_SIZE_T_FMT " len=%d\n", nalu_hdr, frame->m, frame->seq, frame->timestamp, frame->datalen);
+	//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "nalu=%02x mark=%d seq=%d ts=%d len=%d\n", nalu_hdr, frame->m, frame->seq, frame->timestamp, frame->datalen);
 
-	if (!context->got_pps && nalu_type != 7) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "waiting pps\n");
-		return SWITCH_STATUS_RESTART;
+	if (context->got_pps <= 0) {
+		context->got_pps--;
+		if ((abs(context->got_pps) % 30) == 0) {
+			switch_set_flag(frame, SFF_WAIT_KEY_FRAME);
+		}
+		//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "waiting pps\n");
+		//return SWITCH_STATUS_RESTART;
 	}
 
-	if (!context->got_pps) context->got_pps = 1;
+	if (context->got_pps <= 0 && nalu_type == 7) context->got_pps = 1;
 
 	/* hack for phones sending sps/pps with frame->m = 1 such as grandstream */
 	if ((nalu_type == 7 || nalu_type == 8) && frame->m) frame->m = SWITCH_FALSE;
@@ -630,6 +635,7 @@ static switch_status_t switch_h264_encode(switch_codec_t *codec,
 	switch_image_t *img = frame->img;
 	void *encoded_data = frame->data;
 	uint32_t *encoded_data_len = &frame->datalen;
+
 	//unsigned int *flag = &frame->flags;
 
 	//if (*flag & SFF_WAIT_KEY_FRAME) context->need_key_frame = 1;
@@ -670,12 +676,26 @@ static switch_status_t switch_h264_encode(switch_codec_t *codec,
 	x264_picture_init(&pic);
 	pic.img.i_csp = X264_CSP_I420;
 	pic.img.i_plane = 3;
-	pic.img.i_stride[0] = img->stride[0];
-	pic.img.i_stride[1] = img->stride[1];
-	pic.img.i_stride[2] = img->stride[2];
-	pic.img.plane[0] = img->planes[0];
-	pic.img.plane[1] = img->planes[1];
-	pic.img.plane[2] = img->planes[2];
+
+
+	if (context->encimg && (context->encimg->d_w != width || context->encimg->d_h != height)) {
+		switch_img_free(&context->encimg);
+	}
+
+	if (!context->encimg) {
+		context->encimg = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, width, height, 1);
+	}
+
+	switch_img_copy(img, &context->encimg);
+
+	pic.img.i_stride[0] = context->encimg->stride[0];
+	pic.img.i_stride[1] = context->encimg->stride[1];
+	pic.img.i_stride[2] = context->encimg->stride[2];
+	pic.img.plane[0] = context->encimg->planes[0];
+	pic.img.plane[1] = context->encimg->planes[1];
+	pic.img.plane[2] = context->encimg->planes[2];
+
+
 	// pic.i_pts = (context->pts++);
 	// pic.i_pts = (context->pts+=90000/FPS);
 	pic.i_pts = 0;
@@ -771,21 +791,37 @@ static switch_status_t switch_h264_decode(switch_codec_t *codec, switch_frame_t 
 			if (got_picture && decoded_len > 0) {
 				int width = avctx->width;
 				int height = avctx->height;
-
-				if (!context->img) {
-					context->img = switch_img_wrap(NULL, SWITCH_IMG_FMT_I420, width, height, 0, picture->data[0]);
+				int i;
+				
+				if (!context->img || (context->img->d_w != width || context->img->d_h != height)) {
+					//context->img = switch_img_wrap(NULL, SWITCH_IMG_FMT_I420, width, height, 0, picture->data[0]);
+					context->img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, width, height, 1);
 					assert(context->img);
 				}
+
 				context->img->w = picture->linesize[0];
 				context->img->h = picture->linesize[1];
 				context->img->d_w = width;
 				context->img->d_h = height;
-				context->img->planes[0] = picture->data[0];
-				context->img->planes[1] = picture->data[1];
-				context->img->planes[2] = picture->data[2];
-				context->img->stride[0] = picture->linesize[0];
-				context->img->stride[1] = picture->linesize[1];
-				context->img->stride[2] = picture->linesize[2];
+
+				//context->img->planes[0] = picture->data[0];
+				//context->img->planes[1] = picture->data[1];
+				//context->img->planes[2] = picture->data[2];
+				//context->img->stride[0] = picture->linesize[0];
+				//context->img->stride[1] = picture->linesize[1];
+				//context->img->stride[2] = picture->linesize[2];
+				
+				for (i = 0; i < height; i++) {
+					memcpy(context->img->planes[SWITCH_PLANE_Y] + context->img->stride[SWITCH_PLANE_Y] * i, 
+						   picture->data[SWITCH_PLANE_Y] + picture->linesize[SWITCH_PLANE_Y] * i, width);
+				}
+				
+				for (i = 0; i < height / 2; i++) {
+					memcpy(context->img->planes[SWITCH_PLANE_U] + context->img->stride[SWITCH_PLANE_U] * i, 
+						   picture->data[SWITCH_PLANE_U] + picture->linesize[SWITCH_PLANE_U] * i, width / 2);
+					memcpy(context->img->planes[SWITCH_PLANE_V] + context->img->stride[SWITCH_PLANE_V] * i, 
+						   picture->data[SWITCH_PLANE_V] + picture->linesize[SWITCH_PLANE_V] * i, width / 2);
+				}
 
 				frame->img = context->img;
 			}
@@ -848,6 +884,8 @@ static switch_status_t switch_h264_destroy(switch_codec_t *codec)
 	h264_codec_context_t *context = (h264_codec_context_t *)codec->private_info;
 
 	if (!context) return SWITCH_STATUS_SUCCESS;
+
+	switch_img_free(&context->encimg);
 
 	switch_buffer_destroy(&context->nalu_buffer);
 	if (context->decoder_ctx) {
@@ -1087,9 +1125,9 @@ static void log_callback(void *ptr, int level, const char *fmt, va_list vl)
 
 	switch(level) {
 		case AV_LOG_QUIET:   switch_level = SWITCH_LOG_CONSOLE; break;
-		case AV_LOG_PANIC:   switch_level = SWITCH_LOG_ERROR;   break;
-		case AV_LOG_FATAL:   switch_level = SWITCH_LOG_ERROR;   break;
-		case AV_LOG_ERROR:   switch_level = SWITCH_LOG_ERROR;   break;
+		case AV_LOG_PANIC:   switch_level = SWITCH_LOG_DEBUG2;   break;
+		case AV_LOG_FATAL:   switch_level = SWITCH_LOG_DEBUG2;   break;
+		case AV_LOG_ERROR:   switch_level = SWITCH_LOG_DEBUG2;   break;
 		case AV_LOG_WARNING: switch_level = SWITCH_LOG_WARNING; break;
 		case AV_LOG_INFO:    switch_level = SWITCH_LOG_INFO;    break;
 		case AV_LOG_VERBOSE: switch_level = SWITCH_LOG_INFO;    break;
@@ -1098,7 +1136,7 @@ static void log_callback(void *ptr, int level, const char *fmt, va_list vl)
 	}
 
 	// switch_level = SWITCH_LOG_ERROR; // hardcoded for debug
-	switch_log_vprintf(SWITCH_CHANNEL_LOG, switch_level, fmt, vl);
+	switch_log_vprintf(SWITCH_CHANNEL_LOG_CLEAN, switch_level, fmt, vl);
 }
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_avcodec_load)

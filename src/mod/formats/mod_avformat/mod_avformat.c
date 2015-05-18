@@ -1128,9 +1128,9 @@ static void log_callback(void *ptr, int level, const char *fmt, va_list vl)
 
 	switch(level) {
 		case AV_LOG_QUIET:   switch_level = SWITCH_LOG_CONSOLE; break;
-		case AV_LOG_PANIC:   switch_level = SWITCH_LOG_ERROR;   break;
-		case AV_LOG_FATAL:   switch_level = SWITCH_LOG_ERROR;   break;
-		case AV_LOG_ERROR:   switch_level = SWITCH_LOG_ERROR;   break;
+		case AV_LOG_PANIC:   switch_level = SWITCH_LOG_DEBUG2;   break;
+		case AV_LOG_FATAL:   switch_level = SWITCH_LOG_DEBUG2;   break;
+		case AV_LOG_ERROR:   switch_level = SWITCH_LOG_DEBUG2;   break;
 		case AV_LOG_WARNING: switch_level = SWITCH_LOG_WARNING; break;
 		case AV_LOG_INFO:    switch_level = SWITCH_LOG_INFO;    break;
 		case AV_LOG_VERBOSE: switch_level = SWITCH_LOG_INFO;    break;
