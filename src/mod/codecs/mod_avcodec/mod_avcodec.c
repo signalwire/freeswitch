@@ -37,6 +37,7 @@
 
 /* use libx264 by default, comment out to use the ffmpeg/avcodec wrapper */
 #define H264_CODEC_USE_LIBX264
+
 #define SLICE_SIZE SWITCH_DEFAULT_VIDEO_SIZE
 
 #ifdef H264_CODEC_USE_LIBX264
@@ -87,6 +88,10 @@ typedef struct h264_codec_context_s {
 	int need_key_frame;
 	switch_bool_t nalu_28_start;
 
+	int change_bandwidth;
+	unsigned int bandwidth;
+	switch_codec_settings_t codec_settings;
+
 #ifndef H264_CODEC_USE_LIBX264
 	AVCodecContext *encoder_ctx;
 	AVFrame *encoder_avframe;
@@ -100,10 +105,6 @@ typedef struct h264_codec_context_s {
 	x264_nal_t *x264_nals;
 	int x264_nal_count;
 	int cur_nalu_index;
-
-	int change_bandwidth;
-	unsigned int bandwidth;
-	switch_codec_settings_t codec_settings;
 
 #endif
 
@@ -540,7 +541,7 @@ static switch_status_t switch_h264_encode(switch_codec_t *codec, switch_frame_t 
 	pkt->data = NULL;      // packet data will be allocated by the encoder
 	pkt->size = 0;
 
-	if (!context->encoder_avframe) context->encoder_avframe = avcodec_alloc_frame();
+	if (!context->encoder_avframe) context->encoder_avframe = av_frame_alloc();//avcodec_alloc_frame();
 
 	avframe = context->encoder_avframe;
 
@@ -569,7 +570,7 @@ static switch_status_t switch_h264_encode(switch_codec_t *codec, switch_frame_t 
 		}
 
 		if (*got_output) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Encoded frame %llu (size=%5d) nalu_type=0x%x %d\n", context->pts, pkt->size, *((uint8_t *)pkt->data +4), *got_output);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Encoded frame %lu (size=%5d) nalu_type=0x%x %d\n", context->pts, pkt->size, *((uint8_t *)pkt->data +4), *got_output);
 			goto process;
 		}
 	}
