@@ -59,6 +59,47 @@ SWITCH_MODULE_DEFINITION(mod_avcodec, mod_avcodec_load, NULL, NULL);
 
 const uint8_t *ff_avc_find_startcode(const uint8_t *p, const uint8_t *end);
 
+static const uint8_t *fs_avc_find_startcode_internal(const uint8_t *p, const uint8_t *end)
+{
+    const uint8_t *a = p + 4 - ((intptr_t)p & 3);
+
+    for (end -= 3; p < a && p < end; p++) {
+        if (p[0] == 0 && p[1] == 0 && p[2] == 1)
+            return p;
+    }
+
+    for (end -= 3; p < end; p += 4) {
+        uint32_t x = *(const uint32_t*)p;
+        if ((x - 0x01010101) & (~x) & 0x80808080) {
+            if (p[1] == 0) {
+                if (p[0] == 0 && p[2] == 1)
+                    return p;
+                if (p[2] == 0 && p[3] == 1)
+                    return p+1;
+            }
+            if (p[3] == 0) {
+                if (p[2] == 0 && p[4] == 1)
+                    return p+2;
+                if (p[4] == 0 && p[5] == 1)
+                    return p+3;
+            }
+        }
+    }
+
+    for (end += 3; p < end; p++) {
+        if (p[0] == 0 && p[1] == 0 && p[2] == 1)
+            return p;
+    }
+
+    return end + 3;
+}
+
+const uint8_t *fs_avc_find_startcode(const uint8_t *p, const uint8_t *end){
+    const uint8_t *out= fs_avc_find_startcode_internal(p, end);
+    if(p<out && out<end && !out[-1]) out--;
+    return out;
+}
+
 
 /* codec interface */
 
@@ -593,10 +634,12 @@ process:
 		const uint8_t *p = pkt->data;
 		int i = 0;
 
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Encoded frame %lu (size=%5d) nalu_type=0x%x %d\n", context->pts, pkt->size, *((uint8_t *)pkt->data +4), *got_output);
+
 		/* split into nalus */
 		memset(context->nalus, 0, sizeof(context->nalus));
 
-		while ((p = ff_avc_find_startcode(p, pkt->data+pkt->size)) < (pkt->data + pkt->size)) {
+		while ((p = fs_avc_find_startcode(p, pkt->data+pkt->size)) < (pkt->data + pkt->size)) {
 			if (!context->nalus[i].start) {
 				while (!(*p++)) ; /* eat the sync bytes, what ever 0 0 1 or 0 0 0 1 */
 				context->nalus[i].start = p;
@@ -614,6 +657,11 @@ process:
 		context->nalus[i].len = p - context->nalus[i].start;
 		context->nalu_current_index = 0;
 		return consume_nalu(context, frame);
+	}
+
+	if (context->encoder_avframe) { //quick code to avoice internal refs
+		av_frame_free(&context->encoder_avframe);
+		context->encoder_avframe = NULL;
 	}
 
 error:
