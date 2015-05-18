@@ -1217,7 +1217,7 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 		break;
 	case SWITCH_ABC_TYPE_TAP_NATIVE_READ:
 		{
-			switch_time_t now = switch_micro_time_now();
+			switch_time_t now = switch_time_now();
 			switch_time_t diff;
 
 			rh->rready = 1;
@@ -1235,9 +1235,9 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 				
 				
 			if (rh->last_read_time && rh->last_read_time < now) {
-				diff = ((now - rh->last_read_time) + 3000 ) / rh->read_impl.microseconds_per_packet;
+				diff = (now - rh->last_read_time) / rh->read_impl.microseconds_per_packet;
 				
-				if (diff > 1) {
+				if (diff > 3) {
 					unsigned char fill_data[SWITCH_RECOMMENDED_BUFFER_SIZE] = {0};
 					switch_core_gen_encoded_silence(fill_data, &rh->read_impl, len);
 					
@@ -1256,7 +1256,7 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 		break;
 	case SWITCH_ABC_TYPE_TAP_NATIVE_WRITE:
 		{
-			switch_time_t now = switch_micro_time_now();
+			switch_time_t now = switch_time_now();
 			switch_time_t diff;
 			rh->wready = 1;
 			
@@ -1274,9 +1274,9 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 			
 
 			if (rh->last_write_time && rh->last_write_time < now) {
-				diff = ((now - rh->last_write_time) + 3000 ) / rh->read_impl.microseconds_per_packet;
+				diff = (now - rh->last_write_time) / rh->read_impl.microseconds_per_packet;
 				
-				if (diff > 1) {
+				if (diff > 3) {
 					unsigned char fill_data[SWITCH_RECOMMENDED_BUFFER_SIZE] = {0};
 					switch_core_gen_encoded_silence(fill_data, &rh->read_impl, len);
 					
