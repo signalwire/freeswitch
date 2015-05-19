@@ -294,6 +294,7 @@ fi
 # set defaults for use on all platforms
 SWITCH_AM_CFLAGS="-I${switch_srcdir}/src/include -I${switch_builddir}/src/include -I${switch_srcdir}/libs/libteletone/src"
 SWITCH_AM_CXXFLAGS="-I${switch_srcdir}/src/include -I${switch_builddir}/src/include -I${switch_srcdir}/libs/libteletone/src"
+SWITCH_AM_CPPFLAGS="-I${switch_srcdir}/src/include -I${switch_builddir}/src/include -I${switch_srcdir}/libs/libteletone/src"
 SWITCH_AM_LDFLAGS="-lm"
 
 #set SOLINK variable based on compiler and host
@@ -810,6 +811,7 @@ fi
 AC_SUBST(SWITCH_AM_CFLAGS)
 AC_SUBST(SWITCH_ANSI_CFLAGS)
 AC_SUBST(SWITCH_AM_CXXFLAGS)
+AC_SUBST(SWITCH_AM_CPPFLAGS)
 AC_SUBST(SWITCH_AM_LDFLAGS)
 AC_SUBST(ESL_LDFLAGS)
 AC_SUBST(PLATFORM_CORE_LDFLAGS)
@@ -1260,6 +1262,7 @@ PKG_CHECK_MODULES([VPX], [vpx2 >= 1.4.0],[
 
 SWITCH_AM_CFLAGS="$VPX_CFLAGS $SWITCH_AM_CFLAGS"
 SWITCH_AM_CXXFLAGS="$VPX_CFLAGS $SWITCH_AM_CXXFLAGS"
+SWITCH_AM_CPPFLAGS="$VPX_CFLAGS $SWITCH_AM_CPPFLAGS"
 
 PKG_CHECK_MODULES([AVCODEC], [libavcodec >= 53.35.0],[
   AM_CONDITIONAL([HAVE_AVCODEC],[true])],[

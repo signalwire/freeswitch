@@ -8,15 +8,15 @@ perldir=$(prefix)/perl
 mod_LTLIBRARIES = mod_perl.la
 perl_LTLIBRARIES = freeswitch.la
 mod_perl_la_SOURCES  = mod_perl.c freeswitch_perl.cpp mod_perl_wrap.cpp perlxsi.c
-mod_perl_la_CFLAGS   = $(AM_CFLAGS)
-mod_perl_la_CXXFLAGS = $(AM_CXXFLAGS)
+mod_perl_la_CFLAGS   = $(SWITCH_AM_CFLAGS)
+mod_perl_la_CXXFLAGS = $(SWITCH_AM_CXXFLAGS)
 mod_perl_la_CPPFLAGS = -w -DMULTIPLICITY `$(PERL) -MExtUtils::Embed -e ccopts` -DEMBED_PERL -I$(switch_srcdir)/libs/libteletone/src/ 
 mod_perl_la_LIBADD   = $(switch_builddir)/libfreeswitch.la
 mod_perl_la_LDFLAGS  = -avoid-version -module -no-undefined -shared `$(PERL) -MExtUtils::Embed -e ldopts` `$(PERL) -MConfig -e 'print $$Config{libs}'`
 
 freeswitch_la_SOURCES = freeswitch_perl.cpp mod_perl_wrap.cpp perlxsi.c
 freeswitch_la_LDFLAGS = -avoid-version -module -no-undefined -shared $(LDFLAGS)
-freeswitch_la_CPPFLAGS = -w -DMULTIPLICITY `$(PERL) -MExtUtils::Embed -e ccopts` -DEMBED_PERL -I$(switch_srcdir)/libs/libteletone/src/ 
+freeswitch_la_CPPFLAGS = $(SWITCH_AM_CPPFLAGS) -w -DMULTIPLICITY `$(PERL) -MExtUtils::Embed -e ccopts` -DEMBED_PERL -I$(switch_srcdir)/libs/libteletone/src/ 
 reswig:	swigclean mod_perl_wrap.cpp
 
 swigclean: clean
