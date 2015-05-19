@@ -382,6 +382,27 @@ int tls_init_context(tls_t *tls, tls_issues_t const *ti)
     errno = EIO;
     return -1;
 #endif
+#ifndef OPENSSL_NO_DH
+  } else {
+    BIO *bio = BIO_new_file(ti->key, "r");
+    if (bio != NULL) {
+      DH *dh = PEM_read_bio_DHparams(bio, NULL, NULL, NULL);
+      if (dh != NULL) {
+        if (!SSL_CTX_set_tmp_dh(tls->ctx, dh)) {
+          SU_DEBUG_1(("%s: invalid DH parameters (PFS) because %s: %s\n",
+                      "tls_init_context",
+                      ERR_reason_error_string(ERR_get_error()),
+                      ti->key));
+        } else {
+          long options = SSL_OP_CIPHER_SERVER_PREFERENCE | SSL_OP_SINGLE_DH_USE;
+          options = SSL_CTX_set_options(tls->ctx, options);
+          SU_DEBUG_3(("%s\n", "tls: initialized DHE"));
+        }
+        DH_free(dh);
+      }
+      BIO_free(bio);
+    }
+#endif
   }
 
   if (!SSL_CTX_load_verify_locations(tls->ctx,
