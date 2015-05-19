@@ -10326,14 +10326,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_video_frame(switch_cor
 	/* When desired, scale video to match the input signal (if output is bigger) */
 	if (switch_channel_test_flag(session->channel, CF_VIDEO_READY) && smh->vid_params.width && 
 		switch_channel_test_flag(session->channel, CF_VIDEO_MIRROR_INPUT) && 
-		(smh->vid_params.width * smh->vid_params.height) < (img->d_w * img->d_h)) {
+		((smh->vid_params.width != img->d_w) || (smh->vid_params.height != img->d_h))) {
 
-		switch_img_copy(img, &dup_img);
-		switch_img_fit(&dup_img, smh->vid_params.width, smh->vid_params.height);
+		switch_img_letterbox(img, &dup_img, smh->vid_params.width, smh->vid_params.height, "#000000f");
 
 		img = dup_img;
 	}
-
+	
 	if (session->bugs) {
 		switch_media_bug_t *bp;
 		switch_bool_t ok = SWITCH_TRUE;

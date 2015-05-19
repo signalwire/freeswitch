@@ -363,6 +363,7 @@ SWITCH_DECLARE(switch_status_t) switch_img_convert(switch_image_t *src, switch_c
 SWITCH_DECLARE(switch_image_t *) switch_img_write_text_img(int w, int h, switch_bool_t full, const char *text);
 
 SWITCH_DECLARE(switch_image_t *) switch_img_read_file(const char* file_name);
+SWITCH_DECLARE(switch_status_t) switch_img_letterbox(switch_image_t *img, switch_image_t **imgP, int width, int height, const char *color);
 
 /** @} */
 

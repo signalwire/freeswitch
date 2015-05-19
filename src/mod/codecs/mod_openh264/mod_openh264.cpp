@@ -192,10 +192,17 @@ static switch_size_t buffer_h264_nalu(h264_codec_context_t *context, switch_fram
 	nalu_idc = (nalu_hdr & 0x60) >> 5;
 	nalu_type = nalu_hdr & 0x1f;
 
-	if (!context->got_sps && nalu_type != 7) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Waiting SPS/PPS, Got %d\n", nalu_type);
-		return 0;
+	if (context->got_sps <= 0) {
+		context->got_sps--;
+		if ((abs(context->got_sps) % 30) == 0) {
+			switch_set_flag(frame, SFF_WAIT_KEY_FRAME);
+		}
+		//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "waiting pps\n");
+		//return SWITCH_STATUS_RESTART;
 	}
+
+	if (context->got_sps <= 0 && nalu_type == 7) context->got_sps = 1;
+
 
 	//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "XXX GOT %d len:%d\n", nalu_type, frame->datalen);
 
