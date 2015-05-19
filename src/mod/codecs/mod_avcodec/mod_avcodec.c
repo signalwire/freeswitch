@@ -182,7 +182,7 @@ static switch_status_t init_x264(h264_codec_context_t *context, uint32_t width, 
 		context->bandwidth = 5120;
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "initializing x264 handle %dx%d bw:%d\n", width, height, context->bandwidth);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "initializing x264 handle %dx%d bw:%d\n", context->codec_settings.video.width, context->codec_settings.video.height, context->bandwidth);
 
 
 	if (xh) {
@@ -697,12 +697,16 @@ static switch_status_t switch_h264_encode(switch_codec_t *codec,
 	if (context->change_bandwidth) {
 		context->codec_settings.video.bandwidth = context->change_bandwidth;
 		context->change_bandwidth = 0;
-		init_x264(context, 0, 0);
+		if (init_x264(context, 0, 0) != SWITCH_STATUS_SUCCESS) {
+			return SWITCH_STATUS_FALSE;
+		}
 		switch_set_flag(frame, SFF_WAIT_KEY_FRAME);
 	}
 
 	if (!context->x264_handle) {
-		init_x264(context, width, height);
+		if (init_x264(context, width, height) != SWITCH_STATUS_SUCCESS) {
+			return SWITCH_STATUS_FALSE;
+		}
 		switch_set_flag(frame, SFF_WAIT_KEY_FRAME);
 	}
 
@@ -715,8 +719,10 @@ static switch_status_t switch_h264_encode(switch_codec_t *codec,
 
 	if (context->x264_params.i_width != width || context->x264_params.i_height != height) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "picture size changed from %dx%d to %dx%d, reinitializing encoder\n",
-						  context->x264_params.i_width, context->x264_params.i_width, width, height);
-		init_x264(context, width, height);
+						  context->x264_params.i_width, context->x264_params.i_height, width, height);
+		if (init_x264(context, width, height) != SWITCH_STATUS_SUCCESS) {
+			return SWITCH_STATUS_FALSE;
+		}
 		switch_set_flag(frame, SFF_WAIT_KEY_FRAME);
 	}
 

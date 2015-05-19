@@ -1677,6 +1677,51 @@ SWITCH_DECLARE(switch_status_t) switch_img_write_png(switch_image_t *img, char* 
 
 #endif
 
+SWITCH_DECLARE(switch_status_t) switch_img_letterbox(switch_image_t *img, switch_image_t **imgP, int width, int height, const char *color)
+{
+	int img_w = 0, img_h = 0;
+	double screen_aspect = 0, img_aspect = 0;
+	int x_pos = 0;
+	int y_pos = 0;
+	switch_image_t *IMG = NULL, *scale_img = NULL;
+	switch_rgb_color_t bgcolor = { 0 };
+	
+	switch_assert(imgP);
+	*imgP = NULL;
+
+	if (img->d_w == width && img->d_h == height) {
+		switch_img_copy(img, imgP);
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	IMG = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, width, height, 1);
+	switch_color_set_rgb(&bgcolor, color);
+	switch_img_fill(IMG, 0, 0, IMG->d_w, IMG->d_h, &bgcolor);
+
+	img_w = IMG->d_w;
+	img_h = IMG->d_h;
+
+	screen_aspect = (double) IMG->d_w / IMG->d_h;
+	img_aspect = (double) img->d_w / img->d_h;
+	
+
+	if (screen_aspect > img_aspect) {
+		img_w = img_aspect * IMG->d_h;
+		x_pos = (IMG->d_w - img_w) / 2;
+	} else if (screen_aspect < img_aspect) {
+		img_h = IMG->d_w / img_aspect;
+		y_pos = (IMG->d_h - img_h) / 2;
+	}
+	
+	switch_img_scale(img, &scale_img, img_w, img_h);
+	switch_img_patch(IMG, scale_img, x_pos, y_pos);
+	switch_img_free(&scale_img);
+
+	*imgP = IMG;
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_img_fit(switch_image_t **srcP, int width, int height)
 {
 	switch_image_t *src, *tmp = NULL;
