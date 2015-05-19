@@ -413,8 +413,6 @@
      openssl ciphers -v 'ALL:!ADH:!LOW:!EXP:!MD5:@STRENGTH'
 
      Will show you what is available in your verion of openssl.
-     Freeswitch does not support non-Elliptic Curve Diffie Hellman key 
-     exchange.  
   -->
   <X-PRE-PROCESS cmd="set" data="sip_tls_ciphers=ALL:!ADH:!LOW:!EXP:!MD5:@STRENGTH"/>
   
