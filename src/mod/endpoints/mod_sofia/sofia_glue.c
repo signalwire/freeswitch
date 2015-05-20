@@ -1240,7 +1240,9 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 
 
 	if ((switch_channel_get_private(tech_pvt->channel, "t38_options")) ||  
-		((sofia_test_flag(tech_pvt, TFLAG_INB_NOMEDIA) || sofia_test_flag(tech_pvt, TFLAG_PROXY_MEDIA)) 
+		((sofia_test_flag(tech_pvt, TFLAG_INB_NOMEDIA) ||
+		  sofia_test_flag(tech_pvt, TFLAG_PROXY_MEDIA) ||
+		  switch_true(switch_channel_get_variable(tech_pvt->channel, SWITCH_BYPASS_MEDIA_VARIABLE)) )
 			&& switch_stristr("m=image", tech_pvt->mparams.local_sdp_str))) {
 		sofia_clear_flag(tech_pvt, TFLAG_ENABLE_SOA);
 		is_t38 = 1;
