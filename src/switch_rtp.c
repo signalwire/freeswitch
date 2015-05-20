@@ -6850,13 +6850,13 @@ static int rtp_write_ready(switch_rtp_t *rtp_session, uint32_t bytes, int line)
 	if (!rtp_session) return 0;
 	
 	if (rtp_session->ice.ice_user && !(rtp_session->ice.rready && rtp_session->ice.ready)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Skip sending %s packet %ld bytes (ice not ready @ line %d!)\n", 
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG3, "Skip sending %s packet %ld bytes (ice not ready @ line %d!)\n", 
 						  rtp_type(rtp_session), (long)bytes, line);
 		return 0;
 	}
 
 	if (rtp_session->dtls && rtp_session->dtls->state != DS_READY) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Skip sending %s packet %ld bytes (dtls not ready @ line %d!)\n", 
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG3, "Skip sending %s packet %ld bytes (dtls not ready @ line %d!)\n", 
 						  rtp_type(rtp_session), (long)bytes, line);
 		return 0;
 	}
