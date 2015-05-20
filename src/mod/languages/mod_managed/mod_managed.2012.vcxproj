@@ -322,7 +322,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="freeswitch_managed.cpp" />
-    <ClCompile Include="freeswitch_wrap.2010.cxx">
+    <ClCompile Include="freeswitch_wrap.cxx">
       <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug_CLR|x64'">4505;4244;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release_CLR|x64'">4505;4244;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release_CLR|Win32'">4505;4244;%(DisableSpecificWarnings)</DisableSpecificWarnings>

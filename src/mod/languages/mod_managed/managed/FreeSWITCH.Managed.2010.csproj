@@ -85,7 +85,7 @@
     <Compile Include="PluginInterfaces.cs" />
     <Compile Include="PluginManager.cs" />
     <Compile Include="ScriptPluginManager.cs" />
-    <Compile Include="swig.2010.cs" />
+    <Compile Include="swig.cs" />
     <Compile Include="Util.cs" />
     <Compile Include="XmlSearchBinding.cs" />
   </ItemGroup>
