@@ -6093,12 +6093,12 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 				}
 			}
 
-			if (using_ice(rtp_session)) {
-				if (check_rtcp_and_ice(rtp_session) == -1) {
-					ret = -1;
-					goto end;
-				}
+
+			if (check_rtcp_and_ice(rtp_session) == -1) {
+				ret = -1;
+				goto end;
 			}
+
 		
 			if ((!(io_flags & SWITCH_IO_FLAG_NOBLOCK)) && 
 				(rtp_session->dtmf_data.out_digit_dur == 0) && !rtp_session->flags[SWITCH_RTP_FLAG_ENABLE_RTCP]) {

@@ -1397,6 +1397,14 @@ static void layer_set_banner(conference_member_t *member, mcu_layer_t *layer, co
 
 }
 
+static void reset_video_bitrate_counters(conference_member_t *member)
+{
+	member->managed_kps = 0;
+	member->blackouts = 0;
+	member->good_img = 0;
+	member->blanks = 0;
+}
+
 static switch_status_t attach_video_layer(conference_member_t *member, int idx)
 {
 	mcu_layer_t *layer = NULL;
@@ -1481,8 +1489,7 @@ static switch_status_t attach_video_layer(conference_member_t *member, int idx)
 	switch_img_fill(member->conference->canvas->img, layer->x_pos, layer->y_pos, layer->screen_w, layer->screen_h, 
 					&member->conference->canvas->letterbox_bgcolor);
 
-	member->managed_kps = 0;
-	member->blackouts = 0;
+	reset_video_bitrate_counters(member);
 
  end:
 
@@ -1869,7 +1876,6 @@ static void check_avatar(conference_member_t *member, switch_bool_t force)
 }
 
 
-
 static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thread, void *obj)
 {
 	conference_obj_t *conference = (conference_obj_t *) obj;
@@ -2019,24 +2025,24 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 					if (img) {
 						imember->good_img++;
 						if ((imember->good_img % (int)(conference->video_fps.fps * 10)) == 0) {
-							imember->blackouts = 0;
+							reset_video_bitrate_counters(imember);
 						}
 					} else {
 						imember->blanks++;
 						imember->good_img = 0;
-
+						
 						if (imember->blanks == conference->video_fps.fps || (imember->blanks % (int)(conference->video_fps.fps * 10)) == 0) {
-							imember->blackouts++;
 							imember->managed_kps = 0;
 							switch_core_session_request_video_refresh(imember->session);
 						}
 						
-						if (imember->blanks == conference->video_fps.fps * 2) {
+						if (imember->blanks == conference->video_fps.fps * 5) {
 							imember->blackouts++;
 							check_avatar(imember, SWITCH_TRUE);
 							if (layer && imember->avatar_png_img) {
 								layer->is_avatar = 1;
 							}
+							imember->managed_kps = 0;
 						}
 					}
 				}
@@ -2045,8 +2051,8 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 
 				if (flushed && imember->blanks) {
 					switch_img_free(&imember->avatar_png_img);
-					imember->managed_kps = 0;
-
+					reset_video_bitrate_counters(imember);
+					
 					if (layer) {
 						layer->is_avatar = 0;
 					}
@@ -2122,22 +2128,15 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 				int kps;
 				
 				if (!layer || !switch_test_flag(imember, MFLAG_CAN_BE_SEEN) || imember->avatar_png_img) {
-					kps = switch_calc_bitrate(320, 240, 1, imember->conference->video_fps.fps);
+					kps = switch_calc_bitrate(320, 240, 2, imember->conference->video_fps.fps);
 					
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "%s auto-setting bitrate to %dkps because user's image is not visible\n", 
 									  switch_channel_get_name(imember->channel), kps);
 				} else {
 					kps = switch_calc_bitrate(layer->screen_w, layer->screen_h, 2, imember->conference->video_fps.fps);
 				
-					if (imember->blackouts > 2) {
-						kps /= 2;
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, 
-										  "%s auto-setting half-bitrate based on loss to %dkps to accomodate %dx%d resolution\n", 
-										  switch_channel_get_name(imember->channel), kps, layer->screen_w, layer->screen_h);
-					} else {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "%s auto-setting bitrate to %dkps to accomodate %dx%d resolution\n", 
-										  switch_channel_get_name(imember->channel), kps, layer->screen_w, layer->screen_h);
-					}
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "%s auto-setting bitrate to %dkps to accomodate %dx%d resolution\n", 
+									  switch_channel_get_name(imember->channel), kps, layer->screen_w, layer->screen_h);
 				}
 
 				msg.message_id = SWITCH_MESSAGE_INDICATE_BITRATE_REQ;
@@ -8384,9 +8383,8 @@ static switch_status_t conf_api_sub_vmute(conference_member_t *member, switch_st
 		return SWITCH_STATUS_GENERR;
 
 	switch_clear_flag_locked(member, MFLAG_CAN_BE_SEEN);
-	member->managed_kps = 0;
-	member->blackouts = 0;
-
+	reset_video_bitrate_counters(member);
+	
 	//if (member->channel) {
 		//switch_channel_set_flag(member->channel, CF_VIDEO_PAUSE_READ);
 		//switch_core_session_request_video_refresh(member->session);
@@ -8444,8 +8442,7 @@ static switch_status_t conf_api_sub_unvmute(conference_member_t *member, switch_
 	}
 
 	switch_set_flag_locked(member, MFLAG_CAN_BE_SEEN);
-	member->managed_kps = 0;
-	member->blackouts = 0;
+	reset_video_bitrate_counters(member);
 
 	if (member->channel) {
 		//switch_channel_clear_flag(member->channel, CF_VIDEO_PAUSE_READ);
