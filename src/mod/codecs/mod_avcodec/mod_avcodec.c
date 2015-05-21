@@ -36,7 +36,7 @@
 #include <libavutil/imgutils.h>
 
 /* use libx264 by default, comment out to use the ffmpeg/avcodec wrapper */
-#define H264_CODEC_USE_LIBX264
+// #define H264_CODEC_USE_LIBX264
 
 #define SLICE_SIZE SWITCH_DEFAULT_VIDEO_SIZE
 
@@ -146,7 +146,6 @@ typedef struct h264_codec_context_s {
 	x264_nal_t *x264_nals;
 	int x264_nal_count;
 	int cur_nalu_index;
-
 #endif
 
 } h264_codec_context_t;
@@ -269,7 +268,7 @@ static switch_status_t nalu_slice(h264_codec_context_t *context, switch_frame_t 
 
 	switch_assert(nalu_len > 0);
 
-	// if ((*buffer & 0x1f) == 7) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Got SPS\n");
+	// if ((*buffer & 0x1f) == 7) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Got SPS | %02x %02x %02x\n", *(buffer+1), *(buffer+2), *(buffer+3));
 
 	memcpy(frame->data, buffer, nalu_len);
 	frame->datalen = nalu_len;
@@ -365,11 +364,11 @@ static switch_status_t consume_nalu(h264_codec_context_t *context, switch_frame_
 
 	if (!nalu->start) {
 		frame->datalen = 0;
-		frame->m = 1;
+		frame->m = 0;
 		if (context->encoder_avpacket.size > 0) av_free_packet(&context->encoder_avpacket);
 		if (context->encoder_avframe->data) av_freep(&context->encoder_avframe->data[0]);
 		context->nalu_current_index = 0;
-		return SWITCH_STATUS_SUCCESS;
+		return SWITCH_STATUS_NOTFOUND;
 	}
 
 	assert(nalu->len);
@@ -395,7 +394,7 @@ static switch_status_t consume_nalu(h264_codec_context_t *context, switch_frame_
 		int left = nalu->len - (nalu->eat - nalu->start);
 		uint8_t *p = frame->data;
 
-		if (left <= (1400 - 2)) {
+		if (left <= (SLICE_SIZE - 2)) {
 			p[0] = nri | 28; // FU-A
 			p[1] = 0x40 | nalu_type;
 			memcpy(p+2, nalu->eat, left);
@@ -410,9 +409,9 @@ static switch_status_t consume_nalu(h264_codec_context_t *context, switch_frame_
 			p[0] = nri | 28; // FU-A
 			p[1] = start | nalu_type;
 			if (start) nalu->eat++;
-			memcpy(p+2, nalu->eat, 1400 - 2);
-			nalu->eat += (1400 - 2);
-			frame->datalen = 1400;
+			memcpy(p+2, nalu->eat, SLICE_SIZE - 2);
+			nalu->eat += (SLICE_SIZE - 2);
+			frame->datalen = SLICE_SIZE;
 			return SWITCH_STATUS_MORE_DATA;
 		}
 	}
@@ -428,26 +427,60 @@ static switch_status_t open_encoder(h264_codec_context_t *context, uint32_t widt
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (!context->encoder_ctx) context->encoder_ctx = avcodec_alloc_context3(context->encoder);
+	if (context->encoder_ctx) {
+		if (avcodec_is_open(context->encoder_ctx)) {
+			avcodec_close(context->encoder_ctx);
+		}
+		av_free(context->encoder_ctx);
+		context->encoder_ctx = NULL;
+	}
+
+	context->encoder_ctx = avcodec_alloc_context3(context->encoder);
 
 	if (!context->encoder_ctx) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not allocate video encoder context\n");
 		return SWITCH_STATUS_FALSE;
 	}
 
-	context->encoder_ctx->bit_rate = 400000;
+	if (width && height) {
+		context->codec_settings.video.width = width;
+		context->codec_settings.video.height = height;
+	}
+
+	if (!context->codec_settings.video.width) {
+		context->codec_settings.video.width = 1280;
+	}
+
+	if (!context->codec_settings.video.height) {
+		context->codec_settings.video.height = 720;
+	}
+
+	if (context->codec_settings.video.bandwidth) {
+		context->bandwidth = context->codec_settings.video.bandwidth;
+	} else {
+		context->bandwidth = switch_calc_bitrate(context->codec_settings.video.width, context->codec_settings.video.height, 0, 0);
+	}
+
+	if (context->bandwidth > 5120) {
+		context->bandwidth = 5120;
+	}
+
+	context->encoder_ctx->bit_rate = context->bandwidth * 1024;
 	context->encoder_ctx->width = width;
 	context->encoder_ctx->height = height;
 	/* frames per second */
-	context->encoder_ctx->time_base = (AVRational){1, 90000};
+	context->encoder_ctx->time_base = (AVRational){1, FPS};
 	context->encoder_ctx->gop_size = FPS * 3; /* emit one intra frame every 3 seconds */
 	context->encoder_ctx->max_b_frames = 0;
 	context->encoder_ctx->pix_fmt = AV_PIX_FMT_YUV420P;
 	context->encoder_ctx->thread_count = 1; // switch_core_cpu_count();
 	context->encoder_ctx->rtp_payload_size = SLICE_SIZE;
-	av_opt_set(context->encoder_ctx->priv_data, "preset", "fast", 0);
-
-	if (avcodec_is_open(context->encoder_ctx)) avcodec_close(context->encoder_ctx);
+	context->encoder_ctx->profile = 66;
+	context->encoder_ctx->level = 31;
+	av_opt_set(context->encoder_ctx->priv_data, "preset", "veryfast", 0);
+	av_opt_set(context->encoder_ctx->priv_data, "tune", "animation+zerolatency", 0);
+	av_opt_set(context->encoder_ctx->priv_data, "profile", "baseline", 0);
+	// av_opt_set_int(context->encoder_ctx->priv_data, "slice-max-size", SLICE_SIZE, 0);
 
 	if (avcodec_open2(context->encoder_ctx, context->encoder, NULL) < 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not open codec\n");
@@ -480,7 +513,6 @@ static switch_status_t switch_h264_init(switch_codec_t *codec, switch_codec_flag
 		if (codec_settings) {
 			context->codec_settings = *codec_settings;
 		}
-
 
 		if (decoding) {
 			context->decoder = avcodec_find_decoder(AV_CODEC_ID_H264);
@@ -543,7 +575,7 @@ static switch_status_t switch_h264_encode(switch_codec_t *codec, switch_frame_t 
 	AVCodecContext *avctx = context->encoder_ctx;
 	int ret;
 	int *got_output = &context->got_encoded_output;
-	AVFrame *avframe;
+	AVFrame *avframe = NULL;
 	AVPacket *pkt = &context->encoder_avpacket;
 	uint32_t width = 0;
 	uint32_t height = 0;
@@ -576,31 +608,51 @@ static switch_status_t switch_h264_encode(switch_codec_t *codec, switch_frame_t 
 		if (open_encoder(context, width, height) != SWITCH_STATUS_SUCCESS) {
 			goto error;
 		}
+		avctx = context->encoder_ctx;
+	}
+
+	if (context->change_bandwidth) {
+		context->codec_settings.video.bandwidth = context->change_bandwidth;
+		context->change_bandwidth = 0;
+		if (open_encoder(context, width, height) != SWITCH_STATUS_SUCCESS) {
+			goto error;
+		}
+		avctx = context->encoder_ctx;
+		switch_set_flag(frame, SFF_WAIT_KEY_FRAME);
 	}
 
 	av_init_packet(pkt);
 	pkt->data = NULL;      // packet data will be allocated by the encoder
 	pkt->size = 0;
 
-	if (!context->encoder_avframe) context->encoder_avframe = av_frame_alloc();//avcodec_alloc_frame();
-
 	avframe = context->encoder_avframe;
 
-	if (!avframe) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error allocate frame!\n");
-		goto error;
+	if (avframe) {
+		if (avframe->width != width || avframe->height != height) {
+			av_frame_free(&avframe);
+		}
 	}
 
-	avframe->format = avctx->pix_fmt;
-	avframe->width  = avctx->width;
-	avframe->height = avctx->height;
+	if (!avframe) {
+		avframe = av_frame_alloc();
+		context->encoder_avframe = avframe;
 
-	/* the image can be allocated by any means and av_image_alloc() is
-	 * just the most convenient way if av_malloc() is to be used */
-	ret = av_image_alloc(avframe->data, avframe->linesize, avctx->width, avctx->height, avctx->pix_fmt, 32);
-	if (ret < 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not allocate raw picture buffer\n");
-		goto error;
+		if (!avframe) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error allocate frame!\n");
+			goto error;
+		}
+
+		avframe->format = avctx->pix_fmt;
+		avframe->width  = avctx->width;
+		avframe->height = avctx->height;
+
+		ret = av_frame_get_buffer(avframe, 32);
+
+		if (ret < 0) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not allocate raw picture buffer\n");
+			av_frame_free(&context->encoder_avframe);
+			goto error;
+		}
 	}
 
 	if (*got_output) { // Could be more delayed frames
@@ -611,7 +663,7 @@ static switch_status_t switch_h264_encode(switch_codec_t *codec, switch_frame_t 
 		}
 
 		if (*got_output) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Encoded frame %lu (size=%5d) nalu_type=0x%x %d\n", context->pts, pkt->size, *((uint8_t *)pkt->data +4), *got_output);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Encoded frame %" SWITCH_INT64_T_FMT " (size=%5d) nalu_type=0x%x %d\n", context->pts, pkt->size, *((uint8_t *)pkt->data +4), *got_output);
 			goto process;
 		}
 	}
@@ -619,6 +671,12 @@ static switch_status_t switch_h264_encode(switch_codec_t *codec, switch_frame_t 
 	fill_avframe(avframe, img);
 
 	avframe->pts = context->pts++;
+
+	if (context->need_key_frame) {
+		// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "NEED Refresh\n");
+		// av_opt_set_int(context->encoder_ctx->priv_data, "intra-refresh", 1, 0);
+		avframe->pict_type = AV_PICTURE_TYPE_I;
+	}
 
 	/* encode the image */
 	ret = avcodec_encode_video2(avctx, pkt, avframe, got_output);
@@ -628,13 +686,18 @@ static switch_status_t switch_h264_encode(switch_codec_t *codec, switch_frame_t 
 		goto error;
 	}
 
+	if (context->need_key_frame) {
+		avframe->pict_type = 0;
+		context->need_key_frame = 0;
+	}
+
 process:
 
 	if (*got_output) {
 		const uint8_t *p = pkt->data;
 		int i = 0;
 
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Encoded frame %lu (size=%5d) nalu_type=0x%x %d\n", context->pts, pkt->size, *((uint8_t *)pkt->data +4), *got_output);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Encoded frame %" SWITCH_INT64_T_FMT " (size=%5d) nalu_type=0x%x %d\n", context->pts, pkt->size, *((uint8_t *)pkt->data +4), *got_output);
 
 		/* split into nalus */
 		memset(context->nalus, 0, sizeof(context->nalus));
@@ -657,11 +720,6 @@ process:
 		context->nalus[i].len = p - context->nalus[i].start;
 		context->nalu_current_index = 0;
 		return consume_nalu(context, frame);
-	}
-
-	if (context->encoder_avframe) { //quick code to avoice internal refs
-		av_frame_free(&context->encoder_avframe);
-		context->encoder_avframe = NULL;
 	}
 
 error:
