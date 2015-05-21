@@ -1701,7 +1701,6 @@ AC_CONFIG_FILES([Makefile
 		src/mod/asr_tts/mod_unimrcp/Makefile
 		src/mod/codecs/mod_amr/Makefile
 		src/mod/codecs/mod_amrwb/Makefile
-		src/mod/codecs/mod_avcodec/Makefile
 		src/mod/codecs/mod_b64/Makefile
 		src/mod/codecs/mod_bv/Makefile
 		src/mod/codecs/mod_codec2/Makefile
@@ -1757,7 +1756,6 @@ AC_CONFIG_FILES([Makefile
 		src/mod/event_handlers/mod_rayo/Makefile
 		src/mod/event_handlers/mod_snmp/Makefile
 		src/mod/event_handlers/mod_event_zmq/Makefile
-		src/mod/formats/mod_avformat/Makefile
 		src/mod/formats/mod_imagick/Makefile
 		src/mod/formats/mod_local_stream/Makefile
 		src/mod/formats/mod_native_file/Makefile

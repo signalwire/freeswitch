@@ -24,8 +24,9 @@
  * Contributor(s):
  *
  * Seven Du <dujinfang@gmail.com>
+ * Anthony Minessale <anthm@freeswitch.org>
  *
- * mod_avformat -- FS Video File Format using libav.org
+ * mod_avformat -- File Formats with libav.org
  *
  */
 
@@ -36,7 +37,6 @@
 #include <libavutil/imgutils.h>
 #include <libavutil/avstring.h>
 #include <libavutil/channel_layout.h>
-// #include <libavutil/timestamp.h>
 #include <libavresample/avresample.h>
 #include <libswscale/swscale.h>
 
@@ -44,7 +44,6 @@
 #define DFT_RECORD_OFFSET 350
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_avformat_load);
-SWITCH_MODULE_DEFINITION(mod_avformat, mod_avformat_load, NULL, NULL);
 
 static char *const get_error_text(const int error)
 {
@@ -906,74 +905,9 @@ SWITCH_STANDARD_APP(record_av_function)
 
 /* API interface */
 
-static char get_media_type_char(enum AVMediaType type)
-{
-	switch (type) {
-		case AVMEDIA_TYPE_VIDEO:    return 'V';
-		case AVMEDIA_TYPE_AUDIO:    return 'A';
-		case AVMEDIA_TYPE_DATA:     return 'D';
-		case AVMEDIA_TYPE_SUBTITLE: return 'S';
-		case AVMEDIA_TYPE_ATTACHMENT:return 'T';
-		default:                    return '?';
-	}
-}
-
-static const AVCodec *next_codec_for_id(enum AVCodecID id, const AVCodec *prev,
-										int encoder)
-{
-	while ((prev = av_codec_next(prev))) {
-		if (prev->id == id &&
-			(encoder ? av_codec_is_encoder(prev) : av_codec_is_decoder(prev)))
-			return prev;
-	}
-	return NULL;
-}
-
-static int compare_codec_desc(const void *a, const void *b)
-{
-	const AVCodecDescriptor * const *da = a;
-	const AVCodecDescriptor * const *db = b;
-
-	return (*da)->type != (*db)->type ? (*da)->type - (*db)->type :
-		   strcmp((*da)->name, (*db)->name);
-}
-
-static unsigned get_codecs_sorted(const AVCodecDescriptor ***rcodecs)
-{
-	const AVCodecDescriptor *desc = NULL;
-	const AVCodecDescriptor **codecs;
-	unsigned nb_codecs = 0, i = 0;
-
-	while ((desc = avcodec_descriptor_next(desc)))
-		nb_codecs++;
-	if (!(codecs = av_malloc(nb_codecs * sizeof(*codecs)))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "MEM Error!\n");
-		return 0;
-	}
-	desc = NULL;
-	while ((desc = avcodec_descriptor_next(desc)))
-		codecs[i++] = desc;
-	switch_assert(i == nb_codecs);
-	qsort(codecs, nb_codecs, sizeof(*codecs), compare_codec_desc);
-	*rcodecs = codecs;
-	return nb_codecs;
-}
-
-static void print_codecs_for_id(switch_stream_handle_t *stream, enum AVCodecID id, int encoder)
-{
-	const AVCodec *codec = NULL;
-
-	stream->write_function(stream, " (%s: ", encoder ? "encoders" : "decoders");
-
-	while ((codec = next_codec_for_id(id, codec, encoder)))
-		stream->write_function(stream, "%s ", codec->name);
-
-	stream->write_function(stream, ")");
-}
-
 static int is_device(const AVClass *avclass)
 {
-#if 0
+#if defined (AV_CLASS_CATEGORY_DEVICE_VIDEO_OUTPUT)
 	if (!avclass) return 0;
 
 
@@ -1046,59 +980,7 @@ void show_formats(switch_stream_handle_t *stream) {
 
 }
 
-void show_codecs(switch_stream_handle_t *stream)
-{
-	const AVCodecDescriptor **codecs = NULL;
-	unsigned i, nb_codecs = get_codecs_sorted(&codecs);
-
-	stream->write_function(stream, "================ Codecs ===============================:\n"
-		   " V..... = Video\n"
-		   " A..... = Audio\n"
-		   " S..... = Subtitle\n"
-		   " .F.... = Frame-level multithreading\n"
-		   " ..S... = Slice-level multithreading\n"
-		   " ...X.. = Codec is experimental\n"
-		   " ....B. = Supports draw_horiz_band\n"
-		   " .....D = Supports direct rendering method 1\n"
-		   " ----------------------------------------------\n\n");
-
-	for (i = 0; i < nb_codecs; i++) {
-		const AVCodecDescriptor *desc = codecs[i];
-		const AVCodec *codec = NULL;
-
-		stream->write_function(stream, " ");
-		stream->write_function(stream, avcodec_find_decoder(desc->id) ? "D" : ".");
-		stream->write_function(stream, avcodec_find_encoder(desc->id) ? "E" : ".");
-
-		stream->write_function(stream, "%c", get_media_type_char(desc->type));
-		stream->write_function(stream, (desc->props & AV_CODEC_PROP_INTRA_ONLY) ? "I" : ".");
-		stream->write_function(stream, (desc->props & AV_CODEC_PROP_LOSSY)      ? "L" : ".");
-		stream->write_function(stream, (desc->props & AV_CODEC_PROP_LOSSLESS)   ? "S" : ".");
-
-		stream->write_function(stream, " %-20s %s", desc->name, desc->long_name ? desc->long_name : "");
-
-		/* print decoders/encoders when there's more than one or their
-		 * names are different from codec name */
-		while ((codec = next_codec_for_id(desc->id, codec, 0))) {
-			if (strcmp(codec->name, desc->name)) {
-				print_codecs_for_id(stream ,desc->id, 0);
-				break;
-			}
-		}
-		codec = NULL;
-		while ((codec = next_codec_for_id(desc->id, codec, 1))) {
-			if (strcmp(codec->name, desc->name)) {
-				print_codecs_for_id(stream, desc->id, 1);
-				break;
-			}
-		}
-
-		stream->write_function(stream, "\n");
-
-	}
-
-	av_free(codecs);
-}
+void show_codecs(switch_stream_handle_t *stream);
 
 SWITCH_STANDARD_API(av_format_api_function)
 {
@@ -1117,29 +999,6 @@ SWITCH_STANDARD_API(av_format_api_function)
 	}
 
 	return SWITCH_STATUS_SUCCESS;
-}
-
-static void log_callback(void *ptr, int level, const char *fmt, va_list vl)
-{
-	switch_log_level_t switch_level = SWITCH_LOG_DEBUG;
-
-	/* naggy messages */
-	if (level == AV_LOG_DEBUG || level == AV_LOG_WARNING) return;
-
-	switch(level) {
-		case AV_LOG_QUIET:   switch_level = SWITCH_LOG_CONSOLE; break;
-		case AV_LOG_PANIC:   switch_level = SWITCH_LOG_DEBUG2;   break;
-		case AV_LOG_FATAL:   switch_level = SWITCH_LOG_DEBUG2;   break;
-		case AV_LOG_ERROR:   switch_level = SWITCH_LOG_DEBUG2;   break;
-		case AV_LOG_WARNING: switch_level = SWITCH_LOG_WARNING; break;
-		case AV_LOG_INFO:    switch_level = SWITCH_LOG_INFO;    break;
-		case AV_LOG_VERBOSE: switch_level = SWITCH_LOG_INFO;    break;
-		case AV_LOG_DEBUG:   switch_level = SWITCH_LOG_DEBUG;   break;
-		default: break;
-	}
-
-	// switch_level = SWITCH_LOG_ERROR; // hardcoded for debug
-	switch_log_vprintf(SWITCH_CHANNEL_LOG_CLEAN, switch_level, fmt, vl);
 }
 
 /* file interface */
@@ -1438,7 +1297,7 @@ static void *SWITCH_THREAD_FUNC file_read_thread_run(switch_thread_t *thread, vo
 					// }
 
 				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "this block is not tested samples: %d\n", in_frame.nb_samples);
+					//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "this block is not tested samples: %d\n", in_frame.nb_samples);
 					switch_mutex_lock(context->mutex);
 					switch_buffer_write(context->audio_buffer, in_frame.data[0], in_frame.nb_samples * 2 * context->audio_st.channels);
 					switch_mutex_unlock(context->mutex);
@@ -2031,8 +1890,9 @@ static switch_status_t av_file_get_string(switch_file_handle_t *handle, switch_a
 	return SWITCH_STATUS_FALSE;
 }
 
-
 static char *supported_formats[SWITCH_MAX_CODECS] = { 0 };
+
+static const char modname[] = "mod_av";
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_avformat_load)
 {
@@ -2046,8 +1906,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_avformat_load)
 	supported_formats[i++] = "mp4";
 	supported_formats[i++] = "mov";
 
-	/* connect my internal structure to the blank pointer passed to me */
-	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
 	file_interface = (switch_file_interface_t *)switch_loadable_module_create_interface(*module_interface, SWITCH_FILE_INTERFACE);
 	file_interface->interface_name = modname;
@@ -2066,13 +1924,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_avformat_load)
 	SWITCH_ADD_API(api_interface, "av_format", "av information", av_format_api_function, "");
 
 	SWITCH_ADD_APP(app_interface, "record_av", "record video using libavformat", "record video using libavformat", record_av_function, "<file>", SAF_NONE);
-
-	av_log_set_callback(log_callback);
-	av_log_set_level(AV_LOG_INFO);
-	avformat_network_init();
-	av_register_all();
-
-	av_log(NULL, AV_LOG_INFO, "%s %d\n", "av_log callback installed, level=", av_log_get_level());
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;

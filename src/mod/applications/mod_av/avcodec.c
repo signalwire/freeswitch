@@ -24,6 +24,7 @@
  * Contributor(s):
  *
  * Seven Du <dujinfang@gmail.com>
+ * Anthony Minessale <anthm@freeswitch.org>
  *
  * mod_avcodec -- Codec with libav.org
  *
@@ -35,19 +36,10 @@
 #include <libavutil/opt.h>
 #include <libavutil/imgutils.h>
 
-/* use libx264 by default, comment out to use the ffmpeg/avcodec wrapper */
-// #define H264_CODEC_USE_LIBX264
-
 #define SLICE_SIZE SWITCH_DEFAULT_VIDEO_SIZE
-
-#ifdef H264_CODEC_USE_LIBX264
-#include <x264.h>
-#endif
-
-#define FPS 30 // frame rate
+#define FPS 15 // frame rate
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_avcodec_load);
-SWITCH_MODULE_DEFINITION(mod_avcodec, mod_avcodec_load, NULL, NULL);
 
 /*  ff_avc_find_startcode is not exposed in the ffmpeg lib but you can use it
 	Either include the avc.h which available in the ffmpeg source, or
@@ -132,158 +124,11 @@ typedef struct h264_codec_context_s {
 	int change_bandwidth;
 	unsigned int bandwidth;
 	switch_codec_settings_t codec_settings;
-
-#ifndef H264_CODEC_USE_LIBX264
 	AVCodecContext *encoder_ctx;
 	AVFrame *encoder_avframe;
 	AVPacket encoder_avpacket;
 	our_h264_nalu_t nalus[MAX_NALUS];
-#else
-	/*x264*/
-
-	x264_t *x264_handle;
-	x264_param_t x264_params;
-	x264_nal_t *x264_nals;
-	int x264_nal_count;
-	int cur_nalu_index;
-#endif
-
 } h264_codec_context_t;
-
-#ifdef H264_CODEC_USE_LIBX264
-
-static switch_status_t init_x264(h264_codec_context_t *context, uint32_t width, uint32_t height)
-{
-	x264_t *xh = context->x264_handle;
-	x264_param_t *xp = &context->x264_params;
-	//int ret = 0;
-
-	if (width && height) {
-		context->codec_settings.video.width = width;
-		context->codec_settings.video.height = height;
-	}
-
-	if (!context->codec_settings.video.width) {
-		context->codec_settings.video.width = 1280;
-	}
-
-	if (!context->codec_settings.video.height) {
-		context->codec_settings.video.height = 720;
-	}
-
-	if (context->codec_settings.video.bandwidth) {
-		context->bandwidth = context->codec_settings.video.bandwidth;
-	} else {
-		context->bandwidth = switch_calc_bitrate(context->codec_settings.video.width, context->codec_settings.video.height, 0, 0);
-	}
-
-	if (context->bandwidth > 5120) {
-		context->bandwidth = 5120;
-	}
-
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "initializing x264 handle %dx%d bw:%d\n", context->codec_settings.video.width, context->codec_settings.video.height, context->bandwidth);
-
-
-	if (xh) {
-		x264_encoder_close(context->x264_handle);
-		context->x264_handle = xh = NULL;
-		switch_buffer_zero(context->nalu_buffer);
-		
-		//xp->i_width = width;
-		//xp->i_height = height;
-		//ret = x264_encoder_reconfig(xh, xp);
-
-		//if (ret == 0) return SWITCH_STATUS_SUCCESS;
-
-		//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Cannot Reset error:%d\n", ret);
-		//return SWITCH_STATUS_FALSE;
-	}
-
-	// x264_param_default(xp);
-	x264_param_default_preset(xp, "veryfast", "zerolatency");
-	// xp->i_level_idc = 31; // baseline
-	// CPU Flags
-	// xp->i_threads  = 1;//X264_SYNC_LOOKAHEAD_AUTO;
-	// xp->i_lookahead_threads = X264_SYNC_LOOKAHEAD_AUTO;
-	// Video Properties
-	xp->i_width	  = context->codec_settings.video.width;
-	xp->i_height  = context->codec_settings.video.height;
-	xp->i_frame_total = 0;
-	xp->i_keyint_max = FPS * 10;
-	// Bitstream parameters
-	xp->i_bframe	 = 0;
-	// xp->i_frame_reference = 0;
-	// xp->b_open_gop	= 0;
-	// xp->i_bframe_pyramid = 0;
-	// xp->i_bframe_adaptive = X264_B_ADAPT_NONE;
-
-	//xp->vui.i_sar_width = 1080;
-	//xp->vui.i_sar_height = 720;
-	// xp->i_log_level	 = X264_LOG_DEBUG;
-	xp->i_log_level	 = X264_LOG_NONE;
-	// Rate control Parameters
-	xp->rc.i_bitrate = context->bandwidth;
-	// Muxing parameters
-	//xp->i_fps_den  = 1;
-	//xp->i_fps_num  = FPS;
-	xp->i_timebase_den = xp->i_fps_num;
-	xp->i_timebase_num = xp->i_fps_den;
-	xp->i_slice_max_size = SLICE_SIZE;
-	//Set Profile 0=baseline other than 1=MainProfile
-	x264_param_apply_profile(xp, x264_profile_names[0]);
-	xh = x264_encoder_open(xp);
-
-	if (!xh) return SWITCH_STATUS_FALSE;
-
-	// copy params back to xp;
-	x264_encoder_parameters(xh, xp);
-	context->x264_handle = xh;
-	return SWITCH_STATUS_SUCCESS;
-}
-
-static switch_status_t nalu_slice(h264_codec_context_t *context, switch_frame_t *frame)
-{
-	int nalu_len;
-	uint8_t *buffer;
-	int start_code_len = 3;
-	x264_nal_t *nal = &context->x264_nals[context->cur_nalu_index];
-	switch_status_t status = SWITCH_STATUS_SUCCESS;
-
-	frame->m = 0;
-
-	if (context->cur_nalu_index >= context->x264_nal_count) {
-		frame->datalen = 0;
-		frame->m = 0;
-		context->cur_nalu_index = 0;
-		return SWITCH_STATUS_NOTFOUND;
-	}
-
-	if (nal->b_long_startcode) start_code_len++;
-
-	nalu_len = nal->i_payload - start_code_len;
-	buffer = nal->p_payload + start_code_len;
-
-	// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "nalu:%d/%d nalu_len:%d\n",
-		// context->cur_nalu_index, context->x264_nal_count, nalu_len);
-
-	switch_assert(nalu_len > 0);
-
-	// if ((*buffer & 0x1f) == 7) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Got SPS | %02x %02x %02x\n", *(buffer+1), *(buffer+2), *(buffer+3));
-
-	memcpy(frame->data, buffer, nalu_len);
-	frame->datalen = nalu_len;
-	if (context->cur_nalu_index == context->x264_nal_count - 1) {
-		frame->m = 1;
-	} else {
-		status = SWITCH_STATUS_MORE_DATA;
-	}
-
-	context->cur_nalu_index++;
-
-	return status;
-}
-
-#endif
 
 static uint8_t ff_input_buffer_padding[FF_INPUT_BUFFER_PADDING_SIZE] = { 0 };
 
@@ -356,7 +201,7 @@ static switch_status_t buffer_h264_nalu(h264_codec_context_t *context, switch_fr
 	return SWITCH_STATUS_SUCCESS;
 }
 
-#ifndef H264_CODEC_USE_LIBX264
+
 
 static switch_status_t consume_nalu(h264_codec_context_t *context, switch_frame_t *frame)
 {
@@ -466,8 +311,8 @@ static switch_status_t open_encoder(h264_codec_context_t *context, uint32_t widt
 	}
 
 	context->encoder_ctx->bit_rate = context->bandwidth * 1024;
-	context->encoder_ctx->width = width;
-	context->encoder_ctx->height = height;
+	context->encoder_ctx->width = context->codec_settings.video.width;
+	context->encoder_ctx->height = context->codec_settings.video.height;
 	/* frames per second */
 	context->encoder_ctx->time_base = (AVRational){1, FPS};
 	context->encoder_ctx->gop_size = FPS * 3; /* emit one intra frame every 3 seconds */
@@ -489,7 +334,6 @@ static switch_status_t open_encoder(h264_codec_context_t *context, uint32_t widt
 
 	return SWITCH_STATUS_SUCCESS;
 }
-#endif
 
 static switch_status_t switch_h264_init(switch_codec_t *codec, switch_codec_flag_t flags, const switch_codec_settings_t *codec_settings)
 {
@@ -567,8 +411,6 @@ static void __attribute__((unused)) fill_avframe(AVFrame *pict, switch_image_t *
 
 }
 
-#ifndef H264_CODEC_USE_LIBX264
-
 static switch_status_t switch_h264_encode(switch_codec_t *codec, switch_frame_t *frame)
 {
 	h264_codec_context_t *context = (h264_codec_context_t *)codec->private_info;
@@ -645,6 +487,7 @@ static switch_status_t switch_h264_encode(switch_codec_t *codec, switch_frame_t 
 		avframe->format = avctx->pix_fmt;
 		avframe->width  = avctx->width;
 		avframe->height = avctx->height;
+		avframe->pts = frame->timestamp / 90;
 
 		ret = av_frame_get_buffer(avframe, 32);
 
@@ -670,7 +513,7 @@ static switch_status_t switch_h264_encode(switch_codec_t *codec, switch_frame_t 
 
 	fill_avframe(avframe, img);
 
-	avframe->pts = context->pts++;
+	//avframe->pts = context->pts++;
 
 	if (context->need_key_frame) {
 		// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "NEED Refresh\n");
@@ -726,131 +569,6 @@ error:
 	frame->datalen = 0;
 	return SWITCH_STATUS_FALSE;
 }
-
-#endif
-
-#ifdef H264_CODEC_USE_LIBX264
-
-static switch_status_t switch_h264_encode(switch_codec_t *codec,
-										  switch_frame_t *frame)
-{
-	h264_codec_context_t *context = (h264_codec_context_t *)codec->private_info;
-	uint32_t width = 0;
-	uint32_t height = 0;
-	x264_picture_t pic = { 0 }, pic_out = { 0 };
-	int result;
-	switch_image_t *img = frame->img;
-	void *encoded_data = frame->data;
-	uint32_t *encoded_data_len = &frame->datalen;
-
-	//unsigned int *flag = &frame->flags;
-
-	//if (*flag & SFF_WAIT_KEY_FRAME) context->need_key_frame = 1;
-
-	//if (*encoded_data_len < SWITCH_DEFAULT_VIDEO_SIZE) return SWITCH_STATUS_FALSE;
-
-	if (!context) return SWITCH_STATUS_FALSE;
-
-
-	if (context->change_bandwidth) {
-		context->codec_settings.video.bandwidth = context->change_bandwidth;
-		context->change_bandwidth = 0;
-		if (init_x264(context, 0, 0) != SWITCH_STATUS_SUCCESS) {
-			return SWITCH_STATUS_FALSE;
-		}
-		switch_set_flag(frame, SFF_WAIT_KEY_FRAME);
-	}
-
-	if (!context->x264_handle) {
-		if (init_x264(context, width, height) != SWITCH_STATUS_SUCCESS) {
-			return SWITCH_STATUS_FALSE;
-		}
-		switch_set_flag(frame, SFF_WAIT_KEY_FRAME);
-	}
-
-	if (frame->flags & SFF_SAME_IMAGE) {
-		return nalu_slice(context, frame);
-	}
-
-	width = img->d_w;
-	height = img->d_h;
-
-	if (context->x264_params.i_width != width || context->x264_params.i_height != height) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "picture size changed from %dx%d to %dx%d, reinitializing encoder\n",
-						  context->x264_params.i_width, context->x264_params.i_height, width, height);
-		if (init_x264(context, width, height) != SWITCH_STATUS_SUCCESS) {
-			return SWITCH_STATUS_FALSE;
-		}
-		switch_set_flag(frame, SFF_WAIT_KEY_FRAME);
-	}
-
-	switch_assert(encoded_data);
-
-	x264_picture_init(&pic);
-	pic.img.i_csp = X264_CSP_I420;
-	pic.img.i_plane = 3;
-
-
-	if (context->encimg && (context->encimg->d_w != width || context->encimg->d_h != height)) {
-		switch_img_free(&context->encimg);
-	}
-
-	if (!context->encimg) {
-		context->encimg = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, width, height, 1);
-	}
-
-	switch_img_copy(img, &context->encimg);
-
-	pic.img.i_stride[0] = context->encimg->stride[0];
-	pic.img.i_stride[1] = context->encimg->stride[1];
-	pic.img.i_stride[2] = context->encimg->stride[2];
-	pic.img.plane[0] = context->encimg->planes[0];
-	pic.img.plane[1] = context->encimg->planes[1];
-	pic.img.plane[2] = context->encimg->planes[2];
-
-
-	// pic.i_pts = (context->pts++);
-	// pic.i_pts = (context->pts+=90000/FPS);
-	pic.i_pts = 0;
-
-	if (context->need_key_frame) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "H264 KEYFRAME GENERATED\n");
-		//pic.i_type = X264_TYPE_IDR;
-		pic.i_type = X264_TYPE_KEYFRAME;
-		context->need_key_frame = 0;
-	}
-
-	result = x264_encoder_encode(context->x264_handle, &context->x264_nals, &context->x264_nal_count, &pic, &pic_out);
-
-	if (result < 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "encode error\n");
-		goto error;
-	}
-
-	// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "encode result:%d nal_count:%d daylayed: %d, max_delayed: %d\n", result, context->x264_nal_count, x264_encoder_delayed_frames(context->x264_handle), x264_encoder_maximum_delayed_frames(context->x264_handle));
-
-	if (0) { //debug
-		int i;
-		x264_nal_t *nals = context->x264_nals;
-
-		for (i = 0; i < context->x264_nal_count; i++) {
-			// int start_code_len = 3 + nals[i].b_long_startcode;
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "encoded: %d %d %d %d| %d %d %d %x %x %x %x %x %x\n",
-				nals[i].i_type, nals[i].i_ref_idc, nals[i].i_payload, nals[i].b_long_startcode, *(nals[i].p_payload), *(nals[i].p_payload + 1), *(nals[i].p_payload + 2), *(nals[i].p_payload+3), *(nals[i].p_payload + 4), *(nals[i].p_payload + 5), *(nals[i].p_payload + 6), *(nals[i].p_payload + 7), *(nals[i].p_payload + 8));
-		}
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Got ACL count : %d, Encoder output dts:%ld\n", context->x264_nal_count, (long)pic_out.i_dts);
-	}
-
-	context->cur_nalu_index = 0;
-	return nalu_slice(context, frame);
-
-error:
-
-	*encoded_data_len = 0;
-	return SWITCH_STATUS_NOTFOUND;
-}
-
-#endif
 
 static switch_status_t switch_h264_decode(switch_codec_t *codec, switch_frame_t *frame)
 {
@@ -1008,7 +726,6 @@ static switch_status_t switch_h264_destroy(switch_codec_t *codec)
 
 	switch_img_free(&context->img);
 
-#ifndef H264_CODEC_USE_LIBX264
 	if (context->encoder_ctx) {
 		if (avcodec_is_open(context->encoder_ctx)) avcodec_close(context->encoder_ctx);
 		av_free(context->encoder_ctx);
@@ -1017,11 +734,6 @@ static switch_status_t switch_h264_destroy(switch_codec_t *codec)
 	if (context->encoder_avframe) {
 		av_frame_free(&context->encoder_avframe);
 	}
-#else
-	if (context->x264_handle) {
-		x264_encoder_close(context->x264_handle);
-	}
-#endif
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -1093,81 +805,6 @@ static void print_codecs_for_id(switch_stream_handle_t *stream, enum AVCodecID i
 	stream->write_function(stream, ")");
 }
 
-static int is_device(const AVClass *avclass)
-{
-#if 0
-	if (!avclass) return 0;
-
-
-	return  avclass->category == AV_CLASS_CATEGORY_DEVICE_VIDEO_OUTPUT ||
-			avclass->category == AV_CLASS_CATEGORY_DEVICE_VIDEO_INPUT ||
-			avclass->category == AV_CLASS_CATEGORY_DEVICE_AUDIO_OUTPUT ||
-			avclass->category == AV_CLASS_CATEGORY_DEVICE_AUDIO_INPUT ||
-			avclass->category == AV_CLASS_CATEGORY_DEVICE_OUTPUT ||
-			avclass->category == AV_CLASS_CATEGORY_DEVICE_INPUT;
-#endif
-
-	return 0;
-
-}
-
-void show_formats(switch_stream_handle_t *stream) {
-	AVInputFormat *ifmt  = NULL;
-	AVOutputFormat *ofmt = NULL;
-	const char *last_name;
-	// int is_dev;
-
-	stream->write_function(stream, "============= File Formats ==============================:\n"
-		   " D. = Demuxing supported\n"
-		   " .M = Muxing supported\n"
-		   "----------------------\n");
-
-	last_name = "000";
-
-	for (;;) {
-		int decode = 0;
-		int encode = 0;
-		int is_dev = 0;
-		const char *name      = NULL;
-		const char *long_name = NULL;
-
-		while ((ofmt = av_oformat_next(ofmt))) {
-			is_dev = is_device(ofmt->priv_class);
-
-			if ((name == NULL || strcmp(ofmt->name, name) < 0) &&
-				strcmp(ofmt->name, last_name) > 0) {
-				name      = ofmt->name;
-				long_name = ofmt->long_name;
-				encode    = 1;
-			}
-		}
-
-		while ((ifmt = av_iformat_next(ifmt))) {
-			is_dev = is_device(ifmt->priv_class);
-
-			if ((name == NULL || strcmp(ifmt->name, name) < 0) &&
-				strcmp(ifmt->name, last_name) > 0) {
-				name      = ifmt->name;
-				long_name = ifmt->long_name;
-				encode    = 0;
-			}
-
-			if (name && strcmp(ifmt->name, name) == 0) decode = 1;
-		}
-
-		if (name == NULL) break;
-
-		last_name = name;
-
-		stream->write_function(stream, "%s%s%s %-15s %s\n",
-			is_dev ? "*" : " ",
-			decode ? "D" : " ",
-			encode ? "M" : " ",
-			name, long_name ? long_name:" ");
-	}
-
-}
-
 void show_codecs(switch_stream_handle_t *stream)
 {
 	const AVCodecDescriptor **codecs = NULL;
@@ -1222,6 +859,7 @@ void show_codecs(switch_stream_handle_t *stream)
 	av_free(codecs);
 }
 
+
 SWITCH_STANDARD_API(av_codec_api_function)
 {
 	show_codecs(stream);
@@ -1229,48 +867,18 @@ SWITCH_STANDARD_API(av_codec_api_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static void log_callback(void *ptr, int level, const char *fmt, va_list vl)
-{
-	switch_log_level_t switch_level = SWITCH_LOG_DEBUG;
-
-	/* naggy messages */
-	if (level == AV_LOG_DEBUG || level == AV_LOG_WARNING) return;
-
-	switch(level) {
-		case AV_LOG_QUIET:   switch_level = SWITCH_LOG_CONSOLE; break;
-		case AV_LOG_PANIC:   switch_level = SWITCH_LOG_DEBUG2;   break;
-		case AV_LOG_FATAL:   switch_level = SWITCH_LOG_DEBUG2;   break;
-		case AV_LOG_ERROR:   switch_level = SWITCH_LOG_DEBUG2;   break;
-		case AV_LOG_WARNING: switch_level = SWITCH_LOG_WARNING; break;
-		case AV_LOG_INFO:    switch_level = SWITCH_LOG_INFO;    break;
-		case AV_LOG_VERBOSE: switch_level = SWITCH_LOG_INFO;    break;
-		case AV_LOG_DEBUG:   switch_level = SWITCH_LOG_DEBUG;   break;
-		default: break;
-	}
-
-	// switch_level = SWITCH_LOG_ERROR; // hardcoded for debug
-	switch_log_vprintf(SWITCH_CHANNEL_LOG_CLEAN, switch_level, fmt, vl);
-}
+static const char modname[] = "mod_av";
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_avcodec_load)
 {
 	switch_codec_interface_t *codec_interface;
 	switch_api_interface_t *api_interface;
 
-	/* connect my internal structure to the blank pointer passed to me */
-	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
-
 	SWITCH_ADD_CODEC(codec_interface, "H264 Video");
 	switch_core_codec_add_video_implementation(pool, codec_interface, 99, "H264", NULL,
 											   switch_h264_init, switch_h264_encode, switch_h264_decode, switch_h264_control, switch_h264_destroy);
 
 	SWITCH_ADD_API(api_interface, "av_codec", "av_codec information", av_codec_api_function, "");
-
-	av_log_set_callback(log_callback);
-	av_log_set_level(AV_LOG_DEBUG);
-	av_register_all();
-
-	av_log(NULL, AV_LOG_INFO, "%s %d\n", "av_log callback installed, level=", av_log_get_level());
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
