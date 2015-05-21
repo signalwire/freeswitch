@@ -63,6 +63,10 @@ if test "x$prefix" = "xNONE" ; then
     prefix='/usr/local/freeswitch'
 fi
 
+if test "x${exec_prefix}" = "xNONE" ; then
+    exec_prefix="$prefix"
+fi
+
 default_scriptdir="$prefix/scripts"
 default_grammardir="$prefix/grammar"
 default_soundsdir="$prefix/sounds"
@@ -84,6 +88,7 @@ if test "${enable_fhs}" = "yes"; then
     eval datadir=$full_datadir
     eval full_localstatedir="${localstatedir}"
     eval localstatedir=$full_localstatedir
+    eval libdir=$libdir
     default_cachedir="${localstatedir}/cache/freeswitch"
     localstatedir="${localstatedir}/lib/freeswitch"
     default_scriptdir="${datadir}/scripts"
@@ -117,9 +122,12 @@ default_pkgconfigdir="$libdir/pkgconfig"
 default_runtimedir="$rundir"
 default_logfiledir="$logdir"
 
+AC_SUBST(libdir)
+
 # Where to install the modules
 AC_ARG_WITH([modinstdir],
 	[AS_HELP_STRING([--with-modinstdir=DIR], [Install modules into this location (default: $prefix/mod)])], [modulesdir="$withval"], [modulesdir="${default_modulesdir}"])
+eval modulesdir="${modulesdir}"
 AC_SUBST(modulesdir)
 AC_DEFINE_UNQUOTED([SWITCH_MOD_DIR],"${modulesdir}",[where to install the modules to])
 
@@ -198,7 +206,6 @@ AC_DEFINE_UNQUOTED([SWITCH_DATA_DIR],"${datadir}",[directory for data files])
 AC_SUBST(localstatedir)
 AC_DEFINE_UNQUOTED([SWITCH_LOCALSTATE_DIR],"${localstatedir}",[directory for local state files])
 
-AC_SUBST(libdir)
 AC_SUBST(bindir)
 AC_SUBST(includedir)
 
