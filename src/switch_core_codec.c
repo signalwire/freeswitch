@@ -619,16 +619,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_reset(switch_codec_t *codec)
 SWITCH_DECLARE(switch_status_t) switch_core_codec_copy(switch_codec_t *codec, switch_codec_t *new_codec, 
 													   const switch_codec_settings_t *codec_settings, switch_memory_pool_t *pool)
 {
-	uint32_t codec_rate;
 	switch_assert(codec != NULL);
 	switch_assert(new_codec != NULL);
-	codec_rate = !strcasecmp(codec->implementation->iananame, "g722")
-		? codec->implementation->samples_per_second : codec->implementation->actual_samples_per_second;
-		
-	return switch_core_codec_init(new_codec,
+	
+	return switch_core_codec_init(new_codec, 
 								  codec->implementation->iananame,
 								  codec->fmtp_in,
-								  codec_rate,
+								  codec->implementation->samples_per_second,
 								  codec->implementation->microseconds_per_packet / 1000,
 								  codec->implementation->number_of_channels,
 								  codec->flags,
