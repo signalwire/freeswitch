@@ -4012,6 +4012,7 @@ struct speech_thread_handle {
 	switch_mutex_t *mutex;
 	switch_thread_cond_t *cond;
 	switch_memory_pool_t *pool;
+	switch_thread_t *thread;
 	int ready;
 };
 
@@ -4175,23 +4176,29 @@ static switch_bool_t speech_callback(switch_media_bug_t *bug, void *user_data, s
 	frame.buflen = SWITCH_RECOMMENDED_BUFFER_SIZE;
 
 	switch (type) {
-	case SWITCH_ABC_TYPE_INIT:{
-			switch_thread_t *thread;
+	case SWITCH_ABC_TYPE_INIT:
+		{
 			switch_threadattr_t *thd_attr = NULL;
-
+			
 			switch_threadattr_create(&thd_attr, sth->pool);
-			switch_threadattr_detach_set(thd_attr, 1);
 			switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
-			switch_thread_create(&thread, thd_attr, speech_thread, sth, sth->pool);
+			switch_thread_create(&sth->thread, thd_attr, speech_thread, sth, sth->pool);
 		}
 		break;
-	case SWITCH_ABC_TYPE_CLOSE:{
+	case SWITCH_ABC_TYPE_CLOSE:
+		{
+			switch_status_t st;
+
 			switch_core_asr_close(sth->ah, &flags);
 			if (sth->mutex && sth->cond && sth->ready) {
-				switch_mutex_lock(sth->mutex);
-				switch_thread_cond_signal(sth->cond);
-				switch_mutex_unlock(sth->mutex);
+				if (switch_mutex_trylock(sth->mutex) == SWITCH_STATUS_SUCCESS) {
+					switch_thread_cond_signal(sth->cond);
+					switch_mutex_unlock(sth->mutex);
+				}
 			}
+			
+			switch_thread_join(&st, sth->thread);
+
 		}
 		break;
 	case SWITCH_ABC_TYPE_READ:

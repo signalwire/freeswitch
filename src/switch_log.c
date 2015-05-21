@@ -512,8 +512,6 @@ SWITCH_DECLARE(switch_status_t) switch_log_init(switch_memory_pool_t *pool, swit
 	LOG_POOL = pool;
 
 	switch_threadattr_create(&thd_attr, LOG_POOL);
-	switch_threadattr_detach_set(thd_attr, 1);
-
 
 	switch_queue_create(&LOG_QUEUE, SWITCH_CORE_QUEUE_LEN, LOG_POOL);
 #ifdef SWITCH_LOG_RECYCLE

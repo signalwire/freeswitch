@@ -60,6 +60,7 @@ SWITCH_BEGIN_EXTERN_C struct switch_unicast_conninfo {
 	int type;
 	int transport;
 	int stream_id;
+	switch_thread_t *thread;
 };
 typedef struct switch_unicast_conninfo switch_unicast_conninfo_t;
 
