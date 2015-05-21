@@ -789,8 +789,8 @@ SWITCH_DECLARE(void) switch_core_set_globals(void)
 		if (SWITCH_GLOBAL_dirs.base_dir)
 			switch_snprintf(SWITCH_GLOBAL_dirs.fonts_dir, BUFSIZE, "%s%sfonts", SWITCH_GLOBAL_dirs.base_dir, SWITCH_PATH_SEPARATOR);
 		else
-#ifdef SWITCH_FONT_DIR
-			switch_snprintf(SWITCH_GLOBAL_dirs.fonts_dir, BUFSIZE, "%s", SWITCH_FONT_DIR);
+#ifdef SWITCH_FONTS_DIR
+			switch_snprintf(SWITCH_GLOBAL_dirs.fonts_dir, BUFSIZE, "%s", SWITCH_FONTS_DIR);
 #else
 			switch_snprintf(SWITCH_GLOBAL_dirs.fonts_dir, BUFSIZE, "%s%sfonts", base_dir, SWITCH_PATH_SEPARATOR);
 #endif
@@ -800,8 +800,8 @@ SWITCH_DECLARE(void) switch_core_set_globals(void)
 		if (SWITCH_GLOBAL_dirs.base_dir)
 			switch_snprintf(SWITCH_GLOBAL_dirs.images_dir, BUFSIZE, "%s%simages", SWITCH_GLOBAL_dirs.base_dir, SWITCH_PATH_SEPARATOR);
 		else
-#ifdef SWITCH_IMAGE_DIR
-			switch_snprintf(SWITCH_GLOBAL_dirs.images_dir, BUFSIZE, "%s", SWITCH_IMAGE_DIR);
+#ifdef SWITCH_IMAGES_DIR
+			switch_snprintf(SWITCH_GLOBAL_dirs.images_dir, BUFSIZE, "%s", SWITCH_IMAGES_DIR);
 #else
 			switch_snprintf(SWITCH_GLOBAL_dirs.images_dir, BUFSIZE, "%s%simages", base_dir, SWITCH_PATH_SEPARATOR);
 #endif
