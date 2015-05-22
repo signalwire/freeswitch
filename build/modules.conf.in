@@ -1,4 +1,5 @@
 #applications/mod_abstraction
+#applications/mod_av
 #applications/mod_avmd
 #applications/mod_bert
 #applications/mod_blacklist
@@ -57,7 +58,6 @@ applications/mod_voicemail
 #asr_tts/mod_unimrcp
 codecs/mod_amr
 #codecs/mod_amrwb
-#codecs/mod_avcodec
 codecs/mod_b64
 #codecs/mod_bv
 #codecs/mod_codec2
@@ -108,7 +108,6 @@ event_handlers/mod_event_socket
 #event_handlers/mod_rayo
 #event_handlers/mod_snmp
 #event_handlers/mod_event_zmq
-#formats/mod_avformat
 #formats/mod_imagick
 formats/mod_local_stream
 formats/mod_native_file
