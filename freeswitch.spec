@@ -1670,8 +1670,14 @@ cd ../..
 %if 0%{?suse_version} > 100
 %{__install} -D -m 744 build/freeswitch.init.suse %{buildroot}/etc/rc.d/init.d/freeswitch
 %else
+%if "%{?_unitdir}" == ""
 # On RedHat like
 %{__install} -D -m 0755 build/freeswitch.init.redhat %{buildroot}/etc/rc.d/init.d/freeswitch
+%else
+# systemd
+%{__install} -Dpm 0644 build/freeswitch.service %{buildroot}%{_unitdir}/freeswitch.service
+%{__install} -Dpm 0644 build/freeswitch-tmpfiles.conf %{buildroot}%{_tmpfilesdir}/freeswitch.conf
+%endif
 %endif
 # On SuSE make /usr/sbin/rcfreeswitch a link to /etc/rc.d/init.d/freeswitch
 %if 0%{?suse_version} > 100
@@ -1723,9 +1729,18 @@ fi
 
 chown freeswitch:daemon /var/log/freeswitch /var/run/freeswitch
 
+%if "%{?_unitdir}" == ""
 chkconfig --add freeswitch
+%else
+%tmpfiles_create freeswitch
+/usr/bin/systemctl -q enable freeswitch.service
+%endif
+
+%preun
+%{?systemd_preun freeswitch.service}
 
 %postun
+%{?systemd_postun freeswitch.service}
 ######################################################################################################################
 #
 #				On uninstallation get rid of the freeswitch user
@@ -1794,7 +1809,12 @@ fi
 ######################################################################################################################
 %config(noreplace) %attr(0644,-,-) %{HTDOCSDIR}/*
 %ifos linux
+%if "%{?_unitdir}" == ""
 /etc/rc.d/init.d/freeswitch
+%else
+%{_unitdir}/freeswitch.service
+%{_tmpfilesdir}/freeswitch.conf
+%endif
 %config(noreplace) /etc/sysconfig/freeswitch
 %if 0%{?suse_version} > 100
 /usr/sbin/rcfreeswitch
@@ -2482,6 +2502,8 @@ fi
 #
 ######################################################################################################################
 %changelog
+* Tue Jul 09 2015 - Artur Zaprzała
+- add systemd service file for CentOS 7
 * Thu Jun 25 2015 - s.safarov@gmail.com
 - Dependencies of mod_shout were declared
 * Mon Jun 22 2015 - krice@freeswitch.org

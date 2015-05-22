@@ -1,0 +1,17 @@
+[Unit]
+Description=FreeSWITCH
+After=syslog.target network.target
+After=postgresql.service postgresql-9.3.service postgresql-9.4.service mysqld.service httpd.service
+
+[Service]
+User=freeswitch
+EnvironmentFile=-/etc/sysconfig/freeswitch
+# RuntimeDirectory is not yet supported in CentOS 7. A workaround is to use /etc/tmpfiles.d/freeswitch.conf
+#RuntimeDirectory=/run/freeswitch
+#RuntimeDirectoryMode=0750
+WorkingDirectory=/run/freeswitch
+ExecStart=/usr/bin/freeswitch -nc -nf $FREESWITCH_PARAMS
+ExecReload=/usr/bin/kill -HUP $MAINPID
+
+[Install]
+WantedBy=multi-user.target
