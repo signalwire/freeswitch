@@ -1302,7 +1302,7 @@ PKG_CHECK_MODULES([VLC], [libvlc >= 2.1.0],[
   AM_CONDITIONAL([HAVE_VLC],[true])],[
   AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_VLC],[false])])
 
-PKG_CHECK_MODULES([OPENCV], [opencv >= 2.4.9.1],[
+PKG_CHECK_MODULES([OPENCV], [opencv >= 2.4.5],[
   AM_CONDITIONAL([HAVE_OPENCV],[true])],[
   AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_OPENCV],[false])])
 
