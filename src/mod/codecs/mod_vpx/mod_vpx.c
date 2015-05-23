@@ -159,7 +159,7 @@ typedef union {
 #endif
 
 
-#define __IS_VP8_KEY_FRAME(byte) (((byte) & 0x01) ^ 0x01)
+#define __IS_VP8_KEY_FRAME(byte) !(((byte) & 0x01))
 static inline int IS_VP8_KEY_FRAME(uint8_t *data) 
 {
 	uint8_t S;
@@ -227,6 +227,7 @@ struct vpx_context {
 	uint8_t decoder_init;
 	switch_buffer_t *vpx_packet_buffer;
 	int got_key_frame;
+	int got_start_frame;
 	uint32_t last_received_timestamp;
 	switch_bool_t last_received_complete_picture;
 	int need_key_frame;
@@ -272,6 +273,7 @@ static switch_status_t init_decoder(switch_codec_t *codec)
 		context->last_received_complete_picture = 0;
 		context->decoder_init = 1;
 		context->got_key_frame = 0;
+		context->got_start_frame = 0;
 		// the types of post processing to be done, should be combination of "vp8_postproc_level"
 		ppcfg.post_proc_flag = VP8_DEBLOCK;//VP8_DEMACROBLOCK | VP8_DEBLOCK;
 		// the strength of deblocking, valid range [0, 16]
@@ -681,29 +683,57 @@ static switch_status_t buffer_vp8_packets(vpx_context_t *context, switch_frame_t
 	uint8_t *data = frame->data;
 	uint8_t S;
 	uint8_t DES;
-	//uint8_t PID;
+	uint8_t PID;
 	int len;
+	int key = 0;
 
+#if 0
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, 
+					  "VIDEO VPX: seq: %d ts: %u len: %ld %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x mark: %d\n",
+					  frame->seq, frame->timestamp, frame->datalen,
+					  *((uint8_t *)data), *((uint8_t *)data + 1),
+					  *((uint8_t *)data + 2), *((uint8_t *)data + 3),
+					  *((uint8_t *)data + 4), *((uint8_t *)data + 5),
+					  *((uint8_t *)data + 6), *((uint8_t *)data + 7),
+					  *((uint8_t *)data + 8), *((uint8_t *)data + 9),
+					  *((uint8_t *)data + 10), frame->m);
+#endif
+
+	
 	DES = *data;
 	data++;
-	S = DES & 0x10;
-	//PID = DES & 0x07;
+	S = (DES & 0x10);
+	PID = DES & 0x07;
 
+	//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "DATA LEN %d S BIT %d PID: %d\n", frame->datalen, S, PID);
+			
 	if (DES & 0x80) { // X
 		uint8_t X = *data;
+		//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "X BIT SET\n");
 		data++;
 		if (X & 0x80) { // I
 			uint8_t M = (*data) & 0x80;
+			//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "I BIT SET\n");
 			data++;
-			if (M) data++;
+			if (M) {
+				//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "M BIT SET\n");
+				data++;
+			}
 		}
-		if (X & 0x40) data++; // L
-		if (X & 0x30) data++; // T/K
+		if (X & 0x40) {
+			//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "L BIT SET\n");
+			data++; // L
+		}
+		if (X & 0x30) {
+			//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "T/K BIT SET\n");
+			data++; // T/K
+		}
 	}
 
 	if (!switch_buffer_inuse(context->vpx_packet_buffer) && !S) {
 		if (context->got_key_frame > 0) {
 			context->got_key_frame = 0;
+			context->got_start_frame = 0;
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG2, "packet loss?\n");
 		}
 		return SWITCH_STATUS_MORE_DATA;
@@ -712,10 +742,14 @@ static switch_status_t buffer_vp8_packets(vpx_context_t *context, switch_frame_t
 	if (S) {
 		switch_buffer_zero(context->vpx_packet_buffer);
 		context->last_received_timestamp = frame->timestamp;
+		if (PID == 0) {
+			key = __IS_VP8_KEY_FRAME(*data);
+		}
 	}
 
 	len = frame->datalen - (data - (uint8_t *)frame->data);
-
+	//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "POST PARSE: DATA LEN %d KEY %d KEYBYTE = %0x\n", len, key, *data);
+	
 	if (len <= 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid packet %d\n", len);
 		return SWITCH_STATUS_RESTART;
@@ -802,7 +836,11 @@ static switch_status_t switch_vpx_decode(switch_codec_t *codec, switch_frame_t *
 	// context->last_received_timestamp = frame->timestamp;
 	context->last_received_complete_picture = frame->m ? SWITCH_TRUE : SWITCH_FALSE;
 
-	if (is_keyframe || is_start) {
+	if (is_start) {
+		context->got_start_frame = 1;
+	}
+	
+	if (is_keyframe) {
 		if (context->got_key_frame <= 0) {
 			context->got_key_frame = 1;
 			if (!is_keyframe) {
@@ -815,7 +853,9 @@ static switch_status_t switch_vpx_decode(switch_codec_t *codec, switch_frame_t *
 		if ((--context->got_key_frame % 200) == 0) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Waiting for key frame %d\n", context->got_key_frame);
 		}
-		switch_goto_status(SWITCH_STATUS_MORE_DATA, end);
+		if (!context->got_start_frame) {
+			switch_goto_status(SWITCH_STATUS_MORE_DATA, end);
+		}
 	}
 
 
@@ -839,12 +879,12 @@ static switch_status_t switch_vpx_decode(switch_codec_t *codec, switch_frame_t *
 		uint8_t *data;
 		int corrupted = 0;
 		int err;
-		//int keyframe = 0;
+		int keyframe = 0;
 
 		//printf("WTF %d %ld\n", frame->m, len);
 
 		switch_buffer_peek_zerocopy(context->vpx_packet_buffer, (void *)&data);
-		//keyframe = (*data & 0x01) ? 0 : 1;
+		keyframe = (*data & 0x01) ? 0 : 1;
 
 		//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "buffered: %" SWITCH_SIZE_T_FMT ", key: %d\n", len, keyframe);
 
@@ -871,17 +911,22 @@ static switch_status_t switch_vpx_decode(switch_codec_t *codec, switch_frame_t *
 		switch_buffer_zero(context->vpx_packet_buffer);
 		
 		if (!frame->img) {
-			context->need_decoder_reset = 1;
+			//context->need_decoder_reset = 1;
 			context->got_key_frame = 0;
+			context->got_start_frame = 0;
 			status = SWITCH_STATUS_RESTART;
 		}
 	}
 
 end:
 
-	//if (status == SWITCH_STATUS_RESTART) {
-	//	context->need_decoder_reset = 1;
-	//}
+	if (status == SWITCH_STATUS_RESTART) {
+		switch_buffer_zero(context->vpx_packet_buffer);
+		//context->need_decoder_reset = 1;
+		context->got_key_frame = 0;
+		context->got_start_frame = 0;
+		//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "RESET VPX\n");
+	}
 
 	if (!frame->img || status == SWITCH_STATUS_RESTART) {
 		status = SWITCH_STATUS_MORE_DATA;
