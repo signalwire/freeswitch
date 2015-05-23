@@ -211,7 +211,7 @@ static switch_status_t consume_nalu(h264_codec_context_t *context, switch_frame_
 		frame->datalen = 0;
 		frame->m = 0;
 		if (context->encoder_avpacket.size > 0) av_free_packet(&context->encoder_avpacket);
-		if (context->encoder_avframe->data) av_freep(&context->encoder_avframe->data[0]);
+		if (context->encoder_avframe->data[0]) av_freep(&context->encoder_avframe->data[0]);
 		context->nalu_current_index = 0;
 		return SWITCH_STATUS_NOTFOUND;
 	}
