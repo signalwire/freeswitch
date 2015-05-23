@@ -3154,7 +3154,7 @@ static void check_ice(switch_media_handle_t *smh, switch_media_type_t type, sdp_
 			engine->ice_in.cand_idx++;
 
 			for (i = 0; i < engine->cand_acl_count; i++) {
-				if (!engine->ice_in.chosen[cid] && switch_check_network_list_ip(fields[4], engine->cand_acl[i])) {
+				if (!engine->ice_in.chosen[cid] && !strchr(fields[4], ':') && switch_check_network_list_ip(fields[4], engine->cand_acl[i])) {
 					engine->ice_in.chosen[cid] = engine->ice_in.cand_idx;
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_NOTICE, 
 									  "Choose %s Candidate cid: %d proto: %s type: %s addr: %s:%s\n", 
@@ -4778,6 +4778,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_set_video_file(switch_core_ses
 
 	switch_mutex_unlock(v_engine->mh.file_mutex);
 
+	switch_core_session_start_video_thread(session);
+	
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -4931,7 +4933,7 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 		} else if (switch_channel_test_flag(channel, CF_VIDEO_DECODED_READ)) {
 			send_blank = 1;
 		}
-
+		
 		if ((send_blank || switch_channel_test_flag(channel, CF_VIDEO_BLANK)) && 
 			!session->video_read_callback && !switch_channel_test_flag(session->channel, CF_BRIDGED)) {
 			fr.img = blank_img;
@@ -5003,7 +5005,6 @@ SWITCH_DECLARE(void) switch_core_media_start_video_function(switch_core_session_
 		smh->video_function = video_function;
 		smh->video_user_data = user_data;
 		switch_core_session_video_reset(session);
-		switch_core_session_start_video_thread(session);
 	}
 	switch_mutex_unlock(smh->control_mutex);
 }
@@ -5191,7 +5192,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_proxy_remote_addr(switch_core_
 						!switch_channel_test_flag(session->channel, CF_AVPF)) {
 						/* Reactivate the NAT buster flag. */
 						switch_rtp_set_flag(v_engine->rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
-						switch_core_session_start_video_thread(session);
 					}
 					if (switch_media_handle_test_media_flag(smh, SCMF_AUTOFIX_TIMING)) {
 						v_engine->check_frames = 0;
@@ -6169,7 +6169,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 									  v_engine->local_sdp_ip, v_engine->local_sdp_port, v_engine->cur_payload_map->remote_sdp_ip,
 									  v_engine->cur_payload_map->remote_sdp_port, v_engine->cur_payload_map->agreed_pt);
 
-					switch_core_session_start_video_thread(session);
 					switch_rtp_set_default_payload(v_engine->rtp_session, v_engine->cur_payload_map->agreed_pt);
 				}
 			}
@@ -6202,7 +6201,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 						!((val = switch_channel_get_variable(session->channel, "disable_rtp_auto_adjust")) && switch_true(val))) {
 						/* Reactivate the NAT buster flag. */
 						switch_rtp_set_flag(v_engine->rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
-						switch_core_session_start_video_thread(session);
 					}
 
 				}
@@ -6317,7 +6315,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 				}
 				
 				switch_rtp_set_payload_map(v_engine->rtp_session, &v_engine->payload_map);
-				switch_core_session_start_video_thread(session);
+				//switch_core_session_start_video_thread(session);
 				switch_channel_set_flag(session->channel, CF_VIDEO);
 
 				if ((ssrc = switch_channel_get_variable(session->channel, "rtp_use_video_ssrc"))) {
@@ -6923,7 +6921,7 @@ static void add_fb(char *buf, uint32_t buflen, int pt, int fir, int nack, int pl
 		sp = " ";
 	}
 
-	if (fir) {
+	if (!zstr(zfir) || !zstr(ztmmbr)) {
 		switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=rtcp-fb:%d ccm %s%s%s\n", pt, zfir, sp, ztmmbr);
 	}
 
@@ -7324,7 +7322,8 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 	
 
 		if (!zstr(a_engine->local_dtls_fingerprint.type)) {
-			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=fingerprint:%s %s\na=setup:%s\n", a_engine->local_dtls_fingerprint.type, 
+			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=fingerprint:%s %s\na=setup:%s\na=mid:audio\n",
+							a_engine->local_dtls_fingerprint.type, 
 							a_engine->local_dtls_fingerprint.str, get_setup(session));
 		}
 		
@@ -7358,13 +7357,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 
 			ice_out = &a_engine->ice_out;
 			
-			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=ssrc:%u cname:%s\n", a_engine->ssrc, smh->cname);
-			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=ssrc:%u msid:%s a0\n", a_engine->ssrc, smh->msid);
-			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=ssrc:%u mslabel:%s\n", a_engine->ssrc, smh->msid);
-			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=ssrc:%u label:%sa0\n", a_engine->ssrc, smh->msid);
 			
-
-
 			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=ice-ufrag:%s\n", ice_out->ufrag);
 			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=ice-pwd:%s\n", ice_out->pwd);
 
@@ -7406,7 +7399,13 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 									);
 				}
 			}
-			
+
+
+			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=ssrc:%u cname:%s\n", a_engine->ssrc, smh->cname);
+			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=ssrc:%u msid:%s a0\n", a_engine->ssrc, smh->msid);
+			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=ssrc:%u mslabel:%s\n", a_engine->ssrc, smh->msid);
+			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=ssrc:%u label:%sa0\n", a_engine->ssrc, smh->msid);
+
 				
 #ifdef GOOGLE_ICE
 			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=ice-options:google-ice\n");
@@ -8600,13 +8599,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_receive_message(switch_core_se
 	case SWITCH_MESSAGE_INDICATE_VIDEO_REFRESH_REQ:
 		{
 			if (v_engine->rtp_session) {
-				if (switch_rtp_test_flag(v_engine->rtp_session, SWITCH_RTP_FLAG_PLI)) {
-					switch_rtp_video_loss(v_engine->rtp_session);
-				}
-
 				if (switch_rtp_test_flag(v_engine->rtp_session, SWITCH_RTP_FLAG_FIR)) {
 					switch_rtp_video_refresh(v_engine->rtp_session);
-				}
+				}// else {
+					if (switch_rtp_test_flag(v_engine->rtp_session, SWITCH_RTP_FLAG_PLI)) {
+						switch_rtp_video_loss(v_engine->rtp_session);
+					}
+					//				}
 			}
 		}
 
@@ -10482,7 +10481,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_video_frame(switch_core
 
 	if (status == SWITCH_STATUS_INUSE) {
 		*frame = &runtime.dummy_cng_frame;
-		switch_yield(20000);
+		switch_cond_next();
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -10541,7 +10540,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_video_frame(switch_core
 
 			if (!(*frame)->img) {
 				*frame = &runtime.dummy_cng_frame;
-				switch_yield(66000);
+				switch_cond_next();
 				return SWITCH_STATUS_SUCCESS;
 			}
 		}
