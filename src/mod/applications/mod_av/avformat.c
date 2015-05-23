@@ -225,6 +225,7 @@ static switch_status_t add_stream(MediaStream *mst, AVFormatContext *fc, AVCodec
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	int threads = switch_core_cpu_count();
 	int buffer_bytes = 2097152; /* 2 mb */
+	int fps = 15;
 
 	/* find the encoder */
 	*codec = avcodec_find_encoder(codec_id);
@@ -271,13 +272,21 @@ static switch_status_t add_stream(MediaStream *mst, AVFormatContext *fc, AVCodec
 			if (mm->vbuf) {
 				buffer_bytes = mm->vbuf;
 			}
+			fps = mm->fps;
+
+			if (mm->vw && mm->vh) {
+				mst->width = mm->vw;
+				mst->height = mm->vh;
+			}
+
 		}
 
 		c->codec_id = codec_id;
-		c->bit_rate = 1000000;
+
 		/* Resolution must be a multiple of two. */
 		c->width    = mst->width;
 		c->height   = mst->height;
+		c->bit_rate = switch_calc_bitrate(c->width, c->height, 2, fps) * 1024;
 		mst->st->time_base.den = 1000;
 		mst->st->time_base.num = 1;
 		c->time_base.den = 1000;
@@ -297,7 +306,7 @@ static switch_status_t add_stream(MediaStream *mst, AVFormatContext *fc, AVCodec
 
 		if (mm) {
 			if (mm->vb) {
-				c->bit_rate = mm->vb * 1000;
+				c->bit_rate = mm->vb * 1024;
 			}
 			if (mm->keyint) {
 				c->gop_size = mm->keyint;

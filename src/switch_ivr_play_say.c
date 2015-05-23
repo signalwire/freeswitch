@@ -530,8 +530,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 	}
 
 	if (switch_channel_test_flag(channel, CF_VIDEO)) {
+		switch_vid_params_t vid_params = { 0 };
+
 		file_flags |= SWITCH_FILE_FLAG_VIDEO;
 		switch_channel_set_flag_recursive(channel, CF_VIDEO_DECODED_READ);
+		fh->mm.fps = switch_core_media_get_video_fps(session);
+		switch_core_media_get_vid_params(session, &vid_params);
+		fh->mm.vw = vid_params.width;
+		fh->mm.vh = vid_params.height;
 	}
 
 	if (switch_core_file_open(fh, file, fh->channels, read_impl.actual_samples_per_second, file_flags, NULL) != SWITCH_STATUS_SUCCESS) {
