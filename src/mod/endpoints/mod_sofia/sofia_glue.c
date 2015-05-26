@@ -307,6 +307,10 @@ enum tport_tls_verify_policy sofia_glue_str2tls_verify_policy(const char * str){
 			ret |= TPTLS_VERIFY_SUBJECTS_OUT;
 		} else if (!strncasecmp(ptr_cur, "subjects_all",len)) {
 			ret |= TPTLS_VERIFY_SUBJECTS_ALL;
+		} else {
+			char el[32] = {0};
+			strncpy(el, ptr_cur, len < sizeof(el) ? len : sizeof(el) - 1);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid tls-verify-policy value: %s\n", el);
 		}
 		ptr_cur = ptr_next;
 	}

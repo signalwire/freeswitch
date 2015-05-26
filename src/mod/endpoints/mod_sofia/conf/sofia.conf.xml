@@ -242,7 +242,7 @@
              how should we verify their certificate -->
         <!-- set to 'in' to only verify incoming connections, 'out' to only
              verify outgoing connections, 'all' to verify all connections, also
-             'in_subjects', 'out_subjects' and 'all_subjects' for subject
+             'subjects_in', 'subjects_out' and 'subjects_all' for subject
              validation. Multiple policies can be split with a '|' pipe -->
         <param name="tls-verify-policy" value="none"/>
         <!-- Certificate max verify depth to use for validating peer TLS
