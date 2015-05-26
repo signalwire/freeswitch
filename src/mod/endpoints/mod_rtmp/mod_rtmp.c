@@ -25,6 +25,7 @@
  * Mathieu Rene <mrene@avgs.ca>
  * Anthony Minessale II <anthm@freeswitch.org>
  * William King <william.king@quentustech.com>
+ * Seven Du <dujinfang@gmail.com>
  *
  * mod_rtmp.c -- RTMP Endpoint Module
  *
@@ -37,6 +38,7 @@
 #endif
 
 #include "mod_rtmp.h"
+#include "rtmp_video.h"
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_rtmp_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_rtmp_shutdown);
@@ -68,7 +70,10 @@ switch_io_routines_t rtmp_io_routines = {
 	/*.kill_channel */ rtmp_kill_channel,
 	/*.send_dtmf */ rtmp_send_dtmf,
 	/*.receive_message */ rtmp_receive_message,
-	/*.receive_event */ rtmp_receive_event
+	/*.receive_event */ rtmp_receive_event,
+	/*.state_change*/ NULL,
+	/*.rtmp_read_vid_frame */ rtmp_read_video_frame,
+	/*.rtmp_write_vid_frame */ rtmp_write_video_frame
 };
 
 struct mod_rtmp_globals rtmp_globals;
@@ -119,7 +124,7 @@ switch_status_t rtmp_tech_init(rtmp_private_t *tech_pvt, rtmp_session_t *rsessio
 	}
 
 	if (switch_core_codec_init(&tech_pvt->write_codec, /* name */ "SPEEX", /* modname */ NULL,
-		 /* fmtp */ NULL,  /* rate */ 16000, /* ms */ 20, /* channels */ 1,
+		/* fmtp */ NULL,  /* rate */ 16000, /* ms */ 20, /* channels */ 1,
 		/* flags */ SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
 		/* codec settings */ NULL, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't initialize write codec\n");
@@ -133,7 +138,39 @@ switch_status_t rtmp_tech_init(rtmp_private_t *tech_pvt, rtmp_session_t *rsessio
 	//static inline uint8_t rtmp_audio_codec(int channels, int bits, int rate, rtmp_audio_format_t format) {
 	tech_pvt->audio_codec = 0xB2; //rtmp_audio_codec(1, 16, 0 /* speex is always 8000  */, RTMP_AUDIO_SPEEX);
 
+	if (tech_pvt->has_video) {
+		/* Initialize video read & write codecs */
+		if (switch_core_codec_init(&tech_pvt->video_read_codec, /* name */ "H264", /* modname */ NULL,
+			/* fmtp */ NULL,  /* rate */ 90000, /* ms */ 0, /* channels */ 1,
+			/* flags */ SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
+			/* codec settings */ NULL, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't initialize video read codec\n");
+
+			return SWITCH_STATUS_FALSE;
+		}
+
+		if (switch_core_codec_init(&tech_pvt->video_write_codec, /* name */ "H264", /* modname */ NULL,
+			/* fmtp */ NULL,  /* rate */ 90000, /* ms */ 0, /* channels */ 1,
+			/* flags */ SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
+			/* codec settings */ NULL, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't initialize write codec\n");
+
+			return SWITCH_STATUS_FALSE;
+		}
+
+		switch_core_session_set_video_read_codec(session, &tech_pvt->video_read_codec);
+		switch_core_session_set_video_write_codec(session, &tech_pvt->video_write_codec);
+		switch_channel_set_flag(tech_pvt->channel, CF_VIDEO);
+
+		tech_pvt->mparams.external_video_source = SWITCH_TRUE;
+		switch_media_handle_create(&tech_pvt->media_handle, session, &tech_pvt->mparams);
+
+		on_rtmp_tech_init(session, tech_pvt);
+	}
+
 	switch_core_session_set_private(session, tech_pvt);
+
+	// switch_core_session_start_video_thread(session);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -232,6 +269,7 @@ switch_status_t rtmp_on_destroy(switch_core_session_t *session)
 
 		switch_buffer_destroy(&tech_pvt->readbuf);
 		switch_core_timer_destroy(&tech_pvt->timer);
+		on_rtmp_destroy(tech_pvt);
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -293,6 +331,15 @@ switch_status_t rtmp_on_hangup(switch_core_session_t *session)
 		}
 		switch_thread_rwlock_unlock(rsession->session_rwlock);
 	}
+
+#if 0
+	// this block could replace the above if block, not sure if it's safe
+	switch_core_hash_delete_wrlock(rsession->session_hash, switch_core_session_get_uuid(session), rsession->session_rwlock);
+
+	switch_mutex_lock(rsession->count_mutex);
+	rsession->active_sessions--;
+	switch_mutex_unlock(rsession->count_mutex);
+#endif
 
 #ifndef RTMP_DONT_HOLD
 	if (switch_channel_test_flag(channel, CF_HOLD)) {
@@ -451,6 +498,7 @@ switch_status_t rtmp_write_frame(switch_core_session_t *session, switch_frame_t 
 	//switch_frame_t *pframe;
 	unsigned char buf[AMF_MAX_SIZE];
 	switch_time_t ts;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
@@ -460,36 +508,36 @@ switch_status_t rtmp_write_frame(switch_core_session_t *session, switch_frame_t 
 	rsession = tech_pvt->rtmp_session;
 
 	if ( rsession == NULL ) {
-		goto error_null;
+		return SWITCH_STATUS_FALSE;
 	}
 
 	switch_thread_rwlock_wrlock(rsession->rwlock);
 
 	if (!switch_test_flag(tech_pvt, TFLAG_IO)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "TFLAG_IO not set\n");
-		goto error;
+		switch_goto_status(SWITCH_STATUS_FALSE, end);
 	}
 
 	if (switch_test_flag(tech_pvt, TFLAG_DETACHED) || !switch_test_flag(rsession, SFLAG_AUDIO)) {
-		goto success;
+		switch_goto_status(SWITCH_STATUS_SUCCESS, end);
 	}
 
 	if (!rsession || !tech_pvt->audio_codec || !tech_pvt->write_channel) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing mandatory value\n");
-		goto error;
+		switch_goto_status(SWITCH_STATUS_FALSE, end);
 	}
 
 	if (rsession->state >= RS_DESTROY) {
-		goto error;
+		switch_goto_status(SWITCH_STATUS_FALSE, end);
 	}
 
 	if (frame->datalen+1 > frame->buflen) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Datalen too big\n");
-		goto error;
+		switch_goto_status(SWITCH_STATUS_FALSE, end);
 	}
 
 	if (frame->flags & SFF_CNG) {
-		goto success;
+		switch_goto_status(SWITCH_STATUS_SUCCESS, end);
 	}
 
 	/* Build message */
@@ -504,19 +552,12 @@ switch_status_t rtmp_write_frame(switch_core_session_t *session, switch_frame_t 
 		ts = (switch_micro_time_now() / 1000) - tech_pvt->stream_start_ts;
 	}
 
-	rtmp_send_message(rsession, RTMP_DEFAULT_STREAM_AUDIO, ts, RTMP_TYPE_AUDIO, rsession->media_streamid, buf, frame->datalen + 1, 0);
+	status = rtmp_send_message(rsession, RTMP_DEFAULT_STREAM_AUDIO, ts, RTMP_TYPE_AUDIO, rsession->media_streamid, buf, frame->datalen + 1, 0);
 
- success:
+end:
 	switch_thread_rwlock_unlock(rsession->rwlock);
-	return SWITCH_STATUS_SUCCESS;
-
- error:
-	switch_thread_rwlock_unlock(rsession->rwlock);
-
- error_null:
-	return SWITCH_STATUS_FALSE;
+	return status;
 }
-
 
 switch_status_t rtmp_receive_message(switch_core_session_t *session, switch_core_session_message_t *msg)
 {
@@ -546,7 +587,19 @@ switch_status_t rtmp_receive_message(switch_core_session_t *session, switch_core
 	case SWITCH_MESSAGE_INDICATE_UNHOLD:
 		rtmp_notify_call_state(session);
 		break;
+	case SWITCH_MESSAGE_INDICATE_BRIDGE:
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Flushing read buffer\n");
 
+		switch_mutex_lock(tech_pvt->readbuf_mutex);
+		switch_buffer_zero(tech_pvt->readbuf);
+		switch_mutex_unlock(tech_pvt->readbuf_mutex);
+
+		if (tech_pvt->has_video) {
+			switch_mutex_lock(tech_pvt->video_readbuf_mutex);
+			switch_buffer_zero(tech_pvt->video_readbuf);
+			switch_mutex_unlock(tech_pvt->video_readbuf_mutex);
+		}
+		break;
 	case SWITCH_MESSAGE_INDICATE_DISPLAY:
 		{
 			const char *name = msg->string_array_arg[0], *number = msg->string_array_arg[1];
@@ -584,6 +637,41 @@ switch_status_t rtmp_receive_message(switch_core_session_t *session, switch_core
 			switch_safe_free(arg);
 		}
 		break;
+	case SWITCH_MESSAGE_INDICATE_DEBUG_MEDIA:
+		{
+			rtmp_session_t *rsession = tech_pvt->rtmp_session;
+			const char *direction = msg->string_array_arg[0];
+			int video = 0;
+
+			if (direction && *direction == 'v') {
+				direction++;
+				video = 1;
+			}
+
+			if (!zstr(direction) && !zstr(msg->string_array_arg[1])) {
+				int both = !strcasecmp(direction, "both");
+				uint8_t flag = 0;
+
+				if (both || !strcasecmp(direction, "read")) {
+					flag |= (video ? RTMP_MD_VIDEO_READ : RTMP_MD_AUDIO_READ);
+				}
+
+				if (both || !strcasecmp(direction, "write")) {
+					flag |= (video ? RTMP_MD_VIDEO_WRITE : RTMP_MD_AUDIO_WRITE);
+				}
+
+				if (flag) {
+					if (switch_true(msg->string_array_arg[1])) {
+						rsession->media_debug |= flag;
+					} else {
+						rsession->media_debug &= ~flag;
+					}
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid Options\n");
+				}
+			}
+		}
+		break;
 	default:
 		break;
 	}
@@ -595,9 +683,9 @@ switch_status_t rtmp_receive_message(switch_core_session_t *session, switch_core
    that allocate memory or you will have 1 channel with memory allocated from another channel's pool!
 */
 switch_call_cause_t rtmp_outgoing_channel(switch_core_session_t *session, switch_event_t *var_event,
-													switch_caller_profile_t *outbound_profile,
-													switch_core_session_t **newsession, switch_memory_pool_t **inpool, switch_originate_flag_t flags,
-													switch_call_cause_t *cancel_cause)
+										  switch_caller_profile_t *outbound_profile,
+										  switch_core_session_t **newsession, switch_memory_pool_t **inpool, switch_originate_flag_t flags,
+										  switch_call_cause_t *cancel_cause)
 {
 	rtmp_private_t *tech_pvt;
 	switch_caller_profile_t *caller_profile;
@@ -645,6 +733,25 @@ switch_call_cause_t rtmp_outgoing_channel(switch_core_session_t *session, switch
 	tech_pvt->caller_profile = caller_profile;
 	switch_core_session_add_stream(*newsession, NULL);
 
+	if (session) {
+		const char *video_possible;
+
+		video_possible = switch_channel_get_variable(switch_core_session_get_channel(session), "video_possible");
+		if (video_possible && switch_true(video_possible)) {
+			tech_pvt->has_video = 1;
+		}
+	}
+
+	if (var_event) {
+		const char *video_possible = NULL;
+
+		video_possible = switch_event_get_header(var_event, "video_possible");
+
+		if (video_possible && switch_true(video_possible)) {
+			tech_pvt->has_video = 1;
+		}
+	}
+
 	if (rtmp_tech_init(tech_pvt, rsession, *newsession) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(*newsession), SWITCH_LOG_ERROR, "tech_init failed\n");
 		cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
@@ -662,7 +769,7 @@ switch_call_cause_t rtmp_outgoing_channel(switch_core_session_t *session, switch
 
 	switch_channel_ring_ready(channel);
 	rtmp_send_incoming_call(*newsession, var_event);
-
+	// switch_channel_set_flag(channel, CF_VIDEO);
 	switch_channel_set_state(channel, CS_INIT);
 	switch_set_flag_locked(tech_pvt, TFLAG_IO);
 
@@ -762,12 +869,15 @@ switch_status_t rtmp_session_request(rtmp_profile_t *profile, rtmp_session_t **n
 	switch_core_new_memory_pool(&pool);
 	*newsession = switch_core_alloc(pool, sizeof(rtmp_session_t));
 
+	memset(*newsession, 0, sizeof(rtmp_session_t));
 	(*newsession)->pool = pool;
 	(*newsession)->profile = profile;
 	(*newsession)->in_chunksize = (*newsession)->out_chunksize = RTMP_DEFAULT_CHUNKSIZE;
 	(*newsession)->recv_ack_window = RTMP_DEFAULT_ACK_WINDOW;
+	(*newsession)->send_ack_window = RTMP_DEFAULT_ACK_WINDOW;
 	(*newsession)->next_streamid = 1;
 	(*newsession)->io_private = NULL;
+	(*newsession)->dropped_video_frame = 0;
 
 	switch_uuid_get(&uuid);
 	switch_uuid_format((*newsession)->uuid, &uuid);
@@ -786,10 +896,13 @@ switch_status_t rtmp_session_request(rtmp_profile_t *profile, rtmp_session_t **n
 #ifdef RTMP_DEBUG_IO
 	{
 		char buf[1024];
+#ifndef _WIN32
+#else
 		snprintf(buf, sizeof(buf), "/tmp/rtmp-%s-in.txt", (*newsession)->uuid);
 		(*newsession)->io_debug_in = fopen(buf, "w");
 		snprintf(buf, sizeof(buf), "/tmp/rtmp-%s-out.txt", (*newsession)->uuid);
 		(*newsession)->io_debug_out = fopen(buf, "w");
+#endif
 	}
 #endif
 
@@ -982,6 +1095,15 @@ switch_call_cause_t rtmp_session_create_call(rtmp_session_t *rsession, switch_co
 	tech_pvt->caller_profile = caller_profile;
 	switch_core_session_add_stream(*newsession, NULL);
 
+	if (event) {
+		const char *want_video = switch_event_get_header(event, "want_video");
+
+		if (want_video && switch_true(want_video)) {
+			tech_pvt->has_video = 1;
+			switch_channel_set_variable(channel, "video_possible", "true");
+		}
+	}
+
 	if (rtmp_tech_init(tech_pvt, rsession, *newsession) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "tech_init failed\n");
 		goto fail;
@@ -1003,6 +1125,7 @@ switch_call_cause_t rtmp_session_create_call(rtmp_session_t *rsession, switch_co
 
 		for (hp = event->headers; hp; hp = hp->next) {
 			switch_channel_set_variable_name_printf(channel, hp->value, RTMP_USER_VARIABLE_PREFIX "_%s", hp->name);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s\n", hp->name);
 		}
 	}
 
@@ -1081,14 +1204,14 @@ switch_status_t rtmp_profile_destroy(rtmp_profile_t **profile) {
 	/* Kill all sessions */
 	while ((hi = switch_core_hash_first_iter((*profile)->session_hash, hi))) {
 		void *val;
-		rtmp_session_t *session;
+		rtmp_session_t *rsession;
 		const void *key;
 		switch_ssize_t keylen;
 		switch_core_hash_this(hi, &key, &keylen, &val);
 
-		session = val;
-		
-		rtmp_session_destroy(&session);
+		rsession = val;
+
+		if (rsession->state != RS_DESTROY) rtmp_session_destroy(&rsession);
 	}
 
 	if ((*profile)->io->running > 0) {
@@ -1536,16 +1659,16 @@ done:
 
 static const char *state2name(int state)
 {
- switch(state) {
- case RS_HANDSHAKE:
-	 return "HANDSHAKE";
- case RS_HANDSHAKE2:
-	 return "HANDSHAKE2";
- case RS_ESTABLISHED:
-	 return "ESTABLISHED";
- default:
-	 return "DESTROY (PENDING)";
- }
+	switch(state) {
+	case RS_HANDSHAKE:
+		return "HANDSHAKE";
+	case RS_HANDSHAKE2:
+		return "HANDSHAKE2";
+	case RS_ESTABLISHED:
+		return "ESTABLISHED";
+	default:
+		return "DESTROY (PENDING)";
+	}
 }
 
 #define RTMP_FUNCTION_SYNTAX "profile [profilename] [start | stop | rescan | restart]\nstatus profile [profilename]\nstatus profile [profilename] [reg | sessions]\nsession [session_id] [kill | login [user@domain] | logout [user@domain]]"
@@ -1639,7 +1762,6 @@ SWITCH_STANDARD_API(rtmp_function)
 											   item->account ? item->account->user : NULL,
 											   item->account ? item->account->domain : NULL,
 											   item->flashVer, state2name(item->state));
-
 					}
 					switch_thread_rwlock_unlock(profile->session_rwlock);
 				} else if (!zstr(argv[3]) && !strcmp(argv[3], "reg")) {
@@ -1672,9 +1794,9 @@ SWITCH_STANDARD_API(rtmp_function)
 				stream->write_function(stream, "-ERR No such profile [%s]\n", argv[2]);
 			}
 		} else {
-			switch_hash_index_t *hi;
+			switch_hash_index_t *hi = NULL;
 			switch_thread_rwlock_rdlock(rtmp_globals.profile_rwlock);
-			for (hi = switch_core_hash_first(rtmp_globals.profile_hash); hi; hi = switch_core_hash_next(&hi)) {
+			for (hi = switch_core_hash_first_iter(rtmp_globals.profile_hash, hi); hi; hi = switch_core_hash_next(&hi)) {
 				void *val;
 				const void *key;
 				switch_ssize_t keylen;
@@ -1742,22 +1864,22 @@ SWITCH_STANDARD_API(rtmp_function)
 			}
 
 			if (!zstr(dest)) {
-					if (rtmp_session_create_call(rsession, &newsession, 0, RTMP_DEFAULT_STREAM_AUDIO, dest, user, domain, NULL) != SWITCH_CAUSE_SUCCESS) {
-						stream->write_function(stream, "-ERR Couldn't create new call\n");
-					} else {
-						rtmp_private_t *new_pvt = switch_core_session_get_private(newsession);
-						rtmp_send_invoke_free(rsession, 3, 0, 0,
-							amf0_str("onMakeCall"),
-							amf0_number_new(0),
-							amf0_null_new(),
-							amf0_str(switch_core_session_get_uuid(newsession)),
-							amf0_str(switch_str_nil(dest)),
-							amf0_str(switch_str_nil(new_pvt->auth)),
-							NULL);
+				if (rtmp_session_create_call(rsession, &newsession, 0, RTMP_DEFAULT_STREAM_AUDIO, dest, user, domain, NULL) != SWITCH_CAUSE_SUCCESS) {
+					stream->write_function(stream, "-ERR Couldn't create new call\n");
+				} else {
+					rtmp_private_t *new_pvt = switch_core_session_get_private(newsession);
+					rtmp_send_invoke_free(rsession, 3, 0, 0,
+						amf0_str("onMakeCall"),
+						amf0_number_new(0),
+						amf0_null_new(),
+						amf0_str(switch_core_session_get_uuid(newsession)),
+						amf0_str(switch_str_nil(dest)),
+						amf0_str(switch_str_nil(new_pvt->auth)),
+						NULL);
 
-						rtmp_attach_private(rsession, switch_core_session_get_private(newsession));
-						stream->write_function(stream, "+OK\n");
-					}
+					rtmp_attach_private(rsession, switch_core_session_get_private(newsession));
+					stream->write_function(stream, "+OK\n");
+				}
 			} else {
 				stream->write_function(stream, "-ERR Missing destination number\n");
 			}
@@ -1851,6 +1973,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_rtmp_load)
 	rtmp_register_invoke_function("play", rtmp_i_play);
 	rtmp_register_invoke_function("publish", rtmp_i_publish);
 	rtmp_register_invoke_function("makeCall", rtmp_i_makeCall);
+	rtmp_register_invoke_function("FCSubscribe", rtmp_i_fcSubscribe);
 	rtmp_register_invoke_function("login", rtmp_i_login);
 	rtmp_register_invoke_function("logout", rtmp_i_logout);
 	rtmp_register_invoke_function("sendDTMF", rtmp_i_sendDTMF);
@@ -1926,7 +2049,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_rtmp_shutdown)
 	switch_hash_index_t *hi = NULL;
 
 	switch_mutex_lock(rtmp_globals.mutex);
-	while ((hi = switch_core_hash_first_iter( rtmp_globals.profile_hash, hi))) {
+	while ((hi = switch_core_hash_first_iter(rtmp_globals.profile_hash, hi))) {
 		void *val;
 		const void *key;
 		switch_ssize_t keylen;

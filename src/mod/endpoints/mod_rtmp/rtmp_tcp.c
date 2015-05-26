@@ -49,33 +49,9 @@ typedef struct rtmp_io_tcp rtmp_io_tcp_t;
 struct rtmp_tcp_io_private {
 	switch_pollfd_t *pollfd;
 	switch_socket_t *socket;
-	switch_buffer_t *sendq;
-	switch_bool_t poll_send;
 };
 
 typedef struct rtmp_tcp_io_private rtmp_tcp_io_private_t;
-
-static void rtmp_tcp_alter_pollfd(rtmp_session_t *rsession, switch_bool_t pollout)
-{
-	rtmp_tcp_io_private_t *io_pvt = rsession->io_private;
-	rtmp_io_tcp_t *io = (rtmp_io_tcp_t*)rsession->profile->io;
-
-	if (pollout && (io_pvt->pollfd->reqevents & SWITCH_POLLOUT)) {
-		return;
-	} else if (!pollout && !(io_pvt->pollfd->reqevents & SWITCH_POLLOUT)) {
-		return;
-	}
-
-	switch_pollset_remove(io->pollset, io_pvt->pollfd);
-	io_pvt->pollfd->reqevents = SWITCH_POLLIN | SWITCH_POLLERR;
-	if (pollout) {
-		io_pvt->pollfd->reqevents |=  SWITCH_POLLOUT;
-	}
-	switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rsession->uuid), SWITCH_LOG_NOTICE, "Pollout: %s\n",
-		pollout ? "true" : "false");
-
-	switch_pollset_add(io->pollset, io_pvt->pollfd);
-}
 
 static switch_status_t rtmp_tcp_read(rtmp_session_t *rsession, unsigned char *buf, switch_size_t *len)
 {
@@ -117,8 +93,10 @@ static switch_status_t rtmp_tcp_write(rtmp_session_t *rsession, const unsigned c
 {
 	//rtmp_io_tcp_t *io = (rtmp_io_tcp_t*)rsession->profile->io;
 	rtmp_tcp_io_private_t *io_pvt = rsession->io_private;
-	switch_status_t status;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_size_t orig_len = *len;
+	switch_size_t remaining = *len;
+	int sanity = 100;
 
 #ifdef RTMP_DEBUG_IO
 	{
@@ -139,28 +117,31 @@ static switch_status_t rtmp_tcp_write(rtmp_session_t *rsession, const unsigned c
 	}
 #endif
 
-	if (io_pvt->sendq && switch_buffer_inuse(io_pvt->sendq) > 0) {
-		/* We already have queued data, append it to the sendq */
-		switch_buffer_write(io_pvt->sendq, buf, *len);
-		return SWITCH_STATUS_SUCCESS;
-	}
-
-	status = switch_socket_send_nonblock(io_pvt->socket, (char*)buf, len);
-
-	if (*len > 0 && *len < orig_len) {
-
+	while (remaining > 0) {
 		if (rsession->state >= RS_DESTROY) {
 			return SWITCH_STATUS_FALSE;
 		}
 
-		/* We didnt send it all... add it to the sendq*/
-		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rsession->uuid), SWITCH_LOG_DEBUG, "%"SWITCH_SIZE_T_FMT" bytes added to sendq.\n", (orig_len - *len));
+again:
+		status = switch_socket_send_nonblock(io_pvt->socket, (char*)buf, len);
 
-		switch_buffer_write(io_pvt->sendq, (buf + *len), orig_len - *len);
+		if ((status == 32 || SWITCH_STATUS_IS_BREAK(status)) && sanity-- > 0) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "sending too fast, retrying %d\n", sanity);
+			goto again;
+		}
 
-		/* Make sure we poll-write */
-		rtmp_tcp_alter_pollfd(rsession, SWITCH_TRUE);
+		if (status != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "send error %d\n", status);
+			break;
+		}
+
+		if (*len != orig_len) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "sent %ld of %ld\n", *len, orig_len);
+		buf += *len;
+		remaining -= *len;
+		*len = remaining;
 	}
+
+	*len = orig_len;
 
 	return status;
 }
@@ -178,11 +159,6 @@ static switch_status_t rtmp_tcp_close(rtmp_session_t *rsession)
 		switch_socket_close(io_pvt->socket);
 		io_pvt->socket = NULL;
 	}
-
-	if ( io_pvt->sendq ) {
-		switch_buffer_destroy(&(io_pvt->sendq));
-	}
-
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -246,7 +222,6 @@ void *SWITCH_THREAD_FUNC rtmp_io_tcp_thread(switch_thread_t *thread, void *obj)
 						pvt->socket = newsocket;
 						switch_socket_create_pollfd(&pvt->pollfd, newsocket, SWITCH_POLLIN | SWITCH_POLLERR, rsession, rsession->pool);
 						switch_pollset_add(io->pollset, pvt->pollfd);
-						switch_buffer_create_dynamic(&pvt->sendq, 512, 1024, 0);
 
 						/* Get the remote address/port info */
 						switch_socket_addr_get(&addr, SWITCH_TRUE, newsocket);
@@ -261,18 +236,7 @@ void *SWITCH_THREAD_FUNC rtmp_io_tcp_thread(switch_thread_t *thread, void *obj)
 				rtmp_session_t *rsession = (rtmp_session_t*)fds[i].client_data;
 				rtmp_tcp_io_private_t *io_pvt = (rtmp_tcp_io_private_t*)rsession->io_private;
 
-				if (fds[i].rtnevents & SWITCH_POLLOUT && switch_buffer_inuse(io_pvt->sendq) > 0) {
-					/* Send as much remaining data as possible */
-					switch_size_t sendlen;
-					const void *ptr;
-					sendlen = switch_buffer_peek_zerocopy(io_pvt->sendq, &ptr);
-					switch_socket_send_nonblock(io_pvt->socket, ptr, &sendlen);
-					switch_buffer_toss(io_pvt->sendq, sendlen);
-					if (switch_buffer_inuse(io_pvt->sendq) == 0) {
-						/* Remove our fd from OUT polling */
-						rtmp_tcp_alter_pollfd(rsession, SWITCH_FALSE);
-					}
-				} else 	if (fds[i].rtnevents & SWITCH_POLLIN && rtmp_handle_data(rsession) != SWITCH_STATUS_SUCCESS) {
+				if (fds[i].rtnevents & SWITCH_POLLIN && rtmp_handle_data(rsession) != SWITCH_STATUS_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rsession->uuid), SWITCH_LOG_DEBUG, "Closing socket\n");
 
 					switch_mutex_lock(io->mutex);
