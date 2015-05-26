@@ -23,6 +23,7 @@
  * Contributor(s):
  *
  * Mathieu Rene <mrene@avgs.ca>
+ * Seven Du <dujinfang@gmail.com>
  *
  * rtmp.c -- RTMP Signalling functions
  *
@@ -284,8 +285,7 @@ RTMP_INVOKE_FUNCTION(rtmp_i_makeCall)
 	if ((number = amf0_get_string(argv[1]))) {
 		switch_event_t *event = NULL;
 		char *auth, *user = NULL, *domain = NULL;
-
-		if ((auth = amf0_get_string(argv[2])) && !zstr(auth)) {
+		if (argc >= 3 && (auth = amf0_get_string(argv[2])) && !zstr(auth)) {
 			switch_split_user_domain(auth, &user, &domain);
 			if (rtmp_session_check_user(rsession, user, domain) != SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rsession->uuid), SWITCH_LOG_WARNING, "Unauthorized call to %s, client is not logged in account [%s@%s]\n",
@@ -325,6 +325,33 @@ RTMP_INVOKE_FUNCTION(rtmp_i_makeCall)
 	}
 
 	return SWITCH_STATUS_SUCCESS;
+}
+
+RTMP_INVOKE_FUNCTION(rtmp_i_fcSubscribe)
+{
+	switch_status_t status;
+	int ac;
+	amf0_data *av[3] = { 0 };
+
+	switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rsession->uuid), SWITCH_LOG_DEBUG, "Got FCSubscribe for %s on stream %d\n", switch_str_nil(amf0_get_string(argv[1])), state->stream_id);
+
+	ac = 3;
+	av[0] = argv[0];
+	av[1] = argv[1];
+	av[2] = amf0_boolean_new(1);
+	switch_assert(av[2]);
+
+	status = rtmp_i_receiveaudio(rsession, state, amfnumber, transaction_id, ac, av);
+	if (status != SWITCH_STATUS_SUCCESS) return status;
+
+	rtmp_i_receivevideo(rsession, state, amfnumber, transaction_id, ac, av);
+	if (status != SWITCH_STATUS_SUCCESS) return status;
+
+	amf0_data_free(av[2]);
+
+	rtmp_i_makeCall(rsession, state, amfnumber, transaction_id, argc, argv);
+
+	return status;
 }
 
 RTMP_INVOKE_FUNCTION(rtmp_i_sendDTMF)

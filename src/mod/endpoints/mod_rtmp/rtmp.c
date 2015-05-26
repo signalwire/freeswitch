@@ -25,12 +25,15 @@
  * Mathieu Rene <mrene@avgs.ca>
  * Joao Mesquita <jmesquita@freeswitch.org>
  * William King <william.king@quentustech.com>
- *
+ * Seven Du <dujinfang@gmail.com>
+ * Da Xiong <wavecb@gmail.com>
  * rtmp.c -- RTMP Protocol Handler
  *
  */
 
 #include "mod_rtmp.h"
+#include "handshake.h"
+
 
 typedef struct {
 	unsigned char *buf;
@@ -97,6 +100,13 @@ void rtmp_handle_control(rtmp_session_t *rsession, int amfnumber)
 				switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rsession->uuid), SWITCH_LOG_INFO, "Ping reply: %d ms\n", (int)(now - sent));
 			}
 			break;
+		case RTMP_CTRL_SET_BUFFER_LENGTH:
+			{
+				uint32_t stream_id = state->buf[2] << 24 | state->buf[3] << 16 | state->buf[4] << 8 | state->buf[5];
+				uint32_t length = state->buf[6] << 24 | state->buf[7] << 16 | state->buf[8] << 8 | state->buf[9];
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "stream=%u Client buffer set to %ums\n", stream_id, length);
+			}
+			break;
 		default:
 			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rsession->uuid), SWITCH_LOG_WARNING, "[amfnumber=%d] Unhandled control packet (type=0x%x)\n",
 				amfnumber, type);
@@ -117,7 +127,7 @@ void rtmp_handle_invoke(rtmp_session_t *rsession, int amfnumber)
 	amf0_data *argv[100] = { 0 };
 	rtmp_invoke_function_t function;
 
-#if 0
+#ifdef RTMP_DEBUG_IO
 	printf(">>>>> BEGIN INVOKE MSG (num=0x%02x, type=0x%02x, stream_id=0x%x)\n", amfnumber, state->type, state->stream_id);
 	while((dump = amf0_data_read(my_buffer_read, &helper))) {
 		amf0_data *dump2;
@@ -423,6 +433,9 @@ void rtmp_send_incoming_call(switch_core_session_t *session, switch_event_t *var
 	}
 
 	if (event) {
+		if (tech_pvt->has_video) {
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "want_video", "true");
+		}
 		amf_event_to_object(&obj, event);
 		switch_event_destroy(&event);
 	}
@@ -559,12 +572,64 @@ switch_status_t rtmp_send_message(rtmp_session_t *rsession, uint8_t amfnumber, u
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	rtmp_state_t *state = &rsession->amfstate_out[amfnumber];
 
-	if ((rsession->send_ack + rsession->send_ack_window) < rsession->send &&
-			(type == RTMP_TYPE_VIDEO || type == RTMP_TYPE_AUDIO)) {
+	// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%d send_ack=%d send=%d window=%d wait_ack=%d\n",
+	// 	type, rsession->send_ack, rsession->send, rsession->send_ack_window, rsession->send + 3073 - rsession->send_ack);
+
+	if (type == RTMP_TYPE_VIDEO) {
+		uint32_t window = rsession->send_ack_window;
+
+		if (rsession->media_debug & RTMP_MD_VIDEO_WRITE) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "W V ts:%u data:0x%02x len:%" SWITCH_SIZE_T_FMT "\n", timestamp, *message, len);
+		}
+
+		/* start to drop video frame on window/2 if the frame is a non-IDR video frame
+		   start to drop video frame on window * 3/4 if the frame is a IDR frame
+		   start to drop audio frame on widnow full
+		 */
+
+		if (*message == 0x17) {
+			window = window / 4 * 3;
+		} else {
+			window /= 2;
+		}
+
+		if ((rsession->send_ack + window) < (rsession->send + 3073)) {
+			/* We're sending too fast, drop the frame */
+			rsession->dropped_video_frame++;
+			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rsession->uuid), SWITCH_LOG_DEBUG,
+				"DROP VIDEO FRAME [amfnumber=%d type=0x%x stream_id=0x%x ftype=0x%x] len=%"SWITCH_SIZE_T_FMT
+				" dropped=%"SWITCH_SIZE_T_FMT"\n",
+				amfnumber, type, stream_id, *message, len, rsession->dropped_video_frame);
+			return SWITCH_STATUS_SUCCESS;
+		}
+
+		if (rsession->dropped_video_frame) {
+			if (*message != 0x17) {
+				rsession->dropped_video_frame++;
+				switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rsession->uuid), SWITCH_LOG_DEBUG,
+					"DROP VIDEO FRAME [amfnumber=%d type=0x%x stream_id=0x%x ftype=0x%x] len=%"SWITCH_SIZE_T_FMT
+					" dropped=%"SWITCH_SIZE_T_FMT" waiting for the next IDR\n",
+					amfnumber, type, stream_id, *message, len, rsession->dropped_video_frame);
+
+				return SWITCH_STATUS_SUCCESS;
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rsession->uuid), SWITCH_LOG_INFO,
+					"Got IDR frame after %"SWITCH_SIZE_T_FMT" frame(s) dropped\n",
+					rsession->dropped_video_frame);
+				rsession->dropped_video_frame = 0;
+			}
+		}
+	}
+
+	if (type == RTMP_TYPE_AUDIO && (rsession->media_debug & RTMP_MD_AUDIO_WRITE)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "W A ts:%u data:0x%02x len:%" SWITCH_SIZE_T_FMT "\n", timestamp, *message, len);
+	}
+
+	if (type == RTMP_TYPE_AUDIO && (rsession->send_ack + rsession->send_ack_window) < (rsession->send + 3073)) {
 		/* We're sending too fast, drop the frame */
 		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rsession->uuid), SWITCH_LOG_DEBUG,
 						  "DROP %s FRAME [amfnumber=%d type=0x%x stream_id=0x%x] len=%"SWITCH_SIZE_T_FMT" \n",
-						  type == RTMP_TYPE_AUDIO ? "AUDIO" : "VIDEO", amfnumber, type, stream_id, len);
+						  "AUDIO", amfnumber, type, stream_id, len);
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -654,6 +719,7 @@ switch_status_t rtmp_send_message(rtmp_session_t *rsession, uint8_t amfnumber, u
 	while (((signed)len - (signed)pos) > 0) {
 		switch_mutex_unlock(rsession->socket_mutex);
 		/* Let other threads send data on the socket */
+		switch_cond_next();
 		switch_mutex_lock(rsession->socket_mutex);
 		hdrsize = 1;
 		if (rsession->profile->io->write(rsession, (unsigned char*)&microhdr, &hdrsize) != SWITCH_STATUS_SUCCESS) {
@@ -698,13 +764,26 @@ switch_status_t rtmp_handle_data(rtmp_session_t *rsession)
 
 		/* Send reply (S0 + S1) */
 		memset(buf, 0, sizeof(buf));
-		*buf = '\x03';
+		//*buf = '\x03';
+		/* fix handshake for h264 */
+		{
+			handshake_helper_t shake_helper;
+			shake_helper.r_buf = rsession->hsbuf;
+			shake_helper.r_len = 2048;
+			shake_helper.r_pos = 0;
+			shake_helper.w_buf = buf;
+			shake_helper.w_len = sizeof(buf);
+			shake_helper.w_pos = 0;
+			SHandShake0(&shake_helper);
+		}
+
 		s = 1537;
 		rsession->profile->io->write(rsession, (unsigned char*)buf, &s);
 
 		/* Send S2 */
 		s = 1536;
-		rsession->profile->io->write(rsession, rsession->hsbuf, &s);
+		//rsession->profile->io->write(rsession, rsession->hsbuf, &s);
+		rsession->profile->io->write(rsession,  (unsigned char*)buf + 1537, &s);
 
 		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rsession->uuid), SWITCH_LOG_DEBUG, "Sent handshake response\n");
 
@@ -860,7 +939,9 @@ switch_status_t rtmp_handle_data(rtmp_session_t *rsession)
 
 				if (!s) {
 					/* Restart from beginning */
-					s = state->remainlen = state->origlen;
+					state->remainlen = state->origlen;
+					s = state->remainlen < rsession->in_chunksize ? state->remainlen : rsession->in_chunksize;
+
 					rsession->parse_remain = s;
 					if (!s) {
 						switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rsession->uuid), SWITCH_LOG_ERROR, "Protocol error, forcing big read\n");
@@ -919,6 +1000,10 @@ switch_status_t rtmp_handle_data(rtmp_session_t *rsession)
 							rtmp_handle_invoke(rsession, rsession->amfnumber);
 							break;
 						case RTMP_TYPE_AUDIO: /* Audio data */
+							if (rsession->media_debug & RTMP_MD_AUDIO_READ) {
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "R A ts:%u data:0x%02x len:%d\n", state->ts, *(state->buf), state->origlen);
+							}
+
 							switch_thread_rwlock_wrlock(rsession->rwlock);
 							if (rsession->tech_pvt) {
 								uint16_t len = state->origlen;
@@ -930,13 +1015,13 @@ switch_status_t rtmp_handle_data(rtmp_session_t *rsession)
 
 
 								switch_mutex_lock(rsession->tech_pvt->readbuf_mutex);
-								if (rsession->tech_pvt->maxlen && switch_buffer_inuse(rsession->tech_pvt->readbuf) > (switch_size_t)(rsession->tech_pvt->maxlen * 40)) {
+								if (rsession->tech_pvt->maxlen && switch_buffer_inuse(rsession->tech_pvt->readbuf) > rsession->tech_pvt->maxlen * 40) {
 									rsession->tech_pvt->over_size++;
 								} else {
 									rsession->tech_pvt->over_size = 0;
 								}
 								if (rsession->tech_pvt->over_size > 10) {
-									switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rsession->uuid), SWITCH_LOG_DEBUG,
+									switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rsession->uuid), SWITCH_LOG_WARNING,
 													  "%s buffer > %u for 10 consecutive packets... Flushing buffer\n",
 													  switch_core_session_get_name(rsession->tech_pvt->session), rsession->tech_pvt->maxlen * 40);
 									switch_buffer_zero(rsession->tech_pvt->readbuf);
@@ -947,6 +1032,7 @@ switch_status_t rtmp_handle_data(rtmp_session_t *rsession)
 								switch_buffer_write(rsession->tech_pvt->readbuf, &len, 2);
 								switch_buffer_write(rsession->tech_pvt->readbuf, state->buf, len);
 								if (len > rsession->tech_pvt->maxlen) {
+									switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "changing maxlen from %d to %d\n", rsession->tech_pvt->maxlen, len);
 									rsession->tech_pvt->maxlen = len;
 								}
 								switch_mutex_unlock(rsession->tech_pvt->readbuf_mutex);
@@ -954,11 +1040,55 @@ switch_status_t rtmp_handle_data(rtmp_session_t *rsession)
 							switch_thread_rwlock_unlock(rsession->rwlock);
 							break;
 						case RTMP_TYPE_VIDEO: /* Video data */
+							if (rsession->media_debug & RTMP_MD_VIDEO_READ) {
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "R V ts:%u data:0x%02x len:%d \n", state->ts, *(state->buf), state->origlen);
+							}
+
+							if ((!rsession->tech_pvt) || (!rsession->tech_pvt->has_video)) break;
+
+							switch_thread_rwlock_wrlock(rsession->rwlock);
+							if (rsession->tech_pvt) {
+								uint16_t len = state->origlen;
+
+								if (!rsession->tech_pvt->video_readbuf) {
+									switch_thread_rwlock_unlock(rsession->rwlock);
+									return SWITCH_STATUS_FALSE;
+								}
+
+								switch_mutex_lock(rsession->tech_pvt->video_readbuf_mutex);
+								if (rsession->tech_pvt->video_maxlen && switch_buffer_inuse(rsession->tech_pvt->video_readbuf) > rsession->tech_pvt->video_maxlen * 100) {
+									rsession->tech_pvt->video_over_size++;
+								} else {
+									rsession->tech_pvt->video_over_size = 0;
+								}
+								if (rsession->tech_pvt->video_over_size > 10) {
+									switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rsession->uuid), SWITCH_LOG_DEBUG,
+													  "%s buffer > %u for 10 consecutive packets... Flushing buffer\n",
+													  switch_core_session_get_name(rsession->tech_pvt->session), rsession->tech_pvt->video_maxlen * 100);
+									switch_buffer_zero(rsession->tech_pvt->video_readbuf);
+									#ifdef RTMP_DEBUG_IO
+									fprintf(rsession->io_debug_in, "[chunk_stream=%d type=0x%x ts=%d stream_id=0x%x] FLUSH BUFFER [exceeded %u]\n", rsession->amfnumber, state->type, (int)state->ts, state->stream_id, rsession->tech_pvt->video_maxlen * 5);
+									#endif
+								}
+								switch_buffer_write(rsession->tech_pvt->video_readbuf, &len, 2);
+								switch_buffer_write(rsession->tech_pvt->video_readbuf, &state->ts, 4);
+								switch_buffer_write(rsession->tech_pvt->video_readbuf, state->buf, len);
+								if (len > rsession->tech_pvt->video_maxlen) {
+									switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "changing video max len from %d to %d\n", rsession->tech_pvt->video_maxlen, len);
+									rsession->tech_pvt->video_maxlen = len;
+								}
+								switch_mutex_unlock(rsession->tech_pvt->video_readbuf_mutex);
+							}
+							switch_thread_rwlock_unlock(rsession->rwlock);
+							break;
 						case RTMP_TYPE_METADATA: /* Metadata */
 							break;
 						case RTMP_TYPE_WINDOW_ACK_SIZE:
-							rsession->send_ack_window = (state->buf[0] << 24) | (state->buf[1] << 16) | (state->buf[2] << 8) | (state->buf[3]);
-							switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rsession->uuid), SWITCH_LOG_DEBUG, "Set window size: %lu bytes\n", (long unsigned int)rsession->send_ack_window);
+							{
+								uint32_t new_window = (state->buf[0] << 24) | (state->buf[1] << 16) | (state->buf[2] << 8) | (state->buf[3]);
+								switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rsession->uuid), SWITCH_LOG_DEBUG, "Set window size: from %u to %u bytes\n", rsession->send_ack_window, new_window);
+								rsession->send_ack_window = new_window;
+							}
 							break;
 						case RTMP_TYPE_ACK:
 						{
@@ -971,6 +1101,9 @@ switch_status_t rtmp_handle_data(rtmp_session_t *rsession)
 							if (delta) {
 								rsession->send_bw  = (ack - rsession->send_ack) / delta;
 							}
+
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "got ack %d send:%d wait-ack:%d\n",
+								ack, rsession->send + 3073, rsession->send + 3073 - ack);
 
 							rsession->send_ack = ack;
 							rsession->send_ack_ts = switch_micro_time_now();

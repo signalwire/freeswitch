@@ -23,6 +23,7 @@
  * Contributor(s):
  *
  * Mathieu Rene <mrene@avgs.ca>
+ * Seven Du <dujinfang@gmail.com>
  *
  * mod_rtmp.h -- RTMP Endpoint Module
  *
@@ -45,8 +46,8 @@
 #define RTMP_USER_VARIABLE_PREFIX "rtmp_u_"
 
 #define RTMP_DEFAULT_PORT 1935
-#define RTMP_TCP_READ_BUF 2048
-#define AMF_MAX_SIZE 2048
+#define RTMP_TCP_READ_BUF 2048 * 16
+#define AMF_MAX_SIZE      2048 * 16
 
 #define SUPPORT_SND_NONE	0x0000
 #define SUPPORT_SND_ADPCM	0x0002
@@ -77,7 +78,7 @@
 #define kAMF0 0
 #define kAMF3 3
 
-#define RTMP_DEFAULT_ACK_WINDOW 0x20000
+#define RTMP_DEFAULT_ACK_WINDOW 0x200000
 
 #define RTMP_TYPE_CHUNKSIZE 0x01
 #define RTMP_TYPE_ABORT 0x2
@@ -129,6 +130,12 @@
 #ifndef INT32_MAX
 #define INT32_MAX 0x7fffffffL
 #endif
+
+/* Media debug flags */
+#define RTMP_MD_AUDIO_READ    (1 << 0)
+#define RTMP_MD_AUDIO_WRITE   (1 << 1)
+#define RTMP_MD_VIDEO_READ    (1 << 2)
+#define RTMP_MD_VIDEO_WRITE   (1 << 3)
 
 typedef enum {
 	RTMP_AUDIO_PCM = 0,
@@ -412,6 +419,29 @@ struct rtmp_account {
 	rtmp_account_t *next;
 };
 
+typedef struct rtmp2rtp_helper_s
+{
+	amf0_data	*sps;
+	amf0_data	*pps;
+	amf0_data	*nal_list;
+	uint32_t	lenSize;
+} rtmp2rtp_helper_t;
+
+typedef struct rtp2rtmp_helper_s
+{
+	amf0_data       *sps;
+	amf0_data       *pps;
+	amf0_data       *avc_conf;
+	switch_bool_t   send;
+	switch_bool_t   send_avc;
+	switch_buffer_t *rtmp_buf;
+	switch_buffer_t *fua_buf; //fu_a buf
+	uint32_t        last_recv_ts;
+	uint8_t         last_mark;
+	uint16_t        last_seq;
+	switch_bool_t   sps_changed;
+} rtp2rtmp_helper_t;
+
 struct rtmp_session {
 	switch_memory_pool_t *pool;
 	rtmp_profile_t *profile;
@@ -484,6 +514,9 @@ struct rtmp_session {
 
 	uint32_t media_streamid;			/* < The stream id that was used for the last "play" command,
 											where we should send media */
+	switch_size_t dropped_video_frame;
+
+	uint8_t media_debug;
 };
 
 struct rtmp_private {
@@ -509,6 +542,7 @@ struct rtmp_private {
 	uint8_t video_codec;
 
 	switch_time_t stream_start_ts;
+	switch_time_t stream_last_ts;
 	switch_timer_t timer;
 	switch_buffer_t *readbuf;
 	switch_mutex_t *readbuf_mutex;
@@ -522,6 +556,24 @@ struct rtmp_private {
 
 	uint16_t maxlen;
 	int over_size;
+
+	//video
+	int has_video;
+	switch_codec_t video_read_codec;
+	switch_codec_t video_write_codec;
+	rtp2rtmp_helper_t video_write_helper;
+	rtmp2rtp_helper_t video_read_helper;
+	switch_frame_t video_read_frame;
+	uint32_t video_read_ts;
+	uint16_t seq;
+	unsigned char video_databuf[SWITCH_RTP_MAX_BUF_LEN];	/* < Buffer for read_frame */
+	switch_buffer_t *video_readbuf;
+	switch_mutex_t *video_readbuf_mutex;
+	uint16_t video_maxlen;
+	int video_over_size;
+
+	switch_core_media_params_t mparams;
+	switch_media_handle_t *media_handle;
 };
 
 struct rtmp_reg;
@@ -540,7 +592,6 @@ typedef enum {
 	MSG_FULLHEADER = 1
 } rtmp_message_send_flag_t;
 
-
 /* Invokable functions from flash */
 RTMP_INVOKE_FUNCTION(rtmp_i_connect);
 RTMP_INVOKE_FUNCTION(rtmp_i_createStream);
@@ -548,6 +599,7 @@ RTMP_INVOKE_FUNCTION(rtmp_i_noop);
 RTMP_INVOKE_FUNCTION(rtmp_i_play);
 RTMP_INVOKE_FUNCTION(rtmp_i_publish);
 RTMP_INVOKE_FUNCTION(rtmp_i_makeCall);
+RTMP_INVOKE_FUNCTION(rtmp_i_fcSubscribe);
 RTMP_INVOKE_FUNCTION(rtmp_i_sendDTMF);
 RTMP_INVOKE_FUNCTION(rtmp_i_login);
 RTMP_INVOKE_FUNCTION(rtmp_i_logout);
