@@ -1852,13 +1852,13 @@ SWITCH_DECLARE(void) switch_channel_set_flag_value(switch_channel_t *channel, sw
 		switch_channel_set_variable(channel, "recovered", "true");
 	}
 
-	if (flag == CF_VIDEO_ECHO) {
-		switch_core_session_start_video_thread(channel->session);
-	}
+	//if (flag == CF_VIDEO_ECHO) {
+	//	switch_core_session_start_video_thread(channel->session);
+	//}
 	
 	if (flag == CF_VIDEO_DECODED_READ) {
 		switch_core_session_request_video_refresh(channel->session);
-		switch_core_session_start_video_thread(channel->session);
+		//switch_core_session_start_video_thread(channel->session);
 		if (!switch_core_session_in_video_thread(channel->session)) {
 			switch_channel_wait_for_flag(channel, CF_VIDEO_READY, SWITCH_TRUE, 10000, NULL);
 		}
@@ -3442,6 +3442,10 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_pre_answered(switch_
 		switch_channel_api_on(channel, SWITCH_CHANNEL_API_ON_PRE_ANSWER_VARIABLE);
 		switch_channel_api_on(channel, SWITCH_CHANNEL_API_ON_MEDIA_VARIABLE);
 
+		if (switch_channel_test_flag(channel, CF_VIDEO)) {
+			switch_core_session_start_video_thread(channel->session);
+		}
+
 		if (switch_true(switch_channel_get_variable(channel, SWITCH_PASSTHRU_PTIME_MISMATCH_VARIABLE))) {
 			switch_channel_set_flag(channel, CF_PASSTHRU_PTIME_MISMATCH);
 		}
@@ -3743,6 +3747,9 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_answered(switch_chan
 	if (!switch_channel_test_flag(channel, CF_EARLY_MEDIA)) {
 		switch_channel_execute_on(channel, SWITCH_CHANNEL_EXECUTE_ON_MEDIA_VARIABLE);
 		switch_channel_api_on(channel, SWITCH_CHANNEL_API_ON_MEDIA_VARIABLE);
+		if (switch_channel_test_flag(channel, CF_VIDEO)) {
+			switch_core_session_start_video_thread(channel->session);
+		}
 	}
 
 	switch_channel_api_on(channel, SWITCH_CHANNEL_API_ON_ANSWER_VARIABLE);
