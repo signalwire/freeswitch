@@ -867,8 +867,6 @@ SWITCH_STANDARD_API(av_codec_api_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static const char modname[] = "mod_av";
-
 SWITCH_MODULE_LOAD_FUNCTION(mod_avcodec_load)
 {
 	switch_codec_interface_t *codec_interface;

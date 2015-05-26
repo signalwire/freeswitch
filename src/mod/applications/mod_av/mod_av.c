@@ -40,6 +40,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_av_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_av_shutdown);
 SWITCH_MODULE_DEFINITION(mod_av, mod_av_load, mod_av_shutdown, NULL);
 
+static const char modname[] = "mod_av";
 
 static void log_callback(void *ptr, int level, const char *fmt, va_list vl)
 {
