@@ -9,7 +9,7 @@ if [ -f "$WGET" ] ; then
     DOWNLOAD_CMD=$WGET
 else
     if [ -f "$CURL" ] ; then
-        DOWNLOAD_CMD="$CURL -O"
+        DOWNLOAD_CMD="$CURL -L -O"
     fi
 fi
 
