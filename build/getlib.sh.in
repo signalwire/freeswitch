@@ -11,7 +11,7 @@ CURL=@CURL@
 if [ -f "$WGET" ]; then
   DOWNLOAD_CMD=$WGET
 elif [ -f "$CURL" ]; then
-  DOWNLOAD_CMD="$CURL -O"
+  DOWNLOAD_CMD="$CURL -L -O"
 fi
 
 if [ -n "`echo $1 | grep '://'`" ]; then
