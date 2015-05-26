@@ -77,7 +77,7 @@ int main(int argc, char *argv[])
         total = 0.0;
         if ((noise_source = awgn_init_dbm0(NULL, idum, (float) j)) == NULL)
         {
-            printf("Failed to allocation AWGN source\n");
+            printf("Failed to allocate AWGN source\n");
             exit(2);
         }
         total_samples = 1000000;
@@ -114,7 +114,7 @@ int main(int argc, char *argv[])
     clip_low = 0;
     if ((noise_source = awgn_init_dbm0(NULL, idum, -15.0)) == NULL)
     {
-        printf("Failed to allocation AWGN source\n");
+        printf("Failed to allocate AWGN source\n");
         exit(2);
     }
     total_samples = 10000000;

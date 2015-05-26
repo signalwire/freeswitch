@@ -63,7 +63,15 @@ export LESS="-R"
 export CHARSET="ISO-8859-1"
 export PS1='\n\[\033[01;31m\]\u@\h\[\033[01;36m\] [\d \@] \[\033[01;33m\] \w\n\[\033[00m\]<\#>:'
 export PS2="\[\033[1m\]> \[\033[0m\]"
-export VISUAL=emacs
+if [ -f ~/.viplease ]; then
+    if [ -f /usr/bin/vim ]; then
+	export VISUAL=vim
+    else 
+	export VISUAL=vi
+    fi
+else
+    export VISUAL=emacs
+fi
 export GIT_SSL_NO_VERIFY=true
 
 umask 022

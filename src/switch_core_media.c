@@ -426,7 +426,41 @@ static switch_t38_options_t * switch_core_media_process_udptl(switch_core_sessio
 	return t38_options;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_core_media_check_autoadj(switch_core_session_t *session)
+{
+	switch_rtp_engine_t *a_engine;
+	switch_rtp_engine_t *v_engine;
+	switch_media_handle_t *smh;
+	const char *val;
+	int x = 0;
 
+	switch_assert(session);
+
+	if (!(smh = session->media_handle)) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	a_engine = &smh->engines[SWITCH_MEDIA_TYPE_AUDIO];
+	v_engine = &smh->engines[SWITCH_MEDIA_TYPE_VIDEO];	
+	
+	if (!switch_media_handle_test_media_flag(smh, SCMF_DISABLE_RTP_AUTOADJ) &&
+		!((val = switch_channel_get_variable(session->channel, "disable_rtp_auto_adjust")) && switch_true(val)) && 
+		!switch_channel_test_flag(session->channel, CF_WEBRTC)) {
+		/* Reactivate the NAT buster flag. */
+		
+		if (a_engine->rtp_session) {
+			switch_rtp_set_flag(a_engine->rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
+			x++;
+		}
+		
+		if (v_engine->rtp_session) {
+			switch_rtp_set_flag(v_engine->rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
+			x++;
+		}
+	}
+
+	return x ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
+}
 
 
 
@@ -3098,6 +3132,7 @@ static void clear_pmaps(switch_rtp_engine_t *engine)
 SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *session, const char *r_sdp, uint8_t *proceed, switch_sdp_type_t sdp_type)
 {
 	uint8_t match = 0;
+	uint8_t vmatch = 0;
 	switch_payload_t best_te = 0, te = 0, cng_pt = 0;
 	sdp_media_t *m;
 	sdp_attribute_t *attr;
@@ -3368,6 +3403,11 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 		} else if (m->m_type == sdp_media_audio && m->m_port && !got_audio) {
 			sdp_rtpmap_t *map;
 			int ice = 0;
+
+			nm_idx = 0;
+			m_idx = 0;
+			memset(matches, 0, sizeof(matches[0]) * MAX_MATCHES);
+			memset(near_matches, 0, sizeof(near_matches[0]) * MAX_MATCHES);
 
 			if (!sendonly && (m->m_mode == sdp_sendonly || m->m_mode == sdp_inactive)) {
 				sendonly = 1;
@@ -3920,8 +3960,9 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 			sdp_rtpmap_t *map;
 			const char *rm_encoding;
 			const switch_codec_implementation_t *mimp = NULL;
-			int vmatch = 0, i;
-			
+			int i;
+
+			vmatch = 0;
 			nm_idx = 0;
 			m_idx = 0;
 			memset(matches, 0, sizeof(matches[0]) * MAX_MATCHES);
@@ -4104,7 +4145,6 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 				switch_core_media_check_video_codecs(session);
 				switch_snprintf(tmp, sizeof(tmp), "%d", v_engine->cur_payload_map->recv_pt);
 				switch_channel_set_variable(session->channel, "rtp_video_recv_pt", tmp);
-				if (!match && vmatch) match = 1;
 
 				if (switch_core_codec_ready(&v_engine->read_codec) && strcasecmp(matches[0].imp->iananame, v_engine->read_codec.implementation->iananame)) {
 					v_engine->reset_codec = 1;
@@ -4117,12 +4157,9 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 		}
 	}
 
+	if (!match && vmatch) match = 1;
+
  done:
-
-
-
-
-
 
 	if (parser) {
 		sdp_parser_free(parser);
@@ -4233,7 +4270,6 @@ SWITCH_DECLARE(int) switch_core_media_toggle_hold(switch_core_session_t *session
 		switch_channel_clear_flag(session->channel, CF_HOLD_LOCK);
 
 		if (switch_channel_test_flag(session->channel, CF_PROTO_HOLD)) {
-			const char *val;
 			int media_on_hold_a = switch_true(switch_channel_get_variable_dup(session->channel, "bypass_media_resume_on_hold", SWITCH_FALSE, -1));
 			int media_on_hold_b = 0;
 			int bypass_after_hold_a = 0;
@@ -4273,19 +4309,7 @@ SWITCH_DECLARE(int) switch_core_media_toggle_hold(switch_core_session_t *session
 				}
 			}
 
-			if (!switch_media_handle_test_media_flag(smh, SCMF_DISABLE_RTP_AUTOADJ) &&
-				!((val = switch_channel_get_variable(session->channel, "disable_rtp_auto_adjust")) && switch_true(val)) && 
-				!switch_channel_test_flag(session->channel, CF_WEBRTC)) {
-				/* Reactivate the NAT buster flag. */
-
-				if (a_engine->rtp_session) {
-					switch_rtp_set_flag(a_engine->rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
-				}
-
-				if (v_engine->rtp_session) {
-					switch_rtp_set_flag(v_engine->rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
-				}
-			}
+			switch_core_media_check_autoadj(session);
 
 			switch_channel_clear_flag(session->channel, CF_PROTO_HOLD);
 			switch_channel_mark_hold(session->channel, SWITCH_FALSE);

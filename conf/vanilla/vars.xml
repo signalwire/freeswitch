@@ -335,6 +335,7 @@
        if true, the destination number is not included -->
   <X-PRE-PROCESS cmd="set" data="presence_privacy=false"/>
 
+  <X-PRE-PROCESS cmd="set" data="au-ring=%(400,200,383,417);%(400,2000,383,417)"/>
   <X-PRE-PROCESS cmd="set" data="be-ring=%(1000,3000,425)"/>
   <X-PRE-PROCESS cmd="set" data="ca-ring=%(2000,4000,440,480)"/>
   <X-PRE-PROCESS cmd="set" data="cn-ring=%(1000,4000,450)"/>

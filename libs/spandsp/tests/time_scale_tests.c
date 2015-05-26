@@ -65,6 +65,8 @@ int main(int argc, char *argv[])
     int out_frames;
     int count;
     int max;
+    int samples_in;
+    int samples_out;
     time_scale_state_t state;
     float rate;
     float sample_rate;
@@ -129,9 +131,19 @@ int main(int argc, char *argv[])
     max = time_scale_max_output_len(&state, BLOCK_LEN);
     printf("Rate is %f, longest output block is %d\n", rate, max);
     count = 0;
+    samples_in = 0;
+    samples_out = 0;
     while ((frames = sf_readf_short(inhandle, in, BLOCK_LEN)))
     {
+        samples_in += frames;
         new_frames = time_scale(&state, out, in, frames);
+        if (new_frames > max)
+        {
+            printf("Generated signal has more than the expected maximum samples - %d vs %d\n", new_frames, max);
+            printf("Tests failed\n");
+            exit(2);
+        }
+        samples_out += new_frames;
         out_frames = sf_writef_short(outhandle, out, new_frames);
         if (out_frames != new_frames)
         {
@@ -152,7 +164,27 @@ int main(int argc, char *argv[])
             count = 0;
         }
     }
+    new_frames = time_scale_flush(&state, out);
+    if (new_frames > max)
+    {
+        printf("Generated signal has more than the expected maximum samples - %d vs %d\n", new_frames, max);
+        printf("Tests failed\n");
+        exit(2);
+    }
+    samples_out += new_frames;
+    out_frames = sf_writef_short(outhandle, out, new_frames);
+    if (out_frames != new_frames)
+    {
+        fprintf(stderr, "    Error writing audio file\n");
+        exit(2);
+    }
     time_scale_release(&state);
+    if ((int) (rate*samples_in) < samples_out - 1  ||  (int) (rate*samples_in) > samples_out + 1)
+    {
+        printf("%d samples became %d samples\n", (int) (rate*samples_in), samples_out);
+        printf("Tests failed\n");
+        exit(2);
+    }
     if (sf_close(inhandle))
     {
         printf("    Cannot close audio file '%s'\n", in_file_name);

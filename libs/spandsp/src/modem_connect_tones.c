@@ -526,7 +526,7 @@ SPAN_DECLARE_NONSTD(int) modem_connect_tones_rx(modem_connect_tones_rx_state_t *
             filtered = 0.001599787f*(v1 - s->z15hz_2);
             s->z15hz_2 = s->z15hz_1;
             s->z15hz_1 = v1;
-            s->am_level += abs(lfastrintf(filtered)) - (s->am_level >> 8);
+            s->am_level += abs((int) lfastrintf(filtered)) - (s->am_level >> 8);
             //printf("%9.1f %10.4f %9d %9d\n", famp, filtered, s->am_level, s->channel_level);
             /* A Cauer notch at 2100Hz, spread just wide enough to meet our detection bandwidth
                criteria. */

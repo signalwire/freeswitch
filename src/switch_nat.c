@@ -365,7 +365,6 @@ SWITCH_DECLARE(void) switch_nat_thread_start(void)
 	}
 
 	switch_threadattr_create(&thd_attr, nat_globals_perm.pool);
-	switch_threadattr_detach_set(thd_attr, 1);
 	switch_thread_create(&nat_thread_p, thd_attr, switch_nat_multicast_runtime, NULL, nat_globals_perm.pool);
 }
 

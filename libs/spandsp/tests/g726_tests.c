@@ -90,7 +90,7 @@ uint8_t unpacked[MAX_TEST_VECTOR_LEN];
 uint8_t xlaw[MAX_TEST_VECTOR_LEN];
 
 /*
-Table 4 - V Reset and homing sequences for u-law
+Table 4 - Reset and homing sequences for u-law
             Normal                              I-input     Overload
 Algorithm   Input   Intermediate    Output      Input       Output      Input   Intermediate    Output
             (PCM)   (ADPCM)         (PCM)       (ADPCM)     (PCM)       (PCM)   (ADPCM)         (PCM)
@@ -108,7 +108,7 @@ Algorithm   Input   Intermediate    Output      Input       Output      Input   
                     HN40FM.I        HN40FM.O                HI40FM.O            HV40FM.I        HV40FM.O
 
 
-Table 5 - V Reset and homing sequences for A-law
+Table 5 - Reset and homing sequences for A-law
             Normal                              I-input     Overload
 Algorithm   Input   Intermediate    Output      Input       Output      Input   Intermediate    Output
             (PCM)   (ADPCM)         (PCM)       (ADPCM)     (PCM)       (PCM)   (ADPCM)         (PCM)

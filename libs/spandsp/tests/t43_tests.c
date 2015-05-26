@@ -43,7 +43,7 @@
 
 #include "spandsp.h"
 
-#if defined(SPANDSP_SUPPORT_TIFF_FX)
+#if defined(SPANDSP_SUPPORT_TIFF_FX)  &&  defined(HAVE_TIF_DIR_H)
 #include <tif_dir.h>
 #endif
 
@@ -63,7 +63,7 @@ typedef struct
     int ptr;
 } packer_t;
 
-#if defined(SPANDSP_SUPPORT_TIFF_FX)
+#if defined(SPANDSP_SUPPORT_TIFF_FX)  &&  defined(HAVE_TIF_DIR_H)
 /* TIFF-FX related extensions to the tag set supported by libtiff */
 static const TIFFFieldInfo tiff_fx_tiff_field_info[] =
 {
@@ -184,7 +184,7 @@ int write_file(meta_t *meta, int page, const uint8_t buf[])
     uint8_t *out_buf;
     uint8_t *out_buf2;
     packer_t packer;
-#if defined(SPANDSP_SUPPORT_TIFF_FX)
+#if defined(SPANDSP_SUPPORT_TIFF_FX)  &&  defined(HAVE_TIF_DIR_H)
     toff_t diroff;
 #endif
 
@@ -222,7 +222,7 @@ int write_file(meta_t *meta, int page, const uint8_t buf[])
     TIFFSetField(tif, TIFFTAG_MAKE, "soft-switch.org");
     TIFFSetField(tif, TIFFTAG_MODEL, "spandsp");
     TIFFSetField(tif, TIFFTAG_HOSTCOMPUTER, "i7.coppice.org");
-#if defined(SPANDSP_SUPPORT_TIFF_FX)
+#if defined(SPANDSP_SUPPORT_TIFF_FX)  &&  defined(HAVE_TIF_DIR_H)
     /* Make space for this to be filled in later */
     TIFFSetField(tif, TIFFTAG_GLOBALPARAMETERSIFD, 0);
 #endif
@@ -310,7 +310,7 @@ int write_file(meta_t *meta, int page, const uint8_t buf[])
     if (!TIFFWriteDirectory(tif))
         printf("Failed to write directory.\n");
 
-#if defined(SPANDSP_SUPPORT_TIFF_FX)
+#if defined(SPANDSP_SUPPORT_TIFF_FX)  &&  defined(HAVE_TIF_DIR_H)
     if (!TIFFCreateCustomDirectory(tif, &tiff_fx_field_array))
     {
         TIFFSetField(tif, TIFFTAG_PROFILETYPE, PROFILETYPE_G3_FAX);
@@ -337,7 +337,7 @@ int write_file(meta_t *meta, int page, const uint8_t buf[])
 
 int read_file(meta_t *meta, int page)
 {
-#if defined(SPANDSP_SUPPORT_TIFF_FX)
+#if defined(SPANDSP_SUPPORT_TIFF_FX)  &&  defined(HAVE_TIF_DIR_H)
     static const char *tiff_fx_fax_profiles[] =
     {
         "???",
@@ -419,7 +419,7 @@ int read_file(meta_t *meta, int page)
         meta->bmax = 0.0f;
         break;
     }
-#if defined(SPANDSP_SUPPORT_TIFF_FX)
+#if defined(SPANDSP_SUPPORT_TIFF_FX)  &&  defined(HAVE_TIF_DIR_H)
     if (TIFFGetField(tif, TIFFTAG_DECODE, &parm16, &fl_parms))
     {
         meta->lmin = fl_parms[0];
@@ -432,7 +432,7 @@ int read_file(meta_t *meta, int page)
     }
 #endif
 
-#if defined(SPANDSP_SUPPORT_TIFF_FX)
+#if defined(SPANDSP_SUPPORT_TIFF_FX)  &&  defined(HAVE_TIF_DIR_H)
     printf("Trying to get global parameters\n");
     if (TIFFGetField(tif, TIFFTAG_GLOBALPARAMETERSIFD, &diroff))
     {
@@ -891,7 +891,7 @@ int main(int argc, char *argv[])
     meta_t meta;
     int output_compression;
     int page_no;
-#if defined(SPANDSP_SUPPORT_TIFF_FX)
+#if defined(SPANDSP_SUPPORT_TIFF_FX)  &&  defined(HAVE_TIF_DIR_H)
     toff_t diroff;
 #endif
 
@@ -900,7 +900,7 @@ int main(int argc, char *argv[])
     destination_file = OUT_FILE_NAME;
     output_compression = (argc > 2)  ?  atoi(argv[2]) : COMPRESSION_CCITT_T6;
 
-#if defined(SPANDSP_SUPPORT_TIFF_FX)
+#if defined(SPANDSP_SUPPORT_TIFF_FX)  &&  defined(HAVE_TIF_DIR_H)
     TIFF_FX_init();
 #endif
 
@@ -1305,7 +1305,7 @@ int main(int argc, char *argv[])
     TIFFSetField(tif, TIFFTAG_MAKE, "soft-switch.org");
     TIFFSetField(tif, TIFFTAG_MODEL, "spandsp");
     TIFFSetField(tif, TIFFTAG_HOSTCOMPUTER, "i7.coppice.org");
-#if defined(SPANDSP_SUPPORT_TIFF_FX)
+#if defined(SPANDSP_SUPPORT_TIFF_FX)  &&  defined(HAVE_TIF_DIR_H)
     /* Make space for this to be filled in later */
     TIFFSetField(tif, TIFFTAG_GLOBALPARAMETERSIFD, 0);
 #endif
@@ -1379,7 +1379,7 @@ int main(int argc, char *argv[])
     if (!TIFFWriteDirectory(tif))
         printf("Failed to write directory.\n");
 
-#if defined(SPANDSP_SUPPORT_TIFF_FX)
+#if defined(SPANDSP_SUPPORT_TIFF_FX)  &&  defined(HAVE_TIF_DIR_H)
     if (!TIFFCreateCustomDirectory(tif, &tiff_fx_field_array))
     {
         TIFFSetField(tif, TIFFTAG_PROFILETYPE, PROFILETYPE_G3_FAX);

@@ -515,7 +515,9 @@ SWITCH_STANDARD_APP(play_and_detect_speech_function)
 		char *grammar = argv[1];
 		char *result = NULL;
 		switch_ivr_play_and_detect_speech(session, file, engine, grammar, &result, 0, NULL);
-		switch_channel_set_variable(channel, "detect_speech_result", result);
+		if (!zstr(result)) {
+			switch_channel_set_variable(channel, "detect_speech_result", result);
+		}
 	} else {
 		/* bad input */
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Usage: %s\n", PLAY_AND_DETECT_SPEECH_SYNTAX);
@@ -622,6 +624,28 @@ SWITCH_STANDARD_APP(rename_function)
 	
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Usage: %s\n", RENAME_SYNTAX);
+	}
+}
+
+#define TRANSFER_VARS_SYNTAX "<~variable_prefix|variable>"
+SWITCH_STANDARD_APP(transfer_vars_function)
+{
+	char *argv[1] = { 0 };
+	int argc;
+	char *lbuf = NULL;
+	
+	if (!zstr(data) && (lbuf = switch_core_session_strdup(session, data))
+		&& (argc = switch_separate_string(lbuf, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) >= 1) {
+		switch_core_session_t *nsession = NULL;
+
+		switch_core_session_get_partner(session, &nsession);
+
+		if (nsession) {
+			switch_ivr_transfer_variable(session, nsession, argv[0]);
+			switch_core_session_rwunlock(nsession);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Usage: %s\n", TRANSFER_VARS_SYNTAX);
+		}
 	}
 }
 
@@ -5667,7 +5691,112 @@ SWITCH_STANDARD_API(page_api_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+/**
+ * Convert DTMF source to human readable string
+ */
+static const char *to_dtmf_source_string(switch_dtmf_source_t source)
+{
+	switch(source) {
+		case SWITCH_DTMF_ENDPOINT: return "SIP INFO";
+		case SWITCH_DTMF_INBAND_AUDIO: return "INBAND";
+		case SWITCH_DTMF_RTP: return "2833";
+		case SWITCH_DTMF_UNKNOWN: return "UNKNOWN";
+		case SWITCH_DTMF_APP: return "APP";
+	}
+	return "UNKNOWN";
+}
 
+struct deduplicate_dtmf_filter {
+	int only_rtp;
+	char last_dtmf;
+	switch_dtmf_source_t last_dtmf_source;
+};
+
+/**
+ * Filter incoming DTMF and ignore any duplicates
+ */
+static switch_status_t deduplicate_recv_dtmf_hook(switch_core_session_t *session, const switch_dtmf_t *dtmf, switch_dtmf_direction_t direction)
+{
+	switch_status_t status = SWITCH_STATUS_FALSE;
+	int only_rtp = 0;
+	struct deduplicate_dtmf_filter *filter = switch_channel_get_private(switch_core_session_get_channel(session), "deduplicate_dtmf_filter");
+
+	if (!filter) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Accept %s digit %c: deduplicate filter missing!\n", to_dtmf_source_string(dtmf->source), dtmf->digit);
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	/* remember current state as it might change */
+	only_rtp = filter->only_rtp;
+
+	/* RTP DTMF is preferred over all others- and if it's demonstrated to be available, inband / info detection is disabled */
+	if (only_rtp) {
+		switch (dtmf->source) {
+			case SWITCH_DTMF_ENDPOINT:
+				switch_channel_set_variable(switch_core_session_get_channel(session), "deduplicate_dtmf_seen_endpoint", "true");
+				break;
+			case SWITCH_DTMF_INBAND_AUDIO:
+				switch_channel_set_variable(switch_core_session_get_channel(session), "deduplicate_dtmf_seen_inband", "true");
+				break;
+			case SWITCH_DTMF_RTP:
+				switch_channel_set_variable(switch_core_session_get_channel(session), "deduplicate_dtmf_seen_rtp", "true");
+				/* pass through */
+			case SWITCH_DTMF_UNKNOWN:
+			case SWITCH_DTMF_APP:
+				/* always allow */
+				status = SWITCH_STATUS_SUCCESS;
+				break;
+		}
+	} else {
+		/* accept everything except duplicates until RTP digit is detected */
+		switch (dtmf->source) {
+			case SWITCH_DTMF_INBAND_AUDIO:
+				switch_channel_set_variable(switch_core_session_get_channel(session), "deduplicate_dtmf_seen_inband", "true");
+				break;
+			case SWITCH_DTMF_RTP:
+				switch_channel_set_variable(switch_core_session_get_channel(session), "deduplicate_dtmf_seen_rtp", "true");
+				/* change state to only allow RTP events */
+				filter->only_rtp = 1;
+
+				/* stop inband detector */
+				switch_ivr_broadcast(switch_core_session_get_uuid(session), "spandsp_stop_dtmf::", SMF_ECHO_ALEG);
+				break;
+			case SWITCH_DTMF_ENDPOINT:
+				switch_channel_set_variable(switch_core_session_get_channel(session), "deduplicate_dtmf_seen_endpoint", "true");
+				break;
+			case SWITCH_DTMF_UNKNOWN:
+			case SWITCH_DTMF_APP:
+				/* always allow */
+				status = SWITCH_STATUS_SUCCESS;
+				break;
+		}
+
+		/* make sure not a duplicate DTMF */
+		if (filter->last_dtmf_source == dtmf->source || filter->last_dtmf != dtmf->digit) {
+			status = SWITCH_STATUS_SUCCESS;
+		}
+		filter->last_dtmf = dtmf->digit;
+		filter->last_dtmf_source = dtmf->source;
+	}
+
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "(%s) %s %s digit %c\n",
+		(only_rtp) ? "ALLOW 2833" : "ALLOW ALL",
+		(status == SWITCH_STATUS_SUCCESS) ? "Accept" : "Ignore", to_dtmf_source_string(dtmf->source), dtmf->digit);
+
+	return status;
+}
+
+SWITCH_STANDARD_APP(deduplicate_dtmf_app_function)
+{
+	struct deduplicate_dtmf_filter *filter = switch_channel_get_private(switch_core_session_get_channel(session), "deduplicate_dtmf_filter");
+	if (!filter) {
+		filter = switch_core_session_alloc(session, sizeof(*filter));
+		filter->only_rtp = !zstr(data) && !strcmp("only_rtp", data);
+		filter->last_dtmf = 0;
+		switch_channel_set_private(switch_core_session_get_channel(session), "deduplicate_dtmf_filter", filter);
+		switch_core_event_hook_add_recv_dtmf(session, deduplicate_recv_dtmf_hook);
+	}
+}
 
 #define SPEAK_DESC "Speak text to a channel via the tts interface"
 #define DISPLACE_DESC "Displace audio from a file to the channels input"
@@ -5897,6 +6026,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	SWITCH_ADD_APP(app_interface, "media_reset", "Reset all bypass/proxy media flags", "Reset all bypass/proxy media flags", media_reset_function, "", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "mkdir", "Create a directory", "Create a directory", mkdir_function, MKDIR_SYNTAX, SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "rename", "Rename file", "Rename file", rename_function, RENAME_SYNTAX, SAF_SUPPORT_NOMEDIA | SAF_ZOMBIE_EXEC);
+	SWITCH_ADD_APP(app_interface, "transfer_vars", "Transfer variables", "Transfer variables", transfer_vars_function, TRANSFER_VARS_SYNTAX,
+				   SAF_SUPPORT_NOMEDIA | SAF_ZOMBIE_EXEC);
 	SWITCH_ADD_APP(app_interface, "soft_hold", "Put a bridged channel on hold", "Put a bridged channel on hold", soft_hold_function, SOFT_HOLD_SYNTAX,
 				   SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "bind_meta_app", "Bind a key to an application", "Bind a key to an application", dtmf_bind_function, BIND_SYNTAX,
@@ -5966,6 +6097,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	SWITCH_ADD_APP(app_interface, "limit_hash_execute", "Limit", LIMITHASHEXECUTE_DESC, limit_hash_execute_function, LIMITHASHEXECUTE_USAGE, SAF_SUPPORT_NOMEDIA);
 
 	SWITCH_ADD_APP(app_interface, "pickup", "Pickup", "Pickup a call", pickup_function, PICKUP_SYNTAX, SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_APP(app_interface, "deduplicate_dtmf", "Prevent duplicate inband + 2833 dtmf", "", deduplicate_dtmf_app_function, "[only_rtp]", SAF_SUPPORT_NOMEDIA);
 
 
 	SWITCH_ADD_DIALPLAN(dp_interface, "inline", inline_dialplan_hunt);

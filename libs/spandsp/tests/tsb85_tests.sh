@@ -17,7 +17,7 @@
 
 run_tsb85_test()
 {
-    rm -f fax_tests_1.tif
+    rm -f tsb85_tests.tif
     echo ./tsb85_tests ${TEST}
     ./tsb85_tests ${TEST} 2>xyzzy2
     RETVAL=$?
@@ -33,11 +33,6 @@ do
     run_tsb85_test
 done
 
-#MRGN14 fails because we don't adequately distinguish between receiving a
-#bad image signal and receiving none at all.
-#MRGN16 fails because we don't adequately distinguish between receiving a
-#bad image signal and receiving none at all.
-
 for TEST in MRGN09 MRGN10 MRGN11 MRGN12 MRGN13 MRGN14 MRGN15 MRGN16 MRGN17
 do
     run_tsb85_test
@@ -52,10 +47,6 @@ for TEST in OREN01 OREN02 OREN03 OREN04 OREN05 OREN06 OREN07 OREN08 OREN09 OREN1
 do
     run_tsb85_test
 done
-
-# MRGX03 is failing because the V.27ter modem says it trained on HDLC
-# MRGX05 is failing because we don't distinguish MPS immediately after MCF from MPS after
-# a corrupt image signal.
 
 for TEST in MRGX01 MRGX02 MRGX03 MRGX04 MRGX05 MRGX06 MRGX07 MRGX08
 do

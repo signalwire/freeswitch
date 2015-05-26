@@ -232,7 +232,11 @@ static int check_rx_dcs(const uint8_t *msg, int len)
     image_width = widths[(dcs_frame[8] & DISBIT3)  ?  2  :  1][dcs_frame[5] & (DISBIT2 | DISBIT1)];
 
     /* Check which compression we will use. */
-    if ((dcs_frame[6] & DISBIT7))
+    if ((dcs_frame[12] & DISBIT7))
+        line_encoding = T4_COMPRESSION_T85_L0;
+    else if ((dcs_frame[12] & DISBIT6))
+        line_encoding = T4_COMPRESSION_T85;
+    else if ((dcs_frame[6] & DISBIT7))
         line_encoding = T4_COMPRESSION_T6;
     else if ((dcs_frame[4] & DISBIT8))
         line_encoding = T4_COMPRESSION_T4_2D;

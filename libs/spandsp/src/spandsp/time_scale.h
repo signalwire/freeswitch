@@ -62,25 +62,6 @@ extern "C"
 {
 #endif
 
-/*! Initialise a time scale context. This must be called before the first
-    use of the context, to initialise its contents.
-    \brief Initialise a time scale context.
-    \param s The time scale context.
-    \param sample_rate The sample rate of the signal.
-    \param playout_rate The ratio between the output speed and the input speed.
-    \return A pointer to the context, or NULL if there was a problem. */
-SPAN_DECLARE(time_scale_state_t *) time_scale_init(time_scale_state_t *s, int sample_rate, float playout_rate);
-
-/*! \brief Release a time scale context.
-    \param s The time scale context.
-    \return 0 for OK, else -1. */
-SPAN_DECLARE(int) time_scale_release(time_scale_state_t *s);
-
-/*! \brief Free a time scale context.
-    \param s The time scale context.
-    \return 0 for OK, else -1. */
-SPAN_DECLARE(int) time_scale_free(time_scale_state_t *s);
-
 /*! Change the time scale rate.
     \brief Change the time scale rate.
     \param s The time scale context.
@@ -107,6 +88,27 @@ SPAN_DECLARE(int) time_scale_max_output_len(time_scale_state_t *s, int input_len
     \return The number of output samples.
 */
 SPAN_DECLARE(int) time_scale(time_scale_state_t *s, int16_t out[], int16_t in[], int len);
+
+SPAN_DECLARE(int) time_scale_flush(time_scale_state_t *s, int16_t out[]);
+
+/*! Initialise a time scale context. This must be called before the first
+    use of the context, to initialise its contents.
+    \brief Initialise a time scale context.
+    \param s The time scale context.
+    \param sample_rate The sample rate of the signal.
+    \param playout_rate The ratio between the output speed and the input speed.
+    \return A pointer to the context, or NULL if there was a problem. */
+SPAN_DECLARE(time_scale_state_t *) time_scale_init(time_scale_state_t *s, int sample_rate, float playout_rate);
+
+/*! \brief Release a time scale context.
+    \param s The time scale context.
+    \return 0 for OK, else -1. */
+SPAN_DECLARE(int) time_scale_release(time_scale_state_t *s);
+
+/*! \brief Free a time scale context.
+    \param s The time scale context.
+    \return 0 for OK, else -1. */
+SPAN_DECLARE(int) time_scale_free(time_scale_state_t *s);
 
 #if defined(__cplusplus)
 }

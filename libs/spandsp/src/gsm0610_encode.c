@@ -116,12 +116,12 @@ SPAN_DECLARE(gsm0610_state_t *) gsm0610_init(gsm0610_state_t *s, int packing)
 {
     if (s == NULL)
     {
-        if ((s = (gsm0610_state_t *) span_alloc(sizeof (*s))) == NULL)
+        if ((s = (gsm0610_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
         /*endif*/
     }
     /*endif*/
-    memset((char *) s, '\0', sizeof (gsm0610_state_t));
+    memset((char *) s, '\0', sizeof(gsm0610_state_t));
     s->nrp = 40;
     s->packing = packing;
     return s;

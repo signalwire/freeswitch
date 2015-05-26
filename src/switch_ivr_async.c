@@ -1217,7 +1217,7 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 		break;
 	case SWITCH_ABC_TYPE_TAP_NATIVE_READ:
 		{
-			switch_time_t now = switch_micro_time_now();
+			switch_time_t now = switch_time_now();
 			switch_time_t diff;
 
 			rh->rready = 1;
@@ -1235,9 +1235,9 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 				
 				
 			if (rh->last_read_time && rh->last_read_time < now) {
-				diff = ((now - rh->last_read_time) + 3000 ) / rh->read_impl.microseconds_per_packet;
+				diff = (now - rh->last_read_time) / rh->read_impl.microseconds_per_packet;
 				
-				if (diff > 1) {
+				if (diff > 3) {
 					unsigned char fill_data[SWITCH_RECOMMENDED_BUFFER_SIZE] = {0};
 					switch_core_gen_encoded_silence(fill_data, &rh->read_impl, len);
 					
@@ -1256,7 +1256,7 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 		break;
 	case SWITCH_ABC_TYPE_TAP_NATIVE_WRITE:
 		{
-			switch_time_t now = switch_micro_time_now();
+			switch_time_t now = switch_time_now();
 			switch_time_t diff;
 			rh->wready = 1;
 			
@@ -1274,9 +1274,9 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 			
 
 			if (rh->last_write_time && rh->last_write_time < now) {
-				diff = ((now - rh->last_write_time) + 3000 ) / rh->read_impl.microseconds_per_packet;
+				diff = (now - rh->last_write_time) / rh->read_impl.microseconds_per_packet;
 				
-				if (diff > 1) {
+				if (diff > 3) {
 					unsigned char fill_data[SWITCH_RECOMMENDED_BUFFER_SIZE] = {0};
 					switch_core_gen_encoded_silence(fill_data, &rh->read_impl, len);
 					
@@ -2263,7 +2263,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 
 		in_file = switch_core_session_sprintf(session, "%s-in.%s", file, ext);
 		out_file = switch_core_session_sprintf(session, "%s-out.%s", file, ext);
-
+		rh->in_fh.pre_buffer_datalen = rh->out_fh.pre_buffer_datalen = fh->pre_buffer_datalen;
+		channels = 1;
+		switch_set_flag(&rh->in_fh, SWITCH_FILE_NATIVE);
+		switch_set_flag(&rh->out_fh, SWITCH_FILE_NATIVE);
 
 		if (switch_core_file_open(&rh->in_fh, in_file, channels, read_impl.actual_samples_per_second, file_flags, NULL) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error opening %s\n", in_file);
@@ -2988,6 +2991,7 @@ static switch_status_t generate_on_dtmf(switch_core_session_t *session, const sw
 						switch_channel_event_set_data(channel, event);
 						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "DTMF-Digit", "%c", dtmf->digit);
 						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "DTMF-Duration", "%u", dtmf->duration);
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "DTMF-Source", "APP");
 						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "DTMF-Conversion", "native:inband");
 						if (switch_channel_test_flag(channel, CF_DIVERT_EVENTS)) {
 							switch_core_session_queue_event(session, &event);
@@ -3854,6 +3858,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_bind_dtmf_meta_session(switch_core_se
 	return SWITCH_STATUS_SUCCESS;
 }
 
+#define PLAY_AND_DETECT_DONE 1
+#define PLAY_AND_DETECT_DONE_RECOGNIZING 2
 typedef struct {
 	int done;
 	char *result;
@@ -3862,28 +3868,53 @@ typedef struct {
 static switch_status_t play_and_detect_input_callback(switch_core_session_t *session, void *input, switch_input_type_t input_type, void *data, unsigned int len)
 {
 	play_and_detect_speech_state_t *state = (play_and_detect_speech_state_t *)data;
-	switch_event_t *event;
-	switch_channel_t *channel = switch_core_session_get_channel(session);
-	if (input_type == SWITCH_INPUT_TYPE_EVENT) {
-		event = (switch_event_t *)input;
-		if (event->event_id == SWITCH_EVENT_DETECTED_SPEECH && !state->done) {
-			const char *speech_type = switch_event_get_header(event, "Speech-Type");
-			if (!zstr(speech_type)) {
-				if (!strcasecmp(speech_type, "detected-speech")) {
-					const char *result;
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "(%s) DETECTED SPEECH\n", switch_channel_get_name(channel));
-					result = switch_event_get_body(event);
-					if (!zstr(result)) {
-						state->result = switch_core_session_strdup(session, result);
-					} else {
+	if (!state->done) {
+		switch_channel_t *channel = switch_core_session_get_channel(session);
+		if (input_type == SWITCH_INPUT_TYPE_EVENT) {
+			switch_event_t *event;
+			event = (switch_event_t *)input;
+			if (event->event_id == SWITCH_EVENT_DETECTED_SPEECH) {
+				const char *speech_type = switch_event_get_header(event, "Speech-Type");
+				if (!zstr(speech_type)) {
+					if (!strcasecmp(speech_type, "detected-speech")) {
+						const char *result;
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "(%s) DETECTED SPEECH\n", switch_channel_get_name(channel));
+						result = switch_event_get_body(event);
+						if (!zstr(result)) {
+							state->result = switch_core_session_strdup(session, result);
+						} else {
+							state->result = "";
+						}
+						state->done = PLAY_AND_DETECT_DONE_RECOGNIZING;
+						return SWITCH_STATUS_BREAK;
+					} else if (!strcasecmp(speech_type, "begin-speaking")) {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "(%s) START OF SPEECH\n", switch_channel_get_name(channel));
+						return SWITCH_STATUS_BREAK;
+					} else if (!strcasecmp("closed", speech_type)) {
+						state->done = PLAY_AND_DETECT_DONE_RECOGNIZING;
 						state->result = "";
+						return SWITCH_STATUS_BREAK;
 					}
-					state->done = 1;
-					return SWITCH_STATUS_BREAK;
-				} else if (!strcasecmp(speech_type, "begin-speaking")) {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "(%s) START OF SPEECH\n", switch_channel_get_name(channel));
-					return SWITCH_STATUS_BREAK;
 				}
+			}
+		} else if (input_type == SWITCH_INPUT_TYPE_DTMF) {
+			switch_dtmf_t *dtmf = (switch_dtmf_t *) input;
+			const char *terminators = switch_channel_get_variable(channel, SWITCH_PLAYBACK_TERMINATORS_VARIABLE);
+			if (terminators) {
+				if (!strcasecmp(terminators, "any")) {
+					terminators = "1234567890*#";
+				} else if (!strcasecmp(terminators, "none")) {
+					terminators = NULL;
+				}
+			}
+			if (terminators && strchr(terminators, dtmf->digit)) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "(%s) ACCEPT TERMINATOR %c\n", switch_channel_get_name(channel), dtmf->digit);
+				switch_channel_set_variable_printf(channel, SWITCH_PLAYBACK_TERMINATOR_USED, "%c", dtmf->digit);
+				state->result = switch_core_session_sprintf(session, "DIGIT: %c", dtmf->digit);
+				state->done = PLAY_AND_DETECT_DONE;
+				return SWITCH_STATUS_BREAK;
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "(%s) IGNORE NON-TERMINATOR DIGIT %c\n", switch_channel_get_name(channel), dtmf->digit);
 			}
 		}
 	}
@@ -3929,7 +3960,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_and_detect_speech(switch_core_se
 	status = switch_ivr_play_file(session, NULL, file, args);
 
 	if (args->dmachine && switch_ivr_dmachine_last_ping(args->dmachine) != SWITCH_STATUS_SUCCESS) {
-		state.done = 1;
+		state.done |= PLAY_AND_DETECT_DONE;
 		goto done;
 	}
 
@@ -3943,22 +3974,24 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_and_detect_speech(switch_core_se
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "(%s) WAITING FOR RESULT\n", switch_channel_get_name(channel));
 		while (!state.done && switch_channel_ready(channel)) {
 			status = switch_ivr_sleep(session, input_timeout, SWITCH_FALSE, args);
-			
+
 			if (args->dmachine && switch_ivr_dmachine_last_ping(args->dmachine) != SWITCH_STATUS_SUCCESS) {
-				state.done = 1;
+				state.done |= PLAY_AND_DETECT_DONE;
 				goto done;
-			}			
+			}
 
 			if (status != SWITCH_STATUS_BREAK && status != SWITCH_STATUS_SUCCESS) {
 				goto done;
 			}
 		}
 	}
-	recognizing = !state.done;
 
 done:
-	if (recognizing) {
+	if (recognizing && !(state.done & PLAY_AND_DETECT_DONE_RECOGNIZING)) {
 		switch_ivr_pause_detect_speech(session);
+	}
+	if (recognizing && switch_true(switch_channel_get_variable(channel, "play_and_detect_speech_close_asr"))) {
+		switch_ivr_stop_detect_speech(session);
 	}
 
 	*result = state.result;
@@ -3969,7 +4002,7 @@ done:
 
 	arg_recursion_check_stop(args);
 
-	return status;;
+	return status;
 }
 
 struct speech_thread_handle {
@@ -3979,6 +4012,7 @@ struct speech_thread_handle {
 	switch_mutex_t *mutex;
 	switch_thread_cond_t *cond;
 	switch_memory_pool_t *pool;
+	switch_thread_t *thread;
 	int ready;
 };
 
@@ -4142,23 +4176,29 @@ static switch_bool_t speech_callback(switch_media_bug_t *bug, void *user_data, s
 	frame.buflen = SWITCH_RECOMMENDED_BUFFER_SIZE;
 
 	switch (type) {
-	case SWITCH_ABC_TYPE_INIT:{
-			switch_thread_t *thread;
+	case SWITCH_ABC_TYPE_INIT:
+		{
 			switch_threadattr_t *thd_attr = NULL;
-
+			
 			switch_threadattr_create(&thd_attr, sth->pool);
-			switch_threadattr_detach_set(thd_attr, 1);
 			switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
-			switch_thread_create(&thread, thd_attr, speech_thread, sth, sth->pool);
+			switch_thread_create(&sth->thread, thd_attr, speech_thread, sth, sth->pool);
 		}
 		break;
-	case SWITCH_ABC_TYPE_CLOSE:{
+	case SWITCH_ABC_TYPE_CLOSE:
+		{
+			switch_status_t st;
+
 			switch_core_asr_close(sth->ah, &flags);
 			if (sth->mutex && sth->cond && sth->ready) {
-				switch_mutex_lock(sth->mutex);
-				switch_thread_cond_signal(sth->cond);
-				switch_mutex_unlock(sth->mutex);
+				if (switch_mutex_trylock(sth->mutex) == SWITCH_STATUS_SUCCESS) {
+					switch_thread_cond_signal(sth->cond);
+					switch_mutex_unlock(sth->mutex);
+				}
 			}
+			
+			switch_thread_join(&st, sth->thread);
+
 		}
 		break;
 	case SWITCH_ABC_TYPE_READ:

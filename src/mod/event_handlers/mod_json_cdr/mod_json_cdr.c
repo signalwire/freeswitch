@@ -572,17 +572,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_json_cdr_load)
 	switch_xml_t cfg, xml, settings, param;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
-	/* test global state handlers */
-	switch_core_add_state_handler(&state_handlers);
-
-	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
-
 	memset(&globals, 0, sizeof(globals));
-
-	if (switch_event_bind_removable(modname, SWITCH_EVENT_TRAP, SWITCH_EVENT_SUBCLASS_ANY, event_handler, NULL, &globals.node) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
-		return SWITCH_STATUS_GENERR;
-	}
 
 	globals.log_http_and_disk = 0;
 	globals.log_errors_to_disk = SWITCH_TRUE;
@@ -725,6 +715,16 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_json_cdr_load)
 	globals.retries++;
 
 	set_json_cdr_log_dirs();
+
+	if (switch_event_bind_removable(modname, SWITCH_EVENT_TRAP, SWITCH_EVENT_SUBCLASS_ANY, event_handler, NULL, &globals.node) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
+		return SWITCH_STATUS_GENERR;
+	}
+
+	/* test global state handlers */
+	switch_core_add_state_handler(&state_handlers);
+
+	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
 	switch_xml_free(xml);
 	return status;

@@ -2201,9 +2201,23 @@ static void _send_presence_notify(sofia_profile_t *profile,
 		path = sofia_glue_get_path_from_contact((char *) o_contact);
 	}
 
-	tmp = (char *)o_contact;
-	o_contact_dup = sofia_glue_get_url_from_contact(tmp, 1);
+	dst = sofia_glue_get_destination((char *) o_contact);
+	switch_assert(dst);
 
+	if (!zstr(dst->contact)) {
+		contact = sofia_glue_get_url_from_contact(dst->contact, 1);
+	} else {
+		contact = strdup(o_contact);
+	}
+
+	if (dst->route_uri) {
+		route_uri = sofia_glue_strip_uri(dst->route_uri);
+		tmp = (char *)route_uri;
+	} else {
+		tmp = (char *)o_contact;
+	}
+
+	o_contact_dup = sofia_glue_get_url_from_contact(tmp, 1);
 
 	if ((tp = switch_stristr("transport=", o_contact_dup))) {
 		tp += 10;
@@ -2270,19 +2284,6 @@ static void _send_presence_notify(sofia_profile_t *profile,
 		}
 
 		free(to_uri);
-	}
-
-	dst = sofia_glue_get_destination((char *) o_contact);
-	switch_assert(dst);
-
-	if (!zstr(dst->contact)) {
-		contact = sofia_glue_get_url_from_contact(dst->contact, 1);
-	} else {
-		contact = strdup(o_contact);
-	}
-
-	if (dst->route_uri) {
-		route_uri = sofia_glue_strip_uri(dst->route_uri);
 	}
 
 	if (expires) {
@@ -4023,7 +4024,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 		char *sticky = NULL;
 		char *contactstr = profile->url, *cs = NULL;
 		char *p = NULL, *new_contactstr = NULL;
-
+		sofia_transport_t transport;
 
 		if (np.is_nat) {
 			char params[128] = "";
@@ -4040,20 +4041,23 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 			contactstr = profile->url;
 		}
 
+		if (sip->sip_via) {
+			transport = sofia_glue_via2transport(sip->sip_via);
+		} else {
+			transport = sofia_glue_url2transport(contact->m_url);
+		}
 
-		if (switch_stristr("port=tcp", contact->m_url->url_params)) {
+		if (transport == SOFIA_TRANSPORT_TCP) {
 			if (np.is_auto_nat) {
 				cs = profile->tcp_public_contact;
 			} else {
 				cs = profile->tcp_contact;
 			}
-		} else if (switch_stristr("port=tls", contact->m_url->url_params)) {
+		} else if (transport == SOFIA_TRANSPORT_TCP_TLS) {
 			if (np.is_auto_nat) {
-				cs = sofia_test_pflag(profile, PFLAG_TLS) ?
-					profile->tls_public_contact : profile->tcp_public_contact;
+				cs = sofia_test_pflag(profile, PFLAG_TLS) ?	profile->tls_public_contact : profile->tcp_public_contact;
 			} else {
-				cs = sofia_test_pflag(profile, PFLAG_TLS) ?
-					profile->tls_contact : profile->tcp_contact;
+				cs = sofia_test_pflag(profile, PFLAG_TLS) ?	profile->tls_contact : profile->tcp_contact;
 			}
 		}
 

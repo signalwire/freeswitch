@@ -64,13 +64,13 @@
       <FileType>Document</FileType>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Downloading 16khzsound.</Message>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">set /P SOUND_VERSION=&lt;"$(ProjectDir)..\..\build\moh_version.txt"
-if not exist "$(ProjectDir)..\sounds\music\16000" cscript /nologo "$(ProjectDir)util.vbs" GetUnzip http://files.freeswitch.org/freeswitch-sounds-music-16000-%SOUND_VERSION%.tar.gz "$(ProjectDir)..\sounds"
+if not exist "$(ProjectDir)..\sounds\music\16000" cscript /nologo "$(ProjectDir)util.vbs" GetUnzip http://files.freeswitch.org/releases/sounds/freeswitch-sounds-music-16000-%SOUND_VERSION%.tar.gz "$(ProjectDir)..\sounds"
 
 </Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ProjectDir)..\sounds\music\16000;%(Outputs)</Outputs>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Downloading 16khzsound.</Message>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">set /P SOUND_VERSION=&lt;"$(ProjectDir)..\..\build\moh_version.txt"
-if not exist "$(ProjectDir)..\sounds\music\16000" cscript /nologo "$(ProjectDir)util.vbs" GetUnzip http://files.freeswitch.org/freeswitch-sounds-music-16000-%SOUND_VERSION%.tar.gz "$(ProjectDir)..\sounds"
+if not exist "$(ProjectDir)..\sounds\music\16000" cscript /nologo "$(ProjectDir)util.vbs" GetUnzip http://files.freeswitch.org/releases/sounds/freeswitch-sounds-music-16000-%SOUND_VERSION%.tar.gz "$(ProjectDir)..\sounds"
 
 </Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(ProjectDir)..\sounds\music\16000;%(Outputs)</Outputs>

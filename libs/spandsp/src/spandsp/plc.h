@@ -111,7 +111,6 @@ That's it!
 */
 typedef struct plc_state_s plc_state_t;
 
-
 #if defined(__cplusplus)
 extern "C"
 {

@@ -149,7 +149,7 @@ static void rx_callback(void *user_data, const ademco_contactid_report_t *report
     printf("    Event %X\n", report->xyz);
     printf("    Group/partition %X\n", report->gg);
     printf("    User/Zone information %X\n", report->ccc);
-    if (memcmp(&reports[reports_entry], report, sizeof (*report)))
+    if (memcmp(&reports[reports_entry], report, sizeof(*report)))
     {
         printf("Report mismatch\n");
         exit(2);

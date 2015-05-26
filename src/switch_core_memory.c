@@ -662,7 +662,6 @@ switch_memory_pool_t *switch_core_memory_init(void)
 	switch_queue_create(&memory_manager.pool_recycle_queue, 50000, memory_manager.memory_pool);
 
 	switch_threadattr_create(&thd_attr, memory_manager.memory_pool);
-	switch_threadattr_detach_set(thd_attr, 0);
 
 	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
 	switch_thread_create(&pool_thread_p, thd_attr, pool_thread, NULL, memory_manager.memory_pool);

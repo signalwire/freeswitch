@@ -116,7 +116,7 @@ SWITCH_MODULE_DEFINITION(mod_xml_ldap, mod_xml_ldap_load, mod_xml_ldap_shutdown,
 static switch_xml_t xml_ldap_search(const char *section, const char *tag_name, const char *key_name, const char *key_value, switch_event_t *params,
                                                                        void *user_data);
 
-static switch_status_t trydir(switch_xml_t *, int *, LDAP *, char *, char *, xml_binding_t *);
+static switch_status_t trydir(switch_xml_t *, int *, LDAP *, char *, char *, xml_binding_t *, switch_event_t *params);
 static switch_status_t do_config(void);
 static switch_status_t trysearch(switch_xml_t *pxml, int *xoff, LDAP * ld, char *basedn, char *filter);
 void rec(switch_xml_t *, int *, LDAP * ld, char *);
@@ -353,7 +353,7 @@ static switch_status_t do_config(void)
 }
 
 
-static switch_status_t trydir(switch_xml_t *pxml, int *xoff, LDAP * ld, char *dir_domain, char *dir_exten, xml_binding_t *binding)
+static switch_status_t trydir(switch_xml_t *pxml, int *xoff, LDAP * ld, char *dir_domain, char *dir_exten, xml_binding_t *binding, switch_event_t *param_event)
 {
         switch_status_t ret = SWITCH_STATUS_FALSE;
         int off = *xoff;
@@ -373,6 +373,15 @@ static switch_status_t trydir(switch_xml_t *pxml, int *xoff, LDAP * ld, char *di
         basedn = switch_mprintf(binding->basedn, dir_domain);
         filter = switch_mprintf(binding->filter, dir_exten);
  
+		if (param_event) {
+			char *expanded = switch_event_expand_headers(param_event, filter);
+			
+			if (expanded != filter) {
+				free(filter);
+				filter = expanded;
+			}
+		}
+
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "searching in basedn %s with filter %s\n", basedn, filter);
  
         if ((ldap_search_s(ld, basedn, LDAP_SCOPE_SUB, filter, NULL, 0, &msg) != LDAP_SUCCESS))
@@ -612,7 +621,7 @@ static switch_xml_t xml_ldap_search(const char *section, const char *tag_name, c
                 break;
 
         case XML_LDAP_DIRECTORY:
-                ret = trydir(&xml, &xoff, ld, dir_domain, dir_exten, binding);
+			ret = trydir(&xml, &xoff, ld, dir_domain, dir_exten, binding, params);
                 break;
 
         case XML_LDAP_DIALPLAN:

@@ -34,15 +34,27 @@
 /*! Audio time scaling descriptor. */
 struct time_scale_state_s
 {
+    /*! \brief The sample rate of both the incoming and outgoing signal */
     int sample_rate;
+    /*! \brief The minimum pitch we will search for, in samples per cycle */
     int min_pitch;
+    /*! \brief The maximum pitch we will search for, in samples per cycle */
     int max_pitch;
-    int buf_len;
+    /*! \brief The playout speed, as the fraction output time/input time.
+         (i.e. >1.0 == slow down, 1.0 == no speed change, <1.0 == speed up) */
     float playout_rate;
+    /*! \brief */
     double rcomp;
+    /*! \brief The fractional sample adjustment, to allow for non-integer values of lcp. */
     double rate_nudge;
-    int fill;
+    /*! \brief */
     int lcp;
+    /*! \brief The active length of buf at the current sample rate. */
+    int buf_len;
+    /*! \brief The number of samples in buf */
+    int fill;
+    /*! \brief Buffer for residual samples kept over from one call of time_scale() to
+        the next. */
     int16_t buf[TIME_SCALE_BUF_LEN];
 };
 

@@ -328,6 +328,7 @@ struct switch_rtp {
 	uint16_t seq;
 	uint32_t ssrc;
 	uint32_t remote_ssrc;
+	uint32_t last_read_ssrc;
 	int8_t sending_dtmf;
 	uint8_t need_mark;
 	switch_payload_t payload;
@@ -488,25 +489,6 @@ static void switch_rtp_change_ice_dest(switch_rtp_t *rtp_session, switch_rtp_ice
 	if (!is_rtcp || rtp_session->flags[SWITCH_RTP_FLAG_RTCP_MUX]) {
 		switch_rtp_set_remote_address(rtp_session, host, port, 0, SWITCH_FALSE, &err);
 	}
-	
-	if (rtp_session->dtls) {
-		
-		if (!is_rtcp || rtp_session->flags[SWITCH_RTP_FLAG_RTCP_MUX]) {
-			switch_sockaddr_info_get(&rtp_session->dtls->remote_addr, host, SWITCH_UNSPEC, port, 0, rtp_session->pool);
-		}
-		
-		if (is_rtcp && !rtp_session->flags[SWITCH_RTP_FLAG_RTCP_MUX]) {
-			
-			switch_sockaddr_info_get(&rtp_session->rtcp_remote_addr, host, SWITCH_UNSPEC, port, 0, rtp_session->pool);
-			if (rtp_session->rtcp_dtls) {
-				//switch_sockaddr_info_get(&rtp_session->rtcp_dtls->remote_addr, host, SWITCH_UNSPEC, port, 0, rtp_session->pool);
-				rtp_session->rtcp_dtls->remote_addr = rtp_session->rtcp_remote_addr;
-				rtp_session->rtcp_dtls->sock_output = rtp_session->rtcp_sock_output;
-			}
-			
-		}
-	}
-	
 }
 
 
@@ -2769,7 +2751,16 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_set_remote_address(switch_rtp_t *rtp_
 		if ((status = switch_socket_create(&rtp_session->sock_output,
 										   switch_sockaddr_get_family(rtp_session->remote_addr),
 										   SOCK_DGRAM, 0, rtp_session->pool)) != SWITCH_STATUS_SUCCESS) {
+
 			*err = "Socket Error!";
+		}
+	}
+
+	if (rtp_session->dtls) {
+		rtp_session->dtls->sock_output = rtp_session->sock_output;
+
+		if (rtp_session->flags[SWITCH_RTP_FLAG_RTCP_MUX]) {
+			switch_sockaddr_info_get(&rtp_session->dtls->remote_addr, host, SWITCH_UNSPEC, port, 0, rtp_session->pool);
 		}
 	}
 
@@ -2781,6 +2772,12 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_set_remote_address(switch_rtp_t *rtp_
 			rtp_session->remote_rtcp_port = rtp_session->eff_remote_port + 1;
 		}
 		status = enable_remote_rtcp_socket(rtp_session, err);
+		
+		if (rtp_session->rtcp_dtls) {
+			//switch_sockaddr_info_get(&rtp_session->rtcp_dtls->remote_addr, host, SWITCH_UNSPEC, port, 0, rtp_session->pool);
+			rtp_session->rtcp_dtls->remote_addr = rtp_session->rtcp_remote_addr;
+			rtp_session->rtcp_dtls->sock_output = rtp_session->rtcp_sock_output;
+		}
 	}
 
 	if (rtp_session->flags[SWITCH_RTP_FLAG_ENABLE_RTCP] && rtp_session->flags[SWITCH_RTP_FLAG_RTCP_MUX]) {	
@@ -3078,6 +3075,8 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_dtls(switch_rtp_t *rtp_session, d
 	switch_dtls_t *dtls;
 	int ret;
 	const char *kind = "";
+	BIO *bio;
+	DH *dh;
 
 #ifndef HAVE_OPENSSL_DTLS_SRTP
 	return SWITCH_STATUS_FALSE;
@@ -3124,6 +3123,14 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_dtls(switch_rtp_t *rtp_session, d
 		
 	dtls->ssl_ctx = SSL_CTX_new(DTLSv1_method());
 	switch_assert(dtls->ssl_ctx);
+
+	bio = BIO_new_file(dtls->pem, "r");
+	dh = PEM_read_bio_DHparams(bio, NULL, NULL, NULL);
+	BIO_free(bio);
+	if (dh) {
+		SSL_CTX_set_tmp_dh(dtls->ssl_ctx, dh);
+		DH_free(dh);
+	}
 
 	SSL_CTX_set_mode(dtls->ssl_ctx, SSL_MODE_AUTO_RETRY);
 
@@ -5071,10 +5078,14 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 
 
 	if (rtp_session->jb && !rtp_session->pause_jb && jb_valid(rtp_session) && rtp_session->recv_msg.header.version == 2 && *bytes) {
+		uint32_t read_ssrc = ntohl((uint32_t)rtp_session->recv_msg.header.ssrc);
 		if (rtp_session->recv_msg.header.m && rtp_session->recv_msg.header.pt != rtp_session->recv_te && 
 			!rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] && !(rtp_session->rtp_bugs & RTP_BUG_IGNORE_MARK_BIT)) {
 			stfu_n_reset(rtp_session->jb);
+		} else if (rtp_session->last_read_ssrc && rtp_session->last_read_ssrc != read_ssrc) {
+			stfu_n_reset(rtp_session->jb);
 		}
+		rtp_session->last_read_ssrc = read_ssrc;
 
 		if (!rtp_session->flags[SWITCH_RTP_FLAG_USE_TIMER] && rtp_session->timer.interval) {
 			switch_core_timer_sync(&rtp_session->timer);
@@ -5867,10 +5878,10 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 					}
 				}
 			} else {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG, "Correct ip/port confirmed.\n");
 				if ((rtp_session->rtp_bugs & RTP_BUG_ALWAYS_AUTO_ADJUST)) {
 					switch_rtp_set_flag(rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
 				} else {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG, "Correct ip/port confirmed.\n");
 					switch_rtp_clear_flag(rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
 				}
 				rtp_session->auto_adj_used = 0;
@@ -6207,7 +6218,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtcp_zerocopy_read_frame(switch_rtp_t *rt
 		for (i = 0; i < (int)rtp_session->rtcp_recv_msg_p->header.count && i < MAX_REPORT_BLOCKS ; i++) {
 			struct switch_rtcp_report_block* report = (struct switch_rtcp_report_block*) (rtp_session->rtcp_recv_msg_p->body + (sizeof(struct switch_rtcp_sr_head) + (i * sizeof(struct switch_rtcp_report_block))));
 			frame->reports[i].ssrc = ntohl(report->ssrc);
-			frame->reports[i].fraction = report->fraction;
+			frame->reports[i].fraction = (uint8_t)report->fraction;
 			frame->reports[i].lost = ntohl(report->lost);
 			frame->reports[i].highest_sequence_number_received = ntohl(report->highest_sequence_number_received);
 			frame->reports[i].jitter = ntohl(report->jitter);

@@ -348,14 +348,12 @@ static void *SWITCH_THREAD_FUNC unicast_thread_run(switch_thread_t *thread, void
 
 static void unicast_thread_launch(switch_unicast_conninfo_t *conninfo)
 {
-	switch_thread_t *thread;
 	switch_threadattr_t *thd_attr = NULL;
 
 	switch_threadattr_create(&thd_attr, switch_core_session_get_pool(conninfo->session));
-	switch_threadattr_detach_set(thd_attr, 1);
 	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
 	switch_set_flag_locked(conninfo, SUF_THREAD_RUNNING);
-	switch_thread_create(&thread, thd_attr, unicast_thread_run, conninfo, switch_core_session_get_pool(conninfo->session));
+	switch_thread_create(&conninfo->thread, thd_attr, unicast_thread_run, conninfo, switch_core_session_get_pool(conninfo->session));
 }
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_deactivate_unicast(switch_core_session_t *session)
@@ -369,9 +367,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_deactivate_unicast(switch_core_sessio
 	}
 
 	if ((conninfo = switch_channel_get_private(channel, "unicast"))) {
+		switch_status_t st;
+
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Shutting down unicast connection\n");
 		switch_clear_flag_locked(conninfo, SUF_READY);
 		switch_socket_shutdown(conninfo->socket, SWITCH_SHUTDOWN_READWRITE);
+		switch_thread_join(&st, conninfo->thread);
+		
 		while (switch_test_flag(conninfo, SUF_THREAD_RUNNING)) {
 			switch_yield(10000);
 			if (++sanity >= 10000) {

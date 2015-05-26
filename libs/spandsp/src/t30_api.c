@@ -95,6 +95,65 @@
 
 #include "t30_local.h"
 
+SPAN_DECLARE(int) t33_sub_address_extract_field(uint8_t num[21], const uint8_t t33[], int field_no)
+{
+    int i;
+    int j;
+    int k;
+    int ch;
+    int type;
+
+    num[0] = '\0';
+    k = 0;
+    for (i = 0;  t33[i];  )
+    {
+        if (k++ == field_no)
+        {
+            ch = t33[i++];
+            j = 0;
+            if (ch != '#')
+            {
+                num[j++] = ch;
+                type = T33_EXT;
+            }
+            else
+            {
+                type = T33_SST;
+            }
+            while (t33[i])
+            {
+                ch = t33[i++];
+                if (ch == '#')
+                    break;
+                num[j++] = ch;
+                if (j >= 20)
+                    return -1;
+            }
+            num[j] = '\0';
+            return type;
+        }
+        /* Skip this field */
+        i++;
+        while (t33[i])
+        {
+            if (t33[i++] == '#')
+                break;
+        }
+    }
+    return T33_NONE;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(void) t33_sub_address_add_field(uint8_t t33[], const uint8_t field[], int type)
+{
+    if (t33[0] != '\0')
+        strcat((char *) t33, "#");
+    if (type == T33_SST)
+        strcat((char *) t33, "#");
+    strcat((char *) t33, (const char *) field);
+}
+/*- End of function --------------------------------------------------------*/
+
 SPAN_DECLARE(int) t30_set_tx_ident(t30_state_t *s, const char *id)
 {
     if (id == NULL)

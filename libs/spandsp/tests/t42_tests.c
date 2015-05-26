@@ -43,7 +43,7 @@
 
 #include "spandsp.h"
 
-#if defined(SPANDSP_SUPPORT_TIFF_FX)
+#if defined(SPANDSP_SUPPORT_TIFF_FX)  &&  defined(HAVE_TIF_DIR_H)
 #include <tif_dir.h>
 #endif
 
@@ -157,7 +157,7 @@ int main(int argc, char *argv[])
     logging = span_log_init(NULL, SPAN_LOG_FLOW, "T.42");
 #endif
 
-#if defined(SPANDSP_SUPPORT_TIFF_FX)
+#if defined(SPANDSP_SUPPORT_TIFF_FX)  &&  defined(HAVE_TIF_DIR_H)
     TIFF_FX_init();
 #endif
 
