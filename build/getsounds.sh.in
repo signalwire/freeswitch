@@ -12,7 +12,7 @@ if [ -x "$WGET" ]; then
   DOWNLOAD_CMD=$WGET
 fi
 if [ "x${DOWNLOAD_CMD}" = "x" -a -x "$CURL" ] ; then
-  DOWNLOAD_CMD="$CURL -O"
+  DOWNLOAD_CMD="$CURL -L -O"
 fi
 
 base=http://files.freeswitch.org/
