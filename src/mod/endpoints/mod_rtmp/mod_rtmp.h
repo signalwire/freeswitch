@@ -1,4 +1,4 @@
-/* 
+/*
  * mod_rtmp for FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2011, Barracuda Networks Inc.
  *
@@ -21,7 +21,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Mathieu Rene <mrene@avgs.ca>
  *
  * mod_rtmp.h -- RTMP Endpoint Module
@@ -37,7 +37,7 @@
 #include "io.h"
 #include "types.h"
 
-//#define RTMP_DEBUG_IO 
+//#define RTMP_DEBUG_IO
 #define RTMP_DONT_HOLD
 
 #define RTMP_THREE_WAY_UUID_VARIABLE "rtmp_three_way_uuid"
@@ -162,9 +162,9 @@ codecID	 (byte & 0x0f) » 0	 2: Sorensen H.263, 3: Screen video, 4: On2 VP6, 5: 
 frameType	 (byte & 0xf0) » 4	 1: keyframe, 2: inter frame, 3: disposable inter frame
 
 0x12: META
-The contents of a meta packet are two AMF packets. 
-The first is almost always a short uint16_be length-prefixed UTF-8 string (AMF type 0×02), 
-and the second is typically a mixed array (AMF type 0×08). However, the second chunk typically contains a variety of types, 
+The contents of a meta packet are two AMF packets.
+The first is almost always a short uint16_be length-prefixed UTF-8 string (AMF type 0×02),
+and the second is typically a mixed array (AMF type 0×08). However, the second chunk typically contains a variety of types,
 so a full AMF parser should be used.
 */
 
@@ -198,7 +198,7 @@ static inline rtmp_audio_format_t rtmp_audio_codec_get_format(uint8_t codec) {
 
 static inline uint8_t rtmp_audio_codec(int channels, int bits, int rate, rtmp_audio_format_t format) {
 	uint8_t codec = 0;
-	
+
 	switch (channels) {
 		case 1:
 			break;
@@ -207,7 +207,7 @@ static inline uint8_t rtmp_audio_codec(int channels, int bits, int rate, rtmp_au
 		default:
 			return 0;
 	}
-	
+
 	switch (bits) {
 		case 8:
 			break;
@@ -215,8 +215,8 @@ static inline uint8_t rtmp_audio_codec(int channels, int bits, int rate, rtmp_au
 			codec |= 2;
 		default:
 			return 0;
-	}	
-	
+	}
+
 	switch (rate) {
 		case 0:
 		case 5500:
@@ -232,7 +232,7 @@ static inline uint8_t rtmp_audio_codec(int channels, int bits, int rate, rtmp_au
 		default:
 			return 0;
 	}
-	
+
 	switch(format) {
 		case RTMP_AUDIO_PCM:
 			break;
@@ -254,7 +254,7 @@ static inline uint8_t rtmp_audio_codec(int channels, int bits, int rate, rtmp_au
 		default:
 			return 0;
 	}
-	
+
 	return codec;
 }
 
@@ -280,12 +280,12 @@ typedef switch_status_t (*rtmp_invoke_function_t)(RTMP_INVOKE_FUNCTION_ARGS);
 #define amf0_is_boolean(_x) (_x && (_x)->type == AMF0_TYPE_BOOLEAN)
 #define amf0_is_object(_x) (_x && (_x)->type == AMF0_TYPE_OBJECT)
 
-static inline char *amf0_get_string(amf0_data *x) 
+static inline char *amf0_get_string(amf0_data *x)
 {
 	return (amf0_is_string(x) ? (char*)amf0_string_get_uint8_ts(x) : NULL);
 }
 
-static inline int amf0_get_number(amf0_data *x) 
+static inline int amf0_get_number(amf0_data *x)
 {
 	return (amf0_is_number(x) ? amf0_number_get_value(x) : 0);
 }
@@ -321,7 +321,7 @@ typedef enum {
 typedef enum {
 	SFLAG_AUDIO = (1 << 0),		/* < Send audio */
 	SFLAG_VIDEO = (1 << 1)		/* < Send video */
-} SFLAGS; 
+} SFLAGS;
 
 typedef enum {
 	PFLAG_RUNNING = (1 << 0)
@@ -357,11 +357,11 @@ struct rtmp_profile {
 	const char *bind_address;	/* < Bind address */
 	const char *io_name;		/* < Name of I/O module (from config) */
 	int chunksize;				/* < Override default chunksize (from config) */
-	int buffer_len;				/* < Receive buffer length the flash clients should use */ 
-	
+	int buffer_len;				/* < Receive buffer length the flash clients should use */
+
 	switch_hash_t *reg_hash;	/* < Registration hashtable */
 	switch_thread_rwlock_t *reg_rwlock; /* < Registration hash rwlock */
-	
+
 	switch_bool_t auth_calls;	/* < Require authentiation */
 };
 
@@ -417,52 +417,52 @@ struct rtmp_session {
 	rtmp_profile_t *profile;
 	char uuid[SWITCH_UUID_FORMATTED_LENGTH+1];
 	void *io_private;
-	
+
 	rtmp_session_state_t state;
 	int parse_state;
 	uint16_t parse_remain; /* < Remaining bytes required before changing parse state */
-	
+
 	int hdrsize;	/* < The current header size */
 	int amfnumber;	/* < The current AMF number */
 
 	rtmp_state_t amfstate[64];
 	rtmp_state_t amfstate_out[64];
-	
+
 	switch_mutex_t *socket_mutex;
 	switch_mutex_t *count_mutex;
 	int active_sessions;
-	
+
 	unsigned char hsbuf[2048];
 	int hspos;
 	uint16_t in_chunksize;
 	uint16_t out_chunksize;
-	
+
 	/* Connect params */
 	const char *flashVer;
 	const char *swfUrl;
 	const char *tcUrl;
 	const char *app;
 	const char *pageUrl;
-	
+
 	uint32_t capabilities;
 	uint32_t audioCodecs;
 	uint32_t videoCodecs;
 	uint32_t videoFunction;
-	
+
 	switch_thread_rwlock_t *rwlock;
-	
+
 	rtmp_private_t *tech_pvt;		/* < Active call's tech_pvt */
 #ifdef RTMP_DEBUG_IO
 	FILE *io_debug_in;
 	FILE *io_debug_out;
 #endif
-	
+
 	const char *remote_address;
 	switch_port_t remote_port;
-	
+
 	switch_hash_t *session_hash;		/* < Hash of call uuids and tech_pvt */
 	switch_thread_rwlock_t *session_rwlock;	/* < RWLock protecting session_hash */
-	
+
 	rtmp_account_t *account;
 	switch_thread_rwlock_t *account_rwlock;
 	uint32_t flags;
@@ -471,18 +471,18 @@ struct rtmp_session {
 	uint64_t recv_ack_window;			/* < ACK Window */
 	uint64_t recv_ack_sent;				/* < Bytes ack'd */
 	uint64_t recv;						/* < Bytes received */
-	
+
 	uint32_t send_ack_window;
 	uint32_t send_ack;
 	uint32_t send;
 	switch_time_t send_ack_ts;
-	
+
 	uint32_t send_bw;					/* < Current send bandwidth (in bytes/sec) */
-	
+
 	uint32_t next_streamid;				/* < The next stream id that will be used */
 	uint32_t active_streamid;			/* < The stream id returned by the last call to createStream */
-	
-	uint32_t media_streamid;			/* < The stream id that was used for the last "play" command, 
+
+	uint32_t media_streamid;			/* < The stream id that was used for the last "play" command,
 											where we should send media */
 };
 
@@ -490,32 +490,32 @@ struct rtmp_private {
 	unsigned int flags;
 	switch_codec_t read_codec;
 	switch_codec_t write_codec;
-	
+
 	switch_frame_t read_frame;
 	unsigned char databuf[SWITCH_RECOMMENDED_BUFFER_SIZE];	/* < Buffer for read_frame */
-	
+
 	switch_caller_profile_t *caller_profile;
-	
+
 	switch_mutex_t *mutex;
 	switch_mutex_t *flag_mutex;
-	
+
 	switch_core_session_t *session;
 	switch_channel_t *channel;
 	rtmp_session_t *rtmp_session;
-	
+
 	int read_channel; /* RTMP channel #s for read and write */
 	int write_channel;
 	uint8_t audio_codec;
 	uint8_t video_codec;
-	
+
 	switch_time_t stream_start_ts;
 	switch_timer_t timer;
 	switch_buffer_t *readbuf;
 	switch_mutex_t *readbuf_mutex;
-	
+
 	const char *display_callee_id_name;
 	const char *display_callee_id_number;
-	
+
 	const char *auth_user;
 	const char *auth_domain;
 	const char *auth;
@@ -536,10 +536,10 @@ struct rtmp_reg {
 };
 
 
-typedef enum { 
+typedef enum {
 	MSG_FULLHEADER = 1
 } rtmp_message_send_flag_t;
-	
+
 
 /* Invokable functions from flash */
 RTMP_INVOKE_FUNCTION(rtmp_i_connect);
@@ -591,9 +591,9 @@ switch_status_t rtmp_on_routing(switch_core_session_t *session);
 switch_status_t rtmp_on_exchange_media(switch_core_session_t *session);
 switch_status_t rtmp_on_soft_execute(switch_core_session_t *session);
 switch_call_cause_t rtmp_outgoing_channel(switch_core_session_t *session, switch_event_t *var_event,
- 											switch_caller_profile_t *outbound_profile,
- 											switch_core_session_t **new_session, switch_memory_pool_t **pool, switch_originate_flag_t flags,
- 											switch_call_cause_t *cancel_cause);
+											switch_caller_profile_t *outbound_profile,
+											switch_core_session_t **new_session, switch_memory_pool_t **pool, switch_originate_flag_t flags,
+											switch_call_cause_t *cancel_cause);
 switch_status_t rtmp_read_frame(switch_core_session_t *session, switch_frame_t **frame, switch_io_flag_t flags, int stream_id);
 switch_status_t rtmp_write_frame(switch_core_session_t *session, switch_frame_t *frame, switch_io_flag_t flags, int stream_id);
 switch_status_t rtmp_kill_channel(switch_core_session_t *session, int sig);

@@ -1,4 +1,4 @@
-/* 
+/*
  * mod_rtmp for FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2011-2012, Barracuda Networks Inc.
  *
@@ -21,7 +21,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Mathieu Rene <mrene@avgs.ca>
  * Anthony Minessale II <anthm@freeswitch.org>
  * William King <william.king@quentustech.com>
@@ -78,7 +78,7 @@ static void rtmp_set_channel_variables(switch_core_session_t *session)
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	rtmp_private_t *tech_pvt = switch_core_session_get_private(session);
 	rtmp_session_t *rsession = tech_pvt->rtmp_session;
-	
+
 	switch_channel_set_variable(channel, "rtmp_profile", rsession->profile->name);
 	switch_channel_set_variable(channel, "rtmp_session", rsession->uuid);
 	switch_channel_set_variable(channel, "rtmp_flash_version", rsession->flashVer);
@@ -92,55 +92,55 @@ static void rtmp_set_channel_variables(switch_core_session_t *session)
 switch_status_t rtmp_tech_init(rtmp_private_t *tech_pvt, rtmp_session_t *rsession, switch_core_session_t *session)
 {
 	switch_assert(rsession && session && tech_pvt);
-	
+
 	tech_pvt->read_frame.data = tech_pvt->databuf;
 	tech_pvt->read_frame.buflen = sizeof(tech_pvt->databuf);
 	switch_mutex_init(&tech_pvt->mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
 	switch_mutex_init(&tech_pvt->flag_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
 	switch_mutex_init(&tech_pvt->readbuf_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
-	
+
 	switch_buffer_create_dynamic(&tech_pvt->readbuf, 512, 512, 1024000);
 	//switch_buffer_add_mutex(tech_pvt->readbuf, tech_pvt->readbuf_mutex);
-	
+
 	switch_core_timer_init(&tech_pvt->timer, "soft", 20, (16000 / (1000 / 20)), switch_core_session_get_pool(session));
-	
+
 	tech_pvt->session = session;
 	tech_pvt->rtmp_session = rsession;
 	tech_pvt->channel = switch_core_session_get_channel(session);
 
 	/* Initialize read & write codecs */
 	if (switch_core_codec_init(&tech_pvt->read_codec, /* name */ "SPEEX", /* modname */ NULL,
-		 /* fmtp */ NULL,  /* rate */ 16000, /* ms */ 20, /* channels */ 1, 
-		/* flags */ SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, 
+		/* fmtp */ NULL,  /* rate */ 16000, /* ms */ 20, /* channels */ 1,
+		/* flags */ SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
 		/* codec settings */ NULL, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't initialize read codec\n");
-		
+
 		return SWITCH_STATUS_FALSE;
 	}
 
 	if (switch_core_codec_init(&tech_pvt->write_codec, /* name */ "SPEEX", /* modname */ NULL,
-		 /* fmtp */ NULL,  /* rate */ 16000, /* ms */ 20, /* channels */ 1, 
-		/* flags */ SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, 
+		 /* fmtp */ NULL,  /* rate */ 16000, /* ms */ 20, /* channels */ 1,
+		/* flags */ SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
 		/* codec settings */ NULL, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't initialize write codec\n");
-		
+
 		return SWITCH_STATUS_FALSE;
 	}
-	
+
 	switch_core_session_set_read_codec(session, &tech_pvt->read_codec);
 	switch_core_session_set_write_codec(session, &tech_pvt->write_codec);
-	
+
 	//static inline uint8_t rtmp_audio_codec(int channels, int bits, int rate, rtmp_audio_format_t format) {
 	tech_pvt->audio_codec = 0xB2; //rtmp_audio_codec(1, 16, 0 /* speex is always 8000  */, RTMP_AUDIO_SPEEX);
-	
+
 	switch_core_session_set_private(session, tech_pvt);
-	
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
 
-/* 
-   State methods they get called when the state changes to the specific state 
+/*
+   State methods they get called when the state changes to the specific state
    returning SWITCH_STATUS_SUCCESS tells the core to execute the standard state method next
    so if you fully implement the state you can return SWITCH_STATUS_FALSE to skip it.
 */
@@ -159,11 +159,11 @@ switch_status_t rtmp_on_init(switch_core_session_t *session)
 	assert(channel != NULL);
 
 	switch_channel_set_flag(channel, CF_CNG_PLC);
-	
+
 	rtmp_notify_call_state(session);
-	
+
 	switch_set_flag_locked(tech_pvt, TFLAG_IO);
-	
+
 	switch_mutex_lock(rsession->profile->mutex);
 	rsession->profile->calls++;
 	switch_mutex_unlock(rsession->profile->mutex);
@@ -229,7 +229,7 @@ switch_status_t rtmp_on_destroy(switch_core_session_t *session)
 		if (switch_core_codec_ready(&tech_pvt->write_codec)) {
 			switch_core_codec_destroy(&tech_pvt->write_codec);
 		}
-		
+
 		switch_buffer_destroy(&tech_pvt->readbuf);
 		switch_core_timer_destroy(&tech_pvt->timer);
 	}
@@ -276,11 +276,11 @@ switch_status_t rtmp_on_hangup(switch_core_session_t *session)
 
 	rtmp_notify_call_state(session);
 	rtmp_send_onhangup(session);
-	
+
 	/*
 	 * If the session_rwlock is already locked, then there is a larger possibility that the rsession
 	 * is looping through because the rsession is trying to hang them up. If that is the case, then there
-	 * is really no reason to foce this hash_delete. Just timeout, and let the rsession handle the final cleanup 
+	 * is really no reason to foce this hash_delete. Just timeout, and let the rsession handle the final cleanup
 	 * since it now checks for the existence of the FS session safely.
 	 */
 	if ( switch_thread_rwlock_trywrlock_timeout(rsession->session_rwlock, 10) == SWITCH_STATUS_SUCCESS) {
@@ -293,7 +293,7 @@ switch_status_t rtmp_on_hangup(switch_core_session_t *session)
 		}
 		switch_thread_rwlock_unlock(rsession->session_rwlock);
 	}
-	
+
 #ifndef RTMP_DONT_HOLD
 	if (switch_channel_test_flag(channel, CF_HOLD)) {
 		switch_channel_mark_hold(channel, SWITCH_FALSE);
@@ -322,7 +322,7 @@ switch_status_t rtmp_kill_channel(switch_core_session_t *session, int sig)
 	switch (sig) {
 	case SWITCH_SIG_KILL:
 		switch_clear_flag_locked(tech_pvt, TFLAG_IO);
-		
+
 		break;
 	case SWITCH_SIG_BREAK:
 		switch_set_flag_locked(tech_pvt, TFLAG_BREAK);
@@ -372,19 +372,19 @@ switch_status_t rtmp_read_frame(switch_core_session_t *session, switch_frame_t *
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 	rsession = tech_pvt->rtmp_session;
-	
+
 	if (rsession->state >= RS_DESTROY) {
 		return SWITCH_STATUS_FALSE;
 	}
-	
+
 	if (switch_test_flag(tech_pvt, TFLAG_DETACHED)) {
 		switch_core_timer_next(&tech_pvt->timer);
 		goto cng;
 	}
-	
+
 	tech_pvt->read_frame.flags = SFF_NONE;
 	tech_pvt->read_frame.codec = &tech_pvt->read_codec;
-	
+
 	switch_core_timer_next(&tech_pvt->timer);
 
 	if (switch_buffer_inuse(tech_pvt->readbuf) < 2) {
@@ -399,19 +399,19 @@ switch_status_t rtmp_read_frame(switch_core_session_t *session, switch_frame_t *
 				goto cng;
 			} else {
 				uint8_t codec;
-				
+
 				if (tech_pvt->read_frame.buflen < len) {
 					switch_mutex_unlock(tech_pvt->readbuf_mutex);
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Packet of size %u is bigger that the buffer length %u.\n",
 						len, tech_pvt->read_frame.buflen);
 					return SWITCH_STATUS_FALSE;
 				}
-				
+
 				switch_buffer_toss(tech_pvt->readbuf, 2);
-				switch_buffer_read(tech_pvt->readbuf, &codec, 1); 
+				switch_buffer_read(tech_pvt->readbuf, &codec, 1);
 				switch_buffer_read(tech_pvt->readbuf, tech_pvt->read_frame.data, len-1);
 				tech_pvt->read_frame.datalen = len-1;
-				
+
 				if (codec != tech_pvt->audio_codec) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Received codec 0x%x instead of 0x%x\n", codec, tech_pvt->audio_codec);
 					switch_mutex_unlock(tech_pvt->readbuf_mutex);
@@ -423,9 +423,9 @@ switch_status_t rtmp_read_frame(switch_core_session_t *session, switch_frame_t *
 	}
 
 	*frame = &tech_pvt->read_frame;
-	
+
 	return SWITCH_STATUS_SUCCESS;
-	
+
 cng:
 
 	data = (switch_byte_t *) tech_pvt->read_frame.data;
@@ -438,7 +438,7 @@ cng:
 	//switch_core_timer_sync(&tech_pvt->timer);
 
 	*frame = &tech_pvt->read_frame;
-	
+
 	return SWITCH_STATUS_SUCCESS;
 
 }
@@ -451,7 +451,7 @@ switch_status_t rtmp_write_frame(switch_core_session_t *session, switch_frame_t 
 	//switch_frame_t *pframe;
 	unsigned char buf[AMF_MAX_SIZE];
 	switch_time_t ts;
-	
+
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
 
@@ -469,16 +469,16 @@ switch_status_t rtmp_write_frame(switch_core_session_t *session, switch_frame_t 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "TFLAG_IO not set\n");
 		goto error;
 	}
-	
+
 	if (switch_test_flag(tech_pvt, TFLAG_DETACHED) || !switch_test_flag(rsession, SFLAG_AUDIO)) {
 		goto success;
 	}
-	
+
 	if (!rsession || !tech_pvt->audio_codec || !tech_pvt->write_channel) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing mandatory value\n");
 		goto error;
 	}
-	
+
 	if (rsession->state >= RS_DESTROY) {
 		goto error;
 	}
@@ -487,7 +487,7 @@ switch_status_t rtmp_write_frame(switch_core_session_t *session, switch_frame_t 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Datalen too big\n");
 		goto error;
 	}
-	
+
 	if (frame->flags & SFF_CNG) {
 		goto success;
 	}
@@ -495,7 +495,7 @@ switch_status_t rtmp_write_frame(switch_core_session_t *session, switch_frame_t 
 	/* Build message */
 	buf[0] = tech_pvt->audio_codec;
 	memcpy(buf+1, frame->data, frame->datalen);
-	
+
 	/* Send it down the socket */
 	if (!tech_pvt->stream_start_ts) {
 		tech_pvt->stream_start_ts = switch_micro_time_now() / 1000;
@@ -507,12 +507,12 @@ switch_status_t rtmp_write_frame(switch_core_session_t *session, switch_frame_t 
 	rtmp_send_message(rsession, RTMP_DEFAULT_STREAM_AUDIO, ts, RTMP_TYPE_AUDIO, rsession->media_streamid, buf, frame->datalen + 1, 0);
 
  success:
-	switch_thread_rwlock_unlock(rsession->rwlock);	
+	switch_thread_rwlock_unlock(rsession->rwlock);
 	return SWITCH_STATUS_SUCCESS;
 
  error:
 	switch_thread_rwlock_unlock(rsession->rwlock);
-	
+
  error_null:
 	return SWITCH_STATUS_FALSE;
 }
@@ -546,7 +546,7 @@ switch_status_t rtmp_receive_message(switch_core_session_t *session, switch_core
 	case SWITCH_MESSAGE_INDICATE_UNHOLD:
 		rtmp_notify_call_state(session);
 		break;
-	
+
 	case SWITCH_MESSAGE_INDICATE_DISPLAY:
 		{
 			const char *name = msg->string_array_arg[0], *number = msg->string_array_arg[1];
@@ -563,24 +563,24 @@ switch_status_t rtmp_receive_message(switch_core_session_t *session, switch_core
 				number = argv[1];
 
 			}
-			
+
 			if (!zstr(name)) {
 				if (zstr(number)) {
 					switch_caller_profile_t *caller_profile = switch_channel_get_caller_profile(channel);
 					number = caller_profile->destination_number;
 				}
-				
+
 				if (zstr(tech_pvt->display_callee_id_name) || strcmp(tech_pvt->display_callee_id_name, name)) {
 					tech_pvt->display_callee_id_name = switch_core_session_strdup(session, name);
 				}
-				
+
 				if (zstr(tech_pvt->display_callee_id_number) || strcmp(tech_pvt->display_callee_id_number, number)) {
 					tech_pvt->display_callee_id_number = switch_core_session_strdup(session, number);
 				}
-				
+
 				rtmp_send_display_update(session);
 			}
-			
+
 			switch_safe_free(arg);
 		}
 		break;
@@ -607,14 +607,14 @@ switch_call_cause_t rtmp_outgoing_channel(switch_core_session_t *session, switch
 	switch_memory_pool_t *pool;
 	char *destination = NULL, *auth, *user, *domain;
 	*newsession = NULL;
-	
+
 	if (zstr(outbound_profile->destination_number)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "No destination\n");
 		goto fail;
 	}
 
 	destination = strdup(outbound_profile->destination_number);
-	
+
 	if ((auth = strchr(destination, '/'))) {
 		*auth++ = '\0';
 	}
@@ -625,32 +625,32 @@ switch_call_cause_t rtmp_outgoing_channel(switch_core_session_t *session, switch
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "No such session id: %s\n", outbound_profile->destination_number);
 		goto fail;
 	}
-	
+
 	if (!(*newsession = switch_core_session_request_uuid(rtmp_globals.rtmp_endpoint_interface, flags, SWITCH_CALL_DIRECTION_OUTBOUND, inpool, switch_event_get_header(var_event, "origination_uuid")))) {
 		goto fail;
 	}
-	
+
 	pool = switch_core_session_get_pool(*newsession);
 
- 	channel = switch_core_session_get_channel(*newsession);
+	channel = switch_core_session_get_channel(*newsession);
 	switch_channel_set_name(channel, switch_core_session_sprintf(*newsession, "rtmp/%s/%s", rsession->profile->name, outbound_profile->destination_number));
-	
+
 	caller_profile = switch_caller_profile_dup(pool, outbound_profile);
 	switch_channel_set_caller_profile(channel, caller_profile);
-	
+
 	tech_pvt = switch_core_alloc(pool, sizeof(rtmp_private_t));
 	tech_pvt->rtmp_session = rsession;
 	tech_pvt->write_channel = RTMP_DEFAULT_STREAM_AUDIO;
 	tech_pvt->session = *newsession;
-	tech_pvt->caller_profile = caller_profile;	
+	tech_pvt->caller_profile = caller_profile;
 	switch_core_session_add_stream(*newsession, NULL);
-	
+
 	if (rtmp_tech_init(tech_pvt, rsession, *newsession) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(*newsession), SWITCH_LOG_ERROR, "tech_init failed\n");
 		cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 		goto fail;
 	}
-	
+
 	if (!zstr(auth)) {
 		tech_pvt->auth = switch_core_session_strdup(*newsession, auth);
 		switch_split_user_domain(auth, &user, &domain);
@@ -659,13 +659,13 @@ switch_call_cause_t rtmp_outgoing_channel(switch_core_session_t *session, switch
 	}
 
 	/*switch_channel_mark_pre_answered(channel);*/
-	
+
 	switch_channel_ring_ready(channel);
 	rtmp_send_incoming_call(*newsession, var_event);
-	
+
 	switch_channel_set_state(channel, CS_INIT);
 	switch_set_flag_locked(tech_pvt, TFLAG_IO);
-	
+
 	rtmp_set_channel_variables(*newsession);
 
 	switch_core_hash_insert_wrlock(rsession->session_hash, switch_core_session_get_uuid(*newsession), tech_pvt, rsession->session_rwlock);
@@ -673,9 +673,9 @@ switch_call_cause_t rtmp_outgoing_channel(switch_core_session_t *session, switch
 	if (rsession) {
 		rtmp_session_rwunlock(rsession);
 	}
-	
+
 	return SWITCH_CAUSE_SUCCESS;
-	
+
 fail:
 	if (*newsession) {
 		if (!switch_core_session_running(*newsession) && !switch_core_session_started(*newsession)) {
@@ -698,17 +698,17 @@ switch_status_t rtmp_receive_event(switch_core_session_t *session, switch_event_
 
 	/* Deliver the event as a custom message to the target rtmp session */
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Session", switch_core_session_get_uuid(session));
-	
+
 	rtmp_send_event(rsession, event);
 
 	return SWITCH_STATUS_SUCCESS;
 }
 
 
-rtmp_profile_t *rtmp_profile_locate(const char *name) 
+rtmp_profile_t *rtmp_profile_locate(const char *name)
 {
 	rtmp_profile_t *profile = switch_core_hash_find_rdlock(rtmp_globals.profile_hash, name, rtmp_globals.profile_rwlock);
-	
+
 	if (profile) {
 		if (switch_thread_rwlock_tryrdlock(profile->rwlock) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Profile %s is locked\n", name);
@@ -719,7 +719,7 @@ rtmp_profile_t *rtmp_profile_locate(const char *name)
 	return profile;
 }
 
-void rtmp_profile_release(rtmp_profile_t *profile) 
+void rtmp_profile_release(rtmp_profile_t *profile)
 {
 	switch_thread_rwlock_unlock(profile->rwlock);
 }
@@ -727,13 +727,13 @@ void rtmp_profile_release(rtmp_profile_t *profile)
 rtmp_session_t *rtmp_session_locate(const char *uuid)
 {
 	rtmp_session_t *rsession = switch_core_hash_find_rdlock(rtmp_globals.session_hash, uuid, rtmp_globals.session_rwlock);
-	
+
 	if (!rsession || rsession->state >= RS_DESTROY) {
 		return NULL;
 	}
-	
+
 	switch_thread_rwlock_rdlock(rsession->rwlock);
-	
+
 	return rsession;
 }
 
@@ -742,7 +742,7 @@ void rtmp_session_rwunlock(rtmp_session_t *rsession)
 	switch_thread_rwlock_unlock(rsession->rwlock);
 }
 
-void rtmp_event_fill(rtmp_session_t *rsession, switch_event_t *event) 
+void rtmp_event_fill(rtmp_session_t *rsession, switch_event_t *event)
 {
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "RTMP-Session-ID", rsession->uuid);
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "RTMP-Flash-Version", rsession->flashVer);
@@ -761,14 +761,14 @@ switch_status_t rtmp_session_request(rtmp_profile_t *profile, rtmp_session_t **n
 	switch_uuid_t uuid;
 	switch_core_new_memory_pool(&pool);
 	*newsession = switch_core_alloc(pool, sizeof(rtmp_session_t));
-	
+
 	(*newsession)->pool = pool;
 	(*newsession)->profile = profile;
 	(*newsession)->in_chunksize = (*newsession)->out_chunksize = RTMP_DEFAULT_CHUNKSIZE;
 	(*newsession)->recv_ack_window = RTMP_DEFAULT_ACK_WINDOW;
 	(*newsession)->next_streamid = 1;
 	(*newsession)->io_private = NULL;
-		
+
 	switch_uuid_get(&uuid);
 	switch_uuid_format((*newsession)->uuid, &uuid);
 	switch_mutex_init(&((*newsession)->socket_mutex), SWITCH_MUTEX_NESTED, pool);
@@ -779,7 +779,7 @@ switch_status_t rtmp_session_request(rtmp_profile_t *profile, rtmp_session_t **n
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "New RTMP session [%s]\n", (*newsession)->uuid);
 	switch_core_hash_insert_wrlock(rtmp_globals.session_hash, (*newsession)->uuid, *newsession, rtmp_globals.session_rwlock);
 	switch_core_hash_insert_wrlock(profile->session_hash, (*newsession)->uuid, *newsession, profile->session_rwlock);
-	
+
 	switch_core_hash_init(&(*newsession)->session_hash);
 	switch_thread_rwlock_create(&(*newsession)->session_rwlock, pool);
 
@@ -792,11 +792,11 @@ switch_status_t rtmp_session_request(rtmp_profile_t *profile, rtmp_session_t **n
 		(*newsession)->io_debug_out = fopen(buf, "w");
 	}
 #endif
-	
+
 	switch_mutex_lock(profile->mutex);
 	profile->clients++;
 	switch_mutex_unlock(profile->mutex);
-	
+
 	{
 		switch_event_t *event;
 		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, RTMP_EVENT_CONNECT) == SWITCH_STATUS_SUCCESS) {
@@ -804,7 +804,7 @@ switch_status_t rtmp_session_request(rtmp_profile_t *profile, rtmp_session_t **n
 			switch_event_fire(&event);
 		}
 	}
-	
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -820,7 +820,7 @@ static void rtmp_garbage_colletor(void)
  top:
 
 	for (hi = switch_core_hash_first_iter( rtmp_globals.session_hash, hi); hi; hi = switch_core_hash_next(&hi)) {
-		void *val;	
+		void *val;
 		const void *key;
 		switch_ssize_t keylen;
 		rtmp_session_t *rsession;
@@ -835,11 +835,11 @@ static void rtmp_garbage_colletor(void)
 		}
 	}
 	switch_safe_free(hi);
-	
+
 	switch_thread_rwlock_unlock(rtmp_globals.session_rwlock);
 }
 
-switch_status_t rtmp_session_destroy(rtmp_session_t **rsession) 
+switch_status_t rtmp_session_destroy(rtmp_session_t **rsession)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
@@ -854,7 +854,7 @@ switch_status_t rtmp_session_destroy(rtmp_session_t **rsession)
 	return status;
 }
 
-switch_status_t rtmp_real_session_destroy(rtmp_session_t **rsession) 
+switch_status_t rtmp_real_session_destroy(rtmp_session_t **rsession)
 {
 	switch_hash_index_t *hi;
 	switch_event_t *event;
@@ -862,14 +862,14 @@ switch_status_t rtmp_real_session_destroy(rtmp_session_t **rsession)
 
 	switch_thread_rwlock_rdlock((*rsession)->session_rwlock);
 	for (hi = switch_core_hash_first((*rsession)->session_hash); hi; hi = switch_core_hash_next(&hi)) {
-		void *val;	
+		void *val;
 		const void *key;
 		switch_ssize_t keylen;
 		switch_channel_t *channel;
 		switch_core_session_t *session;
 
-		switch_core_hash_this(hi, &key, &keylen, &val);		
-		
+		switch_core_hash_this(hi, &key, &keylen, &val);
+
 		/* If there are any sessions attached, abort the destroy operation */
 		if ((session = switch_core_session_locate((char *)key)) != NULL ) {
 			channel = switch_core_session_get_channel(session);
@@ -884,21 +884,21 @@ switch_status_t rtmp_real_session_destroy(rtmp_session_t **rsession)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "RTMP session [%s] %p still busy.\n", (*rsession)->uuid, (void *) *rsession);
 		return SWITCH_STATUS_FALSE;
 	}
-	
+
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "RTMP session [%s] %p will be destroyed.\n", (*rsession)->uuid, (void *) *rsession);
-	
-	
+
+
 	if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, RTMP_EVENT_DISCONNECT) == SWITCH_STATUS_SUCCESS) {
 		rtmp_event_fill(*rsession, event);
 		switch_event_fire(&event);
 	}
-	
+
 	switch_core_hash_delete(rtmp_globals.session_hash, (*rsession)->uuid);
 	switch_core_hash_delete_wrlock((*rsession)->profile->session_hash, (*rsession)->uuid, (*rsession)->profile->session_rwlock);
 	rtmp_clear_registration(*rsession, NULL, NULL);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "RTMP session ended [%s]\n", (*rsession)->uuid);
-   
-	
+
+
 	switch_mutex_lock((*rsession)->profile->mutex);
 	if ( (*rsession)->profile->calls < 1 ) {
 		(*rsession)->profile->calls = 0;
@@ -909,22 +909,22 @@ switch_status_t rtmp_real_session_destroy(rtmp_session_t **rsession)
 
 	switch_thread_rwlock_wrlock((*rsession)->rwlock);
 	switch_thread_rwlock_unlock((*rsession)->rwlock);
-	
+
 #ifdef RTMP_DEBUG_IO
 	fclose((*rsession)->io_debug_in);
 	fclose((*rsession)->io_debug_out);
-#endif	
-	
+#endif
+
 	switch_mutex_lock((*rsession)->profile->mutex);
 	(*rsession)->profile->clients--;
 	switch_mutex_unlock((*rsession)->profile->mutex);
-	
+
 	switch_core_hash_destroy(&(*rsession)->session_hash);
-	
+
 	switch_core_destroy_memory_pool(&(*rsession)->pool);
-	
+
 	*rsession = NULL;
-	
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -935,58 +935,58 @@ switch_call_cause_t rtmp_session_create_call(rtmp_session_t *rsession, switch_co
 	switch_caller_profile_t *caller_profile;
 	switch_channel_t *channel;
 	const char *dialplan, *context;
-	
+
 	if (!(*newsession = switch_core_session_request(rtmp_globals.rtmp_endpoint_interface, SWITCH_CALL_DIRECTION_INBOUND, SOF_NONE, NULL))) {
 		return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 	}
 	switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rsession->uuid), SWITCH_LOG_INFO, "New FreeSWITCH session created: %s\n",
 					  switch_core_session_get_uuid(*newsession));
 
-	pool = switch_core_session_get_pool(*newsession);	
- 	channel = switch_core_session_get_channel(*newsession);
+	pool = switch_core_session_get_pool(*newsession);
+	channel = switch_core_session_get_channel(*newsession);
 	switch_channel_set_name(channel, switch_core_session_sprintf(*newsession, "rtmp/%s/%s", rsession->profile->name, number));
-	
+
 	if (!zstr(auth_user) && !zstr(auth_domain)) {
 		const char *s = switch_core_session_sprintf(*newsession, "%s@%s", auth_user, auth_domain);
 		switch_ivr_set_user(*newsession, s);
 		switch_channel_set_variable(channel, "rtmp_authorized", "true");
 	}
-	
+
 	if (!(context = switch_channel_get_variable(channel, "user_context"))) {
 		if (!(context = rsession->profile->context)) {
 			context = "public";
 		}
 	}
-	
+
 	if (!(dialplan = switch_channel_get_variable(channel, "inbound_dialplan"))) {
 		if (!(dialplan = rsession->profile->dialplan)) {
 			dialplan = "XML";
 		}
 	}
-	
-	caller_profile = switch_caller_profile_new(pool, switch_str_nil(auth_user), dialplan, 
-		SWITCH_DEFAULT_CLID_NAME, 
+
+	caller_profile = switch_caller_profile_new(pool, switch_str_nil(auth_user), dialplan,
+		SWITCH_DEFAULT_CLID_NAME,
 		!zstr(auth_user) ? auth_user : SWITCH_DEFAULT_CLID_NUMBER,
-		rsession->remote_address /* net addr */, 
-		NULL /* ani   */, 
-		NULL /* anii  */, 
-		NULL /* rdnis */, 
+		rsession->remote_address /* net addr */,
+		NULL /* ani   */,
+		NULL /* anii  */,
+		NULL /* rdnis */,
 		"mod_rtmp", context, number);
-		
+
 	switch_channel_set_caller_profile(channel, caller_profile);
-	
+
 	tech_pvt = switch_core_alloc(pool, sizeof(rtmp_private_t));
 	tech_pvt->rtmp_session = rsession;
 	tech_pvt->write_channel = RTMP_DEFAULT_STREAM_AUDIO;
 	tech_pvt->session = *newsession;
-	tech_pvt->caller_profile = caller_profile;	
+	tech_pvt->caller_profile = caller_profile;
 	switch_core_session_add_stream(*newsession, NULL);
-	
+
 	if (rtmp_tech_init(tech_pvt, rsession, *newsession) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "tech_init failed\n");
 		goto fail;
 	}
-	
+
 	if (!zstr(auth_user) && !zstr(auth_domain)) {
 		tech_pvt->auth_user = switch_core_session_strdup(*newsession, auth_user);
 		tech_pvt->auth_domain = switch_core_session_strdup(*newsession, auth_domain);
@@ -1012,25 +1012,25 @@ switch_call_cause_t rtmp_session_create_call(rtmp_session_t *rsession, switch_co
 	}
 
 	switch_core_hash_insert_wrlock(rsession->session_hash, switch_core_session_get_uuid(*newsession), tech_pvt, rsession->session_rwlock);
-	
+
 	return SWITCH_CAUSE_SUCCESS;
-	
+
 fail:
 
 	if (!switch_core_session_running(*newsession) && !switch_core_session_started(*newsession)) {
 		switch_core_session_destroy(newsession);
 	}
 
-	return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;	
+	return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 }
 
 switch_status_t rtmp_profile_start(const char *profilename)
 {
 	switch_memory_pool_t *pool;
 	rtmp_profile_t *profile;
-	
+
 	switch_assert(profilename);
-	
+
 	switch_core_new_memory_pool(&pool);
 	profile = switch_core_alloc(pool, sizeof(*profile));
 	profile->pool = pool;
@@ -1047,21 +1047,21 @@ switch_status_t rtmp_profile_start(const char *profilename)
 	switch_thread_rwlock_create(&profile->session_rwlock, pool);
 	switch_thread_rwlock_create(&profile->reg_rwlock, pool);
 	switch_core_hash_init(&profile->reg_hash);
-	
+
 	if (!strcmp(profile->io_name, "tcp")) {
 		if (rtmp_tcp_init(profile, profile->bind_address, &profile->io, pool) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't initialize I/O layer\n");
 			goto fail;
-		}	
+		}
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No such I/O module [%s]\n", profile->io_name);
 		goto fail;
 	}
-	
+
 	switch_core_hash_insert_wrlock(rtmp_globals.profile_hash, profile->name, profile, rtmp_globals.profile_rwlock);
-	
+
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Started profile %s\n", profile->name);
-	
+
 	return SWITCH_STATUS_SUCCESS;
 fail:
 	switch_core_destroy_memory_pool(&pool);
@@ -1073,49 +1073,49 @@ switch_status_t rtmp_profile_destroy(rtmp_profile_t **profile) {
 	switch_hash_index_t *hi = NULL;
 	switch_xml_config_item_t *instructions = get_instructions(*profile);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Stopping profile: %s\n", (*profile)->name);
-	
+
 	switch_core_hash_delete_wrlock(rtmp_globals.profile_hash, (*profile)->name, rtmp_globals.profile_rwlock);
-	
+
 	switch_thread_rwlock_wrlock((*profile)->rwlock);
-	
-	/* Kill all sessions */	
+
+	/* Kill all sessions */
 	while ((hi = switch_core_hash_first_iter((*profile)->session_hash, hi))) {
 		void *val;
 		rtmp_session_t *session;
 		const void *key;
 		switch_ssize_t keylen;
 		switch_core_hash_this(hi, &key, &keylen, &val);
+
+		session = val;
 		
-		session = val;				
-			
 		rtmp_session_destroy(&session);
 	}
-	
+
 	if ((*profile)->io->running > 0) {
 		(*profile)->io->running = 0;
-	
+
 		while (sanity++ < 100 && (*profile)->io->running == 0) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Waiting for thread to end\n");
 			switch_yield(500000);
 		}
 	}
-	
+
 	switch_thread_rwlock_unlock((*profile)->rwlock);
-	
+
 	switch_xml_config_cleanup(instructions);
-	
+
 	switch_core_hash_destroy(&(*profile)->session_hash);
 	switch_core_hash_destroy(&(*profile)->reg_hash);
-	
+
 	switch_core_destroy_memory_pool(&(*profile)->pool);
-	
+
 	free(instructions);
-	
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
 
-void rtmp_add_registration(rtmp_session_t *rsession, const char *auth, const char *nickname) 
+void rtmp_add_registration(rtmp_session_t *rsession, const char *auth, const char *nickname)
 {
 	rtmp_reg_t *current_reg;
 	rtmp_reg_t *reg;
@@ -1124,14 +1124,14 @@ void rtmp_add_registration(rtmp_session_t *rsession, const char *auth, const cha
 	if (zstr(auth)) {
 		return;
 	}
-	
+
 	reg = switch_core_alloc(rsession->pool, sizeof(*reg));
 	reg->uuid = rsession->uuid;
 
 	if (!zstr(nickname)) {
-		reg->nickname = switch_core_strdup(rsession->pool, nickname);		
+		reg->nickname = switch_core_strdup(rsession->pool, nickname);
 	}
-	
+
 	switch_thread_rwlock_wrlock(rsession->profile->reg_rwlock);
 	if ((current_reg = switch_core_hash_find(rsession->profile->reg_hash, auth))) {
 		for (;current_reg && current_reg->next; current_reg = current_reg->next);
@@ -1140,7 +1140,7 @@ void rtmp_add_registration(rtmp_session_t *rsession, const char *auth, const cha
 		switch_core_hash_insert(rsession->profile->reg_hash, auth, reg);
 	}
 	switch_thread_rwlock_unlock(rsession->profile->reg_rwlock);
-	
+
 	if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, RTMP_EVENT_REGISTER) == SWITCH_STATUS_SUCCESS) {
 		char *user, *domain, *dup;
 		char *url = NULL;
@@ -1148,7 +1148,7 @@ void rtmp_add_registration(rtmp_session_t *rsession, const char *auth, const cha
 		char network_port_c[6];
 		snprintf(network_port_c, sizeof(network_port_c), "%d", rsession->remote_port);
 		rtmp_event_fill(rsession, event);
-		
+
 		dup = strdup(auth);
 		switch_split_user_domain(dup, &user, &domain);
 
@@ -1157,7 +1157,7 @@ void rtmp_add_registration(rtmp_session_t *rsession, const char *auth, const cha
 
 		reg->user = switch_core_strdup(rsession->pool, user);
 		reg->domain = switch_core_strdup(rsession->pool, domain);
-			
+
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "User", user);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Domain", domain);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Nickname", switch_str_nil(nickname));
@@ -1201,9 +1201,9 @@ static void rtmp_clear_reg_auth(rtmp_session_t *rsession, const char *auth, cons
 
 
 void rtmp_clear_registration(rtmp_session_t *rsession, const char *auth, const char *nickname)
-{	
+{
 	rtmp_account_t *account;
-	
+
 	if (zstr(auth)) {
 		/* Reg data is pool-allocated, no need to free them */
 		switch_thread_rwlock_rdlock(rsession->account_rwlock);
@@ -1220,22 +1220,22 @@ void rtmp_clear_registration(rtmp_session_t *rsession, const char *auth, const c
 	} else {
 		rtmp_clear_reg_auth(rsession, auth, nickname);
 	}
-	
+
 }
 
 switch_status_t rtmp_session_login(rtmp_session_t *rsession, const char *user, const char *domain)
 {
 	rtmp_account_t *account = switch_core_alloc(rsession->pool, sizeof(*account));
 	switch_event_t *event;
-	
+
 	account->user = switch_core_strdup(rsession->pool, user);
 	account->domain = switch_core_strdup(rsession->pool, domain);
-	
+
 	switch_thread_rwlock_wrlock(rsession->account_rwlock);
 	account->next = rsession->account;
 	rsession->account = account;
 	switch_thread_rwlock_unlock(rsession->account_rwlock);
-	
+
 	rtmp_send_invoke_free(rsession, 3, 0, 0,
 		amf0_str("onLogin"),
 		amf0_number_new(0),
@@ -1243,16 +1243,16 @@ switch_status_t rtmp_session_login(rtmp_session_t *rsession, const char *user, c
 		amf0_str("success"),
 		amf0_str(user),
 		amf0_str(domain), NULL);
-		
+
 	if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, RTMP_EVENT_LOGIN) == SWITCH_STATUS_SUCCESS) {
 		rtmp_event_fill(rsession, event);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "User", user);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Domain", domain);
 		switch_event_fire(&event);
 	}
-	
-	switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rsession->uuid), SWITCH_LOG_INFO, "RTMP Session [%s] is now logged into %s@%s\n", rsession->uuid, user, domain);	
-	
+
+	switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rsession->uuid), SWITCH_LOG_INFO, "RTMP Session [%s] is now logged into %s@%s\n", rsession->uuid, user, domain);
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -1260,7 +1260,7 @@ switch_status_t rtmp_session_logout(rtmp_session_t *rsession, const char *user, 
 {
 	rtmp_account_t *account;
 	switch_event_t *event;
-	
+
 	switch_thread_rwlock_wrlock(rsession->account_rwlock);
 	for (account = rsession->account; account; account = account->next) {
 		if (!strcmp(account->user, user) && !strcmp(account->domain, domain)) {
@@ -1268,23 +1268,23 @@ switch_status_t rtmp_session_logout(rtmp_session_t *rsession, const char *user, 
 		}
 	}
 	switch_thread_rwlock_unlock(rsession->account_rwlock);
-	
+
 	rtmp_send_invoke_free(rsession, 3, 0, 0,
 		amf0_str("onLogout"),
 		amf0_number_new(0),
 		amf0_null_new(),
 		amf0_str(user),
 		amf0_str(domain), NULL);
-	
+
 	if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, RTMP_EVENT_LOGOUT) == SWITCH_STATUS_SUCCESS) {
 		rtmp_event_fill(rsession, event);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "User", user);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Domain", domain);
 		switch_event_fire(&event);
 	}
-	
+
 	switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rsession->uuid), SWITCH_LOG_INFO, "RTMP Session [%s] is now logged out of %s@%s\n", rsession->uuid, user, domain);
-	
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -1292,7 +1292,7 @@ switch_status_t rtmp_session_check_user(rtmp_session_t *rsession, const char *us
 {
 	rtmp_account_t *account;
 	switch_status_t status = SWITCH_STATUS_FALSE;
-	
+
 	switch_thread_rwlock_rdlock(rsession->account_rwlock);
 	if (user && domain) {
 		for (account = rsession->account; account; account = account->next) {
@@ -1303,14 +1303,14 @@ switch_status_t rtmp_session_check_user(rtmp_session_t *rsession, const char *us
 		}
 	}
 	switch_thread_rwlock_unlock(rsession->account_rwlock);
-	
+
 	return status;
 }
 
-void rtmp_attach_private(rtmp_session_t *rsession, rtmp_private_t *tech_pvt) 
-{	
+void rtmp_attach_private(rtmp_session_t *rsession, rtmp_private_t *tech_pvt)
+{
 	switch_event_t *event;
-	
+
 	if (rsession->tech_pvt) {
 		/* Detach current call */
 		switch_set_flag_locked(rsession->tech_pvt, TFLAG_DETACHED);
@@ -1320,14 +1320,14 @@ void rtmp_attach_private(rtmp_session_t *rsession, rtmp_private_t *tech_pvt)
 #endif
 		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, RTMP_EVENT_DETACH) == SWITCH_STATUS_SUCCESS) {
 			rtmp_event_fill(rsession, event);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Call-ID", 
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Call-ID",
 				switch_core_session_get_uuid(rsession->tech_pvt->session));
 			switch_event_fire(&event);
 		}
-		
+
 		rsession->tech_pvt = NULL;
 	}
-	
+
 	if (tech_pvt && switch_test_flag(tech_pvt, TFLAG_THREE_WAY)) {
 		const char *s = switch_channel_get_variable(tech_pvt->channel, RTMP_THREE_WAY_UUID_VARIABLE);
 		/* 2nd call of a three-way: attach to other call instead */
@@ -1337,17 +1337,17 @@ void rtmp_attach_private(rtmp_session_t *rsession, rtmp_private_t *tech_pvt)
 			tech_pvt = NULL;
 		}
 	}
-	
+
 	rsession->tech_pvt = tech_pvt;
-	
+
 	if (tech_pvt) {
 		/* Attach new call */
 		switch_clear_flag_locked(tech_pvt, TFLAG_DETACHED);
-		
+
 #ifndef RTMP_DONT_HOLD
 		if (switch_channel_test_flag(tech_pvt->channel, CF_HOLD)) {
 			switch_channel_mark_hold(tech_pvt->channel, SWITCH_FALSE);
-			switch_ivr_unhold(tech_pvt->session);	
+			switch_ivr_unhold(tech_pvt->session);
 		}
 #endif
 		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, RTMP_EVENT_ATTACH) == SWITCH_STATUS_SUCCESS) {
@@ -1368,7 +1368,7 @@ rtmp_private_t *rtmp_locate_private(rtmp_session_t *rsession, const char *uuid)
 
 static switch_xml_config_item_t *get_instructions(rtmp_profile_t *profile) {
 	switch_xml_config_item_t *dup;
-	static switch_xml_config_int_options_t opt_chunksize = { 
+	static switch_xml_config_int_options_t opt_chunksize = {
 		SWITCH_TRUE,  /* enforce min */
 		128,
 		SWITCH_TRUE, /* Enforce Max */
@@ -1395,7 +1395,7 @@ static switch_xml_config_item_t *get_instructions(rtmp_profile_t *profile) {
 		SWITCH_CONFIG_ITEM("buffer-len", SWITCH_CONFIG_INT, CONFIG_RELOADABLE, &profile->buffer_len, 500, &opt_bufferlen, "", "Length of the receiving buffer to be used by the flash clients, in miliseconds"),
 		SWITCH_CONFIG_ITEM_END()
 	};
-	
+
 	dup = malloc(sizeof(instructions));
 	memcpy(dup, instructions, sizeof(instructions));
 	return dup;
@@ -1409,35 +1409,35 @@ static switch_status_t config_profile(rtmp_profile_t *profile, switch_bool_t rel
 	switch_event_t *event = NULL;
 	int count;
 	const char *file = "rtmp.conf";
-	
+
 	if (!(xml = switch_xml_open_cfg(file, &cfg, NULL))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not open %s\n", file);
 		goto done;
 	}
-	
+
 	if (!(x_profiles = switch_xml_child(cfg, "profiles"))) {
 		goto done;
 	}
-	
+
 	for (x_profile = switch_xml_child(x_profiles, "profile"); x_profile; x_profile = x_profile->next) {
 		const char *name = switch_xml_attr_soft(x_profile, "name");
 		if (strcmp(name, profile->name)) {
 			continue;
 		}
-		
+
 		if (!(x_settings = switch_xml_child(x_profile, "settings"))) {
 			goto done;
 		}
-		
-		
+
+
 		count = switch_event_import_xml(switch_xml_child(x_settings, "param"), "name", "value", &event);
 		status = switch_xml_config_parse_event(event, count, reload, instructions);
 	}
-	
-	
+
+
 done:
 	if (xml) {
-		switch_xml_free(xml);	
+		switch_xml_free(xml);
 	}
 	switch_safe_free(instructions);
 	if (event) {
@@ -1450,17 +1450,17 @@ static void rtmp_event_handler(switch_event_t *event)
 {
 	rtmp_session_t *rsession;
 	const char *uuid;
-	
+
 	if (!event) {
 		return;
 	}
-	
+
 	uuid = switch_event_get_header(event, "RTMP-Session-ID");
 	if (zstr(uuid)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "RTMP Custom event without RTMP-Session-ID\n");
 		return;
 	}
-	
+
 	if ((rsession = rtmp_session_locate(uuid))) {
 		rtmp_send_event(rsession, event);
 		rtmp_session_rwunlock(rsession);
@@ -1473,41 +1473,41 @@ SWITCH_STANDARD_API(rtmp_contact_function)
 	int argc;
 	char *argv[5];
 	char *dup = NULL;
-	char *szprofile = NULL, *user = NULL; 
+	char *szprofile = NULL, *user = NULL;
 	const char *nickname = NULL;
 	rtmp_profile_t *profile = NULL;
 	rtmp_reg_t *reg;
 	switch_bool_t first = SWITCH_TRUE;
-	
+
 	if (zstr(cmd)) {
 		goto usage;
 	}
-	
+
 	dup = strdup(cmd);
 	argc = switch_split(dup, '/', argv);
-	
+
 	if (argc < 2 || zstr(argv[0]) || zstr(argv[1])) {
 		goto usage;
 	}
-	
+
 	szprofile = argv[0];
 	if (!strchr(argv[1], '@')) {
 		goto usage;
-	} 
-	
+	}
+
 	user = argv[1];
 	nickname = argv[2];
-	
+
 	if (!(profile = rtmp_profile_locate(szprofile))) {
 		stream->write_function(stream, "-ERR No such profile\n");
 		goto done;
 	}
-	
+
 	switch_thread_rwlock_rdlock(profile->reg_rwlock);
-	if ((reg = switch_core_hash_find(profile->reg_hash, user))) {		
+	if ((reg = switch_core_hash_find(profile->reg_hash, user))) {
 		for (; reg; reg = reg->next) {
-			if (zstr(nickname) || 
-				(nickname[0] == '!' && (zstr(reg->nickname) || strcmp(reg->nickname, nickname+1))) || 
+			if (zstr(nickname) ||
+				(nickname[0] == '!' && (zstr(reg->nickname) || strcmp(reg->nickname, nickname+1))) ||
 				(!zstr(reg->nickname) && !strcmp(reg->nickname, nickname))) {
 				if (!first) {
 					stream->write_function(stream, ",");
@@ -1522,7 +1522,7 @@ SWITCH_STANDARD_API(rtmp_contact_function)
 	}
 	switch_thread_rwlock_unlock(profile->reg_rwlock);
 	goto done;
-	
+
 usage:
 	stream->write_function(stream, "Usage: rtmp_contact "RTMP_CONTACT_FUNCTION_SYNTAX"\n");
 
@@ -1554,18 +1554,18 @@ SWITCH_STANDARD_API(rtmp_function)
 	int argc;
 	char *argv[10];
 	char *dup = NULL;
-	
+
 	if (zstr(cmd)) {
 		goto usage;
 	}
-	
+
 	dup = strdup(cmd);
 	argc = switch_split(dup, ' ', argv);
-	
+
 	if (argc < 1 || zstr(argv[0])) {
 		goto usage;
 	}
-	
+
 	if (!strcmp(argv[0], "profile")) {
 		if (zstr(argv[1]) || zstr(argv[2])) {
 			goto usage;
@@ -1613,13 +1613,13 @@ SWITCH_STANDARD_API(rtmp_function)
 	} else if (!strcmp(argv[0], "status")) {
 		if (!zstr(argv[1]) && !strcmp(argv[1], "profile") && !zstr(argv[2])) {
 			rtmp_profile_t *profile;
-			
+
 			if ((profile = rtmp_profile_locate(argv[2]))) {
 				stream->write_function(stream, "Profile: %s\n", profile->name);
 				stream->write_function(stream, "I/O Backend: %s\n", profile->io->name);
 				stream->write_function(stream, "Bind address: %s\n", profile->io->address);
 				stream->write_function(stream, "Active calls: %d\n", profile->calls);
-				
+
 				if (!zstr(argv[3]) && !strcmp(argv[3], "sessions"))
 				{
 					switch_hash_index_t *hi;
@@ -1627,46 +1627,46 @@ SWITCH_STANDARD_API(rtmp_function)
 					stream->write_function(stream, "uuid,address,user,domain,flashVer,state\n");
 					switch_thread_rwlock_rdlock(profile->session_rwlock);
 					for (hi = switch_core_hash_first(profile->session_hash); hi; hi = switch_core_hash_next(&hi)) {
-						void *val;	
+						void *val;
 						const void *key;
 						switch_ssize_t keylen;
 						rtmp_session_t *item;
 						switch_core_hash_this(hi, &key, &keylen, &val);
-											
+
 						item = (rtmp_session_t *)val;
-						stream->write_function(stream, "%s,%s:%d,%s,%s,%s,%s\n", 
+						stream->write_function(stream, "%s,%s:%d,%s,%s,%s,%s\n",
 											   item->uuid, item->remote_address, item->remote_port,
 											   item->account ? item->account->user : NULL,
 											   item->account ? item->account->domain : NULL,
 											   item->flashVer, state2name(item->state));
-						
+
 					}
 					switch_thread_rwlock_unlock(profile->session_rwlock);
 				} else if (!zstr(argv[3]) && !strcmp(argv[3], "reg")) {
 					switch_hash_index_t *hi;
 					stream->write_function(stream, "\nRegistrations:\n");
 					stream->write_function(stream, "user,nickname,uuid\n");
-					
+
 					switch_thread_rwlock_rdlock(profile->reg_rwlock);
 					for (hi = switch_core_hash_first(profile->reg_hash); hi; hi = switch_core_hash_next(&hi)) {
-						void *val;	
+						void *val;
 						const void *key;
 						switch_ssize_t keylen;
 						rtmp_reg_t *item;
 						switch_core_hash_this(hi, &key, &keylen, &val);
-											
+
 						item = (rtmp_reg_t *)val;
 						for (;item;item = item->next) {
 							stream->write_function(stream, "%s,%s,%s\n",
 								key, switch_str_nil(item->nickname), item->uuid);
 						}
 					}
-					switch_thread_rwlock_unlock(profile->reg_rwlock);	
+					switch_thread_rwlock_unlock(profile->reg_rwlock);
 				} else {
-                    stream->write_function(stream, "Dialplan: %s\n", profile->dialplan);
-                    stream->write_function(stream, "Context: %s\n", profile->context);
+					stream->write_function(stream, "Dialplan: %s\n", profile->dialplan);
+					stream->write_function(stream, "Context: %s\n", profile->context);
 				}
-				
+
 				rtmp_profile_release(profile);
 			} else {
 				stream->write_function(stream, "-ERR No such profile [%s]\n", argv[2]);
@@ -1675,39 +1675,39 @@ SWITCH_STANDARD_API(rtmp_function)
 			switch_hash_index_t *hi;
 			switch_thread_rwlock_rdlock(rtmp_globals.profile_rwlock);
 			for (hi = switch_core_hash_first(rtmp_globals.profile_hash); hi; hi = switch_core_hash_next(&hi)) {
-				void *val;	
+				void *val;
 				const void *key;
 				switch_ssize_t keylen;
 				rtmp_profile_t *item;
 				switch_core_hash_this(hi, &key, &keylen, &val);
-									
+
 				item = (rtmp_profile_t *)val;
 				stream->write_function(stream, "%s\t%s:%s\tprofile\n", item->name, item->io->name, item->io->address);
-				
+
 			}
 			switch_thread_rwlock_unlock(rtmp_globals.profile_rwlock);
 		}
-		
+
 	} else if (!strcmp(argv[0], "session")) {
 		rtmp_session_t *rsession;
-		
+
 		if (zstr(argv[1]) || zstr(argv[2])) {
 			goto usage;
 		}
-		
+
 		rsession = rtmp_session_locate(argv[1]);
 		if (!rsession) {
 			stream->write_function(stream, "-ERR No such session\n");
 			goto done;
 		}
-		
+
 		if (!strcmp(argv[2], "login")) {
 			char *user, *domain;
 			if (zstr(argv[3])) {
 				goto usage;
 			}
 			switch_split_user_domain(argv[3], &user, &domain);
-			
+
 			if (!zstr(user) && !zstr(domain)) {
 				rtmp_session_login(rsession, user, domain);
 				stream->write_function(stream, "+OK\n");
@@ -1720,7 +1720,7 @@ SWITCH_STANDARD_API(rtmp_function)
 				goto usage;
 			}
 			switch_split_user_domain(argv[3], &user, &domain);
-			
+
 			if (!zstr(user) && !zstr(domain)) {
 				rtmp_session_logout(rsession, user, domain);
 				stream->write_function(stream, "+OK\n");
@@ -1736,11 +1736,11 @@ SWITCH_STANDARD_API(rtmp_function)
 			char *dest = argv[3];
 			char *user = argv[4];
 			char *domain = NULL;
-			
+
 			if (!zstr(user) && (domain = strchr(user, '@'))) {
 				*domain++ = '\0';
 			}
-			
+
 			if (!zstr(dest)) {
 					if (rtmp_session_create_call(rsession, &newsession, 0, RTMP_DEFAULT_STREAM_AUDIO, dest, user, domain, NULL) != SWITCH_CAUSE_SUCCESS) {
 						stream->write_function(stream, "-ERR Couldn't create new call\n");
@@ -1767,16 +1767,16 @@ SWITCH_STANDARD_API(rtmp_function)
 		} else {
 			stream->write_function(stream, "-ERR No such session action [%s]\n", argv[2]);
 		}
-		
+
 		if (rsession) {
 			rtmp_session_rwunlock(rsession);
 		}
 	} else {
 		goto usage;
 	}
-	
+
 	goto done;
-	
+
 usage:
 	stream->write_function(stream, "-ERR Usage: "RTMP_FUNCTION_SYNTAX"\n");
 
@@ -1785,7 +1785,7 @@ done:
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static inline void rtmp_register_invoke_function(const char *name, rtmp_invoke_function_t func) 
+static inline void rtmp_register_invoke_function(const char *name, rtmp_invoke_function_t func)
 {
 	switch_core_hash_insert(rtmp_globals.invoke_hash, name, (void*)(intptr_t)func);
 }
@@ -1843,7 +1843,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_rtmp_load)
 	switch_core_hash_init(&rtmp_globals.invoke_hash);
 	switch_thread_rwlock_create(&rtmp_globals.profile_rwlock, pool);
 	switch_thread_rwlock_create(&rtmp_globals.session_rwlock, pool);
-		
+
 	rtmp_register_invoke_function("connect", rtmp_i_connect);
 	rtmp_register_invoke_function("createStream", rtmp_i_createStream);
 	rtmp_register_invoke_function("closeStream", rtmp_i_noop);
@@ -1866,13 +1866,13 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_rtmp_load)
 	rtmp_register_invoke_function("receiveAudio", rtmp_i_receiveaudio);
 	rtmp_register_invoke_function("receiveVideo", rtmp_i_receivevideo);
 	rtmp_register_invoke_function("log", rtmp_i_log);
-	
+
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 	rtmp_globals.rtmp_endpoint_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_ENDPOINT_INTERFACE);
 	rtmp_globals.rtmp_endpoint_interface->interface_name = "rtmp";
 	rtmp_globals.rtmp_endpoint_interface->io_routines = &rtmp_io_routines;
 	rtmp_globals.rtmp_endpoint_interface->state_handler = &rtmp_state_handlers;
-	
+
 	SWITCH_ADD_API(api_interface, "rtmp", "rtmp management", rtmp_function, RTMP_FUNCTION_SYNTAX);
 	SWITCH_ADD_API(api_interface, "rtmp_contact", "rtmp contact", rtmp_contact_function, RTMP_CONTACT_FUNCTION_SYNTAX);
 
@@ -1887,12 +1887,12 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_rtmp_load)
 	switch_console_set_complete("add rtmp session ::rtmp::list_sessions kill");
 	switch_console_set_complete("add rtmp session ::rtmp::list_sessions login");
 	switch_console_set_complete("add rtmp session ::rtmp::list_sessions logout");
-	
+
 	switch_console_add_complete_func("::rtmp::list_profiles", list_profiles);
 	switch_console_add_complete_func("::rtmp::list_sessions", list_sessions);
-	
+
 	switch_event_bind("mod_rtmp", SWITCH_EVENT_CUSTOM, RTMP_EVENT_CUSTOM, rtmp_event_handler, NULL);
-	
+
 	{
 		switch_xml_t cfg, xml, x_profiles, x_profile;
 		const char *file = "rtmp.conf";
@@ -1912,12 +1912,12 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_rtmp_load)
 		}
 		done:
 		if (xml) {
-			switch_xml_free(xml);	
+			switch_xml_free(xml);
 		}
 	}
 
 	rtmp_globals.running = 1;
-	
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -1927,26 +1927,26 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_rtmp_shutdown)
 
 	switch_mutex_lock(rtmp_globals.mutex);
 	while ((hi = switch_core_hash_first_iter( rtmp_globals.profile_hash, hi))) {
-		void *val;	
+		void *val;
 		const void *key;
 		switch_ssize_t keylen;
 		rtmp_profile_t *item;
 		switch_core_hash_this(hi, &key, &keylen, &val);
-							
+
 		item = (rtmp_profile_t *)val;
-		
+
 		switch_mutex_unlock(rtmp_globals.mutex);
 		rtmp_profile_destroy(&item);
-		switch_mutex_lock(rtmp_globals.mutex);	
+		switch_mutex_lock(rtmp_globals.mutex);
 	}
 	switch_mutex_unlock(rtmp_globals.mutex);
-	
+
 	switch_event_unbind_callback(rtmp_event_handler);
-	
+
 	switch_core_hash_destroy(&rtmp_globals.profile_hash);
 	switch_core_hash_destroy(&rtmp_globals.session_hash);
 	switch_core_hash_destroy(&rtmp_globals.invoke_hash);
-	
+
 	rtmp_globals.running = 0;
 
 	return SWITCH_STATUS_SUCCESS;
