@@ -1,4 +1,4 @@
-/* 
+/*
  * mod_rtmp for FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2011-2012, Barracuda Networks Inc.
  *
@@ -21,7 +21,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Mathieu Rene <mrene@avgs.ca>
  * Joao Mesquita <jmesquita@freeswitch.org>
  * William King <william.king@quentustech.com>
@@ -69,13 +69,13 @@ void rtmp_handle_control(rtmp_session_t *rsession, int amfnumber)
 	char *p = buf;
 	int type = state->buf[0] << 8 | state->buf[1];
 	int i;
-	
+
 	for (i = 2; i < state->origlen; i++) {
 		p += sprintf(p, "%02x ", state->buf[i] & 0xFF);
 	}
-	
+
 	switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rsession->uuid), SWITCH_LOG_DEBUG, "Control (%d): %s\n", type, buf);
-	
+
 	switch(type) {
 		case RTMP_CTRL_STREAM_BEGIN:
 			break;
@@ -93,7 +93,7 @@ void rtmp_handle_control(rtmp_session_t *rsession, int amfnumber)
 			{
 				uint32_t now = ((switch_micro_time_now()/1000) & 0xFFFFFFFF);
 				uint32_t sent = state->buf[2] << 24 | state->buf[3] << 16 | state->buf[4] << 8 | state->buf[5];
-				
+
 				switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rsession->uuid), SWITCH_LOG_INFO, "Ping reply: %d ms\n", (int)(now - sent));
 			}
 			break;
@@ -112,7 +112,7 @@ void rtmp_handle_invoke(rtmp_session_t *rsession, int amfnumber)
 	int i = 0;
 	buffer_helper_t helper = { state->buf, 0, state->origlen };
 	int64_t transaction_id;
-	const char *command;	
+	const char *command;
 	int argc = 0;
 	amf0_data *argv[100] = { 0 };
 	rtmp_invoke_function_t function;
@@ -132,9 +132,9 @@ void rtmp_handle_invoke(rtmp_session_t *rsession, int amfnumber)
 		}
 		amf0_data_free(dump);
 	}
-	printf("<<<<< END AMF MSG\n");	
+	printf("<<<<< END AMF MSG\n");
 #endif
-	
+
 #ifdef RTMP_DEBUG_IO
 	{
 		helper.pos = 0;
@@ -156,8 +156,8 @@ void rtmp_handle_invoke(rtmp_session_t *rsession, int amfnumber)
 		fprintf(rsession->io_debug_in, "<<<<< END AMF MSG\n");
 		fflush(rsession->io_debug_in);
 	}
-#endif	
-	
+#endif
+
 	helper.pos = 0;
 	while (argc < switch_arraylen(argv) && (argv[argc++] = amf0_data_read(my_buffer_read, &helper)));
 
@@ -165,10 +165,10 @@ void rtmp_handle_invoke(rtmp_session_t *rsession, int amfnumber)
 		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rsession->uuid), SWITCH_LOG_WARNING, "Bogus INVOKE request\n");
 		return;
 	}
-	
+
 	transaction_id = amf0_get_number(argv[i++]);
-	
-	switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rsession->uuid), SWITCH_LOG_DEBUG, "[amfnumber=%d] Got INVOKE for %s\n", amfnumber, 
+
+	switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rsession->uuid), SWITCH_LOG_DEBUG, "[amfnumber=%d] Got INVOKE for %s\n", amfnumber,
 		command);
 
 	if ((function = (rtmp_invoke_function_t)(intptr_t)switch_core_hash_find(rtmp_globals.invoke_hash, command))) {
@@ -192,13 +192,13 @@ switch_status_t rtmp_check_auth(rtmp_session_t *rsession, const char *user, cons
 	switch_xml_t xml = NULL, x_param, x_params;
 	switch_bool_t allow_empty_password = SWITCH_FALSE;
 	const char *passwd = NULL;
-    switch_bool_t disallow_multiple_registration = SWITCH_FALSE;
+	switch_bool_t disallow_multiple_registration = SWITCH_FALSE;
 	switch_event_t *locate_params;
-	
+
 	switch_event_create(&locate_params, SWITCH_EVENT_GENERAL);
 	switch_assert(locate_params);
 	switch_event_add_header_string(locate_params, SWITCH_STACK_BOTTOM, "source", "mod_rtmp");
-	
+
 	/* Locate user */
 	if (switch_xml_locate_user_merged("id", user, domain, NULL, &xml, locate_params) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rsession->uuid), SWITCH_LOG_WARNING, "Authentication failed. No such user %s@%s\n", user, domain);
@@ -216,52 +216,52 @@ switch_status_t rtmp_check_auth(rtmp_session_t *rsession, const char *user, cons
 			if (!strcasecmp(var, "allow-empty-password")) {
 				allow_empty_password = switch_true(val);
 			}
-            if (!strcasecmp(var, "disallow-multiple-registration")) {
+			if (!strcasecmp(var, "disallow-multiple-registration")) {
 				disallow_multiple_registration = switch_true(val);
 			}
 		}
 	}
-	
+
 	if (zstr(passwd)) {
 		if (allow_empty_password) {
-			status = SWITCH_STATUS_SUCCESS;	
+			status = SWITCH_STATUS_SUCCESS;
 		}  else {
 			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rsession->uuid), SWITCH_LOG_WARNING, "Authentication failed for %s@%s: empty password not allowed\n", user, switch_str_nil(domain));
 		}
 		goto done;
 	}
-	
+
 	auth = switch_core_sprintf(rsession->pool, "%s:%s@%s:%s", rsession->uuid, user, domain, passwd);
 	switch_md5_string(md5, auth, strlen(auth));
-	
+
 	if (!strncmp(md5, authmd5, SWITCH_MD5_DIGEST_STRING_SIZE)) {
 		status = SWITCH_STATUS_SUCCESS;
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rsession->uuid), SWITCH_LOG_WARNING, "Authentication failed for %s@%s\n", user, domain);
 	}
-    
-    if (disallow_multiple_registration) {
-        switch_hash_index_t *hi;
-        switch_thread_rwlock_rdlock(rsession->profile->session_rwlock);
-        for (hi = switch_core_hash_first(rsession->profile->session_hash); hi; hi = switch_core_hash_next(&hi)) {
-            void *val;	
-            const void *key;
-            switch_ssize_t keylen;
-            rtmp_session_t *item;
-            switch_core_hash_this(hi, &key, &keylen, &val);
-            
-            item = (rtmp_session_t *)val;
-            if (rtmp_session_check_user(item, user, domain) == SWITCH_STATUS_SUCCESS) {
-                switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rsession->uuid), SWITCH_LOG_INFO, "Logging out %s@%s on RTMP sesssion [%s]\n", user, domain, item->uuid);
-                if (rtmp_session_logout(item, user, domain) != SWITCH_STATUS_SUCCESS) {
-                    switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rsession->uuid), SWITCH_LOG_ERROR, "Unable to logout %s@%s on RTMP sesssion [%s]\n", user, domain, item->uuid);
-                }
-            }
-            
-        }
-        switch_thread_rwlock_unlock(rsession->profile->session_rwlock);
-    }
-	
+
+	if (disallow_multiple_registration) {
+		switch_hash_index_t *hi;
+		switch_thread_rwlock_rdlock(rsession->profile->session_rwlock);
+		for (hi = switch_core_hash_first(rsession->profile->session_hash); hi; hi = switch_core_hash_next(&hi)) {
+			void *val;
+			const void *key;
+			switch_ssize_t keylen;
+			rtmp_session_t *item;
+			switch_core_hash_this(hi, &key, &keylen, &val);
+
+			item = (rtmp_session_t *)val;
+			if (rtmp_session_check_user(item, user, domain) == SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rsession->uuid), SWITCH_LOG_INFO, "Logging out %s@%s on RTMP sesssion [%s]\n", user, domain, item->uuid);
+				if (rtmp_session_logout(item, user, domain) != SWITCH_STATUS_SUCCESS) {
+					switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rsession->uuid), SWITCH_LOG_ERROR, "Unable to logout %s@%s on RTMP sesssion [%s]\n", user, domain, item->uuid);
+				}
+			}
+
+		}
+		switch_thread_rwlock_unlock(rsession->profile->session_rwlock);
+	}
+
 done:
 	if (xml) {
 		switch_xml_free(xml);
@@ -275,7 +275,7 @@ done:
 switch_status_t amf_object_to_event(amf0_data *obj, switch_event_t **event)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	
+
 	if (obj && obj->type == AMF0_TYPE_OBJECT) {
 		amf0_node *node;
 		if (!*event) {
@@ -287,7 +287,7 @@ switch_status_t amf_object_to_event(amf0_data *obj, switch_event_t **event)
 		for (node = amf0_object_first(obj); node; node = amf0_object_next(node)) {
 			const char *name = amf0_get_string(amf0_object_get_name(node));
 			const char *value = amf0_get_string(amf0_object_get_data(node));
-			
+
 			if (!zstr(name) && !zstr(value)) {
 				if (!strcmp(name, "_body")) {
 					switch_event_add_body(*event, "%s", value);
@@ -299,41 +299,41 @@ switch_status_t amf_object_to_event(amf0_data *obj, switch_event_t **event)
 	} else {
 		status = SWITCH_STATUS_FALSE;
 	}
-	
+
 	return status;
 }
 
-switch_status_t amf_event_to_object(amf0_data **obj, switch_event_t *event) 
+switch_status_t amf_event_to_object(amf0_data **obj, switch_event_t *event)
 {
 	switch_event_header_t *hp;
 	const char *body;
-	
+
 	switch_assert(event);
 	switch_assert(obj);
-	
+
 	if (!*obj) {
 		*obj = amf0_object_new();
 	}
-	
+
 	for (hp = event->headers; hp; hp = hp->next) {
 		amf0_object_add(*obj, hp->name, amf0_str(hp->value));
 	}
-	
+
 	body = switch_event_get_body(event);
 	if (!zstr(body)) {
 		amf0_object_add(*obj, "_body", amf0_str(body));
 	}
-	
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
 void rtmp_set_chunksize(rtmp_session_t *rsession, uint32_t chunksize)
 {
 	if (rsession->out_chunksize != chunksize) {
-		unsigned char buf[] = { 
+		unsigned char buf[] = {
 			INT32(chunksize)
 		};
-		
+
 		rtmp_send_message(rsession, 2 /*amfnumber*/, 0, RTMP_TYPE_CHUNKSIZE, 0, buf, sizeof(buf), MSG_FULLHEADER);
 		rsession->out_chunksize = chunksize;
 	}
@@ -343,11 +343,11 @@ void rtmp_get_user_variables(switch_event_t **event, switch_core_session_t *sess
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_event_header_t *he;
-	
+
 	if (!*event && switch_event_create(event, SWITCH_EVENT_CLONE) != SWITCH_STATUS_SUCCESS) {
 		return;
 	}
-	
+
 	if ((he = switch_channel_variable_first(channel))) {
 		for (; he; he = he->next) {
 			if (!strncmp(he->name, RTMP_USER_VARIABLE_PREFIX, strlen(RTMP_USER_VARIABLE_PREFIX))) {
@@ -362,7 +362,7 @@ void rtmp_get_user_variables(switch_event_t **event, switch_core_session_t *sess
 void rtmp_get_user_variables_event(switch_event_t **event, switch_event_t *var_event)
 {
 	switch_event_header_t *he;
-	
+
 	if (!*event && switch_event_create(event, SWITCH_EVENT_CLONE) != SWITCH_STATUS_SUCCESS) {
 		return;
 	}
@@ -380,7 +380,7 @@ void rtmp_get_user_variables_event(switch_event_t **event, switch_event_t *var_e
 void rtmp_session_send_onattach(rtmp_session_t *rsession)
 {
 	const char *uuid = "";
-	
+
 	if (rsession->tech_pvt) {
 		uuid = switch_core_session_get_uuid(rsession->tech_pvt->session);
 	}
@@ -390,7 +390,7 @@ void rtmp_session_send_onattach(rtmp_session_t *rsession)
 		amf0_number_new(0),
 		amf0_null_new(),
 		amf0_str(uuid), NULL);
-	
+
 }
 
 void rtmp_send_display_update(switch_core_session_t *session)
@@ -415,18 +415,18 @@ void rtmp_send_incoming_call(switch_core_session_t *session, switch_event_t *var
 	switch_caller_profile_t *caller_profile = switch_channel_get_caller_profile(channel);
 	switch_event_t *event = NULL;
 	amf0_data *obj = NULL;
-	
+
 	if (var_event) {
 		rtmp_get_user_variables_event(&event, var_event);
 	} else {
 		rtmp_get_user_variables(&event, session);
 	}
-	
+
 	if (event) {
 		amf_event_to_object(&obj, event);
 		switch_event_destroy(&event);
 	}
-	
+
 	rtmp_send_invoke_free(rsession, 3, 0, 0,
 		amf0_str("incomingCall"),
 		amf0_number_new(0),
@@ -443,7 +443,7 @@ void rtmp_send_onhangup(switch_core_session_t *session)
 	rtmp_private_t *tech_pvt = switch_core_session_get_private(session);
 	rtmp_session_t *rsession = tech_pvt->rtmp_session;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-	
+
 	rtmp_send_invoke_free(rsession, 3, 0, 0,
 		amf0_str("onHangup"),
 		amf0_number_new(0),
@@ -455,18 +455,18 @@ void rtmp_send_onhangup(switch_core_session_t *session)
 void rtmp_send_event(rtmp_session_t *rsession, switch_event_t *event)
 {
 	amf0_data *obj = NULL;
-	
+
 	switch_assert(event != NULL);
 	switch_assert(rsession != NULL);
-	
+
 	if (amf_event_to_object(&obj, event) == SWITCH_STATUS_SUCCESS) {
-		rtmp_send_invoke_free(rsession, 3, 0, 0, amf0_str("event"), amf0_number_new(0), amf0_null_new(), obj, NULL);	
+		rtmp_send_invoke_free(rsession, 3, 0, 0, amf0_str("event"), amf0_number_new(0), amf0_null_new(), obj, NULL);
 	}
 }
 
 void rtmp_ping(rtmp_session_t *rsession)
 {
- 	uint32_t now = (uint32_t)((switch_micro_time_now() / 1000) & 0xFFFFFFFF);
+	uint32_t now = (uint32_t)((switch_micro_time_now() / 1000) & 0xFFFFFFFF);
 	unsigned char buf[] = {
 		INT16(RTMP_CTRL_PING_REQUEST),
 		INT32(now)
@@ -536,7 +536,7 @@ switch_status_t rtmp_send_invoke_v(rtmp_session_t *rsession, uint8_t amfnumber, 
 	amf0_data *data;
 	unsigned char buf[AMF_MAX_SIZE];
 	buffer_helper_t helper = { buf, 0, AMF_MAX_SIZE };
-	
+
 	while ((data = va_arg(list, amf0_data*))) {
 		//amf0_data_dump(stdout, data, 0);
 		//printf("\n");
@@ -558,21 +558,21 @@ switch_status_t rtmp_send_message(rtmp_session_t *rsession, uint8_t amfnumber, u
 	switch_size_t hdrsize = 1;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	rtmp_state_t *state = &rsession->amfstate_out[amfnumber];
-	
-	if ((rsession->send_ack + rsession->send_ack_window) < rsession->send && 
-			(type == RTMP_TYPE_VIDEO || type == RTMP_TYPE_AUDIO)) { 
+
+	if ((rsession->send_ack + rsession->send_ack_window) < rsession->send &&
+			(type == RTMP_TYPE_VIDEO || type == RTMP_TYPE_AUDIO)) {
 		/* We're sending too fast, drop the frame */
-		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rsession->uuid), SWITCH_LOG_DEBUG, 
+		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rsession->uuid), SWITCH_LOG_DEBUG,
 						  "DROP %s FRAME [amfnumber=%d type=0x%x stream_id=0x%x] len=%"SWITCH_SIZE_T_FMT" \n",
 						  type == RTMP_TYPE_AUDIO ? "AUDIO" : "VIDEO", amfnumber, type, stream_id, len);
 		return SWITCH_STATUS_SUCCESS;
 	}
 
 	if (type != RTMP_TYPE_AUDIO && type != RTMP_TYPE_VIDEO && type != RTMP_TYPE_ACK) {
-		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rsession->uuid), SWITCH_LOG_DEBUG, 
-						  "[amfnumber=%d type=0x%x stream_id=0x%x] len=%"SWITCH_SIZE_T_FMT" \n", amfnumber, type, stream_id, len);	
+		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rsession->uuid), SWITCH_LOG_DEBUG,
+						  "[amfnumber=%d type=0x%x stream_id=0x%x] len=%"SWITCH_SIZE_T_FMT" \n", amfnumber, type, stream_id, len);
 	}
-	
+
 #ifdef RTMP_DEBUG_IO
 	{
 		fprintf(rsession->io_debug_out, "[amfnumber=%d type=0x%x stream_id=0x%x] len=%"SWITCH_SIZE_T_FMT" \n", amfnumber, type, stream_id, len);
@@ -595,10 +595,10 @@ switch_status_t rtmp_send_message(rtmp_session_t *rsession, uint8_t amfnumber, u
 				fprintf(rsession->io_debug_out, "<<<<< END AMF MSG\n");
 		}
 		fflush(rsession->io_debug_out);
-		
+
 	}
 #endif
-	
+
 	/* Find out what is the smallest header we can use */
 	if (!(flags & MSG_FULLHEADER) && stream_id > 0 && state->stream_id == stream_id && timestamp >= state->ts) {
 		if (state->type == type && state->origlen == (int)len) {
@@ -630,7 +630,7 @@ switch_status_t rtmp_send_message(rtmp_session_t *rsession, uint8_t amfnumber, u
 		header[2] = (timestamp >> 8) & 0xFF;
 		header[3] = timestamp & 0xFF;
 	}
-	
+
 	state->ts = timestamp;
 	state->type = type;
 	state->origlen = len;
@@ -642,14 +642,14 @@ switch_status_t rtmp_send_message(rtmp_session_t *rsession, uint8_t amfnumber, u
 		switch_goto_status(SWITCH_STATUS_FALSE, end);
 	}
 	rsession->send += hdrsize;
-	
+
 	/* Write one chunk of data */
 	if (rsession->profile->io->write(rsession, (unsigned char*)message, &chunksize) != SWITCH_STATUS_SUCCESS) {
 		switch_goto_status(SWITCH_STATUS_FALSE, end);
 	}
 	rsession->send += chunksize;
 	pos += chunksize;
-	
+
 	/* Send more chunks if we need to */
 	while (((signed)len - (signed)pos) > 0) {
 		switch_mutex_unlock(rsession->socket_mutex);
@@ -660,9 +660,9 @@ switch_status_t rtmp_send_message(rtmp_session_t *rsession, uint8_t amfnumber, u
 			switch_goto_status(SWITCH_STATUS_FALSE, end);
 		}
 		rsession->send += hdrsize;
-		
+
 		chunksize = (len - pos) < rsession->out_chunksize ? (len - pos) : rsession->out_chunksize;
-				
+
 		if (rsession->profile->io->write(rsession, message + pos, &chunksize) != SWITCH_STATUS_SUCCESS) {
 			switch_goto_status(SWITCH_STATUS_FALSE, end);
 		}
@@ -682,58 +682,58 @@ switch_status_t rtmp_handle_data(rtmp_session_t *rsession)
 
 	if (rsession->state == RS_HANDSHAKE) {
 		s = 1537 - rsession->hspos;
-		
+
 		if (rsession->profile->io->read(rsession, rsession->hsbuf + rsession->hspos, &s) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rsession->uuid), SWITCH_LOG_NOTICE, "Disconnected from flash client\n");
 			return SWITCH_STATUS_FALSE;
 		}
-		
+
 		rsession->hspos += s;
-		
+
 		/* Receive C0 and C1 */
 		if (rsession->hspos < 1537) {
 			/* Not quite there yet */
 			return SWITCH_STATUS_SUCCESS;
 		}
-		
+
 		/* Send reply (S0 + S1) */
 		memset(buf, 0, sizeof(buf));
 		*buf = '\x03';
 		s = 1537;
 		rsession->profile->io->write(rsession, (unsigned char*)buf, &s);
-		
+
 		/* Send S2 */
 		s = 1536;
 		rsession->profile->io->write(rsession, rsession->hsbuf, &s);
-		
+
 		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rsession->uuid), SWITCH_LOG_DEBUG, "Sent handshake response\n");
-		
+
 		rsession->state++;
 		rsession->hspos = 0;
 	} else if (rsession->state == RS_HANDSHAKE2) {
 		s = 1536 - rsession->hspos;
-		
+
 		/* Receive C2 */
 		if (rsession->profile->io->read(rsession, rsession->hsbuf + rsession->hspos, &s) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rsession->uuid), SWITCH_LOG_NOTICE, "Disconnected from flash client\n");
 			return SWITCH_STATUS_FALSE;
 		}
-		
+
 		rsession->hspos += s;
-		
+
 		if (rsession->hspos < 1536) {
 			/* Not quite there yet */
 			return SWITCH_STATUS_SUCCESS;
 		}
-		
+
 		rsession->state++;
-		
+
 		//s = 1536;
 		//rsession->profile->io->write(rsession, (char*)buf, &s);
-		
+
 		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rsession->uuid), SWITCH_LOG_DEBUG, "Done with handshake\n");
-		
-		
+
+
 		return SWITCH_STATUS_SUCCESS;
 	}  else if (rsession->state == RS_ESTABLISHED) {
 		/* Process RTMP packet */
@@ -745,9 +745,9 @@ switch_status_t rtmp_handle_data(rtmp_session_t *rsession)
 					switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rsession->uuid), SWITCH_LOG_NOTICE, "Disconnected from flash client\n");
 					return SWITCH_STATUS_FALSE;
 				}
-				
+
 				rsession->recv += s;
-			
+
 				switch(buf[0] >> 6) {
 					case 0:
 						rsession->hdrsize = 12;
@@ -770,7 +770,7 @@ switch_status_t rtmp_handle_data(rtmp_session_t *rsession)
 				if (rsession->amfnumber > 64) {
 					switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rsession->uuid), SWITCH_LOG_ERROR, "Protocol error\n");
 					return SWITCH_STATUS_FALSE;
-				} 
+				}
 				//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Header size: %d AMF Number: %d\n", rsession->hdrsize, rsession->amfnumber);
 				rsession->parse_state++;
 				if (rsession->hdrsize == 1) {
@@ -779,39 +779,39 @@ switch_status_t rtmp_handle_data(rtmp_session_t *rsession)
 				}
 				rsession->parse_remain = 0;
 				break;
-			
+
 			case 1:
 			{
 				/* Read full header and decode */
 				rtmp_state_t *state = &rsession->amfstate[rsession->amfnumber];
 				uint8_t *hdr = (uint8_t*)state->header.sz;
 				unsigned char *readbuf = (unsigned char*)hdr;
-				
+
 				if (!rsession->parse_remain) {
-					rsession->parse_remain = s = rsession->hdrsize - 1;	
+					rsession->parse_remain = s = rsession->hdrsize - 1;
 				} else {
 					s = rsession->parse_remain;
 					readbuf += (rsession->hdrsize - 1) - s;
 				}
-				
+
 				if ( !(s < 12 && s > 0) ) { /** XXX **/
 					switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rsession->uuid), SWITCH_LOG_NOTICE, "Protocol error: Invalid header size\n");
 					return SWITCH_STATUS_FALSE;
 				}
-				
+
 				if (rsession->profile->io->read(rsession, readbuf, &s) != SWITCH_STATUS_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rsession->uuid), SWITCH_LOG_NOTICE, "Disconnected from flash client\n");
 					return SWITCH_STATUS_FALSE;
 				}
-				
+
 				rsession->parse_remain -= s;
 				if (rsession->parse_remain > 0) {
 					/* More data please */
 					return SWITCH_STATUS_SUCCESS;
 				}
-				
+
 				rsession->recv += s;
-				
+
 				if (rsession->hdrsize == 12) {
 					state->ts = (hdr[0] << 16) | (hdr[1] << 8) | (hdr[2]);
 					state->ts_delta = 0;
@@ -823,7 +823,7 @@ switch_status_t rtmp_handle_data(rtmp_session_t *rsession)
 					/* Type 3: Re-use timestamp delta if we have one */
 					state->ts += state->ts_delta;
 				}
-				
+
 				if (rsession->hdrsize >= 8) {
 					/* Reset length counter since its included in the header */
 					state->remainlen = state->origlen = (hdr[3] << 16) | (hdr[4] << 8) | (hdr[5]);
@@ -833,31 +833,31 @@ switch_status_t rtmp_handle_data(rtmp_session_t *rsession)
 				if (rsession->hdrsize == 12) {
 					state->stream_id = (hdr[10] << 24) | (hdr[9] << 16) | (hdr[8] << 8) | hdr[7];
 				}
-				
+
 				if (rsession->hdrsize >= 8 && state->origlen == 0) {
 					/* Happens we sometimes get a 0 length packet */
 					rsession->parse_state = 0;
 					return SWITCH_STATUS_SUCCESS;
 				}
-				
+
 				/* FIXME: Handle extended timestamps */
 				if (state->ts == 0x00ffffff) {
 					return SWITCH_STATUS_FALSE;
 				}
-				
+
 				rsession->parse_state++;
 			}
-			case 2: 
+			case 2:
 			{
 				rtmp_state_t *state = &rsession->amfstate[rsession->amfnumber];
-				
+
 				if (rsession->parse_remain > 0) {
 					s = rsession->parse_remain;
 				} else {
 					s = state->remainlen < rsession->in_chunksize ? state->remainlen : rsession->in_chunksize;
-					rsession->parse_remain = s;		
+					rsession->parse_remain = s;
 				}
-				
+
 				if (!s) {
 					/* Restart from beginning */
 					s = state->remainlen = state->origlen;
@@ -869,31 +869,31 @@ switch_status_t rtmp_handle_data(rtmp_session_t *rsession)
 						return SWITCH_STATUS_FALSE;
 					}
 				}
-				
+
 				/* Sanity check */
 				if ((state->buf_pos + s) > AMF_MAX_SIZE) {
 					switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rsession->uuid), SWITCH_LOG_ERROR, "WTF %"SWITCH_SIZE_T_FMT" %"SWITCH_SIZE_T_FMT"\n",
 						state->buf_pos, s);
-					
+
 					switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rsession->uuid), SWITCH_LOG_ERROR, "Protocol error: exceeding max AMF packet size\n");
 					return SWITCH_STATUS_FALSE;
 				}
 
 				if (s > rsession->in_chunksize) {
 					switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rsession->uuid), SWITCH_LOG_ERROR, "Protocol error: invalid chunksize\n");
-					return SWITCH_STATUS_FALSE;					
+					return SWITCH_STATUS_FALSE;
 				}
-				
+
 				if (rsession->profile->io->read(rsession, state->buf + state->buf_pos, &s) != SWITCH_STATUS_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rsession->uuid), SWITCH_LOG_NOTICE, "Disconnected from flash client\n");
 					return SWITCH_STATUS_FALSE;
 				}
 				rsession->recv += s;
-				
+
 				state->remainlen -= s;
 				rsession->parse_remain -= s;
 				state->buf_pos += s;
-				
+
 				if (rsession->parse_remain > 0) {
 					/* Need more data */
 					return SWITCH_STATUS_SUCCESS;
@@ -922,13 +922,13 @@ switch_status_t rtmp_handle_data(rtmp_session_t *rsession)
 							switch_thread_rwlock_wrlock(rsession->rwlock);
 							if (rsession->tech_pvt) {
 								uint16_t len = state->origlen;
-								
+
 								if (!rsession->tech_pvt->readbuf) {
 									switch_thread_rwlock_unlock(rsession->rwlock);
 									return SWITCH_STATUS_FALSE;
 								}
 
-								
+
 								switch_mutex_lock(rsession->tech_pvt->readbuf_mutex);
 								if (rsession->tech_pvt->maxlen && switch_buffer_inuse(rsession->tech_pvt->readbuf) > (switch_size_t)(rsession->tech_pvt->maxlen * 40)) {
 									rsession->tech_pvt->over_size++;
@@ -936,8 +936,8 @@ switch_status_t rtmp_handle_data(rtmp_session_t *rsession)
 									rsession->tech_pvt->over_size = 0;
 								}
 								if (rsession->tech_pvt->over_size > 10) {
-									switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rsession->uuid), SWITCH_LOG_DEBUG, 
-													  "%s buffer > %u for 10 consecutive packets... Flushing buffer\n", 
+									switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rsession->uuid), SWITCH_LOG_DEBUG,
+													  "%s buffer > %u for 10 consecutive packets... Flushing buffer\n",
 													  switch_core_session_get_name(rsession->tech_pvt->session), rsession->tech_pvt->maxlen * 40);
 									switch_buffer_zero(rsession->tech_pvt->readbuf);
 									#ifdef RTMP_DEBUG_IO
@@ -965,15 +965,15 @@ switch_status_t rtmp_handle_data(rtmp_session_t *rsession)
 							switch_time_t now = switch_micro_time_now();
 							uint32_t ack = (state->buf[0] << 24) | (state->buf[1] << 16) | (state->buf[2] << 8) | (state->buf[3]);
 							uint32_t delta = rsession->send_ack_ts == 0 ? 0 : now - rsession->send_ack_ts;
-							
+
 							delta /= 1000000; /* microseconds -> seconds */
-							
+
 							if (delta) {
 								rsession->send_bw  = (ack - rsession->send_ack) / delta;
 							}
-							
+
 							rsession->send_ack = ack;
-							rsession->send_ack_ts = switch_micro_time_now();								
+							rsession->send_ack_ts = switch_micro_time_now();
 							break;
 						}
 						default:
@@ -984,7 +984,7 @@ switch_status_t rtmp_handle_data(rtmp_session_t *rsession)
 				}
 
 				rsession->parse_state = 0;
-				
+
 				/* Send an ACK if we need to */
 				if (rsession->recv - rsession->recv_ack_sent >= rsession->recv_ack_window) {
 					unsigned char ackbuf[] = { INT32(rsession->recv) };
@@ -992,11 +992,11 @@ switch_status_t rtmp_handle_data(rtmp_session_t *rsession)
 					rtmp_send_message(rsession, 2/*chunkstream*/, 0/*ts*/, RTMP_TYPE_ACK, 0/*msg stream id */, ackbuf, sizeof(ackbuf), 0 /*flags*/);
 					rsession->recv_ack_sent = rsession->recv;
 				}
-				
+
 			}
-		}	
+		}
 	}
-	
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
