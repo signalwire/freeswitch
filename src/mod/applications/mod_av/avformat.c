@@ -906,6 +906,8 @@ SWITCH_STANDARD_APP(record_av_function)
 	switch_core_session_set_read_codec(session, NULL);
 	switch_core_codec_destroy(&codec);
 
+	if (buffer) switch_buffer_destroy(&buffer);
+
  done:
 	switch_core_session_video_reset(session);
 }
