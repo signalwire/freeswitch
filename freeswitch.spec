@@ -1540,9 +1540,11 @@ export ACLOCAL_FLAGS="-I /usr/share/aclocal"
 #
 ######################################################################################################################
 
-if test ! -f Makefile.in 
+if test -f bootstrap.sh
 then 
    ./bootstrap.sh
+else
+   ./rebootstrap.sh
 fi
 
 %configure -C \
