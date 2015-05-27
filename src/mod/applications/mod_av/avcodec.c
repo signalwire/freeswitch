@@ -268,7 +268,7 @@ static switch_status_t open_encoder(h264_codec_context_t *context, uint32_t widt
 	if (!context->encoder) context->encoder = avcodec_find_encoder(AV_CODEC_ID_H264);
 
 	if (!context->encoder) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot find AV_CODEC_ID_H264 decoder\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot find AV_CODEC_ID_H264 encoder\n");
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -310,22 +310,27 @@ static switch_status_t open_encoder(h264_codec_context_t *context, uint32_t widt
 		context->bandwidth = 5120;
 	}
 
-	context->encoder_ctx->bit_rate = context->bandwidth * 1024;
+	//context->encoder_ctx->bit_rate = context->bandwidth * 1024;
 	context->encoder_ctx->width = context->codec_settings.video.width;
 	context->encoder_ctx->height = context->codec_settings.video.height;
 	/* frames per second */
-	context->encoder_ctx->time_base = (AVRational){1, FPS};
-	context->encoder_ctx->gop_size = FPS * 3; /* emit one intra frame every 3 seconds */
+	context->encoder_ctx->time_base = (AVRational){1, 90};
+	context->encoder_ctx->gop_size = FPS * 10; /* emit one intra frame every 3 seconds */
 	context->encoder_ctx->max_b_frames = 0;
 	context->encoder_ctx->pix_fmt = AV_PIX_FMT_YUV420P;
-	context->encoder_ctx->thread_count = 1; // switch_core_cpu_count();
+	context->encoder_ctx->thread_count = 1;//switch_core_cpu_count() > 4 ? 4 : 1;
+
+	context->encoder_ctx->bit_rate = context->bandwidth * 1024;
+	context->encoder_ctx->rc_max_rate = context->bandwidth * 1024;
+	context->encoder_ctx->rc_buffer_size = context->bandwidth * 1024 * 2;
+	
 	context->encoder_ctx->rtp_payload_size = SLICE_SIZE;
-	context->encoder_ctx->profile = 66;
+	context->encoder_ctx->profile = FF_PROFILE_H264_BASELINE;
 	context->encoder_ctx->level = 31;
 	av_opt_set(context->encoder_ctx->priv_data, "preset", "veryfast", 0);
-	av_opt_set(context->encoder_ctx->priv_data, "tune", "animation+zerolatency", 0);
+	av_opt_set(context->encoder_ctx->priv_data, "tune", "zerolatency", 0);
 	av_opt_set(context->encoder_ctx->priv_data, "profile", "baseline", 0);
-	// av_opt_set_int(context->encoder_ctx->priv_data, "slice-max-size", SLICE_SIZE, 0);
+	//av_opt_set_int(context->encoder_ctx->priv_data, "slice-max-size", SLICE_SIZE, 0);
 
 	if (avcodec_open2(context->encoder_ctx, context->encoder, NULL) < 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not open codec\n");
@@ -445,8 +450,8 @@ static switch_status_t switch_h264_encode(switch_codec_t *codec, switch_frame_t 
 	}
 
 	if (avctx->width != width || avctx->height != height) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "picture size changed from %dx%d to %dx%d, reinitializing encoder",
-			avctx->width, avctx->height, width, height);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "picture size changed from %dx%d to %dx%d, reinitializing encoder\n",
+						  avctx->width, avctx->height, width, height);
 		if (open_encoder(context, width, height) != SWITCH_STATUS_SUCCESS) {
 			goto error;
 		}
@@ -487,7 +492,7 @@ static switch_status_t switch_h264_encode(switch_codec_t *codec, switch_frame_t 
 		avframe->format = avctx->pix_fmt;
 		avframe->width  = avctx->width;
 		avframe->height = avctx->height;
-		avframe->pts = frame->timestamp / 90;
+		avframe->pts = frame->timestamp / 1000;
 
 		ret = av_frame_get_buffer(avframe, 32);
 
@@ -516,9 +521,9 @@ static switch_status_t switch_h264_encode(switch_codec_t *codec, switch_frame_t 
 	//avframe->pts = context->pts++;
 
 	if (context->need_key_frame) {
-		// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "NEED Refresh\n");
-		// av_opt_set_int(context->encoder_ctx->priv_data, "intra-refresh", 1, 0);
-		avframe->pict_type = AV_PICTURE_TYPE_I;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Send AV KEYFRAME\n");
+		 av_opt_set_int(context->encoder_ctx->priv_data, "intra-refresh", 1, 0);
+		 avframe->pict_type = AV_PICTURE_TYPE_I;
 	}
 
 	/* encode the image */
@@ -540,7 +545,7 @@ process:
 		const uint8_t *p = pkt->data;
 		int i = 0;
 
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Encoded frame %" SWITCH_INT64_T_FMT " (size=%5d) nalu_type=0x%x %d\n", context->pts, pkt->size, *((uint8_t *)pkt->data +4), *got_output);
+		//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Encoded frame %" SWITCH_INT64_T_FMT " (size=%5d) nalu_type=0x%x %d\n", context->pts, pkt->size, *((uint8_t *)pkt->data +4), *got_output);
 
 		/* split into nalus */
 		memset(context->nalus, 0, sizeof(context->nalus));
