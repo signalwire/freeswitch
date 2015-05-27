@@ -686,6 +686,8 @@ struct conference_member {
 	int managed_kps;
 	int blackouts;
 	int good_img;
+	int auto_avatar;
+	int avatar_patched;
 };
 
 typedef enum {
@@ -1201,6 +1203,7 @@ static void detach_video_layer(conference_member_t *member)
 	reset_layer(member->conference->canvas, layer);
 	layer->member_id = 0;
 	member->video_layer_id = -1;
+	member->avatar_patched = 0;
 	check_used_layers(member->conference);
 	switch_mutex_unlock(member->conference->canvas->mutex);
 }
@@ -1463,6 +1466,8 @@ static switch_status_t attach_video_layer(conference_member_t *member, int idx)
 	reset_layer(member->conference->canvas, layer);
 	switch_img_free(&layer->mute_img);
 
+	member->avatar_patched = 0;
+		
 	if (member->avatar_png_img) {
 		layer->is_avatar = 1;
 	}
@@ -1844,6 +1849,8 @@ static void check_avatar(conference_member_t *member, switch_bool_t force)
 		switch_mutex_lock(member->conference->canvas->mutex);
 	}
 
+	member->avatar_patched = 0;
+	
 	if (!force && switch_channel_test_flag(member->channel, CF_VIDEO) && member->video_flow != SWITCH_MEDIA_FLOW_SENDONLY) {
 		switch_set_flag_locked(member, MFLAG_ACK_VIDEO);
 	} else {
@@ -2039,29 +2046,36 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 						if (imember->blanks == conference->video_fps.fps * 5) {
 							imember->blackouts++;
 							check_avatar(imember, SWITCH_TRUE);
-							if (layer && imember->avatar_png_img) {
-								layer->is_avatar = 1;
-							}
 							imember->managed_kps = 0;
+							
+							if (imember->avatar_png_img) {
+								//if (layer) {
+									//layer->is_avatar = 1;
+								//}
+
+								imember->auto_avatar = 1;
+							}
 						}
 					}
 				}
 			} else {
 				int flushed = flush_video_queue(imember->video_queue);
 
-				if (flushed && imember->blanks) {
+				if (flushed && imember->auto_avatar) {
 					switch_img_free(&imember->avatar_png_img);
+					imember->avatar_patched = 0;
 					reset_video_bitrate_counters(imember);
 					
 					if (layer) {
 						layer->is_avatar = 0;
+						imember->auto_avatar = 0;
 					}
-
+					
 					imember->blanks = 0;
 					//switch_channel_video_sync(imember->channel);
+				} else {
+					
 				}
-						
-				img = imember->avatar_png_img;
 			}
 			
 			layer = NULL;
@@ -2078,11 +2092,25 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 				}
 			}
 
+			if (imember->avatar_png_img) {
+				if (layer) {
+					if (!imember->avatar_patched || !layer->cur_img) {
+						layer->tagged = 1;
+						//layer->is_avatar = 1;
+						switch_img_free(&layer->cur_img);
+						switch_img_copy(imember->avatar_png_img, &layer->cur_img);
+						imember->avatar_patched = 1;
+					}
+				}
+				switch_img_free(&img);
+			}
+
+
 			avatar_layers = 0;
 			for (i = 0; i < conference->canvas->total_layers; i++) {
 				mcu_layer_t *xlayer = &conference->canvas->layers[i];
 					
-				if (xlayer->is_avatar && xlayer->member_id != conference->video_floor_holder && !switch_test_flag(imember, MFLAG_MOD)) {
+				if (xlayer->is_avatar && xlayer->member_id != conference->video_floor_holder) {
 					avatar_layers++;
 				}
 			}
@@ -2122,35 +2150,46 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 					}
 				}
 			}
+
+			if (switch_test_flag(imember->conference, CFLAG_MANAGE_INBOUND_VIDEO_BITRATE) && !imember->managed_kps) {
+				switch_core_session_message_t msg = { 0 };
+				int kps;
+				int w = 320;
+				int h = 240;
 				
-			if (layer) {
-				if (switch_test_flag(imember->conference, CFLAG_MANAGE_INBOUND_VIDEO_BITRATE) && !imember->managed_kps) {
-					switch_core_session_message_t msg = { 0 };
-					int kps;
+				if (layer) {
+					if (layer->screen_w > 320 && layer->screen_h > 240) {
+						w = layer->screen_w;
+						h = layer->screen_h;
+					}
+				}
+
 				
-					//if (!layer || !switch_test_flag(imember, MFLAG_CAN_BE_SEEN) || imember->avatar_png_img) {
-					//	kps = switch_calc_bitrate(320, 240, 2, imember->conference->video_fps.fps);
-					
-					//	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "%s auto-setting bitrate to %dkps because user's image is not visible\n", 
-					//					  switch_channel_get_name(imember->channel), kps);
-					//} else {
-					kps = switch_calc_bitrate(layer->screen_w, layer->screen_h, 2, imember->conference->video_fps.fps);
-				
+
+				if (!layer || !switch_test_flag(imember, MFLAG_CAN_BE_SEEN) || imember->avatar_png_img) {
+					kps = 200;
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "%s auto-setting bitrate to %dkps because user's image is not visible\n", 
+									  switch_channel_get_name(imember->channel), kps);
+				} else {
+					kps = switch_calc_bitrate(w, h, 2, imember->conference->video_fps.fps);
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "%s auto-setting bitrate to %dkps to accomodate %dx%d resolution\n", 
 									  switch_channel_get_name(imember->channel), kps, layer->screen_w, layer->screen_h);
-					//}
-
-					msg.message_id = SWITCH_MESSAGE_INDICATE_BITRATE_REQ;
-					msg.numeric_arg = kps * 1024;
-					msg.from = __FILE__;
+				}
 				
-					switch_core_session_receive_message(imember->session, &msg);
-					imember->managed_kps = kps;
-				}
+				msg.message_id = SWITCH_MESSAGE_INDICATE_BITRATE_REQ;
+				msg.numeric_arg = kps * 1024;
+				msg.from = __FILE__;
+				
+				switch_core_session_receive_message(imember->session, &msg);
+				imember->managed_kps = kps;
+			}
 
-				if (layer->cur_img && layer->cur_img != imember->avatar_png_img) {
-					switch_img_free(&layer->cur_img);
-				}
+				
+			if (layer) {
+				
+				//if (layer->cur_img && layer->cur_img != imember->avatar_png_img) {
+				//	switch_img_free(&layer->cur_img);
+				//}
 
 				if (switch_test_flag(imember, MFLAG_CAN_BE_SEEN)) {
 					layer->mute_patched = 0;
@@ -2185,21 +2224,14 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 					}
 				}
 
-				if (img) {
-					if (imember->avatar_png_img) {
-						if (!layer->cur_img) {
-							switch_img_copy(imember->avatar_png_img, &layer->cur_img);
-						}
-							
-						if (img != imember->avatar_png_img) {
-							switch_img_free(&img);
-						}
-							
-					}
 
-					if (img && !layer->cur_img) {
+				if (img) {
+
+					if (img != layer->cur_img) {
+						switch_img_free(&layer->cur_img);
 						layer->cur_img = img;
 					}
+
 						
 					img = NULL;
 					layer->tagged = 1;
@@ -2243,13 +2275,14 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 						layer->refresh = 1;
 						conference->canvas->refresh++;
 					}
-					
+
 					if (layer->cur_img) {
 						scale_and_patch(conference, layer, NULL, SWITCH_FALSE);
 					}
 					
 					layer->tagged = 0;
 				}
+				
 				layer->bugged = 0;
 			}
 		}
@@ -4651,6 +4684,7 @@ static switch_status_t conference_del_member(conference_obj_t *conference, confe
 		switch_ivr_dmachine_destroy(&member->dmachine);
 	}
 
+	member->avatar_patched = 0;
 	switch_img_free(&member->avatar_png_img);
 	switch_img_free(&member->video_mute_img);
 
