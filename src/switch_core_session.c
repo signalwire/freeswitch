@@ -732,6 +732,7 @@ static const char *message_names[] = {
 	"DISPLAY",
 	"TRANSCODING_NECESSARY",
 	"AUDIO_SYNC",
+	"VIDEO_SYNC",
 	"REQUEST_IMAGE_MEDIA",
 	"UUID_CHANGE",
 	"SIMPLIFY",

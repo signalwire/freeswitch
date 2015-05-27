@@ -500,24 +500,15 @@ static void switch_rtp_change_ice_dest(switch_rtp_t *rtp_session, switch_rtp_ice
 	ice->ice_params->cands[ice->ice_params->chosen[ice->proto]][ice->proto].con_addr = switch_core_strdup(rtp_session->pool, host);
 	ice->ice_params->cands[ice->ice_params->chosen[ice->proto]][ice->proto].con_port = port;
 	ice->missed_count = 0;
-	
-	switch_sockaddr_info_get(&ice->addr, host, SWITCH_UNSPEC, port, 0, rtp_session->pool);
-	
-	if (!is_rtcp || rtp_session->flags[SWITCH_RTP_FLAG_RTCP_MUX]) {
-		switch_rtp_set_remote_address(rtp_session, host, port, 0, SWITCH_FALSE, &err);
-	}
 
-	if (is_rtcp || rtp_session->flags[SWITCH_RTP_FLAG_RTCP_MUX]) {
-		rtp_session->remote_rtcp_port = port;
-		rtp_session->eff_remote_host_str = switch_core_strdup(rtp_session->pool, host);
+	if (is_rtcp) {
+		ice->addr = rtp_session->rtcp_remote_addr;
+	} else {
+		switch_rtp_set_remote_address(rtp_session, host, port, 0, SWITCH_FALSE, &err);
 
 		if (rtp_session->flags[SWITCH_RTP_FLAG_RTCP_MUX]) {
-			rtp_session->rtcp_remote_addr = rtp_session->remote_addr;
-		} else {
-			switch_sockaddr_info_get(&rtp_session->rtcp_remote_addr, 
-									 rtp_session->eff_remote_host_str, SWITCH_UNSPEC, rtp_session->remote_rtcp_port, 0, rtp_session->pool);
+			ice->addr = rtp_session->remote_addr;
 		}
-
 	}
 
 }
@@ -1048,7 +1039,7 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 
 							ice = icep[j];
 							ok = 1;
-
+							
 							if (j != IPR_RTP) {
 								break;
 							}
@@ -1111,7 +1102,7 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 	}
 
 
-	//if (rtp_session->flags[SWITCH_RTP_FLAG_VIDEO]) {
+	//if (rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] || 1) {
 	//	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING, "WTF OK %s %d\n", rtp_type(rtp_session), ok);
 	//}
 	
@@ -1139,9 +1130,6 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 
 			if (!ice->ready) {
 				ice->ready = 1;
-				if (rtp_session->flags[SWITCH_RTP_FLAG_VIDEO]) {
-					switch_core_session_video_reinit(rtp_session->session);
-				}
 			}
 
 			memset(stunbuf, 0, sizeof(stunbuf));
@@ -1172,10 +1160,10 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 			}
 
 			if (hosts_set) {
-				switch_sockaddr_info_get(&ice->addr, host, SWITCH_UNSPEC, port, 0, rtp_session->pool);
+				//switch_sockaddr_info_get(&ice->addr, host, SWITCH_UNSPEC, port, 0, rtp_session->pool);
 				 
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_NOTICE,
-								  "Auto Changing stun/%s/dtls port from %s:%u to %s:%u\n", is_rtcp ? "rtcp" : "rtp", 
+								  "Auto Changing %s stun/%s/dtls port from %s:%u to %s:%u\n", rtp_type(rtp_session), is_rtcp ? "rtcp" : "rtp", 
 								  host2, port2,
 								  host, port);
 
@@ -1215,7 +1203,7 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 				}
 
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_NOTICE,
-								  "Auto Changing stun/%s/dtls port from %s:%u to %s:%u\n", is_rtcp ? "rtcp" : "rtp", 
+								  "Auto Changing %s stun/%s/dtls port from %s:%u to %s:%u\n", rtp_type(rtp_session), is_rtcp ? "rtcp" : "rtp", 
 								  host2, port2,
 								  host, port);
 
@@ -2210,7 +2198,7 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 			old_host = switch_get_addr(bufb, sizeof(bufb), rtp_session->rtcp_remote_addr);
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_CRIT, "%s SEND %s RTCP %s:%d %ld\n", 
 							  rtp_session_name(rtp_session),
-							  rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] ? "video" : "audio", 
+							  rtp_type(rtp_session),
 							  old_host,
 							  switch_sockaddr_get_port(rtp_session->rtcp_remote_addr),
 							  rtcp_bytes);
@@ -4143,7 +4131,6 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_activate_ice(switch_rtp_t *rtp_sessio
 		ice = &rtp_session->ice;		
 		rtp_session->flags[SWITCH_RTP_FLAG_PAUSE] = 0;
 		rtp_session->flags[SWITCH_RTP_FLAG_MUTE] = 0;
-		switch_core_session_video_reinit(rtp_session->session);
 	} else {
 		ice = &rtp_session->rtcp_ice;
 	}
