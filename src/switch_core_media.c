@@ -5885,6 +5885,15 @@ static const char *get_media_profile_name(switch_core_session_t *session, int se
 	
 }
 
+static char *get_setup(switch_core_session_t *session)
+{
+	if (switch_channel_direction(session->channel) == SWITCH_CALL_DIRECTION_INBOUND && !switch_channel_test_flag(session->channel, CF_RECOVERING)) {
+		return "active";
+	}
+
+	return "actpass";
+}  
+
 //?
 static void generate_m(switch_core_session_t *session, char *buf, size_t buflen, 
 					   switch_port_t port, const char *family, const char *ip,
@@ -6041,10 +6050,10 @@ static void generate_m(switch_core_session_t *session, char *buf, size_t buflen,
 	}
 
 	if (!zstr(a_engine->local_dtls_fingerprint.type) && secure) {
-		switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=fingerprint:%s %s\n", a_engine->local_dtls_fingerprint.type, 
-						a_engine->local_dtls_fingerprint.str);
+		switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=fingerprint:%s %s\na=setup:%s\n", a_engine->local_dtls_fingerprint.type, 
+						a_engine->local_dtls_fingerprint.str, get_setup(session));
 	}
-
+	
 	if (smh->mparams->rtcp_audio_interval_msec) {
 		if (a_engine->rtcp_mux > 0) {
 			switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=rtcp-mux\n");
@@ -6649,8 +6658,8 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 	
 
 		if (!zstr(a_engine->local_dtls_fingerprint.type)) {
-			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=fingerprint:%s %s\n", a_engine->local_dtls_fingerprint.type, 
-							a_engine->local_dtls_fingerprint.str);
+			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=fingerprint:%s %s\na=setup:%s\n", a_engine->local_dtls_fingerprint.type, 
+							a_engine->local_dtls_fingerprint.str, get_setup(session));
 		}
 		
 		if (smh->mparams->rtcp_audio_interval_msec) {
@@ -7046,8 +7055,8 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 
 
 				if (!zstr(v_engine->local_dtls_fingerprint.type)) {
-					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=fingerprint:%s %s\n", v_engine->local_dtls_fingerprint.type, 
-									v_engine->local_dtls_fingerprint.str);
+					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=fingerprint:%s %s\na=setup:%s\n", v_engine->local_dtls_fingerprint.type, 
+									v_engine->local_dtls_fingerprint.str, get_setup(session));
 				}
 
 
