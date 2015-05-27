@@ -2975,13 +2975,19 @@ static void check_ice(switch_media_handle_t *smh, switch_media_type_t type, sdp_
 	}
 
 	if (engine->ice_in.cands[engine->ice_in.chosen[1]][1].con_port) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_NOTICE,
-						  "setting remote rtcp %s addr to %s:%d based on candidate\n", type2str(type),
-						  engine->ice_in.cands[engine->ice_in.chosen[1]][1].con_addr, engine->ice_in.cands[engine->ice_in.chosen[1]][1].con_port);
-		engine->remote_rtcp_ice_port = engine->ice_in.cands[engine->ice_in.chosen[1]][1].con_port;
-		engine->remote_rtcp_ice_addr = switch_core_session_strdup(smh->session, engine->ice_in.cands[engine->ice_in.chosen[1]][1].con_addr);
-
-		engine->remote_rtcp_port = engine->ice_in.cands[engine->ice_in.chosen[1]][1].con_port;
+		if (engine->rtcp_mux) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_NOTICE,
+							  "Asked by candidate to set remote rtcp %s addr to %s:%d but this is rtcp-mux so no thanks\n", type2str(type),
+							  engine->ice_in.cands[engine->ice_in.chosen[1]][1].con_addr, engine->ice_in.cands[engine->ice_in.chosen[1]][1].con_port);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_NOTICE,
+							  "Setting remote rtcp %s addr to %s:%d based on candidate\n", type2str(type),
+							  engine->ice_in.cands[engine->ice_in.chosen[1]][1].con_addr, engine->ice_in.cands[engine->ice_in.chosen[1]][1].con_port);
+			engine->remote_rtcp_ice_port = engine->ice_in.cands[engine->ice_in.chosen[1]][1].con_port;
+			engine->remote_rtcp_ice_addr = switch_core_session_strdup(smh->session, engine->ice_in.cands[engine->ice_in.chosen[1]][1].con_addr);
+			
+			engine->remote_rtcp_port = engine->ice_in.cands[engine->ice_in.chosen[1]][1].con_port;
+		}
 	}
 
 
@@ -5879,6 +5885,15 @@ static const char *get_media_profile_name(switch_core_session_t *session, int se
 	
 }
 
+static char *get_setup(switch_core_session_t *session)
+{
+	if (switch_channel_direction(session->channel) == SWITCH_CALL_DIRECTION_INBOUND && !switch_channel_test_flag(session->channel, CF_RECOVERING)) {
+		return "active";
+	}
+
+	return "actpass";
+}  
+
 //?
 static void generate_m(switch_core_session_t *session, char *buf, size_t buflen, 
 					   switch_port_t port, const char *family, const char *ip,
@@ -6035,10 +6050,10 @@ static void generate_m(switch_core_session_t *session, char *buf, size_t buflen,
 	}
 
 	if (!zstr(a_engine->local_dtls_fingerprint.type) && secure) {
-		switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=fingerprint:%s %s\n", a_engine->local_dtls_fingerprint.type, 
-						a_engine->local_dtls_fingerprint.str);
+		switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=fingerprint:%s %s\na=setup:%s\n", a_engine->local_dtls_fingerprint.type, 
+						a_engine->local_dtls_fingerprint.str, get_setup(session));
 	}
-
+	
 	if (smh->mparams->rtcp_audio_interval_msec) {
 		if (a_engine->rtcp_mux > 0) {
 			switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=rtcp-mux\n");
@@ -6643,8 +6658,8 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 	
 
 		if (!zstr(a_engine->local_dtls_fingerprint.type)) {
-			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=fingerprint:%s %s\n", a_engine->local_dtls_fingerprint.type, 
-							a_engine->local_dtls_fingerprint.str);
+			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=fingerprint:%s %s\na=setup:%s\n", a_engine->local_dtls_fingerprint.type, 
+							a_engine->local_dtls_fingerprint.str, get_setup(session));
 		}
 		
 		if (smh->mparams->rtcp_audio_interval_msec) {
@@ -7040,8 +7055,8 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 
 
 				if (!zstr(v_engine->local_dtls_fingerprint.type)) {
-					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=fingerprint:%s %s\n", v_engine->local_dtls_fingerprint.type, 
-									v_engine->local_dtls_fingerprint.str);
+					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=fingerprint:%s %s\na=setup:%s\n", v_engine->local_dtls_fingerprint.type, 
+									v_engine->local_dtls_fingerprint.str, get_setup(session));
 				}
 
 
