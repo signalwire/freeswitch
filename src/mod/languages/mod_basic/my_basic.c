@@ -5514,6 +5514,7 @@ int _std_str(mb_interpreter_t* s, void** l) {
 		sprintf(chr, "%g", arg.value.float_point);
 	} else {
 		result = MB_FUNC_ERR;
+		free(chr);
 		goto _exit;
 	}
 	mb_check(mb_push_string(s, l, chr));
