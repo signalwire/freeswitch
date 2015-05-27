@@ -1845,9 +1845,11 @@ static void calc_bw_exp(uint32_t bps, uint8_t bits, rtcp_tmmbx_t *tmmbx)
 	uint32_t mantissa = 0;
 	uint16_t overhead = 60;
 
+	switch_assert(bits<=32);
+
 	mantissa_max = (1 << bits) - 1;
 
-	for (i = 0; i < 64; ++i) {
+	for (i = 0; i < 32; ++i) {
 		if (bps <= (mantissa_max << i)) {
 			exp = i;
 			break;
