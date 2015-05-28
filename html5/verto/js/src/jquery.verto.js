@@ -76,6 +76,7 @@
             videoParams: {},
             audioParams: {},
 	    loginParams: {},
+	    userVariables: {},
             iceServers: false,
             ringSleep: 6000
         }, options);
@@ -94,6 +95,7 @@
             passwd: verto.options.passwd,
             socketUrl: verto.options.socketUrl,
 	    loginParams: verto.options.loginParams,
+	    userVariables: verto.options.userVariables,
             sessid: verto.sessid,
             onmessage: function(e) {
                 return verto.handleMessage(e.eventData);
@@ -1348,7 +1350,7 @@
 
             verto.subscribe(confMan.params.laData.modChannel, {
                 handler: function(v, e) {
-                    console.error("MODDATA:", e.data);
+                    //console.error("MODDATA:", e.data);
                     if (confMan.params.onBroadcast) {
                         confMan.params.onBroadcast(verto, confMan, e.data);
                     }
@@ -1358,7 +1360,11 @@
 			var vlayout_id = "#confman_vid_layout_" + confMan.serno;
 			var x = 0;
 			var options;
-
+			
+			$(vlselect_id).selectmenu({});
+			$(vlselect_id).selectmenu("enable");
+			$(vlselect_id).empty();
+			
 			$(vlselect_id).append(new Option("Choose a Layout", "none"));
 
 			if (e.data.responseData) {
@@ -2138,29 +2144,30 @@
     $.verto.videoDevices = [];
     $.verto.audioDevices = [];
 
-    $.verto.findDevices = function(runtime) {
+    $.verto.init = function(obj, runtime) {
 	var aud = [], vid = [];
+	
+	$.FSRTC.getValidRes(obj.camera, function() {
+	    console.info("enumerating devices");
 
-	MediaStreamTrack.getSources(function (media_sources) {
-	    for (var i = 0; i < media_sources.length; i++) {
-
-		if (media_sources[i].kind == 'video') {
-		    vid.push(media_sources[i]);
-		} else {
-		    aud.push(media_sources[i]);
+	    MediaStreamTrack.getSources(function (media_sources) {
+		for (var i = 0; i < media_sources.length; i++) {
+		    
+		    if (media_sources[i].kind == 'video') {
+			vid.push(media_sources[i]);
+		    } else {
+			aud.push(media_sources[i]);
+		    }
 		}
-	    }
-
-	    $.verto.videoDevices = vid;
-	    $.verto.audioDevices = aud;
-
-	    console.info("Audio Devices", $.verto.audioDevices);
-	    console.info("Video Devices", $.verto.videoDevices);
-	    runtime();
+		
+		$.verto.videoDevices = vid;
+		$.verto.audioDevices = aud;
+		
+		console.info("Audio Devices", $.verto.audioDevices);
+		console.info("Video Devices", $.verto.videoDevices);
+		runtime();
+	    });
 	});
     }
-
-
-
 
 })(jQuery);

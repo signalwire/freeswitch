@@ -217,14 +217,14 @@ static switch_status_t gsmopen_codec(private_t * tech_pvt, int sample_rate, int 
 	switch_core_session_t *session = NULL;
 
 	if (switch_core_codec_init
-		(&tech_pvt->read_codec, "L16", NULL, sample_rate, codec_ms, 1,
+		(&tech_pvt->read_codec, "L16", NULL, NULL, sample_rate, codec_ms, 1,
 		 SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, NULL) != SWITCH_STATUS_SUCCESS) {
 		ERRORA("Can't load codec?\n", GSMOPEN_P_LOG);
 		return SWITCH_STATUS_FALSE;
 	}
 
 	if (switch_core_codec_init
-		(&tech_pvt->write_codec, "L16", NULL, sample_rate, codec_ms, 1,
+		(&tech_pvt->write_codec, "L16", NULL, NULL, sample_rate, codec_ms, 1,
 		 SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, NULL) != SWITCH_STATUS_SUCCESS) {
 		ERRORA("Can't load codec?\n", GSMOPEN_P_LOG);
 		switch_core_codec_destroy(&tech_pvt->read_codec);

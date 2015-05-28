@@ -48,5 +48,3 @@ c=IN IP4 135.180.130.88
 m=audio 492170 RTP/AVP 0 12
 m=video 3227 RTP/AVP 31
 a=rtpmap:31 LPC
-
-

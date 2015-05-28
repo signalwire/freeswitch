@@ -31,7 +31,6 @@ avoid_mods=(
   endpoints/mod_reference
   endpoints/mod_unicall
   event_handlers/mod_amqp
-  languages/mod_managed
   sdk/autotools
   xml_int/mod_xml_ldap
   xml_int/mod_xml_radius
@@ -684,7 +683,6 @@ Depends: \${misc:Depends}, freeswitch (= \${binary:Version}),
  freeswitch-mod-amrwb (= \${binary:Version}),
  freeswitch-mod-b64 (= \${binary:Version}),
  freeswitch-mod-bv (= \${binary:Version}),
- freeswitch-mod-celt (= \${binary:Version}),
  freeswitch-mod-codec2 (= \${binary:Version}),
  freeswitch-mod-dahdi-codec (= \${binary:Version}),
  freeswitch-mod-g723-1 (= \${binary:Version}),

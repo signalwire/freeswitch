@@ -1440,6 +1440,7 @@ void mod_spandsp_fax_process_fax(switch_core_session_t *session, const char *dat
 	 */
 	if (switch_core_codec_init(&read_codec,
 							   "L16",
+                               NULL,
 							   NULL,
 							   read_impl.samples_per_second,
 							   read_impl.microseconds_per_packet / 1000,
@@ -1457,6 +1458,7 @@ void mod_spandsp_fax_process_fax(switch_core_session_t *session, const char *dat
 
 	if (switch_core_codec_init(&write_codec,
 							   "L16",
+                               NULL,
 							   NULL,
 							   read_impl.samples_per_second,
 							   read_impl.microseconds_per_packet / 1000,
@@ -1864,6 +1866,7 @@ static switch_status_t t38_gateway_on_consume_media(switch_core_session_t *sessi
 
 	if (switch_core_codec_init(&read_codec,
 							   "L16",
+                               NULL,
 							   NULL,
 							   read_impl.samples_per_second,
 							   read_impl.microseconds_per_packet / 1000,
@@ -1880,6 +1883,7 @@ static switch_status_t t38_gateway_on_consume_media(switch_core_session_t *sessi
 
 	if (switch_core_codec_init(&write_codec,
 							   "L16",
+                               NULL,
 							   NULL,
 							   read_impl.samples_per_second,
 							   read_impl.microseconds_per_packet / 1000,
@@ -2355,7 +2359,7 @@ switch_status_t spandsp_fax_detect_session(switch_core_session_t *session,
 /* For Emacs:
  * Local Variables:
  * mode:c
- * indent-tabs-mode:nil
+ * indent-tabs-mode:t
  * tab-width:4
  * c-basic-offset:4
  * End:

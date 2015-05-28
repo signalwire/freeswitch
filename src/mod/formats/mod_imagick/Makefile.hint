@@ -1,0 +1,9 @@
+#Mac
+#LOCAL_CFLAGS=-I/usr/local/Cellar/imagemagick/6.8.9-8/include/ImageMagick-6
+#LOCAL_LDFLAGS=-L/usr/local/Cellar/imagemagick/6.8.9-8/lib -lMagickCore-6.Q16
+
+LOCAL_CFLAGS=-I/usr/include/ImageMagick
+LOCAL_LDFLAGS=-L/usr/lib/x86_64-linux-gnu -lMagickCore
+
+BASE=../../../..
+include $(BASE)/build/modmake.rules

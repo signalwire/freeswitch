@@ -212,14 +212,14 @@ static switch_status_t skypopen_codec(private_t *tech_pvt, int sample_rate, int 
 	switch_core_session_t *session = NULL;
 
 	if (switch_core_codec_init
-		(&tech_pvt->read_codec, "L16", NULL, sample_rate, codec_ms, 1,
+		(&tech_pvt->read_codec, "L16", NULL, NULL, sample_rate, codec_ms, 1,
 		 SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, NULL) != SWITCH_STATUS_SUCCESS) {
 		ERRORA("skypopen_codec: Can't load codec?\n", SKYPOPEN_P_LOG);
 		return SWITCH_STATUS_FALSE;
 	}
 
 	if (switch_core_codec_init
-		(&tech_pvt->write_codec, "L16", NULL, sample_rate, codec_ms, 1,
+		(&tech_pvt->write_codec, "L16", NULL, NULL, sample_rate, codec_ms, 1,
 		 SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, NULL) != SWITCH_STATUS_SUCCESS) {
 		ERRORA("skypopen_codec: Can't load codec?\n", SKYPOPEN_P_LOG);
 		switch_core_codec_destroy(&tech_pvt->read_codec);
@@ -2785,7 +2785,7 @@ int skypopen_partner_handle_ring(private_t *tech_pvt)
 		} else {
 			ERRORA("no session\n", SKYPOPEN_P_LOG);
 		}
-	} else if (!tech_pvt || !tech_pvt->skype_call_id) {
+	} else if (!tech_pvt || !tech_pvt->skype_call_id[0]) {
 		ERRORA("No Call ID?\n", SKYPOPEN_P_LOG);
 	} else {
 		DEBUGA_SKYPE("We're in a call now (%s), let's refuse this one (%s)\n", SKYPOPEN_P_LOG, tech_pvt->skype_call_id, id);
@@ -2884,7 +2884,7 @@ int skypopen_answer(private_t *tech_pvt)
 		DEBUGA_SKYPE
 			("NEW!  name: %s, state: %d, value=%s, tech_pvt->callid_number=%s, tech_pvt->skype_user=%s\n",
 			 SKYPOPEN_P_LOG, tech_pvt->name, tech_pvt->interface_state, value, tech_pvt->callid_number, tech_pvt->skype_user);
-	} else if (!tech_pvt || !tech_pvt->skype_call_id) {
+	} else if (!tech_pvt || !tech_pvt->skype_call_id[0]) {
 		ERRORA("No Call ID?\n", SKYPOPEN_P_LOG);
 	} else {
 		DEBUGA_SKYPE("We're in a call now (%s), let's refuse this one (%s)\n", SKYPOPEN_P_LOG, tech_pvt->skype_call_id, id);
@@ -2956,9 +2956,9 @@ int skypopen_transfer(private_t *tech_pvt)
 	}
 	DEBUGA_SKYPE("NOT FOUND\n", SKYPOPEN_P_LOG);
 
-	if (!tech_pvt || !tech_pvt->skype_call_id || !strlen(tech_pvt->skype_call_id)) {
+	if (!tech_pvt || !tech_pvt->skype_call_id[0]) {
 		/* we are not inside an active call */
-		DEBUGA_SKYPE("We're NO MORE in a call now %s\n", SKYPOPEN_P_LOG, (tech_pvt && tech_pvt->skype_call_id) ? tech_pvt->skype_call_id : "");
+		DEBUGA_SKYPE("We're NO MORE in a call now %s\n", SKYPOPEN_P_LOG, tech_pvt ? tech_pvt->skype_call_id : "");
 		switch_mutex_unlock(globals.mutex);
 
 	} else {

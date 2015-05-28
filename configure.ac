@@ -3,10 +3,10 @@
 
 # Must change all of the below together
 # For a release, set revision for that tagged release as well and uncomment
-AC_INIT([freeswitch], [1.5.final], bugs@freeswitch.org)
+AC_INIT([freeswitch], [1.7.0], bugs@freeswitch.org)
 AC_SUBST(SWITCH_VERSION_MAJOR, [1])
-AC_SUBST(SWITCH_VERSION_MINOR, [5])
-AC_SUBST(SWITCH_VERSION_MICRO, [final])
+AC_SUBST(SWITCH_VERSION_MINOR, [7])
+AC_SUBST(SWITCH_VERSION_MICRO, [0])
 AC_SUBST(SWITCH_VERSION_REVISION, [])
 AC_SUBST(SWITCH_VERSION_REVISION_HUMAN, [])
 
@@ -19,12 +19,6 @@ AC_CONFIG_SRCDIR([src/switch.c])
 AC_CONFIG_HEADER([src/include/switch_private.h])
 AC_CONFIG_HEADER([libs/esl/src/include/esl_config_auto.h])
 AC_CONFIG_HEADER([libs/xmlrpc-c/xmlrpc_amconfig.h])
-
-AC_PREFIX_DEFAULT(/usr/local/freeswitch)
-# AC_PREFIX_DEFAULT does not get expanded until too late so we need to do this to use prefix in this script
-if test "x$prefix" = "xNONE" ; then
-    prefix='/usr/local/freeswitch'
-fi
 
 AC_CANONICAL_HOST
 
@@ -58,57 +52,82 @@ if test "${enable_64}" = "yes"; then
 fi
 
 # Whether to follow FHS
-AC_ARG_ENABLE([fhs],
-  [AS_HELP_STRING([--enable-fhs],
-    [Follow the FHS when placing files and directories])],,
-  [enable_fhs="no"])
-AM_CONDITIONAL([ENABLE_FHS],[test "${enable_fhs}" = "yes"])
+AC_ARG_ENABLE([fhs],[AS_HELP_STRING([--disable-fhs],
+	[Do Not follow the FHS when placing files and directories (default only when not specifying prefix])],[enable_fhs="$enableval"],[enable_fhs="yes"])
 
-if test "$localstatedir" = "\${prefix}/var" ; then
-    rundir="$prefix/run"
-    logdir="${prefix}/log"
-else
-    rundir="$localstatedir/run/freeswitch"
-    logdir="$localstatedir/log/freeswitch"
+AC_PREFIX_DEFAULT(/usr/local/freeswitch)
+# AC_PREFIX_DEFAULT does not get expanded until too late so we need to do this to use prefix in this script
+
+if test "x$prefix" = "xNONE" ; then
+    enable_fhs=no
+    prefix='/usr/local/freeswitch'
 fi
 
-default_certsdir="$prefix/certs"
-default_dbdir="$prefix/db"
-default_grammardir="$prefix/grammar"
-default_htdocsdir="$prefix/htdocs"
-default_logfiledir="$logdir"
-default_modulesdir="$prefix/mod"
-default_pkgconfigdir="$libdir/pkgconfig"
-default_recordingsdir="$prefix/recordings"
-default_runtimedir="$rundir"
+if test "x${exec_prefix}" = "xNONE" ; then
+    exec_prefix="$prefix"
+fi
+
 default_scriptdir="$prefix/scripts"
+default_grammardir="$prefix/grammar"
 default_soundsdir="$prefix/sounds"
+default_htdocsdir="$prefix/htdocs"
+default_modulesdir="$prefix/mod"
+default_dbdir="$prefix/db"
 default_storagedir="$prefix/storage"
 default_cachedir="$prefix/cache"
+default_recordingsdir="$prefix/recordings"
+rundir="$prefix/run"
+logdir="${prefix}/log"
+confdir="$prefix/conf"
+default_certsdir="$prefix/certs"
+default_fontsdir="$prefix/fonts"
+default_imagesdir="$prefix/images"
 
-if test "$enable_fhs" = yes; then
-  prefix="/usr" exec_prefix="$prefix"
-  libdir="$(eval echo "$libdir")"
-  sysconfdir="/etc/freeswitch"
-  localstatedir="/var"
-  default_certsdir="/etc/freeswitch/tls"
-  default_dbdir="/var/lib/freeswitch/db"
-  default_grammardir="/usr/share/freeswitch/grammar"
-  default_htdocsdir="/usr/share/freeswitch/htdocs"
-  default_logfiledir="/var/log/freeswitch"
-  default_modulesdir="$libdir/freeswitch/mod"
-  default_pkgconfigdir="$libdir/pkgconfig"
-  default_recordingsdir="/var/lib/freeswitch/recordings"
-  default_runtimedir="/var/run/freeswitch"
-  default_scriptdir="/usr/share/freeswitch/scripts"
-  default_soundsdir="/usr/share/freeswitch/sounds"
-  default_storagedir="/var/lib/freeswitch/storage"
-  default_cachedir="/var/cache/freeswitch"
+if test "${enable_fhs}" = "yes"; then
+    eval full_datadir="${datadir}/freeswitch"
+    eval datadir=$full_datadir
+    eval full_localstatedir="${localstatedir}"
+    eval localstatedir=$full_localstatedir
+    eval libdir=$libdir
+    default_cachedir="${localstatedir}/cache/freeswitch"
+    localstatedir="${localstatedir}/lib/freeswitch"
+    default_scriptdir="${datadir}/scripts"
+    default_grammardir="${datadir}/grammar"
+    default_soundsdir="${datadir}/sounds"
+    default_htdocsdir="${datadir}/htdocs"
+    default_fontsdir="${datadir}/fonts"
+    default_modulesdir="${libdir}/freeswitch/mod"
+    default_dbdir="${localstatedir}/db"
+    default_storagedir="${localstatedir}/storage"
+    default_recordingsdir="${localstatedir}/recordings"
+    default_imagesdir="${localstatedir}/images"
+    rundir="${localstatedir}/run/freeswitch"
+    logdir="${localstatedir}/log/freeswitch"
+    eval confdir="${sysconfdir}/freeswitch"
+    eval default_certsdir="${confdir}/tls"
+else
+    if test "$datadir" = "\${datarootdir}" ; then
+        datadir="${prefix}"
+    fi
+    if test "$localstatedir" = "\${prefix}/var" ; then
+        localstatedir="${prefix}"
+    fi
 fi
+
+if test "$includedir" = "\${prefix}/include" ; then
+   includedir="${prefix}/include/freeswitch"
+fi
+
+default_pkgconfigdir="$libdir/pkgconfig"
+default_runtimedir="$rundir"
+default_logfiledir="$logdir"
+
+AC_SUBST(libdir)
 
 # Where to install the modules
 AC_ARG_WITH([modinstdir],
 	[AS_HELP_STRING([--with-modinstdir=DIR], [Install modules into this location (default: $prefix/mod)])], [modulesdir="$withval"], [modulesdir="${default_modulesdir}"])
+eval modulesdir="${modulesdir}"
 AC_SUBST(modulesdir)
 AC_DEFINE_UNQUOTED([SWITCH_MOD_DIR],"${modulesdir}",[where to install the modules to])
 
@@ -132,6 +151,11 @@ AC_ARG_WITH([htdocsdir],
 	[AS_HELP_STRING([--with-htdocsdir=DIR], [Put html files into this location (default: $prefix/htdocs)])], [htdocsdir="$withval"], [htdocsdir="${default_htdocsdir}"])
 AC_SUBST(htdocsdir)
 AC_DEFINE_UNQUOTED([SWITCH_HTDOCS_DIR],"${htdocsdir}",[where to put htdocs files])
+
+AC_ARG_WITH([fontsdir],
+	[AS_HELP_STRING([--with-fontsdir=DIR], [Put font files into this location (default: $prefix/fonts)])], [fontsdir="$withval"], [fontsdir="${default_fontsdir}"])
+AC_SUBST(fontsdir)
+AC_DEFINE_UNQUOTED([SWITCH_FONTS_DIR],"${fontsdir}",[where to put font files])
 
 AC_ARG_WITH([soundsdir],
 	[AS_HELP_STRING([--with-soundsdir=DIR], [Put sound files into this location (default: $prefix/sounds)])], [soundsdir="$withval"], [soundsdir="${default_soundsdir}"])
@@ -158,6 +182,11 @@ AC_ARG_WITH([recordingsdir],
 AC_SUBST(recordingsdir)
 AC_DEFINE_UNQUOTED([SWITCH_RECORDINGS_DIR],"${recordingsdir}",[where to put recording files])
 
+AC_ARG_WITH([imagesdir],
+	[AS_HELP_STRING([--with-imagesdir=DIR], [Put images files into this location (default: $prefix/images)])], [imagesdir="$withval"], [imagesdir="${default_imagesdir}"])
+AC_SUBST(imagesdir)
+AC_DEFINE_UNQUOTED([SWITCH_IMAGES_DIR],"${imagesdir}",[where to put image files])
+
 AC_ARG_WITH([storagedir],
 	[AS_HELP_STRING([--with-storagedir=DIR], [Put storage files into this location (default: $prefix/storage)])], [storagedir="$withval"], [storagedir="${default_storagedir}"])
 AC_SUBST(storagedir)
@@ -168,18 +197,15 @@ AC_ARG_WITH([cachedir],
 AC_SUBST(cachedir)
 AC_DEFINE_UNQUOTED([SWITCH_CACHE_DIR],"${cachedir}",[where to put cache files])
 
-if test "$sysconfdir" = "\${prefix}/etc" ; then
-    confdir="$prefix/conf"
-else
-    confdir="$sysconfdir"
-fi
-
-sysconfdir="$confdir"
-
 AC_SUBST(confdir)
 AC_DEFINE_UNQUOTED([SWITCH_CONF_DIR],"${confdir}",[directory for configuration files])
 
-AC_SUBST(libdir)
+AC_SUBST(datadir)
+AC_DEFINE_UNQUOTED([SWITCH_DATA_DIR],"${datadir}",[directory for data files])
+
+AC_SUBST(localstatedir)
+AC_DEFINE_UNQUOTED([SWITCH_LOCALSTATE_DIR],"${localstatedir}",[directory for local state files])
+
 AC_SUBST(bindir)
 AC_SUBST(includedir)
 
@@ -277,6 +303,7 @@ fi
 # set defaults for use on all platforms
 SWITCH_AM_CFLAGS="-I${switch_srcdir}/src/include -I${switch_builddir}/src/include -I${switch_srcdir}/libs/libteletone/src"
 SWITCH_AM_CXXFLAGS="-I${switch_srcdir}/src/include -I${switch_builddir}/src/include -I${switch_srcdir}/libs/libteletone/src"
+SWITCH_AM_CPPFLAGS="-I${switch_srcdir}/src/include -I${switch_builddir}/src/include -I${switch_srcdir}/libs/libteletone/src"
 SWITCH_AM_LDFLAGS="-lm"
 
 #set SOLINK variable based on compiler and host
@@ -533,7 +560,6 @@ AC_SUBST(SYS_XMLRPC_CFLAGS)
 AC_SUBST(SYS_XMLRPC_LDFLAGS)
 AM_CONDITIONAL([SYSTEM_XMLRPCC],[test "${enable_xmlrpcc}" = "yes"])
 
-AC_ARG_ENABLE([system-lua],[AS_HELP_STRING([--enable-system-lua],[use system lib for lua])],,[enable_system_lua="no"])
 PKG_CHECK_MODULES([LUA],[lua5.2],[have_lua=yes],[have_lua=no])
 if test "${have_lua}" = "no" ; then
    PKG_CHECK_MODULES([LUA],[lua5.1],[have_lua=yes],[have_lua=no])
@@ -544,6 +570,8 @@ fi
 if test x"${LUA_LIBS}" = x"" ; then
    LUA_LIBS="-llua"
 fi
+#AC_ARG_ENABLE([system-lua],[AS_HELP_STRING([--enable-system-lua],[use system lib for lua])],,[enable_system_lua="no"])
+enable_system_lua=yes
 AM_CONDITIONAL([SYSTEM_LUA],[test "${enable_system_lua}" = "yes"])
 
 AC_ARG_ENABLE(srtp,
@@ -755,6 +783,13 @@ if test "x$have_libz" = "xyes"  ; then
 APR_ADDTO([PLATFORM_CORE_LIBS], [-lz])
 fi
 
+PKG_CHECK_MODULES([YUV], [libyuv >= 0.0.1280],[AC_MSG_RESULT([yes])],[AC_MSG_ERROR([You need to install libyuv-dev. Required library])])
+
+AC_CHECK_LIB(yuv, I420Scale, have_libyuv=yes, AC_MSG_ERROR([no usable libyuv; please install libyuv devel package or equivalent]))
+if test "x$have_libyuv" = "xyes"  ; then
+APR_ADDTO([PLATFORM_CORE_LIBS], [${YUV_LIBS}])
+fi
+
 AC_CHECK_LIB(apr-1, apr_pool_mutex_set, use_system_apr=yes, use_system_apr=no)
 AM_CONDITIONAL([SYSTEM_APR],[test "${use_system_apr}" = "yes"])
 AC_CHECK_LIB(aprutil-1, apr_queue_pop_timeout, use_system_aprutil=yes, use_system_aprutil=no)
@@ -785,6 +820,7 @@ fi
 AC_SUBST(SWITCH_AM_CFLAGS)
 AC_SUBST(SWITCH_ANSI_CFLAGS)
 AC_SUBST(SWITCH_AM_CXXFLAGS)
+AC_SUBST(SWITCH_AM_CPPFLAGS)
 AC_SUBST(SWITCH_AM_LDFLAGS)
 AC_SUBST(ESL_LDFLAGS)
 AC_SUBST(PLATFORM_CORE_LDFLAGS)
@@ -853,6 +889,8 @@ AC_FUNC_STRERROR_R
 CPPFLAGS="$save_CPPFLAGS"
 
 AX_HAVE_CPU_SET
+
+AC_CHECK_LIB(vpx, vpx_img_alloc, [AC_DEFINE(HAVE_VPX, 1, [Define if you have vpx()])])
 
 AC_CHECK_LIB(rt, clock_gettime, [AC_DEFINE(HAVE_CLOCK_GETTIME, 1, [Define if you have clock_gettime()])])
 AC_CHECK_LIB(rt, clock_getres, [AC_DEFINE(HAVE_CLOCK_GETRES, 1, [Define if you have clock_getres()])])
@@ -1190,6 +1228,17 @@ module_enabled() {
   grep -v -e "\#" -e "^\$" modules.conf | sed -e "s|^.*/||" | grep "^${1}\$" >/dev/null
 }
 
+
+PKG_CHECK_MODULES([LIBPNG], [libpng >= 1.6.16],[
+  AM_CONDITIONAL([HAVE_PNG],[true])],[
+    PKG_CHECK_MODULES([LIBPNG], [libpng16 >= 1.6.16],[
+      AM_CONDITIONAL([HAVE_PNG],[true])],[
+        PKG_CHECK_MODULES([LIBPNG], [libpng >= 1.2.49],[
+          AM_CONDITIONAL([HAVE_PNG],[true])],[
+          AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_PNG],[false])])])])
+PKG_CHECK_MODULES([FREETYPE], [freetype2 >= 2.4.9],[
+  AM_CONDITIONAL([HAVE_FREETYPE],[true])],[
+  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_FREETYPE],[false])])
 PKG_CHECK_MODULES([SQLITE], [sqlite3 >= 3.6.20])
 PKG_CHECK_MODULES([CURL], [libcurl >= 7.19])
 PKG_CHECK_MODULES([PCRE], [libpcre >= 7.8])
@@ -1210,6 +1259,92 @@ PKG_CHECK_MODULES([LDNS], [libldns >= 1.6.6],[
       AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_LDNS],[false])
     fi],[
     AM_CONDITIONAL([HAVE_LDNS],[true])])])
+PKG_CHECK_MODULES([SNDFILE], [sndfile >= 1.0.20],[
+  AM_CONDITIONAL([HAVE_SNDFILE],[true])],[
+  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_SNDFILE],[false])])
+
+PKG_CHECK_MODULES([VPX], [vpx2 >= 1.4.0],[
+  AM_CONDITIONAL([HAVE_VPX],[true])],[
+    PKG_CHECK_MODULES([VPX], [vpx >= 1.4.0],[
+      AM_CONDITIONAL([HAVE_VPX],[true])],[
+      AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_VPX],[false])])])
+
+SWITCH_AM_CFLAGS="$VPX_CFLAGS $SWITCH_AM_CFLAGS"
+SWITCH_AM_CXXFLAGS="$VPX_CFLAGS $SWITCH_AM_CXXFLAGS"
+SWITCH_AM_CPPFLAGS="$VPX_CFLAGS $SWITCH_AM_CPPFLAGS"
+
+PKG_CHECK_MODULES([AVCODEC], [libavcodec >= 53.35.0],[
+  AM_CONDITIONAL([HAVE_AVCODEC],[true])],[
+  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_AVCODEC],[false])])
+
+PKG_CHECK_MODULES([X264], [x264 >= 0.142.2431],[
+  AM_CONDITIONAL([HAVE_X264],[true])],[
+  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_X264],[false])])
+
+PKG_CHECK_MODULES([AVFORMAT], [libavformat >= 53.21.1],[
+  AM_CONDITIONAL([HAVE_AVFORMAT],[true])],[
+  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_AVFORMAT],[false])])
+
+PKG_CHECK_MODULES([AVUTIL], [libavutil >= 54.3.0],[
+  AM_CONDITIONAL([HAVE_AVUTIL],[true])],[
+  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_AVUTIL],[false])])
+
+PKG_CHECK_MODULES([AVRESAMPLE], [libavresample >= 2.1.0],[
+  AM_CONDITIONAL([HAVE_AVRESAMPLE],[true])],[
+  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_AVRESAMPLE],[false])])
+
+
+PKG_CHECK_MODULES([SWSCALE], [libswscale >= 3.0.0],[
+  AM_CONDITIONAL([HAVE_SWSCALE],[true])],[
+  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_SWSCALE],[false])])
+
+PKG_CHECK_MODULES([VLC], [libvlc >= 2.1.0],[
+  AM_CONDITIONAL([HAVE_VLC],[true])],[
+  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_VLC],[false])])
+
+PKG_CHECK_MODULES([OPENCV], [opencv >= 2.4.5],[
+  AM_CONDITIONAL([HAVE_OPENCV],[true])],[
+  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_OPENCV],[false])])
+
+PKG_CHECK_MODULES([MAGICK], [ImageMagick >= 6.0.0],[
+  AM_CONDITIONAL([HAVE_MAGICK],[true])],[
+  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_MAGICK],[false])])
+
+PKG_CHECK_MODULES([SILK], [silk >= 1.0.8],[
+  AM_CONDITIONAL([HAVE_SILK],[true])],[
+  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_SILK],[false])])
+
+PKG_CHECK_MODULES([BROADVOICE], [broadvoice >= 0.1.0],[
+  AM_CONDITIONAL([HAVE_BROADVOICE],[true])],[
+  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_BROADVOICE],[false])])
+
+PKG_CHECK_MODULES([ILBC], [ilbc >= 0.0.1],[
+  AM_CONDITIONAL([HAVE_ILBC],[true])],[
+  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_ILBC],[false])])
+
+PKG_CHECK_MODULES([G7221], [g722_1 >= 0.2.0],[
+  AM_CONDITIONAL([HAVE_G7221],[true])],[
+  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_G7221],[false])])
+
+PKG_CHECK_MODULES([CODEC2], [codec2 >= 0.2],[
+  AM_CONDITIONAL([HAVE_CODEC2],[true])],[
+  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_CODEC2],[false])])
+
+PKG_CHECK_MODULES([OPUS], [opus >= 1.1],[
+  AM_CONDITIONAL([HAVE_OPUS],[true])],[
+  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_OPUS],[false])])
+
+PKG_CHECK_MODULES([SOUNDTOUCH], [soundtouch >= 1.7.1],[
+  AM_CONDITIONAL([HAVE_SOUNDTOUCH],[true])],[
+  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_SOUNDTOUCH],[false])])
+
+PKG_CHECK_MODULES([FLITE], [flite >= 2.0.0],[
+  AM_CONDITIONAL([HAVE_FLITE],[true])],[
+  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_FLITE],[false])])
+
+PKG_CHECK_MODULES([MONGOC], [libmongoc-1.0 >= 1.0.8],[
+  AM_CONDITIONAL([HAVE_MONGOC],[true])],[
+  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_MONGOC],[false])])
 
 PKG_CHECK_MODULES([MEMCACHED], [libmemcached >= 0.31],[
   AM_CONDITIONAL([HAVE_MEMCACHED],[true])
@@ -1242,6 +1377,34 @@ AS_IF([test "x$enable_core_libedit_support" != "xno"],[
     AS_IF([test "x$LIBEDIT_LIBS" = "x"], [
       AC_MSG_ERROR([You need to either install libedit-dev (>= 2.11) or configure with --disable-core-libedit-support])
       ])])])
+
+dnl ---------------------------------------------------------------------------
+dnl - OpenLDAP SDK
+dnl ---------------------------------------------------------------------------
+
+AC_CHECK_LIB(ldap, ldap_search, with_ldap=yes)
+dnl Check for other libraries we need to link with to get the main routines.
+test "$with_ldap" != "yes" && { AC_CHECK_LIB(ldap, ldap_open, [with_ldap=yes with_ldap_lber=yes], , -llber) }
+test "$with_ldap" != "yes" && { AC_CHECK_LIB(ldap, ldap_open, [with_ldap=yes with_ldap_lber=yes with_ldap_krb=yes], , -llber -lkrb) }
+test "$with_ldap" != "yes" && { AC_CHECK_LIB(ldap, ldap_open, [with_ldap=yes with_ldap_lber=yes with_ldap_krb=yes with_ldap_des=yes], , -llber -lkrb -ldes) }
+test "$with_ldap_lber" != "yes" && { AC_CHECK_LIB(lber, ber_pvt_opt_on, with_ldap_lber=yes) }
+
+if test "$with_ldap" = "yes"; then
+   if test "$with_ldap_des" = "yes" ; then
+      OPENLDAP_LIBS="${OPENLDAP_LIBS} -ldes"
+   fi
+   if test "$with_ldap_krb" = "yes" ; then
+      OPENLDAP_LIBS="${OPENLDAP_LIBS} -lkrb"
+   fi
+   if test "$with_ldap_lber" = "yes" ; then
+      OPENLDAP_LIBS="${OPENLDAP_LIBS} -llber"
+   fi
+   OPENLDAP_LIBS="${OPENLDAP_LIBS} -lldap"
+fi
+
+AM_CONDITIONAL([HAVE_LDAP],[test "x$with_ldap" == "xyes"])
+
+AC_SUBST(OPENLDAP_LIBS)
 
 AS_IF([test "x$enable_core_libedit_support" != "xno"], [
   # If making changes here, don't forget to run autoheader and
@@ -1486,6 +1649,7 @@ AC_CONFIG_FILES([Makefile
 		src/mod/applications/mod_commands/Makefile
 		src/mod/applications/mod_conference/Makefile
 		src/mod/applications/mod_curl/Makefile
+		src/mod/applications/mod_cv/Makefile
 		src/mod/applications/mod_db/Makefile
 		src/mod/applications/mod_directory/Makefile
 		src/mod/applications/mod_distributor/Makefile
@@ -1507,6 +1671,7 @@ AC_CONFIG_FILES([Makefile
 		src/mod/applications/mod_memcache/Makefile
 		src/mod/applications/mod_mongo/Makefile
 		src/mod/applications/mod_mp4/Makefile
+		src/mod/applications/mod_mp4v2/Makefile
 		src/mod/applications/mod_nibblebill/Makefile
 		src/mod/applications/mod_oreka/Makefile
 		src/mod/applications/mod_osp/Makefile
@@ -1518,7 +1683,6 @@ AC_CONFIG_FILES([Makefile
 		src/mod/applications/mod_skel/Makefile
 		src/mod/applications/mod_sms/Makefile
 		src/mod/applications/mod_snapshot/Makefile
-		src/mod/applications/mod_snipe_hunt/Makefile
 		src/mod/applications/mod_snom/Makefile
 		src/mod/applications/mod_sonar/Makefile
 		src/mod/applications/mod_soundtouch/Makefile
@@ -1539,7 +1703,6 @@ AC_CONFIG_FILES([Makefile
 		src/mod/codecs/mod_amrwb/Makefile
 		src/mod/codecs/mod_b64/Makefile
 		src/mod/codecs/mod_bv/Makefile
-		src/mod/codecs/mod_celt/Makefile
 		src/mod/codecs/mod_codec2/Makefile
 		src/mod/codecs/mod_com_g729/Makefile
 		src/mod/codecs/mod_dahdi_codec/Makefile
@@ -1550,12 +1713,13 @@ AC_CONFIG_FILES([Makefile
 		src/mod/codecs/mod_isac/Makefile
 		src/mod/codecs/mod_mp4v/Makefile
 		src/mod/codecs/mod_opus/Makefile
+		src/mod/codecs/mod_openh264/Makefile
 		src/mod/codecs/mod_sangoma_codec/Makefile
 		src/mod/codecs/mod_silk/Makefile
 		src/mod/codecs/mod_siren/Makefile
 		src/mod/codecs/mod_skel_codec/Makefile
 		src/mod/codecs/mod_theora/Makefile
-		src/mod/codecs/mod_vp8/Makefile
+		src/mod/codecs/mod_vpx/Makefile
 		src/mod/dialplans/mod_dialplan_asterisk/Makefile
 		src/mod/dialplans/mod_dialplan_directory/Makefile
 		src/mod/dialplans/mod_dialplan_xml/Makefile
@@ -1592,6 +1756,7 @@ AC_CONFIG_FILES([Makefile
 		src/mod/event_handlers/mod_rayo/Makefile
 		src/mod/event_handlers/mod_snmp/Makefile
 		src/mod/event_handlers/mod_event_zmq/Makefile
+		src/mod/formats/mod_imagick/Makefile
 		src/mod/formats/mod_local_stream/Makefile
 		src/mod/formats/mod_native_file/Makefile
 		src/mod/formats/mod_shell_stream/Makefile
@@ -1640,6 +1805,7 @@ AC_CONFIG_FILES([Makefile
 		src/mod/xml_int/mod_xml_radius/Makefile
 		src/mod/xml_int/mod_xml_rpc/Makefile
 		src/mod/xml_int/mod_xml_scgi/Makefile
+		src/mod/applications/mod_av/Makefile
 		src/include/switch_am_config.h
 		build/getsounds.sh
 		build/getlib.sh
@@ -1711,19 +1877,13 @@ fi
 if test "$use_system_aprutil" != "yes"; then
    AC_CONFIG_SUBDIRS([libs/apr-util])
 fi
-AC_CONFIG_SUBDIRS([libs/ilbc])
 AC_CONFIG_SUBDIRS([libs/iksemel])
 AC_CONFIG_SUBDIRS([libs/libdingaling])
-AC_CONFIG_SUBDIRS([libs/libsndfile])
 AC_CONFIG_SUBDIRS([libs/sofia-sip])
 AC_CONFIG_SUBDIRS([libs/freetdm])
 AC_CONFIG_SUBDIRS([libs/unimrcp])
 AC_CONFIG_SUBDIRS([libs/tiff-4.0.2])
 AC_CONFIG_SUBDIRS([libs/spandsp])
-AC_CONFIG_SUBDIRS([libs/broadvoice])
-AC_CONFIG_SUBDIRS([libs/libg722_1])
-AC_CONFIG_SUBDIRS([libs/silk])
-AC_CONFIG_SUBDIRS([libs/libcodec2])
 if test "x${enable_zrtp}" = "xyes"; then
    AC_CONFIG_SUBDIRS([libs/libzrtp])
 fi
@@ -1741,7 +1901,7 @@ AC_OUTPUT
 ##
 ## Registering for ClueCon
 ##
-if ! test -f noreg ; then
+if ! test -f noreg -o -f /noreg; then
 echo ""
 echo ""
 echo $ECHO_N "Registering you for ClueCon http://www.cluecon.com $ECHO_C" 1>&6
@@ -1762,22 +1922,26 @@ echo
 echo "-------------------------- FreeSWITCH configuration --------------------------"
 echo ""
 echo "  Locations:"
-echo "      FHS enabled:     ${enable_fhs}"
 echo ""
 echo "      prefix:          ${prefix}"
 echo "      exec_prefix:     ${exec_prefix}"
 echo "      bindir:          ${bindir}"
-echo "      sysconfdir:      ${sysconfdir}"
+echo "      confdir:         ${confdir}"
 echo "      libdir:          ${libdir}"
+echo "      datadir:         ${datadir}"
+echo "      localstatedir:   ${localstatedir}"
+echo "      includedir:      ${includedir}"
 echo ""
 echo "      certsdir:        ${certsdir}"
 echo "      dbdir:           ${dbdir}"
 echo "      grammardir:      ${grammardir}"
 echo "      htdocsdir:       ${htdocsdir}"
+echo "      fontsdir:        ${fontsdir}"
 echo "      logfiledir:      ${logfiledir}"
 echo "      modulesdir:      ${modulesdir}"
 echo "      pkgconfigdir:    ${pkgconfigdir}"
 echo "      recordingsdir:   ${recordingsdir}"
+echo "      imagesdir:       ${imagesdir}"
 echo "      runtimedir:      ${runtimedir}"
 echo "      scriptdir:       ${scriptdir}"
 echo "      soundsdir:       ${soundsdir}"

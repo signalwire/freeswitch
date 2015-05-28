@@ -972,6 +972,7 @@ switch_status_t FSSession::InitSpeechEngine(const char *engine, const char *voic
 	if (switch_core_codec_init(&this->_speech->codec,
 							   "L16",
 							   NULL,
+							   NULL,
 							   rate,
 							   interval,
 							   1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL,

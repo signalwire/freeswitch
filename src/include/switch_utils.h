@@ -40,11 +40,29 @@
 #define SWITCH_UTILS_H
 
 #include <switch.h>
+#include <math.h>
 
 SWITCH_BEGIN_EXTERN_C 
 
 #define SWITCH_URL_UNSAFE "\r\n #%&+:;<=>?@[\\]^`{|}\""
 
+
+static inline uint32_t switch_round_to_step(uint32_t num, uint32_t step)
+{
+	uint32_t r;
+	uint32_t x;
+
+	if (!num) return 0;
+	
+	r = (num % step);
+	x = num - r;
+	
+	if (r > step / 2) {
+		x += step;
+	}
+	
+	return x;
+}
 
 /* https://code.google.com/p/stringencoders/wiki/PerformanceAscii 
    http://www.azillionmonkeys.com/qed/asmexample.html
@@ -513,6 +531,7 @@ SWITCH_DECLARE(char *) get_addr6(char *buf, switch_size_t len, struct sockaddr_i
 
 SWITCH_DECLARE(int) get_addr_int(switch_sockaddr_t *sa);
 SWITCH_DECLARE(int) switch_cmp_addr(switch_sockaddr_t *sa1, switch_sockaddr_t *sa2);
+SWITCH_DECLARE(int) switch_cp_addr(switch_sockaddr_t *sa1, switch_sockaddr_t *sa2);
 
 /*!
   \brief get the port number of an ip address
@@ -975,6 +994,42 @@ SWITCH_DECLARE(char *) switch_util_quote_shell_arg_pool(const char *string, swit
 
 #define SWITCH_READ_ACCEPTABLE(status) (status == SWITCH_STATUS_SUCCESS || status == SWITCH_STATUS_BREAK || status == SWITCH_STATUS_INUSE)
 
+
+static inline int32_t switch_calc_bitrate(int w, int h, int quality, int fps)
+{
+	/* KUSH GAUGE*/
+
+	if (!fps) fps = 15;
+	if (!quality) quality = 2;
+	
+	return (int32_t)((float)(w * h * fps * quality) * 0.07) / 1000;
+}
+
+static inline int32_t switch_parse_bandwidth_string(const char *bwv)
+{
+	float bw = 0;
+
+	if (!bwv) return 0;
+
+	if (!strcasecmp(bwv, "auto")) {
+		return -1;
+	}	
+
+	if ((bw = (float) atof(bwv))) {
+		if (bw < 0) return 0;
+
+		if (strstr(bwv, "KB")) {
+			bw *= 8;
+		} else if (strstr(bwv, "mb")) {
+			bw *= 1024;
+		} else if (strstr(bwv, "MB")) {
+			bw *= 8192;
+		}
+	}
+
+	return (int32_t) roundf(bw);
+}
+
 static inline int switch_needs_url_encode(const char *s)
 {
 	const char hex[] = "0123456789ABCDEF";
@@ -1008,7 +1063,6 @@ SWITCH_DECLARE(char *) switch_find_end_paren(const char *s, char open, char clos
 static inline void switch_separate_file_params(const char *file, char **file_portion, char **params_portion)
 {
 	char *e = NULL;
-	int x;
 	char *space = strdup(file);
 
 	file = space;
@@ -1016,18 +1070,14 @@ static inline void switch_separate_file_params(const char *file, char **file_por
 	*file_portion = NULL;
 	*params_portion = NULL;
 	
-	for (x = 0; x < 2; x++) {
-		if (*file == '[' && *(file + 1) == *SWITCH_PATH_SEPARATOR) {
-			e = switch_find_end_paren(file, '[', ']');
-		} else if (*file == '{') {
-			e = switch_find_end_paren(file, '{', '}');
-		} else {
-			break;
-		}
+	while (*file == '{') {
+		e = switch_find_end_paren(file, '{', '}');
+		file = e + 1;
+		while(*file == ' ') file++;
 	}
 
+
 	if (e) {
-		file = e + 1;
 		*file_portion = strdup((char *)file);
 		*++e = '\0';
 		*params_portion = (char *)space;
@@ -1041,30 +1091,26 @@ static inline void switch_separate_file_params(const char *file, char **file_por
 static inline switch_bool_t switch_is_file_path(const char *file)
 {
 	const char *e;
-	int r, x;
+	int r;
 
-	for (x = 0; x < 2; x++) {
-		if (*file == '[' && *(file + 1) == *SWITCH_PATH_SEPARATOR) {
-			if ((e = switch_find_end_paren(file, '[', ']'))) {
-				file = e + 1;
-			}
-		} else if (*file == '{') {
-			if ((e = switch_find_end_paren(file, '{', '}'))) {
-				file = e + 1;
-			}
-		} else {
-			break;
+	if (zstr(file)) {
+		return SWITCH_FALSE;
+	}
+
+	while(*file == '{') {
+		if ((e = switch_find_end_paren(file, '{', '}'))) {
+			file = e + 1;
+			while(*file == ' ') file++;
 		}
 	}
 
 #ifdef WIN32
-	r = (file && (*file == '\\' || *(file + 1) == ':' || *file == '/' || strstr(file, SWITCH_URL_SEPARATOR)));
+	r = (*file == '\\' || *(file + 1) == ':' || *file == '/' || strstr(file, SWITCH_URL_SEPARATOR));
 #else
-	r = (file && ((*file == '/') || strstr(file, SWITCH_URL_SEPARATOR)));
+	r = ((*file == '/') || strstr(file, SWITCH_URL_SEPARATOR));
 #endif
 
 	return r ? SWITCH_TRUE : SWITCH_FALSE;
-
 }
 
 
@@ -1197,6 +1243,11 @@ SWITCH_DECLARE(void) switch_http_dump_request(switch_http_request_t *request);
  */
 
 SWITCH_DECLARE(void) switch_http_parse_qs(switch_http_request_t *request, char *qs);
+
+SWITCH_DECLARE(switch_status_t) switch_frame_buffer_free(switch_frame_buffer_t *fb, switch_frame_t **frameP);
+SWITCH_DECLARE(switch_status_t) switch_frame_buffer_dup(switch_frame_buffer_t *fb, switch_frame_t *orig, switch_frame_t **clone);
+SWITCH_DECLARE(switch_status_t) switch_frame_buffer_destroy(switch_frame_buffer_t **fbP);
+SWITCH_DECLARE(switch_status_t) switch_frame_buffer_create(switch_frame_buffer_t **fbP);
 
 SWITCH_END_EXTERN_C
 #endif

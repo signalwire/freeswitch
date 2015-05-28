@@ -145,6 +145,14 @@ if HAVE_ODBC
 CORE_CFLAGS += -DSWITCH_HAVE_ODBC $(ODBC_INC_FLAGS)
 endif
 
+if HAVE_PNG
+CORE_CFLAGS += -DSWITCH_HAVE_PNG $(LIBPNG_CFLAGS)
+endif
+
+if HAVE_FREETYPE
+CORE_CFLAGS += -DSWITCH_HAVE_FREETYPE $(LIBFREETYPE_CFLAGS)
+endif
+
 ##
 ## libfreeswitch
 ##
@@ -153,10 +161,14 @@ libfreeswitch_spandsp_la_SOURCES = libs/spandsp/src/plc.c libs/spandsp/src/alloc
 libfreeswitch_spandsp_la_CFLAGS  = -Ilibs/spandsp/src $(CORE_CFLAGS) $(AM_CFLAGS)
 CORE_LIBS+=libfreeswitch_spandsp.la
 lib_LTLIBRARIES	         = libfreeswitch.la
-libfreeswitch_la_CFLAGS  = $(CORE_CFLAGS) $(SQLITE_CFLAGS) $(CURL_CFLAGS) $(PCRE_CFLAGS) $(SPEEX_CFLAGS) $(LIBEDIT_CFLAGS) $(openssl_CFLAGS) $(AM_CFLAGS)
+libfreeswitch_la_CFLAGS  = $(CORE_CFLAGS) $(SQLITE_CFLAGS) $(FREETYPE_CFLAGS) $(CURL_CFLAGS) $(PCRE_CFLAGS) $(SPEEX_CFLAGS) $(LIBEDIT_CFLAGS) $(openssl_CFLAGS) $(VPX_CFLAGS) $(AM_CFLAGS)
 libfreeswitch_la_LDFLAGS = -version-info 1:0:0 $(AM_LDFLAGS) $(PLATFORM_CORE_LDFLAGS) -no-undefined
-libfreeswitch_la_LIBADD  = $(CORE_LIBS) $(APR_LIBS) $(SQLITE_LIBS) $(CURL_LIBS) $(PCRE_LIBS) $(SPEEX_LIBS) $(LIBEDIT_LIBS) $(openssl_LIBS) $(PLATFORM_CORE_LIBS)
+libfreeswitch_la_LIBADD  = $(CORE_LIBS) $(APR_LIBS) $(SQLITE_LIBS) $(FREETYPE_LIBS) $(CURL_LIBS) $(PCRE_LIBS) $(SPEEX_LIBS) $(LIBEDIT_LIBS) $(openssl_LIBS) $(VPX_LIBS) $(PLATFORM_CORE_LIBS)
 libfreeswitch_la_DEPENDENCIES = $(BUILT_SOURCES)
+
+if HAVE_PNG
+libfreeswitch_la_LIBADD += $(LIBPNG_LIBS)
+endif
 
 if HAVE_ODBC
 libfreeswitch_la_LDFLAGS += $(ODBC_LIB_FLAGS)
@@ -188,6 +200,7 @@ library_include_HEADERS = \
 	src/include/switch_scheduler.h \
 	src/include/switch_core.h \
 	src/include/switch_core_media.h \
+	src/include/switch_core_video.h \
 	src/include/switch_core_db.h \
 	src/include/switch_mprintf.h \
 	src/include/switch_config.h \
@@ -203,6 +216,7 @@ library_include_HEADERS = \
 	src/include/switch_types.h \
 	src/include/switch_utils.h \
 	src/include/switch_rtp.h \
+	src/include/switch_vidderbuffer.h \
 	src/include/switch_rtcp_frame.h \
 	src/include/switch_stun.h \
 	src/include/switch_nat.h \
@@ -213,6 +227,8 @@ library_include_HEADERS = \
 	src/include/switch_curl.h \
 	src/include/switch_json.h \
 	src/include/switch_stfu.h \
+	src/include/switch_utf8.h \
+	src/include/switch_vpx.h \
 	libs/libteletone/src/libteletone_detect.h \
 	libs/libteletone/src/libteletone_generate.h \
 	libs/libteletone/src/libteletone.h \
@@ -254,6 +270,7 @@ libfreeswitch_la_SOURCES = \
 	src/switch_core.c \
 	src/switch_version.c \
 	src/switch_core_media.c \
+	src/switch_core_video.c \
 	src/switch_sdp.c \
 	src/switch_scheduler.c \
 	src/switch_core_db.c \
@@ -264,6 +281,7 @@ libfreeswitch_la_SOURCES = \
 	src/switch_resample.c \
 	src/switch_regex.c \
 	src/switch_rtp.c \
+	src/switch_vidderbuffer.c \
 	src/switch_ivr_bridge.c \
 	src/switch_ivr_originate.c \
 	src/switch_ivr_async.c \
@@ -289,6 +307,7 @@ libfreeswitch_la_SOURCES = \
 	src/switch_curl.c \
 	src/switch_hashtable.c\
 	src/switch_stfu.c \
+	src/switch_utf8.c \
 	libs/libtpl-1.5/src/tpl.c \
 	libs/libteletone/src/libteletone_detect.c \
 	libs/libteletone/src/libteletone_generate.c \
@@ -393,7 +412,7 @@ scripts/fsxs: scripts/fsxs.in
 	    -e "s,@LIB_DIR\@,@libdir@," \
 	    -e "s,@BIN_DIR\@,@bindir@," \
 	    -e "s,@INC_DIR\@,@includedir@," \
-	    -e "s,@CFG_DIR\@,@sysconfdir@," \
+	    -e "s,@CFG_DIR\@,@confdir@," \
 	    -e "s,@DB_DIR\@,@dbdir@," \
 	    -e "s,@PREFIX\@,@prefix@," \
 	    -e "s,@CC\@,$(CC)," \
@@ -498,27 +517,27 @@ libs/srtp/libsrtp.la: libs/srtp libs/srtp/.update $(SRTP_SRC)
 ## helper targets
 ##
 yaml-files:
-	@echo `mkdir $(DESTDIR)$(sysconfdir)/yaml 2>/dev/null`
-	$(INSTALL) -m 644 $(switch_srcdir)/conf/default/yaml/*.yaml $(DESTDIR)$(sysconfdir)/yaml
+	@echo `mkdir $(DESTDIR)$(confdir)/yaml 2>/dev/null`
+	$(INSTALL) -m 644 $(switch_srcdir)/conf/default/yaml/*.yaml $(DESTDIR)$(confdir)/yaml
 
 vm-sync:
-	test -d $(DESTDIR)$(sysconfdir) || $(mkinstalldirs) $(DESTDIR)$(sysconfdir)
-	test -d $(DESTDIR)$(sysconfdir)/lang || $(mkinstalldirs) $(DESTDIR)$(sysconfdir)/lang
-	test -d $(DESTDIR)$(sysconfdir)/lang/en || $(mkinstalldirs) $(DESTDIR)$(sysconfdir)/lang/en
-	test -d $(DESTDIR)$(sysconfdir)/lang/en/demo || $(mkinstalldirs) $(DESTDIR)$(sysconfdir)/lang/en/demo
-	test -d $(DESTDIR)$(sysconfdir)/lang/en/vm || $(mkinstalldirs) $(DESTDIR)$(sysconfdir)/lang/en/vm
-	$(INSTALL) -m 644 $(switch_srcdir)/conf/vanilla/lang/en/vm/* $(DESTDIR)$(sysconfdir)/lang/en/vm
-	$(INSTALL) -m 644 $(switch_srcdir)/conf/vanilla/lang/en/demo/* $(DESTDIR)$(sysconfdir)/lang/en/demo
+	test -d $(DESTDIR)$(confdir) || $(mkinstalldirs) $(DESTDIR)$(confdir)
+	test -d $(DESTDIR)$(confdir)/lang || $(mkinstalldirs) $(DESTDIR)$(confdir)/lang
+	test -d $(DESTDIR)$(confdir)/lang/en || $(mkinstalldirs) $(DESTDIR)$(confdir)/lang/en
+	test -d $(DESTDIR)$(confdir)/lang/en/demo || $(mkinstalldirs) $(DESTDIR)$(confdir)/lang/en/demo
+	test -d $(DESTDIR)$(confdir)/lang/en/vm || $(mkinstalldirs) $(DESTDIR)$(confdir)/lang/en/vm
+	$(INSTALL) -m 644 $(switch_srcdir)/conf/vanilla/lang/en/vm/* $(DESTDIR)$(confdir)/lang/en/vm
+	$(INSTALL) -m 644 $(switch_srcdir)/conf/vanilla/lang/en/demo/* $(DESTDIR)$(confdir)/lang/en/demo
 
 config-%:
-	test -d $(DESTDIR)$(sysconfdir) || $(mkinstalldirs) $(DESTDIR)$(sysconfdir)
+	test -d $(DESTDIR)$(confdir) || $(mkinstalldirs) $(DESTDIR)$(confdir)
 	for conffile in `cd $(switch_srcdir)/conf/$* && find . -name \*.xml && find . -name \*.conf && find . -name \*.tpl  && find . -name \*.ttml && find . -name mime.types` ; do \
 		dir=`echo $$conffile | sed -e 's|^\.||' | sed -e 's|/[^/]*$$||'`; \
 		filename=`echo $$conffile | sed -e 's|^\.||' | sed -e 's|^.*/||'`; \
-		test -d $(DESTDIR)$(sysconfdir)$$dir || $(mkinstalldirs) $(DESTDIR)$(sysconfdir)$$dir ; \
-		test -f $(DESTDIR)$(sysconfdir)$$dir/$$filename || \
-		test -f $(DESTDIR)$(sysconfdir)$$dir/$$filename.noload || \
-			$(INSTALL) -m 644 $(switch_srcdir)/conf/$*/$$dir/$$filename $(DESTDIR)$(sysconfdir)$$dir; \
+		test -d $(DESTDIR)$(confdir)$$dir || $(mkinstalldirs) $(DESTDIR)$(confdir)$$dir ; \
+		test -f $(DESTDIR)$(confdir)$$dir/$$filename || \
+		test -f $(DESTDIR)$(confdir)$$dir/$$filename.noload || \
+			$(INSTALL) -m 644 $(switch_srcdir)/conf/$*/$$dir/$$filename $(DESTDIR)$(confdir)$$dir; \
 	done
 
 samples-conf: config-vanilla
@@ -533,6 +552,10 @@ samples-htdocs:
 	done
 
 
+fonts_DATA = fonts/FreeMono.ttf fonts/FreeMonoOblique.ttf fonts/FreeSansBoldOblique.ttf fonts/FreeSerifBold.ttf fonts/OFL.txt fonts/FreeMonoBold.ttf fonts/FreeSans.ttf fonts/FreeSansOblique.ttf fonts/FreeSerifBoldItalic.ttf fonts/README.fonts fonts/FreeMonoBoldOblique.ttf fonts/FreeSansBold.ttf fonts/FreeSerif.ttf fonts/FreeSerifItalic.ttf
+
+images_DATA = images/default-avatar.png	images/default-mute.png
+
 samples: samples-conf samples-htdocs
 
 install-exec-local:
@@ -540,10 +563,10 @@ install-exec-local:
 
 install-data-local:
 	@echo Installing $(NAME)
-	@for x in $(modulesdir) $(runtimedir) $(dbdir) $(logfiledir) $(logfiledir)/xml_cdr $(bindir) $(scriptdir) $(recordingsdir) $(grammardir); do \
+	@for x in $(modulesdir) $(runtimedir) $(dbdir) $(logfiledir) $(logfiledir)/xml_cdr $(bindir) $(scriptdir) $(recordingsdir) $(grammardir) $(imagesdir) $(fontsdir); do \
 		$(mkinstalldirs) $(DESTDIR)$$x ; \
 	 done
-	test -d $(DESTDIR)$(sysconfdir) || $(MAKE) samples-conf
+	test -d $(DESTDIR)$(confdir) || $(MAKE) samples-conf
 	test -d $(DESTDIR)$(htdocsdir) || $(MAKE) samples-htdocs
 
 is-scm:

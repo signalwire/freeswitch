@@ -1,27 +1,27 @@
 /***********************************************************************
-Copyright (c) 2006-2011, Skype Limited. All rights reserved. 
-Redistribution and use in source and binary forms, with or without 
-modification, (subject to the limitations in the disclaimer below) 
+Copyright (c) 2006-2011, Skype Limited. All rights reserved.
+Redistribution and use in source and binary forms, with or without
+modification, (subject to the limitations in the disclaimer below)
 are permitted provided that the following conditions are met:
 - Redistributions of source code must retain the above copyright notice,
 this list of conditions and the following disclaimer.
-- Redistributions in binary form must reproduce the above copyright 
-notice, this list of conditions and the following disclaimer in the 
+- Redistributions in binary form must reproduce the above copyright
+notice, this list of conditions and the following disclaimer in the
 documentation and/or other materials provided with the distribution.
-- Neither the name of Skype Limited, nor the names of specific 
-contributors, may be used to endorse or promote products derived from 
+- Neither the name of Skype Limited, nor the names of specific
+contributors, may be used to endorse or promote products derived from
 this software without specific prior written permission.
-NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED 
-BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND 
+NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED
+BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
 CONTRIBUTORS ''AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING,
-BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND 
-FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
-COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, 
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
 INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
-NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF 
-USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON 
-ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
+NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
+USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ***********************************************************************/
 
@@ -78,7 +78,7 @@ static SKP_int32 gcd(
 }
 
 /* Initialize/reset the resampler state for a given pair of input/output sampling rates */
-SKP_int SKP_Silk_resampler_init( 
+SKP_int SKP_Silk_resampler_init(
 	SKP_Silk_resampler_state_struct	*S,		    /* I/O: Resampler state 			*/
 	SKP_int32							Fs_Hz_in,	/* I:	Input sampling rate (Hz)	*/
 	SKP_int32							Fs_Hz_out	/* I:	Output sampling rate (Hz)	*/
@@ -160,7 +160,7 @@ SKP_int SKP_Silk_resampler_init(
         /* Upsample */
         if( Fs_Hz_out == SKP_MUL( Fs_Hz_in, 2 ) ) {                             /* Fs_out : Fs_in = 2 : 1 */
             /* Special case: directly use 2x upsampler */
-    	    S->resampler_function = SKP_Silk_resampler_private_up2_HQ_wrapper;
+	    S->resampler_function = SKP_Silk_resampler_private_up2_HQ_wrapper;
         } else {
 	        /* Default resampler */
 	        S->resampler_function = SKP_Silk_resampler_private_IIR_FIR;
@@ -176,50 +176,50 @@ SKP_int SKP_Silk_resampler_init(
     } else if ( Fs_Hz_out < Fs_Hz_in ) {
         /* Downsample */
         if( SKP_MUL( Fs_Hz_out, 4 ) == SKP_MUL( Fs_Hz_in, 3 ) ) {               /* Fs_out : Fs_in = 3 : 4 */
-    	    S->FIR_Fracs = 3;
-    	    S->Coefs = SKP_Silk_Resampler_3_4_COEFS;
-    	    S->resampler_function = SKP_Silk_resampler_private_down_FIR;
+	    S->FIR_Fracs = 3;
+	    S->Coefs = SKP_Silk_Resampler_3_4_COEFS;
+	    S->resampler_function = SKP_Silk_resampler_private_down_FIR;
         } else if( SKP_MUL( Fs_Hz_out, 3 ) == SKP_MUL( Fs_Hz_in, 2 ) ) {        /* Fs_out : Fs_in = 2 : 3 */
-    	    S->FIR_Fracs = 2;
-    	    S->Coefs = SKP_Silk_Resampler_2_3_COEFS;
-    	    S->resampler_function = SKP_Silk_resampler_private_down_FIR;
+	    S->FIR_Fracs = 2;
+	    S->Coefs = SKP_Silk_Resampler_2_3_COEFS;
+	    S->resampler_function = SKP_Silk_resampler_private_down_FIR;
         } else if( SKP_MUL( Fs_Hz_out, 2 ) == Fs_Hz_in ) {                      /* Fs_out : Fs_in = 1 : 2 */
-    	    S->FIR_Fracs = 1;
-    	    S->Coefs = SKP_Silk_Resampler_1_2_COEFS;
-    	    S->resampler_function = SKP_Silk_resampler_private_down_FIR;
+	    S->FIR_Fracs = 1;
+	    S->Coefs = SKP_Silk_Resampler_1_2_COEFS;
+	    S->resampler_function = SKP_Silk_resampler_private_down_FIR;
         } else if( SKP_MUL( Fs_Hz_out, 8 ) == SKP_MUL( Fs_Hz_in, 3 ) ) {        /* Fs_out : Fs_in = 3 : 8 */
-    	    S->FIR_Fracs = 3;
-    	    S->Coefs = SKP_Silk_Resampler_3_8_COEFS;
-    	    S->resampler_function = SKP_Silk_resampler_private_down_FIR;
+	    S->FIR_Fracs = 3;
+	    S->Coefs = SKP_Silk_Resampler_3_8_COEFS;
+	    S->resampler_function = SKP_Silk_resampler_private_down_FIR;
         } else if( SKP_MUL( Fs_Hz_out, 3 ) == Fs_Hz_in ) {                      /* Fs_out : Fs_in = 1 : 3 */
-    	    S->FIR_Fracs = 1;
-    	    S->Coefs = SKP_Silk_Resampler_1_3_COEFS;
-    	    S->resampler_function = SKP_Silk_resampler_private_down_FIR;
+	    S->FIR_Fracs = 1;
+	    S->Coefs = SKP_Silk_Resampler_1_3_COEFS;
+	    S->resampler_function = SKP_Silk_resampler_private_down_FIR;
         } else if( SKP_MUL( Fs_Hz_out, 4 ) == Fs_Hz_in ) {                      /* Fs_out : Fs_in = 1 : 4 */
-    	    S->FIR_Fracs = 1;
+	    S->FIR_Fracs = 1;
             down2 = 1;
-    	    S->Coefs = SKP_Silk_Resampler_1_2_COEFS;
+	    S->Coefs = SKP_Silk_Resampler_1_2_COEFS;
             S->resampler_function = SKP_Silk_resampler_private_down_FIR;
         } else if( SKP_MUL( Fs_Hz_out, 6 ) == Fs_Hz_in ) {                      /* Fs_out : Fs_in = 1 : 6 */
-    	    S->FIR_Fracs = 1;
+	    S->FIR_Fracs = 1;
             down2 = 1;
-    	    S->Coefs = SKP_Silk_Resampler_1_3_COEFS;
+	    S->Coefs = SKP_Silk_Resampler_1_3_COEFS;
             S->resampler_function = SKP_Silk_resampler_private_down_FIR;
         } else if( SKP_MUL( Fs_Hz_out, 441 ) == SKP_MUL( Fs_Hz_in, 80 ) ) {     /* Fs_out : Fs_in = 80 : 441 */
-    	    S->Coefs = SKP_Silk_Resampler_80_441_ARMA4_COEFS;
-    	    S->resampler_function = SKP_Silk_resampler_private_IIR_FIR;
+	    S->Coefs = SKP_Silk_Resampler_80_441_ARMA4_COEFS;
+	    S->resampler_function = SKP_Silk_resampler_private_IIR_FIR;
         } else if( SKP_MUL( Fs_Hz_out, 441 ) == SKP_MUL( Fs_Hz_in, 120 ) ) {    /* Fs_out : Fs_in = 120 : 441 */
-    	    S->Coefs = SKP_Silk_Resampler_120_441_ARMA4_COEFS;
-    	    S->resampler_function = SKP_Silk_resampler_private_IIR_FIR;
+	    S->Coefs = SKP_Silk_Resampler_120_441_ARMA4_COEFS;
+	    S->resampler_function = SKP_Silk_resampler_private_IIR_FIR;
         } else if( SKP_MUL( Fs_Hz_out, 441 ) == SKP_MUL( Fs_Hz_in, 160 ) ) {    /* Fs_out : Fs_in = 160 : 441 */
-    	    S->Coefs = SKP_Silk_Resampler_160_441_ARMA4_COEFS;
-    	    S->resampler_function = SKP_Silk_resampler_private_IIR_FIR;
+	    S->Coefs = SKP_Silk_Resampler_160_441_ARMA4_COEFS;
+	    S->resampler_function = SKP_Silk_resampler_private_IIR_FIR;
         } else if( SKP_MUL( Fs_Hz_out, 441 ) == SKP_MUL( Fs_Hz_in, 240 ) ) {    /* Fs_out : Fs_in = 240 : 441 */
-    	    S->Coefs = SKP_Silk_Resampler_240_441_ARMA4_COEFS;
-    	    S->resampler_function = SKP_Silk_resampler_private_IIR_FIR;
+	    S->Coefs = SKP_Silk_Resampler_240_441_ARMA4_COEFS;
+	    S->resampler_function = SKP_Silk_resampler_private_IIR_FIR;
         } else if( SKP_MUL( Fs_Hz_out, 441 ) == SKP_MUL( Fs_Hz_in, 320 ) ) {    /* Fs_out : Fs_in = 320 : 441 */
-    	    S->Coefs = SKP_Silk_Resampler_320_441_ARMA4_COEFS;
-    	    S->resampler_function = SKP_Silk_resampler_private_IIR_FIR;
+	    S->Coefs = SKP_Silk_Resampler_320_441_ARMA4_COEFS;
+	    S->resampler_function = SKP_Silk_resampler_private_IIR_FIR;
         } else {
 	        /* Default resampler */
 	        S->resampler_function = SKP_Silk_resampler_private_IIR_FIR;
@@ -252,7 +252,7 @@ SKP_int SKP_Silk_resampler_init(
 }
 
 /* Clear the states of all resampling filters, without resetting sampling rate ratio */
-SKP_int SKP_Silk_resampler_clear( 
+SKP_int SKP_Silk_resampler_clear(
 	SKP_Silk_resampler_state_struct	*S		    /* I/O: Resampler state 			*/
 )
 {
@@ -268,7 +268,7 @@ SKP_int SKP_Silk_resampler_clear(
 }
 
 /* Resampler: convert from one sampling rate to another                                 */
-SKP_int SKP_Silk_resampler( 
+SKP_int SKP_Silk_resampler(
 	SKP_Silk_resampler_state_struct	*S,		    /* I/O: Resampler state 			*/
 	SKP_int16							out[],	    /* O:	Output signal 				*/
 	const SKP_int16						in[],	    /* I:	Input signal				*/
@@ -289,30 +289,30 @@ SKP_int SKP_Silk_resampler(
 
         while( inLen > 0 ) {
             /* Number of input and output samples to process */
-    		nSamplesIn = SKP_min( inLen, S->batchSizePrePost );
+		nSamplesIn = SKP_min( inLen, S->batchSizePrePost );
             nSamplesOut = SKP_SMULWB( S->ratio_Q16, nSamplesIn );
 
             SKP_assert( SKP_RSHIFT32( nSamplesIn,  S->nPreDownsamplers ) <= 480 );
             SKP_assert( SKP_RSHIFT32( nSamplesOut, S->nPostUpsamplers  ) <= 480 );
 
-    		if( S->nPreDownsamplers > 0 ) {
+		if( S->nPreDownsamplers > 0 ) {
                 S->down_pre_function( S->sDownPre, in_buf, in, nSamplesIn );
-    		    if( S->nPostUpsamplers > 0 ) {
-            		S->resampler_function( S, out_buf, in_buf, SKP_RSHIFT32( nSamplesIn, S->nPreDownsamplers ) );
+		    if( S->nPostUpsamplers > 0 ) {
+			S->resampler_function( S, out_buf, in_buf, SKP_RSHIFT32( nSamplesIn, S->nPreDownsamplers ) );
                     S->up_post_function( S->sUpPost, out, out_buf, SKP_RSHIFT32( nSamplesOut, S->nPostUpsamplers ) );
                 } else {
-            		S->resampler_function( S, out, in_buf, SKP_RSHIFT32( nSamplesIn, S->nPreDownsamplers ) );
+			S->resampler_function( S, out, in_buf, SKP_RSHIFT32( nSamplesIn, S->nPreDownsamplers ) );
                 }
             } else {
-        		S->resampler_function( S, out_buf, in, SKP_RSHIFT32( nSamplesIn, S->nPreDownsamplers ) );
+			S->resampler_function( S, out_buf, in, SKP_RSHIFT32( nSamplesIn, S->nPreDownsamplers ) );
                 S->up_post_function( S->sUpPost, out, out_buf, SKP_RSHIFT32( nSamplesOut, S->nPostUpsamplers ) );
             }
 
-    		in += nSamplesIn;
+		in += nSamplesIn;
             out += nSamplesOut;
-	    	inLen -= nSamplesIn;
+		inLen -= nSamplesIn;
         }
-	} else 
+	} else
 #endif
 	{
 		/* Input and output sampling rate are at most 48000 Hz */

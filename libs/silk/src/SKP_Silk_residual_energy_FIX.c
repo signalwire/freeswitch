@@ -1,27 +1,27 @@
 /***********************************************************************
-Copyright (c) 2006-2011, Skype Limited. All rights reserved. 
-Redistribution and use in source and binary forms, with or without 
-modification, (subject to the limitations in the disclaimer below) 
+Copyright (c) 2006-2011, Skype Limited. All rights reserved.
+Redistribution and use in source and binary forms, with or without
+modification, (subject to the limitations in the disclaimer below)
 are permitted provided that the following conditions are met:
 - Redistributions of source code must retain the above copyright notice,
 this list of conditions and the following disclaimer.
-- Redistributions in binary form must reproduce the above copyright 
-notice, this list of conditions and the following disclaimer in the 
+- Redistributions in binary form must reproduce the above copyright
+notice, this list of conditions and the following disclaimer in the
 documentation and/or other materials provided with the distribution.
-- Neither the name of Skype Limited, nor the names of specific 
-contributors, may be used to endorse or promote products derived from 
+- Neither the name of Skype Limited, nor the names of specific
+contributors, may be used to endorse or promote products derived from
 this software without specific prior written permission.
-NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED 
-BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND 
+NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED
+BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
 CONTRIBUTORS ''AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING,
-BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND 
-FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
-COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, 
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
 INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
-NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF 
-USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON 
-ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
+NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
+USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ***********************************************************************/
 
@@ -47,7 +47,7 @@ void SKP_Silk_residual_energy_FIX(
 
     x_ptr  = x;
     offset = LPC_order + subfr_length;
-    
+
     /* Filter input to create the LPC residual for each frame half, and measure subframe energies */
     for( i = 0; i < 2; i++ ) {
         /* Calculate half frame LPC residual signal including preceeding samples */
@@ -58,11 +58,11 @@ void SKP_Silk_residual_energy_FIX(
         LPC_res_ptr = LPC_res + LPC_order;
         for( j = 0; j < ( NB_SUBFR >> 1 ); j++ ) {
             /* Measure subframe energy */
-            SKP_Silk_sum_sqr_shift( &nrgs[ i * ( NB_SUBFR >> 1 ) + j ], &rshift, LPC_res_ptr, subfr_length ); 
-            
+            SKP_Silk_sum_sqr_shift( &nrgs[ i * ( NB_SUBFR >> 1 ) + j ], &rshift, LPC_res_ptr, subfr_length );
+
             /* Set Q values for the measured energy */
             nrgsQ[ i * ( NB_SUBFR >> 1 ) + j ] = -rshift;
-            
+
             /* Move to next subframe */
             LPC_res_ptr += offset;
         }
@@ -73,9 +73,9 @@ void SKP_Silk_residual_energy_FIX(
     /* Apply the squared subframe gains */
     for( i = 0; i < NB_SUBFR; i++ ) {
         /* Fully upscale gains and energies */
-        lz1 = SKP_Silk_CLZ32( nrgs[  i ] ) - 1; 
-        lz2 = SKP_Silk_CLZ32( gains[ i ] ) - 1; 
-        
+        lz1 = SKP_Silk_CLZ32( nrgs[  i ] ) - 1;
+        lz2 = SKP_Silk_CLZ32( gains[ i ] ) - 1;
+
         tmp32 = SKP_LSHIFT32( gains[ i ], lz2 );
 
         /* Find squared gains */

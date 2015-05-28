@@ -78,7 +78,6 @@
 #endif
 #endif
 
-
 /* #define DEBUG_ALLOC */
 #define DO_EVENTS
 
@@ -102,7 +101,6 @@ typedef enum {
 	SSF_DESTROYABLE = (1 << 9),
 	SSF_MEDIA_BUG_TAP_ONLY = (1 << 10)
 } switch_session_flag_t;
-
 
 struct switch_core_session {
 	switch_memory_pool_t *pool;
@@ -134,6 +132,8 @@ struct switch_core_session {
 	switch_mutex_t *resample_mutex;
 	switch_mutex_t *codec_read_mutex;
 	switch_mutex_t *codec_write_mutex;
+	switch_mutex_t *video_codec_read_mutex;
+	switch_mutex_t *video_codec_write_mutex;
 	switch_thread_cond_t *cond;
 	switch_mutex_t *frame_read_mutex;
 
@@ -166,6 +166,16 @@ struct switch_core_session {
 	switch_frame_t enc_read_frame;
 	uint8_t raw_read_buf[SWITCH_RECOMMENDED_BUFFER_SIZE];
 	uint8_t enc_read_buf[SWITCH_RECOMMENDED_BUFFER_SIZE];
+
+	/* video frame.data being trated differently than audio, allocate a dynamic data buffer if necessary*/
+	switch_buffer_t *video_raw_write_buffer;
+	switch_frame_t video_raw_write_frame;
+	// switch_frame_t video_enc_write_frame;
+
+	switch_buffer_t *video_raw_read_buffer;
+	switch_frame_t video_raw_read_frame;
+	// switch_frame_t video_enc_read_frame;
+
 	switch_codec_t bug_codec;
 	uint32_t read_frame_count;
 	uint32_t track_duration;
@@ -177,6 +187,9 @@ struct switch_core_session {
 
 	switch_media_handle_t *media_handle;
 	uint32_t decoder_errors;
+	switch_core_video_thread_callback_func_t *video_read_callback;
+	void *video_read_user_data;
+	switch_slin_data_t *sdata;
 };
 
 struct switch_media_bug {
@@ -208,6 +221,9 @@ struct switch_media_bug {
 	uint32_t record_pre_buffer_max;
 	switch_frame_t *ping_frame;
 	switch_frame_t *read_demux_frame;
+	switch_queue_t *read_video_queue;
+	switch_queue_t *write_video_queue;
+	switch_thread_t *video_bug_thread;
 	struct switch_media_bug *next;
 };
 

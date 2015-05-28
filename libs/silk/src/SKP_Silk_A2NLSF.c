@@ -1,27 +1,27 @@
 /***********************************************************************
-Copyright (c) 2006-2011, Skype Limited. All rights reserved. 
-Redistribution and use in source and binary forms, with or without 
-modification, (subject to the limitations in the disclaimer below) 
+Copyright (c) 2006-2011, Skype Limited. All rights reserved.
+Redistribution and use in source and binary forms, with or without
+modification, (subject to the limitations in the disclaimer below)
 are permitted provided that the following conditions are met:
 - Redistributions of source code must retain the above copyright notice,
 this list of conditions and the following disclaimer.
-- Redistributions in binary form must reproduce the above copyright 
-notice, this list of conditions and the following disclaimer in the 
+- Redistributions in binary form must reproduce the above copyright
+notice, this list of conditions and the following disclaimer in the
 documentation and/or other materials provided with the distribution.
-- Neither the name of Skype Limited, nor the names of specific 
-contributors, may be used to endorse or promote products derived from 
+- Neither the name of Skype Limited, nor the names of specific
+contributors, may be used to endorse or promote products derived from
 this software without specific prior written permission.
-NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED 
-BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND 
+NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED
+BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
 CONTRIBUTORS ''AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING,
-BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND 
-FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
-COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, 
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
 INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
-NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF 
-USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON 
-ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
+NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
+USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ***********************************************************************/
 
@@ -49,14 +49,14 @@ SKP_INLINE void SKP_Silk_A2NLSF_trans_poly(
 )
 {
     SKP_int k, n;
-    
+
     for( k = 2; k <= dd; k++ ) {
         for( n = dd; n > k; n-- ) {
             p[ n - 2 ] -= p[ n ];
         }
         p[ k - 2 ] -= SKP_LSHIFT( p[ k ], 1 );
     }
-}    
+}
 /* Helper function for A2NLSF(..)                    */
 /* Polynomial evaluation                             */
 SKP_INLINE SKP_int32 SKP_Silk_A2NLSF_eval_poly(    /* return the polynomial evaluation, in QPoly */
@@ -78,10 +78,10 @@ SKP_INLINE SKP_int32 SKP_Silk_A2NLSF_eval_poly(    /* return the polynomial eval
 
 SKP_INLINE void SKP_Silk_A2NLSF_init(
      const SKP_int32    *a_Q16,
-     SKP_int32          *P, 
-     SKP_int32          *Q, 
+     SKP_int32          *P,
+     SKP_int32          *Q,
      const SKP_int      dd
-) 
+)
 {
     SKP_int k;
 
@@ -105,8 +105,8 @@ SKP_INLINE void SKP_Silk_A2NLSF_init(
     /* z =  1 is always a root in Q, and                        */
     /* z = -1 is always a root in P                             */
     for( k = dd; k > 0; k-- ) {
-        P[ k - 1 ] -= P[ k ]; 
-        Q[ k - 1 ] += Q[ k ]; 
+        P[ k - 1 ] -= P[ k ];
+        Q[ k - 1 ] += Q[ k ];
     }
 
     /* Transform polynomials from cos(n*f) to cos(f)^n */
@@ -141,7 +141,7 @@ void SKP_Silk_A2NLSF(
 
     /* Find roots, alternating between P and Q */
     p = P;    /* Pointer to polynomial */
-    
+
     xlo = SKP_Silk_LSFCosTab_FIX_Q12[ 0 ]; // Q12
     ylo = SKP_Silk_A2NLSF_eval_poly( p, xlo, dd );
 
@@ -160,13 +160,13 @@ void SKP_Silk_A2NLSF(
         /* Evaluate polynomial */
 #if OVERSAMPLE_COSINE_TABLE
         xhi = SKP_Silk_LSFCosTab_FIX_Q12[   k       >> 1 ] +
-          ( ( SKP_Silk_LSFCosTab_FIX_Q12[ ( k + 1 ) >> 1 ] - 
+          ( ( SKP_Silk_LSFCosTab_FIX_Q12[ ( k + 1 ) >> 1 ] -
               SKP_Silk_LSFCosTab_FIX_Q12[   k       >> 1 ] ) >> 1 );    /* Q12 */
 #else
         xhi = SKP_Silk_LSFCosTab_FIX_Q12[ k ]; /* Q12 */
 #endif
         yhi = SKP_Silk_A2NLSF_eval_poly( p, xhi, dd );
-        
+
         /* Detect zero crossing */
         if( ( ylo <= 0 && yhi >= 0 ) || ( ylo >= 0 && yhi <= 0 ) ) {
             /* Binary division */
@@ -196,7 +196,7 @@ void SKP_Silk_A2NLSF(
 #endif
                 }
             }
-            
+
             /* Interpolate */
             if( SKP_abs( ylo ) < 65536 ) {
                 /* Avoid dividing by zero */
@@ -210,9 +210,9 @@ void SKP_Silk_A2NLSF(
                 ffrac += SKP_DIV32( ylo, SKP_RSHIFT( ylo - yhi, 8 - BIN_DIV_STEPS_A2NLSF_FIX ) );
             }
 #if OVERSAMPLE_COSINE_TABLE
-            NLSF[ root_ix ] = (SKP_int)SKP_min_32( SKP_LSHIFT( (SKP_int32)k, 7 ) + ffrac, SKP_int16_MAX ); 
+            NLSF[ root_ix ] = (SKP_int)SKP_min_32( SKP_LSHIFT( (SKP_int32)k, 7 ) + ffrac, SKP_int16_MAX );
 #else
-            NLSF[ root_ix ] = (SKP_int)SKP_min_32( SKP_LSHIFT( (SKP_int32)k, 8 ) + ffrac, SKP_int16_MAX ); 
+            NLSF[ root_ix ] = (SKP_int)SKP_min_32( SKP_LSHIFT( (SKP_int32)k, 8 ) + ffrac, SKP_int16_MAX );
 #endif
 
             SKP_assert( NLSF[ root_ix ] >=     0 );
@@ -225,11 +225,11 @@ void SKP_Silk_A2NLSF(
             }
             /* Alternate pointer to polynomial */
             p = PQ[ root_ix & 1 ];
-            
+
             /* Evaluate polynomial */
 #if OVERSAMPLE_COSINE_TABLE
             xlo = SKP_Silk_LSFCosTab_FIX_Q12[ ( k - 1 ) >> 1 ] +
-              ( ( SKP_Silk_LSFCosTab_FIX_Q12[   k       >> 1 ] - 
+              ( ( SKP_Silk_LSFCosTab_FIX_Q12[   k       >> 1 ] -
                   SKP_Silk_LSFCosTab_FIX_Q12[ ( k - 1 ) >> 1 ] ) >> 1 ); // Q12
 #else
             xlo = SKP_Silk_LSFCosTab_FIX_Q12[ k - 1 ]; // Q12
@@ -240,7 +240,7 @@ void SKP_Silk_A2NLSF(
             k++;
             xlo    = xhi;
             ylo    = yhi;
-            
+
 #if OVERSAMPLE_COSINE_TABLE
             if( k > 2 * LSF_COS_TAB_SZ_FIX ) {
 #else

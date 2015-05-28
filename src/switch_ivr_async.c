@@ -34,6 +34,7 @@
  */
 
 #include <switch.h>
+#include "private/switch_core_pvt.h"
 #include <speex/speex_preprocess.h>
 #include <speex/speex_echo.h>
 
@@ -636,7 +637,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_echo(switch_core_session_t *s
 	switch_status_t status;
 	switch_frame_t *read_frame;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-	int orig_vid = switch_channel_test_flag(channel, CF_VIDEO);
 
 	if (switch_channel_pre_answer(channel) != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_FALSE;
@@ -644,7 +644,15 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_echo(switch_core_session_t *s
 
 	arg_recursion_check_start(args);
 
- restart:
+	if (switch_true(switch_channel_get_variable(channel, "echo_decode_video"))) {
+		switch_channel_set_flag(channel, CF_VIDEO_DECODED_READ);
+	}
+
+	if (switch_true(switch_channel_get_variable(channel, "echo_decode_audio"))) {
+		switch_core_session_raw_read(session);
+	}
+
+	switch_channel_set_flag(channel, CF_VIDEO_ECHO);
 
 	while (switch_channel_ready(channel)) {
 		status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
@@ -652,12 +660,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_echo(switch_core_session_t *s
 			break;
 		}
 		
-		if (!orig_vid && switch_channel_test_flag(channel, CF_VIDEO)) {
-			orig_vid = 1;
-			goto restart;
-		}
-
-
 		switch_ivr_parse_all_events(session);
 
 		if (args && (args->input_callback || args->buf || args->buflen)) {
@@ -695,28 +697,16 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_echo(switch_core_session_t *s
 			}
 		}
 
-
 		switch_core_session_write_frame(session, read_frame, SWITCH_IO_FLAG_NONE, 0);
-
-#ifndef SWITCH_VIDEO_IN_THREADS
-		status = switch_core_session_read_video_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
-
-		if (!SWITCH_READ_ACCEPTABLE(status)) {
-			break;
-		}
-
-		if (switch_test_flag(read_frame, SFF_CNG)) {
-			continue;
-		}
-
-		switch_core_session_write_video_frame(session, read_frame, SWITCH_IO_FLAG_NONE, 0);
-#endif
 
 		if (switch_channel_test_flag(channel, CF_BREAK)) {
 			switch_channel_clear_flag(channel, CF_BREAK);
 			break;
 		}
 	}
+
+	switch_core_session_video_reset(session);
+	switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -1194,12 +1184,11 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 				switch_threadattr_create(&thd_attr, pool);
 				switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
 				switch_thread_create(&rh->thread, thd_attr, recording_thread, bug, pool);
-
+				
 				while(--sanity > 0 && !rh->thread_ready) {
 					switch_yield(10000);
 				}
 			}
-
 
 			if (switch_event_create(&event, SWITCH_EVENT_RECORD_START) == SWITCH_STATUS_SUCCESS) {
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Record-File-Path", rh->file);
@@ -1342,8 +1331,16 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 					}
 				}
 
+				
+				if (switch_core_file_has_video(rh->fh)) {
+					//switch_core_media_set_video_file(session, NULL, SWITCH_RW_READ);
+					switch_channel_clear_flag_recursive(session->channel, CF_VIDEO_DECODED_READ);
+				}
 
 				switch_core_file_close(rh->fh);
+
+				
+
 				if (rh->fh->samples_out < rh->fh->samplerate * rh->min_sec) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Discarding short file %s\n", rh->file);
 					switch_channel_set_variable(channel, "RECORD_DISCARDED", "true");
@@ -1478,6 +1475,20 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 			}
 		}
 		break;
+	case SWITCH_ABC_TYPE_READ_VIDEO_PING:
+	case SWITCH_ABC_TYPE_STREAM_VIDEO_PING:
+		if (rh->fh) {
+			if (!bug->ping_frame) break;
+			
+			if ((len || bug->ping_frame->img) && switch_core_file_write_video(rh->fh, bug->ping_frame) != SWITCH_STATUS_SUCCESS && rh->hangup_on_error) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error writing video to %s\n", rh->file);
+				switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+				switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
+				return SWITCH_FALSE;
+			}
+		}
+		break;
+
 	case SWITCH_ABC_TYPE_WRITE:
 	default:
 		break;
@@ -1633,7 +1644,17 @@ static switch_bool_t eavesdrop_callback(switch_media_bug_t *bug, void *user_data
 			}
 		}
 		break;
+	case SWITCH_ABC_TYPE_READ_VIDEO_PING:
+		if (!bug->ping_frame) break;
 
+		if (ep->eavesdropper && switch_core_session_read_lock(ep->eavesdropper) == SWITCH_STATUS_SUCCESS) {
+			switch_channel_t *channel = switch_core_session_get_channel(ep->eavesdropper);
+			if (switch_channel_test_flag(channel, CF_VIDEO)) {
+				switch_core_session_write_video_frame(ep->eavesdropper, bug->ping_frame, SWITCH_IO_FLAG_NONE, 0);
+			}
+			switch_core_session_rwunlock(ep->eavesdropper);
+		}
+		break;
 	default:
 		break;
 	}
@@ -1830,6 +1851,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 		if (switch_core_codec_init(&codec,
 								   "L16",
 								   NULL,
+								   NULL,
 								   tread_impl.actual_samples_per_second,
 								   tread_impl.microseconds_per_packet / 1000,
 								   tread_impl.number_of_channels,
@@ -1914,6 +1936,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 		msg.string_arg = cid_buf;
 		msg.message_id = SWITCH_MESSAGE_INDICATE_DISPLAY;
 		switch_core_session_receive_message(session, &msg);
+
+		if (switch_channel_test_flag(tchannel, CF_VIDEO)) {
+
+			msg.message_id = SWITCH_MESSAGE_INDICATE_VIDEO_REFRESH_REQ;
+
+			switch_core_session_receive_message(tsession, &msg);
+		}
 
 		while (switch_channel_up_nosig(tchannel) && switch_channel_ready(channel)) {
 			uint32_t len = sizeof(buf);
@@ -2248,6 +2277,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 	if ((ext = strrchr(file, '.'))) {
 		ext++;
 
+		if (switch_channel_test_flag(channel, CF_VIDEO)) {
+			file_flags |= SWITCH_FILE_FLAG_VIDEO;
+		}
+
 		if (switch_core_file_open(fh, file, channels, read_impl.actual_samples_per_second, file_flags, NULL) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error opening %s\n", file);
 			if (hangup_on_error) {
@@ -2256,6 +2289,23 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 			}
 			return SWITCH_STATUS_GENERR;
 		}
+
+		if (switch_core_file_has_video(fh)) {
+			//switch_core_media_set_video_file(session, fh, SWITCH_RW_READ);
+			switch_channel_set_flag_recursive(session->channel, CF_VIDEO_DECODED_READ);
+			
+			if ((vval = switch_channel_get_variable(channel, "record_concat_video")) && switch_true(vval)) { 
+				flags |= SMBF_READ_VIDEO_STREAM;
+				flags |= SMBF_WRITE_VIDEO_STREAM;
+			} else {
+				flags |= SMBF_READ_VIDEO_PING;
+			}
+		} else {
+			flags &= ~SMBF_READ_VIDEO_PING;
+			flags &= ~SMBF_READ_VIDEO_STREAM;
+			flags &= ~SMBF_WRITE_VIDEO_STREAM;
+		}
+
 	} else {
 		int tflags = 0;
 
@@ -2406,6 +2456,15 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 	}
 
 	switch_channel_set_private(channel, file, bug);
+
+	if (switch_channel_test_flag(channel, CF_VIDEO)) {
+		switch_core_session_message_t msg = { 0 };
+
+		msg.from = __FILE__;
+		msg.message_id = SWITCH_MESSAGE_INDICATE_VIDEO_REFRESH_REQ;
+
+		switch_core_session_receive_message(session, &msg);
+	}
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -3552,6 +3611,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_tone_detect_session(switch_core_sessi
 
 	return SWITCH_STATUS_SUCCESS;
 }
+
 
 typedef struct {
 	const char *app;
@@ -4751,6 +4811,107 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_broadcast(const char *uuid, const cha
 	switch_core_session_rwunlock(session);
 	switch_safe_free(mypath);
 
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
+typedef struct oht_s {
+	switch_image_t *img;
+	switch_img_position_t pos;
+	uint8_t alpha;
+} overly_helper_t;
+
+static switch_bool_t video_write_overlay_callback(switch_media_bug_t *bug, void *user_data, switch_abc_type_t type)
+{
+	overly_helper_t *oht = (overly_helper_t *) user_data;
+	switch_core_session_t *session = switch_core_media_bug_get_session(bug);
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	
+    switch (type) {
+    case SWITCH_ABC_TYPE_INIT:
+        {			
+        }
+        break;
+    case SWITCH_ABC_TYPE_CLOSE:
+        {
+			switch_img_free(&oht->img);
+        }
+        break;
+	case SWITCH_ABC_TYPE_WRITE_VIDEO_PING:
+		if (switch_channel_test_flag(channel, CF_VIDEO_DECODED_READ)) {
+			switch_frame_t *frame = switch_core_media_bug_get_video_ping_frame(bug);
+			int x = 0, y = 0;
+			switch_image_t *oimg = NULL;
+
+			if (frame->img && oht->img) {
+				switch_img_copy(oht->img, &oimg);
+				switch_img_fit(&oimg, frame->img->d_w, frame->img->d_h);
+				switch_img_find_position(oht->pos, frame->img->d_w, frame->img->d_h, oimg->d_w, oimg->d_h, &x, &y);
+				switch_img_overlay(frame->img, oimg, x, y, oht->alpha);
+				//switch_img_patch(frame->img, oimg, x, y);
+				switch_img_free(&oimg);
+			}
+		}
+        break;
+    default:
+        break;
+    }
+
+    return SWITCH_TRUE;
+}
+
+
+SWITCH_DECLARE(switch_status_t) switch_ivr_stop_video_write_overlay_session(switch_core_session_t *session)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_media_bug_t *bug = switch_channel_get_private(channel, "_video_write_overlay_bug_");
+
+	if (bug) {
+		switch_channel_set_private(channel, "_video_write_overlay_bug_", NULL);
+		switch_core_media_bug_remove(session, &bug);
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	return SWITCH_STATUS_FALSE;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_ivr_video_write_overlay_session(switch_core_session_t *session, const char *img_path, 
+																	   switch_img_position_t pos, uint8_t alpha)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_status_t status;
+	switch_media_bug_flag_t bflags = SMBF_WRITE_VIDEO_PING;
+    switch_media_bug_t *bug;
+	overly_helper_t *oht;
+	switch_image_t *img;
+
+	bflags |= SMBF_NO_PAUSE;
+
+	if (switch_channel_get_private(channel, "_video_write_overlay_bug_")) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Only one of this type of bug per channel\n");
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (!(img = switch_img_read_png(img_path, SWITCH_IMG_FMT_ARGB))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error opening file: %s\n", img_path);
+		return SWITCH_STATUS_FALSE;
+	}
+
+	oht = switch_core_session_alloc(session, sizeof(*oht));
+	oht->img = img;
+	oht->pos = pos;
+	oht->alpha = alpha;
+
+	if ((status = switch_core_media_bug_add(session, "video_write_overlay", NULL,
+											video_write_overlay_callback, oht, 0, bflags, &bug)) != SWITCH_STATUS_SUCCESS) {
+
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error creating bug, file: %s\n", img_path);
+		switch_img_free(&oht->img);
+		return status;
+	}
+
+	switch_channel_set_private(channel, "_video_write_overlay_bug_", bug);
+	
 	return SWITCH_STATUS_SUCCESS;
 }
 

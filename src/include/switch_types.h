@@ -40,6 +40,7 @@
 
 #include <switch.h>
 #include <switch_json.h>
+#include <switch_vpx.h>
 
 SWITCH_BEGIN_EXTERN_C
 #define SWITCH_ENT_ORIGINATE_DELIM ":_:"
@@ -226,6 +227,9 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_DTMF_LOG_LEN 1000
 #define SWITCH_MAX_TRANS 2000
 #define SWITCH_CORE_SESSION_MAX_PRIVATES 2
+#define SWITCH_DEFAULT_VIDEO_SIZE 1200
+#define SWITCH_RTCP_AUDIO_INTERVAL_MSEC "5000"
+#define SWITCH_RTCP_VIDEO_INTERVAL_MSEC "2000"
 
 /* Jitter */
 #define JITTER_VARIANCE_THRESHOLD 400.0
@@ -483,7 +487,11 @@ typedef enum {
 	SWITCH_ABC_TYPE_READ_PING,
 	SWITCH_ABC_TYPE_TAP_NATIVE_READ,
 	SWITCH_ABC_TYPE_TAP_NATIVE_WRITE,
-	SWITCH_ABC_TYPE_CLOSE
+	SWITCH_ABC_TYPE_CLOSE,
+	SWITCH_ABC_TYPE_READ_VIDEO_PING,
+	SWITCH_ABC_TYPE_WRITE_VIDEO_PING,
+	SWITCH_ABC_TYPE_STREAM_VIDEO_PING,
+	SWITCH_ABC_TYPE_VIDEO_PATCH
 } switch_abc_type_t;
 
 typedef struct {
@@ -520,6 +528,10 @@ struct switch_directories {
 	char *sounds_dir;
 	char *lib_dir;
 	char *certs_dir;
+	char *fonts_dir;
+	char *images_dir;
+	char *data_dir;
+	char *localstate_dir;
 };
 
 typedef struct switch_directories switch_directories;
@@ -546,6 +558,11 @@ SWITCH_DECLARE_DATA extern switch_filenames SWITCH_GLOBAL_filenames;
 #define SWITCH_MAX_MANAGEMENT_BUFFER_LEN 1024 * 8
 
 #define SWITCH_ACCEPTABLE_INTERVAL(_i) (_i && _i <= SWITCH_MAX_INTERVAL && (_i % 10) == 0)
+
+typedef enum {
+	SWITCH_RW_READ,
+	SWITCH_RW_WRITE
+} switch_rw_t;
 
 typedef enum {
 	SWITCH_CPF_NONE = 0,
@@ -645,6 +662,7 @@ typedef struct {
 	uint16_t last_rpt_cycle;      /* Packet loss calculation, sequence number cycle at the begining of the current RTCP report interval */
 	uint16_t period_pkt_count;    /* Packet loss calculation, packet count received during this RTCP report interval */
 	uint16_t pkt_count;           /* Packet loss calculation, packet count received during this session */
+	uint16_t sent_pkt_count;
 	uint32_t rtcp_rtp_count;      /* RTCP report generated count */
 	uint32_t high_ext_seq_recv;   /* Packet loss calculation, highest extended sequence number received and processed for stats */
 	uint16_t cycle;               /* Packet loss calculation, sequence number cycle of the current RTCP report interval */
@@ -731,6 +749,8 @@ typedef enum {
 	SWITCH_RTP_FLAG_PLI,
 	SWITCH_RTP_FLAG_RESET,
 	SWITCH_RTP_FLAG_MUTE,
+	SWITCH_RTP_FLAG_NACK,
+	SWITCH_RTP_FLAG_TMMBR,
 	SWITCH_RTP_FLAG_INVALID
 } switch_rtp_flag_t;
 
@@ -915,6 +935,13 @@ typedef struct {
 #pragma pack(push, r1, 1)
 #endif
 
+typedef struct switch_rtcp_sdes_unit_s {
+	unsigned char type;
+	unsigned char length;
+	char value[];
+} switch_rtcp_sdes_unit_t;
+
+
 #if SWITCH_BYTE_ORDER == __BIG_ENDIAN
 typedef struct switch_rtcp_hdr_s {
 	unsigned version:2;			/* protocol version                  */
@@ -1022,6 +1049,7 @@ typedef enum {
 	SWITCH_MESSAGE_INDICATE_DISPLAY,
 	SWITCH_MESSAGE_INDICATE_TRANSCODING_NECESSARY,
 	SWITCH_MESSAGE_INDICATE_AUDIO_SYNC,
+	SWITCH_MESSAGE_INDICATE_VIDEO_SYNC,
 	SWITCH_MESSAGE_INDICATE_REQUEST_IMAGE_MEDIA,
 	SWITCH_MESSAGE_INDICATE_UUID_CHANGE,
 	SWITCH_MESSAGE_INDICATE_SIMPLIFY,
@@ -1044,6 +1072,8 @@ typedef enum {
 	SWITCH_MESSAGE_INDICATE_MEDIA_RENEG,
 	SWITCH_MESSAGE_INDICATE_KEEPALIVE,
 	SWITCH_MESSAGE_INDICATE_HARD_MUTE,
+	SWITCH_MESSAGE_INDICATE_BITRATE_REQ,
+	SWITCH_MESSAGE_INDICATE_BITRATE_ACK,
 	SWITCH_MESSAGE_REFER_EVENT,
 	SWITCH_MESSAGE_ANSWER_EVENT,
 	SWITCH_MESSAGE_PROGRESS_EVENT,
@@ -1431,8 +1461,8 @@ typedef enum {
 	CF_REINVITE,
 	CF_AUTOFLUSH_DURING_BRIDGE,
 	CF_RTP_NOTIMER_DURING_BRIDGE,
-	CF_WEBRTC,
-	CF_WEBRTC_MOZ,
+	CF_AVPF,
+	CF_AVPF_MOZ,
 	CF_ICE,
 	CF_DTLS,
 	CF_VERBOSE_SDP,
@@ -1441,17 +1471,31 @@ typedef enum {
 	CF_VIDEO_PASSIVE,
 	CF_NOVIDEO,
 	CF_VIDEO_ECHO,
+	CF_VIDEO_BLANK,
 	CF_SLA_INTERCEPT,
 	CF_VIDEO_BREAK,
 	CF_AUDIO_PAUSE,
-	CF_VIDEO_PAUSE,
+	CF_VIDEO_PAUSE_READ,
+	CF_VIDEO_PAUSE_WRITE,
 	CF_BYPASS_MEDIA_AFTER_HOLD,
 	CF_HANGUP_HELD,
 	CF_CONFERENCE_RESET_MEDIA,
+	CF_VIDEO_DECODED_READ,
+	CF_VIDEO_DEBUG_READ,
+	CF_VIDEO_DEBUG_WRITE,
+	CF_VIDEO_ONLY,
+	CF_VIDEO_READY,
+	CF_VIDEO_MIRROR_INPUT,
 	/* WARNING: DO NOT ADD ANY FLAGS BELOW THIS LINE */
 	/* IF YOU ADD NEW ONES CHECK IF THEY SHOULD PERSIST OR ZERO THEM IN switch_core_session.c switch_core_session_request_xml() */
 	CF_FLAG_MAX
 } switch_channel_flag_t;
+
+typedef struct switch_vid_params_s {
+	int width;
+	int height;
+} switch_vid_params_t;
+
 
 
 typedef enum {
@@ -1470,10 +1514,12 @@ typedef enum {
 <pre>
 SFF_CNG        = (1 <<  0) - Frame represents comfort noise
 SFF_RAW_RTP    = (1 <<  1) - Frame has raw rtp accessible
-SFF_RTP_HEADER = (1 << 2)  - Get the rtp header from the frame header
-SFF_PLC        = (1 << 3)  - Frame has generated PLC data
-SFF_RFC2833    = (1 << 4)  - Frame has rfc2833 dtmf data
-SFF_DYNAMIC    = (1 << 5)  - Frame is dynamic and should be freed
+SFF_RTP_HEADER = (1 <<  2) - Get the rtp header from the frame header
+SFF_PLC        = (1 <<  3) - Frame has generated PLC data
+SFF_RFC2833    = (1 <<  4) - Frame has rfc2833 dtmf data
+SFF_DYNAMIC    = (1 <<  5) - Frame is dynamic and should be freed
+SFF_MARKER     = (1 << 11) - Frame flag has Marker set, only set by encoder
+SFF_WAIT_KEY_FRAME = (1 << 12) - Need a key from before could decode, or force generate a key frame on encode
 </pre>
  */
 typedef enum {
@@ -1488,7 +1534,14 @@ typedef enum {
 	SFF_ZRTP = (1 << 7),
 	SFF_UDPTL_PACKET = (1 << 8),
 	SFF_NOT_AUDIO = (1 << 9),
-	SFF_RTCP = (1 << 10)
+	SFF_RTCP = (1 << 10),
+	SFF_MARKER = (1 << 11),
+	SFF_WAIT_KEY_FRAME = (1 << 12),
+	SFF_RAW_RTP_PARSE_FRAME = (1 << 13),
+	SFF_PICTURE_RESET = (1 << 14),
+	SFF_SAME_IMAGE = (1 << 15),
+	SFF_USE_VIDEO_TIMESTAMP = (1 << 16),
+	SFF_ENCODED = (1 << 17)
 } switch_frame_flag_enum_t;
 typedef uint32_t switch_frame_flag_t;
 
@@ -1683,7 +1736,12 @@ typedef enum {
 	SMBF_TAP_NATIVE_READ = (1 << 13),
 	SMBF_TAP_NATIVE_WRITE = (1 << 14),
 	SMBF_ONE_ONLY = (1 << 15),
-	SMBF_MASK = (1 << 16)
+	SMBF_MASK = (1 << 16),
+	SMBF_READ_VIDEO_PING = (1 << 17),
+	SMBF_WRITE_VIDEO_PING = (1 << 18),
+	SMBF_READ_VIDEO_STREAM = (1 << 19),
+	SMBF_WRITE_VIDEO_STREAM = (1 << 20),
+	SMBF_VIDEO_PATCH = (1 << 21)
 } switch_media_bug_flag_enum_t;
 typedef uint32_t switch_media_bug_flag_t;
 
@@ -1724,14 +1782,16 @@ typedef enum {
 	SWITCH_FILE_WRITE_APPEND = (1 << 15),
 	SWITCH_FILE_WRITE_OVER = (1 << 16),
 	SWITCH_FILE_NOMUX = (1 << 17),
-	SWITCH_FILE_BREAK_ON_CHANGE = (1 << 18)
+	SWITCH_FILE_BREAK_ON_CHANGE = (1 << 18),
+	SWITCH_FILE_FLAG_VIDEO = (1 << 19)
 } switch_file_flag_enum_t;
 typedef uint32_t switch_file_flag_t;
 
 typedef enum {
 	SWITCH_IO_FLAG_NONE = 0,
 	SWITCH_IO_FLAG_NOBLOCK = (1 << 0),
-	SWITCH_IO_FLAG_SINGLE_READ = (1 << 1)
+	SWITCH_IO_FLAG_SINGLE_READ = (1 << 1),
+	SWITCH_IO_FLAG_FORCE = (1 << 2)
 } switch_io_flag_enum_t;
 typedef uint32_t switch_io_flag_t;
 
@@ -2092,7 +2152,7 @@ typedef struct switch_codec switch_codec_t;
 typedef struct switch_core_thread_session switch_core_thread_session_t;
 typedef struct switch_codec_implementation switch_codec_implementation_t;
 typedef struct switch_buffer switch_buffer_t;
-typedef struct switch_codec_settings switch_codec_settings_t;
+typedef union  switch_codec_settings switch_codec_settings_t;
 typedef struct switch_codec_fmtp switch_codec_fmtp_t;
 typedef struct switch_odbc_handle switch_odbc_handle_t;
 typedef struct switch_pgsql_handle switch_pgsql_handle_t;
@@ -2139,11 +2199,14 @@ typedef struct switch_console_callback_match switch_console_callback_match_t;
 
 typedef void (*switch_media_bug_exec_cb_t)(switch_media_bug_t *bug, void *user_data);
 
+typedef switch_status_t (switch_core_video_thread_callback_func_t) (switch_core_session_t *session, switch_frame_t *frame, void *user_data);
 typedef void (*switch_cap_callback_t) (const char *var, const char *val, void *user_data);
 typedef switch_status_t (*switch_console_complete_callback_t) (const char *, const char *, switch_console_callback_match_t **matches);
 typedef switch_bool_t (*switch_media_bug_callback_t) (switch_media_bug_t *, void *, switch_abc_type_t);
 typedef switch_bool_t (*switch_tone_detect_callback_t) (switch_core_session_t *, const char *, const char *);
 typedef struct switch_xml_binding switch_xml_binding_t;
+
+typedef void (*switch_video_function_t) (switch_core_session_t *session, void *user_data);
 
 typedef switch_status_t (*switch_core_codec_encode_func_t) (switch_codec_t *codec,
 															switch_codec_t *other_codec,
@@ -2159,6 +2222,35 @@ typedef switch_status_t (*switch_core_codec_decode_func_t) (switch_codec_t *code
 															uint32_t encoded_data_len,
 															uint32_t encoded_rate,
 															void *decoded_data, uint32_t *decoded_data_len, uint32_t *decoded_rate, unsigned int *flag);
+
+typedef switch_status_t (*switch_core_codec_video_encode_func_t) (switch_codec_t *codec, switch_frame_t *frame);
+
+typedef switch_status_t (*switch_core_codec_video_decode_func_t) (switch_codec_t *codec, switch_frame_t *frame);
+
+typedef enum {
+	SCC_VIDEO_REFRESH = 0,
+	SCC_VIDEO_BANDWIDTH,
+	SCC_VIDEO_RESET
+} switch_codec_control_command_t;
+
+typedef enum {
+	SCCT_NONE = 0,
+	SCCT_STRING,
+	SCCT_INT,
+} switch_codec_control_type_t;
+
+typedef enum {
+	SWITCH_IO_READ,
+	SWITCH_IO_WRITE
+} switch_io_type_t;
+
+typedef switch_status_t (*switch_core_codec_control_func_t) (switch_codec_t *codec, 
+																   switch_codec_control_command_t cmd, 
+																   switch_codec_control_type_t ctype,
+																   void *cmd_data,
+																   switch_codec_control_type_t *rtype,
+																   void **ret_data);
+																   
 
 typedef switch_status_t (*switch_core_codec_init_func_t) (switch_codec_t *, switch_codec_flag_t, const switch_codec_settings_t *codec_settings);
 typedef switch_status_t (*switch_core_codec_fmtp_parse_func_t) (const char *fmtp, switch_codec_fmtp_t *codec_fmtp);
@@ -2288,6 +2380,7 @@ typedef switch_xml_t(*switch_xml_search_function_t) (const char *section,
 struct switch_hashtable;
 struct switch_hashtable_iterator;
 typedef struct switch_hashtable switch_hash_t;
+typedef struct switch_hashtable switch_inthash_t;
 typedef struct switch_hashtable_iterator switch_hash_index_t;
 
 struct switch_network_list;
@@ -2394,6 +2487,7 @@ typedef struct payload_map_s {
 
 	char *rm_encoding;
 	char *iananame;
+	char *modname;
 	switch_payload_t pt;
 	unsigned long rm_rate;
 	unsigned long adv_rm_rate;
@@ -2418,6 +2512,13 @@ typedef struct payload_map_s {
 } payload_map_t;
 
 typedef enum {
+	SWITCH_MEDIA_FLOW_SENDRECV = 0,
+	SWITCH_MEDIA_FLOW_SENDONLY,
+	SWITCH_MEDIA_FLOW_RECVONLY,
+	SWITCH_MEDIA_FLOW_INACTIVE
+} switch_media_flow_t;
+
+typedef enum {
 	ICE_GOOGLE_JINGLE = (1 << 0),
 	ICE_VANILLA = (1 << 1),
 	ICE_CONTROLLED = (1 << 2)
@@ -2439,6 +2540,20 @@ typedef struct switch_waitlist_s {
 	uint32_t events;
 	uint32_t revents;
 } switch_waitlist_t;
+
+struct switch_vb_s;
+typedef struct switch_vb_s switch_vb_t;
+
+struct switch_img_txt_handle_s;
+typedef struct switch_img_txt_handle_s switch_img_txt_handle_t;
+
+struct switch_frame_buffer_s;
+typedef struct switch_frame_buffer_s switch_frame_buffer_t;
+
+typedef enum {
+	SVR_BLOCK = (1 << 0),
+	SVR_FLUSH = (1 << 1)
+} switch_video_read_flag_t;
 
 
 SWITCH_END_EXTERN_C

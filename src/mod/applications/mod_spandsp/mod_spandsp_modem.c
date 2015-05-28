@@ -770,6 +770,7 @@ static switch_status_t tech_init(private_t *tech_pvt, switch_core_session_t *ses
 
 	status = switch_core_codec_init(&tech_pvt->read_codec,
 									iananame,
+                                    NULL,
 									NULL,
 									rate, interval, 1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, switch_core_session_get_pool(session));
 
@@ -779,6 +780,7 @@ static switch_status_t tech_init(private_t *tech_pvt, switch_core_session_t *ses
 
 	status = switch_core_codec_init(&tech_pvt->write_codec,
 									iananame,
+                                    NULL,
 									NULL,
 									rate, interval, 1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, switch_core_session_get_pool(session));
 
@@ -1442,7 +1444,7 @@ void modem_global_shutdown(void)
 /* For Emacs:
  * Local Variables:
  * mode:c
- * indent-tabs-mode:nil
+ * indent-tabs-mode:t
  * tab-width:4
  * c-basic-offset:4
  * End:

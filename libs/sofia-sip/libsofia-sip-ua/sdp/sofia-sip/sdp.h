@@ -143,6 +143,7 @@ typedef enum
   sdp_bw_x,				/**< Unknown bandwidth type */
   sdp_bw_ct,				/**< Conference total */
   sdp_bw_as,				/**< Application-specific */
+  sdp_bw_tias,				/**< Application-specific */
 } sdp_bandwidth_e;
 
 /** Session or media bandwidth. */
@@ -245,7 +246,8 @@ typedef enum
   sdp_proto_udptl = 258,		/**< UDPTL. @NEW_1_12_4. */
   sdp_proto_msrp =  259,		/**< TCP/MSRP @NEW_MSRP*/
   sdp_proto_msrps = 260,		/**< TCP/TLS/MSRP @NEW_MSRP*/
-  sdp_proto_extended_srtp = 261, /** WEBRTC */
+  sdp_proto_extended_srtp = 261, /** WEBRTC SAVPF */
+  sdp_proto_extended_rtp = 262, /** WEBRTC AVPF */
   sdp_proto_tls = 511,			/**< TLS over TCP */
   sdp_proto_any = 512		        /**< * wildcard */
 } sdp_proto_e;

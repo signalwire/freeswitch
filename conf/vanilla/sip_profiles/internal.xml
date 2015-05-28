@@ -305,13 +305,12 @@
     <param name="force-register-db-domain" value="$${domain}"/>
 
 
-    <!-- uncomment for sip over websocket support -->
-    <!--<param name="ws-binding"  value=":5066"/>-->
+    <!-- for sip over websocket support -->
+    <param name="ws-binding"  value=":5066"/>
 
-    <!-- uncomment for sip over secure websocket support -->
-    <!-- You need wss.pem in $${certs_dir} for wss -->
-    <!--<param name="wss-binding" value=":7443"/>-->
-    
+    <!-- for sip over secure websocket support -->
+    <!-- You need wss.pem in $${certs_dir} for wss or one will be created for you -->
+    <param name="wss-binding" value=":7443"/>    
 
     <!--<param name="delete-subs-on-register" value="false"/>-->
 

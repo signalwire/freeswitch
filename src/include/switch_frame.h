@@ -66,7 +66,7 @@ SWITCH_BEGIN_EXTERN_C
 	/*! the payload of the frame */
 	switch_payload_t payload;
 	/*! the timestamp of the frame */
-	switch_size_t timestamp;
+	uint32_t timestamp;
 	uint16_t seq;
 	uint32_t ssrc;
 	switch_bool_t m;
@@ -74,6 +74,7 @@ SWITCH_BEGIN_EXTERN_C
 	switch_frame_flag_t flags;
 	void *user_data;
 	payload_map_t *pmap;
+	switch_image_t *img;
 };
 
 SWITCH_END_EXTERN_C

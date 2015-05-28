@@ -361,6 +361,20 @@ SWITCH_DECLARE(void) switch_channel_perform_audio_sync(switch_channel_t *channel
 }
 
 
+SWITCH_DECLARE(void) switch_channel_perform_video_sync(switch_channel_t *channel, const char *file, const char *func, int line)
+{
+	if (switch_channel_media_up(channel)) {
+		switch_core_session_message_t msg = { 0 };
+		msg.message_id = SWITCH_MESSAGE_INDICATE_VIDEO_SYNC;
+		msg.from = channel->name;
+		msg._file = file;
+		msg._func = func;
+		msg._line = line;
+		switch_core_session_receive_message(channel->session, &msg);
+	}
+}
+
+
 
 SWITCH_DECLARE(switch_call_cause_t) switch_channel_cause_q850(switch_call_cause_t cause)
 {
@@ -1771,7 +1785,8 @@ SWITCH_DECLARE(char *) switch_channel_get_cap_string(switch_channel_t *channel)
 SWITCH_DECLARE(void) switch_channel_set_flag_value(switch_channel_t *channel, switch_channel_flag_t flag, uint32_t value)
 {
 	int HELD = 0;
-	
+	int just_set = 0;
+
 	switch_assert(channel);
 	switch_assert(channel->flag_mutex);
 
@@ -1779,8 +1794,15 @@ SWITCH_DECLARE(void) switch_channel_set_flag_value(switch_channel_t *channel, sw
 	if (flag == CF_LEG_HOLDING && !channel->flags[flag] && channel->flags[CF_ANSWERED]) {
 		HELD = 1;
 	}
-	channel->flags[flag] = value;
+	if (channel->flags[flag] != value) {
+		just_set = 1;
+		channel->flags[flag] = value;
+	}
 	switch_mutex_unlock(channel->flag_mutex);
+
+	if (flag == CF_VIDEO_READY && just_set) {
+		switch_core_session_request_video_refresh(channel->session);
+	}
 
 	if (flag == CF_ORIGINATOR && switch_channel_test_flag(channel, CF_ANSWERED) && switch_channel_up_nosig(channel)) {
 		switch_channel_set_callstate(channel, CCS_RING_WAIT);
@@ -1830,6 +1852,16 @@ SWITCH_DECLARE(void) switch_channel_set_flag_value(switch_channel_t *channel, sw
 		switch_channel_set_variable(channel, "recovered", "true");
 	}
 
+	if (flag == CF_VIDEO_ECHO || flag == CF_VIDEO_BLANK || flag == CF_VIDEO_DECODED_READ || flag == CF_VIDEO_PASSIVE) {
+		switch_core_session_start_video_thread(channel->session);
+	}
+	
+	if (flag == CF_VIDEO_DECODED_READ) {
+		switch_core_session_request_video_refresh(channel->session);
+		if (!switch_core_session_in_video_thread(channel->session)) {
+			switch_channel_wait_for_flag(channel, CF_VIDEO_READY, SWITCH_TRUE, 10000, NULL);
+		}
+	}
 }
 
 SWITCH_DECLARE(void) switch_channel_set_flag_recursive(switch_channel_t *channel, switch_channel_flag_t flag)
@@ -1961,8 +1993,11 @@ SWITCH_DECLARE(void) switch_channel_clear_flag(switch_channel_t *channel, switch
 		ACTIVE = 1;
 	}
 
-	if (flag == CF_VIDEO_PASSIVE && channel->flags[flag]) {
-		CLEAR = 1;
+	if (flag == CF_VIDEO_PASSIVE) {
+		channel->flags[CF_VIDEO_READY] = 1;
+		if (channel->flags[flag]) {
+			CLEAR = 1;
+		}
 	}
 
 	channel->flags[flag] = 0;
@@ -3373,6 +3408,10 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_pre_answered(switch_
 		
 		switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "EARLY MEDIA");
 
+		if (switch_true(switch_channel_get_variable(channel, "video_mirror_input"))) {
+			switch_channel_set_flag(channel, CF_VIDEO_MIRROR_INPUT);
+		}
+		
 		if (channel->caller_profile && channel->caller_profile->times) {
 			switch_mutex_lock(channel->profile_mutex);
 			channel->caller_profile->times->progress_media = switch_micro_time_now();
@@ -3643,6 +3682,11 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_answered(switch_chan
 	switch_channel_check_zrtp(channel);
 	switch_channel_set_flag(channel, CF_ANSWERED);
 
+	if (switch_true(switch_channel_get_variable(channel, "video_mirror_input"))) {
+		switch_channel_set_flag(channel, CF_VIDEO_MIRROR_INPUT);
+		//switch_channel_set_flag(channel, CF_VIDEO_DECODED_READ);
+	}
+	
 
 	if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_ANSWER) == SWITCH_STATUS_SUCCESS) {
 		switch_channel_event_set_data(channel, event);
@@ -3754,6 +3798,10 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_answer(switch_channel_t *
 	if (switch_core_session_in_thread(channel->session)) {
 		const char *delay;
 
+		if (switch_channel_test_flag(channel, CF_VIDEO)) {
+			switch_channel_wait_for_flag(channel, CF_VIDEO_READY, SWITCH_TRUE, 10000, NULL);
+		}
+		
 		if ((delay = switch_channel_get_variable(channel, "answer_delay"))) {
 			uint32_t msec = atoi(delay);
 			

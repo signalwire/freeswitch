@@ -1287,12 +1287,12 @@ PBoolean FSMediaStream::Open()
     }
 
     // The following is performed on two different instances of this object.
-    if (switch_core_codec_init(m_switchCodec, mediaFormat.GetEncodingName(), NULL, // FMTP
+    if (switch_core_codec_init(m_switchCodec, mediaFormat.GetEncodingName(), NULL, NULL, // FMTP
                                mediaFormat.GetClockRate(), ptime, 1,  // Channels
                                SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL,   // Settings
                                switch_core_session_get_pool(fsSession)) != SWITCH_STATUS_SUCCESS) {
         // Could not select a codecs using negotiated frames/packet, so try using default.
-        if (switch_core_codec_init(m_switchCodec, mediaFormat.GetEncodingName(), NULL, // FMTP
+        if (switch_core_codec_init(m_switchCodec, mediaFormat.GetEncodingName(), NULL, NULL, // FMTP
                                    mediaFormat.GetClockRate(), 0, 1,  // Channels
                                    SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL,   // Settings
                                    switch_core_session_get_pool(fsSession)) != SWITCH_STATUS_SUCCESS) {
@@ -1508,7 +1508,7 @@ switch_status_t FSMediaStream::write_frame(const switch_frame_t *frame, switch_i
 /* For Emacs:
  * Local Variables:
  * mode:c
- * indent-tabs-mode:nil
+ * indent-tabs-mode:t
  * tab-width:4
  * c-basic-offset:4
  * End:

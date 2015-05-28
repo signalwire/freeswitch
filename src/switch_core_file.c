@@ -80,22 +80,112 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 		switch_set_flag(fh, SWITCH_FILE_FLAG_FREE_POOL);
 	}
 
+	fh->mm.samplerate = 44100;
+	fh->mm.channels = 1;
+	fh->mm.keyint = 60;
+	fh->mm.ab = 128;
+
 	if (*file_path == '{') {
 		char *timeout;
-		char *new_fp;
+		char *modname;
+		const char *val;
+		int tmp;
+		
 		fp = switch_core_strdup(fh->memory_pool, file_path);
 
-		if (switch_event_create_brackets(fp, '{', '}', ',', &fh->params, &new_fp, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
-			if ((timeout = switch_event_get_header(fh->params, "timeout"))) {
-				if ((to = atoi(timeout)) < 1) {
-					to = 0;
-				}
+		while (*fp == '{') {
+			char *parsed = NULL;
+			
+			if (switch_event_create_brackets(fp, '{', '}', ',', &fh->params, &parsed, SWITCH_FALSE) != SWITCH_STATUS_SUCCESS || !parsed) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Parse Error!\n");
+				goto fail;
 			}
-		} else {
-			new_fp = fp;
+			
+			fp = parsed;
 		}
 
-		file_path = new_fp;
+		file_path = fp;
+		
+		if ((timeout = switch_event_get_header(fh->params, "timeout"))) {
+			if ((to = atoi(timeout)) < 1) {
+				to = 0;
+			}
+		}
+
+		if ((modname = switch_event_get_header(fh->params, "modname"))) {
+			fh->modname = switch_core_strdup(fh->memory_pool, modname);
+		}
+
+		if ((val = switch_event_get_header(fh->params, "samplerate"))) {
+			tmp = atoi(val);
+			if (tmp > 8000) {
+				fh->mm.samplerate = tmp;
+			}
+		}
+
+		if ((val = switch_event_get_header(fh->params, "channels"))) {
+			tmp = atoi(val);
+			if (tmp == 1 || tmp == 2) {
+				fh->mm.channels = tmp;
+			}
+		}
+
+		if ((val = switch_event_get_header(fh->params, "ab"))) {
+			tmp = atoi(val);
+			if (tmp > 16) {
+				fh->mm.ab = tmp;
+			}
+		}
+
+
+		if ((val = switch_event_get_header(fh->params, "vb"))) {
+			tmp = atoi(val);
+			
+			if (strrchr(val, 'k')) {
+				tmp *= 1024;
+			} else if (strrchr(val, 'm')) {
+				tmp *= 1048576;
+			}
+
+			fh->mm.vb = tmp;
+		}
+
+		if ((val = switch_event_get_header(fh->params, "vw"))) {
+			tmp = atoi(val);
+			if (tmp > 0) {
+				fh->mm.vw = tmp;
+			}
+		}
+
+		if ((val = switch_event_get_header(fh->params, "vh"))) {
+			tmp = atoi(val);
+			if (tmp > 0) {
+				fh->mm.vh = tmp;
+			}
+		}
+
+		if ((val = switch_event_get_header(fh->params, "fps"))) {
+			float ftmp = atof(val);
+			if (ftmp > 0.0f) {
+				fh->mm.fps = ftmp;
+			}
+		}
+
+		if ((val = switch_event_get_header(fh->params, "vbuf"))) {
+			tmp = atoi(val);
+
+			if (strrchr(val, 'k')) {
+				tmp *= 1024;
+			} else if (strrchr(val, 'm')) {
+				tmp *= 1048576;
+			}
+			
+			if (tmp > 0 && tmp < 104857600 /*100mb*/) {
+				fh->mm.vbuf = tmp;
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid buffer size: %d\n", tmp);
+			}
+		}
 	}
 
 	if (switch_directory_exists(file_path, fh->memory_pool) == SWITCH_STATUS_SUCCESS) {
@@ -108,31 +198,19 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 		switch_copy_string(stream_name, file_path, (rhs + 1) - file_path);
 		ext = stream_name;
 		file_path = rhs + 3;
+		fh->stream_name = switch_core_strdup(fh->memory_pool, stream_name);
 		fh->file_path = switch_core_strdup(fh->memory_pool, file_path);
 		is_stream = 1;
 	} else {
 		if ((flags & SWITCH_FILE_FLAG_WRITE)) {
 
-			char *p, *e;
-
-			fh->file_path = switch_core_strdup(fh->memory_pool, file_path);
-			p = fh->file_path;
-
-			if (*p == '[' && *(p + 1) == *SWITCH_PATH_SEPARATOR) {
-				e = switch_find_end_paren(p, '[', ']');
-
-				if (e) {
-					*e = '\0';
-					spool_path = p + 1;
-					fh->file_path = e + 1;
-				}
+			if (fh->params) {
+				spool_path = switch_event_get_header(fh->params, "spool_path");
 			}
 
 			if (!spool_path) {
 				spool_path = switch_core_get_variable_pdup(SWITCH_AUDIO_SPOOL_PATH_VARIABLE, fh->memory_pool);
 			}
-
-			file_path = fh->file_path;
 		}
 
 		if ((ext = strrchr(file_path, '.')) == 0) {
@@ -145,7 +223,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 
 
 
-	if ((fh->file_interface = switch_loadable_module_get_file_interface(ext)) == 0) {
+	if ((fh->file_interface = switch_loadable_module_get_file_interface(ext, fh->modname)) == 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid file format [%s] for [%s]!\n", ext, file_path);
 		switch_goto_status(SWITCH_STATUS_GENERR, fail);
 	}
@@ -154,6 +232,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 	fh->func = func;
 	fh->line = line;
 
+	if (switch_test_flag(fh, SWITCH_FILE_FLAG_VIDEO) && !fh->file_interface->file_read_video) {
+		switch_clear_flag(fh, SWITCH_FILE_FLAG_VIDEO);
+	}
 
 	if (spool_path) {
 		char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
@@ -217,6 +298,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 		if ((flags & SWITCH_FILE_FLAG_READ)) {
 			fh->samplerate = rate;
 		}
+	}
+
+	if (switch_test_flag(fh, SWITCH_FILE_FLAG_VIDEO)) {
+		fh->pre_buffer_datalen = 0;
 	}
 
 	if (fh->pre_buffer_datalen) {
@@ -382,6 +467,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_read(switch_file_handle_t *fh, 
 	return status;
 }
 
+SWITCH_DECLARE(switch_bool_t) switch_core_file_has_video(switch_file_handle_t *fh)
+{
+	return (switch_test_flag(fh, SWITCH_FILE_OPEN) && switch_test_flag(fh, SWITCH_FILE_FLAG_VIDEO)) ? SWITCH_TRUE : SWITCH_FALSE;
+}
 
 SWITCH_DECLARE(switch_status_t) switch_core_file_write(switch_file_handle_t *fh, void *data, switch_size_t *len)
 {
@@ -464,7 +553,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_write(switch_file_handle_t *fh,
 	}
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_file_write_video(switch_file_handle_t *fh, void *data, switch_size_t *len)
+SWITCH_DECLARE(switch_status_t) switch_core_file_write_video(switch_file_handle_t *fh, switch_frame_t *frame)
 {
 	switch_assert(fh != NULL);
 	switch_assert(fh->file_interface != NULL);
@@ -477,8 +566,32 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_write_video(switch_file_handle_
 		return SWITCH_STATUS_FALSE;
 	}
 
-	return fh->file_interface->file_write_video(fh, data, len);
+	return fh->file_interface->file_write_video(fh, frame);
 
+}
+
+SWITCH_DECLARE(switch_status_t) switch_core_file_read_video(switch_file_handle_t *fh, switch_frame_t *frame, switch_video_read_flag_t flags)
+{
+	switch_status_t status;
+
+	switch_assert(fh != NULL);
+	switch_assert(fh->file_interface != NULL);
+
+	if (!switch_test_flag(fh, SWITCH_FILE_OPEN)) {
+		return SWITCH_STATUS_GENERR;
+	}
+
+	if (!fh->file_interface->file_read_video) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	status = fh->file_interface->file_read_video(fh, frame, flags);
+
+	if (status == SWITCH_STATUS_FALSE) {
+		switch_cond_next();
+	}
+
+	return status;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_file_seek(switch_file_handle_t *fh, unsigned int *cur_pos, int64_t samples, int whence)

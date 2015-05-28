@@ -593,7 +593,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_parse_fmtp(const char *codec_n
 
 	memset(codec_fmtp, 0, sizeof(*codec_fmtp));
 	
-	if ((codec_interface = switch_loadable_module_get_codec_interface(codec_name))) {
+	if ((codec_interface = switch_loadable_module_get_codec_interface(codec_name, NULL))) {
 		if (codec_interface->parse_fmtp) {
 			codec_fmtp->actual_samples_per_second = rate;
 			status = codec_interface->parse_fmtp(fmtp, codec_fmtp);
@@ -624,6 +624,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_copy(switch_codec_t *codec, sw
 	
 	return switch_core_codec_init(new_codec, 
 								  codec->implementation->iananame,
+								  codec->implementation->modname,
 								  codec->fmtp_in,
 								  codec->implementation->samples_per_second,
 								  codec->implementation->microseconds_per_packet / 1000,
@@ -634,7 +635,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_copy(switch_codec_t *codec, sw
 	
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_codec_init_with_bitrate(switch_codec_t *codec, const char *codec_name, const char *fmtp,
+SWITCH_DECLARE(switch_status_t) switch_core_codec_init_with_bitrate(switch_codec_t *codec, const char *codec_name, const char *modname, const char *fmtp,
 													   uint32_t rate, int ms, int channels, uint32_t bitrate, uint32_t flags,
 													   const switch_codec_settings_t *codec_settings, switch_memory_pool_t *pool)
 {
@@ -646,7 +647,21 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_init_with_bitrate(switch_codec
 
 	memset(codec, 0, sizeof(*codec));
 
-	if ((codec_interface = switch_loadable_module_get_codec_interface(codec_name)) == 0) {
+	if (pool) {
+		codec->session = switch_core_memory_pool_get_data(pool, "__session");
+	}
+
+	if (strchr(codec_name, '.')) {
+		char *p = NULL;
+		codec_name = switch_core_strdup(pool, codec_name);
+		if ((p = strchr(codec_name, '.'))) {
+			*p++ = '\0';
+			modname = codec_name;
+			codec_name = p;
+		}
+	}
+
+	if ((codec_interface = switch_loadable_module_get_codec_interface(codec_name, modname)) == 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid codec %s!\n", codec_name);
 		return SWITCH_STATUS_GENERR;
 	}
@@ -780,6 +795,103 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_decode(switch_codec_t *codec,
 	status = codec->implementation->decode(codec, other_codec, encoded_data, encoded_data_len, encoded_rate,
 										   decoded_data, decoded_data_len, decoded_rate, flag);
 	if (codec->mutex) switch_mutex_unlock(codec->mutex);
+
+	return status;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_core_codec_encode_video(switch_codec_t *codec, switch_frame_t *frame)
+{
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	switch_assert(codec != NULL);
+
+	if (!codec->implementation || !switch_core_codec_ready(codec)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec is not initialized!\n");
+		return SWITCH_STATUS_NOT_INITALIZED;
+	}
+
+	if (!switch_test_flag(codec, SWITCH_CODEC_FLAG_ENCODE)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec encoder is not initialized!\n");
+		return SWITCH_STATUS_NOT_INITALIZED;
+	}
+
+	if (codec->mutex) switch_mutex_lock(codec->mutex);
+
+	if (codec->implementation->encode_video) {
+		status = codec->implementation->encode_video(codec, frame);
+		
+		if (status == SWITCH_STATUS_MORE_DATA) {
+			frame->flags |= SFF_SAME_IMAGE;
+		} else {
+			frame->flags &= ~SFF_SAME_IMAGE;
+		}
+
+		frame->packetlen = frame->datalen + 12;
+	}
+
+	if (codec->mutex) switch_mutex_unlock(codec->mutex);
+
+	return status;
+
+}
+
+SWITCH_DECLARE(switch_status_t) switch_core_codec_decode_video(switch_codec_t *codec, switch_frame_t *frame)
+{
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	switch_assert(codec != NULL);
+	switch_assert(frame != NULL);
+
+	if (!codec->implementation || !switch_core_codec_ready(codec)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Decode Codec is not initialized!\n");
+		return SWITCH_STATUS_NOT_INITALIZED;
+	}
+
+	if (!switch_test_flag(codec, SWITCH_CODEC_FLAG_DECODE)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec decoder is not initialized!\n");
+		return SWITCH_STATUS_NOT_INITALIZED;
+	}
+
+	if (codec->mutex) switch_mutex_lock(codec->mutex);
+
+	if (codec->implementation->decode_video) {
+		status = codec->implementation->decode_video(codec, frame);
+	}
+	if (codec->mutex) switch_mutex_unlock(codec->mutex);
+
+	return status;
+}
+
+
+SWITCH_DECLARE(switch_status_t) switch_core_codec_control(switch_codec_t *codec, 
+														  switch_codec_control_command_t cmd, 
+														  switch_codec_control_type_t ctype,
+														  void *cmd_data,
+														  switch_codec_control_type_t *rtype,
+														  void **ret_data) 
+{
+
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
+
+	switch_assert(codec != NULL);
+
+	
+	if (!codec->implementation || !switch_core_codec_ready(codec)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec is not initialized!\n");
+		abort();
+		return SWITCH_STATUS_NOT_INITALIZED;
+	}
+
+
+	if (codec->mutex) switch_mutex_lock(codec->mutex);
+
+	if (codec->implementation->codec_control) {
+		status = codec->implementation->codec_control(codec, cmd, ctype, cmd_data, rtype, ret_data);
+	}
+
+	if (codec->mutex) switch_mutex_unlock(codec->mutex);
+
 
 	return status;
 }

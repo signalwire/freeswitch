@@ -378,7 +378,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 	int file_flags = SWITCH_FILE_FLAG_WRITE | SWITCH_FILE_DATA_SHORT;
 	int restart_limit_on_dtmf = 0;
 	const char *prefix, *var;
-
+	
 
 	if (switch_channel_pre_answer(channel) != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_FALSE;
@@ -453,6 +453,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 		if (switch_core_codec_init(&write_codec,
 								   "L16",
 								   NULL,
+								   NULL,
 								   read_impl.actual_samples_per_second,
 								   read_impl.microseconds_per_packet / 1000,
 								   read_impl.number_of_channels,
@@ -477,17 +478,22 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 			char *tfile = NULL;
 			char *e;
 
-			if (*file == '[') {
+			if (*file == '{') {
 				tfile = switch_core_session_strdup(session, file);
-				if ((e = switch_find_end_paren(tfile, '[', ']'))) {
-					*e = '\0';
-					file = e + 1;
-				} else {
-					tfile = NULL;
+				
+				while (*file == '{') {
+					if ((e = switch_find_end_paren(tfile, '{', '}'))) {
+						*e = '\0';
+						file = e + 1;
+						while(*file == ' ') file++;
+					} else {
+						tfile = NULL;
+						break;
+					}
 				}
 			}
-
-			file = switch_core_session_sprintf(session, "%s%s%s%s%s", switch_str_nil(tfile), tfile ? "]" : "", prefix, SWITCH_PATH_SEPARATOR, file);
+			
+			file = switch_core_session_sprintf(session, "%s%s%s%s%s", switch_str_nil(tfile), tfile ? "}" : "", prefix, SWITCH_PATH_SEPARATOR, file);
 		}
 		if ((ext = strrchr(file, '.'))) {
 			ext++;
@@ -523,11 +529,27 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 		fh->prefix = prefix;
 	}
 
+	if (switch_channel_test_flag(channel, CF_VIDEO)) {
+		switch_vid_params_t vid_params = { 0 };
+
+		file_flags |= SWITCH_FILE_FLAG_VIDEO;
+		switch_channel_set_flag_recursive(channel, CF_VIDEO_DECODED_READ);
+		fh->mm.fps = switch_core_media_get_video_fps(session);
+		switch_core_media_get_vid_params(session, &vid_params);
+		fh->mm.vw = vid_params.width;
+		fh->mm.vh = vid_params.height;
+	}
+
 	if (switch_core_file_open(fh, file, fh->channels, read_impl.actual_samples_per_second, file_flags, NULL) != SWITCH_STATUS_SUCCESS) {
 		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 		switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
 		arg_recursion_check_stop(args);
 		return SWITCH_STATUS_GENERR;
+	}
+	
+	if (switch_core_file_has_video(fh)) {
+		switch_channel_set_flag(channel, CF_VIDEO_ECHO);
+		switch_core_media_set_video_file(session, fh, SWITCH_RW_READ);
 	}
 
 	if (sample_start > 0) {
@@ -585,6 +607,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 		if (switch_core_codec_init(&codec,
 								   codec_name,
 								   NULL,
+								   NULL,
 								   read_impl.actual_samples_per_second,
 								   read_impl.microseconds_per_packet / 1000,
 								   read_impl.number_of_channels,
@@ -596,7 +619,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR,
 							  "Raw Codec Activation Failed %s@%uhz %u channels %dms\n", codec_name, fh->samplerate,
 							  fh->channels, read_impl.microseconds_per_packet / 1000);
+			if (switch_core_file_has_video(fh)) {
+				switch_channel_clear_flag(channel, CF_VIDEO_ECHO);
+				switch_channel_clear_flag_recursive(channel, CF_VIDEO_DECODED_READ);
+				switch_core_media_set_video_file(session, NULL, SWITCH_RW_READ);
+			}
 			switch_core_file_close(fh);
+
 			switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
 			arg_recursion_check_stop(args);
 			return SWITCH_STATUS_GENERR;
@@ -761,13 +790,17 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 				break;
 			}
 		}
-
 	}
 
 	if (fill_cng || waste_resources) {
 		switch_core_codec_destroy(&write_codec);
 	}
 
+	if (switch_core_file_has_video(fh)) {
+		switch_channel_clear_flag(channel, CF_VIDEO_ECHO);
+		switch_channel_clear_flag_recursive(channel, CF_VIDEO_DECODED_READ);
+		switch_core_media_set_video_file(session, NULL, SWITCH_RW_READ);
+	}
 	switch_core_file_close(fh);
 
 
@@ -847,6 +880,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_gentones(switch_core_session_t *sessi
 
 	if (switch_core_codec_init(&write_codec,
 							   "L16",
+							   NULL,
 							   NULL,
 							   read_impl.actual_samples_per_second,
 							   read_impl.microseconds_per_packet / 1000,
@@ -1043,6 +1077,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 	switch_event_t *event;
 	uint32_t test_native = 0, last_native = 0;
 	uint32_t buflen = 0;
+	int flags;
 
 	if (switch_channel_pre_answer(channel) != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_FALSE;
@@ -1189,33 +1224,25 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 
 		if (!strstr(file, SWITCH_URL_SEPARATOR)) {
 			if (!switch_is_file_path(file)) {
-				char *tfile = NULL, *tfile2 = NULL;
+				char *tfile = NULL;
 				char *e;
-				int x;
 
-				for (x = 0; x < 2; x++) {
-					if (*file == '[') {
-						tfile = switch_core_session_strdup(session, file);
-						if ((e = switch_find_end_paren(tfile, '[', ']'))) {
+				if (*file == '{') {
+					tfile = switch_core_session_strdup(session, file);
+
+					while (*file == '{') {
+						if ((e = switch_find_end_paren(tfile, '{', '}'))) {
 							*e = '\0';
 							file = e + 1;
+							while(*file == ' ') file++;
 						} else {
 							tfile = NULL;
+							break;
 						}
-					} else if (*file == '{') {
-						tfile2 = switch_core_session_strdup(session, file);
-						if ((e = switch_find_end_paren(tfile2, '{', '}'))) {
-							*e = '\0';
-							file = e + 1;
-						} else {
-							tfile2 = NULL;
-						}
-					} else {
-						break;
 					}
 				}
 
-				file = switch_core_session_sprintf(session, "%s%s%s%s%s%s%s", switch_str_nil(tfile), tfile ? "]" : "", switch_str_nil(tfile2), tfile2 ? "}" : "", prefix, SWITCH_PATH_SEPARATOR, file);
+				file = switch_core_session_sprintf(session, "%s%s%s%s%s", switch_str_nil(tfile), tfile ? "}" : "", prefix, SWITCH_PATH_SEPARATOR, file);
 			}
 			if ((ext = strrchr(file, '.'))) {
 				ext++;
@@ -1237,10 +1264,17 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 			fh->prefix = prefix;
 		}
 
+		flags = SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT;
+
+		if (switch_channel_test_flag(channel, CF_VIDEO)) {
+			flags |= SWITCH_FILE_FLAG_VIDEO;
+			//switch_channel_set_flag_recursive(channel, CF_VIDEO_DECODED_READ);
+		}
+
 		if (switch_core_file_open(fh,
 								  file,
 								  read_impl.number_of_channels,
-								  read_impl.actual_samples_per_second, SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, NULL) != SWITCH_STATUS_SUCCESS) {
+								  read_impl.actual_samples_per_second, flags, NULL) != SWITCH_STATUS_SUCCESS) {
 			switch_core_session_reset(session, SWITCH_TRUE, SWITCH_FALSE);
 			status = SWITCH_STATUS_NOTFOUND;
 			continue;
@@ -1251,6 +1285,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 		switch_channel_set_private(channel, "__fh", fh);
 		switch_core_session_io_rwunlock(session);
 
+		if (switch_core_file_has_video(fh)) {
+			switch_core_media_set_video_file(session, fh, SWITCH_RW_WRITE);
+		}
 
 		if (!abuf) {
 			buflen = write_frame.buflen = FILE_STARTSAMPLES * sizeof(*abuf) * fh->channels;
@@ -1308,6 +1345,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 			if (switch_core_codec_init(&codec,
 									   codec_name,
 									   NULL,
+									   NULL,
 									   fh->samplerate,
 									   interval, read_impl.number_of_channels, 
 									   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, pool) == SWITCH_STATUS_SUCCESS) {
@@ -1323,6 +1361,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 				switch_core_session_io_write_lock(session);
 				switch_channel_set_private(channel, "__fh", NULL);
 				switch_core_session_io_rwunlock(session);
+
+				if (switch_core_file_has_video(fh)) {
+					//switch_channel_clear_flag_recursive(channel, CF_VIDEO_DECODED_READ);
+					switch_core_media_set_video_file(session, NULL, SWITCH_RW_WRITE);
+				}
 
 				switch_core_file_close(fh);
 
@@ -1345,6 +1388,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 				switch_channel_set_private(channel, "__fh", NULL);
 				switch_core_session_io_rwunlock(session);
 
+				if (switch_core_file_has_video(fh)) {
+					//switch_channel_clear_flag_recursive(channel, CF_VIDEO_DECODED_READ);
+					switch_core_media_set_video_file(session, NULL, SWITCH_RW_WRITE);
+				}
 				switch_core_file_close(fh);
 
 				switch_core_session_reset(session, SWITCH_TRUE, SWITCH_FALSE);
@@ -1370,6 +1417,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 				switch_core_session_io_write_lock(session);
 				switch_channel_set_private(channel, "__fh", NULL);
 				switch_core_session_io_rwunlock(session);
+				if (switch_core_file_has_video(fh)) {
+					//switch_channel_clear_flag_recursive(channel, CF_VIDEO_DECODED_READ);
+					switch_core_media_set_video_file(session, NULL, SWITCH_RW_WRITE);
+				}
 				switch_core_file_close(fh);
 				switch_core_session_reset(session, SWITCH_TRUE, SWITCH_FALSE);
 				status = SWITCH_STATUS_GENERR;
@@ -1528,7 +1579,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 					olen /= 2;
 				}
 				switch_set_flag(fh, SWITCH_FILE_BREAK_ON_CHANGE);
-				
+
 				if ((rstatus = switch_core_file_read(fh, abuf, &olen)) == SWITCH_STATUS_BREAK) {
 					continue;
 				}
@@ -1777,6 +1828,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 		switch_channel_set_private(channel, "__fh", NULL);
 		switch_core_session_io_rwunlock(session);
 
+		if (switch_core_file_has_video(fh)) {
+			//switch_channel_clear_flag_recursive(channel, CF_VIDEO_DECODED_READ);
+			switch_core_media_set_video_file(session, NULL, SWITCH_RW_WRITE);
+		}
 		switch_core_file_close(fh);
 
 		if (fh->audio_buffer) {
@@ -1850,6 +1905,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_silence(switch_core_session_
 
 	if (switch_core_codec_init(&raw_codec,
 							   "L16",
+							   NULL,
 							   NULL,
 							   read_impl.actual_samples_per_second,
 							   read_impl.microseconds_per_packet / 1000,
@@ -2560,6 +2616,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *ses
 	if (need_create) {
 		if (switch_core_codec_init(codec,
 								   codec_name,
+								   NULL,
 								   NULL, (int) rate, interval, channels, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL,
 								   pool) == SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Raw Codec Activated\n");

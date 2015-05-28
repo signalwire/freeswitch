@@ -84,7 +84,7 @@ you own VCPROJ file for CURL, if you want to use MSVC. It does
 provide a Makefile.vc6 as mentioned above.
 
 To build all the CURL library variations, use
-> nmake /nologo vc-all 
+> nmake /nologo vc-all
 but note this will use the /MD[d] DLL runtime. Only by adding
 RTCFGLIB=static to each of the makefile commands will /MT[d] be
 used.

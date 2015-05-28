@@ -143,6 +143,7 @@
 #include "switch_json.h"
 #include "switch_limit.h"
 #include "switch_core_media.h"
+#include "switch_core_video.h"
 #include <libteletone.h>
 
 
@@ -200,17 +201,12 @@
  * 
  *  mod_bv
  *      - BroadVoice16 (8kHz) and BroadVoice32 (16kHz) (https://www.broadcom.com/support/broadvoice)
- *  mod_celt
- *      - Ultra-low delay audio codec (48kHz) (http://celt-codec.org)
  *
  *  mod_codec2
  *      - Codec2 is an open source low bit rate speech at 2400 bit/s and below. (http://www.rowetel.com/blog/?page_id=452)
  *
  *	mod_speex
  *		- libspeex (http://www.speex.org/)
- *
- *	mod_celt
- *		- libcelt (http://www.celt-codec.org/)
  *
  *	mod_siren
  *		- libg722_1 (http://www.polycom.com/company/about_us/technology/siren22/index.html)

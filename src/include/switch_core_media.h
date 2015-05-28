@@ -146,14 +146,19 @@ typedef struct switch_core_media_params_s {
 	switch_core_media_dtmf_t dtmf_type;
 	switch_payload_t cng_pt;
 
+
 	/* a core_video_thread will be started automatically
 	   when uses rtp based media,
 	   external_video_source should be set to SWITCH_TRUE and
-	   switch_core_media_start_video_thread()
+	   switch_core_session_start_video_thread()
 	   should be explicitly called to start the video thread
 	   if uses the media handle for non-rtp based media
 	*/
+
 	switch_bool_t external_video_source;
+
+	uint32_t video_key_freq;
+	uint32_t video_key_first;
 
 } switch_core_media_params_t;
 
@@ -187,6 +192,7 @@ SWITCH_DECLARE(int) switch_core_session_check_incoming_crypto(switch_core_sessio
 															  switch_media_type_t type, const char *crypto, int crypto_tag, switch_sdp_type_t sdp_type);
 
 
+SWITCH_DECLARE(uint32_t) switch_core_media_get_video_fps(switch_core_session_t *session);
 SWITCH_DECLARE(void) switch_core_media_set_rtp_session(switch_core_session_t *session, switch_media_type_t type, switch_rtp_t *rtp_session);
 
 SWITCH_DECLARE(const char *)switch_core_media_get_codec_string(switch_core_session_t *session);
@@ -261,7 +267,6 @@ SWITCH_DECLARE(void) switch_core_media_deinit(void);
 SWITCH_DECLARE(void) switch_core_media_set_stats(switch_core_session_t *session);
 SWITCH_DECLARE(void) switch_core_session_wake_video_thread(switch_core_session_t *session);
 SWITCH_DECLARE(void) switch_core_session_clear_crypto(switch_core_session_t *session);
-SWITCH_DECLARE(switch_status_t) switch_core_media_start_video_thread(switch_core_session_t *session);
 
 SWITCH_DECLARE(switch_status_t) switch_core_session_get_payload_code(switch_core_session_t *session,
 																	 switch_media_type_t type,
@@ -274,6 +279,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_get_payload_code(switch_core
 SWITCH_DECLARE(payload_map_t *) switch_core_media_add_payload_map(switch_core_session_t *session, 
 																  switch_media_type_t type,
 																  const char *name, 
+																  const char *modname, 
 																  const char *fmtp,
 																  switch_sdp_type_t sdp_type,
 																  uint32_t pt, 
@@ -288,6 +294,42 @@ SWITCH_DECLARE(const char *) switch_core_media_crypto_type2str(switch_rtp_crypto
 SWITCH_DECLARE(int) switch_core_media_crypto_keylen(switch_rtp_crypto_key_type_t type);
 SWITCH_DECLARE(char *) switch_core_media_filter_sdp(const char *sdp, const char *cmd, const char *arg);
 SWITCH_DECLARE(char *) switch_core_media_process_sdp_filter(const char *sdp, const char *cmd_buf, switch_core_session_t *session);
+
+
+SWITCH_DECLARE(switch_status_t) switch_core_media_codec_control(switch_core_session_t *session, 
+																switch_media_type_t mtype,
+																switch_io_type_t iotype,
+																switch_codec_control_command_t cmd, 
+																switch_codec_control_type_t ctype,
+																void *cmd_data,
+																switch_codec_control_type_t *rtype,
+																void **ret_data);
+
+
+#define switch_core_media_gen_key_frame(_session) switch_core_media_codec_control(_session, SWITCH_MEDIA_TYPE_VIDEO, SWITCH_IO_WRITE, \
+																				  SCC_VIDEO_REFRESH, SCCT_NONE, NULL, NULL, NULL) \
+
+#define switch_core_media_write_bandwidth(_session, _val) switch_core_media_codec_control(_session, SWITCH_MEDIA_TYPE_VIDEO, SWITCH_IO_WRITE, \
+																						  SCC_VIDEO_BANDWIDTH, SCCT_STRING, _val, NULL, NULL) \
+
+
+SWITCH_DECLARE(switch_timer_t *) switch_core_media_get_timer(switch_core_session_t *session, switch_media_type_t mtype);
+SWITCH_DECLARE(void) switch_core_media_start_video_function(switch_core_session_t *session, switch_video_function_t video_function, void *user_data);
+SWITCH_DECLARE(void) switch_core_media_end_video_function(switch_core_session_t *session);
+SWITCH_DECLARE(switch_status_t) switch_core_session_start_video_thread(switch_core_session_t *session);
+SWITCH_DECLARE(int) switch_core_media_check_video_function(switch_core_session_t *session);
+SWITCH_DECLARE(void) switch_core_session_video_reinit(switch_core_session_t *session);
+SWITCH_DECLARE(switch_status_t) switch_core_media_read_lock_unlock(switch_core_session_t *session, switch_media_type_t type, switch_bool_t lock);
+
+#define switch_core_media_read_lock(_s, _t) switch_core_media_read_lock_unlock(_s, _t, SWITCH_TRUE) 
+#define switch_core_media_read_unlock(_s, _t) switch_core_media_read_lock_unlock(_s, _t, SWITCH_FALSE)
+
+SWITCH_DECLARE(void) switch_core_session_stop_media(switch_core_session_t *session);
+SWITCH_DECLARE(switch_media_flow_t) switch_core_session_media_flow(switch_core_session_t *session, switch_media_type_t type);
+SWITCH_DECLARE(switch_status_t) switch_core_media_get_vid_params(switch_core_session_t *session, switch_vid_params_t *vid_params);
+SWITCH_DECLARE(switch_status_t) switch_core_media_set_video_file(switch_core_session_t *session, switch_file_handle_t *fh, switch_rw_t rw);
+SWITCH_DECLARE(switch_bool_t) switch_core_session_in_video_thread(switch_core_session_t *session);
+
 SWITCH_END_EXTERN_C
 #endif
 /* For Emacs:

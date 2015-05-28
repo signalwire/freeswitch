@@ -1,0 +1,195 @@
+<html>
+<head>
+	<META http-equiv="Content-Type" content="text/html;charset=utf-8"></META>
+	<TITLE>FreeSWITCH Video Flash Phone Demo</TITLE>
+
+	<script type="text/javascript" src="swfobject.js"></script>
+	<script type="text/javascript" src="jquery.min.js"></script>
+
+	<script type="text/javascript" charset="utf-8">
+		var flashvars = {
+			rtmp_url: 'rtmp://' + document.location.hostname + '/phone',
+			local_loopback: 2, // x pos if local video
+			buffer_time: 0
+		};
+
+		var params	= {
+			allowScriptAccess: 'always',
+			wmode: 'window'
+		};
+
+		var current_uuid = "uuid";
+		var flash;
+
+		function log(msg) {
+			if ('console' in window) console.log(msg);
+		}
+
+		function login() {
+				flash.login($('#user').val(), '1234');
+		}
+
+		function register() {
+				flash.register($('#user').val(), 'Test');
+		}
+
+		function unregister() {
+				flash.register($('#user').val(), 'Test');
+		}
+
+		function makeCall() {
+				flash.makeCall($('#dest').val(), '', {want_video: "true"});
+		}
+
+		function hangup() {
+				flash.hangup(current_uuid);
+		}
+
+		function answer() {
+			flash.answer(current_uuid);
+		}
+
+		function settings() {
+			flash.showPrivacy();
+		}
+
+		function send_dtmf(digit) {
+			flash.sendDTMF(digit, 2000);
+		}
+
+		function onDisplayUpdate(uuid, name, number){
+			log("DisplayUpdate -- uuid: " + uuid + " name: " + name + " number: " + number);
+		}
+		function onCallState(uuid, state){
+			log("CallState -- uuid: " + uuid + " state: " + state);
+			$('#status').html(state);
+		}
+		function onIncomingCall(uuid, name, number, account, evt){
+			log("IncomingCall -- uuid: " + uuid + " name: " + name + " number: " + number + " account: " + account);
+			log(evt);
+			if (current_uuid == "uuid") {
+				var want_video = "";
+
+				current_uuid = uuid;
+
+				if (typeof(evt) === "object" && evt.want_video == "true") {
+					want_video = " (Video)";
+				}
+
+				$('#incoming_call').html("Incoming call " + uuid + " from '" + name + "' <" + number + ">" + want_video);
+			} else {
+				$("#flash")[0].hangup(uuid);
+			}
+		}
+		function onDisconnected(){
+			log("socket disconnected");
+			$('#status').html('Disconnected');
+			$('#reconnect').show();
+		}
+		function onMakeCall(uuid, number, account){
+			log("MakeCall -- uuid: " + uuid + " account: " + account + " number: " + number);
+			current_uuid = uuid;
+		}
+		function onHangup(uuid, cause){
+			log("Hangup -- uuid: " + uuid + " cause: " + cause);
+			current_uuid = "uuid";
+			$('#status').html("Hangup " + cause);
+		}
+		function onDebug(message){
+			log("debug -- " + message);
+		}
+		function onAttach(uuid){
+			log("Attach -- " + uuid);
+		}
+		function onConnected(session_id){
+			log("Connected -- sessionid: " + session_id);
+			$('#session_id').html(session_id);
+			$('#status').html('Connected');
+			$('#reconnect').hide();
+		}
+		function onLogin(status, user, domain){
+			log("Login -- status: " + status + " user: " + user + " domain: " + domain);
+		}
+		function onLogout(user, domain){
+			log("Logout -- user: " + user + " domain: " + domain);
+		}
+		function onInit(){console.log('initing...');}
+	</script>
+
+</head>
+
+<body>
+
+	<div id="dialpad" style="float:left;width:300px">
+		<table border="1" cellspacing="5" cellpadding="5" width="200">
+			<tr>
+				<th colspan = 3>Flash Phone</th>
+			</tr><tr>
+				<td colspan = 3>
+					<input type="text" name="x" value="9196" id="dest" size = "10">
+				</td>
+			</tr><tr>
+				<td><input type="button" name="k7" value="7" id="k7" onclick="send_dtmf('7')"></td>
+				<td><input type="button" name="k7" value="8" id="k7" onclick="send_dtmf('8')"></td>
+				<td><input type="button" name="k7" value="9" id="k7" onclick="send_dtmf('9')"></td>
+			</tr><tr>
+				<td><input type="button" name="k7" value="4" id="k7" onclick="send_dtmf('4')"></td>
+				<td><input type="button" name="k7" value="5" id="k7" onclick="send_dtmf('5')"></td>
+				<td><input type="button" name="k7" value="6" id="k7" onclick="send_dtmf('6')"></td>
+			</tr><tr>
+				<td><input type="button" name="k7" value="1" id="k7" onclick="send_dtmf('1')"></td>
+				<td><input type="button" name="k7" value="2" id="k7" onclick="send_dtmf('2')"></td>
+				<td><input type="button" name="k7" value="3" id="k7" onclick="send_dtmf('3')"></td>
+			</tr><tr>
+				<td><input type="button" name="k7" value="*" id="k7" onclick="send_dtmf('*')"></td>
+				<td><input type="button" name="k7" value="0" id="k7" onclick="send_dtmf('0')"></td>
+				<td><input type="button" name="k7" value="#" id="k7" onclick="send_dtmf('#')"></td>
+			</tr><tr>
+				<td colspan="3">
+					<span id="status">Ready</span>
+					<span id="reconnect" style="display:none">
+						<a href='#' onclick="flash.connect();return false;">Reconnect</a>
+					</span>
+				</td>
+			</tr>
+		</table>
+	</div>
+
+	<div>
+		SessionID: <span id = "session_id"></span><br>
+		Incoming:  <span id = "incoming_call"></span>
+
+		<br>
+		<input type="text" name="user" value="1019@192.168.7.4" id="user">
+		<input type="button" name="Call" value="Login" onclick = "login()" id="Login">
+		<input type="button" name="Register" value="Register" onclick = "register()" id="Register">
+		<input type="button" name="Register" value="UnRegister" onclick = "unregister()" id="UnRegister">
+		<br>
+		<input type="button" name="Call" value="Call" onclick = "makeCall()" id="Call">
+		<input type="button" name="Call" value="Hangup" onclick = "hangup()" id="Hangup">
+		<input type="button" name="some_name" value="Answer" id="some_name" onclick="answer()">
+		<input type="button" name="some_name" value="Settings" id="some_name" onclick="settings()">
+	</div>
+
+	<div style="border:2px solid blue;float:left;padding:5px">
+		<div id="flash">
+				<h1>Alternative content</h1>
+				<p><a href="http://www.adobe.com/go/getflashplayer"><img src="http://www.adobe.com/images/shared/download_buttons/get_flash_player.gif" alt="Get Adobe Flash player" /></a></p>
+		</div>
+	</div>
+
+	<br style="clear:both">
+
+	<script type="text/javascript" charset="utf-8">
+
+		$(document).ready(function() {
+			swfobject.embedSWF("freeswitch-h264.swf", "flash", "360", "296", "11.2.202.229", "expressInstall.swf", flashvars, params, []);
+			flash = $('#flash')[0];
+
+			$('#user').val("1000@" + window.location.hostname);
+
+		});
+	</script>
+
+</body>
+</html>

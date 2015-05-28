@@ -97,9 +97,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_codec_slin(switch_core_s
 	if (switch_core_codec_init(&data->codec,
 							   "L16",
 							   NULL,
+							   NULL,
 							   read_impl.actual_samples_per_second,
 							   interval,
-							   1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, NULL) == SWITCH_STATUS_SUCCESS) {
+							   read_impl.number_of_channels, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, NULL) == SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session),
 						  SWITCH_LOG_DEBUG, "Codec Activated L16@%uhz %dms\n", read_impl.actual_samples_per_second, interval);
 
@@ -731,6 +732,7 @@ static const char *message_names[] = {
 	"DISPLAY",
 	"TRANSCODING_NECESSARY",
 	"AUDIO_SYNC",
+	"VIDEO_SYNC",
 	"REQUEST_IMAGE_MEDIA",
 	"UUID_CHANGE",
 	"SIMPLIFY",
@@ -1298,6 +1300,9 @@ SWITCH_DECLARE(void) switch_core_session_reset(switch_core_session_t *session, s
 
 	if (reset_read_codec) {
 		switch_core_session_set_read_codec(session, NULL);
+		if (session->sdata && switch_core_codec_ready(&session->sdata->codec)) {
+			switch_core_codec_destroy(&session->sdata->codec);
+		}
 	}
 
 	/* clear resamplers */
@@ -1316,6 +1321,17 @@ SWITCH_DECLARE(void) switch_core_session_reset(switch_core_session_t *session, s
 	switch_mutex_lock(session->codec_read_mutex);
 	switch_buffer_destroy(&session->raw_read_buffer);
 	switch_mutex_unlock(session->codec_read_mutex);
+
+	switch_mutex_lock(session->video_codec_write_mutex);
+	switch_buffer_destroy(&session->video_raw_write_buffer);
+	switch_mutex_unlock(session->video_codec_write_mutex);
+
+	switch_mutex_lock(session->video_codec_read_mutex);
+	switch_buffer_destroy(&session->video_raw_read_buffer);
+	switch_mutex_unlock(session->video_codec_read_mutex);
+
+	//video_raw_read_frame.data is dynamically allocated if necessary, so wipe this also
+	switch_safe_free(session->video_raw_read_frame.data);
 
 	if (flush_dtmf) {
 		while ((has = switch_channel_has_dtmf(channel))) {
@@ -1656,7 +1672,7 @@ static void *SWITCH_THREAD_FUNC switch_core_session_thread_pool_worker(switch_th
 	switch_memory_pool_t *pool = node->pool;
 	void *pop;
 	int check = 0;
-
+	
 	switch_mutex_lock(session_manager.mutex);
 	session_manager.starting--;
 	session_manager.running++;
@@ -1685,8 +1701,6 @@ static void *SWITCH_THREAD_FUNC switch_core_session_thread_pool_worker(switch_th
 
 		if (check_status == SWITCH_STATUS_SUCCESS && pop) {
 			switch_thread_data_t *td = (switch_thread_data_t *) pop;
-			
-			if (!td) break;
 
 			switch_mutex_lock(session_manager.mutex);
 			session_manager.busy++;
@@ -2167,7 +2181,8 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_xml(switch_e
 	flags[CF_LAZY_ATTENDED_TRANSFER] = 0;
 	flags[CF_SIGNAL_DATA] = 0;
 	flags[CF_SIMPLIFY] = 0;
-
+	flags[CF_VIDEO_READY] = 0;
+	flags[CF_VIDEO_DECODED_READ] = 0;
 
 	if (!(session = switch_core_session_request_uuid(endpoint_interface, direction, SOF_NO_LIMITS, pool, uuid))) {
 		return NULL;
@@ -2419,6 +2434,8 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_uuid(switch_
 	switch_mutex_init(&session->resample_mutex, SWITCH_MUTEX_NESTED, session->pool);
 	switch_mutex_init(&session->codec_read_mutex, SWITCH_MUTEX_NESTED, session->pool);
 	switch_mutex_init(&session->codec_write_mutex, SWITCH_MUTEX_NESTED, session->pool);
+	switch_mutex_init(&session->video_codec_read_mutex, SWITCH_MUTEX_NESTED, session->pool);
+	switch_mutex_init(&session->video_codec_write_mutex, SWITCH_MUTEX_NESTED, session->pool);
 	switch_mutex_init(&session->frame_read_mutex, SWITCH_MUTEX_NESTED, session->pool);
 	switch_thread_rwlock_create(&session->bug_rwlock, session->pool);
 	switch_thread_cond_create(&session->cond, session->pool);
@@ -2661,9 +2678,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_execute_application_async(sw
 
 SWITCH_DECLARE(void) switch_core_session_video_reset(switch_core_session_t *session)
 {
-	switch_channel_set_flag(session->channel, CF_VIDEO_ECHO);
+	switch_channel_clear_flag(session->channel, CF_VIDEO_ECHO);
 	switch_channel_clear_flag(session->channel, CF_VIDEO_PASSIVE);
-	switch_core_session_refresh_video(session);
+	//switch_channel_clear_flag(session->channel, CF_VIDEO_DECODED_READ);
+	switch_channel_clear_flag(session->channel, CF_VIDEO_DEBUG_READ);
+	switch_channel_clear_flag(session->channel, CF_VIDEO_DEBUG_WRITE);
+	switch_core_session_request_video_refresh(session);
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_session_execute_application_get_flags(switch_core_session_t *session, const char *app,
@@ -2671,6 +2691,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_execute_application_get_flag
 {
 	switch_application_interface_t *application_interface;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
+
+	switch_core_session_request_video_refresh(session);
+	switch_core_media_gen_key_frame(session);
 
 	if (switch_channel_down_nosig(session->channel)) {
 		char *p;
@@ -2721,7 +2744,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_execute_application_get_flag
 	}
 
 	if (!switch_test_flag(application_interface, SAF_SUPPORT_NOMEDIA) && (switch_channel_test_flag(session->channel, CF_VIDEO))) {
-		switch_core_session_refresh_video(session);
+		switch_core_session_request_video_refresh(session);
 	}
 
 	if (switch_channel_test_flag(session->channel, CF_PROXY_MODE) && !switch_test_flag(application_interface, SAF_SUPPORT_NOMEDIA)) {
@@ -3029,25 +3052,24 @@ SWITCH_DECLARE(switch_log_level_t) switch_core_session_get_loglevel(switch_core_
 	return session->loglevel;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_session_refresh_video(switch_core_session_t *session)
-{
-	switch_channel_t *channel = switch_core_session_get_channel(session);
-
-	if (switch_channel_test_flag(channel, CF_VIDEO)) {
-		switch_core_session_message_t msg = { 0 };
-		msg.from = __FILE__;
-		msg.message_id = SWITCH_MESSAGE_INDICATE_VIDEO_REFRESH_REQ;
-		switch_core_session_receive_message(session, &msg);
-		return SWITCH_STATUS_SUCCESS;
-	}
-
-	return SWITCH_STATUS_FALSE;
-}
-
 SWITCH_DECLARE(void) switch_core_session_debug_pool(switch_stream_handle_t *stream)
 {
 	stream->write_function(stream, "Thread pool: running:%d busy:%d popping:%d\n",
 		session_manager.running, session_manager.busy, session_manager.popping);
+}
+
+SWITCH_DECLARE(void) switch_core_session_raw_read(switch_core_session_t *session)
+{
+	if (session->sdata) {
+		if (session->sdata && switch_core_codec_ready(&session->sdata->codec)) {
+			switch_core_codec_destroy(&session->sdata->codec);
+		}
+		memset(session->sdata, 0, sizeof(*session->sdata));
+	} else {
+		session->sdata = switch_core_session_alloc(session, sizeof(*session->sdata));
+	}
+
+	switch_core_session_set_codec_slin(session, session->sdata);
 }
 
 /* For Emacs:

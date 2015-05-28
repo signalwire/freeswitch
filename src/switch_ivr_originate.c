@@ -922,6 +922,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 			if (switch_core_codec_init(&write_codec,
 									   "L16",
 									   NULL,
+									   NULL,
 									   read_codec->implementation->actual_samples_per_second,
 									   read_codec->implementation->microseconds_per_packet / 1000,
 									   1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL,
@@ -1239,6 +1240,7 @@ static switch_status_t setup_ringback(originate_global_t *oglobals, originate_st
 			
 			if (switch_core_codec_init(write_codec,
 									   "L16",
+									   NULL,
 									   NULL,
 									   peer_read_impl.actual_samples_per_second,
 									   peer_read_impl.microseconds_per_packet / 1000,
@@ -1775,6 +1777,7 @@ static void *SWITCH_THREAD_FUNC early_thread_run(switch_thread_t *thread, void *
 					if (!switch_core_codec_ready((&read_codecs[i]))) {
 						if (switch_core_codec_init(&read_codecs[i],
 												   "L16",
+												   NULL,
 												   NULL,
 												   read_impl.actual_samples_per_second,
 												   read_impl.microseconds_per_packet / 1000,

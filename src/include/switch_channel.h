@@ -624,6 +624,8 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(_In_ switch_channe
 
 SWITCH_DECLARE(void) switch_channel_perform_audio_sync(switch_channel_t *channel, const char *file, const char *func, int line);
 #define switch_channel_audio_sync(_c)  switch_channel_perform_audio_sync(_c, __FILE__, __SWITCH_FUNC__, __LINE__)
+SWITCH_DECLARE(void) switch_channel_perform_video_sync(switch_channel_t *channel, const char *file, const char *func, int line);
+#define switch_channel_video_sync(_c)  switch_channel_perform_video_sync(_c, __FILE__, __SWITCH_FUNC__, __LINE__)
 
 SWITCH_DECLARE(void) switch_channel_set_private_flag(switch_channel_t *channel, uint32_t flags);
 SWITCH_DECLARE(void) switch_channel_clear_private_flag(switch_channel_t *channel, uint32_t flags);

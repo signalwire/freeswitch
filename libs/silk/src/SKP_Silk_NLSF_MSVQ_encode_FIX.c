@@ -1,27 +1,27 @@
 /***********************************************************************
-Copyright (c) 2006-2011, Skype Limited. All rights reserved. 
-Redistribution and use in source and binary forms, with or without 
-modification, (subject to the limitations in the disclaimer below) 
+Copyright (c) 2006-2011, Skype Limited. All rights reserved.
+Redistribution and use in source and binary forms, with or without
+modification, (subject to the limitations in the disclaimer below)
 are permitted provided that the following conditions are met:
 - Redistributions of source code must retain the above copyright notice,
 this list of conditions and the following disclaimer.
-- Redistributions in binary form must reproduce the above copyright 
-notice, this list of conditions and the following disclaimer in the 
+- Redistributions in binary form must reproduce the above copyright
+notice, this list of conditions and the following disclaimer in the
 documentation and/or other materials provided with the distribution.
-- Neither the name of Skype Limited, nor the names of specific 
-contributors, may be used to endorse or promote products derived from 
+- Neither the name of Skype Limited, nor the names of specific
+contributors, may be used to endorse or promote products derived from
 this software without specific prior written permission.
-NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED 
-BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND 
+NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED
+BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
 CONTRIBUTORS ''AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING,
-BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND 
-FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
-COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, 
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
 INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
-NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF 
-USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON 
-ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
+NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
+USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ***********************************************************************/
 
@@ -89,7 +89,7 @@ void SKP_Silk_NLSF_MSVQ_encode_FIX(
 
     /* Clear accumulated rates */
     SKP_memset( pRate_Q5, 0, NLSF_MSVQ_Survivors * sizeof( SKP_int32 ) );
-    
+
     /* Copy NLSFs into residual signal vector */
     for( i = 0; i < LPC_order; i++ ) {
         pRes_Q15[ i ] = pNLSF_Q15[ i ];
@@ -119,30 +119,30 @@ void SKP_Silk_NLSF_MSVQ_encode_FIX(
 #endif
 
         /* Nearest neighbor clustering for multiple input data vectors */
-        SKP_Silk_NLSF_VQ_rate_distortion_FIX( pRateDist_Q18, pCurrentCBStage, pRes_Q15, pW_Q6, 
+        SKP_Silk_NLSF_VQ_rate_distortion_FIX( pRateDist_Q18, pCurrentCBStage, pRes_Q15, pW_Q6,
             pRate_Q5, NLSF_mu_Q15, prev_survivors, LPC_order );
 
         /* Sort the rate-distortion errors */
-        SKP_Silk_insertion_sort_increasing( pRateDist_Q18, pTempIndices, 
+        SKP_Silk_insertion_sort_increasing( pRateDist_Q18, pTempIndices,
             prev_survivors * pCurrentCBStage->nVectors, cur_survivors );
 
         /* Discard survivors with rate-distortion values too far above the best one */
         if( pRateDist_Q18[ 0 ] < SKP_int32_MAX / MAX_NLSF_MSVQ_SURVIVORS ) {
-            rateDistThreshold_Q18 = SKP_SMLAWB( pRateDist_Q18[ 0 ], 
+            rateDistThreshold_Q18 = SKP_SMLAWB( pRateDist_Q18[ 0 ],
                 SKP_MUL( NLSF_MSVQ_Survivors, pRateDist_Q18[ 0 ] ), SKP_FIX_CONST( NLSF_MSVQ_SURV_MAX_REL_RD, 16 ) );
             while( pRateDist_Q18[ cur_survivors - 1 ] > rateDistThreshold_Q18 && cur_survivors > min_survivors ) {
                 cur_survivors--;
             }
         }
         /* Update accumulated codebook contributions for the 'cur_survivors' best codebook indices */
-        for( k = 0; k < cur_survivors; k++ ) { 
+        for( k = 0; k < cur_survivors; k++ ) {
             if( s > 0 ) {
                 /* Find the indices of the input and the codebook vector */
                 if( pCurrentCBStage->nVectors == 8 ) {
                     input_index = SKP_RSHIFT( pTempIndices[ k ], 3 );
                     cb_index    = pTempIndices[ k ] & 7;
                 } else {
-                    input_index = SKP_DIV32_16( pTempIndices[ k ], pCurrentCBStage->nVectors );  
+                    input_index = SKP_DIV32_16( pTempIndices[ k ], pCurrentCBStage->nVectors );
                     cb_index    = pTempIndices[ k ] - SKP_SMULBB( input_index, pCurrentCBStage->nVectors );
                 }
             } else {
@@ -194,14 +194,14 @@ void SKP_Silk_NLSF_MSVQ_encode_FIX(
     /* NLSF fluctuation reduction */
     /******************************/
     if( deactivate_fluc_red != 1 ) {
-    
+
         /* Search among all survivors, now taking also weighted fluctuation errors into account */
         bestRateDist_Q20 = SKP_int32_MAX;
         for( s = 0; s < cur_survivors; s++ ) {
             /* Decode survivor to compare with previous quantized NLSF vector */
             SKP_Silk_NLSF_MSVQ_decode( pNLSF_Q15, psNLSF_CB, &pPath_new[ SKP_SMULBB( s, psNLSF_CB->nStages ) ], LPC_order );
 
-            /* Compare decoded NLSF vector with the previously quantized vector */ 
+            /* Compare decoded NLSF vector with the previously quantized vector */
             wsse_Q20 = 0;
             for( i = 0; i < LPC_order; i += 2 ) {
                 /* Compute weighted squared quantization error for index i */

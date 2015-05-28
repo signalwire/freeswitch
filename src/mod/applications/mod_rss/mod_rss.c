@@ -272,6 +272,7 @@ SWITCH_STANDARD_APP(rss_function)
 	if (switch_core_codec_init(&speech_codec,
 							   "L16",
 							   NULL,
+							   NULL,
 							   (int) rate,
 							   interval,
 							   1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL,

@@ -197,16 +197,6 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 				do_break_a = NULL;
 			}
 		}
-
-
-		if (switch_xml_child(xcond, "condition")) {
-			if (!(proceed = parse_exten(session, caller_profile, xcond, extension, orig_exten_name, recur + 1))) {
-				if (do_break_i == BREAK_NEVER) {
-					continue;
-				}
-				goto done;
-			}
-		}
 		
 		if (time_match == 1) {
 			if ( switch_core_test_flag(SCF_DIALPLAN_TIMESTAMPS) ) {
@@ -583,6 +573,17 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 		if (((anti_action == SWITCH_FALSE && do_break_i == BREAK_ON_TRUE) ||
 			 (anti_action == SWITCH_TRUE && do_break_i == BREAK_ON_FALSE)) || do_break_i == BREAK_ALWAYS) {
 			break;
+		}
+
+		if (proceed) {
+			if (switch_xml_child(xcond, "condition")) {
+				if (!(proceed = parse_exten(session, caller_profile, xcond, extension, orig_exten_name, recur + 1))) {
+					if (do_break_i == BREAK_NEVER) {
+						continue;
+					}
+					goto done;
+				}
+			}
 		}
 	}
 

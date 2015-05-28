@@ -141,6 +141,8 @@ struct jsock_s {
 	switch_event_t *params;
 	switch_event_t *vars;
 
+	switch_event_t *user_vars;
+
 	switch_queue_t *event_queue;
 	int lost_events;
 	int ready;

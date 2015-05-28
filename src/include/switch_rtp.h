@@ -49,6 +49,10 @@ SWITCH_BEGIN_EXTERN_C
 //#define SWITCH_RTP_CRYPTO_KEY_32 "AES_CM_128_HMAC_SHA1_32"
 #define SWITCH_RTP_CRYPTO_KEY_80 "AES_CM_128_HMAC_SHA1_80"
 
+typedef struct {
+	switch_rtp_hdr_t header;
+	char body[SWITCH_RTP_MAX_BUF_LEN];
+} switch_rtp_packet_t;
 
 typedef enum {
 	SWITCH_RTP_CRYPTO_SEND,
@@ -107,6 +111,58 @@ typedef struct ice_s {
 
 } ice_t;
 
+typedef enum { /* RTCP Control Packet types (PT) http://www.iana.org/assignments/rtp-parameters/rtp-parameters.xhtml#rtp-parameters-4 */
+	RTCP_PT_IJ    = 195, /* IJ: Extended inter-arrival jitter report RFC5450*/
+	RTCP_PT_SR    = 200, /* SR: sender report RFC3550 */
+	RTCP_PT_RR    = 201, /* RR: receiver report RFC3550 */
+	RTCP_PT_SDES  = 202, /* SDES: source description RFC3550 */
+	RTPC_PT_BYE   = 203, /* BYE: goodbye RFC3550 */
+	RTCP_PT_APP   = 204, /* APP: application-defined RFC3550 */
+	RTCP_PT_RTPFB = 205, /* RTPFB: RTCP Transport layer FB message RFC4585 */
+	RTCP_PT_PSFB  = 206, /* PSFB: RTCP Payload-specific FB message RFC4585 */
+	RTCP_PT_XR    = 207, /* XR: extended report RFC3611 */
+	RTCP_PT_AVB   = 208, /* AVB: "Standard for Layer 3 Transport Protocol for Time Sensitive Applications in Local Area Networks." Work in progress. */
+	RTCP_PT_RSI   = 209, /* RSI: Receiver Summary Information RFC5760 */
+	RTCP_PT_TOKEN = 210, /* TOKEN: Port Mapping RFC6284 */
+	RTCP_PT_IDMS  = 211, /* IDMS: IDMS Settings RFC7272 */
+	RTCP_PT_LAST  = 255  /* RESERVED */
+} rtcp_pt_t;
+
+typedef enum { /* RTP SDES item types http://www.iana.org/assignments/rtp-parameters/rtp-parameters.xhtml#rtp-parameters-5 */
+	RTCP_SDES_END   = 0, /* END: end of sdes list RFC3550 */
+	RTCP_SDES_CNAME = 1, /* CNAME: canonical name RFC3550 */
+	RTCP_SDES_NAME  = 2, /* NAME: user name RFC3550 */
+	RTCP_SDES_EMAIL = 3, /* EMAIL: user's electronic mail address RFC3550 */
+	RTCP_SDES_PHONE = 4, /* PHONE: user's phone number RFC3550 */
+	RTCP_SDES_LOC   = 5, /* LOC: geographic user location RFC3550 */
+	RTCP_SDES_TOOL  = 6, /* TOOL: name of application or tool RFC3550 */
+	RTCP_SDES_NOTE  = 7, /* NOTE: notice about the source RFC3550 */
+	RTCP_SDES_PRIV  = 8, /* PRIV: private extensions RFC3550 */
+	RTCP_SDES_H323  = 9, /* H323-CADDR: H.323 callable address [Vineet Kumar] */
+	RTCP_SDES_APSI  = 10 /* APSI: Application specific identifer RFC6776 */
+} rtcp_sdes_t;
+
+typedef enum { /* FMT Values for RTPFB Payload Types http://www.iana.org/assignments/rtp-parameters/rtp-parameters.xhtml#rtp-parameters-8 */
+	RTCP_RTPFB_NACK   = 1, /* Generic NACK: Generic negative acknowledgement RFC4585 */
+	RTCP_RTPFB_TMMBR  = 3, /* TMMBR: Temporary Maximum Media Stream Bit Rate Request RFC5104 */
+	RTCP_RTPFB_TMMBN  = 4, /* TMMBN: Temporary Maximum Media Stream Bit Rate Notification RFC5104 */
+	RTCP_RTPFB_SR_REQ = 5, /* RTCP-SR-REQ: TCP Rapid Resynchronisation Request RFC6051*/
+	RTCP_RTPFB_RAMS   = 6, /* RAMS: Rapid Acquisition of Multicast Sessions RFC6285 */
+	RTCP_RTPFB_TLLEI  = 7, /* TLLEI: Transport-Layer Third-Party Loss Early Indication RFC6642 */
+	RTCP_RTPFB_ECN_FB = 8  /* RTCP-ECN-FB: RTCP ECN Feedback RFC6679*/
+} rtcp_rtpfb_t;
+
+typedef enum { /* FMT Values for PSFB Payload Types http://www.iana.org/assignments/rtp-parameters/rtp-parameters.xhtml#rtp-parameters-9 */
+	RTCP_PSFB_PLI   = 1, /* PLI: Picture Loss Indication RFC4585 */
+	RTCP_PSFB_SLI   = 2, /* SLI: Slice Loss Indication RFC4585 */
+	RTCP_PSFB_RPSI  = 3, /* RPSI: Reference Picture Selection Indication RFC4585 */
+	RTCP_PSFB_FIR   = 4, /* FIR: Full Intra Request Command RFC5104 */
+	RTCP_PSFB_TSTR  = 5, /* TSTR: Temporal-Spatial Trade-off Request RFC5104 */
+	RTCP_PSFB_TSTN  = 6, /* TSTN: Temporal-Spatial Trade-off Notification RFC5104 */
+	RTCP_PSFB_VBCM  = 7, /* VBCM: Video Back Channel Message RFC5104 */
+	RTCP_PSFB_PSLEI = 8, /* PSLEI: Payload-Specific Third-Party Loss Early Indication RFC6642*/ 
+	RTCP_PSFB_AFB   = 15 /* AFB Application layer FB */
+} rtcp_psfb_t;
 
 
 
@@ -268,6 +324,12 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_activate_ice(switch_rtp_t *rtp_sessio
 */
 SWITCH_DECLARE(switch_status_t) switch_rtp_activate_rtcp(switch_rtp_t *rtp_session, int send_rate, switch_port_t remote_port, switch_bool_t mux);
 
+
+SWITCH_DECLARE(switch_timer_t *) switch_rtp_get_media_timer(switch_rtp_t *rtp_session);
+
+SWITCH_DECLARE(switch_status_t) switch_rtp_set_video_buffer_size(switch_rtp_t *rtp_session, uint32_t frames);
+SWITCH_DECLARE(uint32_t) switch_rtp_get_video_buffer_size(switch_rtp_t *rtp_session);
+
 /*! 
   \brief Acvite a jitter buffer on an RTP session
   \param rtp_session the rtp session
@@ -284,6 +346,9 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_debug_jitter_buffer(switch_rtp_t *rtp
 SWITCH_DECLARE(switch_status_t) switch_rtp_deactivate_jitter_buffer(switch_rtp_t *rtp_session);
 SWITCH_DECLARE(switch_status_t) switch_rtp_pause_jitter_buffer(switch_rtp_t *rtp_session, switch_bool_t pause);
 SWITCH_DECLARE(stfu_instance_t *) switch_rtp_get_jitter_buffer(switch_rtp_t *rtp_session);
+
+
+
 
 /*!
   \brief Set an RTP Flag
@@ -464,6 +529,8 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_fra
 SWITCH_DECLARE(int) switch_rtp_write_manual(switch_rtp_t *rtp_session,
 											void *data, uint32_t datalen, uint8_t m, switch_payload_t payload, uint32_t ts, switch_frame_flag_t *flags);
 
+SWITCH_DECLARE(switch_status_t) switch_rtp_write_raw(switch_rtp_t *rtp_session, void *data, switch_size_t *bytes, switch_bool_t process_encryption);
+
 /*! 
   \brief Retrieve the SSRC from a given RTP session
   \param rtp_session the RTP session to retrieve from
@@ -508,9 +575,14 @@ SWITCH_DECLARE(void) switch_rtp_set_interdigit_delay(switch_rtp_t *rtp_session, 
 
 SWITCH_DECLARE(switch_status_t) switch_rtp_add_dtls(switch_rtp_t *rtp_session, dtls_fingerprint_t *local_fp, dtls_fingerprint_t *remote_fp, dtls_type_t type);
 SWITCH_DECLARE(switch_status_t) switch_rtp_del_dtls(switch_rtp_t *rtp_session, dtls_type_t type);
+SWITCH_DECLARE(dtls_state_t) switch_rtp_dtls_state(switch_rtp_t *rtp_session, dtls_type_t type);
 
 SWITCH_DECLARE(int) switch_rtp_has_dtls(void);
+
+SWITCH_DECLARE(switch_status_t) switch_rtp_req_bitrate(switch_rtp_t *rtp_session, uint32_t bps);
+SWITCH_DECLARE(switch_status_t) switch_rtp_ack_bitrate(switch_rtp_t *rtp_session, uint32_t bps);
 SWITCH_DECLARE(void) switch_rtp_video_refresh(switch_rtp_t *rtp_session);
+SWITCH_DECLARE(void) switch_rtp_video_loss(switch_rtp_t *rtp_session);
 
 /*!
   \}

@@ -574,25 +574,27 @@ switch_status_t skinny_tech_set_codec(private_t *tech_pvt, int force)
 	}
 
 	if (switch_core_codec_init(&tech_pvt->read_codec,
-				tech_pvt->iananame,
-				tech_pvt->rm_fmtp,
-				tech_pvt->rm_rate,
-				tech_pvt->codec_ms,
-				1,
-				SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE | 0 /* TODO tech_pvt->profile->codec_flags */,
-				NULL, switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
+							   tech_pvt->iananame,
+							   NULL,
+							   tech_pvt->rm_fmtp,
+							   tech_pvt->rm_rate,
+							   tech_pvt->codec_ms,
+							   1,
+							   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE | 0 /* TODO tech_pvt->profile->codec_flags */,
+							   NULL, switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_ERROR, "Can't load codec?\n");
 		switch_goto_status(SWITCH_STATUS_FALSE, end);
 	}
 
 	if (switch_core_codec_init(&tech_pvt->write_codec,
-				tech_pvt->iananame,
-				tech_pvt->rm_fmtp,
-				tech_pvt->rm_rate,
-				tech_pvt->codec_ms,
-				1,
-				SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE | 0 /* TODO tech_pvt->profile->codec_flags */,
-				NULL, switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
+							   tech_pvt->iananame,
+							   NULL,
+							   tech_pvt->rm_fmtp,
+							   tech_pvt->rm_rate,
+							   tech_pvt->codec_ms,
+							   1,
+							   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE | 0 /* TODO tech_pvt->profile->codec_flags */,
+							   NULL, switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_ERROR, "Can't load codec?\n");
 		switch_goto_status(SWITCH_STATUS_FALSE, end);
 	}

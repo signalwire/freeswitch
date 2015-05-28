@@ -43,7 +43,9 @@
     <!-- <load module="mod_unicall"/> -->
     <!-- <load module="mod_skinny"/> -->
     <!-- <load module="mod_khomp"/>   -->
+    <load module="mod_rtc"/>
     <!-- <load module="mod_rtmp"/>   -->
+    <load module="mod_verto"/>
 
     <!-- Applications -->
     <load module="mod_commands"/>
@@ -88,16 +90,16 @@
     <load module="mod_amr"/>
     <!--<load module="mod_ilbc"/>-->
     <load module="mod_h26x"/>
-    <load module="mod_vp8"/>
+    <load module="mod_vpx"/>
     <load module="mod_b64"/>
     <!--<load module="mod_siren"/>-->
     <!--<load module="mod_isac"/>-->
-    <!--<load module="mod_celt"/>-->
     <load module="mod_opus"/>
 
     <!-- File Format Interfaces -->
     <load module="mod_sndfile"/>
     <load module="mod_native_file"/>
+    <load module="mod_png"/>
     <!-- <load module="mod_shell_stream"/> -->
     <!--For icecast/mp3 streams/files-->
     <!--<load module="mod_shout"/>-->

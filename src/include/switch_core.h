@@ -162,17 +162,13 @@ typedef enum {
 } dtls_type_t;
 
 typedef enum {
+	DS_OFF,
 	DS_HANDSHAKE,
 	DS_SETUP,
 	DS_READY,
 	DS_FAIL,
 	DS_INVALID,
 } dtls_state_t;
-
-
-
-
-
 
 #define MESSAGE_STAMP_FFL(_m) _m->_file = __FILE__; _m->_func = __SWITCH_FUNC__; _m->_line = __LINE__
 
@@ -255,6 +251,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_pop(switch_core_session_t 
 								
 SWITCH_DECLARE(switch_status_t) switch_core_media_bug_exec_all(switch_core_session_t *orig_session, 
 															   const char *function, switch_media_bug_exec_cb_t cb, void *user_data);
+SWITCH_DECLARE(uint32_t) switch_core_media_bug_patch_video(switch_core_session_t *orig_session, switch_frame_t *frame);
 SWITCH_DECLARE(uint32_t) switch_core_media_bug_count(switch_core_session_t *orig_session, const char *function);
 /*!
   \brief Add a media bug to the session
@@ -304,6 +301,8 @@ SWITCH_DECLARE(switch_frame_t *) switch_core_media_bug_get_write_replace_frame(_
 SWITCH_DECLARE(switch_frame_t *) switch_core_media_bug_get_native_read_frame(switch_media_bug_t *bug);
 SWITCH_DECLARE(switch_frame_t *) switch_core_media_bug_get_native_write_frame(switch_media_bug_t *bug);
 
+
+SWITCH_DECLARE(switch_frame_t *) switch_core_media_bug_get_video_ping_frame(switch_media_bug_t *bug);
 
 /*!
   \brief Set a return replace frame
@@ -866,6 +865,7 @@ SWITCH_DECLARE(switch_digit_action_target_t) switch_ivr_dmachine_get_target(swit
 SWITCH_DECLARE(void) switch_ivr_dmachine_set_target(switch_ivr_dmachine_t *dmachine, switch_digit_action_target_t target);
 SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_set_terminators(switch_ivr_dmachine_t *dmachine, const char *terminators);
 SWITCH_DECLARE(switch_status_t) switch_core_session_set_codec_slin(switch_core_session_t *session, switch_slin_data_t *data);
+SWITCH_DECLARE(void) switch_core_session_raw_read(switch_core_session_t *session);
 
 /*! 
   \brief Retrieve the unique identifier from the core
@@ -1275,7 +1275,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(_In_ switch_core_
 */
 SWITCH_DECLARE(switch_status_t) switch_core_session_read_video_frame(_In_ switch_core_session_t *session, switch_frame_t **frame, switch_io_flag_t flags,
 																	 int stream_id);
-
 /*! 
   \brief Write a video frame to a session
   \param session the session to write to
@@ -1286,6 +1285,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_video_frame(_In_ switch
 */
 SWITCH_DECLARE(switch_status_t) switch_core_session_write_video_frame(_In_ switch_core_session_t *session, switch_frame_t *frame, switch_io_flag_t flags,
 																	  int stream_id);
+
+SWITCH_DECLARE(switch_status_t) switch_core_session_write_encoded_video_frame(switch_core_session_t *session, 
+																		switch_frame_t *frame, switch_io_flag_t flags, int stream_id);
 
 SWITCH_DECLARE(switch_status_t) switch_core_session_set_read_impl(switch_core_session_t *session, const switch_codec_implementation_t *impp);
 SWITCH_DECLARE(switch_status_t) switch_core_session_set_write_impl(switch_core_session_t *session, const switch_codec_implementation_t *impp);
@@ -1404,9 +1406,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_hash_insert_wrlock(switch_hash_t *ha
   \brief Delete data from a hash based on desired key
   \param hash the hash to delete from
   \param key the key from which to delete the data
-  \return SWITCH_STATUS_SUCCESS if the data is deleted
+  \return The value stored if the data is deleted otherwise NULL
 */
-SWITCH_DECLARE(switch_status_t) switch_core_hash_delete(_In_ switch_hash_t *hash, _In_z_ const char *key);
+SWITCH_DECLARE(void *) switch_core_hash_delete(_In_ switch_hash_t *hash, _In_z_ const char *key);
 
 /*! 
   \brief Delete data from a hash based on desired key
@@ -1494,7 +1496,13 @@ SWITCH_DECLARE(switch_hash_index_t *) switch_core_hash_next(_In_ switch_hash_ind
 SWITCH_DECLARE(void) switch_core_hash_this(_In_ switch_hash_index_t *hi, _Out_opt_ptrdiff_cap_(klen)
 									  const void **key, _Out_opt_ switch_ssize_t *klen, _Out_ void **val);
 
+SWITCH_DECLARE(void) switch_core_hash_this_val(switch_hash_index_t *hi, void *val);
 
+SWITCH_DECLARE(switch_status_t) switch_core_inthash_init(switch_inthash_t **hash);
+SWITCH_DECLARE(switch_status_t) switch_core_inthash_destroy(switch_inthash_t **hash);
+SWITCH_DECLARE(switch_status_t) switch_core_inthash_insert(switch_inthash_t *hash, uint32_t key, const void *data);
+SWITCH_DECLARE(void *) switch_core_inthash_delete(switch_inthash_t *hash, uint32_t key);
+SWITCH_DECLARE(void *) switch_core_inthash_find(switch_inthash_t *hash, uint32_t key);
 
 ///\}
 
@@ -1563,17 +1571,20 @@ SWITCH_DECLARE(switch_status_t) switch_core_timer_destroy(switch_timer_t *timer)
   \param pool the memory pool to use
   \return SWITCH_STATUS_SUCCESS if the handle is allocated
 */
-#define switch_core_codec_init(_codec, _codec_name, _fmtp, _rate, _ms, _channels, _flags, _codec_settings, _pool) \
-	switch_core_codec_init_with_bitrate(_codec, _codec_name, _fmtp, _rate, _ms, _channels, 0, _flags, _codec_settings, _pool)
+#define switch_core_codec_init(_codec, _codec_name, _modname, _fmtp, _rate, _ms, _channels, _flags, _codec_settings, _pool) \
+	switch_core_codec_init_with_bitrate(_codec, _codec_name, _modname, _fmtp, _rate, _ms, _channels, 0, _flags, _codec_settings, _pool)
 SWITCH_DECLARE(switch_status_t) switch_core_codec_init_with_bitrate(switch_codec_t *codec,
-													   const char *codec_name,
-													   const char *fmtp,
-													   uint32_t rate,
-													   int ms,
-													   int channels,
-													   uint32_t bitrate,
-													   uint32_t flags, const switch_codec_settings_t *codec_settings, switch_memory_pool_t *pool);
-
+																	const char *codec_name,
+																	const char *fmtp,
+																	const char *modname,
+																	uint32_t rate,
+																	int ms,
+																	int channels,
+																	uint32_t bitrate,
+																	uint32_t flags, 
+																	const switch_codec_settings_t *codec_settings, 
+																	switch_memory_pool_t *pool);
+								
 SWITCH_DECLARE(switch_status_t) switch_core_codec_copy(switch_codec_t *codec, switch_codec_t *new_codec, 
 													   const switch_codec_settings_t *codec_settings, switch_memory_pool_t *pool);
 SWITCH_DECLARE(switch_status_t) switch_core_codec_parse_fmtp(const char *codec_name, const char *fmtp, uint32_t rate, switch_codec_fmtp_t *codec_fmtp);
@@ -1620,6 +1631,41 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_decode(switch_codec_t *codec,
 														 uint32_t encoded_data_len,
 														 uint32_t encoded_rate,
 														 void *decoded_data, uint32_t *decoded_data_len, uint32_t *decoded_rate, unsigned int *flag);
+
+/*!
+  \brief Encode video data using a codec handle
+  \param codec the codec handle to use
+  \param frame the frame to encode
+*/
+SWITCH_DECLARE(switch_status_t) switch_core_codec_encode_video(switch_codec_t *codec, switch_frame_t *frame);
+
+
+/*!
+  \brief send control data using a codec handle
+  \param codec the codec handle to use
+  \param cmd the command to send
+  \param ctype the type of the arguement
+  \param cmd_data a void pointer to the data matching the passed type
+  \param rtype the type of the response if any
+  \param ret_data a void pointer to a pointer of return data
+  \return SWITCH_STATUS_SUCCESS if the command was received
+*/
+SWITCH_DECLARE(switch_status_t) switch_core_codec_control(switch_codec_t *codec, 
+														  switch_codec_control_command_t cmd, 
+														  switch_codec_control_type_t ctype,
+														  void *cmd_data,
+														  switch_codec_control_type_t *rtype,
+														  void **ret_data);
+
+/*!
+  \brief Decode video data using a codec handle
+  \param codec the codec handle to use
+  \param frame the frame to be decoded
+  \param img the new image in I420 format, allocated by the codec
+  \param flag flags to exchange
+  \return SWITCH_STATUS_SUCCESS if the data was decoded, and a non-NULL img
+*/
+SWITCH_DECLARE(switch_status_t) switch_core_codec_decode_video(switch_codec_t *codec, switch_frame_t *frame);
 
 /*! 
   \brief Destroy an initalized codec handle
@@ -1812,7 +1858,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_write(_In_ switch_file_handle_t
   \param len the amount of data to write from the buffer
   \return SWITCH_STATUS_SUCCESS with len adjusted to the bytes written if successful
 */
-SWITCH_DECLARE(switch_status_t) switch_core_file_write_video(_In_ switch_file_handle_t *fh, void *data, switch_size_t *len);
+SWITCH_DECLARE(switch_status_t) switch_core_file_write_video(_In_ switch_file_handle_t *fh, switch_frame_t *frame);
+SWITCH_DECLARE(switch_status_t) switch_core_file_read_video(switch_file_handle_t *fh, switch_frame_t *frame, switch_video_read_flag_t flags);
 
 /*!
   \brief Seek a position in a file
@@ -1851,6 +1898,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_get_string(_In_ switch_file_han
 SWITCH_DECLARE(switch_status_t) switch_core_file_close(_In_ switch_file_handle_t *fh);
 
 SWITCH_DECLARE(switch_status_t) switch_core_file_truncate(switch_file_handle_t *fh, int64_t offset);
+SWITCH_DECLARE(switch_bool_t) switch_core_file_has_video(switch_file_handle_t *fh);
 
 
 ///\}
@@ -2276,6 +2324,12 @@ SWITCH_DECLARE(uint8_t) switch_core_session_compare(switch_core_session_t *a, sw
   \return TRUE or FALSE
 */
 SWITCH_DECLARE(uint8_t) switch_core_session_check_interface(switch_core_session_t *session, const switch_endpoint_interface_t *endpoint_interface);
+
+SWITCH_DECLARE(switch_status_t) switch_core_session_set_video_read_callback(switch_core_session_t *session, 
+																			switch_core_video_thread_callback_func_t func, void *user_data);
+
+SWITCH_DECLARE(switch_status_t) switch_core_session_video_read_callback(switch_core_session_t *session, switch_frame_t *frame);
+
 SWITCH_DECLARE(switch_hash_index_t *) switch_core_mime_index(void);
 SWITCH_DECLARE(const char *) switch_core_mime_ext2type(const char *ext);
 SWITCH_DECLARE(const char *) switch_core_mime_type2ext(const char *type);
@@ -2625,8 +2679,8 @@ SWITCH_DECLARE(int) switch_core_gen_certs(const char *prefix);
 SWITCH_DECLARE(int) switch_core_cert_gen_fingerprint(const char *prefix, dtls_fingerprint_t *fp);
 SWITCH_DECLARE(int) switch_core_cert_expand_fingerprint(dtls_fingerprint_t *fp, const char *str);
 SWITCH_DECLARE(int) switch_core_cert_verify(dtls_fingerprint_t *fp);
-SWITCH_DECLARE(switch_status_t) switch_core_session_refresh_video(switch_core_session_t *session);
-
+SWITCH_DECLARE(switch_status_t) switch_core_session_request_video_refresh(switch_core_session_t *session);
+SWITCH_DECLARE(switch_status_t) switch_core_session_send_and_request_video_refresh(switch_core_session_t *session);
 SWITCH_DECLARE(int) switch_system(const char *cmd, switch_bool_t wait);
 SWITCH_DECLARE(int) switch_stream_system_fork(const char *cmd, switch_stream_handle_t *stream);
 SWITCH_DECLARE(int) switch_stream_system(const char *cmd, switch_stream_handle_t *stream);

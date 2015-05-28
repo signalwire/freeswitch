@@ -205,7 +205,7 @@ int main(int argc, char *argv[])
 
 
 	if (out_asis) {
-		if (switch_core_codec_init_with_bitrate(&codec, format, fmtp, rate, ptime, channels, bitrate, SWITCH_CODEC_FLAG_ENCODE, NULL, pool) != SWITCH_STATUS_SUCCESS) {
+		if (switch_core_codec_init_with_bitrate(&codec, format, NULL, fmtp, rate, ptime, channels, bitrate, SWITCH_CODEC_FLAG_ENCODE, NULL, pool) != SWITCH_STATUS_SUCCESS) {
 			fprintf(stderr, "Couldn't initialize codec for %s@%dh@%di\n", format, rate, ptime);
 			goto end;
 		}
@@ -215,12 +215,12 @@ int main(int argc, char *argv[])
 		if ((p = strchr(input, '.'))) {
 			p++;
 		}
-		if (!p || switch_core_codec_init_with_bitrate(&codec, p, fmtp, rate, ptime, channels, bitrate, SWITCH_CODEC_FLAG_ENCODE|SWITCH_CODEC_FLAG_DECODE, NULL, pool) != SWITCH_STATUS_SUCCESS) {
+		if (!p || switch_core_codec_init_with_bitrate(&codec, p, NULL, fmtp, rate, ptime, channels, bitrate, SWITCH_CODEC_FLAG_ENCODE|SWITCH_CODEC_FLAG_DECODE, NULL, pool) != SWITCH_STATUS_SUCCESS) {
 			fprintf(stderr, "Couldn't initialize codec for %s@%dh@%di\n", p, rate, ptime);
 			goto end;
 		}
 		
-		if (switch_core_codec_init_with_bitrate(&raw_codec, "L16", fmtp, rate, ptime, channels, bitrate, SWITCH_CODEC_FLAG_ENCODE|SWITCH_CODEC_FLAG_DECODE, NULL, pool) != SWITCH_STATUS_SUCCESS) {
+		if (switch_core_codec_init_with_bitrate(&raw_codec, "L16", NULL, fmtp, rate, ptime, channels, bitrate, SWITCH_CODEC_FLAG_ENCODE|SWITCH_CODEC_FLAG_DECODE, NULL, pool) != SWITCH_STATUS_SUCCESS) {
 		fprintf(stderr, "Couldn't initialize codec for %s@%dh@%di\n", "L16", rate, ptime);
 		goto end;
 		}

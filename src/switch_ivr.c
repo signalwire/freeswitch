@@ -62,6 +62,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_sound_test(switch_core_session_t *ses
 	if (switch_core_codec_init(&codec,
 							   "L16",
 							   NULL,
+							   NULL,
 							   imp.samples_per_second,
 							   imp.microseconds_per_packet / 1000,
 							   imp.number_of_channels,
@@ -142,6 +143,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session,
 
 	arg_recursion_check_start(args);
 
+	switch_channel_set_flag(channel, CF_VIDEO_BLANK);
+
 	switch_core_session_get_read_impl(session, &imp);
 
 	/*
@@ -176,6 +179,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session,
 
 		if (switch_core_codec_init(&codec,
 								   "L16",
+								   NULL,
 								   NULL,
 								   imp.actual_samples_per_second,
 								   imp.microseconds_per_packet / 1000,
@@ -310,6 +314,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session,
 
  end:
 
+	switch_channel_clear_flag(channel, CF_VIDEO_BLANK);
+
 	arg_recursion_check_stop(args);
 
 	if (write_frame.codec) {
@@ -431,6 +437,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_activate_unicast(switch_core_session_
 	if (!switch_test_flag(conninfo, SUF_NATIVE)) {
 		if (switch_core_codec_init(&conninfo->read_codec,
 								   "L16",
+								   NULL,
 								   NULL,
 								   read_codec->implementation->actual_samples_per_second,
 								   read_codec->implementation->microseconds_per_packet / 1000,
@@ -949,6 +956,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
 				if (switch_core_codec_init(&codec,
 								   "L16",
 								   NULL,
+								   NULL,
 								   imp.actual_samples_per_second,
 								   imp.microseconds_per_packet / 1000,
 								   imp.number_of_channels,
@@ -1292,6 +1300,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_count(switch_core_sess
 
 		if (switch_core_codec_init(&codec,
 								   "L16",
+								   NULL,
 								   NULL,
 								   imp.samples_per_second,
 								   imp.microseconds_per_packet / 1000,
@@ -2065,7 +2074,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_del_event(switch_
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
 	if (parser != NULL && digits != NULL && *digits) {
-		status = switch_core_hash_delete(parser->hash, digits);
+		status = switch_core_hash_delete(parser->hash, digits) ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
 	}
 
 	if (status != SWITCH_STATUS_SUCCESS) {

@@ -217,6 +217,7 @@ struct switch_timer {
 	switch_size_t diff;
 	switch_time_t start;
 	uint64_t tick;
+
 };
 
 typedef enum {
@@ -279,9 +280,9 @@ struct switch_file_interface {
 	/*! function to write from the file */
 	switch_status_t (*file_write) (switch_file_handle_t *, void *data, switch_size_t *len);
 	/*! function to seek to a certian position in the file */
-	switch_status_t (*file_read_video) (switch_file_handle_t *, void *data, switch_size_t *len);
+	switch_status_t (*file_read_video) (switch_file_handle_t *, switch_frame_t *frame, switch_video_read_flag_t flags);
 	/*! function to write from the file */
-	switch_status_t (*file_write_video) (switch_file_handle_t *, void *data, switch_size_t *len);
+	switch_status_t (*file_write_video) (switch_file_handle_t *, switch_frame_t *frame);
 	/*! function to seek to a certian position in the file */
 	switch_status_t (*file_seek) (switch_file_handle_t *, unsigned int *cur_pos, int64_t samples, int whence);
 	/*! function to set meta data */
@@ -296,6 +297,18 @@ struct switch_file_interface {
 	switch_loadable_module_interface_t *parent;
 	struct switch_file_interface *next;
 };
+
+typedef struct switch_mm_s {
+	int samplerate;
+	int channels;
+	int keyint;
+	int ab;
+	int vb;
+	int vw;
+	int vh;
+	float fps;
+	int vbuf;
+} switch_mm_t;
 
 /*! an abstract representation of a file handle (some parameters based on compat with libsndfile) */
 struct switch_file_handle {
@@ -358,6 +371,9 @@ struct switch_file_handle {
 	switch_event_t *params;
 	uint32_t cur_channels;
 	uint32_t cur_samplerate;
+	char *stream_name;
+	char *modname;
+	switch_mm_t mm;
 };
 
 /*! \brief Abstract interface to an asr module */
@@ -590,10 +606,19 @@ struct switch_directory_handle {
 	void *private_info;
 };
 
-/* nobody has more setting than speex so we will let them set the standard */
-/*! \brief Various codec settings (currently only relevant to speex) */
-struct switch_codec_settings {
+struct switch_audio_codec_settings {
 	int unused;
+};
+
+struct switch_video_codec_settings {
+	uint32_t bandwidth;
+	int32_t width;
+	int32_t height;
+};
+
+union switch_codec_settings {
+	struct switch_audio_codec_settings audio;
+	struct switch_video_codec_settings video;
 };
 
 /*! an abstract handle of a fmtp parsed by codec */
@@ -609,6 +634,13 @@ struct switch_codec_fmtp {
 	/*! private data for the codec module to store handle specific info */
 	void *private_info;
 
+};
+
+struct switch_picture {
+	uint32_t width;      /* the picture width */
+	uint32_t height;     /* the picture height */
+	uint8_t *planes[4];  /* pointer to the top left pixel for each plane */
+	uint32_t stride[4];  /* stride between rows for each plane */
 };
 
 /*! an abstract handle to a codec module */
@@ -668,10 +700,17 @@ struct switch_codec_implementation {
 	switch_core_codec_encode_func_t encode;
 	/*! function to decode encoded data into raw data */
 	switch_core_codec_decode_func_t decode;
+	/*! function to encode video raw data into encoded data */
+	switch_core_codec_video_encode_func_t encode_video;
+	/*! function to decode video encoded data into raw data */
+	switch_core_codec_video_decode_func_t decode_video;
+	/*! function to send control messages to the codec */
+	switch_core_codec_control_func_t codec_control;
 	/*! deinitalize a codec handle using this implementation */
 	switch_core_codec_destroy_func_t destroy;
 	uint32_t codec_id;
 	uint32_t impl_id;
+	char *modname;
 	struct switch_codec_implementation *next;
 };
 
@@ -687,6 +726,7 @@ struct switch_codec_interface {
 	switch_thread_rwlock_t *rwlock;
 	int refs;
 	switch_mutex_t *reflock;
+	char *modname;
 	switch_loadable_module_interface_t *parent;
 	struct switch_codec_interface *next;
 };

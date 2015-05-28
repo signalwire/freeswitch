@@ -380,7 +380,7 @@ SWITCH_DECLARE(void) switch_time_set_cond_yield(switch_bool_t enable)
 
 static switch_status_t timer_generic_sync(switch_timer_t *timer)
 {
-	switch_time_t now = switch_micro_time_now();
+	switch_time_t now = switch_time_now();
 	int64_t elapsed = (now - timer->start);
 	
 	timer->tick = (elapsed / timer->interval) / 1000;

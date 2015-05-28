@@ -1,33 +1,33 @@
 /***********************************************************************
-Copyright (c) 2006-2011, Skype Limited. All rights reserved. 
-Redistribution and use in source and binary forms, with or without 
-modification, (subject to the limitations in the disclaimer below) 
+Copyright (c) 2006-2011, Skype Limited. All rights reserved.
+Redistribution and use in source and binary forms, with or without
+modification, (subject to the limitations in the disclaimer below)
 are permitted provided that the following conditions are met:
 - Redistributions of source code must retain the above copyright notice,
 this list of conditions and the following disclaimer.
-- Redistributions in binary form must reproduce the above copyright 
-notice, this list of conditions and the following disclaimer in the 
+- Redistributions in binary form must reproduce the above copyright
+notice, this list of conditions and the following disclaimer in the
 documentation and/or other materials provided with the distribution.
-- Neither the name of Skype Limited, nor the names of specific 
-contributors, may be used to endorse or promote products derived from 
+- Neither the name of Skype Limited, nor the names of specific
+contributors, may be used to endorse or promote products derived from
 this software without specific prior written permission.
-NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED 
-BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND 
+NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED
+BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
 CONTRIBUTORS ''AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING,
-BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND 
-FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
-COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, 
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
 INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
-NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF 
-USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON 
-ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
+NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
+USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ***********************************************************************/
 
-/* 
+/*
 
-    Elliptic/Cauer filters designed with 0.1 dB passband ripple, 
+    Elliptic/Cauer filters designed with 0.1 dB passband ripple,
         80 dB minimum stopband attenuation, and
         [0.95 : 0.15 : 0.35] normalized cut off frequencies.
 
@@ -37,8 +37,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #if SWITCH_TRANSITION_FILTERING
 
 /* Helper function, that interpolates the filter taps */
-SKP_INLINE void SKP_Silk_LP_interpolate_filter_taps( 
-    SKP_int32           B_Q28[ TRANSITION_NB ], 
+SKP_INLINE void SKP_Silk_LP_interpolate_filter_taps(
+    SKP_int32           B_Q28[ TRANSITION_NB ],
     SKP_int32           A_Q28[ TRANSITION_NA ],
     const SKP_int       ind,
     const SKP_int32     fac_Q16
@@ -68,19 +68,19 @@ SKP_INLINE void SKP_Silk_LP_interpolate_filter_taps(
 
                 /* Piece-wise linear interpolation of B and A */
                 for( nb = 0; nb < TRANSITION_NB; nb++ ) {
-                    B_Q28[ nb ] = SKP_RSHIFT( 
+                    B_Q28[ nb ] = SKP_RSHIFT(
                         SKP_Silk_Transition_LP_B_Q28[ ind     ][ nb ] +
                         SKP_Silk_Transition_LP_B_Q28[ ind + 1 ][ nb ],
                         1 );
                 }
                 for( na = 0; na < TRANSITION_NA; na++ ) {
-                    A_Q28[ na ] = SKP_RSHIFT( 
-                        SKP_Silk_Transition_LP_A_Q28[ ind     ][ na ] + 
-                        SKP_Silk_Transition_LP_A_Q28[ ind + 1 ][ na ], 
+                    A_Q28[ na ] = SKP_RSHIFT(
+                        SKP_Silk_Transition_LP_A_Q28[ ind     ][ na ] +
+                        SKP_Silk_Transition_LP_A_Q28[ ind + 1 ][ na ],
                         1 );
                 }
             } else { /* ( ( 1 << 16 ) - fac_Q16 ) is in range of a 16-bit int */
-                
+
                 SKP_assert( ( ( 1 << 16 ) - fac_Q16 ) == SKP_SAT16( ( ( 1 << 16 ) - fac_Q16) ) );
                 /* Piece-wise linear interpolation of B and A */
                 for( nb = 0; nb < TRANSITION_NB; nb++ ) {
@@ -123,7 +123,7 @@ void SKP_Silk_LP_variable_cutoff(
     SKP_int     ind = 0;
 
     SKP_assert( psLP->transition_frame_no >= 0 );
-    SKP_assert( ( ( ( psLP->transition_frame_no <= TRANSITION_FRAMES_DOWN ) && ( psLP->mode == 0 ) ) || 
+    SKP_assert( ( ( ( psLP->transition_frame_no <= TRANSITION_FRAMES_DOWN ) && ( psLP->mode == 0 ) ) ||
                   ( ( psLP->transition_frame_no <= TRANSITION_FRAMES_UP   ) && ( psLP->mode == 1 ) ) ) );
 
     /* Interpolate filter coefficients if needed */
@@ -173,15 +173,15 @@ void SKP_Silk_LP_variable_cutoff(
 
                 /* Increment transition frame number for next frame */
                 psLP->transition_frame_no++;
-            
+
             } else {
                 SKP_assert( psLP->transition_frame_no == TRANSITION_FRAMES_UP );
                 /* End of transition phase */
                 SKP_Silk_LP_interpolate_filter_taps( B_Q28, A_Q28, 0, 0 );
             }
         }
-    } 
-    
+    }
+
     if( psLP->transition_frame_no > 0 ) {
         /* ARMA low-pass filtering */
         SKP_assert( TRANSITION_NB == 3 && TRANSITION_NA == 2 );

@@ -1167,6 +1167,7 @@ static int activate_audio_rtp(struct private_object *tech_pvt)
 		if (switch_core_codec_init(&tech_pvt->transports[LDL_TPORT_RTP].read_codec,
 								   tech_pvt->transports[LDL_TPORT_RTP].codec_name,
 								   NULL,
+								   NULL,
 								   tech_pvt->transports[LDL_TPORT_RTP].codec_rate,
 								   ms,
 								   1,
@@ -1187,6 +1188,7 @@ static int activate_audio_rtp(struct private_object *tech_pvt)
 
 		if (switch_core_codec_init(&tech_pvt->transports[LDL_TPORT_RTP].write_codec,
 								   tech_pvt->transports[LDL_TPORT_RTP].codec_name,
+								   NULL,
 								   NULL,
 								   tech_pvt->transports[LDL_TPORT_RTP].codec_rate,
 								   ms,
@@ -1366,6 +1368,7 @@ static int activate_video_rtp(struct private_object *tech_pvt)
 		if (switch_core_codec_init(&tech_pvt->transports[LDL_TPORT_VIDEO_RTP].read_codec,
 								   tech_pvt->transports[LDL_TPORT_VIDEO_RTP].codec_name,
 								   NULL,
+								   NULL,
 								   tech_pvt->transports[LDL_TPORT_VIDEO_RTP].codec_rate,
 								   ms,
 								   1,
@@ -1383,6 +1386,7 @@ static int activate_video_rtp(struct private_object *tech_pvt)
 
 		if (switch_core_codec_init(&tech_pvt->transports[LDL_TPORT_VIDEO_RTP].write_codec,
 								   tech_pvt->transports[LDL_TPORT_VIDEO_RTP].codec_name,
+								   NULL,
 								   NULL,
 								   tech_pvt->transports[LDL_TPORT_VIDEO_RTP].codec_rate,
 								   ms,
@@ -2025,7 +2029,7 @@ static switch_status_t channel_on_destroy(switch_core_session_t *session)
 			
 			if (tech_pvt->profile->purge) {
 				mdl_profile_t *profile = tech_pvt->profile;
-				if (switch_core_hash_delete(globals.profile_hash, profile->name) == SWITCH_STATUS_SUCCESS) {
+				if (switch_core_hash_delete(globals.profile_hash, profile->name)) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Profile %s deleted successfully\n", profile->name);
 				}
 			}
@@ -3261,7 +3265,7 @@ static switch_status_t destroy_profile(char *name)
 				ldl_handle_stop(profile->handle);
 			}
 
-			if (switch_core_hash_delete(globals.profile_hash, profile->name) == SWITCH_STATUS_SUCCESS) {
+			if (switch_core_hash_delete(globals.profile_hash, profile->name)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Profile %s deleted successfully\n", profile->name);
 			}
 		}

@@ -36,86 +36,6 @@
 #include <switch.h>
 #include "private/switch_core_pvt.h"
 
-SWITCH_DECLARE(switch_status_t) switch_core_session_write_video_frame(switch_core_session_t *session, switch_frame_t *frame, switch_io_flag_t flags,
-																	  int stream_id)
-{
-	switch_io_event_hook_video_write_frame_t *ptr;
-	switch_status_t status = SWITCH_STATUS_FALSE;
-
-	if (switch_channel_down(session->channel)) {
-		return SWITCH_STATUS_FALSE;
-	}
-
-	if (switch_channel_test_flag(session->channel, CF_VIDEO_PAUSE)) {
-		return SWITCH_STATUS_SUCCESS;
-	}
-
-	if (session->endpoint_interface->io_routines->write_video_frame) {
-		if ((status = session->endpoint_interface->io_routines->write_video_frame(session, frame, flags, stream_id)) == SWITCH_STATUS_SUCCESS) {
-			for (ptr = session->event_hooks.video_write_frame; ptr; ptr = ptr->next) {
-				if ((status = ptr->video_write_frame(session, frame, flags, stream_id)) != SWITCH_STATUS_SUCCESS) {
-					break;
-				}
-			}
-		}
-	}
-	return status;
-}
-
-SWITCH_DECLARE(switch_status_t) switch_core_session_read_video_frame(switch_core_session_t *session, switch_frame_t **frame, switch_io_flag_t flags,
-																	 int stream_id)
-{
-	switch_status_t status = SWITCH_STATUS_FALSE;
-	switch_io_event_hook_video_read_frame_t *ptr;
-
-	switch_assert(session != NULL);
-
-	if (switch_channel_down(session->channel)) {
-		return SWITCH_STATUS_FALSE;
-	}
-
-	if (switch_channel_test_flag(session->channel, CF_VIDEO_PAUSE)) {
-		*frame = &runtime.dummy_cng_frame;
-		switch_yield(20000);
-		return SWITCH_STATUS_SUCCESS;
-	}
-
-	if (session->endpoint_interface->io_routines->read_video_frame) {
-		if ((status = session->endpoint_interface->io_routines->read_video_frame(session, frame, flags, stream_id)) == SWITCH_STATUS_SUCCESS) {
-			for (ptr = session->event_hooks.video_read_frame; ptr; ptr = ptr->next) {
-				if ((status = ptr->video_read_frame(session, frame, flags, stream_id)) != SWITCH_STATUS_SUCCESS) {
-					break;
-				}
-			}
-		}
-	}
-
-	if (status == SWITCH_STATUS_INUSE) {
-		*frame = &runtime.dummy_cng_frame;
-		switch_yield(20000);
-		return SWITCH_STATUS_SUCCESS;
-	}
-
-	if (status != SWITCH_STATUS_SUCCESS) {
-		goto done;
-	}
-
-	if (!(*frame)) {
-		goto done;
-	}
-
-	switch_assert(*frame != NULL);
-
-	if (switch_test_flag(*frame, SFF_CNG)) {
-		status = SWITCH_STATUS_SUCCESS;
-		goto done;
-	}
-
-  done:
-
-	return status;
-}
-
 SWITCH_DECLARE(void) switch_core_gen_encoded_silence(unsigned char *data, const switch_codec_implementation_t *read_impl, switch_size_t len)
 {
 	unsigned char g729_filler[] = {
@@ -1709,7 +1629,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_perform_kill_channel(switch_
 	switch_io_event_hook_kill_channel_t *ptr;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
-	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, switch_core_session_get_uuid(session), SWITCH_LOG_DEBUG, "Send signal %s [%s]\n",
+	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, switch_core_session_get_uuid(session), SWITCH_LOG_DEBUG10, "Send signal %s [%s]\n",
 					  switch_channel_get_name(session->channel), SIG_NAMES[sig]);
 
 	if (session->endpoint_interface->io_routines->kill_channel) {

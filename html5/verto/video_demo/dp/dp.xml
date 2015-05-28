@@ -1,0 +1,58 @@
+<include>
+     <extension name="h" continue="true">
+       <condition field="destination_number" expression="^h264_(.*)$" break="never">
+	<action application="set" data="absolute_codec_string=opus,pcmu,h264"/>
+	 <action application="transfer" data="$1"/>	 
+       </condition>
+     </extension>
+
+     <extension name="v" continue="true">
+       <condition field="destination_number" expression="^vp8_(.*)$" break="never">
+	<action application="set" data="absolute_codec_string=opus,pcmu,vp8"/>
+	 <action application="transfer" data="$1"/>	 
+       </condition>
+     </extension>
+
+
+
+     <extension name="h" continue="true">
+       <condition field="destination_number" expression="^hbr_(.*)$" break="never">
+	<action application="export" data="nolocal:absolute_codec_string=opus,pcmu,h264"/>
+	 <action application="transfer" data="$1"/>	 
+       </condition>
+     </extension>
+
+     <extension name="v" continue="true">
+       <condition field="destination_number" expression="^vbr_(.*)$" break="never">
+	<action application="export" data="nolocal:absolute_codec_string=opus,pcmu,vp8"/>
+	 <action application="transfer" data="$1"/>	 
+       </condition>
+     </extension>
+
+
+
+     <extension name="bug">
+       <condition field="destination_number" expression="^vbr_(.*)$">
+	<action application="set" data="absolute_codec_string=pcmu,vp8"/>
+	 <action application="answer"/>
+	 <action application="bridge" data="vlc//var/www/vid/$1" />
+       </condition>
+     </extension>
+
+     <extension name="bug">
+       <condition field="destination_number" expression="^vid_(.*)$">
+	 <action application="answer"/>
+	 <action application="play_video" data="/var/www/vid/$1" />
+       </condition>
+     </extension>
+
+
+     <extension name="bug">
+       <condition field="destination_number" expression="^decode$|^9952$">
+	 <action application="answer"/>
+	 <action application="set" data="hold_music=silence_stream://-1"/>
+	 <action application="decode_video"/>
+       </condition>
+     </extension>
+
+</include>

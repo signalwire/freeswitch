@@ -50,24 +50,20 @@ struct file_header {
 };
 
 struct record_helper {
-	switch_core_session_t *session;
 	switch_mutex_t *mutex;
 	int fd;
-	int up;
     switch_size_t shared_ts;
 };
 
-static void *SWITCH_THREAD_FUNC record_video_thread(switch_thread_t *thread, void *obj)
+static void record_video_thread(switch_core_session_t *session, void *obj)
 {
 	struct record_helper *eh = obj;
-	switch_core_session_t *session = eh->session;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_status_t status;
 	switch_frame_t *read_frame;
 	int bytes;
 
-	eh->up = 1;
-	while (switch_channel_ready(channel) && eh->up) {
+	while (switch_channel_ready(channel)) {
 		status = switch_core_session_read_video_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 
 		if (!SWITCH_READ_ACCEPTABLE(status)) {
@@ -96,8 +92,6 @@ static void *SWITCH_THREAD_FUNC record_video_thread(switch_thread_t *thread, voi
 
 		switch_core_session_write_video_frame(session, read_frame, SWITCH_IO_FLAG_NONE, 0);
 	}
-	eh->up = 0;
-	return NULL;
 }
 
 SWITCH_STANDARD_APP(record_fsv_function)
@@ -106,8 +100,6 @@ SWITCH_STANDARD_APP(record_fsv_function)
 	switch_frame_t *read_frame;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	struct record_helper eh = { 0 };
-	switch_thread_t *thread;
-	switch_threadattr_t *thd_attr = NULL;
 	int fd;
 	switch_mutex_t *mutex = NULL;
 	switch_codec_t codec, *vid_codec;
@@ -119,7 +111,7 @@ SWITCH_STANDARD_APP(record_fsv_function)
 
 	switch_core_session_get_read_impl(session, &read_impl);
 	switch_channel_answer(channel);
-	switch_core_session_refresh_video(session);
+	switch_core_session_request_video_refresh(session);
 
 	switch_channel_set_variable(channel, SWITCH_PLAYBACK_TERMINATOR_USED, "");
 
@@ -154,6 +146,7 @@ SWITCH_STANDARD_APP(record_fsv_function)
 
 	if (switch_core_codec_init(&codec,
 							   "L16",
+							   NULL,
 							   NULL,
 							   read_impl.samples_per_second,
 							   read_impl.microseconds_per_packet / 1000,
@@ -190,11 +183,7 @@ SWITCH_STANDARD_APP(record_fsv_function)
 		switch_mutex_init(&mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
 		eh.mutex = mutex;
 		eh.fd = fd;
-		eh.session = session;
-		switch_threadattr_create(&thd_attr, switch_core_session_get_pool(session));
-		switch_threadattr_detach_set(thd_attr, 1);
-		switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
-		switch_thread_create(&thread, thd_attr, record_video_thread, &eh, switch_core_session_get_pool(session));
+		switch_core_media_start_video_function(session, record_video_thread, &eh);
 	}
 
 
@@ -204,7 +193,6 @@ SWITCH_STANDARD_APP(record_fsv_function)
 
 		if (switch_channel_test_flag(channel, CF_BREAK)) {
 			switch_channel_clear_flag(channel, CF_BREAK);
-			eh.up = 0;
 			break;
 		}
 
@@ -224,13 +212,11 @@ SWITCH_STANDARD_APP(record_fsv_function)
 
 				char sbuf[2] = {dtmf.digit, '\0'};
 				switch_channel_set_variable(channel, SWITCH_PLAYBACK_TERMINATOR_USED, sbuf);
-				eh.up = 0;
 				break;
 			}
 		}
 
 		if (!SWITCH_READ_ACCEPTABLE(status)) {
-			eh.up = 0;
 			break;
 		}
 
@@ -267,24 +253,16 @@ SWITCH_STANDARD_APP(record_fsv_function)
 
   end:
 
-	if (eh.up) {
-		while (eh.up) {
-			switch_cond_next();
-		}
-	}
-
 	if (fd > -1) {
 		close(fd);
 	}
 
-
+	switch_core_media_end_video_function(session);
 	switch_core_session_set_read_codec(session, NULL);
 	switch_core_codec_destroy(&codec);
 
  done:
-
-	switch_channel_clear_flag(channel, CF_VIDEO_PASSIVE);
-
+	switch_core_session_video_reset(session);
 }
 
 SWITCH_STANDARD_APP(play_fsv_function)
@@ -306,14 +284,12 @@ SWITCH_STANDARD_APP(play_fsv_function)
 	switch_frame_t *read_frame;
 	switch_codec_implementation_t read_impl = { 0 };
 
-	switch_channel_set_flag(channel, CF_VIDEO_PASSIVE);
-
-	switch_core_session_refresh_video(session);
+	switch_core_session_request_video_refresh(session);
 
 	switch_core_session_get_read_impl(session, &read_impl);
 
 	aud_buffer = switch_core_session_alloc(session, SWITCH_RECOMMENDED_BUFFER_SIZE);
-	vid_buffer = switch_core_session_alloc(session, SWITCH_RECOMMENDED_BUFFER_SIZE);
+	vid_buffer = switch_core_session_alloc(session, SWITCH_RTP_MAX_BUF_LEN);
 
 	switch_channel_set_variable(channel, SWITCH_PLAYBACK_TERMINATOR_USED, "");
 
@@ -348,10 +324,11 @@ SWITCH_STANDARD_APP(play_fsv_function)
 
 	vid_frame.codec = &vid_codec;
 	vid_frame.packet = vid_buffer;
-	vid_frame.data = vid_buffer + 12;
-	vid_frame.buflen = SWITCH_RECOMMENDED_BUFFER_SIZE - 12;
+	vid_frame.data = ((uint8_t *)vid_buffer) + 12;
+	vid_frame.buflen = SWITCH_RTP_MAX_BUF_LEN - 12;
 	switch_set_flag((&vid_frame), SFF_RAW_RTP);
-	switch_set_flag((&vid_frame), SFF_PROXY_PACKET);
+	// switch_set_flag((&vid_frame), SFF_PROXY_PACKET);
+	switch_set_flag((&vid_frame), SFF_RAW_RTP_PARSE_FRAME);
 
 	if (switch_core_timer_init(&timer, "soft", read_impl.microseconds_per_packet / 1000,
 							   read_impl.samples_per_packet, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
@@ -362,6 +339,7 @@ SWITCH_STANDARD_APP(play_fsv_function)
 
 	if (switch_core_codec_init(&codec,
 							   "L16",
+							   NULL,
 							   NULL,
 							   h.audio_rate,
 							   h.audio_ptime,
@@ -377,6 +355,7 @@ SWITCH_STANDARD_APP(play_fsv_function)
 	if (switch_core_codec_init(&vid_codec,
 							   h.video_codec_name,
 							   NULL,
+							   NULL,
 							   0,
 							   0,
 							   1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
@@ -388,8 +367,6 @@ SWITCH_STANDARD_APP(play_fsv_function)
 		goto end;
 	}
 	switch_core_session_set_read_codec(session, &codec);
-
-	switch_core_service_session_av(session, SWITCH_FALSE, SWITCH_TRUE);
 	
 	while (switch_channel_ready(channel)) {
 
@@ -423,7 +400,7 @@ SWITCH_STANDARD_APP(play_fsv_function)
 
 				vid_frame.m = hdr->m;
 				vid_frame.timestamp = ts;
-				vid_frame.data = data + 12;
+				vid_frame.data = ((uint8_t *)data) + 12;
 				vid_frame.datalen = vid_frame.packetlen - 12;
 				switch_core_session_write_video_frame(session, &vid_frame, SWITCH_IO_FLAG_NONE, 0);
 			}
@@ -504,8 +481,291 @@ SWITCH_STANDARD_APP(play_fsv_function)
 	}
 
  done:
-	switch_channel_clear_flag(channel, CF_VIDEO_PASSIVE);
+	switch_core_session_video_reset(session);
 }
+
+/*
+	\brief play YUV file in I420 (YV12) format
+*/
+SWITCH_STANDARD_APP(play_yuv_function)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_frame_t vid_frame = { 0 };
+	int fd = -1;
+	switch_codec_t *codec = NULL;
+	unsigned char *vid_buffer;
+	// switch_timer_t timer = { 0 };
+	switch_dtmf_t dtmf = { 0 };
+	switch_frame_t *read_frame;
+	uint32_t width = 0, height = 0, size;
+	switch_image_t *img = NULL;
+	switch_byte_t *yuv = NULL;
+	int argc;
+	int to  = 0;
+	char *argv[5] = { 0 };
+	char *mydata = switch_core_session_strdup(session, data);
+	uint32_t loops = 0;
+	switch_time_t done = 0;
+	int nots = 0;
+
+	switch_channel_answer(channel);
+
+	switch_channel_audio_sync(channel);
+	switch_core_session_raw_read(session);
+
+	argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+
+	if (argc == 0) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No file present\n");
+		goto done;
+	}
+
+	if (argc > 1) width = atoi(argv[1]);
+	if (argc > 2) height = atoi(argv[2]);
+	if (argc > 3) to = atoi(argv[3]);
+	if (argc > 4) nots = atoi(argv[4]);
+
+	if (to) {
+		done = switch_micro_time_now() + (to * 1000);
+	}
+
+	switch_channel_set_flag(channel, CF_VIDEO_DECODED_READ);
+
+	while (switch_channel_ready(channel) && !switch_channel_test_flag(channel, CF_VIDEO)) {
+		if ((++loops % 100) == 0) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Waiting for video......\n");
+		switch_ivr_sleep(session, 20, SWITCH_TRUE, NULL);
+
+		if (done && switch_micro_time_now() > done) {
+			goto done;
+		}
+		continue;
+	}
+
+
+	width = width ? width : 352;
+	height = height ? height : 288;
+	size = width * height * 3 / 2;
+
+	img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, width, height, 0);
+
+	if (!img) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Memory Error\n");
+		goto end;
+	}
+
+	yuv = img->planes[SWITCH_PLANE_PACKED];
+
+	// switch_channel_set_flag(channel, CF_VIDEO_PASSIVE);
+	//SWITCH_RTP_MAX_BUF_LEN
+	vid_buffer = switch_core_session_alloc(session, SWITCH_RTP_MAX_BUF_LEN);
+
+	switch_channel_set_variable(channel, SWITCH_PLAYBACK_TERMINATOR_USED, "");
+
+	if ((fd = open(argv[0], O_RDONLY | O_BINARY)) < 0) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Error opening file %s\n", (char *) data);
+		switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "Got error while opening file");
+		goto end;
+	}
+
+	if (read(fd, yuv, size) != size) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Error reading file\n");
+		switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "Got error reading file");
+		goto end;
+	}
+
+	close(fd);
+	fd = -1;
+
+
+
+	codec = switch_core_session_get_video_write_codec(session);
+
+	vid_frame.codec = codec;
+	vid_frame.packet = vid_buffer;
+	vid_frame.data = ((uint8_t *)vid_buffer) + 12;
+	vid_frame.buflen = SWITCH_RTP_MAX_BUF_LEN - 12;
+	switch_set_flag((&vid_frame), SFF_RAW_RTP);
+	// switch_set_flag((&vid_frame), SFF_PROXY_PACKET);
+
+	switch_core_session_request_video_refresh(session);
+	switch_core_media_gen_key_frame(session);
+
+	while (switch_channel_ready(channel)) {
+		char ts_str[64];
+
+		switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
+
+		if (switch_channel_test_flag(channel, CF_BREAK)) {
+			switch_channel_clear_flag(channel, CF_BREAK);
+			break;
+		}
+
+		if (done && switch_micro_time_now() > done) {
+			goto done;
+		}
+
+
+		switch_ivr_parse_all_events(session);
+
+		//check for dtmf interrupts
+		if (switch_channel_has_dtmf(channel)) {
+			const char * terminators = switch_channel_get_variable(channel, SWITCH_PLAYBACK_TERMINATORS_VARIABLE);
+			switch_channel_dequeue_dtmf(channel, &dtmf);
+
+			if (terminators && !strcasecmp(terminators, "none")) {
+				terminators = NULL;
+			}
+
+			if (terminators && strchr(terminators, dtmf.digit)) {
+				char sbuf[2] = {dtmf.digit, '\0'};
+
+				switch_channel_set_variable(channel, SWITCH_PLAYBACK_TERMINATOR_USED, sbuf);
+				break;
+			}
+		}
+		
+		if (read_frame) {
+			memset(read_frame->data, 0, read_frame->datalen);
+			switch_core_session_write_frame(session, read_frame, SWITCH_IO_FLAG_NONE, 0);
+		}
+
+		if (!nots) {
+			sprintf(ts_str, "%" SWITCH_TIME_T_FMT, switch_micro_time_now() / 1000);
+			switch_img_add_text(img->planes[SWITCH_PLANE_PACKED], width, 20, 20, ts_str);
+		}
+
+		vid_frame.img = img;
+		switch_core_session_write_video_frame(session, &vid_frame, SWITCH_IO_FLAG_NONE, 0);
+	}
+
+	switch_core_thread_session_end(session);
+	switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "OK");
+
+  end:
+
+	if (fd > -1) {
+		close(fd);
+	}
+
+	switch_img_free(&img);
+
+ done:
+
+	switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
+	switch_core_session_video_reset(session);
+	// switch_channel_clear_flag(channel, CF_VIDEO_PASSIVE);
+}
+
+
+static void decode_video_thread(switch_core_session_t *session, void *obj)
+{
+	uint32_t max_pictures = *((uint32_t *) obj);
+	switch_codec_t *codec;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_frame_t *frame;
+	uint32_t width = 0, height = 0;
+	uint32_t decoded_pictures = 0;
+	int count = 0;
+
+	if (!switch_channel_ready(channel)) {
+		goto done;
+	}
+
+	codec = switch_core_session_get_video_read_codec(session);
+
+	if (!codec) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Channel has no video read codec\n");
+		goto done;
+	}
+
+	switch_channel_set_flag(channel, CF_VIDEO_DEBUG_READ);
+	switch_channel_set_flag(channel, CF_VIDEO_DEBUG_WRITE);
+
+	while (switch_channel_ready(channel)) {
+		switch_status_t status = switch_core_session_read_video_frame(session, &frame, SWITCH_IO_FLAG_NONE, 0);
+
+		if (switch_channel_test_flag(channel, CF_BREAK)) {
+			switch_channel_clear_flag(channel, CF_BREAK);
+			break;
+		}
+
+		if (!SWITCH_READ_ACCEPTABLE(status)) {
+			break;
+		}
+
+		if (!count || ++count == 101) {
+			switch_core_session_request_video_refresh(session);
+			count = 1;
+		}
+			
+
+		if (frame && frame->datalen > 0) {
+			switch_core_session_write_video_frame(session, frame, SWITCH_IO_FLAG_NONE, 0);
+		} else {
+			continue;
+		}
+
+		if (switch_test_flag(frame, SFF_CNG) || frame->datalen < 3) {
+			continue;
+		}
+
+		if (frame->img) {
+			if (frame->img->d_w > 0 && !width) {
+				width = frame->img->d_w;
+				switch_channel_set_variable_printf(channel, "video_width", "%d", width);
+			}
+
+			if (frame->img->d_h > 0 && !height) {
+				height = frame->img->d_h;
+				switch_channel_set_variable_printf(channel, "video_height", "%d", height);
+			}
+
+			decoded_pictures++;
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "picture#%d %dx%d\n", decoded_pictures, frame->img->d_w, frame->img->d_h);
+
+			if (max_pictures && (decoded_pictures >= max_pictures)) {
+				break;
+			}
+		}
+	}
+
+ done:
+
+	return;
+}
+
+SWITCH_STANDARD_APP(decode_video_function)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	uint32_t max_pictures = 0;
+	const char *moh = switch_channel_get_hold_music(channel);
+
+	if (zstr(moh)) {
+		moh = "silence_stream://-1";
+	}
+
+	switch_channel_answer(channel);
+	switch_core_session_request_video_refresh(session);
+
+	switch_channel_set_flag(channel, CF_VIDEO_DECODED_READ);
+
+	switch_core_media_start_video_function(session, decode_video_thread, &max_pictures);
+
+	switch_ivr_play_file(session, NULL, moh, NULL);
+
+	switch_channel_set_variable(channel, SWITCH_PLAYBACK_TERMINATOR_USED, "");
+
+	if (!zstr(data)) max_pictures = atoi(data);
+
+	switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "OK");
+
+
+	switch_core_media_end_video_function(session);
+	switch_core_session_video_reset(session);
+}
+
+
+/* File Interface*/
 
 struct fsv_file_context {
 	switch_file_t *fd;
@@ -561,8 +821,8 @@ static switch_status_t fsv_file_open(switch_file_handle_t *handle, const char *p
 	}
 
 	handle->samples = 0;
-	handle->samplerate = 8000;
-	handle->channels = 1;
+	// handle->samplerate = 8000;
+	// handle->channels = 1;
 	handle->format = 0;
 	handle->sections = 0;
 	handle->seekable = 0;
@@ -690,17 +950,31 @@ end:
 
 static switch_status_t fsv_file_write(switch_file_handle_t *handle, void *data, size_t *len)
 {
-	size_t datalen = *len * 2;
+	uint32_t datalen = *len * sizeof(int16_t);
 	size_t size;
 	switch_status_t status;
+	int16_t *xdata = data;
+	int max_datasize = handle->samplerate / 8000 * 160;
 
 	fsv_file_context *context = handle->private_info;
 
-	/* switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "writing: %ld\n", (long)(*len)); */
+	/* switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "writing: %ld %d %x\n", (long)(*len), handle->channels, handle->flags); */
 
-	if (*len > 160) { /* when sample rate is 8000 */
+	if (*len > max_datasize) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "You are asking to write %d bytes of data which is not supported. Please set enable_file_write_buffering=false to use .fsv format\n", (int)(*len));
 		return SWITCH_STATUS_GENERR;
+	}
+
+	if (handle->channels > 1) {
+		int i, j;
+		int32_t mixed = 0;
+		for (i=0; i<*len; i++) {
+			for (j = 0; j < handle->channels; j++) {
+				mixed += xdata[i * handle->channels + j];
+			}
+			switch_normalize_to_16bit(mixed);
+			xdata[i] = (uint16_t)mixed;
+		}
 	}
 
 	switch_mutex_lock(context->mutex);
@@ -715,9 +989,12 @@ static switch_status_t fsv_file_write(switch_file_handle_t *handle, void *data, 
 	status =  switch_file_write(context->fd, data, len);
 	switch_mutex_unlock(context->mutex);
 
+	handle->sample_count += *len / sizeof(int16_t);
+
 	return status;
 }
 
+#if 0
 static switch_status_t fsv_file_write_video(switch_file_handle_t *handle, void *data, size_t *len)
 {
 	uint32_t datalen = (uint32_t)*len;
@@ -740,8 +1017,12 @@ static switch_status_t fsv_file_write_video(switch_file_handle_t *handle, void *
 	status =  switch_file_write(context->fd, data, len);
 	switch_mutex_unlock(context->mutex);
 
+	*len /= 2;
+	handle->sample_count += *len;
+
 	return status;
 }
+#endif
 
 static switch_status_t fsv_file_set_string(switch_file_handle_t *handle, switch_audio_col_t col, const char *string)
 {
@@ -775,13 +1056,17 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_fsv_load)
 	file_interface->file_truncate = fsv_file_truncate;
 	file_interface->file_read = fsv_file_read;
 	file_interface->file_write = fsv_file_write;
+#if 0
 	file_interface->file_write_video = fsv_file_write_video;
+#endif
 	file_interface->file_seek = fsv_file_seek;
 	file_interface->file_set_string = fsv_file_set_string;
 	file_interface->file_get_string = fsv_file_get_string;
 
-	SWITCH_ADD_APP(app_interface, "play_fsv", "play an fsv file", "play an fsv file", play_fsv_function, "<file>", SAF_NONE);
+	SWITCH_ADD_APP(app_interface, "play_fsv", "play a fsv file", "play a fsv file", play_fsv_function, "<file>", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "record_fsv", "record an fsv file", "record an fsv file", record_fsv_function, "<file>", SAF_NONE);
+	SWITCH_ADD_APP(app_interface, "play_yuv", "play a yvv file", "play a yvv file in I420 format", play_yuv_function, "<file> [width] [height]", SAF_NONE);
+	SWITCH_ADD_APP(app_interface, "decode_video", "decode picture", "decode picture and dump to log", decode_video_function, "[max_pictures]", SAF_NONE);
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;

@@ -713,7 +713,7 @@ switch_status_t Board::KhompPvt::justAlloc(bool is_answering, switch_memory_pool
 
     switch_core_session_add_stream(session(), NULL);
 
-    if (switch_core_codec_init(&_read_codec, "PCMA", NULL, 8000, Globals::switch_packet_duration, 1,
+    if (switch_core_codec_init(&_read_codec, "PCMA", NULL, NULL, 8000, Globals::switch_packet_duration, 1,
             SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL,
                 (pool ? *pool : NULL)) != SWITCH_STATUS_SUCCESS)
     {
@@ -722,7 +722,7 @@ switch_status_t Board::KhompPvt::justAlloc(bool is_answering, switch_memory_pool
         return SWITCH_STATUS_FALSE;
     }
 
-    if (switch_core_codec_init(&_write_codec, "PCMA", NULL, 8000, Globals::switch_packet_duration, 1,
+    if (switch_core_codec_init(&_write_codec, "PCMA", NULL, NULL, 8000, Globals::switch_packet_duration, 1,
             SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL,
                 (pool ? *pool : NULL)) != SWITCH_STATUS_SUCCESS)
     {

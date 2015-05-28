@@ -1,27 +1,27 @@
 /***********************************************************************
-Copyright (c) 2006-2011, Skype Limited. All rights reserved. 
-Redistribution and use in source and binary forms, with or without 
-modification, (subject to the limitations in the disclaimer below) 
+Copyright (c) 2006-2011, Skype Limited. All rights reserved.
+Redistribution and use in source and binary forms, with or without
+modification, (subject to the limitations in the disclaimer below)
 are permitted provided that the following conditions are met:
 - Redistributions of source code must retain the above copyright notice,
 this list of conditions and the following disclaimer.
-- Redistributions in binary form must reproduce the above copyright 
-notice, this list of conditions and the following disclaimer in the 
+- Redistributions in binary form must reproduce the above copyright
+notice, this list of conditions and the following disclaimer in the
 documentation and/or other materials provided with the distribution.
-- Neither the name of Skype Limited, nor the names of specific 
-contributors, may be used to endorse or promote products derived from 
+- Neither the name of Skype Limited, nor the names of specific
+contributors, may be used to endorse or promote products derived from
 this software without specific prior written permission.
-NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED 
-BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND 
+NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED
+BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
 CONTRIBUTORS ''AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING,
-BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND 
-FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
-COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, 
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
 INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
-NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF 
-USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON 
-ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
+NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
+USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ***********************************************************************/
 
@@ -68,7 +68,7 @@ void SKP_Silk_decode_parameters(
         SKP_Silk_range_decoder( &Ix, psRC, SKP_Silk_type_offset_CDF, SKP_Silk_type_offset_CDF_offset );
     } else {
         /* condidtional coding */
-        SKP_Silk_range_decoder( &Ix, psRC, SKP_Silk_type_offset_joint_CDF[ psDec->typeOffsetPrev ], 
+        SKP_Silk_range_decoder( &Ix, psRC, SKP_Silk_type_offset_joint_CDF[ psDec->typeOffsetPrev ],
                 SKP_Silk_type_offset_CDF_offset );
     }
     psDecCtrl->sigtype         = SKP_RSHIFT( Ix, 1 );
@@ -78,7 +78,7 @@ void SKP_Silk_decode_parameters(
     /****************/
     /* Decode gains */
     /****************/
-    /* first subframe */    
+    /* first subframe */
     if( psDec->nFramesDecoded == 0 ) {
         /* first frame in packet: independent coding */
         SKP_Silk_range_decoder( &GainsIndices[ 0 ], psRC, SKP_Silk_gain_CDF[ psDecCtrl->sigtype ], SKP_Silk_gain_CDF_offset );
@@ -91,7 +91,7 @@ void SKP_Silk_decode_parameters(
     for( i = 1; i < NB_SUBFR; i++ ) {
         SKP_Silk_range_decoder( &GainsIndices[ i ], psRC, SKP_Silk_delta_gain_CDF, SKP_Silk_delta_gain_CDF_offset );
     }
-    
+
     /* Dequant Gains */
     SKP_Silk_gains_dequant( psDecCtrl->Gains_Q16, GainsIndices, &psDec->LastGainIndex, psDec->nFramesDecoded );
     /****************/
@@ -109,9 +109,9 @@ void SKP_Silk_decode_parameters(
     /************************************/
     /* Decode NLSF interpolation factor */
     /************************************/
-    SKP_Silk_range_decoder( &psDecCtrl->NLSFInterpCoef_Q2, psRC, SKP_Silk_NLSF_interpolation_factor_CDF, 
+    SKP_Silk_range_decoder( &psDecCtrl->NLSFInterpCoef_Q2, psRC, SKP_Silk_NLSF_interpolation_factor_CDF,
         SKP_Silk_NLSF_interpolation_factor_offset );
-    
+
     /* If just reset, e.g., because internal Fs changed, do not allow interpolation */
     /* improves the case of packet loss in the first frame after a switch           */
     if( psDec->first_frame_after_reset == 1 ) {
@@ -123,10 +123,10 @@ void SKP_Silk_decode_parameters(
         SKP_Silk_NLSF2A_stable( psDecCtrl->PredCoef_Q12[ 1 ], pNLSF_Q15, psDec->LPC_order );
 
         if( psDecCtrl->NLSFInterpCoef_Q2 < 4 ) {
-            /* Calculation of the interpolated NLSF0 vector from the interpolation factor, */ 
+            /* Calculation of the interpolated NLSF0 vector from the interpolation factor, */
             /* the previous NLSF1, and the current NLSF1                                   */
             for( i = 0; i < psDec->LPC_order; i++ ) {
-                pNLSF0_Q15[ i ] = psDec->prevNLSF_Q15[ i ] + SKP_RSHIFT( SKP_MUL( psDecCtrl->NLSFInterpCoef_Q2, 
+                pNLSF0_Q15[ i ] = psDec->prevNLSF_Q15[ i ] + SKP_RSHIFT( SKP_MUL( psDecCtrl->NLSFInterpCoef_Q2,
                     ( pNLSF_Q15[ i ] - psDec->prevNLSF_Q15[ i ] ) ), 2 );
             }
 
@@ -134,7 +134,7 @@ void SKP_Silk_decode_parameters(
             SKP_Silk_NLSF2A_stable( psDecCtrl->PredCoef_Q12[ 0 ], pNLSF0_Q15, psDec->LPC_order );
         } else {
             /* Copy LPC coefficients for first half from second half */
-            SKP_memcpy( psDecCtrl->PredCoef_Q12[ 0 ], psDecCtrl->PredCoef_Q12[ 1 ], 
+            SKP_memcpy( psDecCtrl->PredCoef_Q12[ 0 ], psDecCtrl->PredCoef_Q12[ 1 ],
                 psDec->LPC_order * sizeof( SKP_int16 ) );
         }
     }
@@ -161,7 +161,7 @@ void SKP_Silk_decode_parameters(
         } else {
             SKP_Silk_range_decoder( &Ixs[ 0 ], psRC, SKP_Silk_pitch_lag_SWB_CDF, SKP_Silk_pitch_lag_SWB_CDF_offset );
         }
-        
+
         /* Get countour index */
         if( psDec->fs_kHz == 8 ) {
             /* Less codevectors used in 8 khz mode */
@@ -170,7 +170,7 @@ void SKP_Silk_decode_parameters(
             /* Joint for 12, 16, and 24 khz */
             SKP_Silk_range_decoder( &Ixs[ 1 ], psRC, SKP_Silk_pitch_contour_CDF, SKP_Silk_pitch_contour_CDF_offset );
         }
-        
+
         /* Decode pitch values */
         SKP_Silk_decode_pitch( Ixs[ 0 ], Ixs[ 1 ], psDecCtrl->pitchL, psDec->fs_kHz );
 
@@ -178,14 +178,14 @@ void SKP_Silk_decode_parameters(
         /* Decode LTP gains */
         /********************/
         /* Decode PERIndex value */
-        SKP_Silk_range_decoder( &psDecCtrl->PERIndex, psRC, SKP_Silk_LTP_per_index_CDF, 
+        SKP_Silk_range_decoder( &psDecCtrl->PERIndex, psRC, SKP_Silk_LTP_per_index_CDF,
                 SKP_Silk_LTP_per_index_CDF_offset );
 
         /* Decode Codebook Index */
         cbk_ptr_Q14 = SKP_Silk_LTP_vq_ptrs_Q14[ psDecCtrl->PERIndex ]; /* set pointer to start of codebook */
 
         for( k = 0; k < NB_SUBFR; k++ ) {
-            SKP_Silk_range_decoder( &Ix, psRC, SKP_Silk_LTP_gain_CDF_ptrs[ psDecCtrl->PERIndex ], 
+            SKP_Silk_range_decoder( &Ix, psRC, SKP_Silk_LTP_gain_CDF_ptrs[ psDecCtrl->PERIndex ],
                 SKP_Silk_LTP_gain_CDF_offsets[ psDecCtrl->PERIndex ] );
 
             for( i = 0; i < LTP_ORDER; i++ ) {
