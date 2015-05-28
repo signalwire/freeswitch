@@ -431,7 +431,8 @@ SWITCH_DECLARE(switch_bool_t) switch_network_list_validate_ip6_token(switch_netw
 
 	for (node = list->node_head; node; node = node->next) {
 		if (node->family == AF_INET) continue;
-		if (node->bits > bits && switch_testv6_subnet(ip, node->ip, node->mask)) {
+
+		if (node->bits >= bits && switch_testv6_subnet(ip, node->ip, node->mask)) {
 			if (node->ok) {
 				ok = SWITCH_TRUE;
 			} else {
@@ -457,7 +458,7 @@ SWITCH_DECLARE(switch_bool_t) switch_network_list_validate_ip_token(switch_netwo
 
 	for (node = list->node_head; node; node = node->next) {
 		if (node->family == AF_INET6) continue; /* want AF_INET */
-		if (node->bits > bits && switch_test_subnet(ip, node->ip.v4, node->mask.v4)) {
+		if (node->bits >= bits && switch_test_subnet(ip, node->ip.v4, node->mask.v4)) {
 			if (node->ok) {
 				ok = SWITCH_TRUE;
 			} else {

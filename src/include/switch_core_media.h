@@ -125,6 +125,9 @@ typedef struct switch_core_media_params_s {
 
 	char *extrtpip;
 	char *rtpip;
+	char *rtpip4;
+	char *rtpip6;
+	
 
 	char *remote_ip;
 	int remote_port;

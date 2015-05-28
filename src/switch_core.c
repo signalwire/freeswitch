@@ -1331,7 +1331,12 @@ SWITCH_DECLARE(switch_bool_t) switch_check_network_list_ip_token(const char *ip_
 			free(list_name_dup);
 		} else {
 			switch_parse_cidr(list_name, &net, &mask, &bits);
-			ok = switch_test_subnet(ip.v4, net.v4, mask.v4);
+
+			if (ipv6) {
+				ok = switch_testv6_subnet(ip, net, mask);
+			} else {
+				ok = switch_test_subnet(ip.v4, net.v4, mask.v4);
+			}
 		}
 	}
 	switch_mutex_unlock(runtime.global_mutex);
@@ -1394,6 +1399,26 @@ SWITCH_DECLARE(void) switch_load_network_lists(switch_bool_t reload)
 	switch_network_list_add_cidr(rfc_list, "169.254.0.0/16", SWITCH_FALSE);
 	switch_network_list_add_cidr(rfc_list, "fe80::/10", SWITCH_FALSE);
 	switch_core_hash_insert(IP_LIST.hash, tmp_name, rfc_list);
+
+	tmp_name = "wan_v6.auto";
+	switch_network_list_create(&rfc_list, tmp_name, SWITCH_TRUE, IP_LIST.pool);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Created ip list %s default (allow)\n", tmp_name);
+	switch_network_list_add_cidr(rfc_list, "0.0.0.0/0", SWITCH_FALSE);
+	switch_network_list_add_cidr(rfc_list, "fe80::/10", SWITCH_FALSE);
+	switch_core_hash_insert(IP_LIST.hash, tmp_name, rfc_list);
+
+
+	tmp_name = "wan_v4.auto";
+	switch_network_list_create(&rfc_list, tmp_name, SWITCH_TRUE, IP_LIST.pool);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Created ip list %s default (allow)\n", tmp_name);
+	switch_network_list_add_cidr(rfc_list, "0.0.0.0/8", SWITCH_FALSE);
+	switch_network_list_add_cidr(rfc_list, "10.0.0.0/8", SWITCH_FALSE);
+	switch_network_list_add_cidr(rfc_list, "172.16.0.0/12", SWITCH_FALSE);
+	switch_network_list_add_cidr(rfc_list, "192.168.0.0/16", SWITCH_FALSE);
+	switch_network_list_add_cidr(rfc_list, "169.254.0.0/16", SWITCH_FALSE);
+	switch_network_list_add_cidr(rfc_list, "::/0", SWITCH_FALSE);
+	switch_core_hash_insert(IP_LIST.hash, tmp_name, rfc_list);
+
 
 	tmp_name = "nat.auto";
 	switch_network_list_create(&rfc_list, tmp_name, SWITCH_FALSE, IP_LIST.pool);

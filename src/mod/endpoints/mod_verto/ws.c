@@ -691,6 +691,7 @@ ssize_t ws_read_frame(wsh_t *wsh, ws_opcode_t *oc, uint8_t **data)
 	ssize_t need = 2;
 	char *maskp;
 	int ll = 0;
+	int frag = 0;
 
  again:
 	need = 2;
@@ -741,8 +742,16 @@ ssize_t ws_read_frame(wsh_t *wsh, ws_opcode_t *oc, uint8_t **data)
 	case WSOC_PING:
 	case WSOC_PONG:
 		{
-			//int fin = (wsh->buffer[0] >> 7) & 1;
+			int fin = (wsh->buffer[0] >> 7) & 1;
 			int mask = (wsh->buffer[1] >> 7) & 1;
+			
+			if (fin) {
+				if (*oc == WSOC_CONTINUATION) {
+					frag = 1;
+				} else {
+					frag = 0;
+				}
+			}
 
 			if (mask) {
 				need += 4;
@@ -835,6 +844,10 @@ ssize_t ws_read_frame(wsh_t *wsh, ws_opcode_t *oc, uint8_t **data)
 
 			if (*oc == WSOC_PING) {
 				ws_write_frame(wsh, WSOC_PONG, wsh->payload, wsh->rplen);
+				goto again;
+			}
+
+			if (frag) {
 				goto again;
 			}
 			

@@ -58,16 +58,29 @@
 int mcast_socket_create(const char *host, int16_t port, mcast_handle_t *handle, mcast_flag_t flags)
 {
 	uint32_t one = 1;
+	int family = AF_INET;
 
 	memset(handle, 0, sizeof(*handle));
 	
-	if ((!(flags & MCAST_SEND) && !(flags & MCAST_RECV)) || (handle->sock = socket(AF_INET, SOCK_DGRAM, 0)) <= 0 ) {
-		return -1;
+	if (strchr(host, ':')) { 
+		family = AF_INET6;
 	}
 	
-	handle->send_addr.sin_family = AF_INET;
-	handle->send_addr.sin_addr.s_addr = inet_addr(host);
-	handle->send_addr.sin_port = htons(port);
+	if ((!(flags & MCAST_SEND) && !(flags & MCAST_RECV)) || (handle->sock = socket(family, SOCK_DGRAM, 0)) <= 0 ) {
+		return -1;
+	}
+
+	if (family == AF_INET6) {
+		handle->send_addr6.sin6_family = AF_INET6;
+		handle->send_addr6.sin6_port = htons(port);
+		inet_pton(AF_INET6, host, &(handle->send_addr6.sin6_addr));
+		handle->family = AF_INET6;
+	} else {
+		handle->send_addr.sin_family = AF_INET;
+		handle->send_addr.sin_addr.s_addr = inet_addr(host);
+		handle->send_addr.sin_port = htons(port);
+		handle->family = AF_INET;
+	}
 	
 	if ( setsockopt(handle->sock, SOL_SOCKET, SO_REUSEADDR, (void *)&one, sizeof(one)) != 0 ) {
 		close(handle->sock);
@@ -76,28 +89,61 @@ int mcast_socket_create(const char *host, int16_t port, mcast_handle_t *handle, 
 	
 
 	if ((flags & MCAST_RECV)) {
-		struct ip_mreq mreq;
+		if (handle->family == AF_INET) {
+			struct ip_mreq mreq;
+			
+			handle->recv_addr.sin_family = AF_INET;
+			handle->recv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+			handle->recv_addr.sin_port = htons(port);
 
-		handle->recv_addr.sin_family = AF_INET;
-		handle->recv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-		handle->recv_addr.sin_port = htons(port);
+			mreq.imr_multiaddr.s_addr = inet_addr(host);
+			mreq.imr_interface.s_addr = htonl(INADDR_ANY);
 
-		mreq.imr_multiaddr.s_addr = inet_addr(host);
-		mreq.imr_interface.s_addr = htonl(INADDR_ANY);
+			if (setsockopt(handle->sock, IPPROTO_IP, IP_ADD_MEMBERSHIP, (void *)&mreq, sizeof(mreq)) < 0) {
+				close(handle->sock);
+				handle->sock = -1;
+				return -1;
+			}
 
-		if (setsockopt(handle->sock, IPPROTO_IP, IP_ADD_MEMBERSHIP, (void *)&mreq, sizeof(mreq)) < 0) {
-			close(handle->sock);
-			handle->sock = -1;
-			return -1;
+			if (bind(handle->sock, (struct sockaddr *) &handle->recv_addr, sizeof(handle->recv_addr)) < 0) {
+				close(handle->sock);
+				handle->sock = -1;
+				return -1;
+			}
+
+		} else {
+			struct ipv6_mreq mreq;
+			struct addrinfo addr_criteria;
+			struct addrinfo *mcast_addr;
+			char service[80] = "";
+			
+			memset(&addr_criteria, 0, sizeof(addr_criteria));
+			addr_criteria.ai_family = AF_UNSPEC;
+			addr_criteria.ai_socktype = SOCK_DGRAM;
+			addr_criteria.ai_protocol = IPPROTO_UDP;
+			addr_criteria.ai_flags |= AI_NUMERICHOST;
+			
+			snprintf(service, sizeof(service), "%d", port);
+			getaddrinfo(host, service, &addr_criteria, &mcast_addr);
+
+			
+			memset(&handle->recv_addr6, 0, sizeof(handle->recv_addr6));
+			handle->recv_addr6.sin6_family = AF_INET6;
+			handle->recv_addr6.sin6_port = htons(port);
+			inet_pton(AF_INET6, "::0", &(handle->recv_addr6.sin6_addr));
+
+			memcpy(&mreq.ipv6mr_multiaddr, &((struct sockaddr_in6 *)mcast_addr->ai_addr)->sin6_addr,  sizeof(struct in6_addr));
+											 
+			mreq.ipv6mr_interface = 0;
+			setsockopt(handle->sock, IPPROTO_IPV6, IPV6_JOIN_GROUP, &mreq, sizeof(mreq));
+
+			if (bind(handle->sock, (struct sockaddr *) &handle->recv_addr6, sizeof(handle->recv_addr6)) < 0) {
+				printf("FUCK (%s) %s\n", host, strerror(errno));
+				close(handle->sock);
+				handle->sock = -1;
+				return -1;
+			}
 		}
-
-		if (bind(handle->sock, (struct sockaddr *) &handle->recv_addr, sizeof(handle->recv_addr)) < 0) {
-			close(handle->sock);
-			handle->sock = -1;
-			return -1;
-		}
-		
-
 	}
 
 	handle->ttl = 1;
@@ -155,7 +201,11 @@ ssize_t mcast_socket_send(mcast_handle_t *handle, void *data, size_t datalen)
 		datalen = sizeof(handle->buffer);
 	}
 
-	return sendto(handle->sock, data, datalen, 0, (struct sockaddr *) &handle->send_addr, sizeof(handle->send_addr));
+	if (handle->family == AF_INET6) {
+		return sendto(handle->sock, data, datalen, 0, (struct sockaddr *) &handle->send_addr6, sizeof(handle->send_addr6));
+	} else {
+		return sendto(handle->sock, data, datalen, 0, (struct sockaddr *) &handle->send_addr, sizeof(handle->send_addr));
+	}
 }
 
 ssize_t mcast_socket_recv(mcast_handle_t *handle, void *data, size_t datalen, int ms)
@@ -175,6 +225,9 @@ ssize_t mcast_socket_recv(mcast_handle_t *handle, void *data, size_t datalen, in
 		}
 	}
 
-	
-	return recvfrom(handle->sock, data, datalen, 0, (struct sockaddr *) &handle->recv_addr, &addrlen);
+	if (handle->family == AF_INET6) {
+		return recvfrom(handle->sock, data, datalen, 0, (struct sockaddr *) &handle->recv_addr6, &addrlen);
+	} else {
+		return recvfrom(handle->sock, data, datalen, 0, (struct sockaddr *) &handle->recv_addr, &addrlen);
+	}
 }

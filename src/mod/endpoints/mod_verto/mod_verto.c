@@ -1803,12 +1803,6 @@ error:
 
 static void client_run(jsock_t *jsock)
 {
-
-    jsock->local_addr.sin_family = AF_INET;
-    jsock->local_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-    jsock->local_addr.sin_port = 0;
-
-
 	if (ws_init(&jsock->ws, jsock->client_socket, (jsock->ptype & PTYPE_CLIENT_SSL) ? jsock->profile->ssl_ctx : NULL, 0, 1, !!jsock->profile->vhosts) < 0) {
 		if (jsock->profile->vhosts) {
 			http_run(jsock);
@@ -2259,10 +2253,30 @@ static void verto_set_media_options(verto_pvt_t *tech_pvt, verto_profile_t *prof
 {
 	uint32_t i;
 
-	tech_pvt->mparams->rtpip = switch_core_session_strdup(tech_pvt->session, profile->rtpip[profile->rtpip_cur++]);
+	if (!zstr(profile->rtpip[profile->rtpip_cur])) {
+		tech_pvt->mparams->rtpip4 = switch_core_session_strdup(tech_pvt->session, profile->rtpip[profile->rtpip_cur++]);
+		tech_pvt->mparams->rtpip = tech_pvt->mparams->rtpip4;
+		if (profile->rtpip_cur == profile->rtpip_index) {
+			profile->rtpip_cur = 0;
+		}
+	}
 
-	if (profile->rtpip_cur == profile->rtpip_index) {
-		profile->rtpip_cur = 0;
+	if (!zstr(profile->rtpip6[profile->rtpip_cur6])) {
+		tech_pvt->mparams->rtpip6 = switch_core_session_strdup(tech_pvt->session, profile->rtpip6[profile->rtpip_cur6++]);
+
+		if (zstr(tech_pvt->mparams->rtpip)) {
+			tech_pvt->mparams->rtpip = tech_pvt->mparams->rtpip6;
+		}
+		
+		if (profile->rtpip_cur6 == profile->rtpip_index6) {
+			profile->rtpip_cur6 = 0;
+		}
+	}
+
+	if (zstr(tech_pvt->mparams->rtpip)) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_ERROR, "%s has no media ip, check your configuration\n", 
+						  switch_channel_get_name(tech_pvt->channel));
+		switch_channel_hangup(tech_pvt->channel, SWITCH_CAUSE_BEARERCAPABILITY_NOTAVAIL);
 	}
 
 	tech_pvt->mparams->extrtpip = tech_pvt->mparams->extsipip = profile->extrtpip;
@@ -3376,7 +3390,7 @@ static switch_bool_t verto__invite_func(const char *method, cJSON *params, jsock
 													switch_either(jsock->dialplan, jsock->profile->dialplan),
 													caller_id_name,
 													caller_id_number,
-													inet_ntoa(jsock->remote_addr.sin_addr),
+													jsock->remote_host,
 													cJSON_GetObjectCstr(dialog, "ani"),
 													cJSON_GetObjectCstr(dialog, "aniii"),
 													cJSON_GetObjectCstr(dialog, "rdnis"), 
@@ -3778,7 +3792,7 @@ static void jrpc_init(void)
 
 
 
-static int start_jsock(verto_profile_t *profile, ws_socket_t sock)
+static int start_jsock(verto_profile_t *profile, ws_socket_t sock, int family)
 {
 	jsock_t *jsock = NULL;
 	int flag = 1;
@@ -3798,11 +3812,20 @@ static int start_jsock(verto_profile_t *profile, ws_socket_t sock)
 
 	jsock = (jsock_t *) switch_core_alloc(pool, sizeof(*jsock));
 	jsock->pool = pool;
+	jsock->family = family;
 
-    len = sizeof(jsock->remote_addr);
+	if (family == PF_INET) {
+		len = sizeof(jsock->remote_addr);
 
-	if ((jsock->client_socket = accept(sock, (struct sockaddr *) &jsock->remote_addr, &len)) < 0) {
-		die("ACCEPT FAILED\n");
+		if ((jsock->client_socket = accept(sock, (struct sockaddr *) &jsock->remote_addr, &len)) < 0) {
+			die("ACCEPT FAILED\n");
+		}
+	} else {
+		len = sizeof(jsock->remote_addr6);
+
+		if ((jsock->client_socket = accept(sock, (struct sockaddr *) &jsock->remote_addr6, &len)) < 0) {
+			die("ACCEPT FAILED\n");
+		}
 	}
 	
 	for (i = 0; i < profile->i; i++) {
@@ -3818,7 +3841,15 @@ static int start_jsock(verto_profile_t *profile, ws_socket_t sock)
 	jsock->profile = profile;
 	
 	if (zstr(jsock->name)) {
-		jsock->name = switch_core_sprintf(pool, "%s:%d", inet_ntoa(jsock->remote_addr.sin_addr), ntohs(jsock->remote_addr.sin_port));
+		if (family == PF_INET) {
+			jsock->remote_port = ntohs(jsock->remote_addr.sin_port);
+			inet_ntop(AF_INET, &jsock->remote_addr.sin_addr, jsock->remote_host, sizeof(jsock->remote_host));
+			jsock->name = switch_core_sprintf(pool, "%s:%d", jsock->remote_host, jsock->remote_port);
+		} else {
+			jsock->remote_port = ntohs(jsock->remote_addr6.sin6_port);
+			inet_ntop(AF_INET6, &jsock->remote_addr6.sin6_addr, jsock->remote_host, sizeof(jsock->remote_host));
+			jsock->name = switch_core_sprintf(pool, "%s:%d", jsock->remote_host, jsock->remote_port);
+		}
 	}
 	
 	jsock->ptype = ptype;
@@ -3826,7 +3857,7 @@ static int start_jsock(verto_profile_t *profile, ws_socket_t sock)
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s Client Connect.\n", jsock->name);
 	if (switch_event_create_subclass(&s_event, SWITCH_EVENT_CUSTOM, MY_EVENT_CLIENT_CONNECT) == SWITCH_STATUS_SUCCESS) {
 		switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "verto_profile_name", profile->name);
-		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "verto_client_address", "%s:%d", inet_ntoa(jsock->remote_addr.sin_addr), ntohs(jsock->remote_addr.sin_port));
+		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "verto_client_address", "%s:%d", jsock->remote_host, jsock->remote_port);
 		switch_event_fire(&s_event);
 	}
 
@@ -3873,7 +3904,7 @@ static int start_jsock(verto_profile_t *profile, ws_socket_t sock)
 	return -1;
 }
 
-static ws_socket_t prepare_socket(int ip, uint16_t port) 
+static ws_socket_t prepare_socket(ips_t *ips) 
 {
 	ws_socket_t sock = ws_sock_invalid;
 #ifndef WIN32
@@ -3881,28 +3912,47 @@ static ws_socket_t prepare_socket(int ip, uint16_t port)
 #else
 	char reuse_addr = 1;
 #endif
+	int family;
 	struct sockaddr_in addr;
+	struct sockaddr_in6 addr6;
 
-	if ((sock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0) {
+	if (strchr(ips->local_ip, ':')) {
+		family = PF_INET6;
+	} else {
+		family = PF_INET;
+	}
+
+	if ((sock = socket(family, SOCK_STREAM, IPPROTO_TCP)) < 0) {
 		die("Socket Error!\n");
 	}
 	
 	if ( setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &reuse_addr, sizeof(reuse_addr)) < 0 ) {
 		die("Socket setsockopt Error!\n");
 	}
-	
-	memset(&addr, 0, sizeof(addr));
-	addr.sin_family = AF_INET;
-    addr.sin_addr.s_addr = ip;
-    addr.sin_port = htons(port);
-	
-    if (bind(sock, (struct sockaddr *) &addr, sizeof(addr)) < 0) {
-		die("Bind Error!\n");
-	}
 
+	if (family == PF_INET) {
+		memset(&addr, 0, sizeof(addr));
+		addr.sin_family = AF_INET;
+		addr.sin_addr.s_addr = inet_addr(ips->local_ip);
+		addr.sin_port = htons(ips->local_port);
+		if (bind(sock, (struct sockaddr *) &addr, sizeof(addr)) < 0) {
+			die("Bind Error!\n");
+		}
+	} else {
+		memset(&addr6, 0, sizeof(addr6));
+		addr6.sin6_family = AF_INET6;
+		addr6.sin6_port = htons(ips->local_port);
+		inet_pton(AF_INET6, ips->local_ip, &(addr6.sin6_addr));
+		if (bind(sock, (struct sockaddr *) &addr6, sizeof(addr6)) < 0) {
+			die("Bind Error!\n");
+		}
+	}
+	
     if (listen(sock, MAXPENDING) < 0) {
 		die("Listen error\n");
 	}
+
+	ips->family = family;
 
 	return sock;
 
@@ -3979,7 +4029,7 @@ static int profile_one_loop(verto_profile_t *profile)
 			if (profile->mcast_ip && pfds[x].sock == (switch_os_socket_t)profile->mcast_sub.sock) {
 				handle_mcast_sub(profile);
 			} else {
-				start_jsock(profile, pfds[x].sock);
+				start_jsock(profile, pfds[x].sock, profile->ip[x].family);
 			}
 		}
 	}
@@ -3990,52 +4040,6 @@ static int profile_one_loop(verto_profile_t *profile)
 	return -1;
 }
 
-
-static int runtime(verto_profile_t *profile)
-{
-	int i;
-
-	for (i = 0; i < profile->i; i++) {
-		if ((profile->server_socket[i] = prepare_socket(profile->ip[i].local_ip_addr, profile->ip[i].local_port)) < 0) {
-			die("Client Socket Error!\n");
-		}
-	}
-	
-	if (profile->mcast_ip) {
-		if (mcast_socket_create(profile->mcast_ip, profile->mcast_port, &profile->mcast_sub, MCAST_RECV | MCAST_TTL_HOST) < 0) {
-			die("mcast recv socket create");
-		}
-		
-		if (mcast_socket_create(profile->mcast_ip, profile->mcast_port + 1, &profile->mcast_pub, MCAST_SEND | MCAST_TTL_HOST) > 0) {
-			mcast_socket_close(&profile->mcast_sub);
-			die("mcast send socket create");
-		}
-
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "MCAST Bound to %s:%d/%d\n", profile->mcast_ip, profile->mcast_port, profile->mcast_port + 1);
-	}
-	
-	
-	while(profile->running) {
-		if (profile_one_loop(profile) < 0) {
-			goto error;
-		}
-	}
-
-	if (profile->mcast_sub.sock > -1) {
-		mcast_socket_close(&profile->mcast_sub);
-	}
-
-	if (profile->mcast_pub.sock > -1) {
-		mcast_socket_close(&profile->mcast_pub);
-	}
-
-	return 0;
-
- error:
-
-	return -1;
-
-}
 
 static void kill_profile(verto_profile_t *profile)
 {
@@ -4092,6 +4096,58 @@ static void kill_profiles(void)
 }
 
 
+static int runtime(verto_profile_t *profile)
+{
+	int i;
+	int r = 0;
+
+	for (i = 0; i < profile->i; i++) {
+		//if ((profile->server_socket[i] = prepare_socket(profile->ip[i].local_ip_addr, profile->ip[i].local_port)) < 0) {
+		if ((profile->server_socket[i] = prepare_socket(&profile->ip[i])) < 0) {
+			die("Client Socket Error!\n");
+		}
+	}
+	
+	if (profile->mcast_ip) {
+		if (mcast_socket_create(profile->mcast_ip, profile->mcast_port, &profile->mcast_sub, MCAST_RECV | MCAST_TTL_HOST) < 0) {
+			r = -1;
+			die("mcast recv socket create\n");
+		}
+		
+		if (mcast_socket_create(profile->mcast_ip, profile->mcast_port + 1, &profile->mcast_pub, MCAST_SEND | MCAST_TTL_HOST) > 0) {
+			mcast_socket_close(&profile->mcast_sub);
+			r = -1;
+			die("mcast send socket create\n");
+		}
+
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "MCAST Bound to %s:%d/%d\n", profile->mcast_ip, profile->mcast_port, profile->mcast_port + 1);
+	}
+	
+	
+	while(profile->running) {
+		if (profile_one_loop(profile) < 0) {
+			goto error;
+		}
+	}
+
+ error:
+
+	if (profile->mcast_sub.sock > -1) {
+		mcast_socket_close(&profile->mcast_sub);
+	}
+
+	if (profile->mcast_pub.sock > -1) {
+		mcast_socket_close(&profile->mcast_pub);
+	}
+
+	if (r) {
+		kill_profile(profile);
+	}
+
+	return r;
+	
+}
+
 static void do_shutdown(void)
 {
 	globals.running = 0;
@@ -4105,20 +4161,35 @@ static void do_shutdown(void)
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Done\n");
 }
 
-static void parse_ip(char *host, uint16_t *port, in_addr_t *addr, char *input)
+
+static void parse_ip(char *host, switch_size_t host_len, uint16_t *port, char *input)
 {
 	char *p;
-	struct hostent *hent;
+	//struct hostent *hent;
 
-	strncpy(host, input, 255);
-
-	host[255] = 0;
-
-	if ((p = strchr(host, ':')) != NULL) {
-		*p++  = '\0';
-		*port = (uint16_t)atoi(p);
+	if ((p = strchr(input, '['))) {
+		char *end = switch_find_end_paren(p, '[', ']');
+		if (end) {
+			p++;
+			strncpy(host, p, end - p);
+			if (*(end+1) == ':' && end + 2 < end_of_p(input)) {
+				end += 2;
+				if (end) {
+					*port = (uint16_t)atoi(end);
+				}
+			}
+		} else {
+			strncpy(host, "::", host_len);
+		}
+	} else {
+		strncpy(host, input, host_len);
+		if ((p = strrchr(host, ':')) != NULL) {
+			*p++  = '\0';
+			*port = (uint16_t)atoi(p);
+		}
 	}
 
+#if 0
 	if ( host[0] < '0' || host[0] > '9' ) {
 		// Non-numeric host (at least it doesn't start with one).  Convert it to ip addr first
 		if ((hent = gethostbyname(host)) != NULL) {
@@ -4130,7 +4201,9 @@ static void parse_ip(char *host, uint16_t *port, in_addr_t *addr, char *input)
 	} else {
 		*addr = inet_addr(host);
 	}
+#endif
 }
+
 
 static verto_profile_t *find_profile(const char *name)
 {
@@ -4264,7 +4337,7 @@ static switch_status_t parse_config(const char *cf)
 				if (!strcasecmp(var, "bind-local")) {
 					const char *secure = switch_xml_attr_soft(param, "secure");
 					if (i < MAX_BIND) {
-						parse_ip(profile->ip[profile->i].local_ip, &profile->ip[profile->i].local_port, &profile->ip[profile->i].local_ip_addr, val);
+						parse_ip(profile->ip[profile->i].local_ip, sizeof(profile->ip[profile->i].local_ip), &profile->ip[profile->i].local_port, val);
 						if (switch_true(secure)) {
 							profile->ip[profile->i].secure = 1;
 						}
@@ -4316,10 +4389,18 @@ static switch_status_t parse_config(const char *cf)
 					if (zstr(val)) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid RTP IP.\n");
 					} else {
-						if (profile->rtpip_index < MAX_RTPIP -1) {
-							profile->rtpip[profile->rtpip_index++] = switch_core_strdup(profile->pool, val);
+						if (strchr(val, ':')) {
+							if (profile->rtpip_index6 < MAX_RTPIP -1) {
+								profile->rtpip6[profile->rtpip_index6++] = switch_core_strdup(profile->pool, val);
+							} else {
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Too many RTP IP.\n");
+							}
 						} else {
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Too many RTP IP.\n");
+							if (profile->rtpip_index < MAX_RTPIP -1) {
+								profile->rtpip[profile->rtpip_index++] = switch_core_strdup(profile->pool, val);
+							} else {
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Too many RTP IP.\n");
+							}
 						}
 					}
 				} else if (!strcasecmp(var, "ext-rtp-ip")) {
