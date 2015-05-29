@@ -9234,7 +9234,7 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 				switch_channel_set_variable(channel, hp->name, hp->value);
 			}
 
-			ruser = switch_event_get_header(v_event, "username");
+			ruser = switch_event_get_header(v_event, "user_name");
 			rdomain = switch_event_get_header(v_event, "domain_name");
 
 			switch_channel_set_variable(channel, "requested_user_name", ruser);
