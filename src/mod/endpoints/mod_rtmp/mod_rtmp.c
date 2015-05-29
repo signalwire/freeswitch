@@ -1713,12 +1713,14 @@ SWITCH_STANDARD_API(rtmp_function)
 			}
 		} else if (!strcmp(argv[2], "rescan")) {
 			rtmp_profile_t *profile = rtmp_profile_locate(argv[1]);
-			if (config_profile(profile, SWITCH_TRUE) == SWITCH_STATUS_SUCCESS) {
-				stream->write_function(stream, "+OK\n");
-			} else {
-				stream->write_function(stream, "-ERR Config error\n");
+			if (profile) {
+				if (config_profile(profile, SWITCH_TRUE) == SWITCH_STATUS_SUCCESS) {
+					stream->write_function(stream, "+OK\n");
+				} else {
+					stream->write_function(stream, "-ERR Config error\n");
+				}
+				rtmp_profile_release(profile);
 			}
-			rtmp_profile_release(profile);
 		} else if (!strcmp(argv[2], "restart")) {
 			rtmp_profile_t *profile = rtmp_profile_locate(argv[1]);
 			if (profile) {
