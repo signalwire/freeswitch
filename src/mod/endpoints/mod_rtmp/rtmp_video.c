@@ -124,6 +124,7 @@ switch_status_t on_rtmp_destroy(rtmp_private_t *tech_pvt)
 switch_status_t rtmp_rtmp2rtpH264(rtmp2rtp_helper_t  *read_helper, uint8_t* data, uint32_t len)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	uint8_t *end = data + len;
 
 	if (data[0] == 0x17 && data[1] == 0) {
 		switch_byte_t *pdata = data + 2;
@@ -139,8 +140,14 @@ switch_status_t rtmp_rtmp2rtpH264(rtmp2rtp_helper_t  *read_helper, uint8_t* data
 			numSPS = pdata[8] & 0x1f;
 			pdata += 9;
 			for (i = 0; i < numSPS; i++) {
-				lenSPS = ((pdata[0] & 0xff) << 8) | (pdata[1] & 0xff);
+				lenSPS = ntohs(*(uint16_t *)pdata);
 				pdata += 2;
+
+				if (lenSPS > end - pdata) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "corrupted data\n");
+					return SWITCH_STATUS_FALSE;
+				}
+
 				if (read_helper->sps == NULL) {
 					read_helper->sps = amf0_string_new(pdata, lenSPS);
 				}
@@ -150,8 +157,13 @@ switch_status_t rtmp_rtmp2rtpH264(rtmp2rtp_helper_t  *read_helper, uint8_t* data
 			numPPS = pdata[0];
 			pdata += 1;
 			for (i = 0; i < numPPS; i++) {
-				lenPPS = ((pdata[0] & 0xff) << 8) | (pdata[1] & 0xff);
-				pdata +=2;
+				lenPPS = ntohs(*(uint16_t *)pdata);
+				pdata += 2;
+				if (lenPPS > end - pdata) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "corrupted data\n");
+					return SWITCH_STATUS_FALSE;
+				}
+
 				if (read_helper->pps == NULL) {
 					read_helper->pps = amf0_string_new(pdata, lenPPS);
 				}
@@ -282,14 +294,14 @@ switch_bool_t sps_changed(amf0_data *data, uint8_t *new, int datalen)
 switch_status_t rtmp_rtp2rtmpH264(rtp2rtmp_helper_t *helper, switch_frame_t *frame)
 {
 	uint8_t* packet = frame->packet;
-	uint32_t len = frame->packetlen;
+	// uint32_t len = frame->packetlen;
 	switch_rtp_hdr_t *raw_rtp = (switch_rtp_hdr_t *)packet;
-	switch_byte_t *payload = packet + 12;
-	int datalen = len - 12;
+	switch_byte_t *payload = frame->data;
+	int datalen = frame->datalen;
 	int nalType = payload[0] & 0x1f;
 	uint32_t size = 0;
-	uint16_t rtp_seq = ntohs(raw_rtp->seq);
-	// uint32_t rtp_ts = ntohl(raw_rtp->ts);
+	uint16_t rtp_seq = 0;
+	uint32_t rtp_ts = 0;
 	static const uint8_t rtmp_header17[] = {0x17, 1, 0, 0, 0};
 	static const uint8_t rtmp_header27[] = {0x27, 1, 0, 0, 0};
 
@@ -297,13 +309,16 @@ switch_status_t rtmp_rtp2rtmpH264(rtp2rtmp_helper_t *helper, switch_frame_t *fra
 	// 	"read: %-4u: %02x %02x ts:%u seq:%u %s\n",
 	// 	len, payload[0], payload[1], rtp_ts, rtp_seq, raw_rtp->m ? " mark" : "");
 
-#if 0
-	if (helper->last_seq && helper->last_seq + 1 != rtp_seq) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "possible video rtp packet loss? seq: %u - %u - 1 = %d ts: %u - %u = %d\n",
-			ntohs(raw_rtp->seq), helper->last_seq, (int)(rtp_seq - helper->last_seq - 1),
-			ntohl(raw_rtp->ts), helper->last_recv_ts, (int)(rtp_ts - helper->last_recv_ts));
+	if (switch_test_flag(frame, SFF_RAW_RTP) && !switch_test_flag(frame, SFF_RAW_RTP_PARSE_FRAME)) {
+		rtp_seq = ntohs(raw_rtp->seq);
+		rtp_ts = ntohl(raw_rtp->ts);
 
-/*
+		if (helper->last_seq && helper->last_seq + 1 != rtp_seq) {
+
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "possible video rtp packet loss? seq: %u - %u - 1 = %d ts: %u - %u = %d\n",
+				ntohs(raw_rtp->seq), helper->last_seq, (int)(rtp_seq - helper->last_seq - 1),
+				ntohl(raw_rtp->ts), helper->last_recv_ts, (int)(rtp_ts - helper->last_recv_ts));
+
 			if (nalType != 7) {
 				if (helper->sps) {
 					amf0_data_free(helper->sps);
@@ -314,17 +329,16 @@ switch_status_t rtmp_rtp2rtmpH264(rtp2rtmp_helper_t *helper, switch_frame_t *fra
 				helper->last_seq = rtp_seq;
 				goto wait_sps;
 			}
-*/
+		}
 	}
-
-#endif
 
 	if (helper->last_recv_ts != frame->timestamp) {
 		switch_buffer_zero(helper->rtmp_buf);
 		switch_buffer_zero(helper->fua_buf);
 	}
+
 	helper->last_recv_ts = frame->timestamp;
-	helper->last_mark = frame->m;//raw_rtp->m;
+	helper->last_mark = frame->m;
 	helper->last_seq = rtp_seq;
 
 	switch (nalType) {
@@ -499,7 +513,7 @@ switch_status_t rtmp_rtp2rtmpH264(rtp2rtmp_helper_t *helper, switch_frame_t *fra
 			helper->send = SWITCH_TRUE;
 		} else {
 
-// wait_sps:
+wait_sps:
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "waiting for sps and pps\n");
 			switch_buffer_zero(helper->rtmp_buf);
 			switch_buffer_zero(helper->fua_buf);
