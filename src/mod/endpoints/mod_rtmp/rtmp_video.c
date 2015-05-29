@@ -458,6 +458,10 @@ switch_status_t rtmp_rtp2rtmpH264(rtp2rtmp_helper_t *helper, switch_frame_t *fra
 			}
 		}
 		break;
+
+	case 6:
+		break;
+
 	default:
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unsupported NAL %d\n", nalType);
 		break;

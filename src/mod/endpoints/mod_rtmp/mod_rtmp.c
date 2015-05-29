@@ -1126,7 +1126,7 @@ switch_call_cause_t rtmp_session_create_call(rtmp_session_t *rsession, switch_co
 	switch_set_flag_locked(tech_pvt, TFLAG_DETACHED);
 	rtmp_set_channel_variables(*newsession);
 
-	if (event) {
+	if (0 && event) {
 		switch_event_header_t *hp;
 
 		for (hp = event->headers; hp; hp = hp->next) {
