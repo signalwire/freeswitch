@@ -101,9 +101,11 @@ static unsigned int GetDigestOffset2(uint8_t *handshake, unsigned int len)
 
 	res = (offset % 728) + 776;
 
+#if 0 //CID 1301111 logically dead code
 	if (res + 32 > 1535) {
 		RTMP_Log(RTMP_LOGERROR, "%s: Couldn't calculate correct digest offset (got %d), exiting", __FUNCTION__, res);
 	}
+#endif
 	return res;
 }
 
@@ -125,12 +127,13 @@ static unsigned int GetDigestOffset1(uint8_t *handshake, unsigned int len)
 
 	res = (offset % 728) + 12;
 
+#if 0 //CID 1301110 logicall dead code
 	if (res + 32 > 771) {
 		RTMP_Log(RTMP_LOGERROR,
 			"%s: Couldn't calculate digest offset (got %d), exiting!",
 			__FUNCTION__, res);
 	}
-
+#endif
 	return res;
 }
 
