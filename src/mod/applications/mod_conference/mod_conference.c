@@ -2062,6 +2062,8 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 				int flushed = flush_video_queue(imember->video_queue);
 
 				if (flushed && imember->auto_avatar) {
+					switch_channel_video_sync(imember->channel);
+
 					switch_img_free(&imember->avatar_png_img);
 					imember->avatar_patched = 0;
 					reset_video_bitrate_counters(imember);
@@ -2072,7 +2074,6 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 					}
 					
 					imember->blanks = 0;
-					//switch_channel_video_sync(imember->channel);
 				} else {
 					
 				}
@@ -8414,11 +8415,11 @@ static switch_status_t conf_api_sub_vmute(conference_member_t *member, switch_st
 	switch_clear_flag_locked(member, MFLAG_CAN_BE_SEEN);
 	reset_video_bitrate_counters(member);
 	
-	//if (member->channel) {
-		//switch_channel_set_flag(member->channel, CF_VIDEO_PAUSE_READ);
-		//switch_core_session_request_video_refresh(member->session);
-		//switch_channel_video_sync(member->channel);
-	//}
+	if (member->channel) {
+		switch_channel_set_flag(member->channel, CF_VIDEO_PAUSE_READ);
+		switch_core_session_request_video_refresh(member->session);
+		switch_channel_video_sync(member->channel);
+	}
 
 	if (!(data) || !strstr((char *) data, "quiet")) {
 		switch_set_flag(member, MFLAG_INDICATE_MUTE);
@@ -8474,8 +8475,8 @@ static switch_status_t conf_api_sub_unvmute(conference_member_t *member, switch_
 	reset_video_bitrate_counters(member);
 
 	if (member->channel) {
-		//switch_channel_clear_flag(member->channel, CF_VIDEO_PAUSE_READ);
-		//switch_channel_video_sync(member->channel);
+		switch_channel_clear_flag(member->channel, CF_VIDEO_PAUSE_READ);
+		switch_channel_video_sync(member->channel);
 	}
 
 	if (!(data) || !strstr((char *) data, "quiet")) {
