@@ -739,6 +739,12 @@ switch_call_cause_t rtmp_outgoing_channel(switch_core_session_t *session, switch
 		video_possible = switch_channel_get_variable(switch_core_session_get_channel(session), "video_possible");
 		if (video_possible && switch_true(video_possible)) {
 			tech_pvt->has_video = 1;
+		} else {
+			const char *codec_string = switch_channel_get_variable(switch_core_session_get_channel(session), "ep_codec_string");
+
+			if (codec_string && (switch_stristr("H26", codec_string) || switch_stristr("VP", codec_string))) {
+				tech_pvt->has_video = 1;
+			}
 		}
 	}
 
