@@ -225,9 +225,11 @@ void *SWITCH_THREAD_FUNC rtmp_io_tcp_thread(switch_thread_t *thread, void *obj)
 
 						/* Get the remote address/port info */
 						switch_socket_addr_get(&addr, SWITCH_TRUE, newsocket);
-						switch_get_addr(ipbuf, sizeof(ipbuf), addr);
-						rsession->remote_address = switch_core_strdup(rsession->pool, ipbuf);
-						rsession->remote_port = switch_sockaddr_get_port(addr);
+						if (addr) {
+							switch_get_addr(ipbuf, sizeof(ipbuf), addr);
+							rsession->remote_address = switch_core_strdup(rsession->pool, ipbuf);
+							rsession->remote_port = switch_sockaddr_get_port(addr);
+						}
 						switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rsession->uuid), SWITCH_LOG_INFO, "Rtmp connection from %s:%i\n",
 										  rsession->remote_address, rsession->remote_port);
 					}
