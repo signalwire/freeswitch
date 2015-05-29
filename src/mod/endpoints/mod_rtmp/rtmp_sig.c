@@ -344,7 +344,7 @@ RTMP_INVOKE_FUNCTION(rtmp_i_fcSubscribe)
 	status = rtmp_i_receiveaudio(rsession, state, amfnumber, transaction_id, ac, av);
 	if (status != SWITCH_STATUS_SUCCESS) return status;
 
-	rtmp_i_receivevideo(rsession, state, amfnumber, transaction_id, ac, av);
+	status = rtmp_i_receivevideo(rsession, state, amfnumber, transaction_id, ac, av);
 	if (status != SWITCH_STATUS_SUCCESS) return status;
 
 	amf0_data_free(av[2]);
