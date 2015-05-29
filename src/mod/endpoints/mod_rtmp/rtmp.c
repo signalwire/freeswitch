@@ -926,6 +926,7 @@ switch_status_t rtmp_handle_data(rtmp_session_t *rsession)
 
 				rsession->parse_state++;
 			}
+				break;
 			case 2:
 			{
 				rtmp_state_t *state = &rsession->amfstate[rsession->amfnumber];
