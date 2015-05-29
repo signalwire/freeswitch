@@ -48,7 +48,7 @@ void rtmp2rtp_helper_init(rtmp2rtp_helper_t *helper)
 
 void rtp2rtmp_helper_init(rtp2rtmp_helper_t *helper)
 {
-	memset(helper, 0, sizeof(rtmp2rtp_helper_t));
+	memset(helper, 0, sizeof(rtp2rtmp_helper_t));
 	helper->pps = NULL;
 	helper->sps = NULL;
 	helper->send = SWITCH_FALSE;
