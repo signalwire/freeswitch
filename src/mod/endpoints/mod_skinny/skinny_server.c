@@ -1113,12 +1113,17 @@ switch_status_t skinny_handle_register(listener_t *listener, skinny_message_t *r
 	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "action", "skinny-auth");
 
 	/* clean up all traces before adding to database */
+	skinny_lock_device_name(listener, request->data.reg.device_name);
 	skinny_clean_device_from_db(listener, request->data.reg.device_name);
 
 	if (switch_xml_locate_user("id", request->data.reg.device_name, profile->domain, "", &xroot, &xdomain, &xuser, &xgroup, params) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Can't find device [%s@%s]\n"
 				"You must define a domain called '%s' in your directory and add a user with id=\"%s\".\n"
 				, request->data.reg.device_name, profile->domain, profile->domain, request->data.reg.device_name);
+
+		/* unlock before trying to send response in case socket blocks */
+		skinny_unlock_device_name(listener, request->data.reg.device_name);
+
 		send_register_reject(listener, "Device not found");
 		status =  SWITCH_STATUS_FALSE;
 		goto end;
@@ -1135,6 +1140,10 @@ switch_status_t skinny_handle_register(listener_t *listener, skinny_message_t *r
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
 				"Device %s:%d is already registered on another listener.\n",
 				request->data.reg.device_name, request->data.reg.instance);
+
+		/* unlock before trying to send response in case socket blocks */
+		skinny_unlock_device_name(listener, request->data.reg.device_name);
+
 		send_register_reject(listener, "Device is already registered on another listener");
 		status =  SWITCH_STATUS_FALSE;
 		goto end;
@@ -1156,10 +1165,11 @@ switch_status_t skinny_handle_register(listener_t *listener, skinny_message_t *r
 		switch_safe_free(sql);
 	}
 
-
 	switch_copy_string(listener->device_name, request->data.reg.device_name, 16);
 	listener->device_instance = request->data.reg.instance;
 	listener->device_type = request->data.reg.device_type;
+
+	skinny_unlock_device_name(listener, request->data.reg.device_name);
 
 	xskinny = switch_xml_child(xuser, "skinny");
 	if (xskinny) {
