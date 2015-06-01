@@ -50,6 +50,7 @@
  */
 
 #include <switch.h>
+#include <math.h>
 
 typedef struct {
 	switch_time_t lastts;		/* Last time we did any billing */
@@ -59,6 +60,7 @@ typedef struct {
 	double bill_adjustments;	/* Adjustments to make to the next billing, based on pause/resume events */
 
 	int lowbal_action_executed;	/* Set to 1 once lowbal_action has been executed */
+	int final_bill_done;		/* Set to 1 one the final rounding has been done on a call to prevent spurious rebills on hangup */
 } nibble_data_t;
 
 
@@ -454,6 +456,12 @@ static switch_status_t do_billing(switch_core_session_t *session)
 	double nobal_amt = globals.nobal_amt;
 	double lowbal_amt = globals.lowbal_amt;
 	double balance;
+	double minimum_charge = 0;
+	double rounding_factor = 1;
+	double excess = 0;
+	double rounded_billed = 0;
+	int billsecs = 0;
+	double balance_check = 0;
 
 	if (!session) {
 		/* Why are we here? */
@@ -480,6 +488,16 @@ static switch_status_t do_billing(switch_core_session_t *session)
 		lowbal_amt = atof(switch_channel_get_variable(channel, "lowbal_amt"));
 	}
 	
+	if (!zstr(switch_channel_get_variable(channel, "nibble_rounding"))) {
+		rounding_factor = pow(10, atof(switch_channel_get_variable(channel, "nibble_rounding")));
+	}
+
+	if (!zstr(switch_channel_get_variable(channel, "nibble_minimum"))) {
+		minimum_charge = atof(switch_channel_get_variable(channel, "nibble_minimum"));
+	}
+
+
+
 	/* Return if there's no billing information on this session */
 	if (!billrate || !billaccount) {
 		return SWITCH_STATUS_SUCCESS;
@@ -501,8 +519,9 @@ static switch_status_t do_billing(switch_core_session_t *session)
 
 		/* See if this person has enough money left to continue the call */
 		balance = get_balance(billaccount, channel);
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Comparing %f to hangup balance of %f\n", balance, nobal_amt);
-		if (balance <= nobal_amt) {
+		balance_check = balance - minimum_charge;
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Comparing %f to hangup balance of %f, taking into account minimum charge of %f\n", balance, nobal_amt, minimum_charge);
+		if (balance_check <= nobal_amt) {
 			/* Not enough money - reroute call to nobal location */
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Balance of %f fell below allowed amount of %f! (Account %s)\n",
 							  balance, nobal_amt, billaccount);
@@ -530,6 +549,12 @@ static switch_status_t do_billing(switch_core_session_t *session)
 		return SWITCH_STATUS_SUCCESS;
 	}
 
+	if (nibble_data && nibble_data->final_bill_done) {
+		switch_mutex_lock(globals.mutex);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Received heartbeat, but final bill has been committed - ignoring\n");
+		return SWITCH_STATUS_SUCCESS;
+	}
+
 	/* Have we done any billing on this channel yet? If no, set up vars for doing so */
 	if (!nibble_data) {
 		nibble_data = switch_core_session_alloc(session, sizeof(*nibble_data));
@@ -543,8 +568,10 @@ static switch_status_t do_billing(switch_core_session_t *session)
 	switch_time_exp_lt(&tm, nibble_data->lastts);
 	switch_strftime_nocheck(date, &retsize, sizeof(date), "%Y-%m-%d %T", &tm);
 
+	billsecs = (int) ((ts - nibble_data->lastts) / 1000000);
+
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%d seconds passed since last bill time of %s\n",
-					  (int) ((ts - nibble_data->lastts) / 1000000), date);
+					  billsecs, date);
 
 	if ((ts - nibble_data->lastts) >= 0) {
 		/* If billincrement is set we bill by it and not by time elapsed */
@@ -575,6 +602,29 @@ static switch_status_t do_billing(switch_core_session_t *session)
 			switch_channel_set_variable_printf(channel, "nibble_total_billed", "%f", nibble_data->total);
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Failed to log to database!\n");
+		}
+
+		/* Do Rounding and minimum charge during hangup */
+		if (switch_channel_get_state(channel) == CS_HANGUP) {
+			/* we're going to make an assumption that final billing is done here. So we'll see how this goes. */
+			/* round total billed up as required */
+
+			rounded_billed = ceilf(nibble_data->total * rounding_factor) / rounding_factor;
+
+			if (rounded_billed < minimum_charge)
+			{
+				excess = minimum_charge - nibble_data->total;
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Applying minimum charge of %f (%f excess)\n", minimum_charge, excess);
+			}
+			else if (nibble_data->total < rounded_billed)
+			{
+				excess = rounded_billed - nibble_data->total;
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Rounding to precision %f, total %f (%f excess)\n", rounding_factor, rounded_billed, excess);
+			}
+			bill_event(excess, billaccount, channel);
+			nibble_data->total += excess;
+			switch_channel_set_variable_printf(channel, "nibble_total_billed", "%f", nibble_data->total);
+			nibble_data->final_bill_done = 1;
 		}
 	} else {
 		if (switch_strlen_zero(billincrement))
@@ -951,10 +1001,11 @@ static switch_status_t process_hangup(switch_core_session_t *session)
 	do_billing(session);
 
 	billaccount = switch_channel_get_variable(channel, globals.var_name_account);
+
 	if (billaccount) {
 		switch_channel_set_variable_printf(channel, "nibble_current_balance", "%f", get_balance(billaccount, channel));
-	}			
-	
+	}
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
