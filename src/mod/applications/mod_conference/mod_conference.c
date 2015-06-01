@@ -594,6 +594,7 @@ typedef struct conference_obj {
 	struct conf_fps video_fps;
 	int playing_video_file;
 	int recording_members;
+	uint32_t video_floor_packets;
 } conference_obj_t;
 
 /* Relationship with another member */
@@ -682,6 +683,7 @@ struct conference_member {
 	switch_frame_buffer_t *fb;
 	switch_image_t *avatar_png_img;
 	switch_image_t *video_mute_img;
+	uint32_t floor_packets;
 	int blanks;
 	int managed_kps;
 	int blackouts;
@@ -4531,6 +4533,7 @@ static void conference_set_floor_holder(conference_obj_t *conference, conference
 	if (old_member) {
 		old_id = old_member->id;
 		member_update_status_field(old_member);
+		old_member->floor_packets = 0;
 	}
 
 	switch_set_flag(conference, CFLAG_FLOOR_CHANGE);
@@ -6330,6 +6333,7 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 					check_agc_levels(member);
 					clear_avg(member);
 					member->score_iir = 0;
+					member->floor_packets = 0;
 
 					if (test_eflag(member->conference, EFLAG_STOP_TALKING) &&
 						switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
@@ -6369,7 +6373,7 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 			if (member->volume_in_level) {
 				switch_change_sln_volume(read_frame->data, (read_frame->datalen / 2) * member->conference->channels, member->volume_in_level);
 			}
-
+			
 			if (member->agc_volume_in_level) {
 				switch_change_sln_volume_granular(read_frame->data, (read_frame->datalen / 2) * member->conference->channels, member->agc_volume_in_level);
 			}
@@ -6428,10 +6432,6 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 				member->score_iir = SCORE_MAX_IIR;
 			}
 			
-			if (member == member->conference->floor_holder && member->id != member->conference->video_floor_holder) {
-				conference_set_video_floor_holder(member->conference, member, SWITCH_FALSE);
-			}
-
 			if (noise_gate_check(member)) {
 				uint32_t diff = member->score - member->energy_level;
 				if (hangover_hits) {
@@ -6440,6 +6440,10 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 
 				if (member->conference->agc_level) {
 					member->nt_tally = 0;
+				}
+
+				if (member == member->conference->floor_holder) {
+					member->floor_packets++;
 				}
 
 				if (diff >= diff_level || ++hangunder_hits >= hangunder) { 
@@ -6504,6 +6508,13 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 
 
 			member->last_score = member->score;
+
+			if (member == member->conference->floor_holder) {
+				if (member->id != member->conference->video_floor_holder && 
+					(member->floor_packets > member->conference->video_floor_packets || member->energy_level == 0)) {
+					conference_set_video_floor_holder(member->conference, member, SWITCH_FALSE);
+				}
+			}
 		}
 
 		loops++;
@@ -12573,7 +12584,7 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 	switch_codec_implementation_t read_impl = { 0 };
 	switch_channel_t *channel = NULL;
 	const char *force_rate = NULL, *force_interval = NULL, *force_channels = NULL, *presence_id = NULL;
-	uint32_t force_rate_i = 0, force_interval_i = 0, force_channels_i = 0;
+	uint32_t force_rate_i = 0, force_interval_i = 0, force_channels_i = 0, video_auto_floor_msec = 0;
 
 	/* Validate the conference name */
 	if (zstr(name)) {
@@ -12789,6 +12800,13 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 					comfort_noise_level = tmp;
 				} else if (switch_true(val)) {
 					comfort_noise_level = 1400;
+				}
+			} else if (!strcasecmp(var, "video-auto-floor-msec") && !zstr(val)) {
+				int tmp;
+				tmp = atoi(val);
+
+				if (tmp > 0) {
+					video_auto_floor_msec = tmp;
 				}
 			} else if (!strcasecmp(var, "sound-prefix") && !zstr(val)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "override sound-prefix with: %s\n", val);
@@ -13169,6 +13187,10 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 	conference->interval = interval;
 	conference->ivr_dtmf_timeout = ivr_dtmf_timeout;
 	conference->ivr_input_timeout = ivr_input_timeout;
+
+	if (video_auto_floor_msec) {
+		conference->video_floor_packets = video_auto_floor_msec / conference->interval;
+	}
 
 	conference->eflags = 0xFFFFFFFF;
 
