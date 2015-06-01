@@ -370,6 +370,12 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 				if ((all && !fail) || (!all && pass)) {
 					anti_action = SWITCH_FALSE; 
 				}
+				if (all && total != pass) {
+					proceed = 1;
+					pass = 0;
+					fail++;
+					anti_action = SWITCH_TRUE;
+				}
 			}
 
 			switch_safe_free(field_expanded);
