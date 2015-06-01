@@ -4498,15 +4498,6 @@ static void conference_set_floor_holder(conference_obj_t *conference, conference
 	conference_member_t *old_member = NULL;
 	int old_id = 0;
 
-	
-	if (((conference->video_floor_holder && !member && !switch_test_flag(conference, CFLAG_VID_FLOOR_LOCK)) ||
-		 (member && member->channel && (switch_channel_test_flag(member->channel, CF_VIDEO) || member->avatar_png_img)))) {
-		
-		if (member && member->id != conference->video_floor_holder) {
-			conference_set_video_floor_holder(conference, member, SWITCH_FALSE);
-		}
-	}
-	
 	if (conference->floor_holder) {
 		if (conference->floor_holder == member) {
 			return;
@@ -6451,11 +6442,11 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 					hangover_hits = hangunder_hits = 0;
 					member->last_talking = switch_epoch_time_now(NULL);
 
-					
 					if (!switch_test_flag(member, MFLAG_TALKING)) {
 						switch_set_flag_locked(member, MFLAG_TALKING);
 						member_update_status_field(member);
-						
+						member->floor_packets = 0;
+
 						if (test_eflag(member->conference, EFLAG_START_TALKING) && switch_test_flag(member, MFLAG_CAN_SPEAK) &&
 							switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 							conference_add_event_member_data(member, event);
