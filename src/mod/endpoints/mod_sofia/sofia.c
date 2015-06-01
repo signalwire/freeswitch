@@ -8041,6 +8041,7 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 							sofia_clear_flag_locked(tech_pvt, TFLAG_HOLD_LOCK);
 							switch_channel_set_variable(channel_b, "park_timeout", "2:attended_transfer");
 							switch_channel_set_state(channel_b, CS_PARK);
+							switch_channel_wait_for_state_timeout(channel_b, CS_PARK, 5000);
 
 						} else {
 							if (!br_a && !br_b) {
