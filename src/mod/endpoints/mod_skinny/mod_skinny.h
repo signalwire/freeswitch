@@ -127,6 +127,9 @@ struct skinny_profile {
 	int non_blocking;
 	switch_hash_t *soft_key_set_sets_hash;
 	switch_hash_t *device_type_params_hash;
+	/* lock on device names for multiple connection handling */
+	switch_mutex_t *device_name_lock_mutex;
+	switch_hash_t *device_name_lock_hash;
 	/* extensions */
 	char *ext_voicemail;
 	char *ext_redial;
@@ -169,6 +172,23 @@ typedef enum {
 	SKINNY_ACTION_WAIT
 } skinny_action_t;
 
+
+
+/*****************************************************************************/
+/* DEVICE NAME LOCK TYPES */
+/*****************************************************************************/
+typedef enum {
+	DNLFLAG_INUSE = (1 << 0),
+} device_name_lock_flag_t;
+
+struct device_name_lock {
+	char device_name[16];
+	switch_mutex_t *flag_mutex;
+	uint32_t flags;
+};
+
+typedef struct device_name_lock device_name_lock_t;
+
 /*****************************************************************************/
 /* LISTENERS TYPES */
 /*****************************************************************************/
@@ -197,6 +217,7 @@ struct listener {
 	switch_mutex_t *flag_mutex;
 	uint32_t flags;
 	time_t expire_time;
+	time_t connect_time;
 	switch_time_t digit_timeout_time;
 	struct listener *next;
 	char *ext_voicemail;
@@ -300,6 +321,12 @@ switch_status_t kill_listener(listener_t *listener, void *pvt);
 switch_status_t keepalive_listener(listener_t *listener, void *pvt);
 void skinny_clean_listener_from_db(listener_t *listener);
 void skinny_clean_device_from_db(listener_t *listener, char *device_name);
+
+/*****************************************************************************/
+/* DEVICE NAME LOCK FUNCTIONS */
+/*****************************************************************************/
+void skinny_lock_device_name(listener_t *listener, char *device_name);
+void skinny_unlock_device_name(listener_t *listener, char *device_name);
 
 /*****************************************************************************/
 /* CHANNEL FUNCTIONS */

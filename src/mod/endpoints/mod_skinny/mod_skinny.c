@@ -1462,6 +1462,86 @@ static int flush_listener_callback(void *pArg, int argc, char **argv, char **col
 	return 0;
 }
 
+void skinny_lock_device_name(listener_t *listener, char *device_name)
+{
+	switch_time_t started = 0;
+	unsigned int elapsed = 0;
+	device_name_lock_t *dnl;
+
+	if ( listener->profile->debug >= 9 ) {
+		skinny_log_l(listener, SWITCH_LOG_DEBUG, "lock device name '%s'\n", device_name);
+	}
+
+	started = switch_micro_time_now();
+
+	/* global mutex on hash operations */
+	switch_mutex_lock(listener->profile->device_name_lock_mutex);
+
+	dnl = (device_name_lock_t *) switch_core_hash_find(listener->profile->device_name_lock_hash, device_name);
+	if ( ! dnl ) {
+		if ( listener->profile->debug >= 9 ) {
+			skinny_log_l(listener, SWITCH_LOG_DEBUG, "creating device name lock for device name '%s'\n", device_name);
+		}
+		dnl = switch_core_alloc(listener->profile->pool, sizeof(*dnl));
+		switch_mutex_init(&dnl->flag_mutex, SWITCH_MUTEX_NESTED, listener->profile->pool);
+		switch_core_hash_insert(listener->profile->device_name_lock_hash, device_name, dnl);
+	}
+
+	switch_mutex_unlock(listener->profile->device_name_lock_mutex);
+
+	if ( listener->profile->debug >= 9 ) {
+		skinny_log_l(listener, SWITCH_LOG_DEBUG, "setting device name lock for device name '%s'\n", device_name);
+	}
+	switch_set_flag_locked(dnl, DNLFLAG_INUSE);
+
+	if ((elapsed = (unsigned int) ((switch_micro_time_now() - started) / 1000)) > 5) {
+		skinny_log_l(listener, SWITCH_LOG_DEBUG, "device name lock took more than 5ms for '%s' (%d)\n", device_name, elapsed);
+	}
+
+	if ( listener->profile->debug >= 9 ) {
+		skinny_log_l(listener, SWITCH_LOG_DEBUG, "locked device name '%s'\n", device_name);
+	}
+}
+
+void skinny_unlock_device_name(listener_t *listener, char *device_name)
+{
+	switch_time_t started = 0;
+	unsigned int elapsed = 0;
+	device_name_lock_t *dnl;
+
+	if ( listener->profile->debug >= 9 ) {
+		skinny_log_l(listener, SWITCH_LOG_DEBUG, "unlock device name '%s'\n", device_name);
+	}
+
+	started = switch_micro_time_now();
+
+	/* global mutex on hash operations */
+	switch_mutex_lock(listener->profile->device_name_lock_mutex);
+	dnl = (device_name_lock_t *) switch_core_hash_find(listener->profile->device_name_lock_hash, device_name);
+	switch_mutex_unlock(listener->profile->device_name_lock_mutex);
+
+	if ( ! dnl ) {
+		skinny_log_l(listener, SWITCH_LOG_WARNING, "request to unlock and no lock structure for '%s'\n", device_name);
+		/* since it didn't exist, nothing to unlock, don't bother creating structure now */
+	} else {
+		if ( listener->profile->debug >= 9 ) {
+			skinny_log_l(listener, SWITCH_LOG_DEBUG, "clearing device name lock on '%s'\n", device_name);
+		}
+		switch_clear_flag_locked(dnl, DNLFLAG_INUSE);
+	}
+
+	/* Should we clean up the lock structure here, or does it ever get reclaimed? I don't think memory is released
+		so attempting to clear it up here likely would just result in a leak. */
+
+	if ((elapsed = (unsigned int) ((switch_micro_time_now() - started) / 1000)) > 5) {
+		skinny_log_l(listener, SWITCH_LOG_DEBUG, "device name unlock took more than 5ms for '%s' (%d)\n", device_name, elapsed);
+	}
+
+	if ( listener->profile->debug >= 9 ) {
+		skinny_log_l(listener, SWITCH_LOG_DEBUG, "unlocked device name '%s'\n", device_name);
+	}
+}
+
 void skinny_clean_device_from_db(listener_t *listener, char *device_name)
 {
 	if(!zstr(device_name)) {
@@ -1577,7 +1657,9 @@ static void flush_listener(listener_t *listener)
 			switch_safe_free(sql);
 		}
 
+		skinny_lock_device_name(listener, listener->device_name);
 		skinny_clean_listener_from_db(listener);
+		skinny_unlock_device_name(listener, listener->device_name);
 
 		strcpy(listener->device_name, "");
 	}
@@ -1656,7 +1738,7 @@ switch_status_t kill_listener(listener_t *listener, void *pvt)
 {
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Killing listener %s:%d.\n",
 			listener->device_name, listener->device_instance);
-	switch_clear_flag(listener, LFLAG_RUNNING);
+	switch_clear_flag_locked(listener, LFLAG_RUNNING);
 	close_socket(&listener->sock, listener->profile);
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -1738,10 +1820,11 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 		skinny_log_l_msg(listener, SWITCH_LOG_DEBUG, "Connection Open\n");
 	}
 
+	listener->connect_time = switch_epoch_time_now(NULL);
+
 	switch_set_flag_locked(listener, LFLAG_RUNNING);
 	keepalive_listener(listener, NULL);
 	add_listener(listener);
-
 
 	while (listener_is_ready(listener)) {
 		status = skinny_read_packet(listener, &request);
@@ -2114,6 +2197,8 @@ static switch_status_t load_skinny_config(void)
 				switch_mutex_init(&profile->sock_mutex, SWITCH_MUTEX_NESTED, profile->pool);
 				switch_mutex_init(&profile->flag_mutex, SWITCH_MUTEX_NESTED, profile->pool);
 
+				switch_mutex_init(&profile->device_name_lock_mutex, SWITCH_MUTEX_NESTED, profile->pool);
+
 				for (param = switch_xml_child(xsettings, "param"); param; param = param->next) {
 					char *var = (char *) switch_xml_attr_soft(param, "name");
 					char *val = (char *) switch_xml_attr_soft(param, "value");
@@ -2231,6 +2316,8 @@ static switch_status_t load_skinny_config(void)
 					continue;
 				}
 
+				/* Device Name Locks */
+				switch_core_hash_init(&profile->device_name_lock_hash);
 
 				/* Device types */
 				switch_core_hash_init(&profile->device_type_params_hash);
