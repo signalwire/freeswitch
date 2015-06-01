@@ -1252,6 +1252,7 @@ uint8_t sofia_reg_handle_register_token(nua_t *nua, sofia_profile_t *profile, nu
 	const char *agent = "unknown";
 	const char *pres_on_reg = NULL;
 	int send_pres = 0;
+	int send_message_query = 0;
 	int is_tls = 0, is_tcp = 0, is_ws = 0, is_wss = 0;
 	char expbuf[35] = "";
 	time_t reg_time = switch_epoch_time_now(NULL);
@@ -1264,6 +1265,7 @@ uint8_t sofia_reg_handle_register_token(nua_t *nua, sofia_profile_t *profile, nu
 	char *sw_to_user;
 	char *sw_reg_host;
 	char *token_val = NULL;
+
 
 	if (sofia_private_p) {
 		sofia_private = *sofia_private_p;
@@ -1761,6 +1763,7 @@ uint8_t sofia_reg_handle_register_token(nua_t *nua, sofia_profile_t *profile, nu
 		reg_meta = var;
 	}
 
+	/* associated MWI account */
 	if (v_event && *v_event && (mwi_account = switch_event_get_header(*v_event, "mwi-account"))) {
 		dup_mwi_account = strdup(mwi_account);
 		switch_assert(dup_mwi_account != NULL);
@@ -1772,6 +1775,26 @@ uint8_t sofia_reg_handle_register_token(nua_t *nua, sofia_profile_t *profile, nu
 	}
 	if (!mwi_host) {
 		mwi_host = (char *) reg_host;
+	}
+
+	/* per-profile unsolicited MWI on register */
+	if (sofia_test_pflag(profile, PFLAG_MESSAGE_QUERY_ON_REGISTER)) {
+		send_message_query = 2;
+	} else if (sofia_test_pflag(profile, PFLAG_MESSAGE_QUERY_ON_FIRST_REGISTER)) {
+		send_message_query = 1;
+	} else {
+		send_message_query = 0;
+	}
+
+	/* per-account unsolicited MWI on register */
+	if (v_event && *v_event && (var = switch_event_get_header(*v_event, "send-message-query-on-register"))) {
+		if (switch_true(var)) {
+			send_message_query = 2;
+		} else if (!strcasecmp(var, "first-only")) {
+			send_message_query = 1;
+		} else {
+			send_message_query = 0;
+		}
 	}
 
 	if (regtype != REG_REGISTER) {
@@ -2027,10 +2050,9 @@ uint8_t sofia_reg_handle_register_token(nua_t *nua, sofia_profile_t *profile, nu
 
 				switch_snprintf(exp_param, sizeof(exp_param), "expires=%ld", exptime);
 				sip_contact_add_param(nua_handle_home(nh), sip->sip_contact, exp_param);
-				
-				if ((sofia_test_pflag(profile, PFLAG_MESSAGE_QUERY_ON_REGISTER) ||
-					 (reg_count == 1 && sofia_test_pflag(profile, PFLAG_MESSAGE_QUERY_ON_FIRST_REGISTER))) && debounce_ok) {
-					
+
+				/* send unsolicited MWI if configured */
+				if (send_message_query == 2 || (reg_count == 1 && send_message_query == 1 && debounce_ok)) {
 					if (switch_event_create(&s_mwi_event, SWITCH_EVENT_MESSAGE_QUERY) == SWITCH_STATUS_SUCCESS) {
 						switch_event_add_header(s_mwi_event, SWITCH_STACK_BOTTOM, "Message-Account", "%s:%s@%s", proto, mwi_user, mwi_host);
 						switch_event_add_header_string(s_mwi_event, SWITCH_STACK_BOTTOM, "VM-Sofia-Profile", profile->name);
