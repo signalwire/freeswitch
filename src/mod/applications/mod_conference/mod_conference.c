@@ -8905,7 +8905,7 @@ static void clear_eflags(char *events, uint32_t *f)
 			} else if (!strcmp(event, "play-file")) {
 				*f &= ~EFLAG_PLAY_FILE;
 			} else if (!strcmp(event, "play-file-done")) {
-				*f &= ~EFLAG_PLAY_FILE;
+				*f &= ~EFLAG_PLAY_FILE_DONE;
 			} else if (!strcmp(event, "play-file-member")) {
 				*f &= ~EFLAG_PLAY_FILE_MEMBER;
 			} else if (!strcmp(event, "speak-text")) {
