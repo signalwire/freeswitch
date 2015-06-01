@@ -5705,7 +5705,7 @@ static switch_status_t process_rtcp_packet(switch_rtp_t *rtp_session, switch_siz
 
 		if (msg->header.version != 2 || !(msg->header.type > 199 && msg->header.type < 208)) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING, 
-							  "INVALID RTCP PACKET TYPE %d VER %d LEN %ld\n", msg->header.type, 
+							  "INVALID RTCP PACKET TYPE %d VER %d LEN %" SWITCH_SIZE_T_FMT "\n", msg->header.type, 
 							  msg->header.version, len);
 			status = SWITCH_STATUS_BREAK;
 			break;
