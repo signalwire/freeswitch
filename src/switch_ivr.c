@@ -530,7 +530,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 		elp = 1;
 	}
 
-	if (lead_frames) {
+	if (lead_frames && switch_channel_media_ready(channel)) {
 		switch_frame_t *read_frame;
 		int frame_count = atoi(lead_frames);
 		int max_frames = frame_count * 2;
