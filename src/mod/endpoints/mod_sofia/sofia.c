@@ -7928,6 +7928,7 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 
 							if ((a_session = switch_core_session_locate(br_a))) {
 								const char *moh = profile->hold_music;
+								switch_core_session_t *tmpsess = NULL;
 								switch_channel_t *a_channel = switch_core_session_get_channel(a_session);
 								switch_caller_profile_t *prof = switch_channel_get_caller_profile(channel_b);
 								const char *tmp;
@@ -7957,6 +7958,15 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 									switch_ivr_session_transfer(a_session, xdest, "inline", NULL);
 								} else {
 									switch_ivr_session_transfer(a_session, "park", "inline", NULL);
+								}
+								if (switch_true(switch_channel_get_variable(channel_a, "recording_follow_transfer"))) {
+									switch_core_media_bug_transfer_recordings(session, a_session);
+								}
+								if (switch_true(switch_channel_get_variable(channel_b, "recording_follow_transfer")) && (tmpsess = switch_core_session_locate(br_a))) {
+									switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE,
+											  "Early transfer detected with no media, moving recording bug to other leg\n");
+									switch_core_media_bug_transfer_recordings(b_session, tmpsess);
+									switch_core_session_rwunlock(tmpsess);
 								}
 
 								switch_core_session_rwunlock(a_session);
