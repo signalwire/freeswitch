@@ -71,6 +71,9 @@ typedef struct {
 	unsigned char ttl;
 	struct sockaddr_in send_addr;
 	struct sockaddr_in recv_addr;
+	struct sockaddr_in6 send_addr6;
+	struct sockaddr_in6 recv_addr6;
+	int family;
 	unsigned char buffer[65536];
 	int ready;
 } mcast_handle_t;

@@ -2885,6 +2885,8 @@ static void clear_ice(switch_core_session_t *session, switch_media_type_t type)
 
 	engine->ice_in.chosen[0] = 0;
 	engine->ice_in.chosen[1] = 0;
+	engine->ice_in.is_chosen[0] = 0;
+	engine->ice_in.is_chosen[1] = 0;
 	engine->ice_in.cand_idx = 0;
 	memset(&engine->ice_in, 0, sizeof(engine->ice_in));
 	engine->remote_rtcp_port = 0;
@@ -3048,6 +3050,52 @@ SWITCH_DECLARE(switch_call_direction_t) switch_ice_direction(switch_core_session
 }
 
 //?
+static switch_status_t ip_choose_family(switch_media_handle_t *smh, const char *ip)
+{
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	if (zstr(ip)) {
+		return status;
+	}
+
+	if (strchr(ip, ':')) {
+		if (!zstr(smh->mparams->rtpip6)) {
+			smh->mparams->rtpip = smh->mparams->rtpip6;
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_DEBUG, "%s choosing family v6\n", 
+							  switch_channel_get_name(smh->session->channel));
+			status = SWITCH_STATUS_SUCCESS;
+		}
+	} else {
+		if (!zstr(smh->mparams->rtpip4)) {
+			smh->mparams->rtpip = smh->mparams->rtpip4;
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_DEBUG, "%s choosing family v4\n", 
+							  switch_channel_get_name(smh->session->channel));
+			status = SWITCH_STATUS_SUCCESS;
+		}
+	}
+
+	return status;
+}
+
+//?
+static switch_bool_t ip_possible(switch_media_handle_t *smh, const char *ip)
+{
+	switch_bool_t r = SWITCH_FALSE;
+
+	if (zstr(ip)) {
+		return r;
+	}
+
+	if (strchr(ip, ':')) {
+		r = (switch_bool_t) !zstr(smh->mparams->rtpip6);
+	} else {
+		r = (switch_bool_t) !zstr(smh->mparams->rtpip4);
+	}
+
+	return r;
+}
+
+//?
 static void check_ice(switch_media_handle_t *smh, switch_media_type_t type, sdp_session_t *sdp, sdp_media_t *m)
 {
 	switch_rtp_engine_t *engine = &smh->engines[type];
@@ -3055,12 +3103,14 @@ static void check_ice(switch_media_handle_t *smh, switch_media_type_t type, sdp_
 	int i = 0, got_rtcp_mux = 0;
 	const char *val;
 
-	if (engine->ice_in.chosen[0] && engine->ice_in.chosen[1] && !switch_channel_test_flag(smh->session->channel, CF_REINVITE)) {
+	if (engine->ice_in.is_chosen[0] && engine->ice_in.is_chosen[1] && !switch_channel_test_flag(smh->session->channel, CF_REINVITE)) {
 		return;
 	}
 
 	engine->ice_in.chosen[0] = 0;
 	engine->ice_in.chosen[1] = 0;
+	engine->ice_in.is_chosen[0] = 0;
+	engine->ice_in.is_chosen[1] = 0;
 	engine->ice_in.cand_idx = 0;
 
 	if (m) {
@@ -3074,6 +3124,7 @@ static void check_ice(switch_media_handle_t *smh, switch_media_type_t type, sdp_
 		char *fields[15];
 		int argc = 0, j = 0;
 		int cid = 0;
+		int pass_acl = 0;
 
 		if (zstr(attr->a_name)) {
 			continue;
@@ -3150,55 +3201,61 @@ static void check_ice(switch_media_handle_t *smh, switch_media_type_t type, sdp_
 
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_DEBUG, 
 							  "Checking Candidate cid: %d proto: %s type: %s addr: %s:%s\n", cid+1, fields[2], fields[7], fields[4], fields[5]);
-
-
-			engine->ice_in.cand_idx++;
+			
+			pass_acl = 0;
 
 			for (i = 0; i < engine->cand_acl_count; i++) {
-				if (!engine->ice_in.chosen[cid] && !strchr(fields[4], ':') && switch_check_network_list_ip(fields[4], engine->cand_acl[i])) {
-					engine->ice_in.chosen[cid] = engine->ice_in.cand_idx;
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_NOTICE, 
-									  "Choose %s Candidate cid: %d proto: %s type: %s addr: %s:%s\n", 
-									  type == SWITCH_MEDIA_TYPE_VIDEO ? "video" : "audio",
-									  cid+1, fields[2], fields[7], fields[4], fields[5]);
-				} else {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_NOTICE, 
-									  "Save %s Candidate cid: %d proto: %s type: %s addr: %s:%s\n", 
-									  type == SWITCH_MEDIA_TYPE_VIDEO ? "video" : "audio",
-									  cid+1, fields[2], fields[7], fields[4], fields[5]);
+				if (switch_check_network_list_ip(fields[4], engine->cand_acl[i])) {
+					pass_acl = 1;
+					break;
 				}
-
-				engine->ice_in.cands[engine->ice_in.cand_idx][cid].foundation = switch_core_session_strdup(smh->session, fields[0]);
-				engine->ice_in.cands[engine->ice_in.cand_idx][cid].component_id = atoi(fields[1]);
-				engine->ice_in.cands[engine->ice_in.cand_idx][cid].transport = switch_core_session_strdup(smh->session, fields[2]);
-				engine->ice_in.cands[engine->ice_in.cand_idx][cid].priority = atol(fields[3]);
-				engine->ice_in.cands[engine->ice_in.cand_idx][cid].con_addr = switch_core_session_strdup(smh->session, fields[4]);
-				engine->ice_in.cands[engine->ice_in.cand_idx][cid].con_port = (switch_port_t)atoi(fields[5]);
-
-
-				j = 6;
-
-				while(j < argc && fields[j+1]) {
-					if (!strcasecmp(fields[j], "typ")) {
-						engine->ice_in.cands[engine->ice_in.cand_idx][cid].cand_type = switch_core_session_strdup(smh->session, fields[j+1]);							
-					} else if (!strcasecmp(fields[j], "raddr")) {
-						engine->ice_in.cands[engine->ice_in.cand_idx][cid].raddr = switch_core_session_strdup(smh->session, fields[j+1]);
-					} else if (!strcasecmp(fields[j], "rport")) {
-						engine->ice_in.cands[engine->ice_in.cand_idx][cid].rport = (switch_port_t)atoi(fields[j+1]);
-					} else if (!strcasecmp(fields[j], "generation")) {
-						engine->ice_in.cands[engine->ice_in.cand_idx][cid].generation = switch_core_session_strdup(smh->session, fields[j+1]);
-					}
-					
-					j += 2;
-				} 
-				
-
-				if (engine->ice_in.chosen[cid]) {
-					engine->ice_in.cands[engine->ice_in.chosen[cid]][cid].ready++;
-				}
-				
-				break;
 			}
+
+			if (!engine->ice_in.is_chosen[cid] && ip_possible(smh, fields[4]) && pass_acl) {
+				engine->ice_in.chosen[cid] = engine->ice_in.cand_idx;
+				engine->ice_in.is_chosen[cid] = 1;
+				
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_NOTICE, 
+								  "Choose %s Candidate cid: %d proto: %s type: %s addr: %s:%s\n", 
+								  type == SWITCH_MEDIA_TYPE_VIDEO ? "video" : "audio",
+								  cid+1, fields[2], fields[7], fields[4], fields[5]);
+				ip_choose_family(smh, fields[4]);
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_NOTICE, 
+								  "Save %s Candidate cid: %d proto: %s type: %s addr: %s:%s\n", 
+								  type == SWITCH_MEDIA_TYPE_VIDEO ? "video" : "audio",
+								  cid+1, fields[2], fields[7], fields[4], fields[5]);
+			}
+
+			engine->ice_in.cands[engine->ice_in.cand_idx][cid].foundation = switch_core_session_strdup(smh->session, fields[0]);
+			engine->ice_in.cands[engine->ice_in.cand_idx][cid].component_id = atoi(fields[1]);
+			engine->ice_in.cands[engine->ice_in.cand_idx][cid].transport = switch_core_session_strdup(smh->session, fields[2]);
+			engine->ice_in.cands[engine->ice_in.cand_idx][cid].priority = atol(fields[3]);
+			engine->ice_in.cands[engine->ice_in.cand_idx][cid].con_addr = switch_core_session_strdup(smh->session, fields[4]);
+			engine->ice_in.cands[engine->ice_in.cand_idx][cid].con_port = (switch_port_t)atoi(fields[5]);
+
+			j = 6;
+
+			while(j < argc && fields[j+1]) {
+				if (!strcasecmp(fields[j], "typ")) {
+					engine->ice_in.cands[engine->ice_in.cand_idx][cid].cand_type = switch_core_session_strdup(smh->session, fields[j+1]);							
+				} else if (!strcasecmp(fields[j], "raddr")) {
+					engine->ice_in.cands[engine->ice_in.cand_idx][cid].raddr = switch_core_session_strdup(smh->session, fields[j+1]);
+				} else if (!strcasecmp(fields[j], "rport")) {
+					engine->ice_in.cands[engine->ice_in.cand_idx][cid].rport = (switch_port_t)atoi(fields[j+1]);
+				} else if (!strcasecmp(fields[j], "generation")) {
+					engine->ice_in.cands[engine->ice_in.cand_idx][cid].generation = switch_core_session_strdup(smh->session, fields[j+1]);
+				}
+					
+				j += 2;
+			} 
+				
+
+			if (engine->ice_in.is_chosen[cid]) {
+				engine->ice_in.cands[engine->ice_in.chosen[cid]][cid].ready++;
+			}
+
+			engine->ice_in.cand_idx++;
 		}
 		
 	}
@@ -3206,18 +3263,23 @@ static void check_ice(switch_media_handle_t *smh, switch_media_type_t type, sdp_
 	/* still no candidates, so start searching for some based on sane deduction */
 
 	/* look for candidates on the same network */
-	if (!engine->ice_in.chosen[0] || !engine->ice_in.chosen[1]) {
-		for (i = 0; i <= engine->ice_in.cand_idx && (!engine->ice_in.chosen[0] || !engine->ice_in.chosen[1]); i++) {
-			if (!engine->ice_in.chosen[0] && engine->ice_in.cands[i][0].component_id == 1 && 
-				!engine->ice_in.cands[i][0].rport && switch_check_network_list_ip(engine->ice_in.cands[i][0].con_addr, "localnet.auto")) {
+	if (!engine->ice_in.is_chosen[0] || !engine->ice_in.is_chosen[1]) {
+		for (i = 0; i <= engine->ice_in.cand_idx && (!engine->ice_in.is_chosen[0] || !engine->ice_in.is_chosen[1]); i++) {
+			if (!engine->ice_in.is_chosen[0] && engine->ice_in.cands[i][0].component_id == 1 && 
+				!engine->ice_in.cands[i][0].rport && ip_possible(smh, engine->ice_in.cands[i][0].con_addr) &&
+				switch_check_network_list_ip(engine->ice_in.cands[i][0].con_addr, "localnet.auto")) {
 				engine->ice_in.chosen[0] = i;
+				engine->ice_in.is_chosen[0] = 1;
 				engine->ice_in.cands[engine->ice_in.chosen[0]][0].ready++;
+				ip_choose_family(smh, engine->ice_in.cands[i][0].con_addr);
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_NOTICE, 
 								  "No %s RTP candidate found; defaulting to the first local one.\n", type2str(type));
 			}
-			if (!engine->ice_in.chosen[1] && engine->ice_in.cands[i][1].component_id == 2 && 
-				!engine->ice_in.cands[i][1].rport && switch_check_network_list_ip(engine->ice_in.cands[i][1].con_addr, "localnet.auto")) {
+			if (!engine->ice_in.is_chosen[1] && engine->ice_in.cands[i][1].component_id == 2 && 
+				!engine->ice_in.cands[i][1].rport && ip_possible(smh, engine->ice_in.cands[i][1].con_addr) &&
+				switch_check_network_list_ip(engine->ice_in.cands[i][1].con_addr, "localnet.auto")) {
 				engine->ice_in.chosen[1] = i;
+				engine->ice_in.is_chosen[1] = 1;
 				engine->ice_in.cands[engine->ice_in.chosen[1]][1].ready++;
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session),SWITCH_LOG_NOTICE, 
 								  "No %s RTCP candidate found; defaulting to the first local one.\n", type2str(type));
@@ -3226,16 +3288,21 @@ static void check_ice(switch_media_handle_t *smh, switch_media_type_t type, sdp_
 	}
 
 	/* look for candidates with srflx */
-	if (!engine->ice_in.chosen[0] || !engine->ice_in.chosen[1]) {
-		for (i = 0; i <= engine->ice_in.cand_idx && (!engine->ice_in.chosen[0] || !engine->ice_in.chosen[1]); i++) {
-			if (!engine->ice_in.chosen[0] && engine->ice_in.cands[i][0].component_id == 1 && engine->ice_in.cands[i][0].rport) {
+	if (!engine->ice_in.is_chosen[0] || !engine->ice_in.is_chosen[1]) {
+		for (i = 0; i <= engine->ice_in.cand_idx && (!engine->ice_in.is_chosen[0] || !engine->ice_in.is_chosen[1]); i++) {
+			if (!engine->ice_in.is_chosen[0] &&
+				engine->ice_in.cands[i][0].component_id == 1 && engine->ice_in.cands[i][0].rport && ip_possible(smh, engine->ice_in.cands[i][0].con_addr)) {
 				engine->ice_in.chosen[0] = i;
+				engine->ice_in.chosen[1] = 1;
 				engine->ice_in.cands[engine->ice_in.chosen[0]][0].ready++;
+				ip_choose_family(smh, engine->ice_in.cands[i][0].con_addr);
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_NOTICE, 
 								  "No %s RTP candidate found; defaulting to the first srflx one.\n", type2str(type));
 			}
-			if (!engine->ice_in.chosen[1] && engine->ice_in.cands[i][1].component_id == 2 && engine->ice_in.cands[i][1].rport) {
+			if (!engine->ice_in.is_chosen[1] && engine->ice_in.cands[i][1].component_id == 2 && engine->ice_in.cands[i][1].rport &&
+				ip_possible(smh, engine->ice_in.cands[i][1].con_addr)) {
 				engine->ice_in.chosen[1] = i;
+				engine->ice_in.is_chosen[1] = 1;
 				engine->ice_in.cands[engine->ice_in.chosen[1]][1].ready++;
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session),SWITCH_LOG_NOTICE, 
 								  "No %s RTCP candidate found; defaulting to the first srflx one.\n", type2str(type));
@@ -3244,8 +3311,9 @@ static void check_ice(switch_media_handle_t *smh, switch_media_type_t type, sdp_
 	}
 
 	/* Got RTP but not RTCP, probably mux */
-	if (engine->ice_in.chosen[0] && !engine->ice_in.chosen[1] && got_rtcp_mux) {
+	if (engine->ice_in.is_chosen[0] && !engine->ice_in.is_chosen[1] && got_rtcp_mux) {
 		engine->ice_in.chosen[1] = engine->ice_in.chosen[0];
+		engine->ice_in.is_chosen[1] = 1;
 
 		memcpy(&engine->ice_in.cands[engine->ice_in.chosen[1]][1], &engine->ice_in.cands[engine->ice_in.chosen[0]][0], 
 			   sizeof(engine->ice_in.cands[engine->ice_in.chosen[0]][0]));
@@ -3257,21 +3325,31 @@ static void check_ice(switch_media_handle_t *smh, switch_media_type_t type, sdp_
 	}
 
 	/* look for any candidates and hope for auto-adjust */
-	if (!engine->ice_in.chosen[0] || !engine->ice_in.chosen[1]) {
-		for (i = 0; i <= engine->ice_in.cand_idx && (!engine->ice_in.chosen[0] || !engine->ice_in.chosen[1]); i++) {
-			if (!engine->ice_in.chosen[0] && engine->ice_in.cands[i][0].component_id == 1) {
+	if (!engine->ice_in.is_chosen[0] || !engine->ice_in.is_chosen[1]) {
+		for (i = 0; i <= engine->ice_in.cand_idx && (!engine->ice_in.is_chosen[0] || !engine->ice_in.is_chosen[1]); i++) {
+			if (!engine->ice_in.is_chosen[0] && engine->ice_in.cands[i][0].component_id == 1 && ip_possible(smh, engine->ice_in.cands[i][0].con_addr)) {
 				engine->ice_in.chosen[0] = i;
+				engine->ice_in.is_chosen[0] = 1;
 				engine->ice_in.cands[engine->ice_in.chosen[0]][0].ready++;
+				ip_choose_family(smh, engine->ice_in.cands[i][0].con_addr);
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_NOTICE, 
 								  "No %s RTP candidate found; defaulting to the first one.\n", type2str(type));
 			}
-			if (!engine->ice_in.chosen[1] && engine->ice_in.cands[i][1].component_id == 2) {
+			if (!engine->ice_in.is_chosen[1] && engine->ice_in.cands[i][1].component_id == 2) {
 				engine->ice_in.chosen[1] = i;
+				engine->ice_in.is_chosen[1] = 1;
 				engine->ice_in.cands[engine->ice_in.chosen[1]][1].ready++;
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_NOTICE, 
 								  "No %s RTCP candidate found; defaulting to the first one.\n", type2str(type));
 			}
 		}
+	}
+
+	if (!engine->ice_in.is_chosen[0] || !engine->ice_in.is_chosen[1]) {
+		/* PUNT */
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_DEBUG, "%s no suitable candidates found.\n", 
+						  switch_channel_get_name(smh->session->channel));
+		return;
 	}
 
 	for (i = 0; i < 2; i++) {
@@ -5476,6 +5554,20 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_choose_port(switch_core_sessio
 SWITCH_DECLARE(switch_status_t) switch_core_media_choose_ports(switch_core_session_t *session, switch_bool_t audio, switch_bool_t video)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	switch_media_handle_t *smh;
+	
+	if (!(smh = session->media_handle)) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (zstr(smh->mparams->rtpip)) {
+		
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "%s has no media ip\n", 
+						  switch_channel_get_name(smh->session->channel));
+		switch_channel_hangup(smh->session->channel, SWITCH_CAUSE_BEARERCAPABILITY_NOTAVAIL);
+
+		return SWITCH_STATUS_FALSE;
+	}
 
 	if (audio && (status = switch_core_media_choose_port(session, SWITCH_MEDIA_TYPE_AUDIO, 0)) == SWITCH_STATUS_SUCCESS) {
 		if (video) {
@@ -6316,7 +6408,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%sVIDEO RTP [%s] %s:%d->%s:%d codec: %u ms: %d [%s]\n",
 							  switch_channel_test_flag(session->channel, CF_PROXY_MEDIA) ? "PROXY " : "",
 							  switch_channel_get_name(session->channel),
-							  a_engine->cur_payload_map->remote_sdp_ip,
+							  a_engine->local_sdp_ip,
 							  v_engine->local_sdp_port,
 							  v_engine->cur_payload_map->remote_sdp_ip,
 							  v_engine->cur_payload_map->remote_sdp_port, v_engine->cur_payload_map->agreed_pt,

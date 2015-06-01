@@ -105,6 +105,7 @@ typedef struct ice_s {
 	icand_t cands[MAX_CAND][2];
 	int cand_idx;
 	int chosen[2];
+	int is_chosen[2];
 	char *ufrag;
 	char *pwd;
 	char *options;

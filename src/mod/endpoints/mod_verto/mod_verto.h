@@ -106,9 +106,8 @@ struct jsock_s {
 	unsigned char buf[65535];
 	char *name;
 	jsock_type_t ptype;
-	struct sockaddr_in local_addr;
 	struct sockaddr_in remote_addr;
-	struct sockaddr_in send_addr;
+	struct sockaddr_in6 remote_addr6;
 #ifndef WIN32
 	struct passwd pw;
 #endif
@@ -132,6 +131,11 @@ struct jsock_s {
 	char *dialplan;
 	char *context;
 	
+
+	char remote_host[256];
+	int remote_port;
+	int family;
+
 	struct verto_profile_s *profile;
 	switch_thread_rwlock_t *rwlock;
 	
@@ -155,12 +159,12 @@ typedef struct jsock_s jsock_t;
 #define MAX_BIND 25
 #define MAX_RTPIP 25
 
-struct ips {
+typedef struct ips {
 	char local_ip[256];
-	in_addr_t local_ip_addr;
 	uint16_t local_port;
 	int secure;
-};
+	int family;
+} ips_t;
 
 typedef enum {
 	TFLAG_SENT_MEDIA = (1 << 0),
@@ -239,6 +243,10 @@ struct verto_profile_s {
 	char *rtpip[MAX_RTPIP];
 	int rtpip_index;
 	int rtpip_cur;
+
+	char *rtpip6[MAX_RTPIP];
+	int rtpip_index6;
+	int rtpip_cur6;
 
 	char *cand_acl[SWITCH_MAX_CAND_ACL];
 	uint32_t cand_acl_count;
