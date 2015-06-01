@@ -1,0 +1,225 @@
+attributetype ( 1.3.6.1.4.1.27880.1003.1.1.1 NAME 'fsUid'
+	DESC 'FreeSWITCH directory user id'
+	EQUALITY caseExactIA5Match
+	SUBSTR caseExactIA5SubstringsMatch
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26
+	SINGLE-VALUE )
+
+attributetype ( 1.3.6.1.4.1.27880.1003.1.1.2 NAME 'fsCIDR'
+	DESC 'FreeSWITCH directory user id cidr'
+	EQUALITY caseExactIA5Match
+	SUBSTR caseExactIA5SubstringsMatch
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26
+	SINGLE-VALUE )
+
+attributetype ( 1.3.6.1.4.1.27880.1003.1.1.3 NAME 'fsNumberAlias'
+	DESC 'FreeSWITCH directory user id number-alias'
+	EQUALITY numericStringMatch
+	SUBSTR numericStringSubstringsMatch
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.36
+	SINGLE-VALUE )
+
+attributetype ( 1.3.6.1.4.1.27880.1003.1.1.4 NAME 'fsDialString'
+	DESC 'FreeSWITCH directory dial-string param'
+	EQUALITY caseExactIA5Match
+	SUBSTR caseExactIA5SubstringsMatch
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26
+	SINGLE-VALUE )
+
+attributetype ( 1.3.6.1.4.1.27880.1003.1.1.5 NAME 'fsPassword'
+	DESC 'FreeSWITCH directory password param'
+	EQUALITY caseExactIA5Match
+	SUBSTR caseExactIA5SubstringsMatch
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26
+	SINGLE-VALUE )
+
+attributetype ( 1.3.6.1.4.1.27880.1003.1.1.6 NAME 'fsReverseAuthUser'
+	DESC 'FreeSWITCH directory reverse-auth-user param'
+	EQUALITY caseExactIA5Match
+	SUBSTR caseExactIA5SubstringsMatch
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26
+	SINGLE-VALUE )
+
+attributetype ( 1.3.6.1.4.1.27880.1003.1.1.7 NAME 'fsReverseAuthPass'
+	DESC 'FreeSWITCH directory reverse-auth-pass param'
+	EQUALITY caseExactIA5Match
+	SUBSTR caseExactIA5SubstringsMatch
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26
+	SINGLE-VALUE )
+
+attributetype ( 1.3.6.1.4.1.27880.1003.1.1.8 NAME 'fsA1Hash'
+	DESC 'FreeSWITCH directory a1-hash param'
+	EQUALITY caseExactIA5Match
+	SUBSTR caseExactIA5SubstringsMatch
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26
+	SINGLE-VALUE )
+
+attributetype ( 1.3.6.1.4.1.27880.1003.1.1.9 NAME 'fsVmPassword'
+	DESC 'FreeSWITCH directory vm-password param'
+	EQUALITY numericStringMatch
+	SUBSTR numericStringSubstringsMatch
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.36
+	SINGLE-VALUE )
+
+attributetype ( 1.3.6.1.4.1.27880.1003.1.1.10 NAME 'fsVmEnabled'
+	DESC 'FreeSWITCH directory vm-enabled param'
+	EQUALITY booleanMatch
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+	SINGLE-VALUE )
+
+attributetype ( 1.3.6.1.4.1.27880.1003.1.1.11 NAME 'fsVmMailFrom'
+	DESC 'FreeSWITCH directory vm-mailfrom param'
+	EQUALITY caseIgnoreIA5Match
+	SUBSTR caseIgnoreIA5SubstringsMatch
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26
+	SINGLE-VALUE )
+
+attributetype ( 1.3.6.1.4.1.27880.1003.1.1.12 NAME 'fsVmMailTo'
+	DESC 'FreeSWITCH directory vm-mailto param'
+	EQUALITY caseIgnoreIA5Match
+	SUBSTR caseIgnoreIA5SubstringsMatch
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26
+	SINGLE-VALUE )
+
+attributetype ( 1.3.6.1.4.1.27880.1003.1.1.13 NAME 'fsVmNotifyMailTo'
+	DESC 'FreeSWITCH directory vm-notify-mailto param'
+	EQUALITY caseIgnoreIA5Match
+	SUBSTR caseIgnoreIA5SubstringsMatch
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26
+	SINGLE-VALUE )
+
+attributetype ( 1.3.6.1.4.1.27880.1003.1.1.14 NAME 'fsVmAttachFile'
+	DESC 'FreeSWITCH directory vm-attach-file param'
+	EQUALITY booleanMatch
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+	SINGLE-VALUE )
+
+attributetype ( 1.3.6.1.4.1.27880.1003.1.1.15 NAME 'fsVmMessageExt'
+	DESC 'FreeSWITCH directory vm-message-ext param'
+	EQUALITY caseIgnoreIA5Match
+	SUBSTR caseIgnoreIA5SubstringsMatch
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26
+	SINGLE-VALUE )
+
+attributetype ( 1.3.6.1.4.1.27880.1003.1.1.16 NAME 'fsVmEmailAllMessages'
+	DESC 'FreeSWITCH directory vm-email-all-messages param'
+	EQUALITY booleanMatch
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+	SINGLE-VALUE )
+
+attributetype ( 1.3.6.1.4.1.27880.1003.1.1.17 NAME 'fsVmKeepLocalAfterEmail'
+	DESC 'FreeSWITCH directory vm-keep-local-after-email param'
+	EQUALITY booleanMatch
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+	SINGLE-VALUE )
+
+attributetype ( 1.3.6.1.4.1.27880.1003.1.1.18 NAME 'fsVmNotifyEmailAllMessages'
+	DESC 'FreeSWITCH directory vm-notify-email-all-messages param'
+	EQUALITY booleanMatch
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+	SINGLE-VALUE )
+
+attributetype ( 1.3.6.1.4.1.27880.1003.1.1.19 NAME 'fsVmSkipInstructions'
+	DESC 'FreeSWITCH directory vm-skip-instructions param'
+	EQUALITY booleanMatch
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+	SINGLE-VALUE )
+
+attributetype ( 1.3.6.1.4.1.27880.1003.1.1.20 NAME 'fsVmCc'
+	DESC 'FreeSWITCH directory vm-cc param'
+	EQUALITY caseIgnoreIA5Match
+	SUBSTR caseIgnoreIA5SubstringsMatch
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26
+	SINGLE-VALUE )
+
+attributetype ( 1.3.6.1.4.1.27880.1003.1.1.21 NAME 'fsVmDiskQuota'
+	DESC 'FreeSWITCH directory vm-disk-quota param'
+	EQUALITY numericStringMatch
+	SUBSTR numericStringSubstringsMatch
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.36
+	SINGLE-VALUE )
+
+attributetype ( 1.3.6.1.4.1.27880.1003.1.1.22 NAME 'fsAccountCode'
+	DESC 'FreeSWITCH directory accountcode variable'
+	EQUALITY caseIgnoreIA5Match
+	SUBSTR caseIgnoreIA5SubstringsMatch
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26
+	SINGLE-VALUE )
+
+attributetype ( 1.3.6.1.4.1.27880.1003.1.1.23 NAME 'fsUserContext'
+	DESC 'FreeSWITCH directory user_context variable'
+	EQUALITY caseIgnoreIA5Match
+	SUBSTR caseIgnoreIA5SubstringsMatch
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26
+	SINGLE-VALUE )
+
+attributetype ( 1.3.6.1.4.1.27880.1003.1.1.24 NAME 'fsVmMailbox'
+	DESC 'FreeSWITCH directory vm_mailbox variable'
+	EQUALITY numericStringMatch
+	SUBSTR numericStringSubstringsMatch
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.36
+	SINGLE-VALUE )
+
+attributetype ( 1.3.6.1.4.1.27880.1003.1.1.25 NAME 'fsCallGroup'
+	DESC 'FreeSWITCH directory callgroup variable'
+	EQUALITY caseIgnoreIA5Match
+	SUBSTR caseIgnoreIA5SubstringsMatch
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26
+	SINGLE-VALUE )
+
+attributetype ( 1.3.6.1.4.1.27880.1003.1.1.26 NAME ('fsTollAllow' 'fsRuleSet')
+	DESC 'FreeSWITCH directory toll_allow variable'
+	EQUALITY caseIgnoreIA5Match
+	SUBSTR caseIgnoreIA5SubstringsMatch
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26
+	SINGLE-VALUE )
+
+attributetype ( 1.3.6.1.4.1.27880.1003.1.1.27 NAME 'fsEffectiveCallerIDNumber'
+	DESC 'FreeSWITCH directory effective_caller_id_number variable'
+	EQUALITY numericStringMatch
+	SUBSTR numericStringSubstringsMatch
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.36
+	SINGLE-VALUE )
+
+attributetype ( 1.3.6.1.4.1.27880.1003.1.1.28 NAME 'fsEffectiveCallerIDName'
+	DESC 'FreeSWITCH directory effective_caller_id_name variable'
+	EQUALITY caseExactMatch
+	SUBSTR caseExactSubstringsMatch
+	ORDERING caseExactOrderingMatch
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+	SINGLE-VALUE )
+
+attributetype ( 1.3.6.1.4.1.27880.1003.1.1.29 NAME 'fsOutboundCallerIDNumber'
+	DESC 'FreeSWITCH directory outbound_caller_id_number variable'
+	EQUALITY numericStringMatch
+	SUBSTR numericStringSubstringsMatch
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.36
+	SINGLE-VALUE )
+
+attributetype ( 1.3.6.1.4.1.27880.1003.1.1.30 NAME 'fsOutboundCallerIDName'
+	DESC 'FreeSWITCH directory outbound_caller_id_name variable'
+	EQUALITY caseExactMatch
+	SUBSTR caseExactSubstringsMatch
+	ORDERING caseExactOrderingMatch
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+	SINGLE-VALUE )
+
+attributetype ( 1.3.6.1.4.1.27880.1003.1.1.31 NAME 'fsDomainName'
+	DESC 'FreeSWITCH directory domain name' 
+	EQUALITY caseIgnoreIA5Match
+	SUBSTR caseIgnoreIA5SubstringsMatch
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26
+	SINGLE-VALUE )
+
+objectclass (1.3.6.1.4.1.27880.1003.2.1 NAME 'FSAccount' 
+	SUP top AUXILIARY
+	DESC 'FreeSWITCH Directory Account (v1.1)'
+	MAY ( fsUid $ fsCIDR $ fsNumberAlias $ fsDialString $ fsPassword $
+              fsReverseAuthUser $ fsReverseAuthPass $ fsA1Hash $ fsVmMessageExt $ 
+              fsVmPassword $ fsVmEnabled $ fsVmMailFrom $ fsVmMailTo $
+              fsVmNotifyMailTo $ fsVmAttachFile $ fsVmMessageExt $
+              fsVmEmailAllMessages $ fsVmKeepLocalAfterEmail $ fsVmNotifyEmailAllMessages $ 
+              fsVmSkipInstructions $ fsVmCc $ fsVmDiskQuota $ fsAccountCode $
+              fsUserContext $ fsVmMailbox $ fsCallGroup $ fsTollAllow $
+              fsEffectiveCallerIDNumber $ fsEffectiveCallerIDName $ 
+              fsOutboundCallerIDNumber $ fsOutboundCallerIDName $ fsDomainName ))
