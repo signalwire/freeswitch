@@ -74,6 +74,7 @@ struct opus_context {
 	OpusDecoder *decoder_object;
 	uint32_t enc_frame_size;
 	uint32_t dec_frame_size;
+	uint32_t counter_plc_fec;
 };
 
 struct {
@@ -338,7 +339,7 @@ static switch_status_t switch_opus_init(switch_codec_t *codec, switch_codec_flag
             
 			return SWITCH_STATUS_GENERR;
 		}
-        
+		context->counter_plc_fec = 0;
 	}
     
 	codec->private_info = context;
@@ -352,6 +353,7 @@ static switch_status_t switch_opus_destroy(switch_codec_t *codec)
     
 	if (context) {
 		if (context->decoder_object) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"tried PLC or FEC %d times \n",context->counter_plc_fec);
 			opus_decoder_destroy(context->decoder_object);
 			context->decoder_object = NULL;
 		}
@@ -400,9 +402,13 @@ static switch_status_t switch_opus_decode(switch_codec_t *codec,
 										  unsigned int *flag)
 {
 	struct opus_context *context = codec->private_info;
+	switch_core_session_t *session = codec->session;
+	stfu_instance_t *jb = NULL;
+	stfu_frame_t next_frame;
 	int samples = 0;
     uint32_t frame_size;
 	uint32_t frame_samples;
+	uint32_t found_frame;
 
 	if (!context) {
 		return SWITCH_STATUS_FALSE;
@@ -411,7 +417,28 @@ static switch_status_t switch_opus_decode(switch_codec_t *codec,
 	frame_samples = *decoded_data_len / 2 / codec->implementation->number_of_channels;
 	frame_size = frame_samples - (frame_samples % (codec->implementation->actual_samples_per_second / 400));
 	
-	samples = opus_decode(context->decoder_object, (*flag & SFF_PLC) ? NULL : encoded_data, encoded_data_len, decoded_data, frame_size, !!(*flag & SFF_PLC));
+	/*FEC: shameless rip-off from mod_silk.c . OPUS only supports n+1 FEC , SILK is supposed to work with n+1, n+2*/
+	if (*flag & SFF_PLC) {
+		context->counter_plc_fec;
+		if (session) {
+			jb = switch_core_session_get_jb(session, SWITCH_MEDIA_TYPE_AUDIO);
+		}
+		if (jb && codec->cur_frame) {
+			found_frame = stfu_n_copy_next_frame(jb, (uint32_t)codec->cur_frame->timestamp, codec->cur_frame->seq, 1, &next_frame);
+			if (found_frame) {
+				samples = opus_decode(context->decoder_object, next_frame.data, next_frame.dlen, decoded_data, frame_size, 1); /* opus_decode() does PLC if there's no FEC in the packet*/
+				if (samples < 0 ) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Decoder Error (FEC): %s!\n", opus_strerror(samples));
+					return SWITCH_STATUS_FALSE;
+				} else {
+					*decoded_data_len = samples * 2 * codec->implementation->number_of_channels;
+					return SWITCH_STATUS_SUCCESS;
+				}
+			}
+		}
+	}
+
+	samples = opus_decode(context->decoder_object, (*flag & SFF_PLC) ? NULL : encoded_data, encoded_data_len, decoded_data, frame_size, 0);
 
 	if (samples < 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Decoder Error: %s fs:%u plc:%d!\n", opus_strerror(samples), frame_size, !!(*flag & SFF_PLC));
