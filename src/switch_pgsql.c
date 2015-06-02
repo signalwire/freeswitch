@@ -25,6 +25,7 @@
  * 
  * Anthony Minessale II <anthm@freeswitch.org>
  * Eliot Gable <egable@gmail.com>
+ * Seven Du <dujinfang@gmail.com>
  *
  * switch_pgsql.c -- PGSQL Driver
  *
@@ -465,7 +466,17 @@ SWITCH_DECLARE(switch_pgsql_status_t) switch_pgsql_finish_results_real(const cha
 			switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_ERROR, "Error executing query:\n%s\n", res->err);
 			final_status = SWITCH_PGSQL_FAIL;
 		}
-		if (!res) done = 1;
+
+		if (!res) {
+			done = 1;
+		} else if (res->result) {
+			char *affected_rows = PQcmdTuples(res->result);
+
+			if (!zstr(affected_rows)) {
+				handle->affected_rows = atoi(affected_rows);
+			}
+		}
+
 		switch_pgsql_free_result(&res);
 	} while (!done);
 	return final_status;
