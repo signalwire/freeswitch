@@ -8,6 +8,11 @@
 		<param name="mixer-conf-profile" value="sla"/>
 		<!-- if true, to attribute in offer uses URI instead of name/number -->
 		<param name="offer-uri" value="true"/>
+		<!-- how offers are distributed to clients (all, first, random). -->
+		<param name="offer-algorithm" value="all"/>
+		<!-- If offer is not answered after timeout, next client is offered (based on algorithm picked).
+		     If no other clients are available, the call is rejected.  Set to 0 to disable -->
+		<param name="offer-timeout-ms" value="5000"/>
 		<!-- if true, channel variables are added to rayo client offer -->
 		<param name="add-variables-to-offer" value="false"/>
                 <!-- if true, channel variables are added to offer, ringing, answered, and end events sent to rayo clients -->
