@@ -25,7 +25,7 @@
  * 
  * Marc Olivier Chouinard <mochouinard@moctel.com>
  * Emmanuel Schmidbauer <e.schmidbauer@gmail.com>
- *
+ * Ítalo Rossi <italorossib@gmail.com>
  *
  * mod_callcenter.c -- Call Center Module
  *
@@ -2517,6 +2517,7 @@ SWITCH_STANDARD_APP(callcenter_function)
 	const char *cc_base_score = switch_channel_get_variable(member_channel, "cc_base_score");
 	int cc_base_score_int = 0;
 	const char *cur_moh = NULL;
+	char *moh_expanded = NULL;
 	char start_epoch[64];
 	switch_event_t *event;
 	switch_time_t t_member_called = local_epoch_time_now(NULL);
@@ -2678,6 +2679,7 @@ SWITCH_STANDARD_APP(callcenter_function)
 		cur_moh = switch_core_session_strdup(member_session, queue->moh);
 	}
 	queue_rwunlock(queue);
+	moh_expanded = switch_channel_expand_variables(member_channel, cur_moh);
 
 	while (switch_channel_ready(member_channel)) {
 		switch_input_args_t args = { 0 };
@@ -2700,9 +2702,8 @@ SWITCH_STANDARD_APP(callcenter_function)
 
 		switch_core_session_flush_private_events(member_session);
 
-		if (moh_valid && cur_moh) {
-			switch_status_t status = switch_ivr_play_file(member_session, NULL, cur_moh, &args);
-
+		if (moh_valid && moh_expanded) {
+			switch_status_t status = switch_ivr_play_file(member_session, NULL, moh_expanded, &args);
 			if (status == SWITCH_STATUS_FALSE /* Invalid Recording */ && SWITCH_READ_ACCEPTABLE(status)) { 
 				/* Sadly, there doesn't seem to be a return to switch_ivr_play_file that tell you the file wasn't found.  FALSE also mean that the channel got switch to BRAKE state, so we check for read acceptable */
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_WARNING, "Couldn't play file '%s', continuing wait with no audio\n", cur_moh);
@@ -2722,6 +2723,9 @@ SWITCH_STANDARD_APP(callcenter_function)
 			}
 		}
 		switch_yield(1000);
+	}
+	if (moh_expanded != cur_moh) {
+		switch_safe_free(moh_expanded);
 	}
 
 	/* Make sure an agent was found, as we might break above without setting it */
