@@ -353,7 +353,7 @@ static switch_status_t switch_opus_destroy(switch_codec_t *codec)
     
 	if (context) {
 		if (context->decoder_object) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"tried PLC or FEC %d times \n",context->counter_plc_fec);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "tried PLC or FEC %d times \n", context->counter_plc_fec);
 			opus_decoder_destroy(context->decoder_object);
 			context->decoder_object = NULL;
 		}
@@ -419,7 +419,7 @@ static switch_status_t switch_opus_decode(switch_codec_t *codec,
 	
 	/*FEC: shameless rip-off from mod_silk.c . OPUS only supports n+1 FEC , SILK is supposed to work with n+1, n+2*/
 	if (*flag & SFF_PLC) {
-		context->counter_plc_fec;
+		context->counter_plc_fec++;
 		if (session) {
 			jb = switch_core_session_get_jb(session, SWITCH_MEDIA_TYPE_AUDIO);
 		}
