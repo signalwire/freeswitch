@@ -30,7 +30,6 @@ avoid_mods=(
   endpoints/mod_opal
   endpoints/mod_reference
   endpoints/mod_unicall
-  event_handlers/mod_amqp
   sdk/autotools
   xml_int/mod_xml_ldap
   xml_int/mod_xml_radius
