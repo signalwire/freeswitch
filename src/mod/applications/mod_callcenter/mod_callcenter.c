@@ -2107,6 +2107,7 @@ static int members_callback(void *pArg, int argc, char **argv, char **columnName
 	agent_callback_t cbt;
 	const char *member_state = NULL;
 	const char *member_abandoned_epoch = NULL;
+	const char *serving_agent = NULL;
 	memset(&cbt, 0, sizeof(cbt));
 
 	cbt.queue_name = argv[0];
@@ -2118,6 +2119,7 @@ static int members_callback(void *pArg, int argc, char **argv, char **columnName
 	cbt.member_score = argv[6];
 	member_state = argv[7];
 	member_abandoned_epoch = argv[8];
+	serving_agent = argv[9];
 
 	if (!cbt.queue_name || !(queue = get_queue(cbt.queue_name))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Queue %s not found locally, skip this member\n", cbt.queue_name);
@@ -2152,7 +2154,23 @@ static int members_callback(void *pArg, int argc, char **argv, char **columnName
 		}
 		/* Skip this member */
 		goto end;
-	} 
+	}
+
+	/* Tracking queue strategy changes */
+	/* member is ring-all but not the queue */
+	if (!strcasecmp(serving_agent, "ring-all") && (strcasecmp(queue_strategy, "ring-all") != 0)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Queue '%s' changed strategy, adjusting member parameters", queue_name);
+		sql = switch_mprintf("UPDATE members SET serving_agent = '', state = '%s' WHERE uuid = '%s' AND state = '%s' AND serving_agent = 'ring-all'", cc_member_state2str(CC_MEMBER_STATE_WAITING), cbt.member_uuid, cc_member_state2str(CC_MEMBER_STATE_TRYING));
+		cc_execute_sql(NULL, sql, NULL);
+		switch_safe_free(sql);
+	}
+	/* Queue is now ring-all and not the member */
+	else if (!strcasecmp(queue_strategy, "ring-all") && (strcasecmp(serving_agent, "ring-all") != 0)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Queue '%s' changed strategy, adjusting member parameters", queue_name);
+		sql = switch_mprintf("UPDATE members SET serving_agent = 'ring-all', state = '%s' WHERE uuid = '%s' AND state = '%s' AND serving_agent = ''", cc_member_state2str(CC_MEMBER_STATE_TRYING), cbt.member_uuid, cc_member_state2str(CC_MEMBER_STATE_WAITING));
+		cc_execute_sql(NULL, sql, NULL);
+		switch_safe_free(sql);
+	}
 
 	/* Check if member is in the queue waiting */
 	if (zstr(cbt.member_session_uuid)) {
@@ -2306,7 +2324,7 @@ void *SWITCH_THREAD_FUNC cc_agent_dispatch_thread_run(switch_thread_t *thread, v
 
 	while (globals.running == 1) {
 		char *sql = NULL;
-		sql = switch_mprintf("SELECT queue,uuid,session_uuid,cid_number,cid_name,joined_epoch,(%" SWITCH_TIME_T_FMT "-joined_epoch)+base_score+skill_score AS score, state, abandoned_epoch FROM members"
+		sql = switch_mprintf("SELECT queue,uuid,session_uuid,cid_number,cid_name,joined_epoch,(%" SWITCH_TIME_T_FMT "-joined_epoch)+base_score+skill_score AS score, state, abandoned_epoch, serving_agent FROM members"
 				" WHERE state = '%q' OR state = '%q' OR (serving_agent = 'ring-all' AND state = '%q') ORDER BY score DESC",
 				local_epoch_time_now(NULL),
 				cc_member_state2str(CC_MEMBER_STATE_WAITING), cc_member_state2str(CC_MEMBER_STATE_ABANDONED), cc_member_state2str(CC_MEMBER_STATE_TRYING));
