@@ -47,7 +47,7 @@
 
 #define RTMP_DEFAULT_PORT 1935
 #define RTMP_TCP_READ_BUF 2048 * 16
-#define AMF_MAX_SIZE      2048 * 16
+#define AMF_MAX_SIZE      2048 * 16 * 2
 
 #define SUPPORT_SND_NONE	0x0000
 #define SUPPORT_SND_ADPCM	0x0002
