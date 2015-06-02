@@ -72,6 +72,7 @@ static switch_status_t sofia_kill_channel(switch_core_session_t *session, int si
 */
 static switch_status_t sofia_on_init(switch_core_session_t *session)
 {
+	const char *hval = NULL;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	private_object_t *tech_pvt = (private_object_t *) switch_core_session_get_private(session);
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
@@ -87,6 +88,23 @@ static switch_status_t sofia_on_init(switch_core_session_t *session)
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s SOFIA INIT\n", switch_channel_get_name(channel));
 	if (switch_channel_test_flag(channel, CF_PROXY_MODE) || switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
 		switch_core_media_absorb_sdp(session);
+	}
+
+	if ((hval = switch_channel_get_variable(channel, "sip_watch_headers"))) {
+		char *dupvar = NULL;
+		char *watch_headers[10];
+		unsigned int numhdrs = 0;
+		int i = 0;
+		dupvar = switch_core_session_strdup(session, hval);
+		numhdrs = switch_separate_string(dupvar, ',', watch_headers, switch_arraylen(watch_headers));
+		if (numhdrs) {
+			char **wheaders = switch_core_session_alloc(session, ((numhdrs+1) * sizeof(wheaders[0])));
+			for (i = 0; i < numhdrs; i++) {
+				wheaders[i] = watch_headers[i];
+			}
+			wheaders[i] = NULL;
+			tech_pvt->watch_headers = wheaders;
+		}
 	}
 
 	if (switch_channel_test_flag(tech_pvt->channel, CF_RECOVERING) || switch_channel_test_flag(tech_pvt->channel, CF_RECOVERING_BRIDGE)) {

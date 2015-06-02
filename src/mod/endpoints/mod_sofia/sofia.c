@@ -1272,6 +1272,21 @@ static void tech_send_ack(nua_handle_t *nh, private_object_t *tech_pvt)
 
 }
 
+static void notify_watched_header(switch_core_session_t *session, const char *msgline, const char *hdrname, const char *hdrval)
+{
+	switch_event_t *event = NULL;
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Found known watched header in message '%s', %s: %s\n", msgline, hdrname, hdrval);
+	if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, MY_EVENT_NOTIFY_WATCHED_HEADER) == SWITCH_STATUS_SUCCESS) {
+		switch_channel_t *channel = switch_core_session_get_channel(session);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "SIP-Message", msgline);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Header-Name", hdrname);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Header-Value", hdrval);
+		switch_channel_event_set_data(channel, event);
+		switch_event_fire(&event);
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Failed creating event of type %s!\n", MY_EVENT_NOTIFY_WATCHED_HEADER);
+	}
+}
 
 //sofia_dispatch_event_t *de
 static void our_sofia_event_callback(nua_event_t event,
@@ -1343,6 +1358,56 @@ static void our_sofia_event_callback(nua_event_t event,
 			} else {
 				/* we can't find the session it must be hanging up or something else, its too late to do anything with it. */
 				return;
+			}
+		}
+	}
+
+	if (session && tech_pvt && tech_pvt->watch_headers && sip) {
+		char msgline[512];
+		int hi;
+		msg_header_t *h = NULL;
+		if (sip->sip_request) {
+			h = (msg_header_t *)sip->sip_request;
+			msg_header_field_e(msgline, sizeof(msgline), h, 0);
+		} else if (sip->sip_status) {
+			h = (msg_header_t *)sip->sip_status;
+			msg_header_field_e(msgline, sizeof(msgline), h, 0);
+		}
+		if (h) {
+			sip_unknown_t *un = NULL;
+			char buf[512];
+			char *c = NULL;
+
+			msgline[sizeof(msgline)-1] = '\0';
+			c = strchr(msgline, '\r');
+			if (c) {
+				*c = '\0';
+			}
+
+			/* Faster (ie hash-based) search here would be nice? ie, make watch_headers a hash? */
+
+			/* Search first in the valid headers */
+			for (h = h->sh_succ; h; h = h->sh_succ) {
+				sip_header_t *sh = (sip_header_t *)h;
+				if (!sh->sh_class->hc_name) {
+					continue;
+				}
+				for (hi = 0; tech_pvt->watch_headers[hi]; hi++) {
+					if (!strcasecmp(tech_pvt->watch_headers[hi], sh->sh_class->hc_name)) {
+						msg_header_field_e(buf, sizeof(buf), h, 0);
+						buf[sizeof(buf)-1] = '\0';
+						notify_watched_header(session, msgline, sh->sh_class->hc_name, buf);
+					}
+				}
+			}
+
+			/* Search now in the unknown headers */
+			for (un = sip->sip_unknown; un; un = un->un_next) {
+				for (hi = 0; tech_pvt->watch_headers[hi]; hi++) {
+					if (!strcasecmp(tech_pvt->watch_headers[hi], un->un_name)) {
+						notify_watched_header(session, msgline, un->un_name, un->un_value);
+					}
+				}
 			}
 		}
 	}
