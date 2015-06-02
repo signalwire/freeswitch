@@ -997,6 +997,7 @@ static inline int switch_needs_url_encode(const char *s)
 	return 0;
 }
 
+SWITCH_DECLARE(char *) switch_url_encode_opt(const char *url, char *buf, size_t len, switch_bool_t double_encode);
 SWITCH_DECLARE(char *) switch_url_encode(const char *url, char *buf, size_t len);
 SWITCH_DECLARE(char *) switch_url_decode(char *s);
 SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to,
