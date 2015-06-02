@@ -933,9 +933,9 @@ ESL_DECLARE(int) esl_wait_sock(esl_socket_t sock, uint32_t ms, esl_poll_t flags)
 	if ((flags & ESL_POLL_ERROR)) {
 		pfds[0].events |= POLLERR;
 	}
-	
-	s = poll(pfds, 1, ms);
 
+	s = poll(pfds, 1, ms);
+	
 	if (s < 0) {
 		r = s;
 	} else if (s > 0) {
