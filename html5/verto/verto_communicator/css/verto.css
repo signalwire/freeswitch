@@ -1,0 +1,1333 @@
+html, body {
+  height: 100%;
+}
+
+body {
+  width: 100%;
+  /* Moving the content because the navbar is fixed on top. */
+  padding-top: 60px;
+}
+
+.container-fluid {
+  height: 100%;
+}
+
+.container-fluid .row {
+  height: inherit;
+}
+
+.height100 {
+  height: 100%;
+}
+
+/* This is an technique to align the block centered vertically
+   and horizontally in a page. */
+.centered-block-frame {
+  display: -webkit-flex; /* Safari */
+  -webkit-justify-content: center; /* Safari 6.1+ */
+  -webkit-align-items: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  object-fit:inherit;
+  width: 100%;
+  height: 100%;
+}
+
+.centered-block {
+  object-fit: inherit;
+}
+
+.shadow-z-0 {
+  box-shadow: none;
+}
+
+button.btn i {
+  line-height: 0;
+  vertical-align: middle;
+}
+
+/*.navbar-nav {*/
+  /*height: 50px;*/
+/*}*/
+
+.navbar-nav {
+  background-color: #0d47a1;
+}
+
+.navbar .navbar-nav > li.navbar-item-icon > a {
+  padding: 18px;
+  height: 60px;
+}
+
+@media (max-width: 1199px) {
+  .navbar .navbar-nav > li.navbar-item-icon > a {
+    padding: 13px;
+    height: 50px;
+  }
+}
+
+.navbar .navbar-nav > li.navbar-item-icon > a .caret {
+  vertical-align: 7px;
+}
+
+.mdi-toggle-radio-button-on.connected {
+   color: #4ACF55;
+}
+
+.mdi-toggle-radio-button-on.connecting {
+  color: #F7D965;
+}
+
+.mdi-toggle-radio-button-on.disconnected {
+  color: #F45A5A;
+}
+
+.incall-number {
+  font-weight: bold;
+  padding-top: 22px;
+}
+
+.spinner {
+  -webkit-animation: rotator 1.4s linear infinite;
+          animation: rotator 1.4s linear infinite;
+  position: absolute;
+  top: 35%;
+  left: 50%;
+  margin-left: -35px;
+  zoom: 2;
+}
+
+@-webkit-keyframes rotator {
+  0% {
+    -webkit-transform: rotate(0deg);
+            transform: rotate(0deg);
+  }
+  100% {
+    -webkit-transform: rotate(270deg);
+            transform: rotate(270deg);
+  }
+}
+
+@keyframes rotator {
+  0% {
+    -webkit-transform: rotate(0deg);
+            transform: rotate(0deg);
+  }
+  100% {
+    -webkit-transform: rotate(270deg);
+            transform: rotate(270deg);
+  }
+}
+
+.path {
+  stroke-dasharray: 187;
+  stroke-dashoffset: 0;
+  -webkit-transform-origin: center;
+      -ms-transform-origin: center;
+          transform-origin: center;
+  -webkit-animation: dash 1.4s ease-in-out infinite, colors 5.6s ease-in-out infinite;
+          animation: dash 1.4s ease-in-out infinite, colors 5.6s ease-in-out infinite;
+}
+
+@-webkit-keyframes colors {
+  0% {
+    stroke: #4285F4;
+  }
+  25% {
+    stroke: #DE3E35;
+  }
+  50% {
+    stroke: #F7C223;
+  }
+  75% {
+    stroke: #1B9A59;
+  }
+  100% {
+    stroke: #4285F4;
+  }
+}
+
+@keyframes colors {
+  0% {
+    stroke: #4285F4;
+  }
+  25% {
+    stroke: #DE3E35;
+  }
+  50% {
+    stroke: #F7C223;
+  }
+  75% {
+    stroke: #1B9A59;
+  }
+  100% {
+    stroke: #4285F4;
+  }
+}
+@-webkit-keyframes dash {
+  0% {
+    stroke-dashoffset: 187;
+  }
+  50% {
+    stroke-dashoffset: 46.75;
+    -webkit-transform: rotate(135deg);
+            transform: rotate(135deg);
+  }
+  100% {
+    stroke-dashoffset: 187;
+    -webkit-transform: rotate(450deg);
+            transform: rotate(450deg);
+  }
+}
+@keyframes dash {
+  0% {
+    stroke-dashoffset: 187;
+  }
+  50% {
+    stroke-dashoffset: 46.75;
+    -webkit-transform: rotate(135deg);
+            transform: rotate(135deg);
+  }
+  100% {
+    stroke-dashoffset: 187;
+    -webkit-transform: rotate(450deg);
+            transform: rotate(450deg);
+  }
+}
+
+
+/* --- Modal settings page --- */
+
+body .modal-body .btn-group .btn.active {
+  background: #009688;
+  color: #EEE;
+}
+
+/* --- End of Modal settings page --- */
+
+
+/* --- Login page --- */
+
+#login h3 {
+  margin-top: 0;
+  margin-bottom: 20px;
+}
+
+#login .panel-body {
+  padding: 30px
+}
+
+#login .form-group:last-child,
+#login .form-group:last-child button {
+  margin-bottom: 0;
+}
+
+/* --- End of Login page --- */
+
+
+/* --- Dialpad page --- */
+
+#dialpad .centered-block {
+  max-width: 500px;
+}
+
+#dialpad .dialpad-display {
+  width: 100%;
+}
+
+#dialpad .dialpad-display .btn-fab {
+  font-size: 32px;
+  position: relative;
+  top: -7px;
+  left: -2px;
+}
+
+#dialpad .dialpad-display input.form-control {
+  background-color: #eee;
+  height: 100px;
+  font-size: 40px;
+  padding: 10px;
+}
+
+#dialpad .dialpad-display input::-webkit-input-placeholder {
+  font-size: 17px;
+  line-height: 60px;
+}
+
+#dialpad .dialpad-display .input-group-btn-left {
+  position: absolute;
+  font-size: 0;
+  white-space: nowrap;
+  width: 40px;
+  height: 40px;
+  z-index: 3;
+  left: 15px;
+  top: 38px;
+}
+
+#dialpad .dialpad-display .input-group-btn {
+  position: absolute;
+  font-size: 0;
+  white-space: nowrap;
+  width: 40px;
+  height: 40px;
+  z-index: 2;
+  right: -5px;
+  top: 38px;
+}
+
+#dialpad .dialpad-display .input-group-btn i {
+  color: #BDBDBD;
+}
+
+#dialpad #call-history-wrapper {
+  transition:visibility 0s linear 0.2s,opacity 0.2s linear;
+  -webkit-transition: all 0.2s ease-in-out;
+  -moz-transition: all 0.2s ease-in-out;
+  -o-transition: all 0.2s ease-in-out;
+  transition: all 0.2s ease-in-out;
+  margin-left: -271px;
+  margin-top: -20px;
+}
+
+#dialpad #call-history-wrapper.active {
+  margin-left: 0;
+}
+
+#dialpad .pull-right-margin {
+  margin-right: 10px;
+}
+
+#dialpad .panel-title a {
+  color: #000;
+}
+
+#dialpad #call_history {
+  height: 460px;
+  background-color: #FFF;
+  visibility: hidden;
+  opacity: 0;
+  top: 10px;
+  left: 300px;
+  transition:visibility 0s linear 0.2s,opacity 0.2s linear;
+  -webkit-transition: all 0.2s ease-in-out;
+  -moz-transition: all 0.2s ease-in-out;
+  -o-transition: all 0.2s ease-in-out;
+  transition: all 0.2s ease-in-out;
+  position: relative;
+}
+
+
+#dialpad #call_history.active {
+  visibility: visible;
+  left:30px;
+  opacity: 1;
+  transition-delay:0s;
+}
+
+#dialpad .call-history {
+  padding: 20px;
+  overflow-y: scroll;
+  height: 400px;
+}
+
+#dialpad .call-history li {
+  list-style: none;
+  margin-bottom: 20px;
+}
+
+#dialpad .call-history li a {
+  text-decoration: none;
+}
+
+#dialpad .history-icon {
+  position: absolute;
+  left: 32px;
+  margin-top: 5px;
+  color: #BDBDBD;
+}
+
+#dialpad .dialpad-numbers {
+  margin-bottom: 10px;
+}
+
+#dialpad .dialpad-numbers a.btn.btn-block {
+  padding: 10px 0;
+}
+
+#dialpad .dialpad-number-limited {
+  width: 200px;
+  display: inline-block;
+  text-overflow: clip;
+  overflow: hidden;
+  overflow-wrap: break-word;
+}
+
+#dialpad .dialpad-number {
+  margin: 0;
+  color: rgb(38, 204, 218);
+}
+
+#dialpad .dialpad-alpha {
+  font-size: 11px;
+  color: #CCC;
+}
+
+#dialpad .dialpad-star,
+#dialpad .dialpad-pound{
+  color: #999;
+}
+
+#dialpad .btn-block {
+  margin: 0
+}
+
+/* --- End of dialpad page --- */
+
+
+/* --- In call page --- */
+
+#incall .phone-call {
+  width: 80%;
+}
+/*
+#incall .video-call {
+  width: 78vw;
+  /*height: 56.25vw;
+  max-height: 100vh;
+  max-width: 177.78vh;
+  margin: auto;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  margin-top: 20px;
+}*/
+
+#incall .video-call {
+  width: 81vw;
+  height: 82vw;
+  max-height: calc(100% - 1vw);
+  max-width: 146.78vh;
+  margin: auto;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  margin-top: auto;
+}
+
+#incall .avatar {
+  width: 120px;
+  height: 120px;
+  background-color: #EEE;
+  border-radius: 90px;
+  border: none;
+  float: left;
+}
+
+#incall .call-info {
+  float: left;
+  padding: 22px;
+}
+
+.modal-dialog .dialpad .panel {
+  background: #FFF;
+  max-width: 500px;
+}
+
+#incall .dialed-number {
+  margin: 0;
+  color: rgb(38, 204, 218);
+}
+
+#incall .panel {
+  background: #333;
+}
+
+#incall .hangup-button {
+  padding-left: 30px;
+}
+
+#incall .panel-footer ul {
+  margin-top: 10px;
+}
+
+.panel-center {
+  width: 100%;
+  height: 100%;
+  text-align: center;
+  margin: auto;
+  left: 0;
+}
+
+#incall .panel-footer {
+  background: #333;
+}
+
+#incall .phone {
+  background: #fff;
+}
+
+#incall .phone li {
+  display: inline-block;
+}
+
+#incall .phone li button {
+  color: rgba(255,255,255, 1);
+}
+
+#incall .phone li button .big-icon {
+  font-size: 36px; 
+}
+
+#incall .video-wrapper {
+  position: relative;
+  margin: 0 5px;
+}
+
+#incall .video-hover-buttons {
+  visibility:hidden;
+  opacity:0;
+  transition:visibility 0s linear 0.5s,opacity 0.5s linear;
+
+  position: absolute;
+  right: 15px;
+  top: 15px;
+  z-index: 2;
+}
+
+#incall .panel:hover .video-hover-buttons {
+  visibility:visible;
+  opacity:1;
+  transition-delay:0s;
+}
+
+#incall .video-hover-buttons .btn-group {
+  margin: 0;
+}
+
+#incall .video-hover-buttons .btn-group .dropdown-menu {
+  height: 200px;
+  overflow: auto;
+}
+
+#incall .video-hover-buttons .btn-group ul li a:hover {
+  background-color: #EEE;
+  cursor: pointer;
+}
+
+#incall .video-tag-wrapper {
+  height: 56.25%;
+  background: #000;
+}
+
+#incall .video-hover-buttons button {
+  margin: 0;
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+#incall .video-footer button {
+  margin: 0;
+}
+
+#incall .video-timer {
+  font-size: 35px;
+  color: #EEEEEE;
+  height: 35px;
+  line-height: 35px;
+}
+
+.modal-dialog .dialpad-display {
+  width: 100%;
+}
+
+.modal-dialog .dialpad-display .btn-fab {
+  font-size: 32px;
+  position: relative;
+  top: -7px;
+  left: -2px;
+}
+
+.modal-dialog .dialpad-display input.form-control {
+  background-color: #eee;
+  height: 100px;
+  font-size: 40px;
+  padding: 10px;
+}
+
+.modal-dialog .dialpad-display input::-webkit-input-placeholder {
+  font-size: 17px;
+  line-height: 60px;
+}
+
+.modal-dialog .dialpad-display .input-group-btn-left {
+  position: absolute;
+  font-size: 0;
+  white-space: nowrap;
+  width: 40px;
+  height: 40px;
+  z-index: 3;
+  left: 15px;
+  top: 38px;
+}
+
+.modal-dialog .dialpad-display .input-group-btn {
+  position: absolute;
+  font-size: 0;
+  white-space: nowrap;
+  width: 40px;
+  height: 40px;
+  z-index: 2;
+  right: -5px;
+  top: 38px;
+}
+
+.modal-dialog .dialpad-display .input-group-btn i {
+  color: #BDBDBD;
+}
+
+#incall .pull-right-margin {
+  margin-right: 10px;
+}
+
+#incall .panel-title a {
+  color: #000;
+}
+
+.modal-dialog .dialpad-numbers {
+  margin-bottom: 10px;
+}
+
+.modal-dialog .dialpad-numbers a.btn.btn-block {
+  padding: 10px 0;
+}
+
+.modal-dialog .dialpad-number-limited {
+  width: 200px;
+  text-overflow: clip;
+  overflow: hidden;
+  overflow-wrap: break-word;
+}
+
+.modal-dialog .dialpad-number {
+  margin: 0;
+  color: rgb(38, 204, 218);
+}
+
+.modal-dialog .dialpad-alpha {
+  font-size: 11px;
+  color: #CCC;
+}
+
+.modal-dialog .dialpad-star,
+.modal-dialog .dialpad-pound{
+  color: #999;
+}
+
+#incall .btn-block {
+  margin: 0
+}
+
+/* --- End of in call page --- */
+
+
+
+
+/*!
+ * Start Bootstrap - Simple Sidebar HTML Template (http://startbootstrap.com)
+ * Code licensed under the Apache License v2.0.
+ * For details, see http://www.apache.org/licenses/LICENSE-2.0.
+ */
+
+/* Toggle Styles */
+
+#wrapper {
+    height: 100%;
+    padding-left: 0;
+    -webkit-transition: all 0.5s ease;
+    -moz-transition: all 0.5s ease;
+    -o-transition: all 0.5s ease;
+    transition: all 0.5s ease;
+}
+
+#wrapper.toggled {
+    padding-right: 360px;
+}
+
+#sidebar-wrapper {
+    z-index: 1000;
+    position: fixed;
+    width: 0;
+    height: calc(100% - 60px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    margin-right: -361px;
+    /*background: #000;*/
+    background: #FFF;
+    border-left: 1px solid #DDD;
+    -webkit-transition: all 0.5s ease;
+    -moz-transition: all 0.5s ease;
+    -o-transition: all 0.5s ease;
+    transition: all 0.5s ease;
+}
+
+
+#sidebar-wrapper {
+    right: 360px;
+}
+
+#wrapper.toggled #sidebar-wrapper,
+.sidebar-nav {
+    width: 360px;
+}
+
+#page-content-wrapper {
+    height: 100%;
+    width: 100%;
+    position: absolute;
+    /*padding: 15px;*/
+}
+
+#wrapper.toggled #page-content-wrapper {
+    position: absolute;
+    margin-right: -360px;
+}
+
+
+/* Sidebar Styles */
+
+.sidebar-nav {
+    position: absolute;
+    top: 0;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+/*.sidebar-nav li {*/
+    /*text-indent: 20px;*/
+    /*line-height: 40px;*/
+/*}*/
+
+/*.sidebar-nav li a {*/
+    /*display: block;*/
+    /*text-decoration: none;*/
+    /*color: #999999;*/
+/*}*/
+
+/*.sidebar-nav li a:hover {*/
+    /*text-decoration: none;*/
+    /*color: #fff;*/
+    /*background: rgba(255,255,255,0.2);*/
+/*}*/
+
+/*.sidebar-nav li a:active,*/
+/*.sidebar-nav li a:focus {*/
+    /*text-decoration: none;*/
+/*}*/
+
+/*.sidebar-nav > .sidebar-brand {*/
+    /*height: 65px;*/
+    /*font-size: 18px;*/
+    /*line-height: 60px;*/
+/*}*/
+
+/*.sidebar-nav > .sidebar-brand a {*/
+    /*color: #999999;*/
+/*}*/
+
+/*.sidebar-nav > .sidebar-brand a:hover {*/
+    /*color: #fff;*/
+    /*background: none;*/
+/*}*/
+
+@media(min-width:768px) {
+    #wrapper {
+        padding-right: 360px;
+    }
+
+    #wrapper.toggled {
+        padding-right: 0;
+    }
+
+    #sidebar-wrapper {
+        width: 360px;
+    }
+
+    #wrapper.toggled #sidebar-wrapper {
+        width: 0;
+    }
+
+    #page-content-wrapper {
+        /*padding: 20px;*/
+        position: relative;
+    }
+
+    #wrapper.toggled #page-content-wrapper {
+        position: relative;
+        margin-right: 0;
+    }
+}
+
+
+#incall-pane {
+  display: flex;
+  flex-flow: column;
+  height: 100%;
+}
+
+#incall-pane .nav-tabs {
+  background: #FFF;
+  border-bottom: 1px solid #EEE;
+}
+
+#incall-pane .nav-tabs > li {
+  width: 50%;
+  text-align: center;
+  text-indent: 0;
+}
+
+#incall-pane .nav-tabs > li > a {
+  color: #999 !important;
+  text-transform: uppercase;
+}
+
+#incall-pane .nav-tabs > li.active > a {
+  border-bottom: 2px solid #2196f3 !important;
+  color: #2196f3 !important;
+}
+
+.chat-members {
+  /*color: #DDD;*/
+}
+
+.chat-members .chat-member-item {
+  padding: 8px 16px;
+  height: 56px;
+}
+
+.chat-members .chat-member-item:hover {
+  background-color: #E5E5E5;
+}
+
+.chat-members .chat-members-avatar {
+  width: 40px;
+  height: 40px;
+  background-color: #EEE;
+  display: block;
+  border-radius: 50%;
+  margin-right: 16px;
+  float: left;
+}
+
+.chat-members .chat-members-name {
+  margin: 0;
+  font-size: 16px;
+  display: inline-block;
+  line-height: 40px;
+}
+
+.chat-members .chat-members-status i {
+  font-size: 24px;
+  vertical-align: -2px;
+  margin-left: 8px;
+  margin-top: 8px;
+}
+
+.chat-members .chat-members-status i.disabled {
+  color: #444;
+}
+
+.chat-members .chat-members-status i.muted {
+  color: #DDD;
+}
+
+.chat-members .chat-members-status i.not-in-use {
+  color: #DDD;
+}
+
+.chat-members .chat-members-status i.in-use {
+  color: #67AB49;
+}
+
+.chat-members .chat-members-action .btn-group {
+  box-shadow: none;
+  margin: 0;
+  margin-left: 8px;
+  margin-top: 8px;
+}
+
+.chat-members .chat-members-action .btn-group .btn {
+  margin: 0;
+  padding: 0;
+  width: 22px;
+  height: 22px;
+}
+
+.chat-members .chat-members-action .btn-group ul li a {
+  font-size: 13px;
+}
+
+.chat-members .chat-members-action .btn-group ul li a span {
+  font-size: 16px;
+  vertical-align: -2px;
+}
+
+
+/*.chat-messages {*/
+  /*border-top: 1px solid #E5E5E5;*/
+  /*height: calc(100% - 40px);*/
+  /*overflow-y: auto;*/
+/*}*/
+
+.chat-notification-badge {
+  top: 9px;
+  left: 29px;
+  border-radius: 50px;
+  width: auto;
+  height: 15px;
+  position: absolute;
+  font-size: 11px;
+  background-color: red;
+  color: white;
+}
+
+.chat-notification {
+  padding-left: 5px;
+  padding-right: 6px;
+  margin-top: -2px;
+  font-weight: bold;
+}
+
+@media(min-width:1200px) {
+  .chat-notification-badge {
+    top: 13px;
+    left: 34px;
+  }
+
+  .chat-notification {
+    padding-left: 6px;
+    margin-top: -2px;
+    font-weight: bold;
+  }
+
+}
+
+@media(max-width:768px) {
+  .chat-notification-badge {
+    top: 5px;
+    left: 28px;
+  }
+}
+
+.chat-history {
+  flex: 1;
+  flex-flow: column;
+  height: calc(100% - 40px);
+}
+
+.chat-history .chat-messages {
+  overflow: auto;
+  height: calc(100% - 42px);
+}
+
+.chat-message-input .chat-message-input-group {
+  display: flex;
+  flex-flow: row;
+}
+
+.chat-message-input {
+  height: 40px;
+  border-top: 1px solid #DDD;
+}
+
+.chat-message-input .chat-message-input-group .form-control {
+  flex-grow: 1;
+  height: 39px;
+  border: none;
+  background: none;
+  padding: 8px;
+  font-size: 14px;
+  line-height: 22px;
+}
+
+.chat-message-input .chat-message-input-group .form-control textarea:active,
+.chat-message-input .chat-message-input-group .form-control textarea:focus,
+.chat-message-input .chat-message-input-group .form-control textarea:hover {
+  background: none;
+  padding: 8px;
+  float: none;
+}
+
+.chat-message-input .chat-message-input-group button {
+  border-radius: 0;
+  margin: 0;
+  padding: 8px 23px 8px 15px;
+}
+
+.chat-message-input .chat-message-input-group button .chat-message-input-group-icon-button {
+  vertical-align: -2px;
+  font-size: 17px;
+  margin-left: 6px;
+}
+
+.chat-messages .chat-message:not(:first-child) {
+  border-top: 1px solid #E5E5E5;
+}
+
+.chat-messages .chat-message {
+  padding: 4px 8px;
+  /*color: #DDD;*/
+}
+
+.chat-messages .chat-message.my-message {
+  background: #E1EAF4;
+  border-top: none;
+}
+
+.chat-messages .chat-message .chat-message-metadata {
+  font-size: 11px;
+  color: #999;
+  margin-bottom: 0;
+}
+.chat-messages .chat-message .chat-message-body {
+  margin-bottom: 0;
+}
+
+.browsers-supported li {
+  list-style: none;
+  display: inline-block;
+  padding: 30px;
+}
+
+.browsers-supported li img {
+  width: 64px;
+}
+
+.toast-top-right {
+  top: 80px;
+}
+
+.https-untrusted {
+  float: none;
+}
+
+.navbar-center {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  text-align: center;
+  margin: auto;
+  top: 18%;
+  left: 0;
+}
+
+.navbar {
+  height: 67px;
+}
+
+.https-message {
+  background-color: rgb(203, 44, 44);
+  margin: 0 auto;
+  width: 215px;
+  padding: 5px;
+  font-weight: bold;
+  border: 2px #734B4B solid;
+}
+
+.contributors li {
+  list-style: none;
+  margin-top: 15px;
+  margin-bottom: 15px;
+}
+
+.contributor-avatar {
+  float: left;
+}
+
+.contributor-avatar img {
+  border-radius: 100%;
+}
+
+.contributor-info {
+  float: left;
+  margin-left: 26px;
+  margin-top: -9px;
+}
+
+/**
+ * FULLSCREEN MQ
+ **/
+
+body:-webkit-full-screen {
+  background-color: #000;
+  padding-top: 0;
+}
+
+body:-moz-full-screen {
+  background-color: #000;
+}
+
+body:-webkit-full-screen .navbar {
+  display: none;
+}
+
+body:-moz-full-screen .navbar {
+  display: none;
+}
+
+body:-webkit-full-screen #incall .panel {
+  background: #000;
+}
+
+body:-moz-full-screen #incall .panel {
+  background: #000;
+}
+
+body:-webkit-full-screen #incall .centered-block-frame {
+  width: 100%;
+  height: 100%;
+}
+
+body:-webkit-full-screen #incall .centered-block {
+  width: 100%;
+  height: 100%;
+  padding: 0;
+}
+
+body:-webkit-full-screen #incall .centered-block .panel {
+  width: 100%;
+  height: 100%;
+}
+
+body:-webkit-full-screen #incall .video-wrapper {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+}
+
+body:-webkit-full-screen #incall .video-tag-wrapper {
+   height: auto;
+}
+
+body:-webkit-full-screen #sidebar-wrapper {
+  height: 100%;
+}
+
+body:-webkit-full-screen .chat-message-input {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+}
+
+body:-webkit-full-screen #incall .video-call {
+  margin-top: 0px;
+  max-height: 100%;
+  max-width: 100%;
+}
+
+body:-webkit-full-screen #incall .video-footer {
+  bottom: 0;
+  position: absolute;
+  width: 100%;
+  background: rgba(255,255,255, .1);
+}
+
+@media (max-width: 760px) {
+  body {
+    overflow-x: hidden;
+  }
+  
+  #dialpad .call-history li {
+    overflow-x: hidden;
+  }
+   
+  #sidebar-wrapper {
+    margin-right: -750px;
+  }
+
+  #wrapper.toggled {
+    padding-right: 0;
+  }
+
+#dialpad.centered-block-frame {
+    height: auto;
+  }
+
+  #dialpad .centered-block {
+    height: 100%;
+    margin-top: 8px;
+    padding-right: 0px;
+    padding-left: 0px;
+  }
+
+  #incall .phone ul {
+    -webkit-padding-start: 0px;
+  }
+
+  #incall .phone li button .big-icon {
+     font-size: 25px;
+  }
+
+  #incall .hangup-button {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    top: 62px;
+    padding-left: 0px;
+  }
+
+  #incall .call-info {
+    float: none;
+    position: relative;
+    margin: 0 auto;
+    width: 100%;
+    text-align: center;
+    padding: 22px;
+  }
+
+  #incall .avatar {
+    margin: 0 auto;
+    float: none;
+  }
+  
+  #incall .phone li button {
+    padding: 10px;
+  }
+
+
+  .contributors {
+    -webkit-padding-start: 0px;
+    text-align: center;
+    margin: 0 auto;
+  }
+
+  .contributor-avatar {
+    float: none;
+    text-align: center;
+  }
+
+  .contributor-info {
+    float: none;
+    text-align:center;
+    margin-left: 0;
+    margin-top: 0;
+  }
+}
+
+@media screen 
+  and (min-device-width: 320px) 
+  and (max-device-width: 780px) {
+
+  body {
+    overflow-x: hidden;
+  }
+
+  #call-history-wrapper {
+    display: none;
+  }
+
+  .browsers-supported {
+    padding-left: 0;
+  }
+
+  .browsers-supported li {
+    padding: 3px;
+  }
+
+  #sidebar-wrapper {
+    margin-right: -750px;
+  }
+
+  #wrapper.toggled {
+    padding-right: 0;
+  }
+
+  #dialpad.centered-block-frame {
+    height: auto;
+  }
+
+  #dialpad .centered-block {
+    height: 100%;
+    margin-top: 8px;
+    padding-right: 0px;
+    padding-left: 0px;
+  }
+
+  #incall .phone ul {
+    -webkit-padding-start: 0px;
+  }
+
+  #incall .phone li button .big-icon {
+     font-size: 25px;
+  }
+
+  #incall .hangup-button {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    top: 62px;
+    padding-left: 0px;
+  }
+
+  #incall .call-info {
+    float: none;
+    position: relative;
+    margin: 0 auto;
+    width: 100%;
+    text-align: center;
+    padding: 22px;
+  }
+
+  #incall .avatar {
+    margin: 0 auto;
+    float: none;
+  }
+  
+  #incall.centered-block-frame {
+    display: block;
+    justify-content: none;
+    align-items: none;
+  }
+
+  #incall .centered-block {
+    width: 100%;
+    padding-right: 0;
+    padding-left: 0;
+  }
+
+  #incall .phone li button {
+    padding: 10px;
+  }
+
+  #incall .phone-body {
+    padding-top: calc(50% - 25%);
+    padding-bottom: calc(50% - 25%);
+  }
+  
+  .contributors {
+    -webkit-padding-start: 0px;
+    text-align: center;
+    margin: 0 auto;
+  }
+
+  .contributor-avatar {
+    float: none;
+    text-align: center;
+  }
+
+  .contributor-info {
+    float: none;
+    text-align:center;
+    margin-left: 0;
+    margin-top: 0;
+  }
+
+}

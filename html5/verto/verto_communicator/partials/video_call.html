@@ -1,0 +1,72 @@
+<div class="panel panel-default shadow-z-0">
+  <div class="video-wrapper">
+    <div class="video-hover-buttons" ng-show="verto.data.callState == 'active'">
+      <div id="moderator-tools" ng-show="verto.data.confRole == 'moderator'">
+      <button tooltips="" tooltip-title="Play" tooltip-side="bottom" tooltip-lazy="false" class="btn btn-material-blue-900" ng-click="play()">
+        <i class="mdi-av-play-circle-outline"></i>
+      </button>
+      <button tooltips="" tooltip-title="Stop" tooltip-side="bottom" tooltip-lazy="false" class="btn btn-material-blue-900" ng-click="stop()">
+        <i class="mdi-av-stop"></i>
+      </button>
+      <button tooltips="" tooltip-title="Record" tooltip-side="bottom" tooltip-lazy="false" class="btn btn-material-blue-900" ng-click="record()">
+        <i class="mdi-toggle-radio-button-on"></i>
+      </button>
+      <button tooltips="" tooltip-title="Stop Record" tooltip-side="bottom" tooltip-lazy="false" class="btn btn-material-blue-900" ng-click="stopRecord()">
+        <i class="mdi-image-switch-camera"></i>
+      </button>
+      <button tooltips="" tooltip-title="Snapshot" tooltip-side="bottom" tooltip-lazy="false" class="btn btn-material-blue-900" ng-click="snapshot()">
+        <i class="mdi-image-photo-camera"></i>
+      </button>
+      <button tooltips="" tooltip-title="Screenshare" tooltip-side="bottom" tooltip-lazy="false" class="btn btn-material-blue-900" ng-click="screenshare()">
+        <i class="mdi-hardware-desktop-windows"></i>
+      </button>
+      <div class="btn-group">
+        <button tooltips="" tooltip-title="Video Mode" tooltip-side="bottom" tooltip-lazy="false" type="button" class="btn btn-material-blue-900 dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          <i class="mdi-action-view-module"></i>
+          <span class="caret"></span>
+        </button>
+        <ul class="dropdown-menu">
+          <li ng-repeat="layout in verto.data.confLayouts">
+            <a ng-click="confChangeVideoLayout(layout)">{{ layout }}</a>
+          </li>
+        </ul>
+      </div>
+      </div>
+      <br/>
+      <button tooltips="" tooltip-title="(un)Mute Mic" tooltip-side="bottom" tooltip-lazy="false" class="btn btn-material-blue-900" ng-click="muteMic(cbMuteMic)">
+        <i class="" ng-class="{'mdi-av-mic': !verto.data.mutedMic, 'mdi-av-mic-off': verto.data.mutedMic}"></i>
+      </button>
+      <button tooltips="" tooltip-title="(un)Mute Video" tooltip-side="bottom" tooltip-lazy="false" class="btn btn-material-blue-900" ng-click="muteVideo(cbMuteVideo)">
+        <i class="" ng-class="{'mdi-av-videocam': !verto.data.mutedVideo, 'mdi-av-videocam-off': verto.data.mutedVideo}"></i>
+      </button>
+      <button tooltips="" tooltip-title="Toggle Fullscreen Mode" tooltip-side="bottom" tooltip-lazy="false" class="btn btn-material-blue-900" ng-click="goFullscreen()">
+        <i class="" ng-class="{'mdi-navigation-fullscreen': !fullscreenEnabled, 'mdi-navigation-fullscreen-exit': fullscreenEnabled}"></i>
+      </button>
+      <button tooltips="" tooltip-title="Open/Close Chat" tooltip-side="right" tooltip-lazy="false" class="btn btn-material-blue-900" ng-click="toggleChat()" ng-show="fullscreenEnabled">
+        <i class="mdi-communication-chat"></i>
+      </button>
+    </div>
+    <div class="video-tag-wrapper" id="video-tag-wrapper" ng-dblclick="goFullscreen()" show-controls>
+      <video-tag ng-class="{'invisible': (verto.data.callState != 'active')}"></video-tag>
+      <svg ng-show="verto.data.callState != 'active'" class="spinner" width="65px" height="65px" viewBox="0 0 66 66" xmlns="http://www.w3.org/2000/svg">
+        <circle class="path" fill="none" stroke-width="6" stroke-linecap="round" cx="33" cy="33" r="30"></circle>
+      </svg>
+    </div>
+    <div class="video-footer panel-body">
+      <div class="row">
+        <div class="col-md-6 col-xs-6 text-left">
+          <div class="video-timer">
+            <timer start-time="start_time" autostart="false" interval="1000">{{hhours}}:{{mminutes}}:{{sseconds}}</timer>
+          </div>
+        </div>
+        <div class="col-md-6 col-xs-6 text-right">
+          <button class="btn btn-danger" ng-click="hangup()">
+            <i class="mdi-communication-call-end"></i>
+            End Call
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+

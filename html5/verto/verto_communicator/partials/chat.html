@@ -1,0 +1,120 @@
+<div id="incall-pane" class="sidebar-nav" ng-controller="ChatController">
+  <ul class="nav nav-tabs" role="tablist" ng-init="activePane = 'members'">
+    <li role="presentation" ng-class="{'active': activePane == 'members'}">
+      <a ng-click="activePane = 'members'" href="">
+        Members
+      </a>
+    </li>
+    <li role="presentation" ng-class="{'active': activePane == 'chat'}">
+      <a ng-click="activePane = 'chat'" href="">
+        Chat
+      </a>
+    </li>
+  </ul>
+
+  <div class="chat-members" ng-show="activePane == 'members'">
+    <div ng-show="!members.length">
+      <p class="text-center text-muted">There are no members to show.</p>
+    </div>
+
+    <div ng-repeat="member in members" class="chat-member-item">
+      <span class="chat-members-avatar">
+        <img />
+      </span>
+      <h4 class="chat-members-name">{{ member.name }}</h4>
+      <div class="pull-right action-buttons chat-members-action" ng-show="verto.data.confRole == 'moderator'">
+        <div class="btn-group">
+          <button type="button" class="btn btn-xs dropdown-toggle" data-toggle="dropdown">
+            <i class="mdi-navigation-more-vert" style="margin-right: 0px;"></i>
+          </button>
+          <ul class="dropdown-menu slidedown pull-right">
+            <li>
+              <a href="" ng-click="confKick(member.id)">
+                <span class="mdi-fw mdi-av-not-interested"></span>
+                Kick
+              </a>
+            </li>
+            <li>
+              <a href="" ng-click="confMuteMic(member.id)">
+                <span class="mdi-fw mdi-av-mic-off"></span>
+                Mute/Unmute Mic
+              </a>
+            </li>
+            <li>
+              <a href="" ng-click="confMuteVideo(member.id)">
+                <span class="mdi-fw mdi-av-videocam-off"></span>
+                Mute/Unmute Video
+              </a>
+            </li>
+            <li>
+              <a href="" ng-click="confPresenter(member.id)">
+                <span class="mdi-fw mdi-action-picture-in-picture"></span>
+                Presenter
+              </a>
+            </li>
+            <li>
+              <a href="" ng-click="confVideoFloor(member.id)">
+                <span class="mdi-fw mdi-action-aspect-ratio"></span>
+                Video Floor
+              </a>
+            </li>
+            <li>
+              <a href="" ng-click="confBanner(member.id)">
+                <span class="mdi-fw mdi-av-subtitles"></span>
+                Banner
+              </a>
+            </li>
+            <li>
+              <a href="" ng-click="confVolumeDown(member.id)">
+                <span class="mdi-fw mdi-av-volume-down"></span>
+                Vol –
+              </a>
+            </li>
+            <li>
+              <a href="" ng-click="confVolumeUp(member.id)">
+                <span class="mdi-fw mdi-av-volume-up"></span>
+                Vol +
+              </a>
+            </li>
+            <li>
+              <a href="" ng-click="confTransfer(member.id)">
+                <span class="mdi-fw mdi-communication-call-made"></span>
+                Transfer
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <span class="chat-members-status pull-right">
+        <i class="in-use" ng-class="{'mdi-av-mic': !member.status.audio.muted, 'mdi-av-mic-off': member.status.audio.muted, 'mic_talking': member.status.audio.talking}"></i>
+        <i ng-class="{'mdi-av-videocam': !member.status.video.muted, 'mdi-av-videocam-off': member.status.video.muted, 'in-use': (member.status.video && !member.status.video.muted), 'disabled': !member.status.video}"></i>
+      </span>
+    </div>
+  </div>
+
+  <div class="chat-history" ng-show="activePane == 'chat'">
+    <div class="chat-messages">
+      <div class="chat-message" ng-show="!messages.length">
+        <p class="text-center text-muted">There are no messages to show.</p>
+      </div>
+      <div class="chat-message" ng-repeat="message in messages" title="Sent at {{ message.created_at|date }}.">
+        <div class="chat-message-metadata">{{ message.from }}:</div>
+        <p class="chat-message-body">{{ message.body }}</p>
+      </div>
+      <div id="chat-message-bottom"></div>
+    </div>
+
+    <div class="chat-message-input">
+      <form ng-submit="send()" >
+        <div class="chat-message-input-group">
+          <textarea ng-model="message" ng-keyup="($event.keyCode == 13 && $event.shiftKey !== true) && send()" required="required" class="form-control input-sm" placeholder="Type your message here..."></textarea>
+          <button class="btn btn-success btn-sm" type="submit">
+            Send
+            <span class="mdi-navigation-arrow-forward chat-message-input-group-icon-button"></span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

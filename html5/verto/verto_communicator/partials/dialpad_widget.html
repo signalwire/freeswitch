@@ -1,0 +1,111 @@
+<div class="panel panel-default shadow-z-2" ng-class="{'shadow-z-4': call_history, 'shadow-z-2': !call_history}">
+      <form name="form">
+        <div class="input-group dialpad-display">
+          <span ng-show="!incall" class="input-group-btn-left">
+            <a href="" ng-click="toggleCallHistory()">
+              <i class="mdi-action-settings-phone"></i>
+            </a>
+          </span>
+          <input name="dialpadnumber" type="text" class="form-control text-center" placeholder="Enter an extension" ng-model="dialpadNumber" />
+          <span class="input-group-btn">
+            <a href="" ng-click="backspace()">
+              <i class="mdi-content-backspace"></i>
+            </a>
+          </span>
+        </div>
+        <div class="panel-body">
+          <div class="dialpad-numbers">
+            <div class="row">
+              <div class="col-md-4 col-xs-4">
+                <a class="btn btn-block" href="" ng-click="dtmf(1)">
+                  <h2 class="dialpad-number">1</h2>
+                  <span class="dialpad-alpha">./@</span>
+                </a>
+              </div>
+              <div class="col-md-4 col-xs-4">
+                <a class="btn btn-block" href="" ng-click="dtmf(2)">
+                  <h2 class="dialpad-number">2</h2>
+                  <span class="dialpad-alpha">ABC</span>
+                </a>
+              </div>
+              <div class="col-md-4 col-xs-4">
+                <a class="btn btn-block" href="" ng-click="dtmf(3)">
+                  <h2 class="dialpad-number">3</h2>
+                  <span class="dialpad-alpha">DEF</span>
+                </a>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-md-4 col-xs-4">
+                <a class="btn btn-block" href="" ng-click="dtmf(4)">
+                  <h2 class="dialpad-number">4</h2>
+                  <span class="dialpad-alpha">GHI</span>
+                </a>
+              </div>
+              <div class="col-md-4 col-xs-4">
+                <a class="btn btn-block" href="" ng-click="dtmf(5)">
+                  <h2 class="dialpad-number">5</h2>
+                  <span class="dialpad-alpha">JKL</span>
+                </a>
+              </div>
+              <div class="col-md-4 col-xs-4">
+                <a class="btn btn-block" href="" ng-click="dtmf(6)">
+                  <h2 class="dialpad-number">6</h2>
+                  <span class="dialpad-alpha">MNO</span>
+                </a>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-md-4 col-xs-4">
+                <a class="btn btn-block" href="" ng-click="dtmf(7)">
+                  <h2 class="dialpad-number">7</h2>
+                  <span class="dialpad-alpha">PQRS</span>
+                </a>
+              </div>
+              <div class="col-md-4 col-xs-4">
+                <a class="btn btn-block" href="" ng-click="dtmf(8)">
+                  <h2 class="dialpad-number">8</h2>
+                  <span class="dialpad-alpha">TUV</span>
+                </a>
+              </div>
+              <div class="col-md-4 col-xs-4">
+                <a class="btn btn-block" href="" ng-click="dtmf(9)">
+                  <h2 class="dialpad-number">9</h2>
+                  <span class="dialpad-alpha">WXYZ</span>
+                </a>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-md-4 col-xs-4">
+                <a class="btn btn-block" href="" ng-click="dtmf('*')">
+                  <h2 class="dialpad-number dialpad-star">*</h2>
+                  <span class="dialpad-alpha"></span>
+                </a>
+              </div>
+              <div class="col-md-4 col-xs-4">
+                <a class="btn btn-block" href="" ng-click="dtmf(0)">
+                  <h2 class="dialpad-number">0</h2>
+                  <span class="dialpad-alpha">+</span>
+                </a>
+              </div>
+              <div class="col-md-4 col-xs-4">
+                <a class="btn btn-block" href="" ng-click="dtmf('#')">
+                  <h2 class="dialpad-number dialpad-pound">#</h2>
+                  <span class="dialpad-alpha"></span>
+                </a>
+              </div>
+            </div>
+          </div>
+          <div class="form-group text-center">
+            <button type="submit" class="btn btn-success btn-fab" ng-click="call(); ok()" title="Call Extension">
+              <i class="mdi-communication-call"></i>
+            </button>
+            &nbsp;&nbsp;
+            <button type="submit" class="btn btn-primary btn-fab" ng-click="transfer(); ok()" title="Transfer">
+              <i class="mdi-notification-phone-forwarded"></i>
+            </button>
+
+          </div>
+        </div>
+      </form>
+    </div>

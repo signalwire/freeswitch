@@ -1166,6 +1166,154 @@
 
     var CONFMAN_SERNO = 1;
 
+    /*
+        Conference Manager without jQuery table.
+     */
+
+    $.verto.conf = function(verto, params) {
+        var conf = this;
+
+        conf.params = $.extend({
+            dialog: null,
+            hasVid: false,
+            laData: null,
+            onBroadcast: null,
+            onLaChange: null,
+            onLaRow: null
+        }, params);
+
+        conf.verto = verto;
+        conf.serno = CONFMAN_SERNO++;
+
+        createMainModeratorMethods();
+
+        verto.subscribe(conf.params.laData.modChannel, {
+            handler: function(v, e) {
+                if (conf.params.onBroadcast) {
+                    conf.params.onBroadcast(verto, conf, e.data);
+                }
+            }
+        })
+    };
+
+    $.verto.conf.prototype.modCommand = function(cmd, id, value) {
+        var conf = this;
+
+        conf.verto.rpcClient.call("verto.broadcast", {
+            "eventChannel": conf.params.laData.modChannel,
+            "data": {
+                "application": "conf-control",
+                "command": cmd,
+                "id": id,
+                "value": value
+            }
+        });
+    };
+
+    $.verto.conf.prototype.destroy = function() {
+        var conf = this;
+
+        conf.destroyed = true;
+        conf.params.onBroadcast(verto, conf, 'destroy');
+
+        if (conf.params.laData.modChannel) {
+            conf.verto.unsubscribe(conf.params.laData.modChannel);
+        }
+    };
+
+    function createMainModeratorMethods() {
+        $.verto.conf.prototype.listVideoLayouts = function() {
+            this.modCommand("list-videoLayouts", null, null);
+        };
+
+        $.verto.conf.prototype.play = function(file) {
+            this.modCommand("play", null, file);
+        };
+
+        $.verto.conf.prototype.stop = function() {
+            this.modCommand("stop", null, "all");
+        };
+
+        $.verto.conf.prototype.record = function(file) {
+            this.modCommand("recording", null, ["start", file]);
+        };
+
+        $.verto.conf.prototype.stopRecord = function() {
+            this.modCommand("recording", null, ["stop", "all"]);
+        };
+
+        $.verto.conf.prototype.snapshot = function(file) {
+            if (!this.params.hasVid) {
+                throw 'Conference has no video';
+            }
+            this.modCommand("vid-write-png", null, file);
+        };
+
+        $.verto.conf.prototype.setVideoLayout = function(layout) {
+            if (!this.params.hasVid) {
+                throw 'Conference has no video';
+            }
+            this.modCommand("vid-layout", null, layout);
+        };
+
+        $.verto.conf.prototype.kick = function(memberID) {
+            this.modCommand("kick", parseInt(memberID));
+        };
+
+        $.verto.conf.prototype.muteMic = function(memberID) {
+            this.modCommand("tmute", parseInt(memberID));
+        };
+
+        $.verto.conf.prototype.muteVideo = function(memberID) {
+            if (!this.params.hasVid) {
+                throw 'Conference has no video';
+            }
+            this.modCommand("tvmute", parseInt(memberID));
+        };
+
+        $.verto.conf.prototype.presenter = function(memberID) {
+            if (!this.params.hasVid) {
+                throw 'Conference has no video';
+            }
+            this.modCommand("vid-res-id", parseInt(memberID), "presenter");
+        };
+
+        $.verto.conf.prototype.videoFloor = function(memberID) {
+            if (!this.params.hasVid) {
+                throw 'Conference has no video';
+            }
+            this.modCommand("vid-floor", parseInt(memberID), "force");
+        };
+
+        $.verto.conf.prototype.banner = function(memberID, text) {
+            if (!this.params.hasVid) {
+                throw 'Conference has no video';
+            }
+            this.modCommand("vid-banner", parseInt(memberID), escape(text));
+        };
+
+        $.verto.conf.prototype.volumeDown = function(memberID) {
+            if (!this.params.hasVid) {
+                throw 'Conference has no video';
+            }
+            this.modCommand("volume_in", parseInt(memberID), "down");
+        };
+
+        $.verto.conf.prototype.volumeUp = function(memberID) {
+            if (!this.params.hasVid) {
+                throw 'Conference has no video';
+            }
+            this.modCommand("volume_in", parseInt(memberID), "up");
+        };
+
+        $.verto.conf.prototype.transfer = function(memberID, exten) {
+            if (!this.params.hasVid) {
+                throw 'Conference has no video';
+            }
+            this.modCommand("transfer", parseInt(memberID), "exten");
+        };
+    }
+
     $.verto.modfuncs = {};
 
     $.verto.confMan = function(verto, params) {

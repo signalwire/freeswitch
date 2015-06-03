@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html ng-app="vertoApp" ng-controller="MainController" lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+
+    <meta name="description" content="Verto (VER-to) RTC is a FreeSWITCH endpoint that implements a subset of a JSON-RPC connection designed for use over secure websockets.">
+    <meta name="author" content="FreeSWITCH">
+    <link rel="icon" href="favicon.ico">
+
+    <title ng-bind="'[' + title + '] ' + 'FreeSWITCH Verto&trade; Video Transcoding'"></title>
+
+    <!-- CSS -->
+    <link rel="stylesheet" type="text/css" href="css/bootstrap/bootstrap.min.css">
+    <!--<link rel="stylesheet" type="text/css" href="css/jquery.mobile.min.css">-->
+    <!--<link rel="stylesheet" type="text/css" href="css/jsontable.css">-->
+    <link rel="stylesheet" type="text/css" href="css/material-design/roboto.min.css">
+    <link rel="stylesheet" type="text/css" href="css/material-design/material.min.css">
+    <link rel="stylesheet" type="text/css" href="css/material-design/material-fullpalette.min.css">
+    <link rel="stylesheet" type="text/css" href="css/material-design/ripples.min.css">
+    <link rel="stylesheet" type="text/css" href="css/angular-toastr/angular-toastr.min.css">
+    <link rel="stylesheet" type="text/css" href="css/angular-tooltips.min.css">
+    <link rel="stylesheet" type="text/css" href="css/verto.css">
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+
+    <div ng-include="'partials/menu.html'"></div>
+
+    <div id="wrapper" class="toggled">
+      <!-- Sidebar -->
+      <div id="sidebar-wrapper">
+        <div ng-include="'partials/chat.html'"></div>
+      </div>
+      <!-- /#sidebar-wrapper -->
+
+      <!-- Page Content -->
+      <div id="page-content-wrapper">
+        <div class="container-fluid">
+          <div class="row" ng-view>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <video class="hide" id="webcam" autoplay="autoplay" style="width:100%; height:100%; object-fit:inherit;"></video>
+
+    <script type="text/javascript" src="js/3rd-party/getScreenId.js"></script>
+    
+    <script type="text/javascript" src="js/jquery/jquery-2.1.1.min.js"></script>
+    <!--<script type="text/javascript" src="js/jquery/jquery.mobile.min.js"></script>-->
+    <script type="text/javascript" src="js/jquery/jquery.json-2.4.min.js"></script>
+    <script type="text/javascript" src="js/jquery/jquery.cookie.js"></script>
+    <script type="text/javascript" src="js/jquery/jquery.dataTables.min.js"></script>
+    <script type="text/javascript" src="js/bootstrap/bootstrap.min.js"></script>
+    <script type="text/javascript" src="js/material-design/material.min.js"></script>
+    <script type="text/javascript" src="js/material-design/ripples.min.js"></script>
+
+    <script type="text/javascript" src="js/angularjs/angular.min.js"></script>
+    <script type="text/javascript" src="js/angularjs/angular-animate.min.js"></script>
+    <script type="text/javascript" src="js/angularjs/angular-route.min.js"></script>
+    <script type="text/javascript" src="js/angularjs/angular-cookies.min.js"></script>
+    <script type="text/javascript" src="js/angularui/ui-bootstrap-tpls-0.13.0.min.js"></script>
+    <script type="text/javascript" src="js/angularjs/angular-timer-all.min.js"></script>
+    <script type="text/javascript" src="js/angularjs/angular-storage.min.js"></script>
+    <script type="text/javascript" src="js/angularjs/angular-fullscreen.js"></script>
+    <script type="text/javascript" src="js/angularjs/angular-prompt.js"></script>
+    <script type="text/javascript" src="js/angularjs/angular-tooltips.min.js"></script>
+    <script type="text/javascript" src="js/angular-toastr/angular-toastr.tpls.min.js"></script>
+    <script type="text/javascript" src="js/angular-gravatar/angular-gravatar.js"></script>
+
+    <script type="text/javascript" src="../js/src/jquery.jsonrpcclient.js"></script>
+    <script type="text/javascript" src="../js/src/jquery.FSRTC.js"></script>
+    <script type="text/javascript" src="../js/src/jquery.verto.js"></script>
+
+    <script type="text/javascript" src="js/3rd-party/md5.min.js"></script>
+    <script type="text/javascript" src="js/filters.js"></script>
+    <script type="text/javascript" src="js/verto-service.js"></script>
+    <script type="text/javascript" src="js/storage-service.js"></script>
+    <script type="text/javascript" src="js/app.js"></script>
+    <script type="text/javascript" src="js/controllers.js"></script>
+    <script type="text/javascript" src="js/directives.js"></script>
+  </body>
+</html>
+
