@@ -5,7 +5,7 @@
   </settings>
 
   <profiles>
-    <profile name="default-v4">
+    <profile name="default">
       <param name="bind-local" value="$${local_ip_v4}:8081"/>
       <param name="bind-local" value="$${local_ip_v4}:8082" secure="true"/>
       <param name="bind-local" value="[$${local_ip_v6}]:8081"/>
