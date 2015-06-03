@@ -12565,7 +12565,7 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 	char *suppress_events = NULL;
 	char *verbose_events = NULL;
 	char *auto_record = NULL;
-	int min_recording_participants = 2;
+	int min_recording_participants = 1;
 	char *conference_log_dir = NULL;
 	char *cdr_event_mode = NULL;
 	char *terminate_on_silence = NULL;
@@ -12828,9 +12828,7 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 			} else if (!strcasecmp(var, "auto-record") && !zstr(val)) {
 				auto_record = val;
 			} else if (!strcasecmp(var, "min-required-recording-participants") && !zstr(val)) {
-				if (!strcmp(val, "1")) {
-					min_recording_participants = 1;
-				} else if (!strcmp(val, "2")) {
+				if (!strcmp(val, "2")) {
 					min_recording_participants = 2;
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "min-required-recording-participants is invalid, leaving set to %d\n", min_recording_participants);
