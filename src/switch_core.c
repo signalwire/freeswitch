@@ -1192,7 +1192,7 @@ SWITCH_DECLARE(void) switch_core_setrlimits(void)
 	   Setting the stack size on FreeBSD results in an instant crash.
 
 	   If anyone knows how to fix this,
-	   feel free to submit a patch to http://jira.freeswitch.org 
+	   feel free to submit a patch to https://freeswitch.org/jira 
 	 */
 
 #ifndef __FreeBSD__

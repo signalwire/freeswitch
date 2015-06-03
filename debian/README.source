@@ -18,7 +18,7 @@ of a FreeSWITCH git repository.  You can achieve this with:
 
     aptitude update && aptitude install -y git
     mkdir -p /usr/src/freeswitch
-    git clone https://stash.freeswitch.org/scm/fs/freeswitch.git /usr/src/freeswitch/src
+    git clone https://freeswitch.org/stash/scm/fs/freeswitch.git /usr/src/freeswitch/src
     cd /usr/src/freeswitch/src
 
 Ensuring you have a clean build directory

@@ -12,7 +12,7 @@ fi
 
 if [ ! -d "$basedir/../freeswitch-sounds" ]; then
         cd $basedir/..
-        git clone https://stash.freeswitch.org/scm/fs/freeswitch-sounds.git
+        git clone https://freeswitch.org/stash/scm/fs/freeswitch-sounds.git
 else
         cd $basedir/../freeswitch-sounds
         git clean -fdx

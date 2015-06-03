@@ -327,7 +327,7 @@ if test -z "$LIBTOOL_MAJOR_VERSION" ; then
 	LIBTOOL_MAJOR_VERSION="`sed -n -e '/^VERSION/{s/^.*=\"\{0,1\}\([[0-9]]\{1,\}\)\..*/\1/;p;}' ${switch_srcdir}/build/config/ltmain.sh`"
 fi
 if test -z "$LIBTOOL_MAJOR_VERSION" ; then
-	AC_MSG_ERROR([Failed to detect your libtool version, please open a bug report on http://jira.freeswitch.org/])
+	AC_MSG_ERROR([Failed to detect your libtool version, please open a bug report on https://freeswitch.org/jira])
 fi
 AC_MSG_RESULT([${LIBTOOL_MAJOR_VERSION}])
 
