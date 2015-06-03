@@ -4,4 +4,4 @@ mod_say_pl - support for Polish language in FreeSWITCH
 Moduł bazuje na mod_say_en. Aktualnie nie jest jeszcze kompletny,
 tym nie mniej pozwala na czytanie liczb czy dat/czasu. Liczę na
 Wasze wsparcie w zakresie testowania modułu, sugestii, łat, etc.
-na http://jira.freeswitch.org/.
+na https://freeswitch.org/jira.

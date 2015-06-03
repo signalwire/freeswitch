@@ -6,7 +6,7 @@ For copyright claims over this packaging and other software, see
 debian/copyright.
 
 Current maintainer: Travis Cross <tc@traviscross.com>
-Bug reports: http://jira.freeswitch.org/ (assign to maintainer)
+Bug reports: https://freeswitch.org/jira (assign to maintainer)
 Security related bug reports: [email to maintainer]
 
 # Acknowledgments
