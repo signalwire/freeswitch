@@ -1884,6 +1884,26 @@ static void check_avatar(conference_member_t *member, switch_bool_t force)
 	}
 }
 
+static void check_flush(conference_member_t *member)
+{
+	int flushed;
+
+	if (!member->channel || !switch_channel_test_flag(member->channel, CF_VIDEO)) {
+		return;
+	}
+	
+	flushed = flush_video_queue(member->video_queue);
+	
+	if (flushed && member->auto_avatar) {
+		switch_channel_video_sync(member->channel);
+		
+		switch_img_free(&member->avatar_png_img);
+		member->avatar_patched = 0;
+		reset_video_bitrate_counters(member);
+		member->blanks = 0;
+		member->auto_avatar = 0;
+	}
+}
 
 static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thread, void *obj)
 {
@@ -2030,7 +2050,7 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 					size = switch_queue_size(imember->video_queue);
 				} while(size > 0);
 
-				if (switch_test_flag(imember, MFLAG_CAN_BE_SEEN) && imember->video_flow != SWITCH_MEDIA_FLOW_SENDONLY) {
+				if (switch_test_flag(imember, MFLAG_CAN_BE_SEEN) && imember->video_layer_id > -1 && imember->video_flow != SWITCH_MEDIA_FLOW_SENDONLY) {
 					if (img) {
 						imember->good_img++;
 						if ((imember->good_img % (int)(conference->video_fps.fps * 10)) == 0) {
@@ -2054,31 +2074,14 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 								//if (layer) {
 									//layer->is_avatar = 1;
 								//}
-
+								
 								imember->auto_avatar = 1;
 							}
 						}
 					}
 				}
 			} else {
-				int flushed = flush_video_queue(imember->video_queue);
-
-				if (flushed && imember->auto_avatar) {
-					switch_channel_video_sync(imember->channel);
-
-					switch_img_free(&imember->avatar_png_img);
-					imember->avatar_patched = 0;
-					reset_video_bitrate_counters(imember);
-					
-					if (layer) {
-						layer->is_avatar = 0;
-						imember->auto_avatar = 0;
-					}
-					
-					imember->blanks = 0;
-				} else {
-					
-				}
+				check_flush(imember);
 			}
 			
 			layer = NULL;
@@ -4441,6 +4444,7 @@ static void conference_set_video_floor_holder(conference_obj_t *conference, conf
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Adding video floor %s\n",
 						  switch_channel_get_name(member->channel));
 
+		check_flush(member);
 		switch_core_session_video_reinit(member->session);
 		conference->video_floor_holder = member->id;
 		member_update_status_field(member);
