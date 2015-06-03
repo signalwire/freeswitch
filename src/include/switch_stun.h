@@ -197,6 +197,8 @@ SWITCH_DECLARE(char *) switch_stun_host_lookup(const char *host, switch_memory_p
   \return true or false
 */
 SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_get_mapped_address(switch_stun_packet_attribute_t *attribute, char *ipstr, uint16_t *port);
+SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_get_xor_mapped_address(switch_stun_packet_attribute_t *attribute, uint32_t cookie, char *ipstr, uint16_t *port);
+
 
 /*!
   \brief Extract a username from a packet attribute

@@ -216,8 +216,6 @@ struct switch_media_handle_s {
 
 };
 
-static switch_bool_t check_dtls(switch_core_session_t *session);
-
 static switch_srtp_crypto_suite_t SUITES[CRYPTO_INVALID] = {
 	{ "AEAD_AES_256_GCM_8", AEAD_AES_256_GCM_8, 44},
 	{ "AEAD_AES_128_GCM_8", AEAD_AES_128_GCM_8, 28},
@@ -6589,12 +6587,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 
  end:
 
-
 	switch_channel_clear_flag(session->channel, CF_REINVITE);
 
 	switch_core_recovery_track(session);
-
-
 
 	return status;
 
@@ -8649,7 +8644,7 @@ static int check_engine(switch_rtp_engine_t *engine)
 	return 1;
 }
 
-static switch_bool_t check_dtls(switch_core_session_t *session)
+SWITCH_DECLARE(switch_bool_t) switch_core_media_check_dtls(switch_core_session_t *session)
 {
 	switch_media_handle_t *smh;
 	switch_rtp_engine_t *a_engine, *v_engine;
@@ -8661,7 +8656,7 @@ static switch_bool_t check_dtls(switch_core_session_t *session)
 		return SWITCH_FALSE;
 	}
 
-	if (switch_channel_down(session->channel)) {
+	if (!switch_channel_media_up(session->channel)) {
 		return SWITCH_FALSE;
 	}
 
@@ -8715,14 +8710,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_receive_message(switch_core_se
 		}
 		break;
 		
-	case SWITCH_MESSAGE_INDICATE_ANSWER:
-	case SWITCH_MESSAGE_INDICATE_PROGRESS:
-	case SWITCH_MESSAGE_ANSWER_EVENT:
-	case SWITCH_MESSAGE_PROGRESS_EVENT:
-		{
-			check_dtls(session);
-		}
-		break;
 	case SWITCH_MESSAGE_INDICATE_VIDEO_REFRESH_REQ:
 		{
 			if (v_engine->rtp_session) {

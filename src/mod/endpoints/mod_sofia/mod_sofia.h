@@ -575,11 +575,14 @@ struct sofia_profile {
 	char *shutdown_type;
 	char *extrtpip;
 	char *rtpip[MAX_RTPIP];
+	char *rtpip6[MAX_RTPIP];
 	char *jb_msec;
 	switch_payload_t te;
 	switch_payload_t recv_te;
 	uint32_t rtpip_index;
 	uint32_t rtpip_next;
+	uint32_t rtpip_index6;
+	uint32_t rtpip_next6;
 	char *rtcp_audio_interval_msec;
 	char *rtcp_video_interval_msec;
 

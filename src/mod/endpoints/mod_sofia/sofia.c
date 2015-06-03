@@ -4219,6 +4219,7 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 					profile->ob_failed_calls = 0;
 					profile->shutdown_type = "false";
 					profile->rtpip_index = 0;
+					profile->rtpip_index6 = 0;
 
 					if (xprofiledomain) {
 						profile->domain_name = switch_core_strdup(profile->pool, xprofiledomain);
@@ -4717,10 +4718,19 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 						} else {
 							ip = strcasecmp(val, "auto") ? val : mod_sofia_globals.guess_ip;
 						}
-						if (profile->rtpip_index < MAX_RTPIP) {
-							profile->rtpip[profile->rtpip_index++] = switch_core_strdup(profile->pool, ip);
+
+						if (strchr(ip, ':')) {
+							if (profile->rtpip_index < MAX_RTPIP) {
+								profile->rtpip6[profile->rtpip_index6++] = switch_core_strdup(profile->pool, ip);
+							} else {
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Max IPs configured for profile %s.\n", profile->name);
+							}
 						} else {
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Max IPs configured for profile %s.\n", profile->name);
+							if (profile->rtpip_index6 < MAX_RTPIP) {
+								profile->rtpip[profile->rtpip_index++] = switch_core_strdup(profile->pool, ip);
+							} else {
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Max IPs configured for profile %s.\n", profile->name);
+							}
 						}
 					} else if (!strcasecmp(var, "sip-ip")) {
 						char *ip = mod_sofia_globals.guess_ip;
@@ -5455,7 +5465,7 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 					profile->sipip = switch_core_strdup(profile->pool, mod_sofia_globals.guess_ip);
 				}
 
-				if (!profile->rtpip[0]) {
+				if (!profile->rtpip[0] && !profile->rtpip6[0]) {
 					profile->rtpip[profile->rtpip_index++] = switch_core_strdup(profile->pool, mod_sofia_globals.guess_ip);
 				}
 
@@ -5488,7 +5498,7 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 					profile->sdp_username = switch_core_strdup(profile->pool, "FreeSWITCH");
 				}
 
-				if (!profile->rtpip[0]) {
+				if (!profile->rtpip[0] && !profile->rtpip6[0]) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Setting ip to '127.0.0.1'\n");
 					profile->rtpip[profile->rtpip_index++] = switch_core_strdup(profile->pool, "127.0.0.1");
 				}

@@ -486,6 +486,10 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 					}
 				}
 			}
+
+			if (state > CS_INIT && switch_channel_media_up(session->channel)) {
+				switch_core_media_check_dtls(session);
+			}
 			
 			switch (state) {
 			case CS_NEW:		/* Just created, Waiting for first instructions */
