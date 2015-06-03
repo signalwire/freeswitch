@@ -3241,6 +3241,11 @@ static switch_status_t check_ice(switch_media_handle_t *smh, switch_media_type_t
 		}
 	}
 
+	if (!ice_seen) {
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+
 	for (cid = 0; cid < 2; cid++) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_DEBUG, "Searching for %s candidate.\n", cid ? "rtcp" : "rtp");
 
@@ -3418,7 +3423,6 @@ static switch_status_t check_ice(switch_media_handle_t *smh, switch_media_type_t
 		}
 		
 	}
-
 
 	return ice_seen ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_BREAK;
 }
@@ -4567,7 +4571,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 				}
 
 				if (switch_core_media_set_video_codec(session, 0) == SWITCH_STATUS_SUCCESS) {
-					if (check_ice(smh, SWITCH_MEDIA_TYPE_VIDEO, sdp, m) != SWITCH_STATUS_SUCCESS) {
+					if (check_ice(smh, SWITCH_MEDIA_TYPE_VIDEO, sdp, m) == SWITCH_STATUS_FALSE) {
 						vmatch = 0;
 					}
 				}
