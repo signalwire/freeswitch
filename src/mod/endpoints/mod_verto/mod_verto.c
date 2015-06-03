@@ -143,7 +143,7 @@ static void verto_deinit_ssl(verto_profile_t *profile)
 
 static void close_file(ws_socket_t *sock)
 {
-	if (*sock > -1) {
+	if (*sock != ws_sock_invalid) {
 #ifndef WIN32
 		close(*sock);
 #else
@@ -155,7 +155,7 @@ static void close_file(ws_socket_t *sock)
 
 static void close_socket(ws_socket_t *sock)
 {
-	if (*sock > -1) {
+	if (*sock != ws_sock_invalid) {
 		shutdown(*sock, 2);
 		close_file(sock);
 	}
@@ -1914,7 +1914,7 @@ static void *SWITCH_THREAD_FUNC client_thread(switch_thread_t *thread, void *obj
 	switch_event_destroy(&jsock->vars);
 	switch_event_destroy(&jsock->user_vars);
 
-	if (jsock->client_socket > -1) {
+	if (jsock->client_socket != ws_sock_invalid) {
 		close_socket(&jsock->client_socket);
 	}
 	
@@ -3655,7 +3655,7 @@ static switch_bool_t verto__broadcast_func(const char *method, cJSON *params, js
 	jevent = cJSON_Duplicate(params, 1);
 	switch_event_channel_broadcast(event_channel, &jevent, modname, globals.event_channel_id);
 
-	if (jsock->profile->mcast_pub.sock > -1) {
+	if (jsock->profile->mcast_pub.sock != ws_sock_invalid) {
 		if ((json_text = cJSON_PrintUnformatted(params))) {
 
 			if ( mcast_socket_send(&jsock->profile->mcast_pub, json_text, strlen(json_text) + 1) < 0 ) {
@@ -3894,7 +3894,7 @@ static int start_jsock(verto_profile_t *profile, ws_socket_t sock, int family)
  error:
 	
 	if (jsock) {
-		if (jsock->client_socket > -1) {
+		if (jsock->client_socket != ws_sock_invalid) {
 			close_socket(&jsock->client_socket);
 		}
 
@@ -3965,7 +3965,13 @@ static ws_socket_t prepare_socket(ips_t *ips)
 
 static void handle_mcast_sub(verto_profile_t *profile)
 {
-	int bytes = mcast_socket_recv(&profile->mcast_sub, NULL, 0, 0);
+	int bytes;
+
+	if (profile->mcast_sub.sock == ws_sock_invalid) {
+		return;
+	}
+
+	bytes = mcast_socket_recv(&profile->mcast_sub, NULL, 0, 0);
 
 	if (bytes > 0) {
 		cJSON *json;
@@ -4100,27 +4106,36 @@ static int runtime(verto_profile_t *profile)
 {
 	int i;
 	int r = 0;
+	int listeners = 0;
 
 	for (i = 0; i < profile->i; i++) {
 		//if ((profile->server_socket[i] = prepare_socket(profile->ip[i].local_ip_addr, profile->ip[i].local_port)) < 0) {
-		if ((profile->server_socket[i] = prepare_socket(&profile->ip[i])) < 0) {
-			die("Client Socket Error!\n");
+		if ((profile->server_socket[i] = prepare_socket(&profile->ip[i])) != ws_sock_invalid) {
+			listeners++;
 		}
 	}
 	
+	if (!listeners) {
+		die("Client Socket Error! No Listeners!\n");
+	}
+
 	if (profile->mcast_ip) {
+		int ok = 1;
+
 		if (mcast_socket_create(profile->mcast_ip, profile->mcast_port, &profile->mcast_sub, MCAST_RECV | MCAST_TTL_HOST) < 0) {
-			r = -1;
-			die("mcast recv socket create\n");
+			ok++;
 		}
 		
-		if (mcast_socket_create(profile->mcast_ip, profile->mcast_port + 1, &profile->mcast_pub, MCAST_SEND | MCAST_TTL_HOST) > 0) {
+		if (ok && mcast_socket_create(profile->mcast_ip, profile->mcast_port + 1, &profile->mcast_pub, MCAST_SEND | MCAST_TTL_HOST) > 0) {
 			mcast_socket_close(&profile->mcast_sub);
-			r = -1;
-			die("mcast send socket create\n");
+			ok = 0;
 		}
 
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "MCAST Bound to %s:%d/%d\n", profile->mcast_ip, profile->mcast_port, profile->mcast_port + 1);
+		if (ok) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "MCAST Bound to %s:%d/%d\n", profile->mcast_ip, profile->mcast_port, profile->mcast_port + 1);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "MCAST Disabled\n");
+		}
 	}
 	
 	
@@ -4132,11 +4147,11 @@ static int runtime(verto_profile_t *profile)
 
  error:
 
-	if (profile->mcast_sub.sock > -1) {
+	if (profile->mcast_sub.sock != ws_sock_invalid) {
 		mcast_socket_close(&profile->mcast_sub);
 	}
 
-	if (profile->mcast_pub.sock > -1) {
+	if (profile->mcast_pub.sock != ws_sock_invalid) {
 		mcast_socket_close(&profile->mcast_pub);
 	}
 

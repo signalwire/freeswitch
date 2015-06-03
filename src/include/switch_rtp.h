@@ -103,7 +103,7 @@ typedef struct icand_s {
 typedef struct ice_s {
 
 	icand_t cands[MAX_CAND][2];
-	int cand_idx;
+	int cand_idx[2];
 	int chosen[2];
 	int is_chosen[2];
 	char *ufrag;
