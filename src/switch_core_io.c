@@ -1334,6 +1334,17 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 		switch_mutex_lock(session->resample_mutex);
 		if (session->write_resampler) {
 
+			if (switch_resample_calc_buffer_size(session->write_resampler->to_rate, session->write_resampler->from_rate,
+												 write_frame->datalen / 2 / session->write_resampler->channels) > SWITCH_RECOMMENDED_BUFFER_SIZE) {
+				
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "%s not enough buffer space for required resample operation!\n",
+								  switch_channel_get_name(session->channel));
+				switch_channel_hangup(session->channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+				switch_mutex_unlock(session->resample_mutex);
+				goto error;
+			}
+		
+
 			switch_resample_process(session->write_resampler, data, write_frame->datalen / 2 / session->write_resampler->channels);
 
 			memcpy(data, session->write_resampler->to, session->write_resampler->to_len * 2 * session->write_resampler->channels);
