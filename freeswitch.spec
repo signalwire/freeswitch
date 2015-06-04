@@ -2463,7 +2463,7 @@ fi
 #
 ######################################################################################################################
 %changelog
-* Thu Jun 04 2015 - crienzo@grasshopper.com
+* Thu Jun 04 2015 - s.safarov@gmail.com
 - Build dependences declared
 - mod_rad_auth, mod_radius_cdr, mod_format_cdr modules declared
 * Tue Nov 04 2014 - crienzo@grasshopper.com
