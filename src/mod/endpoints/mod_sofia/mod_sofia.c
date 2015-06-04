@@ -72,6 +72,7 @@ static switch_status_t sofia_kill_channel(switch_core_session_t *session, int si
 */
 static switch_status_t sofia_on_init(switch_core_session_t *session)
 {
+	const char *hval = NULL;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	private_object_t *tech_pvt = (private_object_t *) switch_core_session_get_private(session);
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
@@ -87,6 +88,23 @@ static switch_status_t sofia_on_init(switch_core_session_t *session)
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s SOFIA INIT\n", switch_channel_get_name(channel));
 	if (switch_channel_test_flag(channel, CF_PROXY_MODE) || switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
 		switch_core_media_absorb_sdp(session);
+	}
+
+	if ((hval = switch_channel_get_variable(channel, "sip_watch_headers"))) {
+		char *dupvar = NULL;
+		char *watch_headers[10];
+		unsigned int numhdrs = 0;
+		int i = 0;
+		dupvar = switch_core_session_strdup(session, hval);
+		numhdrs = switch_separate_string(dupvar, ',', watch_headers, switch_arraylen(watch_headers));
+		if (numhdrs) {
+			char **wheaders = switch_core_session_alloc(session, ((numhdrs+1) * sizeof(wheaders[0])));
+			for (i = 0; i < numhdrs; i++) {
+				wheaders[i] = watch_headers[i];
+			}
+			wheaders[i] = NULL;
+			tech_pvt->watch_headers = wheaders;
+		}
 	}
 
 	if (switch_channel_test_flag(tech_pvt->channel, CF_RECOVERING) || switch_channel_test_flag(tech_pvt->channel, CF_RECOVERING_BRIDGE)) {
@@ -2658,9 +2676,15 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 					stream->write_function(stream, "Dialplan         \t%s\n", switch_str_nil(profile->dialplan));
 					stream->write_function(stream, "Context          \t%s\n", switch_str_nil(profile->context));
 					stream->write_function(stream, "Challenge Realm  \t%s\n", zstr(profile->challenge_realm) ? "auto_to" : profile->challenge_realm);
+
 					for (x = 0; x < profile->rtpip_index; x++) {
 						stream->write_function(stream, "RTP-IP           \t%s\n", switch_str_nil(profile->rtpip[x]));
 					}
+
+					for (x = 0; x < profile->rtpip_index6; x++) {
+						stream->write_function(stream, "RTP-IP           \t%s\n", switch_str_nil(profile->rtpip6[x]));
+					}
+
 					if (profile->extrtpip) {
 						stream->write_function(stream, "Ext-RTP-IP       \t%s\n", profile->extrtpip);
 					}
@@ -2961,6 +2985,9 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 										   zstr(profile->challenge_realm) ? "auto_to" : profile->challenge_realm);
 					for (x = 0; x < profile->rtpip_index; x++) {
 						stream->write_function(stream, "    <rtp-ip>%s</rtp-ip>\n", switch_str_nil(profile->rtpip[x]));
+					}
+					for (x = 0; x < profile->rtpip_index6; x++) {
+						stream->write_function(stream, "    <rtp-ip>%s</rtp-ip>\n", switch_str_nil(profile->rtpip6[x]));
 					}
 					if (profile->extrtpip) {
 						stream->write_function(stream, "    <ext-rtp-ip>%s</ext-rtp-ip>\n", profile->extrtpip);
@@ -5449,7 +5476,7 @@ static void general_event_handler(switch_event_t *event)
 								}
 
 								if (!strcmp(profile->rtpip[x], old_ip6)) {
-									profile->rtpip[x] = switch_core_strdup(profile->pool, new_ip6);
+									profile->rtpip6[x] = switch_core_strdup(profile->pool, new_ip6);
 									rb++;
 								}
 							}

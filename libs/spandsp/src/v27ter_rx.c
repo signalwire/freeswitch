@@ -497,14 +497,14 @@ static __inline__ void symbol_sync(v27ter_rx_state_t *s)
 
     s->gardner_integrate += (p + q > 0)  ?  s->gardner_step  :  -s->gardner_step;
 
-    if (abs(s->gardner_integrate) >= 256)
+    if (abs(s->gardner_integrate) >= 128)
     {
         /* This integrate and dump approach avoids rapid changes of the equalizer put step.
            Rapid changes, without hysteresis, are bad. They degrade the equalizer performance
            when the true symbol boundary is close to a sample boundary. */
         //span_log(&s->logging, SPAN_LOG_FLOW, "Hop %d\n", s->gardner_integrate);
-        s->eq_put_step += (s->gardner_integrate/256);
-        s->total_baud_timing_correction += (s->gardner_integrate/256);
+        s->eq_put_step += (s->gardner_integrate/128);
+        s->total_baud_timing_correction += (s->gardner_integrate/128);
         if (s->qam_report)
             s->qam_report(s->qam_user_data, NULL, NULL, s->gardner_integrate);
         s->gardner_integrate = 0;

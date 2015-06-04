@@ -795,6 +795,7 @@ function refresh_devices()
 
     //$("input[type='radio']).checkboxradio({});
     $("input[type='radio']").checkboxradio("refresh");
+    $("input[type='checkbox']").checkboxradio("refresh");
 
     //console.error($("#usecamera").find(":selected").val());
 }

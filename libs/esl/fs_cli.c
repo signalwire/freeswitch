@@ -99,6 +99,9 @@ static History *myhistory;
 static HistEvent ev;
 #endif
 
+
+static esl_mutex_t *MUTEX = NULL;
+
 static void _sleep_ns(int secs, long nsecs) {
 #ifndef WIN32
 	if (nsecs > 999999999) {
@@ -720,8 +723,15 @@ static void *msg_thread_run(esl_thread_t *me, void *obj)
 	thread_running = 1;
 	while(thread_running && handle->connected) {
 		int aok = 1;
-		esl_status_t status = esl_recv_event_timed(handle, 10, 1, NULL);
-		if (status == ESL_FAIL) {
+		esl_status_t status;
+
+		esl_mutex_lock(MUTEX);
+		status = esl_recv_event_timed(handle, 10, 1, NULL);
+		esl_mutex_unlock(MUTEX);
+		
+		if (status == ESL_BREAK) {
+			sleep_ms(1);
+		} else if (status == ESL_FAIL) {
 			esl_log(ESL_LOG_WARNING, "Disconnected.\n");
 			running = -1; thread_running = 0;
 		} else if (status == ESL_SUCCESS) {
@@ -851,8 +861,11 @@ static const char *cli_usage =
 
 static int process_command(esl_handle_t *handle, const char *cmd)
 {
+	int r = 0;
+	
 	while (*cmd == ' ') cmd++;
 
+	esl_mutex_lock(MUTEX);
 
 	if ((*cmd == '/' && cmd++) || !strncasecmp(cmd, "...", 3)) {
 		if (!strcasecmp(cmd, "help")) {
@@ -865,7 +878,7 @@ static int process_command(esl_handle_t *handle, const char *cmd)
 			!strcasecmp(cmd, "bye")
 			) {
 			esl_log(ESL_LOG_INFO, "Goodbye!\nSee you at ClueCon http://www.cluecon.com/\n");
-			return -1;
+			r = -1; goto end;
 		} else if (!strncasecmp(cmd, "logfilter", 9)) {
 			cmd += 9;
 			while (*cmd && *cmd == ' ') {
@@ -922,7 +935,7 @@ static int process_command(esl_handle_t *handle, const char *cmd)
 		snprintf(cmd_str, sizeof(cmd_str), "api %s\nconsole_execute: true\n\n", cmd);
 		if (esl_send_recv(handle, cmd_str)) {
 			output_printf("Socket interrupted, bye!\n");
-			return -1;
+			r = -1; goto end;
 		}
 		if (handle->last_sr_event) {
 			if (handle->last_sr_event->body) {
@@ -932,8 +945,12 @@ static int process_command(esl_handle_t *handle, const char *cmd)
 			}
 		}
 	}
+	
  end:
-	return 0;
+
+	esl_mutex_unlock(MUTEX);
+		
+	return r;
 }
 
 static int get_profile(const char *name, cli_profile_t **profile)
@@ -1142,7 +1159,9 @@ static unsigned char esl_console_complete(const char *buffer, const char *cursor
 	} else {
 		snprintf(cmd_str, sizeof(cmd_str), "api console_complete %s\n\n", buf);
 	}
+
 	esl_send_recv(global_handle, cmd_str);
+
 	if (global_handle->last_sr_event && global_handle->last_sr_event->body) {
 		char *r = global_handle->last_sr_event->body;
 		char *w, *p1;
@@ -1183,7 +1202,13 @@ static unsigned char esl_console_complete(const char *buffer, const char *cursor
 static unsigned char complete(EditLine *el, int ch)
 {
 	const LineInfo *lf = el_line(el);
-	return esl_console_complete(lf->buffer, lf->cursor, lf->lastchar);
+	int r;
+
+	esl_mutex_lock(MUTEX);
+	r = esl_console_complete(lf->buffer, lf->cursor, lf->lastchar);
+	esl_mutex_unlock(MUTEX);
+
+	return r;
 }
 #endif
 
@@ -1378,6 +1403,9 @@ int main(int argc, char *argv[])
 	int loops = 2, reconnect = 0;
 	char *ccheck;
 
+
+	esl_mutex_create(&MUTEX);
+			
 #if HAVE_DECL_EL_PROMPT_ESC
 	feature_level = 1;
 #else
@@ -1755,6 +1783,9 @@ int main(int argc, char *argv[])
 	esl_disconnect(&handle);
 	global_handle = NULL;
 	thread_running = 0;
+
+	esl_mutex_destroy(&MUTEX);
+
 	return 0;
 }
 

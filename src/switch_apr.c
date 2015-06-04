@@ -864,11 +864,15 @@ SWITCH_DECLARE(const char *) switch_get_addr(char *buf, switch_size_t len, switc
 		return SWITCH_BLANK_STRING;
 	}
 
+	memset(buf, 0, len);
+
 	if (in->family == AF_INET) {
-		return get_addr(buf, len, (struct sockaddr *) &in->sa, in->salen);
+		get_addr(buf, len, (struct sockaddr *) &in->sa, in->salen);
+		return buf;
 	}
 
-	return get_addr6(buf, len, (struct sockaddr_in6 *) &in->sa, in->salen);
+	get_addr6(buf, len, (struct sockaddr_in6 *) &in->sa, in->salen);
+	return buf;
 }
 
 SWITCH_DECLARE(uint16_t) switch_sockaddr_get_port(switch_sockaddr_t *sa)

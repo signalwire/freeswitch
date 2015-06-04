@@ -92,9 +92,25 @@ void sofia_glue_attach_private(switch_core_session_t *session, sofia_profile_t *
 
 	tech_pvt->profile = profile;
 
-	tech_pvt->mparams.rtpip = switch_core_session_strdup(session, profile->rtpip[profile->rtpip_next++]);
-	if (profile->rtpip_next >= profile->rtpip_index) {
-		profile->rtpip_next = 0;
+	if (!zstr(profile->rtpip[profile->rtpip_next])) {
+		tech_pvt->mparams.rtpip4 = switch_core_session_strdup(session, profile->rtpip[profile->rtpip_next++]);
+		tech_pvt->mparams.rtpip = tech_pvt->mparams.rtpip4;
+
+		if (profile->rtpip_next >= profile->rtpip_index) {
+			profile->rtpip_next = 0;
+		}
+	}
+
+	if (!zstr(profile->rtpip[profile->rtpip_next6])) {
+		tech_pvt->mparams.rtpip6 = switch_core_session_strdup(session, profile->rtpip[profile->rtpip_next6++]);
+
+		if (zstr(tech_pvt->mparams.rtpip)) {
+			tech_pvt->mparams.rtpip = tech_pvt->mparams.rtpip6;
+		}
+
+		if (profile->rtpip_next6 >= profile->rtpip_index6) {
+			profile->rtpip_next6 = 0;
+		}
 	}
 
 	profile->inuse++;

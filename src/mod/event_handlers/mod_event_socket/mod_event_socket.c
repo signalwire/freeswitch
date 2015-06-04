@@ -401,8 +401,12 @@ SWITCH_STANDARD_APP(socket_function)
 	listener_t *listener;
 	int argc = 0, x = 0;
 	char *argv[80] = { 0 };
+	char *hosts[50] = { 0 };
+	unsigned int hosts_count = 0;
+	switch_status_t connected = SWITCH_STATUS_FALSE;
 	char *mydata;
 	switch_channel_t *channel = NULL;
+	char errbuf[512] = {0};
 
 	channel = switch_core_session_get_channel(session);
 
@@ -415,46 +419,57 @@ SWITCH_STANDARD_APP(socket_function)
 		return;
 	}
 
-	host = argv[0];
+	hosts_count = switch_split(argv[0], '|', hosts);
 
-	if (zstr(host)) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Missing Host!\n");
-		return;
-	}
+	for(x = 0; x < hosts_count; x++) {
+		host = hosts[x];
 
-	if ((port_name = strrchr(host, ':'))) {
-		*port_name++ = '\0';
-		port = (switch_port_t) atoi(port_name);
-	}
+		if (zstr(host)) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Missing Host!\n");
+			continue;
+		}
 
-	if ((path = strchr((port_name ? port_name : host), '/'))) {
-		*path++ = '\0';
-		switch_channel_set_variable(channel, "socket_path", path);
-	}
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Trying host: %s\n", host);
 
-	switch_channel_set_variable(channel, "socket_host", host);
+		if ((port_name = strrchr(host, ':'))) {
+			*port_name++ = '\0';
+			port = (switch_port_t) atoi(port_name);
+		}
 
-	if (switch_sockaddr_info_get(&sa, host, SWITCH_UNSPEC, port, 0, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
+		if ((path = strchr((port_name ? port_name : host), '/'))) {
+			*path++ = '\0';
+			switch_channel_set_variable(channel, "socket_path", path);
+		}
+
+		switch_channel_set_variable(channel, "socket_host", host);
+
+		if (switch_sockaddr_info_get(&sa, host, SWITCH_UNSPEC, port, 0, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Socket Error!\n");
+			continue;
+		}
+
+		if (switch_socket_create(&new_sock, switch_sockaddr_get_family(sa), SOCK_STREAM, SWITCH_PROTO_TCP, switch_core_session_get_pool(session))
+				!= SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Socket Error!\n");
+			continue;
+		}
+
+		switch_socket_opt_set(new_sock, SWITCH_SO_KEEPALIVE, 1);
+		switch_socket_opt_set(new_sock, SWITCH_SO_TCP_NODELAY, 1);
+		switch_socket_opt_set(new_sock, SWITCH_SO_TCP_KEEPIDLE, 30);
+		switch_socket_opt_set(new_sock, SWITCH_SO_TCP_KEEPINTVL, 30);
+
+		if ((connected = switch_socket_connect(new_sock, sa)) == SWITCH_STATUS_SUCCESS) {
+			break;
+		}
+
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Socket Error: %s\n", switch_strerror(errno, errbuf, sizeof(errbuf)));
+	}//end hosts loop
+
+	if (connected != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Socket Error!\n");
 		return;
 	}
-
-	if (switch_socket_create(&new_sock, switch_sockaddr_get_family(sa), SOCK_STREAM, SWITCH_PROTO_TCP, switch_core_session_get_pool(session))
-		!= SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Socket Error!\n");
-		return;
-	}
-
-	switch_socket_opt_set(new_sock, SWITCH_SO_KEEPALIVE, 1);
-	switch_socket_opt_set(new_sock, SWITCH_SO_TCP_NODELAY, 1);
-	switch_socket_opt_set(new_sock, SWITCH_SO_TCP_KEEPIDLE, 30);
-	switch_socket_opt_set(new_sock, SWITCH_SO_TCP_KEEPINTVL, 30);
-
-	if (switch_socket_connect(new_sock, sa) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Socket Error!\n");
-		return;
-	}
-
 
 	if (!(listener = switch_core_session_alloc(session, sizeof(*listener)))) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Memory Error\n");

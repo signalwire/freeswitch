@@ -152,7 +152,7 @@ static switch_status_t switch_codec2_encode(switch_codec_t *codec, switch_codec_
 	fflush(context->encoder_out);
 #endif
 	
-	*encoded_data_len = 8;
+	*encoded_data_len = 6;
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -230,7 +230,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_codec2_load)
 
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
-	SWITCH_ADD_CODEC(codec_interface, "CODEC2 2550bps");
+	SWITCH_ADD_CODEC(codec_interface, "CODEC2 2400bps");
 
 	switch_core_codec_add_implementation(pool, codec_interface,
 							 SWITCH_CODEC_TYPE_AUDIO,
@@ -239,7 +239,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_codec2_load)
 							 NULL,
 							 8000, /* samples/sec */
 							 8000, /* samples/sec */
-							 2550, /* bps */
+							 2400, /* bps */
 							 20000, /* ptime */
 							 CODEC2_SAMPLES_PER_FRAME,	/* samples decoded */
 							 CODEC2_SAMPLES_PER_FRAME*2,	/* bytes decoded */

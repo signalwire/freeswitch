@@ -594,6 +594,7 @@ typedef struct conference_obj {
 	struct conf_fps video_fps;
 	int playing_video_file;
 	int recording_members;
+	uint32_t video_floor_packets;
 } conference_obj_t;
 
 /* Relationship with another member */
@@ -682,6 +683,7 @@ struct conference_member {
 	switch_frame_buffer_t *fb;
 	switch_image_t *avatar_png_img;
 	switch_image_t *video_mute_img;
+	uint32_t floor_packets;
 	int blanks;
 	int managed_kps;
 	int blackouts;
@@ -1882,6 +1884,26 @@ static void check_avatar(conference_member_t *member, switch_bool_t force)
 	}
 }
 
+static void check_flush(conference_member_t *member)
+{
+	int flushed;
+
+	if (!member->channel || !switch_channel_test_flag(member->channel, CF_VIDEO)) {
+		return;
+	}
+	
+	flushed = flush_video_queue(member->video_queue);
+	
+	if (flushed && member->auto_avatar) {
+		switch_channel_video_sync(member->channel);
+		
+		switch_img_free(&member->avatar_png_img);
+		member->avatar_patched = 0;
+		reset_video_bitrate_counters(member);
+		member->blanks = 0;
+		member->auto_avatar = 0;
+	}
+}
 
 static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thread, void *obj)
 {
@@ -2028,7 +2050,7 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 					size = switch_queue_size(imember->video_queue);
 				} while(size > 0);
 
-				if (switch_test_flag(imember, MFLAG_CAN_BE_SEEN) && imember->video_flow != SWITCH_MEDIA_FLOW_SENDONLY) {
+				if (switch_test_flag(imember, MFLAG_CAN_BE_SEEN) && imember->video_layer_id > -1 && imember->video_flow != SWITCH_MEDIA_FLOW_SENDONLY) {
 					if (img) {
 						imember->good_img++;
 						if ((imember->good_img % (int)(conference->video_fps.fps * 10)) == 0) {
@@ -2052,31 +2074,14 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 								//if (layer) {
 									//layer->is_avatar = 1;
 								//}
-
+								
 								imember->auto_avatar = 1;
 							}
 						}
 					}
 				}
 			} else {
-				int flushed = flush_video_queue(imember->video_queue);
-
-				if (flushed && imember->auto_avatar) {
-					switch_channel_video_sync(imember->channel);
-
-					switch_img_free(&imember->avatar_png_img);
-					imember->avatar_patched = 0;
-					reset_video_bitrate_counters(imember);
-					
-					if (layer) {
-						layer->is_avatar = 0;
-						imember->auto_avatar = 0;
-					}
-					
-					imember->blanks = 0;
-				} else {
-					
-				}
+				check_flush(imember);
 			}
 			
 			layer = NULL;
@@ -4439,6 +4444,7 @@ static void conference_set_video_floor_holder(conference_obj_t *conference, conf
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Adding video floor %s\n",
 						  switch_channel_get_name(member->channel));
 
+		check_flush(member);
 		switch_core_session_video_reinit(member->session);
 		conference->video_floor_holder = member->id;
 		member_update_status_field(member);
@@ -4496,15 +4502,6 @@ static void conference_set_floor_holder(conference_obj_t *conference, conference
 	conference_member_t *old_member = NULL;
 	int old_id = 0;
 
-	
-	if (((conference->video_floor_holder && !member && !switch_test_flag(conference, CFLAG_VID_FLOOR_LOCK)) ||
-		 (member && member->channel && (switch_channel_test_flag(member->channel, CF_VIDEO) || member->avatar_png_img)))) {
-		
-		if (member && member->id != conference->video_floor_holder) {
-			conference_set_video_floor_holder(conference, member, SWITCH_FALSE);
-		}
-	}
-	
 	if (conference->floor_holder) {
 		if (conference->floor_holder == member) {
 			return;
@@ -4531,6 +4528,7 @@ static void conference_set_floor_holder(conference_obj_t *conference, conference
 	if (old_member) {
 		old_id = old_member->id;
 		member_update_status_field(old_member);
+		old_member->floor_packets = 0;
 	}
 
 	switch_set_flag(conference, CFLAG_FLOOR_CHANGE);
@@ -6330,6 +6328,7 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 					check_agc_levels(member);
 					clear_avg(member);
 					member->score_iir = 0;
+					member->floor_packets = 0;
 
 					if (test_eflag(member->conference, EFLAG_STOP_TALKING) &&
 						switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
@@ -6369,7 +6368,7 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 			if (member->volume_in_level) {
 				switch_change_sln_volume(read_frame->data, (read_frame->datalen / 2) * member->conference->channels, member->volume_in_level);
 			}
-
+			
 			if (member->agc_volume_in_level) {
 				switch_change_sln_volume_granular(read_frame->data, (read_frame->datalen / 2) * member->conference->channels, member->agc_volume_in_level);
 			}
@@ -6428,10 +6427,6 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 				member->score_iir = SCORE_MAX_IIR;
 			}
 			
-			if (member == member->conference->floor_holder && member->id != member->conference->video_floor_holder) {
-				conference_set_video_floor_holder(member->conference, member, SWITCH_FALSE);
-			}
-
 			if (noise_gate_check(member)) {
 				uint32_t diff = member->score - member->energy_level;
 				if (hangover_hits) {
@@ -6442,16 +6437,20 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 					member->nt_tally = 0;
 				}
 
+				if (member == member->conference->floor_holder) {
+					member->floor_packets++;
+				}
+
 				if (diff >= diff_level || ++hangunder_hits >= hangunder) { 
 
 					hangover_hits = hangunder_hits = 0;
 					member->last_talking = switch_epoch_time_now(NULL);
 
-					
 					if (!switch_test_flag(member, MFLAG_TALKING)) {
 						switch_set_flag_locked(member, MFLAG_TALKING);
 						member_update_status_field(member);
-						
+						member->floor_packets = 0;
+
 						if (test_eflag(member->conference, EFLAG_START_TALKING) && switch_test_flag(member, MFLAG_CAN_SPEAK) &&
 							switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 							conference_add_event_member_data(member, event);
@@ -6504,6 +6503,13 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 
 
 			member->last_score = member->score;
+
+			if (member == member->conference->floor_holder) {
+				if (member->id != member->conference->video_floor_holder && 
+					(member->floor_packets > member->conference->video_floor_packets || member->energy_level == 0)) {
+					conference_set_video_floor_holder(member->conference, member, SWITCH_FALSE);
+				}
+			}
 		}
 
 		loops++;
@@ -11479,7 +11485,7 @@ static void clear_eflags(char *events, uint32_t *f)
 			} else if (!strcmp(event, "play-file")) {
 				*f &= ~EFLAG_PLAY_FILE;
 			} else if (!strcmp(event, "play-file-done")) {
-				*f &= ~EFLAG_PLAY_FILE;
+				*f &= ~EFLAG_PLAY_FILE_DONE;
 			} else if (!strcmp(event, "play-file-member")) {
 				*f &= ~EFLAG_PLAY_FILE_MEMBER;
 			} else if (!strcmp(event, "speak-text")) {
@@ -12563,7 +12569,7 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 	char *suppress_events = NULL;
 	char *verbose_events = NULL;
 	char *auto_record = NULL;
-	int min_recording_participants = 2;
+	int min_recording_participants = 1;
 	char *conference_log_dir = NULL;
 	char *cdr_event_mode = NULL;
 	char *terminate_on_silence = NULL;
@@ -12573,7 +12579,7 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 	switch_codec_implementation_t read_impl = { 0 };
 	switch_channel_t *channel = NULL;
 	const char *force_rate = NULL, *force_interval = NULL, *force_channels = NULL, *presence_id = NULL;
-	uint32_t force_rate_i = 0, force_interval_i = 0, force_channels_i = 0;
+	uint32_t force_rate_i = 0, force_interval_i = 0, force_channels_i = 0, video_auto_floor_msec = 0;
 
 	/* Validate the conference name */
 	if (zstr(name)) {
@@ -12790,6 +12796,13 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 				} else if (switch_true(val)) {
 					comfort_noise_level = 1400;
 				}
+			} else if (!strcasecmp(var, "video-auto-floor-msec") && !zstr(val)) {
+				int tmp;
+				tmp = atoi(val);
+
+				if (tmp > 0) {
+					video_auto_floor_msec = tmp;
+				}
 			} else if (!strcasecmp(var, "sound-prefix") && !zstr(val)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "override sound-prefix with: %s\n", val);
 				sound_prefix = val;
@@ -12819,9 +12832,7 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 			} else if (!strcasecmp(var, "auto-record") && !zstr(val)) {
 				auto_record = val;
 			} else if (!strcasecmp(var, "min-required-recording-participants") && !zstr(val)) {
-				if (!strcmp(val, "1")) {
-					min_recording_participants = 1;
-				} else if (!strcmp(val, "2")) {
+				if (!strcmp(val, "2")) {
 					min_recording_participants = 2;
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "min-required-recording-participants is invalid, leaving set to %d\n", min_recording_participants);
@@ -13169,6 +13180,10 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 	conference->interval = interval;
 	conference->ivr_dtmf_timeout = ivr_dtmf_timeout;
 	conference->ivr_input_timeout = ivr_input_timeout;
+
+	if (video_auto_floor_msec) {
+		conference->video_floor_packets = video_auto_floor_msec / conference->interval;
+	}
 
 	conference->eflags = 0xFFFFFFFF;
 

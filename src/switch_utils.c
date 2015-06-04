@@ -431,7 +431,8 @@ SWITCH_DECLARE(switch_bool_t) switch_network_list_validate_ip6_token(switch_netw
 
 	for (node = list->node_head; node; node = node->next) {
 		if (node->family == AF_INET) continue;
-		if (node->bits > bits && switch_testv6_subnet(ip, node->ip, node->mask)) {
+
+		if (node->bits >= bits && switch_testv6_subnet(ip, node->ip, node->mask)) {
 			if (node->ok) {
 				ok = SWITCH_TRUE;
 			} else {
@@ -457,7 +458,7 @@ SWITCH_DECLARE(switch_bool_t) switch_network_list_validate_ip_token(switch_netwo
 
 	for (node = list->node_head; node; node = node->next) {
 		if (node->family == AF_INET6) continue; /* want AF_INET */
-		if (node->bits > bits && switch_test_subnet(ip, node->ip.v4, node->mask.v4)) {
+		if (node->bits >= bits && switch_test_subnet(ip, node->ip.v4, node->mask.v4)) {
 			if (node->ok) {
 				ok = SWITCH_TRUE;
 			} else {
@@ -3161,7 +3162,7 @@ SWITCH_DECLARE(int) switch_socket_waitfor(switch_pollfd_t *poll, int ms)
 	return nsds;
 }
 
-SWITCH_DECLARE(char *) switch_url_encode(const char *url, char *buf, size_t len)
+SWITCH_DECLARE(char *) switch_url_encode_opt(const char *url, char *buf, size_t len, switch_bool_t double_encode)
 {
 	const char *p, *e = end_of_p(url);
 	size_t x = 0;
@@ -3184,7 +3185,7 @@ SWITCH_DECLARE(char *) switch_url_encode(const char *url, char *buf, size_t len)
 			break;
 		}
 
-		if (*p == '%' && e-p > 1) {
+		if (!double_encode && *p == '%' && e-p > 1) {
 			if (strchr(hex, *(p+1)) && strchr(hex, *(p+2))) {
 				ok = 1;
 			}
@@ -3204,6 +3205,11 @@ SWITCH_DECLARE(char *) switch_url_encode(const char *url, char *buf, size_t len)
 	buf[x] = '\0';
 
 	return buf;
+}
+
+SWITCH_DECLARE(char *) switch_url_encode(const char *url, char *buf, size_t len)
+{
+	return switch_url_encode_opt(url, buf, len, SWITCH_FALSE);
 }
 
 SWITCH_DECLARE(char *) switch_url_decode(char *s)

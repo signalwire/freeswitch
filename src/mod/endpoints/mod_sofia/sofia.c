@@ -1136,12 +1136,28 @@ void sofia_update_callee_id(switch_core_session_t *session, sofia_profile_t *pro
 	}
 
 	if (!fs) {
+		sip_remote_party_id_t *rpid;
 		if ((passerted = sip_p_asserted_identity(sip))) {
 			if (passerted->paid_url->url_user) {
 				number = passerted->paid_url->url_user;
 			}
 			if (!zstr(passerted->paid_display)) {
 				dup = strdup(passerted->paid_display);
+				if (*dup == '"') {
+					name = dup + 1;
+				} else {
+					name = dup;
+				}
+				if (end_of(name) == '"') {
+					end_of(name) = '\0';
+				}
+			}
+		} else if ((rpid = sip_remote_party_id(sip))) {
+			if (rpid->rpid_url->url_user) {
+				number = rpid->rpid_url->url_user;
+			}
+			if (!zstr(rpid->rpid_display)) {
+				dup = strdup(rpid->rpid_display);
 				if (*dup == '"') {
 					name = dup + 1;
 				} else {
@@ -1256,6 +1272,21 @@ static void tech_send_ack(nua_handle_t *nh, private_object_t *tech_pvt)
 
 }
 
+static void notify_watched_header(switch_core_session_t *session, const char *msgline, const char *hdrname, const char *hdrval)
+{
+	switch_event_t *event = NULL;
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Found known watched header in message '%s', %s: %s\n", msgline, hdrname, hdrval);
+	if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, MY_EVENT_NOTIFY_WATCHED_HEADER) == SWITCH_STATUS_SUCCESS) {
+		switch_channel_t *channel = switch_core_session_get_channel(session);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "SIP-Message", msgline);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Header-Name", hdrname);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Header-Value", hdrval);
+		switch_channel_event_set_data(channel, event);
+		switch_event_fire(&event);
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Failed creating event of type %s!\n", MY_EVENT_NOTIFY_WATCHED_HEADER);
+	}
+}
 
 //sofia_dispatch_event_t *de
 static void our_sofia_event_callback(nua_event_t event,
@@ -1327,6 +1358,56 @@ static void our_sofia_event_callback(nua_event_t event,
 			} else {
 				/* we can't find the session it must be hanging up or something else, its too late to do anything with it. */
 				return;
+			}
+		}
+	}
+
+	if (session && tech_pvt && tech_pvt->watch_headers && sip) {
+		char msgline[512];
+		int hi;
+		msg_header_t *h = NULL;
+		if (sip->sip_request) {
+			h = (msg_header_t *)sip->sip_request;
+			msg_header_field_e(msgline, sizeof(msgline), h, 0);
+		} else if (sip->sip_status) {
+			h = (msg_header_t *)sip->sip_status;
+			msg_header_field_e(msgline, sizeof(msgline), h, 0);
+		}
+		if (h) {
+			sip_unknown_t *un = NULL;
+			char buf[512];
+			char *c = NULL;
+
+			msgline[sizeof(msgline)-1] = '\0';
+			c = strchr(msgline, '\r');
+			if (c) {
+				*c = '\0';
+			}
+
+			/* Faster (ie hash-based) search here would be nice? ie, make watch_headers a hash? */
+
+			/* Search first in the valid headers */
+			for (h = h->sh_succ; h; h = h->sh_succ) {
+				sip_header_t *sh = (sip_header_t *)h;
+				if (!sh->sh_class->hc_name) {
+					continue;
+				}
+				for (hi = 0; tech_pvt->watch_headers[hi]; hi++) {
+					if (!strcasecmp(tech_pvt->watch_headers[hi], sh->sh_class->hc_name)) {
+						msg_header_field_e(buf, sizeof(buf), h, 0);
+						buf[sizeof(buf)-1] = '\0';
+						notify_watched_header(session, msgline, sh->sh_class->hc_name, buf);
+					}
+				}
+			}
+
+			/* Search now in the unknown headers */
+			for (un = sip->sip_unknown; un; un = un->un_next) {
+				for (hi = 0; tech_pvt->watch_headers[hi]; hi++) {
+					if (!strcasecmp(tech_pvt->watch_headers[hi], un->un_name)) {
+						notify_watched_header(session, msgline, un->un_name, un->un_value);
+					}
+				}
 			}
 		}
 	}
@@ -1510,6 +1591,7 @@ static void our_sofia_event_callback(nua_event_t event,
 		sofia_handle_sip_i_info(nua, profile, nh, session, sip, de, tags);
 		break;
 	case nua_i_update:
+		sofia_update_callee_id(session, profile, sip, SWITCH_TRUE);
 		break;
 	case nua_r_update:
 		if (session && tech_pvt && locked) {
@@ -4137,6 +4219,7 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 					profile->ob_failed_calls = 0;
 					profile->shutdown_type = "false";
 					profile->rtpip_index = 0;
+					profile->rtpip_index6 = 0;
 
 					if (xprofiledomain) {
 						profile->domain_name = switch_core_strdup(profile->pool, xprofiledomain);
@@ -4635,10 +4718,19 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 						} else {
 							ip = strcasecmp(val, "auto") ? val : mod_sofia_globals.guess_ip;
 						}
-						if (profile->rtpip_index < MAX_RTPIP) {
-							profile->rtpip[profile->rtpip_index++] = switch_core_strdup(profile->pool, ip);
+
+						if (strchr(ip, ':')) {
+							if (profile->rtpip_index < MAX_RTPIP) {
+								profile->rtpip6[profile->rtpip_index6++] = switch_core_strdup(profile->pool, ip);
+							} else {
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Max IPs configured for profile %s.\n", profile->name);
+							}
 						} else {
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Max IPs configured for profile %s.\n", profile->name);
+							if (profile->rtpip_index6 < MAX_RTPIP) {
+								profile->rtpip[profile->rtpip_index++] = switch_core_strdup(profile->pool, ip);
+							} else {
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Max IPs configured for profile %s.\n", profile->name);
+							}
 						}
 					} else if (!strcasecmp(var, "sip-ip")) {
 						char *ip = mod_sofia_globals.guess_ip;
@@ -5373,7 +5465,7 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 					profile->sipip = switch_core_strdup(profile->pool, mod_sofia_globals.guess_ip);
 				}
 
-				if (!profile->rtpip[0]) {
+				if (!profile->rtpip[0] && !profile->rtpip6[0]) {
 					profile->rtpip[profile->rtpip_index++] = switch_core_strdup(profile->pool, mod_sofia_globals.guess_ip);
 				}
 
@@ -5406,7 +5498,7 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 					profile->sdp_username = switch_core_strdup(profile->pool, "FreeSWITCH");
 				}
 
-				if (!profile->rtpip[0]) {
+				if (!profile->rtpip[0] && !profile->rtpip6[0]) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Setting ip to '127.0.0.1'\n");
 					profile->rtpip[profile->rtpip_index++] = switch_core_strdup(profile->pool, "127.0.0.1");
 				}
@@ -7911,6 +8003,7 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 
 							if ((a_session = switch_core_session_locate(br_a))) {
 								const char *moh = profile->hold_music;
+								switch_core_session_t *tmpsess = NULL;
 								switch_channel_t *a_channel = switch_core_session_get_channel(a_session);
 								switch_caller_profile_t *prof = switch_channel_get_caller_profile(channel_b);
 								const char *tmp;
@@ -7940,6 +8033,15 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 									switch_ivr_session_transfer(a_session, xdest, "inline", NULL);
 								} else {
 									switch_ivr_session_transfer(a_session, "park", "inline", NULL);
+								}
+								if (switch_true(switch_channel_get_variable(channel_a, "recording_follow_transfer"))) {
+									switch_core_media_bug_transfer_recordings(session, a_session);
+								}
+								if (switch_true(switch_channel_get_variable(channel_b, "recording_follow_transfer")) && (tmpsess = switch_core_session_locate(br_a))) {
+									switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE,
+											  "Early transfer detected with no media, moving recording bug to other leg\n");
+									switch_core_media_bug_transfer_recordings(b_session, tmpsess);
+									switch_core_session_rwunlock(tmpsess);
 								}
 
 								switch_core_session_rwunlock(a_session);
@@ -8024,6 +8126,7 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 							sofia_clear_flag_locked(tech_pvt, TFLAG_HOLD_LOCK);
 							switch_channel_set_variable(channel_b, "park_timeout", "2:attended_transfer");
 							switch_channel_set_state(channel_b, CS_PARK);
+							switch_channel_wait_for_state_timeout(channel_b, CS_PARK, 5000);
 
 						} else {
 							if (!br_a && !br_b) {

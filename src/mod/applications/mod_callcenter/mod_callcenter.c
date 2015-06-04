@@ -25,7 +25,7 @@
  * 
  * Marc Olivier Chouinard <mochouinard@moctel.com>
  * Emmanuel Schmidbauer <e.schmidbauer@gmail.com>
- *
+ * Ítalo Rossi <italorossib@gmail.com>
  *
  * mod_callcenter.c -- Call Center Module
  *
@@ -1506,19 +1506,18 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 		const char *cid_number = NULL;
 		const char *cid_name_prefix = NULL;
 
-		if ((cid_name_prefix = switch_channel_get_variable(member_channel, "cc_outbound_cid_name_prefix"))) {
-			cid_name_freeable = switch_mprintf("%s%s", cid_name_prefix, h->member_cid_name);
-			cid_name = cid_name_freeable;
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_DEBUG, "Setting outbound caller_id_name to: %s\n", cid_name);
-		} else {
-			if (!(cid_name = switch_channel_get_variable(member_channel, "effective_caller_id_name"))) {
-				cid_name = h->member_cid_name;
-			}
-
-			if (!(cid_number = switch_channel_get_variable(member_channel, "effective_caller_id_number"))) {
-				cid_number = h->member_cid_number;
-			}
+		if (!(cid_name = switch_channel_get_variable(member_channel, "effective_caller_id_name"))) {
+			cid_name = h->member_cid_name;
 		}
+		if (!(cid_number = switch_channel_get_variable(member_channel, "effective_caller_id_number"))) {
+			cid_number = h->member_cid_number;
+		}
+		if ((cid_name_prefix = switch_channel_get_variable(member_channel, "cc_outbound_cid_name_prefix"))) {
+			cid_name_freeable = switch_mprintf("%s%s", cid_name_prefix, cid_name);
+			cid_name = cid_name_freeable;
+		}
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_DEBUG, "Setting outbound caller_id_name to: %s\n", cid_name);
+
 		switch_event_create(&ovars, SWITCH_EVENT_REQUEST_PARAMS);
 		switch_event_add_header(ovars, SWITCH_STACK_BOTTOM, "cc_queue", "%s", h->queue_name);
 		switch_event_add_header(ovars, SWITCH_STACK_BOTTOM, "cc_member_uuid", "%s", h->member_uuid);
@@ -2108,6 +2107,7 @@ static int members_callback(void *pArg, int argc, char **argv, char **columnName
 	agent_callback_t cbt;
 	const char *member_state = NULL;
 	const char *member_abandoned_epoch = NULL;
+	const char *serving_agent = NULL;
 	memset(&cbt, 0, sizeof(cbt));
 
 	cbt.queue_name = argv[0];
@@ -2119,6 +2119,7 @@ static int members_callback(void *pArg, int argc, char **argv, char **columnName
 	cbt.member_score = argv[6];
 	member_state = argv[7];
 	member_abandoned_epoch = argv[8];
+	serving_agent = argv[9];
 
 	if (!cbt.queue_name || !(queue = get_queue(cbt.queue_name))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Queue %s not found locally, skip this member\n", cbt.queue_name);
@@ -2153,7 +2154,23 @@ static int members_callback(void *pArg, int argc, char **argv, char **columnName
 		}
 		/* Skip this member */
 		goto end;
-	} 
+	}
+
+	/* Tracking queue strategy changes */
+	/* member is ring-all but not the queue */
+	if (!strcasecmp(serving_agent, "ring-all") && (strcasecmp(queue_strategy, "ring-all") != 0)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Queue '%s' changed strategy, adjusting member parameters", queue_name);
+		sql = switch_mprintf("UPDATE members SET serving_agent = '', state = '%s' WHERE uuid = '%s' AND state = '%s' AND serving_agent = 'ring-all'", cc_member_state2str(CC_MEMBER_STATE_WAITING), cbt.member_uuid, cc_member_state2str(CC_MEMBER_STATE_TRYING));
+		cc_execute_sql(NULL, sql, NULL);
+		switch_safe_free(sql);
+	}
+	/* Queue is now ring-all and not the member */
+	else if (!strcasecmp(queue_strategy, "ring-all") && (strcasecmp(serving_agent, "ring-all") != 0)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Queue '%s' changed strategy, adjusting member parameters", queue_name);
+		sql = switch_mprintf("UPDATE members SET serving_agent = 'ring-all', state = '%s' WHERE uuid = '%s' AND state = '%s' AND serving_agent = ''", cc_member_state2str(CC_MEMBER_STATE_TRYING), cbt.member_uuid, cc_member_state2str(CC_MEMBER_STATE_WAITING));
+		cc_execute_sql(NULL, sql, NULL);
+		switch_safe_free(sql);
+	}
 
 	/* Check if member is in the queue waiting */
 	if (zstr(cbt.member_session_uuid)) {
@@ -2307,7 +2324,7 @@ void *SWITCH_THREAD_FUNC cc_agent_dispatch_thread_run(switch_thread_t *thread, v
 
 	while (globals.running == 1) {
 		char *sql = NULL;
-		sql = switch_mprintf("SELECT queue,uuid,session_uuid,cid_number,cid_name,joined_epoch,(%" SWITCH_TIME_T_FMT "-joined_epoch)+base_score+skill_score AS score, state, abandoned_epoch FROM members"
+		sql = switch_mprintf("SELECT queue,uuid,session_uuid,cid_number,cid_name,joined_epoch,(%" SWITCH_TIME_T_FMT "-joined_epoch)+base_score+skill_score AS score, state, abandoned_epoch, serving_agent FROM members"
 				" WHERE state = '%q' OR state = '%q' OR (serving_agent = 'ring-all' AND state = '%q') ORDER BY score DESC",
 				local_epoch_time_now(NULL),
 				cc_member_state2str(CC_MEMBER_STATE_WAITING), cc_member_state2str(CC_MEMBER_STATE_ABANDONED), cc_member_state2str(CC_MEMBER_STATE_TRYING));
@@ -2518,6 +2535,7 @@ SWITCH_STANDARD_APP(callcenter_function)
 	const char *cc_base_score = switch_channel_get_variable(member_channel, "cc_base_score");
 	int cc_base_score_int = 0;
 	const char *cur_moh = NULL;
+	char *moh_expanded = NULL;
 	char start_epoch[64];
 	switch_event_t *event;
 	switch_time_t t_member_called = local_epoch_time_now(NULL);
@@ -2679,6 +2697,7 @@ SWITCH_STANDARD_APP(callcenter_function)
 		cur_moh = switch_core_session_strdup(member_session, queue->moh);
 	}
 	queue_rwunlock(queue);
+	moh_expanded = switch_channel_expand_variables(member_channel, cur_moh);
 
 	while (switch_channel_ready(member_channel)) {
 		switch_input_args_t args = { 0 };
@@ -2701,9 +2720,8 @@ SWITCH_STANDARD_APP(callcenter_function)
 
 		switch_core_session_flush_private_events(member_session);
 
-		if (moh_valid && cur_moh) {
-			switch_status_t status = switch_ivr_play_file(member_session, NULL, cur_moh, &args);
-
+		if (moh_valid && moh_expanded) {
+			switch_status_t status = switch_ivr_play_file(member_session, NULL, moh_expanded, &args);
 			if (status == SWITCH_STATUS_FALSE /* Invalid Recording */ && SWITCH_READ_ACCEPTABLE(status)) { 
 				/* Sadly, there doesn't seem to be a return to switch_ivr_play_file that tell you the file wasn't found.  FALSE also mean that the channel got switch to BRAKE state, so we check for read acceptable */
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_WARNING, "Couldn't play file '%s', continuing wait with no audio\n", cur_moh);
@@ -2723,6 +2741,9 @@ SWITCH_STANDARD_APP(callcenter_function)
 			}
 		}
 		switch_yield(1000);
+	}
+	if (moh_expanded != cur_moh) {
+		switch_safe_free(moh_expanded);
 	}
 
 	/* Make sure an agent was found, as we might break above without setting it */

@@ -887,7 +887,7 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG8, "STUN PACKET TYPE: %s\n", 
 					  switch_stun_value_to_name(SWITCH_STUN_TYPE_PACKET_TYPE, packet->header.type));
 	do {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG8, "|---: STUN ATTR %s\n",
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG8, "|---: STUN ATTR %d %x %s\n", attr->type, attr->type,
 						  switch_stun_value_to_name(SWITCH_STUN_TYPE_ATTRIBUTE, attr->type));
 
 		switch (attr->type) {
@@ -925,6 +925,14 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 				char ip[16];
 				uint16_t port;
 				switch_stun_packet_attribute_get_mapped_address(attr, ip, &port);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG8, "|------: %s:%d\n", ip, port);
+			}
+			break;
+		case SWITCH_STUN_ATTR_XOR_MAPPED_ADDRESS:
+			if (attr->type) {
+				char ip[16];
+				uint16_t port;
+				switch_stun_packet_attribute_get_xor_mapped_address(attr, packet->header.cookie, ip, &port);
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG8, "|------: %s:%d\n", ip, port);
 			}
 			break;
@@ -1030,7 +1038,7 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 					if (!icep[j] || !icep[j]->ice_params) {
 						continue;
 					}
-					for (i = 0; i < icep[j]->ice_params->cand_idx; i++) {
+					for (i = 0; i < icep[j]->ice_params->cand_idx[icep[j]->proto]; i++) {
 						if (icep[j]->ice_params &&  icep[j]->ice_params->cands[i][icep[j]->proto].priority == *pri) {
 							if (j == IPR_RTP) {
 								icep[j]->ice_params->chosen[j] = i;
@@ -1183,7 +1191,7 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 
 
 
-				for (i = 0; i <= ice->ice_params->cand_idx; i++) {
+				for (i = 0; i <= ice->ice_params->cand_idx[ice->proto]; i++) {
 					if (ice->ice_params->cands[i][ice->proto].con_port == port) {
 						if (!strcmp(ice->ice_params->cands[i][ice->proto].con_addr, host) && 
 							!strcmp(ice->ice_params->cands[i][ice->proto].cand_type, "relay")) {
@@ -2396,7 +2404,7 @@ static switch_status_t enable_remote_rtcp_socket(switch_rtp_t *rtp_session, cons
 			host = switch_get_addr(bufa, sizeof(bufa), rtp_session->rtcp_remote_addr);
 
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG, 
-							  "Setting RTCP remote addr to %s:%d\n", host, rtp_session->remote_rtcp_port);
+							  "Setting RTCP remote addr to %s:%d %d\n", host, rtp_session->remote_rtcp_port, rtp_session->rtcp_remote_addr->family);
 		}
 
 		if (rtp_session->rtcp_sock_input && switch_sockaddr_get_family(rtp_session->rtcp_remote_addr) == 
@@ -2838,23 +2846,24 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_set_remote_address(switch_rtp_t *rtp_
 	}
 
 
-	if (rtp_session->flags[SWITCH_RTP_FLAG_ENABLE_RTCP] && !rtp_session->flags[SWITCH_RTP_FLAG_RTCP_MUX]) {	
-		if (remote_rtcp_port) {
-			rtp_session->remote_rtcp_port = remote_rtcp_port;
+	if (rtp_session->flags[SWITCH_RTP_FLAG_ENABLE_RTCP]) {
+		if (rtp_session->flags[SWITCH_RTP_FLAG_RTCP_MUX]) {	
+			rtp_session->rtcp_remote_addr = rtp_session->remote_addr;
+			rtp_session->rtcp_sock_output = rtp_session->sock_output;
 		} else {
-			rtp_session->remote_rtcp_port = rtp_session->eff_remote_port + 1;
+			if (remote_rtcp_port) {
+				rtp_session->remote_rtcp_port = remote_rtcp_port;
+			} else {
+				rtp_session->remote_rtcp_port = rtp_session->eff_remote_port + 1;
+			}
+			status = enable_remote_rtcp_socket(rtp_session, err);
+			
+			if (rtp_session->rtcp_dtls) {
+				//switch_sockaddr_info_get(&rtp_session->rtcp_dtls->remote_addr, host, SWITCH_UNSPEC, port, 0, rtp_session->pool);
+				rtp_session->rtcp_dtls->remote_addr = rtp_session->rtcp_remote_addr;
+				rtp_session->rtcp_dtls->sock_output = rtp_session->rtcp_sock_output;
+			}
 		}
-		status = enable_remote_rtcp_socket(rtp_session, err);
-		
-		if (rtp_session->rtcp_dtls) {
-			//switch_sockaddr_info_get(&rtp_session->rtcp_dtls->remote_addr, host, SWITCH_UNSPEC, port, 0, rtp_session->pool);
-			rtp_session->rtcp_dtls->remote_addr = rtp_session->rtcp_remote_addr;
-			rtp_session->rtcp_dtls->sock_output = rtp_session->rtcp_sock_output;
-		}
-	}
-
-	if (rtp_session->flags[SWITCH_RTP_FLAG_ENABLE_RTCP] && rtp_session->flags[SWITCH_RTP_FLAG_RTCP_MUX]) {	
-		rtp_session->rtcp_remote_addr = rtp_session->remote_addr;
 	}
 
 	switch_mutex_unlock(rtp_session->write_mutex);
@@ -4104,8 +4113,10 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_activate_rtcp(switch_rtp_t *rtp_sessi
 		rtp_session->rtcp_sock_output = rtp_session->sock_output;
 
 		rtp_session->rtcp_recv_msg_p = (rtcp_msg_t *) &rtp_session->recv_msg;
+		
+		return SWITCH_STATUS_SUCCESS;
 
-		return enable_remote_rtcp_socket(rtp_session, &err);
+		//return enable_remote_rtcp_socket(rtp_session, &err);
 	} else {
 		rtp_session->rtcp_recv_msg_p = (rtcp_msg_t *) &rtp_session->rtcp_recv_msg;
 	}
@@ -5705,7 +5716,7 @@ static switch_status_t process_rtcp_packet(switch_rtp_t *rtp_session, switch_siz
 
 		if (msg->header.version != 2 || !(msg->header.type > 199 && msg->header.type < 208)) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING, 
-							  "INVALID RTCP PACKET TYPE %d VER %d LEN %ld\n", msg->header.type, 
+							  "INVALID RTCP PACKET TYPE %d VER %d LEN %" SWITCH_SIZE_T_FMT "\n", msg->header.type, 
 							  msg->header.version, len);
 			status = SWITCH_STATUS_BREAK;
 			break;
@@ -7746,7 +7757,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_write_raw(switch_rtp_t *rtp_session, 
 				break;
 			case zrtp_status_drop:
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error: zRTP protection drop with code %d\n", stat);
-				ret = SWITCH_STATUS_SUCCESS;
+				status = SWITCH_STATUS_SUCCESS;
 				goto end;
 				break;
 			case zrtp_status_fail:

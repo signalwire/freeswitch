@@ -96,6 +96,7 @@ typedef struct private_object private_object_t;
 #define MY_EVENT_RECOVERY_RECOVERED "sofia::recovery_recovered"
 #define MY_EVENT_ERROR "sofia::error"
 #define MY_EVENT_PROFILE_START "sofia::profile_start"
+#define MY_EVENT_NOTIFY_WATCHED_HEADER "sofia::notify_watched_header"
 
 #define MULTICAST_EVENT "multicast::event"
 #define SOFIA_REPLACES_HEADER "_sofia_replaces_"
@@ -574,11 +575,14 @@ struct sofia_profile {
 	char *shutdown_type;
 	char *extrtpip;
 	char *rtpip[MAX_RTPIP];
+	char *rtpip6[MAX_RTPIP];
 	char *jb_msec;
 	switch_payload_t te;
 	switch_payload_t recv_te;
 	uint32_t rtpip_index;
 	uint32_t rtpip_next;
+	uint32_t rtpip_index6;
+	uint32_t rtpip_next6;
 	char *rtcp_audio_interval_msec;
 	char *rtcp_video_interval_msec;
 
@@ -805,6 +809,7 @@ struct private_object {
 	sofia_cid_type_t cid_type;
 	uint32_t session_timeout;
 	enum nua_session_refresher session_refresher;
+	char **watch_headers;
 	char *respond_phrase;
 	int respond_code;
 	char *respond_dest;

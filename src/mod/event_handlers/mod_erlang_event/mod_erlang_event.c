@@ -757,7 +757,10 @@ static switch_status_t check_attached_sessions(listener_t *listener, int *msgs_s
 					sp->uuid_str, switch_channel_state_name(sp->channel_state));
 
 			ei_x_new_with_version(&ebuf);
+			ei_x_encode_tuple_header(&ebuf, 2);
 			ei_x_encode_atom(&ebuf, "call_hangup");
+			_ei_x_encode_string(&ebuf, sp->uuid_str);
+
 			switch_mutex_lock(listener->sock_mutex);
 			ei_sendto(listener->ec, listener->sockfd, &sp->process, &ebuf);
 			(*msgs_sent)++;
