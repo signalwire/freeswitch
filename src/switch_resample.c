@@ -84,9 +84,13 @@ SWITCH_DECLARE(switch_status_t) switch_resample_perform_create(switch_audio_resa
 	return SWITCH_STATUS_SUCCESS;
 }
 
-
 SWITCH_DECLARE(uint32_t) switch_resample_process(switch_audio_resampler_t *resampler, int16_t *src, uint32_t srclen)
 {
+	if (switch_resample_calc_buffer_size(resampler->to_rate, resampler->from_rate, srclen) > SWITCH_RECOMMENDED_BUFFER_SIZE) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Out of Buffer SPACE!\n");
+		return 0;
+	}
+		
 	resampler->to_len = resampler->to_size;
 	speex_resampler_process_interleaved_int(resampler->resampler, src, &srclen, resampler->to, &resampler->to_len);
 	return resampler->to_len;
