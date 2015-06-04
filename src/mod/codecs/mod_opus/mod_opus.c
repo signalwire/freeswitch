@@ -82,6 +82,7 @@ struct {
     int complexity;
     int maxaveragebitrate;
     int maxplaybackrate;
+	int plpct;
     switch_mutex_t *mutex;
 } opus_prefs;
 
@@ -261,6 +262,7 @@ static switch_status_t switch_opus_init(switch_codec_t *codec, switch_codec_flag
 		int bitrate_bps = OPUS_AUTO;
 		int use_vbr = opus_prefs.use_vbr;
 		int complexity = opus_prefs.complexity;
+		int plpct = opus_prefs.plpct;
 		int err;
 		int samplerate = opus_codec_settings.samplerate ? opus_codec_settings.samplerate : codec->implementation->actual_samples_per_second;
         
@@ -313,6 +315,10 @@ static switch_status_t switch_opus_init(switch_codec_t *codec, switch_codec_flag
 			opus_encoder_ctl(context->encoder_object, OPUS_SET_COMPLEXITY(complexity));
         }
 
+		if (plpct) {
+			opus_encoder_ctl(context->encoder_object, OPUS_SET_PACKET_LOSS_PERC(plpct));
+		}
+		
 		if (opus_codec_settings.useinbandfec) {
 			opus_encoder_ctl(context->encoder_object, OPUS_SET_INBAND_FEC(opus_codec_settings.useinbandfec));
 		}
@@ -480,6 +486,8 @@ static switch_status_t opus_load_config(switch_bool_t reload)
 				opus_prefs.use_vbr = atoi(val);
 			} else if (!strcasecmp(key, "complexity")) {
 				opus_prefs.complexity = atoi(val);
+			} else if (!strcasecmp(key, "packet-loss-percent")) {
+				opus_prefs.plpct = atoi(val);
 			} else if (!strcasecmp(key, "maxaveragebitrate")) {
 				opus_prefs.maxaveragebitrate = atoi(val);
 				if ( opus_prefs.maxaveragebitrate < 6000 || opus_prefs.maxaveragebitrate > 510000 ) {

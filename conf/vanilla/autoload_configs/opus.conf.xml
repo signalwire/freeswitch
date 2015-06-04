@@ -2,6 +2,8 @@
     <settings>
         <param name="use-vbr" value="1"/>
         <param name="complexity" value="10"/>
+	<!-- Packet Loss Percent, Default 0 -->
+        <!--<param name="packet-loss-percent" value="20"/>-->
 
         <!--
            maxaveragebitrate: the maximum average codec bitrate (values: 6000 to 510000 in bps) 0 is not considered
