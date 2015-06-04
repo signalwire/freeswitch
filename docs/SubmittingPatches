@@ -50,7 +50,7 @@ Create a Pull Request
     chromium https://freeswitch.org/confluence/display/FREESWITCH/Pull+Requests
 
     # add your repository as a remote (change to your username)
-    git remote add stash ssh://git@stash.freeswitch.org:7999/~johndoe/freeswitch.git
+    git remote add stash ssh://git@freeswitch.org:7999/~johndoe/freeswitch.git
 
     # push your changes to a branch
     git push stash +HEAD:myfeature

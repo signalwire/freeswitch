@@ -33,7 +33,7 @@
  * and use the resulting source code and executable binaries
  * (including modified versions of each) under the Mozilla Public
  * License Version 1.1 (MPLv1.1).  For more information about
- * FreeSWITCH, visit: http://freeswitch.org/
+ * FreeSWITCH, visit: https://freeswitch.org/
  *
  * As a restatement of the above, you may use, modify, and
  * redistribute this library as if it were licensed under the MPLv1.1

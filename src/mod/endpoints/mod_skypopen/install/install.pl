@@ -31,7 +31,7 @@ printf("Especially designed for FreeSWITCH\n");
 printf("by Giovanni Maruzzelli\n");
 printf("\n");
 printf("Please direct all questions or issues to the FreeSWITCH mailing list or Jira\n");
-printf("(http://lists.freeswitch.org/mailman/listinfo or http://jira.freeswitch.org)\n");
+printf("(http://lists.freeswitch.org/mailman/listinfo or https://freeswitch.org/jira)\n");
 printf("\n");
 printf("\n");
 printf("I'll ask you questions, giving default answers in square brackets [] if any\n");

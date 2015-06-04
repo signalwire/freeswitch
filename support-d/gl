@@ -57,7 +57,7 @@ sub bugtxt($)
 	return catfile($tmp);
     }
 
-    my $cmd = "wget -q http://jira.freeswitch.org/si/jira.issueviews:issue-xml/$bug/$bug.xml -O $tmp";
+    my $cmd = "wget -q https://freeswitch.org/jira/si/jira.issueviews:issue-xml/$bug/$bug.xml -O $tmp";
 
     system($cmd);
 
@@ -71,7 +71,7 @@ sub bugtxt($)
 
 
     if ($rname && $aname) {
-	my $data = "$title\nReporter: $rname [$rlogin]\nAssignee: $aname [$alogin]\nStatus: $status\nhttp://jira.freeswitch.org/browse/$bug\n";
+	my $data = "$title\nReporter: $rname [$rlogin]\nAssignee: $aname [$alogin]\nStatus: $status\nhttps://freeswitch.org/jira/browse/$bug\n";
 	open(O, ">$tmp");
 	print O $data;
 	close(O);

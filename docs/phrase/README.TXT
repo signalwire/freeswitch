@@ -11,7 +11,7 @@ updated for the respective phrase_xx.xml file.
 How can you contribute?
 
 You can contribute via patches posted to the mailing list or at 
-http://jira.freeswitch.org, if possible please record the sound files
+https://freeswitch.org/jira, if possible please record the sound files
 for testing.  We also need voicemail_xx.xml macros updated for each language.
 
 Thanks,
