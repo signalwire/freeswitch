@@ -1601,7 +1601,8 @@ typedef enum {
 	SWITCH_CODEC_FLAG_FREE_POOL = (1 << 5),
 	SWITCH_CODEC_FLAG_AAL2 = (1 << 6),
 	SWITCH_CODEC_FLAG_PASSTHROUGH = (1 << 7),
-	SWITCH_CODEC_FLAG_READY = (1 << 8)
+	SWITCH_CODEC_FLAG_READY = (1 << 8),
+	SWITCH_CODEC_FLAG_HAS_PLC = (1 << 15)
 } switch_codec_flag_enum_t;
 typedef uint32_t switch_codec_flag_t;
 

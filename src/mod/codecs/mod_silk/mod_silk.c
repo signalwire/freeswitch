@@ -204,6 +204,9 @@ static switch_status_t switch_silk_init(switch_codec_t *codec,
 	}
 
 	if (decoding) {
+
+		switch_set_flag(codec, SWITCH_CODEC_FLAG_HAS_PLC);
+		
 		if (SKP_Silk_SDK_Get_Decoder_Size(&decSizeBytes)) {
 			return SWITCH_STATUS_FALSE;
 		}
@@ -335,14 +338,19 @@ static switch_status_t switch_silk_decode(switch_codec_t *codec,
 	*decoded_data_len = 0;
 
 	if (lost_flag) {
+		*flag &= ~SFF_PLC;
+
 		if (session) {
 			jb = switch_core_session_get_jb(session, SWITCH_MEDIA_TYPE_AUDIO);
 		}
+
 		if (jb && codec->cur_frame) {
 			for (i = 1; i <= MAX_LBRR_DELAY; i++) {
 				found_frame = stfu_n_copy_next_frame(jb, (uint32_t)codec->cur_frame->timestamp, codec->cur_frame->seq, (uint16_t)i, &next_frame);
+
 				if (found_frame) {
 					SKP_Silk_SDK_search_for_LBRR(next_frame.data, (const int)next_frame.dlen, i, (SKP_uint8*) &recbuff, &reclen);
+
 					if (reclen) {
 						encoded_data = &recbuff;
 						encoded_data_len = reclen;
