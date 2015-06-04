@@ -944,44 +944,25 @@ stfu_frame_t *stfu_n_read_a_frame(stfu_instance_t *i)
         i->plc_pt = rframe->pt;
 
     } else {
-        int force = 0;
-
         if (i->consecutive_bad_count > (i->max_qlen / 2)) {
-            force = 1;
-        }
+			if (stfu_log != null_logger && i->debug) {
+				stfu_log(STFU_LOG_EMERG, "%s NO PACKETS HARD RESETTING\n", i->name);
+			}
+			stfu_n_reset(i);
+		} else {
+			i->last_wr_ts = i->cur_ts;
+			rframe = &i->out_queue->int_frame;
+			rframe->dlen = i->plc_len;
+			rframe->pt = i->plc_pt;
+			rframe->ts = i->cur_ts;
+			rframe->seq = i->cur_seq;
+			i->miss_count++;
 
-        if (stfu_n_find_any_frame(i, i->out_queue, &rframe, force)) {
-            i->cur_ts = rframe->ts;
-            i->cur_seq = rframe->seq;
-            i->last_wr_ts = i->cur_ts;
-            i->miss_count = 0;
-
-            if (stfu_log != null_logger && i->debug) {
-                stfu_log(STFU_LOG_EMERG, "%s AUTOCORRECT %d %d %ld %u:%u\n", i->name, 
-                         i->miss_count, rframe->plc, rframe->dlen, rframe->ts, rframe->ts / i->samples_per_packet);
-            }
-
-        } else {
-            if (force) {
-                if (stfu_log != null_logger && i->debug) {
-                    stfu_log(STFU_LOG_EMERG, "%s NO PACKETS HARD RESETTING\n", i->name);
-                }
-                stfu_n_reset(i);
-            } else {
-                i->last_wr_ts = i->cur_ts;
-                rframe = &i->out_queue->int_frame;
-                rframe->dlen = i->plc_len;
-                rframe->pt = i->plc_pt;
-                rframe->ts = i->cur_ts;
-                rframe->seq = i->cur_seq;
-                i->miss_count++;
-
-                if (stfu_log != null_logger && i->debug) {
-                    stfu_log(STFU_LOG_EMERG, "%s PLC %d/%d %d %ld %u:%u\n", i->name, 
-                             i->miss_count, i->max_qlen, rframe->plc, rframe->dlen, rframe->ts, rframe->ts / i->samples_per_packet);
-                }
-            }
-        }
+			if (stfu_log != null_logger && i->debug) {
+				stfu_log(STFU_LOG_EMERG, "%s PLC %d/%d %d %ld %u:%u\n", i->name, 
+						 i->miss_count, i->max_qlen, rframe->plc, rframe->dlen, rframe->ts, rframe->ts / i->samples_per_packet);
+			}
+		}
 
         if (i->miss_count > i->max_qlen) {
             if (stfu_log != null_logger && i->debug) {
