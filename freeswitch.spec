@@ -187,19 +187,18 @@ BuildRequires: net-snmp-devel
 BuildRequires: libmemcached-devel
 BuildRequires: portaudio-devel
 BuildRequires: libsndfile-devel
-BuildRequires: mongo-c-driver-devel
-BuildRequires: soundtouch-devel => 1.8.0
+BuildRequires: broadvoice-devel
+BuildRequires: flite-devel
+BuildRequires: ilbc-devel = 0.0.1
+BuildRequires: g722_1-devel
 BuildRequires: libcodec2-devel
 BuildRequires: libsilk-devel
-BuildRequires: g722_1-devel
 BuildRequires: libvpx-devel => 1.4.0
-BuildRequires: lua-devel
-BuildRequires: opus-devel
-BuildRequires: flite-devel
-BuildRequires: ilbc-devel
-BuildRequires: broadvoice-devel
 BuildRequires: libyuv-devel >= 0.0.1280
-BuildRequires: flite-devel
+BuildRequires: lua-devel
+BuildRequires: mongo-c-driver-devel
+BuildRequires: opus-devel
+BuildRequires: soundtouch-devel => 1.7.1
 %if %{build_py26_esl}
 BuildRequires: python26-devel
 Requires: python26
@@ -284,14 +283,6 @@ FreeSWITCH development files
 ######################################################################################################################
 #				FreeSWITCH Application Modules
 ######################################################################################################################
-%package application-translate
-Summary:	FreeSWITCH mod_translate
-Group:          System/Libraries
-Requires:       %{name} = %{version}-%{release}
-
-%description application-translate
-Provide an number translation to FreeSWITCH API calls
-
 %package application-abstraction
 Summary:	FreeSWITCH mod_abstraction
 Group:          System/Libraries
@@ -603,6 +594,14 @@ Requires:       %{name} = %{version}-%{release}
 %description application-stress
 Provides FreeSWITCH mod_stress. mod_stress attempts to detect stress in a 
 person's voice and generates FreeSWITCH events based on that data. 
+
+%package application-translate
+Summary:	FreeSWITCH mod_translate
+Group:          System/Libraries
+Requires:       %{name} = %{version}-%{release}
+
+%description application-translate
+Provide an number translation to FreeSWITCH API calls
 
 %package application-valet_parking
 Summary:	FreeSWITCH mod_valet_parking
@@ -1012,6 +1011,14 @@ BuildRequires:	erlang
 %description event-erlang-event
 Erlang Event Module for FreeSWITCH.
 
+%package event-format-cdr
+Summary:        JSON and XML Logger for the FreeSWITCH open source telephony platform
+Group:          System/Libraries
+Requires:        %{name} = %{version}-%{release}
+
+%description event-format-cdr
+JSON and XML Logger for the FreeSWITCH open source telephony platform
+
 %package event-multicast
 Summary:	Multicast Event System for the FreeSWITCH open source telephony platform
 Group:		System/Libraries
@@ -1035,14 +1042,6 @@ Requires:	%{name} = %{version}-%{release}
 
 %description event-json-cdr
 JSON CDR Logger for FreeSWITCH.
-
-%package event-format-cdr
-Summary:        JSON and XML Logger for the FreeSWITCH open source telephony platform
-Group:          System/Libraries
-Requires:        %{name} = %{version}-%{release}
-
-%description event-format-cdr
-JSON and XML Logger for the FreeSWITCH open source telephony platform
 
 %package event-radius-cdr
 Summary:        RADIUS Logger for the FreeSWITCH open source telephony platform
@@ -1391,7 +1390,7 @@ cp %{SOURCE11} libs/
 cp %{SOURCE12} libs/
 
 #Hotfix for redefined %_sysconfdir
-sed -ie 's:confdir="$sysconfdir/freeswitch":confdir="$sysconfdir":' ./configure.ac
+sed -ie 's:confdir="${sysconfdir}/freeswitch":confdir="$sysconfdir":' ./configure.ac
 
 ######################################################################################################################
 #
@@ -1850,7 +1849,6 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/amqp.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/blacklist.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/callcenter.conf.xml
-%config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/conference_layouts.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/cdr_csv.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/cdr_mongodb.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/cdr_pg_csv.conf.xml
@@ -1858,6 +1856,7 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/cepstral.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/cidlookup.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/conference.conf.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/conference_layouts.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/console.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/db.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/dialplan_directory.conf.xml
@@ -1972,9 +1971,6 @@ fi
 %files application-avmd
 %{MODINSTDIR}/mod_avmd.so*
 
-%files application-translate
-%{MODINSTDIR}/mod_translate.so*
-
 %files application-blacklist
 %{MODINSTDIR}/mod_blacklist.so*
 
@@ -2075,6 +2071,9 @@ fi
 
 %files application-stress
 %{MODINSTDIR}/mod_stress.so*
+
+%files application-translate
+%{MODINSTDIR}/mod_translate.so*
 
 %files application-valet_parking
 %{MODINSTDIR}/mod_valet_parking.so*
@@ -2250,6 +2249,9 @@ fi
 %files event-erlang-event
 %{MODINSTDIR}/mod_erlang_event.so*
 
+%files event-format-cdr
+%{MODINSTDIR}/mod_format_cdr.so*
+
 %files event-multicast
 %{MODINSTDIR}/mod_event_multicast.so*
 
@@ -2258,9 +2260,6 @@ fi
 
 %files event-json-cdr
 %{MODINSTDIR}/mod_json_cdr.so*
-
-%files event-format-cdr
-%{MODINSTDIR}/mod_format_cdr.so*
 
 %files event-radius-cdr
 %{MODINSTDIR}/mod_radius_cdr.so*
@@ -2464,6 +2463,9 @@ fi
 #
 ######################################################################################################################
 %changelog
+* Thu Jun 04 2015 - crienzo@grasshopper.com
+- Build dependences declared
+- mod_rad_auth, mod_radius_cdr, mod_format_cdr modules declared
 * Tue Nov 04 2014 - crienzo@grasshopper.com
 - add mod_graylog2 and mod_mongo
 * Thu Sep 11 2014 - krice@freeswitch.org
