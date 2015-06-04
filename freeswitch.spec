@@ -187,6 +187,18 @@ BuildRequires: net-snmp-devel
 BuildRequires: libmemcached-devel
 BuildRequires: portaudio-devel
 BuildRequires: libsndfile-devel
+BuildRequires: broadvoice-devel
+BuildRequires: flite-devel
+BuildRequires: ilbc-devel = 0.0.1
+BuildRequires: g722_1-devel
+BuildRequires: libcodec2-devel
+BuildRequires: libsilk-devel
+BuildRequires: libvpx-devel => 1.4.0
+BuildRequires: libyuv-devel >= 0.0.1280
+BuildRequires: lua-devel
+BuildRequires: mongo-c-driver-devel
+BuildRequires: opus-devel
+BuildRequires: soundtouch-devel => 1.7.1
 %if %{build_py26_esl}
 BuildRequires: python26-devel
 Requires: python26
@@ -500,6 +512,14 @@ Provides FreeSWITCH mod_nibblebill, provides a credit/debit module for
 FreeSWITCH to allow real-time debiting of credit or cash from a database 
 while calls are in progress.
 
+%package application-rad_auth
+Summary:	FreeSWITCH mod_rad_auth
+Group:          System/Libraries
+Requires:       %{name} = %{version}-%{release}
+
+%description application-rad_auth
+Provides FreeSWITCH mod_rad_auth, authetication via RADIUS protocol from FreeSWITCH dialplan
+
 %package application-redis
 Summary:	FreeSWITCH mod_redis
 Group:          System/Libraries
@@ -574,6 +594,14 @@ Requires:       %{name} = %{version}-%{release}
 %description application-stress
 Provides FreeSWITCH mod_stress. mod_stress attempts to detect stress in a 
 person's voice and generates FreeSWITCH events based on that data. 
+
+%package application-translate
+Summary:	FreeSWITCH mod_translate
+Group:          System/Libraries
+Requires:       %{name} = %{version}-%{release}
+
+%description application-translate
+Provide an number translation to FreeSWITCH API calls
 
 %package application-valet_parking
 Summary:	FreeSWITCH mod_valet_parking
@@ -983,6 +1011,14 @@ BuildRequires:	erlang
 %description event-erlang-event
 Erlang Event Module for FreeSWITCH.
 
+%package event-format-cdr
+Summary:        JSON and XML Logger for the FreeSWITCH open source telephony platform
+Group:          System/Libraries
+Requires:        %{name} = %{version}-%{release}
+
+%description event-format-cdr
+JSON and XML Logger for the FreeSWITCH open source telephony platform
+
 %package event-multicast
 Summary:	Multicast Event System for the FreeSWITCH open source telephony platform
 Group:		System/Libraries
@@ -1006,6 +1042,14 @@ Requires:	%{name} = %{version}-%{release}
 
 %description event-json-cdr
 JSON CDR Logger for FreeSWITCH.
+
+%package event-radius-cdr
+Summary:        RADIUS Logger for the FreeSWITCH open source telephony platform
+Group:          System/Libraries
+Requires:        %{name} = %{version}-%{release}
+
+%description event-radius-cdr
+RADIUS Logger for the FreeSWITCH open source telephony platform
 
 %if %{build_mod_rayo}
 %package event-rayo
@@ -1344,7 +1388,9 @@ cp %{SOURCE9} libs/
 cp %{SOURCE10} libs/
 cp %{SOURCE11} libs/
 cp %{SOURCE12} libs/
-cp %{SOURCE13} libs/
+
+#Hotfix for redefined %_sysconfdir
+sed -ie 's:confdir="${sysconfdir}/freeswitch":confdir="$sysconfdir":' ./configure.ac
 
 ######################################################################################################################
 #
@@ -1384,11 +1430,12 @@ APPLICATION_MODULES_DE+="applications/mod_esl"
 
 APPLICATION_MODULES_FR="applications/mod_fifo applications/mod_fsk applications/mod_fsv applications/mod_hash \
 			applications/mod_httapi applications/mod_http_cache applications/mod_lcr applications/mod_limit \
-			applications/mod_memcache applications/mod_mongo applications/mod_nibblebill applications/mod_redis applications/mod_rss" 
+			applications/mod_memcache applications/mod_mongo applications/mod_nibblebill applications/mod_rad_auth \
+			applications/mod_redis applications/mod_rss "
 
 APPLICATION_MODULES_SZ="applications/mod_sms applications/mod_snapshot applications/mod_snom applications/mod_soundtouch \
 			applications/mod_spandsp applications/mod_spy applications/mod_stress \
-			applications/mod_valet_parking applications/mod_voicemail \
+			applications/mod_valet_parking applications/mod_translate applications/mod_voicemail \
 			applications/mod_voicemail_ivr"
 
 APPLICATIONS_MODULES="$APPLICATION_MODULES_AC $APPLICATION_MODULES_DE $APPLICATION_MODULES_FR $APPLICATION_MODULES_SZ"
@@ -1444,8 +1491,8 @@ ENDPOINTS_MODULES="endpoints/mod_dingaling ../../libs/freetdm/mod_freetdm \
 #
 ######################################################################################################################
 EVENT_HANDLERS_MODULES="event_handlers/mod_cdr_csv event_handlers/mod_cdr_pg_csv event_handlers/mod_cdr_sqlite \
-			event_handlers/mod_cdr_mongodb event_handlers/mod_erlang_event event_handlers/mod_event_multicast \
-			event_handlers/mod_event_socket event_handlers/mod_json_cdr \
+			event_handlers/mod_cdr_mongodb event_handlers/mod_format_cdr event_handlers/mod_erlang_event event_handlers/mod_event_multicast \
+			event_handlers/mod_event_socket event_handlers/mod_json_cdr event_handlers/mod_radius_cdr \
 			event_handlers/mod_snmp"
 %if %{build_mod_rayo}
 EVENT_HANDLERS_MODULES+=" event_handlers/mod_rayo"
@@ -1809,6 +1856,7 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/cepstral.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/cidlookup.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/conference.conf.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/conference_layouts.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/console.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/db.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/dialplan_directory.conf.xml
@@ -1877,6 +1925,12 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/dialplan/default/*.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/dialplan/public/*.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/dialplan/skinny-patterns/*.xml
+######################################################################################################################
+#						Fonts
+######################################################################################################################
+%config(noreplace) %attr(0640, freeswitch, daemon) %{_datadir}/freeswitch/fonts/*.ttf
+%config(noreplace) %attr(0640, freeswitch, daemon) %{_datadir}/freeswitch/fonts/OFL.txt
+%config(noreplace) %attr(0640, freeswitch, daemon) %{_datadir}/freeswitch/fonts/README.fonts
 ######################################################################################################################
 #						User Directories
 ######################################################################################################################
@@ -1991,6 +2045,9 @@ fi
 %files application-nibblebill
 %{MODINSTDIR}/mod_nibblebill.so*
 
+%files application-rad_auth
+%{MODINSTDIR}/mod_rad_auth.so*
+
 %files application-redis
 %{MODINSTDIR}/mod_redis.so*
 
@@ -2014,6 +2071,9 @@ fi
 
 %files application-stress
 %{MODINSTDIR}/mod_stress.so*
+
+%files application-translate
+%{MODINSTDIR}/mod_translate.so*
 
 %files application-valet_parking
 %{MODINSTDIR}/mod_valet_parking.so*
@@ -2189,6 +2249,9 @@ fi
 %files event-erlang-event
 %{MODINSTDIR}/mod_erlang_event.so*
 
+%files event-format-cdr
+%{MODINSTDIR}/mod_format_cdr.so*
+
 %files event-multicast
 %{MODINSTDIR}/mod_event_multicast.so*
 
@@ -2197,6 +2260,9 @@ fi
 
 %files event-json-cdr
 %{MODINSTDIR}/mod_json_cdr.so*
+
+%files event-radius-cdr
+%{MODINSTDIR}/mod_radius_cdr.so*
 
 %if %{build_mod_rayo}
 %files event-rayo 
@@ -2397,6 +2463,9 @@ fi
 #
 ######################################################################################################################
 %changelog
+* Thu Jun 04 2015 - s.safarov@gmail.com
+- Build dependences declared
+- mod_rad_auth, mod_radius_cdr, mod_format_cdr modules declared
 * Tue Nov 04 2014 - crienzo@grasshopper.com
 - add mod_graylog2 and mod_mongo
 * Thu Sep 11 2014 - krice@freeswitch.org
