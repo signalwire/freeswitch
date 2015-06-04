@@ -559,6 +559,7 @@ struct rtmp_private {
 
 	//video
 	int has_video;
+	char *video_max_bandwidth_out;
 	switch_codec_t video_read_codec;
 	switch_codec_t video_write_codec;
 	rtp2rtmp_helper_t video_write_helper;

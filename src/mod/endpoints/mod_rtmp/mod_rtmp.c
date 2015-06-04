@@ -139,6 +139,8 @@ switch_status_t rtmp_tech_init(rtmp_private_t *tech_pvt, rtmp_session_t *rsessio
 	tech_pvt->audio_codec = 0xB2; //rtmp_audio_codec(1, 16, 0 /* speex is always 8000  */, RTMP_AUDIO_SPEEX);
 
 	if (tech_pvt->has_video) {
+		switch_codec_settings_t codec_settings = {{ 0 }};
+
 		/* Initialize video read & write codecs */
 		if (switch_core_codec_init(&tech_pvt->video_read_codec, /* name */ "H264", /* modname */ NULL,
 			/* fmtp */ NULL,  /* rate */ 90000, /* ms */ 0, /* channels */ 1,
@@ -149,10 +151,16 @@ switch_status_t rtmp_tech_init(rtmp_private_t *tech_pvt, rtmp_session_t *rsessio
 			return SWITCH_STATUS_FALSE;
 		}
 
+		if (!zstr(tech_pvt->video_max_bandwidth_out)) {
+			codec_settings.video.bandwidth = switch_parse_bandwidth_string(tech_pvt->video_max_bandwidth_out);
+		} else {
+			codec_settings.video.bandwidth = switch_parse_bandwidth_string("1mb");
+		}
+
 		if (switch_core_codec_init(&tech_pvt->video_write_codec, /* name */ "H264", /* modname */ NULL,
 			/* fmtp */ NULL,  /* rate */ 90000, /* ms */ 0, /* channels */ 1,
 			/* flags */ SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
-			/* codec settings */ NULL, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
+			/* codec settings */ &codec_settings, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't initialize write codec\n");
 
 			return SWITCH_STATUS_FALSE;
@@ -1102,12 +1110,18 @@ switch_call_cause_t rtmp_session_create_call(rtmp_session_t *rsession, switch_co
 	switch_core_session_add_stream(*newsession, NULL);
 
 	if (event) {
-		const char *want_video = switch_event_get_header(event, "want_video");
+		const char *want_video = switch_event_get_header(event, "wantVideo");
+		const char *bandwidth = switch_event_get_header(event, "incomingBandwidth");
 
 		if (want_video && switch_true(want_video)) {
 			tech_pvt->has_video = 1;
 			switch_channel_set_variable(channel, "video_possible", "true");
 		}
+
+		if (!zstr(bandwidth)) {
+			tech_pvt->video_max_bandwidth_out = switch_core_strdup(pool, bandwidth);
+		}
+
 	}
 
 	if (rtmp_tech_init(tech_pvt, rsession, *newsession) != SWITCH_STATUS_SUCCESS) {
