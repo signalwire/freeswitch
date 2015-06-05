@@ -822,6 +822,7 @@ SWITCH_DECLARE(uint32_t) switch_img_txt_handle_render(switch_img_txt_handle_t *h
 	FT_Face face;
 	uint32_t width = 0;
 	int this_x = 0, last_x = 0, space = 0;
+	uint32_t ret;
 
 	if (zstr(text)) return 0;
 
@@ -920,9 +921,11 @@ SWITCH_DECLARE(uint32_t) switch_img_txt_handle_render(switch_img_txt_handle_t *h
 		pen.y += slot->advance.y >> 6;
 	}
 
+	ret = width + slot->bitmap.width * 3;
+
 	FT_Done_Face(face);
 
-	return width + slot->bitmap.width * 3;
+	return ret;
 #else
 	return 0;
 #endif
