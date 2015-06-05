@@ -4847,6 +4847,8 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 	mh->up = 1;
 	switch_mutex_lock(mh->cond_mutex);
 
+	switch_core_media_check_dtls(session, SWITCH_MEDIA_TYPE_VIDEO);
+
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Video thread started. Echo is %s\n", 
 					  switch_channel_get_name(session->channel), switch_channel_test_flag(channel, CF_VIDEO_ECHO) ? "on" : "off");
 	switch_core_session_request_video_refresh(session);
@@ -8585,11 +8587,11 @@ static int check_engine(switch_rtp_engine_t *engine)
 	return 1;
 }
 
-SWITCH_DECLARE(switch_bool_t) switch_core_media_check_dtls(switch_core_session_t *session)
+SWITCH_DECLARE(switch_bool_t) switch_core_media_check_dtls(switch_core_session_t *session, switch_media_type_t type)
 {
 	switch_media_handle_t *smh;
-	switch_rtp_engine_t *a_engine, *v_engine;
-	int audio_checking = 0, video_checking = 0;
+	switch_rtp_engine_t *engine;
+	int checking = 0;
 
 	switch_assert(session);
 
@@ -8605,15 +8607,13 @@ SWITCH_DECLARE(switch_bool_t) switch_core_media_check_dtls(switch_core_session_t
 		return SWITCH_TRUE;
 	}
 	
-	a_engine = &smh->engines[SWITCH_MEDIA_TYPE_AUDIO];
-	v_engine = &smh->engines[SWITCH_MEDIA_TYPE_VIDEO];
+	engine = &smh->engines[type];
 
 	do {
-		if (a_engine->rtp_session) audio_checking = check_engine(a_engine);
-		if (v_engine->rtp_session) check_engine(v_engine);
-	} while (switch_channel_ready(session->channel) && (audio_checking || video_checking));
-
-	if (!audio_checking && !video_checking) {
+		if (engine->rtp_session) checking = check_engine(engine);
+	} while (switch_channel_ready(session->channel) && checking);
+	
+	if (!checking) {
 		return SWITCH_TRUE;
 	}
 	
