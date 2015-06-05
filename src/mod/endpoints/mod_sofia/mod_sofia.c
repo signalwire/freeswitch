@@ -243,7 +243,7 @@ char *generate_pai_str(private_object_t *tech_pvt)
 
 	header = (tech_pvt->cid_type == CID_TYPE_RPID && !switch_stristr("aastra", ua)) ? "Remote-Party-ID" : "P-Asserted-Identity";
 
-	if (!zstr(callee_name) && !zstr(callee_number)) {
+	if (!zstr(callee_name) && strcmp(callee_name, "_undef_") && !zstr(callee_number)) {
 		check_decode(callee_name, tech_pvt->session);
 
 		if (switch_stristr("update_display", tech_pvt->x_freeswitch_support_remote)) {
@@ -1664,7 +1664,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			number = msg->string_array_arg[1];
 			call_info = switch_channel_get_variable(channel, "presence_call_info_full");
 
-			if (!zstr(name)) {
+			if (!zstr(name) && strcmp(name, "_undef_")) {
 				char message[256] = "";
 				const char *ua = switch_channel_get_variable(tech_pvt->channel, "sip_user_agent");
 				switch_event_t *event;
