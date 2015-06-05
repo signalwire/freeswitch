@@ -111,7 +111,7 @@ typedef int stfu_filehandle_t;
 #endif
 
 
-#define STFU_PRE __FILE__, __FUNCTION__, __LINE__
+#define STFU_PRE __FILE__, __SWITCH_FUNC__, __LINE__
 #define STFU_LOG_LEVEL_DEBUG 7
 #define STFU_LOG_LEVEL_INFO 6
 #define STFU_LOG_LEVEL_NOTICE 5
