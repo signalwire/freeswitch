@@ -2237,6 +2237,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 					snprintf(header, sizeof(header), "Source%u-Lost", i);
 					snprintf(value, sizeof(value), "%u", rtcp_frame.reports[i].lost);
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header, value);
+					snprintf(header, sizeof(header), "Source%u-Loss-Avg", i);
+					snprintf(value, sizeof(value), "%u", rtcp_frame.reports[i].loss_avg);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header, value);
 					snprintf(header, sizeof(header), "Source%u-Highest-Sequence-Number-Received", i);
 					snprintf(value, sizeof(value), "%u", rtcp_frame.reports[i].highest_sequence_number_received);
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header, value);

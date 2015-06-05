@@ -74,7 +74,8 @@ struct opus_context {
 	OpusDecoder *decoder_object;
 	uint32_t enc_frame_size;
 	uint32_t dec_frame_size;
-	uint32_t counter_plc_fec;
+	uint32_t old_plpct;
+	opus_codec_settings_t codec_settings;
 };
 
 struct {
@@ -246,6 +247,7 @@ static switch_status_t switch_opus_init(switch_codec_t *codec, switch_codec_flag
 	memset(&codec_fmtp, '\0', sizeof(struct switch_codec_fmtp));
 	codec_fmtp.private_info = &opus_codec_settings;
 	switch_opus_fmtp_parse(codec->fmtp_in, &codec_fmtp);
+	context->codec_settings = opus_codec_settings;
 
 	/* Verify if the local or remote configuration are lowering maxaveragebitrate and/or maxplaybackrate */
 	if ( opus_prefs.maxaveragebitrate && (opus_prefs.maxaveragebitrate < opus_codec_settings.maxaveragebitrate || !opus_codec_settings.maxaveragebitrate) ) {
@@ -346,7 +348,6 @@ static switch_status_t switch_opus_init(switch_codec_t *codec, switch_codec_flag
             
 			return SWITCH_STATUS_GENERR;
 		}
-		context->counter_plc_fec = 0;
 	}
     
 	codec->private_info = context;
@@ -360,7 +361,6 @@ static switch_status_t switch_opus_destroy(switch_codec_t *codec)
     
 	if (context) {
 		if (context->decoder_object) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "tried PLC or FEC %d times \n", context->counter_plc_fec);
 			opus_decoder_destroy(context->decoder_object);
 			context->decoder_object = NULL;
 		}
@@ -409,13 +409,10 @@ static switch_status_t switch_opus_decode(switch_codec_t *codec,
 										  unsigned int *flag)
 {
 	struct opus_context *context = codec->private_info;
-	switch_core_session_t *session = codec->session;
-	stfu_instance_t *jb = NULL;
-	stfu_frame_t next_frame;
 	int samples = 0;
-    uint32_t frame_size;
+	int fec = 0, plc = 0;
+	int32_t frame_size;
 	uint32_t frame_samples;
-	uint32_t found_frame;
 
 	if (!context) {
 		return SWITCH_STATUS_FALSE;
@@ -423,41 +420,24 @@ static switch_status_t switch_opus_decode(switch_codec_t *codec,
 
 	frame_samples = *decoded_data_len / 2 / codec->implementation->number_of_channels;
 	frame_size = frame_samples - (frame_samples % (codec->implementation->actual_samples_per_second / 400));
-	
-	if (*flag & SFF_PLC) {
-		if (session) {
-			jb = switch_core_session_get_jb(session, SWITCH_MEDIA_TYPE_AUDIO);
-		}
-
-		if (jb && codec->cur_frame) {
-
-			found_frame = stfu_n_copy_next_frame(jb, (uint32_t)codec->cur_frame->timestamp, codec->cur_frame->seq, 1, &next_frame);
-
-			if (found_frame) {
-				samples = opus_decode(context->decoder_object, next_frame.data, next_frame.dlen, decoded_data, frame_size, 1); 
-
-				if (samples < 0 ) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Decoder Error (FEC): %s!\n", opus_strerror(samples));
-				} else {
-					context->counter_plc_fec++;
-					*flag &= ~SFF_PLC;
-					*decoded_data_len = samples * 2 * codec->implementation->number_of_channels;
-					return SWITCH_STATUS_SUCCESS;
-				}
-			}
-		}
-	}
-
-	/* opus_decode() does PLC if there's no FEC in the packet*/
-	samples = opus_decode(context->decoder_object, (*flag & SFF_PLC) ? NULL : encoded_data, encoded_data_len, decoded_data, frame_size, 0);
 
 	if (*flag & SFF_PLC) {
-		context->counter_plc_fec++;
+		plc = 1;
+		encoded_data = NULL;
+		opus_decoder_ctl(context->decoder_object, OPUS_GET_LAST_PACKET_DURATION(&frame_size));
+
+		if (context->codec_settings.useinbandfec) {
+			fec = 1;
+		}
+
 		*flag &= ~SFF_PLC;
 	}
+
+	samples = opus_decode(context->decoder_object, encoded_data, encoded_data_len, decoded_data, frame_size, fec);
  
 	if (samples < 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Decoder Error: %s fs:%u plc:%d!\n", opus_strerror(samples), frame_size, !!(*flag & SFF_PLC));
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Decoder Error: %s fs:%u plc:%s!\n",
+						  opus_strerror(samples), frame_size, plc ? "true" : "false");
 		return SWITCH_STATUS_GENERR;
 	}
 	
@@ -509,6 +489,46 @@ static switch_status_t opus_load_config(switch_bool_t reload)
     
     return status;
 }
+
+static switch_status_t switch_opus_control(switch_codec_t *codec,
+										   switch_codec_control_command_t cmd,
+										   switch_codec_control_type_t ctype,
+										   void *cmd_data,
+										   switch_codec_control_type_t *rtype,
+										   void **ret_data)
+{
+	struct opus_context *context = codec->private_info;
+
+	switch(cmd) {
+	case SCC_AUDIO_PACKET_LOSS:
+		{
+			uint32_t plpct = *((uint32_t *) cmd_data);
+			uint32_t calc;
+
+			if (plpct < 0) {
+				plpct = 0;
+			}
+
+			if (plpct > 100) {
+				plpct = 100;
+			}
+
+			calc = plpct % 10;
+			plpct = plpct - calc + ( calc ? 10 : 0);
+
+			if (plpct != context->old_plpct) {
+				opus_encoder_ctl(context->encoder_object, OPUS_SET_PACKET_LOSS_PERC(plpct));
+			}
+			context->old_plpct = plpct;
+		}
+		break;
+	default:
+		break;
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_opus_load)
 {
@@ -569,6 +589,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_opus_load)
 											 switch_opus_encode,	/* function to encode raw data into encoded data */
 											 switch_opus_decode,	/* function to decode encoded data into raw data */
 											 switch_opus_destroy);	/* deinitalize a codec handle using this implementation */
+
+		codec_interface->implementations->codec_control = switch_opus_control;
 		
 		settings.stereo = 1;
 		if (x < 2) {
@@ -590,6 +612,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_opus_load)
 											 switch_opus_encode,	/* function to encode raw data into encoded data */
 											 switch_opus_decode,	/* function to decode encoded data into raw data */
 											 switch_opus_destroy);	/* deinitalize a codec handle using this implementation */
+		codec_interface->implementations->codec_control = switch_opus_control;
 		}
 		bytes *= 2;
 		samples *= 2;
@@ -658,6 +681,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_opus_load)
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
 }
+
+
+
 
 /* For Emacs:
  * Local Variables:

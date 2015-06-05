@@ -269,6 +269,13 @@ static switch_status_t rtc_receive_event(switch_core_session_t *session, switch_
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static stfu_instance_t *rtc_get_jb(switch_core_session_t *session, switch_media_type_t type)
+{
+	private_object_t *tech_pvt = (private_object_t *) switch_core_session_get_private(session);
+
+	return switch_core_media_get_jb(tech_pvt->session, type);
+}
+
 switch_io_routines_t rtc_io_routines = {
 	/*.outgoing_channel */ rtc_outgoing_channel,
 	/*.read_frame */ rtc_read_frame,
@@ -281,7 +288,7 @@ switch_io_routines_t rtc_io_routines = {
 	/*.read_video_frame */ rtc_read_video_frame,
 	/*.write_video_frame */ rtc_write_video_frame,
 	/*.state_run*/ NULL,
-	/*.get_jb*/ NULL
+	/*.get_jb*/ rtc_get_jb
 };
 
 switch_state_handler_table_t rtc_event_handlers = {

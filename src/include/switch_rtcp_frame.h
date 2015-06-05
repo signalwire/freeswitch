@@ -50,6 +50,7 @@ struct switch_rtcp_report_block_frame {
 	uint32_t jitter; /* An estimate of the statistical variance of the RTP data packet interarrival time, measured in timestamp units and expressed as an unsigned integer. */
 	uint32_t lsr; /* The middle 32 bits out of 64 in the NTP timestamp */
 	uint32_t dlsr; /* The delay, expressed in units of 1/65536 seconds, between receiving the last SR packet from source SSRC_n and sending this reception report block */
+	uint32_t loss_avg;
 };
 
 /*! \brief An abstraction of a rtcp frame */

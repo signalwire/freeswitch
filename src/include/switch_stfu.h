@@ -185,7 +185,7 @@ stfu_status_t _stfu_n_resize(stfu_instance_t *i, uint32_t qlen, int line);
 #define stfu_n_resize(_i, _ql) _stfu_n_resize(_i, _ql, __LINE__)
 stfu_status_t stfu_n_add_data(stfu_instance_t *i, uint32_t ts, uint16_t seq, uint32_t pt, void *data, size_t datalen, uint32_t timer_ts, int last);
 stfu_frame_t *stfu_n_read_a_frame(stfu_instance_t *i);
-SWITCH_DECLARE(int32_t) stfu_n_copy_next_frame(stfu_instance_t *jb, uint32_t timestamp, uint16_t seq, uint16_t distance, stfu_frame_t *next_frame);
+SWITCH_DECLARE(int32_t) stfu_n_peek_frame(stfu_instance_t *jb, uint32_t timestamp, uint16_t seq, uint16_t distance, stfu_frame_t **rframe);
 void _stfu_n_reset(stfu_instance_t *i, const char *file, const char *func, int line);
 #define stfu_n_reset(_i) _stfu_n_reset(_i, STFU_PRE)
 stfu_status_t stfu_n_sync(stfu_instance_t *i, uint32_t packets);

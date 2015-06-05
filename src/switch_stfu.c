@@ -976,38 +976,23 @@ stfu_frame_t *stfu_n_read_a_frame(stfu_instance_t *i)
     return rframe;
 }
 
-SWITCH_DECLARE(int32_t) stfu_n_copy_next_frame(stfu_instance_t *jb, uint32_t timestamp, uint16_t seq, uint16_t distance, stfu_frame_t *next_frame)
+SWITCH_DECLARE(int32_t) stfu_n_peek_frame(stfu_instance_t *jb, uint32_t timestamp, uint16_t seq, uint16_t distance, stfu_frame_t **rframe)
 {
-	uint32_t i = 0, j = 0;
-#ifdef WIN32
-#pragma warning (disable:4204)
-#endif
-	stfu_queue_t *queues[] = { jb->out_queue, jb->in_queue, jb->old_queue};
-#ifdef WIN32
-#pragma warning (default:4204)
-#endif
-	stfu_queue_t *queue = NULL;
+	uint32_t i = 0, qi = 0;
 	stfu_frame_t *frame = NULL;
+	uint16_t want_seq = seq + distance;
+	stfu_queue_t *queues[2] = {jb->out_queue, jb->in_queue};
 
-	uint32_t target_ts = 0;
+	switch_assert(rframe);
 
-#ifdef WIN32
-	UNREFERENCED_PARAMETER(seq);
-#endif
-	if (!next_frame) return 0;
+	for (qi = 0; qi < 2; qi++) {
+		stfu_queue_t *queue = queues[qi];
 
-	target_ts = timestamp + (distance - 1) * jb->samples_per_packet;
+		for(i = 0; i < queue->array_len; i++) {
+			frame = &queue->array[i];
 
-	for (i = 0; i < sizeof(queues)/sizeof(queues[0]); i++) {
-		queue = queues[i];
-
-		if (!queue) continue;
-
-		for(j = 0; j < queue->array_size; j++) {
-			frame = &queue->array[j];
-			/* FIXME: ts rollover happened? bad luck */
-			if (frame->ts > target_ts) {
-				memcpy(next_frame, frame, sizeof(stfu_frame_t));
+			if (frame->seq == want_seq) {
+				*rframe = frame;
 				return 1;
 			}
 		}

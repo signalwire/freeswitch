@@ -304,6 +304,7 @@ struct switch_rtp {
 	switch_sockaddr_t *local_addr, *rtcp_local_addr;
 	rtp_msg_t send_msg;
 	rtcp_msg_t rtcp_send_msg;
+	switch_rtcp_frame_t rtcp_frame;
 
 	uint8_t fir_seq;
 	uint16_t fir_count;
@@ -5581,7 +5582,7 @@ static void handle_nack(switch_rtp_t *rtp_session, uint32_t nack)
 static switch_status_t process_rtcp_report(switch_rtp_t *rtp_session, rtcp_msg_t *msg, switch_size_t bytes)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
-
+	int i;
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG3,
 					  "RTCP packet bytes %" SWITCH_SIZE_T_FMT " type %d pad %d\n", 
@@ -5658,10 +5659,46 @@ static switch_status_t process_rtcp_report(switch_rtp_t *rtp_session, rtcp_msg_t
 								  ntohl(sr->sender_info.ts),
 								  ntohl(sr->sender_info.pc),
 								  ntohl(sr->sender_info.oc));
+
+
+				rtp_session->rtcp_frame.ssrc = ntohl(sr->ssrc);
+				rtp_session->rtcp_frame.packet_type = (uint16_t)rtp_session->rtcp_recv_msg_p->header.type;
+				rtp_session->rtcp_frame.ntp_msw = ntohl(sr->sender_info.ntp_msw);
+				rtp_session->rtcp_frame.ntp_lsw = ntohl(sr->sender_info.ntp_lsw);
+				rtp_session->rtcp_frame.timestamp = ntohl(sr->sender_info.ts);
+				rtp_session->rtcp_frame.packet_count =  ntohl(sr->sender_info.pc);
+				rtp_session->rtcp_frame.octect_count = ntohl(sr->sender_info.oc);
+
+				for (i = 0; i < (int)msg->header.count && i < MAX_REPORT_BLOCKS ; i++) {
+					struct switch_rtcp_report_block *report = (struct switch_rtcp_report_block *) (msg->body + (sizeof(struct switch_rtcp_sr_head) + (i * sizeof(struct switch_rtcp_report_block))));
+					uint32_t old_avg = rtp_session->rtcp_frame.reports[i].loss_avg;
+
+					if (!rtp_session->rtcp_frame.reports[i].loss_avg) {
+						rtp_session->rtcp_frame.reports[i].loss_avg = (uint8_t)report->fraction;
+					} else {
+						rtp_session->rtcp_frame.reports[i].loss_avg = (uint32_t)(((float)rtp_session->rtcp_frame.reports[i].loss_avg * .7) +
+																				 ((float)(uint8_t)report->fraction * .3));
+					}
+
+					if (!rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] && rtp_session->rtcp_frame.reports[i].loss_avg != old_avg) {
+						switch_core_media_codec_control(rtp_session->session, SWITCH_MEDIA_TYPE_AUDIO, SWITCH_IO_WRITE, SCC_AUDIO_PACKET_LOSS, SCCT_INT, (void *)&rtp_session->rtcp_frame.reports[i].loss_avg, NULL, NULL);
+					}
+
+					rtp_session->rtcp_frame.reports[i].ssrc = ntohl(report->ssrc);
+					rtp_session->rtcp_frame.reports[i].fraction = (uint8_t)report->fraction;
+					rtp_session->rtcp_frame.reports[i].lost = ntohl(report->lost);
+					rtp_session->rtcp_frame.reports[i].highest_sequence_number_received = ntohl(report->highest_sequence_number_received);
+					rtp_session->rtcp_frame.reports[i].jitter = ntohl(report->jitter);
+					rtp_session->rtcp_frame.reports[i].lsr = ntohl(report->lsr);
+					rtp_session->rtcp_frame.reports[i].dlsr = ntohl(report->dlsr);
+				}
+				rtp_session->rtcp_frame.report_count = (uint16_t)i;
+
 			} else { /* Receiver report */
 				struct switch_rtcp_receiver_report* rr = (struct switch_rtcp_receiver_report*)msg->body;
 				report_block = &rr->report_block;
 				packet_ssrc = rr->ssrc;
+				memset(&rtp_session->rtcp_frame, 0, sizeof(rtp_session->rtcp_frame));
 			}
 
 			/* Currently in passthru mode RTT will not be accurate, some work as to be done (something like mapping the NTP timestamp with a local one) to have RTT from both legs */
@@ -6722,39 +6759,16 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_read(switch_rtp_t *rtp_session, void 
 SWITCH_DECLARE(switch_status_t) switch_rtcp_zerocopy_read_frame(switch_rtp_t *rtp_session, switch_rtcp_frame_t *frame)
 {
 
-
-
 	if (!rtp_session->flags[SWITCH_RTP_FLAG_ENABLE_RTCP]) {
 		return SWITCH_STATUS_FALSE;
 	}
 
 	/* A fresh frame has been found! */
 	if (rtp_session->rtcp_fresh_frame) {
-		struct switch_rtcp_sender_report* sr = (struct switch_rtcp_sender_report*)rtp_session->rtcp_recv_msg_p->body;
-		int i = 0;
-
 		/* turn the flag off! */
 		rtp_session->rtcp_fresh_frame = 0;
 
-                frame->ssrc = ntohl(sr->ssrc);
-                frame->packet_type = (uint16_t)rtp_session->rtcp_recv_msg_p->header.type;
-                frame->ntp_msw = ntohl(sr->sender_info.ntp_msw);
-                frame->ntp_lsw = ntohl(sr->sender_info.ntp_lsw);
-                frame->timestamp = ntohl(sr->sender_info.ts);
-                frame->packet_count =  ntohl(sr->sender_info.pc);
-                frame->octect_count = ntohl(sr->sender_info.oc);
-
-		for (i = 0; i < (int)rtp_session->rtcp_recv_msg_p->header.count && i < MAX_REPORT_BLOCKS ; i++) {
-			struct switch_rtcp_report_block* report = (struct switch_rtcp_report_block*) (rtp_session->rtcp_recv_msg_p->body + (sizeof(struct switch_rtcp_sr_head) + (i * sizeof(struct switch_rtcp_report_block))));
-			frame->reports[i].ssrc = ntohl(report->ssrc);
-			frame->reports[i].fraction = (uint8_t)report->fraction;
-			frame->reports[i].lost = ntohl(report->lost);
-			frame->reports[i].highest_sequence_number_received = ntohl(report->highest_sequence_number_received);
-			frame->reports[i].jitter = ntohl(report->jitter);
-			frame->reports[i].lsr = ntohl(report->lsr);
-			frame->reports[i].dlsr = ntohl(report->dlsr);
-		}
-		frame->report_count = (uint16_t)i;
+		*frame = rtp_session->rtcp_frame;
 
 		return SWITCH_STATUS_SUCCESS;
 	}
