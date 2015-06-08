@@ -6562,8 +6562,7 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 				/* Write the audio into the input buffer */
 				switch_mutex_lock(member->audio_in_mutex);
 				if (switch_buffer_inuse(member->audio_buffer) > flush_len) {
-					switch_buffer_zero(member->audio_buffer);
-					switch_channel_audio_sync(channel);
+					switch_buffer_toss(member->audio_buffer, tmp_frame.datalen);
 				}
 				ok = switch_buffer_write(member->audio_buffer, tmp_frame.data, tmp_frame.datalen);
 				switch_mutex_unlock(member->audio_in_mutex);
