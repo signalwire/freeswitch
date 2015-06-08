@@ -1915,6 +1915,38 @@ static int on_ring(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_event 
 	ftdm_set_string(caller_data->dnis.digits, (char *)pevent->ring.callednum);
 	ftdm_set_string(caller_data->rdnis.digits, (char *)pevent->ring.redirectingnum);
 
+	if (pevent->ring.callingpres == PRES_ALLOWED_USER_NUMBER_NOT_SCREENED) {
+		caller_data->pres = FTDM_PRES_ALLOWED;
+		caller_data->screen = FTDM_SCREENING_NOT_SCREENED;
+	} else if (pevent->ring.callingpres == PRES_ALLOWED_USER_NUMBER_PASSED_SCREEN) {
+		caller_data->pres = FTDM_PRES_ALLOWED;
+		caller_data->screen = FTDM_SCREENING_VERIFIED_PASSED;
+	} else if (pevent->ring.callingpres == PRES_ALLOWED_USER_NUMBER_FAILED_SCREEN) {
+		caller_data->pres = FTDM_PRES_ALLOWED;
+		caller_data->screen = FTDM_SCREENING_VERIFIED_FAILED;
+	} else if (pevent->ring.callingpres == PRES_ALLOWED_NETWORK_NUMBER) {
+		caller_data->pres = FTDM_PRES_ALLOWED;
+		caller_data->screen = FTDM_SCREENING_NETWORK_PROVIDED;
+	} else if (pevent->ring.callingpres == PRES_PROHIB_USER_NUMBER_NOT_SCREENED) {
+		caller_data->pres = FTDM_PRES_RESTRICTED;
+		caller_data->screen = FTDM_SCREENING_NOT_SCREENED;
+	} else if (pevent->ring.callingpres == PRES_PROHIB_USER_NUMBER_PASSED_SCREEN) {
+		caller_data->pres = FTDM_PRES_RESTRICTED;
+		caller_data->screen = FTDM_SCREENING_VERIFIED_PASSED;
+	} else if (pevent->ring.callingpres == PRES_PROHIB_USER_NUMBER_FAILED_SCREEN) {
+		caller_data->pres = FTDM_PRES_RESTRICTED;
+		caller_data->screen = FTDM_SCREENING_VERIFIED_FAILED;
+	} else if (pevent->ring.callingpres == PRES_PROHIB_NETWORK_NUMBER) {
+		caller_data->pres = FTDM_PRES_RESTRICTED;
+		caller_data->screen = FTDM_SCREENING_NETWORK_PROVIDED;
+	} else if (pevent->ring.callingpres == PRES_NUMBER_NOT_AVAILABLE) {
+		caller_data->pres = FTDM_PRES_NOT_AVAILABLE;
+		caller_data->screen = FTDM_SCREENING_NETWORK_PROVIDED;
+	} else {
+		caller_data->pres = FTDM_PRES_INVALID;
+		caller_data->screen = FTDM_SCREENING_INVALID;
+	}
+
 	if (pevent->ring.callingplanani != -1) {
 		caller_data->ani.type = pevent->ring.callingplanani >> 4;
 		caller_data->ani.plan = pevent->ring.callingplanani & 0x0F;
