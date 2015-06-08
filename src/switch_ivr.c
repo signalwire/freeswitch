@@ -2695,8 +2695,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_generate_json_cdr(switch_core_session
 	cJSON *cdr = cJSON_CreateObject();
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_caller_profile_t *caller_profile;
-	cJSON *variables, *j_main_cp, *j_caller_profile, *j_caller_extension, *j_caller_extension_apps, *j_times,
-		*j_application, *j_callflow, *j_inner_extension, *j_app_log, *j_apps, *j_o, *j_o_profiles, *j_channel_data;
+	cJSON *variables, *j_main_cp, *j_caller_profile, *j_caller_extension, *j_caller_extension_apps, *j_times, *j_application,
+		*j_callflow, *j_profile, *j_inner_extension, *j_app_log, *j_apps, *j_o, *j_o_profiles, *j_channel_data;
 	switch_app_log_t *app_log;
 	char tmp[512], *f;
 
@@ -2750,18 +2750,19 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_generate_json_cdr(switch_core_session
 
 	caller_profile = switch_channel_get_caller_profile(channel);
 
+	j_callflow = cJSON_CreateArray();
+	cJSON_AddItemToObject(cdr, "callflow", j_callflow);
+
 	while (caller_profile) {
 
-		j_callflow = cJSON_CreateObject();
-
-		cJSON_AddItemToObject(cdr, "callflow", j_callflow);
+		j_profile = cJSON_CreateObject();
 
 		if (!zstr(caller_profile->dialplan)) {
-			cJSON_AddItemToObject(j_callflow, "dialplan", cJSON_CreateString((char *)caller_profile->dialplan));
+			cJSON_AddItemToObject(j_profile, "dialplan", cJSON_CreateString((char *)caller_profile->dialplan));
 		}
 
 		if (!zstr(caller_profile->profile_index)) {
-			cJSON_AddItemToObject(j_callflow, "profile_index", cJSON_CreateString((char *)caller_profile->profile_index));
+			cJSON_AddItemToObject(j_profile, "profile_index", cJSON_CreateString((char *)caller_profile->profile_index));
 		}
 
 		if (caller_profile->caller_extension) {
@@ -2770,7 +2771,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_generate_json_cdr(switch_core_session
 			j_caller_extension = cJSON_CreateObject();
 			j_caller_extension_apps = cJSON_CreateArray();
 
-			cJSON_AddItemToObject(j_callflow, "extension", j_caller_extension);
+			cJSON_AddItemToObject(j_profile, "extension", j_caller_extension);
 
 			cJSON_AddItemToObject(j_caller_extension, "name", cJSON_CreateString(caller_profile->caller_extension->extension_name));
 			cJSON_AddItemToObject(j_caller_extension, "number", cJSON_CreateString(caller_profile->caller_extension->extension_number));
@@ -2831,7 +2832,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_generate_json_cdr(switch_core_session
 		}
 
 		j_main_cp = cJSON_CreateObject();
-		cJSON_AddItemToObject(j_callflow, "caller_profile", j_main_cp);
+		cJSON_AddItemToObject(j_profile, "caller_profile", j_main_cp);
 
 		switch_ivr_set_json_profile_data(j_main_cp, caller_profile);
 
@@ -2872,7 +2873,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_generate_json_cdr(switch_core_session
 		if (caller_profile->times) {
 
 			j_times = cJSON_CreateObject();
-			cJSON_AddItemToObject(j_callflow, "times", j_times);
+			cJSON_AddItemToObject(j_profile, "times", j_times);
 
 			switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, caller_profile->times->created);
 			cJSON_AddItemToObject(j_times, "created_time", cJSON_CreateString(tmp));
@@ -2908,7 +2909,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_generate_json_cdr(switch_core_session
 			cJSON_AddItemToObject(j_times, "transfer_time", cJSON_CreateString(tmp));
 
 		}
-
+		cJSON_AddItemToArray(j_callflow, j_profile);
 		caller_profile = caller_profile->next;
 	}
 
