@@ -6249,7 +6249,7 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 
 	switch_channel_audio_sync(channel);
 
-	flush_len = switch_samples_per_packet(member->conference->rate, member->conference->interval) * member->conference->channels * 10;
+	flush_len = switch_samples_per_packet(member->conference->rate, member->conference->interval) * 2 * member->conference->channels (500 / member->conference->interval);
 
 	/* As long as we have a valid read, feed that data into an input buffer where the conference thread will take it 
 	   and mux it with any audio from other channels. */
@@ -6741,7 +6741,7 @@ static void conference_loop_output(conference_member_t *member)
 
 	switch_assert(member->conference != NULL);
 
-	flush_len = switch_samples_per_packet(member->conference->rate, member->conference->interval) * 10 * member->conference->channels;
+	flush_len = switch_samples_per_packet(member->conference->rate, member->conference->interval) * 2 * member->conference->channels (500 / member->conference->interval);
 
 	if (switch_core_timer_init(&timer, member->conference->timer_name, interval, tsamples, NULL) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session), SWITCH_LOG_ERROR, "Timer Setup Failed.  Conference Cannot Start\n");
