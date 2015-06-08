@@ -69,7 +69,7 @@ codecs/mod_ilbc
 codecs/mod_isac
 codecs/mod_mp4v
 codecs/mod_opus
-#codecs/mod_sangoma_codec
+codecs/mod_sangoma_codec
 codecs/mod_silk
 codecs/mod_siren
 codecs/mod_theora
