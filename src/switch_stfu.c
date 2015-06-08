@@ -770,7 +770,7 @@ static int stfu_n_find_any_frame(stfu_instance_t *in, stfu_queue_t *queue, stfu_
 }
 
 
-static int stfu_n_find_frame(stfu_instance_t *in, stfu_queue_t *queue, uint32_t min_ts, uint32_t max_ts, stfu_frame_t **r_frame)
+static int stfu_n_find_frame(stfu_instance_t *in, stfu_queue_t *queue, uint32_t ts, stfu_frame_t **r_frame)
 {
     uint32_t i = 0;
     stfu_frame_t *frame = NULL;
@@ -782,7 +782,7 @@ static int stfu_n_find_frame(stfu_instance_t *in, stfu_queue_t *queue, uint32_t 
     for(i = 0; i < queue->array_len; i++) {
         frame = &queue->array[i];
         
-        if (frame->ts == max_ts || (frame->ts > min_ts && frame->ts < max_ts)) {
+        if (frame->ts == ts) {
             if (r_frame) {
                 *r_frame = frame;
                 queue->last_index = i;
@@ -856,19 +856,14 @@ stfu_frame_t *stfu_n_read_a_frame(stfu_instance_t *i)
         i->cur_seq++;
     }
     
-    found = stfu_n_find_frame(i, i->out_queue, i->last_wr_ts, i->cur_ts, &rframe);
+    found = stfu_n_find_frame(i, i->out_queue, i->cur_ts, &rframe);
 
     if (!found) {
-        found = stfu_n_find_frame(i, i->in_queue, i->last_wr_ts, i->cur_ts, &rframe);
+        found = stfu_n_find_frame(i, i->in_queue, i->cur_ts, &rframe);
 
         if (!found) {
-            found = stfu_n_find_frame(i, i->old_queue, i->last_wr_ts, i->cur_ts, &rframe);
+            found = stfu_n_find_frame(i, i->old_queue, i->cur_ts, &rframe);
         }
-    }
-
-    if (found) {
-        i->cur_ts = rframe->ts;
-        i->cur_seq = rframe->seq;
     }
 
     if (i->sync_out) {
