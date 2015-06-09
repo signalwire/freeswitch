@@ -774,7 +774,7 @@ static switch_status_t vlc_file_open(switch_file_handle_t *handle, const char *p
 	if (switch_test_flag(handle, SWITCH_FILE_FLAG_VIDEO) && switch_test_flag(handle, SWITCH_FILE_FLAG_WRITE)) {
 		if ((ext = strrchr(path, '.')) && !strcasecmp(ext, ".mp4")) {
 			realpath = path;
-			path = switch_core_sprintf(context->pool, "#transcode{vcodec=h264,acodec=aac}:std{access=file,mux=mp4,dst=%s}", path);
+			path = switch_core_sprintf(context->pool, "#transcode{vcodec=h264,acodec=mpga}:std{access=file,mux=mp4,dst=%s}", path);
 		} else if (handle->stream_name && (!strcasecmp(handle->stream_name, "rtmp") || !strcasecmp(handle->stream_name, "youtube"))) {
 
 			handle->mm.samplerate = 44100;
