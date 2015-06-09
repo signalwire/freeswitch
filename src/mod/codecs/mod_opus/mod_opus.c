@@ -505,10 +505,6 @@ static switch_status_t switch_opus_control(switch_codec_t *codec,
 			uint32_t plpct = *((uint32_t *) cmd_data);
 			uint32_t calc;
 
-			if (plpct < 0) {
-				plpct = 0;
-			}
-
 			if (plpct > 100) {
 				plpct = 100;
 			}
