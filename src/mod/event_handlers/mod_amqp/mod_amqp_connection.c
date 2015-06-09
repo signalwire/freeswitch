@@ -234,6 +234,7 @@ switch_status_t mod_amqp_connection_create(mod_amqp_connection_t **conn, switch_
 void mod_amqp_connection_destroy(mod_amqp_connection_t **conn)
 {
 	if (conn && *conn) {
+		mod_amqp_connection_close(*conn);
 		*conn = NULL;
 	}
 }
