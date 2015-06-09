@@ -101,8 +101,8 @@ void sofia_glue_attach_private(switch_core_session_t *session, sofia_profile_t *
 		}
 	}
 
-	if (!zstr(profile->rtpip[profile->rtpip_next6])) {
-		tech_pvt->mparams.rtpip6 = switch_core_session_strdup(session, profile->rtpip[profile->rtpip_next6++]);
+	if (!zstr(profile->rtpip6[profile->rtpip_next6])) {
+		tech_pvt->mparams.rtpip6 = switch_core_session_strdup(session, profile->rtpip6[profile->rtpip_next6++]);
 
 		if (zstr(tech_pvt->mparams.rtpip)) {
 			tech_pvt->mparams.rtpip = tech_pvt->mparams.rtpip6;
