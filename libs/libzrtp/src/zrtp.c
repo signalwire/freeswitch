@@ -800,6 +800,7 @@ void zrtp_profile_defaults(zrtp_profile_t* profile, zrtp_global_t* zrtp)
 	profile->cipher_types[0]	= ZRTP_CIPHER_AES256;
 	profile->cipher_types[1]	= ZRTP_CIPHER_AES128;
 	profile->auth_tag_lens[0]	= ZRTP_ATL_HS32;
+	profile->auth_tag_lens[1]   = ZRTP_ATL_HS80;
 	profile->hash_schemes[0]	= ZRTP_HASH_SHA256;
 
 	if (zrtp && (ZRTP_LICENSE_MODE_PASSIVE == zrtp->lic_mode)) {
@@ -855,7 +856,12 @@ zrtp_status_t zrtp_profile_check(const zrtp_profile_t* profile, zrtp_global_t* z
         ZRTP_LOG(1, (_ZTU_,"WARNING! can't find '32      ' in profile.\n"));
         return zrtp_status_fail;
     }
-    
+
+	if (0 > zrtp_profile_find(profile, ZRTP_CC_ATL, ZRTP_ATL_HS80)) {
+        ZRTP_LOG(1, (_ZTU_,"WARNING! can't find '80      ' in profile.\n"));
+        return zrtp_status_fail;
+    }
+
     /*
      * Check that each component in the profile is in the global set of components.
      */
