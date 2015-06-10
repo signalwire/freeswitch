@@ -450,7 +450,7 @@ static switch_status_t switch_h264_encode(switch_codec_t *codec, switch_frame_t 
 	}
 
 	if (avctx->width != width || avctx->height != height) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "picture size changed from %dx%d to %dx%d, reinitializing encoder\n",
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "picture size changed from %dx%d to %dx%d, reinitializing encoder\n",
 						  avctx->width, avctx->height, width, height);
 		if (open_encoder(context, width, height) != SWITCH_STATUS_SUCCESS) {
 			goto error;
@@ -521,7 +521,7 @@ static switch_status_t switch_h264_encode(switch_codec_t *codec, switch_frame_t 
 	//avframe->pts = context->pts++;
 
 	if (context->need_key_frame) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Send AV KEYFRAME\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Send AV KEYFRAME\n");
 		 av_opt_set_int(context->encoder_ctx->priv_data, "intra-refresh", 1, 0);
 		 avframe->pict_type = AV_PICTURE_TYPE_I;
 	}
