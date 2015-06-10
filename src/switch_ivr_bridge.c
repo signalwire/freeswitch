@@ -732,27 +732,30 @@ static switch_status_t audio_bridge_on_exchange_media(switch_core_session_t *ses
 
 	state = switch_channel_get_state(channel);
 
-	if (state < CS_HANGUP && switch_true(switch_channel_get_variable(channel, SWITCH_PARK_AFTER_BRIDGE_VARIABLE))) {
-		switch_ivr_park_session(session);
-	} else if (state < CS_HANGUP && (var = switch_channel_get_variable(channel, SWITCH_TRANSFER_AFTER_BRIDGE_VARIABLE))) {
-		transfer_after_bridge(session, var);
-	} else {
-		if (!switch_channel_test_flag(channel, CF_TRANSFER) && !switch_channel_test_flag(channel, CF_REDIRECT) &&
-			!switch_channel_test_flag(channel, CF_XFER_ZOMBIE) && bd && !bd->clean_exit
-			&& state != CS_PARK && state != CS_ROUTING && state == CS_EXCHANGE_MEDIA && !switch_channel_test_flag(channel, CF_INNER_BRIDGE)) {
-			if (switch_channel_test_flag(channel, CF_INTERCEPTED)) {
-				switch_channel_clear_flag(channel, CF_INTERCEPT);
-				switch_channel_clear_flag(channel, CF_INTERCEPTED);
-				return SWITCH_STATUS_FALSE;
+	if (!switch_channel_test_flag(channel, CF_TRANSFER) && !switch_channel_test_flag(channel, CF_REDIRECT) &&
+		!switch_channel_test_flag(channel, CF_XFER_ZOMBIE) && bd && !bd->clean_exit && state != CS_PARK && state != CS_ROUTING && 
+		state == CS_EXCHANGE_MEDIA && !switch_channel_test_flag(channel, CF_INNER_BRIDGE)) {
+
+		if (state < CS_HANGUP && switch_true(switch_channel_get_variable(channel, SWITCH_PARK_AFTER_BRIDGE_VARIABLE))) {
+			switch_ivr_park_session(session);
+			return SWITCH_STATUS_FALSE;
+		} else if (state < CS_HANGUP && (var = switch_channel_get_variable(channel, SWITCH_TRANSFER_AFTER_BRIDGE_VARIABLE))) {
+			transfer_after_bridge(session, var);
+			return SWITCH_STATUS_FALSE;
+		}
+
+		if (switch_channel_test_flag(channel, CF_INTERCEPTED)) {
+			switch_channel_clear_flag(channel, CF_INTERCEPT);
+			switch_channel_clear_flag(channel, CF_INTERCEPTED);
+			return SWITCH_STATUS_FALSE;
+		} else {
+			if (switch_channel_test_flag(channel, CF_INTERCEPT)) {
+				switch_channel_hangup(channel, SWITCH_CAUSE_PICKED_OFF);
 			} else {
-				if (switch_channel_test_flag(channel, CF_INTERCEPT)) {
-					switch_channel_hangup(channel, SWITCH_CAUSE_PICKED_OFF);
+				if (!switch_channel_test_flag(channel, CF_ANSWERED)) {
+					switch_channel_hangup(channel, SWITCH_CAUSE_ORIGINATOR_CANCEL);
 				} else {
-					if (!switch_channel_test_flag(channel, CF_ANSWERED)) {
-						switch_channel_hangup(channel, SWITCH_CAUSE_ORIGINATOR_CANCEL);
-					} else {
-						switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
-					}
+					switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
 				}
 			}
 		}
