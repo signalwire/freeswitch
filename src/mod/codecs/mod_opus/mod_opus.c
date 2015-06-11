@@ -83,10 +83,19 @@ struct {
     int complexity;
     int maxaveragebitrate;
     int maxplaybackrate;
+	int sprop_maxcapturerate;
 	int plpct;
+	int asymmetric_samplerates;
     switch_mutex_t *mutex;
 } opus_prefs;
 
+static switch_bool_t switch_opus_acceptable_rate(int rate)
+{
+	if ( rate != 8000 && rate != 12000 && rate != 16000 && rate != 24000 && rate != 48000) {
+		return SWITCH_FALSE;
+	} 
+	return SWITCH_TRUE;
+}
 
 static switch_status_t switch_opus_fmtp_parse(const char *fmtp, switch_codec_fmtp_t *codec_fmtp)
 {
@@ -166,9 +175,14 @@ static switch_status_t switch_opus_fmtp_parse(const char *fmtp, switch_codec_fmt
                         
 						if (!strcasecmp(data, "maxplaybackrate")) {
 							codec_settings->maxplaybackrate = atoi(arg);
-							if ( codec_settings->maxplaybackrate != 8000 && codec_settings->maxplaybackrate != 12000 && codec_settings->maxplaybackrate != 16000
-									&& codec_settings->maxplaybackrate != 24000 && codec_settings->maxplaybackrate != 48000) {
+							if (!switch_opus_acceptable_rate(codec_settings->maxplaybackrate)) {
 								codec_settings->maxplaybackrate = 0; /* value not supported */
+							}
+						}
+						if (!strcasecmp(data, "sprop-maxcapturerate")) {
+							codec_settings->sprop_maxcapturerate = atoi(arg);
+							if (!switch_opus_acceptable_rate(codec_settings->sprop_maxcapturerate)) {
+								codec_settings->sprop_maxcapturerate = 0; /* value not supported */
 							}
 						}
 					}
@@ -200,7 +214,11 @@ static char *gen_fmtp(opus_codec_settings_t *settings, switch_memory_pool_t *poo
 	if (settings->maxplaybackrate) {
 		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "maxplaybackrate=%d; ", settings->maxplaybackrate);
 	}
-    
+
+	if (settings->sprop_maxcapturerate) {
+		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "sprop-maxcapturerate=%d; ", settings->sprop_maxcapturerate);
+	}
+
 	if (settings->ptime) {
 		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "ptime=%d; ", settings->ptime);
 	}
@@ -236,6 +254,7 @@ static switch_status_t switch_opus_init(switch_codec_t *codec, switch_codec_flag
 	int decoding = (flags & SWITCH_CODEC_FLAG_DECODE);
 	switch_codec_fmtp_t codec_fmtp;
 	opus_codec_settings_t opus_codec_settings = { 0 };
+	opus_codec_settings_t opus_codec_settings_remote = { 0 };
     
 	if (!(encoding || decoding) || (!(context = switch_core_alloc(codec->memory_pool, sizeof(*context))))) {
 		return SWITCH_STATUS_FALSE;
@@ -250,11 +269,20 @@ static switch_status_t switch_opus_init(switch_codec_t *codec, switch_codec_flag
 	context->codec_settings = opus_codec_settings;
 
 	/* Verify if the local or remote configuration are lowering maxaveragebitrate and/or maxplaybackrate */
-	if ( opus_prefs.maxaveragebitrate && (opus_prefs.maxaveragebitrate < opus_codec_settings.maxaveragebitrate || !opus_codec_settings.maxaveragebitrate) ) {
+	if ( opus_prefs.maxaveragebitrate && (opus_prefs.maxaveragebitrate < opus_codec_settings_remote.maxaveragebitrate || !opus_codec_settings_remote.maxaveragebitrate) ) {
 		opus_codec_settings.maxaveragebitrate = opus_prefs.maxaveragebitrate;
+	} else {
+		opus_codec_settings.maxaveragebitrate = opus_codec_settings_remote.maxaveragebitrate;
 	}
-	if ( opus_prefs.maxplaybackrate && (opus_prefs.maxplaybackrate < opus_codec_settings.maxplaybackrate || !opus_codec_settings.maxplaybackrate) ) {
+	if ( opus_prefs.maxplaybackrate && (opus_prefs.maxplaybackrate < opus_codec_settings_remote.maxplaybackrate || !opus_codec_settings_remote.maxplaybackrate) ) {
 		opus_codec_settings.maxplaybackrate = opus_prefs.maxplaybackrate;
+	} else {
+		opus_codec_settings.maxplaybackrate=opus_codec_settings_remote.maxplaybackrate;
+	}
+	if ( opus_prefs.sprop_maxcapturerate && (opus_prefs.sprop_maxcapturerate < opus_codec_settings_remote.sprop_maxcapturerate || !opus_codec_settings_remote.sprop_maxcapturerate) ) {
+		opus_codec_settings.sprop_maxcapturerate = opus_prefs.sprop_maxcapturerate;
+	} else {
+		opus_codec_settings.sprop_maxcapturerate = opus_codec_settings_remote.sprop_maxcapturerate;
 	}
 
 	codec->fmtp_out = gen_fmtp(&opus_codec_settings, codec->memory_pool);
@@ -266,9 +294,28 @@ static switch_status_t switch_opus_init(switch_codec_t *codec, switch_codec_flag
 		int complexity = opus_prefs.complexity;
 		int plpct = opus_prefs.plpct;
 		int err;
-		int samplerate = opus_codec_settings.samplerate ? opus_codec_settings.samplerate : codec->implementation->actual_samples_per_second;
-        
-		context->encoder_object = opus_encoder_create(samplerate,
+		int enc_samplerate = opus_codec_settings.samplerate ? opus_codec_settings.samplerate : codec->implementation->actual_samples_per_second;
+     
+		if (opus_prefs.asymmetric_samplerates) {
+		 /* If an entity receives an fmtp: maxplaybackrate=R1,sprop-maxcapturerate=R2 and sends an fmtp with:
+		 * maxplaybackrate=R3,sprop-maxcapturerate=R4
+		 * then it should start the encoder at sample rate: min(R1, R4) and the decoder at sample rate: min(R3, R2)*/
+		if (codec_fmtp.private_info) {
+				opus_codec_settings_t *codec_settings = codec_fmtp.private_info;
+				if (opus_codec_settings.sprop_maxcapturerate || codec_settings->maxplaybackrate) {
+					enc_samplerate = opus_codec_settings.sprop_maxcapturerate; /*R4*/
+					if (codec_settings->maxplaybackrate < enc_samplerate && codec_settings->maxplaybackrate) {
+						enc_samplerate = codec_settings->maxplaybackrate; /*R1*/
+						context->enc_frame_size = enc_samplerate * (codec->implementation->microseconds_per_packet / 1000) / 1000;
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Opus encoder will be created at sample rate %d hz\n",enc_samplerate);
+					} else {
+						enc_samplerate = codec->implementation->actual_samples_per_second;
+					}
+				}
+			}
+		}
+
+		context->encoder_object = opus_encoder_create(enc_samplerate,
 													  codec->implementation->number_of_channels,
 													  codec->implementation->number_of_channels == 1 ? OPUS_APPLICATION_VOIP : OPUS_APPLICATION_AUDIO, &err);
         
@@ -332,9 +379,25 @@ static switch_status_t switch_opus_init(switch_codec_t *codec, switch_codec_flag
 	
 	if (decoding) {
 		int err;
-        
-		context->decoder_object = opus_decoder_create(codec->implementation->actual_samples_per_second,
-													  codec->implementation->number_of_channels, &err);
+		int dec_samplerate = codec->implementation->actual_samples_per_second;
+		
+		if (opus_prefs.asymmetric_samplerates) {
+			if (codec_fmtp.private_info) {
+				opus_codec_settings_t *codec_settings = codec_fmtp.private_info;
+				if (opus_codec_settings.maxplaybackrate || codec_settings->sprop_maxcapturerate ) {       
+					dec_samplerate = opus_codec_settings.maxplaybackrate; /* R3 */
+					if (dec_samplerate > codec_settings->sprop_maxcapturerate && codec_settings->sprop_maxcapturerate){
+						dec_samplerate = codec_settings->sprop_maxcapturerate; /* R2 */
+						context->dec_frame_size = dec_samplerate*(codec->implementation->microseconds_per_packet / 1000) / 1000;
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Opus decoder will be created at sample rate %d hz\n",dec_samplerate);
+					} else {
+						dec_samplerate = codec->implementation->actual_samples_per_second;
+					}
+				}
+			}
+		}
+
+		context->decoder_object = opus_decoder_create(dec_samplerate, codec->implementation->number_of_channels, &err);
         
 		switch_set_flag(codec, SWITCH_CODEC_FLAG_HAS_PLC);
 		
@@ -468,6 +531,8 @@ static switch_status_t opus_load_config(switch_bool_t reload)
 				opus_prefs.complexity = atoi(val);
 			} else if (!strcasecmp(key, "packet-loss-percent")) {
 				opus_prefs.plpct = atoi(val);
+			} else if (!strcasecmp(key, "asymmetric-sample-rates")) {
+				opus_prefs.asymmetric_samplerates = atoi(val);
 			} else if (!strcasecmp(key, "maxaveragebitrate")) {
 				opus_prefs.maxaveragebitrate = atoi(val);
 				if ( opus_prefs.maxaveragebitrate < 6000 || opus_prefs.maxaveragebitrate > 510000 ) {
@@ -477,6 +542,11 @@ static switch_status_t opus_load_config(switch_bool_t reload)
 				opus_prefs.maxplaybackrate = atoi(val);
 				if ( opus_prefs.maxplaybackrate != 8000 && opus_prefs.maxplaybackrate != 12000 && opus_prefs.maxplaybackrate != 16000
 							&& opus_prefs.maxplaybackrate != 24000 && opus_prefs.maxplaybackrate != 48000) {
+					opus_prefs.maxplaybackrate = 0; /* value not supported */
+				}
+			} else if (!strcasecmp(key, "sprop-maxcapturerate")) {
+				opus_prefs.sprop_maxcapturerate = atoi(val);
+				if (!switch_opus_acceptable_rate(opus_prefs.sprop_maxcapturerate)) {
 					opus_prefs.maxplaybackrate = 0; /* value not supported */
 				}
 			}
@@ -558,6 +628,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_opus_load)
     if (opus_prefs.maxplaybackrate) {
         settings.maxplaybackrate = opus_prefs.maxplaybackrate;
     }
+	if (opus_prefs.sprop_maxcapturerate) {
+		settings.sprop_maxcapturerate = opus_prefs.sprop_maxcapturerate;
+	}
 
 	for (x = 0; x < 3; x++) {
         
