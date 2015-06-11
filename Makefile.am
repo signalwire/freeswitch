@@ -540,7 +540,7 @@ install-exec-local:
 
 install-data-local:
 	@echo Installing $(NAME)
-	@for x in $(modulesdir) $(runtimedir) $(dbdir) $(logfiledir) $(logfiledir)/xml_cdr $(bindir) $(scriptdir) $(recordingsdir) $(grammardir); do \
+	@for x in $(modulesdir) $(runtimedir) $(dbdir) $(logfiledir) $(logfiledir)/xml_cdr $(bindir) $(scriptdir) $(recordingsdir) $(grammardir) $(certsdir) $(cachedir) $(soundsdir) $(storagedir); do \
 		$(mkinstalldirs) $(DESTDIR)$$x ; \
 	 done
 	test -d $(DESTDIR)$(sysconfdir) || $(MAKE) samples-conf
