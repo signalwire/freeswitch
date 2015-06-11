@@ -468,7 +468,7 @@ static int sockopt_callback(void *clientp, curl_socket_t curlfd,
 
 	context->curlfd = curlfd;
 	
-	return CURL_SOCKOPT_OK;
+	return 0;
 }
 
 #define MY_BUF_LEN 1024 * 32
