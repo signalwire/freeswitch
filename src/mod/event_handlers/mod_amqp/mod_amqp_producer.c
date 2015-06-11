@@ -252,10 +252,10 @@ switch_status_t mod_amqp_producer_create(char *name, switch_xml_t cfg)
 				if ( interval && interval > 0 ) {
 					profile->enable_fallback_format_fields = 1;
 				}
-			} else if (!strncmp(var, "exchange", 8)) {
-				exchange = switch_core_strdup(profile->pool, val);
 			} else if (!strncmp(var, "exchange_type", 13)) {
 				exchange_type = switch_core_strdup(profile->pool, val);
+			} else if (!strncmp(var, "exchange", 8)) {
+				exchange = switch_core_strdup(profile->pool, val);
 			} else if (!strncmp(var, "format_fields", 13)) {
 				int size = 0;
 				if ((size = mod_amqp_count_chars(val, ',')) >= MAX_ROUTING_KEY_FORMAT_FIELDS) {
