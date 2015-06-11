@@ -223,6 +223,9 @@ struct switch_media_bug {
 	switch_frame_t *read_demux_frame;
 	switch_queue_t *read_video_queue;
 	switch_queue_t *write_video_queue;
+	switch_queue_t *spy_video_queue[2];
+	switch_image_t *spy_img[2];
+	switch_vid_spy_fmt_t spy_fmt;
 	switch_thread_t *video_bug_thread;
 	struct switch_media_bug *next;
 };

@@ -523,7 +523,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 			/* mux or demux to match */
 			if (session->read_impl.number_of_channels != read_frame->codec->implementation->number_of_channels) {
 				uint32_t rlen = session->raw_read_frame.datalen / 2 / read_frame->codec->implementation->number_of_channels;
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "%s MUX READ\n", switch_channel_get_name(session->channel));
+				//switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "%s MUX READ\n", switch_channel_get_name(session->channel));
 				switch_mux_channels((int16_t *) session->raw_read_frame.data, rlen, 
 									read_frame->codec->implementation->number_of_channels, session->read_impl.number_of_channels);
 				session->raw_write_frame.datalen = rlen * 2 * session->read_impl.number_of_channels;

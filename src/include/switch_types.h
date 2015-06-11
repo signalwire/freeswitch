@@ -1742,7 +1742,9 @@ typedef enum {
 	SMBF_WRITE_VIDEO_PING = (1 << 18),
 	SMBF_READ_VIDEO_STREAM = (1 << 19),
 	SMBF_WRITE_VIDEO_STREAM = (1 << 20),
-	SMBF_VIDEO_PATCH = (1 << 21)
+	SMBF_VIDEO_PATCH = (1 << 21),
+	SMBF_SPY_VIDEO_STREAM = (1 << 22),
+	SMBF_SPY_VIDEO_STREAM_BLEG = (1 << 23)
 } switch_media_bug_flag_enum_t;
 typedef uint32_t switch_media_bug_flag_t;
 
@@ -2557,6 +2559,11 @@ typedef enum {
 	SVR_FLUSH = (1 << 1)
 } switch_video_read_flag_t;
 
+typedef enum {
+	SPY_LOWER_RIGHT_SMALL,
+	SPY_LOWER_RIGHT_LARGE,
+	SPY_DUAL_CROP
+} switch_vid_spy_fmt_t;
 
 SWITCH_END_EXTERN_C
 #endif

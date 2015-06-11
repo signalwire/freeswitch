@@ -253,6 +253,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_exec_all(switch_core_sessi
 															   const char *function, switch_media_bug_exec_cb_t cb, void *user_data);
 SWITCH_DECLARE(uint32_t) switch_core_media_bug_patch_video(switch_core_session_t *orig_session, switch_frame_t *frame);
 SWITCH_DECLARE(uint32_t) switch_core_media_bug_count(switch_core_session_t *orig_session, const char *function);
+SWITCH_DECLARE(void) switch_media_bug_set_spy_fmt(switch_media_bug_t *bug, switch_vid_spy_fmt_t spy_fmt);
+SWITCH_DECLARE(switch_status_t) switch_core_media_bug_push_spy_frame(switch_media_bug_t *bug, switch_frame_t *frame, switch_rw_t rw);
+SWITCH_DECLARE(switch_status_t) switch_core_media_bug_patch_spy_frame(switch_media_bug_t *bug, switch_image_t *img, switch_rw_t rw);
+SWITCH_DECLARE(switch_vid_spy_fmt_t) switch_media_bug_parse_spy_fmt(const char *name);
+
 /*!
   \brief Add a media bug to the session
   \param session the session to add the bug to
