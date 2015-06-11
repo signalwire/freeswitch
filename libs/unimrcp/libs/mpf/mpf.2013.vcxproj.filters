@@ -1,0 +1,236 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="codecs">
+      <UniqueIdentifier>{3d69fc35-a195-4376-9508-ef77d7b27e71}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="codecs\g711">
+      <UniqueIdentifier>{81e2eace-c57a-4135-92cd-cc3575dfb088}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="src">
+      <UniqueIdentifier>{6fc3533a-b688-477d-914d-e0ffb15aa9a9}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="codecs\g711\g711.c">
+      <Filter>codecs\g711</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mpf_activity_detector.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mpf_audio_file_stream.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mpf_bridge.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mpf_buffer.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mpf_codec_descriptor.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mpf_codec_g711.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mpf_codec_linear.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mpf_codec_manager.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mpf_context.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mpf_decoder.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mpf_dtmf_detector.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mpf_dtmf_generator.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mpf_encoder.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mpf_engine.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mpf_file_termination_factory.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mpf_frame_buffer.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mpf_jitter_buffer.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mpf_mixer.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mpf_multiplier.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mpf_named_event.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mpf_resampler.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mpf_rtp_attribs.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mpf_rtp_stream.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mpf_rtp_termination_factory.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mpf_scheduler.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mpf_stream.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mpf_termination.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mpf_termination_factory.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mpf_engine_factory.c">
+      <Filter>src</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="codecs\g711\g711.h">
+      <Filter>codecs\g711</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mpf.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mpf_activity_detector.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mpf_audio_file_descriptor.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mpf_audio_file_stream.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mpf_bridge.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mpf_buffer.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mpf_codec.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mpf_codec_descriptor.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mpf_codec_manager.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mpf_context.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mpf_decoder.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mpf_dtmf_detector.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mpf_dtmf_generator.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mpf_encoder.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mpf_engine.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mpf_file_termination_factory.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mpf_frame.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mpf_frame_buffer.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mpf_jitter_buffer.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mpf_message.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mpf_mixer.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mpf_multiplier.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mpf_named_event.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mpf_object.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mpf_resampler.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mpf_rtcp_packet.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mpf_rtp_attribs.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mpf_rtp_defs.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mpf_rtp_descriptor.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mpf_rtp_header.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mpf_rtp_pt.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mpf_rtp_stat.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mpf_rtp_stream.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mpf_rtp_termination_factory.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mpf_scheduler.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mpf_stream.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mpf_stream_descriptor.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mpf_termination.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mpf_termination_factory.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mpf_types.h">
+      <Filter>include</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

@@ -1,0 +1,182 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Source Files\apps">
+      <UniqueIdentifier>{cf6ed228-8b22-4124-ad73-05c2a9dc3ba9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Header Files\apps">
+      <UniqueIdentifier>{059be3d7-da1e-4270-8f05-a6772ccc5e10}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\apps\app_rand.c">
+      <Filter>Source Files\apps</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\apps\apps.c">
+      <Filter>Source Files\apps</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\apps\asn1pars.c">
+      <Filter>Source Files\apps</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\apps\ca.c">
+      <Filter>Source Files\apps</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\apps\ciphers.c">
+      <Filter>Source Files\apps</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\apps\cms.c">
+      <Filter>Source Files\apps</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\apps\crl.c">
+      <Filter>Source Files\apps</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\apps\crl2p7.c">
+      <Filter>Source Files\apps</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\apps\dgst.c">
+      <Filter>Source Files\apps</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\apps\dh.c">
+      <Filter>Source Files\apps</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\apps\dhparam.c">
+      <Filter>Source Files\apps</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\apps\dsa.c">
+      <Filter>Source Files\apps</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\apps\dsaparam.c">
+      <Filter>Source Files\apps</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\apps\ec.c">
+      <Filter>Source Files\apps</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\apps\ecparam.c">
+      <Filter>Source Files\apps</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\apps\enc.c">
+      <Filter>Source Files\apps</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\apps\engine.c">
+      <Filter>Source Files\apps</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\apps\errstr.c">
+      <Filter>Source Files\apps</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\apps\gendh.c">
+      <Filter>Source Files\apps</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\apps\gendsa.c">
+      <Filter>Source Files\apps</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\apps\genpkey.c">
+      <Filter>Source Files\apps</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\apps\genrsa.c">
+      <Filter>Source Files\apps</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\apps\nseq.c">
+      <Filter>Source Files\apps</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\apps\ocsp.c">
+      <Filter>Source Files\apps</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\apps\openssl.c">
+      <Filter>Source Files\apps</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\apps\passwd.c">
+      <Filter>Source Files\apps</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\apps\pkcs12.c">
+      <Filter>Source Files\apps</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\apps\pkcs7.c">
+      <Filter>Source Files\apps</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\apps\pkcs8.c">
+      <Filter>Source Files\apps</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\apps\pkey.c">
+      <Filter>Source Files\apps</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\apps\pkeyparam.c">
+      <Filter>Source Files\apps</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\apps\pkeyutl.c">
+      <Filter>Source Files\apps</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\apps\prime.c">
+      <Filter>Source Files\apps</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\apps\rand.c">
+      <Filter>Source Files\apps</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\apps\req.c">
+      <Filter>Source Files\apps</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\apps\rsa.c">
+      <Filter>Source Files\apps</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\apps\rsautl.c">
+      <Filter>Source Files\apps</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\apps\s_cb.c">
+      <Filter>Source Files\apps</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\apps\s_client.c">
+      <Filter>Source Files\apps</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\apps\s_server.c">
+      <Filter>Source Files\apps</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\apps\s_socket.c">
+      <Filter>Source Files\apps</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\apps\s_time.c">
+      <Filter>Source Files\apps</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\apps\sess_id.c">
+      <Filter>Source Files\apps</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\apps\smime.c">
+      <Filter>Source Files\apps</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\apps\speed.c">
+      <Filter>Source Files\apps</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\apps\spkac.c">
+      <Filter>Source Files\apps</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\apps\ts.c">
+      <Filter>Source Files\apps</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\apps\verify.c">
+      <Filter>Source Files\apps</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\apps\version.c">
+      <Filter>Source Files\apps</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\apps\winrand.c">
+      <Filter>Source Files\apps</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\apps\x509.c">
+      <Filter>Source Files\apps</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\openssl-$(OpenSSLVersion)\apps\srp.c">
+      <Filter>Source Files\apps</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\openssl-$(OpenSSLVersion)\apps\apps.h">
+      <Filter>Header Files\apps</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

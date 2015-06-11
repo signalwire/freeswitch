@@ -1,0 +1,122 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="mod_v8.cpp" />
+    <ClCompile Include=".\src\jsmain.cpp">
+      <Filter>BaseClasses</Filter>
+    </ClCompile>
+    <ClCompile Include=".\src\jsbase.cpp">
+      <Filter>BaseClasses</Filter>
+    </ClCompile>
+    <ClCompile Include=".\src\fscoredb.cpp">
+      <Filter>FSClasses</Filter>
+    </ClCompile>
+    <ClCompile Include=".\src\fscurl.cpp">
+      <Filter>FSClasses</Filter>
+    </ClCompile>
+    <ClCompile Include=".\src\fsdtmf.cpp">
+      <Filter>FSClasses</Filter>
+    </ClCompile>
+    <ClCompile Include=".\src\fsevent.cpp">
+      <Filter>FSClasses</Filter>
+    </ClCompile>
+    <ClCompile Include="src\fsfile.cpp">
+      <Filter>FSClasses</Filter>
+    </ClCompile>
+    <ClCompile Include=".\src\fsfileio.cpp">
+      <Filter>FSClasses</Filter>
+    </ClCompile>
+    <ClCompile Include=".\src\fsglobal.cpp">
+      <Filter>FSClasses</Filter>
+    </ClCompile>
+    <ClCompile Include=".\src\fsodbc.cpp">
+      <Filter>FSClasses</Filter>
+    </ClCompile>
+    <ClCompile Include=".\src\fspcre.cpp">
+      <Filter>FSClasses</Filter>
+    </ClCompile>
+    <ClCompile Include=".\src\fsrequest.cpp">
+      <Filter>FSClasses</Filter>
+    </ClCompile>
+    <ClCompile Include=".\src\fssession.cpp">
+      <Filter>FSClasses</Filter>
+    </ClCompile>
+    <ClCompile Include=".\src\fssocket.cpp">
+      <Filter>FSClasses</Filter>
+    </ClCompile>
+    <ClCompile Include=".\src\fsteletone.cpp">
+      <Filter>FSClasses</Filter>
+    </ClCompile>
+    <ClCompile Include="src\fsxml.cpp">
+      <Filter>FSClasses</Filter>
+    </ClCompile>
+    <ClCompile Include="src\fseventhandler.cpp">
+      <Filter>FSClasses</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="mod_v8.h" />
+    <ClInclude Include=".\include\javascript.hpp">
+      <Filter>BaseClasses\include</Filter>
+    </ClInclude>
+    <ClInclude Include=".\include\fscoredb.hpp">
+      <Filter>FSClasses\include</Filter>
+    </ClInclude>
+    <ClInclude Include=".\include\fscurl.hpp">
+      <Filter>FSClasses\include</Filter>
+    </ClInclude>
+    <ClInclude Include=".\include\fsdtmf.hpp">
+      <Filter>FSClasses\include</Filter>
+    </ClInclude>
+    <ClInclude Include=".\include\fsevent.hpp">
+      <Filter>FSClasses\include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\fsfile.hpp">
+      <Filter>FSClasses\include</Filter>
+    </ClInclude>
+    <ClInclude Include=".\include\fsfileio.hpp">
+      <Filter>FSClasses\include</Filter>
+    </ClInclude>
+    <ClInclude Include=".\include\fsglobal.hpp">
+      <Filter>FSClasses\include</Filter>
+    </ClInclude>
+    <ClInclude Include=".\include\fsodbc.hpp">
+      <Filter>FSClasses\include</Filter>
+    </ClInclude>
+    <ClInclude Include=".\include\fspcre.hpp">
+      <Filter>FSClasses\include</Filter>
+    </ClInclude>
+    <ClInclude Include=".\include\fsrequest.hpp">
+      <Filter>FSClasses\include</Filter>
+    </ClInclude>
+    <ClInclude Include=".\include\fssession.hpp">
+      <Filter>FSClasses\include</Filter>
+    </ClInclude>
+    <ClInclude Include=".\include\fssocket.hpp">
+      <Filter>FSClasses\include</Filter>
+    </ClInclude>
+    <ClInclude Include=".\include\fsteletone.hpp">
+      <Filter>FSClasses\include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\fsxml.hpp">
+      <Filter>FSClasses\include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\fseventhandler.hpp">
+      <Filter>FSClasses\include</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="BaseClasses">
+      <UniqueIdentifier>{57f55a0b-1790-4632-95e6-19acbe9015d3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="FSClasses">
+      <UniqueIdentifier>{dcda9b2f-890a-4820-84e3-4bbcf8f0b62c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="FSClasses\include">
+      <UniqueIdentifier>{ed9652cf-79bd-4567-9a98-1ed5077d5805}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="BaseClasses\include">
+      <UniqueIdentifier>{3efc073f-f052-4e3d-921c-8d6b6a5a7215}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

@@ -1,0 +1,39 @@
+﻿Build started 7/16/2014 11:19:26 PM.
+     1>Project "C:\dev\freeswitchgit\libs\win32\speex\libspeex.2012.vcxproj" on node 3 (Build target(s)).
+     1>Link:
+         C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"Release_Dynamic\libspeex.dll" /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /DEF:"libspeex.def" /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /PDB:"Release_Dynamic\libspeex.pdb" /OPT:REF /OPT:ICF /LTCG /TLBID:1 /DYNAMICBASE:NO /IMPLIB:"Release_Dynamic\libspeex.lib" /MACHINE:X86 /SAFESEH /DLL Release_Dynamic\bits.obj
+         Release_Dynamic\cb_search.obj
+         Release_Dynamic\exc_10_16_table.obj
+         Release_Dynamic\exc_10_32_table.obj
+         Release_Dynamic\exc_20_32_table.obj
+         Release_Dynamic\exc_5_256_table.obj
+         Release_Dynamic\exc_5_64_table.obj
+         Release_Dynamic\exc_8_128_table.obj
+         Release_Dynamic\filters.obj
+         Release_Dynamic\gain_table.obj
+         Release_Dynamic\gain_table_lbr.obj
+         Release_Dynamic\hexc_10_32_table.obj
+         Release_Dynamic\hexc_table.obj
+         Release_Dynamic\high_lsp_tables.obj
+         Release_Dynamic\lpc.obj
+         Release_Dynamic\lsp.obj
+         Release_Dynamic\lsp_tables_nb.obj
+         Release_Dynamic\ltp.obj
+         Release_Dynamic\modes.obj
+         Release_Dynamic\modes_wb.obj
+         Release_Dynamic\nb_celp.obj
+         Release_Dynamic\quant_lsp.obj
+         Release_Dynamic\sb_celp.obj
+         Release_Dynamic\speex.obj
+         Release_Dynamic\speex_callbacks.obj
+         Release_Dynamic\speex_header.obj
+         Release_Dynamic\stereo.obj
+         Release_Dynamic\vbr.obj
+         Release_Dynamic\vq.obj
+         Release_Dynamic\window.obj
+     1>LINK : fatal error LNK1104: cannot open file 'libspeex.def'
+     1>Done Building Project "C:\dev\freeswitchgit\libs\win32\speex\libspeex.2012.vcxproj" (Build target(s)) -- FAILED.
+
+Build FAILED.
+
+Time Elapsed 00:00:00.61

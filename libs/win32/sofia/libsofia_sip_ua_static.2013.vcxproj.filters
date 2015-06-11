@@ -1,0 +1,1025 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{e2fb9ce3-2e60-4ab8-a3f5-3acc0770c1fb}</UniqueIdentifier>
+      <Extensions>cpp;c;cxx;rc;def;r;odl;idl;hpj;bat</Extensions>
+    </Filter>
+    <Filter Include="Source Files\su">
+      <UniqueIdentifier>{07c4085c-ab49-4d20-b4f4-bcd30b90ce73}</UniqueIdentifier>
+      <Extensions>su*.c</Extensions>
+    </Filter>
+    <Filter Include="Source Files\ipt">
+      <UniqueIdentifier>{f302ae4a-7736-4563-b130-a88f67fb8420}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\url">
+      <UniqueIdentifier>{0bd6f7dc-1416-4eba-a83b-9728b0f5ff09}</UniqueIdentifier>
+      <Extensions>url*.c</Extensions>
+    </Filter>
+    <Filter Include="Source Files\features">
+      <UniqueIdentifier>{7d12ef13-6833-4299-a002-4cfa700aab08}</UniqueIdentifier>
+      <Extensions>features*.c</Extensions>
+    </Filter>
+    <Filter Include="Source Files\bnf">
+      <UniqueIdentifier>{503e3513-dc29-4a8d-968f-eb9b85e37831}</UniqueIdentifier>
+      <Extensions>bnf*.c</Extensions>
+    </Filter>
+    <Filter Include="Source Files\msg">
+      <UniqueIdentifier>{3680f590-87b0-43fc-93d4-2f055947608c}</UniqueIdentifier>
+      <Extensions>msg*.c</Extensions>
+    </Filter>
+    <Filter Include="Source Files\clib replacement">
+      <UniqueIdentifier>{71b15ca9-401c-4587-8b0e-1cbd01761e4c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\sip">
+      <UniqueIdentifier>{777999e7-603f-4e2a-be29-0933e5d56c0d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\http">
+      <UniqueIdentifier>{0b33e411-4f7e-4275-9d87-9d674a0a294f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\nth">
+      <UniqueIdentifier>{3e4054e5-d5cf-498d-afe4-feaee3b0df04}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\sresolv">
+      <UniqueIdentifier>{92d282a8-1180-42cf-baea-3b826d7fc6da}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\nea">
+      <UniqueIdentifier>{5dfb833d-6d12-41e4-9b84-35faae36eac9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\iptsec">
+      <UniqueIdentifier>{ce2f9d87-410e-4558-8fb0-564ae88af551}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\stun">
+      <UniqueIdentifier>{a631bda8-f647-4fe1-92d1-6929887d822c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\nua">
+      <UniqueIdentifier>{e7f1aa28-e4cd-4563-bb81-46e761435d07}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\nta">
+      <UniqueIdentifier>{c608280f-e56c-4f2b-94a8-052eac15f6e5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\tport">
+      <UniqueIdentifier>{00e7d1cc-bb3a-4e76-b6b1-11db89ed6701}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\sdp">
+      <UniqueIdentifier>{6b3531f0-aab2-44d2-8319-185e40c5c739}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\soa">
+      <UniqueIdentifier>{c1b1203d-95fa-41e3-bdea-df2b9915c4b9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{ab318891-9ef3-4e56-baf7-8ce922a73e45}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl</Extensions>
+    </Filter>
+    <Filter Include="Header Files\su headers">
+      <UniqueIdentifier>{af1f4a99-a82d-4e82-b6ce-94a3cf7d1c37}</UniqueIdentifier>
+      <Extensions>su*.h</Extensions>
+    </Filter>
+    <Filter Include="Header Files\win32 headers">
+      <UniqueIdentifier>{861289c7-2dec-4715-b158-2b3e00ab6040}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\ipt headers">
+      <UniqueIdentifier>{ee802dd4-b53b-43d1-bdf2-3d4343d37779}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\url headers">
+      <UniqueIdentifier>{bb636639-0b7f-41ed-a549-438d02a7d3ac}</UniqueIdentifier>
+      <Extensions>url*.h</Extensions>
+    </Filter>
+    <Filter Include="Header Files\features headers">
+      <UniqueIdentifier>{d294ad27-4906-495b-8be4-5fc8aa291f3a}</UniqueIdentifier>
+      <Extensions>features*.h</Extensions>
+    </Filter>
+    <Filter Include="Header Files\bnf headers">
+      <UniqueIdentifier>{566a4c1d-8cbb-4570-a8e8-3d1c6a6e3f71}</UniqueIdentifier>
+      <Extensions>bnf*.h</Extensions>
+    </Filter>
+    <Filter Include="Header Files\msg headers">
+      <UniqueIdentifier>{32c05478-a038-4b7d-bb4b-d33b82ab576d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\sip headers">
+      <UniqueIdentifier>{84dbad62-348f-4e67-a48e-d8d22526b4a8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\http headers">
+      <UniqueIdentifier>{1441bb2b-94f7-4cbe-a4fc-82e7a88af588}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\nth headers">
+      <UniqueIdentifier>{bce41b99-f79a-45ee-9634-d0859695014f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\sresolv headers">
+      <UniqueIdentifier>{ce670254-9dd6-4e3c-99ad-90f78c69d766}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\nea headers">
+      <UniqueIdentifier>{3b978047-99c5-4fd4-99fe-200151c76fd1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\iptsec headers">
+      <UniqueIdentifier>{e9eaad41-1195-4c26-b813-d101ff7bf4f2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\stun headers">
+      <UniqueIdentifier>{9ec1016a-8c36-4a62-bd3f-e226b3a6b479}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\nua headers">
+      <UniqueIdentifier>{4a392d00-3246-42cb-bff9-7b4f7889d8f2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\nta headers">
+      <UniqueIdentifier>{e8343a7f-eed9-4051-85b0-d02fd78c06f1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\tport headers">
+      <UniqueIdentifier>{17f68ee6-6245-4c14-8bda-387799431553}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\sdp headers">
+      <UniqueIdentifier>{b08ddec7-8118-4a9d-8606-c62ffcbafc97}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\soa headers">
+      <UniqueIdentifier>{de42c0cc-17b9-4768-9981-abf8765ec30b}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\su\inet_ntop.c">
+      <Filter>Source Files\su</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\su\inet_pton.c">
+      <Filter>Source Files\su</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\su\smoothsort.c">
+      <Filter>Source Files\su</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\su\string0.c">
+      <Filter>Source Files\su</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\su\su.c">
+      <Filter>Source Files\su</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\su\su_addrinfo.c">
+      <Filter>Source Files\su</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\su\su_alloc.c">
+      <Filter>Source Files\su</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\su\su_alloc_lock.c">
+      <Filter>Source Files\su</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\su\su_base_port.c">
+      <Filter>Source Files\su</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\su\su_bm.c">
+      <Filter>Source Files\su</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\su\su_default_log.c">
+      <Filter>Source Files\su</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\su\su_errno.c">
+      <Filter>Source Files\su</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\su\su_global_log.c">
+      <Filter>Source Files\su</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\su\su_localinfo.c">
+      <Filter>Source Files\su</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\su\su_log.c">
+      <Filter>Source Files\su</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\su\su_md5.c">
+      <Filter>Source Files\su</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\su\su_os_nw.c">
+      <Filter>Source Files\su</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\su\su_port.c">
+      <Filter>Source Files\su</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\su\su_pthread_port.c">
+      <Filter>Source Files\su</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\su\su_root.c">
+      <Filter>Source Files\su</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\su\su_socket_port.c">
+      <Filter>Source Files\su</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\su\su_sprintf.c">
+      <Filter>Source Files\su</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\su\su_strdup.c">
+      <Filter>Source Files\su</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\su\su_string.c">
+      <Filter>Source Files\su</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\su\su_strlst.c">
+      <Filter>Source Files\su</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\su\su_tag.c">
+      <Filter>Source Files\su</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\su\su_tag_io.c">
+      <Filter>Source Files\su</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\su\su_taglist.c">
+      <Filter>Source Files\su</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\su\su_time.c">
+      <Filter>Source Files\su</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\su\su_time0.c">
+      <Filter>Source Files\su</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\su\su_timer.c">
+      <Filter>Source Files\su</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\su\su_uniqueid.c">
+      <Filter>Source Files\su</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\su\su_vector.c">
+      <Filter>Source Files\su</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\su\su_wait.c">
+      <Filter>Source Files\su</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\su\su_win32_port.c">
+      <Filter>Source Files\su</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\ipt\base64.c">
+      <Filter>Source Files\ipt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\ipt\rc4.c">
+      <Filter>Source Files\ipt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\ipt\token64.c">
+      <Filter>Source Files\ipt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\url\url.c">
+      <Filter>Source Files\url</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\url\url_tag.c">
+      <Filter>Source Files\url</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\url\url_tag_ref.c">
+      <Filter>Source Files\url</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\features\features.c">
+      <Filter>Source Files\features</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\bnf\bnf.c">
+      <Filter>Source Files\bnf</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\msg\msg.c">
+      <Filter>Source Files\msg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\msg\msg_auth.c">
+      <Filter>Source Files\msg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\msg\msg_basic.c">
+      <Filter>Source Files\msg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\msg\msg_date.c">
+      <Filter>Source Files\msg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\msg\msg_generic.c">
+      <Filter>Source Files\msg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\msg\msg_header_copy.c">
+      <Filter>Source Files\msg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\msg\msg_header_make.c">
+      <Filter>Source Files\msg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\msg\msg_mclass.c">
+      <Filter>Source Files\msg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\msg\msg_mime.c">
+      <Filter>Source Files\msg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\msg\msg_mime_table.c">
+      <Filter>Source Files\msg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\msg\msg_parser.c">
+      <Filter>Source Files\msg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\msg\msg_parser_util.c">
+      <Filter>Source Files\msg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\msg\msg_tag.c">
+      <Filter>Source Files\msg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\su\memcspn.c">
+      <Filter>Source Files\clib replacement</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\su\memmem.c">
+      <Filter>Source Files\clib replacement</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\su\memspn.c">
+      <Filter>Source Files\clib replacement</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\su\strcasestr.c">
+      <Filter>Source Files\clib replacement</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\su\strtoull.c">
+      <Filter>Source Files\clib replacement</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\sip\sip_basic.c">
+      <Filter>Source Files\sip</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\sip\sip_caller_prefs.c">
+      <Filter>Source Files\sip</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\sip\sip_event.c">
+      <Filter>Source Files\sip</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\sip\sip_extra.c">
+      <Filter>Source Files\sip</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\sip\sip_feature.c">
+      <Filter>Source Files\sip</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\sip\sip_header.c">
+      <Filter>Source Files\sip</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\sip\sip_mime.c">
+      <Filter>Source Files\sip</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\sip\sip_parser.c">
+      <Filter>Source Files\sip</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\sip\sip_parser_table.c">
+      <Filter>Source Files\sip</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\sip\sip_prack.c">
+      <Filter>Source Files\sip</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\sip\sip_pref_util.c">
+      <Filter>Source Files\sip</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\sip\sip_reason.c">
+      <Filter>Source Files\sip</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\sip\sip_refer.c">
+      <Filter>Source Files\sip</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\sip\sip_security.c">
+      <Filter>Source Files\sip</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\sip\sip_session.c">
+      <Filter>Source Files\sip</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\sip\sip_status.c">
+      <Filter>Source Files\sip</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\sip\sip_tag.c">
+      <Filter>Source Files\sip</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\sip\sip_tag_class.c">
+      <Filter>Source Files\sip</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\sip\sip_tag_ref.c">
+      <Filter>Source Files\sip</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\sip\sip_time.c">
+      <Filter>Source Files\sip</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\sip\sip_util.c">
+      <Filter>Source Files\sip</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\http\http_basic.c">
+      <Filter>Source Files\http</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\http\http_extra.c">
+      <Filter>Source Files\http</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\http\http_header.c">
+      <Filter>Source Files\http</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\http\http_parser.c">
+      <Filter>Source Files\http</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\http\http_parser_table.c">
+      <Filter>Source Files\http</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\http\http_status.c">
+      <Filter>Source Files\http</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\http\http_tag.c">
+      <Filter>Source Files\http</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\http\http_tag_class.c">
+      <Filter>Source Files\http</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\http\http_tag_ref.c">
+      <Filter>Source Files\http</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\nth\nth_client.c">
+      <Filter>Source Files\nth</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\nth\nth_server.c">
+      <Filter>Source Files\nth</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\nth\nth_tag.c">
+      <Filter>Source Files\nth</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\nth\nth_tag_ref.c">
+      <Filter>Source Files\nth</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\sresolv\sres.c">
+      <Filter>Source Files\sresolv</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\sresolv\sres_blocking.c">
+      <Filter>Source Files\sresolv</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\sresolv\sres_cache.c">
+      <Filter>Source Files\sresolv</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\sresolv\sres_sip.c">
+      <Filter>Source Files\sresolv</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\sresolv\sresolv.c">
+      <Filter>Source Files\sresolv</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\nea\nea.c">
+      <Filter>Source Files\nea</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\nea\nea_debug.c">
+      <Filter>Source Files\nea</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\nea\nea_event.c">
+      <Filter>Source Files\nea</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\nea\nea_server.c">
+      <Filter>Source Files\nea</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\nea\nea_tag.c">
+      <Filter>Source Files\nea</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\nea\nea_tag_ref.c">
+      <Filter>Source Files\nea</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\iptsec\auth_client.c">
+      <Filter>Source Files\iptsec</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\iptsec\auth_common.c">
+      <Filter>Source Files\iptsec</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\iptsec\auth_digest.c">
+      <Filter>Source Files\iptsec</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\iptsec\auth_module.c">
+      <Filter>Source Files\iptsec</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\iptsec\auth_module_http.c">
+      <Filter>Source Files\iptsec</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\iptsec\auth_module_sip.c">
+      <Filter>Source Files\iptsec</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\iptsec\auth_plugin.c">
+      <Filter>Source Files\iptsec</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\iptsec\auth_plugin_delayed.c">
+      <Filter>Source Files\iptsec</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\iptsec\auth_tag.c">
+      <Filter>Source Files\iptsec</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\iptsec\auth_tag_ref.c">
+      <Filter>Source Files\iptsec</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\iptsec\iptsec_debug.c">
+      <Filter>Source Files\iptsec</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\stun\stun.c">
+      <Filter>Source Files\stun</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\stun\stun_common.c">
+      <Filter>Source Files\stun</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\stun\stun_dns.c">
+      <Filter>Source Files\stun</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\stun\stun_mini.c">
+      <Filter>Source Files\stun</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\stun\stun_tag.c">
+      <Filter>Source Files\stun</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\stun\stun_tag_ref.c">
+      <Filter>Source Files\stun</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\nua\nua.c">
+      <Filter>Source Files\nua</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\nua\nua_client.c">
+      <Filter>Source Files\nua</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\nua\nua_common.c">
+      <Filter>Source Files\nua</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\nua\nua_dialog.c">
+      <Filter>Source Files\nua</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\nua\nua_event_server.c">
+      <Filter>Source Files\nua</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\nua\nua_extension.c">
+      <Filter>Source Files\nua</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\nua\nua_message.c">
+      <Filter>Source Files\nua</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\nua\nua_notifier.c">
+      <Filter>Source Files\nua</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\nua\nua_options.c">
+      <Filter>Source Files\nua</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\nua\nua_params.c">
+      <Filter>Source Files\nua</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\nua\nua_publish.c">
+      <Filter>Source Files\nua</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\nua\nua_register.c">
+      <Filter>Source Files\nua</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\nua\nua_registrar.c">
+      <Filter>Source Files\nua</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\nua\nua_server.c">
+      <Filter>Source Files\nua</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\nua\nua_session.c">
+      <Filter>Source Files\nua</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\nua\nua_stack.c">
+      <Filter>Source Files\nua</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\nua\nua_subnotref.c">
+      <Filter>Source Files\nua</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\nua\nua_tag.c">
+      <Filter>Source Files\nua</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\nua\nua_tag_ref.c">
+      <Filter>Source Files\nua</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\nua\outbound.c">
+      <Filter>Source Files\nua</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\nta\nta.c">
+      <Filter>Source Files\nta</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\nta\nta_check.c">
+      <Filter>Source Files\nta</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\nta\nta_tag.c">
+      <Filter>Source Files\nta</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\nta\nta_tag_ref.c">
+      <Filter>Source Files\nta</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\nta\sl_read_payload.c">
+      <Filter>Source Files\nta</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\nta\sl_utils_log.c">
+      <Filter>Source Files\nta</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\nta\sl_utils_print.c">
+      <Filter>Source Files\nta</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\tport\tport.c">
+      <Filter>Source Files\tport</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\tport\tport_logging.c">
+      <Filter>Source Files\tport</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\tport\tport_stub_sigcomp.c">
+      <Filter>Source Files\tport</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\tport\tport_stub_stun.c">
+      <Filter>Source Files\tport</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\tport\tport_tag.c">
+      <Filter>Source Files\tport</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\tport\tport_tag_ref.c">
+      <Filter>Source Files\tport</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\tport\tport_tls.c">
+      <Filter>Source Files\tport</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\tport\tport_type_connect.c">
+      <Filter>Source Files\tport</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\tport\tport_type_tcp.c">
+      <Filter>Source Files\tport</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\tport\tport_type_ws.c">
+      <Filter>Source Files\tport</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\tport\ws.c">
+      <Filter>Source Files\tport</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\tport\tport_type_tls.c">
+      <Filter>Source Files\tport</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\tport\tport_type_udp.c">
+      <Filter>Source Files\tport</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\sdp\sdp.c">
+      <Filter>Source Files\sdp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\sdp\sdp_parse.c">
+      <Filter>Source Files\sdp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\sdp\sdp_print.c">
+      <Filter>Source Files\sdp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\sdp\sdp_tag.c">
+      <Filter>Source Files\sdp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\sdp\sdp_tag_ref.c">
+      <Filter>Source Files\sdp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\soa\soa.c">
+      <Filter>Source Files\soa</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\soa\soa_static.c">
+      <Filter>Source Files\soa</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\soa\soa_tag.c">
+      <Filter>Source Files\soa</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\soa\soa_tag_ref.c">
+      <Filter>Source Files\soa</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\stun\stun_internal.h">
+      <Filter>Source Files\stun</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\nua\nua_client.h">
+      <Filter>Source Files\nua</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\nua\nua_dialog.h">
+      <Filter>Source Files\nua</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\nua\nua_params.h">
+      <Filter>Source Files\nua</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\nua\nua_server.h">
+      <Filter>Source Files\nua</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\nua\nua_stack.h">
+      <Filter>Source Files\nua</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\tport\tport_internal.h">
+      <Filter>Source Files\tport</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\soa\sofia-sip\soa_session.h">
+      <Filter>Source Files\soa</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\htable.h">
+      <Filter>Header Files\su headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\htable2.h">
+      <Filter>Header Files\su headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\rbtree.h">
+      <Filter>Header Files\su headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\string0.h">
+      <Filter>Header Files\su headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\su.h">
+      <Filter>Header Files\su headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\su_addrinfo.h">
+      <Filter>Header Files\su headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\su_alloc.h">
+      <Filter>Header Files\su headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\su_alloc_stat.h">
+      <Filter>Header Files\su headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\su_bm.h">
+      <Filter>Header Files\su headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\su_config.h">
+      <Filter>Header Files\su headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\su_debug.h">
+      <Filter>Header Files\su headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\su_errno.h">
+      <Filter>Header Files\su headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\su_localinfo.h">
+      <Filter>Header Files\su headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\su_log.h">
+      <Filter>Header Files\su headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\su_md5.h">
+      <Filter>Header Files\su headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\su\su_module_debug.h">
+      <Filter>Header Files\su headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\su_os_nw.h">
+      <Filter>Header Files\su headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\su\su_port.h">
+      <Filter>Header Files\su headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\su_source.h">
+      <Filter>Header Files\su headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\su_string.h">
+      <Filter>Header Files\su headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\su_strlst.h">
+      <Filter>Header Files\su headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\su_tag.h">
+      <Filter>Header Files\su headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\su_tag_class.h">
+      <Filter>Header Files\su headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\su_tag_inline.h">
+      <Filter>Header Files\su headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\su_tag_io.h">
+      <Filter>Header Files\su headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\su_tagarg.h">
+      <Filter>Header Files\su headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\su_time.h">
+      <Filter>Header Files\su headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\su_types.h">
+      <Filter>Header Files\su headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\su_uniqueid.h">
+      <Filter>Header Files\su headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\su_vector.h">
+      <Filter>Header Files\su headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\su_wait.h">
+      <Filter>Header Files\su headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\tstdef.h">
+      <Filter>Header Files\su headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\win32\config.h">
+      <Filter>Header Files\win32 headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\win32\sofia-sip\su_configure.h">
+      <Filter>Header Files\win32 headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\win32\unistd.h">
+      <Filter>Header Files\win32 headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\ipt\sofia-sip\base64.h">
+      <Filter>Header Files\ipt headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\ipt\sofia-sip\rc4.h">
+      <Filter>Header Files\ipt headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\ipt\sofia-sip\token64.h">
+      <Filter>Header Files\ipt headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\url\sofia-sip\url.h">
+      <Filter>Header Files\url headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\url\sofia-sip\url_tag.h">
+      <Filter>Header Files\url headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\url\sofia-sip\url_tag_class.h">
+      <Filter>Header Files\url headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\features\sofia-sip\sofia_features.h">
+      <Filter>Header Files\features headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\bnf\sofia-sip\bnf.h">
+      <Filter>Header Files\bnf headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\bnf\sofia-sip\hostdomain.h">
+      <Filter>Header Files\bnf headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\msg\sofia-sip\msg.h">
+      <Filter>Header Files\msg headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\msg\sofia-sip\msg_addr.h">
+      <Filter>Header Files\msg headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\msg\msg_bnf.h">
+      <Filter>Header Files\msg headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\msg\sofia-sip\msg_buffer.h">
+      <Filter>Header Files\msg headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\msg\sofia-sip\msg_date.h">
+      <Filter>Header Files\msg headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\msg\sofia-sip\msg_header.h">
+      <Filter>Header Files\msg headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\msg\msg_internal.h">
+      <Filter>Header Files\msg headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\msg\sofia-sip\msg_mclass.h">
+      <Filter>Header Files\msg headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\msg\sofia-sip\msg_mclass_hash.h">
+      <Filter>Header Files\msg headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\msg\sofia-sip\msg_mime.h">
+      <Filter>Header Files\msg headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\msg\sofia-sip\msg_mime_protos.h">
+      <Filter>Header Files\msg headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\msg\sofia-sip\msg_parser.h">
+      <Filter>Header Files\msg headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\msg\sofia-sip\msg_protos.h">
+      <Filter>Header Files\msg headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\msg\sofia-sip\msg_tag_class.h">
+      <Filter>Header Files\msg headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\msg\sofia-sip\msg_types.h">
+      <Filter>Header Files\msg headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\sip\sofia-sip\sip.h">
+      <Filter>Header Files\sip headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\sip\sip_extensions.h">
+      <Filter>Header Files\sip headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\sip\sofia-sip\sip_hclasses.h">
+      <Filter>Header Files\sip headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\sip\sofia-sip\sip_header.h">
+      <Filter>Header Files\sip headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\sip\sip_internal.h">
+      <Filter>Header Files\sip headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\sip\sofia-sip\sip_parser.h">
+      <Filter>Header Files\sip headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\sip\sofia-sip\sip_protos.h">
+      <Filter>Header Files\sip headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\sip\sofia-sip\sip_status.h">
+      <Filter>Header Files\sip headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\sip\sofia-sip\sip_tag.h">
+      <Filter>Header Files\sip headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\sip\sofia-sip\sip_tag_class.h">
+      <Filter>Header Files\sip headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\sip\sofia-sip\sip_util.h">
+      <Filter>Header Files\sip headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\http\sofia-sip\http.h">
+      <Filter>Header Files\http headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\http\sofia-sip\http_hclasses.h">
+      <Filter>Header Files\http headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\http\sofia-sip\http_header.h">
+      <Filter>Header Files\http headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\http\sofia-sip\http_parser.h">
+      <Filter>Header Files\http headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\http\sofia-sip\http_protos.h">
+      <Filter>Header Files\http headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\http\sofia-sip\http_status.h">
+      <Filter>Header Files\http headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\http\sofia-sip\http_tag.h">
+      <Filter>Header Files\http headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\http\sofia-sip\http_tag_class.h">
+      <Filter>Header Files\http headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\nth\sofia-sip\nth.h">
+      <Filter>Header Files\nth headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\nth\sofia-sip\nth_tag.h">
+      <Filter>Header Files\nth headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\sresolv\sofia-resolv\sres.h">
+      <Filter>Header Files\sresolv headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\sresolv\sofia-resolv\sres_async.h">
+      <Filter>Header Files\sresolv headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\sresolv\sofia-resolv\sres_cache.h">
+      <Filter>Header Files\sresolv headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\sresolv\sofia-resolv\sres_record.h">
+      <Filter>Header Files\sresolv headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\sresolv\sofia-sip\sres_sip.h">
+      <Filter>Header Files\sresolv headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\sresolv\sofia-sip\sresolv.h">
+      <Filter>Header Files\sresolv headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\nea\sofia-sip\nea.h">
+      <Filter>Header Files\nea headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\nea\nea_debug.h">
+      <Filter>Header Files\nea headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\nea\sofia-sip\nea_tag.h">
+      <Filter>Header Files\nea headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\iptsec\sofia-sip\auth_client.h">
+      <Filter>Header Files\iptsec headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\iptsec\sofia-sip\auth_digest.h">
+      <Filter>Header Files\iptsec headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\iptsec\sofia-sip\auth_module.h">
+      <Filter>Header Files\iptsec headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\iptsec\sofia-sip\auth_ntlm.h">
+      <Filter>Header Files\iptsec headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\iptsec\sofia-sip\auth_plugin.h">
+      <Filter>Header Files\iptsec headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\iptsec\iptsec_debug.h">
+      <Filter>Header Files\iptsec headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\stun\sofia-sip\stun.h">
+      <Filter>Header Files\stun headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\stun\sofia-sip\stun_common.h">
+      <Filter>Header Files\stun headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\stun\sofia-sip\stun_tag.h">
+      <Filter>Header Files\stun headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\nua\sofia-sip\nua.h">
+      <Filter>Header Files\nua headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\nua\sofia-sip\nua_tag.h">
+      <Filter>Header Files\nua headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\nta\sofia-sip\nta.h">
+      <Filter>Header Files\nta headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\nta\nta_internal.h">
+      <Filter>Header Files\nta headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\nta\sofia-sip\nta_stateless.h">
+      <Filter>Header Files\nta headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\nta\sofia-sip\nta_tag.h">
+      <Filter>Header Files\nta headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\nta\sofia-sip\nta_tport.h">
+      <Filter>Header Files\nta headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\nta\sofia-sip\sl_utils.h">
+      <Filter>Header Files\nta headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\tport\sofia-sip\tport.h">
+      <Filter>Header Files\tport headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\tport\sofia-sip\tport_plugins.h">
+      <Filter>Header Files\tport headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\tport\sofia-sip\tport_tag.h">
+      <Filter>Header Files\tport headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\tport\tport_tls.h">
+      <Filter>Header Files\tport headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\sdp\sofia-sip\sdp.h">
+      <Filter>Header Files\sdp headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\sdp\sofia-sip\sdp_tag.h">
+      <Filter>Header Files\sdp headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\soa\sofia-sip\soa.h">
+      <Filter>Header Files\soa headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\soa\sofia-sip\soa_add.h">
+      <Filter>Header Files\soa headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\soa\sofia-sip\soa_tag.h">
+      <Filter>Header Files\soa headers</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
