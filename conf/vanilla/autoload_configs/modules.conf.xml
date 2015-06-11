@@ -44,6 +44,8 @@
     <!-- <load module="mod_skinny"/> -->
     <!-- <load module="mod_khomp"/>   -->
     <!-- <load module="mod_rtmp"/>   -->
+    <load module="mod_rtc"/>
+    <load module="mod_verto"/>
 
     <!-- Applications -->
     <load module="mod_commands"/>

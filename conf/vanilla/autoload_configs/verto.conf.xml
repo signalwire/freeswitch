@@ -17,6 +17,7 @@
       <param name="mcast-port" value="1337"/>
       <param name="rtp-ip" value="$${local_ip_v4}"/>
       <!--  <param name="ext-rtp-ip" value=""/> -->
+      <param name="force-register-domain" value="$${domain}"/>
       <param name="local-network" value="localnet.auto"/>
       <param name="outbound-codec-string" value="opus,vp8"/>
       <param name="inbound-codec-string" value="opus,vp8"/>
