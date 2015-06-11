@@ -380,7 +380,7 @@ build_all () {
   local OPTIND OPTARG
   local orig_opts="" dsc_opts="" deb_opts="" modlist=""
   local archs="" distros="" orig="" depinst=false par=false
-  while getopts 'a:bc:df:ijkl:m:no:p:s:tu:v:z:' o "$@"; do
+  while getopts 'a:bc:df:ijkK:l:m:no:p:s:tT:u:v:z:' o "$@"; do
     case "$o" in
       a) archs="$archs $OPTARG";;
       b) orig_opts="$orig_opts -b";;
@@ -390,6 +390,7 @@ build_all () {
       i) depinst=true;;
       j) par=true;;
       k) deb_opts="$deb_opts -k";;
+      K) deb_opts="$deb_opts -K$OPTARG";;
       l) modlist="$OPTARG";;
       m) orig_opts="$orig_opts -m$OPTARG"; dsc_opts="$dsc_opts -m$OPTARG";;
       n) orig_opts="$orig_opts -n";;
@@ -397,6 +398,7 @@ build_all () {
       p) dsc_opts="$dsc_opts -p$OPTARG";;
       s) dsc_opts="$dsc_opts -s$OPTARG";;
       t) deb_opts="$deb_opts -t";;
+      T) deb_opts="$deb_opts -T$OPTARG";;
       u) dsc_opts="$dsc_opts -u$OPTARG";;
       v) orig_opts="$orig_opts -v$OPTARG";;
       z) orig_opts="$orig_opts -z$OPTARG"; dsc_opts="$dsc_opts -z$OPTARG";;
