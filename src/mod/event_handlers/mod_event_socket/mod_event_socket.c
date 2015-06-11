@@ -2844,6 +2844,10 @@ static int config(void)
 		prefs.nat_map = 0;
 	}
 
+	if (!prefs.acl_count) {
+		prefs.acl[prefs.acl_count++] = strdup("loopback.auto");
+	}
+
 	if (prefs.nat_map) {
 		prefs.nat_map = 0;
 	}

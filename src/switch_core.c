@@ -1,4 +1,3 @@
-
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
@@ -1290,6 +1289,12 @@ SWITCH_DECLARE(switch_bool_t) switch_check_network_list_ip_token(const char *ip_
 	uint32_t bits;
 	char *ipv6 = strchr(ip_str,':');
 	switch_bool_t ok = SWITCH_FALSE;
+	char *ipv4 = NULL;
+
+	if ((ipv4 = switch_network_ipv4_mapped_ipv6_addr(ip_str))) {
+		ip_str = ipv4;
+		ipv6 = NULL;
+	}
 
 	switch_mutex_lock(runtime.global_mutex);
 	if (ipv6) {
@@ -1339,6 +1344,8 @@ SWITCH_DECLARE(switch_bool_t) switch_check_network_list_ip_token(const char *ip_
 			}
 		}
 	}
+
+	switch_safe_free(ipv4);
 	switch_mutex_unlock(runtime.global_mutex);
 
 	return ok;
@@ -1450,6 +1457,7 @@ SWITCH_DECLARE(void) switch_load_network_lists(switch_bool_t reload)
 	switch_network_list_create(&rfc_list, tmp_name, SWITCH_FALSE, IP_LIST.pool);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Created ip list %s default (deny)\n", tmp_name);
 	switch_network_list_add_cidr(rfc_list, "127.0.0.0/8", SWITCH_TRUE);
+	switch_network_list_add_cidr(rfc_list, "::1/128", SWITCH_TRUE);
 	switch_core_hash_insert(IP_LIST.hash, tmp_name, rfc_list);
 
 	tmp_name = "localnet.auto";
@@ -1556,17 +1564,9 @@ SWITCH_DECLARE(void) switch_load_network_lists(switch_bool_t reload)
 
 						switch_xml_free(xml_root);
 					} else if (cidr) {
-						if (switch_network_list_add_cidr(list, cidr, ok) == SWITCH_STATUS_SUCCESS) {
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding %s (%s) to list %s\n", cidr, ok ? "allow" : "deny", name);
-						} else {
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
-											  "Error Adding %s (%s) to list %s\n", cidr, ok ? "allow" : "deny", name);
-						}
+						switch_network_list_add_cidr(list, cidr, ok);
 					} else if (host && mask) {
-						if (switch_network_list_add_host_mask(list, host, mask, ok) == SWITCH_STATUS_SUCCESS) {
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE,
-											  "Adding %s/%s (%s) to list %s\n", host, mask, ok ? "allow" : "deny", name);
-						}
+						switch_network_list_add_host_mask(list, host, mask, ok);
 					}
 
 					switch_core_hash_insert(IP_LIST.hash, name, list);

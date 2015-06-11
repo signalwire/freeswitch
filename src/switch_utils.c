@@ -476,16 +476,33 @@ SWITCH_DECLARE(switch_bool_t) switch_network_list_validate_ip_token(switch_netwo
 	return ok;
 }
 
+SWITCH_DECLARE(char *) switch_network_ipv4_mapped_ipv6_addr(const char* ip_str)
+{
+	/* ipv4 mapped ipv6 address */
+
+	if (strncasecmp(ip_str, "::ffff:", 7)) {
+		return NULL;
+	}
+
+	return strdup(ip_str + 7);
+}
+
 SWITCH_DECLARE(switch_status_t) switch_network_list_perform_add_cidr_token(switch_network_list_t *list, const char *cidr_str, switch_bool_t ok,
 																		   const char *token)
 {
 	ip_t ip, mask;
 	uint32_t bits;
 	switch_network_node_t *node;
+	char *ipv4 = NULL;
+
+	if ((ipv4 = switch_network_ipv4_mapped_ipv6_addr(cidr_str))) {
+		cidr_str = ipv4;
+	}
 
 	if (switch_parse_cidr(cidr_str, &ip, &mask, &bits)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Adding %s (%s) [%s] to list %s\n",
 						  cidr_str, ok ? "allow" : "deny", switch_str_nil(token), list->name);
+		switch_safe_free(ipv4);
 		return SWITCH_STATUS_GENERR;
 	}
 
@@ -513,6 +530,7 @@ SWITCH_DECLARE(switch_status_t) switch_network_list_perform_add_cidr_token(switc
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding %s (%s) [%s] to list %s\n",
 					  cidr_str, ok ? "allow" : "deny", switch_str_nil(token), list->name);
 
+	switch_safe_free(ipv4);
 	return SWITCH_STATUS_SUCCESS;
 }
 
