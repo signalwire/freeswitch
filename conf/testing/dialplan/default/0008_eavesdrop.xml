@@ -1,0 +1,7 @@
+<extension name="eavesdrop">
+  <condition field="destination_number" expression="^6004$">
+    <action application="answer"/>
+    <action application="eavesdrop" data="all"/>  
+  </condition>
+</extension>
+
