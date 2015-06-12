@@ -1,0 +1,8 @@
+<extension name="leave_videomail">
+  <condition field="destination_number" expression="^6000$">
+    <action application="answer"/>
+    <action application="sleep" data="1000"/>
+    <action application="voicemail" data="videomail ${domain_name} 1000"/>  
+  </condition>
+</extension>
+
