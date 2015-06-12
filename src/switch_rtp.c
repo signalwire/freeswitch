@@ -71,6 +71,7 @@
 #define WARN_SRTP_ERRS 10
 #define MAX_SRTP_ERRS 100
 #define NTP_TIME_OFFSET 2208988800UL
+static const switch_payload_t INVALID_PT = 255;
 
 #define DTMF_SANITY (rtp_session->one_second * 30)
 
@@ -550,7 +551,7 @@ static handle_rfc2833_result_t handle_rfc2833(switch_rtp_t *rtp_session, switch_
 	*/
 	
 	if (bytes > rtp_header_len && !rtp_session->flags[SWITCH_RTP_FLAG_PROXY_MEDIA] &&
-		rtp_session->recv_te && rtp_session->recv_msg.header.pt == rtp_session->recv_te) {
+		rtp_session->recv_msg.header.pt == rtp_session->recv_te) {
 		switch_size_t len = bytes - rtp_header_len;
 		unsigned char *packet = (unsigned char *) RTP_BODY(rtp_session);
 		int end;
@@ -1889,7 +1890,7 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 	switch_time_t now = switch_micro_time_now();
 	int rate = 0;
 
-	if (rtp_session->flags[SWITCH_RTP_FLAG_AUTO_CNG] && rtp_session->send_msg.header.ts && rtp_session->cng_pt &&
+	if (rtp_session->flags[SWITCH_RTP_FLAG_AUTO_CNG] && rtp_session->send_msg.header.ts && rtp_session->cng_pt != INVALID_PT &&
 		rtp_session->timer.samplecount >= (rtp_session->last_write_samplecount + (rtp_session->samples_per_interval * 60))) {
 		uint8_t data[10] = { 0 };
 		switch_frame_flag_t frame_flags = SFF_NONE;
@@ -3614,8 +3615,9 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 	}
 
 	rtp_session->pool = pool;
-	rtp_session->te = 0;
-	rtp_session->recv_te = 0;
+	rtp_session->te = INVALID_PT;
+	rtp_session->recv_te = INVALID_PT;
+	rtp_session->cng_pt = INVALID_PT;
 	rtp_session->session = session;
 	
 	switch_mutex_init(&rtp_session->flag_mutex, SWITCH_MUTEX_NESTED, pool);
@@ -4906,7 +4908,7 @@ static void do_flush(switch_rtp_t *rtp_session, int force)
 					int do_cng = 0;
 
 					/* Make sure to handle RFC2833 packets, even if we're flushing the packets */
-					if (bytes > rtp_header_len && rtp_session->recv_te && rtp_session->recv_msg.header.pt == rtp_session->recv_te) {
+					if (bytes > rtp_header_len && rtp_session->recv_msg.header.pt == rtp_session->recv_te) {
 						handle_rfc2833(rtp_session, bytes, &do_cng);
 #ifdef DEBUG_2833
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "*** RTP packet handled in flush loop %d ***\n", do_cng);
@@ -5084,8 +5086,8 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 		if (rtp_session->flags[SWITCH_RTP_FLAG_RTCP_MUX]) { 
 			*flags &= ~SFF_RTCP;
 			if (!check_recv_payload(rtp_session)  && 
-				(!rtp_session->recv_te || rtp_session->recv_msg.header.pt != rtp_session->recv_te) &&
-				(!rtp_session->cng_pt || rtp_session->recv_msg.header.pt != rtp_session->cng_pt) &&
+				rtp_session->recv_msg.header.pt != rtp_session->recv_te &&
+				rtp_session->recv_msg.header.pt != rtp_session->cng_pt &&
 				rtp_session->rtcp_recv_msg_p->header.version == 2 && 
 				rtp_session->rtcp_recv_msg_p->header.type > 199 && rtp_session->rtcp_recv_msg_p->header.type < 208) { //rtcp muxed
 				*flags |= SFF_RTCP;
@@ -5224,7 +5226,7 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 	}
 
 	if (!rtp_session->flags[SWITCH_RTP_FLAG_PROXY_MEDIA] && !rtp_session->flags[SWITCH_RTP_FLAG_UDPTL] && !rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] && 
-		*bytes && (!rtp_session->recv_te || rtp_session->recv_msg.header.pt != rtp_session->recv_te) && 
+		*bytes && rtp_session->recv_msg.header.pt != rtp_session->recv_te && 
 		ts && !rtp_session->jb && !rtp_session->pause_jb && jb_valid(rtp_session) && ts == rtp_session->last_cng_ts) {
 		/* we already sent this frame..... */
 		*bytes = 0;
@@ -5262,8 +5264,8 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 #ifdef ENABLE_SRTP
 			if (rtp_session->flags[SWITCH_RTP_FLAG_SECURE_RECV] && rtp_session->recv_msg.header.version == 2 && 
 				(check_recv_payload(rtp_session) || 
-				 (rtp_session->recv_te && rtp_session->recv_msg.header.pt == rtp_session->recv_te) || 
-				 (rtp_session->cng_pt && rtp_session->recv_msg.header.pt == rtp_session->cng_pt))) {
+				 rtp_session->recv_msg.header.pt == rtp_session->recv_te || 
+				 rtp_session->recv_msg.header.pt == rtp_session->cng_pt)) {
 				//if (rtp_session->flags[SWITCH_RTP_FLAG_SECURE_RECV] && (!rtp_session->ice.ice_user || rtp_session->recv_msg.header.version == 2)) {
 				int sbytes = (int) *bytes;
 				err_status_t stat = 0;
@@ -5377,9 +5379,9 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 		
 		rtp_session->stats.inbound.raw_bytes += *bytes;
 		
-		if (rtp_session->recv_te && rtp_session->recv_msg.header.pt == rtp_session->recv_te) {
+		if (rtp_session->recv_msg.header.pt == rtp_session->recv_te) {
 			rtp_session->stats.inbound.dtmf_packet_count++;
-		} else if (rtp_session->cng_pt && (rtp_session->recv_msg.header.pt == rtp_session->cng_pt || rtp_session->recv_msg.header.pt == 13)) {
+		} else if (rtp_session->recv_msg.header.pt == rtp_session->cng_pt || rtp_session->recv_msg.header.pt == 13) {
 			rtp_session->stats.inbound.cng_packet_count++;
 		} else {
 			rtp_session->stats.inbound.media_packet_count++;
@@ -5389,7 +5391,7 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 		rtp_session->stats.inbound.packet_count++;
 	}
 
-	if ((rtp_session->recv_te && rtp_session->recv_msg.header.pt == rtp_session->recv_te) || 
+	if (rtp_session->recv_msg.header.pt == rtp_session->recv_te || 
 		(*bytes < rtp_header_len && *bytes > 0) ||
 		rtp_session->flags[SWITCH_RTP_FLAG_PROXY_MEDIA] || rtp_session->flags[SWITCH_RTP_FLAG_UDPTL]) {
 		return SWITCH_STATUS_SUCCESS;
@@ -6301,7 +6303,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			!rtp_session->flags[SWITCH_RTP_FLAG_PROXY_MEDIA] && !rtp_session->flags[SWITCH_RTP_FLAG_UDPTL] &&
 			rtp_session->recv_msg.header.pt != 13 && 
 			rtp_session->recv_msg.header.pt != rtp_session->recv_te && 
-			(!rtp_session->cng_pt || rtp_session->recv_msg.header.pt != rtp_session->cng_pt)) {
+			rtp_session->recv_msg.header.pt != rtp_session->cng_pt) {
 			int accept_packet = 1;
 			
 
@@ -6376,7 +6378,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		}
 
 
-		if (((rtp_session->cng_pt && rtp_session->recv_msg.header.pt == rtp_session->cng_pt) || rtp_session->recv_msg.header.pt == 13)) {
+		if (rtp_session->recv_msg.header.pt == rtp_session->cng_pt || rtp_session->recv_msg.header.pt == 13) {
 			*flags |= SFF_NOT_AUDIO;
 		} else {
 			*flags &= ~SFF_NOT_AUDIO; /* If this flag was already set, make sure to remove it when we get real audio */
@@ -6386,7 +6388,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		/* ignore packets not meant for us unless the auto-adjust window is open */
 		if (bytes) {
 			if (rtp_session->flags[SWITCH_RTP_FLAG_AUTOADJ]) {
-				if (((rtp_session->cng_pt && rtp_session->recv_msg.header.pt == rtp_session->cng_pt) || rtp_session->recv_msg.header.pt == 13)) {
+				if (rtp_session->recv_msg.header.pt == rtp_session->cng_pt || rtp_session->recv_msg.header.pt == 13) {
 					goto recvfrom;
 
 				}
@@ -6515,7 +6517,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			memset(data, 0, 2);
 			data[0] = 65;
 
-			rtp_session->recv_msg.header.pt = (uint32_t) rtp_session->cng_pt ? rtp_session->cng_pt : SWITCH_RTP_CNG_PAYLOAD;
+			rtp_session->recv_msg.header.pt = rtp_session->cng_pt != INVALID_PT ? rtp_session->cng_pt : SWITCH_RTP_CNG_PAYLOAD;
 			*flags |= SFF_CNG;
 			*payload_type = (switch_payload_t) rtp_session->recv_msg.header.pt;
 			ret = 2 + rtp_header_len;
@@ -6557,7 +6559,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 
 			memset(data, 0, 2);
 			data[0] = 65;
-			rtp_session->recv_msg.header.pt = (uint32_t) rtp_session->cng_pt ? rtp_session->cng_pt : SWITCH_RTP_CNG_PAYLOAD;
+			rtp_session->recv_msg.header.pt = rtp_session->cng_pt != INVALID_PT ? rtp_session->cng_pt : SWITCH_RTP_CNG_PAYLOAD;
 			*flags |= SFF_CNG;
 			*payload_type = (switch_payload_t) rtp_session->recv_msg.header.pt;
 			ret = 2 + rtp_header_len;
@@ -6947,6 +6949,10 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 		m = (uint8_t) send_msg->header.m;
 
 		if (flags && *flags & SFF_RFC2833) {
+			if (rtp_session->te == INVALID_PT) {
+				ret = 0;
+				goto end;
+			}
 			send_msg->header.pt = rtp_session->te;
 		}
 		data = send_msg->body;
@@ -6955,6 +6961,10 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 		}
 	} else {
 		if (*flags & SFF_RFC2833) {
+			if (rtp_session->te == INVALID_PT) {
+				ret = 0;
+				goto end;
+			}
 			payload = rtp_session->te;
 		}
 
@@ -7344,7 +7354,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 			rtp_session->stats.rtcp.sent_pkt_count++;
 		}
 
-		if (rtp_session->cng_pt && send_msg->header.pt == rtp_session->cng_pt) {
+		if (send_msg->header.pt == rtp_session->cng_pt) {
 			rtp_session->stats.outbound.cng_packet_count++;
 		} else {
 			rtp_session->stats.outbound.media_packet_count++;
@@ -7555,7 +7565,7 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_fra
 	switch_assert(frame != NULL);
 
 	if (switch_test_flag(frame, SFF_CNG)) {
-		if (rtp_session->cng_pt) {
+		if (rtp_session->cng_pt != INVALID_PT) {
 			payload = rtp_session->cng_pt;
 		} else {
 			return (int) frame->packetlen;
@@ -7676,6 +7686,10 @@ SWITCH_DECLARE(int) switch_rtp_write_manual(switch_rtp_t *rtp_session,
 	}
 
 	if (!rtp_write_ready(rtp_session, datalen, __LINE__)) {
+		return 0;
+	}
+
+	if (payload == INVALID_PT) {
 		return 0;
 	}
 
