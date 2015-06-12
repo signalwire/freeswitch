@@ -33,7 +33,7 @@
  *
  */
 #include <switch.h>
-#include "libmpg123/mpg123.h"
+#include "mpg123.h"
 #include <shout/shout.h>
 #include <lame.h>
 #include <switch_curl.h>
