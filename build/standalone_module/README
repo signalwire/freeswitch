@@ -1,0 +1,7 @@
+This is a sample build system for a stand alone FreeSWITCH module.
+
+To build and install:
+./bootstrap.sh
+./configure
+make
+make install
