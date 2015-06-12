@@ -305,6 +305,7 @@ Build-Depends:
  libedit-dev (>= 2.11),
  libsqlite3-dev,
  wget, pkg-config,
+ libyuv-dev, libvpx-dev (>= 1.4.0) | libvpx2-dev,
 # core codecs
  libogg-dev, libspeex-dev, libspeexdsp-dev,
 # configure options

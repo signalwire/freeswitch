@@ -104,16 +104,7 @@ getlibs () {
   getlib http://download.zeromq.org/zeromq-2.1.9.tar.gz \
     || getlib http://download.zeromq.org/historic/zeromq-2.1.9.tar.gz
   getlib http://files.freeswitch.org/downloads/libs/freeradius-client-1.1.6.tar.gz
-  getlib http://files.freeswitch.org/downloads/libs/lame-3.98.4.tar.gz
-  getlib http://files.freeswitch.org/downloads/libs/libshout-2.2.2.tar.gz
-  getlib http://files.freeswitch.org/downloads/libs/mpg123-1.13.2.tar.gz
   getlib http://files.freeswitch.org/downloads/libs/v8-3.24.14.tar.bz2
-  # cleanup mongo
-  (
-    cd mongo-cxx-driver-v1.8
-    rm -rf config.log .sconf_temp *Test *Example
-    find . -name "*.o" -exec rm -f {} \;
-  )
 }
 
 check_repo_clean () {

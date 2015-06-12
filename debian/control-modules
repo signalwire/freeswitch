@@ -8,6 +8,11 @@ Description: Abstraction layer for APIs
  This module provides a way to create new API functions via regex
  rewriting.
 
+Module: applications/mod_av
+Description: mod_av
+ Adds mod_av.
+Build-Depends: libavformat-dev, libswscale-dev
+
 Module: applications/mod_avmd
 Description: Advanced voicemail detection
  This module attempts to determine when a voicemail system has
@@ -46,6 +51,11 @@ Description: Conference
 Module: applications/mod_curl
 Description: cURL
  This module provides an API for making HTTP requests with cURL.
+
+Module: applications/mod_cv
+Description: Computer Vision
+ This module exposes opencv actions to enable computer vision actions
+Build-Depends: libopencv-dev
 
 Module: applications/mod_db
 Description: DB
@@ -521,6 +531,10 @@ Module: formats/mod_local_stream
 Description: mod_local_stream
  Adds mod_local_stream.
 
+Module: formats/mod_imagick
+Description: Image formats support
+Build-Depends: libmagickcore-dev
+ 
 Module: formats/mod_native_file
 Description: mod_native_file
  Adds mod_native_file.
@@ -537,7 +551,7 @@ Description: mod_shell_stream
 Module: formats/mod_shout
 Description: mod_shout
  Adds mod_shout.
-Build-Depends: libogg-dev, libvorbis-dev
+Build-Depends: libogg-dev, libvorbis-dev, libmp3lame-dev, libmpg123-dev, libshout3-dev
 
 Module: formats/mod_sndfile
 Description: mod_sndfile
@@ -574,6 +588,7 @@ Build-Depends: default-jdk, gcj-jdk
 Module: languages/mod_lua
 Description: mod_lua
  Adds mod_lua.
+Build-Depends: liblua5.2-dev | liblua5.1-dev
 
 Module: languages/mod_managed
 Description: mod_managed
@@ -734,3 +749,38 @@ Module: xml_int/mod_xml_scgi
 Description: mod_xml_scgi
  Adds mod_xml_scgi.
 
+Module: applications/mod_mp4v2
+Description: 
+ 
+
+Module: applications/mod_skel
+Description: 
+ 
+
+Module: codecs/mod_celt
+Description: 
+ 
+
+Module: codecs/mod_openh264
+Description: 
+ 
+
+Module: codecs/mod_skel_codec
+Description: 
+ 
+
+Module: codecs/mod_vp8
+Description: 
+ 
+
+Module: codecs/mod_yuv
+Description: 
+ 
+
+Module: formats/mod_png
+Description: 
+ 
+
+Module: formats/mod_webm
+Description: 
+ 
