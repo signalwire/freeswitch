@@ -1,0 +1,7 @@
+<extension name="pre_answer">
+  <condition field="destination_number" expression="^98(10[01][0-9])$">
+    <action application="pre_answer"/>
+    <action application="transfer" data="$1"/>  
+  </condition>
+</extension>
+

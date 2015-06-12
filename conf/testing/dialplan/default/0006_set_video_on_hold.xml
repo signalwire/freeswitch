@@ -1,0 +1,7 @@
+<extension name="video_on_hold">
+  <condition field="destination_number" expression="^99(10[01][0-9])$">
+    <action application="set" data="hold_music=/var/www/vid/notime.mp4"/>
+    <action application="transfer" data="$1"/>  
+  </condition>
+</extension>
+
