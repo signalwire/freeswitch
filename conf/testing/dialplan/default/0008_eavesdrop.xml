@@ -3,5 +3,36 @@
     <action application="answer"/>
     <action application="eavesdrop" data="all"/>  
   </condition>
+  <condition field="destination_number" expression="^6005$">
+    <action application="set" data="absolute_codec_string=PCMU"/> <!-- MONO -->
+    <action application="answer"/>
+    <action application="eavesdrop" data="all"/>  
+  </condition>
+  <condition field="destination_number" expression="^6006$">
+    <action application="set" data="absolute_codec_string=OPUS"/> <!-- STEREO -->
+    <action application="answer"/>
+    <action application="eavesdrop" data="all"/>  
+  </condition>
+  <condition field="destination_number" expression="^6007$">
+    <action application="set" data="absolute_codec_string=OPUS,VP8"/> <!-- STEREO, VIDEO -->
+    <action application="answer"/>
+    <action application="eavesdrop" data="all"/>  
+  </condition>
+  <condition field="destination_number" expression="^6008$">
+    <action application="set" data="absolute_codec_string=PCMU,VP8"/> <!-- MONO, VIDEO -->
+    <action application="answer"/>
+    <action application="eavesdrop" data="all"/>  
+  </condition>
+  <!-- RESERVED --> 
+  <condition field="destination_number" expression="^6009$">
+  </condition>
+  <condition field="destination_number" expression="^6010$">
+  </condition>
+  <condition field="destination_number" expression="^6011$">
+  </condition>
+  <condition field="destination_number" expression="^6012$">
+  </condition>
+  <condition field="destination_number" expression="^6013$">
+  </condition>
 </extension>
 
