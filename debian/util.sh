@@ -98,14 +98,9 @@ getlib () {
 
 getlibs () {
   # get pinned libraries
-  getlib http://downloads.mongodb.org/cxx-driver/mongodb-linux-x86_64-v1.8-latest.tgz
-  getlib http://files.freeswitch.org/downloads/libs/soundtouch-1.7.1.tar.gz
-  getlib http://files.freeswitch.org/downloads/libs/flite-2.0.0-release.tar.bz2
   getlib http://files.freeswitch.org/downloads/libs/sphinxbase-0.8.tar.gz
   getlib http://files.freeswitch.org/downloads/libs/pocketsphinx-0.8.tar.gz
   getlib http://files.freeswitch.org/downloads/libs/communicator_semi_6000_20080321.tar.gz
-  getlib http://files.freeswitch.org/downloads/libs/opus-1.1-p2.tar.gz
-  getlib http://files.freeswitch.org/downloads/libs/openldap-2.4.19.tar.gz
   getlib http://download.zeromq.org/zeromq-2.1.9.tar.gz \
     || getlib http://download.zeromq.org/historic/zeromq-2.1.9.tar.gz
   getlib http://files.freeswitch.org/downloads/libs/freeradius-client-1.1.6.tar.gz
@@ -272,7 +267,10 @@ get_sources () {
   local tgt_distro="$1"
   while read type path distro components; do
     test "$type" = deb || continue
-    printf "$type $path $tgt_distro $components\n"
+    prefix=`echo $distro | awk -F/ '{print $1}'`
+    suffix="`echo $distro | awk -F/ '{print $2}'`"
+    if test -n "$suffix" ; then full="$tgt_distro/$suffix" ; else full="$tgt_distro" ; fi
+    printf "$type $path $full $components\n"
   done < "$2"
 }
 
