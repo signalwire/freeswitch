@@ -1332,10 +1332,10 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 				}
 
 				
-				if (switch_core_file_has_video(rh->fh)) {
+				//if (switch_core_file_has_video(rh->fh)) {
 					//switch_core_media_set_video_file(session, NULL, SWITCH_RW_READ);
-					switch_channel_clear_flag_recursive(session->channel, CF_VIDEO_DECODED_READ);
-				}
+					//switch_channel_clear_flag_recursive(session->channel, CF_VIDEO_DECODED_READ);
+				//}
 
 				switch_core_file_close(rh->fh);
 
@@ -1564,24 +1564,80 @@ struct eavesdrop_pvt {
 	switch_core_session_t *eavesdropper;
 	uint32_t flags;
 	switch_frame_t demux_frame;
+	int set_decoded_read;
+	int errs;
 	uint8_t data[SWITCH_RECOMMENDED_BUFFER_SIZE];
 };
 
 
+static switch_status_t video_eavesdrop_callback(switch_core_session_t *session, switch_frame_t *frame, void *user_data)
+{
+	switch_media_bug_t *bug = (switch_media_bug_t *) user_data;
+
+	if (frame->img) {
+		if (switch_core_media_bug_test_flag(bug, SMBF_SPY_VIDEO_STREAM)) {
+			switch_core_media_bug_push_spy_frame(bug, frame, SWITCH_RW_READ);
+		}
+		
+		if (switch_core_media_bug_test_flag(bug, SMBF_SPY_VIDEO_STREAM_BLEG)) {
+			switch_core_media_bug_push_spy_frame(bug, frame, SWITCH_RW_WRITE);
+		}
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
 
 static switch_bool_t eavesdrop_callback(switch_media_bug_t *bug, void *user_data, switch_abc_type_t type)
 {
 	struct eavesdrop_pvt *ep = (struct eavesdrop_pvt *) user_data;
 	uint8_t data[SWITCH_RECOMMENDED_BUFFER_SIZE];
 	switch_frame_t frame = { 0 };
+	switch_core_session_t *session = switch_core_media_bug_get_session(bug);
+	switch_channel_t *e_channel = switch_core_session_get_channel(ep->eavesdropper);
+	int show_spy = 0;
 
 	frame.data = data;
 	frame.buflen = SWITCH_RECOMMENDED_BUFFER_SIZE;
 
+	show_spy = switch_core_media_bug_test_flag(bug, SMBF_SPY_VIDEO_STREAM) || switch_core_media_bug_test_flag(bug, SMBF_SPY_VIDEO_STREAM_BLEG);
+
+	if (show_spy) {
+		if (!ep->set_decoded_read) {
+			ep->set_decoded_read = 1;
+			switch_channel_set_flag_recursive(e_channel, CF_VIDEO_DECODED_READ);
+			switch_core_session_request_video_refresh(ep->eavesdropper);
+		}
+	} else {
+		if (ep->set_decoded_read) {
+			ep->set_decoded_read = 0;
+			switch_channel_clear_flag_recursive(e_channel, CF_VIDEO_DECODED_READ);
+			switch_core_session_request_video_refresh(ep->eavesdropper);
+		}
+	}
+
 	switch (type) {
 	case SWITCH_ABC_TYPE_INIT:
+
+		if (switch_core_media_bug_test_flag(bug, SMBF_READ_VIDEO_STREAM) || 
+			switch_core_media_bug_test_flag(bug, SMBF_WRITE_VIDEO_STREAM) || 
+			switch_core_media_bug_test_flag(bug, SMBF_READ_VIDEO_PING)) {
+			switch_core_session_set_video_read_callback(ep->eavesdropper, video_eavesdrop_callback, (void *)bug);
+			switch_channel_set_flag_recursive(switch_core_session_get_channel(session), CF_VIDEO_DECODED_READ);
+		}
 		break;
 	case SWITCH_ABC_TYPE_CLOSE:
+		if (ep->set_decoded_read) {
+			switch_channel_clear_flag_recursive(e_channel, CF_VIDEO_DECODED_READ);
+		}
+
+		if (switch_core_media_bug_test_flag(bug, SMBF_READ_VIDEO_STREAM) || 
+			switch_core_media_bug_test_flag(bug, SMBF_WRITE_VIDEO_STREAM) || 
+			switch_core_media_bug_test_flag(bug, SMBF_READ_VIDEO_PING)) {
+			switch_core_session_set_video_read_callback(ep->eavesdropper, NULL, NULL);
+		}
+
+		switch_channel_clear_flag_recursive(switch_core_session_get_channel(session), CF_VIDEO_DECODED_READ);
+
 		break;
 	case SWITCH_ABC_TYPE_WRITE:
 		break;
@@ -1644,15 +1700,31 @@ static switch_bool_t eavesdrop_callback(switch_media_bug_t *bug, void *user_data
 			}
 		}
 		break;
-	case SWITCH_ABC_TYPE_READ_VIDEO_PING:
-		if (!bug->ping_frame) break;
 
-		if (ep->eavesdropper && switch_core_session_read_lock(ep->eavesdropper) == SWITCH_STATUS_SUCCESS) {
-			switch_channel_t *channel = switch_core_session_get_channel(ep->eavesdropper);
-			if (switch_channel_test_flag(channel, CF_VIDEO)) {
-				switch_core_session_write_video_frame(ep->eavesdropper, bug->ping_frame, SWITCH_IO_FLAG_NONE, 0);
+	case SWITCH_ABC_TYPE_READ_VIDEO_PING:
+	case SWITCH_ABC_TYPE_STREAM_VIDEO_PING:
+		{
+
+			if (!bug->ping_frame || !bug->ping_frame->img) {
+				break;
 			}
-			switch_core_session_rwunlock(ep->eavesdropper);
+			
+			if (ep->eavesdropper && switch_core_session_read_lock(ep->eavesdropper) == SWITCH_STATUS_SUCCESS) {
+				if (switch_core_session_write_video_frame(ep->eavesdropper, bug->ping_frame, SWITCH_IO_FLAG_NONE, 0) != SWITCH_STATUS_SUCCESS) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error writing video to %s\n", switch_core_session_get_name(ep->eavesdropper));
+					ep->errs++;
+
+					if (ep->errs > 10) {
+						switch_channel_hangup(e_channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+						switch_core_session_reset(ep->eavesdropper, SWITCH_TRUE, SWITCH_TRUE);
+						switch_core_session_rwunlock(ep->eavesdropper);
+						return SWITCH_FALSE;
+					}
+				} else {
+					ep->errs = 0;
+				}
+				switch_core_session_rwunlock(ep->eavesdropper);
+			}
 		}
 		break;
 	default:
@@ -1780,6 +1852,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 		switch_caller_profile_t *cp = NULL;
 		uint32_t sanity = 600;
 		switch_media_bug_flag_t read_flags = 0, write_flags = 0;
+		const char *vval;
 
 		if (!switch_channel_media_up(channel)) {
 			goto end;
@@ -1889,14 +1962,39 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 		switch_buffer_create_dynamic(&ep->r_buffer, 2048, 2048, 8192);
 		switch_buffer_add_mutex(ep->r_buffer, ep->r_mutex);
 
-
 		if (flags & ED_BRIDGE_READ) {
 			read_flags = SMBF_READ_STREAM | SMBF_READ_REPLACE;
 		}
+
 		if (flags & ED_BRIDGE_WRITE) {
 			write_flags = SMBF_WRITE_STREAM | SMBF_WRITE_REPLACE;
 		}
 
+		if (switch_channel_test_flag(session->channel, CF_VIDEO) && switch_channel_test_flag(tsession->channel, CF_VIDEO)) {			
+			if ((vval = switch_channel_get_variable(session->channel, "eavesdrop_show_listener_video"))) { 
+				if (switch_true(vval) || !strcasecmp(vval, "aleg") || !strcasecmp(vval, "bleg") || !strcasecmp(vval, "both")) {
+					read_flags |= SMBF_SPY_VIDEO_STREAM;
+				}
+				if (switch_true(vval) || !strcasecmp(vval, "bleg") || !strcasecmp(vval, "both")) {
+					read_flags |= SMBF_SPY_VIDEO_STREAM_BLEG;
+				}
+			}
+			
+			if ((vval = switch_channel_get_variable(session->channel, "eavesdrop_concat_video")) && switch_true(vval)) { 
+				read_flags |= SMBF_READ_VIDEO_STREAM;
+				read_flags |= SMBF_WRITE_VIDEO_STREAM;
+			} else {
+				read_flags |= SMBF_READ_VIDEO_PING;
+			}
+		} else {
+			read_flags &= ~SMBF_READ_VIDEO_PING;
+			read_flags &= ~SMBF_READ_VIDEO_STREAM;
+			read_flags &= ~SMBF_WRITE_VIDEO_STREAM;
+			read_flags &= ~SMBF_SPY_VIDEO_STREAM;
+			read_flags &= ~SMBF_SPY_VIDEO_STREAM_BLEG;
+		}
+
+		
 		if (switch_core_media_bug_add(tsession, "eavesdrop", uuid,
 									  eavesdrop_callback, ep, 0,
 									  read_flags | write_flags | SMBF_READ_PING | SMBF_THREAD_LOCK | SMBF_NO_PAUSE,
@@ -1905,6 +2003,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 			goto end;
 		}
 
+		if ((vval = switch_channel_get_variable(session->channel, "eavesdrop_video_spy_fmt"))) { 
+			switch_media_bug_set_spy_fmt(bug, switch_media_bug_parse_spy_fmt(vval));
+		}
 
 		msg.from = __FILE__;
 
@@ -1949,6 +2050,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 			switch_event_t *event = NULL;
 			char *fcommand = NULL;
 			char db[2] = "";
+			int vid_bug = 0, vid_dual = 0;
 
 			status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 
@@ -1971,6 +2073,15 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 				fcommand = db;
 			}
 
+			if (switch_core_media_bug_test_flag(bug, SMBF_READ_VIDEO_STREAM) || 
+				switch_core_media_bug_test_flag(bug, SMBF_WRITE_VIDEO_STREAM)) {
+				vid_dual = 1;
+			}
+
+			if (vid_dual || switch_core_media_bug_test_flag(bug, SMBF_READ_VIDEO_PING)) {
+				vid_bug = 1;
+			}
+			
 			if (fcommand) {
 				char *d;
 				for (d = fcommand; *d; d++) {
@@ -1980,18 +2091,48 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 					case '1':
 						switch_set_flag(ep, ED_MUX_READ);
 						switch_clear_flag(ep, ED_MUX_WRITE);
+						if (vid_bug) {
+							switch_core_media_bug_set_flag(bug, SMBF_SPY_VIDEO_STREAM);
+							switch_core_media_bug_clear_flag(bug, SMBF_SPY_VIDEO_STREAM_BLEG);
+							switch_core_session_request_video_refresh(tsession);
+						}
 						break;
 					case '2':
 						switch_set_flag(ep, ED_MUX_WRITE);
 						switch_clear_flag(ep, ED_MUX_READ);
+						if (vid_bug) {
+							switch_core_media_bug_set_flag(bug, SMBF_SPY_VIDEO_STREAM_BLEG);
+							switch_core_media_bug_clear_flag(bug, SMBF_SPY_VIDEO_STREAM);
+							switch_core_session_request_video_refresh(tsession);
+						}
 						break;
 					case '3':
 						switch_set_flag(ep, ED_MUX_READ);
 						switch_set_flag(ep, ED_MUX_WRITE);
+						if (vid_bug) {
+							switch_core_media_bug_set_flag(bug, SMBF_SPY_VIDEO_STREAM);
+							switch_core_media_bug_set_flag(bug, SMBF_SPY_VIDEO_STREAM_BLEG);
+							switch_core_session_request_video_refresh(tsession);
+						}
+						break;
+
+					case '4':
+						switch_media_bug_set_spy_fmt(bug, switch_media_bug_parse_spy_fmt("dual-crop"));
+						break;
+					case '5':
+						switch_media_bug_set_spy_fmt(bug, switch_media_bug_parse_spy_fmt("lower-right-small"));
+						break;
+					case '6':
+						switch_media_bug_set_spy_fmt(bug, switch_media_bug_parse_spy_fmt("lower-right-large"));
 						break;
 					case '0':
 						switch_clear_flag(ep, ED_MUX_READ);
 						switch_clear_flag(ep, ED_MUX_WRITE);
+						if (vid_bug) {
+							switch_core_media_bug_clear_flag(bug, SMBF_SPY_VIDEO_STREAM);
+							switch_core_media_bug_clear_flag(bug, SMBF_SPY_VIDEO_STREAM_BLEG);
+							switch_core_session_request_video_refresh(tsession);
+						}
 						break;
 					case '*':
 						goto end_loop;
@@ -2292,7 +2433,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 
 		if (switch_core_file_has_video(fh)) {
 			//switch_core_media_set_video_file(session, fh, SWITCH_RW_READ);
-			switch_channel_set_flag_recursive(session->channel, CF_VIDEO_DECODED_READ);
+			//switch_channel_set_flag_recursive(session->channel, CF_VIDEO_DECODED_READ);
 			
 			if ((vval = switch_channel_get_variable(channel, "record_concat_video")) && switch_true(vval)) { 
 				flags |= SMBF_READ_VIDEO_STREAM;

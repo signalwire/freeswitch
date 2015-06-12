@@ -53,6 +53,7 @@ static void video_bridge_thread(switch_core_session_t *session, void *obj)
 	switch_channel_t *b_channel = switch_core_session_get_channel(vh->session_b);
 	switch_status_t status;
 	switch_frame_t *read_frame = 0;
+	int set_decoded_read = 0;
 
 	vh->up = 1;
 
@@ -67,11 +68,22 @@ static void video_bridge_thread(switch_core_session_t *session, void *obj)
 			switch_codec_t *a_codec = switch_core_session_get_video_read_codec(vh->session_a);
 			switch_codec_t *b_codec = switch_core_session_get_video_write_codec(vh->session_b);
 
-			if ((!b_codec || !a_codec || a_codec->implementation->impl_id == b_codec->implementation->impl_id) && 
-				!switch_channel_test_flag(b_channel, CF_VIDEO_DECODED_READ)) {
-				switch_channel_clear_flag(channel, CF_VIDEO_DECODED_READ);
+			switch_assert(a_codec);
+			switch_assert(b_codec);
+
+			if (switch_channel_test_flag(channel, CF_VIDEO_DECODED_READ)) {
+				if (a_codec->implementation->impl_id == b_codec->implementation->impl_id && !switch_channel_test_flag(b_channel, CF_VIDEO_DECODED_READ)) {
+					if (set_decoded_read) {
+						switch_channel_clear_flag_recursive(channel, CF_VIDEO_DECODED_READ);
+						set_decoded_read = 0;
+					}
+				}
 			} else {
-				switch_channel_set_flag(channel, CF_VIDEO_DECODED_READ);
+				if (a_codec->implementation->impl_id != b_codec->implementation->impl_id || 
+					switch_channel_test_flag(b_channel, CF_VIDEO_DECODED_READ)) {
+					switch_channel_set_flag_recursive(channel, CF_VIDEO_DECODED_READ);
+					set_decoded_read = 1;
+				}
 			}
 			
 			status = switch_core_session_read_video_frame(vh->session_a, &read_frame, SWITCH_IO_FLAG_NONE, 0);
@@ -92,6 +104,10 @@ static void video_bridge_thread(switch_core_session_t *session, void *obj)
 				continue;
 			}
 		}
+	}
+
+	if (set_decoded_read) {
+		switch_channel_clear_flag_recursive(channel, CF_VIDEO_DECODED_READ);
 	}
 
 	switch_core_session_kill_channel(vh->session_b, SWITCH_SIG_BREAK);

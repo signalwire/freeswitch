@@ -1735,22 +1735,35 @@ SWITCH_DECLARE(switch_status_t) switch_img_fit(switch_image_t **srcP, int width,
 
 	src = *srcP;
 
-	if (!src || (src->d_w <= width && src->d_h <= height)) {
+	if (!src || (src->d_w == width && src->d_h == height)) {
 		return SWITCH_STATUS_SUCCESS;
 	}
 
 	new_w = src->d_w;
 	new_h = src->d_h;
 	
-	while(new_w > width || new_h > height) { 
-		if (new_w > width) {
-			double m = (double) width / new_w;
+	if (src->d_w < width && src->d_h < height) {
+		float rw = (float)new_w / width;
+		float rh = (float)new_h / height;
+
+		if (rw > rh) {
+			new_h = (int)((float)new_h / rw);
 			new_w = width;
-			new_h = (int) (new_h * m);
 		} else {
-			double m = (double) height / new_h;
+			new_w = (int)((float)new_w / rh);
 			new_h = height;
-			new_w = (int) (new_w * m);
+		}
+	} else {
+		while(new_w > width || new_h > height) { 
+			if (new_w > width) {
+				double m = (double) width / new_w;
+				new_w = width;
+				new_h = (int) (new_h * m);
+			} else {
+				double m = (double) height / new_h;
+				new_h = height;
+				new_w = (int) (new_w * m);
+			}
 		}
 	}
 
