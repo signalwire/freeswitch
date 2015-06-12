@@ -327,7 +327,7 @@ static switch_status_t switch_silk_decode(switch_codec_t *codec,
 	stfu_instance_t *jb = NULL;
 
 	SKP_int lost_flag = (*flag & SFF_PLC);
-	stfu_frame_t next_frame;
+	stfu_frame_t *next_frame = NULL;
 
 	SKP_uint8 recbuff[STFU_DATALEN];
 	SKP_int16 reclen;
@@ -346,10 +346,10 @@ static switch_status_t switch_silk_decode(switch_codec_t *codec,
 
 		if (jb && codec->cur_frame) {
 			for (i = 1; i <= MAX_LBRR_DELAY; i++) {
-				found_frame = stfu_n_copy_next_frame(jb, (uint32_t)codec->cur_frame->timestamp, codec->cur_frame->seq, (uint16_t)i, &next_frame);
+				found_frame = stfu_n_peek_frame(jb, (uint32_t)codec->cur_frame->timestamp, codec->cur_frame->seq, (uint16_t)i, &next_frame);
 
 				if (found_frame) {
-					SKP_Silk_SDK_search_for_LBRR(next_frame.data, (const int)next_frame.dlen, i, (SKP_uint8*) &recbuff, &reclen);
+					SKP_Silk_SDK_search_for_LBRR(next_frame->data, (const int)next_frame->dlen, i, (SKP_uint8*) &recbuff, &reclen);
 
 					if (reclen) {
 						encoded_data = &recbuff;
