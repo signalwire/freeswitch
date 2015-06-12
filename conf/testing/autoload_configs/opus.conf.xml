@@ -1,0 +1,19 @@
+<configuration name="opus.conf">
+    <settings>
+        <param name="use-vbr" value="1"/>
+        <param name="complexity" value="10"/>
+
+        <!--
+           maxaveragebitrate: the maximum average codec bitrate (values: 6000 to 510000 in bps) 0 is not considered
+           maxplaybackrate: the maximum codec internal frequency (values: 8000, 12000, 16000, 24000, 48000 in Hz) 0 is not considered
+           This will set the local encoder and instruct the remote encoder trough specific "fmtp" attibute in the SDP.
+
+           Example: if you receive "maxaveragebitrate=20000" from SDP and you have set "maxaveragebitrate=24000" in this configuration
+                    the lowest will prevail in this case "20000" is set on the encoder and the corresponding fmtp attribute will be set
+                    to instruct the remote encoder to do the same.
+        -->
+        <param name="maxaveragebitrate" value="0"/>
+        <param name="maxplaybackrate" value="0"/>
+
+    </settings>
+</configuration>

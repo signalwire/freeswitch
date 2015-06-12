@@ -1,0 +1,7 @@
+<include>
+  <user id="default">
+    <variables>
+      <!--<variable name="numbering_plan" value="$${default_country}"/>-->
+    </variables>
+  </user>
+</include>

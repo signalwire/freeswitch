@@ -1,0 +1,82 @@
+<include>
+  <X-PRE-PROCESS cmd="set" data="default_password=1234"/>
+  <X-PRE-PROCESS cmd="set" data="sound_prefix=$${sounds_dir}/en/us/callie"/>
+  <X-PRE-PROCESS cmd="set" data="domain=$${local_ip_v4}"/>
+  <X-PRE-PROCESS cmd="set" data="domain_name=$${domain}"/>
+  <X-PRE-PROCESS cmd="set" data="hold_music=local_stream://moh"/>
+  <X-PRE-PROCESS cmd="set" data="use_profile=external"/>
+  <X-PRE-PROCESS cmd="set" data="rtp_sdes_suites=AEAD_AES_256_GCM_8|AEAD_AES_128_GCM_8|AES_CM_256_HMAC_SHA1_80|AES_CM_192_HMAC_SHA1_80|AES_CM_128_HMAC_SHA1_80|AES_CM_256_HMAC_SHA1_32|AES_CM_192_HMAC_SHA1_32|AES_CM_128_HMAC_SHA1_32|AES_CM_128_NULL_AUTH"/>
+  <X-PRE-PROCESS cmd="set" data="zrtp_secure_media=true"/>
+  <X-PRE-PROCESS cmd="set" data="global_codec_prefs=OPUS,G722,PCMU,PCMA,VP8,H264"/>
+  <X-PRE-PROCESS cmd="set" data="outbound_codec_prefs=OPUS,G722,PCMU,PCMA,VP8,H264"/>
+  <X-PRE-PROCESS cmd="set" data="outbound_caller_name=FreeSWITCH"/>
+  <X-PRE-PROCESS cmd="set" data="outbound_caller_id=0000000000"/>
+
+  <X-PRE-PROCESS cmd="set" data="call_debug=false"/>
+  <X-PRE-PROCESS cmd="set" data="console_loglevel=debug"/>
+  <X-PRE-PROCESS cmd="set" data="presence_privacy=false"/>
+
+  <X-PRE-PROCESS cmd="set" data="au-ring=%(400,200,383,417);%(400,2000,383,417)"/>
+  <X-PRE-PROCESS cmd="set" data="be-ring=%(1000,3000,425)"/>
+  <X-PRE-PROCESS cmd="set" data="ca-ring=%(2000,4000,440,480)"/>
+  <X-PRE-PROCESS cmd="set" data="cn-ring=%(1000,4000,450)"/>
+  <X-PRE-PROCESS cmd="set" data="cy-ring=%(1500,3000,425)"/>
+  <X-PRE-PROCESS cmd="set" data="cz-ring=%(1000,4000,425)"/>
+  <X-PRE-PROCESS cmd="set" data="de-ring=%(1000,4000,425)"/>
+  <X-PRE-PROCESS cmd="set" data="dk-ring=%(1000,4000,425)"/>
+  <X-PRE-PROCESS cmd="set" data="dz-ring=%(1500,3500,425)"/>
+  <X-PRE-PROCESS cmd="set" data="eg-ring=%(2000,1000,475,375)"/>
+  <X-PRE-PROCESS cmd="set" data="es-ring=%(1500,3000,425)"/>
+  <X-PRE-PROCESS cmd="set" data="fi-ring=%(1000,4000,425)"/>
+  <X-PRE-PROCESS cmd="set" data="fr-ring=%(1500,3500,440)"/>
+  <X-PRE-PROCESS cmd="set" data="hk-ring=%(400,200,440,480);%(400,3000,440,480)"/>
+  <X-PRE-PROCESS cmd="set" data="hu-ring=%(1250,3750,425)"/>
+  <X-PRE-PROCESS cmd="set" data="il-ring=%(1000,3000,400)"/>
+  <X-PRE-PROCESS cmd="set" data="in-ring=%(400,200,425,375);%(400,2000,425,375)"/>
+  <X-PRE-PROCESS cmd="set" data="jp-ring=%(1000,2000,420,380)"/>
+  <X-PRE-PROCESS cmd="set" data="ko-ring=%(1000,2000,440,480)"/>
+  <X-PRE-PROCESS cmd="set" data="pk-ring=%(1000,2000,400)"/>
+  <X-PRE-PROCESS cmd="set" data="pl-ring=%(1000,4000,425)"/>
+  <X-PRE-PROCESS cmd="set" data="ro-ring=%(1850,4150,475,425)"/>
+  <X-PRE-PROCESS cmd="set" data="rs-ring=%(1000,4000,425)"/>
+  <X-PRE-PROCESS cmd="set" data="ru-ring=%(800,3200,425)"/>
+  <X-PRE-PROCESS cmd="set" data="sa-ring=%(1200,4600,425)"/>
+  <X-PRE-PROCESS cmd="set" data="tr-ring=%(2000,4000,450)"/>
+  <X-PRE-PROCESS cmd="set" data="uk-ring=%(400,200,400,450);%(400,2000,400,450)"/>
+  <X-PRE-PROCESS cmd="set" data="us-ring=%(2000,4000,440,480)"/>
+  <X-PRE-PROCESS cmd="set" data="bong-ring=v=-7;%(100,0,941.0,1477.0);v=-7;>=2;+=.1;%(1400,0,350,440)"/>
+  <X-PRE-PROCESS cmd="set" data="beep=%(1000,0,640)"/>
+  <X-PRE-PROCESS cmd="set" data="sit=%(274,0,913.8);%(274,0,1370.6);%(380,0,1776.7)"/>
+
+  <X-PRE-PROCESS cmd="set" data="sip_tls_version=tlsv1,tlsv1.1,tlsv1.2"/>
+  <X-PRE-PROCESS cmd="set" data="sip_tls_ciphers=ALL:!ADH:!LOW:!EXP:!MD5:@STRENGTH"/>
+  
+  <!-- Internal SIP Profile -->
+  <X-PRE-PROCESS cmd="set" data="internal_auth_calls=true"/>
+  <X-PRE-PROCESS cmd="set" data="internal_sip_port=5080"/>
+  <X-PRE-PROCESS cmd="set" data="internal_tls_port=5081"/>
+  <X-PRE-PROCESS cmd="set" data="internal_ssl_enable=false"/>
+
+  <!-- External SIP Profile -->
+  <X-PRE-PROCESS cmd="set" data="external_auth_calls=false"/>
+  <X-PRE-PROCESS cmd="set" data="external_sip_port=5090"/>
+  <X-PRE-PROCESS cmd="set" data="external_tls_port=5091"/>
+  <X-PRE-PROCESS cmd="set" data="external_ssl_enable=false"/>
+
+  <!-- Setting the max bandwdith -->
+  <X-PRE-PROCESS cmd="set" data="rtp_video_max_bandwidth_in=1mb"/>
+  <X-PRE-PROCESS cmd="set" data="rtp_video_max_bandwidth_out=1mb"/>
+
+  <!-- WebRTC Video -->
+  <!-- Suppress CNG for WebRTC Audio -->
+  <X-PRE-PROCESS cmd="set" data="suppress_cng=true"/>
+  <!-- Enable liberal DTMF for those that can't get it right -->
+  <X-PRE-PROCESS cmd="set" data="rtp_liberal_dtmf=true"/>
+  <!-- Helps with WebRTC Audio -->
+  <X-PRE-PROCESS cmd="set" data="answer_delay=4000"/>
+
+  <!-- Stock Video Avatars -->
+  <X-PRE-PROCESS cmd="set" data="video_mute_png=$${images_dir}/default-mute.png"/>
+  <X-PRE-PROCESS cmd="set" data="video_no_avatar_png=$${images_dir}/default-avatar.png"/>
+
+</include>

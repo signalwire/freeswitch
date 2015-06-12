@@ -1,0 +1,7 @@
+<context name="default">
+  <extension name="demo">
+    <condition field="to" expression="^(.*)$">
+      <action application="reply" data="Hello, you said: ${_body}"/>
+    </condition>
+  </extension>
+</context>

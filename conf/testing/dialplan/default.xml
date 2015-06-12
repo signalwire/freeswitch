@@ -1,0 +1,5 @@
+<context name="default">
+  
+  <X-PRE-PROCESS cmd="include" data="default/*.xml"/>
+  
+</context>

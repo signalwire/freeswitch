@@ -1,0 +1,6 @@
+<extension name="public_extensions">
+  <condition field="destination_number" expression="^(10[01][0-9])$">
+    <action application="transfer" data="$1 XML default"/>
+  </condition>
+</extension>
+
