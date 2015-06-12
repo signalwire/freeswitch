@@ -1,15 +1,9 @@
 <profile name="external-ipv6">
-  <!-- http://wiki.freeswitch.org/wiki/Sofia_Configuration_Files -->
-  <!-- This profile is only for outbound registrations to providers -->
   <gateways>
-    <X-PRE-PROCESS cmd="include" data="external-ipv6/*.xml"/>
+    <NO-PRE-PROCESS cmd="include" data="external-ipv6/*.xml"/>
   </gateways>
 
   <aliases>
-    <!--
-        <alias name="outbound"/>
-        <alias name="nat"/>
-    -->
   </aliases>
 
   <domains>
