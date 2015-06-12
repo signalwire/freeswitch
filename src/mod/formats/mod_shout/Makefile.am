@@ -9,7 +9,7 @@ mod_shout_la_SOURCES  = mod_shout.c
 mod_shout_la_CFLAGS   = $(AM_CFLAGS)
 mod_shout_la_CPPFLAGS = $(CURL_CFLAGS) $(AM_CPPFLAGS) $(SHOUT_CFLAGS) $(MP3LAME_CFLAGS) $(MPG123_CFLAGS)
 mod_shout_la_LIBADD   = $(switch_builddir)/libfreeswitch.la
-mod_shout_la_LDFLAGS  = $(CURL_LIBS) -avoid-version -module -no-undefined -shared $(SHOUT_LDFLAGS) $(MP3LAME_LDFLAGS) $(MPG123_LDFLAGS)
+mod_shout_la_LDFLAGS  = $(CURL_LIBS) -avoid-version -module -no-undefined -shared $(SHOUT_LIBS) $(MP3LAME_LIBS) $(MPG123_LIBS)
 
 
 if !HAVE_MP3LAME
