@@ -228,10 +228,12 @@ SWITCH_DECLARE(void) switch_generate_sln_silence(int16_t *data, uint32_t samples
 	}
 }
 
-SWITCH_DECLARE(uint32_t) switch_merge_sln(int16_t *data, uint32_t samples, int16_t *other_data, uint32_t other_samples)
+SWITCH_DECLARE(uint32_t) switch_merge_sln(int16_t *data, uint32_t samples, int16_t *other_data, uint32_t other_samples, int channels)
 {
 	int i;
 	int32_t x, z;
+
+	if (channels == 0) channels = 1;
 
 	if (samples > other_samples) {
 		x = other_samples;
@@ -239,7 +241,7 @@ SWITCH_DECLARE(uint32_t) switch_merge_sln(int16_t *data, uint32_t samples, int16
 		x = samples;
 	}
 
-	for (i = 0; i < x; i++) {
+	for (i = 0; i < x * channels; i++) {
 		z = data[i] + other_data[i];
 		switch_normalize_to_16bit(z);
 		data[i] = (int16_t) z;
@@ -249,10 +251,12 @@ SWITCH_DECLARE(uint32_t) switch_merge_sln(int16_t *data, uint32_t samples, int16
 }
 
 
-SWITCH_DECLARE(uint32_t) switch_unmerge_sln(int16_t *data, uint32_t samples, int16_t *other_data, uint32_t other_samples)
+SWITCH_DECLARE(uint32_t) switch_unmerge_sln(int16_t *data, uint32_t samples, int16_t *other_data, uint32_t other_samples, int channels)
 {
 	int i;
 	int32_t x;
+
+	if (channels == 0) channels = 1;
 
 	if (samples > other_samples) {
 		x = other_samples;
@@ -260,7 +264,7 @@ SWITCH_DECLARE(uint32_t) switch_unmerge_sln(int16_t *data, uint32_t samples, int
 		x = samples;
 	}
 
-	for (i = 0; i < x; i++) {
+	for (i = 0; i < x * channels; i++) {
 		data[i] -= other_data[i];
 	}
 

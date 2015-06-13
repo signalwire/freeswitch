@@ -1566,6 +1566,8 @@ struct eavesdrop_pvt {
 	switch_frame_t demux_frame;
 	int set_decoded_read;
 	int errs;
+	switch_codec_implementation_t read_impl;
+	switch_codec_implementation_t tread_impl;
 	uint8_t data[SWITCH_RECOMMENDED_BUFFER_SIZE];
 };
 
@@ -1666,18 +1668,21 @@ static switch_bool_t eavesdrop_callback(switch_media_bug_t *bug, void *user_data
 					switch_buffer_lock(ep->r_buffer);
 					bytes = (uint32_t) switch_buffer_read(ep->r_buffer, ep->data, rframe->datalen);
 
-					rframe->datalen = switch_merge_sln(rframe->data, rframe->samples, (int16_t *) ep->data, bytes / 2) * 2;
+					memcpy(rframe->data, ep->data, rframe->datalen);
+					rframe->datalen = switch_merge_sln(rframe->data, rframe->samples, (int16_t *) ep->data, bytes / 2, rframe->channels) * 2 * rframe->channels;
 					rframe->samples = rframe->datalen / 2;
 
 					ep->demux_frame.data = ep->data;
 					ep->demux_frame.datalen = bytes;
 					ep->demux_frame.samples = bytes / 2;
-					
+					ep->demux_frame.channels = rframe->channels;
+
 					switch_buffer_unlock(ep->r_buffer);
 					switch_core_media_bug_set_read_replace_frame(bug, rframe);
 					switch_core_media_bug_set_read_demux_frame(bug, &ep->demux_frame);
 				}
 			}
+
 		}
 		break;
 
@@ -1691,7 +1696,7 @@ static switch_bool_t eavesdrop_callback(switch_media_bug_t *bug, void *user_data
 					switch_buffer_lock(ep->w_buffer);
 					bytes = (uint32_t) switch_buffer_read(ep->w_buffer, data, rframe->datalen);
 
-					rframe->datalen = switch_merge_sln(rframe->data, rframe->samples, (int16_t *) data, bytes / 2) * 2;
+					rframe->datalen = switch_merge_sln(rframe->data, rframe->samples, (int16_t *) data, bytes / 2, rframe->channels) * 2 * rframe->channels;
 					rframe->samples = rframe->datalen / 2;
 
 					switch_buffer_unlock(ep->w_buffer);
@@ -1853,6 +1858,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 		uint32_t sanity = 600;
 		switch_media_bug_flag_t read_flags = 0, write_flags = 0;
 		const char *vval;
+		int buf_size = 0;
 
 		if (!switch_channel_media_up(channel)) {
 			goto end;
@@ -1935,6 +1941,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 			goto end;
 		}
 
+		switch_core_session_get_read_impl(session, &read_impl);
+
+		ep->read_impl = read_impl;
+		ep->tread_impl = tread_impl;
+
 		codec_initialized = 1;
 
 		switch_core_session_set_read_codec(session, &codec);
@@ -1942,24 +1953,26 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 		write_frame.data = buf;
 		write_frame.buflen = sizeof(buf);
 		write_frame.rate = codec.implementation->actual_samples_per_second;
-
+		
 		/* Make sure that at least one leg is bridged, default to both */
 		if (! (flags & (ED_BRIDGE_READ | ED_BRIDGE_WRITE))) {
 			flags |= ED_BRIDGE_READ | ED_BRIDGE_WRITE;
 		}
 
+		buf_size = codec.implementation->decoded_bytes_per_packet * 10;
+
 		ep->eavesdropper = session;
 		ep->flags = flags;
 		switch_mutex_init(&ep->mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(tsession));
-		switch_buffer_create_dynamic(&ep->buffer, 2048, 2048, 8192);
+		switch_buffer_create_dynamic(&ep->buffer, buf_size, buf_size, buf_size);
 		switch_buffer_add_mutex(ep->buffer, ep->mutex);
 
 		switch_mutex_init(&ep->w_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(tsession));
-		switch_buffer_create_dynamic(&ep->w_buffer, 2048, 2048, 8192);
+		switch_buffer_create_dynamic(&ep->w_buffer, buf_size, buf_size, buf_size);
 		switch_buffer_add_mutex(ep->w_buffer, ep->w_mutex);
 
 		switch_mutex_init(&ep->r_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(tsession));
-		switch_buffer_create_dynamic(&ep->r_buffer, 2048, 2048, 8192);
+		switch_buffer_create_dynamic(&ep->r_buffer, buf_size, buf_size, buf_size);
 		switch_buffer_add_mutex(ep->r_buffer, ep->r_mutex);
 
 		if (flags & ED_BRIDGE_READ) {
@@ -2178,6 +2191,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 					write_frame.datalen = (uint32_t) switch_buffer_read(ep->buffer, buf, len);
 					write_frame.samples = write_frame.datalen / 2;
 
+					if (ep->tread_impl.number_of_channels != ep->read_impl.number_of_channels) {
+						uint32_t rlen = write_frame.datalen / 2 / ep->tread_impl.number_of_channels;
+						switch_mux_channels((int16_t *) write_frame.data, rlen, ep->tread_impl.number_of_channels, ep->read_impl.number_of_channels);
+						write_frame.datalen = rlen * 2 * ep->read_impl.number_of_channels;
+						write_frame.samples = write_frame.datalen / 2;
+					}
+					
 					if ((status = switch_core_session_write_frame(session, &write_frame, SWITCH_IO_FLAG_NONE, 0)) != SWITCH_STATUS_SUCCESS) {
 						break;
 					}
