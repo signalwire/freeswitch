@@ -171,8 +171,8 @@ SWITCH_DECLARE(void) switch_change_sln_volume(int16_t *data, uint32_t samples, i
 SWITCH_DECLARE(void) switch_change_sln_volume_granular(int16_t *data, uint32_t samples, int32_t vol);
 ///\}
 
-SWITCH_DECLARE(uint32_t) switch_merge_sln(int16_t *data, uint32_t samples, int16_t *other_data, uint32_t other_samples);
-SWITCH_DECLARE(uint32_t) switch_unmerge_sln(int16_t *data, uint32_t samples, int16_t *other_data, uint32_t other_samples);
+SWITCH_DECLARE(uint32_t) switch_merge_sln(int16_t *data, uint32_t samples, int16_t *other_data, uint32_t other_samples, int channels);
+SWITCH_DECLARE(uint32_t) switch_unmerge_sln(int16_t *data, uint32_t samples, int16_t *other_data, uint32_t other_samples, int channels);
 SWITCH_DECLARE(void) switch_mux_channels(int16_t *data, switch_size_t samples, uint32_t orig_channels, uint32_t channels);
 
 SWITCH_END_EXTERN_C

@@ -570,6 +570,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 													  session->read_impl.actual_samples_per_second,
 													  session->raw_read_frame.data, &session->raw_read_frame.datalen, &session->raw_read_frame.rate, 
 													  &read_frame->flags);
+
+					session->raw_read_frame.samples = session->raw_read_frame.datalen / 2;
+					session->raw_read_frame.channels = codec->implementation->number_of_channels;
 					codec->cur_frame = NULL;
 					session->read_codec->cur_frame = NULL;
 					switch_thread_rwlock_unlock(session->bug_rwlock);
@@ -600,13 +603,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 			}
 
 			/* mux or demux to match */
-			if (session->read_impl.number_of_channels != read_frame->codec->implementation->number_of_channels) {
-				uint32_t rlen = session->raw_read_frame.datalen / 2 / read_frame->codec->implementation->number_of_channels;
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "%s MUX READ\n", switch_channel_get_name(session->channel));
-				switch_mux_channels((int16_t *) session->raw_read_frame.data, rlen, 
-									read_frame->codec->implementation->number_of_channels, session->read_impl.number_of_channels);
-				session->raw_write_frame.datalen = rlen * 2 * session->read_impl.number_of_channels;
+			if (session->raw_read_frame.channels != session->read_impl.number_of_channels) {
+				uint32_t rlen = session->raw_read_frame.datalen / 2 / session->raw_read_frame.channels;
+				switch_mux_channels((int16_t *) session->raw_read_frame.data, rlen, session->raw_read_frame.channels, session->read_impl.number_of_channels);
+				session->raw_read_frame.datalen = rlen * 2 * session->read_impl.number_of_channels;
+				session->raw_read_frame.samples = session->raw_read_frame.datalen / 2;
+				session->raw_read_frame.channels = session->read_impl.number_of_channels;
 			}
+
 
 			switch (status) {
 			case SWITCH_STATUS_RESAMPLE:
@@ -788,11 +792,16 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 					switch_mutex_lock(bp->read_mutex);
 					if (bp->read_demux_frame) {
 						uint8_t data[SWITCH_RECOMMENDED_BUFFER_SIZE];
-						int bytes = read_frame->datalen / 2;
+						int bytes = read_frame->datalen;
+						uint32_t datalen = 0;
+						uint32_t samples = bytes / 2 / bp->read_demux_frame->channels;
 
 						memcpy(data, read_frame->data, read_frame->datalen);
-						switch_unmerge_sln((int16_t *)data, bytes, bp->read_demux_frame->data, bytes);
-						switch_buffer_write(bp->raw_read_buffer, data, read_frame->datalen);
+						datalen = switch_unmerge_sln((int16_t *)data, samples, 
+													 bp->read_demux_frame->data, samples, 
+													 bp->read_demux_frame->channels) * 2 * bp->read_demux_frame->channels;
+
+						switch_buffer_write(bp->raw_read_buffer, data, datalen);
 					} else {
 						switch_buffer_write(bp->raw_read_buffer, read_frame->data, read_frame->datalen);
 					}
