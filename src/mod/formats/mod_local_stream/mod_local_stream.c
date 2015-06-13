@@ -63,6 +63,7 @@ struct local_stream_context {
 	const char *func;
 	int line;
 	switch_file_handle_t *handle;
+	switch_queue_t *video_q;
 	struct local_stream_context *next;
 };
 
@@ -98,6 +99,7 @@ struct local_stream_source {
 	int32_t chime_counter;
 	int32_t chime_max_counter;
 	switch_file_handle_t chime_fh;
+	switch_queue_t *video_q;
 };
 
 typedef struct local_stream_source local_stream_source_t;
@@ -133,6 +135,7 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 		source->prebuf = DEFAULT_PREBUFFER_SIZE;
 	}
 
+	switch_queue_create(&source->video_q, 500, source->pool);
 	switch_buffer_create_dynamic(&audio_buffer, 1024, source->prebuf + 10, 0);
 	dist_buf = switch_core_alloc(source->pool, source->prebuf + 10);
 
@@ -210,7 +213,7 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 
 			if (switch_core_file_open(&fh,
 									  (char *) fname,
-									  source->channels, source->rate, SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, NULL) != SWITCH_STATUS_SUCCESS) {
+									  source->channels, source->rate, SWITCH_FILE_FLAG_VIDEO | SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, NULL) != SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't open %s\n", fname);
 				switch_yield(1000000);
 				continue;
@@ -226,6 +229,7 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 			while (RUNNING && !source->stopped) {
 				int is_open;
 				switch_file_handle_t *use_fh = &fh;
+				int has_video = 0;
 
 				switch_core_timer_next(&timer);
 				olen = source->samples;
@@ -248,7 +252,7 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 						if (switch_core_file_open(&source->chime_fh,
 												  (char *) val,
 												  source->channels,
-												  source->rate, SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, NULL) != SWITCH_STATUS_SUCCESS) {
+												  source->rate, SWITCH_FILE_FLAG_VIDEO | SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, NULL) != SWITCH_STATUS_SUCCESS) {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't open %s\n", val);
 						}
 					}
@@ -277,9 +281,22 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 					}
 				}
 
-
+				has_video = 0;
 
 				if (is_open) {
+					
+					if (switch_core_file_has_video(use_fh)) {
+						switch_frame_t vid_frame = { 0 };
+
+						has_video = 1;
+
+						if (switch_core_file_read_video(use_fh, &vid_frame, SVR_FLUSH) == SWITCH_STATUS_SUCCESS) {
+							if (vid_frame.img) {
+								switch_queue_push(source->video_q, vid_frame.img);
+							}
+						}
+					}
+
 					if (switch_core_file_read(use_fh, abuf, &olen) != SWITCH_STATUS_SUCCESS || !olen) {
 						switch_core_file_close(use_fh);
 						if (use_fh == &source->chime_fh) {
@@ -297,7 +314,7 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 								goto retry;
 							}
 						}
-
+						
 						switch_buffer_write(audio_buffer, abuf, olen * 2 * source->channels);
 					}
 				}
@@ -309,14 +326,35 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 				}
 
 				if (!is_open || used >= source->prebuf || (source->total && used > source->samples * 2 * source->channels)) {
+					void *pop;
+
 					used = switch_buffer_read(audio_buffer, dist_buf, source->samples * 2 * source->channels);
-					if (source->total) {
+
+					if (!source->total) {
+						switch_mutex_lock(source->mutex);
+
+						while (switch_queue_trypop(source->video_q, &pop) == SWITCH_STATUS_SUCCESS) {
+							switch_image_t *img = (switch_image_t *) pop;
+							switch_img_free(&img);
+						}
+
+						switch_mutex_unlock(source->mutex);
+
+					} else {
 						uint32_t bused = 0;
+						
 						switch_mutex_lock(source->mutex);
 						for (cp = source->context_list; cp && RUNNING; cp = cp->next) {
+							if (has_video) {
+								switch_set_flag(cp->handle, SWITCH_FILE_FLAG_VIDEO);
+							} else {
+								switch_clear_flag(cp->handle, SWITCH_FILE_FLAG_VIDEO);
+							}
+							
 							if (switch_test_flag(cp->handle, SWITCH_FILE_CALLBACK)) {
 								continue;
 							}
+							
 							switch_mutex_lock(cp->audio_mutex);
 							bused = (uint32_t)switch_buffer_inuse(cp->audio_buffer);
 							if (bused > source->samples * 768) {
@@ -329,6 +367,30 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 							switch_mutex_unlock(cp->audio_mutex);
 						}
 						switch_mutex_unlock(source->mutex);
+
+						switch_mutex_lock(source->mutex);
+						while (switch_queue_trypop(source->video_q, &pop) == SWITCH_STATUS_SUCCESS) {
+							switch_image_t *img = (switch_image_t *) pop;
+							switch_image_t *imgcp = NULL;
+
+							if (source->total == 1) {
+								switch_queue_push(source->context_list->video_q, img);
+							} else if (source->context_list) {
+								for (cp = source->context_list; cp && RUNNING; cp = cp->next) {
+									if (cp->video_q) {
+										imgcp = NULL;
+										switch_img_copy(img, &imgcp);
+										if (imgcp) {
+											switch_queue_push(cp->video_q, imgcp);
+										}
+									}
+								}
+							} else {
+								switch_img_free(&img);
+							}
+						}
+						switch_mutex_unlock(source->mutex);
+
 					}
 				}
 			}
@@ -418,6 +480,15 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 
 	switch_buffer_destroy(&audio_buffer);
 
+	if (source->video_q) {
+		void *pop;
+
+		while (switch_queue_trypop(source->video_q, &pop) == SWITCH_STATUS_SUCCESS) {
+			switch_image_t *img = (switch_image_t *) pop;
+			switch_img_free(&img);
+		}
+	}
+
 	if (fd > -1) {
 		close(fd);
 	}
@@ -486,6 +557,8 @@ static switch_status_t local_stream_file_open(switch_file_handle_t *handle, cons
 		goto end;
 	}
 
+	switch_queue_create(&context->video_q, 500, handle->memory_pool);
+
 	handle->samples = 0;
 	handle->samplerate = source->rate;
 	handle->channels = source->channels;
@@ -536,12 +609,61 @@ static switch_status_t local_stream_file_close(switch_file_handle_t *handle)
 		}
 		last = cp;
 	}
+
+	if (context->video_q) {
+		void *pop;
+
+		while (switch_queue_trypop(context->video_q, &pop) == SWITCH_STATUS_SUCCESS) {
+			switch_image_t *img = (switch_image_t *) pop;
+			switch_img_free(&img);
+		}
+	}
+
 	context->source->total--;
 	switch_mutex_unlock(context->source->mutex);
 	switch_buffer_destroy(&context->audio_buffer);
 	switch_thread_rwlock_unlock(context->source->rwlock);
 
 	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t local_stream_file_read_video(switch_file_handle_t *handle, switch_frame_t *frame, switch_video_read_flag_t flags)
+{
+	void *pop;
+	local_stream_context_t *context = handle->private_info;
+	switch_status_t status;
+
+	if (!context->source->ready) {
+		return SWITCH_STATUS_FALSE;
+	}
+	
+	while((flags & SVR_FLUSH) && switch_queue_size(context->video_q) > 1) {
+		if (switch_queue_trypop(context->video_q, &pop) == SWITCH_STATUS_SUCCESS) {
+			switch_image_t *img = (switch_image_t *) pop;
+			switch_img_free(&img);
+		}
+	}
+
+	if (!context->source->ready) {
+		return SWITCH_STATUS_FALSE;
+	}
+	
+	if ((flags && SVR_BLOCK)) {
+		status = switch_queue_pop(context->video_q, &pop);
+	} else {
+		status = switch_queue_trypop(context->video_q, &pop);
+	}
+
+	if (status == SWITCH_STATUS_SUCCESS) {
+		if (!pop) {
+			return SWITCH_STATUS_FALSE;
+		}
+
+		frame->img = (switch_image_t *) pop;
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	return (flags & SVR_FLUSH) ? SWITCH_STATUS_BREAK : status;
 }
 
 static switch_status_t local_stream_file_read(switch_file_handle_t *handle, void *data, size_t *len)
@@ -993,6 +1115,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_local_stream_load)
 	file_interface->file_open = local_stream_file_open;
 	file_interface->file_close = local_stream_file_close;
 	file_interface->file_read = local_stream_file_read;
+	file_interface->file_read_video = local_stream_file_read_video;
 
 	if (switch_event_bind(modname, SWITCH_EVENT_SHUTDOWN, SWITCH_EVENT_SUBCLASS_ANY, event_handler, NULL) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind event handler!\n");
