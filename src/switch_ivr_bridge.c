@@ -53,7 +53,9 @@ static void video_bridge_thread(switch_core_session_t *session, void *obj)
 	switch_channel_t *b_channel = switch_core_session_get_channel(vh->session_b);
 	switch_status_t status;
 	switch_frame_t *read_frame = 0;
-	int set_decoded_read = 0;
+	int set_decoded_read = 0, refresh_timer = 0, playing_file = 0;
+	switch_frame_t fr = { 0 };
+	unsigned char *buf = NULL;
 
 	vh->up = 1;
 
@@ -63,10 +65,13 @@ static void video_bridge_thread(switch_core_session_t *session, void *obj)
 	switch_core_session_request_video_refresh(vh->session_a);
 	switch_core_session_request_video_refresh(vh->session_b);
 
+	refresh_timer = 5;
+
 	while (switch_channel_up_nosig(channel) && switch_channel_up_nosig(b_channel) && vh->up == 1) {
 		if (switch_channel_media_up(channel)) {
 			switch_codec_t *a_codec = switch_core_session_get_video_read_codec(vh->session_a);
 			switch_codec_t *b_codec = switch_core_session_get_video_write_codec(vh->session_b);
+			switch_file_handle_t *fh;
 
 			switch_assert(a_codec);
 			switch_assert(b_codec);
@@ -76,6 +81,7 @@ static void video_bridge_thread(switch_core_session_t *session, void *obj)
 					if (set_decoded_read) {
 						switch_channel_clear_flag_recursive(channel, CF_VIDEO_DECODED_READ);
 						set_decoded_read = 0;
+						refresh_timer = 5;
 					}
 				}
 			} else {
@@ -83,18 +89,72 @@ static void video_bridge_thread(switch_core_session_t *session, void *obj)
 					switch_channel_test_flag(b_channel, CF_VIDEO_DECODED_READ)) {
 					switch_channel_set_flag_recursive(channel, CF_VIDEO_DECODED_READ);
 					set_decoded_read = 1;
+					refresh_timer = 5;
 				}
 			}
 			
-			status = switch_core_session_read_video_frame(vh->session_a, &read_frame, SWITCH_IO_FLAG_NONE, 0);
+
+			if ((fh = switch_core_media_get_video_file(session, SWITCH_RW_WRITE)) && switch_test_flag(fh, SWITCH_FILE_OPEN)) {
+				switch_status_t wstatus;
+				
+				if (!playing_file) {
+					playing_file = 1;
+				}
+
+				if (!buf) {
+					int buflen = SWITCH_RTP_MAX_BUF_LEN;
+
+					buf = switch_core_session_alloc(session, buflen);
+					fr.packet = buf;
+					fr.packetlen = buflen;
+					fr.data = buf + 12;
+					fr.buflen = buflen - 12;
+					switch_core_media_gen_key_frame(session);
+				}
+
+				wstatus = switch_core_file_read_video(fh, &fr, SVR_BLOCK);
+				
+				if (wstatus == SWITCH_STATUS_SUCCESS) {
+					switch_core_session_write_video_frame(session, &fr, SWITCH_IO_FLAG_NONE, 0);
+					switch_img_free(&fr.img);
+				} else if (wstatus != SWITCH_STATUS_BREAK) {
+					switch_core_media_set_video_file(session, NULL, SWITCH_RW_WRITE);
+				}
+
+				continue;
+			}
 			
+
+			if (playing_file) {
+				playing_file = 0;
+				switch_core_session_request_video_refresh(vh->session_a);
+				switch_core_session_request_video_refresh(vh->session_b);
+				switch_channel_video_sync(channel);
+				refresh_timer = 5;
+			}
+
+			if (refresh_timer) {
+				if (--refresh_timer == 0) {
+					switch_core_session_request_video_refresh(vh->session_a);
+					switch_core_session_request_video_refresh(vh->session_b);
+				}
+			}
+		
+
+			status = switch_core_session_read_video_frame(vh->session_a, &read_frame, SWITCH_IO_FLAG_NONE, 0);
+
 			if (!SWITCH_READ_ACCEPTABLE(status)) {
 				switch_cond_next();
 				continue;
 			}
+
+
+			if (switch_test_flag(read_frame, SFF_CNG)) {
+				continue;
+			}
 		}
 
-		if (switch_test_flag(read_frame, SFF_CNG)) {
+		if (switch_channel_test_flag(channel, CF_LEG_HOLDING) || switch_channel_test_flag(b_channel, CF_VIDEO_READ_FILE_ATTACHED)) {
 			continue;
 		}
 

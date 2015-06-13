@@ -4763,6 +4763,39 @@ SWITCH_DECLARE(int) switch_core_media_toggle_hold(switch_core_session_t *session
 	return changed;
 }
 
+
+SWITCH_DECLARE(switch_file_handle_t *) switch_core_media_get_video_file(switch_core_session_t *session, switch_rw_t rw)
+{
+	switch_media_handle_t *smh;
+	switch_rtp_engine_t *v_engine;
+	switch_file_handle_t *fh;
+
+	switch_assert(session);
+
+	if (!switch_channel_test_flag(session->channel, CF_VIDEO)) {
+		return NULL;
+	}
+
+	if (!(smh = session->media_handle)) {
+		return NULL;
+	}
+
+	v_engine = &smh->engines[SWITCH_MEDIA_TYPE_VIDEO];	
+
+	switch_mutex_lock(v_engine->mh.file_mutex);
+
+	if (rw == SWITCH_RW_READ) {
+		fh = smh->video_read_fh;
+	} else {
+		fh = smh->video_write_fh;
+	}
+
+	switch_mutex_unlock(v_engine->mh.file_mutex);
+
+	return fh;
+}
+
+
 SWITCH_DECLARE(switch_status_t) switch_core_media_set_video_file(switch_core_session_t *session, switch_file_handle_t *fh, switch_rw_t rw)
 {
 	switch_media_handle_t *smh;
@@ -4789,14 +4822,28 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_set_video_file(switch_core_ses
 	switch_mutex_lock(v_engine->mh.file_mutex);
 
 	if (rw == SWITCH_RW_READ) {
-		smh->video_read_fh = fh;
+		
 		if (fh) {
 			switch_channel_set_flag_recursive(session->channel, CF_VIDEO_DECODED_READ);
-		} else {
+			switch_channel_set_flag(session->channel, CF_VIDEO_READ_FILE_ATTACHED);
+		} else if (smh->video_read_fh) {
 			switch_channel_clear_flag_recursive(session->channel, CF_VIDEO_DECODED_READ);
 			switch_core_session_video_reset(session);
 		}
+		
+		if (!fh) {
+			switch_channel_clear_flag(session->channel, CF_VIDEO_READ_FILE_ATTACHED);
+		}
+
+		smh->video_read_fh = fh;
+
 	} else {
+		if (fh) {
+			switch_channel_set_flag(session->channel, CF_VIDEO_WRITE_FILE_ATTACHED);
+		} else {
+			switch_channel_clear_flag(session->channel, CF_VIDEO_WRITE_FILE_ATTACHED);
+		}
+
 		switch_core_media_gen_key_frame(session);
 		smh->video_write_fh = fh;
 	}
@@ -4941,7 +4988,7 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 		vloops++;
 
 		if (!buf) {
-			int buflen = SWITCH_RECOMMENDED_BUFFER_SIZE * 4;
+			int buflen = SWITCH_RTP_MAX_BUF_LEN;
 			buf = switch_core_session_alloc(session, buflen);
 			fr.packet = buf;
 			fr.packetlen = buflen;
