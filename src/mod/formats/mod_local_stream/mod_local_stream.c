@@ -375,17 +375,18 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 
 							if (source->total == 1) {
 								switch_queue_push(source->context_list->video_q, img);
-							} else if (source->context_list) {
-								for (cp = source->context_list; cp && RUNNING; cp = cp->next) {
-									if (cp->video_q) {
-										imgcp = NULL;
-										switch_img_copy(img, &imgcp);
-										if (imgcp) {
-											switch_queue_push(cp->video_q, imgcp);
+							} else {
+								if (source->context_list) {
+									for (cp = source->context_list; cp && RUNNING; cp = cp->next) {
+										if (cp->video_q) {
+											imgcp = NULL;
+											switch_img_copy(img, &imgcp);
+											if (imgcp) {
+												switch_queue_push(cp->video_q, imgcp);
+											}
 										}
 									}
 								}
-							} else {
 								switch_img_free(&img);
 							}
 						}
