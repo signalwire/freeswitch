@@ -133,6 +133,7 @@
     };
 
     $.verto.prototype.loginData = function(params) {
+	var verto = this;
         verto.options.login = params.login;
         verto.options.passwd = params.passwd;
         verto.rpcClient.loginData(params);
