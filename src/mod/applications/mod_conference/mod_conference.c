@@ -263,7 +263,8 @@ typedef enum {
 	CFLAG_TRANSCODE_VIDEO = (1 << 24),
 	CFLAG_VIDEO_MUXING = (1 << 25),
 	CFLAG_MINIMIZE_VIDEO_ENCODING = (1 << 26),
-	CFLAG_MANAGE_INBOUND_VIDEO_BITRATE = (1 << 27)
+	CFLAG_MANAGE_INBOUND_VIDEO_BITRATE = (1 << 27),
+	CFLAG_JSON_STATUS = (1 << 28)
 } conf_flag_t;
 
 typedef enum {
@@ -3921,9 +3922,11 @@ static void send_conference_notify(conference_obj_t *conference, const char *sta
 
 }
 
+
 static void member_update_status_field(conference_member_t *member)
 {
-	char *str, *vstr = "", display[128] = "";
+	char *str, *vstr = "", display[128] = "", *json_display = NULL;
+	cJSON *json, *audio, *video;
 
 	if (!member->conference->la || !member->json || !member->status_field || switch_channel_test_flag(member->channel, CF_VIDEO_ONLY)) {
 		return;
@@ -3931,38 +3934,74 @@ static void member_update_status_field(conference_member_t *member)
 
 	switch_live_array_lock(member->conference->la);
 
-	if (!switch_test_flag(member, MFLAG_CAN_SPEAK)) {
-		str = "MUTE";
-	} else if (switch_channel_test_flag(member->channel, CF_HOLD)) {
-		str = "HOLD";
-	} else if (member == member->conference->floor_holder) {
-		if (switch_test_flag(member, MFLAG_TALKING)) {
-			str = "TALKING (FLOOR)";
+	if (switch_test_flag(member->conference, CFLAG_JSON_STATUS)) {
+		json = cJSON_CreateObject();
+		audio = cJSON_CreateObject();
+		cJSON_AddItemToObject(audio, "muted", cJSON_CreateBool(!switch_test_flag(member, MFLAG_CAN_SPEAK))); 
+		cJSON_AddItemToObject(audio, "onHold", cJSON_CreateBool(switch_channel_test_flag(member->channel, CF_HOLD))); 
+		cJSON_AddItemToObject(audio, "talking", cJSON_CreateBool(switch_test_flag(member, MFLAG_TALKING)));
+		cJSON_AddItemToObject(audio, "floor", cJSON_CreateBool(member == member->conference->floor_holder));
+		cJSON_AddItemToObject(audio, "energyScore", cJSON_CreateNumber(member->score));
+		cJSON_AddItemToObject(json, "audio", audio);
+		
+		if (switch_channel_test_flag(member->channel, CF_VIDEO) || member->avatar_png_img) {
+			video = cJSON_CreateObject();
+			cJSON_AddItemToObject(video, "avatarPresented", cJSON_CreateBool(!!member->avatar_png_img));
+			cJSON_AddItemToObject(video, "mediaFlow", cJSON_CreateString(member->video_flow == SWITCH_MEDIA_FLOW_SENDONLY ? "sendOnly" : "sendRecv"));
+			cJSON_AddItemToObject(video, "muted", cJSON_CreateBool(!switch_test_flag(member, MFLAG_CAN_BE_SEEN)));
+			cJSON_AddItemToObject(video, "floor", cJSON_CreateBool(member && member->id == member->conference->video_floor_holder));
+			if (member && member->id == member->conference->video_floor_holder && switch_test_flag(member->conference, CFLAG_VID_FLOOR_LOCK)) {
+				cJSON_AddItemToObject(video, "floorLocked", cJSON_CreateTrue());
+			}
+			cJSON_AddItemToObject(video, "reservationID", member->video_reservation_id ? 
+								  cJSON_CreateString(member->video_reservation_id) : cJSON_CreateNull());
+
+			cJSON_AddItemToObject(video, "videoLayerID", cJSON_CreateNumber(member->video_layer_id));
+			
+			cJSON_AddItemToObject(json, "video", video);
 		} else {
-			str = "FLOOR";
+			cJSON_AddItemToObject(json, "video", cJSON_CreateFalse());
 		}
-	} else if (switch_test_flag(member, MFLAG_TALKING)) {
-		str = "TALKING";
+
+		json_display = cJSON_PrintUnformatted(json);
+		cJSON_Delete(json);
 	} else {
-		str = "ACTIVE";
-	}
-	
-	if (switch_channel_test_flag(member->channel, CF_VIDEO)) {
-		if (!switch_test_flag(member, MFLAG_CAN_BE_SEEN)) {
-			vstr = " VIDEO (BLIND)";
+		if (!switch_test_flag(member, MFLAG_CAN_SPEAK)) {
+			str = "MUTE";
+		} else if (switch_channel_test_flag(member->channel, CF_HOLD)) {
+			str = "HOLD";
+		} else if (member == member->conference->floor_holder) {
+			if (switch_test_flag(member, MFLAG_TALKING)) {
+				str = "TALKING (FLOOR)";
+			} else {
+				str = "FLOOR";
+			}
+		} else if (switch_test_flag(member, MFLAG_TALKING)) {
+			str = "TALKING";
 		} else {
-			vstr = " VIDEO";
-			if (member && member->id == member->conference->video_floor_holder) {
-				vstr = " VIDEO (FLOOR)";
+			str = "ACTIVE";
+		}
+	
+		if (switch_channel_test_flag(member->channel, CF_VIDEO)) {
+			if (!switch_test_flag(member, MFLAG_CAN_BE_SEEN)) {
+				vstr = " VIDEO (BLIND)";
+			} else {
+				vstr = " VIDEO";
+				if (member && member->id == member->conference->video_floor_holder) {
+					vstr = " VIDEO (FLOOR)";
+				}
 			}
 		}
+
+		switch_snprintf(display, sizeof(display), "%s%s", str, vstr);
 	}
 
-	switch_snprintf(display, sizeof(display), "%s%s", str, vstr);
-
-
-	free(member->status_field->valuestring);
-	member->status_field->valuestring = strdup(display);
+	if (json_display) {
+		member->status_field->valuestring = json_display;
+	} else {
+		free(member->status_field->valuestring);
+		member->status_field->valuestring = strdup(display);
+	}
 
 	switch_live_array_add(member->conference->la, switch_core_session_get_uuid(member->session), -1, &member->json, SWITCH_FALSE);
 	switch_live_array_unlock(member->conference->la);
@@ -11416,6 +11455,8 @@ static void set_cflags(const char *flags, uint32_t *f)
 				*f |= CFLAG_JSON_EVENTS;
 			} else if (!strcasecmp(argv[i], "livearray-sync")) {
 				*f |= CFLAG_LIVEARRAY_SYNC;
+			} else if (!strcasecmp(argv[i], "livearray-json-status")) {
+				*f |= CFLAG_JSON_STATUS;
 			} else if (!strcasecmp(argv[i], "rfc-4579")) {
 				*f |= CFLAG_RFC4579;
 			} else if (!strcasecmp(argv[i], "auto-3d-position")) {
