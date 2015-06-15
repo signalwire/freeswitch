@@ -86,8 +86,13 @@ struct {
 	int sprop_maxcapturerate;
 	int plpct;
 	int asymmetric_samplerates;
+	int debuginfo;
     switch_mutex_t *mutex;
 } opus_prefs;
+
+static struct {
+	int debug;
+} globals;
 
 static switch_bool_t switch_opus_acceptable_rate(int rate)
 {
@@ -245,6 +250,45 @@ static char *gen_fmtp(opus_codec_settings_t *settings, switch_memory_pool_t *poo
 	
 	return switch_core_strdup(pool, buf);
     
+}
+
+static switch_status_t switch_opus_info(void * encoded_data, uint32_t len, uint32_t samples_per_second, char *print_text)
+{
+	int nb_samples;
+	int nb_frames;
+	int audiobandwidth;
+	const char *audiobandwidth_str = "UNKNOWN";
+	opus_int16 frame_sizes[48];
+	const unsigned char *frame_data[48];
+	char has_fec = 0;
+
+	if ((encoded_data == NULL) || (len < 0))
+		return SWITCH_STATUS_FALSE ;
+	nb_frames = opus_packet_get_nb_frames(encoded_data, len);
+	nb_samples = opus_packet_get_samples_per_frame(encoded_data, samples_per_second) * nb_frames;
+	audiobandwidth = opus_packet_get_bandwidth(encoded_data);
+	if (audiobandwidth == OPUS_BANDWIDTH_NARROWBAND){
+		audiobandwidth_str = "NARROWBAND";
+	} else if (audiobandwidth == OPUS_BANDWIDTH_MEDIUMBAND) {
+		audiobandwidth_str = "MEDIUMBAND";
+	} else if (audiobandwidth == OPUS_BANDWIDTH_WIDEBAND){
+		audiobandwidth_str = "WIDEBAND";
+	} else if (audiobandwidth == OPUS_BANDWIDTH_SUPERWIDEBAND) {
+		audiobandwidth_str = "SUPERWIDEBAND";
+	} else if (audiobandwidth == OPUS_BANDWIDTH_FULLBAND){
+		audiobandwidth_str = "FULLBAND";
+	} else if (audiobandwidth == OPUS_INVALID_PACKET){
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s: OPUS_INVALID_PACKET !\n", print_text);
+	}
+	if (opus_packet_parse(encoded_data, len, NULL, frame_data, frame_sizes, NULL)){
+		if (frame_data[0] != NULL) {
+			/*check only 1st frame*/
+			has_fec = frame_data[0][0] & (0x80 >> 1);
+		}
+	}
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s: frames [%d] samples [%d] audio bandwidth [%s] bytes [%d] FEC[%s]\n", 
+							print_text, nb_frames, nb_samples, audiobandwidth_str, len, has_fec ? "yes" : "no" );
+	return SWITCH_STATUS_SUCCESS;
 }
 
 static switch_status_t switch_opus_init(switch_codec_t *codec, switch_codec_flag_t flags, const switch_codec_settings_t *codec_settings)
@@ -453,7 +497,12 @@ static switch_status_t switch_opus_encode(switch_codec_t *codec,
 	}
 	
 	bytes = opus_encode(context->encoder_object, (void *) decoded_data, context->enc_frame_size, (unsigned char *) encoded_data, len);
-	
+
+	if (globals.debug){
+		int samplerate = context->enc_frame_size * 1000 / (codec->implementation->microseconds_per_packet / 1000);
+		switch_opus_info(encoded_data, bytes, samplerate, "encode");
+	}
+
 	if (bytes > 0) {
 		*encoded_data_len = (uint32_t) bytes;
 		return SWITCH_STATUS_SUCCESS;
@@ -494,6 +543,11 @@ static switch_status_t switch_opus_decode(switch_codec_t *codec,
 		}
 
 		*flag &= ~SFF_PLC;
+	}
+
+	if (globals.debug){
+		int samplerate = context->dec_frame_size * 1000 / (codec->implementation->microseconds_per_packet / 1000);
+		switch_opus_info((*flag & SFF_PLC) ? NULL : encoded_data, encoded_data_len, samplerate ? samplerate : codec->implementation->actual_samples_per_second, "decode");
 	}
 
 	samples = opus_decode(context->decoder_object, encoded_data, encoded_data_len, decoded_data, frame_size, fec);
@@ -594,11 +648,31 @@ static switch_status_t switch_opus_control(switch_codec_t *codec,
 
 	return SWITCH_STATUS_SUCCESS;
 }
+#define OPUS_DEBUG_SYNTAX "<on|off>"
+SWITCH_STANDARD_API(mod_opus_debug)
+{
+	if (zstr(cmd)) {
+		stream->write_function(stream, "-USAGE: %s\n", OPUS_DEBUG_SYNTAX);
+	} else {
+		if (!strcasecmp(cmd, "on")) {
+			globals.debug = 1;
+			stream->write_function(stream, "OPUS Debug: on\n");
+		} else if (!strcasecmp(cmd, "off")) {
+			globals.debug = 0;
+			stream->write_function(stream, "OPUS Debug: off\n");
+		} else {
+			stream->write_function(stream, "-USAGE: %s\n", OPUS_DEBUG_SYNTAX);
+		}
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
 
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_opus_load)
 {
 	switch_codec_interface_t *codec_interface;
+	switch_api_interface_t *commands_api_interface;
 	int samples = 480;
 	int bytes = 960;
 	int mss = 10000;
@@ -617,7 +691,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_opus_load)
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
     
 	SWITCH_ADD_CODEC(codec_interface, "OPUS (STANDARD)");
-    
+	SWITCH_ADD_API(commands_api_interface, "opus_debug", "Set OPUS Debug", mod_opus_debug, OPUS_DEBUG_SYNTAX);
+	
 	codec_interface->parse_fmtp = switch_opus_fmtp_parse;
     
 	settings = default_codec_settings;
