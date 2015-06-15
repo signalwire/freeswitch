@@ -322,10 +322,6 @@ build_debs () {
           --othermirror "$(get_mirrors $distro $custom_sources_file)"
       fi
     }
-    if [ ! -e "$custom_keyring" ]; then
-      # Cleanup script created temporary file
-      rm -f $keyring
-    fi
     if ! [ -d $cow_img ]; then
       announce "Creating base $distro-$arch image..."
       local x=30
@@ -351,6 +347,10 @@ build_debs () {
       --hookdir "$hookdir" \
       --buildresult ../ \
       $cow_build_opts
+    if [ ! -e "$custom_keyring" ]; then
+      # Cleanup script created temporary file
+      rm -f $keyring
+    fi
   } 1>&2
   echo ${dsc%.dsc}_${arch}.changes
 }
