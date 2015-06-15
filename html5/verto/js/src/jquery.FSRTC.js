@@ -575,11 +575,6 @@
             url: !moz ? 'stun:stun.l.google.com:19302' : 'stun:23.21.150.121'
         };
 
-        var TURN = {
-            url: 'turn:homeo@turn.bistri.com:80',
-            credential: 'homeo'
-        };
-
         var iceServers = null;
 
         if (options.iceServers) {
@@ -599,12 +594,6 @@
             };
 
             if (!moz && !tmp) {
-                if (parseInt(navigator.userAgent.match(/Chrom(e|ium)\/([0-9]+)\./)[2]) >= 28) TURN = {
-                    url: 'turn:turn.bistri.com:80',
-                    credential: 'homeo',
-                    username: 'homeo'
-                };
-
                 iceServers.iceServers = [STUN];
             }
         }
