@@ -1,57 +1,35 @@
 <extension name="eavesdrop1">
-  <condition field="destination_number" expression="^6004$">
+  <condition field="destination_number" expression="^6020$">
     <action application="answer"/>
     <action application="eavesdrop" data="all"/>  
   </condition>
 </extension>
 
 <extension name="eavesdrop2">
-  <condition field="destination_number" expression="^6005$">
+  <condition field="destination_number" expression="^6021$">
     <action application="set" data="absolute_codec_string=PCMU"/> <!-- MONO -->
     <action application="answer"/>
     <action application="eavesdrop" data="all"/>  
   </condition>
 </extension>
 <extension name="eavesdrop3">
-  <condition field="destination_number" expression="^6006$">
+  <condition field="destination_number" expression="^6022$">
     <action application="set" data="absolute_codec_string=OPUS"/> <!-- STEREO -->
     <action application="answer"/>
     <action application="eavesdrop" data="all"/>  
   </condition>
 </extension>
 <extension name="eavesdrop4">
-  <condition field="destination_number" expression="^6007$">
+  <condition field="destination_number" expression="^6023$">
     <action application="set" data="absolute_codec_string=OPUS,VP8"/> <!-- STEREO, VIDEO -->
     <action application="answer"/>
     <action application="eavesdrop" data="all"/>  
   </condition>
 </extension>
 <extension name="eavesdrop5">
-  <condition field="destination_number" expression="^6008$">
+  <condition field="destination_number" expression="^6024$">
     <action application="set" data="absolute_codec_string=PCMU,VP8"/> <!-- MONO, VIDEO -->
     <action application="answer"/>
     <action application="eavesdrop" data="all"/>  
   </condition>
 </extension>
-<extension name="eavesdrop6">
-  <!-- RESERVED --> 
-  <condition field="destination_number" expression="^6009$">
-  </condition>
-</extension>
-<extension name="eavesdrop7">
-  <condition field="destination_number" expression="^6010$">
-  </condition>
-</extension>
-<extension name="eavesdrop8">
-  <condition field="destination_number" expression="^6011$">
-  </condition>
-</extension>
-<extension name="eavesdrop9">
-  <condition field="destination_number" expression="^6012$">
-  </condition>
-</extension>
-<extension name="eavesdrop10">
-  <condition field="destination_number" expression="^6013$">
-  </condition>
-</extension>
-
