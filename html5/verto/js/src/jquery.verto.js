@@ -2150,24 +2150,64 @@
 	
 	$.FSRTC.getValidRes(obj.camera, function() {
 	    console.info("enumerating devices");
+	    
+	    if (MediaStreamTrack.getSources) {
+		MediaStreamTrack.getSources(function (media_sources) {
+		    for (var i = 0; i < media_sources.length; i++) {
 
-	    MediaStreamTrack.getSources(function (media_sources) {
-		for (var i = 0; i < media_sources.length; i++) {
-		    
-		    if (media_sources[i].kind == 'video') {
-			vid.push(media_sources[i]);
-		    } else {
-			aud.push(media_sources[i]);
+			if (media_sources[i].kind == 'video') {
+			    vid.push(media_sources[i]);
+			} else {
+			    aud.push(media_sources[i]);
+			}
 		    }
+		    
+		    $.verto.videoDevices = vid;
+		    $.verto.audioDevices = aud;
+		    
+		    console.info("Audio Devices", $.verto.audioDevices);
+		    console.info("Video Devices", $.verto.videoDevices);
+		    runtime();
+		});
+	    } else {
+		/* of course it's a totally different API CALL with different element names for the same exact thing */
+		
+		if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
+		    console.log("enumerateDevices() not supported.");
+		    return;
 		}
-		
-		$.verto.videoDevices = vid;
-		$.verto.audioDevices = aud;
-		
-		console.info("Audio Devices", $.verto.audioDevices);
-		console.info("Video Devices", $.verto.videoDevices);
-		runtime();
-	    });
+
+		// List cameras and microphones.
+
+		navigator.mediaDevices.enumerateDevices()
+		    .then(function(devices) {
+			devices.forEach(function(device) {
+			    console.log(device);
+
+			    console.log(device.kind + ": " + device.label +
+					" id = " + device.deviceId);
+			    
+			    if (device.kind === "videoinput") {
+				vid.push({id: device.deviceId, kind: "video", label: device.label});
+			    } else {
+				aud.push({id: device.deviceId, kind: "audio", label: device.label});
+			    }
+			});
+			
+
+			$.verto.videoDevices = vid;
+			$.verto.audioDevices = aud;
+			
+			console.info("Audio Devices", $.verto.audioDevices);
+			console.info("Video Devices", $.verto.videoDevices);
+			runtime();
+			
+		    })
+		    .catch(function(err) {
+			console.log(err.name + ": " + error.message);
+			runtime();
+		    });
+	    }
 	});
     }
 

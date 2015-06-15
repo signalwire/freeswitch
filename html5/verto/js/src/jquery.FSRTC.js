@@ -289,7 +289,7 @@
 
         if (self.options.useVideo) {
             self.options.useVideo.style.display = 'none';
-	    self.options.useVideo[moz ? 'mozSrcObject' : 'src'] = "";
+	    self.options.useVideo[moz ? 'mozSrcObject' : 'src'] = null;
         }
 
         if (self.localStream) {
@@ -299,7 +299,7 @@
 
         if (self.options.localVideo) {
             self.options.localVideo.style.display = 'none';
-	    self.options.localVideo[moz ? 'mozSrcObject' : 'src'] = "";
+	    self.options.localVideo[moz ? 'mozSrcObject' : 'src'] = null;
         }
 
 	if (self.options.localVideoStream) {
