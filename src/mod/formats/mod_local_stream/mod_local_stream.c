@@ -64,6 +64,7 @@ struct local_stream_context {
 	int line;
 	switch_file_handle_t *handle;
 	switch_queue_t *video_q;
+	int ready;
 	struct local_stream_context *next;
 };
 
@@ -583,6 +584,7 @@ static switch_status_t local_stream_file_open(switch_file_handle_t *handle, cons
 	context->func = handle->func;
 	context->line = handle->line;
 	context->handle = handle;
+	context->ready = 1;
 	switch_mutex_lock(source->mutex);
 	context->next = source->context_list;
 	source->context_list = context;
@@ -598,6 +600,8 @@ static switch_status_t local_stream_file_close(switch_file_handle_t *handle)
 {
 	local_stream_context_t *cp, *last = NULL, *context = handle->private_info;
 
+	context->ready = 0;
+
 	switch_mutex_lock(context->source->mutex);
 	for (cp = context->source->context_list; cp; cp = cp->next) {
 		if (cp == context) {
@@ -610,10 +614,12 @@ static switch_status_t local_stream_file_close(switch_file_handle_t *handle)
 		}
 		last = cp;
 	}
-
+	
 	if (context->video_q) {
 		void *pop;
+		switch_queue_push(context->video_q, NULL);
 
+		switch_queue_interrupt_all(context->video_q);
 		while (switch_queue_trypop(context->video_q, &pop) == SWITCH_STATUS_SUCCESS) {
 			switch_image_t *img = (switch_image_t *) pop;
 			switch_img_free(&img);
@@ -634,18 +640,18 @@ static switch_status_t local_stream_file_read_video(switch_file_handle_t *handle
 	local_stream_context_t *context = handle->private_info;
 	switch_status_t status;
 
-	if (!context->source->ready) {
+	if (!(context->ready && context->source->ready)) {
 		return SWITCH_STATUS_FALSE;
 	}
 	
-	while((flags & SVR_FLUSH) && switch_queue_size(context->video_q) > 1) {
+	while(context->ready && context->source->ready && (flags & SVR_FLUSH) && switch_queue_size(context->video_q) > 1) {
 		if (switch_queue_trypop(context->video_q, &pop) == SWITCH_STATUS_SUCCESS) {
 			switch_image_t *img = (switch_image_t *) pop;
 			switch_img_free(&img);
 		}
 	}
 
-	if (!context->source->ready) {
+	if (!(context->ready && context->source->ready)) {
 		return SWITCH_STATUS_FALSE;
 	}
 	
