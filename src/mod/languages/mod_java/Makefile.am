@@ -29,7 +29,7 @@ classes:
 
 reswig:
 	rm -f switch_swig_wrap.cpp
-	swig -java -c++ -I../../../include -package org.freeswitch.swig -outdir src/org/freeswitch/swig -o switch_swig_wrap.cpp mod_java.i
+	swig2.0 -java -c++ -I../../../include -package org.freeswitch.swig -outdir src/org/freeswitch/swig -o switch_swig_wrap.cpp mod_java.i
 
 install-data-local:
 	cp freeswitch.jar $(DESTDIR)@scriptdir@

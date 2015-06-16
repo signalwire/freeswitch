@@ -3065,7 +3065,7 @@ static int _wrap_Stream_read(lua_State* L) {
   }
   
   result = (char *)(arg1)->read(arg2);
-  lua_pushstring(L,(const char *)result); SWIG_arg++;
+  lua_pushlstring(L,(const char*)result, (*arg2)); SWIG_arg++;
   lua_pushnumber(L, (lua_Number) *arg2); SWIG_arg++;
   return SWIG_arg;
   
@@ -6855,7 +6855,7 @@ static int _wrap_new_Session__SWIG_0(lua_State* L) {
   
   SWIG_check_num_args("LUA::Session::Session",0,0)
   result = (LUA::Session *)new LUA::Session();
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_LUA__Session,1); SWIG_arg++; 
+  SWIG_NewPointerObj(L,result,SWIGTYPE_p_LUA__Session,1); SWIG_arg++; result->setLUA(L);
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -6882,7 +6882,7 @@ static int _wrap_new_Session__SWIG_1(lua_State* L) {
   }
   
   result = (LUA::Session *)new LUA::Session(arg1,arg2);
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_LUA__Session,1); SWIG_arg++; 
+  SWIG_NewPointerObj(L,result,SWIGTYPE_p_LUA__Session,1); SWIG_arg++;  result->setLUA(L);
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -6902,7 +6902,7 @@ static int _wrap_new_Session__SWIG_2(lua_State* L) {
   if(!SWIG_lua_isnilstring(L,1)) SWIG_fail_arg("LUA::Session::Session",1,"char *");
   arg1 = (char *)lua_tostring(L, 1);
   result = (LUA::Session *)new LUA::Session(arg1);
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_LUA__Session,1); SWIG_arg++; 
+  SWIG_NewPointerObj(L,result,SWIGTYPE_p_LUA__Session,1); SWIG_arg++;  result->setLUA(L);
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -6926,7 +6926,7 @@ static int _wrap_new_Session__SWIG_3(lua_State* L) {
   }
   
   result = (LUA::Session *)new LUA::Session(arg1);
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_LUA__Session,1); SWIG_arg++; 
+  SWIG_NewPointerObj(L,result,SWIGTYPE_p_LUA__Session,1); SWIG_arg++;  result->setLUA(L);
   return SWIG_arg;
   
   if(0) SWIG_fail;
