@@ -6,7 +6,7 @@ mod_LTLIBRARIES = mod_managed.la
 mod_managed_la_SOURCES  = mod_managed.cpp freeswitch_managed.cpp freeswitch_wrap.cxx
 mod_managed_la_CFLAGS   = $(AM_CFLAGS)
 mod_managed_la_CXXFLAGS = $(AM_CXXFLAGS)
-mod_managed_la_CPPFLAGS = `/usr/bin/pkg-config mono-2 --cflags` -I$(switch_srcdir)/libs/libteletone/src/  -I$(switch_srcdir)/src/include
+mod_managed_la_CPPFLAGS = `/usr/bin/pkg-config mono-2 --cflags` $(SWITCH_AM_CPPFLAGS)
 mod_managed_la_LIBADD   = $(switch_builddir)/libfreeswitch.la
 mod_managed_la_LDFLAGS  = -avoid-version -module -no-undefined -shared `/usr/bin/pkg-config mono-2 --libs`
 
