@@ -26,6 +26,10 @@
 			 such interval and so on. This option is no-op if there is only one
 			 server in the list. Set to 0 in order to disable the feature. -->
 		<param name="radius_deadtime" value="0"/>
+		<!-- Timezone name from "autoload_configs/timezones.conf.xml".
+			 All time related values will be adjusted for this timezone.
+			 If param is not provided used is local server timezone -->
+		<!-- <param name="timezone" value="Asia/Tokyo"/> -->
 	</settings>
 </configuration>
 
