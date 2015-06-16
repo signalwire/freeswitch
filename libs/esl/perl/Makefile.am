@@ -18,7 +18,7 @@ perlmod-install: install-perlLTLIBRARIES
 endif
 
 esl_wrap.cpp:
-	swig -module ESL -shadow -perl5 -c++ -DMULTIPLICITY -I../src/include -o esl_wrap.cpp ../ESL.i
+	swig2.0 -module ESL -shadow -perl5 -c++ -DMULTIPLICITY -I../src/include -o esl_wrap.cpp ../ESL.i
 
 perlxsi.c:
 	$(PERL) -MExtUtils::Embed -e xsinit -- -o perlxsi.c

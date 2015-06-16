@@ -5,7 +5,7 @@ SITE_DIR=$(DESTDIR)/`python -c "from distutils.sysconfig import get_python_lib; 
 all: _ESL.so
 
 esl_wrap.cpp:
-	swig -module ESL -classic -python -c++ -DMULTIPLICITY -threads -I../src/include -o esl_wrap.cpp ../ESL.i
+	swig2.0 -module ESL -classic -python -c++ -DMULTIPLICITY -threads -I../src/include -o esl_wrap.cpp ../ESL.i
 
 esl_wrap.o: esl_wrap.cpp
 	$(CXX) $(CXX_CFLAGS) $(CXXFLAGS) $(LOCAL_CFLAGS) -c esl_wrap.cpp -o esl_wrap.o
