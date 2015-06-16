@@ -118,9 +118,9 @@ formats/mod_ssml
 formats/mod_tone_stream
 formats/mod_vlc
 languages/mod_basic
-#languages/mod_java
+languages/mod_java
 languages/mod_lua
-#languages/mod_managed
+languages/mod_managed
 languages/mod_perl
 languages/mod_python
 languages/mod_v8
