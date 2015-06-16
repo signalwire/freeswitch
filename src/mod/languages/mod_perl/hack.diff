@@ -1,36 +1,35 @@
---- mod_perl_wrap.cpp	2008-07-16 16:55:53.000000000 -0400
-+++ old.cpp	2008-07-16 16:55:38.000000000 -0400
-@@ -8852,13 +8852,18 @@
+--- mod_perl_wrap.cpp.old	2015-06-16 12:01:31.832000000 -0500
++++ mod_perl_wrap.cpp	2015-06-16 12:01:38.996000000 -0500
+@@ -8710,13 +8710,18 @@
    {
-     PERL::Session *result = 0 ;
      int argvi = 0;
-+    SV *foo;
+     PERL::Session *result = 0 ;
++	SV *foo;
      dXSARGS;
--    
-+
+     
      if ((items < 0) || (items > 0)) {
        SWIG_croak("Usage: new_Session();");
      }
 -    result = (PERL::Session *)new PERL::Session();
 -    ST(argvi) = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_PERL__Session, SWIG_OWNER | SWIG_SHADOW); argvi++ ;
-+    result = (PERL::Session *)new PERL::Session(); 
++	result = (PERL::Session *)new PERL::Session();
 +	result->setPERL(my_perl);
 +	foo = sv_newmortal();
 +	SWIG_MakePtr(foo, SWIG_as_voidptr(result), SWIGTYPE_p_PERL__Session, SWIG_OWNER | SWIG_SHADOW);
-+	result->setME(foo);	
++	result->setME(foo);
 +	ST(argvi) = foo; argvi++ ;
      XSRETURN(argvi);
    fail:
      SWIG_croak_null();
-@@ -8877,6 +8882,7 @@
-     void *argp2 = 0 ;
+@@ -8735,6 +8740,7 @@
      int res2 = 0 ;
      int argvi = 0;
+     PERL::Session *result = 0 ;
 +	SV *foo;
      dXSARGS;
      
      if ((items < 2) || (items > 2)) {
-@@ -8893,7 +8899,16 @@
+@@ -8751,7 +8757,16 @@
      }
      arg2 = reinterpret_cast< CoreSession * >(argp2);
      result = (PERL::Session *)new PERL::Session(arg1,arg2);
@@ -48,15 +47,15 @@
      if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
      
      XSRETURN(argvi);
-@@ -8913,6 +8928,7 @@
-     char *buf1 = 0 ;
+@@ -8771,6 +8786,7 @@
      int alloc1 = 0 ;
      int argvi = 0;
+     PERL::Session *result = 0 ;
 +	SV *foo;
      dXSARGS;
      
      if ((items < 1) || (items > 1)) {
-@@ -8923,9 +8939,19 @@
+@@ -8781,9 +8797,19 @@
        SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "new_Session" "', argument " "1"" of type '" "char *""'");
      }
      arg1 = reinterpret_cast< char * >(buf1);
@@ -78,15 +77,15 @@
      XSRETURN(argvi);
    fail:
      if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
-@@ -8941,6 +8967,7 @@
-     void *argp1 = 0 ;
+@@ -8799,6 +8825,7 @@
      int res1 = 0 ;
      int argvi = 0;
+     PERL::Session *result = 0 ;
 +    SV *foo;
      dXSARGS;
      
      if ((items < 1) || (items > 1)) {
-@@ -8952,8 +8979,18 @@
+@@ -8810,8 +8837,18 @@
      }
      arg1 = reinterpret_cast< switch_core_session_t * >(argp1);
      result = (PERL::Session *)new PERL::Session(arg1);
