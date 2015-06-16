@@ -101,6 +101,7 @@ struct local_stream_source {
 	int32_t chime_max_counter;
 	switch_file_handle_t chime_fh;
 	switch_queue_t *video_q;
+	int has_video;
 };
 
 typedef struct local_stream_source local_stream_source_t;
@@ -230,7 +231,6 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 			while (RUNNING && !source->stopped) {
 				int is_open;
 				switch_file_handle_t *use_fh = &fh;
-				int has_video = 0;
 
 				switch_core_timer_next(&timer);
 				olen = source->samples;
@@ -282,17 +282,14 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 					}
 				}
 
-				has_video = 0;
 
 				if (is_open) {
-					
 					if (switch_core_file_has_video(use_fh)) {
 						switch_frame_t vid_frame = { 0 };
 
-						has_video = 1;
-
 						if (switch_core_file_read_video(use_fh, &vid_frame, SVR_FLUSH) == SWITCH_STATUS_SUCCESS) {
 							if (vid_frame.img) {
+								source->has_video = 1;
 								switch_queue_push(source->video_q, vid_frame.img);
 							}
 						}
@@ -343,10 +340,11 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 
 					} else {
 						uint32_t bused = 0;
-						
+
 						switch_mutex_lock(source->mutex);
 						for (cp = source->context_list; cp && RUNNING; cp = cp->next) {
-							if (has_video) {
+							
+							if (source->has_video) {
 								switch_set_flag(cp->handle, SWITCH_FILE_FLAG_VIDEO);
 							} else {
 								switch_clear_flag(cp->handle, SWITCH_FILE_FLAG_VIDEO);
@@ -577,6 +575,10 @@ static switch_status_t local_stream_file_open(switch_file_handle_t *handle, cons
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Memory Error!\n");
 		status = SWITCH_STATUS_MEMERR;
 		goto end;
+	}
+
+	if (switch_test_flag(handle, SWITCH_FILE_FLAG_VIDEO) && !source->has_video) {
+		switch_clear_flag(handle, SWITCH_FILE_FLAG_VIDEO);
 	}
 
 	context->source = source;
