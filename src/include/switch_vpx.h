@@ -40,9 +40,7 @@
 #define SWITCH_VPX_H
 
 #include <switch.h>
-
-#include "vpx/vpx_image.h"
-#include "vpx/vpx_integer.h"
+#include <switch_image.h>
 
 SWITCH_BEGIN_EXTERN_C
 

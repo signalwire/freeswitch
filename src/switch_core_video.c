@@ -29,15 +29,24 @@
  *
  */
 
+#ifdef SWITCH_HAVE_VPX
+#include "vpx/vpx_image.h"
+#if VPX_IMAGE_ABI_VERSION != (3)
+#error VPX_IMAGE_ABI_VERSION is not (3)
+#endif
+#endif
+
 #include <switch.h>
 #include <switch_utf8.h>
+
+#ifdef SWITCH_HAVE_YUV
 #include <libyuv.h>
+#endif
 
 // #define HAVE_LIBGD
 #ifdef HAVE_LIBGD
 #include <gd.h>
 #endif
-
 
 struct pos_el {
 	switch_img_position_t pos;
@@ -77,12 +86,26 @@ SWITCH_DECLARE(switch_img_position_t) parse_img_position(const char *name)
 	return r;
 }
 
+SWITCH_DECLARE(switch_bool_t) switch_core_has_video()
+{
+#ifdef SWITCH_HAVE_VPX
+#ifdef SWITCH_HAVE_YUV
+	return SWITCH_TRUE;
+#else
+	return SWITCH_FALSE;
+#endif
+#else
+	return SWITCH_FALSE;
+#endif
+}
+							  
 SWITCH_DECLARE(switch_image_t *)switch_img_alloc(switch_image_t  *img,
 						 switch_img_fmt_t fmt,
 						 unsigned int d_w,
 						 unsigned int d_h,
 						 unsigned int align)
 {
+#ifdef SWITCH_HAVE_VPX
 #ifdef HAVE_LIBGD
 	if (fmt == SWITCH_IMG_FMT_GD) {
 		gdImagePtr gd = gdImageCreateTrueColor(d_w, d_h);
@@ -106,6 +129,9 @@ SWITCH_DECLARE(switch_image_t *)switch_img_alloc(switch_image_t  *img,
 #endif
 
 	return (switch_image_t *)vpx_img_alloc((vpx_image_t *)img, (vpx_img_fmt_t)fmt, d_w, d_h, align);
+#else
+	return NULL;
+#endif
 }
 
 SWITCH_DECLARE(switch_image_t *)switch_img_wrap(switch_image_t  *img,
@@ -115,7 +141,11 @@ SWITCH_DECLARE(switch_image_t *)switch_img_wrap(switch_image_t  *img,
 						unsigned int align,
 						unsigned char      *img_data)
 {
+#ifdef SWITCH_HAVE_VPX
 	return (switch_image_t *)vpx_img_wrap((vpx_image_t *)img, (vpx_img_fmt_t)fmt, d_w, d_h, align, img_data);
+#else
+	return NULL;
+#endif
 }
 
 SWITCH_DECLARE(int) switch_img_set_rect(switch_image_t  *img,
@@ -124,16 +154,23 @@ SWITCH_DECLARE(int) switch_img_set_rect(switch_image_t  *img,
 				   unsigned int  w,
 				   unsigned int  h)
 {
+#ifdef SWITCH_HAVE_VPX
 	return vpx_img_set_rect((vpx_image_t *)img, x, y, w, h);
+#else
+	return 0;
+#endif
 }
 
 SWITCH_DECLARE(void) switch_img_flip(switch_image_t *img)
 {
+#ifdef SWITCH_HAVE_VPX
 	vpx_img_flip((vpx_image_t *)img);
+#endif
 }
 
 SWITCH_DECLARE(void) switch_img_free(switch_image_t **img)
 {
+#ifdef SWITCH_HAVE_VPX
 	if (img && *img) {
 		if ((*img)->fmt == SWITCH_IMG_FMT_GD) {
 #ifdef HAVE_LIBGD
@@ -145,6 +182,7 @@ SWITCH_DECLARE(void) switch_img_free(switch_image_t **img)
 		vpx_img_free((vpx_image_t *)*img);
 		*img = NULL;
 	}
+#endif
 }
 
 #ifndef MIN
@@ -248,6 +286,7 @@ SWITCH_DECLARE(void) switch_img_patch(switch_image_t *IMG, switch_image_t *img, 
 
 SWITCH_DECLARE(void) switch_img_patch_rect(switch_image_t *IMG, int X, int Y, switch_image_t *img, uint32_t x, uint32_t y, uint32_t w, uint32_t h)
 {
+#ifdef SWITCH_HAVE_VPX
 	switch_image_t *tmp;
 	uint8_t *data;
 
@@ -270,6 +309,7 @@ SWITCH_DECLARE(void) switch_img_patch_rect(switch_image_t *IMG, int X, int Y, sw
 	}
 
 	switch_img_free(&tmp);
+#endif
 }
 
 SWITCH_DECLARE(void) switch_img_copy(switch_image_t *img, switch_image_t **new_img)
@@ -325,6 +365,7 @@ SWITCH_DECLARE(void) switch_img_copy(switch_image_t *img, switch_image_t **new_i
 
 SWITCH_DECLARE(switch_image_t *) switch_img_copy_rect(switch_image_t *img, uint32_t x, uint32_t y, uint32_t w, uint32_t h)
 {
+#ifdef SWITCH_HAVE_VPX
 	switch_image_t *new_img = NULL, *tmp;
 	uint8_t *data;
 
@@ -351,10 +392,14 @@ SWITCH_DECLARE(switch_image_t *) switch_img_copy_rect(switch_image_t *img, uint3
 	switch_img_free(&tmp);
 
 	return new_img;
+#else
+	return NULL;
+#endif
 }
 
 SWITCH_DECLARE(void) switch_img_draw_pixel(switch_image_t *img, int x, int y, switch_rgb_color_t *color)
 {
+#ifdef SWITCH_HAVE_YUV	
 	switch_yuv_color_t yuv;
 
 	if (x < 0 || y < 0 || x >= img->d_w || y >= img->d_h) return;
@@ -375,10 +420,12 @@ SWITCH_DECLARE(void) switch_img_draw_pixel(switch_image_t *img, int x, int y, sw
 		*(alpha + 2) = color->g;
 		*(alpha + 3) = color->b;
 	}
+#endif
 }
 
 SWITCH_DECLARE(void) switch_img_fill(switch_image_t *img, int x, int y, int w, int h, switch_rgb_color_t *color)
 {
+#ifdef SWITCH_HAVE_YUV	
 	int len, i, max_h;
 	switch_yuv_color_t yuv_color;
 
@@ -419,10 +466,12 @@ SWITCH_DECLARE(void) switch_img_fill(switch_image_t *img, int x, int y, int w, i
 					img->planes[SWITCH_PLANE_PACKED], img->d_w * 4);
 		}
 	}
+#endif
 }
 
 SWITCH_DECLARE(void) switch_img_get_yuv_pixel(switch_image_t *img, switch_yuv_color_t *yuv, int x, int y)
 {
+#ifdef SWITCH_HAVE_YUV		
 	// switch_assert(img->fmt == SWITCH_IMG_FMT_I420);
 
 	if (x < 0 || y < 0 || x >= img->d_w || y >= img->d_h) return;
@@ -430,10 +479,12 @@ SWITCH_DECLARE(void) switch_img_get_yuv_pixel(switch_image_t *img, switch_yuv_co
 	yuv->y = *(img->planes[SWITCH_PLANE_Y] + img->stride[SWITCH_PLANE_Y] * y + x);
 	yuv->u = *(img->planes[SWITCH_PLANE_U] + img->stride[SWITCH_PLANE_U] * y / 2 + x / 2);
 	yuv->v = *(img->planes[SWITCH_PLANE_V] + img->stride[SWITCH_PLANE_V] * y / 2 + x / 2);
+#endif	
 }
 
 SWITCH_DECLARE(void) switch_img_get_rgb_pixel(switch_image_t *img, switch_rgb_color_t *rgb, int x, int y)
 {
+#ifdef SWITCH_HAVE_YUV		
 	if (x < 0 || y < 0 || x >= img->d_w || y >= img->d_h) return;
 
 	if (img->fmt == SWITCH_IMG_FMT_I420) {
@@ -448,6 +499,7 @@ SWITCH_DECLARE(void) switch_img_get_rgb_pixel(switch_image_t *img, switch_rgb_co
 		rgb->g = *(++a);
 		rgb->b = *(++a);
 	}
+#endif	
 }
 
 SWITCH_DECLARE(void) switch_img_overlay(switch_image_t *IMG, switch_image_t *img, int x, int y, uint8_t alpha)
@@ -577,15 +629,18 @@ SWITCH_DECLARE(void) switch_color_set_rgb(switch_rgb_color_t *color, const char 
 
 SWITCH_DECLARE(void) switch_color_rgb2yuv(switch_rgb_color_t *rgb, switch_yuv_color_t *yuv)
 {
+#ifdef SWITCH_HAVE_YUV		
 	yuv->y = (uint8_t)(((rgb->r * 4897) >> 14) + ((rgb->g * 9611) >> 14) + ((rgb->b * 1876) >> 14));
 	yuv->u = (uint8_t)(- ((rgb->r * 2766) >> 14)  - ((5426 * rgb->g) >> 14) + rgb->b / 2 + 128);
 	yuv->v = (uint8_t)(rgb->r / 2 -((6855 * rgb->g) >> 14) - ((rgb->b * 1337) >> 14) + 128);
+#endif	
 }
 
 #define CLAMP(val) MAX(0, MIN(val, 255))
 
 SWITCH_DECLARE(void) switch_color_yuv2rgb(switch_yuv_color_t *yuv, switch_rgb_color_t *rgb)
 {
+#ifdef SWITCH_HAVE_YUV	
 #if 0
 	int C = yuv->y - 16;
 	int D = yuv->u - 128;
@@ -600,14 +655,17 @@ SWITCH_DECLARE(void) switch_color_yuv2rgb(switch_yuv_color_t *yuv, switch_rgb_co
 	rgb->r = CLAMP( yuv->y + ((22457 * (yuv->v-128)) >> 14));
 	rgb->g = CLAMP((yuv->y - ((715   * (yuv->v-128)) >> 10) - ((5532 * (yuv->u-128)) >> 14)));
 	rgb->b = CLAMP((yuv->y + ((28384 * (yuv->u-128)) >> 14)));
-}
+#endif
+ }
 
 SWITCH_DECLARE(void) switch_color_set_yuv(switch_yuv_color_t *color, const char *str)
 {
+#ifdef SWITCH_HAVE_YUV	
 	switch_rgb_color_t rgb = { 0 };
 
 	switch_color_set_rgb(&rgb, str);
 	switch_color_rgb2yuv(&rgb, color);
+#endif	
 }
 
 #if SWITCH_HAVE_FREETYPE

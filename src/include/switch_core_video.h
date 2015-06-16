@@ -364,7 +364,7 @@ SWITCH_DECLARE(switch_image_t *) switch_img_write_text_img(int w, int h, switch_
 
 SWITCH_DECLARE(switch_image_t *) switch_img_read_file(const char* file_name);
 SWITCH_DECLARE(switch_status_t) switch_img_letterbox(switch_image_t *img, switch_image_t **imgP, int width, int height, const char *color);
-
+SWITCH_DECLARE(switch_bool_t) switch_core_has_video();
 /** @} */
 
 SWITCH_END_EXTERN_C

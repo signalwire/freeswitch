@@ -1,6 +1,8 @@
 include $(top_srcdir)/build/modmake.rulesam
 MODNAME=mod_av
 
+if HAVE_YUV
+if HAVE_VPX
 if HAVE_AVFORMAT
 
 mod_LTLIBRARIES = mod_av.la
@@ -14,5 +16,20 @@ install: error
 all: error
 error:
 	$(error You must install libavformat-dev to build mod_av)
+endif
+
+else
+install: error
+all: error
+error:
+	$(error You must install libvpx2-dev to build mod_av)
+endif
+
+
+else
+install: error
+all: error
+error:
+	$(error You must install libyuv-dev to build mod_av)
 endif
 

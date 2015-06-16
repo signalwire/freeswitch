@@ -783,12 +783,15 @@ if test "x$have_libz" = "xyes"  ; then
 APR_ADDTO([PLATFORM_CORE_LIBS], [-lz])
 fi
 
-PKG_CHECK_MODULES([YUV], [libyuv >= 0.0.1280],[AC_MSG_RESULT([yes])],[AC_MSG_ERROR([You need to install libyuv-dev. Required library])])
+PKG_CHECK_MODULES([YUV], [libyuv >= 0.0.1280],
+			 [AC_MSG_RESULT([yes]);AM_CONDITIONAL([HAVE_YUV],[true])],
+			 [AC_MSG_RESULT([no]);AM_CONDITIONAL([HAVE_YUV],[false])])
 
-AC_CHECK_LIB(yuv, I420Scale, have_libyuv=yes, AC_MSG_ERROR([no usable libyuv; please install libyuv devel package or equivalent]))
-if test "x$have_libyuv" = "xyes"  ; then
 APR_ADDTO([PLATFORM_CORE_LIBS], [${YUV_LIBS}])
-fi
+
+PKG_CHECK_MODULES([MPG123], [libmpg123 >= 1.20.1],[
+  AM_CONDITIONAL([HAVE_MPG123],[true])],[
+  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_MPG123],[false])])
 
 AC_CHECK_LIB(apr-1, apr_pool_mutex_set, use_system_apr=yes, use_system_apr=no)
 AM_CONDITIONAL([SYSTEM_APR],[test "${use_system_apr}" = "yes"])

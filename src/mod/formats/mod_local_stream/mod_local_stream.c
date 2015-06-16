@@ -284,7 +284,7 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 
 
 				if (is_open) {
-					if (switch_core_file_has_video(use_fh)) {
+					if (switch_core_has_video() && switch_core_file_has_video(use_fh)) {
 						switch_frame_t vid_frame = { 0 };
 
 						if (switch_core_file_read_video(use_fh, &vid_frame, SVR_FLUSH) == SWITCH_STATUS_SUCCESS) {
@@ -1124,7 +1124,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_local_stream_load)
 	file_interface->file_open = local_stream_file_open;
 	file_interface->file_close = local_stream_file_close;
 	file_interface->file_read = local_stream_file_read;
-	file_interface->file_read_video = local_stream_file_read_video;
+
+	if (switch_core_has_video()) {
+		file_interface->file_read_video = local_stream_file_read_video;
+	}
 
 	if (switch_event_bind(modname, SWITCH_EVENT_SHUTDOWN, SWITCH_EVENT_SUBCLASS_ANY, event_handler, NULL) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind event handler!\n");

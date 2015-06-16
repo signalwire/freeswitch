@@ -1,6 +1,8 @@
 include $(top_srcdir)/build/modmake.rulesam
 MODNAME=mod_vlc
 
+if HAVE_YUV
+if HAVE_VPX
 if HAVE_VLC
 
 mod_LTLIBRARIES = mod_vlc.la
@@ -14,5 +16,19 @@ install: error
 all: error
 error:
 	$(error You must install libvlc-dev to build mod_vlc)
+endif
+
+else
+install: error
+all: error
+error:
+	$(error You must install libvpx2-dev to build mod_vlc)
+endif
+
+else
+install: error
+all: error
+error:
+	$(error You must install libyuv-dev to build mod_vlc)
 endif
 

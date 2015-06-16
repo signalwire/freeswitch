@@ -12982,6 +12982,11 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 
 	conference->conf_video_mode = conf_video_mode;
 
+	if (!switch_core_has_video() && (conference->conf_video_mode == CONF_VIDEO_MODE_MUX || conference->conf_video_mode == CONF_VIDEO_MODE_TRANSCODE)) {
+		conference->conf_video_mode = CONF_VIDEO_MODE_PASSTHROUGH;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "video-mode invalid, only valid setting is 'passthrough' due to no video capabilities\n");
+	}
+	
 	if (conference->conf_video_mode == CONF_VIDEO_MODE_MUX) {
 		int canvas_w = 0, canvas_h = 0;
 		if (video_canvas_size) {
