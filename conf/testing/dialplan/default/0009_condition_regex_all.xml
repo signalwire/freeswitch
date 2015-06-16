@@ -3,7 +3,7 @@
   <condition regex="all"> <!-- ALL -->
     <!-- ALL CAN NOT MATCH EVER -->
     <regex time-of-day="08:00:00-12:00:00"/> <!-- CAN'T TIME TRAVEL -->
-    <regex time-of-day="23:00:00-24:00:00"/> <!-- CAN'T BE IN TWO TIMES AT ONCE -->
+    <regex time-of-day="22:00:00-23:00:00"/> 
     <regex wday="3"/>
     <action application="log" data="INFO At least one of the conditions matched!"/>
     <action application="playback" data="ivr/ivr-yes_we_have_no_bananas.wav"/>

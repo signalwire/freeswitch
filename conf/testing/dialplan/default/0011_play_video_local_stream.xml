@@ -1,0 +1,7 @@
+<extension name="play_video_local_stream">
+  <condition field="destination_number" expression="^6050$">
+    <action application="answer"/>  
+    <action application="playback" data="local_stream://video"/>
+  </condition>
+</extension>
+
