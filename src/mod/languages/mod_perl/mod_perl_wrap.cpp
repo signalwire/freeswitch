@@ -8576,7 +8576,6 @@ XS(_wrap_bridge) {
     void *argp2 = 0 ;
     int res2 = 0 ;
     int argvi = 0;
-	SV *foo;
     dXSARGS;
     
     if ((items < 2) || (items > 2)) {
@@ -8711,13 +8710,18 @@ XS(_wrap_new_Session__SWIG_0) {
   {
     int argvi = 0;
     PERL::Session *result = 0 ;
+	SV *foo;
     dXSARGS;
     
     if ((items < 0) || (items > 0)) {
       SWIG_croak("Usage: new_Session();");
     }
-    result = (PERL::Session *)new PERL::Session();
-    ST(argvi) = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_PERL__Session, SWIG_OWNER | SWIG_SHADOW); argvi++ ;
+	result = (PERL::Session *)new PERL::Session();
+	result->setPERL(my_perl);
+	foo = sv_newmortal();
+	SWIG_MakePtr(foo, SWIG_as_voidptr(result), SWIGTYPE_p_PERL__Session, SWIG_OWNER | SWIG_SHADOW);
+	result->setME(foo);
+	ST(argvi) = foo; argvi++ ;
     XSRETURN(argvi);
   fail:
     SWIG_croak_null();
@@ -8736,6 +8740,7 @@ XS(_wrap_new_Session__SWIG_1) {
     int res2 = 0 ;
     int argvi = 0;
     PERL::Session *result = 0 ;
+	SV *foo;
     dXSARGS;
     
     if ((items < 2) || (items > 2)) {
@@ -8781,6 +8786,7 @@ XS(_wrap_new_Session__SWIG_2) {
     int alloc1 = 0 ;
     int argvi = 0;
     PERL::Session *result = 0 ;
+	SV *foo;
     dXSARGS;
     
     if ((items < 1) || (items > 1)) {
@@ -8791,9 +8797,19 @@ XS(_wrap_new_Session__SWIG_2) {
       SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "new_Session" "', argument " "1"" of type '" "char *""'");
     }
     arg1 = reinterpret_cast< char * >(buf1);
-    result = (PERL::Session *)new PERL::Session(arg1);
-    ST(argvi) = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_PERL__Session, SWIG_OWNER | SWIG_SHADOW); argvi++ ;
+    result = (PERL::Session *)new PERL::Session(arg1); 
+	if (result->allocated) {
+		result->setPERL(my_perl);
+		foo = get_sv(result->suuid, TRUE);
+		SWIG_MakePtr(foo, SWIG_as_voidptr(result), SWIGTYPE_p_PERL__Session, SWIG_OWNER | SWIG_SHADOW);
+		result->setME(foo);	
+	} else {
+		foo = sv_newmortal();
+		SWIG_MakePtr(foo, SWIG_as_voidptr(result), SWIGTYPE_p_PERL__Session, SWIG_OWNER | SWIG_SHADOW);
+	}
+	ST(argvi) = foo; argvi++ ;
     if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
+
     XSRETURN(argvi);
   fail:
     if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
@@ -8809,6 +8825,7 @@ XS(_wrap_new_Session__SWIG_3) {
     int res1 = 0 ;
     int argvi = 0;
     PERL::Session *result = 0 ;
+    SV *foo;
     dXSARGS;
     
     if ((items < 1) || (items > 1)) {
@@ -8820,8 +8837,18 @@ XS(_wrap_new_Session__SWIG_3) {
     }
     arg1 = reinterpret_cast< switch_core_session_t * >(argp1);
     result = (PERL::Session *)new PERL::Session(arg1);
-    ST(argvi) = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_PERL__Session, SWIG_OWNER | SWIG_SHADOW); argvi++ ;
-    
+	if (result->allocated) {
+		result->setPERL(my_perl);
+		foo = get_sv(result->suuid, TRUE);
+		SWIG_MakePtr(foo, SWIG_as_voidptr(result), SWIGTYPE_p_PERL__Session, SWIG_OWNER | SWIG_SHADOW);
+		result->setME(foo);	
+	} else {
+		foo = sv_newmortal();
+		SWIG_MakePtr(foo, SWIG_as_voidptr(result), SWIGTYPE_p_PERL__Session, SWIG_OWNER | SWIG_SHADOW);
+	}
+
+	ST(argvi) = foo; argvi++ ;
+	
     XSRETURN(argvi);
   fail:
     
@@ -8938,7 +8965,6 @@ XS(_wrap_delete_Session) {
     void *argp1 = 0 ;
     int res1 = 0 ;
     int argvi = 0;
-	SV *foo;
     dXSARGS;
     
     if ((items < 1) || (items > 1)) {
@@ -8966,7 +8992,6 @@ XS(_wrap_Session_destroy) {
     void *argp1 = 0 ;
     int res1 = 0 ;
     int argvi = 0;
-    SV *foo;
     dXSARGS;
     
     if ((items < 1) || (items > 1)) {
