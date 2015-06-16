@@ -86,7 +86,7 @@ SWITCH_DECLARE(switch_img_position_t) parse_img_position(const char *name)
 	return r;
 }
 
-SWITCH_DECLARE(switch_bool_t) switch_core_has_video()
+SWITCH_DECLARE(switch_bool_t) switch_core_has_video(void)
 {
 #ifdef SWITCH_HAVE_VPX
 #ifdef SWITCH_HAVE_YUV
