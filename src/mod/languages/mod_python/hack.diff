@@ -1,6 +1,6 @@
---- mod_python_wrap_patched.cpp	2013-12-23 23:19:43.308488527 +0500
-+++ mod_python_wrap.cpp	2013-12-23 23:19:37.572488834 +0500
-@@ -5585,7 +5585,9 @@
+--- mod_python_wrap.cpp.old	2015-06-16 12:56:23.868000000 -0500
++++ mod_python_wrap.cpp	2015-06-16 12:56:32.268000000 -0500
+@@ -6198,7 +6198,9 @@
      } 
      arg3 = static_cast< int >(val3);
    }
@@ -10,7 +10,7 @@
    resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_Event, SWIG_POINTER_OWN |  0 );
    return resultobj;
  fail:
-@@ -8515,20 +8517,20 @@
+@@ -9264,20 +9266,20 @@
  }
  
  
@@ -34,7 +34,7 @@
    PyObject *resultobj = 0;
    char *arg1 = (char *) 0 ;
    CoreSession *arg2 = (CoreSession *) 0 ;
-@@ -8553,7 +8555,7 @@
+@@ -9302,7 +9304,7 @@
    }
    arg2 = reinterpret_cast< CoreSession * >(argp2);
    result = (PYTHON::Session *)new PYTHON::Session(arg1,arg2);
@@ -43,7 +43,7 @@
    if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
    return resultobj;
  fail:
-@@ -8562,7 +8564,7 @@
+@@ -9311,7 +9313,7 @@
  }
  
  
@@ -51,8 +51,8 @@
 +SWIGINTERN PyObject *_wrap_new_Session__SWIG_2(PyObject *self, PyObject *args) {
    PyObject *resultobj = 0;
    char *arg1 = (char *) 0 ;
-   PYTHON::Session *result = 0 ;
-@@ -8578,7 +8580,7 @@
+   int res1 ;
+@@ -9327,7 +9329,7 @@
    }
    arg1 = reinterpret_cast< char * >(buf1);
    result = (PYTHON::Session *)new PYTHON::Session(arg1);
@@ -61,7 +61,7 @@
    if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
    return resultobj;
  fail:
-@@ -8587,7 +8589,7 @@
+@@ -9336,7 +9338,7 @@
  }
  
  
@@ -69,8 +69,8 @@
 +SWIGINTERN PyObject *_wrap_new_Session__SWIG_3(PyObject *self, PyObject *args) {
    PyObject *resultobj = 0;
    switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
-   PYTHON::Session *result = 0 ;
-@@ -8602,7 +8604,7 @@
+   void *argp1 = 0 ;
+@@ -9351,7 +9353,7 @@
    }
    arg1 = reinterpret_cast< switch_core_session_t * >(argp1);
    result = (PYTHON::Session *)new PYTHON::Session(arg1);

@@ -20,9 +20,9 @@ swigclean: clean
 	rm -f mod_python_wrap.* freeswitch.py
 
 mod_python_wrap.cpp: mod_python_extra.c hack.diff 
-	which swig 2>&1 >>/dev/null && swig -python -c++ -I../../../../src/include -oh mod_python_wrap.h -o mod_python_wrap.cpp mod_python.i
-	which swig 2>&1 >>/dev/null && echo "#include \"mod_python_extra.c\"" >> mod_python_wrap.cpp
-	which swig 2>&1 >>/dev/null && patch -s -p0 -i hack.diff
+	swig2.0 -python -c++ -I../../../../src/include -oh mod_python_wrap.h -o mod_python_wrap.cpp mod_python.i
+	echo "#include \"mod_python_extra.c\"" >> mod_python_wrap.cpp
+	patch -s -p0 -i hack.diff
 
 install-data-local:
 	mkdir -m755 -p $(DESTDIR)$(PYTHON_SITE_DIR)
