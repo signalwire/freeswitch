@@ -1906,6 +1906,19 @@ static void check_flush(conference_member_t *member)
 	}
 }
 
+static void patch_fnode(conference_obj_t *conference, conference_file_node_t *fnode, switch_frame_t *write_frame)
+{
+	if (fnode && fnode->layer_id > -1) {
+		mcu_layer_t *layer = &conference->canvas->layers[fnode->layer_id];
+		
+		if (switch_core_file_read_video(&fnode->fh, write_frame, SVR_FLUSH) == SWITCH_STATUS_SUCCESS) {
+			switch_img_free(&layer->cur_img);
+			layer->cur_img = write_frame->img;
+			layer->tagged = 1;
+		}
+	}
+}
+
 static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thread, void *obj)
 {
 	conference_obj_t *conference = (conference_obj_t *) obj;
@@ -2262,17 +2275,14 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 
 		switch_mutex_unlock(conference->member_mutex);
 
-		if (conference->fnode && 
-			conference->fnode->layer_id > -1) {
-			mcu_layer_t *layer = &conference->canvas->layers[conference->fnode->layer_id];
-			
-			if (switch_core_file_read_video(&conference->fnode->fh, &write_frame, SVR_FLUSH) == SWITCH_STATUS_SUCCESS) {
-				switch_img_free(&layer->cur_img);
-				layer->cur_img = write_frame.img;
-				layer->tagged = 1;
-			}
-		}
+		if (conference->async_fnode && conference->async_fnode->layer_id > -1) { 
+			patch_fnode(conference, conference->async_fnode, &write_frame);
+		} 
 
+		if (conference->fnode && conference->fnode->layer_id > -1) {
+			patch_fnode(conference, conference->fnode, &write_frame);
+		}
+		
 		if (!conference->playing_video_file) {
 			for (i = 0; i < conference->canvas->total_layers; i++) {
 				mcu_layer_t *layer = &conference->canvas->layers[i];
@@ -4983,7 +4993,7 @@ static void fnode_check_video(conference_obj_t *conference, conference_file_node
 
 	if (switch_core_file_has_video(&fnode->fh)) {
 		int full_screen = 0;
-		
+
 		if (fnode->fh.params) {
 			full_screen = switch_true(switch_event_get_header(fnode->fh.params, "full-screen"));
 		}
@@ -5426,6 +5436,11 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 
 		if (conference->async_fnode && conference->async_fnode->done) {
 			switch_memory_pool_t *pool;
+
+			if (conference->canvas && conference->async_fnode->layer_id > -1 ) {
+				canvas_del_fnode_layer(conference, conference->async_fnode);
+			}
+
 			conference_file_close(conference, conference->async_fnode);
 			pool = conference->async_fnode->pool;
 			conference->async_fnode = NULL;
@@ -7481,6 +7496,7 @@ static void canvas_del_fnode_layer(conference_obj_t *conference, conference_file
 static void canvas_set_fnode_layer(conference_obj_t *conference, conference_file_node_t *fnode, int idx)
 {
 	mcu_layer_t *layer = NULL;
+	mcu_layer_t *xlayer = NULL;
 
 	switch_mutex_lock(conference->canvas->mutex);
 
@@ -7489,11 +7505,18 @@ static void canvas_set_fnode_layer(conference_obj_t *conference, conference_file
 
 		if (conference->canvas->layout_floor_id > -1) {
 			idx = conference->canvas->layout_floor_id;
-		} else {
-			for (i = 0; i < conference->canvas->total_layers; i++) {
-				mcu_layer_t *xlayer = &conference->canvas->layers[i];
+			xlayer = &conference->canvas->layers[idx];
 
-				if (xlayer->geometry.res_id || xlayer->member_id) {
+			if (xlayer->fnode) {
+				idx = -1;
+			}
+		}
+
+		if (idx < 0) {
+			for (i = 0; i < conference->canvas->total_layers; i++) {
+				xlayer = &conference->canvas->layers[i];
+
+				if (xlayer->fnode || xlayer->geometry.res_id || xlayer->member_id) {
 					continue;
 				}
 				
