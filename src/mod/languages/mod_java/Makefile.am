@@ -4,9 +4,7 @@ MODNAME=mod_java
 mod_LTLIBRARIES = mod_java.la
 mod_java_la_SOURCES  = mod_java.cpp freeswitch_java.cpp switch_swig_wrap.cpp modjava.c
 mod_java_la_CFLAGS   = $(AM_CFLAGS)
-mod_java_la_CPPFLAGS = -I/usr/lib/jvm/java-gcj/include
-mod_java_la_CPPFLAGS+= -I/usr/lib/jvm/java-gcj/include/linux
-mod_java_la_CPPFLAGS+= $(AM_CPPFLAGS)
+mod_java_la_CPPFLAGS = $(JAVA_FLAGS) $(AM_CPPFLAGS)
 mod_java_la_LIBADD   = $(switch_builddir)/libfreeswitch.la
 mod_java_la_LDFLAGS  = -avoid-version -module -no-undefined -shared
 
