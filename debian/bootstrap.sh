@@ -21,7 +21,6 @@ avoid_mods=(
   asr_tts/mod_cepstral
   codecs/mod_com_g729
   codecs/mod_ilbc
-  codecs/mod_sangoma_codec
   codecs/mod_siren
   codecs/mod_skel_codec
   endpoints/mod_gsmopen
@@ -36,13 +35,9 @@ avoid_mods=(
 )
 avoid_mods_sid=(
   directories/mod_ldap
-  formats/mod_shout
-  languages/mod_java
 )
 avoid_mods_jessie=(
   directories/mod_ldap
-  languages/mod_java
-  formats/mod_shout
 )
 avoid_mods_wheezy=(
   event_handlers/mod_amqp
