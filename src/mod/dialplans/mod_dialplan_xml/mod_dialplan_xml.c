@@ -234,6 +234,7 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 			switch_channel_del_variable_prefix(channel, "DP_REGEX_MATCH");
 
 			for (xregex = switch_xml_child(xcond, "regex"); xregex; xregex = xregex->next) {
+				int time_match;
 				check_tz();
 				time_match = switch_xml_std_datetime_check(xregex, tzoff ? &offset : NULL, tzname_);
 				
@@ -247,7 +248,6 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 									  "%sDialplan: %s Date/Time Match (PASS) [%s]\n", space,
 									  switch_channel_get_name(channel), exten_name);
 					}
-					anti_action = SWITCH_FALSE;
 				} else if (time_match == 0) {
 					if ( switch_core_test_flag(SCF_DIALPLAN_TIMESTAMPS) ) {
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
@@ -334,6 +334,9 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 					pass++;
 					proceed = 1;
 					if (!all && !xor) break;
+				} else {	// time_match == 0
+					fail++;
+					if (all) break;
 				}
 				
 				if (field && strchr(expression, '(')) {
@@ -347,7 +350,6 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 					switch_safe_free(save_field_data);
 					switch_regex_safe_free(save_re);
 					
-					
 					save_expression = strdup(expression);
 					save_field_data = strdup(field_data);
 					save_re = re;
@@ -360,7 +362,6 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 
 				switch_safe_free(field_expanded);
 				switch_safe_free(expression_expanded);
-				
 			}
 
 			if (xor) {
@@ -371,17 +372,10 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 				if ((all && !fail) || (!all && pass)) {
 					anti_action = SWITCH_FALSE; 
 				}
-				if (all && total != pass) {
-					proceed = 1;
-					pass = 0;
-					fail++;
-					anti_action = SWITCH_TRUE;
-				}
 			}
 
 			switch_safe_free(field_expanded);
 			switch_safe_free(expression_expanded);
-			
 		} else {
 			if ((xexpression = switch_xml_child(xcond, "expression"))) {
 				expression = switch_str_nil(xexpression->txt);
