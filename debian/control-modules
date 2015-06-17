@@ -299,10 +299,6 @@ Description: mod_bv
  Adds mod_bv.
 Build-Depends: libbroadvoice-dev
 
-Module: codecs/mod_celt
-Description: Adds mod_celt
- Adds mod_celt.
-
 Module: codecs/mod_codec2
 Description: mod_codec2
  Adds mod_codec2.
@@ -374,10 +370,6 @@ Description: Adds mod_skel_codec
 Module: codecs/mod_theora
 Description: mod_theora
  Adds mod_theora.
-
-Module: codecs/mod_vp8
-Description: Adds mod_vp8
- Adds mod_vp8.
 
 Module: codecs/mod_vpx
 Description: VP8/VP9 video codec
