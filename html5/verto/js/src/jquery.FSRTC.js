@@ -29,6 +29,11 @@
  *
  */
 
+
+var iceTimerSent = 0;
+var iceTimerCompleted = 0;
+var iceTimer;
+
 (function($) {
 
     // Find the line in sdpLines that starts with |prefix|, and, if specified,
@@ -619,49 +624,101 @@
         peer.onicecandidate = function(event) {
             if (event.candidate) {
                 options.onICE(event.candidate);
-            } else {
-                if (options.onICEComplete) {
-                    options.onICEComplete();
-                }
+		clearTimeout(iceTimer);
+		iceTimer = setTimeout(function() {
+		    iceTimerSent = 1;
 
-                if (options.type == "offer") {
-		    /* new mozilla now tries to be like chrome but it takes them 10 seconds to complete the ICE 
-		       Booooooooo! This trickle thing is a waste of time...... We'll all have to re-code our engines 
-		       to handle partial setups to maybe save 100m
-		     */
-                    if ((!moz || (!options.sentICESDP && peer.localDescription.sdp.match(/a=candidate/)) && !x && options.onICESDP)) {
-                        options.onICESDP(peer.localDescription);
-                        //x = 1;
-                        /*
-                        x = 1;
-                        peer.createOffer(function(sessionDescription) {
-                            sessionDescription.sdp = serializeSdp(sessionDescription.sdp);
-                            peer.setLocalDescription(sessionDescription);
-                            if (options.onICESDP) {
-                                options.onICESDP(sessionDescription);
-                            }
-                        }, onSdpError, constraints);
-                        */
+		    if (iceTimerCompleted == 0) {
+
+			if (options.onICEComplete) {
+			    options.onICEComplete();
+			}
+
+			if (options.type == "offer") {
+			    /* new mozilla now tries to be like chrome but it takes them 10 seconds to complete the ICE 
+			       Booooooooo! This trickle thing is a waste of time...... We'll all have to re-code our engines 
+			       to handle partial setups to maybe save 100m
+			    */
+			    if ((!moz || (!options.sentICESDP && peer.localDescription.sdp.match(/a=candidate/)) && !x && options.onICESDP)) {
+				options.onICESDP(peer.localDescription);
+				//x = 1;
+				/*
+				  x = 1;
+				  peer.createOffer(function(sessionDescription) {
+				  sessionDescription.sdp = serializeSdp(sessionDescription.sdp);
+				  peer.setLocalDescription(sessionDescription);
+				  if (options.onICESDP) {
+                                  options.onICESDP(sessionDescription);
+				  }
+				  }, onSdpError, constraints);
+				*/
+			    }
+			} else {
+			    if (!x && options.onICESDP) {
+				options.onICESDP(peer.localDescription);
+				//x = 1;
+				/*
+				  x = 1;
+				  peer.createAnswer(function(sessionDescription) {
+				  sessionDescription.sdp = serializeSdp(sessionDescription.sdp);
+				  peer.setLocalDescription(sessionDescription);
+				  if (options.onICESDP) {
+                                  options.onICESDP(sessionDescription);
+				  }
+				  }, onSdpError, constraints);
+				*/
+			    }
+			}
+		    }
+		}, 1000);
+            } else {
+		if (iceTimerSent == 0) {
+		    clearTimeout(iceTimer);
+		    iceTimerCompleted = 1;
+
+                    if (options.onICEComplete) {
+			options.onICEComplete();
                     }
-                } else {
-                    if (!x && options.onICESDP) {
-                        options.onICESDP(peer.localDescription);
-                        //x = 1;
-                        /*
-                        x = 1;
-                        peer.createAnswer(function(sessionDescription) {
-                            sessionDescription.sdp = serializeSdp(sessionDescription.sdp);
-                            peer.setLocalDescription(sessionDescription);
-                            if (options.onICESDP) {
-                                options.onICESDP(sessionDescription);
-                            }
-                        }, onSdpError, constraints);
-                        */
+
+                    if (options.type == "offer") {
+			/* new mozilla now tries to be like chrome but it takes them 10 seconds to complete the ICE 
+			   Booooooooo! This trickle thing is a waste of time...... We'll all have to re-code our engines 
+			   to handle partial setups to maybe save 100m
+			*/
+			if ((!moz || (!options.sentICESDP && peer.localDescription.sdp.match(/a=candidate/)) && !x && options.onICESDP)) {
+                            options.onICESDP(peer.localDescription);
+                            //x = 1;
+                            /*
+                              x = 1;
+                              peer.createOffer(function(sessionDescription) {
+                              sessionDescription.sdp = serializeSdp(sessionDescription.sdp);
+                              peer.setLocalDescription(sessionDescription);
+                              if (options.onICESDP) {
+                              options.onICESDP(sessionDescription);
+                              }
+                              }, onSdpError, constraints);
+                            */
+			}
+                    } else {
+			if (!x && options.onICESDP) {
+                            options.onICESDP(peer.localDescription);
+                            //x = 1;
+                            /*
+                              x = 1;
+                              peer.createAnswer(function(sessionDescription) {
+                              sessionDescription.sdp = serializeSdp(sessionDescription.sdp);
+                              peer.setLocalDescription(sessionDescription);
+                              if (options.onICESDP) {
+                              options.onICESDP(sessionDescription);
+                              }
+                              }, onSdpError, constraints);
+                            */
+			}
                     }
-                }
+		}
             }
         };
-
+	
         // attachStream = MediaStream;
         if (options.attachStream) peer.addStream(options.attachStream);
 
