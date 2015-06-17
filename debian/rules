@@ -76,7 +76,7 @@ override_dh_auto_clean:
 		--enable-core-odbc-support --enable-zrtp \
 		--enable-core-pgsql-support \
 		--prefix=/usr --localstatedir=/var \
-		--sysconfdir=/etc/freeswitch \
+		--sysconfdir=/etc \
 		--with-modinstdir=/usr/lib/freeswitch/mod \
 		--with-rundir=/var/run/freeswitch \
 		--with-logfiledir=/var/log/freeswitch \
