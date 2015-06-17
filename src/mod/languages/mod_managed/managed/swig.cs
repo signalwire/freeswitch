@@ -2665,6 +2665,11 @@ public class freeswitch {
     return ret;
   }
 
+  public static string switch_core_mime_type2ext(string type) {
+    string ret = freeswitchPINVOKE.switch_core_mime_type2ext(type);
+    return ret;
+  }
+
   public static switch_status_t switch_core_mime_add_type(string type, string ext) {
     switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_mime_add_type(type, ext);
     return ret;
@@ -3945,6 +3950,11 @@ public class freeswitch {
 
   public static int switch_needs_url_encode(string s) {
     int ret = freeswitchPINVOKE.switch_needs_url_encode(s);
+    return ret;
+  }
+
+  public static string switch_url_encode_opt(string url, string buf, uint len, switch_bool_t double_encode) {
+    string ret = freeswitchPINVOKE.switch_url_encode_opt(url, buf, len, (int)double_encode);
     return ret;
   }
 
@@ -5344,13 +5354,13 @@ public class freeswitch {
     freeswitchPINVOKE.switch_change_sln_volume_granular(SWIGTYPE_p_short.getCPtr(data), samples, vol);
   }
 
-  public static uint switch_merge_sln(SWIGTYPE_p_short data, uint samples, SWIGTYPE_p_short other_data, uint other_samples) {
-    uint ret = freeswitchPINVOKE.switch_merge_sln(SWIGTYPE_p_short.getCPtr(data), samples, SWIGTYPE_p_short.getCPtr(other_data), other_samples);
+  public static uint switch_merge_sln(SWIGTYPE_p_short data, uint samples, SWIGTYPE_p_short other_data, uint other_samples, int channels) {
+    uint ret = freeswitchPINVOKE.switch_merge_sln(SWIGTYPE_p_short.getCPtr(data), samples, SWIGTYPE_p_short.getCPtr(other_data), other_samples, channels);
     return ret;
   }
 
-  public static uint switch_unmerge_sln(SWIGTYPE_p_short data, uint samples, SWIGTYPE_p_short other_data, uint other_samples) {
-    uint ret = freeswitchPINVOKE.switch_unmerge_sln(SWIGTYPE_p_short.getCPtr(data), samples, SWIGTYPE_p_short.getCPtr(other_data), other_samples);
+  public static uint switch_unmerge_sln(SWIGTYPE_p_short data, uint samples, SWIGTYPE_p_short other_data, uint other_samples, int channels) {
+    uint ret = freeswitchPINVOKE.switch_unmerge_sln(SWIGTYPE_p_short.getCPtr(data), samples, SWIGTYPE_p_short.getCPtr(other_data), other_samples, channels);
     return ret;
   }
 
@@ -10886,6 +10896,9 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_mime_ext2type")]
   public static extern string switch_core_mime_ext2type(string jarg1);
 
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_mime_type2ext")]
+  public static extern string switch_core_mime_type2ext(string jarg1);
+
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_mime_add_type")]
   public static extern int switch_core_mime_add_type(string jarg1, string jarg2);
 
@@ -11917,6 +11930,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_needs_url_encode")]
   public static extern int switch_needs_url_encode(string jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_url_encode_opt")]
+  public static extern string switch_url_encode_opt(string jarg1, string jarg2, uint jarg3, int jarg4);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_url_encode")]
   public static extern string switch_url_encode(string jarg1, string jarg2, uint jarg3);
@@ -15981,10 +15997,10 @@ class freeswitchPINVOKE {
   public static extern void switch_change_sln_volume_granular(HandleRef jarg1, uint jarg2, int jarg3);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_merge_sln")]
-  public static extern uint switch_merge_sln(HandleRef jarg1, uint jarg2, HandleRef jarg3, uint jarg4);
+  public static extern uint switch_merge_sln(HandleRef jarg1, uint jarg2, HandleRef jarg3, uint jarg4, int jarg5);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_unmerge_sln")]
-  public static extern uint switch_unmerge_sln(HandleRef jarg1, uint jarg2, HandleRef jarg3, uint jarg4);
+  public static extern uint switch_unmerge_sln(HandleRef jarg1, uint jarg2, HandleRef jarg3, uint jarg4, int jarg5);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_mux_channels")]
   public static extern void switch_mux_channels(HandleRef jarg1, HandleRef jarg2, uint jarg3, uint jarg4);
@@ -16084,6 +16100,12 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_unicast_conninfo_stream_id_get")]
   public static extern int switch_unicast_conninfo_stream_id_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_unicast_conninfo_thread_set")]
+  public static extern void switch_unicast_conninfo_thread_set(HandleRef jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_unicast_conninfo_thread_get")]
+  public static extern IntPtr switch_unicast_conninfo_thread_get(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_new_switch_unicast_conninfo")]
   public static extern IntPtr new_switch_unicast_conninfo();
@@ -24875,6 +24897,36 @@ public class SWIGTYPE_p_switch_thread_start_t {
   }
 
   internal static HandleRef getCPtr(SWIGTYPE_p_switch_thread_start_t obj) {
+    return (obj == null) ? new HandleRef(null, IntPtr.Zero) : obj.swigCPtr;
+  }
+}
+
+}
+/* ----------------------------------------------------------------------------
+ * This file was automatically generated by SWIG (http://www.swig.org).
+ * Version 2.0.12
+ *
+ * Do not make changes to this file unless you know what you are doing--modify
+ * the SWIG interface file instead.
+ * ----------------------------------------------------------------------------- */
+
+namespace FreeSWITCH.Native {
+
+using System;
+using System.Runtime.InteropServices;
+
+public class SWIGTYPE_p_switch_thread_t {
+  private HandleRef swigCPtr;
+
+  internal SWIGTYPE_p_switch_thread_t(IntPtr cPtr, bool futureUse) {
+    swigCPtr = new HandleRef(this, cPtr);
+  }
+
+  protected SWIGTYPE_p_switch_thread_t() {
+    swigCPtr = new HandleRef(null, IntPtr.Zero);
+  }
+
+  internal static HandleRef getCPtr(SWIGTYPE_p_switch_thread_t obj) {
     return (obj == null) ? new HandleRef(null, IntPtr.Zero) : obj.swigCPtr;
   }
 }
@@ -40472,6 +40524,17 @@ public class switch_unicast_conninfo : IDisposable {
     } 
     get {
       int ret = freeswitchPINVOKE.switch_unicast_conninfo_stream_id_get(swigCPtr);
+      return ret;
+    } 
+  }
+
+  public SWIGTYPE_p_switch_thread_t thread {
+    set {
+      freeswitchPINVOKE.switch_unicast_conninfo_thread_set(swigCPtr, SWIGTYPE_p_switch_thread_t.getCPtr(value));
+    } 
+    get {
+      IntPtr cPtr = freeswitchPINVOKE.switch_unicast_conninfo_thread_get(swigCPtr);
+      SWIGTYPE_p_switch_thread_t ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_switch_thread_t(cPtr, false);
       return ret;
     } 
   }

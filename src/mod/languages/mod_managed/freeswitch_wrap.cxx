@@ -14160,6 +14160,18 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_switch_core_mime_ext2type(char * jarg1) {
 }
 
 
+SWIGEXPORT char * SWIGSTDCALL CSharp_switch_core_mime_type2ext(char * jarg1) {
+  char * jresult ;
+  char *arg1 = (char *) 0 ;
+  char *result = 0 ;
+  
+  arg1 = (char *)jarg1; 
+  result = (char *)switch_core_mime_type2ext((char const *)arg1);
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
 SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_mime_add_type(char * jarg1, char * jarg2) {
   int jresult ;
   char *arg1 = (char *) 0 ;
@@ -18614,6 +18626,24 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_needs_url_encode(char * jarg1) {
   arg1 = (char *)jarg1; 
   result = (int)switch_needs_url_encode((char const *)arg1);
   jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT char * SWIGSTDCALL CSharp_switch_url_encode_opt(char * jarg1, char * jarg2, unsigned long jarg3, int jarg4) {
+  char * jresult ;
+  char *arg1 = (char *) 0 ;
+  char *arg2 = (char *) 0 ;
+  size_t arg3 ;
+  switch_bool_t arg4 ;
+  char *result = 0 ;
+  
+  arg1 = (char *)jarg1; 
+  arg2 = (char *)jarg2; 
+  arg3 = (size_t)jarg3; 
+  arg4 = (switch_bool_t)jarg4; 
+  result = (char *)switch_url_encode_opt((char const *)arg1,arg2,arg3,arg4);
+  jresult = SWIG_csharp_string_callback((const char *)result); 
   return jresult;
 }
 
@@ -35067,37 +35097,41 @@ SWIGEXPORT void SWIGSTDCALL CSharp_switch_change_sln_volume_granular(void * jarg
 }
 
 
-SWIGEXPORT unsigned long SWIGSTDCALL CSharp_switch_merge_sln(void * jarg1, unsigned long jarg2, void * jarg3, unsigned long jarg4) {
+SWIGEXPORT unsigned long SWIGSTDCALL CSharp_switch_merge_sln(void * jarg1, unsigned long jarg2, void * jarg3, unsigned long jarg4, int jarg5) {
   unsigned long jresult ;
   int16_t *arg1 = (int16_t *) 0 ;
   uint32_t arg2 ;
   int16_t *arg3 = (int16_t *) 0 ;
   uint32_t arg4 ;
+  int arg5 ;
   uint32_t result;
   
   arg1 = (int16_t *)jarg1; 
   arg2 = (uint32_t)jarg2; 
   arg3 = (int16_t *)jarg3; 
   arg4 = (uint32_t)jarg4; 
-  result = (uint32_t)switch_merge_sln(arg1,arg2,arg3,arg4);
+  arg5 = (int)jarg5; 
+  result = (uint32_t)switch_merge_sln(arg1,arg2,arg3,arg4,arg5);
   jresult = (unsigned long)result; 
   return jresult;
 }
 
 
-SWIGEXPORT unsigned long SWIGSTDCALL CSharp_switch_unmerge_sln(void * jarg1, unsigned long jarg2, void * jarg3, unsigned long jarg4) {
+SWIGEXPORT unsigned long SWIGSTDCALL CSharp_switch_unmerge_sln(void * jarg1, unsigned long jarg2, void * jarg3, unsigned long jarg4, int jarg5) {
   unsigned long jresult ;
   int16_t *arg1 = (int16_t *) 0 ;
   uint32_t arg2 ;
   int16_t *arg3 = (int16_t *) 0 ;
   uint32_t arg4 ;
+  int arg5 ;
   uint32_t result;
   
   arg1 = (int16_t *)jarg1; 
   arg2 = (uint32_t)jarg2; 
   arg3 = (int16_t *)jarg3; 
   arg4 = (uint32_t)jarg4; 
-  result = (uint32_t)switch_unmerge_sln(arg1,arg2,arg3,arg4);
+  arg5 = (int)jarg5; 
+  result = (uint32_t)switch_unmerge_sln(arg1,arg2,arg3,arg4,arg5);
   jresult = (unsigned long)result; 
   return jresult;
 }
@@ -35491,6 +35525,28 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_unicast_conninfo_stream_id_get(void * j
   arg1 = (switch_unicast_conninfo *)jarg1; 
   result = (int) ((arg1)->stream_id);
   jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_unicast_conninfo_thread_set(void * jarg1, void * jarg2) {
+  switch_unicast_conninfo *arg1 = (switch_unicast_conninfo *) 0 ;
+  switch_thread_t *arg2 = (switch_thread_t *) 0 ;
+  
+  arg1 = (switch_unicast_conninfo *)jarg1; 
+  arg2 = (switch_thread_t *)jarg2; 
+  if (arg1) (arg1)->thread = arg2;
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_unicast_conninfo_thread_get(void * jarg1) {
+  void * jresult ;
+  switch_unicast_conninfo *arg1 = (switch_unicast_conninfo *) 0 ;
+  switch_thread_t *result = 0 ;
+  
+  arg1 = (switch_unicast_conninfo *)jarg1; 
+  result = (switch_thread_t *) ((arg1)->thread);
+  jresult = (void *)result; 
   return jresult;
 }
 
