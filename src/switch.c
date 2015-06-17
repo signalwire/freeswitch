@@ -1196,6 +1196,10 @@ int main(int argc, char *argv[])
 	}
 #endif
 
+	if (nc && nf) {
+		signal(SIGINT, handle_SIGILL);
+	}
+
 	switch_core_runtime_loop(nc);
 
 	destroy_status = switch_core_destroy();
