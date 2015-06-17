@@ -3274,7 +3274,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_set_user_xml(switch_core_session_t *s
 		}
 	}
 
-	if ((x_params = switch_xml_child(x_user, "profile-variables"))) {
+	if (switch_channel_get_caller_profile(channel) && (x_params = switch_xml_child(x_user, "profile-variables"))) {
 		for (x_param = switch_xml_child(x_params, "variable"); x_param; x_param = x_param->next) {
 			const char *var = switch_xml_attr(x_param, "name");
 			const char *val = switch_xml_attr(x_param, "value");
