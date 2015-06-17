@@ -4,6 +4,9 @@
       <param name="password" value="$${default_password}"/>
       <param name="vm-password" value="1019"/>
     </params>
+    <profile-variables>
+      <variable name="Silly-Variable-Name" value="TRUE"/>
+    </profile-variables>
     <variables>
       <variable name="toll_allow" value="domestic,international,local"/>
       <variable name="accountcode" value="1019"/>
