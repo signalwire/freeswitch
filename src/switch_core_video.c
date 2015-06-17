@@ -660,7 +660,7 @@ SWITCH_DECLARE(void) switch_color_yuv2rgb(switch_yuv_color_t *yuv, switch_rgb_co
 
 SWITCH_DECLARE(void) switch_color_set_yuv(switch_yuv_color_t *color, const char *str)
 {
-#ifdef SWITCH_HAVE_YUV	
+#ifdef SWITCH_HAVE_YUV
 	switch_rgb_color_t rgb = { 0 };
 
 	switch_color_set_rgb(&rgb, str);
@@ -1838,6 +1838,7 @@ SWITCH_DECLARE(switch_status_t) switch_img_fit(switch_image_t **srcP, int width,
 
 SWITCH_DECLARE(switch_status_t) switch_img_convert(switch_image_t *src, switch_convert_fmt_t fmt, void *dest, switch_size_t *size)
 {
+#ifdef SWITCH_HAVE_YUV
 	switch_assert(src->fmt == SWITCH_IMG_FMT_I420);
 
 	switch (fmt) {
@@ -1858,12 +1859,14 @@ SWITCH_DECLARE(switch_status_t) switch_img_convert(switch_image_t *src, switch_c
 		abort();
 		break;
 	}
-
-
+#else
+	return SWITCH_STATUS_FALSE;
+#endif
 }
 
 SWITCH_DECLARE(switch_status_t) switch_img_scale(switch_image_t *src, switch_image_t **destP, int width, int height)
 {
+#ifdef SWITCH_HAVE_YUV
 	switch_image_t *dest = NULL;
 	int ret = 0;
 
@@ -1903,6 +1906,9 @@ SWITCH_DECLARE(switch_status_t) switch_img_scale(switch_image_t *src, switch_ima
 	}
 	
 	return SWITCH_STATUS_SUCCESS;
+#else
+	return SWITCH_STATUS_FALSE;
+#endif
 }
 
 SWITCH_DECLARE(void) switch_img_find_position(switch_img_position_t pos, int sw, int sh, int iw, int ih, int *xP, int *yP)
