@@ -154,6 +154,10 @@ Description: MP4 video support
  This module adds support for MP4 video playback.
 Build-Depends: libmp4v2-dev
 
+Module: applications/mod_mp4v2
+Description: Adds mod_mp4v2
+ Adds mod_mp4v2.
+
 Module: applications/mod_nibblebill
 Description: Nibblebill
  This module allows for real-time accounting of a cash balance and
@@ -191,6 +195,10 @@ Description: Redis limit backend
 Module: applications/mod_rss
 Description: RSS browser
  This module provides an RSS browser.
+
+Module: applications/mod_skel
+Description: Adds mod_skel
+ Adds mod_skel.
 
 Module: applications/mod_sms
 Description: Astract SMS
@@ -291,6 +299,10 @@ Description: mod_bv
  Adds mod_bv.
 Build-Depends: libbroadvoice-dev
 
+Module: codecs/mod_celt
+Description: Adds mod_celt
+ Adds mod_celt.
+
 Module: codecs/mod_codec2
 Description: mod_codec2
  Adds mod_codec2.
@@ -330,6 +342,10 @@ Module: codecs/mod_mp4v
 Description: mod_mp4v
  Adds mod_mp4v.
 
+Module: codecs/mod_openh264
+Description: Adds mod_openh264
+ Adds mod_openh264.
+
 Module: codecs/mod_opus
 Description: mod_opus
  Adds mod_opus.
@@ -351,13 +367,25 @@ Description: mod_siren
  Adds mod_siren.
 Build-Depends: libg7221-dev
 
+Module: codecs/mod_skel_codec
+Description: Adds mod_skel_codec
+ Adds mod_skel_codec.
+
 Module: codecs/mod_theora
 Description: mod_theora
  Adds mod_theora.
 
+Module: codecs/mod_vp8
+Description: Adds mod_vp8
+ Adds mod_vp8.
+
 Module: codecs/mod_vpx
 Description: VP8/VP9 video codec
  This module adds the VP8 video codec, also known as WebM.
+
+Module: codecs/mod_yuv
+Description: Adds mod_yuv
+ Adds mod_yuv.
 
 ## mod/dialplans
 
@@ -527,17 +555,22 @@ Build-Depends: libsnmp-dev
 
 ## mod/formats
 
+Module: formats/mod_imagick
+Description: Adds image formats support
+ Adds image formats support via mod_imagick.
+Build-Depends: libmagickcore-dev
+
 Module: formats/mod_local_stream
 Description: mod_local_stream
  Adds mod_local_stream.
 
-Module: formats/mod_imagick
-Description: Image formats support
-Build-Depends: libmagickcore-dev
- 
 Module: formats/mod_native_file
 Description: mod_native_file
  Adds mod_native_file.
+
+Module: formats/mod_png
+Description: Adds mod_png
+ Adds mod_png.
 
 Module: formats/mod_portaudio_stream
 Description: mod_portaudio_stream
@@ -551,12 +584,14 @@ Description: mod_shell_stream
 Module: formats/mod_shout
 Description: mod_shout
  Adds mod_shout.
-Build-Depends: libogg-dev, libvorbis-dev, libmp3lame-dev, libmpg123-dev, libshout3-dev
+Build-Depends: libogg-dev, libvorbis-dev, libmp3lame-dev,
+ libmpg123-dev, libshout3-dev
 
 Module: formats/mod_sndfile
 Description: mod_sndfile
  Adds mod_sndfile.
-Build-Depends: libsndfile1-dev, libflac-dev, libogg-dev, libvorbis-dev
+Build-Depends: libsndfile1-dev, libflac-dev, libogg-dev,
+ libvorbis-dev
 
 Module: formats/mod_ssml
 Description: mod_ssml
@@ -573,6 +608,10 @@ Build-Depends: libvlc-dev (>= 2.0.0)
 Depends: vlc-nox
 Suggests: vlc-dbg
 Distro-Conflicts: squeeze
+
+Module: formats/mod_webm
+Description: Adds mod_webm
+ Adds mod_webm.
 
 ## mod/languages
 
@@ -749,38 +788,3 @@ Module: xml_int/mod_xml_scgi
 Description: mod_xml_scgi
  Adds mod_xml_scgi.
 
-Module: applications/mod_mp4v2
-Description: 
- 
-
-Module: applications/mod_skel
-Description: 
- 
-
-Module: codecs/mod_celt
-Description: 
- 
-
-Module: codecs/mod_openh264
-Description: 
- 
-
-Module: codecs/mod_skel_codec
-Description: 
- 
-
-Module: codecs/mod_vp8
-Description: 
- 
-
-Module: codecs/mod_yuv
-Description: 
- 
-
-Module: formats/mod_png
-Description: 
- 
-
-Module: formats/mod_webm
-Description: 
- 
