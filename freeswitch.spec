@@ -193,7 +193,7 @@ BuildRequires: ilbc-devel = 0.0.1
 BuildRequires: g722_1-devel
 BuildRequires: libcodec2-devel
 BuildRequires: libsilk-devel
-BuildRequires: libvpx-devel => 1.4.0
+BuildRequires: libvpx2-devel => 2.0.0
 BuildRequires: libyuv-devel >= 0.0.1280
 BuildRequires: lua-devel
 BuildRequires: mongo-c-driver-devel
@@ -2463,6 +2463,8 @@ fi
 #
 ######################################################################################################################
 %changelog
+* Wed Jun 17 2015 - krice@freeswitch.org
+- Update libvpx2 dep requirement
 * Thu Jun 04 2015 - s.safarov@gmail.com
 - Build dependences declared
 - mod_rad_auth, mod_radius_cdr, mod_format_cdr modules declared
