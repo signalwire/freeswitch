@@ -246,6 +246,36 @@ static switch_size_t buffer_h264_nalu(h264_codec_context_t *context, switch_fram
 		}
 
 		size = switch_buffer_write(buffer, (void *)(data + 2), frame->datalen - 2);
+	} else if (nalu_type == 24) { // 0x18 STAP-A
+		uint16_t nalu_size;
+		int left = frame->datalen - 1;
+
+		data++;
+
+	again:
+		if (left > 2) {
+			nalu_size = ntohs(*(uint16_t *)data);
+			data += 2;
+			left -= 2;
+
+			if (nalu_size > left) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "INVALID PACKET\n");
+				context->got_sps = 0;
+				switch_buffer_zero(buffer);
+				return SWITCH_STATUS_FALSE;
+			}
+
+			nalu_hdr = *data;
+			nalu_type = nalu_hdr & 0x1f;
+
+			if (context->got_sps <= 0 && nalu_type == 7) context->got_sps = 1;
+
+			size += switch_buffer_write(buffer, sync_bytes, sizeof(sync_bytes));
+			size += switch_buffer_write(buffer, (void *)data, nalu_size);
+			data += nalu_size;
+			left -= nalu_size;
+			goto again;
+		}
 	} else {
 		size = switch_buffer_write(buffer, sync_bytes, sizeof(sync_bytes));
 		size = switch_buffer_write(buffer, frame->data, frame->datalen);
