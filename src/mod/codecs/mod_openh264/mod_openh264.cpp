@@ -262,7 +262,7 @@ static switch_size_t buffer_h264_nalu(h264_codec_context_t *context, switch_fram
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "INVALID PACKET\n");
 				context->got_sps = 0;
 				switch_buffer_zero(buffer);
-				return SWITCH_STATUS_FALSE;
+				return 0;
 			}
 
 			nalu_hdr = *data;
