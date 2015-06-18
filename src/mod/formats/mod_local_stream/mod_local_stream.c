@@ -313,7 +313,11 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 							}
 						}
 						
-						switch_buffer_write(audio_buffer, abuf, olen * 2 * source->channels);
+						if (source->total) {
+							switch_buffer_write(audio_buffer, abuf, olen * 2 * source->channels);
+						} else {
+							switch_buffer_zero(audio_buffer);
+						}
 					}
 				}
 
@@ -329,15 +333,10 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 					used = switch_buffer_read(audio_buffer, dist_buf, source->samples * 2 * source->channels);
 
 					if (!source->total) {
-						switch_mutex_lock(source->mutex);
-
 						while (switch_queue_trypop(source->video_q, &pop) == SWITCH_STATUS_SUCCESS) {
 							switch_image_t *img = (switch_image_t *) pop;
 							switch_img_free(&img);
 						}
-
-						switch_mutex_unlock(source->mutex);
-
 					} else {
 						uint32_t bused = 0;
 
@@ -367,7 +366,7 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 						}
 						switch_mutex_unlock(source->mutex);
 
-						switch_mutex_lock(source->mutex);
+						
 						while (switch_queue_trypop(source->video_q, &pop) == SWITCH_STATUS_SUCCESS) {
 							switch_image_t *img = (switch_image_t *) pop;
 							switch_image_t *imgcp = NULL;
@@ -376,6 +375,7 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 								switch_queue_push(source->context_list->video_q, img);
 							} else {
 								if (source->context_list) {
+									switch_mutex_lock(source->mutex);
 									for (cp = source->context_list; cp && RUNNING; cp = cp->next) {
 										if (cp->video_q) {
 											imgcp = NULL;
@@ -385,12 +385,11 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 											}
 										}
 									}
+									switch_mutex_unlock(source->mutex);
 								}
 								switch_img_free(&img);
 							}
 						}
-						switch_mutex_unlock(source->mutex);
-
 					}
 				}
 			}
