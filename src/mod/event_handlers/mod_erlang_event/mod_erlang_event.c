@@ -2084,15 +2084,15 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_erlang_event_runtime)
 
 	/* return value is -1 for error, a descriptor pointing to epmd otherwise */
 	if ((epmdfd = ei_publish(&ec, prefs.port)) == -1) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Failed to publish port to empd, trying to start empd via system()\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Failed to publish port to epmd, trying to start epmd via system()\n");
 		if (system("epmd -daemon")) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
-							  "Failed to start empd manually! Is epmd in $PATH? If not, start it yourself or run an erl shell with -sname or -name\n");
+							  "Failed to start epmd manually! Is epmd in $PATH? If not, start it yourself or run an erl shell with -sname or -name\n");
 			goto init_failed;
 		}
 		switch_yield(100000);
 		if ((epmdfd = ei_publish(&ec, prefs.port)) == -1) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to publish port to empd AGAIN\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to publish port to epmd AGAIN\n");
 			goto init_failed;
 		}
 	}
