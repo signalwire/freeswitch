@@ -1,0 +1,6 @@
+<extension name="play_audio_local_stream">
+  <condition field="destination_number" expression="^6060$">
+    <action application="answer"/>  
+    <action application="playback" data="local_stream://default"/>
+  </condition>
+</extension>

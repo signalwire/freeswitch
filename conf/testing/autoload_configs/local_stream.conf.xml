@@ -54,4 +54,12 @@
     <param name="timer-name" value="soft"/>
   </directory>
 
+  <directory name="my_voh" path="$${base_dir}/videos">
+    <param name="rate" value="48000"/>
+    <param name="shuffle" value="true"/>
+    <param name="channels" value="2"/>
+    <param name="interval" value="10"/>
+    <param name="timer-name" value="soft"/>
+  </directory>
+
 </configuration>

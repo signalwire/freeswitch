@@ -1,0 +1,12 @@
+<!--
+    Test Fail On Single Reject:
+    
+originate {fail_on_single_reject=UNALLOCATED_NUMBER,hangup_on_single_reject=true}sofia/internal/hup_27@192.168.168.34|sofia/internal/hup_27@192.168.168.34|sofia/internal/hup_1@192.168.168.34|sofia/internal/hup_16@192.168.168.34
+park inline
+-->
+
+<extension name="hangup">
+  <condition field="destination_number" expression="^hup_(\d+)$">
+    <action application="hangup" data="$1"/>
+  </condition>
+</extension>
