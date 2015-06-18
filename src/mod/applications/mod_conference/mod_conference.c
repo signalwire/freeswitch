@@ -12976,10 +12976,6 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 	conference->broadcast_chat_messages = broadcast_chat_messages;
 
 	
-	if (video_codec_bandwidth) {
-		conference->video_codec_settings.video.bandwidth = switch_parse_bandwidth_string(video_codec_bandwidth);
-	}
-
 	conference->conf_video_mode = conf_video_mode;
 
 	if (!switch_core_has_video() && (conference->conf_video_mode == CONF_VIDEO_MODE_MUX || conference->conf_video_mode == CONF_VIDEO_MODE_TRANSCODE)) {
@@ -13035,6 +13031,14 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 			conference_set_fps(conference, 30);
 		}
 
+		if (video_codec_bandwidth) {
+			if (!strcasecmp(video_codec_bandwidth, "auto")) {
+				conference->video_codec_settings.video.bandwidth = switch_calc_bitrate(canvas_w, canvas_h, 2, conference->video_fps.fps);
+			} else {
+				conference->video_codec_settings.video.bandwidth = switch_parse_bandwidth_string(video_codec_bandwidth);
+			}
+		}
+		
 		if (zstr(video_layout_name)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "No video-layout-name specified, using " CONFERENCE_MUX_DEFAULT_LAYOUT "\n");
 			video_layout_name = CONFERENCE_MUX_DEFAULT_LAYOUT;
