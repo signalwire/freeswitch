@@ -491,6 +491,7 @@ int main(int argc, char *argv[])
 	switch_bool_t reincarnate = SWITCH_FALSE, reincarnate_reexec = SWITCH_FALSE;
 	int fds[2] = { 0, 0 };
 #else
+	const switch_bool_t nf = SWITCH_TRUE;		     /* On Windows, force nf to true*/
 	switch_bool_t win32_service = SWITCH_FALSE;
 #endif
 	switch_bool_t nc = SWITCH_FALSE;				/* TRUE if we are running in noconsole mode */
