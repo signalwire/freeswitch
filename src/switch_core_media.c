@@ -5889,7 +5889,7 @@ static const char *get_media_profile_name(switch_core_session_t *session, int se
 
 static char *get_setup(switch_core_session_t *session, switch_sdp_type_t sdp_type)
 {
-	if (sdp_type == SDP_TYPE_RESPONSE) {
+	if (sdp_type == SDP_TYPE_RESPONSE && !switch_channel_test_flag(session->channel, CF_RECOVERING)) {
 		return "active";
 	}
 
