@@ -1023,6 +1023,7 @@ var iceTimer;
 
     var resList = [[320, 180], [320, 240], [640, 360], [640, 480], [1280, 720], [1920, 1080]];
     var resI = 0;
+    var ttl = 0;
 
     var checkRes = function (cam, func) {
 
@@ -1060,7 +1061,7 @@ var iceTimer;
 
 	getUserMedia({
 	    constraints: {
-                audio: true,
+                audio: ttl++ == 0,
                 video: video	    
 	    },
 	    onsuccess: function(e) {e.stop(); console.info(w + "x" + h + " supported."); $.FSRTC.validRes.push([w, h]); checkRes(cam, func);},

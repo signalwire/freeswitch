@@ -77,11 +77,11 @@ $.FSRTC.validRes=[];$.FSRTC.resSupported=function(w,h){for(var i in $.FSRTC.vali
 return false;}
 $.FSRTC.bestResSupported=function(){var w=0,h=0;for(var i in $.FSRTC.validRes){if($.FSRTC.validRes[i][0]>w&&$.FSRTC.validRes[i][1]>h){w=$.FSRTC.validRes[i][0];h=$.FSRTC.validRes[i][1];}}
 return[w,h];}
-var resList=[[320,180],[320,240],[640,360],[640,480],[1280,720],[1920,1080]];var resI=0;var checkRes=function(cam,func){if(resI>=resList.length){if(func)return func();return;}
+var resList=[[320,180],[320,240],[640,360],[640,480],[1280,720],[1920,1080]];var resI=0;var ttl=0;var checkRes=function(cam,func){if(resI>=resList.length){if(func)return func();return;}
 var video={mandatory:{},optional:[]}
 if(cam){video.optional=[{sourceId:cam}];}
 w=resList[resI][0];h=resList[resI][1];resI++;video.mandatory={"minWidth":w,"minHeight":h,"maxWidth":w,"maxHeight":h};if(window.moz){video=video.mandatory;if(!video.width)video.width=video.minWidth;if(!video.height)video.height=video.minHeight;if(!video.frameRate)video.frameRate=video.minFrameRate;}
-getUserMedia({constraints:{audio:true,video:video},onsuccess:function(e){e.stop();console.info(w+"x"+h+" supported.");$.FSRTC.validRes.push([w,h]);checkRes(cam,func);},onerror:function(e){console.error(w+"x"+h+" not supported.");checkRes(cam,func);}});}
+getUserMedia({constraints:{audio:ttl++==0,video:video},onsuccess:function(e){e.stop();console.info(w+"x"+h+" supported.");$.FSRTC.validRes.push([w,h]);checkRes(cam,func);},onerror:function(e){console.error(w+"x"+h+" not supported.");checkRes(cam,func);}});}
 $.FSRTC.getValidRes=function(cam,func){var used=[];$.FSRTC.validRes=[];resI=0;checkRes(cam,func);}
 $.FSRTC.checkPerms=function(){getUserMedia({constraints:{audio:true,video:true,},onsuccess:function(e){e.stop();console.info("media perm init complete");},onerror:function(e){console.error("media perm init error");}});}})(jQuery);(function($){$.JsonRpcClient=function(options){var self=this;this.options=$.extend({ajaxUrl:null,socketUrl:null,onmessage:null,login:null,passwd:null,sessid:null,loginParams:null,userVariables:null,getSocket:function(onmessage_cb){return self._getSocket(onmessage_cb);}},options);self.ws_cnt=0;this.wsOnMessage=function(event){self._wsOnMessage(event);};};$.JsonRpcClient.prototype._ws_socket=null;$.JsonRpcClient.prototype._ws_callbacks={};$.JsonRpcClient.prototype._current_id=1;$.JsonRpcClient.prototype.call=function(method,params,success_cb,error_cb){if(!params){params={};}
 if(this.options.sessid){params.sessid=this.options.sessid;}
