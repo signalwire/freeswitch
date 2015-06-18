@@ -262,7 +262,7 @@ if not exist "$(ProjectDir)..\..\..\ldns\ldns\net.h" type "$(ProjectDir)\net.h" 
     <None Include="ldns\readme.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\Download LDNS.2012.vcxproj">
+    <ProjectReference Include="..\..\Download LDNS.2013.vcxproj">
       <Project>{5be9a596-f11f-4379-928c-412f81ae182b}</Project>
     </ProjectReference>
   </ItemGroup>

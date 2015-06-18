@@ -156,7 +156,7 @@
     <ClCompile Include="src\apt_timer_queue.c" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\win32\apr-util\libaprutil.2012.vcxproj">
+    <ProjectReference Include="..\..\..\win32\apr-util\libaprutil.2013.vcxproj">
       <Project>{f057da7f-79e5-4b00-845c-ef446ef055e3}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>

@@ -389,11 +389,11 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Download pocketsphinx.2012.vcxproj">
+    <ProjectReference Include="..\Download pocketsphinx.2013.vcxproj">
       <Project>{af8163ee-fa76-4904-a11d-7d70a1b5ba2e}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\sphinxbase\sphinxbase.2012.vcxproj">
+    <ProjectReference Include="..\sphinxbase\sphinxbase.2013.vcxproj">
       <Project>{2f025ead-99bd-40f5-b2cc-f0a28cad7f2d}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>

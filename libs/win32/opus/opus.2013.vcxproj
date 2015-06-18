@@ -235,7 +235,7 @@
     <ClInclude Include="..\..\opus-1.1\src\opus_private.h" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Download OPUS.2012.vcxproj">
+    <ProjectReference Include="..\Download OPUS.2013.vcxproj">
       <Project>{092124c9-09ed-43c7-bd6d-4ae5d6b3c547}</Project>
       <Private>false</Private>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
@@ -243,16 +243,16 @@
       <LinkLibraryDependencies>false</LinkLibraryDependencies>
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
-    <ProjectReference Include="opus.celt.2012.vcxproj">
+    <ProjectReference Include="opus.celt.2013.vcxproj">
       <Project>{245603e3-f580-41a5-9632-b25fe3372cbf}</Project>
     </ProjectReference>
-    <ProjectReference Include="opus.silk_common.2012.vcxproj">
+    <ProjectReference Include="opus.silk_common.2013.vcxproj">
       <Project>{c303d2fc-ff97-49b8-9ddd-467b4c9a0b16}</Project>
     </ProjectReference>
-    <ProjectReference Include="opus.silk_fixed.2012.vcxproj">
+    <ProjectReference Include="opus.silk_fixed.2013.vcxproj">
       <Project>{8484c90d-1561-402f-a91d-2db10f8c5171}</Project>
     </ProjectReference>
-    <ProjectReference Include="opus.silk_float.2012.vcxproj">
+    <ProjectReference Include="opus.silk_float.2013.vcxproj">
       <Project>{9c4961d2-5ddb-40c7-9be8-ca918dc4e782}</Project>
     </ProjectReference>
   </ItemGroup>

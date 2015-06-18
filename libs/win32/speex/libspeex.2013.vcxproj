@@ -624,7 +624,7 @@
     <ClInclude Include="config.h" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Download SPEEX.2012.vcxproj">
+    <ProjectReference Include="..\Download SPEEX.2013.vcxproj">
       <Project>{1bdab935-27dc-47e3-95ea-17e024d39c31}</Project>
     </ProjectReference>
   </ItemGroup>

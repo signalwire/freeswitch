@@ -200,10 +200,10 @@
     <ClInclude Include="getopt\getopt.h" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\w32\Library\FreeSwitchCore.2012.vcxproj">
+    <ProjectReference Include="..\..\w32\Library\FreeSwitchCore.2013.vcxproj">
       <Project>{202d7a4e-760d-4d0e-afa1-d7459ced30ff}</Project>
     </ProjectReference>
-    <ProjectReference Include="src\esl.2012.vcxproj">
+    <ProjectReference Include="src\esl.2013.vcxproj">
       <Project>{cf405366-9558-4ae8-90ef-5e21b51ccb4e}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>

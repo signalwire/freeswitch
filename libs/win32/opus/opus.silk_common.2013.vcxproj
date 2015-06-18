@@ -305,7 +305,7 @@
     <ClInclude Include="..\..\opus-1.1\silk\typedef.h" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Download OPUS.2012.vcxproj">
+    <ProjectReference Include="..\Download OPUS.2013.vcxproj">
       <Project>{092124c9-09ed-43c7-bd6d-4ae5d6b3c547}</Project>
     </ProjectReference>
   </ItemGroup>

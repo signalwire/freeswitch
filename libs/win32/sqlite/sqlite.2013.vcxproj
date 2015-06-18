@@ -320,7 +320,7 @@
     <ClInclude Include="..\..\sqlite-amalgamation-3080401\sqlite3.h" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Download SQLITE.2012.vcxproj">
+    <ProjectReference Include="..\Download SQLITE.2013.vcxproj">
       <Project>{97d25665-34cd-4e0c-96e7-88f0795b8883}</Project>
     </ProjectReference>
   </ItemGroup>

@@ -94,7 +94,7 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Download 8khz music.2012.vcxproj">
+    <ProjectReference Include="..\Download 8khz music.2013.vcxproj">
       <Project>{4f5c9d55-98ef-4256-8311-32d7bd360406}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>

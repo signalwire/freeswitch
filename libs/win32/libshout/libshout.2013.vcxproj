@@ -177,11 +177,11 @@
     <ClInclude Include="shout\shout.h" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Download LIBSHOUT.2012.vcxproj">
+    <ProjectReference Include="..\Download LIBSHOUT.2013.vcxproj">
       <Project>{d5d2bf72-29fe-4982-a9fa-82ab3086db1b}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\libogg\libogg.2012.vcxproj">
+    <ProjectReference Include="..\libogg\libogg.2013.vcxproj">
       <Project>{0feeaec6-4399-4c46-b7db-62ece80d15b4}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>

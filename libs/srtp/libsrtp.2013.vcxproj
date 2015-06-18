@@ -430,7 +430,7 @@
     <None Include="srtp.def" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\win32\openssl\openssl.2012.vcxproj">
+    <ProjectReference Include="..\win32\openssl\openssl.2013.vcxproj">
       <Project>{25bd39b1-c8bf-4676-a738-9cabd9c6bc79}</Project>
     </ProjectReference>
   </ItemGroup>

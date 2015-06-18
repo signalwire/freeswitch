@@ -830,32 +830,32 @@ if not exist "$(OutDir)htdocs" xcopy "$(SolutionDir)htdocs\*.*" "$(OutDir)htdocs
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\libs\libteletone\libteletone.2012.vcxproj">
+    <ProjectReference Include="..\..\libs\libteletone\libteletone.2013.vcxproj">
       <Project>{89385c74-5860-4174-9caf-a39e7c48909c}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\..\libs\libzrtp\projects\win\libzrtp.2012.vcxproj">
+    <ProjectReference Include="..\..\libs\libzrtp\projects\win\libzrtp.2013.vcxproj">
       <Project>{c13cc324-0032-4492-9a30-310a6bd64ff5}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\..\libs\spandsp\src\libspandsp.2012.vcxproj">
+    <ProjectReference Include="..\..\libs\spandsp\src\libspandsp.2013.vcxproj">
       <Project>{1cbb0077-18c5-455f-801c-0a0ce7b0bbf5}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\..\libs\win32\speex\libspeexdsp.2012.vcxproj">
+    <ProjectReference Include="..\..\libs\win32\speex\libspeexdsp.2013.vcxproj">
       <Project>{03207781-0d1c-4db3-a71d-45c608f28dbd}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\..\libs\win32\speex\libspeex.2012.vcxproj">
+    <ProjectReference Include="..\..\libs\win32\speex\libspeex.2013.vcxproj">
       <Project>{e972c52f-9e85-4d65-b19c-031e511e9db4}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\..\libs\srtp\libsrtp.2012.vcxproj">
+    <ProjectReference Include="..\..\libs\srtp\libsrtp.2013.vcxproj">
       <Project>{eef031cb-fed8-451e-a471-91ec8d4f6750}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\..\libs\win32\apr-util\libaprutil.2012.vcxproj">
+    <ProjectReference Include="..\..\libs\win32\apr-util\libaprutil.2013.vcxproj">
       <Project>{f057da7f-79e5-4b00-845c-ef446ef055e3}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\..\libs\win32\apr\libapr.2012.vcxproj">
+    <ProjectReference Include="..\..\libs\win32\apr\libapr.2013.vcxproj">
       <Project>{f6c55d93-b927-4483-bb69-15aef3dd2dff}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <Private>true</Private>
@@ -863,20 +863,20 @@ if not exist "$(OutDir)htdocs" xcopy "$(SolutionDir)htdocs\*.*" "$(OutDir)htdocs
       <LinkLibraryDependencies>true</LinkLibraryDependencies>
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
-    <ProjectReference Include="..\..\libs\win32\curl\curllib.2012.vcxproj">
+    <ProjectReference Include="..\..\libs\win32\curl\curllib.2013.vcxproj">
       <Project>{87ee9da4-de1e-4448-8324-183c98dca588}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\..\libs\win32\openssl\libeay32.2012.vcxproj">
+    <ProjectReference Include="..\..\libs\win32\openssl\libeay32.2013.vcxproj">
       <Project>{d331904d-a00a-4694-a5a3-fcff64ab5dbe}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\..\libs\win32\openssl\ssleay32.2012.vcxproj">
+    <ProjectReference Include="..\..\libs\win32\openssl\ssleay32.2013.vcxproj">
       <Project>{b4b62169-5ad4-4559-8707-3d933ac5db39}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\..\libs\win32\pcre\libpcre.2012.vcxproj">
+    <ProjectReference Include="..\..\libs\win32\pcre\libpcre.2013.vcxproj">
       <Project>{8d04b550-d240-4a44-8a18-35da3f7038d9}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\..\libs\win32\sqlite\sqlite.2012.vcxproj">
+    <ProjectReference Include="..\..\libs\win32\sqlite\sqlite.2013.vcxproj">
       <Project>{6edfefd5-3596-4fa9-8eba-b331547b35a3}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>

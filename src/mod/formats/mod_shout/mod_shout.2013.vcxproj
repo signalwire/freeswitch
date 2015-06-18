@@ -164,36 +164,36 @@
     <ClInclude Include="mpglib.h" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\libs\win32\curl\curllib.2012.vcxproj">
+    <ProjectReference Include="..\..\..\..\libs\win32\curl\curllib.2013.vcxproj">
       <Project>{87ee9da4-de1e-4448-8324-183c98dca588}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\..\libs\win32\libmp3lame\libmp3lame.2012.vcxproj">
+    <ProjectReference Include="..\..\..\..\libs\win32\libmp3lame\libmp3lame.2013.vcxproj">
       <Project>{e316772f-5d8f-4f2a-8f71-094c3e859d34}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\..\libs\win32\libogg\libogg.2012.vcxproj">
+    <ProjectReference Include="..\..\..\..\libs\win32\libogg\libogg.2013.vcxproj">
       <Project>{0feeaec6-4399-4c46-b7db-62ece80d15b4}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\..\libs\win32\libshout\libshout.2012.vcxproj">
+    <ProjectReference Include="..\..\..\..\libs\win32\libshout\libshout.2013.vcxproj">
       <Project>{d3d8b329-20be-475e-9e83-653cea0e0ef5}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\..\libs\win32\mpg123\libmpg123.2012.vcxproj">
+    <ProjectReference Include="..\..\..\..\libs\win32\mpg123\libmpg123.2013.vcxproj">
       <Project>{419c8f80-d858-4b48-a25c-af4007608137}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\..\libs\win32\openssl\libeay32.2012.vcxproj">
+    <ProjectReference Include="..\..\..\..\libs\win32\openssl\libeay32.2013.vcxproj">
       <Project>{d331904d-a00a-4694-a5a3-fcff64ab5dbe}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\..\libs\win32\openssl\ssleay32.2012.vcxproj">
+    <ProjectReference Include="..\..\..\..\libs\win32\openssl\ssleay32.2013.vcxproj">
       <Project>{b4b62169-5ad4-4559-8707-3d933ac5db39}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\..\libs\win32\pthread\pthread.2012.vcxproj">
+    <ProjectReference Include="..\..\..\..\libs\win32\pthread\pthread.2013.vcxproj">
       <Project>{df018947-0fff-4eb3-bdee-441dc81da7a4}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\..\w32\Library\FreeSwitchCore.2012.vcxproj">
+    <ProjectReference Include="..\..\..\..\w32\Library\FreeSwitchCore.2013.vcxproj">
       <Project>{202d7a4e-760d-4d0e-afa1-d7459ced30ff}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>

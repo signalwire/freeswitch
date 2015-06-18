@@ -243,7 +243,7 @@
     <ClCompile Include="..\..\xmlrpc-c\src\xmlrpc_struct.c" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="xmlparse.2012.vcxproj">
+    <ProjectReference Include="xmlparse.2013.vcxproj">
       <Project>{0d108721-eae8-4baf-8102-d8960ec93647}</Project>
     </ProjectReference>
   </ItemGroup>

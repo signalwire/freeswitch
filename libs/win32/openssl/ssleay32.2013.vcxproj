@@ -259,7 +259,7 @@
     <ClInclude Include="..\..\openssl-$(OpenSSLVersion)\crypto\evp\evp_locl.h" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="libeay32.2012.vcxproj">
+    <ProjectReference Include="libeay32.2013.vcxproj">
       <Project>{d331904d-a00a-4694-a5a3-fcff64ab5dbe}</Project>
     </ProjectReference>
   </ItemGroup>

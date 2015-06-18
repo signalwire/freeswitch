@@ -152,10 +152,10 @@
     <ClCompile Include="mod_enum.c" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\libs\win32\ldns\ldns-lib\ldns-lib.2012.vcxproj">
+    <ProjectReference Include="..\..\..\..\libs\win32\ldns\ldns-lib\ldns-lib.2013.vcxproj">
       <Project>{23b4d303-79fc-49e0-89e2-2280e7e28940}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\..\w32\Library\FreeSwitchCore.2012.vcxproj">
+    <ProjectReference Include="..\..\..\..\w32\Library\FreeSwitchCore.2013.vcxproj">
       <Project>{202d7a4e-760d-4d0e-afa1-d7459ced30ff}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>

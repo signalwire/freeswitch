@@ -430,7 +430,7 @@
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\win32\libjpeg\libjpeg.2012.vcxproj">
+    <ProjectReference Include="..\..\win32\libjpeg\libjpeg.2013.vcxproj">
       <Project>{019dbd2a-273d-4ba4-bf86-b5efe2ed76b1}</Project>
       <Private>true</Private>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
@@ -438,25 +438,25 @@
       <LinkLibraryDependencies>true</LinkLibraryDependencies>
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
-    <ProjectReference Include="libtiff.2012.vcxproj">
+    <ProjectReference Include="libtiff.2013.vcxproj">
       <Project>{401a40cd-5db4-4e34-ac68-fa99e9fac014}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="msvc\make_at_dictionary.2012.vcxproj">
+    <ProjectReference Include="msvc\make_at_dictionary.2013.vcxproj">
       <Project>{dee932ab-5911-4700-9eeb-8c7090a0a330}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="msvc\make_cielab_luts.2012.vcxproj">
+    <ProjectReference Include="msvc\make_cielab_luts.2013.vcxproj">
       <Project>{85f0cf8c-c7ab-48f6-ba19-cc94cf87f981}</Project>
     </ProjectReference>
-    <ProjectReference Include="msvc\make_math_fixed_tables.2012.vcxproj">
+    <ProjectReference Include="msvc\make_math_fixed_tables.2013.vcxproj">
       <Project>{2386b892-35f5-46cf-a0f0-10394d2fbf9b}</Project>
     </ProjectReference>
-    <ProjectReference Include="msvc\make_modem_filter.2012.vcxproj">
+    <ProjectReference Include="msvc\make_modem_filter.2013.vcxproj">
       <Project>{329a6fa0-0fcc-4435-a950-e670aefa9838}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="msvc\make_t43_gray_code_tables.2012.vcxproj">
+    <ProjectReference Include="msvc\make_t43_gray_code_tables.2013.vcxproj">
       <Project>{eddb8ab9-c53e-44c0-a620-0e86c2cbd5d5}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>

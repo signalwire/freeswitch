@@ -947,10 +947,10 @@ xcopy "$(ProjectDir)..\..\apr-util\include\*.h" "$(ProjectDir)..\..\include\" /C
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\apr\libapr.2012.vcxproj">
+    <ProjectReference Include="..\apr\libapr.2013.vcxproj">
       <Project>{f6c55d93-b927-4483-bb69-15aef3dd2dff}</Project>
     </ProjectReference>
-    <ProjectReference Include="xml.2012.vcxproj">
+    <ProjectReference Include="xml.2013.vcxproj">
       <Project>{155844c3-ec5f-407f-97a4-a2ddaded9b2f}</Project>
     </ProjectReference>
   </ItemGroup>

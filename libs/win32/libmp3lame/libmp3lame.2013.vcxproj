@@ -467,7 +467,7 @@
     <None Include="..\..\lame-3.98.4\libmp3lame\i386\scalar.nas" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Download LAME.2012.vcxproj">
+    <ProjectReference Include="..\Download LAME.2013.vcxproj">
       <Project>{d5d2bf72-29fe-4982-a9fa-82ab2086db1b}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>

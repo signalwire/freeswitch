@@ -130,11 +130,11 @@
     <ClCompile Include="mod_tone_stream.c" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\libs\libteletone\libteletone.2012.vcxproj">
+    <ProjectReference Include="..\..\..\..\libs\libteletone\libteletone.2013.vcxproj">
       <Project>{89385c74-5860-4174-9caf-a39e7c48909c}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\..\w32\Library\FreeSwitchCore.2012.vcxproj">
+    <ProjectReference Include="..\..\..\..\w32\Library\FreeSwitchCore.2013.vcxproj">
       <Project>{202d7a4e-760d-4d0e-afa1-d7459ced30ff}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>

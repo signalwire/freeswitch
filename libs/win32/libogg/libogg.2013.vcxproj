@@ -198,7 +198,7 @@
     <ClInclude Include="..\..\libogg-1.1.3\include\ogg\os_types.h" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Download OGG.2012.vcxproj">
+    <ProjectReference Include="..\Download OGG.2013.vcxproj">
       <Project>{d5d2bf72-29fe-4982-a9fa-82ab1086db1b}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
