@@ -644,11 +644,11 @@
     <ClInclude Include="..\..\sphinxbase-0.7\include\yin.h" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Download sphinxbase.2012.vcxproj">
+    <ProjectReference Include="..\Download sphinxbase.2013.vcxproj">
       <Project>{4f92b672-dadb-4047-8d6a-4bb3796733fd}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\Download sphinxmodel.2012.vcxproj">
+    <ProjectReference Include="..\Download sphinxmodel.2013.vcxproj">
       <Project>{2dee4895-1134-439c-b688-52203e57d878}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>

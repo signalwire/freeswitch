@@ -335,7 +335,7 @@
     <ClInclude Include="..\..\curl-7.35.0\lib\urldata.h" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Download CURL.2012.vcxproj">
+    <ProjectReference Include="..\Download CURL.2013.vcxproj">
       <Project>{3970bcde-be1a-4cf3-a65f-5264ba2e47b5}</Project>
     </ProjectReference>
   </ItemGroup>

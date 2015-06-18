@@ -206,18 +206,18 @@
     <ClInclude Include="mod_v8.h" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\libs\libteletone\libteletone.2012.vcxproj">
+    <ProjectReference Include="..\..\..\..\libs\libteletone\libteletone.2013.vcxproj">
       <Project>{89385c74-5860-4174-9caf-a39e7c48909c}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\..\libs\win32\v8\libv8.2012.vcxproj">
+    <ProjectReference Include="..\..\..\..\libs\win32\v8\libv8.2013.vcxproj">
       <Project>{AB03E82B-48B1-4374-B32A-A1AF83DDC6C2}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\..\libs\win32\curl\curllib.2012.vcxproj">
+    <ProjectReference Include="..\..\..\..\libs\win32\curl\curllib.2013.vcxproj">
       <Project>{87ee9da4-de1e-4448-8324-183c98dca588}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\..\w32\Library\FreeSwitchCore.2012.vcxproj">
+    <ProjectReference Include="..\..\..\..\w32\Library\FreeSwitchCore.2013.vcxproj">
       <Project>{202d7a4e-760d-4d0e-afa1-d7459ced30ff}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>

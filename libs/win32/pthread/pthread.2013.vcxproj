@@ -445,7 +445,7 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Download PTHREAD.2012.vcxproj">
+    <ProjectReference Include="..\Download PTHREAD.2013.vcxproj">
       <Project>{8b3b4c4c-13c2-446c-beb0-f412cc2cfb9a}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>

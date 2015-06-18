@@ -260,14 +260,14 @@
     <ClCompile Include="mod_flite.c" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\libs\win32\Download FLITE.2012.vcxproj">
+    <ProjectReference Include="..\..\..\..\libs\win32\Download FLITE.2013.vcxproj">
       <Project>{d5d2bf72-29fe-4982-a9fa-82fdd086db1b}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\..\libs\win32\flite\flite.2012.vcxproj">
+    <ProjectReference Include="..\..\..\..\libs\win32\flite\flite.2013.vcxproj">
       <Project>{0ad1177e-1fd8-4643-9391-431467a11084}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\..\w32\Library\FreeSwitchCore.2012.vcxproj">
+    <ProjectReference Include="..\..\..\..\w32\Library\FreeSwitchCore.2013.vcxproj">
       <Project>{202d7a4e-760d-4d0e-afa1-d7459ced30ff}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>

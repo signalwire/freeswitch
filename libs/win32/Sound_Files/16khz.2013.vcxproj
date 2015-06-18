@@ -134,7 +134,7 @@ xcopy "$(SolutionDir)libs\sounds\en\us\callie\directory\16000\*.*" "$(OutDir)sou
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Download 16khz Sounds.2012.vcxproj">
+    <ProjectReference Include="..\Download 16khz Sounds.2013.vcxproj">
       <Project>{87a1fe3d-f410-4c8e-9591-8c625985bc70}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>

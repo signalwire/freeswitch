@@ -132,7 +132,7 @@
     <ClCompile Include="mod_opus.c" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\libs\win32\opus\opus.2012.vcxproj">
+    <ProjectReference Include="..\..\..\..\libs\win32\opus\opus.2013.vcxproj">
       <Project>{FD60942F-72D6-4CA1-8B57-EA1D1B95A89E}</Project>
       <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
       <Private>false</Private>
@@ -140,16 +140,16 @@
       <LinkLibraryDependencies>true</LinkLibraryDependencies>
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\..\libs\win32\opus\opus.celt.2012.vcxproj">
+    <ProjectReference Include="..\..\..\..\libs\win32\opus\opus.celt.2013.vcxproj">
       <Project>{245603e3-f580-41a5-9632-b25fe3372cbf}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\..\libs\win32\opus\opus.silk_common.2012.vcxproj">
+    <ProjectReference Include="..\..\..\..\libs\win32\opus\opus.silk_common.2013.vcxproj">
       <Project>{c303d2fc-ff97-49b8-9ddd-467b4c9a0b16}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\..\libs\win32\opus\opus.silk_float.2012.vcxproj">
+    <ProjectReference Include="..\..\..\..\libs\win32\opus\opus.silk_float.2013.vcxproj">
       <Project>{9c4961d2-5ddb-40c7-9be8-ca918dc4e782}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\..\w32\Library\FreeSwitchCore.2012.vcxproj">
+    <ProjectReference Include="..\..\..\..\w32\Library\FreeSwitchCore.2013.vcxproj">
       <Project>{202d7a4e-760d-4d0e-afa1-d7459ced30ff}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>

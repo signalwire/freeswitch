@@ -146,7 +146,7 @@
     <ClCompile Include="..\..\celt-0.10.0\libcelt\vq.c" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Download CELT.2012.vcxproj">
+    <ProjectReference Include="..\Download CELT.2013.vcxproj">
       <Project>{fff82f9b-6a2b-4be3-95d8-dc5a4fc71e19}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>

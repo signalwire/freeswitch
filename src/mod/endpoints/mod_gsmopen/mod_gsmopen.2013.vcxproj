@@ -168,16 +168,16 @@
     <ClCompile Include="mod_gsmopen.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\libs\spandsp\src\libspandsp.2012.vcxproj">
+    <ProjectReference Include="..\..\..\..\libs\spandsp\src\libspandsp.2013.vcxproj">
       <Project>{1cbb0077-18c5-455f-801c-0a0ce7b0bbf5}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\..\libs\win32\libcbt\libcbt.2012.vcxproj">
+    <ProjectReference Include="..\..\..\..\libs\win32\libcbt\libcbt.2013.vcxproj">
       <Project>{77bc1dd2-c9a1-44d7-bffa-1320370cacb9}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\..\w32\Library\FreeSwitchCore.2012.vcxproj">
+    <ProjectReference Include="..\..\..\..\w32\Library\FreeSwitchCore.2013.vcxproj">
       <Project>{202d7a4e-760d-4d0e-afa1-d7459ced30ff}</Project>
     </ProjectReference>
-    <ProjectReference Include="gsmlib\gsmlib-1.10-patched-13ubuntu\win32\gsmlib.2012.vcxproj">
+    <ProjectReference Include="gsmlib\gsmlib-1.10-patched-13ubuntu\win32\gsmlib.2013.vcxproj">
       <Project>{26c82fce-e0cf-4d10-a00c-d8e582ffeb53}</Project>
     </ProjectReference>
   </ItemGroup>

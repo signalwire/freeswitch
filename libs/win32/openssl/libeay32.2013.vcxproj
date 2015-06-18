@@ -896,7 +896,7 @@ if not exist "$(ProjectDir)..\..\openssl-$(OpenSSLVersion)\include\openssl\e_os.
     <ClInclude Include="..\..\openssl-$(OpenSSLVersion)\ms\uplink.h" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Download OPENSSL.2012.vcxproj">
+    <ProjectReference Include="..\Download OPENSSL.2013.vcxproj">
       <Project>{d578e676-7ec8-4548-bd8b-845c635f14ad}</Project>
     </ProjectReference>
   </ItemGroup>

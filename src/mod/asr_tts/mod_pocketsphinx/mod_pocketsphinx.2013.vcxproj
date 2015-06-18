@@ -191,27 +191,27 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\libs\win32\Download pocketsphinx.2012.vcxproj">
+    <ProjectReference Include="..\..\..\..\libs\win32\Download pocketsphinx.2013.vcxproj">
       <Project>{af8163ee-fa76-4904-a11d-7d70a1b5ba2e}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\..\libs\win32\Download sphinxbase.2012.vcxproj">
+    <ProjectReference Include="..\..\..\..\libs\win32\Download sphinxbase.2013.vcxproj">
       <Project>{4f92b672-dadb-4047-8d6a-4bb3796733fd}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\..\libs\win32\Download sphinxmodel.2012.vcxproj">
+    <ProjectReference Include="..\..\..\..\libs\win32\Download sphinxmodel.2013.vcxproj">
       <Project>{2dee4895-1134-439c-b688-52203e57d878}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\..\libs\win32\pocketsphinx\pocketsphinx.2012.vcxproj">
+    <ProjectReference Include="..\..\..\..\libs\win32\pocketsphinx\pocketsphinx.2013.vcxproj">
       <Project>{94001a0e-a837-445c-8004-f918f10d0226}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\..\libs\win32\sphinxbase\sphinxbase.2012.vcxproj">
+    <ProjectReference Include="..\..\..\..\libs\win32\sphinxbase\sphinxbase.2013.vcxproj">
       <Project>{2f025ead-99bd-40f5-b2cc-f0a28cad7f2d}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\..\w32\Library\FreeSwitchCore.2012.vcxproj">
+    <ProjectReference Include="..\..\..\..\w32\Library\FreeSwitchCore.2013.vcxproj">
       <Project>{202d7a4e-760d-4d0e-afa1-d7459ced30ff}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>

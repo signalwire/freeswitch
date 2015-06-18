@@ -344,7 +344,7 @@
     <ClInclude Include="..\..\flite-2.0.0\src\speech\g72x.h" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Download FLITE.2012.vcxproj">
+    <ProjectReference Include="..\Download FLITE.2013.vcxproj">
       <Project>{d5d2bf72-29fe-4982-a9fa-82fdd086db1b}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>

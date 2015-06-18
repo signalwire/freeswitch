@@ -198,7 +198,7 @@
     <ClInclude Include="..\lib\expat\xmltok\nametab.h" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="gennmtab.2012.vcxproj">
+    <ProjectReference Include="gennmtab.2013.vcxproj">
       <Project>{bed7539c-0099-4a14-ad5d-30828f15a171}</Project>
     </ProjectReference>
   </ItemGroup>

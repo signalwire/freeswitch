@@ -254,10 +254,10 @@
     <ClInclude Include="..\..\openssl-$(OpenSSLVersion)\apps\apps.h" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="libeay32.2012.vcxproj">
+    <ProjectReference Include="libeay32.2013.vcxproj">
       <Project>{d331904d-a00a-4694-a5a3-fcff64ab5dbe}</Project>
     </ProjectReference>
-    <ProjectReference Include="ssleay32.2012.vcxproj">
+    <ProjectReference Include="ssleay32.2013.vcxproj">
       <Project>{b4b62169-5ad4-4559-8707-3d933ac5db39}</Project>
     </ProjectReference>
   </ItemGroup>

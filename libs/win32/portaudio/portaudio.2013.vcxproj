@@ -853,7 +853,7 @@
     <None Include="portaudio.def" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Download PORTAUDIO.2012.vcxproj">
+    <ProjectReference Include="..\Download PORTAUDIO.2013.vcxproj">
       <Project>{c0779bcc-c037-4f58-b890-ef37ba956b3c}</Project>
     </ProjectReference>
   </ItemGroup>

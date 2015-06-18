@@ -180,7 +180,7 @@
     <ClCompile Include="dftables.c" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Download PCRE.2012.vcxproj">
+    <ProjectReference Include="..\Download PCRE.2013.vcxproj">
       <Project>{b1e7e876-347f-4dc9-9bea-d1afbd9dff8a}</Project>
     </ProjectReference>
   </ItemGroup>

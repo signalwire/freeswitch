@@ -137,7 +137,7 @@
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Download V8.2012.vcxproj">
+    <ProjectReference Include="..\Download V8.2013.vcxproj">
       <Project>{13077E43-E5DF-4EF6-9EB1-2A0B22E8DFAF}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
