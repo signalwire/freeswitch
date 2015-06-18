@@ -1040,7 +1040,7 @@ function init() {
     });
 //
 
-    vqual = $.cookie("verto_demo_vqual") || "qvga";
+    vqual = $.cookie("verto_demo_vqual") || "hd";
     $.cookie("verto_demo_vqual", vqual, {
         expires: 365
     });
