@@ -316,9 +316,10 @@ SPAN_DECLARE(codec_munge_state_t *) codec_munge_init(int codec, int info)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(void) codec_munge_free(codec_munge_state_t *s)
+SPAN_DECLARE(int) codec_munge_free(codec_munge_state_t *s)
 {
     free(s);
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 

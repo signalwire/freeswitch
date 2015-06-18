@@ -90,7 +90,7 @@ typedef struct
 } packer_t;
 
 #if defined(SPANDSP_SUPPORT_TIFF_FX)
-#if TIFFLIB_VERSION >= 20120615
+#if TIFFLIB_VERSION >= 20120922  &&  defined(HAVE_TIF_DIR_H)
 extern TIFFFieldArray tiff_fx_field_array;
 #endif
 #endif
@@ -615,7 +615,7 @@ static int write_tiff_t43_image(t4_rx_state_t *s)
 static int write_tiff_image(t4_rx_state_t *s)
 {
     t4_rx_tiff_state_t *t;
-#if defined(SPANDSP_SUPPORT_TIFF_FX)
+#if defined(SPANDSP_SUPPORT_TIFF_FX)  &&  TIFFLIB_VERSION >= 20120922  &&  defined(HAVE_TIF_DIR_H)
     toff_t diroff;
 #endif
 
@@ -678,6 +678,7 @@ static int write_tiff_image(t4_rx_state_t *s)
        the first page in the file */
     if (s->current_page == 0)
     {
+#if TIFFLIB_VERSION >= 20120922  &&  defined(HAVE_TIF_DIR_H)
         if (!TIFFCreateCustomDirectory(t->tiff_file, &tiff_fx_field_array))
         {
             TIFFSetField(t->tiff_file, TIFFTAG_FAXPROFILE, PROFILETYPE_G3_FAX);
@@ -698,6 +699,7 @@ static int write_tiff_image(t4_rx_state_t *s)
             if (!TIFFWriteDirectory(t->tiff_file))
                 span_log(&s->logging, SPAN_LOG_WARNING, "%s: Failed to write directory for page %d.\n", t->file, s->current_page);
         }
+#endif
     }
 #endif
     return 0;

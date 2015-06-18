@@ -61,7 +61,7 @@ SPAN_DECLARE(void) ifft(complex_t data[], int len);
 
 SPAN_DECLARE(codec_munge_state_t *) codec_munge_init(int codec, int info);
 
-SPAN_DECLARE(void) codec_munge_free(codec_munge_state_t *s);
+SPAN_DECLARE(int) codec_munge_free(codec_munge_state_t *s);
 
 SPAN_DECLARE(void) codec_munge(codec_munge_state_t *s, int16_t amp[], int len);
 

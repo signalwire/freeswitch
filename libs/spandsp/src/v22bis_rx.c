@@ -643,6 +643,7 @@ static __inline__ void process_half_baud(v22bis_state_t *s, const complexf_t *sa
         tune_equalizer(s, &z, target);
         raw_bits = phase_steps[((nearest >> 2) - (s->rx.constellation_state >> 2)) & 3];
         bitstream = decode_baudx(s, nearest);
+        span_log(&s->logging, SPAN_LOG_FLOW, "+++ Rx 0x%x\n", bitstream);
         s->rx.training_count++;
 //span_log(&s->logging, SPAN_LOG_FLOW, "S11 0x%02x 0x%02x 0x%X %d %d %d %d %d\n", raw_bits, nearest, bitstream, s->rx.scrambled_ones_to_date, 0, 0, 0, s->rx.training_count);
         if (s->negotiated_bit_rate == 1200)
@@ -736,6 +737,7 @@ static __inline__ void process_half_baud(v22bis_state_t *s, const complexf_t *sa
         track_carrier(s, &z, target);
         tune_equalizer(s, &z, target);
         bitstream = decode_baudx(s, nearest);
+        span_log(&s->logging, SPAN_LOG_FLOW, "+++ Rx 0x%x\n", bitstream);
         if (++s->rx.training_count > ms_to_symbols(270 + 765))
         {
             span_log(&s->logging, SPAN_LOG_FLOW, "+++ Rx normal operation (1200)\n");

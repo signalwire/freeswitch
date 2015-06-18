@@ -81,7 +81,7 @@
 
 #include "faxfont.h"
 
-#if defined(SPANDSP_SUPPORT_TIFF_FX)
+#if defined(SPANDSP_SUPPORT_TIFF_FX)  &&  defined(HAVE_TIF_DIR_H)
 #include <tif_dir.h>
 #endif
 
@@ -164,7 +164,7 @@ static const TIFFFieldInfo tiff_fx_tiff_field_info[] =
     {TIFFTAG_IMAGELAYER, 2, 2, TIFF_LONG, FIELD_CUSTOM, false, false, (char *) "ImageLayer"},
 };
 
-#if TIFFLIB_VERSION >= 20120615
+#if TIFFLIB_VERSION >= 20120922  &&  defined(HAVE_TIF_DIR_H)
 static TIFFField tiff_fx_tiff_fields[] =
 {
     { TIFFTAG_INDEXED, 1, 1, TIFF_SHORT, 0, TIFF_SETGET_UINT16, TIFF_SETGET_UNDEFINED, FIELD_CUSTOM, 1, 0, (char *) "Indexed" },
@@ -623,6 +623,7 @@ static int get_tiff_directory_info(t4_tx_state_t *s)
     diroff = 0;
     if (TIFFGetField(t->tiff_file, TIFFTAG_GLOBALPARAMETERSIFD, &diroff))
     {
+#if TIFFLIB_VERSION >= 20120922  &&  defined(HAVE_TIF_DIR_H)
         if (!TIFFReadCustomDirectory(t->tiff_file, diroff, &tiff_fx_field_array))
         {
             span_log(&s->logging, SPAN_LOG_FLOW, "Global parameter read failed\n");
@@ -648,6 +649,7 @@ static int get_tiff_directory_info(t4_tx_state_t *s)
             if (!TIFFSetDirectory(t->tiff_file, (tdir_t) s->current_page))
                 span_log(&s->logging, SPAN_LOG_FLOW, "Failed to set directory to page %d\n", s->current_page);
         }
+#endif
     }
 #endif
     return 0;

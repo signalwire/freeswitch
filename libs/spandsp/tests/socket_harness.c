@@ -95,7 +95,7 @@ int socket_harness_run(socket_harness_state_t *s)
     {
         //if (s->modem->event)
         //    modem_event(s->modem);
-#ifdef SIMULATE_RING
+#if defined(SIMULATE_RING)
         tmo.tv_sec = 0;
         tmo.tv_usec= 1000000/RING_HZ;
 #else
@@ -135,7 +135,7 @@ int socket_harness_run(socket_harness_state_t *s)
         if (ret == 0)
         {
             /* Timeout */
-#ifdef SIMULATE_RING
+#if defined(SIMULATE_RING)
             if (!modem->modem->started)
             {
                 rcount++;

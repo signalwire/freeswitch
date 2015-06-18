@@ -891,7 +891,6 @@ static void generate_ad_edd(void)
             l = FFT_SIZE - (LINE_FILTER_SIZE - 1)/2;
             for (i = 0;  i < LINE_FILTER_SIZE;  i++)
             {
-
 #if defined(HAVE_FFTW3_H)
                 impulse_responses[filter_sets][i] = out[l][0]/pw;
 #else

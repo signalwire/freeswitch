@@ -195,7 +195,7 @@ extern "C"
     {
         return (long int) (x);
     }
-#elif defined(__ppc__)  ||   defined(__powerpc__)
+#elif (defined(__ppc__)  ||  defined(__powerpc__))  &&  !defined(__NO_FPRS__)
     static __inline__ long int lfastrint(register double x)
     {
         int res[2];

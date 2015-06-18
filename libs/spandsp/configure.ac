@@ -36,27 +36,7 @@ m4_include(m4/ax_misaligned_access_fails.m4)
 m4_include(m4/ax_c99_features.m4)
 m4_include(m4/ax_check_export_capability.m4)
 m4_include(m4/ax_check_arm_neon.m4)
-
-AC_DEFUN([AC_FUNC_ALIGNED_ALLOC],[
-saved_CFLAGS="$CFLAGS"
-CFLAGS="$CFLAGS -Werror"
-  AC_CACHE_CHECK([checking for aligned_alloc],
-               [ac_cv_func_aligned_alloc],
-               [AC_LINK_IFELSE([AC_LANG_PROGRAM([
-												 #define _ISOC11_SOURCE
-                                                 #include <stdlib.h>
-                                                ],
-                                                [
-                                                   aligned_alloc(0,0);
-                                                ])],
-                               [ac_cv_func_aligned_alloc=yes],
-                               [ac_cv_func_aligned_alloc=no])])
-
-  if test "x${ac_cv_func_aligned_alloc}" = "xyes" ; then
-    AC_DEFINE([HAVE_ALIGNED_ALLOC], [1], [Define to 1 if you have the aligned_alloc() function.])
-  fi
-CFLAGS="$saved_CFLAGS"
-])
+m4_include(m4/ax_func_aligned_alloc.m4)
 
 AC_CONFIG_SRCDIR([src/tone_generate.c])
 AC_CONFIG_AUX_DIR([config])
@@ -150,9 +130,6 @@ AC_TYPE_SIGNAL
 
 AC_ARG_ENABLE(doc,          [  --enable-doc         Build the documentation])
 AC_ARG_ENABLE(tests,        [  --enable-tests       Build the test programs])
-AC_ARG_ENABLE(t43,          [  --enable-t43         Enable T.43 support])
-AC_ARG_ENABLE(v32bis,       [  --enable-v32bis      Enable V.32bis support])
-AC_ARG_ENABLE(v34,          [  --enable-v34         Enable V.34 support])
 AC_ARG_ENABLE(mmx,          [  --enable-mmx         Enable MMX support])
 AC_ARG_ENABLE(sse,          [  --enable-sse         Enable SSE support])
 AC_ARG_ENABLE(sse2,         [  --enable-sse2        Enable SSE2 support])
@@ -160,12 +137,12 @@ AC_ARG_ENABLE(sse3,         [  --enable-sse3        Enable SSE3 support])
 AC_ARG_ENABLE(ssse3,        [  --enable-ssse3       Enable SSSE3 support])
 AC_ARG_ENABLE(sse4_1,       [  --enable-sse4-1      Enable SSE4.1 support])
 AC_ARG_ENABLE(sse4_2,       [  --enable-sse4-2      Enable SSE4.2 support])
-AC_ARG_ENABLE(sse4a,        [  --enable-sse4a       Enable SSE4A support])
-AC_ARG_ENABLE(sse5,         [  --enable-sse5        Enable SSE5 support])
 AC_ARG_ENABLE(avx,          [  --enable-avx         Enable AVX support])
 AC_ARG_ENABLE(avx2,         [  --enable-avx2        Enable AVX2 support])
 AC_ARG_ENABLE(neon,         [  --enable-neon        Enable NEON support])
 AC_ARG_ENABLE(fixed_point,  [  --enable-fixed-point Enable fixed point support])
+AC_ARG_ENABLE(v32bis,       [  --enable-v32bis      Enable V.32bis support])
+AC_ARG_ENABLE(v34,          [  --enable-v34         Enable V.34 support])
 
 # The following is for MSVC, where we may be using a local copy of libtiff, built alongside spandsp
 AC_ARG_ENABLE(builtin_tiff,
@@ -195,7 +172,7 @@ fi
 
 AX_C99_FLEXIBLE_ARRAY
 
-AC_FUNC_ALIGNED_ALLOC
+AX_FUNC_ALIGNED_ALLOC
 AC_CHECK_FUNCS([memalign])
 AC_CHECK_FUNCS([posix_memalign])
 AC_CHECK_FUNCS([memmove])
@@ -389,12 +366,6 @@ gnu)
     if test "$enable_avx" = "yes" ; then
         COMP_VENDOR_CFLAGS="-mavx $COMP_VENDOR_CFLAGS"
     fi
-    if test "$enable_sse5" = "yes" ; then
-        COMP_VENDOR_CFLAGS="-msse5 $COMP_VENDOR_CFLAGS"
-    fi
-    if test "$enable_sse4a" = "yes" ; then
-        COMP_VENDOR_CFLAGS="-msse4a $COMP_VENDOR_CFLAGS"
-    fi
     if test "$enable_sse4_2" = "yes" ; then
         COMP_VENDOR_CFLAGS="-msse42 $COMP_VENDOR_CFLAGS"
     fi
@@ -455,12 +426,6 @@ intel)
     fi
     if test "$enable_avx" = "yes" ; then
         COMP_VENDOR_CFLAGS="-mavx $COMP_VENDOR_CFLAGS"
-    fi
-    if test "$enable_sse5" = "yes" ; then
-        COMP_VENDOR_CFLAGS="-msse5 $COMP_VENDOR_CFLAGS"
-    fi
-    if test "$enable_sse4a" = "yes" ; then
-        COMP_VENDOR_CFLAGS="-msse4a $COMP_VENDOR_CFLAGS"
     fi
     if test "$enable_sse4_2" = "yes" ; then
         COMP_VENDOR_CFLAGS="-msse42 $COMP_VENDOR_CFLAGS"
@@ -530,14 +495,6 @@ x86_64-* | i386-* | i686-*)
     fi
     if test "$enable_avx" = "yes" ; then
         AC_DEFINE([SPANDSP_USE_AVX], [1], [Use the AVX instruction set (i386 and x86_64 only).])
-        enable_sse5="yes"
-    fi
-    if test "$enable_sse5" = "yes" ; then
-        AC_DEFINE([SPANDSP_USE_SSE5], [1], [Use the SSE5 instruction set (i386 and x86_64 only).])
-        enable_sse4a="yes"
-    fi
-    if test "$enable_sse4a" = "yes" ; then
-        AC_DEFINE([SPANDSP_USE_SSE4A], [1], [Use the SSE4A instruction set (i386 and x86_64 only).])
         enable_sse4_2="yes"
     fi
     if test "$enable_sse4_2" = "yes" ; then
@@ -640,8 +597,6 @@ AM_CONDITIONAL([COND_SSE3], [test "$enable_sse3" = yes])
 AM_CONDITIONAL([COND_SSSE3], [test "$enable_ssse3" = yes])
 AM_CONDITIONAL([COND_SSE4_1], [test "$enable_sse4_1" = yes])
 AM_CONDITIONAL([COND_SSE4_2], [test "$enable_sse4_2" = yes])
-AM_CONDITIONAL([COND_SSE4A], [test "$enable_sse4a" = yes])
-AM_CONDITIONAL([COND_SSE5], [test "$enable_sse5" = yes])
 AM_CONDITIONAL([COND_AVX], [test "$enable_avx" = yes])
 AM_CONDITIONAL([COND_AVX2], [test "$enable_avx2" = yes])
 AM_CONDITIONAL([COND_NEON], [test "$enable_neon" = yes])
@@ -682,6 +637,7 @@ AC_CONFIG_FILES([Makefile
                  test-data/etsi/fax/Makefile
                  test-data/itu/Makefile
                  test-data/itu/fax/Makefile
+                 test-data/itu/tiff-fx/Makefile
                  test-data/local/Makefile
                  tests/Makefile
                  spandsp.pc

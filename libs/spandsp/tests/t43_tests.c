@@ -222,7 +222,7 @@ int write_file(meta_t *meta, int page, const uint8_t buf[])
     TIFFSetField(tif, TIFFTAG_MAKE, "soft-switch.org");
     TIFFSetField(tif, TIFFTAG_MODEL, "spandsp");
     TIFFSetField(tif, TIFFTAG_HOSTCOMPUTER, "i7.coppice.org");
-#if defined(SPANDSP_SUPPORT_TIFF_FX)  &&  defined(HAVE_TIF_DIR_H)
+#if defined(SPANDSP_SUPPORT_TIFF_FX)
     /* Make space for this to be filled in later */
     TIFFSetField(tif, TIFFTAG_GLOBALPARAMETERSIFD, 0);
 #endif

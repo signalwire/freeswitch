@@ -8905,13 +8905,13 @@ int main(int argc, char *argv[])
             break;
         }
     }
+    argc -= optind;
+    argv += optind;
     if (decode_test_file)
     {
         decode_test_data_file(test_standard, decode_test_file);
         exit(0);
     }
-    argc -= optind;
-    argv += optind;
     if (argc > 0)
         match = argv[0];
 

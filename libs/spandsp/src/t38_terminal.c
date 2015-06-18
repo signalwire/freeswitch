@@ -1460,6 +1460,7 @@ static int t38_terminal_t38_fe_restart(t38_terminal_state_t *t)
     s = &t->t38_fe;
     t38_core_restart(&s->t38);
 
+    s->current_tx_type = -1;
     s->rx_signal_present = false;
     s->timed_step = T38_TIMED_STEP_NONE;
     //s->iaf = T30_IAF_MODE_T37 | T30_IAF_MODE_T38;

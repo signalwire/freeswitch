@@ -315,7 +315,7 @@ static int receive_xid(v42_state_t *ss, const uint8_t *frame, int len)
                 {
                 case PI_HDLC_OPTIONAL_FUNCTIONS:
                     /* TODO: param_val is never used right now. */
-                    param_val = pack_value(buf, param_len);
+                    //param_val = pack_value(buf, param_len);
                     break;
                 case PI_TX_INFO_MAXSIZE:
                     param_val = pack_value(buf, param_len);

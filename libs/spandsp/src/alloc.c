@@ -78,7 +78,7 @@ static span_alloc_t __span_alloc = malloc;
 static span_realloc_t __span_realloc = realloc;
 static span_free_t __span_free = free;
 
-#ifdef _MSC_VER
+#if defined(_MSC_VER)
 #pragma warning(pop)
 #endif
 

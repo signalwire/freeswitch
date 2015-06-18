@@ -61,7 +61,7 @@
 
 struct iphdr
 {
-#ifdef _HPUX_LI
+#if defined(_HPUX_LI)
     unsigned int ihl:4;
     unsigned int version:4;
 #else

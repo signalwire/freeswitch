@@ -606,6 +606,7 @@ SPAN_DECLARE(logging_state_t *) fax_modems_get_logging_state(fax_modems_state_t 
 
 SPAN_DECLARE(int) fax_modems_restart(fax_modems_state_t *s)
 {
+    s->current_tx_type = -1;
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -653,7 +654,7 @@ SPAN_DECLARE(fax_modems_state_t *) fax_modems_init(fax_modems_state_t *s,
     s->hdlc_accept = hdlc_accept;
     s->hdlc_accept_user_data = user_data;
 
-    hdlc_rx_init(&s->hdlc_rx, false, false, HDLC_FRAMING_OK_THRESHOLD, fax_modems_hdlc_accept, s);
+    hdlc_rx_init(&s->hdlc_rx, false, true, HDLC_FRAMING_OK_THRESHOLD, fax_modems_hdlc_accept, s);
     hdlc_tx_init(&s->hdlc_tx, false, 2, false, hdlc_tx_underflow, user_data);
 
     fax_modems_start_slow_modem(s, FAX_MODEM_V21_RX);
