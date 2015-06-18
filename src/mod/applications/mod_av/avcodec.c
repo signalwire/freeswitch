@@ -331,13 +331,9 @@ static switch_status_t open_encoder(h264_codec_context_t *context, uint32_t widt
 	}
 
 	if (context->codec_settings.video.bandwidth) {
-		context->bandwidth = context->codec_settings.video.bandwidth;
+		context->bandwidth = context->codec_settings.video.bandwidth * 8;
 	} else {
-		context->bandwidth = switch_calc_bitrate(context->codec_settings.video.width, context->codec_settings.video.height, 0, 0);
-	}
-
-	if (context->bandwidth > 5120) {
-		context->bandwidth = 5120;
+		context->bandwidth = switch_calc_bitrate(context->codec_settings.video.width, context->codec_settings.video.height, 0, 0) * 8;
 	}
 
 	//context->encoder_ctx->bit_rate = context->bandwidth * 1024;
@@ -345,21 +341,44 @@ static switch_status_t open_encoder(h264_codec_context_t *context, uint32_t widt
 	context->encoder_ctx->height = context->codec_settings.video.height;
 	/* frames per second */
 	context->encoder_ctx->time_base = (AVRational){1, 90};
-	context->encoder_ctx->gop_size = FPS * 10; /* emit one intra frame every 3 seconds */
-	context->encoder_ctx->max_b_frames = 0;
+	//context->encoder_ctx->gop_size = FPS * 10; /* emit one intra frame every 3 seconds */
+	//context->encoder_ctx->max_b_frames = 0;
 	context->encoder_ctx->pix_fmt = AV_PIX_FMT_YUV420P;
 	context->encoder_ctx->thread_count = 1;//switch_core_cpu_count() > 4 ? 4 : 1;
 
 	context->encoder_ctx->bit_rate = context->bandwidth * 1024;
 	context->encoder_ctx->rc_max_rate = context->bandwidth * 1024;
-	context->encoder_ctx->rc_buffer_size = context->bandwidth * 1024 * 2;
+	context->encoder_ctx->rc_buffer_size = context->bandwidth * 1024 * 4;
 	
 	context->encoder_ctx->rtp_payload_size = SLICE_SIZE;
 	context->encoder_ctx->profile = FF_PROFILE_H264_BASELINE;
-	context->encoder_ctx->level = 31;
+	context->encoder_ctx->level = 30;
 	av_opt_set(context->encoder_ctx->priv_data, "preset", "veryfast", 0);
 	av_opt_set(context->encoder_ctx->priv_data, "tune", "zerolatency", 0);
 	av_opt_set(context->encoder_ctx->priv_data, "profile", "baseline", 0);
+
+
+	// libx264-medium.ffpreset preset
+	context->encoder_ctx->coder_type = 1;  // coder = 1
+	context->encoder_ctx->flags|=CODEC_FLAG_LOOP_FILTER;   // flags=+loop
+	context->encoder_ctx->me_cmp|= 1;  // cmp=+chroma, where CHROMA = 1
+	context->encoder_ctx->me_method=ME_HEX;    // me_method=hex
+	context->encoder_ctx->me_subpel_quality = 7;   // subq=7
+	context->encoder_ctx->me_range = 16;   // me_range=16
+	context->encoder_ctx->gop_size = 250;  // g=250
+	context->encoder_ctx->keyint_min = 25; // keyint_min=25
+	context->encoder_ctx->scenechange_threshold = 40;  // sc_threshold=40
+	context->encoder_ctx->i_quant_factor = 0.71; // i_qfactor=0.71
+	context->encoder_ctx->b_frame_strategy = 1;  // b_strategy=1
+	context->encoder_ctx->qcompress = 0.6; // qcomp=0.6
+	context->encoder_ctx->qmin = 10;   // qmin=10
+	context->encoder_ctx->qmax = 51;   // qmax=51
+	context->encoder_ctx->max_qdiff = 4;   // qdiff=4
+	context->encoder_ctx->max_b_frames = 3;    // bf=3
+	context->encoder_ctx->refs = 3;    // refs=3
+	context->encoder_ctx->trellis = 1; // trellis=1
+
+	
 	//av_opt_set_int(context->encoder_ctx->priv_data, "slice-max-size", SLICE_SIZE, 0);
 
 	if (avcodec_open2(context->encoder_ctx, context->encoder, NULL) < 0) {
