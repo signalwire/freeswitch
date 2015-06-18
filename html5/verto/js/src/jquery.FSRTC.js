@@ -467,11 +467,20 @@ var iceTimer;
             });
 	}
 
-	var video = {
-            mandatory: obj.options.videoParams,
-            optional: []
-        }
+	var video = {};
 
+	if (window.moz) {
+	    video = obj.options.videoParams;
+	    if (!video.width) video.width = video.minWidth;
+	    if (!video.height) video.height = video.minHeight;
+	    if (!video.frameRate) video.frameRate = video.minFrameRate;
+	} else {
+	    video = {
+		mandatory: obj.options.videoParams,
+		optional: []
+            }
+	}
+	
 	var useVideo = obj.options.useVideo;
 
 	if (useVideo && obj.options.useCamera && obj.options.useCamera !== "none") {
@@ -1042,9 +1051,16 @@ var iceTimer;
 	    "maxHeight": h
 	};
 
+	if (window.moz) {
+	    video = video.mandatory;
+	    if (!video.width) video.width = video.minWidth;
+	    if (!video.height) video.height = video.minHeight;
+	    if (!video.frameRate) video.frameRate = video.minFrameRate;
+	}
+
 	getUserMedia({
 	    constraints: {
-                audio: false,
+                audio: true,
                 video: video	    
 	    },
 	    onsuccess: function(e) {e.stop(); console.info(w + "x" + h + " supported."); $.FSRTC.validRes.push([w, h]); checkRes(cam, func);},
