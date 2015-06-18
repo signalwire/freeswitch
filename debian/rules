@@ -72,24 +72,10 @@ override_dh_auto_clean:
 	cp debian/modules_.conf modules.conf
 	./configure -C --enable-portable-binary --disable-dependency-tracking \
 		--host=$(DEB_HOST_GNU_TYPE) --build=$(DEB_BUILD_GNU_TYPE) \
+		--prefix=/usr --localstatedir=/var --sysconfdir=/etc \
 		--with-gnu-ld --with-python --with-erlang --with-openssl \
-		--sysconfdir=/etc \
 		--enable-core-odbc-support --enable-zrtp \
 		--enable-core-pgsql-support \
-		--prefix=/usr --localstatedir=/var \
-		--sysconfdir=/etc \
-		--with-modinstdir=/usr/lib/freeswitch/mod \
-		--with-rundir=/var/run/freeswitch \
-		--with-logfiledir=/var/log/freeswitch \
-		--with-dbdir=/var/lib/freeswitch/db \
-		--with-htdocsdir=/usr/share/freeswitch/htdocs \
-		--with-soundsdir=/usr/share/freeswitch/sounds \
-		--with-storagedir=/var/lib/freeswitch/storage \
-		--with-cachedir=/var/cache/freeswitch \
-		--with-grammardir=/usr/share/freeswitch/grammar \
-		--with-certsdir=/etc/freeswitch/tls \
-		--with-scriptdir=/usr/share/freeswitch/scripts \
-		--with-recordingsdir=/var/lib/freeswitch/recordings \
 		--enable-static-v8 --disable-parallel-build-v8
 	touch $@
 

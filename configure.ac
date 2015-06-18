@@ -90,6 +90,8 @@ if test "${enable_fhs}" = "yes"; then
     eval localstatedir=$full_localstatedir
     eval libdir=$libdir
     default_cachedir="${localstatedir}/cache/freeswitch"
+    rundir="${localstatedir}/run/freeswitch"
+    logdir="${localstatedir}/log/freeswitch"
     localstatedir="${localstatedir}/lib/freeswitch"
     default_scriptdir="${datadir}/scripts"
     default_grammardir="${datadir}/grammar"
@@ -101,8 +103,6 @@ if test "${enable_fhs}" = "yes"; then
     default_storagedir="${localstatedir}/storage"
     default_recordingsdir="${localstatedir}/recordings"
     default_imagesdir="${localstatedir}/images"
-    rundir="${localstatedir}/run/freeswitch"
-    logdir="${localstatedir}/log/freeswitch"
     eval confdir="${sysconfdir}/freeswitch"
     eval default_certsdir="${confdir}/tls"
 else
