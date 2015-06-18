@@ -334,6 +334,7 @@ Conflicts: $(list_freeswitch_all_replaces)
 Depends: \${shlibs:Depends}, \${perl:Depends}, \${misc:Depends},
  freeswitch-music-default (>= 1.0.8),
  freeswitch-sounds-en-us-callie (>= 1.0.25) | freeswitch-sounds,
+ libyuv, libvpx (>= 1.4.0) | libvpx2,
  $(debian_wrap "${mod_depends}")
 Recommends:
  $(debian_wrap "${mod_recommends}")
