@@ -345,6 +345,7 @@ if not exist "$(OutDir)htdocs" xcopy "$(SolutionDir)htdocs\*.*" "$(OutDir)htdocs
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
       </PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="..\..\src\switch_core_video.c" />
     <ClCompile Include="..\..\src\switch_stfu.c">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
       </PrecompiledHeader>
@@ -464,6 +465,7 @@ if not exist "$(OutDir)htdocs" xcopy "$(SolutionDir)htdocs\*.*" "$(OutDir)htdocs
     <ClCompile Include="..\..\src\switch_time.c" />
     <ClCompile Include="..\..\src\switch_utils.c" />
     <ClCompile Include="..\..\src\switch_version.c" />
+    <ClCompile Include="..\..\src\switch_vidderbuffer.c" />
     <ClCompile Include="..\..\src\switch_xml.c" />
     <ClCompile Include="..\..\src\switch_xml_config.c" />
     <ClCompile Include="..\..\libs\miniupnpc\igd_desc_parse.c">
