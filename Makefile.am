@@ -244,7 +244,8 @@ library_include_HEADERS = \
 	src/include/switch_limit.h \
 	src/include/switch_odbc.h \
 	src/include/switch_pgsql.h \
-	src/include/switch_hashtable.h
+	src/include/switch_hashtable.h \
+	src/include/switch_image.h
 
 nodist_libfreeswitch_la_SOURCES = \
 	src/include/switch_frame.h \
