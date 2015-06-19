@@ -372,6 +372,7 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 								if (source->total) {
 									switch_queue_push(source->video_q, vid_frame.img);
 								} else {
+									switch_img_free(&vid_frame.img);
 									flush_video_queue(source->video_q);
 								}
 							}
