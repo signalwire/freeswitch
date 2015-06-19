@@ -1506,6 +1506,21 @@ static switch_status_t av_file_truncate(switch_file_handle_t *handle, int64_t of
 	return SWITCH_STATUS_FALSE;
 }
 
+static void flush_video_queue(switch_queue_t *q)
+{
+	void *pop;
+
+	if (switch_queue_size(q) == 0) {
+		return;
+	}
+
+	while (switch_queue_trypop(q, &pop) == SWITCH_STATUS_SUCCESS) {
+		switch_image_t *img = (switch_image_t *) pop;
+		switch_img_free(&img);
+	}
+
+}
+
 static switch_status_t av_file_close(switch_file_handle_t *handle)
 {
 	av_file_context_t *context = (av_file_context_t *)handle->private_info;
@@ -1522,6 +1537,10 @@ static switch_status_t av_file_close(switch_file_handle_t *handle)
 	if (context->file_read_thread_running && context->file_read_thread) {
 		context->file_read_thread_running = 0;
 		switch_thread_join(&status, context->file_read_thread);
+	}
+
+	if (context->eh.video_queue) {
+		flush_video_queue(context->eh.video_queue);
 	}
 
 	if (context->fc) {
@@ -1884,7 +1903,6 @@ static switch_status_t av_file_set_string(switch_file_handle_t *handle, switch_a
 	if (context->fc) {
 		const char *field = switch_parse_audio_col(col);
 
-		printf("WTF [%s][%s]\n", field, string);
 		if (field) {
 			av_dict_set(&context->fc->metadata, field, string, 0);
 			return SWITCH_STATUS_SUCCESS;
