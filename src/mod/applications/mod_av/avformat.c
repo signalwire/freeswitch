@@ -1530,12 +1530,8 @@ static switch_status_t av_file_close(switch_file_handle_t *handle)
 		if (context->has_video) close_stream(context->fc, &context->video_st);
 		if (context->has_audio) close_stream(context->fc, &context->audio_st);
 
-		if (context->fc->oformat) {
-			if (!(context->fc->oformat->flags & AVFMT_NOFILE)) {
-				avio_close(context->fc->pb);//todo
-			} else {
-				avformat_network_deinit();
-			}
+		if (context->fc->pb) {
+			avio_close(context->fc->pb);
 		}
 
 		/* free the stream */
