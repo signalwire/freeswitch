@@ -91,11 +91,15 @@ static switch_status_t play_group(switch_say_method_t method, int a, int b, int 
 
 	if (b) {
 		if (b > 1) {
+			if (c) {
+				say_file("digits/%d.wav", c);
+				say_file("currency/and.wav");
+			}
 			say_file("digits/%d0.wav", b);
 		} else {
 			say_file("digits/%d%d.wav", b, c);
-			c = 0;
 		}
+		c = 0;
 	}
 
 	if (c) {
