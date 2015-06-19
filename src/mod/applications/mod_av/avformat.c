@@ -1879,11 +1879,35 @@ end:
 
 static switch_status_t av_file_set_string(switch_file_handle_t *handle, switch_audio_col_t col, const char *string)
 {
+	av_file_context_t *context = (av_file_context_t *)handle->private_info;
+
+	if (context->fc) {
+		const char *field = switch_parse_audio_col(col);
+
+		printf("WTF [%s][%s]\n", field, string);
+		if (field) {
+			av_dict_set(&context->fc->metadata, field, string, 0);
+			return SWITCH_STATUS_SUCCESS;
+		}
+	}
+
 	return SWITCH_STATUS_FALSE;
 }
 
 static switch_status_t av_file_get_string(switch_file_handle_t *handle, switch_audio_col_t col, const char **string)
 {
+	av_file_context_t *context = (av_file_context_t *)handle->private_info;
+
+	if (context->fc) {
+		AVDictionaryEntry *tag = NULL;
+		const char *field = switch_parse_audio_col(col);
+
+		if (field && (tag = av_dict_get(context->fc->metadata, field, tag, 0))) {
+			*string = tag->value;
+			return SWITCH_STATUS_SUCCESS;
+		}
+	}
+
 	return SWITCH_STATUS_FALSE;
 }
 

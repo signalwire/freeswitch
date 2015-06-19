@@ -1115,6 +1115,35 @@ static inline switch_bool_t switch_is_file_path(const char *file)
 }
 
 
+static inline const char *switch_parse_audio_col(switch_audio_col_t col)
+{
+	const char *field = NULL;
+
+	switch (col) {
+	case SWITCH_AUDIO_COL_STR_TITLE:
+		field = "title";
+		break;
+	case SWITCH_AUDIO_COL_STR_COMMENT:
+		field = "comment";
+		break;
+	case SWITCH_AUDIO_COL_STR_ARTIST:
+		field = "artist";
+		break;
+	case SWITCH_AUDIO_COL_STR_DATE:
+		field = "date";
+		break;
+	case SWITCH_AUDIO_COL_STR_SOFTWARE:
+		field = "software";
+		break;
+	case SWITCH_AUDIO_COL_STR_COPYRIGHT:
+		field = "copyright";
+		break;
+	default:
+		break;
+	}
+
+	return field;
+}
 
 SWITCH_DECLARE(int) switch_parse_cidr(const char *string, ip_t *ip, ip_t *mask, uint32_t *bitp);
 SWITCH_DECLARE(switch_status_t) switch_network_list_create(switch_network_list_t **list, const char *name, switch_bool_t default_type,

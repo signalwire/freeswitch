@@ -68,6 +68,8 @@ struct local_stream_context {
 	int sent_png;
 	int last_w;
 	int last_h;
+	switch_image_t *banner_img;
+	switch_time_t banner_timeout;
 	struct local_stream_context *next;
 };
 
@@ -107,6 +109,7 @@ struct local_stream_source {
 	int has_video;
 	switch_image_t *blank_img;
 	switch_image_t *cover_art;
+	char *banner_txt;
 };
 
 typedef struct local_stream_source local_stream_source_t;
@@ -217,6 +220,7 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 		while (RUNNING && !source->stopped) {
 			switch_size_t olen;
 			uint8_t abuf[SWITCH_RECOMMENDED_BUFFER_SIZE] = { 0 };
+			const char *artist = NULL, *title = NULL;
 
 			if (fd > -1) {
 				char *p;
@@ -268,6 +272,13 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 				continue;
 			}
 
+			if (switch_core_timer_init(&timer, source->timer_name, source->interval, (int)source->samples, temp_pool) != SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Can't start timer.\n");
+				switch_dir_close(source->dir_handle);
+				source->dir_handle = NULL;
+				goto done;
+			}
+
 			switch_img_free(&source->cover_art);
 			switch_set_string(tmp_buf, path_buf);
 			if ((p = strrchr(tmp_buf, '/'))) {
@@ -278,11 +289,20 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 				}
 			}
 			
-			if (switch_core_timer_init(&timer, source->timer_name, source->interval, (int)source->samples, temp_pool) != SWITCH_STATUS_SUCCESS) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Can't start timer.\n");
-				switch_dir_close(source->dir_handle);
-				source->dir_handle = NULL;
-				goto done;
+			switch_safe_free(source->banner_txt);
+			title = artist = NULL;
+			
+			switch_core_file_get_string(&fh, SWITCH_AUDIO_COL_STR_ARTIST, &artist);
+			switch_core_file_get_string(&fh, SWITCH_AUDIO_COL_STR_TITLE, &title);
+			
+			if (title && (source->cover_art || switch_core_file_has_video(&fh))) {
+				const char *format = "#cccccc:#333333:FreeSans.ttf:3%:";
+
+				if (artist) {
+					source->banner_txt = switch_mprintf("%s%s (%s)", format, title, artist);
+				} else {
+					source->banner_txt = switch_mprintf("%s%s", format, title);
+				}
 			}
 
 			while (RUNNING && !source->stopped) {
@@ -322,7 +342,7 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 
 			  retry:
 
-				source->has_video = switch_core_file_has_video(use_fh);
+				source->has_video = switch_core_file_has_video(use_fh) || source->cover_art || source->banner_txt;
 
 				is_open = switch_test_flag(use_fh, SWITCH_FILE_OPEN);
 
@@ -524,6 +544,8 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 
   done:
 
+	switch_safe_free(source->banner_txt);
+	
 	if (switch_test_flag((&fh), SWITCH_FILE_OPEN)) {
 		switch_core_file_close(&fh);
 	}
@@ -632,7 +654,8 @@ static switch_status_t local_stream_file_open(switch_file_handle_t *handle, cons
 		goto end;
 	}
 
-	if (switch_test_flag(handle, SWITCH_FILE_FLAG_VIDEO) && !source->has_video) {
+	if (!switch_core_has_video() || 
+		(switch_test_flag(handle, SWITCH_FILE_FLAG_VIDEO) && !source->has_video && !source->blank_img && !source->cover_art && !source->banner_txt)) {
 		switch_clear_flag(handle, SWITCH_FILE_FLAG_VIDEO);
 	}
 
@@ -683,6 +706,8 @@ static switch_status_t local_stream_file_close(switch_file_handle_t *handle)
 		}
 	}
 
+	switch_img_free(&context->banner_img);
+	
 	context->source->total--;
 	switch_mutex_unlock(context->source->mutex);
 	switch_buffer_destroy(&context->audio_buffer);
@@ -696,6 +721,7 @@ static switch_status_t local_stream_file_read_video(switch_file_handle_t *handle
 	void *pop;
 	local_stream_context_t *context = handle->private_info;
 	switch_status_t status;
+	switch_time_t now;
 
 	if (!(context->ready && context->source->ready)) {
 		return SWITCH_STATUS_FALSE;
@@ -724,7 +750,7 @@ static switch_status_t local_stream_file_read_video(switch_file_handle_t *handle
 				}
 
 				frame->img = img;
-				return SWITCH_STATUS_SUCCESS;
+				goto got_img;
 			}
 		}
 		return SWITCH_STATUS_IGNORE;
@@ -760,10 +786,41 @@ static switch_status_t local_stream_file_read_video(switch_file_handle_t *handle
 		context->sent_png = 0;
 		context->last_w = frame->img->d_w;
 		context->last_h = frame->img->d_h;
-		return SWITCH_STATUS_SUCCESS;
+		goto got_img;
 	}
 
 	return (flags & SVR_FLUSH) ? SWITCH_STATUS_BREAK : status;
+
+ got_img:
+
+	now = switch_micro_time_now();
+
+	if (context->banner_img) {
+		if (now >= context->banner_timeout) {
+			switch_img_free(&context->banner_img);
+		}
+	}
+
+	if (context->source->banner_txt) {
+		if ((!context->banner_timeout || context->banner_timeout >= now)) {
+			if (!context->banner_img) {
+				context->banner_img = switch_img_write_text_img(context->last_w, context->last_h, SWITCH_TRUE, context->source->banner_txt);
+				context->banner_timeout = now + 5000000;
+			}
+		}
+	} else {
+		if (context->banner_img) {
+			switch_img_free(&context->banner_img);
+		}
+		context->banner_timeout = 0;
+	}
+
+	if (frame->img && context->banner_img && frame->img->d_w >= context->banner_img->d_w) {
+		//switch_img_overlay(frame->img, context->banner_img, 0, frame->img->d_h - context->banner_img->d_h, 100);
+		switch_img_patch(frame->img, context->banner_img, 0, frame->img->d_h - context->banner_img->d_h);
+	}
+	
+	return SWITCH_STATUS_SUCCESS;
 }
 
 static switch_status_t local_stream_file_read(switch_file_handle_t *handle, void *data, size_t *len)

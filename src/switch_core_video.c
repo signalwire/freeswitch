@@ -473,7 +473,6 @@ SWITCH_DECLARE(void) switch_img_get_yuv_pixel(switch_image_t *img, switch_yuv_co
 {
 #ifdef SWITCH_HAVE_YUV		
 	// switch_assert(img->fmt == SWITCH_IMG_FMT_I420);
-
 	if (x < 0 || y < 0 || x >= img->d_w || y >= img->d_h) return;
 
 	yuv->y = *(img->planes[SWITCH_PLANE_Y] + img->stride[SWITCH_PLANE_Y] * y + x);
@@ -1010,19 +1009,19 @@ SWITCH_DECLARE(switch_image_t *) switch_img_write_text_img(int w, int h, switch_
 	if (strchr(text, ':')) {
 		argc = switch_split(duptxt, ':', argv);
 		
-		if (argc > 0) {
+		if (argc > 0 && !zstr(argv[0])) {
 			fg = argv[0];
 		}
 
-		if (argc > 1) {
+		if (argc > 1 && !zstr(argv[1])) {
 			bg = argv[1];
 		}
 		
-		if (argc > 2) {
+		if (argc > 2 && !zstr(argv[2])) {
 			font_face = argv[2];
 		}
 		
-		if (argc > 3) {
+		if (argc > 3 && !zstr(argv[3])) {
 			fontsz = argv[3];
 		}
 
@@ -1084,6 +1083,7 @@ SWITCH_DECLARE(switch_image_t *) switch_img_write_text_img(int w, int h, switch_
                                  x, y,
                                  txt, NULL, fg, bg, 0, 0);
 	switch_img_txt_handle_destroy(&txthandle);
+
 	return txtimg;
 }
 
