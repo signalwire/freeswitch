@@ -1330,7 +1330,6 @@ static switch_status_t av_file_open(switch_file_handle_t *handle, const char *pa
 {
 	av_file_context_t *context;
 	char *ext;
-	unsigned int flags = 0;
 	const char *tmp = NULL;
 	AVOutputFormat *fmt;
 	const char *format = NULL;
@@ -1363,19 +1362,6 @@ static switch_status_t av_file_open(switch_file_handle_t *handle, const char *pa
 	switch_mutex_init(&context->mutex, SWITCH_MUTEX_NESTED, handle->memory_pool);
 	switch_core_timer_init(&context->timer, "soft", 1, 1000, context->pool);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "init timer\n");
-
-	if (switch_test_flag(handle, SWITCH_FILE_FLAG_WRITE)) {
-		flags |= SWITCH_FOPEN_WRITE | SWITCH_FOPEN_CREATE;
-		if (switch_test_flag(handle, SWITCH_FILE_WRITE_APPEND) || switch_test_flag(handle, SWITCH_FILE_WRITE_OVER)) {
-			flags |= SWITCH_FOPEN_READ;
-		} else {
-			flags |= SWITCH_FOPEN_TRUNCATE;
-		}
-	}
-
-	if (switch_test_flag(handle, SWITCH_FILE_FLAG_READ)) {
-		flags |= SWITCH_FOPEN_READ;
-	}
 
 	switch_buffer_create_dynamic(&context->audio_buffer, 512, 512, 0);
 
