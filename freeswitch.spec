@@ -45,7 +45,7 @@
 %{?with_timerfd:%define build_timerfd 1 }
 %{?with_mod_esl:%define build_mod_esl 1 }
 
-%define version 1.5.16
+%define version 1.7.0
 %define release 1
 
 ######################################################################################################################
@@ -115,18 +115,14 @@ Vendor:       	http://www.freeswitch.org/
 #
 ######################################################################################################################
 Source0:        http://files.freeswitch.org/%{name}-%{version}.tar.bz2
-Source1:	http://files.freeswitch.org/downloads/libs/flite-2.0.0-release.tar.bz2
-Source2:	http://files.freeswitch.org/downloads/libs/lame-3.98.4.tar.gz
-Source3:	http://files.freeswitch.org/downloads/libs/libshout-2.2.2.tar.gz
-Source4:	http://files.freeswitch.org/downloads/libs/mpg123-1.13.2.tar.gz
-Source5:	http://files.freeswitch.org/downloads/libs/pocketsphinx-0.8.tar.gz
-Source6:	http://files.freeswitch.org/downloads/libs/soundtouch-1.7.1.tar.gz
-Source7:	http://files.freeswitch.org/downloads/libs/sphinxbase-0.8.tar.gz
-Source8:	http://files.freeswitch.org/downloads/libs/communicator_semi_6000_20080321.tar.gz
-Source9:	http://files.freeswitch.org/downloads/libs/libmemcached-0.32.tar.gz
-Source10:       http://files.freeswitch.org/downloads/libs/opus-1.1-p2.tar.gz
-Source11:       http://files.freeswitch.org/downloads/libs/v8-3.24.14.tar.bz2
-Source12:       http://files.freeswitch.org/downloads/libs/mongo-c-driver-1.1.0.tar.gz
+Source1:	http://files.freeswitch.org/downloads/libs/lame-3.98.4.tar.gz
+Source2:	http://files.freeswitch.org/downloads/libs/mpg123-1.13.2.tar.gz
+Source3:	http://files.freeswitch.org/downloads/libs/pocketsphinx-0.8.tar.gz
+Source4:	http://files.freeswitch.org/downloads/libs/sphinxbase-0.8.tar.gz
+Source5:	http://files.freeswitch.org/downloads/libs/communicator_semi_6000_20080321.tar.gz
+Source6:	http://files.freeswitch.org/downloads/libs/libmemcached-0.32.tar.gz
+Source7:        http://files.freeswitch.org/downloads/libs/v8-3.24.14.tar.bz2
+Source8:        http://files.freeswitch.org/downloads/libs/mongo-c-driver-1.1.0.tar.gz
 Prefix:        	%{prefix}
 
 
@@ -151,6 +147,7 @@ BuildRequires: gnutls-devel
 BuildRequires: libtool >= 1.5.17
 BuildRequires: ncurses-devel
 BuildRequires: openssl-devel >= 1.0.1e
+#BuildRequires: libshout-devel 
 BuildRequires: pcre-devel 
 BuildRequires: speex-devel 
 BuildRequires: sqlite-devel
@@ -189,16 +186,16 @@ BuildRequires: portaudio-devel
 BuildRequires: libsndfile-devel
 BuildRequires: broadvoice-devel
 BuildRequires: flite-devel
-BuildRequires: ilbc-devel = 0.0.1
+BuildRequires: ilbc2-devel 
 BuildRequires: g722_1-devel
 BuildRequires: libcodec2-devel
 BuildRequires: libsilk-devel
-BuildRequires: libvpx2-devel => 2.0.0
+BuildRequires: libvpx2-devel >= 2.0.0
 BuildRequires: libyuv-devel >= 0.0.1280
 BuildRequires: lua-devel
 BuildRequires: mongo-c-driver-devel
 BuildRequires: opus-devel
-BuildRequires: soundtouch-devel => 1.7.1
+BuildRequires: soundtouch-devel >= 1.7.1
 %if %{build_py26_esl}
 BuildRequires: python26-devel
 Requires: python26
@@ -1128,14 +1125,14 @@ Mod shell stream is a FreeSWITCH module to allow you to stream audio from an
 arbitrary shell command. You could use it to read audio from a database, from 
 a soundcard, etc. 
 
-%package format-mod-shout
-Summary:	Implements Media Steaming from arbitrary shell commands for the FreeSWITCH open source telephony platform
-Group:		System/Libraries
-Requires:	%{name} = %{version}-%{release}
+#%package format-mod-shout
+#Summary:	Implements Media Steaming from arbitrary shell commands for the FreeSWITCH open source telephony platform
+#Group:		System/Libraries
+#Requires:	%{name} = %{version}-%{release}
 
-%description format-mod-shout
-Mod Shout is a FreeSWITCH module to allow you to stream audio from MP3s or a i
-shoutcast stream.
+#%description format-mod-shout
+#Mod Shout is a FreeSWITCH module to allow you to stream audio from MP3s or a i
+#shoutcast stream.
 
 %if %{build_mod_ssml}
 %package format-ssml
@@ -1384,10 +1381,6 @@ cp %{SOURCE5} libs/
 cp %{SOURCE6} libs/
 cp %{SOURCE7} libs/
 cp %{SOURCE8} libs/
-cp %{SOURCE9} libs/
-cp %{SOURCE10} libs/
-cp %{SOURCE11} libs/
-cp %{SOURCE12} libs/
 
 #Hotfix for redefined %_sysconfdir
 sed -ie 's:confdir="${sysconfdir}/freeswitch":confdir="$sysconfdir":' ./configure.ac
@@ -1505,7 +1498,8 @@ EVENT_HANDLERS_MODULES+=" event_handlers/mod_rayo"
 #
 ######################################################################################################################
 FORMATS_MODULES="formats/mod_local_stream formats/mod_native_file formats/mod_portaudio_stream \
-                 formats/mod_shell_stream formats/mod_shout formats/mod_sndfile formats/mod_tone_stream"
+                 formats/mod_shell_stream formats/mod_sndfile formats/mod_tone_stream"
+# DISABLED formats/mod_shout 
 %if %{build_mod_ssml}
 FORMATS_MODULES+=" formats/mod_ssml"
 %endif
@@ -1593,7 +1587,7 @@ fi
 --sbindir=%{SBINDIR} \
 --libexecdir=%{LIBEXECDIR} \
 --sharedstatedir=%{SHARESTATEDIR} \
---localstatedir=%{LOCALSTATEDIR} \
+--localstatedir=%{_localstatedir} \
 --libdir=%{LIBDIR} \
 --includedir=%{INCLUDEDIR} \
 --datadir=%{DATADIR} \
@@ -1746,6 +1740,7 @@ fi
 #
 %dir %attr(0750, freeswitch, daemon) %{sysconfdir}
 %dir %attr(0750, freeswitch, daemon) %{LOCALSTATEDIR}
+%dir %attr(0750, freeswitch, daemon) %{LOCALSTATEDIR}/images
 %dir %attr(0750, freeswitch, daemon) %{DBDIR}
 %dir %attr(0755, -, -) %{GRAMMARDIR}
 %dir %attr(0755, -, -) %{HTDOCSDIR}
@@ -1792,6 +1787,7 @@ fi
 %dir %attr(0750,-,-) /etc/monit.d
 %config(noreplace) %attr(0644,-,-) /etc/monit.d/freeswitch.monitrc
 %endif
+%{LOCALSTATEDIR}/images/*
 
 ######################################################################################################################
 #
@@ -2290,8 +2286,8 @@ fi
 %files format-shell-stream
 %{MODINSTDIR}/mod_shell_stream.so*
 
-%files format-mod-shout
-%{MODINSTDIR}/mod_shout.so*
+#%files format-mod-shout
+#%{MODINSTDIR}/mod_shout.so*
 
 %if %{build_mod_ssml}
 %files format-ssml
@@ -2463,6 +2459,8 @@ fi
 #
 ######################################################################################################################
 %changelog
+* Mon Jun 22 2015 - krice@freeswitch.org
+- disable mod_shout until we can figure out the correct system deps for RPM based platforms
 * Wed Jun 17 2015 - krice@freeswitch.org
 - Update libvpx2 dep requirement
 * Thu Jun 04 2015 - s.safarov@gmail.com
