@@ -65,6 +65,9 @@ struct local_stream_context {
 	switch_file_handle_t *handle;
 	switch_queue_t *video_q;
 	int ready;
+	int sent_png;
+	int last_w;
+	int last_h;
 	struct local_stream_context *next;
 };
 
@@ -103,6 +106,7 @@ struct local_stream_source {
 	switch_queue_t *video_q;
 	int has_video;
 	switch_image_t *blank_img;
+	switch_image_t *cover_art;
 };
 
 typedef struct local_stream_source local_stream_source_t;
@@ -140,7 +144,7 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 	local_stream_source_t *source = obj;
 	switch_file_handle_t fh = { 0 };
 	local_stream_context_t *cp;
-	char file_buf[128] = "", path_buf[512] = "", last_path[512];
+	char file_buf[128] = "", path_buf[512] = "", last_path[512], png_buf[512] = "", tmp_buf[512] = "";
 	switch_timer_t timer = { 0 };
 	int fd = -1;
 	switch_buffer_t *audio_buffer;
@@ -149,6 +153,7 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 	int skip = 0;
 	switch_memory_pool_t *temp_pool = NULL;
 	uint32_t dir_count = 0, do_shuffle = 0;
+	char *p;
 
 	switch_mutex_lock(globals.mutex);
 	THREADS++;
@@ -263,6 +268,15 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 				continue;
 			}
 
+			switch_img_free(&source->cover_art);
+			switch_set_string(tmp_buf, path_buf);
+			if ((p = strrchr(tmp_buf, '/'))) {
+				*p++ = '\0';
+				switch_snprintf(png_buf, sizeof(png_buf), "%s/art/%s.png", tmp_buf, p);				
+				if (switch_file_exists(png_buf, source->pool) == SWITCH_STATUS_SUCCESS) {
+					source->cover_art = switch_img_read_png(png_buf, SWITCH_IMG_FMT_I420);
+				}
+			}
 			
 			if (switch_core_timer_init(&timer, source->timer_name, source->interval, (int)source->samples, temp_pool) != SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Can't start timer.\n");
@@ -688,12 +702,30 @@ static switch_status_t local_stream_file_read_video(switch_file_handle_t *handle
 	}
 
 	if (!context->source->has_video) {
-		if (frame && context->source->blank_img) {
-			switch_image_t *img = NULL;
+		if (frame) {
+			switch_image_t *src_img = context->source->cover_art;
 
-			switch_img_copy(context->source->blank_img, &img);
-			frame->img = img;
-			return SWITCH_STATUS_SUCCESS;
+			if (!src_img) {
+				src_img = context->source->blank_img;
+			}
+
+			if (src_img) {
+				switch_image_t *img = NULL;
+			
+				if (context->sent_png && --context->sent_png > 0) {
+					return SWITCH_STATUS_BREAK;
+				}
+
+				context->sent_png = 50;
+				switch_img_copy(src_img, &img);
+
+				if (context->last_w && context->last_h) {
+					switch_img_fit(&img, context->last_w, context->last_h);
+				}
+
+				frame->img = img;
+				return SWITCH_STATUS_SUCCESS;
+			}
 		}
 		return SWITCH_STATUS_IGNORE;
 	}
@@ -725,7 +757,9 @@ static switch_status_t local_stream_file_read_video(switch_file_handle_t *handle
 		}
 
 		frame->img = (switch_image_t *) pop;
-		
+		context->sent_png = 0;
+		context->last_w = frame->img->d_w;
+		context->last_h = frame->img->d_h;
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -752,10 +786,11 @@ static switch_status_t local_stream_file_read(switch_file_handle_t *handle, void
 		if (need > blank) {
 			need = blank;
 		}
-
 		memset(data, 0, need);
 		*len = need / 2 / handle->real_channels;
 	}
+
+
 	switch_mutex_unlock(context->audio_mutex);
 	handle->sample_count += *len;
 	return SWITCH_STATUS_SUCCESS;
