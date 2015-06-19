@@ -352,6 +352,7 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 						is_open = 0;
 
 						switch_core_file_close(use_fh);
+						flush_video_queue(source->video_q);
 						if (use_fh == &source->chime_fh) {
 							source->chime_counter = source->rate * source->chime_freq;
 							use_fh = &fh;
@@ -383,6 +384,7 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 
 					if (switch_core_file_read(use_fh, abuf, &olen) != SWITCH_STATUS_SUCCESS || !olen) {
 						switch_core_file_close(use_fh);
+						flush_video_queue(source->video_q);
 
 						if (use_fh == &source->chime_fh) {
 							source->chime_counter = source->rate * source->chime_freq;
@@ -394,6 +396,7 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 							if (source->chime_max_counter >= source->chime_max) {
 								source->chime_max_counter = 0;
 								switch_core_file_close(use_fh);
+								flush_video_queue(source->video_q);
 								source->chime_counter = source->rate * source->chime_freq;
 								use_fh = &fh;
 								goto retry;
