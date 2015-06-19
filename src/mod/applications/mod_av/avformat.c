@@ -1578,10 +1578,6 @@ static switch_status_t av_file_read(switch_file_handle_t *handle, void *data, si
 	av_file_context_t *context = (av_file_context_t *)handle->private_info;
 	int size;
 
-	if ((flags & SVR_CHECK)) {
-		return SWITCH_STATUS_BREAK;
-	}
-
 	if (!context->has_audio && context->has_video && switch_queue_size(context->eh.video_queue) > 0) {
 		memset(data, 0, *len * handle->channels * 2);
 		return SWITCH_STATUS_SUCCESS;
@@ -1721,6 +1717,10 @@ static switch_status_t av_file_read_video(switch_file_handle_t *handle, switch_f
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
 	if (!context->has_video) return SWITCH_STATUS_FALSE;
+
+	if ((flags & SVR_CHECK)) {
+		return SWITCH_STATUS_BREAK;
+	}
 
 	if (flags & SVR_FLUSH) max_delta = 0.02 * AV_TIME_BASE;
 
