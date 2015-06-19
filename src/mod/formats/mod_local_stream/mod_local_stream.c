@@ -102,17 +102,37 @@ struct local_stream_source {
 	switch_file_handle_t chime_fh;
 	switch_queue_t *video_q;
 	int has_video;
+	switch_image_t *blank_img;
 };
 
 typedef struct local_stream_source local_stream_source_t;
 
-static int do_rand(void)
+static int do_rand(uint32_t count)
 {
 	double r;
 	int index;
+
+	if (count < 3) return 0;
+
 	r = ((double) rand() / ((double) (RAND_MAX) + (double) (1)));
-	index = (int) (r * 9) + 1;
+	index = (int) (r * count) + 1;
+
 	return index;
+}
+
+static void flush_video_queue(switch_queue_t *q)
+{
+	void *pop;
+
+	if (switch_queue_size(q) == 0) {
+		return;
+	}
+
+	while (switch_queue_trypop(q, &pop) == SWITCH_STATUS_SUCCESS) {
+		switch_image_t *img = (switch_image_t *) pop;
+		switch_img_free(&img);
+	}
+
 }
 
 static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void *obj)
@@ -120,7 +140,7 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 	local_stream_source_t *source = obj;
 	switch_file_handle_t fh = { 0 };
 	local_stream_context_t *cp;
-	char file_buf[128] = "", path_buf[512] = "";
+	char file_buf[128] = "", path_buf[512] = "", last_path[512];
 	switch_timer_t timer = { 0 };
 	int fd = -1;
 	switch_buffer_t *audio_buffer;
@@ -128,6 +148,7 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 	switch_size_t used;
 	int skip = 0;
 	switch_memory_pool_t *temp_pool = NULL;
+	uint32_t dir_count = 0, do_shuffle = 0;
 
 	switch_mutex_lock(globals.mutex);
 	THREADS++;
@@ -137,13 +158,13 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 		source->prebuf = DEFAULT_PREBUFFER_SIZE;
 	}
 
+	if (source->shuffle) {
+		do_shuffle = 1;
+	}
+
 	switch_queue_create(&source->video_q, 500, source->pool);
 	switch_buffer_create_dynamic(&audio_buffer, 1024, source->prebuf + 10, 0);
 	dist_buf = switch_core_alloc(source->pool, source->prebuf + 10);
-
-	if (source->shuffle) {
-		skip = do_rand();
-	}
 
 	switch_thread_rwlock_create(&source->rwlock, source->pool);
 
@@ -169,6 +190,21 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 		if (switch_dir_open(&source->dir_handle, source->location, temp_pool) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Can't open directory: %s\n", source->location);
 			goto done;
+		}
+
+		if (fd > -1) {
+			dir_count = 0;
+			while (switch_fd_read_line(fd, path_buf, sizeof(path_buf))) {
+				dir_count++;
+			}
+			lseek(fd, 0, SEEK_SET);
+		} else {
+			dir_count = switch_dir_count(source->dir_handle);
+		}
+
+		if (do_shuffle) {
+			skip = do_rand(dir_count);
+			do_shuffle = 0;
 		}
 
 		switch_yield(1000000);
@@ -204,10 +240,16 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 				}
 			}
 
+			if (dir_count > 1 && !strcmp(last_path, path_buf)) {
+				continue;
+			}
+
 			if (skip > 0) {
 				skip--;
 				continue;
 			}
+
+			switch_set_string(last_path, path_buf);
 
 			fname = path_buf;
 			fh.prebuf = source->prebuf;
@@ -221,6 +263,7 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 				continue;
 			}
 
+			
 			if (switch_core_timer_init(&timer, source->timer_name, source->interval, (int)source->samples, temp_pool) != SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Can't start timer.\n");
 				switch_dir_close(source->dir_handle);
@@ -265,6 +308,8 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 
 			  retry:
 
+				source->has_video = switch_core_file_has_video(use_fh);
+
 				is_open = switch_test_flag(use_fh, SWITCH_FILE_OPEN);
 
 				if (source->hup) {
@@ -281,8 +326,7 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 						}
 					}
 				}
-
-
+				
 				if (is_open) {
 					if (switch_core_has_video() && switch_core_file_has_video(use_fh)) {
 						switch_frame_t vid_frame = { 0 };
@@ -290,13 +334,21 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 						if (switch_core_file_read_video(use_fh, &vid_frame, SVR_FLUSH) == SWITCH_STATUS_SUCCESS) {
 							if (vid_frame.img) {
 								source->has_video = 1;
-								switch_queue_push(source->video_q, vid_frame.img);
+								
+								if (source->total) {
+									switch_queue_push(source->video_q, vid_frame.img);
+								} else {
+									flush_video_queue(source->video_q);
+								}
 							}
 						}
+					} else {
+						source->has_video = 0;
 					}
 
 					if (switch_core_file_read(use_fh, abuf, &olen) != SWITCH_STATUS_SUCCESS || !olen) {
 						switch_core_file_close(use_fh);
+
 						if (use_fh == &source->chime_fh) {
 							source->chime_counter = source->rate * source->chime_freq;
 						}
@@ -333,15 +385,7 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 					used = switch_buffer_read(audio_buffer, dist_buf, source->samples * 2 * source->channels);
 
 					if (!source->total) {
-						switch_mutex_lock(source->mutex);
-
-						while (switch_queue_trypop(source->video_q, &pop) == SWITCH_STATUS_SUCCESS) {
-							switch_image_t *img = (switch_image_t *) pop;
-							switch_img_free(&img);
-						}
-
-						switch_mutex_unlock(source->mutex);
-
+						flush_video_queue(source->video_q);
 					} else {
 						uint32_t bused = 0;
 
@@ -371,7 +415,7 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 						}
 						switch_mutex_unlock(source->mutex);
 
-						switch_mutex_lock(source->mutex);
+						
 						while (switch_queue_trypop(source->video_q, &pop) == SWITCH_STATUS_SUCCESS) {
 							switch_image_t *img = (switch_image_t *) pop;
 							switch_image_t *imgcp = NULL;
@@ -380,6 +424,7 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 								switch_queue_push(source->context_list->video_q, img);
 							} else {
 								if (source->context_list) {
+									switch_mutex_lock(source->mutex);
 									for (cp = source->context_list; cp && RUNNING; cp = cp->next) {
 										if (cp->video_q) {
 											imgcp = NULL;
@@ -389,19 +434,18 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 											}
 										}
 									}
+									switch_mutex_unlock(source->mutex);
 								}
 								switch_img_free(&img);
 							}
 						}
-						switch_mutex_unlock(source->mutex);
-
 					}
 				}
 			}
 
 			switch_core_timer_destroy(&timer);
 			if (RUNNING && source->shuffle) {
-				skip = do_rand();
+				skip = do_rand(dir_count);
 			}
 		}
 
@@ -484,14 +528,7 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 
 	switch_buffer_destroy(&audio_buffer);
 
-	if (source->video_q) {
-		void *pop;
-
-		while (switch_queue_trypop(source->video_q, &pop) == SWITCH_STATUS_SUCCESS) {
-			switch_image_t *img = (switch_image_t *) pop;
-			switch_img_free(&img);
-		}
-	}
+	flush_video_queue(source->video_q);
 
 	if (fd > -1) {
 		close(fd);
@@ -649,7 +686,22 @@ static switch_status_t local_stream_file_read_video(switch_file_handle_t *handle
 	if (!(context->ready && context->source->ready)) {
 		return SWITCH_STATUS_FALSE;
 	}
-	
+
+	if (!context->source->has_video) {
+		if (frame && context->source->blank_img) {
+			switch_image_t *img = NULL;
+
+			switch_img_copy(context->source->blank_img, &img);
+			frame->img = img;
+			return SWITCH_STATUS_SUCCESS;
+		}
+		return SWITCH_STATUS_IGNORE;
+	}
+
+	if ((flags & SVR_CHECK)) {
+		return SWITCH_STATUS_BREAK;
+	}
+
 	while(context->ready && context->source->ready && (flags & SVR_FLUSH) && switch_queue_size(context->video_q) > 1) {
 		if (switch_queue_trypop(context->video_q, &pop) == SWITCH_STATUS_SUCCESS) {
 			switch_image_t *img = (switch_image_t *) pop;
@@ -661,7 +713,7 @@ static switch_status_t local_stream_file_read_video(switch_file_handle_t *handle
 		return SWITCH_STATUS_FALSE;
 	}
 	
-	if ((flags && SVR_BLOCK)) {
+	if ((flags & SVR_BLOCK)) {
 		status = switch_queue_pop(context->video_q, &pop);
 	} else {
 		status = switch_queue_trypop(context->video_q, &pop);
@@ -673,6 +725,7 @@ static switch_status_t local_stream_file_read_video(switch_file_handle_t *handle
 		}
 
 		frame->img = (switch_image_t *) pop;
+		
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -694,10 +747,13 @@ static switch_status_t local_stream_file_read(switch_file_handle_t *handle, void
 	if ((bytes = switch_buffer_read(context->audio_buffer, data, need))) {
 		*len = bytes / 2 / handle->real_channels;
 	} else {
-		if (need > 2560) {
-			need = 2560;
+		size_t blank = (handle->samplerate / 20) * 2 * handle->real_channels;
+
+		if (need > blank) {
+			need = blank;
 		}
-		memset(data, 255, need);
+
+		memset(data, 0, need);
 		*len = need / 2 / handle->real_channels;
 	}
 	switch_mutex_unlock(context->audio_mutex);
@@ -780,6 +836,8 @@ static void launch_thread(const char *name, const char *path, switch_xml_t direc
 			}
 		} else if (!strcasecmp(var, "timer-name")) {
 			source->timer_name = switch_core_strdup(source->pool, val);
+		} else if (!strcasecmp(var, "blank-img") && !zstr(val)) {
+			source->blank_img = switch_img_read_png(val, SWITCH_IMG_FMT_I420);
 		}
 	}
 

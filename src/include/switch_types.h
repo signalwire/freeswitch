@@ -2558,7 +2558,8 @@ typedef struct switch_frame_buffer_s switch_frame_buffer_t;
 
 typedef enum {
 	SVR_BLOCK = (1 << 0),
-	SVR_FLUSH = (1 << 1)
+	SVR_FLUSH = (1 << 1),
+	SVR_CHECK = (1 << 2)
 } switch_video_read_flag_t;
 
 typedef enum {

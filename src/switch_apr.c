@@ -559,6 +559,34 @@ SWITCH_DECLARE(switch_status_t) switch_dir_close(switch_dir_t *thedir)
 	return status;
 }
 
+SWITCH_DECLARE(uint32_t) switch_dir_count(switch_dir_t *thedir)
+{
+	const char *name;
+	apr_int32_t finfo_flags = APR_FINFO_DIRENT | APR_FINFO_TYPE | APR_FINFO_NAME;
+	uint32_t count = 0;
+
+	apr_dir_rewind(thedir->dir_handle);
+
+	while (apr_dir_read(&(thedir->finfo), finfo_flags, thedir->dir_handle) == SWITCH_STATUS_SUCCESS) {
+
+		if (thedir->finfo.filetype != APR_REG && thedir->finfo.filetype != APR_LNK) {
+			continue;
+		}
+
+		if (!(name = thedir->finfo.fname)) {
+			name = thedir->finfo.name;
+		}
+
+		if (name) {
+			count++;
+		}
+	}
+
+	apr_dir_rewind(thedir->dir_handle);
+
+	return count;
+}
+
 SWITCH_DECLARE(const char *) switch_dir_next_file(switch_dir_t *thedir, char *buf, switch_size_t len)
 {
 	const char *fname = NULL;

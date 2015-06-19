@@ -1063,6 +1063,10 @@ static switch_status_t vlc_file_read(switch_file_handle_t *handle, void *data, s
 	size_t bytes = *len * sizeof(int16_t) * handle->channels, read;
 	libvlc_state_t status;
 
+	if ((flags & SVR_CHECK)) {
+		return SWITCH_STATUS_BREAK;
+	}
+
 	if (switch_test_flag(handle, SWITCH_FILE_FLAG_VIDEO)) {
 		return vlc_file_av_read(handle, data, len);
 	}
@@ -1143,7 +1147,7 @@ static switch_status_t vlc_file_read_video(switch_file_handle_t *handle, switch_
 		return SWITCH_STATUS_FALSE;
 	}
 	
-	if ((flags && SVR_BLOCK)) {
+	if ((flags & SVR_BLOCK)) {
 		status = switch_queue_pop(vcontext->video_queue, &pop);
 	} else {
 		status = switch_queue_trypop(vcontext->video_queue, &pop);
