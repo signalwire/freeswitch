@@ -82,6 +82,7 @@ static const switch_state_handler_table_t originate_state_handlers = {
 
 
 typedef struct {
+	switch_core_session_t *down_session;
 	switch_core_session_t *peer_session;
 	switch_channel_t *peer_channel;
 	switch_caller_profile_t *caller_profile;
@@ -1888,7 +1889,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_channel_t *caller_channel = NULL;
 	char *peer_names[MAX_PEERS] = { 0 };
-	switch_core_session_t *new_session = NULL, *peer_session;
+	switch_core_session_t *new_session = NULL, *peer_session = NULL;
 	switch_caller_profile_t *new_profile = NULL, *caller_caller_profile;
 	char *chan_type = NULL, *chan_data;
 	switch_channel_t *peer_channel = NULL;
@@ -2275,11 +2276,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	   list of cause names which should be considered fatal
 	 */
 	if ((var = switch_event_get_header(var_event, "hangup_on_single_reject"))) {
-		hangup_on_single_reject = 1;
+		hangup_on_single_reject = switch_true(var);
 	}
 
-	if (hangup_on_single_reject || (var = switch_event_get_header(var_event, "fail_on_single_reject"))) {
-		fail_on_single_reject_var = strdup(var);
+	if ((var = switch_event_get_header(var_event, "fail_on_single_reject")) || hangup_on_single_reject) {
+		if (var) {
+			fail_on_single_reject_var = strdup(var);
+		}
+
 		if (switch_true(var)) {
 			fail_on_single_reject = 1;
 		} else {
@@ -2647,6 +2651,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				originate_status[i].caller_profile = NULL;
 				originate_status[i].peer_channel = NULL;
 				originate_status[i].peer_session = NULL;
+
 				new_session = NULL;
 
 				if (and_argc > 1 || or_argc > 1) {
@@ -2725,7 +2730,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				
 				reason = switch_core_session_outgoing_channel(oglobals.session, originate_var_event, chan_type,
 															  new_profile, &new_session, NULL, myflags, cancel_cause);
-
 				switch_event_destroy(&originate_var_event);
 
 				if (reason != SWITCH_CAUSE_SUCCESS) {
@@ -3812,8 +3816,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				switch_channel_clear_flag(originate_status[i].peer_channel, CF_ORIGINATING);
 
 				peer_session = originate_status[i].peer_session;
+				originate_status[i].down_session = originate_status[i].peer_session;
 				originate_status[i].peer_session = NULL;
 				originate_status[i].peer_channel = NULL;
+				
 				switch_core_session_rwunlock(peer_session);
 			}
 
@@ -3827,11 +3833,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 						switch_channel_t *pchannel;
 						const char *cause_str;
 							
-						if (!originate_status[i].peer_session) {
+						if (!originate_status[i].down_session) {
 							continue;
 						}
 							
-						pchannel = switch_core_session_get_channel(originate_status[i].peer_session);
+						pchannel = switch_core_session_get_channel(originate_status[i].down_session);
 						wait_for_cause(pchannel);
 
 						if (switch_channel_down_nosig(pchannel)) {
@@ -3844,8 +3850,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 							if (neg) {
 								pos = !pos;
-							}
-								
+							}												
 								
 							if (pos) {
 								ok = 0;
