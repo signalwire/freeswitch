@@ -23,7 +23,7 @@ $(LICSERVER) $(VALIDATOR) $(MOD): $(G729INSTALLER)
 
 $(G729INSTALLER):
 	rm -f $(top_srcdir)/libs/fs-*-installer*
-	$(GETG729) fsg729-$(VERSION)-installer
+	$(GETG729) fs-$(VERSION)-installer
 	chmod 755 $(G729INSTALLER)
 
 clean:
