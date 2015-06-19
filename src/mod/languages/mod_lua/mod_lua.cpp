@@ -272,7 +272,7 @@ static switch_xml_t lua_fetch(const char *section,
 		}
 
 		lua_getglobal(L, "XML_STRING");
-		str = lua_tostring(L, 1);
+		str = lua_tostring(L, -1);
 		
 		if (str) {
 			if (zstr(str)) {
