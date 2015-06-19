@@ -43,7 +43,7 @@
       <!-- Number of milliseconds per frame -->
       <param name="interval" value="20"/>
       <!-- Energy level required for audio to be sent to the other users -->
-      <param name="energy-level" value="300"/>
+      <param name="energy-level" value="100"/>
 
       <!--Can be | delim of waste|mute|deaf|dist-dtmf waste will always transmit data to each channel
           even during silence.  dist-dtmf propagates dtmfs to all other members, but channel controls
@@ -132,7 +132,7 @@
       <param name="domain" value="$${domain}"/>
       <param name="rate" value="16000"/>
       <param name="interval" value="20"/>
-      <param name="energy-level" value="300"/>
+      <param name="energy-level" value="100"/>
       <!-- <param name="sound-prefix" value="$${sounds_dir}/en/us/callie"/> -->
       <param name="muted-sound" value="conference/conf-muted.wav"/>
       <param name="unmuted-sound" value="conference/conf-unmuted.wav"/>
@@ -157,7 +157,7 @@
       <param name="domain" value="$${domain}"/>
       <param name="rate" value="32000"/>
       <param name="interval" value="20"/>
-      <param name="energy-level" value="300"/>
+      <param name="energy-level" value="100"/>
       <!-- <param name="sound-prefix" value="$${sounds_dir}/en/us/callie"/> -->
       <param name="muted-sound" value="conference/conf-muted.wav"/>
       <param name="unmuted-sound" value="conference/conf-unmuted.wav"/>
@@ -196,7 +196,7 @@
       <param name="domain" value="$${domain}"/>
       <param name="rate" value="48000"/>
       <param name="interval" value="20"/>
-      <param name="energy-level" value="300"/>
+      <param name="energy-level" value="100"/>
       <!-- <param name="sound-prefix" value="$${sounds_dir}/en/us/callie"/> -->
       <param name="muted-sound" value="conference/conf-muted.wav"/>
       <param name="unmuted-sound" value="conference/conf-unmuted.wav"/>
