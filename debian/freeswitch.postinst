@@ -30,8 +30,9 @@ case "$1" in
       chown freeswitch $x
     done
     if [ ! -d "/etc/freeswitch" ]; then
-	mkdir -p /etc/freeswitch/
+	mkdir -p /etc/freeswitch/tls/
 	cp -a /usr/share/freeswitch/conf/vanilla/* /etc/freeswitch/
+	
     fi
     ;;
   abort-upgrade|abort-remove|abort-deconfigure)
