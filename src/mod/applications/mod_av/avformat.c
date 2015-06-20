@@ -1578,13 +1578,12 @@ static switch_status_t av_file_read(switch_file_handle_t *handle, void *data, si
 {
 	av_file_context_t *context = (av_file_context_t *)handle->private_info;
 	int size;
+	size_t need = *len * 2 * context->audio_st.channels;
 
 	if (!context->has_audio && context->has_video && switch_queue_size(context->eh.video_queue) > 0) {
 		memset(data, 0, *len * handle->channels * 2);
 		return SWITCH_STATUS_SUCCESS;
 	}
-
-again:
 
 	if (!context->file_read_thread_running && switch_buffer_inuse(context->audio_buffer) == 0) {
 		*len = 0;
@@ -1598,11 +1597,16 @@ again:
 	switch_mutex_unlock(context->mutex);
 
 	if (size == 0) {
-		switch_yield(20000);
-		goto again;
+		size_t blank = (handle->samplerate / 20) * 2 * handle->real_channels;
+		
+		if (need > blank) {
+			need = blank;
+		}
+		memset(data, 0, need);
+		*len = need / 2 / handle->real_channels;
+	} else {
+		*len = size / context->audio_st.channels / 2;
 	}
-
-	*len = size / context->audio_st.channels / 2;
 
 	handle->pos += *len;
 	handle->sample_count += *len;
@@ -1716,7 +1720,7 @@ static switch_status_t av_file_read_video(switch_file_handle_t *handle, switch_f
 	int ticks = 0;
 	int max_delta = 1 * AV_TIME_BASE; // 1 second
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-
+	
 	if (!context->has_video) return SWITCH_STATUS_FALSE;
 
 	if ((flags & SVR_CHECK)) {
@@ -1752,7 +1756,7 @@ static switch_status_t av_file_read_video(switch_file_handle_t *handle, switch_f
 			st->start_time, st->duration, st->nb_frames, av_q2d(st->time_base));
 	}
 
-again: if (0) goto again;
+ again:
 
 	if (flags & SVR_BLOCK) {
 		status = switch_queue_pop(context->eh.video_queue, &pop);
@@ -1793,9 +1797,11 @@ again: if (0) goto again;
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "picture is too late, off: %" SWITCH_INT64_T_FMT " queue size:%u\n", (int64_t)(switch_micro_time_now() - mst->next_pts), switch_queue_size(context->eh.video_queue));
 			switch_img_free(&img);
 
+
 			if (switch_queue_size(context->eh.video_queue) > 0) {
 				goto again;
 			} else {
+				mst->next_pts = 0;
 				return SWITCH_STATUS_BREAK;
 			}
 		}

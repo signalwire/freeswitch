@@ -68,6 +68,7 @@ struct local_stream_context {
 	int sent_png;
 	int last_w;
 	int last_h;
+	int serno;
 	switch_image_t *banner_img;
 	switch_time_t banner_timeout;
 	struct local_stream_context *next;
@@ -110,6 +111,7 @@ struct local_stream_source {
 	switch_image_t *blank_img;
 	switch_image_t *cover_art;
 	char *banner_txt;
+	int serno;
 };
 
 typedef struct local_stream_source local_stream_source_t;
@@ -288,7 +290,8 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 					source->cover_art = switch_img_read_png(png_buf, SWITCH_IMG_FMT_I420);
 				}
 			}
-			
+
+			source->serno++;
 			switch_safe_free(source->banner_txt);
 			title = artist = NULL;
 			
@@ -311,7 +314,7 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 
 				switch_core_timer_next(&timer);
 				olen = source->samples;
-
+				
 				if (source->chime_total) {
 
 					if (source->chime_counter > 0) {
@@ -340,7 +343,7 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 					}
 				}
 
-			  retry:
+			retry:
 
 				source->has_video = switch_core_file_has_video(use_fh) || source->cover_art || source->banner_txt;
 
@@ -366,6 +369,12 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 					if (switch_core_has_video() && switch_core_file_has_video(use_fh)) {
 						switch_frame_t vid_frame = { 0 };
 
+						if (use_fh == &source->chime_fh && switch_core_file_has_video(&fh)) {
+							if (switch_core_file_read_video(&fh, &vid_frame, SVR_FLUSH) == SWITCH_STATUS_SUCCESS) {
+								switch_img_free(&vid_frame.img);
+							}
+						}
+
 						if (switch_core_file_read_video(use_fh, &vid_frame, SVR_FLUSH) == SWITCH_STATUS_SUCCESS) {
 							if (vid_frame.img) {
 								source->has_video = 1;
@@ -382,14 +391,22 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 						source->has_video = 0;
 					}
 
+					if (use_fh == &source->chime_fh) {
+						olen = source->samples;
+						switch_core_file_read(&fh, abuf, &olen);
+						olen = source->samples;
+					}
+
 					if (switch_core_file_read(use_fh, abuf, &olen) != SWITCH_STATUS_SUCCESS || !olen) {
 						switch_core_file_close(use_fh);
 						flush_video_queue(source->video_q);
 
 						if (use_fh == &source->chime_fh) {
 							source->chime_counter = source->rate * source->chime_freq;
+							use_fh = &fh;
+						} else {
+							is_open = 0;
 						}
-						is_open = 0;
 					} else {
 						if (use_fh == &source->chime_fh && source->chime_max) {
 							source->chime_max_counter += (int32_t)source->samples;
@@ -805,6 +822,12 @@ static switch_status_t local_stream_file_read_video(switch_file_handle_t *handle
 		}
 	}
 
+	if (context->serno != context->source->serno) {
+		switch_img_free(&context->banner_img);
+		context->banner_timeout = 0;
+		context->serno = context->source->serno;
+	}
+	
 	if (context->source->banner_txt) {
 		if ((!context->banner_timeout || context->banner_timeout >= now)) {
 			if (!context->banner_img) {
