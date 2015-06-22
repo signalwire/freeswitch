@@ -683,11 +683,11 @@ static switch_status_t buffer_vp8_packets(vpx_context_t *context, switch_frame_t
 	uint8_t *data = frame->data;
 	uint8_t S;
 	uint8_t DES;
-	uint8_t PID;
+	//	uint8_t PID;
 	int len;
+#if 0
 	int key = 0;
 
-#if 0
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, 
 					  "VIDEO VPX: seq: %d ts: %u len: %ld %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x mark: %d\n",
 					  frame->seq, frame->timestamp, frame->datalen,
@@ -703,7 +703,7 @@ static switch_status_t buffer_vp8_packets(vpx_context_t *context, switch_frame_t
 	DES = *data;
 	data++;
 	S = (DES & 0x10);
-	PID = DES & 0x07;
+	//	PID = DES & 0x07;
 
 	//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "DATA LEN %d S BIT %d PID: %d\n", frame->datalen, S, PID);
 			
@@ -742,9 +742,11 @@ static switch_status_t buffer_vp8_packets(vpx_context_t *context, switch_frame_t
 	if (S) {
 		switch_buffer_zero(context->vpx_packet_buffer);
 		context->last_received_timestamp = frame->timestamp;
+#if 0
 		if (PID == 0) {
 			key = __IS_VP8_KEY_FRAME(*data);
 		}
+#endif
 	}
 
 	len = frame->datalen - (data - (uint8_t *)frame->data);
@@ -879,14 +881,8 @@ static switch_status_t switch_vpx_decode(switch_codec_t *codec, switch_frame_t *
 		uint8_t *data;
 		int corrupted = 0;
 		int err;
-		int keyframe = 0;
-
-		//printf("WTF %d %ld\n", frame->m, len);
 
 		switch_buffer_peek_zerocopy(context->vpx_packet_buffer, (void *)&data);
-		keyframe = (*data & 0x01) ? 0 : 1;
-
-		//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "buffered: %" SWITCH_SIZE_T_FMT ", key: %d\n", len, keyframe);
 
 		context->dec_iter = NULL;
 		err = vpx_codec_decode(decoder, data, (unsigned int)len, NULL, 0);
