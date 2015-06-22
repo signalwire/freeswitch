@@ -1135,6 +1135,10 @@ SWITCH_DECLARE(void) switch_img_patch_hole(switch_image_t *IMG, switch_image_t *
 #define SWITCH_IMG_MAX_WIDTH  1920 * 2
 #define SWITCH_IMG_MAX_HEIGHT 1080 * 2
 
+#if !defined(SWITCH_HAVE_YUV)
+#undef SWITCH_HAVE_PNG
+#endif
+
 #ifdef SWITCH_HAVE_PNG
 // WIP png functions, need furthur tweak/check to make sure it works on all png files and errors are properly detected and reported
 // #define PNG_DEBUG 3
