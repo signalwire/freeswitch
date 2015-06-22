@@ -839,24 +839,23 @@ SWITCH_DECLARE(char *) CoreSession::getDigits(int maxdigits,
 											  int timeout,
 											  int interdigit)
 {
-    switch_status_t status;
 	this_check((char *)"");
 	sanity_check((char *)"");
 	begin_allow_threads();
 	char terminator;
 
 	memset(dtmf_buf, 0, sizeof(dtmf_buf));
-    status = switch_ivr_collect_digits_count(session, 
-											 dtmf_buf,
-											 sizeof(dtmf_buf),
-											 maxdigits, 
-											 terminators, 
-											 &terminator, 
-											 (uint32_t) timeout, (uint32_t)interdigit, 0);
+	switch_ivr_collect_digits_count(session, 
+									dtmf_buf,
+									sizeof(dtmf_buf),
+									maxdigits, 
+									terminators, 
+									&terminator, 
+									(uint32_t) timeout, (uint32_t)interdigit, 0);
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "getDigits dtmf_buf: %s\n", dtmf_buf);
 	end_allow_threads();
-    return dtmf_buf;
+	return dtmf_buf;
 }
 
 SWITCH_DECLARE(int) CoreSession::transfer(char *extension, char *dialplan, char *context)
@@ -913,25 +912,24 @@ SWITCH_DECLARE(char *) CoreSession::playAndGetDigits(int min_digits,
 													 int digit_timeout,
 													 const char *transfer_on_failure)
 {
-    switch_status_t status;
 	sanity_check((char *)"");
 	this_check((char *)"");
 	begin_allow_threads();
 	memset(dtmf_buf, 0, sizeof(dtmf_buf));
-    status = switch_play_and_get_digits( session, 
-										 (uint32_t) min_digits,
-										 (uint32_t) max_digits,
-										 (uint32_t) max_tries, 
-										 (uint32_t) timeout, 
-										 terminators, 
-										 audio_files, 
-										 bad_input_audio_files,
-										 var_name,
-										 dtmf_buf, 
-										 sizeof(dtmf_buf), 
-										 digits_regex,
-										 (uint32_t) digit_timeout,
-										 transfer_on_failure);
+	switch_play_and_get_digits( session, 
+								(uint32_t) min_digits,
+								(uint32_t) max_digits,
+								(uint32_t) max_tries, 
+								(uint32_t) timeout, 
+								terminators, 
+								audio_files, 
+								bad_input_audio_files,
+								var_name,
+								dtmf_buf, 
+								sizeof(dtmf_buf), 
+								digits_regex,
+								(uint32_t) digit_timeout,
+								transfer_on_failure);
 
 	end_allow_threads();
 	return dtmf_buf;
