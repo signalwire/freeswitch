@@ -1723,15 +1723,19 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 			playback_array(agent_session, o_announce);
 		}
 
-		switch_ivr_uuid_bridge(h->member_session_uuid, switch_core_session_get_uuid(agent_session));
-
-		switch_channel_set_variable(member_channel, "cc_agent_uuid", agent_uuid);
-
 		/* This is used for the waiting caller to quit waiting for a agent */
 		switch_channel_set_variable(member_channel, "cc_agent_found", "true");
+		switch_channel_set_variable(member_channel, "cc_agent_uuid", agent_uuid);
+		switch_ivr_uuid_bridge(h->member_session_uuid, switch_core_session_get_uuid(agent_session));
+		switch_channel_wait_for_flag(agent_channel, CF_BRIDGED, SWITCH_TRUE, 1000, NULL);
 
 		/* Wait until the agent hangup.  This will quit also if the agent transfer the call */
 		while(switch_channel_up(agent_channel) && globals.running) {
+			if (!strcasecmp(h->agent_type, CC_AGENT_TYPE_UUID_STANDBY)) {
+				if (!switch_channel_test_flag(agent_channel, CF_BRIDGED)) {
+					break;
+				}
+			}
 			switch_yield(100000);
 		}
 		tiers_state = CC_TIER_STATE_READY;
