@@ -1,0 +1,13 @@
+<extension name="from-centos">
+  <condition field="destination_number" expression="^(6080)$">
+    <action application="export" data="nolocal:absolute_codec_string=OPUS,VP8"/>
+    <action application="set" data="hangup_after_bridge=true"/>
+    <action application="set" data="record_concat_video=true"/>
+    <!--
+	DO NOT EXPORT execute_on_answer in this case.
+	It will cause both sessions to record to the exact same file.
+    -->
+    <action application="set" data="execute_on_answer=record_session /var/www/html/rec/${strftime(%Y%m%d_%H%M%S)}_${destination_number}.mp4"/>
+    <action application="bridge" data="sofia/external/sip:decode@cantina.freeswitch.org"/>
+  </condition>
+</extension> 
