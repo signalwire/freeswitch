@@ -111,7 +111,7 @@ static void *SWITCH_THREAD_FUNC api_exec(switch_thread_t *thread, void *obj)
 			_ei_x_encode_string(&ebuf, reply);
 
 			switch_mutex_lock(acs->listener->sock_mutex);
-			ei_send(acs->listener->sockfd, &acs->pid, ebuf.buff, ebuf.index);
+			ei_send(acs->listener->sockdes, &acs->pid, ebuf.buff, ebuf.index);
 			switch_mutex_unlock(acs->listener->sock_mutex);
 #ifdef EI_DEBUG
 			ei_x_print_msg(&ebuf, &acs->pid, 1);
@@ -139,7 +139,7 @@ static void *SWITCH_THREAD_FUNC api_exec(switch_thread_t *thread, void *obj)
 
 
 		switch_mutex_lock(acs->listener->sock_mutex);
-		ei_send(acs->listener->sockfd, &acs->pid, rbuf.buff, rbuf.index);
+		ei_send(acs->listener->sockdes, &acs->pid, rbuf.buff, rbuf.index);
 		switch_mutex_unlock(acs->listener->sock_mutex);
 #ifdef EI_DEBUG
 		ei_x_print_msg(&rbuf, &acs->pid, 1);
@@ -1332,7 +1332,7 @@ static switch_status_t handle_net_kernel_msg(listener_t *listener, erlang_msg * 
 	ei_x_encode_atom(rbuf, "yes");
 
 	switch_mutex_lock(listener->sock_mutex);
-	ei_send(listener->sockfd, &pid, rbuf->buff, rbuf->index);
+	ei_send(listener->sockdes, &pid, rbuf->buff, rbuf->index);
 	switch_mutex_unlock(listener->sock_mutex);
 #ifdef EI_DEBUG
 	ei_x_print_msg(rbuf, &pid, 1);
@@ -1398,7 +1398,7 @@ int handle_msg(listener_t *listener, erlang_msg * msg, ei_x_buff * buf, ei_x_buf
 		return 0;
 	} else if (rbuf->index > 1) {
 		switch_mutex_lock(listener->sock_mutex);
-		ei_send(listener->sockfd, &msg->from, rbuf->buff, rbuf->index);
+		ei_send(listener->sockdes, &msg->from, rbuf->buff, rbuf->index);
 		switch_mutex_unlock(listener->sock_mutex);
 #ifdef EI_DEBUG
 		ei_x_print_msg(rbuf, &msg->from, 1);

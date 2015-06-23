@@ -64,6 +64,8 @@ void ei_link(listener_t *listener, erlang_pid * from, erlang_pid * to)
 	char msgbuf[2048];
 	char *s;
 	int index = 0;
+	switch_socket_t *sock = NULL;
+	switch_os_sock_put(&sock, &listener->sockdes, listener->pool);
 
 	index = 5;					/* max sizes: */
 	ei_encode_version(msgbuf, &index);	/*   1 */
@@ -79,13 +81,9 @@ void ei_link(listener_t *listener, erlang_pid * from, erlang_pid * to)
 	/* sum:  542 */
 
 	switch_mutex_lock(listener->sock_mutex);
-#ifdef WIN32
-	send(listener->sockfd, msgbuf, index, 0);
-#else
-	if (write(listener->sockfd, msgbuf, index) == -1) {
+	if (switch_socket_send(sock, msgbuf, (switch_size_t *) &index)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Failed to link to process on %s\n", listener->peer_nodename);
 	}
-#endif
 	switch_mutex_unlock(listener->sock_mutex);
 }
 
@@ -329,30 +327,17 @@ int ei_decode_string_or_binary(char *buf, int *index, int maxlen, char *dst)
 
 switch_status_t initialise_ei(struct ei_cnode_s *ec)
 {
-	int rv;
-	struct sockaddr_in server_addr;
-	struct hostent *nodehost;
-	char thishostname[EI_MAXHOSTNAMELEN + 1] = "";
+	char *thishostname = NULL;
 	char thisnodename[MAXNODELEN + 1];
 	char thisalivename[MAXNODELEN + 1];
 	char *atsign;
 
-	/* zero out the struct before we use it */
-	memset(&server_addr, 0, sizeof(server_addr));
-
-	/* convert the configured IP to network byte order, handing errors */
-	rv = switch_inet_pton(AF_INET, prefs.ip, &server_addr.sin_addr.s_addr);
-	if (rv == 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not parse invalid ip address: %s\n", prefs.ip);
-		return SWITCH_STATUS_FALSE;
-	} else if (rv == -1) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error when parsing ip address %s : %s\n", prefs.ip, strerror(errno));
-		return SWITCH_STATUS_FALSE;
+	if (zstr(listen_list.hostname) || !strncasecmp(prefs.ip, "0.0.0.0", 7) || !strncasecmp(prefs.ip, "::", 2)) {
+		listen_list.hostname=(char *) switch_core_get_hostname();
 	}
-
-	/* set the address family and port */
-	server_addr.sin_family = AF_INET;
-	server_addr.sin_port = htons(prefs.port);
+	if (strlen(listen_list.hostname) > EI_MAXHOSTNAMELEN) {
+		*(listen_list.hostname+EI_MAXHOSTNAMELEN) = '\0';
+	}
 
 	/* copy the prefs.nodename into something we can modify */
 	strncpy(thisalivename, prefs.nodename, MAXNODELEN);
@@ -363,39 +348,19 @@ switch_status_t initialise_ei(struct ei_cnode_s *ec)
 		/* truncate the alivename at the @ */
 		*atsign = '\0';
 	} else {
-#ifdef WIN32
-		if ((nodehost = gethostbyaddr((const char *) &server_addr.sin_addr.s_addr, sizeof(server_addr.sin_addr.s_addr), AF_INET)))
-#else
-		if ((nodehost = gethostbyaddr((const char *) &server_addr.sin_addr.s_addr, sizeof(server_addr.sin_addr.s_addr), AF_INET)))
-#endif
-			memcpy(thishostname, nodehost->h_name, EI_MAXHOSTNAMELEN);
-
-		if (zstr_buf(thishostname) || !strncasecmp(prefs.ip, "0.0.0.0", 7)) {
-			gethostname(thishostname, EI_MAXHOSTNAMELEN);
-		}
-
 		if (prefs.shortname) {
 			char *off;
-			if ((off = strchr(thishostname, '.'))) {
+			if ((off = strchr(listen_list.hostname, '.'))) {
 				*off = '\0';
-			}
-		} else {
-			if (!(_res.options & RES_INIT)) {
-				// init the resolver
-				res_init();
-			}
-			if (_res.dnsrch[0] && !zstr_buf(_res.dnsrch[0])) {
-				strncat(thishostname, ".", 1);
-				strncat(thishostname, _res.dnsrch[0], EI_MAXHOSTNAMELEN - strlen(thishostname));
 			}
 
 		}
-		snprintf(thisnodename, MAXNODELEN + 1, "%s@%s", prefs.nodename, thishostname);
+		snprintf(thisnodename, MAXNODELEN + 1, "%s@%s", prefs.nodename, listen_list.hostname);
 	}
 
 
 	/* init the ei stuff */
-	if (ei_connect_xinit(ec, thishostname, thisalivename, thisnodename, (Erl_IpAddr) (&server_addr.sin_addr.s_addr), prefs.cookie, 0) < 0) {
+	if (ei_connect_xinit(ec, listen_list.hostname, thisalivename, thisnodename, (Erl_IpAddr) listen_list.addr, prefs.cookie, 0) < 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to init ei connection\n");
 		return SWITCH_STATUS_FALSE;
 	}

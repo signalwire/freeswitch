@@ -112,11 +112,7 @@ typedef enum {
    5 call sessions will be "attached" to the same listener.
  */
 struct listener {
-#ifdef WIN32
-	SOCKET sockfd;
-#else
-	int sockfd;
-#endif
+	switch_os_socket_t sockdes;
 	struct ei_cnode_s *ec;
 	struct erlang_process log_process;
 	struct erlang_process event_process;
@@ -170,6 +166,7 @@ struct api_command_struct {
 };
 
 struct globals_struct {
+	switch_mutex_t *listener_mutex;
 	switch_thread_rwlock_t *listener_rwlock;
 	switch_thread_rwlock_t *bindings_rwlock;
 	switch_event_node_t *node;
@@ -187,11 +184,10 @@ struct globals_struct {
 typedef struct globals_struct globals_t;
 
 struct listen_list_struct {
-#ifdef WIN32
-	SOCKET sockfd;
-#else
-	int sockfd;
-#endif
+	char *hostname;
+	char addr[64];
+	switch_socket_t *sock;
+	switch_mutex_t *sock_mutex;
 	listener_t *listeners;
 	uint8_t ready;
 };
@@ -220,6 +216,7 @@ struct prefs_struct {
 	int compat_rel;
 	int max_event_bulk;
 	int max_log_bulk;
+	int stop_on_bind_error;
 };
 typedef struct prefs_struct prefs_t;
 
