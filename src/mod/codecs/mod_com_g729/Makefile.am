@@ -1,7 +1,7 @@
 include $(top_srcdir)/build/modmake.rulesam
 
 MODNAME=mod_com_g729
-VERSION=201501231218
+VERSION=201506221434
 
 if ISLINUX
 
