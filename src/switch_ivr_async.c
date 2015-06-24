@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2015, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -4150,7 +4150,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_and_detect_speech(switch_core_se
 																  uint32_t input_timeout,
 																  switch_input_args_t *args)
 {
-	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	switch_status_t status = SWITCH_STATUS_FALSE;
 	int recognizing = 0;
 	switch_input_args_t myargs = { 0 };
 	play_and_detect_speech_state_t state = { 0, "" };
@@ -4169,7 +4169,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_and_detect_speech(switch_core_se
 	}
 
 	/* start speech detection */
-	if (switch_ivr_detect_speech(session, mod_name, grammar, "", NULL, NULL) != SWITCH_STATUS_SUCCESS) {
+	if ((status = switch_ivr_detect_speech(session, mod_name, grammar, "", NULL, NULL)) != SWITCH_STATUS_SUCCESS) {
+		/* map SWITCH_STATUS_FALSE to SWITCH_STATUS_GENERR to indicate grammar load failed
+		SWITCH_STATUS_NOT_INITALIZED will be passed back to indicate ASR resource problem */
+		if (status == SWITCH_STATUS_FALSE) {
+			status = SWITCH_STATUS_GENERR;
+		}
 		goto done;
 	}
 	recognizing = 1;
@@ -4186,6 +4191,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_and_detect_speech(switch_core_se
 	}
 
 	if (status != SWITCH_STATUS_BREAK && status != SWITCH_STATUS_SUCCESS) {
+		status = SWITCH_STATUS_FALSE;
 		goto done;
 	}
 
@@ -4202,10 +4208,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_and_detect_speech(switch_core_se
 			}
 
 			if (status != SWITCH_STATUS_BREAK && status != SWITCH_STATUS_SUCCESS) {
+				status = SWITCH_STATUS_FALSE;
 				goto done;
 			}
 		}
 	}
+
+
 
 done:
 	if (recognizing && !(state.done & PLAY_AND_DETECT_DONE_RECOGNIZING)) {
@@ -4215,11 +4224,10 @@ done:
 		switch_ivr_stop_detect_speech(session);
 	}
 
-	*result = state.result;
-
-	if (!state.done) {
-		status = SWITCH_STATUS_FALSE;
+	if (state.done) {
+		status = SWITCH_STATUS_SUCCESS;
 	}
+	*result = state.result;
 
 	arg_recursion_check_stop(args);
 
@@ -4679,12 +4687,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech(switch_core_session_t *
 	if (!sth) {
 		/* No speech thread handle available yet, init speech detection first. */
 		if ((status = switch_ivr_detect_speech_init(session, mod_name, dest, ah)) != SWITCH_STATUS_SUCCESS) {
-			return status;
+			return SWITCH_STATUS_NOT_INITALIZED;
 		}
 
 		/* Fetch the new speech thread handle */
 		if (!(sth = switch_channel_get_private(channel, SWITCH_SPEECH_KEY))) {
-			return SWITCH_STATUS_FALSE;
+			return SWITCH_STATUS_NOT_INITALIZED;
 		}
 	}
 

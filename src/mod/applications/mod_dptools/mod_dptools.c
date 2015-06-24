@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2015, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -514,9 +514,17 @@ SWITCH_STANDARD_APP(play_and_detect_speech_function)
 		char *engine = argv[0];
 		char *grammar = argv[1];
 		char *result = NULL;
-		switch_ivr_play_and_detect_speech(session, file, engine, grammar, &result, 0, NULL);
-		if (!zstr(result)) {
-			switch_channel_set_variable(channel, "detect_speech_result", result);
+		switch_status_t status = switch_ivr_play_and_detect_speech(session, file, engine, grammar, &result, 0, NULL);
+		if (status == SWITCH_STATUS_SUCCESS) {
+			if (!zstr(result)) {
+				switch_channel_set_variable(channel, "detect_speech_result", result);
+			}
+		} else if (status == SWITCH_STATUS_GENERR) {
+			response = "GRAMMAR ERROR";
+		} else if (status == SWITCH_STATUS_NOT_INITALIZED) {
+			response = "ASR INIT ERROR";
+		} else {
+			response = "ERROR";
 		}
 	} else {
 		/* bad input */
