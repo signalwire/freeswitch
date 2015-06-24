@@ -883,6 +883,8 @@ SWITCH_DECLARE(uint32_t) switch_img_txt_handle_render(switch_img_txt_handle_t *h
 
 	if (zstr(text)) return 0;
 
+	if (!handle) return 0;
+
 	switch_assert(!img || img->fmt == SWITCH_IMG_FMT_I420 || img->fmt == SWITCH_IMG_FMT_ARGB);
 
 	if (font_family) {

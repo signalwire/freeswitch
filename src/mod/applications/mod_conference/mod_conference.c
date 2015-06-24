@@ -1350,7 +1350,6 @@ static void layer_set_banner(conference_member_t *member, mcu_layer_t *layer, co
 		text = tmp + 1;
 	}
 
-
 	if (params) {
 		if ((var = switch_event_get_header(params, "fg"))) {
 			fg = var;
@@ -1379,28 +1378,37 @@ static void layer_set_banner(conference_member_t *member, mcu_layer_t *layer, co
 	switch_color_set_rgb(&fgcolor, fg);
 	switch_color_set_rgb(&bgcolor, bg);
 
-	switch_img_free(&layer->banner_img);
-	switch_img_free(&layer->logo_img);
-	switch_img_free(&layer->logo_text_img);
-	layer->banner_img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, layer->screen_w, font_size * 2, 1);
-
 	if (layer->txthandle) {
 		switch_img_txt_handle_destroy(&layer->txthandle);
 	}
 
 	switch_img_txt_handle_create(&layer->txthandle, font_face, fg, bg, font_size, 0, NULL);
 
+	if (!layer->txthandle) {
+		switch_img_free(&layer->banner_img);
+		layer->banner_patched = 0;
+
+		switch_img_fill(member->conference->canvas->img, layer->x_pos, layer->y_pos, layer->screen_w, layer->screen_h,
+						&member->conference->canvas->letterbox_bgcolor);
+
+		goto end;
+	}
+
+	switch_img_free(&layer->banner_img);
+	switch_img_free(&layer->logo_img);
+	switch_img_free(&layer->logo_text_img);
+	layer->banner_img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, layer->screen_w, font_size * 2, 1);
+
 	reset_image(layer->banner_img, &bgcolor);
 	switch_img_txt_handle_render(layer->txthandle, layer->banner_img, font_size / 2, font_size / 2, text, NULL, fg, bg, 0, 0);
+
+ end:
 
 	if (params) switch_event_destroy(&params);
 
 	switch_safe_free(dup);
 
- end:
-
 	switch_mutex_unlock(member->conference->canvas->mutex);
-
 }
 
 static void reset_video_bitrate_counters(conference_member_t *member)
