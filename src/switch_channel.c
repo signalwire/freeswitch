@@ -3810,6 +3810,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_answer(switch_channel_t *
 			uint32_t msec = atoi(delay);
 			
 			if (msec) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(channel->session), SWITCH_LOG_DEBUG, "Answer delay for %u msec\n", msec);
 				switch_ivr_sleep(channel->session, msec, SWITCH_TRUE, NULL);
 			}
 		}
