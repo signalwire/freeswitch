@@ -7,8 +7,8 @@
 #  chkconfig: 345 89 14
 #  description: Starts and stops the freeswitch server daemon
 #  processname: freeswitch
-#  config: /usr/local/freeswitch/conf/freeswitch.conf
-#  pidfile: /usr/local/freeswitch/run/freeswitch.pid
+#  config: /etc/freeswitch/freeswitch.xml
+#  pidfile: /var/run/freeswitch/freeswitch.pid
 #
 
 # Source function library.
