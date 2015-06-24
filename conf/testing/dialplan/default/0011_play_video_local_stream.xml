@@ -43,3 +43,11 @@
     <action application="playback" data="local_stream://I_DO_NOT_EXIST_TEST"/>
   </condition>
 </extension>
+
+<extension name="play_video_local_stream">
+  <condition field="destination_number" expression="^6056$">
+    <action application="answer"/>  
+    <action application="playback" data="local_stream://video_chime"/>
+  </condition>
+</extension>
+

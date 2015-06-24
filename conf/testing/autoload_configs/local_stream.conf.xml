@@ -54,12 +54,15 @@
     <param name="timer-name" value="soft"/>
   </directory>
 
-  <directory name="my_voh" path="$${base_dir}/videos">
+  <directory name="video_chime" path="$${sounds_dir}/music/video">
     <param name="rate" value="48000"/>
     <param name="shuffle" value="true"/>
     <param name="channels" value="2"/>
     <param name="interval" value="10"/>
     <param name="timer-name" value="soft"/>
+    <param name="chime-list" value="$${sounds_dir}/music/chimes/01.mp4,$${sounds_dir}/music/chimes/02.mp4,$${sounds_dir}/music/chimes/03.mp4,$${sounds_dir}/music/chimes/04.mp4,$${sounds_dir}/music/chimes/05.mp4,$${sounds_dir}/music/chimes/06.mp4,$${sounds_dir}/music/chimes/07.mp4"/>
+    <param name="chime-freq" value="60"/>
+    <param name="chime-max" value="45"/>
   </directory>
 
 </configuration>
