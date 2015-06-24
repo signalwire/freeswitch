@@ -1476,11 +1476,9 @@ static switch_status_t speech_channel_write(speech_channel_t *schannel, void *da
 		return SWITCH_STATUS_FALSE;
 	}
 
-	switch_mutex_lock(schannel->mutex);
 	if (schannel->state == SPEECH_CHANNEL_PROCESSING) {
 		audio_queue_write(schannel->audio_queue, data, len);
 	}
-	switch_mutex_unlock(schannel->mutex);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -1502,7 +1500,6 @@ static switch_status_t speech_channel_read(speech_channel_t *schannel, void *dat
 		return SWITCH_STATUS_FALSE;
 	}
 
-	switch_mutex_lock(schannel->mutex);
 	switch (schannel->state) {
 	case SPEECH_CHANNEL_DONE:
 		/* pull any remaining audio - never blocking */
@@ -1518,7 +1515,6 @@ static switch_status_t speech_channel_read(speech_channel_t *schannel, void *dat
 	default:
 		status = SWITCH_STATUS_BREAK;
 	}
-	switch_mutex_unlock(schannel->mutex);
 
 	return status;
 }
