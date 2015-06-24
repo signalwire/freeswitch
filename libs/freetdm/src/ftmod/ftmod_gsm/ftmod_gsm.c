@@ -104,6 +104,7 @@ typedef struct ftdm_gsm_span_data_s {
 	ftdm_channel_t *dchan;
 	ftdm_channel_t *bchan;
 	int32_t call_id;
+	uint32_t sms_id;
 } ftdm_gsm_span_data_t;
 
 // command handler function type.
@@ -153,7 +154,9 @@ static void *ftdm_gsm_run(ftdm_thread_t *me, void *obj);
 /*                           static & global data                               */
 /*                                                                              */
 /********************************************************************************/
-int g_outbound_call_id = 8;
+
+/* At the moment we support only one concurrent call per span, so no need to have different ids */
+#define GSM_OUTBOUND_CALL_ID 8
 
 /* IO interface for the command API */
 static ftdm_io_interface_t g_ftdm_gsm_interface;
@@ -190,7 +193,8 @@ int on_wat_span_write(unsigned char span_id, void *buffer, unsigned len)
 	gsm_data = span->signal_data;
 	status = ftdm_channel_write(gsm_data->dchan, (void *)buffer, len, &outsize);
 	if (status != FTDM_SUCCESS) {
-		ftdm_log(FTDM_LOG_ERROR, "Failed to write %d bytes to d-channel in span %s\n", len, span->name);
+		char errbuf[255];
+		ftdm_log(FTDM_LOG_ERROR, "Failed to write %d bytes to d-channel in span %s: %s\n", len, span->name, strerror_r(errno, errbuf, sizeof(errbuf)));
 		return -1;
 	}
 	return len;
@@ -342,13 +346,16 @@ void on_wat_rel_ind(unsigned char span_id, uint8_t call_id, wat_rel_event_t *rel
 
 	ftdm_log(FTDM_LOG_INFO, "s%d: Call hangup (id:%d) cause:%d\n", span_id, call_id, rel_event->cause);
 
-	if(!(span = GetSpanByID(span_id, &gsm_data))) {
+	if (!(span = GetSpanByID(span_id, &gsm_data))) {
+		return;
+	}
+
+	if (gsm_data->bchan->state == FTDM_CHANNEL_STATE_HANGUP ||
+	    gsm_data->bchan->state == FTDM_CHANNEL_STATE_DOWN) {
 		return;
 	}
 
 	ftdm_set_state(gsm_data->bchan, FTDM_CHANNEL_STATE_HANGUP);
-
-	
 }
 
 void on_wat_rel_cfm(unsigned char span_id, uint8_t call_id)
@@ -705,7 +712,7 @@ static ftdm_status_t ftdm_gsm_state_advance(ftdm_channel_t *ftdmchan)
 					ftdm_gsm_span_data_t *gsm_data;
 					wat_con_event_t con_event;
 					gsm_data = ftdmchan->span->signal_data;
-					gsm_data->call_id = g_outbound_call_id++;				
+					gsm_data->call_id = GSM_OUTBOUND_CALL_ID;
 					memset(&con_event, 0, sizeof(con_event));
 					ftdm_set_string(con_event.called_num.digits, ftdmchan->caller_data.dnis.digits);
 					ftdm_log(FTDM_LOG_DEBUG, "Dialing number %s\n", con_event.called_num.digits);
@@ -1046,6 +1053,9 @@ static void *ftdm_gsm_run(ftdm_thread_t *me, void *obj)
 	ftdm_span_t *span = (ftdm_span_t *) obj;
 	ftdm_gsm_span_data_t *gsm_data = NULL;
 	ftdm_interrupt_t *data_sources[2] = {NULL, NULL};
+	ftdm_wait_flag_t flags = FTDM_READ | FTDM_EVENTS;
+	ftdm_status_t status = FTDM_SUCCESS;
+	char buffer[1025] = { 0 };
 	int waitms = 0;
 	
 	ftdm_log(FTDM_LOG_INFO,"ftdm_gsm_run\r\n");
@@ -1061,11 +1071,7 @@ static void *ftdm_gsm_run(ftdm_thread_t *me, void *obj)
 		goto done;
 	}
 
-
-
-
 	while (ftdm_running()) {
-
 		wat_span_run(span->span_id);
 
 		waitms = wat_span_schedule_next(span->span_id);
@@ -1073,48 +1079,25 @@ static void *ftdm_gsm_run(ftdm_thread_t *me, void *obj)
 			waitms = GSM_POLL_INTERVAL_MS;
 		}
 
-/////////////////////
+		flags = FTDM_READ | FTDM_EVENTS;
+		status = ftdm_channel_wait(gsm_data->dchan, &flags, waitms);
 		
+		/* check if this channel has a state change pending and process it if needed */
+		ftdm_channel_lock(gsm_data->bchan);
+		ftdm_channel_advance_states(gsm_data->bchan);
+		if (FTDM_SUCCESS == status && (flags & FTDM_READ)) {
+			int n = 0, m = 0;
 
-		{
-			ftdm_wait_flag_t flags = FTDM_READ | FTDM_EVENTS;
-			ftdm_status_t status = ftdm_channel_wait(gsm_data->dchan, &flags, waitms);
-			
-	
-			/* double check that this channel has a state change pending */
-			ftdm_channel_lock(gsm_data->bchan);
-			ftdm_channel_advance_states(gsm_data->bchan);
-					
-			if(FTDM_SUCCESS == status ) {
-		
-				if(flags &FTDM_READ ) {
-					char buffer[1025];
-					int n = 0, m = 0;
-					memset(buffer, 0, sizeof(buffer));
-
-					n = read_channel(gsm_data->dchan, buffer, sizeof(buffer)-1);
-					m = strlen(buffer);	
-					wat_span_process_read(span->span_id, buffer, m);
-#if 	 LOG_SIG_DATA
-						printf("<<======================= incomming data len = %d, %s\r\n", n, buffer);
-#endif
-
-				}
+			n = read_channel(gsm_data->dchan, buffer, sizeof(buffer) - 1);
+			if (n > 0) {
+				m = strlen(buffer); /* TODO: Hum? is this needed? why not using the return val from read_channel? */
+				wat_span_process_read(span->span_id, buffer, m);
 			}
-			
-			ftdm_channel_advance_states(gsm_data->bchan);
-			
-			ftdm_channel_unlock(gsm_data->bchan);
-			
-
 		}
-
-
-		
+		ftdm_channel_advance_states(gsm_data->bchan);
+		ftdm_channel_unlock(gsm_data->bchan);
 
 		ftdm_span_trigger_signals(span);
-
-
 	}
 
 done:
@@ -1203,9 +1186,8 @@ COMMAND_HANDLER(status)
 	const wat_sim_info_t *sim_info = NULL;
 	const wat_net_info_t *net_info = NULL;
 	const wat_sig_info_t *sig_info = NULL;
-	const wat_pin_stat_t *pin_stat = NULL;
+	wat_pin_stat_t pin_stat = 0;
 
-	
 	span_id = atoi(argv[0]);
 	if (ftdm_span_find_by_name(argv[0], &span) != FTDM_SUCCESS && ftdm_span_find(span_id, &span) != FTDM_SUCCESS) {
 		stream->write_function(stream, "-ERR Failed to find GSM span '%s'\n",  argv[1]);
@@ -1221,7 +1203,12 @@ COMMAND_HANDLER(status)
 	sim_info = wat_span_get_sim_info(span->span_id);
 	net_info = wat_span_get_net_info(span->span_id);
 	sig_info = wat_span_get_sig_info(span->span_id);
-	pin_stat = wat_span_get_pin_info(span->span_id);
+
+	/* This is absolutely retarded and should be fixed in libwat
+	 * why the hell would you return a pointer to an internal state enum instead of a copy?
+	 * probably the same applies to the rest of the info (sim_info, chip_info, net_info, etc),
+	 * but at least there you could have the lame excuse that you don't need to copy the whole struct */
+	pin_stat = *wat_span_get_pin_info(span->span_id);
 	
 	stream->write_function(stream, "Span %d (%s):\n",  span->span_id, span->name);
 
@@ -1243,6 +1230,10 @@ COMMAND_HANDLER(status)
 		wat_net_stat2str(net_info->stat), net_info->lac, net_info->ci, net_info->operator_name);		
 
 		
+	stream->write_function(stream, "Sig Info: rssi(%d) ber(%d)\n", sig_info->rssi, sig_info->ber);
+
+	stream->write_function(stream, "PIN Status: %s\n", wat_pin_stat2str(pin_stat));
+
 	stream->write_function(stream, "\n");
 	
 	stream->write_function(stream, "+OK.\n");
@@ -1254,9 +1245,10 @@ COMMAND_HANDLER(status)
 COMMAND_HANDLER(sms)
 {
 	int span_id = 0, i;
+	uint32_t sms_id = 0;
 	ftdm_span_t *span = NULL;
 	wat_sms_event_t sms;
-
+	ftdm_gsm_span_data_t *gsm_data = NULL;
 	
 	span_id = atoi(argv[0]);
 	if (ftdm_span_find_by_name(argv[0], &span) != FTDM_SUCCESS && ftdm_span_find(span_id, &span) != FTDM_SUCCESS) {
@@ -1268,9 +1260,9 @@ COMMAND_HANDLER(sms)
 		stream->write_function(stream, "-ERR '%s' is not a valid GSM span\n",  argv[1]);
 		return FTDM_FAIL;
 	}
+	gsm_data = span->signal_data;
 
 	memset(&sms, 0, sizeof(sms));
-
 	strcpy(sms.to.digits, argv[1]);
 	sms.type = WAT_SMS_TXT;
 	sms.content.data[0] = '\0';
@@ -1280,11 +1272,16 @@ COMMAND_HANDLER(sms)
 	}
 	sms.content.len = strlen(sms.content.data);
 	
-	
-	if(WAT_SUCCESS != wat_sms_req(span->span_id, g_outbound_call_id++ , &sms)) {
+	ftdm_channel_lock(gsm_data->bchan);
+
+	sms_id = gsm_data->sms_id >= WAT_MAX_SMSS_PER_SPAN ? 0 : gsm_data->sms_id;
+	gsm_data->sms_id++;
+
+	ftdm_channel_unlock(gsm_data->bchan);
+
+	if (WAT_SUCCESS != wat_sms_req(span->span_id, sms_id, &sms)) {
 		stream->write_function(stream, "Failed to Send SMS \n");
-	}
-	else {
+	} else {
 		stream->write_function(stream, "SMS Sent.\n");
 	}
 	return FTDM_SUCCESS;
