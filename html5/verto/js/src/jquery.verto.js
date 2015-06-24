@@ -2204,7 +2204,7 @@
 		.catch(function(err) {
 		    console.log(err.name + ": " + error.message);
 		    runtime();
-		}).else(runtime);
+		});
 	}
 
     };
