@@ -358,10 +358,10 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 						flush_video_queue(source->video_q);
 						if (use_fh == &source->chime_fh) {
 							source->chime_counter = source->rate * source->chime_freq;
-							use_fh = &fh;
-							goto retry;
-							//switch_core_file_close(&fh);
+							switch_core_file_close(&fh);
+							use_fh = &fh;							
 						}
+						goto retry;
 					}
 				}
 				
