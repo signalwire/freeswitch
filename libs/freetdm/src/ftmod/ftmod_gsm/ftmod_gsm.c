@@ -104,6 +104,7 @@ typedef struct ftdm_gsm_span_data_s {
 	ftdm_channel_t *dchan;
 	ftdm_channel_t *bchan;
 	int32_t call_id;
+	uint32_t sms_id;
 } ftdm_gsm_span_data_t;
 
 // command handler function type.
@@ -153,7 +154,9 @@ static void *ftdm_gsm_run(ftdm_thread_t *me, void *obj);
 /*                           static & global data                               */
 /*                                                                              */
 /********************************************************************************/
-int g_outbound_call_id = 8;
+
+/* At the moment we support only one concurrent call per span, so no need to have different ids */
+#define GSM_OUTBOUND_CALL_ID 8
 
 /* IO interface for the command API */
 static ftdm_io_interface_t g_ftdm_gsm_interface;
@@ -705,7 +708,7 @@ static ftdm_status_t ftdm_gsm_state_advance(ftdm_channel_t *ftdmchan)
 					ftdm_gsm_span_data_t *gsm_data;
 					wat_con_event_t con_event;
 					gsm_data = ftdmchan->span->signal_data;
-					gsm_data->call_id = g_outbound_call_id++;				
+					gsm_data->call_id = GSM_OUTBOUND_CALL_ID;
 					memset(&con_event, 0, sizeof(con_event));
 					ftdm_set_string(con_event.called_num.digits, ftdmchan->caller_data.dnis.digits);
 					ftdm_log(FTDM_LOG_DEBUG, "Dialing number %s\n", con_event.called_num.digits);
@@ -1254,9 +1257,10 @@ COMMAND_HANDLER(status)
 COMMAND_HANDLER(sms)
 {
 	int span_id = 0, i;
+	uint32_t sms_id = 0;
 	ftdm_span_t *span = NULL;
 	wat_sms_event_t sms;
-
+	ftdm_gsm_span_data_t *gsm_data = NULL;
 	
 	span_id = atoi(argv[0]);
 	if (ftdm_span_find_by_name(argv[0], &span) != FTDM_SUCCESS && ftdm_span_find(span_id, &span) != FTDM_SUCCESS) {
@@ -1268,9 +1272,9 @@ COMMAND_HANDLER(sms)
 		stream->write_function(stream, "-ERR '%s' is not a valid GSM span\n",  argv[1]);
 		return FTDM_FAIL;
 	}
+	gsm_data = span->signal_data;
 
 	memset(&sms, 0, sizeof(sms));
-
 	strcpy(sms.to.digits, argv[1]);
 	sms.type = WAT_SMS_TXT;
 	sms.content.data[0] = '\0';
@@ -1280,11 +1284,16 @@ COMMAND_HANDLER(sms)
 	}
 	sms.content.len = strlen(sms.content.data);
 	
-	
-	if(WAT_SUCCESS != wat_sms_req(span->span_id, g_outbound_call_id++ , &sms)) {
+	ftdm_channel_lock(gsm_data->bchan);
+
+	sms_id = gsm_data->sms_id >= WAT_MAX_SMSS_PER_SPAN ? 0 : gsm_data->sms_id;
+	gsm_data->sms_id++;
+
+	ftdm_channel_unlock(gsm_data->bchan);
+
+	if (WAT_SUCCESS != wat_sms_req(span->span_id, sms_id, &sms)) {
 		stream->write_function(stream, "Failed to Send SMS \n");
-	}
-	else {
+	} else {
 		stream->write_function(stream, "SMS Sent.\n");
 	}
 	return FTDM_SUCCESS;
