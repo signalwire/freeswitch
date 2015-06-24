@@ -193,7 +193,8 @@ int on_wat_span_write(unsigned char span_id, void *buffer, unsigned len)
 	gsm_data = span->signal_data;
 	status = ftdm_channel_write(gsm_data->dchan, (void *)buffer, len, &outsize);
 	if (status != FTDM_SUCCESS) {
-		ftdm_log(FTDM_LOG_ERROR, "Failed to write %d bytes to d-channel in span %s\n", len, span->name);
+		char errbuf[255];
+		ftdm_log(FTDM_LOG_ERROR, "Failed to write %d bytes to d-channel in span %s: %s\n", len, span->name, strerror_r(errno, errbuf, sizeof(errbuf)));
 		return -1;
 	}
 	return len;
@@ -345,13 +346,16 @@ void on_wat_rel_ind(unsigned char span_id, uint8_t call_id, wat_rel_event_t *rel
 
 	ftdm_log(FTDM_LOG_INFO, "s%d: Call hangup (id:%d) cause:%d\n", span_id, call_id, rel_event->cause);
 
-	if(!(span = GetSpanByID(span_id, &gsm_data))) {
+	if (!(span = GetSpanByID(span_id, &gsm_data))) {
+		return;
+	}
+
+	if (gsm_data->bchan->state == FTDM_CHANNEL_STATE_HANGUP ||
+	    gsm_data->bchan->state == FTDM_CHANNEL_STATE_DOWN) {
 		return;
 	}
 
 	ftdm_set_state(gsm_data->bchan, FTDM_CHANNEL_STATE_HANGUP);
-
-	
 }
 
 void on_wat_rel_cfm(unsigned char span_id, uint8_t call_id)
