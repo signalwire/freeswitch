@@ -1240,7 +1240,7 @@ function init() {
     refresh_devices();
 }
 
-$(document).ready(function() {
+$(window).load(function() {
     var hash = window.location.hash.substring(1);    
     var a = [];
 
