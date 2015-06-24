@@ -2,7 +2,7 @@
 #
 #       /etc/rc.d/init.d/freeswitch
 #
-#       The FreeSwitch Open Source Voice Platform
+#       The FreeSWITCH Open Source Voice Platform
 #
 #  chkconfig: 345 89 14
 #  description: Starts and stops the freeswitch server daemon
@@ -20,7 +20,7 @@ FS_USER=${FS_USER-freeswitch}
 FS_FILE=${FS_FILE-/usr/bin/freeswitch} 
 FS_HOME=${FS_HOME-/var/run/freeswitch}
 LOCK_FILE=/var/lock/subsys/freeswitch
-FREESWITCH_ARGS="-nc"
+FREESWITCH_ARGS="-ncwait"
 RETVAL=0
 
 # Source usr/localions file
