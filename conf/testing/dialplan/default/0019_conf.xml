@@ -45,4 +45,12 @@
   </condition>
 </extension>
 
+<!-- test video chime list via local_stream in conference -->
+<extension name="conf">
+  <condition field="destination_number" expression="^6074$">
+    <action application="answer"/>  
+    <action application="conference" data="6070@video-mcu-stereo-chime"/>  
+  </condition>
+</extension>
+
 
