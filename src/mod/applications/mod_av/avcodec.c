@@ -375,7 +375,7 @@ static switch_status_t open_encoder(h264_codec_context_t *context, uint32_t widt
 	context->encoder_ctx->qmax = 51;   // qmax=51
 	context->encoder_ctx->max_qdiff = 4;   // qdiff=4
 	context->encoder_ctx->max_b_frames = 3;    // bf=3
-	context->encoder_ctx->refs = 3;    // refs=3
+	//context->encoder_ctx->refs = 3;    // refs=3
 	context->encoder_ctx->trellis = 1; // trellis=1
 
 	
