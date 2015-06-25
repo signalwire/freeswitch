@@ -2683,6 +2683,7 @@ SWITCH_DECLARE(void) switch_core_session_video_reset(switch_core_session_t *sess
 	//switch_channel_clear_flag(session->channel, CF_VIDEO_DECODED_READ);
 	switch_channel_clear_flag(session->channel, CF_VIDEO_DEBUG_READ);
 	switch_channel_clear_flag(session->channel, CF_VIDEO_DEBUG_WRITE);
+	switch_channel_clear_flag(session->channel, CF_VIDEO_BLANK);
 	switch_core_session_request_video_refresh(session);
 }
 

@@ -550,6 +550,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 	if (switch_core_file_has_video(fh)) {
 		switch_channel_set_flag(channel, CF_VIDEO_ECHO);
 		switch_core_media_set_video_file(session, fh, SWITCH_RW_READ);
+	} else if (switch_channel_test_flag(channel, CF_VIDEO)) {
+		switch_channel_set_flag(channel, CF_VIDEO_BLANK);
 	}
 
 	if (sample_start > 0) {
@@ -624,6 +626,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 				switch_channel_clear_flag_recursive(channel, CF_VIDEO_DECODED_READ);
 				switch_core_media_set_video_file(session, NULL, SWITCH_RW_READ);
 			}
+			switch_channel_clear_flag(channel, CF_VIDEO_BLANK);
 			switch_core_file_close(fh);
 
 			switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
@@ -801,6 +804,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 		switch_channel_clear_flag_recursive(channel, CF_VIDEO_DECODED_READ);
 		switch_core_media_set_video_file(session, NULL, SWITCH_RW_READ);
 	}
+	switch_channel_clear_flag(channel, CF_VIDEO_BLANK);
 	switch_core_file_close(fh);
 
 

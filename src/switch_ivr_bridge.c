@@ -478,6 +478,13 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 			vh.session_a = session_a;
 			vh.session_b = session_b;
 			launch_video(&vh);
+		} else {
+			if (switch_channel_test_flag(chan_a, CF_VIDEO)) {
+				switch_channel_set_flag(chan_a, CF_VIDEO_BLANK);
+			}
+			if (switch_channel_test_flag(chan_b, CF_VIDEO)) {
+				switch_channel_set_flag(chan_b, CF_VIDEO_BLANK);
+			}
 		}
 #endif
 
@@ -751,6 +758,8 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 		switch_channel_set_flag(chan_b, CF_INTERCEPT);
 	}
 
+	switch_channel_clear_flag(chan_a, CF_VIDEO_BLANK);
+	switch_channel_clear_flag(chan_b, CF_VIDEO_BLANK);
 
 	switch_core_session_kill_channel(session_b, SWITCH_SIG_BREAK);
 	data->done = 1;
