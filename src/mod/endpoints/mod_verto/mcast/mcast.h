@@ -43,6 +43,7 @@ extern "C" {
 
 #include <sys/types.h>
 #ifdef WIN32
+#include <ws2tcpip.h> // struct 'sockaddr_in6'
 #include <WinSock2.h>
 #else
 #include <sys/socket.h>
