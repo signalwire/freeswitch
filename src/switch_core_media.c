@@ -5014,7 +5014,7 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 		} else if (switch_channel_test_flag(channel, CF_VIDEO_DECODED_READ)) {
 			send_blank = 1;
 		}
-		send_blank = 1;
+
 		if ((send_blank || switch_channel_test_flag(channel, CF_VIDEO_BLANK)) && 
 			!session->video_read_callback && !switch_channel_test_flag(session->channel, CF_BRIDGED)) {
 			fr.img = blank_img;
