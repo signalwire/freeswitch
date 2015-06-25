@@ -3847,7 +3847,7 @@ static int start_jsock(verto_profile_t *profile, ws_socket_t sock, int family)
 		} else {
 			jsock->remote_port = ntohs(jsock->remote_addr6.sin6_port);
 			inet_ntop(AF_INET6, &jsock->remote_addr6.sin6_addr, jsock->remote_host, sizeof(jsock->remote_host));
-			jsock->name = switch_core_sprintf(pool, "%s:%d", jsock->remote_host, jsock->remote_port);
+			jsock->name = switch_core_sprintf(pool, "[%s]:%d", jsock->remote_host, jsock->remote_port);
 		}
 	}
 	
@@ -3856,7 +3856,7 @@ static int start_jsock(verto_profile_t *profile, ws_socket_t sock, int family)
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s Client Connect.\n", jsock->name);
 	if (switch_event_create_subclass(&s_event, SWITCH_EVENT_CUSTOM, MY_EVENT_CLIENT_CONNECT) == SWITCH_STATUS_SUCCESS) {
 		switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "verto_profile_name", profile->name);
-		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "verto_client_address", "%s:%d", jsock->remote_host, jsock->remote_port);
+		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "verto_client_address", "%s", jsock->name);
 		switch_event_fire(&s_event);
 	}
 
@@ -4460,7 +4460,8 @@ static switch_status_t parse_config(const char *cf)
 				int i;
 
 				for (i = 0; i < profile->i; i++) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s Bound to %s:%d\n", 
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,
+									  strchr(profile->ip[i].local_ip, ':') ? "%s Bound to [%s]:%d\n" : "%s Bound to %s:%d\n", 
 									  profile->name, profile->ip[i].local_ip, profile->ip[i].local_port);
 				}
 			}
@@ -4634,7 +4635,8 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 	switch_mutex_lock(globals.mutex);
 	for(profile = globals.profile_head; profile; profile = profile->next) {
 		for (i = 0; i < profile->i; i++) { 
-			char *tmpurl = switch_mprintf("%s:%s:%d",(profile->ip[i].secure == 1) ? "wss" : "ws", profile->ip[i].local_ip, profile->ip[i].local_port);
+			char *tmpurl = switch_mprintf(strchr(profile->ip[i].local_ip, ':') ? "%s:[%s]:%d" : "%s:%s:%d",
+										  (profile->ip[i].secure == 1) ? "wss" : "ws", profile->ip[i].local_ip, profile->ip[i].local_port);
 			stream->write_function(stream, "%25s\t%s\t  %40s\t%s\n", profile->name, "profile", tmpurl, (profile->running) ? "RUNNING" : "DOWN");
 			switch_safe_free(tmpurl);
 		}
@@ -4677,7 +4679,8 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 	switch_mutex_lock(globals.mutex);
 	for(profile = globals.profile_head; profile; profile = profile->next) {
 		for (i = 0; i < profile->i; i++) { 
-			char *tmpurl = switch_mprintf("%s:%s:%d",(profile->ip[i].secure == 1) ? "wss" : "ws", profile->ip[i].local_ip, profile->ip[i].local_port);
+			char *tmpurl = switch_mprintf(strchr(profile->ip[i].local_ip, ':') ? "%s:[%s]:%d" : "%s:%s:%d",
+										  (profile->ip[i].secure == 1) ? "wss" : "ws", profile->ip[i].local_ip, profile->ip[i].local_port);
 			stream->write_function(stream, "<profile>\n<name>%s</name>\n<type>%s</type>\n<data>%s</data>\n<state>%s</state>\n</profile>\n", profile->name, "profile", tmpurl, (profile->running) ? "RUNNING" : "DOWN");
 			switch_safe_free(tmpurl);
 		}
