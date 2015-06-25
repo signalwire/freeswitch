@@ -4915,11 +4915,9 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 
 		if (!smh->video_write_fh && !smh->video_read_fh && switch_core_session_media_flow(session, SWITCH_MEDIA_TYPE_VIDEO) == SWITCH_MEDIA_FLOW_SENDONLY) {
 			do_sleep = 1;
-		} else {
-			xloops = 0;
 		}
-
-		if (!switch_channel_test_flag(channel, CF_VIDEO_DECODED_READ) && (xloops > 20 || switch_channel_test_flag(channel, CF_VIDEO_PASSIVE))) {
+		
+		if (!switch_channel_test_flag(channel, CF_VIDEO_DECODED_READ) && (++xloops > 20 || switch_channel_test_flag(channel, CF_VIDEO_PASSIVE))) {
 			switch_channel_set_flag(channel, CF_VIDEO_READY);
 		}
 	
@@ -5015,11 +5013,10 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 			send_blank = 1;
 		}
 
-		if ((send_blank || switch_channel_test_flag(channel, CF_VIDEO_BLANK)) && 
-			!session->video_read_callback && !switch_channel_test_flag(session->channel, CF_BRIDGED)) {
+		if ((send_blank || switch_channel_test_flag(channel, CF_VIDEO_BLANK)) && !session->video_read_callback) {
 			fr.img = blank_img;
 			switch_yield(10000);
-			switch_core_session_write_video_frame(session, &fr, SWITCH_IO_FLAG_NONE, SWITCH_IO_FLAG_FORCE);
+			switch_core_session_write_video_frame(session, &fr, SWITCH_IO_FLAG_FORCE, 0);
 		} else if (read_frame && (switch_channel_test_flag(channel, CF_VIDEO_ECHO))) {
 			switch_core_session_write_video_frame(session, read_frame, SWITCH_IO_FLAG_NONE, 0);
 		}

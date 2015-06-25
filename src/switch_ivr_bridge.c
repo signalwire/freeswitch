@@ -477,11 +477,14 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 			vid_launch++;
 			vh.session_a = session_a;
 			vh.session_b = session_b;
+			switch_channel_clear_flag(chan_a, CF_VIDEO_BLANK);
+			switch_channel_clear_flag(chan_b, CF_VIDEO_BLANK);
 			launch_video(&vh);
 		} else {
 			if (switch_channel_test_flag(chan_a, CF_VIDEO)) {
 				switch_channel_set_flag(chan_a, CF_VIDEO_BLANK);
 			}
+
 			if (switch_channel_test_flag(chan_b, CF_VIDEO)) {
 				switch_channel_set_flag(chan_b, CF_VIDEO_BLANK);
 			}
