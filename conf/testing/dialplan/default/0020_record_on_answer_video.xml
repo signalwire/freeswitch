@@ -22,13 +22,27 @@
   </condition>
 </extension> 
 
-<extension name="test2">
+<extension name="test3">
   <condition field="destination_number" expression="^(6082)$">
     <action application="export" data="nolocal:absolute_codec_string=OPUS,VP8"/>
     <action application="set" data="hangup_after_bridge=true"/>
     <action application="set" data="record_concat_video=true"/>
     <action application="answer"/>
     <action application="record_session" data="/var/www/html/rec/${strftime(%Y%m%d_%H%M%S)}_${destination_number}.mp4"/>
+    <action application="bridge" data="sofia/external/sip:decode@cantina.freeswitch.org"/>
+  </condition>
+</extension> 
+
+<extension name="test4">
+  <condition field="destination_number" expression="^(6083)$">
+    <action application="set" data="hangup_after_bridge=true"/>
+    <!--<action application="answer"/>-->
+    <action application="export" data="record_concat_video=true"/>
+    <!-- Shouldn't bind the same file name to both legs,
+	 if both press *2 it clobbers the file -->
+    <!-- bind_meta_app can have these args <key> [a|b|ab] [a|b|o|s] -->
+    <action application="bind_meta_app" data="2 a i record_session::/var/www/html/rec/${strftime(%Y%m%d_%H%M%S)}_${destination_number}_a.mp4"/>
+    <action application="bind_meta_app" data="2 b i record_session::/var/www/html/rec/${strftime(%Y%m%d_%H%M%S)}_${destination_number}_b.mp4"/>
     <action application="bridge" data="sofia/external/sip:decode@cantina.freeswitch.org"/>
   </condition>
 </extension> 
