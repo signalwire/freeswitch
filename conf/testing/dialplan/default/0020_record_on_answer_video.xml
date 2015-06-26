@@ -43,6 +43,19 @@
     <!-- bind_meta_app can have these args <key> [a|b|ab] [a|b|o|s] -->
     <action application="bind_meta_app" data="2 a i record_session::/var/www/html/rec/${strftime(%Y%m%d_%H%M%S)}_${destination_number}_a.mp4"/>
     <action application="bind_meta_app" data="2 b i record_session::/var/www/html/rec/${strftime(%Y%m%d_%H%M%S)}_${destination_number}_b.mp4"/>
-    <action application="bridge" data="sofia/external/sip:decode@cantina.freeswitch.org"/>
+    <action application="bridge" data="{sip_h_X-Send-DTMF=*2}sofia/external/sip:decode@cantina.freeswitch.org"/>
+  </condition>
+</extension> 
+
+<extension name="test5">
+  <condition field="destination_number" expression="^(6084)$">
+    <action application="set" data="hangup_after_bridge=true"/>
+    <!--<action application="answer"/>-->
+    <!-- Shouldn't bind the same file name to both legs,
+	 if both press *2 it clobbers the file -->
+    <!-- bind_meta_app can have these args <key> [a|b|ab] [a|b|o|s] -->
+    <action application="bind_meta_app" data="2 a i record_session::/var/www/html/rec/${strftime(%Y%m%d_%H%M%S)}_${destination_number}_a.mp4"/>
+    <action application="bind_meta_app" data="2 b i record_session::/var/www/html/rec/${strftime(%Y%m%d_%H%M%S)}_${destination_number}_b.mp4"/>
+    <action application="bridge" data="{sip_h_X-Send-DTMF=*2}sofia/external/sip:decode@cantina.freeswitch.org"/>
   </condition>
 </extension> 
