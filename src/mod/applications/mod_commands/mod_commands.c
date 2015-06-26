@@ -2744,6 +2744,9 @@ SWITCH_STANDARD_API(transfer_function)
 				switch_core_session_t *tmp = tsession;
 				tsession = other_session;
 				other_session = NULL;
+				if (switch_true(switch_channel_get_variable(channel, "recording_follow_transfer"))) {
+					switch_core_media_bug_transfer_recordings(tmp, tsession);
+				}
 				switch_core_session_rwunlock(tmp);
 			}
 		} else if (!strcasecmp(arg, "both")) {
