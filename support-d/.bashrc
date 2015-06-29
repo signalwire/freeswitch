@@ -6,7 +6,30 @@ export UNAME=`uname -s`
 if [ "`id -u`" = "0" ]; then
     if [ "${UNAME}" = "Linux" ]; then
 	export PATH="$PATH:/opt/bin:/usr/local/bin:/usr/local/sbin:/usr/local/freeswitch/bin"
-	export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:/usr/lib/x86_64-linux-gnu/pkgconfig:/usr/local/lib/pkgconfig
+	export PCVAR=`find / -name freeswitch.pc| grep -v build/freeswitch.pc`
+	if [ -n "$PCVAR" ]; then
+	    export PCDIR=${PCVAR%/*}
+	    export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:$PCDIR:/usr/lib/x86_64-linux-gnu/pkgconfig:/usr/local/lib/pkgconfig
+	    export localstatedir=`pkg-config freeswitch --variable=localstatedir`
+	    export sysconfdir=`pkg-config freeswitch --variable=sysconfdir`
+	    export logfiledir=`pkg-config freeswitch --variable=logfiledir`
+	    export grammardir=`pkg-config freeswitch --variable=grammardir`
+	    export runtimedir=`pkg-config freeswitch --variable=runtimedir`
+	    export libexecdir=`pkg-config freeswitch --variable=libexecdir`
+	    export exec_prefix=`pkg-config freeswitch --variable=exec_prefix`
+	    export modulesdir=`pkg-config freeswitch --variable=modulesdir`
+	    export bindir=`pkg-config freeswitch --variable=bindir`
+	    export dbdir=`pkg-config freeswitch --variable=dbdir`
+	    export recordingsdir=`pkg-config freeswitch --variable=recordingsdir`
+	    export prefix=`pkg-config freeswitch --variable=prefix`
+	    export libdir=`pkg-config freeswitch --variable=libdir`
+	    export scriptdir=`pkg-config freeswitch --variable=scriptdir`
+	    export includedir=`pkg-config freeswitch --variable=includedir`
+	    export htdocsdir=`pkg-config freeswitch --variable=htdocsdir`
+	    export soundsdir=`pkg-config freeswitch --variable=soundsdir`
+	else
+	    export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:/usr/lib/x86_64-linux-gnu/pkgconfig:/usr/local/lib/pkgconfig
+	fi
     fi
     if [ "${UNAME}" = "SunOS" ]; then
 	export PATH="$PATH:/opt/64/bin:/opt/bin:/usr/local/bin:/usr/local/sbin:/usr/local/freeswitch/bin"
@@ -83,12 +106,12 @@ alias mecas='emacs'
 alias bgit='git commit --author "Brian West <brian@freeswitch.org>"'
 alias mgit='git commit --author "Mike Jerris <mike@jerris.com>"'
 alias tgit='git commit --author "Anthony Minessale <anthm@freeswitch.org>"'
-alias dp='emacs /usr/local/freeswitch/conf/dialplan/default.xml'
-alias go='/usr/local/freeswitch/bin/freeswitch -nonat'
-alias fstop='top -p `cat /usr/local/freeswitch/run/freeswitch.pid`'
-alias fsgcore='gcore `cat /usr/local/freeswitch/run/freeswitch.pid`'
-alias fsgdb='gdb /usr/local/freeswitch/bin/freeswitch `cat /usr/local/freeswitch/run/freeswitch.pid`'
-alias fscore='gdb /usr/local/freeswitch/bin/freeswitch `ls -rt core.* | tail -n1`'
+alias dp='emacs $sysconfdir/dialplan/default.xml'
+alias go='$bindir/freeswitch -nonat'
+alias fstop='top -p `cat $runtimedir/freeswitch.pid`'
+alias fsgcore='gcore `cat $runtimedir/freeswitch.pid`'
+alias fsgdb='gdb $bindir/freeswitch `cat $runtimedir/freeswitch.pid`'
+alias fscore='gdb $bindir/freeswitch `ls -rt core.* | tail -n1`'
 alias emacs='emacs -nw'
 
 if [ "${UNAME}" = "Linux" ]; then
