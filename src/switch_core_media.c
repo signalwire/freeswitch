@@ -10495,12 +10495,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_video_frame(switch_cor
 				prune++;
 			}
 
-
-			switch_thread_rwlock_unlock(session->bug_rwlock);
-			if (prune) {
-				switch_core_media_bug_prune(session);
-			}
 		}
+
+		switch_thread_rwlock_unlock(session->bug_rwlock);
+
+		if (prune) {
+			switch_core_media_bug_prune(session);
+		}
+		
 	}
 
 	write_frame = *frame;
@@ -10723,7 +10725,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_video_frame(switch_core
 				prune++;
 			}
 		}
+		
 		switch_thread_rwlock_unlock(session->bug_rwlock);
+
 		if (prune) {
 			switch_core_media_bug_prune(session);
 		}
