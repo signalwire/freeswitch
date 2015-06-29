@@ -50,7 +50,7 @@ void sngisdn_process_con_ind (sngisdn_event_data_t *sngisdn_event)
 	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*) ftdmchan->span->signal_data;
 	ConEvnt *conEvnt = &sngisdn_event->event.conEvnt;
 
-	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
+	ISDN_FUNC_TRACE_ENTER(__FTDM_FUNC__);
 
 	ftdm_assert(!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_STATE_CHANGE), "State change flag pending\n");
 	
@@ -274,7 +274,7 @@ void sngisdn_process_con_ind (sngisdn_event_data_t *sngisdn_event)
 			ftdm_log_chan(ftdmchan, FTDM_LOG_CRIT, "Processing SETUP in an invalid state (%s)\n", ftdm_channel_state2str(ftdmchan->state));
 			break;
 	}
-	ISDN_FUNC_TRACE_EXIT(__FUNCTION__);
+	ISDN_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 	return;
 }
 
@@ -289,7 +289,7 @@ void sngisdn_process_con_cfm (sngisdn_event_data_t *sngisdn_event)
 	ftdm_channel_t *ftdmchan = sngisdn_info->ftdmchan;
 	CnStEvnt *cnStEvnt = &sngisdn_event->event.cnStEvnt;
 
-	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
+	ISDN_FUNC_TRACE_ENTER(__FTDM_FUNC__);
 				
 	ftdm_assert(!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_STATE_CHANGE), "State change flag pending\n");
 	
@@ -304,7 +304,7 @@ void sngisdn_process_con_cfm (sngisdn_event_data_t *sngisdn_event)
 		} else {
 			/* We already assigned this call, do nothing */
 			ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Call already assigned, ignoring connect\n");
-			ISDN_FUNC_TRACE_EXIT(__FUNCTION__);
+			ISDN_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 			return;
 		}
 	}
@@ -359,7 +359,7 @@ void sngisdn_process_con_cfm (sngisdn_event_data_t *sngisdn_event)
 		}
 	}
 
-	ISDN_FUNC_TRACE_EXIT(__FUNCTION__);
+	ISDN_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 	return;
 }
 
@@ -377,7 +377,7 @@ void sngisdn_process_cnst_ind (sngisdn_event_data_t *sngisdn_event)
 	
 	CnStEvnt *cnStEvnt = &sngisdn_event->event.cnStEvnt;
 
-	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
+	ISDN_FUNC_TRACE_ENTER(__FTDM_FUNC__);
 
 	ftdm_assert(!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_STATE_CHANGE), "State change flag pending\n");
 
@@ -535,7 +535,7 @@ void sngisdn_process_cnst_ind (sngisdn_event_data_t *sngisdn_event)
 	}
 
 sngisdn_process_cnst_ind_end:
-	ISDN_FUNC_TRACE_EXIT(__FUNCTION__);
+	ISDN_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 	return;
 }
 
@@ -549,7 +549,7 @@ void sngisdn_process_disc_ind (sngisdn_event_data_t *sngisdn_event)
 	
 	DiscEvnt *discEvnt = &sngisdn_event->event.discEvnt;
 
-	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
+	ISDN_FUNC_TRACE_ENTER(__FTDM_FUNC__);
 
 	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Processing DISCONNECT (suId:%u suInstId:%u spInstId:%u)\n", suId, suInstId, spInstId);
 
@@ -599,7 +599,7 @@ void sngisdn_process_disc_ind (sngisdn_event_data_t *sngisdn_event)
 			break;
 	}
 
-	ISDN_FUNC_TRACE_EXIT(__FUNCTION__);
+	ISDN_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 	return;
 }
 
@@ -613,7 +613,7 @@ void sngisdn_process_rel_ind (sngisdn_event_data_t *sngisdn_event)
 	
 	RelEvnt *relEvnt = &sngisdn_event->event.relEvnt;
 
-	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
+	ISDN_FUNC_TRACE_ENTER(__FTDM_FUNC__);
 
 	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Processing RELEASE/RELEASE COMPLETE (suId:%u suInstId:%u spInstId:%u)\n", suId, suInstId, spInstId);
 	
@@ -626,7 +626,7 @@ void sngisdn_process_rel_ind (sngisdn_event_data_t *sngisdn_event)
 		ftdm_clear_flag(sngisdn_info, FLAG_DELAYED_REL);
 		clear_call_glare_data(sngisdn_info);
 
-		ISDN_FUNC_TRACE_EXIT(__FUNCTION__);
+		ISDN_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 		return;
 	}
 
@@ -702,7 +702,7 @@ void sngisdn_process_rel_ind (sngisdn_event_data_t *sngisdn_event)
 	}
 
 
-	ISDN_FUNC_TRACE_EXIT(__FUNCTION__);
+	ISDN_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 	return;
 }
 
@@ -715,13 +715,13 @@ void sngisdn_process_dat_ind (sngisdn_event_data_t *sngisdn_event)
 	sngisdn_chan_data_t *sngisdn_info = sngisdn_event->sngisdn_info;
 	ftdm_channel_t *ftdmchan = sngisdn_info->ftdmchan;
 
-	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);	
+	ISDN_FUNC_TRACE_ENTER(__FTDM_FUNC__);	
 
 	/* Function does not require any info from infoEvnt struct for now */
 	/* InfoEvnt *infoEvnt = &sngisdn_event->event.infoEvnt; */
 	
 	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Processing DATA IND (suId:%u suInstId:%u spInstId:%u)\n", suId, suInstId, spInstId);
-	ISDN_FUNC_TRACE_EXIT(__FUNCTION__);
+	ISDN_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 	return;
 }
 
@@ -734,13 +734,13 @@ void sngisdn_process_sshl_ind (sngisdn_event_data_t *sngisdn_event)
 	sngisdn_chan_data_t *sngisdn_info = sngisdn_event->sngisdn_info;
 	ftdm_channel_t *ftdmchan = sngisdn_info->ftdmchan;
 
-	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
+	ISDN_FUNC_TRACE_ENTER(__FTDM_FUNC__);
 
 	/* Function does not require any info from ssHlEvnt struct for now */
 	/* SsHlEvnt *ssHlEvnt = &sngisdn_event->event.ssHlEvnt; */
 	
 	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Processing SSHL IND (suId:%u suInstId:%u spInstId:%u)\n", suId, suInstId, spInstId);
-	ISDN_FUNC_TRACE_EXIT(__FUNCTION__);
+	ISDN_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 	return;
 }
 
@@ -753,13 +753,13 @@ void sngisdn_process_sshl_cfm (sngisdn_event_data_t *sngisdn_event)
 	sngisdn_chan_data_t *sngisdn_info = sngisdn_event->sngisdn_info;
 	ftdm_channel_t *ftdmchan = sngisdn_info->ftdmchan;
 
-	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
+	ISDN_FUNC_TRACE_ENTER(__FTDM_FUNC__);
 	
 	/* Function does not require any info from ssHlEvnt struct for now */
 	/* SsHlEvnt *ssHlEvnt = &sngisdn_event->event.ssHlEvnt; */
 
 	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Processing SSHL CFM (suId:%u suInstId:%u spInstId:%u)\n", suId, suInstId, spInstId);
-	ISDN_FUNC_TRACE_EXIT(__FUNCTION__);
+	ISDN_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 	return;
 }
 
@@ -772,13 +772,13 @@ void sngisdn_process_rmrt_ind (sngisdn_event_data_t *sngisdn_event)
 	sngisdn_chan_data_t *sngisdn_info = sngisdn_event->sngisdn_info;
 	ftdm_channel_t *ftdmchan = sngisdn_info->ftdmchan;
 
-	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
+	ISDN_FUNC_TRACE_ENTER(__FTDM_FUNC__);
 
 	/* Function does not require any info from ssHlEvnt struct for now */
 	/* RmRtEvnt *rmRtEvnt = &sngisdn_event->event.rmRtEvnt; */
 
 	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Processing RESUME/RETRIEVE IND (suId:%u suInstId:%u spInstId:%u)\n", suId, suInstId, spInstId);
-	ISDN_FUNC_TRACE_EXIT(__FUNCTION__);
+	ISDN_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 	return;
 }
 
@@ -791,13 +791,13 @@ void sngisdn_process_rmrt_cfm (sngisdn_event_data_t *sngisdn_event)
 	sngisdn_chan_data_t *sngisdn_info = sngisdn_event->sngisdn_info;
 	ftdm_channel_t *ftdmchan = sngisdn_info->ftdmchan;
 	
-	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
+	ISDN_FUNC_TRACE_ENTER(__FTDM_FUNC__);
 
 	/* Function does not require any info from ssHlEvnt struct for now */
 	/* RmRtEvnt *rmRtEvnt = &sngisdn_event->event.rmRtEvnt; */
 	
 	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Processing RESUME/RETRIEVE CFM (suId:%u suInstId:%u spInstId:%u)\n", suId, suInstId, spInstId);
-	ISDN_FUNC_TRACE_EXIT(__FUNCTION__);
+	ISDN_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 	return;
 }
 
@@ -810,13 +810,13 @@ void sngisdn_process_flc_ind (sngisdn_event_data_t *sngisdn_event)
 	sngisdn_chan_data_t *sngisdn_info = sngisdn_event->sngisdn_info;
 	ftdm_channel_t *ftdmchan = sngisdn_info->ftdmchan;
 
-	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
+	ISDN_FUNC_TRACE_ENTER(__FTDM_FUNC__);
 
 	/* Function does not require any info from ssHlEvnt struct for now */
 	/* StaEvnt *staEvnt = &sngisdn_event->event.staEvnt; */
 
 	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Processing FLOW CONTROL IND (suId:%u suInstId:%u spInstId:%u)\n", suId, suInstId, spInstId);
-	ISDN_FUNC_TRACE_EXIT(__FUNCTION__);
+	ISDN_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 	return;
 }
 
@@ -832,7 +832,7 @@ void sngisdn_process_fac_ind (sngisdn_event_data_t *sngisdn_event)
 
 	FacEvnt *facEvnt = &sngisdn_event->event.facEvnt;
 
-	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
+	ISDN_FUNC_TRACE_ENTER(__FTDM_FUNC__);
 
 	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Processing FACILITY IND (suId:%u suInstId:%u spInstId:%u)\n", suId, suInstId, spInstId);
 
@@ -842,7 +842,7 @@ void sngisdn_process_fac_ind (sngisdn_event_data_t *sngisdn_event)
 			get_facility_ie_str(ftdmchan, &facEvnt->facElmt.facStr.val[2], facEvnt->facElmt.facStr.len-2);
 			sngisdn_send_signal(sngisdn_info, FTDM_SIGEVENT_FACILITY);
 		}
-		ISDN_FUNC_TRACE_EXIT(__FUNCTION__);
+		ISDN_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 		return;
 	}
 
@@ -895,7 +895,7 @@ void sngisdn_process_fac_ind (sngisdn_event_data_t *sngisdn_event)
 			/* We do not support other FACILITY types for now, so do nothing */
 			break;
 	}
-	ISDN_FUNC_TRACE_EXIT(__FUNCTION__);
+	ISDN_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 	return;
 }
 
@@ -911,7 +911,7 @@ void sngisdn_process_sta_cfm (sngisdn_event_data_t *sngisdn_event)
 	
 	uint8_t call_state = 0;
 
-	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
+	ISDN_FUNC_TRACE_ENTER(__FTDM_FUNC__);
 
 	if (!suInstId && !spInstId) {
 		/* We already cleared this call */
@@ -932,13 +932,13 @@ void sngisdn_process_sta_cfm (sngisdn_event_data_t *sngisdn_event)
 			call_state = staEvnt->callSte.callGlblSte.val;
 		} else {
 			ftdm_log_chan_msg(ftdmchan, FTDM_LOG_WARNING, "Received STATUS without call state\n");
-			ISDN_FUNC_TRACE_EXIT(__FUNCTION__);
+			ISDN_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 			return;
 		}
 		switch (staEvnt->causeDgn[0].causeVal.val) {
 			case FTDM_CAUSE_RESPONSE_TO_STATUS_ENQUIRY:
 				ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Status Check OK:%d", call_state);
-				ISDN_FUNC_TRACE_EXIT(__FUNCTION__);
+				ISDN_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 				return;
 			case FTDM_CAUSE_WRONG_CALL_STATE:
 				ftdm_log_chan(ftdmchan, FTDM_LOG_WARNING, "Message incompatible with call state (call_state:%d channel-state:%s cause:%d) (suId:%u suInstId:%u spInstId:%u)\n", call_state, ftdm_channel_state2str(ftdmchan->state), staEvnt->causeDgn[0].causeVal.val, suId, suInstId, spInstId);
@@ -1117,7 +1117,7 @@ void sngisdn_process_sta_cfm (sngisdn_event_data_t *sngisdn_event)
 		}
 	}
 
-	ISDN_FUNC_TRACE_EXIT(__FUNCTION__);
+	ISDN_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 	return;
 }
 
@@ -1128,13 +1128,13 @@ void sngisdn_process_srv_ind (sngisdn_event_data_t *sngisdn_event)
 	int16_t dChan = sngisdn_event->dChan;
 	uint8_t ces = sngisdn_event->ces;
 
-	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
+	ISDN_FUNC_TRACE_ENTER(__FTDM_FUNC__);
 
 	/* Function does not require any info from ssHlEvnt struct for now */
 	/*Srv *srvEvnt = &sngisdn_event->event.srvEvnt;*/
 	
 	ftdm_log(FTDM_LOG_DEBUG, "Processing SERVICE IND (suId:%u dChan:%d ces:%d)\n", suId, dChan, ces);
-	ISDN_FUNC_TRACE_EXIT(__FUNCTION__);
+	ISDN_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 	return;
 }
 
@@ -1144,13 +1144,13 @@ void sngisdn_process_srv_cfm (sngisdn_event_data_t *sngisdn_event)
 	int16_t dChan = sngisdn_event->dChan;
 	uint8_t ces = sngisdn_event->ces;
 
-	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
+	ISDN_FUNC_TRACE_ENTER(__FTDM_FUNC__);
 
 	/* Function does not require any info from ssHlEvnt struct for now */
 	/*Srv *srvEvnt = &sngisdn_event->event.srvEvnt;*/
 	
 	ftdm_log(FTDM_LOG_DEBUG, "Processing SERVICE CFM (suId:%u dChan:%d ces:%d)\n", suId, dChan, ces);
-	ISDN_FUNC_TRACE_EXIT(__FUNCTION__);
+	ISDN_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 	return;
 }
 
@@ -1286,7 +1286,7 @@ void sngisdn_process_rst_cfm (sngisdn_event_data_t *sngisdn_event)
 	}
 
 	ftdm_log(FTDM_LOG_DEBUG, "Processing RESTART CFM (suId:%u dChan:%d ces:%d type:%d)\n", suId, dChan, ces, evntType);
-	ISDN_FUNC_TRACE_EXIT(__FUNCTION__);
+	ISDN_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 	return;
 }
 
@@ -1303,7 +1303,7 @@ void sngisdn_process_rst_ind (sngisdn_event_data_t *sngisdn_event)
 	Rst *rstEvnt = NULL;
 	sngisdn_span_data_t     *signal_data = NULL;
 
-	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
+	ISDN_FUNC_TRACE_ENTER(__FTDM_FUNC__);
 
 	rstEvnt = &sngisdn_event->event.rstEvnt;
 
@@ -1396,7 +1396,7 @@ void sngisdn_process_rst_ind (sngisdn_event_data_t *sngisdn_event)
 	}
 
 	
-	ISDN_FUNC_TRACE_EXIT(__FUNCTION__);
+	ISDN_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 	return;
 }
 

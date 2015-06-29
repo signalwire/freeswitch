@@ -337,10 +337,6 @@ typedef struct ftdm_module {
 	char path[256];
 } ftdm_module_t;
 
-#ifndef __FUNCTION__
-#define __FUNCTION__ (const char *)__func__
-#endif
-
 typedef struct ftdm_fsk_data_state ftdm_fsk_data_state_t;
 typedef int (*ftdm_fsk_data_decoder_t)(ftdm_fsk_data_state_t *state);
 typedef ftdm_status_t (*ftdm_fsk_write_sample_t)(int16_t *buf, ftdm_size_t buflen, void *user_data);

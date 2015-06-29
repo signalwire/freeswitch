@@ -92,7 +92,7 @@ ftdm_status_t handle_olm_msg(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 
 ftdm_status_t handle_con_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiConEvnt *siConEvnt)
 {
-	SS7_FUNC_TRACE_ENTER(__FUNCTION__);
+	SS7_FUNC_TRACE_ENTER(__FTDM_FUNC__);
 
 	sngss7_chan_data_t *sngss7_info = NULL;
 	ftdm_channel_t *ftdmchan = NULL;
@@ -105,7 +105,7 @@ ftdm_status_t handle_con_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	/* get the ftdmchan and ss7_chan_data from the circuit */
 	if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
 		SS7_ERROR("Failed to extract channel data for circuit = %d!\n", circuit);
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 		return FTDM_FAIL;
 	}
 
@@ -366,14 +366,14 @@ handle_glare:
 	/* unlock the channel */
 	ftdm_mutex_unlock(ftdmchan->mutex);
 
-	SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+	SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 	return FTDM_SUCCESS;
 }
 
 /******************************************************************************/
 ftdm_status_t handle_con_sta(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiCnStEvnt *siCnStEvnt, uint8_t evntType)
 {
-	SS7_FUNC_TRACE_ENTER(__FUNCTION__);
+	SS7_FUNC_TRACE_ENTER(__FTDM_FUNC__);
 
 	sngss7_chan_data_t  *sngss7_info ;
 	ftdm_channel_t	  *ftdmchan;
@@ -383,7 +383,7 @@ ftdm_status_t handle_con_sta(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	/* get the ftdmchan and ss7_chan_data from the circuit */
 	if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
 		SS7_ERROR("Failed to extract channel data for circuit = %d!\n", circuit);
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 		return FTDM_FAIL;
 	}
 
@@ -642,14 +642,14 @@ ftdm_status_t handle_con_sta(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	/* unlock the channel */
 	ftdm_mutex_unlock(ftdmchan->mutex);
 
-	SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+	SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 	return FTDM_SUCCESS;
 }
 
 /******************************************************************************/
 ftdm_status_t handle_con_cfm(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiConEvnt *siConEvnt)
 {
-	SS7_FUNC_TRACE_ENTER(__FUNCTION__);
+	SS7_FUNC_TRACE_ENTER(__FTDM_FUNC__);
 
 	sngss7_chan_data_t  *sngss7_info ;
 	ftdm_channel_t	  *ftdmchan;
@@ -659,7 +659,7 @@ ftdm_status_t handle_con_cfm(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	/* get the ftdmchan and ss7_chan_data from the circuit */
 	if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
 		SS7_ERROR("Failed to extract channel data for circuit = %d!\n", circuit);
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 		return FTDM_FAIL;
 	}
 
@@ -722,14 +722,14 @@ ftdm_status_t handle_con_cfm(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	/* unlock the channel */
 	ftdm_mutex_unlock(ftdmchan->mutex);
 
-	SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+	SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 	return FTDM_SUCCESS;
 }
 
 /******************************************************************************/
 ftdm_status_t handle_rel_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiRelEvnt *siRelEvnt)
 {
-	SS7_FUNC_TRACE_ENTER(__FUNCTION__);
+	SS7_FUNC_TRACE_ENTER(__FTDM_FUNC__);
 
 	sngss7_chan_data_t  *sngss7_info ;
 	ftdm_channel_t	  *ftdmchan;
@@ -739,7 +739,7 @@ ftdm_status_t handle_rel_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	/* get the ftdmchan and ss7_chan_data from the circuit */
 	if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
 		SS7_ERROR("Failed to extract channel data for circuit = %d!\n", circuit);
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 		return FTDM_FAIL;
 	}
 
@@ -854,14 +854,14 @@ rel_ind_reset:
 	/* unlock the channel */
 	ftdm_mutex_unlock(ftdmchan->mutex);
 
-	SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+	SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 	return FTDM_SUCCESS;
 }
 
 /******************************************************************************/
 ftdm_status_t handle_rel_cfm(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiRelEvnt *siRelEvnt)
 {
-	SS7_FUNC_TRACE_ENTER(__FUNCTION__);
+	SS7_FUNC_TRACE_ENTER(__FTDM_FUNC__);
 	
 	sngss7_chan_data_t  *sngss7_info ;
 	ftdm_channel_t	  *ftdmchan;
@@ -871,7 +871,7 @@ ftdm_status_t handle_rel_cfm(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	/* get the ftdmchan and ss7_chan_data from the circuit */
 	if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
 		SS7_ERROR("Failed to extract channel data for circuit = %d!\n", circuit);
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 		return FTDM_FAIL;
 	}
 
@@ -907,14 +907,14 @@ ftdm_status_t handle_rel_cfm(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	/* unlock the channel */
 	ftdm_mutex_unlock(ftdmchan->mutex);
 
-	SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+	SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 	return FTDM_SUCCESS;
 }
 
 /******************************************************************************/
 ftdm_status_t handle_dat_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiInfoEvnt *siInfoEvnt)
 {
-	SS7_FUNC_TRACE_ENTER(__FUNCTION__);
+	SS7_FUNC_TRACE_ENTER(__FTDM_FUNC__);
 	
 	sngss7_chan_data_t  *sngss7_info ;
 	ftdm_channel_t	  *ftdmchan;
@@ -924,7 +924,7 @@ ftdm_status_t handle_dat_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	/* get the ftdmchan and ss7_chan_data from the circuit */
 	if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
 		SS7_ERROR("Failed to extract channel data for circuit = %d!\n", circuit);
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 		return FTDM_FAIL;
 	}
 
@@ -936,14 +936,14 @@ ftdm_status_t handle_dat_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	/* unlock the channel */
 	ftdm_mutex_unlock(ftdmchan->mutex);
 
-	SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+	SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 	return FTDM_SUCCESS;
 }
 
 /******************************************************************************/
 ftdm_status_t handle_fac_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t evntType, SiFacEvnt *siFacEvnt)
 {
-	SS7_FUNC_TRACE_ENTER(__FUNCTION__);
+	SS7_FUNC_TRACE_ENTER(__FTDM_FUNC__);
 	
 	sngss7_chan_data_t  *sngss7_info ;
 	ftdm_channel_t	  *ftdmchan;
@@ -953,7 +953,7 @@ ftdm_status_t handle_fac_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	/* get the ftdmchan and ss7_chan_data from the circuit */
 	if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
 		SS7_ERROR("Failed to extract channel data for circuit = %d!\n", circuit);
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 		return FTDM_FAIL;
 	}
 
@@ -965,14 +965,14 @@ ftdm_status_t handle_fac_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	/* unlock the channel */
 	ftdm_mutex_unlock(ftdmchan->mutex);
 
-	SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+	SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 	return FTDM_SUCCESS;
 }
 
 /******************************************************************************/
 ftdm_status_t handle_fac_cfm(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t evntType, SiFacEvnt *siFacEvnt)
 {
-	SS7_FUNC_TRACE_ENTER(__FUNCTION__);
+	SS7_FUNC_TRACE_ENTER(__FTDM_FUNC__);
 	
 	sngss7_chan_data_t  *sngss7_info ;
 	ftdm_channel_t	  *ftdmchan;
@@ -982,7 +982,7 @@ ftdm_status_t handle_fac_cfm(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	/* get the ftdmchan and ss7_chan_data from the circuit */
 	if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
 		SS7_ERROR("Failed to extract channel data for circuit = %d!\n", circuit);
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 		return FTDM_FAIL;
 	}
 
@@ -994,14 +994,14 @@ ftdm_status_t handle_fac_cfm(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	/* unlock the channel */
 	ftdm_mutex_unlock(ftdmchan->mutex);
 
-	SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+	SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 	return FTDM_SUCCESS;
 }
 
 /******************************************************************************/
 ftdm_status_t handle_umsg_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit)
 {
-	SS7_FUNC_TRACE_ENTER(__FUNCTION__);
+	SS7_FUNC_TRACE_ENTER(__FTDM_FUNC__);
 	
 	sngss7_chan_data_t  *sngss7_info ;
 	ftdm_channel_t	  *ftdmchan;
@@ -1011,7 +1011,7 @@ ftdm_status_t handle_umsg_ind(uint32_t suInstId, uint32_t spInstId, uint32_t cir
 	/* get the ftdmchan and ss7_chan_data from the circuit */
 	if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
 		SS7_ERROR("Failed to extract channel data for circuit = %d!\n", circuit);
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 		return FTDM_FAIL;
 	}
 
@@ -1023,14 +1023,14 @@ ftdm_status_t handle_umsg_ind(uint32_t suInstId, uint32_t spInstId, uint32_t cir
 	/* unlock the channel */
 	ftdm_mutex_unlock(ftdmchan->mutex);
 
-	SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+	SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 	return FTDM_SUCCESS;
 }
 
 /******************************************************************************/
 ftdm_status_t handle_susp_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiSuspEvnt *siSuspEvnt)
 {
-	SS7_FUNC_TRACE_ENTER(__FUNCTION__);
+	SS7_FUNC_TRACE_ENTER(__FTDM_FUNC__);
 	
 	sngss7_chan_data_t  *sngss7_info ;
 	ftdm_channel_t	  *ftdmchan;
@@ -1040,7 +1040,7 @@ ftdm_status_t handle_susp_ind(uint32_t suInstId, uint32_t spInstId, uint32_t cir
 	/* get the ftdmchan and ss7_chan_data from the circuit */
 	if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
 		SS7_ERROR("Failed to extract channel data for circuit = %d!\n", circuit);
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 		return FTDM_FAIL;
 	}
 
@@ -1052,14 +1052,14 @@ ftdm_status_t handle_susp_ind(uint32_t suInstId, uint32_t spInstId, uint32_t cir
 	/* unlock the channel */
 	ftdm_mutex_unlock(ftdmchan->mutex);
 
-	SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+	SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 	return FTDM_SUCCESS;
 }
 
 /******************************************************************************/
 ftdm_status_t handle_resm_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiResmEvnt *siResmEvnt)
 {
-	SS7_FUNC_TRACE_ENTER(__FUNCTION__);
+	SS7_FUNC_TRACE_ENTER(__FTDM_FUNC__);
 	
 	sngss7_chan_data_t  *sngss7_info ;
 	ftdm_channel_t	  *ftdmchan;
@@ -1069,7 +1069,7 @@ ftdm_status_t handle_resm_ind(uint32_t suInstId, uint32_t spInstId, uint32_t cir
 	/* get the ftdmchan and ss7_chan_data from the circuit */
 	if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
 		SS7_ERROR("Failed to extract channel data for circuit = %d!\n", circuit);
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 		return FTDM_FAIL;
 	}
 
@@ -1081,14 +1081,14 @@ ftdm_status_t handle_resm_ind(uint32_t suInstId, uint32_t spInstId, uint32_t cir
 	/* unlock the channel */
 	ftdm_mutex_unlock(ftdmchan->mutex);
 
-	SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+	SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 	return FTDM_SUCCESS;
 }
 
 /******************************************************************************/
 ftdm_status_t handle_sta_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t globalFlg, uint8_t evntType, SiStaEvnt *siStaEvnt)
 {
-	SS7_FUNC_TRACE_ENTER(__FUNCTION__);
+	SS7_FUNC_TRACE_ENTER(__FTDM_FUNC__);
 	
 	ftdm_running_return(FTDM_FAIL);
 
@@ -1280,7 +1280,7 @@ ftdm_status_t handle_sta_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 		break;
 	} /* switch (evntType) */
 
-	SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+	SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 	return FTDM_SUCCESS;
 
 }
@@ -1288,7 +1288,7 @@ ftdm_status_t handle_sta_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 /******************************************************************************/
 ftdm_status_t handle_reattempt(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t globalFlg, uint8_t evntType, SiStaEvnt *siStaEvnt)
 {
-	SS7_FUNC_TRACE_ENTER(__FUNCTION__);
+	SS7_FUNC_TRACE_ENTER(__FTDM_FUNC__);
 
 	sngss7_chan_data_t  *sngss7_info = NULL;
 	ftdm_channel_t	  *ftdmchan = NULL;
@@ -1301,13 +1301,13 @@ ftdm_status_t handle_reattempt(uint32_t suInstId, uint32_t spInstId, uint32_t ci
 					g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic,
 					DECODE_LCC_EVENT(evntType));
 
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 		return FTDM_FAIL;
 	} else {
 		/* get the ftdmchan and ss7_chan_data from the circuit */
 		if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
 			SS7_ERROR("Failed to extract channel data for ISUP circuit = %d!\n", circuit);
-			SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+			SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 			return FTDM_FAIL;
 		}
 
@@ -1375,14 +1375,14 @@ ftdm_status_t handle_reattempt(uint32_t suInstId, uint32_t spInstId, uint32_t ci
 	/* unlock the channel again before we exit */
 	ftdm_mutex_unlock(ftdmchan->mutex);
 
-	SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+	SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 	return FTDM_SUCCESS;
 }
 
 /******************************************************************************/
 ftdm_status_t handle_pause(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t globalFlg, uint8_t evntType, SiStaEvnt *siStaEvnt)
 {
-	SS7_FUNC_TRACE_ENTER(__FUNCTION__);
+	SS7_FUNC_TRACE_ENTER(__FTDM_FUNC__);
 	
 	sngss7_chan_data_t  *sngss7_info = NULL;
 	ftdm_channel_t	  *ftdmchan = NULL;
@@ -1442,14 +1442,14 @@ ftdm_status_t handle_pause(uint32_t suInstId, uint32_t spInstId, uint32_t circui
 	
 	} /* while (g_ftdm_sngss7_data.cfg.isupCkt[i].id != 0) */
 	
-	SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+	SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 	return FTDM_SUCCESS;
 }
 
 /******************************************************************************/
 ftdm_status_t handle_resume(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t globalFlg, uint8_t evntType, SiStaEvnt *siStaEvnt)
 {
-	SS7_FUNC_TRACE_ENTER(__FUNCTION__);
+	SS7_FUNC_TRACE_ENTER(__FTDM_FUNC__);
 
 	sngss7_chan_data_t  *sngss7_info = NULL;
 	ftdm_channel_t	  *ftdmchan = NULL;
@@ -1510,14 +1510,14 @@ ftdm_status_t handle_resume(uint32_t suInstId, uint32_t spInstId, uint32_t circu
 
 	} /* while (g_ftdm_sngss7_data.cfg.isupCkt[i].id != 0) */
 
-	SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+	SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 	return FTDM_SUCCESS;
 }
 
 /******************************************************************************/
 ftdm_status_t handle_cot_start(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t globalFlg, uint8_t evntType, SiStaEvnt *siStaEvnt)
 {
-	SS7_FUNC_TRACE_ENTER(__FUNCTION__);
+	SS7_FUNC_TRACE_ENTER(__FTDM_FUNC__);
 
 	sngss7_chan_data_t  *sngss7_info = NULL;
 	ftdm_channel_t	  *ftdmchan = NULL;
@@ -1530,13 +1530,13 @@ ftdm_status_t handle_cot_start(uint32_t suInstId, uint32_t spInstId, uint32_t ci
 					g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic,
 					DECODE_LCC_EVENT(evntType));
 
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 		return FTDM_FAIL;
 	} else {
 		/* get the ftdmchan and ss7_chan_data from the circuit */
 		if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
 			SS7_ERROR("Failed to extract channel data for ISUP circuit = %d!\n", circuit);
-			SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+			SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 			return FTDM_FAIL;
 		}
 
@@ -1553,7 +1553,7 @@ ftdm_status_t handle_cot_start(uint32_t suInstId, uint32_t spInstId, uint32_t ci
 		if (ftdm_channel_open_chan(ftdmchan) != FTDM_SUCCESS) {
 			SS7_ERROR("Failed to open CIC %d for CCR test!\n", sngss7_info->circuit->cic);
 			/* KONRAD FIX ME */
-			SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+			SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 			return FTDM_FAIL;
 		}
 	}
@@ -1567,14 +1567,14 @@ ftdm_status_t handle_cot_start(uint32_t suInstId, uint32_t spInstId, uint32_t ci
 	/* unlock the channel again before we exit */
 	ftdm_mutex_unlock(ftdmchan->mutex);
 
-	SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+	SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 	return FTDM_SUCCESS;
 }
 
 /******************************************************************************/
 ftdm_status_t handle_cot_stop(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t globalFlg, uint8_t evntType, SiStaEvnt *siStaEvnt)
 {
-	SS7_FUNC_TRACE_ENTER(__FUNCTION__);
+	SS7_FUNC_TRACE_ENTER(__FTDM_FUNC__);
 
 	sngss7_chan_data_t  *sngss7_info = NULL;
 	ftdm_channel_t	  *ftdmchan = NULL;
@@ -1587,13 +1587,13 @@ ftdm_status_t handle_cot_stop(uint32_t suInstId, uint32_t spInstId, uint32_t cir
 					g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic,
 					DECODE_LCC_EVENT(evntType));
 
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 		return FTDM_FAIL;
 	} else {
 		/* get the ftdmchan and ss7_chan_data from the circuit */
 		if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
 			SS7_ERROR("Failed to extract channel data for ISUP circuit = %d!\n", circuit);
-			SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+			SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 			return FTDM_FAIL;
 		}
 
@@ -1614,14 +1614,14 @@ ftdm_status_t handle_cot_stop(uint32_t suInstId, uint32_t spInstId, uint32_t cir
 	/* unlock the channel again before we exit */
 	ftdm_mutex_unlock(ftdmchan->mutex);
 
-	SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+	SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 	return FTDM_SUCCESS;
 }
 
 /******************************************************************************/
 ftdm_status_t handle_cot(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t globalFlg, uint8_t evntType, SiStaEvnt *siStaEvnt)
 {
-	SS7_FUNC_TRACE_ENTER(__FUNCTION__);
+	SS7_FUNC_TRACE_ENTER(__FTDM_FUNC__);
 
 	sngss7_chan_data_t  *sngss7_info = NULL;
 	ftdm_channel_t	  *ftdmchan = NULL;
@@ -1634,13 +1634,13 @@ ftdm_status_t handle_cot(uint32_t suInstId, uint32_t spInstId, uint32_t circuit,
 					g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic,
 					DECODE_LCC_EVENT(evntType));
 
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 		return FTDM_FAIL;
 	} else {
 		/* get the ftdmchan and ss7_chan_data from the circuit */
 		if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
 			SS7_ERROR("Failed to extract channel data for ISUP circuit = %d!\n", circuit);
-			SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+			SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 			return FTDM_FAIL;
 		}
 
@@ -1684,14 +1684,14 @@ ftdm_status_t handle_cot(uint32_t suInstId, uint32_t spInstId, uint32_t circuit,
 	/* unlock the channel again before we exit */
 	ftdm_mutex_unlock(ftdmchan->mutex);
 
-	SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+	SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 	return FTDM_SUCCESS;
 }
 
 /******************************************************************************/
 ftdm_status_t handle_blo_req(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t globalFlg, uint8_t evntType, SiStaEvnt *siStaEvnt)
 {
-	SS7_FUNC_TRACE_ENTER(__FUNCTION__);
+	SS7_FUNC_TRACE_ENTER(__FTDM_FUNC__);
 
 	sngss7_chan_data_t  *sngss7_info = NULL;
 	ftdm_channel_t	  *ftdmchan = NULL;
@@ -1704,13 +1704,13 @@ ftdm_status_t handle_blo_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 					g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic,
 					DECODE_LCC_EVENT(evntType));
 
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 		return FTDM_FAIL;
 	} else {
 		/* get the ftdmchan and ss7_chan_data from the circuit */
 		if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
 			SS7_ERROR("Failed to extract channel data for ISUP circuit = %d!\n", circuit);
-			SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+			SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 			return FTDM_FAIL;
 		}
 
@@ -1737,14 +1737,14 @@ ftdm_status_t handle_blo_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	/* unlock the channel again before we exit */
 	ftdm_mutex_unlock(ftdmchan->mutex);
 
-	SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+	SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 	return FTDM_SUCCESS;
 }
 
 /******************************************************************************/
 ftdm_status_t handle_blo_rsp(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t globalFlg, uint8_t evntType, SiStaEvnt *siStaEvnt)
 {
-	SS7_FUNC_TRACE_ENTER(__FUNCTION__);
+	SS7_FUNC_TRACE_ENTER(__FTDM_FUNC__);
 
 	sngss7_chan_data_t  *sngss7_info = NULL;
 	ftdm_channel_t	  *ftdmchan = NULL;
@@ -1757,13 +1757,13 @@ ftdm_status_t handle_blo_rsp(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 					g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic,
 					DECODE_LCC_EVENT(evntType));
 
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 		return FTDM_FAIL;
 	} else {
 		/* get the ftdmchan and ss7_chan_data from the circuit */
 		if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
 			SS7_ERROR("Failed to extract channel data for ISUP circuit = %d!\n", circuit);
-			SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+			SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 			return FTDM_FAIL;
 		}
 
@@ -1780,14 +1780,14 @@ ftdm_status_t handle_blo_rsp(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	/* unlock the channel again before we exit */
 	ftdm_mutex_unlock(ftdmchan->mutex);
 
-	SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+	SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 	return FTDM_SUCCESS;
 }
 
 /******************************************************************************/
 ftdm_status_t handle_ubl_req(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t globalFlg, uint8_t evntType, SiStaEvnt *siStaEvnt)
 {
-	SS7_FUNC_TRACE_ENTER(__FUNCTION__);
+	SS7_FUNC_TRACE_ENTER(__FTDM_FUNC__);
 
 	sngss7_chan_data_t  *sngss7_info = NULL;
 	ftdm_channel_t	  *ftdmchan = NULL;
@@ -1800,13 +1800,13 @@ ftdm_status_t handle_ubl_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 					g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic,
 					DECODE_LCC_EVENT(evntType));
 
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 		return FTDM_FAIL;
 	} else {
 		/* get the ftdmchan and ss7_chan_data from the circuit */
 		if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
 			SS7_ERROR("Failed to extract channel data for ISUP circuit = %d!\n", circuit);
-			SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+			SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 			return FTDM_FAIL;
 		}
 
@@ -1837,14 +1837,14 @@ ftdm_status_t handle_ubl_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	/* unlock the channel again before we exit */
 	ftdm_mutex_unlock(ftdmchan->mutex);
 
-	SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+	SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 	return FTDM_SUCCESS;
 }
 
 /******************************************************************************/
 ftdm_status_t handle_ubl_rsp(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t globalFlg, uint8_t evntType, SiStaEvnt *siStaEvnt)
 {
-	SS7_FUNC_TRACE_ENTER(__FUNCTION__);
+	SS7_FUNC_TRACE_ENTER(__FTDM_FUNC__);
 
 	sngss7_chan_data_t  *sngss7_info = NULL;
 	ftdm_channel_t	  *ftdmchan = NULL;
@@ -1855,13 +1855,13 @@ ftdm_status_t handle_ubl_rsp(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 					g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic,
 					DECODE_LCC_EVENT(evntType));
 
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 		return FTDM_FAIL;
 	} else {
 		/* get the ftdmchan and ss7_chan_data from the circuit */
 		if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
 			SS7_ERROR("Failed to extract channel data for ISUP circuit = %d!\n", circuit);
-			SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+			SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 			return FTDM_FAIL;
 		}
 
@@ -1870,14 +1870,14 @@ ftdm_status_t handle_ubl_rsp(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 			DECODE_LCC_EVENT(evntType));
 	}
 
-	SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+	SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 	return FTDM_SUCCESS;
 }
 
 /******************************************************************************/
 ftdm_status_t handle_rsc_req(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t globalFlg, uint8_t evntType, SiStaEvnt *siStaEvnt)
 {
-	SS7_FUNC_TRACE_ENTER(__FUNCTION__);
+	SS7_FUNC_TRACE_ENTER(__FTDM_FUNC__);
 
 	sngss7_chan_data_t  *sngss7_info = NULL;
 	ftdm_channel_t	  *ftdmchan = NULL;
@@ -1890,13 +1890,13 @@ ftdm_status_t handle_rsc_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 					g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic,
 					DECODE_LCC_EVENT(evntType));
 
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 		return FTDM_FAIL;
 	} else {
 		/* get the ftdmchan and ss7_chan_data from the circuit */
 		if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
 			SS7_ERROR("Failed to extract channel data for ISUP circuit = %d!\n", circuit);
-			SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+			SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 			return FTDM_FAIL;
 		}
 
@@ -1932,14 +1932,14 @@ ftdm_status_t handle_rsc_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	/* unlock the channel again before we exit */
 	ftdm_mutex_unlock(ftdmchan->mutex);
 
-	SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+	SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 	return FTDM_SUCCESS;
 }
 
 /******************************************************************************/
 ftdm_status_t handle_local_rsc_req(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t globalFlg, uint8_t evntType, SiStaEvnt *siStaEvnt)
 {
-	SS7_FUNC_TRACE_ENTER(__FUNCTION__);
+	SS7_FUNC_TRACE_ENTER(__FTDM_FUNC__);
 
 	sngss7_chan_data_t  *sngss7_info = NULL;
 	ftdm_channel_t	  *ftdmchan = NULL;
@@ -1952,13 +1952,13 @@ ftdm_status_t handle_local_rsc_req(uint32_t suInstId, uint32_t spInstId, uint32_
 					g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic,
 					DECODE_LCC_EVENT(evntType));
 
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 		return FTDM_FAIL;
 	} else {
 		/* get the ftdmchan and ss7_chan_data from the circuit */
 		if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
 			SS7_ERROR("Failed to extract channel data for ISUP circuit = %d!\n", circuit);
-			SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+			SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 			return FTDM_FAIL;
 		}
 
@@ -1992,14 +1992,14 @@ ftdm_status_t handle_local_rsc_req(uint32_t suInstId, uint32_t spInstId, uint32_
 	/* unlock the channel again before we exit */
 	ftdm_mutex_unlock(ftdmchan->mutex);
 
-	SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+	SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 	return FTDM_SUCCESS;
 }
 
 /******************************************************************************/
 ftdm_status_t handle_rsc_rsp(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t globalFlg, uint8_t evntType, SiStaEvnt *siStaEvnt)
 {
-	SS7_FUNC_TRACE_ENTER(__FUNCTION__);
+	SS7_FUNC_TRACE_ENTER(__FTDM_FUNC__);
 
 	sngss7_chan_data_t  *sngss7_info = NULL;
 	ftdm_channel_t	  *ftdmchan = NULL;
@@ -2012,13 +2012,13 @@ ftdm_status_t handle_rsc_rsp(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 					g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic,
 					DECODE_LCC_EVENT(evntType));
 
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 		return FTDM_FAIL;
 	} else {
 		/* get the ftdmchan and ss7_chan_data from the circuit */
 		if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
 			SS7_ERROR("Failed to extract channel data for ISUP circuit = %d!\n", circuit);
-			SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+			SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 			return FTDM_FAIL;
 		}
 
@@ -2083,13 +2083,13 @@ ftdm_status_t handle_rsc_rsp(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	/* unlock the channel again before we exit */
 	ftdm_mutex_unlock(ftdmchan->mutex);
 
-	SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+	SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 	return FTDM_SUCCESS;
 }
 /******************************************************************************/
 ftdm_status_t handle_grs_req(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t globalFlg, uint8_t evntType, SiStaEvnt *siStaEvnt)
 {
-	SS7_FUNC_TRACE_ENTER(__FUNCTION__);
+	SS7_FUNC_TRACE_ENTER(__FTDM_FUNC__);
 
 	sngss7_chan_data_t *sngss7_info = NULL;
 	ftdm_channel_t *ftdmchan = NULL;
@@ -2104,13 +2104,13 @@ ftdm_status_t handle_grs_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 					g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic,
 					DECODE_LCC_EVENT(evntType));
 
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 		return FTDM_FAIL;
 	} else {
 		/* get the ftdmchan and ss7_chan_data from the circuit */
 		if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
 			SS7_ERROR("Failed to extract channel data for ISUP circuit = %d!\n", circuit);
-			SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+			SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 			return FTDM_FAIL;
 		}
 
@@ -2124,7 +2124,7 @@ ftdm_status_t handle_grs_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 		range = siStaEvnt->rangStat.range.val;
 	} else {
 		SS7_ERROR("Received GRS with no range value on CIC = %d\n", sngss7_info->circuit->cic);
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 		return FTDM_FAIL;
 	}
 
@@ -2132,7 +2132,7 @@ ftdm_status_t handle_grs_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	sngss7_span = ftdmchan->span->signal_data;
 	if (sngss7_info->rx_grs.range) {
 		SS7_CRITICAL("Cannot handle another GRS on CIC = %d\n", sngss7_info->circuit->cic);
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 		return FTDM_FAIL;
 	}
 	sngss7_info->rx_grs.circuit = circuit; 
@@ -2141,14 +2141,14 @@ ftdm_status_t handle_grs_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	ftdm_set_flag(sngss7_span, SNGSS7_RX_GRS_PENDING);
 	/* the reset will be started in the main thread by "check_if_rx_grs_started" */
 
-	SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+	SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 	return FTDM_SUCCESS;
 }
 
 /******************************************************************************/
 ftdm_status_t handle_grs_rsp(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t globalFlg, uint8_t evntType, SiStaEvnt *siStaEvnt)
 {
-	SS7_FUNC_TRACE_ENTER(__FUNCTION__);
+	SS7_FUNC_TRACE_ENTER(__FTDM_FUNC__);
 
 	sngss7_chan_data_t *sngss7_info = NULL;
 	ftdm_channel_t *ftdmchan = NULL;
@@ -2163,13 +2163,13 @@ ftdm_status_t handle_grs_rsp(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 					g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic,
 					DECODE_LCC_EVENT(evntType));
 
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 		return FTDM_FAIL;
 	} else {
 		/* get the ftdmchan and ss7_chan_data from the circuit */
 		if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
 			SS7_ERROR("Failed to extract channel data for ISUP circuit = %d!\n", circuit);
-			SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+			SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 			return FTDM_FAIL;
 		}
 
@@ -2183,7 +2183,7 @@ ftdm_status_t handle_grs_rsp(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 		range = siStaEvnt->rangStat.range.val;
 	} else {
 		SS7_ERROR("Received GRA with no range value on CIC = %d\n", sngss7_info->circuit->cic);
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 		return FTDM_FAIL;
 	}
 
@@ -2191,7 +2191,7 @@ ftdm_status_t handle_grs_rsp(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	sngss7_span = ftdmchan->span->signal_data;
 	if (sngss7_info->rx_gra.range) {
 		SS7_ERROR("Cannot handle another GRA on CIC = %d\n", sngss7_info->circuit->cic);
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 		return FTDM_FAIL;
 	}
 	sngss7_info->rx_gra.circuit = circuit; 
@@ -2209,14 +2209,14 @@ ftdm_status_t handle_grs_rsp(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 
 	/* the reset will be started in the main thread by "check_if_rx_gra_started" */
 	
-	SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+	SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 	return FTDM_SUCCESS;
 }
 
 /******************************************************************************/
 ftdm_status_t handle_local_blk(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t globalFlg, uint8_t evntType, SiStaEvnt *siStaEvnt)
 {
-	SS7_FUNC_TRACE_ENTER(__FUNCTION__);
+	SS7_FUNC_TRACE_ENTER(__FTDM_FUNC__);
 
 	sngss7_chan_data_t  *sngss7_info = NULL;
 	ftdm_channel_t	  *ftdmchan = NULL;
@@ -2229,13 +2229,13 @@ ftdm_status_t handle_local_blk(uint32_t suInstId, uint32_t spInstId, uint32_t ci
 					g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic,
 					DECODE_LCC_EVENT(evntType));
 
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 		return FTDM_FAIL;
 	} else {
 		/* get the ftdmchan and ss7_chan_data from the circuit */
 		if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
 			SS7_ERROR("Failed to extract channel data for ISUP circuit = %d!\n", circuit);
-			SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+			SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 			return FTDM_FAIL;
 		}
 
@@ -2261,14 +2261,14 @@ ftdm_status_t handle_local_blk(uint32_t suInstId, uint32_t spInstId, uint32_t ci
 	/* unlock the channel again before we exit */
 	ftdm_mutex_unlock(ftdmchan->mutex);
 
-	SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+	SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 	return FTDM_SUCCESS;
 }
 
 /******************************************************************************/
 ftdm_status_t handle_local_ubl(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t globalFlg, uint8_t evntType, SiStaEvnt *siStaEvnt)
 {
-	SS7_FUNC_TRACE_ENTER(__FUNCTION__);
+	SS7_FUNC_TRACE_ENTER(__FTDM_FUNC__);
 
 	sngss7_chan_data_t  *sngss7_info = NULL;
 	ftdm_channel_t	  *ftdmchan = NULL;
@@ -2281,13 +2281,13 @@ ftdm_status_t handle_local_ubl(uint32_t suInstId, uint32_t spInstId, uint32_t ci
 					g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic,
 					DECODE_LCC_EVENT(evntType));
 
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 		return FTDM_FAIL;
 	} else {
 		/* get the ftdmchan and ss7_chan_data from the circuit */
 		if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
 			SS7_ERROR("Failed to extract channel data for ISUP circuit = %d!\n", circuit);
-			SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+			SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 			return FTDM_FAIL;
 		}
 
@@ -2313,14 +2313,14 @@ ftdm_status_t handle_local_ubl(uint32_t suInstId, uint32_t spInstId, uint32_t ci
 	/* unlock the channel again before we exit */
 	ftdm_mutex_unlock(ftdmchan->mutex);
 
-	SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+	SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 	return FTDM_SUCCESS;
 }
 
 /******************************************************************************/
 ftdm_status_t handle_ucic(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t globalFlg, uint8_t evntType, SiStaEvnt *siStaEvnt)
 {
-	SS7_FUNC_TRACE_ENTER(__FUNCTION__);
+	SS7_FUNC_TRACE_ENTER(__FTDM_FUNC__);
 
 	ftdm_iterator_t *iter = NULL;
 	ftdm_iterator_t *curr = NULL;
@@ -2337,13 +2337,13 @@ ftdm_status_t handle_ucic(uint32_t suInstId, uint32_t spInstId, uint32_t circuit
 					g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic,
 					DECODE_LCC_EVENT(evntType));
 
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 		return FTDM_FAIL;
 	} else {
 		/* get the ftdmchan and ss7_chan_data from the circuit */
 		if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
 			SS7_ERROR("Failed to extract channel data for ISUP circuit = %d!\n", circuit);
-			SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+			SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 			return FTDM_FAIL;
 		}
 
@@ -2395,14 +2395,14 @@ done:
 		ftdm_iterator_free(iter);
 	}
 
-	SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+	SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 	return FTDM_SUCCESS;
 }
 
 /******************************************************************************/
 ftdm_status_t handle_cgb_req(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t globalFlg, uint8_t evntType, SiStaEvnt *siStaEvnt)
 {
-	SS7_FUNC_TRACE_ENTER(__FUNCTION__);
+	SS7_FUNC_TRACE_ENTER(__FTDM_FUNC__);
 
 	sngss7_chan_data_t	*sngss7_info = NULL;
 	sngss7_span_data_t	*sngss7_span = NULL;
@@ -2425,13 +2425,13 @@ ftdm_status_t handle_cgb_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 					g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic,
 					DECODE_LCC_EVENT(evntType));
 
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 		return FTDM_FAIL;
 	} else {
 		/* get the ftdmchan and ss7_chan_data from the circuit */
 		if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
 			SS7_ERROR("Failed to extract channel data for ISUP circuit = %d!\n", circuit);
-			SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+			SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 			return FTDM_FAIL;
 		}
 
@@ -2447,7 +2447,7 @@ ftdm_status_t handle_cgb_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 		blockType = siStaEvnt->cgsmti.typeInd.val;
 	} else {
 		SS7_ERROR("Received CGB with no circuit group supervision value on CIC = %d\n", sngss7_info->circuit->cic);
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 		return FTDM_FAIL;
 	}	
 
@@ -2456,7 +2456,7 @@ ftdm_status_t handle_cgb_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 		range = siStaEvnt->rangStat.range.val;
 	} else {
 		SS7_ERROR("Received CGB with no range value on CIC = %d\n", sngss7_info->circuit->cic);
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 		return FTDM_FAIL;
 	}
 
@@ -2467,7 +2467,7 @@ ftdm_status_t handle_cgb_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 		}
 	} else {
 		SS7_ERROR("Received CGB with no status value on CIC = %d\n", sngss7_info->circuit->cic);
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 		return FTDM_FAIL;
 	}
 
@@ -2534,7 +2534,7 @@ ftdm_status_t handle_cgb_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	/* get the ftdmchan and ss7_chan_data from the circuit */
 	if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
 		SS7_ERROR("Failed to extract channel data for circuit = %d!\n", circuit);
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 		return FTDM_FAIL;
 	}
 
@@ -2546,7 +2546,7 @@ ftdm_status_t handle_cgb_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 /******************************************************************************/
 ftdm_status_t handle_cgu_req(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t globalFlg, uint8_t evntType, SiStaEvnt *siStaEvnt)
 {
-	SS7_FUNC_TRACE_ENTER(__FUNCTION__);
+	SS7_FUNC_TRACE_ENTER(__FTDM_FUNC__);
 
 	sngss7_chan_data_t	*sngss7_info = NULL;
 	sngss7_span_data_t	*sngss7_span = NULL;
@@ -2571,13 +2571,13 @@ ftdm_status_t handle_cgu_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 					g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic,
 					DECODE_LCC_EVENT(evntType));
 
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 		return FTDM_FAIL;
 	} else {
 		/* get the ftdmchan and ss7_chan_data from the circuit */
 		if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
 			SS7_ERROR("Failed to extract channel data for ISUP circuit = %d!\n", circuit);
-			SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+			SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 			return FTDM_FAIL;
 		}
 
@@ -2594,7 +2594,7 @@ ftdm_status_t handle_cgu_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 		blockType = siStaEvnt->cgsmti.typeInd.val;
 	} else {
 		SS7_ERROR("Received CGU with no circuit group supervision value on CIC = %d\n", sngss7_info->circuit->cic);
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 		return FTDM_FAIL;
 	}	
 
@@ -2603,7 +2603,7 @@ ftdm_status_t handle_cgu_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 		range = siStaEvnt->rangStat.range.val;
 	} else {
 		SS7_ERROR("Received CGU with no range value on CIC = %d\n", sngss7_info->circuit->cic);
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 		return FTDM_FAIL;
 	}
 
@@ -2614,7 +2614,7 @@ ftdm_status_t handle_cgu_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 		}
 	} else {
 		SS7_ERROR("Received CGU with no status value on CIC = %d\n", sngss7_info->circuit->cic);
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 		return FTDM_FAIL;
 	}
 
@@ -2687,7 +2687,7 @@ ftdm_status_t handle_cgu_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	/* get the ftdmchan and ss7_chan_data from the circuit */
 	if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
 		SS7_ERROR("Failed to extract channel data for circuit = %d!\n", circuit);
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 		return FTDM_FAIL;
 	}
 
@@ -2699,7 +2699,7 @@ ftdm_status_t handle_cgu_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 /******************************************************************************/
 ftdm_status_t handle_olm_msg(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t globalFlg, uint8_t evntType, SiStaEvnt *siStaEvnt)
 {
-	SS7_FUNC_TRACE_ENTER(__FUNCTION__);
+	SS7_FUNC_TRACE_ENTER(__FTDM_FUNC__);
 
 	sngss7_chan_data_t	*sngss7_info = NULL;
 	ftdm_channel_t		*ftdmchan = NULL;
@@ -2712,13 +2712,13 @@ ftdm_status_t handle_olm_msg(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 					g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic,
 					DECODE_LCC_EVENT(evntType));
 
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 		return FTDM_FAIL;
 	} else {
 		/* get the ftdmchan and ss7_chan_data from the circuit */
 		if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
 			SS7_ERROR("Failed to extract channel data for ISUP circuit = %d!\n", circuit);
-			SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+			SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 			return FTDM_FAIL;
 		}
 
@@ -2732,7 +2732,7 @@ ftdm_status_t handle_olm_msg(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 
 	sng_isup_reg_info_show();
 
-	SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+	SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 	return FTDM_SUCCESS;
 }
 

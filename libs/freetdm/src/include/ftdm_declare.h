@@ -57,6 +57,7 @@ extern "C" {
 #endif
 
 #ifdef _MSC_VER
+#define __FTDM_FUNC__ __FUNCTION__
 #if defined(FT_DECLARE_STATIC)
 #define FT_DECLARE(type)			type __stdcall
 #define FT_DECLARE_NONSTD(type)		type __cdecl
@@ -73,6 +74,7 @@ extern "C" {
 #define FT_DECLARE_INLINE(type)		extern __inline__ type /* why extern? see http://support.microsoft.com/kb/123768 */
 #define EX_DECLARE_DATA				__declspec(dllexport)
 #else
+#define __FTDM_FUNC__ (const char *)__func__
 #if (defined(__GNUC__) || defined(__SUNPRO_CC) || defined (__SUNPRO_C)) && defined(HAVE_VISIBILITY)
 #define FT_DECLARE(type)		__attribute__((visibility("default"))) type
 #define FT_DECLARE_NONSTD(type)	__attribute__((visibility("default"))) type

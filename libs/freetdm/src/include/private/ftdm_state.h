@@ -106,7 +106,7 @@ typedef ftdm_status_t (*ftdm_channel_state_processor_t)(ftdm_channel_t *fchan);
 FT_DECLARE(ftdm_status_t) ftdm_channel_advance_states(ftdm_channel_t *fchan);
 
 FT_DECLARE(ftdm_status_t) _ftdm_channel_complete_state(const char *file, const char *function, int line, ftdm_channel_t *fchan);
-#define ftdm_channel_complete_state(obj) _ftdm_channel_complete_state(__FILE__, __FUNCTION__, __LINE__, obj)
+#define ftdm_channel_complete_state(obj) _ftdm_channel_complete_state(__FILE__, __FTDM_FUNC__, __LINE__, obj)
 FT_DECLARE(int) ftdm_check_state_all(ftdm_span_t *span, ftdm_channel_state_t state);
 
 /*!
@@ -201,7 +201,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_set_state(const char *file, const char *f
  * */
 FT_DECLARE(ftdm_status_t) _ftdm_set_state(const char *file, const char *func, int line,
 			ftdm_channel_t *fchan, ftdm_channel_state_t state);
-#define ftdm_set_state(obj, s) _ftdm_set_state(__FILE__, __FUNCTION__, __LINE__, obj, s);									\
+#define ftdm_set_state(obj, s) _ftdm_set_state(__FILE__, __FTDM_FUNC__, __LINE__, obj, s);									\
 
 /*!\brief This macro is deprecated, signaling modules should always lock the channel themselves anyways since they must
  * process first the user pending state changes then set a new state before releasing the lock 
@@ -211,11 +211,11 @@ FT_DECLARE(ftdm_status_t) _ftdm_set_state(const char *file, const char *func, in
 #define ftdm_set_state_locked(obj, s) \
 	do { \
 		ftdm_channel_lock(obj); \
-		ftdm_channel_set_state(__FILE__, __FUNCTION__, __LINE__, obj, s, 0, NULL);									\
+		ftdm_channel_set_state(__FILE__, __FTDM_FUNC__, __LINE__, obj, s, 0, NULL);									\
 		ftdm_channel_unlock(obj); \
 	} while(0);
 
-#define ftdm_set_state_r(obj, s, r) r = ftdm_channel_set_state(__FILE__, __FUNCTION__, __LINE__, obj, s, 0);
+#define ftdm_set_state_r(obj, s, r) r = ftdm_channel_set_state(__FILE__, __FTDM_FUNC__, __LINE__, obj, s, 0);
 
 #define ftdm_set_state_all(span, state) \
 	do { \

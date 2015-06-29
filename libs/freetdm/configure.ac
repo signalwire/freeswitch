@@ -91,7 +91,7 @@ gnu)
 	COMP_VENDOR_CFLAGS="-ffast-math -Wall -Werror -Wunused-variable -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -O0"
 	;;
 sun)
-	COMP_VENDOR_CFLAGS="-xc99=all -mt -xCC -D__FUNCTION__=__func__ -xvpara"
+	COMP_VENDOR_CFLAGS="-xc99=all -mt -xCC -xvpara"
 	if test "$enable_64" != "no" ; then
 		COMP_VENDOR_CFLAGS="-m64 $COMP_VENDOR_CFLAGS"
 	fi

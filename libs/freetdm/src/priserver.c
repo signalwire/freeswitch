@@ -234,7 +234,7 @@ static int on_restart(struct sangoma_pri *spri, sangoma_pri_event_t event_type, 
 
 static int on_anything(struct sangoma_pri *spri, sangoma_pri_event_t event_type, pri_event *event) 
 {
-	printf("%s: Caught Event %d (%s)\n", __FUNCTION__, event_type, sangoma_pri_event_str(event_type));
+	printf("%s: Caught Event %d (%s)\n", __FTDM_FUNC__, event_type, sangoma_pri_event_str(event_type));
 	return 0;
 }
 

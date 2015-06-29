@@ -42,7 +42,7 @@ void sngisdn_rcv_con_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, Co
 	sngisdn_chan_data_t *sngisdn_info = NULL;
 	sngisdn_event_data_t *sngisdn_event = NULL;
 
-	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
+	ISDN_FUNC_TRACE_ENTER(__FTDM_FUNC__);
 
 	ftdm_assert(g_sngisdn_data.ccs[suId].activation_done != 0, "Con Ind on unconfigured cc\n");
 	ftdm_assert(g_sngisdn_data.spans[dChan], "Con Ind on unconfigured dchan\n");
@@ -50,7 +50,7 @@ void sngisdn_rcv_con_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, Co
 	if (conEvnt->chanId.eh.pres != PRSNT_NODEF) {
 		/* TODO: Implement me */
 		ftdm_log(FTDM_LOG_ERROR, "Incoming call without Channel Id not supported yet\n");
-		ISDN_FUNC_TRACE_EXIT(__FUNCTION__);
+		ISDN_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 		return;
 	}
 
@@ -66,18 +66,18 @@ void sngisdn_rcv_con_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, Co
 
 	if (!bchan_no) {
 		ftdm_log(FTDM_LOG_ERROR, "Failed to obtain b-channel number from SETUP message\n");
-		ISDN_FUNC_TRACE_EXIT(__FUNCTION__);
+		ISDN_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 		return;
 	}
 
 	if (g_sngisdn_data.spans[dChan]->nfas.trunk) {
 		if (interface_id < 0) {
 			ftdm_log(FTDM_LOG_ERROR, "Interface ID not present on NFAS interface\n");
-			ISDN_FUNC_TRACE_EXIT(__FUNCTION__);
+			ISDN_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 			return;
 		} else if (!g_sngisdn_data.spans[dChan]->nfas.trunk->spans[interface_id]) {
 			ftdm_log(FTDM_LOG_ERROR, "NFAS group:%s does not have logical interface %d\n", g_sngisdn_data.spans[dChan]->nfas.trunk->name, interface_id);
-			ISDN_FUNC_TRACE_EXIT(__FUNCTION__);
+			ISDN_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 			return;
 		} else {
 			sngisdn_info = g_sngisdn_data.spans[dChan]->nfas.trunk->spans[interface_id]->channels[bchan_no];
@@ -85,7 +85,7 @@ void sngisdn_rcv_con_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, Co
 	} else {
 		if (g_sngisdn_data.spans[dChan]->channels[bchan_no] == NULL) {
 			ftdm_log(FTDM_LOG_ERROR, "Incoming call on unconfigured b-channel:%d\n", bchan_no);
-			ISDN_FUNC_TRACE_EXIT(__FUNCTION__);
+			ISDN_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 			return;
 		}
 		
@@ -113,7 +113,7 @@ void sngisdn_rcv_con_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, Co
 	memcpy(&sngisdn_event->event.conEvnt, conEvnt, sizeof(*conEvnt));
 
 	ftdm_queue_enqueue(((sngisdn_span_data_t*)sngisdn_info->ftdmchan->span->signal_data)->event_queue, sngisdn_event);
-	ISDN_FUNC_TRACE_EXIT(__FUNCTION__);
+	ISDN_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 }
 
 void sngisdn_rcv_con_cfm (int16_t suId, uint32_t suInstId, uint32_t spInstId, CnStEvnt *cnStEvnt, int16_t dChan, uint8_t ces)
@@ -121,14 +121,14 @@ void sngisdn_rcv_con_cfm (int16_t suId, uint32_t suInstId, uint32_t spInstId, Cn
 	sngisdn_chan_data_t *sngisdn_info = NULL;
 	sngisdn_event_data_t *sngisdn_event = NULL;
 
-	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
+	ISDN_FUNC_TRACE_ENTER(__FTDM_FUNC__);
 
 	ftdm_assert(g_sngisdn_data.ccs[suId].activation_done != 0, "Con Cfm on unconfigured cc\n");
 	ftdm_assert(g_sngisdn_data.spans[dChan] != 0, "Con Cfm on unconfigured dchan\n");
 
 	if (get_ftdmchan_by_suInstId(suId, suInstId, &sngisdn_info) != FTDM_SUCCESS) {
 		ftdm_log(FTDM_LOG_CRIT, "Could not find matching call suId:%u suInstId:%u spInstId:%u\n", suId, suInstId, spInstId);
-		ISDN_FUNC_TRACE_EXIT(__FUNCTION__);
+		ISDN_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 		return;
 	}
 
@@ -157,7 +157,7 @@ void sngisdn_rcv_con_cfm (int16_t suId, uint32_t suInstId, uint32_t spInstId, Cn
 	memcpy(&sngisdn_event->event.cnStEvnt, cnStEvnt, sizeof(*cnStEvnt));
 	
 	ftdm_queue_enqueue(((sngisdn_span_data_t*)sngisdn_info->ftdmchan->span->signal_data)->event_queue, sngisdn_event);
-	ISDN_FUNC_TRACE_EXIT(__FUNCTION__);
+	ISDN_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 }
 
 void sngisdn_rcv_cnst_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, CnStEvnt *cnStEvnt, uint8_t evntType, int16_t dChan, uint8_t ces)
@@ -165,14 +165,14 @@ void sngisdn_rcv_cnst_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, C
 	sngisdn_chan_data_t *sngisdn_info = NULL;
 	sngisdn_event_data_t *sngisdn_event = NULL;
 	
-	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
+	ISDN_FUNC_TRACE_ENTER(__FTDM_FUNC__);
 
 	ftdm_assert(g_sngisdn_data.ccs[suId].activation_done != 0, "Cnst Ind on unconfigured cc\n");
 	ftdm_assert(g_sngisdn_data.spans[dChan] != 0, "Cnst Ind on unconfigured dchan\n");
 
 	if (get_ftdmchan_by_suInstId(suId, suInstId, &sngisdn_info) != FTDM_SUCCESS) {
 		ftdm_log(FTDM_LOG_CRIT, "Could not find matching call suId:%u suInstId:%u spInstId:%u\n", suId, suInstId, spInstId);
-		ISDN_FUNC_TRACE_EXIT(__FUNCTION__);
+		ISDN_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 		return;
 	}
 
@@ -209,7 +209,7 @@ void sngisdn_rcv_cnst_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, C
 	memcpy(&sngisdn_event->event.cnStEvnt, cnStEvnt, sizeof(*cnStEvnt));
 	
 	ftdm_queue_enqueue(((sngisdn_span_data_t*)sngisdn_info->ftdmchan->span->signal_data)->event_queue, sngisdn_event);
-	ISDN_FUNC_TRACE_EXIT(__FUNCTION__);
+	ISDN_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 }
 
 void sngisdn_rcv_disc_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, DiscEvnt *discEvnt)
@@ -217,7 +217,7 @@ void sngisdn_rcv_disc_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, D
 	sngisdn_chan_data_t *sngisdn_info = NULL;
 	sngisdn_event_data_t *sngisdn_event = NULL;
 
-	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
+	ISDN_FUNC_TRACE_ENTER(__FTDM_FUNC__);
 
 	ftdm_assert(spInstId != 0, "Received DISCONNECT with invalid id");
 
@@ -245,7 +245,7 @@ void sngisdn_rcv_disc_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, D
 	
 	ftdm_queue_enqueue(((sngisdn_span_data_t*)sngisdn_info->ftdmchan->span->signal_data)->event_queue, sngisdn_event);
 	
-	ISDN_FUNC_TRACE_EXIT(__FUNCTION__);
+	ISDN_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 }
 
 void sngisdn_rcv_rel_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, RelEvnt *relEvnt)
@@ -253,7 +253,7 @@ void sngisdn_rcv_rel_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, Re
 	sngisdn_chan_data_t  *sngisdn_info = NULL;
 	sngisdn_event_data_t *sngisdn_event = NULL;
 
-	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
+	ISDN_FUNC_TRACE_ENTER(__FTDM_FUNC__);
 	
 	if (!(spInstId && get_ftdmchan_by_spInstId(suId, spInstId, &sngisdn_info) == FTDM_SUCCESS) &&
 		!(suInstId && get_ftdmchan_by_suInstId(suId, suInstId, &sngisdn_info) == FTDM_SUCCESS)) {
@@ -279,7 +279,7 @@ void sngisdn_rcv_rel_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, Re
 	memcpy(&sngisdn_event->event.relEvnt, relEvnt, sizeof(*relEvnt));
 	
  	ftdm_queue_enqueue(((sngisdn_span_data_t*)sngisdn_info->ftdmchan->span->signal_data)->event_queue, sngisdn_event);
-	ISDN_FUNC_TRACE_EXIT(__FUNCTION__);
+	ISDN_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 }
 
 void sngisdn_rcv_dat_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, InfoEvnt *infoEvnt)
@@ -287,7 +287,7 @@ void sngisdn_rcv_dat_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, In
 	sngisdn_chan_data_t  *sngisdn_info;
 	sngisdn_event_data_t *sngisdn_event = NULL;
 	
-	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
+	ISDN_FUNC_TRACE_ENTER(__FTDM_FUNC__);
 
 	if (!(spInstId && get_ftdmchan_by_spInstId(suId, spInstId, &sngisdn_info) == FTDM_SUCCESS) &&
 		!(suInstId && get_ftdmchan_by_suInstId(suId, suInstId, &sngisdn_info) == FTDM_SUCCESS)) {
@@ -312,7 +312,7 @@ void sngisdn_rcv_dat_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, In
 	memcpy(&sngisdn_event->event.infoEvnt, infoEvnt, sizeof(*infoEvnt));
 
  	ftdm_queue_enqueue(((sngisdn_span_data_t*)sngisdn_info->ftdmchan->span->signal_data)->event_queue, sngisdn_event);
-	ISDN_FUNC_TRACE_EXIT(__FUNCTION__);
+	ISDN_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 }
 
 void sngisdn_rcv_sshl_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, SsHlEvnt *ssHlEvnt, uint8_t action)
@@ -320,7 +320,7 @@ void sngisdn_rcv_sshl_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, S
 	sngisdn_chan_data_t  *sngisdn_info;
 	sngisdn_event_data_t *sngisdn_event = NULL;
 
-	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
+	ISDN_FUNC_TRACE_ENTER(__FTDM_FUNC__);
 	
 	if (!(spInstId && get_ftdmchan_by_spInstId(suId, spInstId, &sngisdn_info) == FTDM_SUCCESS) &&
 		!(suInstId && get_ftdmchan_by_suInstId(suId, suInstId, &sngisdn_info) == FTDM_SUCCESS)) {
@@ -346,7 +346,7 @@ void sngisdn_rcv_sshl_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, S
 	memcpy(&sngisdn_event->event.ssHlEvnt, ssHlEvnt, sizeof(*ssHlEvnt));
 
  	ftdm_queue_enqueue(((sngisdn_span_data_t*)sngisdn_info->ftdmchan->span->signal_data)->event_queue, sngisdn_event);
-	ISDN_FUNC_TRACE_EXIT(__FUNCTION__);
+	ISDN_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 }
 
 void sngisdn_rcv_sshl_cfm (int16_t suId, uint32_t suInstId, uint32_t spInstId, SsHlEvnt *ssHlEvnt, uint8_t action)
@@ -354,7 +354,7 @@ void sngisdn_rcv_sshl_cfm (int16_t suId, uint32_t suInstId, uint32_t spInstId, S
 	sngisdn_chan_data_t  *sngisdn_info;
 	sngisdn_event_data_t *sngisdn_event = NULL;
 
-	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
+	ISDN_FUNC_TRACE_ENTER(__FTDM_FUNC__);
 	
 	if (!(spInstId && get_ftdmchan_by_spInstId(suId, spInstId, &sngisdn_info) == FTDM_SUCCESS) &&
 		!(suInstId && get_ftdmchan_by_suInstId(suId, suInstId, &sngisdn_info) == FTDM_SUCCESS)) {
@@ -380,14 +380,14 @@ void sngisdn_rcv_sshl_cfm (int16_t suId, uint32_t suInstId, uint32_t spInstId, S
 	memcpy(&sngisdn_event->event.ssHlEvnt, ssHlEvnt, sizeof(*ssHlEvnt));
 
 	ftdm_queue_enqueue(((sngisdn_span_data_t*)sngisdn_info->ftdmchan->span->signal_data)->event_queue, sngisdn_event);
-	ISDN_FUNC_TRACE_EXIT(__FUNCTION__);
+	ISDN_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 }
 void sngisdn_rcv_rmrt_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, RmRtEvnt *rmRtEvnt, uint8_t action)
 {
 	sngisdn_chan_data_t  *sngisdn_info;
 	sngisdn_event_data_t *sngisdn_event = NULL;
 
-	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
+	ISDN_FUNC_TRACE_ENTER(__FTDM_FUNC__);
 	
 	if (!(spInstId && get_ftdmchan_by_spInstId(suId, spInstId, &sngisdn_info) == FTDM_SUCCESS) &&
 		!(suInstId && get_ftdmchan_by_suInstId(suId, suInstId, &sngisdn_info) == FTDM_SUCCESS)) {
@@ -413,7 +413,7 @@ void sngisdn_rcv_rmrt_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, R
 	memcpy(&sngisdn_event->event.rmRtEvnt, rmRtEvnt, sizeof(*rmRtEvnt));
 
 	ftdm_queue_enqueue(((sngisdn_span_data_t*)sngisdn_info->ftdmchan->span->signal_data)->event_queue, sngisdn_event);
-	ISDN_FUNC_TRACE_EXIT(__FUNCTION__);
+	ISDN_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 }
 
 void sngisdn_rcv_rmrt_cfm (int16_t suId, uint32_t suInstId, uint32_t spInstId, RmRtEvnt *rmRtEvnt, uint8_t action)
@@ -421,7 +421,7 @@ void sngisdn_rcv_rmrt_cfm (int16_t suId, uint32_t suInstId, uint32_t spInstId, R
 	sngisdn_chan_data_t  *sngisdn_info;
 	sngisdn_event_data_t *sngisdn_event = NULL;
 
-	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
+	ISDN_FUNC_TRACE_ENTER(__FTDM_FUNC__);
 	
 	if (!(spInstId && get_ftdmchan_by_spInstId(suId, spInstId, &sngisdn_info) == FTDM_SUCCESS) &&
 		!(suInstId && get_ftdmchan_by_suInstId(suId, suInstId, &sngisdn_info) == FTDM_SUCCESS)) {
@@ -447,7 +447,7 @@ void sngisdn_rcv_rmrt_cfm (int16_t suId, uint32_t suInstId, uint32_t spInstId, R
 	memcpy(&sngisdn_event->event.rmRtEvnt, rmRtEvnt, sizeof(*rmRtEvnt));
 
 	ftdm_queue_enqueue(((sngisdn_span_data_t*)sngisdn_info->ftdmchan->span->signal_data)->event_queue, sngisdn_event);
-	ISDN_FUNC_TRACE_EXIT(__FUNCTION__);
+	ISDN_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 }
 
 void sngisdn_rcv_flc_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, StaEvnt *staEvnt)
@@ -455,7 +455,7 @@ void sngisdn_rcv_flc_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, St
 	sngisdn_chan_data_t  *sngisdn_info;
 	sngisdn_event_data_t *sngisdn_event = NULL;
 
-	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
+	ISDN_FUNC_TRACE_ENTER(__FTDM_FUNC__);
 	
 	if (!(spInstId && get_ftdmchan_by_spInstId(suId, spInstId, &sngisdn_info) == FTDM_SUCCESS) &&
 			 !(suInstId && get_ftdmchan_by_suInstId(suId, suInstId, &sngisdn_info) == FTDM_SUCCESS)) {
@@ -480,7 +480,7 @@ void sngisdn_rcv_flc_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, St
 	memcpy(&sngisdn_event->event.staEvnt, staEvnt, sizeof(*staEvnt));
 
 	ftdm_queue_enqueue(((sngisdn_span_data_t*)sngisdn_info->ftdmchan->span->signal_data)->event_queue, sngisdn_event);
-	ISDN_FUNC_TRACE_EXIT(__FUNCTION__);
+	ISDN_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 }
 
 
@@ -489,7 +489,7 @@ void sngisdn_rcv_fac_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, Fa
 	sngisdn_chan_data_t  *sngisdn_info;
 	sngisdn_event_data_t *sngisdn_event = NULL;
 
-	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
+	ISDN_FUNC_TRACE_ENTER(__FTDM_FUNC__);
 	
 	if (!(spInstId && get_ftdmchan_by_spInstId(suId, spInstId, &sngisdn_info) == FTDM_SUCCESS) &&
 		!(suInstId && get_ftdmchan_by_suInstId(suId, suInstId, &sngisdn_info) == FTDM_SUCCESS)) {
@@ -514,7 +514,7 @@ void sngisdn_rcv_fac_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, Fa
 	memcpy(&sngisdn_event->event.facEvnt, facEvnt, sizeof(*facEvnt));
 
  	ftdm_queue_enqueue(((sngisdn_span_data_t*)sngisdn_info->ftdmchan->span->signal_data)->event_queue, sngisdn_event);
-	ISDN_FUNC_TRACE_EXIT(__FUNCTION__);
+	ISDN_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 }
 
 
@@ -523,12 +523,12 @@ void sngisdn_rcv_sta_cfm (int16_t suId, uint32_t suInstId, uint32_t spInstId, St
 	sngisdn_chan_data_t  *sngisdn_info;
 	sngisdn_event_data_t *sngisdn_event = NULL;
 
-	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
+	ISDN_FUNC_TRACE_ENTER(__FTDM_FUNC__);
 
 	if (!suInstId && !spInstId) {
 		/* This is a response to a sngisdn_snd_info_req
 		 * that was sent to attempt to re-establish DL link */
-		ISDN_FUNC_TRACE_EXIT(__FUNCTION__);
+		ISDN_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 		return;
 	}
 
@@ -560,7 +560,7 @@ void sngisdn_rcv_sta_cfm (int16_t suId, uint32_t suInstId, uint32_t spInstId, St
 
  	ftdm_queue_enqueue(((sngisdn_span_data_t*)sngisdn_info->ftdmchan->span->signal_data)->event_queue, sngisdn_event);
 	ftdm_mutex_unlock(g_sngisdn_data.ccs[suId].mutex);
-	ISDN_FUNC_TRACE_EXIT(__FUNCTION__);
+	ISDN_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 }
 
 void sngisdn_rcv_srv_ind (int16_t suId, Srv *srvEvnt, int16_t dChan, uint8_t ces)
@@ -569,7 +569,7 @@ void sngisdn_rcv_srv_ind (int16_t suId, Srv *srvEvnt, int16_t dChan, uint8_t ces
 	sngisdn_span_data_t	*signal_data;
 	sngisdn_event_data_t *sngisdn_event = NULL;
 
-	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
+	ISDN_FUNC_TRACE_ENTER(__FTDM_FUNC__);
 
 	ftdm_log(FTDM_LOG_INFO, "Received SERVICE IND (dChan:%d ces:%u)\n", dChan, ces);
 
@@ -594,7 +594,7 @@ void sngisdn_rcv_srv_ind (int16_t suId, Srv *srvEvnt, int16_t dChan, uint8_t ces
 	} else {
 		ftdm_queue_enqueue(signal_data->event_queue, sngisdn_event);
 	}
-	ISDN_FUNC_TRACE_EXIT(__FUNCTION__);
+	ISDN_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 }
 
 
@@ -603,7 +603,7 @@ void sngisdn_rcv_srv_cfm (int16_t suId, Srv *srvEvnt, int16_t dChan, uint8_t ces
 	sngisdn_span_data_t	*signal_data = NULL;
 	sngisdn_event_data_t *sngisdn_event = NULL;
 
-	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
+	ISDN_FUNC_TRACE_ENTER(__FTDM_FUNC__);
 
 	ftdm_log(FTDM_LOG_INFO, "Received SERVICE CFM (dChan:%d ces:%u)\n", dChan, ces);
 
@@ -628,7 +628,7 @@ void sngisdn_rcv_srv_cfm (int16_t suId, Srv *srvEvnt, int16_t dChan, uint8_t ces
 	} else {
 		ftdm_queue_enqueue(signal_data->event_queue, sngisdn_event);
 	}
-	ISDN_FUNC_TRACE_EXIT(__FUNCTION__);
+	ISDN_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 }
 
 void sngisdn_rcv_rst_ind (int16_t suId, Rst *rstEvnt, int16_t dChan, uint8_t ces, uint8_t evntType)
@@ -636,7 +636,7 @@ void sngisdn_rcv_rst_ind (int16_t suId, Rst *rstEvnt, int16_t dChan, uint8_t ces
 	sngisdn_span_data_t	*signal_data = NULL;
 	sngisdn_event_data_t *sngisdn_event = NULL;
 
-	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
+	ISDN_FUNC_TRACE_ENTER(__FTDM_FUNC__);
 
 	ftdm_log(FTDM_LOG_INFO, "Received RESTART IND (dChan:%d ces:%u type:%u)\n", dChan, ces, evntType);
 
@@ -661,7 +661,7 @@ void sngisdn_rcv_rst_ind (int16_t suId, Rst *rstEvnt, int16_t dChan, uint8_t ces
 	} else {
 		ftdm_queue_enqueue(signal_data->event_queue, sngisdn_event);
 	}
-	ISDN_FUNC_TRACE_EXIT(__FUNCTION__);
+	ISDN_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 }
 
 void sngisdn_rcv_rst_cfm (int16_t suId, Rst *rstEvnt, int16_t dChan, uint8_t ces, uint8_t evntType)
@@ -669,7 +669,7 @@ void sngisdn_rcv_rst_cfm (int16_t suId, Rst *rstEvnt, int16_t dChan, uint8_t ces
 	sngisdn_span_data_t	*signal_data;
 	sngisdn_event_data_t *sngisdn_event = NULL;
 
-	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
+	ISDN_FUNC_TRACE_ENTER(__FTDM_FUNC__);
 
 
 	ftdm_log(FTDM_LOG_INFO, "Received RESTART CFM (dChan:%d ces:%u type:%u)\n", dChan, ces, evntType);
@@ -695,7 +695,7 @@ void sngisdn_rcv_rst_cfm (int16_t suId, Rst *rstEvnt, int16_t dChan, uint8_t ces
 	} else {
 		ftdm_queue_enqueue(signal_data->event_queue, sngisdn_event);
 	}
-	ISDN_FUNC_TRACE_EXIT(__FUNCTION__);
+	ISDN_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 }
 
 
@@ -866,15 +866,15 @@ void sngisdn_rcv_q931_ind(InMngmt *status)
 											DECODE_LCM_CAUSE(status->t.usta.alarm.cause), status->t.usta.alarm.cause);
 	}
 	
-	ISDN_FUNC_TRACE_EXIT(__FUNCTION__);
+	ISDN_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 	return;
 }
 
 void sngisdn_rcv_cc_ind(CcMngmt *status)
 {
-	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
-	ftdm_log(FTDM_LOG_INFO, "RECEIVED %s\n", __FUNCTION__);
-	ISDN_FUNC_TRACE_EXIT(__FUNCTION__);
+	ISDN_FUNC_TRACE_ENTER(__FTDM_FUNC__);
+	ftdm_log(FTDM_LOG_INFO, "RECEIVED %s\n", __FTDM_FUNC__);
+	ISDN_FUNC_TRACE_EXIT(__FTDM_FUNC__);
     return;
 }
 
