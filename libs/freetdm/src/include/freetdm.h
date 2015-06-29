@@ -1985,7 +1985,7 @@ FIO_CODEC_FUNCTION(fio_alaw2slin);
 FIO_CODEC_FUNCTION(fio_ulaw2alaw);
 FIO_CODEC_FUNCTION(fio_alaw2ulaw);
 
-#define FTDM_PRE __FILE__, __FUNCTION__, __LINE__
+#define FTDM_PRE __FILE__, __func__, __LINE__
 #define FTDM_LOG_LEVEL_DEBUG 7
 #define FTDM_LOG_LEVEL_INFO 6
 #define FTDM_LOG_LEVEL_NOTICE 5
