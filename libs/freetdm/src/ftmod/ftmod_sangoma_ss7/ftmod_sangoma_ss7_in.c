@@ -60,7 +60,7 @@ void sngss7_ssp_sta_cfm(uint32_t infId);
 /* FUNCTIONS ******************************************************************/
 void sngss7_con_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiConEvnt *siConEvnt)
 {
-	SS7_FUNC_TRACE_ENTER(__FUNCTION__);
+	SS7_FUNC_TRACE_ENTER(__FTDM_FUNC__);
 
 	sngss7_chan_data_t	*sngss7_info = NULL;
 	ftdm_channel_t		*ftdmchan = NULL;
@@ -68,14 +68,14 @@ void sngss7_con_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiCo
 
 	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != SNG_CKT_VOICE) {
 		SS7_ERROR("Rx sig event on circuit that is not a voice CIC (%d)\n", circuit);
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 		return;
 	}
 
 	/* get the ftdmchan and ss7_chan_data from the circuit */
 	if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
 		SS7_ERROR("Failed to extract channel data for circuit = %d!\n", circuit);
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 		return;
 	}
 
@@ -84,7 +84,7 @@ void sngss7_con_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiCo
 	
 	if (sngss7_event == NULL) {
 		SS7_ERROR("Failed to allocate memory for sngss7_event!\n");
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 		return;
 	}
 	memset(sngss7_event, 0x0, sizeof(*sngss7_event));
@@ -99,13 +99,13 @@ void sngss7_con_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiCo
 	/* enqueue this event */
 	ftdm_queue_enqueue(((sngss7_span_data_t*)sngss7_info->ftdmchan->span->signal_data)->event_queue, sngss7_event);
 
-	SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+	SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 }
 
 /******************************************************************************/
 void sngss7_con_cfm(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiConEvnt *siConEvnt)
 {
-	SS7_FUNC_TRACE_ENTER(__FUNCTION__);
+	SS7_FUNC_TRACE_ENTER(__FTDM_FUNC__);
 
 	sngss7_chan_data_t	*sngss7_info = NULL;
 	ftdm_channel_t		*ftdmchan = NULL;
@@ -113,14 +113,14 @@ void sngss7_con_cfm(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiCo
 
 	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != SNG_CKT_VOICE) {
 		SS7_ERROR("Rx sig event on circuit that is not a voice CIC (%d)\n", circuit);
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 		return;
 	}
 
 	/* get the ftdmchan and ss7_chan_data from the circuit */
 	if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
 		SS7_ERROR("Failed to extract channel data for circuit = %d!\n", circuit);
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 		return;
 	}
 
@@ -128,7 +128,7 @@ void sngss7_con_cfm(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiCo
 	sngss7_event = ftdm_malloc(sizeof(*sngss7_event));
 	if (sngss7_event == NULL) {
 		SS7_ERROR("Failed to allocate memory for sngss7_event!\n");
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 		return;
 	}
 	memset(sngss7_event, 0x0, sizeof(*sngss7_event));
@@ -143,13 +143,13 @@ void sngss7_con_cfm(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiCo
 	/* enqueue this event */
 	ftdm_queue_enqueue(((sngss7_span_data_t*)sngss7_info->ftdmchan->span->signal_data)->event_queue, sngss7_event);
 
-	SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+	SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 }
 
 /******************************************************************************/
 void sngss7_con_sta(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiCnStEvnt *siCnStEvnt, uint8_t evntType)
 {
-	SS7_FUNC_TRACE_ENTER(__FUNCTION__);
+	SS7_FUNC_TRACE_ENTER(__FTDM_FUNC__);
 
 	sngss7_chan_data_t	*sngss7_info = NULL;
 	ftdm_channel_t		*ftdmchan = NULL;
@@ -157,14 +157,14 @@ void sngss7_con_sta(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiCn
 
 	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != SNG_CKT_VOICE) {
 		SS7_ERROR("Rx sig event on circuit that is not a voice CIC (%d)\n", circuit);
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 		return;
 	}
 
 	/* get the ftdmchan and ss7_chan_data from the circuit */
 	if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
 		SS7_ERROR("Failed to extract channel data for circuit = %d!\n", circuit);
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 		return;
 	}
 
@@ -172,7 +172,7 @@ void sngss7_con_sta(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiCn
 	sngss7_event = ftdm_malloc(sizeof(*sngss7_event));
 	if (sngss7_event == NULL) {
 		SS7_ERROR("Failed to allocate memory for sngss7_event!\n");
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 		return;
 	}
 	memset(sngss7_event, 0x0, sizeof(*sngss7_event));
@@ -188,13 +188,13 @@ void sngss7_con_sta(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiCn
 	/* enqueue this event */
 	ftdm_queue_enqueue(((sngss7_span_data_t*)sngss7_info->ftdmchan->span->signal_data)->event_queue, sngss7_event);
 
-	SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+	SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 }
 
 /******************************************************************************/
 void sngss7_rel_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiRelEvnt *siRelEvnt)
 {
-	SS7_FUNC_TRACE_ENTER(__FUNCTION__);
+	SS7_FUNC_TRACE_ENTER(__FTDM_FUNC__);
 
 	sngss7_chan_data_t	*sngss7_info = NULL;
 	ftdm_channel_t		*ftdmchan = NULL;
@@ -202,14 +202,14 @@ void sngss7_rel_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiRe
 
 	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != SNG_CKT_VOICE) {
 		SS7_ERROR("Rx sig event on circuit that is not a voice CIC (%d)\n", circuit);
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 		return;
 	}
 
 	/* get the ftdmchan and ss7_chan_data from the circuit */
 	if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
 		SS7_ERROR("Failed to extract channel data for circuit = %d!\n", circuit);
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 		return;
 	}
 
@@ -217,7 +217,7 @@ void sngss7_rel_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiRe
 	sngss7_event = ftdm_malloc(sizeof(*sngss7_event));
 	if (sngss7_event == NULL) {
 		SS7_ERROR("Failed to allocate memory for sngss7_event!\n");
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 		return;
 	}
 	memset(sngss7_event, 0x0, sizeof(*sngss7_event));
@@ -232,13 +232,13 @@ void sngss7_rel_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiRe
 	/* enqueue this event */
 	ftdm_queue_enqueue(((sngss7_span_data_t*)sngss7_info->ftdmchan->span->signal_data)->event_queue, sngss7_event);
 
-	SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+	SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 }
 
 /******************************************************************************/
 void sngss7_rel_cfm(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiRelEvnt *siRelEvnt)
 {
-	SS7_FUNC_TRACE_ENTER(__FUNCTION__);
+	SS7_FUNC_TRACE_ENTER(__FTDM_FUNC__);
 
 	sngss7_chan_data_t	*sngss7_info = NULL;
 	ftdm_channel_t		*ftdmchan = NULL;
@@ -246,14 +246,14 @@ void sngss7_rel_cfm(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiRe
 
 	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != SNG_CKT_VOICE) {
 		SS7_ERROR("Rx sig event on circuit that is not a voice CIC (%d)\n", circuit);
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 		return;
 	}
 
 	/* get the ftdmchan and ss7_chan_data from the circuit */
 	if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
 		SS7_ERROR("Failed to extract channel data for circuit = %d!\n", circuit);
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 		return;
 	}
 
@@ -261,7 +261,7 @@ void sngss7_rel_cfm(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiRe
 	sngss7_event = ftdm_malloc(sizeof(*sngss7_event));
 	if (sngss7_event == NULL) {
 		SS7_ERROR("Failed to allocate memory for sngss7_event!\n");
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 		return;
 	}
 	memset(sngss7_event, 0x0, sizeof(*sngss7_event));
@@ -276,13 +276,13 @@ void sngss7_rel_cfm(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiRe
 	/* enqueue this event */
 	ftdm_queue_enqueue(((sngss7_span_data_t*)sngss7_info->ftdmchan->span->signal_data)->event_queue, sngss7_event);
 
-	SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+	SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 }
 
 /******************************************************************************/
 void sngss7_dat_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiInfoEvnt *siInfoEvnt)
 {
-	SS7_FUNC_TRACE_ENTER(__FUNCTION__);
+	SS7_FUNC_TRACE_ENTER(__FTDM_FUNC__);
 
 	sngss7_chan_data_t	*sngss7_info = NULL;
 	ftdm_channel_t		*ftdmchan = NULL;
@@ -290,14 +290,14 @@ void sngss7_dat_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiIn
 
 	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != SNG_CKT_VOICE) {
 		SS7_ERROR("Rx sig event on circuit that is not a voice CIC (%d)\n", circuit);
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 		return;
 	}
 
 	/* get the ftdmchan and ss7_chan_data from the circuit */
 	if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
 		SS7_ERROR("Failed to extract channel data for circuit = %d!\n", circuit);
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 		return;
 	}
 
@@ -305,7 +305,7 @@ void sngss7_dat_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiIn
 	sngss7_event = ftdm_malloc(sizeof(*sngss7_event));
 	if (sngss7_event == NULL) {
 		SS7_ERROR("Failed to allocate memory for sngss7_event!\n");
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 		return;
 	}
 	memset(sngss7_event, 0x0, sizeof(*sngss7_event));
@@ -320,13 +320,13 @@ void sngss7_dat_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiIn
 	/* enqueue this event */
 	ftdm_queue_enqueue(((sngss7_span_data_t*)sngss7_info->ftdmchan->span->signal_data)->event_queue, sngss7_event);
 
-	SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+	SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 }
 
 /******************************************************************************/
 void sngss7_fac_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t evntType, SiFacEvnt *siFacEvnt)
 {
-	SS7_FUNC_TRACE_ENTER(__FUNCTION__);
+	SS7_FUNC_TRACE_ENTER(__FTDM_FUNC__);
 
 	sngss7_chan_data_t	*sngss7_info = NULL;
 	ftdm_channel_t		*ftdmchan = NULL;
@@ -334,14 +334,14 @@ void sngss7_fac_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint
 
 	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != SNG_CKT_VOICE) {
 		SS7_ERROR("Rx sig event on circuit that is not a voice CIC (%d)\n", circuit);
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 		return;
 	}
 
 	/* get the ftdmchan and ss7_chan_data from the circuit */
 	if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
 		SS7_ERROR("Failed to extract channel data for circuit = %d!\n", circuit);
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 		return;
 	}
 
@@ -349,7 +349,7 @@ void sngss7_fac_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint
 	sngss7_event = ftdm_malloc(sizeof(*sngss7_event));
 	if (sngss7_event == NULL) {
 		SS7_ERROR("Failed to allocate memory for sngss7_event!\n");
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 		return;
 	}
 	memset(sngss7_event, 0x0, sizeof(*sngss7_event));
@@ -365,13 +365,13 @@ void sngss7_fac_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint
 	/* enqueue this event */
 	ftdm_queue_enqueue(((sngss7_span_data_t*)sngss7_info->ftdmchan->span->signal_data)->event_queue, sngss7_event);
 
-	SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+	SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 }
 
 /******************************************************************************/
 void sngss7_fac_cfm(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t evntType, SiFacEvnt *siFacEvnt)
 {
-	SS7_FUNC_TRACE_ENTER(__FUNCTION__);
+	SS7_FUNC_TRACE_ENTER(__FTDM_FUNC__);
 
 	sngss7_chan_data_t	*sngss7_info = NULL;
 	ftdm_channel_t		*ftdmchan = NULL;
@@ -379,14 +379,14 @@ void sngss7_fac_cfm(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint
 
 	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != SNG_CKT_VOICE) {
 		SS7_ERROR("Rx sig event on circuit that is not a voice CIC (%d)\n", circuit);
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 		return;
 	}
 
 	/* get the ftdmchan and ss7_chan_data from the circuit */
 	if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
 		SS7_ERROR("Failed to extract channel data for circuit = %d!\n", circuit);
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 		return;
 	}
 
@@ -394,7 +394,7 @@ void sngss7_fac_cfm(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint
 	sngss7_event = ftdm_malloc(sizeof(*sngss7_event));
 	if (sngss7_event == NULL) {
 		SS7_ERROR("Failed to allocate memory for sngss7_event!\n");
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 		return;
 	}
 	memset(sngss7_event, 0x0, sizeof(*sngss7_event));
@@ -410,13 +410,13 @@ void sngss7_fac_cfm(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint
 	/* enqueue this event */
 	ftdm_queue_enqueue(((sngss7_span_data_t*)sngss7_info->ftdmchan->span->signal_data)->event_queue, sngss7_event);
 
-	SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+	SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 }
 
 /******************************************************************************/
 void sngss7_umsg_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit)
 {
-	SS7_FUNC_TRACE_ENTER(__FUNCTION__);
+	SS7_FUNC_TRACE_ENTER(__FTDM_FUNC__);
 
 	sngss7_chan_data_t	*sngss7_info = NULL;
 	ftdm_channel_t		*ftdmchan = NULL;
@@ -424,14 +424,14 @@ void sngss7_umsg_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit)
 
 	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != SNG_CKT_VOICE) {
 		SS7_ERROR("Rx sig event on circuit that is not a voice CIC (%d)\n", circuit);
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 		return;
 	}
 
 	/* get the ftdmchan and ss7_chan_data from the circuit */
 	if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
 		SS7_ERROR("Failed to extract channel data for circuit = %d!\n", circuit);
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 		return;
 	}
 
@@ -439,7 +439,7 @@ void sngss7_umsg_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit)
 	sngss7_event = ftdm_malloc(sizeof(*sngss7_event));
 	if (sngss7_event == NULL) {
 		SS7_ERROR("Failed to allocate memory for sngss7_event!\n");
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 		return;
 	}
 	memset(sngss7_event, 0x0, sizeof(*sngss7_event));
@@ -453,13 +453,13 @@ void sngss7_umsg_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit)
 	/* enqueue this event */
 	ftdm_queue_enqueue(((sngss7_span_data_t*)sngss7_info->ftdmchan->span->signal_data)->event_queue, sngss7_event);
 
-	SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+	SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 
 }
 /* GENERAL STATUS *************************************************************/
 void sngss7_sta_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t globalFlg, uint8_t evntType, SiStaEvnt *siStaEvnt)
 {
-	SS7_FUNC_TRACE_ENTER(__FUNCTION__);
+	SS7_FUNC_TRACE_ENTER(__FTDM_FUNC__);
 
 	sngss7_chan_data_t	*sngss7_info = NULL;
 	ftdm_channel_t		*ftdmchan = NULL;
@@ -509,7 +509,7 @@ void sngss7_sta_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint
 
 					if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
 						SS7_ERROR("Failed to extract channel data for circuit = %d!\n", circuit);
-						SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+						SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 						return;
 					}
 
@@ -525,7 +525,7 @@ void sngss7_sta_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint
 		/* check if we found any circuits that are on the intfId, drop the message
 		 * if none are found */
 		if (!ftdmchan) {
-			SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+			SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 			return;
 		}
 
@@ -535,14 +535,14 @@ void sngss7_sta_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint
 		if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != SNG_CKT_VOICE) {
 			ftdm_log(FTDM_LOG_DEBUG, "Rx %s on circuit that is not a voice CIC (%d) (circuit:%d)\n",
 						DECODE_LCC_EVENT(evntType), g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic, circuit);
-			SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+			SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 			return;
 		}
 
 		/* get the ftdmchan and ss7_chan_data from the circuit */
 		if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
 			SS7_ERROR("Failed to extract channel data for circuit = %d!\n", circuit);
-			SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+			SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 			return;
 		}
 		break;
@@ -553,7 +553,7 @@ void sngss7_sta_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint
 	sngss7_event = ftdm_malloc(sizeof(*sngss7_event));
 	if (sngss7_event == NULL) {
 		SS7_ERROR("Failed to allocate memory for sngss7_event!\n");
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 		return;
 	}
 	memset(sngss7_event, 0x0, sizeof(*sngss7_event));
@@ -576,7 +576,7 @@ void sngss7_sta_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint
 /******************************************************************************/
 void sngss7_susp_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiSuspEvnt *siSuspEvnt)
 {
-	SS7_FUNC_TRACE_ENTER(__FUNCTION__);
+	SS7_FUNC_TRACE_ENTER(__FTDM_FUNC__);
 
 	sngss7_chan_data_t	*sngss7_info = NULL;
 	ftdm_channel_t		*ftdmchan = NULL;
@@ -584,14 +584,14 @@ void sngss7_susp_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiS
 
 	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != SNG_CKT_VOICE) {
 		SS7_ERROR("Rx sig event on circuit that is not a voice CIC (%d)\n", circuit);
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 		return;
 	}
 
 	/* get the ftdmchan and ss7_chan_data from the circuit */
 	if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
 		SS7_ERROR("Failed to extract channel data for circuit = %d!\n", circuit);
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 		return;
 	}
 
@@ -599,7 +599,7 @@ void sngss7_susp_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiS
 	sngss7_event = ftdm_malloc(sizeof(*sngss7_event));
 	if (sngss7_event == NULL) {
 		SS7_ERROR("Failed to allocate memory for sngss7_event!\n");
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 		return;
 	}
 	memset(sngss7_event, 0x0, sizeof(*sngss7_event));
@@ -616,14 +616,14 @@ void sngss7_susp_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiS
 	/* enqueue this event */
 	ftdm_queue_enqueue(((sngss7_span_data_t*)sngss7_info->ftdmchan->span->signal_data)->event_queue, sngss7_event);
 
-	SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+	SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 
 }
 
 /******************************************************************************/
 void sngss7_resm_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiResmEvnt *siResmEvnt)
 {
-	SS7_FUNC_TRACE_ENTER(__FUNCTION__);
+	SS7_FUNC_TRACE_ENTER(__FTDM_FUNC__);
 
 	sngss7_chan_data_t	*sngss7_info = NULL;
 	ftdm_channel_t		*ftdmchan = NULL;
@@ -631,14 +631,14 @@ void sngss7_resm_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiR
 
 	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != SNG_CKT_VOICE) {
 		SS7_ERROR("Rx sig event on circuit that is not a voice CIC (%d)\n", circuit);
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 		return;
 	}
 
 	/* get the ftdmchan and ss7_chan_data from the circuit */
 	if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
 		SS7_ERROR("Failed to extract channel data for circuit = %d!\n", circuit);
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 		return;
 	}
 
@@ -646,7 +646,7 @@ void sngss7_resm_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiR
 	sngss7_event = ftdm_malloc(sizeof(*sngss7_event));
 	if (sngss7_event == NULL) {
 		SS7_ERROR("Failed to allocate memory for sngss7_event!\n");
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 		return;
 	}
 	memset(sngss7_event, 0x0, sizeof(*sngss7_event));
@@ -663,14 +663,14 @@ void sngss7_resm_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiR
 	/* enqueue this event */
 	ftdm_queue_enqueue(((sngss7_span_data_t*)sngss7_info->ftdmchan->span->signal_data)->event_queue, sngss7_event);
 
-	SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+	SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 
 }
 
 /******************************************************************************/
 void sngss7_ssp_sta_cfm(uint32_t infId)
 {
-	SS7_FUNC_TRACE_ENTER(__FUNCTION__);
+	SS7_FUNC_TRACE_ENTER(__FTDM_FUNC__);
 #if 0
 	sngss7_chan_data_t	*sngss7_info = NULL;
 	ftdm_channel_t		*ftdmchan = NULL;
@@ -679,7 +679,7 @@ void sngss7_ssp_sta_cfm(uint32_t infId)
 	/* get the ftdmchan and ss7_chan_data from the circuit */
 	if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
 		SS7_ERROR("Failed to extract channel data for circuit = %d!\n", circuit);
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 		return;
 	}
 
@@ -687,7 +687,7 @@ void sngss7_ssp_sta_cfm(uint32_t infId)
 	sngss7_event = ftdm_malloc(sizeof(*sngss7_event));
 	if (sngss7_event == NULL) {
 		SS7_ERROR("Failed to allocate memory for sngss7_event!\n");
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 		return;
 	}
 	memset(sngss7_event, 0x0, sizeof(*sngss7_event));
@@ -704,7 +704,7 @@ void sngss7_ssp_sta_cfm(uint32_t infId)
 	/* enqueue this event */
 	ftdm_queue_enqueue(((sngss7_span_data_t*)sngss7_info->ftdmchan->span->signal_data)->event_queue, sngss7_event);
 #endif
-	SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+	SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 
 }
 /******************************************************************************/

@@ -55,7 +55,7 @@
 /* FUNCTIONS ******************************************************************/
 void handle_isup_t35(void *userdata)
 {
-    SS7_FUNC_TRACE_ENTER(__FUNCTION__);
+    SS7_FUNC_TRACE_ENTER(__FTDM_FUNC__);
 
     sngss7_timer_data_t *timer = userdata;
     sngss7_chan_data_t  *sngss7_info = timer->sngss7_info;
@@ -87,14 +87,14 @@ void handle_isup_t35(void *userdata)
     /*unlock*/
     ftdm_channel_unlock(ftdmchan);
 
-    SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+    SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
     return;
 }
 
 
 void handle_isup_t10(void *userdata)
 {
-	SS7_FUNC_TRACE_ENTER(__FUNCTION__);
+	SS7_FUNC_TRACE_ENTER(__FTDM_FUNC__);
 
 	sngss7_timer_data_t *timer = userdata;
 	sngss7_chan_data_t  *sngss7_info = timer->sngss7_info;
@@ -109,12 +109,12 @@ void handle_isup_t10(void *userdata)
 
 	ftdm_channel_unlock(ftdmchan);
 
-	SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+	SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 }
 
 void handle_isup_t39(void *userdata)
 {
-	SS7_FUNC_TRACE_ENTER(__FUNCTION__);
+	SS7_FUNC_TRACE_ENTER(__FTDM_FUNC__);
 
 	sngss7_timer_data_t *timer = userdata;
 	sngss7_chan_data_t  *sngss7_info = timer->sngss7_info;
@@ -146,7 +146,7 @@ void handle_isup_t39(void *userdata)
 	/*unlock*/
 	ftdm_channel_unlock(ftdmchan);
 
-	SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+	SS7_FUNC_TRACE_EXIT(__FTDM_FUNC__);
 }
 /******************************************************************************/
 /* For Emacs:

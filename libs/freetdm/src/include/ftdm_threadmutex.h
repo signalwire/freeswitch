@@ -43,13 +43,13 @@ FT_DECLARE(void) ftdm_thread_override_default_stacksize(ftdm_size_t size);
 FT_DECLARE(ftdm_status_t) ftdm_mutex_create(ftdm_mutex_t **mutex);
 FT_DECLARE(ftdm_status_t) ftdm_mutex_destroy(ftdm_mutex_t **mutex);
 
-#define ftdm_mutex_lock(_x) _ftdm_mutex_lock(__FILE__, __LINE__, __FUNCTION__, _x)
+#define ftdm_mutex_lock(_x) _ftdm_mutex_lock(__FILE__, __LINE__, __FTDM_FUNC__, _x)
 FT_DECLARE(ftdm_status_t) _ftdm_mutex_lock(const char *file, int line, const char *func, ftdm_mutex_t *mutex);
 
-#define ftdm_mutex_trylock(_x) _ftdm_mutex_trylock(__FILE__, __LINE__, __FUNCTION__, _x)
+#define ftdm_mutex_trylock(_x) _ftdm_mutex_trylock(__FILE__, __LINE__, __FTDM_FUNC__, _x)
 FT_DECLARE(ftdm_status_t) _ftdm_mutex_trylock(const char *file, int line, const char *func, ftdm_mutex_t *mutex);
 
-#define ftdm_mutex_unlock(_x) _ftdm_mutex_unlock(__FILE__, __LINE__, __FUNCTION__, _x)
+#define ftdm_mutex_unlock(_x) _ftdm_mutex_unlock(__FILE__, __LINE__, __FTDM_FUNC__, _x)
 FT_DECLARE(ftdm_status_t) _ftdm_mutex_unlock(const char *file, int line, const char *func, ftdm_mutex_t *mutex);
 
 FT_DECLARE(ftdm_status_t) ftdm_interrupt_create(ftdm_interrupt_t **cond, ftdm_socket_t device, ftdm_wait_flag_t device_flags);

@@ -507,7 +507,7 @@ void on_wat_log_span(uint8_t span_id, uint8_t level, char *fmt, ...)
 	
 	vsprintf(buff, fmt, argptr);
 
-	ftdm_log_chan_ex(gsm_data->dchan, __FILE__, __FUNCTION__, __LINE__, ftdm_level, "%s", buff);
+	ftdm_log_chan_ex(gsm_data->dchan, __FILE__, __FTDM_FUNC__, __LINE__, ftdm_level, "%s", buff);
 
 	va_end(argptr);
 }

@@ -3863,7 +3863,7 @@ skipdebug:
 			if (!strcmp(ftdmchan->dtmf_hangup_buf, ftdmchan->span->dtmf_hangup)) {
 				ftdm_log(FTDM_LOG_DEBUG, "DTMF hangup detected.\n");
 
-				ftdm_channel_set_state(__FILE__, __FUNCTION__, __LINE__, ftdmchan, FTDM_CHANNEL_STATE_HANGUP, 0, NULL);
+				ftdm_channel_set_state(__FILE__, __FTDM_FUNC__, __LINE__, ftdmchan, FTDM_CHANNEL_STATE_HANGUP, 0, NULL);
 				break;
 			}
 		}
@@ -6122,7 +6122,7 @@ static void execute_safety_hangup(void *data)
 	fchan->hangup_timer = 0;
 	if (fchan->state == FTDM_CHANNEL_STATE_TERMINATING) {
 		ftdm_log_chan(fchan, FTDM_LOG_WARNING, "Forcing hangup since the user did not confirmed our hangup after %dms\n", FORCE_HANGUP_TIMER);
-		_ftdm_channel_call_hangup_nl(__FILE__, __FUNCTION__, __LINE__, fchan, NULL);
+		_ftdm_channel_call_hangup_nl(__FILE__, __FTDM_FUNC__, __LINE__, fchan, NULL);
 	} else {
 		ftdm_log_chan(fchan, FTDM_LOG_CRIT, "Not performing safety hangup, channel state is %s\n", ftdm_channel_state2str(fchan->state));
 	}

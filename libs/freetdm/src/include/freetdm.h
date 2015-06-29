@@ -1014,8 +1014,8 @@ FT_DECLARE(int) ftdm_channel_get_availability(ftdm_channel_t *ftdmchan);
  *        there is no guarantee of whether the event will arrive after or before your execution thread returns
  *        from ftdm_channel_call_answer 
  */
-#define ftdm_channel_call_answer(ftdmchan) _ftdm_channel_call_answer(__FILE__, __FUNCTION__, __LINE__, (ftdmchan), NULL)
-#define ftdm_channel_call_answer_ex(ftdmchan, usrmsg) _ftdm_channel_call_answer(__FILE__, __FUNCTION__, __LINE__, (ftdmchan), (usrmsg))
+#define ftdm_channel_call_answer(ftdmchan) _ftdm_channel_call_answer(__FILE__, __FTDM_FUNC__, __LINE__, (ftdmchan), NULL)
+#define ftdm_channel_call_answer_ex(ftdmchan, usrmsg) _ftdm_channel_call_answer(__FILE__, __FTDM_FUNC__, __LINE__, (ftdmchan), (usrmsg))
 
 /*! \brief Answer call recording the source code point where the it was called (see ftdm_channel_call_answer for an easy to use macro) */
 FT_DECLARE(ftdm_status_t) _ftdm_channel_call_answer(const char *file, const char *func, int line, ftdm_channel_t *ftdmchan, ftdm_usrmsg_t *usrmsg);
@@ -1023,8 +1023,8 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_call_answer(const char *file, const char
 /*! \brief Place an outgoing call in the given channel 
  *  \deprecated This macro is deprecated since leaves the door open to glare issues, use ftdm_call_place instead
  */
-#define ftdm_channel_call_place(ftdmchan) _ftdm_channel_call_place(__FILE__, __FUNCTION__, __LINE__, (ftdmchan), NULL)
-#define ftdm_channel_call_place_ex(ftdmchan, usrmsg) _ftdm_channel_call_place_ex(__FILE__, __FUNCTION__, __LINE__, (ftdmchan), (usrmsg))
+#define ftdm_channel_call_place(ftdmchan) _ftdm_channel_call_place(__FILE__, __FTDM_FUNC__, __LINE__, (ftdmchan), NULL)
+#define ftdm_channel_call_place_ex(ftdmchan, usrmsg) _ftdm_channel_call_place_ex(__FILE__, __FTDM_FUNC__, __LINE__, (ftdmchan), (usrmsg))
 
 /*! \brief Place an outgoing call recording the source code point where it was called (see ftdm_channel_call_place for an easy to use macro)
  *  \deprecated This function is deprecated since leaves the door open to glare issues, use ftdm_call_place instead
@@ -1032,8 +1032,8 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_call_answer(const char *file, const char
 FT_DECLARE(ftdm_status_t) _ftdm_channel_call_place(const char *file, const char *func, int line, ftdm_channel_t *ftdmchan, ftdm_usrmsg_t *usrmsg);
 
 /*! \brief Place an outgoing call with the given caller data in a channel according to the hunting scheme provided */
-#define ftdm_call_place(callerdata, hunting) _ftdm_call_place(__FILE__, __FUNCTION__, __LINE__, (callerdata), (hunting), NULL)
-#define ftdm_call_place_ex(callerdata, hunting, usrmsg) _ftdm_call_place(__FILE__, __FUNCTION__, __LINE__, (callerdata), (hunting), (usrmsg))
+#define ftdm_call_place(callerdata, hunting) _ftdm_call_place(__FILE__, __FTDM_FUNC__, __LINE__, (callerdata), (hunting), NULL)
+#define ftdm_call_place_ex(callerdata, hunting, usrmsg) _ftdm_call_place(__FILE__, __FTDM_FUNC__, __LINE__, (callerdata), (hunting), (usrmsg))
 
 /*! \brief Place an outgoing call with the given caller data in a channel according to the hunting scheme provided and records
  *         the place where it was called. See ftdm_call_place for an easy to use macro
@@ -1065,22 +1065,22 @@ FT_DECLARE(ftdm_status_t) _ftdm_call_place(const char *file, const char *func, i
  * \note  You cannot send more than one indication at the time. You must wait for the completed event before 
  *        calling this function again (unless the return code was different than FTDM_SUCCESS)
  */
-#define ftdm_channel_call_indicate(ftdmchan, indication) _ftdm_channel_call_indicate(__FILE__, __FUNCTION__, __LINE__, (ftdmchan), (indication), NULL)
-#define ftdm_channel_call_indicate_ex(ftdmchan, indication, usrmsg) _ftdm_channel_call_indicate(__FILE__, __FUNCTION__, __LINE__, (ftdmchan), (indication), (usrmsg))
+#define ftdm_channel_call_indicate(ftdmchan, indication) _ftdm_channel_call_indicate(__FILE__, __FTDM_FUNC__, __LINE__, (ftdmchan), (indication), NULL)
+#define ftdm_channel_call_indicate_ex(ftdmchan, indication, usrmsg) _ftdm_channel_call_indicate(__FILE__, __FTDM_FUNC__, __LINE__, (ftdmchan), (indication), (usrmsg))
 
 /*! \brief Indicate a new condition in an incoming call recording the source code point where it was called (see ftdm_channel_call_indicate for an easy to use macro) */
 FT_DECLARE(ftdm_status_t) _ftdm_channel_call_indicate(const char *file, const char *func, int line, ftdm_channel_t *ftdmchan, ftdm_channel_indication_t indication, ftdm_usrmsg_t *usrmsg);
 
 /*! \brief Hangup the call without cause */
-#define ftdm_channel_call_hangup(ftdmchan) _ftdm_channel_call_hangup(__FILE__, __FUNCTION__, __LINE__, (ftdmchan), NULL)
-#define ftdm_channel_call_hangup_ex(ftdmchan, usrmsg) _ftdm_channel_call_hangup(__FILE__, __FUNCTION__, __LINE__, (ftdmchan), (usrmsg))
+#define ftdm_channel_call_hangup(ftdmchan) _ftdm_channel_call_hangup(__FILE__, __FTDM_FUNC__, __LINE__, (ftdmchan), NULL)
+#define ftdm_channel_call_hangup_ex(ftdmchan, usrmsg) _ftdm_channel_call_hangup(__FILE__, __FTDM_FUNC__, __LINE__, (ftdmchan), (usrmsg))
 
 /*! \brief Hangup the call without cause recording the source code point where it was called (see ftdm_channel_call_hangup for an easy to use macro)*/
 FT_DECLARE(ftdm_status_t) _ftdm_channel_call_hangup(const char *file, const char *func, int line, ftdm_channel_t *ftdmchan, ftdm_usrmsg_t *usrmsg);
 
 /*! \brief Hangup the call with cause */
-#define ftdm_channel_call_hangup_with_cause(ftdmchan, cause) _ftdm_channel_call_hangup_with_cause(__FILE__, __FUNCTION__, __LINE__, (ftdmchan), (cause), NULL)
-#define ftdm_channel_call_hangup_with_cause_ex(ftdmchan, cause, usrmsg) _ftdm_channel_call_hangup_with_cause(__FILE__, __FUNCTION__, __LINE__, (ftdmchan), (cause), (usrmsg))
+#define ftdm_channel_call_hangup_with_cause(ftdmchan, cause) _ftdm_channel_call_hangup_with_cause(__FILE__, __FTDM_FUNC__, __LINE__, (ftdmchan), (cause), NULL)
+#define ftdm_channel_call_hangup_with_cause_ex(ftdmchan, cause, usrmsg) _ftdm_channel_call_hangup_with_cause(__FILE__, __FTDM_FUNC__, __LINE__, (ftdmchan), (cause), (usrmsg))
 
 /*! \brief Hangup the call with cause recording the source code point where it was called (see ftdm_channel_call_hangup_with_cause for an easy to use macro) */
 FT_DECLARE(ftdm_status_t) _ftdm_channel_call_hangup_with_cause(const char *file, const char *func, int line, ftdm_channel_t *ftdmchan, ftdm_call_cause_t, ftdm_usrmsg_t *usrmsg);
@@ -1093,15 +1093,15 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_call_hangup_with_cause(const char *file,
  *        there is no guarantee of whether the event will arrive after or before your execution thread returns
  *        from ftdm_channel_call_transfer
  */
-#define ftdm_channel_call_transfer(ftdmchan, arg) _ftdm_channel_call_transfer(__FILE__, __FUNCTION__, __LINE__, (ftdmchan), (arg), NULL)
-#define ftdm_channel_call_transfer_ex(ftdmchan, arg, usrmsg) _ftdm_channel_call_transfer(__FILE__, __FUNCTION__, __LINE__, (ftdmchan), (arg), (usrmsg))
+#define ftdm_channel_call_transfer(ftdmchan, arg) _ftdm_channel_call_transfer(__FILE__, __FTDM_FUNC__, __LINE__, (ftdmchan), (arg), NULL)
+#define ftdm_channel_call_transfer_ex(ftdmchan, arg, usrmsg) _ftdm_channel_call_transfer(__FILE__, __FTDM_FUNC__, __LINE__, (ftdmchan), (arg), (usrmsg))
 
 /*! \brief Answer call recording the source code point where the it was called (see ftdm_channel_call_tranasfer for an easy to use macro) */
 FT_DECLARE(ftdm_status_t) _ftdm_channel_call_transfer(const char *file, const char *func, int line, ftdm_channel_t *ftdmchan, const char* arg, ftdm_usrmsg_t *usrmsg);
 
 /*! \brief Reset the channel */
-#define ftdm_channel_reset(ftdmchan) _ftdm_channel_reset(__FILE__, __FUNCTION__, __LINE__, (ftdmchan), NULL)
-#define ftdm_channel_reset_ex(ftdmchan, usrmsg) _ftdm_channel_reset(__FILE__, __FUNCTION__, __LINE__, (ftdmchan), usrmsg)
+#define ftdm_channel_reset(ftdmchan) _ftdm_channel_reset(__FILE__, __FTDM_FUNC__, __LINE__, (ftdmchan), NULL)
+#define ftdm_channel_reset_ex(ftdmchan, usrmsg) _ftdm_channel_reset(__FILE__, __FTDM_FUNC__, __LINE__, (ftdmchan), usrmsg)
 
 /*! \brief Reset the channel (see _ftdm_channel_reset for an easy to use macro) 
  *  \note if there was a call on this channel, call will be cleared without any notifications to the user
@@ -1109,15 +1109,15 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_call_transfer(const char *file, const ch
 FT_DECLARE(ftdm_status_t) _ftdm_channel_reset(const char *file, const char *func, int line, ftdm_channel_t *ftdmchan, ftdm_usrmsg_t *usrmsg);
 
 /*! \brief Put a call on hold (if supported by the signaling stack) */
-#define ftdm_channel_call_hold(ftdmchan) _ftdm_channel_call_hold(__FILE__, __FUNCTION__, __LINE__, (ftdmchan), NULL)
-#define ftdm_channel_call_hold_ex(ftdmchan, usrmsg) _ftdm_channel_call_hold(__FILE__, __FUNCTION__, __LINE__, (ftdmchan), (usrmsg))
+#define ftdm_channel_call_hold(ftdmchan) _ftdm_channel_call_hold(__FILE__, __FTDM_FUNC__, __LINE__, (ftdmchan), NULL)
+#define ftdm_channel_call_hold_ex(ftdmchan, usrmsg) _ftdm_channel_call_hold(__FILE__, __FTDM_FUNC__, __LINE__, (ftdmchan), (usrmsg))
 
 /*! \brief Put a call on hold recording the source code point where it was called (see ftdm_channel_call_hold for an easy to use macro) */
 FT_DECLARE(ftdm_status_t) _ftdm_channel_call_hold(const char *file, const char *func, int line, ftdm_channel_t *ftdmchan, ftdm_usrmsg_t *usrmsg);
 
 /*! \brief Unhold a call */
-#define ftdm_channel_call_unhold(ftdmchan) _ftdm_channel_call_unhold(__FILE__, __FUNCTION__, __LINE__, (ftdmchan), NULL)
-#define ftdm_channel_call_unhold_ex(ftdmchan, usrmsg) _ftdm_channel_call_unhold(__FILE__, __FUNCTION__, __LINE__, (ftdmchan), (usrmsg))
+#define ftdm_channel_call_unhold(ftdmchan) _ftdm_channel_call_unhold(__FILE__, __FTDM_FUNC__, __LINE__, (ftdmchan), NULL)
+#define ftdm_channel_call_unhold_ex(ftdmchan, usrmsg) _ftdm_channel_call_unhold(__FILE__, __FTDM_FUNC__, __LINE__, (ftdmchan), (usrmsg))
 
 /*! \brief Unhold a call recording the source code point where it was called (see ftdm_channel_call_unhold for an easy to use macro) */
 FT_DECLARE(ftdm_status_t) _ftdm_channel_call_unhold(const char *file, const char *func, int line, ftdm_channel_t *ftdmchan, ftdm_usrmsg_t *usrmsg);

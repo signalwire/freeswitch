@@ -2340,7 +2340,7 @@ outgoing_successful:
 #if 0
 	  static FIO_CHANNEL_REQUEST_FUNCTION (ftdm_sangoma_ss7_request_chan)
 	  {
-	SS7_INFO ("KONRAD-> I got called %s\n", __FUNCTION__);
+	SS7_INFO ("KONRAD-> I got called %s\n", __FTDM_FUNC__);
 	return FTDM_SUCCESS;
 	  }
 

@@ -37,10 +37,6 @@
 
 //#define CUDATEL_DEBUG
 
-#ifndef __FUNCTION__
-#define __FUNCTION__ __SWITCH_FUNC__
-#endif
-
 #define FREETDM_LIMIT_REALM "__freetdm"
 #define FREETDM_VAR_PREFIX "freetdm_"
 #define FREETDM_VAR_PREFIX_LEN (sizeof(FREETDM_VAR_PREFIX)-1)
