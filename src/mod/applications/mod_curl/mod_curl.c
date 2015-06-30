@@ -269,7 +269,7 @@ static http_data_t *do_lookup_url(switch_memory_pool_t *pool, const char *url, c
 static char *print_json(switch_memory_pool_t *pool, http_data_t *http_data)
 {
 	cJSON *top = cJSON_CreateObject(),
-	      *headers = cJSON_CreateObject();
+	      *headers = cJSON_CreateArray();
 	char *data = NULL;
 	char tmp[32], *f = NULL;
 	switch_curl_slist_t *header = http_data->headers;
