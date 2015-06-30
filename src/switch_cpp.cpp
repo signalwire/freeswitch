@@ -1171,7 +1171,7 @@ SWITCH_DECLARE(int) CoreSession::recordFile(char *file_name, int time_limit, int
 	local_fh.silence_hits = silence_hits;
 
 	begin_allow_threads();
-	status = switch_ivr_record_file(session, &local_fh, file_name, &args, time_limit);
+	status = switch_ivr_record_file(session, &local_fh, file_name, ap, time_limit);
 	end_allow_threads();
 
 	fhp = NULL;
