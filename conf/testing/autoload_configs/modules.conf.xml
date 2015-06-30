@@ -28,6 +28,7 @@
     <load module="mod_local_stream"/>
     <load module="mod_tone_stream"/>
     <load module="mod_lua"/>
+    <load module="mod_xml_curl"/>
     <load module="mod_say_en"/>
     <load module="mod_com_amd"/>
     <load module="mod_com_g729"/>
