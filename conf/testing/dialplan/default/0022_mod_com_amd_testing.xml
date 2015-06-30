@@ -1,0 +1,21 @@
+<!-- Testing mod_com_amd -->
+<extension name="amd_example" continue="false">
+  <condition field="destination_number" expression="^6090$">
+    <action application="set" data="media_bug_answer_req=true"/>
+    <action application="set" data="amd_execute_on_machine=transfer machine_detected XML default"/>
+    <action application="voice_start"/>
+    <action application="waitforresult"/>
+    <action application="info"/>
+    <action application="hangup"/>
+  </condition>
+</extension>
+
+<extension name="Found machine">
+  <condition field="destination_number" expression="^(machine_detected)$">
+    <action application="wait_for_silence" data="300 30 5 25000"/>
+    <action application="sleep" data="8000"/>
+    <action application="playback" data="$${sounds_dir}/en/us/callie/ivr/8000/ivr-welcome_to_freeswitch.wav"/>
+    <action application="info"/>
+    <action application="hangup"/>
+  </condition>
+</extension>

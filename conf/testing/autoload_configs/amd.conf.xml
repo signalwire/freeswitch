@@ -1,0 +1,17 @@
+<configuration name="amd.conf" description="AMD Configuration">
+  <!-- AMD -->
+  <settings>
+    <param name="silent_threshold" value="256"/>
+    <param name="silent_initial" value="4500"/>
+    <param name="silent_after_intro" value="2500"/>
+    <param name="silent_max_session" value="200"/>
+    <param name="noise_max_intro" value="1250"/>
+    <param name="noise_min_length" value="120"/>
+    <param name="noise_inter_silence" value="50"/>
+    <param name="noise_max_count" value="3"/>
+    <param name="total_analysis_time" value="5000"/>
+    <param name="ring_timeout" value="36"/>
+    <param name="break_digit" value="#"/>
+    <param name="debug" value="1"/>
+  </settings>
+</configuration>

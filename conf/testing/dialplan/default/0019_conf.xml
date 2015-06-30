@@ -41,7 +41,7 @@
     <action application="set" data="video_mute_png=/tmp/does_not_exist.png"/>  
     <action application="set" data="video_banner_text={font_face=/tmp/does_not_exist.ttf}${caller_id_name}(${caller_id_number})"/>  
     <action application="set" data="conference_member_flags=moderator"/>
-    <action application="conference" data="6070@video-mcu-stereo"/>  
+    <action application="conference" data="6070@video-mcu-stereo"/>
   </condition>
 </extension>
 
@@ -49,7 +49,23 @@
 <extension name="conf">
   <condition field="destination_number" expression="^6074$">
     <action application="answer"/>  
-    <action application="conference" data="6070@video-mcu-stereo-chime"/>  
+    <action application="conference" data="6070@video-mcu-stereo-chime"/>
+  </condition>
+</extension>
+
+<!-- test video chime list via local_stream in conference -->
+<extension name="conf">
+  <condition field="destination_number" expression="^6075$">
+    <action application="answer"/>  
+    <action application="conference" data="6070@video-mcu-stereo-chime-record"/>
+  </condition>
+</extension>
+
+
+<extension name="conf">
+  <condition field="destination_number" expression="^6076$">
+    <action application="answer"/>  
+    <action application="conference" data="6070@video-mcu-passthrough"/>
   </condition>
 </extension>
 
