@@ -468,6 +468,8 @@ var iceTimer;
 	}
 
 	var video = {};
+	var bestFrameRate = obj.options.videoParams.vertoBestFrameRate;
+	delete obj.options.videoParams.vertoBestFrameRate;
 
 	if (window.moz) {
 	    video = obj.options.videoParams;
@@ -478,15 +480,20 @@ var iceTimer;
 	    video = {
 		mandatory: obj.options.videoParams,
 		optional: []
-            }
+            }	    	    
 	}
 	
 	var useVideo = obj.options.useVideo;
 
 	if (useVideo && obj.options.useCamera && obj.options.useCamera !== "none") {
 	    if (obj.options.useCamera !== "any") {
-		video.optional = [{sourceId: obj.options.useCamera}]
+		video.optional.push({sourceId: obj.options.useCamera});
 	    }
+
+	    if (bestFrameRate && !window.moz) {
+		video.optional.push({minFrameRate: bestFrameRate});
+	    }
+
 	} else {
 	    video = null;
 	    useVideo = null;

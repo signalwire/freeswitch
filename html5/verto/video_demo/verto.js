@@ -179,7 +179,8 @@ function check_vid_res()
 	    "minHeight": vid_height,
 	    "maxWidth": vid_width,
 	    "maxHeight": vid_height,
-	    "minFrameRate": 30, 
+	    "minFrameRate": 15, 
+	    "vertoBestFrameRate": 30,
 	    //chromeMediaSource: 'screen', 
 	    //mediaSource: 'screen'
 	});
@@ -1165,7 +1166,8 @@ function init() {
             "minHeight": vid_height,
 	    "maxWidth": vid_width,
 	    "maxHeight": vid_height,
-	    "minFrameRate": 30,
+	    "minFrameRate": 15,
+	    "vertoBestFrameRate": 30,
 	    //chromeMediaSource: 'screen',
 	    //mediaSource: 'screen'
         },
