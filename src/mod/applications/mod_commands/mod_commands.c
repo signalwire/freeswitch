@@ -5430,7 +5430,7 @@ SWITCH_STANDARD_API(uuid_setvar_function)
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "No variable name specified.\n");
 					stream->write_function(stream, "-ERR No variable specified\n");
 				} else {
-					switch_channel_set_variable(channel, var_name, var_value);
+					switch_channel_add_variable_var_check(channel, var_name, var_value, SWITCH_FALSE, SWITCH_STACK_BOTTOM);
 					stream->write_function(stream, "+OK\n");
 				}
 
@@ -5539,7 +5539,24 @@ SWITCH_STANDARD_API(uuid_getvar_function)
 					stream->write_function(stream, "-ERR No variable name specified!\n");
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "No variable name specified.\n");
 				} else {
-					var_value = switch_channel_get_variable(channel, var_name);
+					if (strchr(var_name, '[')) {
+						char *ptr = NULL;
+						int idx = -1;
+						char *vname = strdup(var_name);
+						
+						if ((ptr = strchr(vname, '[')) && strchr(ptr, ']')) {
+							*ptr++ = '\0';
+							idx = atoi(ptr);
+							var_value = switch_channel_get_variable_dup(channel, vname, SWITCH_TRUE, idx);
+						}
+
+						free(vname);
+					}
+					
+					if (!var_value) {
+						var_value = switch_channel_get_variable(channel, var_name);
+					}
+						
 					if (var_value != NULL) {
 						stream->write_function(stream, "%s", var_value);
 					} else {
