@@ -33,7 +33,7 @@
 #include "srgs.h"
 
 #define MAX_RECURSION 100
-#define MAX_TAGS 30
+#define MAX_TAGS 1024
 
 /** function to handle tag attributes */
 typedef int (* tag_attribs_fn)(struct srgs_grammar *, char **);
