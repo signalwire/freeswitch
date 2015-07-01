@@ -69,6 +69,7 @@ struct local_stream_context {
 	int last_w;
 	int last_h;
 	int serno;
+	int pop_count;
 	switch_image_t *banner_img;
 	switch_time_t banner_timeout;
 	struct local_stream_context *next;
@@ -814,6 +815,13 @@ static switch_status_t local_stream_file_read_video(switch_file_handle_t *handle
 
  got_img:
 
+	if (context->pop_count > 0) {
+		switch_rgb_color_t bgcolor = { 0 };
+		switch_color_set_rgb(&bgcolor, "#000000");
+		switch_img_fill(frame->img, 0, 0, frame->img->d_w, frame->img->d_h, &bgcolor);
+		context->pop_count--;
+	}
+	
 	now = switch_micro_time_now();
 
 	if (context->banner_img) {
@@ -826,6 +834,7 @@ static switch_status_t local_stream_file_read_video(switch_file_handle_t *handle
 		switch_img_free(&context->banner_img);
 		context->banner_timeout = 0;
 		context->serno = context->source->serno;
+		context->pop_count = 5;
 	}
 	
 	if (context->source->banner_txt) {
