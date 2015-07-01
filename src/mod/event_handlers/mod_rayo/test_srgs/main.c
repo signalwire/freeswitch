@@ -18,6 +18,79 @@ static const char *adhearsion_menu_grammar =
 	"  </rule>\n"
 	"</grammar>\n";
 
+static const char *adhearsion_large_menu_grammar =
+	"<grammar xmlns=\"http://www.w3.org/2001/06/grammar\" version=\"1.0\" xml:lang=\"en-US\" mode=\"dtmf\" root=\"options\" tag-format=\"semantics/1.0-literals\">"
+	"  <rule id=\"options\" scope=\"public\">\n"
+	"    <one-of>\n"
+	"      <item><tag>0</tag>1</item>\n"
+	"      <item><tag>1</tag>5</item>\n"
+	"      <item><tag>2</tag>7</item>\n"
+	"      <item><tag>3</tag>9</item>\n"
+	"      <item><tag>4</tag>715</item>\n"
+	"      <item><tag>5</tag>716</item>\n"
+	"      <item><tag>6</tag>717</item>\n"
+	"      <item><tag>7</tag>718</item>\n"
+	"      <item><tag>8</tag>719</item>\n"
+	"      <item><tag>9</tag>720</item>\n"
+	"      <item><tag>10</tag>721</item>\n"
+	"      <item><tag>11</tag>722</item>\n"
+	"      <item><tag>12</tag>723</item>\n"
+	"      <item><tag>13</tag>724</item>\n"
+	"      <item><tag>14</tag>725</item>\n"
+	"      <item><tag>15</tag>726</item>\n"
+	"      <item><tag>16</tag>727</item>\n"
+	"      <item><tag>17</tag>728</item>\n"
+	"      <item><tag>18</tag>729</item>\n"
+	"      <item><tag>19</tag>730</item>\n"
+	"      <item><tag>20</tag>731</item>\n"
+	"      <item><tag>21</tag>732</item>\n"
+	"      <item><tag>22</tag>733</item>\n"
+	"      <item><tag>23</tag>734</item>\n"
+	"      <item><tag>24</tag>735</item>\n"
+	"      <item><tag>25</tag>736</item>\n"
+	"      <item><tag>26</tag>737</item>\n"
+	"      <item><tag>27</tag>738</item>\n"
+	"      <item><tag>28</tag>739</item>\n"
+	"      <item><tag>29</tag>740</item>\n"
+	"      <item><tag>30</tag>741</item>\n"
+	"      <item><tag>31</tag>742</item>\n"
+	"      <item><tag>32</tag>743</item>\n"
+	"      <item><tag>33</tag>744</item>\n"
+	"      <item><tag>34</tag>745</item>\n"
+	"      <item><tag>35</tag>746</item>\n"
+	"      <item><tag>36</tag>747</item>\n"
+	"      <item><tag>37</tag>748</item>\n"
+	"      <item><tag>38</tag>749</item>\n"
+	"      <item><tag>39</tag>750</item>\n"
+	"      <item><tag>40</tag>751</item>\n"
+	"      <item><tag>41</tag>752</item>\n"
+	"      <item><tag>42</tag>753</item>\n"
+	"      <item><tag>43</tag>754</item>\n"
+	"      <item><tag>44</tag>755</item>\n"
+	"      <item><tag>45</tag>756</item>\n"
+	"      <item><tag>46</tag>757</item>\n"
+	"      <item><tag>47</tag>758</item>\n"
+	"      <item><tag>48</tag>759</item>\n"
+	"      <item><tag>49</tag>760</item>\n"
+	"      <item><tag>50</tag>761</item>\n"
+	"      <item><tag>51</tag>762</item>\n"
+	"      <item><tag>52</tag>763</item>\n"
+	"      <item><tag>53</tag>764</item>\n"
+	"      <item><tag>54</tag>765</item>\n"
+	"      <item><tag>55</tag>766</item>\n"
+	"      <item><tag>56</tag>767</item>\n"
+	"      <item><tag>57</tag>768</item>\n"
+	"      <item><tag>58</tag>769</item>\n"
+	"      <item><tag>59</tag>770</item>\n"
+	"      <item><tag>60</tag>771</item>\n"
+	"      <item><tag>61</tag>772</item>\n"
+	"      <item><tag>62</tag>773</item>\n"
+	"      <item><tag>63</tag>774</item>\n"
+	"      <item><tag>64</tag>775</item>\n"
+	"    </one-of>\n"
+	"  </rule>\n"
+	"</grammar>\n";
+
 /**
  * Test matching against adhearsion menu grammar
  */
@@ -64,6 +137,58 @@ static void test_match_adhearsion_menu_grammar(void)
 	ASSERT_NULL(interpretation);
 	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "0123456789*#", &interpretation));
 	ASSERT_NULL(interpretation);
+
+	srgs_parser_destroy(parser);
+}
+
+/**
+ * Test matching against adhearsion menu grammar
+ */
+static void test_match_adhearsion_large_menu_grammar(void)
+{
+	struct srgs_parser *parser;
+	struct srgs_grammar *grammar;
+	const char *interpretation;
+
+	parser = srgs_parser_new("1234");
+	ASSERT_NOT_NULL((grammar = srgs_parse(parser, adhearsion_large_menu_grammar)));
+
+	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "0", &interpretation));
+	ASSERT_NULL(interpretation);
+	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "1", &interpretation));
+	ASSERT_STRING_EQUALS("0", interpretation);
+	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "2", &interpretation));
+	ASSERT_NULL(interpretation);
+	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "3", &interpretation));
+	ASSERT_NULL(interpretation);
+	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "4", &interpretation));
+	ASSERT_NULL(interpretation);
+	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "5", &interpretation));
+	ASSERT_STRING_EQUALS("1", interpretation);
+	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "6", &interpretation));
+	ASSERT_NULL(interpretation);
+	ASSERT_EQUALS(SMT_MATCH, srgs_grammar_match(grammar, "7", &interpretation));
+	ASSERT_STRING_EQUALS("2", interpretation);
+	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "715", &interpretation));
+	ASSERT_STRING_EQUALS("4", interpretation);
+	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "8", &interpretation));
+	ASSERT_NULL(interpretation);
+	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "9", &interpretation));
+	ASSERT_STRING_EQUALS("3", interpretation);
+	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "#", &interpretation));
+	ASSERT_NULL(interpretation);
+	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "*", &interpretation));
+	ASSERT_NULL(interpretation);
+	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "A", &interpretation));
+	ASSERT_NULL(interpretation);
+	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "27", &interpretation));
+	ASSERT_NULL(interpretation);
+	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "223", &interpretation));
+	ASSERT_NULL(interpretation);
+	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "0123456789*#", &interpretation));
+	ASSERT_NULL(interpretation);
+	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "761", &interpretation));
+	ASSERT_STRING_EQUALS("50", interpretation);
 
 	srgs_parser_destroy(parser);
 }
@@ -1088,6 +1213,7 @@ int main(int argc, char **argv)
 	srgs_init();
 	TEST(test_parse_grammar);
 	TEST(test_match_adhearsion_menu_grammar);
+	TEST(test_match_adhearsion_large_menu_grammar);
 	TEST(test_match_duplicate_tag_grammar);
 	TEST(test_match_adhearsion_ask_grammar);
 	TEST(test_match_multi_digit_grammar);
