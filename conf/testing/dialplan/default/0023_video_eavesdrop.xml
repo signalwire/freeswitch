@@ -1,0 +1,9 @@
+<extension name="eavesdrop">
+  <condition field="destination_number" expression="^7000$">
+    <action application="answer"/>
+    <action application="set" data="eavesdrop_indicate_failed=tone_stream://%(500, 0, 320)"/>
+    <action application="set" data="eavesdrop_indicate_new=tone_stream://%(500, 0, 620)"/>
+    <action application="set" data="eavesdrop_indicate_idle=tone_stream://%(250, 0, 920)"/>
+    <action application="eavesdrop" data="all"/>
+  </condition>
+</extension>  
