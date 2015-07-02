@@ -4920,7 +4920,13 @@ static void conference_write_video_frame(conference_obj_t *conference, conferenc
 {
 	conference_member_t *imember;
 	int want_refresh = 0;
+	unsigned char buf[SWITCH_RTP_MAX_BUF_LEN] = "";
+	switch_frame_t tmp_frame = { 0 };
 
+	if (switch_test_flag(vid_frame, SFF_CNG) || !vid_frame->packet) {
+		return;
+	}
+	
 	if (switch_test_flag(conference, CFLAG_FLOOR_CHANGE)) {
 		switch_clear_flag(conference, CFLAG_FLOOR_CHANGE);
 	}
@@ -4939,12 +4945,18 @@ static void conference_write_video_frame(conference_obj_t *conference, conferenc
 		}
 		
 		if (isession && switch_channel_test_flag(imember->channel, CF_VIDEO)) {
-			//switch_test_flag(conference, CFLAG_VID_FLOOR_LOCK) || 
-
 			if (!switch_test_flag(imember, MFLAG_RECEIVING_VIDEO) && 
 				(switch_test_flag(conference, CFLAG_VID_FLOOR_LOCK) ||
 				 !(imember->id == imember->conference->video_floor_holder && imember->conference->last_video_floor_holder))) {
-				switch_core_session_write_video_frame(imember->session, vid_frame, SWITCH_IO_FLAG_NONE, 0);
+
+				switch_assert(vid_frame->packetlen <= SWITCH_RTP_MAX_BUF_LEN);
+				tmp_frame = *vid_frame;
+				tmp_frame.packet = buf;
+				tmp_frame.data = buf + 12;
+				memcpy(tmp_frame.packet, vid_frame->packet, vid_frame->packetlen);
+				tmp_frame.packetlen = vid_frame->packetlen;
+				tmp_frame.datalen = vid_frame->datalen;
+				switch_core_session_write_video_frame(imember->session, &tmp_frame, SWITCH_IO_FLAG_NONE, 0);
 			}
 		}
 		
@@ -4966,6 +4978,10 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
 
 	switch_assert(member);
 
+	if (switch_test_flag(frame, SFF_CNG) || !frame->packet) {
+		return SWITCH_STATUS_SUCCESS;
+	}
+	
 	
 	if (switch_thread_rwlock_tryrdlock(member->conference->rwlock) != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_FALSE;
