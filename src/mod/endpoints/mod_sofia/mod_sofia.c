@@ -969,8 +969,9 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 		return SWITCH_STATUS_FALSE;
 	}
 
-	while (!(switch_core_media_ready(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO) && !switch_channel_test_flag(channel, CF_REQ_MEDIA))) {
+	while (!(switch_core_media_ready(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO))){// && !switch_channel_test_flag(channel, CF_REQ_MEDIA))) {
 		switch_ivr_parse_all_messages(tech_pvt->session);
+
 		if (--sanity && switch_channel_up(channel)) {
 			switch_yield(10000);
 		} else {
@@ -1374,7 +1375,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 							  switch_channel_get_name(channel), msg->string_arg);
 			switch_core_media_set_local_sdp(session, msg->string_arg, SWITCH_TRUE);
 
-			if(zstr(tech_pvt->mparams.local_sdp_str)) {
+			if (zstr(tech_pvt->mparams.local_sdp_str)) {
 				sofia_set_flag(tech_pvt, TFLAG_3PCC_INVITE);
 			}
 
@@ -1444,6 +1445,17 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "%s Request to send IMAGE on channel with not t38 options.\n",
 								  switch_channel_get_name(channel));
 			}
+		}
+		break;
+
+	case SWITCH_MESSAGE_INDICATE_3P_NOMEDIA:
+		{
+			nua_invite(tech_pvt->nh, NUTAG_MEDIA_ENABLE(0), SIPTAG_PAYLOAD_STR(msg->string_arg), TAG_END());
+		}
+		break;
+	case SWITCH_MESSAGE_INDICATE_3P_MEDIA:
+		{
+			nua_invite(tech_pvt->nh, NUTAG_MEDIA_ENABLE(0), SIPTAG_PAYLOAD_STR(""), TAG_END());
 		}
 		break;
 

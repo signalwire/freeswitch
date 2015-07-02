@@ -588,7 +588,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_uuid_bridge(const char *originator_uu
   \return SWITCH_STATUS_SUCCESS if all is well
 */
 SWITCH_DECLARE(switch_status_t) switch_ivr_media(const char *uuid, switch_media_flag_t flags);
-
+SWITCH_DECLARE(switch_status_t) switch_ivr_3p_media(const char *uuid, switch_media_flag_t flags);
 /*!
   \brief Signal a session to request indirect media allowing it to exchange media directly with another device
   \param uuid the uuid of the session to request
@@ -596,6 +596,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_media(const char *uuid, switch_media_
   \return SWITCH_STATUS_SUCCESS if all is well
 */
 SWITCH_DECLARE(switch_status_t) switch_ivr_nomedia(const char *uuid, switch_media_flag_t flags);
+SWITCH_DECLARE(switch_status_t) switch_ivr_3p_nomedia(const char *uuid, switch_media_flag_t flags);
 
 /*!
   \brief Signal the session with a protocol specific hold message.
