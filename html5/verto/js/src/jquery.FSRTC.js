@@ -491,7 +491,7 @@ var iceTimer;
 	    }
 
 	    if (bestFrameRate && !window.moz) {
-		video.optional.push({minFrameRate: bestFrameRate});
+		 video.optional.push({minFrameRate: bestFrameRate});
 	    }
 
 	} else {

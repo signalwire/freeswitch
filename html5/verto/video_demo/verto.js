@@ -16,6 +16,13 @@ var is_full_screen = false;
 var outgoingBandwidth;
 var incomingBandwidth;
 var vqual;
+var sessid = null;
+var master = null;
+var canvas_id = null;
+var second_screen = null;
+var save_settings = true;
+
+var video_screen = "webcam"
 
 $( ".selector" ).pagecontainer({ "theme": "a" });
 
@@ -30,6 +37,7 @@ function clearConfMan() {
     }
 
     $("#conf").hide();
+    $("#canvasui").hide();
     $("#message").hide();
     chatting_with = null;
 }
@@ -96,39 +104,39 @@ function full_screen(name) {
     }
 }
 
-$("#webcam").resize(function(e) { 
-    console.log("video size changed to " + $("#webcam").width() + "x" + $("#webcam").height());
+$("#" + video_screen).resize(function(e) { 
+    console.log("video size changed to " + $("#" + video_screen).width() + "x" + $("#" + video_screen).height());
 
-    if ($("#webcam").width() > $(window).width()) {
+    if ($("#" + video_screen).width() > $(window).width()) {
 	//resize(false);
-	$("#webcam").width("100%");
-	$("#webcam").height("100%"); 
+	$("#" + video_screen).width("100%");
+	$("#" + video_screen).height("100%"); 
     }
 
 });
 		   
 
 function resize(up) {
-    var width = $("#webcam").width();
-    var height = $("#webcam").height();
+    var width = $("#" + video_screen).width();
+    var height = $("#" + video_screen).height();
 
     if (up) {
-	$("#webcam").width(width * 1.20);
-	$("#webcam").height(height * 1.20);
+	$("#" + video_screen).width(width * 1.20);
+	$("#" + video_screen).height(height * 1.20);
     } else {
-	$("#webcam").width(width * .80);
-	$("#webcam").height(height * .80);
+	$("#" + video_screen).width(width * .80);
+	$("#" + video_screen).height(height * .80);
     }
 
-    console.log("video size changed to " + $("#webcam").width() + "x" + $("#webcam").height());
+    console.log("video size changed to " + $("#" + video_screen).width() + "x" + $("#" + video_screen).height());
 
 }
 
 function real_size() {
 
 
-    $("#webcam").width("");
-    $("#webcam").height("");
+    $("#" + video_screen).width("");
+    $("#" + video_screen).height("");
 
     console.log("video size changed to natural default");
 
@@ -253,24 +261,88 @@ var callbacks = {
 
                 case "conference-liveArray-part":
                     clearConfMan();
+		    if (data.pvtData.secondScreen) {
+			$("#mainButtons").show();
+			$("#canvasButtons").hide();
+			$("#keypad").show();
+		    }
                     break;
                 case "conference-liveArray-join":
                     clearConfMan();
-		    confMan = new $.verto.confMan(verto, {
-			tableID: "#conf_list",
-			statusID: "#conf_count",
-			mainModID: "#conf_mod",
-			displayID: "#conf_display",
-			dialog: dialog,
-			hasVid: check_vid(),
-			laData: data.pvtData
-		    });
 
-                    $("#conf").show();
-		    $("#chatwin").html("");
-                    $("#message").show();
+		    if (data.pvtData.secondScreen) {
+			$("#mainButtons").hide();
+			$("#canvasButtons").show();
+			$("#keypad").hide();
+		    } else {
+			confMan = new $.verto.confMan(verto, {
+			    tableID: "#conf_list",
+			    statusID: "#conf_count",
+			    mainModID: "#conf_mod",
+			    displayID: "#conf_display",
+			    dialog: dialog,
+			    hasVid: check_vid(),
+			    laData: data.pvtData
+			});
 
-		    chatting_with = data.pvtData.chatID;
+			if (!data.pvtData.canvasCount) {
+			    data.pvtData.canvasCount = 1;
+			}
+
+			var canvasCount = data.pvtData.canvasCount + 0;
+		    
+			if (canvasCount <= 1) {
+			    $("#canvasui").hide();
+			} if (canvasCount > 1) {
+			    $("#canvasui").show();
+			    $("#canvasid").selectmenu({});
+			    $("#canvasid").selectmenu("enable");
+			    $("#canvasid").empty();
+			    
+			    var x;
+			    
+			    for (x = 1; x < canvasCount; x++) {
+				$("#canvasid").append(new Option("Canvas " + (x + 1), (x + 1)));
+			    }
+			    
+			    $("#canvasid").append(new Option("Super Canvas", x + 1));
+
+			    $("#canvasid").selectmenu('refresh', true);
+			    
+			    $("#canvasbut").click(function() {
+				var canvas_id = $("#canvasid").find(":selected").val();
+				var s = window.location.href;
+				s = s.replace(/\#.*/,'');
+				s += "#sessid=random&master=" + cur_call.callID + 
+				    "&secondScreen=true&canvas_id=" + canvas_id + "&autocall=" + $("#ext").val() + "-canvas-" + canvas_id;
+				console.log("opening new window to " + s);
+				window.open(s, "canvas_window_" + canvas_id, "toolbar=0,location=0,menubar=0,directories=0,width=" + ($("#" + video_screen).width() + 50) + ",height=" + ($("#" + video_screen).height() + 400));
+			    });
+			}
+
+			$("#conf").show();
+			$("#chatwin").html("");
+
+			if (data.pvtData.hipchatURL) {
+			    var namex = $("#cidname").val();
+
+			    if (!namex.indexOf(" ") > 0) {
+				namex += " " + $("#cid").val();
+			    }
+			    
+			    var name = namex.replace(/ /i, '%20');
+			
+			    $('#hcmessage').hipChatPanel({
+				url: data.pvtData.hipchatURL + "?name=" + name,
+				timezone: "CST"
+			    });
+			    $("#hctop").show().find('.show-hipchat').click();
+			} else {
+			    $("#message").show();
+			}
+
+			chatting_with = data.pvtData.chatID;
+		    }
 
                     break;
                 }
@@ -402,17 +474,38 @@ var callbacks = {
 	    break;
         case $.verto.enum.state.early:
         case $.verto.enum.state.active:
-            display("Talking to: " + d.cidString());
+	    if (sessid) {
+		cur_call.setMute("on");
+		display("Viewing Canvas: " + canvas_id);
+
+		verto.subscribe("presence", {
+                    handler: function(v, e) {
+			if (e.data.channelUUID === master && e.data.channelCallState === "HANGUP") {
+			    cur_call.hangup();
+			}
+                    }
+		});
+
+	    } else {
+		display("Talking to: " + d.cidString());
+	    }
             goto_page("incall");
             break;
         case $.verto.enum.state.hangup:
 	    $("#main_info").html("Call ended with cause: " + d.cause);
             goto_page("main");
+	    exit_full_screen();
         case $.verto.enum.state.destroy:
 	    $("#hangup_cause").html("");
             clearConfMan();
 	    real_size();
             cur_call = null;
+	    if (sessid) {
+		setTimeout(function() {
+		    delete $.verto.warnOnUnload;
+		    window.close();
+		}, 500);
+	    }
             break;
         case $.verto.enum.state.held:
             break;
@@ -458,6 +551,10 @@ var callbacks = {
         var today = new Date();
         $("#errordisplay").html("Connection Error.<br>Last Attempt: " + today);
         goto_page("main");
+
+	if (sessid) {
+	    window.close();
+	}
     },
 
     onEvent: function(v, e) {
@@ -511,6 +608,12 @@ $("#hupbtn").click(function() {
     cur_call = null;
 });
 
+$("#hupbtn2").click(function() {
+    delete $.verto.warnOnUnload;
+    verto.hangup();
+    cur_call = null;
+});
+
 $("#mutebtn").click(function() {
     cur_call.dtmf("0");
 });
@@ -542,19 +645,23 @@ function on_full(which)
 	clearTimeout(rs);
 	$("#usr2").hide();
 	rs = setTimeout(function() {
-	    $("#webcam").width($(window).width());
-	    $("#webcam").height($(window).height());
+	    $("#" + video_screen).width($(window).width());
+	    $("#" + video_screen).height($(window).height());
 	}, 1500);
 	$("#rows").css("position", "absolute").css("z-index", "2");    
 	$("#fullbtn").text("Exit Full Screen");
+	$("#fullbtn2").text("Exit Full Screen");
+	$("#usrctl").show();
     } else {
+	$("#usrctl").hide();
 	$("#rows").css("position", "static").css("z-index", "2");
 	$("#fullbtn").text("Enter Full Screen");
+	$("#fullbtn2").text("Enter Full Screen");
 	clearTimeout(usrto);
 	clearTimeout(rs);
 	rs = setTimeout(function() { 
-	    $("#webcam").width("100%");
-	    $("#webcam").height("100%");
+	    $("#" + video_screen).width("100%");
+	    $("#" + video_screen).height("100%");
 	}, 1500);
     }
 
@@ -587,10 +694,15 @@ $("#fullbtn").click(function() {
     } else {
 	exit_full_screen();
     }
+});
 
+$("#fullbtn2").click(function() {
 
-//    $("#mod1").css("position", "absolute").css("z-index", "2");
-
+    if (!is_full) {
+	full_screen("fs");
+    } else {
+	exit_full_screen();
+    }
 });
 
 $("#biggerbtn").click(function() {
@@ -601,7 +713,7 @@ $("#smallerbtn").click(function() {
     resize(false);
 });
 
-$("#webcam").click(function() {
+$("#" + video_screen).click(function() {
     check_vid();
 });
 
@@ -624,10 +736,14 @@ function docall() {
 	incomingBandwidth: incomingBandwidth,
         useVideo: check_vid(),
         useStereo: $("#use_stereo").is(':checked'),
-	useCamera: $("#usecamera").find(":selected").val(),
+	useCamera: sessid ? "none" : $("#usecamera").find(":selected").val(),
 	useMic: $("#usemic").find(":selected").val(),
 	dedEnc: $("#use_dedenc").is(':checked'),
-	mirrorInput: $("#mirror_input").is(':checked')
+	mirrorInput: $("#mirror_input").is(':checked'),
+        userVariables: {
+            avatar: $("#avatar").val(),
+            email: $("#email").val(),
+        },
     });
 }
 
@@ -727,13 +843,29 @@ function pop(id, cname, dft) {
     $.cookie(cname, tmp, {
         expires: 365
     });
+
     $(id).val(tmp).change(function() {
+	if (!save_settings) return;
+
         $.cookie(cname, $(id).val(), {
             expires: 365
         });
     });
 }
 
+function pop_select(id, cname, dft) {
+    var tmp = $.cookie(cname) || dft;
+    $.cookie(cname, tmp, {
+	expires: 365
+    });
+        // $("#usecamera").find(":selected").val()
+    $(id).change(function() {
+	tmp =  $(id).find(":selected").val();
+	$.cookie(cname, tmp, {
+	    expires: 365
+	});
+    });
+}
 
 
 function refresh_devices()
@@ -756,6 +888,7 @@ function refresh_devices()
     var x = 0;
 
     $("#usecamera").append(new Option("No Camera", "none"));
+    $("#usemic").append(new Option("Do Not Specify", "any"));
     for (var i in $.verto.videoDevices) {
 	var source = $.verto.videoDevices[i];
 	var o = new Option(source.label, source.id);
@@ -772,7 +905,7 @@ function refresh_devices()
 	$("#useshare").append(oo);
     }
 
-    x = 0;
+    x = 1;
     
     for (var i in $.verto.audioDevices) {
 	var source = $.verto.audioDevices[i];
@@ -799,10 +932,24 @@ function refresh_devices()
     $("input[type='checkbox']").checkboxradio("refresh");
 
     //console.error($("#usecamera").find(":selected").val());
+
+    var tmp;
+    tmp = $.cookie("verto_demo_camera_selected") || "false";
+    if (tmp) {
+        $('#usecamera option[value=' + tmp + ']').prop('selected', 'selected').change();
+        pop_select("#usecamera","verto_demo_camera_selected", tmp);
+    }
+
+    tmp = $.cookie("verto_demo_mic_selected") || "false";
+    if (tmp) {
+        $('#usemic option[value=' + tmp + ']').prop('selected', 'selected').change();
+        pop_select("#usemic","verto_demo_mic_selected", tmp);
+    }
 }
 
 function init() {
     cur_call = null;
+    goto_page("main");
 
     $("#usecamera").selectmenu({});
     $("#usemic").selectmenu({});
@@ -812,8 +959,10 @@ function init() {
 	pop("#ext", "verto_demo_ext", "3500");
     }
 
+    pop("#avatar", "verto_demo_avatar", "");
     pop("#cidname", "verto_demo_name", "FreeSWITCH User");
     pop("#cid", "verto_demo_cid", "1008");
+    pop("#email", "verto_demo_email", "");
     pop("#textto", "verto_demo_textto", "1000");
 
     pop("#login", "verto_demo_login", "1008");
@@ -1146,9 +1295,6 @@ function init() {
         $.cookie("verto_demo_local_video_checked", tmp ? "true" : "false", {
             expires: 365
         });
-	if (verto) {
-	    verto.iceServers(tmp);
-	}
     });
     
     check_vid_res();
@@ -1157,10 +1303,11 @@ function init() {
         login: $("#login").val() + "@" + $("#hostName").val(),
         passwd: $("#passwd").val(),
         socketUrl: $("#wsURL").val(),
-        tag: "webcam",
+        tag: video_screen,
         //localTag: $("#local_video").is(':checked') ? "local_webcam" : null,
         ringFile: "sounds/bell_ring2.wav",
-	loginParams: {foo: true, bar: "yes"},
+	sessid: sessid,
+	//loginParams: {second_screen: second_screen},
         videoParams: {
             "minWidth": vid_width,
             "minHeight": vid_height,
@@ -1171,6 +1318,11 @@ function init() {
 	    //chromeMediaSource: 'screen',
 	    //mediaSource: 'screen'
         },
+
+	deviceParams: {
+	    useCamera: $("#usecamera").find(":selected").val(),                                                                                                            useMic: $("#usemic").find(":selected").val()
+	},
+
 //	audioParams: {
 //	    googAutoGainControl: false,
 //	    googNoiseSuppression: false,
@@ -1180,6 +1332,55 @@ function init() {
 	iceServers: $("#use_stun").is(':checked')
     },callbacks);
 
+
+    function handleEmailResponse(resp) {
+	for (var i=0; i < resp.emails.length; i++) {
+            if (resp.emails[i].type === 'account' && resp.emails[i].value) { 
+		$("#email").val(resp.emails[i].value);
+		$("#email").change();
+            }
+	}
+
+	if (resp.displayName) {
+	    $("#cidname").val(resp.displayName);
+	    $("#cidname").trigger("change");
+	}
+	
+	$("#avatar").val(resp.image.url + "0");
+	$("#avatar").trigger("change");
+
+	gapi.auth.signOut();
+    }
+    
+    $("#signinButton").click(function() {
+	gapi.auth.signIn({callback: function(authResult) {
+	    console.log('Sign-in state: ' + authResult['error']);
+	    if (authResult['status']['signed_in']) {
+		// Update the app to reflect a signed in user
+		// Hide the sign-in button now that the user is authorized, for example:
+		//document.getElementById('signinButton').setAttribute('style', 'display: none');
+		gapi.client.load('plus','v1', function(){
+		    var request = gapi.client.plus.people.get({userId: 'me'}).execute(handleEmailResponse);
+		});
+	    } else {
+		// Update the app to reflect a signed out user
+		// Possible error values:
+		//   "user_signed_out" - User is signed-out
+		//   "access_denied" - User denied access to your app
+		//   "immediate_failed" - Could not automatically log in the user
+		console.log('Sign-in state: ' + authResult['error']);
+	    }
+	    
+	}});
+    });
+
+    $("#email").change(function(e) {
+        $("#avatar").val("http://gravatar.com/avatar/" + md5($("#emailaddr").val()) + ".png?s=600");
+        $.cookie("verto_demo_email", e.currentTarget.value, {
+            expires: 365
+        });
+	
+    });
 
     $("#login").change(function(e) {
         $("#cid").val(e.currentTarget.value);
@@ -1199,6 +1400,7 @@ function init() {
     $("#logoutbtn").click(function() {
         verto.logout();
         online(false);
+	$("#errordisplay").html("");
     });
 
     $("#loginbtn").click(function() {
@@ -1212,7 +1414,7 @@ function init() {
     });
 
     $("#xferdiv").hide();
-//    $("#webcam").hide();
+//    $("#" + video_screen).hide();
 
     online(false);
 
@@ -1245,18 +1447,48 @@ function init() {
 $(window).load(function() {
     var hash = window.location.hash.substring(1);    
     var a = [];
+    var vars = [];
 
     if (hash && hash.indexOf("page-") == -1) {
 	window.location.hash = "";
-	$("#ext").val(hash);
-	autocall = true;
+
+	if (vars = hash.split("&")) {
+	    for (var i in vars) {
+		var v = vars[i];
+		if (a = v.split("=")) {
+		    var v_name = a[0];
+		    var v_val = a[1];
+		    
+		    if (v_name === "sessid") {
+			sessid = v_val;
+			if (sessid === "random") {
+			    sessid = $.verto.genUUID();
+			}	
+			save_settings = false;
+			$.verto.warnOnUnload = "WARNING: DO NOT RELOAD THIS PAGE! Please Close it Instead\n";
+			$.verto.unloadJobs.push(function() {
+			    exit_full_screen();
+			    verto.hangup();
+			    cur_call = null;
+			});
+		    } else if (v_name === "master") {
+			master = v_val;
+		    } else if (v_name === "canvas_id") {
+			canvas_id = v_val;
+		    } else if (v_name === "autocall") {
+			$("#ext").val(v_val);
+			autocall = true;
+		    }
+		}
+	    }
+	}
     }
 
-    if (hash && (a = hash.split("&"))) {
-	window.location.hash = a[0];
-    }
+    //if (hash && (a = hash.split("&"))) {
+    //	window.location.hash = a[0];
+    //  }
 
-    $("#webcam").hide();
+    $("#" + video_screen).hide();
     $("#camdiv").hide();
     $('#demos').hide();
     $('#devices').hide();
@@ -1283,8 +1515,11 @@ $(window).load(function() {
 	}
     });
 
-
-    $.verto.init({}, init);
+    $("#search").show();
+    goto_page("enum");
+    setTimeout(function() {
+	$.verto.init({}, init);
+    }, 500);
 
 });
 

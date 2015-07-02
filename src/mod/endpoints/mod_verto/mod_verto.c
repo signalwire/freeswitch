@@ -3259,7 +3259,7 @@ static switch_bool_t verto__info_func(const char *method, cJSON *params, jsock_t
 
 static switch_bool_t verto__invite_func(const char *method, cJSON *params, jsock_t *jsock, cJSON **response)
 {
-	cJSON *obj = cJSON_CreateObject(), *screenShare = NULL, *dedEnc = NULL, *mirrorInput;
+	cJSON *obj = cJSON_CreateObject(), *screenShare = NULL, *dedEnc = NULL, *mirrorInput, *json_ptr = NULL;
 	switch_core_session_t *session = NULL;
 	switch_channel_t *channel;
 	switch_event_t *var_event;
@@ -3348,6 +3348,22 @@ static switch_bool_t verto__invite_func(const char *method, cJSON *params, jsock
 	if ((bandwidth = cJSON_GetObjectCstr(dialog, "incomingBandwidth"))) {
 		if (strcasecmp(bandwidth, "default")) {
 			switch_channel_set_variable(channel, "rtp_video_max_bandwidth_out", bandwidth);
+		}
+	}
+
+	if ((json_ptr = cJSON_GetObjectItem(dialog, "userVariables"))) {
+		cJSON * i;
+
+		for(i = json_ptr->child; i; i = i->next) {
+			char *varname = switch_core_session_sprintf(session, "verto_dvar_%s", i->string);
+
+			if (i->type == cJSON_True) {
+				switch_channel_set_variable(channel, varname, "true");
+			} else if (i->type == cJSON_False) {
+				switch_channel_set_variable(channel, varname, "false");
+			} else if (!zstr(i->string) && !zstr(i->valuestring)) {
+				switch_channel_set_variable(channel, varname, i->valuestring);
+			}
 		}
 	}
 

@@ -76,15 +76,21 @@
             videoParams: {},
             audioParams: {},
 	    loginParams: {},
+	    deviceParams: {},
 	    userVariables: {},
             iceServers: false,
-            ringSleep: 6000
+            ringSleep: 6000,
+	    sessid: null
         }, options);
 
-        verto.sessid = $.cookie('verto_session_uuid') || generateGUID();
-        $.cookie('verto_session_uuid', verto.sessid, {
-            expires: 1
-        });
+	if (verto.options.sessid) {
+	    verto.sessid = verto.options.sessid;
+	} else {
+            verto.sessid = $.cookie('verto_session_uuid') || generateGUID();
+            $.cookie('verto_session_uuid', verto.sessid, {
+		expires: 1
+            });
+	}
 
         verto.dialogs = {};
         verto.callbacks = callbacks || {};
@@ -1160,6 +1166,8 @@
 
     var CONFMAN_SERNO = 1;
 
+    $.verto.modfuncs = {};
+
     $.verto.confMan = function(verto, params) {
         var confMan = this;
 
@@ -1177,7 +1185,8 @@
 
         confMan.verto = verto;
         confMan.serno = CONFMAN_SERNO++;
-
+	confMan.canvasCount = confMan.params.laData.canvasCount;
+	
         function genMainMod(jq) {
             var play_id = "play_" + confMan.serno;
             var stop_id = "stop_" + confMan.serno;
@@ -1185,8 +1194,6 @@
             var snapshot_id = "snapshot_" + confMan.serno;
             var rec_stop_id = "recording_stop" + confMan.serno;
             var div_id = "confman_" + confMan.serno;
-
-
 
             var html =  "<div id='" + div_id + "'><br>" +
 		"<button class='ctlbtn' id='" + play_id + "'>Play</button>" +
@@ -1198,21 +1205,25 @@
 
             jq.html(html);
 
-	    if (confMan.params.hasVid) {
-		var vlayout_id = "confman_vid_layout_" + confMan.serno;
-		var vlselect_id = "confman_vl_select_" + confMan.serno;
-		
-		var vlhtml =  "<div id='" + vlayout_id + "'><br>" +
-		    "<b>Video Layout</b> <select id='" + vlselect_id + "'></select> " +
-		    "<br><br></div>";
-		jq.append(vlhtml);
+	    $.verto.modfuncs.change_video_layout = function(id, canvas_id) {	    
+		var val = $("#" + id + " option:selected").text();
+		if (val !== "none") {
+                    confMan.modCommand("vid-layout", null, [val, canvas_id]);
+		}
+	    };
 
-		$("#" + vlselect_id).change(function() {
-		    var val = $("#" + vlselect_id).find(":selected").val();
-		    if (val !== "none") {
-			confMan.modCommand("vid-layout", null, val);
-		    }
-		});
+	    if (confMan.params.hasVid) {
+		for (var j = 0; j < confMan.canvasCount; j++) {
+		    var vlayout_id = "confman_vid_layout_" + j + "_" + confMan.serno;
+		    var vlselect_id = "confman_vl_select_" + j + "_" + confMan.serno;
+		
+
+		    var vlhtml =  "<div id='" + vlayout_id + "'><br>" +
+			"<b>Video Layout Canvas " + (j+1) + 
+			"</b> <select onChange='$.verto.modfuncs.change_video_layout(\"" + vlayout_id + "\", \"" + j + "\")' id='" + vlselect_id + "'></select> " +
+			"<br><br></div>";
+		    jq.append(vlhtml);
+		}
 
 		$("#" + snapshot_id).click(function() {
                     var file = prompt("Please enter file name", "");
@@ -1249,6 +1260,18 @@
         function genControls(jq, rowid) {
             var x = parseInt(rowid);
             var kick_id = "kick_" + x;
+            var canvas_in_next_id = "canvas_in_next_" + x;
+            var canvas_in_prev_id = "canvas_in_prev_" + x;
+            var canvas_out_next_id = "canvas_out_next_" + x;
+            var canvas_out_prev_id = "canvas_out_prev_" + x;
+
+            var canvas_in_set_id = "canvas_in_set_" + x;
+            var canvas_out_set_id = "canvas_out_set_" + x;
+
+            var layer_set_id = "layer_set_" + x;
+            var layer_next_id = "layer_next_" + x;
+            var layer_prev_id = "layer_prev_" + x;
+	    
             var tmute_id = "tmute_" + x;
             var tvmute_id = "tvmute_" + x;
             var vbanner_id = "vbanner_" + x;
@@ -1260,20 +1283,51 @@
             var transfer_id = "transfer" + x;
 	    
 
-            var html = "<div id='" + box_id + "'>" +
-                "<button class='ctlbtn' id='" + kick_id + "'>Kick</button>" +
+            var html = "<div id='" + box_id + "'>";
+
+	    html += "<b>General Controls</b><hr noshade>";
+
+            html += "<button class='ctlbtn' id='" + kick_id + "'>Kick</button>" +
                 "<button class='ctlbtn' id='" + tmute_id + "'>Mute</button>" +
-                (confMan.params.hasVid ? "<button class='ctlbtn' id='" + tvmute_id + "'>VMute</button>" : "") +
-                (confMan.params.hasVid ? "<button class='ctlbtn' id='" + tvpresenter_id + "'>Presenter</button>" : "") +
-                (confMan.params.hasVid ? "<button class='ctlbtn' id='" + tvfloor_id + "'>Vid Floor</button>" : "") +
-                (confMan.params.hasVid ? "<button class='ctlbtn' id='" + vbanner_id + "'>Banner</button>" : "") +
                 "<button class='ctlbtn' id='" + voldn_id + "'>Vol -</button>" +
                 "<button class='ctlbtn' id='" + volup_id + "'>Vol +</button>" +
-                "<button class='ctlbtn' id='" + transfer_id + "'>Transfer</button>" +
-                "</div>"
-                ;
+                "<button class='ctlbtn' id='" + transfer_id + "'>Transfer</button>";
+		
+	    if (confMan.params.hasVid) {
+		html += "<br><br><b>Video Controls</b><hr noshade>";
+
+
+                html += "<button class='ctlbtn' id='" + tvmute_id + "'>VMute</button>" +
+                    "<button class='ctlbtn' id='" + tvpresenter_id + "'>Presenter</button>" +
+                    "<button class='ctlbtn' id='" + tvfloor_id + "'>Vid Floor</button>" +
+                    "<button class='ctlbtn' id='" + vbanner_id + "'>Banner</button>";
+
+		if (confMan.canvasCount > 1) {
+                    html += "<br><br><b>Canvas Controls</b><hr noshade>" +
+			"<button class='ctlbtn' id='" + canvas_in_set_id + "'>Set Input Canvas</button>" +
+			"<button class='ctlbtn' id='" + canvas_in_prev_id + "'>Prev Input Canvas</button>" +
+			"<button class='ctlbtn' id='" + canvas_in_next_id + "'>Next Input Canvas</button>" +
+			
+		    "<br>" +
+			
+		    "<button class='ctlbtn' id='" + canvas_out_set_id + "'>Set Watching Canvas</button>" +
+			"<button class='ctlbtn' id='" + canvas_out_prev_id + "'>Prev Watching Canvas</button>" +
+			"<button class='ctlbtn' id='" + canvas_out_next_id + "'>Next Watching Canvas</button>";
+		}
+		
+		html += "<br>" +
+
+                "<button class='ctlbtn' id='" + layer_set_id + "'>Set Layer</button>" +
+                    "<button class='ctlbtn' id='" + layer_prev_id + "'>Prev Layer</button>" +
+                    "<button class='ctlbtn' id='" + layer_next_id + "'>Next Layer</button>" +
+
+
+
+                    "</div>";
+            }
 
             jq.html(html);
+
 
             if (!jq.data("mouse")) {
                 $("#" + box_id).hide();
@@ -1300,6 +1354,50 @@
                 confMan.modCommand("kick", x);
             });
 
+
+            $("#" + layer_set_id).click(function() {
+                var cid = prompt("Please enter layer ID", "");
+		if (cid) {
+                    confMan.modCommand("vid-layer", x, cid);
+		}
+            });
+
+            $("#" + layer_next_id).click(function() {
+                confMan.modCommand("vid-layer", x, "next");
+            });
+            $("#" + layer_prev_id).click(function() {
+                confMan.modCommand("vid-layer", x, "prev");
+            });
+
+            $("#" + canvas_in_set_id).click(function() {
+                var cid = prompt("Please enter canvas ID", "");
+		if (cid) {
+                    confMan.modCommand("vid-canvas", x, cid);
+		}
+            });
+
+            $("#" + canvas_out_set_id).click(function() {
+                var cid = prompt("Please enter canvas ID", "");
+		if (cid) {
+                    confMan.modCommand("vid-watching-canvas", x, cid);
+		}
+            });
+
+            $("#" + canvas_in_next_id).click(function() {
+                confMan.modCommand("vid-canvas", x, "next");
+            });
+            $("#" + canvas_in_prev_id).click(function() {
+                confMan.modCommand("vid-canvas", x, "prev");
+            });
+
+
+            $("#" + canvas_out_next_id).click(function() {
+                confMan.modCommand("vid-watching-canvas", x, "next");
+            });
+            $("#" + canvas_out_prev_id).click(function() {
+                confMan.modCommand("vid-watching-canvas", x, "prev");
+            });
+	    
             $("#" + tmute_id).click(function() {
                 confMan.modCommand("tmute", x);
             });
@@ -1340,7 +1438,7 @@
 
         if (confMan.params.laData.role === "moderator") {
             atitle = "Action";
-            awidth = 300;
+            awidth = 600;
 
             if (confMan.params.mainModID) {
                 genMainMod($(confMan.params.mainModID));
@@ -1357,30 +1455,33 @@
                     }
 
 		    if (e.data["conf-command"] === "list-videoLayouts") {
-			var vlselect_id = "#confman_vl_select_" + confMan.serno;
-			var vlayout_id = "#confman_vid_layout_" + confMan.serno;
-			var x = 0;
-			var options;
-			
-			$(vlselect_id).selectmenu({});
-			$(vlselect_id).selectmenu("enable");
-			$(vlselect_id).empty();
-			
-			$(vlselect_id).append(new Option("Choose a Layout", "none"));
+			for (var j = 0; j < confMan.canvasCount; j++) {
+			    var vlselect_id = "#confman_vl_select_" + j + "_" + confMan.serno;
+			    var vlayout_id = "#confman_vid_layout_" + j + "_" + confMan.serno;
+			    
+			    var x = 0;
+			    var options;
+			    
+			    $(vlselect_id).selectmenu({});
+			    $(vlselect_id).selectmenu("enable");
+			    $(vlselect_id).empty();
+			    
+			    $(vlselect_id).append(new Option("Choose a Layout", "none"));
 
-			if (e.data.responseData) {
-			    options = e.data.responseData.sort();
+			    if (e.data.responseData) {
+				options = e.data.responseData.sort();
 
-			    for (var i in options) {
-				$(vlselect_id).append(new Option(options[i], options[i]));
-				x++;
+				for (var i in options) {
+				    $(vlselect_id).append(new Option(options[i], options[i]));
+				    x++;
+				}
 			    }
-			}
 
-			if (x) {
-			    $(vlselect_id).selectmenu('refresh', true);
-			} else {
-			    $(vlayout_id).hide();
+			    if (x) {
+				$(vlselect_id).selectmenu('refresh', true);
+			    } else {
+				$(vlayout_id).hide();
+			    }
 			}
 		    } else {
 
@@ -1432,16 +1533,20 @@
             "aaData": [],
             "aoColumns": [
                 {
-                    "sTitle": "ID"
+                    "sTitle": "ID",
+                    "sWidth": "50"
                 },
                 {
-                    "sTitle": "Number"
+                    "sTitle": "Number",
+		    "sWidth": "250"
                 },
                 {
-                    "sTitle": "Name"
+                    "sTitle": "Name",
+		    "sWidth": "250"
                 },
                 {
-                    "sTitle": "Codec"
+                    "sTitle": "Codec",
+                    "sWidth": "100"
                 },
                 {
                     "sTitle": "Status",
@@ -1459,7 +1564,7 @@
             "bFilter": false,
             "bLengthChange": false,
             "bPaginate": false,
-            "iDisplayLength": 1000,
+            "iDisplayLength": 1400,
 
             "oLanguage": {
                 "sEmptyTable": "The Conference is Empty....."
@@ -1519,6 +1624,9 @@
 	    videoParams: verto.options.videoParams
         }, params);
 	
+	dialog.useCamera = verto.options.deviceParams.useCamera;
+	dialog.useMic = verto.options.deviceParams.useMic;
+
         dialog.verto = verto;
         dialog.direction = direction;
         dialog.lastState = null;
@@ -1957,12 +2065,17 @@
 
 	    params.sdp = dialog.params.sdp;
 
+	    dialog.useCamera = verto.options.deviceParams.useCamera;
+	    dialog.useMic = verto.options.deviceParams.useMic;
+
             if (params) {
                 if (params.useVideo) {
                     dialog.useVideo(true);
                 }
 		dialog.params.callee_id_name = params.callee_id_name;
 		dialog.params.callee_id_number = params.callee_id_number;
+		dialog.useCamera = params.useCamera;
+		dialog.useMic = params.useMic;
             }
 	    
             dialog.rtc.createAnswer(params);
@@ -2130,8 +2243,14 @@
     $.verto.enum = Object.freeze($.verto.enum);
 
     $.verto.saved = [];
+    
+    $.verto.unloadJobs = [];
 
     $(window).bind('beforeunload', function() {
+	for (var f in $.verto.unloadJobs) {
+	    $.verto.unloadJobs[f]();
+	}
+
         for (var i in $.verto.saved) {
             var verto = $.verto.saved[i];
             if (verto) {
@@ -2139,6 +2258,7 @@
                 verto.logout();
             }
         }
+
         return $.verto.warnOnUnload;
     });
 
@@ -2215,5 +2335,10 @@
 	    $.FSRTC.getValidRes(obj.camera, runtime);
 	});
     }
+
+    $.verto.genUUID = function () {
+	return generateGUID();
+    }
+
 
 })(jQuery);

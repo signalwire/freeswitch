@@ -4907,7 +4907,6 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 	switch_core_session_request_video_refresh(session);
 
 	while (switch_channel_up_nosig(channel)) {
-		int do_sleep = 0;
 		int send_blank = 0;
 
 		if (!switch_channel_test_flag(channel, CF_VIDEO)) {
@@ -4916,15 +4915,11 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 			continue;
 		}
 
-		if (!smh->video_write_fh && !smh->video_read_fh && switch_core_session_media_flow(session, SWITCH_MEDIA_TYPE_VIDEO) == SWITCH_MEDIA_FLOW_SENDONLY) {
-			do_sleep = 1;
-		}
-		
 		if (!switch_channel_test_flag(channel, CF_VIDEO_DECODED_READ) && (++xloops > 20 || switch_channel_test_flag(channel, CF_VIDEO_PASSIVE))) {
 			switch_channel_set_flag(channel, CF_VIDEO_READY);
 		}
 	
-		if (switch_channel_test_flag(channel, CF_VIDEO_PASSIVE) || do_sleep) {
+		if (switch_channel_test_flag(channel, CF_VIDEO_PASSIVE)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Video thread paused. Echo is %s\n", 
 							  switch_channel_get_name(session->channel), switch_channel_test_flag(channel, CF_VIDEO_ECHO) ? "on" : "off");
 			switch_thread_cond_wait(mh->cond, mh->cond_mutex);
@@ -4933,7 +4928,7 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 			switch_core_session_request_video_refresh(session);
 		}
 
-		if (switch_channel_test_flag(channel, CF_VIDEO_PASSIVE) || do_sleep) {
+		if (switch_channel_test_flag(channel, CF_VIDEO_PASSIVE)) {
 			continue;
 		}
 
@@ -4964,27 +4959,25 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 
 		if (v_engine->smode == SWITCH_MEDIA_FLOW_SENDONLY) {
 			switch_channel_set_flag(channel, CF_VIDEO_READY);
-		} else {
-
-			//if (!smh->video_write_fh || !switch_channel_test_flag(channel, CF_VIDEO_READY)) {
-			status = switch_core_session_read_video_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
-			
-			if (!SWITCH_READ_ACCEPTABLE(status)) {
-				switch_cond_next();
-				continue;
-			}
-			
-			//if (switch_test_flag(read_frame, SFF_CNG)) {
-			//	continue;
-			//}
-			//}
-
-			//if (vloops < 300 && (vloops % 100) == 0) {
-			//			switch_core_media_gen_key_frame(session);
-			//switch_core_session_request_video_refresh(session);
-			//}
-
 		}
+
+		//if (!smh->video_write_fh || !switch_channel_test_flag(channel, CF_VIDEO_READY)) {
+		status = switch_core_session_read_video_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
+		
+		if (!SWITCH_READ_ACCEPTABLE(status)) {
+			switch_cond_next();
+			continue;
+		}
+		
+		//if (switch_test_flag(read_frame, SFF_CNG)) {
+		//	continue;
+		//}
+		//}
+		
+		//if (vloops < 300 && (vloops % 100) == 0) {
+		//			switch_core_media_gen_key_frame(session);
+		//switch_core_session_request_video_refresh(session);
+		//}
 		
 		vloops++;
 
@@ -4998,6 +4991,10 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 			switch_core_media_gen_key_frame(session);
 		}
 
+		if (v_engine->smode == SWITCH_MEDIA_FLOW_SENDONLY) {
+			send_blank = 1;
+		}
+
 		if (switch_channel_test_flag(channel, CF_VIDEO_READY)) {
 			switch_mutex_lock(mh->file_mutex);
 			if (smh->video_write_fh && switch_channel_ready(session->channel) && switch_test_flag(smh->video_write_fh, SWITCH_FILE_OPEN)) {
@@ -5008,8 +5005,10 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 				} else if (wstatus != SWITCH_STATUS_BREAK && wstatus != SWITCH_STATUS_IGNORE) {
 					smh->video_write_fh = NULL;
 				}
+				send_blank = 0;
 			} else if (smh->video_read_fh && switch_test_flag(smh->video_read_fh, SWITCH_FILE_OPEN) && read_frame->img) {
 				switch_core_file_write_video(smh->video_read_fh, read_frame);
+				send_blank = 0;
 			} 
 			switch_mutex_unlock(mh->file_mutex);
 		} else if (switch_channel_test_flag(channel, CF_VIDEO_DECODED_READ)) {

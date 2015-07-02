@@ -2,6 +2,14 @@
 <html>
   <head>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Replace the clientid Here with your Client ID. -->
+    <meta name="google-signin-clientid" content="675954646436-qs593t199b1nt7gj0v6p4njau8724oss.apps.googleusercontent.com">
+    <meta name="google-signin-scope" content="https://www.googleapis.com/auth/plus.profile.emails.read"/>
+    <meta name="google-signin-requestvisibleactions" content="http://schema.org/AddAction" />
+    <meta name="google-signin-cookiepolicy" content="single_host_origin" />
+    <!------>
+
   <link rel="stylesheet" href="css/jquery.mobile.min.css"/>
   <link rel="stylesheet" type="text/css" href="css/jsontable.css" />
   <link rel="shortcut icon" href="favicon.ico" />
@@ -16,9 +24,11 @@
 }
 
 .ctlbtn {
-	 border: 0px;
-	 color: #eeeeee;
-	 background-color: #0000ae;
+	 border: 2px;
+	 border-style:outset;
+	 color: #ffffff;
+	 min-width: 125px;
+	 background-color: #666666;
 	 font-face: arial;
 	 height:18px;
 	 font-size:7pt;
@@ -73,6 +83,7 @@
 	max-height:40px;
 }
 
+div#preload { display: none; }
 
     </style>
 
@@ -82,6 +93,17 @@
       <div data-role="header" class="page-header">
 	FreeSWITCH Verto&trade; Video Transcoding Demo
       </div>
+
+    </div>
+
+
+    <div data-role="page" id="page-enum" align="center">
+      <div data-role="header" class="page-header">
+	FreeSWITCH Verto&trade; Looking For Devices
+      </div>
+      <div id="search" hidden="true">
+	<img src="images/search.gif"/>
+	</div>
 
     </div>
 
@@ -100,7 +122,11 @@
 <span id=usrinner style="margin:25px">
   <span id=usrctl><b>User Controls</b></span>
       <div id=usr2>
-
+      <div id="canvasButtons" hidden="true">
+          <button data-inline="true" id="hupbtn2">End Call</button>
+	  <button data-inline="true" id="fullbtn2">Enter Full Screen</button>
+      </div>
+      <div id="mainButtons">
       <button data-inline="true" id="hold">HOLD</button>
       <button data-inline="true" id="hupbtn">End Call</button>
       <button data-inline="true" id="mutebtn">Toggle Audio Mute</button>
@@ -119,12 +145,21 @@
   	     	  <button data-inline="true" id="fullbtn">Enter Full Screen</button>
                   <button data-inline="true" id="vmutebtn">Toggle Video Mute</button>
              </span>
+     </div>
 
 <br><br>
       <div id="conf" xstyle="width:100%;height:100%">
 	<div style="color:black;font-family: verdana" align="center" id="conf_count"></div><br>
-	<table width="1000" cellspacing="0" cellpadding="0" border="0" align="center" id="conf_list" class="jsDataTable">
+	<table width="1400" cellspacing="0" cellpadding="0" border="0" align="center" id="conf_list" class="jsDataTable">
 	</table>
+
+	<div id="canvasui" style="width:700px;" hidden="true">
+	<br><br>
+	<table border=0 cellspacing=0 cellpadding=0>
+	<tr><td width=180><b>Additional Canvas</b>:</td><td><select style="width:200px;" id="canvasid"></select></td><td width=220 align=right><button id="canvasbut" style="width:200px;">Open Canvas</button></td></tr>
+	</table>
+	<br><br>
+	</div>
 
 	</div><!---conf-->
 
@@ -136,6 +171,15 @@
 <!--	<textarea readonly id="chatwin"></textarea>-->
 	<table><tr><td><textarea id="chatmsg"></textarea></td><td><button id="chatsend" style="width:100px;">Send</button></td></tr></table>
 	<hr class="l1" width="500"/><br>
+      </div>
+      
+
+
+      <div id="hctop" hidden="true">
+	<br/><br/>
+	<div id="hcmessage"></div> 
+	<br><br>
+	</div>
       </div>
       
       <div class="ui-field-contain" id="xferdiv">
@@ -184,6 +228,7 @@
 
 
       <video id="webcam" autoplay="autoplay" style="width:100%;height:100%;object-fit:inherit;"></video>
+      <!--<video id="local_webcam" autoplay="autoplay" style="width:100%;height:100%;object-fit:inherit;"></video>-->
 
 </div><!-- rows -->
 
@@ -300,12 +345,10 @@ if ($('#devices').is(':visible')) {
 
 </script>
 
-<button data-inline="true" id="showdemo" onclick="toggle_demo();">View Demo Extensions</button>
+<!--<button data-inline="true" id="showdemo" onclick="toggle_demo();">View Demo Extensions</button>-->
 <button data-inline="true" id="showdevices" onclick="toggle_device();">View Device Settings</button>
- <button data-inline="true"id="logoutbtn">Log Out</button>
-<br><br>
+<button data-inline="true"id="logoutbtn">Log Out</button>
 
-	  
 <div id="devices" style="border-style:outset;border-width:2px">
 
 <div id="camdiv">
@@ -422,7 +465,7 @@ if ($('#devices').is(':visible')) {
 	<label><input id="mirror_input" type="checkbox" value="foo" >Scale Remote Video To Match Camera</label>
 <br><br>
 <center><button data-inline="true" id="refreshbtn">Refresh Device List</button>
-<button data-inline="true" id="hidedevices" onclick="$('#devices').hide();$('#showdevices').show()">Save Device Settings</button>
+<button data-inline="true" id="hidedevices" onclick="toggle_device()">Save Device Settings</button>
 
 </center>
 <Br clear="all"><br>
@@ -475,9 +518,24 @@ if ($('#devices').is(':visible')) {
 	<input type="text" size="20" id="cid"/>
       </div>
       <div class="ui-field-contain" style="text-align:right;">
+	<label for="name">Email</label>  
+	<input type="text" size="20" id="email"/>
+      </div>
+
+      <div class="ui-field-contain" style="text-align:right;">
+	<label for="name">Avatar</label>  
+       	<input type="text" size="20" id="avatar" />
+      </div>
+
+      <div class="ui-field-contain" style="text-align:right;">
 	<label for="name">Extension</label>  
 	  <input type="text" id="ext""/>
-</div>
+      </div>
+
+       <!--Comment out to "EOC" comment to disable Googleb Login -->
+       <button data-inline="true" id="signinButton">Import Google Credentials</button>
+       <!--<button data-inline="true" id="signoutButton">Sign out with Google</button>-->
+
 	  <button data-inline="true" id="callbtn">Call Extension</button>
 <br>
 <hr>
@@ -587,7 +645,14 @@ if ($('#devices').is(':visible')) {
     <script type="text/javascript" src="js/jquery.dataTables.min.js"></script>
     <script type="text/javascript" src="js/verto-min.js"></script>
     <script type="text/javascript" src="js/getScreenId.js"></script>
+    <script type="text/javascript" src="js/md5.min.js"></script>
+    <script type="text/javascript" src="js/jquery.hipchat.js"></script>	
     <script type="text/javascript" src="verto.js"></script>
+    <script src="https://apis.google.com/js/client:platform.js?onload=render" async defer></script>
+
+<div id="preload" hidden=true>
+	<img src="images/search.gif"/>
+</div>
 
   </body>
 </html>

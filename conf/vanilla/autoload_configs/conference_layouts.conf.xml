@@ -12,6 +12,11 @@
 	<image x="0" y="90" scale="180"/>
 	<image x="180" y="90" scale="180"/>
       </layout>
+      <layout name="1x1+2x1" auto-3d-position="true">
+	<image x="90" y="0" scale="180"/>
+	<image x="0" y="180" scale="180"/>
+	<image x="180" y="180" scale="180"/>
+      </layout>
       <layout name="2x2" auto-3d-position="true">
 	<image x="0" y="0" scale="180"/>
 	<image x="180" y="0" scale="180"/>
@@ -300,11 +305,14 @@
 	<image x="60" y="300" scale="60" overlap="true"/>
 	<image x="0" y="300" scale="60" overlap="true"/>
       </layout>
+      
+
     </layouts>
     <groups>
       <group name="grid">
 	<layout>1x1</layout>
 	<layout>2x1</layout>
+	<layout>1x1+2x1</layout>
 	<layout>2x2</layout>
 	<layout>3x3</layout>
 	<layout>4x4</layout>

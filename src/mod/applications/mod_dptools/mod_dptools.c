@@ -1450,6 +1450,18 @@ SWITCH_STANDARD_APP(sched_cancel_function)
 static void base_set (switch_core_session_t *session, const char *data, switch_stack_t stack)
 {
 	char *var, *val = NULL;
+	const char *what = "SET";
+
+	switch (stack) {
+	case SWITCH_STACK_PUSH:
+		what = "PUSH";
+		break;
+	case SWITCH_STACK_UNSHIFT:
+		what = "UNSHIFT";
+		break;
+	default:
+		break;
+	}
 
 	if (zstr(data)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "No variable name specified.\n");
@@ -1474,8 +1486,9 @@ static void base_set (switch_core_session_t *session, const char *data, switch_s
 			expanded = switch_channel_expand_variables(channel, val);
 		}
 
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s SET [%s]=[%s]\n", switch_channel_get_name(channel), var,
-						  expanded ? expanded : "UNDEF");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s %s [%s]=[%s]\n", 
+						  what, switch_channel_get_name(channel), var, expanded ? expanded : "UNDEF");
+						  
 		switch_channel_add_variable_var_check(channel, var, expanded, SWITCH_FALSE, stack);
 
 		if (expanded && expanded != val) {
