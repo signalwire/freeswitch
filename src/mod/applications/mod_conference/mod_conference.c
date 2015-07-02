@@ -4949,14 +4949,18 @@ static void conference_write_video_frame(conference_obj_t *conference, conferenc
 				(switch_test_flag(conference, CFLAG_VID_FLOOR_LOCK) ||
 				 !(imember->id == imember->conference->video_floor_holder && imember->conference->last_video_floor_holder))) {
 
-				switch_assert(vid_frame->packetlen <= SWITCH_RTP_MAX_BUF_LEN);
-				tmp_frame = *vid_frame;
-				tmp_frame.packet = buf;
-				tmp_frame.data = buf + 12;
-				memcpy(tmp_frame.packet, vid_frame->packet, vid_frame->packetlen);
-				tmp_frame.packetlen = vid_frame->packetlen;
-				tmp_frame.datalen = vid_frame->datalen;
-				switch_core_session_write_video_frame(imember->session, &tmp_frame, SWITCH_IO_FLAG_NONE, 0);
+				if (vid_frame->img) {
+					switch_core_session_write_video_frame(imember->session, vid_frame, SWITCH_IO_FLAG_NONE, 0);
+				} else {
+					switch_assert(vid_frame->packetlen <= SWITCH_RTP_MAX_BUF_LEN);
+					tmp_frame = *vid_frame;
+					tmp_frame.packet = buf;
+					tmp_frame.data = buf + 12;
+					memcpy(tmp_frame.packet, vid_frame->packet, vid_frame->packetlen);
+					tmp_frame.packetlen = vid_frame->packetlen;
+					tmp_frame.datalen = vid_frame->datalen;
+					switch_core_session_write_video_frame(imember->session, &tmp_frame, SWITCH_IO_FLAG_NONE, 0);
+				}
 			}
 		}
 		
