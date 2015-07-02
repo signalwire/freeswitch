@@ -2070,8 +2070,8 @@ SWITCH_DECLARE(switch_codec_interface_t *) switch_loadable_module_get_codec_inte
 
 #define HASH_FUNC(_kind_) SWITCH_DECLARE(switch_##_kind_##_interface_t *) switch_loadable_module_get_##_kind_##_interface(const char *name)	\
 	{																	\
-		switch_##_kind_##_interface_t *i;								\
-		if ((i = switch_core_hash_find_locked(loadable_modules._kind_##_hash, name, loadable_modules.mutex))) {	\
+		switch_##_kind_##_interface_t *i = NULL;								\
+		if (loadable_modules._kind_##_hash && (i = switch_core_hash_find_locked(loadable_modules._kind_##_hash, name, loadable_modules.mutex))) {	\
 			PROTECT_INTERFACE(i);										\
 		}																\
 		return i;														\
