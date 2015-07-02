@@ -1362,7 +1362,11 @@ SWITCH_DECLARE(const char *) switch_lookup_timezone(const char *tz_name)
 {
 	char *value = NULL;
 
-	if (tz_name && (value = switch_core_hash_find(TIMEZONES_LIST.hash, tz_name)) == NULL) {
+	if (zstr(tz_name) || !TIMEZONES_LIST.hash) {
+		return NULL;
+	}
+	
+	if ((value = switch_core_hash_find(TIMEZONES_LIST.hash, tz_name)) == NULL) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Timezone '%s' not found!\n", tz_name);
 	}
 
