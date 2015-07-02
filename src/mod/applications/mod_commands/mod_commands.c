@@ -1888,9 +1888,9 @@ SWITCH_STANDARD_API(cond_function)
 	char *expr;
 	char *a, *b;
 	double a_f = 0.0, b_f = 0.0;
+	int a_is_quoted = 0, b_is_quoted = 0;
 	o_t o = O_NONE;
 	int is_true = 0;
-	char *p;
 
 	if (!cmd) {
 		goto error;
@@ -1899,62 +1899,50 @@ SWITCH_STANDARD_API(cond_function)
 	mydata = strdup(cmd);
 	switch_assert(mydata);
 
-	if ((p = strchr(mydata, '?'))) {
-		*p = ':';
-	} else {
-		goto error;
-	}
-
-	argc = switch_separate_string(mydata, ':', argv, (sizeof(argv) / sizeof(argv[0])));
-
-	if (! (argc >= 2 && argc <= 3)) {
-		goto error;
-	}
-
-	a = argv[0];
-	while(*a == ' ' || *a == '\t') a++;
+	a = mydata;
 
 	if (*a == '\'') {
-		if ((expr = switch_find_end_paren(a, '\'', '\''))) {
-			a++;
-			*expr++ = '\0';
-		} else {
+		a_is_quoted = 1;
+		for (expr = ++a; *expr; expr++) {
+			if (*expr == '\\') {
+				if (*(expr + 1) == '\\' || *(expr + 1) == '\'') {
+					expr++;
+				}
+			} else if (*expr == '\'') {
+				break;
+			}
+		}
+		if (!*expr) {
+			goto error;
+		}
+		*expr++ = '\0';
+
+		if (!switch_isspace(*expr)) {
 			goto error;
 		}
 	} else {
 		if ((expr = strchr(a, ' '))) {
 			*expr++ = '\0';
 		} else {
-			expr = a;
+			goto error;
 		}
 	}
 
-	if (strspn(a, "!<>=")) {
-		expr = a;
-	}
-
-	if (expr == a) {
-		a = "";
-	}
-
-	while (*expr == ' ') expr++;
-
-	while(expr && *expr) {
-		switch(*expr) {
-		case '!':
-		case '<':
-		case '>':
-		case '=':
-		goto done;
-		default:
-			expr++;
-			break;
-		}
-	}
-
- done:
+	while (switch_isspace(*expr)) expr++;
 
 	switch(*expr) {
+	case '!':
+	case '<':
+	case '>':
+	case '=':
+		goto operator;
+	default:
+		goto error;
+	}
+
+  operator:
+
+	switch (*expr) {
 	case '!':
 		*expr++ = '\0';
 		if (*expr == '=') {
@@ -1995,20 +1983,58 @@ SWITCH_STANDARD_API(cond_function)
 		goto error;
 	}
 
-	
 	if (o) {
 		char *s_a = NULL, *s_b = NULL;
 		int a_is_num, b_is_num;
 
 		expr++;
+		while (switch_isspace(*expr)) expr++;
+
 		b = expr;
+		if (*b == '\'') {
+			b_is_quoted = 1;
+			for (expr = ++b; *expr; expr++) {
+				if (*expr == '\\') {
+					if (*(expr + 1) == '\\' || *(expr + 1) == '\'') {
+						expr++;
+					}
+				} else if (*expr == '\'') {
+					break;
+				}
+			}
+			if (!*expr) {
+				goto error;
+			}
+			*expr++ = '\0';
 
-		s_a = switch_strip_spaces(a, SWITCH_TRUE);
-		s_b = switch_strip_spaces(b, SWITCH_TRUE);
+			if (!switch_isspace(*expr)) {
+				goto error;
+			}
+		} else {
+			if ((expr = strchr(b, ' '))) {
+				*expr++ = '\0';
+			} else {
+				goto error;
+			}
+		}
 
+		while (switch_isspace(*expr)) expr++;
 
-		a_is_num = switch_is_number(s_a);
-		b_is_num = switch_is_number(s_b);
+		if (*expr != '?') {
+			goto error;
+		}
+
+		*expr = ':';
+
+		argc = switch_separate_string(expr, ':', argv, (sizeof(argv) / sizeof(argv[0])));
+		if (!(argc >= 2 && argc <= 3)) {
+			goto error;
+		}
+
+		s_a = a;
+		s_b = b;
+		a_is_num = (switch_is_number(s_a) && !a_is_quoted);
+		b_is_num = (switch_is_number(s_b) && !b_is_quoted);
 
 		a_f = a_is_num ? atof(s_a) : (float) strlen(s_a);
 		b_f = b_is_num ? atof(s_b) : (float) strlen(s_b);
@@ -2043,20 +2069,18 @@ SWITCH_STANDARD_API(cond_function)
 		default:
 			break;
 		}
-		switch_safe_free(s_a);
-		switch_safe_free(s_b);
 
 		if ((argc == 2 && !is_true)) {
 			stream->write_function(stream, "");
 		} else {
 			stream->write_function(stream, "%s", is_true ? argv[1] : argv[2]);
 		}
-		goto ok;
+		goto end;
 	}
 
   error:
 	stream->write_function(stream, "-ERR");
-  ok:
+  end:
 
 	switch_safe_free(mydata);
 	return SWITCH_STATUS_SUCCESS;
