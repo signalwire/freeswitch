@@ -1730,9 +1730,9 @@ static switch_status_t av_file_read_video(switch_file_handle_t *handle, switch_f
 	if (flags & SVR_FLUSH) max_delta = 0.02 * AV_TIME_BASE;
 
 	if (context->last_img) {
-		if (mst->next_pts && (switch_micro_time_now() - mst->next_pts > max_delta)) {
+		if (mst->next_pts && (switch_time_now() - mst->next_pts > max_delta)) {
 			switch_img_free(&context->last_img); // too late
-		} else if (mst->next_pts && (switch_micro_time_now() - mst->next_pts > -10000)) {
+		} else if (mst->next_pts && (switch_time_now() - mst->next_pts > -10000)) {
 			frame->img = context->last_img;
 			context->last_img = NULL;
 			return SWITCH_STATUS_SUCCESS;
@@ -1767,14 +1767,15 @@ static switch_status_t av_file_read_video(switch_file_handle_t *handle, switch_f
 	if (pop && status == SWITCH_STATUS_SUCCESS) {
 		switch_image_t *img = (switch_image_t *)pop;
 
-// #define YIELD 60000 // use a constant FPS
+		// #define YIELD 40000 // use a constant FPS
 #ifdef YIELD
 		switch_yield(YIELD);
 		frame->img = img;
+		if (0) goto again;
 #else
 
 		uint64_t pts;
-		uint64_t now = switch_micro_time_now();
+		uint64_t now = switch_time_now();
 
 		pts = av_rescale_q(*((uint64_t *)img->user_priv), st->time_base, AV_TIME_BASE_Q);
 
@@ -1785,16 +1786,16 @@ static switch_status_t av_file_read_video(switch_file_handle_t *handle, switch_f
 		if (st->time_base.num == 0) {
 			mst->next_pts = 0;
 		} else {
-			// uint64_t last_pts = mst->next_pts;
+			//uint64_t last_pts = mst->next_pts;
 			mst->next_pts = context->video_start_time + pts;
-			// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "pts: %" SWITCH_INT64_T_FMT " last_pts: %" SWITCH_INT64_T_FMT " delta: %" SWITCH_INT64_T_FMT " frame_pts: %" SWITCH_INT64_T_FMT " nextpts: %" SWITCH_INT64_T_FMT ", num: %d, den:%d num:%d den:%d sleep: %" SWITCH_INT64_T_FMT "\n",
-				// pts, last_pts, mst->next_pts - last_pts, *((uint64_t *)img->user_priv), mst->next_pts, st->time_base.num, st->time_base.den, st->codec->time_base.num, st->codec->time_base.den, mst->next_pts - now);
+			//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "pts: %" SWITCH_INT64_T_FMT " last_pts: %" SWITCH_INT64_T_FMT " delta: %" SWITCH_INT64_T_FMT " frame_pts: %" SWITCH_INT64_T_FMT " nextpts: %" SWITCH_INT64_T_FMT ", num: %d, den:%d num:%d den:%d sleep: %" SWITCH_INT64_T_FMT "\n",
+			//pts, last_pts, mst->next_pts - last_pts, *((uint64_t *)img->user_priv), mst->next_pts, st->time_base.num, st->time_base.den, st->codec->time_base.num, st->codec->time_base.den, mst->next_pts - now);
 		}
 
 		if (pts == 0) mst->next_pts = 0;
 
-		if (mst->next_pts && switch_micro_time_now() - mst->next_pts > max_delta) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "picture is too late, off: %" SWITCH_INT64_T_FMT " queue size:%u\n", (int64_t)(switch_micro_time_now() - mst->next_pts), switch_queue_size(context->eh.video_queue));
+		if ((mst->next_pts && switch_time_now() - mst->next_pts > max_delta)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG3, "picture is too late, off: %" SWITCH_INT64_T_FMT " queue size:%u\n", (int64_t)(switch_time_now() - mst->next_pts), switch_queue_size(context->eh.video_queue));
 			switch_img_free(&img);
 
 
@@ -1807,13 +1808,12 @@ static switch_status_t av_file_read_video(switch_file_handle_t *handle, switch_f
 		}
 
 		if (flags & SVR_BLOCK) {
-			while (switch_micro_time_now() - mst->next_pts < -10000 / 2) {
-				// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "yield\n");
-				switch_yield(10000);
+			while (switch_time_now() - mst->next_pts < -10000 / 2) {
+				switch_cond_next();
 			}
 			frame->img = img;
 		} else {
-			if (switch_micro_time_now() - mst->next_pts > -10000 / 2) {
+			if (switch_time_now() - mst->next_pts > -10000 / 2) {
 				frame->img = img;
 			} else {
 				context->last_img = img;
