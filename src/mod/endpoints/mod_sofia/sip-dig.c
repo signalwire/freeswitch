@@ -215,10 +215,13 @@ switch_status_t sip_dig_function(_In_opt_z_ const char *cmd, _In_opt_ switch_cor
 	char const *string;
 	url_t *uri = NULL;
 
+	#define DIG_MAX_ARGS 50
 	char const *host;
 	char const *port;
 	char *transport = NULL, tport[32];
-	char *argv_[25] = { 0 };
+	char *argv_[DIG_MAX_ARGS + 1] = { 0 };
+	int argc;
+	int i;
 	char *mycmd = NULL;
 	char **argv;
 	struct dig dig[1] = {{ NULL }};
@@ -230,81 +233,81 @@ switch_status_t sip_dig_function(_In_opt_z_ const char *cmd, _In_opt_ switch_cor
 	argv = argv_;
 	argv++;
 
-	if (!cmd) {
-		{usage(1);}
+	if (zstr(cmd)) {
+		usage(1);
 	}
 
 	mycmd = strdup(cmd);
 
-	switch_separate_string(mycmd, ' ', argv, (sizeof(argv_) / sizeof(argv_[0])) - 1);
+	argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv_) / sizeof(argv_[0])) - 1);
 	argv = argv_;
+	argc++;
+	argv[0] = "sofia_dig";
+	i = 1;
 
-
-	if (!argv[1]) {
-		{usage(1);}
+	if (argc < 2 || argc == (DIG_MAX_ARGS + 1)) {
+		usage(1);
 	}
 	
-	if (!strcasecmp(argv[1], "xml")) {
+	if (!strcasecmp(argv[i], "xml")) {
 		switch_event_add_header_string(stream->param_event, SWITCH_STACK_BOTTOM, "xml", "true");
-		argv++;
+		i++;
 		xml++;
 	}
 
-	argv[0] = "sofia_dig";
-
-
-	//if (su_init() != 0)
-	//return -1;
-
-	while (argv[1] && argv[1][0] == '-') {
-		if (strcmp(argv[1], "-v") == 0)
+	while (argv[i] && argv[i][0] == '-') {
+		if (strcmp(argv[i], "-v") == 0) {
 			o_verbatim++;
-		else if (strcmp(argv[1], "-6") == 0)
+		} else if (strcmp(argv[i], "-6") == 0) {
 			dig->ip6 = ++family;
-		else if (strcmp(argv[1], "-4") == 0)
+		} else if (strcmp(argv[i], "-4") == 0) {
 			dig->ip4 = ++family;
-		else if (strncmp(argv[1], "-p", 2) == 0) {
+		} else if (strncmp(argv[i], "-p", 2) == 0) {
 			char const *proto;
 
-			if (argv[1][2] == '=')
-				proto = argv[1] + 3;
-			else if (argv[1][2])
-				proto = argv[1] + 2;
-			else
-				proto = argv++[2];
+			if (argv[i][2] == '=') {
+				proto = argv[i] + 3;
+			} else if (argv[i][2]) {
+				proto = argv[i] + 2;
+			} else {
+				i++;
+				proto = argv[i];
+			}
 
-			if (proto == NULL)
-				{usage(2);}
+			if (proto == NULL) {
+				usage(2);
+			}
 
 			if (prepare_transport(dig, proto) < 0) {
 				goto fail;
 			}
-		}
-		else if (strcmp(argv[1], "--udp") == 0)
+		} else if (strcmp(argv[i], "--udp") == 0) {
 			prepare_transport(dig, "udp");
-		else if (strcmp(argv[1], "--tcp") == 0)
+		} else if (strcmp(argv[i], "--tcp") == 0) {
 			prepare_transport(dig, "tcp");
-		else if (strcmp(argv[1], "--tls") == 0)
+		} else if (strcmp(argv[i], "--tls") == 0) {
 			prepare_transport(dig, "tls");
-		else if (strcmp(argv[1], "--sctp") == 0)
+		} else if (strcmp(argv[i], "--sctp") == 0) {
 			prepare_transport(dig, "sctp");
-		else if (strcmp(argv[1], "--tls-sctp") == 0)
+		} else if (strcmp(argv[i], "--tls-sctp") == 0) {
 			prepare_transport(dig, "tls-sctp");
-		else if (strcmp(argv[1], "--tls-udp") == 0)
+		} else if (strcmp(argv[i], "--tls-udp") == 0) {
 			prepare_transport(dig, "tls-udp");
-		else if (strcmp(argv[1], "--no-sctp") == 0)
+		} else if (strcmp(argv[i], "--no-sctp") == 0) {
 			o_sctp = 0, o_tls_sctp = 0;
-		else if (strcmp(argv[1], "--help") == 0)
-			{usage(0);}
-		else if (strcmp(argv[1], "-h") == 0)
-			{usage(0);}
-		else if (strcmp(argv[1], "-?") == 0)
-			{usage(0);}
-		else if (strcmp(argv++[1], "-") == 0)
+		} else if (strcmp(argv[i], "--help") == 0) {
+			usage(0);
+		} else if (strcmp(argv[i], "-h") == 0) {
+			usage(0);
+		} else if (strcmp(argv[i], "-?") == 0) {
+			usage(0);
+		} else if (strcmp(argv[i], "-") == 0) {
+			i++;
 			break;
-		else
-			{usage(2);}
-		argv++;
+		} else {
+			usage(2);
+		}
+		i++;
 	}
 
 
@@ -319,27 +322,29 @@ switch_status_t sip_dig_function(_In_opt_z_ const char *cmd, _In_opt_ switch_cor
 		dig->ip4 = 1, dig->ip6 = 2;
 
 
-	if (!argv[1])
-		{usage(2);}
+	if (!argv[i]) {
+		usage(2);
+	}
 
-
-	multiple = argv[1] && argv[2];
+	multiple = argv[i] && argv[i +1];
 
 	if (!count_transports(dig, NULL, NULL)) {
 		prepare_transport(dig, "udp");
 		prepare_transport(dig, "tcp");
 		if (o_sctp)
-			prepare_transport(dig, "sctp");
+			 prepare_transport(dig, "sctp");
 		prepare_transport(dig, "tls");
 		if (o_tls_sctp)
 			prepare_transport(dig, "tls-sctp");
 	}
 
 	dig->sres = sres_resolver_new(getenv("SRESOLV_CONF"));
-	if (!dig->sres)
-		{usage(1);}
+
+	if (!dig->sres) {
+		usage(1);
+	}
 	
-	for (; (string = argv[1]); argv++) {
+	for (; i <= argc && (string = argv[i]); i++) {
 		if (multiple)
 			stream->write_function(stream, "%s", string);
 
