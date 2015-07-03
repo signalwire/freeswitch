@@ -913,6 +913,11 @@ SWITCH_DECLARE(int32_t) switch_sockaddr_get_family(switch_sockaddr_t *sa)
 	return sa->family;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_getnameinfo(char **hostname, switch_sockaddr_t *sa, int32_t flags)
+{
+	return apr_getnameinfo(hostname, sa, flags);
+}
+
 SWITCH_DECLARE(switch_status_t) switch_socket_atmark(switch_socket_t *sock, int *atmark)
 {
 	return apr_socket_atmark(sock, atmark);
