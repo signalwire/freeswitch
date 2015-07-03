@@ -188,6 +188,9 @@ struct switch_media_handle_s {
 	char *fmtps[SWITCH_MAX_CODECS];
 	int video_count;
 
+	int rates[SWITCH_MAX_CODECS];
+	uint32_t num_rates;
+
 	uint32_t owner_id;
 	uint32_t session_id;
 
@@ -6679,7 +6682,10 @@ static void generate_m(switch_core_session_t *session, char *buf, size_t buflen,
 	}
 
 	if (smh->mparams->dtmf_type == DTMF_2833 && smh->mparams->te > 95) {
-		switch_snprintf(buf + strlen(buf), buflen - strlen(buf), " %d", smh->mparams->te);
+		int i;
+		for (i = 0; i < smh->num_rates; i++) {
+			switch_snprintf(buf + strlen(buf), buflen - strlen(buf), " %d", smh->ianacodes[smh->mparams->num_codecs + i]);
+		}
 	}
 		
 	if (!switch_media_handle_test_media_flag(smh, SCMF_SUPPRESS_CNG) && cng_type && use_cng) {
@@ -6761,12 +6767,15 @@ static void generate_m(switch_core_session_t *session, char *buf, size_t buflen,
 	if ((smh->mparams->dtmf_type == DTMF_2833 || switch_media_handle_test_media_flag(smh, SCMF_LIBERAL_DTMF) || 
 		 switch_channel_test_flag(session->channel, CF_LIBERAL_DTMF)) && smh->mparams->te > 95) {
 
-		if (switch_channel_test_flag(session->channel, CF_AVPF)) {
-			switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=rtpmap:%d telephone-event/8000\n", smh->mparams->te);
-		} else {
-			switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=rtpmap:%d telephone-event/8000\na=fmtp:%d 0-16\n", smh->mparams->te, smh->mparams->te);
+		for (i = 0; i < smh->num_rates; i++) {
+			if (switch_channel_test_flag(session->channel, CF_AVPF)) {
+				switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=rtpmap:%d telephone-event/%d\n", 
+								smh->ianacodes[smh->mparams->num_codecs + i], smh->rates[i]);
+			} else {
+				switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=rtpmap:%d telephone-event/%d\na=fmtp:%d 0-16\n", 
+								smh->ianacodes[smh->mparams->num_codecs + i], smh->rates[i], smh->ianacodes[smh->mparams->num_codecs + i]);
+			}
 		}
-
 	}
 
 	if (!zstr(a_engine->local_dtls_fingerprint.type) && secure) {
@@ -7151,9 +7160,27 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 		/* it could be 98 but chrome reserves 98 and 99 for some internal stuff even though they should not.  
 		   Everyone expects dtmf to be at 101 and Its not worth the trouble so we'll start at 102 */
 		smh->payload_space = 102;
+		memset(smh->rates, 0, sizeof(smh->rates));
+		smh->num_rates = 0;
 
 		for (i = 0; i < smh->mparams->num_codecs; i++) {
+			int j;
 			smh->ianacodes[i] = smh->codecs[i]->ianacode;
+
+			for (j = 0; j < SWITCH_MAX_CODECS; j++) {
+				if (smh->rates[j] == 0) {
+					break;
+				}
+
+				if (smh->rates[j] == smh->codecs[i]->samples_per_second) {
+					goto do_next;
+				}
+			}
+			
+			smh->rates[smh->num_rates++] = smh->codecs[i]->samples_per_second;
+
+		do_next:
+			continue;
 		}
 		
 		if (sdp_type == SDP_TYPE_REQUEST) {
@@ -7207,7 +7234,15 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 												  imp->number_of_channels,
 												  SWITCH_FALSE);
 			}
-				
+			
+			for (i = 0; i < smh->num_rates; i++) {
+				if (smh->rates[i] == 8000 || smh->num_rates == 1) {
+					smh->ianacodes[smh->mparams->num_codecs + i] = smh->mparams->te;
+				} else {
+					smh->ianacodes[smh->mparams->num_codecs + i] = (switch_payload_t)smh->payload_space++;
+				}
+			}
+	
 
 			if (orig_session) {
 				switch_core_session_rwunlock(orig_session);
@@ -7383,10 +7418,13 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 		if ((smh->mparams->dtmf_type == DTMF_2833 || switch_media_handle_test_media_flag(smh, SCMF_LIBERAL_DTMF) || 
 			 switch_channel_test_flag(session->channel, CF_LIBERAL_DTMF))
 			&& smh->mparams->te > 95) {
+
 			if (switch_channel_test_flag(session->channel, CF_AVPF)) {
-				switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtpmap:%d telephone-event/8000\n", smh->mparams->te);
+				switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtpmap:%d telephone-event/%d\n", 
+								smh->mparams->te, rate);
 			} else {
-				switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtpmap:%d telephone-event/8000\na=fmtp:%d 0-16\n", smh->mparams->te, smh->mparams->te);
+				switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtpmap:%d telephone-event/%d\na=fmtp:%d 0-16\n", 
+								smh->mparams->te, rate, smh->mparams->te);
 			}
 		}
 
