@@ -4580,18 +4580,28 @@ struct file_string_context {
 
 typedef struct file_string_context file_string_context_t;
 
+#define FILE_STRING_OPEN "filestring::open"
+#define FILE_STRING_CLOSE "filestring::close"
+#define FILE_STRING_FAIL "filestring::fail"
+
 static switch_status_t next_file(switch_file_handle_t *handle)
 {
 	file_string_context_t *context = handle->private_info;
 	char *file;
 	const char *prefix = handle->prefix;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	
+	switch_event_t *event = NULL;
+
   top:
 
 	context->index++;
 
 	if (switch_test_flag((&context->fh), SWITCH_FILE_OPEN)) {
+		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, FILE_STRING_CLOSE) == SWITCH_STATUS_SUCCESS) {
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "File", context->argv[(context->index - 1)]);
+			switch_event_fire(&event);
+		}
+
 		switch_core_file_close(&context->fh);
 	}
 
@@ -4619,6 +4629,11 @@ static switch_status_t next_file(switch_file_handle_t *handle)
 		if ((p = strrchr(path, *SWITCH_PATH_SEPARATOR))) {
 			*p = '\0';
 			if (switch_dir_make_recursive(path, SWITCH_DEFAULT_DIR_PERMS, handle->memory_pool) != SWITCH_STATUS_SUCCESS) {
+				if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, FILE_STRING_FAIL) == SWITCH_STATUS_SUCCESS) {
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "File", context->argv[context->index]);
+					switch_event_fire(&event);
+				}
+
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error creating %s\n", path);
 				return SWITCH_STATUS_FALSE;
 			}
@@ -4629,12 +4644,21 @@ static switch_status_t next_file(switch_file_handle_t *handle)
 	}
 
 	if (switch_core_file_open(&context->fh, file, handle->channels, handle->samplerate, handle->flags, NULL) != SWITCH_STATUS_SUCCESS) {
+		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, FILE_STRING_FAIL) == SWITCH_STATUS_SUCCESS) {
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "File", context->argv[context->index]);
+			switch_event_fire(&event);
+		}
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't open file %s\n", file);
 		if (switch_test_flag(handle, SWITCH_FILE_FLAG_WRITE)) {
 			switch_file_remove(file, handle->memory_pool);
 		}
 		goto top;
+	}
+
+	if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, FILE_STRING_OPEN) == SWITCH_STATUS_SUCCESS) {
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "File", context->argv[context->index]);
+		switch_event_fire(&event);
 	}
 
 	if (handle->dbuflen) {
