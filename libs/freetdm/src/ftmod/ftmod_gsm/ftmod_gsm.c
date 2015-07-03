@@ -1053,6 +1053,9 @@ static void *ftdm_gsm_run(ftdm_thread_t *me, void *obj)
 	ftdm_span_t *span = (ftdm_span_t *) obj;
 	ftdm_gsm_span_data_t *gsm_data = NULL;
 	ftdm_interrupt_t *data_sources[2] = {NULL, NULL};
+	ftdm_wait_flag_t flags = FTDM_READ | FTDM_EVENTS;
+	ftdm_status_t status = FTDM_SUCCESS;
+	char buffer[1025] = { 0 };
 	int waitms = 0;
 	
 	ftdm_log(FTDM_LOG_INFO,"ftdm_gsm_run\r\n");
@@ -1068,11 +1071,7 @@ static void *ftdm_gsm_run(ftdm_thread_t *me, void *obj)
 		goto done;
 	}
 
-
-
-
 	while (ftdm_running()) {
-
 		wat_span_run(span->span_id);
 
 		waitms = wat_span_schedule_next(span->span_id);
@@ -1080,48 +1079,25 @@ static void *ftdm_gsm_run(ftdm_thread_t *me, void *obj)
 			waitms = GSM_POLL_INTERVAL_MS;
 		}
 
-/////////////////////
+		flags = FTDM_READ | FTDM_EVENTS;
+		status = ftdm_channel_wait(gsm_data->dchan, &flags, waitms);
 		
+		/* check if this channel has a state change pending and process it if needed */
+		ftdm_channel_lock(gsm_data->bchan);
+		ftdm_channel_advance_states(gsm_data->bchan);
+		if (FTDM_SUCCESS == status && (flags & FTDM_READ)) {
+			int n = 0, m = 0;
 
-		{
-			ftdm_wait_flag_t flags = FTDM_READ | FTDM_EVENTS;
-			ftdm_status_t status = ftdm_channel_wait(gsm_data->dchan, &flags, waitms);
-			
-	
-			/* double check that this channel has a state change pending */
-			ftdm_channel_lock(gsm_data->bchan);
-			ftdm_channel_advance_states(gsm_data->bchan);
-					
-			if(FTDM_SUCCESS == status ) {
-		
-				if(flags &FTDM_READ ) {
-					char buffer[1025];
-					int n = 0, m = 0;
-					memset(buffer, 0, sizeof(buffer));
-
-					n = read_channel(gsm_data->dchan, buffer, sizeof(buffer)-1);
-					m = strlen(buffer);	
-					wat_span_process_read(span->span_id, buffer, m);
-#if 	 LOG_SIG_DATA
-						printf("<<======================= incomming data len = %d, %s\r\n", n, buffer);
-#endif
-
-				}
+			n = read_channel(gsm_data->dchan, buffer, sizeof(buffer) - 1);
+			if (n > 0) {
+				m = strlen(buffer); /* TODO: Hum? is this needed? why not using the return val from read_channel? */
+				wat_span_process_read(span->span_id, buffer, m);
 			}
-			
-			ftdm_channel_advance_states(gsm_data->bchan);
-			
-			ftdm_channel_unlock(gsm_data->bchan);
-			
-
 		}
-
-
-		
+		ftdm_channel_advance_states(gsm_data->bchan);
+		ftdm_channel_unlock(gsm_data->bchan);
 
 		ftdm_span_trigger_signals(span);
-
-
 	}
 
 done:
@@ -1210,9 +1186,8 @@ COMMAND_HANDLER(status)
 	const wat_sim_info_t *sim_info = NULL;
 	const wat_net_info_t *net_info = NULL;
 	const wat_sig_info_t *sig_info = NULL;
-	const wat_pin_stat_t *pin_stat = NULL;
+	wat_pin_stat_t pin_stat = 0;
 
-	
 	span_id = atoi(argv[0]);
 	if (ftdm_span_find_by_name(argv[0], &span) != FTDM_SUCCESS && ftdm_span_find(span_id, &span) != FTDM_SUCCESS) {
 		stream->write_function(stream, "-ERR Failed to find GSM span '%s'\n",  argv[1]);
@@ -1228,7 +1203,12 @@ COMMAND_HANDLER(status)
 	sim_info = wat_span_get_sim_info(span->span_id);
 	net_info = wat_span_get_net_info(span->span_id);
 	sig_info = wat_span_get_sig_info(span->span_id);
-	pin_stat = wat_span_get_pin_info(span->span_id);
+
+	/* This is absolutely retarded and should be fixed in libwat
+	 * why the hell would you return a pointer to an internal state enum instead of a copy?
+	 * probably the same applies to the rest of the info (sim_info, chip_info, net_info, etc),
+	 * but at least there you could have the lame excuse that you don't need to copy the whole struct */
+	pin_stat = *wat_span_get_pin_info(span->span_id);
 	
 	stream->write_function(stream, "Span %d (%s):\n",  span->span_id, span->name);
 
@@ -1250,6 +1230,10 @@ COMMAND_HANDLER(status)
 		wat_net_stat2str(net_info->stat), net_info->lac, net_info->ci, net_info->operator_name);		
 
 		
+	stream->write_function(stream, "Sig Info: rssi(%d) ber(%d)\n", sig_info->rssi, sig_info->ber);
+
+	stream->write_function(stream, "PIN Status: %s\n", wat_pin_stat2str(pin_stat));
+
 	stream->write_function(stream, "\n");
 	
 	stream->write_function(stream, "+OK.\n");
