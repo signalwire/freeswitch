@@ -604,6 +604,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 		switch_channel_set_variable(channel, "RECORD_DATE", NULL);
 	}
 
+	switch_channel_set_variable(channel, "silence_hits_exhausted", "false");
+
 	if (!asis) {
 		codec_name = "L16";
 		if (switch_core_codec_init(&codec,
@@ -761,6 +763,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 
 			if (score < fh->thresh) {
 				if (!--fh->silence_hits) {
+					switch_channel_set_variable(channel, "silence_hits_exhausted", "true");
 					break;
 				}
 			} else {
