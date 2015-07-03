@@ -5628,6 +5628,7 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 	if (conference->video_muxing_thread) {
 		switch_status_t st = 0;
 		switch_thread_join(&st, conference->video_muxing_thread);
+		conference->video_muxing_thread = NULL;
 	}
 
 	/* Wait till everybody is out */
@@ -7127,10 +7128,7 @@ static void conference_loop_output(conference_member_t *member)
 		/* Wait for the input thread to end */
 		if (member->input_thread) {
 			switch_thread_join(&st, member->input_thread);
-		}
-		if (member->video_muxing_write_thread) {
-			switch_queue_push(member->mux_out_queue, NULL);
-			switch_thread_join(&st, member->video_muxing_write_thread);
+			member->input_thread = NULL;
 		}
 	}
 
@@ -12314,15 +12312,18 @@ SWITCH_STANDARD_APP(conference_function)
 		switch_queue_create(&member.video_queue, 2000, member.pool);
 		switch_queue_create(&member.mux_out_queue, 2000, member.pool);
 		switch_frame_buffer_create(&member.fb);
-		launch_conference_video_muxing_write_thread(&member);
 	}
-
+	
 	/* Add the caller to the conference */
 	if (conference_add_member(conference, &member) != SWITCH_STATUS_SUCCESS) {
 		switch_core_codec_destroy(&member.read_codec);
 		goto done;
 	}
 
+	if (conference->conf_video_mode == CONF_VIDEO_MODE_MUX) {
+		launch_conference_video_muxing_write_thread(&member);
+	}
+	
 	msg.from = __FILE__;
 
 	/* Tell the channel we are going to be in a bridge */
@@ -12367,6 +12368,14 @@ SWITCH_STANDARD_APP(conference_function)
 
   done:
 
+	if (member.video_muxing_write_thread) {
+		switch_status_t st = SWITCH_STATUS_SUCCESS;
+		switch_queue_push(member.mux_out_queue, NULL);
+		switch_thread_join(&st, member.video_muxing_write_thread);
+		member.video_muxing_write_thread = NULL;
+	}
+
+	
 	if (locked) {
 		switch_mutex_unlock(globals.setup_mutex);
 	}
