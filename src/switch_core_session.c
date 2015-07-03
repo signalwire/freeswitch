@@ -1848,9 +1848,10 @@ static void *SWITCH_THREAD_FUNC switch_core_session_thread_pool_manager(switch_t
 			xsleep = 10000;
 		}
 
-		switch_mutex_lock(session_manager.cond2_mutex);
-		switch_thread_cond_timedwait(session_manager.cond, session_manager.cond_mutex, xsleep);
-		switch_mutex_unlock(session_manager.cond2_mutex);
+		if (switch_mutex_trylock(session_manager.cond2_mutex) == SWITCH_STATUS_SUCCESS) {
+			switch_thread_cond_timedwait(session_manager.cond, session_manager.cond_mutex, xsleep);
+			switch_mutex_unlock(session_manager.cond2_mutex);
+		}
 		
 
 		if (switch_micro_time_now() >= next) {
