@@ -8239,7 +8239,7 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 
 							channel = switch_core_session_get_channel(a_session);
 
-							if (sofia_test_flag(profile, PFLAG_CHANNEL_XML_FETCH_ON_NIGHTMARE_TRANSFER) 
+							if (sofia_test_pflag(profile, PFLAG_CHANNEL_XML_FETCH_ON_NIGHTMARE_TRANSFER) 
 								&& switch_xml_locate("channels", "channel", "uuid", replaces->rp_call_id, &xml_root, &xml_channel, xml_params, SWITCH_FALSE) ==	SWITCH_STATUS_SUCCESS
 								&& (params = switch_xml_child(xml_channel, "params"))
 								&& (param = switch_xml_find_child(params, "param", "name", "sip-url"))
