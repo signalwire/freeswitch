@@ -294,6 +294,10 @@ static switch_status_t imagick_file_read_video(switch_file_handle_t *handle, swi
 	switch_image_t *dup = NULL;
 	switch_status_t status;
 
+	if ((flags & SVR_CHECK)) {
+		return SWITCH_STATUS_BREAK;
+	}
+
 	if (!context->images || !context->samples) {
 		return SWITCH_STATUS_FALSE;
 	}

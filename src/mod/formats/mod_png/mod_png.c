@@ -178,7 +178,11 @@ static switch_status_t png_file_read_video(switch_file_handle_t *handle, switch_
 {
 	png_file_context_t *context = (png_file_context_t *)handle->private_info;
 	switch_image_t *dup = NULL;
-	
+
+	if ((flags & SVR_CHECK)) {
+		return SWITCH_STATUS_BREAK;
+	}
+
 	if (!context->img || !context->samples) {
 		return SWITCH_STATUS_FALSE;
 	}
