@@ -35,6 +35,8 @@
 #define KAZOO_DESC "kazoo information"
 #define KAZOO_SYNTAX "<command> [<args>]"
 
+globals_t globals;
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_kazoo_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_kazoo_shutdown);
 SWITCH_MODULE_RUNTIME_FUNCTION(mod_kazoo_runtime);

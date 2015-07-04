@@ -111,8 +111,9 @@ struct globals_s {
 	int event_stream_preallocate;
 	int send_msg_batch;
 	short event_stream_framing;
-} globals;
+};
 typedef struct globals_s globals_t;
+extern globals_t globals;
 
 /* kazoo_node.c */
 switch_status_t new_kazoo_node(int nodefd, ErlConnect *conn);

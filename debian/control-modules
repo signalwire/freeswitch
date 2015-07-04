@@ -523,6 +523,12 @@ Module: event_handlers/mod_format_cdr
 Description: mod_format_cdr
  Adds mod_format_cdr.
 
+Module: event_handlers/mod_kazoo
+Description: mod_kazoo
+ Adds mod_kazoo.
+Build-Depends: erlang-dev
+Depends: erlang
+
 Module: event_handlers/mod_json_cdr
 Description: mod_json_cdr
  Adds mod_json_cdr.
