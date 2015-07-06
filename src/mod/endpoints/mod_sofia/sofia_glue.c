@@ -2222,7 +2222,7 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 	switch_cache_db_test_reactive(dbh, test_sql, "drop table sip_registrations", reg_sql);
 
 	switch_cache_db_test_reactive(dbh, "select ping_count from sip_registrations", NULL, "alter table sip_registrations add column ping_count INTEGER default 0");
-	switch_cache_db_test_reactive(dbh, "select ping_status from sip_registrations", NULL, "alter table sip_registrations add column ping_status VARCHAR(255) default \"Reachable\"");
+	switch_cache_db_test_reactive(dbh, "select ping_status from sip_registrations", NULL, "alter table sip_registrations add column ping_status VARCHAR(255) default 'Reachable'");
 	switch_cache_db_test_reactive(dbh, "select ping_expires from sip_registrations", NULL, "alter table sip_registrations add column ping_expires INTEGER not null default 0");
 	
 	test2 = switch_mprintf("%s;%s", test_sql, test_sql);
