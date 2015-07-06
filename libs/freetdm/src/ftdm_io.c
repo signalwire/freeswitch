@@ -724,6 +724,10 @@ static ftdm_status_t ftdm_span_destroy(ftdm_span_t *span)
 		ftdm_queue_destroy(&span->pendingchans);
 	}
 	if (span->pendingsignals) {
+		ftdm_sigmsg_t *sigmsg = NULL;
+		while ((sigmsg = ftdm_queue_dequeue(span->pendingsignals))) {
+			ftdm_sigmsg_free(&sigmsg);
+		}
 		ftdm_queue_destroy(&span->pendingsignals);
 	}
 	ftdm_mutex_unlock(span->mutex);
@@ -6121,7 +6125,6 @@ FT_DECLARE(ftdm_status_t) ftdm_span_trigger_signals(const ftdm_span_t *span)
 	}
 	return FTDM_SUCCESS;
 }
-
 
 static void execute_safety_hangup(void *data)
 {

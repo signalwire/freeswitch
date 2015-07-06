@@ -282,7 +282,12 @@ static void on_wat_span_status(unsigned char span_id, wat_span_status_t *status)
 		break;
 	case WAT_SPAN_STS_SIM_INFO_READY:
 		{
+			const wat_sim_info_t *sim_info = NULL;
 			ftdm_log(FTDM_LOG_INFO, "span %s: SIM information ready\n", span->name);
+			sim_info = wat_span_get_sim_info(span->span_id);
+			if (!ftdm_strlen_zero(sim_info->subscriber.digits)) {
+				ftdm_set_string(gsm_data->bchan->chan_number, sim_info->subscriber.digits);
+			}
 		}
 		break;
 	case WAT_SPAN_STS_ALARM:
@@ -305,37 +310,18 @@ static void on_wat_con_ind(uint8_t span_id, uint8_t call_id, wat_con_event_t *co
 	
 	ftdm_log(FTDM_LOG_INFO, "s%d: Incoming call (id:%d) Calling Number:%s  Calling Name:\"%s\" type:%d plan:%d\n", span_id, call_id, con_event->calling_num.digits, con_event->calling_name, con_event->calling_num.type, con_event->calling_num.plan);
 	
-	if (!(span = get_span_by_id(span_id, &gsm_data))) {
-		return;
-	}	  
+	span = get_span_by_id(span_id, &gsm_data);
 
 	gsm_data->call_id = call_id;			
 	
-	#define ZERO_ARRAY(arr) memset(arr, 0, sizeof(arr))
-	// cid date
-	{
-		time_t t;
-		struct tm *tmp;
-		t = time(NULL);
-		tmp = localtime(&t);
-		if (tmp == NULL) {
-			ZERO_ARRAY(gsm_data->bchan->caller_data.cid_date);
-			strftime(gsm_data->bchan->caller_data.cid_date, sizeof(gsm_data->bchan->caller_data.cid_date), "%y/%m/%d", tmp);
-		}
-
-	}
-
 	// cid name
-	ZERO_ARRAY(gsm_data->bchan->caller_data.cid_name);
-	strncpy(gsm_data->bchan->caller_data.cid_name, con_event->calling_name,sizeof(gsm_data->bchan->caller_data.cid_name));
+	ftdm_set_string(gsm_data->bchan->caller_data.cid_name, con_event->calling_name);
 
-	// dnis
-	ZERO_ARRAY(gsm_data->bchan->caller_data.dnis.digits);
-	strncpy(gsm_data->bchan->caller_data.dnis.digits, con_event->calling_num.digits, FTDM_DIGITS_LIMIT);
-	
-	//collected
-	ZERO_ARRAY(gsm_data->bchan->caller_data.collected);
-	strncpy(gsm_data->bchan->caller_data.collected, con_event->calling_num.digits, FTDM_DIGITS_LIMIT);
+	// cid number
+	ftdm_set_string(gsm_data->bchan->caller_data.cid_num.digits, con_event->calling_num.digits);
+
+	// destination number
+	ftdm_set_string(gsm_data->bchan->caller_data.dnis.digits, gsm_data->bchan->chan_number);
 	
 	ftdm_set_state(gsm_data->bchan, FTDM_CHANNEL_STATE_RING);
 
