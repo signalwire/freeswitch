@@ -35,7 +35,7 @@
 #include <switch.h>
 #include "freetdm.h"
 
-//#define CUDATEL_DEBUG
+//#define BACKTRACE_DEBUG
 
 #define FREETDM_LIMIT_REALM "__freetdm"
 #define FREETDM_VAR_PREFIX "freetdm_"
@@ -496,16 +496,16 @@ static switch_status_t channel_on_destroy(switch_core_session_t *session)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-#ifdef CUDATEL_DEBUG
-struct cudatel_trace_priv {
+#ifdef BACKTRACE_DEBUG
+struct debug_trace_priv {
 	const char *name;
 	int span_id;
 	int chan_id;
 };
 
-static void cudatel_trace(const int tid, const void *addr, const char *symbol, void *priv)
+static void debug_trace(const int tid, const void *addr, const char *symbol, void *priv)
 {
-	struct cudatel_trace_priv *data = priv;
+	struct debug_trace_priv *data = priv;
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "[%d:%d][tid:%d] %s -> %s\n",
 			data->span_id, data->chan_id, tid, data->name, symbol);
 }
@@ -568,13 +568,13 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 		goto end;
 	}
 
-#ifdef CUDATEL_DEBUG
+#ifdef BACKTRACE_DEBUG
 	{
-		struct cudatel_trace_priv trace_data;
+		struct debug_trace_priv trace_data;
 		trace_data.name = name;
 		trace_data.span_id = span_id;
 		trace_data.chan_id = chan_id;
-		ftdm_backtrace_walk(&cudatel_trace, &trace_data);
+		ftdm_backtrace_walk(&debug_trace, &trace_data);
 	}
 #endif
 
