@@ -1756,10 +1756,15 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_
 	switch_channel_t *other_channel = NULL;
 	const char *uuid = NULL;
 	const char *max_forwards;
-	const char *forwardvar = switch_channel_get_variable(channel, SWITCH_MAX_FORWARDS_VARIABLE);
+	const char *forwardvar_name = SWITCH_MAX_SESSION_TRANSFERS_VARIABLE; /* max_session_transfers has first priority for setting maximum */
+	const char *forwardvar = switch_channel_get_variable(channel, forwardvar_name);
 	int forwardval = 70;
 	const char *use_dialplan = dialplan, *use_context = context;
 
+	if (zstr(forwardvar)) {
+		forwardvar_name = SWITCH_MAX_FORWARDS_VARIABLE; /* fall back to max_forwards variable for setting maximum */
+		forwardvar = switch_channel_get_variable(channel, forwardvar_name);
+	}
 	if (!zstr(forwardvar)) {
 		forwardval = atoi(forwardvar) - 1;
 	}
@@ -1769,7 +1774,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_
 	}
 
 	max_forwards = switch_core_session_sprintf(session, "%d", forwardval);
-	switch_channel_set_variable(channel, SWITCH_MAX_FORWARDS_VARIABLE, max_forwards);
+	switch_channel_set_variable(channel, forwardvar_name, max_forwards);
 
 	switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
 	switch_channel_clear_flag(channel, CF_ORIGINATING);
