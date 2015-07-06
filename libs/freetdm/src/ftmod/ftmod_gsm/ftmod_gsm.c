@@ -126,6 +126,7 @@ typedef struct ftdm_gsm_span_data_s {
 	ftdm_bool_t startup_forwarding_disabled;
 	char startup_commands[20][50];
 	ftdm_gsm_flag_t flags;
+	ftdm_bool_t sig_up;
 } ftdm_gsm_span_data_t;
 
 // command handler function type.
@@ -188,17 +189,6 @@ static ftdm_io_interface_t g_ftdm_gsm_interface;
 /*                              implementation                                  */
 /*                                                                              */
 /********************************************************************************/
-static int read_channel(ftdm_channel_t *ftdm_chan , const void *buf, int size)
-{
-	ftdm_size_t outsize = size;
-	ftdm_status_t status = ftdm_channel_read(ftdm_chan, (void *)buf, &outsize);
-	if (FTDM_FAIL == status) {
-		return -1;
-	}
-	return (int)outsize;
-}
-
-
 static int on_wat_span_write(unsigned char span_id, void *buffer, unsigned len)
 {
 	ftdm_span_t *span = NULL;
@@ -256,17 +246,14 @@ static void ftdm_gsm_enable_conditional_forwarding(void *data)
 
 static void on_wat_span_status(unsigned char span_id, wat_span_status_t *status)
 {
-	ftdm_span_t *span = NULL;
 	ftdm_gsm_span_data_t *gsm_data = NULL;
-	if (!(span = get_span_by_id(span_id, &gsm_data))) {
-		return;
-	}
+	ftdm_span_t *span = get_span_by_id(span_id, &gsm_data);
 
 	switch (status->type) {
 	case WAT_SPAN_STS_READY:
 		{
 			int i = 0;
-			ftdm_log(FTDM_LOG_INFO, "span %d: Ready\n", span_id);
+			ftdm_log(FTDM_LOG_INFO, "span %s: Ready\n", span->name);
 			for (i = 0; !ftdm_strlen_zero_buf(gsm_data->startup_commands[i]); i++) {
 				ftdm_log(FTDM_LOG_INFO, "span %d: Executing startup command '%s'\n", span_id, gsm_data->startup_commands[i]);
 				if (WAT_SUCCESS != wat_cmd_req(span_id, gsm_data->startup_commands[i], NULL, NULL)) {
@@ -279,8 +266,10 @@ static void on_wat_span_status(unsigned char span_id, wat_span_status_t *status)
 		{
 			if (status->sts.sigstatus == WAT_SIGSTATUS_UP) {
 				ftdm_log_chan_msg(gsm_data->bchan, FTDM_LOG_INFO, "Signaling is now up\n");
+				gsm_data->sig_up = FTDM_TRUE;
 			} else {
 				ftdm_log_chan_msg(gsm_data->bchan, FTDM_LOG_INFO, "Signaling is now down\n");
+				gsm_data->sig_up = FTDM_FALSE;
 			}
 			if (gsm_data->init_conditional_forwarding == FTDM_TRUE && !ftdm_strlen_zero_buf(gsm_data->conditional_forward_number)) {
 				ftdm_sched_timer(gsm_data->sched, "conditional_forwarding_delay", 1000,
@@ -293,17 +282,17 @@ static void on_wat_span_status(unsigned char span_id, wat_span_status_t *status)
 		break;
 	case WAT_SPAN_STS_SIM_INFO_READY:
 		{
-			ftdm_log(FTDM_LOG_INFO, "span %d: SIM information ready\n", span_id);
+			ftdm_log(FTDM_LOG_INFO, "span %s: SIM information ready\n", span->name);
 		}
 		break;
 	case WAT_SPAN_STS_ALARM:
 		{
-			ftdm_log(FTDM_LOG_INFO, "span %d: Alarm received\n", span_id);
+			ftdm_log(FTDM_LOG_INFO, "span %s: Alarm received\n", span->name);
 		}
 		break;
 	default:
 		{
-			ftdm_log(FTDM_LOG_INFO, "span %d: Unhandled span status notification %d\n", span_id, status->type);
+			ftdm_log(FTDM_LOG_INFO, "span %s: Unhandled span status notification %d\n", span->name, status->type);
 		}
 		break;
 	}
@@ -621,31 +610,28 @@ static ftdm_status_t ftdm_gsm_destroy(ftdm_span_t *span)
 
 static FIO_CHANNEL_GET_SIG_STATUS_FUNCTION(ftdm_gsm_get_channel_sig_status)
 {
-	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_SIG_UP)) {
-		*status = FTDM_SIG_STATE_UP;
-	}
-	else {
-		*status = FTDM_SIG_STATE_DOWN;
-	}
-	*status = FTDM_SIG_STATE_UP;
+	ftdm_gsm_span_data_t *gsm_data = ftdmchan->span->signal_data;
+	*status = gsm_data->sig_up ? FTDM_SIG_STATE_UP : FTDM_SIG_STATE_DOWN;
 	return FTDM_SUCCESS;
-
 }
 
 static FIO_CHANNEL_SET_SIG_STATUS_FUNCTION(ftdm_gsm_set_channel_sig_status)
 {
-	return FTDM_SUCCESS;
+	ftdm_log(FTDM_LOG_ERROR, "You cannot set the signaling status for GSM channels (%s)\n", ftdmchan->span->name);
+	return FTDM_FAIL;
 }
 
 static FIO_SPAN_GET_SIG_STATUS_FUNCTION(ftdm_gsm_get_span_sig_status)
 {
-	*status = FTDM_SIG_STATE_UP;
+	ftdm_gsm_span_data_t *gsm_data = span->signal_data;
+	*status = gsm_data->sig_up ? FTDM_SIG_STATE_UP : FTDM_SIG_STATE_DOWN;
 	return FTDM_SUCCESS;
 }
 
 static FIO_SPAN_SET_SIG_STATUS_FUNCTION(ftdm_gsm_set_span_sig_status)
 {
-	return FTDM_SUCCESS;
+	ftdm_log(FTDM_LOG_ERROR, "You cannot set the signaling status for GSM spans (%s)\n", span->name);
+	return FTDM_FAIL;
 }
 
 static ftdm_state_map_t gsm_state_map = {
@@ -910,6 +896,12 @@ static ftdm_status_t ftdm_gsm_state_advance(ftdm_channel_t *ftdmchan)
 	case FTDM_CHANNEL_STATE_RINGING:
 		{
 			SEND_STATE_SIGNAL(FTDM_SIGEVENT_RINGING);
+		}
+		break;
+
+	case FTDM_CHANNEL_STATE_RESET:
+		{
+			ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
 		}
 		break;
 
@@ -1228,7 +1220,9 @@ static void *ftdm_gsm_run(ftdm_thread_t *me, void *obj)
 	ftdm_interrupt_t *data_sources[2] = {NULL, NULL};
 	ftdm_wait_flag_t flags = FTDM_READ | FTDM_EVENTS;
 	ftdm_status_t status = FTDM_SUCCESS;
-	char buffer[1025] = { 0 };
+	ftdm_alarm_flag_t alarms;
+	char buffer[1024] = { 0 };
+	ftdm_size_t bufsize = 0;
 	int waitms = 0;
 	
 	gsm_data = span->signal_data;
@@ -1242,6 +1236,19 @@ static void *ftdm_gsm_run(ftdm_thread_t *me, void *obj)
 		ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Failed to open GSM d-channel of span %s!\n", span->name);
 		gsm_data->dchan = NULL;
 		goto done;
+	}
+
+	/* Do not start if the link layer is not ready yet */
+	ftdm_channel_get_alarms(gsm_data->dchan, &alarms);
+	if (alarms != FTDM_ALARM_NONE) {
+		ftdm_log(FTDM_LOG_WARNING, "Delaying initialization of span %s until alarms are cleared\n", span->name);
+		while (ftdm_running() && ftdm_test_flag(gsm_data, FTDM_GSM_SPAN_STARTED) && alarms != FTDM_ALARM_NONE) {
+			ftdm_channel_get_alarms(gsm_data->dchan, &alarms);
+			ftdm_sleep(100);
+		}
+		if (!ftdm_running() || !ftdm_test_flag(gsm_data, FTDM_GSM_SPAN_STARTED)) {
+			goto done;
+		}
 	}
 
 	if (wat_span_start(span->span_id)) {
@@ -1264,14 +1271,16 @@ static void *ftdm_gsm_run(ftdm_thread_t *me, void *obj)
 		/* check if this channel has a state change pending and process it if needed */
 		ftdm_channel_lock(gsm_data->bchan);
 		ftdm_channel_advance_states(gsm_data->bchan);
+
 		if (FTDM_SUCCESS == status && (flags & FTDM_READ)) {
-			int n = 0;
-			n = read_channel(gsm_data->dchan, buffer, sizeof(buffer) - 1);
-			if (n > 0) {
-				wat_span_process_read(span->span_id, buffer, n);
+			bufsize = sizeof(buffer);
+			status = ftdm_channel_read(gsm_data->dchan, buffer, &bufsize);
+			if (status == FTDM_SUCCESS && bufsize > 0) {
+				wat_span_process_read(span->span_id, buffer, bufsize);
 				buffer[0] = 0;
 			}
 		}
+
 		ftdm_channel_advance_states(gsm_data->bchan);
 		ftdm_channel_unlock(gsm_data->bchan);
 
