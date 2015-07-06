@@ -447,8 +447,6 @@
       <prompt phrase="Este telefone não está configurado correctamente." filename="ivr-phone_not_configured.wav"/>
       <prompt phrase="Parabéns! Este telefone está configurado correctamente e pode agora ser associado a um utilizador." filename="ivr-phone_is_configured_properly.wav"/>
       <prompt phrase="Por favor contacte o administrador do sistema para assistência." filename="ivr-contact_system_administrator.wav"/>	
-      <prompt phrase="Barracuda Networks" filename="ivr-barracuda_networks.wav"/>
-      <prompt phrase="CudaTel Communication Server" filename="ivr-cudatel_communication_server.wav"/>
       <prompt phrase="Não há mais chamadas á espera nesta fila." filename="ivr-no_calls_waiting_in_queue.wav"/>
       <prompt phrase="Você é o cliente número um. Claro, todos os nossos clientes são número um na nossa lista, portanto você pode ter que esperar um pouco." filename="ivr-youre_number_one.wav"/>
     </ivr>

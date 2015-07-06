@@ -422,8 +422,6 @@
       <prompt phrase="Deze telefoon is niet correct geconfigureerd." filename="ivr-phone_not_configured.wav"/>
       <prompt phrase="Gefeliciteerd! Deze telefoon is correct geconfigureerd en kan nu aan een gebruiker toegekend worden." filename="ivr-phone_is_configured_properly.wav"/>
       <prompt phrase="Neem aub contact op met de systeem beheerder voor ondersteuning." filename="ivr-contact_system_administrator.wav"/>	
-      <prompt phrase="Barracuda Networks" filename="ivr-barracuda_networks.wav"/>
-      <prompt phrase="CudaTel Communication Server" filename="ivr-cudatel_communication_server.wav"/>
       <prompt phrase="Er zijn geen gesprekken aanwezig in deze wachtrij." filename="ivr-no_calls_waiting_in_queue.wav"/>
       <prompt phrase="U bent beller nummer 1. Uiteraard is *elke* beller nummer 1 bij ons dus het kan best dat u nog een tijdje moet wachten." filename="ivr-youre_number_one.wav"/>
       <prompt phrase="...heeft een nood oproep geplaatst" filename="ivr-has_called_emergency_services.wav"/>

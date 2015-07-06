@@ -453,8 +453,6 @@
 			<prompt phrase="该电话设置有误" filename="ivr-phone_not_configured.wav"/>
 			<prompt phrase="恭喜! 电话配置已成功，现在可以分配给一个用户了" filename="ivr-phone_is_configured_properly.wav"/>
 			<prompt phrase="请联系系统管理员" filename="ivr-contact_system_administrator.wav"/>
-			<prompt phrase="Barracuda Networks" filename="ivr-barracuda_networks.wav"/>
-			<prompt phrase="CudaTel Communication Server" filename="ivr-cudatel_communication_server.wav"/>
 			<prompt phrase="该队列没有电话了" filename="ivr-no_calls_waiting_in_queue.wav"/>
 			<prompt phrase="您是第一个呼叫者，当然，在我们的字典里每个人都是第一个，所以，请稍等一会儿..." filename="ivr-youre_number_one.wav"/>
 			<prompt phrase="...呼叫了紧急服务" filename="ivr-has_called_emergency_services.wav"/>

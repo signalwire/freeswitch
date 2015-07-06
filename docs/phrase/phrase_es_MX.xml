@@ -454,8 +454,6 @@
       <prompt phrase="Este teléfono no está configurado correctamente." filename="ivr-phone_not_configured.wav"/>
       <prompt phrase="¡Felicitaciones! Este teléfono está configurado correctamente y puede ahora ser asociado a un usuario." filename="ivr-phone_is_configured_properly.wav"/>
       <prompt phrase="Por favor contacte con el administrador del sistema para obtener asistencia." filename="ivr-contact_system_administrator.wav"/>	
-      <prompt phrase="Barracuda Networks" filename="ivr-barracuda_networks.wav"/>
-      <prompt phrase="CudaTel Communication Server" filename="ivr-cudatel_communication_server.wav"/>
       <prompt phrase="No hay llamadas en espera en esta cola." filename="ivr-no_calls_waiting_in_queue.wav"/>
       <prompt phrase="Usted es el llamante prioritario. Por supuesto, todos nuestros llamantes son prioritarios, por lo que puede tener que esperar un poco." filename="ivr-youre_number_one.wav"/>
     </ivr>

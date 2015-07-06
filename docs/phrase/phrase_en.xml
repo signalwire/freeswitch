@@ -502,8 +502,6 @@
       <prompt phrase="This phone is not configured properly." filename="ivr-phone_not_configured.wav"/>
       <prompt phrase="Congratulations! This phone is configured properly and may now be assigned to a user." filename="ivr-phone_is_configured_properly.wav"/>
       <prompt phrase="Please contact the system administrator for assistance." filename="ivr-contact_system_administrator.wav"/>
-      <prompt phrase="Barracuda Networks" filename="ivr-barracuda_networks.wav"/>
-      <prompt phrase="CudaTel Communication Server" filename="ivr-cudatel_communication_server.wav"/>
       <prompt phrase="There are no calls waiting in this queue." filename="ivr-no_calls_waiting_in_queue.wav"/>
       <prompt phrase="You are caller number one. Of course, *every* caller is number one in our book so you may be waiting a while." filename="ivr-you_are_number_one.wav"/>
       <prompt phrase="...has called emergency services" filename="ivr-has_called_emergency_services.wav"/>
@@ -696,12 +694,8 @@
       <prompt phrase="It is held in downtown Chicago each summer." filename="misc-chicago_each_summer.wav"/>
       <prompt phrase="ClueCon brings together a wide range of VoIP engineers, software developers, and business persons." filename="misc-wide_range_of_persons.wav"/>
       <prompt phrase="By attending ClueCon, you are showing support not only for FreeSWITCH but also the entire spectrum of open source telephony software." filename="misc-support_open_source_by_attending.wav"/>
-      <prompt phrase="CudaTel! You know you want one!" filename="misc-cudatel_you_know_you_want_one.wav"/>
       <prompt phrase="FreeSWITCH is open source software that is sponsored by OSTAG - the Open Source Telephony Advancement Group." filename="misc-freeswitch_sponsored_by_ostag.wav"/>
       <prompt phrase="OSTAG is advancing the next generation of telephony through open-source software. Learn more at www.ostag.org." filename="misc-ostag_learn_more.wav"/>
-      <prompt phrase="Everyone is koo koo for CudaTel!" filename="misc-koo_koo_for_cudatel.wav"/>
-      <prompt phrase="I'm pretty sure CudaTel's patented Automagicatronical configuration takes care of it." filename="misc-cudatel_automagicatronical.wav"/>
-      <prompt phrase="Thank you for calling the CudaTel test system." filename="misc-cudatel_test_system.wav"/>
       <prompt phrase="To learn more about FreeSWITCH Solutions, press..." filename="misc-learn_more_about_freeswitch_solutions.wav"/>
       <prompt phrase="For information about FreeSWITCH, press..." filename="misc-information_about_freeswitch.wav"/>
       <prompt phrase="FreeSWITCH is a state of the art telecommunications platform." filename="misc-freeswitch_is_state_of_the_art.wav"/>
@@ -709,11 +703,6 @@
       <prompt phrase="Best of all, it is free for anyone to download and use." filename="misc-free_to_download.wav"/>
       <prompt phrase="Visit www dot freeswitch dot org to learn more about our project and worldwide community." filename="misc-freeswitch_dot_org_more.wav"/>
       <prompt phrase="Sangoma." filename="misc-Sangoma.wav"/>
-      <prompt phrase="To learn more about CudaTel, press..." filename="misc-learn_more_about_cudatel.wav"/>
-      <prompt phrase="The CudaTel Communication Server from Barracuda Networks is an advanced IP PBX powered by FreeSWITCH and designed by the core FreeSWITCH development team." filename="misc-cudatel_communication_server_from_barracuda.wav"/>
-      <prompt phrase="CudaTel is the IP PBX designed by I.T. professionals, for I.T. professionals." filename="misc-cudatel_by_it.wav"/>
-      <prompt phrase="To speak to a knowledgeable CudaTel representative, call us at 734-887-3000." filename="misc-speak_to_cudatel_rep.wav"/>
-      <prompt phrase="You may also visit us at W W W dot C U D A T E L dot com to learn more about this amazing product." filename="misc-visit_cudatel_dot_com.wav"/>
       <prompt phrase="FreeSWITCH Solutions offers the best FreeSWITCH consulting money can buy." filename="misc-fss_best_consulting.wav"/>
       <prompt phrase="We have a network of FreeSWITCH experts that includes the core FreeSWITCH development team." filename="misc-fss_network_of_experts.wav"/>
       <prompt phrase="Contact us at W-W-W dot freeswitchsolutions dot com to see how we can help you take your FreeSWITCH experience to the next level." filename="misc-fss_contact_us.wav"/>
