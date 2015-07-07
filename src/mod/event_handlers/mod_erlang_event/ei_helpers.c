@@ -327,7 +327,6 @@ int ei_decode_string_or_binary(char *buf, int *index, int maxlen, char *dst)
 
 switch_status_t initialise_ei(struct ei_cnode_s *ec)
 {
-	char *thishostname = NULL;
 	char thisnodename[MAXNODELEN + 1];
 	char thisalivename[MAXNODELEN + 1];
 	char *atsign;
