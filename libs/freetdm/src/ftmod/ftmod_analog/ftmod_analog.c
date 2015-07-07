@@ -847,6 +847,9 @@ static void *ftdm_analog_channel_run(ftdm_thread_t *me, void *obj)
 
 		if (last_digit && (!collecting || ((elapsed - last_digit > analog_data->digit_timeout) || strlen(dtmf) >= analog_data->max_dialstr))) {
 			ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Number obtained [%s]\n", dtmf);
+			if (ftdmchan->state == FTDM_CHANNEL_STATE_COLLECT && ftdmchan->state_status != FTDM_STATE_STATUS_COMPLETED) {
+				ftdm_channel_complete_state(ftdmchan);
+			}
 			ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_RING);
 			last_digit = 0;
 			collecting = 0;
