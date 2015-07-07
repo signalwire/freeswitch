@@ -328,7 +328,7 @@ int ei_decode_string_or_binary_limited(char *buf, int *index, int maxsize, char 
 
 	if (type == ERL_NIL_EXT) {
 		res = 0;
-		dst = '\0';
+		*dst = '\0';
 	} else if (type == ERL_BINARY_EXT) {
         res = ei_decode_binary(buf, index, dst, &len);
         dst[len] = '\0'; /* binaries aren't null terminated */

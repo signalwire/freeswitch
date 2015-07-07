@@ -9,6 +9,7 @@ AC_ARG_WITH(
 	[with_erlang="try"]
 )
 
+AM_CONDITIONAL([HAVE_ERLANG],[false])
 if test "$with_erlang" != "no"
 then
 	save_CFLAGS="$CFLAGS"
@@ -78,6 +79,7 @@ then
 			AC_MSG_NOTICE([Your erlang seems OK, do not forget to enable mod_erlang_event in modules.conf])
 			AC_SUBST([ERLANG_CFLAGS],  [$ERLANG_CFLAGS])
 			AC_SUBST([ERLANG_LDFLAGS], [$ERLANG_LDFLAGS])
+			AM_CONDITIONAL([HAVE_ERLANG],[true])
 		fi
 
 		LIBS="$save_LIBS"
