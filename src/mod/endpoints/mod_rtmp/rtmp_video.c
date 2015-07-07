@@ -16,7 +16,7 @@
  *
  * The Original Code is rtmp_video for FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  *
- * The Initial Developer of the Original Code is Barracuda Networks Inc.
+ * The Initial Developer of the Original Code is Seven Du,
  * Portions created by the Initial Developer are Copyright (C)
  * the Initial Developer. All Rights Reserved.
  *
