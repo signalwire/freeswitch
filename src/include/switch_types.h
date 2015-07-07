@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2015, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -219,6 +219,7 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_EXEC_AFTER_BRIDGE_APP_VARIABLE "exec_after_bridge_app"
 #define SWITCH_EXEC_AFTER_BRIDGE_ARG_VARIABLE "exec_after_bridge_arg"
 #define SWITCH_MAX_FORWARDS_VARIABLE "max_forwards"
+#define SWITCH_MAX_SESSION_TRANSFERS_VARIABLE "max_session_transfers"
 #define SWITCH_DISABLE_APP_LOG_VARIABLE "disable_app_log"
 #define SWITCH_SPEECH_KEY "speech"
 #define SWITCH_UUID_BRIDGE "uuid_bridge"
