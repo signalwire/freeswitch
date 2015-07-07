@@ -25,6 +25,7 @@
  *
  * Brian K. West <brian@freeswitch.org>
  * Noel Morgan <noel@vwci.com>
+ * Dragos Oancea <droancea@yahoo.com>
  *
  * mod_opus.c -- The OPUS ultra-low delay audio codec (http://www.opus-codec.org/)
  *
@@ -86,6 +87,7 @@ struct {
 	int sprop_maxcapturerate;
 	int plpct;
 	int asymmetric_samplerates;
+	int keep_fec;
 	int debuginfo;
     switch_mutex_t *mutex;
 } opus_prefs;
@@ -594,6 +596,8 @@ static switch_status_t opus_load_config(switch_bool_t reload)
 				opus_prefs.plpct = atoi(val);
 			} else if (!strcasecmp(key, "asymmetric-sample-rates")) {
 				opus_prefs.asymmetric_samplerates = atoi(val);
+			} else if (!strcasecmp(key, "keep-fec-enabled")) {
+				opus_prefs.keep_fec = atoi(val);
 			} else if (!strcasecmp(key, "maxaveragebitrate")) {
 				opus_prefs.maxaveragebitrate = atoi(val);
 				if ( opus_prefs.maxaveragebitrate < 6000 || opus_prefs.maxaveragebitrate > 510000 ) {
@@ -621,6 +625,55 @@ static switch_status_t opus_load_config(switch_bool_t reload)
     return status;
 }
 
+static switch_status_t switch_opus_keep_fec_enabled(switch_codec_t *codec)
+{
+	struct opus_context *context = codec->private_info;
+	opus_int32 current_bitrate;
+	opus_int32 current_loss;
+	uint32_t LBRR_threshold_bitrate,LBRR_rate_thres_bps,real_target_bitrate ;  
+	opus_int32 a32,b32; 
+	uint32_t fs = context->enc_frame_size * 1000 / (codec->implementation->microseconds_per_packet / 1000);
+	float frame_rate = 1000 / (codec->implementation->microseconds_per_packet / 1000);
+	uint32_t step = 8000 / (codec->implementation->microseconds_per_packet / 1000); /* this works for 10 ms, 20 ms and 40 ms frame sizes. not for 60 ms*/
+
+	opus_encoder_ctl(context->encoder_object, OPUS_GET_BITRATE(&current_bitrate));
+	opus_encoder_ctl(context->encoder_object, OPUS_GET_PACKET_LOSS_PERC(&current_loss));
+	if( fs == 8000 ) {
+		LBRR_rate_thres_bps = 12000; /*LBRR_NB_MIN_RATE_BPS*/
+	} else if( fs == 12000 ) {
+		LBRR_rate_thres_bps = 14000; /*LBRR_MB_MIN_RATE_BPS*/
+	} else { 
+		LBRR_rate_thres_bps = 16000; /*LBRR_WB_MIN_RATE_BPS*/
+	}
+	/*see opus-1.1/src/opus_encoder.c , opus_encode_native() */
+	real_target_bitrate =  8 * (current_bitrate * context->enc_frame_size / ( fs * 8 ) - 1) * frame_rate ;
+	/*check if the internally used bitrate is above the threshold defined in opus-1.1/silk/control_codec.c  */
+	a32 =  LBRR_rate_thres_bps * (125 -(((current_loss) < (25)) ? (current_loss) :  (25)));
+	b32 =  ((opus_int32)((0.01) * ((opus_int64)1 << (16)) + 0.5));
+	LBRR_threshold_bitrate =  (a32 >> 16) * (opus_int32)((opus_int16)b32) + (((a32 & 0x0000FFFF) * (opus_int32)((opus_int16)b32)) >> 16);
+	if ((!real_target_bitrate || !LBRR_threshold_bitrate)){
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,"Opus encoder: error while controlling FEC params\n");
+		return SWITCH_STATUS_FALSE;
+	}
+	/* Is there any FEC at the current bitrate and requested packet loss ? 
+	 * If yes, then keep the current bitrate. If not, modify bitrate to keep FEC on. */
+	if (real_target_bitrate > LBRR_threshold_bitrate) {
+		/*FEC is already enabled, do nothing*/
+		if (globals.debug)
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"Opus encoder: FEC is enabled\n");
+		return SWITCH_STATUS_SUCCESS;
+	} else {
+		while (real_target_bitrate <= LBRR_threshold_bitrate) {
+			current_bitrate += step;
+			real_target_bitrate =  8 * (current_bitrate * context->enc_frame_size / ( fs * 8 ) - 1) * frame_rate ;
+		}
+		opus_encoder_ctl(context->encoder_object,OPUS_SET_BITRATE(current_bitrate));
+		if (globals.debug)
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"Opus encoder: increased bitrate to [%d] to keep FEC enabled\n",current_bitrate);
+		return SWITCH_STATUS_SUCCESS;
+	}
+}
+
 static switch_status_t switch_opus_control(switch_codec_t *codec,
 										   switch_codec_control_command_t cmd,
 										   switch_codec_control_type_t ctype,
@@ -645,6 +698,8 @@ static switch_status_t switch_opus_control(switch_codec_t *codec,
 
 			if (plpct != context->old_plpct) {
 				opus_encoder_ctl(context->encoder_object, OPUS_SET_PACKET_LOSS_PERC(plpct));
+				if (opus_prefs.keep_fec)
+					switch_opus_keep_fec_enabled(codec);
 			}
 			context->old_plpct = plpct;
 		}
@@ -805,7 +860,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_opus_load)
 											 switch_opus_encode,	/* function to encode raw data into encoded data */
 											 switch_opus_decode,	/* function to decode encoded data into raw data */
 											 switch_opus_destroy);	/* deinitalize a codec handle using this implementation */
-
+		codec_interface->implementations->codec_control = switch_opus_control;
 		settings.stereo = 1;
 		dft_fmtp = gen_fmtp(&settings, pool);
 		switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
@@ -825,6 +880,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_opus_load)
 											 switch_opus_encode,	/* function to encode raw data into encoded data */
 											 switch_opus_decode,	/* function to decode encoded data into raw data */
 											 switch_opus_destroy);	/* deinitalize a codec handle using this implementation */
+		codec_interface->implementations->codec_control = switch_opus_control;
         
 		bytes *= 2;
 		samples *= 2;
