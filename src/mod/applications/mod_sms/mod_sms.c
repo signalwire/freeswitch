@@ -32,6 +32,7 @@
 #include <switch.h>
 #define SMS_CHAT_PROTO "GLOBAL_SMS"
 #define MY_EVENT_SEND_MESSAGE "SMS::SEND_MESSAGE"
+#define MY_EVENT_DELIVERY_REPORT "SMS::DELIVERY_REPORT"
 
 /* Prototypes */
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_sms_shutdown);
@@ -39,6 +40,35 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_sms_runtime);
 SWITCH_MODULE_LOAD_FUNCTION(mod_sms_load);
 SWITCH_MODULE_DEFINITION(mod_sms, mod_sms_load, mod_sms_shutdown, NULL);
 
+
+static void send_report(switch_event_t *event, const char * Status) {
+	switch_event_t *report = NULL;
+	switch_event_header_t *header;
+
+	if (switch_event_create_subclass(&report, SWITCH_EVENT_CUSTOM, MY_EVENT_DELIVERY_REPORT) == SWITCH_STATUS_SUCCESS) {
+
+		switch_event_add_header_string(report, SWITCH_STACK_BOTTOM, "Status", Status);
+
+
+		for (header = event->headers; header; header = header->next) {
+			if (!strcmp(header->name, "Event-Subclass")) {
+				continue;
+			}
+			if (!strcmp(header->name, "Event-Name")) {
+				continue;
+			}
+	        if (header->idx) {
+	            int i;
+	            for (i = 0; i < header->idx; i++) {
+	                switch_event_add_header_string(report, SWITCH_STACK_PUSH, header->name, header->array[i]);
+	            }
+	        } else {
+	            switch_event_add_header_string(report, SWITCH_STACK_BOTTOM, header->name, header->value);
+	        }
+		}
+		switch_event_fire(&report);
+	}
+}
 
 static void event_handler(switch_event_t *event) 
 {
@@ -52,13 +82,15 @@ static void event_handler(switch_event_t *event)
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Delivery Failure\n");
 		DUMP_EVENT(event);
-
+		send_report(event, "Failure");
 		return;
 	} else if ( check_failure && switch_false(check_failure) ) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SMS Delivery Success\n");
+		send_report(event, "Success");
 		return;
 	} else if ( check_nonblocking && switch_true(check_nonblocking) ) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SMS Delivery assumed successful due to being sent in non-blocking manner\n");
+		send_report(event, "Accepted");
 		return;
 	}
 
