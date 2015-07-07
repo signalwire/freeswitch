@@ -37,6 +37,7 @@
 %define build_mod_esl 0
 %define build_mod_rayo 1
 %define build_mod_ssml 1
+%define build_mod_shout 0
 
 %{?with_sang_tc:%define build_sng_tc 1 }
 %{?with_sang_isdn:%define build_sng_isdn 1 }
@@ -44,6 +45,7 @@
 %{?with_py26_esl:%define build_py26_esl 1 }
 %{?with_timerfd:%define build_timerfd 1 }
 %{?with_mod_esl:%define build_mod_esl 1 }
+%{?with_mod_shout:%define build_mod_shout 1 }
 
 %define version 1.7.0
 %define release 1
@@ -115,14 +117,12 @@ Vendor:       	http://www.freeswitch.org/
 #
 ######################################################################################################################
 Source0:        http://files.freeswitch.org/%{name}-%{version}.tar.bz2
-Source1:	http://files.freeswitch.org/downloads/libs/lame-3.98.4.tar.gz
-Source2:	http://files.freeswitch.org/downloads/libs/mpg123-1.13.2.tar.gz
+Source1:	http://files.freeswitch.org/downloads/libs/v8-3.24.14.tar.bz2
+Source2:	http://files.freeswitch.org/downloads/libs/mongo-c-driver-1.1.0.tar.gz
 Source3:	http://files.freeswitch.org/downloads/libs/pocketsphinx-0.8.tar.gz
 Source4:	http://files.freeswitch.org/downloads/libs/sphinxbase-0.8.tar.gz
 Source5:	http://files.freeswitch.org/downloads/libs/communicator_semi_6000_20080321.tar.gz
 Source6:	http://files.freeswitch.org/downloads/libs/libmemcached-0.32.tar.gz
-Source7:        http://files.freeswitch.org/downloads/libs/v8-3.24.14.tar.bz2
-Source8:        http://files.freeswitch.org/downloads/libs/mongo-c-driver-1.1.0.tar.gz
 Prefix:        	%{prefix}
 
 
@@ -147,7 +147,6 @@ BuildRequires: gnutls-devel
 BuildRequires: libtool >= 1.5.17
 BuildRequires: ncurses-devel
 BuildRequires: openssl-devel >= 1.0.1e
-#BuildRequires: libshout-devel 
 BuildRequires: pcre-devel 
 BuildRequires: speex-devel 
 BuildRequires: sqlite-devel
@@ -1135,14 +1134,22 @@ Mod shell stream is a FreeSWITCH module to allow you to stream audio from an
 arbitrary shell command. You could use it to read audio from a database, from 
 a soundcard, etc. 
 
-#%package format-mod-shout
-#Summary:	Implements Media Steaming from arbitrary shell commands for the FreeSWITCH open source telephony platform
-#Group:		System/Libraries
-#Requires:	%{name} = %{version}-%{release}
+%if %{build_mod_shout}
+%package format-mod-shout
+Summary:	Implements Media Steaming from arbitrary shell commands for the FreeSWITCH open source telephony platform
+Group:		System/Libraries
+Requires:	%{name} = %{version}-%{release}
+Requires:	libshout >= 2.3.1
+Requires:	libmpg123 >= 1.20.1
+Requires:	lame
+BuildRequires:	libshout-devel >= 2.3.1
+BuildRequires:	libmpg123-devel >= 1.20.1
+BuildRequires:	lame-devel
 
-#%description format-mod-shout
-#Mod Shout is a FreeSWITCH module to allow you to stream audio from MP3s or a i
-#shoutcast stream.
+%description format-mod-shout
+Mod Shout is a FreeSWITCH module to allow you to stream audio from MP3s or a i
+shoutcast stream.
+%endif
 
 %if %{build_mod_ssml}
 %package format-ssml
@@ -1389,8 +1396,6 @@ cp %{SOURCE3} libs/
 cp %{SOURCE4} libs/
 cp %{SOURCE5} libs/
 cp %{SOURCE6} libs/
-cp %{SOURCE7} libs/
-cp %{SOURCE8} libs/
 
 #Hotfix for redefined %_sysconfdir
 sed -ie 's:confdir="${sysconfdir}/freeswitch":confdir="$sysconfdir":' ./configure.ac
@@ -1509,7 +1514,9 @@ EVENT_HANDLERS_MODULES+=" event_handlers/mod_rayo"
 ######################################################################################################################
 FORMATS_MODULES="formats/mod_local_stream formats/mod_native_file formats/mod_portaudio_stream \
                  formats/mod_shell_stream formats/mod_sndfile formats/mod_tone_stream"
-# DISABLED formats/mod_shout 
+%if %{build_mod_shout}
+FORMATS_MODULES+=" formats/mod_shout "
+%endif
 %if %{build_mod_ssml}
 FORMATS_MODULES+=" formats/mod_ssml"
 %endif
@@ -2300,8 +2307,10 @@ fi
 %files format-shell-stream
 %{MODINSTDIR}/mod_shell_stream.so*
 
-#%files format-mod-shout
-#%{MODINSTDIR}/mod_shout.so*
+%if %{build_mod_shout}
+%files format-mod-shout
+%{MODINSTDIR}/mod_shout.so*
+%endif
 
 %if %{build_mod_ssml}
 %files format-ssml
@@ -2473,6 +2482,8 @@ fi
 #
 ######################################################################################################################
 %changelog
+* Thu Jun 25 2015 - s.safarov@gmail.com
+- Dependencies of mod_shout were declared
 * Mon Jun 22 2015 - krice@freeswitch.org
 - disable mod_shout until we can figure out the correct system deps for RPM based platforms
 * Wed Jun 17 2015 - krice@freeswitch.org
