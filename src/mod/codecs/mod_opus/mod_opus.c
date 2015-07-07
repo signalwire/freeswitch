@@ -826,9 +826,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_opus_load)
 											 switch_opus_decode,	/* function to decode encoded data into raw data */
 											 switch_opus_destroy);	/* deinitalize a codec handle using this implementation */
         
-		bytes += 160;
-		samples += 480;
-		mss += 10000;
+		bytes *= 2;
+		samples *= 2;
+		mss *= 2;
 		
 	}
     
