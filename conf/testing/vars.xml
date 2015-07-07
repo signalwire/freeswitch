@@ -55,17 +55,17 @@
   <X-PRE-PROCESS cmd="set" data="internal_auth_calls=true"/>
   <X-PRE-PROCESS cmd="set" data="internal_sip_port=5080"/>
   <X-PRE-PROCESS cmd="set" data="internal_tls_port=5081"/>
-  <X-PRE-PROCESS cmd="set" data="internal_ssl_enable=false"/>
+  <X-PRE-PROCESS cmd="set" data="internal_ssl_enable=true"/>
 
   <!-- External SIP Profile -->
   <X-PRE-PROCESS cmd="set" data="external_auth_calls=false"/>
   <X-PRE-PROCESS cmd="set" data="external_sip_port=5090"/>
   <X-PRE-PROCESS cmd="set" data="external_tls_port=5091"/>
-  <X-PRE-PROCESS cmd="set" data="external_ssl_enable=false"/>
+  <X-PRE-PROCESS cmd="set" data="external_ssl_enable=true"/>
 
   <!-- Setting the max bandwdith -->
-  <X-PRE-PROCESS cmd="set" data="rtp_video_max_bandwidth_in=1mb"/>
-  <X-PRE-PROCESS cmd="set" data="rtp_video_max_bandwidth_out=1mb"/>
+  <X-PRE-PROCESS cmd="set" data="rtp_video_max_bandwidth_in=2mb"/>
+  <X-PRE-PROCESS cmd="set" data="rtp_video_max_bandwidth_out=2mb"/>
 
   <!-- WebRTC Video -->
   <!-- Suppress CNG for WebRTC Audio -->
