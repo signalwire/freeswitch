@@ -640,6 +640,11 @@ SWITCH_STANDARD_APP(record_av_function)
 
 	switch_buffer_create_dynamic(&buffer, 8192, 65536, 0);
 
+	if (!buffer) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not allocate buffer for %s\n", data);
+		goto end;
+	}
+
 	av_register_all();
 	mod_avformat_alloc_output_context2(&fc, NULL, format, data);
 
@@ -1364,6 +1369,11 @@ static switch_status_t av_file_open(switch_file_handle_t *handle, const char *pa
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "init timer\n");
 
 	switch_buffer_create_dynamic(&context->audio_buffer, 512, 512, 0);
+
+	if (!context->audio_buffer) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not allocate buffer for %s\n", path);
+		return SWITCH_STATUS_MEMERR;
+	}
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "sample rate: %d, channels: %d\n", handle->samplerate, handle->channels);
 
