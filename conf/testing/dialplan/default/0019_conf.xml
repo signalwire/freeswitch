@@ -70,3 +70,22 @@
 </extension>
 
 
+<extension name="conf">
+  <condition field="destination_number" expression="^6077$">
+    <action application="set" data="video_initial_canvas=1"/>  
+    <action application="set" data="video_initial_watching_canvas=2"/>  
+    <action application="answer"/>  
+    <action application="conference" data="6070@video-mcu-stereo-multi-canvas"/>
+  </condition>
+</extension>
+
+<extension name="conf">
+  <condition field="destination_number" expression="^6078$">
+    <action application="set" data="video_initial_canvas=2"/>  
+    <action application="set" data="video_initial_watching_canvas=1"/>  
+    <action application="answer"/>  
+    <action application="conference" data="6070@video-mcu-stereo-multi-canvas"/>
+  </condition>
+</extension>
+
+
