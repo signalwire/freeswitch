@@ -1,0 +1,12 @@
+<extension name="one">
+  <condition field="destination_number" value="^9000$"/>
+  <condition date-time="2020-01-01 00:00:00~2020-01-01 01:00:00">
+    <action application="log" data="INFO DATE TIME conditions matched!"/>
+  </condition>
+</extension>
+
+<extension name="two">
+  <condition field="destination_number" value="^9000$">
+    <action application="log" data="INFO W00t it worked!"/>
+  </condition>
+</extension> 
