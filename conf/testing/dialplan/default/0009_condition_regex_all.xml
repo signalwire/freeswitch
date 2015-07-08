@@ -1,26 +1,47 @@
-<extension name="Logical AND" >
+<extension name="Logical AND 1 false" >
   <condition field="destination_number" expression="^6030$"/>
-  <condition regex="all"> <!-- ALL -->
-    <!-- ALL CAN NOT MATCH EVER -->
-    <regex time-of-day="08:00:00-12:00:00"/> <!-- CAN'T TIME TRAVEL -->
-    <regex time-of-day="22:00:00-23:00:00"/> 
-    <regex wday="3"/>
-    <action application="log" data="INFO At least one of the conditions matched!"/>
-    <action application="playback" data="ivr/ivr-yes_we_have_no_bananas.wav"/>
-    <anti-action application="log" data="WARNING None of the conditions matched!"/>
+  <condition regex="all">
+    <regex wday="1-7"/>
+    <regex year="0"/>
+    <anti-action application="log" data="INFO Test PASSED!"/>
+    <anti-action application="playback" data="ivr/ivr-thank_you_for_calling.wav"/>
+    <action application="log" data="ERROR Test FAILED!"/>
+    <action application="playback" data="ivr/ivr-no_no_no.wav"/>
+  </condition>
+</extension>
+
+<extension name="Logical AND 2 false" >
+  <condition field="destination_number" expression="^6031$"/>
+  <condition regex="all">
+    <regex field="destination_number" expression="."/>
+    <regex field="destination_number" expression="^$"/>
+    <anti-action application="log" data="INFO Test PASSED!"/>
+    <anti-action application="playback" data="ivr/ivr-thank_you_for_calling.wav"/>
+    <action application="log" data="ERROR Test FAILED!"/>
+    <action application="playback" data="ivr/ivr-no_no_no.wav"/>
+  </condition>
+</extension>
+
+<extension name="Logical AND 1 true" >
+  <condition field="destination_number" expression="^6032$"/>
+  <condition regex="all">
+    <regex wday="1-7"/>
+    <regex wday="1-7"/>
+    <action application="log" data="INFO Test PASSED!"/>
+    <action application="playback" data="ivr/ivr-thank_you_for_calling.wav"/>
+    <anti-action application="log" data="ERROR Test FAILED!"/>
     <anti-action application="playback" data="ivr/ivr-no_no_no.wav"/>
   </condition>
 </extension>
 
-<extension name="Logical AND 2" >
-  <condition field="destination_number" expression="^6031$"/>
+<extension name="Logical AND 2 true" >
+  <condition field="destination_number" expression="^6033$"/>
   <condition regex="all">
-    <regex field="caller_id_name" expression="testuser"/>
-    <regex field="caller_id_number" expression="^1000$"/>
-    <regex field="destination_number" expression="^6031$"/>
-    <action application="log" data="INFO At least one of the conditions matched!"/>
-    <anti-action application="log" data="WARNING None of the conditions matched!"/>
-    <action application="playback" data="ivr/ivr-yes_we_have_no_bananas.wav"/>
-    <anti-action application="playback"	data="ivr/ivr-no_no_no.wav"/>
+    <regex field="destination_number" expression="."/>
+    <regex field="destination_number" expression="."/>
+    <action application="log" data="INFO Test PASSED!"/>
+    <action application="playback" data="ivr/ivr-thank_you_for_calling.wav"/>
+    <anti-action application="log" data="ERROR Test FAILED!"/>
+    <anti-action application="playback" data="ivr/ivr-no_no_no.wav"/>
   </condition>
 </extension>

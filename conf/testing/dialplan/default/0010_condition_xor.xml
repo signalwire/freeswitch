@@ -1,24 +1,49 @@
-<extension name="Logical XOR" >
+<extension name="Logical XOR 1 false" >
   <condition field="destination_number" expression="^6040$"/>
   <condition regex="xor">
-    <regex time-of-day="08:00:00-19:00:00"/>
-    <regex wday="4"/>
-    <action application="log" data="INFO At least one of the conditions matched!"/>
-    <action application="playback" data="ivr/ivr-yes_we_have_no_bananas.wav"/>
-    <anti-action application="log" data="WARNING None of the conditions matched!"/>
-    <anti-action application="playback"	data="ivr/ivr-no_no_no.wav"/>
+    <regex wday="1-7"/>
+    <regex wday="1-7"/>
+    <anti-action application="log" data="INFO Test PASSED!"/>
+    <anti-action application="playback" data="ivr/ivr-thank_you_for_calling.wav"/>
+    <action application="log" data="ERROR Test FAILED!"/>
+    <action application="playback" data="ivr/ivr-no_no_no.wav"/>
   </condition>
 </extension>
 
-<extension name="Logical XOR 2" >
+<extension name="Logical XOR 2 false" >
   <condition field="destination_number" expression="^6041$"/>
   <condition regex="xor">
-    <regex field="caller_id_name" expression="testuser"/>
-    <regex field="caller_id_number" expression="^1000$"/>
-    <regex field="destination_number" expression="^6041$"/>
-    <action application="log" data="INFO At least one of the conditions matched!"/>
-    <anti-action application="log" data="WARNING None of the conditions matched!"/>
-    <action application="playback" data="ivr/ivr-yes_we_have_no_bananas.wav"/>
+    <regex field="destination_number" expression="."/>
+    <regex field="destination_number" expression="."/>
+    <anti-action application="log" data="INFO Test PASSED!"/>
+    <anti-action application="playback" data="ivr/ivr-thank_you_for_calling.wav"/>
+    <action application="log" data="ERROR Test FAILED!"/>
+    <action application="playback" data="ivr/ivr-no_no_no.wav"/>
+  </condition>
+</extension>
+
+<extension name="Logical XOR 1 true" >
+  <condition field="destination_number" expression="^6042$"/>
+  <condition regex="xor">
+    <regex wday="1-7"/>
+    <regex year="0"/>
+    <regex year="0"/>
+    <action application="log" data="INFO Test PASSED!"/>
+    <action application="playback" data="ivr/ivr-thank_you_for_calling.wav"/>
+    <anti-action application="log" data="ERROR Test FAILED!"/>
+    <anti-action application="playback" data="ivr/ivr-no_no_no.wav"/>
+  </condition>
+</extension>
+
+<extension name="Logical XOR 2 true" >
+  <condition field="destination_number" expression="^6043$"/>
+  <condition regex="xor">
+    <regex field="destination_number" expression="."/>
+    <regex field="destination_number" expression="^$"/>
+    <regex field="destination_number" expression="^$"/>
+    <action application="log" data="INFO Test PASSED!"/>
+    <action application="playback" data="ivr/ivr-thank_you_for_calling.wav"/>
+    <anti-action application="log" data="ERROR Test FAILED!"/>
     <anti-action application="playback" data="ivr/ivr-no_no_no.wav"/>
   </condition>
 </extension>
