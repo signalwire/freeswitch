@@ -201,6 +201,7 @@ static struct xml_section_t SECTIONS[] = {
 	{"dialplan", SWITCH_XML_SECTION_DIALPLAN},
 	{"languages", SWITCH_XML_SECTION_LANGUAGES},
 	{"chatplan", SWITCH_XML_SECTION_CHATPLAN},
+	{"channels", SWITCH_XML_SECTION_CHANNELS},
 	{NULL, 0}
 };
 
