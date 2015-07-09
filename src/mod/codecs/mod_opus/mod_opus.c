@@ -145,7 +145,11 @@ static switch_status_t switch_opus_fmtp_parse(const char *fmtp, switch_codec_fmt
 						if (!strcasecmp(data, "usedtx")) {
 							codec_settings->usedtx = switch_true(arg);
 						}
-                        
+
+						if (!strcasecmp(data, "cbr")) {
+							codec_settings->cbr = switch_true(arg);
+						}
+ 
 						if (!strcasecmp(data, "sprop-maxcapturerate")) {
 							codec_settings->sprop_maxcapturerate = atoi(arg);
 						}
@@ -213,7 +217,11 @@ static char *gen_fmtp(opus_codec_settings_t *settings, switch_memory_pool_t *poo
 	if (settings->usedtx) {
 		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "usedtx=1; ");
 	}
-    
+
+	if (settings->cbr) {
+		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "cbr=1; ");
+	}
+   
 	if (settings->maxaveragebitrate) {
 		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "maxaveragebitrate=%d; ", settings->maxaveragebitrate);
 	}
@@ -337,12 +345,14 @@ static switch_status_t switch_opus_init(switch_codec_t *codec, switch_codec_flag
 		opus_codec_settings.sprop_maxcapturerate = opus_codec_settings_remote.sprop_maxcapturerate;
 	}
 
+	opus_codec_settings.cbr = !opus_prefs.use_vbr;
+
 	codec->fmtp_out = gen_fmtp(&opus_codec_settings, codec->memory_pool);
 
 	if (encoding) {
 		/* come up with a way to specify these */
 		int bitrate_bps = OPUS_AUTO;
-		int use_vbr = opus_prefs.use_vbr;
+		int use_vbr = opus_codec_settings.cbr ? !opus_codec_settings.cbr : opus_prefs.use_vbr  ;
 		int complexity = opus_prefs.complexity;
 		int plpct = opus_prefs.plpct;
 		int err;
@@ -410,7 +420,11 @@ static switch_status_t switch_opus_init(switch_codec_t *codec, switch_codec_flag
 		}
 
 		if (use_vbr) {
+			/* VBR is default*/
 			opus_encoder_ctl(context->encoder_object, OPUS_SET_VBR(use_vbr));
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Opus encoder: CBR mode enabled\n");
+			opus_encoder_ctl(context->encoder_object, OPUS_SET_VBR(0));
 		}
 		if (complexity) {
 			opus_encoder_ctl(context->encoder_object, OPUS_SET_COMPLEXITY(complexity));
