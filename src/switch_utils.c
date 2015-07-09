@@ -3320,37 +3320,24 @@ SWITCH_DECLARE(int) switch_fulldate_cmp(const char *exp, switch_time_t *ts)
 	char *dup = strdup(exp);
 	char *sStart;
 	char *sEnd;
+	char *cur;
+	char *p;
 
 	switch_assert(dup);
 
-	sStart = dup;
-	if ((sEnd=strchr(dup, '~'))) {
-		char *sDate = sStart;
-		char *sTime;
-		*sEnd++ = '\0';
-		if ((sTime=strchr(sStart, ' '))) {
-			switch_time_t tsStart;
-			struct tm tmTmp;
-			int year = 1970, month = 1, day = 1;
-			int hour = 0, min = 0, sec = 0;
-			*sTime++ = '\0';
+	cur = dup;
+	if ((p = strchr(cur, ','))) {
+		*p++ = '\0';
+	}
 
-			memset(&tmTmp, 0, sizeof(tmTmp));
-			switch_split_date(sDate, &year, &month, &day);
-			switch_split_time(sTime, &hour, &min, &sec);
-			tmTmp.tm_year = year-1900;
-			tmTmp.tm_mon = month-1;
-			tmTmp.tm_mday = day;
-
-			tmTmp.tm_hour = hour;
-			tmTmp.tm_min = min;
-			tmTmp.tm_sec = sec;
-			tmTmp.tm_isdst = 0;
-			tsStart = mktime(&tmTmp);
-
-			sDate = sEnd;
-			if ((sTime=strchr(sEnd, ' '))) {
-				switch_time_t tsEnd;
+	while (cur) {
+		sStart = cur;
+		if ((sEnd=strchr(cur, '~'))) {
+			char *sDate = sStart;
+			char *sTime;
+			*sEnd++ = '\0';
+			if ((sTime=strchr(sStart, ' '))) {
+				switch_time_t tsStart;
 				struct tm tmTmp;
 				int year = 1970, month = 1, day = 1;
 				int hour = 0, min = 0, sec = 0;
@@ -3367,14 +3354,44 @@ SWITCH_DECLARE(int) switch_fulldate_cmp(const char *exp, switch_time_t *ts)
 				tmTmp.tm_min = min;
 				tmTmp.tm_sec = sec;
 				tmTmp.tm_isdst = 0;
-				tsEnd = mktime(&tmTmp);
+				tsStart = mktime(&tmTmp);
 
-				if (tsStart <= *ts/1000000 && tsEnd > *ts/1000000) {
-					switch_safe_free(dup);
-					return 1;
+				sDate = sEnd;
+				if ((sTime=strchr(sEnd, ' '))) {
+					switch_time_t tsEnd;
+					struct tm tmTmp;
+					int year = 1970, month = 1, day = 1;
+					int hour = 0, min = 0, sec = 0;
+					*sTime++ = '\0';
+
+					memset(&tmTmp, 0, sizeof(tmTmp));
+					switch_split_date(sDate, &year, &month, &day);
+					switch_split_time(sTime, &hour, &min, &sec);
+					tmTmp.tm_year = year-1900;
+					tmTmp.tm_mon = month-1;
+					tmTmp.tm_mday = day;
+
+					tmTmp.tm_hour = hour;
+					tmTmp.tm_min = min;
+					tmTmp.tm_sec = sec;
+					tmTmp.tm_isdst = 0;
+					tsEnd = mktime(&tmTmp);
+
+					if (tsStart <= *ts/1000000 && tsEnd > *ts/1000000) {
+						switch_safe_free(dup);
+						return 1;
+					}
 				}
 			}
 		}
+
+		cur = p;
+		if (p) {
+			if ((p = strchr(p, ','))) {
+				*p++ = '\0';
+			}
+		}
+
 	}
 	switch_safe_free(dup);
 	return 0;
@@ -3711,7 +3728,7 @@ SWITCH_DECLARE(switch_bool_t) switch_dow_cmp(const char *exp, int val)
 		} else {
 			/* Valid day found */
 			if (range_start != DOW_EOF) { /* Evaluating a range */
-				if (val >= range_start && val <= cur) {
+				if (range_start <= cur ? (val >= range_start && val <= cur) : (val >= range_start || val <= cur)) {
 					return SWITCH_TRUE;
 				}
 				range_start = DOW_EOF;
@@ -3754,35 +3771,56 @@ SWITCH_DECLARE(int) switch_tod_cmp(const char *exp, int val)
 	char *maxh;
 	char *maxm;
 	char *maxs;
+	char *cur;
+	char *p;
+	int range_start, range_end;
 
 	switch_assert(dup);
 
-	minh = dup;
-	if ((minm=strchr(dup, ':'))) {
-		*minm++ = '\0';
-		if ((maxh=strchr(minm, '-'))) {
-			if ((maxm=strchr(maxh, ':'))) {
-				*maxh++ = '\0';
-				*maxm++ = '\0';
-				/* Check if min/max seconds are present */
-				if ((mins=strchr(minm, ':'))) {
-					*mins++ = '\0';
-				} else {
-					mins = "00";
-				}
-				if ((maxs=strchr(maxm, ':'))) {
-					*maxs++ = '\0';
-				} else {
-					maxs = "00";
-				}
+	cur = dup;
+	if ((p = strchr(cur, ','))) {
+		*p++ = '\0';
+	}
 
-				if (val >= (atol(minh) * 60 * 60) + (atol(minm) * 60) + atol(mins) && val < (atol(maxh) * 60 * 60) + (atol(maxm) * 60) + atol(maxs)) {
-					switch_safe_free(dup);
-					return 1;
+	while (cur) {
+		minh = cur;
+		if ((minm=strchr(cur, ':'))) {
+			*minm++ = '\0';
+			if ((maxh=strchr(minm, '-'))) {
+				if ((maxm=strchr(maxh, ':'))) {
+					*maxh++ = '\0';
+					*maxm++ = '\0';
+					/* Check if min/max seconds are present */
+					if ((mins=strchr(minm, ':'))) {
+						*mins++ = '\0';
+					} else {
+						mins = "00";
+					}
+					if ((maxs=strchr(maxm, ':'))) {
+						*maxs++ = '\0';
+					} else {
+						maxs = "00";
+					}
+
+					range_start = (atol(minh) * 60 * 60) + (atol(minm) * 60) + atol(mins);
+					range_end = (atol(maxh) * 60 * 60) + (atol(maxm) * 60) + atol(maxs);
+					if (range_start <= range_end ? (val >= range_start && val <= range_end) : (val >= range_start || val <= range_end)) {
+						switch_safe_free(dup);
+						return 1;
+					}
 				}
 			}
 		}
+
+		cur = p;
+		if (p) {
+			if ((p = strchr(p, ','))) {
+				*p++ = '\0';
+			}
+		}
+
 	}
+
 	switch_safe_free(dup);
 	return 0;
 
