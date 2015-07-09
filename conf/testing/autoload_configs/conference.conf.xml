@@ -3,7 +3,7 @@
 <configuration name="conference.conf" description="Audio Conference">
   <!-- Advertise certain presence on startup . -->
   <advertise>
-    <room name="3001@$${domain}" status="FreeSWITCH"/>
+    <room name="6070@$${domain}" status="FreeSWITCH"/>
   </advertise>
 
   <!-- These are the default keys that map when you do not specify a caller control group -->	
