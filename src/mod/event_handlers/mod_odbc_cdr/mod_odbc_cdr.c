@@ -221,6 +221,12 @@ static switch_status_t odbc_cdr_reporting(switch_core_session_t *session)
 	} else if (globals.log_leg == ODBC_CDR_LOG_B && caller_profile->direction == SWITCH_CALL_DIRECTION_INBOUND) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Only logging B-Leg, ignoring A-leg\n");
 		return SWITCH_STATUS_SUCCESS;
+	} else {
+		const char *tmp = NULL;
+		if ((tmp = switch_channel_get_variable(channel, "odbc-cdr-ignore-leg")) && switch_true(tmp)) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "odbc-cdr-ignore-leg set to true, ignoring leg\n");
+			return SWITCH_STATUS_SUCCESS;
+		}
 	}
 
 	if (!(uuid = switch_channel_get_variable(channel, "uuid"))) {
