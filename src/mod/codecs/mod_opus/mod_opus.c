@@ -648,10 +648,14 @@ static switch_status_t switch_opus_keep_fec_enabled(switch_codec_t *codec)
 	opus_int32 a32,b32; 
 	uint32_t fs = context->enc_frame_size * 1000 / (codec->implementation->microseconds_per_packet / 1000);
 	float frame_rate = 1000 / (codec->implementation->microseconds_per_packet / 1000);
-	uint32_t step = 8000 / (codec->implementation->microseconds_per_packet / 1000); /* this works for 10 ms, 20 ms and 40 ms frame sizes. not for 60 ms*/
+	uint32_t step = (codec->implementation->microseconds_per_packet / 1000) != 60 ? 8000 / (codec->implementation->microseconds_per_packet / 1000 ) : 134 ;
 
 	opus_encoder_ctl(context->encoder_object, OPUS_GET_BITRATE(&current_bitrate));
 	opus_encoder_ctl(context->encoder_object, OPUS_GET_PACKET_LOSS_PERC(&current_loss));
+	if ( current_loss == 0  ){
+		opus_encoder_ctl(context->encoder_object, OPUS_SET_BITRATE(opus_prefs.maxaveragebitrate));
+		return SWITCH_STATUS_SUCCESS;
+	}
 	if( fs == 8000 ) {
 		LBRR_rate_thres_bps = 12000; /*LBRR_NB_MIN_RATE_BPS*/
 	} else if( fs == 12000 ) {
