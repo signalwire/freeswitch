@@ -14,8 +14,7 @@ event_create_LDFLAGS = $(SWITCH_AM_LDFLAGS) -ltap
 
 
 else
-install: error
-all: error
+check:
 error:
 	$(error You must install libtap-dev to build these unit tests)
 endif
