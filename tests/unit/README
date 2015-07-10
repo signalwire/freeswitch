@@ -16,3 +16,16 @@ Use libtap from https://github.com/zorgnax/libtap
 cd /usr/local/src/
 git clone https://github.com/zorgnax/libtap.git
 make PREFIX=/usr install
+
+
+
+To run a benchmark version of a unit test, update the loops count, and
+make sure to uncomment the 'BENCHMARK' define line. Then you can run
+the benchmark with:
+
+perf record ./.libs/switch_hash
+
+Once that is completed you can view the results with:
+
+perf report
+
