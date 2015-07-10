@@ -1,0 +1,12 @@
+*
+!/**/
+!/*.*
+
+*.o
+*~
+\#*
+*.log
+*.trs
+perf.data
+perf.data.old
+Makefile.in
