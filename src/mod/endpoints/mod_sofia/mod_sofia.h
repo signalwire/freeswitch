@@ -98,6 +98,11 @@ typedef struct private_object private_object_t;
 #define MY_EVENT_PROFILE_START "sofia::profile_start"
 #define MY_EVENT_NOTIFY_WATCHED_HEADER "sofia::notify_watched_header"
 
+#define MY_EVENT_TRANSFEROR "sofia::transferor"
+#define MY_EVENT_TRANSFEREE "sofia::transferee"
+#define MY_EVENT_REPLACED "sofia::replaced"
+#define MY_EVENT_INTERCEPTED "sofia::intercepted"
+
 #define MULTICAST_EVENT "multicast::event"
 #define SOFIA_REPLACES_HEADER "_sofia_replaces_"
 #define SOFIA_CHAT_PROTO "sip"
@@ -284,6 +289,7 @@ typedef enum {
 	PFLAG_AUTH_SUBSCRIPTIONS,
 	PFLAG_PROXY_REFER,
 	PFLAG_CHANNEL_XML_FETCH_ON_NIGHTMARE_TRANSFER,
+	PFLAG_FIRE_TRANFER_EVENTS,
 
 	/* No new flags below this line */
 	PFLAG_MAX
