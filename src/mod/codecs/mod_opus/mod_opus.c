@@ -176,7 +176,11 @@ static switch_status_t switch_opus_fmtp_parse(const char *fmtp, switch_codec_fmt
 							codec_settings->stereo = atoi(arg);
 							codec_fmtp->stereo = codec_settings->stereo;
 						}
-                        
+
+						if (!strcasecmp(data, "sprop-stereo")) {
+							codec_settings->sprop_stereo = atoi(arg);
+						}
+ 
 						if (!strcasecmp(data, "maxaveragebitrate")) {
 							codec_settings->maxaveragebitrate = atoi(arg);
 							if ( codec_settings->maxaveragebitrate < 6000 || codec_settings->maxaveragebitrate > 510000 ) {
@@ -252,6 +256,10 @@ static char *gen_fmtp(opus_codec_settings_t *settings, switch_memory_pool_t *poo
 
 	if (settings->stereo) {
 		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "stereo=%d; ", settings->stereo);
+	}
+
+	if (settings->sprop_stereo) {
+		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "sprop-stereo=%d; ", settings->sprop_stereo);
 	}
 
 	if (end_of(buf) == ' ') {
@@ -463,7 +471,7 @@ static switch_status_t switch_opus_init(switch_codec_t *codec, switch_codec_flag
 			}
 		}
 
-		context->decoder_object = opus_decoder_create(dec_samplerate, codec->implementation->number_of_channels, &err);
+		context->decoder_object = opus_decoder_create(dec_samplerate, (!context->codec_settings.sprop_stereo ? codec->implementation->number_of_channels : 2), &err);
         
 		switch_set_flag(codec, SWITCH_CODEC_FLAG_HAS_PLC);
 		
@@ -552,7 +560,7 @@ static switch_status_t switch_opus_decode(switch_codec_t *codec,
 		return SWITCH_STATUS_FALSE;
 	}
 
-	frame_samples = *decoded_data_len / 2 / codec->implementation->number_of_channels;
+	frame_samples = *decoded_data_len / 2 / (!context->codec_settings.sprop_stereo ? codec->implementation->number_of_channels : 2);
 	frame_size = frame_samples - (frame_samples % (codec->implementation->actual_samples_per_second / 400));
 
 	if (*flag & SFF_PLC) {
@@ -581,7 +589,7 @@ static switch_status_t switch_opus_decode(switch_codec_t *codec,
 		return SWITCH_STATUS_GENERR;
 	}
 	
-	*decoded_data_len = samples * 2 * codec->implementation->number_of_channels;
+	*decoded_data_len = samples * 2 * (!context->codec_settings.sprop_stereo ? codec->implementation->number_of_channels : 2);
 	
 	return SWITCH_STATUS_SUCCESS;
 }
