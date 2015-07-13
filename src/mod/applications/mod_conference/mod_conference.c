@@ -793,6 +793,7 @@ static inline switch_bool_t conference_test_flag(conference_obj_t *conference, c
 {
 	return !!conference->flags[flag];
 }
+#if 0
 static inline void conference_set_mflag(conference_obj_t *conference, member_flag_t mflag)
 {
 	conference->mflags[mflag] = 1;
@@ -805,6 +806,7 @@ static inline switch_bool_t conference_test_mflag(conference_obj_t *conference, 
 {
 	return !!conference->mflags[mflag];
 }
+#endif
 static inline switch_bool_t cdr_test_mflag(conference_cdr_node_t *np, member_flag_t mflag)
 {
 	return !!np->mflags[mflag];
