@@ -204,11 +204,19 @@ static switch_status_t png_file_read_video(switch_file_handle_t *handle, switch_
 	return SWITCH_STATUS_SUCCESS;
 }
 
+typedef struct {
+	switch_image_t *read_img;
+	switch_image_t *write_img;
+	char *path;
+	char *other_path;
+	switch_bool_t both_legs;
+} png_write_data;
+
 static switch_bool_t write_png_bug_callback(switch_media_bug_t *bug, void *user_data, switch_abc_type_t type)
 {
 	switch_core_session_t *session = switch_core_media_bug_get_session(bug);
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-	char *path = (char *) user_data;
+	png_write_data *data = (png_write_data *) user_data;
 
 	switch (type) {
 	case SWITCH_ABC_TYPE_INIT:
@@ -225,13 +233,57 @@ static switch_bool_t write_png_bug_callback(switch_media_bug_t *bug, void *user_
 	case SWITCH_ABC_TYPE_READ_VIDEO_PING:
 		{
 			switch_frame_t *frame = switch_core_media_bug_get_video_ping_frame(bug);
+
 			if (!frame || !frame->img) break;
-			switch_img_write_png(frame->img, path);
-			return SWITCH_FALSE;
+
+			if (data->both_legs == SWITCH_FALSE) {
+				switch_img_write_png(frame->img, data->path);
+				return SWITCH_FALSE;
+			}
+
+			if (!data->read_img) {
+				switch_img_copy(frame->img, &data->read_img);
+			}
+		}
+		break;
+	case SWITCH_ABC_TYPE_WRITE_VIDEO_PING:
+		{
+			switch_frame_t *frame = switch_core_media_bug_get_video_ping_frame(bug);
+
+			if (!frame || !frame->img) break;
+
+			if (!data->write_img) {
+				switch_img_copy(frame->img, &data->write_img);
+			}
 		}
 		break;
 	default:
 		break;
+	}
+
+	if (data->both_legs == SWITCH_TRUE && data->read_img && data->write_img) {
+		if (data->other_path) {
+			switch_img_write_png(data->read_img, data->path);
+			switch_img_write_png(data->write_img, data->other_path);
+		} else {
+			int width, height;
+			switch_image_t *img;
+			switch_rgb_color_t bgcolor;
+
+			switch_color_set_rgb(&bgcolor, "#000000");
+			width = data->read_img->d_w + data->write_img->d_w;
+			height = data->read_img->d_h > data->write_img->d_h ? data->read_img->d_h : data->write_img->d_h;
+			img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, width, height, 1);
+			switch_img_fill(img, 0, 0, width, height, &bgcolor);
+			switch_img_patch(img, data->read_img, 0, (height - data->read_img->d_h) / 2);
+			switch_img_patch(img, data->write_img, data->read_img->d_w, (height - data->write_img->d_h) / 2);
+			switch_img_write_png(img, data->path);
+			switch_img_free(&img);
+		}
+
+		switch_img_free(&data->read_img);
+		switch_img_free(&data->write_img);
+		return SWITCH_FALSE;
 	}
 
 	return SWITCH_TRUE;
@@ -240,10 +292,10 @@ static switch_bool_t write_png_bug_callback(switch_media_bug_t *bug, void *user_
 SWITCH_STANDARD_API(uuid_write_png_function)
 {
 	int argc = 0;
-	char *argv[2] = { 0 };
+	char *argv[4] = { 0 };
 	char *mydata = NULL;
 	char *uuid;
-	char *path;
+	png_write_data *bug_data;
 	switch_media_bug_t *bug;
 	switch_media_bug_flag_t flags = SMBF_READ_VIDEO_PING;
 	switch_core_session_t *session_;
@@ -252,12 +304,13 @@ SWITCH_STANDARD_API(uuid_write_png_function)
 		argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 	}
 
-	if (argc < 2) {
-		stream->write_function(stream, "-USAGE: <uuid> <path> \n");	
+	if (argc < 2 || (argc > 2 && strcasecmp(argv[2], "concat") && strcasecmp(argv[2], "split"))) {
+		stream->write_function(stream, "-USAGE: <uuid> <path> [concat | split <other_path>]\n");
 		goto end;
 	}
 	
 	uuid = argv[0];
+
 	if (!(session_ = switch_core_session_locate(uuid))) {
 		stream->write_function(stream, "-ERR Could not locate session.\n");
 		goto end;
@@ -269,16 +322,46 @@ SWITCH_STANDARD_API(uuid_write_png_function)
 		goto end;
 	}
 
+	bug_data = switch_core_session_alloc(session_, sizeof(*bug_data));
+
+	if (argc > 2) {
+		switch_channel_t *channel_ = switch_core_session_get_channel(session_);
+
+		if (!switch_channel_test_flag_partner(channel_, CF_VIDEO)) {
+			stream->write_function(stream, "-ERR Session must be bridged and other leg must have video.\n");
+			switch_core_session_rwunlock(session_);
+			goto end;
+		}
+
+		bug_data->both_legs = SWITCH_TRUE;
+		flags |= SMBF_WRITE_VIDEO_PING;
+
+		if (!strcasecmp(argv[2], "split")) {
+			if (argc == 3) {
+				stream->write_function(stream, "-ERR Second filename expected but not given.\n");
+				switch_core_session_rwunlock(session_);
+				goto end;
+			}
+
+			if (!switch_is_file_path(argv[3])) {
+				const char *prefix = SWITCH_GLOBAL_dirs.images_dir;
+				bug_data->other_path = switch_core_session_sprintf(session_, "%s%s%s", prefix, SWITCH_PATH_SEPARATOR, argv[3]);
+			} else {
+				bug_data->other_path = switch_core_session_strdup(session_, argv[3]);
+			}
+		}
+	}
+
     if (!switch_is_file_path(argv[1])) {
         const char *prefix = SWITCH_GLOBAL_dirs.images_dir;
-        path = switch_core_session_sprintf(session_, "%s%s%s", prefix, SWITCH_PATH_SEPARATOR, argv[1]);
+        bug_data->path = switch_core_session_sprintf(session_, "%s%s%s", prefix, SWITCH_PATH_SEPARATOR, argv[1]);
     } else {
-        path = switch_core_session_strdup(session_, argv[1]);
+        bug_data->path = switch_core_session_strdup(session_, argv[1]);
     }
 
 	switch_thread_rwlock_rdlock(MODULE_INTERFACE->rwlock);
 
-	if (switch_core_media_bug_add(session_, NULL, NULL, write_png_bug_callback, path, 0, flags, &bug) != SWITCH_STATUS_SUCCESS) {
+	if (switch_core_media_bug_add(session_, NULL, NULL, write_png_bug_callback, bug_data, 0, flags, &bug) != SWITCH_STATUS_SUCCESS) {
 		stream->write_function(stream, "-ERR Could not attach bug.\n");
 		switch_thread_rwlock_unlock(MODULE_INTERFACE->rwlock);
 	} else {
