@@ -6,7 +6,7 @@ check_PROGRAMS =
 
 if HAVE_TAP
 TESTS += switch_event
-check_PROGRAMS = switch_event
+check_PROGRAMS += switch_event
 
 switch_event_SOURCES = switch_event.c
 switch_event_CFLAGS = $(SWITCH_AM_CFLAGS)
