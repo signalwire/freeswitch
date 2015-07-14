@@ -312,7 +312,7 @@ static switch_status_t switch_opus_init(switch_codec_t *codec, switch_codec_flag
 	struct opus_context *context = NULL;
 	int encoding = (flags & SWITCH_CODEC_FLAG_ENCODE);
 	int decoding = (flags & SWITCH_CODEC_FLAG_DECODE);
-	switch_codec_fmtp_t codec_fmtp;
+	switch_codec_fmtp_t codec_fmtp,codec_fmtp_only_remote;
 	opus_codec_settings_t opus_codec_settings = { 0 };
 	opus_codec_settings_t opus_codec_settings_remote = { 0 };
     
@@ -326,6 +326,11 @@ static switch_status_t switch_opus_init(switch_codec_t *codec, switch_codec_flag
 	memset(&codec_fmtp, '\0', sizeof(struct switch_codec_fmtp));
 	codec_fmtp.private_info = &opus_codec_settings;
 	switch_opus_fmtp_parse(codec->fmtp_in, &codec_fmtp);
+	if (opus_prefs.asymmetric_samplerates) {
+		/* save the remote fmtp values, before processing */
+		codec_fmtp_only_remote.private_info = &opus_codec_settings_remote;
+		switch_opus_fmtp_parse(codec->fmtp_in, &codec_fmtp_only_remote);
+	}
 	context->codec_settings = opus_codec_settings;
 
 	/* Verify if the local or remote configuration are lowering maxaveragebitrate and/or maxplaybackrate */
@@ -363,7 +368,7 @@ static switch_status_t switch_opus_init(switch_codec_t *codec, switch_codec_flag
 		 * maxplaybackrate=R3,sprop-maxcapturerate=R4
 		 * then it should start the encoder at sample rate: min(R1, R4) and the decoder at sample rate: min(R3, R2)*/
 		if (codec_fmtp.private_info) {
-				opus_codec_settings_t *codec_settings = codec_fmtp.private_info;
+				opus_codec_settings_t *codec_settings = codec_fmtp_only_remote.private_info;
 				if (opus_codec_settings.sprop_maxcapturerate || codec_settings->maxplaybackrate) {
 					enc_samplerate = opus_codec_settings.sprop_maxcapturerate; /*R4*/
 					if (codec_settings->maxplaybackrate < enc_samplerate && codec_settings->maxplaybackrate) {
@@ -449,7 +454,7 @@ static switch_status_t switch_opus_init(switch_codec_t *codec, switch_codec_flag
 		
 		if (opus_prefs.asymmetric_samplerates) {
 			if (codec_fmtp.private_info) {
-				opus_codec_settings_t *codec_settings = codec_fmtp.private_info;
+				opus_codec_settings_t *codec_settings = codec_fmtp_only_remote.private_info;
 				if (opus_codec_settings.maxplaybackrate || codec_settings->sprop_maxcapturerate ) {       
 					dec_samplerate = opus_codec_settings.maxplaybackrate; /* R3 */
 					if (dec_samplerate > codec_settings->sprop_maxcapturerate && codec_settings->sprop_maxcapturerate){
@@ -619,14 +624,13 @@ static switch_status_t opus_load_config(switch_bool_t reload)
 				}
 			} else if (!strcasecmp(key, "maxplaybackrate")) {
 				opus_prefs.maxplaybackrate = atoi(val);
-				if ( opus_prefs.maxplaybackrate != 8000 && opus_prefs.maxplaybackrate != 12000 && opus_prefs.maxplaybackrate != 16000
-							&& opus_prefs.maxplaybackrate != 24000 && opus_prefs.maxplaybackrate != 48000) {
+				if (!switch_opus_acceptable_rate(opus_prefs.maxplaybackrate)) {
 					opus_prefs.maxplaybackrate = 0; /* value not supported */
 				}
 			} else if (!strcasecmp(key, "sprop-maxcapturerate")) {
 				opus_prefs.sprop_maxcapturerate = atoi(val);
 				if (!switch_opus_acceptable_rate(opus_prefs.sprop_maxcapturerate)) {
-					opus_prefs.maxplaybackrate = 0; /* value not supported */
+					opus_prefs.sprop_maxcapturerate = 0; /* value not supported */
 				}
 			}
 		}
