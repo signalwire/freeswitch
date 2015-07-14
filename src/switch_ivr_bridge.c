@@ -80,6 +80,10 @@ static void video_bridge_thread(switch_core_session_t *session, void *obj)
 			switch_assert(a_codec);
 			switch_assert(b_codec);
 
+			if (switch_channel_test_flag(channel, CF_VIDEO_REFRESH_REQ)) {
+				refresh_timer = refresh_cnt;
+			}
+
 			if (switch_channel_test_flag(channel, CF_VIDEO_DECODED_READ)) {
 				if (a_codec->implementation->impl_id == b_codec->implementation->impl_id && !switch_channel_test_flag(b_channel, CF_VIDEO_DECODED_READ)) {
 					if (set_decoded_read) {
