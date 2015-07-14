@@ -81,6 +81,7 @@ struct opus_context {
 
 struct {
     int use_vbr;
+    int use_dtx;
     int complexity;
     int maxaveragebitrate;
     int maxplaybackrate;
@@ -352,6 +353,8 @@ static switch_status_t switch_opus_init(switch_codec_t *codec, switch_codec_flag
 
 	opus_codec_settings.cbr = !opus_prefs.use_vbr;
 
+	opus_codec_settings.usedtx = opus_prefs.use_dtx;
+
 	codec->fmtp_out = gen_fmtp(&opus_codec_settings, codec->memory_pool);
 
 	if (encoding) {
@@ -609,6 +612,8 @@ static switch_status_t opus_load_config(switch_bool_t reload)
 			
 			if (!strcasecmp(key, "use-vbr") && !zstr(val)) {
 				opus_prefs.use_vbr = atoi(val);
+			} else if (!strcasecmp(key, "use-dtx")) {
+				opus_prefs.use_dtx = atoi(val);
 			} else if (!strcasecmp(key, "complexity")) {
 				opus_prefs.complexity = atoi(val);
 			} else if (!strcasecmp(key, "packet-loss-percent")) {
