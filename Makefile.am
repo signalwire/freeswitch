@@ -1,5 +1,5 @@
 EXTRA_DIST =
-SUBDIRS = . src build
+SUBDIRS = . src build tests/unit
 AUTOMAKE_OPTIONS = foreign subdir-objects
 NAME = freeswitch
 

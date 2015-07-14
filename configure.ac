@@ -205,7 +205,6 @@ AC_DEFINE_UNQUOTED([SWITCH_DATA_DIR],"${datadir}",[directory for data files])
 
 AC_SUBST(localstatedir)
 AC_DEFINE_UNQUOTED([SWITCH_LOCALSTATE_DIR],"${localstatedir}",[directory for local state files])
-
 AC_SUBST(bindir)
 AC_SUBST(includedir)
 
@@ -1383,6 +1382,10 @@ PKG_CHECK_MODULES([AMQP], [librabbitmq >= 0.5.2],[
   AM_CONDITIONAL([HAVE_AMQP],[true])],[
   AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_AMQP],[false])])
 
+PKG_CHECK_MODULES([TAP], [tap >= 0.1.0],[
+  AM_CONDITIONAL([HAVE_TAP],[true])],[
+  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_TAP],[false])])
+
 PKG_CHECK_MODULES([SMPP34], [libsmpp34 >= 1.10],[
   AM_CONDITIONAL([HAVE_SMPP34],[true])],[
   AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_SMPP34],[false])])
@@ -1659,6 +1662,7 @@ ac_cv_file_dbd_apr_dbd_mysql_c=no
 AC_CONFIG_FILES([Makefile
 		build/Makefile
 		src/Makefile
+		tests/unit/Makefile
 		src/mod/Makefile
 		src/mod/applications/mod_abstraction/Makefile
 		src/mod/applications/mod_avmd/Makefile
