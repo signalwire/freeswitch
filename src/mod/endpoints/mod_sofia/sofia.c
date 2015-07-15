@@ -8279,45 +8279,72 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 						if ((a_session = switch_core_session_locate(br_a))) {
 							const char *port = NULL;
 							const char *rep_h = NULL;
-							switch_xml_t xml_root = NULL, xml_channel = NULL;
-							switch_event_t *xml_params = NULL;
-							const char *xml_url = NULL;
-							switch_xml_t params = NULL, param = NULL;
+							
 
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
+											  "REFER from %s replaces %s (%s@%s) with %s on another server\n",
+											  switch_core_session_get_uuid(session), rep, exten, (char *) refer_to->r_url->url_host, br_a);
 
-							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "REFER from %s replaces %s (%s@%s) with %s on another server\n"
-											  ,switch_core_session_get_uuid(session), rep, exten, (char *) refer_to->r_url->url_host, br_a);
-
-							switch_event_create(&xml_params, SWITCH_EVENT_REQUEST_PARAMS);
-							switch_assert(xml_params);
-							switch_event_add_header_string(xml_params, SWITCH_STACK_BOTTOM, "purpose", "nightmare_xfer");
-							switch_event_add_header_string(xml_params, SWITCH_STACK_BOTTOM, "profile", profile->name);
-							switch_event_add_header_string(xml_params, SWITCH_STACK_BOTTOM, "refer-to-user", refer_to->r_url->url_user);
-							switch_event_add_header_string(xml_params, SWITCH_STACK_BOTTOM, "refer-to-host", refer_to->r_url->url_host);
-							switch_event_add_header_string(xml_params, SWITCH_STACK_BOTTOM, "refer-to-params", refer_to->r_url->url_params ? refer_to->r_url->url_params : "");
-							switch_event_add_header_string(xml_params, SWITCH_STACK_BOTTOM, "refer-to-headers", refer_to->r_url->url_headers ? refer_to->r_url->url_headers : "");
-
+							
 							if (refer_to && refer_to->r_url->url_port) {
 								port = refer_to->r_url->url_port;
 							}
 
 							channel = switch_core_session_get_channel(a_session);
 
-							if (sofia_test_pflag(profile, PFLAG_CHANNEL_XML_FETCH_ON_NIGHTMARE_TRANSFER) 
-								&& switch_xml_locate("channels", "channel", "uuid", replaces->rp_call_id, &xml_root, &xml_channel, xml_params, SWITCH_FALSE) ==	SWITCH_STATUS_SUCCESS
-								&& (params = switch_xml_child(xml_channel, "params"))
-								&& (param = switch_xml_find_child(params, "param", "name", "sip-url"))
-								&& (xml_url = switch_xml_attr(param, "value"))
-								&& !zstr(xml_url)) {
-									exten = switch_core_session_sprintf(session, "sofia/%s/%s", profile->name, xml_url);
-							} else {
+							exten = NULL;
+							
+							if (sofia_test_pflag(profile, PFLAG_CHANNEL_XML_FETCH_ON_NIGHTMARE_TRANSFER)) {
+								switch_xml_t xml_root = NULL, xml_channel = NULL;
+								switch_event_t *xml_params = NULL;
+								const char *xml_url = NULL, *use_profile = profile->name;
+								switch_xml_t params = NULL, param = NULL;
+
+								switch_event_create(&xml_params, SWITCH_EVENT_REQUEST_PARAMS);
+								switch_event_add_header_string(xml_params, SWITCH_STACK_BOTTOM, "purpose", "nightmare_xfer");
+								switch_event_add_header_string(xml_params, SWITCH_STACK_BOTTOM, "profile", profile->name);
+								switch_event_add_header_string(xml_params, SWITCH_STACK_BOTTOM, "refer-to-user", refer_to->r_url->url_user);
+								switch_event_add_header_string(xml_params, SWITCH_STACK_BOTTOM, "refer-to-host", refer_to->r_url->url_host);
+								switch_event_add_header_string(xml_params, SWITCH_STACK_BOTTOM, "refer-to-params", refer_to->r_url->url_params ? refer_to->r_url->url_params : "");
+								switch_event_add_header_string(xml_params, SWITCH_STACK_BOTTOM, "refer-to-headers", refer_to->r_url->url_headers ? refer_to->r_url->url_headers : "");
+								switch_event_add_header_string(xml_params, SWITCH_STACK_BOTTOM, "replaces-call-id", replaces->rp_call_id);
+
+
+								if (switch_xml_locate("channels", NULL, NULL, NULL,
+													  &xml_root, &xml_channel, xml_params, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
+									if ((params = switch_xml_child(xml_channel, "params"))) {
+										for (param = switch_xml_child(params, "param"); param; param = param->next) {
+											const char *name = switch_xml_attr(param, "name");
+											const char *value = switch_xml_attr(param, "value");
+
+											if (!(name && value)) continue;
+
+											if (!strcasecmp(name, "sip-url")) {
+												xml_url = value;
+											} else if (!strcasecmp(name, "sip-profile")) {
+												use_profile = value;
+											}
+										}
+									}
+
+									if (xml_url) {
+										exten = switch_core_session_sprintf(session, "sofia/%s/%s", use_profile, xml_url);
+									}
+									
+									switch_xml_free(xml_root);
+								}
+
+								switch_event_destroy(&xml_params);
+							}
+							
+
+
+							if (zstr(exten)) {
 								exten = switch_core_session_sprintf(session, "sofia/%s/sip:%s@%s%s%s",
 																	profile->name, refer_to->r_url->url_user,
 																	refer_to->r_url->url_host, port ? ":" : "", port ? port : "");
 							}
-							switch_xml_free(xml_root);
-							switch_event_destroy(&xml_params);
-
+							
 							switch_core_new_memory_pool(&npool);
 							nightmare_xfer_helper = switch_core_alloc(npool, sizeof(*nightmare_xfer_helper));
 							nightmare_xfer_helper->exten = switch_core_strdup(npool, exten);
