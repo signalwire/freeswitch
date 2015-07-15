@@ -8148,7 +8148,7 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 							if (sofia_test_pflag(profile, PFLAG_CHANNEL_XML_FETCH_ON_NIGHTMARE_TRANSFER)) {
 								switch_xml_t xml_root = NULL, xml_channel = NULL;
 								switch_event_t *xml_params = NULL;
-								const char *xml_url = NULL, *use_profile = profile->name;
+								const char *xml_url = NULL, *use_profile = profile->name, *dial_prefix = NULL, *absolute_dial_string = NULL;
 								switch_xml_t params = NULL, param = NULL;
 
 								switch_event_create(&xml_params, SWITCH_EVENT_REQUEST_PARAMS);
@@ -8172,14 +8172,20 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 
 											if (!strcasecmp(name, "sip-url")) {
 												xml_url = value;
+											} else if (!strcasecmp(name, "dial-prefix")) {
+												dial_prefix = value;
+											} else if (!strcasecmp(name, "absolute-dial-string")) {
+												absolute_dial_string = value;
 											} else if (!strcasecmp(name, "sip-profile")) {
 												use_profile = value;
 											}
 										}
 									}
 
-									if (xml_url) {
-										exten = switch_core_session_sprintf(session, "sofia/%s/%s", use_profile, xml_url);
+									if (absolute_dial_string) {
+										exten = switch_core_session_sprintf(session, "%s%s", dial_prefix, absolute_dial_string);
+									} else if (xml_url) {
+										exten = switch_core_session_sprintf(session, "%ssofia/%s/%s", dial_prefix, use_profile, xml_url);
 									}
 									
 									switch_xml_free(xml_root);
