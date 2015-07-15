@@ -1800,7 +1800,7 @@ static int rtcp_stats(switch_rtp_t *rtp_session)
 	if (seq_diff < MAX_DROPOUT) {  /* in order, with permissible gap */
 		if (pkt_seq < max_seq) {
 			stats->cycle++;
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "rtcp_stats:[cycle change] pkt_seq[%d] cycle[%d] max_seq[%d] stats_ssrc[%u] local_ts[%u]\n",
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "rtcp_stats:[cycle change] pkt_seq[%d] cycle[%d] max_seq[%d] stats_ssrc[%u] local_ts[%u]\n",
                   pkt_seq, stats->cycle, max_seq, stats->ssrc, rtp_session->timer.samplecount);
 		}
 		pkt_extended_seq = stats->cycle << 16 | pkt_seq; /* getting the extended packet extended sequence ID */

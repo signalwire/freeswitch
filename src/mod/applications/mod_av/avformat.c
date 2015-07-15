@@ -1366,7 +1366,7 @@ static switch_status_t av_file_open(switch_file_handle_t *handle, const char *pa
 
 	switch_mutex_init(&context->mutex, SWITCH_MUTEX_NESTED, handle->memory_pool);
 	switch_core_timer_init(&context->timer, "soft", 1, 1000, context->pool);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "init timer\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "init timer\n");
 
 	switch_buffer_create_dynamic(&context->audio_buffer, 512, 512, 0);
 
@@ -1476,7 +1476,7 @@ static switch_status_t av_file_open(switch_file_handle_t *handle, const char *pa
 
 		desc = avcodec_descriptor_get(fmt->video_codec);
 
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "use video codec: [%d] %s (%s)\n", fmt->video_codec, desc->name, desc->long_name);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "use video codec: [%d] %s (%s)\n", fmt->video_codec, desc->name, desc->long_name);
 	}
 
 	if (fmt->audio_codec != AV_CODEC_ID_NONE) {
