@@ -47,6 +47,7 @@
 #include <AL/alext.h>
 #endif
 
+#define DEFAULT_LAYER_TIMEOUT 10
 #define DEFAULT_AGC_LEVEL 1100
 #define CONFERENCE_UUID_VARIABLE "conference_uuid"
 
@@ -704,6 +705,7 @@ struct conference_member {
 	int video_layer_id;
 	int canvas_id;
 	int watching_canvas_id;
+	int layer_timeout;
 	int video_codec_index;
 	int video_codec_id;
 	char *video_banner_text;
@@ -1325,6 +1327,8 @@ static void detach_video_layer(conference_member_t *member)
 	reset_layer(layer);
 	layer->member_id = 0;
 	member->video_layer_id = -1;
+	member->layer_timeout = DEFAULT_LAYER_TIMEOUT;
+
 	//member->canvas_id = 0;
 	//member->watching_canvas_id = -1;
 	member->avatar_patched = 0;
@@ -1624,6 +1628,7 @@ static switch_status_t attach_video_layer(conference_member_t *member, mcu_canva
 	layer->member_id = member->id;
 	member->video_layer_id = idx;
 	member->canvas_id = canvas->canvas_id;
+	member->layer_timeout = DEFAULT_LAYER_TIMEOUT;
 	canvas->send_keyframe = 1;
 
 	//member->watching_canvas_id = canvas->canvas_id;
@@ -2216,6 +2221,8 @@ static void next_canvas(conference_member_t *imember)
 	} else {
 		imember->canvas_id++;
 	}
+
+	imember->layer_timeout = DEFAULT_LAYER_TIMEOUT;
 }
 
 static void pop_next_image(conference_member_t *member, switch_image_t **imgP)
@@ -2534,6 +2541,7 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 				if (layer->member_id != imember->id) {
 					layer = NULL;
 					imember->video_layer_id = -1;
+					imember->layer_timeout = DEFAULT_LAYER_TIMEOUT;
 				}
 			}
 
@@ -2551,8 +2559,12 @@ static void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread
 			}
 
 			if (!layer) {
-				if (find_layer(conference, canvas, imember, &layer) != SWITCH_STATUS_SUCCESS) {
-					next_canvas(imember);
+				if (find_layer(conference, canvas, imember, &layer) == SWITCH_STATUS_SUCCESS) {
+					imember->layer_timeout = 0;
+				} else {
+					if (--imember->layer_timeout <= 0) {
+						next_canvas(imember);
+					}
 				}
 			}
 
@@ -4378,6 +4390,17 @@ static void conference_mod_event_channel_handler(const char *event_channel, cJSO
 					cJSON_AddItemToArray(array, cJSON_CreateString((char *)vvar));
 				}
 			}
+			
+			if (conference->layout_group_hash) {
+				for (hi = switch_core_hash_first(conference->layout_group_hash); hi; hi = switch_core_hash_next(&hi)) {
+					char *name;
+					switch_core_hash_this(hi, &vvar, NULL, &val);
+					name = switch_mprintf("group:%s", (char *)vvar);
+					cJSON_AddItemToArray(array, cJSON_CreateString(name));
+					free(name);
+				}
+			}
+
 			switch_mutex_unlock(globals.setup_mutex);
 			switch_thread_rwlock_unlock(conference->rwlock);
 		}
@@ -5149,7 +5172,7 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 	member->score_iir = 0;
 	member->verbose_events = conference->verbose_events;
 	member->video_layer_id = -1;
-
+	member->layer_timeout = DEFAULT_LAYER_TIMEOUT;
 
 	switch_queue_create(&member->dtmf_queue, 100, member->pool);
 
@@ -5198,6 +5221,7 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 			int id = atoi(var) - 1;
 			if (id < conference->canvas_count) {
 				member->canvas_id = id;
+				member->layer_timeout = DEFAULT_LAYER_TIMEOUT;
 			}
 		}
 
@@ -9896,7 +9920,7 @@ static switch_status_t conf_api_sub_canvas(conference_member_t *member, switch_s
 
 	detach_video_layer(member);
 	member->canvas_id = index;
-	
+	member->layer_timeout = DEFAULT_LAYER_TIMEOUT;
 	canvas = member->conference->canvases[member->canvas_id];
 	attach_video_layer(member, canvas, index);
 	reset_member_codec_index(member);
@@ -10284,27 +10308,36 @@ static switch_status_t conf_api_sub_vid_layout(conference_obj_t *conference, swi
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	if (!strcasecmp(argv[2], "group")) {
+	if (!strncasecmp(argv[2], "group", 5)) {
 		layout_group_t *lg = NULL;
+		char *group_name = NULL;
+		int xx = 4;
 
-		if (!argv[3]) {
-				stream->write_function(stream, "Group name not specified.\n");
-				return SWITCH_STATUS_SUCCESS;
+		if ((group_name = strchr(argv[2], ':'))) {
+			group_name++;
+			xx--;
 		} else {
-			if (((lg = switch_core_hash_find(conference->layout_group_hash, argv[3])))) {
+			group_name = argv[3];
+		}
+
+		if (!group_name) {
+			stream->write_function(stream, "Group name not specified.\n");
+			return SWITCH_STATUS_SUCCESS;
+		} else {
+			if (((lg = switch_core_hash_find(conference->layout_group_hash, group_name)))) {
 				vlayout = find_best_layout(conference, lg, 0);
 			}
 
 			if (!vlayout) {
-				stream->write_function(stream, "Invalid group layout [%s]\n", argv[3]);
+				stream->write_function(stream, "Invalid group layout [%s]\n", group_name);
 				return SWITCH_STATUS_SUCCESS;
 			}
 			
-			stream->write_function(stream, "Change to layout group [%s]\n", argv[3]);
-			conference->video_layout_group = switch_core_strdup(conference->pool, argv[3]);
+			stream->write_function(stream, "Change to layout group [%s]\n", group_name);
+			conference->video_layout_group = switch_core_strdup(conference->pool, group_name);
 
-			if (argv[4]) {
-				idx = atoi(argv[4]);
+			if (argv[xx]) {
+				idx = atoi(argv[xx]);
 			}
 		}
 	}
@@ -10323,7 +10356,7 @@ static switch_status_t conf_api_sub_vid_layout(conference_obj_t *conference, swi
 	
 	if (idx < 0 || idx > conference->canvas_count - 1) idx = 0;
 	
-	stream->write_function(stream, "Change canvas %d to layout [%s]\n", idx, vlayout->name);
+	stream->write_function(stream, "Change canvas %d to layout [%s]\n", idx + 1, vlayout->name);
 
 	switch_mutex_lock(conference->member_mutex);
 	conference->canvases[idx]->new_vlayout = vlayout;
