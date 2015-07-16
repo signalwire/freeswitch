@@ -583,15 +583,18 @@ SWITCH_STANDARD_APP(ladspa_run_function)
 
 
 
-#define API_SYNTAX "<uuid>|<flags>|<plugin>|<label>|<params>"
+#define API_SYNTAX "<uuid> [start|stop] <flags>|<plugin>|<label>|<params>"
 SWITCH_STANDARD_API(ladspa_api)
 {
 	char *uuid = NULL;
-	char *data;
-	char *p;
+	char *data = NULL;
+	char *p, *action;
 	switch_core_session_t *ksession = NULL;
 
-	if (!cmd) goto err;
+	if (!cmd) {
+		stream->write_function(stream, "-ERR Operation Failed\n");
+		goto done;
+	}
 
 	data = strdup(cmd);
 
@@ -599,24 +602,32 @@ SWITCH_STANDARD_API(ladspa_api)
 		uuid = data;
 		*p++ = '\0';
 
-		if ((ksession = switch_core_session_locate(uuid))) {
-			ladspa_parse(ksession, p);
+		if (!(ksession = switch_core_session_locate(uuid))) {
+			stream->write_function(stream, "-ERR non-existant UUID\n");
+			goto done;	
+		} 
+
+		if ((action = strstr(cmd, "stop"))) {
+			stop_ladspa_session(ksession);			
 			switch_core_session_rwunlock(ksession);
 			stream->write_function(stream, "+OK\n");
-		} else {
-			stream->write_function(stream, "-ERR non-existant UUID\n");
+			goto done;
+		} else if ((action = strstr(cmd, "start"))) {
+			// Advance past 'start' conditional keyword and move on
+			p += 5 * sizeof(char);
+			*p++ = '\0';
+			switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_DEBUG, "Tried to remove 'start' and now the string is \"%s\"\n", p);
 		}
+
+		ladspa_parse(ksession, p);
+		stream->write_function(stream, "+OK\n");
 	} else {
 		stream->write_function(stream, "-ERR Usage %s\n", API_SYNTAX);
-	}
+	}	
 
-	free(data);
+done:
 
-	return SWITCH_STATUS_SUCCESS;
-
- err:
-
-	stream->write_function(stream, "-ERR Operation Failed\n");
+	switch_safe_free(data);
 
 	return SWITCH_STATUS_SUCCESS;
 }
