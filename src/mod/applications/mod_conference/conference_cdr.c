@@ -42,28 +42,28 @@
 #include <mod_conference.h>
 
 
-inline switch_bool_t conf_cdr_test_mflag(conf_cdr_node_t *np, member_flag_t mflag)
+inline switch_bool_t conference_cdr_test_mflag(conference_cdr_node_t *np, member_flag_t mflag)
 {
 	return !!np->mflags[mflag];
 }
 
-const char *conf_cdr_audio_flow(conf_member_t *member)
+const char *conference_cdr_audio_flow(conference_member_t *member)
 {
 	const char *flow = "sendrecv";
 
-	if (!conf_utils_member_test_flag(member, MFLAG_CAN_SPEAK)) {
+	if (!conference_utils_member_test_flag(member, MFLAG_CAN_SPEAK)) {
 		flow = "recvonly";
 	}
 
 	if (member->channel && switch_channel_test_flag(member->channel, CF_HOLD)) {
-		flow = conf_utils_member_test_flag(member, MFLAG_CAN_SPEAK) ? "sendonly" : "inactive";
+		flow = conference_utils_member_test_flag(member, MFLAG_CAN_SPEAK) ? "sendonly" : "inactive";
 	}
 
 	return flow;
 }
 
 
-char *conf_cdr_rfc4579_render(conference_obj_t *conference, switch_event_t *event, switch_event_t *revent)
+char *conference_cdr_rfc4579_render(conference_obj_t *conference, switch_event_t *event, switch_event_t *revent)
 {
 	switch_xml_t xml, x_tag, x_tag1, x_tag2, x_tag3, x_tag4;
 	char tmp[30];
@@ -71,7 +71,7 @@ char *conf_cdr_rfc4579_render(conference_obj_t *conference, switch_event_t *even
 	char *dup_domain = NULL;
 	char *uri;
 	int off = 0, off1 = 0, off2 = 0, off3 = 0, off4 = 0;
-	conf_cdr_node_t *np;
+	conference_cdr_node_t *np;
 	char *tmpp = tmp;
 	char *xml_text = NULL;
 
@@ -250,7 +250,7 @@ char *conf_cdr_rfc4579_render(conference_obj_t *conference, switch_event_t *even
 			const char *var;
 			//char buf[1024];
 
-			//switch_snprintf(buf, sizeof(buf), "conf_%s_%s_%s", conference->name, conference->domain, np->cp->caller_id_number);
+			//switch_snprintf(buf, sizeof(buf), "conference_%s_%s_%s", conference->name, conference->domain, np->cp->caller_id_number);
 			//switch_channel_set_variable(channel, "conference_call_key", buf);
 
 			if (!(x_tag3 = switch_xml_add_child_d(x_tag2, "media", off3++))) {
@@ -276,7 +276,7 @@ char *conf_cdr_rfc4579_render(conference_obj_t *conference, switch_event_t *even
 			if (!(x_tag4 = switch_xml_add_child_d(x_tag3, "status", off4++))) {
 				abort();
 			}
-			switch_xml_set_txt_d(x_tag4, conf_cdr_audio_flow(np->member));
+			switch_xml_set_txt_d(x_tag4, conference_cdr_audio_flow(np->member));
 			
 			
 			if (switch_channel_test_flag(channel, CF_VIDEO)) {
@@ -327,13 +327,13 @@ char *conf_cdr_rfc4579_render(conference_obj_t *conference, switch_event_t *even
 }
 
 
-cJSON *conf_cdr_json_render(conference_obj_t *conference, cJSON *req)
+cJSON *conference_cdr_json_render(conference_obj_t *conference, cJSON *req)
 {
 	char tmp[30];
 	const char *domain;	const char *name;
 	char *dup_domain = NULL;
 	char *uri;
-	conf_cdr_node_t *np;
+	conference_cdr_node_t *np;
 	char *tmpp = tmp;
 	cJSON *json = cJSON_CreateObject(), *jusers = NULL, *jold_users = NULL, *juser = NULL, *jvars = NULL;
 
@@ -437,7 +437,7 @@ cJSON *conf_cdr_json_render(conference_obj_t *conference, cJSON *req)
 
 			switch_channel_get_variables(channel, &var_event);
 
-			if ((prefix = switch_event_get_header(var_event, "json_conf_var_prefix"))) {
+			if ((prefix = switch_event_get_header(var_event, "json_conference_var_prefix"))) {
 				all = strcasecmp(prefix, "__all__");
 			} else {
 				prefix = "json_";
@@ -457,7 +457,7 @@ cJSON *conf_cdr_json_render(conference_obj_t *conference, cJSON *req)
 				json_add_child_string(juser, "rtpAudioSSRC", var);
 			}
 			
-			json_add_child_string(juser, "rtpAudioDirection", conf_cdr_audio_flow(np->member));
+			json_add_child_string(juser, "rtpAudioDirection", conference_cdr_audio_flow(np->member));
 			
 			
 			if (switch_channel_test_flag(channel, CF_VIDEO)) {
@@ -486,7 +486,7 @@ cJSON *conf_cdr_json_render(conference_obj_t *conference, cJSON *req)
 	return json;
 }
 
-void conf_cdr_del(conf_member_t *member)
+void conference_cdr_del(conference_member_t *member)
 {
 	if (member->channel) {
 		switch_channel_get_variables(member->channel, &member->cdr_node->var_event);
@@ -498,9 +498,9 @@ void conf_cdr_del(conf_member_t *member)
 	}
 }
 
-void conf_cdr_add(conf_member_t *member)
+void conference_cdr_add(conference_member_t *member)
 {
-	conf_cdr_node_t *np;
+	conference_cdr_node_t *np;
 	switch_caller_profile_t *cp;
 	switch_channel_t *channel;
 
@@ -530,9 +530,9 @@ void conf_cdr_add(conf_member_t *member)
 	
 }
 
-void conf_cdr_rejected(conference_obj_t *conference, switch_channel_t *channel, cdr_reject_reason_t reason)
+void conference_cdr_rejected(conference_obj_t *conference, switch_channel_t *channel, cdr_reject_reason_t reason)
 {
-	conf_cdr_reject_t *rp;
+	conference_cdr_reject_t *rp;
 	switch_caller_profile_t *cp;
 
 	rp = switch_core_alloc(conference->pool, sizeof(*rp));
@@ -549,12 +549,12 @@ void conf_cdr_rejected(conference_obj_t *conference, switch_channel_t *channel, 
 	rp->cp = switch_caller_profile_dup(conference->pool, cp);
 }
 
-void conf_cdr_render(conference_obj_t *conference)
+void conference_cdr_render(conference_obj_t *conference)
 {
 	switch_xml_t cdr, x_ptr, x_member, x_members, x_conference, x_cp, x_flags, x_tag, x_rejected, x_attempt;
-	conf_cdr_node_t *np;
-	conf_cdr_reject_t *rp;
-	int cdr_off = 0, conf_off = 0;
+	conference_cdr_node_t *np;
+	conference_cdr_reject_t *rp;
+	int cdr_off = 0, conference_off = 0;
 	char str[512];
 	char *path = NULL, *xml_text;
 	int fd;
@@ -571,30 +571,30 @@ void conf_cdr_render(conference_obj_t *conference)
 		abort();
 	}
 	
-	if (!(x_ptr = switch_xml_add_child_d(x_conference, "name", conf_off++))) {
+	if (!(x_ptr = switch_xml_add_child_d(x_conference, "name", conference_off++))) {
 		abort();
 	}
 	switch_xml_set_txt_d(x_ptr, conference->name);
 	
-	if (!(x_ptr = switch_xml_add_child_d(x_conference, "hostname", conf_off++))) {
+	if (!(x_ptr = switch_xml_add_child_d(x_conference, "hostname", conference_off++))) {
 		abort();
 	}
 	switch_xml_set_txt_d(x_ptr, switch_core_get_hostname());
 	
-	if (!(x_ptr = switch_xml_add_child_d(x_conference, "rate", conf_off++))) {
+	if (!(x_ptr = switch_xml_add_child_d(x_conference, "rate", conference_off++))) {
 		abort();
 	}
 	switch_snprintf(str, sizeof(str), "%d", conference->rate);
 	switch_xml_set_txt_d(x_ptr, str);
 	
-	if (!(x_ptr = switch_xml_add_child_d(x_conference, "interval", conf_off++))) {
+	if (!(x_ptr = switch_xml_add_child_d(x_conference, "interval", conference_off++))) {
 		abort();
 	}
 	switch_snprintf(str, sizeof(str), "%d", conference->interval);
 	switch_xml_set_txt_d(x_ptr, str);
 	
 	
-	if (!(x_ptr = switch_xml_add_child_d(x_conference, "start_time", conf_off++))) {
+	if (!(x_ptr = switch_xml_add_child_d(x_conference, "start_time", conference_off++))) {
 		abort();
 	}
 	switch_xml_set_attr_d(x_ptr, "type", "UNIX-epoch");
@@ -602,17 +602,17 @@ void conf_cdr_render(conference_obj_t *conference)
 	switch_xml_set_txt_d(x_ptr, str);
 	
 	
-	if (!(x_ptr = switch_xml_add_child_d(x_conference, "end_time", conf_off++))) {
+	if (!(x_ptr = switch_xml_add_child_d(x_conference, "end_time", conference_off++))) {
 		abort();
 	}
-	switch_xml_set_attr_d(x_ptr, "endconf_forced", conf_utils_test_flag(conference, CFLAG_ENDCONF_FORCED) ? "true" : "false");
+	switch_xml_set_attr_d(x_ptr, "endconference_forced", conference_utils_test_flag(conference, CFLAG_ENDCONF_FORCED) ? "true" : "false");
 	switch_xml_set_attr_d(x_ptr, "type", "UNIX-epoch");
 	switch_snprintf(str, sizeof(str), "%ld", (long)conference->end_time);
 	switch_xml_set_txt_d(x_ptr, str);
 
 
 
-	if (!(x_members = switch_xml_add_child_d(x_conference, "members", conf_off++))) {
+	if (!(x_members = switch_xml_add_child_d(x_conference, "members", conference_off++))) {
 		abort();
 	}
 
@@ -621,7 +621,7 @@ void conf_cdr_render(conference_obj_t *conference)
 		int flag_off = 0;
 
 
-		if (!(x_member = switch_xml_add_child_d(x_members, "member", conf_off++))) {
+		if (!(x_member = switch_xml_add_child_d(x_members, "member", conference_off++))) {
 			abort();
 		}
 
@@ -647,16 +647,16 @@ void conf_cdr_render(conference_obj_t *conference)
 			switch_assert(x_flags);
 
 			x_tag = switch_xml_add_child_d(x_flags, "is_moderator", flag_off++);
-			switch_xml_set_txt_d(x_tag, conf_cdr_test_mflag(np, MFLAG_MOD) ? "true" : "false");
+			switch_xml_set_txt_d(x_tag, conference_cdr_test_mflag(np, MFLAG_MOD) ? "true" : "false");
 
 			x_tag = switch_xml_add_child_d(x_flags, "end_conference", flag_off++);
-			switch_xml_set_txt_d(x_tag, conf_cdr_test_mflag(np, MFLAG_ENDCONF) ? "true" : "false");
+			switch_xml_set_txt_d(x_tag, conference_cdr_test_mflag(np, MFLAG_ENDCONF) ? "true" : "false");
 
 			x_tag = switch_xml_add_child_d(x_flags, "was_kicked", flag_off++);
-			switch_xml_set_txt_d(x_tag, conf_cdr_test_mflag(np, MFLAG_KICKED) ? "true" : "false");
+			switch_xml_set_txt_d(x_tag, conference_cdr_test_mflag(np, MFLAG_KICKED) ? "true" : "false");
 
 			x_tag = switch_xml_add_child_d(x_flags, "is_ghost", flag_off++);
-			switch_xml_set_txt_d(x_tag, conf_cdr_test_mflag(np, MFLAG_GHOST) ? "true" : "false");
+			switch_xml_set_txt_d(x_tag, conference_cdr_test_mflag(np, MFLAG_GHOST) ? "true" : "false");
 
 			if (!(x_cp = switch_xml_add_child_d(x_member, "caller_profile", member_off++))) {
 				abort();
@@ -674,7 +674,7 @@ void conf_cdr_render(conference_obj_t *conference)
 
 	}
 
-	if (!(x_rejected = switch_xml_add_child_d(x_conference, "rejected", conf_off++))) {
+	if (!(x_rejected = switch_xml_add_child_d(x_conference, "rejected", conference_off++))) {
 		abort();
 	}
 

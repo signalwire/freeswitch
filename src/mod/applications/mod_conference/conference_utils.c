@@ -41,7 +41,7 @@
  */
 #include <mod_conference.h>
 
-const char *conf_utils_combine_flag_var(switch_core_session_t *session, const char *var_name) 
+const char *conference_utils_combine_flag_var(switch_core_session_t *session, const char *var_name) 
 {
 	switch_event_header_t *hp;
 	switch_event_t *event, *cevent;
@@ -85,7 +85,7 @@ const char *conf_utils_combine_flag_var(switch_core_session_t *session, const ch
 
 }
 
-void conf_utils_set_mflags(const char *flags, member_flag_t *f)
+void conference_utils_set_mflags(const char *flags, member_flag_t *f)
 {
 	if (flags) {
 		char *dup = strdup(flags);
@@ -150,7 +150,7 @@ void conf_utils_set_mflags(const char *flags, member_flag_t *f)
 
 
 
-void conf_utils_set_cflags(const char *flags, conference_flag_t *f)
+void conference_utils_set_cflags(const char *flags, conference_flag_t *f)
 {
 	if (flags) {
 		char *dup = strdup(flags);
@@ -203,7 +203,7 @@ void conf_utils_set_cflags(const char *flags, conference_flag_t *f)
 }
 
 
-void conf_utils_clear_eflags(char *events, uint32_t *f)
+void conference_utils_clear_eflags(char *events, uint32_t *f)
 {
 	char buf[512] = "";
 	char *next = NULL;
@@ -280,7 +280,7 @@ void conf_utils_clear_eflags(char *events, uint32_t *f)
 }
 
 
-void conf_utils_merge_mflags(member_flag_t *a, member_flag_t *b)
+void conference_utils_merge_mflags(member_flag_t *a, member_flag_t *b)
 {
 	int x;
 
@@ -289,71 +289,71 @@ void conf_utils_merge_mflags(member_flag_t *a, member_flag_t *b)
 	}
 }
 
-void conf_utils_set_flag(conference_obj_t *conference, conference_flag_t flag)
+void conference_utils_set_flag(conference_obj_t *conference, conference_flag_t flag)
 {
 	conference->flags[flag] = 1;
 }
-void conf_utils_set_flag_locked(conference_obj_t *conference, conference_flag_t flag)
+void conference_utils_set_flag_locked(conference_obj_t *conference, conference_flag_t flag)
 {
 	switch_mutex_lock(conference->flag_mutex);
 	conference->flags[flag] = 1;
 	switch_mutex_unlock(conference->flag_mutex);
 }
-void conf_utils_clear_flag(conference_obj_t *conference, conference_flag_t flag)
+void conference_utils_clear_flag(conference_obj_t *conference, conference_flag_t flag)
 {
 	conference->flags[flag] = 0;
 }
-void conf_utils_clear_flag_locked(conference_obj_t *conference, conference_flag_t flag)
+void conference_utils_clear_flag_locked(conference_obj_t *conference, conference_flag_t flag)
 {
 	switch_mutex_lock(conference->flag_mutex);
 	conference->flags[flag] = 0;
 	switch_mutex_unlock(conference->flag_mutex);
 }
-switch_bool_t conf_utils_test_flag(conference_obj_t *conference, conference_flag_t flag)
+switch_bool_t conference_utils_test_flag(conference_obj_t *conference, conference_flag_t flag)
 {
 	return !!conference->flags[flag];
 }
 
 #if 0
-void conf_utils_conf_utils_set_mflag(conference_obj_t *conference, member_flag_t mflag)
+void conference_utils_conference_utils_set_mflag(conference_obj_t *conference, member_flag_t mflag)
 {
 	conference->mflags[mflag] = 1;
 }
 
-void conf_utils_clear_mflag(conference_obj_t *conference, member_flag_t mflag)
+void conference_utils_clear_mflag(conference_obj_t *conference, member_flag_t mflag)
 {
 	conference->mflags[mflag] = 0;
 }
 
-switch_bool_t conf_utils_test_mflag(conference_obj_t *conference, member_flag_t mflag)
+switch_bool_t conference_utils_test_mflag(conference_obj_t *conference, member_flag_t mflag)
 {
 	return !!conference->mflags[mflag];
 }
 #endif
 
-void conf_utils_member_set_flag(conf_member_t *member, member_flag_t flag)
+void conference_utils_member_set_flag(conference_member_t *member, member_flag_t flag)
 {
 	member->flags[flag] = 1;
 }
 
-void conf_utils_member_set_flag_locked(conf_member_t *member, member_flag_t flag)
+void conference_utils_member_set_flag_locked(conference_member_t *member, member_flag_t flag)
 {
 	switch_mutex_lock(member->flag_mutex);
 	member->flags[flag] = 1;
 	switch_mutex_unlock(member->flag_mutex);
 }
 
-void conf_utils_member_clear_flag(conf_member_t *member, member_flag_t flag)
+void conference_utils_member_clear_flag(conference_member_t *member, member_flag_t flag)
 {
 	member->flags[flag] = 0;
 }
-void conf_utils_member_clear_flag_locked(conf_member_t *member, member_flag_t flag)
+void conference_utils_member_clear_flag_locked(conference_member_t *member, member_flag_t flag)
 {
 	switch_mutex_lock(member->flag_mutex);
 	member->flags[flag] = 0;
 	switch_mutex_unlock(member->flag_mutex);
 }
-switch_bool_t conf_utils_member_test_flag(conf_member_t *member, member_flag_t flag)
+switch_bool_t conference_utils_member_test_flag(conference_member_t *member, member_flag_t flag)
 {
 	return !!member->flags[flag];
 }

@@ -43,7 +43,7 @@
 
 
 
-al_handle_t *conf_al_create(switch_memory_pool_t *pool)
+al_handle_t *conference_al_create(switch_memory_pool_t *pool)
 {
 	al_handle_t *al;
 
@@ -54,22 +54,22 @@ al_handle_t *conf_al_create(switch_memory_pool_t *pool)
 }
 
 #ifndef OPENAL_POSITIONING
-void conf_al_gen_arc(conference_obj_t *conference, switch_stream_handle_t *stream)
+void conference_al_gen_arc(conference_obj_t *conference, switch_stream_handle_t *stream)
 {
 }
-void conf_al_process(al_handle_t *al, void *data, switch_size_t datalen, int rate)
+void conference_al_process(al_handle_t *al, void *data, switch_size_t datalen, int rate)
 {
 }
 
 #else
-void conf_al_gen_arc(conference_obj_t *conference, switch_stream_handle_t *stream)
+void conference_al_gen_arc(conference_obj_t *conference, switch_stream_handle_t *stream)
 {
 	float offset;
 	float pos;
 	float radius;
 	float x, z;
 	float div = 3.14159f / 180;
-	conf_member_t *member;
+	conference_member_t *member;
 	uint32_t count = 0;
 
 	if (!conference->count) {
@@ -78,14 +78,14 @@ void conf_al_gen_arc(conference_obj_t *conference, switch_stream_handle_t *strea
 
 	switch_mutex_lock(conference->member_mutex);
 	for (member = conference->members; member; member = member->next) {
-		if (member->channel && conf_utils_member_test_flag(member, MFLAG_CAN_SPEAK) && !conf_utils_member_test_flag(member, MFLAG_NO_POSITIONAL)) {
+		if (member->channel && conference_utils_member_test_flag(member, MFLAG_CAN_SPEAK) && !conference_utils_member_test_flag(member, MFLAG_NO_POSITIONAL)) {
 			count++;
 		}
 	}
 
 	if (count < 3) {
 		for (member = conference->members; member; member = member->next) {
-			if (member->channel && !conf_utils_member_test_flag(member, MFLAG_NO_POSITIONAL) && member->al) {
+			if (member->channel && !conference_utils_member_test_flag(member, MFLAG_NO_POSITIONAL) && member->al) {
 
 				member->al->pos_x = 0;
 				member->al->pos_y = 0;
@@ -112,14 +112,14 @@ void conf_al_gen_arc(conference_obj_t *conference, switch_stream_handle_t *strea
 	
 	for (member = conference->members; member; member = member->next) {
 
-		if (!member->channel || conf_utils_member_test_flag(member, MFLAG_NO_POSITIONAL) || !conf_utils_member_test_flag(member, MFLAG_CAN_SPEAK)) {
+		if (!member->channel || conference_utils_member_test_flag(member, MFLAG_NO_POSITIONAL) || !conference_utils_member_test_flag(member, MFLAG_CAN_SPEAK)) {
 			continue;
 		}
 
 		if (!member->al) {
-			member->al = conf_al_create(member->pool);
+			member->al = conference_al_create(member->pool);
 		}
-		conf_utils_member_set_flag(member, MFLAG_POSITIONAL);
+		conference_utils_member_set_flag(member, MFLAG_POSITIONAL);
 
 		if (pos == 0) {
 			x = 0;
@@ -163,7 +163,7 @@ void conf_al_gen_arc(conference_obj_t *conference, switch_stream_handle_t *strea
 
 
 
-void conf_al_process(al_handle_t *al, void *data, switch_size_t datalen, int rate)
+void conference_al_process(al_handle_t *al, void *data, switch_size_t datalen, int rate)
 {
 
 	if (rate != 48000) {
@@ -180,7 +180,7 @@ void conf_al_process(al_handle_t *al, void *data, switch_size_t datalen, int rat
 			0
 		};
 
-		switch_mutex_lock(conf_globals.setup_mutex);
+		switch_mutex_lock(conference_globals.setup_mutex);
 		if ((al->device = alcLoopbackOpenDeviceSOFT(NULL))) {
 			const ALshort silence[16] = { 0 };
 			float orient[6] = { /*fwd:*/ 0., 0., -1., /*up:*/ 0., 1., 0. };
@@ -205,7 +205,7 @@ void conf_al_process(al_handle_t *al, void *data, switch_size_t datalen, int rat
 			alSourceQueueBuffers(al->source, 2, al->buffer_in);
 			alSourcePlay(al->source);
 		}
-		switch_mutex_unlock(conf_globals.setup_mutex);
+		switch_mutex_unlock(conference_globals.setup_mutex);
 	}
 
 	if (al->device) {
@@ -238,13 +238,13 @@ void conf_al_process(al_handle_t *al, void *data, switch_size_t datalen, int rat
 #endif
 
 #ifndef OPENAL_POSITIONING
-switch_status_t conf_al_parse_position(al_handle_t *al, const char *data) 
+switch_status_t conference_al_parse_position(al_handle_t *al, const char *data) 
 {
 	return SWITCH_STATUS_FALSE;
 }
 
 #else 
-switch_status_t conf_al_parse_position(al_handle_t *al, const char *data) 
+switch_status_t conference_al_parse_position(al_handle_t *al, const char *data) 
 {
 	char *args[3];
 	int num;
@@ -270,11 +270,11 @@ switch_status_t conf_al_parse_position(al_handle_t *al, const char *data)
 #endif
 
 #ifdef OPENAL_POSITIONING
-void conf_al_close(al_handle_t *al)
+void conference_al_close(al_handle_t *al)
 {
 	if (!al) return;
 
-	switch_mutex_lock(conf_globals.setup_mutex);	
+	switch_mutex_lock(conference_globals.setup_mutex);	
 	if (al->source) {
 		alDeleteSources(1, &al->source);
 		al->source = 0;
@@ -295,7 +295,7 @@ void conf_al_close(al_handle_t *al)
 		alcCloseDevice(al->device);
 		al->device = NULL;
 	}
-	switch_mutex_unlock(conf_globals.setup_mutex);
+	switch_mutex_unlock(conference_globals.setup_mutex);
 }
 #endif
 

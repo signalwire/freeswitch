@@ -45,12 +45,12 @@
 switch_status_t conference_file_close(conference_obj_t *conference, conference_file_node_t *node)
 {
 	switch_event_t *event;
-	conf_member_t *member = NULL;
+	conference_member_t *member = NULL;
 
 	if (test_eflag(conference, EFLAG_PLAY_FILE_DONE) &&
 		switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		
-		conf_event_add_data(conference, event);
+		conference_event_add_data(conference, event);
 
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "seconds", "%ld", (long) node->fh.samples_in / node->fh.native_rate);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "milliseconds", "%ld", (long) node->fh.samples_in / (node->fh.native_rate / 1000));
@@ -63,8 +63,8 @@ switch_status_t conference_file_close(conference_obj_t *conference, conference_f
 		if (node->member_id) {
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "play-file-member-done");
 		
-			if ((member = conf_member_get(conference, node->member_id))) {
-				conf_member_add_event_data(member, event);
+			if ((member = conference_member_get(conference, node->member_id))) {
+				conference_member_add_event_data(member, event);
 				switch_thread_rwlock_unlock(member->rwlock);
 			}
 
@@ -83,7 +83,7 @@ switch_status_t conference_file_close(conference_obj_t *conference, conference_f
 
 #ifdef OPENAL_POSITIONING	
 	if (node->al && node->al->device) {
-		conf_al_close(node->al);
+		conference_al_close(node->al);
 	}
 #endif
 	if (switch_core_file_has_video(&node->fh) && conference->canvas) {
@@ -175,7 +175,7 @@ switch_status_t conference_file_play(conference_obj_t *conference, char *file, u
 	}
 
 	if (!async && say) {
-		status = conf_say(conference, file + 4, leadin);
+		status = conference_say(conference, file + 4, leadin);
 		goto done;
 	}
 
@@ -196,7 +196,7 @@ switch_status_t conference_file_play(conference_obj_t *conference, char *file, u
 			switch_safe_free(params_portion);
 
 		} else if (!async) {
-			status = conf_say(conference, file, leadin);
+			status = conference_say(conference, file, leadin);
 			goto done;
 		} else {
 			goto done;
@@ -232,7 +232,7 @@ switch_status_t conference_file_play(conference_obj_t *conference, char *file, u
 
 	flags = SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT;
 
-	if (conference->members_with_video && conf_utils_test_flag(conference, CFLAG_TRANSCODE_VIDEO)) {
+	if (conference->members_with_video && conference_utils_test_flag(conference, CFLAG_TRANSCODE_VIDEO)) {
 		flags |= SWITCH_FILE_FLAG_VIDEO;
 	}
 
@@ -244,7 +244,7 @@ switch_status_t conference_file_play(conference_obj_t *conference, char *file, u
 
 		if (test_eflag(conference, EFLAG_PLAY_FILE) &&
 			switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
-			conf_event_add_data(conference, event);
+			conference_event_add_data(conference, event);
 			
 			if (fnode->fh.params) {
 				switch_event_merge(event, conference->fnode->fh.params);
@@ -271,8 +271,8 @@ switch_status_t conference_file_play(conference_obj_t *conference, char *file, u
 		}
 
 		if (!bad_params && !zstr(position) && conference->channels == 2) {
-			fnode->al = conf_al_create(pool);
-			if (conf_al_parse_position(fnode->al, position) != SWITCH_STATUS_SUCCESS) {
+			fnode->al = conference_al_create(pool);
+			if (conference_al_parse_position(fnode->al, position) != SWITCH_STATUS_SUCCESS) {
 				switch_core_file_close(&fnode->fh);
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Position Data.\n");
 				fnode->al = NULL;
@@ -288,7 +288,7 @@ switch_status_t conference_file_play(conference_obj_t *conference, char *file, u
 	fnode->file = switch_core_strdup(fnode->pool, file);
 	
 	if (!conference->fnode || (async && !conference->async_fnode)) {
-		conf_video_fnode_check(fnode);
+		conference_video_fnode_check(fnode);
 	}
 
 	/* Queue the node */
