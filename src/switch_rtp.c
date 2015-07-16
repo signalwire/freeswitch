@@ -5674,12 +5674,12 @@ static switch_status_t process_rtcp_report(switch_rtp_t *rtp_session, rtcp_msg_t
 				for (i = 0; i < (int)msg->header.count && i < MAX_REPORT_BLOCKS ; i++) {
 					struct switch_rtcp_report_block *report = (struct switch_rtcp_report_block *) (msg->body + (sizeof(struct switch_rtcp_sr_head) + (i * sizeof(struct switch_rtcp_report_block))));
 					uint32_t old_avg = rtp_session->rtcp_frame.reports[i].loss_avg;
-
+					uint8_t percent_fraction = (uint8_t)report->fraction * 100 / 256 ;
 					if (!rtp_session->rtcp_frame.reports[i].loss_avg) {
-						rtp_session->rtcp_frame.reports[i].loss_avg = (uint8_t)report->fraction;
+						rtp_session->rtcp_frame.reports[i].loss_avg = (uint8_t)percent_fraction;
 					} else {
 						rtp_session->rtcp_frame.reports[i].loss_avg = (uint32_t)(((float)rtp_session->rtcp_frame.reports[i].loss_avg * .7) +
-																				 ((float)(uint8_t)report->fraction * .3));
+																				 ((float)(uint8_t)percent_fraction * .3));
 					}
 
 					if (!rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] && rtp_session->rtcp_frame.reports[i].loss_avg != old_avg) {
