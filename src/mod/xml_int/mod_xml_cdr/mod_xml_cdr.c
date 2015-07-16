@@ -46,6 +46,7 @@ static struct {
 	int url_count;
 	int url_index;
 	switch_thread_rwlock_t *log_path_lock;
+	switch_mutex_t *url_index_mutex;
 	char *base_log_dir;
 	char *base_err_log_dir;
 	char *log_dir;
@@ -260,6 +261,12 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 	/* try to post it to the web server */
 	if (globals.url_count) {
 		char *destUrl = NULL;
+		int g_url_index = -1;
+
+		switch_mutex_lock(globals.url_index_mutex);
+		g_url_index = globals.url_index;
+		switch_mutex_unlock(globals.url_index_mutex);
+
 		curl_handle = switch_curl_easy_init();
 
 		if (globals.encode == ENCODING_TEXTXML) {
@@ -347,10 +354,10 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 				switch_yield(globals.delay * 1000000);
 			}
 
-			if( strchr(globals.urls[globals.url_index], '?') != NULL ) {
+			if( strchr(globals.urls[g_url_index], '?') != NULL ) {
 				url_joiner = '&';
 			}
-			destUrl = switch_mprintf("%s%cuuid=%s%s", globals.urls[globals.url_index], url_joiner, a_prefix, switch_core_session_get_uuid(session));
+			destUrl = switch_mprintf("%s%cuuid=%s%s", globals.urls[g_url_index], url_joiner, a_prefix, switch_core_session_get_uuid(session));
 			switch_curl_easy_setopt(curl_handle, CURLOPT_URL, destUrl);
 
 			if (!strncasecmp(destUrl, "https", 5)) {
@@ -366,6 +373,9 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 				switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 2);
 			}
 
+			/* overrides default 300s timeout, could be usefull if the current web server is down to prevent long time waiting for nothing */
+			/* connection_timeout = retry_timeout  */
+			switch_curl_easy_setopt(curl_handle, CURLOPT_CONNECTTIMEOUT, !globals.delay ? 5 : (long)globals.delay);
 			switch_curl_easy_perform(curl_handle);
 			switch_curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &httpRes);
 			switch_safe_free(destUrl);
@@ -373,13 +383,18 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 				goto success;
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Got error [%ld] posting to web server [%s]\n",
-								  httpRes, globals.urls[globals.url_index]);
-				globals.url_index++;
+								  httpRes, globals.urls[g_url_index]);
+				g_url_index++;
 				switch_assert(globals.url_count <= MAX_URLS);
-				if (globals.url_index >= globals.url_count) {
-					globals.url_index = 0;
+				if (g_url_index >= globals.url_count) {
+					g_url_index = 0;
 				}
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Retry will be with url [%s]\n", globals.urls[globals.url_index]);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Retry will be with url [%s]\n", globals.urls[g_url_index]);
+				switch_mutex_lock(globals.url_index_mutex);
+				if (globals.url_index != g_url_index) {
+					globals.url_index = g_url_index;
+				}
+				switch_mutex_unlock(globals.url_index_mutex);
 			}
 		}
 		switch_curl_easy_cleanup(curl_handle);
@@ -487,6 +502,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load)
 	globals.auth_scheme = CURLAUTH_BASIC;
 
 	switch_thread_rwlock_create(&globals.log_path_lock, pool);
+	switch_mutex_init(&globals.url_index_mutex, SWITCH_MUTEX_NESTED, globals.pool);
 
 	/* parse the config */
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
