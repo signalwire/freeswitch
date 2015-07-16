@@ -43,7 +43,7 @@
 
 
 
-al_handle_t *create_al(switch_memory_pool_t *pool)
+al_handle_t *conf_al_create(switch_memory_pool_t *pool)
 {
 	al_handle_t *al;
 
@@ -54,22 +54,22 @@ al_handle_t *create_al(switch_memory_pool_t *pool)
 }
 
 #ifndef OPENAL_POSITIONING
-void gen_arc(conference_obj_t *conference, switch_stream_handle_t *stream)
+void conf_al_gen_arc(conference_obj_t *conference, switch_stream_handle_t *stream)
 {
 }
-void process_al(al_handle_t *al, void *data, switch_size_t datalen, int rate)
+void conf_al_process(al_handle_t *al, void *data, switch_size_t datalen, int rate)
 {
 }
 
 #else
-void gen_arc(conference_obj_t *conference, switch_stream_handle_t *stream)
+void conf_al_gen_arc(conference_obj_t *conference, switch_stream_handle_t *stream)
 {
 	float offset;
 	float pos;
 	float radius;
 	float x, z;
 	float div = 3.14159f / 180;
-	conference_member_t *member;
+	conf_member_t *member;
 	uint32_t count = 0;
 
 	if (!conference->count) {
@@ -78,14 +78,14 @@ void gen_arc(conference_obj_t *conference, switch_stream_handle_t *stream)
 
 	switch_mutex_lock(conference->member_mutex);
 	for (member = conference->members; member; member = member->next) {
-		if (member->channel && member_test_flag(member, MFLAG_CAN_SPEAK) && !member_test_flag(member, MFLAG_NO_POSITIONAL)) {
+		if (member->channel && conf_utils_member_test_flag(member, MFLAG_CAN_SPEAK) && !conf_utils_member_test_flag(member, MFLAG_NO_POSITIONAL)) {
 			count++;
 		}
 	}
 
 	if (count < 3) {
 		for (member = conference->members; member; member = member->next) {
-			if (member->channel && !member_test_flag(member, MFLAG_NO_POSITIONAL) && member->al) {
+			if (member->channel && !conf_utils_member_test_flag(member, MFLAG_NO_POSITIONAL) && member->al) {
 
 				member->al->pos_x = 0;
 				member->al->pos_y = 0;
@@ -112,14 +112,14 @@ void gen_arc(conference_obj_t *conference, switch_stream_handle_t *stream)
 	
 	for (member = conference->members; member; member = member->next) {
 
-		if (!member->channel || member_test_flag(member, MFLAG_NO_POSITIONAL) || !member_test_flag(member, MFLAG_CAN_SPEAK)) {
+		if (!member->channel || conf_utils_member_test_flag(member, MFLAG_NO_POSITIONAL) || !conf_utils_member_test_flag(member, MFLAG_CAN_SPEAK)) {
 			continue;
 		}
 
 		if (!member->al) {
-			member->al = create_al(member->pool);
+			member->al = conf_al_create(member->pool);
 		}
-		member_set_flag(member, MFLAG_POSITIONAL);
+		conf_utils_member_set_flag(member, MFLAG_POSITIONAL);
 
 		if (pos == 0) {
 			x = 0;
@@ -163,7 +163,7 @@ void gen_arc(conference_obj_t *conference, switch_stream_handle_t *stream)
 
 
 
-void process_al(al_handle_t *al, void *data, switch_size_t datalen, int rate)
+void conf_al_process(al_handle_t *al, void *data, switch_size_t datalen, int rate)
 {
 
 	if (rate != 48000) {
@@ -180,7 +180,7 @@ void process_al(al_handle_t *al, void *data, switch_size_t datalen, int rate)
 			0
 		};
 
-		switch_mutex_lock(mod_conference_globals.setup_mutex);
+		switch_mutex_lock(conf_globals.setup_mutex);
 		if ((al->device = alcLoopbackOpenDeviceSOFT(NULL))) {
 			const ALshort silence[16] = { 0 };
 			float orient[6] = { /*fwd:*/ 0., 0., -1., /*up:*/ 0., 1., 0. };
@@ -205,7 +205,7 @@ void process_al(al_handle_t *al, void *data, switch_size_t datalen, int rate)
 			alSourceQueueBuffers(al->source, 2, al->buffer_in);
 			alSourcePlay(al->source);
 		}
-		switch_mutex_unlock(mod_conference_globals.setup_mutex);
+		switch_mutex_unlock(conf_globals.setup_mutex);
 	}
 
 	if (al->device) {
@@ -237,42 +237,14 @@ void process_al(al_handle_t *al, void *data, switch_size_t datalen, int rate)
 }
 #endif
 
-void check_agc_levels(conference_member_t *member)
-{
-	int x = 0;
-
-	if (!member->avg_score) return;
-	
-	if ((int)member->avg_score < member->conference->agc_level - 100) {
-		member->agc_volume_in_level++;
-		switch_normalize_volume_granular(member->agc_volume_in_level);
-		x = 1;
-	} else if ((int)member->avg_score > member->conference->agc_level + 100) {
-		member->agc_volume_in_level--;
-		switch_normalize_volume_granular(member->agc_volume_in_level);
-		x = -1;
-	}
-
-	if (x) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG7,
-						  "AGC %s:%d diff:%d level:%d cur:%d avg:%d vol:%d %s\n", 
-						  member->conference->name,
-						  member->id, member->conference->agc_level - member->avg_score, member->conference->agc_level, 
-						  member->score, member->avg_score, member->agc_volume_in_level, x > 0 ? "+++" : "---");
-		
-		clear_avg(member);
-	}
-}
-
-
 #ifndef OPENAL_POSITIONING
-switch_status_t parse_position(al_handle_t *al, const char *data) 
+switch_status_t conf_al_parse_position(al_handle_t *al, const char *data) 
 {
 	return SWITCH_STATUS_FALSE;
 }
 
 #else 
-switch_status_t parse_position(al_handle_t *al, const char *data) 
+switch_status_t conf_al_parse_position(al_handle_t *al, const char *data) 
 {
 	char *args[3];
 	int num;
@@ -297,31 +269,12 @@ switch_status_t parse_position(al_handle_t *al, const char *data)
 }
 #endif
 
-#ifndef OPENAL_POSITIONING
-switch_status_t member_parse_position(conference_member_t *member, const char *data)
-{
-	return SWITCH_STATUS_FALSE;
-}
-#else
-switch_status_t member_parse_position(conference_member_t *member, const char *data)
-{
-	switch_status_t status = SWITCH_STATUS_FALSE;
-
-	if (member->al) {
-		status = parse_position(member->al, data);
-	}
-
-	return status;
-	
-}
-#endif
-
 #ifdef OPENAL_POSITIONING
-void close_al(al_handle_t *al)
+void conf_al_close(al_handle_t *al)
 {
 	if (!al) return;
 
-	switch_mutex_lock(mod_conference_globals.setup_mutex);	
+	switch_mutex_lock(conf_globals.setup_mutex);	
 	if (al->source) {
 		alDeleteSources(1, &al->source);
 		al->source = 0;
@@ -342,7 +295,7 @@ void close_al(al_handle_t *al)
 		alcCloseDevice(al->device);
 		al->device = NULL;
 	}
-	switch_mutex_unlock(mod_conference_globals.setup_mutex);
+	switch_mutex_unlock(conf_globals.setup_mutex);
 }
 #endif
 

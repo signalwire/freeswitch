@@ -41,7 +41,51 @@
  */
 #include <mod_conference.h>
 
-void set_mflags(const char *flags, member_flag_t *f)
+const char *conf_utils_combine_flag_var(switch_core_session_t *session, const char *var_name) 
+{
+	switch_event_header_t *hp;
+	switch_event_t *event, *cevent;
+	char *ret = NULL;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+
+	switch_core_get_variables(&event);
+	switch_channel_get_variables(channel, &cevent);
+	switch_event_merge(event, cevent);
+
+	
+	for (hp = event->headers; hp; hp = hp->next) {
+		char *var = hp->name;
+		char *val = hp->value;
+
+		if (!strcasecmp(var, var_name)) {
+			if (hp->idx) {
+				int i;
+				for (i = 0; i < hp->idx; i++) {
+					if (zstr(ret)) {
+						ret = switch_core_session_sprintf(session, "%s", hp->array[i]);
+					} else {
+						ret = switch_core_session_sprintf(session, "%s|%s", ret, hp->array[i]);
+					}
+				}
+			} else {
+				if (zstr(ret)) {
+					ret = switch_core_session_sprintf(session, "%s", val);
+				} else {
+					ret = switch_core_session_sprintf(session, "%s|%s", ret, val);
+				}
+			}
+		}
+	}
+	
+
+	switch_event_destroy(&event);
+	switch_event_destroy(&cevent);
+
+	return ret;
+
+}
+
+void conf_utils_set_mflags(const char *flags, member_flag_t *f)
 {
 	if (flags) {
 		char *dup = strdup(flags);
@@ -106,7 +150,7 @@ void set_mflags(const char *flags, member_flag_t *f)
 
 
 
-void set_cflags(const char *flags, conference_flag_t *f)
+void conf_utils_set_cflags(const char *flags, conference_flag_t *f)
 {
 	if (flags) {
 		char *dup = strdup(flags);
@@ -159,7 +203,7 @@ void set_cflags(const char *flags, conference_flag_t *f)
 }
 
 
-void clear_eflags(char *events, uint32_t *f)
+void conf_utils_clear_eflags(char *events, uint32_t *f)
 {
 	char buf[512] = "";
 	char *next = NULL;
@@ -236,7 +280,7 @@ void clear_eflags(char *events, uint32_t *f)
 }
 
 
-void merge_mflags(member_flag_t *a, member_flag_t *b)
+void conf_utils_merge_mflags(member_flag_t *a, member_flag_t *b)
 {
 	int x;
 
@@ -245,71 +289,71 @@ void merge_mflags(member_flag_t *a, member_flag_t *b)
 	}
 }
 
-void conference_set_flag(conference_obj_t *conference, conference_flag_t flag)
+void conf_utils_set_flag(conference_obj_t *conference, conference_flag_t flag)
 {
 	conference->flags[flag] = 1;
 }
-void conference_set_flag_locked(conference_obj_t *conference, conference_flag_t flag)
+void conf_utils_set_flag_locked(conference_obj_t *conference, conference_flag_t flag)
 {
 	switch_mutex_lock(conference->flag_mutex);
 	conference->flags[flag] = 1;
 	switch_mutex_unlock(conference->flag_mutex);
 }
-void conference_clear_flag(conference_obj_t *conference, conference_flag_t flag)
+void conf_utils_clear_flag(conference_obj_t *conference, conference_flag_t flag)
 {
 	conference->flags[flag] = 0;
 }
-void conference_clear_flag_locked(conference_obj_t *conference, conference_flag_t flag)
+void conf_utils_clear_flag_locked(conference_obj_t *conference, conference_flag_t flag)
 {
 	switch_mutex_lock(conference->flag_mutex);
 	conference->flags[flag] = 0;
 	switch_mutex_unlock(conference->flag_mutex);
 }
-switch_bool_t conference_test_flag(conference_obj_t *conference, conference_flag_t flag)
+switch_bool_t conf_utils_test_flag(conference_obj_t *conference, conference_flag_t flag)
 {
 	return !!conference->flags[flag];
 }
 
 #if 0
-void conference_set_mflag(conference_obj_t *conference, member_flag_t mflag)
+void conf_utils_conf_utils_set_mflag(conference_obj_t *conference, member_flag_t mflag)
 {
 	conference->mflags[mflag] = 1;
 }
 
-void conference_clear_mflag(conference_obj_t *conference, member_flag_t mflag)
+void conf_utils_clear_mflag(conference_obj_t *conference, member_flag_t mflag)
 {
 	conference->mflags[mflag] = 0;
 }
 
-switch_bool_t conference_test_mflag(conference_obj_t *conference, member_flag_t mflag)
+switch_bool_t conf_utils_test_mflag(conference_obj_t *conference, member_flag_t mflag)
 {
 	return !!conference->mflags[mflag];
 }
 #endif
 
-void member_set_flag(conference_member_t *member, member_flag_t flag)
+void conf_utils_member_set_flag(conf_member_t *member, member_flag_t flag)
 {
 	member->flags[flag] = 1;
 }
 
-void member_set_flag_locked(conference_member_t *member, member_flag_t flag)
+void conf_utils_member_set_flag_locked(conf_member_t *member, member_flag_t flag)
 {
 	switch_mutex_lock(member->flag_mutex);
 	member->flags[flag] = 1;
 	switch_mutex_unlock(member->flag_mutex);
 }
 
-void member_clear_flag(conference_member_t *member, member_flag_t flag)
+void conf_utils_member_clear_flag(conf_member_t *member, member_flag_t flag)
 {
 	member->flags[flag] = 0;
 }
-void member_clear_flag_locked(conference_member_t *member, member_flag_t flag)
+void conf_utils_member_clear_flag_locked(conf_member_t *member, member_flag_t flag)
 {
 	switch_mutex_lock(member->flag_mutex);
 	member->flags[flag] = 0;
 	switch_mutex_unlock(member->flag_mutex);
 }
-switch_bool_t member_test_flag(conference_member_t *member, member_flag_t flag)
+switch_bool_t conf_utils_member_test_flag(conf_member_t *member, member_flag_t flag)
 {
 	return !!member->flags[flag];
 }
