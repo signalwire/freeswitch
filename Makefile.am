@@ -121,15 +121,15 @@ CORE_CFLAGS += -I$(switch_builddir)/libs/tiff-4.0.2/libtiff -I$(switch_srcdir)/l
 
 APR_LIBS   = $(AM_LIBAPU_LIBS) $(AM_LIBAPR_LIBS)
 CORE_LIBS=
-if SYSTEM_APR
-CORE_LIBS += $(AM_LIBAPR_LINKLIBTOOL)
-else
-CORE_LIBS += libs/apr/libapr-1.la
-endif
 if SYSTEM_APRUTIL
 CORE_LIBS += $(AM_LIBAPU_LINKLIBTOOL)
 else
 CORE_LIBS +=  libs/apr-util/libaprutil-1.la
+endif
+if SYSTEM_APR
+CORE_LIBS += $(AM_LIBAPR_LINKLIBTOOL)
+else
+CORE_LIBS += libs/apr/libapr-1.la
 endif
 
 if ENABLE_SRTP
