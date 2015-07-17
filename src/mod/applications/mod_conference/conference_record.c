@@ -9,7 +9,7 @@
  * the License. You may obtain a copy of the License at
  * http://www.mozilla.org/MPL/
  *
- * Software distributed under the License is distributed on an "AS IS" basis, 
+ * Software distributed under the License is distributed on an "AS IS" basis,
  * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
  * for the specific language governing rights and limitations under the
  * License.
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  * Neal Horman <neal at wanlink dot com>
  * Bret McDanel <trixter at 0xdecafbad dot com>
@@ -115,27 +115,27 @@ switch_status_t conference_record_action(conference_obj_t *conference, char *pat
 	switch_assert(conference != NULL);
 	switch_mutex_lock(conference->member_mutex);
 	for (member = conference->members; member; member = member->next)
-	{
-		if (conference_utils_member_test_flag(member, MFLAG_NOCHANNEL) && (!path || !strcmp(path, member->rec_path)))
 		{
-			//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,	"Action: %d\n", action);
-			switch (action)
-			{
-				case REC_ACTION_STOP:
-						conference_utils_member_clear_flag_locked(member, MFLAG_RUNNING);
-						count++;
-						break;
-				case REC_ACTION_PAUSE:
-						conference_utils_member_set_flag_locked(member, MFLAG_PAUSE_RECORDING);
-						count = 1;
-						break;
-				case REC_ACTION_RESUME:
-						conference_utils_member_clear_flag_locked(member, MFLAG_PAUSE_RECORDING);
-						count = 1;
-						break;
-					}
+			if (conference_utils_member_test_flag(member, MFLAG_NOCHANNEL) && (!path || !strcmp(path, member->rec_path)))
+				{
+					//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,	"Action: %d\n", action);
+					switch (action)
+						{
+						case REC_ACTION_STOP:
+							conference_utils_member_clear_flag_locked(member, MFLAG_RUNNING);
+							count++;
+							break;
+						case REC_ACTION_PAUSE:
+							conference_utils_member_set_flag_locked(member, MFLAG_PAUSE_RECORDING);
+							count = 1;
+							break;
+						case REC_ACTION_RESUME:
+							conference_utils_member_clear_flag_locked(member, MFLAG_PAUSE_RECORDING);
+							count = 1;
+							break;
+						}
 				}
-			}
+		}
 	switch_mutex_unlock(conference->member_mutex);
 	return count;
 }
@@ -225,7 +225,7 @@ void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *thread, v
 		flags |= SWITCH_FILE_FLAG_VIDEO;
 		if (conference->canvas) {
 			char *orig_path = rec->path;
-			rec->path = switch_core_sprintf(rec->pool, "{channels=%d,samplerate=%d,vw=%d,vh=%d,fps=%0.2f}%s", 
+			rec->path = switch_core_sprintf(rec->pool, "{channels=%d,samplerate=%d,vw=%d,vh=%d,fps=%0.2f}%s",
 											conference->channels,
 											conference->rate,
 											conference->canvas->width,
@@ -277,7 +277,7 @@ void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *thread, v
 	switch_core_file_set_string(&member->rec->fh, SWITCH_AUDIO_COL_STR_ARTIST, "FreeSWITCH mod_conference Software Conference Module");
 
 	if (test_eflag(conference, EFLAG_RECORD) &&
-			switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+		switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_event_add_data(conference, event);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "start-recording");
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Path", rec->path);
@@ -325,7 +325,7 @@ void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *thread, v
 
 		if (len == 0) {
 			mux_used = (uint32_t) switch_buffer_inuse(member->mux_buffer);
-				
+
 			if (mux_used >= data_buf_len) {
 				goto again;
 			}
@@ -346,16 +346,16 @@ void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *thread, v
 		switch_core_timer_next(&timer);
 	}							/* Rinse ... Repeat */
 
-  end:
-	
+ end:
+
 	for(;;) {
 		switch_mutex_lock(member->audio_out_mutex);
 		rlen = (uint32_t) switch_buffer_read(member->mux_buffer, data_buf, data_buf_len);
 		switch_mutex_unlock(member->audio_out_mutex);
-		
+
 		if (rlen > 0) {
 			len = (switch_size_t) rlen / sizeof(int16_t)/ conference->channels;
-			switch_core_file_write(&member->rec->fh, data_buf, &len); 
+			switch_core_file_write(&member->rec->fh, data_buf, &len);
 		} else {
 			break;
 		}
@@ -382,9 +382,9 @@ void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *thread, v
 		conference_event_add_data(conference, event);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "stop-recording");
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Path", rec->path);
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Samples-Out", "%ld", (long) member->rec->fh.samples_out);  
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Samplerate", "%ld", (long) member->rec->fh.samplerate);  
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Milliseconds-Elapsed", "%ld", (long) member->rec->fh.samples_out / (member->rec->fh.samplerate / 1000));  
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Samples-Out", "%ld", (long) member->rec->fh.samples_out);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Samplerate", "%ld", (long) member->rec->fh.samplerate);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Milliseconds-Elapsed", "%ld", (long) member->rec->fh.samples_out / (member->rec->fh.samplerate / 1000));
 		switch_event_fire(&event);
 	}
 
@@ -419,5 +419,13 @@ void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *thread, v
 	return NULL;
 }
 
-
-
+/* For Emacs:
+ * Local Variables:
+ * mode:c
+ * indent-tabs-mode:t
+ * tab-width:4
+ * c-basic-offset:4
+ * End:
+ * For VIM:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet:
+ */

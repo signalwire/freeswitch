@@ -9,7 +9,7 @@
  * the License. You may obtain a copy of the License at
  * http://www.mozilla.org/MPL/
  *
- * Software distributed under the License is distributed on an "AS IS" basis, 
+ * Software distributed under the License is distributed on an "AS IS" basis,
  * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
  * for the specific language governing rights and limitations under the
  * License.
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  * Neal Horman <neal at wanlink dot com>
  * Bret McDanel <trixter at 0xdecafbad dot com>
@@ -49,7 +49,7 @@ switch_status_t conference_file_close(conference_obj_t *conference, conference_f
 
 	if (test_eflag(conference, EFLAG_PLAY_FILE_DONE) &&
 		switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
-		
+
 		conference_event_add_data(conference, event);
 
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "seconds", "%ld", (long) node->fh.samples_in / node->fh.native_rate);
@@ -62,7 +62,7 @@ switch_status_t conference_file_close(conference_obj_t *conference, conference_f
 
 		if (node->member_id) {
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "play-file-member-done");
-		
+
 			if ((member = conference_member_get(conference, node->member_id))) {
 				conference_member_add_event_data(member, event);
 				switch_thread_rwlock_unlock(member->rwlock);
@@ -81,7 +81,7 @@ switch_status_t conference_file_close(conference_obj_t *conference, conference_f
 		switch_event_fire(&event);
 	}
 
-#ifdef OPENAL_POSITIONING	
+#ifdef OPENAL_POSITIONING
 	if (node->al && node->al->device) {
 		conference_al_close(node->al);
 	}
@@ -227,7 +227,7 @@ switch_status_t conference_file_play(conference_obj_t *conference, char *file, u
 		/* positional requires mono input */
 		fnode->fh.channels = channels = 1;
 	}
-	
+
  retry:
 
 	flags = SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT;
@@ -245,11 +245,11 @@ switch_status_t conference_file_play(conference_obj_t *conference, char *file, u
 		if (test_eflag(conference, EFLAG_PLAY_FILE) &&
 			switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 			conference_event_add_data(conference, event);
-			
+
 			if (fnode->fh.params) {
 				switch_event_merge(event, conference->fnode->fh.params);
 			}
-			
+
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "play-file");
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "File", file);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Async", async ? "true" : "false");
@@ -286,7 +286,7 @@ switch_status_t conference_file_play(conference_obj_t *conference, char *file, u
 	fnode->pool = pool;
 	fnode->async = async;
 	fnode->file = switch_core_strdup(fnode->pool, file);
-	
+
 	if (!conference->fnode || (async && !conference->async_fnode)) {
 		conference_video_fnode_check(fnode);
 	}
@@ -319,7 +319,7 @@ switch_status_t conference_file_play(conference_obj_t *conference, char *file, u
 
 	switch_mutex_unlock(conference->mutex);
 
-  done:
+ done:
 
 	switch_safe_free(expanded);
 	switch_safe_free(dfile);
@@ -329,7 +329,7 @@ switch_status_t conference_file_play(conference_obj_t *conference, char *file, u
 
 /* Play a file */
 switch_status_t conference_file_local_play(conference_obj_t *conference, switch_core_session_t *session, char *path, uint32_t leadin, void *buf,
-												  uint32_t buflen)
+										   uint32_t buflen)
 {
 	uint32_t x = 0;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
@@ -385,8 +385,19 @@ switch_status_t conference_file_local_play(conference_obj_t *conference, switch_
 		switch_safe_free(dpath);
 	}
 
-  done:
+ done:
 	switch_safe_free(expanded);
 
 	return status;
 }
+
+/* For Emacs:
+ * Local Variables:
+ * mode:c
+ * indent-tabs-mode:t
+ * tab-width:4
+ * c-basic-offset:4
+ * End:
+ * For VIM:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet:
+ */

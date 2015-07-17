@@ -9,7 +9,7 @@
  * the License. You may obtain a copy of the License at
  * http://www.mozilla.org/MPL/
  *
- * Software distributed under the License is distributed on an "AS IS" basis, 
+ * Software distributed under the License is distributed on an "AS IS" basis,
  * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
  * for the specific language governing rights and limitations under the
  * License.
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  * Neal Horman <neal at wanlink dot com>
  * Bret McDanel <trixter at 0xdecafbad dot com>
@@ -44,7 +44,7 @@
 
 void conference_event_mod_channel_handler(const char *event_channel, cJSON *json, const char *key, switch_event_channel_id_t id)
 {
-	cJSON *data, *addobj = NULL; 
+	cJSON *data, *addobj = NULL;
 	const char *action = NULL;
 	char *value = NULL;
 	cJSON *jid = 0;
@@ -80,7 +80,7 @@ void conference_event_mod_channel_handler(const char *event_channel, cJSON *json
 						argv[i] = str->valuestring;
 					}
 				}
-			} else if (jvalue->type == cJSON_String) { 
+			} else if (jvalue->type == cJSON_String) {
 				value = jvalue->valuestring;
 				argv[argc++] = value;
 			}
@@ -94,20 +94,20 @@ void conference_event_mod_channel_handler(const char *event_channel, cJSON *json
 	}
 
 	SWITCH_STANDARD_STREAM(stream);
-	
-	if (!strcasecmp(action, "kick") || 
-		!strcasecmp(action, "mute") || 
-		!strcasecmp(action, "unmute") || 
+
+	if (!strcasecmp(action, "kick") ||
+		!strcasecmp(action, "mute") ||
+		!strcasecmp(action, "unmute") ||
 		!strcasecmp(action, "tmute") ||
-		!strcasecmp(action, "vmute") || 
-		!strcasecmp(action, "unvmute") || 
-		!strcasecmp(action, "tvmute")  
+		!strcasecmp(action, "vmute") ||
+		!strcasecmp(action, "unvmute") ||
+		!strcasecmp(action, "tvmute")
 		) {
 		exec = switch_mprintf("%s %s %d", conference_name, action, cid);
-	} else if (!strcasecmp(action, "volume_in") || 
-			   !strcasecmp(action, "volume_out") || 
-			   !strcasecmp(action, "vid-res-id") || 
-			   !strcasecmp(action, "vid-floor") || 
+	} else if (!strcasecmp(action, "volume_in") ||
+			   !strcasecmp(action, "volume_out") ||
+			   !strcasecmp(action, "vid-res-id") ||
+			   !strcasecmp(action, "vid-floor") ||
 			   !strcasecmp(action, "vid-layer") ||
 			   !strcasecmp(action, "vid-canvas") ||
 			   !strcasecmp(action, "vid-watching-canvas") ||
@@ -135,7 +135,7 @@ void conference_event_mod_channel_handler(const char *event_channel, cJSON *json
 				switch_ivr_session_transfer(member->session, argv[0], argv[1], argv[2]);
 				switch_thread_rwlock_unlock(member->rwlock);
 			}
-			switch_thread_rwlock_unlock(conference->rwlock); 
+			switch_thread_rwlock_unlock(conference->rwlock);
 		}
 		goto end;
 	} else if (!strcasecmp(action, "list-videoLayouts")) {
@@ -154,13 +154,13 @@ void conference_event_mod_channel_handler(const char *event_channel, cJSON *json
 			}
 
 			if (conference->layout_group_hash) {
-			  for (hi = switch_core_hash_first(conference->layout_group_hash); hi; hi = switch_core_hash_next(&hi)) {
-			    char *name;
-			    switch_core_hash_this(hi, &vvar, NULL, &val);
-			    name = switch_mprintf("group:%s", (char *)vvar);
-			    cJSON_AddItemToArray(array, cJSON_CreateString(name));
-			    free(name);
-			  }
+				for (hi = switch_core_hash_first(conference->layout_group_hash); hi; hi = switch_core_hash_next(&hi)) {
+					char *name;
+					switch_core_hash_this(hi, &vvar, NULL, &val);
+					name = switch_mprintf("group:%s", (char *)vvar);
+					cJSON_AddItemToArray(array, cJSON_CreateString(name));
+					free(name);
+				}
 			}
 
 			switch_mutex_unlock(conference_globals.setup_mutex);
@@ -180,7 +180,7 @@ void conference_event_mod_channel_handler(const char *event_channel, cJSON *json
 
 	cJSON_AddItemToObject(msg, "eventChannel", cJSON_CreateString(event_channel));
 	cJSON_AddItemToObject(jdata, "action", cJSON_CreateString("response"));
-	
+
 	if (addobj) {
 		cJSON_AddItemToObject(jdata, "conf-command", cJSON_CreateString(action));
 		cJSON_AddItemToObject(jdata, "response", cJSON_CreateString("OK"));
@@ -234,9 +234,9 @@ void conference_event_channel_handler(const char *event_channel, cJSON *json, co
 			*domain++ = '\0';
 		}
 	}
-	
+
 	if (!strcasecmp(action, "bootstrap")) {
-		if (!zstr(name) && (conference = conference_find(name, domain))) { 
+		if (!zstr(name) && (conference = conference_find(name, domain))) {
 			conference_desc = conference_cdr_json_render(conference, json);
 		} else {
 			conference_desc = cJSON_CreateObject();
@@ -251,7 +251,7 @@ void conference_event_channel_handler(const char *event_channel, cJSON *json, co
 	}
 
 	json_add_child_string(conference_desc, "action", "conferenceDescription");
-	
+
 	cJSON_AddItemToObject(reply, "data", conference_desc);
 
 	switch_safe_free(dup);
@@ -286,9 +286,9 @@ void conference_event_send_json(conference_obj_t *conference)
 
 	event = cJSON_CreateObject();
 
-	json_add_child_string(event, "eventChannel", event_channel);  
+	json_add_child_string(event, "eventChannel", event_channel);
 	cJSON_AddItemToObject(event, "data", conference_desc);
-	
+
 	switch_event_channel_broadcast(event_channel, &event, "mod_conference", conference_globals.event_channel_id);
 
 	switch_safe_free(dup_domain);
@@ -306,9 +306,9 @@ void conference_event_adv_la(conference_obj_t *conference, conference_member_t *
 	//if (member->video_flow == SWITCH_MEDIA_FLOW_SENDONLY) {
 	switch_channel_set_flag(member->channel, CF_VIDEO_REFRESH_REQ);
 	switch_core_media_gen_key_frame(member->session);
-		//}
+	//}
 
-	if (conference && conference->la && member->session && 
+	if (conference && conference->la && member->session &&
 		!switch_channel_test_flag(member->channel, CF_VIDEO_ONLY)) {
 		cJSON *msg, *data;
 		const char *uuid = switch_core_session_get_uuid(member->session);
@@ -329,16 +329,16 @@ void conference_event_adv_la(conference_obj_t *conference, conference_member_t *
 		cJSON_AddItemToObject(data, "role", cJSON_CreateString(conference_utils_member_test_flag(member, MFLAG_MOD) ? "moderator" : "participant"));
 		cJSON_AddItemToObject(data, "chatID", cJSON_CreateString(conference->chat_id));
 		cJSON_AddItemToObject(data, "canvasCount", cJSON_CreateNumber(conference->canvas_count));
-		
+
 		if (conference_utils_member_test_flag(member, MFLAG_SECOND_SCREEN)) {
 			cJSON_AddItemToObject(data, "secondScreen", cJSON_CreateTrue());
 		}
-		
+
 		if (conference_utils_member_test_flag(member, MFLAG_MOD)) {
 			cJSON_AddItemToObject(data, "modChannel", cJSON_CreateString(conference->mod_event_channel));
 		}
-		
-		switch_core_get_variables(&variables); 
+
+		switch_core_get_variables(&variables);
 		for (hp = variables->headers; hp; hp = hp->next) {
 			if (!strncasecmp(hp->name, "conference_verto_", 11)) {
 				char *var = hp->name + 11;
@@ -363,7 +363,7 @@ void conference_event_send_rfc(conference_obj_t *conference)
 	switch_event_t *event;
 	char *body;
 	char *name = NULL, *domain = NULL, *dup_domain = NULL;
-	
+
 	if (!conference_utils_test_flag(conference, CFLAG_RFC4579)) {
 		return;
 	}
@@ -425,7 +425,7 @@ void conference_event_chat_message_broadcast(conference_obj_t *conference, switc
 			const char *presence_id = switch_channel_get_variable(member->channel, "presence_id");
 			const char *chat_proto = switch_channel_get_variable(member->channel, "chat_proto");
 			switch_event_t *reply = NULL;
-			
+
 			if (presence_id && chat_proto) {
 				if (switch_event_get_header(processed, presence_id)) {
 					continue;
@@ -434,9 +434,9 @@ void conference_event_chat_message_broadcast(conference_obj_t *conference, switc
 				switch_event_add_header_string(reply, SWITCH_STACK_BOTTOM, "to", presence_id);
 				switch_event_add_header_string(reply, SWITCH_STACK_BOTTOM, "conference_name", conference->name);
 				switch_event_add_header_string(reply, SWITCH_STACK_BOTTOM, "conference_domain", conference->domain);
-				
+
 				switch_event_set_body(reply, switch_event_get_body(event));
-				
+
 				switch_core_chat_deliver(chat_proto, &reply);
 				switch_event_add_header_string(processed, SWITCH_STACK_BOTTOM, presence_id, "true");
 			}
@@ -469,7 +469,7 @@ void conference_event_call_setup_handler(switch_event_t *event)
 		if (conference_utils_test_flag(conference, CFLAG_RFC4579)) {
 			char *key = switch_mprintf("conference_%s_%s_%s_%s", conference->name, conference->domain, ext, ext_domain);
 			char *expanded = NULL, *ostr = dial_str;;
-			
+
 			if (!strcasecmp(action, "call")) {
 				if((conference->max_members > 0) && (conference->count >= conference->max_members)) {
 					// Conference member limit has been reached; do not proceed with setup request
@@ -509,7 +509,7 @@ void conference_event_call_setup_handler(switch_event_t *event)
 						switch_safe_free(expanded);
 					}
 				}
-				
+
 			} else if (!strcasecmp(action, "end")) {
 				if (switch_core_session_hupall_matching_var("conference_call_key", key, SWITCH_CAUSE_NORMAL_CLEARING)) {
 					conference_send_notify(conference, "SIP/2.0 200 OK\r\n", call_id, SWITCH_TRUE);
@@ -544,7 +544,7 @@ void conference_event_call_setup_handler(switch_event_t *event)
 			switch_event_fire(&event);
 		}
 	}
-	
+
 }
 
 void conference_data_event_handler(switch_event_t *event)
@@ -586,7 +586,7 @@ void conference_event_pres_handler(switch_event_t *event)
 	if (!(dup_to = strdup(to))) {
 		return;
 	}
-	
+
 
 	conference_name = dup_to + 5;
 
@@ -595,7 +595,7 @@ void conference_event_pres_handler(switch_event_t *event)
 	}
 
 	dup_conference_name = switch_mprintf("%q@%q", conference_name, domain_name);
-	
+
 
 	if ((conference = conference_find(conference_name, NULL)) || (conference = conference_find(dup_conference_name, NULL))) {
 		if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
@@ -642,7 +642,7 @@ switch_status_t chat_send(switch_event_t *message_event)
 	conference_obj_t *conference = NULL;
 	switch_stream_handle_t stream = { 0 };
 	const char *proto;
-	const char *from; 
+	const char *from;
 	const char *to;
 	//const char *subject;
 	const char *body;
@@ -671,7 +671,7 @@ switch_status_t chat_send(switch_event_t *message_event)
 	}
 
 	if (!(conference = conference_find(name, NULL))) {
-		switch_core_chat_send_args(proto, CONF_CHAT_PROTO, to, hint && strchr(hint, '/') ? hint : from, "", 
+		switch_core_chat_send_args(proto, CONF_CHAT_PROTO, to, hint && strchr(hint, '/') ? hint : from, "",
 								   "Conference not active.", NULL, NULL, SWITCH_FALSE);
 		return SWITCH_STATUS_FALSE;
 	}
@@ -702,3 +702,13 @@ switch_status_t chat_send(switch_event_t *message_event)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+/* For Emacs:
+ * Local Variables:
+ * mode:c
+ * indent-tabs-mode:t
+ * tab-width:4
+ * c-basic-offset:4
+ * End:
+ * For VIM:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet:
+ */

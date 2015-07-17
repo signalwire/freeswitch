@@ -9,7 +9,7 @@
  * the License. You may obtain a copy of the License at
  * http://www.mozilla.org/MPL/
  *
- * Software distributed under the License is distributed on an "AS IS" basis, 
+ * Software distributed under the License is distributed on an "AS IS" basis,
  * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
  * for the specific language governing rights and limitations under the
  * License.
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  * Neal Horman <neal at wanlink dot com>
  * Bret McDanel <trixter at 0xdecafbad dot com>
@@ -41,7 +41,7 @@
  */
 #include <mod_conference.h>
 
-const char *conference_utils_combine_flag_var(switch_core_session_t *session, const char *var_name) 
+const char *conference_utils_combine_flag_var(switch_core_session_t *session, const char *var_name)
 {
 	switch_event_header_t *hp;
 	switch_event_t *event, *cevent;
@@ -52,7 +52,7 @@ const char *conference_utils_combine_flag_var(switch_core_session_t *session, co
 	switch_channel_get_variables(channel, &cevent);
 	switch_event_merge(event, cevent);
 
-	
+
 	for (hp = event->headers; hp; hp = hp->next) {
 		char *var = hp->name;
 		char *val = hp->value;
@@ -76,7 +76,7 @@ const char *conference_utils_combine_flag_var(switch_core_session_t *session, co
 			}
 		}
 	}
-	
+
 
 	switch_event_destroy(&event);
 	switch_event_destroy(&cevent);
@@ -196,7 +196,7 @@ void conference_utils_set_cflags(const char *flags, conference_flag_t *f)
 			} else if (!strcasecmp(argv[i], "video-muxing-personal-canvas")) {
 				f[CFLAG_PERSONAL_CANVAS] = 1;
 			}
-		}		
+		}
 
 		free(dup);
 	}
@@ -358,3 +358,13 @@ switch_bool_t conference_utils_member_test_flag(conference_member_t *member, mem
 	return !!member->flags[flag];
 }
 
+/* For Emacs:
+ * Local Variables:
+ * mode:c
+ * indent-tabs-mode:t
+ * tab-width:4
+ * c-basic-offset:4
+ * End:
+ * For VIM:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet:
+ */

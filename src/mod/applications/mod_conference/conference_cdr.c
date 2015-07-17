@@ -9,7 +9,7 @@
  * the License. You may obtain a copy of the License at
  * http://www.mozilla.org/MPL/
  *
- * Software distributed under the License is distributed on an "AS IS" basis, 
+ * Software distributed under the License is distributed on an "AS IS" basis,
  * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
  * for the specific language governing rights and limitations under the
  * License.
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  * Neal Horman <neal at wanlink dot com>
  * Bret McDanel <trixter at 0xdecafbad dot com>
@@ -78,7 +78,7 @@ char *conference_cdr_rfc4579_render(conference_obj_t *conference, switch_event_t
 	if (!(xml = switch_xml_new("conference-info"))) {
 		abort();
 	}
-	
+
 	switch_mutex_lock(conference->mutex);
 	switch_snprintf(tmp, sizeof(tmp), "%u", conference->doc_version);
 	conference->doc_version++;
@@ -98,12 +98,12 @@ char *conference_cdr_rfc4579_render(conference_obj_t *conference, switch_event_t
 			}
 		}
 	}
-		
+
 	switch_xml_set_attr_d(xml, "version", tmpp);
 
 	switch_xml_set_attr_d(xml, "state", "full");
 	switch_xml_set_attr_d(xml, "xmlns", "urn:ietf:params:xml:ns:conference-info");
-	
+
 
 	uri = switch_mprintf("sip:%s@%s", name, domain);
 	switch_xml_set_attr_d(xml, "entity", uri);
@@ -111,7 +111,7 @@ char *conference_cdr_rfc4579_render(conference_obj_t *conference, switch_event_t
 	if (!(x_tag = switch_xml_add_child_d(xml, "conference-description", off++))) {
 		abort();
 	}
-	
+
 	if (!(x_tag1 = switch_xml_add_child_d(x_tag, "display-text", off1++))) {
 		abort();
 	}
@@ -140,7 +140,7 @@ char *conference_cdr_rfc4579_render(conference_obj_t *conference, switch_event_t
 		abort();
 	}
 	switch_snprintf(tmp, sizeof(tmp), "%u", conference->count);
-	switch_xml_set_txt_d(x_tag1, tmpp);	
+	switch_xml_set_txt_d(x_tag1, tmpp);
 
 #if 0
 	if (conference->count == 0) {
@@ -151,20 +151,20 @@ char *conference_cdr_rfc4579_render(conference_obj_t *conference, switch_event_t
 	if (!(x_tag1 = switch_xml_add_child_d(x_tag, "active", off1++))) {
 		abort();
 	}
-	switch_xml_set_txt_d(x_tag1, "true");	
-	
+	switch_xml_set_txt_d(x_tag1, "true");
+
 	off1 = off2 = off3 = off4 = 0;
 
 	if (!(x_tag = switch_xml_add_child_d(xml, "users", off++))) {
 		abort();
 	}
-	
+
 	switch_mutex_lock(conference->member_mutex);
-	
+
 	for (np = conference->cdr_nodes; np; np = np->next) {
 		char *user_uri = NULL;
 		switch_channel_t *channel = NULL;
-		
+
 		if (!np->cp || (np->member && !np->member->session) || np->leave_time) { /* for now we'll remove participants when the leave */
 			continue;
 		}
@@ -184,12 +184,12 @@ char *conference_cdr_rfc4579_render(conference_obj_t *conference, switch_event_t
 				user_uri = strdup(uri);
 			}
 		}
-		
+
 		if (!user_uri) {
 			user_uri = switch_mprintf("sip:%s@%s", np->cp->caller_id_number, domain);
 		}
-		
-		
+
+
 		switch_xml_set_attr_d(x_tag1, "state", "full");
 		switch_xml_set_attr_d(x_tag1, "entity", user_uri);
 
@@ -197,13 +197,13 @@ char *conference_cdr_rfc4579_render(conference_obj_t *conference, switch_event_t
 			abort();
 		}
 		switch_xml_set_txt_d(x_tag2, np->cp->caller_id_name);
-		
+
 
 		if (!(x_tag2 = switch_xml_add_child_d(x_tag1, "endpoint", off2++))) {
 			abort();
 		}
 		switch_xml_set_attr_d(x_tag2, "entity", user_uri);
-		
+
 		if (!(x_tag3 = switch_xml_add_child_d(x_tag2, "display-text", off3++))) {
 			abort();
 		}
@@ -228,7 +228,7 @@ char *conference_cdr_rfc4579_render(conference_obj_t *conference, switch_event_t
 			char *p;
 
 			switch_time_exp_lt(&tm, (switch_time_t) conference->start_time * 1000000);
-			switch_strftime_nocheck(tmp, &retsize, sizeof(tmp), fmt, &tm);			
+			switch_strftime_nocheck(tmp, &retsize, sizeof(tmp), fmt, &tm);
 			p = end_of_p(tmpp) -1;
 			snprintf(p, 4, ":00");
 
@@ -237,13 +237,13 @@ char *conference_cdr_rfc4579_render(conference_obj_t *conference, switch_event_t
 		}
 
 
-		
 
-		/** ok so this is in the rfc but not the xsd 
-		if (!(x_tag3 = switch_xml_add_child_d(x_tag2, "joining-method", off3++))) {
+
+		/** ok so this is in the rfc but not the xsd
+			if (!(x_tag3 = switch_xml_add_child_d(x_tag2, "joining-method", off3++))) {
 			abort();
-		}
-		switch_xml_set_txt_d(x_tag3, np->cp->direction == SWITCH_CALL_DIRECTION_INBOUND ? "dialed-in" : "dialed-out");
+			}
+			switch_xml_set_txt_d(x_tag3, np->cp->direction == SWITCH_CALL_DIRECTION_INBOUND ? "dialed-in" : "dialed-out");
 		*/
 
 		if (np->member) {
@@ -256,7 +256,7 @@ char *conference_cdr_rfc4579_render(conference_obj_t *conference, switch_event_t
 			if (!(x_tag3 = switch_xml_add_child_d(x_tag2, "media", off3++))) {
 				abort();
 			}
-			
+
 			snprintf(tmp, sizeof(tmp), "%ua", np->member->id);
 			switch_xml_set_attr_d(x_tag3, "id", tmpp);
 
@@ -272,20 +272,20 @@ char *conference_cdr_rfc4579_render(conference_obj_t *conference, switch_event_t
 				}
 				switch_xml_set_txt_d(x_tag4, var);
 			}
-			
+
 			if (!(x_tag4 = switch_xml_add_child_d(x_tag3, "status", off4++))) {
 				abort();
 			}
 			switch_xml_set_txt_d(x_tag4, conference_cdr_audio_flow(np->member));
-			
-			
+
+
 			if (switch_channel_test_flag(channel, CF_VIDEO)) {
 				off4 = 0;
 
 				if (!(x_tag3 = switch_xml_add_child_d(x_tag2, "media", off3++))) {
 					abort();
 				}
-				
+
 				snprintf(tmp, sizeof(tmp), "%uv", np->member->id);
 				switch_xml_set_attr_d(x_tag3, "id", tmpp);
 
@@ -301,15 +301,15 @@ char *conference_cdr_rfc4579_render(conference_obj_t *conference, switch_event_t
 					}
 					switch_xml_set_txt_d(x_tag4, var);
 				}
-				
+
 				if (!(x_tag4 = switch_xml_add_child_d(x_tag3, "status", off4++))) {
 					abort();
 				}
 				switch_xml_set_txt_d(x_tag4, switch_channel_test_flag(channel, CF_HOLD) ? "sendonly" : "sendrecv");
-				
+
 			}
 		}
-		
+
 		switch_safe_free(user_uri);
 	}
 
@@ -319,9 +319,9 @@ char *conference_cdr_rfc4579_render(conference_obj_t *conference, switch_event_t
 
 	xml_text = switch_xml_toxml(xml, SWITCH_TRUE);
 	switch_xml_free(xml);
-	
+
 	switch_safe_free(dup_domain);
-	switch_safe_free(uri);	
+	switch_safe_free(uri);
 
 	return xml_text;
 }
@@ -338,7 +338,7 @@ cJSON *conference_cdr_json_render(conference_obj_t *conference, cJSON *req)
 	cJSON *json = cJSON_CreateObject(), *jusers = NULL, *jold_users = NULL, *juser = NULL, *jvars = NULL;
 
 	switch_assert(json);
-	
+
 	switch_mutex_lock(conference->mutex);
 	switch_snprintf(tmp, sizeof(tmp), "%u", conference->doc_version);
 	conference->doc_version++;
@@ -354,20 +354,20 @@ cJSON *conference_cdr_json_render(conference_obj_t *conference, cJSON *req)
 			domain = "cluecon.com";
 		}
 	}
-	
+
 
 	uri = switch_mprintf("%s@%s", name, domain);
-	json_add_child_string(json, "entity", uri);  
-	json_add_child_string(json, "conferenceDescription", conference->desc ? conference->desc : "FreeSWITCH Conference");  
-	json_add_child_string(json, "conferenceState", "active");  
+	json_add_child_string(json, "entity", uri);
+	json_add_child_string(json, "conferenceDescription", conference->desc ? conference->desc : "FreeSWITCH Conference");
+	json_add_child_string(json, "conferenceState", "active");
 	switch_snprintf(tmp, sizeof(tmp), "%u", conference->count);
-	json_add_child_string(json, "userCount", tmp);  
-	
+	json_add_child_string(json, "userCount", tmp);
+
 	jusers = json_add_child_array(json, "users");
 	jold_users = json_add_child_array(json, "oldUsers");
-	
+
 	switch_mutex_lock(conference->member_mutex);
-	
+
 	for (np = conference->cdr_nodes; np; np = np->next) {
 		char *user_uri = NULL;
 		switch_channel_t *channel = NULL;
@@ -375,7 +375,7 @@ cJSON *conference_cdr_json_render(conference_obj_t *conference, cJSON *req)
 		switch_size_t retsize;
 		const char *fmt = "%Y-%m-%dT%H:%M:%S%z";
 		char *p;
-		
+
 		if (np->record_path || !np->cp) {
 			continue;
 		}
@@ -397,25 +397,25 @@ cJSON *conference_cdr_json_render(conference_obj_t *conference, cJSON *req)
 				user_uri = strdup(uri);
 			}
 		}
-		
+
 		if (np->cp) {
 
 			if (!user_uri) {
 				user_uri = switch_mprintf("%s@%s", np->cp->caller_id_number, domain);
 			}
-		
+
 			json_add_child_string(juser, "entity", user_uri);
 			json_add_child_string(juser, "displayText", np->cp->caller_id_name);
 		}
 
 		//if (np->record_path) {
-			//json_add_child_string(juser, "recordingPATH", np->record_path);
+		//json_add_child_string(juser, "recordingPATH", np->record_path);
 		//}
 
 		json_add_child_string(juser, "status", np->leave_time ? "disconnected" : "connected");
 
 		switch_time_exp_lt(&tm, (switch_time_t) conference->start_time * 1000000);
-		switch_strftime_nocheck(tmp, &retsize, sizeof(tmp), fmt, &tm);			
+		switch_strftime_nocheck(tmp, &retsize, sizeof(tmp), fmt, &tm);
 		p = end_of_p(tmpp) -1;
 		snprintf(p, 4, ":00");
 
@@ -448,7 +448,7 @@ cJSON *conference_cdr_json_render(conference_obj_t *conference, cJSON *req)
 					json_add_child_string(jvars, hp->name, hp->value);
 				}
 			}
-			
+
 			switch_json_add_presence_data_cols(var_event, jvars, "PD-");
 
 			switch_event_destroy(&var_event);
@@ -456,15 +456,15 @@ cJSON *conference_cdr_json_render(conference_obj_t *conference, cJSON *req)
 			if ((var = switch_channel_get_variable(channel, "rtp_use_ssrc"))) {
 				json_add_child_string(juser, "rtpAudioSSRC", var);
 			}
-			
+
 			json_add_child_string(juser, "rtpAudioDirection", conference_cdr_audio_flow(np->member));
-			
-			
+
+
 			if (switch_channel_test_flag(channel, CF_VIDEO)) {
 				if ((var = switch_channel_get_variable(channel, "rtp_use_video_ssrc"))) {
 					json_add_child_string(juser, "rtpVideoSSRC", var);
 				}
-				
+
 				json_add_child_string(juser, "rtpVideoDirection", switch_channel_test_flag(channel, CF_HOLD) ? "sendonly" : "sendrecv");
 			}
 		}
@@ -474,14 +474,14 @@ cJSON *conference_cdr_json_render(conference_obj_t *conference, cJSON *req)
 		}
 
 		cJSON_AddItemToArray(np->leave_time ? jold_users : jusers, juser);
-	
+
 		switch_safe_free(user_uri);
 	}
 
 	switch_mutex_unlock(conference->member_mutex);
 
 	switch_safe_free(dup_domain);
-	switch_safe_free(uri);	
+	switch_safe_free(uri);
 
 	return json;
 }
@@ -525,9 +525,9 @@ void conference_cdr_add(conference_member_t *member)
 	member->cdr_node->cp = switch_caller_profile_dup(member->conference->pool, cp);
 
 	member->cdr_node->id = member->id;
-	
 
-	
+
+
 }
 
 void conference_cdr_rejected(conference_obj_t *conference, switch_channel_t *channel, cdr_reject_reason_t reason)
@@ -570,38 +570,38 @@ void conference_cdr_render(conference_obj_t *conference)
 	if (!(x_conference = switch_xml_add_child_d(cdr, "conference", cdr_off++))) {
 		abort();
 	}
-	
+
 	if (!(x_ptr = switch_xml_add_child_d(x_conference, "name", conference_off++))) {
 		abort();
 	}
 	switch_xml_set_txt_d(x_ptr, conference->name);
-	
+
 	if (!(x_ptr = switch_xml_add_child_d(x_conference, "hostname", conference_off++))) {
 		abort();
 	}
 	switch_xml_set_txt_d(x_ptr, switch_core_get_hostname());
-	
+
 	if (!(x_ptr = switch_xml_add_child_d(x_conference, "rate", conference_off++))) {
 		abort();
 	}
 	switch_snprintf(str, sizeof(str), "%d", conference->rate);
 	switch_xml_set_txt_d(x_ptr, str);
-	
+
 	if (!(x_ptr = switch_xml_add_child_d(x_conference, "interval", conference_off++))) {
 		abort();
 	}
 	switch_snprintf(str, sizeof(str), "%d", conference->interval);
 	switch_xml_set_txt_d(x_ptr, str);
-	
-	
+
+
 	if (!(x_ptr = switch_xml_add_child_d(x_conference, "start_time", conference_off++))) {
 		abort();
 	}
 	switch_xml_set_attr_d(x_ptr, "type", "UNIX-epoch");
 	switch_snprintf(str, sizeof(str), "%ld", (long)conference->start_time);
 	switch_xml_set_txt_d(x_ptr, str);
-	
-	
+
+
 	if (!(x_ptr = switch_xml_add_child_d(x_conference, "end_time", conference_off++))) {
 		abort();
 	}
@@ -626,7 +626,7 @@ void conference_cdr_render(conference_obj_t *conference)
 		}
 
 		switch_xml_set_attr_d(x_member, "type", np->cp ? "caller" : "recording_node");
-		
+
 		if (!(x_ptr = switch_xml_add_child_d(x_member, "join_time", member_off++))) {
 			abort();
 		}
@@ -693,7 +693,7 @@ void conference_cdr_render(conference_obj_t *conference)
 			switch_xml_set_txt_d(x_ptr, "conference_locked");
 		} else if (rp->reason == CDRR_MAXMEMBERS) {
 			switch_xml_set_txt_d(x_ptr, "max_members_reached");
-		} else 	if (rp->reason == CDRR_PIN) {
+		} else	if (rp->reason == CDRR_PIN) {
 			switch_xml_set_txt_d(x_ptr, "invalid_pin");
 		}
 
@@ -711,51 +711,62 @@ void conference_cdr_render(conference_obj_t *conference)
 			switch_ivr_set_xml_profile_data(x_cp, rp->cp, 0);
 		}
 	}
-	
+
 	xml_text = switch_xml_toxml(cdr, SWITCH_TRUE);
 
-	
+
 	if (!zstr(conference->log_dir)) {
 		path = switch_mprintf("%s%s%s.cdr.xml", conference->log_dir, SWITCH_PATH_SEPARATOR, conference->uuid_str);
-	
+
 
 
 #ifdef _MSC_VER
 		if ((fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR)) > -1) {
 #else
-		if ((fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)) > -1) {
+			if ((fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)) > -1) {
 #endif
-			int wrote;
-			wrote = write(fd, xml_text, (unsigned) strlen(xml_text));
-			wrote++;
-			close(fd);
-			fd = -1;
-		} else {
-			char ebuf[512] = { 0 };
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error writing [%s][%s]\n",
-					path, switch_strerror_r(errno, ebuf, sizeof(ebuf)));
-		}
-
-		if (conference->cdr_event_mode != CDRE_NONE) {
-			switch_event_t *event;
-
-			if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_CDR) == SWITCH_STATUS_SUCCESS)
-		//	if (switch_event_create(&event, SWITCH_EVENT_CDR) == SWITCH_STATUS_SUCCESS)
-			{
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CDR-Source", CONF_EVENT_CDR);
-				if (conference->cdr_event_mode == CDRE_AS_CONTENT) {
-					switch_event_set_body(event, xml_text);
-				} else {
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CDR-Path", path);
-				}
-				switch_event_fire(&event);
+				int wrote;
+				wrote = write(fd, xml_text, (unsigned) strlen(xml_text));
+				wrote++;
+				close(fd);
+				fd = -1;
 			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not create CDR event");
+				char ebuf[512] = { 0 };
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error writing [%s][%s]\n",
+								  path, switch_strerror_r(errno, ebuf, sizeof(ebuf)));
+			}
+
+			if (conference->cdr_event_mode != CDRE_NONE) {
+				switch_event_t *event;
+
+				if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_CDR) == SWITCH_STATUS_SUCCESS)
+					//	if (switch_event_create(&event, SWITCH_EVENT_CDR) == SWITCH_STATUS_SUCCESS)
+					{
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CDR-Source", CONF_EVENT_CDR);
+						if (conference->cdr_event_mode == CDRE_AS_CONTENT) {
+							switch_event_set_body(event, xml_text);
+						} else {
+							switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CDR-Path", path);
+						}
+						switch_event_fire(&event);
+					} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not create CDR event");
+				}
 			}
 		}
+
+		switch_safe_free(path);
+		switch_safe_free(xml_text);
+		switch_xml_free(cdr);
 	}
 
-   	switch_safe_free(path);
-	switch_safe_free(xml_text);
-	switch_xml_free(cdr);
-}
+	/* For Emacs:
+	 * Local Variables:
+	 * mode:c
+	 * indent-tabs-mode:t
+	 * tab-width:4
+	 * c-basic-offset:4
+	 * End:
+	 * For VIM:
+	 * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet:
+	 */

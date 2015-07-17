@@ -9,7 +9,7 @@
  * the License. You may obtain a copy of the License at
  * http://www.mozilla.org/MPL/
  *
- * Software distributed under the License is distributed on an "AS IS" basis, 
+ * Software distributed under the License is distributed on an "AS IS" basis,
  * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
  * for the specific language governing rights and limitations under the
  * License.
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  * Neal Horman <neal at wanlink dot com>
  * Bret McDanel <trixter at 0xdecafbad dot com>
@@ -95,7 +95,7 @@ void conference_al_gen_arc(conference_obj_t *conference, switch_stream_handle_t 
 				if (stream) {
 					stream->write_function(stream, "Member %d (%s) 0.0:0.0:0.0\n", member->id, switch_channel_get_name(member->channel));
 				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Member %d (%s) 0.0:0.0:0.0\n", 
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Member %d (%s) 0.0:0.0:0.0\n",
 									  member->id, switch_channel_get_name(member->channel));
 				}
 			}
@@ -109,7 +109,7 @@ void conference_al_gen_arc(conference_obj_t *conference, switch_stream_handle_t 
 	radius = 1.0f;
 
 	pos = -90.0f;
-	
+
 	for (member = conference->members; member; member = member->next) {
 
 		if (!member->channel || conference_utils_member_test_flag(member, MFLAG_NO_POSITIONAL) || !conference_utils_member_test_flag(member, MFLAG_CAN_SPEAK)) {
@@ -146,13 +146,13 @@ void conference_al_gen_arc(conference_obj_t *conference, switch_stream_handle_t 
 		if (stream) {
 			stream->write_function(stream, "Member %d (%s) %0.2f:0.0:%0.2f\n", member->id, switch_channel_get_name(member->channel), x, z);
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Member %d (%s) %0.2f:0.0:%0.2f\n", 
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Member %d (%s) %0.2f:0.0:%0.2f\n",
 							  member->id, switch_channel_get_name(member->channel), x, z);
 		}
 
 		pos += offset;
 	}
-		
+
  end:
 
 	switch_mutex_unlock(conference->member_mutex);
@@ -184,16 +184,16 @@ void conference_al_process(al_handle_t *al, void *data, switch_size_t datalen, i
 		if ((al->device = alcLoopbackOpenDeviceSOFT(NULL))) {
 			const ALshort silence[16] = { 0 };
 			float orient[6] = { /*fwd:*/ 0., 0., -1., /*up:*/ 0., 1., 0. };
-			
+
 			al->context = alcCreateContext(al->device, contextAttr);
 			alcSetThreadContext(al->context);
-			
+
 			/* listener at origin, facing down -z (ears at 0.0m height) */
 			alListener3f( AL_POSITION, 0. ,0, 0. );
 			alListener3f( AL_VELOCITY, 0., 0., 0. );
 			alListenerfv( AL_ORIENTATION, orient );
 
-			
+
 			alGenSources(1, &al->source);
 			alSourcef( al->source, AL_PITCH, 1.);
 			alSourcef( al->source, AL_GAIN, 1.);
@@ -210,17 +210,17 @@ void conference_al_process(al_handle_t *al, void *data, switch_size_t datalen, i
 
 	if (al->device) {
 		ALint processed = 0, state = 0;
-		
+
 		//alcSetThreadContext(al->context);
 		alGetSourcei(al->source, AL_SOURCE_STATE, &state);
 		alGetSourcei(al->source, AL_BUFFERS_PROCESSED, &processed);
-				
+
 		if (al->setpos) {
 			al->setpos = 0;
 			alSource3f(al->source, AL_POSITION, al->pos_x, al->pos_y, al->pos_z);
 			//alSource3f(al->source, AL_VELOCITY, .01, 0., 0.);
 		}
-		
+
 		if (processed > 0) {
 			ALuint bufid;
 			alSourceUnqueueBuffers(al->source, 1, &bufid);
@@ -231,29 +231,29 @@ void conference_al_process(al_handle_t *al, void *data, switch_size_t datalen, i
 		if (state != AL_PLAYING) {
 			alSourcePlay(al->source);
 		}
-		
+
 		alcRenderSamplesSOFT(al->device, data, datalen / 2);
 	}
 }
 #endif
 
 #ifndef OPENAL_POSITIONING
-switch_status_t conference_al_parse_position(al_handle_t *al, const char *data) 
+switch_status_t conference_al_parse_position(al_handle_t *al, const char *data)
 {
 	return SWITCH_STATUS_FALSE;
 }
 
-#else 
-switch_status_t conference_al_parse_position(al_handle_t *al, const char *data) 
+#else
+switch_status_t conference_al_parse_position(al_handle_t *al, const char *data)
 {
 	char *args[3];
 	int num;
 	char *dup;
-	
+
 
 	dup = strdup((char *)data);
 	switch_assert(dup);
-			
+
 	if ((num = switch_split(dup, ':', args)) != 3) {
 		return SWITCH_STATUS_FALSE;
 	}
@@ -274,7 +274,7 @@ void conference_al_close(al_handle_t *al)
 {
 	if (!al) return;
 
-	switch_mutex_lock(conference_globals.setup_mutex);	
+	switch_mutex_lock(conference_globals.setup_mutex);
 	if (al->source) {
 		alDeleteSources(1, &al->source);
 		al->source = 0;
@@ -299,3 +299,13 @@ void conference_al_close(al_handle_t *al)
 }
 #endif
 
+/* For Emacs:
+ * Local Variables:
+ * mode:c
+ * indent-tabs-mode:t
+ * tab-width:4
+ * c-basic-offset:4
+ * End:
+ * For VIM:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet:
+ */
