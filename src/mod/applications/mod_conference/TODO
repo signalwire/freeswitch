@@ -1,0 +1,7 @@
+runtime in one file, header(with all structures), apps, api commands, utilities
+
+Currently mod_conference can compile with 'time make -j' in:
+real    0m9.709s
+user    0m9.040s
+sys     0m0.568s
+
