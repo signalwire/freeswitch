@@ -404,10 +404,12 @@ typedef struct mcu_layer_geometry_s {
 	int x;
 	int y;
 	int scale;
+	int hscale;
 	int floor;
 	int flooronly;
 	int fileonly;
 	int overlap;
+	int zoom;
 	char *res_id;
 	char *audio_position;
 } mcu_layer_geometry_t;

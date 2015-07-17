@@ -12,6 +12,49 @@
 	<image x="0" y="90" scale="180"/>
 	<image x="180" y="90" scale="180"/>
       </layout>
+      <layout name="2x1-zoom" auto-3d-position="true">
+	<image x="0" y="0" scale="180" hscale="360" zoom="true"/>
+	<image x="180" y="0" scale="180" hscale="360" zoom="true"/>
+      </layout>
+      <layout name="3x1-zoom" auto-3d-position="true">
+	<image x="0" y="0" scale="120" hscale="360" zoom="true"/>
+	<image x="120" y="0" scale="120" hscale="360" zoom="true"/>
+	<image x="240" y="0" scale="120" hscale="360" zoom="true"/>
+      </layout>
+      <layout name="5-grid-zoom" auto-3d-position="true">
+	<image x="0" y="0" scale="180"/>
+	<image x="180" y="0" scale="180"/>
+	<image x="0" y="180" scale="120" hscale="180" zoom="true"/>
+	<image x="120" y="180" scale="120" hscale="180" zoom="true"/>
+	<image x="240" y="180" scale="120" hscale="180" zoom="true"/>
+      </layout>
+      <layout name="3x2-zoom" auto-3d-position="true">
+	<image x="0" y="0" scale="120" hscale="180" zoom="true"/>
+	<image x="120" y="0" scale="120" hscale="180" zoom="true"/>
+	<image x="240" y="0" scale="120" hscale="180" zoom="true"/>
+	<image x="0" y="180" scale="120" hscale="180" zoom="true"/>
+	<image x="120" y="180" scale="120" hscale="180" zoom="true"/>
+	<image x="240" y="180" scale="120" hscale="180" zoom="true"/>
+      </layout>
+      <layout name="7-grid-zoom" auto-3d-position="true">
+	<image x="0" y="0" scale="120" hscale="180" zoom="true"/>
+	<image x="120" y="0" scale="120" hscale="180" zoom="true"/>
+	<image x="240" y="0" scale="120" hscale="180" zoom="true"/>
+	<image x="0" y="180" scale="90" hscale="180" zoom="true"/>
+	<image x="90" y="180" scale="90" hscale="180" zoom="true"/>
+	<image x="180" y="180" scale="90" hscale="180" zoom="true"/>
+	<image x="270" y="180" scale="90" hscale="180" zoom="true"/>
+      </layout>
+      <layout name="4x2-zoom" auto-3d-position="true">
+	<image x="0" y="0" scale="90" hscale="180" zoom="true"/>
+	<image x="90" y="0" scale="90" hscale="180" zoom="true"/>
+	<image x="180" y="0" scale="90" hscale="180" zoom="true"/>
+	<image x="270" y="0" scale="90" hscale="180" zoom="true"/>
+	<image x="0" y="180" scale="90" hscale="180" zoom="true"/>
+	<image x="90" y="180" scale="90" hscale="180" zoom="true"/>
+	<image x="180" y="180" scale="90" hscale="180" zoom="true"/>
+	<image x="270" y="180" scale="90" hscale="180" zoom="true"/>
+      </layout>
       <layout name="1x1+2x1" auto-3d-position="true">
 	<image x="90" y="0" scale="180"/>
 	<image x="0" y="180" scale="180"/>
@@ -319,6 +362,17 @@
 	<layout>5x5</layout>
 	<layout>6x6</layout>
 	<layout>8x8</layout>
+      </group>
+      <group name="grid-zoom">
+	<layout>1x1</layout>
+	<layout>2x1-zoom</layout>
+	<layout>3x1-zoom</layout>
+	<layout>2x2</layout>
+	<layout>5-grid-zoom</layout>
+	<layout>3x2-zoom</layout>
+	<layout>7-grid-zoom</layout>
+	<layout>4x2-zoom</layout>
+	<layout>3x3</layout>
       </group>
       <group name="1up_top_left_plus">
 	<layout>1up_top_left+5</layout>

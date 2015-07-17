@@ -129,7 +129,7 @@ void conference_video_parse_layouts(conference_obj_t *conference, int WIDTH, int
 
 				for (x_image = switch_xml_child(x_layout, "image"); x_image; x_image = x_image->next) {
 					const char *res_id = NULL, *audio_position = NULL;
-					int x = -1, y = -1, scale = -1, floor = 0, flooronly = 0, fileonly = 0, overlap = 0;
+					int x = -1, y = -1, scale = -1, hscale = -1, floor = 0, flooronly = 0, fileonly = 0, overlap = 0, zoom = 0;
 
 					if ((val = switch_xml_attr(x_image, "x"))) {
 						x = atoi(val);
@@ -141,6 +141,14 @@ void conference_video_parse_layouts(conference_obj_t *conference, int WIDTH, int
 
 					if ((val = switch_xml_attr(x_image, "scale"))) {
 						scale = atoi(val);
+					}
+
+					if ((val = switch_xml_attr(x_image, "hscale"))) {
+						hscale = atoi(val);
+					}
+
+					if ((val = switch_xml_attr(x_image, "zoom"))) {
+						zoom = switch_true(val);
 					}
 
 					if ((val = switch_xml_attr(x_image, "floor"))) {
@@ -173,10 +181,15 @@ void conference_video_parse_layouts(conference_obj_t *conference, int WIDTH, int
 						continue;
 					}
 
+					if (hscale == -1) {
+						hscale = scale;
+					}
 
 					vlayout->images[vlayout->layers].x = x;
 					vlayout->images[vlayout->layers].y = y;
 					vlayout->images[vlayout->layers].scale = scale;
+					vlayout->images[vlayout->layers].hscale = hscale;
+					vlayout->images[vlayout->layers].zoom = zoom;
 					vlayout->images[vlayout->layers].floor = floor;
 					vlayout->images[vlayout->layers].flooronly = flooronly;
 					vlayout->images[vlayout->layers].fileonly = fileonly;
@@ -191,7 +204,7 @@ void conference_video_parse_layouts(conference_obj_t *conference, int WIDTH, int
 							int x_pos = WIDTH * x / VIDEO_LAYOUT_SCALE;
 							int y_pos = HEIGHT * y / VIDEO_LAYOUT_SCALE;
 							int width = WIDTH * scale / VIDEO_LAYOUT_SCALE;
-							int height = HEIGHT * scale / VIDEO_LAYOUT_SCALE;
+							int height = HEIGHT * hscale / VIDEO_LAYOUT_SCALE;
 							int center_x = x_pos + width / 2;
 							int center_y = y_pos + height / 2;
 							int half_x = WIDTH / 2;
@@ -352,10 +365,34 @@ void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, 
 		int y_pos = layer->y_pos;
 
 		img_w = layer->screen_w = IMG->d_w * layer->geometry.scale / VIDEO_LAYOUT_SCALE;
-		img_h = layer->screen_h = IMG->d_h * layer->geometry.scale / VIDEO_LAYOUT_SCALE;
+		img_h = layer->screen_h = IMG->d_h * layer->geometry.hscale / VIDEO_LAYOUT_SCALE;
 
 		screen_aspect = (double) layer->screen_w / layer->screen_h;
 		img_aspect = (double) img->d_w / img->d_h;
+
+		if (layer->geometry.zoom) {
+			if (screen_aspect < img_aspect) {
+				int cropsize = 0;
+				double scale = 1;
+				if (img->d_h != layer->screen_h) {
+					scale = (double)layer->screen_h / img->d_h;
+				}
+				cropsize = ((img->d_w )-((double)layer->screen_w/scale)) / 2;
+
+				switch_img_set_rect(img, cropsize, 0, layer->screen_w/scale, layer->screen_h/scale);
+				img_aspect = (double) img->d_w / img->d_h;
+			} else if (screen_aspect > img_aspect) {
+				int cropsize = 0;
+				double scale = 1;
+				if (img->d_w != layer->screen_w) {
+					scale = (double)layer->screen_w / img->d_w;
+				}
+				cropsize = ((img->d_h )-((double)layer->screen_h/scale)) / 2;
+
+				switch_img_set_rect(img, 0, cropsize, layer->screen_w/scale, layer->screen_h/scale);
+				img_aspect = (double) img->d_w / img->d_h;
+			}
+		}
 
 		if (freeze) {
 			switch_img_free(&layer->img);
@@ -659,8 +696,11 @@ void conference_video_layer_set_banner(conference_member_t *member, mcu_layer_t 
 		}
 	}
 
-	font_size = (double)(font_scale / 100.0f) * layer->screen_h;
-
+	if (layer->screen_h < layer->screen_w) {
+		font_size = (double)(font_scale / 100.0f) * layer->screen_h;
+	} else {
+		font_size = (double)(font_scale / 100.0f) * layer->screen_w;
+	}
 
 	switch_color_set_rgb(&fgcolor, fg);
 	switch_color_set_rgb(&bgcolor, bg);
@@ -832,14 +872,19 @@ void conference_video_init_canvas_layers(conference_obj_t *conference, mcu_canva
 		mcu_layer_t *layer = &canvas->layers[i];
 		layer->geometry.x = vlayout->images[i].x;
 		layer->geometry.y = vlayout->images[i].y;
+		layer->geometry.hscale = vlayout->images[i].scale;
+		if (vlayout->images[i].hscale) {
+			layer->geometry.hscale = vlayout->images[i].hscale;
+		}
 		layer->geometry.scale = vlayout->images[i].scale;
+		layer->geometry.zoom = vlayout->images[i].zoom;
 		layer->geometry.floor = vlayout->images[i].floor;
 		layer->geometry.overlap = vlayout->images[i].overlap;
 		layer->idx = i;
 		layer->refresh = 1;
 
 		layer->screen_w = canvas->img->d_w * layer->geometry.scale / VIDEO_LAYOUT_SCALE;
-		layer->screen_h = canvas->img->d_h * layer->geometry.scale / VIDEO_LAYOUT_SCALE;
+		layer->screen_h = canvas->img->d_h * layer->geometry.hscale / VIDEO_LAYOUT_SCALE;
 
 		// if (layer->screen_w % 2) layer->screen_w++; // round to even
 		// if (layer->screen_h % 2) layer->screen_h++; // round to even
