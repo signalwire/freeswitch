@@ -410,6 +410,7 @@ typedef struct mcu_layer_geometry_s {
 	int fileonly;
 	int overlap;
 	int zoom;
+	int border;
 	char *res_id;
 	char *audio_position;
 } mcu_layer_geometry_t;
@@ -476,6 +477,7 @@ typedef struct mcu_canvas_s {
 	int send_keyframe;
 	int play_file;
 	switch_rgb_color_t bgcolor;
+	switch_rgb_color_t border_color;
 	switch_rgb_color_t letterbox_bgcolor;
 	switch_mutex_t *mutex;
 	switch_timer_t timer;
@@ -539,6 +541,7 @@ typedef struct conference_obj {
 	char *video_layout_name;
 	char *video_layout_group;
 	char *video_canvas_bgcolor;
+	char *video_border_color;
 	char *video_super_canvas_bgcolor;
 	char *video_letterbox_bgcolor;
 	char *no_video_avatar;
@@ -551,6 +554,7 @@ typedef struct conference_obj {
 	uint32_t terminate_on_silence;
 	uint32_t max_members;
 	uint32_t doc_version;
+	uint32_t video_border_size;
 	char *maxmember_sound;
 	uint32_t announce_count;
 	char *pin;

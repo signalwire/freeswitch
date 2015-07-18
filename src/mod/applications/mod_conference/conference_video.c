@@ -112,7 +112,8 @@ void conference_video_parse_layouts(conference_obj_t *conference, int WIDTH, int
 				video_layout_t *vlayout;
 				const char *val = NULL, *name = NULL;
 				switch_bool_t auto_3d = SWITCH_FALSE;
-
+				int border = 0;
+				
 				if ((val = switch_xml_attr(x_layout, "name"))) {
 					name = val;
 				}
@@ -123,6 +124,12 @@ void conference_video_parse_layouts(conference_obj_t *conference, int WIDTH, int
 				}
 
 				auto_3d = switch_true(switch_xml_attr(x_layout, "auto-3d-position"));
+
+				if ((val = switch_xml_attr(x_layout, "border"))) {
+					border = atoi(val);
+					if (border < 0) border = 0;
+					if (border > 50) border = 50;
+				}
 
 				vlayout = switch_core_alloc(conference->pool, sizeof(*vlayout));
 				vlayout->name = switch_core_strdup(conference->pool, name);
@@ -174,7 +181,13 @@ void conference_video_parse_layouts(conference_obj_t *conference, int WIDTH, int
 					if ((val = switch_xml_attr(x_image, "audio-position"))) {
 						audio_position = val;
 					}
+					
+					if ((val = switch_xml_attr(x_image, "border"))) {
+						border = atoi(val);
 
+						if (border < 0) border = 0;
+						if (border > 50) border = 50;
+					}
 
 					if (x < 0 || y < 0 || scale < 0 || !name) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "invalid image\n");
@@ -184,7 +197,10 @@ void conference_video_parse_layouts(conference_obj_t *conference, int WIDTH, int
 					if (hscale == -1) {
 						hscale = scale;
 					}
-
+					
+					if (!border) border = conference->video_border_size;
+					
+					vlayout->images[vlayout->layers].border = border;
 					vlayout->images[vlayout->layers].x = x;
 					vlayout->images[vlayout->layers].y = y;
 					vlayout->images[vlayout->layers].scale = scale;
@@ -415,10 +431,10 @@ void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, 
 		if (!layer->img) {
 			layer->img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, img_w, img_h, 1);
 		}
-
+		
 		if (layer->banner_img && !layer->banner_patched) {
-			switch_img_fill(layer->canvas->img, layer->x_pos, layer->y_pos, layer->screen_w, layer->screen_h, &layer->canvas->letterbox_bgcolor);
-			switch_img_patch(IMG, layer->banner_img, layer->x_pos, layer->y_pos + (layer->screen_h - layer->banner_img->d_h));
+			switch_img_fill(layer->canvas->img, layer->x_pos + layer->geometry.border, layer->y_pos + layer->geometry.border, layer->screen_w, layer->screen_h, &layer->canvas->letterbox_bgcolor);
+			switch_img_patch(IMG, layer->banner_img, layer->x_pos + layer->geometry.border, layer->y_pos + (layer->screen_h - layer->banner_img->d_h) + layer->geometry.border);
 
 			if (!freeze) {
 				switch_img_set_rect(layer->img, 0, 0, layer->img->d_w, layer->img->d_h - layer->banner_img->d_h);
@@ -428,6 +444,13 @@ void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, 
 		}
 
 		switch_assert(layer->img);
+
+		if (layer->geometry.border) {
+			switch_img_fill(IMG, x_pos, y_pos, img_w, img_h, &layer->canvas->border_color);
+		}
+		
+		img_w -= (layer->geometry.border * 2);
+		img_h -= (layer->geometry.border * 2);
 
 		if (switch_img_scale(img, &layer->img, img_w, img_h) == SWITCH_STATUS_SUCCESS) {
 			if (layer->bugged && layer->member_id > -1) {
@@ -440,21 +463,23 @@ void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, 
 				}
 			}
 
-			switch_img_patch(IMG, layer->img, x_pos, y_pos);
+			switch_img_patch(IMG, layer->img, x_pos + layer->geometry.border, y_pos + layer->geometry.border);
 		}
 
 		if (layer->logo_img) {
-			int ew = layer->screen_w, eh = layer->screen_h - (layer->banner_img ? layer->banner_img->d_h : 0);
+			int ew = layer->screen_w - (layer->geometry.border * 2), eh = layer->screen_h - (layer->banner_img ? layer->banner_img->d_h : 0) - (layer->geometry.border * 2);
 			int ex = 0, ey = 0;
 
 			switch_img_fit(&layer->logo_img, ew, eh);
 			switch_img_find_position(layer->logo_pos, ew, eh, layer->logo_img->d_w, layer->logo_img->d_h, &ex, &ey);
-			switch_img_patch(IMG, layer->logo_img, layer->x_pos + ex, layer->y_pos + ey);
+			switch_img_patch(IMG, layer->logo_img, layer->x_pos + ex + layer->geometry.border, layer->y_pos + ey + layer->geometry.border);
 			if (layer->logo_text_img) {
 				int tx = 0, ty = 0;
+
+				switch_img_fit(&layer->logo_text_img, (ew / 2) + 1, (eh / 2) + 1);
 				switch_img_find_position(POS_LEFT_BOT,
 										 layer->logo_img->d_w, layer->logo_img->d_h, layer->logo_text_img->d_w, layer->logo_text_img->d_h, &tx, &ty);
-				switch_img_patch(IMG, layer->logo_text_img, layer->x_pos + ex + tx, layer->y_pos + ey + ty);
+				switch_img_patch(IMG, layer->logo_text_img, layer->x_pos + ex + tx + layer->geometry.border, layer->y_pos + ey + ty + layer->geometry.border);
 			}
 
 		}
@@ -475,6 +500,11 @@ void conference_video_set_canvas_bgcolor(mcu_canvas_t *canvas, char *color)
 void conference_video_set_canvas_letterbox_bgcolor(mcu_canvas_t *canvas, char *color)
 {
 	switch_color_set_rgb(&canvas->letterbox_bgcolor, color);
+}
+
+void conference_video_set_canvas_border_color(mcu_canvas_t *canvas, char *color)
+{
+	switch_color_set_rgb(&canvas->border_color, color);
 }
 
 void conference_video_check_used_layers(mcu_canvas_t *canvas)
@@ -878,11 +908,13 @@ void conference_video_init_canvas_layers(conference_obj_t *conference, mcu_canva
 		}
 		layer->geometry.scale = vlayout->images[i].scale;
 		layer->geometry.zoom = vlayout->images[i].zoom;
+		layer->geometry.border = vlayout->images[i].border;
 		layer->geometry.floor = vlayout->images[i].floor;
 		layer->geometry.overlap = vlayout->images[i].overlap;
 		layer->idx = i;
 		layer->refresh = 1;
 
+																		
 		layer->screen_w = canvas->img->d_w * layer->geometry.scale / VIDEO_LAYOUT_SCALE;
 		layer->screen_h = canvas->img->d_h * layer->geometry.hscale / VIDEO_LAYOUT_SCALE;
 
@@ -975,6 +1007,7 @@ switch_status_t conference_video_init_canvas(conference_obj_t *conference, video
 	switch_mutex_lock(canvas->mutex);
 	conference_video_set_canvas_bgcolor(canvas, conference->video_canvas_bgcolor);
 	conference_video_set_canvas_letterbox_bgcolor(canvas, conference->video_letterbox_bgcolor);
+	conference_video_set_canvas_border_color(canvas, conference->video_border_color);
 	conference_video_init_canvas_layers(conference, canvas, vlayout);
 	switch_mutex_unlock(canvas->mutex);
 

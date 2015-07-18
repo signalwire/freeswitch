@@ -2380,6 +2380,8 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 	char *video_layout_group = NULL;
 	char *video_canvas_size = NULL;
 	char *video_canvas_bgcolor = NULL;
+	char *video_border_color = NULL;
+	int video_border_size = 0;
 	char *video_super_canvas_bgcolor = NULL;
 	char *video_letterbox_bgcolor = NULL;
 	char *video_codec_bandwidth = NULL;
@@ -2545,7 +2547,11 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 			} else if (!strcasecmp(var, "video-super-canvas-show-all-layers") && !zstr(val)) {
 				video_super_canvas_show_all_layers = atoi(val);
 			} else if (!strcasecmp(var, "video-canvas-bgcolor") && !zstr(val)) {
-				video_canvas_bgcolor= val;
+				video_canvas_bgcolor = val;
+			} else if (!strcasecmp(var, "video-border-color") && !zstr(val)) {
+				video_border_color = val;
+			} else if (!strcasecmp(var, "video-border-size") && !zstr(val)) {
+				video_border_size = atoi(val);
 			} else if (!strcasecmp(var, "video-super-canvas-bgcolor") && !zstr(val)) {
 				video_super_canvas_bgcolor= val;
 			} else if (!strcasecmp(var, "video-letterbox-bgcolor") && !zstr(val)) {
@@ -2783,6 +2789,11 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 			canvas_h = CONFERENCE_CANVAS_DEFAULT_HIGHT;
 		}
 
+		if (video_border_size) {
+			if (video_border_size < 0) video_border_size = 0;
+			if (video_border_size > 50) video_border_size = 50;
+		}
+		conference->video_border_size = video_border_size;
 
 		conference_video_parse_layouts(conference, canvas_w, canvas_h);
 
@@ -2790,6 +2801,10 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 			video_canvas_bgcolor = "#333333";
 		}
 
+		if (!video_border_color) {
+			video_border_color = "#000000";
+		}
+		
 		if (!video_super_canvas_bgcolor) {
 			video_super_canvas_bgcolor = "#068df3";
 		}
@@ -2802,7 +2817,9 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 			conference->no_video_avatar = switch_core_strdup(conference->pool, no_video_avatar);
 		}
 
+		
 		conference->video_canvas_bgcolor = switch_core_strdup(conference->pool, video_canvas_bgcolor);
+		conference->video_border_color = switch_core_strdup(conference->pool, video_border_color);
 		conference->video_super_canvas_bgcolor = switch_core_strdup(conference->pool, video_super_canvas_bgcolor);
 		conference->video_letterbox_bgcolor = switch_core_strdup(conference->pool, video_letterbox_bgcolor);
 
