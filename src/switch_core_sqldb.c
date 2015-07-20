@@ -2246,10 +2246,14 @@ static void core_event_handler(switch_event_t *event)
 			const char *manager = switch_event_get_header(event, "task-sql_manager");
 
 			if (id) {
-				new_sql() = switch_mprintf("insert into tasks values(%q,'%q','%q',%q, '%q')",
+				new_sql() = switch_mprintf("insert into tasks (task_id, task_desc, task_group, task_runtime, task_sql_manager, hostname) "
+										   "values(%q,'%q','%q',%q,%q,'%q')",
 										   id,
 										   switch_event_get_header_nil(event, "task-desc"),
-										   switch_event_get_header_nil(event, "task-group"), manager ? manager : "0", switch_core_get_hostname()
+										   switch_event_get_header_nil(event, "task-group"),
+										   switch_event_get_header_nil(event, "task-runtime"),
+										   manager ? manager : "0",
+										   switch_core_get_hostname()
 										   );
 			}
 		}
@@ -2265,10 +2269,14 @@ static void core_event_handler(switch_event_t *event)
 			const char *manager = switch_event_get_header(event, "task-sql_manager");
 
 			if (id) {
-				new_sql() = switch_mprintf("update tasks set task_desc='%q',task_group='%q', task_sql_manager=%q where task_id=%q and hostname='%q'",
+				new_sql() = switch_mprintf("update tasks set task_desc='%q',task_group='%q', task_runtime=%q, task_sql_manager=%q where task_id=%q and hostname='%q'",
 										   switch_event_get_header_nil(event, "task-desc"),
-										   switch_event_get_header_nil(event, "task-group"), manager ? manager : "0", id,
-										   switch_core_get_hostname());
+										   switch_event_get_header_nil(event, "task-group"),
+										   switch_event_get_header_nil(event, "task-runtime"),
+										   manager ? manager : "0",
+										   id,
+										   switch_core_get_hostname()
+										   );
 			}
 		}
 		break;
@@ -2738,8 +2746,9 @@ static char create_tasks_sql[] =
 	"   task_id             INTEGER,\n"
 	"   task_desc           VARCHAR(4096),\n"
 	"   task_group          VARCHAR(1024),\n"
+	"   task_runtime        BIGINT,\n"
 	"   task_sql_manager    INTEGER,\n"
-	"   hostname VARCHAR(256)\n"
+	"   hostname            VARCHAR(256)\n"
 	");\n";
 
 static char create_nat_sql[] =
@@ -3442,7 +3451,8 @@ switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_
 				free(tmp);
 			}
 			switch_cache_db_test_reactive(sql_manager.dbh, "select ikey from interfaces", "DROP TABLE interfaces", create_interfaces_sql);
-			switch_cache_db_test_reactive(sql_manager.dbh, "select hostname from tasks", "DROP TABLE tasks", create_tasks_sql);
+			switch_cache_db_test_reactive(sql_manager.dbh, "select task_id, task_desc, task_group, task_runtime, task_sql_manager, hostname from tasks",
+										  "DROP TABLE tasks", create_tasks_sql);
 
 
 			switch(sql_manager.dbh->type) {
