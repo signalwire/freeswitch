@@ -1712,7 +1712,6 @@ static switch_status_t av_file_write(switch_file_handle_t *handle, void *data, s
 			}
 		}
 
-		break;
 	}
 
 
