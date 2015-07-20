@@ -1,3 +1,4 @@
+AUTOMAKE_OPTIONS = foreign
 FSLD = $(top_builddir)/libfreeswitch.la $(top_builddir)/libs/apr/libapr-1.la $(top_builddir)/libs/apr-util/libaprutil-1.la
 
 TESTS = 
@@ -22,7 +23,7 @@ switch_hash_LDADD = $(FSLD)
 switch_hash_LDFLAGS = $(SWITCH_AM_LDFLAGS) -ltap
 
 else
-check:
+check: error
 error:
 	$(error You must install libtap-dev to build these unit tests)
 endif
