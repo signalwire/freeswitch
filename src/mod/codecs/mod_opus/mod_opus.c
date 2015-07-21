@@ -602,6 +602,74 @@ static switch_status_t switch_opus_decode(switch_codec_t *codec,
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static switch_status_t switch_opus_encode_repacketize(switch_codec_t *codec,
+										  switch_codec_t *other_codec,
+										  void *decoded_data,
+										  uint32_t decoded_data_len,
+										  uint32_t decoded_rate, void *encoded_data, uint32_t *encoded_data_len, uint32_t *encoded_rate,
+										  unsigned int *flag)
+{
+	struct opus_context *context = codec->private_info;
+	int len = (int) *encoded_data_len;
+	OpusRepacketizer *rp = opus_repacketizer_create();
+	int16_t *dec_ptr_buf = decoded_data;
+	/*work inside the available buffer to avoid other buffer allocations. *encoded_data_len will be SWITCH_RECOMMENDED_BUFFER_SIZE */
+	unsigned char *enc_ptr_buf =  (unsigned char *)encoded_data + (len / 2); 
+	int nb_frames = codec->implementation->microseconds_per_packet / 20000 ; /* requested ptime: 20 ms * nb_frames */
+	int i, bytes = 0;
+	opus_int32 ret = 0;
+	opus_int32 total_len = 0;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+
+	if (!context) {
+		switch_goto_status(SWITCH_STATUS_FALSE, end);
+	}
+	opus_repacketizer_init(rp);
+	for (i = 0; i < nb_frames; i++) {
+		dec_ptr_buf = (int16_t *)decoded_data + i * (decoded_data_len / 2 / nb_frames);
+		bytes = opus_encode(context->encoder_object, (opus_int16 *) dec_ptr_buf, context->enc_frame_size / nb_frames, enc_ptr_buf, len);
+		if (bytes < 0) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Encoder Error: %s Decoded Datalen %u Codec NumberChans %u" \
+			"Len %u DecodedDate %p EncodedData %p ContextEncoderObject %p enc_frame_size: %d\n",opus_strerror(bytes),decoded_data_len,codec->implementation->number_of_channels,len,
+			(void *) decoded_data,(void *) encoded_data,(void *) context->encoder_object,context->enc_frame_size);
+			switch_goto_status(SWITCH_STATUS_GENERR, end);
+		}
+
+		/* enc_ptr_buf : Opus API manual:  "The application must ensure this pointer remains valid until the next call to opus_repacketizer_init() or opus_repacketizer_destroy()." */
+		ret = opus_repacketizer_cat(rp, enc_ptr_buf, bytes);
+		if (ret != OPUS_OK) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,"Opus encoder: error while repacketizing (cat) : %s !\n",opus_strerror(ret));
+			switch_goto_status(SWITCH_STATUS_GENERR, end);
+		} 
+
+		enc_ptr_buf += bytes;
+		total_len += bytes;
+	}
+	/* this will never happen, unless there is a huge and unsupported number of frames */
+	if (total_len + opus_repacketizer_get_nb_frames(rp) > len / 2) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,"Opus encoder: error while repacketizing: not enough buffer space\n");
+		switch_goto_status(SWITCH_STATUS_GENERR, end);
+	}
+
+	ret = opus_repacketizer_out(rp, encoded_data, total_len+opus_repacketizer_get_nb_frames(rp));
+	if (globals.debug) {
+		int samplerate = context->enc_frame_size * 1000 / (codec->implementation->microseconds_per_packet / 1000);
+		switch_opus_info(encoded_data, ret, samplerate, "encode_repacketize");
+	}
+	if (ret <= 0) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,"Opus encoder: error while repacketizing (out) : %s !\n",opus_strerror(ret));
+		switch_goto_status(SWITCH_STATUS_GENERR, end);
+	}
+
+	*encoded_data_len = (uint32_t) ret;
+
+end:
+	if (rp) {
+		opus_repacketizer_destroy(rp);
+	}
+	return status;
+}
+
 static switch_status_t opus_load_config(switch_bool_t reload)
 {
 	char *cf = "opus.conf";
@@ -917,6 +985,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_opus_load)
 											 switch_opus_destroy);	/* deinitalize a codec handle using this implementation */
 		codec_interface->implementations->codec_control = switch_opus_control;
 		if (x == 1){ /*20 ms * 3  = 60 ms */
+			int nb_frames;
 			settings.stereo = 0;
 			dft_fmtp = gen_fmtp(&settings, pool);
 			switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
@@ -928,7 +997,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_opus_load)
 												 bits,	/* bits transferred per second */
 												 mss * 3,	/* number of microseconds per frame */
 												 samples * 3,	/* number of samples per frame */
-												 bytes * 2 * 3,	/* number of bytes per frame decompressed */
+												 bytes * 3,	/* number of bytes per frame decompressed */
 												 0,	/* number of bytes per frame compressed */
 												 1,/* number of channels represented */
 												 1,	/* number of frames per network packet */
@@ -937,8 +1006,35 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_opus_load)
 												 switch_opus_decode,	/* function to decode encoded data into raw data */
 												 switch_opus_destroy);	/* deinitalize a codec handle using this implementation */
 			codec_interface->implementations->codec_control = switch_opus_control;
+
+			for (nb_frames = 4; nb_frames <= 6; nb_frames++) {
+				/*20 ms * nb_frames  = 80 ms , 100 ms , 120 ms */
+				settings.stereo = 0;
+				dft_fmtp = gen_fmtp(&settings, pool);
+				switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
+													 116,	/* the IANA code number */
+													 "opus",/* the IANA code name */
+													 dft_fmtp,	/* default fmtp to send (can be overridden by the init function) */
+													 48000,	/* samples transferred per second */
+													 rate,	/* actual samples transferred per second */
+													 bits,	/* bits transferred per second */
+													 mss * nb_frames,	/* number of microseconds per frame */
+													 samples * nb_frames,	/* number of samples per frame */
+													 bytes * nb_frames,	/* number of bytes per frame decompressed */
+													 0,	/* number of bytes per frame compressed */
+													 1,/* number of channels represented */
+													 1,	/* number of frames per network packet */
+													 switch_opus_init,	/* function to initialize a codec handle using this implementation */
+													 switch_opus_encode_repacketize,	/* function to encode raw data into encoded data */
+													 switch_opus_decode,	/* function to decode encoded data into raw data */
+													 switch_opus_destroy);	/* deinitalize a codec handle using this implementation */
+				codec_interface->implementations->codec_control = switch_opus_control;
+			
+			}
+			
 		}
- 
+
+
 		bytes *= 2;
 		samples *= 2;
 		mss *= 2;
