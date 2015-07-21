@@ -1969,14 +1969,14 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 
 		
 		if (!rtp_session->stats.rtcp.sent_pkt_count) {
-			rtp_session->rtcp_send_msg.header.type = RTCP_PT_RR; /* Receiver report */
+			rtp_session->rtcp_send_msg.header.type = _RTCP_PT_RR; /* Receiver report */
 			rr=(struct switch_rtcp_receiver_report*) rtp_session->rtcp_send_msg.body;
 			rr->ssrc = htonl(rtp_session->ssrc);
 			rtcp_report_block = &rr->report_block;
 			rtcp_bytes += sizeof(struct switch_rtcp_report_block);
 		} else {
 			struct switch_rtcp_sender_info *rtcp_sender_info;
-			rtp_session->rtcp_send_msg.header.type = RTCP_PT_SR; /* Sender report */
+			rtp_session->rtcp_send_msg.header.type = _RTCP_PT_SR; /* Sender report */
 			sr = (struct switch_rtcp_sender_report*) rtp_session->rtcp_send_msg.body;
 			sr->ssrc = htonl(rtp_session->ssrc);
 			rtcp_sender_info = &sr->sender_info;
@@ -2006,8 +2006,8 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 			
 				ext_hdr->version = 2;
 				ext_hdr->p = 0;
-				ext_hdr->fmt = RTCP_PSFB_PLI;
-				ext_hdr->pt = RTCP_PT_PSFB;
+				ext_hdr->fmt = _RTCP_PSFB_PLI;
+				ext_hdr->pt = _RTCP_PT_PSFB;
 			
 				ext_hdr->send_ssrc = htonl(rtp_session->ssrc);
 				ext_hdr->recv_ssrc = htonl(rtp_session->remote_ssrc);
@@ -2027,8 +2027,8 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 			
 				ext_hdr->version = 2;
 				ext_hdr->p = 0;
-				ext_hdr->fmt = RTCP_RTPFB_NACK;
-				ext_hdr->pt = RTCP_PT_RTPFB;
+				ext_hdr->fmt = _RTCP_RTPFB_NACK;
+				ext_hdr->pt = _RTCP_PT_RTPFB;
 				ext_hdr->send_ssrc = htonl(rtp_session->ssrc);
 				ext_hdr->recv_ssrc = htonl(rtp_session->remote_ssrc);
 				ext_hdr->length = htons(3);
@@ -2056,8 +2056,8 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 			
 				ext_hdr->version = 2;
 				ext_hdr->p = 0;
-				ext_hdr->fmt = RTCP_PSFB_FIR;
-				ext_hdr->pt = RTCP_PT_PSFB;
+				ext_hdr->fmt = _RTCP_PSFB_FIR;
+				ext_hdr->pt = _RTCP_PT_PSFB;
 			
 				ext_hdr->send_ssrc = htonl(rtp_session->ssrc);
 				ext_hdr->recv_ssrc = 0;
@@ -2091,18 +2091,18 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 
 				ext_hdr->version = 2;
 				ext_hdr->p = 0;
-				ext_hdr->pt = RTCP_PT_RTPFB;
+				ext_hdr->pt = _RTCP_PT_RTPFB;
 				ext_hdr->send_ssrc = htonl(rtp_session->ssrc);
 				ext_hdr->recv_ssrc = 0;
 
 				if (rtp_session->tmmbr) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "Sending RTCP TMMBR %u\n", rtp_session->tmmbr);
-					ext_hdr->fmt = RTCP_RTPFB_TMMBR;
+					ext_hdr->fmt = _RTCP_RTPFB_TMMBR;
 					bps = rtp_session->tmmbr;
 					rtp_session->tmmbr = 0;
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "Sending RTCP TMMBN %u\n", rtp_session->tmmbr);
-					ext_hdr->fmt = RTCP_RTPFB_TMMBN;
+					ext_hdr->fmt = _RTCP_RTPFB_TMMBN;
 					bps = rtp_session->tmmbn;
 					rtp_session->tmmbn = 0;
 				}
@@ -2120,7 +2120,7 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 		p = (uint8_t *) (&rtp_session->rtcp_send_msg) + rtcp_bytes;
 		sdes = (switch_rtcp_hdr_t *) p;
 		sdes->version = 2;
-		sdes->type = RTCP_PT_SDES;
+		sdes->type = _RTCP_PT_SDES;
 		sdes->count = 1;
 		sdes->p = 0;
 		p = (uint8_t *) (sdes) + sdes_bytes;
@@ -2131,7 +2131,7 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 
 		p = (uint8_t *) (sdes) + sdes_bytes;
 		unit = (switch_rtcp_sdes_unit_t *) p;
-		unit->type = RTCP_SDES_CNAME;
+		unit->type = _RTCP_SDES_CNAME;
 		snprintf((char *)unit->value, 80, "%x", rtp_session->ssrc);
 		unit->length = strlen((char *)unit->value);
 		sdes_bytes += sizeof(switch_rtcp_sdes_unit_t) + unit->length;
@@ -2139,7 +2139,7 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 
 		p += sizeof(switch_rtcp_sdes_unit_t) + unit->length;
 		unit = (switch_rtcp_sdes_unit_t *) p;
-		unit->type = RTCP_SDES_NOTE;
+		unit->type = _RTCP_SDES_NOTE;
 		snprintf((char *)unit->value, 80, "FreeSWITCH.org -- Come to ClueCon.com");
 		unit->length = strlen((char *)unit->value);
 		sdes_bytes += sizeof(switch_rtcp_sdes_unit_t) + unit->length;		
@@ -5590,20 +5590,20 @@ static switch_status_t process_rtcp_report(switch_rtp_t *rtp_session, rtcp_msg_t
 					  "RTCP packet bytes %" SWITCH_SIZE_T_FMT " type %d pad %d\n", 
 					  bytes, msg->header.type, msg->header.p);
 	
-	if (rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] && (msg->header.type == RTCP_PT_RTPFB || msg->header.type == RTCP_PT_PSFB)) {
+	if (rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] && (msg->header.type == _RTCP_PT_RTPFB || msg->header.type == _RTCP_PT_PSFB)) {
 		rtcp_ext_msg_t *extp = (rtcp_ext_msg_t *) msg;			
 
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "PICKED UP XRTCP type: %d fmt: %d\n", 
 						  msg->header.type, extp->header.fmt);
 		
-		if (msg->header.type == RTCP_PT_PSFB && (extp->header.fmt == RTCP_PSFB_FIR || extp->header.fmt == RTCP_PSFB_PLI)) {
+		if (msg->header.type == _RTCP_PT_PSFB && (extp->header.fmt == _RTCP_PSFB_FIR || extp->header.fmt == _RTCP_PSFB_PLI)) {
 			switch_core_media_gen_key_frame(rtp_session->session);
 			if (rtp_session->vbw) {
 				switch_vb_reset(rtp_session->vbw);
 			}
 		}
 
-		if (msg->header.type == RTCP_PT_RTPFB && extp->header.fmt == RTCP_RTPFB_NACK) {
+		if (msg->header.type == _RTCP_PT_RTPFB && extp->header.fmt == _RTCP_RTPFB_NACK) {
 			uint32_t *nack = (uint32_t *) extp->body;
 			int i;
 			
@@ -5620,7 +5620,7 @@ static switch_status_t process_rtcp_report(switch_rtp_t *rtp_session, rtcp_msg_t
 
 	} else
 
-		if (msg->header.type == RTCP_PT_SR || msg->header.type == RTCP_PT_RR) {
+		if (msg->header.type == _RTCP_PT_SR || msg->header.type == _RTCP_PT_RR) {
 			struct switch_rtcp_report_block *report_block;
 			switch_time_t now;
 			switch_time_exp_t now_hr;
@@ -5634,7 +5634,7 @@ static switch_status_t process_rtcp_report(switch_rtp_t *rtp_session, rtcp_msg_t
 			ntp_usec = (uint32_t)(now - (sec*1000000)); /* micro seconds */
 			lsr_now = (uint32_t)(ntp_usec*0.065536) | (ntp_sec&0x0000ffff)<<16; // 0.065536 is used for convertion from useconds 
 
-			if (msg->header.type == RTCP_PT_SR) { /* Sender report */
+			if (msg->header.type == _RTCP_PT_SR) { /* Sender report */
 				struct switch_rtcp_sender_report* sr = (struct switch_rtcp_sender_report*)msg->body;
 				
 				report_block = &sr->report_block;

@@ -113,56 +113,56 @@ typedef struct ice_s {
 } ice_t;
 
 typedef enum { /* RTCP Control Packet types (PT) http://www.iana.org/assignments/rtp-parameters/rtp-parameters.xhtml#rtp-parameters-4 */
-	RTCP_PT_IJ    = 195, /* IJ: Extended inter-arrival jitter report RFC5450*/
-	RTCP_PT_SR    = 200, /* SR: sender report RFC3550 */
-	RTCP_PT_RR    = 201, /* RR: receiver report RFC3550 */
-	RTCP_PT_SDES  = 202, /* SDES: source description RFC3550 */
-	RTPC_PT_BYE   = 203, /* BYE: goodbye RFC3550 */
-	RTCP_PT_APP   = 204, /* APP: application-defined RFC3550 */
-	RTCP_PT_RTPFB = 205, /* RTPFB: RTCP Transport layer FB message RFC4585 */
-	RTCP_PT_PSFB  = 206, /* PSFB: RTCP Payload-specific FB message RFC4585 */
-	RTCP_PT_XR    = 207, /* XR: extended report RFC3611 */
-	RTCP_PT_AVB   = 208, /* AVB: "Standard for Layer 3 Transport Protocol for Time Sensitive Applications in Local Area Networks." Work in progress. */
-	RTCP_PT_RSI   = 209, /* RSI: Receiver Summary Information RFC5760 */
-	RTCP_PT_TOKEN = 210, /* TOKEN: Port Mapping RFC6284 */
-	RTCP_PT_IDMS  = 211, /* IDMS: IDMS Settings RFC7272 */
-	RTCP_PT_LAST  = 255  /* RESERVED */
+	_RTCP_PT_IJ    = 195, /* IJ: Extended inter-arrival jitter report RFC5450*/
+	_RTCP_PT_SR    = 200, /* SR: sender report RFC3550 */
+	_RTCP_PT_RR    = 201, /* RR: receiver report RFC3550 */
+	_RTCP_PT_SDES  = 202, /* SDES: source description RFC3550 */
+	_RTCP_PT_BYE   = 203, /* BYE: goodbye RFC3550 */
+	_RTCP_PT_APP   = 204, /* APP: application-defined RFC3550 */
+	_RTCP_PT_RTPFB = 205, /* RTPFB: RTCP Transport layer FB message RFC4585 */
+	_RTCP_PT_PSFB  = 206, /* PSFB: RTCP Payload-specific FB message RFC4585 */
+	_RTCP_PT_XR    = 207, /* XR: extended report RFC3611 */
+	_RTCP_PT_AVB   = 208, /* AVB: "Standard for Layer 3 Transport Protocol for Time Sensitive Applications in Local Area Networks." Work in progress. */
+	_RTCP_PT_RSI   = 209, /* RSI: Receiver Summary Information RFC5760 */
+	_RTCP_PT_TOKEN = 210, /* TOKEN: Port Mapping RFC6284 */
+	_RTCP_PT_IDMS  = 211, /* IDMS: IDMS Settings RFC7272 */
+	_RTCP_PT_LAST  = 255  /* RESERVED */
 } rtcp_pt_t;
 
 typedef enum { /* RTP SDES item types http://www.iana.org/assignments/rtp-parameters/rtp-parameters.xhtml#rtp-parameters-5 */
-	RTCP_SDES_END   = 0, /* END: end of sdes list RFC3550 */
-	RTCP_SDES_CNAME = 1, /* CNAME: canonical name RFC3550 */
-	RTCP_SDES_NAME  = 2, /* NAME: user name RFC3550 */
-	RTCP_SDES_EMAIL = 3, /* EMAIL: user's electronic mail address RFC3550 */
-	RTCP_SDES_PHONE = 4, /* PHONE: user's phone number RFC3550 */
-	RTCP_SDES_LOC   = 5, /* LOC: geographic user location RFC3550 */
-	RTCP_SDES_TOOL  = 6, /* TOOL: name of application or tool RFC3550 */
-	RTCP_SDES_NOTE  = 7, /* NOTE: notice about the source RFC3550 */
-	RTCP_SDES_PRIV  = 8, /* PRIV: private extensions RFC3550 */
-	RTCP_SDES_H323  = 9, /* H323-CADDR: H.323 callable address [Vineet Kumar] */
-	RTCP_SDES_APSI  = 10 /* APSI: Application specific identifer RFC6776 */
+	_RTCP_SDES_END   = 0, /* END: end of sdes list RFC3550 */
+	_RTCP_SDES_CNAME = 1, /* CNAME: canonical name RFC3550 */
+	_RTCP_SDES_NAME  = 2, /* NAME: user name RFC3550 */
+	_RTCP_SDES_EMAIL = 3, /* EMAIL: user's electronic mail address RFC3550 */
+	_RTCP_SDES_PHONE = 4, /* PHONE: user's phone number RFC3550 */
+	_RTCP_SDES_LOC   = 5, /* LOC: geographic user location RFC3550 */
+	_RTCP_SDES_TOOL  = 6, /* TOOL: name of application or tool RFC3550 */
+	_RTCP_SDES_NOTE  = 7, /* NOTE: notice about the source RFC3550 */
+	_RTCP_SDES_PRIV  = 8, /* PRIV: private extensions RFC3550 */
+	_RTCP_SDES_H323  = 9, /* H323-CADDR: H.323 callable address [Vineet Kumar] */
+	_RTCP_SDES_APSI  = 10 /* APSI: Application specific identifer RFC6776 */
 } rtcp_sdes_t;
 
 typedef enum { /* FMT Values for RTPFB Payload Types http://www.iana.org/assignments/rtp-parameters/rtp-parameters.xhtml#rtp-parameters-8 */
-	RTCP_RTPFB_NACK   = 1, /* Generic NACK: Generic negative acknowledgement RFC4585 */
-	RTCP_RTPFB_TMMBR  = 3, /* TMMBR: Temporary Maximum Media Stream Bit Rate Request RFC5104 */
-	RTCP_RTPFB_TMMBN  = 4, /* TMMBN: Temporary Maximum Media Stream Bit Rate Notification RFC5104 */
-	RTCP_RTPFB_SR_REQ = 5, /* RTCP-SR-REQ: TCP Rapid Resynchronisation Request RFC6051*/
-	RTCP_RTPFB_RAMS   = 6, /* RAMS: Rapid Acquisition of Multicast Sessions RFC6285 */
-	RTCP_RTPFB_TLLEI  = 7, /* TLLEI: Transport-Layer Third-Party Loss Early Indication RFC6642 */
-	RTCP_RTPFB_ECN_FB = 8  /* RTCP-ECN-FB: RTCP ECN Feedback RFC6679*/
+	_RTCP_RTPFB_NACK   = 1, /* Generic NACK: Generic negative acknowledgement RFC4585 */
+	_RTCP_RTPFB_TMMBR  = 3, /* TMMBR: Temporary Maximum Media Stream Bit Rate Request RFC5104 */
+	_RTCP_RTPFB_TMMBN  = 4, /* TMMBN: Temporary Maximum Media Stream Bit Rate Notification RFC5104 */
+	_RTCP_RTPFB_SR_REQ = 5, /* RTCP-SR-REQ: TCP Rapid Resynchronisation Request RFC6051*/
+	_RTCP_RTPFB_RAMS   = 6, /* RAMS: Rapid Acquisition of Multicast Sessions RFC6285 */
+	_RTCP_RTPFB_TLLEI  = 7, /* TLLEI: Transport-Layer Third-Party Loss Early Indication RFC6642 */
+	_RTCP_RTPFB_ECN_FB = 8  /* RTCP-ECN-FB: RTCP ECN Feedback RFC6679*/
 } rtcp_rtpfb_t;
 
 typedef enum { /* FMT Values for PSFB Payload Types http://www.iana.org/assignments/rtp-parameters/rtp-parameters.xhtml#rtp-parameters-9 */
-	RTCP_PSFB_PLI   = 1, /* PLI: Picture Loss Indication RFC4585 */
-	RTCP_PSFB_SLI   = 2, /* SLI: Slice Loss Indication RFC4585 */
-	RTCP_PSFB_RPSI  = 3, /* RPSI: Reference Picture Selection Indication RFC4585 */
-	RTCP_PSFB_FIR   = 4, /* FIR: Full Intra Request Command RFC5104 */
-	RTCP_PSFB_TSTR  = 5, /* TSTR: Temporal-Spatial Trade-off Request RFC5104 */
-	RTCP_PSFB_TSTN  = 6, /* TSTN: Temporal-Spatial Trade-off Notification RFC5104 */
-	RTCP_PSFB_VBCM  = 7, /* VBCM: Video Back Channel Message RFC5104 */
-	RTCP_PSFB_PSLEI = 8, /* PSLEI: Payload-Specific Third-Party Loss Early Indication RFC6642*/ 
-	RTCP_PSFB_AFB   = 15 /* AFB Application layer FB */
+	_RTCP_PSFB_PLI   = 1, /* PLI: Picture Loss Indication RFC4585 */
+	_RTCP_PSFB_SLI   = 2, /* SLI: Slice Loss Indication RFC4585 */
+	_RTCP_PSFB_RPSI  = 3, /* RPSI: Reference Picture Selection Indication RFC4585 */
+	_RTCP_PSFB_FIR   = 4, /* FIR: Full Intra Request Command RFC5104 */
+	_RTCP_PSFB_TSTR  = 5, /* TSTR: Temporal-Spatial Trade-off Request RFC5104 */
+	_RTCP_PSFB_TSTN  = 6, /* TSTN: Temporal-Spatial Trade-off Notification RFC5104 */
+	_RTCP_PSFB_VBCM  = 7, /* VBCM: Video Back Channel Message RFC5104 */
+	_RTCP_PSFB_PSLEI = 8, /* PSLEI: Payload-Specific Third-Party Loss Early Indication RFC6642*/ 
+	_RTCP_PSFB_AFB   = 15 /* AFB Application layer FB */
 } rtcp_psfb_t;
 
 
