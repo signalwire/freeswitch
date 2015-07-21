@@ -1014,7 +1014,7 @@ function init() {
     pop("#avatar", "verto_demo_avatar", "");
     pop("#cidname", "verto_demo_name", "FreeSWITCH User");
     pop("#cid", "verto_demo_cid", "1008");
-    pop("#email", "verto_demo_email", "");
+    pop("#email", "verto_demo_emailaddr", "");
     pop("#textto", "verto_demo_textto", "1000");
 
     pop("#login", "verto_demo_login", "1008");
@@ -1389,6 +1389,8 @@ function init() {
             if (resp.emails[i].type === 'account' && resp.emails[i].value) { 
 		$("#email").val(resp.emails[i].value);
 		$("#email").change();
+		$("#cid").val(resp.emails[i].value);
+		$("#cid").change();
             }
 	}
 
