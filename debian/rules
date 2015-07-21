@@ -98,8 +98,6 @@ override_dh_auto_install:
 	dh_auto_install
 	mkdir -p debian/tmp/lib/systemd/system
 	install -m0644 debian/freeswitch-systemd.freeswitch.service debian/tmp/lib/systemd/system/freeswitch.service
-	mkdir -p debian/tmp/usr/lib/tmpfiles.d
-	install -m0644 debian/freeswitch-systemd.freeswitch.conf debian/usr/lib/tmpfiles.d/freeswitch.conf
 	rm -f debian/tmp/usr/share/freeswitch/grammar/model/communicator/COPYING
 
 override_dh_installinit:
