@@ -107,6 +107,8 @@ void conference_utils_set_mflags(const char *flags, member_flag_t *f)
 			if (!strcasecmp(argv[i], "mute")) {
 				f[MFLAG_CAN_SPEAK] = 0;
 				f[MFLAG_TALKING] = 0;
+            } else if (!strcasecmp(argv[i], "vmute")) {
+                f[MFLAG_CAN_BE_SEEN] = 0;
 			} else if (!strcasecmp(argv[i], "deaf")) {
 				f[MFLAG_CAN_HEAR] = 0;
 			} else if (!strcasecmp(argv[i], "mute-detect")) {
