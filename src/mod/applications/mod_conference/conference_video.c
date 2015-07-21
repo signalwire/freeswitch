@@ -1525,6 +1525,13 @@ void conference_video_fnode_check(conference_file_node_t *fnode) {
 			canvas->conference->playing_video_file = 1;
 		} else {
 			conference_video_canvas_set_fnode_layer(canvas, fnode, -1);
+
+			if (fnode->layer_id == -1) {
+				switch_frame_t file_frame = { 0 };
+
+				switch_core_file_read_video(&fnode->fh, &file_frame, SVR_FLUSH);
+				switch_img_free(&file_frame.img);
+			}
 		}
 	}
 }
@@ -2230,7 +2237,6 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 
 			switch_mutex_unlock(conference->member_mutex);
 		} else {
-
 
 			if (conference->async_fnode && conference->async_fnode->canvas_id == canvas->canvas_id) {
 				if (conference->async_fnode->layer_id > -1) {

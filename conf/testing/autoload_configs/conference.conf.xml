@@ -270,7 +270,7 @@
       <param name="muted-sound" value="conference/conf-muted.wav"/>
       <param name="unmuted-sound" value="conference/conf-unmuted.wav"/>
       <param name="alone-sound" value="conference/conf-alone.wav"/>
-      <!--<param name="moh-sound" value="local_stream://video"/> -->
+      <param name="moh-sound" value="local_stream://video"/>
       <param name="enter-sound" value="tone_stream://%(200,0,500,600,700)"/>
       <param name="exit-sound" value="tone_stream://%(500,0,300,200,100,50,25)"/>
       <param name="kicked-sound" value="conference/conf-kicked.wav"/>
