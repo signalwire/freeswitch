@@ -403,7 +403,7 @@ switch_status_t conference_api_sub_conference_video_vmute_snap(conference_member
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	if (!member->conference->canvas) {
+	if (!member->conference->canvases[0]) {
 		stream->write_function(stream, "Conference is not in mixing mode\n");
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -1028,7 +1028,7 @@ switch_status_t conference_api_sub_vid_fps(conference_obj_t *conference, switch_
 {
 	float fps = 0;
 
-	if (!conference->canvas) {
+	if (!conference->canvases[0]) {
 		stream->write_function(stream, "Conference is not in mixing mode\n");
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -1091,7 +1091,7 @@ switch_status_t conference_api_sub_vid_layout(conference_obj_t *conference, swit
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	if (!conference->canvas) {
+	if (!conference->canvases[0]) {
 		stream->write_function(stream, "Conference is not in mixing mode\n");
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -1491,7 +1491,7 @@ switch_status_t conference_api_sub_vid_res_id(conference_member_t *member, switc
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (!member->conference->canvas) {
+	if (!member->conference->canvases[0]) {
 		stream->write_function(stream, "-ERR conference is not in mixing mode\n");
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -1501,7 +1501,7 @@ switch_status_t conference_api_sub_vid_res_id(conference_member_t *member, switc
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	switch_mutex_lock(member->conference->canvas->mutex);
+	switch_mutex_lock(member->conference->canvas_mutex);
 
 	if (!strcasecmp(text, "clear") || (member->video_reservation_id && !strcasecmp(text, member->video_reservation_id))) {
 		member->video_reservation_id = NULL;
@@ -1513,7 +1513,7 @@ switch_status_t conference_api_sub_vid_res_id(conference_member_t *member, switc
 
 	conference_video_detach_video_layer(member);
 
-	switch_mutex_unlock(member->conference->canvas->mutex);
+	switch_mutex_unlock(member->conference->canvas_mutex);
 
 	return SWITCH_STATUS_SUCCESS;
 
@@ -2266,6 +2266,8 @@ switch_status_t conference_api_sub_check_record(conference_obj_t *conference, sw
 
 switch_status_t conference_api_sub_record(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv)
 {
+	int id = 0;
+
 	switch_assert(conference != NULL);
 	switch_assert(stream != NULL);
 
@@ -2273,10 +2275,33 @@ switch_status_t conference_api_sub_record(conference_obj_t *conference, switch_s
 		return SWITCH_STATUS_GENERR;
 	}
 
-	stream->write_function(stream, "Record file %s\n", argv[2]);
+	if (argv[3]) {
+
+		if (argv[3]) {
+			id = atoi(argv[3]);
+		}
+
+		if (id < 1 || id > MAX_CANVASES+1) {
+			id = -1;
+		}
+
+		if (id < 1) {
+			stream->write_function(stream, "-ERR Invalid canvas\n");
+		}
+
+	}
+
+	if (id == 0 && conference->canvases[0]) id = 1;
+	
+	if (id > 0) {
+		stream->write_function(stream, "Record file %s canvas %d\n", argv[2], id);
+	} else {
+		stream->write_function(stream, "Record file %s\n", argv[2]);
+	}
+
 	conference->record_filename = switch_core_strdup(conference->pool, argv[2]);
 	conference->record_count++;
-	conference_record_launch_thread(conference, argv[2], SWITCH_FALSE);
+	conference_record_launch_thread(conference, argv[2], id - 1, SWITCH_FALSE);
 	return SWITCH_STATUS_SUCCESS;
 }
 

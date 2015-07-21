@@ -490,6 +490,7 @@ typedef struct mcu_canvas_s {
 	int video_timer_reset;
 	switch_queue_t *video_queue;
 	int32_t video_write_bandwidth;
+	int recording;
 } mcu_canvas_t;
 
 /* Record Node */
@@ -500,6 +501,7 @@ typedef struct conference_record {
 	switch_bool_t autorec;
 	struct conference_record *next;
 	switch_file_handle_t fh;
+	int canvas_id;
 } conference_record_t;
 
 typedef enum {
@@ -536,6 +538,7 @@ typedef struct conference_obj {
 	char *sound_prefix;
 	char *special_announce;
 	char *auto_record;
+	int auto_record_canvas;
 	char *record_filename;
 	char *outcall_templ;
 	char *video_layout_name;
@@ -630,7 +633,6 @@ typedef struct conference_obj {
 	struct vid_helper mh;
 	conference_record_t *rec_node_head;
 	int last_speech_channels;
-	mcu_canvas_t *canvas;
 	mcu_canvas_t *canvases[MAX_CANVASES+1];
 	int canvas_count;
 	int super_canvas_label_layers;
@@ -982,7 +984,7 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 switch_status_t chat_send(switch_event_t *message_event);
 
 
-void conference_record_launch_thread(conference_obj_t *conference, char *path, switch_bool_t autorec);
+void conference_record_launch_thread(conference_obj_t *conference, char *path, int canvas_id, switch_bool_t autorec);
 
 typedef switch_status_t (*conference_api_args_cmd_t) (conference_obj_t *, switch_stream_handle_t *, int, char **);
 typedef switch_status_t (*conference_api_member_cmd_t) (conference_member_t *, switch_stream_handle_t *, void *);

@@ -41,7 +41,7 @@
  */
 #include <mod_conference.h>
 
-void conference_record_launch_thread(conference_obj_t *conference, char *path, switch_bool_t autorec)
+void conference_record_launch_thread(conference_obj_t *conference, char *path, int canvas_id, switch_bool_t autorec)
 {
 	switch_thread_t *thread;
 	switch_threadattr_t *thd_attr = NULL;
@@ -64,6 +64,10 @@ void conference_record_launch_thread(conference_obj_t *conference, char *path, s
 	rec->path = switch_core_strdup(pool, path);
 	rec->pool = pool;
 	rec->autorec = autorec;
+
+	if (canvas_id > -1) {
+		rec->canvas_id = canvas_id;
+	}
 
 	switch_mutex_lock(conference->flag_mutex);
 	rec->next = conference->rec_node_head;
@@ -157,6 +161,7 @@ void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *thread, v
 	switch_event_t *event;
 	switch_size_t len = 0;
 	int flags = 0;
+	mcu_canvas_t *canvas = NULL;
 
 	data_buf_len = samples * sizeof(int16_t);
 
@@ -187,11 +192,16 @@ void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *thread, v
 	member->rec->fh.samplerate = conference->rate;
 	member->id = next_member_id();
 	member->pool = rec->pool;
-
 	member->frame_size = SWITCH_RECOMMENDED_BUFFER_SIZE;
 	member->frame = switch_core_alloc(member->pool, member->frame_size);
 	member->mux_frame = switch_core_alloc(member->pool, member->frame_size);
-
+	
+	if (conference->canvases[0]) {
+		member->canvas_id = rec->canvas_id;
+		canvas = conference->canvases[member->canvas_id];
+		canvas->recording++;
+		canvas->send_keyframe = 1;
+	}
 
 	switch_mutex_init(&member->write_mutex, SWITCH_MUTEX_NESTED, rec->pool);
 	switch_mutex_init(&member->flag_mutex, SWITCH_MUTEX_NESTED, rec->pool);
@@ -213,23 +223,19 @@ void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *thread, v
 		goto end;
 	}
 
-	if (conference->canvas) {
-		conference->canvas->send_keyframe = 1;
-	}
-
 	member->rec->fh.pre_buffer_datalen = SWITCH_DEFAULT_FILE_BUFFER_LEN;
 
 	flags = SWITCH_FILE_FLAG_WRITE | SWITCH_FILE_DATA_SHORT;
 
 	if (conference->members_with_video && conference_utils_test_flag(conference, CFLAG_TRANSCODE_VIDEO)) {
 		flags |= SWITCH_FILE_FLAG_VIDEO;
-		if (conference->canvas) {
+		if (canvas) {
 			char *orig_path = rec->path;
 			rec->path = switch_core_sprintf(rec->pool, "{channels=%d,samplerate=%d,vw=%d,vh=%d,fps=%0.2f}%s",
 											conference->channels,
 											conference->rate,
-											conference->canvas->width,
-											conference->canvas->height,
+											canvas->width,
+											canvas->height,
 											conference->video_fps.fps,
 											orig_path);
 		}
@@ -365,8 +371,8 @@ void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *thread, v
 	switch_core_timer_destroy(&timer);
 	conference_member_del(conference, member);
 
-	if (conference->canvas) {
-		conference->canvas->send_keyframe = 1;
+	if (canvas) {
+		canvas->send_keyframe = 1;
 	}
 
 	switch_buffer_destroy(&member->audio_buffer);
@@ -390,6 +396,10 @@ void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *thread, v
 
 	if (rec->autorec && conference->auto_recording) {
 		conference->auto_recording--;
+	}
+
+	if (canvas) {
+		canvas->recording--;
 	}
 
 	switch_mutex_lock(conference->flag_mutex);

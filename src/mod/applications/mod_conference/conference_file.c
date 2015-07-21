@@ -86,11 +86,11 @@ switch_status_t conference_file_close(conference_obj_t *conference, conference_f
 		conference_al_close(node->al);
 	}
 #endif
-	if (switch_core_file_has_video(&node->fh) && conference->canvas) {
-		conference->canvas->timer.interval = conference->video_fps.ms;
-		conference->canvas->timer.samples = conference->video_fps.samples;
-		switch_core_timer_sync(&conference->canvas->timer);
-		conference->canvas->send_keyframe = 1;
+	if (switch_core_file_has_video(&node->fh) && conference->canvases[0] && node->canvas_id > -1) {
+		conference->canvases[node->canvas_id]->timer.interval = conference->video_fps.ms;
+		conference->canvases[node->canvas_id]->timer.samples = conference->video_fps.samples;
+		switch_core_timer_sync(&conference->canvases[node->canvas_id]->timer);
+		conference->canvases[node->canvas_id]->send_keyframe = 1;
 		conference->playing_video_file = 0;
 	}
 	return switch_core_file_close(&node->fh);
@@ -265,6 +265,16 @@ switch_status_t conference_file_play(conference_obj_t *conference, char *file, u
 	if (fnode->fh.params) {
 		const char *vol = switch_event_get_header(fnode->fh.params, "vol");
 		const char *position = switch_event_get_header(fnode->fh.params, "position");
+		const char *canvasstr = switch_event_get_header(fnode->fh.params, "canvas");
+		int canvas_id = -1;
+
+		if (canvasstr) {
+			canvas_id = atoi(canvasstr) - 1;
+		}
+
+		if (canvas_id > -1 && canvas_id < MAX_CANVASES) {
+			fnode->canvas_id = canvas_id;
+		}
 
 		if (!zstr(vol)) {
 			fnode->fh.vol = atoi(vol);

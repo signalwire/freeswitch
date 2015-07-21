@@ -357,8 +357,9 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 			if (imember) {
 				switch_channel_t *channel = switch_core_session_get_channel(imember->session);
 				char *rfile = switch_channel_expand_variables(channel, conference->auto_record);
+
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Auto recording file: %s\n", rfile);
-				conference_record_launch_thread(conference, rfile, SWITCH_TRUE);
+				conference_record_launch_thread(conference, rfile, -1, SWITCH_TRUE);
 
 				if (rfile != conference->auto_record) {
 					conference->record_filename = switch_core_strdup(conference->pool, rfile);
@@ -366,11 +367,13 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 				} else {
 					conference->record_filename = switch_core_strdup(conference->pool, conference->auto_record);
 				}
+
 				/* Set the conference recording variable for each member */
 				for (omember = conference->members; omember; omember = omember->next) {
 					if (!omember->session) continue;
 					channel = switch_core_session_get_channel(omember->session);
 					switch_channel_set_variable(channel, "conference_recording", conference->record_filename);
+					switch_channel_set_variable_printf(channel, "conference_recording_canvas", "%d", conference->auto_record_canvas + 1);
 				}
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Auto Record Failed.  No members in conference.\n");
@@ -620,7 +623,7 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 		if (conference->async_fnode && conference->async_fnode->done) {
 			switch_memory_pool_t *pool;
 
-			if (conference->canvas && conference->async_fnode->layer_id > -1 ) {
+			if (conference->canvases[0] && conference->async_fnode->layer_id > -1 ) {
 				conference_video_canvas_del_fnode_layer(conference, conference->async_fnode);
 			}
 
@@ -634,7 +637,7 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 			conference_file_node_t *fnode;
 			switch_memory_pool_t *pool;
 
-			if (conference->canvas && conference->fnode->layer_id > -1 ) {
+			if (conference->canvases[0] && conference->fnode->layer_id > -1 ) {
 				conference_video_canvas_del_fnode_layer(conference, conference->fnode);
 			}
 
@@ -2404,6 +2407,7 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 	char *suppress_events = NULL;
 	char *verbose_events = NULL;
 	char *auto_record = NULL;
+	int auto_record_canvas = 0;
 	int min_recording_participants = 1;
 	char *conference_log_dir = NULL;
 	char *cdr_event_mode = NULL;
@@ -2678,6 +2682,13 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 				verbose_events = val;
 			} else if (!strcasecmp(var, "auto-record") && !zstr(val)) {
 				auto_record = val;
+			} else if (!strcasecmp(var, "auto-record-canvas-id") && !zstr(val)) {
+				auto_record_canvas = atoi(val);
+				if (auto_record_canvas) {
+					auto_record_canvas--;
+
+					if (auto_record_canvas < 1) auto_record_canvas = 0;
+				}
 			} else if (!strcasecmp(var, "min-required-recording-participants") && !zstr(val)) {
 				if (!strcmp(val, "1")) {
 					min_recording_participants = 1;
