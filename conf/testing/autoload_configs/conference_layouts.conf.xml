@@ -12,6 +12,10 @@
 	<image x="0" y="90" scale="180"/>
 	<image x="180" y="90" scale="180"/>
       </layout>
+      <layout name="test_res_id" auto-3d-position="true">
+	<image x="0" y="90" scale="180" reservation_id="left"/>
+	<image x="180" y="90" scale="180" reservation_id="right"/>
+      </layout>
       <layout name="2x2" auto-3d-position="true">
 	<image x="0" y="0" scale="180"/>
 	<image x="180" y="0" scale="180"/>

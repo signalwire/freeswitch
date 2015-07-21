@@ -261,6 +261,37 @@
       <param name="video-fps" value="15"/>
     </profile>
 
+    <profile name="test_res_id">
+      <param name="domain" value="$${domain}"/>
+      <param name="rate" value="48000"/>
+      <param name="channels" value="2"/>
+      <param name="interval" value="20"/>
+      <param name="energy-level" value="200"/>
+      <param name="muted-sound" value="conference/conf-muted.wav"/>
+      <param name="unmuted-sound" value="conference/conf-unmuted.wav"/>
+      <param name="alone-sound" value="conference/conf-alone.wav"/>
+      <!--<param name="moh-sound" value="local_stream://video"/> -->
+      <param name="enter-sound" value="tone_stream://%(200,0,500,600,700)"/>
+      <param name="exit-sound" value="tone_stream://%(500,0,300,200,100,50,25)"/>
+      <param name="kicked-sound" value="conference/conf-kicked.wav"/>
+      <param name="locked-sound" value="conference/conf-locked.wav"/>
+      <param name="is-locked-sound" value="conference/conf-is-locked.wav"/>
+      <param name="is-unlocked-sound" value="conference/conf-is-unlocked.wav"/>
+      <param name="pin-sound" value="conference/conf-pin.wav"/>
+      <param name="bad-pin-sound" value="conference/conf-bad-pin.wav"/>
+      <param name="caller-id-name" value="$${outbound_caller_name}"/>
+      <param name="caller-id-number" value="$${outbound_caller_id}"/>
+      <param name="comfort-noise" value="false"/>
+      <param name="conference-flags" value="video-floor-only|rfc-4579|livearray-sync|minimize-video-encoding"/>
+      <param name="video-mode" value="mux"/> 
+      <param name="video-layout-name" value="test_res_id"/>
+      <param name="video-canvas-size" value="1920x1080"/>
+      <param name="video-canvas-bgcolor" value="#333333"/>
+      <param name="video-layout-bgcolor" value="#000000"/>
+      <param name="video-codec-bandwidth" value="3mb"/>
+      <param name="video-fps" value="15"/>
+    </profile>
+
     <profile name="video-mcu-stereo-multi-canvas">
       <param name="domain" value="$${domain}"/>
       <param name="rate" value="48000"/>

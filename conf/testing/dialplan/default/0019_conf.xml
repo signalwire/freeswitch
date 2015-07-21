@@ -88,4 +88,10 @@
   </condition>
 </extension>
 
+<extension name="conf">
+  <condition field="destination_number" expression="^6079$">
+    <action application="conference" data="6079@test_res_id"/>  
+  </condition>
+</extension>
+
 

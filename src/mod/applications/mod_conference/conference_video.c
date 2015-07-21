@@ -521,6 +521,57 @@ void conference_video_check_used_layers(mcu_canvas_t *canvas)
 	}
 }
 
+mcu_layer_t *conference_video_get_layer_locked(conference_member_t *member)
+{
+	mcu_layer_t *layer = NULL;
+	mcu_canvas_t *canvas = NULL;
+
+	if (!member || member->canvas_id < 0 || member->video_layer_id < 0) return NULL;
+	
+	switch_mutex_lock(member->conference->canvas_mutex);
+
+	canvas = member->conference->canvases[member->canvas_id];
+
+	if (!canvas) {
+		goto end;
+	}
+
+	switch_mutex_lock(canvas->mutex);
+	layer = &canvas->layers[member->video_layer_id];
+
+	if (!layer) {
+		switch_mutex_unlock(canvas->mutex);
+	}
+	
+ end:
+
+	if (!layer) {
+		switch_mutex_unlock(member->conference->canvas_mutex);
+	}
+
+	return layer;
+}
+
+void conference_video_release_layer(mcu_layer_t **layer)
+{
+	mcu_canvas_t *canvas = NULL;
+
+	if (!layer || !*layer) return;
+
+	canvas = (*layer)->canvas;
+
+	if (!canvas) return;
+
+	switch_mutex_unlock(canvas->mutex);
+
+	switch_assert(canvas->conference);
+
+	switch_mutex_unlock(canvas->conference->canvas_mutex);
+
+	*layer = NULL;
+}
+
+
 void conference_video_detach_video_layer(conference_member_t *member)
 {
 	mcu_layer_t *layer = NULL;

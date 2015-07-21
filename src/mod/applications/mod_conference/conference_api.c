@@ -488,11 +488,11 @@ switch_status_t conference_api_sub_unvmute(conference_member_t *member, switch_s
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	if (member->conference->canvas) {
-		switch_mutex_lock(member->conference->canvas->mutex);
-		layer = &member->conference->canvas->layers[member->video_layer_id];
+	layer = conference_video_get_layer_locked(member);
+
+	if (layer) {
 		conference_video_clear_layer(layer);
-		switch_mutex_unlock(member->conference->canvas->mutex);
+		conference_video_release_layer(&layer);
 	}
 
 	conference_utils_member_set_flag_locked(member, MFLAG_CAN_BE_SEEN);
@@ -1419,14 +1419,13 @@ switch_status_t conference_api_sub_vid_mute_img(conference_member_t *member, swi
 		return SWITCH_STATUS_FALSE;
 	}
 
-	switch_mutex_lock(layer->canvas->mutex);
+	layer = conference_video_get_layer_locked(member);
 
-	if (member->video_layer_id == -1 || !layer->canvas) {
+	if (!layer) {
 		goto end;
 	}
 
 	member->video_mute_png = NULL;
-	layer = &layer->canvas->layers[member->video_layer_id];
 
 	if (text) {
 		switch_img_free(&layer->mute_img);
@@ -1436,11 +1435,11 @@ switch_status_t conference_api_sub_vid_mute_img(conference_member_t *member, swi
 		member->video_mute_png = switch_core_strdup(member->pool, text);
 	}
 
- end:
+end:
 
 	stream->write_function(stream, "%s\n", member->video_mute_png ? member->video_mute_png : "_undef_");
 
-	switch_mutex_unlock(layer->canvas->mutex);
+	conference_video_release_layer(&layer);
 
 	return SWITCH_STATUS_SUCCESS;
 
@@ -1459,15 +1458,11 @@ switch_status_t conference_api_sub_vid_logo_img(conference_member_t *member, swi
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (member->video_layer_id == -1 || !member->conference->canvas) {
+	layer = conference_video_get_layer_locked(member);
+		
+	if (!layer) {
 		goto end;
 	}
-
-
-
-	layer = &member->conference->canvas->layers[member->video_layer_id];
-
-	switch_mutex_lock(layer->canvas->mutex);
 
 	if (strcasecmp(text, "clear")) {
 		member->video_logo = switch_core_strdup(member->pool, text);
@@ -1479,7 +1474,7 @@ switch_status_t conference_api_sub_vid_logo_img(conference_member_t *member, swi
 
 	stream->write_function(stream, "+OK\n");
 
-	switch_mutex_unlock(layer->canvas->mutex);
+	conference_video_release_layer(&layer);
 
 	return SWITCH_STATUS_SUCCESS;
 
@@ -1488,7 +1483,6 @@ switch_status_t conference_api_sub_vid_logo_img(conference_member_t *member, swi
 switch_status_t conference_api_sub_vid_res_id(conference_member_t *member, switch_stream_handle_t *stream, void *data)
 {
 	char *text = (char *) data;
-	//mcu_layer_t *layer = NULL;
 
 	if (member == NULL)
 		return SWITCH_STATUS_GENERR;
@@ -1508,8 +1502,6 @@ switch_status_t conference_api_sub_vid_res_id(conference_member_t *member, switc
 	}
 
 	switch_mutex_lock(member->conference->canvas->mutex);
-
-	//layer = &member->conference->canvas->layers[member->video_layer_id];
 
 	if (!strcasecmp(text, "clear") || (member->video_reservation_id && !strcasecmp(text, member->video_reservation_id))) {
 		member->video_reservation_id = NULL;
@@ -1542,9 +1534,9 @@ switch_status_t conference_api_sub_vid_banner(conference_member_t *member, switc
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	switch_mutex_lock(member->conference->mutex);
+	layer = conference_video_get_layer_locked(member);
 
-	if (member->video_layer_id == -1 || !member->conference->canvas) {
+	if (!layer) {
 		stream->write_function(stream, "Channel %s is not in a video layer\n", switch_channel_get_name(member->channel));
 		goto end;
 	}
@@ -1554,8 +1546,6 @@ switch_status_t conference_api_sub_vid_banner(conference_member_t *member, switc
 		goto end;
 	}
 
-	layer = &member->conference->canvas->layers[member->video_layer_id];
-
 	member->video_banner_text = switch_core_strdup(member->pool, text);
 
 	conference_video_layer_set_banner(member, layer, NULL);
@@ -1564,7 +1554,7 @@ switch_status_t conference_api_sub_vid_banner(conference_member_t *member, switc
 
  end:
 
-	switch_mutex_unlock(member->conference->mutex);
+	conference_video_release_layer(&layer);
 
 	return SWITCH_STATUS_SUCCESS;
 }
