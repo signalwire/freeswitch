@@ -2365,24 +2365,25 @@ SWITCH_DECLARE(char *) switch_event_expand_headers_check(switch_event_t *event, 
 						}
 					}
 
-					if (offset || ooffset) {
-						cloned_sub_val = strdup(sub_val);
-						switch_assert(cloned_sub_val);
-						sub_val = cloned_sub_val;
-					}
+					if (sub_val) {
+						if (offset || ooffset) {
+							cloned_sub_val = strdup(sub_val);
+							switch_assert(cloned_sub_val);
+							sub_val = cloned_sub_val;
+						}
 
-					if (offset >= 0) {
-						sub_val += offset;
-					} else if ((size_t) abs(offset) <= strlen(sub_val)) {
-						sub_val = cloned_sub_val + (strlen(cloned_sub_val) + offset);
-					}
+						if (offset >= 0) {
+							sub_val += offset;
+						} else if ((size_t) abs(offset) <= strlen(sub_val)) {
+							sub_val = cloned_sub_val + (strlen(cloned_sub_val) + offset);
+						}
 
-					if (ooffset > 0 && (size_t) ooffset < strlen(sub_val)) {
-						if ((ptr = (char *) sub_val + ooffset)) {
-							*ptr = '\0';
+						if (ooffset > 0 && (size_t) ooffset < strlen(sub_val)) {
+							if ((ptr = (char *) sub_val + ooffset)) {
+								*ptr = '\0';
+							}
 						}
 					}
-
 
 					switch_safe_free(expanded);
 				} else {
