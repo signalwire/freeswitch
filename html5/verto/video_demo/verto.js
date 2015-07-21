@@ -201,6 +201,31 @@ function check_vid() {
     return use_vid;
 }
 
+// Attach audio output device to video element using device/sink ID.                                                                                            
+function attachSinkId(element, sinkId) {
+    if (typeof element.sinkId !== 'undefined') {
+	element.setSinkId(sinkId)
+	    .then(function() {
+		console.log('Success, audio output device attached: ' + sinkId);
+	    })
+	    .catch(function(error) {
+		var errorMessage = error;
+		if (error.name === 'SecurityError') {
+		    errorMessage = 'You need to use HTTPS for selecting audio output ' +
+			'device: ' + error;
+		}
+		console.error(errorMessage);
+		// Jump back to first output device in the list as it's the default.                                                                                      
+		//audioOutputSelect.selectedIndex = 0;
+	    });
+    } else {
+	console.warn('Browser does not support output device selection.');
+    }
+}
+
+
+
+
 function messageTextToJQ(body) {
 	// Builds a jQuery collection from body text, linkifies http/https links, imageifies http/https links to images, and doesn't allow script injection
 	
@@ -437,7 +462,9 @@ var callbacks = {
 		    callee_id_name: $("#cidname").val(),
 		    callee_id_number: $("#cid").val(),
 		    useCamera: $("#usecamera").find(":selected").val(),
-		    useMic: $("#usemic").find(":selected").val()
+		    useMic: $("#usemic").find(":selected").val(),
+		    useSpeak: $("#usespeak").find(":selected").val()
+
 		});
                 $('#dialog-incoming-call').dialog('close');
             });
@@ -457,7 +484,8 @@ var callbacks = {
                         useVideo: true,
 			useStereo: $("#use_stereo").is(':checked'),
 			useCamera: $("#usecamera").find(":selected").val(),
-			useMic: $("#usemic").find(":selected").val()
+			useMic: $("#usemic").find(":selected").val(),
+			useSpeak: $("#usespeak").find(":selected").val()
                     });
                 });
                 // the buttons in this jquery mobile wont hide .. gotta wrap them in a div as a workaround
@@ -489,7 +517,9 @@ var callbacks = {
 	    } else {
 		display("Talking to: " + d.cidString());
 	    }
+
             goto_page("incall");
+
             break;
         case $.verto.enum.state.hangup:
 	    $("#main_info").html("Call ended with cause: " + d.cause);
@@ -738,6 +768,7 @@ function docall() {
         useStereo: $("#use_stereo").is(':checked'),
 	useCamera: sessid ? "none" : $("#usecamera").find(":selected").val(),
 	useMic: $("#usemic").find(":selected").val(),
+	useSpeak: $("#usespeak").find(":selected").val(),
 	dedEnc: $("#use_dedenc").is(':checked'),
 	mirrorInput: $("#mirror_input").is(':checked'),
         userVariables: {
@@ -874,14 +905,17 @@ function refresh_devices()
     $("#useshare").selectmenu({});
     $("#useshare").selectmenu({});
     $("#usemic").selectmenu({});
+    $("#usespeak").selectmenu({});
 
     $("#useshare").selectmenu("enable");
     $("#useshare").selectmenu("enable");
     $("#usemic").selectmenu("enable");
+    $("#usespeak").selectmenu("enable");
 
     $("#useshare").empty();
     $("#usecamera").empty();
     $("#usemic").empty();
+    $("#usespeak").empty();
     
 
 
@@ -889,6 +923,7 @@ function refresh_devices()
 
     $("#usecamera").append(new Option("No Camera", "none"));
     $("#usemic").append(new Option("Do Not Specify", "any"));
+    $("#usespeak").append(new Option("Do Not Specify", "any"));
     for (var i in $.verto.videoDevices) {
 	var source = $.verto.videoDevices[i];
 	var o = new Option(source.label, source.id);
@@ -907,13 +942,22 @@ function refresh_devices()
 
     x = 1;
     
-    for (var i in $.verto.audioDevices) {
-	var source = $.verto.audioDevices[i];
+    for (var i in $.verto.audioInDevices) {
+	var source = $.verto.audioInDevices[i];
 	var o = new Option(source.label, source.id);
 	if (!x++) {
 	    o.selected = true;
 	}
 	$("#usemic").append(o);
+    }
+
+    for (var i in $.verto.audioOutDevices) {
+	var source = $.verto.audioOutDevices[i];
+	var o = new Option(source.label, source.id);
+	if (!x++) {
+	    o.selected = true;
+	}
+	$("#usespeak").append(o);
     }
 
 
@@ -925,6 +969,7 @@ function refresh_devices()
     
     $("#usecamera").selectmenu('refresh', true);
     $("#usemic").selectmenu('refresh', true);
+    $("#usespeak").selectmenu('refresh', true);
     $("#useshare").selectmenu('refresh', true);
 
     //$("input[type='radio']).checkboxradio({});
@@ -945,6 +990,12 @@ function refresh_devices()
         $('#usemic option[value=' + tmp + ']').prop('selected', 'selected').change();
         pop_select("#usemic","verto_demo_mic_selected", tmp);
     }
+
+    tmp = $.cookie("verto_demo_speak_selected") || "false";
+    if (tmp) {
+        $('#usespeak option[value=' + tmp + ']').prop('selected', 'selected').change();
+        pop_select("#usespeak","verto_demo_speak_selected", tmp);
+    }
 }
 
 function init() {
@@ -953,6 +1004,7 @@ function init() {
 
     $("#usecamera").selectmenu({});
     $("#usemic").selectmenu({});
+    $("#usespeak").selectmenu({});
     $("#useshare").selectmenu({});
 
     if (!autocall) {
@@ -1307,20 +1359,19 @@ function init() {
         //localTag: $("#local_video").is(':checked') ? "local_webcam" : null,
         ringFile: "sounds/bell_ring2.wav",
 	sessid: sessid,
-	//loginParams: {second_screen: second_screen},
         videoParams: {
             "minWidth": vid_width,
             "minHeight": vid_height,
 	    "maxWidth": vid_width,
 	    "maxHeight": vid_height,
 	    "minFrameRate": 15,
-	    "vertoBestFrameRate": 30,
-	    //chromeMediaSource: 'screen',
-	    //mediaSource: 'screen'
+	    "vertoBestFrameRate": 30
         },
 
 	deviceParams: {
-	    useCamera: $("#usecamera").find(":selected").val(),                                                                                                            useMic: $("#usemic").find(":selected").val()
+	    useCamera: $("#usecamera").find(":selected").val(),                                                                                                            useMic: $("#usemic").find(":selected").val(),
+            useSpeak: $("#usespeak").find(":selected").val()
+
 	},
 
 //	audioParams: {

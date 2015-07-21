@@ -354,6 +354,7 @@ var iceTimer;
 
 	self.options.useCamera = params.useCamera || "any";
 	self.options.useMic = params.useMic || "any";
+	self.options.useSpeak = params.useSpeak || "any";
 
         function onSuccess(stream) {
             self.localStream = stream;
@@ -486,6 +487,10 @@ var iceTimer;
 	var useVideo = obj.options.useVideo;
 
 	if (useVideo && obj.options.useCamera && obj.options.useCamera !== "none") {
+	    if (!video.optional) {
+		video.optional = [];
+	    }
+
 	    if (obj.options.useCamera !== "any") {
 		video.optional.push({sourceId: obj.options.useCamera});
 	    }

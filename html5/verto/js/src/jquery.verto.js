@@ -1618,6 +1618,7 @@
 	    screenShare: false,
 	    useCamera: "any",
 	    useMic: "any",
+	    useSpeak: "any",
             tag: verto.options.tag,
             localTag: verto.options.localTag,
             login: verto.options.login,
@@ -1626,6 +1627,7 @@
 	
 	dialog.useCamera = verto.options.deviceParams.useCamera;
 	dialog.useMic = verto.options.deviceParams.useMic;
+	dialog.useSpeak = verto.options.deviceParams.useSpeak;
 
         dialog.verto = verto;
         dialog.direction = direction;
@@ -1637,6 +1639,7 @@
 	dialog.screenShare = params.screenShare || false;
 	dialog.useCamera = params.useCamera;
 	dialog.useMic = params.useMic;
+	dialog.useSpeak = params.useSpeak;
 
         if (dialog.params.callID) {
             dialog.callID = dialog.params.callID;
@@ -1736,7 +1739,8 @@
             iceServers: verto.options.iceServers,
 	    screenShare: dialog.screenShare,
 	    useCamera: dialog.useCamera,
-	    useMic: dialog.useMic
+	    useMic: dialog.useMic,
+	    useSpeak: dialog.useSpeak
         });
 
         dialog.rtc.verto = dialog.verto;
@@ -1820,6 +1824,23 @@
         }
 
         switch (dialog.state) {
+
+        case $.verto.enum.state.early:
+        case $.verto.enum.state.active:
+
+	    var speaker = dialog.useSpeak;
+	    console.info("Using Speaker: ", speaker);
+
+	    if (speaker && speaker !== "any") {
+		var videoElement = dialog.audioStream;
+
+		setTimeout(function() {
+		    console.info("Setting speaker:", videoElement, speaker);
+		    attachSinkId(videoElement, speaker);}, 500);
+	    }
+
+	    break;
+
         case $.verto.enum.state.trying:
             setTimeout(function() {
                 if (dialog.state == $.verto.enum.state.trying) {
@@ -2067,6 +2088,7 @@
 
 	    dialog.useCamera = verto.options.deviceParams.useCamera;
 	    dialog.useMic = verto.options.deviceParams.useMic;
+	    dialog.useSpeak = verto.options.deviceParams.useSpeak;
 
             if (params) {
                 if (params.useVideo) {
@@ -2076,6 +2098,7 @@
 		dialog.params.callee_id_number = params.callee_id_number;
 		dialog.useCamera = params.useCamera;
 		dialog.useMic = params.useMic;
+		dialog.useSpeak = params.useSpeak;
             }
 	    
             dialog.rtc.createAnswer(params);
@@ -2263,27 +2286,28 @@
     });
 
     $.verto.videoDevices = [];
-    $.verto.audioDevices = [];
+    $.verto.audioInDevices = [];
+    $.verto.audioOutDevices = [];
 
     var checkDevices = function(runtime) {
 	console.info("enumerating devices");
-	var aud = [], vid = [];	
+	var aud_in = [], aud_out = [], vid = [];	
 
-	if (MediaStreamTrack.getSources) {
+	if ((!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) && MediaStreamTrack.getSources) {
 	    MediaStreamTrack.getSources(function (media_sources) {
 		for (var i = 0; i < media_sources.length; i++) {
 
 		    if (media_sources[i].kind == 'video') {
 			vid.push(media_sources[i]);
 		    } else {
-			aud.push(media_sources[i]);
+			aud_in.push(media_sources[i]);
 		    }
 		}
 		
 		$.verto.videoDevices = vid;
-		$.verto.audioDevices = aud;
+		$.verto.audioInDevices = aud_in;
 		
-		console.info("Audio Devices", $.verto.audioDevices);
+		console.info("Audio Devices", $.verto.audioInDevices);
 		console.info("Video Devices", $.verto.videoDevices);
 		runtime();
 	    });
@@ -2307,16 +2331,20 @@
 			
 			if (device.kind === "videoinput") {
 			    vid.push({id: device.deviceId, kind: "video", label: device.label});
-			} else {
-			    aud.push({id: device.deviceId, kind: "audio", label: device.label});
+			} else if (device.kind === "audioinput") {
+			    aud_in.push({id: device.deviceId, kind: "audio_in", label: device.label});
+			} else if (device.kind === "audiooutput") {
+			    aud_out.push({id: device.deviceId, kind: "audio_out", label: device.label});
 			}
 		    });
 		    
 
 		    $.verto.videoDevices = vid;
-		    $.verto.audioDevices = aud;
+		    $.verto.audioInDevices = aud_in;
+		    $.verto.audioOutDevices = aud_out;
 		    
-		    console.info("Audio Devices", $.verto.audioDevices);
+		    console.info("Audio IN Devices", $.verto.audioInDevices);
+		    console.info("Audio Out Devices", $.verto.audioOutDevices);
 		    console.info("Video Devices", $.verto.videoDevices);
 		    runtime();
 		    
