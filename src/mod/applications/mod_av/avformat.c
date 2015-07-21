@@ -43,6 +43,7 @@
 #define SCALE_FLAGS SWS_BICUBIC
 #define DFT_RECORD_OFFSET 350
 
+static switch_status_t av_file_close(switch_file_handle_t *handle);
 SWITCH_MODULE_LOAD_FUNCTION(mod_avformat_load);
 
 static char *const get_error_text(const int error)
@@ -423,6 +424,8 @@ static switch_status_t open_audio(AVFormatContext *fc, AVCodec *codec, MediaStre
 
 		if ((ret = avresample_open(mst->resample_ctx)) < 0) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to initialize the resampling context\n");
+			av_free(mst->resample_ctx);
+			mst->resample_ctx = NULL;
 			return status;
 		}
 	}
@@ -567,7 +570,7 @@ static switch_status_t video_read_callback(switch_core_session_t *session, switc
 
 static void close_stream(AVFormatContext *fc, MediaStream *mst)
 {
-	if (mst->resample_ctx) avresample_close(mst->resample_ctx);
+	if (mst->resample_ctx) avresample_free(&mst->resample_ctx);
 	if (mst->sws_ctx) sws_freeContext(mst->sws_ctx);
 	if (mst->frame) av_frame_free(&mst->frame);
 	if (mst->tmp_frame) av_frame_free(&mst->tmp_frame);
@@ -893,14 +896,14 @@ SWITCH_STANDARD_APP(record_av_function)
 
 		if (fmt) {
 			if (!(fmt->flags & AVFMT_NOFILE)) {
-				avio_close(fc->pb);
+				avformat_close_input(&fc);
 			} else {
 				avformat_network_deinit();
+				avformat_free_context(fc);
 			}
+		} else {
+			avformat_free_context(fc);
 		}
-
-		/* free the stream */
-		avformat_free_context(fc);
 	}
 
 	if (timer.interval) {
@@ -1151,9 +1154,12 @@ static switch_status_t open_input_file(av_file_context_t *context, switch_file_h
 	return status;
 
 err:
+	/*
+	if (context->has_video) close_stream(context->fc, &context->video_st);
+	if (context->has_audio) close_stream(context->fc, &context->audio_st);
 
 	if (context->fc) avformat_close_input(&context->fc);
-
+	*/
 	return status;
 }
 
@@ -1264,10 +1270,8 @@ static void *SWITCH_THREAD_FUNC file_read_thread_run(switch_thread_t *thread, vo
 						switch_queue_push(context->eh.video_queue, img);
 					}
 				}
-
-				av_frame_free(&vframe);
 			}
-
+			av_frame_free(&vframe);
 			continue;
 		} else if (context->has_audio && pkt.stream_index == context->audio_st.st->index) {
 			AVFrame in_frame = { { 0 } };
@@ -1333,13 +1337,14 @@ static void *SWITCH_THREAD_FUNC file_read_thread_run(switch_thread_t *thread, vo
 
 static switch_status_t av_file_open(switch_file_handle_t *handle, const char *path)
 {
-	av_file_context_t *context;
+	av_file_context_t *context = NULL;
 	char *ext;
 	const char *tmp = NULL;
 	AVOutputFormat *fmt;
 	const char *format = NULL;
 	int ret;
 	char file[1024];
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
 	switch_set_string(file, path);
 	
@@ -1354,10 +1359,12 @@ static switch_status_t av_file_open(switch_file_handle_t *handle, const char *pa
 	ext++;
 
 	if ((context = (av_file_context_t *)switch_core_alloc(handle->memory_pool, sizeof(av_file_context_t))) == 0) {
-		return SWITCH_STATUS_MEMERR;
+		switch_goto_status(SWITCH_STATUS_MEMERR, end);
 	}
 
 	memset(context, 0, sizeof(av_file_context_t));
+	handle->private_info = context;
+	context->pool = handle->memory_pool;
 
 	context->offset = DFT_RECORD_OFFSET;
 	if (handle->params && (tmp = switch_event_get_header(handle->params, "av_video_offset"))) {
@@ -1372,7 +1379,7 @@ static switch_status_t av_file_open(switch_file_handle_t *handle, const char *pa
 
 	if (!context->audio_buffer) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not allocate buffer for %s\n", path);
-		return SWITCH_STATUS_MEMERR;
+		switch_goto_status(SWITCH_STATUS_MEMERR, end);
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "sample rate: %d, channels: %d\n", handle->samplerate, handle->channels);
@@ -1382,11 +1389,8 @@ static switch_status_t av_file_open(switch_file_handle_t *handle, const char *pa
 	if (switch_test_flag(handle, SWITCH_FILE_FLAG_READ)) {
 		if (open_input_file(context, handle, path) != SWITCH_STATUS_SUCCESS) {
 			//clean up;
-			return SWITCH_STATUS_GENERR;
+			switch_goto_status(SWITCH_STATUS_GENERR, end);
 		}
-
-		handle->private_info = context;
-		context->pool = handle->memory_pool;
 
 		if (context->has_video) {
 			switch_queue_create(&context->eh.video_queue, SWITCH_CORE_QUEUE_LEN, handle->memory_pool);
@@ -1409,7 +1413,7 @@ static switch_status_t av_file_open(switch_file_handle_t *handle, const char *pa
 
 	if (!context->fc) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Could not deduce output format from file extension\n");
-		goto end;
+		switch_goto_status(SWITCH_STATUS_GENERR, end);
 	}
 
 	fmt = context->fc->oformat;
@@ -1419,7 +1423,7 @@ static switch_status_t av_file_open(switch_file_handle_t *handle, const char *pa
 		ret = avio_open(&context->fc->pb, file, AVIO_FLAG_WRITE);
 		if (ret < 0) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not open '%s': %s\n", file, get_error_text(ret));
-			goto end;
+			switch_goto_status(SWITCH_STATUS_GENERR, end);
 		}
 	} else {
 		avformat_network_init();
@@ -1485,7 +1489,7 @@ static switch_status_t av_file_open(switch_file_handle_t *handle, const char *pa
 
 		add_stream(&context->audio_st, context->fc, &context->audio_codec, fmt->audio_codec, &handle->mm);
 		if (open_audio(context->fc, context->audio_codec, &context->audio_st) != SWITCH_STATUS_SUCCESS) {
-			goto end;
+			switch_goto_status(SWITCH_STATUS_GENERR, end);
 		}
 
 		context->has_audio = 1;
@@ -1498,17 +1502,27 @@ static switch_status_t av_file_open(switch_file_handle_t *handle, const char *pa
 	handle->seekable = 0;
 	handle->speed = 0;
 	handle->pos = 0;
-	handle->private_info = context;
-	context->pool = handle->memory_pool;
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Opening File [%s] %dhz %s\n",
 		file, handle->samplerate, switch_test_flag(handle, SWITCH_FILE_FLAG_VIDEO) ? " with VIDEO" : "");
 
 	return SWITCH_STATUS_SUCCESS;
 
-end:
+ end:
 
-	return SWITCH_STATUS_GENERR;
+	if (handle && context) {
+		av_file_close(handle);
+	}
+
+	if (context->timer.interval) {
+		switch_core_timer_destroy(&context->timer);
+	}
+
+	if (context->audio_buffer) {
+		switch_buffer_destroy(&context->audio_buffer);
+	}
+
+	return status;
 }
 
 static switch_status_t av_file_truncate(switch_file_handle_t *handle, int64_t offset)
@@ -1536,6 +1550,7 @@ static switch_status_t av_file_close(switch_file_handle_t *handle)
 	av_file_context_t *context = (av_file_context_t *)handle->private_info;
 	switch_status_t status;
 
+
 	if (context->eh.video_queue) {
 		switch_queue_push(context->eh.video_queue, NULL);
 	}
@@ -1559,12 +1574,11 @@ static switch_status_t av_file_close(switch_file_handle_t *handle)
 		if (context->has_video) close_stream(context->fc, &context->video_st);
 		if (context->has_audio) close_stream(context->fc, &context->audio_st);
 
-		if (context->fc->pb) {
-			avio_close(context->fc->pb);
+		if (context->audio_st.resample_ctx) {
+			avresample_free(&context->audio_st.resample_ctx);
 		}
 
-		/* free the stream */
-		avformat_free_context(context->fc);
+		avformat_close_input(&context->fc);
 	}
 
 	if (context->timer.interval) {
