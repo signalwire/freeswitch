@@ -49,7 +49,7 @@ void conference_event_mod_channel_handler(const char *event_channel, cJSON *json
 	char *value = NULL;
 	cJSON *jid = 0;
 	char *conference_name = strdup(event_channel + 15);
-	int cid = 0;
+	char cid[32] = "";
 	char *p;
 	switch_stream_handle_t stream = { 0 };
 	char *exec = NULL;
@@ -64,7 +64,11 @@ void conference_event_mod_channel_handler(const char *event_channel, cJSON *json
 	if ((data = cJSON_GetObjectItem(json, "data"))) {
 		action = cJSON_GetObjectCstr(data, "command");
 		if ((jid = cJSON_GetObjectItem(data, "id"))) {
-			cid = jid->valueint;
+			if (jid->valueint) {
+				switch_snprintf(cid, sizeof(cid), "%d", jid->valueint);
+			} else if (!zstr(jid->valuestring)) {
+				switch_snprintf(cid, sizeof(cid), "%s", jid->valuestring);
+			}
 		}
 
 		if ((jvalue = cJSON_GetObjectItem(data, "value"))) {
@@ -87,7 +91,7 @@ void conference_event_mod_channel_handler(const char *event_channel, cJSON *json
 		}
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "conf %s CMD %s [%s] %d\n", conference_name, key, action, cid);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "conf %s CMD %s [%s] %s\n", conference_name, key, action, cid);
 
 	if (zstr(action)) {
 		goto end;
@@ -123,15 +127,20 @@ void conference_event_mod_channel_handler(const char *event_channel, cJSON *json
 
 		exec = switch_mprintf("%s %s %s %s", conference_name, action, argv[0], argv[1]);
 
-	} else if (!strcasecmp(action, "transfer") && cid) {
+	} else if (!strcasecmp(action, "transfer")) {
 		conference_member_t *member;
 		conference_obj_t *conference;
+
+		if (cid[0] == '\0') {
+			stream.write_function(&stream, "-ERR Call transfer requires id");
+			goto end;
+		}
 
 		exec = switch_mprintf("%s %s %s", argv[0], switch_str_nil(argv[1]), switch_str_nil(argv[2]));
 		stream.write_function(&stream, "+OK Call transferred to %s", argv[0]);
 
 		if ((conference = conference_find(conference_name, NULL))) {
-			if ((member = conference_member_get(conference, cid))) {
+			if ((member = conference_member_get(conference, atoi(cid)))) {
 				switch_ivr_session_transfer(member->session, argv[0], argv[1], argv[2]);
 				switch_thread_rwlock_unlock(member->rwlock);
 			}
