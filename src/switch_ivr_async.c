@@ -2193,12 +2193,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 					write_frame.datalen = (uint32_t) switch_buffer_read(ep->buffer, buf, len);
 					write_frame.samples = write_frame.datalen / 2;
 
-					if (ep->tread_impl.number_of_channels != ep->read_impl.number_of_channels) {
-						uint32_t rlen = write_frame.datalen / 2 / ep->tread_impl.number_of_channels;
-						switch_mux_channels((int16_t *) write_frame.data, rlen, ep->tread_impl.number_of_channels, ep->read_impl.number_of_channels);
-						write_frame.datalen = rlen * 2 * ep->read_impl.number_of_channels;
-						write_frame.samples = write_frame.datalen / 2;
-					}
+					//if (ep->tread_impl.number_of_channels != ep->read_impl.number_of_channels) {
+					//	uint32_t rlen = write_frame.datalen / 2 / ep->tread_impl.number_of_channels;
+					//	switch_mux_channels((int16_t *) write_frame.data, rlen, ep->tread_impl.number_of_channels, ep->read_impl.number_of_channels);
+					//	write_frame.datalen = rlen * 2 * ep->read_impl.number_of_channels;
+					//	write_frame.samples = write_frame.datalen / 2;
+					//}
 					
 					if ((status = switch_core_session_write_frame(session, &write_frame, SWITCH_IO_FLAG_NONE, 0)) != SWITCH_STATUS_SUCCESS) {
 						break;
