@@ -869,7 +869,7 @@ $("#nosharebtn").click(function() {
 
 $("#nosharebtn").hide();
 
-function pop(id, cname, dft) {
+function pop(id, cname, dft, onchange) {
     var tmp = $.cookie(cname) || dft;
     $.cookie(cname, tmp, {
         expires: 365
@@ -881,20 +881,30 @@ function pop(id, cname, dft) {
         $.cookie(cname, $(id).val(), {
             expires: 365
         });
+
+	if (onchange) {
+	    onchange($(id));
+	}
     });
 }
 
-function pop_select(id, cname, dft) {
+function pop_select(id, cname, dft, onchange) {
     var tmp = $.cookie(cname) || dft;
     $.cookie(cname, tmp, {
 	expires: 365
     });
         // $("#usecamera").find(":selected").val()
     $(id).change(function() {
+	if (!save_settings) return;
+
 	tmp =  $(id).find(":selected").val();
 	$.cookie(cname, tmp, {
 	    expires: 365
 	});
+
+	if (onchange) {
+	    onchange($(id));
+	}
     });
 }
 
@@ -1011,10 +1021,16 @@ function init() {
 	pop("#ext", "verto_demo_ext", "3500");
     }
 
-    pop("#avatar", "verto_demo_avatar", "");
+    pop("#avatar", "verto_demo_avatar", "", function(jq) { 
+	$("#avatar_img").attr("src", jq.val());
+    });
     pop("#cidname", "verto_demo_name", "FreeSWITCH User");
     pop("#cid", "verto_demo_cid", "1008");
-    pop("#email", "verto_demo_emailaddr", "");
+    pop("#email", "verto_demo_emailaddr", "", function(jq) {
+	$("#avatar").val("http://gravatar.com/avatar/" + md5($("#email").val()) + ".png?s=600");
+	$("#avatar_img").attr("src", $("#avatar").val());
+	$("#avatar").change();
+    });
     pop("#textto", "verto_demo_textto", "1000");
 
     pop("#login", "verto_demo_login", "1008");
@@ -1022,6 +1038,9 @@ function init() {
 
     pop("#hostName", "verto_demo_hostname", window.location.hostname);
     pop("#wsURL", "verto_demo_wsurl", "wss://" + window.location.hostname + ":8082");
+
+
+    $("#avatar_img").attr("src", $("#avatar").val());
 
     var tmp = $.cookie("verto_demo_vid_checked") || "true";
     $.cookie("verto_demo_vid_checked", tmp, {
@@ -1425,14 +1444,6 @@ function init() {
 	    }
 	    
 	}});
-    });
-
-    $("#email").change(function(e) {
-        $("#avatar").val("http://gravatar.com/avatar/" + md5($("#emailaddr").val()) + ".png?s=600");
-        $.cookie("verto_demo_email", e.currentTarget.value, {
-            expires: 365
-        });
-	
     });
 
     $("#login").change(function(e) {
