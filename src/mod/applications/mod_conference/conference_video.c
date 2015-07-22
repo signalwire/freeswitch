@@ -1774,7 +1774,7 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 
 			switch_mutex_lock(conference->member_mutex);
 			for (imember = conference->members; imember; imember = imember->next) {
-				if (imember->canvas_id == canvas->canvas_id || imember->canvas_id == -1) {
+				if (imember->canvas_id == canvas->canvas_id) {
 					canvas_count++;
 				}
 			}
