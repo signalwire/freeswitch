@@ -1693,10 +1693,12 @@ static switch_bool_t eavesdrop_callback(switch_media_bug_t *bug, void *user_data
 
 				if (switch_buffer_inuse(ep->w_buffer) >= rframe->datalen) {
 					uint32_t bytes;
+					int channels = rframe->channels ? rframe->channels : 1;
+
 					switch_buffer_lock(ep->w_buffer);
 					bytes = (uint32_t) switch_buffer_read(ep->w_buffer, data, rframe->datalen);
 
-					rframe->datalen = switch_merge_sln(rframe->data, rframe->samples, (int16_t *) data, bytes / 2, rframe->channels) * 2 * rframe->channels;
+					rframe->datalen = switch_merge_sln(rframe->data, rframe->samples, (int16_t *) data, bytes / 2, channels) * 2 * channels;
 					rframe->samples = rframe->datalen / 2;
 
 					switch_buffer_unlock(ep->w_buffer);
