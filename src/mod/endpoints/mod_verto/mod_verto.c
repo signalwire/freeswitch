@@ -2778,24 +2778,23 @@ static switch_bool_t attended_transfer(switch_core_session_t *session, switch_co
 	tech_pvt = switch_core_session_get_private_class(session, SWITCH_PVT_SECONDARY);
 	b_tech_pvt = switch_core_session_get_private_class(b_session, SWITCH_PVT_SECONDARY);
 
-	switch_assert(b_tech_pvt);
-	switch_assert(tech_pvt);
-
-	switch_channel_set_variable(tech_pvt->channel, "refer_uuid", switch_core_session_get_uuid(b_tech_pvt->session));
-	switch_channel_set_variable(b_tech_pvt->channel, "transfer_disposition", "replaced");
+	if (tech_pvt && b_tech_pvt) {
+		switch_channel_set_variable(tech_pvt->channel, "refer_uuid", switch_core_session_get_uuid(b_tech_pvt->session));
+		switch_channel_set_variable(b_tech_pvt->channel, "transfer_disposition", "replaced");
 	
-	br_a = switch_channel_get_partner_uuid(tech_pvt->channel);
-	br_b = switch_channel_get_partner_uuid(b_tech_pvt->channel);
+		br_a = switch_channel_get_partner_uuid(tech_pvt->channel);
+		br_b = switch_channel_get_partner_uuid(b_tech_pvt->channel);
 
-	if (!switch_ivr_uuid_exists(br_a)) {
-		br_a = NULL;
+		if (!switch_ivr_uuid_exists(br_a)) {
+			br_a = NULL;
+		}
+
+		if (!switch_ivr_uuid_exists(br_b)) {
+			br_b = NULL;
+		}
 	}
 
-	if (!switch_ivr_uuid_exists(br_b)) {
-		br_b = NULL;
-	}
-
-	if (switch_channel_test_flag(b_tech_pvt->channel, CF_ORIGINATOR)) {
+	if (tech_pvt && b_tech_pvt && switch_channel_test_flag(b_tech_pvt->channel, CF_ORIGINATOR)) {
 		switch_core_session_t *a_session;
 
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE,
