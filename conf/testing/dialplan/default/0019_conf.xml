@@ -65,7 +65,7 @@
 <extension name="conf">
   <condition field="destination_number" expression="^6076$">
     <action application="answer"/>  
-    <action application="conference" data="6070@video-mcu-passthrough"/>
+    <action application="conference" data="6070@video-mcu-stereo-passthrough"/>
   </condition>
 </extension>
 
