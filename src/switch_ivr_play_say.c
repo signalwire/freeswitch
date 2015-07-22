@@ -1380,7 +1380,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 							  "Setup timer success %u bytes per %d ms! %d ch\n", len, interval, codec.implementation->number_of_channels);
 		}
 		write_frame.rate = fh->samplerate;
-
+		write_frame.channels = fh->channels;
 		if (timer_name) {
 			/* start a thread to absorb incoming audio */
 			switch_core_service_session(session);
