@@ -23,6 +23,23 @@
       <control action="vol listen dn" digits="4"/>
       <control action="hangup" digits="#"/>
     </group>
+    <group name="defaultvideo">
+      <control action="mute" digits="0"/>
+      <control action="vmute" digits="*0"/>
+      <control action="vmute snap" digits="*1"/>
+      <control action="vmute snapoff" digits="*2"/>
+      <control action="energy up" digits="9"/>
+      <control action="energy equ" digits="8"/>
+      <control action="energy dn" digits="7"/>
+      <control action="vol talk up" digits="3"/>
+      <control action="vol talk zero" digits="2"/>
+      <control action="vol talk dn" digits="1"/>
+      <control action="vol listen up" digits="6"/>
+      <control action="vol listen zero" digits="5"/>
+      <control action="vol listen dn" digits="4"/>
+      <control action="hangup" digits="#"/>
+    </group>
+
   </caller-controls>
 
   <!-- Profiles are collections of settings you can reference by name. -->
@@ -235,6 +252,7 @@
       <param name="energy-level" value="200"/>
       <!-- <param name="tts-engine" value="flite"/> -->
       <!-- <param name="tts-voice" value="kal16"/> -->
+      <param name="caller-controls" value="defaultvideo"/>
       <param name="muted-sound" value="conference/conf-muted.wav"/>
       <param name="unmuted-sound" value="conference/conf-unmuted.wav"/>
       <param name="alone-sound" value="conference/conf-alone.wav"/>

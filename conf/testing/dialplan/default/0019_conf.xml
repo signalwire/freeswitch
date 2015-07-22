@@ -2,6 +2,7 @@
 <extension name="conf">
   <condition field="destination_number" expression="^6070$">
     <!--<action application="answer" data="is_conference"/>  -->
+    <action application="push" data="conference_member_flags=moderator"/>
     <action application="conference" data="6070@video-mcu-stereo"/>  
   </condition>
 </extension>
