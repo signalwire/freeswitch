@@ -107,7 +107,7 @@ void conference_event_mod_channel_handler(const char *event_channel, cJSON *json
 		!strcasecmp(action, "unvmute") ||
 		!strcasecmp(action, "tvmute")
 		) {
-		exec = switch_mprintf("%s %s %d", conference_name, action, cid);
+		exec = switch_mprintf("%s %s %s", conference_name, action, cid);
 	} else if (!strcasecmp(action, "volume_in") ||
 			   !strcasecmp(action, "volume_out") ||
 			   !strcasecmp(action, "vid-res-id") ||
@@ -116,7 +116,7 @@ void conference_event_mod_channel_handler(const char *event_channel, cJSON *json
 			   !strcasecmp(action, "vid-canvas") ||
 			   !strcasecmp(action, "vid-watching-canvas") ||
 			   !strcasecmp(action, "vid-banner")) {
-		exec = switch_mprintf("%s %s %d %s", conference_name, action, cid, argv[0]);
+		exec = switch_mprintf("%s %s %s %s", conference_name, action, cid, argv[0]);
 	} else if (!strcasecmp(action, "play") || !strcasecmp(action, "stop")) {
 		exec = switch_mprintf("%s %s %s", conference_name, action, argv[0]);
 	} else if (!strcasecmp(action, "recording") || !strcasecmp(action, "vid-layout") || !strcasecmp(action, "vid-write-png")) {
