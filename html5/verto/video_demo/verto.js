@@ -2,7 +2,7 @@
 var cur_call = null;
 var share_call = null;
 var confMan = null;
-var verto;
+var vertoHandle;
 var ringing = false;
 var autocall = false;
 var chatting_with = false;
@@ -181,8 +181,8 @@ function check_vid_res()
 
     real_size();
 
-    if (verto) {
-	verto.videoParams({
+    if (vertoHandle) {
+	vertoHandle.videoParams({
 	    "minWidth": vid_width,
 	    "minHeight": vid_height,
 	    "maxWidth": vid_width,
@@ -506,7 +506,7 @@ var callbacks = {
 		cur_call.setMute("on");
 		display("Viewing Canvas: " + canvas_id);
 
-		verto.subscribe("presence", {
+		vertoHandle.subscribe("presence", {
                     handler: function(v, e) {
 			if (e.data.channelUUID === master && e.data.channelCallState === "HANGUP") {
 			    cur_call.hangup();
@@ -634,13 +634,13 @@ $(".dtmf").click(function(e) {
 
 $("#hupbtn").click(function() {
     exit_full_screen();
-    verto.hangup();
+    vertoHandle.hangup();
     cur_call = null;
 });
 
 $("#hupbtn2").click(function() {
     delete $.verto.warnOnUnload;
-    verto.hangup();
+    vertoHandle.hangup();
     cur_call = null;
 });
 
@@ -758,7 +758,7 @@ function docall() {
 
     check_vid_res();
 
-    cur_call = verto.newCall({
+    cur_call = vertoHandle.newCall({
         destination_number: $("#ext").val(),
         caller_id_name: $("#cidname").val(),
         caller_id_number: $("#cid").val(),
@@ -799,7 +799,7 @@ function doshare(on) {
 
     if (sharedev !== "screen") {
 
-	share_call = verto.newCall({
+	share_call = vertoHandle.newCall({
             destination_number: $("#ext").val() + "-screen",
             caller_id_name: $("#cidname").val() + " (Screen)",
             caller_id_number: $("#cid").val() + " (screen)",
@@ -821,7 +821,7 @@ function doshare(on) {
 	
 
 
-	share_call = verto.newCall({
+	share_call = vertoHandle.newCall({
             destination_number: $("#ext").val() + "-screen",
             caller_id_name: $("#cidname").val() + " (Screen)",
             caller_id_number: $("#cid").val() + " (screen)",
@@ -842,7 +842,7 @@ function doshare(on) {
 
     //check_vid_res();
 
-    //cur_share = verto.newCall({
+    //cur_share = vertoHandle.newCall({
     //    destination_number: $("#ext").val(),
     //    caller_id_name: $("#cidname").val(),
     //    caller_id_number: $("#cid").val(),
@@ -1350,8 +1350,8 @@ function init() {
         $.cookie("verto_demo_stun_checked", tmp ? "true" : "false", {
             expires: 365
         });
-	if (verto) {
-	    verto.iceServers(tmp);
+	if (vertoHandle) {
+	    vertoHandle.iceServers(tmp);
 	}
     });
 
@@ -1370,7 +1370,7 @@ function init() {
     
     check_vid_res();
 
-    verto = new $.verto({
+    vertoHandle = new $.verto({
         login: $("#login").val() + "@" + $("#hostName").val(),
         passwd: $("#passwd").val(),
         socketUrl: $("#wsURL").val(),
@@ -1454,7 +1454,7 @@ function init() {
     });
 
     $("#vtxtbtn").click(function() {
-        verto.message({
+        vertoHandle.message({
             to: $("#textto").val(),
             body: $("#textmsg").val()
         });
@@ -1462,18 +1462,18 @@ function init() {
     });
 
     $("#logoutbtn").click(function() {
-        verto.logout();
+        vertoHandle.logout();
         online(false);
 	$("#errordisplay").html("");
     });
 
     $("#loginbtn").click(function() {
         online(false);
-        verto.loginData({
+        vertoHandle.loginData({
             login: $("#login").val() + "@" + $("#hostName").val(),
             passwd: $("#passwd").val()
         });
-        verto.login();
+        vertoHandle.login();
         goto_page("main");
     });
 
@@ -1532,7 +1532,7 @@ $(window).load(function() {
 			$.verto.warnOnUnload = "WARNING: DO NOT RELOAD THIS PAGE! Please Close it Instead\n";
 			$.verto.unloadJobs.push(function() {
 			    exit_full_screen();
-			    verto.hangup();
+			    vertoHandle.hangup();
 			    cur_call = null;
 			});
 		    } else if (v_name === "master") {

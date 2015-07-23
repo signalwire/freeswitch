@@ -2086,9 +2086,9 @@
 
 	    params.sdp = dialog.params.sdp;
 
-	    dialog.useCamera = verto.options.deviceParams.useCamera;
-	    dialog.useMic = verto.options.deviceParams.useMic;
-	    dialog.useSpeak = verto.options.deviceParams.useSpeak;
+	    dialog.useCamera = dialog.verto.options.deviceParams.useCamera;
+	    dialog.useMic = dialog.verto.options.deviceParams.useMic;
+	    dialog.useSpeak = dialog.verto.options.deviceParams.useSpeak;
 
             if (params) {
                 if (params.useVideo) {
