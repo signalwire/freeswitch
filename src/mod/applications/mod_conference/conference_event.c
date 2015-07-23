@@ -99,15 +99,19 @@ void conference_event_mod_channel_handler(const char *event_channel, cJSON *json
 
 	SWITCH_STANDARD_STREAM(stream);
 
-	if (!strcasecmp(action, "kick") ||
-		!strcasecmp(action, "mute") ||
+	if (!strcasecmp(action, "kick")) {
+		exec = switch_mprintf("%s %s %s", conference_name, action, cid);
+	} else if (!strcasecmp(action, "mute") ||
 		!strcasecmp(action, "unmute") ||
 		!strcasecmp(action, "tmute") ||
 		!strcasecmp(action, "vmute") ||
 		!strcasecmp(action, "unvmute") ||
-		!strcasecmp(action, "tvmute")
-		) {
-		exec = switch_mprintf("%s %s %s", conference_name, action, cid);
+		!strcasecmp(action, "tvmute")) {
+		if (argv[0]) {
+		  exec = switch_mprintf("%s %s %s %s", conference_name, action, cid, argv[0]);
+		} else {
+		  exec = switch_mprintf("%s %s %s", conference_name, action, cid);
+		}
 	} else if (!strcasecmp(action, "volume_in") ||
 			   !strcasecmp(action, "volume_out") ||
 			   !strcasecmp(action, "vid-res-id") ||
