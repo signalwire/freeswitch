@@ -182,6 +182,7 @@ typedef struct h264_codec_context_s {
 	AVPacket encoder_avpacket;
 	our_h264_nalu_t nalus[MAX_NALUS];
 	enum AVCodecID av_codec_id;
+	uint16_t last_seq; // last received frame->seq
 } h264_codec_context_t;
 
 static uint8_t ff_input_buffer_padding[FF_INPUT_BUFFER_PADDING_SIZE] = { 0 };
@@ -298,6 +299,7 @@ static switch_status_t buffer_h263_packets(h264_codec_context_t *context, switch
 	uint8_t *data = frame->data;
 	int header_len = 4; // Mode A, default
 	h263_payload_header_t *h = (h263_payload_header_t *)data;
+	int delta = 0;
 
 	if (h->f) {
 		if (h->p) {
@@ -309,10 +311,37 @@ static switch_status_t buffer_h263_packets(h264_codec_context_t *context, switch
 	}
 
 #if 0
-	if (h->i == 0) {
+	//emulate packet loss
+	static int z = 0;
+	if ((z++ % 200 == 0) && h->i) return SWITCH_STATUS_RESTART;
+#endif
+
+#if 0
+	if (h->i == 0 && frame->m) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Got a H263 Key Frame\n");
 	}
 #endif
+
+	delta = frame->seq - context->last_seq;
+
+	if (delta > 1) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "packet loss? frame seq: %d last seq: %d, delta = %d\n", frame->seq, context->last_seq, delta);
+		if (delta > 2) { // wait for key frame
+			if (h->i) {
+				switch_set_flag(frame, SFF_WAIT_KEY_FRAME);
+				return SWITCH_STATUS_RESTART;
+			} else { // key frame
+				context->last_seq = frame->seq;
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Received a H263 key frame after delta %d\n", delta);
+			}
+		}
+		// return SWITCH_STATUS_RESTART;
+	} else if (delta < 1) {
+		// probabaly stream changed
+		return SWITCH_STATUS_RESTART;
+	} else { // delta == 1
+		context->last_seq = frame->seq;
+	}
 
 	if (0) {
 		static char *h263_src[] = {
