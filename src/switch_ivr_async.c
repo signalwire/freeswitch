@@ -2071,7 +2071,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 							if (switch_core_codec_init(&codec,
 													   "L16",
 													   NULL,
-													   NULL,
 													   tread_impl.actual_samples_per_second,
 													   tread_impl.microseconds_per_packet / 1000,
 													   tread_impl.number_of_channels,
