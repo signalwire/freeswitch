@@ -275,6 +275,10 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 				continue;
 			}
 
+			if (switch_core_file_has_video(&fh)) {
+				flush_video_queue(source->video_q);
+			}
+
 			if (switch_core_timer_init(&timer, source->timer_name, source->interval, (int)source->samples, temp_pool) != SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Can't start timer.\n");
 				switch_dir_close(source->dir_handle);
@@ -337,6 +341,12 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 												  source->rate, SWITCH_FILE_FLAG_VIDEO | SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, NULL) != SWITCH_STATUS_SUCCESS) {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't open %s\n", val);
 						}
+
+
+						if (switch_core_file_has_video(&source->chime_fh)) {
+							flush_video_queue(source->video_q);
+						}
+
 					}
 
 					if (switch_test_flag((&source->chime_fh), SWITCH_FILE_OPEN)) {
@@ -378,11 +388,17 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 
 						if (switch_core_file_read_video(use_fh, &vid_frame, SVR_FLUSH) == SWITCH_STATUS_SUCCESS) {
 							if (vid_frame.img) {
+								int flush = 1;
+
 								source->has_video = 1;
 								
 								if (source->total) {
-									switch_queue_push(source->video_q, vid_frame.img);
-								} else {
+									if (switch_queue_trypush(source->video_q, vid_frame.img) == SWITCH_STATUS_SUCCESS) {
+										flush = 0;
+									}
+								}
+
+								if (flush) {
 									switch_img_free(&vid_frame.img);
 									flush_video_queue(source->video_q);
 								}
@@ -486,7 +502,9 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 											imgcp = NULL;
 											switch_img_copy(img, &imgcp);
 											if (imgcp) {
-												switch_queue_push(cp->video_q, imgcp);
+												if (switch_queue_trypush(cp->video_q, imgcp) != SWITCH_STATUS_SUCCESS) {
+													flush_video_queue(cp->video_q);
+												}
 											}
 										}
 									}
@@ -718,14 +736,10 @@ static switch_status_t local_stream_file_close(switch_file_handle_t *handle)
 	}
 	
 	if (context->video_q) {
-		void *pop;
-		switch_queue_push(context->video_q, NULL);
-
+		flush_video_queue(context->video_q);
+		switch_queue_trypush(context->video_q, NULL);
 		switch_queue_interrupt_all(context->video_q);
-		while (switch_queue_trypop(context->video_q, &pop) == SWITCH_STATUS_SUCCESS) {
-			switch_image_t *img = (switch_image_t *) pop;
-			switch_img_free(&img);
-		}
+		flush_video_queue(context->video_q);
 	}
 
 	switch_img_free(&context->banner_img);
