@@ -359,6 +359,7 @@ typedef struct {
 	int reverse_twist;
 	int filter_dialtone;
 	int threshold;
+	switch_audio_resampler_t *resampler;
 } switch_inband_dtmf_t;
 
 static void spandsp_dtmf_rx_realtime_callback(void *user_data, int code, int level, int duration)
@@ -391,7 +392,10 @@ static switch_bool_t inband_dtmf_callback(switch_media_bug_t *bug, void *user_da
 {
 	switch_inband_dtmf_t *pvt = (switch_inband_dtmf_t *) user_data;
 	switch_frame_t *frame = NULL;
+	switch_core_session_t *session = switch_core_media_bug_get_session(bug);
+	switch_codec_implementation_t read_impl = { 0 };
 
+	
 	switch (type) {
 	case SWITCH_ABC_TYPE_INIT: {
 		pvt->dtmf_detect = dtmf_rx_init(NULL, NULL, NULL);
@@ -407,10 +411,56 @@ static switch_bool_t inband_dtmf_callback(switch_media_bug_t *bug, void *user_da
 		if (pvt->dtmf_detect) {
 			dtmf_rx_free(pvt->dtmf_detect);
 		}
+
+		if (pvt->resampler) {
+			switch_resample_destroy(&pvt->resampler);
+		}
+
 		break;
 	case SWITCH_ABC_TYPE_READ_REPLACE:
 		if ((frame = switch_core_media_bug_get_read_replace_frame(bug))) {
-			dtmf_rx(pvt->dtmf_detect, frame->data, frame->samples);
+			int16_t data[SWITCH_RECOMMENDED_BUFFER_SIZE];
+			int datalen = frame->datalen;
+			int16_t *dp = frame->data;
+			int samples = frame->samples;
+
+			switch_core_session_get_read_impl(session, &read_impl);
+			
+			if (read_impl.number_of_channels != 1 || read_impl.actual_samples_per_second != 8000) {
+				memcpy(data, frame->data, frame->datalen);
+				dp = data;
+			}
+
+			if (read_impl.number_of_channels != 1) {
+				uint32_t rlen = frame->datalen / 2 / read_impl.number_of_channels;
+
+				switch_mux_channels((int16_t *) dp, rlen, read_impl.number_of_channels, 1);
+				datalen = rlen * 2 * 1;
+				samples = datalen / 2;
+			}
+
+			if (read_impl.actual_samples_per_second != 8000) {
+				if (!pvt->resampler) {
+					if (switch_resample_create(&pvt->resampler,
+											   read_impl.actual_samples_per_second,
+											   8000,
+											   8 * (read_impl.microseconds_per_packet / 1000),
+											   SWITCH_RESAMPLE_QUALITY, 
+											   1) != SWITCH_STATUS_SUCCESS) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to allocate resampler\n");
+						return SWITCH_FALSE;
+					}
+				}
+
+				
+
+				switch_resample_process(pvt->resampler, dp, (int) datalen / 2 / 1);
+				memcpy(dp, pvt->resampler->to, pvt->resampler->to_len * 2 * 1);
+				samples = pvt->resampler->to_len;
+				datalen = pvt->resampler->to_len * 2 * 1;
+			}
+
+			dtmf_rx(pvt->dtmf_detect, dp, samples);
 			switch_core_media_bug_set_read_replace_frame(bug, frame);
 		}
 		break;
