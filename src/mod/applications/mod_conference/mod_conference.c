@@ -242,9 +242,11 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 
 		if (strchr(conference->name, '@')) {
 			conference->la_event_channel = switch_core_sprintf(conference->pool, "conference-liveArray.%s", conference->name);
+			conference->chat_event_channel = switch_core_sprintf(conference->pool, "conference-chat.%s", conference->name);
 			conference->mod_event_channel = switch_core_sprintf(conference->pool, "conference-mod.%s", conference->name);
 		} else {
 			conference->la_event_channel = switch_core_sprintf(conference->pool, "conference-liveArray.%s@%s", conference->name, conference->domain);
+			conference->chat_event_channel = switch_core_sprintf(conference->pool, "conference-chat.%s@%s", conference->name, conference->domain);
 			conference->mod_event_channel = switch_core_sprintf(conference->pool, "conference-mod.%s@%s", conference->name, conference->domain);
 		}
 
@@ -3303,6 +3305,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_conference_load)
 	switch_event_channel_bind("conference", conference_event_channel_handler, &conference_globals.event_channel_id);
 	switch_event_channel_bind("conference-liveArray", conference_event_la_channel_handler, &conference_globals.event_channel_id);
 	switch_event_channel_bind("conference-mod", conference_event_mod_channel_handler, &conference_globals.event_channel_id);
+	switch_event_channel_bind("conference-chat", conference_event_chat_channel_handler, &conference_globals.event_channel_id);
 
 	if ( conference_api_sub_syntax(&api_syntax) != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_TERM;
@@ -3358,6 +3361,8 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_conference_shutdown)
 
 		switch_event_channel_unbind(NULL, conference_event_channel_handler);
 		switch_event_channel_unbind(NULL, conference_event_la_channel_handler);
+		switch_event_channel_unbind(NULL, conference_event_mod_channel_handler);
+		switch_event_channel_unbind(NULL, conference_event_chat_channel_handler);
 
 		switch_console_del_complete_func("::conference::conference_list_conferences");
 

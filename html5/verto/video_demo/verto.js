@@ -70,15 +70,11 @@ function setupChat() {
     $("#chatwin").html("");
 
     $("#chatsend").click(function() {
-	if (!cur_call && chatting_with) {
+	if (!cur_call || !chatting_with || !confMan) {
 	    return;
 	}
 
-	cur_call.message({to: chatting_with, 
-			  body: $("#chatmsg").val(), 
-			  from_msg_name: cur_call.params.caller_id_name, 
-			  from_msg_number: cur_call.params.caller_id_number
-			 });  
+	confMan.sendChat($("#chatmsg").val(), "message");
 	$("#chatmsg").val("");
     });
 
@@ -307,7 +303,19 @@ var callbacks = {
 			    displayID: "#conf_display",
 			    dialog: dialog,
 			    hasVid: check_vid(),
-			    laData: data.pvtData
+			    laData: data.pvtData,
+			    chatCallback: function(v, e) {
+				console.log(e);
+				var from = e.data.fromDisplay || e.data.from || "Unknown";
+				var message = e.data.message || "";
+
+				$('#chatwin')
+				    .append($('<span class="chatuid" />').text(from + ':'))
+				    .append($('<br />'))
+				    .append(messageTextToJQ(message))
+				    .append($('<br />'));
+				$('#chatwin').animate({"scrollTop": $('#chatwin')[0].scrollHeight}, "fast");
+			    }
 			});
 
 			if (!data.pvtData.canvasCount) {
@@ -366,7 +374,7 @@ var callbacks = {
 			    $("#message").show();
 			}
 
-			chatting_with = data.pvtData.chatID;
+			chatting_with = data.pvtData.chatChannel;
 		    }
 
                     break;

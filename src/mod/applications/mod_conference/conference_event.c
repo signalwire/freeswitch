@@ -212,6 +212,68 @@ void conference_event_mod_channel_handler(const char *event_channel, cJSON *json
 
 }
 
+void conference_event_chat_channel_handler(const char *event_channel, cJSON *json, const char *key, switch_event_channel_id_t id)
+{
+	cJSON *data;
+	cJSON *jid = 0;
+	const char *type = NULL;
+	const char *action = NULL;
+	cJSON *msg;
+	char *conference_name = strdup(event_channel + 15);
+	char *message = NULL;
+	cJSON *jdata;
+	char *p;
+	const char *uid = NULL;
+	const char *display = NULL;
+
+	if (conference_name && (p = strchr(conference_name, '@'))) {
+		*p = '\0';
+	}
+
+	uid = cJSON_GetObjectCstr(json, "userid");
+	display = cJSON_GetObjectCstr(json, "fromDisplay");
+
+	if ((data = cJSON_GetObjectItem(json, "data"))) {
+		type = cJSON_GetObjectCstr(data, "type");
+		action = cJSON_GetObjectCstr(data, "action");
+		if ((jid = cJSON_GetObjectItem(data, "message"))) {
+			if (!zstr(jid->valuestring)) {
+				message = jid->valuestring;
+			}
+		}
+	}
+
+	if (action && !strcasecmp(action, "send")) {
+		msg = cJSON_CreateObject();
+		jdata = json_add_child_obj(msg, "data", NULL);
+
+		cJSON_AddItemToObject(msg, "eventChannel", cJSON_CreateString(event_channel));
+		cJSON_AddItemToObject(jdata, "direction", cJSON_CreateString("outbound"));
+
+		if (message) {
+			cJSON_AddItemToObject(jdata, "message", cJSON_CreateString(message));
+		}
+
+		if (display) {
+			cJSON_AddItemToObject(jdata, "fromDisplay", cJSON_CreateString(display));
+		}
+
+		if (uid) {
+			cJSON_AddItemToObject(jdata, "from", cJSON_CreateString(uid));
+		}
+
+		if (type) {
+			cJSON_AddItemToObject(jdata, "type", cJSON_CreateString(type));
+		} else {
+			cJSON_AddItemToObject(jdata, "type", cJSON_CreateString("message"));
+		}
+
+		switch_event_channel_broadcast(event_channel, &msg, __FILE__, conference_globals.event_channel_id);
+	}
+
+	switch_safe_free(conference_name);
+}
+
 void conference_event_la_channel_handler(const char *event_channel, cJSON *json, const char *key, switch_event_channel_id_t id)
 {
 	switch_live_array_parse_json(json, conference_globals.event_channel_id);
@@ -347,6 +409,8 @@ void conference_event_adv_la(conference_obj_t *conference, conference_member_t *
 			cJSON_AddItemToObject(data, "modChannel", cJSON_CreateString(conference->mod_event_channel));
 		}
 
+		cJSON_AddItemToObject(data, "chatChannel", cJSON_CreateString(conference->chat_event_channel));
+
 		switch_core_get_variables(&variables);
 		for (hp = variables->headers; hp; hp = hp->next) {
 			if (!strncasecmp(hp->name, "conference_verto_", 11)) {
@@ -363,6 +427,7 @@ void conference_event_adv_la(conference_obj_t *conference, conference_member_t *
 		if (cookie) {
 			switch_event_channel_permission_modify(cookie, conference->la_event_channel, join);
 			switch_event_channel_permission_modify(cookie, conference->mod_event_channel, join);
+			switch_event_channel_permission_modify(cookie, conference->chat_event_channel, join);
 		}
 	}
 }

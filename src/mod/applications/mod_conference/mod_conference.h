@@ -515,6 +515,7 @@ typedef struct conference_obj {
 	char *name;
 	char *la_name;
 	char *la_event_channel;
+	char *chat_event_channel;
 	char *mod_event_channel;
 	char *desc;
 	char *timer_name;
@@ -1002,7 +1003,7 @@ void conference_cdr_render(conference_obj_t *conference);
 void conference_event_channel_handler(const char *event_channel, cJSON *json, const char *key, switch_event_channel_id_t id);
 void conference_event_la_channel_handler(const char *event_channel, cJSON *json, const char *key, switch_event_channel_id_t id);
 void conference_event_mod_channel_handler(const char *event_channel, cJSON *json, const char *key, switch_event_channel_id_t id);
-
+void conference_event_chat_channel_handler(const char *event_channel, cJSON *json, const char *key, switch_event_channel_id_t id);
 
 void conference_member_itterator(conference_obj_t *conference, switch_stream_handle_t *stream, uint8_t non_mod, conference_api_member_cmd_t pfncallback, void *data);
 

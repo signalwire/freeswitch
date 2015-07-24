@@ -1436,6 +1436,14 @@
 
         //$(".jsDataTable").width(confMan.params.hasVid ? "900px" : "800px");
 
+	verto.subscribe(confMan.params.laData.chatChannel, {
+	    handler: function(v, e) {
+		if (typeof(confMan.params.chatCallback) === "function") {
+		    confMan.params.chatCallback(v,e);
+		}
+	    }
+	});
+
         if (confMan.params.laData.role === "moderator") {
             atitle = "Action";
             awidth = 600;
@@ -1588,7 +1596,18 @@
             }
 	});
     };
-				    
+
+    $.verto.confMan.prototype.sendChat = function(message, type) {
+        var confMan = this;
+        confMan.verto.rpcClient.call("verto.broadcast", {
+            "eventChannel": confMan.params.laData.chatChannel,
+            "data": {
+		"action": "send",
+		"message": message,
+		"type": type
+            }
+	});
+    };
 
 
     $.verto.confMan.prototype.destroy = function() {
@@ -1598,6 +1617,10 @@
 
         if (confMan.lt) {
             confMan.lt.destroy();
+        }
+
+        if (confMan.params.laData.chatChannel) {
+            confMan.verto.unsubscribe(confMan.params.laData.chatChannel);
         }
 
         if (confMan.params.laData.modChannel) {

@@ -3386,8 +3386,10 @@ static switch_bool_t verto__invite_func(const char *method, cJSON *params, jsock
 		if ((var = switch_event_get_header(jsock->params, "caller-id-name"))) {
 			caller_id_name = var;
 		}
+	} else if (caller_id_name) {
+		switch_event_add_header_string(jsock->params, SWITCH_STACK_BOTTOM, "caller-id-name", caller_id_name);
 	}
-	
+
 	if (zstr(caller_id_number)) {
 		if ((var = switch_event_get_header(jsock->params, "caller-id-number"))) {
 			caller_id_number = var;
@@ -3647,6 +3649,7 @@ static switch_bool_t verto__broadcast_func(const char *method, cJSON *params, js
 	switch_bool_t r = SWITCH_FALSE;
 	const char *event_channel = cJSON_GetObjectCstr(params, "eventChannel");
 	cJSON *jevent;
+	const char *display = NULL;
 
 	*response = cJSON_CreateObject();
 
@@ -3665,6 +3668,11 @@ static switch_bool_t verto__broadcast_func(const char *method, cJSON *params, js
 
 
 	cJSON_AddItemToObject(params, "userid", cJSON_CreateString(jsock->uid)); 
+
+	display = switch_event_get_header(jsock->params, "caller-id-name");
+	if (display) {
+		cJSON_AddItemToObject(params, "fromDisplay", cJSON_CreateString(display));
+	}
 
 	jevent = cJSON_Duplicate(params, 1);
 	switch_event_channel_broadcast(event_channel, &jevent, modname, globals.event_channel_id);
