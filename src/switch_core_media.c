@@ -4886,7 +4886,7 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 
 	if (!blank_img) {
 		switch_color_set_rgb(&bgcolor, "#000000");
-		blank_img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, 320, 240, 1);
+		blank_img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, 352, 288, 1);
 		switch_img_fill(blank_img, 0, 0, blank_img->d_w, blank_img->d_h, &bgcolor);
 	}
 	
