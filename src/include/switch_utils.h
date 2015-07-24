@@ -1279,6 +1279,15 @@ SWITCH_DECLARE(switch_status_t) switch_frame_buffer_dup(switch_frame_buffer_t *f
 SWITCH_DECLARE(switch_status_t) switch_frame_buffer_destroy(switch_frame_buffer_t **fbP);
 SWITCH_DECLARE(switch_status_t) switch_frame_buffer_create(switch_frame_buffer_t **fbP);
 
+typedef struct {
+	int64_t userms;
+	int64_t kernelms;
+} switch_cputime;
+/**
+/ Return used CPU time in this process for user and kernel code
+**/
+SWITCH_DECLARE(void) switch_getcputime(switch_cputime *t);
+
 SWITCH_END_EXTERN_C
 #endif
 /* For Emacs:

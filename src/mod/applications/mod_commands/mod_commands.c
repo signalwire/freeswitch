@@ -6059,6 +6059,22 @@ SWITCH_STANDARD_API(quote_shell_arg_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+#define GETCPUTIME_SYNTAX "[reset]"
+SWITCH_STANDARD_API(getcputime_function) 
+{
+	static int64_t reset_ums = 0, reset_kms = 0; // Last reset times in ms
+	switch_cputime t = { 0 };
+	switch_getcputime(&t);
+	t.userms -= reset_ums;
+	t.kernelms -= reset_kms;
+	stream->write_function(stream, "%"SWITCH_INT64_T_FMT", %"SWITCH_INT64_T_FMT, t.userms, t.kernelms);
+	if (cmd && !strncmp(cmd, "reset", 5) && t.userms != -1) {
+		reset_ums += t.userms;
+		reset_kms += t.kernelms;
+	}
+	return SWITCH_STATUS_SUCCESS;
+}
+
 #define UUID_LOGLEVEL_SYNTAX "<uuid> <level>"
 SWITCH_STANDARD_API(uuid_loglevel)
 {
@@ -6916,6 +6932,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "xml_locate", "Find some xml", xml_locate_function, "[root | <section> <tag> <tag_attr_name> <tag_attr_val>]");
 	SWITCH_ADD_API(commands_api_interface, "xml_wrap", "Wrap another api command in xml", xml_wrap_api_function, "<command> <args>");
 	SWITCH_ADD_API(commands_api_interface, "file_exists", "Check if a file exists on server", file_exists_function, "<file>");
+	SWITCH_ADD_API(commands_api_interface, "getcputime", "Gets CPU time in milliseconds (user,kernel)", getcputime_function, GETCPUTIME_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "json", "JSON API", json_function, "JSON");
 
 	SWITCH_ADD_JSON_API(json_api_interface, "mediaStats", "JSON Media Stats", json_stats_function, "");
@@ -7096,6 +7113,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add uuid_warning ::console::list_uuid");
 	switch_console_set_complete("add ...");
 	switch_console_set_complete("add file_exists");
+	switch_console_set_complete("add getcputime");
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_NOUNLOAD;

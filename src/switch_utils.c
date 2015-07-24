@@ -35,6 +35,10 @@
 #include <switch.h>
 #ifndef WIN32
 #include <arpa/inet.h>
+#if defined(HAVE_SYS_TIME_H) && defined(HAVE_SYS_RESOURCE_H)
+#include <sys/time.h>
+#include <sys/resource.h>
+#endif
 #endif
 #include "private/switch_core_pvt.h"
 #define ESCAPE_META '\\'
@@ -4202,6 +4206,25 @@ SWITCH_DECLARE(void) switch_http_dump_request(switch_http_request_t *request)
 		}
 	}
 }
+
+SWITCH_DECLARE(void) switch_getcputime(switch_cputime *t)
+{
+#if defined(_WIN32)
+	FILETIME ct, et, kt, ut; // Times are in 100-ns ticks (div 10000 to get ms)
+	GetProcessTimes(GetCurrentProcess(), &ct, &et, &kt, &ut);
+	t->userms = ((int64_t)ut.dwLowDateTime | ((int64_t)ut.dwHighDateTime << 32)) / 10000;
+	t->kernelms = ((int64_t)kt.dwLowDateTime | ((int64_t)kt.dwHighDateTime << 32)) / 10000;
+#elif defined(HAVE_GETRUSAGE)
+	struct rusage r;
+	getrusage(RUSAGE_SELF, &r);
+	t->userms = r.ru_utime.tv_sec * 1000 + r.ru_utime.tv_usec / 1000;
+	t->kernelms = r.ru_stime.tv_sec * 1000 + r.ru_stime.tv_usec / 1000;
+#else
+	t->userms = -1;
+	t->kernelms = -1;
+#endif
+}
+
 
 /* For Emacs:
  * Local Variables:
