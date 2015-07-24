@@ -444,7 +444,7 @@ static switch_bool_t inband_dtmf_callback(switch_media_bug_t *bug, void *user_da
 					if (switch_resample_create(&pvt->resampler,
 											   read_impl.actual_samples_per_second,
 											   8000,
-											   8 * (read_impl.microseconds_per_packet / 1000),
+											   8 * (read_impl.microseconds_per_packet / 1000) * 2,
 											   SWITCH_RESAMPLE_QUALITY, 
 											   1) != SWITCH_STATUS_SUCCESS) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to allocate resampler\n");
