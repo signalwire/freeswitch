@@ -1665,11 +1665,12 @@ static switch_bool_t eavesdrop_callback(switch_media_bug_t *bug, void *user_data
 
 				if (switch_buffer_inuse(ep->r_buffer) >= rframe->datalen) {
 					uint32_t bytes;
+					int channels = rframe->channels ? rframe->channels : 1;
+					
 					switch_buffer_lock(ep->r_buffer);
 					bytes = (uint32_t) switch_buffer_read(ep->r_buffer, ep->data, rframe->datalen);
-
-					memcpy(rframe->data, ep->data, rframe->datalen);
-					rframe->datalen = switch_merge_sln(rframe->data, rframe->samples, (int16_t *) ep->data, bytes / 2, rframe->channels) * 2 * rframe->channels;
+					
+					rframe->datalen = switch_merge_sln(rframe->data, rframe->samples, (int16_t *) ep->data, bytes / 2, channels) * 2 * channels;
 					rframe->samples = rframe->datalen / 2;
 
 					ep->demux_frame.data = ep->data;
@@ -2190,15 +2191,79 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 			if (switch_buffer_inuse(ep->buffer) >= len) {
 				switch_buffer_lock(ep->buffer);
 				while (switch_buffer_inuse(ep->buffer) >= len) {
+					int tchanged = 0, changed = 0;
+
 					write_frame.datalen = (uint32_t) switch_buffer_read(ep->buffer, buf, len);
 					write_frame.samples = write_frame.datalen / 2;
 
-					//if (ep->tread_impl.number_of_channels != ep->read_impl.number_of_channels) {
-					//	uint32_t rlen = write_frame.datalen / 2 / ep->tread_impl.number_of_channels;
-					//	switch_mux_channels((int16_t *) write_frame.data, rlen, ep->tread_impl.number_of_channels, ep->read_impl.number_of_channels);
-					//	write_frame.datalen = rlen * 2 * ep->read_impl.number_of_channels;
-					//	write_frame.samples = write_frame.datalen / 2;
-					//}
+
+					switch_core_session_get_read_impl(tsession, &tread_impl);
+					switch_core_session_get_read_impl(session, &read_impl);
+						
+					if (tread_impl.number_of_channels != ep->tread_impl.number_of_channels || 
+						tread_impl.actual_samples_per_second != ep->tread_impl.actual_samples_per_second) {
+						tchanged = 1;
+					}
+
+					if (read_impl.number_of_channels != ep->tread_impl.number_of_channels ||
+						read_impl.actual_samples_per_second != ep->read_impl.actual_samples_per_second) {
+						changed = 1;
+					}
+					
+					if (changed || tchanged) {
+
+						if (changed) {
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, 
+											  "SPYING CHANNEL CODEC CHANGE FROM %dhz@%dc to %dhz@%dc\n", 
+											  ep->read_impl.actual_samples_per_second,
+											  ep->read_impl.number_of_channels,
+											  read_impl.actual_samples_per_second,
+											  read_impl.number_of_channels);
+						}
+
+						if (tchanged) {
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, 
+											  "SPYED CHANNEL CODEC CHANGE FROM %dhz@%dc to %dhz@%dc\n", 
+											  ep->tread_impl.actual_samples_per_second,
+											  ep->tread_impl.number_of_channels,
+											  tread_impl.actual_samples_per_second,
+											  tread_impl.number_of_channels);
+
+							tlen = tread_impl.decoded_bytes_per_packet;
+							
+							if (len > tlen) {
+								len = tlen;
+							}
+							
+							switch_core_codec_destroy(&codec);
+							
+							if (switch_core_codec_init(&codec,
+													   "L16",
+													   NULL,
+													   NULL,
+													   tread_impl.actual_samples_per_second,
+													   tread_impl.microseconds_per_packet / 1000,
+													   tread_impl.number_of_channels,
+													   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
+													   NULL, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
+								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot init codec\n");
+								switch_core_session_rwunlock(tsession);
+								goto end;
+							}
+						}
+						
+						ep->read_impl = read_impl;
+						ep->tread_impl = tread_impl;
+					}
+					
+
+					if (ep->tread_impl.number_of_channels != ep->read_impl.number_of_channels) {
+						uint32_t rlen = write_frame.datalen / 2 / ep->tread_impl.number_of_channels;
+						
+						switch_mux_channels((int16_t *) write_frame.data, rlen, ep->tread_impl.number_of_channels, ep->read_impl.number_of_channels);
+						write_frame.datalen = rlen * 2 * ep->read_impl.number_of_channels;
+						write_frame.samples = write_frame.datalen / 2;
+					}
 					
 					if ((status = switch_core_session_write_frame(session, &write_frame, SWITCH_IO_FLAG_NONE, 0)) != SWITCH_STATUS_SUCCESS) {
 						break;
