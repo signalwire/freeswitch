@@ -1360,14 +1360,17 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_write_thread_run(switch_thread_
 {
 	conference_member_t *member = (conference_member_t *) obj;
 	void *pop;
-	int loops = 0;
+	int loops = 0, done = 0;
 
 	while(conference_utils_member_test_flag(member, MFLAG_RUNNING) || switch_queue_size(member->mux_out_queue)) {
 		switch_frame_t *frame;
 
-		if (conference_utils_member_test_flag(member, MFLAG_RUNNING)) {
+		if (conference_utils_member_test_flag(member, MFLAG_RUNNING) && !done) {
 			if (switch_queue_pop(member->mux_out_queue, &pop) == SWITCH_STATUS_SUCCESS) {
-				if (!pop) continue;
+				if (!pop) {
+					done = 1;
+					continue;
+				}
 
 				if (loops == 0 || loops == 50) {
 					switch_core_media_gen_key_frame(member->session);
@@ -1391,6 +1394,8 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_write_thread_run(switch_thread_
 					frame = (switch_frame_t *) pop;
 					switch_frame_buffer_free(member->fb, &frame);
 				}
+			} else {
+				if (done) break;
 			}
 		}
 	}
