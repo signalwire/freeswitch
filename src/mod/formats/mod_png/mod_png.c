@@ -252,6 +252,11 @@ static switch_bool_t write_png_bug_callback(switch_media_bug_t *bug, void *user_
 
 			if (!frame || !frame->img) break;
 
+			if (data->both_legs == SWITCH_FALSE) {
+				switch_img_write_png(frame->img, data->path);
+				return SWITCH_FALSE;
+			}
+			
 			if (!data->write_img) {
 				switch_img_copy(frame->img, &data->write_img);
 			}
@@ -304,7 +309,7 @@ SWITCH_STANDARD_API(uuid_write_png_function)
 		argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 	}
 
-	if (argc < 2 || (argc > 2 && strcasecmp(argv[2], "concat") && strcasecmp(argv[2], "split"))) {
+	if (argc < 2 || (argc > 2 && strcasecmp(argv[2], "concat") && strcasecmp(argv[2], "split") && strcasecmp(argv[2], "write"))) {
 		stream->write_function(stream, "-USAGE: <uuid> <path> [concat | split <other_path>]\n");
 		goto end;
 	}
@@ -325,29 +330,34 @@ SWITCH_STANDARD_API(uuid_write_png_function)
 	bug_data = switch_core_session_alloc(session_, sizeof(*bug_data));
 
 	if (argc > 2) {
-		switch_channel_t *channel_ = switch_core_session_get_channel(session_);
+		if (!strcasecmp(argv[2], "write")) {
+			flags = SMBF_WRITE_VIDEO_PING;
+		} else {
 
-		if (!switch_channel_test_flag_partner(channel_, CF_VIDEO)) {
-			stream->write_function(stream, "-ERR Session must be bridged and other leg must have video.\n");
-			switch_core_session_rwunlock(session_);
-			goto end;
-		}
+			switch_channel_t *channel_ = switch_core_session_get_channel(session_);
 
-		bug_data->both_legs = SWITCH_TRUE;
-		flags |= SMBF_WRITE_VIDEO_PING;
-
-		if (!strcasecmp(argv[2], "split")) {
-			if (argc == 3) {
-				stream->write_function(stream, "-ERR Second filename expected but not given.\n");
+			if (!switch_channel_test_flag_partner(channel_, CF_VIDEO)) {
+				stream->write_function(stream, "-ERR Session must be bridged and other leg must have video.\n");
 				switch_core_session_rwunlock(session_);
 				goto end;
 			}
 
-			if (!switch_is_file_path(argv[3])) {
-				const char *prefix = SWITCH_GLOBAL_dirs.images_dir;
-				bug_data->other_path = switch_core_session_sprintf(session_, "%s%s%s", prefix, SWITCH_PATH_SEPARATOR, argv[3]);
-			} else {
-				bug_data->other_path = switch_core_session_strdup(session_, argv[3]);
+			bug_data->both_legs = SWITCH_TRUE;
+			flags |= SMBF_WRITE_VIDEO_PING;
+
+			if (!strcasecmp(argv[2], "split")) {
+				if (argc == 3) {
+					stream->write_function(stream, "-ERR Second filename expected but not given.\n");
+					switch_core_session_rwunlock(session_);
+					goto end;
+				}
+
+				if (!switch_is_file_path(argv[3])) {
+					const char *prefix = SWITCH_GLOBAL_dirs.images_dir;
+					bug_data->other_path = switch_core_session_sprintf(session_, "%s%s%s", prefix, SWITCH_PATH_SEPARATOR, argv[3]);
+				} else {
+					bug_data->other_path = switch_core_session_strdup(session_, argv[3]);
+				}
 			}
 		}
 	}
@@ -398,6 +408,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_png_load)
 
 	SWITCH_ADD_API(api_interface, "uuid_write_png", "grab an image from a call",uuid_write_png_function, "");
 
+	switch_console_set_complete("add uuid_write_png ::console::list_uuid");
+	
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
 }
