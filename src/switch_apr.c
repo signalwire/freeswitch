@@ -269,6 +269,11 @@ SWITCH_DECLARE(switch_status_t) switch_thread_rwlock_unlock(switch_thread_rwlock
 
 SWITCH_DECLARE(switch_status_t) switch_mutex_init(switch_mutex_t ** lock, unsigned int flags, switch_memory_pool_t *pool)
 {
+#ifdef WIN32
+	/* Old version of APR misunderstands mutexes. On Windows, mutexes are cross-process. 
+	   APR has no reason to not use critical sections instead of mutexes. */
+	if (flags == SWITCH_MUTEX_NESTED) flags = SWITCH_MUTEX_DEFAULT;
+#endif
 	return apr_thread_mutex_create(lock, flags, pool);
 }
 
