@@ -7,8 +7,8 @@
   <X-PRE-PROCESS cmd="set" data="use_profile=external"/>
   <X-PRE-PROCESS cmd="set" data="rtp_sdes_suites=AEAD_AES_256_GCM_8|AEAD_AES_128_GCM_8|AES_CM_256_HMAC_SHA1_80|AES_CM_192_HMAC_SHA1_80|AES_CM_128_HMAC_SHA1_80|AES_CM_256_HMAC_SHA1_32|AES_CM_192_HMAC_SHA1_32|AES_CM_128_HMAC_SHA1_32|AES_CM_128_NULL_AUTH"/>
   <X-PRE-PROCESS cmd="set" data="zrtp_secure_media=true"/>
-  <X-PRE-PROCESS cmd="set" data="global_codec_prefs=OPUS,G722,PCMU,PCMA,VP8,H264,H263,H263-1998"/>
-  <X-PRE-PROCESS cmd="set" data="outbound_codec_prefs=OPUS,G722,PCMU,PCMA,VP8,H264,H263,H263-1998"/>
+  <X-PRE-PROCESS cmd="set" data="global_codec_prefs=OPUS,G722,PCMU,PCMA,VP8,H264,H263,H263-1998,G7221@32000h"/>
+  <X-PRE-PROCESS cmd="set" data="outbound_codec_prefs=OPUS,G722,PCMU,PCMA,VP8,H264,H263,H263-1998,G7221@32000h"/>
   <X-PRE-PROCESS cmd="set" data="outbound_caller_name=FreeSWITCH"/>
   <X-PRE-PROCESS cmd="set" data="outbound_caller_id=0000000000"/>
 

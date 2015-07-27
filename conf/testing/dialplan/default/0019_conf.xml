@@ -2,6 +2,8 @@
 <extension name="conf">
   <condition field="destination_number" expression="^6070$">
     <!--<action application="answer" data="is_conference"/>  -->
+    <action application="set" data="video_mirror_input=true"/> 
+    <action application="set" data="video_use_dedicated_encoder=true"/> 
     <action application="push" data="conference_member_flags=moderator"/>
     <action application="conference" data="6070@video-mcu-stereo"/>  
   </condition>

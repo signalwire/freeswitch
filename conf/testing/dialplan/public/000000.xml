@@ -1,0 +1,57 @@
+<!-- Eavesdrop Test Rig -->
+
+<!-- Target Bridge To Spy On -->
+<extension name="party-a-to-party-b-bridge">
+  <condition field="destination_number" expression="^bridge$">
+    <action application="set" data="test_role=bridge_partya"/>
+    <action application="set" data="eavesdrop_group=bridge"/>
+    <action application="set" data="absolute_codec_string=${sip_h_X-Party-A-Codec}"/>
+    <action application="bridge" data="{test_role=bridge_partyb,eavesdrop_group=bridge,absolute_codec_string=${sip_h_X-Party-B-Codec}}sofia/external/sip:partyb@${local_ip_v4}:5090"/>
+  </condition>
+</extension>
+
+<!-- Eavesdrop Target App -->
+<extension name="eavesdrop-target">
+  <condition field="destination_number" expression="^eavesdrop$">
+    <action application="set" data="test_role=eavesdrop_target"/>
+    <action application="set" data="eavesdrop_require_group=bridge"/>
+    <action application="set" data="absolute_codec_string=${sip_h_X-Eavesdrop-Codec}"/>
+    <action application="answer"/>
+    <action application="eavesdrop" data="all"/>
+  </condition>
+</extension>
+
+<!-- Target Party B -->
+<extension name="party-b-answer">
+  <condition field="destination_number" expression="^partyb$">
+    <action application="set" data="test_role=partyb"/>
+    <action application="set" data="absolute_codec_string=${sip_h_X-Party-B-Codec}"/>
+    <action application="answer"/>
+    <action application="spandsp_start_dtmf"/>
+    <action application="playback" data="silence_stream://-1"/>
+  </condition>
+</extension>
+
+<!-- Source Party A -->
+<extension name="party-a-playback">
+  <condition field="destination_number" expression="^partya$">
+    <action application="set" data="test_role=partya"/>
+    <action application="answer"/>
+    <action application="spandsp_start_dtmf"/>
+    <action application="playback" data="silence_stream://-1"/>
+  </condition>
+</extension>
+
+<!-- Eavesdrop Party -->
+<extension name="eavesdroper">
+  <condition field="destination_number" expression="^eavesdroper$">
+    <action application="set" data="test_role=eavesdrop_source"/>
+    <action application="answer"/>
+    <action application="spandsp_start_dtmf"/>
+    <action application="playback" data="silence_stream://-1"/>
+  </condition>
+</extension>
+
+
+
+

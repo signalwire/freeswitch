@@ -1,0 +1,22 @@
+<!-- Image Playback Party -->
+<extension name="image-play-back">
+  <condition field="destination_number" expression="^playimg(\d+)$">
+    <action application="set" data="test_role=playimg$1"/>
+    <action application="answer"/>
+    <action application="spandsp_start_dtmf"/>
+    <action application="playback" data="{audio_file=silence_stream://-1,png_ms=-1}/${sip_h_X-File}"/>
+  </condition>
+</extension>
+
+<!-- Conference MCU -->
+<extension name="conf">
+  <condition field="destination_number" expression="^6070$">
+    <action application="set" data="test_role=${sip_h_X-Test-Role}"/>
+    <!--
+    <action application="set" data="video_mirror_input=true"/> 
+    <action application="set" data="video_use_dedicated_encoder=true"/>
+    -->
+    <action application="push" data="conference_member_flags=moderator"/>
+    <action application="conference" data="6070@video-mcu-stereo"/>  
+  </condition>
+</extension>
