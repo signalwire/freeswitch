@@ -7171,6 +7171,10 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 					break;
 				}
 
+				if (smh->codecs[i]->codec_type != SWITCH_CODEC_TYPE_AUDIO) {
+					goto do_next;
+				}
+
 				if (smh->rates[j] == smh->codecs[i]->samples_per_second) {
 					goto do_next;
 				}
