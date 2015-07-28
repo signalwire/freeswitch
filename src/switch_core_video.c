@@ -205,16 +205,24 @@ SWITCH_DECLARE(void) switch_img_patch(switch_image_t *IMG, switch_image_t *img, 
 		int max_h = MIN(img->d_h, IMG->d_h - abs(y));
 		int j;
 		uint8_t alpha;
-		switch_rgb_color_t *rgb_color;
+		switch_rgb_color_t *rgb;
 
 		for (i = 0; i < max_h; i++) {
 			for (j = 0; j < max_w; j++) {
 				alpha = img->planes[SWITCH_PLANE_PACKED][i * img->stride[SWITCH_PLANE_PACKED] + j * 4];
-				// printf("%d, %d alpha: %d\n", j, i, alpha);
 
-				if (alpha > 127) { // todo: mux alpha with the underlying pixel ?
-					rgb_color = (switch_rgb_color_t *)(img->planes[SWITCH_PLANE_PACKED] + i * img->stride[SWITCH_PLANE_PACKED] + j * 4);
-					switch_img_draw_pixel(IMG, x + j, y + i, rgb_color);
+				if (alpha > 0) {
+					switch_rgb_color_t RGB = { 0 };
+
+					switch_img_get_rgb_pixel(IMG, &RGB, x + j, y + i);
+					rgb = (switch_rgb_color_t *)(img->planes[SWITCH_PLANE_PACKED] + i * img->stride[SWITCH_PLANE_PACKED] + j * 4);
+
+					RGB.a = 255;
+					RGB.r = ((RGB.r * (255 - alpha)) >> 8) + ((rgb->r * alpha) >> 8);
+					RGB.g = ((RGB.g * (255 - alpha)) >> 8) + ((rgb->g * alpha) >> 8);
+					RGB.b = ((RGB.b * (255 - alpha)) >> 8) + ((rgb->b * alpha) >> 8);
+
+					switch_img_draw_pixel(IMG, x + j, y + i, &RGB);
 				}
 			}
 		}
