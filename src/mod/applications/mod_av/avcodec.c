@@ -880,7 +880,7 @@ static switch_status_t open_encoder(h264_codec_context_t *context, uint32_t widt
 		context->encoder_ctx->me_subpel_quality = 7;   // subq=7
 		context->encoder_ctx->me_range = 16;   // me_range=16
 		context->encoder_ctx->max_b_frames = 3;    // bf=3
-		context->encoder_ctx->refs = 3;    // refs=3
+		//context->encoder_ctx->refs = 3;    // refs=3
 		context->encoder_ctx->trellis = 1; // trellis=1
 	}
 
