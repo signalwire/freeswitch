@@ -8159,7 +8159,9 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 								switch_event_add_header_string(xml_params, SWITCH_STACK_BOTTOM, "refer-to-params", refer_to->r_url->url_params ? refer_to->r_url->url_params : "");
 								switch_event_add_header_string(xml_params, SWITCH_STACK_BOTTOM, "refer-to-headers", refer_to->r_url->url_headers ? refer_to->r_url->url_headers : "");
 								switch_event_add_header_string(xml_params, SWITCH_STACK_BOTTOM, "replaces-call-id", replaces->rp_call_id);
-
+								switch_event_add_header_string(xml_params, SWITCH_STACK_BOTTOM, "refer-from-channel-id", switch_core_session_get_uuid(session));
+								switch_event_add_header_string(xml_params, SWITCH_STACK_BOTTOM, "refer-for-channel-id", br_a);
+								 
 
 								if (switch_xml_locate("channels", NULL, NULL, NULL,
 													  &xml_root, &xml_channel, xml_params, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
