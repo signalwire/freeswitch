@@ -11,8 +11,8 @@ extern "C" {
 #include <switch.h>
 #define this_check(x) do { if (!this) { switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_ERROR, "object is not initalized\n"); return x;}} while(0)
 #define this_check_void() do { if (!this) { switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_ERROR, "object is not initalized\n"); return;}} while(0)
-#define sanity_check(x) do { if (!(session && allocated)) { switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_ERROR, "session is not initalized\n"); return x;}} while(0)
-#define sanity_check_noreturn do { if (!(session && allocated)) { switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_ERROR, "session is not initalized\n"); return;}} while(0)
+#define sanity_check(x) do { if (!(session && allocated)) { switch_log_printf(SWITCH_CHANNEL_UUID_LOG(uuid),SWITCH_LOG_ERROR, "session is not initalized\n"); return x;}} while(0)
+#define sanity_check_noreturn do { if (!(session && allocated)) { switch_log_printf(SWITCH_CHANNEL_UUID_LOG(uuid),SWITCH_LOG_ERROR, "session is not initalized\n"); return;}} while(0)
 #define init_vars() allocated = 0;						\
 	session = NULL;										\
 	channel = NULL;										\
