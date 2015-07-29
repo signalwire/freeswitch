@@ -1933,7 +1933,7 @@ static void check_jb(switch_core_session_t *session, const char *input, int32_t 
 
 static void check_jb_sync(switch_core_session_t *session)
 {
-	int32_t jb_sync_msec = 200;
+	int32_t jb_sync_msec = 0;
 	uint32_t fps, frames = 0;
 	switch_media_handle_t *smh;
 	switch_rtp_engine_t *v_engine = NULL;
@@ -1951,9 +1951,10 @@ static void check_jb_sync(switch_core_session_t *session)
 
 	v_engine = &smh->engines[SWITCH_MEDIA_TYPE_VIDEO];
 	
-	if ((var = switch_channel_get_variable(session->channel, "jb_sync_msec"))) {
+	if ((var = switch_channel_get_variable_dup(session->channel, "jb_sync_msec", SWITCH_FALSE, -1))) {
 		int tmp;
-
+		char *p;
+		
 		if (!strcasecmp(var, "disabled")) {
 			return;
 		}
@@ -1963,21 +1964,38 @@ static void check_jb_sync(switch_core_session_t *session)
 		if (tmp && tmp > -50 && tmp < 10000) {
 			jb_sync_msec = tmp;
 		}
+
+		if ((p = strchr(var, ':'))) {
+			p++;
+			frames = atoi(p);
+		}
 	}
+	
 	if (smh->vid_frames < 10) {
-		fps = 15; 
+		fps = 30; 
 	} else {
 		fps = switch_core_media_get_video_fps(session);
 	}
 	
 	if (!fps) return;
 
-	if (jb_sync_msec < 0) {
-		frames = abs(jb_sync_msec);
-		jb_sync_msec = 1000 / (fps / frames);
-	} else {
-		frames = fps / (1000 / jb_sync_msec);
+	if (!frames) {
+		frames = fps / 7.5;
+		if (frames < 4) frames = 4;
 	}
+	
+	if (!jb_sync_msec) {
+		jb_sync_msec = frames * 75;
+	}
+	
+	//if (!frames) {
+	//	if (jb_sync_msec < 0) {
+	//		frames = abs(jb_sync_msec);
+	//		jb_sync_msec = 1000 / (fps / frames);
+	//	} else {
+	//		frames = fps / (1000 / jb_sync_msec);
+	//	}
+	//}
 
 	if (frames == switch_rtp_get_video_buffer_size(v_engine->rtp_session)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), 
