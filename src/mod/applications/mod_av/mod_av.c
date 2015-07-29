@@ -40,6 +40,56 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_av_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_av_shutdown);
 SWITCH_MODULE_DEFINITION(mod_av, mod_av_load, mod_av_shutdown, NULL);
 
+typedef struct av_mutex_helper_s {
+	switch_mutex_t *mutex;
+	switch_memory_pool_t *pool;
+} av_mutex_helper_t;
+
+int mod_av_lockmgr_cb(void **m, enum AVLockOp op)
+{
+	av_mutex_helper_t *context = NULL;
+
+	if (!m) return -1;
+
+	context = (av_mutex_helper_t *)*m;
+
+	switch(op)
+		{
+		case AV_LOCK_CREATE:
+			{
+				switch_memory_pool_t *pool;
+				switch_core_new_memory_pool(&pool);
+				context = switch_core_alloc(pool, sizeof(av_mutex_helper_t));
+				switch_mutex_init(&context->mutex, SWITCH_MUTEX_NESTED, pool);
+				context->pool = pool;
+				*m = (void *)context;
+				break;
+			}
+		case AV_LOCK_OBTAIN:
+			{
+				switch_mutex_t *mutex = context->mutex;
+				if (!mutex) return -1;
+				switch_mutex_lock(mutex);
+				break;
+			}
+		case AV_LOCK_RELEASE:
+			{
+				switch_mutex_t *mutex = context->mutex;
+				if (!mutex) return -1;
+				switch_mutex_unlock(mutex);
+				break;
+			}
+		case AV_LOCK_DESTROY:
+			{
+				switch_core_destroy_memory_pool(&context->pool);
+				break;
+			}
+		default:
+			break;
+		}
+	return 0;
+}
+
 static void log_callback(void *ptr, int level, const char *fmt, va_list vl)
 {
 	switch_log_level_t switch_level = SWITCH_LOG_DEBUG;
@@ -68,12 +118,13 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_av_shutdown)
 {
 	avformat_network_deinit();
 	av_log_set_callback(NULL);
+	av_lockmgr_register(NULL);
 	return SWITCH_STATUS_SUCCESS;
 }
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_av_load)
 {
-
+	av_lockmgr_register(&mod_av_lockmgr_cb);
 	av_log_set_callback(log_callback);
 	av_log_set_level(AV_LOG_INFO);
 	avformat_network_init();
