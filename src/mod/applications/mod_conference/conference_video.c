@@ -834,8 +834,8 @@ void conference_video_layer_set_banner(conference_member_t *member, mcu_layer_t 
 	}
 
 	switch_img_free(&layer->banner_img);
-	switch_img_free(&layer->logo_img);
-	switch_img_free(&layer->logo_text_img);
+	//switch_img_free(&layer->logo_img);
+	//switch_img_free(&layer->logo_text_img);
 	layer->banner_img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, layer->screen_w, font_size * 2, 1);
 
 	conference_video_reset_image(layer->banner_img, &bgcolor);
