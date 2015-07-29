@@ -12,6 +12,43 @@
 	<image x="0" y="90" scale="180"/>
 	<image x="180" y="90" scale="180"/>
       </layout>
+
+      <layout name="hollywood" auto-3d-position="true" bgimg="/root/fakebg.png">
+	<image x="58" y="0" scale="80" hscale="118" zoom="true" reservation_id="square-1"/>
+	<image x="140" y="0" scale="80" hscale="118" zoom="true" reservation_id="square-2"/>
+	<image x="222" y="0" scale="80" hscale="118" zoom="true" reservation_id="square-3"/>
+	<image x="58" y="121" scale="80" hscale="118" zoom="true" reservation_id="square-4"/>
+	<image x="140" y="121" scale="80" hscale="118" zoom="true" reservation_id="square-5"/>
+	<image x="222" y="121" scale="80" hscale="118" zoom="true" reservation_id="square-6"/>
+	<image x="58" y="242" scale="80" hscale="118" zoom="true" reservation_id="square-7"/>
+	<image x="140" y="242" scale="80" hscale="118" zoom="true" reservation_id="square-8"/>
+	<image x="222" y="242" scale="80" hscale="118" zoom="true" reservation_id="square-9"/>
+      </layout>
+
+      <layout name="3x3-reserved" auto-3d-position="true">
+	<image x="0" y="0" scale="120" reservation_id="square-1"/>
+	<image x="120" y="0" scale="120" reservation_id="square-2"/>
+	<image x="240" y="0" scale="120" reservation_id="square-3"/>
+	<image x="0" y="120" scale="120" reservation_id="square-4"/>
+	<image x="120" y="120" scale="120" reservation_id="square-5"/>
+	<image x="240" y="120" scale="120" reservation_id="square-6"/>
+	<image x="0" y="240" scale="120" reservation_id="square-7"/>
+	<image x="120" y="240" scale="120" reservation_id="square-8"/>
+	<image x="240" y="240" scale="120" reservation_id="square-9"/>
+      </layout>
+
+      <layout name="hollywood-bg" auto-3d-position="true">
+	<image x="0" y="0" scale="360" reservation_id="bg"/>
+	<image x="58" y="0" scale="80" hscale="118" zoom="true" overlap="true" reservation_id="square-1"/>
+	<image x="140" y="0" scale="80" hscale="118" zoom="true" overlap="true" reservation_id="square-2"/>
+	<image x="222" y="0" scale="80" hscale="118" zoom="true" overlap="true" reservation_id="square-3"/>
+	<image x="58" y="121" scale="80" hscale="118" zoom="true" overlap="true" reservation_id="square-4"/>
+	<image x="140" y="121" scale="80" hscale="118" zoom="true" overlap="true" reservation_id="square-5"/>
+	<image x="222" y="121" scale="80" hscale="118" zoom="true" overlap="true" reservation_id="square-6"/>
+	<image x="58" y="242" scale="80" hscale="118" zoom="true" overlap="true" reservation_id="square-7"/>
+	<image x="140" y="242" scale="80" hscale="118" zoom="true" overlap="true" reservation_id="square-8"/>
+	<image x="222" y="242" scale="80" hscale="118" zoom="true" overlap="true" reservation_id="square-9"/>
+      </layout>
       <layout name="2x1-zoom" auto-3d-position="true">
 	<image x="0" y="0" scale="180" hscale="360" zoom="true"/>
 	<image x="180" y="0" scale="180" hscale="360" zoom="true"/>

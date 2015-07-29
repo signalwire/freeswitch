@@ -112,6 +112,7 @@ uint32_t conference_file_stop(conference_obj_t *conference, file_stop_t stop)
 			nptr->done++;
 			count++;
 		}
+
 		if (conference->async_fnode) {
 			conference->async_fnode->done++;
 			count++;

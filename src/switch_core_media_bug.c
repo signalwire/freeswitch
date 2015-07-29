@@ -471,8 +471,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_patch_spy_frame(switch_med
 				switch_img_copy(img, &img_dup);
 				img_tmp = switch_img_copy_rect(img_dup, w / 4, 0, w / 2, h);
 
-				switch_img_fit(&spy_tmp, w / 2, h);
-				switch_img_fit(&img_tmp, w / 2, h);
+				switch_img_fit(&spy_tmp, w / 2, h, SWITCH_FIT_SIZE);
+				switch_img_fit(&img_tmp, w / 2, h, SWITCH_FIT_SIZE);
 
 				switch_color_set_rgb(&bgcolor, "#000000");
 				switch_img_fill(img, 0, 0, img->d_w, img->d_h, &bgcolor);

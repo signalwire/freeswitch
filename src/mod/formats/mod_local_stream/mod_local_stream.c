@@ -782,7 +782,7 @@ static switch_status_t local_stream_file_read_video(switch_file_handle_t *handle
 				switch_img_copy(src_img, &img);
 
 				if (context->last_w && context->last_h) {
-					switch_img_fit(&img, context->last_w, context->last_h);
+					switch_img_fit(&img, context->last_w, context->last_h, SWITCH_FIT_SIZE);
 				}
 
 				frame->img = img;

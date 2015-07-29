@@ -392,6 +392,52 @@ conference_member_t *conference_member_get(conference_obj_t *conference, uint32_
 	return member;
 }
 
+
+/* traverse the conference member list for the specified member with var/val  and return it's pointer */
+conference_member_t *conference_member_get_by_var(conference_obj_t *conference, const char *var, const char *val)
+{
+	conference_member_t *member = NULL;
+
+	switch_assert(conference != NULL);
+	if (!(var && val)) {
+		return NULL;
+	}
+
+	switch_mutex_lock(conference->member_mutex);
+	for (member = conference->members; member; member = member->next) {
+		const char *check_var;
+		
+		if (conference_utils_member_test_flag(member, MFLAG_NOCHANNEL)) {
+			continue;
+		}
+
+		if ((check_var = switch_channel_get_variable_dup(member->channel, var , SWITCH_FALSE, -1)) && !strcmp(check_var, val)) {
+			break;
+		}
+	}
+
+	if (member) {
+		if (!conference_utils_member_test_flag(member, MFLAG_INTREE) ||
+			conference_utils_member_test_flag(member, MFLAG_KICKED) ||
+			(member->session && !switch_channel_up(switch_core_session_get_channel(member->session)))) {
+
+			/* member is kicked or hanging up so forget it */
+			member = NULL;
+		}
+	}
+
+	if (member) {
+		if (switch_thread_rwlock_tryrdlock(member->rwlock) != SWITCH_STATUS_SUCCESS) {
+			/* if you cant readlock it's way to late to do anything */
+			member = NULL;
+		}
+	}
+
+	switch_mutex_unlock(conference->member_mutex);
+
+	return member;
+}
+
 void conference_member_check_agc_levels(conference_member_t *member)
 {
 	int x = 0;

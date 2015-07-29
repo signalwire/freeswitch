@@ -5086,7 +5086,7 @@ static switch_bool_t video_write_overlay_callback(switch_media_bug_t *bug, void 
 
 			if (frame->img && oht->img) {
 				switch_img_copy(oht->img, &oimg);
-				switch_img_fit(&oimg, frame->img->d_w, frame->img->d_h);
+				switch_img_fit(&oimg, frame->img->d_w, frame->img->d_h, SWITCH_FIT_SIZE);
 				switch_img_find_position(oht->pos, frame->img->d_w, frame->img->d_h, oimg->d_w, oimg->d_h, &x, &y);
 				switch_img_overlay(frame->img, oimg, x, y, oht->alpha);
 				//switch_img_patch(frame->img, oimg, x, y);

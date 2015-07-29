@@ -86,6 +86,38 @@ SWITCH_DECLARE(switch_img_position_t) parse_img_position(const char *name)
 	return r;
 }
 
+
+struct fit_el {
+	switch_img_fit_t fit;
+	const char *name;
+};
+
+
+static struct fit_el IMG_FIT_TABLE[] = {
+       	{SWITCH_FIT_SIZE, "fit-size"},
+       	{SWITCH_FIT_SCALE, "fit-scale"},
+       	{SWITCH_FIT_SIZE_AND_SCALE, "fit-size-and-scale"},
+		{SWITCH_FIT_NONE, NULL}
+};
+
+
+SWITCH_DECLARE(switch_img_fit_t) parse_img_fit(const char *name)
+{
+	switch_img_fit_t r = SWITCH_FIT_SIZE;
+	int i;
+
+	switch_assert(name);
+	
+	for(i = 0; IMG_FIT_TABLE[i].name; i++) {
+		if (!strcasecmp(IMG_FIT_TABLE[i].name, name)) {
+			r = IMG_FIT_TABLE[i].fit;
+			break;
+		}
+	}
+	
+	return r;
+}
+
 SWITCH_DECLARE(switch_bool_t) switch_core_has_video(void)
 {
 #ifdef SWITCH_HAVE_VPX
@@ -1797,7 +1829,7 @@ SWITCH_DECLARE(switch_status_t) switch_img_letterbox(switch_image_t *img, switch
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_img_fit(switch_image_t **srcP, int width, int height)
+SWITCH_DECLARE(switch_status_t) switch_img_fit(switch_image_t **srcP, int width, int height, switch_img_fit_t fit)
 {
 	switch_image_t *src, *tmp = NULL;
 	int new_w = 0, new_h = 0;
@@ -1808,6 +1840,13 @@ SWITCH_DECLARE(switch_status_t) switch_img_fit(switch_image_t **srcP, int width,
 	src = *srcP;
 
 	if (!src || (src->d_w == width && src->d_h == height)) {
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	if (fit == SWITCH_FIT_SCALE) {
+		switch_img_scale(src, &tmp, width, height);
+		switch_img_free(&src);
+		*srcP = tmp;
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -1843,6 +1882,14 @@ SWITCH_DECLARE(switch_status_t) switch_img_fit(switch_image_t **srcP, int width,
 		if (switch_img_scale(src, &tmp, new_w, new_h) == SWITCH_STATUS_SUCCESS) {
 			switch_img_free(&src);
 			*srcP = tmp;
+
+			if (fit == SWITCH_FIT_SIZE_AND_SCALE) {
+				src = *srcP;
+				switch_img_scale(src, &tmp, width, height);
+				switch_img_free(&src);
+				*srcP = tmp;
+			}
+
 			return SWITCH_STATUS_SUCCESS;
 		}
 	}

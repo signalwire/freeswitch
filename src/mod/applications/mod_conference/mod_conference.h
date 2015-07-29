@@ -379,6 +379,7 @@ typedef struct conference_file_node {
 	int layer_id;
 	int canvas_id;
 	struct conference_obj *conference;
+	char *res_id;
 } conference_file_node_t;
 
 typedef enum {
@@ -437,6 +438,7 @@ typedef struct mcu_layer_s {
 	int avatar_patched;
 	int refresh;
 	int is_avatar;
+	int64_t last_img_addr;
 	switch_img_position_t logo_pos;
 	switch_image_t *img;
 	switch_image_t *cur_img;
@@ -446,12 +448,14 @@ typedef struct mcu_layer_s {
 	switch_image_t *mute_img;
 	switch_img_txt_handle_t *txthandle;
 	conference_file_node_t *fnode;
+	switch_img_fit_t logo_fit;
 	struct mcu_canvas_s *canvas;
 } mcu_layer_t;
 
 typedef struct video_layout_s {
 	char *name;
 	char *audio_position;
+	char *bgimg;
 	mcu_layer_geometry_t images[MCU_MAX_LAYERS];
 	int layers;
 } video_layout_t;
@@ -491,6 +495,7 @@ typedef struct mcu_canvas_s {
 	switch_queue_t *video_queue;
 	int32_t video_write_bandwidth;
 	int recording;
+	switch_image_t *bgimg;
 } mcu_canvas_t;
 
 /* Record Node */
@@ -545,6 +550,7 @@ typedef struct conference_obj {
 	char *video_layout_name;
 	char *video_layout_group;
 	char *video_canvas_bgcolor;
+	char *video_canvas_bgimg;
 	char *video_border_color;
 	char *video_super_canvas_bgcolor;
 	char *video_letterbox_bgcolor;
@@ -919,6 +925,7 @@ void conference_video_check_avatar(conference_member_t *member, switch_bool_t fo
 void conference_video_find_floor(conference_member_t *member, switch_bool_t entering);
 void conference_video_destroy_canvas(mcu_canvas_t **canvasP);
 void conference_video_fnode_check(conference_file_node_t *fnode);
+switch_status_t conference_video_set_canvas_bgimg(mcu_canvas_t *canvas, const char *img_path);
 switch_status_t conference_al_parse_position(al_handle_t *al, const char *data);
 switch_status_t conference_video_thread_callback(switch_core_session_t *session, switch_frame_t *frame, void *user_data);
 void *SWITCH_THREAD_FUNC conference_video_muxing_write_thread_run(switch_thread_t *thread, void *obj);
@@ -934,6 +941,7 @@ void conference_fnode_toggle_pause(conference_file_node_t *fnode, switch_stream_
 
 conference_relationship_t *conference_member_add_relationship(conference_member_t *member, uint32_t id);
 conference_member_t *conference_member_get(conference_obj_t *conference, uint32_t id);
+conference_member_t *conference_member_get_by_var(conference_obj_t *conference, const char *var, const char *val);
 
 switch_status_t conference_member_del_relationship(conference_member_t *member, uint32_t id);
 switch_status_t conference_member_add(conference_obj_t *conference, conference_member_t *member);
@@ -1050,6 +1058,7 @@ switch_status_t conference_api_sub_get(conference_obj_t *conference, switch_stre
 switch_status_t conference_api_sub_vid_mute_img(conference_member_t *member, switch_stream_handle_t *stream, void *data);
 switch_status_t conference_api_sub_vid_logo_img(conference_member_t *member, switch_stream_handle_t *stream, void *data);
 switch_status_t conference_api_sub_vid_fps(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv);
+switch_status_t conference_api_sub_canvas_bgimg(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv);
 switch_status_t conference_api_sub_write_png(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv);
 switch_status_t conference_api_sub_file_vol(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv);
 switch_status_t conference_api_sub_recording(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv);

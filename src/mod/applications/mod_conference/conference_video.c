@@ -110,7 +110,7 @@ void conference_video_parse_layouts(conference_obj_t *conference, int WIDTH, int
 		if ((x_layouts = switch_xml_child(x_layout_settings, "layouts"))) {
 			for (x_layout = switch_xml_child(x_layouts, "layout"); x_layout; x_layout = x_layout->next) {
 				video_layout_t *vlayout;
-				const char *val = NULL, *name = NULL;
+				const char *val = NULL, *name = NULL, *bgimg = NULL;
 				switch_bool_t auto_3d = SWITCH_FALSE;
 				int border = 0;
 				
@@ -125,6 +125,8 @@ void conference_video_parse_layouts(conference_obj_t *conference, int WIDTH, int
 
 				auto_3d = switch_true(switch_xml_attr(x_layout, "auto-3d-position"));
 
+				bgimg = switch_xml_attr(x_layout, "bgimg");
+				
 				if ((val = switch_xml_attr(x_layout, "border"))) {
 					border = atoi(val);
 					if (border < 0) border = 0;
@@ -133,6 +135,10 @@ void conference_video_parse_layouts(conference_obj_t *conference, int WIDTH, int
 
 				vlayout = switch_core_alloc(conference->pool, sizeof(*vlayout));
 				vlayout->name = switch_core_strdup(conference->pool, name);
+
+				if (bgimg) {
+					vlayout->bgimg = switch_core_strdup(conference->pool, bgimg);
+				}
 
 				for (x_image = switch_xml_child(x_layout, "image"); x_image; x_image = x_image->next) {
 					const char *res_id = NULL, *audio_position = NULL;
@@ -379,34 +385,43 @@ void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, 
 		double screen_aspect = 0, img_aspect = 0;
 		int x_pos = layer->x_pos;
 		int y_pos = layer->y_pos;
+		int64_t img_addr = 0;
 
 		img_w = layer->screen_w = IMG->d_w * layer->geometry.scale / VIDEO_LAYOUT_SCALE;
 		img_h = layer->screen_h = IMG->d_h * layer->geometry.hscale / VIDEO_LAYOUT_SCALE;
 
+
 		screen_aspect = (double) layer->screen_w / layer->screen_h;
 		img_aspect = (double) img->d_w / img->d_h;
 
-		if (layer->geometry.zoom) {
+		img_addr = (int64_t)img;
+
+		if (layer->last_img_addr != img_addr && layer->geometry.zoom) {
 			if (screen_aspect < img_aspect) {
 				int cropsize = 0;
 				double scale = 1;
 				if (img->d_h != layer->screen_h) {
 					scale = (double)layer->screen_h / img->d_h;
 				}
+
 				cropsize = ((img->d_w )-((double)layer->screen_w/scale)) / 2;
 
-				switch_img_set_rect(img, cropsize, 0, layer->screen_w/scale, layer->screen_h/scale);
-				img_aspect = (double) img->d_w / img->d_h;
+				if (cropsize) {
+					switch_img_set_rect(img, cropsize, 0, layer->screen_w/scale, layer->screen_h/scale);
+					img_aspect = (double) img->d_w / img->d_h;
+				}
+
 			} else if (screen_aspect > img_aspect) {
 				int cropsize = 0;
 				double scale = 1;
 				if (img->d_w != layer->screen_w) {
 					scale = (double)layer->screen_w / img->d_w;
 				}
-				cropsize = ((img->d_h )-((double)layer->screen_h/scale)) / 2;
-
-				switch_img_set_rect(img, 0, cropsize, layer->screen_w/scale, layer->screen_h/scale);
-				img_aspect = (double) img->d_w / img->d_h;
+				cropsize = ceil(((img->d_h )-((double)layer->screen_h/scale)) / 2);
+				if (cropsize) {
+					switch_img_set_rect(img, 0, cropsize, layer->screen_w/scale, layer->screen_h/scale);
+					img_aspect = (double) img->d_w / img->d_h;
+				}
 			}
 		}
 
@@ -415,10 +430,10 @@ void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, 
 		}
 
 		if (screen_aspect > img_aspect) {
-			img_w = img_aspect * layer->screen_h;
+			img_w = ceil((double)img_aspect * layer->screen_h);
 			x_pos += (layer->screen_w - img_w) / 2;
 		} else if (screen_aspect < img_aspect) {
-			img_h = layer->screen_w / img_aspect;
+			img_h = ceil((double)layer->screen_w / img_aspect);
 			y_pos += (layer->screen_h - img_h) / 2;
 		}
 
@@ -452,7 +467,9 @@ void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, 
 		img_w -= (layer->geometry.border * 2);
 		img_h -= (layer->geometry.border * 2);
 
-		if (switch_img_scale(img, &layer->img, img_w, img_h) == SWITCH_STATUS_SUCCESS) {
+		switch_img_scale(img, &layer->img, img_w, img_h);
+
+		if (layer->img) {
 			if (layer->bugged && layer->member_id > -1) {
 				conference_member_t *member;
 				if ((member = conference_member_get(layer->canvas->conference, layer->member_id))) {
@@ -470,19 +487,23 @@ void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, 
 			int ew = layer->screen_w - (layer->geometry.border * 2), eh = layer->screen_h - (layer->banner_img ? layer->banner_img->d_h : 0) - (layer->geometry.border * 2);
 			int ex = 0, ey = 0;
 
-			switch_img_fit(&layer->logo_img, ew, eh);
+			switch_img_fit(&layer->logo_img, ew, eh, layer->logo_fit);
+
 			switch_img_find_position(layer->logo_pos, ew, eh, layer->logo_img->d_w, layer->logo_img->d_h, &ex, &ey);
 			switch_img_patch(IMG, layer->logo_img, layer->x_pos + ex + layer->geometry.border, layer->y_pos + ey + layer->geometry.border);
 			if (layer->logo_text_img) {
 				int tx = 0, ty = 0;
 
-				switch_img_fit(&layer->logo_text_img, (ew / 2) + 1, (eh / 2) + 1);
+				switch_img_fit(&layer->logo_text_img, (ew / 2) + 1, (eh / 2) + 1, SWITCH_FIT_SIZE);
 				switch_img_find_position(POS_LEFT_BOT,
 										 layer->logo_img->d_w, layer->logo_img->d_h, layer->logo_text_img->d_w, layer->logo_text_img->d_h, &tx, &ty);
 				switch_img_patch(IMG, layer->logo_text_img, layer->x_pos + ex + tx + layer->geometry.border, layer->y_pos + ey + ty + layer->geometry.border);
 			}
 
 		}
+		
+		layer->last_img_addr = img_addr;
+
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "insert at %d,%d\n", 0, 0);
 		switch_img_patch(IMG, img, 0, 0);
@@ -631,6 +652,7 @@ void conference_video_layer_set_logo(conference_member_t *member, mcu_layer_t *l
 	char *parsed = NULL;
 	char *tmp;
 	switch_img_position_t pos = POS_LEFT_TOP;
+	switch_img_fit_t fit = SWITCH_FIT_SIZE;
 
 	switch_mutex_lock(layer->canvas->mutex);
 
@@ -677,10 +699,13 @@ void conference_video_layer_set_logo(conference_member_t *member, mcu_layer_t *l
 		path = tmp + 1;
 	}
 
-
 	if (params) {
 		if ((var = switch_event_get_header(params, "position"))) {
 			pos = parse_img_position(var);
+		}
+
+		if ((var = switch_event_get_header(params, "fit"))) {
+			fit = parse_img_fit(var);
 		}
 	}
 
@@ -690,6 +715,7 @@ void conference_video_layer_set_logo(conference_member_t *member, mcu_layer_t *l
 
 	if (layer->logo_img) {
 		layer->logo_pos = pos;
+		layer->logo_fit = fit;
 
 		if (params) {
 			if ((var = switch_event_get_header(params, "text"))) {
@@ -1012,10 +1038,41 @@ void conference_video_init_canvas_layers(conference_obj_t *conference, mcu_canva
 	canvas->total_layers = vlayout->layers;
 	canvas->send_keyframe = 1;
 
+	if (vlayout->bgimg) {
+		conference_video_set_canvas_bgimg(canvas, vlayout->bgimg);
+	} else if (canvas->bgimg) {
+		switch_img_free(&canvas->bgimg);
+	}
+
+	if (conference->video_canvas_bgimg && !vlayout->bgimg) {
+		conference_video_set_canvas_bgimg(canvas, conference->video_canvas_bgimg);
+	}
+	
+
 	switch_mutex_unlock(canvas->mutex);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Canvas position %d applied layout %s\n", canvas->canvas_id, vlayout->name);
 
 }
+
+switch_status_t conference_video_set_canvas_bgimg(mcu_canvas_t *canvas, const char *img_path)
+{
+
+	int x = 0, y = 0;
+	switch_img_free(&canvas->bgimg);
+	canvas->bgimg = switch_img_read_png(img_path, SWITCH_IMG_FMT_I420);
+	
+	if (!canvas->bgimg) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot open image for bgimg\n");
+		return SWITCH_STATUS_FALSE;
+	}
+
+	switch_img_fit(&canvas->bgimg, canvas->img->d_w, canvas->img->d_h, SWITCH_FIT_SIZE);
+	switch_img_find_position(POS_CENTER_MID, canvas->img->d_w, canvas->img->d_h, canvas->bgimg->d_w, canvas->bgimg->d_h, &x, &y);
+	switch_img_patch(canvas->img, canvas->bgimg, x, y);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 
 switch_status_t conference_video_attach_canvas(conference_obj_t *conference, mcu_canvas_t *canvas, int super)
 {
@@ -1098,6 +1155,7 @@ void conference_video_destroy_canvas(mcu_canvas_t **canvasP) {
 	mcu_canvas_t *canvas = *canvasP;
 
 	switch_img_free(&canvas->img);
+	switch_img_free(&canvas->bgimg);
 	conference_video_flush_queue(canvas->video_queue);
 
 	for (i = 0; i < MCU_MAX_LAYERS; i++) {
@@ -1296,7 +1354,7 @@ void conference_video_canvas_set_fnode_layer(mcu_canvas_t *canvas, conference_fi
 			for (i = 0; i < canvas->total_layers; i++) {
 				xlayer = &canvas->layers[i];
 
-				if (xlayer->fnode || xlayer->geometry.res_id || xlayer->member_id) {
+				if (xlayer->fnode || (xlayer->geometry.res_id && (!fnode->res_id || strcmp(xlayer->geometry.res_id, fnode->res_id))) || xlayer->member_id) {
 					continue;
 				}
 
@@ -1529,9 +1587,16 @@ void conference_video_fnode_check(conference_file_node_t *fnode) {
 
 	if (switch_core_file_has_video(&fnode->fh) && switch_core_file_read_video(&fnode->fh, NULL, SVR_CHECK) == SWITCH_STATUS_BREAK) {
 		int full_screen = 0;
+		char *res_id = NULL;
 
 		if (fnode->fh.params && fnode->conference->canvas_count == 1) {
 			full_screen = switch_true(switch_event_get_header(fnode->fh.params, "full-screen"));
+		}
+
+		if (fnode->fh.params) {
+			if ((res_id = switch_event_get_header(fnode->fh.params, "reservation_id"))) {
+				fnode->res_id = switch_core_strdup(fnode->pool, res_id);
+			}
 		}
 
 		if (full_screen) {
@@ -2971,7 +3036,7 @@ void conference_video_write_frame(conference_obj_t *conference, conference_membe
 		int x,y;
 
 		switch_img_copy(vid_frame->img, &tmp_img);
-		switch_img_fit(&tmp_img, conference->canvases[0]->width, conference->canvases[0]->height);
+		switch_img_fit(&tmp_img, conference->canvases[0]->width, conference->canvases[0]->height, SWITCH_FIT_SIZE);
 		frame_img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, conference->canvases[0]->width, conference->canvases[0]->height, 1);
 		conference_video_reset_image(frame_img, &conference->canvases[0]->bgcolor);
 		switch_img_find_position(POS_CENTER_MID, frame_img->d_w, frame_img->d_h, tmp_img->d_w, tmp_img->d_h, &x, &y);

@@ -101,6 +101,7 @@ api_command_t conference_api_sub_commands[] = {
 	{"vid-layout", (void_fn_t) & conference_api_sub_vid_layout, CONF_API_SUB_ARGS_SPLIT, "vid-layout", "<layout name>|group <group name> [<canvas id>]"},
 	{"vid-write-png", (void_fn_t) & conference_api_sub_write_png, CONF_API_SUB_ARGS_SPLIT, "vid-write-png", "<path>"},
 	{"vid-fps", (void_fn_t) & conference_api_sub_vid_fps, CONF_API_SUB_ARGS_SPLIT, "vid-fps", "<fps>"},
+	{"vid-bgimg", (void_fn_t) & conference_api_sub_canvas_bgimg, CONF_API_SUB_ARGS_SPLIT, "vid-bgimg", "<file> | clear [<canvas-id>]"},
 	{"vid-bandwidth", (void_fn_t) & conference_api_sub_vid_bandwidth, CONF_API_SUB_ARGS_SPLIT, "vid-bandwidth", "<BW>"}
 };
 
@@ -1001,6 +1002,7 @@ switch_status_t conference_api_sub_volume_out(conference_member_t *member, switc
 switch_status_t conference_api_sub_vid_bandwidth(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv)
 {
 	int32_t i, video_write_bandwidth;
+	int x = 0;
 
 	if (!conference_utils_test_flag(conference, CFLAG_MINIMIZE_VIDEO_ENCODING)) {
 		stream->write_function(stream, "Bandwidth control not available.\n");
@@ -1013,13 +1015,60 @@ switch_status_t conference_api_sub_vid_bandwidth(conference_obj_t *conference, s
 	}
 
 	video_write_bandwidth = switch_parse_bandwidth_string(argv[2]);
-	for (i = 0; i >= conference->canvas_count; i++) {
+	for (i = 0; i <= conference->canvas_count; i++) {
 		if (conference->canvases[i]) {
+			stream->write_function(stream, "Set Bandwidth for canvas %d to %d\n", i + 1, video_write_bandwidth);
+			x++;
 			conference->canvases[i]->video_write_bandwidth = video_write_bandwidth;
 		}
 	}
 
-	stream->write_function(stream, "Set Bandwidth %d\n", video_write_bandwidth);
+	if (!x) {
+		stream->write_function(stream, "Bandwidth not set\n");
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
+switch_status_t conference_api_sub_canvas_bgimg(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv)
+{
+	mcu_canvas_t *canvas = NULL;
+	int idx = 0;
+	char *file = NULL;
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	if (!argv[2]) {
+		stream->write_function(stream, "Invalid input\n");
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	file = argv[2];
+
+	if (argv[3]) {
+		idx = atoi(argv[3]) - 1;
+	}
+
+	if (idx < 0 || idx > SUPER_CANVAS_ID || !conference->canvases[idx]) {
+		stream->write_function(stream, "Invalid canvas\n");
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	if ((canvas = conference->canvases[idx])) {
+		switch_mutex_lock(canvas->mutex);
+		if (!strcasecmp(file, "clear")) {
+			conference_video_reset_image(canvas->img, &canvas->bgcolor);
+		} else {
+			status = conference_video_set_canvas_bgimg(canvas, file);
+		}
+		switch_mutex_unlock(canvas->mutex);
+	}
+
+	if (status == SWITCH_STATUS_SUCCESS) {
+		stream->write_function(stream, "Set Bgimg %s\n", file);
+	} else {
+		stream->write_function(stream, "Error Setting Bgimg %s\n", file);
+	}
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -2712,6 +2761,27 @@ switch_status_t conference_api_dispatch(conference_obj_t *conference, switch_str
 						} else {
 							stream->write_function(stream, "Non-Existant ID %u\n", id);
 						}
+					} else if (strchr(argv[argn + 1], '=')) {
+						conference_api_member_cmd_t pfn = (conference_api_member_cmd_t) conference_api_sub_commands[i].pfnapicmd;
+						conference_member_t *member;
+						char *var, *val;
+
+						var = strdup(argv[argn + 1]);
+
+						if ((val = strchr(var, '='))) {
+							*val++ = '\0';
+						}
+
+						member = conference_member_get_by_var(conference, var, val);
+						
+						if (member != NULL) {
+							pfn(member, stream, argv[argn + 2]);
+							switch_thread_rwlock_unlock(member->rwlock);
+						} else {
+							stream->write_function(stream, "Non-Existant member\n");
+						}
+
+						switch_safe_free(var);
 					} else {
 						stream->write_function(stream, "%s %s", conference_api_sub_commands[i].pcommand, conference_api_sub_commands[i].psyntax);
 					}

@@ -57,6 +57,12 @@ typedef enum {
 	POS_NONE
 } switch_img_position_t;
 
+typedef enum {
+	SWITCH_FIT_SIZE,
+	SWITCH_FIT_SCALE,
+	SWITCH_FIT_SIZE_AND_SCALE,
+	SWITCH_FIT_NONE
+} switch_img_fit_t;
 
 typedef struct switch_yuv_color_s {
 	uint8_t y;
@@ -356,8 +362,9 @@ SWITCH_DECLARE(void) switch_img_get_rgb_pixel(switch_image_t *img, switch_rgb_co
 SWITCH_DECLARE(void) switch_img_overlay(switch_image_t *IMG, switch_image_t *img, int x, int y, uint8_t alpha);
 
 SWITCH_DECLARE(switch_status_t) switch_img_scale(switch_image_t *src, switch_image_t **destP, int width, int height);
-SWITCH_DECLARE(switch_status_t) switch_img_fit(switch_image_t **srcP, int width, int height);
+SWITCH_DECLARE(switch_status_t) switch_img_fit(switch_image_t **srcP, int width, int height, switch_img_fit_t fit);
 SWITCH_DECLARE(switch_img_position_t) parse_img_position(const char *name);
+SWITCH_DECLARE(switch_img_fit_t) parse_img_fit(const char *name);
 SWITCH_DECLARE(void) switch_img_find_position(switch_img_position_t pos, int sw, int sh, int iw, int ih, int *xP, int *yP);
 SWITCH_DECLARE(switch_status_t) switch_img_convert(switch_image_t *src, switch_convert_fmt_t fmt, void *dest, switch_size_t *size);
 SWITCH_DECLARE(switch_image_t *) switch_img_write_text_img(int w, int h, switch_bool_t full, const char *text);
