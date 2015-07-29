@@ -385,7 +385,7 @@ void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, 
 		double screen_aspect = 0, img_aspect = 0;
 		int x_pos = layer->x_pos;
 		int y_pos = layer->y_pos;
-		int64_t img_addr = 0;
+		switch_size_t img_addr = 0;
 
 		img_w = layer->screen_w = IMG->d_w * layer->geometry.scale / VIDEO_LAYOUT_SCALE;
 		img_h = layer->screen_h = IMG->d_h * layer->geometry.hscale / VIDEO_LAYOUT_SCALE;
@@ -394,7 +394,7 @@ void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, 
 		screen_aspect = (double) layer->screen_w / layer->screen_h;
 		img_aspect = (double) img->d_w / img->d_h;
 
-		img_addr = (int64_t)img;
+		img_addr = (switch_size_t)img;
 
 		if (layer->last_img_addr != img_addr && layer->geometry.zoom) {
 			if (screen_aspect < img_aspect) {
