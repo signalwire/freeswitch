@@ -133,12 +133,12 @@ static lua_State *lua_init(void)
 }
 
 
-static int lua_parse_and_execute(lua_State * L, char *input_code)
+static int lua_parse_and_execute(lua_State * L, char *input_code, switch_core_session_t *session)
 {
 	int error = 0;
 
 	if (zstr(input_code)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No code to execute!\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "No code to execute!\n");
 		return 1;
 	}
 
@@ -200,7 +200,7 @@ static int lua_parse_and_execute(lua_State * L, char *input_code)
 	if (error) {
 		const char *err = lua_tostring(L, -1);
 		if (!zstr(err)) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s\n", err);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "%s\n", err);
 		}
 		lua_pop(L, 1);			/* pop error message from the stack */
 	}
@@ -219,7 +219,7 @@ static void *SWITCH_THREAD_FUNC lua_thread_run(switch_thread_t *thread, void *ob
 	switch_memory_pool_t *pool = lth->pool;
 	lua_State *L = lua_init();	/* opens Lua */
 
-	lua_parse_and_execute(L, lth->input_code);
+	lua_parse_and_execute(L, lth->input_code, NULL);
 
 	lth = NULL;
 
@@ -266,7 +266,7 @@ static switch_xml_t lua_fetch(const char *section,
 			mod_lua_conjure_event(L, params, "params", 1);
 		}
 
-		if((error = lua_parse_and_execute(L, mycmd))){
+		if((error = lua_parse_and_execute(L, mycmd, NULL))){
 		    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "LUA script parse/execute error!\n");
 		    goto end;
 		}
@@ -457,7 +457,7 @@ static void lua_event_handler(switch_event_t *event)
 
 	mod_lua_conjure_event(L, event, "event", 1);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "lua event hook: execute '%s'\n", (char *)script);
-	lua_parse_and_execute(L, (char *)script);
+	lua_parse_and_execute(L, (char *)script, NULL);
 	lua_uninit(L);
 
 	switch_safe_free(script);
@@ -478,7 +478,7 @@ SWITCH_STANDARD_APP(lua_function)
 	mycmd = strdup((char *) data);
 	switch_assert(mycmd);
 
-	lua_parse_and_execute(L, mycmd);
+	lua_parse_and_execute(L, mycmd, session);
 	lua_uninit(L);
 	free(mycmd);
 
@@ -507,7 +507,7 @@ SWITCH_STANDARD_CHAT_APP(lua_chat_function)
 	}
 
 	mod_lua_conjure_event(L, message, "message", 1);
-	lua_parse_and_execute(L, (char *)dup);
+	lua_parse_and_execute(L, (char *)dup, NULL);
 	lua_uninit(L);
 
 	switch_safe_free(dup);
@@ -540,7 +540,7 @@ SWITCH_STANDARD_API(lua_api_function)
 			mod_lua_conjure_event(L, stream->param_event, "env", 1);
 		}
 
-		if ((error = lua_parse_and_execute(L, mycmd))) {
+		if ((error = lua_parse_and_execute(L, mycmd, session))) {
 			char * http = switch_event_get_header(stream->param_event, "http-uri");
 			if (http && (!strncasecmp(http, "/api/", 5) || !strncasecmp(http, "/webapi/", 8))) {
 					/* api -> fs api streams the Content-Type e.g. text/html or text/xml               */
@@ -587,7 +587,7 @@ SWITCH_STANDARD_DIALPLAN(lua_dialplan_hunt)
 	switch_assert(cmd);
 
 	mod_lua_conjure_session(L, session, "session", 1);
-	lua_parse_and_execute(L, cmd);
+	lua_parse_and_execute(L, cmd, session);
 
 	/* expecting ACTIONS = { {"app1", "app_data1"}, { "app2" }, "app3" } -- each of three is valid */
 	lua_getglobal(L, "ACTIONS");
