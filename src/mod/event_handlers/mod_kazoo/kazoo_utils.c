@@ -139,11 +139,11 @@ void close_socketfd(int *sockfd) {
 	}
 }
 
-switch_socket_t *create_socket(switch_memory_pool_t *pool) {
+switch_socket_t *create_socket_with_port(switch_memory_pool_t *pool, switch_port_t port) {
 	switch_sockaddr_t *sa;
 	switch_socket_t *socket;
 
-	if(switch_sockaddr_info_get(&sa, globals.ip, SWITCH_UNSPEC, 0, 0, pool)) {
+	if(switch_sockaddr_info_get(&sa, globals.ip, SWITCH_UNSPEC, port, 0, pool)) {
 		return NULL;
 	}
 
@@ -168,6 +168,11 @@ switch_socket_t *create_socket(switch_memory_pool_t *pool) {
 	//	}
 
 	return socket;
+}
+
+switch_socket_t *create_socket(switch_memory_pool_t *pool) {
+	return create_socket_with_port(pool, 0);
+
 }
 
 switch_status_t create_ei_cnode(const char *ip_addr, const char *name, struct ei_cnode_s *ei_cnode) {
@@ -503,7 +508,7 @@ switch_hash_t *create_default_filter() {
 	switch_core_hash_insert(filter, "Hangup-Cause", "1");
 	switch_core_hash_insert(filter, "Unique-ID", "1");
 	switch_core_hash_insert(filter, "variable_switch_r_sdp", "1");
-	switch_core_hash_insert(filter, "variable_sip_local_sdp_str", "1");
+	switch_core_hash_insert(filter, "variable_rtp_local_sdp_str", "1");
 	switch_core_hash_insert(filter, "variable_sip_to_uri", "1");
 	switch_core_hash_insert(filter, "variable_sip_from_uri", "1");
 	switch_core_hash_insert(filter, "variable_sip_user_agent", "1");
