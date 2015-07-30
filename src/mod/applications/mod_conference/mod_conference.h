@@ -451,6 +451,8 @@ typedef struct mcu_layer_s {
 	conference_file_node_t *fnode;
 	switch_img_fit_t logo_fit;
 	struct mcu_canvas_s *canvas;
+	int need_patch;
+	conference_member_t *member;
 } mcu_layer_t;
 
 typedef struct video_layout_s {
