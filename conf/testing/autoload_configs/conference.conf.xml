@@ -268,7 +268,7 @@
       <param name="caller-id-name" value="$${outbound_caller_name}"/>
       <param name="caller-id-number" value="$${outbound_caller_id}"/>
       <param name="comfort-noise" value="false"/>
-      <param name="conference-flags" value="video-floor-only|rfc-4579|livearray-sync|minimize-video-encoding"/>
+      <param name="conference-flags" value="video-floor-only|livearray-sync|minimize-video-encoding|video-muxing-personal-canvas|video-required-for-canvas"/>
       <param name="video-mode" value="mux"/> 
       <param name="video-layout-name" value="3x3"/>
       <param name="video-layout-name" value="group:grid"/>
@@ -333,7 +333,7 @@
       <param name="caller-id-name" value="$${outbound_caller_name}"/>
       <param name="caller-id-number" value="$${outbound_caller_id}"/>
       <param name="comfort-noise" value="false"/>
-      <param name="conference-flags" value="video-floor-only|rfc-4579|livearray-sync|minimize-video-encoding|video-muxing-personal-canvas|video-required-for-canvas|video-bridge-first-two"/>
+      <param name="conference-flags" value="video-floor-only|livearray-sync|minimize-video-encoding|video-muxing-personal-canvas|video-required-for-canvas"/>
       <param name="video-mode" value="mux"/> 
       <param name="video-canvas-count" value="2"/> 
       <param name="video-layout-name" value="3x3"/>

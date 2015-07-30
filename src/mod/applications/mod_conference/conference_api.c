@@ -1173,7 +1173,14 @@ switch_status_t conference_api_sub_vid_layout(conference_obj_t *conference, swit
 			return SWITCH_STATUS_SUCCESS;
 		} else {
 			if (((lg = switch_core_hash_find(conference->layout_group_hash, group_name)))) {
-				vlayout = conference_video_find_best_layout(conference, lg, 0);
+				if (conference_utils_test_flag(conference, CFLAG_PERSONAL_CANVAS)) {
+					stream->write_function(stream, "Change personal canvas to layout group [%s]\n", group_name);
+					conference->video_layout_group = switch_core_strdup(conference->pool, group_name);
+					conference_utils_set_flag(conference, CFLAG_REFRESH_LAYOUT);
+					return SWITCH_STATUS_SUCCESS;
+				} else {
+					vlayout = conference_video_find_best_layout(conference, lg, 0);
+				}
 			}
 
 			if (!vlayout) {
@@ -1182,8 +1189,8 @@ switch_status_t conference_api_sub_vid_layout(conference_obj_t *conference, swit
 			}
 
 			stream->write_function(stream, "Change to layout group [%s]\n", group_name);
-			conference->video_layout_group = switch_core_strdup(conference->pool, group_name);
-
+			conference->video_layout_group = switch_core_strdup(conference->pool, group_name);			
+			
 			if (argv[xx]) {
 				idx = atoi(argv[xx]);
 			}
@@ -1204,11 +1211,15 @@ switch_status_t conference_api_sub_vid_layout(conference_obj_t *conference, swit
 
 	if (idx < 0 || idx > conference->canvas_count - 1) idx = 0;
 
-	stream->write_function(stream, "Change canvas %d to layout [%s]\n", idx + 1, vlayout->name);
-
-	switch_mutex_lock(conference->member_mutex);
-	conference->canvases[idx]->new_vlayout = vlayout;
-	switch_mutex_unlock(conference->member_mutex);
+	switch_mutex_lock(conference->canvas_mutex);
+	if (conference_utils_test_flag(conference, CFLAG_PERSONAL_CANVAS)) {
+		stream->write_function(stream, "Change personal canvas set to layout [%s]\n", vlayout->name);
+		conference->new_personal_vlayout = vlayout;
+	} else {
+		stream->write_function(stream, "Change canvas %d to layout [%s]\n", idx + 1, vlayout->name);
+		conference->canvases[idx]->new_vlayout = vlayout;
+	}
+	switch_mutex_unlock(conference->canvas_mutex);
 
 	return SWITCH_STATUS_SUCCESS;
 }

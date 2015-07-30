@@ -245,6 +245,7 @@ typedef enum {
 	CFLAG_VIDEO_BRIDGE_FIRST_TWO,
 	CFLAG_VIDEO_REQUIRED_FOR_CANVAS,
 	CFLAG_PERSONAL_CANVAS,
+	CFLAG_REFRESH_LAYOUT,
 	/////////////////////////////////
 	CFLAG_MAX
 } conference_flag_t;
@@ -652,6 +653,7 @@ typedef struct conference_obj {
 	int playing_video_file;
 	int recording_members;
 	uint32_t video_floor_packets;
+	video_layout_t *new_personal_vlayout;
 } conference_obj_t;
 
 /* Relationship with another member */

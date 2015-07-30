@@ -1054,7 +1054,7 @@ void conference_video_init_canvas_layers(conference_obj_t *conference, mcu_canva
 	
 
 	switch_mutex_unlock(canvas->mutex);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Canvas position %d applied layout %s\n", canvas->canvas_id, vlayout->name);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Canvas position %d applied layout %s\n", canvas->canvas_id + 1, vlayout->name);
 
 }
 
@@ -1803,7 +1803,8 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 	int members_with_video = 0, members_with_avatar = 0;
 	int do_refresh = 0;
 	int last_file_count = 0;
-
+	int layout_applied = 0;
+	
 	canvas->video_timer_reset = 1;
 
 	packet = switch_core_alloc(conference->pool, SWITCH_RTP_MAX_BUF_LEN);
@@ -1818,11 +1819,13 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 		switch_frame_t file_frame = { 0 };
 		int j = 0;
 
-		switch_mutex_lock(canvas->mutex);
-		if (canvas->new_vlayout) {
-			conference_video_init_canvas_layers(conference, canvas, NULL);
+		if (!conference_utils_test_flag(conference, CFLAG_PERSONAL_CANVAS)) {
+			switch_mutex_lock(canvas->mutex);
+			if (canvas->new_vlayout) {
+				conference_video_init_canvas_layers(conference, canvas, NULL);
+			}
+			switch_mutex_unlock(canvas->mutex);
 		}
-		switch_mutex_unlock(canvas->mutex);
 
 		if (canvas->video_timer_reset) {
 			canvas->video_timer_reset = 0;
@@ -2121,6 +2124,11 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 
 			switch_mutex_lock(conference->member_mutex);
 
+			if (conference_utils_test_flag(conference, CFLAG_REFRESH_LAYOUT)) {
+				count_changed = 1;
+				conference_utils_clear_flag(conference, CFLAG_REFRESH_LAYOUT);
+			}
+			
 			for (imember = conference->members; imember; imember = imember->next) {
 
 				if (!imember->session || !switch_channel_test_flag(imember->channel, CF_VIDEO) ||
@@ -2128,14 +2136,19 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 					continue;
 				}
 
+				if (conference->new_personal_vlayout) {
+					conference_video_init_canvas_layers(conference, imember->canvas, conference->new_personal_vlayout);
+					layout_applied++;
+				}
+				
 				if (switch_channel_test_flag(imember->channel, CF_VIDEO_REFRESH_REQ)) {
 					switch_channel_clear_flag(imember->channel, CF_VIDEO_REFRESH_REQ);
 					need_keyframe = SWITCH_TRUE;
 				}
-
+				
 				if (count_changed) {
 					int total = conference->members_with_video;
-
+					
 					if (!conference_utils_test_flag(conference, CFLAG_VIDEO_REQUIRED_FOR_CANVAS)) {
 						total += conference->members_with_avatar;
 					}
@@ -2152,7 +2165,7 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 						}
 					}
 				}
-
+				
 				if (imember->video_flow != SWITCH_MEDIA_FLOW_SENDONLY) {
 					conference_video_pop_next_image(imember, &imember->pcanvas_img);
 				}
@@ -2160,6 +2173,11 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 				switch_core_session_rwunlock(imember->session);
 			}
 
+			if (conference->new_personal_vlayout && layout_applied) {
+				conference->new_personal_vlayout = NULL;
+				layout_applied = 0;
+			}
+			
 			if (check_async_file) {
 				if (switch_core_file_read_video(&conference->async_fnode->fh, &file_frame, SVR_BLOCK | SVR_FLUSH) == SWITCH_STATUS_SUCCESS) {
 					if ((async_file_img = file_frame.img)) {
@@ -2246,12 +2264,12 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 						}
 
 						if (layer) {
-							if (conference_utils_member_test_flag(imember, MFLAG_CAN_BE_SEEN)) {
+							if (conference_utils_member_test_flag(omember, MFLAG_CAN_BE_SEEN)) {
 								layer->mute_patched = 0;
 							} else {
 								if (!layer->mute_patched) {
 									switch_image_t *tmp;
-									conference_video_scale_and_patch(layer, imember->video_mute_img ? imember->video_mute_img : omember->pcanvas_img, SWITCH_FALSE);
+									conference_video_scale_and_patch(layer, omember->video_mute_img ? omember->video_mute_img : omember->pcanvas_img, SWITCH_FALSE);
 									tmp = switch_img_write_text_img(layer->screen_w, layer->screen_h, SWITCH_TRUE, "VIDEO MUTED");
 									switch_img_patch(imember->canvas->img, tmp, layer->x_pos, layer->y_pos);
 									switch_img_free(&tmp);
