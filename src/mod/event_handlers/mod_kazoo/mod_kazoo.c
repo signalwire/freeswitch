@@ -347,6 +347,7 @@ static switch_status_t config(void) {
 	globals.event_stream_preallocate = 4000;
 	globals.send_msg_batch = 10;
 	globals.event_stream_framing = 2;
+	globals.port = 0;
 	
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to open configuration file %s\n", cf);
@@ -360,6 +361,9 @@ static switch_status_t config(void) {
 				if (!strcmp(var, "listen-ip")) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Set bind ip address: %s\n", val);
 					set_pref_ip(val);
+				} else if (!strcmp(var, "listen-port")) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Set bind port: %s\n", val);
+					globals.port = atoi(val);
 				} else if (!strcmp(var, "cookie")) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Set cookie: %s\n", val);
 					set_pref_ei_cookie(val);
@@ -515,7 +519,7 @@ static switch_status_t create_acceptor() {
 		ei_set_compat_rel(globals.ei_compat_rel);
 	}
 	
-	if (!(globals.acceptor = create_socket(globals.pool))) {
+	if (!(globals.acceptor = create_socket_with_port(globals.pool, globals.port))) {
 		return SWITCH_STATUS_SOCKERR;
 	}
 	
