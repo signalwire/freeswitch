@@ -67,6 +67,16 @@ static inline void switch_color_rgb2yuv(switch_rgb_color_t *rgb, switch_yuv_colo
 */
 static inline void switch_color_yuv2rgb(switch_yuv_color_t *yuv, switch_rgb_color_t *rgb);
 
+/*!\brief Draw a pixel on an image
+*
+* \param[in]    img       Image descriptor
+* \param[in]    x         leftmost pos
+* \param[in]    y         topmost pos
+* \param[in]    color     RGB color
+*/
+static inline void switch_img_draw_pixel(switch_image_t *img, int x, int y, switch_rgb_color_t *color);
+
+
 struct pos_el {
 	switch_img_position_t pos;
 	const char *name;
@@ -460,7 +470,7 @@ SWITCH_DECLARE(switch_image_t *) switch_img_copy_rect(switch_image_t *img, uint3
 #endif
 }
 
-SWITCH_DECLARE(void) switch_img_draw_pixel(switch_image_t *img, int x, int y, switch_rgb_color_t *color)
+static inline void switch_img_draw_pixel(switch_image_t *img, int x, int y, switch_rgb_color_t *color)
 {
 #ifdef SWITCH_HAVE_YUV	
 	switch_yuv_color_t yuv;
@@ -567,7 +577,7 @@ static inline void switch_img_get_rgb_pixel(switch_image_t *img, switch_rgb_colo
 SWITCH_DECLARE(void) switch_img_overlay(switch_image_t *IMG, switch_image_t *img, int x, int y, uint8_t alpha)
 {
 	int i, j, len, max_h;
-	switch_rgb_color_t RGB = {0}, rgb = {0}, c;
+	switch_rgb_color_t RGB = {0}, rgb = {0}, c = {0};
 	int xoff = 0, yoff = 0;
 
 	switch_assert(IMG->fmt == SWITCH_IMG_FMT_I420);

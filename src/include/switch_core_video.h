@@ -258,15 +258,6 @@ SWITCH_DECLARE(switch_image_t *) switch_img_copy_rect(switch_image_t *img, uint3
 */
 SWITCH_DECLARE(void) switch_img_fill(switch_image_t *img, int x, int y, int w, int h, switch_rgb_color_t *color);
 
-/*!\brief Draw a pixel on an image
-*
-* \param[in]    img       Image descriptor
-* \param[in]    x         leftmost pos
-* \param[in]    y         topmost pos
-* \param[in]    color     RGB color
-*/
-SWITCH_DECLARE(void) switch_img_draw_pixel(switch_image_t *img, int x, int y, switch_rgb_color_t *color);
-
 /*!\brief Set RGB color with a string
 *
 * Color string should be in #RRGGBB format
