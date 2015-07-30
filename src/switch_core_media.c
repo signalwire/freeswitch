@@ -185,6 +185,8 @@ struct switch_media_handle_s {
 	const switch_codec_implementation_t *negotiated_codecs[SWITCH_MAX_CODECS];
 	int num_negotiated_codecs;
 	switch_payload_t ianacodes[SWITCH_MAX_CODECS];
+	switch_payload_t dtmf_ianacodes[SWITCH_MAX_CODECS];
+	switch_payload_t cng_ianacodes[SWITCH_MAX_CODECS];
 	char *fmtps[SWITCH_MAX_CODECS];
 	int video_count;
 
@@ -3514,6 +3516,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 	uint8_t match = 0;
 	uint8_t vmatch = 0;
 	switch_payload_t best_te = 0, te = 0, cng_pt = 0;
+	unsigned long best_te_rate = 8000, cng_rate = 8000;
 	sdp_media_t *m;
 	sdp_attribute_t *attr;
 	int ptime = 0, dptime = 0, maxptime = 0, dmaxptime = 0;
@@ -3996,7 +3999,8 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 				if (!strcasecmp(rm_encoding, "telephone-event")) {
 					if (!best_te || map->rm_rate == a_engine->cur_payload_map->rm_rate) {
 						best_te = (switch_payload_t) map->rm_pt;
-						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Set telephone-event payload to %u\n", best_te);
+						best_te_rate = map->rm_rate;
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Set telephone-event payload to %u@%ld\n", best_te, best_te_rate);
 					}
 					continue;
 				}
@@ -4327,7 +4331,46 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 					match = 0;
 				}
 			}
-				
+
+			for (map = m->m_rtpmaps; map; map = map->rm_next) {
+				const char *rm_encoding;
+
+				if (!(rm_encoding = map->rm_encoding)) {
+					rm_encoding = "";
+				}
+
+				if (!strcasecmp(rm_encoding, "telephone-event")) {
+					if (!best_te || map->rm_rate == a_engine->cur_payload_map->rm_rate) {
+						best_te = (switch_payload_t) map->rm_pt;
+						best_te_rate = map->rm_rate;
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Set telephone-event payload to %u@%lu\n", best_te, best_te_rate);
+					}
+					continue;
+				}
+
+				if (!switch_media_handle_test_media_flag(smh, SCMF_SUPPRESS_CNG) && !strcasecmp(rm_encoding, "CN")) {
+
+					if (!cng_pt || map->rm_rate == a_engine->cur_payload_map->rm_rate) {
+						cng_pt = (switch_payload_t) map->rm_pt;
+						cng_rate = map->rm_rate;
+
+						if (a_engine->rtp_session) {
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Set comfort noise payload to %u@%lu\n", cng_pt, cng_rate);
+							switch_rtp_set_cng_pt(a_engine->rtp_session, smh->mparams->cng_pt);
+						}
+					}
+					continue;
+				}
+			}
+
+			if (cng_rate != a_engine->cur_payload_map->rm_rate) {
+				cng_rate = 8000;
+			}
+
+			if (best_te_rate != a_engine->cur_payload_map->rm_rate) {
+				best_te_rate = 8000;
+			}
+
 			if (!best_te && (switch_media_handle_test_media_flag(smh, SCMF_LIBERAL_DTMF) || 
 							 switch_channel_test_flag(session->channel, CF_LIBERAL_DTMF))) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, 
@@ -4347,6 +4390,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 					}
 				} else {
 					te = smh->mparams->recv_te = smh->mparams->te = (switch_payload_t) best_te;
+					smh->mparams->te_rate = best_te_rate;
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Set 2833 dtmf send/recv payload to %u\n", te);
 					switch_channel_set_variable(session->channel, "dtmf_type", "rfc2833");
 					smh->mparams->dtmf_type = DTMF_2833;
@@ -4612,6 +4656,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 	}
 
 	smh->mparams->cng_pt = cng_pt;
+	smh->mparams->cng_rate = cng_rate;
 
 	return match;
 }
@@ -6701,13 +6746,18 @@ static void generate_m(switch_core_session_t *session, char *buf, size_t buflen,
 	if (smh->mparams->dtmf_type == DTMF_2833 && smh->mparams->te > 95) {
 		int i;
 		for (i = 0; i < smh->num_rates; i++) {
-			switch_snprintf(buf + strlen(buf), buflen - strlen(buf), " %d", smh->ianacodes[smh->mparams->num_codecs + i]);
+			if (smh->dtmf_ianacodes[i]) {
+				switch_snprintf(buf + strlen(buf), buflen - strlen(buf), " %d", smh->dtmf_ianacodes[i]);
+			}
+			if (smh->cng_ianacodes[i] && !switch_media_handle_test_media_flag(smh, SCMF_SUPPRESS_CNG) && cng_type && use_cng) {
+				switch_snprintf(buf + strlen(buf), buflen - strlen(buf), " %d", smh->cng_ianacodes[i]);
+			}
 		}
 	}
 		
-	if (!switch_media_handle_test_media_flag(smh, SCMF_SUPPRESS_CNG) && cng_type && use_cng) {
-		switch_snprintf(buf + strlen(buf), buflen - strlen(buf), " %d", cng_type);
-	}
+	//if (!switch_media_handle_test_media_flag(smh, SCMF_SUPPRESS_CNG) && cng_type && use_cng) {
+		//switch_snprintf(buf + strlen(buf), buflen - strlen(buf), " %d", cng_type);
+	//}
 		
 	switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "\n");
 
@@ -6787,10 +6837,10 @@ static void generate_m(switch_core_session_t *session, char *buf, size_t buflen,
 		for (i = 0; i < smh->num_rates; i++) {
 			if (switch_channel_test_flag(session->channel, CF_AVPF)) {
 				switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=rtpmap:%d telephone-event/%d\n", 
-								smh->ianacodes[smh->mparams->num_codecs + i], smh->rates[i]);
+								smh->dtmf_ianacodes[i], smh->rates[i]);
 			} else {
 				switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=rtpmap:%d telephone-event/%d\na=fmtp:%d 0-16\n", 
-								smh->ianacodes[smh->mparams->num_codecs + i], smh->rates[i], smh->ianacodes[smh->mparams->num_codecs + i]);
+								smh->dtmf_ianacodes[i], smh->rates[i], smh->dtmf_ianacodes[i]);
 			}
 		}
 	}
@@ -6898,9 +6948,15 @@ static void generate_m(switch_core_session_t *session, char *buf, size_t buflen,
 		//switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=encryption:optional\n");
 	}
 
-	if (!cng_type) {
-		//switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=rtpmap:%d CN/8000\n", cng_type);
-		//} else {
+	if (cng_type) {
+		for (i = 0; i < smh->num_rates; i++) {
+			//if (smh->rates[i] == 8000) {
+			//	switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=rtpmap:%d CN/%d\n", cng_type, smh->rates[i]);
+			//} else {
+				switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=rtpmap:%d CN/%d\n", smh->cng_ianacodes[i], smh->rates[i]);
+				//}
+		}
+	} else {
 		if (switch_media_handle_test_media_flag(smh, SCMF_SUPPRESS_CNG)) { 
 			switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=silenceSupp:off - - - -\n");
 		}
@@ -7184,22 +7240,24 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 			int j;
 			smh->ianacodes[i] = smh->codecs[i]->ianacode;
 
-			for (j = 0; j < SWITCH_MAX_CODECS; j++) {
-				if (smh->rates[j] == 0) {
-					break;
-				}
+			if (smh->codecs[i]->codec_type != SWITCH_CODEC_TYPE_AUDIO) {
+				continue;
+			}
 
-				if (smh->codecs[i]->codec_type != SWITCH_CODEC_TYPE_AUDIO) {
-					goto do_next;
+			if (sdp_type == SDP_TYPE_REQUEST) {
+				for (j = 0; j < SWITCH_MAX_CODECS; j++) {
+					if (smh->rates[j] == 0) {
+						break;
+					}
+					
+					if (smh->rates[j] == smh->codecs[i]->samples_per_second) {
+						goto do_next;
+					}
 				}
-
-				if (smh->rates[j] == smh->codecs[i]->samples_per_second) {
-					goto do_next;
-				}
+			
+				smh->rates[smh->num_rates++] = smh->codecs[i]->samples_per_second;
 			}
 			
-			smh->rates[smh->num_rates++] = smh->codecs[i]->samples_per_second;
-
 		do_next:
 			continue;
 		}
@@ -7258,9 +7316,11 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 			
 			for (i = 0; i < smh->num_rates; i++) {
 				if (smh->rates[i] == 8000 || smh->num_rates == 1) {
-					smh->ianacodes[smh->mparams->num_codecs + i] = smh->mparams->te;
+					smh->dtmf_ianacodes[i] = smh->mparams->te;
+					smh->cng_ianacodes[i] = smh->mparams->cng_pt;
 				} else {
-					smh->ianacodes[smh->mparams->num_codecs + i] = (switch_payload_t)smh->payload_space++;
+					smh->dtmf_ianacodes[i] = (switch_payload_t)smh->payload_space++;
+					smh->cng_ianacodes[i] = (switch_payload_t)smh->payload_space++;
 				}
 			}
 	
@@ -7442,17 +7502,17 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 
 			if (switch_channel_test_flag(session->channel, CF_AVPF)) {
 				switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtpmap:%d telephone-event/%d\n", 
-								smh->mparams->te, rate);
+								smh->mparams->te, smh->mparams->te_rate);
 			} else {
 				switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtpmap:%d telephone-event/%d\na=fmtp:%d 0-16\n", 
-								smh->mparams->te, rate, smh->mparams->te);
+								smh->mparams->te, smh->mparams->te_rate, smh->mparams->te);
 			}
 		}
 
 		if (switch_media_handle_test_media_flag(smh, SCMF_SUPPRESS_CNG)) {
 			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=silenceSupp:off - - - -\n");
 		} else if (smh->mparams->cng_pt && use_cng) {
-			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtpmap:%d CN/8000\n", smh->mparams->cng_pt);
+			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtpmap:%d CN/%lu\n", smh->mparams->cng_pt, smh->mparams->cng_rate);
 
 			if (!a_engine->codec_negotiated) {
 				smh->mparams->cng_pt = 0;

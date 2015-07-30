@@ -141,6 +141,8 @@ typedef struct switch_core_media_params_s {
 
 	switch_payload_t te;
 	switch_payload_t recv_te;
+	unsigned long te_rate;
+	unsigned long cng_rate;
 
 	char *adv_sdp_audio_ip;
 
