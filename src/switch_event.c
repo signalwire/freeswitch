@@ -1053,7 +1053,7 @@ static switch_status_t switch_event_base_add_header(switch_event_t *event, switc
 			switch_event_del_header(event, header_name);
 		}
 
-		if (strstr(data, "ARRAY::")) {
+		if (!strncmp(data, "ARRAY::", 7)) {
 			switch_event_add_array(event, header_name, data);
 			FREE(data);
 			goto end;
