@@ -688,7 +688,7 @@ void conference_video_layer_set_logo(conference_member_t *member, mcu_layer_t *l
 	if (zstr(path) || !strcasecmp(path, "clear")) {
 		switch_img_free(&layer->banner_img);
 		layer->banner_patched = 0;
-
+		member->video_logo = NULL;
 		switch_img_fill(layer->canvas->img, layer->x_pos, layer->y_pos, layer->screen_w, layer->screen_h,
 						&layer->canvas->letterbox_bgcolor);
 
@@ -772,12 +772,16 @@ void conference_video_layer_set_banner(conference_member_t *member, mcu_layer_t 
 		text = switch_channel_get_variable_dup(member->channel, "video_banner_text", SWITCH_FALSE, -1);
 	}
 
-	if (zstr(text) || !strcasecmp(text, "clear")) {
+	if (zstr(text) || !strcasecmp(text, "clear") || !strcasecmp(text, "allclear")) {
 		switch_img_free(&layer->banner_img);
 		layer->banner_patched = 0;
 
 		switch_img_fill(layer->canvas->img, layer->x_pos, layer->y_pos, layer->screen_w, layer->screen_h,
 						&layer->canvas->letterbox_bgcolor);
+
+		if (!strcasecmp(text, "allclear")) {
+			switch_channel_set_variable(member->channel, "video_banner_text", NULL);
+		}
 
 		goto end;
 	}
@@ -1867,7 +1871,7 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 				}
 			}
 		}
-
+		
 		if (count_changed) {
 			need_refresh = 1;
 			need_keyframe = 1;
