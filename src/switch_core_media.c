@@ -635,7 +635,7 @@ SWITCH_DECLARE(payload_map_t *) switch_core_media_add_payload_map(switch_core_se
 
 
 	for (pmap = engine->payload_map; pmap && pmap->allocated; pmap = pmap->next) {
-		exists = (!strcasecmp(name, pmap->iananame) && (!pmap->rate || rate == pmap->rate) && (!pmap->ptime || pmap->ptime == ptime));
+		exists = (!strcasecmp(name, pmap->iananame) && pmap->pt == pt && (!pmap->rate || rate == pmap->rate) && (!pmap->ptime || pmap->ptime == ptime));
 
 		if (exists) {
 			
