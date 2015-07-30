@@ -8,6 +8,8 @@ mod_conference_la_CFLAGS   = $(AM_CFLAGS) -I.
 mod_conference_la_LIBADD   = $(switch_builddir)/libfreeswitch.la
 mod_conference_la_LDFLAGS  = -avoid-version -module -no-undefined -shared
 
+$(am_mod_conference_la_OBJECTS):  mod_conference.h
+
 if HAVE_OPENAL
 mod_conference_la_LDFLAGS += -lopenal -lm
 mod_conference_la_CFLAGS += -DOPENAL_POSITIONING
