@@ -48,6 +48,25 @@
 #include <gd.h>
 #endif
 
+static inline void switch_img_get_yuv_pixel(switch_image_t *img, switch_yuv_color_t *yuv, int x, int y);
+
+static inline void switch_img_get_rgb_pixel(switch_image_t *img, switch_rgb_color_t *rgb, int x, int y);
+
+
+/*!\brief Convert RGB color to YUV
+*
+* \param[in]    rgb       RGB color pointer
+* \param[out]   yuv       YUV color pointer
+*/
+static inline void switch_color_rgb2yuv(switch_rgb_color_t *rgb, switch_yuv_color_t *yuv);
+
+/*!\brief Convert YUV color to RGB
+*
+* \param[in]    yuv       YUV color pointer
+* \param[out]   rgb       RGB color pointer
+*/
+static inline void switch_color_yuv2rgb(switch_yuv_color_t *yuv, switch_rgb_color_t *rgb);
+
 struct pos_el {
 	switch_img_position_t pos;
 	const char *name;
@@ -249,12 +268,16 @@ SWITCH_DECLARE(void) switch_img_patch(switch_image_t *IMG, switch_image_t *img, 
 					switch_img_get_rgb_pixel(IMG, &RGB, x + j, y + i);
 					rgb = (switch_rgb_color_t *)(img->planes[SWITCH_PLANE_PACKED] + i * img->stride[SWITCH_PLANE_PACKED] + j * 4);
 
-					RGB.a = 255;
-					RGB.r = ((RGB.r * (255 - alpha)) >> 8) + ((rgb->r * alpha) >> 8);
-					RGB.g = ((RGB.g * (255 - alpha)) >> 8) + ((rgb->g * alpha) >> 8);
-					RGB.b = ((RGB.b * (255 - alpha)) >> 8) + ((rgb->b * alpha) >> 8);
+					if (alpha < 255) {
+						RGB.a = 255;
+						RGB.r = ((RGB.r * (255 - alpha)) >> 8) + ((rgb->r * alpha) >> 8);
+						RGB.g = ((RGB.g * (255 - alpha)) >> 8) + ((rgb->g * alpha) >> 8);
+						RGB.b = ((RGB.b * (255 - alpha)) >> 8) + ((rgb->b * alpha) >> 8);
 
-					switch_img_draw_pixel(IMG, x + j, y + i, &RGB);
+						switch_img_draw_pixel(IMG, x + j, y + i, &RGB);
+					} else {
+						switch_img_draw_pixel(IMG, x + j, y + i, rgb);
+					}
 				}
 			}
 		}
@@ -509,7 +532,7 @@ SWITCH_DECLARE(void) switch_img_fill(switch_image_t *img, int x, int y, int w, i
 #endif
 }
 
-SWITCH_DECLARE(void) switch_img_get_yuv_pixel(switch_image_t *img, switch_yuv_color_t *yuv, int x, int y)
+static inline void switch_img_get_yuv_pixel(switch_image_t *img, switch_yuv_color_t *yuv, int x, int y)
 {
 #ifdef SWITCH_HAVE_YUV		
 	// switch_assert(img->fmt == SWITCH_IMG_FMT_I420);
@@ -521,7 +544,7 @@ SWITCH_DECLARE(void) switch_img_get_yuv_pixel(switch_image_t *img, switch_yuv_co
 #endif	
 }
 
-SWITCH_DECLARE(void) switch_img_get_rgb_pixel(switch_image_t *img, switch_rgb_color_t *rgb, int x, int y)
+static inline void switch_img_get_rgb_pixel(switch_image_t *img, switch_rgb_color_t *rgb, int x, int y)
 {
 #ifdef SWITCH_HAVE_YUV		
 	if (x < 0 || y < 0 || x >= img->d_w || y >= img->d_h) return;
@@ -544,7 +567,7 @@ SWITCH_DECLARE(void) switch_img_get_rgb_pixel(switch_image_t *img, switch_rgb_co
 SWITCH_DECLARE(void) switch_img_overlay(switch_image_t *IMG, switch_image_t *img, int x, int y, uint8_t alpha)
 {
 	int i, j, len, max_h;
-	switch_rgb_color_t RGB, rgb, c;
+	switch_rgb_color_t RGB = {0}, rgb = {0}, c;
 	int xoff = 0, yoff = 0;
 
 	switch_assert(IMG->fmt == SWITCH_IMG_FMT_I420);
@@ -666,7 +689,7 @@ SWITCH_DECLARE(void) switch_color_set_rgb(switch_rgb_color_t *color, const char 
 	}
 }
 
-SWITCH_DECLARE(void) switch_color_rgb2yuv(switch_rgb_color_t *rgb, switch_yuv_color_t *yuv)
+static inline void switch_color_rgb2yuv(switch_rgb_color_t *rgb, switch_yuv_color_t *yuv)
 {
 #ifdef SWITCH_HAVE_YUV		
 	yuv->y = (uint8_t)(((rgb->r * 4897) >> 14) + ((rgb->g * 9611) >> 14) + ((rgb->b * 1876) >> 14));
@@ -677,7 +700,7 @@ SWITCH_DECLARE(void) switch_color_rgb2yuv(switch_rgb_color_t *rgb, switch_yuv_co
 
 #define CLAMP(val) MAX(0, MIN(val, 255))
 
-SWITCH_DECLARE(void) switch_color_yuv2rgb(switch_yuv_color_t *yuv, switch_rgb_color_t *rgb)
+static inline void switch_color_yuv2rgb(switch_yuv_color_t *yuv, switch_rgb_color_t *rgb)
 {
 #ifdef SWITCH_HAVE_YUV	
 #if 0
@@ -879,7 +902,7 @@ static void draw_bitmap(switch_img_txt_handle_t *handle, switch_image_t *img, FT
 			if (handle->use_bgcolor) {
 				switch_img_draw_pixel(img, i, j, &handle->gradient_table[gradient * MAX_GRADIENT / 256]);
 			} else {
-				switch_rgb_color_t rgb_color;
+				switch_rgb_color_t rgb_color = {0};
 				switch_rgb_color_t c;
 				switch_img_get_rgb_pixel(img, &rgb_color, i, j);
 

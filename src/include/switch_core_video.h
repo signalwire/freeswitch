@@ -285,20 +285,6 @@ SWITCH_DECLARE(void) switch_color_set_rgb(switch_rgb_color_t *color, const char 
 */
 SWITCH_DECLARE(void) switch_color_set_yuv(switch_yuv_color_t *color, const char *color_str);
 
-/*!\brief Convert RGB color to YUV
-*
-* \param[in]    rgb       RGB color pointer
-* \param[out]   yuv       YUV color pointer
-*/
-SWITCH_DECLARE(void) switch_color_rgb2yuv(switch_rgb_color_t *rgb, switch_yuv_color_t *yuv);
-
-/*!\brief Convert YUV color to RGB
-*
-* \param[in]    yuv       YUV color pointer
-* \param[out]   rgb       RGB color pointer
-*/
-SWITCH_DECLARE(void) switch_color_yuv2rgb(switch_yuv_color_t *yuv, switch_rgb_color_t *rgb);
-
 /*!\brief Created a text handle
 *
 * \param[out]   handleP     Pointer to the text handle pointer
@@ -344,10 +330,6 @@ SWITCH_DECLARE(switch_image_t *) switch_img_read_png(const char *file_name, swit
 SWITCH_DECLARE(switch_status_t) switch_img_write_png(switch_image_t *img, char *file_name);
 SWITCH_DECLARE(switch_status_t) switch_png_open(switch_png_t **pngP, const char *file_name);
 SWITCH_DECLARE(void) switch_png_free(switch_png_t **pngP);
-
-SWITCH_DECLARE(void) switch_img_get_yuv_pixel(switch_image_t *img, switch_yuv_color_t *yuv, int x, int y);
-
-SWITCH_DECLARE(void) switch_img_get_rgb_pixel(switch_image_t *img, switch_rgb_color_t *rgb, int x, int y);
 
 /*!\brief put a small img over a big IMG at position x,y, with alpha transparency
 *
