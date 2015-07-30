@@ -96,6 +96,7 @@
     <param name="auth-calls" value="$${internal_auth_calls}"/>
     <!-- on authed calls, authenticate *all* the packets not just invite -->
     <param name="auth-all-packets" value="false"/>
+    <!-- Shouldn't set these on IPv6 -->
     <!-- <param name="ext-rtp-ip" value="$${external_rtp_ip}"/> -->
     <!-- <param name="ext-sip-ip" value="$${external_sip_ip}"/> -->
     <!-- rtp inactivity timeout -->
