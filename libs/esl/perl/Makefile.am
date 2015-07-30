@@ -17,6 +17,9 @@ perlmod-install: install-perlLTLIBRARIES
 	install -m 755 ESL/* $(DESTDIR)$(PERL_SITEDIR)/ESL
 endif
 
+../libesl.la:
+	$(MAKE) -C ..
+
 esl_wrap.cpp:
 	swig2.0 -module ESL -shadow -perl5 -c++ -DMULTIPLICITY -I../src/include -o esl_wrap.cpp ../ESL.i
 
