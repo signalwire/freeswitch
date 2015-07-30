@@ -439,17 +439,18 @@ char *sofia_glue_create_external_via(switch_core_session_t *session, sofia_profi
 
 char *sofia_glue_create_via(switch_core_session_t *session, const char *ip, switch_port_t port, sofia_transport_t transport)
 {
+	char *ipv6 = strchr(ip, ':');
 	if (port && port != 5060) {
 		if (session) {
-			return switch_core_session_sprintf(session, "SIP/2.0/%s %s:%d;rport", sofia_glue_transport2str(transport), ip, port);
+			return switch_core_session_sprintf(session, "SIP/2.0/%s %s%s%s:%d;rport", sofia_glue_transport2str(transport), ipv6 ? "[" : "", ip, ipv6 ? "]" : "", port);
 		} else {
-			return switch_mprintf("SIP/2.0/%s %s:%d;rport", sofia_glue_transport2str(transport), ip, port);
+			return switch_mprintf("SIP/2.0/%s %s%s%s:%d;rport", sofia_glue_transport2str(transport), ipv6 ? "[" : "", ip, ipv6 ? "]" : "", port);
 		}
 	} else {
 		if (session) {
-			return switch_core_session_sprintf(session, "SIP/2.0/%s %s;rport", sofia_glue_transport2str(transport), ip);
+			return switch_core_session_sprintf(session, "SIP/2.0/%s %s%s%s;rport", sofia_glue_transport2str(transport), ipv6 ? "[" : "", ip, ipv6 ? "]" : "");
 		} else {
-			return switch_mprintf("SIP/2.0/%s %s;rport", sofia_glue_transport2str(transport), ip);
+			return switch_mprintf("SIP/2.0/%s %s%s%s;rport", sofia_glue_transport2str(transport), ipv6 ? "[" : "", ip, ipv6 ? "]" : "");
 		}
 	}
 }
