@@ -15,7 +15,7 @@ ExecStart=/usr/bin/freeswitch -ncwait -nonat
 TimeoutSec=45s
 Restart=always
 ; exec
-WorkingDirectory=/run/freeswitch
+WorkingDirectory=/var/log/freeswitch
 User=freeswitch
 Group=freeswitch
 LimitCORE=infinity

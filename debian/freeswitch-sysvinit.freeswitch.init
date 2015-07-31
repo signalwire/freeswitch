@@ -24,7 +24,7 @@ CONFDIR=/etc/$NAME
 RUNDIR=/var/run/$NAME
 PIDFILE=$RUNDIR/$NAME.pid
 SCRIPTNAME=/etc/init.d/$NAME
-WORKDIR=/var/lib/$NAME
+WORKDIR=/var/log/$NAME
 
 [ -x $DAEMON ] || exit 0
 [ -r /etc/default/$NAME ] && . /etc/default/$NAME
