@@ -2157,7 +2157,7 @@ SWITCH_STANDARD_APP(conference_function)
 
 	if (conference->conference_video_mode == CONF_VIDEO_MODE_MUX) {
 		switch_queue_create(&member.video_queue, 200, member.pool);
-		switch_queue_create(&member.mux_out_queue, 200, member.pool);
+		switch_queue_create(&member.mux_out_queue, 500, member.pool);
 		switch_frame_buffer_create(&member.fb);
 	}
 

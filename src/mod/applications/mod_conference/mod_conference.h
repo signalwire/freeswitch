@@ -499,6 +499,7 @@ typedef struct mcu_canvas_s {
 	int32_t video_write_bandwidth;
 	int recording;
 	switch_image_t *bgimg;
+	switch_thread_rwlock_t *video_rwlock;
 } mcu_canvas_t;
 
 /* Record Node */
