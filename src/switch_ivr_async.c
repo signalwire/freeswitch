@@ -1880,7 +1880,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 		switch_core_session_get_read_impl(session, &read_impl);
 
 		if ((id_name = switch_channel_get_variable(tchannel, "eavesdrop_announce_id"))) {
-			const char *tmp = switch_channel_get_variable(tchannel, "eavesdrop_annnounce_macro");
+			const char *tmp = switch_channel_get_variable(tchannel, "eavesdrop_announce_macro");
 			if (tmp) {
 				macro_name = tmp;
 			}
