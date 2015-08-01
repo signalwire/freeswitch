@@ -2205,6 +2205,13 @@ SWITCH_STANDARD_APP(conference_function)
 	msg.message_id = SWITCH_MESSAGE_INDICATE_UNBRIDGE;
 	switch_core_session_receive_message(session, &msg);
 
+	if (member.video_muxing_write_thread) {
+		switch_status_t st = SWITCH_STATUS_SUCCESS;
+		switch_queue_push(member.mux_out_queue, NULL);
+		switch_thread_join(&st, member.video_muxing_write_thread);
+		member.video_muxing_write_thread = NULL;
+	}
+
 	/* Remove the caller from the conference */
 	conference_member_del(member.conference, &member);
 
@@ -2214,14 +2221,6 @@ SWITCH_STANDARD_APP(conference_function)
 	/* Clean Up. */
 
  done:
-
-	if (member.video_muxing_write_thread) {
-		switch_status_t st = SWITCH_STATUS_SUCCESS;
-		switch_queue_push(member.mux_out_queue, NULL);
-		switch_thread_join(&st, member.video_muxing_write_thread);
-		member.video_muxing_write_thread = NULL;
-	}
-
 
 	if (locked) {
 		switch_mutex_unlock(conference_globals.setup_mutex);
