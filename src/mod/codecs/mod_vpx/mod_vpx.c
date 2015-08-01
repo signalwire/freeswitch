@@ -256,7 +256,7 @@ static switch_status_t init_decoder(switch_codec_t *codec)
 		//	context->decoder_init = 0;
 		//}
 
-		cfg.threads = switch_core_cpu_count();
+		//cfg.threads = switch_core_cpu_count();
 
 		if (!context->is_vp9) { // vp8 only
 			dec_flags = VPX_CODEC_USE_POSTPROC;
@@ -337,7 +337,7 @@ static switch_status_t init_encoder(switch_codec_t *codec)
 	config->rc_target_bitrate = context->bandwidth;
 	config->g_lag_in_frames = 0;
 	config->kf_max_dist = 2000;
-	config->g_threads = (cpus > 1) ? 2 : 1;
+	//config->g_threads = (cpus > 1) ? 2 : 1;
 	
 	if (context->is_vp9) {
 		//config->rc_dropframe_thresh = 2;
