@@ -148,6 +148,42 @@ switch_status_t mod_amqp_do_config(switch_bool_t reload)
 }
 
 
+#define KEY_SAFE(C) ((C >= 'a' && C <= 'z') || \
+					(C >= 'A' && C <= 'Z') || \
+					(C >= '0' && C <= '9') || \
+					(C == '-' || C == '~' || C == '_'))
+
+#define HI4(C) (C>>4)
+#define LO4(C) (C & 0x0F)
+
+#define hexint(C) (C < 10?('0' + C):('A'+ C - 10))
+
+char *amqp_util_encode(char *key, char *dest) {
+	char *p, *end;
+ 	if ((strlen(key) == 1) && (key[0] == '#' || key[0] == '*')) {
+ 		*dest++ = key[0];
+		*dest = '\0';
+		return dest;
+    }
+	for (p = key, end = key + strlen(key); p < end; p++) {
+		if (KEY_SAFE(*p)) {
+			*dest++ = *p;
+		} else if (*p == '.') {
+			memcpy(dest, "%2E", 3);
+			dest += 3;
+		} else if (*p == ' ') {
+			*dest++ = '+';
+		} else {
+			*dest++ = '%';
+			sprintf(dest, "%c%c", hexint(HI4(*p)), hexint(LO4(*p)));
+			dest += 2;
+		}
+	}
+	*dest = '\0';
+	return dest;
+}
+
+
 /* For Emacs:
  * Local Variables:
  * mode:c

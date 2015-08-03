@@ -50,10 +50,12 @@
 
 /* If you change MAX_ROUTING_KEY_FORMAT_FIELDS then you must change the implementation of makeRoutingKey where it formats the routing key using sprintf */
 #define MAX_ROUTING_KEY_FORMAT_FIELDS 10
+#define MAX_ROUTING_KEY_FORMAT_FALLBACK_FIELDS 5
 #define MAX_AMQP_ROUTING_KEY_LENGTH 255
 
 #define TIME_STATS_TO_AGGREGATE 1024
 #define MOD_AMQP_DEBUG_TIMING 0
+#define MOD_AMQP_DEFAULT_CONTENT_TYPE "text/json"
 
 
 typedef struct {
@@ -74,12 +76,23 @@ typedef struct mod_amqp_connection_s {
   struct mod_amqp_connection_s *next;
 } mod_amqp_connection_t;
 
+typedef struct mod_amqp_keypart_s {
+  char *name[MAX_ROUTING_KEY_FORMAT_FALLBACK_FIELDS];
+  int size;
+} mod_amqp_keypart_t;
+
 typedef struct {
   char *name;
 
   char *exchange;
   char *exchange_type;
-  char *format_fields[MAX_ROUTING_KEY_FORMAT_FIELDS+1];
+  int exchange_durable;
+  int exchange_auto_delete;
+  int delivery_mode;
+  int delivery_timestamp;
+  char *content_type;
+  mod_amqp_keypart_t format_fields[MAX_ROUTING_KEY_FORMAT_FIELDS+1];
+
   
   /* Array to store the possible event subscriptions */
   int event_subscriptions;
@@ -158,11 +171,12 @@ void * SWITCH_THREAD_FUNC mod_amqp_command_thread(switch_thread_t *thread, void 
 /* producer */
 void mod_amqp_producer_event_handler(switch_event_t* evt);
 switch_status_t mod_amqp_producer_routing_key(mod_amqp_producer_profile_t *profile, char routingKey[MAX_AMQP_ROUTING_KEY_LENGTH],
-					      switch_event_t* evt, char* routingKeyEventHeaderNames[]);
+					      switch_event_t* evt, mod_amqp_keypart_t routingKeyEventHeaderNames[]);
 switch_status_t mod_amqp_producer_destroy(mod_amqp_producer_profile_t **profile);
 switch_status_t mod_amqp_producer_create(char *name, switch_xml_t cfg);
 void * SWITCH_THREAD_FUNC mod_amqp_producer_thread(switch_thread_t *thread, void *data);
 
+char *amqp_util_encode(char *key, char *dest);
 
 #endif /* MOD_AMQP_H */
 
