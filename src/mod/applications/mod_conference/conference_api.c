@@ -97,6 +97,7 @@ api_command_t conference_api_sub_commands[] = {
 	{"vid-mute-img", (void_fn_t) & conference_api_sub_vid_mute_img, CONF_API_SUB_MEMBER_TARGET, "vid-mute-img", "<member_id|last> [<path>|clear]"},
 	{"vid-logo-img", (void_fn_t) & conference_api_sub_vid_logo_img, CONF_API_SUB_MEMBER_TARGET, "vid-logo-img", "<member_id|last> [<path>|clear]"},
 	{"vid-res-id", (void_fn_t) & conference_api_sub_vid_res_id, CONF_API_SUB_MEMBER_TARGET, "vid-res-id", "<member_id|last> <val>|clear"},
+	{"get-uuid", (void_fn_t) & conference_api_sub_get_uuid, CONF_API_SUB_MEMBER_TARGET, "get-uuid", "<member_id|last>"},
 	{"clear-vid-floor", (void_fn_t) & conference_api_sub_clear_vid_floor, CONF_API_SUB_ARGS_AS_ONE, "clear-vid-floor", ""},
 	{"vid-layout", (void_fn_t) & conference_api_sub_vid_layout, CONF_API_SUB_ARGS_SPLIT, "vid-layout", "<layout name>|group <group name> [<canvas id>]"},
 	{"vid-write-png", (void_fn_t) & conference_api_sub_write_png, CONF_API_SUB_ARGS_SPLIT, "vid-write-png", "<path>"},
@@ -1545,6 +1546,17 @@ switch_status_t conference_api_sub_vid_logo_img(conference_member_t *member, swi
 
 }
 
+switch_status_t conference_api_sub_get_uuid(conference_member_t *member, switch_stream_handle_t *stream, void *data)
+{
+	if (member->session) {
+		stream->write_function(stream, "%s", switch_core_session_get_uuid(member->session));
+	} else {
+		stream->write_function(stream, "_undef_");
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 switch_status_t conference_api_sub_vid_res_id(conference_member_t *member, switch_stream_handle_t *stream, void *data)
 {
 	char *text = (char *) data;
@@ -2777,7 +2789,7 @@ switch_status_t conference_api_dispatch(conference_obj_t *conference, switch_str
 						} else {
 							stream->write_function(stream, "Non-Existant ID %u\n", id);
 						}
-					} else if (strchr(argv[argn + 1], '=')) {
+					} else if (!zstr(argv[argn + 1]) && strchr(argv[argn + 1], '=')) {
 						conference_api_member_cmd_t pfn = (conference_api_member_cmd_t) conference_api_sub_commands[i].pfnapicmd;
 						conference_member_t *member;
 						char *var, *val;
