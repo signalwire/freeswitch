@@ -798,8 +798,8 @@ SWITCH_DECLARE(switch_status_t) switch_img_txt_handle_create(switch_img_txt_hand
 	if (FT_Init_FreeType(&new_handle->library)) {
 		return SWITCH_STATUS_FALSE;
 	}
-#else
-	return SWITCH_STATUS_FALSE;
+/*#else
+	return SWITCH_STATUS_FALSE; */
 #endif
 
 	new_handle->pool = pool;
