@@ -132,6 +132,7 @@
       <PrecompiledHeader>
       </PrecompiledHeader>
       <EnablePREfast>false</EnablePREfast>
+      <AdditionalIncludeDirectories>$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
@@ -141,6 +142,16 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="conference_al.c" />
+    <ClCompile Include="conference_api.c" />
+    <ClCompile Include="conference_cdr.c" />
+    <ClCompile Include="conference_event.c" />
+    <ClCompile Include="conference_file.c" />
+    <ClCompile Include="conference_loop.c" />
+    <ClCompile Include="conference_member.c" />
+    <ClCompile Include="conference_record.c" />
+    <ClCompile Include="conference_utils.c" />
+    <ClCompile Include="conference_video.c" />
     <ClCompile Include="mod_conference.c" />
   </ItemGroup>
   <ItemGroup>
@@ -152,6 +163,9 @@
       <Project>{202d7a4e-760d-4d0e-afa1-d7459ced30ff}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="mod_conference.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
