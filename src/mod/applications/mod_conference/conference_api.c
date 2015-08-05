@@ -701,7 +701,7 @@ switch_status_t conference_api_sub_canvas(conference_member_t *member, switch_st
 {
 	int index;
 	char *val = (char *) data;
-	mcu_canvas_t *canvas = NULL;
+	//mcu_canvas_t *canvas = NULL;
 
 	if (member->conference->canvas_count == 1) {
 		stream->write_function(stream, "-ERR Only 1 Canvas\n");
@@ -722,8 +722,8 @@ switch_status_t conference_api_sub_canvas(conference_member_t *member, switch_st
 	member->canvas_id = index;
 	member->layer_timeout = DEFAULT_LAYER_TIMEOUT;
 
-	canvas = member->conference->canvases[member->canvas_id];
-	conference_video_attach_video_layer(member, canvas, index);
+	//canvas = member->conference->canvases[member->canvas_id];
+	//conference_video_attach_video_layer(member, canvas, index);
 	conference_video_reset_member_codec_index(member);
 	switch_mutex_unlock(member->conference->canvas_mutex);
 

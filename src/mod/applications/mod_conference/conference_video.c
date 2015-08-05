@@ -1720,7 +1720,7 @@ switch_status_t conference_video_find_layer(conference_obj_t *conference, mcu_ca
 				}
 			} else if ((!xlayer->member_id || (!member->avatar_png_img &&
 											   xlayer->is_avatar &&
-											   xlayer->member_id != conference->video_floor_holder)) &&
+											   (conference->canvas_count > 1 || xlayer->member_id != conference->video_floor_holder))) &&
 					   !xlayer->fnode && !xlayer->geometry.fileonly) {
 				switch_status_t lstatus;
 
@@ -2099,11 +2099,12 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 				switch_img_free(&img);
 			}
 
-			if (!layer) {
+			if (!layer && (!conference_utils_test_flag(imember->conference, CFLAG_VIDEO_REQUIRED_FOR_CANVAS) || (switch_channel_test_flag(imember->channel, CF_VIDEO) && !imember->video_flow == SWITCH_MEDIA_FLOW_SENDONLY))) {
 				if (conference_video_find_layer(conference, canvas, imember, &layer) == SWITCH_STATUS_SUCCESS) {
 					imember->layer_timeout = 0;
 				} else {
 					if (--imember->layer_timeout <= 0) {
+
 						conference_video_next_canvas(imember);
 					}
 				}
@@ -2516,7 +2517,7 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 						}
 					}
 				}
-				
+
 				if (!x) break;
 
 				switch_thread_rwlock_wrlock(canvas->video_rwlock);
