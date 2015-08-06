@@ -1055,10 +1055,6 @@ switch_status_t conference_member_del(conference_obj_t *conference, conference_m
 	}
 #endif
 
-	if (member->canvas) {
-		conference_video_destroy_canvas(&member->canvas);
-	}
-
 	member_fnode = member->fnode;
 	member_sh = member->sh;
 	member->fnode = NULL;
@@ -1181,6 +1177,10 @@ switch_status_t conference_member_del(conference_obj_t *conference, conference_m
 
 	conference_video_find_floor(member, SWITCH_FALSE);
 	conference_video_detach_video_layer(member);
+
+	if (member->canvas) {
+		conference_video_destroy_canvas(&member->canvas);
+	}
 
 	member->conference = NULL;
 
