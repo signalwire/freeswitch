@@ -1,0 +1,143 @@
+<div class="centered-block-frame" id="dialpad">
+  <div id="call-history-wrapper">
+    <div id="call_history" class="shadow-z-2 panel">
+      <div class="panel-heading">
+        <div class="panel-title">
+            Call History
+
+            <span class="pull-right pull-right-margin dropdown">
+              <a href="" class="dropdown-toggle" data-target="#" data-toggle="dropdown" aria-expanded="true">
+                <i class="mdi-navigation-more-vert"></i>
+              </a>
+              <ul class="dropdown-menu">
+                  <li><a href="" ng-click="clearCallHistory()">Clear History</a></li>
+              </ul>
+            </span>
+        </div>
+      </div>
+      <ul class="call-history">
+        <div ng-show="!storage.data.call_history.length">
+          <p class="text-center text-muted">No history calls.</p>
+        </div>
+
+        <li ng-repeat="call in storage.data.call_history">
+          <a ng-show="call.number" href="" ng-dblclick="$parent.call()" ng-click="$parent.fillDialpadNumber(call.number)">
+            <i ng-show="call.direction == 'inbound'" ng-class="{'mdi-communication-call-missed': !call.status,'mdi-communication-call-received': call.status}"></i>
+            <i ng-show="call.direction == 'outbound'" class="mdi-communication-call-made"></i>
+            <h2 class="dialpad-number dialpad-number-limited">{{ call.number }}</h2>
+            <br/>
+            <span class="dialpad-alpha">{{ call.call_start }}</span>
+          </a>
+        </li>
+      </ul>
+    </div>
+  </div>
+  <div class="col-md-4 col-sm-12 col-xs-12 centered-block">
+    <div class="panel panel-default shadow-z-2" ng-class="{'shadow-z-4': call_history, 'shadow-z-2': !call_history}">
+      <form name="form">
+        <div class="input-group dialpad-display">
+          <span class="input-group-btn-left">
+            <a href="" ng-click="toggleCallHistory()">
+              <i class="mdi-action-settings-phone"></i>
+            </a>
+          </span>
+          <input name="dialpadnumber" type="text" class="form-control text-center" placeholder="Enter an extension" ng-model="dialpadNumber" />
+          <span class="input-group-btn">
+            <a href="" ng-click="backspace()">
+              <i class="mdi-content-backspace"></i>
+            </a>
+          </span>
+        </div>
+        <div class="panel-body">
+          <div class="dialpad-numbers">
+            <div class="row">
+              <div class="col-md-4 col-xs-4">
+                <a class="btn btn-block" href="" ng-click="dtmf(1)">
+                  <h2 class="dialpad-number">1</h2>
+                  <span class="dialpad-alpha">./@</span>
+                </a>
+              </div>
+              <div class="col-md-4 col-xs-4">
+                <a class="btn btn-block" href="" ng-click="dtmf(2)">
+                  <h2 class="dialpad-number">2</h2>
+                  <span class="dialpad-alpha">ABC</span>
+                </a>
+              </div>
+              <div class="col-md-4 col-xs-4">
+                <a class="btn btn-block" href="" ng-click="dtmf(3)">
+                  <h2 class="dialpad-number">3</h2>
+                  <span class="dialpad-alpha">DEF</span>
+                </a>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-md-4 col-xs-4">
+                <a class="btn btn-block" href="" ng-click="dtmf(4)">
+                  <h2 class="dialpad-number">4</h2>
+                  <span class="dialpad-alpha">GHI</span>
+                </a>
+              </div>
+              <div class="col-md-4 col-xs-4">
+                <a class="btn btn-block" href="" ng-click="dtmf(5)">
+                  <h2 class="dialpad-number">5</h2>
+                  <span class="dialpad-alpha">JKL</span>
+                </a>
+              </div>
+              <div class="col-md-4 col-xs-4">
+                <a class="btn btn-block" href="" ng-click="dtmf(6)">
+                  <h2 class="dialpad-number">6</h2>
+                  <span class="dialpad-alpha">MNO</span>
+                </a>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-md-4 col-xs-4">
+                <a class="btn btn-block" href="" ng-click="dtmf(7)">
+                  <h2 class="dialpad-number">7</h2>
+                  <span class="dialpad-alpha">PQRS</span>
+                </a>
+              </div>
+              <div class="col-md-4 col-xs-4">
+                <a class="btn btn-block" href="" ng-click="dtmf(8)">
+                  <h2 class="dialpad-number">8</h2>
+                  <span class="dialpad-alpha">TUV</span>
+                </a>
+              </div>
+              <div class="col-md-4 col-xs-4">
+                <a class="btn btn-block" href="" ng-click="dtmf(9)">
+                  <h2 class="dialpad-number">9</h2>
+                  <span class="dialpad-alpha">WXYZ</span>
+                </a>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-md-4 col-xs-4">
+                <a class="btn btn-block" href="" ng-click="dtmf('*')">
+                  <h2 class="dialpad-number dialpad-star">*</h2>
+                  <span class="dialpad-alpha"></span>
+                </a>
+              </div>
+              <div class="col-md-4 col-xs-4">
+                <a class="btn btn-block" href="" ng-click="dtmf(0)">
+                  <h2 class="dialpad-number">0</h2>
+                  <span class="dialpad-alpha">+</span>
+                </a>
+              </div>
+              <div class="col-md-4 col-xs-4">
+                <a class="btn btn-block" href="" ng-click="dtmf('#')">
+                  <h2 class="dialpad-number dialpad-pound">#</h2>
+                  <span class="dialpad-alpha"></span>
+                </a>
+              </div>
+            </div>
+          </div>
+          <div class="form-group text-center">
+            <button type="submit" class="btn btn-success btn-fab" ng-click="call()" title="Call Extension">
+              <i class="mdi-communication-call"></i>
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

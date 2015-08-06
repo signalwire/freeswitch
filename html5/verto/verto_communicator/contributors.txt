@@ -1,0 +1,5 @@
+[
+  "Jonatas Oliveira <jonatas@evolux.net.br>",
+  "Ítalo Rossi <italo@evolux.net.br>",
+  "Stefan Yohansson <stefan@evolux.net.br>"
+]

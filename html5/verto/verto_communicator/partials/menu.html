@@ -1,0 +1,69 @@
+<nav ng-controller="MenuController" class="navbar navbar-fixed-top navbar-material-blue-900">
+  <div class="container-fluid">
+    <div class="https-untrusted navbar-center" ng-show="!safeProtocol">
+      <div class="https-message">
+        This Connection is Untrusted.
+      </div>
+    </div>
+
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="#/">
+        Verto Communicator
+      </a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav navbar-right">
+        <li>
+          <a href="">
+              <i class="mdi-toggle-radio-button-on" user-status condition="storage.data.userStatus"></i>
+          </a>
+        </li>
+        <li>
+          <a href="" class="incall-number" ng-show="storage.data.called_number">
+              {{ storage.data.called_number && storage.data.userStatus == 'connecting' ? 'Last Call: ' : 'In Call: '  }} {{ storage.data.called_number  }}
+          </a>
+        </li>
+
+        <li class="navbar-item-icon" ng-show="verto.data.connected">
+          <a href="" ng-click="openModal('partials/modal_settings.html', 'ModalSettingsController')">
+            <i class="mdi-action-settings"></i>
+          </a>
+        </li>
+        <li class="navbar-item-icon" ng-show="verto.data.call && storage.data.videoCall">
+          <a href="" ng-click="toggleChat()">
+            <i class="mdi-communication-chat"></i>
+            <div ng-show="chat_counter" class="chat-notification-badge">
+                <div class="chat-notification">{{ chat_counter }}</div>
+            </div>
+          </a>
+        </li>
+        <li class="navbar-item-icon">
+          <a ng-show="!verto.data.connected" href="#/login">
+            <i class="mdi-social-person"></i>
+          </a>
+          <a ng-show="verto.data.connected" href="" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+            <i class="mdi-social-person"></i>
+            <span class="caret"></span>
+          </a>
+          <ul class="dropdown-menu" role="menu">
+            <li><a href="" ng-click="openModal('partials/modal_logininfo.html', 'ModalLoginInformationController')">Change Login Information</a></li>
+            <!--<li><a href="#">View Device Settings</a></li>-->
+            <li><a href="" ng-click="logout()">Logout</a></li>
+          </ul>
+        </li>
+        <li class="navbar-item-icon">
+          <a href="" ng-click="showContributors()">
+            <i class="mdi-action-loyalty"></i>
+          </a>
+        </li>
+
+      </ul>
+    </div>
+  </div>
+</nav>

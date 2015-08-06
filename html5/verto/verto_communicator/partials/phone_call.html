@@ -1,0 +1,58 @@
+<div class="panel panel-default phone">
+  <div class="panel-body phone-body">
+    <div class="col-md-6">
+      <div class="avatar">
+        <img />
+      </div>
+      <div class="call-info">
+        <h2 class="dialed-number">{{ storage.data.called_number }}</h2>
+        <div ng-show="!storage.data.calling" class="video-timer">
+          <timer start-time="start_time" autostart="false" interval="1000">{{hhours}}:{{mminutes}}:{{sseconds}}</timer>
+        </div>
+        <div ng-show="storage.data.calling" class="">
+          <h3>Calling</h3>
+        </div>
+      </div>
+      <div class="clearfix"></div>
+    </div>
+    <div class="col-md-6 dialpad slide-animate-container">
+      <div class="slide-animate" ng-include="dialpadTemplate"></div>
+    </div>
+  </div>
+
+  <div class="panel-footer">
+    <div class="panel-center">
+      <div class="col-md-12">
+        <ul>
+          <li>
+            <button tooltips="" tooltip-title="Dialpad" tooltip-side="bottom" tooltip-lazy="false" class="btn btn-material-900" ng-click="toggleDialpad()">
+              <i class="big-icon mdi-communication-dialpad"></i>
+            </button>
+          </li>
+          <li>
+            <button tooltips="" tooltip-title="(un)Mute Mic" tooltip-side="bottom" tooltip-lazy="false" class="btn btn-material-900" ng-click="muteMic()">
+              <i class="big-icon" ng-class="{'mdi-av-mic': !verto.data.mutedMic, 'mdi-av-mic-off': verto.data.mutedMic}"></i>
+            </button>
+          </li>
+          <li>
+            <button tooltips="" tooltip-title="Hold" tooltip-side="bottom" tooltip-lazy="false" class="btn btn-material-900" ng-click="hold()">
+              <i class="big-icon" ng-class="{'mdi-av-pause':!storage.data.onHold, 'mdi-av-play-arrow': storage.data.onHold}"></i>
+            </button>
+          </li>
+          <!--<li>
+            <button tooltips="" tooltip-title="Video Call" tooltip-side="bottom" tooltip-lazy="false" class="btn btn-material-900" ng-click="videoCall()">
+              <i class="big-icon mdi-notification-voice-chat"></i>
+            </button>
+            </li>-->
+          <li class="hangup-button">
+            <button tooltips="" tooltip-title="Hangup" tooltip-side="bottom" tooltip-lazy="false" class="btn btn-danger btn-fab btn-raised mdi-communication-call-end" ng-click="hangup()">
+            </button>
+          </li>
+        </ul>
+      </div>
+
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</div>
+ 
