@@ -2519,7 +2519,7 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 				}
 
 				if (!x) break;
-
+				switch_cond_next();
 				switch_thread_rwlock_wrlock(canvas->video_rwlock);
 				switch_thread_rwlock_unlock(canvas->video_rwlock);
 			}
