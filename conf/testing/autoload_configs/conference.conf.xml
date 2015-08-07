@@ -1,3 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <!-- http://wiki.freeswitch.org/wiki/Mod_conference --> 
 <!-- None of these paths are real if you want any of these options you need to really set them up -->
 <configuration name="conference.conf" description="Audio Conference">
@@ -268,7 +270,7 @@
       <param name="caller-id-name" value="$${outbound_caller_name}"/>
       <param name="caller-id-number" value="$${outbound_caller_id}"/>
       <param name="comfort-noise" value="false"/>
-      <param name="conference-flags" value="video-floor-only|livearray-sync|minimize-video-encoding|video-muxing-personal-canvas|video-required-for-canvas"/>
+      <param name="conference-flags" value="livearray-json-status|json-events|video-floor-only|livearray-sync|minimize-video-encoding|video-required-for-canvas"/>
       <param name="video-mode" value="mux"/> 
       <param name="video-layout-name" value="3x3"/>
       <param name="video-layout-name" value="group:grid"/>
