@@ -493,10 +493,8 @@ body .modal-body .btn-group .btn.active {
   visibility:hidden;
   opacity:0;
   transition:visibility 0s linear 0.5s,opacity 0.5s linear;
-
+  margin: 10px;
   position: absolute;
-  right: 15px;
-  top: 15px;
   z-index: 1001;
 }
 
