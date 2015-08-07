@@ -497,7 +497,7 @@ body .modal-body .btn-group .btn.active {
   position: absolute;
   right: 15px;
   top: 15px;
-  z-index: 2;
+  z-index: 1001;
 }
 
 #incall .panel:hover .video-hover-buttons {
