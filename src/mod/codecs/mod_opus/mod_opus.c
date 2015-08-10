@@ -151,10 +151,6 @@ static switch_status_t switch_opus_fmtp_parse(const char *fmtp, switch_codec_fmt
 							codec_settings->cbr = switch_true(arg);
 						}
  
-						if (!strcasecmp(data, "sprop-maxcapturerate")) {
-							codec_settings->sprop_maxcapturerate = atoi(arg);
-						}
-                        
 						if (!strcasecmp(data, "maxptime")) {
 							codec_settings->maxptime = atoi(arg);
 						}
