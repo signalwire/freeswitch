@@ -664,7 +664,8 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 			switch_epoch_time_now(NULL) - conference->endconference_time > conference->endconference_grace_time) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Conference %s: endconf grace time exceeded (%u)\n",
 							  conference->name, conference->endconference_grace_time);
-			conference_utils_set_flag(conference, CFLAG_DESTRUCT | CFLAG_ENDCONF_FORCED);
+			conference_utils_set_flag(conference, CFLAG_DESTRUCT);
+			conference_utils_set_flag(conference, CFLAG_ENDCONF_FORCED);
 		}
 
 		switch_mutex_unlock(conference->mutex);
