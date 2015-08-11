@@ -710,10 +710,10 @@ vertoControllers.controller('DialPadController', ['$rootScope', '$scope', '$http
     /**
      * Call to the number in the $rootScope.dialpadNumber.
      */
-    $rootScope.call = function() {
+    $rootScope.call = function(extension) {
       storage.data.onHold = false;
       storage.data.cur_call = 0;
-      
+      $rootScope.dialpadNumber = extension;
       if(!$rootScope.dialpadNumber && storage.data.called_number) {
         $rootScope.dialpadNumber = storage.data.called_number;
         return false;
