@@ -1,6 +1,6 @@
 /*
  * mod_rayo for FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2014, Grasshopper
+ * Copyright (C) 2014-2015, Grasshopper
  *
  * Version: MPL 1.1
  *
@@ -452,7 +452,9 @@ void rayo_cpa_detector_shutdown(void)
 {
 	switch_console_set_complete("del rayo_cpa");
 	switch_console_del_complete_func("::rayo_cpa::list_signal_types");
-	switch_core_hash_destroy(&globals.detectors);
+	if (globals.detectors) {
+		switch_core_hash_destroy(&globals.detectors);
+	}
 	switch_event_unbind_callback(rayo_cpa_detector_event);
 }
 
