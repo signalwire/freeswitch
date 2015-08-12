@@ -1,6 +1,6 @@
 /*
  * mod_rayo for FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2013-2014, Grasshopper
+ * Copyright (C) 2013-2015, Grasshopper
  *
  * Version: MPL 1.1
  *
@@ -1259,7 +1259,9 @@ switch_status_t rayo_output_component_load(switch_loadable_module_interface_t **
  */
 switch_status_t rayo_output_component_shutdown(void)
 {
-	switch_core_hash_destroy(&fileman_globals.hash);
+	if (fileman_globals.hash) {
+		switch_core_hash_destroy(&fileman_globals.hash);
+	}
 
 	return SWITCH_STATUS_SUCCESS;
 }

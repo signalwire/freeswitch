@@ -1066,7 +1066,9 @@ switch_status_t rayo_input_component_shutdown(void)
 {
 	switch_event_unbind_callback(on_detected_speech_event);
 
-	srgs_parser_destroy(globals.parser);
+	if (globals.parser) {
+		srgs_parser_destroy(globals.parser);
+	}
 	srgs_destroy();
 	nlsml_destroy();
 

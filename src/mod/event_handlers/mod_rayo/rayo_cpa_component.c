@@ -390,7 +390,9 @@ void rayo_cpa_component_shutdown(void)
 	switch_event_unbind_callback(on_rayo_cpa_detector_event);
 	switch_event_unbind_callback(on_channel_hangup_complete_event);
 	rayo_cpa_detector_shutdown();
-	switch_core_hash_destroy(&globals.subscribers);
+	if (globals.subscribers) {
+		switch_core_hash_destroy(&globals.subscribers);
+	}
 }
 
 /* For Emacs:

@@ -885,9 +885,15 @@ static void start_deliver_message_thread(switch_memory_pool_t *pool)
 static void stop_all_threads(void)
 {
 	globals.shutdown = 1;
-	switch_queue_interrupt_all(globals.msg_queue);
-	switch_queue_interrupt_all(globals.offer_queue);
-	switch_thread_rwlock_wrlock(globals.shutdown_rwlock);
+	if (globals.msg_queue) {
+		switch_queue_interrupt_all(globals.msg_queue);
+	}
+	if (globals.offer_queue) {
+		switch_queue_interrupt_all(globals.offer_queue);
+	}
+	if (globals.shutdown_rwlock) {
+		switch_thread_rwlock_wrlock(globals.shutdown_rwlock);
+	}
 }
 
 /**
@@ -5055,6 +5061,79 @@ static switch_status_t list_input(const char *line, const char *cursor, switch_c
 }
 
 /**
+ * Shutdown module on load failure or shutdown from FreeSWITCH core
+ */
+static switch_status_t do_shutdown(void)
+{
+	switch_console_del_complete_func("::rayo::list_all");
+	switch_console_del_complete_func("::rayo::list_internal");
+	switch_console_del_complete_func("::rayo::list_external");
+	switch_console_del_complete_func("::rayo::list_server");
+	switch_console_del_complete_func("::rayo::list_call");
+	switch_console_del_complete_func("::rayo::list_component");
+	switch_console_del_complete_func("::rayo::list_record");
+	switch_console_del_complete_func("::rayo::list_output");
+	switch_console_del_complete_func("::rayo::list_input");
+	switch_console_set_complete("del rayo");
+
+	/* stop XMPP streams */
+	if (globals.xmpp_context) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Waiting for XMPP threads to stop\n");
+		xmpp_stream_context_destroy(globals.xmpp_context);
+	}
+
+	/* stop threads */
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Waiting for message and offer timeout threads to stop\n");
+	stop_all_threads();
+
+	if (globals.console) {
+		RAYO_RELEASE(globals.console);
+		RAYO_DESTROY(globals.console);
+		globals.console = NULL;
+	}
+
+	if (globals.server) {
+		RAYO_RELEASE(globals.server);
+		RAYO_DESTROY(globals.server);
+		globals.server = NULL;
+	}
+
+	rayo_components_shutdown();
+
+	switch_event_unbind_callback(route_call_event);
+	switch_event_unbind_callback(on_call_end_event);
+	switch_event_unbind_callback(route_mixer_event);
+
+	if (globals.command_handlers) {
+		switch_core_hash_destroy(&globals.command_handlers);
+	}
+	if (globals.event_handlers) {
+		switch_core_hash_destroy(&globals.event_handlers);
+	}
+	if (globals.clients_roster) {
+		switch_core_hash_destroy(&globals.clients_roster);
+	}
+	if (globals.actors) {
+		switch_core_hash_destroy(&globals.actors);
+	}
+	if (globals.destroy_actors) {
+		switch_core_hash_destroy(&globals.destroy_actors);
+	}
+	if (globals.actors_by_id) {
+		switch_core_hash_destroy(&globals.actors_by_id);
+	}
+	if (globals.dial_gateways) {
+		switch_core_hash_destroy(&globals.dial_gateways);
+	}
+	if (globals.cmd_aliases) {
+		switch_core_hash_destroy(&globals.cmd_aliases);
+	}
+
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+/**
  * Load module
  */
 SWITCH_MODULE_LOAD_FUNCTION(mod_rayo_load)
@@ -5116,12 +5195,19 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_rayo_load)
 
 	/* set up rayo components */
 	if (rayo_components_load(module_interface, pool, RAYO_CONFIG_FILE) != SWITCH_STATUS_SUCCESS) {
-		return SWITCH_STATUS_TERM;
+		goto error;
 	}
 
 	/* configure / open sockets */
 	if(do_config(globals.pool, RAYO_CONFIG_FILE) != SWITCH_STATUS_SUCCESS) {
-		return SWITCH_STATUS_TERM;
+		goto error;
+	}
+
+	/* create admin client */
+	globals.console = rayo_console_client_create();
+	if (!globals.console) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failed to create console client entity!\n");
+		goto error;
 	}
 
 	/* start up message threads */
@@ -5132,13 +5218,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_rayo_load)
 		}
 	}
 	start_offer_timeout_thread(pool);
-
-	/* create admin client */
-	globals.console = rayo_console_client_create();
-	if (!globals.console) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failed to create console client entity!\n");
-		return SWITCH_STATUS_TERM;
-	}
 
 	switch_console_set_complete("add rayo status");
 	switch_console_set_complete("add rayo msg ::rayo::list_all");
@@ -5159,6 +5238,11 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_rayo_load)
 	switch_console_add_complete_func("::rayo::list_input", list_input);
 
 	return SWITCH_STATUS_SUCCESS;
+
+ error:
+	do_shutdown();
+	return SWITCH_STATUS_TERM;
+
 }
 
 /**
@@ -5166,56 +5250,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_rayo_load)
  */
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_rayo_shutdown)
 {
-	switch_console_del_complete_func("::rayo::list_all");
-	switch_console_del_complete_func("::rayo::list_internal");
-	switch_console_del_complete_func("::rayo::list_external");
-	switch_console_del_complete_func("::rayo::list_server");
-	switch_console_del_complete_func("::rayo::list_call");
-	switch_console_del_complete_func("::rayo::list_component");
-	switch_console_del_complete_func("::rayo::list_record");
-	switch_console_del_complete_func("::rayo::list_output");
-	switch_console_del_complete_func("::rayo::list_input");
-	switch_console_set_complete("del rayo");
-
-	/* stop XMPP streams */
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Waiting for XMPP threads to stop\n");
-	xmpp_stream_context_destroy(globals.xmpp_context);
-
-	/* stop threads */
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Waiting for message and offer timeout threads to stop\n");
-	stop_all_threads();
-
-	if (globals.console) {
-		RAYO_RELEASE(globals.console);
-		RAYO_DESTROY(globals.console);
-		globals.console = NULL;
-	}
-
-	if (globals.server) {
-		RAYO_RELEASE(globals.server);
-		RAYO_DESTROY(globals.server);
-		globals.server = NULL;
-	}
-
-	rayo_components_shutdown();
-
-	/* cleanup module */
-	switch_event_unbind_callback(route_call_event);
-	switch_event_unbind_callback(on_call_end_event);
-	switch_event_unbind_callback(route_mixer_event);
-
-	switch_core_hash_destroy(&globals.command_handlers);
-	switch_core_hash_destroy(&globals.event_handlers);
-	switch_core_hash_destroy(&globals.clients_roster);
-	switch_core_hash_destroy(&globals.actors);
-	switch_core_hash_destroy(&globals.destroy_actors);
-	switch_core_hash_destroy(&globals.actors_by_id);
-	switch_core_hash_destroy(&globals.dial_gateways);
-	switch_core_hash_destroy(&globals.cmd_aliases);
-
+	switch_status_t result = do_shutdown();
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Module shutdown\n");
-
-	return SWITCH_STATUS_SUCCESS;
+	return result;
 }
 
 /**
