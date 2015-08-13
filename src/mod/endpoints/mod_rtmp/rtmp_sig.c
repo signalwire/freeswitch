@@ -127,6 +127,15 @@ RTMP_INVOKE_FUNCTION(rtmp_i_connect)
 
 RTMP_INVOKE_FUNCTION(rtmp_i_createStream)
 {
+	switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rsession->uuid), SWITCH_LOG_INFO, "Replied to createStream (%u)\n", amf0_get_number(argv[1]));
+
+	rsession->next_streamid++;
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+RTMP_INVOKE_FUNCTION(rtmp_i_initStream)
+{
 	rtmp_send_invoke_free(rsession, amfnumber, 0, 0,
 		amf0_str("_result"),
 		amf0_number_new(transaction_id),
@@ -134,7 +143,7 @@ RTMP_INVOKE_FUNCTION(rtmp_i_createStream)
 		amf0_number_new(rsession->next_streamid),
 		NULL);
 
-	switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rsession->uuid), SWITCH_LOG_INFO, "Replied to createStream (%u)\n", rsession->next_streamid);
+	switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rsession->uuid), SWITCH_LOG_INFO, "Received initStream (%u)\n", rsession->next_streamid);
 
 	rsession->next_streamid++;
 
@@ -222,7 +231,7 @@ RTMP_INVOKE_FUNCTION(rtmp_i_play)
 
 	rtmp_send_invoke_free(rsession, RTMP_DEFAULT_STREAM_NOTIFY, 0, rsession->media_streamid,
 		amf0_str("onStatus"),
-		amf0_number_new(1),
+		amf0_number_new(0),
 		amf0_null_new(),
 		object, NULL);
 
@@ -236,7 +245,7 @@ RTMP_INVOKE_FUNCTION(rtmp_i_play)
 
 	rtmp_send_invoke_free(rsession, RTMP_DEFAULT_STREAM_NOTIFY, 0, rsession->media_streamid,
 		amf0_str("onStatus"),
-		amf0_number_new(1),
+		amf0_number_new(0),
 		amf0_null_new(),
 		object, NULL);
 
@@ -256,6 +265,7 @@ RTMP_INVOKE_FUNCTION(rtmp_i_play)
 
 RTMP_INVOKE_FUNCTION(rtmp_i_publish)
 {
+	amf0_data *object = amf0_object_new();
 
 	unsigned char buf[] = {
 		INT16(RTMP_CTRL_STREAM_BEGIN),
@@ -264,12 +274,17 @@ RTMP_INVOKE_FUNCTION(rtmp_i_publish)
 
 	rtmp_send_message(rsession, 2, 0, RTMP_TYPE_USERCTRL, 0, buf, sizeof(buf), 0);
 
-	rtmp_send_invoke_free(rsession, amfnumber, 0, 0,
-		amf0_str("_result"),
-		amf0_number_new(transaction_id),
+	amf0_object_add(object, "level", amf0_str("status"));
+	amf0_object_add(object, "code", amf0_str("NetStream.Publish.Start"));
+	amf0_object_add(object, "description", amf0_str("description"));
+	amf0_object_add(object, "details", amf0_str("details"));
+	amf0_object_add(object, "clientid", amf0_number_new(217834719));
+	
+	rtmp_send_invoke_free(rsession, RTMP_DEFAULT_STREAM_NOTIFY, 0, state->stream_id,
+		amf0_str("onStatus"),
+		amf0_number_new(0),
 		amf0_null_new(),
-		amf0_null_new(),
-		NULL);
+		object, NULL);
 
 
 	switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rsession->uuid), SWITCH_LOG_INFO, "Got publish on stream %u.\n", state->stream_id);
