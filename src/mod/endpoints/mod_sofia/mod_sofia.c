@@ -4992,6 +4992,11 @@ static void general_event_handler(switch_event_t *event)
 						route_uri = sofia_glue_strip_uri(dst->route_uri);
 					}
 
+					if (zstr(dst->contact)) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid contact uri [%s]\n", switch_str_nil(dst->contact));
+						return;
+					}
+
 					nh = nua_handle(profile->nua,
 									NULL,
 									NUTAG_URL(dst->contact),
