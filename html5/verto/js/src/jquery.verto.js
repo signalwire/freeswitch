@@ -2161,9 +2161,9 @@
 	return dialog.rtc.setMute(what);
     };
 
-    $.verto.dialog.prototype.getMute = function(what) {
+    $.verto.dialog.prototype.getMute = function() {
 	var dialog = this; 
-	return dialog.rtc.getMute(what);
+	return dialog.rtc.getMute();
     };
 
     $.verto.dialog.prototype.useStereo = function(on) {
