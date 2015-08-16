@@ -13,7 +13,9 @@
 #include <string.h>
 #ifdef WIN32
 # include "ctb-0.16/win32/gpib-32.h"
+#if _MSC_VER < 1900
 # define snprintf _snprintf
+#endif
 #elif __GNUG__
 # include <gpib/ib.h>
 #endif

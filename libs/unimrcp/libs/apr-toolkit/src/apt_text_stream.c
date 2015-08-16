@@ -26,6 +26,12 @@
 #define TOKEN_TRUE_LENGTH  (sizeof(TOKEN_TRUE)-1)
 #define TOKEN_FALSE_LENGTH (sizeof(TOKEN_FALSE)-1)
 
+#if _MSC_VER >= 1900
+#pragma warning(disable: 4477)
+// 'sprintf' : format string '%d' requires an argument of type 'int', but variadic argument 1 has type 'apr_size_t' apt_text_stream.c 495
+// 'sprintf' : format string '%03d' requires an argument of type 'int', but variadic argument 1 has type 'apr_size_t' apt_text_stream.c 515
+#endif
+
 
 /** Navigate through the lines of the text stream (message) */
 APT_DECLARE(apt_bool_t) apt_text_line_read(apt_text_stream_t *stream, apt_str_t *line)

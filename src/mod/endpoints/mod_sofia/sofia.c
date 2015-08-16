@@ -4234,6 +4234,8 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s [%s]\n", var, val);
 
+					int found = 1; // Used to break up long if/elseif chain (MSVC2015 fails (parser stack overflow) otherwise)
+					
 					if (!strcasecmp(var, "debug")) {
 						profile->debug = atoi(val);
 					} else if (!strcasecmp(var, "parse-invite-tel-params")) {
@@ -4939,7 +4941,12 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 						} else {
 							sofia_clear_pflag(profile, PFLAG_SECURE);
 						}
-					} else if (!strcasecmp(var, "multiple-registrations")) {
+					} else {
+						found = 0;
+					}
+					if (found) continue;
+					
+					if (!strcasecmp(var, "multiple-registrations")) {
 						if (!strcasecmp(val, "call-id")) {
 							sofia_set_pflag(profile, PFLAG_MULTIREG);
 						} else if (!strcasecmp(val, "contact") || switch_true(val)) {

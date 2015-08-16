@@ -56,6 +56,7 @@ extern "C" {
 #endif
 
 #ifdef  _MSC_VER
+#if _MSC_VER < 1900
 #if !defined(_STDINT) && !defined(uint32_t)
 typedef unsigned __int8     uint8_t;
 typedef unsigned __int16    uint16_t;
@@ -68,6 +69,7 @@ typedef __int64     int64_t;
 typedef unsigned long   in_addr_t;
 #endif
 #define snprintf _snprintf
+#endif
 #else
 #include <unistd.h>
 #include <sys/types.h>

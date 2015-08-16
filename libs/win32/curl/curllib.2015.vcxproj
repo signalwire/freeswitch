@@ -1,0 +1,345 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectName>curllib</ProjectName>
+    <ProjectGuid>{87EE9DA4-DE1E-4448-8324-183C98DCA588}</ProjectGuid>
+    <RootNamespace>curllib</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\..\w32\extlib.props" />
+    <Import Project="..\..\..\w32\openssl-version.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\..\w32\extlib.props" />
+    <Import Project="..\..\..\w32\openssl-version.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\..\w32\extlib.props" />
+    <Import Project="..\..\..\w32\openssl-version.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\..\w32\extlib.props" />
+    <Import Project="..\..\..\w32\openssl-version.props" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Midl>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MkTypLibCompatible>true</MkTypLibCompatible>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <TargetEnvironment>Win32</TargetEnvironment>
+      <TypeLibraryName>$(IntDir)curllib.tlb</TypeLibraryName>
+      <HeaderFileName>
+      </HeaderFileName>
+    </Midl>
+    <ClCompile>
+      <Optimization>MaxSpeed</Optimization>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <AdditionalIncludeDirectories>..\..\curl-7.35.0\lib\;..\..\curl-7.35.0\include;.;..\..\openssl-$(OpenSSLVersion)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;BUILDING_LIBCURL;USE_SSLEAY;USE_OPENSSL;CURL_DISABLE_LDAP;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <StringPooling>true</StringPooling>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <BrowseInformation>true</BrowseInformation>
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <Culture>0x0409</Culture>
+    </ResourceCompile>
+    <Bscmake>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <OutputFile>$(IntDir)curllib.bsc</OutputFile>
+    </Bscmake>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Midl>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MkTypLibCompatible>true</MkTypLibCompatible>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <TargetEnvironment>X64</TargetEnvironment>
+      <TypeLibraryName>$(IntDir)curllib.tlb</TypeLibraryName>
+      <HeaderFileName>
+      </HeaderFileName>
+    </Midl>
+    <ClCompile>
+      <Optimization>MaxSpeed</Optimization>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <AdditionalIncludeDirectories>..\..\curl-7.35.0\lib\;..\..\curl-7.35.0\include;.;..\..\openssl-$(OpenSSLVersion)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;BUILDING_LIBCURL;USE_SSLEAY;USE_OPENSSL;CURL_DISABLE_LDAP;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <StringPooling>true</StringPooling>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <BrowseInformation>true</BrowseInformation>
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <Culture>0x0409</Culture>
+    </ResourceCompile>
+    <Bscmake>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <OutputFile>$(IntDir)curllib.bsc</OutputFile>
+    </Bscmake>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Midl>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MkTypLibCompatible>true</MkTypLibCompatible>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <TargetEnvironment>Win32</TargetEnvironment>
+      <TypeLibraryName>$(IntDir)curllib.tlb</TypeLibraryName>
+      <HeaderFileName>
+      </HeaderFileName>
+    </Midl>
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>..\..\curl-7.35.0\lib\;..\..\curl-7.35.0\include;.;..\..\openssl-$(OpenSSLVersion)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;BUILDING_LIBCURL;USE_SSLEAY;USE_OPENSSL;CURL_DISABLE_LDAP;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>true</MinimalRebuild>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <BrowseInformation>true</BrowseInformation>
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <Culture>0x0409</Culture>
+    </ResourceCompile>
+    <Bscmake>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <OutputFile>$(IntDir)curllib.bsc</OutputFile>
+    </Bscmake>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Midl>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MkTypLibCompatible>true</MkTypLibCompatible>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <TargetEnvironment>X64</TargetEnvironment>
+      <TypeLibraryName>$(IntDir)curllib.tlb</TypeLibraryName>
+      <HeaderFileName>
+      </HeaderFileName>
+    </Midl>
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>..\..\curl-7.35.0\lib\;..\..\curl-7.35.0\include;.;..\..\openssl-$(OpenSSLVersion)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;BUILDING_LIBCURL;USE_SSLEAY;USE_OPENSSL;CURL_DISABLE_LDAP;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>true</MinimalRebuild>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <BrowseInformation>true</BrowseInformation>
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <Culture>0x0409</Culture>
+    </ResourceCompile>
+    <Bscmake>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <OutputFile>$(IntDir)curllib.bsc</OutputFile>
+    </Bscmake>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\curl-7.35.0\lib\asyn-ares.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\asyn-thread.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\base64.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\bundles.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\conncache.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\connect.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\content_encoding.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\cookie.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\curl_addrinfo.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\curl_fnmatch.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\curl_gethostname.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\curl_gssapi.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\curl_memrchr.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\curl_multibyte.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\curl_ntlm.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\curl_ntlm_core.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\curl_ntlm_msgs.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\curl_ntlm_wb.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\curl_rtmp.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\curl_sasl.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\curl_threads.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\dict.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\dotdot.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\easy.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\escape.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\file.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\fileinfo.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\formdata.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\ftp.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\ftplistparser.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\getenv.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\getinfo.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\gopher.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\hash.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\hmac.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\hostasyn.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\hostcheck.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\hostip.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\hostip4.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\hostip6.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\hostsyn.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\http.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\http_chunks.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\http_digest.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\http_negotiate.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\http_proxy.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\if2ip.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\imap.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\inet_ntop.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\inet_pton.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\ldap.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\llist.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\md5.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\memdebug.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\mprintf.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\multi.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\netrc.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\non-ascii.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\nonblock.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\parsedate.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\pingpong.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\pipeline.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\pop3.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\progress.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\rawstr.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\rtsp.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\security.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\select.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\sendf.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\share.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\slist.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\smtp.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\socks.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\speedcheck.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\splay.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\strequal.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\strerror.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\strtok.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\strtoofft.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\telnet.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\tftp.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\timeval.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\transfer.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\url.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\version.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\vtls\openssl.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\vtls\vtls.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\warnless.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\wildcard.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\curl-7.35.0\lib\arpa_telnet.h" />
+    <ClInclude Include="..\..\curl-7.35.0\lib\config-mac.h" />
+    <ClInclude Include="..\..\curl-7.35.0\lib\config-win32.h" />
+    <ClInclude Include="..\..\curl-7.35.0\lib\connect.h" />
+    <ClInclude Include="..\..\curl-7.35.0\lib\content_encoding.h" />
+    <ClInclude Include="..\..\curl-7.35.0\lib\cookie.h" />
+    <ClInclude Include="..\..\curl-7.35.0\lib\curlx.h" />
+    <ClInclude Include="..\..\curl-7.35.0\lib\dict.h" />
+    <ClInclude Include="..\..\curl-7.35.0\lib\easyif.h" />
+    <ClInclude Include="..\..\curl-7.35.0\lib\escape.h" />
+    <ClInclude Include="..\..\curl-7.35.0\lib\file.h" />
+    <ClInclude Include="..\..\curl-7.35.0\lib\formdata.h" />
+    <ClInclude Include="..\..\curl-7.35.0\lib\ftp.h" />
+    <ClInclude Include="..\..\curl-7.35.0\lib\getinfo.h" />
+    <ClInclude Include="..\..\curl-7.35.0\lib\hash.h" />
+    <ClInclude Include="..\..\curl-7.35.0\lib\hostip.h" />
+    <ClInclude Include="..\..\curl-7.35.0\lib\http.h" />
+    <ClInclude Include="..\..\curl-7.35.0\lib\http_chunks.h" />
+    <ClInclude Include="..\..\curl-7.35.0\lib\http_digest.h" />
+    <ClInclude Include="..\..\curl-7.35.0\lib\http_negotiate.h" />
+    <ClInclude Include="..\..\curl-7.35.0\lib\if2ip.h" />
+    <ClInclude Include="..\..\curl-7.35.0\lib\inet_ntop.h" />
+    <ClInclude Include="..\..\curl-7.35.0\lib\inet_pton.h" />
+    <ClInclude Include="..\..\curl-7.35.0\lib\llist.h" />
+    <ClInclude Include="..\..\curl-7.35.0\lib\memdebug.h" />
+    <ClInclude Include="..\..\curl-7.35.0\lib\multiif.h" />
+    <ClInclude Include="..\..\curl-7.35.0\lib\netrc.h" />
+    <ClInclude Include="..\..\curl-7.35.0\lib\parsedate.h" />
+    <ClInclude Include="..\..\curl-7.35.0\lib\progress.h" />
+    <ClInclude Include="..\..\curl-7.35.0\lib\select.h" />
+    <ClInclude Include="..\..\curl-7.35.0\lib\sendf.h" />
+    <ClInclude Include="..\..\curl-7.35.0\lib\share.h" />
+    <ClInclude Include="..\..\curl-7.35.0\lib\sockaddr.h" />
+    <ClInclude Include="..\..\curl-7.35.0\lib\speedcheck.h" />
+    <ClInclude Include="..\..\curl-7.35.0\lib\strequal.h" />
+    <ClInclude Include="..\..\curl-7.35.0\lib\strerror.h" />
+    <ClInclude Include="..\..\curl-7.35.0\lib\strtok.h" />
+    <ClInclude Include="..\..\curl-7.35.0\lib\strtoofft.h" />
+    <ClInclude Include="..\..\curl-7.35.0\lib\telnet.h" />
+    <ClInclude Include="..\..\curl-7.35.0\lib\tftp.h" />
+    <ClInclude Include="..\..\curl-7.35.0\lib\timeval.h" />
+    <ClInclude Include="..\..\curl-7.35.0\lib\transfer.h" />
+    <ClInclude Include="..\..\curl-7.35.0\lib\url.h" />
+    <ClInclude Include="..\..\curl-7.35.0\lib\urldata.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Download CURL.2015.vcxproj">
+      <Project>{3970bcde-be1a-4cf3-a65f-5264ba2e47b5}</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

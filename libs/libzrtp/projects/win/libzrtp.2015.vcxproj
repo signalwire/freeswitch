@@ -1,0 +1,258 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{C13CC324-0032-4492-9A30-310A6BD64FF5}</ProjectGuid>
+    <RootNamespace>libzrtp.x32</RootNamespace>
+    <Keyword>Win32Proj</Keyword>
+    <ProjectName>libzrtp</ProjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(VCTargetsPath)Microsoft.CPP.UpgradeFromVC71.props" />
+    <Import Project="..\..\..\..\w32\extlib.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(VCTargetsPath)Microsoft.CPP.UpgradeFromVC71.props" />
+    <Import Project="..\..\..\..\w32\extlib.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(VCTargetsPath)Microsoft.CPP.UpgradeFromVC71.props" />
+    <Import Project="..\..\..\..\w32\extlib.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(VCTargetsPath)Microsoft.CPP.UpgradeFromVC71.props" />
+    <Import Project="..\..\..\..\w32\extlib.props" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Release|x64'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>../../include;../../third_party/bnlib;../../third_party/bgaes;../../test/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;HAVE_CONFIG_H=1;ZRTP_ENABLE_EC=0;ZRTP_USE_BUILTIN_CACHE=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>true</MinimalRebuild>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <StructMemberAlignment>Default</StructMemberAlignment>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <CompileAs>CompileAsC</CompileAs>
+      <DisableSpecificWarnings>4267;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+    </ClCompile>
+    <Lib />
+    <PreBuildEvent>
+      <Command>if not exist "$(ProjectDir)..\..\third_party\bnlib\bnconfig.h" copy "$(ProjectDir)..\..\third_party\bnlib\bnconfig.win" "$(ProjectDir)..\..\third_party\bnlib\bnconfig.h"</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>../../include;../../third_party/bnlib;../../third_party/bgaes;../../test/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;HAVE_CONFIG_H=1;ZRTP_ENABLE_EC=0;ZRTP_USE_BUILTIN_CACHE=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <StructMemberAlignment>Default</StructMemberAlignment>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <CompileAs>CompileAsC</CompileAs>
+      <DisableSpecificWarnings>4267;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+    </ClCompile>
+    <Lib />
+    <PreBuildEvent>
+      <Command>if not exist "$(ProjectDir)..\..\third_party\bnlib\bnconfig.h" copy "$(ProjectDir)..\..\third_party\bnlib\bnconfig.win" "$(ProjectDir)..\..\third_party\bnlib\bnconfig.h"</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>../../include;../../third_party/bnlib;../../third_party/bgaes;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;HAVE_CONFIG_H=1;ZRTP_ENABLE_EC=0;ZRTP_USE_BUILTIN_CACHE=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ExceptionHandling>
+      </ExceptionHandling>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <StructMemberAlignment>Default</StructMemberAlignment>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <CompileAs>CompileAsC</CompileAs>
+      <DisableSpecificWarnings>4267;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+    </ClCompile>
+    <Lib />
+    <PreBuildEvent>
+      <Command>if not exist "$(ProjectDir)..\..\third_party\bnlib\bnconfig.h" copy "$(ProjectDir)..\..\third_party\bnlib\bnconfig.win" "$(ProjectDir)..\..\third_party\bnlib\bnconfig.h"</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>../../include;../../third_party/bnlib;../../third_party/bgaes;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;HAVE_CONFIG_H=1;ZRTP_ENABLE_EC=0;ZRTP_USE_BUILTIN_CACHE=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ExceptionHandling>
+      </ExceptionHandling>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <StructMemberAlignment>Default</StructMemberAlignment>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <CompileAs>CompileAsC</CompileAs>
+      <DisableSpecificWarnings>4267;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+    </ClCompile>
+    <Lib />
+    <PreBuildEvent>
+      <Command>if not exist "$(ProjectDir)..\..\third_party\bnlib\bnconfig.h" copy "$(ProjectDir)..\..\third_party\bnlib\bnconfig.win" "$(ProjectDir)..\..\third_party\bnlib\bnconfig.h"</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\include\zrtp.h" />
+    <ClInclude Include="..\..\include\zrtp_base.h" />
+    <ClInclude Include="..\..\include\zrtp_config.h" />
+    <ClInclude Include="..\..\include\zrtp_config_user.h" />
+    <ClInclude Include="..\..\include\zrtp_config_win.h" />
+    <ClInclude Include="..\..\include\zrtp_crypto.h" />
+    <ClInclude Include="..\..\include\zrtp_ec.h" />
+    <ClInclude Include="..\..\include\zrtp_engine.h" />
+    <ClInclude Include="..\..\include\zrtp_error.h" />
+    <ClInclude Include="..\..\include\zrtp_iface.h" />
+    <ClInclude Include="..\..\include\zrtp_iface_cache.h" />
+    <ClInclude Include="..\..\include\zrtp_iface_system.h" />
+    <ClInclude Include="..\..\include\zrtp_legal.h" />
+    <ClInclude Include="..\..\include\zrtp_list.h" />
+    <ClInclude Include="..\..\include\zrtp_log.h" />
+    <ClInclude Include="..\..\include\zrtp_pbx.h" />
+    <ClInclude Include="..\..\include\zrtp_protocol.h" />
+    <ClInclude Include="..\..\include\zrtp_srtp.h" />
+    <ClInclude Include="..\..\include\zrtp_srtp_builtin.h" />
+    <ClInclude Include="..\..\include\zrtp_string.h" />
+    <ClInclude Include="..\..\include\zrtp_types.h" />
+    <ClInclude Include="..\..\include\zrtp_version.h" />
+    <ClInclude Include="..\..\third_party\bnlib\bn.h" />
+    <ClInclude Include="..\..\third_party\bnlib\bn32.h" />
+    <ClInclude Include="..\..\third_party\bnlib\bnsize00.h" />
+    <ClInclude Include="..\..\third_party\bnlib\kludge.h" />
+    <ClInclude Include="..\..\third_party\bnlib\lbn.h" />
+    <ClInclude Include="..\..\third_party\bnlib\lbn32.h" />
+    <ClInclude Include="..\..\third_party\bnlib\lbnmem.h" />
+    <ClInclude Include="..\..\third_party\bnlib\legal.h" />
+    <ClInclude Include="..\..\third_party\bgaes\aes.h" />
+    <ClInclude Include="..\..\third_party\bgaes\aesopt.h" />
+    <ClInclude Include="..\..\third_party\bgaes\aestab.h" />
+    <ClInclude Include="..\..\third_party\bgaes\bg2zrtp.h" />
+    <ClInclude Include="..\..\third_party\bgaes\brg_types.h" />
+    <ClInclude Include="..\..\third_party\bgaes\sha1.h" />
+    <ClInclude Include="..\..\third_party\bgaes\sha2.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\src\zrtp.c" />
+    <ClCompile Include="..\..\src\zrtp_crc.c" />
+    <ClCompile Include="..\..\src\zrtp_crypto_aes.c" />
+    <ClCompile Include="..\..\src\zrtp_crypto_atl.c" />
+    <ClCompile Include="..\..\src\zrtp_crypto_ec.c" />
+    <ClCompile Include="..\..\src\zrtp_crypto_ecdh.c" />
+    <ClCompile Include="..\..\src\zrtp_crypto_hash.c" />
+    <ClCompile Include="..\..\src\zrtp_crypto_pk.c" />
+    <ClCompile Include="..\..\src\zrtp_crypto_sas.c" />
+    <ClCompile Include="..\..\src\zrtp_datatypes.c" />
+    <ClCompile Include="..\..\src\zrtp_engine.c" />
+    <ClCompile Include="..\..\src\zrtp_engine_driven.c" />
+    <ClCompile Include="..\..\src\zrtp_iface_cache.c" />
+    <ClCompile Include="..\..\src\zrtp_iface_scheduler.c" />
+    <ClCompile Include="..\..\src\zrtp_iface_sys.c" />
+    <ClCompile Include="..\..\src\zrtp_initiator.c" />
+    <ClCompile Include="..\..\src\zrtp_legal.c" />
+    <ClCompile Include="..\..\src\zrtp_list.c" />
+    <ClCompile Include="..\..\src\zrtp_log.c" />
+    <ClCompile Include="..\..\src\zrtp_pbx.c" />
+    <ClCompile Include="..\..\src\zrtp_protocol.c" />
+    <ClCompile Include="..\..\src\zrtp_responder.c" />
+    <ClCompile Include="..\..\src\zrtp_rng.c" />
+    <ClCompile Include="..\..\src\zrtp_srtp_builtin.c" />
+    <ClCompile Include="..\..\src\zrtp_string.c" />
+    <ClCompile Include="..\..\src\zrtp_utils.c" />
+    <ClCompile Include="..\..\src\zrtp_utils_proto.c" />
+    <ClCompile Include="..\..\third_party\bnlib\bn.c" />
+    <ClCompile Include="..\..\third_party\bnlib\bn32.c" />
+    <ClCompile Include="..\..\third_party\bnlib\bninit32.c" />
+    <ClCompile Include="..\..\third_party\bnlib\bntest00.c" />
+    <ClCompile Include="..\..\third_party\bnlib\lbn32.c" />
+    <ClCompile Include="..\..\third_party\bnlib\lbnmem.c" />
+    <ClCompile Include="..\..\third_party\bnlib\legal.c" />
+    <ClCompile Include="..\..\third_party\bgaes\aes_modes.c" />
+    <ClCompile Include="..\..\third_party\bgaes\aescrypt.c" />
+    <ClCompile Include="..\..\third_party\bgaes\aeskey.c" />
+    <ClCompile Include="..\..\third_party\bgaes\aestab.c" />
+    <ClCompile Include="..\..\third_party\bgaes\sha1.c" />
+    <ClCompile Include="..\..\third_party\bgaes\sha2.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\ChangeLog" />
+    <None Include="..\..\News" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

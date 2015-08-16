@@ -456,7 +456,9 @@
 /* Define this as locale-independent strncmp().  */
 #define strncasecmp _strnicmp
 
+#if _MSC_VER < 1900
 #define snprintf _snprintf
+#endif
 
 #ifndef _MSC_VER
 #define vsnprintf _vsnprintf

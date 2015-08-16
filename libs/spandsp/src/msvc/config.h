@@ -68,7 +68,9 @@
 
   #define strncasecmp _strnicmp
   #define strcasecmp _stricmp
+  #if _MSC_VER < 1900
   #define snprintf _snprintf
+  #endif
   #define inline __inline
   #define __inline__ __inline
 

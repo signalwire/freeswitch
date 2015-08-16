@@ -24,7 +24,9 @@
 #include <winsock2.h>
 #include <Ws2tcpip.h>
 #include <io.h>
+#if _MSC_VER < 1900
 #define snprintf _snprintf
+#endif
 #if defined(_MSC_VER) && (_MSC_VER >= 1400)
 #define strncasecmp _memicmp
 #else

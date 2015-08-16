@@ -56,7 +56,9 @@ extern "C" {
 #ifndef strncasecmp
 #define strncasecmp _strnicmp
 #endif
+#if _MSC_VER < 1900
 #define snprintf _snprintf
+#endif
 #ifdef _WIN64
 #define WS_SSIZE_T __int64
 #elif _MSC_VER >= 1400

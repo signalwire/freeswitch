@@ -12,7 +12,9 @@
 #ifdef WIN32
 #include <io.h>
 #include <winsock2.h>
+#if _MSC_VER < 1900
 #define snprintf _snprintf
+#endif
 #else
 #include <unistd.h>
 #include <sys/types.h>

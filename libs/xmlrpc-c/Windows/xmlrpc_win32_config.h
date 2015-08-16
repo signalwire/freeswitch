@@ -217,7 +217,9 @@
   #define XMLRPC_STRTOULL _strtoui64  /* Windows MSVC */
 #endif
 
+#if _MSC_VER < 1900
 #define snprintf _snprintf
+#endif
 #define popen _popen
 
 #endif

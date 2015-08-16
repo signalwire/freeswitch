@@ -1,0 +1,254 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectName>mod_iSAC</ProjectName>
+    <ProjectGuid>{7F1610F1-DD5A-4CF7-8610-30AB12C60ADD}</ProjectGuid>
+    <RootNamespace>mod_iSAC</RootNamespace>
+    <Keyword>Win32Proj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\..\..\w32\module_release.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\..\..\w32\module_debug.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\..\..\w32\module_release.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\..\..\w32\module_debug.props" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <CodeAnalysisRuleSet>NativeMinimumRules.ruleset</CodeAnalysisRuleSet>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <CodeAnalysisRuleSet>NativeMinimumRules.ruleset</CodeAnalysisRuleSet>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <CodeAnalysisRuleSet>NativeMinimumRules.ruleset</CodeAnalysisRuleSet>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <CodeAnalysisRuleSet>NativeMinimumRules.ruleset</CodeAnalysisRuleSet>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_DEBUG;DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <DisableSpecificWarnings>4206;4100;4244;6340;6246;6011;6387;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <EnablePREfast>false</EnablePREfast>
+    </ClCompile>
+    <Link>
+      <RandomizedBaseAddress>false</RandomizedBaseAddress>
+      <DataExecutionPrevention>
+      </DataExecutionPrevention>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Midl>
+      <TargetEnvironment>X64</TargetEnvironment>
+    </Midl>
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_DEBUG;DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <DisableSpecificWarnings>4206;4100;4244;6340;6246;6011;6387;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <EnablePREfast>false</EnablePREfast>
+    </ClCompile>
+    <Link>
+      <RandomizedBaseAddress>false</RandomizedBaseAddress>
+      <DataExecutionPrevention>
+      </DataExecutionPrevention>
+      <TargetMachine>MachineX64</TargetMachine>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <DisableSpecificWarnings>4206;4100;4244;6340;6246;6011;6387;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <EnablePREfast>false</EnablePREfast>
+    </ClCompile>
+    <Link>
+      <RandomizedBaseAddress>false</RandomizedBaseAddress>
+      <DataExecutionPrevention>
+      </DataExecutionPrevention>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Midl>
+      <TargetEnvironment>X64</TargetEnvironment>
+    </Midl>
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <DisableSpecificWarnings>4206;4100;4244;6340;6246;6011;6387;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <EnablePREfast>false</EnablePREfast>
+    </ClCompile>
+    <Link>
+      <RandomizedBaseAddress>false</RandomizedBaseAddress>
+      <DataExecutionPrevention>
+      </DataExecutionPrevention>
+      <TargetMachine>MachineX64</TargetMachine>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="arith_routines.c" />
+    <ClCompile Include="arith_routines_hist.c" />
+    <ClCompile Include="arith_routines_logist.c" />
+    <ClCompile Include="auto_correlation.c" />
+    <ClCompile Include="auto_corr_to_refl_coef.c" />
+    <ClCompile Include="bandwidth_estimator.c" />
+    <ClCompile Include="complex_bit_reverse.c" />
+    <ClCompile Include="complex_fft.c" />
+    <ClCompile Include="copy_set_operations.c" />
+    <ClCompile Include="crc.c" />
+    <ClCompile Include="cross_correlation.c" />
+    <ClCompile Include="decode.c" />
+    <ClCompile Include="decode_bwe.c" />
+    <ClCompile Include="division_operations.c" />
+    <ClCompile Include="dot_product_with_scale.c" />
+    <ClCompile Include="downsample_fast.c" />
+    <ClCompile Include="encode.c" />
+    <ClCompile Include="encode_lpc_swb.c" />
+    <ClCompile Include="energy.c" />
+    <ClCompile Include="entropy_coding.c" />
+    <ClCompile Include="fft.c" />
+    <ClCompile Include="filterbanks.c" />
+    <ClCompile Include="filterbank_tables.c" />
+    <ClCompile Include="filter_ar.c" />
+    <ClCompile Include="filter_ar_fast_q12.c" />
+    <ClCompile Include="filter_functions.c" />
+    <ClCompile Include="filter_ma_fast_q12.c" />
+    <ClCompile Include="get_hanning_window.c" />
+    <ClCompile Include="get_scaling_square.c" />
+    <ClCompile Include="ilbc_specific_functions.c" />
+    <ClCompile Include="intialize.c" />
+    <ClCompile Include="isac.c" />
+    <ClCompile Include="lattice.c" />
+    <ClCompile Include="levinson_durbin.c" />
+    <ClCompile Include="lpc_analysis.c" />
+    <ClCompile Include="lpc_gain_swb_tables.c" />
+    <ClCompile Include="lpc_shape_swb12_tables.c" />
+    <ClCompile Include="lpc_shape_swb16_tables.c" />
+    <ClCompile Include="lpc_tables.c" />
+    <ClCompile Include="lpc_to_refl_coef.c" />
+    <ClCompile Include="min_max_operations.c" />
+    <ClCompile Include="min_max_operations_neon.c" />
+    <ClCompile Include="mod_iSAC.c" />
+    <ClCompile Include="pitch_estimator.c" />
+    <ClCompile Include="pitch_filter.c" />
+    <ClCompile Include="pitch_gain_tables.c" />
+    <ClCompile Include="pitch_lag_tables.c" />
+    <ClCompile Include="randomization_functions.c" />
+    <ClCompile Include="refl_coef_to_lpc.c" />
+    <ClCompile Include="resample.c" />
+    <ClCompile Include="resample_48khz.c" />
+    <ClCompile Include="resample_by_2.c" />
+    <ClCompile Include="resample_by_2_internal.c" />
+    <ClCompile Include="resample_fractional.c" />
+    <ClCompile Include="spectrum_ar_model_tables.c" />
+    <ClCompile Include="splitting_filter.c" />
+    <ClCompile Include="spl_sqrt.c" />
+    <ClCompile Include="spl_sqrt_floor.c" />
+    <ClCompile Include="spl_version.c" />
+    <ClCompile Include="sqrt_of_one_minus_x_squared.c" />
+    <ClCompile Include="transform.c" />
+    <ClCompile Include="vector_scaling_operations.c" />
+    <ClCompile Include="webrtc_fft_t_1024_8.c" />
+    <ClCompile Include="webrtc_fft_t_rad.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\w32\Library\FreeSwitchCore.2015.vcxproj">
+      <Project>{202d7a4e-760d-4d0e-afa1-d7459ced30ff}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="arith_routines.h" />
+    <ClInclude Include="bandwidth_estimator.h" />
+    <ClInclude Include="codec.h" />
+    <ClInclude Include="crc.h" />
+    <ClInclude Include="encode_lpc_swb.h" />
+    <ClInclude Include="entropy_coding.h" />
+    <ClInclude Include="fft.h" />
+    <ClInclude Include="filterbank_tables.h" />
+    <ClInclude Include="isac.h" />
+    <ClInclude Include="lpc_analysis.h" />
+    <ClInclude Include="lpc_gain_swb_tables.h" />
+    <ClInclude Include="lpc_shape_swb12_tables.h" />
+    <ClInclude Include="lpc_shape_swb16_tables.h" />
+    <ClInclude Include="lpc_tables.h" />
+    <ClInclude Include="os_specific_inline.h" />
+    <ClInclude Include="pitch_estimator.h" />
+    <ClInclude Include="pitch_gain_tables.h" />
+    <ClInclude Include="pitch_lag_tables.h" />
+    <ClInclude Include="resample_by_2_internal.h" />
+    <ClInclude Include="settings.h" />
+    <ClInclude Include="signal_processing_library.h" />
+    <ClInclude Include="spectrum_ar_model_tables.h" />
+    <ClInclude Include="spl_inl.h" />
+    <ClInclude Include="spl_inl_armv7.h" />
+    <ClInclude Include="structs.h" />
+    <ClInclude Include="typedefs.h" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

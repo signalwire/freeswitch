@@ -14,7 +14,9 @@
 #include <io.h>
 #define MAXHOSTNAMELEN 64
 #define MIN(x,y) (((x)<(y))?(x):(y))
+#if _MSC_VER < 1900
 #define snprintf _snprintf
+#endif
 #define herror
 #define socklen_t int
 #else

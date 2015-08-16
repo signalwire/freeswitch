@@ -27,6 +27,12 @@
 #include "apt_text_stream.h"
 #include "apt_log.h"
 
+#if _MSC_VER >= 1900
+#pragma warning(disable: 4477)
+// 'snprintf' : format string '%d' requires an argument of type 'int', but variadic argument 1 has type 'apr_size_t' 264
+// 'snprintf' : format string '%d' requires an argument of type 'int', but variadic argument 1 has type 'const apr_size_t' 198
+#endif
+
 static apr_size_t sdp_rtp_media_generate(char *buffer, apr_size_t size, const mrcp_session_descriptor_t *descriptor, const mpf_rtp_media_descriptor_t *audio_descriptor);
 static apr_size_t sdp_control_media_generate(char *buffer, apr_size_t size, const mrcp_session_descriptor_t *descriptor, const mrcp_control_descriptor_t *control_media, apt_bool_t offer);
 

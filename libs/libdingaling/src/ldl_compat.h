@@ -53,7 +53,9 @@ typedef __int32		int32_t;
 typedef __int64		int64_t;
 typedef unsigned long	in_addr_t;
 #endif
+#if _MSC_VER < 1900
 #define snprintf _snprintf
+#endif
 #endif
 
 #ifdef __cplusplus

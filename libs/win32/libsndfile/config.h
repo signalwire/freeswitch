@@ -287,6 +287,8 @@ typedef unsigned __int32 uint32_t;
 #define PRId64 "I64d"
 
 #define __func__ __FUNCTION__
+#if _MSC_VER < 1900
 #define snprintf _snprintf
+#endif
 
 #include <float_cast.h>

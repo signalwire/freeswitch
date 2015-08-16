@@ -35,7 +35,9 @@
 #ifdef  _MSC_VER
 #include <io.h>
 #include <WinSock2.h>
+#if _MSC_VER < 1900
 #define snprintf _snprintf
+#endif
 #else
 #include <unistd.h>
 #include <sys/select.h>

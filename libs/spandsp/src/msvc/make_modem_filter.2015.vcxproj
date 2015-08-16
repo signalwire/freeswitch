@@ -1,0 +1,97 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="All|Win32">
+      <Configuration>All</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectName>make_modem_filter</ProjectName>
+    <ProjectGuid>{329A6FA0-0FCC-4435-A950-E670AEFA9838}</ProjectGuid>
+    <RootNamespace>make_modem_filter</RootNamespace>
+    <Keyword>Win32Proj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='All|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='All|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='All|Win32'">$(PlatformName)\$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='All|Win32'">$(PlatformName)\make_modem_filter\$(Configuration)\</IntDir>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='All|Win32'">false</LinkIncremental>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='All|Win32'">
+    <BuildLog>
+      <Path>$(IntDir)BuildLog $(ProjectName).htm</Path>
+    </BuildLog>
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>.;.\spandsp;.\msvc;..\..\tiff-4.0.2\libtiff;.\generated;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;HAVE_CONFIG_H;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>true</MinimalRebuild>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <ProgramDataBaseFileName>$(IntDir)$(TargetName).pdb</ProgramDataBaseFileName>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Console</SubSystem>
+      <TargetMachine>MachineX86</TargetMachine>
+    </Link>
+    <PostBuildEvent>
+      <Command>"$(TargetPath)" -m V.17 -r &gt;"$(ProjectDir)..\v17_v32bis_rx_rrc.h"
+"$(TargetPath)" -m V.17 -r &gt;"$(ProjectDir)..\v17_v32bis_rx_floating_rrc.h"
+
+"$(TargetPath)" -m V.17 -t &gt;"$(ProjectDir)..\v17_v32bis_tx_rrc.h"
+"$(TargetPath)" -m V.17 -t &gt;"$(ProjectDir)..\v17_v32bis_tx_floating_rrc.h"
+
+"$(TargetPath)" -m V.22bis1200 -r &gt;"$(ProjectDir)..\v22bis_rx_1200_rrc.h"
+"$(TargetPath)" -m V.22bis2400 -r &gt;"$(ProjectDir)..\v22bis_rx_2400_rrc.h"
+"$(TargetPath)" -m V.22bis1200 -r &gt;"$(ProjectDir)..\v22bis_rx_1200_floating_rrc.h"
+"$(TargetPath)" -m V.22bis2400 -r &gt;"$(ProjectDir)..\v22bis_rx_2400_floating_rrc.h"
+"$(TargetPath)" -m V.22bis -t &gt;"$(ProjectDir)..\v22bis_tx_rrc.h"
+"$(TargetPath)" -m V.22bis -t &gt;"$(ProjectDir)..\v22bis_tx_floating_rrc.h"
+
+"$(TargetPath)" -m V.27ter2400 -r &gt;"$(ProjectDir)..\v27ter_rx_2400_rrc.h"
+"$(TargetPath)" -m V.27ter4800 -r &gt;"$(ProjectDir)..\v27ter_rx_4800_rrc.h"
+"$(TargetPath)" -m V.27ter2400 -r &gt;"$(ProjectDir)..\v27ter_rx_2400_floating_rrc.h"
+"$(TargetPath)" -m V.27ter4800 -r &gt;"$(ProjectDir)..\v27ter_rx_4800_floating_rrc.h"
+"$(TargetPath)" -m V.27ter2400 -t &gt;"$(ProjectDir)..\v27ter_tx_2400_rrc.h"
+"$(TargetPath)" -m V.27ter4800 -t &gt;"$(ProjectDir)..\v27ter_tx_4800_rrc.h"
+"$(TargetPath)" -m V.27ter2400 -t &gt;"$(ProjectDir)..\v27ter_tx_2400_floating_rrc.h"
+"$(TargetPath)" -m V.27ter4800 -t &gt;"$(ProjectDir)..\v27ter_tx_4800_floating_rrc.h"
+
+"$(TargetPath)" -m V.29 -r &gt;"$(ProjectDir)..\v29rx_rrc.h"
+"$(TargetPath)" -m V.29 -r &gt;"$(ProjectDir)..\v29rx_floating_rrc.h"
+"$(TargetPath)" -m V.29 -t &gt;"$(ProjectDir)..\v29tx_rrc.h"
+"$(TargetPath)" -m V.29 -t &gt;"$(ProjectDir)..\v29tx_floating_rrc.h"
+</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\filter_tools.c" />
+    <ClCompile Include="getopt.c" />
+    <ClCompile Include="..\make_modem_filter.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\filter_tools.h" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

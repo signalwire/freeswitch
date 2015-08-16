@@ -13,7 +13,7 @@
 #include <string.h>
 #include "ctb-0.16/iobase.h"
 
-#if defined (WIN32)
+#if _MSC_VER < 1900
 # define snprintf _snprintf
 #endif
 

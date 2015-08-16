@@ -106,7 +106,7 @@ extern "C" {
 #ifndef strncasecmp
 #define strncasecmp(s1, s2, n) _strnicmp(s1, s2, n)
 #endif
-#ifndef snprintf
+#if _MSC_VER < 1900
 #define snprintf _snprintf
 #endif
 #ifndef S_IRUSR

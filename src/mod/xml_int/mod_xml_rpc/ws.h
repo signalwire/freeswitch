@@ -13,7 +13,9 @@
 #include <sys/socket.h>
 #else
 #pragma warning(disable:4996)
+#if _MSC_VER < 1900
 #define snprintf _snprintf
+#endif
 #endif
 #include <string.h>
 #include <string.h>
