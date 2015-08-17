@@ -2099,7 +2099,7 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 				switch_img_free(&img);
 			}
 
-			if (!layer && (!conference_utils_test_flag(imember->conference, CFLAG_VIDEO_REQUIRED_FOR_CANVAS) || (switch_channel_test_flag(imember->channel, CF_VIDEO) && !imember->video_flow == SWITCH_MEDIA_FLOW_SENDONLY))) {
+			if (!layer && (!conference_utils_test_flag(imember->conference, CFLAG_VIDEO_REQUIRED_FOR_CANVAS) || ((switch_channel_test_flag(imember->channel, CF_VIDEO) && imember->video_flow != SWITCH_MEDIA_FLOW_SENDONLY)))) {
 				if (conference_video_find_layer(conference, canvas, imember, &layer) == SWITCH_STATUS_SUCCESS) {
 					imember->layer_timeout = 0;
 				} else {
