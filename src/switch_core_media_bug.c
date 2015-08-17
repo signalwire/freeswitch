@@ -565,6 +565,9 @@ static void *SWITCH_THREAD_FUNC video_bug_thread(switch_thread_t *thread, void *
 
 			img = (switch_image_t *) pop;
 			
+			w = img->d_w;
+			h = img->d_h;
+
 			if (other_q) {
 				while(switch_queue_size(other_q) > 0) {
 					if ((status = switch_queue_trypop(other_q, &pop)) == SWITCH_STATUS_SUCCESS) {
@@ -574,12 +577,7 @@ static void *SWITCH_THREAD_FUNC video_bug_thread(switch_thread_t *thread, void *
 						}
 					}
 				}
-			}
 
-			w = img->d_w;
-			h = img->d_h;
-			
-			if (other_q) {
 				if (other_img) {
 					if (other_img->d_w != w || other_img->d_h != h) {
 						switch_image_t *tmp_img = NULL;
@@ -602,14 +600,11 @@ static void *SWITCH_THREAD_FUNC video_bug_thread(switch_thread_t *thread, void *
 				if (other_img) {
 					switch_img_patch(IMG, other_img, w / 2, 0);
 				}
-				
-			} else {
-				IMG = img;
 			}
 
 			switch_thread_rwlock_rdlock(bug->session->bug_rwlock);
 			//switch_mutex_lock(bug->read_mutex);
-			frame.img = IMG;
+			frame.img = other_q ? IMG : img;
 			bug->ping_frame = &frame;
 			if (bug->callback) {
 				if (bug->callback(bug, bug->user_data, SWITCH_ABC_TYPE_STREAM_VIDEO_PING) == SWITCH_FALSE
