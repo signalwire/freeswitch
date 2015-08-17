@@ -3232,6 +3232,7 @@ static switch_status_t check_ice(switch_media_handle_t *smh, switch_media_type_t
 								  "Drop %s Candidate cid: %d proto: %s type: %s addr: %s:%s (no network path)\n", 
 								  type == SWITCH_MEDIA_TYPE_VIDEO ? "video" : "audio",
 								  cid+1, fields[2], fields[7], fields[4], fields[5]);
+				continue;
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_DEBUG, 
 								  "Save %s Candidate cid: %d proto: %s type: %s addr: %s:%s\n", 
