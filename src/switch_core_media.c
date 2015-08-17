@@ -4363,11 +4363,11 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 				}
 			}
 
-			if (cng_rate != a_engine->cur_payload_map->rm_rate) {
+			if (cng_rate != a_engine->cur_payload_map->adv_rm_rate) {
 				cng_rate = 8000;
 			}
 
-			if (best_te_rate != a_engine->cur_payload_map->rm_rate) {
+			if (best_te_rate != a_engine->cur_payload_map->adv_rm_rate) {
 				best_te_rate = 8000;
 			}
 
