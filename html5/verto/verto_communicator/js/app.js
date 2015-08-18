@@ -20,17 +20,17 @@ var vertoApp = angular.module('vertoApp', [
 vertoApp.config(['$routeProvider',
   function($routeProvider) {
     $routeProvider.
-      when('/login', {
-        title: 'Login',
-        templateUrl: 'partials/login.html',
-        controller: 'LoginController'
-      }).
-      when('/dialpad', {
-        title: 'Dialpad',
-        templateUrl: 'partials/dialpad.html',
-        controller: 'DialPadController'
-      }).
-      when('/incall', {
+    when('/login', {
+      title: 'Login',
+      templateUrl: 'partials/login.html',
+      controller: 'LoginController'
+    }).
+    when('/dialpad', {
+      title: 'Dialpad',
+      templateUrl: 'partials/dialpad.html',
+      controller: 'DialPadController'
+    }).
+    when('/incall', {
         title: 'In a Call',
         templateUrl: 'partials/incall.html',
         controller: 'InCallController'
@@ -40,25 +40,26 @@ vertoApp.config(['$routeProvider',
         templateUrl: 'partials/contributors.html',
         controller: 'ContributorsController',
       }).*/
-      when('/browser-upgrade', {
-        title: '',
-        templateUrl: 'partials/browser_upgrade.html',
-        controller: 'BrowserUpgradeController'
-      }).
-      otherwise({
-        redirectTo: '/login'
-      });
-  }]);
+    when('/browser-upgrade', {
+      title: '',
+      templateUrl: 'partials/browser_upgrade.html',
+      controller: 'BrowserUpgradeController'
+    }).
+    otherwise({
+      redirectTo: '/login'
+    });
+  }
+]);
 
 vertoApp.run(['$rootScope', '$location', 'toastr', 'prompt',
   function($rootScope, $location, toastr, prompt) {
-    $rootScope.$on('$routeChangeSuccess', function (event, current, previous) {
+    $rootScope.$on('$routeChangeSuccess', function(event, current, previous) {
       $rootScope.title = current.$$route.title;
     });
 
     $rootScope.safeProtocol = false;
 
-    if(window.location.protocol == 'https:') {
+    if (window.location.protocol == 'https:') {
       $rootScope.safeProtocol = true;
     }
 
@@ -79,7 +80,7 @@ vertoApp.run(['$rootScope', '$location', 'toastr', 'prompt',
         message: message,
         input: true,
         label: label
-      }).then(function (ret) {
+      }).then(function(ret) {
         if (angular.isFunction(callback)) {
           callback(ret);
         }
@@ -89,4 +90,5 @@ vertoApp.run(['$rootScope', '$location', 'toastr', 'prompt',
 
     };
 
-}]);
+  }
+]);

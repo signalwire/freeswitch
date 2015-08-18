@@ -2,38 +2,95 @@
 
 /* Controllers */
 
-var videoQuality = [
-  {id: 'qvga', label: 'QVGA 320x240'},
-  {id: 'vga', label: 'VGA 640x480'},
-  {id: 'qvga_wide', label: 'QVGA WIDE 320x180'},
-  {id: 'vga_wide', label: 'VGA WIDE 640x360'},
-  {id: 'hd', label: 'HD 1280x720'},
-  {id: 'hhd', label: 'HHD 1920x1080'},
-];
+var videoQuality = [{
+  id: 'qvga',
+  label: 'QVGA 320x240',
+  width: 320,
+  height: 240
+}, {
+  id: 'vga',
+  label: 'VGA 640x480',
+  width: 640,
+  height: 480
+}, {
+  id: 'qvga_wide',
+  label: 'QVGA WIDE 320x180',
+  width: 320,
+  height: 180
+}, {
+  id: 'vga_wide',
+  label: 'VGA WIDE 640x360',
+  width: 640,
+  height: 360
+}, {
+  id: 'hd',
+  label: 'HD 1280x720',
+  width: 1280,
+  height: 720
+}, {
+  id: 'hhd',
+  label: 'HHD 1920x1080',
+  width: 1920,
+  height: 1080
+}, ];
 
 var videoResolution = {
-  qvga: {width: 320, height: 240},
-  vga: {width: 640, height: 480},
-  qvga_wide: {width: 320, height: 180},
-  vga_wide: {width: 640, height: 360},
-  hd: {width: 1280, height: 720},
-  hhd: {width: 1920, height: 1080},
+  qvga: {
+    width: 320,
+    height: 240
+  },
+  vga: {
+    width: 640,
+    height: 480
+  },
+  qvga_wide: {
+    width: 320,
+    height: 180
+  },
+  vga_wide: {
+    width: 640,
+    height: 360
+  },
+  hd: {
+    width: 1280,
+    height: 720
+  },
+  hhd: {
+    width: 1920,
+    height: 1080
+  },
 };
 
-var bandwidth = [
-  {id: '250', label: '250kb'},
-  {id: '500', label: '500kb'},
-  {id: '1024', label: '1mb'},
-  {id: '1536', label: '1.5mb'},
-  {id: '2048', label: '2mb'},
-  {id: '5120', label: '5mb'},
-  {id: '0', label: 'No Limit'},
-  {id: 'default', label: 'Server Default'},
-];
+var bandwidth = [{
+  id: '250',
+  label: '250kb'
+}, {
+  id: '500',
+  label: '500kb'
+}, {
+  id: '1024',
+  label: '1mb'
+}, {
+  id: '1536',
+  label: '1.5mb'
+}, {
+  id: '2048',
+  label: '2mb'
+}, {
+  id: '5120',
+  label: '5mb'
+}, {
+  id: '0',
+  label: 'No Limit'
+}, {
+  id: 'default',
+  label: 'Server Default'
+}, ];
 
 var vertoService = angular.module('vertoService', ['ngCookies']);
 
-vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', function($rootScope, $cookieStore, $location) {
+vertoService.service('verto', ['$rootScope', '$cookieStore', '$location',
+  function($rootScope, $cookieStore, $location) {
     var data = {
       // Connection data.
       instance: null,
@@ -72,6 +129,8 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', functi
       incomingBandwidth: $cookieStore.get('verto_demo_incomingBandwidth') || 'default',
       vidQual: $cookieStore.get('verto_demo_vqual') || 'qvga',
       localVideo: $cookieStore.get('verto_demo_local_video_checked') || false,
+      bestWidth: '',
+      bestHeight: '',
       selectedVideo: null,
       selectedAudio: null,
       selectedShare: null
@@ -112,11 +171,24 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', functi
     }
 
     function getVideoParams() {
+      var maxWidth, maxHeight;
+
+      maxWidth = data.bestWidth;
+      maxHeight = data.bestHeight;
+
+      if(!data.bestWidth) {
+        maxWidth = videoResolution[data.vidQual].width;
+      }
+
+      if(!data.bestHeight) {
+        maxHeight = videoResolution[data.vidQual].height;
+      }
+
       return {
         minWidth: videoResolution[data.vidQual].width,
         minHeight: videoResolution[data.vidQual].height,
-        maxWidth: videoResolution[data.vidQual].width,
-        maxHeight: videoResolution[data.vidQual].height
+        maxWidth: maxWidth,
+        maxHeight: maxHeight
       };
     }
 
@@ -161,8 +233,14 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', functi
         console.debug('Attempting to refresh the devices.');
 
 
-        data.videoDevices = [{id: 'none', label: 'No camera'}];
-        data.shareDevices = [{id: 'screen', label: 'Screen'}];
+        data.videoDevices = [{
+          id: 'none',
+          label: 'No camera'
+        }];
+        data.shareDevices = [{
+          id: 'screen',
+          label: 'Screen'
+        }];
         data.audioDevices = [];
 
         data.selectedVideo = 'none';
@@ -171,10 +249,16 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', functi
 
         for (var i in jQuery.verto.videoDevices) {
           var device = jQuery.verto.videoDevices[i];
-          if(!device.label) {
-            data.videoDevices.push({id: 'Camera ' + i, label: 'Camera ' + i});
+          if (!device.label) {
+            data.videoDevices.push({
+              id: 'Camera ' + i,
+              label: 'Camera ' + i
+            });
           } else {
-            data.videoDevices.push({id: device.id, label: device.label || device.id});
+            data.videoDevices.push({
+              id: device.id,
+              label: device.label || device.id
+            });
           }
 
           // Selecting the first source.
@@ -182,12 +266,18 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', functi
             data.selectedVideo = device.id;
           }
 
-          if(!device.label) {
-            data.shareDevices.push({id: 'Share Device ' + i, label: 'Share Device ' + i});
+          if (!device.label) {
+            data.shareDevices.push({
+              id: 'Share Device ' + i,
+              label: 'Share Device ' + i
+            });
             continue;
           }
 
-          data.shareDevices.push({id: device.id, label: device.label || device.id});
+          data.shareDevices.push({
+            id: device.id,
+            label: device.label || device.id
+          });
         }
 
         data.audioDevices = [];
@@ -198,11 +288,17 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', functi
             data.selectedAudio = device.id;
           }
 
-          if(!device.label) {
-            data.audioDevices.push({id: 'Microphone ' + i, label: 'Microphone ' + i});
+          if (!device.label) {
+            data.audioDevices.push({
+              id: 'Microphone ' + i,
+              label: 'Microphone ' + i
+            });
             continue;
           }
-          data.audioDevices.push({id: device.id, label: device.label || device.id});
+          data.audioDevices.push({
+            id: device.id,
+            label: device.label || device.id
+          });
         }
 
         console.debug('Devices were refreshed.');
@@ -228,6 +324,35 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', functi
         } else {
           console.debug('There is no instance of verto.');
         }
+      },
+
+      updateResolutions: function(supportedResolutions) {
+        console.debug('Attempting to sync supported and available resolutions');
+
+        var removed = 0;
+
+        angular.forEach(videoQuality, function(resolution, id) {
+          var supported = false;
+          angular.forEach(supportedResolutions, function(res) {
+            var width = res[0];
+            var height = res[1];
+
+            if(resolution.width == width && resolution.height == height) {
+              supported = true;
+            }
+          });
+
+          if(!supported) {
+            delete videoQuality[id];
+            ++removed;
+          }
+        });
+
+        videoQuality.length = videoQuality.length - removed;
+        this.videoQuality = videoQuality;
+        this.data.vidQual = videoQuality[videoQuality.length - 1].id;
+
+        return videoQuality;
       },
 
       /**
@@ -268,8 +393,11 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', functi
 
           data.liveArray = new $.verto.liveArray(
             data.instance, pvtData.laChannel,
-            pvtData.laName,
-            {subParams: {callID: dialog ? dialog.callID : null}});
+            pvtData.laName, {
+              subParams: {
+                callID: dialog ? dialog.callID : null
+              }
+            });
 
           data.liveArray.onErr = function(obj, args) {
             console.log('liveArray.onErr', obj, args);
@@ -278,7 +406,7 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', functi
           data.liveArray.onChange = function(obj, args) {
             console.log('liveArray.onChange', obj, args);
 
-            switch(args.action) {
+            switch (args.action) {
               case 'bootObj':
                 $rootScope.$emit('members.boot', args.data);
                 break;
@@ -346,7 +474,10 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', functi
               case $.verto.enum.message.info:
                 var body = params.body;
                 var from = params.from_msg_name || params.from;
-                $rootScope.$emit('chat.newMessage', {from: from, body: body});
+                $rootScope.$emit('chat.newMessage', {
+                  from: from,
+                  body: body
+                });
                 break;
               default:
                 break;
@@ -354,9 +485,9 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', functi
           },
 
           onDialogState: function(d) {
-            if(!data.call) {
+            if (!data.call) {
               data.call = d;
-              if(d.state.name !== 'ringing') {
+              if (d.state.name !== 'ringing') {
                 inCall();
               }
             }
@@ -386,7 +517,7 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', functi
                 break;
               case "destroy":
                 console.debug('Destroying: ' + d.cause);
-                if(d.params.screenShare) {
+                if (d.params.screenShare) {
                   cleanShareCall(that);
                 } else {
                   cleanCall();
@@ -404,7 +535,11 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', functi
           }
         };
 
-        var init = function() {
+        var init = function(resolutions) {
+          data.bestWidth = resolutions['bestResSupported'][0];
+          data.bestHeight = resolutions['bestResSupported'][1];
+
+          that.updateResolutions(resolutions['validRes']);
 
           that.refreshVideoResolution();
 
@@ -479,7 +614,7 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', functi
           caller_id_name: data.name,
           caller_id_number: data.login,
           outgoingBandwidth: data.outgoingBandwidth,
-	      incomingBandwidth: data.incomingBandwidth,
+          incomingBandwidth: data.incomingBandwidth,
           useVideo: data.useVideo,
           useStereo: data.useStereo,
           useCamera: data.selectedVideo,
@@ -535,15 +670,15 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', functi
       },
 
       screenshareHangup: function() {
-          if(!data.shareCall) {
-            console.debug('There is no call to hangup.');
-            return false;
-          }
+        if (!data.shareCall) {
+          console.debug('There is no call to hangup.');
+          return false;
+        }
 
-          console.log('shareCall End', data.shareCall);
-          data.shareCall.hangup();
+        console.log('shareCall End', data.shareCall);
+        data.shareCall.hangup();
 
-          console.debug('The screencall was hangup.');
+        console.debug('The screencall was hangup.');
 
       },
 
@@ -648,4 +783,5 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', functi
         }
       }
     };
-  }]);
+  }
+]);

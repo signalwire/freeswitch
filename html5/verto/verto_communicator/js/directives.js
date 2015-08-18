@@ -18,7 +18,7 @@ vertoDirectives.directive('videoTag',
       // Moving the video tag to the new place inside the incall page.
       console.log('Moving the video to element.');
       jQuery('video').removeClass('hide').appendTo(element);
-      jQuery('video').css('display','block');
+      jQuery('video').css('display', 'block');
       scope.callActive();
 
       element.on('$destroy', function() {
@@ -62,19 +62,19 @@ vertoDirectives.directive('showControls',
       jQuery('.video-footer').fadeIn('slow');
       jQuery('.video-hover-buttons').fadeIn('slow');
       element.parent().bind('mousemove', function() {
-        if(Fullscreen.isEnabled()) {
+        if (Fullscreen.isEnabled()) {
           clearTimeout(i);
           jQuery('.video-footer').fadeIn('slow');
           jQuery('.video-hover-buttons').fadeIn(500);
-          i = setTimeout(function () {
-            if(Fullscreen.isEnabled()) {
+          i = setTimeout(function() {
+            if (Fullscreen.isEnabled()) {
               jQuery('.video-footer').fadeOut('slow');
               jQuery('.video-hover-buttons').fadeOut(500);
             }
           }, 3000);
         }
       });
-      element.parent().bind('mouseleave', function () {
+      element.parent().bind('mouseleave', function() {
         jQuery('.video-footer').fadeIn();
         jQuery('.video-hover-buttons').fadeIn();
       });
@@ -84,4 +84,4 @@ vertoDirectives.directive('showControls',
     return {
       link: link
     };
-});
+  });
