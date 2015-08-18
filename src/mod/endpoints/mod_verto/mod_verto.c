@@ -1809,7 +1809,7 @@ static void client_run(jsock_t *jsock)
 			ws_close(&jsock->ws, WS_NONE);
 			goto error;
 		} else {
-			die("%s WS SETUP FAILED [%s]", jsock->name, jsock->ws.buffer);
+			die("%s WS SETUP FAILED [%s]\n", jsock->name, jsock->ws.buffer);
 		}
 	}
 
