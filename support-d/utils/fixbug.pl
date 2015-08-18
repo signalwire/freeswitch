@@ -1,3 +1,4 @@
+#!/usr/bin/perl
 
 use XML::Simple;
 use Data::Dumper;
@@ -31,7 +32,7 @@ if ($ARGV[0] eq "edit") {
   shift;
   $auto = 0;
   open T, ">/tmp/$bug.tmp";
-  print T "#resolve [$sum]\n\n";
+  print T "$bug #resolve [$sum]\n\n";
   close T;
 }
 
@@ -39,7 +40,7 @@ my $args = join(" ", @ARGV);
 my $gitcmd;
 
 if ($auto) {
-  $gitcmd = "git commit $args -m \"#resolve [$sum]\"";
+  $gitcmd = "git commit $args -m \"$bug #resolve [$sum]\"";
 } else {
   $gitcmd = "git commit $args -t /tmp/$bug.tmp";
 }
