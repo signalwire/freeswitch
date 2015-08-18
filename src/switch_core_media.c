@@ -4341,7 +4341,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 				}
 
 				if (!strcasecmp(rm_encoding, "telephone-event")) {
-					if (!best_te || map->rm_rate == a_engine->cur_payload_map->rm_rate) {
+					if (!best_te || map->rm_rate == a_engine->cur_payload_map->adv_rm_rate) {
 						best_te = (switch_payload_t) map->rm_pt;
 						best_te_rate = map->rm_rate;
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Set telephone-event payload to %u@%lu\n", best_te, best_te_rate);
@@ -4351,7 +4351,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 
 				if (!switch_media_handle_test_media_flag(smh, SCMF_SUPPRESS_CNG) && !strcasecmp(rm_encoding, "CN")) {
 
-					if (!cng_pt || map->rm_rate == a_engine->cur_payload_map->rm_rate) {
+					if (!cng_pt || map->rm_rate == a_engine->cur_payload_map->adv_rm_rate) {
 						cng_pt = (switch_payload_t) map->rm_pt;
 						cng_rate = map->rm_rate;
 
