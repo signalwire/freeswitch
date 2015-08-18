@@ -901,7 +901,7 @@ struct call_control {
 	int noexit;
 	int playback_controls_active;
 };
-typedef struct call_control cc_t;
+typedef struct call_control switch_cc_t;
 
 static switch_status_t control_playback(switch_core_session_t *session, void *input, switch_input_type_t itype, void *buf, unsigned int buflen)
 {
@@ -909,7 +909,7 @@ static switch_status_t control_playback(switch_core_session_t *session, void *in
 	case SWITCH_INPUT_TYPE_DTMF:
 		{
 			switch_dtmf_t *dtmf = (switch_dtmf_t *) input;
-			cc_t *cc = (cc_t *) buf;
+			switch_cc_t *cc = (switch_cc_t *) buf;
 			switch_file_handle_t *fh = cc->fh;
 			uint32_t pos = 0;
 
@@ -1191,7 +1191,7 @@ static switch_status_t create_file(switch_core_session_t *session, vm_profile_t 
 	switch_input_args_t args = { 0 };
 	char term;
 	char input[10] = "", key_buf[80] = "";
-	cc_t cc = { 0 };
+	switch_cc_t cc = { 0 };
 	switch_codec_implementation_t read_impl = { 0 };
 	int got_file = 0;
 	switch_bool_t skip_record_check = switch_true(switch_channel_get_variable(channel, "skip_record_check"));
@@ -1587,7 +1587,7 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
 	char term;
 	char input[10] = "", key_buf[80] = "";
 	switch_file_handle_t fh = { 0 };
-	cc_t cc = { 0 };
+	switch_cc_t cc = { 0 };
 	char *forward_file_path = NULL;
 	switch_core_session_message_t msg = { 0 };
 	char cid_buf[1024] = "";
@@ -2179,7 +2179,7 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 				char key_buf[80] = "";
 				callback_t cbt = { 0 };
 				char msg_count[80] = "";
-				cc_t cc = { 0 };
+				switch_cc_t cc = { 0 };
 				switch_size_t message_len = 0;
 
 				cbt.buf = msg_count;
@@ -2709,7 +2709,7 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
 	const char *filename;
 	switch_xml_t x_param, x_params;
-	const char *vm_cc = NULL, *vm_cc_tmp = NULL;
+	const char *vm_cc = NULL, *vm_switch_cc_tmp = NULL;
 	char *vm_email = NULL;
 	char *vm_email_from = NULL;
 	char *vm_notify_email = NULL;
@@ -3075,8 +3075,8 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 
 	if (session) {
 		switch_channel_t *channel = switch_core_session_get_channel(session);
-		if (channel && (vm_cc_tmp = switch_channel_get_variable(channel, "vm_cc"))) {
-			vm_cc = vm_cc_tmp;
+		if (channel && (vm_switch_cc_tmp = switch_channel_get_variable(channel, "vm_cc"))) {
+			vm_cc = vm_switch_cc_tmp;
 		}
 	}
 
@@ -3354,7 +3354,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 	switch_input_args_t args = { 0 };
 	char *vm_email = NULL;
 	char *vm_notify_email = NULL;
-	cc_t cc = { 0 };
+	switch_cc_t cc = { 0 };
 	char *read_flags = NORMAL_FLAG_STRING;
 	const char *operator_ext = switch_channel_get_variable(channel, "vm_operator_extension");
 	char buf[2];
