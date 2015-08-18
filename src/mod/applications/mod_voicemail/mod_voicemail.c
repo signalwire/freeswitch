@@ -2270,7 +2270,6 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 										   domain_name);
 						vm_execute_sql(profile, sql, profile->mutex);
 						switch_safe_free(sql);
-						switch_safe_free(file_path);
 						switch_safe_free(tmp_file_path);
 
 						switch_event_create_subclass(&params, SWITCH_EVENT_CUSTOM, VM_EVENT_MAINT);
@@ -2280,6 +2279,8 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 						switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "VM-Domain", domain_name);
 						switch_channel_event_set_data(channel, params);
 						switch_event_fire(&params);
+
+						switch_safe_free(file_path);
 					}
 
 				} else if (!strcmp(input, profile->change_pass_key)) {
