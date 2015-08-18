@@ -46,8 +46,7 @@ GetOptions(
 	   'user=s' => \$opts{user},
 	   'pass=s' => \$opts{pass},
 	   'type=s' => \$opts{type},
-	   'debug' => \$opts{debug},
-	  ) or die "Usage: $0 --debug  --from NAME\n";
+	  ) or die "Usage: $0 -summary <summary> -desc <desc> ....\n";
 
 
 if ($opts{components}) {

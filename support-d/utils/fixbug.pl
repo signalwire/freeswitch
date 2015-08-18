@@ -2,11 +2,18 @@
 
 use XML::Simple;
 use Data::Dumper;
+use Getopt::Long qw(GetOptions);
+
+my %opts;
+
+GetOptions(
+    'bug=s' => \$opts{bug},
+    'msg=s' => \$opts{msg}
+    ) or die "Usage: $0 -bug <bug-id> [-m [edit|<msg>]] <files>\n";
 
 
-
-my $bug = shift || die "missing bug";;
-my $url = "https://freeswitch.org/jira/si/jira.issueviews:issue-xml/${bug}/${bug}.xml";
+$opts{bug} || die "missing bug";;
+my $url = "https://freeswitch.org/jira/si/jira.issueviews:issue-xml/$opts{bug}/$opts{bug}.xml";
 my $cmd;
 my $prog = `which curl` || `which wget`;
 my $auto = 1;
@@ -28,11 +35,11 @@ my $r = $xs->XMLin($xml);
 
 my $sum = $r->{channel}->{item}->{summary};
 
-if ($ARGV[0] eq "edit") {
-  shift;
+if ($opts{msg} eq "edit") {
   $auto = 0;
-  open T, ">/tmp/$bug.tmp";
-  print T "$bug #resolve [$sum]\n\n";
+  $opts{msg} = undef;
+  open T, ">/tmp/$opts{bug}.tmp";
+  print T "$opts{bug} #resolve [$sum]\n\n";
   close T;
 }
 
@@ -40,11 +47,17 @@ my $args = join(" ", @ARGV);
 my $gitcmd;
 
 if ($auto) {
-  $gitcmd = "git commit $args -m \"$bug #resolve [$sum]\"";
+    if ($opts{msg}) {
+	$opts{msg} =~ s/%s/$sum/;
+	$opts{msg} =~ s/%b/$bug/;
+	$gitcmd = "git commit $args -m \"$opts{msg}\"";
+    } else {
+	$gitcmd = "git commit $args -m \"$opts{bug} #resolve [$sum]\"";
+    }
 } else {
-  $gitcmd = "git commit $args -t /tmp/$bug.tmp";
+  $gitcmd = "git commit $args -t /tmp/$opts{bug}.tmp";
 }
 
 system $gitcmd;
 
-unlink("/tmp/$bug.tmp");
+unlink("/tmp/$opts{bug}.tmp");
