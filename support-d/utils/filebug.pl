@@ -33,9 +33,6 @@ sub get_text {
   return $text;
 }
 
-#my $user = getuser();
-#my $pass = getpass();
-
 my %opts;
 
 my $hashtxt = `git log -1 --oneline 2>/dev/null`;
@@ -73,7 +70,7 @@ if (!$opts{pass}) {
 
 my $jira = JIRA::REST->new('https://freeswitch.org/jira', $opts{user}, $opts{pass}) or die "login incorrect:";
 my $issue = $jira->GET("/issue/FS-7985") or die "login incorrect:";
-#print Dumper $issue;
+#print $issue->{key};
 #exit;
 
 if (!$opts{type}) {
@@ -102,20 +99,21 @@ if (!$opts{hash}) {
 
 
 
-my $issue = $jira->POST('/issue', undef, {
-					  fields => {
-						     project   => { key => 'FS' },
-						     issuetype => { name => $opts{type} },
-						     summary   => $opts{summary},
-						     description => $opts{desc},
-						     customfield_10024 => $opts{hash},
-						     customfield_10025 => $opts{hash},
-						     components => $opts{components_array}
-						    },
-					 });
+my $issue = $jira->POST('/issue', undef, 
+			{ 
+			    fields => {
+				project   => { key => 'FS' },
+				issuetype => { name => $opts{type} },
+				summary   => $opts{summary},
+				description => $opts{desc},
+				customfield_10024 => $opts{hash},
+				customfield_10025 => $opts{hash},
+				components => $opts{components_array}
+			    },
+			}) or die "Issue was not created:";
 
 
-print "Issue Posted";
+print "Issue Posted: " . $issue->{key};
 
 
 __END__
