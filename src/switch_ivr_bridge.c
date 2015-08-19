@@ -1977,8 +1977,7 @@ SWITCH_DECLARE(void) switch_ivr_intercept_session(switch_core_session_t *session
 	switch_channel_set_state(rchannel, CS_PARK);
 
 	if (bchannel) {
-		switch_channel_set_state_flag(bchannel, CF_TRANSFER);
-		switch_channel_set_state(bchannel, CS_PARK);
+		switch_channel_set_variable(bchannel, "park_after_bridge", "true");
 	}
 
 	switch_channel_set_flag(rchannel, CF_INTERCEPTED);
