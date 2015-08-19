@@ -14,7 +14,7 @@ my $default_components = "freeswitch-core";
 sub getpass {
   ReadMode( "noecho");
   print "Password: ";
-  chomp (my $pwd = <>);
+  chomp (my $pwd = <STDIN>);
   ReadMode ("original");
   return $pwd;
 }
@@ -24,10 +24,12 @@ sub getfield {
     my $default = shift;
 
     print $prompt . ($default ? "[$default]: " : "");
-    chomp (my $data = <>);
+    chomp (my $data = <STDIN>);
+    
     if (!$data) {
 	$data = $default;
     }
+
     return $data;
 }
 
@@ -56,6 +58,9 @@ my $hashtxt = `git log -1 --oneline 2>/dev/null`;
 my ($hash) = split(" ", $hashtxt);
 
 GetOptions(
+    'bug=s' => \$opts{bug},
+    'attach' => \$opts{attach},
+    'comment=s' => \$opts{comment},
     'project=s' => \$opts{project},
     'summary=s' => \$opts{summary},
     'desc=s' => \$opts{desc},
@@ -88,12 +93,12 @@ if ($opts{components}) {
 }
 
 if (!$opts{user}) {
-  $opts{user} = getfield("User: ");
+    $opts{user} = getfield("User: ");
 }
 
 if (!$opts{pass} && !$opts{debug}) {
-  $opts{pass} = getpass();
-  print "\n";
+    $opts{pass} = getpass();
+    print "\n";
 }
 
 my $jira;
@@ -103,6 +108,38 @@ if (!$opts{debug}) {
     $jira = JIRA::REST->new('https://freeswitch.org/jira', $opts{user}, $opts{pass}) or die "login incorrect:";
     $issue = $jira->GET("/issue/FS-7985") or die "login incorrect:";
 }
+
+if ($opts{bug}) {
+    if ($opts{comment}) {
+	
+	if ($opts{comment} eq "edit") {
+	    $opts{comment} = get_text();
+	}
+
+	my $input = {
+	    update => {
+		comment => 
+		    [{
+			add => {
+			    body => $opts{comment}
+			}
+		     }
+		    ]
+	    }
+	};
+
+	$jira->PUT("/issue/" . $opts{bug}, undef, $input);
+	print "Comment Posted.\n";
+    }
+
+    if ($opts{attach}) {
+	$jira->attach_files($opts{bug}, @ARGV);
+	printf "%d file%s attached.\n", scalar @ARGV, scalar @ARGV == 1 ? "" : "s";
+    }
+
+    exit;
+}
+
 
 #print $issue->{key};
 #exit;
@@ -174,5 +211,10 @@ if ($opts{debug}) {
 } else {
     $issue = $jira->POST('/issue', undef, $input) or die "Issue was not created:";
     print "Issue Posted: " . $issue->{key};
+
+    if ($opts{attach}) {
+	$jira->attach_files($issue->{key}, @ARGV);
+	printf "%d file%s attached.\n", scalar @ARGV, scalar @ARGV == 1 ? "" : "s";
+    }
 }
 
