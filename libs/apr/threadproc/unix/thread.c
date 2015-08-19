@@ -135,6 +135,19 @@ APR_DECLARE(apr_status_t) apr_threadattr_guardsize_set(apr_threadattr_t *attr,
 static void *dummy_worker(void *opaque)
 {
     apr_thread_t *thread = (apr_thread_t*)opaque;
+
+#ifdef HAVE_PTHREAD_SETSCHEDPARAM
+	if (thread->priority) {
+		int policy;
+		struct sched_param param = { 0 };
+		pthread_t tt = pthread_self();
+	
+		pthread_getschedparam(tt, &policy, &param);
+		param.sched_priority = thread->priority;
+		pthread_setschedparam(tt, policy, &param);
+	}
+#endif
+
     return thread->func(thread, thread->data);
 }
 
@@ -174,19 +187,11 @@ APR_DECLARE(apr_status_t) apr_thread_create(apr_thread_t **new,
         return stat;
     }
 
+	if (attr && attr->priority) {
+		(*new)->priority = attr->priority;
+	}
+
     if ((stat = pthread_create(&tt, temp, dummy_worker, (*new))) == 0) {
-
-#ifdef HAVE_PTHREAD_SETSCHEDPARAM
-		if (attr && attr->priority) {
-			int policy;
-			struct sched_param param = { 0 };
-
-			pthread_getschedparam(tt, &policy, &param);
-			param.sched_priority = attr->priority;
-			pthread_setschedparam(tt, policy, &param);
-		}
-#endif
-
 		*(*new)->td = tt;
 
         return APR_SUCCESS;
