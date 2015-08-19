@@ -6,7 +6,7 @@ use JIRA::REST;
 use Data::Dumper;
 
 my $editor = $ENV{"EDITOR"} || $ENV{"VISUAL"} || `which emacs` || `which vi`;
-my $default_versions = "1.7";
+my $default_versions = "1.7 1.6";
 my $default_components = "freeswitch-core";
 
 
