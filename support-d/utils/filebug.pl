@@ -93,6 +93,7 @@ if (!$opts{user}) {
 
 if (!$opts{pass} && !$opts{debug}) {
   $opts{pass} = getpass();
+  print "\n";
 }
 
 my $jira;
@@ -163,7 +164,7 @@ my $input = {
 	customfield_10024 => $opts{hash},
 	customfield_10025 => $opts{hash},
 	components => $opts{components_array},
-	affectsVersion => $opts{versions_array}
+	versions => $opts{versions_array}
     },
 };
 
