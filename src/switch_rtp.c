@@ -5570,6 +5570,8 @@ static void handle_nack(switch_rtp_t *rtp_session, uint32_t nack)
 	for (i = 0; i < 16; i++) {
 		if (blp & (1 << i)) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "Also Got NACK for seq %u\n", ntohs(seq) + i + 1);
+			/* If they are missing more than one, may as well gen a key frame for good measure */
+			switch_core_media_gen_key_frame(rtp_session->session);
 			if (switch_vb_get_packet_by_seq(rtp_session->vbw, htons(ntohs(seq) + i + 1), (switch_rtp_packet_t *) &send_msg, &bytes) == SWITCH_STATUS_SUCCESS) {
 				if (rtp_session->flags[SWITCH_RTP_FLAG_DEBUG_RTP_WRITE]) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(rtp_session->session), SWITCH_LOG_CONSOLE,
