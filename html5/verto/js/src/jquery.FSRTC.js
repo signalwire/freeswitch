@@ -1040,7 +1040,11 @@ var iceTimer;
     var checkRes = function (cam, func) {
 
 	if (resI >= resList.length) {
-	    if (func) return func();
+            var res = {
+               'validRes': $.FSRTC.validRes,
+               'bestResSupported': $.FSRTC.bestResSupported()
+            };
+	    if (func) return func(res);
 	    return;
 	}
 

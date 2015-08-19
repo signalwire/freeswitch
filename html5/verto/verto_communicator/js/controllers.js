@@ -2,12 +2,14 @@
 
 /* Controllers */
 
-var vertoControllers = angular.module('vertoControllers', ['ui.bootstrap', 'vertoService', 'storageService']);
+var vertoControllers = angular.module('vertoControllers', ['ui.bootstrap',
+  'vertoService', 'storageService'
+]);
 
 
 vertoControllers.filter('gravatar',
   function() {
-    return function (email, size) {
+    return function(email, size) {
       if (angular.isUndefined(size)) {
         size = 40;
       }
@@ -17,8 +19,11 @@ vertoControllers.filter('gravatar',
   });
 
 
-vertoControllers.controller('MainController', ['$scope', '$rootScope', '$location', '$modal', '$timeout', 'verto', 'storage', 'toastr', 'Fullscreen', 'prompt',
-  function($scope, $rootScope, $location, $modal, $timeout, verto, storage, toastr, Fullscreen, prompt) {
+vertoControllers.controller('MainController', ['$scope', '$rootScope',
+  '$location', '$modal', '$timeout', 'verto', 'storage', 'toastr',
+  'Fullscreen', 'prompt',
+  function($scope, $rootScope, $location, $modal,
+    $timeout, verto, storage, toastr, Fullscreen, prompt) {
     console.debug('Executing MainController.');
 
     var myVideo = document.getElementById("webcam");
@@ -42,7 +47,7 @@ vertoControllers.controller('MainController', ['$scope', '$rootScope', '$locatio
     /**
      * if user data saved, use stored data for logon
      */
-    if(storage.data.ui_connected && storage.data.ws_connected) {
+    if (storage.data.ui_connected && storage.data.ws_connected) {
       $scope.verto.data.name = storage.data.name;
       $scope.verto.data.email = storage.data.email;
       $scope.verto.data.login = storage.data.login;
@@ -50,7 +55,7 @@ vertoControllers.controller('MainController', ['$scope', '$rootScope', '$locatio
 
       verto.connect(function(v, connected) {
         $scope.$apply(function() {
-          if(connected) {
+          if (connected) {
             toastr.success('Nice to see you again.', 'Welcome back');
             $location.path('/dialpad');
           }
@@ -84,7 +89,8 @@ vertoControllers.controller('MainController', ['$scope', '$rootScope', '$locatio
             toastr.success('Login successful.', 'Welcome');
             $location.path('/dialpad');
           } else {
-            toastr.error('There was an error while trying to login. Please try again.', 'Error');
+            toastr.error('There was an error while trying to login. \
+            Please try again.', 'Error');
           }
         });
       };
@@ -114,7 +120,7 @@ vertoControllers.controller('MainController', ['$scope', '$rootScope', '$locatio
         verto.hangup();
       }
 
-      if(verto.data.call) {
+      if (verto.data.call) {
         prompt({
           title: 'Oops, Active Call in Course.',
           message: 'It seems that you are in a call. Do you want to hang up?'
@@ -130,7 +136,7 @@ vertoControllers.controller('MainController', ['$scope', '$rootScope', '$locatio
     /**
      * Shows a modal with the settings.
      */
-    $scope.openModalSettings = function () {
+    $scope.openModalSettings = function() {
       var modalInstance = $modal.open({
         animation: $scope.animationsEnabled,
         templateUrl: 'partials/modal_settings.html',
@@ -138,18 +144,18 @@ vertoControllers.controller('MainController', ['$scope', '$rootScope', '$locatio
       });
 
       modalInstance.result.then(
-        function (result) {
+        function(result) {
           console.log(result);
         },
-        function () {
+        function() {
           console.info('Modal dismissed at: ' + new Date());
         }
       );
 
       modalInstance.rendered.then(
-       function() {
-         jQuery.material.init();
-       }
+        function() {
+          jQuery.material.init();
+        }
       );
     };
 
@@ -161,18 +167,18 @@ vertoControllers.controller('MainController', ['$scope', '$rootScope', '$locatio
       });
 
       modalInstance.result.then(
-        function (result) {
+        function(result) {
           console.log(result);
         },
-        function () {
+        function() {
           console.info('Modal dismissed at: ' + new Date());
         }
       );
 
       modalInstance.rendered.then(
-       function() {
-         jQuery.material.init();
-       }
+        function() {
+          jQuery.material.init();
+        }
       );
 
     };
@@ -180,8 +186,8 @@ vertoControllers.controller('MainController', ['$scope', '$rootScope', '$locatio
     $scope.showContributors = function() {
       $scope.openModal('partials/contributors.html', 'ContributorsController');
     };
-     
-     /**
+
+    /**
      * Updates the display adding the new number touched.
      *
      * @param {String} number - New touched number.
@@ -203,8 +209,8 @@ vertoControllers.controller('MainController', ['$scope', '$rootScope', '$locatio
     };
 
 
-    $scope.toggleCallHistory = function () {
-      if(!$scope.call_history) {
+    $scope.toggleCallHistory = function() {
+      if (!$scope.call_history) {
         angular.element("#call_history").addClass('active');
         angular.element("#call-history-wrapper").addClass('active');
       } else {
@@ -218,33 +224,33 @@ vertoControllers.controller('MainController', ['$scope', '$rootScope', '$locatio
       storage.data.call_history = [];
     }
 
-    $scope.toggleChat = function () {
-      if($scope.chatStatus && $rootScope.activePane == 'chat') {
+    $scope.toggleChat = function() {
+      if ($scope.chatStatus && $rootScope.activePane == 'chat') {
         $rootScope.chat_counter = 0;
       }
       angular.element('#wrapper').toggleClass('toggled');
       $scope.chatStatus = angular.element('#wrapper').hasClass('toggled');
     };
 
-    $scope.openChat = function () {
+    $scope.openChat = function() {
       $scope.chatStatus = false;
       angular.element('#wrapper').removeClass('toggled');
     };
 
-    $scope.closeChat = function () {
+    $scope.closeChat = function() {
       $scope.chatStatus = true;
       angular.element('#wrapper').addClass('toggled');
     };
 
     $scope.goFullscreen = function() {
-      if(storage.data.userStatus != 'connected') {
+      if (storage.data.userStatus != 'connected') {
         return;
       }
       $rootScope.fullscreenEnabled = !Fullscreen.isEnabled();
-      if(Fullscreen.isEnabled()) {
+      if (Fullscreen.isEnabled()) {
         Fullscreen.cancel();
       } else {
-        Fullscreen.enable( document.getElementsByTagName('body')[0] );
+        Fullscreen.enable(document.getElementsByTagName('body')[0]);
       }
     }
 
@@ -253,34 +259,34 @@ vertoControllers.controller('MainController', ['$scope', '$rootScope', '$locatio
     });
 
     $rootScope.$on('call.hangup', function(event, data) {
-      if(Fullscreen.isEnabled()) {
+      if (Fullscreen.isEnabled()) {
         Fullscreen.cancel();
       }
 
 
       console.log($scope.chatStatus);
-      if(!$scope.chatStatus) {
+      if (!$scope.chatStatus) {
         angular.element('#wrapper').toggleClass('toggled');
         $scope.chatStatus = angular.element('#wrapper').hasClass('toggled');
       }
-      
+
       $rootScope.dialpadNumber = '';
       console.debug('Redirecting to dialpad page.');
       $location.path('/dialpad');
 
       try {
         $rootScope.$digest();
-      } catch(e) {
+      } catch (e) {
         console.log('not digest');
       }
     });
 
-    $rootScope.$on('page.incall', function (event, data) {
+    $rootScope.$on('page.incall', function(event, data) {
       prompt({
         title: 'Oops, Active Call in Course.',
         message: 'It seems you were in a call before leaving the last time. Wanna go back to that?'
       }).then(function() {
-        verto.changeData(storage.data.verto);
+        verto.changeData(angular.fromJson(storage.data.verto));
         console.log('redirect to incall page');
         $location.path('/incall');
       }, function() {
@@ -292,8 +298,8 @@ vertoControllers.controller('MainController', ['$scope', '$rootScope', '$locatio
     $rootScope.callActive = function(data) {
       verto.data.mutedMic = storage.data.mutedMic;
       verto.data.mutedVideo = storage.data.mutedVideo;
-      
-      if(!storage.data.cur_call) {
+
+      if (!storage.data.cur_call) {
         storage.data.call_start = new Date();
       }
       storage.data.userStatus = 'connected';
@@ -312,7 +318,7 @@ vertoControllers.controller('MainController', ['$scope', '$rootScope', '$locatio
     $rootScope.$on('call.active', function(event, data) {
       $rootScope.callActive(data);
     });
-    
+
     $rootScope.$on('call.calling', function(event, data) {
       storage.data.calling = true;
     });
@@ -336,12 +342,22 @@ vertoControllers.controller('MainController', ['$scope', '$rootScope', '$locatio
 
         $scope.answerCall();
         storage.data.called_number = data;
-        
-        storage.data.call_history.unshift({'number': data, 'direction': 'inbound', 'status': true, 'call_start': Date()});
+
+        storage.data.call_history.unshift({
+          'number': data,
+          'direction': 'inbound',
+          'status': true,
+          'call_start': Date()
+        });
         $location.path('/incall');
       }, function() {
         $scope.declineCall();
-        storage.data.call_history.unshift({'number': data, 'direction': 'inbound', 'status': false, 'call_start': Date()});
+        storage.data.call_history.unshift({
+          'number': data,
+          'direction': 'inbound',
+          'status': false,
+          'call_start': Date()
+        });
       });
     });
 
@@ -374,7 +390,7 @@ vertoControllers.controller('MainController', ['$scope', '$rootScope', '$locatio
 
     $scope.answerCall = function() {
       storage.data.onHold = false;
-      
+
       verto.data.call.answer({
         useStereo: verto.data.useStereo,
         useCamera: verto.data.useCamera,
@@ -383,7 +399,7 @@ vertoControllers.controller('MainController', ['$scope', '$rootScope', '$locatio
         callee_id_number: verto.data.login
       });
 
-      
+
       $location.path('/incall');
     };
 
@@ -393,7 +409,7 @@ vertoControllers.controller('MainController', ['$scope', '$rootScope', '$locatio
     };
 
     $scope.screenshare = function() {
-      if(verto.data.shareCall) {
+      if (verto.data.shareCall) {
         verto.screenshareHangup();
         return false;
       }
@@ -401,10 +417,11 @@ vertoControllers.controller('MainController', ['$scope', '$rootScope', '$locatio
     };
 
     $scope.play = function() {
-      var file = $scope.promptInput('Please, enter filename', '', 'File', function(file) {
-        verto.data.conf.play(file);
-        console.log('play file :', file);
-      });
+      var file = $scope.promptInput('Please, enter filename', '', 'File',
+        function(file) {
+          verto.data.conf.play(file);
+          console.log('play file :', file);
+        });
 
     };
 
@@ -413,10 +430,11 @@ vertoControllers.controller('MainController', ['$scope', '$rootScope', '$locatio
     };
 
     $scope.record = function() {
-      var file = $scope.promptInput('Please, enter filename', '', 'File', function(file) {
-         verto.data.conf.record(file);
-        console.log('recording file :', file);
-      });
+      var file = $scope.promptInput('Please, enter filename', '', 'File',
+        function(file) {
+          verto.data.conf.record(file);
+          console.log('recording file :', file);
+        });
     };
 
     $scope.stopRecord = function() {
@@ -424,18 +442,22 @@ vertoControllers.controller('MainController', ['$scope', '$rootScope', '$locatio
     };
 
     $scope.snapshot = function() {
-      var file = $scope.promptInput('Please, enter filename', '', 'File', function(file) {
-        verto.data.conf.snapshot(file);
-        console.log('snapshot file :', file);
-      });
+      var file = $scope.promptInput('Please, enter filename', '', 'File',
+        function(file) {
+          verto.data.conf.snapshot(file);
+          console.log('snapshot file :', file);
+        });
     };
 
 
-  }]);
+  }
+]);
 
 
-vertoControllers.controller('ChatController', ['$scope', '$rootScope', '$http', '$location', '$anchorScroll', '$timeout', 'verto',
-  function($scope, $rootScope, $http, $location, $anchorScroll, $timeout, verto) {
+vertoControllers.controller('ChatController', ['$scope', '$rootScope', '$http',
+  '$location', '$anchorScroll', '$timeout', 'verto',
+  function($scope, $rootScope, $http, $location, $anchorScroll, $timeout,
+    verto) {
     console.debug('Executing ChatController.');
 
     function scrollToChatBottom() {
@@ -457,7 +479,7 @@ vertoControllers.controller('ChatController', ['$scope', '$rootScope', '$http', 
     clearConferenceChat();
 
     $scope.$watch('activePane', function() {
-      if($scope.activePane == 'chat') {
+      if ($scope.activePane == 'chat') {
         $rootScope.chat_counter = 0;
       }
       $rootScope.activePane = $scope.activePane;
@@ -468,11 +490,12 @@ vertoControllers.controller('ChatController', ['$scope', '$rootScope', '$http', 
       console.log('chat.newMessage', data);
       $scope.$apply(function() {
         $scope.messages.push(data);
-        if(data.from != verto.data.name && (!$scope.chatStatus || $scope.activePane != 'chat')) {
+        if (data.from != verto.data.name && (!$scope.chatStatus ||
+            $scope.activePane != 'chat')) {
           ++$rootScope.chat_counter;
         }
         $timeout(function() {
-            scrollToChatBottom();
+          scrollToChatBottom();
         }, 300);
       });
     });
@@ -542,8 +565,9 @@ vertoControllers.controller('ChatController', ['$scope', '$rootScope', '$http', 
       if (memberIdx < 0) {
         console.log('Didn\'t find the member uuid ' + member.uuid);
       } else {
-        $scope.$apply(function () {
-          console.log('Updating', memberIdx, ' <', $scope.members[memberIdx], '> with <', member, '>');
+        $scope.$apply(function() {
+          console.log('Updating', memberIdx, ' <', $scope.members[memberIdx],
+            '> with <', member, '>');
           angular.extend($scope.members[memberIdx], member);
         });
       }
@@ -612,24 +636,32 @@ vertoControllers.controller('ChatController', ['$scope', '$rootScope', '$http', 
       var exten = '1800';
       verto.data.conf.transfer(memberID, exten);
     };
-  }]);
+  }
+]);
 
 
-vertoControllers.controller('MenuController', ['$scope', '$http', '$location', 'verto', 'storage',
+vertoControllers.controller('MenuController', ['$scope', '$http', '$location',
+  'verto', 'storage',
   function($scope, $http, $location, verto, storage) {
     console.debug('Executing MenuController.');
-  }]);
+  }
+]);
 
 
-vertoControllers.controller('ModalSettingsController', ['$scope', '$http', '$location', '$modalInstance', 'verto', 'storage',
+vertoControllers.controller('ModalSettingsController', ['$scope', '$http',
+  '$location', '$modalInstance', 'verto', 'storage',
   function($scope, $http, $location, $modalInstance, verto, storage) {
     console.debug('Executing ModalSettingsController.');
-    $scope.verto = storage.data.verto;
+
+
+    $scope.verto = verto;
+    $scope.verto = angular.fromJson(storage.data.verto);
     $scope.storage = storage;
 
     $scope.ok = function() {
       $modalInstance.close('Ok.');
-      verto.changeData(storage.data.verto);
+      storage.data.verto = angular.toJson($scope.verto);
+      verto.changeData($scope.verto);
     };
 
     $scope.cancel = function() {
@@ -639,9 +671,11 @@ vertoControllers.controller('ModalSettingsController', ['$scope', '$http', '$loc
     $scope.refreshDeviceList = function() {
       verto.refreshDevices();
     }
-  }]);
+  }
+]);
 
-vertoControllers.controller('ModalLoginInformationController', ['$scope', '$http', '$location', '$modalInstance', 'verto', 'storage',
+vertoControllers.controller('ModalLoginInformationController', ['$scope',
+  '$http', '$location', '$modalInstance', 'verto', 'storage',
   function($scope, $http, $location, $modalInstance, verto, storage) {
     console.debug('Executing ModalLoginInformationController.');
 
@@ -656,9 +690,11 @@ vertoControllers.controller('ModalLoginInformationController', ['$scope', '$http
       $modalInstance.dismiss('cancel');
     };
 
-  }]);
+  }
+]);
 
-vertoControllers.controller('LoginController', ['$scope', '$http', '$location', 'verto',
+vertoControllers.controller('LoginController', ['$scope', '$http', '$location',
+  'verto',
   function($scope, $http, $location, verto) {
     $scope.checkBrowser();
 
@@ -667,16 +703,18 @@ vertoControllers.controller('LoginController', ['$scope', '$http', '$location', 
      */
     verto.data.name = $scope.storage.data.name;
     verto.data.email = $scope.storage.data.email;
-    if($scope.storage.data.login != '' && $scope.storage.data.password != '') {
+    if ($scope.storage.data.login != '' && $scope.storage.data.password != '') {
       verto.data.login = $scope.storage.data.login;
       verto.data.password = $scope.storage.data.password;
     }
 
     console.debug('Executing LoginController.');
-  }]);
+  }
+]);
 
 
-vertoControllers.controller('DialPadController', ['$rootScope', '$scope', '$http', '$location', 'toastr', 'verto', 'storage',
+vertoControllers.controller('DialPadController', ['$rootScope', '$scope',
+  '$http', '$location', 'toastr', 'verto', 'storage',
   function($rootScope, $scope, $http, $location, toastr, verto, storage) {
     console.debug('Executing DialPadController.');
 
@@ -684,11 +722,11 @@ vertoControllers.controller('DialPadController', ['$rootScope', '$scope', '$http
     storage.data.videoCall = false;
     storage.data.userStatus = 'connecting';
     storage.data.calling = false;
-    
+
     /**
      * fill dialpad via querystring [?autocall=\d+]
      */
-    if($location.search().autocall) {
+    if ($location.search().autocall) {
       $rootScope.dialpadNumber = $location.search().autocall;
     }
 
@@ -701,12 +739,12 @@ vertoControllers.controller('DialPadController', ['$rootScope', '$scope', '$http
     };
 
     $rootScope.transfer = function() {
-      if(!$rootScope.dialpadNumber) {
+      if (!$rootScope.dialpadNumber) {
         return false;
       }
       verto.data.call.transfer($rootScope.dialpadNumber);
     };
- 
+
     /**
      * Call to the number in the $rootScope.dialpadNumber.
      */
@@ -714,7 +752,7 @@ vertoControllers.controller('DialPadController', ['$rootScope', '$scope', '$http
       storage.data.onHold = false;
       storage.data.cur_call = 0;
       $rootScope.dialpadNumber = extension;
-      if(!$rootScope.dialpadNumber && storage.data.called_number) {
+      if (!$rootScope.dialpadNumber && storage.data.called_number) {
         $rootScope.dialpadNumber = storage.data.called_number;
         return false;
       } else if (!$rootScope.dialpadNumber && !storage.data.called_number) {
@@ -726,22 +764,30 @@ vertoControllers.controller('DialPadController', ['$rootScope', '$scope', '$http
         console.debug('A call is already in progress.');
         return false;
       }
-      
+
       storage.data.mutedVideo = false;
       storage.data.mutedMic = false;
 
       storage.data.videoCall = false;
       verto.call($rootScope.dialpadNumber);
-      
+
       storage.data.called_number = $rootScope.dialpadNumber;
-      storage.data.call_history.unshift({'number': $rootScope.dialpadNumber, 'direction': 'outbound', 'call_start': Date()});
+      storage.data.call_history.unshift({
+        'number': $rootScope.dialpadNumber,
+        'direction': 'outbound',
+        'call_start': Date()
+      });
       $location.path('/incall');
     }
-  }]);
+  }
+]);
 
 
-vertoControllers.controller('InCallController', ['$rootScope', '$scope', '$http', '$location', '$modal', '$timeout', 'toastr', 'verto', 'storage', 'prompt', 'Fullscreen',
-  function($rootScope, $scope, $http, $location, $modal, $timeout, toatr, verto, storage, prompt, Fullscreen) {
+vertoControllers.controller('InCallController', ['$rootScope', '$scope',
+  '$http', '$location', '$modal', '$timeout', 'toastr', 'verto', 'storage', 'prompt', 'Fullscreen',
+  function($rootScope, $scope, $http, $location, $modal, $timeout, toatr,
+    verto, storage, prompt, Fullscreen) {
+
     console.debug('Executing InCallController.');
     $scope.layout = null;
     $scope.checkBrowser();
@@ -749,25 +795,26 @@ vertoControllers.controller('InCallController', ['$rootScope', '$scope', '$http'
     $scope.callTemplate = 'partials/phone_call.html';
     $scope.dialpadTemplate = '';
     $scope.incall = true;
-    
 
-    if(storage.data.videoCall) {
+
+    if (storage.data.videoCall) {
       $scope.callTemplate = 'partials/video_call.html';
     }
-    
+
     $rootScope.$on('call.video', function(event, data) {
       $timeout(function() {
         $scope.callTemplate = 'partials/video_call.html';
       });
     });
-   
+
     /**
      * toggle dialpad in incall page
      */
     $scope.toggleDialpad = function() {
-      $scope.openModal('partials/dialpad_widget.html', 'ModalDialpadController');
-      
-      /* 
+      $scope.openModal('partials/dialpad_widget.html',
+        'ModalDialpadController');
+
+      /*
       if(!$scope.dialpadTemplate) {
         $scope.dialpadTemplate = 'partials/dialpad_widget.html';
       } else {
@@ -775,7 +822,7 @@ vertoControllers.controller('InCallController', ['$rootScope', '$scope', '$http'
       }
       */
     }
-    
+
     /**
      * TODO: useless?
      */
@@ -803,52 +850,61 @@ vertoControllers.controller('InCallController', ['$rootScope', '$scope', '$http'
 
     $scope.muteMic = verto.muteMic;
     $scope.muteVideo = verto.muteVideo;
-    
-     $timeout(function() {
-       console.log('broadcast time-start incall');
-       $scope.$broadcast('timer-start');
-     }, 1000);
 
-  }]);
+    $timeout(function() {
+      console.log('broadcast time-start incall');
+      $scope.$broadcast('timer-start');
+    }, 1000);
 
-vertoControllers.controller('ModalDialpadController', ['$scope', '$modalInstance', function($scope, $modalInstance) {
-  
-  $scope.ok = function() {
-    $modalInstance.close('Ok.');
-  };
+  }
+]);
 
-  $scope.cancel = function() {
-    $modalInstance.dismiss('cancel');
-  };
+vertoControllers.controller('ModalDialpadController', ['$scope',
+  '$modalInstance',
+  function($scope, $modalInstance) {
 
-}]);
+    $scope.ok = function() {
+      $modalInstance.close('Ok.');
+    };
 
-vertoControllers.controller('BrowserUpgradeController', ['$scope', '$http', '$location', 'verto', 'storage', 'Fullscreen',
+    $scope.cancel = function() {
+      $modalInstance.dismiss('cancel');
+    };
+
+  }
+]);
+
+vertoControllers.controller('BrowserUpgradeController', ['$scope', '$http',
+  '$location', 'verto', 'storage', 'Fullscreen',
   function($scope, $http, $location, verto, storage, Fullscreen) {
     console.debug('Executing BrowserUpgradeController.');
 
-}]);
+  }
+]);
 
-vertoControllers.controller('ContributorsController', ['$scope', '$http', 'toastr', function($scope, $http, toastr) {
-  $http.get(window.location.pathname+'/contributors.txt')
-    .success(function(data) {
+vertoControllers.controller('ContributorsController', ['$scope', '$http',
+  'toastr',
+  function($scope, $http, toastr) {
+    $http.get(window.location.pathname + '/contributors.txt')
+      .success(function(data) {
 
-      var contributors = [];
+        var contributors = [];
 
-      angular.forEach(data, function(value, key) {
-        var re = /(.*) <(.*)>/;
-        var name = value.replace(re, "$1");
-        var email = value.replace(re, "$2");
+        angular.forEach(data, function(value, key) {
+          var re = /(.*) <(.*)>/;
+          var name = value.replace(re, "$1");
+          var email = value.replace(re, "$2");
 
-        this.push({
-          'name': name,
-          'email': email
-        });
-      }, contributors);
-        
-      $scope.contributors = contributors;
-    })
-    .error(function() {
-      toastr.error('contributors not found.');
-    });
-}]);
+          this.push({
+            'name': name,
+            'email': email
+          });
+        }, contributors);
+
+        $scope.contributors = contributors;
+      })
+      .error(function() {
+        toastr.error('contributors not found.');
+      });
+  }
+]);
