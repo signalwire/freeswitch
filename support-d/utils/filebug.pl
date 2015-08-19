@@ -1,10 +1,15 @@
 #!/usr/bin/perl
 #use strict;
-
 use Getopt::Long qw(GetOptions);
 use Term::ReadKey;
 use JIRA::REST;
 use Data::Dumper;
+
+my $editor = $ENV{"EDITOR"} || $ENV{"VISUAL"} || `which emacs` || `which vi`;
+my $default_versions = "1.7";
+my $default_components = "freeswitch-core";
+
+
 
 sub getpass {
   ReadMode( "noecho");
@@ -14,23 +19,35 @@ sub getpass {
   return $pwd;
 }
 
-sub getuser {
-  print "User: ";
-  chomp (my $usr = <>);
-  return $usr;
+sub getfield {
+    my $prompt = shift;
+    my $default = shift;
+
+    print $prompt . ($default ? "[$default]: " : "");
+    chomp (my $data = <>);
+    if (!$data) {
+	$data = $default;
+    }
+    return $data;
 }
 
 sub get_text {
-  my @chars = ("A".."Z", "a".."z");
-  my $string;
-  $string .= $chars[rand @chars] for 1..8;
+    my $text = shift;
 
-  my $editor = $ENV{"EDITOR"} || $ENV{"VISUAL"} || `which emacs` || `which vi`;
+    my @chars = ("A".."Z", "a".."z");
+    my $string;
+    $string .= $chars[rand @chars] for 1..8;
+    
+    if ($text) {
+	open O, ">/tmp/TEXT.$string";
+	print O $text;
+	close O;
+    }
 
-  system("$editor /tmp/TEXT.$string");
-  my $text = `cat /tmp/TEXT.$string`;
-  unlink("/tmp/TEXT.$string");
-  return $text;
+    system("$editor /tmp/TEXT.$string");
+    my $newtext = `cat /tmp/TEXT.$string`;
+    unlink("/tmp/TEXT.$string");
+    return $newtext;
 }
 
 my %opts;
@@ -39,32 +56,39 @@ my $hashtxt = `git log -1 --oneline 2>/dev/null`;
 my ($hash) = split(" ", $hashtxt);
 
 GetOptions(
-	   'project=s' => \$opts{project},
-	   'summary=s' => \$opts{summary},
-	   'desc=s' => \$opts{desc},
-	   'components=s' => \$opts{components},
-	   'hash=s' => \$opts{hash},
-	   'user=s' => \$opts{user},
-	   'pass=s' => \$opts{pass},
-	   'type=s' => \$opts{type},
-	   'debug' => \$opts{debug},
-	  ) or die "Usage: $0 -summary <summary> -desc <desc> [-debug] ....\n";
+    'project=s' => \$opts{project},
+    'summary=s' => \$opts{summary},
+    'desc=s' => \$opts{desc},
+    'components=s' => \$opts{components},
+    'hash=s' => \$opts{hash},
+    'user=s' => \$opts{user},
+    'pass=s' => \$opts{pass},
+    'type=s' => \$opts{type},
+    'versions=s' => \$opts{versions},
+    'noedit' => \$opts{noedit},
+    'askall' => \$opts{askall},
+    'debug' => \$opts{debug},
+    ) or die "Usage: $0 -summary <summary> -desc <desc> [-debug] ....\n";
 
 
 $opts{project} or $opts{project} = "FS";
 
-if ($opts{components}) {
-  $opts{components_array} = [map {{name => $_}} split(" ", $opts{components})];
+if ($opts{versions}) {
+    $opts{versions_array} = [map {{name => $_}} split(" ", $opts{versions})];
 } else {
-  $opts{components_array} = [map {{name => $_}} qw(freeswitch-core)];
+    $opts{versions_array} = [map {{name => $_}} ($default_versions)];
+    $opts{versions} = $default_versions;;
 }
 
-
-#print Dumper \%opts;
-#exit;
+if ($opts{components}) {
+    $opts{components_array} = [map {{name => $_}} split(" ", $opts{components})];
+} else {
+    $opts{components_array} = [map {{name => $_}} ($default_components)];
+    $opts{components} = $default_components;
+}
 
 if (!$opts{user}) {
-  $opts{user} = getuser();
+  $opts{user} = getfield("User: ");
 }
 
 if (!$opts{pass} && !$opts{debug}) {
@@ -86,24 +110,48 @@ if (!$opts{type}) {
   $opts{type} = "Bug";
 }
 
-if (!$opts{summary}) {
-  die "missing summary:";
+if (!$opts{hash}) {
+    $opts{hash} = $hash;
+
+    if (!$opts{hash}) {
+	$opts{hash} = "N/A";
+    }
+}
+
+if ($opts{askall}) {
+    $opts{project} = getfield("Project: ", $opts{project});
+    $opts{type} = getfield("Type: ", $opts{type});
+    $opts{versions} = getfield("Versions: ", $opts{versions});
+    $opts{versions_array} = [map {{name => $_}} split(" ", $opts{versions})];
+    $opts{summary} = getfield("Summary: ", $opts{summary});
+    $opts{components} = getfield("Components: ", $opts{components});
+    $opts{components_array} = [map {{name => $_}} split(" ", $opts{components})];
+    $opts{hash} = getfield("GIT Hash: ", $opts{hash});
+
+    if ($opts{noedit}) {
+	$opts{desc} = getfield("Description: ", $opts{desc});
+    } else {
+	$opts{desc} = get_text($opts{desc});
+    }
 }
 
 if (!$opts{desc}) {
-  $opts{desc} = get_text();
+    if ($opts{noedit}) {
+	$opts{desc} = getfield("Description: ", $opts{desc});
+    } else {
+	$opts{desc} = get_text($opts{desc});
+    }
 
-  if (!$opts{desc}) {
-    die "missing desc:";
-  }
+    if (!$opts{desc}) {
+	die "missing desc:";
+    }
 }
 
-if (!$opts{hash}) {
-  $opts{hash} = $hash;
-
-  if (!$opts{hash}) {
-    $opts{hash} = "N/A";
-  }
+if (!$opts{summary}) {
+    $opts{summary} = getfield("Summary: ", $opts{summary});
+    if (!$opts{summary}) {
+	die "Summary is mandatory.";
+    }
 }
 
 my $input = { 
@@ -114,7 +162,8 @@ my $input = {
 	description => $opts{desc},
 	customfield_10024 => $opts{hash},
 	customfield_10025 => $opts{hash},
-	components => $opts{components_array}
+	components => $opts{components_array},
+	affectsVersion => $opts{versions_array}
     },
 };
 
