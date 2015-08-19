@@ -39,6 +39,7 @@ my $hashtxt = `git log -1 --oneline 2>/dev/null`;
 my ($hash) = split(" ", $hashtxt);
 
 GetOptions(
+	   'project=s' => \$opts{project},
 	   'summary=s' => \$opts{summary},
 	   'desc=s' => \$opts{desc},
 	   'components=s' => \$opts{components},
@@ -46,8 +47,11 @@ GetOptions(
 	   'user=s' => \$opts{user},
 	   'pass=s' => \$opts{pass},
 	   'type=s' => \$opts{type},
-	  ) or die "Usage: $0 -summary <summary> -desc <desc> ....\n";
+	   'debug' => \$opts{debug},
+	  ) or die "Usage: $0 -summary <summary> -desc <desc> [-debug] ....\n";
 
+
+$opts{project} or $opts{project} = "FS";
 
 if ($opts{components}) {
   $opts{components_array} = [map {{name => $_}} split(" ", $opts{components})];
@@ -63,12 +67,18 @@ if (!$opts{user}) {
   $opts{user} = getuser();
 }
 
-if (!$opts{pass}) {
+if (!$opts{pass} && !$opts{debug}) {
   $opts{pass} = getpass();
 }
 
-my $jira = JIRA::REST->new('https://freeswitch.org/jira', $opts{user}, $opts{pass}) or die "login incorrect:";
-my $issue = $jira->GET("/issue/FS-7985") or die "login incorrect:";
+my $jira;
+my $issue;
+
+if (!$opts{debug}) {
+    $jira = JIRA::REST->new('https://freeswitch.org/jira', $opts{user}, $opts{pass}) or die "login incorrect:";
+    $issue = $jira->GET("/issue/FS-7985") or die "login incorrect:";
+}
+
 #print $issue->{key};
 #exit;
 
@@ -96,29 +106,23 @@ if (!$opts{hash}) {
   }
 }
 
+my $input = { 
+    fields => {
+	project   => { key => $opts{project} },
+	issuetype => { name => $opts{type} },
+	summary   => $opts{summary},
+	description => $opts{desc},
+	customfield_10024 => $opts{hash},
+	customfield_10025 => $opts{hash},
+	components => $opts{components_array}
+    },
+};
 
-
-my $issue = $jira->POST('/issue', undef, 
-			{ 
-			    fields => {
-				project   => { key => 'FS' },
-				issuetype => { name => $opts{type} },
-				summary   => $opts{summary},
-				description => $opts{desc},
-				customfield_10024 => $opts{hash},
-				customfield_10025 => $opts{hash},
-				components => $opts{components_array}
-			    },
-			}) or die "Issue was not created:";
-
-
-print "Issue Posted: " . $issue->{key};
-
-
-__END__
-
-my $jira = JIRA::REST->new('https://freeswitch.org/jira', $user, $pass);
-
-#$issue = $jira->GET("/issue/FS-7985");
-#print Dumper $issue;
+if ($opts{debug}) {
+    print Dumper \%opts;
+    print Dumper $input;
+} else {
+    $issue = $jira->POST('/issue', undef, $input) or die "Issue was not created:";
+    print "Issue Posted: " . $issue->{key};
+}
 

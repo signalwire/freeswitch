@@ -8,11 +8,15 @@ my %opts;
 
 GetOptions(
     'bug=s' => \$opts{bug},
-    'msg=s' => \$opts{msg}
-    ) or die "Usage: $0 -bug <bug-id> [-m [edit|<msg>]] <files>\n";
+    'msg=s' => \$opts{msg},
+    'debug' => \$opts{debug},
+    'append=s' => \$opts{append},
+    'comment=s' => \$opts{comment}
+    ) or die "Usage: $0 -bug <bug-id> [-m [edit|<msg>]] [-append <msg>] [-debug] <files>\n";
 
 
-$opts{bug} || die "missing bug";;
+$opts{bug} or $opts{bug} = shift;
+
 my $url = "https://freeswitch.org/jira/si/jira.issueviews:issue-xml/$opts{bug}/$opts{bug}.xml";
 my $cmd;
 my $prog = `which curl` || `which wget`;
@@ -46,18 +50,30 @@ if ($opts{msg} eq "edit") {
 my $args = join(" ", @ARGV);
 my $gitcmd;
 
+if ($opts{append}) {
+    $opts{append} = " " . $opts{append};
+}
+
+if ($opts{comment}) {
+    $opts{append} .= " #comment " . $opts{comment};
+}
+
 if ($auto) {
     if ($opts{msg}) {
 	$opts{msg} =~ s/%s/$sum/;
 	$opts{msg} =~ s/%b/$opts{bug}/;
-	$gitcmd = "git commit $args -m \"$opts{msg}\"";
+	$gitcmd = "git commit $args -m \"$opts{msg}$opts{append}\"";
     } else {
-	$gitcmd = "git commit $args -m \"$opts{bug} #resolve [$sum]\"";
+	$gitcmd = "git commit $args -m \"$opts{bug} #resolve [$sum]$opts{append}\"";
     }
 } else {
   $gitcmd = "git commit $args -t /tmp/$opts{bug}.tmp";
 }
 
-system $gitcmd;
+if ($opts{debug}) {
+    print "CMD: $gitcmd\n";
+} else {
+    system $gitcmd;
+}
 
 unlink("/tmp/$opts{bug}.tmp");
