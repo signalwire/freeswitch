@@ -2205,7 +2205,7 @@ typedef struct switch_console_callback_match switch_console_callback_match_t;
 
 typedef void (*switch_media_bug_exec_cb_t)(switch_media_bug_t *bug, void *user_data);
 
-typedef switch_status_t (switch_core_video_thread_callback_func_t) (switch_core_session_t *session, switch_frame_t *frame, void *user_data);
+typedef switch_status_t (*switch_core_video_thread_callback_func_t) (switch_core_session_t *session, switch_frame_t *frame, void *user_data);
 typedef void (*switch_cap_callback_t) (const char *var, const char *val, void *user_data);
 typedef switch_status_t (*switch_console_complete_callback_t) (const char *, const char *, switch_console_callback_match_t **matches);
 typedef switch_bool_t (*switch_media_bug_callback_t) (switch_media_bug_t *, void *, switch_abc_type_t);
