@@ -49,7 +49,7 @@ my $gitcmd;
 if ($auto) {
     if ($opts{msg}) {
 	$opts{msg} =~ s/%s/$sum/;
-	$opts{msg} =~ s/%b/$bug/;
+	$opts{msg} =~ s/%b/$opts{bug}/;
 	$gitcmd = "git commit $args -m \"$opts{msg}\"";
     } else {
 	$gitcmd = "git commit $args -m \"$opts{bug} #resolve [$sum]\"";
