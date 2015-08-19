@@ -571,6 +571,9 @@ static switch_status_t switch_opus_decode(switch_codec_t *codec,
 		plc = 1;
 		encoded_data = NULL;
 		opus_decoder_ctl(context->decoder_object, OPUS_GET_LAST_PACKET_DURATION(&frame_size));
+		if (!frame_size) {
+			frame_size = frame_samples - (frame_samples % (codec->implementation->actual_samples_per_second / 400));
+		}
 
 		if (context->codec_settings.useinbandfec) {
 			fec = 1;
