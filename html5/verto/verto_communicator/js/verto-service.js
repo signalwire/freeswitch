@@ -203,6 +203,9 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location',
       $cookieStore.put('verto_demo_incomingBandwidth', verto_data.data.incomingBandwidth);
       $cookieStore.put('verto_demo_vqual', verto_data.data.vidQual);
 
+      data.selectedVideo = verto_data.data.selectedVideo;
+      data.selectedAudio = verto_data.data.selectedAudio;
+      data.selectedShare = verto_data.data.selectedShare;
       data.useVideo = verto_data.data.useVideo;
       data.useCamera = verto_data.data.useCamera;
       data.useStereo = verto_data.data.useStereo;
@@ -280,7 +283,6 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location',
           });
         }
 
-        data.audioDevices = [];
         for (var i in jQuery.verto.audioDevices) {
           var device = jQuery.verto.audioDevices[i];
           // Selecting the first source.
