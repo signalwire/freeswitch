@@ -2528,6 +2528,9 @@
 
     };
 
+    $.verto.refreshDevices = function(runtime) {
+	checkDevices(runtime);
+    }
 
     $.verto.init = function(obj, runtime) {
 	checkDevices(function() {
