@@ -26,10 +26,17 @@ module.exports = function (grunt) {
           livereload: true
         },
         files: [
+          'index.html',
           'partials/{,*/}*.html',
           'js/{,*/}*.js',
           'images/{,*/}*.{png,jpg,jpeg,gif,webp,svg}'
         ]
+      }
+    },
+    wiredep: {
+      app: {
+        src: ['index.html'],
+        ignorePath:  /\.\.\//
       }
     },
     connect: {
@@ -56,5 +63,5 @@ module.exports = function (grunt) {
     },
   });
 
-  grunt.registerTask('serve', ['connect:livereload', 'watch']);
+  grunt.registerTask('serve', ['wiredep', 'connect:livereload', 'watch']);
 };
