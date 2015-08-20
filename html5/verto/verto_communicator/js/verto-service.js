@@ -234,85 +234,78 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location',
 
       refreshDevices: function(callback) {
         console.debug('Attempting to refresh the devices.');
+        function refreshDevicesCallback() {
+          data.videoDevices = [{
+            id: 'none',
+            label: 'No camera'
+          }];
+          data.shareDevices = [{
+            id: 'screen',
+            label: 'Screen'
+          }];
+          data.audioDevices = [];
 
+          data.selectedVideo = 'none';
+          data.selectedShare = 'screen';
+          data.selectedAudio = null;
 
-        data.videoDevices = [{
-          id: 'none',
-          label: 'No camera'
-        }];
-        data.shareDevices = [{
-          id: 'screen',
-          label: 'Screen'
-        }];
-        data.audioDevices = [];
+          for (var i in jQuery.verto.videoDevices) {
+            var device = jQuery.verto.videoDevices[i];
+            if (!device.label) {
+              data.videoDevices.push({
+                id: 'Camera ' + i,
+                label: 'Camera ' + i
+              });
+            } else {
+              data.videoDevices.push({
+                id: device.id,
+                label: device.label || device.id
+              });
+            }
 
-        data.selectedVideo = 'none';
-        data.selectedShare = 'screen';
-        data.selectedAudio = null;
+            // Selecting the first source.
+            if (i == 0) {
+              data.selectedVideo = device.id;
+            }
 
-        for (var i in jQuery.verto.videoDevices) {
-          var device = jQuery.verto.videoDevices[i];
-          if (!device.label) {
-            data.videoDevices.push({
-              id: 'Camera ' + i,
-              label: 'Camera ' + i
-            });
-          } else {
-            data.videoDevices.push({
+            if (!device.label) {
+              data.shareDevices.push({
+                id: 'Share Device ' + i,
+                label: 'Share Device ' + i
+              });
+              continue;
+            }
+
+            data.shareDevices.push({
               id: device.id,
               label: device.label || device.id
             });
           }
 
-          // Selecting the first source.
-          if (i == 0) {
-            data.selectedVideo = device.id;
-          }
+          for (var i in jQuery.verto.audioInDevices) {
+            var device = jQuery.verto.audioInDevices[i];
+            // Selecting the first source.
+            if (i == 0) {
+              data.selectedAudio = device.id;
+            }
 
-          if (!device.label) {
-            data.shareDevices.push({
-              id: 'Share Device ' + i,
-              label: 'Share Device ' + i
-            });
-            continue;
-          }
-
-          data.shareDevices.push({
-            id: device.id,
-            label: device.label || device.id
-          });
-        }
-
-        for (var i in jQuery.verto.audioDevices) {
-          var device = jQuery.verto.audioDevices[i];
-          // Selecting the first source.
-          if (i == 0) {
-            data.selectedAudio = device.id;
-          }
-
-          if (!device.label) {
+            if (!device.label) {
+              data.audioDevices.push({
+                id: 'Microphone ' + i,
+                label: 'Microphone ' + i
+              });
+              continue;
+            }
             data.audioDevices.push({
-              id: 'Microphone ' + i,
-              label: 'Microphone ' + i
+              id: device.id,
+              label: device.label || device.id
             });
-            continue;
           }
-          data.audioDevices.push({
-            id: device.id,
-            label: device.label || device.id
-          });
-        }
+          console.debug('Devices were refreshed.');
+        };
 
-        console.debug('Devices were refreshed.');
+        jQuery.verto.refreshDevices(refreshDevicesCallback);
 
-        if (angular.isFunction(callback)) {
-          var devices = {
-            audio: data.audioDevices,
-            video: data.videoDevices,
-            share: data.shareDevices
-          };
-          callback(data.instance, devices);
-        }
       },
 
       /**
