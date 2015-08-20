@@ -188,7 +188,10 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location',
         minWidth: videoResolution[data.vidQual].width,
         minHeight: videoResolution[data.vidQual].height,
         maxWidth: maxWidth,
-        maxHeight: maxHeight
+        maxHeight: maxHeight,
+        minFrameRate: 15,
+        vertoBestFrameRate: 30
+
       };
     }
 
@@ -549,6 +552,12 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location',
               bar: "yes"
             },
             videoParams: getVideoParams(),
+            // TODO: Add options for this.
+            audioParams: {
+                googAutoGainControl: false,
+                googNoiseSuppression: false,
+                googHighpassFilter: false
+            },
             iceServers: data.useSTUN
           }, callbacks);
 
