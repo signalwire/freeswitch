@@ -89,8 +89,8 @@ var bandwidth = [{
 
 var vertoService = angular.module('vertoService', ['ngCookies']);
 
-vertoService.service('verto', ['$rootScope', '$cookieStore', '$location',
-  function($rootScope, $cookieStore, $location) {
+vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'storage',
+  function($rootScope, $cookieStore, $location, storage) {
     var data = {
       // Connection data.
       instance: null,
@@ -554,9 +554,9 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location',
             videoParams: getVideoParams(),
             // TODO: Add options for this.
             audioParams: {
-                googAutoGainControl: false,
-                googNoiseSuppression: false,
-                googHighpassFilter: false
+                googEchoCancellation: storage.data.googEchoCancellation || false,
+                googNoiseSuppression: storage.data.googNoiseSuppression || false,
+                googHighpassFilter: storage.data.googHighpassFilter || false
             },
             iceServers: data.useSTUN
           }, callbacks);

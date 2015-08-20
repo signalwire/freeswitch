@@ -35,7 +35,10 @@ storageService.service('storage', ['$rootScope', '$localStorage',
       outgoingBandwidth: '',
       incomingBandwidth: '',
       vidQual: '',
-      askRecoverCall: true
+      askRecoverCall: false,
+      googNoiseSuppression: false,
+      googHighpassFilter: false,
+      googEchoCancellation: false
     });
 
     function changeData(verto_data) {
