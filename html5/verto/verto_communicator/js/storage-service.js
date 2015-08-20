@@ -34,7 +34,8 @@ storageService.service('storage', ['$rootScope', '$localStorage',
       mirrorInput: '',
       outgoingBandwidth: '',
       incomingBandwidth: '',
-      vidQual: ''
+      vidQual: '',
+      askRecoverCall: true
     });
 
     function changeData(verto_data) {

@@ -283,17 +283,24 @@ vertoControllers.controller('MainController', ['$scope', '$rootScope',
     });
 
     $rootScope.$on('page.incall', function(event, data) {
-      prompt({
-        title: 'Oops, Active Call in Course.',
-        message: 'It seems you were in a call before leaving the last time. Wanna go back to that?'
-      }).then(function() {
+      if (storage.data.askRecoverCall) {
+        prompt({
+          title: 'Oops, Active Call in Course.',
+          message: 'It seems you were in a call before leaving the last time. Wanna go back to that?'
+        }).then(function() {
+          verto.changeData(storage);
+          console.log('redirect to incall page');
+          $location.path('/incall');
+        }, function() {
+          storage.data.userStatus = 'connecting';
+          verto.hangup();
+        });
+      } else {
         verto.changeData(storage);
         console.log('redirect to incall page');
         $location.path('/incall');
-      }, function() {
-        storage.data.userStatus = 'connecting';
-        verto.hangup();
-      });
+      }
+
     });
 
     $rootScope.callActive = function(data) {
