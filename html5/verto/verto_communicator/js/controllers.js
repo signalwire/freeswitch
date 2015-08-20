@@ -653,9 +653,7 @@ vertoControllers.controller('ModalSettingsController', ['$scope', '$http',
   function($scope, $http, $location, $modalInstance, verto, storage) {
     console.debug('Executing ModalSettingsController.');
 
-
     $scope.verto = verto;
-    $scope.verto = angular.fromJson(storage.data.verto);
     $scope.storage = storage;
 
     $scope.ok = function() {
