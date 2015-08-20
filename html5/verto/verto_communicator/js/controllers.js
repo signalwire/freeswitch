@@ -86,6 +86,7 @@ vertoControllers.controller('MainController', ['$scope', '$rootScope',
             storage.data.password = verto.data.password;
 
             console.debug('Redirecting to dialpad page.');
+            storage.changeData(verto);
             toastr.success('Login successful.', 'Welcome');
             $location.path('/dialpad');
           } else {
@@ -286,7 +287,7 @@ vertoControllers.controller('MainController', ['$scope', '$rootScope',
         title: 'Oops, Active Call in Course.',
         message: 'It seems you were in a call before leaving the last time. Wanna go back to that?'
       }).then(function() {
-        verto.changeData(angular.fromJson(storage.data.verto));
+        verto.changeData(storage);
         console.log('redirect to incall page');
         $location.path('/incall');
       }, function() {
@@ -653,13 +654,13 @@ vertoControllers.controller('ModalSettingsController', ['$scope', '$http',
   function($scope, $http, $location, $modalInstance, verto, storage) {
     console.debug('Executing ModalSettingsController.');
 
+    verto.changeData(storage);
     $scope.verto = verto;
     $scope.storage = storage;
 
     $scope.ok = function() {
+      storage.changeData(verto);
       $modalInstance.close('Ok.');
-      storage.data.verto = angular.toJson($scope.verto);
-      verto.changeData($scope.verto);
     };
 
     $scope.cancel = function() {
