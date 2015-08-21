@@ -84,6 +84,7 @@ override_dh_auto_configure: .stamp-configure
 .stamp-build: .stamp-configure
 	@$(call show_vars)
 	make -j$(NJOBS)
+	make -C libs/esl pymod
 	touch $@
 
 override_dh_auto_build: .stamp-build
@@ -96,6 +97,7 @@ override_dh_strip:
 
 override_dh_auto_install:
 	dh_auto_install
+	dh_auto_install -- -C libs/esl pymod-install
 	mkdir -p debian/tmp/lib/systemd/system
 	install -m0644 debian/freeswitch-systemd.freeswitch.service debian/tmp/lib/systemd/system/freeswitch.service
 	

@@ -306,7 +306,7 @@ Build-Depends:
 # configure options
  libssl-dev, unixodbc-dev, libpq-dev,
  libncurses5-dev, libjpeg62-turbo-dev | libjpeg62-dev | libjpeg8-dev,
- python-dev, erlang-dev,
+ python-dev, python-all-dev, python-support (>= 0.90), erlang-dev,
 # documentation
  doxygen,
 # for APR (not essential for build)
@@ -361,6 +361,15 @@ Architecture: any
 Depends: \${shlibs:Depends}, \${misc:Depends}
 Recommends:
 Suggests: libfreeswitch1-dbg
+Description: Cross-Platform Scalable Multi-Protocol Soft Switch
+ $(debian_wrap "${fs_description}")
+ .
+ This package contains the FreeSWITCH core library.
+
+Package: python-esl 
+Section: python
+Architecture: any
+Depends: \${shlibs:Depends}, \${misc:Depends}, \${python:Depends}
 Description: Cross-Platform Scalable Multi-Protocol Soft Switch
  $(debian_wrap "${fs_description}")
  .
