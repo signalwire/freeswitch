@@ -676,7 +676,7 @@ vertoControllers.controller('ModalSettingsController', ['$scope', '$http',
     };
 
     $scope.refreshDeviceList = function() {
-      verto.refreshDevices();
+      return verto.refreshDevices();
     }
   }
 ]);
