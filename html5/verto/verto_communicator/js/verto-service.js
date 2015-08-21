@@ -248,10 +248,6 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
           }];
           data.audioDevices = [];
 
-          data.selectedVideo = 'none';
-          data.selectedShare = 'screen';
-          data.selectedAudio = null;
-
           for (var i in jQuery.verto.videoDevices) {
             var device = jQuery.verto.videoDevices[i];
             if (!device.label) {
