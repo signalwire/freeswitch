@@ -51,10 +51,6 @@ button.btn i {
   /*height: 50px;*/
 /*}*/
 
-.navbar-nav {
-  background-color: #0d47a1;
-}
-
 .navbar .navbar-nav > li.navbar-item-icon > a {
   padding: 18px;
   height: 60px;
@@ -1033,8 +1029,9 @@ body .modal-body .btn-group .btn.active {
   left: 0;
 }
 
-.navbar {
+body .navbar, body .navbar.navbar {
   height: 67px;
+  background-color: #0d47a1;
 }
 
 .https-message {
