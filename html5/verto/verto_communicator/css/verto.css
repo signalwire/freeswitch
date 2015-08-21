@@ -823,6 +823,14 @@ body .modal-body .btn-group .btn.active {
   float: left;
 }
 
+.chat-members .chat-members-avatar .chat-member-talking {
+  box-shadow: 1px 1px 9px green;
+}
+
+.chat-members .chat-members-avatar .chat-member-muted {
+  box-shadow: 1px 1px 9px red;
+}
+
 .chat-members .chat-members-name {
   margin: 0;
   font-size: 16px;

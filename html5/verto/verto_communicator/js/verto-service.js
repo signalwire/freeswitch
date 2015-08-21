@@ -624,7 +624,10 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
           useCamera: data.selectedVideo,
           useMic: data.selectedAudio,
           dedEnc: data.useDedenc,
-          mirrorInput: data.mirrorInput
+          mirrorInput: data.mirrorInput,
+          userVariables: {
+            email : storage.data.email
+          }
         });
 
         data.call = call;
@@ -657,7 +660,10 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
             useVideo: data.useVideo,
             screenShare: true,
             dedEnc: data.useDedenc,
-            mirrorInput: data.mirrorInput
+            mirrorInput: data.mirrorInput,
+            userVariables: {
+              email : storage.data.email
+            }
           });
 
           data.shareCall = call;

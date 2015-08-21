@@ -3,7 +3,7 @@
 /* Controllers */
 
 var vertoControllers = angular.module('vertoControllers', ['ui.bootstrap',
-  'vertoService', 'storageService'
+  'vertoService', 'storageService', 'ui.gravatar'
 ]);
 
 
@@ -531,7 +531,8 @@ vertoControllers.controller('ChatController', ['$scope', '$rootScope', '$http',
         'number': member[1][1],
         'name': member[1][2],
         'codec': member[1][3],
-        'status': JSON.parse(member[1][4])
+        'status': JSON.parse(member[1][4]),
+        'email': member[1][5].email
       };
     }
 
