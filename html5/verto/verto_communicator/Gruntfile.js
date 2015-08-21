@@ -20,7 +20,7 @@ module.exports = function (grunt) {
     dist: 'dist'
   };
 
-  var ip = grunt.option('ip') || 'localhost';
+  var ip = grunt.option('ip');
 
   // Project configuration.
   grunt.initConfig({
@@ -35,7 +35,7 @@ module.exports = function (grunt) {
       },
       js: {
         files: ['js/verto-service.js'],
-        tasks: ['includereplace:dev']
+        tasks: ['string-replace:dev']
       },
       styles: {
         files: ['<%= config.app %>/css/{,*/}*.css'],
@@ -47,25 +47,20 @@ module.exports = function (grunt) {
     },
 
     // Replace so we can have it properly passed from dev
-    includereplace: {
+    'string-replace': {
       dev: {
-        options: {
-          globals: {
-            ip: ip
-          },
+        files: {
+          '.tmp/js/verto-service.js': '<%= config.app %>/js/verto-service.js'
         },
-        src: 'js/verto-service.js',
-        dest: '.tmp/js/verto-service.js'
-      },
-      prod: {
         options: {
-          globals: {
-            ip: ip
-          },
-        },
-        src: 'js/verto-service.js',
-        dest: 'dist/js/'
-      }      
+          replacements: [
+            {
+              pattern: 'window.location.hostname',
+              replacement: ip
+            }
+          ]
+        }
+      }
     },
     wiredep: {
       app: {
@@ -87,9 +82,9 @@ module.exports = function (grunt) {
       dist: {
         files: [{
           expand: true,
-          cwd: '.tmp/styles/',
+          cwd: '.tmp/css/',
           src: '{,*/}*.css',
-          dest: '.tmp/styles/'
+          dest: '.tmp/css/'
         }]
       }
     },
@@ -120,6 +115,15 @@ module.exports = function (grunt) {
           }
         }
       },
+      dist: {
+        options: {
+          port: 9001,
+          background: false,
+          server: {
+            baseDir: ['dist']
+          }
+        }
+      }
     },
 
     jshint: {
@@ -206,28 +210,34 @@ module.exports = function (grunt) {
       }
     },
 
-    htmlmin: {
-      dist: {
-        options: {
-          collapseBooleanAttributes: true,
-          collapseWhitespace: true,
-          conservativeCollapse: true,
-          removeAttributeQuotes: true,
-          removeCommentsFromCDATA: true,
-          removeEmptyAttributes: true,
-          removeOptionalTags: true,
-          // true would impact styles with attribute selectors
-          removeRedundantAttributes: false,
-          useShortDoctype: true
-        },
-        files: [{
-          expand: true,
-          cwd: '<%= config.dist %>',
-          src: '{,*/}*.html',
-          dest: '<%= config.dist %>'
-        }]
-      }
-    },
+    // htmlmin: {
+    //   dist: {
+    //     options: {
+    //       collapseBooleanAttributes: true,
+    //       collapseWhitespace: true,
+    //       conservativeCollapse: true,
+    //       removeAttributeQuotes: true,
+    //       removeCommentsFromCDATA: true,
+    //       removeEmptyAttributes: true,
+    //       removeOptionalTags: true,
+    //       // true would impact styles with attribute selectors
+    //       removeRedundantAttributes: false,
+    //       useShortDoctype: true
+    //     },
+    //     files: [{
+    //       expand: true,
+    //       cwd: '<%= config.dist %>',
+    //       src: '{,*/}*.html',
+    //       dest: '<%= config.dist %>'
+    //     },
+    //     {
+    //       expand: true,
+    //       cwd: '<%= config.dist %>/partials',
+    //       src: '{,*/}*.html',
+    //       dest: '<%= config.dist %>/partials'
+    //     }]
+    //   }
+    // },
      // ng-annotate tries to make the code safe for minification automatically
      // by using the Angular long form for dependency injection.
      ngAnnotate: {
@@ -251,6 +261,7 @@ module.exports = function (grunt) {
            src: [
              '*.{ico,png,txt}',
              '*.html',
+             'partials/**/*.html',
              'images/{,*/}*.{webp}',
              'css/fonts/{,*/}*.*'
            ]
@@ -262,6 +273,11 @@ module.exports = function (grunt) {
          }, {
            expand: true,
            cwd: 'bower_components/bootstrap/dist',
+           src: 'fonts/*',
+           dest: 'dist'
+         }, {
+           expand: true,
+           cwd: 'bower_components/bootstrap-material-design/dist',
            src: 'fonts/*',
            dest: 'dist'
          }]
@@ -286,13 +302,23 @@ module.exports = function (grunt) {
      },
   });
 
-  grunt.registerTask('serve', ['clean:server',
+  grunt.registerTask('serve', function (target) {
+    var tasks = ['clean:server',
       'wiredep',
       'concurrent:server',
-      'postcss',
-      'includereplace:dev',
+      'postcss'];
+
+    if (ip) {
+      tasks = tasks.concat(['string-replace:dev',
       'browserSync:livereload',
       'watch']);
+    } else {
+      tasks = tasks.concat(['browserSync:livereload',
+      'watch']);
+    }
+    
+    grunt.task.run(tasks);
+  });
   
   grunt.registerTask('build', [
     'clean:dist',
@@ -307,7 +333,7 @@ module.exports = function (grunt) {
     'copy:dist',
     'filerev',
     'usemin',
-    'htmlmin'
+    // 'htmlmin'
   ]);
 
 };
