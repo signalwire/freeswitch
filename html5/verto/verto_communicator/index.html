@@ -11,17 +11,18 @@
 
     <title ng-bind="'[' + title + '] ' + 'FreeSWITCH Verto&trade; Video Transcoding'"></title>
 
+    <!-- bower:css -->
+    <link rel="stylesheet" href="bower_components/bootstrap/dist/css/bootstrap.css" />
+    <link rel="stylesheet" href="bower_components/angular-toastr/dist/angular-toastr.css" />
+    <link rel="stylesheet" href="bower_components/angular-tooltips/dist/angular-tooltips.min.css" />
+    <link rel="stylesheet" href="bower_components/datatables/media/css/jquery.dataTables.css" />
+    <link rel="stylesheet" href="bower_components/bootstrap-material-design/dist/css/material.css" />
+    <link rel="stylesheet" href="bower_components/bootstrap-material-design/dist/css/ripples.css" />
+    <!-- endbower -->
+
     <!-- CSS -->
-    <link rel="stylesheet" type="text/css" href="css/bootstrap/bootstrap.min.css">
-    <!--<link rel="stylesheet" type="text/css" href="css/jquery.mobile.min.css">-->
-    <!--<link rel="stylesheet" type="text/css" href="css/jsontable.css">-->
-    <link rel="stylesheet" type="text/css" href="css/material-design/roboto.min.css">
-    <link rel="stylesheet" type="text/css" href="css/material-design/material.min.css">
-    <link rel="stylesheet" type="text/css" href="css/material-design/material-fullpalette.min.css">
-    <link rel="stylesheet" type="text/css" href="css/material-design/ripples.min.css">
-    <link rel="stylesheet" type="text/css" href="css/angular-toastr/angular-toastr.min.css">
-    <link rel="stylesheet" type="text/css" href="css/angular-tooltips.min.css">
     <link rel="stylesheet" type="text/css" href="css/verto.css">
+
 
     <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
     <!--[if lt IE 9]>
@@ -51,34 +52,38 @@
 
     <video class="hide" id="webcam" autoplay="autoplay" style="width:100%; height:100%; object-fit:inherit;"></video>
 
-    <script type="text/javascript" src="js/3rd-party/getScreenId.js"></script>
-    
-    <script type="text/javascript" src="js/jquery/jquery-2.1.1.min.js"></script>
+   
     <!--<script type="text/javascript" src="js/jquery/jquery.mobile.min.js"></script>-->
-    <script type="text/javascript" src="js/jquery/jquery.json-2.4.min.js"></script>
-    <script type="text/javascript" src="js/jquery/jquery.cookie.js"></script>
-    <script type="text/javascript" src="js/jquery/jquery.dataTables.min.js"></script>
-    <script type="text/javascript" src="js/bootstrap/bootstrap.min.js"></script>
-    <script type="text/javascript" src="js/material-design/material.min.js"></script>
-    <script type="text/javascript" src="js/material-design/ripples.min.js"></script>
 
-    <script type="text/javascript" src="js/angularjs/angular.min.js"></script>
-    <script type="text/javascript" src="js/angularjs/angular-animate.min.js"></script>
-    <script type="text/javascript" src="js/angularjs/angular-route.min.js"></script>
-    <script type="text/javascript" src="js/angularjs/angular-cookies.min.js"></script>
-    <script type="text/javascript" src="js/angularui/ui-bootstrap-tpls-0.13.0.min.js"></script>
-    <script type="text/javascript" src="js/angularjs/angular-timer-all.min.js"></script>
-    <script type="text/javascript" src="js/angularjs/angular-storage.min.js"></script>
-    <script type="text/javascript" src="js/angularjs/angular-fullscreen.js"></script>
-    <script type="text/javascript" src="js/angularjs/angular-prompt.js"></script>
-    <script type="text/javascript" src="js/angularjs/angular-tooltips.min.js"></script>
-    <script type="text/javascript" src="js/angular-toastr/angular-toastr.tpls.min.js"></script>
-    <script type="text/javascript" src="js/angular-gravatar/angular-gravatar.js"></script>
+    <!-- bower:js -->
+    <script src="bower_components/jquery/dist/jquery.js"></script>
+    <script src="bower_components/angular/angular.js"></script>
+    <script src="bower_components/angular-gravatar/build/angular-gravatar.js"></script>
+    <script src="bower_components/bootstrap/dist/js/bootstrap.js"></script>
+    <script src="bower_components/angular-toastr/dist/angular-toastr.tpls.js"></script>
+    <script src="bower_components/angular-route/angular-route.js"></script>
+    <script src="bower_components/angular-bootstrap/ui-bootstrap-tpls.js"></script>
+    <script src="bower_components/angular-prompt/dist/angular-prompt.js"></script>
+    <script src="bower_components/angular-animate/angular-animate.js"></script>
+    <script src="bower_components/angular-cookies/angular-cookies.js"></script>
+    <script src="bower_components/angular-fullscreen/src/angular-fullscreen.js"></script>
+    <script src="bower_components/ngstorage/ngStorage.js"></script>
+    <script src="bower_components/momentjs/moment.js"></script>
+    <script src="bower_components/humanize-duration/humanize-duration.js"></script>
+    <script src="bower_components/angular-timer/dist/angular-timer.js"></script>
+    <script src="bower_components/angular-tooltips/dist/angular-tooltips.min.js"></script>
+    <script src="bower_components/jquery-cookie/jquery.cookie.js"></script>
+    <script src="bower_components/jquery-json/src/jquery.json.js"></script>
+    <script src="bower_components/datatables/media/js/jquery.dataTables.js"></script>
+    <script src="bower_components/bootstrap-material-design/dist/js/material.js"></script>
+    <script src="bower_components/bootstrap-material-design/dist/js/ripples.js"></script>
+    <!-- endbower -->
 
     <script type="text/javascript" src="../js/src/jquery.jsonrpcclient.js"></script>
     <script type="text/javascript" src="../js/src/jquery.FSRTC.js"></script>
     <script type="text/javascript" src="../js/src/jquery.verto.js"></script>
 
+    <script type="text/javascript" src="js/3rd-party/getScreenId.js"></script>
     <script type="text/javascript" src="js/3rd-party/md5.min.js"></script>
     <script type="text/javascript" src="js/filters.js"></script>
     <script type="text/javascript" src="js/verto-service.js"></script>
