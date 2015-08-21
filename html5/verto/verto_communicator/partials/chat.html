@@ -19,7 +19,7 @@
 
     <div ng-repeat="member in members" class="chat-member-item">
       <span class="chat-members-avatar">
-        <img />
+        <img gravatar-size="40" gravatar-src-once="member.email" class="img-circle" ng-class="{'chat-member-talking': member.status.audio.talking, 'chat-member-muted': member.status.audio.muted}" />
       </span>
       <h4 class="chat-members-name">{{ member.name }}</h4>
       <div class="pull-right action-buttons chat-members-action" ng-show="verto.data.confRole == 'moderator'">
