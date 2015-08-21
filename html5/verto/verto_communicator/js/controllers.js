@@ -463,9 +463,9 @@ vertoControllers.controller('MainController', ['$scope', '$rootScope',
 
 
 vertoControllers.controller('ChatController', ['$scope', '$rootScope', '$http',
-  '$location', '$anchorScroll', '$timeout', 'verto',
+  '$location', '$anchorScroll', '$timeout', 'toastr', 'verto', 'storage',
   function($scope, $rootScope, $http, $location, $anchorScroll, $timeout,
-    verto) {
+    toastr, verto, storage) {
     console.debug('Executing ChatController.');
 
     function scrollToChatBottom() {
@@ -496,11 +496,24 @@ vertoControllers.controller('ChatController', ['$scope', '$rootScope', '$http',
     $rootScope.$on('chat.newMessage', function(event, data) {
       data.created_at = new Date();
       console.log('chat.newMessage', data);
+
       $scope.$apply(function() {
         $scope.messages.push(data);
-        if (data.from != verto.data.name && (!$scope.chatStatus ||
-            $scope.activePane != 'chat')) {
+        if(data.from != storage.data.name &&
+           (angular.element('#wrapper').hasClass('toggled') ||
+           $scope.activePane != 'chat')) {
+          toastr.info(data.body, data.from, {onHidden: function(clicked) {
+            if(clicked) {
+              $scope.chatStatus = false;
+              angular.element('#wrapper').removeClass('toggled');
+              $rootScope.activePane = 'chat';
+              $scope.activePane = 'chat';
+              $scope.$apply();
+              return true;
+            }
+          }});
           ++$rootScope.chat_counter;
+          return true;
         }
         $timeout(function() {
           scrollToChatBottom();
@@ -802,7 +815,6 @@ vertoControllers.controller('InCallController', ['$rootScope', '$scope',
     $scope.callTemplate = 'partials/phone_call.html';
     $scope.dialpadTemplate = '';
     $scope.incall = true;
-
 
     if (storage.data.videoCall) {
       $scope.callTemplate = 'partials/video_call.html';
