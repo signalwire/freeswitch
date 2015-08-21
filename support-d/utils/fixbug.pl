@@ -43,7 +43,7 @@ if ($opts{msg} eq "edit") {
   $auto = 0;
   $opts{msg} = undef;
   open T, ">/tmp/$opts{bug}.tmp";
-  print T "$opts{bug} #resolve [$sum]\n\n";
+  print T "$opts{bug} #resolve [$sum]\n\n---Cut this line to confirm commit.....";
   close T;
 }
 
