@@ -15,7 +15,7 @@ vertoControllers.filter('gravatar',
       }
       var hash = md5(email);
       return 'https://secure.gravatar.com/avatar/' + hash + '?s=' + size + '&d=mm';
-    }
+    };
   });
 
 
@@ -90,8 +90,7 @@ vertoControllers.controller('MainController', ['$scope', '$rootScope',
             toastr.success('Login successful.', 'Welcome');
             $location.path('/dialpad');
           } else {
-            toastr.error('There was an error while trying to login. \
-            Please try again.', 'Error');
+            toastr.error('There was an error while trying to login. Please try again.', 'Error');
           }
         });
       };
@@ -119,7 +118,7 @@ vertoControllers.controller('MainController', ['$scope', '$rootScope',
         verto.disconnect(disconnectCallback);
 
         verto.hangup();
-      }
+      };
 
       if (verto.data.call) {
         prompt({
@@ -223,10 +222,10 @@ vertoControllers.controller('MainController', ['$scope', '$rootScope',
 
     $scope.clearCallHistory = function() {
       storage.data.call_history = [];
-    }
+    };
 
     $scope.toggleChat = function() {
-      if ($scope.chatStatus && $rootScope.activePane == 'chat') {
+      if ($scope.chatStatus && $rootScope.activePane === 'chat') {
         $rootScope.chat_counter = 0;
       }
       angular.element('#wrapper').toggleClass('toggled');
@@ -244,7 +243,7 @@ vertoControllers.controller('MainController', ['$scope', '$rootScope',
     };
 
     $scope.goFullscreen = function() {
-      if (storage.data.userStatus != 'connected') {
+      if (storage.data.userStatus !== 'connected') {
         return;
       }
       $rootScope.fullscreenEnabled = !Fullscreen.isEnabled();
@@ -253,7 +252,7 @@ vertoControllers.controller('MainController', ['$scope', '$rootScope',
       } else {
         Fullscreen.enable(document.getElementsByTagName('body')[0]);
       }
-    }
+    };
 
     $rootScope.$on('call.video', function(event) {
       storage.data.videoCall = true;

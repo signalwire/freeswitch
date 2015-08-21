@@ -11,6 +11,7 @@
 
     <title ng-bind="'[' + title + '] ' + 'FreeSWITCH Verto&trade; Video Transcoding'"></title>
 
+    <!-- build:css(.) css/vendor.css -->
     <!-- bower:css -->
     <link rel="stylesheet" href="bower_components/bootstrap/dist/css/bootstrap.css" />
     <link rel="stylesheet" href="bower_components/angular-toastr/dist/angular-toastr.css" />
@@ -19,9 +20,12 @@
     <link rel="stylesheet" href="bower_components/bootstrap-material-design/dist/css/material.css" />
     <link rel="stylesheet" href="bower_components/bootstrap-material-design/dist/css/ripples.css" />
     <!-- endbower -->
+    <!-- endbuild -->
 
     <!-- CSS -->
+    <!-- build:css(.tmp) css/main.css -->
     <link rel="stylesheet" type="text/css" href="css/verto.css">
+    <!-- endbuild -->
 
 
     <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
@@ -55,6 +59,7 @@
    
     <!--<script type="text/javascript" src="js/jquery/jquery.mobile.min.js"></script>-->
 
+    <!-- build:js(.) scripts/vendor.js -->
     <!-- bower:js -->
     <script src="bower_components/jquery/dist/jquery.js"></script>
     <script src="bower_components/angular/angular.js"></script>
@@ -78,11 +83,12 @@
     <script src="bower_components/bootstrap-material-design/dist/js/material.js"></script>
     <script src="bower_components/bootstrap-material-design/dist/js/ripples.js"></script>
     <!-- endbower -->
+    <!-- endbuild -->
 
+    <!-- build:js(.) scripts/scripts.js -->
     <script type="text/javascript" src="../js/src/jquery.jsonrpcclient.js"></script>
     <script type="text/javascript" src="../js/src/jquery.FSRTC.js"></script>
     <script type="text/javascript" src="../js/src/jquery.verto.js"></script>
-
     <script type="text/javascript" src="js/3rd-party/getScreenId.js"></script>
     <script type="text/javascript" src="js/3rd-party/md5.min.js"></script>
     <script type="text/javascript" src="js/filters.js"></script>
@@ -91,6 +97,8 @@
     <script type="text/javascript" src="js/app.js"></script>
     <script type="text/javascript" src="js/controllers.js"></script>
     <script type="text/javascript" src="js/directives.js"></script>
+    <!-- endbuild -->
+
   </body>
 </html>
 
