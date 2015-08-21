@@ -92,7 +92,11 @@ if ($opts{versions}) {
 }
 
 if ($opts{components}) {
-    $opts{components_array} = [map {{name => $_}} split(" ", $opts{components})];
+    if ($opts{components} =~ /,/) {
+	$opts{components_array} = [map {{name => $_}} split(" ", $opts{components})];
+    } else {
+	$opts{components_array} = [map {{name => $_}} split(" ", $opts{components})];
+    }
 } else {
     $opts{components_array} = [map {{name => $_}} ($default_components)];
     $opts{components} = $default_components;
@@ -169,7 +173,11 @@ if ($opts{askall}) {
     $opts{versions_array} = [map {{name => $_}} split(" ", $opts{versions})];
     $opts{summary} = getfield("Summary: ", $opts{summary});
     $opts{components} = getfield("Components: ", $opts{components});
-    $opts{components_array} = [map {{name => $_}} split(" ", $opts{components})];
+    if ($opts{components} =~ /,/) {
+	$opts{components_array} = [map {{name => $_}} split(",", $opts{components})];
+    } else {
+	$opts{components_array} = [map {{name => $_}} split(" ", $opts{components})];
+    }
     $opts{hash} = getfield("GIT Hash: ", $opts{hash});
 
     if ($opts{noedit}) {
