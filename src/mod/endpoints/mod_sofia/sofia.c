@@ -4231,10 +4231,9 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 				for (param = switch_xml_child(settings, "param"); param; param = param->next) {
 					char *var = (char *) switch_xml_attr_soft(param, "name");
 					char *val = (char *) switch_xml_attr_soft(param, "value");
+					int found = 1; // Used to break up long if/elseif chain (MSVC2015 fails (parser stack overflow) otherwise)
 
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s [%s]\n", var, val);
-
-					int found = 1; // Used to break up long if/elseif chain (MSVC2015 fails (parser stack overflow) otherwise)
 					
 					if (!strcasecmp(var, "debug")) {
 						profile->debug = atoi(val);
