@@ -417,8 +417,8 @@ void conference_event_adv_la(conference_obj_t *conference, conference_member_t *
 
 		switch_core_get_variables(&variables);
 		for (hp = variables->headers; hp; hp = hp->next) {
-			if (!strncasecmp(hp->name, "conference_verto_", 11)) {
-				char *var = hp->name + 11;
+			if (!strncasecmp(hp->name, "conference_verto_", 17)) {
+				char *var = hp->name + 17;
 				if (var) {
 					cJSON_AddItemToObject(data, var, cJSON_CreateString(hp->value));
 				}
