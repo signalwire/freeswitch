@@ -8,7 +8,7 @@ use Data::Dumper;
 my $editor = $ENV{"EDITOR"} || $ENV{"VISUAL"} || `which emacs` || `which vi`;
 my $default_versions = "1.7 1.6";
 my $default_components = "freeswitch-core";
-
+my $desc_head = "; Enter the description lines beginning with a ; will be ignored.\n";
 
 
 sub getpass {
@@ -35,19 +35,25 @@ sub getfield {
 
 sub get_text {
     my $text = shift;
+    my $notes = shift;
 
     my @chars = ("A".."Z", "a".."z");
     my $string;
     $string .= $chars[rand @chars] for 1..8;
     
-    if ($text) {
+    if ($text || $notes) {
 	open O, ">/tmp/TEXT.$string";
-	print O $text;
+	if ($notes) {
+	    print O $notes;
+	}
+	if ($text) {
+	    print O $text;
+	}
 	close O;
     }
 
     system("$editor /tmp/TEXT.$string");
-    my $newtext = `cat /tmp/TEXT.$string`;
+    my $newtext = `cat /tmp/TEXT.$string | grep -v "^\\;"`;
     unlink("/tmp/TEXT.$string");
     return $newtext;
 }
@@ -167,9 +173,9 @@ if ($opts{askall}) {
     $opts{hash} = getfield("GIT Hash: ", $opts{hash});
 
     if ($opts{noedit}) {
-	$opts{desc} = getfield("Description: ", $opts{desc});
+	$opts{desc} = getfield("Description: ", $opts{desc}, $desc_head);
     } else {
-	$opts{desc} = get_text($opts{desc});
+	$opts{desc} = get_text($opts{desc}, $desc_head);
     }
 }
 
@@ -177,7 +183,7 @@ if (!$opts{desc}) {
     if ($opts{noedit}) {
 	$opts{desc} = getfield("Description: ", $opts{desc});
     } else {
-	$opts{desc} = get_text($opts{desc});
+	$opts{desc} = get_text($opts{desc}, $desc_head);
     }
 
     if (!$opts{desc}) {
