@@ -276,7 +276,7 @@ build_debs () {
     set -e
     local OPTIND OPTARG debug_hook=false hookdir="" cow_build_opts=""
     local keep_pbuilder_config=false keyring="" custom_keyring=""
-    local use_system_sources=false
+    local use_custom_sources=false
     while getopts 'BbdK:kT:t' o "$@"; do
       case "$o" in
         B) cow_build_opts="--debbuildopts '-B'";;
@@ -284,7 +284,7 @@ build_debs () {
         d) debug_hook=true;;
         k) keep_pbuilder_config=true;;
         K) custom_keyring="$OPTARG";;
-        t) use_system_sources=true; custom_sources_file="/etc/apt/sources.list";;
+        t) use_custom_sources=true; custom_sources_file="/etc/apt/sources.list";;
         T) use_custom_sources=true; custom_sources_file="$OPTARG";;
       esac
     done
@@ -308,7 +308,7 @@ build_debs () {
       apt-key exportall > "$keyring"
     fi
     cow () {
-      if ! $use_system_sources; then
+      if ! $use_custom_sources; then
         cowbuilder "$@" \
           --distribution $distro \
           --architecture $arch \
