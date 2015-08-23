@@ -797,6 +797,30 @@ static int stfu_n_find_frame(stfu_instance_t *in, stfu_queue_t *queue, uint32_t 
     return 0;
 }
 
+static stfu_frame_t *stfu_n_find_least_unread_frame(stfu_instance_t *i)
+{
+	uint32_t y, least = 0;
+	stfu_frame_t *frame = NULL, *lframe = NULL;
+	
+	for (y = 0; y < i->out_queue->array_len; y++) {
+		frame = &i->out_queue->array[y];
+		if (!frame->was_read && (frame->ts < least || least == 0)) {
+			lframe = frame;
+			least = frame->ts;
+		}
+	}
+
+	for (y = 0; y < i->in_queue->array_len; y++) {
+		frame = &i->in_queue->array[y];
+		if (!frame->was_read && (frame->ts < least || least == 0)) {
+			least = frame->ts;
+			lframe = frame;
+		}
+	}
+
+	return lframe;
+}
+
 void stfu_n_dump(stfu_instance_t *i)
 {
     uint32_t y;
@@ -817,7 +841,6 @@ void stfu_n_dump(stfu_instance_t *i)
         stfu_log(STFU_LOG_EMERG, "%s\n\n\n", i->name);
     }
 }
-
 
 stfu_frame_t *stfu_n_read_a_frame(stfu_instance_t *i)
 {
@@ -888,12 +911,25 @@ stfu_frame_t *stfu_n_read_a_frame(stfu_instance_t *i)
         return NULL;
     }
 
+    if (!found && i->samples_per_packet) {
+		stfu_frame_t *least = stfu_n_find_least_unread_frame(i);
+
+		if (least && least->ts > i->cur_ts) {
+			if (stfu_log != null_logger && i->debug) {
+				stfu_log(STFU_LOG_EMERG, "%s SLIPPED BEHIND %d packets, RESYNCRONIZING\n", i->name, (least->ts - i->cur_ts) / i->samples_per_packet);
+			}
+			found = 1;
+			i->cur_ts = least->ts;
+			i->cur_seq = least->seq;
+			rframe = least;
+		}
+	}
+
 
     if (!found && i->samples_per_packet) {
         int32_t delay = i->cur_ts - i->last_rd_ts;
         uint32_t need  = abs(delay) / i->samples_per_packet;
-
-        
+		
         i->period_missing_count++;
         i->session_missing_count++;
         i->period_need_range += need;
