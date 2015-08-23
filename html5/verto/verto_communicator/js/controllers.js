@@ -462,9 +462,9 @@ vertoControllers.controller('MainController', ['$scope', '$rootScope',
 
 
 vertoControllers.controller('ChatController', ['$scope', '$rootScope', '$http',
-  '$location', '$anchorScroll', '$timeout', 'toastr', 'verto', 'storage',
+  '$location', '$anchorScroll', '$timeout', 'toastr', 'verto', 'storage', 'prompt',
   function($scope, $rootScope, $http, $location, $anchorScroll, $timeout,
-    toastr, verto, storage) {
+    toastr, verto, storage, prompt) {
     console.debug('Executing ChatController.');
 
     function scrollToChatBottom() {
@@ -643,8 +643,15 @@ vertoControllers.controller('ChatController', ['$scope', '$rootScope', '$http',
 
     $scope.confBanner = function(memberID) {
       console.log('$scope.confBanner');
-      var text = 'New Banner';
-      verto.data.conf.banner(memberID, text);
+      prompt({
+        title: 'Participant banner',
+        message: 'What would you like the banner to say?',
+        input: true,
+        label: 'Text',
+        value: 'New text'
+      }).then(function(text){
+        verto.data.conf.banner(memberID, text);
+      });
     };
 
     $scope.confVolumeDown = function(memberID) {
