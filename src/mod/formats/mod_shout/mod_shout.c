@@ -147,9 +147,12 @@ static inline void free_context(shout_context_t *context)
 		switch_mutex_unlock(context->audio_mutex);
 
 		if (context->stream_url) {
+			switch_mutex_lock(context->audio_mutex);
 			if (context->curlfd > -1) {
 				shutdown(context->curlfd, 2);
+				context->curlfd = -1;
 			}
+			switch_mutex_unlock(context->audio_mutex);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Waiting for stream to terminate: %s\n", context->stream_url);
 			if (context->read_stream_thread) {
 				switch_thread_join(&st, context->read_stream_thread);
@@ -466,7 +469,9 @@ static int sockopt_callback(void *clientp, curl_socket_t curlfd,
 {
 	shout_context_t *context = (shout_context_t *) clientp;
 
+	switch_mutex_lock(context->audio_mutex);
 	context->curlfd = curlfd;
+	switch_mutex_unlock(context->audio_mutex);
 	
 	return 0;
 }
@@ -480,7 +485,9 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 	shout_context_t *context = (shout_context_t *) obj;
 
 	switch_thread_rwlock_rdlock(context->rwlock);
+	switch_mutex_lock(context->audio_mutex);
 	context->curlfd = -1;
+	switch_mutex_unlock(context->audio_mutex);
 	curl_handle = switch_curl_easy_init();
 	switch_curl_easy_setopt(curl_handle, CURLOPT_URL, context->stream_url);
 	curl_easy_setopt(curl_handle, CURLOPT_PROGRESSFUNCTION, progress_callback);
@@ -499,6 +506,10 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 	curl_easy_setopt(curl_handle, CURLOPT_SOCKOPTDATA, (void *)context);
 
 	cc = switch_curl_easy_perform(curl_handle);
+
+	switch_mutex_lock(context->audio_mutex);
+	context->curlfd = -1;
+	switch_mutex_unlock(context->audio_mutex);
 
 	if (cc && cc != CURLE_WRITE_ERROR) {	/* write error is ok, we just exited from callback early */
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "CURL returned error:[%d] %s : %s [%s]\n", cc, switch_curl_easy_strerror(cc),
