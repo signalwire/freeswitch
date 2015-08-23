@@ -55,7 +55,7 @@ module.exports = function (grunt) {
         options: {
           replacements: [
             {
-              pattern: 'window.location.hostname',
+              pattern: /window\.location\.hostname/gi,
               replacement: ip
             }
           ]
@@ -108,6 +108,7 @@ module.exports = function (grunt) {
           port: 9001,
           server: {
             baseDir: ['.tmp', '../js/src/', config.app],
+            watchTask: true,
             routes: {
               '/bower_components': './bower_components',
               '/js/src': '../js/src'
