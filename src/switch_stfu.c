@@ -913,8 +913,8 @@ stfu_frame_t *stfu_n_read_a_frame(stfu_instance_t *i)
 
     if (!found && i->samples_per_packet) {
 		stfu_frame_t *least = stfu_n_find_least_unread_frame(i);
-
-		if (least && least->ts > i->cur_ts) {
+		
+		if (least && least->ts > i->cur_ts && (least->ts - i->cur_ts) / i->samples_per_packet > i->qlen) {
 			if (stfu_log != null_logger && i->debug) {
 				stfu_log(STFU_LOG_EMERG, "%s SLIPPED BEHIND %d packets, RESYNCRONIZING\n", i->name, (least->ts - i->cur_ts) / i->samples_per_packet);
 			}
