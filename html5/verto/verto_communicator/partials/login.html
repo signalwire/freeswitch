@@ -11,7 +11,7 @@
         <form name="form" class="css-form" novalidate ng-init="advanced = false">
           <div class="form-group {{ (((!form.name.$pristine || form.$submitted) && !form.name.$valid) ? 'has-error': '') }}">
             <label class="control-label" for="login-name">Name</label>
-            <input type="text" name="name" class="form-control" id="login-name" placeholder="Your name" required="" ng-model="verto.data.name">
+            <input type="text" name="name" class="form-control" id="login-name" placeholder="Your name" required="" ng-model="verto.data.name" autofocus>
           </div>
           <div class="form-group {{ (((!form.email.$pristine || form.$submitted) && !form.email.$valid) ? 'has-error': '') }}">
             <label class="control-label" for="login-email">Email</label>

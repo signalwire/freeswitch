@@ -85,3 +85,25 @@ vertoDirectives.directive('showControls',
       link: link
     };
   });
+
+/*
+Sometimes autofocus HTML5 directive just isn't enough with SPAs.
+This directive will force autofocus to work properly under those circumstances.
+*/
+(function () {
+  'use strict';
+
+  vertoDirectives.directive('autofocus', ['$timeout',
+    function ($timeout) {
+      return {
+        restrict: 'A',
+        link: function ($scope, $element) {
+          $timeout(function () {
+            console.log('Focusing...');
+            $element[0].focus();
+          });
+        }
+      };
+    }
+  ]);
+})();
