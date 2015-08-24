@@ -17,8 +17,8 @@ var vertoApp = angular.module('vertoApp', [
   'ui.gravatar',
 ]);
 
-vertoApp.config(['$routeProvider', 'gravatarServiceProvider',
-  function($routeProvider, gravatarServiceProvider) {
+vertoApp.config(['$routeProvider', 'gravatarServiceProvider', 'toastrConfig',
+  function($routeProvider, gravatarServiceProvider, toastrConfig) {
     $routeProvider.
     when('/login', {
       title: 'Login',
@@ -52,6 +52,10 @@ vertoApp.config(['$routeProvider', 'gravatarServiceProvider',
     gravatarServiceProvider.defaults = {
       default: 'mm'  // Mystery man as default for missing avatars
     };
+
+    angular.extend(toastrConfig, {
+      maxOpened: 4
+    });
   }
 ]);
 
