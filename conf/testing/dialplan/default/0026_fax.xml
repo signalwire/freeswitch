@@ -11,3 +11,20 @@
     <action application="txfax" data="/root/fax.tif"/>  
   </condition>
 </extension>
+
+<extension name="rxfax_t38">
+  <condition field="destination_number" expression="^9102$">
+    <action application="set" data="fax_enable_t38_request=true"/>
+    <action application="set" data="fax_enable_t38=true"/>
+    <action application="answer"/>
+    <action application="rxfax" data="/tmp/${uuid}.tif"/>  
+  </condition>
+</extension>
+
+<extension name="txfax_t38">
+  <condition field="destination_number" expression="^9103$">
+    <action application="set" data="fax_enable_t38=true"/>
+    <action application="answer"/>
+    <action application="txfax" data="/root/fax.tif"/>  
+  </condition>
+</extension>
