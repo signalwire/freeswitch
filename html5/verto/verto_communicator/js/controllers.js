@@ -507,6 +507,11 @@ vertoControllers.controller('ChatController', ['$scope', '$rootScope', '$http',
       });
     });
 
+    $rootScope.$on('call.recovering', function(event){
+      console.log('Our current call is recovering, clear the participant list.');
+      $scope.members = [];
+    });
+
     function findMemberByUUID(uuid) {
       var found = false;
       for (var idx in $scope.members) {
