@@ -1,0 +1,2 @@
+deb http://httpredir.debian.org/debian jessie main
+deb http://files.freeswitch.org/repo/deb/debian/ jessie main

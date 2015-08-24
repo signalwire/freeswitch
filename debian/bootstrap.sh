@@ -14,6 +14,7 @@ avoid_mods=(
   applications/mod_limit
   applications/mod_mongo
   applications/mod_mp4
+  applications/mod_mp4v2
   applications/mod_osp
   applications/mod_rad_auth
   applications/mod_skel
@@ -21,6 +22,7 @@ avoid_mods=(
   asr_tts/mod_cepstral
   codecs/mod_com_g729
   codecs/mod_ilbc
+  codecs/mod_openh264
   codecs/mod_siren
   codecs/mod_skel_codec
   endpoints/mod_gsmopen
@@ -29,6 +31,8 @@ avoid_mods=(
   endpoints/mod_opal
   endpoints/mod_reference
   endpoints/mod_unicall
+  event_handlers/mod_smpp
+  formats/mod_webm
   sdk/autotools
   xml_int/mod_xml_ldap
   xml_int/mod_xml_radius
