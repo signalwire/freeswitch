@@ -1,0 +1,13 @@
+<extension name="rxfax">
+  <condition field="destination_number" expression="^9100$">
+    <action application="answer"/>
+    <action application="rxfax" data="/tmp/${uuid}.tif"/>  
+  </condition>
+</extension>
+
+<extension name="txfax">
+  <condition field="destination_number" expression="^9101$">
+    <action application="answer"/>
+    <action application="txfax" data="/root/fax.tif"/>  
+  </condition>
+</extension>
