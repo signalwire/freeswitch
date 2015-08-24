@@ -782,7 +782,6 @@ SWITCH_DECLARE(payload_map_t *) switch_core_media_add_payload_map(switch_core_se
 
 	pmap->allocated = 1;
 
-
 	pmap->recv_pt = (switch_payload_t) pt;
 
 
@@ -8410,7 +8409,7 @@ SWITCH_DECLARE(void) switch_core_media_patch_sdp(switch_core_session_t *session)
 												 SDP_TYPE_RESPONSE,
 												 0,
 												 8000,
-												 8000,
+												 20,
 												 1,
 												 SWITCH_TRUE);
 
@@ -9834,7 +9833,7 @@ SWITCH_DECLARE(void) switch_core_media_check_outgoing_proxy(switch_core_session_
 											 SDP_TYPE_RESPONSE,
 											 0,
 											 8000,
-											 8000,
+											 20,
 											 1,
 											 SWITCH_TRUE);
 
