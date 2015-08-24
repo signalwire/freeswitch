@@ -1,3 +1,4 @@
+<!-- expand bgapi originate {absolute_codec_string=pcmu}sofia/external/9100@${local_ip_v4}:5090 9101 -->
 <extension name="rxfax">
   <condition field="destination_number" expression="^9100$">
     <action application="answer"/>
@@ -12,6 +13,7 @@
   </condition>
 </extension>
 
+<!-- expand bgapi originate {absolute_codec_string=pcmu}sofia/external/9102@${local_ip_v4}:5090 9103 -->
 <extension name="rxfax_t38">
   <condition field="destination_number" expression="^9102$">
     <action application="set" data="fax_enable_t38_request=true"/>
@@ -23,6 +25,31 @@
 
 <extension name="txfax_t38">
   <condition field="destination_number" expression="^9103$">
+    <action application="set" data="fax_enable_t38=true"/>
+    <action application="answer"/>
+    <action application="txfax" data="/root/fax.tif"/>  
+  </condition>
+</extension>
+
+<!-- expand bgapi originate {absolute_codec_string=pcmu}sofia/external/9104@${local_ip_v4}:5090 9105 -->
+<extension name="rxfax_t38_a">
+  <condition field="destination_number" expression="^9104$">
+    <action application="set" data="fax_enable_t38_request=true"/>
+    <action application="set" data="fax_enable_t38=true"/>
+    <action application="answer"/>
+    <action application="rxfax" data="/tmp/${uuid}.tif"/>  
+  </condition>
+</extension>
+
+<extension name="t38_passthru">
+  <condition field="destination_number" expression="^9105$">
+    <action application="export" data="t38_passthru=true"/>
+    <action application="bridge" data="{absolute_codec_string=PCMU}sofia/external/sip:9106@${local_ip_v4}:5090"/>  
+  </condition>
+</extension>
+
+<extension name="txfax_t38_b">
+  <condition field="destination_number" expression="^9106$">
     <action application="set" data="fax_enable_t38=true"/>
     <action application="answer"/>
     <action application="txfax" data="/root/fax.tif"/>  
