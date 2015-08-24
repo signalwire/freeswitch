@@ -11,7 +11,8 @@ GetOptions(
     'msg=s' => \$opts{msg},
     'debug' => \$opts{debug},
     'append=s' => \$opts{append},
-    'comment=s' => \$opts{comment}
+    'comment=s' => \$opts{comment},
+    'author=s' => \$opts{author}
     ) or die "Usage: $0 -bug <bug-id> [-m [edit|<msg>]] [-append <msg>] [-debug] <files>\n";
 
 
@@ -68,6 +69,10 @@ if ($auto) {
     }
 } else {
   $gitcmd = "git commit $args -t /tmp/$opts{bug}.tmp";
+}
+
+if ($opts{author}) {
+    $gitcmd .= " --author \"$opts{author}\"";
 }
 
 if ($opts{debug}) {
