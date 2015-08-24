@@ -2058,6 +2058,7 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 				switch_event_add_header(params, SWITCH_STACK_BOTTOM, "VM-Total-Saved-Messages", "%u", total_saved_messages);
 				switch_event_add_header(params, SWITCH_STACK_BOTTOM, "VM-Total-New-Urgent-Messages", "%u", total_new_urgent_messages);
 				switch_event_add_header(params, SWITCH_STACK_BOTTOM, "VM-Total-Saved-Urgent-Messages", "%u", total_saved_urgent_messages);
+				switch_channel_event_set_data(channel, params);
 				switch_event_fire(&params);
 
 				if (total_new_urgent_messages > 0) {
@@ -2320,6 +2321,7 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 						if (fail) {
 							/* add feedback for user - let him/her know that the password they tried to change to is not allowed */
 							switch_ivr_phrase_macro(session, VM_CHANGE_PASS_FAIL_MACRO, NULL, NULL, NULL);
+							switch_event_destroy(&params);
 						} else {
 							sql = switch_mprintf("update voicemail_prefs set password='%s' where username='%s' and domain='%s'", buf, myid, domain_name);
 							vm_execute_sql(profile, sql, profile->mutex);
@@ -2328,9 +2330,8 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 							ok = 1;
 							/* add feedback for user - let him/her know that password change was successful */
 							switch_ivr_phrase_macro(session, VM_CHANGE_PASS_SUCCESS_MACRO, NULL, NULL, NULL);
+							switch_event_fire(&params);
 						}
-					
-						switch_event_destroy(&params);
 					}
 
 				} else if (!strcmp(input, profile->record_name_key)) {
@@ -2342,7 +2343,6 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 					switch_file_rename(tmp_file_path, file_path, switch_core_session_get_pool(session));
 					sql = switch_mprintf("update voicemail_prefs set name_path='%s' where username='%s' and domain='%s'", file_path, myid, domain_name);
 					vm_execute_sql(profile, sql, profile->mutex);
-					switch_safe_free(file_path);
 					switch_safe_free(tmp_file_path);
 					switch_safe_free(sql);
 
@@ -2353,6 +2353,8 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 					switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "VM-Domain", domain_name);
 					switch_channel_event_set_data(channel, params);
 					switch_event_fire(&params);
+
+					switch_safe_free(file_path);
 				}
 				continue;
 			}
@@ -2728,7 +2730,8 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 	switch_status_t ret = SWITCH_STATUS_SUCCESS;
 	char *convert_cmd = profile->convert_cmd;
 	char *convert_ext = profile->convert_ext;
-	
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+
 	if (!params) {
 		switch_event_create(&local_event, SWITCH_EVENT_REQUEST_PARAMS);
 		params = local_event;
@@ -2880,6 +2883,7 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 		switch_event_add_header_string(message_event, SWITCH_STACK_BOTTOM, "VM-UUID", use_uuid);
 		switch_event_add_header(message_event, SWITCH_STACK_BOTTOM, "VM-Message-Len", "%u", message_len);
 		switch_event_add_header(message_event, SWITCH_STACK_BOTTOM, "VM-Timestamp", "%lu", (unsigned long) switch_epoch_time_now(NULL));
+		switch_channel_event_set_data(channel, message_event);
 
 		switch_event_fire(&message_event);
 
