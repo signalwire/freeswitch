@@ -1193,7 +1193,15 @@
                     conf.params.onBroadcast(verto, conf, e.data);
                 }
             }
-        })
+        });
+
+        verto.subscribe(conf.params.laData.chatChannel, {
+            handler: function(v, e) {
+                if (typeof(conf.params.chatCallback) === "function") {
+                    conf.params.chatCallback(v,e);
+                }
+            }
+        });
     };
 
     $.verto.conf.prototype.modCommand = function(cmd, id, value) {
@@ -1218,6 +1226,10 @@
 
         if (conf.params.laData.modChannel) {
             conf.verto.unsubscribe(conf.params.laData.modChannel);
+        }
+
+        if (conf.params.laData.chatChannel) {
+            conf.verto.unsubscribe(conf.params.laData.chatChannel);
         }
     };
 
@@ -1312,6 +1324,19 @@
             }
             this.modCommand("transfer", parseInt(memberID), "exten");
         };
+
+        $.verto.conf.prototype.sendChat = function(message, type) {
+            var conf = this;
+            conf.verto.rpcClient.call("verto.broadcast", {
+                "eventChannel": conf.params.laData.chatChannel,
+                "data": {
+                    "action": "send",
+                    "message": message,
+                    "type": type
+                }
+            });
+        };
+            
     }
 
     $.verto.modfuncs = {};
