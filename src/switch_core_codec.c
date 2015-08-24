@@ -651,6 +651,17 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_init_with_bitrate(switch_codec
 		return SWITCH_STATUS_GENERR;
 	}
 
+	if (!strncasecmp(codec_name, "PROXY", 5)) {
+		for (iptr = codec_interface->implementations; iptr; iptr = iptr->next) {
+			if ((!channels || channels == iptr->number_of_channels)) {
+				implementation = iptr;
+				break;
+			}
+		}
+
+		goto found;
+	}
+	
 	/* If no specific codec interval is requested opt for 20ms above all else because lots of stuff assumes it */
 	if (!ms) {
 		for (iptr = codec_interface->implementations; iptr; iptr = iptr->next) {
