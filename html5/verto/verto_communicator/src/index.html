@@ -24,7 +24,7 @@
 
     <!-- CSS -->
     <!-- build:css(.) css/verto.css -->
-    <link rel="stylesheet" type="text/css" href="css/verto.css">
+    <link rel="stylesheet" type="text/css" href="src/css/verto.css">
     <!-- endbuild -->
 
 
@@ -86,17 +86,41 @@
     <!-- endbuild -->
 
     <!-- build:js(.) scripts/scripts.js -->
+    
     <script type="text/javascript" src="../js/src/jquery.jsonrpcclient.js"></script>
     <script type="text/javascript" src="../js/src/jquery.FSRTC.js"></script>
     <script type="text/javascript" src="../js/src/jquery.verto.js"></script>
+    
     <script type="text/javascript" src="js/3rd-party/getScreenId.js"></script>
     <script type="text/javascript" src="js/3rd-party/md5.min.js"></script>
-    <script type="text/javascript" src="js/filters.js"></script>
-    <script type="text/javascript" src="js/verto-service.js"></script>
-    <script type="text/javascript" src="js/storage-service.js"></script>
-    <script type="text/javascript" src="js/app.js"></script>
-    <script type="text/javascript" src="js/controllers.js"></script>
-    <script type="text/javascript" src="js/directives.js"></script>
+    
+    <script type="text/javascript" src="src/vertoApp/vertoApp.module.js"></script>
+
+    <script type="text/javascript" src="src/vertoControllers/vertoControllers.module.js"></script>
+    <script type="text/javascript" src="src/vertoControllers/controllers/BrowserUpgradeController.js"></script>
+    <script type="text/javascript" src="src/vertoControllers/controllers/ChatController.js"></script>
+    <script type="text/javascript" src="src/vertoControllers/controllers/ContributorsController.js"></script>
+    <script type="text/javascript" src="src/vertoControllers/controllers/DialPadController.js"></script>
+    <script type="text/javascript" src="src/vertoControllers/controllers/InCallController.js"></script>
+    <script type="text/javascript" src="src/vertoControllers/controllers/LoginController.js"></script>
+    <script type="text/javascript" src="src/vertoControllers/controllers/MainController.js"></script>
+    <script type="text/javascript" src="src/vertoControllers/controllers/MenuController.js"></script>
+    <script type="text/javascript" src="src/vertoControllers/controllers/ModalDialpadController.js"></script>
+    <script type="text/javascript" src="src/vertoControllers/controllers/ModalLoginInformationController.js"></script>
+    <script type="text/javascript" src="src/vertoControllers/controllers/ModalSettingsController.js"></script>
+
+    <script type="text/javascript" src="src/vertoDirectives/vertoDirectives.module.js"></script>
+    <script type="text/javascript" src="src/vertoDirectives/directives/autofocus.js"></script>
+    <script type="text/javascript" src="src/vertoDirectives/directives/showControls.js"></script>
+    <script type="text/javascript" src="src/vertoDirectives/directives/userStatus.js"></script>
+    <script type="text/javascript" src="src/vertoDirectives/directives/videoTag.js"></script>
+
+    <script type="text/javascript" src="src/vertoService/vertoService.module.js"></script>
+    <script type="text/javascript" src="src/vertoService/services/vertoService.js"></script>
+
+    <script type="text/javascript" src="src/storageService/storageService.module.js"></script>
+    <script type="text/javascript" src="src/storageService/services/storage.js"></script>
+
     <!-- endbuild -->
 
   </body>

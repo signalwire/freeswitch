@@ -170,10 +170,6 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
       $rootScope.$emit('call.incoming', number);
     }
 
-    function recoveringCall() {
-      $rootScope.$emit('call.recovering');
-    }
-
     function getVideoParams() {
       var maxWidth, maxHeight;
 
@@ -348,7 +344,7 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
 
         videoQuality.length = videoQuality.length - removed;
         this.videoQuality = videoQuality;
-        this.data.vidQual = videoQuality[videoQuality.length - 1].id;
+        this.data.vidQual = (videoQuality.length > 0) ? videoQuality[videoQuality.length - 1].id : null;
 
         return videoQuality;
       },
@@ -503,10 +499,6 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
                 console.debug('Talking to:', d.cidString());
                 data.callState = 'active';
                 calling();
-                break;
-              case "recovering":
-                console.debug('We are recovering a call!');
-                recoveringCall();
                 break;
               case "active":
                 console.debug('Talking to:', d.cidString());
