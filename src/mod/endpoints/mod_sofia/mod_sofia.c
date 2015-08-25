@@ -4765,7 +4765,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 				sofia_clear_flag(ctech_pvt, TFLAG_ENABLE_SOA);
 			}
 
-			if (switch_channel_test_flag(o_channel, CF_ZRTP_PASSTHRU_REQ)) {
+			if (switch_channel_test_flag(o_channel, CF_ZRTP_PASSTHRU_REQ) && switch_channel_test_flag(o_channel, CF_ZRTP_HASH)) {
 				const char *x = NULL;
 				switch_core_media_pass_zrtp_hash2(session, nsession);
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "[zrtp_passthru] Setting a-leg inherit_codec=true\n");
