@@ -1,8 +1,8 @@
 'use strict';
 
-var storageService = angular.module('storageService', ['ngStorage']);
-
-storageService.service('storage', ['$rootScope', '$localStorage',
+  angular
+  .module('storageService')
+  .service('storage', ['$rootScope', '$localStorage',
   function($rootScope, $localStorage) {
     var data = $localStorage;
 

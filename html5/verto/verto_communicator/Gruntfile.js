@@ -16,7 +16,7 @@ module.exports = function (grunt) {
 
   // Configurable paths
   var config = {
-    app: '.',
+    app: './src',
     dist: 'dist'
   };
 
@@ -33,10 +33,6 @@ module.exports = function (grunt) {
         files: ['bower.json'],
         tasks: ['wiredep']
       },
-      js: {
-        files: ['js/verto-service.js'],
-        tasks: ['string-replace:dev']
-      },
       styles: {
         files: ['<%= config.app %>/css/{,*/}*.css'],
         tasks: ['newer:copy:styles', 'postcss']
@@ -46,25 +42,9 @@ module.exports = function (grunt) {
       }
     },
 
-    // Replace so we can have it properly passed from dev
-    'string-replace': {
-      dev: {
-        files: {
-          '.tmp/js/verto-service.js': '<%= config.app %>/js/verto-service.js'
-        },
-        options: {
-          replacements: [
-            {
-              pattern: /window\.location\.hostname/gi,
-              replacement: ip
-            }
-          ]
-        }
-      }
-    },
     wiredep: {
       app: {
-        src: ['index.html'],
+        src: ['src/index.html'],
         ignorePath:  /\.\.\//
       }
     },
@@ -94,24 +74,51 @@ module.exports = function (grunt) {
         notify: false,
         background: true,
         https: true,
-        open: false
+        open: false,
+        // logLevel: "debug",
+        ghostMode: false,
+        logConnections: true,
+        ui: false
       },
       livereload: {
         options: {
           files: [
-            '<%= config.app %>/{,*/}*.html',
+            '<%= config.app %>/**/*.html',
             '.tmp/styles/{,*/}*.css',
             '<%= config.app %>/images/{,*/}*',
-            '.tmp/js/{,*/}*.js',
-            '<%= config.app %>/js/**/*.js'
+            '.tmp/**/*.js',
+            '<%= config.app %>/**/*.js'
           ],
           port: 9001,
           server: {
-            baseDir: ['.tmp', '../js/src/', config.app],
-            watchTask: true,
+            baseDir: ['../js/src/', './js', '.'],
+            index: 'src/index.html',
+            middleware: [
+              require("connect-logger")(),
+              function(req, res, next) {
+                if (ip) {
+                  var parsed = require("url").parse(req.url);
+                  if (!parsed.pathname.match(/vertoService\.js$/)) {
+                    next();
+                    return;
+                  } else {
+                    grunt.log.writeln('Providing replaced data.');
+                    var path = require('path');
+                    var theFilePath = path.resolve('./src', 'vertoService', 'services', 'vertoService.js');
+                    var f = require('fs').readFileSync(theFilePath).toString();
+                    res.setHeader('Content-Type', 'text/javascript');
+                    res.end(f.replace(/window\.location\.hostname/gi, ip));
+                    return;
+                  }
+                }
+                next();
+              }
+            ],
             routes: {
+              '/partials': 'src/partials',
               '/bower_components': './bower_components',
-              '/js/src': '../js/src'
+              '/js/src': '../js/src',
+              '/js': './js'
             }
           }
         }
@@ -137,7 +144,7 @@ module.exports = function (grunt) {
       all: {
         src: [
           'Gruntfile.js',
-          'js/{,*/}*.js'
+          'src/**/*.js'
         ]
       }
     },
@@ -151,8 +158,7 @@ module.exports = function (grunt) {
             '!dist/.git{,*/}*'
             ]
           }]
-        },
-      server: '.tmp'
+        }
     },
     // Renames files for browser caching purposes
     filerev: {
@@ -184,7 +190,7 @@ module.exports = function (grunt) {
           '<%= config.dist %>/styles'
         ]
       },
-      html: ['<%= config.dist %>/{,*/}*.html'],
+      html: ['<%= config.dist %>/**/*.html'],
       css: ['<%= config.dist %>/styles/{,*/}*.css']
     },
 
@@ -257,14 +263,15 @@ module.exports = function (grunt) {
          files: [{
            expand: true,
            dot: true,
-           cwd: '',
+           cwd: '<%= config.app %>',
            dest: 'dist',
            src: [
              '*.{ico,png,txt}',
              '*.html',
              'partials/**/*.html',
              'images/{,*/}*.{webp}',
-             'css/fonts/{,*/}*.*'
+             'css/fonts/{,*/}*.*',
+             'sounds/*.*'
            ]
          }, {
            expand: true,
@@ -285,7 +292,7 @@ module.exports = function (grunt) {
        },
        styles: {
          expand: true,
-         cwd: '/css',
+         cwd: '<%= config.app %>/css',
          dest: '.tmp/css/',
          src: '{,*/}*.css'
        }
@@ -304,19 +311,14 @@ module.exports = function (grunt) {
   });
 
   grunt.registerTask('serve', function (target) {
-    var tasks = ['clean:server',
+    var tasks = [
       'wiredep',
       'concurrent:server',
       'postcss'];
 
-    if (ip) {
-      tasks = tasks.concat(['string-replace:dev',
-      'browserSync:livereload',
-      'watch']);
-    } else {
-      tasks = tasks.concat(['browserSync:livereload',
-      'watch']);
-    }
+    
+    tasks = tasks.concat(['browserSync:livereload',
+    'watch']);
     
     grunt.task.run(tasks);
   });
