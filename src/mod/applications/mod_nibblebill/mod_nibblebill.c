@@ -28,7 +28,7 @@
  * Contributor(s):
  * Darren Schreiber <d@d-man.org>
  * Rupa Schomaker <rupa@rupa.com>
- * Emmanuel Schmidbauer <e.schmidbauer@gmail.com>
+ * Emmanuel Schmidbauer <eschmidbauer@gmail.com>
  *
  * mod_nibblebill.c - Nibble Billing
  * Purpose is to allow real-time debiting of credit or cash from a database while calls are in progress. I had the following goals:
@@ -357,8 +357,8 @@ static void transfer_call(switch_core_session_t *session, char *destination)
 			/* Make sure we are in the media path on B leg */
 			switch_ivr_media(uuid, SMF_REBRIDGE);
 
-			/* Transfer the B leg */
-			switch_ivr_session_transfer(b_session, argv[0], argv[1], argv[2]);
+			/* Execute extension on the B leg */
+			switch_core_session_execute_exten(b_session, argv[0], argv[1], argv[2]);
 			switch_core_session_rwunlock(b_session);
 		}
 	}
@@ -367,8 +367,8 @@ static void transfer_call(switch_core_session_t *session, char *destination)
 	uuid = switch_core_session_get_uuid(session);
 	switch_ivr_media(uuid, SMF_REBRIDGE);
 
-	/* Transfer the A leg */
-	switch_ivr_session_transfer(session, argv[0], argv[1], argv[2]);
+	/* Execute extension on the A leg */
+	switch_core_session_execute_exten(session, argv[0], argv[1], argv[2]);
 	free(mydup);
 }
 
