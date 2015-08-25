@@ -84,6 +84,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 	fh->mm.channels = 1;
 	fh->mm.keyint = 60;
 	fh->mm.ab = 128;
+	fh->mm.vencspd = SWITCH_VIDEO_ENCODE_SPEED_DEFAULT;
 
 	if (*file_path == '{') {
 		char *timeout;
@@ -184,6 +185,18 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 				fh->mm.vbuf = tmp;
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid buffer size: %d\n", tmp);
+			}
+		}
+
+		if ((val = switch_event_get_header(fh->params, "vencspd"))) {
+			if (!strcasecmp(val, "slow")) {
+				fh->mm.vencspd = SWITCH_VIDEO_ENCODE_SPEED_SLOW;
+			} else if (!strcasecmp(val, "medium")) {
+				fh->mm.vencspd = SWITCH_VIDEO_ENCODE_SPEED_MEDIUM;
+			} else if (!strcasecmp(val, "fast")) {
+				fh->mm.vencspd = SWITCH_VIDEO_ENCODE_SPEED_FAST;
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid video encode speed: %s\n", val);
 			}
 		}
 	}
