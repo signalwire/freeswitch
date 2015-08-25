@@ -83,6 +83,18 @@
 	    sessid: null
         }, options);
 
+	if (!verto.options.deviceParams.useCamera) {
+	    verto.options.deviceParams.useCamera = "any";
+	}
+
+	if (!verto.options.deviceParams.useMic) {
+	    verto.options.deviceParams.useMic = "any";
+	}
+
+	if (!verto.options.deviceParams.useSpeak) {
+	    verto.options.deviceParams.useSpeak = "any";
+	}
+
 	if (verto.options.sessid) {
 	    verto.sessid = verto.options.sessid;
 	} else {
@@ -1812,19 +1824,15 @@
             useVideo: verto.options.useVideo,
             useStereo: verto.options.useStereo,
 	    screenShare: false,
-	    useCamera: "any",
-	    useMic: "any",
-	    useSpeak: "any",
+	    useCamera: verto.options.deviceParams.useCamera,
+	    useMic: verto.options.deviceParams.useMic,
+	    useSpeak: verto.options.deviceParams.useSpeak,
             tag: verto.options.tag,
             localTag: verto.options.localTag,
             login: verto.options.login,
 	    videoParams: verto.options.videoParams
         }, params);
 	
-	dialog.useCamera = verto.options.deviceParams.useCamera;
-	dialog.useMic = verto.options.deviceParams.useMic;
-	dialog.useSpeak = verto.options.deviceParams.useSpeak;
-
         dialog.verto = verto;
         dialog.direction = direction;
         dialog.lastState = null;
@@ -2281,10 +2289,6 @@
 	    }
 
 	    params.sdp = dialog.params.sdp;
-
-	    dialog.useCamera = dialog.verto.options.deviceParams.useCamera;
-	    dialog.useMic = dialog.verto.options.deviceParams.useMic;
-	    dialog.useSpeak = dialog.verto.options.deviceParams.useSpeak;
 
             if (params) {
                 if (params.useVideo) {
