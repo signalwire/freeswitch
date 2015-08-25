@@ -6474,6 +6474,21 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_commands_shutdown)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+#define GETENV_SYNTAX "<name>"
+SWITCH_STANDARD_API(getenv_function)
+{
+	const char *var = NULL;
+
+	if (cmd) {
+		var = getenv((char *)cmd);
+	}
+
+	stream->write_function(stream, "%s", var ? var : "_undef_");
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
 #define LOG_SYNTAX "<level> <message>"
 SWITCH_STANDARD_API(log_function)
 {
@@ -6867,6 +6882,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "interface_ip", "Return the primary IP of an interface", interface_ip_function, INTERFACE_IP_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "switchname", "Return the switch name", switchname_api_function, "");
 	SWITCH_ADD_API(commands_api_interface, "gethost", "gethostbyname", gethost_api_function, "");
+	SWITCH_ADD_API(commands_api_interface, "getenv", "getenv", getenv_function, GETENV_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "hupall", "hupall", hupall_api_function, "<cause> [<var> <value>]");
 	SWITCH_ADD_API(commands_api_interface, "in_group", "Determine if a user is in a group", in_group_function, "<user>[@<domain>] <group_name>");
 	SWITCH_ADD_API(commands_api_interface, "is_lan_addr", "See if an ip is a lan addr", lan_addr_function, "<ip>");
