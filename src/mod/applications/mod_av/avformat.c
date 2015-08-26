@@ -1051,6 +1051,18 @@ struct av_file_context {
 
 typedef struct av_file_context av_file_context_t;
 
+static void mod_avformat_destroy_output_context(av_file_context_t *context)
+{
+
+	if (context->has_video) close_stream(context->fc, &context->video_st);
+	if (context->has_audio) close_stream(context->fc, &context->audio_st);
+
+	if (context->audio_st.resample_ctx) {
+		avresample_free(&context->audio_st.resample_ctx);
+	}
+
+	avformat_close_input(&context->fc);
+}
 
 static switch_status_t open_input_file(av_file_context_t *context, switch_file_handle_t *handle, const char *filename)
 {
@@ -1510,8 +1522,8 @@ static switch_status_t av_file_open(switch_file_handle_t *handle, const char *pa
 
  end:
 
-	if (handle && context) {
-		av_file_close(handle);
+	if (context && context->fc) {
+		mod_avformat_destroy_output_context(context);
 	}
 
 	if (context->timer.interval) {
@@ -1550,7 +1562,6 @@ static switch_status_t av_file_close(switch_file_handle_t *handle)
 	av_file_context_t *context = (av_file_context_t *)handle->private_info;
 	switch_status_t status;
 
-
 	if (context->eh.video_queue) {
 		switch_queue_push(context->eh.video_queue, NULL);
 	}
@@ -1571,14 +1582,7 @@ static switch_status_t av_file_close(switch_file_handle_t *handle)
 	if (context->fc) {
 		if (switch_test_flag(handle, SWITCH_FILE_FLAG_WRITE)) av_write_trailer(context->fc);
 
-		if (context->has_video) close_stream(context->fc, &context->video_st);
-		if (context->has_audio) close_stream(context->fc, &context->audio_st);
-
-		if (context->audio_st.resample_ctx) {
-			avresample_free(&context->audio_st.resample_ctx);
-		}
-
-		avformat_close_input(&context->fc);
+		mod_avformat_destroy_output_context(context);
 	}
 
 	if (context->timer.interval) {
