@@ -375,6 +375,7 @@ struct switch_rtp {
 	char *eff_remote_host_str;
 	switch_time_t first_stun;
 	switch_time_t last_stun;
+	uint32_t wrong_addrs;
 	uint32_t samples_per_interval;
 	uint32_t samples_per_second;
 	uint32_t conf_samples_per_interval;
@@ -1173,15 +1174,22 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 			host2 = switch_get_addr(buf2, sizeof(buf2), ice->addr);
 			port2 = switch_sockaddr_get_port(ice->addr);
 
-			
+
 			if (switch_cmp_addr(from_addr, ice->addr)) {
 				ice->last_ok = now;
 			} else {
-				if (elapsed >= 3000 || (elapsed >= 500 && (rtp_session->dtls->state != DS_READY || !ice->ready || !ice->rready))) {
+				if ((rtp_session->dtls->state != DS_READY || !ice->ready || !ice->rready)) {
+					if (elapsed > 500 || rtp_session->wrong_addrs > 1) {
+						do_adj = 1;
+					}
+				} else if (rtp_session->wrong_addrs > 5 || elapsed >= 3000) {
 					do_adj++;
 				}
-			}
 
+				if (!do_adj) {
+					rtp_session->wrong_addrs++;
+				}
+			}
 
 			if ((ice->type & ICE_VANILLA) && ice->ice_params && do_adj) {
 				int i = 0;
@@ -1215,6 +1223,7 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 
 				switch_rtp_change_ice_dest(rtp_session, ice, host, port);
 				ice->last_ok = now;
+				rtp_session->wrong_addrs = 0;
 			}
 
 			switch_socket_sendto(sock_output, from_addr, 0, (void *) rpacket, &bytes);
@@ -2684,7 +2693,7 @@ SWITCH_DECLARE(void) switch_rtp_reset(switch_rtp_t *rtp_session)
 	memset(&rtp_session->ts_norm, 0, sizeof(rtp_session->ts_norm));
 
 	rtp_session->last_stun = rtp_session->first_stun = 0;
-
+	rtp_session->wrong_addrs = 0;
 	rtp_session->rtcp_sent_packets = 0;
 	rtp_session->rtcp_last_sent = 0;
 
