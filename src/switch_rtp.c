@@ -1888,7 +1888,7 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 	int rate = 0;
 
 	if (rtp_session->flags[SWITCH_RTP_FLAG_AUTO_CNG] && rtp_session->send_msg.header.ts && rtp_session->cng_pt != INVALID_PT &&
-		rtp_session->timer.samplecount >= (rtp_session->last_write_samplecount + (rtp_session->samples_per_interval * 60))) {
+		(rtp_session->timer.samplecount - rtp_session->last_write_samplecount >= rtp_session->samples_per_interval * 60)) {
 		uint8_t data[10] = { 0 };
 		switch_frame_flag_t frame_flags = SFF_NONE;
 		data[0] = 65;
@@ -6957,6 +6957,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 		bytes = datalen;
 
 		m = (uint8_t) send_msg->header.m;
+		rtp_session->ts = ntohl(send_msg->header.ts);
 
 		if (flags && *flags & SFF_RFC2833) {
 			if (rtp_session->te == INVALID_PT) {
@@ -6994,7 +6995,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 		if ((rtp_session->rtp_bugs & RTP_BUG_NEVER_SEND_MARKER)) {
 			m = 0;
 		} else {
-			if ((!rtp_session->flags[SWITCH_RTP_FLAG_RESET] && rtp_session->ts > (rtp_session->last_write_ts + (rtp_session->samples_per_interval * 10)))
+			if ((!rtp_session->flags[SWITCH_RTP_FLAG_RESET] && (rtp_session->ts - rtp_session->last_write_ts > rtp_session->samples_per_interval * 10))
 				|| rtp_session->ts == rtp_session->samples_per_interval) {
 				m++;
 			}
