@@ -67,6 +67,9 @@
 #define CR_VERSION_STRING_SIZE_STR STRINGIFY(CREDIS_VERSION_STRING_SIZE)
 
 #ifdef PRINTDEBUG
+#if !defined(_MSC_VER) && !defined(__FUNCTION__)
+#define __FUNCTION__ (const char *)__func__
+#endif
 /* add -DPRINTDEBUG to CPPFLAGS in Makefile for debug outputs */
 #define DEBUG(...)                                 \
   do {                                             \
