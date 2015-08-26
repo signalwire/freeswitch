@@ -4949,8 +4949,9 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 
 	if (!blank_img) {
 		switch_color_set_rgb(&bgcolor, "#000000");
-		blank_img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, 352, 288, 1);
-		switch_img_fill(blank_img, 0, 0, blank_img->d_w, blank_img->d_h, &bgcolor);
+		if ((blank_img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, 352, 288, 1))) {
+			switch_img_fill(blank_img, 0, 0, blank_img->d_w, blank_img->d_h, &bgcolor);
+		}
 	}
 	
 
@@ -5078,7 +5079,7 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 			send_blank = 1;
 		}
 
-		if ((send_blank || switch_channel_test_flag(channel, CF_VIDEO_BLANK)) && !session->video_read_callback) {
+		if (blank_img && (send_blank || switch_channel_test_flag(channel, CF_VIDEO_BLANK)) && !session->video_read_callback) {
 			fr.img = blank_img;
 			switch_yield(10000);
 			switch_core_session_write_video_frame(session, &fr, SWITCH_IO_FLAG_FORCE, 0);
