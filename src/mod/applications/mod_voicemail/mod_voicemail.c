@@ -2730,7 +2730,11 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 	switch_status_t ret = SWITCH_STATUS_SUCCESS;
 	char *convert_cmd = profile->convert_cmd;
 	char *convert_ext = profile->convert_ext;
-	switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_channel_t *channel = NULL;
+
+	if (session) {
+		channel = switch_core_session_get_channel(session);
+	}
 
 	if (!params) {
 		switch_event_create(&local_event, SWITCH_EVENT_REQUEST_PARAMS);
@@ -2883,7 +2887,9 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 		switch_event_add_header_string(message_event, SWITCH_STACK_BOTTOM, "VM-UUID", use_uuid);
 		switch_event_add_header(message_event, SWITCH_STACK_BOTTOM, "VM-Message-Len", "%u", message_len);
 		switch_event_add_header(message_event, SWITCH_STACK_BOTTOM, "VM-Timestamp", "%lu", (unsigned long) switch_epoch_time_now(NULL));
-		switch_channel_event_set_data(channel, message_event);
+		if (channel) {
+			switch_channel_event_set_data(channel, message_event);
+		}
 
 		switch_event_fire(&message_event);
 
