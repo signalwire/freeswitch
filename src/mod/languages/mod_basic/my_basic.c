@@ -686,7 +686,7 @@ static int _close_std_lib(mb_interpreter_t* s);
 #		define _do_nothing do { printf("Unaccessable function: %s\n", __FUNCTION__); } while(0)
 #	endif /* _MSC_VER < 1300 */
 #else /* _MSC_VER */
-#	define _do_nothing do { printf("Unaccessable function: %s\n", (const char *)__func_); } while(0)
+#	define _do_nothing do { printf("Unaccessable function: %s\n", (const char *)__func__); } while(0)
 #endif /* _MSC_VER */
 
 /** Core lib */
