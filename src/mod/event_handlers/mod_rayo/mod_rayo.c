@@ -3818,7 +3818,7 @@ static switch_status_t rayo_call_on_read_frame(switch_core_session_t *session, s
  */
 static int should_offer_to_client(struct rayo_client *rclient, char **offer_filters, int offer_filter_count)
 {
-	if (!rclient->availability == PS_ONLINE) {
+	if (rclient->availability != PS_ONLINE) {
 		return 0;
 	}
 
