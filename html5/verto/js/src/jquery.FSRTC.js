@@ -523,6 +523,14 @@ var iceTimer;
 
         function onSuccess(stream) {
 	    self.localStream = stream;
+	    
+	    if (screen) {
+		if (moz) {
+		    self.constraints.OfferToReceiveVideo = false;
+		} else {
+		    self.constraints.mandatory.OfferToReceiveVideo = false;
+		}
+	    }
 
             self.peer = RTCPeerConnection({
                 type: self.type,
@@ -533,7 +541,7 @@ var iceTimer;
                 onICEComplete: function() {
                     return onICEComplete(self);
                 },
-                onRemoteStream: screen ? function(stream) {console.error("SKIP");} : function(stream) {
+                onRemoteStream: screen ? function(stream) {} : function(stream) {
                     return onRemoteStream(self, stream);
                 },
                 onOfferSDP: function(sdp) {
