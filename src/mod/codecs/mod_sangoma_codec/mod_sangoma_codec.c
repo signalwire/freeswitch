@@ -510,7 +510,7 @@ static switch_status_t switch_sangoma_encode(switch_codec_t *codec, switch_codec
 
 	/* do the writing */
 	memset(&linear_frame, 0, sizeof(linear_frame));	
-	linear_frame.source = __FUNCTION__;
+	linear_frame.source = __SWITCH_FUNC__;
 	linear_frame.data = decoded_byteswapped_data;
 	linear_frame.datalen = decoded_data_len;
 	linear_frame.payload = linear_payload;
@@ -720,7 +720,7 @@ static switch_status_t switch_sangoma_decode(switch_codec_t *codec,	/* codec ses
 
 	/* do the writing */
 	memset(&encoded_frame, 0, sizeof(encoded_frame));
-	encoded_frame.source = __FUNCTION__;
+	encoded_frame.source = __SWITCH_FUNC__;
 	encoded_frame.data = encoded_data;
 	encoded_frame.datalen = encoded_data_len;
 	encoded_frame.payload = codec->implementation->ianacode;

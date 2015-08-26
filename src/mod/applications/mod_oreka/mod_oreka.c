@@ -454,7 +454,7 @@ static switch_bool_t oreka_audio_callback(switch_media_bug_t *bug, void *user_da
 		for (i = 0; i < linear_len / sizeof(int16_t); i++) {
 			pcmu_data[i] = linear_to_ulaw(linear_samples[i]);
 		}
-		pcmu_frame.source = __FUNCTION__;
+		pcmu_frame.source = __SWITCH_FUNC__;
 		pcmu_frame.data = pcmu_data;
 		pcmu_frame.datalen = i;
 		pcmu_frame.payload = 0;
@@ -515,7 +515,7 @@ static switch_bool_t oreka_audio_callback(switch_media_bug_t *bug, void *user_da
                     for (i = 0; i < linear_len / sizeof(int16_t); i++) {
                         pcmu_data[i] = linear_to_ulaw(linear_samples[i]);
                     }
-                    pcmu_frame.source = __FUNCTION__;
+                    pcmu_frame.source = __SWITCH_FUNC__;
                     pcmu_frame.data = pcmu_data;
                     pcmu_frame.datalen = i;
                     pcmu_frame.payload = 0;

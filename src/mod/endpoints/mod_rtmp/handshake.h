@@ -30,6 +30,10 @@
 #include <openssl/hmac.h>
 #include <openssl/sha.h>
 
+#if !defined(_MSC_VER) && !defined(__FUNCTION__)
+#define __FUNCTION__ (const char *)__func__
+#endif
+
 #if OPENSSL_VERSION_NUMBER < 0x0090800 || !defined(SHA256_DIGEST_LENGTH)
 #error Your OpenSSL is too old, need 0.9.8 or newer with SHA256
 #endif
