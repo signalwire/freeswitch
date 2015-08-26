@@ -1264,6 +1264,10 @@ void conference_video_write_canvas_image_to_codec_group(conference_obj_t *confer
 					continue;
 				}
 
+				if (imember->video_flow == SWITCH_MEDIA_FLOW_RECVONLY) {
+					continue;
+				}
+
 				if (!imember->session || !switch_channel_test_flag(imember->channel, CF_VIDEO) ||
 					switch_core_session_read_lock(imember->session) != SWITCH_STATUS_SUCCESS) {
 					continue;
@@ -2588,6 +2592,10 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 					continue;
 				}
 
+				if (imember->video_flow == SWITCH_MEDIA_FLOW_RECVONLY) {
+					continue;
+				}
+
 				if (need_refresh) {
 					switch_core_session_request_video_refresh(imember->session);
 				}
@@ -2919,6 +2927,10 @@ void *SWITCH_THREAD_FUNC conference_video_super_muxing_thread_run(switch_thread_
 			if (imember->watching_canvas_id != canvas->canvas_id) continue;
 
 			if (conference_utils_test_flag(conference, CFLAG_MINIMIZE_VIDEO_ENCODING) && !conference_utils_member_test_flag(imember, MFLAG_NO_MINIMIZE_ENCODING)) {
+				continue;
+			}
+
+			if (imember->video_flow == SWITCH_MEDIA_FLOW_RECVONLY) {
 				continue;
 			}
 

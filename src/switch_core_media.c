@@ -10440,6 +10440,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_encoded_video_frame(sw
 	switch_io_event_hook_video_write_frame_t *ptr;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
+	if (switch_core_session_media_flow(session, SWITCH_MEDIA_TYPE_VIDEO) == SWITCH_MEDIA_FLOW_RECVONLY) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Writing video to RECVONLY session\n");
+		return SWITCH_STATUS_SUCCESS;
+	}
+
 	if (session->endpoint_interface->io_routines->write_video_frame) {
 		if ((status = session->endpoint_interface->io_routines->write_video_frame(session, frame, flags, stream_id)) == SWITCH_STATUS_SUCCESS) {
 			for (ptr = session->event_hooks.video_write_frame; ptr; ptr = ptr->next) {
@@ -10504,6 +10509,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_video_frame(switch_cor
 	if (!codec) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "%s has no video codec\n", switch_core_session_get_name(session));
 		return SWITCH_STATUS_FALSE;
+	}
+
+	if (switch_core_session_media_flow(session, SWITCH_MEDIA_TYPE_VIDEO) == SWITCH_MEDIA_FLOW_RECVONLY) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Writing video to RECVONLY session\n");
+		return SWITCH_STATUS_SUCCESS;
 	}
 
 	if (switch_channel_test_flag(session->channel, CF_VIDEO_PAUSE_WRITE)) {
