@@ -6809,7 +6809,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_zerocopy_read_frame(switch_rtp_t *rtp
 
 	frame->data = RTP_BODY(rtp_session);
 
-	if (bytes < rtp_header_len || switch_test_flag(frame, SFF_CNG)) {
+	if (!rtp_session->flags[SWITCH_RTP_FLAG_UDPTL] && (bytes < rtp_header_len || switch_test_flag(frame, SFF_CNG))) {
 		frame->packet = NULL;
 		frame->timestamp = 0;
 		frame->seq = 0;
