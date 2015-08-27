@@ -430,7 +430,7 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
           if (data.liveArray) {
             console.log('Has data.liveArray.');
             $rootScope.$emit('members.clear');
-            data.liveArray.destroy();
+            // data.liveArray.destroy();
             data.liveArray = null;
           } else {
             console.log('Doesn\'t found data.liveArray.');
