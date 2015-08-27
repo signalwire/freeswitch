@@ -177,11 +177,15 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
       maxHeight = data.bestHeight;
 
       if(!data.bestWidth) {
-        maxWidth = videoResolution[data.vidQual].width;
+        if (videoResolution[data.vidQual]) {
+          maxWidth = videoResolution[data.vidQual].width;
+        }
       }
 
       if(!data.bestHeight) {
-        maxHeight = videoResolution[data.vidQual].height;
+        if (videoResolution[data.vidQual]) {
+          maxHeight = videoResolution[data.vidQual].height;
+        }
       }
 
       return {
@@ -539,12 +543,21 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
         };
 
         var init = function(resolutions) {
+          // This means that we cannot use video!
+          if (resolutions.validRes.length === 0) {
+            console.log('No valid resolutions, disabling video.');
+            data.canVideo = false;
+          } else {
+            data.canVideo = true;
+          }
           data.bestWidth = resolutions['bestResSupported'][0];
           data.bestHeight = resolutions['bestResSupported'][1];
 
-          that.updateResolutions(resolutions['validRes']);
-
-          that.refreshVideoResolution();
+          if (data.canVideo) {
+            that.updateResolutions(resolutions['validRes']);
+            that.refreshVideoResolution();
+          }
+          
           // Checking if we have a failed connection attempt before
           // connecting again.
           if (data.instance && !data.instance.rpcClient.socketReady()) {
@@ -557,10 +570,6 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
             socketUrl: data.wsURL,
             tag: "webcam",
             ringFile: "sounds/bell_ring2.wav",
-            loginParams: {
-              foo: true,
-              bar: "yes"
-            },
             videoParams: getVideoParams(),
             // TODO: Add options for this.
             audioParams: {
