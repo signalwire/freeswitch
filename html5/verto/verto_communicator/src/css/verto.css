@@ -45,6 +45,7 @@ body {
 button.btn i {
   line-height: 0;
   vertical-align: middle;
+  color: #FFFFFF;
 }
 
 /*.navbar-nav {*/
@@ -523,6 +524,7 @@ body .modal-body .btn-group .btn.active {
   margin: 0;
   padding-left: 10px;
   padding-right: 10px;
+  background-color: #0D47A1;
 }
 
 #incall .video-footer button {
