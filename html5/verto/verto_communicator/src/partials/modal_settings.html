@@ -3,24 +3,24 @@
 </div>
 <div class="modal-body">
 
-  <div class="form-group" ng-show="verto.data.useVideo">
+  <div class="form-group" ng-show="mydata.useVideo">
     <label for="settings-camera">Camera:</label>
     <select name="camera" id="settings-camera" class="form-control"
-            ng-model="verto.data.selectedVideo" ng-options="item.id as item.label for item in verto.data.videoDevices">
+            ng-model="mydata.selectedVideo" ng-options="item.id as item.label for item in verto.data.videoDevices">
     </select>
   </div>
 
-  <div class="form-group" ng-show="verto.data.useVideo">
+  <div class="form-group" ng-show="mydata.useVideo">
     <label for="settings-share-device">Share device:</label>
     <select name="share-device" id="settings-share-device" class="form-control"
-            ng-model="verto.data.selectedShare" ng-options="item.id as item.label for item in verto.data.shareDevices">
+            ng-model="mydata.selectedShare" ng-options="item.id as item.label for item in verto.data.shareDevices">
     </select>
   </div>
 
   <div class="form-group">
     <label for="settings-microphone">Microphone:</label>
     <select name="microphone" id="settings-microphone" class="form-control"
-            ng-model="verto.data.selectedAudio" ng-options="item.id as item.label for item in verto.data.audioDevices">
+            ng-model="mydata.selectedAudio" ng-options="item.id as item.label for item in verto.data.audioDevices">
     </select>
 
     <a class="btn btn-primary" href="" ng-click="refreshDeviceList()">Refresh device list</a>
@@ -30,37 +30,37 @@
     <label for="settings-microphone">General settings:</label>
     <div class="checkbox">
       <label>
-        <input type="checkbox" name="use_video" value="verto.data.useVideo" ng-model="verto.data.useVideo">
+        <input type="checkbox" name="use_video" value="mydata.useVideo" ng-model="mydata.useVideo">
         Use Video
       </label>
     </div>
     <div class="checkbox">
       <label>
-        <input type="checkbox" name="use_stereo_audio" ng-value="verto.data.useStereo" ng-model="verto.data.useStereo">
+        <input type="checkbox" name="use_stereo_audio" ng-value="mydata.useStereo" ng-model="mydata.useStereo">
         Stereo Audio
       </label>
     </div>
     <div class="checkbox">
       <label>
-        <input type="checkbox" name="use_stun" ng-value="verto.data.useSTUN" ng-model="verto.data.useSTUN">
+        <input type="checkbox" name="use_stun" ng-value="mydata.useSTUN" ng-model="mydata.useSTUN">
         Use STUN
       </label>
     </div>
     <div class="checkbox">
       <label>
-        <input type="checkbox" name="use_dedenc" ng-value="verto.data.useDedenc" ng-model="verto.data.useDedenc">
+        <input type="checkbox" name="use_dedenc" ng-value="mydata.useDedenc" ng-model="mydata.useDedenc">
         Use Dedicated Remote Encoder
       </label>
     </div>
     <div class="checkbox">
       <label>
-        <input type="checkbox" name="mirror_input" ng-value="verto.data.mirrorInput" ng-model="verto.data.mirrorInput">
+        <input type="checkbox" name="mirror_input" ng-value="mydata.mirrorInput" ng-model="mydata.mirrorInput">
         Scale Remote Video To Match Camera Resolution
       </label>
     </div>
     <div class="checkbox">
       <label>
-        <input type="checkbox" name="ask_recover_call" ng-value="storage.data.askRecoverCall" ng-model="storage.data.askRecoverCall">
+        <input type="checkbox" name="ask_recover_call" ng-value="mydata.askRecoverCall" ng-model="mydata.askRecoverCall">
         Ask before recovering call
       </label>
     </div>
@@ -70,21 +70,21 @@
   <div class="form-group">
     <label for="video-quality">Video quality:</label>
     <select name="video_quality" id="video-quality" class="form-control"
-            ng-model="verto.data.vidQual"
+            ng-model="mydata.vidQual"
             ng-options="item.id as item.label for item in verto.videoQuality"></select>
   </div>
 
   <div class="form-group">
     <label for="outgoing-bandwidth">Max outgoing bandwidth:</label>
     <select name="outgoing_bandwidth" id="outgoing-bandwidth" class="form-control"
-            ng-model="verto.data.outgoingBandwidth"
+            ng-model="mydata.outgoingBandwidth"
             ng-options="item.id as item.label for item in verto.bandwidth"></select>
   </div>
 
   <div class="form-group">
     <label for="incoming-bandwidth">Max incoming bandwidth:</label>
     <select name="incoming_bandwidth" id="incoming-bandwidth" class="form-control"
-            ng-model="verto.data.incomingBandwidth"
+            ng-model="mydata.incomingBandwidth"
             ng-options="item.id as item.label for item in verto.bandwidth"></select>
   </div>
 
