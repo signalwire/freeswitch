@@ -21,7 +21,7 @@
         </div>
 
         <li ng-repeat="call in storage.data.call_history">
-          <a ng-show="call.number" href="" ng-dblclick="$parent.call()" ng-click="$parent.fillDialpadNumber(call.number)">
+          <a ng-show="call.number" href="" ng-dblclick="$parent.call(call.number)" ng-click="$parent.fillDialpadNumber(call.number)">
             <i ng-show="call.direction == 'inbound'" ng-class="{'mdi-communication-call-missed': !call.status,'mdi-communication-call-received': call.status}"></i>
             <i ng-show="call.direction == 'outbound'" class="mdi-communication-call-made"></i>
             <h2 class="dialpad-number dialpad-number-limited">{{ call.number }}</h2>
