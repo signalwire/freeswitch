@@ -1,6 +1,7 @@
 {
   "name": "verto_communicator",
   "version": "0.0.1",
+  "license": "MPL-1.1",
   "description": "HTML5 Based Communications application for use with FreeSWITCH and mod_verto",
   "devDependencies": {
     "autoprefixer-core": "^5.2.1",
