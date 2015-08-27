@@ -6926,6 +6926,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 						su_home_t *home = NULL;
 						switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "RECEIVED");
 						sofia_set_flag_locked(tech_pvt, TFLAG_READY);
+
 						if (switch_channel_get_state(channel) == CS_NEW) {
 							switch_channel_set_state(channel, CS_INIT);
 						} else {
@@ -7053,6 +7054,11 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 			}
 			nua_respond(tech_pvt->nh, SIP_200_OK, TAG_END());
 			goto done;
+		} else if (r_sdp && !sofia_use_soa(tech_pvt)) {
+			nua_respond(tech_pvt->nh, SIP_200_OK,
+						NUTAG_MEDIA_ENABLE(0),
+						SIPTAG_CONTACT_STR(tech_pvt->profile->url),
+						SIPTAG_CONTENT_TYPE_STR("application/sdp"), SIPTAG_PAYLOAD_STR(tech_pvt->mparams.local_sdp_str), TAG_END());
 		} else {
 			ss_state = nua_callstate_completed;
 			goto state_process;
