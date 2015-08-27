@@ -294,7 +294,11 @@ var iceTimer;
 
         if (self.options.useVideo) {
             self.options.useVideo.style.display = 'none';
-	    self.options.useVideo[moz ? 'mozSrcObject' : 'src'] = null;
+            if (moz) {
+                self.options.useVideo['mozSrcObject'] = null;
+            } else {
+                self.options.useVideo['src'] = '';
+            }
         }
 
         if (self.localStream) {
@@ -304,7 +308,11 @@ var iceTimer;
 
         if (self.options.localVideo) {
             self.options.localVideo.style.display = 'none';
-	    self.options.localVideo[moz ? 'mozSrcObject' : 'src'] = null;
+            if (moz) {
+                self.options.localVideo['mozSrcObject'] = null;
+            } else {
+                self.options.localVideo['src'] = '';
+            }
         }
 
 	if (self.options.localVideoStream) {
