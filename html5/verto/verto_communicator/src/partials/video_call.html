@@ -36,7 +36,7 @@
       <button tooltips="" tooltip-title="(un)Mute Mic" tooltip-side="bottom" tooltip-lazy="false" class="btn btn-material-blue-900" ng-click="muteMic(cbMuteMic)">
         <i class="" ng-class="{'mdi-av-mic': !verto.data.mutedMic, 'mdi-av-mic-off': verto.data.mutedMic}"></i>
       </button>
-      <button tooltips="" tooltip-title="(un)Mute Video" tooltip-side="bottom" tooltip-lazy="false" class="btn btn-material-blue-900" ng-click="muteVideo(cbMuteVideo)">
+      <button tooltips="" tooltip-title="(un)Mute Video" tooltip-side="bottom" tooltip-lazy="false" class="btn btn-material-blue-900" ng-click="muteVideo(cbMuteVideo)" ng-if="verto.data.canVideo">
         <i class="" ng-class="{'mdi-av-videocam': !verto.data.mutedVideo, 'mdi-av-videocam-off': verto.data.mutedVideo}"></i>
       </button>
       <button tooltips="" tooltip-title="Toggle Fullscreen Mode" tooltip-side="bottom" tooltip-lazy="false" class="btn btn-material-blue-900" ng-click="goFullscreen()">
