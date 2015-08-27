@@ -52,6 +52,10 @@ button.btn i {
   /*height: 50px;*/
 /*}*/
 
+._720kb-tooltip {
+  z-index:1001;
+}
+
 .navbar .navbar-nav > li.navbar-item-icon > a {
   padding: 18px;
   height: 60px;
