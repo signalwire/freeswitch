@@ -6408,17 +6408,15 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			*flags &= ~SFF_NOT_AUDIO; /* If this flag was already set, make sure to remove it when we get real audio */
 		}
 
-
-		/* ignore packets not meant for us unless the auto-adjust window is open */
-		if (bytes) {
+		/* ignore packets not meant for us unless the auto-adjust window is open (ice mode has its own alternatives to this) */
+		if (!using_ice(rtp_session) && bytes) {
 			if (rtp_session->flags[SWITCH_RTP_FLAG_AUTOADJ]) {
 				if (rtp_session->recv_msg.header.pt == rtp_session->cng_pt || rtp_session->recv_msg.header.pt == 13) {
 					goto recvfrom;
 
 				}
-			} else if (!(rtp_session->rtp_bugs & RTP_BUG_ACCEPT_ANY_PACKETS) && !switch_cmp_addr(rtp_session->from_addr, rtp_session->remote_addr)) {
+			} else if (!(rtp_session->rtp_bugs & RTP_BUG_ACCEPT_ANY_PACKETS) && !switch_cmp_addr(rtp_session->rtp_from_addr, rtp_session->remote_addr)) {
 				goto recvfrom;
-
 			}
 		}
 
