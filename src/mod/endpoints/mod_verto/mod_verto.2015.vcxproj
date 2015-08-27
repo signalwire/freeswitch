@@ -93,6 +93,7 @@
       <PrecompiledHeader>
       </PrecompiledHeader>
       <AdditionalIncludeDirectories>$(SolutionDir)\src\include;%(AdditionalIncludeDirectories);..\..\..\..\libs\openssl-$(OpenSSLVersion)\include;$(ProjectDir)..\..\..\..\libs\pthreads-w32-2-9-1;.\;.\mcast</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_TIMESPEC_DEFINED;_DEBUG;DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
@@ -122,6 +123,7 @@
       <PrecompiledHeader>
       </PrecompiledHeader>
       <AdditionalIncludeDirectories>$(SolutionDir)\src\include;%(AdditionalIncludeDirectories);..\..\..\..\libs\openssl-$(OpenSSLVersion)\include;$(ProjectDir)..\..\..\..\libs\pthreads-w32-2-9-1;.\;.\mcast</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_TIMESPEC_DEFINED;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
