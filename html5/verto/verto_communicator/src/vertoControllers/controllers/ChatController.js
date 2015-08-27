@@ -82,13 +82,11 @@
       }
 
       $rootScope.$on('members.boot', function(event, members) {
-        console.log('members.boot', event, members);
         $scope.$apply(function() {
           clearConferenceChat();
           for (var idx in members) {
             var member = members[idx];
             addMember(member);
-            console.log($scope.members);
           }
         })
       });
@@ -116,8 +114,8 @@
           console.log('Didn\'t find the member uuid ' + member.uuid);
         } else {
           $scope.$apply(function() {
-            console.log('Updating', memberIdx, ' <', $scope.members[memberIdx],
-              '> with <', member, '>');
+            // console.log('Updating', memberIdx, ' <', $scope.members[memberIdx],
+              // '> with <', member, '>');
             angular.extend($scope.members[memberIdx], member);
           });
         }
