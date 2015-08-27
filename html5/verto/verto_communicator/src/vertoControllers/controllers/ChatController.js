@@ -4,9 +4,9 @@
   angular
   .module('vertoControllers')
   .controller('ChatController', ['$scope', '$rootScope', '$http',
-    '$location', '$anchorScroll', '$timeout', 'verto',
+    '$location', '$anchorScroll', '$timeout', 'verto', 'prompt',
     function($scope, $rootScope, $http, $location, $anchorScroll, $timeout,
-      verto) {
+      verto, prompt) {
       console.debug('Executing ChatController.');
 
       function scrollToChatBottom() {
@@ -181,8 +181,17 @@
 
       $scope.confTransfer = function(memberID) {
         console.log('$scope.confTransfer');
-        var exten = '1800';
-        verto.data.conf.transfer(memberID, exten);
+        prompt({
+          title: 'Transfer party?',
+          message: 'To what destination would you like to transfer this call?',
+          input: true,
+          label: 'Destination',
+          value: '',
+        }).then(function(exten) {
+          if (exten) {
+            verto.data.conf.transfer(memberID, exten);
+          }
+        });
       };
     }
   ]);
