@@ -934,17 +934,17 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 			break;
 		case SWITCH_STUN_ATTR_MAPPED_ADDRESS:
 			if (attr->type) {
-				char ip[16];
+				char ip[50];
 				uint16_t port;
-				switch_stun_packet_attribute_get_mapped_address(attr, ip, &port);
+				switch_stun_packet_attribute_get_mapped_address(attr, ip, sizeof(ip), &port);
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG8, "|------: %s:%d\n", ip, port);
 			}
 			break;
 		case SWITCH_STUN_ATTR_XOR_MAPPED_ADDRESS:
 			if (attr->type) {
-				char ip[16];
+				char ip[50];
 				uint16_t port;
-				switch_stun_packet_attribute_get_xor_mapped_address(attr, packet->header.cookie, ip, &port);
+				switch_stun_packet_attribute_get_xor_mapped_address(attr, &packet->header, ip, sizeof(ip), &port);
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG8, "|------: %s:%d\n", ip, port);
 			}
 			break;
@@ -1031,8 +1031,8 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 				uint32_t old;
 				//const char *tx_host;
 				const char *old_host, *err = NULL;
-				//char bufa[30];
-				char bufb[30];
+				//char bufa[50];
+				char bufb[50];
 				char adj_port[6];
 				switch_channel_t *channel = NULL;
 				
@@ -1137,11 +1137,12 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 			switch_stun_packet_t *rpacket;
 			const char *remote_ip;
 			switch_size_t bytes;
-			char ipbuf[25];
+			char ipbuf[50];
 			switch_sockaddr_t *from_addr = rtp_session->from_addr;
 			switch_socket_t *sock_output = rtp_session->sock_output;
 			uint8_t do_adj = 0;
 			switch_time_t now = switch_micro_time_now();
+			int cmp = 0;
 
 			if (is_rtcp) {
 				from_addr = rtp_session->rtcp_from_addr;
@@ -1160,7 +1161,8 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 			}
 
 			remote_ip = switch_get_addr(ipbuf, sizeof(ipbuf), from_addr);
-			switch_stun_packet_attribute_add_xor_binded_address(rpacket, (char *) remote_ip, switch_sockaddr_get_port(from_addr));
+
+			switch_stun_packet_attribute_add_xor_binded_address(rpacket, (char *) remote_ip, switch_sockaddr_get_port(from_addr), from_addr->family);
 
 			if ((ice->type & ICE_VANILLA)) {
 				switch_stun_packet_attribute_add_integrity(rpacket, ice->pass);
@@ -1173,9 +1175,12 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 			port = switch_sockaddr_get_port(from_addr);
 			host2 = switch_get_addr(buf2, sizeof(buf2), ice->addr);
 			port2 = switch_sockaddr_get_port(ice->addr);
+			cmp = switch_cmp_addr(from_addr, ice->addr);
 
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, 
+							  "STUN from %s:%d %s\n", host, port, cmp ? "EXPECTED" : "IGNORED");
 
-			if (switch_cmp_addr(from_addr, ice->addr)) {
+			if (cmp) {
 				ice->last_ok = now;
 			} else {
 				if ((rtp_session->dtls->state != DS_READY || !ice->ready || !ice->rready)) {
@@ -2212,7 +2217,7 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 #ifdef DEBUG_EXTRA
 		{
 			const char *old_host;
-			char bufb[30];
+			char bufb[50];
 			old_host = switch_get_addr(bufb, sizeof(bufb), rtp_session->rtcp_remote_addr);
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_CRIT, "%s SEND %s RTCP %s:%d %ld\n", 
 							  rtp_session_name(rtp_session),
@@ -2407,7 +2412,7 @@ static switch_status_t enable_remote_rtcp_socket(switch_rtp_t *rtp_session, cons
 			return SWITCH_STATUS_FALSE;
 		} else {
 			const char *host;
-			char bufa[30];
+			char bufa[50];
 			
 			host = switch_get_addr(bufa, sizeof(bufa), rtp_session->rtcp_remote_addr);
 
@@ -2445,7 +2450,7 @@ static switch_status_t enable_local_rtcp_socket(switch_rtp_t *rtp_session, const
 	switch_port_t port = rtp_session->local_port;
 	switch_socket_t *rtcp_new_sock = NULL, *rtcp_old_sock = NULL;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	char bufa[30];
+	char bufa[50];
 
 	if (rtp_session->flags[SWITCH_RTP_FLAG_ENABLE_RTCP]) {
 		if (switch_sockaddr_info_get(&rtp_session->rtcp_local_addr, host, SWITCH_UNSPEC, port+1, 0, rtp_session->pool) != SWITCH_STATUS_SUCCESS) {
@@ -4155,7 +4160,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_activate_ice(switch_rtp_t *rtp_sessio
 	switch_rtp_ice_t *ice;
 	char *host = NULL;
 	switch_port_t port = 0;
-	char bufc[30];
+	char bufc[50];
 				 
 
 	switch_mutex_lock(rtp_session->ice_mutex);
@@ -5139,7 +5144,7 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 		const char *old_host;
 		const char *my_host;
 
-		char bufa[30], bufb[30], bufc[30];
+		char bufa[50], bufb[50], bufc[50];
 
 
 		tx_host = switch_get_addr(bufa, sizeof(bufa), rtp_session->rtp_from_addr);
@@ -5540,7 +5545,7 @@ static void handle_nack(switch_rtp_t *rtp_session, uint32_t nack)
 	const char *tx_host = NULL;
 	const char *old_host = NULL;
 	const char *my_host = NULL;
-	char bufa[30], bufb[30], bufc[30];
+	char bufa[50], bufb[50], bufc[50];
 
 	if (!(rtp_session->flags[SWITCH_RTP_FLAG_NACK] && rtp_session->vbw)) {
 		return;  /* not enabled */
@@ -6424,7 +6429,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 					uint32_t old = rtp_session->remote_port;
 					const char *tx_host;
 					const char *old_host;
-					char bufa[30], bufb[30];
+					char bufa[50], bufb[50];
 					char adj_port[6];
 
 					tx_host = switch_get_addr(bufa, sizeof(bufa), rtp_session->rtp_from_addr);
@@ -7305,7 +7310,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 			const char *old_host;
 			const char *my_host;
 
-			char bufa[30], bufb[30], bufc[30];
+			char bufa[50], bufb[50], bufc[50];
 
 
 			tx_host = switch_get_addr(bufa, sizeof(bufa), rtp_session->rtp_from_addr);
@@ -7495,7 +7500,7 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_fra
 		
 		//if (rtp_session->flags[SWITCH_RTP_FLAG_PROXY_MEDIA] || rtp_session->flags[SWITCH_RTP_FLAG_UDPTL]) {
 		switch_size_t bytes;
-		//char bufa[30];
+		//char bufa[50];
 
 		/* Fast PASS! */
 		if (!switch_test_flag(frame, SFF_PROXY_PACKET) && !switch_test_flag(frame, SFF_UDPTL_PACKET)) {

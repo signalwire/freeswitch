@@ -2196,7 +2196,7 @@ SWITCH_DECLARE(int) switch_cp_addr(switch_sockaddr_t *sa1, switch_sockaddr_t *sa
 	struct sockaddr_in6 *s26;
 
 	struct sockaddr *ss1;
-	struct sockaddr *ss2;
+	//struct sockaddr *ss2;
 
 	if (!(sa1 && sa2))
 		return 0;
@@ -2208,14 +2208,13 @@ SWITCH_DECLARE(int) switch_cp_addr(switch_sockaddr_t *sa1, switch_sockaddr_t *sa
 	s26 = (struct sockaddr_in6 *) &sa2->sa;
 
 	ss1 = (struct sockaddr *) &sa1->sa;
-	ss2 = (struct sockaddr *) &sa2->sa;
+	//ss2 = (struct sockaddr *) &sa2->sa;
 
-	if (ss1->sa_family != ss2->sa_family)
-		return 0;
-	
 	sa1->port = sa2->port;
 	sa1->family = sa2->family;
-	
+
+	sa1->sa.sin.sin_family = sa2->family;
+
 	switch (ss1->sa_family) {
 	case AF_INET:
 		s1->sin_addr.s_addr = s2->sin_addr.s_addr;

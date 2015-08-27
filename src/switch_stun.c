@@ -107,6 +107,21 @@ static const struct value_mapping ERROR_TYPES[] = {
 	{0, 0}
 };
 
+static void v6_xor(uint8_t *addr, const uint8_t *transaction_id)
+{
+	int i;
+
+	addr[0] ^= 0x21;
+	addr[1] ^= 0x12;
+	addr[2] ^= 0xa4;
+	addr[3] ^= 0x42;
+
+	for (i = 0; i < 12; i++) {
+		addr[i + 4] ^= transaction_id[i];
+	}
+}
+
+
 SWITCH_DECLARE(void) switch_stun_random_string(char *buf, uint16_t len, char *set)
 {
 	char chars[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -220,8 +235,6 @@ SWITCH_DECLARE(switch_stun_packet_t *) switch_stun_packet_parse(uint8_t *buf, ui
 			{
 				switch_stun_ip_t *ip = (switch_stun_ip_t *) attr->value;
 				ip->port = ntohs(ip->port);
-				//uint32_t *u = (uint32_t *)attr->value;
-				//*u = ntohl(*u);
 			}
 			break;
 		case SWITCH_STUN_ATTR_SOURCE_ADDRESS2:
@@ -361,7 +374,7 @@ SWITCH_DECLARE(const char *) switch_stun_value_to_name(int32_t type, uint32_t va
 	return "INVALID";
 }
 
-SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_get_mapped_address(switch_stun_packet_attribute_t *attribute, char *ipstr, uint16_t *port)
+SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_get_mapped_address(switch_stun_packet_attribute_t *attribute, char *ipstr, switch_size_t iplen, uint16_t *port)
 {
 	switch_stun_ip_t *ip;
 	uint8_t x, *i;
@@ -378,23 +391,30 @@ SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_get_mapped_address(switch_s
 	return 1;
 }
 
-SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_get_xor_mapped_address(switch_stun_packet_attribute_t *attribute, uint32_t cookie, char *ipstr, uint16_t *port)
+SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_get_xor_mapped_address(switch_stun_packet_attribute_t *attribute, switch_stun_packet_header_t *header, char *ipstr, switch_size_t iplen, uint16_t *port)
 {
 	switch_stun_ip_t *ip;
 	uint8_t x, *i;
 	char *p = ipstr;
 
 	ip = (switch_stun_ip_t *) attribute->value;
-	ip->address ^= cookie;
 
-	i = (uint8_t *) & ip->address;
-	*ipstr = 0;
-	for (x = 0; x < 4; x++) {
-		sprintf(p, "%u%s", i[x], x == 3 ? "" : ".");
-		p = ipstr + strlen(ipstr);
+	if (ip->family == 2) {
+		uint8_t *v6addr = (uint8_t *) &ip->address;
+		v6_xor(v6addr, (uint8_t *)header->id);
+		inet_ntop(AF_INET6, v6addr, ipstr, iplen);
+	} else {
+		ip->address ^= header->cookie;
+
+		i = (uint8_t *) & ip->address;
+		*ipstr = 0;
+		for (x = 0; x < 4; x++) {
+			sprintf(p, "%u%s", i[x], x == 3 ? "" : ".");
+			p = ipstr + strlen(ipstr);
+		}
 	}
 
-    ip->port ^= ntohl(cookie) >> 16;
+    ip->port ^= ntohl(header->cookie) >> 16;
 	*port = ip->port;
 
 	return 1;
@@ -427,62 +447,72 @@ SWITCH_DECLARE(switch_stun_packet_t *) switch_stun_packet_build_header(switch_st
 	return (switch_stun_packet_t *) buf;
 }
 
-SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_add_binded_address(switch_stun_packet_t *packet, char *ipstr, uint16_t port)
+
+SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_add_binded_address(switch_stun_packet_t *packet, char *ipstr, uint16_t port, int family)
 {
 	switch_stun_packet_attribute_t *attribute;
 	switch_stun_ip_t *ip;
-	uint8_t *i, x;
-	char *p = ipstr;
-
-	attribute = (switch_stun_packet_attribute_t *) ((uint8_t *) & packet->first_attribute + ntohs(packet->header.length));
-	attribute->type = htons(SWITCH_STUN_ATTR_MAPPED_ADDRESS);
-	attribute->length = htons(8);
-	ip = (switch_stun_ip_t *) attribute->value;
-
-	ip->port = htons(port);
-	ip->family = 1;
-	i = (uint8_t *) & ip->address;
-
-	for (x = 0; x < 4; x++) {
-		i[x] = (uint8_t) atoi(p);
-		if ((p = strchr(p, '.'))) {
-			p++;
-		} else {
-			break;
-		}
-	}
-
-	packet->header.length += htons(sizeof(switch_stun_packet_attribute_t)) + attribute->length;
-
-	return 1;
-}
-
-SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_add_xor_binded_address(switch_stun_packet_t *packet, char *ipstr, uint16_t port)
-{
-	switch_stun_packet_attribute_t *attribute;
-	switch_stun_ip_t *ip;
-	uint8_t *i, x;
-	char *p = ipstr;
-
+	
 	attribute = (switch_stun_packet_attribute_t *) ((uint8_t *) & packet->first_attribute + ntohs(packet->header.length));
 	attribute->type = htons(SWITCH_STUN_ATTR_XOR_MAPPED_ADDRESS);
-	attribute->length = htons(8);
+
+	if (family == AF_INET6) {
+		attribute->length = htons(20);
+	} else {
+		attribute->length = htons(8);
+	}
+
 	ip = (switch_stun_ip_t *) attribute->value;
 
 	ip->port = htons(port ^ (STUN_MAGIC_COOKIE >> 16));
-	ip->family = 1;
-	i = (uint8_t *) & ip->address;
 
-	for (x = 0; x < 4; x++) {
-		i[x] = (uint8_t) atoi(p);
-		if ((p = strchr(p, '.'))) {
-			p++;
-		} else {
-			break;
-		}
+	if (family == AF_INET6) {
+		ip->family = 2;
+	} else {
+		ip->family = 1;
 	}
 
-	ip->address = htonl(ntohl(ip->address) ^ STUN_MAGIC_COOKIE);
+	if (family == AF_INET6) {
+		inet_pton(AF_INET6, ipstr, (struct in6_addr *) &ip->address);
+	} else {
+		inet_pton(AF_INET, ipstr, (int *) &ip->address);
+	}
+
+	packet->header.length += htons(sizeof(switch_stun_packet_attribute_t)) + attribute->length;
+	return 1;
+}
+
+SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_add_xor_binded_address(switch_stun_packet_t *packet, char *ipstr, uint16_t port, int family)
+{
+	switch_stun_packet_attribute_t *attribute;
+	switch_stun_ip_t *ip;
+	
+	attribute = (switch_stun_packet_attribute_t *) ((uint8_t *) & packet->first_attribute + ntohs(packet->header.length));
+	attribute->type = htons(SWITCH_STUN_ATTR_XOR_MAPPED_ADDRESS);
+
+	if (family == AF_INET6) {
+		attribute->length = htons(20);
+	} else {
+		attribute->length = htons(8);
+	}
+
+	ip = (switch_stun_ip_t *) attribute->value;
+
+	ip->port = htons(port ^ (STUN_MAGIC_COOKIE >> 16));
+
+	if (family == AF_INET6) {
+		ip->family = 2;
+	} else {
+		ip->family = 1;
+	}
+
+	if (family == AF_INET6) {
+		inet_pton(AF_INET6, ipstr, (struct in6_addr *) &ip->address);
+		v6_xor((uint8_t *)&ip->address, (uint8_t *)packet->header.id);
+	} else {
+		inet_pton(AF_INET, ipstr, (int *) &ip->address);
+		ip->address = htonl(ntohl(ip->address) ^ STUN_MAGIC_COOKIE);
+	}
 
 	packet->header.length += htons(sizeof(switch_stun_packet_attribute_t)) + attribute->length;
 	return 1;
@@ -677,7 +707,7 @@ SWITCH_DECLARE(switch_status_t) switch_stun_lookup(char **ip,
 	switch_stun_packet_attribute_t *attr;
 	switch_size_t bytes = 0;
 	char username[33] = { 0 };
-	char rip[16] = { 0 };
+	char rip[50] = { 0 };
 	uint16_t rport = 0;
 	switch_time_t started = 0;
 	unsigned int elapsed = 0;
@@ -780,12 +810,12 @@ SWITCH_DECLARE(switch_status_t) switch_stun_lookup(char **ip,
 					switch_stun_ip_t *tmp = (switch_stun_ip_t *) attr->value;
 					tmp->address ^= ntohl(0xabcdabcd);
 				}
-				switch_stun_packet_attribute_get_mapped_address(attr, rip, &rport);
+				switch_stun_packet_attribute_get_mapped_address(attr, rip, sizeof(rip), &rport);
 			}
 			break;
 		case SWITCH_STUN_ATTR_XOR_MAPPED_ADDRESS:
 			if (attr->type) {
-				switch_stun_packet_attribute_get_xor_mapped_address(attr, packet->header.cookie, rip, &rport);
+				switch_stun_packet_attribute_get_xor_mapped_address(attr, &packet->header, rip, sizeof(rip), &rport);
 			}
 			break;
 		case SWITCH_STUN_ATTR_USERNAME:

@@ -141,7 +141,6 @@ typedef struct {
 	uint32_t address;
 } switch_stun_ip_t;
 
-
 #if SWITCH_BYTE_ORDER == __BIG_ENDIAN
 
 typedef struct {
@@ -196,8 +195,8 @@ SWITCH_DECLARE(char *) switch_stun_host_lookup(const char *host, switch_memory_p
   \param port the port
   \return true or false
 */
-SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_get_mapped_address(switch_stun_packet_attribute_t *attribute, char *ipstr, uint16_t *port);
-SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_get_xor_mapped_address(switch_stun_packet_attribute_t *attribute, uint32_t cookie, char *ipstr, uint16_t *port);
+SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_get_mapped_address(switch_stun_packet_attribute_t *attribute, char *ipstr, switch_size_t iplen, uint16_t *port);
+SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_get_xor_mapped_address(switch_stun_packet_attribute_t *attribute, switch_stun_packet_header_t *header, char *ipstr, switch_size_t iplen, uint16_t *port);
 
 
 /*!
@@ -237,10 +236,8 @@ SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_add_software(switch_stun_pa
   \param port the port of the mapped address
   \return true or false
 */
-SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_add_binded_address(switch_stun_packet_t *packet, char *ipstr, uint16_t port);
-SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_add_xor_binded_address(switch_stun_packet_t *packet, char *ipstr, uint16_t port);
-
-
+SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_add_binded_address(switch_stun_packet_t *packet, char *ipstr, uint16_t port, int family);
+SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_add_xor_binded_address(switch_stun_packet_t *packet, char *ipstr, uint16_t port, int family);
 SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_add_integrity(switch_stun_packet_t *packet, const char *pass);
 SWITCH_DECLARE(uint32_t) switch_crc32_8bytes(const void* data, size_t length);
 SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_add_fingerprint(switch_stun_packet_t *packet);
