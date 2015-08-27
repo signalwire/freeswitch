@@ -163,10 +163,6 @@ void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *thread, v
 	int flags = 0;
 	mcu_canvas_t *canvas = NULL;
 
-	data_buf_len = samples * sizeof(int16_t);
-
-	switch_zmalloc(data_buf, data_buf_len);
-
 	if (switch_thread_rwlock_tryrdlock(conference->rwlock) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Read Lock Fail\n");
 		return NULL;
