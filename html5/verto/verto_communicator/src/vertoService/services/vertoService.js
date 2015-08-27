@@ -545,7 +545,12 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
           that.updateResolutions(resolutions['validRes']);
 
           that.refreshVideoResolution();
-
+          // Checking if we have a failed connection attempt before
+          // connecting again.
+          if (data.instance && !data.instance.rpcClient.socketReady()) {
+              clearTimeout(data.instance.rpcClient.to);
+              data.instance.logout();
+          };
           data.instance = new jQuery.verto({
             login: data.login + '@' + data.hostname,
             passwd: data.password,
