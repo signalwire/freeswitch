@@ -117,23 +117,8 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
       textTo: $cookieStore.get('verto_demo_textto') || "1000",
       login: $cookieStore.get('verto_demo_login') || "1008",
       password: $cookieStore.get('verto_demo_passwd') || "1234",
-      hostname: $cookieStore.get('verto_demo_hostname') || window.location.hostname,
-      wsURL: $cookieStore.get('verto_demo_wsurl') || ("wss://" + window.location.hostname + ":8082"),
-      useVideo: $cookieStore.get('verto_demo_vid_checked') || true,
-      useCamera: $cookieStore.get('verto_demo_camera_checked') || true,
-      useStereo: $cookieStore.get('verto_demo_stereo_checked') || true,
-      useSTUN: $cookieStore.get('verto_demo_stun_checked') || true,
-      useDedenc: $cookieStore.get('verto_demo_dedenc_checked') || false,
-      mirrorInput: $cookieStore.get('verto_demo_mirror_input_checked') || false,
-      outgoingBandwidth: $cookieStore.get('verto_demo_outgoingBandwidth') || 'default',
-      incomingBandwidth: $cookieStore.get('verto_demo_incomingBandwidth') || 'default',
-      vidQual: $cookieStore.get('verto_demo_vqual') || 'qvga',
-      localVideo: $cookieStore.get('verto_demo_local_video_checked') || false,
-      bestWidth: '',
-      bestHeight: '',
-      selectedVideo: null,
-      selectedAudio: null,
-      selectedShare: null
+      hostname: window.location.hostname,
+      wsURL: ("wss://" + window.location.hostname + ":8082")
     };
 
     function cleanShareCall(that) {
@@ -199,31 +184,6 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
       };
     }
 
-    function changeData(verto_data) {
-      $cookieStore.put('verto_demo_vid_checked', verto_data.data.useVideo);
-      $cookieStore.put('verto_demo_camera_checked', verto_data.data.useCamera);
-      $cookieStore.put('verto_demo_stereo_checked', verto_data.data.useStereo);
-      $cookieStore.put('verto_demo_stun_checked', verto_data.data.useSTUN);
-      $cookieStore.put('verto_demo_dedenc_checked', verto_data.data.useDedenc);
-      $cookieStore.put('verto_demo_mirror_input_checked', verto_data.data.mirrorInput);
-      $cookieStore.put('verto_demo_outgoingBandwidth', verto_data.data.outgoingBandwidth);
-      $cookieStore.put('verto_demo_incomingBandwidth', verto_data.data.incomingBandwidth);
-      $cookieStore.put('verto_demo_vqual', verto_data.data.vidQual);
-
-      data.selectedVideo = verto_data.data.selectedVideo;
-      data.selectedAudio = verto_data.data.selectedAudio;
-      data.selectedShare = verto_data.data.selectedShare;
-      data.useVideo = verto_data.data.useVideo;
-      data.useCamera = verto_data.data.useCamera;
-      data.useStereo = verto_data.data.useStereo;
-      data.useDedenc = verto_data.data.useDedenc;
-      data.useSTUN = verto_data.data.useSTUN;
-      data.vidQual = verto_data.data.vidQual;
-      data.mirrorInput = verto_data.data.mirrorInput;
-      data.outgoingBandwidth = verto_data.data.outgoingBandwidth;
-      data.incomingBandwidth = verto_data.data.incomingBandwidth;
-    }
-
     var callState = {
       muteMic: false,
       muteVideo: false
@@ -232,7 +192,7 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
     return {
       data: data,
       callState: callState,
-      changeData: changeData,
+      // changeData: changeData,
 
       // Options to compose the interface.
       videoQuality: videoQuality,
@@ -370,7 +330,7 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
 
           var conf = new $.verto.conf(v, {
             dialog: dialog,
-            hasVid: data.useVideo,
+            hasVid: storage.data.useVideo,
             laData: pvtData,
             onBroadcast: function(v, conf, message) {
               console.log('>>> conf.onBroadcast:', arguments);
@@ -636,14 +596,14 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
           destination_number: destination,
           caller_id_name: data.name,
           caller_id_number: data.login,
-          outgoingBandwidth: data.outgoingBandwidth,
-          incomingBandwidth: data.incomingBandwidth,
-          useVideo: data.useVideo,
-          useStereo: data.useStereo,
-          useCamera: data.selectedVideo,
-          useMic: data.selectedAudio,
-          dedEnc: data.useDedenc,
-          mirrorInput: data.mirrorInput,
+          outgoingBandwidth: storage.data.outgoingBandwidth,
+          incomingBandwidth: storage.data.incomingBandwidth,
+          useVideo: storage.data.useVideo,
+          useStereo: storage.data.useStereo,
+          useCamera: storage.data.selectedVideo,
+          useMic: storage.data.selectedAudio,
+          dedEnc: storage.data.useDedenc,
+          mirrorInput: storage.data.mirrorInput,
           userVariables: {
             email : storage.data.email,
             avatar: "http://gravatar.com/avatar/" + md5(storage.data.email) + ".png?s=600"
@@ -674,13 +634,13 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
             destination_number: destination + '-screen',
             caller_id_name: data.name + ' (Screen)',
             caller_id_number: data.login + ' (Screen)',
-            outgoingBandwidth: data.outgoingBandwidth,
-            incomingBandwidth: data.incomingBandwidth,
+            outgoingBandwidth: storage.data.outgoingBandwidth,
+            incomingBandwidth: storage.data.incomingBandwidth,
             videoParams: screen_constraints.video.mandatory,
-            useVideo: data.useVideo,
+            useVideo: storage.data.useVideo,
             screenShare: true,
-            dedEnc: data.useDedenc,
-            mirrorInput: data.mirrorInput,
+            dedEnc: storage.data.useDedenc,
+            mirrorInput: storage.data.mirrorInput,
             userVariables: {
               email : storage.data.email,
               avatar: "http://gravatar.com/avatar/" + md5(storage.data.email) + ".png?s=600"

@@ -277,7 +277,6 @@
             verto.hangup();
           });
         } else {
-          verto.changeData(storage);
           console.log('redirect to incall page');
           $location.path('/incall');
         }
@@ -381,9 +380,9 @@
         storage.data.onHold = false;
 
         verto.data.call.answer({
-          useStereo: verto.data.useStereo,
-          useCamera: verto.data.useCamera,
-          useMic: verto.data.useMic,
+          useStereo: storage.data.useStereo,
+          useCamera: storage.data.selectedVideo,
+          useMic: storage.data.useMic,
           callee_id_name: verto.data.name,
           callee_id_number: verto.data.login
         });

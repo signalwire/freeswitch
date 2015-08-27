@@ -24,17 +24,13 @@
       selectedVideo: null,
       selectedAudio: null,
       selectedShare: null,
-      useVideo: '',
-      useCamera: '',
-      useVideo: '',
-      useCamera: '',
-      useStereo: '',
-      useSTUN: '',
-      useDedenc: '',
-      mirrorInput: '',
-      outgoingBandwidth: '',
-      incomingBandwidth: '',
-      vidQual: '',
+      useStereo: true,
+      useSTUN: true,
+      useDedenc: false,
+      mirrorInput: false,
+      outgoingBandwidth: 'default',
+      incomingBandwidth: 'default',
+      vidQual: 'qvga',
       askRecoverCall: false,
       googNoiseSuppression: false,
       googHighpassFilter: false,
@@ -42,18 +38,7 @@
     });
 
     function changeData(verto_data) {
-      data.selectedVideo = verto_data.data.selectedVideo;
-      data.selectedAudio = verto_data.data.selectedAudio;
-      data.selectedShare = verto_data.data.selectedShare;
-      data.useVideo = verto_data.data.useVideo;
-      data.useCamera = verto_data.data.useCamera;
-      data.useStereo = verto_data.data.useStereo;
-      data.useDedenc = verto_data.data.useDedenc;
-      data.useSTUN = verto_data.data.useSTUN;
-      data.vidQual = verto_data.data.vidQual;
-      data.mirrorInput = verto_data.data.mirrorInput;
-      data.outgoingBandwidth = verto_data.data.outgoingBandwidth;
-      data.incomingBandwidth = verto_data.data.incomingBandwidth;
+      angular.extend(data, verto_data);
     }
 
     return {
