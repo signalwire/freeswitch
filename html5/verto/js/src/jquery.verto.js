@@ -142,14 +142,26 @@
 
     };
 
-    $.verto.prototype.videoParams = function(on) {
+
+    $.verto.prototype.deviceParams = function(obj) {
         var verto = this;
-        verto.options.videoParams = on;
+
+	for (var i in obj) {
+            verto.options.deviceParams[i] = obj[i];
+	}
     };
 
-    $.verto.prototype.iceServers = function(on) {
+    $.verto.prototype.videoParams = function(obj) {
         var verto = this;
-        verto.options.iceServers = on;
+
+	for (var i in obj) {
+            verto.options.videoParams[i] = obj[i];
+	}
+    };
+
+    $.verto.prototype.iceServers = function(obj) {
+        var verto = this;
+        verto.options.iceServers = obj;
     };
 
     $.verto.prototype.loginData = function(params) {
