@@ -1334,7 +1334,7 @@
             if (!this.params.hasVid) {
                 throw 'Conference has no video';
             }
-            this.modCommand("transfer", parseInt(memberID), "exten");
+            this.modCommand("transfer", parseInt(memberID), exten);
         };
 
         $.verto.conf.prototype.sendChat = function(message, type) {
