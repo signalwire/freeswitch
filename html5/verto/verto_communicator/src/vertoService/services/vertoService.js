@@ -636,7 +636,8 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
           dedEnc: data.useDedenc,
           mirrorInput: data.mirrorInput,
           userVariables: {
-            email : storage.data.email
+            email : storage.data.email,
+            avatar: "http://gravatar.com/avatar/" + md5(storage.data.email) + ".png?s=600"
           }
         });
 
@@ -672,7 +673,8 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
             dedEnc: data.useDedenc,
             mirrorInput: data.mirrorInput,
             userVariables: {
-              email : storage.data.email
+              email : storage.data.email,
+              avatar: "http://gravatar.com/avatar/" + md5(storage.data.email) + ".png?s=600"
             }
           });
 
