@@ -398,11 +398,21 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
           };
 
           data.liveArray.onChange = function(obj, args) {
-            console.log('liveArray.onChange', obj, args);
+            // console.log('liveArray.onChange', obj, args);
 
             switch (args.action) {
               case 'bootObj':
                 $rootScope.$emit('members.boot', args.data);
+                args.data.forEach(function(member){
+                  var callId = member[0];
+                  var status = angular.fromJson(member[1][4]);
+                  if (callId === data.call.callID) {
+                    $rootScope.$apply(function(){
+                      data.mutedMic = status.audio.muted;
+                      data.mutedVideo = status.video.muted;
+                    });
+                  }
+                });
                 break;
               case 'add':
                 var member = [args.key, args.data];
