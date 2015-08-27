@@ -19,7 +19,11 @@
 extern "C" {
 #endif
 
-typedef __int8		        __int8_t;
+#if defined(_MSC_VER) && _MSC_VER >= 1900
+#include <stdint.h>
+#else
+
+typedef __int8			        __int8_t;
 typedef __int16		        __int16_t;
 typedef __int32		        __int32_t;
 typedef __int64		        __int64_t;
@@ -33,6 +37,7 @@ typedef __int16		        int16_t;
 typedef __int32		        int32_t;
 typedef __int64		        int64_t;
 
+#endif
 #if !defined(INFINITY)  &&  _MSC_VER < 1800
 #define INFINITY 0x7FFFFFFF
 #endif

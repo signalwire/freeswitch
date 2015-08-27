@@ -73,7 +73,7 @@
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>..\..\flite-2.0.0\include;..\..\flite-2.0.0\lang\usenglish;..\..\flite-2.0.0\lang\cmulex;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>CST_AUDIO_NONE=1;NO_UNION_INITIALIZATION=1;_CRT_SECURE_NO_WARNINGS;inline=__inline;snprintf=_snprintf;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>CST_AUDIO_NONE=1;NO_UNION_INITIALIZATION=1;_CRT_SECURE_NO_WARNINGS;inline=__inline;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -101,7 +101,7 @@
       <Optimization>MaxSpeed</Optimization>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <AdditionalIncludeDirectories>..\..\flite-2.0.0\include;..\..\flite-2.0.0\lang\usenglish;..\..\flite-2.0.0\lang\cmulex;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>CST_AUDIO_NONE=1;NO_UNION_INITIALIZATION=1;_CRT_SECURE_NO_WARNINGS;inline=__inline;snprintf=_snprintf;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>CST_AUDIO_NONE=1;NO_UNION_INITIALIZATION=1;_CRT_SECURE_NO_WARNINGS;inline=__inline;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>

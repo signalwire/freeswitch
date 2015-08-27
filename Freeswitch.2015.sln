@@ -1,6 +1,6 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2013
-VisualStudioVersion = 12.0.31101.0
+# Visual Studio 14
+VisualStudioVersion = 14.0.23107.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Codecs", "Codecs", "{F881ADA2-2F1A-4046-9FEB-191D9422D781}"
 EndProject
@@ -402,6 +402,9 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_skinny", "src\mod\endpoints\mod_skinny\mod_skinny.2015.vcxproj", "{CC1DD008-9406-448D-A0AD-33C3186CFADB}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_rtmp", "src\mod\endpoints\mod_rtmp\mod_rtmp.2015.vcxproj", "{48414740-C693-4968-9846-EE058020C64F}"
+	ProjectSection(ProjectDependencies) = postProject
+		{B4B62169-5AD4-4559-8707-3D933AC5DB39} = {B4B62169-5AD4-4559-8707-3D933AC5DB39}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "make_at_dictionary", "libs\spandsp\src\msvc\make_at_dictionary.2015.vcxproj", "{DEE932AB-5911-4700-9EEB-8C7090A0A330}"
 EndProject

@@ -480,7 +480,7 @@ int main(int argc, char *argv[])
 {
 	char pid_path[PATH_MAX] = "";	/* full path to the pid file */
 	char pid_buffer[32] = "";	/* pid string */
-	char old_pid_buffer[32] = "";	/* pid string */
+	char old_pid_buffer[32] = { 0 };	/* pid string */
 	switch_size_t pid_len, old_pid_len;
 	const char *err = NULL;		/* error value for return from freeswitch initialization */
 #ifndef WIN32
@@ -1213,7 +1213,7 @@ int main(int argc, char *argv[])
 	}
 
 	if (destroy_status == SWITCH_STATUS_RESTART) {
-		char buf[1024] = "";
+		char buf[1024] = { 0 };
 		int j = 0;
 
 		switch_sleep(1000000);

@@ -90,6 +90,9 @@ SWITCH_BEGIN_EXTERN_C
 #undef inline
 #define inline __inline
 #endif
+#if defined(_MSC_VER) && _MSC_VER >= 1900 && !defined(_STDINT)
+#include <stdint.h>
+#endif
 #if !defined(_STDINT) && !defined(uint32_t)
 typedef unsigned __int8 uint8_t;
 typedef unsigned __int16 uint16_t;
