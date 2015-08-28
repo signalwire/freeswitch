@@ -8,7 +8,7 @@ if(elements[i]!==payload)newLine[index++]=elements[i];}
 return newLine.join(' ');}
 $.FSRTC=function(options){this.options=$.extend({useVideo:null,useStereo:false,userData:null,localVideo:null,screenShare:false,useCamera:"any",iceServers:false,videoParams:{},audioParams:{},callbacks:{onICEComplete:function(){},onICE:function(){},onOfferSDP:function(){}},},options);this.enabled=true;this.mediaData={SDP:null,profile:{},candidateList:[]};if(moz){this.constraints={offerToReceiveAudio:true,offerToReceiveVideo:this.options.useVideo?true:false,};}else{this.constraints={optional:[{'DtlsSrtpKeyAgreement':'true'}],mandatory:{OfferToReceiveAudio:true,OfferToReceiveVideo:this.options.useVideo?true:false,}};}
 if(self.options.useVideo){self.options.useVideo.style.display='none';}
-setCompat();checkCompat();};$.FSRTC.prototype.useVideo=function(obj,local){var self=this;if(obj){self.options.useVideo=obj;self.options.localVideo=local;if(moz){self.constraints.offerToReceiveVideo=true;}else{self.constraints.mandatory.OfferToReceiveVideo=true;}}else{self.options.useVideo=null;self.options.localVideo=null;if(moz){self.constraints.offerToReceiveVideo=false;}else{self.constraints.mandatory.OfferToReceiveVideo=false;}}
+setCompat();checkCompat();};$.FSRTC.validRes=[];$.FSRTC.prototype.useVideo=function(obj,local){var self=this;if(obj){self.options.useVideo=obj;self.options.localVideo=local;if(moz){self.constraints.offerToReceiveVideo=true;}else{self.constraints.mandatory.OfferToReceiveVideo=true;}}else{self.options.useVideo=null;self.options.localVideo=null;if(moz){self.constraints.offerToReceiveVideo=false;}else{self.constraints.mandatory.OfferToReceiveVideo=false;}}
 if(self.options.useVideo){self.options.useVideo.style.display='none';}};$.FSRTC.prototype.useStereo=function(on){var self=this;self.options.useStereo=on;};$.FSRTC.prototype.stereoHack=function(sdp){var self=this;if(!self.options.useStereo){return sdp;}
 var sdpLines=sdp.split('\r\n');var opusIndex=findLine(sdpLines,'a=rtpmap','opus/48000'),opusPayload;if(opusIndex){opusPayload=getCodecPayloadType(sdpLines[opusIndex]);}
 var fmtpLineIndex=findLine(sdpLines,'a=fmtp:'+opusPayload.toString());if(fmtpLineIndex===null)return sdp;sdpLines[fmtpLineIndex]=sdpLines[fmtpLineIndex].concat('; stereo=1');sdp=sdpLines.join('\r\n');return sdp;};function setCompat(){$.FSRTC.moz=!!navigator.mozGetUserMedia;if(!navigator.getUserMedia){navigator.getUserMedia=navigator.mozGetUserMedia||navigator.webkitGetUserMedia||navigator.msGetUserMedia;}}
@@ -76,7 +76,7 @@ var video_constraints={mandatory:{},optional:[]};function getUserMedia(options){
 if(options.onsuccess){options.onsuccess(stream);}
 media=stream;}
 return media;}
-$.FSRTC.validRes=[];$.FSRTC.resSupported=function(w,h){for(var i in $.FSRTC.validRes){if($.FSRTC.validRes[i][0]==w&&$.FSRTC.validRes[i][1]==h){return true;}}
+$.FSRTC.resSupported=function(w,h){for(var i in $.FSRTC.validRes){if($.FSRTC.validRes[i][0]==w&&$.FSRTC.validRes[i][1]==h){return true;}}
 return false;}
 $.FSRTC.bestResSupported=function(){var w=0,h=0;for(var i in $.FSRTC.validRes){if($.FSRTC.validRes[i][0]>w&&$.FSRTC.validRes[i][1]>h){w=$.FSRTC.validRes[i][0];h=$.FSRTC.validRes[i][1];}}
 return[w,h];}
