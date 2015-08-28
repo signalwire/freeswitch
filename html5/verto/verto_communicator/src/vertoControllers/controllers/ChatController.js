@@ -132,9 +132,11 @@
        * Public methods.
        */
       $scope.send = function() {
-        verto.sendMessage($scope.message, function() {
-          $scope.message = CLEAN_MESSAGE;
-        });
+        // Only conferencing chat is supported for now
+        // but still calling method with the conference prefix
+        // so we know that explicitly.
+        verto.sendConferenceChat($scope.message);
+        $scope.message = CLEAN_MESSAGE;
       };
 
       // Participants moderation.
