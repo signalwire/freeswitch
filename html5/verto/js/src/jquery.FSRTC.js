@@ -62,7 +62,7 @@ var iceTimer;
         var result = sdpLine.match(pattern);
         return (result && result.length == 2) ? result[1] : null;
     }
-
+    
     // Returns a new m= line with the specified codec as the first one.
     function setDefaultCodec(mLine, payload) {
         var elements = mLine.split(' ');
@@ -128,6 +128,8 @@ var iceTimer;
         setCompat();
         checkCompat();
     };
+
+    $.FSRTC.validRes = [];
 
     $.FSRTC.prototype.useVideo = function(obj, local) {
         var self = this;
@@ -512,8 +514,6 @@ var iceTimer;
 	return {audio: audio, video: video, useVideo: useVideo};
     }
     
-
-
     $.FSRTC.prototype.call = function(profile) {
         checkCompat();
 	
@@ -1020,8 +1020,6 @@ var iceTimer;
 
         return media;
     }
-
-    $.FSRTC.validRes = [];
 
     $.FSRTC.resSupported = function(w, h) {
 	for (var i in $.FSRTC.validRes) {

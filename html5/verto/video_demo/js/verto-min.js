@@ -27,9 +27,9 @@ function onRemoteStream(self,stream){if(self.options.useVideo){self.options.useV
 var element=self.options.useAudio;console.log("REMOTE STREAM",stream,element);if(typeof element.srcObject!=='undefined'){element.srcObject=stream;}else if(typeof element.mozSrcObject!=='undefined'){element.mozSrcObject=stream;}else if(typeof element.src!=='undefined'){element.src=URL.createObjectURL(stream);}else{console.error('Error attaching stream to element.');}
 self.options.useAudio.play();self.remoteStream=stream;}
 function onOfferSDP(self,sdp){self.mediaData.SDP=self.stereoHack(sdp.sdp);console.log("Offer SDP");doCallback(self,"onOfferSDP");}
-$.FSRTC.prototype.answer=function(sdp,onSuccess,onError){this.peer.addAnswerSDP({type:"answer",sdp:sdp},onSuccess,onError);};$.FSRTC.prototype.stop=function(){var self=this;if(self.options.useVideo){self.options.useVideo.style.display='none';self.options.useVideo[moz?'mozSrcObject':'src']=null;}
+$.FSRTC.prototype.answer=function(sdp,onSuccess,onError){this.peer.addAnswerSDP({type:"answer",sdp:sdp},onSuccess,onError);};$.FSRTC.prototype.stop=function(){var self=this;if(self.options.useVideo){self.options.useVideo.style.display='none';if(moz){self.options.useVideo['mozSrcObject']=null;}else{self.options.useVideo['src']='';}}
 if(self.localStream){self.localStream.stop();self.localStream=null;}
-if(self.options.localVideo){self.options.localVideo.style.display='none';self.options.localVideo[moz?'mozSrcObject':'src']=null;}
+if(self.options.localVideo){self.options.localVideo.style.display='none';if(moz){self.options.localVideo['mozSrcObject']=null;}else{self.options.localVideo['src']='';}}
 if(self.options.localVideoStream){self.options.localVideoStream.stop();}
 if(self.peer){console.log("stopping peer");self.peer.stop();}};$.FSRTC.prototype.getMute=function(){var self=this;return self.enabled;}
 $.FSRTC.prototype.setMute=function(what){var self=this;var audioTracks=self.localStream.getAudioTracks();for(var i=0,len=audioTracks.length;i<len;i++){switch(what){case"on":audioTracks[i].enabled=true;break;case"off":audioTracks[i].enabled=false;break;case"toggle":audioTracks[i].enabled=!audioTracks[i].enabled;default:break;}
