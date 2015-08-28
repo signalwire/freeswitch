@@ -752,6 +752,7 @@ static const char *message_names[] = {
 	"STUN_ERROR",
 	"MEDIA_RENEG",
 	"KEEPALIVE",
+	"HARD_MUTE",
 	"REFER_EVENT",
 	"ANSWER_EVENT",
 	"PROGRESS_EVENT",
