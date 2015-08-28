@@ -1105,9 +1105,10 @@ var iceTimer;
 	var cached = localStorage.getItem("res_" + cam);
 	
 	if (cached) {
-	    $.FSRTC.validRes = $.parseJSON(cached);
-	    console.log("CACHED RES FOR CAM " + cam, $.FSRTC.validRes);
-	    return func ? func($.FSRTC.validRes) : null;
+	    var cache = $.parseJSON(cached);
+	    $.FSRTC.validRes = cache.validRes;
+	    console.log("CACHED RES FOR CAM " + cam, cache);
+	    return func ? func(cache) : null;
 	}
 
 
