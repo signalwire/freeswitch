@@ -152,7 +152,7 @@
 	}
 
 	if (obj.useCamera) {
-	    $.FSRTC.getValidRes(verto.options.deviceParams.useCamera, obj ? obj.resCheck : undefined);
+	    $.FSRTC.getValidRes(verto.options.deviceParams.useCamera, obj ? obj.onResCheck : undefined);
 	}
     };
 
