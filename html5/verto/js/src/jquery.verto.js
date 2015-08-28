@@ -87,6 +87,7 @@
 	    $.FSRTC.getValidRes(verto.options.deviceParams.useCamera, verto.options.deviceParams.onResCheck);
 	} else {
 	    verto.options.deviceParams.useCamera = "any";
+	    $.FSRTC.getValidRes(undefined, undefined);
 	}
 
 	if (!verto.options.deviceParams.useMic) {
@@ -2599,7 +2600,9 @@
     }
 
     $.verto.init = function(obj, runtime) {
-	checkDevices(runtime);
+	$.FSRTC.checkPerms(function() {
+	    checkDevices(runtime);
+	});
     }
 
     $.verto.genUUID = function () {

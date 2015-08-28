@@ -1111,14 +1111,14 @@ var iceTimer;
 	checkRes(cam, func);
     }
 
-    $.FSRTC.checkPerms = function () {
+    $.FSRTC.checkPerms = function (runtime) {
 	getUserMedia({
 	    constraints: {
 		audio: true,
 		video: true,
 	    },
-	    onsuccess: function(e) {e.stop(); console.info("media perm init complete");},
-	    onerror: function(e) {console.error("media perm init error");}
+	    onsuccess: function(e) {e.stop(); console.info("media perm init complete"); if (runtime) {runtime(true)}},
+	    onerror: function(e) {console.error("media perm init error"); if (runtime) {runtime(false)}}
 	});
     }
 
