@@ -2038,7 +2038,7 @@
             return false;
         }
 
-        console.error("Dialog " + dialog.callID + ": state change from " + dialog.state.name + " to " + state.name);
+        console.log("Dialog " + dialog.callID + ": state change from " + dialog.state.name + " to " + state.name);
 
         dialog.lastState = dialog.state;
         dialog.state = state;

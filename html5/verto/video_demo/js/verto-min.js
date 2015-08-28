@@ -240,7 +240,7 @@ dialog.verto.rpcClient.call(method,obj,function(e){dialog.processReply(method,tr
 return false;}
 $.verto.dialog.prototype.setState=function(state){var dialog=this;if(dialog.state==$.verto.enum.state.ringing){dialog.stopRinging();}
 if(dialog.state==state||!checkStateChange(dialog.state,state)){console.error("Dialog "+dialog.callID+": INVALID state change from "+dialog.state.name+" to "+state.name);dialog.hangup();return false;}
-console.error("Dialog "+dialog.callID+": state change from "+dialog.state.name+" to "+state.name);dialog.lastState=dialog.state;dialog.state=state;if(!dialog.causeCode){dialog.causeCode=16;}
+console.log("Dialog "+dialog.callID+": state change from "+dialog.state.name+" to "+state.name);dialog.lastState=dialog.state;dialog.state=state;if(!dialog.causeCode){dialog.causeCode=16;}
 if(!dialog.cause){dialog.cause="NORMAL CLEARING";}
 if(dialog.callbacks.onDialogState){dialog.callbacks.onDialogState(this);}
 switch(dialog.state){case $.verto.enum.state.early:case $.verto.enum.state.active:var speaker=dialog.useSpeak;console.info("Using Speaker: ",speaker);if(speaker&&speaker!=="any"){var videoElement=dialog.audioStream;setTimeout(function(){console.info("Setting speaker:",videoElement,speaker);attachSinkId(videoElement,speaker);},500);}
