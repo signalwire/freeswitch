@@ -244,7 +244,7 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
         for (var i in jQuery.verto.audioInDevices) {
           var device = jQuery.verto.audioInDevices[i];
           // Selecting the first source.
-          if (i == 0 && !storage.data.selectedVideo) {
+          if (i == 0 && !storage.data.selectedAudio) {
             storage.data.selectedAudio = device.id;
           }
 
