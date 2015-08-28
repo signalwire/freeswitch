@@ -416,6 +416,7 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
             console.log('Has data.liveArray.');
             $rootScope.$emit('members.clear');
             data.liveArray = null;
+            
           } else {
             console.log('Doesn\'t found data.liveArray.');
           }
@@ -502,6 +503,9 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
                 if (d.params.screenShare) {
                   cleanShareCall(that);
                 } else {
+                  if (data.conf) {
+                    data.conf.destroy();
+                  }
                   cleanCall();
                 }
                 break;
@@ -689,6 +693,11 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
         }
 
         data.call.hangup();
+
+        if (data.conf) {
+          data.conf.destroy();
+          data.conf = null;
+        }
 
         console.debug('The call was hangup.');
 
