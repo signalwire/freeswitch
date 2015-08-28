@@ -632,9 +632,9 @@ abyss_bool websocket_hook(TSession *r)
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "continue\n");
 				continue;
 			case WSOC_TEXT:
-				p = data;
+				p = (char *)data;
 				if (!p) continue;
-				if (!strncasecmp(data, "event ", 6)) {
+				if (!strncasecmp((char *)data, "event ", 6)) {
 					switch_event_types_t type;
 					char *subclass;
 

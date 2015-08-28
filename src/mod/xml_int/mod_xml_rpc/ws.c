@@ -406,10 +406,12 @@ issize_t ws_read_frame(wsh_t *wsh, ws_opcode_t *oc, uint8_t **data)
 	if ((wsh->datalen = ws_raw_read(wsh, wsh->buffer, 14)) < need) {
 		while (!wsh->down && (wsh->datalen += ws_raw_read(wsh, wsh->buffer + wsh->datalen, 14 - wsh->datalen)) < need) ;
 
+#if 0
 		if (0 && (wsh->datalen += ws_raw_read(wsh, wsh->buffer + wsh->datalen, 14 - wsh->datalen)) < need) {
 			 /* too small - protocol err */
 			return ws_close(wsh, WS_PROTO_ERR);
 		}
+#endif
 	}
 
 	*oc = *wsh->buffer & 0xf;
@@ -600,7 +602,7 @@ issize_t ws_write_frame(wsh_t *wsh, ws_opcode_t oc, void *data, size_t bytes)
 		hlen += 8;
 		
 		u64 = (uint64_t *) &hdr[2];
-		*u64 = htonl(bytes);
+		*u64 = htonl((unsigned long)bytes);
 	}
 
 	if (ws_raw_write(wsh, (void *) &hdr[0], hlen) != (issize_t)hlen) {

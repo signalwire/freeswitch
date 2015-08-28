@@ -75,7 +75,7 @@
       </PrecompiledHeader>
       <WarningLevel>Level4</WarningLevel>
       <TreatWarningAsError>false</TreatWarningAsError>
-      <DisableSpecificWarnings>4324;6340;6246;6011;6387;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4456;6031;4324;6340;6246;6011;6387;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <AdditionalOptions>rpcrt4.lib  "..\..\..\..\libs\spandsp\src\Win32\Debug\libtiff.lib" "..\..\..\..\Win32\Debug\libspandsp.lib" %(AdditionalOptions)</AdditionalOptions>
@@ -91,7 +91,7 @@
       </PrecompiledHeader>
       <WarningLevel>Level4</WarningLevel>
       <TreatWarningAsError>false</TreatWarningAsError>
-      <DisableSpecificWarnings>4324;6340;6246;6011;6387;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4456;6031;4324;6340;6246;6011;6387;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <AdditionalOptions>rpcrt4.lib  "..\..\..\..\libs\spandsp\src\x64\Debug\libtiff.lib" "..\..\..\..\x64\Debug\libspandsp.lib" %(AdditionalOptions)</AdditionalOptions>
@@ -105,7 +105,7 @@
       <AdditionalIncludeDirectories>%(RootDir)%(Directory)..\..\..\..\libs\spandsp\src\msvc;%(RootDir)%(Directory)..\..\..\..\libs\spandsp\src;%(RootDir)%(Directory)..\..\..\..\libs\tiff-4.0.2\libtiff;%(RootDir)%(Directory)..\..\..\..\libs\jpeg-8d;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeader>
       </PrecompiledHeader>
-      <DisableSpecificWarnings>4324;6340;6246;6011;6387;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4456;6031;4324;6340;6246;6011;6387;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <AdditionalOptions>rpcrt4.lib "..\..\..\..\libs\spandsp\src\Win32\Release\libtiff.lib" "..\..\..\..\Win32\Release\libspandsp.lib" %(AdditionalOptions)</AdditionalOptions>
@@ -119,7 +119,7 @@
       <AdditionalIncludeDirectories>%(RootDir)%(Directory)..\..\..\..\libs\spandsp\src\msvc;%(RootDir)%(Directory)..\..\..\..\libs\spandsp\src;%(RootDir)%(Directory)..\..\..\..\libs\tiff-4.0.2\libtiff;%(RootDir)%(Directory)..\..\..\..\libs\jpeg-8d;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeader>
       </PrecompiledHeader>
-      <DisableSpecificWarnings>4324;6340;6246;6011;6387;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4456;6031;4324;6340;6246;6011;6387;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <AdditionalOptions>rpcrt4.lib "..\..\..\..\libs\spandsp\src\x64\Release\libtiff.lib" "..\..\..\..\x64\Release\libspandsp.lib" %(AdditionalOptions)</AdditionalOptions>

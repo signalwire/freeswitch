@@ -3083,11 +3083,8 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 		}
 	}
 
-	if (session) {
-		switch_channel_t *channel = switch_core_session_get_channel(session);
-		if (channel && (vm_switch_cc_tmp = switch_channel_get_variable(channel, "vm_cc"))) {
-			vm_cc = vm_switch_cc_tmp;
-		}
+	if (channel && (vm_switch_cc_tmp = switch_channel_get_variable(channel, "vm_cc"))) {
+		vm_cc = vm_switch_cc_tmp;
 	}
 
 	if (vm_cc) {
@@ -4283,7 +4280,7 @@ static int web_callback(void *pArg, int argc, char **argv, char **columnNames)
 	char *del, *get, *fname, *ext;
 	switch_time_exp_t tm;
 	char create_date[80] = "";
-	char read_date[80] = "";
+	char read_date[80] = { 0 };
 	char rss_date[80] = "";
 	switch_size_t retsize;
 	switch_time_t l_created = 0;
@@ -4370,8 +4367,8 @@ static int rss_callback(void *pArg, int argc, char **argv, char **columnNames)
 	char *tmp, *del, *get;
 	switch_time_exp_t tm;
 	char create_date[80] = "";
-	char read_date[80] = "";
-	char rss_date[80] = "";
+	char read_date[80] = { 0 };
+	char rss_date[80] = { 0 };
 	switch_size_t retsize;
 	const char *mime_type = "audio/inline", *new_type;
 	char *ext;
@@ -5836,7 +5833,7 @@ SWITCH_STANDARD_API(vm_fsdb_msg_forward_function)
 		file_path = switch_event_get_header(cbt.my_params, "VM-Message-File-Path");
 		if (file_path && switch_file_exists(file_path, pool) == SWITCH_STATUS_SUCCESS) {
 			const char *new_file_path = file_path;
-			const char *cmd = NULL;
+			const char *command = NULL;
 
 
 			if (prepend_file_path && switch_file_exists(prepend_file_path, pool) == SWITCH_STATUS_SUCCESS) {
@@ -5859,8 +5856,8 @@ SWITCH_STANDARD_API(vm_fsdb_msg_forward_function)
 				}
 
 			}
-			cmd = switch_core_sprintf(pool, "%s@%s %s %s '%s'", dst_id, dst_domain, new_file_path, switch_event_get_header(cbt.my_params, "VM-Message-Caller-Number"), switch_event_get_header(cbt.my_params, "VM-Message-Caller-Name"));
-			if (voicemail_inject(cmd, NULL) == SWITCH_STATUS_SUCCESS) {
+			command = switch_core_sprintf(pool, "%s@%s %s %s '%s'", dst_id, dst_domain, new_file_path, switch_event_get_header(cbt.my_params, "VM-Message-Caller-Number"), switch_event_get_header(cbt.my_params, "VM-Message-Caller-Name"));
+			if (voicemail_inject(command, NULL) == SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Sent Carbon Copy to %s@%s\n", dst_id, dst_domain);
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to Carbon Copy to %s@%s\n", dst_id, dst_domain);

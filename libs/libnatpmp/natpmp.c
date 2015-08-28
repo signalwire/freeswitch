@@ -29,8 +29,12 @@
 #include <winsock2.h>
 #include <Ws2tcpip.h>
 #include <io.h>
+#ifndef EWOULDBLOCK
 #define EWOULDBLOCK WSAEWOULDBLOCK
+#endif
+#ifndef ECONNREFUSED
 #define ECONNREFUSED WSAECONNREFUSED
+#endif
 
 static int gettimeofday(struct timeval* p, void* tz /* IGNORED */) {
   union {

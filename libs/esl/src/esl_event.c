@@ -508,6 +508,11 @@ static esl_status_t esl_event_base_add_header(esl_event_t *event, esl_stack_t st
 		header = new_header(header_name);
 	}
 	
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 6385 6386)
+#endif
+
 	if ((stack & ESL_STACK_PUSH) || (stack & ESL_STACK_UNSHIFT)) {
 		char **m = NULL;
 		esl_size_t len = 0;
@@ -545,6 +550,10 @@ static esl_status_t esl_event_base_add_header(esl_event_t *event, esl_stack_t st
 		for(j = 0; j < header->idx; j++) {
 			len += strlen(header->array[j]) + 2;
 		}
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 
 		if (len) {
 			len += 8;

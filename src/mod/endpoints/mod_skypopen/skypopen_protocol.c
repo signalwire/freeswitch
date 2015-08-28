@@ -1466,7 +1466,7 @@ LRESULT APIENTRY skypopen_present(HWND hWindow, UINT uiMessage, WPARAM uiParam, 
 
 	lReturnCode = 0;
 	fIssueDefProc = 0;
-	tech_pvt = (private_t *) GetWindowLong(hWindow, GWLP_USERDATA);
+	tech_pvt = (private_t *)(intptr_t) GetWindowLong(hWindow, GWLP_USERDATA);
 
 	if (!running) {
 		DEBUGA_SKYPE("let's DIE!\n", SKYPOPEN_P_LOG);
@@ -1477,7 +1477,7 @@ LRESULT APIENTRY skypopen_present(HWND hWindow, UINT uiMessage, WPARAM uiParam, 
 	switch (uiMessage) {
 	case WM_CREATE:
 		tech_pvt = (private_t *) ((LPCREATESTRUCT) ulParam)->lpCreateParams;
-		SetWindowLong(hWindow, GWLP_USERDATA, (LONG) tech_pvt);
+		SetWindowLong(hWindow, GWLP_USERDATA, (LONG) (intptr_t)tech_pvt);
 		DEBUGA_SKYPE("got CREATE\n", SKYPOPEN_P_LOG);
 		break;
 	case WM_DESTROY:

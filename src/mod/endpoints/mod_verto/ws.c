@@ -146,7 +146,7 @@ static int cheezy_get_var(char *data, char *name, char *buf, size_t buflen)
   } while((p = (strstr(p,"\n")+1))!=(char *)1);
 
 
-  if (p != (char *)1 && *p!='\0') {
+  if (p && p != (char *)1 && *p!='\0') {
     char *v, *e = 0;
 
     v = strchr(p, ':');
