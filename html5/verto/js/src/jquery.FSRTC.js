@@ -1106,8 +1106,13 @@ var iceTimer;
 	
 	if (cached) {
 	    var cache = $.parseJSON(cached);
-	    $.FSRTC.validRes = cache.validRes;
-	    console.log("CACHED RES FOR CAM " + cam, cache);
+
+	    if (cache) {
+		$.FSRTC.validRes = cache.validRes;
+		console.log("CACHED RES FOR CAM " + cam, cache);
+	    } else {
+		console.error("INVALID CACHE");
+	    }
 	    return func ? func(cache) : null;
 	}
 
