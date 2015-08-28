@@ -68,7 +68,6 @@
               storage.data.password = verto.data.password;
 
               console.debug('Redirecting to dialpad page.');
-              storage.changeData(verto);
               toastr.success('Login successful.', 'Welcome');
               $location.path('/dialpad');
             } else {
@@ -269,7 +268,6 @@
             title: 'Oops, Active Call in Course.',
             message: 'It seems you were in a call before leaving the last time. Wanna go back to that?'
           }).then(function() {
-            verto.changeData(storage);
             console.log('redirect to incall page');
             $location.path('/incall');
           }, function() {

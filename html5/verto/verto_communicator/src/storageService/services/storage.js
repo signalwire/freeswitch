@@ -38,7 +38,7 @@
     });
 
     function changeData(verto_data) {
-      angular.extend(data, verto_data);
+      jQuery.extend(true, data, verto_data);
     }
 
     return {
