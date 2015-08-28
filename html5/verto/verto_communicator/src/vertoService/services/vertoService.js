@@ -223,7 +223,7 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
           }
 
           // Selecting the first source.
-          if (i == 0) {
+          if (i == 0 && !storage.data.selectedVideo) {
             storage.data.selectedVideo = device.id;
           }
 
@@ -244,7 +244,7 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
         for (var i in jQuery.verto.audioInDevices) {
           var device = jQuery.verto.audioInDevices[i];
           // Selecting the first source.
-          if (i == 0) {
+          if (i == 0 && !storage.data.selectedVideo) {
             storage.data.selectedAudio = device.id;
           }
 
@@ -586,7 +586,7 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
       call: function(destination, callback) {
         console.debug('Attempting to call destination ' + destination + '.');
 
-        this.refreshVideoResolution();
+        //this.refreshVideoResolution();
 
         var call = data.instance.newCall({
           destination_number: destination,
