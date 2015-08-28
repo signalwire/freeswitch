@@ -97,6 +97,7 @@ var iceTimer;
 
 	this.enabled = true;
 
+
         this.mediaData = {
             SDP: null,
             profile: {},
@@ -351,10 +352,6 @@ var iceTimer;
         self.type = "answer";
         self.remoteSDP = params.sdp;
         console.debug("inbound sdp: ", params.sdp);
-
-	self.options.useCamera = params.useCamera || "any";
-	self.options.useMic = params.useMic || "any";
-	self.options.useSpeak = params.useSpeak || "any";
 
         function onSuccess(stream) {
             self.localStream = stream;
@@ -1052,6 +1049,9 @@ var iceTimer;
                'validRes': $.FSRTC.validRes,
                'bestResSupported': $.FSRTC.bestResSupported()
             };
+	    
+	    localStorage.setItem("res_" + cam, $.toJSON(res));
+	    
 	    if (func) return func(res);
 	    return;
 	}
@@ -1096,6 +1096,14 @@ var iceTimer;
 
     $.FSRTC.getValidRes = function (cam, func) {
 	var used = [];
+	var cached = localStorage.getItem("res_" + cam);
+	
+	if (cached) {
+	    $.FSRTC.validRes = $.parseJSON(cached);
+	    console.log("CACHED RES FOR CAM " + cam, $.FSRTC.validRes);
+	    return func ? func() : null;
+	}
+
 
 	$.FSRTC.validRes = [];
 	resI = 0;

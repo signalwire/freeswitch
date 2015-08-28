@@ -83,7 +83,10 @@
 	    sessid: null
         }, options);
 
-	if (!verto.options.deviceParams.useCamera) {
+
+	if (verto.options.deviceParams.useCamera) {
+	    $.FSRTC.getValidRes(verto.options.deviceParams.useCamera, undefined);
+	} else {
 	    verto.options.deviceParams.useCamera = "any";
 	}
 
@@ -98,10 +101,8 @@
 	if (verto.options.sessid) {
 	    verto.sessid = verto.options.sessid;
 	} else {
-            verto.sessid = $.cookie('verto_session_uuid') || generateGUID();
-            $.cookie('verto_session_uuid', verto.sessid, {
-		expires: 1
-            });
+            verto.sessid = localStorage.getItem("verto_session_uuid") || generateGUID();
+	    localStorage.setItem("verto_session_uuid", verto.sessid);
 	}
 
         verto.dialogs = {};
@@ -1853,10 +1854,10 @@
         dialog.answered = false;
         dialog.attach = params.attach || false;
 	dialog.screenShare = params.screenShare || false;
-	dialog.useCamera = params.useCamera;
-	dialog.useMic = params.useMic;
-	dialog.useSpeak = params.useSpeak;
-
+	dialog.useCamera = dialog.params.useCamera;
+	dialog.useMic = dialog.params.useMic;
+	dialog.useSpeak = dialog.params.useSpeak;
+	
         if (dialog.params.callID) {
             dialog.callID = dialog.params.callID;
         } else {
@@ -1909,15 +1910,26 @@
         }
 
         RTCcallbacks.onICESDP = function(rtc) {
+            console.log("RECV " + rtc.type + " SDP", rtc.mediaData.SDP);
+
+	    if (dialog.state == $.verto.enum.state.requesting || dialog.state == $.verto.enum.state.answering || dialog.state == $.verto.enum.state.active) {
+		location.reload();
+		return;
+	    }
 
             if (rtc.type == "offer") {
-                console.log("offer", rtc.mediaData.SDP);
-
-                dialog.setState($.verto.enum.state.requesting);
-
-                dialog.sendMethod("verto.invite", {
-                    sdp: rtc.mediaData.SDP
-                });
+		if (dialog.state == $.verto.enum.state.active) {
+                    dialog.setState($.verto.enum.state.requesting);
+		    dialog.sendMethod("verto.attach", {
+			sdp: rtc.mediaData.SDP
+                    });
+		} else {
+                    dialog.setState($.verto.enum.state.requesting);
+		    
+                    dialog.sendMethod("verto.invite", {
+			sdp: rtc.mediaData.SDP
+                    });
+		}
             } else { //answer
                 dialog.setState($.verto.enum.state.answering);
 
@@ -2022,7 +2034,7 @@
             return false;
         }
 
-        console.info("Dialog " + dialog.callID + ": state change from " + dialog.state.name + " to " + state.name);
+        console.error("Dialog " + dialog.callID + ": state change from " + dialog.state.name + " to " + state.name);
 
         dialog.lastState = dialog.state;
         dialog.state = state;
@@ -2308,9 +2320,18 @@
                 }
 		dialog.params.callee_id_name = params.callee_id_name;
 		dialog.params.callee_id_number = params.callee_id_number;
-		dialog.useCamera = params.useCamera;
-		dialog.useMic = params.useMic;
-		dialog.useSpeak = params.useSpeak;
+
+		if (params.useCamera) {
+		    dialog.useCamera = params.useCamera;
+		}
+
+		if (params.useMic) {
+		    dialog.useMic = params.useMic;
+		}
+
+		if (params.useSpeak) {
+		    dialog.useSpeak = params.useSpeak;
+		}
             }
 	    
             dialog.rtc.createAnswer(params);
@@ -2429,7 +2450,8 @@
         },
         requesting: {
             trying: 1,
-            hangup: 1
+            hangup: 1,
+	    active: 1
         },
         recovering: {
             answering: 1,
@@ -2574,9 +2596,7 @@
     }
 
     $.verto.init = function(obj, runtime) {
-	checkDevices(function() {
-	    $.FSRTC.getValidRes(obj.camera, runtime);
-	});
+	checkDevices(runtime);
     }
 
     $.verto.genUUID = function () {

@@ -995,6 +995,7 @@ function refresh_devices()
     $("input[type='checkbox']").checkboxradio("refresh");
 
     //console.error($("#usecamera").find(":selected").val());
+    //$.FSRTC.getValidRes($("#usecamera").find(":selected").val(), undefined);
 
     var tmp;
     tmp = $.cookie("verto_demo_camera_selected") || "false";
@@ -1377,6 +1378,8 @@ function init() {
     });
     
     check_vid_res();
+    refresh_devices();
+    //console.error($("#usecamera").find(":selected"));
 
     vertoHandle = new $.verto({
         login: $("#login").val() + "@" + $("#hostName").val(),
@@ -1513,7 +1516,7 @@ function init() {
 	$("#directory").hide();
     }
 
-    refresh_devices();
+ 
 }
 
 $(window).load(function() {
@@ -1591,7 +1594,7 @@ $(window).load(function() {
     goto_page("enum");
     setTimeout(function() {
 	$.verto.init({}, init);
-    }, 500);
+    }, 1000);
 
 });
 
