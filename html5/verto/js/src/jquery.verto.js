@@ -76,16 +76,15 @@
             videoParams: {},
             audioParams: {},
 	    loginParams: {},
-	    deviceParams: {},
+	    deviceParams: {onResCheck: null},
 	    userVariables: {},
             iceServers: false,
             ringSleep: 6000,
 	    sessid: null
         }, options);
 
-
 	if (verto.options.deviceParams.useCamera) {
-	    $.FSRTC.getValidRes(verto.options.deviceParams.useCamera, undefined);
+	    $.FSRTC.getValidRes(verto.options.deviceParams.useCamera, verto.options.deviceParams.onResCheck);
 	} else {
 	    verto.options.deviceParams.useCamera = "any";
 	}
@@ -152,7 +151,7 @@
 	}
 
 	if (obj.useCamera) {
-	    $.FSRTC.getValidRes(verto.options.deviceParams.useCamera, undefined);
+	    $.FSRTC.getValidRes(verto.options.deviceParams.useCamera, obj ? obj.resCheck : undefined);
 	}
     };
 
