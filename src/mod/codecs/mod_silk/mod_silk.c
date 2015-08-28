@@ -62,6 +62,8 @@ struct silk_context {
 	SKP_SILK_SDK_DecControlStruct decoder_object;
 	void *enc_state;
 	void *dec_state;
+	SKP_uint8 recbuff[STFU_DATALEN];
+	SKP_int16 reclen;
 };
 
 static switch_status_t switch_silk_fmtp_parse(const char *fmtp, switch_codec_fmtp_t *codec_fmtp)
@@ -329,8 +331,6 @@ static switch_status_t switch_silk_decode(switch_codec_t *codec,
 	SKP_int lost_flag = (*flag & SFF_PLC);
 	stfu_frame_t *next_frame = NULL;
 
-	SKP_uint8 recbuff[STFU_DATALEN];
-	SKP_int16 reclen;
 	int32_t found_frame;
 	switch_bool_t did_lbrr = SWITCH_FALSE;
 	int i;
@@ -349,11 +349,11 @@ static switch_status_t switch_silk_decode(switch_codec_t *codec,
 				found_frame = stfu_n_peek_frame(jb, (uint32_t)codec->cur_frame->timestamp, codec->cur_frame->seq, (uint16_t)i, &next_frame);
 
 				if (found_frame) {
-					SKP_Silk_SDK_search_for_LBRR(next_frame->data, (const int)next_frame->dlen, i, (SKP_uint8*) &recbuff, &reclen);
+					SKP_Silk_SDK_search_for_LBRR(next_frame->data, (const int)next_frame->dlen, i, (SKP_uint8*) &context->recbuff, &context->reclen);
 
-					if (reclen) {
-						encoded_data = &recbuff;
-						encoded_data_len = reclen;
+					if (context->reclen) {
+						encoded_data = &context->recbuff;
+						encoded_data_len = context->reclen;
 						lost_flag = SKP_FALSE;
 						did_lbrr = SWITCH_TRUE;
 						break;
