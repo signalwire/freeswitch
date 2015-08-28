@@ -231,3 +231,4 @@ yum/RPMS
 yum/temp
 html5/verto/verto_communicator/bower_components/
 html5/verto/verto_communicator/node_modules/
+.vs/

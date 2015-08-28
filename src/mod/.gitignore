@@ -76,3 +76,8 @@
 */*/Makefile.in
 */*/Makefile
 */*/mod_*.log
+codecs/mod_amr/Win32/
+codecs/mod_g723_1/Win32/
+codecs/mod_g729/Win32/
+directories/mod_ldap/Win32/
+languages/mod_managed/Win32/

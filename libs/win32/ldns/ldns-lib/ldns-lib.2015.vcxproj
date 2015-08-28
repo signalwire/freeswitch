@@ -85,7 +85,7 @@
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>..\..\..\ldns\;.;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>HAVE_STRUCT_ADDRINFO;HAVE_CONFIG_H;_CRT_SECURE_NO_DEPRECATE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>HAVE_ISBLANK;HAVE_STRUCT_ADDRINFO;HAVE_CONFIG_H;_CRT_SECURE_NO_DEPRECATE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -106,7 +106,7 @@ if not exist "$(ProjectDir)..\..\..\ldns\ldns\net.h" type "$(ProjectDir)\net.h" 
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>..\..\..\ldns\;.;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>HAVE_STRUCT_ADDRINFO;HAVE_CONFIG_H;_CRT_SECURE_NO_DEPRECATE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>HAVE_ISBLANK;HAVE_STRUCT_ADDRINFO;HAVE_CONFIG_H;_CRT_SECURE_NO_DEPRECATE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <WarningLevel>Level3</WarningLevel>
@@ -130,7 +130,7 @@ if not exist "$(ProjectDir)..\..\..\ldns\ldns\net.h" type "$(ProjectDir)\net.h" 
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <PreprocessorDefinitions>HAVE_STRUCT_ADDRINFO;HAVE_CONFIG_H;_CRT_SECURE_NO_DEPRECATE;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>HAVE_ISBLANK;HAVE_STRUCT_ADDRINFO;HAVE_CONFIG_H;_CRT_SECURE_NO_DEPRECATE;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..\..\..\ldns\;.;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4013;4101;4996;4267;4244;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
@@ -157,7 +157,7 @@ if not exist "$(ProjectDir)..\..\..\ldns\ldns\net.h" type "$(ProjectDir)\net.h" 
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <PreprocessorDefinitions>HAVE_STRUCT_ADDRINFO;HAVE_CONFIG_H;_CRT_SECURE_NO_DEPRECATE;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>HAVE_ISBLANK;HAVE_STRUCT_ADDRINFO;HAVE_CONFIG_H;_CRT_SECURE_NO_DEPRECATE;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..\..\..\ldns\;.;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4013;4101;4996;4267;4244;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
@@ -198,7 +198,6 @@ if not exist "$(ProjectDir)..\..\..\ldns\ldns\net.h" type "$(ProjectDir)\net.h" 
     <ClCompile Include="..\..\..\ldns\compat\inet_aton.c" />
     <ClCompile Include="..\..\..\ldns\compat\inet_ntop.c" />
     <ClCompile Include="..\..\..\ldns\compat\inet_pton.c" />
-    <ClCompile Include="..\..\..\ldns\compat\isblank.c" />
     <ClCompile Include="..\..\..\ldns\keys.c" />
     <ClCompile Include="..\..\..\ldns\linktest.c" />
     <ClCompile Include="..\..\..\ldns\compat\malloc.c" />

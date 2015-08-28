@@ -90,7 +90,7 @@
       <PreprocessorDefinitions>LIBSOFIA_SIP_UA_STATIC;PTW32_STATIC_LIB;LIBSRES_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeader>
       </PrecompiledHeader>
-      <DisableSpecificWarnings>4201;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4456;4457;4201;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <EnablePREfast>false</EnablePREfast>
     </ClCompile>
     <Link>
@@ -110,7 +110,7 @@
       <PreprocessorDefinitions>LIBSOFIA_SIP_UA_STATIC;PTW32_STATIC_LIB;LIBSRES_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeader>
       </PrecompiledHeader>
-      <DisableSpecificWarnings>4201;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4456;4457;4201;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <EnablePREfast>false</EnablePREfast>
     </ClCompile>
     <Link>
@@ -128,7 +128,7 @@
       <PreprocessorDefinitions>LIBSOFIA_SIP_UA_STATIC;PTW32_STATIC_LIB;LIBSRES_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeader>
       </PrecompiledHeader>
-      <DisableSpecificWarnings>4201;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4456;4457;4201;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <EnablePREfast>false</EnablePREfast>
     </ClCompile>
     <Link>
@@ -148,7 +148,7 @@
       <PreprocessorDefinitions>LIBSOFIA_SIP_UA_STATIC;PTW32_STATIC_LIB;LIBSRES_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeader>
       </PrecompiledHeader>
-      <DisableSpecificWarnings>4201;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4456;4457;4201;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <EnablePREfast>false</EnablePREfast>
     </ClCompile>
     <Link>

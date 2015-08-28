@@ -57,7 +57,11 @@ typedef __int64		int64_t;
 
 #define strncasecmp _strnicmp
 #define strcasecmp _stricmp
+#if _MSC_VER < 1900
 #define snprintf _snprintf
+#else
+#include <math.h>
+#endif
 
 #if !defined(INFINITY)
 #define INFINITY 0x7fffffff

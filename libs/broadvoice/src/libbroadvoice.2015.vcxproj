@@ -202,7 +202,6 @@
     <ClInclude Include="broadvoice\broadvoice.h" />
     <ClInclude Include="broadvoice\version.h" />
     <ClInclude Include="broadvoice\private\broadvoice.h" />
-    <ClInclude Include="broadvoice.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

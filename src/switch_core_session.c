@@ -1678,7 +1678,7 @@ static void *SWITCH_THREAD_FUNC switch_core_session_thread_pool_worker(switch_th
 	session_manager.running++;
 	switch_mutex_unlock(session_manager.mutex);
 #ifdef DEBUG_THREAD_POOL
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "Worker Thread %ld Started\n", (long) thread);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "Worker Thread %ld Started\n", (long) (intptr_t) thread);
 #endif
 	while(session_manager.ready) {
 		switch_status_t check_status;
@@ -1706,7 +1706,7 @@ static void *SWITCH_THREAD_FUNC switch_core_session_thread_pool_worker(switch_th
 			session_manager.busy++;
 			switch_mutex_unlock(session_manager.mutex);
 #ifdef DEBUG_THREAD_POOL			
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "Worker Thread %ld Processing\n", (long) thread);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "Worker Thread %ld Processing\n", (long) (intptr_t) thread);
 #endif
 
 			td->func(thread, td->obj);
@@ -1719,7 +1719,7 @@ static void *SWITCH_THREAD_FUNC switch_core_session_thread_pool_worker(switch_th
 				free(td);
 			}
 #ifdef DEBUG_THREAD_POOL
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "Worker Thread %ld Done Processing\n", (long) thread);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "Worker Thread %ld Done Processing\n", (long)(intptr_t) thread);
 #endif
 			switch_mutex_lock(session_manager.mutex);
 			session_manager.busy--;
@@ -1733,7 +1733,7 @@ static void *SWITCH_THREAD_FUNC switch_core_session_thread_pool_worker(switch_th
 		}
 	}
 #ifdef DEBUG_THREAD_POOL
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "Worker Thread %ld Ended\n", (long) thread);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "Worker Thread %ld Ended\n", (long)(intptr_t) thread);
 #endif
 	switch_mutex_lock(session_manager.mutex);
 	session_manager.running--;

@@ -85,7 +85,7 @@ xcopy "$(ProjectDir)..\..\apr\include\*.h" "$(ProjectDir)..\..\include\" /C /D /
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <WarningLevel>Level3</WarningLevel>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <DisableSpecificWarnings>4244;4018;4267;4090;4133;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4311;4313;4477;4244;4018;4267;4090;4133;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>_DEBUG;APR_VERSION_ONLY;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -121,7 +121,7 @@ xcopy "$(ProjectDir)..\..\apr\include\*.h" "$(ProjectDir)..\..\include\" /C /D /
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <WarningLevel>Level3</WarningLevel>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <DisableSpecificWarnings>4244;4018;4267;4090;4133;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4311;4313;4477;4244;4018;4267;4090;4133;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>_DEBUG;APR_VERSION_ONLY;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -157,7 +157,7 @@ xcopy "$(ProjectDir)..\..\apr\include\*.h" "$(ProjectDir)..\..\include\" /C /D /
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <WarningLevel>Level3</WarningLevel>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <DisableSpecificWarnings>4244;4018;4267;4090;4133;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4311;4313;4477;4244;4018;4267;4090;4133;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>NDEBUG;APR_VERSION_ONLY;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -194,7 +194,7 @@ xcopy "$(ProjectDir)..\..\apr\include\*.h" "$(ProjectDir)..\..\include\" /C /D /
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <WarningLevel>Level3</WarningLevel>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <DisableSpecificWarnings>4244;4018;4267;4090;4133;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4311;4313;4477;4244;4018;4267;4090;4133;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>NDEBUG;APR_VERSION_ONLY;%(PreprocessorDefinitions)</PreprocessorDefinitions>

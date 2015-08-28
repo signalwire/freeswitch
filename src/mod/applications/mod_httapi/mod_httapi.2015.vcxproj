@@ -72,7 +72,7 @@
     <ClCompile>
       <PrecompiledHeader>
       </PrecompiledHeader>
-      <DisableSpecificWarnings>6053;6340;6246;6011;6387;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4456;6053;6340;6246;6011;6387;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <AdditionalIncludeDirectories>$(SolutionDir)\src\include;..\..\..\..\libs\curl-7.35.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
@@ -88,7 +88,7 @@
     <ClCompile>
       <PrecompiledHeader>
       </PrecompiledHeader>
-      <DisableSpecificWarnings>6053;6340;6246;6011;6387;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4456;6053;6340;6246;6011;6387;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <AdditionalIncludeDirectories>$(SolutionDir)\src\include;..\..\..\..\libs\curl-7.35.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
@@ -102,7 +102,7 @@
     <ClCompile>
       <PrecompiledHeader>
       </PrecompiledHeader>
-      <DisableSpecificWarnings>6053;6340;6246;6011;6387;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4456;6053;6340;6246;6011;6387;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <AdditionalIncludeDirectories>$(SolutionDir)\src\include;..\..\..\..\libs\curl-7.35.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
@@ -118,7 +118,7 @@
     <ClCompile>
       <PrecompiledHeader>
       </PrecompiledHeader>
-      <DisableSpecificWarnings>6053;6340;6246;6011;6387;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4456;6053;6340;6246;6011;6387;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <AdditionalIncludeDirectories>$(SolutionDir)\src\include;..\..\..\..\libs\curl-7.35.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
