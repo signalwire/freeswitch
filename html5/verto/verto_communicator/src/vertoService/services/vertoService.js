@@ -335,6 +335,14 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
             dialog: dialog,
             hasVid: storage.data.useVideo,
             laData: pvtData,
+            chatCallback: function(v, e) {
+              var from = e.data.fromDisplay || e.data.from || "Unknown";
+              var message = e.data.message || "";
+              $rootScope.$emit('chat.newMessage', {
+                from: from,
+                body: message
+              });
+            },
             onBroadcast: function(v, conf, message) {
               console.log('>>> conf.onBroadcast:', arguments);
               if (message.action == 'response') {
@@ -441,6 +449,10 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
                   }
                 }
                 break;
+              /**
+                * This is not being used for conferencing chat
+                * anymore (see conf.chatCallback for that).
+                */
               case $.verto.enum.message.info:
                 var body = params.body;
                 var from = params.from_msg_name || params.from;
@@ -750,7 +762,16 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
           callback(data.instance, true);
         }
       },
-
+      /*
+      * Method is used to send conference chats ONLY.
+      */
+      sendConferenceChat: function(message) {
+        data.conf.sendChat(message, "message");
+      },
+      /*
+      * Method is used to send user2user chats.
+      * VC does not yet support that.
+      */
       sendMessage: function(body, callback) {
         data.call.message({
           to: data.chattingWith,
