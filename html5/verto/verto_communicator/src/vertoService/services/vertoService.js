@@ -110,6 +110,7 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
       videoDevices: [],
       audioDevices: [],
       shareDevices: [],
+      videoQuality: [],
       extension: $cookieStore.get('verto_demo_ext'),
       name: $cookieStore.get('verto_demo_name'),
       email: $cookieStore.get('verto_demo_email'),
@@ -155,34 +156,34 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
       $rootScope.$emit('call.incoming', number);
     }
 
-    function getVideoParams() {
-      var maxWidth, maxHeight;
+    function updateResolutions(supportedResolutions) {
+      console.debug('Attempting to sync supported and available resolutions');
 
-      maxWidth = data.bestWidth;
-      maxHeight = data.bestHeight;
+      var removed = 0;
 
-      if(!data.bestWidth) {
-        if (videoResolution[data.vidQual]) {
-          maxWidth = videoResolution[data.vidQual].width;
+      angular.forEach(videoQuality, function(resolution, id) {
+        var supported = false;
+        angular.forEach(supportedResolutions, function(res) {
+          var width = res[0];
+          var height = res[1];
+
+          if(resolution.width == width && resolution.height == height) {
+            supported = true;
+          }
+        });
+
+        if(!supported) {
+          delete videoQuality[id];
+          ++removed;
         }
-      }
+      });
 
-      if(!data.bestHeight) {
-        if (videoResolution[data.vidQual]) {
-          maxHeight = videoResolution[data.vidQual].height;
-        }
-      }
+      videoQuality.length = videoQuality.length - removed;
+      data.videoQuality = videoQuality;
+      data.vidQual = (videoQuality.length > 0) ? videoQuality[videoQuality.length - 1].id : null;
 
-      return {
-        minWidth: videoResolution[data.vidQual].width,
-        minHeight: videoResolution[data.vidQual].height,
-        maxWidth: maxWidth,
-        maxHeight: maxHeight,
-        minFrameRate: 15,
-        vertoBestFrameRate: 30
-
-      };
-    }
+      return videoQuality;
+    };
 
     var callState = {
       muteMic: false,
@@ -199,118 +200,122 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
       videoResolution: videoResolution,
       bandwidth: bandwidth,
 
-      refreshDevices: function(callback) {
-        console.debug('Attempting to refresh the devices.');
-        function refreshDevicesCallback() {
-          data.videoDevices = [{
+      refreshDevicesCallback : function refreshDevicesCallback() {
+        data.videoDevices = [];
+        data.shareDevices = [{
+          id: 'screen',
+          label: 'Screen'
+        }];
+        data.audioDevices = [];
+
+        for (var i in jQuery.verto.videoDevices) {
+          var device = jQuery.verto.videoDevices[i];
+          if (!device.label) {
+            data.videoDevices.push({
+              id: 'Camera ' + i,
+              label: 'Camera ' + i
+            });
+          } else {
+            data.videoDevices.push({
+              id: device.id,
+              label: device.label || device.id
+            });
+          }
+
+          // Selecting the first source.
+          if (i == 0) {
+            storage.data.selectedVideo = device.id;
+          }
+
+          if (!device.label) {
+            data.shareDevices.push({
+              id: 'Share Device ' + i,
+              label: 'Share Device ' + i
+            });
+            continue;
+          }
+
+          data.shareDevices.push({
+            id: device.id,
+            label: device.label || device.id
+          });
+        }
+
+        for (var i in jQuery.verto.audioInDevices) {
+          var device = jQuery.verto.audioInDevices[i];
+          // Selecting the first source.
+          if (i == 0) {
+            storage.data.selectedAudio = device.id;
+          }
+
+          if (!device.label) {
+            data.audioDevices.push({
+              id: 'Microphone ' + i,
+              label: 'Microphone ' + i
+            });
+            continue;
+          }
+          data.audioDevices.push({
+            id: device.id,
+            label: device.label || device.id
+          });
+        }
+        console.debug('Devices were refreshed, checking that we have cameras.');          
+        
+        // This means that we cannot use video!
+        if (data.videoDevices.length === 0) {
+          console.log('No camera, disabling video.');
+          data.canVideo = false;
+          data.videoDevices.push({
             id: 'none',
             label: 'No camera'
-          }];
-          data.shareDevices = [{
-            id: 'screen',
-            label: 'Screen'
-          }];
-          data.audioDevices = [];
+          });
+        } else {
+          data.canVideo = true;
+        }
+      },
 
-          for (var i in jQuery.verto.videoDevices) {
-            var device = jQuery.verto.videoDevices[i];
-            if (!device.label) {
-              data.videoDevices.push({
-                id: 'Camera ' + i,
-                label: 'Camera ' + i
-              });
-            } else {
-              data.videoDevices.push({
-                id: device.id,
-                label: device.label || device.id
-              });
-            }
-
-            // Selecting the first source.
-            if (i == 0) {
-              data.selectedVideo = device.id;
-            }
-
-            if (!device.label) {
-              data.shareDevices.push({
-                id: 'Share Device ' + i,
-                label: 'Share Device ' + i
-              });
-              continue;
-            }
-
-            data.shareDevices.push({
-              id: device.id,
-              label: device.label || device.id
-            });
-          }
-
-          for (var i in jQuery.verto.audioInDevices) {
-            var device = jQuery.verto.audioInDevices[i];
-            // Selecting the first source.
-            if (i == 0) {
-              data.selectedAudio = device.id;
-            }
-
-            if (!device.label) {
-              data.audioDevices.push({
-                id: 'Microphone ' + i,
-                label: 'Microphone ' + i
-              });
-              continue;
-            }
-            data.audioDevices.push({
-              id: device.id,
-              label: device.label || device.id
-            });
-          }
-          console.debug('Devices were refreshed.');
-        };
-
-        jQuery.verto.refreshDevices(refreshDevicesCallback);
-
+      refreshDevices: function(callback) {
+        console.debug('Attempting to refresh the devices.');        
+        jQuery.verto.refreshDevices(this.refreshDevicesCallback);
       },
 
       /**
        * Updates the video resolutions based on settings.
        */
-      refreshVideoResolution: function() {
+      refreshVideoResolution: function(resolutions) {
         console.debug('Attempting to refresh video resolutions.');
 
         if (data.instance) {
-          data.instance.videoParams(getVideoParams());
+          var w = resolutions['bestResSupported'][0];
+          var h = resolutions['bestResSupported'][1];
+
+          if (h === 1080) {
+            w = 1280;
+            h = 720;
+          }
+
+          updateResolutions(resolutions['validRes']);
+          data.instance.videoParams({
+            minWidth: w,
+            minHeight: h,
+            maxWidth: w,
+            maxHeight: h,
+            minFrameRate: 15,
+            vertoBestFrameRate: 30
+          });
+          videoQuality.forEach(function(qual){
+            if (w === qual.width && h === qual.height) {
+              if (storage.data.vidQual !== qual.id) {
+                storage.data.vidQual = qual.id;
+              }
+            }
+
+          });
+
         } else {
           console.debug('There is no instance of verto.');
         }
-      },
-
-      updateResolutions: function(supportedResolutions) {
-        console.debug('Attempting to sync supported and available resolutions');
-
-        var removed = 0;
-
-        angular.forEach(videoQuality, function(resolution, id) {
-          var supported = false;
-          angular.forEach(supportedResolutions, function(res) {
-            var width = res[0];
-            var height = res[1];
-
-            if(resolution.width == width && resolution.height == height) {
-              supported = true;
-            }
-          });
-
-          if(!supported) {
-            delete videoQuality[id];
-            ++removed;
-          }
-        });
-
-        videoQuality.length = videoQuality.length - removed;
-        this.videoQuality = videoQuality;
-        this.data.vidQual = (videoQuality.length > 0) ? videoQuality[videoQuality.length - 1].id : null;
-
-        return videoQuality;
       },
 
       /**
@@ -502,24 +507,11 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
           }
         };
 
-        var init = function(resolutions) {
-          // This means that we cannot use video!
-          if (resolutions.validRes.length === 0) {
-            console.log('No valid resolutions, disabling video.');
-            data.canVideo = false;
-          } else {
-            data.canVideo = true;
-          }
-          data.bestWidth = resolutions['bestResSupported'][0];
-          data.bestHeight = resolutions['bestResSupported'][1];
-
-          if (data.canVideo) {
-            that.updateResolutions(resolutions['validRes']);
-            that.refreshVideoResolution();
-          }
-          
+        var that = this;
+        function ourBootstrap() {
           // Checking if we have a failed connection attempt before
           // connecting again.
+          that.refreshDevicesCallback();
           if (data.instance && !data.instance.rpcClient.socketReady()) {
               clearTimeout(data.instance.rpcClient.to);
               data.instance.logout();
@@ -530,7 +522,6 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
             socketUrl: data.wsURL,
             tag: "webcam",
             ringFile: "sounds/bell_ring2.wav",
-            videoParams: getVideoParams(),
             // TODO: Add options for this.
             audioParams: {
                 googEchoCancellation: storage.data.googEchoCancellation || false,
@@ -540,10 +531,15 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
             iceServers: data.useSTUN
           }, callbacks);
 
-          that.refreshDevices();
-        };
+          data.instance.deviceParams({
+            useCamera: storage.data.selectedVideo,
+            useMic: storage.data.selectedAudio,
+            resCheck: that.refreshVideoResolution
+          });
 
-        jQuery.verto.init({}, init);
+        }
+
+        $.verto.init({}, ourBootstrap);
       },
 
       /**
