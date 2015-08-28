@@ -1251,7 +1251,7 @@
         var conf = this;
 
         conf.destroyed = true;
-        conf.params.onBroadcast(verto, conf, 'destroy');
+        conf.params.onBroadcast(conf.verto, conf, 'destroy');
 
         if (conf.params.laData.modChannel) {
             conf.verto.unsubscribe(conf.params.laData.modChannel);
