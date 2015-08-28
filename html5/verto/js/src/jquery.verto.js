@@ -150,6 +150,10 @@
 	for (var i in obj) {
             verto.options.deviceParams[i] = obj[i];
 	}
+
+	if (obj.useCamera) {
+	    $.FSRTC.getValidRes(verto.options.deviceParams.useCamera, undefined);
+	}
     };
 
     $.verto.prototype.videoParams = function(obj) {
