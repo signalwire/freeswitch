@@ -1101,7 +1101,7 @@ var iceTimer;
 	if (cached) {
 	    $.FSRTC.validRes = $.parseJSON(cached);
 	    console.log("CACHED RES FOR CAM " + cam, $.FSRTC.validRes);
-	    return func ? func() : null;
+	    return func ? func($.FSRTC.validRes) : null;
 	}
 
 
