@@ -23,6 +23,7 @@ applications/mod_fifo
 #applications/mod_fsk
 applications/mod_fsv
 applications/mod_hash
+#applications/mod_hiredis
 applications/mod_httapi
 #applications/mod_http_cache
 #applications/mod_ladspa

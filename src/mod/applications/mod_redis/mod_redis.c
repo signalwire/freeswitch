@@ -85,7 +85,9 @@ SWITCH_LIMIT_INCR(limit_incr_redis)
 	uint8_t increment = 1;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;	
 	REDIS redis;
-	
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "mod_redis is deprecated and will be removed in FS 1.8. Check out mod_hiredis.\n");
+
 	if (redis_factory(&redis) != SWITCH_STATUS_SUCCESS) {
 		if ( globals.ignore_connect_fail ) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ignore_connect_fail=true, so ignoring the fact that redis was not contactabl and continuing with the call\n" );
@@ -314,6 +316,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_redis_load)
 	if (switch_xml_config_parse_module_settings("redis.conf", SWITCH_FALSE, instructions) != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_FALSE;
 	}
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "mod_redis is deprecated and will be removed in FS 1.8. Check out mod_hiredis.\n");
 
 	/* If FreeSWITCH was restarted and we still have active calls, decrement them so our global count stays valid */
 	limit_reset_redis();
