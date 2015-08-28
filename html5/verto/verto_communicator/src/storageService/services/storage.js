@@ -30,7 +30,7 @@
       mirrorInput: false,
       outgoingBandwidth: 'default',
       incomingBandwidth: 'default',
-      vidQual: 'qvga',
+      vidQual: undefined,
       askRecoverCall: false,
       googNoiseSuppression: false,
       googHighpassFilter: false,

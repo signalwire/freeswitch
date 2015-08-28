@@ -123,7 +123,6 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
     };
 
     function cleanShareCall(that) {
-      that.refreshVideoResolution();
       data.shareCall = null;
       data.callState = 'active';
       that.refreshDevices();
@@ -193,7 +192,6 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
     return {
       data: data,
       callState: callState,
-      // changeData: changeData,
 
       // Options to compose the interface.
       videoQuality: videoQuality,
@@ -306,7 +304,7 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
           });
           videoQuality.forEach(function(qual){
             if (w === qual.width && h === qual.height) {
-              if (storage.data.vidQual !== qual.id) {
+              if (storage.data.vidQual !== qual.id || storage.data.vidQual === undefined) {
                 storage.data.vidQual = qual.id;
               }
             }
@@ -534,7 +532,7 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
           data.instance.deviceParams({
             useCamera: storage.data.selectedVideo,
             useMic: storage.data.selectedAudio,
-            resCheck: that.refreshVideoResolution
+            onResCheck: that.refreshVideoResolution
           });
 
         }
@@ -586,8 +584,6 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
       call: function(destination, callback) {
         console.debug('Attempting to call destination ' + destination + '.');
 
-        //this.refreshVideoResolution();
-
         var call = data.instance.newCall({
           destination_number: destination,
           caller_id_name: data.name,
@@ -620,8 +616,6 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
 
       screenshare: function(destination, callback) {
         console.log('share screen video');
-
-        this.refreshVideoResolution();
 
         var that = this;
 
