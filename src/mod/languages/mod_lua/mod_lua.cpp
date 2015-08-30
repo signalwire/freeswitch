@@ -591,7 +591,7 @@ SWITCH_STANDARD_DIALPLAN(lua_dialplan_hunt)
 
 	/* expecting ACTIONS = { {"app1", "app_data1"}, { "app2" }, "app3" } -- each of three is valid */
 	lua_getglobal(L, "ACTIONS");
-	if (!lua_istable(L, 1)) {
+	if (!lua_istable(L, -1)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR,
 			"Global variable ACTIONS may only be a table\n");
 		goto done;
@@ -599,7 +599,7 @@ SWITCH_STANDARD_DIALPLAN(lua_dialplan_hunt)
 
 	lua_pushnil(L); /* STACK = tab | nil */
 
-	while (lua_next(L, 1) != 0) { /* STACK = tab | k1 .. kn | vn */
+	while (lua_next(L, -2) != 0) { /* STACK = tab | k1 .. kn | vn */
 		char *application = NULL, *app_data = NULL;
 
 		if (lua_isstring(L, -1)) {
