@@ -263,6 +263,9 @@
 #define inline
 #endif
 
+#if _MSC_VER >= 1900
+#include <stdint.h>
+#else
 /* Define to `short' if <sys/types.h> does not define. */
 #undef int16_t
 
@@ -284,9 +287,6 @@
 /* Define to 'int' if not defined */
 #undef socklen_t
 
-/* Define to `int' if <sys/types.h> does not define. */
-#define ssize_t int
-
 /* Define to `unsigned short' if <sys/types.h> does not define. */
 #define uint16_t unsigned short
 
@@ -302,6 +302,11 @@
 #define uint8_t unsigned char
 
 #define int8_t char
+
+#endif
+/* Define to `int' if <sys/types.h> does not define. */
+#define ssize_t int
+
 
 #include <stdio.h>
 #include <string.h>
@@ -356,6 +361,10 @@
 #ifdef _MSC_VER
 #if _MSC_VER < 1900
 #define snprintf _snprintf
+#else
+#ifndef HAVE_ISBLANK
+#define HAVE_ISBLANK
+#endif
 #endif
 #define vsnprintf _vsnprintf
 #define strcasecmp _stricmp
