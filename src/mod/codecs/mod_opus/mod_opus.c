@@ -317,7 +317,7 @@ static switch_status_t switch_opus_init(switch_codec_t *codec, switch_codec_flag
 	struct opus_context *context = NULL;
 	int encoding = (flags & SWITCH_CODEC_FLAG_ENCODE);
 	int decoding = (flags & SWITCH_CODEC_FLAG_DECODE);
-	switch_codec_fmtp_t codec_fmtp, codec_fmtp_only_remote;
+	switch_codec_fmtp_t codec_fmtp, codec_fmtp_only_remote = { 0 };
 	opus_codec_settings_t opus_codec_settings = { 0 };
 	opus_codec_settings_t opus_codec_settings_remote = { 0 };
     

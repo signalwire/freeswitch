@@ -20,7 +20,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\src\mod\endpoints\mod_gsmopen\libctb-0.16\src\fifo.cpp" />
-    <ClCompile Include="..\..\..\src\mod\endpoints\mod_gsmopen\libctb-0.16\src\getopt.cpp" />
     <ClCompile Include="..\..\..\src\mod\endpoints\mod_gsmopen\libctb-0.16\src\gpib.cpp" />
     <ClCompile Include="..\..\..\src\mod\endpoints\mod_gsmopen\libctb-0.16\src\iobase.cpp" />
     <ClCompile Include="..\..\..\src\mod\endpoints\mod_gsmopen\libctb-0.16\src\kbhit.cpp" />

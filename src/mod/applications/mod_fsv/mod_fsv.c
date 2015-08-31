@@ -396,11 +396,11 @@ SWITCH_STANDARD_APP(play_fsv_function)
 				hdr->pt = pt;
 			}
 			if (switch_channel_test_flag(channel, CF_VIDEO)) {
-				switch_byte_t *data = (switch_byte_t *) vid_frame.packet;
+				switch_byte_t *d = (switch_byte_t *) vid_frame.packet;
 
 				vid_frame.m = hdr->m;
 				vid_frame.timestamp = ts;
-				vid_frame.data = ((uint8_t *)data) + 12;
+				vid_frame.data = ((uint8_t *)d) + 12;
 				vid_frame.datalen = vid_frame.packetlen - 12;
 				switch_core_session_write_video_frame(session, &vid_frame, SWITCH_IO_FLAG_NONE, 0);
 			}
@@ -567,7 +567,7 @@ SWITCH_STANDARD_APP(play_yuv_function)
 		goto end;
 	}
 
-	if (read(fd, yuv, size) != size) {
+	if (read(fd, yuv, size) != (int)size) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Error reading file\n");
 		switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "Got error reading file");
 		goto end;
@@ -960,15 +960,16 @@ static switch_status_t fsv_file_write(switch_file_handle_t *handle, void *data, 
 
 	/* switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "writing: %ld %d %x\n", (long)(*len), handle->channels, handle->flags); */
 
-	if (*len > max_datasize) {
+	if (*len > (size_t)max_datasize) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "You are asking to write %d bytes of data which is not supported. Please set enable_file_write_buffering=false to use .fsv format\n", (int)(*len));
 		return SWITCH_STATUS_GENERR;
 	}
 
 	if (handle->channels > 1) {
-		int i, j;
+		int i;
+		uint32_t j;
 		int32_t mixed = 0;
-		for (i=0; i<*len; i++) {
+		for (i = 0; (size_t)i < *len; i++) {
 			for (j = 0; j < handle->channels; j++) {
 				mixed += xdata[i * handle->channels + j];
 			}

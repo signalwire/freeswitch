@@ -914,7 +914,7 @@ switch_status_t conference_video_attach_video_layer(conference_member_t *member,
 		}
 	}
 
-	if (layer->member_id && layer->member_id == member->id) {
+	if (layer->member_id && layer->member_id == (int)member->id) {
 		member->video_layer_id = idx;
 		switch_goto_status(SWITCH_STATUS_BREAK, end);
 	}
@@ -1304,7 +1304,7 @@ video_layout_t *conference_video_find_best_layout(conference_obj_t *conference, 
 	if (!count) count = conference->members_with_video + conference->members_with_avatar;
 
 	for (vlnode = lg->layouts; vlnode; vlnode = vlnode->next) {
-		if (vlnode->vlayout->layers >= count) {
+		if (vlnode->vlayout->layers >= (int)count) {
 			break;
 		}
 
@@ -1697,7 +1697,7 @@ switch_status_t conference_video_find_layer(conference_obj_t *conference, mcu_ca
 	for (i = 0; i < canvas->total_layers; i++) {
 		mcu_layer_t *xlayer = &canvas->layers[i];
 
-		if (xlayer->is_avatar && xlayer->member_id != conference->video_floor_holder) {
+		if (xlayer->is_avatar && xlayer->member_id != (int)conference->video_floor_holder) {
 			avatar_layers++;
 		}
 	}
@@ -1724,7 +1724,7 @@ switch_status_t conference_video_find_layer(conference_obj_t *conference, mcu_ca
 				}
 			} else if ((!xlayer->member_id || (!member->avatar_png_img &&
 											   xlayer->is_avatar &&
-											   (conference->canvas_count > 1 || xlayer->member_id != conference->video_floor_holder))) &&
+											   (conference->canvas_count > 1 || xlayer->member_id != (int)conference->video_floor_holder))) &&
 					   !xlayer->fnode && !xlayer->geometry.fileonly) {
 				switch_status_t lstatus;
 
@@ -1751,7 +1751,7 @@ switch_status_t conference_video_find_layer(conference_obj_t *conference, mcu_ca
 
 void conference_video_next_canvas(conference_member_t *imember)
 {
-	if (imember->canvas_id == imember->conference->canvas_count - 1) {
+	if (imember->canvas_id == (int)imember->conference->canvas_count - 1) {
 		imember->canvas_id = 0;
 	} else {
 		imember->canvas_id++;
@@ -2107,7 +2107,7 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 			switch_mutex_lock(conference->canvas_mutex);
 			if (imember->video_layer_id > -1) {
 				layer = &canvas->layers[imember->video_layer_id];
-				if (layer->member_id != imember->id) {
+				if (layer->member_id != (int)imember->id) {
 					imember->video_layer_id = -1;
 					layer = NULL;
 					imember->layer_timeout = DEFAULT_LAYER_TIMEOUT;
@@ -2318,7 +2318,7 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 
 					if (i < imember->canvas->total_layers) {
 						layer = &imember->canvas->layers[i++];
-						if (layer->member_id != omember->id) {
+						if (layer->member_id != (int)omember->id) {
 							const char *var = NULL;
 
 							layer->mute_patched = 0;

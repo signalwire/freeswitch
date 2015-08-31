@@ -2968,8 +2968,6 @@ int sms_incoming(private_t *tech_pvt)
 int ussd_incoming(private_t *tech_pvt)
 {
 	switch_event_t *event;
-	switch_core_session_t *session = NULL;
-	int event_sent_to_esl = 0;
 
 	DEBUGA_GSMOPEN("received USSD on interface %s: TEXT=%s|\n", GSMOPEN_P_LOG, tech_pvt->name, tech_pvt->ussd_message);
 
