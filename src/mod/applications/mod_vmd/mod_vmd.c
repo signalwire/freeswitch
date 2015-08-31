@@ -150,7 +150,7 @@ typedef struct vmd_session_info {
 	/*! State of the session. */
 	vmd_state_t state;
 	/*! Snapshot of DESA samples. */
-	vmd_point_t points[POINTS];
+	vmd_point_t points[POINTS+1];
 	/*! Internal FreeSWITCH session. */
 	switch_core_session_t *session;
 	/*! Codec information for the session. */
