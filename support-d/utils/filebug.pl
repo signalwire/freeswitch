@@ -77,7 +77,7 @@ GetOptions(
     'type=s' => \$opts{type},
     'versions=s' => \$opts{versions},
     'noedit' => \$opts{noedit},
-    'askall' => \$opts{askall},
+    'terse' => \$opts{terse},
     'debug' => \$opts{debug},
     ) or die "Usage: $0 -summary <summary> -desc <desc> [-debug] ....\n";
 
@@ -166,7 +166,7 @@ if (!$opts{hash}) {
     }
 }
 
-if ($opts{askall}) {
+if (!$opts{terse}) {
     $opts{project} = getfield("Project: ", $opts{project});
     $opts{type} = getfield("Type: ", $opts{type});
     $opts{versions} = getfield("Versions: ", $opts{versions});
