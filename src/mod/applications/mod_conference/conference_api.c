@@ -1135,7 +1135,7 @@ switch_status_t conference_api_sub_write_png(conference_obj_t *conference, switc
 switch_status_t conference_api_sub_vid_layout(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv)
 {
 	video_layout_t *vlayout = NULL;
-	uint32_t idx = 0;
+	int idx = 0;
 
 	if (!argv[2]) {
 		stream->write_function(stream, "Invalid input\n");
@@ -1211,7 +1211,7 @@ switch_status_t conference_api_sub_vid_layout(conference_obj_t *conference, swit
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	if (idx < 0 || idx > conference->canvas_count - 1) idx = 0;
+	if (idx < 0 || idx > (int)(conference->canvas_count - 1)) idx = 0;
 
 	switch_mutex_lock(conference->canvas_mutex);
 	if (conference_utils_test_flag(conference, CFLAG_PERSONAL_CANVAS)) {
