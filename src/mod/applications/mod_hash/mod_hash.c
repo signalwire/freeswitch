@@ -289,7 +289,6 @@ SWITCH_LIMIT_RELEASE(limit_release_hash)
 			void *val = NULL;
 			const void *key;
 			switch_ssize_t keylen;
-			limit_hash_item_t *item = NULL;
 
 			switch_core_hash_this(hi, &key, &keylen, &val);
 

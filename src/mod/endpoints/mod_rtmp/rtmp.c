@@ -1016,7 +1016,7 @@ switch_status_t rtmp_handle_data(rtmp_session_t *rsession)
 
 
 								switch_mutex_lock(rsession->tech_pvt->readbuf_mutex);
-								if (rsession->tech_pvt->maxlen && switch_buffer_inuse(rsession->tech_pvt->readbuf) > rsession->tech_pvt->maxlen * 40) {
+								if (rsession->tech_pvt->maxlen && switch_buffer_inuse(rsession->tech_pvt->readbuf) > (switch_size_t)(rsession->tech_pvt->maxlen * 40)) {
 									rsession->tech_pvt->over_size++;
 								} else {
 									rsession->tech_pvt->over_size = 0;
@@ -1057,7 +1057,7 @@ switch_status_t rtmp_handle_data(rtmp_session_t *rsession)
 								}
 
 								switch_mutex_lock(rsession->tech_pvt->video_readbuf_mutex);
-								if (rsession->tech_pvt->video_maxlen && switch_buffer_inuse(rsession->tech_pvt->video_readbuf) > rsession->tech_pvt->video_maxlen * 100) {
+								if (rsession->tech_pvt->video_maxlen && switch_buffer_inuse(rsession->tech_pvt->video_readbuf) > (switch_size_t)(rsession->tech_pvt->video_maxlen * 100)) {
 									rsession->tech_pvt->video_over_size++;
 								} else {
 									rsession->tech_pvt->video_over_size = 0;

@@ -609,7 +609,7 @@ static switch_status_t do_billing(switch_core_session_t *session)
 			/* we're going to make an assumption that final billing is done here. So we'll see how this goes. */
 			/* round total billed up as required */
 
-			rounded_billed = ceilf(nibble_data->total * rounding_factor) / rounding_factor;
+			rounded_billed = ceilf((float)(nibble_data->total * rounding_factor)) / rounding_factor;
 
 			if (rounded_billed < minimum_charge)
 			{

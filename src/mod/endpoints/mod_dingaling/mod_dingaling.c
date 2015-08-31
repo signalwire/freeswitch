@@ -4018,7 +4018,6 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 				char *proto = MDL_CHAT_PROTO;
 				char *pproto = NULL, *ffrom = NULL;
 				char *hint;
-				switch_event_t *event;
 				char *from_user, *from_host;
 #ifdef AUTO_REPLY
 				if (profile->auto_reply) {

@@ -2111,7 +2111,7 @@ static uint32_t check_presence_epoch(void)
 {
 	struct tm tm = {0};
 	time_t now = switch_epoch_time_now(NULL);
-	uint32_t callsequence = (now - mod_sofia_globals.presence_epoch) * SOFIA_PRESENCE_COLLISION_DELTA;
+	uint32_t callsequence = (uint32_t)((now - mod_sofia_globals.presence_epoch) * SOFIA_PRESENCE_COLLISION_DELTA);
 
 	if (!mod_sofia_globals.presence_year || callsequence >= SOFIA_PRESENCE_ROLLOVER_YEAR) {
 		switch_mutex_lock(mod_sofia_globals.mutex);
@@ -2120,7 +2120,7 @@ static uint32_t check_presence_epoch(void)
 		if (tm.tm_year != mod_sofia_globals.presence_year) {
 			mod_sofia_globals.presence_epoch = (uint32_t)now - (tm.tm_yday * 86400) - (tm.tm_hour * 60 * 60) - (tm.tm_min * 60) - tm.tm_sec;
 			mod_sofia_globals.presence_year = tm.tm_year;
-			callsequence = ((uint32_t)now - mod_sofia_globals.presence_epoch) * SOFIA_PRESENCE_COLLISION_DELTA;
+			callsequence = (uint32_t)(((uint32_t)now - mod_sofia_globals.presence_epoch) * SOFIA_PRESENCE_COLLISION_DELTA);
 		}
 
 		switch_mutex_unlock(mod_sofia_globals.mutex);

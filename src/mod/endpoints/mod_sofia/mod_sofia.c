@@ -94,7 +94,7 @@ static switch_status_t sofia_on_init(switch_core_session_t *session)
 		char *dupvar = NULL;
 		char *watch_headers[10];
 		unsigned int numhdrs = 0;
-		int i = 0;
+		unsigned int i = 0;
 		dupvar = switch_core_session_strdup(session, hval);
 		numhdrs = switch_separate_string(dupvar, ',', watch_headers, switch_arraylen(watch_headers));
 		if (numhdrs) {

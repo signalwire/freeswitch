@@ -136,7 +136,7 @@ int mcast_socket_create(const char *host, int16_t port, mcast_handle_t *handle, 
 			memcpy(&mreq.ipv6mr_multiaddr, &((struct sockaddr_in6 *)mcast_addr->ai_addr)->sin6_addr,  sizeof(struct in6_addr));
 											 
 			mreq.ipv6mr_interface = 0;
-			setsockopt(handle->sock, IPPROTO_IPV6, IPV6_JOIN_GROUP, &mreq, sizeof(mreq));
+			setsockopt(handle->sock, IPPROTO_IPV6, IPV6_JOIN_GROUP, (const char *)&mreq, sizeof(mreq));
 
 			if (bind(handle->sock, (struct sockaddr *) &handle->recv_addr6, sizeof(handle->recv_addr6)) < 0) {
 				printf("FUCK (%s) %s\n", host, strerror(errno));

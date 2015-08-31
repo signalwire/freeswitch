@@ -3840,11 +3840,11 @@ SWITCH_STANDARD_APP(pickup_function)
 			caller_profile->callee_id_number = num;
 			
 			if (switch_event_create(&event, SWITCH_EVENT_CALL_UPDATE) == SWITCH_STATUS_SUCCESS) {
-				const char *uuid = switch_channel_get_partner_uuid(channel);
+				const char *partner_uuid = switch_channel_get_partner_uuid(channel);
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Direction", "RECV");
 				
-				if (uuid) {
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Bridged-To", uuid);
+				if (partner_uuid) {
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Bridged-To", partner_uuid);
 				}
 				switch_channel_event_set_data(channel, event);
 				switch_event_fire(&event);
@@ -4700,17 +4700,17 @@ static switch_status_t next_file(switch_file_handle_t *handle)
 		if (context->file && switch_test_flag(handle, SWITCH_FILE_DATA_SHORT)) { /* TODO handle other data type flags */
 			switch_size_t len;			
 			uint16_t buf[SWITCH_RECOMMENDED_BUFFER_SIZE] = { 0 };
-			switch_status_t status;
+			switch_status_t stat;
 			switch_file_handle_t fh = { 0 };
 
-			if ((status = switch_core_file_open(&fh, context->file, handle->channels, handle->samplerate, 
+			if ((stat = switch_core_file_open(&fh, context->file, handle->channels, handle->samplerate, 
 												SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, NULL)) == SWITCH_STATUS_SUCCESS) {
 					do {
 						len = SWITCH_RECOMMENDED_BUFFER_SIZE / handle->channels;
-						if ((status = switch_core_file_read(&fh, buf, &len)) == SWITCH_STATUS_SUCCESS) {
-							status = switch_core_file_write(&context->fh, buf, &len);
+						if ((stat = switch_core_file_read(&fh, buf, &len)) == SWITCH_STATUS_SUCCESS) {
+							stat = switch_core_file_write(&context->fh, buf, &len);
 						}
-					} while (status == SWITCH_STATUS_SUCCESS);
+					} while (stat == SWITCH_STATUS_SUCCESS);
 
 					switch_core_file_close(&fh);				
 					switch_file_remove(context->file, handle->memory_pool);
@@ -5628,10 +5628,10 @@ SWITCH_STANDARD_APP(page_function)
 	}
 
 	if ((l = switch_channel_get_variable(channel, "page_chunk_size"))) {
-		uint32_t tmp = switch_atoui(l);
+		uint32_t chunk = switch_atoui(l);
 
-		if (tmp > 0) {
-			chunk_size = tmp;
+		if (chunk > 0) {
+			chunk_size = chunk;
 		}
 	}
 

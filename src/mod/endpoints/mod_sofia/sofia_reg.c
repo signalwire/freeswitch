@@ -857,7 +857,7 @@ long sofia_reg_uniform_distribution(int max)
 	int result;
 	int range = max + 1;
 
-	srand((intptr_t) switch_thread_self() + switch_micro_time_now());
+	srand((unsigned)((intptr_t) switch_thread_self() + switch_micro_time_now()));
 	result = (int)((double)rand() / (((double)RAND_MAX + (double)1) / range));
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG9, "Generated random %ld, max is %d\n", (long) result, max);
@@ -2748,7 +2748,7 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 		free(sql);
 
 		//if (!sofia_glue_execute_sql2str(profile, profile->dbh_mutex, sql, np, nplen)) {
-		if (zstr(np) || (profile->max_auth_validity != 0 && cb.last_nc >= profile->max_auth_validity )) {
+		if (zstr(np) || (profile->max_auth_validity != 0 && (uint32_t)cb.last_nc >= profile->max_auth_validity )) {
 			sql = switch_mprintf("delete from sip_authentication where nonce='%q'", nonce);
 			sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
 			ret = AUTH_STALE;

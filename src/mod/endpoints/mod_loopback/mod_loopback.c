@@ -137,12 +137,12 @@ static switch_status_t tech_init(loopback_private_t *tech_pvt, switch_core_sessi
 		interval = codec->implementation->microseconds_per_packet / 1000;
 	} else {
 		const char *var;
-		char *modname = NULL;
+		char *codec_modname = NULL;
 
 		if ((var = switch_channel_get_variable(channel, "loopback_initial_codec"))) {
 			char *dup = switch_core_session_strdup(session, var);
 			uint32_t bit, channels;
-			iananame = switch_parse_codec_buf(dup, &interval, &rate, &bit, &channels, &modname);
+			iananame = switch_parse_codec_buf(dup, &interval, &rate, &bit, &channels, &codec_modname);
 		}
 		
 	}

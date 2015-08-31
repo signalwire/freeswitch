@@ -2437,7 +2437,7 @@ static size_t save_file_callback(void *ptr, size_t size, size_t nmemb, void *dat
 		} else {
 			switch_cond_next();
 		}
-	} while (wrote != realsize && (x == -1 && (errno == EAGAIN || errno == EINTR)) && --sanity);
+	} while ((unsigned)wrote != realsize && (x == -1 && (errno == EAGAIN || errno == EINTR)) && --sanity);
 
 	if (wrote != (int) realsize) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Short write! fd:%d %d out of %d [%s]\n", client->fd, wrote, realsize, strerror(errno));

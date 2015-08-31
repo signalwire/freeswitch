@@ -3677,7 +3677,7 @@ static int xml_callback(void *pArg, int argc, char **argv, char **columnNames)
 	struct xml_helper *h = (struct xml_helper *) pArg;
 	switch_xml_t x_out;
 	int c_off = 0;
-	char exp_buf[128] = "";
+	char exp_buf[128] = { 0 };
 	switch_time_exp_t tm;
 	switch_time_t etime = 0;
 	char atime[128] = "";

@@ -146,7 +146,12 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="mod_redis.c" />
-    <ClCompile Include="credis.c" />
+    <ClCompile Include="credis.c">
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">4005;4389;4133;4244;4706;4306;4996;6340;6246;6011;6387;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">4005;4389;4133;4244;4706;4306;4996;6340;6246;6011;6387;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">4005;4389;4133;4244;4706;4306;4996;6340;6246;6011;6387;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|x64'">4005;4389;4133;4244;4706;4306;4996;6340;6246;6011;6387;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\w32\Library\FreeSwitchCore.2015.vcxproj">

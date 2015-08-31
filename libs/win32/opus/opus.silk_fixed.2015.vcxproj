@@ -93,6 +93,7 @@
       <AdditionalIncludeDirectories>..\..\opus-1.1\silk\;..\..\opus-1.1\win32;..\..\opus-1.1\celt;..\..\opus-1.1\include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <DisableSpecificWarnings>4244;4133;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -109,6 +110,7 @@
       <AdditionalIncludeDirectories>..\..\opus-1.1\silk\;..\..\opus-1.1\win32;..\..\opus-1.1\celt;..\..\opus-1.1\include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <DisableSpecificWarnings>4244;4133;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>

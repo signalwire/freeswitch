@@ -161,7 +161,7 @@ static int load_config(int reloading)
 		lp = new_list;
 
 		for (param = switch_xml_child(list, "node"); param; param = param->next) {
-			char *name = (char *) switch_xml_attr_soft(param, "name");
+			char *name_attr = (char *) switch_xml_attr_soft(param, "name");
 			char *weight_val = (char *) switch_xml_attr_soft(param, "weight");
 			int tmp;
 
@@ -171,7 +171,7 @@ static int load_config(int reloading)
 			}
 
 			switch_zmalloc(node, sizeof(*node));
-			node->name = strdup(name);
+			node->name = strdup(name_attr);
 			node->wval = tmp;
 			
 			if (np) {

@@ -1100,6 +1100,8 @@ static void attach_jsock(jsock_t *jsock)
 
 	switch_mutex_lock(globals.jsock_mutex);
 
+	switch_assert(jsock);
+
 	if ((jp = switch_core_hash_find(globals.jsock_hash, jsock->uuid_str))) {
 		if (jp == jsock) {
 			proceed = 0;
@@ -1543,7 +1545,7 @@ static void http_run(jsock_t *jsock)
 {
 	switch_http_request_t request = { 0 };
 	switch_stream_handle_t stream = { 0 };
-	char *data = NULL;
+	char *err = NULL;
 	char *ext;
 	verto_vhost_t *vhost;
 	switch_bool_t keepalive;
@@ -1600,7 +1602,7 @@ new_req:
 			memcpy(buffer, jsock->ws.buffer + request.bytes_read, bytes);
 		}
 
-		while(bytes < request.content_length) {
+		while(bytes < (switch_ssize_t)request.content_length) {
 			len = request.content_length - bytes;
 
 			if ((len = ws_raw_read(&jsock->ws, buffer + bytes, len, jsock->ws.block)) < 0) {
@@ -1793,9 +1795,9 @@ request_err:
 	switch_http_free_request(&request);
 
 err:
-	data = "HTTP/1.1 500 Internal Server Error\r\n"
+	err = "HTTP/1.1 500 Internal Server Error\r\n"
 		"Content-Length: 0\r\n\r\n";
-	ws_raw_write(&jsock->ws, data, strlen(data));
+	ws_raw_write(&jsock->ws, err, strlen(err));
 
 error:
 	return;
@@ -5072,7 +5074,6 @@ static int verto_send_chat(const char *uid, const char *call_id, cJSON *msg)
 		switch_core_session_t *session;
 		if ((session = switch_core_session_locate(call_id))) {
 			verto_pvt_t *tech_pvt = switch_core_session_get_private_class(session, SWITCH_PVT_SECONDARY);
-			jsock_t *jsock;
 
 			if ((jsock = get_jsock(tech_pvt->jsock_uuid))) {
 				jsock_queue_event(jsock, &msg, SWITCH_FALSE);

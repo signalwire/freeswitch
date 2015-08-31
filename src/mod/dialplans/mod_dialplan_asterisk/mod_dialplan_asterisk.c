@@ -166,7 +166,7 @@ SWITCH_STANDARD_DIALPLAN(asterisk_dialplan_hunt)
 				char *pattern = NULL;
 				char *app = NULL;
 				char *argument = NULL;
-				char *expression = NULL, expression_buf[1024] = "";
+				char *expression = NULL, expression_buf[1024] = { 0 };
 				char substituted[2048] = "";
 				const char *field_data = caller_profile->destination_number;
 				int proceed = 0;

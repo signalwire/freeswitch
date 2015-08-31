@@ -226,10 +226,10 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 			const char *artist = NULL, *title = NULL;
 
 			if (fd > -1) {
-				char *p;
+				char *pb;
 				if (switch_fd_read_line(fd, path_buf, sizeof(path_buf))) {
-					if ((p = strchr(path_buf, '\r')) || (p = strchr(path_buf, '\n'))) {
-						*p = '\0';
+					if ((pb = strchr(path_buf, '\r')) || (pb = strchr(path_buf, '\n'))) {
+						*pb = '\0';
 					}
 				} else {
 					close(fd);
@@ -1011,9 +1011,9 @@ static int launch_streams(const char *name)
 
 	if (zstr(name)) {
 		for (directory = switch_xml_child(cfg, "directory"); directory; directory = directory->next) {
-			char *name = (char *) switch_xml_attr(directory, "name");
+			char *name_attr = (char *) switch_xml_attr(directory, "name");
 			char *path = (char *) switch_xml_attr(directory, "path");
-			launch_thread(name, path, directory);
+			launch_thread(name_attr, path, directory);
 			x++;
 		}
 	} else if ((directory = switch_xml_find_child(cfg, "directory", "name", name))) {

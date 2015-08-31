@@ -126,7 +126,7 @@
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
       <WarningLevel>Level3</WarningLevel>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <AdditionalOptions>/wd4290 /wd4996 %(AdditionalOptions)</AdditionalOptions>
       <DisableSpecificWarnings>4838;4267;4101;4244;4554;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>

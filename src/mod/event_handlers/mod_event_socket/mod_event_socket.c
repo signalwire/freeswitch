@@ -399,7 +399,7 @@ SWITCH_STANDARD_APP(socket_function)
 	switch_sockaddr_t *sa;
 	switch_port_t port = 8084;
 	listener_t *listener;
-	int argc = 0, x = 0;
+	unsigned int argc = 0, x = 0;
 	char *argv[80] = { 0 };
 	char *hosts[50] = { 0 };
 	unsigned int hosts_count = 0;
