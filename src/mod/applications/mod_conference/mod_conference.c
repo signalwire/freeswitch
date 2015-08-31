@@ -2565,7 +2565,7 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 			} else if (!strcasecmp(var, "video-canvas-size") && !zstr(val)) {
 				video_canvas_size = val;
 			} else if (!strcasecmp(var, "video-fps") && !zstr(val)) {
-				fps = atof(val);
+				fps = (float)atof(val);
 			} else if (!strcasecmp(var, "video-codec-bandwidth") && !zstr(val)) {
 				video_codec_bandwidth = val;
 			} else if (!strcasecmp(var, "video-no-video-avatar") && !zstr(val)) {
@@ -2846,7 +2846,7 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 
 		if (video_codec_bandwidth) {
 			if (!strcasecmp(video_codec_bandwidth, "auto")) {
-				conference->video_codec_settings.video.bandwidth = switch_calc_bitrate(canvas_w, canvas_h, 2, conference->video_fps.fps);
+				conference->video_codec_settings.video.bandwidth = switch_calc_bitrate(canvas_w, canvas_h, 2, (int)conference->video_fps.fps);
 			} else {
 				conference->video_codec_settings.video.bandwidth = switch_parse_bandwidth_string(video_codec_bandwidth);
 			}

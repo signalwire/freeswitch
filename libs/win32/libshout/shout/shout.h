@@ -36,7 +36,7 @@
 #endif
 #endif // VC8+
 # endif
-#ifndef __MINGW32__
+#if  !defined(__MINGW32__) && (!defined(_MSC_VER) || _MSC_VER < 1900)
 #define va_copy(ap1, ap2) memcpy(&ap1, &ap2, sizeof(va_list))
 #endif
 

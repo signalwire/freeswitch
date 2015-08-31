@@ -93,6 +93,7 @@
       <PrecompiledHeader>
       </PrecompiledHeader>
       <EnablePREfast>false</EnablePREfast>
+      <DisableSpecificWarnings>4456;6340;6246;6011;6387;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
@@ -108,6 +109,7 @@
       <PrecompiledHeader>
       </PrecompiledHeader>
       <EnablePREfast>false</EnablePREfast>
+      <DisableSpecificWarnings>4456;6340;6246;6011;6387;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
@@ -121,6 +123,7 @@
       <PrecompiledHeader>
       </PrecompiledHeader>
       <EnablePREfast>false</EnablePREfast>
+      <DisableSpecificWarnings>4456;6340;6246;6011;6387;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
@@ -137,6 +140,7 @@
       </PrecompiledHeader>
       <EnablePREfast>false</EnablePREfast>
       <AdditionalIncludeDirectories>$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <DisableSpecificWarnings>4456;6340;6246;6011;6387;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>

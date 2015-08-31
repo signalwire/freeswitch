@@ -430,8 +430,8 @@ typedef struct mcu_layer_s {
 	int idx;
 	int tagged;
 	int bugged;
-	int screen_w;
-	int screen_h;
+	uint32_t screen_w;
+	uint32_t screen_h;
 	int x_pos;
 	int y_pos;
 	int banner_patched;
@@ -645,7 +645,7 @@ typedef struct conference_obj {
 	conference_record_t *rec_node_head;
 	int last_speech_channels;
 	mcu_canvas_t *canvases[MAX_CANVASES+1];
-	int canvas_count;
+	uint32_t canvas_count;
 	int super_canvas_label_layers;
 	int super_canvas_show_all_layers;
 	int canvas_running_count;

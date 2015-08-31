@@ -1002,7 +1002,8 @@ switch_status_t conference_api_sub_volume_out(conference_member_t *member, switc
 
 switch_status_t conference_api_sub_vid_bandwidth(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv)
 {
-	int32_t i, video_write_bandwidth;
+	uint32_t i;
+	int32_t video_write_bandwidth;
 	int x = 0;
 
 	if (!conference_utils_test_flag(conference, CFLAG_MINIMIZE_VIDEO_ENCODING)) {
@@ -1088,7 +1089,7 @@ switch_status_t conference_api_sub_vid_fps(conference_obj_t *conference, switch_
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	fps = atof(argv[2]);
+	fps = (float)atof(argv[2]);
 
 	if (conference_video_set_fps(conference, fps)) {
 		stream->write_function(stream, "FPS set to [%s]\n", argv[2]);
@@ -1134,7 +1135,7 @@ switch_status_t conference_api_sub_write_png(conference_obj_t *conference, switc
 switch_status_t conference_api_sub_vid_layout(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv)
 {
 	video_layout_t *vlayout = NULL;
-	int idx = 0;
+	uint32_t idx = 0;
 
 	if (!argv[2]) {
 		stream->write_function(stream, "Invalid input\n");
@@ -1932,7 +1933,7 @@ switch_status_t conference_api_sub_relate(conference_obj_t *conference, switch_s
 		switch_mutex_lock(conference->mutex);
 
 		if (conference->relationship_total) {
-			int member_id = 0;
+			uint32_t member_id = 0;
 
 			if (argc == 3) member_id = atoi(argv[2]);
 

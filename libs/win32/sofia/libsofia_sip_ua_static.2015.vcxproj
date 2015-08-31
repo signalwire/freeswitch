@@ -279,7 +279,6 @@ if not exist "$(ProjectDir)$(IntDir)\auth_client.obj" "autogen.cmd"
     <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\su\memmem.c" />
     <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\su\memspn.c" />
     <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\su\strcasestr.c" />
-    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\su\strtoull.c" />
     <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\sip\sip_basic.c" />
     <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\sip\sip_caller_prefs.c" />
     <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\sip\sip_event.c" />

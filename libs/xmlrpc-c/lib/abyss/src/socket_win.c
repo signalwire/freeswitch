@@ -277,7 +277,7 @@ channelRead(TChannel *   const channelP,
 			*bytesReceivedP = rc;
 
 			if (ChannelTraceIsActive)
-				fprintf(stderr, "Abyss channel: read %u bytes: '%.*s'\n", bytesReceivedP, (int)(*bytesReceivedP), buffer);
+				fprintf(stderr, "Abyss channel: read %u bytes: '%.*s'\n", *bytesReceivedP, (int)(*bytesReceivedP), buffer);
 		}
 	}
 }

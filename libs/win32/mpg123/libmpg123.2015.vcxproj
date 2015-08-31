@@ -247,7 +247,7 @@
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <CompileAs>CompileAsC</CompileAs>
-      <DisableSpecificWarnings>4028;4334;4267;4996;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4477;4028;4334;4267;4996;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Lib />
   </ItemDefinitionGroup>
@@ -265,7 +265,7 @@
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <CompileAs>CompileAsC</CompileAs>
-      <DisableSpecificWarnings>4028;4334;4267;4996;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4477;4028;4334;4267;4996;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Lib />
   </ItemDefinitionGroup>
@@ -289,7 +289,7 @@
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <CompileAs>CompileAsC</CompileAs>
-      <DisableSpecificWarnings>4028;4334;4267;4996;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4477;4028;4334;4267;4996;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Lib />
   </ItemDefinitionGroup>
@@ -313,7 +313,7 @@
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <CompileAs>CompileAsC</CompileAs>
-      <DisableSpecificWarnings>4028;4334;4267;4996;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4477;4028;4334;4267;4996;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Lib />
   </ItemDefinitionGroup>
@@ -332,7 +332,7 @@
       <TreatWarningAsError>false</TreatWarningAsError>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <CompileAs>CompileAsC</CompileAs>
-      <DisableSpecificWarnings>4028;4334;4267;4996;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4477;4028;4334;4267;4996;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <OutputFile>$(ProjectDir)Debug\$(ProjectName).dll</OutputFile>
@@ -359,7 +359,7 @@
       <TreatWarningAsError>false</TreatWarningAsError>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <CompileAs>CompileAsC</CompileAs>
-      <DisableSpecificWarnings>4028;4334;4267;4996;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4477;4028;4334;4267;4996;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <OutputFile>$(ProjectDir)Debug\$(ProjectName).dll</OutputFile>
@@ -392,7 +392,7 @@
       <TreatWarningAsError>false</TreatWarningAsError>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <CompileAs>CompileAsC</CompileAs>
-      <DisableSpecificWarnings>4028;4334;4267;4996;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4477;4028;4334;4267;4996;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <OutputFile>$(ProjectDir)Release\$(ProjectName).dll</OutputFile>
@@ -423,7 +423,7 @@
       <TreatWarningAsError>false</TreatWarningAsError>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <CompileAs>CompileAsC</CompileAs>
-      <DisableSpecificWarnings>4028;4334;4267;4996;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4477;4028;4334;4267;4996;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <OutputFile>$(ProjectDir)Release\$(ProjectName).dll</OutputFile>
@@ -447,7 +447,7 @@
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <CompileAs>CompileAsC</CompileAs>
-      <DisableSpecificWarnings>4028;4334;4267;4996;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4477;4028;4334;4267;4996;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <PreLinkEvent>
       <Command>cl /I "..\.." /EP /TC "$(ProjectDir)..\libmpg123\src\libmpg123\dct36_3dnow.S" /nologo &gt; "$(ProjectDir)..\libmpg123\Debug\dct36_3dnow.asm"
@@ -534,7 +534,7 @@ yasm -a x86 -p gas -r raw -f win32 -g null -m x86 -o "$(ProjectDir)..\libmpg123\
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <CompileAs>CompileAsC</CompileAs>
-      <DisableSpecificWarnings>4028;4334;4267;4996;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4477;4028;4334;4267;4996;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <PreLinkEvent>
       <Command>cl /I "..\.." /EP /TC "$(ProjectDir)..\libmpg123\src\libmpg123\dct36_3dnow.S" /nologo &gt; "$(ProjectDir)..\libmpg123\Debug\dct36_3dnow.asm"
@@ -627,7 +627,7 @@ yasm -a x86 -p gas -r raw -f win32 -g null -m x86 -o "$(ProjectDir)..\libmpg123\
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <CompileAs>CompileAsC</CompileAs>
-      <DisableSpecificWarnings>4028;4334;4267;4996;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4477;4028;4334;4267;4996;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <PreLinkEvent>
       <Command>cl /I "..\.." /EP /TC "$(ProjectDir)..\libmpg123\src\libmpg123\dct36_3dnow.S" /nologo &gt; "$(ProjectDir)..\libmpg123\Release\dct36_3dnow.asm"
@@ -720,7 +720,7 @@ yasm -a x86 -p gas -r raw -f win32 -g null -m x86 -o "$(ProjectDir)..\libmpg123\
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <CompileAs>CompileAsC</CompileAs>
-      <DisableSpecificWarnings>4028;4334;4267;4996;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4477;4028;4334;4267;4996;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <PreLinkEvent>
       <Command>cl /I "..\.." /EP /TC "$(ProjectDir)..\libmpg123\src\libmpg123\dct36_3dnow.S" /nologo &gt; "$(ProjectDir)..\libmpg123\Release\dct36_3dnow.asm"
@@ -809,7 +809,7 @@ yasm -a x86 -p gas -r raw -f win32 -g null -m x86 -o "$(ProjectDir)..\libmpg123\
       <TreatWarningAsError>false</TreatWarningAsError>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <CompileAs>CompileAsC</CompileAs>
-      <DisableSpecificWarnings>4028;4334;4267;4996;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4477;4028;4334;4267;4996;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <PreLinkEvent>
       <Command>cl /I "..\.." /EP /TC "$(ProjectDir)..\libmpg123\src\libmpg123\dct36_3dnow.S" /nologo &gt; "$(ProjectDir)..\libmpg123\Debug\dct36_3dnow.asm"
@@ -903,7 +903,7 @@ yasm -a x86 -p gas -r raw -f win32 -g null -m x86 -o "$(ProjectDir)..\libmpg123\
       <TreatWarningAsError>false</TreatWarningAsError>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <CompileAs>CompileAsC</CompileAs>
-      <DisableSpecificWarnings>4028;4334;4267;4996;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4477;4028;4334;4267;4996;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <PreLinkEvent>
       <Command>cl /I "..\.." /EP /TC "$(ProjectDir)..\libmpg123\src\libmpg123\dct36_3dnow.S" /nologo &gt; "$(ProjectDir)..\libmpg123\Debug\dct36_3dnow.asm"
@@ -1006,7 +1006,7 @@ yasm -a x86 -p gas -r raw -f win32 -g null -m x86 -o "$(ProjectDir)..\libmpg123\
       <TreatWarningAsError>false</TreatWarningAsError>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <CompileAs>CompileAsC</CompileAs>
-      <DisableSpecificWarnings>4028;4334;4267;4996;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4477;4028;4334;4267;4996;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <PreLinkEvent>
       <Command>cl /I "..\.." /EP /TC "$(ProjectDir)..\..\libmpg123\src\libmpg123\dct36_3dnow.S" /nologo &gt; "$(ProjectDir)..\libmpg123\Release\dct36_3dnow.asm"
@@ -1112,7 +1112,7 @@ yasm -a x86 -p gas -r raw -f win32 -g null -m x86 -o "$(ProjectDir)..\libmpg123\
       <TreatWarningAsError>false</TreatWarningAsError>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <CompileAs>CompileAsC</CompileAs>
-      <DisableSpecificWarnings>4028;4334;4267;4996;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4477;4028;4334;4267;4996;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <PreLinkEvent>
       <Command>cl /I "..\.." /EP /TC "$(ProjectDir)..\..\libmpg123\src\libmpg123\dct36_3dnow.S" /nologo &gt; "$(ProjectDir)..\libmpg123\Release\dct36_3dnow.asm"

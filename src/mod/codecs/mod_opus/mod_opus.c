@@ -209,7 +209,7 @@ static switch_status_t switch_opus_fmtp_parse(const char *fmtp, switch_codec_fmt
 
 static char *gen_fmtp(opus_codec_settings_t *settings, switch_memory_pool_t *pool)
 {
-	char buf[256] = "";
+	char buf[256] = { 0 };
     
 	if (settings->useinbandfec) {
 		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "useinbandfec=1; ");
@@ -317,7 +317,7 @@ static switch_status_t switch_opus_init(switch_codec_t *codec, switch_codec_flag
 	struct opus_context *context = NULL;
 	int encoding = (flags & SWITCH_CODEC_FLAG_ENCODE);
 	int decoding = (flags & SWITCH_CODEC_FLAG_DECODE);
-	switch_codec_fmtp_t codec_fmtp,codec_fmtp_only_remote;
+	switch_codec_fmtp_t codec_fmtp, codec_fmtp_only_remote;
 	opus_codec_settings_t opus_codec_settings = { 0 };
 	opus_codec_settings_t opus_codec_settings_remote = { 0 };
     
@@ -375,11 +375,11 @@ static switch_status_t switch_opus_init(switch_codec_t *codec, switch_codec_flag
 		 * maxplaybackrate=R3,sprop-maxcapturerate=R4
 		 * then it should start the encoder at sample rate: min(R1, R4) and the decoder at sample rate: min(R3, R2)*/
 		if (codec_fmtp.private_info) {
-				opus_codec_settings_t *codec_settings = codec_fmtp_only_remote.private_info;
-				if (opus_codec_settings.sprop_maxcapturerate || codec_settings->maxplaybackrate) {
+				opus_codec_settings_t *settings = codec_fmtp_only_remote.private_info;
+				if (opus_codec_settings.sprop_maxcapturerate || settings->maxplaybackrate) {
 					enc_samplerate = opus_codec_settings.sprop_maxcapturerate; /*R4*/
-					if (codec_settings->maxplaybackrate < enc_samplerate && codec_settings->maxplaybackrate) {
-						enc_samplerate = codec_settings->maxplaybackrate; /*R1*/
+					if (settings->maxplaybackrate < enc_samplerate && settings->maxplaybackrate) {
+						enc_samplerate = settings->maxplaybackrate; /*R1*/
 						context->enc_frame_size = enc_samplerate * (codec->implementation->microseconds_per_packet / 1000) / 1000;
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Opus encoder will be created at sample rate %d hz\n",enc_samplerate);
 					} else {
@@ -461,11 +461,11 @@ static switch_status_t switch_opus_init(switch_codec_t *codec, switch_codec_flag
 		
 		if (opus_prefs.asymmetric_samplerates) {
 			if (codec_fmtp.private_info) {
-				opus_codec_settings_t *codec_settings = codec_fmtp_only_remote.private_info;
-				if (opus_codec_settings.maxplaybackrate || codec_settings->sprop_maxcapturerate ) {       
+				opus_codec_settings_t *settings = codec_fmtp_only_remote.private_info;
+				if (opus_codec_settings.maxplaybackrate || settings->sprop_maxcapturerate ) {       
 					dec_samplerate = opus_codec_settings.maxplaybackrate; /* R3 */
-					if (dec_samplerate > codec_settings->sprop_maxcapturerate && codec_settings->sprop_maxcapturerate){
-						dec_samplerate = codec_settings->sprop_maxcapturerate; /* R2 */
+					if (dec_samplerate > settings->sprop_maxcapturerate && settings->sprop_maxcapturerate){
+						dec_samplerate = settings->sprop_maxcapturerate; /* R2 */
 						context->dec_frame_size = dec_samplerate*(codec->implementation->microseconds_per_packet / 1000) / 1000;
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Opus decoder will be created at sample rate %d hz\n",dec_samplerate);
 					} else {
@@ -731,7 +731,7 @@ static switch_status_t switch_opus_keep_fec_enabled(switch_codec_t *codec)
 	uint32_t LBRR_threshold_bitrate,LBRR_rate_thres_bps,real_target_bitrate ;  
 	opus_int32 a32,b32; 
 	uint32_t fs = context->enc_frame_size * 1000 / (codec->implementation->microseconds_per_packet / 1000);
-	float frame_rate = 1000 / (codec->implementation->microseconds_per_packet / 1000);
+	float frame_rate =(float)(1000 / (codec->implementation->microseconds_per_packet / 1000));
 	uint32_t step = (codec->implementation->microseconds_per_packet / 1000) != 60 ? 8000 / (codec->implementation->microseconds_per_packet / 1000 ) : 134 ;
 
 	opus_encoder_ctl(context->encoder_object, OPUS_GET_BITRATE(&current_bitrate));
@@ -748,7 +748,7 @@ static switch_status_t switch_opus_keep_fec_enabled(switch_codec_t *codec)
 		LBRR_rate_thres_bps = 16000; /*LBRR_WB_MIN_RATE_BPS*/
 	}
 	/*see opus-1.1/src/opus_encoder.c , opus_encode_native() */
-	real_target_bitrate =  8 * (current_bitrate * context->enc_frame_size / ( fs * 8 ) - 1) * frame_rate ;
+	real_target_bitrate =  (uint32_t)(8 * (current_bitrate * context->enc_frame_size / ( fs * 8 ) - 1) * frame_rate );
 	/*check if the internally used bitrate is above the threshold defined in opus-1.1/silk/control_codec.c  */
 	a32 =  LBRR_rate_thres_bps * (125 -(((current_loss) < (25)) ? (current_loss) :  (25)));
 	b32 =  ((opus_int32)((0.01) * ((opus_int64)1 << (16)) + 0.5));
@@ -767,7 +767,7 @@ static switch_status_t switch_opus_keep_fec_enabled(switch_codec_t *codec)
 	} else {
 		while (real_target_bitrate <= LBRR_threshold_bitrate) {
 			current_bitrate += step;
-			real_target_bitrate =  8 * (current_bitrate * context->enc_frame_size / ( fs * 8 ) - 1) * frame_rate ;
+			real_target_bitrate =  (uint32_t)(8 * (current_bitrate * context->enc_frame_size / ( fs * 8 ) - 1) * frame_rate);
 		}
 		opus_encoder_ctl(context->encoder_object,OPUS_SET_BITRATE(current_bitrate));
 		if (globals.debug)

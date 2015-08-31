@@ -1,6 +1,3 @@
-#include "bool.h"
-
-#include "xmlrpc-c/sleep_int.h"
 
 #ifdef WIN32
 #include <windows.h>
@@ -8,6 +5,9 @@
 #else
 #include <unistd.h>
 #endif
+#include "bool.h"
+
+#include "xmlrpc-c/sleep_int.h"
 
 
 void

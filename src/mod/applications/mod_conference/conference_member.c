@@ -733,7 +733,7 @@ switch_status_t conference_member_add(conference_obj_t *conference, conference_m
 		conference_video_check_avatar(member, SWITCH_FALSE);
 
 		if ((var = switch_channel_get_variable_dup(member->channel, "video_initial_canvas", SWITCH_FALSE, -1))) {
-			int id = atoi(var) - 1;
+			uint32_t id = atoi(var) - 1;
 			if (id < conference->canvas_count) {
 				member->canvas_id = id;
 				member->layer_timeout = DEFAULT_LAYER_TIMEOUT;
@@ -741,7 +741,7 @@ switch_status_t conference_member_add(conference_obj_t *conference, conference_m
 		}
 
 		if ((var = switch_channel_get_variable_dup(member->channel, "video_initial_watching_canvas", SWITCH_FALSE, -1))) {
-			int id = atoi(var) - 1;
+			uint32_t id = atoi(var) - 1;
 
 			if (id == 0) {
 				id = conference->canvas_count;
@@ -1560,16 +1560,16 @@ int conference_member_get_canvas_id(conference_member_t *member, const char *val
 	}
 
 	if (watching) {
-		if (index > member->conference->canvas_count || !member->conference->canvases[index]) {
-			index = 0;
-		} else if (index < 0) {
+		if (index < 0) {
 			index = member->conference->canvas_count;
+		} else if ((uint32_t)index > member->conference->canvas_count || !member->conference->canvases[index]) {
+			index = 0;
 		}
 	} else {
-		if (index >= member->conference->canvas_count || !member->conference->canvases[index]) {
-			index = 0;
-		} else if (index < 0) {
+		if (index < 0) {
 			index = member->conference->canvas_count;
+		} else if ((uint32_t)index >= member->conference->canvas_count || !member->conference->canvases[index]) {
+			index = 0;
 		}
 	}
 
@@ -1578,11 +1578,11 @@ int conference_member_get_canvas_id(conference_member_t *member, const char *val
 	}
 
 	if (member->conference->canvas_count > 1) {
-		if (index > member->conference->canvas_count) {
+		if ((uint32_t)index > member->conference->canvas_count) {
 			return -1;
 		}
 	} else {
-		if (index >= member->conference->canvas_count) {
+		if ((uint32_t)index >= member->conference->canvas_count) {
 			return -1;
 		}
 	}

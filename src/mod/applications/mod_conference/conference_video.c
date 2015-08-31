@@ -59,7 +59,7 @@ static struct conference_fps FPS_VALS[] = {
 
 int conference_video_set_fps(conference_obj_t *conference, float fps)
 {
-	int i = 0, j = 0;
+	uint32_t i = 0, j = 0;
 
 	for (i = 0; FPS_VALS[i].ms; i++) {
 		if (FPS_VALS[i].fps == fps) {
@@ -223,10 +223,10 @@ void conference_video_parse_layouts(conference_obj_t *conference, int WIDTH, int
 
 					if (auto_3d || audio_position) {
 						if (auto_3d || !strcasecmp(audio_position, "auto")) {
-							int x_pos = WIDTH * x / VIDEO_LAYOUT_SCALE;
-							int y_pos = HEIGHT * y / VIDEO_LAYOUT_SCALE;
-							int width = WIDTH * scale / VIDEO_LAYOUT_SCALE;
-							int height = HEIGHT * hscale / VIDEO_LAYOUT_SCALE;
+							int x_pos = (int)(WIDTH * x / VIDEO_LAYOUT_SCALE);
+							int y_pos = (int)(HEIGHT * y / VIDEO_LAYOUT_SCALE);
+							int width = (int)(WIDTH * scale / VIDEO_LAYOUT_SCALE);
+							int height = (int)(HEIGHT * hscale / VIDEO_LAYOUT_SCALE);
 							int center_x = x_pos + width / 2;
 							int center_y = y_pos + height / 2;
 							int half_x = WIDTH / 2;
@@ -240,9 +240,9 @@ void conference_video_parse_layouts(conference_obj_t *conference, int WIDTH, int
 							}
 
 							if (center_y > half_y) {
-								yv = -1 - ((center_y - half_y) / half_y) * -1;
+								yv = -1.0f - ((center_y - half_y) / half_y) * -1.0f;
 							} else {
-								yv = center_y / half_y;
+								yv = (float)center_y / half_y;
 							}
 
 							vlayout->images[vlayout->layers].audio_position = switch_core_sprintf(conference->pool, "%02f:0.0:%02f", xv, yv);
@@ -383,14 +383,14 @@ void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, 
 	}
 
 	if (layer->geometry.scale) {
-		int img_w = 0, img_h = 0;
+		uint32_t img_w = 0, img_h = 0;
 		double screen_aspect = 0, img_aspect = 0;
 		int x_pos = layer->x_pos;
 		int y_pos = layer->y_pos;
 		switch_size_t img_addr = 0;
 
-		img_w = layer->screen_w = IMG->d_w * layer->geometry.scale / VIDEO_LAYOUT_SCALE;
-		img_h = layer->screen_h = IMG->d_h * layer->geometry.hscale / VIDEO_LAYOUT_SCALE;
+		img_w = layer->screen_w = (uint32_t)(IMG->d_w * layer->geometry.scale / VIDEO_LAYOUT_SCALE);
+		img_h = layer->screen_h = (uint32_t)(IMG->d_h * layer->geometry.hscale / VIDEO_LAYOUT_SCALE);
 
 
 		screen_aspect = (double) layer->screen_w / layer->screen_h;
@@ -400,28 +400,28 @@ void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, 
 
 		if (layer->last_img_addr != img_addr && layer->geometry.zoom) {
 			if (screen_aspect < img_aspect) {
-				int cropsize = 0;
+				unsigned int cropsize = 0;
 				double scale = 1;
 				if (img->d_h != layer->screen_h) {
 					scale = (double)layer->screen_h / img->d_h;
 				}
 
-				cropsize = ((img->d_w )-((double)layer->screen_w/scale)) / 2;
+				cropsize = (unsigned int)(((img->d_w )-((double)layer->screen_w/scale)) / 2);
 
 				if (cropsize) {
-					switch_img_set_rect(img, cropsize, 0, layer->screen_w/scale, layer->screen_h/scale);
+					switch_img_set_rect(img, cropsize, 0, (unsigned int)(layer->screen_w/scale), (unsigned int)(layer->screen_h/scale));
 					img_aspect = (double) img->d_w / img->d_h;
 				}
 
 			} else if (screen_aspect > img_aspect) {
-				int cropsize = 0;
+				unsigned int cropsize = 0;
 				double scale = 1;
 				if (img->d_w != layer->screen_w) {
 					scale = (double)layer->screen_w / img->d_w;
 				}
-				cropsize = ceil(((img->d_h )-((double)layer->screen_h/scale)) / 2);
+				cropsize = (int)ceil(((img->d_h )-((double)layer->screen_h/scale)) / 2);
 				if (cropsize) {
-					switch_img_set_rect(img, 0, cropsize, layer->screen_w/scale, layer->screen_h/scale);
+					switch_img_set_rect(img, 0, cropsize, (unsigned int)(layer->screen_w/scale), (unsigned int)(layer->screen_h/scale));
 					img_aspect = (double) img->d_w / img->d_h;
 				}
 			}
@@ -432,10 +432,10 @@ void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, 
 		}
 
 		if (screen_aspect > img_aspect) {
-			img_w = ceil((double)img_aspect * layer->screen_h);
+			img_w = (uint32_t)ceil((double)img_aspect * layer->screen_h);
 			x_pos += (layer->screen_w - img_w) / 2;
 		} else if (screen_aspect < img_aspect) {
-			img_h = ceil((double)layer->screen_w / img_aspect);
+			img_h = (uint32_t)ceil((double)layer->screen_w / img_aspect);
 			y_pos += (layer->screen_h - img_h) / 2;
 		}
 
@@ -748,7 +748,7 @@ void conference_video_layer_set_banner(conference_member_t *member, mcu_layer_t 
 {
 	switch_rgb_color_t fgcolor, bgcolor;
 	int font_scale = 4;
-	int font_size = 0;
+	uint16_t font_size = 0;
 	const char *fg = "#cccccc";
 	const char *bg = "#142e55";
 	char *parsed = NULL;
@@ -823,9 +823,9 @@ void conference_video_layer_set_banner(conference_member_t *member, mcu_layer_t 
 	}
 
 	if (layer->screen_h < layer->screen_w) {
-		font_size = (double)(font_scale / 100.0f) * layer->screen_h;
+		font_size = (uint16_t)((double)(font_scale / 100.0f) * layer->screen_h);
 	} else {
-		font_size = (double)(font_scale / 100.0f) * layer->screen_w;
+		font_size = (uint16_t)((double)(font_scale / 100.0f) * layer->screen_w);
 	}
 
 	switch_color_set_rgb(&fgcolor, fg);
@@ -1020,14 +1020,14 @@ void conference_video_init_canvas_layers(conference_obj_t *conference, mcu_canva
 		layer->refresh = 1;
 
 																		
-		layer->screen_w = canvas->img->d_w * layer->geometry.scale / VIDEO_LAYOUT_SCALE;
-		layer->screen_h = canvas->img->d_h * layer->geometry.hscale / VIDEO_LAYOUT_SCALE;
+		layer->screen_w = (uint32_t)(canvas->img->d_w * layer->geometry.scale / VIDEO_LAYOUT_SCALE);
+		layer->screen_h = (uint32_t)(canvas->img->d_h * layer->geometry.hscale / VIDEO_LAYOUT_SCALE);
 
 		// if (layer->screen_w % 2) layer->screen_w++; // round to even
 		// if (layer->screen_h % 2) layer->screen_h++; // round to even
 
-		layer->x_pos = canvas->img->d_w * layer->geometry.x / VIDEO_LAYOUT_SCALE;
-		layer->y_pos = canvas->img->d_h * layer->geometry.y / VIDEO_LAYOUT_SCALE;
+		layer->x_pos = (int)(canvas->img->d_w * layer->geometry.x / VIDEO_LAYOUT_SCALE);
+		layer->y_pos = (int)(canvas->img->d_h * layer->geometry.y / VIDEO_LAYOUT_SCALE);
 
 
 		if (layer->geometry.floor) {
@@ -1835,7 +1835,7 @@ void conference_video_check_auto_bitrate(conference_member_t *member, mcu_layer_
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "%s auto-setting bitrate to %dkps because user's image is not visible\n",
 							  switch_channel_get_name(member->channel), kps);
 		} else {
-			kps = switch_calc_bitrate(w, h, 2, member->conference->video_fps.fps);
+			kps = switch_calc_bitrate(w, h, 2, (int)(member->conference->video_fps.fps));
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "%s auto-setting bitrate to %dkps to accomodate %dx%d resolution\n",
 							  switch_channel_get_name(member->channel), kps, layer->screen_w, layer->screen_h);
 		}
@@ -2711,7 +2711,8 @@ void *SWITCH_THREAD_FUNC conference_video_super_muxing_thread_run(switch_thread_
 		switch_time_t now;
 		int min_members = 0;
 		int count_changed = 0;
-		int  layer_idx = 0, j = 0;
+		int  layer_idx = 0;
+		uint32_t j = 0;
 		switch_image_t *img = NULL;
 		int used_canvases = 0;
 
