@@ -234,11 +234,11 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 			switch_channel_del_variable_prefix(channel, "DP_REGEX_MATCH");
 
 			for (xregex = switch_xml_child(xcond, "regex"); xregex; xregex = xregex->next) {
-				int time_match;
+				int regex_time_match;
 				check_tz();
-				time_match = switch_xml_std_datetime_check(xregex, tzoff ? &offset : NULL, tzname_);
+				regex_time_match = switch_xml_std_datetime_check(xregex, tzoff ? &offset : NULL, tzname_);
 				
-				if (time_match == 1) {
+				if (regex_time_match == 1) {
 					if ( switch_core_test_flag(SCF_DIALPLAN_TIMESTAMPS) ) {
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
 									  "%sDialplan: %s Date/Time Match (PASS) [%s]\n", space,
@@ -248,7 +248,7 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 									  "%sDialplan: %s Date/Time Match (PASS) [%s]\n", space,
 									  switch_channel_get_name(channel), exten_name);
 					}
-				} else if (time_match == 0) {
+				} else if (regex_time_match == 0) {
 					if ( switch_core_test_flag(SCF_DIALPLAN_TIMESTAMPS) ) {
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
 									  "%sDialplan: %s Date/TimeMatch (FAIL) [%s]\n", space,
@@ -317,7 +317,7 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 						fail++;
 						if (all && !xor) break;
 					}
-				} else if (time_match == -1) {
+				} else if (regex_time_match == -1) {
 					if ( switch_core_test_flag(SCF_DIALPLAN_TIMESTAMPS) ) {
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
 									  "%sDialplan: %s Absolute Condition [%s] match=%s\n", space,
@@ -330,11 +330,11 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 					pass++;
 					proceed = 1;
 					if (!all && !xor) break;
-				} else if (time_match == 1) {
+				} else if (regex_time_match == 1) {
 					pass++;
 					proceed = 1;
 					if (!all && !xor) break;
-				} else {	// time_match == 0
+				} else {	// regex_time_match == 0
 					fail++;
 					if (all) break;
 				}
