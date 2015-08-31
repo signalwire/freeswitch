@@ -1,11 +1,11 @@
-@REM this script builds freeswitch using VS2012
+@REM this script builds freeswitch using VS2015
 @REM only one platform/configuration will be built
 @REM runs (probably only) from the commandline
-@REM usage: Freeswitch.2012.sln  [[[.*]ebug] [[.*]elease] [[.*]64] [[.*]32]]
-@REM e.g. Freeswitch.2012.sln Debug x64
-@REM      Freeswitch.2012.sln x64
-@REM 	  Freeswitch.2012.sln Debug
-@REM 	  Freeswitch.2012.sln
+@REM usage: Freeswitch.2015.sln  [[[.*]ebug] [[.*]elease] [[.*]64] [[.*]32]]
+@REM e.g. Freeswitch.2015.sln Debug x64
+@REM      Freeswitch.2015.sln x64
+@REM 	  Freeswitch.2015.sln Debug
+@REM 	  Freeswitch.2015.sln
 
 @setlocal
 @echo on
@@ -47,9 +47,9 @@
 @set procs=%NUMBER_OF_PROCESSORS%
 @set /a procs -= 1
 
-@REM check and set VS2012 environment
+@REM check and set VS2015 environment
 @REM vcvars32.bat calls exit and will also exit whilie running this bat file ...
-@REM so you have to run it again if the VS2012 env is not yet set
+@REM so you have to run it again if the VS2015 env is not yet set
 @if "%VS110COMNTOOLS%"=="" (
 	goto :error_no_VS110COMNTOOLSDIR
 )
@@ -60,13 +60,13 @@
 
 :build
 
-msbuild Freeswitch.2012.sln /m:%procs% /verbosity:normal /property:Configuration=%configuration% /property:Platform=%platform% /fl /flp:logfile=vs2012%platform%%configuration%.log;verbosity=normal
+msbuild Freeswitch.2015.sln /m:%procs% /verbosity:normal /property:Configuration=%configuration% /property:Platform=%platform% /fl /flp:logfile=vs2015%platform%%configuration%.log;verbosity=normal
 @goto :end
 
 @REM -----------------------------------------------------------------------
 :setvcvars
 	@endlocal
-	@echo Now setting Visual Studio 2012 Environment
+	@echo Now setting Visual Studio 2015 Environment
 	@call "%VS110COMNTOOLS%vsvars32"
 	@REM in order to prevent running vsvars32 multiple times and at the same time not
 	@REM cluttering up the environment variables proc/configuration/platform
@@ -75,7 +75,7 @@ msbuild Freeswitch.2012.sln /m:%procs% /verbosity:normal /property:Configuration
 	@goto :end
 
 :error_no_VS110COMNTOOLSDIR
-	@echo ERROR: Cannot determine the location of the VS2012 Common Tools folder.
+	@echo ERROR: Cannot determine the location of the VS2015 Common Tools folder.
 	@echo ERROR: Note this script will not work in a git bash environment
 	@goto :end
 
