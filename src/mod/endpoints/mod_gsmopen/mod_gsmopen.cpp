@@ -1260,7 +1260,6 @@ static switch_status_t load_config(int reload_type)
 			int controldevice_speed = 115200;	//FIXME TODO
 			//int controldevice_audio_speed = 115200;	//FIXME TODO
 			uint32_t controldevprotocol = PROTOCOL_AT;	//FIXME TODO
-			uint32_t running = 1;	//FIXME TODO
 			const char *gsmopen_serial_sync_period = "300";	//FIXME TODO
 			const char *imei = "";	
 			const char *imsi = "";
@@ -1594,7 +1593,7 @@ static switch_status_t load_config(int reload_type)
 
 				globals.GSMOPEN_INTERFACES[interface_id].controldevice_speed = controldevice_speed;	//FIXME
 				globals.GSMOPEN_INTERFACES[interface_id].controldevprotocol = controldevprotocol;	//FIXME
-				globals.GSMOPEN_INTERFACES[interface_id].running = running;	//FIXME
+				globals.GSMOPEN_INTERFACES[interface_id].running = 1;	//FIXME
 
 
 				gsmopen_store_boost((char *) capture_boost, &globals.GSMOPEN_INTERFACES[interface_id].capture_boost);	//FIXME
