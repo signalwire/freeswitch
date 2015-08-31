@@ -1982,7 +1982,7 @@ static void check_jb_sync(switch_core_session_t *session)
 
 	if (!frames) {
 		frames = fps / 7.5;
-		if (frames < 4) frames = 4;
+		if (frames < 1) frames = 1;
 	}
 	
 	if (!jb_sync_msec) {
@@ -2000,13 +2000,17 @@ static void check_jb_sync(switch_core_session_t *session)
 
 	if (frames == switch_rtp_get_video_buffer_size(v_engine->rtp_session)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), 
-						  SWITCH_LOG_DEBUG1, "%s Audio and Video Jitterbuffer settings not changed %dms %u Video Frames FPS %u\n", 
+						  SWITCH_LOG_DEBUG1, "%s %s \"%s\" A/V JB not changed %dms %u VFrames FPS %u\n", 
+						  switch_core_session_get_uuid(session),
 						  switch_channel_get_name(session->channel),
+						  switch_channel_get_variable_dup(session->channel, "caller_id_name", SWITCH_FALSE, -1),
 						  jb_sync_msec, frames, fps);
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), 
-						  SWITCH_LOG_DEBUG, "%s Sync Audio and Video Jitterbuffer to %dms %u Video Frames FPS %u\n", 
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session),
+						  SWITCH_LOG_DEBUG, "%s %s \"%s\" Sync A/V JB to %dms %u VFrames FPS %u\n", 
+						  switch_core_session_get_uuid(session),
 						  switch_channel_get_name(session->channel),
+						  switch_channel_get_variable_dup(session->channel, "caller_id_name", SWITCH_FALSE, -1),
 						  jb_sync_msec, frames, fps);
 		
 		switch_rtp_set_video_buffer_size(v_engine->rtp_session, frames);
