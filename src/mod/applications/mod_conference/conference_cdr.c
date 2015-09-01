@@ -488,6 +488,8 @@ cJSON *conference_cdr_json_render(conference_obj_t *conference, cJSON *req)
 
 void conference_cdr_del(conference_member_t *member)
 {
+	if (!member->cdr_node) return;
+
 	if (member->channel) {
 		switch_channel_get_variables(member->channel, &member->cdr_node->var_event);
 	}
@@ -503,6 +505,8 @@ void conference_cdr_add(conference_member_t *member)
 	conference_cdr_node_t *np;
 	switch_caller_profile_t *cp;
 	switch_channel_t *channel;
+
+	if (zstr(member->conference->log_dir) && (member->conference->cdr_event_mode == CDRE_NONE)) return;
 
 	np = switch_core_alloc(member->conference->pool, sizeof(*np));
 
@@ -534,6 +538,8 @@ void conference_cdr_rejected(conference_obj_t *conference, switch_channel_t *cha
 {
 	conference_cdr_reject_t *rp;
 	switch_caller_profile_t *cp;
+
+	if (zstr(conference->log_dir) && (conference->cdr_event_mode == CDRE_NONE)) return;
 
 	rp = switch_core_alloc(conference->pool, sizeof(*rp));
 
