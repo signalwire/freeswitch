@@ -456,7 +456,7 @@ static iks *prompt_component_handle_input_complete(struct rayo_actor *prompt, st
 		case PCS_START_INPUT_OUTPUT:
 		case PCS_START_INPUT_TIMERS:
 		case PCS_DONE_STOP_OUTPUT:
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s, unexpected start output error event\n", RAYO_JID(prompt));
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "%s, unexpected start output error event\n", RAYO_JID(prompt));
 			break;
 	}
 
@@ -516,12 +516,20 @@ static iks *prompt_component_handle_output_complete(struct rayo_actor *prompt, s
 			}
 			break;
 		case PCS_INPUT:
+			break;
 		case PCS_START_OUTPUT:
 		case PCS_START_OUTPUT_BARGE:
+			/* output most likely failed w/ error */
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s, prompt output finished way too quickly (possible failure), continuing w/ input\n", RAYO_JID(prompt));
+			/* start input with timers enabled and barge events disabled */
+			rayo_component_send_start(RAYO_COMPONENT(prompt), PROMPT_COMPONENT(prompt)->iq);
+			PROMPT_COMPONENT(prompt)->state = PCS_START_INPUT;
+			start_input(PROMPT_COMPONENT(prompt), 1, 0);
+			break;
 		case PCS_START_INPUT:
 		case PCS_START_INPUT_TIMERS:
 		case PCS_DONE:
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s, unexpected start output error event\n", RAYO_JID(prompt));
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "%s, unexpected start output complete event\n", RAYO_JID(prompt));
 			break;
 	}
 
@@ -543,19 +551,19 @@ static iks *start_call_prompt_component(struct rayo_actor *call, struct rayo_mes
 	iks *cmd;
 
 	if (!VALIDATE_RAYO_PROMPT(prompt)) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Bad <prompt> attrib\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Bad <prompt> attrib\n");
 		return iks_new_error_detailed(iq, STANZA_ERROR_BAD_REQUEST, "Bad <prompt> attrib value");
 	}
 
 	output = iks_find(prompt, "output");
 	if (!output) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Missing <output>\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Missing <output>\n");
 		return iks_new_error_detailed(iq, STANZA_ERROR_BAD_REQUEST, "Missing <output>");
 	}
 
 	input = iks_find(prompt, "input");
 	if (!input) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Missing <input>\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Missing <input>\n");
 		return iks_new_error_detailed(iq, STANZA_ERROR_BAD_REQUEST, "Missing <input>");
 	}
 
