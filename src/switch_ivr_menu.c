@@ -75,6 +75,20 @@ struct switch_ivr_menu_action {
 	struct switch_ivr_menu_action *next;
 };
 
+#define MENU_EVENT_ENTER "menu::enter"
+#define MENU_EVENT_EXIT "menu::exit"
+
+static void ivr_send_event(switch_core_session_t *session, char *event_type, switch_ivr_menu_t *menu)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_event_t *event = NULL;
+	if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, event_type) == SWITCH_STATUS_SUCCESS) {
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Menu-Name", menu->name);
+		switch_channel_event_set_data(channel, event);
+		switch_event_fire(&event);
+	}
+}
+
 static switch_ivr_menu_t *switch_ivr_menu_find(switch_ivr_menu_t *stack, const char *name)
 {
 	switch_ivr_menu_t *ret;
@@ -440,7 +454,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *s
 	char arg[512];
 	switch_ivr_action_t todo = SWITCH_IVR_ACTION_DIE;
 	switch_ivr_menu_action_t *ap;
-	switch_ivr_menu_t *menu;
+	switch_ivr_menu_t *menu = NULL;
 	switch_channel_t *channel;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
@@ -468,6 +482,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *s
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Executing IVR menu %s\n", menu->name);
 	switch_channel_set_variable(channel, "ivr_menu_status", "success");
+
+	ivr_send_event(session, MENU_EVENT_ENTER, menu);
 
 	if (!zstr(menu->pin)) {
 		char digit_buffer[128] = "";
@@ -576,7 +592,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *s
 							status = SWITCH_STATUS_SUCCESS;
 						} else {
 							reps = -1;
+							ivr_send_event(session, MENU_EVENT_EXIT, menu);
 							status = switch_ivr_menu_execute(session, stack, aptr, obj);
+							ivr_send_event(session, MENU_EVENT_ENTER, menu);
 						}
 						break;
 					case SWITCH_IVR_ACTION_EXECAPP:
@@ -661,6 +679,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *s
   end:
 
 	stack->stack_count--;
+
+	if (menu) {
+		ivr_send_event(session, MENU_EVENT_EXIT, menu);
+	}
 
 	return status;
 }
