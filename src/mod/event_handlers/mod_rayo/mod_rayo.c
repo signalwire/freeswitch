@@ -3904,10 +3904,8 @@ static int send_offer_to_clients(struct rayo_call *from_call, switch_core_sessio
 			iks_insert_attrib(offer, "to", to_client_jid);
 			RAYO_SEND_MESSAGE_DUP(from_call, to_client_jid, offer);
 
-			/* remove client JID from list of available clients */
-			switch_core_hash_delete(from_call->acps, to_client_jid);
-			from_call->num_acps--;
 			sent = 1;
+			from_call->num_acps--;
 
 			if (selection != -1) {
 				break;
@@ -3916,16 +3914,35 @@ static int send_offer_to_clients(struct rayo_call *from_call, switch_core_sessio
 	}
 	switch_safe_free(hi);
 
-	/* queue offer information */
-	if (globals.offer_timeout_us > 0 && sent) {
-		struct offered_call_info *offered_call;
-		switch_zmalloc(offered_call, sizeof(*offered_call));
-		offered_call->offer_time = switch_micro_time_now();
-		offered_call->call_jid = strdup(RAYO_JID(from_call));
-		if (switch_queue_trypush(globals.offer_queue, offered_call) != SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Failed to queue offered call info!  Offer timeout won't work on this call\n");
-			switch_safe_free(offered_call->call_jid);
-			switch_safe_free(offered_call);
+	if (sent) {
+		/* remove offered client JID(s) from list of available clients */
+		hi = NULL;
+		for (hi = switch_core_hash_first(from_call->pcps); hi; hi = switch_core_hash_next(&hi)) {
+			const char *to_client_jid = NULL;
+			const void *key;
+			void *val;
+
+			/* get client jid that was sent offer */
+			switch_core_hash_this(hi, &key, NULL, &val);
+			to_client_jid = (const char *)key;
+			switch_assert(to_client_jid);
+
+			/* remove client jid from available controlling parties */
+			switch_core_hash_delete(from_call->acps, to_client_jid);
+		}
+		switch_safe_free(hi);
+
+		/* remember when offer was sent for this call to track timeouts */
+		if (globals.offer_timeout_us > 0) {
+			struct offered_call_info *offered_call;
+			switch_zmalloc(offered_call, sizeof(*offered_call));
+			offered_call->offer_time = switch_micro_time_now();
+			offered_call->call_jid = strdup(RAYO_JID(from_call));
+			if (switch_queue_trypush(globals.offer_queue, offered_call) != SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Failed to queue offered call info!  Offer timeout won't work on this call\n");
+				switch_safe_free(offered_call->call_jid);
+				switch_safe_free(offered_call);
+			}
 		}
 	}
 
