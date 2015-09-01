@@ -298,6 +298,13 @@ struct switch_file_interface {
 	struct switch_file_interface *next;
 };
 
+typedef enum {
+	SWITCH_VIDEO_ENCODE_SPEED_DEFAULT;
+	SWITCH_VIDEO_ENCODE_SPEED_SLOW,
+	SWITCH_VIDEO_ENCODE_SPEED_MEDIUM,
+	SWITCH_VIDEO_ENCODE_SPEED_FAST
+} switch_video_encode_speed_t;
+
 typedef struct switch_mm_s {
 	int samplerate;
 	int channels;
@@ -308,6 +315,7 @@ typedef struct switch_mm_s {
 	int vh;
 	float fps;
 	int vbuf;
+	switch_video_encode_speed_t vencspd;
 } switch_mm_t;
 
 /*! an abstract representation of a file handle (some parameters based on compat with libsndfile) */

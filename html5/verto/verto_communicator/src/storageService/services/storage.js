@@ -32,9 +32,9 @@
       incomingBandwidth: 'default',
       vidQual: undefined,
       askRecoverCall: false,
-      googNoiseSuppression: false,
-      googHighpassFilter: false,
-      googEchoCancellation: false
+      googNoiseSuppression: true,
+      googHighpassFilter: true,
+      googEchoCancellation: true
     });
 
     function changeData(verto_data) {
