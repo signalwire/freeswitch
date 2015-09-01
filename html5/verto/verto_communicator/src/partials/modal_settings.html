@@ -68,6 +68,28 @@
   </div>
 
   <div class="form-group">
+    <label for="settings-microphone">Audio settings:</label>
+    <div class="checkbox">
+      <label>
+        <input type="checkbox" name="googEchoCancellation" value="mydata.googEchoCancellation" ng-model="mydata.googEchoCancellation">
+        Echo Cancellation
+      </label>
+    </div>
+    <div class="checkbox">
+      <label>
+        <input type="checkbox" name="googNoiseSuppression" value="mydata.googNoiseSuppression" ng-model="mydata.googNoiseSuppression">
+        Noise Suppression
+      </label>
+    </div>
+    <div class="checkbox">
+      <label>
+        <input type="checkbox" name="googHighpassFilter" value="mydata.googHighpassFilter" ng-model="mydata.googHighpassFilter">
+        Highpass Filter
+      </label>
+    </div>
+  </div>
+
+  <div class="form-group">
     <label for="video-quality">Video quality:</label>
     <select name="video_quality" id="video-quality" class="form-control"
             ng-model="mydata.vidQual"
