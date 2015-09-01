@@ -896,10 +896,10 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 	end_buf = buf + ((sizeof(buf) > packet->header.length) ? packet->header.length : sizeof(buf));
 
 	switch_stun_packet_first_attribute(packet, attr);
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG8, "STUN PACKET TYPE: %s\n", 
-					  switch_stun_value_to_name(SWITCH_STUN_TYPE_PACKET_TYPE, packet->header.type));
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG8, "%s STUN PACKET TYPE: %s\n", 
+					  rtp_type(rtp_session), switch_stun_value_to_name(SWITCH_STUN_TYPE_PACKET_TYPE, packet->header.type));
 	do {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG8, "|---: STUN ATTR %d %x %s\n", attr->type, attr->type,
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG8, "|---: %s STUN ATTR %d %x %s\n", rtp_type(rtp_session), attr->type, attr->type,
 						  switch_stun_value_to_name(SWITCH_STUN_TYPE_ATTRIBUTE, attr->type));
 
 		switch (attr->type) {
@@ -913,18 +913,19 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 				switch_stun_error_code_t *err = (switch_stun_error_code_t *) attr->value;
 				uint32_t code = (err->code * 100) + err->number;
 
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING, "%s got stun binding response %u %s\n",
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING, "%s got %s stun binding response %u %s\n",
 								  rtp_session_name(rtp_session),
+								  rtp_type(rtp_session),
 								  code,
 								  err->reason
 								  );
 
 				if ((ice->type & ICE_VANILLA) && code == 487) {
 					if ((ice->type & ICE_CONTROLLED)) {
-						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING, "Changing role to CONTROLLING\n");
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING, "%s STUN Changing role to CONTROLLING\n", rtp_type(rtp_session));
 						ice->type &= ~ICE_CONTROLLED;
 					} else {
-						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING, "Changing role to CONTROLLED\n");
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING, "%s STUN Changing role to CONTROLLED\n", rtp_type(rtp_session));
 						ice->type |= ICE_CONTROLLED;
 					}
 					packet->header.type = SWITCH_STUN_BINDING_RESPONSE;
@@ -1078,7 +1079,7 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 							}
 							
 							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_INFO,
-											  "ICE Auto Changing port from %s:%u to %s:%u\n", old_host, old, host, port);
+											  "%s ICE Auto Changing port from %s:%u to %s:%u\n", rtp_type(rtp_session), old_host, old, host, port);
 
 							
 							if (channel) {

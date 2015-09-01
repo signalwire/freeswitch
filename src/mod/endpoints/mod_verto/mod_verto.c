@@ -3094,6 +3094,7 @@ static switch_bool_t verto__attach_func(const char *method, cJSON *params, jsock
 
 	switch_core_media_clear_ice(tech_pvt->session);
 	switch_channel_set_flag(tech_pvt->channel, CF_REINVITE);
+	switch_channel_set_flag(tech_pvt->channel, CF_RECOVERING);
 
 	//switch_channel_audio_sync(tech_pvt->channel);
 	//switch_channel_set_flag(tech_pvt->channel, CF_VIDEO_BREAK);

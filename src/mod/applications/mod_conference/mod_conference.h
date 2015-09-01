@@ -744,7 +744,6 @@ struct conference_member {
 	char *video_logo;
 	char *video_mute_png;
 	char *video_reservation_id;
-	switch_media_flow_t video_flow;
 	switch_frame_buffer_t *fb;
 	switch_image_t *avatar_png_img;
 	switch_image_t *video_mute_img;

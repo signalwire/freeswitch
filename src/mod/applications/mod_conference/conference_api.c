@@ -401,7 +401,7 @@ switch_status_t conference_api_sub_conference_video_vmute_snap(conference_member
 	if (member == NULL)
 		return SWITCH_STATUS_GENERR;
 
-	if (member->video_flow == SWITCH_MEDIA_FLOW_SENDONLY) {
+	if (switch_core_session_media_flow(member->session, SWITCH_MEDIA_TYPE_VIDEO) == SWITCH_MEDIA_FLOW_SENDONLY) {
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -430,7 +430,7 @@ switch_status_t conference_api_sub_vmute(conference_member_t *member, switch_str
 	if (member == NULL)
 		return SWITCH_STATUS_GENERR;
 
-	if (member->video_flow == SWITCH_MEDIA_FLOW_SENDONLY) {
+	if (switch_core_session_media_flow(member->session, SWITCH_MEDIA_TYPE_VIDEO) == SWITCH_MEDIA_FLOW_SENDONLY) {
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -486,7 +486,7 @@ switch_status_t conference_api_sub_unvmute(conference_member_t *member, switch_s
 	if (member == NULL)
 		return SWITCH_STATUS_GENERR;
 
-	if (member->video_flow == SWITCH_MEDIA_FLOW_SENDONLY) {
+	if (switch_core_session_media_flow(member->session, SWITCH_MEDIA_TYPE_VIDEO) == SWITCH_MEDIA_FLOW_SENDONLY) {
 		return SWITCH_STATUS_SUCCESS;
 	}
 
