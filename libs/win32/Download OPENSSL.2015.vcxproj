@@ -57,11 +57,11 @@
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Downloading OPENSSL</Message>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">if not exist "$(ProjectDir)..\openssl-$(OpenSSLVersion)" cscript /nologo "$(ProjectDir)util.vbs" GetUnzip http://files.freeswitch.org/downloads/libs/openssl-$(OpenSSLVersion).tar.gz "$(ProjectDir).."
 </Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ProjectDir)..\OPENSSL;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ProjectDir)..\openssl-1.0.1h;%(Outputs)</Outputs>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Downloading OPENSSL</Message>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">if not exist "$(ProjectDir)..\openssl-$(OpenSSLVersion)" cscript /nologo "$(ProjectDir)util.vbs" GetUnzip http://files.freeswitch.org/downloads/libs/openssl-$(OpenSSLVersion).tar.gz "$(ProjectDir).."
 </Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(ProjectDir)..\OPENSSL;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(ProjectDir)..\openssl-1.0.1h;%(Outputs)</Outputs>
     </CustomBuild>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
