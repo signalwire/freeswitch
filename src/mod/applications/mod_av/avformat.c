@@ -299,6 +299,20 @@ static switch_status_t add_stream(MediaStream *mst, AVFormatContext *fc, AVCodec
 
 		if (codec_id == AV_CODEC_ID_H264) {
 			c->ticks_per_frame = 2;
+
+			switch (mm->vencspd) {
+				case SWITCH_VIDEO_ENCODE_SPEED_SLOW:
+					av_opt_set(c->priv_data, "preset", "veryslow", 0);
+					break;
+				case SWITCH_VIDEO_ENCODE_SPEED_MEDIUM:
+					av_opt_set(c->priv_data, "preset", "medium", 0);
+					break;
+				case SWITCH_VIDEO_ENCODE_SPEED_FAST:
+					av_opt_set(c->priv_data, "preset", "ultrafast", 0);
+					break;
+				default:
+					break;
+			}
 		}
 
 		if (codec_id == AV_CODEC_ID_VP8) {
