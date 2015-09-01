@@ -3404,6 +3404,37 @@ SWITCH_STANDARD_API(uuid_media_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+#define MEDIA_SYNTAX "[off] <uuid>"
+SWITCH_STANDARD_API(uuid_media_3p_function)
+{
+	char *mycmd = NULL, *argv[4] = { 0 };
+	int argc = 0;
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	if (!zstr(cmd) && (mycmd = strdup(cmd))) {
+		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+	}
+
+	if (zstr(cmd) || argc < 1 || zstr(argv[0])) {
+		stream->write_function(stream, "-USAGE: %s\n", MEDIA_SYNTAX);
+	} else {
+		if (!strcasecmp(argv[0], "off")) {
+			status = switch_ivr_3p_nomedia(argv[1], SMF_REBRIDGE);
+		} else {
+			status = switch_ivr_3p_media(argv[0], SMF_REBRIDGE);
+		}
+	}
+
+	if (status == SWITCH_STATUS_SUCCESS) {
+		stream->write_function(stream, "+OK Success\n");
+	} else {
+		stream->write_function(stream, "-ERR Operation failed\n");
+	}
+
+	switch_safe_free(mycmd);
+	return SWITCH_STATUS_SUCCESS;
+}
+
 #define MEDIA_RENEG_SYNTAX "<uuid>[ <codec_string>]"
 SWITCH_STANDARD_API(uuid_media_neg_function)
 {
@@ -6959,6 +6990,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "uuid_limit_release", "Release limit resource", uuid_limit_release_function, LIMIT_RELEASE_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_loglevel", "Set loglevel on session", uuid_loglevel, UUID_LOGLEVEL_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_media", "Reinvite FS in or out of media path", uuid_media_function, MEDIA_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "uuid_media_3p", "Reinvite FS in or out of media path using 3pcc", uuid_media_3p_function, MEDIA_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_media_reneg", "Media negotiation", uuid_media_neg_function, MEDIA_RENEG_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_park", "Park channel", park_function, PARK_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_pause", "Pause media on a channel", pause_function, PAUSE_SYNTAX);

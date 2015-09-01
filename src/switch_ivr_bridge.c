@@ -1762,7 +1762,8 @@ static void cleanup_proxy_mode_a(switch_core_session_t *session)
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	int done = 0;
 
-	if (switch_channel_test_flag(channel, CF_PROXY_MODE)) {
+	if (!switch_channel_test_flag(channel, CF_3P_MEDIA_REQUESTED) && 
+		switch_channel_test_flag(channel, CF_PROXY_MODE) && !switch_channel_test_flag(channel, CF_3P_NOMEDIA_REQUESTED)) {
 		if (switch_core_session_get_partner(session, &sbsession) == SWITCH_STATUS_SUCCESS) {
 			switch_channel_t *sbchannel = switch_core_session_get_channel(sbsession);
 
@@ -1844,7 +1845,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_uuid_bridge(const char *originator_uu
 			if (switch_channel_direction(originatee_channel) == SWITCH_CALL_DIRECTION_OUTBOUND && switch_channel_test_flag(originatee_channel, CF_DIALPLAN)) {
 				switch_channel_clear_flag(originatee_channel, CF_DIALPLAN);
 			}
-
+			
 			cleanup_proxy_mode_a(originator_session);
 			cleanup_proxy_mode_a(originatee_session);
 

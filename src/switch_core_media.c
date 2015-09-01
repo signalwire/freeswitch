@@ -9042,7 +9042,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_receive_message(switch_core_se
 			switch_rtp_flush(v_engine->rtp_session);
 		}
 		goto end;
-
+	case SWITCH_MESSAGE_INDICATE_3P_MEDIA:
 	case SWITCH_MESSAGE_INDICATE_MEDIA:
 		{
 
@@ -9053,6 +9053,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_receive_message(switch_core_se
 				switch_core_session_enable_heartbeat(session, session->track_duration);
 			}
 		}
+		break;
+
+	case SWITCH_MESSAGE_INDICATE_3P_NOMEDIA:
+		switch_channel_set_flag(session->channel, CF_PROXY_MODE);
+		switch_core_media_set_local_sdp(session, NULL, SWITCH_FALSE); 
 		break;
 	case SWITCH_MESSAGE_INDICATE_NOMEDIA:
 		{
