@@ -23,7 +23,7 @@
  *
  * Contributor(s):
  *
- * Emmanuel Schmidbauer <e.schmidbauer@gmail.com>
+ * Emmanuel Schmidbauer <eschmidbauer@gmail.com>
  *
  * mod_odbc_cdr.c
  *
@@ -207,18 +207,20 @@ static switch_status_t odbc_cdr_reporting(switch_core_session_t *session)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_memory_pool_t *pool = switch_core_session_get_pool(session);
-	switch_caller_profile_t *caller_profile = switch_channel_get_caller_profile(channel);
 	switch_hash_index_t *hi;
 	const void *var;
 	void *val;
 	switch_console_callback_match_t *matches = NULL;
 	switch_console_callback_match_node_t *m;
 	const char *uuid = NULL;
+	int is_b;
 
-	if (globals.log_leg == ODBC_CDR_LOG_A && caller_profile->direction == SWITCH_CALL_DIRECTION_OUTBOUND) {
+	is_b = channel && switch_channel_get_originator_caller_profile(channel);
+
+	if (globals.log_leg == ODBC_CDR_LOG_A && is_b) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Only logging A-Leg, ignoring B-leg\n");
 		return SWITCH_STATUS_SUCCESS;
-	} else if (globals.log_leg == ODBC_CDR_LOG_B && caller_profile->direction == SWITCH_CALL_DIRECTION_INBOUND) {
+	} else if (globals.log_leg == ODBC_CDR_LOG_B && !is_b) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Only logging B-Leg, ignoring A-leg\n");
 		return SWITCH_STATUS_SUCCESS;
 	} else {
@@ -230,7 +232,7 @@ static switch_status_t odbc_cdr_reporting(switch_core_session_t *session)
 	}
 
 	if (!(uuid = switch_channel_get_variable(channel, "uuid"))) {
-		uuid = switch_core_strdup(pool, caller_profile->uuid);
+		uuid = switch_core_strdup(pool, switch_core_session_get_uuid(session));
 	}
 
 	// copy all table names from global hash
@@ -259,11 +261,11 @@ static switch_status_t odbc_cdr_reporting(switch_core_session_t *session)
 				skip_leg = SWITCH_TRUE;
 			}
 
-			if (table->log_leg == ODBC_CDR_LOG_A && caller_profile->direction == SWITCH_CALL_DIRECTION_OUTBOUND) {
+			if (table->log_leg == ODBC_CDR_LOG_A && is_b) {
 				skip_leg = SWITCH_TRUE;
 			}
 
-			if (table->log_leg == ODBC_CDR_LOG_B && caller_profile->direction == SWITCH_CALL_DIRECTION_INBOUND) {
+			if (table->log_leg == ODBC_CDR_LOG_B && !is_b) {
 				skip_leg = SWITCH_TRUE;
 			}
 
