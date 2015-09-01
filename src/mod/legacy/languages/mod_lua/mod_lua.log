@@ -1,6 +1,0 @@
-
-*** Warning: Linking the shared library mod_lua.la against the
-*** static library lua/liblua.a is not portable!
-libtool: link: rm -fr  .libs/mod_lua.la .libs/mod_lua.lai .libs/mod_lua.so .libs/mod_lua.soT
-libtool: link: g++  -fPIC -DPIC -shared -nostdlib /usr/lib/gcc/x86_64-linux-gnu/4.7/../../../x86_64-linux-gnu/crti.o /usr/lib/gcc/x86_64-linux-gnu/4.7/crtbeginS.o  .libs/mod_lua_la-mod_lua.o .libs/mod_lua_la-freeswitch_lua.o .libs/mod_lua_la-mod_lua_wrap.o   -Wl,-rpath -Wl,/usr/src/freeswitch.git/.libs -Wl,-rpath -Wl,/usr/local/freeswitch/lib -lz lua/liblua.a /usr/src/freeswitch.git/.libs/libfreeswitch.so -lssl -lcrypto -ljpeg -L/usr/lib/gcc/x86_64-linux-gnu/4.7 -L/usr/lib/gcc/x86_64-linux-gnu/4.7/../../../x86_64-linux-gnu -L/usr/lib/gcc/x86_64-linux-gnu/4.7/../../../../lib -L/lib/x86_64-linux-gnu -L/lib/../lib -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib -L/usr/lib/gcc/x86_64-linux-gnu/4.7/../../.. -lstdc++ -lm -lc -lgcc_s /usr/lib/gcc/x86_64-linux-gnu/4.7/crtendS.o /usr/lib/gcc/x86_64-linux-gnu/4.7/../../../x86_64-linux-gnu/crtn.o  -O2 -Wl,-x   -pthread -Wl,-soname -Wl,mod_lua.so -o .libs/mod_lua.so
-libtool: link: ( cd ".libs" && rm -f "mod_lua.la" && ln -s "../mod_lua.la" "mod_lua.la" )
