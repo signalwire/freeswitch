@@ -4430,9 +4430,10 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 			m_idx = 0;
 			memset(matches, 0, sizeof(matches[0]) * MAX_MATCHES);
 			memset(near_matches, 0, sizeof(near_matches[0]) * MAX_MATCHES);
-
+			
 			switch_channel_set_variable(session->channel, "video_possible", "true");
-
+			switch_channel_set_flag(session->channel, CF_VIDEO_SDP_RECVD);
+			
 			connection = sdp->sdp_connection;
 			if (m->m_connections) {
 				connection = m->m_connections;
@@ -7722,7 +7723,16 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 
 	}
 
-	if (switch_channel_test_flag(session->channel, CF_VIDEO_POSSIBLE)) {
+	if (!switch_channel_test_flag(session->channel, CF_VIDEO_POSSIBLE)) {
+		if (switch_channel_test_flag(session->channel, CF_VIDEO_SDP_RECVD)) {
+			switch_channel_clear_flag(session->channel, CF_VIDEO_SDP_RECVD);
+			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "m=video 0 %s 19\n", 
+							get_media_profile_name(session, 
+												   (switch_channel_test_flag(session->channel, CF_SECURE) 
+													&& switch_channel_direction(session->channel) == SWITCH_CALL_DIRECTION_OUTBOUND) || 
+												   a_engine->crypto_type != CRYPTO_INVALID || switch_channel_test_flag(session->channel, CF_DTLS)));
+		}
+	} else {
 		if (switch_channel_direction(session->channel) == SWITCH_CALL_DIRECTION_INBOUND) {
 			if (switch_channel_test_flag(smh->session->channel, CF_DTLS)) {
 				v_engine->no_crypto = 1;
