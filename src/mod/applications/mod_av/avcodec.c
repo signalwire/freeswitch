@@ -1093,7 +1093,7 @@ static switch_status_t switch_h264_encode(switch_codec_t *codec, switch_frame_t 
 		}
 
 		if (*got_output) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Encoded frame %" SWITCH_INT64_T_FMT " (size=%5d) nalu_type=0x%x %d\n", context->pts, pkt->size, *((uint8_t *)pkt->data +4), *got_output);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG5, "Encoded frame %" SWITCH_INT64_T_FMT " (size=%5d) nalu_type=0x%x %d\n", context->pts, pkt->size, *((uint8_t *)pkt->data +4), *got_output);
 			goto process;
 		}
 	}
@@ -1103,7 +1103,7 @@ static switch_status_t switch_h264_encode(switch_codec_t *codec, switch_frame_t 
 	avframe->pts = context->pts++;
 
 	if (context->need_key_frame) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Send AV KEYFRAME\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG5, "Send AV KEYFRAME\n");
 		 av_opt_set_int(context->encoder_ctx->priv_data, "intra-refresh", 1, 0);
 		 avframe->pict_type = AV_PICTURE_TYPE_I;
 	}
@@ -1130,7 +1130,7 @@ process:
 		int i = 0;
 
 		if (context->av_codec_id == AV_CODEC_ID_H263) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Encoded frame %" SWITCH_INT64_T_FMT " (size=%5d) [0x%02x 0x%02x 0x%02x 0x%02x] got_output: %d slices: %d\n", context->pts, pkt->size, *((uint8_t *)pkt->data), *((uint8_t *)(pkt->data + 1)), *((uint8_t *)(pkt->data + 2)), *((uint8_t *)(pkt->data + 3)), *got_output, avctx->slices);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG5, "Encoded frame %" SWITCH_INT64_T_FMT " (size=%5d) [0x%02x 0x%02x 0x%02x 0x%02x] got_output: %d slices: %d\n", context->pts, pkt->size, *((uint8_t *)pkt->data), *((uint8_t *)(pkt->data + 1)), *((uint8_t *)(pkt->data + 2)), *((uint8_t *)(pkt->data + 3)), *got_output, avctx->slices);
 
 #ifdef H263_MODE_B
 			fs_rtp_parse_h263_rfc2190(context, pkt);
@@ -1139,12 +1139,12 @@ process:
 			context->nalu_current_index = 0;
 			return consume_nalu(context, frame);
 		} else if (context->av_codec_id == AV_CODEC_ID_H263P){
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Encoded frame %" SWITCH_INT64_T_FMT " (size=%5d) [0x%02x 0x%02x 0x%02x 0x%02x] got_output: %d slices: %d\n", context->pts, pkt->size, *((uint8_t *)pkt->data), *((uint8_t *)(pkt->data + 1)), *((uint8_t *)(pkt->data + 2)), *((uint8_t *)(pkt->data + 3)), *got_output, avctx->slices);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG5, "Encoded frame %" SWITCH_INT64_T_FMT " (size=%5d) [0x%02x 0x%02x 0x%02x 0x%02x] got_output: %d slices: %d\n", context->pts, pkt->size, *((uint8_t *)pkt->data), *((uint8_t *)(pkt->data + 1)), *((uint8_t *)(pkt->data + 2)), *((uint8_t *)(pkt->data + 3)), *got_output, avctx->slices);
 			fs_rtp_parse_h263_rfc4629(context, pkt);
 			context->nalu_current_index = 0;
 			return consume_nalu(context, frame);
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Encoded frame %" SWITCH_INT64_T_FMT " (size=%5d) nalu_type=0x%x %d\n", context->pts, pkt->size, *((uint8_t *)pkt->data +4), *got_output);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG5, "Encoded frame %" SWITCH_INT64_T_FMT " (size=%5d) nalu_type=0x%x %d\n", context->pts, pkt->size, *((uint8_t *)pkt->data +4), *got_output);
 		}
 		/* split into nalus */
 		memset(context->nalus, 0, sizeof(context->nalus));
