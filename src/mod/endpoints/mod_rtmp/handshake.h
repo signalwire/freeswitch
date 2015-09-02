@@ -27,6 +27,11 @@
 #ifndef _RTMP_VIDEO_H
 #define _RTMP_VIDEO_H
 
+#include <assert.h>
+#include <string.h>
+#ifdef WIN32
+#include <windows.h>
+#endif
 #include <openssl/hmac.h>
 #include <openssl/sha.h>
 
@@ -149,7 +154,7 @@ static void HMACsha256(const uint8_t *message, size_t messageLen, const uint8_t 
 	unsigned int digestLen;
 	HMAC_CTX ctx;
 
-	HMAC_setup(ctx, key, keylen);
+	HMAC_setup(ctx, key, (int)keylen);
 	HMAC_crunch(ctx, message, messageLen);
 	HMAC_finish(ctx, digest, digestLen);
 
@@ -603,7 +608,7 @@ static int ReadN(void * user_data, void * out_buffer, size_t size)
 
 	memcpy(out_buffer, helper->r_buf + helper->r_pos, len);
 	helper->r_pos += len;
-	return len;
+	return (int)len;
 }
 
 static int WriteN(void * user_data, void * buffer, size_t size)
@@ -615,7 +620,7 @@ static int WriteN(void * user_data, void * buffer, size_t size)
 
 	memcpy(helper->w_buf + helper->w_pos, buffer, len);
 	helper->w_pos += len;
-	return len;
+	return (int)len;
 }
 
 static int SHandShake0(handshake_helper_t * r)

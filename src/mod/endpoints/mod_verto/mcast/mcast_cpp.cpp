@@ -55,7 +55,7 @@ int McastHandle::send(const char *data)
 
 char *McastHandle::recv(int ms)
 {
-	int r;
+	ssize_t r;
 
 	if ((r = mcast_socket_recv(&handle, NULL, 0, ms)) > 0) {
 		*((char *)handle.buffer + r) = '\0';

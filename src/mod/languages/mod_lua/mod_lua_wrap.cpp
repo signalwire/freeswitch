@@ -1405,7 +1405,7 @@ SWIGINTERN int  SWIG_Lua_class_tostring(lua_State* L)
 /*  there should be 1 param passed in
   (1) userdata (not the metatable) */
   assert(lua_isuserdata(L,1));  /* just in case */
-  unsigned long userData = (unsigned long)lua_touserdata(L,1); /* get the userdata address for later */
+  unsigned long userData = (unsigned long)(intptr_t)lua_touserdata(L,1); /* get the userdata address for later */
   lua_getmetatable(L,1);    /* get the meta table */
   assert(lua_istable(L,-1));  /* just in case */
   

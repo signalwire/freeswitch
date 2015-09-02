@@ -141,7 +141,7 @@ SWITCH_DECLARE(switch_status_t) switch_log_unbind_logger(_In_ switch_log_functio
 SWITCH_DECLARE(switch_log_level_t) switch_log_str2level(_In_z_ const char *str);
 
 SWITCH_DECLARE(uint32_t) switch_log_str2mask(_In_z_ const char *str);
-#define switch_log_check_mask(_mask, _level) (_mask & (1 << _level))
+#define switch_log_check_mask(_mask, _level) (_mask & ((size_t)1 << _level))
 
 
 SWITCH_DECLARE(switch_log_node_t *) switch_log_node_dup(const switch_log_node_t *node);

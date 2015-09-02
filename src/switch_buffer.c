@@ -115,6 +115,7 @@ SWITCH_DECLARE(switch_status_t) switch_buffer_create_dynamic(switch_buffer_t **b
 		if (start_len) {
 			if (!(new_buffer->data = malloc(start_len))) {
 				free(new_buffer);
+				*buffer = NULL;
 				return SWITCH_STATUS_MEMERR;
 			}
 			memset(new_buffer->data, 0, start_len);
@@ -130,7 +131,7 @@ SWITCH_DECLARE(switch_status_t) switch_buffer_create_dynamic(switch_buffer_t **b
 		*buffer = new_buffer;
 		return SWITCH_STATUS_SUCCESS;
 	}
-
+	*buffer = NULL;
 	return SWITCH_STATUS_MEMERR;
 }
 
@@ -268,6 +269,7 @@ SWITCH_DECLARE(switch_size_t) switch_buffer_peek_zerocopy(switch_buffer_t *buffe
 
 	if (buffer->used < 1) {
 		buffer->used = 0;
+		*ptr = NULL;
 		return 0;
 	} else {
 		reading = buffer->used;

@@ -395,7 +395,7 @@ static void event_handler(switch_event_t *event)
 SWITCH_STANDARD_APP(socket_function)
 {
 	char *host, *port_name, *path;
-	switch_socket_t *new_sock;
+	switch_socket_t *new_sock = NULL;
 	switch_sockaddr_t *sa;
 	switch_port_t port = 8084;
 	listener_t *listener;

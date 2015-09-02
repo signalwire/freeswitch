@@ -137,7 +137,7 @@ static void init_avmd_session_data(avmd_session_t *avmd_session,  switch_core_se
 {
 	/*! This is a worst case sample rate estimate */
 	avmd_session->rate = 48000;
-	INIT_CIRC_BUFFER(&avmd_session->b, BEEP_LEN(avmd_session->rate), FRAME_LEN(avmd_session->rate), fs_session);
+	INIT_CIRC_BUFFER(&avmd_session->b, (size_t)BEEP_LEN(avmd_session->rate), (size_t)FRAME_LEN(avmd_session->rate), fs_session);
 
 	avmd_session->session = fs_session;
 	avmd_session->pos = 0;

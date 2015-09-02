@@ -73,6 +73,7 @@
       <AdditionalIncludeDirectories>%(RootDir)%(Directory)..\..\..\..\libs\libdingaling\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeader>
       </PrecompiledHeader>
+      <DisableSpecificWarnings>4718;6340;6246;6011;6387;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <AdditionalOptions>/NODEFAULTLIB:LIMBCTD %(AdditionalOptions)</AdditionalOptions>
@@ -90,6 +91,7 @@
       <AdditionalIncludeDirectories>%(RootDir)%(Directory)..\..\..\..\libs\libdingaling\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeader>
       </PrecompiledHeader>
+      <DisableSpecificWarnings>4718;6340;6246;6011;6387;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <AdditionalOptions>/NODEFAULTLIB:LIMBCTD %(AdditionalOptions)</AdditionalOptions>
@@ -105,6 +107,7 @@
       <AdditionalIncludeDirectories>%(RootDir)%(Directory)..\..\..\..\libs\libdingaling\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeader>
       </PrecompiledHeader>
+      <DisableSpecificWarnings>4718;6340;6246;6011;6387;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>$(ProjectDir)..\..\..\..\libs\libdingaling\$(OutDir);$(ProjectDir)..\..\..\..\libs\iksemel\$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>

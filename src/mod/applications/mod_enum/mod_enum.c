@@ -280,7 +280,7 @@ static void free_results(enum_record_t ** results)
 
 static ldns_rdf *ldns_rdf_new_addr_frm_str(const char *str)
 {
-	ldns_rdf *a;
+	ldns_rdf *a = NULL;
 
 	ldns_str2rdf_a(&a, str);
 

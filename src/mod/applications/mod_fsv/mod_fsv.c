@@ -950,7 +950,7 @@ end:
 
 static switch_status_t fsv_file_write(switch_file_handle_t *handle, void *data, size_t *len)
 {
-	uint32_t datalen = *len * sizeof(int16_t);
+	uint32_t datalen = (uint32_t)(*len * sizeof(int16_t));
 	size_t size;
 	switch_status_t status;
 	int16_t *xdata = data;

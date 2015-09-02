@@ -1416,7 +1416,7 @@ static uint8_t *http_stream_read(switch_stream_handle_t *handle, int *len)
 		return NULL;
 	}
 
-	*len = r->bytes_buffered - r->bytes_read;
+	*len = (int)(r->bytes_buffered - r->bytes_read);
 
 	if (*len > 0) { // we already read part of the body
 		uint8_t *data = (uint8_t *)wsh->buffer + r->bytes_read;
@@ -1429,10 +1429,10 @@ static uint8_t *http_stream_read(switch_stream_handle_t *handle, int *len)
 		return NULL;
 	}
 
-	*len = r->content_length - (r->bytes_read - r->bytes_header);
+	*len = (int)(r->content_length - (r->bytes_read - r->bytes_header));
 	*len = *len > sizeof(wsh->buffer) ? sizeof(wsh->buffer) : *len;
 
-	if ((*len = ws_raw_read(wsh, wsh->buffer, *len, wsh->block)) < 0) {
+	if ((*len = (int)ws_raw_read(wsh, wsh->buffer, *len, wsh->block)) < 0) {
 		*len = 0;
 		return NULL;
 	}
@@ -1464,7 +1464,7 @@ static switch_status_t http_stream_write(switch_stream_handle_t *handle, const c
 
 	if (data) {
 		if (ret) {
-			ret = ws_raw_write(&jsock->ws, data, (uint32_t)strlen(data));
+			ret =(int) ws_raw_write(&jsock->ws, data, (uint32_t)strlen(data));
 		}
 		switch_safe_free(data);
 	}
@@ -1559,7 +1559,7 @@ new_req:
 	}
 
 	request.headers = stream.param_event;
-	if (switch_http_parse_header(jsock->ws.buffer, jsock->ws.datalen, &request) != SWITCH_STATUS_SUCCESS) {
+	if (switch_http_parse_header(jsock->ws.buffer, (uint32_t)jsock->ws.datalen, &request) != SWITCH_STATUS_SUCCESS) {
 		switch_event_destroy(&stream.param_event);
 		goto err;
 	}
@@ -3995,7 +3995,7 @@ static void handle_mcast_sub(verto_profile_t *profile)
 		return;
 	}
 
-	bytes = mcast_socket_recv(&profile->mcast_sub, NULL, 0, 0);
+	bytes = (int)mcast_socket_recv(&profile->mcast_sub, NULL, 0, 0);
 
 	if (bytes > 0) {
 		cJSON *json;
