@@ -1129,7 +1129,7 @@ var iceTimer;
 		audio: true,
 		video: true,
 	    },
-	    onsuccess: function(e) {e.stop(); console.info("media perm init complete"); if (runtime) {runtime(true)}},
+	    onsuccess: function(e) {e.stop(); console.info("media perm init complete"); if (runtime) {setTimeout(runtime, 100, true)}},
 	    onerror: function(e) {console.error("media perm init error"); if (runtime) {runtime(false)}}
 	});
     }
