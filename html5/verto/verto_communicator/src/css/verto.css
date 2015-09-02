@@ -8,6 +8,22 @@ body {
   padding-top: 60px;
 }
 
+.inline-block {
+  display: inline-block;
+}
+
+.icon-tiny {
+  font-size: 14px;
+}
+
+.back-icon {
+  cursor: pointer;
+  margin-top: -2px;
+  float: left;
+  margin-left: -2px;
+  margin-right: 7px;
+}
+
 .container-fluid {
   height: 100%;
 }
@@ -237,6 +253,12 @@ body .modal-body .btn-group .btn.active {
   width: 100%;
 }
 
+#dialpad .list-icon {
+  margin-top: 8px;
+  float: right;
+  margin-left: 2px;
+}
+
 #dialpad .dialpad-display .btn-fab {
   font-size: 32px;
   position: relative;
@@ -319,6 +341,11 @@ body .modal-body .btn-group .btn.active {
   position: relative;
 }
 
+.call_direction {
+  position: absolute;
+  margin-top: 6px;
+}
+
 
 #dialpad #call_history.active {
   visibility: visible;
@@ -363,11 +390,20 @@ body .modal-body .btn-group .btn.active {
   text-overflow: clip;
   overflow: hidden;
   overflow-wrap: break-word;
+  margin-left: 26px !important;
+  position: absolute;
 }
 
 #dialpad .dialpad-number {
   margin: 0;
   color: rgb(38, 204, 218);
+}
+
+#dialpad .date {
+  margin-top: 15px; 
+  display: block;
+  font-size: 11px;
+  color: #CCC;
 }
 
 #dialpad .dialpad-alpha {

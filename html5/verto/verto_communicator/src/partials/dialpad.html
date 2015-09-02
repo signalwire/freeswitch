@@ -3,7 +3,9 @@
     <div id="call_history" class="shadow-z-2 panel">
       <div class="panel-heading">
         <div class="panel-title">
-            Call History
+            <i class="mdi-navigation-arrow-back back-icon" ng-click="viewCallsList()" ng-if="call_list"></i>
+            <span ng-if="!call_list">Call History</span>
+            <span ng-if="call_list">{{ call_list[0].number }}</span>
 
             <span class="pull-right pull-right-margin dropdown">
               <a href="" class="dropdown-toggle" data-target="#" data-toggle="dropdown" aria-expanded="true">
@@ -16,18 +18,32 @@
         </div>
       </div>
       <ul class="call-history">
-        <div ng-show="!storage.data.call_history.length">
+        <div ng-if="!has_history">
           <p class="text-center text-muted">No history calls.</p>
         </div>
 
-        <li ng-repeat="call in storage.data.call_history">
-          <a ng-show="call.number" href="" ng-dblclick="$parent.call(call.number)" ng-click="$parent.fillDialpadNumber(call.number)">
-            <i ng-show="call.direction == 'inbound'" ng-class="{'mdi-communication-call-missed': !call.status,'mdi-communication-call-received': call.status}"></i>
-            <i ng-show="call.direction == 'outbound'" class="mdi-communication-call-made"></i>
-            <h2 class="dialpad-number dialpad-number-limited">{{ call.number }}</h2>
+        <li ng-repeat="number in history_control track by number" ng-if="!call_list">
+          <a ng-init="call = call_history[number][0]" class="inline-block" ng-show="call.number" href="" ng-dblclick="$parent.call(call.number)" ng-click="$parent.fillDialpadNumber(call.number)">
+            <div class="call-history-info">
+            <i ng-if="call.direction == 'inbound'" ng-class="{'mdi-communication-call-missed': !call.status,'mdi-communication-call-received': call.status}"></i>
+            <i ng-if="call.direction == 'outbound'" class="mdi-communication-call-made call_direction"></i>
+            <h2 class="dialpad-number dialpad-number-limited">{{ call.number }} ({{ call_history[number].length }})</h2>
             <br/>
+            <span class="date">{{ call.call_start }}</span>
+            </div>
+          </a>
+          <a href="" ng-click="$parent.viewCallsList(call_history[number])" class="list-icon">
+            <i class="mdi-action-view-list"></i>
+          </a>
+        </li>
+
+        <li ng-repeat="call in call_list">
+          <a ng-show="call.number" href="" ng-dblclick="$parent.call(call.number)" ng-click="$parent.fillDialpadNumber(call.number)">
+            <i ng-if="call.direction == 'inbound'" class="icon-tiny" ng-class="{'mdi-communication-call-missed': !call.status,'mdi-communication-call-received': call.status}"></i>
+            <i ng-if="call.direction == 'outbound'" class="icon-tiny mdi-communication-call-made"></i>
             <span class="dialpad-alpha">{{ call.call_start }}</span>
           </a>
+
         </li>
       </ul>
     </div>
