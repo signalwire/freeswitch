@@ -14,6 +14,7 @@
 
         $scope.ok = function() {
           storage.changeData($scope.mydata);
+          verto.data.instance.iceServers(storage.data.useSTUN);
           $modalInstance.close('Ok.');
         };
 
