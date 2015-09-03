@@ -665,7 +665,7 @@ void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, void *ob
 	switch_frame_t *read_frame = NULL;
 	uint32_t hangover = 40, hangunder = 5, hangover_hits = 0, hangunder_hits = 0, diff_level = 400;
 	switch_core_session_t *session = member->session;
-	uint32_t flush_len, loops = 0;
+	uint32_t flush_len;
 	switch_frame_t tmp_frame = { 0 };
 
 	if (switch_core_session_read_lock(session) != SWITCH_STATUS_SUCCESS) {
@@ -944,21 +944,17 @@ void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, void *ob
 				}
 			}
 		}
-
-		loops++;
-
+		
 		if (switch_channel_test_flag(member->channel, CF_CONFERENCE_RESET_MEDIA)) {
 			switch_channel_clear_flag(member->channel, CF_CONFERENCE_RESET_MEDIA);
-
-			if (loops > 500) {
-				member->loop_loop = 1;
-
-				if (conference_member_setup_media(member, member->conference)) {
-					switch_mutex_unlock(member->read_mutex);
-					break;
-				}
+			member->loop_loop = 1;
+				
+			if (conference_member_setup_media(member, member->conference)) {
+				switch_mutex_unlock(member->read_mutex);
+				break;
 			}
-
+			
+			goto do_continue;
 		}
 
 		/* skip frames that are not actual media or when we are muted or silent */
@@ -1201,6 +1197,12 @@ void conference_loop_output(conference_member_t *member)
 		int use_timer = 0;
 		switch_buffer_t *use_buffer = NULL;
 		uint32_t mux_used = 0;
+
+
+		if (switch_channel_test_flag(member->channel, CF_CONFERENCE_RESET_MEDIA)) {
+			switch_cond_next();
+			continue;
+		}
 
 		switch_mutex_lock(member->write_mutex);
 
