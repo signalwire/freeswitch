@@ -4,14 +4,28 @@
   angular
     .module('vertoControllers')
     .controller('DialPadController', ['$rootScope', '$scope',
-      '$http', '$location', 'toastr', 'verto', 'storage',
-      function($rootScope, $scope, $http, $location, toastr, verto, storage) {
+      '$http', '$location', 'toastr', 'verto', 'storage', 'CallHistory',
+      function($rootScope, $scope, $http, $location, toastr, verto, storage, CallHistory) {
         console.debug('Executing DialPadController.');
-
         $scope.checkBrowser();
+        $scope.call_history = CallHistory.all();
+        $scope.history_control = CallHistory.all_control();
+        $scope.has_history = Object.keys($scope.call_history).length;
         storage.data.videoCall = false;
         storage.data.userStatus = 'connecting';
         storage.data.calling = false;
+
+        $scope.clearCallHistory = function() {
+          CallHistory.clear();
+          $scope.call_history = CallHistory.all();
+          $scope.history_control = CallHistory.all_control();
+          $scope.has_history = Object.keys($scope.call_history).length;
+          return $scope.history_control;
+        };
+
+        $scope.viewCallsList = function(calls) {
+          return $scope.call_list = calls;
+        };
 
         /**
          * fill dialpad via querystring [?autocall=\d+]
@@ -62,11 +76,7 @@
           verto.call($rootScope.dialpadNumber);
 
           storage.data.called_number = $rootScope.dialpadNumber;
-          storage.data.call_history.unshift({
-            'number': $rootScope.dialpadNumber,
-            'direction': 'outbound',
-            'call_start': Date()
-          });
+          CallHistory.add($rootScope.dialpadNumber, 'outbound');
           $location.path('/incall');
         }
       }

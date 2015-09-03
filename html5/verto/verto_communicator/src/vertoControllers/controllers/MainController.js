@@ -4,8 +4,8 @@
   angular
     .module('vertoControllers')
     .controller('MainController',
-      function($scope, $rootScope, $location, $modal, $timeout, verto, storage, toastr, Fullscreen, prompt) {
-      
+      function($scope, $rootScope, $location, $modal, $timeout, verto, storage, CallHistory, toastr, Fullscreen, prompt) {
+
       console.debug('Executing MainController.');
 
       var myVideo = document.getElementById("webcam");
@@ -140,7 +140,7 @@
         );
       };
 
-      $scope.openModal = function(templateUrl, controller) {
+      $rootScope.openModal = function(templateUrl, controller) {
         var modalInstance = $modal.open({
           animation: $scope.animationsEnabled,
           templateUrl: templateUrl,
@@ -199,10 +199,6 @@
           angular.element("#call-history-wrapper").removeClass('active');
         }
         $scope.call_history = angular.element("#call_history").hasClass('active');
-      };
-
-      $scope.clearCallHistory = function() {
-        storage.data.call_history = [];
       };
 
       $scope.toggleChat = function() {
@@ -328,22 +324,11 @@
 
           $scope.answerCall();
           storage.data.called_number = data;
-
-          storage.data.call_history.unshift({
-            'number': data,
-            'direction': 'inbound',
-            'status': true,
-            'call_start': Date()
-          });
+          CallHistory.add(number, 'inbound', true);
           $location.path('/incall');
         }, function() {
           $scope.declineCall();
-          storage.data.call_history.unshift({
-            'number': data,
-            'direction': 'inbound',
-            'status': false,
-            'call_start': Date()
-          });
+          CallHistory.add(number, 'inbound', false);
         });
       });
 

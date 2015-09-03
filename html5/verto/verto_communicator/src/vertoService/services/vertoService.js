@@ -258,8 +258,8 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
             label: device.label || device.id
           });
         }
-        console.debug('Devices were refreshed, checking that we have cameras.');          
-        
+        console.debug('Devices were refreshed, checking that we have cameras.');
+
         // This means that we cannot use video!
         if (data.videoDevices.length === 0) {
           console.log('No camera, disabling video.');
@@ -274,7 +274,7 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
       },
 
       refreshDevices: function(callback) {
-        console.debug('Attempting to refresh the devices.');        
+        console.debug('Attempting to refresh the devices.');
         jQuery.verto.refreshDevices(this.refreshDevicesCallback);
       },
 
@@ -416,7 +416,7 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
             console.log('Has data.liveArray.');
             $rootScope.$emit('members.clear');
             data.liveArray = null;
-            
+
           } else {
             console.log('Doesn\'t found data.liveArray.');
           }
