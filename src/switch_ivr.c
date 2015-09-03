@@ -820,7 +820,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_all_messages(switch_core_sessio
 }
 
 
-SWITCH_DECLARE(switch_status_t) switch_ivr_parse_all_signal_data(switch_core_session_t *session)
+static switch_status_t switch_ivr_parse_signal_data(switch_core_session_t *session, switch_bool_t all)
 {
 	void *data;
 	switch_core_session_message_t msg = { 0 };
@@ -847,12 +847,21 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_all_signal_data(switch_core_ses
 		switch_core_session_receive_message(session, &msg);
 
 		data = NULL;
-
+		if (!all)
+			break;
 	}
 
 	switch_channel_clear_flag(channel, CF_SIGNAL_DATA);
 
 	return i ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_ivr_parse_all_signal_data(switch_core_session_t *session) {
+	return switch_ivr_parse_signal_data(session, SWITCH_TRUE);
+}
+
+SWITCH_DECLARE(switch_status_t) switch_ivr_parse_next_signal_data(switch_core_session_t *session) {
+	return switch_ivr_parse_signal_data(session, SWITCH_FALSE);
 }
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_parse_all_events(switch_core_session_t *session)
