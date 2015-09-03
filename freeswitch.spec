@@ -47,7 +47,7 @@
 %{?with_mod_esl:%define build_mod_esl 1 }
 %{?with_mod_shout:%define build_mod_shout 1 }
 
-%define version 1.7.0
+%define version 1.6.0
 %define release 1
 
 ######################################################################################################################
