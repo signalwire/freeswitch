@@ -542,7 +542,7 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
                 googNoiseSuppression: storage.data.googNoiseSuppression || false,
                 googHighpassFilter: storage.data.googHighpassFilter || false
             },
-            iceServers: data.useSTUN
+            iceServers: storage.data.useSTUN
           }, callbacks);
 
           data.instance.deviceParams({
