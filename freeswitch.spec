@@ -2503,7 +2503,7 @@ fi
 #
 ######################################################################################################################
 %changelog
-* Tue Jul 09 2015 - Artur Zaprzała
+* Thu Jul 09 2015 - Artur Zaprzała
 - add systemd service file for CentOS 7
 * Thu Jun 25 2015 - s.safarov@gmail.com
 - Dependencies of mod_shout were declared
