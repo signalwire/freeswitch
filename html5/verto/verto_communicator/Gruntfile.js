@@ -21,9 +21,22 @@ module.exports = function (grunt) {
   };
 
   var ip = grunt.option('ip');
+  var debug = grunt.option('debug');
 
+  var uglify_config = {
+  };
+  if (debug) {
+    uglify_config = {
+      options: {
+        beautify: debug ? true : false,
+        compress: debug ? false : true,
+	mangle: debug ? false : true
+      }
+    };
+  }
   // Project configuration.
   grunt.initConfig({
+    uglify: uglify_config,
     // Project settings
     config: config,
 
