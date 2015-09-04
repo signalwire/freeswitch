@@ -2215,11 +2215,12 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 
 
 					num = atoi(input);
-					file_path = switch_mprintf("%s%sgreeting_%d.%s", dir_path, SWITCH_PATH_SEPARATOR, num, profile->file_ext);
-					if (num < 1 || num > VM_MAX_GREETINGS) {
+					if (num < 0 || num > VM_MAX_GREETINGS) {
 						status = SWITCH_STATUS_FALSE;
-					} else {
+					} else if (num > 0) {
 						switch_file_handle_t fh = { 0 };
+
+						file_path = switch_mprintf("%s%sgreeting_%d.%s", dir_path, SWITCH_PATH_SEPARATOR, num, profile->file_ext);
 						memset(&fh, 0, sizeof(fh));
 						greeting_args.input_callback = control_playback;
 						memset(&cc, 0, sizeof(cc));
@@ -2235,15 +2236,25 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 						switch_event_t *params;
 
 						TRY_CODE(switch_ivr_phrase_macro(session, VM_CHOOSE_GREETING_SELECTED_MACRO, input, NULL, NULL));
-						sql =
-							switch_mprintf("update voicemail_prefs set greeting_path='%s' where username='%s' and domain='%s'", file_path, myid,
+						if (file_path == NULL) {
+							sql =
+								switch_mprintf("update voicemail_prefs set greeting_path=NULL where username='%s' and domain='%s'", myid,
 										   domain_name);
+						} else {
+							sql =
+								switch_mprintf("update voicemail_prefs set greeting_path='%s' where username='%s' and domain='%s'",
+										   file_path, myid, domain_name);
+						}
 						vm_execute_sql(profile, sql, profile->mutex);
 						switch_safe_free(sql);
 
 						switch_event_create_subclass(&params, SWITCH_EVENT_CUSTOM, VM_EVENT_MAINT);
-						switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "VM-Action", "change-greeting");
-						switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "VM-Greeting-Path", file_path);
+						if (file_path == NULL) {
+							switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "VM-Action", "remove-greeting");
+						} else {
+							switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "VM-Action", "change-greeting");
+							switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "VM-Greeting-Path", file_path);
+						}
 						switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "VM-User", myid);
 						switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "VM-Domain", domain_name);
 						switch_channel_event_set_data(channel, params);
