@@ -73,6 +73,7 @@
 typedef struct {
 	unsigned int		mp_magic;	/* magic number for struct */
 	unsigned int		mp_flags;	/* flags for the struct */
+	unsigned int		mp_mmflags;	/* flags for mmap */
 	unsigned long		mp_alloc_c;	/* number of allocations */
 	unsigned long		mp_user_alloc;	/* user bytes allocated */
 	unsigned long		mp_max_alloc;	/* maximum user bytes allocated */

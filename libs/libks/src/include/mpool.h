@@ -67,6 +67,11 @@
 #define MPOOL_FLAG_USE_SBRK		(1<<3)
 
 /*
+ * Use MMAP_ANONYMOUS instead of /dev/zero
+ */
+#define MPOOL_FLAG_ANONYMOUS		(1<<4)
+
+/*
  * Mpool error codes
  */
 #define MPOOL_ERROR_NONE	1	/* no error */

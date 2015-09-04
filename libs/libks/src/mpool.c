@@ -273,7 +273,7 @@ static	void	*alloc_pages(mpool_t *mp_p, const unsigned int page_n,
 #endif
     
 		/* mmap from /dev/zero */
-		mem = mmap((caddr_t)mp_p->mp_addr, size, PROT_READ | PROT_WRITE, state,
+		mem = mmap((caddr_t)mp_p->mp_addr, size, mp_p->mp_mmflags, state,
 				   mp_p->mp_fd, mp_p->mp_top);
 		if (mem == (void *)MAP_FAILED) {
 			if (errno == ENOMEM) {
@@ -937,17 +937,24 @@ mpool_t	*mpool_open(const unsigned int flags, const unsigned int page_size,
 		}
 	}
   
+	mp.mp_mmflags = PROT_READ | PROT_WRITE;
+
 	if (BIT_IS_SET(flags, MPOOL_FLAG_USE_SBRK)) {
 		mp.mp_fd = -1;
 		mp.mp_addr = NULL;
 		mp.mp_top = 0;
 	}
 	else {
-		/* open dev-zero for our mmaping */
-		mp.mp_fd = open("/dev/zero", O_RDWR, 0);
-		if (mp.mp_fd < 0) {
-			SET_POINTER(error_p, MPOOL_ERROR_OPEN_ZERO);
-			return NULL;
+		if (BIT_IS_SET(flags, MPOOL_FLAG_ANONYMOUS)) {
+			mp.mp_fd = -1;
+			mp.mp_mmflags |= MAP_ANONYMOUS;
+		} else {
+			/* open dev-zero for our mmaping */
+			mp.mp_fd = open("/dev/zero", O_RDWR, 0);
+			if (mp.mp_fd < 0) {
+				SET_POINTER(error_p, MPOOL_ERROR_OPEN_ZERO);
+				return NULL;
+			}
 		}
 		mp.mp_addr = start_addr;
 		/* we start at the front of the file */
