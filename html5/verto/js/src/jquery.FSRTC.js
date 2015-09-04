@@ -29,11 +29,6 @@
  *
  */
 
-
-var iceTimerSent = 0;
-var iceTimerCompleted = 0;
-var iceTimer;
-
 (function($) {
 
     // Find the line in sdpLines that starts with |prefix|, and, if specified,
@@ -536,7 +531,7 @@ var iceTimer;
 		    self.constraints.mandatory.OfferToReceiveVideo = false;
 		}
 	    }
-
+	    
             self.peer = RTCPeerConnection({
                 type: self.type,
                 attachStream: self.localStream,
@@ -604,12 +599,13 @@ var iceTimer;
     window.moz = !!navigator.mozGetUserMedia;
 
     function RTCPeerConnection(options) {
+	var gathering = false, done = false;
 
         var w = window,
         PeerConnection = w.mozRTCPeerConnection || w.webkitRTCPeerConnection,
         SessionDescription = w.mozRTCSessionDescription || w.RTCSessionDescription,
         IceCandidate = w.mozRTCIceCandidate || w.RTCIceCandidate;
-
+	
         var STUN = {
             url: !moz ? 'stun:stun.l.google.com:19302' : 'stun:23.21.150.121'
         };
@@ -655,104 +651,74 @@ var iceTimer;
         openOffererChannel();
         var x = 0;
 
-        peer.onicecandidate = function(event) {
-            if (event.candidate) {
-                options.onICE(event.candidate);
-		clearTimeout(iceTimer);
-		iceTimer = setTimeout(function() {
-		    iceTimerSent = 1;
+	function ice_handler() {
 
-		    if (iceTimerCompleted == 0) {
+	    done = true;
+	    gathering = null;
 
-			if (options.onICEComplete) {
-			    options.onICEComplete();
-			}
-
-			if (options.type == "offer") {
-			    /* new mozilla now tries to be like chrome but it takes them 10 seconds to complete the ICE 
-			       Booooooooo! This trickle thing is a waste of time...... We'll all have to re-code our engines 
-			       to handle partial setups to maybe save 100m
-			    */
-			    if ((!moz || (!options.sentICESDP && peer.localDescription.sdp.match(/a=candidate/)) && !x && options.onICESDP)) {
-				options.onICESDP(peer.localDescription);
-				//x = 1;
-				/*
-				  x = 1;
-				  peer.createOffer(function(sessionDescription) {
-				  sessionDescription.sdp = serializeSdp(sessionDescription.sdp);
-				  peer.setLocalDescription(sessionDescription);
-				  if (options.onICESDP) {
-                                  options.onICESDP(sessionDescription);
-				  }
-				  }, onSdpError, constraints);
-				*/
-			    }
-			} else {
-			    if (!x && options.onICESDP) {
-				options.onICESDP(peer.localDescription);
-				//x = 1;
-				/*
-				  x = 1;
-				  peer.createAnswer(function(sessionDescription) {
-				  sessionDescription.sdp = serializeSdp(sessionDescription.sdp);
-				  peer.setLocalDescription(sessionDescription);
-				  if (options.onICESDP) {
-                                  options.onICESDP(sessionDescription);
-				  }
-				  }, onSdpError, constraints);
-				*/
-			    }
-			}
-		    }
-		}, 1000);
-            } else {
-		if (iceTimerSent == 0) {
-		    clearTimeout(iceTimer);
-		    iceTimerCompleted = 1;
-
-                    if (options.onICEComplete) {
-			options.onICEComplete();
-                    }
-
-                    if (options.type == "offer") {
-			/* new mozilla now tries to be like chrome but it takes them 10 seconds to complete the ICE 
-			   Booooooooo! This trickle thing is a waste of time...... We'll all have to re-code our engines 
-			   to handle partial setups to maybe save 100m
-			*/
-			if ((!moz || (!options.sentICESDP && peer.localDescription.sdp.match(/a=candidate/)) && !x && options.onICESDP)) {
-                            options.onICESDP(peer.localDescription);
-                            //x = 1;
-                            /*
-                              x = 1;
-                              peer.createOffer(function(sessionDescription) {
-                              sessionDescription.sdp = serializeSdp(sessionDescription.sdp);
-                              peer.setLocalDescription(sessionDescription);
-                              if (options.onICESDP) {
-                              options.onICESDP(sessionDescription);
-                              }
-                              }, onSdpError, constraints);
-                            */
-			}
-                    } else {
-			if (!x && options.onICESDP) {
-                            options.onICESDP(peer.localDescription);
-                            //x = 1;
-                            /*
-                              x = 1;
-                              peer.createAnswer(function(sessionDescription) {
-                              sessionDescription.sdp = serializeSdp(sessionDescription.sdp);
-                              peer.setLocalDescription(sessionDescription);
-                              if (options.onICESDP) {
-                              options.onICESDP(sessionDescription);
-                              }
-                              }, onSdpError, constraints);
-                            */
-			}
-                    }
-		}
+            if (options.onICEComplete) {
+                options.onICEComplete();
             }
+	    
+            if (options.type == "offer") {
+                if ((!moz || (!options.sentICESDP && peer.localDescription.sdp.match(/a=candidate/)) && !x && options.onICESDP)) {
+                    options.onICESDP(peer.localDescription);
+                    //x = 1;
+                    /*
+                      x = 1;
+                      peer.createOffer(function(sessionDescription) {
+                      sessionDescription.sdp = serializeSdp(sessionDescription.sdp);
+                      peer.setLocalDescription(sessionDescription);
+                      if (options.onICESDP) {
+                      options.onICESDP(sessionDescription);
+                      }
+                      }, onSdpError, constraints);
+                    */
+                }
+            } else {
+                if (!x && options.onICESDP) {
+                    options.onICESDP(peer.localDescription);
+                    //x = 1;
+                    /*
+                      x = 1;
+                      peer.createAnswer(function(sessionDescription) {
+                      sessionDescription.sdp = serializeSdp(sessionDescription.sdp);
+                      peer.setLocalDescription(sessionDescription);
+                      if (options.onICESDP) {
+                      options.onICESDP(sessionDescription);
+                      }
+                      }, onSdpError, constraints);
+                    */
+                }
+            }
+        }
+
+        peer.onicecandidate = function(event) {
+
+	    if (done) {
+		return;
+	    }
+
+	    if (!gathering) {
+		gathering = setTimeout(ice_handler, 1000);
+	    }
+	    
+	    if (event) {
+		if (event.candidate) {
+		    options.onICE(event.candidate);
+		}
+	    } else {
+		done = true;
+
+		if (gathering) {
+		    clearTimeout(gathering);
+		    gathering = null;
+		}
+
+		ice_handler();
+	    }
         };
-	
+
         // attachStream = MediaStream;
         if (options.attachStream) peer.addStream(options.attachStream);
 
