@@ -886,7 +886,7 @@ static int free_mem(mpool_t *mp_p, void *addr, const unsigned long size)
  * error_p <- Pointer to integer which, if not NULL, will be set with
  * a mpool error code.
  */
-mpool_t *mpool_open(const unsigned int flags, const unsigned int page_size,
+KS_DECLARE(mpool_t *) mpool_open(const unsigned int flags, const unsigned int page_size,
                     void *start_addr, int *error_p)
 {
     mpool_block_t   *block_p;
@@ -1049,7 +1049,7 @@ mpool_t *mpool_open(const unsigned int flags, const unsigned int page_size,
  *
  * mp_p <-> Pointer to our memory pool.
  */
-int mpool_close(mpool_t *mp_p)
+KS_DECLARE(int) mpool_close(mpool_t *mp_p)
 {
     mpool_block_t   *block_p, *next_p;
     void *addr;
@@ -1136,7 +1136,7 @@ int mpool_close(mpool_t *mp_p)
  *
  * mp_p <-> Pointer to our memory pool.
  */
-int mpool_clear(mpool_t *mp_p)
+KS_DECLARE(int) mpool_clear(mpool_t *mp_p)
 {
     mpool_block_t   *block_p;
     int final = MPOOL_ERROR_NONE, bit_n, ret;
@@ -1207,7 +1207,7 @@ int mpool_clear(mpool_t *mp_p)
  * error_p <- Pointer to integer which, if not NULL, will be set with
  * a mpool error code.
  */
-void *mpool_alloc(mpool_t *mp_p, const unsigned long byte_size,
+KS_DECLARE(void *) mpool_alloc(mpool_t *mp_p, const unsigned long byte_size,
                      int *error_p)
 {
     void *addr;
@@ -1274,7 +1274,7 @@ void *mpool_alloc(mpool_t *mp_p, const unsigned long byte_size,
  * error_p <- Pointer to integer which, if not NULL, will be set with
  * a mpool error code.
  */
-void *mpool_calloc(mpool_t *mp_p, const unsigned long ele_n,
+KS_DECLARE(void *) mpool_calloc(mpool_t *mp_p, const unsigned long ele_n,
                       const unsigned long ele_size, int *error_p)
 {
     void *addr;
@@ -1343,7 +1343,7 @@ void *mpool_calloc(mpool_t *mp_p, const unsigned long ele_n,
  *
  * size -> Size of the address being freed.
  */
-int mpool_free(mpool_t *mp_p, void *addr, const unsigned long size)
+KS_DECLARE(int) mpool_free(mpool_t *mp_p, void *addr, const unsigned long size)
 {
     if (mp_p == NULL) {
         /* special case -- do a normal free */
@@ -1402,7 +1402,7 @@ int mpool_free(mpool_t *mp_p, void *addr, const unsigned long size)
  * error_p <- Pointer to integer which, if not NULL, will be set with
  * a mpool error code.
  */
-void *mpool_resize(mpool_t *mp_p, void *old_addr,
+KS_DECLARE(void *) mpool_resize(mpool_t *mp_p, void *old_addr,
                       const unsigned long old_byte_size,
                       const unsigned long new_byte_size,
                       int *error_p)
@@ -1559,7 +1559,7 @@ void *mpool_resize(mpool_t *mp_p, void *old_addr,
  * will be set to the total amount of space (including administrative
  * overhead) used by the pool.
  */
-int mpool_stats(const mpool_t *mp_p, unsigned int *page_size_p,
+KS_DECLARE(int) mpool_stats(const mpool_t *mp_p, unsigned int *page_size_p,
                 unsigned long *num_alloced_p,
                 unsigned long *user_alloced_p,
                 unsigned long *max_alloced_p,
@@ -1605,7 +1605,7 @@ int mpool_stats(const mpool_t *mp_p, unsigned int *page_size_p,
  * log_func -> Log function (defined in mpool.h) which will be called
  * with each mpool transaction.
  */
-int mpool_set_log_func(mpool_t *mp_p, mpool_log_func_t log_func)
+KS_DECLARE(int) mpool_set_log_func(mpool_t *mp_p, mpool_log_func_t log_func)
 {
     if (mp_p == NULL) {
         return MPOOL_ERROR_ARG_NULL;
@@ -1647,7 +1647,7 @@ int mpool_set_log_func(mpool_t *mp_p, mpool_log_func_t log_func)
  *
  * max_pages -> Maximum number of pages used by the library.
  */
-int mpool_set_max_pages(mpool_t *mp_p, const unsigned int max_pages)
+KS_DECLARE(int) mpool_set_max_pages(mpool_t *mp_p, const unsigned int max_pages)
 {
     if (mp_p == NULL) {
         return MPOOL_ERROR_ARG_NULL;
@@ -1690,7 +1690,7 @@ int mpool_set_max_pages(mpool_t *mp_p, const unsigned int max_pages)
  *
  * error -> Error number that we are converting.
  */
-const char  *mpool_strerror(const int error)
+KS_DECLARE(const char *) mpool_strerror(const int error)
 {
     switch (error) {
     case MPOOL_ERROR_NONE:
