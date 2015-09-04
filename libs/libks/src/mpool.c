@@ -265,15 +265,17 @@ static void *alloc_pages(mpool_t *mp_p, const unsigned int page_n,
  
 
     state = MAP_PRIVATE;
+
 #if defined(MAP_FILE)
     state |= MAP_FILE;
 #endif
+
 #if defined(MAP_VARIABLE)
     state |= MAP_VARIABLE;
 #endif
     
     /* mmap from /dev/zero */
-    mem = mmap(mp_p->mp_addr, size, mp_p->mp_mmflags, state,
+    mem = mmap(mp_p->mp_addr, size, PROT_READ | PROT_WRITE, state | mp_p->mp_mmflags,
                mp_p->mp_fd, mp_p->mp_top);
     if (mem == (void *)MAP_FAILED) {
         if (errno == ENOMEM) {
@@ -283,11 +285,12 @@ static void *alloc_pages(mpool_t *mp_p, const unsigned int page_n,
         }
         return NULL;
     }
+
     mp_p->mp_top += size;
+
     if (mp_p->mp_addr != NULL) {
         mp_p->mp_addr = (char *)mp_p->mp_addr + size;
     }
-
   
     mp_p->mp_page_c += page_n;
   
@@ -932,7 +935,7 @@ mpool_t *mpool_open(const unsigned int flags, const unsigned int page_size,
         }
     }
   
-    mp.mp_mmflags = PROT_READ | PROT_WRITE;
+    mp.mp_mmflags = 0;
 
     if (BIT_IS_SET(flags, MPOOL_FLAG_ANONYMOUS)) {
         mp.mp_fd = -1;
@@ -1109,7 +1112,7 @@ int mpool_close(mpool_t *mp_p)
         addr = mp_p;
     }
     size = SIZE_OF_PAGES(mp_p, PAGES_IN_SIZE(mp_p, sizeof(mpool_t)));
-    printf("WTF\n");
+
     (void)munmap(addr, size);
     
   
