@@ -31,4 +31,4 @@ clean: test-clean
 test/testpools: $(MYLIB) test/testpools.c
 	$(CC) $(CXFLAGS) test/testpools.c -Isrc/include/ libks.a -o test/testpools
 
-test: test/testpools
+test-all: test/testpools
