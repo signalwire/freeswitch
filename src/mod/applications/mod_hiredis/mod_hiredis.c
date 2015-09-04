@@ -93,7 +93,7 @@ SWITCH_STANDARD_API(raw_api)
 		data++;
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "hiredis: debug: profile[%s] for command [%s]\n", input, data);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "hiredis: debug: profile[%s] for command [%s]\n", input, data);
 
 	profile = switch_core_hash_find(mod_hiredis_globals.profiles, input);
 
@@ -127,7 +127,7 @@ SWITCH_LIMIT_INCR(hiredis_limit_incr)
 	time_t now = switch_epoch_time_now(NULL);
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
-	if ( !zstr(realm) ) {
+	if ( zstr(realm) ) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "hiredis: realm must be defined\n");
 		switch_goto_status(SWITCH_STATUS_GENERR, done);
 	}
@@ -182,6 +182,11 @@ SWITCH_LIMIT_RELEASE(hiredis_limit_release)
 	
 	if ( !profile ) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "hiredis: Unable to locate profile[%s]\n", realm);
+		switch_goto_status(SWITCH_STATUS_GENERR, done);
+	}
+
+	if ( !realm && !resource ) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "hiredis does not yet support release on NULL realm[%s] and resource[%s]\n", realm, resource);
 		switch_goto_status(SWITCH_STATUS_GENERR, done);
 	}
 
