@@ -114,6 +114,53 @@ extern "C" {
 #include <assert.h>
 
 
+#ifdef WIN32
+#include <winsock2.h>
+#include <windows.h>
+typedef SOCKET ks_socket_t;
+typedef unsigned __int64 uint64_t;
+typedef unsigned __int32 uint32_t;
+typedef unsigned __int16 uint16_t;
+typedef unsigned __int8 uint8_t;
+typedef __int64 int64_t;
+typedef __int32 int32_t;
+typedef __int16 int16_t;
+typedef __int8 int8_t;
+typedef intptr_t ks_ssize_t;
+typedef int ks_filehandle_t;
+#define KS_SOCK_INVALID INVALID_SOCKET
+#define strerror_r(num, buf, size) strerror_s(buf, size, num)
+#if defined(KS_DECLARE_STATIC)
+#define KS_DECLARE(type)			type __stdcall
+#define KS_DECLARE_NONSTD(type)		type __cdecl
+#define KS_DECLARE_DATA
+#elif defined(KS_EXPORTS)
+#define KS_DECLARE(type)			__declspec(dllexport) type __stdcall
+#define KS_DECLARE_NONSTD(type)		__declspec(dllexport) type __cdecl
+#define KS_DECLARE_DATA				__declspec(dllexport)
+#else
+#define KS_DECLARE(type)			__declspec(dllimport) type __stdcall
+#define KS_DECLARE_NONSTD(type)		__declspec(dllimport) type __cdecl
+#define KS_DECLARE_DATA				__declspec(dllimport)
+#endif
+#else // !WIN32
+#define KS_DECLARE(type) type
+#define KS_DECLARE_NONSTD(type) type
+#define KS_DECLARE_DATA
+#include <stdint.h>
+#include <sys/types.h>
+#include <sys/ioctl.h>
+#include <stdarg.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netdb.h>
+#define KS_SOCK_INVALID -1
+typedef int ks_socket_t;
+typedef ssize_t ks_ssize_t;
+typedef int ks_filehandle_t;
+#endif
+
+
 
 #ifdef __cplusplus
 }
