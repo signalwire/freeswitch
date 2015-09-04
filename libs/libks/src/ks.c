@@ -59,6 +59,7 @@
 /* These warnings need to be ignored warning in sdk header */
 #include <Ws2tcpip.h>
 #include <windows.h>
+#pragma comment(lib, "Ws2_32.lib")
 #ifndef errno
 #define errno WSAGetLastError()
 #endif

@@ -57,6 +57,9 @@
 
 #if defined(_MSC_VER) || defined(__MINGW32__)
 /* provide gettimeofday() missing in Windows */
+#ifdef _MSC_VER
+#pragma comment(lib, "Winmm.lib")
+#endif
 int gettimeofday(struct timeval *tp, void *tzp) {
     DWORD t;
 

@@ -37,7 +37,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#ifndef _MSC_VER
+#ifdef _MSC_VER
+#include <io.h>
+#ifndef open
+#define open _open
+#endif
+#ifndef close
+#define close _close
+#endif
+#else
 #include <unistd.h>
 #endif
 #include <sys/mman.h>
@@ -66,6 +74,18 @@ static	unsigned int	min_bit_free_next = 0;	/* min size of next pnt */
 static	unsigned int	min_bit_free_size = 0;	/* min size of next + size */
 static	unsigned long	bit_array[MAX_BITS + 1]; /* size -> bit */
 
+#ifdef _MSC_VER
+#include <Windows.h>
+long getpagesize(void) {
+	static long g_pagesize = 0;
+	if (!g_pagesize) {
+		SYSTEM_INFO system_info;
+		GetSystemInfo(&system_info);
+		g_pagesize = system_info.dwPageSize;
+	}
+	return g_pagesize;
+}
+#endif
 /****************************** local utilities ******************************/
 
 /*
