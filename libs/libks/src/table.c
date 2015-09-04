@@ -43,8 +43,12 @@
 #include <io.h>
 #include <malloc.h>
 #define NO_MMAP
+#ifndef open
 #define open _open
-
+#endif
+#ifndef fdopen
+#define fdopen _fdopen
+#endif
 #endif
 
 #ifndef NO_MMAP

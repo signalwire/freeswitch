@@ -247,8 +247,8 @@ static	unsigned long	bits_to_size(const int bit_n)
 static	void	*alloc_pages(mpool_t *mp_p, const unsigned int page_n,
 							 int *error_p)
 {
-	void		*mem, *fill_mem;
-	unsigned long	size, fill;
+	void		*mem;
+	unsigned long	size;
 	int		state;
   
 	/* are we over our max-pages? */
