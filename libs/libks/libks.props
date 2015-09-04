@@ -7,6 +7,7 @@
     <ClCompile>
       <PreprocessorDefinitions>SIMCLIST_NO_DUMPRESTORE;_CRT_SECURE_NO_WARNINGS;KS_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(ProjectDir)\src\include;$(ProjectDir)\src\win\sys;$(ProjectDir)\src\win;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <DisableSpecificWarnings>4574;4100;4127;4668;4255;4706;4710;4820</DisableSpecificWarnings>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup />

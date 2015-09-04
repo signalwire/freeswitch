@@ -83,5 +83,11 @@
     <ClInclude Include="src\win\mman.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\include\ks_types.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\include\ks_platform.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
