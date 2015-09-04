@@ -243,56 +243,32 @@ static	void	*alloc_pages(mpool_t *mp_p, const unsigned int page_n,
 	(void)printf("allocating %u pages or %lu bytes\n", page_n, size);
 #endif
  
-	if (BIT_IS_SET(mp_p->mp_flags, MPOOL_FLAG_USE_SBRK)) {
-#ifndef WIN32
-		mem = sbrk(size);
-		if (mem == (void *)-1) {
-			SET_POINTER(error_p, MPOOL_ERROR_NO_MEM);
-			return NULL;
-		}
-		fill = (unsigned long)mem % mp_p->mp_page_size;
-    
-		if (fill > 0) {
-			fill = mp_p->mp_page_size - fill;
-			fill_mem = sbrk(fill);
-			if (fill_mem == (void *)-1) {
-				SET_POINTER(error_p, MPOOL_ERROR_NO_MEM);
-				return NULL;
-			}
-			if ((char *)fill_mem != (char *)mem + size) {
-				SET_POINTER(error_p, MPOOL_ERROR_SBRK_CONTIG);
-				return NULL;
-			}
-			mem = (char *)mem + fill;
-		}
-#endif
-	}
-	else {
-		state = MAP_PRIVATE;
+
+	state = MAP_PRIVATE;
 #ifdef MAP_FILE
-		state |= MAP_FILE;
+	state |= MAP_FILE;
 #endif
 #ifdef MAP_VARIABLE
-		state |= MAP_VARIABLE;
+	state |= MAP_VARIABLE;
 #endif
     
-		/* mmap from /dev/zero */
-		mem = mmap(mp_p->mp_addr, size, mp_p->mp_mmflags, state,
-				   mp_p->mp_fd, mp_p->mp_top);
-		if (mem == (void *)MAP_FAILED) {
-			if (errno == ENOMEM) {
-				SET_POINTER(error_p, MPOOL_ERROR_NO_MEM);
-			}
-			else {
-				SET_POINTER(error_p, MPOOL_ERROR_MMAP);
-			}
-			return NULL;
+	/* mmap from /dev/zero */
+	mem = mmap(mp_p->mp_addr, size, mp_p->mp_mmflags, state,
+			   mp_p->mp_fd, mp_p->mp_top);
+	if (mem == (void *)MAP_FAILED) {
+		if (errno == ENOMEM) {
+			SET_POINTER(error_p, MPOOL_ERROR_NO_MEM);
 		}
-		mp_p->mp_top += size;
-		if (mp_p->mp_addr != NULL) {
-			mp_p->mp_addr = (char *)mp_p->mp_addr + size;
+		else {
+			SET_POINTER(error_p, MPOOL_ERROR_MMAP);
 		}
+		return NULL;
 	}
+	mp_p->mp_top += size;
+	if (mp_p->mp_addr != NULL) {
+		mp_p->mp_addr = (char *)mp_p->mp_addr + size;
+	}
+
   
 	mp_p->mp_page_c += page_n;
   
@@ -321,13 +297,10 @@ static	void	*alloc_pages(mpool_t *mp_p, const unsigned int page_n,
  *
  * sbrk_b -> Set to one if the pages were allocated with sbrk else mmap.
  */
-static	int	free_pages(void *pages, const unsigned long size,
-					   const int sbrk_b)
+static	int	free_pages(void *pages, const unsigned long size)
+					   
 {
-	if (! sbrk_b) {
-		(void)munmap(pages, size);
-	}
-  
+	(void)munmap(pages, size);  
 	return MPOOL_ERROR_NONE;
 }
 
@@ -887,7 +860,6 @@ static	int	free_mem(mpool_t *mp_p, void *addr, const unsigned long size)
  * multiple of the getpagesize() value.  Set to 0 for the default.
  *
  * start_addr -> Starting address to try and allocate memory pools.
- * This is ignored if the MPOOL_FLAG_USE_SBRK is enabled.
  *
  * error_p <- Pointer to integer which, if not NULL, will be set with
  * a mpool error code.
@@ -943,27 +915,21 @@ mpool_t	*mpool_open(const unsigned int flags, const unsigned int page_size,
   
 	mp.mp_mmflags = PROT_READ | PROT_WRITE;
 
-	if (BIT_IS_SET(flags, MPOOL_FLAG_USE_SBRK)) {
+	if (BIT_IS_SET(flags, MPOOL_FLAG_ANONYMOUS)) {
 		mp.mp_fd = -1;
-		mp.mp_addr = NULL;
-		mp.mp_top = 0;
-	}
-	else {
-		if (BIT_IS_SET(flags, MPOOL_FLAG_ANONYMOUS)) {
-			mp.mp_fd = -1;
-			mp.mp_mmflags |= MAP_ANONYMOUS;
-		} else {
-			/* open dev-zero for our mmaping */
-			mp.mp_fd = open("/dev/zero", O_RDWR, 0);
-			if (mp.mp_fd < 0) {
-				SET_POINTER(error_p, MPOOL_ERROR_OPEN_ZERO);
-				return NULL;
-			}
+		mp.mp_mmflags |= MAP_ANON;
+	} else {
+		/* open dev-zero for our mmaping */
+		mp.mp_fd = open("/dev/zero", O_RDWR, 0);
+		if (mp.mp_fd < 0) {
+			SET_POINTER(error_p, MPOOL_ERROR_OPEN_ZERO);
+			return NULL;
 		}
-		mp.mp_addr = start_addr;
-		/* we start at the front of the file */
-		mp.mp_top = 0;
 	}
+	mp.mp_addr = start_addr;
+	/* we start at the front of the file */
+	mp.mp_top = 0;
+
   
 	/*
 	 * Find out how many pages we need for our mpool structure.
@@ -1012,8 +978,8 @@ mpool_t	*mpool_open(const unsigned int flags, const unsigned int page_size,
 				mp.mp_fd = -1;
 			}
 			/* NOTE: after this line mp_p will be invalid */
-			(void)free_pages(block_p, SIZE_OF_PAGES(&mp, page_n),
-							 BIT_IS_SET(flags, MPOOL_FLAG_USE_SBRK));
+			(void)free_pages(block_p, SIZE_OF_PAGES(&mp, page_n));
+							 
 			SET_POINTER(error_p, ret);
 			return NULL;
 		}
@@ -1099,8 +1065,8 @@ int	mpool_close(mpool_t *mp_p)
 		block_p->mb_magic2 = 0;
 		/* record the next pointer because it might be invalidated below */
 		next_p = block_p->mb_next_p;
-		ret = free_pages(block_p, (char *)block_p->mb_bounds_p - (char *)block_p,
-						 BIT_IS_SET(mp_p->mp_flags, MPOOL_FLAG_USE_SBRK));
+		ret = free_pages(block_p, (char *)block_p->mb_bounds_p - (char *)block_p);
+						 
 		if (ret != MPOOL_ERROR_NONE) {
 			final = ret;
 		}
@@ -1116,20 +1082,17 @@ int	mpool_close(mpool_t *mp_p)
 	mp_p->mp_magic = 0;
 	mp_p->mp_magic2 = 0;
   
-	/* last we munmap the mpool pointer itself */
-	if (! BIT_IS_SET(mp_p->mp_flags, MPOOL_FLAG_USE_SBRK)) {
-    
-		/* if we are heavy packing then we need to free the 1st block later */
-		if (BIT_IS_SET(mp_p->mp_flags, MPOOL_FLAG_HEAVY_PACKING)) {
-			addr = (char *)mp_p - sizeof(mpool_block_t);
-		}
-		else {
-			addr = mp_p;
-		}
-		size = SIZE_OF_PAGES(mp_p, PAGES_IN_SIZE(mp_p, sizeof(mpool_t)));
-    
-		(void)munmap(addr, size);
+	/* if we are heavy packing then we need to free the 1st block later */
+	if (BIT_IS_SET(mp_p->mp_flags, MPOOL_FLAG_HEAVY_PACKING)) {
+		addr = (char *)mp_p - sizeof(mpool_block_t);
 	}
+	else {
+		addr = mp_p;
+	}
+	size = SIZE_OF_PAGES(mp_p, PAGES_IN_SIZE(mp_p, sizeof(mpool_t)));
+    
+	(void)munmap(addr, size);
+	
   
 	return final;
 }
@@ -1758,9 +1721,6 @@ const char	*mpool_strerror(const int error)
 		break;
 	case MPOOL_ERROR_FREE_ADDR:
 		return "invalid internal free address";
-		break;
-	case MPOOL_ERROR_SBRK_CONTIG:
-		return "sbrk did not return contiguous memory";
 		break;
 	case MPOOL_ERROR_NO_PAGES:
 		return "no available pages left in pool";

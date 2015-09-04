@@ -34,7 +34,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#ifdef unix
+#if defined(unix) || defined(__APPLE__)
 
 #include <unistd.h>
 

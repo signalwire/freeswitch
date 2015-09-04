@@ -61,15 +61,9 @@
 #define MPOOL_FLAG_HEAVY_PACKING	(1<<2)
 
 /*
- * Use sbrk not mmap to allocate pages.  This is not recommended for
- * normal use.
- */
-#define MPOOL_FLAG_USE_SBRK		(1<<3)
-
-/*
  * Use MMAP_ANONYMOUS instead of /dev/zero
  */
-#define MPOOL_FLAG_ANONYMOUS		(1<<4)
+#define MPOOL_FLAG_ANONYMOUS		(1<<3)
 
 /*
  * Mpool error codes
@@ -91,7 +85,7 @@
 #define MPOOL_ERROR_IS_FREE	15	/* memory block already free */
 #define MPOOL_ERROR_BLOCK_STAT	16	/* invalid internal block status */
 #define MPOOL_ERROR_FREE_ADDR	17	/* invalid internal free address */
-#define MPOOL_ERROR_SBRK_CONTIG	18	/* sbrk did not return contiguous mem*/
+#define MPOOL_ERROR_UNUSED		18	/* UNUSED */
 #define MPOOL_ERROR_NO_PAGES	19	/* ran out of pages in pool */
 #define MPOOL_ERROR_ALLOC	20	/* calloc,malloc,free,realloc failed */
 #define MPOOL_ERROR_PNT_OVER	21	/* pointer structure was overwritten */
