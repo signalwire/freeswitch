@@ -37,7 +37,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#ifndef _MSC_VER
 #include <unistd.h>
+#endif
 #include <sys/mman.h>
 
 #ifdef DMALLOC
@@ -240,8 +242,9 @@ static	void	*alloc_pages(mpool_t *mp_p, const unsigned int page_n,
 #ifdef DEBUG
 	(void)printf("allocating %u pages or %lu bytes\n", page_n, size);
 #endif
-  
+ 
 	if (BIT_IS_SET(mp_p->mp_flags, MPOOL_FLAG_USE_SBRK)) {
+#ifndef WIN32
 		mem = sbrk(size);
 		if (mem == (void *)-1) {
 			SET_POINTER(error_p, MPOOL_ERROR_NO_MEM);
@@ -262,6 +265,7 @@ static	void	*alloc_pages(mpool_t *mp_p, const unsigned int page_n,
 			}
 			mem = (char *)mem + fill;
 		}
+#endif
 	}
 	else {
 		state = MAP_PRIVATE;
@@ -273,7 +277,7 @@ static	void	*alloc_pages(mpool_t *mp_p, const unsigned int page_n,
 #endif
     
 		/* mmap from /dev/zero */
-		mem = mmap((caddr_t)mp_p->mp_addr, size, mp_p->mp_mmflags, state,
+		mem = mmap(mp_p->mp_addr, size, mp_p->mp_mmflags, state,
 				   mp_p->mp_fd, mp_p->mp_top);
 		if (mem == (void *)MAP_FAILED) {
 			if (errno == ENOMEM) {
@@ -321,7 +325,7 @@ static	int	free_pages(void *pages, const unsigned long size,
 					   const int sbrk_b)
 {
 	if (! sbrk_b) {
-		(void)munmap((caddr_t)pages, size);
+		(void)munmap(pages, size);
 	}
   
 	return MPOOL_ERROR_NONE;
@@ -1124,7 +1128,7 @@ int	mpool_close(mpool_t *mp_p)
 		}
 		size = SIZE_OF_PAGES(mp_p, PAGES_IN_SIZE(mp_p, sizeof(mpool_t)));
     
-		(void)munmap((caddr_t)addr, size);
+		(void)munmap(addr, size);
 	}
   
 	return final;

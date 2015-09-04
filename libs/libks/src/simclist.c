@@ -29,6 +29,8 @@
 /* not in Windows! */
 #   include <unistd.h>
 #   include <stdint.h>
+#else
+#include <Windows.h>
 #endif
 #ifndef SIMCLIST_NO_DUMPRESTORE
 /* includes for dump/restore */

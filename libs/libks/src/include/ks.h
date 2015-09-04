@@ -160,8 +160,10 @@ typedef enum {
 #ifndef strncasecmp
 #define strncasecmp(s1, s2, n) _strnicmp(s1, s2, n)
 #endif
+#if (_MSC_VER < 1900)			/* VC 2015 */
 #ifndef snprintf
 #define snprintf _snprintf
+#endif
 #endif
 #ifndef S_IRUSR
 #define S_IRUSR _S_IREAD
