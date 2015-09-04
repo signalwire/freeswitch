@@ -20,7 +20,15 @@ $(MYLIB): $(OBJS) $(HEADERS) $(SRC)
 	ranlib $(MYLIB)
 
 %.o: %.c $(HEADERS)
-	$(CC) $(CC_CFLAGS) $(CFLAGS) -c $< -o $@
+	$(CC) $(CC_CFLAGS) $(CFLAGS) $(CXFLAGS) -c $< -o $@
 
-clean:
+test-clean:
+	rm -f test/testpools
+
+clean: test-clean
 	rm -f *.o src/*.o libks.a *~ src/*~ src/include/*~
+
+test/testpools: $(MYLIB) test/testpools.c
+	$(CC) $(CXFLAGS) test/testpools.c -Isrc/include/ libks.a -o test/testpools
+
+test: test/testpools
