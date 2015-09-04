@@ -43,12 +43,12 @@
 #define BIT_IS_SET(v,f)		((v) & (f))
 #define BIT_TOGGLE(v,f)		(v) ^= (f)
 
-#define SET_POINTER(pnt, val) \
-	do { \
-	  if ((pnt) != NULL) { \
-	    (*(pnt)) = (val); \
-          } \
-        } while(0)
+#define SET_POINTER(pnt, val)					\
+	do {										\
+		if ((pnt) != NULL) {					\
+			(*(pnt)) = (val);					\
+		}										\
+	} while(0)
 
 #define BLOCK_FLAG_USED		BIT_FLAG(0)		/* block is used */
 #define BLOCK_FLAG_FREE		BIT_FLAG(1)		/* block is free */
@@ -56,39 +56,39 @@
 #define DEFAULT_PAGE_MULT		16   /* pagesize = this * getpagesize*/
 
 /* How many pages SIZE bytes resides in.  We add in the block header. */
-#define PAGES_IN_SIZE(mp_p, size)	(((size) + sizeof(mpool_block_t) + \
-					  (mp_p)->mp_page_size - 1) / \
-					 (mp_p)->mp_page_size)
+#define PAGES_IN_SIZE(mp_p, size)	(((size) + sizeof(mpool_block_t) +	\
+									  (mp_p)->mp_page_size - 1) /		\
+									 (mp_p)->mp_page_size)
 #define SIZE_OF_PAGES(mp_p, page_n)	((page_n) * (mp_p)->mp_page_size)
 #define MAX_BITS	30		/* we only can allocate 1gb chunks */
 
 #define MAX_BLOCK_USER_MEMORY(mp_p)	((mp_p)->mp_page_size - \
-					 sizeof(mpool_block_t))
-#define FIRST_ADDR_IN_BLOCK(block_p)	(void *)((char *)(block_p) + \
-						 sizeof(mpool_block_t))
-#define MEMORY_IN_BLOCK(block_p)	((char *)(block_p)->mb_bounds_p - \
-					 ((char *)(block_p) + \
-					  sizeof(mpool_block_t)))
+									 sizeof(mpool_block_t))
+#define FIRST_ADDR_IN_BLOCK(block_p)	(void *)((char *)(block_p) +	\
+												 sizeof(mpool_block_t))
+#define MEMORY_IN_BLOCK(block_p)	((char *)(block_p)->mb_bounds_p -	\
+									 ((char *)(block_p) +				\
+									  sizeof(mpool_block_t)))
 
 typedef struct {
-  unsigned int		mp_magic;	/* magic number for struct */
-  unsigned int		mp_flags;	/* flags for the struct */
-  unsigned long		mp_alloc_c;	/* number of allocations */
-  unsigned long		mp_user_alloc;	/* user bytes allocated */
-  unsigned long		mp_max_alloc;	/* maximum user bytes allocated */
-  unsigned int		mp_page_c;	/* number of pages allocated */
-  unsigned int		mp_max_pages;	/* maximum number of pages to use */
-  unsigned int		mp_page_size;	/* page-size of our system */
-  int			mp_fd;		/* fd for /dev/zero if mmap-ing */
-  off_t			mp_top;		/* top of our allocations in fd */ 
-  mpool_log_func_t	mp_log_func;	/* log callback function */
-  void			*mp_addr;	/* current address for mmaping */
-  void			*mp_min_p;	/* min address in pool for checks */
-  void			*mp_bounds_p;	/* max address in pool for checks */
-  struct mpool_block_st	*mp_first_p;	/* first memory block we are using */
-  struct mpool_block_st	*mp_last_p;	/* last memory block we are using */
-  struct mpool_block_st	*mp_free[MAX_BITS + 1]; /* free lists based on size */
-  unsigned int		mp_magic2;	/* upper magic for overwrite sanity */
+	unsigned int		mp_magic;	/* magic number for struct */
+	unsigned int		mp_flags;	/* flags for the struct */
+	unsigned long		mp_alloc_c;	/* number of allocations */
+	unsigned long		mp_user_alloc;	/* user bytes allocated */
+	unsigned long		mp_max_alloc;	/* maximum user bytes allocated */
+	unsigned int		mp_page_c;	/* number of pages allocated */
+	unsigned int		mp_max_pages;	/* maximum number of pages to use */
+	unsigned int		mp_page_size;	/* page-size of our system */
+	int			mp_fd;		/* fd for /dev/zero if mmap-ing */
+	off_t			mp_top;		/* top of our allocations in fd */ 
+	mpool_log_func_t	mp_log_func;	/* log callback function */
+	void			*mp_addr;	/* current address for mmaping */
+	void			*mp_min_p;	/* min address in pool for checks */
+	void			*mp_bounds_p;	/* max address in pool for checks */
+	struct mpool_block_st	*mp_first_p;	/* first memory block we are using */
+	struct mpool_block_st	*mp_last_p;	/* last memory block we are using */
+	struct mpool_block_st	*mp_free[MAX_BITS + 1]; /* free lists based on size */
+	unsigned int		mp_magic2;	/* upper magic for overwrite sanity */
 } mpool_t;
 
 /* for debuggers to be able to interrogate the generic type in the .h file */
@@ -99,18 +99,29 @@ typedef mpool_t	mpool_ext_t;
  * aligned.
  */
 typedef struct mpool_block_st {
-  unsigned int		mb_magic;	/* magic number for block header */
-  void			*mb_bounds_p;	/* block boundary location */
-  struct mpool_block_st	*mb_next_p;	/* linked list next pointer */
-  unsigned int		mb_magic2;	/* upper magic for overwrite sanity */
+	unsigned int		mb_magic;	/* magic number for block header */
+	void			*mb_bounds_p;	/* block boundary location */
+	struct mpool_block_st	*mb_next_p;	/* linked list next pointer */
+	unsigned int		mb_magic2;	/* upper magic for overwrite sanity */
 } mpool_block_t;
 
 /*
  * Free list structure.
  */
 typedef struct {
-  void			*mf_next_p;	/* pointer to the next free address */
-  unsigned long		mf_size;	/* size of the free block */
+	void			*mf_next_p;	/* pointer to the next free address */
+	unsigned long		mf_size;	/* size of the free block */
 } mpool_free_t;
 
 #endif /* ! __MPOOL_LOC_H__ */
+
+/* For Emacs:
+ * Local Variables:
+ * mode:c
+ * indent-tabs-mode:t
+ * tab-width:4
+ * c-basic-offset:4
+ * End:
+ * For VIM:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet:
+ */
