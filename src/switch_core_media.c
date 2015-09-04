@@ -2014,7 +2014,7 @@ static void check_jb_sync(switch_core_session_t *session)
 						  jb_sync_msec, frames, fps);
 		
 		switch_rtp_set_video_buffer_size(v_engine->rtp_session, frames);
-		check_jb(session, NULL, jb_sync_msec, jb_sync_msec);
+		check_jb(session, NULL, jb_sync_msec, jb_sync_msec * 4);
 	}
 }
 
