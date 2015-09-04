@@ -413,6 +413,7 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
         function stopConference() {
           console.log('stopConference()');
           if (data.liveArray) {
+            data.liveArray.destroy();
             console.log('Has data.liveArray.');
             $rootScope.$emit('members.clear');
             data.liveArray = null;
@@ -504,6 +505,7 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
                   cleanShareCall(that);
                 } else {
                   if (data.conf) {
+                    data.liveArray.destroy();  
                     data.conf.destroy();
                   }
                   cleanCall();
