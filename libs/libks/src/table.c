@@ -68,7 +68,7 @@
 #endif
 
 static	char	*rcs_id =
-  "$Id: table.c,v 1.19 2000/03/09 03:30:41 gray Exp $";
+	"$Id: table.c,v 1.19 2000/03/09 03:30:41 gray Exp $";
 
 /*
  * Version id for the library.  You also need to add an entry to the
@@ -100,24 +100,24 @@ static char *version_id = "$TableVersion: 4.3.0 March 8, 2000 $";
  * and then find the corresponding entry.
  */
 static	table_entry_t	*first_entry(const table_t *table_p,
-				     table_linear_t *linear_p)
+									 table_linear_t *linear_p)
 {
-  table_entry_t	*entry_p;
-  unsigned int	bucket_c = 0;
+	table_entry_t	*entry_p;
+	unsigned int	bucket_c = 0;
   
-  /* look for the first non-empty bucket */
-  for (bucket_c = 0; bucket_c < table_p->ta_bucket_n; bucket_c++) {
-    entry_p = table_p->ta_buckets[bucket_c];
-    if (entry_p != NULL) {
-      if (linear_p != NULL) {
-	linear_p->tl_bucket_c = bucket_c;
-	linear_p->tl_entry_c = 0;
-      }
-      return TABLE_POINTER(table_p, table_entry_t *, entry_p);
-    }
-  }
+	/* look for the first non-empty bucket */
+	for (bucket_c = 0; bucket_c < table_p->ta_bucket_n; bucket_c++) {
+		entry_p = table_p->ta_buckets[bucket_c];
+		if (entry_p != NULL) {
+			if (linear_p != NULL) {
+				linear_p->tl_bucket_c = bucket_c;
+				linear_p->tl_entry_c = 0;
+			}
+			return TABLE_POINTER(table_p, table_entry_t *, entry_p);
+		}
+	}
   
-  return NULL;
+	return NULL;
 }
 
 /*
@@ -145,59 +145,59 @@ static	table_entry_t	*first_entry(const table_t *table_p,
  * will contain a table error code.
  */
 static	table_entry_t	*next_entry(const table_t *table_p,
-				    table_linear_t *linear_p, int *error_p)
+									table_linear_t *linear_p, int *error_p)
 {
-  table_entry_t	*entry_p;
-  int		entry_c;
+	table_entry_t	*entry_p;
+	int		entry_c;
   
-  /* can't next if we haven't first-ed */
-  if (linear_p == NULL) {
-    SET_POINTER(error_p, TABLE_ERROR_LINEAR);
-    return NULL;
-  }
+	/* can't next if we haven't first-ed */
+	if (linear_p == NULL) {
+		SET_POINTER(error_p, TABLE_ERROR_LINEAR);
+		return NULL;
+	}
   
-  if (linear_p->tl_bucket_c >= table_p->ta_bucket_n) {
-    /*
-     * NOTE: this might happen if we delete an item which shortens the
-     * table bucket numbers.
-     */
-    SET_POINTER(error_p, TABLE_ERROR_NOT_FOUND);
-    return NULL;
-  }
+	if (linear_p->tl_bucket_c >= table_p->ta_bucket_n) {
+		/*
+		 * NOTE: this might happen if we delete an item which shortens the
+		 * table bucket numbers.
+		 */
+		SET_POINTER(error_p, TABLE_ERROR_NOT_FOUND);
+		return NULL;
+	}
   
-  linear_p->tl_entry_c++;
+	linear_p->tl_entry_c++;
   
-  /* find the entry which is the nth in the list */
-  entry_p = table_p->ta_buckets[linear_p->tl_bucket_c];
-  /* NOTE: we swap the order here to be more efficient */
-  for (entry_c = linear_p->tl_entry_c; entry_c > 0; entry_c--) {
-    /* did we reach the end of the list? */
-    if (entry_p == NULL) {
-      break;
-    }
-    entry_p = TABLE_POINTER(table_p, table_entry_t *, entry_p)->te_next_p;
-  }
+	/* find the entry which is the nth in the list */
+	entry_p = table_p->ta_buckets[linear_p->tl_bucket_c];
+	/* NOTE: we swap the order here to be more efficient */
+	for (entry_c = linear_p->tl_entry_c; entry_c > 0; entry_c--) {
+		/* did we reach the end of the list? */
+		if (entry_p == NULL) {
+			break;
+		}
+		entry_p = TABLE_POINTER(table_p, table_entry_t *, entry_p)->te_next_p;
+	}
   
-  /* did we find an entry in the current bucket? */
-  if (entry_p != NULL) {
-    SET_POINTER(error_p, TABLE_ERROR_NONE);
-    return TABLE_POINTER(table_p, table_entry_t *, entry_p);
-  }
+	/* did we find an entry in the current bucket? */
+	if (entry_p != NULL) {
+		SET_POINTER(error_p, TABLE_ERROR_NONE);
+		return TABLE_POINTER(table_p, table_entry_t *, entry_p);
+	}
   
-  /* find the first entry in the next non-empty bucket */
+	/* find the first entry in the next non-empty bucket */
   
-  linear_p->tl_entry_c = 0;
-  for (linear_p->tl_bucket_c++; linear_p->tl_bucket_c < table_p->ta_bucket_n;
-       linear_p->tl_bucket_c++) {
-    entry_p = table_p->ta_buckets[linear_p->tl_bucket_c];
-    if (entry_p != NULL) {
-      SET_POINTER(error_p, TABLE_ERROR_NONE);
-      return TABLE_POINTER(table_p, table_entry_t *, entry_p);
-    }
-  }
+	linear_p->tl_entry_c = 0;
+	for (linear_p->tl_bucket_c++; linear_p->tl_bucket_c < table_p->ta_bucket_n;
+		 linear_p->tl_bucket_c++) {
+		entry_p = table_p->ta_buckets[linear_p->tl_bucket_c];
+		if (entry_p != NULL) {
+			SET_POINTER(error_p, TABLE_ERROR_NONE);
+			return TABLE_POINTER(table_p, table_entry_t *, entry_p);
+		}
+	}
   
-  SET_POINTER(error_p, TABLE_ERROR_NOT_FOUND);
-  return NULL;
+	SET_POINTER(error_p, TABLE_ERROR_NOT_FOUND);
+	return NULL;
 }
 
 /*
@@ -225,48 +225,48 @@ static	table_entry_t	*next_entry(const table_t *table_p,
  * will contain a table error code.
  */
 static	table_entry_t	*this_entry(const table_t *table_p,
-				    const table_linear_t *linear_p,
-				    int *error_p)
+									const table_linear_t *linear_p,
+									int *error_p)
 {
-  table_entry_t	*entry_p;
-  int		entry_c;
+	table_entry_t	*entry_p;
+	int		entry_c;
   
-  /* can't next if we haven't first-ed */
-  if (linear_p == NULL) {
-    SET_POINTER(error_p, TABLE_ERROR_LINEAR);
-    return NULL;
-  }
+	/* can't next if we haven't first-ed */
+	if (linear_p == NULL) {
+		SET_POINTER(error_p, TABLE_ERROR_LINEAR);
+		return NULL;
+	}
   
-  if (linear_p->tl_bucket_c >= table_p->ta_bucket_n) {
-    /*
-     * NOTE: this might happen if we delete an item which shortens the
-     * table bucket numbers.
-     */
-    SET_POINTER(error_p, TABLE_ERROR_NOT_FOUND);
-    return NULL;
-  }
+	if (linear_p->tl_bucket_c >= table_p->ta_bucket_n) {
+		/*
+		 * NOTE: this might happen if we delete an item which shortens the
+		 * table bucket numbers.
+		 */
+		SET_POINTER(error_p, TABLE_ERROR_NOT_FOUND);
+		return NULL;
+	}
   
-  /* find the entry which is the nth in the list */
-  entry_p = table_p->ta_buckets[linear_p->tl_bucket_c];
+	/* find the entry which is the nth in the list */
+	entry_p = table_p->ta_buckets[linear_p->tl_bucket_c];
   
-  /* NOTE: we swap the order here to be more efficient */
-  for (entry_c = linear_p->tl_entry_c; entry_c > 0; entry_c--) {
-    /* did we reach the end of the list? */
-    if (entry_p == NULL) {
-      break;
-    }
-    entry_p = TABLE_POINTER(table_p, table_entry_t *, entry_p)->te_next_p;
-  }
+	/* NOTE: we swap the order here to be more efficient */
+	for (entry_c = linear_p->tl_entry_c; entry_c > 0; entry_c--) {
+		/* did we reach the end of the list? */
+		if (entry_p == NULL) {
+			break;
+		}
+		entry_p = TABLE_POINTER(table_p, table_entry_t *, entry_p)->te_next_p;
+	}
   
-  /* did we find an entry in the current bucket? */
-  if (entry_p == NULL) {
-    SET_POINTER(error_p, TABLE_ERROR_NOT_FOUND);
-    return NULL;
-  }
-  else {
-    SET_POINTER(error_p, TABLE_ERROR_NONE);
-    return TABLE_POINTER(table_p, table_entry_t *, entry_p);
-  }
+	/* did we find an entry in the current bucket? */
+	if (entry_p == NULL) {
+		SET_POINTER(error_p, TABLE_ERROR_NOT_FOUND);
+		return NULL;
+	}
+	else {
+		SET_POINTER(error_p, TABLE_ERROR_NONE);
+		return TABLE_POINTER(table_p, table_entry_t *, entry_p);
+	}
 }
 
 /*
@@ -307,67 +307,67 @@ static	table_entry_t	*this_entry(const table_t *table_p,
  * for (i=0, h=0; i<N; ++i) h = hash( keys[i], len[i], h);
  */
 static	unsigned int	hash(const unsigned char *key,
-			     const unsigned int length,
-			     const unsigned int init_val)
+							 const unsigned int length,
+							 const unsigned int init_val)
 {
-  const unsigned char	*key_p = key;
-  unsigned int		a, b, c, len;
+	const unsigned char	*key_p = key;
+	unsigned int		a, b, c, len;
   
-  /* set up the internal state */
-  a = 0x9e3779b9;	/* the golden ratio; an arbitrary value */
-  b = 0x9e3779b9;
-  c = init_val;		/* the previous hash value */
+	/* set up the internal state */
+	a = 0x9e3779b9;	/* the golden ratio; an arbitrary value */
+	b = 0x9e3779b9;
+	c = init_val;		/* the previous hash value */
   
-  /* handle most of the key */
-  for (len = length; len >= 12; len -= 12) {
-    a += (key_p[0]
-	  + ((unsigned int)key_p[1] << 8)
-	  + ((unsigned int)key_p[2] << 16)
-	  + ((unsigned int)key_p[3] << 24));
-    b += (key_p[4]
-	  + ((unsigned int)key_p[5] << 8)
-	  + ((unsigned int)key_p[6] << 16)
-	  + ((unsigned int)key_p[7] << 24));
-    c += (key_p[8]
-	  + ((unsigned int)key_p[9] << 8)
-	  + ((unsigned int)key_p[10] << 16)
-	  + ((unsigned int)key_p[11] << 24));
-    HASH_MIX(a,b,c);
-    key_p += 12;
-  }
+	/* handle most of the key */
+	for (len = length; len >= 12; len -= 12) {
+		a += (key_p[0]
+			  + ((unsigned int)key_p[1] << 8)
+			  + ((unsigned int)key_p[2] << 16)
+			  + ((unsigned int)key_p[3] << 24));
+		b += (key_p[4]
+			  + ((unsigned int)key_p[5] << 8)
+			  + ((unsigned int)key_p[6] << 16)
+			  + ((unsigned int)key_p[7] << 24));
+		c += (key_p[8]
+			  + ((unsigned int)key_p[9] << 8)
+			  + ((unsigned int)key_p[10] << 16)
+			  + ((unsigned int)key_p[11] << 24));
+		HASH_MIX(a,b,c);
+		key_p += 12;
+	}
   
-  c += length;
+	c += length;
   
-  /* all the case statements fall through to the next */
-  switch(len) {
-  case 11:
-    c += ((unsigned int)key_p[10] << 24);
-  case 10:
-    c += ((unsigned int)key_p[9] << 16);
-  case 9:
-    c += ((unsigned int)key_p[8] << 8);
-    /* the first byte of c is reserved for the length */
-  case 8:
-    b += ((unsigned int)key_p[7] << 24);
-  case 7:
-    b += ((unsigned int)key_p[6] << 16);
-  case 6:
-    b += ((unsigned int)key_p[5] << 8);
-  case 5:
-    b += key_p[4];
-  case 4:
-    a += ((unsigned int)key_p[3] << 24);
-  case 3:
-    a += ((unsigned int)key_p[2] << 16);
-  case 2:
-    a += ((unsigned int)key_p[1] << 8);
-  case 1:
-    a += key_p[0];
-    /* case 0: nothing left to add */
-  }
-  HASH_MIX(a, b, c);
+	/* all the case statements fall through to the next */
+	switch(len) {
+	case 11:
+		c += ((unsigned int)key_p[10] << 24);
+	case 10:
+		c += ((unsigned int)key_p[9] << 16);
+	case 9:
+		c += ((unsigned int)key_p[8] << 8);
+		/* the first byte of c is reserved for the length */
+	case 8:
+		b += ((unsigned int)key_p[7] << 24);
+	case 7:
+		b += ((unsigned int)key_p[6] << 16);
+	case 6:
+		b += ((unsigned int)key_p[5] << 8);
+	case 5:
+		b += key_p[4];
+	case 4:
+		a += ((unsigned int)key_p[3] << 24);
+	case 3:
+		a += ((unsigned int)key_p[2] << 16);
+	case 2:
+		a += ((unsigned int)key_p[1] << 8);
+	case 1:
+		a += key_p[0];
+		/* case 0: nothing left to add */
+	}
+	HASH_MIX(a, b, c);
   
-  return c;
+	return c;
 }
 
 /*
@@ -392,28 +392,28 @@ static	unsigned int	hash(const unsigned char *key,
  * data - Size of the entry data.
  */
 static	int	entry_size(const table_t *table_p, const unsigned int key_size,
-			   const unsigned int data_size)
+					   const unsigned int data_size)
 {
-  int	size, left;
+	int	size, left;
   
-  /* initial size -- key is already aligned if right after struct */
-  size = sizeof(struct table_shell_st) + key_size;
+	/* initial size -- key is already aligned if right after struct */
+	size = sizeof(struct table_shell_st) + key_size;
   
-  /* if there is no alignment then it is easy */
-  if (table_p->ta_data_align == 0) {
-    return size + data_size;
-  }
+	/* if there is no alignment then it is easy */
+	if (table_p->ta_data_align == 0) {
+		return size + data_size;
+	}
   
-  /* add in our alignement */
-  left = size & (table_p->ta_data_align - 1);
-  if (left > 0) {
-    size += table_p->ta_data_align - left;
-  }
+	/* add in our alignement */
+	left = size & (table_p->ta_data_align - 1);
+	if (left > 0) {
+		size += table_p->ta_data_align - left;
+	}
   
-  /* we add the data size here after the alignment */
-  size += data_size;
+	/* we add the data size here after the alignment */
+	size += data_size;
   
-  return size;
+	return size;
 }
 
 /*
@@ -437,23 +437,23 @@ static	int	entry_size(const table_t *table_p, const unsigned int key_size,
  * entry_p - Entry whose data pointer we are determining.
  */
 static	unsigned char	*entry_data_buf(const table_t *table_p,
-					const table_entry_t *entry_p)
+										const table_entry_t *entry_p)
 {
-  const unsigned char	*buf_p;
-  unsigned int		size, pad;
+	const unsigned char	*buf_p;
+	unsigned int		size, pad;
   
-  buf_p = entry_p->te_key_buf + entry_p->te_key_size;
+	buf_p = entry_p->te_key_buf + entry_p->te_key_size;
   
-  /* we need the size of the space before the data */
-  size = sizeof(struct table_shell_st) + entry_p->te_key_size;
+	/* we need the size of the space before the data */
+	size = sizeof(struct table_shell_st) + entry_p->te_key_size;
   
-  /* add in our alignment */
-  pad = size & (table_p->ta_data_align - 1);
-  if (pad > 0) {
-    pad = table_p->ta_data_align - pad;
-  }
+	/* add in our alignment */
+	pad = size & (table_p->ta_data_align - 1);
+	if (pad > 0) {
+		pad = table_p->ta_data_align - pad;
+	}
   
-  return (unsigned char *)buf_p + pad;
+	return (unsigned char *)buf_p + pad;
 }
 
 /******************************* sort routines *******************************/
@@ -484,26 +484,26 @@ static	unsigned char	*entry_data_buf(const table_t *table_p,
  * has occurred.  It cannot be NULL.
  */
 static int	local_compare(const void *p1, const void *p2,
-			      table_compare_t compare, const table_t *table_p,
-			      int *err_bp)
+						  table_compare_t compare, const table_t *table_p,
+						  int *err_bp)
 {
-  const table_entry_t	* const *ent1_p = p1, * const *ent2_p = p2;
-  int			cmp;
-  unsigned int		size;
+	const table_entry_t	* const *ent1_p = p1, * const *ent2_p = p2;
+	int			cmp;
+	unsigned int		size;
   
-  /* compare as many bytes as we can */
-  size = (*ent1_p)->te_key_size;
-  if ((*ent2_p)->te_key_size < size) {
-    size = (*ent2_p)->te_key_size;
-  }
-  cmp = memcmp(ENTRY_KEY_BUF(*ent1_p), ENTRY_KEY_BUF(*ent2_p), size);
-  /* if common-size equal, then if next more bytes, it is larger */
-  if (cmp == 0) {
-    cmp = (*ent1_p)->te_key_size - (*ent2_p)->te_key_size;
-  }
+	/* compare as many bytes as we can */
+	size = (*ent1_p)->te_key_size;
+	if ((*ent2_p)->te_key_size < size) {
+		size = (*ent2_p)->te_key_size;
+	}
+	cmp = memcmp(ENTRY_KEY_BUF(*ent1_p), ENTRY_KEY_BUF(*ent2_p), size);
+	/* if common-size equal, then if next more bytes, it is larger */
+	if (cmp == 0) {
+		cmp = (*ent1_p)->te_key_size - (*ent2_p)->te_key_size;
+	}
   
-  *err_bp = 0;
-  return cmp;
+	*err_bp = 0;
+	return cmp;
 }
 
 /*
@@ -532,35 +532,35 @@ static int	local_compare(const void *p1, const void *p2,
  * has occurred.  It cannot be NULL.
  */
 static int	local_compare_pos(const void *p1, const void *p2,
-				  table_compare_t compare,
-				  const table_t *table_p, int *err_bp)
+							  table_compare_t compare,
+							  const table_t *table_p, int *err_bp)
 {
-  const table_linear_t	*lin1_p = p1, *lin2_p = p2;
-  const table_entry_t	*ent1_p, *ent2_p;
-  int			cmp, ret;
-  unsigned int		size;
+	const table_linear_t	*lin1_p = p1, *lin2_p = p2;
+	const table_entry_t	*ent1_p, *ent2_p;
+	int			cmp, ret;
+	unsigned int		size;
   
-  /* get entry pointers */
-  ent1_p = this_entry(table_p, lin1_p, &ret);
-  ent2_p = this_entry(table_p, lin2_p, &ret);
-  if (ent1_p == NULL || ent2_p == NULL) {
-    *err_bp = 1;
-    return 0;
-  }
+	/* get entry pointers */
+	ent1_p = this_entry(table_p, lin1_p, &ret);
+	ent2_p = this_entry(table_p, lin2_p, &ret);
+	if (ent1_p == NULL || ent2_p == NULL) {
+		*err_bp = 1;
+		return 0;
+	}
   
-  /* compare as many bytes as we can */
-  size = ent1_p->te_key_size;
-  if (ent2_p->te_key_size < size) {
-    size = ent2_p->te_key_size;
-  }
-  cmp = memcmp(ENTRY_KEY_BUF(ent1_p), ENTRY_KEY_BUF(ent2_p), size);
-  /* if common-size equal, then if next more bytes, it is larger */
-  if (cmp == 0) {
-    cmp = ent1_p->te_key_size - ent2_p->te_key_size;
-  }
+	/* compare as many bytes as we can */
+	size = ent1_p->te_key_size;
+	if (ent2_p->te_key_size < size) {
+		size = ent2_p->te_key_size;
+	}
+	cmp = memcmp(ENTRY_KEY_BUF(ent1_p), ENTRY_KEY_BUF(ent2_p), size);
+	/* if common-size equal, then if next more bytes, it is larger */
+	if (cmp == 0) {
+		cmp = ent1_p->te_key_size - ent2_p->te_key_size;
+	}
   
-  *err_bp = 0;
-  return cmp;
+	*err_bp = 0;
+	return cmp;
 }
 
 /*
@@ -589,18 +589,18 @@ static int	local_compare_pos(const void *p1, const void *p2,
  * has occurred.  It cannot be NULL.
  */
 static int	external_compare(const void *p1, const void *p2,
-				 table_compare_t user_compare,
-				 const table_t *table_p, int *err_bp)
+							 table_compare_t user_compare,
+							 const table_t *table_p, int *err_bp)
 {
-  const table_entry_t	* const *ent1_p = p1, * const *ent2_p = p2;
-  /* since we know we are not aligned we can use the EXTRY_DATA_BUF macro */
-  *err_bp = 0;
-  return user_compare(ENTRY_KEY_BUF(*ent1_p), (*ent1_p)->te_key_size,
-		      ENTRY_DATA_BUF(table_p, *ent1_p),
-		      (*ent1_p)->te_data_size,
-		      ENTRY_KEY_BUF(*ent2_p), (*ent2_p)->te_key_size,
-		      ENTRY_DATA_BUF(table_p, *ent2_p),
-		      (*ent2_p)->te_data_size);
+	const table_entry_t	* const *ent1_p = p1, * const *ent2_p = p2;
+	/* since we know we are not aligned we can use the EXTRY_DATA_BUF macro */
+	*err_bp = 0;
+	return user_compare(ENTRY_KEY_BUF(*ent1_p), (*ent1_p)->te_key_size,
+						ENTRY_DATA_BUF(table_p, *ent1_p),
+						(*ent1_p)->te_data_size,
+						ENTRY_KEY_BUF(*ent2_p), (*ent2_p)->te_key_size,
+						ENTRY_DATA_BUF(table_p, *ent2_p),
+						(*ent2_p)->te_data_size);
 }
 
 /*
@@ -627,29 +627,29 @@ static int	external_compare(const void *p1, const void *p2,
  *
  * err_bp - Pointer to an integer which will be set with 1 if an error
  * has occurred.  It cannot be NULL.
-*/
+ */
 static int	external_compare_pos(const void *p1, const void *p2,
-				     table_compare_t user_compare,
-				     const table_t *table_p, int *err_bp)
+								 table_compare_t user_compare,
+								 const table_t *table_p, int *err_bp)
 {
-  const table_linear_t	*lin1_p = p1, *lin2_p = p2;
-  const table_entry_t	*ent1_p, *ent2_p;
-  int			ret;
+	const table_linear_t	*lin1_p = p1, *lin2_p = p2;
+	const table_entry_t	*ent1_p, *ent2_p;
+	int			ret;
   
-  /* get entry pointers */
-  ent1_p = this_entry(table_p, lin1_p, &ret);
-  ent2_p = this_entry(table_p, lin2_p, &ret);
-  if (ent1_p == NULL || ent2_p == NULL) {
-    *err_bp = 1;
-    return 0;
-  }
+	/* get entry pointers */
+	ent1_p = this_entry(table_p, lin1_p, &ret);
+	ent2_p = this_entry(table_p, lin2_p, &ret);
+	if (ent1_p == NULL || ent2_p == NULL) {
+		*err_bp = 1;
+		return 0;
+	}
   
-  /* since we know we are not aligned we can use the EXTRY_DATA_BUF macro */
-  *err_bp = 0;
-  return user_compare(ENTRY_KEY_BUF(ent1_p), (ent1_p)->te_key_size,
-		      ENTRY_DATA_BUF(table_p, ent1_p), ent1_p->te_data_size,
-		      ENTRY_KEY_BUF(ent2_p), ent2_p->te_key_size,
-		      ENTRY_DATA_BUF(table_p, ent2_p), ent2_p->te_data_size);
+	/* since we know we are not aligned we can use the EXTRY_DATA_BUF macro */
+	*err_bp = 0;
+	return user_compare(ENTRY_KEY_BUF(ent1_p), (ent1_p)->te_key_size,
+						ENTRY_DATA_BUF(table_p, ent1_p), ent1_p->te_data_size,
+						ENTRY_KEY_BUF(ent2_p), ent2_p->te_key_size,
+						ENTRY_DATA_BUF(table_p, ent2_p), ent2_p->te_data_size);
 }
 
 /*
@@ -678,18 +678,18 @@ static int	external_compare_pos(const void *p1, const void *p2,
  * has occurred.  It cannot be NULL.
  */
 static int	external_compare_align(const void *p1, const void *p2,
-				       table_compare_t user_compare,
-				       const table_t *table_p, int *err_bp)
+								   table_compare_t user_compare,
+								   const table_t *table_p, int *err_bp)
 {
-  const table_entry_t	* const *ent1_p = p1, * const *ent2_p = p2;
-  /* since we are aligned we have to use the entry_data_buf function */
-  *err_bp = 0;
-  return user_compare(ENTRY_KEY_BUF(*ent1_p), (*ent1_p)->te_key_size,
-		      entry_data_buf(table_p, *ent1_p),
-		      (*ent1_p)->te_data_size,
-		      ENTRY_KEY_BUF(*ent2_p), (*ent2_p)->te_key_size,
-		      entry_data_buf(table_p, *ent2_p),
-		      (*ent2_p)->te_data_size);
+	const table_entry_t	* const *ent1_p = p1, * const *ent2_p = p2;
+	/* since we are aligned we have to use the entry_data_buf function */
+	*err_bp = 0;
+	return user_compare(ENTRY_KEY_BUF(*ent1_p), (*ent1_p)->te_key_size,
+						entry_data_buf(table_p, *ent1_p),
+						(*ent1_p)->te_data_size,
+						ENTRY_KEY_BUF(*ent2_p), (*ent2_p)->te_key_size,
+						entry_data_buf(table_p, *ent2_p),
+						(*ent2_p)->te_data_size);
 }
 
 /*
@@ -718,27 +718,27 @@ static int	external_compare_align(const void *p1, const void *p2,
  * has occurred.  It cannot be NULL.
  */
 static int	external_compare_align_pos(const void *p1, const void *p2,
-					   table_compare_t user_compare,
-					   const table_t *table_p, int *err_bp)
+									   table_compare_t user_compare,
+									   const table_t *table_p, int *err_bp)
 {
-  const table_linear_t	*lin1_p = p1, *lin2_p = p2;
-  const table_entry_t	*ent1_p, *ent2_p;
-  int			ret;
+	const table_linear_t	*lin1_p = p1, *lin2_p = p2;
+	const table_entry_t	*ent1_p, *ent2_p;
+	int			ret;
   
-  /* get entry pointers */
-  ent1_p = this_entry(table_p, lin1_p, &ret);
-  ent2_p = this_entry(table_p, lin2_p, &ret);
-  if (ent1_p == NULL || ent2_p == NULL) {
-    *err_bp = 1;
-    return 0;
-  }
+	/* get entry pointers */
+	ent1_p = this_entry(table_p, lin1_p, &ret);
+	ent2_p = this_entry(table_p, lin2_p, &ret);
+	if (ent1_p == NULL || ent2_p == NULL) {
+		*err_bp = 1;
+		return 0;
+	}
   
-  /* since we are aligned we have to use the entry_data_buf function */
-  *err_bp = 0;
-  return user_compare(ENTRY_KEY_BUF(ent1_p), ent1_p->te_key_size,
-		      entry_data_buf(table_p, ent1_p), ent1_p->te_data_size,
-		      ENTRY_KEY_BUF(ent2_p), ent2_p->te_key_size,
-		      entry_data_buf(table_p, ent2_p), ent2_p->te_data_size);
+	/* since we are aligned we have to use the entry_data_buf function */
+	*err_bp = 0;
+	return user_compare(ENTRY_KEY_BUF(ent1_p), ent1_p->te_key_size,
+						entry_data_buf(table_p, ent1_p), ent1_p->te_data_size,
+						ENTRY_KEY_BUF(ent2_p), ent2_p->te_key_size,
+						entry_data_buf(table_p, ent2_p), ent2_p->te_data_size);
 }
 
 /*
@@ -761,17 +761,17 @@ static int	external_compare_align_pos(const void *p1, const void *p2,
  * ele_size -> Size of the two items.
  */
 static	void	swap_bytes(unsigned char *item1_p, unsigned char *item2_p,
-			   int ele_size)
+						   int ele_size)
 {
-  unsigned char	char_temp;
+	unsigned char	char_temp;
   
-  for (; ele_size > 0; ele_size--) {
-    char_temp = *item1_p;
-    *item1_p = *item2_p;
-    *item2_p = char_temp;
-    item1_p++;
-    item2_p++;
-  }
+	for (; ele_size > 0; ele_size--) {
+		char_temp = *item1_p;
+		*item1_p = *item2_p;
+		*item2_p = char_temp;
+		item1_p++;
+		item2_p++;
+	}
 }
 
 /*
@@ -806,44 +806,44 @@ static	void	swap_bytes(unsigned char *item1_p, unsigned char *item2_p,
  * table_p -> Associated table being sorted.
  */
 static	int	insert_sort(unsigned char *first_p, unsigned char *last_p,
-			    unsigned char *holder_p,
-			    const unsigned int ele_size, compare_t compare,
-			    table_compare_t user_compare, table_t *table_p)
+						unsigned char *holder_p,
+						const unsigned int ele_size, compare_t compare,
+						table_compare_t user_compare, table_t *table_p)
 {
-  unsigned char	*inner_p, *outer_p;
-  int		ret, err_b;
+	unsigned char	*inner_p, *outer_p;
+	int		ret, err_b;
   
-  for (outer_p = first_p + ele_size; outer_p <= last_p; ) {
+	for (outer_p = first_p + ele_size; outer_p <= last_p; ) {
     
-    /* look for the place to insert the entry */
-    for (inner_p = outer_p - ele_size;
-	 inner_p >= first_p;
-	 inner_p -= ele_size) {
-      ret = compare(outer_p, inner_p, user_compare, table_p, &err_b);
-      if (err_b) {
-	return TABLE_ERROR_COMPARE;
-      }
-      if (ret >= 0) {
-	break;
-      }
-    }
-    inner_p += ele_size;
+		/* look for the place to insert the entry */
+		for (inner_p = outer_p - ele_size;
+			 inner_p >= first_p;
+			 inner_p -= ele_size) {
+			ret = compare(outer_p, inner_p, user_compare, table_p, &err_b);
+			if (err_b) {
+				return TABLE_ERROR_COMPARE;
+			}
+			if (ret >= 0) {
+				break;
+			}
+		}
+		inner_p += ele_size;
     
-    /* do we need to insert the entry in? */
-    if (outer_p != inner_p) {
-      /*
-       * Now we shift the entry down into its place in the already
-       * sorted list.
-       */
-      memcpy(holder_p, outer_p, ele_size);
-      memmove(inner_p + ele_size, inner_p, outer_p - inner_p);
-      memcpy(inner_p, holder_p, ele_size);
-    }
+		/* do we need to insert the entry in? */
+		if (outer_p != inner_p) {
+			/*
+			 * Now we shift the entry down into its place in the already
+			 * sorted list.
+			 */
+			memcpy(holder_p, outer_p, ele_size);
+			memmove(inner_p + ele_size, inner_p, outer_p - inner_p);
+			memcpy(inner_p, holder_p, ele_size);
+		}
     
-    outer_p += ele_size;
-  }
+		outer_p += ele_size;
+	}
   
-  return TABLE_ERROR_NONE;
+	return TABLE_ERROR_NONE;
 }
 
 /*
@@ -874,197 +874,197 @@ static	int	insert_sort(unsigned char *first_p, unsigned char *last_p,
  * table_p -> Associated table being sorted.
  */
 static	int	split(unsigned char *first_p, unsigned char *last_p,
-		      const unsigned int ele_size, compare_t compare,
-		      table_compare_t user_compare, table_t *table_p)
+				  const unsigned int ele_size, compare_t compare,
+				  table_compare_t user_compare, table_t *table_p)
 {
-  unsigned char	*left_p, *right_p, *pivot_p, *left_last_p, *right_first_p;
-  unsigned char	*firsts[MAX_QSORT_SPLITS], *lasts[MAX_QSORT_SPLITS], *pivot;
-  unsigned int	width, split_c = 0;
-  int		size1, size2, min_qsort_size;
-  int		ret, err_b;
+	unsigned char	*left_p, *right_p, *pivot_p, *left_last_p, *right_first_p;
+	unsigned char	*firsts[MAX_QSORT_SPLITS], *lasts[MAX_QSORT_SPLITS], *pivot;
+	unsigned int	width, split_c = 0;
+	int		size1, size2, min_qsort_size;
+	int		ret, err_b;
   
-  /*
-   * Allocate some space for our pivot value.  We also use this as
-   * holder space for our insert sort.
-   */
-  pivot = alloca(ele_size);
-  if (pivot == NULL) {
-    /* what else can we do? */
-    abort();
-  }
-  
-  min_qsort_size = MAX_QSORT_MANY * ele_size;
-  
-  while (1) {
-    
-    /* find the left, right, and mid point */
-    left_p = first_p;
-    right_p = last_p;
-    /* is there a faster way to find this? */
-    width = (last_p - first_p) / ele_size;
-    pivot_p = first_p + ele_size * (width >> 1);
-    
-    /*
-     * Find which of the left, middle, and right elements is the
-     * median (Knuth vol3 p123).
-      */
-    ret = compare(first_p, pivot_p, user_compare, table_p, &err_b);
-    if (err_b) {
-      return TABLE_ERROR_COMPARE;
-    }
-    if (ret > 0) {
-      swap_bytes(first_p, pivot_p, ele_size);
-    }
-    ret = compare(pivot_p, last_p, user_compare, table_p, &err_b);
-    if (err_b) {
-      return TABLE_ERROR_COMPARE;
-    }
-    if (ret > 0) {
-      swap_bytes(pivot_p, last_p, ele_size);
-      ret = compare(first_p, pivot_p, user_compare, table_p, &err_b);
-      if (err_b) {
-	return TABLE_ERROR_COMPARE;
-      }
-      if (ret > 0) {
-	swap_bytes(first_p, pivot_p, ele_size);
-      }
-    }
-    
-    /*
-     * save our pivot so we don't have to worry about hitting and
-     * swapping it elsewhere while we iterate across the list below.
-     */
-    memcpy(pivot, pivot_p, ele_size);
-    
-    do {
-      
-      /* shift the left side up until we reach the pivot value */
-      while (1) {
-	ret = compare(left_p, pivot, user_compare, table_p, &err_b);
-	if (err_b) {
-	  return TABLE_ERROR_COMPARE;
-	}
-	if (ret >= 0) {
-	  break;
-	}
-	left_p += ele_size;
-      }
-      /* shift the right side down until we reach the pivot value */
-      while (1) {
-	ret = compare(pivot, right_p, user_compare, table_p, &err_b);
-	if (err_b) {
-	  return TABLE_ERROR_COMPARE;
-	}
-	if (ret >= 0) {
-	  break;
-	}
-	right_p -= ele_size;
-      }
-      
-      /* if we met in the middle then we are done */
-      if (left_p == right_p) {
-	left_p += ele_size;
-	right_p -= ele_size;
-	break;
-      }
-      else if (left_p < right_p) {
 	/*
-	 * swap the left and right since they both were on the wrong
-	 * size of the pivot and continue
+	 * Allocate some space for our pivot value.  We also use this as
+	 * holder space for our insert sort.
 	 */
-	swap_bytes(left_p, right_p, ele_size);
-	left_p += ele_size;
-	right_p -= ele_size;
-      }
-    } while (left_p <= right_p);
-    
-    /* Rename variables to make more sense.  This will get optimized out. */
-    right_first_p = left_p;
-    left_last_p = right_p;
-    
-    /* determine the size of the left and right hand parts */
-    size1 = left_last_p - first_p;
-    size2 = last_p - right_first_p;
-    
-    /* is the 1st half small enough to just insert-sort? */
-    if (size1 < min_qsort_size) {
-      
-      /* use the pivot as our temporary space */
-      ret = insert_sort(first_p, left_last_p, pivot, ele_size, compare,
-			user_compare, table_p);
-      if (ret != TABLE_ERROR_NONE) {
-	return ret;
-      }
-      
-      /* is the 2nd part small as well? */
-      if (size2 < min_qsort_size) {
-	
-	/* use the pivot as our temporary space */
-	ret = insert_sort(right_first_p, last_p, pivot, ele_size, compare,
-			  user_compare, table_p);
-	if (ret != TABLE_ERROR_NONE) {
-	  return ret;
+	pivot = alloca(ele_size);
+	if (pivot == NULL) {
+		/* what else can we do? */
+		abort();
 	}
-	
-	/* pop a partition off our stack */
-	if (split_c == 0) {
-	  /* we are done */
-	  return TABLE_ERROR_NONE;
-	}
-	split_c--;
-	first_p = firsts[split_c];
-	last_p = lasts[split_c];
-      }
-      else {
-	/* we can just handle the right side immediately */
-	first_p = right_first_p;
-	/* last_p = last_p */
-      }
-    }
-    else if (size2 < min_qsort_size) {
-      
-      /* use the pivot as our temporary space */
-      ret = insert_sort(right_first_p, last_p, pivot, ele_size, compare,
-			user_compare, table_p);
-      if (ret != TABLE_ERROR_NONE) {
-	return ret;
-      }
-      
-      /* we can just handle the left side immediately */
-      /* first_p = first_p */
-      last_p = left_last_p;
-    }
-    else {
-      /*
-       * neither partition is small, we'll have to push the larger one
-       * of them on the stack
-       */
-      if (split_c >= MAX_QSORT_SPLITS) {
-	/* sanity check here -- we should never get here */
-	abort();
-      }
-      if (size1 > size2) {
-	/* push the left partition on the stack */
-	firsts[split_c] = first_p;
-	lasts[split_c] = left_last_p;
-	split_c++;
-	/* continue handling the right side */
-	first_p = right_first_p;
-	/* last_p = last_p */
-      }
-      else {
-	/* push the right partition on the stack */
-	firsts[split_c] = right_first_p;
-	lasts[split_c] = last_p;
-	split_c++;
-	/* continue handling the left side */
-	/* first_p = first_p */
-	last_p = left_last_p;
-      }
-    }
-  }
   
-  return TABLE_ERROR_NONE;
+	min_qsort_size = MAX_QSORT_MANY * ele_size;
+  
+	while (1) {
+    
+		/* find the left, right, and mid point */
+		left_p = first_p;
+		right_p = last_p;
+		/* is there a faster way to find this? */
+		width = (last_p - first_p) / ele_size;
+		pivot_p = first_p + ele_size * (width >> 1);
+    
+		/*
+		 * Find which of the left, middle, and right elements is the
+		 * median (Knuth vol3 p123).
+		 */
+		ret = compare(first_p, pivot_p, user_compare, table_p, &err_b);
+		if (err_b) {
+			return TABLE_ERROR_COMPARE;
+		}
+		if (ret > 0) {
+			swap_bytes(first_p, pivot_p, ele_size);
+		}
+		ret = compare(pivot_p, last_p, user_compare, table_p, &err_b);
+		if (err_b) {
+			return TABLE_ERROR_COMPARE;
+		}
+		if (ret > 0) {
+			swap_bytes(pivot_p, last_p, ele_size);
+			ret = compare(first_p, pivot_p, user_compare, table_p, &err_b);
+			if (err_b) {
+				return TABLE_ERROR_COMPARE;
+			}
+			if (ret > 0) {
+				swap_bytes(first_p, pivot_p, ele_size);
+			}
+		}
+    
+		/*
+		 * save our pivot so we don't have to worry about hitting and
+		 * swapping it elsewhere while we iterate across the list below.
+		 */
+		memcpy(pivot, pivot_p, ele_size);
+    
+		do {
+      
+			/* shift the left side up until we reach the pivot value */
+			while (1) {
+				ret = compare(left_p, pivot, user_compare, table_p, &err_b);
+				if (err_b) {
+					return TABLE_ERROR_COMPARE;
+				}
+				if (ret >= 0) {
+					break;
+				}
+				left_p += ele_size;
+			}
+			/* shift the right side down until we reach the pivot value */
+			while (1) {
+				ret = compare(pivot, right_p, user_compare, table_p, &err_b);
+				if (err_b) {
+					return TABLE_ERROR_COMPARE;
+				}
+				if (ret >= 0) {
+					break;
+				}
+				right_p -= ele_size;
+			}
+      
+			/* if we met in the middle then we are done */
+			if (left_p == right_p) {
+				left_p += ele_size;
+				right_p -= ele_size;
+				break;
+			}
+			else if (left_p < right_p) {
+				/*
+				 * swap the left and right since they both were on the wrong
+				 * size of the pivot and continue
+				 */
+				swap_bytes(left_p, right_p, ele_size);
+				left_p += ele_size;
+				right_p -= ele_size;
+			}
+		} while (left_p <= right_p);
+    
+		/* Rename variables to make more sense.  This will get optimized out. */
+		right_first_p = left_p;
+		left_last_p = right_p;
+    
+		/* determine the size of the left and right hand parts */
+		size1 = left_last_p - first_p;
+		size2 = last_p - right_first_p;
+    
+		/* is the 1st half small enough to just insert-sort? */
+		if (size1 < min_qsort_size) {
+      
+			/* use the pivot as our temporary space */
+			ret = insert_sort(first_p, left_last_p, pivot, ele_size, compare,
+							  user_compare, table_p);
+			if (ret != TABLE_ERROR_NONE) {
+				return ret;
+			}
+      
+			/* is the 2nd part small as well? */
+			if (size2 < min_qsort_size) {
+	
+				/* use the pivot as our temporary space */
+				ret = insert_sort(right_first_p, last_p, pivot, ele_size, compare,
+								  user_compare, table_p);
+				if (ret != TABLE_ERROR_NONE) {
+					return ret;
+				}
+	
+				/* pop a partition off our stack */
+				if (split_c == 0) {
+					/* we are done */
+					return TABLE_ERROR_NONE;
+				}
+				split_c--;
+				first_p = firsts[split_c];
+				last_p = lasts[split_c];
+			}
+			else {
+				/* we can just handle the right side immediately */
+				first_p = right_first_p;
+				/* last_p = last_p */
+			}
+		}
+		else if (size2 < min_qsort_size) {
+      
+			/* use the pivot as our temporary space */
+			ret = insert_sort(right_first_p, last_p, pivot, ele_size, compare,
+							  user_compare, table_p);
+			if (ret != TABLE_ERROR_NONE) {
+				return ret;
+			}
+      
+			/* we can just handle the left side immediately */
+			/* first_p = first_p */
+			last_p = left_last_p;
+		}
+		else {
+			/*
+			 * neither partition is small, we'll have to push the larger one
+			 * of them on the stack
+			 */
+			if (split_c >= MAX_QSORT_SPLITS) {
+				/* sanity check here -- we should never get here */
+				abort();
+			}
+			if (size1 > size2) {
+				/* push the left partition on the stack */
+				firsts[split_c] = first_p;
+				lasts[split_c] = left_last_p;
+				split_c++;
+				/* continue handling the right side */
+				first_p = right_first_p;
+				/* last_p = last_p */
+			}
+			else {
+				/* push the right partition on the stack */
+				firsts[split_c] = right_first_p;
+				lasts[split_c] = last_p;
+				split_c++;
+				/* continue handling the left side */
+				/* first_p = first_p */
+				last_p = left_last_p;
+			}
+		}
+	}
+  
+	return TABLE_ERROR_NONE;
 }
 
 /*************************** exported routines *******************************/
@@ -1092,50 +1092,50 @@ static	int	split(unsigned char *first_p, unsigned char *last_p,
  */
 table_t		*table_alloc(const unsigned int bucket_n, int *error_p)
 {
-  table_t	*table_p = NULL;
-  unsigned int	buck_n;
+	table_t	*table_p = NULL;
+	unsigned int	buck_n;
   
-  /* allocate a table structure */
-  table_p = malloc(sizeof(table_t));
-  if (table_p == NULL) {
-    SET_POINTER(error_p, TABLE_ERROR_ALLOC);
-    return NULL;
-  }
+	/* allocate a table structure */
+	table_p = malloc(sizeof(table_t));
+	if (table_p == NULL) {
+		SET_POINTER(error_p, TABLE_ERROR_ALLOC);
+		return NULL;
+	}
   
-  if (bucket_n > 0) {
-    buck_n = bucket_n;
-  }
-  else {
-    buck_n = DEFAULT_SIZE;
-  }
+	if (bucket_n > 0) {
+		buck_n = bucket_n;
+	}
+	else {
+		buck_n = DEFAULT_SIZE;
+	}
   
-  /* allocate the buckets which are NULLed */
-  table_p->ta_buckets = (table_entry_t **)calloc(buck_n,
-						 sizeof(table_entry_t *));
-  if (table_p->ta_buckets == NULL) {
-    SET_POINTER(error_p, TABLE_ERROR_ALLOC);
-    free(table_p);
-    return NULL;
-  }
+	/* allocate the buckets which are NULLed */
+	table_p->ta_buckets = (table_entry_t **)calloc(buck_n,
+												   sizeof(table_entry_t *));
+	if (table_p->ta_buckets == NULL) {
+		SET_POINTER(error_p, TABLE_ERROR_ALLOC);
+		free(table_p);
+		return NULL;
+	}
   
-  /* initialize structure */
-  table_p->ta_magic = TABLE_MAGIC;
-  table_p->ta_flags = 0;
-  table_p->ta_bucket_n = buck_n;
-  table_p->ta_entry_n = 0;
-  table_p->ta_data_align = 0;
-  table_p->ta_linear.tl_magic = 0;
-  table_p->ta_linear.tl_bucket_c = 0;
-  table_p->ta_linear.tl_entry_c = 0;
-  table_p->ta_mmap = NULL;
-  table_p->ta_file_size = 0;
-  table_p->ta_mem_pool = NULL;
-  table_p->ta_alloc_func = NULL;
-  table_p->ta_resize_func = NULL;
-  table_p->ta_free_func = NULL;
+	/* initialize structure */
+	table_p->ta_magic = TABLE_MAGIC;
+	table_p->ta_flags = 0;
+	table_p->ta_bucket_n = buck_n;
+	table_p->ta_entry_n = 0;
+	table_p->ta_data_align = 0;
+	table_p->ta_linear.tl_magic = 0;
+	table_p->ta_linear.tl_bucket_c = 0;
+	table_p->ta_linear.tl_entry_c = 0;
+	table_p->ta_mmap = NULL;
+	table_p->ta_file_size = 0;
+	table_p->ta_mem_pool = NULL;
+	table_p->ta_alloc_func = NULL;
+	table_p->ta_resize_func = NULL;
+	table_p->ta_free_func = NULL;
   
-  SET_POINTER(error_p, TABLE_ERROR_NONE);
-  return table_p;
+	SET_POINTER(error_p, TABLE_ERROR_NONE);
+	return table_p;
 }
 
 /*
@@ -1171,66 +1171,66 @@ table_t		*table_alloc(const unsigned int bucket_n, int *error_p)
  * table error code.
  */
 table_t		*table_alloc_in_pool(const unsigned int bucket_n,
-				     void *mem_pool,
-				     table_mem_alloc_t alloc_func,
-				     table_mem_resize_t resize_func,
-				     table_mem_free_t free_func, int *error_p)
+								 void *mem_pool,
+								 table_mem_alloc_t alloc_func,
+								 table_mem_resize_t resize_func,
+								 table_mem_free_t free_func, int *error_p)
 {
-  table_t	*table_p = NULL;
-  unsigned int	buck_n, size;
+	table_t	*table_p = NULL;
+	unsigned int	buck_n, size;
   
-  /* make sure we have real functions, mem_pool and resize_func can be NULL */
-  if (alloc_func == NULL || free_func == NULL) {
-    SET_POINTER(error_p, TABLE_ERROR_ARG_NULL);
-    return NULL;
-  }
+	/* make sure we have real functions, mem_pool and resize_func can be NULL */
+	if (alloc_func == NULL || free_func == NULL) {
+		SET_POINTER(error_p, TABLE_ERROR_ARG_NULL);
+		return NULL;
+	}
   
-  /* allocate a table structure */
-  table_p = alloc_func(mem_pool, sizeof(table_t));
-  if (table_p == NULL) {
-    SET_POINTER(error_p, TABLE_ERROR_ALLOC);
-    return NULL;
-  }
+	/* allocate a table structure */
+	table_p = alloc_func(mem_pool, sizeof(table_t));
+	if (table_p == NULL) {
+		SET_POINTER(error_p, TABLE_ERROR_ALLOC);
+		return NULL;
+	}
   
-  if (bucket_n > 0) {
-    buck_n = bucket_n;
-  }
-  else {
-    buck_n = DEFAULT_SIZE;
-  }
+	if (bucket_n > 0) {
+		buck_n = bucket_n;
+	}
+	else {
+		buck_n = DEFAULT_SIZE;
+	}
   
-  /* allocate the buckets which are NULLed */
-  size = buck_n * sizeof(table_entry_t *);
-  table_p->ta_buckets = (table_entry_t **)alloc_func(mem_pool, size);
-  if (table_p->ta_buckets == NULL) {
-    SET_POINTER(error_p, TABLE_ERROR_ALLOC);
-    (void)free_func(mem_pool, table_p, sizeof(table_t));
-    return NULL;
-  }
-  /*
-   * We zero it ourselves to save the necessity of having a
-   * table_mem_calloc_t memory override function.
-   */
-  memset(table_p->ta_buckets, 0, size);
+	/* allocate the buckets which are NULLed */
+	size = buck_n * sizeof(table_entry_t *);
+	table_p->ta_buckets = (table_entry_t **)alloc_func(mem_pool, size);
+	if (table_p->ta_buckets == NULL) {
+		SET_POINTER(error_p, TABLE_ERROR_ALLOC);
+		(void)free_func(mem_pool, table_p, sizeof(table_t));
+		return NULL;
+	}
+	/*
+	 * We zero it ourselves to save the necessity of having a
+	 * table_mem_calloc_t memory override function.
+	 */
+	memset(table_p->ta_buckets, 0, size);
   
-  /* initialize structure */
-  table_p->ta_magic = TABLE_MAGIC;
-  table_p->ta_flags = 0;
-  table_p->ta_bucket_n = buck_n;
-  table_p->ta_entry_n = 0;
-  table_p->ta_data_align = 0;
-  table_p->ta_linear.tl_magic = 0;
-  table_p->ta_linear.tl_bucket_c = 0;
-  table_p->ta_linear.tl_entry_c = 0;
-  table_p->ta_mmap = NULL;
-  table_p->ta_file_size = 0;
-  table_p->ta_mem_pool = mem_pool;
-  table_p->ta_alloc_func = alloc_func;
-  table_p->ta_resize_func = resize_func;
-  table_p->ta_free_func = free_func;
+	/* initialize structure */
+	table_p->ta_magic = TABLE_MAGIC;
+	table_p->ta_flags = 0;
+	table_p->ta_bucket_n = buck_n;
+	table_p->ta_entry_n = 0;
+	table_p->ta_data_align = 0;
+	table_p->ta_linear.tl_magic = 0;
+	table_p->ta_linear.tl_bucket_c = 0;
+	table_p->ta_linear.tl_entry_c = 0;
+	table_p->ta_mmap = NULL;
+	table_p->ta_file_size = 0;
+	table_p->ta_mem_pool = mem_pool;
+	table_p->ta_alloc_func = alloc_func;
+	table_p->ta_resize_func = resize_func;
+	table_p->ta_free_func = free_func;
   
-  SET_POINTER(error_p, TABLE_ERROR_NONE);
-  return table_p;
+	SET_POINTER(error_p, TABLE_ERROR_NONE);
+	return table_p;
 }
 
 /*
@@ -1255,16 +1255,16 @@ table_t		*table_alloc_in_pool(const unsigned int bucket_n,
  */
 int	table_attr(table_t *table_p, const int attr)
 {
-  if (table_p == NULL) {
-    return TABLE_ERROR_ARG_NULL;
-  }
-  if (table_p->ta_magic != TABLE_MAGIC) {
-    return TABLE_ERROR_PNT;
-  }
+	if (table_p == NULL) {
+		return TABLE_ERROR_ARG_NULL;
+	}
+	if (table_p->ta_magic != TABLE_MAGIC) {
+		return TABLE_ERROR_PNT;
+	}
   
-  table_p->ta_flags = attr;
+	table_p->ta_flags = attr;
   
-  return TABLE_ERROR_NONE;
+	return TABLE_ERROR_NONE;
 }
 
 /*
@@ -1306,36 +1306,36 @@ int	table_attr(table_t *table_p, const int attr)
  */
 int	table_set_data_alignment(table_t *table_p, const int alignment)
 {
-  int		val;
+	int		val;
   
-  if (table_p == NULL) {
-    return TABLE_ERROR_ARG_NULL;
-  }
-  if (table_p->ta_magic != TABLE_MAGIC) {
-    return TABLE_ERROR_PNT;
-  }
-  if (table_p->ta_entry_n > 0) {
-    return TABLE_ERROR_NOT_EMPTY;
-  }
+	if (table_p == NULL) {
+		return TABLE_ERROR_ARG_NULL;
+	}
+	if (table_p->ta_magic != TABLE_MAGIC) {
+		return TABLE_ERROR_PNT;
+	}
+	if (table_p->ta_entry_n > 0) {
+		return TABLE_ERROR_NOT_EMPTY;
+	}
   
-  /* defaults */
-  if (alignment < 2) {
-    table_p->ta_data_align = 0;
-  }
-  else {
-    /* verify we have a base 2 number */
-    for (val = 2; val < MAX_ALIGNMENT; val *= 2) {
-      if (val == alignment) {
-	break;
-      }
-    }
-    if (val >= MAX_ALIGNMENT) {
-      return TABLE_ERROR_ALIGNMENT;
-    }
-    table_p->ta_data_align = alignment;
-  }
+	/* defaults */
+	if (alignment < 2) {
+		table_p->ta_data_align = 0;
+	}
+	else {
+		/* verify we have a base 2 number */
+		for (val = 2; val < MAX_ALIGNMENT; val *= 2) {
+			if (val == alignment) {
+				break;
+			}
+		}
+		if (val >= MAX_ALIGNMENT) {
+			return TABLE_ERROR_ALIGNMENT;
+		}
+		table_p->ta_data_align = alignment;
+	}
   
-  return TABLE_ERROR_NONE;
+	return TABLE_ERROR_NONE;
 }
 
 /*
@@ -1357,52 +1357,52 @@ int	table_set_data_alignment(table_t *table_p, const int alignment)
  */
 int	table_clear(table_t *table_p)
 {
-  int		final = TABLE_ERROR_NONE;
-  table_entry_t	*entry_p, *next_p;
-  table_entry_t	**bucket_p, **bounds_p;
+	int		final = TABLE_ERROR_NONE;
+	table_entry_t	*entry_p, *next_p;
+	table_entry_t	**bucket_p, **bounds_p;
   
-  if (table_p == NULL) {
-    return TABLE_ERROR_ARG_NULL;
-  }
-  if (table_p->ta_magic != TABLE_MAGIC) {
-    return TABLE_ERROR_PNT;
-  }
+	if (table_p == NULL) {
+		return TABLE_ERROR_ARG_NULL;
+	}
+	if (table_p->ta_magic != TABLE_MAGIC) {
+		return TABLE_ERROR_PNT;
+	}
   
 #ifndef NO_MMAP
-  /* no mmap support so immediate error */
-  if (table_p->ta_mmap != NULL) {
-    return TABLE_ERROR_MMAP_OP;
-  }
+	/* no mmap support so immediate error */
+	if (table_p->ta_mmap != NULL) {
+		return TABLE_ERROR_MMAP_OP;
+	}
 #endif
   
-  /* free the table allocation and table structure */
-  bounds_p = table_p->ta_buckets + table_p->ta_bucket_n;
-  for (bucket_p = table_p->ta_buckets; bucket_p < bounds_p; bucket_p++) {
-    for (entry_p = *bucket_p; entry_p != NULL; entry_p = next_p) {
-      /* record the next pointer before we free */
-      next_p = entry_p->te_next_p;
-      if (table_p->ta_free_func == NULL) {
-	free(entry_p);
-      }
-      else if (! table_p->ta_free_func(table_p->ta_mem_pool, entry_p,
-				       entry_size(table_p,
-						  entry_p->te_key_size,
-						  entry_p->te_data_size))) {
-	final = TABLE_ERROR_FREE;
-      }
-    }
+	/* free the table allocation and table structure */
+	bounds_p = table_p->ta_buckets + table_p->ta_bucket_n;
+	for (bucket_p = table_p->ta_buckets; bucket_p < bounds_p; bucket_p++) {
+		for (entry_p = *bucket_p; entry_p != NULL; entry_p = next_p) {
+			/* record the next pointer before we free */
+			next_p = entry_p->te_next_p;
+			if (table_p->ta_free_func == NULL) {
+				free(entry_p);
+			}
+			else if (! table_p->ta_free_func(table_p->ta_mem_pool, entry_p,
+											 entry_size(table_p,
+														entry_p->te_key_size,
+														entry_p->te_data_size))) {
+				final = TABLE_ERROR_FREE;
+			}
+		}
     
-    /* clear the bucket entry after we free its entries */
-    *bucket_p = NULL;
-  }
+		/* clear the bucket entry after we free its entries */
+		*bucket_p = NULL;
+	}
   
-  /* reset table state info */
-  table_p->ta_entry_n = 0;
-  table_p->ta_linear.tl_magic = 0;
-  table_p->ta_linear.tl_bucket_c = 0;
-  table_p->ta_linear.tl_entry_c = 0;
+	/* reset table state info */
+	table_p->ta_entry_n = 0;
+	table_p->ta_linear.tl_magic = 0;
+	table_p->ta_linear.tl_bucket_c = 0;
+	table_p->ta_linear.tl_entry_c = 0;
   
-  return final;
+	return final;
 }
 
 /*
@@ -1424,47 +1424,47 @@ int	table_clear(table_t *table_p)
  */
 int	table_free(table_t *table_p)
 {
-  int	ret;
+	int	ret;
   
-  if (table_p == NULL) {
-    return TABLE_ERROR_ARG_NULL;
-  }
-  if (table_p->ta_magic != TABLE_MAGIC) {
-    return TABLE_ERROR_PNT;
-  }
+	if (table_p == NULL) {
+		return TABLE_ERROR_ARG_NULL;
+	}
+	if (table_p->ta_magic != TABLE_MAGIC) {
+		return TABLE_ERROR_PNT;
+	}
   
 #ifndef NO_MMAP
-  /* no mmap support so immediate error */
-  if (table_p->ta_mmap != NULL) {
-    return TABLE_ERROR_MMAP_OP;
-  }
+	/* no mmap support so immediate error */
+	if (table_p->ta_mmap != NULL) {
+		return TABLE_ERROR_MMAP_OP;
+	}
 #endif
   
-  ret = table_clear(table_p);
+	ret = table_clear(table_p);
   
-  if (table_p->ta_buckets != NULL) {
-    if (table_p->ta_free_func == NULL) {
-      free(table_p->ta_buckets);
-    }
-    else if (! table_p->ta_free_func(table_p->ta_mem_pool,
-				     table_p->ta_buckets,
-				     table_p->ta_bucket_n *
-				     sizeof(table_entry_t *))) {
-      return TABLE_ERROR_FREE;
-    }
-  }
-  table_p->ta_magic = 0;
-  if (table_p->ta_free_func == NULL) {
-    free(table_p);
-  }
-  else if (! table_p->ta_free_func(table_p->ta_mem_pool, table_p,
-				   sizeof(table_t))) {
-    if (ret == TABLE_ERROR_NONE) {
-      ret = TABLE_ERROR_FREE;
-    }
-  }
+	if (table_p->ta_buckets != NULL) {
+		if (table_p->ta_free_func == NULL) {
+			free(table_p->ta_buckets);
+		}
+		else if (! table_p->ta_free_func(table_p->ta_mem_pool,
+										 table_p->ta_buckets,
+										 table_p->ta_bucket_n *
+										 sizeof(table_entry_t *))) {
+			return TABLE_ERROR_FREE;
+		}
+	}
+	table_p->ta_magic = 0;
+	if (table_p->ta_free_func == NULL) {
+		free(table_p);
+	}
+	else if (! table_p->ta_free_func(table_p->ta_mem_pool, table_p,
+									 sizeof(table_t))) {
+		if (ret == TABLE_ERROR_NONE) {
+			ret = TABLE_ERROR_FREE;
+		}
+	}
   
-  return ret;
+	return ret;
 }
 
 /*
@@ -1544,241 +1544,241 @@ int	table_free(table_t *table_p)
  * in the table.
  */
 int	table_insert_kd(table_t *table_p,
-			const void *key_buf, const int key_size,
-			const void *data_buf, const int data_size,
-			void **key_buf_p, void **data_buf_p,
-			const char overwrite_b)
+					const void *key_buf, const int key_size,
+					const void *data_buf, const int data_size,
+					void **key_buf_p, void **data_buf_p,
+					const char overwrite_b)
 {
-  int		bucket;
-  unsigned int	ksize, dsize, new_size, old_size, copy_size;
-  table_entry_t	*entry_p, *last_p, *new_entry_p;
-  void		*key_copy_p, *data_copy_p;
+	int		bucket;
+	unsigned int	ksize, dsize, new_size, old_size, copy_size;
+	table_entry_t	*entry_p, *last_p, *new_entry_p;
+	void		*key_copy_p, *data_copy_p;
   
-  /* check the arguments */
-  if (table_p == NULL) {
-    return TABLE_ERROR_ARG_NULL;
-  }
-  if (table_p->ta_magic != TABLE_MAGIC) {
-    return TABLE_ERROR_PNT;
-  }
-  if (key_buf == NULL) {
-    return TABLE_ERROR_ARG_NULL;
-  }
-  /* data_buf can be null but size must be >= 0, if it isn't null size != 0 */
-  if ((data_buf == NULL && data_size < 0)
-      || (data_buf != NULL && data_size == 0)) {
-    return TABLE_ERROR_SIZE;
-  }
+	/* check the arguments */
+	if (table_p == NULL) {
+		return TABLE_ERROR_ARG_NULL;
+	}
+	if (table_p->ta_magic != TABLE_MAGIC) {
+		return TABLE_ERROR_PNT;
+	}
+	if (key_buf == NULL) {
+		return TABLE_ERROR_ARG_NULL;
+	}
+	/* data_buf can be null but size must be >= 0, if it isn't null size != 0 */
+	if ((data_buf == NULL && data_size < 0)
+		|| (data_buf != NULL && data_size == 0)) {
+		return TABLE_ERROR_SIZE;
+	}
   
 #ifndef NO_MMAP
-  /* no mmap support so immediate error */
-  if (table_p->ta_mmap != NULL) {
-    return TABLE_ERROR_MMAP_OP;
-  }
+	/* no mmap support so immediate error */
+	if (table_p->ta_mmap != NULL) {
+		return TABLE_ERROR_MMAP_OP;
+	}
 #endif
   
-  /* determine sizes of key and data */
-  if (key_size < 0) {
-    ksize = strlen((char *)key_buf) + sizeof(char);
-  }
-  else {
-    ksize = key_size;
-  }
-  if (data_size < 0) {
-    dsize = strlen((char *)data_buf) + sizeof(char);
-  }
-  else {
-    dsize = data_size;
-  }
-  
-  /* get the bucket number via a hash function */
-  bucket = hash(key_buf, ksize, 0) % table_p->ta_bucket_n;
-  
-  /* look for the entry in this bucket, only check keys of the same size */
-  last_p = NULL;
-  for (entry_p = table_p->ta_buckets[bucket];
-       entry_p != NULL;
-       last_p = entry_p, entry_p = entry_p->te_next_p) {
-    if (entry_p->te_key_size == ksize
-	&& memcmp(ENTRY_KEY_BUF(entry_p), key_buf, ksize) == 0) {
-      break;
-    }
-  }
-  
-  /* did we find it?  then we are in replace mode. */
-  if (entry_p != NULL) {
-    
-    /* can we not overwrite existing data? */
-    if (! overwrite_b) {
-      SET_POINTER(key_buf_p, ENTRY_KEY_BUF(entry_p));
-      if (data_buf_p != NULL) {
-	if (entry_p->te_data_size == 0) {
-	  *data_buf_p = NULL;
+	/* determine sizes of key and data */
+	if (key_size < 0) {
+		ksize = strlen((char *)key_buf) + sizeof(char);
 	}
 	else {
-	  if (table_p->ta_data_align == 0) {
-	    *data_buf_p = ENTRY_DATA_BUF(table_p, entry_p);
-	  }
-	  else {
-	    *data_buf_p = entry_data_buf(table_p, entry_p);
-	  }
+		ksize = key_size;
 	}
-      }
-      return TABLE_ERROR_OVERWRITE;
-    }
+	if (data_size < 0) {
+		dsize = strlen((char *)data_buf) + sizeof(char);
+	}
+	else {
+		dsize = data_size;
+	}
+  
+	/* get the bucket number via a hash function */
+	bucket = hash(key_buf, ksize, 0) % table_p->ta_bucket_n;
+  
+	/* look for the entry in this bucket, only check keys of the same size */
+	last_p = NULL;
+	for (entry_p = table_p->ta_buckets[bucket];
+		 entry_p != NULL;
+		 last_p = entry_p, entry_p = entry_p->te_next_p) {
+		if (entry_p->te_key_size == ksize
+			&& memcmp(ENTRY_KEY_BUF(entry_p), key_buf, ksize) == 0) {
+			break;
+		}
+	}
+  
+	/* did we find it?  then we are in replace mode. */
+	if (entry_p != NULL) {
     
-    /* re-alloc entry's data if the new size != the old */
-    if (dsize != entry_p->te_data_size) {
+		/* can we not overwrite existing data? */
+		if (! overwrite_b) {
+			SET_POINTER(key_buf_p, ENTRY_KEY_BUF(entry_p));
+			if (data_buf_p != NULL) {
+				if (entry_p->te_data_size == 0) {
+					*data_buf_p = NULL;
+				}
+				else {
+					if (table_p->ta_data_align == 0) {
+						*data_buf_p = ENTRY_DATA_BUF(table_p, entry_p);
+					}
+					else {
+						*data_buf_p = entry_data_buf(table_p, entry_p);
+					}
+				}
+			}
+			return TABLE_ERROR_OVERWRITE;
+		}
+    
+		/* re-alloc entry's data if the new size != the old */
+		if (dsize != entry_p->te_data_size) {
       
-      /*
-       * First we delete it from the list to keep the list whole.
-       * This properly preserves the linked list in case we have a
-       * thread marching through the linked list while we are
-       * inserting.  Maybe this is an unnecessary protection but it
-       * should not harm that much.
-       */
-      if (last_p == NULL) {
-	table_p->ta_buckets[bucket] = entry_p->te_next_p;
-      }
-      else {
-	last_p->te_next_p = entry_p->te_next_p;
-      }
+			/*
+			 * First we delete it from the list to keep the list whole.
+			 * This properly preserves the linked list in case we have a
+			 * thread marching through the linked list while we are
+			 * inserting.  Maybe this is an unnecessary protection but it
+			 * should not harm that much.
+			 */
+			if (last_p == NULL) {
+				table_p->ta_buckets[bucket] = entry_p->te_next_p;
+			}
+			else {
+				last_p->te_next_p = entry_p->te_next_p;
+			}
       
-      /*
-       * Realloc the structure which may change its pointer. NOTE:
-       * this may change any previous data_key_p and data_copy_p
-       * pointers.
-       */
-      new_size = entry_size(table_p, entry_p->te_key_size, dsize);
-      if (table_p->ta_resize_func == NULL) {
-	/* if the alloc function has not been overriden do realloc */
+			/*
+			 * Realloc the structure which may change its pointer. NOTE:
+			 * this may change any previous data_key_p and data_copy_p
+			 * pointers.
+			 */
+			new_size = entry_size(table_p, entry_p->te_key_size, dsize);
+			if (table_p->ta_resize_func == NULL) {
+				/* if the alloc function has not been overriden do realloc */
+				if (table_p->ta_alloc_func == NULL) {
+					entry_p = (table_entry_t *)realloc(entry_p, new_size);
+					if (entry_p == NULL) {
+						return TABLE_ERROR_ALLOC;
+					}
+				}
+				else {
+					old_size = new_size - dsize + entry_p->te_data_size;
+					/*
+					 * if the user did override alloc but not resize, assume
+					 * that the user's allocation functions can't grok realloc
+					 * and do it ourselves the hard way.
+					 */
+					new_entry_p =
+						(table_entry_t *)table_p->ta_alloc_func(table_p->ta_mem_pool,
+																new_size);
+					if (new_entry_p == NULL) {
+						return TABLE_ERROR_ALLOC;
+					}
+					if (new_size > old_size) {
+						copy_size = old_size;
+					}
+					else {
+						copy_size = new_size;
+					}
+					memcpy(new_entry_p, entry_p, copy_size);
+					if (! table_p->ta_free_func(table_p->ta_mem_pool, entry_p,
+												old_size)) {
+						return TABLE_ERROR_FREE;
+					}
+					entry_p = new_entry_p;
+				}
+			}
+			else {
+				old_size = new_size - dsize + entry_p->te_data_size;
+				entry_p = (table_entry_t *)
+					table_p->ta_resize_func(table_p->ta_mem_pool, entry_p,
+											old_size, new_size);
+				if (entry_p == NULL) {
+					return TABLE_ERROR_ALLOC;
+				}
+			}
+      
+			/* add it back to the front of the list */
+			entry_p->te_data_size = dsize;
+			entry_p->te_next_p = table_p->ta_buckets[bucket];
+			table_p->ta_buckets[bucket] = entry_p;
+		}
+    
+		/* copy or replace data in storage */
+		if (dsize > 0) {
+			if (table_p->ta_data_align == 0) {
+				data_copy_p = ENTRY_DATA_BUF(table_p, entry_p);
+			}
+			else {
+				data_copy_p = entry_data_buf(table_p, entry_p);
+			}
+			if (data_buf != NULL) {
+				memcpy(data_copy_p, data_buf, dsize);
+			}
+		}
+		else {
+			data_copy_p = NULL;
+		}
+    
+		SET_POINTER(key_buf_p, ENTRY_KEY_BUF(entry_p));
+		SET_POINTER(data_buf_p, data_copy_p);
+    
+		/* returning from the section where we were overwriting table data */
+		return TABLE_ERROR_NONE;
+	}
+  
+	/*
+	 * It is a new entry.
+	 */
+  
+	/* allocate a new entry */
+	new_size = entry_size(table_p, ksize, dsize);
 	if (table_p->ta_alloc_func == NULL) {
-	  entry_p = (table_entry_t *)realloc(entry_p, new_size);
-	  if (entry_p == NULL) {
-	    return TABLE_ERROR_ALLOC;
-	  }
+		entry_p = (table_entry_t *)malloc(new_size);
 	}
 	else {
-	  old_size = new_size - dsize + entry_p->te_data_size;
-	  /*
-	   * if the user did override alloc but not resize, assume
-	   * that the user's allocation functions can't grok realloc
-	   * and do it ourselves the hard way.
-	   */
-	  new_entry_p =
-	    (table_entry_t *)table_p->ta_alloc_func(table_p->ta_mem_pool,
-						    new_size);
-	  if (new_entry_p == NULL) {
-	    return TABLE_ERROR_ALLOC;
-	  }
-	  if (new_size > old_size) {
-	    copy_size = old_size;
-	  }
-	  else {
-	    copy_size = new_size;
-	  }
-	  memcpy(new_entry_p, entry_p, copy_size);
-	  if (! table_p->ta_free_func(table_p->ta_mem_pool, entry_p,
-				      old_size)) {
-	    return TABLE_ERROR_FREE;
-	  }
-	  entry_p = new_entry_p;
+		entry_p =
+			(table_entry_t *)table_p->ta_alloc_func(table_p->ta_mem_pool, new_size);
 	}
-      }
-      else {
-	old_size = new_size - dsize + entry_p->te_data_size;
-	entry_p = (table_entry_t *)
-	  table_p->ta_resize_func(table_p->ta_mem_pool, entry_p,
-				  old_size, new_size);
 	if (entry_p == NULL) {
-	  return TABLE_ERROR_ALLOC;
+		return TABLE_ERROR_ALLOC;
 	}
-      }
-      
-      /* add it back to the front of the list */
-      entry_p->te_data_size = dsize;
-      entry_p->te_next_p = table_p->ta_buckets[bucket];
-      table_p->ta_buckets[bucket] = entry_p;
-    }
-    
-    /* copy or replace data in storage */
-    if (dsize > 0) {
-      if (table_p->ta_data_align == 0) {
-	data_copy_p = ENTRY_DATA_BUF(table_p, entry_p);
-      }
-      else {
-	data_copy_p = entry_data_buf(table_p, entry_p);
-      }
-      if (data_buf != NULL) {
-	memcpy(data_copy_p, data_buf, dsize);
-      }
-    }
-    else {
-      data_copy_p = NULL;
-    }
-    
-    SET_POINTER(key_buf_p, ENTRY_KEY_BUF(entry_p));
-    SET_POINTER(data_buf_p, data_copy_p);
-    
-    /* returning from the section where we were overwriting table data */
-    return TABLE_ERROR_NONE;
-  }
   
-  /*
-   * It is a new entry.
-   */
+	/* copy key into storage */
+	entry_p->te_key_size = ksize;
+	key_copy_p = ENTRY_KEY_BUF(entry_p);
+	memcpy(key_copy_p, key_buf, ksize);
   
-  /* allocate a new entry */
-  new_size = entry_size(table_p, ksize, dsize);
-  if (table_p->ta_alloc_func == NULL) {
-    entry_p = (table_entry_t *)malloc(new_size);
-  }
-  else {
-    entry_p =
-      (table_entry_t *)table_p->ta_alloc_func(table_p->ta_mem_pool, new_size);
-  }
-  if (entry_p == NULL) {
-    return TABLE_ERROR_ALLOC;
-  }
+	/* copy data in */
+	entry_p->te_data_size = dsize;
+	if (dsize > 0) {
+		if (table_p->ta_data_align == 0) {
+			data_copy_p = ENTRY_DATA_BUF(table_p, entry_p);
+		}
+		else {
+			data_copy_p = entry_data_buf(table_p, entry_p);
+		}
+		if (data_buf != NULL) {
+			memcpy(data_copy_p, data_buf, dsize);
+		}
+	}
+	else {
+		data_copy_p = NULL;
+	}
   
-  /* copy key into storage */
-  entry_p->te_key_size = ksize;
-  key_copy_p = ENTRY_KEY_BUF(entry_p);
-  memcpy(key_copy_p, key_buf, ksize);
+	SET_POINTER(key_buf_p, key_copy_p);
+	SET_POINTER(data_buf_p, data_copy_p);
   
-  /* copy data in */
-  entry_p->te_data_size = dsize;
-  if (dsize > 0) {
-    if (table_p->ta_data_align == 0) {
-      data_copy_p = ENTRY_DATA_BUF(table_p, entry_p);
-    }
-    else {
-      data_copy_p = entry_data_buf(table_p, entry_p);
-    }
-    if (data_buf != NULL) {
-      memcpy(data_copy_p, data_buf, dsize);
-    }
-  }
-  else {
-    data_copy_p = NULL;
-  }
+	/* insert into list, no need to append */
+	entry_p->te_next_p = table_p->ta_buckets[bucket];
+	table_p->ta_buckets[bucket] = entry_p;
   
-  SET_POINTER(key_buf_p, key_copy_p);
-  SET_POINTER(data_buf_p, data_copy_p);
+	table_p->ta_entry_n++;
   
-  /* insert into list, no need to append */
-  entry_p->te_next_p = table_p->ta_buckets[bucket];
-  table_p->ta_buckets[bucket] = entry_p;
+	/* do we need auto-adjust? */
+	if ((table_p->ta_flags & TABLE_FLAG_AUTO_ADJUST)
+		&& SHOULD_TABLE_GROW(table_p)) {
+		return table_adjust(table_p, table_p->ta_entry_n);
+	}
   
-  table_p->ta_entry_n++;
-  
-  /* do we need auto-adjust? */
-  if ((table_p->ta_flags & TABLE_FLAG_AUTO_ADJUST)
-      && SHOULD_TABLE_GROW(table_p)) {
-    return table_adjust(table_p, table_p->ta_entry_n);
-  }
-  
-  return TABLE_ERROR_NONE;
+	return TABLE_ERROR_NONE;
 }
 
 /*
@@ -1834,12 +1834,12 @@ int	table_insert_kd(table_t *table_p,
  * in the table.
  */
 int	table_insert(table_t *table_p,
-		     const void *key_buf, const int key_size,
-		     const void *data_buf, const int data_size,
-		     void **data_buf_p, const char overwrite_b)
+				 const void *key_buf, const int key_size,
+				 const void *data_buf, const int data_size,
+				 void **data_buf_p, const char overwrite_b)
 {
-  return table_insert_kd(table_p, key_buf, key_size, data_buf, data_size,
-			 NULL, data_buf_p, overwrite_b);
+	return table_insert_kd(table_p, key_buf, key_size, data_buf, data_size,
+						   NULL, data_buf_p, overwrite_b);
 }
 
 /*
@@ -1882,67 +1882,67 @@ int	table_insert(table_t *table_p,
  * the key.
  */
 int	table_retrieve(table_t *table_p,
-		       const void *key_buf, const int key_size,
-		       void **data_buf_p, int *data_size_p)
+				   const void *key_buf, const int key_size,
+				   void **data_buf_p, int *data_size_p)
 {
-  int		bucket;
-  unsigned int	ksize;
-  table_entry_t	*entry_p, **buckets;
+	int		bucket;
+	unsigned int	ksize;
+	table_entry_t	*entry_p, **buckets;
   
-  if (table_p == NULL) {
-    return TABLE_ERROR_ARG_NULL;
-  }
-  if (table_p->ta_magic != TABLE_MAGIC) {
-    return TABLE_ERROR_PNT;
-  }
-  if (key_buf == NULL) {
-    return TABLE_ERROR_ARG_NULL;
-  }
+	if (table_p == NULL) {
+		return TABLE_ERROR_ARG_NULL;
+	}
+	if (table_p->ta_magic != TABLE_MAGIC) {
+		return TABLE_ERROR_PNT;
+	}
+	if (key_buf == NULL) {
+		return TABLE_ERROR_ARG_NULL;
+	}
   
-  /* find key size */
-  if (key_size < 0) {
-    ksize = strlen((char *)key_buf) + sizeof(char);
-  }
-  else {
-    ksize = key_size;
-  }
+	/* find key size */
+	if (key_size < 0) {
+		ksize = strlen((char *)key_buf) + sizeof(char);
+	}
+	else {
+		ksize = key_size;
+	}
   
-  /* get the bucket number via a has function */
-  bucket = hash(key_buf, ksize, 0) % table_p->ta_bucket_n;
+	/* get the bucket number via a has function */
+	bucket = hash(key_buf, ksize, 0) % table_p->ta_bucket_n;
   
-  /* look for the entry in this bucket, only check keys of the same size */
-  buckets = table_p->ta_buckets;
-  for (entry_p = buckets[bucket];
-       entry_p != NULL;
-       entry_p = entry_p->te_next_p) {
-    entry_p = TABLE_POINTER(table_p, table_entry_t *, entry_p);
-    if (entry_p->te_key_size == ksize
-	&& memcmp(ENTRY_KEY_BUF(entry_p), key_buf, ksize) == 0) {
-      break;
-    }
-  }
+	/* look for the entry in this bucket, only check keys of the same size */
+	buckets = table_p->ta_buckets;
+	for (entry_p = buckets[bucket];
+		 entry_p != NULL;
+		 entry_p = entry_p->te_next_p) {
+		entry_p = TABLE_POINTER(table_p, table_entry_t *, entry_p);
+		if (entry_p->te_key_size == ksize
+			&& memcmp(ENTRY_KEY_BUF(entry_p), key_buf, ksize) == 0) {
+			break;
+		}
+	}
   
-  /* not found? */
-  if (entry_p == NULL) {
-    return TABLE_ERROR_NOT_FOUND;
-  }
+	/* not found? */
+	if (entry_p == NULL) {
+		return TABLE_ERROR_NOT_FOUND;
+	}
   
-  if (data_buf_p != NULL) {
-    if (entry_p->te_data_size == 0) {
-      *data_buf_p = NULL;
-    }
-    else {
-      if (table_p->ta_data_align == 0) {
-	*data_buf_p = ENTRY_DATA_BUF(table_p, entry_p);
-      }
-      else {
-	*data_buf_p = entry_data_buf(table_p, entry_p);
-      }
-    }
-  }
-  SET_POINTER(data_size_p, entry_p->te_data_size);
+	if (data_buf_p != NULL) {
+		if (entry_p->te_data_size == 0) {
+			*data_buf_p = NULL;
+		}
+		else {
+			if (table_p->ta_data_align == 0) {
+				*data_buf_p = ENTRY_DATA_BUF(table_p, entry_p);
+			}
+			else {
+				*data_buf_p = entry_data_buf(table_p, entry_p);
+			}
+		}
+	}
+	SET_POINTER(data_size_p, entry_p->te_data_size);
   
-  return TABLE_ERROR_NONE;
+	return TABLE_ERROR_NONE;
 }
 
 /*
@@ -1991,121 +1991,121 @@ int	table_retrieve(table_t *table_p,
  * associated with the key.
  */
 int	table_delete(table_t *table_p,
-		     const void *key_buf, const int key_size,
-		     void **data_buf_p, int *data_size_p)
+				 const void *key_buf, const int key_size,
+				 void **data_buf_p, int *data_size_p)
 {
-  int		bucket;
-  unsigned int	ksize;
-  unsigned char	*data_copy_p;
-  table_entry_t	*entry_p, *last_p;
+	int		bucket;
+	unsigned int	ksize;
+	unsigned char	*data_copy_p;
+	table_entry_t	*entry_p, *last_p;
   
-  if (table_p == NULL) {
-    return TABLE_ERROR_ARG_NULL;
-  }
-  if (table_p->ta_magic != TABLE_MAGIC) {
-    return TABLE_ERROR_PNT;
-  }
-  if (key_buf == NULL) {
-    return TABLE_ERROR_ARG_NULL;
-  }
+	if (table_p == NULL) {
+		return TABLE_ERROR_ARG_NULL;
+	}
+	if (table_p->ta_magic != TABLE_MAGIC) {
+		return TABLE_ERROR_PNT;
+	}
+	if (key_buf == NULL) {
+		return TABLE_ERROR_ARG_NULL;
+	}
   
 #ifndef NO_MMAP
-  /* no mmap support so immediate error */
-  if (table_p->ta_mmap != NULL) {
-    return TABLE_ERROR_MMAP_OP;
-  }
+	/* no mmap support so immediate error */
+	if (table_p->ta_mmap != NULL) {
+		return TABLE_ERROR_MMAP_OP;
+	}
 #endif
   
-  /* get the key size */
-  if (key_size < 0) {
-    ksize = strlen((char *)key_buf) + sizeof(char);
-  }
-  else {
-    ksize = key_size;
-  }
+	/* get the key size */
+	if (key_size < 0) {
+		ksize = strlen((char *)key_buf) + sizeof(char);
+	}
+	else {
+		ksize = key_size;
+	}
   
-  /* find our bucket */
-  bucket = hash(key_buf, ksize, 0) % table_p->ta_bucket_n;
+	/* find our bucket */
+	bucket = hash(key_buf, ksize, 0) % table_p->ta_bucket_n;
   
-  /* look for the entry in this bucket, only check keys of the same size */
-  for (last_p = NULL, entry_p = table_p->ta_buckets[bucket];
-       entry_p != NULL;
-       last_p = entry_p, entry_p = entry_p->te_next_p) {
-    if (entry_p->te_key_size == ksize
-	&& memcmp(ENTRY_KEY_BUF(entry_p), key_buf, ksize) == 0) {
-      break;
-    }
-  }
+	/* look for the entry in this bucket, only check keys of the same size */
+	for (last_p = NULL, entry_p = table_p->ta_buckets[bucket];
+		 entry_p != NULL;
+		 last_p = entry_p, entry_p = entry_p->te_next_p) {
+		if (entry_p->te_key_size == ksize
+			&& memcmp(ENTRY_KEY_BUF(entry_p), key_buf, ksize) == 0) {
+			break;
+		}
+	}
   
-  /* did we find it? */
-  if (entry_p == NULL) {
-    return TABLE_ERROR_NOT_FOUND;
-  }
+	/* did we find it? */
+	if (entry_p == NULL) {
+		return TABLE_ERROR_NOT_FOUND;
+	}
   
-  /*
-   * NOTE: we may want to adjust the linear counters here if the entry
-   * we are deleting is the one we are pointing on or is ahead of the
-   * one in the bucket list
-   */
+	/*
+	 * NOTE: we may want to adjust the linear counters here if the entry
+	 * we are deleting is the one we are pointing on or is ahead of the
+	 * one in the bucket list
+	 */
   
-  /* remove entry from the linked list */
-  if (last_p == NULL) {
-    table_p->ta_buckets[bucket] = entry_p->te_next_p;
-  }
-  else {
-    last_p->te_next_p = entry_p->te_next_p;
-  }
+	/* remove entry from the linked list */
+	if (last_p == NULL) {
+		table_p->ta_buckets[bucket] = entry_p->te_next_p;
+	}
+	else {
+		last_p->te_next_p = entry_p->te_next_p;
+	}
   
-  /* free entry */
-  if (data_buf_p != NULL) {
-    if (entry_p->te_data_size == 0) {
-      *data_buf_p = NULL;
-    }
-    else {
-      /*
-       * if we were storing it compacted, we now need to malloc some
-       * space if the user wants the value after the delete.
-       */
-      if (table_p->ta_alloc_func == NULL) {
-	*data_buf_p = malloc(entry_p->te_data_size);
-      }
-      else {
-	*data_buf_p = table_p->ta_alloc_func(table_p->ta_mem_pool,
-					     entry_p->te_data_size);
-      }
-      if (*data_buf_p == NULL) {
-	return TABLE_ERROR_ALLOC;
-      }
-      if (table_p->ta_data_align == 0) {
-	data_copy_p = ENTRY_DATA_BUF(table_p, entry_p);
-      }
-      else {
-	data_copy_p = entry_data_buf(table_p, entry_p);
-      }
-      memcpy(*data_buf_p, data_copy_p, entry_p->te_data_size);
-    }
-  }
-  SET_POINTER(data_size_p, entry_p->te_data_size);
-  if (table_p->ta_free_func == NULL) {
-    free(entry_p);
-  }
-  else if (! table_p->ta_free_func(table_p->ta_mem_pool, entry_p,
-				   entry_size(table_p,
-					      entry_p->te_key_size,
-					      entry_p->te_data_size))) {
-    return TABLE_ERROR_FREE;
-  }
+	/* free entry */
+	if (data_buf_p != NULL) {
+		if (entry_p->te_data_size == 0) {
+			*data_buf_p = NULL;
+		}
+		else {
+			/*
+			 * if we were storing it compacted, we now need to malloc some
+			 * space if the user wants the value after the delete.
+			 */
+			if (table_p->ta_alloc_func == NULL) {
+				*data_buf_p = malloc(entry_p->te_data_size);
+			}
+			else {
+				*data_buf_p = table_p->ta_alloc_func(table_p->ta_mem_pool,
+													 entry_p->te_data_size);
+			}
+			if (*data_buf_p == NULL) {
+				return TABLE_ERROR_ALLOC;
+			}
+			if (table_p->ta_data_align == 0) {
+				data_copy_p = ENTRY_DATA_BUF(table_p, entry_p);
+			}
+			else {
+				data_copy_p = entry_data_buf(table_p, entry_p);
+			}
+			memcpy(*data_buf_p, data_copy_p, entry_p->te_data_size);
+		}
+	}
+	SET_POINTER(data_size_p, entry_p->te_data_size);
+	if (table_p->ta_free_func == NULL) {
+		free(entry_p);
+	}
+	else if (! table_p->ta_free_func(table_p->ta_mem_pool, entry_p,
+									 entry_size(table_p,
+												entry_p->te_key_size,
+												entry_p->te_data_size))) {
+		return TABLE_ERROR_FREE;
+	}
   
-  table_p->ta_entry_n--;
+	table_p->ta_entry_n--;
   
-  /* do we need auto-adjust down? */
-  if ((table_p->ta_flags & TABLE_FLAG_AUTO_ADJUST)
-      && (table_p->ta_flags & TABLE_FLAG_ADJUST_DOWN)
-      && SHOULD_TABLE_SHRINK(table_p)) {
-    return table_adjust(table_p, table_p->ta_entry_n);
-  }
+	/* do we need auto-adjust down? */
+	if ((table_p->ta_flags & TABLE_FLAG_AUTO_ADJUST)
+		&& (table_p->ta_flags & TABLE_FLAG_ADJUST_DOWN)
+		&& SHOULD_TABLE_SHRINK(table_p)) {
+		return table_adjust(table_p, table_p->ta_entry_n);
+	}
   
-  return TABLE_ERROR_NONE;
+	return TABLE_ERROR_NONE;
 }
 
 /*
@@ -2158,116 +2158,116 @@ int	table_delete(table_t *table_p,
  * associated with the key.
  */
 int	table_delete_first(table_t *table_p,
-			   void **key_buf_p, int *key_size_p,
-			   void **data_buf_p, int *data_size_p)
+					   void **key_buf_p, int *key_size_p,
+					   void **data_buf_p, int *data_size_p)
 {
-  unsigned char		*data_copy_p;
-  table_entry_t		*entry_p;
-  table_linear_t	linear;
+	unsigned char		*data_copy_p;
+	table_entry_t		*entry_p;
+	table_linear_t	linear;
   
-  if (table_p == NULL) {
-    return TABLE_ERROR_ARG_NULL;
-  }
-  if (table_p->ta_magic != TABLE_MAGIC) {
-    return TABLE_ERROR_PNT;
-  }
+	if (table_p == NULL) {
+		return TABLE_ERROR_ARG_NULL;
+	}
+	if (table_p->ta_magic != TABLE_MAGIC) {
+		return TABLE_ERROR_PNT;
+	}
   
 #ifndef NO_MMAP
-  /* no mmap support so immediate error */
-  if (table_p->ta_mmap != NULL) {
-    return TABLE_ERROR_MMAP_OP;
-  }
+	/* no mmap support so immediate error */
+	if (table_p->ta_mmap != NULL) {
+		return TABLE_ERROR_MMAP_OP;
+	}
 #endif
   
-  /* take the first entry */
-  entry_p = first_entry(table_p, &linear);
-  if (entry_p == NULL) {
-    return TABLE_ERROR_NOT_FOUND;
-  }
+	/* take the first entry */
+	entry_p = first_entry(table_p, &linear);
+	if (entry_p == NULL) {
+		return TABLE_ERROR_NOT_FOUND;
+	}
   
-  /*
-   * NOTE: we may want to adjust the linear counters here if the entry
-   * we are deleting is the one we are pointing on or is ahead of the
-   * one in the bucket list
-   */
+	/*
+	 * NOTE: we may want to adjust the linear counters here if the entry
+	 * we are deleting is the one we are pointing on or is ahead of the
+	 * one in the bucket list
+	 */
   
-  /* remove entry from the linked list */
-  table_p->ta_buckets[linear.tl_bucket_c] = entry_p->te_next_p;
+	/* remove entry from the linked list */
+	table_p->ta_buckets[linear.tl_bucket_c] = entry_p->te_next_p;
   
-  /* free entry */
-  if (key_buf_p != NULL) {
-    if (entry_p->te_key_size == 0) {
-      *key_buf_p = NULL;
-    }
-    else {
-      /*
-       * if we were storing it compacted, we now need to malloc some
-       * space if the user wants the value after the delete.
-       */
-      if (table_p->ta_alloc_func == NULL) {
-	*key_buf_p = malloc(entry_p->te_key_size);
-      }
-      else {
-	*key_buf_p = table_p->ta_alloc_func(table_p->ta_mem_pool,
-					    entry_p->te_key_size);
-      }
-      if (*key_buf_p == NULL) {
-	return TABLE_ERROR_ALLOC;
-      }
-      memcpy(*key_buf_p, ENTRY_KEY_BUF(entry_p), entry_p->te_key_size);
-    }
-  }
-  SET_POINTER(key_size_p, entry_p->te_key_size);
+	/* free entry */
+	if (key_buf_p != NULL) {
+		if (entry_p->te_key_size == 0) {
+			*key_buf_p = NULL;
+		}
+		else {
+			/*
+			 * if we were storing it compacted, we now need to malloc some
+			 * space if the user wants the value after the delete.
+			 */
+			if (table_p->ta_alloc_func == NULL) {
+				*key_buf_p = malloc(entry_p->te_key_size);
+			}
+			else {
+				*key_buf_p = table_p->ta_alloc_func(table_p->ta_mem_pool,
+													entry_p->te_key_size);
+			}
+			if (*key_buf_p == NULL) {
+				return TABLE_ERROR_ALLOC;
+			}
+			memcpy(*key_buf_p, ENTRY_KEY_BUF(entry_p), entry_p->te_key_size);
+		}
+	}
+	SET_POINTER(key_size_p, entry_p->te_key_size);
   
-  if (data_buf_p != NULL) {
-    if (entry_p->te_data_size == 0) {
-      *data_buf_p = NULL;
-    }
-    else {
-      /*
-       * if we were storing it compacted, we now need to malloc some
-       * space if the user wants the value after the delete.
-       */
-      if (table_p->ta_alloc_func == NULL) {
-	*data_buf_p = malloc(entry_p->te_data_size);
-      }
-      else {
-	*data_buf_p = table_p->ta_alloc_func(table_p->ta_mem_pool,
-					     entry_p->te_data_size);
-      }
-      if (*data_buf_p == NULL) {
-	return TABLE_ERROR_ALLOC;
-      }
-      if (table_p->ta_data_align == 0) {
-	data_copy_p = ENTRY_DATA_BUF(table_p, entry_p);
-      }
-      else {
-	data_copy_p = entry_data_buf(table_p, entry_p);
-      }
-      memcpy(*data_buf_p, data_copy_p, entry_p->te_data_size);
-    }
-  }
-  SET_POINTER(data_size_p, entry_p->te_data_size);
-  if (table_p->ta_free_func == NULL) {
-    free(entry_p);
-  }
-  else if (! table_p->ta_free_func(table_p->ta_mem_pool, entry_p,
-				   entry_size(table_p,
-					      entry_p->te_key_size,
-					      entry_p->te_data_size))) {
-    return TABLE_ERROR_FREE;
-  }
+	if (data_buf_p != NULL) {
+		if (entry_p->te_data_size == 0) {
+			*data_buf_p = NULL;
+		}
+		else {
+			/*
+			 * if we were storing it compacted, we now need to malloc some
+			 * space if the user wants the value after the delete.
+			 */
+			if (table_p->ta_alloc_func == NULL) {
+				*data_buf_p = malloc(entry_p->te_data_size);
+			}
+			else {
+				*data_buf_p = table_p->ta_alloc_func(table_p->ta_mem_pool,
+													 entry_p->te_data_size);
+			}
+			if (*data_buf_p == NULL) {
+				return TABLE_ERROR_ALLOC;
+			}
+			if (table_p->ta_data_align == 0) {
+				data_copy_p = ENTRY_DATA_BUF(table_p, entry_p);
+			}
+			else {
+				data_copy_p = entry_data_buf(table_p, entry_p);
+			}
+			memcpy(*data_buf_p, data_copy_p, entry_p->te_data_size);
+		}
+	}
+	SET_POINTER(data_size_p, entry_p->te_data_size);
+	if (table_p->ta_free_func == NULL) {
+		free(entry_p);
+	}
+	else if (! table_p->ta_free_func(table_p->ta_mem_pool, entry_p,
+									 entry_size(table_p,
+												entry_p->te_key_size,
+												entry_p->te_data_size))) {
+		return TABLE_ERROR_FREE;
+	}
   
-  table_p->ta_entry_n--;
+	table_p->ta_entry_n--;
   
-  /* do we need auto-adjust down? */
-  if ((table_p->ta_flags & TABLE_FLAG_AUTO_ADJUST)
-      && (table_p->ta_flags & TABLE_FLAG_ADJUST_DOWN)
-      && SHOULD_TABLE_SHRINK(table_p)) {
-    return table_adjust(table_p, table_p->ta_entry_n);
-  }
+	/* do we need auto-adjust down? */
+	if ((table_p->ta_flags & TABLE_FLAG_AUTO_ADJUST)
+		&& (table_p->ta_flags & TABLE_FLAG_ADJUST_DOWN)
+		&& SHOULD_TABLE_SHRINK(table_p)) {
+		return table_adjust(table_p, table_p->ta_entry_n);
+	}
   
-  return TABLE_ERROR_NONE;
+	return TABLE_ERROR_NONE;
 }
 
 /*
@@ -2296,17 +2296,17 @@ int	table_delete_first(table_t *table_p,
  */
 int	table_info(table_t *table_p, int *num_buckets_p, int *num_entries_p)
 {
-  if (table_p == NULL) {
-    return TABLE_ERROR_ARG_NULL;
-  }
-  if (table_p->ta_magic != TABLE_MAGIC) {
-    return TABLE_ERROR_PNT;
-  }
+	if (table_p == NULL) {
+		return TABLE_ERROR_ARG_NULL;
+	}
+	if (table_p->ta_magic != TABLE_MAGIC) {
+		return TABLE_ERROR_PNT;
+	}
   
-  SET_POINTER(num_buckets_p, table_p->ta_bucket_n);
-  SET_POINTER(num_entries_p, table_p->ta_entry_n);
+	SET_POINTER(num_buckets_p, table_p->ta_bucket_n);
+	SET_POINTER(num_entries_p, table_p->ta_entry_n);
   
-  return TABLE_ERROR_NONE;
+	return TABLE_ERROR_NONE;
 }
 
 /*
@@ -2331,111 +2331,111 @@ int	table_info(table_t *table_p, int *num_buckets_p, int *num_entries_p)
  */
 int	table_adjust(table_t *table_p, const int bucket_n)
 {
-  table_entry_t	*entry_p, *next_p;
-  table_entry_t	**buckets, **bucket_p, **bounds_p;
-  int		bucket;
-  unsigned int	buck_n, bucket_size;
+	table_entry_t	*entry_p, *next_p;
+	table_entry_t	**buckets, **bucket_p, **bounds_p;
+	int		bucket;
+	unsigned int	buck_n, bucket_size;
   
-  if (table_p == NULL) {
-    return TABLE_ERROR_ARG_NULL;
-  }
-  if (table_p->ta_magic != TABLE_MAGIC) {
-    return TABLE_ERROR_PNT;
-  }
+	if (table_p == NULL) {
+		return TABLE_ERROR_ARG_NULL;
+	}
+	if (table_p->ta_magic != TABLE_MAGIC) {
+		return TABLE_ERROR_PNT;
+	}
   
 #ifndef NO_MMAP
-  /* no mmap support so immediate error */
-  if (table_p->ta_mmap != NULL) {
-    return TABLE_ERROR_MMAP_OP;
-  }
+	/* no mmap support so immediate error */
+	if (table_p->ta_mmap != NULL) {
+		return TABLE_ERROR_MMAP_OP;
+	}
 #endif
   
-  /*
-   * NOTE: we walk through the entries and rehash them.  If we stored
-   * the hash value as a full int in the table-entry, all we would
-   * have to do is remod it.
-   */
+	/*
+	 * NOTE: we walk through the entries and rehash them.  If we stored
+	 * the hash value as a full int in the table-entry, all we would
+	 * have to do is remod it.
+	 */
   
-  /* normalize to the number of entries */
-  if (bucket_n == 0) {
-    buck_n = table_p->ta_entry_n;
-  }
-  else {
-    buck_n = bucket_n;
-  }
+	/* normalize to the number of entries */
+	if (bucket_n == 0) {
+		buck_n = table_p->ta_entry_n;
+	}
+	else {
+		buck_n = bucket_n;
+	}
   
-  /* we must have at least 1 bucket */
-  if (buck_n == 0) {
-    buck_n = 1;
-  }
+	/* we must have at least 1 bucket */
+	if (buck_n == 0) {
+		buck_n = 1;
+	}
   
-  (void)printf("growing table to %d\n", buck_n);
+	(void)printf("growing table to %d\n", buck_n);
   
-  /* make sure we have something to do */
-  if (buck_n == table_p->ta_bucket_n) {
-    return TABLE_ERROR_NONE;
-  }
+	/* make sure we have something to do */
+	if (buck_n == table_p->ta_bucket_n) {
+		return TABLE_ERROR_NONE;
+	}
   
-  /* allocate a new bucket list */
-  bucket_size = buck_n * sizeof(table_entry_t *);
-  if (table_p->ta_alloc_func == NULL) {
-    buckets = (table_entry_t **)malloc(bucket_size);
-  }
-  else {
-    buckets =
-      (table_entry_t **)table_p->ta_alloc_func(table_p->ta_mem_pool,
-					       bucket_size);
-  }
-  if (buckets == NULL) {
-    return TABLE_ERROR_ALLOC;
-  }
-  /*
-   * We zero it ourselves to save the necessity of having a
-   * table_mem_calloc_t memory override function.
-   */
-  memset(buckets, 0, bucket_size);
+	/* allocate a new bucket list */
+	bucket_size = buck_n * sizeof(table_entry_t *);
+	if (table_p->ta_alloc_func == NULL) {
+		buckets = (table_entry_t **)malloc(bucket_size);
+	}
+	else {
+		buckets =
+			(table_entry_t **)table_p->ta_alloc_func(table_p->ta_mem_pool,
+													 bucket_size);
+	}
+	if (buckets == NULL) {
+		return TABLE_ERROR_ALLOC;
+	}
+	/*
+	 * We zero it ourselves to save the necessity of having a
+	 * table_mem_calloc_t memory override function.
+	 */
+	memset(buckets, 0, bucket_size);
   
-  /*
-   * run through each of the items in the current table and rehash
-   * them into the newest bucket sizes
-   */
-  bounds_p = table_p->ta_buckets + table_p->ta_bucket_n;
-  for (bucket_p = table_p->ta_buckets; bucket_p < bounds_p; bucket_p++) {
-    for (entry_p = *bucket_p; entry_p != NULL; entry_p = next_p) {
+	/*
+	 * run through each of the items in the current table and rehash
+	 * them into the newest bucket sizes
+	 */
+	bounds_p = table_p->ta_buckets + table_p->ta_bucket_n;
+	for (bucket_p = table_p->ta_buckets; bucket_p < bounds_p; bucket_p++) {
+		for (entry_p = *bucket_p; entry_p != NULL; entry_p = next_p) {
       
-      /* hash the old data into the new table size */
-      bucket = hash(ENTRY_KEY_BUF(entry_p), entry_p->te_key_size, 0) % buck_n;
+			/* hash the old data into the new table size */
+			bucket = hash(ENTRY_KEY_BUF(entry_p), entry_p->te_key_size, 0) % buck_n;
       
-      /* record the next one now since we overwrite next below */
-      next_p = entry_p->te_next_p;
+			/* record the next one now since we overwrite next below */
+			next_p = entry_p->te_next_p;
       
-      /* insert into new list, no need to append */
-      entry_p->te_next_p = buckets[bucket];
-      buckets[bucket] = entry_p;
+			/* insert into new list, no need to append */
+			entry_p->te_next_p = buckets[bucket];
+			buckets[bucket] = entry_p;
       
-      /*
-       * NOTE: we may want to adjust the bucket_c linear entry here to
-       * keep it current
-       */
-    }
-    /* remove the old table pointers as we go by */
-    *bucket_p = NULL;
-  }
+			/*
+			 * NOTE: we may want to adjust the bucket_c linear entry here to
+			 * keep it current
+			 */
+		}
+		/* remove the old table pointers as we go by */
+		*bucket_p = NULL;
+	}
   
-  /* replace the table buckets with the new ones */
-  if (table_p->ta_free_func == NULL) {
-    free(table_p->ta_buckets);
-  }
-  else if (! table_p->ta_free_func(table_p->ta_mem_pool,
-				   table_p->ta_buckets,
-				   table_p->ta_bucket_n *
-				   sizeof(table_entry_t *))) {
-    return TABLE_ERROR_FREE;
-  }
-  table_p->ta_buckets = buckets;
-  table_p->ta_bucket_n = buck_n;
+	/* replace the table buckets with the new ones */
+	if (table_p->ta_free_func == NULL) {
+		free(table_p->ta_buckets);
+	}
+	else if (! table_p->ta_free_func(table_p->ta_mem_pool,
+									 table_p->ta_buckets,
+									 table_p->ta_bucket_n *
+									 sizeof(table_entry_t *))) {
+		return TABLE_ERROR_FREE;
+	}
+	table_p->ta_buckets = buckets;
+	table_p->ta_bucket_n = buck_n;
   
-  return TABLE_ERROR_NONE;
+	return TABLE_ERROR_NONE;
 }
 
 /*
@@ -2455,7 +2455,7 @@ int	table_adjust(table_t *table_p, const int bucket_n)
  */
 int	table_type_size(void)
 {
-  return sizeof(table_t);
+	return sizeof(table_t);
 }
 
 /************************* linear access routines ****************************/
@@ -2504,44 +2504,44 @@ int	table_type_size(void)
  * associated with the first key.
  */
 int	table_first(table_t *table_p,
-		    void **key_buf_p, int *key_size_p,
-		    void **data_buf_p, int *data_size_p)
+				void **key_buf_p, int *key_size_p,
+				void **data_buf_p, int *data_size_p)
 {
-  table_entry_t	*entry_p;
+	table_entry_t	*entry_p;
   
-  if (table_p == NULL) {
-    return TABLE_ERROR_ARG_NULL;
-  }
-  if (table_p->ta_magic != TABLE_MAGIC) {
-    return TABLE_ERROR_PNT;
-  }
+	if (table_p == NULL) {
+		return TABLE_ERROR_ARG_NULL;
+	}
+	if (table_p->ta_magic != TABLE_MAGIC) {
+		return TABLE_ERROR_PNT;
+	}
   
-  /* initialize our linear magic number */
-  table_p->ta_linear.tl_magic = LINEAR_MAGIC;
+	/* initialize our linear magic number */
+	table_p->ta_linear.tl_magic = LINEAR_MAGIC;
   
-  entry_p = first_entry(table_p, &table_p->ta_linear);
-  if (entry_p == NULL) {
-    return TABLE_ERROR_NOT_FOUND;
-  }
+	entry_p = first_entry(table_p, &table_p->ta_linear);
+	if (entry_p == NULL) {
+		return TABLE_ERROR_NOT_FOUND;
+	}
   
-  SET_POINTER(key_buf_p, ENTRY_KEY_BUF(entry_p));
-  SET_POINTER(key_size_p, entry_p->te_key_size);
-  if (data_buf_p != NULL) {
-    if (entry_p->te_data_size == 0) {
-      *data_buf_p = NULL;
-    }
-    else {
-      if (table_p->ta_data_align == 0) {
-	*data_buf_p = ENTRY_DATA_BUF(table_p, entry_p);
-      }
-      else {
-	*data_buf_p = entry_data_buf(table_p, entry_p);
-      }
-    }
-  }
-  SET_POINTER(data_size_p, entry_p->te_data_size);
+	SET_POINTER(key_buf_p, ENTRY_KEY_BUF(entry_p));
+	SET_POINTER(key_size_p, entry_p->te_key_size);
+	if (data_buf_p != NULL) {
+		if (entry_p->te_data_size == 0) {
+			*data_buf_p = NULL;
+		}
+		else {
+			if (table_p->ta_data_align == 0) {
+				*data_buf_p = ENTRY_DATA_BUF(table_p, entry_p);
+			}
+			else {
+				*data_buf_p = entry_data_buf(table_p, entry_p);
+			}
+		}
+	}
+	SET_POINTER(data_size_p, entry_p->te_data_size);
   
-  return TABLE_ERROR_NONE;
+	return TABLE_ERROR_NONE;
 }
 
 /*
@@ -2588,46 +2588,46 @@ int	table_first(table_t *table_p,
  * associated with the next key.
  */
 int	table_next(table_t *table_p,
-		   void **key_buf_p, int *key_size_p,
-		   void **data_buf_p, int *data_size_p)
+			   void **key_buf_p, int *key_size_p,
+			   void **data_buf_p, int *data_size_p)
 {
-  table_entry_t	*entry_p;
-  int		error;
+	table_entry_t	*entry_p;
+	int		error;
   
-  if (table_p == NULL) {
-    return TABLE_ERROR_ARG_NULL;
-  }
-  if (table_p->ta_magic != TABLE_MAGIC) {
-    return TABLE_ERROR_PNT;
-  }
-  if (table_p->ta_linear.tl_magic != LINEAR_MAGIC) {
-    return TABLE_ERROR_LINEAR;
-  }
+	if (table_p == NULL) {
+		return TABLE_ERROR_ARG_NULL;
+	}
+	if (table_p->ta_magic != TABLE_MAGIC) {
+		return TABLE_ERROR_PNT;
+	}
+	if (table_p->ta_linear.tl_magic != LINEAR_MAGIC) {
+		return TABLE_ERROR_LINEAR;
+	}
   
-  /* move to the next entry */
-  entry_p = next_entry(table_p, &table_p->ta_linear, &error);
-  if (entry_p == NULL) {
-    return error;
-  }
+	/* move to the next entry */
+	entry_p = next_entry(table_p, &table_p->ta_linear, &error);
+	if (entry_p == NULL) {
+		return error;
+	}
   
-  SET_POINTER(key_buf_p, ENTRY_KEY_BUF(entry_p));
-  SET_POINTER(key_size_p, entry_p->te_key_size);
-  if (data_buf_p != NULL) {
-    if (entry_p->te_data_size == 0) {
-      *data_buf_p = NULL;
-    }
-    else {
-      if (table_p->ta_data_align == 0) {
-	*data_buf_p = ENTRY_DATA_BUF(table_p, entry_p);
-      }
-      else {
-	*data_buf_p = entry_data_buf(table_p, entry_p);
-      }
-    }
-  }
-  SET_POINTER(data_size_p, entry_p->te_data_size);
+	SET_POINTER(key_buf_p, ENTRY_KEY_BUF(entry_p));
+	SET_POINTER(key_size_p, entry_p->te_key_size);
+	if (data_buf_p != NULL) {
+		if (entry_p->te_data_size == 0) {
+			*data_buf_p = NULL;
+		}
+		else {
+			if (table_p->ta_data_align == 0) {
+				*data_buf_p = ENTRY_DATA_BUF(table_p, entry_p);
+			}
+			else {
+				*data_buf_p = entry_data_buf(table_p, entry_p);
+			}
+		}
+	}
+	SET_POINTER(data_size_p, entry_p->te_data_size);
   
-  return TABLE_ERROR_NONE;
+	return TABLE_ERROR_NONE;
 }
 
 /*
@@ -2673,65 +2673,65 @@ int	table_next(table_t *table_p,
  * associated with the current key.
  */
 int	table_this(table_t *table_p,
-		   void **key_buf_p, int *key_size_p,
-		   void **data_buf_p, int *data_size_p)
+			   void **key_buf_p, int *key_size_p,
+			   void **data_buf_p, int *data_size_p)
 {
-  table_entry_t	*entry_p = NULL;
-  int		entry_c;
+	table_entry_t	*entry_p = NULL;
+	int		entry_c;
   
-  if (table_p == NULL) {
-    return TABLE_ERROR_ARG_NULL;
-  }
-  if (table_p->ta_magic != TABLE_MAGIC) {
-    return TABLE_ERROR_PNT;
-  }
-  if (table_p->ta_linear.tl_magic != LINEAR_MAGIC) {
-    return TABLE_ERROR_LINEAR;
-  }
+	if (table_p == NULL) {
+		return TABLE_ERROR_ARG_NULL;
+	}
+	if (table_p->ta_magic != TABLE_MAGIC) {
+		return TABLE_ERROR_PNT;
+	}
+	if (table_p->ta_linear.tl_magic != LINEAR_MAGIC) {
+		return TABLE_ERROR_LINEAR;
+	}
   
-  /* if we removed an item that shorted the bucket list, we may get this */
-  if (table_p->ta_linear.tl_bucket_c >= table_p->ta_bucket_n) {
-    /*
-     * NOTE: this might happen if we delete an item which shortens the
-     * table bucket numbers.
-     */
-    return TABLE_ERROR_NOT_FOUND;
-  }
+	/* if we removed an item that shorted the bucket list, we may get this */
+	if (table_p->ta_linear.tl_bucket_c >= table_p->ta_bucket_n) {
+		/*
+		 * NOTE: this might happen if we delete an item which shortens the
+		 * table bucket numbers.
+		 */
+		return TABLE_ERROR_NOT_FOUND;
+	}
   
-  /* find the entry which is the nth in the list */
-  entry_p = table_p->ta_buckets[table_p->ta_linear.tl_bucket_c];
-  /* NOTE: we swap the order here to be more efficient */
-  for (entry_c = table_p->ta_linear.tl_entry_c; entry_c > 0; entry_c--) {
-    /* did we reach the end of the list? */
-    if (entry_p == NULL) {
-      break;
-    }
-    entry_p = TABLE_POINTER(table_p, table_entry_t *, entry_p)->te_next_p;
-  }
+	/* find the entry which is the nth in the list */
+	entry_p = table_p->ta_buckets[table_p->ta_linear.tl_bucket_c];
+	/* NOTE: we swap the order here to be more efficient */
+	for (entry_c = table_p->ta_linear.tl_entry_c; entry_c > 0; entry_c--) {
+		/* did we reach the end of the list? */
+		if (entry_p == NULL) {
+			break;
+		}
+		entry_p = TABLE_POINTER(table_p, table_entry_t *, entry_p)->te_next_p;
+	}
 
-  /* is this a NOT_FOUND or a LINEAR error */
-  if (entry_p == NULL) {
-    return TABLE_ERROR_NOT_FOUND;
-  }
+	/* is this a NOT_FOUND or a LINEAR error */
+	if (entry_p == NULL) {
+		return TABLE_ERROR_NOT_FOUND;
+	}
   
-  SET_POINTER(key_buf_p, ENTRY_KEY_BUF(entry_p));
-  SET_POINTER(key_size_p, entry_p->te_key_size);
-  if (data_buf_p != NULL) {
-    if (entry_p->te_data_size == 0) {
-      *data_buf_p = NULL;
-    }
-    else {
-      if (table_p->ta_data_align == 0) {
-	*data_buf_p = ENTRY_DATA_BUF(table_p, entry_p);
-      }
-      else {
-	*data_buf_p = entry_data_buf(table_p, entry_p);
-      }
-    }
-  }
-  SET_POINTER(data_size_p, entry_p->te_data_size);
+	SET_POINTER(key_buf_p, ENTRY_KEY_BUF(entry_p));
+	SET_POINTER(key_size_p, entry_p->te_key_size);
+	if (data_buf_p != NULL) {
+		if (entry_p->te_data_size == 0) {
+			*data_buf_p = NULL;
+		}
+		else {
+			if (table_p->ta_data_align == 0) {
+				*data_buf_p = ENTRY_DATA_BUF(table_p, entry_p);
+			}
+			else {
+				*data_buf_p = entry_data_buf(table_p, entry_p);
+			}
+		}
+	}
+	SET_POINTER(data_size_p, entry_p->te_data_size);
   
-  return TABLE_ERROR_NONE;
+	return TABLE_ERROR_NONE;
 }
 
 /*
@@ -2779,47 +2779,47 @@ int	table_this(table_t *table_p,
  * associated with the first key.
  */
 int	table_first_r(table_t *table_p, table_linear_t *linear_p,
-		      void **key_buf_p, int *key_size_p,
-		      void **data_buf_p, int *data_size_p)
+				  void **key_buf_p, int *key_size_p,
+				  void **data_buf_p, int *data_size_p)
 {
-  table_entry_t	*entry_p;
+	table_entry_t	*entry_p;
   
-  if (table_p == NULL) {
-    return TABLE_ERROR_ARG_NULL;
-  }
-  if (table_p->ta_magic != TABLE_MAGIC) {
-    return TABLE_ERROR_PNT;
-  }
-  if (linear_p == NULL) {
-    return TABLE_ERROR_ARG_NULL;
-  }
+	if (table_p == NULL) {
+		return TABLE_ERROR_ARG_NULL;
+	}
+	if (table_p->ta_magic != TABLE_MAGIC) {
+		return TABLE_ERROR_PNT;
+	}
+	if (linear_p == NULL) {
+		return TABLE_ERROR_ARG_NULL;
+	}
   
-  /* initialize our linear magic number */
-  linear_p->tl_magic = LINEAR_MAGIC;
+	/* initialize our linear magic number */
+	linear_p->tl_magic = LINEAR_MAGIC;
   
-  entry_p = first_entry(table_p, linear_p);
-  if (entry_p == NULL) {
-    return TABLE_ERROR_NOT_FOUND;
-  }
+	entry_p = first_entry(table_p, linear_p);
+	if (entry_p == NULL) {
+		return TABLE_ERROR_NOT_FOUND;
+	}
   
-  SET_POINTER(key_buf_p, ENTRY_KEY_BUF(entry_p));
-  SET_POINTER(key_size_p, entry_p->te_key_size);
-  if (data_buf_p != NULL) {
-    if (entry_p->te_data_size == 0) {
-      *data_buf_p = NULL;
-    }
-    else {
-      if (table_p->ta_data_align == 0) {
-	*data_buf_p = ENTRY_DATA_BUF(table_p, entry_p);
-      }
-      else {
-	*data_buf_p = entry_data_buf(table_p, entry_p);
-      }
-    }
-  }
-  SET_POINTER(data_size_p, entry_p->te_data_size);
+	SET_POINTER(key_buf_p, ENTRY_KEY_BUF(entry_p));
+	SET_POINTER(key_size_p, entry_p->te_key_size);
+	if (data_buf_p != NULL) {
+		if (entry_p->te_data_size == 0) {
+			*data_buf_p = NULL;
+		}
+		else {
+			if (table_p->ta_data_align == 0) {
+				*data_buf_p = ENTRY_DATA_BUF(table_p, entry_p);
+			}
+			else {
+				*data_buf_p = entry_data_buf(table_p, entry_p);
+			}
+		}
+	}
+	SET_POINTER(data_size_p, entry_p->te_data_size);
   
-  return TABLE_ERROR_NONE;
+	return TABLE_ERROR_NONE;
 }
 
 /*
@@ -2867,49 +2867,49 @@ int	table_first_r(table_t *table_p, table_linear_t *linear_p,
  * associated with the next key.
  */
 int	table_next_r(table_t *table_p, table_linear_t *linear_p,
-		     void **key_buf_p, int *key_size_p,
-		     void **data_buf_p, int *data_size_p)
+				 void **key_buf_p, int *key_size_p,
+				 void **data_buf_p, int *data_size_p)
 {
-  table_entry_t	*entry_p;
-  int		error;
+	table_entry_t	*entry_p;
+	int		error;
   
-  if (table_p == NULL) {
-    return TABLE_ERROR_ARG_NULL;
-  }
-  if (table_p->ta_magic != TABLE_MAGIC) {
-    return TABLE_ERROR_PNT;
-  }
-  if (linear_p == NULL) {
-    return TABLE_ERROR_ARG_NULL;
-  }
-  if (linear_p->tl_magic != LINEAR_MAGIC) {
-    return TABLE_ERROR_LINEAR;
-  }
+	if (table_p == NULL) {
+		return TABLE_ERROR_ARG_NULL;
+	}
+	if (table_p->ta_magic != TABLE_MAGIC) {
+		return TABLE_ERROR_PNT;
+	}
+	if (linear_p == NULL) {
+		return TABLE_ERROR_ARG_NULL;
+	}
+	if (linear_p->tl_magic != LINEAR_MAGIC) {
+		return TABLE_ERROR_LINEAR;
+	}
   
-  /* move to the next entry */
-  entry_p = next_entry(table_p, linear_p, &error);
-  if (entry_p == NULL) {
-    return error;
-  }
+	/* move to the next entry */
+	entry_p = next_entry(table_p, linear_p, &error);
+	if (entry_p == NULL) {
+		return error;
+	}
   
-  SET_POINTER(key_buf_p, ENTRY_KEY_BUF(entry_p));
-  SET_POINTER(key_size_p, entry_p->te_key_size);
-  if (data_buf_p != NULL) {
-    if (entry_p->te_data_size == 0) {
-      *data_buf_p = NULL;
-    }
-    else {
-      if (table_p->ta_data_align == 0) {
-	*data_buf_p = ENTRY_DATA_BUF(table_p, entry_p);
-      }
-      else {
-	*data_buf_p = entry_data_buf(table_p, entry_p);
-      }
-    }
-  }
-  SET_POINTER(data_size_p, entry_p->te_data_size);
+	SET_POINTER(key_buf_p, ENTRY_KEY_BUF(entry_p));
+	SET_POINTER(key_size_p, entry_p->te_key_size);
+	if (data_buf_p != NULL) {
+		if (entry_p->te_data_size == 0) {
+			*data_buf_p = NULL;
+		}
+		else {
+			if (table_p->ta_data_align == 0) {
+				*data_buf_p = ENTRY_DATA_BUF(table_p, entry_p);
+			}
+			else {
+				*data_buf_p = entry_data_buf(table_p, entry_p);
+			}
+		}
+	}
+	SET_POINTER(data_size_p, entry_p->te_data_size);
   
-  return TABLE_ERROR_NONE;
+	return TABLE_ERROR_NONE;
 }
 
 /*
@@ -2957,61 +2957,61 @@ int	table_next_r(table_t *table_p, table_linear_t *linear_p,
  * associated with the current key.
  */
 int	table_this_r(table_t *table_p, table_linear_t *linear_p,
-		     void **key_buf_p, int *key_size_p,
-		     void **data_buf_p, int *data_size_p)
+				 void **key_buf_p, int *key_size_p,
+				 void **data_buf_p, int *data_size_p)
 {
-  table_entry_t	*entry_p;
-  int		entry_c;
+	table_entry_t	*entry_p;
+	int		entry_c;
   
-  if (table_p == NULL) {
-    return TABLE_ERROR_ARG_NULL;
-  }
-  if (table_p->ta_magic != TABLE_MAGIC) {
-    return TABLE_ERROR_PNT;
-  }
-  if (linear_p->tl_magic != LINEAR_MAGIC) {
-    return TABLE_ERROR_LINEAR;
-  }
+	if (table_p == NULL) {
+		return TABLE_ERROR_ARG_NULL;
+	}
+	if (table_p->ta_magic != TABLE_MAGIC) {
+		return TABLE_ERROR_PNT;
+	}
+	if (linear_p->tl_magic != LINEAR_MAGIC) {
+		return TABLE_ERROR_LINEAR;
+	}
   
-  /* if we removed an item that shorted the bucket list, we may get this */
-  if (linear_p->tl_bucket_c >= table_p->ta_bucket_n) {
-    /*
-     * NOTE: this might happen if we delete an item which shortens the
-     * table bucket numbers.
-     */
-    return TABLE_ERROR_NOT_FOUND;
-  }
+	/* if we removed an item that shorted the bucket list, we may get this */
+	if (linear_p->tl_bucket_c >= table_p->ta_bucket_n) {
+		/*
+		 * NOTE: this might happen if we delete an item which shortens the
+		 * table bucket numbers.
+		 */
+		return TABLE_ERROR_NOT_FOUND;
+	}
   
-  /* find the entry which is the nth in the list */
-  for (entry_c = linear_p->tl_entry_c,
-	 entry_p = table_p->ta_buckets[linear_p->tl_bucket_c];
-       entry_p != NULL && entry_c > 0;
-       entry_c--, entry_p = TABLE_POINTER(table_p, table_entry_t *,
-					  entry_p)->te_next_p) {
-  }
+	/* find the entry which is the nth in the list */
+	for (entry_c = linear_p->tl_entry_c,
+			 entry_p = table_p->ta_buckets[linear_p->tl_bucket_c];
+		 entry_p != NULL && entry_c > 0;
+		 entry_c--, entry_p = TABLE_POINTER(table_p, table_entry_t *,
+											entry_p)->te_next_p) {
+	}
   
-  if (entry_p == NULL) {
-    return TABLE_ERROR_NOT_FOUND;
-  }
+	if (entry_p == NULL) {
+		return TABLE_ERROR_NOT_FOUND;
+	}
   
-  SET_POINTER(key_buf_p, ENTRY_KEY_BUF(entry_p));
-  SET_POINTER(key_size_p, entry_p->te_key_size);
-  if (data_buf_p != NULL) {
-    if (entry_p->te_data_size == 0) {
-      *data_buf_p = NULL;
-    }
-    else {
-      if (table_p->ta_data_align == 0) {
-	*data_buf_p = ENTRY_DATA_BUF(table_p, entry_p);
-      }
-      else {
-	*data_buf_p = entry_data_buf(table_p, entry_p);
-      }
-    }
-  }
-  SET_POINTER(data_size_p, entry_p->te_data_size);
+	SET_POINTER(key_buf_p, ENTRY_KEY_BUF(entry_p));
+	SET_POINTER(key_size_p, entry_p->te_key_size);
+	if (data_buf_p != NULL) {
+		if (entry_p->te_data_size == 0) {
+			*data_buf_p = NULL;
+		}
+		else {
+			if (table_p->ta_data_align == 0) {
+				*data_buf_p = ENTRY_DATA_BUF(table_p, entry_p);
+			}
+			else {
+				*data_buf_p = entry_data_buf(table_p, entry_p);
+			}
+		}
+	}
+	SET_POINTER(data_size_p, entry_p->te_data_size);
   
-  return TABLE_ERROR_NONE;
+	return TABLE_ERROR_NONE;
 }
 
 /******************************* mmap routines *******************************/
@@ -3040,81 +3040,81 @@ table_t		*table_mmap(const char *path, int *error_p)
 {
 #ifdef NO_MMAP
   
-  /* no mmap support so immediate error */
-  SET_POINTER(error_p, TABLE_ERROR_MMAP_NONE);
-  return NULL;
+	/* no mmap support so immediate error */
+	SET_POINTER(error_p, TABLE_ERROR_MMAP_NONE);
+	return NULL;
   
 #else
   
-  table_t	*table_p;
-  struct stat	sbuf;
-  int		fd, state;
+	table_t	*table_p;
+	struct stat	sbuf;
+	int		fd, state;
   
-  table_p = (table_t *)malloc(sizeof(table_t));
-  if (table_p == NULL) {
-    SET_POINTER(error_p, TABLE_ERROR_ALLOC);
-    return NULL;
-  }
+	table_p = (table_t *)malloc(sizeof(table_t));
+	if (table_p == NULL) {
+		SET_POINTER(error_p, TABLE_ERROR_ALLOC);
+		return NULL;
+	}
   
-  /* open the mmap file */
-  fd = open(path, O_RDONLY, 0);
-  if (fd < 0) {
-    free(table_p);
-    SET_POINTER(error_p, TABLE_ERROR_OPEN);
-    return NULL;
-  }
+	/* open the mmap file */
+	fd = open(path, O_RDONLY, 0);
+	if (fd < 0) {
+		free(table_p);
+		SET_POINTER(error_p, TABLE_ERROR_OPEN);
+		return NULL;
+	}
   
-  /* get the file size */
-  if (fstat(fd, &sbuf) != 0) {
-    free(table_p);
-    SET_POINTER(error_p, TABLE_ERROR_OPEN);
-    return NULL;
-  }
+	/* get the file size */
+	if (fstat(fd, &sbuf) != 0) {
+		free(table_p);
+		SET_POINTER(error_p, TABLE_ERROR_OPEN);
+		return NULL;
+	}
   
-  /* mmap the space and close the file */
+	/* mmap the space and close the file */
 #ifdef __alpha
-  state = (MAP_SHARED | MAP_FILE | MAP_VARIABLE);
+	state = (MAP_SHARED | MAP_FILE | MAP_VARIABLE);
 #else
-  state = MAP_SHARED;
+	state = MAP_SHARED;
 #endif
   
-  table_p->ta_mmap = (table_t *)mmap((caddr_t)0, sbuf.st_size, PROT_READ,
-				     state, fd, 0);
-  (void)close(fd);
+	table_p->ta_mmap = (table_t *)mmap((caddr_t)0, sbuf.st_size, PROT_READ,
+									   state, fd, 0);
+	(void)close(fd);
   
-  if (table_p->ta_mmap == (table_t *)MAP_FAILED) {
-    SET_POINTER(error_p, TABLE_ERROR_MMAP);
-    return NULL;
-  }  
+	if (table_p->ta_mmap == (table_t *)MAP_FAILED) {
+		SET_POINTER(error_p, TABLE_ERROR_MMAP);
+		return NULL;
+	}  
   
-  /* is the mmap file contain bad info or maybe another system type? */
-  if (table_p->ta_mmap->ta_magic != TABLE_MAGIC) {
-    SET_POINTER(error_p, TABLE_ERROR_PNT);
-    return NULL;
-  }
+	/* is the mmap file contain bad info or maybe another system type? */
+	if (table_p->ta_mmap->ta_magic != TABLE_MAGIC) {
+		SET_POINTER(error_p, TABLE_ERROR_PNT);
+		return NULL;
+	}
   
-  /* sanity check on the file size */
-  if (table_p->ta_mmap->ta_file_size != sbuf.st_size) {
-    SET_POINTER(error_p, TABLE_ERROR_SIZE);
-    return NULL;
-  }
+	/* sanity check on the file size */
+	if (table_p->ta_mmap->ta_file_size != sbuf.st_size) {
+		SET_POINTER(error_p, TABLE_ERROR_SIZE);
+		return NULL;
+	}
   
-  /* copy the fields out of the mmap file into our memory version */
-  table_p->ta_magic = TABLE_MAGIC;
-  table_p->ta_flags = table_p->ta_mmap->ta_flags;
-  table_p->ta_bucket_n = table_p->ta_mmap->ta_bucket_n;
-  table_p->ta_entry_n = table_p->ta_mmap->ta_entry_n;
-  table_p->ta_data_align = table_p->ta_mmap->ta_data_align;
-  table_p->ta_buckets = TABLE_POINTER(table_p, table_entry_t **,
-				      table_p->ta_mmap->ta_buckets);
-  table_p->ta_linear.tl_magic = 0;
-  table_p->ta_linear.tl_bucket_c = 0;
-  table_p->ta_linear.tl_entry_c = 0;
-  /* mmap is already set */
-  table_p->ta_file_size = table_p->ta_mmap->ta_file_size;
+	/* copy the fields out of the mmap file into our memory version */
+	table_p->ta_magic = TABLE_MAGIC;
+	table_p->ta_flags = table_p->ta_mmap->ta_flags;
+	table_p->ta_bucket_n = table_p->ta_mmap->ta_bucket_n;
+	table_p->ta_entry_n = table_p->ta_mmap->ta_entry_n;
+	table_p->ta_data_align = table_p->ta_mmap->ta_data_align;
+	table_p->ta_buckets = TABLE_POINTER(table_p, table_entry_t **,
+										table_p->ta_mmap->ta_buckets);
+	table_p->ta_linear.tl_magic = 0;
+	table_p->ta_linear.tl_bucket_c = 0;
+	table_p->ta_linear.tl_entry_c = 0;
+	/* mmap is already set */
+	table_p->ta_file_size = table_p->ta_mmap->ta_file_size;
   
-  SET_POINTER(error_p, TABLE_ERROR_NONE);
-  return table_p;
+	SET_POINTER(error_p, TABLE_ERROR_NONE);
+	return table_p;
   
 #endif
 }
@@ -3138,25 +3138,25 @@ int	table_munmap(table_t *table_p)
 {
 #ifdef NO_MMAP
   
-  /* no mmap support so immediate error */
-  return TABLE_ERROR_MMAP_NONE;
+	/* no mmap support so immediate error */
+	return TABLE_ERROR_MMAP_NONE;
   
 #else
   
-  if (table_p == NULL) {
-    return TABLE_ERROR_ARG_NULL;
-  }
-  if (table_p->ta_magic != TABLE_MAGIC) {
-    return TABLE_ERROR_PNT;
-  }
-  if (table_p->ta_mmap == NULL) {
-    return TABLE_ERROR_PNT;
-  }
+	if (table_p == NULL) {
+		return TABLE_ERROR_ARG_NULL;
+	}
+	if (table_p->ta_magic != TABLE_MAGIC) {
+		return TABLE_ERROR_PNT;
+	}
+	if (table_p->ta_mmap == NULL) {
+		return TABLE_ERROR_PNT;
+	}
   
-  (void)munmap((caddr_t)table_p->ta_mmap, table_p->ta_file_size);
-  table_p->ta_magic = 0;
-  free(table_p);
-  return TABLE_ERROR_NONE;
+	(void)munmap((caddr_t)table_p->ta_mmap, table_p->ta_file_size);
+	table_p->ta_magic = 0;
+	free(table_p);
+	return TABLE_ERROR_NONE;
   
 #endif
 }
@@ -3187,146 +3187,146 @@ int	table_munmap(table_t *table_p)
  */
 table_t	*table_read(const char *path, int *error_p)
 {
-  unsigned int	size;
-  int		fd, ent_size;
-  FILE		*infile;
-  table_entry_t	entry, **bucket_p, *entry_p = NULL, *last_p;
-  unsigned long	pos;
-  table_t	*table_p;
+	unsigned int	size;
+	int		fd, ent_size;
+	FILE		*infile;
+	table_entry_t	entry, **bucket_p, *entry_p = NULL, *last_p;
+	unsigned long	pos;
+	table_t	*table_p;
   
-  /* open the file */
-  fd = open(path, O_RDONLY, 0);
-  if (fd < 0) {
-    SET_POINTER(error_p, TABLE_ERROR_OPEN);
-    return NULL;
-  }
-  
-  /* allocate a table structure */
-  table_p = malloc(sizeof(table_t));
-  if (table_p == NULL) {
-    SET_POINTER(error_p, TABLE_ERROR_ALLOC);
-    return NULL;
-  }
-  
-  /* now open the fd to get buffered i/o */
-  infile = fdopen(fd, "r");
-  if (infile == NULL) {
-    SET_POINTER(error_p, TABLE_ERROR_OPEN);
-    return NULL;
-  }
-  
-  /* read the main table struct */
-  if (fread(table_p, sizeof(table_t), 1, infile) != 1) {
-    SET_POINTER(error_p, TABLE_ERROR_READ);
-    free(table_p);
-    return NULL;
-  }
-  table_p->ta_file_size = 0;
-  
-  /* is the mmap file contain bad info or maybe another system type? */
-  if (table_p->ta_magic != TABLE_MAGIC) {
-    SET_POINTER(error_p, TABLE_ERROR_PNT);
-    return NULL;
-  }
-  
-  /* allocate the buckets */
-  table_p->ta_buckets = (table_entry_t **)calloc(table_p->ta_bucket_n,
-						 sizeof(table_entry_t *));
-  if (table_p->ta_buckets == NULL) {
-    SET_POINTER(error_p, TABLE_ERROR_ALLOC);
-    free(table_p);
-    return NULL;
-  }
-  
-  if (fread(table_p->ta_buckets, sizeof(table_entry_t *), table_p->ta_bucket_n,
-	    infile) != (size_t)table_p->ta_bucket_n) {
-    SET_POINTER(error_p, TABLE_ERROR_READ);
-    free(table_p->ta_buckets);
-    free(table_p);
-    return NULL;
-  }
-  
-  /* read in the entries */
-  for (bucket_p = table_p->ta_buckets;
-       bucket_p < table_p->ta_buckets + table_p->ta_bucket_n;
-       bucket_p++) {
-    
-    /* skip null buckets */
-    if (*bucket_p == NULL) {
-      continue;
-    }
-    
-    /* run through the entry list */
-    last_p = NULL;
-    for (pos = *(unsigned long *)bucket_p;;
-	 pos = (unsigned long)entry_p->te_next_p) {
-      
-      /* read in the entry */
-      if (fseek(infile, pos, SEEK_SET) != 0) {
-	SET_POINTER(error_p, TABLE_ERROR_SEEK);
-	free(table_p->ta_buckets);
-	free(table_p);
-	if (entry_p != NULL) {
-	  free(entry_p);
+	/* open the file */
+	fd = open(path, O_RDONLY, 0);
+	if (fd < 0) {
+		SET_POINTER(error_p, TABLE_ERROR_OPEN);
+		return NULL;
 	}
-	/* the other table elements will not be freed */
-	return NULL;
-      }
-      if (fread(&entry, sizeof(struct table_shell_st), 1, infile) != 1) {
-	SET_POINTER(error_p, TABLE_ERROR_READ);
-	free(table_p->ta_buckets);
-	free(table_p);
-	if (entry_p != NULL) {
-	  free(entry_p);
+  
+	/* allocate a table structure */
+	table_p = malloc(sizeof(table_t));
+	if (table_p == NULL) {
+		SET_POINTER(error_p, TABLE_ERROR_ALLOC);
+		return NULL;
 	}
-	/* the other table elements will not be freed */
-	return NULL;
-      }
-      
-      /* make a new entry */
-      ent_size = entry_size(table_p, entry.te_key_size, entry.te_data_size);
-      entry_p = (table_entry_t *)malloc(ent_size);
-      if (entry_p == NULL) {
-	SET_POINTER(error_p, TABLE_ERROR_ALLOC);
-	free(table_p->ta_buckets);
-	free(table_p);
-	/* the other table elements will not be freed */
-	return NULL;
-      }
-      entry_p->te_key_size = entry.te_key_size;
-      entry_p->te_data_size = entry.te_data_size;
-      entry_p->te_next_p = entry.te_next_p;
-      
-      if (last_p == NULL) {
-	*bucket_p = entry_p;
-      }
-      else {
-	last_p->te_next_p = entry_p;
-      }
-      
-      /* determine how much more we have to read */
-      size = ent_size - sizeof(struct table_shell_st);
-      if (fread(ENTRY_KEY_BUF(entry_p), sizeof(char), size, infile) != size) {
-	SET_POINTER(error_p, TABLE_ERROR_READ);
-	free(table_p->ta_buckets);
-	free(table_p);
-	free(entry_p);
-	/* the other table elements will not be freed */
-	return NULL;
-      }
-      
-      /* we are done if the next pointer is null */
-      if (entry_p->te_next_p == (unsigned long)0) {
-	break;
-      }
-      last_p = entry_p;
-    }
-  }
   
-  (void)fclose(infile);
+	/* now open the fd to get buffered i/o */
+	infile = fdopen(fd, "r");
+	if (infile == NULL) {
+		SET_POINTER(error_p, TABLE_ERROR_OPEN);
+		return NULL;
+	}
   
-  SET_POINTER(error_p, TABLE_ERROR_NONE);
-  return table_p;
+	/* read the main table struct */
+	if (fread(table_p, sizeof(table_t), 1, infile) != 1) {
+		SET_POINTER(error_p, TABLE_ERROR_READ);
+		free(table_p);
+		return NULL;
+	}
+	table_p->ta_file_size = 0;
+  
+	/* is the mmap file contain bad info or maybe another system type? */
+	if (table_p->ta_magic != TABLE_MAGIC) {
+		SET_POINTER(error_p, TABLE_ERROR_PNT);
+		return NULL;
+	}
+  
+	/* allocate the buckets */
+	table_p->ta_buckets = (table_entry_t **)calloc(table_p->ta_bucket_n,
+												   sizeof(table_entry_t *));
+	if (table_p->ta_buckets == NULL) {
+		SET_POINTER(error_p, TABLE_ERROR_ALLOC);
+		free(table_p);
+		return NULL;
+	}
+  
+	if (fread(table_p->ta_buckets, sizeof(table_entry_t *), table_p->ta_bucket_n,
+			  infile) != (size_t)table_p->ta_bucket_n) {
+		SET_POINTER(error_p, TABLE_ERROR_READ);
+		free(table_p->ta_buckets);
+		free(table_p);
+		return NULL;
+	}
+  
+	/* read in the entries */
+	for (bucket_p = table_p->ta_buckets;
+		 bucket_p < table_p->ta_buckets + table_p->ta_bucket_n;
+		 bucket_p++) {
+    
+		/* skip null buckets */
+		if (*bucket_p == NULL) {
+			continue;
+		}
+    
+		/* run through the entry list */
+		last_p = NULL;
+		for (pos = *(unsigned long *)bucket_p;;
+			 pos = (unsigned long)entry_p->te_next_p) {
+      
+			/* read in the entry */
+			if (fseek(infile, pos, SEEK_SET) != 0) {
+				SET_POINTER(error_p, TABLE_ERROR_SEEK);
+				free(table_p->ta_buckets);
+				free(table_p);
+				if (entry_p != NULL) {
+					free(entry_p);
+				}
+				/* the other table elements will not be freed */
+				return NULL;
+			}
+			if (fread(&entry, sizeof(struct table_shell_st), 1, infile) != 1) {
+				SET_POINTER(error_p, TABLE_ERROR_READ);
+				free(table_p->ta_buckets);
+				free(table_p);
+				if (entry_p != NULL) {
+					free(entry_p);
+				}
+				/* the other table elements will not be freed */
+				return NULL;
+			}
+      
+			/* make a new entry */
+			ent_size = entry_size(table_p, entry.te_key_size, entry.te_data_size);
+			entry_p = (table_entry_t *)malloc(ent_size);
+			if (entry_p == NULL) {
+				SET_POINTER(error_p, TABLE_ERROR_ALLOC);
+				free(table_p->ta_buckets);
+				free(table_p);
+				/* the other table elements will not be freed */
+				return NULL;
+			}
+			entry_p->te_key_size = entry.te_key_size;
+			entry_p->te_data_size = entry.te_data_size;
+			entry_p->te_next_p = entry.te_next_p;
+      
+			if (last_p == NULL) {
+				*bucket_p = entry_p;
+			}
+			else {
+				last_p->te_next_p = entry_p;
+			}
+      
+			/* determine how much more we have to read */
+			size = ent_size - sizeof(struct table_shell_st);
+			if (fread(ENTRY_KEY_BUF(entry_p), sizeof(char), size, infile) != size) {
+				SET_POINTER(error_p, TABLE_ERROR_READ);
+				free(table_p->ta_buckets);
+				free(table_p);
+				free(entry_p);
+				/* the other table elements will not be freed */
+				return NULL;
+			}
+      
+			/* we are done if the next pointer is null */
+			if (entry_p->te_next_p == (unsigned long)0) {
+				break;
+			}
+			last_p = entry_p;
+		}
+	}
+  
+	(void)fclose(infile);
+  
+	SET_POINTER(error_p, TABLE_ERROR_NONE);
+	return table_p;
 }
 
 /*
@@ -3353,186 +3353,186 @@ table_t	*table_read(const char *path, int *error_p)
  */
 int	table_write(const table_t *table_p, const char *path, const int mode)
 {
-  int		fd, rem, ent_size;
-  unsigned int	bucket_c, bucket_size;
-  unsigned long	size;
-  table_entry_t	*entry_p, **buckets, **bucket_p, *next_p;
-  table_t	main_tab;
-  FILE		*outfile;
+	int		fd, rem, ent_size;
+	unsigned int	bucket_c, bucket_size;
+	unsigned long	size;
+	table_entry_t	*entry_p, **buckets, **bucket_p, *next_p;
+	table_t	main_tab;
+	FILE		*outfile;
   
-  if (table_p == NULL) {
-    return TABLE_ERROR_ARG_NULL;
-  }
-  if (table_p->ta_magic != TABLE_MAGIC) {
-    return TABLE_ERROR_PNT;
-  }
+	if (table_p == NULL) {
+		return TABLE_ERROR_ARG_NULL;
+	}
+	if (table_p->ta_magic != TABLE_MAGIC) {
+		return TABLE_ERROR_PNT;
+	}
   
-  fd = open(path, O_WRONLY | O_CREAT, mode);
-  if (fd < 0) {
-    return TABLE_ERROR_OPEN;
-  }
+	fd = open(path, O_WRONLY | O_CREAT, mode);
+	if (fd < 0) {
+		return TABLE_ERROR_OPEN;
+	}
   
-  outfile = fdopen(fd, "w");
-  if (outfile == NULL) {
-    return TABLE_ERROR_OPEN;
-  }
+	outfile = fdopen(fd, "w");
+	if (outfile == NULL) {
+		return TABLE_ERROR_OPEN;
+	}
   
-  /* allocate a block of sizes for each bucket */
-  bucket_size = sizeof(table_entry_t *) * table_p->ta_bucket_n;
-  if (table_p->ta_alloc_func == NULL) {
-    buckets = (table_entry_t **)malloc(bucket_size);
-  }
-  else {
-    buckets =
-      (table_entry_t **)table_p->ta_alloc_func(table_p->ta_mem_pool,
-					       bucket_size);
-  }
-  if (buckets == NULL) {
-    return TABLE_ERROR_ALLOC;
-  }
-  
-  /* make a copy of the main struct */
-  main_tab = *table_p;
-  
-  /* start counting the bytes */
-  size = 0;
-  size += sizeof(table_t);
-  
-  /* buckets go right after main struct */
-  main_tab.ta_buckets = (table_entry_t **)size;
-  size += sizeof(table_entry_t *) * table_p->ta_bucket_n;
-  
-  /* run through and count the buckets */
-  for (bucket_c = 0; bucket_c < table_p->ta_bucket_n; bucket_c++) {
-    bucket_p = table_p->ta_buckets + bucket_c;
-    if (*bucket_p == NULL) {
-      buckets[bucket_c] = NULL;
-      continue;
-    }
-    buckets[bucket_c] = (table_entry_t *)size;
-    for (entry_p = *bucket_p; entry_p != NULL; entry_p = entry_p->te_next_p) {
-      size += entry_size(table_p, entry_p->te_key_size, entry_p->te_data_size);
-      /*
-       * We now have to round the file to the nearest long so the
-       * mmaping of the longs in the entry structs will work.
-       */
-      rem = size & (sizeof(long) - 1);
-      if (rem > 0) {
-	size += sizeof(long) - rem;
-      }
-    }
-  }
-  /* add a \0 at the end to fill the last section */
-  size++;
-  
-  /* set the main fields */
-  main_tab.ta_linear.tl_magic = 0;
-  main_tab.ta_linear.tl_bucket_c = 0;
-  main_tab.ta_linear.tl_entry_c = 0;
-  main_tab.ta_mmap = NULL;
-  main_tab.ta_file_size = size;
-  
-  /*
-   * Now we can start the writing because we got the bucket offsets.
-   */
-  
-  /* write the main table struct */
-  size = 0;
-  if (fwrite(&main_tab, sizeof(table_t), 1, outfile) != 1) {
-    if (table_p->ta_free_func == NULL) {
-      free(buckets);
-    }
-    else {
-      (void)table_p->ta_free_func(table_p->ta_mem_pool, buckets, bucket_size);
-    }
-    return TABLE_ERROR_WRITE;
-  }
-  size += sizeof(table_t);
-  if (fwrite(buckets, sizeof(table_entry_t *), table_p->ta_bucket_n,
-	     outfile) != (size_t)table_p->ta_bucket_n) {
-    if (table_p->ta_free_func == NULL) {
-      free(buckets);
-    }
-    else {
-      (void)table_p->ta_free_func(table_p->ta_mem_pool, buckets, bucket_size);
-    }
-    return TABLE_ERROR_WRITE;
-  }
-  size += sizeof(table_entry_t *) * table_p->ta_bucket_n;
-  
-  /* write out the entries */
-  for (bucket_p = table_p->ta_buckets;
-       bucket_p < table_p->ta_buckets + table_p->ta_bucket_n;
-       bucket_p++) {
-    for (entry_p = *bucket_p; entry_p != NULL; entry_p = entry_p->te_next_p) {
-      
-      ent_size = entry_size(table_p, entry_p->te_key_size,
-			    entry_p->te_data_size);
-      size += ent_size;
-      /* round to nearest long here so we can write copy */
-      rem = size & (sizeof(long) - 1);
-      if (rem > 0) {
-	size += sizeof(long) - rem;
-      }
-      next_p = entry_p->te_next_p;
-      if (next_p != NULL) {
-	entry_p->te_next_p = (table_entry_t *)size;
-      }
-      
-      /* now write to disk */
-      if (fwrite(entry_p, ent_size, 1, outfile) != 1) {
-	if (table_p->ta_free_func == NULL) {
-	  free(buckets);
+	/* allocate a block of sizes for each bucket */
+	bucket_size = sizeof(table_entry_t *) * table_p->ta_bucket_n;
+	if (table_p->ta_alloc_func == NULL) {
+		buckets = (table_entry_t **)malloc(bucket_size);
 	}
 	else {
-	  (void)table_p->ta_free_func(table_p->ta_mem_pool, buckets,
-				      bucket_size);
+		buckets =
+			(table_entry_t **)table_p->ta_alloc_func(table_p->ta_mem_pool,
+													 bucket_size);
 	}
-	return TABLE_ERROR_WRITE;
-      }
-      
-      /* restore the next pointer */
-      if (next_p != NULL) {
-	entry_p->te_next_p = next_p;
-      }
-      
-      /* now write the padding information */
-      if (rem > 0) {
-	rem = sizeof(long) - rem;
+	if (buckets == NULL) {
+		return TABLE_ERROR_ALLOC;
+	}
+  
+	/* make a copy of the main struct */
+	main_tab = *table_p;
+  
+	/* start counting the bytes */
+	size = 0;
+	size += sizeof(table_t);
+  
+	/* buckets go right after main struct */
+	main_tab.ta_buckets = (table_entry_t **)size;
+	size += sizeof(table_entry_t *) * table_p->ta_bucket_n;
+  
+	/* run through and count the buckets */
+	for (bucket_c = 0; bucket_c < table_p->ta_bucket_n; bucket_c++) {
+		bucket_p = table_p->ta_buckets + bucket_c;
+		if (*bucket_p == NULL) {
+			buckets[bucket_c] = NULL;
+			continue;
+		}
+		buckets[bucket_c] = (table_entry_t *)size;
+		for (entry_p = *bucket_p; entry_p != NULL; entry_p = entry_p->te_next_p) {
+			size += entry_size(table_p, entry_p->te_key_size, entry_p->te_data_size);
+			/*
+			 * We now have to round the file to the nearest long so the
+			 * mmaping of the longs in the entry structs will work.
+			 */
+			rem = size & (sizeof(long) - 1);
+			if (rem > 0) {
+				size += sizeof(long) - rem;
+			}
+		}
+	}
+	/* add a \0 at the end to fill the last section */
+	size++;
+  
+	/* set the main fields */
+	main_tab.ta_linear.tl_magic = 0;
+	main_tab.ta_linear.tl_bucket_c = 0;
+	main_tab.ta_linear.tl_entry_c = 0;
+	main_tab.ta_mmap = NULL;
+	main_tab.ta_file_size = size;
+  
 	/*
-	 * NOTE: this won't leave fseek'd space at the end but we
-	 * don't care there because there is no accessed memory
-	 * afterwards.  We write 1 \0 at the end to make sure.
+	 * Now we can start the writing because we got the bucket offsets.
 	 */
-	if (fseek(outfile, rem, SEEK_CUR) != 0) {
-	  if (table_p->ta_free_func == NULL) {
-	    free(buckets);
-	  }
-	  else {
-	    (void)table_p->ta_free_func(table_p->ta_mem_pool, buckets,
-					bucket_size);
-	  }
-	  return TABLE_ERROR_SEEK;
+  
+	/* write the main table struct */
+	size = 0;
+	if (fwrite(&main_tab, sizeof(table_t), 1, outfile) != 1) {
+		if (table_p->ta_free_func == NULL) {
+			free(buckets);
+		}
+		else {
+			(void)table_p->ta_free_func(table_p->ta_mem_pool, buckets, bucket_size);
+		}
+		return TABLE_ERROR_WRITE;
 	}
-      }
-    }
-  }
-  /*
-   * Write a \0 at the end of the file to make sure that the last
-   * fseek filled with nulls.
-   */
-  (void)fputc('\0', outfile);
+	size += sizeof(table_t);
+	if (fwrite(buckets, sizeof(table_entry_t *), table_p->ta_bucket_n,
+			   outfile) != (size_t)table_p->ta_bucket_n) {
+		if (table_p->ta_free_func == NULL) {
+			free(buckets);
+		}
+		else {
+			(void)table_p->ta_free_func(table_p->ta_mem_pool, buckets, bucket_size);
+		}
+		return TABLE_ERROR_WRITE;
+	}
+	size += sizeof(table_entry_t *) * table_p->ta_bucket_n;
   
-  (void)fclose(outfile);
-  if (table_p->ta_free_func == NULL) {
-    free(buckets);
-  }
-  else if (! table_p->ta_free_func(table_p->ta_mem_pool, buckets,
-				   bucket_size)) {
-    return TABLE_ERROR_FREE;
-  }
+	/* write out the entries */
+	for (bucket_p = table_p->ta_buckets;
+		 bucket_p < table_p->ta_buckets + table_p->ta_bucket_n;
+		 bucket_p++) {
+		for (entry_p = *bucket_p; entry_p != NULL; entry_p = entry_p->te_next_p) {
+      
+			ent_size = entry_size(table_p, entry_p->te_key_size,
+								  entry_p->te_data_size);
+			size += ent_size;
+			/* round to nearest long here so we can write copy */
+			rem = size & (sizeof(long) - 1);
+			if (rem > 0) {
+				size += sizeof(long) - rem;
+			}
+			next_p = entry_p->te_next_p;
+			if (next_p != NULL) {
+				entry_p->te_next_p = (table_entry_t *)size;
+			}
+      
+			/* now write to disk */
+			if (fwrite(entry_p, ent_size, 1, outfile) != 1) {
+				if (table_p->ta_free_func == NULL) {
+					free(buckets);
+				}
+				else {
+					(void)table_p->ta_free_func(table_p->ta_mem_pool, buckets,
+												bucket_size);
+				}
+				return TABLE_ERROR_WRITE;
+			}
+      
+			/* restore the next pointer */
+			if (next_p != NULL) {
+				entry_p->te_next_p = next_p;
+			}
+      
+			/* now write the padding information */
+			if (rem > 0) {
+				rem = sizeof(long) - rem;
+				/*
+				 * NOTE: this won't leave fseek'd space at the end but we
+				 * don't care there because there is no accessed memory
+				 * afterwards.  We write 1 \0 at the end to make sure.
+				 */
+				if (fseek(outfile, rem, SEEK_CUR) != 0) {
+					if (table_p->ta_free_func == NULL) {
+						free(buckets);
+					}
+					else {
+						(void)table_p->ta_free_func(table_p->ta_mem_pool, buckets,
+													bucket_size);
+					}
+					return TABLE_ERROR_SEEK;
+				}
+			}
+		}
+	}
+	/*
+	 * Write a \0 at the end of the file to make sure that the last
+	 * fseek filled with nulls.
+	 */
+	(void)fputc('\0', outfile);
   
-  return TABLE_ERROR_NONE;
+	(void)fclose(outfile);
+	if (table_p->ta_free_func == NULL) {
+		free(buckets);
+	}
+	else if (! table_p->ta_free_func(table_p->ta_mem_pool, buckets,
+									 bucket_size)) {
+		return TABLE_ERROR_FREE;
+	}
+  
+	return TABLE_ERROR_NONE;
 }
 
 /******************************** table order ********************************/
@@ -3572,104 +3572,104 @@ int	table_write(const table_t *table_p, const char *path, const int mode)
  * table error code.
  */
 table_entry_t	**table_order(table_t *table_p, table_compare_t compare,
-			      int *num_entries_p, int *error_p)
+							  int *num_entries_p, int *error_p)
 {
-  table_entry_t		*entry_p, **entries, **entries_p;
-  table_linear_t	linear;
-  compare_t		comp_func;
-  unsigned int		entries_size;
-  int			ret;
+	table_entry_t		*entry_p, **entries, **entries_p;
+	table_linear_t	linear;
+	compare_t		comp_func;
+	unsigned int		entries_size;
+	int			ret;
   
-  if (table_p == NULL) {
-    SET_POINTER(error_p, TABLE_ERROR_ARG_NULL);
-    return NULL;
-  }
-  if (table_p->ta_magic != TABLE_MAGIC) {
-    SET_POINTER(error_p, TABLE_ERROR_PNT);
-    return NULL;
-  }
+	if (table_p == NULL) {
+		SET_POINTER(error_p, TABLE_ERROR_ARG_NULL);
+		return NULL;
+	}
+	if (table_p->ta_magic != TABLE_MAGIC) {
+		SET_POINTER(error_p, TABLE_ERROR_PNT);
+		return NULL;
+	}
   
-  /* there must be at least 1 element in the table for this to work */
-  if (table_p->ta_entry_n == 0) {
-    SET_POINTER(error_p, TABLE_ERROR_EMPTY);
-    return NULL;
-  }
+	/* there must be at least 1 element in the table for this to work */
+	if (table_p->ta_entry_n == 0) {
+		SET_POINTER(error_p, TABLE_ERROR_EMPTY);
+		return NULL;
+	}
   
-  entries_size = table_p->ta_entry_n * sizeof(table_entry_t *);
-  if (table_p->ta_alloc_func == NULL) {
-    entries = (table_entry_t **)malloc(entries_size);
-  }
-  else {
-    entries =
-      (table_entry_t **)table_p->ta_alloc_func(table_p->ta_mem_pool,
-					       entries_size);
-  }
-  if (entries == NULL) {
-    SET_POINTER(error_p, TABLE_ERROR_ALLOC);
-    return NULL;
-  }
+	entries_size = table_p->ta_entry_n * sizeof(table_entry_t *);
+	if (table_p->ta_alloc_func == NULL) {
+		entries = (table_entry_t **)malloc(entries_size);
+	}
+	else {
+		entries =
+			(table_entry_t **)table_p->ta_alloc_func(table_p->ta_mem_pool,
+													 entries_size);
+	}
+	if (entries == NULL) {
+		SET_POINTER(error_p, TABLE_ERROR_ALLOC);
+		return NULL;
+	}
   
-  /* get a pointer to all entries */
-  entry_p = first_entry(table_p, &linear);
-  if (entry_p == NULL) {
-    if (table_p->ta_free_func == NULL) {
-      free(entries);
-    }
-    else {
-      (void)table_p->ta_free_func(table_p->ta_mem_pool, entries, entries_size);
-    }
-    SET_POINTER(error_p, TABLE_ERROR_NOT_FOUND);
-    return NULL;
-  }
+	/* get a pointer to all entries */
+	entry_p = first_entry(table_p, &linear);
+	if (entry_p == NULL) {
+		if (table_p->ta_free_func == NULL) {
+			free(entries);
+		}
+		else {
+			(void)table_p->ta_free_func(table_p->ta_mem_pool, entries, entries_size);
+		}
+		SET_POINTER(error_p, TABLE_ERROR_NOT_FOUND);
+		return NULL;
+	}
   
-  /* add all of the entries to the array */
-  for (entries_p = entries;
-       entry_p != NULL;
-       entry_p = next_entry(table_p, &linear, &ret)) {
-    *entries_p++ = entry_p;
-  }
+	/* add all of the entries to the array */
+	for (entries_p = entries;
+		 entry_p != NULL;
+		 entry_p = next_entry(table_p, &linear, &ret)) {
+		*entries_p++ = entry_p;
+	}
   
-  if (ret != TABLE_ERROR_NOT_FOUND) {
-    if (table_p->ta_free_func == NULL) {
-      free(entries);
-    }
-    else {
-      (void)table_p->ta_free_func(table_p->ta_mem_pool, entries, entries_size);
-    }
-    SET_POINTER(error_p, ret);
-    return NULL;
-  }
+	if (ret != TABLE_ERROR_NOT_FOUND) {
+		if (table_p->ta_free_func == NULL) {
+			free(entries);
+		}
+		else {
+			(void)table_p->ta_free_func(table_p->ta_mem_pool, entries, entries_size);
+		}
+		SET_POINTER(error_p, ret);
+		return NULL;
+	}
   
-  if (compare == NULL) {
-    /* this is regardless of the alignment */
-    comp_func = local_compare;
-  }
-  else if (table_p->ta_data_align == 0) {
-    comp_func = external_compare;
-  }
-  else {
-    comp_func = external_compare_align;
-  }
+	if (compare == NULL) {
+		/* this is regardless of the alignment */
+		comp_func = local_compare;
+	}
+	else if (table_p->ta_data_align == 0) {
+		comp_func = external_compare;
+	}
+	else {
+		comp_func = external_compare_align;
+	}
   
-  /* now qsort the entire entries array from first to last element */
-  ret = split((unsigned char *)entries,
-	      (unsigned char *)(entries + table_p->ta_entry_n - 1),
-	      sizeof(table_entry_t *), comp_func, compare, table_p);
-  if (ret != TABLE_ERROR_NONE) {
-    if (table_p->ta_free_func == NULL) {
-      free(entries);
-    }
-    else {
-      (void)table_p->ta_free_func(table_p->ta_mem_pool, entries, entries_size);
-    }
-    SET_POINTER(error_p, ret);
-    return NULL;
-  }
+	/* now qsort the entire entries array from first to last element */
+	ret = split((unsigned char *)entries,
+				(unsigned char *)(entries + table_p->ta_entry_n - 1),
+				sizeof(table_entry_t *), comp_func, compare, table_p);
+	if (ret != TABLE_ERROR_NONE) {
+		if (table_p->ta_free_func == NULL) {
+			free(entries);
+		}
+		else {
+			(void)table_p->ta_free_func(table_p->ta_mem_pool, entries, entries_size);
+		}
+		SET_POINTER(error_p, ret);
+		return NULL;
+	}
   
-  SET_POINTER(num_entries_p, table_p->ta_entry_n);
+	SET_POINTER(num_entries_p, table_p->ta_entry_n);
   
-  SET_POINTER(error_p, TABLE_ERROR_NONE);
-  return entries;
+	SET_POINTER(error_p, TABLE_ERROR_NONE);
+	return entries;
 }
 
 /*
@@ -3697,29 +3697,29 @@ table_entry_t	**table_order(table_t *table_p, table_compare_t compare,
  * table_order or table_order_pos in num_entries_p.
  */
 int	table_order_free(table_t *table_p, table_entry_t **table_entries,
-			 const int entry_n)
+					 const int entry_n)
 {
-  int	ret, final = TABLE_ERROR_NONE;
+	int	ret, final = TABLE_ERROR_NONE;
   
-  if (table_p == NULL) {
-    return TABLE_ERROR_ARG_NULL;
-  }
-  if (table_p->ta_magic != TABLE_MAGIC) {
-    return TABLE_ERROR_PNT;
-  }
+	if (table_p == NULL) {
+		return TABLE_ERROR_ARG_NULL;
+	}
+	if (table_p->ta_magic != TABLE_MAGIC) {
+		return TABLE_ERROR_PNT;
+	}
   
-  if (table_p->ta_free_func == NULL) {
-    free(table_entries);
-  }
-  else {
-    ret = table_p->ta_free_func(table_p->ta_mem_pool, table_entries,
-				sizeof(table_entry_t *) * entry_n);
-    if (ret != 1) {
-      final = TABLE_ERROR_FREE;
-    }
-  }
+	if (table_p->ta_free_func == NULL) {
+		free(table_entries);
+	}
+	else {
+		ret = table_p->ta_free_func(table_p->ta_mem_pool, table_entries,
+									sizeof(table_entry_t *) * entry_n);
+		if (ret != 1) {
+			final = TABLE_ERROR_FREE;
+		}
+	}
   
-  return final;
+	return final;
 }
 
 /*
@@ -3762,37 +3762,37 @@ int	table_order_free(table_t *table_p, table_entry_t **table_entries,
  * to the size of the data that is stored in the table.
  */
 int	table_entry(table_t *table_p, table_entry_t *entry_p,
-		    void **key_buf_p, int *key_size_p,
-		    void **data_buf_p, int *data_size_p)
+				void **key_buf_p, int *key_size_p,
+				void **data_buf_p, int *data_size_p)
 {
-  if (table_p == NULL) {
-    return TABLE_ERROR_ARG_NULL;
-  }
-  if (table_p->ta_magic != TABLE_MAGIC) {
-    return TABLE_ERROR_PNT;
-  }
-  if (entry_p == NULL) {
-    return TABLE_ERROR_ARG_NULL;
-  }
+	if (table_p == NULL) {
+		return TABLE_ERROR_ARG_NULL;
+	}
+	if (table_p->ta_magic != TABLE_MAGIC) {
+		return TABLE_ERROR_PNT;
+	}
+	if (entry_p == NULL) {
+		return TABLE_ERROR_ARG_NULL;
+	}
   
-  SET_POINTER(key_buf_p, ENTRY_KEY_BUF(entry_p));
-  SET_POINTER(key_size_p, entry_p->te_key_size);
-  if (data_buf_p != NULL) {
-    if (entry_p->te_data_size == 0) {
-      *data_buf_p = NULL;
-    }
-    else {
-      if (table_p->ta_data_align == 0) {
-	*data_buf_p = ENTRY_DATA_BUF(table_p, entry_p);
-      }
-      else {
-	*data_buf_p = entry_data_buf(table_p, entry_p);
-      }
-    }
-  }
-  SET_POINTER(data_size_p, entry_p->te_data_size);
+	SET_POINTER(key_buf_p, ENTRY_KEY_BUF(entry_p));
+	SET_POINTER(key_size_p, entry_p->te_key_size);
+	if (data_buf_p != NULL) {
+		if (entry_p->te_data_size == 0) {
+			*data_buf_p = NULL;
+		}
+		else {
+			if (table_p->ta_data_align == 0) {
+				*data_buf_p = ENTRY_DATA_BUF(table_p, entry_p);
+			}
+			else {
+				*data_buf_p = entry_data_buf(table_p, entry_p);
+			}
+		}
+	}
+	SET_POINTER(data_size_p, entry_p->te_data_size);
   
-  return TABLE_ERROR_NONE;
+	return TABLE_ERROR_NONE;
 }
 
 /*
@@ -3830,84 +3830,84 @@ int	table_entry(table_t *table_p, table_entry_t *entry_p,
  * table error code.
  */
 table_linear_t	*table_order_pos(table_t *table_p, table_compare_t compare,
-				 int *num_entries_p, int *error_p)
+								 int *num_entries_p, int *error_p)
 {
-  table_entry_t		*entry_p;
-  table_linear_t	linear, *linears, *linears_p;
-  compare_t		comp_func;
-  int			ret;
+	table_entry_t		*entry_p;
+	table_linear_t	linear, *linears, *linears_p;
+	compare_t		comp_func;
+	int			ret;
   
-  if (table_p == NULL) {
-    SET_POINTER(error_p, TABLE_ERROR_ARG_NULL);
-    return NULL;
-  }
-  if (table_p->ta_magic != TABLE_MAGIC) {
-    SET_POINTER(error_p, TABLE_ERROR_PNT);
-    return NULL;
-  }
+	if (table_p == NULL) {
+		SET_POINTER(error_p, TABLE_ERROR_ARG_NULL);
+		return NULL;
+	}
+	if (table_p->ta_magic != TABLE_MAGIC) {
+		SET_POINTER(error_p, TABLE_ERROR_PNT);
+		return NULL;
+	}
   
-  /* there must be at least 1 element in the table for this to work */
-  if (table_p->ta_entry_n == 0) {
-    SET_POINTER(error_p, TABLE_ERROR_EMPTY);
-    return NULL;
-  }
+	/* there must be at least 1 element in the table for this to work */
+	if (table_p->ta_entry_n == 0) {
+		SET_POINTER(error_p, TABLE_ERROR_EMPTY);
+		return NULL;
+	}
   
-  if (table_p->ta_alloc_func == NULL) {
-    linears = (table_linear_t *)malloc(table_p->ta_entry_n *
-				       sizeof(table_linear_t));
-  }
-  else {
-    linears =
-      (table_linear_t *)table_p->ta_alloc_func(table_p->ta_mem_pool,
-					       table_p->ta_entry_n *
-					       sizeof(table_linear_t));
-  }
-  if (linears == NULL) {
-    SET_POINTER(error_p, TABLE_ERROR_ALLOC);
-    return NULL;
-  }
+	if (table_p->ta_alloc_func == NULL) {
+		linears = (table_linear_t *)malloc(table_p->ta_entry_n *
+										   sizeof(table_linear_t));
+	}
+	else {
+		linears =
+			(table_linear_t *)table_p->ta_alloc_func(table_p->ta_mem_pool,
+													 table_p->ta_entry_n *
+													 sizeof(table_linear_t));
+	}
+	if (linears == NULL) {
+		SET_POINTER(error_p, TABLE_ERROR_ALLOC);
+		return NULL;
+	}
   
-  /* get a pointer to all entries */
-  entry_p = first_entry(table_p, &linear);
-  if (entry_p == NULL) {
-    SET_POINTER(error_p, TABLE_ERROR_NOT_FOUND);
-    return NULL;
-  }
+	/* get a pointer to all entries */
+	entry_p = first_entry(table_p, &linear);
+	if (entry_p == NULL) {
+		SET_POINTER(error_p, TABLE_ERROR_NOT_FOUND);
+		return NULL;
+	}
   
-  /* add all of the entries to the array */
-  for (linears_p = linears;
-       entry_p != NULL;
-       entry_p = next_entry(table_p, &linear, &ret)) {
-    *linears_p++ = linear;
-  }
+	/* add all of the entries to the array */
+	for (linears_p = linears;
+		 entry_p != NULL;
+		 entry_p = next_entry(table_p, &linear, &ret)) {
+		*linears_p++ = linear;
+	}
   
-  if (ret != TABLE_ERROR_NOT_FOUND) {
-    SET_POINTER(error_p, ret);
-    return NULL;
-  }
+	if (ret != TABLE_ERROR_NOT_FOUND) {
+		SET_POINTER(error_p, ret);
+		return NULL;
+	}
   
-  if (compare == NULL) {
-    /* this is regardless of the alignment */
-    comp_func = local_compare_pos;
-  }
-  else if (table_p->ta_data_align == 0) {
-    comp_func = external_compare_pos;
-  }
-  else {
-    comp_func = external_compare_align_pos;
-  }
+	if (compare == NULL) {
+		/* this is regardless of the alignment */
+		comp_func = local_compare_pos;
+	}
+	else if (table_p->ta_data_align == 0) {
+		comp_func = external_compare_pos;
+	}
+	else {
+		comp_func = external_compare_align_pos;
+	}
   
-  /* now qsort the entire entries array from first to last element */
-  split((unsigned char *)linears,
-	(unsigned char *)(linears + table_p->ta_entry_n - 1),
-	sizeof(table_linear_t),	comp_func, compare, table_p);
+	/* now qsort the entire entries array from first to last element */
+	split((unsigned char *)linears,
+		  (unsigned char *)(linears + table_p->ta_entry_n - 1),
+		  sizeof(table_linear_t),	comp_func, compare, table_p);
   
-  if (num_entries_p != NULL) {
-    *num_entries_p = table_p->ta_entry_n;
-  }
+	if (num_entries_p != NULL) {
+		*num_entries_p = table_p->ta_entry_n;
+	}
   
-  SET_POINTER(error_p, TABLE_ERROR_NONE);
-  return linears;
+	SET_POINTER(error_p, TABLE_ERROR_NONE);
+	return linears;
 }
 
 /*
@@ -3935,29 +3935,29 @@ table_linear_t	*table_order_pos(table_t *table_p, table_compare_t compare,
  * table_order or table_order_pos in num_entries_p.
  */
 int	table_order_pos_free(table_t *table_p, table_linear_t *table_entries,
-			     const int entry_n)
+						 const int entry_n)
 {
-  int	ret, final = TABLE_ERROR_NONE;
+	int	ret, final = TABLE_ERROR_NONE;
   
-  if (table_p == NULL) {
-    return TABLE_ERROR_ARG_NULL;
-  }
-  if (table_p->ta_magic != TABLE_MAGIC) {
-    return TABLE_ERROR_PNT;
-  }
+	if (table_p == NULL) {
+		return TABLE_ERROR_ARG_NULL;
+	}
+	if (table_p->ta_magic != TABLE_MAGIC) {
+		return TABLE_ERROR_PNT;
+	}
   
-  if (table_p->ta_free_func == NULL) {
-    free(table_entries);
-  }
-  else {
-    ret = table_p->ta_free_func(table_p->ta_mem_pool, table_entries,
-				sizeof(table_linear_t) * entry_n);
-    if (ret != 1) {
-      final = TABLE_ERROR_FREE;
-    }
-  }
+	if (table_p->ta_free_func == NULL) {
+		free(table_entries);
+	}
+	else {
+		ret = table_p->ta_free_func(table_p->ta_mem_pool, table_entries,
+									sizeof(table_linear_t) * entry_n);
+		if (ret != 1) {
+			final = TABLE_ERROR_FREE;
+		}
+	}
   
-  return final;
+	return final;
 }
 
 /*
@@ -4000,52 +4000,52 @@ int	table_order_pos_free(table_t *table_p, table_linear_t *table_entries,
  * to the size of the data that is stored in the table.
  */
 int	table_entry_pos(table_t *table_p, table_linear_t *linear_p,
-			void **key_buf_p, int *key_size_p,
-			void **data_buf_p, int *data_size_p)
+					void **key_buf_p, int *key_size_p,
+					void **data_buf_p, int *data_size_p)
 {
-  table_entry_t		*entry_p;
-  int			ret;
+	table_entry_t		*entry_p;
+	int			ret;
   
-  if (table_p == NULL) {
-    return TABLE_ERROR_ARG_NULL;
-  }
-  if (table_p->ta_magic != TABLE_MAGIC) {
-    return TABLE_ERROR_PNT;
-  }
-  if (linear_p == NULL) {
-    return TABLE_ERROR_ARG_NULL;
-  }
+	if (table_p == NULL) {
+		return TABLE_ERROR_ARG_NULL;
+	}
+	if (table_p->ta_magic != TABLE_MAGIC) {
+		return TABLE_ERROR_PNT;
+	}
+	if (linear_p == NULL) {
+		return TABLE_ERROR_ARG_NULL;
+	}
   
-  /* find the associated entry */
-  entry_p = this_entry(table_p, linear_p, &ret);
-  if (entry_p == NULL) {
-    return ret;
-  }
+	/* find the associated entry */
+	entry_p = this_entry(table_p, linear_p, &ret);
+	if (entry_p == NULL) {
+		return ret;
+	}
   
-  if (key_buf_p != NULL) {
-    *key_buf_p = ENTRY_KEY_BUF(entry_p);
-  }
-  if (key_size_p != NULL) {
-    *key_size_p = entry_p->te_key_size;
-  }
-  if (data_buf_p != NULL) {
-    if (entry_p->te_data_size == 0) {
-      *data_buf_p = NULL;
-    }
-    else {
-      if (table_p->ta_data_align == 0) {
-	*data_buf_p = ENTRY_DATA_BUF(table_p, entry_p);
-      }
-      else {
-	*data_buf_p = entry_data_buf(table_p, entry_p);
-      }
-    }
-  }
-  if (data_size_p != NULL) {
-    *data_size_p = entry_p->te_data_size;
-  }
+	if (key_buf_p != NULL) {
+		*key_buf_p = ENTRY_KEY_BUF(entry_p);
+	}
+	if (key_size_p != NULL) {
+		*key_size_p = entry_p->te_key_size;
+	}
+	if (data_buf_p != NULL) {
+		if (entry_p->te_data_size == 0) {
+			*data_buf_p = NULL;
+		}
+		else {
+			if (table_p->ta_data_align == 0) {
+				*data_buf_p = ENTRY_DATA_BUF(table_p, entry_p);
+			}
+			else {
+				*data_buf_p = entry_data_buf(table_p, entry_p);
+			}
+		}
+	}
+	if (data_size_p != NULL) {
+		*data_size_p = entry_p->te_data_size;
+	}
   
-  return TABLE_ERROR_NONE;
+	return TABLE_ERROR_NONE;
 }
 
 /*
@@ -4067,13 +4067,24 @@ int	table_entry_pos(table_t *table_p, table_linear_t *linear_p,
  */
 const char	*table_strerror(const int error)
 {
-  error_str_t	*err_p;
+	error_str_t	*err_p;
   
-  for (err_p = errors; err_p->es_error != 0; err_p++) {
-    if (err_p->es_error == error) {
-      return err_p->es_string;
-    }
-  }
+	for (err_p = errors; err_p->es_error != 0; err_p++) {
+		if (err_p->es_error == error) {
+			return err_p->es_string;
+		}
+	}
   
-  return INVALID_ERROR;
+	return INVALID_ERROR;
 }
+
+/* For Emacs:
+ * Local Variables:
+ * mode:c
+ * indent-tabs-mode:t
+ * tab-width:4
+ * c-basic-offset:4
+ * End:
+ * For VIM:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet:
+ */

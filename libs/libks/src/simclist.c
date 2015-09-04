@@ -26,12 +26,12 @@
 #include <errno.h>          /* for setting errno */
 #include <sys/types.h>
 #ifndef _WIN32
-    /* not in Windows! */
+/* not in Windows! */
 #   include <unistd.h>
 #   include <stdint.h>
 #endif
 #ifndef SIMCLIST_NO_DUMPRESTORE
-    /* includes for dump/restore */
+/* includes for dump/restore */
 #   include <time.h>
 #   include <sys/uio.h>     /* for READ_ERRCHECK() and write() */
 #   include <fcntl.h>       /* for open() etc */
@@ -88,31 +88,31 @@ typedef INT64   int64_t;
 /* define some commodity macros for Dump/Restore functionality */
 #ifndef SIMCLIST_NO_DUMPRESTORE
 /* write() decorated with error checking logic */
-#define WRITE_ERRCHECK(fd, msgbuf, msglen)      do {                                                    \
-                                                    if (write(fd, msgbuf, msglen) < 0) return -1;       \
-                                                } while (0);
+#define WRITE_ERRCHECK(fd, msgbuf, msglen)      do {	\
+		if (write(fd, msgbuf, msglen) < 0) return -1;	\
+	} while (0);
 /* READ_ERRCHECK() decorated with error checking logic */
-#define READ_ERRCHECK(fd, msgbuf, msglen)      do {                                                     \
-                                                    if (read(fd, msgbuf, msglen) != msglen) {           \
-                                                        /*errno = EPROTO;*/                             \
-                                                        return -1;                                      \
-                                                    }                                                   \
-                                                } while (0);
+#define READ_ERRCHECK(fd, msgbuf, msglen)      do {	\
+		if (read(fd, msgbuf, msglen) != msglen) {	\
+			/*errno = EPROTO;*/						\
+			return -1;								\
+		}											\
+	} while (0);
 
 /* convert 64bit integers from host to network format */
-#define hton64(x)       (\
-        htons(1) == 1 ?                                         \
-            (uint64_t)x      /* big endian */                   \
-        :       /* little endian */                             \
-        ((uint64_t)((((uint64_t)(x) & 0xff00000000000000ULL) >> 56) | \
-            (((uint64_t)(x) & 0x00ff000000000000ULL) >> 40) | \
-            (((uint64_t)(x) & 0x0000ff0000000000ULL) >> 24) | \
-            (((uint64_t)(x) & 0x000000ff00000000ULL) >>  8) | \
-            (((uint64_t)(x) & 0x00000000ff000000ULL) <<  8) | \
-            (((uint64_t)(x) & 0x0000000000ff0000ULL) << 24) | \
-            (((uint64_t)(x) & 0x000000000000ff00ULL) << 40) | \
-            (((uint64_t)(x) & 0x00000000000000ffULL) << 56)))   \
-        )
+#define hton64(x)       (												\
+						 htons(1) == 1 ?								\
+						 (uint64_t)x      /* big endian */				\
+						 :       /* little endian */					\
+						 ((uint64_t)((((uint64_t)(x) & 0xff00000000000000ULL) >> 56) | \
+									 (((uint64_t)(x) & 0x00ff000000000000ULL) >> 40) | \
+									 (((uint64_t)(x) & 0x0000ff0000000000ULL) >> 24) | \
+									 (((uint64_t)(x) & 0x000000ff00000000ULL) >>  8) | \
+									 (((uint64_t)(x) & 0x00000000ff000000ULL) <<  8) | \
+									 (((uint64_t)(x) & 0x0000000000ff0000ULL) << 24) | \
+									 (((uint64_t)(x) & 0x000000000000ff00ULL) << 40) | \
+									 (((uint64_t)(x) & 0x00000000000000ffULL) << 56))) \
+						 )
 
 /* convert 64bit integers from network to host format */
 #define ntoh64(x)       (hton64(x))
@@ -206,12 +206,12 @@ static int list_attrOk(const list_t *restrict l);
 
 /* do not inline, this is recursive */
 static void list_sort_quicksort(list_t *restrict l, int versus,
-        unsigned int first, struct list_entry_s *fel,
-        unsigned int last, struct list_entry_s *lel);
+								unsigned int first, struct list_entry_s *fel,
+								unsigned int last, struct list_entry_s *lel);
 
 static inline void list_sort_selectionsort(list_t *restrict l, int versus,
-        unsigned int first, struct list_entry_s *fel,
-        unsigned int last, struct list_entry_s *lel);
+										   unsigned int first, struct list_entry_s *fel,
+										   unsigned int last, struct list_entry_s *lel);
 
 static void *list_get_minmax(const list_t *restrict l, int versus);
 
@@ -792,8 +792,8 @@ static void *list_sort_quicksort_threadwrapper(void *wrapped_params) {
 #endif
 
 static inline void list_sort_selectionsort(list_t *restrict l, int versus,
-        unsigned int first, struct list_entry_s *fel,
-        unsigned int last, struct list_entry_s *lel) {
+										   unsigned int first, struct list_entry_s *fel,
+										   unsigned int last, struct list_entry_s *lel) {
     struct list_entry_s *cursor, *toswap, *firstunsorted;
     void *tmpdata;
 
@@ -813,8 +813,8 @@ static inline void list_sort_selectionsort(list_t *restrict l, int versus,
 }
 
 static void list_sort_quicksort(list_t *restrict l, int versus,
-        unsigned int first, struct list_entry_s *fel,
-        unsigned int last, struct list_entry_s *lel) {
+								unsigned int first, struct list_entry_s *fel,
+								unsigned int last, struct list_entry_s *lel) {
     unsigned int pivotid;
     unsigned int i;
     register struct list_entry_s *pivot;
@@ -1094,15 +1094,15 @@ int list_dump_filedescriptor(const list_t *restrict l, int fd, size_t *restrict 
 
     /****       DUMP FORMAT      ****
 
-    [ ver   timestamp   |  totlen   numels  elemlen     hash    |   DATA ]
+				[ ver   timestamp   |  totlen   numels  elemlen     hash    |   DATA ]
 
-    where DATA can be:
-    @ for constant-size list (element size is constant; elemlen > 0)
-    [ elem    elem    ...    elem ]
-    @ for other lists (element size dictated by element_meter each time; elemlen <= 0)
-    [ size elem     size elem       ...     size elem ]
+				where DATA can be:
+				@ for constant-size list (element size is constant; elemlen > 0)
+				[ elem    elem    ...    elem ]
+				@ for other lists (element size dictated by element_meter each time; elemlen <= 0)
+				[ size elem     size elem       ...     size elem ]
 
-    all integers are encoded in NETWORK BYTE FORMAT
+				all integers are encoded in NETWORK BYTE FORMAT
     *****/
 
 
@@ -1327,10 +1327,10 @@ int list_restore_filedescriptor(list_t *restrict l, int fd, size_t *restrict len
     /* possibly verify the list consistency */
     /* wrt hash */
     /* don't do that
-    if (header.listhash != 0 && header.listhash != list_hash(l)) {
-        errno = ECANCELED;
-        return -1;
-    }
+	   if (header.listhash != 0 && header.listhash != list_hash(l)) {
+	   errno = ECANCELED;
+	   return -1;
+	   }
     */
 
     /* wrt header */
@@ -1487,14 +1487,14 @@ static int list_repOk(const list_t *restrict l) {
     struct list_entry_s *s;
 
     ok = (l != NULL) && (
-            /* head/tail checks */
-            (l->head_sentinel != NULL && l->tail_sentinel != NULL) &&
-                (l->head_sentinel != l->tail_sentinel) && (l->head_sentinel->prev == NULL && l->tail_sentinel->next == NULL) &&
-            /* empty list */
-            (l->numels > 0 || (l->mid == NULL && l->head_sentinel->next == l->tail_sentinel && l->tail_sentinel->prev == l->head_sentinel)) &&
-            /* spare elements checks */
-            l->spareelsnum <= SIMCLIST_MAX_SPARE_ELEMS
-         );
+						 /* head/tail checks */
+						 (l->head_sentinel != NULL && l->tail_sentinel != NULL) &&
+						 (l->head_sentinel != l->tail_sentinel) && (l->head_sentinel->prev == NULL && l->tail_sentinel->next == NULL) &&
+						 /* empty list */
+						 (l->numels > 0 || (l->mid == NULL && l->head_sentinel->next == l->tail_sentinel && l->tail_sentinel->prev == l->head_sentinel)) &&
+						 /* spare elements checks */
+						 l->spareelsnum <= SIMCLIST_MAX_SPARE_ELEMS
+						 );
 
     if (!ok) return 0;
 
@@ -1523,3 +1523,13 @@ static int list_attrOk(const list_t *restrict l) {
 
 #endif
 
+/* For Emacs:
+ * Local Variables:
+ * mode:c
+ * indent-tabs-mode:t
+ * tab-width:4
+ * c-basic-offset:4
+ * End:
+ * For VIM:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet:
+ */

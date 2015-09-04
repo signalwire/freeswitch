@@ -134,11 +134,11 @@
  * mpool_resize only.
  */
 typedef void	(*mpool_log_func_t)(const void *mp_p,
-				    const int func_id,
-				    const unsigned long byte_size,
-				    const unsigned long ele_n,
-				    const void *old_addr, const void *new_addr,
-				    const unsigned long old_byte_size);
+									const int func_id,
+									const unsigned long byte_size,
+									const unsigned long ele_n,
+									const void *old_addr, const void *new_addr,
+									const unsigned long old_byte_size);
 
 #ifdef MPOOL_MAIN
 
@@ -183,7 +183,7 @@ typedef	void	mpool_t;
  */
 extern
 mpool_t	*mpool_open(const unsigned int flags, const unsigned int page_size,
-		    void *start_addr, int *error_p);
+					void *start_addr, int *error_p);
 
 /*
  * int mpool_close
@@ -251,7 +251,7 @@ int	mpool_clear(mpool_t *mp_p);
  */
 extern
 void	*mpool_alloc(mpool_t *mp_p, const unsigned long byte_size,
-		     int *error_p);
+					 int *error_p);
 
 /*
  * void *mpool_calloc
@@ -281,7 +281,7 @@ void	*mpool_alloc(mpool_t *mp_p, const unsigned long byte_size,
  */
 extern
 void	*mpool_calloc(mpool_t *mp_p, const unsigned long ele_n,
-		      const unsigned long ele_size, int *error_p);
+					  const unsigned long ele_size, int *error_p);
 
 /*
  * int mpool_free
@@ -341,9 +341,9 @@ int	mpool_free(mpool_t *mp_p, void *addr, const unsigned long size);
  */
 extern
 void	*mpool_resize(mpool_t *mp_p, void *old_addr,
-		      const unsigned long old_byte_size,
-		      const unsigned long new_byte_size,
-		      int *error_p);
+					  const unsigned long old_byte_size,
+					  const unsigned long new_byte_size,
+					  int *error_p);
 
 /*
  * int mpool_stats
@@ -381,10 +381,10 @@ void	*mpool_resize(mpool_t *mp_p, void *old_addr,
  */
 extern
 int	mpool_stats(const mpool_t *mp_p, unsigned int *page_size_p,
-		    unsigned long *num_alloced_p,
-		    unsigned long *user_alloced_p,
-		    unsigned long *max_alloced_p,
-		    unsigned long *tot_alloced_p);
+				unsigned long *num_alloced_p,
+				unsigned long *user_alloced_p,
+				unsigned long *max_alloced_p,
+				unsigned long *tot_alloced_p);
 
 /*
  * int mpool_set_log_func
@@ -461,3 +461,14 @@ const char	*mpool_strerror(const int error);
 /*<<<<<<<<<<   This is end of the auto-generated output from fillproto. */
 
 #endif /* ! __MPOOL_H__ */
+
+/* For Emacs:
+ * Local Variables:
+ * mode:c
+ * indent-tabs-mode:t
+ * tab-width:4
+ * c-basic-offset:4
+ * End:
+ * For VIM:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet:
+ */
