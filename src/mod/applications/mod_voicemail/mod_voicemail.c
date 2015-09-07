@@ -2316,6 +2316,9 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 						switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "VM-Domain", domain_name);
 						switch_channel_event_set_data(channel, params);
 						
+						if (zstr(buf) && !profile->allow_empty_password_auth) {
+							fail = 1;
+						}
 						if (switch_xml_locate_user("id", myid, domain_name, switch_channel_get_variable(channel, "network_addr"),
 												   &xx_domain_root, &xx_domain, &xx_user, NULL, params) == SWITCH_STATUS_SUCCESS) {
 							switch_xml_t x_result;
