@@ -61,7 +61,13 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="filter.xslt" />
+    <Content Include="packages.config" />
   </ItemGroup>
+  <PropertyGroup>
+    <WixToolPath>$(SolutionDir)packages\WiX.Toolset.2015.3.10.0.1503\tools\wix\</WixToolPath>
+    <WixTargetsPath>$(WixToolPath)wix.targets</WixTargetsPath>
+    <WixTasksPath>$(WixToolPath)WixTasks.dll</WixTasksPath>
+  </PropertyGroup>
   <Import Project="$(WixTargetsPath)" />
   <PropertyGroup>
     <PreBuildEvent>"$(WixToolPath)\heat.exe" dir "$(ProjectDir)..\..\conf\vanilla" -cg FreeSWITCHConfFiles -gg -scom -sreg -sfrag -srd -dr CONFLOCATION -var var.FreeSWITCHConfFilesDir -out "$(ProjectDir)Fragments\FreeSWITCHConfFiles.wxs"
