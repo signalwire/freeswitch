@@ -11,6 +11,7 @@ PIDFile=/run/freeswitch/freeswitch.pid
 PermissionsStartOnly=true
 ExecStartPre=/bin/mkdir -p /run/freeswitch
 ExecStartPre=/bin/chown freeswitch:freeswitch /run/freeswitch
+ExecStartPre=/bin/chown freeswitch:freeswitch /etc/freeswitch/tls
 ExecStart=/usr/bin/freeswitch -ncwait -nonat
 TimeoutSec=45s
 Restart=always
