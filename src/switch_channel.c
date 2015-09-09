@@ -2100,10 +2100,8 @@ SWITCH_DECLARE(int) switch_channel_state_change_pending(switch_channel_t *channe
 
 SWITCH_DECLARE(int) switch_channel_check_signal(switch_channel_t *channel, switch_bool_t in_thread_only)
 {
-	if (!in_thread_only || switch_core_session_in_thread(channel->session)) {
-		switch_ivr_parse_all_signal_data(channel->session);
-	}
-
+	(void)in_thread_only;
+	switch_ivr_parse_next_signal_data(channel->session);
 	return 0;
 }
 
