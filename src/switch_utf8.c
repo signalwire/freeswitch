@@ -463,45 +463,12 @@ SWITCH_DECLARE(int) switch_u8_is_locale_utf8(char *locale)
     return 0;
 }
 
-SWITCH_DECLARE(int) switch_u8_vprintf(char *fmt, va_list ap)
-{
-    int cnt, sz=0;
-    char *buf;
-    uint32_t *wcs;
-
-    sz = 512;
-    buf = (char*)alloca(sz);
- try_print:
-    cnt = vsnprintf(buf, sz, fmt, ap);
-    if (cnt >= sz) {
-        buf = (char*)alloca(cnt - sz + 1);
-        sz = cnt + 1;
-        goto try_print;
-    }
-    wcs = (uint32_t*)alloca((cnt+1) * sizeof(uint32_t));
-    cnt = switch_u8_toucs(wcs, cnt+1, buf, cnt);
-    printf("%ls", (wchar_t*)wcs);
-    return cnt;
-}
-
-SWITCH_DECLARE(int) switch_u8_printf(char *fmt, ...)
-{
-    int cnt;
-    va_list args;
-
-    va_start(args, fmt);
-
-    cnt = switch_u8_vprintf(fmt, args);
-
-    va_end(args);
-    return cnt;
-}
 
 
 /* reads the next utf-8 sequence out of a string, updating an index */
 SWITCH_DECLARE(uint32_t) switch_u8_get_char(char *s, int *i)
 {
-	u_int32_t ch = 0;
+	uint32_t ch = 0;
 	int sz = 0;
 
 	do {
