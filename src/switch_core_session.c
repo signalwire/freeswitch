@@ -1659,9 +1659,9 @@ static void *SWITCH_THREAD_FUNC switch_core_session_thread_pool_worker(switch_th
 #ifdef DEBUG_THREAD_POOL
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "Worker Thread %ld Started\n", (long) thread);
 #endif
-	while (1) {
+	for (;;) {
 		void *pop;
-		switch_status_t check_status = switch_queue_pop_timeout(session_manager.thread_queue, &pop, apr_time_from_sec(5));
+		switch_status_t check_status = switch_queue_pop_timeout(session_manager.thread_queue, &pop, 5000000);
 		if (check_status == SWITCH_STATUS_SUCCESS) {
 			switch_thread_data_t *td = (switch_thread_data_t *) pop;
 			
@@ -2454,7 +2454,7 @@ void switch_core_session_uninit(void)
 	switch_queue_term(session_manager.thread_queue);
 	switch_mutex_lock(session_manager.mutex);
 	if (session_manager.running)
-		switch_thread_cond_timedwait(session_manager.cond, session_manager.mutex, apr_time_from_sec(10));
+		switch_thread_cond_timedwait(session_manager.cond, session_manager.mutex, 10000000);
 	switch_mutex_unlock(session_manager.mutex);
 	switch_core_hash_destroy(&session_manager.session_table);
 }
