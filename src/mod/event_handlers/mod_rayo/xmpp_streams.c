@@ -1123,7 +1123,7 @@ static void xmpp_stream_destroy(struct xmpp_stream *stream)
 
 	/* remove from available streams */
 	switch_mutex_lock(context->streams_mutex);
-	if (stream->jid && !stream->incoming) {
+	if (stream->jid) {
 		switch_core_hash_delete(context->routes, stream->jid);
 	}
 	if (stream->id) {
