@@ -659,6 +659,8 @@ SWITCH_DECLARE(switch_status_t) switch_queue_trypop(switch_queue_t *queue, void 
 
 SWITCH_DECLARE(switch_status_t) switch_queue_interrupt_all(switch_queue_t *queue);
 
+SWITCH_DECLARE(switch_status_t) switch_queue_term(switch_queue_t *queue);
+
 /**
  * push/add a object to the queue, returning immediatly if the queue is full
  *
