@@ -2218,8 +2218,9 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 					if (num < 0 || num > VM_MAX_GREETINGS) {
 						status = SWITCH_STATUS_FALSE;
 					} else if (num > 0) {
-						file_path = switch_mprintf("%s%sgreeting_%d.%s", dir_path, SWITCH_PATH_SEPARATOR, num, profile->file_ext);
 						switch_file_handle_t fh = { 0 };
+
+						file_path = switch_mprintf("%s%sgreeting_%d.%s", dir_path, SWITCH_PATH_SEPARATOR, num, profile->file_ext);
 						memset(&fh, 0, sizeof(fh));
 						greeting_args.input_callback = control_playback;
 						memset(&cc, 0, sizeof(cc));
