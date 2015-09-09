@@ -143,6 +143,11 @@ switch_status_t hiredis_profile_execute_sync(hiredis_profile_t *profile, const c
 	
 	response = redisCommand(profile->conn->context, data);
 
+	if ( !response ) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "hiredis: empty response received\n");
+		return SWITCH_STATUS_GENERR;
+	}
+	
 	switch(response->type) {
 	case REDIS_REPLY_STATUS: /* fallthrough */
 	case REDIS_REPLY_STRING:
