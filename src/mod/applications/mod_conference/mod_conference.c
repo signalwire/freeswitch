@@ -294,7 +294,7 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 					floor_holder = imember;
 				}
 
-				if (switch_channel_ready(channel) && switch_channel_test_flag(channel, CF_VIDEO) && imember->video_flow != SWITCH_MEDIA_FLOW_SENDONLY) {
+				if (switch_channel_ready(channel) && switch_channel_test_flag(channel, CF_VIDEO) && switch_core_session_media_flow(imember->session, SWITCH_MEDIA_TYPE_VIDEO) != SWITCH_MEDIA_FLOW_SENDONLY) {
 					members_with_video++;
 				}
 

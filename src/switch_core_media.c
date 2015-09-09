@@ -161,6 +161,8 @@ typedef struct switch_rtp_engine_s {
 	switch_media_flow_t rmode;
 	switch_media_flow_t smode;
 	switch_thread_id_t thread_id;
+	uint8_t new_ice;
+	uint8_t new_dtls;
 } switch_rtp_engine_t;
 
 struct switch_media_handle_s {
@@ -3135,8 +3137,13 @@ static switch_status_t check_ice(switch_media_handle_t *smh, switch_media_type_t
 	const char *val;
 	int ice_seen = 0, cid = 0, ai = 0;
 
-	if (engine->ice_in.is_chosen[0] && engine->ice_in.is_chosen[1] && !switch_channel_test_flag(smh->session->channel, CF_REINVITE)) {
+	if (engine->ice_in.is_chosen[0] && engine->ice_in.is_chosen[1]) {
 		return SWITCH_STATUS_SUCCESS;
+	}
+
+	if (switch_channel_test_flag(smh->session->channel, CF_REINVITE) && !switch_channel_test_flag(smh->session->channel, CF_RECOVERING)) {
+		engine->new_ice = 0;
+		engine->new_dtls = 0;
 	}
 
 	engine->ice_in.chosen[0] = 0;
@@ -3375,7 +3382,7 @@ static switch_status_t check_ice(switch_media_handle_t *smh, switch_media_type_t
 
 	if (switch_channel_test_flag(smh->session->channel, CF_REINVITE)) {
 
-		if (switch_rtp_ready(engine->rtp_session) && engine->ice_in.cands[engine->ice_in.chosen[0]][0].ready) {
+		if (switch_rtp_ready(engine->rtp_session) && engine->ice_in.cands[engine->ice_in.chosen[0]][0].ready && engine->new_ice) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_INFO, "RE-Activating %s ICE\n", type2str(type));
 
 			switch_rtp_activate_ice(engine->rtp_session, 
@@ -3395,7 +3402,7 @@ static switch_status_t check_ice(switch_media_handle_t *smh, switch_media_type_t
 									);
 
 		
-			
+			engine->new_ice = 0;
 		}
 		
 
@@ -3574,6 +3581,15 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 		switch_channel_clear_flag(smh->session->channel, CF_DTLS_OK);
 		switch_channel_clear_flag(smh->session->channel, CF_DTLS);
 	}
+
+	a_engine->new_ice = 1;
+	a_engine->new_dtls = 1;
+	v_engine->new_ice = 1;
+	v_engine->new_dtls = 1;
+
+	//if (switch_channel_test_flag(session->channel, CF_REINVITE)) {
+	//	switch_core_media_clear_ice(session);
+	//}
 
 	switch_core_session_parse_crypto_prefs(session);
 
@@ -3810,7 +3826,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 
 
 			a_engine->rmode = sdp_media_flow(m->m_mode);
-			
+
 			if (sdp_type == SDP_TYPE_REQUEST) {
 				switch(a_engine->rmode) {
 				case SWITCH_MEDIA_FLOW_RECVONLY:
@@ -5804,7 +5820,7 @@ SWITCH_DECLARE(void) switch_core_session_wake_video_thread(switch_core_session_t
 
 static void check_dtls_reinvite(switch_core_session_t *session, switch_rtp_engine_t *engine)
 {
-	if (switch_channel_test_flag(session->channel, CF_REINVITE)) {
+	if (switch_channel_test_flag(session->channel, CF_REINVITE) && engine->new_dtls) {
 
 		if (!zstr(engine->local_dtls_fingerprint.str) && switch_rtp_has_dtls() && dtls_ok(session)) {
 			dtls_type_t xtype, dtype = switch_ice_direction(session) == SWITCH_CALL_DIRECTION_INBOUND ? DTLS_TYPE_CLIENT : DTLS_TYPE_SERVER;
@@ -5822,6 +5838,7 @@ static void check_dtls_reinvite(switch_core_session_t *session, switch_rtp_engin
 			}
 		
 		}
+		engine->new_dtls = 0;
 	}
 }
 
@@ -6678,7 +6695,8 @@ static const char *get_media_profile_name(switch_core_session_t *session, int se
 
 static char *get_setup(switch_core_session_t *session, switch_sdp_type_t sdp_type)
 {
-	if (sdp_type == SDP_TYPE_RESPONSE && !switch_channel_test_flag(session->channel, CF_RECOVERING)) {
+	if ((sdp_type == SDP_TYPE_RESPONSE || switch_channel_test_flag(session->channel, CF_REINVITE)) && 
+		!switch_channel_test_flag(session->channel, CF_RECOVERING)) {
 		return "active";
 	}
 
@@ -10461,7 +10479,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_encoded_video_frame(sw
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
 	if (switch_core_session_media_flow(session, SWITCH_MEDIA_TYPE_VIDEO) == SWITCH_MEDIA_FLOW_RECVONLY) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Writing video to RECVONLY session\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG3, "Writing video to RECVONLY session\n");
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -10532,7 +10550,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_video_frame(switch_cor
 	}
 
 	if (switch_core_session_media_flow(session, SWITCH_MEDIA_TYPE_VIDEO) == SWITCH_MEDIA_FLOW_RECVONLY) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Writing video to RECVONLY session\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG3, "Writing video to RECVONLY session\n");
 		return SWITCH_STATUS_SUCCESS;
 	}
 
