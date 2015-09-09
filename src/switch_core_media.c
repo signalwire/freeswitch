@@ -10585,12 +10585,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_video_frame(switch_cor
 	
 	if (session->bugs) {
 		switch_media_bug_t *bp;
-		switch_bool_t ok = SWITCH_TRUE;
 		int prune = 0;
 		int patched = 0;
 
 		switch_thread_rwlock_rdlock(session->bug_rwlock);
 		for (bp = session->bugs; bp; bp = bp->next) {
+			switch_bool_t ok = SWITCH_TRUE;
+
 			if (switch_channel_test_flag(session->channel, CF_PAUSE_BUGS) && !switch_core_media_bug_test_flag(bp, SMBF_NO_PAUSE)) {
 				continue;
 			}
@@ -10820,12 +10821,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_video_frame(switch_core
 
 	if (session->bugs) {
 		switch_media_bug_t *bp;
-		switch_bool_t ok = SWITCH_TRUE;
 		int prune = 0;
 		int patched = 0;
 
 		switch_thread_rwlock_rdlock(session->bug_rwlock);
 		for (bp = session->bugs; bp; bp = bp->next) {
+			switch_bool_t ok = SWITCH_TRUE;
+
 			if (switch_channel_test_flag(session->channel, CF_PAUSE_BUGS) && !switch_core_media_bug_test_flag(bp, SMBF_NO_PAUSE)) {
 				continue;
 			}
