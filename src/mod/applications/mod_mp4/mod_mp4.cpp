@@ -266,7 +266,7 @@ static void *SWITCH_THREAD_FUNC play_video_function(switch_thread_t *thread, voi
 {
 	AVParams * pt = reinterpret_cast<AVParams*>(obj);
 	u_int next = 0, first = 0xffffffff;
-	u_int64_t ts = 0, control = 0;
+	uint64_t ts = 0, control = 0;
 
 	bool ok;
 	bool sent = true;
@@ -323,7 +323,7 @@ static void *SWITCH_THREAD_FUNC play_audio_function(switch_thread_t *thread, voi
 {
 	AVParams * pt = reinterpret_cast<AVParams*>(obj);
 	u_int next = 0, first = 0xffffffff;
-	u_int64_t ts = 0, control = 0;
+	uint64_t ts = 0, control = 0;
 
 	bool ok;
 	bool sent = true;

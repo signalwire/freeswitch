@@ -56,10 +56,10 @@ namespace MP4
 	};
 	
 	struct RuntimeProperties {
-		u_int32_t frame; // sampleID
-		u_int16_t packetsPerFrame;
-		u_int16_t packet; // packetID
-		u_int32_t last_frame; // timestamp
+		uint32_t frame; // sampleID
+		uint16_t packetsPerFrame;
+		uint16_t packet; // packetID
+		uint32_t last_frame; // timestamp
 
 		RuntimeProperties(): frame(0), packetsPerFrame(0), packet(0)
 		{
@@ -72,9 +72,9 @@ namespace MP4
 		MP4TrackId track;
 
 		char * codecName;
-		u_int8_t payload;
-		u_int32_t clock;
-		u_int32_t packetLength; // packet Length in time (ms)
+		uint8_t payload;
+		uint32_t clock;
+		uint32_t packetLength; // packet Length in time (ms)
 		
 		RuntimeProperties runtime;
 
