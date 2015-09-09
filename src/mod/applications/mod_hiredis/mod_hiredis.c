@@ -64,7 +64,7 @@ SWITCH_STANDARD_APP(raw_app)
 		return;
 	}
 	
-	if ( hiredis_profile_execute_sync(profile, data, &response) != SWITCH_STATUS_SUCCESS) {
+	if ( hiredis_profile_execute_sync(profile, cmd, &response) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "hiredis: profile[%s] error executing [%s] because [%s]\n", profile_name, cmd, response);
 	}
 
