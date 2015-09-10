@@ -1583,7 +1583,6 @@ session_elem_t *attach_call_to_spawned_process(listener_t *listener, char *modul
 
 	session_element->process.type = ERLANG_PID;
 	memcpy(&session_element->process.pid, p->pid, sizeof(erlang_pid));
-	session_element->spawn_reply = NULL;
 
 	switch_clear_flag_locked(session_element, LFLAG_WAITING_FOR_PID);
 

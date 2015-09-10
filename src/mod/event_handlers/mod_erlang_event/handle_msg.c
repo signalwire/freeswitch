@@ -1224,7 +1224,7 @@ static switch_status_t handle_ref_tuple(listener_t *listener, erlang_msg * msg, 
 	for (iter = switch_core_hash_first(listener->sessions); iter; iter = switch_core_hash_next(&iter)) {
 		switch_core_hash_this(iter, &key, NULL, &val);
 		se = (session_elem_t*)val;
-		if (se->spawn_reply && !strncmp(se->spawn_reply->hash, hash, 100)) {
+		if (switch_test_flag(se, LFLAG_WAITING_FOR_PID) && se->spawn_reply && !strncmp(se->spawn_reply->hash, hash, 100)) {
 			
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "found matching session for %s : %s\n", hash, se->uuid_str);
 
