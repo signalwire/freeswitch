@@ -819,6 +819,10 @@ static switch_status_t switch_opus_control(switch_codec_t *codec,
 			calc = plpct % 10;
 			plpct = plpct - calc + ( calc ? 10 : 0);
 
+			if (opus_prefs.plpct > 0 && plpct < opus_prefs.plpct) {
+				plpct = opus_prefs.plpct;
+			}
+
 			if (plpct != context->old_plpct) {
 				opus_encoder_ctl(context->encoder_object, OPUS_SET_PACKET_LOSS_PERC(plpct));
 
