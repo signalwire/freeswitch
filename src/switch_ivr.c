@@ -3159,17 +3159,21 @@ SWITCH_DECLARE(void) switch_ivr_park_session(switch_core_session_t *session)
 
 SWITCH_DECLARE(void) switch_ivr_delay_echo(switch_core_session_t *session, uint32_t delay_ms)
 {
-	stfu_instance_t *jb;
+	switch_jb_t *jb;
 	int qlen = 0;
-	stfu_frame_t *jb_frame;
 	switch_frame_t *read_frame, write_frame = { 0 };
 	switch_status_t status;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	uint32_t interval;
 	uint32_t ts = 0;
+	uint16_t seq = 0;
 	switch_codec_implementation_t read_impl = { 0 };
-	switch_core_session_get_read_impl(session, &read_impl);
+	int is_rtp = 0;
+	int debug = 0;
+	const char *var;
 
+
+	switch_core_session_get_read_impl(session, &read_impl);
 
 	if (delay_ms < 1 || delay_ms > 10000) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid delay [%d] must be between 1 and 10000\n", delay_ms);
@@ -3177,41 +3181,68 @@ SWITCH_DECLARE(void) switch_ivr_delay_echo(switch_core_session_t *session, uint3
 	}
 
 	interval = read_impl.microseconds_per_packet / 1000;
-	//samples = switch_samples_per_packet(read_impl.samples_per_second, interval);
 
 	if (delay_ms < interval * 2) {
 		delay_ms = interval * 2;
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Minimum possible delay for this codec (%d) has been chosen\n", delay_ms);
 	}
 
-
 	qlen = delay_ms / (interval);
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Setting delay to %dms (%d frames)\n", delay_ms, qlen);
-	jb = stfu_n_init(qlen, qlen, read_impl.samples_per_packet, read_impl.samples_per_second, 0);
+
+	switch_jb_create(&jb, SJB_AUDIO, qlen, qlen, switch_core_session_get_pool(session));
+
+	if ((var = switch_channel_get_variable(channel, "delay_echo_debug_level"))) {
+		debug = atoi(var);
+	}
+
+	if (debug) {
+		switch_jb_debug_level(jb, debug);
+	}
 
 	write_frame.codec = switch_core_session_get_read_codec(session);
 
 	while (switch_channel_ready(channel)) {
+		switch_rtp_packet_t packet = { {0} };
+		switch_size_t plen = sizeof(packet);
+
 		status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
+
 		if (!SWITCH_READ_ACCEPTABLE(status)) {
 			break;
 		}
 
-		stfu_n_eat(jb, ts, 0, read_frame->payload, read_frame->data, read_frame->datalen, 0);
-		ts += read_impl.samples_per_packet;
+		if (switch_test_flag(read_frame, SFF_CNG)) {
+			continue;
+		}
 
-		if ((jb_frame = stfu_n_read_a_frame(jb))) {
-			write_frame.data = jb_frame->data;
-			write_frame.datalen = (uint32_t) jb_frame->dlen;
-			write_frame.buflen = (uint32_t) jb_frame->dlen;
+		if (read_frame->packet) {
+			is_rtp = 1;
+			switch_jb_put_packet(jb, (switch_rtp_packet_t *) read_frame->packet, read_frame->packetlen);
+		} else if (is_rtp) {
+			continue;
+		} else {
+			ts += read_impl.samples_per_packet;
+			memcpy(packet.body, read_frame->data, read_frame->datalen);
+			packet.header.ts = htonl(ts);
+			packet.header.seq = htons(++seq);
+			packet.header.version = 2;
+		}
+		
+		if (switch_jb_get_packet(jb, (switch_rtp_packet_t *) &packet, &plen) == SWITCH_STATUS_SUCCESS) {
+			write_frame.data = packet.body;
+			write_frame.datalen = (uint32_t) plen - 12;
+			write_frame.buflen = (uint32_t) plen;
+
 			status = switch_core_session_write_frame(session, &write_frame, SWITCH_IO_FLAG_NONE, 0);
+
 			if (!SWITCH_READ_ACCEPTABLE(status)) {
 				break;
 			}
 		}
 	}
 
-	stfu_n_destroy(&jb);
+	switch_jb_destroy(&jb);
 }
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_say(switch_core_session_t *session,

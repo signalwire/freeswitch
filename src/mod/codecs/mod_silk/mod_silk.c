@@ -62,7 +62,7 @@ struct silk_context {
 	SKP_SILK_SDK_DecControlStruct decoder_object;
 	void *enc_state;
 	void *dec_state;
-	SKP_uint8 recbuff[STFU_DATALEN];
+	SKP_uint8 recbuff[SWITCH_RTP_MAX_BUF_LEN];
 	SKP_int16 reclen;
 };
 
@@ -326,12 +326,8 @@ static switch_status_t switch_silk_decode(switch_codec_t *codec,
 	SKP_int16 ret, len; 
 	int16_t *target = decoded_data;
 	switch_core_session_t *session = codec->session;
-	stfu_instance_t *jb = NULL;
-
+	switch_jb_t *jb = NULL;
 	SKP_int lost_flag = (*flag & SFF_PLC);
-	stfu_frame_t *next_frame = NULL;
-
-	int32_t found_frame;
 	switch_bool_t did_lbrr = SWITCH_FALSE;
 	int i;
 
@@ -345,11 +341,14 @@ static switch_status_t switch_silk_decode(switch_codec_t *codec,
 		}
 
 		if (jb && codec->cur_frame) {
-			for (i = 1; i <= MAX_LBRR_DELAY; i++) {
-				found_frame = stfu_n_peek_frame(jb, (uint32_t)codec->cur_frame->timestamp, codec->cur_frame->seq, (uint16_t)i, &next_frame);
+			switch_frame_t frame = { 0 };
+			uint8_t buf[SWITCH_RTP_MAX_BUF_LEN];
+			frame.data = buf;
+			frame.buflen = sizeof(buf);
 
-				if (found_frame) {
-					SKP_Silk_SDK_search_for_LBRR(next_frame->data, (const int)next_frame->dlen, i, (SKP_uint8*) &context->recbuff, &context->reclen);
+			for (i = 1; i <= MAX_LBRR_DELAY; i++) {
+				if (switch_jb_peek_frame(jb, codec->cur_frame->seq, (uint16_t)i, &frame)) {
+					SKP_Silk_SDK_search_for_LBRR(frame.data, (const int)frame.datalen, i, (SKP_uint8*) &context->recbuff, &context->reclen);
 
 					if (context->reclen) {
 						encoded_data = &context->recbuff;

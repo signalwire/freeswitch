@@ -75,6 +75,8 @@ struct opus_context {
 	uint32_t enc_frame_size;
 	uint32_t dec_frame_size;
 	uint32_t old_plpct;
+	uint32_t debug;
+	uint32_t use_jb_lookahead;
 	opus_codec_settings_t codec_settings;
 };
 
@@ -89,6 +91,7 @@ struct {
 	int asymmetric_samplerates;
 	int keep_fec;
 	int debuginfo;
+	uint32_t use_jb_lookahead;
 	switch_mutex_t *mutex;
 } opus_prefs;
 
@@ -534,7 +537,7 @@ static switch_status_t switch_opus_encode(switch_codec_t *codec,
 
 	bytes = opus_encode(context->encoder_object, (void *) decoded_data, context->enc_frame_size, (unsigned char *) encoded_data, len);
 
-	if (globals.debug) {
+	if (globals.debug || context->debug > 1) {
 		int samplerate = context->enc_frame_size * 1000 / (codec->implementation->microseconds_per_packet / 1000);
 		switch_opus_info(encoded_data, bytes, samplerate, "encode");
 	}
@@ -551,6 +554,7 @@ static switch_status_t switch_opus_encode(switch_codec_t *codec,
 
 	return SWITCH_STATUS_GENERR;
 }
+
 
 static switch_status_t switch_opus_decode(switch_codec_t *codec,
 										  switch_codec_t *other_codec,
@@ -573,24 +577,57 @@ static switch_status_t switch_opus_decode(switch_codec_t *codec,
 	frame_size = frame_samples - (frame_samples % (codec->implementation->actual_samples_per_second / 400));
 
 	if (*flag & SFF_PLC) {
+		switch_core_session_t *session = codec->session;
+		switch_jb_t *jb = NULL;
+		int got_frame = 0;
+
 		plc = 1;
+
 		encoded_data = NULL;
-		
-		opus_decoder_ctl(context->decoder_object, OPUS_GET_LAST_PACKET_DURATION(&frame_size));
-		if (!frame_size) {
-			frame_size = frame_samples - (frame_samples % (codec->implementation->actual_samples_per_second / 400));
+
+		if (opus_prefs.use_jb_lookahead || context->use_jb_lookahead) {
+			fec = 1;
 		}
 
-		if (context->codec_settings.useinbandfec) {
-			fec = 1;
+		if (!fec && context->codec_settings.useinbandfec && session) {
+			if (opus_packet_get_bandwidth(codec->cur_frame->data) != OPUS_BANDWIDTH_FULLBAND && 
+				codec->cur_frame && (jb = switch_core_session_get_jb(session, SWITCH_MEDIA_TYPE_AUDIO))) {
+				switch_frame_t frame = { 0 };
+				uint8_t buf[SWITCH_RTP_MAX_BUF_LEN];
+				frame.data = buf;
+				frame.buflen = sizeof(buf);
+
+				if (switch_jb_peek_frame(jb, codec->cur_frame->seq, 1, &frame)) {
+					got_frame = 1;
+					fec = 1;
+					encoded_data = frame.data;
+					encoded_data_len = frame.datalen;
+				}
+			}
+		}
+		
+		if (!got_frame) {
+			opus_decoder_ctl(context->decoder_object, OPUS_GET_LAST_PACKET_DURATION(&frame_size));
+		
+			if (!frame_size) {
+				frame_size = frame_samples - (frame_samples % (codec->implementation->actual_samples_per_second / 400));
+			}
+		}
+
+		if (globals.debug || context->debug) {
+			if (opus_prefs.use_jb_lookahead || context->use_jb_lookahead) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "MISSING FRAME: %s\n", fec ? "Look-ahead FEC" : "PLC");
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "MISSING FRAME: OPUS_PLC\n");
+			}
 		}
 
 		*flag &= ~SFF_PLC;
 	}
 
-	if (globals.debug) {
+	if (globals.debug || context->debug > 1) {
 		int samplerate = context->dec_frame_size * 1000 / (codec->implementation->microseconds_per_packet / 1000);
-		switch_opus_info((*flag & SFF_PLC) ? NULL : encoded_data, encoded_data_len,
+		switch_opus_info(encoded_data, encoded_data_len,
 						 samplerate ? samplerate : codec->implementation->actual_samples_per_second, "decode");
 	}
 
@@ -660,7 +697,7 @@ static switch_status_t switch_opus_encode_repacketize(switch_codec_t *codec,
 
 	ret = opus_repacketizer_out(rp, encoded_data, total_len+opus_repacketizer_get_nb_frames(rp));
 
-	if (globals.debug) {
+	if (globals.debug || context->debug) {
 		int samplerate = context->enc_frame_size * 1000 / (codec->implementation->microseconds_per_packet / 1000);
 		switch_opus_info(encoded_data, ret, samplerate, "encode_repacketize");
 	}
@@ -706,6 +743,8 @@ static switch_status_t opus_load_config(switch_bool_t reload)
 				opus_prefs.plpct = atoi(val);
 			} else if (!strcasecmp(key, "asymmetric-sample-rates")) {
 				opus_prefs.asymmetric_samplerates = atoi(val);
+			} else if (!strcasecmp(key, "use-jb-lookahead")) {
+				opus_prefs.use_jb_lookahead = switch_true(val);
 			} else if (!strcasecmp(key, "keep-fec-enabled")) {
 				opus_prefs.keep_fec = atoi(val);
 			} else if (!strcasecmp(key, "maxaveragebitrate")) {
@@ -777,7 +816,7 @@ static switch_status_t switch_opus_keep_fec_enabled(switch_codec_t *codec)
 	 * If yes, then keep the current bitrate. If not, modify bitrate to keep FEC on. */
 	if (real_target_bitrate > LBRR_threshold_bitrate) {
 		/*FEC is already enabled, do nothing*/
-		if (globals.debug) {
+		if (globals.debug || context->debug) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Opus encoder: FEC is enabled\n");
 		}
 		return SWITCH_STATUS_SUCCESS;
@@ -789,7 +828,7 @@ static switch_status_t switch_opus_keep_fec_enabled(switch_codec_t *codec)
 
 		opus_encoder_ctl(context->encoder_object,OPUS_SET_BITRATE(current_bitrate));
 
-		if (globals.debug) {
+		if (globals.debug || context->debug) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Opus encoder: increased bitrate to [%d] to keep FEC enabled\n", current_bitrate);
 		}
 
@@ -801,12 +840,46 @@ static switch_status_t switch_opus_control(switch_codec_t *codec,
 										   switch_codec_control_command_t cmd,
 										   switch_codec_control_type_t ctype,
 										   void *cmd_data,
+										   switch_codec_control_type_t atype,
+										   void *cmd_arg,
 										   switch_codec_control_type_t *rtype,
 										   void **ret_data)
 {
 	struct opus_context *context = codec->private_info;
 
 	switch(cmd) {
+	case SCC_CODEC_SPECIFIC:
+		{
+			const char *cmd = (const char *)cmd_data;
+			const char *arg = (const char *)cmd_arg;
+			switch_codec_control_type_t reply_type = SCCT_STRING;
+			const char *reply = "ERROR INVALID COMMAND";
+
+			if (!zstr(cmd)) {
+				if (!strcasecmp(cmd, "jb_lookahead")) {
+					if (!zstr(arg)) {
+						context->use_jb_lookahead = switch_true(arg);
+					}
+					reply = context->use_jb_lookahead ? "LOOKAHEAD ON" : "LOOKAHEAD OFF";
+				}
+			}
+
+			if (rtype) {
+				*rtype = reply_type;
+
+				if (reply) {
+					*ret_data = (void *)reply;
+				}
+			}
+
+		}
+		break;
+	case SCC_DEBUG:
+		{
+			int32_t level = *((uint32_t *) cmd_data);
+			context->debug = level;
+		}
+		break;
 	case SCC_AUDIO_PACKET_LOSS:
 		{
 			uint32_t plpct = *((uint32_t *) cmd_data);
@@ -830,7 +903,7 @@ static switch_status_t switch_opus_control(switch_codec_t *codec,
 					switch_opus_keep_fec_enabled(codec);
 				}
 
-				if (globals.debug) {
+				if (globals.debug || context->debug) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Opus Adjusting packet loss percent from %d%% to %d%%!\n",
 									  context->old_plpct, plpct);
 				}

@@ -128,6 +128,7 @@ typedef int gid_t;
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <netdb.h>
 #endif // _MSC_VER
 #ifndef __LITTLE_ENDIAN
 #define __LITTLE_ENDIAN 1234

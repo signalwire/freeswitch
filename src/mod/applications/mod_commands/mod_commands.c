@@ -4086,6 +4086,100 @@ SWITCH_STANDARD_API(uuid_video_bitrate_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+#define CODEC_DEBUG_SYNTAX "<uuid> audio|video <level>"
+SWITCH_STANDARD_API(uuid_codec_debug_function)
+{
+	switch_status_t status = SWITCH_STATUS_FALSE;
+	char *mycmd = NULL, *argv[3] = { 0 };
+	int argc = 0;
+
+	if (!zstr(cmd) && (mycmd = strdup(cmd))) {
+		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+	}
+
+	if (argc < 3) {
+		stream->write_function(stream, "-USAGE: %s\n", CODEC_DEBUG_SYNTAX);
+	} else {
+		switch_core_session_t *lsession = NULL;
+
+		if ((lsession = switch_core_session_locate(argv[0]))) {
+			int level = atoi(argv[2]);
+			switch_media_type_t type = SWITCH_MEDIA_TYPE_AUDIO;
+			switch_core_session_message_t msg = { 0 };
+
+			if (!strcasecmp(argv[1], "video")) {
+				type = SWITCH_MEDIA_TYPE_VIDEO;
+			}
+
+			if (level < 0) level = 0;
+
+			msg.message_id = SWITCH_MESSAGE_INDICATE_CODEC_DEBUG_REQ;
+			msg.numeric_arg = level;
+			msg.numeric_reply = type;
+			msg.from = __FILE__;
+			
+			switch_core_session_receive_message(lsession, &msg);
+			status = SWITCH_STATUS_SUCCESS;
+			switch_core_session_rwunlock(lsession);
+		}
+	}
+
+	if (status == SWITCH_STATUS_SUCCESS) {
+		stream->write_function(stream, "+OK Success\n");
+	} else {
+		stream->write_function(stream, "-ERR Operation Failed\n");
+	}
+
+	switch_safe_free(mycmd);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
+#define CODEC_PARAM_SYNTAX "<uuid> audio|video read|write <param> <val>"
+SWITCH_STANDARD_API(uuid_codec_param_function)
+{
+	switch_status_t status = SWITCH_STATUS_FALSE;
+	char *mycmd = NULL, *argv[5] = { 0 };
+	int argc = 0;
+	switch_core_session_message_t msg = { 0 };
+
+	msg.string_array_arg[4] = "NOT SENT";
+
+	if (!zstr(cmd) && (mycmd = strdup(cmd))) {
+		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+	}
+
+	if (argc < 3) {
+		stream->write_function(stream, "-USAGE: %s\n", CODEC_PARAM_SYNTAX);
+	} else {
+		switch_core_session_t *lsession = NULL;
+
+		if ((lsession = switch_core_session_locate(argv[0]))) {
+			msg.message_id = SWITCH_MESSAGE_INDICATE_CODEC_SPECIFIC_REQ;
+			msg.string_array_arg[0] = argv[1];
+			msg.string_array_arg[1] = argv[2];
+			msg.string_array_arg[2] = argv[3];
+			msg.string_array_arg[3] = argv[4];
+			msg.from = __FILE__;
+			
+			switch_core_session_receive_message(lsession, &msg);
+			status = SWITCH_STATUS_SUCCESS;
+			switch_core_session_rwunlock(lsession);
+		}
+	}
+
+	if (status == SWITCH_STATUS_SUCCESS) {
+		stream->write_function(stream, "+OK Command sent reply: [%s]\n", msg.string_array_arg[4]);
+	} else {
+		stream->write_function(stream, "-ERR Operation Failed [%s]\n", msg.string_array_arg[4]);
+	}
+
+	switch_safe_free(mycmd);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 
 #define DEBUG_MEDIA_SYNTAX "<uuid> <read|write|both|vread|vwrite|vboth|all> <on|off>"
 SWITCH_STANDARD_API(uuid_debug_media_function)
@@ -6967,6 +7061,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "uuid_broadcast", "Execute dialplan application", uuid_broadcast_function, BROADCAST_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_buglist", "List media bugs on a session", uuid_buglist_function, BUGLIST_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_chat", "Send a chat message", uuid_chat, UUID_CHAT_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "uuid_codec_debug", "Send codec a debug message", uuid_codec_debug_function, CODEC_DEBUG_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "uuid_codec_param", "Send codec a param", uuid_codec_param_function, CODEC_PARAM_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_debug_media", "Debug media", uuid_debug_media_function, DEBUG_MEDIA_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_deflect", "Send a deflect", uuid_deflect, UUID_DEFLECT_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_displace", "Displace audio", session_displace_function, "<uuid> [start|stop] <path> [<limit>] [mux]");
@@ -7144,6 +7240,12 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add uuid_broadcast ::console::list_uuid");
 	switch_console_set_complete("add uuid_buglist ::console::list_uuid");
 	switch_console_set_complete("add uuid_chat ::console::list_uuid");
+	switch_console_set_complete("add uuid_codec_debug ::console::list_uuid audio");
+	switch_console_set_complete("add uuid_codec_debug ::console::list_uuid video");
+	switch_console_set_complete("add uuid_codec_param ::console::list_uuid audio read");
+	switch_console_set_complete("add uuid_codec_param ::console::list_uuid audio write");
+	switch_console_set_complete("add uuid_codec_param ::console::list_uuid video read");
+	switch_console_set_complete("add uuid_codec_param ::console::list_uuid video write");
 	switch_console_set_complete("add uuid_debug_media ::console::list_uuid");
 	switch_console_set_complete("add uuid_deflect ::console::list_uuid");
 	switch_console_set_complete("add uuid_displace ::console::list_uuid");

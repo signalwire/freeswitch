@@ -111,7 +111,6 @@
 
 #include "switch_platform.h"
 #include "switch_types.h"
-#include "switch_stfu.h"
 #include "switch_apr.h"
 #include "switch_mprintf.h"
 #include "switch_core_db.h"
@@ -144,6 +143,7 @@
 #include "switch_limit.h"
 #include "switch_core_media.h"
 #include "switch_core_video.h"
+#include "switch_jitterbuffer.h"
 #include <libteletone.h>
 
 

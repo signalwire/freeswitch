@@ -119,7 +119,7 @@ typedef switch_status_t (*switch_io_state_change_t) (switch_core_session_t *);
 typedef switch_status_t (*switch_io_state_run_t) (switch_core_session_t *);
 typedef switch_status_t (*switch_io_read_video_frame_t) (switch_core_session_t *, switch_frame_t **, switch_io_flag_t, int);
 typedef switch_status_t (*switch_io_write_video_frame_t) (switch_core_session_t *, switch_frame_t *, switch_io_flag_t, int);
-typedef stfu_instance_t *(*switch_io_get_jb_t) (switch_core_session_t *, switch_media_type_t);
+typedef switch_jb_t *(*switch_io_get_jb_t) (switch_core_session_t *, switch_media_type_t);
 
 typedef enum {
 	SWITCH_IO_OUTGOING_CHANNEL,

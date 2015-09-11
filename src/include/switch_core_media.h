@@ -253,7 +253,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_udptl_mode(switch_core_session
 
 SWITCH_DECLARE(void) switch_core_media_set_rtp_flag(switch_core_session_t *session, switch_media_type_t type, switch_rtp_flag_t flag);
 SWITCH_DECLARE(void) switch_core_media_clear_rtp_flag(switch_core_session_t *session, switch_media_type_t type, switch_rtp_flag_t flag);
-SWITCH_DECLARE(stfu_instance_t *) switch_core_media_get_jb(switch_core_session_t *session, switch_media_type_t type);
+SWITCH_DECLARE(switch_jb_t *) switch_core_media_get_jb(switch_core_session_t *session, switch_media_type_t type);
 SWITCH_DECLARE(switch_rtp_stats_t *) switch_core_media_get_stats(switch_core_session_t *session, switch_media_type_t type, switch_memory_pool_t *pool);
 
 
@@ -307,15 +307,17 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_codec_control(switch_core_sess
 																switch_codec_control_command_t cmd, 
 																switch_codec_control_type_t ctype,
 																void *cmd_data,
+																switch_codec_control_type_t atype,
+																void *cmd_arg,
 																switch_codec_control_type_t *rtype,
 																void **ret_data);
 
 
 #define switch_core_media_gen_key_frame(_session) switch_core_media_codec_control(_session, SWITCH_MEDIA_TYPE_VIDEO, SWITCH_IO_WRITE, \
-																				  SCC_VIDEO_REFRESH, SCCT_NONE, NULL, NULL, NULL) \
+																				  SCC_VIDEO_REFRESH, SCCT_NONE, NULL, SCCT_NONE, NULL, NULL, NULL) \
 
 #define switch_core_media_write_bandwidth(_session, _val) switch_core_media_codec_control(_session, SWITCH_MEDIA_TYPE_VIDEO, SWITCH_IO_WRITE, \
-																						  SCC_VIDEO_BANDWIDTH, SCCT_STRING, _val, NULL, NULL) \
+																						  SCC_VIDEO_BANDWIDTH, SCCT_STRING, _val, SCCT_NONE, NULL, NULL, NULL) \
 
 
 SWITCH_DECLARE(switch_timer_t *) switch_core_media_get_timer(switch_core_session_t *session, switch_media_type_t mtype);

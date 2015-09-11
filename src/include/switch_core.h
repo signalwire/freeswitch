@@ -861,7 +861,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_loglevel(switch_core_ses
 */
 SWITCH_DECLARE(switch_log_level_t) switch_core_session_get_loglevel(switch_core_session_t *session);
 								   
-SWITCH_DECLARE(stfu_instance_t *) switch_core_session_get_jb(switch_core_session_t *session, switch_media_type_t type);
+SWITCH_DECLARE(switch_jb_t *) switch_core_session_get_jb(switch_core_session_t *session, switch_media_type_t type);
 SWITCH_DECLARE(void) switch_core_session_soft_lock(switch_core_session_t *session, uint32_t sec);
 SWITCH_DECLARE(void) switch_core_session_soft_unlock(switch_core_session_t *session);
 SWITCH_DECLARE(void) switch_core_session_set_dmachine(switch_core_session_t *session, switch_ivr_dmachine_t *dmachine, switch_digit_action_target_t target);
@@ -1651,6 +1651,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_encode_video(switch_codec_t *c
   \param cmd the command to send
   \param ctype the type of the arguement
   \param cmd_data a void pointer to the data matching the passed type
+  \param atype the type of the extra arguement
+  \param cmd_arg a void pointer to the data matching the passed type
   \param rtype the type of the response if any
   \param ret_data a void pointer to a pointer of return data
   \return SWITCH_STATUS_SUCCESS if the command was received
@@ -1659,6 +1661,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_control(switch_codec_t *codec,
 														  switch_codec_control_command_t cmd, 
 														  switch_codec_control_type_t ctype,
 														  void *cmd_data,
+														  switch_codec_control_type_t atype,
+														  void *cmd_arg,
 														  switch_codec_control_type_t *rtype,
 														  void **ret_data);
 

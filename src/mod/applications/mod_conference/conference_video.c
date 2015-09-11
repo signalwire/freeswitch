@@ -1219,12 +1219,12 @@ void conference_video_write_canvas_image_to_codec_group(conference_obj_t *confer
 
 	if (need_reset) {
 		int type = 1; // sum flags: 1 encoder; 2; decoder
-		switch_core_codec_control(&codec_set->codec, SCC_VIDEO_RESET, SCCT_INT, (void *)&type, NULL, NULL);
+		switch_core_codec_control(&codec_set->codec, SCC_VIDEO_RESET, SCCT_INT, (void *)&type, SCCT_NONE, NULL, NULL, NULL);
 		need_refresh = SWITCH_TRUE;
 	}
 
 	if (need_refresh || need_keyframe) {
-		switch_core_codec_control(&codec_set->codec, SCC_VIDEO_REFRESH, SCCT_NONE, NULL, NULL, NULL);
+		switch_core_codec_control(&codec_set->codec, SCC_VIDEO_REFRESH, SCCT_NONE, NULL, SCCT_NONE, NULL, NULL, NULL);
 	}
 
 	do {
@@ -1817,7 +1817,8 @@ void conference_video_pop_next_image(conference_member_t *member, switch_image_t
 
 void conference_video_check_auto_bitrate(conference_member_t *member, mcu_layer_t *layer)
 {
-	if (conference_utils_test_flag(member->conference, CFLAG_MANAGE_INBOUND_VIDEO_BITRATE) && !member->managed_kps) {
+	if (conference_utils_test_flag(member->conference, CFLAG_MANAGE_INBOUND_VIDEO_BITRATE) && !member->managed_kps && 
+		!switch_channel_test_flag(member->channel, CF_VIDEO_BITRATE_UNMANAGABLE)) {
 		switch_core_session_message_t msg = { 0 };
 		int kps;
 		int w = 320;
@@ -2570,7 +2571,8 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 																	   timestamp, need_refresh, need_keyframe, need_reset);
 
 					if (canvas->video_write_bandwidth) {
-						switch_core_codec_control(&write_codecs[i]->codec, SCC_VIDEO_BANDWIDTH, SCCT_INT, &canvas->video_write_bandwidth, NULL, NULL);
+						switch_core_codec_control(&write_codecs[i]->codec, SCC_VIDEO_BANDWIDTH, 
+												  SCCT_INT, &canvas->video_write_bandwidth, SCCT_NONE, NULL, NULL, NULL);
 						canvas->video_write_bandwidth = 0;
 					}
 
@@ -2912,7 +2914,8 @@ void *SWITCH_THREAD_FUNC conference_video_super_muxing_thread_run(switch_thread_
 				conference_video_write_canvas_image_to_codec_group(conference, canvas, write_codecs[i], i, timestamp, need_refresh, need_keyframe, need_reset);
 
 				if (canvas->video_write_bandwidth) {
-					switch_core_codec_control(&write_codecs[i]->codec, SCC_VIDEO_BANDWIDTH, SCCT_INT, &canvas->video_write_bandwidth, NULL, NULL);
+					switch_core_codec_control(&write_codecs[i]->codec, SCC_VIDEO_BANDWIDTH, 
+											  SCCT_INT, &canvas->video_write_bandwidth, SCCT_NONE, NULL, NULL, NULL);
 					canvas->video_write_bandwidth = 0;
 				}
 			}

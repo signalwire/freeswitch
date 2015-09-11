@@ -1853,12 +1853,17 @@ static void check_jb(switch_core_session_t *session, const char *input, int32_t 
 		
 		if (v_engine->rtp_session) {
 			if (!strncasecmp(input, "vbsize:", 7)) {
-				int frames = 0;
+				int frames = 0, max_frames = 0;
 				s = input + 7;
 				
 				frames = atoi(s);
+
+				if ((s = strchr(s, ':')) && *(s+1) != '\0') {
+					max_frames = atoi(s+1);
+				}
+				
 				if (frames > 0) {
-					switch_rtp_set_video_buffer_size(v_engine->rtp_session, frames);
+					switch_rtp_set_video_buffer_size(v_engine->rtp_session, frames, max_frames);
 				}
 				return;
 			} else if (!strncasecmp(input, "vdebug:", 7)) {
@@ -1875,27 +1880,30 @@ static void check_jb(switch_core_session_t *session, const char *input, int32_t 
 	
 
 	if (jb_msec || (val = switch_channel_get_variable(session->channel, "jitterbuffer_msec")) || (val = smh->mparams->jb_msec)) {
-		int max_drift = 0;
-		char *p, *q;
+		char *p;
 
 		if (!jb_msec) {
 			jb_msec = atoi(val);
+
+			if (strchr(val, 'p') && jb_msec > 0) {
+				jb_msec *= -1;
+			}
 					
 			if ((p = strchr(val, ':'))) {
 				p++;
 				maxlen = atoi(p);
-				if ((q = strchr(p, ':'))) {
-					q++;
-					max_drift = abs(atoi(q));
+
+				if (strchr(p, 'p') && maxlen > 0) {
+					maxlen *= -1;
 				}
 			}
 		}
 
-		if (jb_msec < 0 && jb_msec > -20) {
+		if (jb_msec < 0 && jb_msec > -1000) {
 			jb_msec = (a_engine->read_codec.implementation->microseconds_per_packet / 1000) * abs(jb_msec);
 		}
 
-		if (maxlen < 0 && maxlen > -20) {
+		if (maxlen < 0 && maxlen > -1000) {
 			maxlen = (a_engine->read_codec.implementation->microseconds_per_packet / 1000) * abs(maxlen);
 		}
 
@@ -1903,7 +1911,7 @@ static void check_jb(switch_core_session_t *session, const char *input, int32_t 
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR,
 							  "Invalid Jitterbuffer spec [%d] must be between 10 and 10000\n", jb_msec);
 		} else {
-			int qlen, maxqlen = 10;
+			int qlen, maxqlen = 30;
 				
 			qlen = jb_msec / (a_engine->read_impl.microseconds_per_packet / 1000);
 
@@ -1916,11 +1924,11 @@ static void check_jb(switch_core_session_t *session, const char *input, int32_t 
 			}
 			if (switch_rtp_activate_jitter_buffer(a_engine->rtp_session, qlen, maxqlen,
 												  a_engine->read_impl.samples_per_packet, 
-												  a_engine->read_impl.samples_per_second, max_drift) == SWITCH_STATUS_SUCCESS) {
-						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), 
-										  SWITCH_LOG_DEBUG, "Setting Jitterbuffer to %dms (%d frames) (%d max frames) (%d max drift)\n", 
-										  jb_msec, qlen, maxqlen, max_drift);
-						switch_channel_set_flag(session->channel, CF_JITTERBUFFER);
+												  a_engine->read_impl.samples_per_second) == SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), 
+								  SWITCH_LOG_DEBUG, "Setting Jitterbuffer to %dms (%d frames) (%d max frames)\n", 
+								  jb_msec, qlen, maxqlen);
+				switch_channel_set_flag(session->channel, CF_JITTERBUFFER);
 				if (!switch_false(switch_channel_get_variable(session->channel, "rtp_jitter_buffer_plc"))) {
 					switch_channel_set_flag(session->channel, CF_JITTERBUFFER_PLC);
 				}
@@ -1938,6 +1946,9 @@ static void check_jb_sync(switch_core_session_t *session)
 {
 	int32_t jb_sync_msec = 0;
 	uint32_t fps, frames = 0;
+	uint32_t min_frames = 0;
+	uint32_t max_frames = 0;
+	uint32_t cur_frames = 0;
 	switch_media_handle_t *smh;
 	switch_rtp_engine_t *v_engine = NULL;
 	const char *var;
@@ -1954,7 +1965,7 @@ static void check_jb_sync(switch_core_session_t *session)
 
 	v_engine = &smh->engines[SWITCH_MEDIA_TYPE_VIDEO];
 	
-	if ((var = switch_channel_get_variable_dup(session->channel, "jb_sync_msec", SWITCH_FALSE, -1))) {
+	if ((var = switch_channel_get_variable_dup(session->channel, "jb_av_sync_msec", SWITCH_FALSE, -1))) {
 		int tmp;
 		char *p;
 		
@@ -1980,7 +1991,7 @@ static void check_jb_sync(switch_core_session_t *session)
 		fps = switch_core_media_get_video_fps(session);
 	}
 	
-	if (!fps) return;
+	if (fps < 15) return;
 
 	if (!frames) {
 		frames = fps / 7.5;
@@ -2000,7 +2011,9 @@ static void check_jb_sync(switch_core_session_t *session)
 	//	}
 	//}
 
-	if (frames == switch_rtp_get_video_buffer_size(v_engine->rtp_session)) {
+	switch_rtp_get_video_buffer_size(v_engine->rtp_session, &min_frames, &max_frames, &cur_frames, NULL);
+
+	if (cur_frames > min_frames || frames == min_frames) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), 
 						  SWITCH_LOG_DEBUG1, "%s %s \"%s\" A/V JB not changed %dms %u VFrames FPS %u\n", 
 						  switch_core_session_get_uuid(session),
@@ -2015,8 +2028,8 @@ static void check_jb_sync(switch_core_session_t *session)
 						  switch_channel_get_variable_dup(session->channel, "caller_id_name", SWITCH_FALSE, -1),
 						  jb_sync_msec, frames, fps);
 		
-		switch_rtp_set_video_buffer_size(v_engine->rtp_session, frames);
-		check_jb(session, NULL, jb_sync_msec, jb_sync_msec * 4);
+		switch_rtp_set_video_buffer_size(v_engine->rtp_session, frames, 0);
+		check_jb(session, NULL, jb_sync_msec, 0);
 	}
 }
 
@@ -8919,6 +8932,55 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_receive_message(switch_core_se
 		}
 		break;
 
+	case SWITCH_MESSAGE_INDICATE_CODEC_DEBUG_REQ:
+		{
+			switch_rtp_engine_t *engine = &smh->engines[msg->numeric_reply];
+			uint32_t level = (uint32_t) msg->numeric_arg;
+			
+			if (engine->rtp_session) {
+				switch_core_codec_control(&engine->read_codec, SCC_DEBUG, SCCT_INT, (void *)&level, SCCT_NONE, NULL, NULL, NULL);
+				switch_core_codec_control(&engine->write_codec, SCC_DEBUG, SCCT_INT, (void *)&level, SCCT_NONE, NULL, NULL, NULL);
+			}
+		}
+		break;
+
+	case SWITCH_MESSAGE_INDICATE_CODEC_SPECIFIC_REQ:
+		{
+			switch_rtp_engine_t *engine;
+			switch_io_type_t iotype = SWITCH_IO_READ;
+			switch_media_type_t type = SWITCH_MEDIA_TYPE_AUDIO;
+			switch_codec_control_type_t reply_type = SCCT_NONE;
+			void *reply = NULL;
+
+			if (!strcasecmp(msg->string_array_arg[0], "video")) {
+				type = SWITCH_MEDIA_TYPE_VIDEO;
+			}
+
+			if (!strcasecmp(msg->string_array_arg[1], "write")) {
+				iotype = SWITCH_IO_WRITE;
+			}
+
+			engine = &smh->engines[type];
+
+			if (engine->rtp_session) {
+				if (iotype == SWITCH_IO_READ) {
+					switch_core_codec_control(&engine->read_codec, SCC_CODEC_SPECIFIC, 
+											  SCCT_STRING, (void *)msg->string_array_arg[2], 
+											  SCCT_STRING, (void *)msg->string_array_arg[3], &reply_type, &reply);
+				} else {
+					switch_core_codec_control(&engine->write_codec, SCC_CODEC_SPECIFIC, 
+											  SCCT_STRING, (void *)msg->string_array_arg[2], 
+											  SCCT_STRING, (void *)msg->string_array_arg[3], &reply_type, &reply);
+				}
+				
+				
+				if (reply_type == SCCT_STRING) {
+					msg->string_array_arg[4] = (char *)reply;
+				}
+			}
+		}
+		break;
+
 	case SWITCH_MESSAGE_INDICATE_DEBUG_MEDIA:
 		{
 			switch_rtp_t *rtp = a_engine->rtp_session;
@@ -9417,7 +9479,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_udptl_mode(switch_core_session
 }
 
 //?
-SWITCH_DECLARE(stfu_instance_t *) switch_core_media_get_jb(switch_core_session_t *session, switch_media_type_t type)
+SWITCH_DECLARE(switch_jb_t *) switch_core_media_get_jb(switch_core_session_t *session, switch_media_type_t type)
 {
 	switch_media_handle_t *smh;
 
@@ -9781,12 +9843,12 @@ SWITCH_DECLARE(void) switch_core_session_stop_media(switch_core_session_t *sessi
 
 	if (switch_core_codec_ready(&v_engine->read_codec)) {
 		type = 1;
-		switch_core_codec_control(&v_engine->read_codec, SCC_VIDEO_RESET, SCCT_INT, (void *)&type, NULL, NULL);
+		switch_core_codec_control(&v_engine->read_codec, SCC_VIDEO_RESET, SCCT_INT, (void *)&type, SCCT_NONE, NULL, NULL, NULL);
 	}
 
 	if (switch_core_codec_ready(&v_engine->write_codec)) {
 		type = 2;
-		switch_core_codec_control(&v_engine->write_codec, SCC_VIDEO_RESET, SCCT_INT, (void *)&type, NULL, NULL);
+		switch_core_codec_control(&v_engine->write_codec, SCC_VIDEO_RESET, SCCT_INT, (void *)&type, SCCT_NONE, NULL, NULL, NULL);
 	}
 
 	if (a_engine->rtp_session) {
@@ -10420,6 +10482,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_codec_control(switch_core_sess
 																switch_codec_control_command_t cmd, 
 																switch_codec_control_type_t ctype,
 																void *cmd_data,
+																switch_codec_control_type_t atype,
+																void *cmd_arg,
 																switch_codec_control_type_t *rtype,
 																void **ret_data) 
 {
@@ -10465,7 +10529,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_codec_control(switch_core_sess
 			switch_channel_set_flag(session->channel, CF_VIDEO_REFRESH_REQ);
 		}
 
-		return switch_core_codec_control(codec, cmd, ctype, cmd_data, rtype, ret_data);
+		return switch_core_codec_control(codec, cmd, ctype, cmd_data, atype, cmd_arg, rtype, ret_data);
 	}
 
 	return SWITCH_STATUS_FALSE;
@@ -10516,7 +10580,7 @@ SWITCH_DECLARE(void) switch_core_session_video_reinit(switch_core_session_t *ses
 	switch_core_session_send_and_request_video_refresh(session);
 	
 	type = 1;
-	switch_core_media_codec_control(session, SWITCH_MEDIA_TYPE_VIDEO, SWITCH_IO_READ, SCC_VIDEO_RESET, SCCT_INT, (void *)&type, NULL, NULL);
+	switch_core_media_codec_control(session, SWITCH_MEDIA_TYPE_VIDEO, SWITCH_IO_READ, SCC_VIDEO_RESET, SCCT_INT, (void *)&type, SCCT_NONE, NULL, NULL, NULL);
 	switch_core_session_request_video_refresh(session);
 
 }
