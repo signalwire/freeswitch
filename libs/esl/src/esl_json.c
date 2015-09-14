@@ -204,7 +204,7 @@ static const char *parse_string(cJSON *item,const char *str)
 					break;
 				default:  *ptr2++=*ptr; break;
 			}
-			ptr++;
+			if (*ptr) ptr++;
 		}
 	}
 	*ptr2=0;
