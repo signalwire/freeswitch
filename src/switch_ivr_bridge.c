@@ -1749,8 +1749,8 @@ static void cleanup_proxy_mode_b(switch_core_session_t *session)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 
-
-	if (switch_channel_test_flag(channel, CF_PROXY_MODE)) {
+	if (switch_channel_test_flag(channel, CF_PROXY_MODE) && 
+		!switch_channel_test_flag(channel, CF_MEDIA_TRANS) && !switch_channel_test_flag(channel, CF_3P_MEDIA_REQUESTED)) {
 		switch_ivr_media(switch_core_session_get_uuid(session), SMF_NONE);
 	}
 }
