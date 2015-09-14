@@ -435,7 +435,7 @@ static void jb_frame_inc(switch_jb_t *jb, int i)
 				switch_channel_clear_flag(jb->channel, CF_VIDEO_BITRATE_UNMANAGABLE);
 			} else {
 				switch_core_session_message_t msg = { 0 };
-				int new_bitrate = 256;
+				int new_bitrate = 512;
 
 				msg.message_id = SWITCH_MESSAGE_INDICATE_BITRATE_REQ;
 				msg.numeric_arg = new_bitrate * 1024;
