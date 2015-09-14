@@ -13518,23 +13518,27 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_codec_encode_video(void * jarg1, v
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_codec_control(void * jarg1, int jarg2, int jarg3, void * jarg4, void * jarg5, void * jarg6) {
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_codec_control(void * jarg1, int jarg2, int jarg3, void * jarg4, int jarg5, void * jarg6, void * jarg7, void * jarg8) {
   int jresult ;
   switch_codec_t *arg1 = (switch_codec_t *) 0 ;
   switch_codec_control_command_t arg2 ;
   switch_codec_control_type_t arg3 ;
   void *arg4 = (void *) 0 ;
-  switch_codec_control_type_t *arg5 = (switch_codec_control_type_t *) 0 ;
-  void **arg6 = (void **) 0 ;
+  switch_codec_control_type_t arg5 ;
+  void *arg6 = (void *) 0 ;
+  switch_codec_control_type_t *arg7 = (switch_codec_control_type_t *) 0 ;
+  void **arg8 = (void **) 0 ;
   switch_status_t result;
   
   arg1 = (switch_codec_t *)jarg1; 
   arg2 = (switch_codec_control_command_t)jarg2; 
   arg3 = (switch_codec_control_type_t)jarg3; 
   arg4 = (void *)jarg4; 
-  arg5 = (switch_codec_control_type_t *)jarg5; 
-  arg6 = (void **)jarg6; 
-  result = (switch_status_t)switch_core_codec_control(arg1,arg2,arg3,arg4,arg5,arg6);
+  arg5 = (switch_codec_control_type_t)jarg5; 
+  arg6 = (void *)jarg6; 
+  arg7 = (switch_codec_control_type_t *)jarg7; 
+  arg8 = (void **)jarg8; 
+  result = (switch_status_t)switch_core_codec_control(arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8);
   jresult = result; 
   return jresult;
 }
@@ -41008,14 +41012,22 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_rtp_set_video_buffer_size(void * jarg1,
 }
 
 
-SWIGEXPORT unsigned long SWIGSTDCALL CSharp_switch_rtp_get_video_buffer_size(void * jarg1) {
-  unsigned long jresult ;
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_rtp_get_video_buffer_size(void * jarg1, void * jarg2, void * jarg3, void * jarg4, void * jarg5) {
+  int jresult ;
   switch_rtp_t *arg1 = (switch_rtp_t *) 0 ;
-  uint32_t result;
+  uint32_t *arg2 = (uint32_t *) 0 ;
+  uint32_t *arg3 = (uint32_t *) 0 ;
+  uint32_t *arg4 = (uint32_t *) 0 ;
+  uint32_t *arg5 = (uint32_t *) 0 ;
+  switch_status_t result;
   
   arg1 = (switch_rtp_t *)jarg1; 
-  result = (uint32_t)switch_rtp_get_video_buffer_size(arg1);
-  jresult = (unsigned long)result; 
+  arg2 = (uint32_t *)jarg2; 
+  arg3 = (uint32_t *)jarg3; 
+  arg4 = (uint32_t *)jarg4; 
+  arg5 = (uint32_t *)jarg5; 
+  result = (switch_status_t)switch_rtp_get_video_buffer_size(arg1,arg2,arg3,arg4,arg5);
+  jresult = result; 
   return jresult;
 }
 

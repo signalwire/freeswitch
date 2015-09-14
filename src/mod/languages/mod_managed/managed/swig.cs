@@ -2297,8 +2297,8 @@ public class freeswitch {
     return ret;
   }
 
-  public static switch_status_t switch_core_codec_control(switch_codec codec, switch_codec_control_command_t cmd, switch_codec_control_type_t ctype, SWIGTYPE_p_void cmd_data, SWIGTYPE_p_switch_codec_control_type_t rtype, SWIGTYPE_p_p_void ret_data) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_codec_control(switch_codec.getCPtr(codec), (int)cmd, (int)ctype, SWIGTYPE_p_void.getCPtr(cmd_data), SWIGTYPE_p_switch_codec_control_type_t.getCPtr(rtype), SWIGTYPE_p_p_void.getCPtr(ret_data));
+  public static switch_status_t switch_core_codec_control(switch_codec codec, switch_codec_control_command_t cmd, switch_codec_control_type_t ctype, SWIGTYPE_p_void cmd_data, switch_codec_control_type_t atype, SWIGTYPE_p_void cmd_arg, SWIGTYPE_p_switch_codec_control_type_t rtype, SWIGTYPE_p_p_void ret_data) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_codec_control(switch_codec.getCPtr(codec), (int)cmd, (int)ctype, SWIGTYPE_p_void.getCPtr(cmd_data), (int)atype, SWIGTYPE_p_void.getCPtr(cmd_arg), SWIGTYPE_p_switch_codec_control_type_t.getCPtr(rtype), SWIGTYPE_p_p_void.getCPtr(ret_data));
     return ret;
   }
 
@@ -3514,8 +3514,8 @@ public class freeswitch {
     freeswitchPINVOKE.switch_core_codec_add_implementation(SWIGTYPE_p_apr_pool_t.getCPtr(pool), switch_codec_interface.getCPtr(codec_interface), (int)codec_type, ianacode, iananame, fmtp, samples_per_second, actual_samples_per_second, bits_per_second, microseconds_per_packet, samples_per_packet, decoded_bytes_per_packet, encoded_bytes_per_packet, number_of_channels, codec_frames_per_packet, SWIGTYPE_p_f_p_switch_codec_unsigned_long_p_q_const__switch_codec_settings__switch_status_t.getCPtr(init), SWIGTYPE_p_f_p_switch_codec_p_switch_codec_p_void_unsigned_long_unsigned_long_p_void_p_unsigned_long_p_unsigned_long_p_unsigned_int__switch_status_t.getCPtr(encode), SWIGTYPE_p_f_p_switch_codec_p_switch_codec_p_void_unsigned_long_unsigned_long_p_void_p_unsigned_long_p_unsigned_long_p_unsigned_int__switch_status_t.getCPtr(decode), SWIGTYPE_p_f_p_switch_codec__switch_status_t.getCPtr(destroy));
   }
 
-  public static void switch_core_codec_add_video_implementation(SWIGTYPE_p_apr_pool_t pool, switch_codec_interface codec_interface, byte ianacode, string iananame, string fmtp, SWIGTYPE_p_f_p_switch_codec_unsigned_long_p_q_const__switch_codec_settings__switch_status_t init, SWIGTYPE_p_f_p_switch_codec_p_switch_frame__switch_status_t encode, SWIGTYPE_p_f_p_switch_codec_p_switch_frame__switch_status_t decode, SWIGTYPE_p_f_p_switch_codec_enum_switch_codec_control_command_t_enum_switch_codec_control_type_t_p_void_p_enum_switch_codec_control_type_t_p_p_void__switch_status_t control, SWIGTYPE_p_f_p_switch_codec__switch_status_t destroy) {
-    freeswitchPINVOKE.switch_core_codec_add_video_implementation(SWIGTYPE_p_apr_pool_t.getCPtr(pool), switch_codec_interface.getCPtr(codec_interface), ianacode, iananame, fmtp, SWIGTYPE_p_f_p_switch_codec_unsigned_long_p_q_const__switch_codec_settings__switch_status_t.getCPtr(init), SWIGTYPE_p_f_p_switch_codec_p_switch_frame__switch_status_t.getCPtr(encode), SWIGTYPE_p_f_p_switch_codec_p_switch_frame__switch_status_t.getCPtr(decode), SWIGTYPE_p_f_p_switch_codec_enum_switch_codec_control_command_t_enum_switch_codec_control_type_t_p_void_p_enum_switch_codec_control_type_t_p_p_void__switch_status_t.getCPtr(control), SWIGTYPE_p_f_p_switch_codec__switch_status_t.getCPtr(destroy));
+  public static void switch_core_codec_add_video_implementation(SWIGTYPE_p_apr_pool_t pool, switch_codec_interface codec_interface, byte ianacode, string iananame, string fmtp, SWIGTYPE_p_f_p_switch_codec_unsigned_long_p_q_const__switch_codec_settings__switch_status_t init, SWIGTYPE_p_f_p_switch_codec_p_switch_frame__switch_status_t encode, SWIGTYPE_p_f_p_switch_codec_p_switch_frame__switch_status_t decode, SWIGTYPE_p_f_p_switch_codec_enum_switch_codec_control_command_t_enum_switch_codec_control_type_t_p_void_enum_switch_codec_control_type_t_p_void_p_enum_switch_codec_control_type_t_p_p_void__switch_status_t control, SWIGTYPE_p_f_p_switch_codec__switch_status_t destroy) {
+    freeswitchPINVOKE.switch_core_codec_add_video_implementation(SWIGTYPE_p_apr_pool_t.getCPtr(pool), switch_codec_interface.getCPtr(codec_interface), ianacode, iananame, fmtp, SWIGTYPE_p_f_p_switch_codec_unsigned_long_p_q_const__switch_codec_settings__switch_status_t.getCPtr(init), SWIGTYPE_p_f_p_switch_codec_p_switch_frame__switch_status_t.getCPtr(encode), SWIGTYPE_p_f_p_switch_codec_p_switch_frame__switch_status_t.getCPtr(decode), SWIGTYPE_p_f_p_switch_codec_enum_switch_codec_control_command_t_enum_switch_codec_control_type_t_p_void_enum_switch_codec_control_type_t_p_void_p_enum_switch_codec_control_type_t_p_p_void__switch_status_t.getCPtr(control), SWIGTYPE_p_f_p_switch_codec__switch_status_t.getCPtr(destroy));
   }
 
   public static switch_bool_t switch_core_codec_ready(switch_codec codec) {
@@ -6451,8 +6451,8 @@ public class freeswitch {
     return ret;
   }
 
-  public static uint switch_rtp_get_video_buffer_size(SWIGTYPE_p_switch_rtp rtp_session) {
-    uint ret = freeswitchPINVOKE.switch_rtp_get_video_buffer_size(SWIGTYPE_p_switch_rtp.getCPtr(rtp_session));
+  public static switch_status_t switch_rtp_get_video_buffer_size(SWIGTYPE_p_switch_rtp rtp_session, SWIGTYPE_p_unsigned_long min_frame_len, SWIGTYPE_p_unsigned_long max_frame_len, SWIGTYPE_p_unsigned_long cur_frame_len, SWIGTYPE_p_unsigned_long highest_frame_len) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_rtp_get_video_buffer_size(SWIGTYPE_p_switch_rtp.getCPtr(rtp_session), SWIGTYPE_p_unsigned_long.getCPtr(min_frame_len), SWIGTYPE_p_unsigned_long.getCPtr(max_frame_len), SWIGTYPE_p_unsigned_long.getCPtr(cur_frame_len), SWIGTYPE_p_unsigned_long.getCPtr(highest_frame_len));
     return ret;
   }
 
@@ -11023,7 +11023,7 @@ class freeswitchPINVOKE {
   public static extern int switch_core_codec_encode_video(HandleRef jarg1, HandleRef jarg2);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_codec_control")]
-  public static extern int switch_core_codec_control(HandleRef jarg1, int jarg2, int jarg3, HandleRef jarg4, HandleRef jarg5, HandleRef jarg6);
+  public static extern int switch_core_codec_control(HandleRef jarg1, int jarg2, int jarg3, HandleRef jarg4, int jarg5, HandleRef jarg6, HandleRef jarg7, HandleRef jarg8);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_codec_decode_video")]
   public static extern int switch_core_codec_decode_video(HandleRef jarg1, HandleRef jarg2);
@@ -17545,7 +17545,7 @@ class freeswitchPINVOKE {
   public static extern int switch_rtp_set_video_buffer_size(HandleRef jarg1, uint jarg2, uint jarg3);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_get_video_buffer_size")]
-  public static extern uint switch_rtp_get_video_buffer_size(HandleRef jarg1);
+  public static extern int switch_rtp_get_video_buffer_size(HandleRef jarg1, HandleRef jarg2, HandleRef jarg3, HandleRef jarg4, HandleRef jarg5);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_activate_jitter_buffer")]
   public static extern int switch_rtp_activate_jitter_buffer(HandleRef jarg1, uint jarg2, uint jarg3, uint jarg4, uint jarg5);
@@ -21062,18 +21062,18 @@ namespace FreeSWITCH.Native {
 using System;
 using System.Runtime.InteropServices;
 
-public class SWIGTYPE_p_f_p_switch_codec_enum_switch_codec_control_command_t_enum_switch_codec_control_type_t_p_void_p_enum_switch_codec_control_type_t_p_p_void__switch_status_t {
+public class SWIGTYPE_p_f_p_switch_codec_enum_switch_codec_control_command_t_enum_switch_codec_control_type_t_p_void_enum_switch_codec_control_type_t_p_void_p_enum_switch_codec_control_type_t_p_p_void__switch_status_t {
   private HandleRef swigCPtr;
 
-  internal SWIGTYPE_p_f_p_switch_codec_enum_switch_codec_control_command_t_enum_switch_codec_control_type_t_p_void_p_enum_switch_codec_control_type_t_p_p_void__switch_status_t(IntPtr cPtr, bool futureUse) {
+  internal SWIGTYPE_p_f_p_switch_codec_enum_switch_codec_control_command_t_enum_switch_codec_control_type_t_p_void_enum_switch_codec_control_type_t_p_void_p_enum_switch_codec_control_type_t_p_p_void__switch_status_t(IntPtr cPtr, bool futureUse) {
     swigCPtr = new HandleRef(this, cPtr);
   }
 
-  protected SWIGTYPE_p_f_p_switch_codec_enum_switch_codec_control_command_t_enum_switch_codec_control_type_t_p_void_p_enum_switch_codec_control_type_t_p_p_void__switch_status_t() {
+  protected SWIGTYPE_p_f_p_switch_codec_enum_switch_codec_control_command_t_enum_switch_codec_control_type_t_p_void_enum_switch_codec_control_type_t_p_void_p_enum_switch_codec_control_type_t_p_p_void__switch_status_t() {
     swigCPtr = new HandleRef(null, IntPtr.Zero);
   }
 
-  internal static HandleRef getCPtr(SWIGTYPE_p_f_p_switch_codec_enum_switch_codec_control_command_t_enum_switch_codec_control_type_t_p_void_p_enum_switch_codec_control_type_t_p_p_void__switch_status_t obj) {
+  internal static HandleRef getCPtr(SWIGTYPE_p_f_p_switch_codec_enum_switch_codec_control_command_t_enum_switch_codec_control_type_t_p_void_enum_switch_codec_control_type_t_p_void_p_enum_switch_codec_control_type_t_p_p_void__switch_status_t obj) {
     return (obj == null) ? new HandleRef(null, IntPtr.Zero) : obj.swigCPtr;
   }
 }
@@ -29178,6 +29178,7 @@ public enum switch_channel_flag_t {
   CF_3PCC,
   CF_VIDEO_PASSIVE,
   CF_NOVIDEO,
+  CF_VIDEO_BITRATE_UNMANAGABLE,
   CF_VIDEO_ECHO,
   CF_VIDEO_BLANK,
   CF_SLA_INTERCEPT,
@@ -29741,7 +29742,9 @@ public enum switch_codec_control_command_t {
   SCC_VIDEO_REFRESH = 0,
   SCC_VIDEO_BANDWIDTH,
   SCC_VIDEO_RESET,
-  SCC_AUDIO_PACKET_LOSS
+  SCC_AUDIO_PACKET_LOSS,
+  SCC_DEBUG,
+  SCC_CODEC_SPECIFIC
 }
 
 }
@@ -30291,13 +30294,13 @@ public class switch_codec_implementation : IDisposable {
     } 
   }
 
-  public SWIGTYPE_p_f_p_switch_codec_enum_switch_codec_control_command_t_enum_switch_codec_control_type_t_p_void_p_enum_switch_codec_control_type_t_p_p_void__switch_status_t codec_control {
+  public SWIGTYPE_p_f_p_switch_codec_enum_switch_codec_control_command_t_enum_switch_codec_control_type_t_p_void_enum_switch_codec_control_type_t_p_void_p_enum_switch_codec_control_type_t_p_p_void__switch_status_t codec_control {
     set {
-      freeswitchPINVOKE.switch_codec_implementation_codec_control_set(swigCPtr, SWIGTYPE_p_f_p_switch_codec_enum_switch_codec_control_command_t_enum_switch_codec_control_type_t_p_void_p_enum_switch_codec_control_type_t_p_p_void__switch_status_t.getCPtr(value));
+      freeswitchPINVOKE.switch_codec_implementation_codec_control_set(swigCPtr, SWIGTYPE_p_f_p_switch_codec_enum_switch_codec_control_command_t_enum_switch_codec_control_type_t_p_void_enum_switch_codec_control_type_t_p_void_p_enum_switch_codec_control_type_t_p_p_void__switch_status_t.getCPtr(value));
     } 
     get {
       IntPtr cPtr = freeswitchPINVOKE.switch_codec_implementation_codec_control_get(swigCPtr);
-      SWIGTYPE_p_f_p_switch_codec_enum_switch_codec_control_command_t_enum_switch_codec_control_type_t_p_void_p_enum_switch_codec_control_type_t_p_p_void__switch_status_t ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_f_p_switch_codec_enum_switch_codec_control_command_t_enum_switch_codec_control_type_t_p_void_p_enum_switch_codec_control_type_t_p_p_void__switch_status_t(cPtr, false);
+      SWIGTYPE_p_f_p_switch_codec_enum_switch_codec_control_command_t_enum_switch_codec_control_type_t_p_void_enum_switch_codec_control_type_t_p_void_p_enum_switch_codec_control_type_t_p_p_void__switch_status_t ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_f_p_switch_codec_enum_switch_codec_control_command_t_enum_switch_codec_control_type_t_p_void_enum_switch_codec_control_type_t_p_void_p_enum_switch_codec_control_type_t_p_p_void__switch_status_t(cPtr, false);
       return ret;
     } 
   }
@@ -31281,6 +31284,8 @@ public enum switch_core_session_message_types_t {
   SWITCH_MESSAGE_INDICATE_HARD_MUTE,
   SWITCH_MESSAGE_INDICATE_BITRATE_REQ,
   SWITCH_MESSAGE_INDICATE_BITRATE_ACK,
+  SWITCH_MESSAGE_INDICATE_CODEC_DEBUG_REQ,
+  SWITCH_MESSAGE_INDICATE_CODEC_SPECIFIC_REQ,
   SWITCH_MESSAGE_REFER_EVENT,
   SWITCH_MESSAGE_ANSWER_EVENT,
   SWITCH_MESSAGE_PROGRESS_EVENT,
