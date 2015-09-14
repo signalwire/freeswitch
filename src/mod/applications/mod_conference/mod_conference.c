@@ -288,13 +288,26 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 
 			if (conference_utils_member_test_flag(imember, MFLAG_RUNNING) && imember->session) {
 				switch_channel_t *channel = switch_core_session_get_channel(imember->session);
-
+				switch_media_flow_t video_media_flow;
+				
 				if ((!floor_holder || (imember->score_iir > SCORE_IIR_SPEAKING_MAX && (floor_holder->score_iir < SCORE_IIR_SPEAKING_MIN)))) {// &&
 					//(!conference_utils_test_flag(conference, CFLAG_VID_FLOOR) || switch_channel_test_flag(channel, CF_VIDEO))) {
 					floor_holder = imember;
 				}
 
-				if (switch_channel_ready(channel) && switch_channel_test_flag(channel, CF_VIDEO) && switch_core_session_media_flow(imember->session, SWITCH_MEDIA_TYPE_VIDEO) != SWITCH_MEDIA_FLOW_SENDONLY) {
+				video_media_flow = switch_core_session_media_flow(imember->session, SWITCH_MEDIA_TYPE_VIDEO);
+
+				if (video_media_flow != imember->video_media_flow) {
+					imember->video_media_flow = video_media_flow;
+
+					if (imember->video_media_flow == SWITCH_MEDIA_FLOW_SENDONLY) {
+						conference_utils_member_clear_flag(imember, MFLAG_CAN_BE_SEEN);
+					} else {
+						conference_utils_member_set_flag(imember, MFLAG_CAN_BE_SEEN);
+					}
+				}
+
+				if (switch_channel_ready(channel) && switch_channel_test_flag(channel, CF_VIDEO) && imember->video_media_flow != SWITCH_MEDIA_FLOW_SENDONLY) {
 					members_with_video++;
 				}
 

@@ -754,6 +754,7 @@ struct conference_member {
 	int good_img;
 	int auto_avatar;
 	int avatar_patched;
+	switch_media_flow_t video_media_flow;
 	mcu_canvas_t *canvas;
 	switch_image_t *pcanvas_img;
 };

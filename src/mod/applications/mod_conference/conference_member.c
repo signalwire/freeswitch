@@ -675,7 +675,7 @@ switch_status_t conference_member_add(conference_obj_t *conference, conference_m
 	switch_mutex_lock(member->audio_out_mutex);
 	lock_member(member);
 	switch_mutex_lock(conference->member_mutex);
-
+	
 	if (member->rec) {
 		conference->recording_members++;
 	}

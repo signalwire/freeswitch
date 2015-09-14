@@ -3154,11 +3154,6 @@ static switch_status_t check_ice(switch_media_handle_t *smh, switch_media_type_t
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	if (switch_channel_test_flag(smh->session->channel, CF_REINVITE) && !switch_channel_test_flag(smh->session->channel, CF_RECOVERING)) {
-		engine->new_ice = 0;
-		engine->new_dtls = 0;
-	}
-
 	engine->ice_in.chosen[0] = 0;
 	engine->ice_in.chosen[1] = 0;
 	engine->ice_in.is_chosen[0] = 0;
@@ -3595,10 +3590,18 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 		switch_channel_clear_flag(smh->session->channel, CF_DTLS);
 	}
 
-	a_engine->new_ice = 1;
-	a_engine->new_dtls = 1;
-	v_engine->new_ice = 1;
-	v_engine->new_dtls = 1;
+	/* may have to test for a new dtls fingerprint here too and clear these flags */
+	if (switch_channel_test_flag(smh->session->channel, CF_REINVITE) && !switch_channel_test_flag(smh->session->channel, CF_RECOVERING)) {
+		a_engine->new_ice = 0;
+		a_engine->new_dtls = 0;
+		v_engine->new_ice = 0;
+		v_engine->new_dtls = 0;
+	} else {
+		a_engine->new_ice = 1;
+		a_engine->new_dtls = 1;
+		v_engine->new_ice = 1;
+		v_engine->new_dtls = 1;
+	}
 
 	//if (switch_channel_test_flag(session->channel, CF_REINVITE)) {
 	//	switch_core_media_clear_ice(session);
