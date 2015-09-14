@@ -591,10 +591,10 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
         case SWITCH_MESSAGE_INDICATE_JITTER_BUFFER:
 		{
 			if (switch_rtp_ready(tech_pvt->rtp_session)) {
-				int len = 0, maxlen = 0, qlen = 0, maxqlen = 50, max_drift = 0;
+				int len = 0, maxlen = 0, qlen = 0, maxqlen = 50;
                 
 				if (msg->string_arg) {
-					char *p, *q;
+					char *p;
 					const char *s;
                     
 					if (!strcasecmp(msg->string_arg, "pause")) {
@@ -624,10 +624,6 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 						if ((p = strchr(msg->string_arg, ':'))) {
 							p++;
 							maxlen = atol(p);
-							if ((q = strchr(p, ':'))) {
-								q++;
-								max_drift = abs(atoi(q));
-							}
 						}
 					}
                     
@@ -643,10 +639,10 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 					}
 					if (switch_rtp_activate_jitter_buffer(tech_pvt->rtp_session, qlen, maxqlen,
 														  tech_pvt->read_codec.implementation->samples_per_packet, 
-														  tech_pvt->read_codec.implementation->samples_per_second, max_drift) == SWITCH_STATUS_SUCCESS) {
+														  tech_pvt->read_codec.implementation->samples_per_second) == SWITCH_STATUS_SUCCESS) {
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), 
-										  SWITCH_LOG_DEBUG, "Setting Jitterbuffer to %dms (%d frames) (%d max frames) (%d max drift)\n", 
-										  len, qlen, maxqlen, max_drift);
+										  SWITCH_LOG_DEBUG, "Setting Jitterbuffer to %dms (%d frames) (%d max frames)\n", 
+										  len, qlen, maxqlen);
 						switch_channel_set_flag(tech_pvt->channel, CF_JITTERBUFFER);
 						if (!switch_false(switch_channel_get_variable(tech_pvt->channel, "rtp_jitter_buffer_plc"))) {
 							switch_channel_set_flag(tech_pvt->channel, CF_JITTERBUFFER_PLC);

@@ -65,7 +65,7 @@ SWITCH_DECLARE(switch_ivr_dmachine_t *) switch_core_session_get_dmachine(switch_
 }
 
 
-SWITCH_DECLARE(stfu_instance_t *) switch_core_session_get_jb(switch_core_session_t *session, switch_media_type_t type)
+SWITCH_DECLARE(switch_jb_t *) switch_core_session_get_jb(switch_core_session_t *session, switch_media_type_t type)
 {
 	if (session->endpoint_interface->io_routines->get_jb) {
 		return session->endpoint_interface->io_routines->get_jb(session, type);
@@ -759,6 +759,8 @@ static const char *message_names[] = {
 	"HARD_MUTE",
 	"BITRATE_REQ",
 	"BITRATE_ACK",
+	"CODEC_DEBUG_REQ",
+	"CODEC_SPECIFIC_REQ",
 	"REFER_EVENT",
 	"ANSWER_EVENT",
 	"PROGRESS_EVENT",

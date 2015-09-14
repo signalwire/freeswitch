@@ -878,6 +878,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_control(switch_codec_t *codec,
 														  switch_codec_control_command_t cmd, 
 														  switch_codec_control_type_t ctype,
 														  void *cmd_data,
+														  switch_codec_control_type_t atype,
+														  void *cmd_arg,
 														  switch_codec_control_type_t *rtype,
 														  void **ret_data) 
 {
@@ -898,7 +900,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_control(switch_codec_t *codec,
 	if (codec->mutex) switch_mutex_lock(codec->mutex);
 
 	if (codec->implementation->codec_control) {
-		status = codec->implementation->codec_control(codec, cmd, ctype, cmd_data, rtype, ret_data);
+		status = codec->implementation->codec_control(codec, cmd, ctype, cmd_data, atype, cmd_arg, rtype, ret_data);
 	}
 
 	if (codec->mutex) switch_mutex_unlock(codec->mutex);

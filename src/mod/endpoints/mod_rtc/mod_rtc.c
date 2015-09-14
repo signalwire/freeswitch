@@ -269,7 +269,7 @@ static switch_status_t rtc_receive_event(switch_core_session_t *session, switch_
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static stfu_instance_t *rtc_get_jb(switch_core_session_t *session, switch_media_type_t type)
+static switch_jb_t *rtc_get_jb(switch_core_session_t *session, switch_media_type_t type)
 {
 	private_object_t *tech_pvt = (private_object_t *) switch_core_session_get_private(session);
 

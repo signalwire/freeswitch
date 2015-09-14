@@ -1077,6 +1077,8 @@ typedef enum {
 	SWITCH_MESSAGE_INDICATE_HARD_MUTE,
 	SWITCH_MESSAGE_INDICATE_BITRATE_REQ,
 	SWITCH_MESSAGE_INDICATE_BITRATE_ACK,
+	SWITCH_MESSAGE_INDICATE_CODEC_DEBUG_REQ,
+	SWITCH_MESSAGE_INDICATE_CODEC_SPECIFIC_REQ,
 	SWITCH_MESSAGE_REFER_EVENT,
 	SWITCH_MESSAGE_ANSWER_EVENT,
 	SWITCH_MESSAGE_PROGRESS_EVENT,
@@ -1473,6 +1475,7 @@ typedef enum {
 	CF_3PCC,
 	CF_VIDEO_PASSIVE,
 	CF_NOVIDEO,
+	CF_VIDEO_BITRATE_UNMANAGABLE,
 	CF_VIDEO_ECHO,
 	CF_VIDEO_BLANK,
 	CF_SLA_INTERCEPT,
@@ -2243,7 +2246,9 @@ typedef enum {
 	SCC_VIDEO_REFRESH = 0,
 	SCC_VIDEO_BANDWIDTH,
 	SCC_VIDEO_RESET,
-	SCC_AUDIO_PACKET_LOSS
+	SCC_AUDIO_PACKET_LOSS,
+	SCC_DEBUG,
+	SCC_CODEC_SPECIFIC
 } switch_codec_control_command_t;
 
 typedef enum {
@@ -2261,6 +2266,8 @@ typedef switch_status_t (*switch_core_codec_control_func_t) (switch_codec_t *cod
 																   switch_codec_control_command_t cmd, 
 																   switch_codec_control_type_t ctype,
 																   void *cmd_data,
+																   switch_codec_control_type_t atype,
+																   void *cmd_arg,
 																   switch_codec_control_type_t *rtype,
 																   void **ret_data);
 																   
@@ -2554,8 +2561,8 @@ typedef struct switch_waitlist_s {
 	uint32_t revents;
 } switch_waitlist_t;
 
-struct switch_vb_s;
-typedef struct switch_vb_s switch_vb_t;
+struct switch_jb_s;
+typedef struct switch_jb_s switch_jb_t;
 
 struct switch_img_txt_handle_s;
 typedef struct switch_img_txt_handle_s switch_img_txt_handle_t;
