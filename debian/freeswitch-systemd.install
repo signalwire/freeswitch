@@ -1,3 +1,2 @@
 /lib/systemd/system/freeswitch.service
 /usr/lib/tmpfiles.d/freeswitch.conf
-
