@@ -88,6 +88,10 @@
           var disconnectCallback = function(v, connected) {
             console.debug('Redirecting to login page.');
             storage.reset();
+			if (typeof gapi !== 'undefined'){
+				console.debug(gapi);
+				gapi.auth.signOut();
+			}
             $location.path('/login');
           };
 
@@ -275,6 +279,40 @@
           $location.path('/incall');
         }
 
+      });
+
+      $scope.$on('event:google-plus-signin-success', function (event,authResult) {
+        // Send login to server or save into cookie
+        console.log('Google+ Login Success');
+	console.log(authResult);
+	gapi.client.load('plus', 'v1', gapiClientLoaded);
+      });
+
+      function gapiClientLoaded() {
+	gapi.client.plus.people.get({userId: 'me'}).execute(handleEmailResponse);
+      }
+
+      function handleEmailResponse(resp){
+        var primaryEmail;
+	for (var i=0; i < resp.emails.length; i++) {
+	  if (resp.emails[i].type === 'account') primaryEmail = resp.emails[i].value;
+        }
+	console.debug("Primary Email: " + primaryEmail );
+	console.debug("display name: " + resp.displayName);
+	console.debug("imageurl: " + resp.image.url);
+	console.debug(resp);
+	console.debug(verto.data);
+	verto.data.email = primaryEmail;
+	verto.data.name = resp.displayName;
+	storage.data.name = verto.data.name;
+	storage.data.email = verto.data.email;
+
+	$scope.login();
+      }
+
+      $scope.$on('event:google-plus-signin-failure', function (event,authResult) {
+        // Auth failure or signout detected
+        console.log('Google+ Login Failure');
       });
 
       $rootScope.callActive = function(data) {

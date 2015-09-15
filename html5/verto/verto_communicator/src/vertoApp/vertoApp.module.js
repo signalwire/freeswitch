@@ -13,6 +13,7 @@
     'cgPrompt',
     '720kb.tooltips',
     'ui.gravatar',
+    'directive.g+signin',
   ]);
 
   vertoApp.config(['$routeProvider', 'gravatarServiceProvider',

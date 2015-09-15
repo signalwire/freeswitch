@@ -3,7 +3,7 @@
 
 	angular
 	.module('vertoControllers')
-	.controller('LoginController', ['$scope', '$http', '$location', 'verto',
+	.controller('LoginController', ['$scope', '$http', '$location', 'verto', 
 		function($scope, $http, $location, verto) {
 				$scope.checkBrowser();
 
@@ -18,6 +18,11 @@
 				/* save these for later as we're about to possibly over write them */
 				var name = verto.data.name;
 				var email = verto.data.email;
+
+				console.debug("googlelogin: " + data.googlelogin);
+				if (data.googlelogin){
+					$scope.googlelogin = data.googlelogin;
+				}
 
 				angular.extend(verto.data, data);
 
