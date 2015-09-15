@@ -371,7 +371,7 @@ Description: Cross-Platform Scalable Multi-Protocol Soft Switch
  .
  This package contains the FreeSWITCH core library.
 
-Package: python-esl 
+Package: python-esl
 Section: python
 Architecture: any
 Depends: \${shlibs:Depends}, \${misc:Depends}, \${python:Depends}
