@@ -597,7 +597,7 @@ static switch_status_t switch_opus_decode(switch_codec_t *codec,
 				frame.data = buf;
 				frame.buflen = sizeof(buf);
 
-				if (switch_jb_peek_frame(jb, codec->cur_frame->seq, 1, &frame)) {
+				if (switch_jb_peek_frame(jb, codec->cur_frame->timestamp, 0, 1, &frame)) {
 					got_frame = 1;
 					fec = 1;
 					encoded_data = frame.data;

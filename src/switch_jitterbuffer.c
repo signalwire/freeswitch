@@ -60,6 +60,9 @@ struct switch_jb_s {
 	uint32_t highest_wrote_ts;
 	uint32_t highest_wrote_seq;
 	uint16_t target_seq;
+	uint32_t target_ts;
+	uint32_t last_target_ts;
+	uint16_t psuedo_seq;
 	uint32_t visible_nodes;
 	uint32_t complete_frames;
 	uint32_t frame_len;
@@ -73,6 +76,8 @@ struct switch_jb_s {
 	uint32_t consec_good_count;
 	uint32_t period_count;
 	uint32_t dropped;
+	uint32_t samples_per_frame;
+	uint32_t samples_per_second;
 	uint8_t write_init;
 	uint8_t read_init;
 	uint8_t debug_level;
@@ -80,6 +85,7 @@ struct switch_jb_s {
 	switch_size_t last_len;
 	switch_inthash_t *missing_seq_hash;
 	switch_inthash_t *node_hash;
+	switch_inthash_t *node_hash_ts;
 	switch_mutex_t *mutex;
 	switch_mutex_t *list_mutex;
 	switch_memory_pool_t *pool;
@@ -274,6 +280,10 @@ static inline void hide_node(switch_jb_node_t *node, switch_bool_t pop)
 		}
 	}
 
+	if (jb->node_hash_ts) {
+		switch_core_inthash_delete(jb->node_hash_ts, node->packet.header.ts);
+	}
+
 	switch_core_inthash_delete(jb->node_hash, node->packet.header.seq);
 
 	switch_mutex_unlock(jb->list_mutex);
@@ -388,13 +398,6 @@ static inline void jb_hit(switch_jb_t *jb)
 	jb->consec_miss_count = 0;
 }
 
-static inline void jb_miss(switch_jb_t *jb)
-{
-	jb->period_miss_count++;
-	jb->consec_miss_count++;
-	jb->consec_good_count = 0;
-}
-
 static void jb_frame_inc(switch_jb_t *jb, int i)
 {
 	uint32_t old_frame_len = jb->frame_len;
@@ -456,6 +459,13 @@ static void jb_frame_inc(switch_jb_t *jb, int i)
 
 }
 
+static inline void jb_miss(switch_jb_t *jb)
+{
+	jb->period_miss_count++;
+	jb->consec_miss_count++;
+	jb->consec_good_count = 0;
+}
+
 static inline int verify_oldest_frame(switch_jb_t *jb)
 {
 	switch_jb_node_t *lowest = jb_find_lowest_node(jb), *np = NULL;
@@ -514,6 +524,10 @@ static inline void add_node(switch_jb_t *jb, switch_rtp_packet_t *packet, switch
 
 	switch_core_inthash_insert(jb->node_hash, node->packet.header.seq, node);
 
+	if (jb->node_hash_ts) {
+		switch_core_inthash_insert(jb->node_hash_ts, node->packet.header.ts, node);
+	}
+
 	jb_debug(jb, (packet->header.m ? 1 : 2), "PUT packet last_ts:%u ts:%u seq:%u%s\n", 
 			 ntohl(jb->highest_wrote_ts), ntohl(node->packet.header.ts), ntohs(node->packet.header.seq), packet->header.m ? " <MARK>" : "");
 
@@ -521,7 +535,7 @@ static inline void add_node(switch_jb_t *jb, switch_rtp_packet_t *packet, switch
 
 
 
-	if (jb->write_init && ((abs(((int)htons(packet->header.seq) - htons(jb->highest_wrote_seq))) >= jb->max_frame_len) || 
+	if (jb->write_init && ((abs(((int)ntohs(packet->header.seq) - ntohs(jb->highest_wrote_seq))) >= jb->max_frame_len) || 
 						   (abs((int)((int64_t)ntohl(node->packet.header.ts) - (int64_t)ntohl(jb->highest_wrote_ts))) > (900000 * 5)))) {
 		jb_debug(jb, 2, "%s", "CHANGE DETECTED, PUNT\n");
 		switch_jb_reset(jb);
@@ -560,6 +574,24 @@ static inline void add_node(switch_jb_t *jb, switch_rtp_packet_t *packet, switch
 	}
 }
 
+static inline void increment_ts(switch_jb_t *jb)
+{
+	if (!jb->target_ts) return;
+
+	jb->target_ts = htonl((ntohl(jb->target_ts) + jb->samples_per_frame));
+	jb->psuedo_seq++;
+}
+
+static inline void set_read_ts(switch_jb_t *jb, uint32_t ts)
+{
+	if (!ts) return;
+
+	jb->last_target_ts = ts;
+	jb->target_ts = htonl((ntohl(jb->last_target_ts) + jb->samples_per_frame));
+	jb->psuedo_seq++;
+}
+
+
 static inline void increment_seq(switch_jb_t *jb)
 {
 	jb->target_seq = htons((ntohs(jb->target_seq) + 1));
@@ -571,7 +603,7 @@ static inline void set_read_seq(switch_jb_t *jb, uint16_t seq)
 	jb->target_seq = htons((ntohs(jb->last_target_seq) + 1));
 }
 
-static inline switch_status_t jb_next_packet(switch_jb_t *jb, switch_jb_node_t **nodep)
+static inline switch_status_t jb_next_packet_by_seq(switch_jb_t *jb, switch_jb_node_t **nodep)
 {
 	switch_jb_node_t *node = NULL;
 
@@ -644,11 +676,60 @@ static inline switch_status_t jb_next_packet(switch_jb_t *jb, switch_jb_node_t *
 	
 }
 
+
+static inline switch_status_t jb_next_packet_by_ts(switch_jb_t *jb, switch_jb_node_t **nodep)
+{
+	switch_jb_node_t *node = NULL;
+
+	if (!jb->target_ts) {
+		if ((node = jb_find_lowest_node(jb))) {
+			jb_debug(jb, 2, "No target ts using ts: %u as a starting point\n", ntohl(node->packet.header.ts));
+		} else {
+			jb_debug(jb, 1, "%s", "No nodes available....\n");
+		}
+		jb_hit(jb);
+	} else if ((node = switch_core_inthash_find(jb->node_hash_ts, jb->target_ts))) {
+		jb_debug(jb, 2, "FOUND desired ts: %u\n", ntohl(jb->target_ts));
+		jb_hit(jb);
+	} else {
+		jb_debug(jb, 2, "MISSING desired ts: %u\n", ntohl(jb->target_ts));
+		jb_miss(jb);
+		increment_ts(jb);
+	}
+
+	*nodep = node;
+	
+	if (node) {
+		set_read_ts(jb, node->packet.header.ts);
+		node->packet.header.seq = htons(jb->psuedo_seq);
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	return SWITCH_STATUS_NOTFOUND;
+	
+}
+
+static inline switch_status_t jb_next_packet(switch_jb_t *jb, switch_jb_node_t **nodep)
+{
+	if (jb->samples_per_frame) {
+		return jb_next_packet_by_ts(jb, nodep);
+	} else {
+		return jb_next_packet_by_seq(jb, nodep);
+	}
+}
+
 static inline void free_nodes(switch_jb_t *jb)
 {
 	switch_mutex_lock(jb->list_mutex);
 	jb->node_list = NULL;
 	switch_mutex_unlock(jb->list_mutex);
+}
+
+SWITCH_DECLARE(void) switch_jb_ts_mode(switch_jb_t *jb, uint32_t samples_per_frame, uint32_t samples_per_second)
+{
+	jb->samples_per_frame = samples_per_frame;
+	jb->samples_per_second = samples_per_second;
+	switch_core_inthash_init(&jb->node_hash_ts);
 }
 
 SWITCH_DECLARE(void) switch_jb_set_session(switch_jb_t *jb, switch_core_session_t *session)
@@ -713,18 +794,27 @@ SWITCH_DECLARE(void) switch_jb_reset(switch_jb_t *jb)
 	jb->period_good_count = 0;
 	jb->consec_good_count = 0;
 	jb->period_count = 0;
+	jb->target_ts = 0;
+	jb->last_target_ts = 0;
 	
 	switch_mutex_lock(jb->mutex);
 	hide_nodes(jb);
 	switch_mutex_unlock(jb->mutex);
 }
 
-SWITCH_DECLARE(switch_status_t) switch_jb_peek_frame(switch_jb_t *jb, uint16_t seq, int peek, switch_frame_t *frame)
+SWITCH_DECLARE(switch_status_t) switch_jb_peek_frame(switch_jb_t *jb, uint32_t ts, uint16_t seq, int peek, switch_frame_t *frame)
 {
-	uint16_t want_seq = seq + peek;
-	switch_jb_node_t *node;
+	switch_jb_node_t *node = NULL;
 
-	if ((node = switch_core_inthash_find(jb->node_hash, want_seq))) {
+	if (seq) {
+		uint16_t want_seq = seq + peek;
+		node = switch_core_inthash_find(jb->node_hash, want_seq);
+	} else if (ts && jb->samples_per_frame) {
+		uint32_t want_ts = ts + (peek * jb->samples_per_frame);	
+		node = switch_core_inthash_find(jb->node_hash_ts, want_ts);
+	}
+
+	if (node) {
 		frame->seq = ntohs(node->packet.header.seq);
 		frame->timestamp = ntohl(node->packet.header.ts);
 		frame->m = node->packet.header.m;
@@ -823,6 +913,10 @@ SWITCH_DECLARE(switch_status_t) switch_jb_destroy(switch_jb_t **jbp)
 		switch_core_inthash_destroy(&jb->missing_seq_hash);
 	}
 	switch_core_inthash_destroy(&jb->node_hash);
+
+	if (jb->node_hash_ts) {
+		switch_core_inthash_destroy(&jb->node_hash_ts);
+	}
 
 	free_nodes(jb);
 
@@ -1039,8 +1133,8 @@ SWITCH_DECLARE(switch_status_t) switch_jb_get_packet(switch_jb_t *jb, switch_rtp
 			default:							
 				if (jb->consec_miss_count > jb->frame_len) {
 					switch_jb_reset(jb);
-					jb_debug(jb, 2, "%s", "Too many frames not found, RESIZE\n");
 					jb_frame_inc(jb, 1);
+					jb_debug(jb, 2, "%s", "Too many frames not found, RESIZE\n");
 					switch_goto_status(SWITCH_STATUS_RESTART, end);
 				} else {
 					jb_debug(jb, 2, "%s", "Frame not found suggest PLC\n");

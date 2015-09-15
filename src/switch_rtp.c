@@ -4060,6 +4060,8 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_activate_jitter_buffer(switch_rtp_t *
 	} else {
 		status = switch_jb_create(&rtp_session->jb, SJB_AUDIO, queue_frames, max_queue_frames, rtp_session->pool);
 		switch_jb_set_session(rtp_session->jb, rtp_session->session);
+		switch_jb_ts_mode(rtp_session->jb, samples_per_packet, samples_per_second);
+		//switch_jb_debug_level(rtp_session->jb, 10);
 	}
 
 	READ_DEC(rtp_session);

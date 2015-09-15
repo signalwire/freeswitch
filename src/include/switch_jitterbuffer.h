@@ -47,7 +47,7 @@ SWITCH_BEGIN_EXTERN_C
 SWITCH_DECLARE(switch_status_t) switch_jb_create(switch_jb_t **jbp, switch_jb_type_t type,
 												 uint32_t min_frame_len, uint32_t max_frame_len, switch_memory_pool_t *pool);
 SWITCH_DECLARE(switch_status_t) switch_jb_set_frames(switch_jb_t *jb, uint32_t min_frame_len, uint32_t max_frame_len);
-SWITCH_DECLARE(switch_status_t) switch_jb_peek_frame(switch_jb_t *jb, uint16_t seq, int peek, switch_frame_t *frame);
+SWITCH_DECLARE(switch_status_t) switch_jb_peek_frame(switch_jb_t *jb, uint32_t ts, uint16_t seq, int peek, switch_frame_t *frame);
 SWITCH_DECLARE(switch_status_t) switch_jb_get_frames(switch_jb_t *jb, uint32_t *min_frame_len, uint32_t *max_frame_len, uint32_t *cur_frame_len, uint32_t *highest_frame_len);
 SWITCH_DECLARE(switch_status_t) switch_jb_destroy(switch_jb_t **jbp);
 SWITCH_DECLARE(void) switch_jb_reset(switch_jb_t *jb);
@@ -61,6 +61,7 @@ SWITCH_DECLARE(switch_status_t) switch_jb_get_packet(switch_jb_t *jb, switch_rtp
 SWITCH_DECLARE(uint32_t) switch_jb_pop_nack(switch_jb_t *jb);
 SWITCH_DECLARE(switch_status_t) switch_jb_get_packet_by_seq(switch_jb_t *jb, uint16_t seq, switch_rtp_packet_t *packet, switch_size_t *len);
 SWITCH_DECLARE(void) switch_jb_set_session(switch_jb_t *jb, switch_core_session_t *session);
+SWITCH_DECLARE(void) switch_jb_ts_mode(switch_jb_t *jb, uint32_t samples_per_frame, uint32_t samples_per_second);
 SWITCH_DECLARE(void) switch_jb_set_flag(switch_jb_t *jb, switch_jb_flag_t flag);
 SWITCH_DECLARE(void) switch_jb_clear_flag(switch_jb_t *jb, switch_jb_flag_t flag);
 
