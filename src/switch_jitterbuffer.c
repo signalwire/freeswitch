@@ -97,112 +97,96 @@ struct switch_jb_s {
 };
 
 
-/*
- * https://gist.github.com/ideasman42/5921b0edfc6aa41a9ce0
- *
- * Originally from: http://stackoverflow.com/a/27663998/432509
- *
- * With following modifications:
- * - Use a pointer to the tail (remove 2x conditional checks, reduces code-size).
- * - Avoid re-assigning empty values the size doesn't change.
- * - Corrected comments.
- */
-
 static int node_cmp(const void *l, const void *r)
 {
 	switch_jb_node_t *a = (switch_jb_node_t *) l;
 	switch_jb_node_t *b = (switch_jb_node_t *) r;
+	
+	if (!a->visible) return 0;
+	if (!b->visible) return 1;
 
-	if (!a->visible && !b->visible) {
-		return 0;
-	}
-
-	if (a->visible != b->visible) {
-		if (a->visible) {
-			return 1;
-		} else {
-			return -1;
-		}
-	}
-
-	return a->packet.header.seq - b->packet.header.seq;
+	return ntohs(a->packet.header.seq) - ntohs(b->packet.header.seq);
 }
 
-static switch_jb_node_t *sort_nodes(switch_jb_node_t *head, int (*cmp)(const void *, const void *))
-{
-	int block_size = 1, block_count;
+//http://www.chiark.greenend.org.uk/~sgtatham/algorithms/listsort.c
+switch_jb_node_t *sort_nodes(switch_jb_node_t *list, int (*cmp)(const void *, const void *)) {
+	switch_jb_node_t *p, *q, *e, *tail;
+	int insize, nmerges, psize, qsize, i;
 
-	do {
-		/* Maintain two lists pointing to two blocks, 'l' and 'r' */
-		switch_jb_node_t *l = head, *r = head, **tail_p;
-		
-		head = NULL; /* Start a new list */
-		tail_p = &head;
+	if (!list) {
+		return NULL;
+	}
 
-		block_count = 0;
+	insize = 1;
 
-		/* Walk through entire list in blocks of 'block_size'*/
-		while (l != NULL) {
-			/* Move 'r' to start of next block, measure size of 'l' list while doing so */
-			int l_size, r_size = block_size;
-			int l_empty, r_empty;
+	while (1) {
+		p = list;
+		list = NULL;
+		tail = NULL;
 
-			block_count++;
-			for (l_size = 0; (l_size < block_size) && (r != NULL); l_size++) {
-				r = r->next;
+		nmerges = 0;  /* count number of merges we do in this pass */
+
+		while (p) {
+			nmerges++;  /* there exists a merge to be done */
+			            /* step `insize' places along from p */
+			q = p;
+			psize = 0;
+			for (i = 0; i < insize; i++) {
+				psize++;
+				q = q->next;
+				if (!q) break;
 			}
 
-			/* Merge two list until their individual ends */
-			l_empty = (l_size == 0);
-			r_empty = (r_size == 0 || r == NULL);
-			while (!l_empty || !r_empty) {
-				switch_jb_node_t *s;
-				/* Using <= instead of < gives us sort stability */
-				if (r_empty || (!l_empty && cmp(l, r) <= 0)) {
-					s = l;
-					l = l->next;
-					l_size--;
-					l_empty = (l_size == 0);
+			/* if q hasn't fallen off end, we have two lists to merge */
+			qsize = insize;
+
+			/* now we have two lists; merge them */
+			while (psize > 0 || (qsize > 0 && q)) {
+
+				/* decide whether next switch_jb_node_t of merge comes from p or q */
+				if (psize == 0) {
+					/* p is empty; e must come from q. */
+					e = q; q = q->next; qsize--;
+				} else if (qsize == 0 || !q) {
+					/* q is empty; e must come from p. */
+					e = p; p = p->next; psize--;
+				} else if (cmp(p,q) <= 0) {
+					/* First switch_jb_node_t of p is lower (or same);
+					 * e must come from p. */
+					e = p; p = p->next; psize--;
 				} else {
-					s = r;
-					r = r->next;
-					r_size--;
-					r_empty = (r_size == 0) || (r == NULL);
+					/* First switch_jb_node_t of q is lower; e must come from q. */
+					e = q; q = q->next; qsize--;
 				}
 
-				/* Update new list */
-				(*tail_p) = s;
-				tail_p = &(s->next);
+				/* add the next switch_jb_node_t to the merged list */
+				if (tail) {
+					tail->next = e;
+				} else {
+					list = e;
+				}
+
+				/* Maintain reverse pointers in a doubly linked list. */
+				e->prev = tail;
+				
+				tail = e;
 			}
 
-			/* 'r' now points to next block for 'l' */
-			l = r;
+			/* now p has stepped `insize' places along, and q has too */
+			p = q;
 		}
 
-		/* terminate new list, take care of case when input list is NULL */
-		*tail_p = NULL;
+		tail->next = NULL;
 
-		/* Lg n iterations */
-		block_size <<= 1;
+		/* If we have done only one merge, we're finished. */
+		if (nmerges <= 1)   /* allow for nmerges==0, the empty list case */
+			return list;
 
-	} while (block_count > 1);
-
-	if (head) {
-		switch_jb_node_t *np, *last = NULL;
-
-		head->prev = NULL;
-
-		for (np = head; np ; np = np->next) {
-			if (last) {
-				np->prev = last;
-			}
-			last = np;
-		}
+		/* Otherwise repeat, merging lists twice the size */
+		insize *= 2;
 	}
-				 
-
-	return head;
 }
+
 
 static inline switch_jb_node_t *new_node(switch_jb_t *jb)
 {
@@ -489,9 +473,7 @@ static inline int verify_oldest_frame(switch_jb_t *jb)
 		}
 				
 		if (np->packet.header.ts != lowest->packet.header.ts || !np->next) {
-			if (np->prev->packet.header.m) {
-				r = 1;
-			}
+			r = 1;
 		}
 	}
 	
