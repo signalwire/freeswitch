@@ -7362,7 +7362,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 					int j = 0;
 
 					for (j = 0; j < smh->mparams->num_codecs; j++) {
-						if (smh->ianacodes[i] == smh->payload_space) {
+						if (smh->ianacodes[j] == smh->payload_space) {
 							smh->payload_space++;
 							break;
 						}
