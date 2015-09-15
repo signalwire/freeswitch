@@ -302,8 +302,11 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 
 					if (imember->video_media_flow == SWITCH_MEDIA_FLOW_SENDONLY) {
 						conference_utils_member_clear_flag(imember, MFLAG_CAN_BE_SEEN);
+						conference_video_find_floor(imember, SWITCH_FALSE);
 					} else {
 						conference_utils_member_set_flag(imember, MFLAG_CAN_BE_SEEN);
+						conference_video_find_floor(imember, SWITCH_TRUE);
+						switch_core_session_request_video_refresh(imember->session);
 					}
 				}
 

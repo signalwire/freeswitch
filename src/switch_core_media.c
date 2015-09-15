@@ -5958,6 +5958,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 		flags[SWITCH_RTP_FLAG_BYTESWAP] = 0;
 	}
 
+	if ((val = switch_channel_get_variable(session->channel, "rtp_gen_ts_delta")) && switch_true(val)) {
+		flags[SWITCH_RTP_FLAG_GEN_TS_DELTA] = 1;
+	}
+
 	if (a_engine->rtp_session && switch_channel_test_flag(session->channel, CF_REINVITE)) {
 		//const char *ip = switch_channel_get_variable(session->channel, SWITCH_LOCAL_MEDIA_IP_VARIABLE);
 		//const char *port = switch_channel_get_variable(session->channel, SWITCH_LOCAL_MEDIA_PORT_VARIABLE);

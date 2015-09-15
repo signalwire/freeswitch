@@ -3264,13 +3264,27 @@ void conference_video_write_frame(conference_obj_t *conference, conference_membe
 
 		switch_core_session_rwunlock(isession);
 	}
+
+	if (want_refresh) {
+		for (imember = conference->members; imember; imember = imember->next) {
+			switch_core_session_t *isession = imember->session;
+			
+			if (!isession || switch_core_session_read_lock(isession) != SWITCH_STATUS_SUCCESS) {
+				continue;
+			}
+			
+			if (!isession || !switch_channel_test_flag(imember->channel, CF_VIDEO) ) {
+				continue;
+			}
+		
+			switch_core_session_request_video_refresh(imember->session);	
+			switch_core_session_rwunlock(isession);
+		}
+	}
+
 	switch_mutex_unlock(conference->member_mutex);
 
 	switch_img_free(&tmp_frame.img);
-
-	if (want_refresh && floor_holder->session) {
-		switch_core_session_request_video_refresh(floor_holder->session);
-	}
 }
 
 switch_status_t conference_video_thread_callback(switch_core_session_t *session, switch_frame_t *frame, void *user_data)
@@ -3286,6 +3300,9 @@ switch_status_t conference_video_thread_callback(switch_core_session_t *session,
 		return SWITCH_STATUS_SUCCESS;
 	}
 
+	if (switch_core_session_media_flow(session, SWITCH_MEDIA_TYPE_VIDEO) == SWITCH_MEDIA_FLOW_SENDONLY) {
+		return SWITCH_STATUS_SUCCESS;
+	}
 
 	if (switch_thread_rwlock_tryrdlock(member->conference->rwlock) != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_FALSE;
