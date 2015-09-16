@@ -234,8 +234,16 @@ SWITCH_DECLARE(const char *) API::execute(const char *cmd, const char *arg)
 {
 	switch_stream_handle_t stream = { 0 };
 	this_check("");
+
 	SWITCH_STANDARD_STREAM(stream);
-	switch_api_execute(cmd, arg, session, &stream);
+
+	if (zstr(cmd)) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "No application specified\n");
+		stream.write_function(&stream, "-ERR No application specified");
+	} else {
+		switch_api_execute(cmd, arg, session, &stream);
+	}
+
 	return (char *) stream.data;
 }
 
@@ -729,6 +737,11 @@ SWITCH_DECLARE(void) CoreSession::execute(const char *app, const char *data)
 {
 	this_check_void();
 	sanity_check_noreturn;
+
+	if (zstr(app)) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "No application specified\n");
+		return;
+	} 
 
 	begin_allow_threads();
 	switch_core_session_execute_application(session, app, data);
