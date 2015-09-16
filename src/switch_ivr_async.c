@@ -780,7 +780,7 @@ static switch_bool_t write_displace_callback(switch_media_bug_t *bug, void *user
 			} else {
 				st = switch_core_file_read(&dh->fh, rframe->data, &len);
 				if (len < rframe->samples) {
-					memset((char *)rframe->data + len * 2 * dh->fh.channels, 0, (rframe->datalen - len) * 2 * dh->fh.channels);
+					memset((char *)rframe->data + (len * 2 * dh->fh.channels), 0, (rframe->samples - len) * 2 * dh->fh.channels);
 				}
 			}
 
