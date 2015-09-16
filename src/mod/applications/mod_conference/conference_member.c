@@ -170,7 +170,7 @@ void conference_member_update_status_field(conference_member_t *member)
 		if (switch_channel_test_flag(member->channel, CF_VIDEO) || member->avatar_png_img) {
 			video = cJSON_CreateObject();
 			cJSON_AddItemToObject(video, "avatarPresented", cJSON_CreateBool(!!member->avatar_png_img));
-			cJSON_AddItemToObject(video, "mediaFlow", cJSON_CreateString(member->video_media_flow == SWITCH_MEDIA_FLOW_SENDONLY ? "sendOnly" : "sendRecv"));
+			cJSON_AddItemToObject(video, "mediaFlow", cJSON_CreateString(switch_core_session_media_flow(member->session, SWITCH_MEDIA_TYPE_VIDEO) == SWITCH_MEDIA_FLOW_SENDONLY ? "sendOnly" : "sendRecv"));
 			cJSON_AddItemToObject(video, "muted", cJSON_CreateBool(!conference_utils_member_test_flag(member, MFLAG_CAN_BE_SEEN)));
 			cJSON_AddItemToObject(video, "floor", cJSON_CreateBool(member && member->id == member->conference->video_floor_holder));
 			if (member && member->id == member->conference->video_floor_holder && conference_utils_test_flag(member->conference, CFLAG_VID_FLOOR_LOCK)) {
@@ -702,10 +702,6 @@ switch_status_t conference_member_add(conference_obj_t *conference, conference_m
 		switch_mutex_unlock(conference->canvas_mutex);
 	}
 
-	if (member->video_media_flow == SWITCH_MEDIA_FLOW_SENDONLY) {
-		conference_utils_member_clear_flag_locked(member, MFLAG_CAN_BE_SEEN);
-	}
-
 	conference->members = member;
 	conference_utils_member_set_flag_locked(member, MFLAG_INTREE);
 	switch_mutex_unlock(conference->member_mutex);
@@ -713,6 +709,11 @@ switch_status_t conference_member_add(conference_obj_t *conference, conference_m
 
 
 	if (!conference_utils_member_test_flag(member, MFLAG_NOCHANNEL)) {
+
+		if (switch_core_session_media_flow(member->session, SWITCH_MEDIA_TYPE_VIDEO) == SWITCH_MEDIA_FLOW_SENDONLY) {
+			conference_utils_member_clear_flag_locked(member, MFLAG_CAN_BE_SEEN);
+		}
+
 		if (conference_utils_member_test_flag(member, MFLAG_GHOST)) {
 			conference->count_ghosts++;
 		} else {

@@ -378,7 +378,7 @@ void conference_event_la_command_handler(switch_live_array_t *la, const char *cm
 void conference_event_adv_la(conference_obj_t *conference, conference_member_t *member, switch_bool_t join)
 {
 
-	//if (member->video_media_flow == SWITCH_MEDIA_FLOW_SENDONLY) {
+	//if (switch_core_session_media_flow(member->session, SWITCH_MEDIA_TYPE_VIDEO) == SWITCH_MEDIA_FLOW_SENDONLY) {
 	switch_channel_set_flag(member->channel, CF_VIDEO_REFRESH_REQ);
 	switch_core_media_gen_key_frame(member->session);
 	//}
