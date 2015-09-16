@@ -922,23 +922,25 @@ switch_status_t conference_member_add(conference_obj_t *conference, conference_m
 			member->status_field = cJSON_CreateString("");
 			cJSON_AddItemToArray(member->json, member->status_field);
 
-			switch_channel_get_variables(member->channel, &var_event);
+			if (conference_utils_test_flag(member->conference, CFLAG_JSON_STATUS)) {
+				switch_channel_get_variables(member->channel, &var_event);
 
-			dvars = cJSON_CreateObject();
+				dvars = cJSON_CreateObject();
 
-			for (hi = var_event->headers; hi; hi = hi->next) {
-				if (!strncasecmp(hi->name, "verto_dvar_", 11)) {
-					char *var = hi->name + 11;
-
-					if (var) {
-						cJSON_AddItemToObject(dvars, var, cJSON_CreateString(hi->value));
+				for (hi = var_event->headers; hi; hi = hi->next) {
+					if (!strncasecmp(hi->name, "verto_dvar_", 11)) {
+						char *var = hi->name + 11;
+						
+						if (var) {
+							cJSON_AddItemToObject(dvars, var, cJSON_CreateString(hi->value));
+						}
 					}
 				}
+
+				cJSON_AddItemToArray(member->json, dvars);
+
+				switch_event_destroy(&var_event);
 			}
-
-			cJSON_AddItemToArray(member->json, dvars);
-
-			switch_event_destroy(&var_event);
 
 			cJSON_AddItemToArray(member->json, cJSON_CreateNull());
 
