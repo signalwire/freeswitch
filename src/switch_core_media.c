@@ -157,6 +157,7 @@ typedef struct switch_rtp_engine_s {
 	uint8_t nack;
 	uint8_t tmmbr;
 	uint8_t no_crypto;
+	uint8_t dtls_controller;
 	switch_codec_settings_t codec_settings;
 	switch_media_flow_t rmode;
 	switch_media_flow_t smode;
@@ -3079,23 +3080,6 @@ static int dtls_ok(switch_core_session_t *session)
 #endif
 
 //?
-SWITCH_DECLARE(switch_call_direction_t) switch_ice_direction(switch_core_session_t *session)
-{
-	switch_call_direction_t r = switch_channel_direction(session->channel);
-
-	if (switch_channel_test_flag(session->channel, CF_3PCC)) {
-		r = (r == SWITCH_CALL_DIRECTION_INBOUND) ? SWITCH_CALL_DIRECTION_OUTBOUND : SWITCH_CALL_DIRECTION_INBOUND;
-	}
-
-	if ((switch_channel_test_flag(session->channel, CF_REINVITE) || switch_channel_test_flag(session->channel, CF_RECOVERING)) 
-		&& switch_channel_test_flag(session->channel, CF_AVPF)) {
-		r = SWITCH_CALL_DIRECTION_OUTBOUND;
-	}
-
-	return r;
-}
-
-//?
 static switch_status_t ip_choose_family(switch_media_handle_t *smh, const char *ip)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
@@ -3150,9 +3134,9 @@ static switch_status_t check_ice(switch_media_handle_t *smh, switch_media_type_t
 	const char *val;
 	int ice_seen = 0, cid = 0, ai = 0;
 
-	if (engine->ice_in.is_chosen[0] && engine->ice_in.is_chosen[1]) {
-		return SWITCH_STATUS_SUCCESS;
-	}
+	//if (engine->ice_in.is_chosen[0] && engine->ice_in.is_chosen[1]) {
+		//return SWITCH_STATUS_SUCCESS;
+	//}
 
 	engine->ice_in.chosen[0] = 0;
 	engine->ice_in.chosen[1] = 0;
@@ -3175,14 +3159,33 @@ static switch_status_t check_ice(switch_media_handle_t *smh, switch_media_type_t
 		if (zstr(attr->a_name)) {
 			continue;
 		}
-
+		
 		if (!strcasecmp(attr->a_name, "ice-ufrag")) {
-			engine->ice_in.ufrag = switch_core_session_strdup(smh->session, attr->a_value);
+			if (engine->ice_in.ufrag && !strcmp(engine->ice_in.ufrag, attr->a_value)) {
+				engine->new_ice = 0;
+			} else {
+				engine->ice_in.ufrag = switch_core_session_strdup(smh->session, attr->a_value);
+				engine->new_ice = 1;
+			}
 			ice_seen++;
 		} else if (!strcasecmp(attr->a_name, "ice-pwd")) {
-			engine->ice_in.pwd = switch_core_session_strdup(smh->session, attr->a_value);
+			if (!engine->ice_in.pwd || strcmp(engine->ice_in.pwd, attr->a_value)) {
+				engine->ice_in.pwd = switch_core_session_strdup(smh->session, attr->a_value);
+			}
 		} else if (!strcasecmp(attr->a_name, "ice-options")) {
 			engine->ice_in.options = switch_core_session_strdup(smh->session, attr->a_value);
+		} else if (!strcasecmp(attr->a_name, "setup")) {
+			if (!strcasecmp(attr->a_value, "passive") || !strcasecmp(attr->a_value, "actpass")) {
+				if (!engine->dtls_controller) {
+					engine->new_dtls = 1;
+				}
+				engine->dtls_controller = 1;
+			} else if (!strcasecmp(attr->a_value, "active")) {
+				if (engine->dtls_controller) {
+					engine->new_dtls = 1;
+				}
+				engine->dtls_controller = 0;
+			}
 		} else if (switch_rtp_has_dtls() && dtls_ok(smh->session) && !strcasecmp(attr->a_name, "fingerprint") && !zstr(attr->a_value)) {
 			char *p;
 
@@ -3190,9 +3193,17 @@ static switch_status_t check_ice(switch_media_handle_t *smh, switch_media_type_t
 			
 			if ((p = strchr(engine->remote_dtls_fingerprint.type, ' '))) {
 				*p++ = '\0';
-				switch_set_string(engine->local_dtls_fingerprint.str, p);
+
+				if (switch_channel_test_flag(smh->session->channel, CF_REINVITE) && !switch_channel_test_flag(smh->session->channel, CF_RECOVERING) &&
+					!zstr(engine->remote_dtls_fingerprint.str) && !strcmp(engine->remote_dtls_fingerprint.str, p)) {
+						engine->new_dtls = 0;
+				} else {
+					switch_set_string(engine->remote_dtls_fingerprint.str, p);
+					engine->new_dtls = 1;
+				}
 			}
 			
+
 			//if (strcasecmp(engine->remote_dtls_fingerprint.type, "sha-256")) {
 			//	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_WARNING, "Unsupported fingerprint type.\n");
 				//engine->local_dtls_fingerprint.type = NULL;
@@ -3403,8 +3414,7 @@ static switch_status_t check_ice(switch_media_handle_t *smh, switch_media_type_t
 									ICE_GOOGLE_JINGLE,
 									NULL
 #else
-									switch_ice_direction(smh->session) == 
-									SWITCH_CALL_DIRECTION_OUTBOUND ? ICE_VANILLA : (ICE_VANILLA | ICE_CONTROLLED),
+									engine->dtls_controller ? (ICE_VANILLA | ICE_CONTROLLED) : ICE_VANILLA,
 									&engine->ice_in
 #endif
 									);
@@ -3458,8 +3468,7 @@ static switch_status_t check_ice(switch_media_handle_t *smh, switch_media_type_t
 										ICE_GOOGLE_JINGLE,
 										NULL
 #else
-										switch_ice_direction(smh->session) == 
-										SWITCH_CALL_DIRECTION_OUTBOUND ? ICE_VANILLA : (ICE_VANILLA | ICE_CONTROLLED),
+										engine->dtls_controller ? (ICE_VANILLA | ICE_CONTROLLED) : ICE_VANILLA,
 										&engine->ice_in
 #endif
 										);
@@ -3590,22 +3599,10 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 		switch_channel_clear_flag(smh->session->channel, CF_DTLS);
 	}
 
-	/* may have to test for a new dtls fingerprint here too and clear these flags */
-	if (switch_channel_test_flag(smh->session->channel, CF_REINVITE) && !switch_channel_test_flag(smh->session->channel, CF_RECOVERING)) {
-		a_engine->new_ice = 0;
-		a_engine->new_dtls = 0;
-		v_engine->new_ice = 0;
-		v_engine->new_dtls = 0;
-	} else {
-		a_engine->new_ice = 1;
-		a_engine->new_dtls = 1;
-		v_engine->new_ice = 1;
-		v_engine->new_dtls = 1;
-	}
-
-	//if (switch_channel_test_flag(session->channel, CF_REINVITE)) {
-	//	switch_core_media_clear_ice(session);
-	//}
+	v_engine->new_dtls = 1;
+	v_engine->new_ice = 1;
+	a_engine->new_dtls = 1;
+	a_engine->new_ice = 1;
 
 	switch_core_session_parse_crypto_prefs(session);
 
@@ -4314,7 +4311,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 						
 				}
 			}
-				
+
 			if (match) {
 				char tmp[50];
 				//const char *mirror = switch_channel_get_variable(session->channel, "rtp_mirror_remote_audio_codec_payload");
@@ -5839,7 +5836,7 @@ static void check_dtls_reinvite(switch_core_session_t *session, switch_rtp_engin
 	if (switch_channel_test_flag(session->channel, CF_REINVITE) && engine->new_dtls) {
 
 		if (!zstr(engine->local_dtls_fingerprint.str) && switch_rtp_has_dtls() && dtls_ok(session)) {
-			dtls_type_t xtype, dtype = switch_ice_direction(session) == SWITCH_CALL_DIRECTION_INBOUND ? DTLS_TYPE_CLIENT : DTLS_TYPE_SERVER;
+			dtls_type_t xtype, dtype = engine->dtls_controller ? DTLS_TYPE_CLIENT : DTLS_TYPE_SERVER;
 			
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "RE-SETTING %s DTLS\n", type2str(engine->type));
 		
@@ -6174,8 +6171,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 									ICE_GOOGLE_JINGLE,
 									NULL
 #else
-									switch_ice_direction(session) == 
-									SWITCH_CALL_DIRECTION_OUTBOUND ? ICE_VANILLA : (ICE_VANILLA | ICE_CONTROLLED),
+									a_engine->dtls_controller ? (ICE_VANILLA | ICE_CONTROLLED) : ICE_VANILLA,
 									&a_engine->ice_in
 #endif
 									);
@@ -6227,8 +6223,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 											ICE_GOOGLE_JINGLE,
 											NULL
 #else
-											switch_ice_direction(session) == 
-											SWITCH_CALL_DIRECTION_OUTBOUND ? ICE_VANILLA : (ICE_VANILLA | ICE_CONTROLLED),
+											a_engine->dtls_controller ? (ICE_VANILLA | ICE_CONTROLLED) : ICE_VANILLA,
 											&a_engine->ice_in
 #endif
 										);
@@ -6556,8 +6551,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 											ICE_GOOGLE_JINGLE,
 											NULL
 #else
-											switch_ice_direction(session) == 
-											SWITCH_CALL_DIRECTION_OUTBOUND ? ICE_VANILLA : (ICE_VANILLA | ICE_CONTROLLED),
+											v_engine->dtls_controller ? (ICE_VANILLA | ICE_CONTROLLED) : ICE_VANILLA,
 											&v_engine->ice_in
 #endif
 											);
@@ -6607,9 +6601,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 													ICE_GOOGLE_JINGLE,
 													NULL
 #else
-													switch_ice_direction(session) == 
-													SWITCH_CALL_DIRECTION_OUTBOUND ? ICE_VANILLA : (ICE_VANILLA | ICE_CONTROLLED),
-													
+													v_engine->dtls_controller ? (ICE_VANILLA | ICE_CONTROLLED) : ICE_VANILLA,
 													&v_engine->ice_in
 #endif
 													);
@@ -6713,14 +6705,14 @@ static const char *get_media_profile_name(switch_core_session_t *session, int se
 	
 }
 
-static char *get_setup(switch_core_session_t *session, switch_sdp_type_t sdp_type)
+static char *get_setup(switch_rtp_engine_t *engine, switch_core_session_t *session, switch_sdp_type_t sdp_type)
 {
-	if ((sdp_type == SDP_TYPE_RESPONSE || switch_channel_test_flag(session->channel, CF_REINVITE)) && 
-		!switch_channel_test_flag(session->channel, CF_RECOVERING)) {
-		return "active";
+	if (sdp_type == SDP_TYPE_REQUEST) {
+		engine->dtls_controller = 0;
+		return "actpass";
+	} else {
+		return engine->dtls_controller ? "active" : "passive";
 	}
-
-	return "actpass";
 }
 
 //?
@@ -6891,7 +6883,7 @@ static void generate_m(switch_core_session_t *session, char *buf, size_t buflen,
 
 	if (!zstr(a_engine->local_dtls_fingerprint.type) && secure) {
 		switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=fingerprint:%s %s\na=setup:%s\n", a_engine->local_dtls_fingerprint.type, 
-						a_engine->local_dtls_fingerprint.str, get_setup(session, sdp_type));
+						a_engine->local_dtls_fingerprint.str, get_setup(a_engine, session, sdp_type));
 	}
 	
 	if (smh->mparams->rtcp_audio_interval_msec) {
@@ -7596,7 +7588,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 		if (!zstr(a_engine->local_dtls_fingerprint.type)) {
 			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=fingerprint:%s %s\na=setup:%s\n",
 							a_engine->local_dtls_fingerprint.type, 
-							a_engine->local_dtls_fingerprint.str, get_setup(session, sdp_type));
+							a_engine->local_dtls_fingerprint.str, get_setup(a_engine, session, sdp_type));
 		}
 		
 		if (smh->mparams->rtcp_audio_interval_msec) {
@@ -8011,7 +8003,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 
 				if (!zstr(v_engine->local_dtls_fingerprint.type)) {
 					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=fingerprint:%s %s\na=setup:%s\n", v_engine->local_dtls_fingerprint.type, 
-									v_engine->local_dtls_fingerprint.str, get_setup(session, sdp_type));
+									v_engine->local_dtls_fingerprint.str, get_setup(v_engine, session, sdp_type));
 				}
 
 

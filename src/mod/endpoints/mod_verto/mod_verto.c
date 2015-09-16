@@ -1171,7 +1171,7 @@ static void tech_reattach(verto_pvt_t *tech_pvt, jsock_t *jsock)
 
 	switch_channel_set_flag(tech_pvt->channel, CF_REINVITE);
 	switch_channel_set_flag(tech_pvt->channel, CF_RECOVERING);
-	switch_core_media_gen_local_sdp(tech_pvt->session, SDP_TYPE_RESPONSE, NULL, 0, NULL, 0);
+	switch_core_media_gen_local_sdp(tech_pvt->session, SDP_TYPE_REQUEST, NULL, 0, NULL, 0);
 	switch_channel_clear_flag(tech_pvt->channel, CF_REINVITE);
 	switch_channel_clear_flag(tech_pvt->channel, CF_RECOVERING);
 	switch_core_session_request_video_refresh(tech_pvt->session);
