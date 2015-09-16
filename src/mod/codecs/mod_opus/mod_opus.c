@@ -585,11 +585,7 @@ static switch_status_t switch_opus_decode(switch_codec_t *codec,
 
 		encoded_data = NULL;
 
-		if (opus_prefs.use_jb_lookahead || context->use_jb_lookahead) {
-			fec = 1;
-		}
-
-		if (!fec && context->codec_settings.useinbandfec && session) {
+		if ((opus_prefs.use_jb_lookahead || context->use_jb_lookahead) && context->codec_settings.useinbandfec && session) {
 			if (opus_packet_get_bandwidth(codec->cur_frame->data) != OPUS_BANDWIDTH_FULLBAND && 
 				codec->cur_frame && (jb = switch_core_session_get_jb(session, SWITCH_MEDIA_TYPE_AUDIO))) {
 				switch_frame_t frame = { 0 };
