@@ -268,6 +268,47 @@ static char *gen_fmtp(opus_codec_settings_t *settings, switch_memory_pool_t *poo
 
 }
 
+static switch_bool_t switch_opus_has_fec(const uint8_t* payload,int payload_length_bytes) 
+{
+	int frames, payload_length_ms;
+	int n;
+	opus_int16 frame_sizes[48];
+	const unsigned char *frame_data[48];
+
+	if (payload == NULL || payload_length_bytes <= 0){
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "corrupted packet\n");
+		return SWITCH_FALSE;
+	}
+
+	if (payload[0] & 0x80){   
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "FEC in CELT_ONLY mode ?!\n");
+		return SWITCH_FALSE;
+	}
+	
+	payload_length_ms = opus_packet_get_samples_per_frame(payload, 48000) / 48;
+	if (10 > payload_length_ms) {
+			payload_length_ms = 10;
+	}
+	
+	frames = opus_packet_parse(payload, payload_length_bytes, NULL, frame_data, frame_sizes, NULL);
+	
+	if (frames < 0) {
+		return SWITCH_FALSE;
+	}
+	
+	if (frame_sizes[0] <= 1) {
+		return SWITCH_FALSE;
+	}
+	
+	for (n = 0; n <= (payload[0]&0x4);n++) {
+		if (frame_data[0][0] & (0x80 >> ((n + 1) * (frames + 1) - 1))) {
+			return SWITCH_TRUE; /*this works only for 20 ms frames now, it will return VAD for 40 ms or 60 ms*/
+		}
+	}
+
+	return  SWITCH_FALSE;
+}
+
 static switch_status_t switch_opus_info(void * encoded_data, uint32_t len, uint32_t samples_per_second, char *print_text)
 {
 	int nb_samples;
@@ -598,7 +639,16 @@ static switch_status_t switch_opus_decode(switch_codec_t *codec,
 					fec = 1;
 					encoded_data = frame.data;
 					encoded_data_len = frame.datalen;
-				}
+					if (globals.debug || context->debug) {
+						if (switch_opus_has_fec(frame.data, frame.datalen)) {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "FEC info available in packet with SEQ[%d] encoded_data_len: %d\n", 
+										  codec->cur_frame->seq, encoded_data_len);
+						} else {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "NO FEC info in this packet with SEQ[%d] encoded_data_len: %d\n", 
+										  codec->cur_frame->seq, encoded_data_len );
+						}
+					}
+				} 
 			}
 		}
 		
