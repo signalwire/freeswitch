@@ -2014,7 +2014,7 @@ static void check_jb_sync(switch_core_session_t *session)
 
 	switch_rtp_get_video_buffer_size(v_engine->rtp_session, &min_frames, &max_frames, &cur_frames, NULL);
 
-	if (cur_frames > min_frames || frames == min_frames) {
+	if (frames == cur_frames) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), 
 						  SWITCH_LOG_DEBUG1, "%s %s \"%s\" A/V JB not changed %dms %u VFrames FPS %u\n", 
 						  switch_core_session_get_uuid(session),

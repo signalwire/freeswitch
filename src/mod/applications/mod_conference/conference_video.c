@@ -1814,8 +1814,10 @@ void conference_video_pop_next_image(conference_member_t *member, switch_image_t
 
 void conference_video_check_auto_bitrate(conference_member_t *member, mcu_layer_t *layer)
 {
-	if (conference_utils_test_flag(member->conference, CFLAG_MANAGE_INBOUND_VIDEO_BITRATE) && !member->managed_kps && 
-		!switch_channel_test_flag(member->channel, CF_VIDEO_BITRATE_UNMANAGABLE)) {
+
+	if (switch_channel_test_flag(member->channel, CF_VIDEO_BITRATE_UNMANAGABLE)) {
+		member->managed_kps = 0;
+	} else if (conference_utils_test_flag(member->conference, CFLAG_MANAGE_INBOUND_VIDEO_BITRATE) && !member->managed_kps) {
 		switch_core_session_message_t msg = { 0 };
 		int kps;
 		int w = 320;

@@ -78,6 +78,7 @@ struct switch_jb_s {
 	uint32_t dropped;
 	uint32_t samples_per_frame;
 	uint32_t samples_per_second;
+	uint32_t bitrate_control;
 	uint8_t write_init;
 	uint8_t read_init;
 	uint8_t debug_level;
@@ -375,6 +376,31 @@ static inline uint32_t jb_find_lowest_ts(switch_jb_t *jb)
 	return lowest ? lowest->packet.header.ts : 0;
 }
 
+
+static inline switch_jb_node_t *jb_find_highest_node(switch_jb_t *jb)
+{
+	switch_jb_node_t *np, *highest = NULL;
+
+	switch_mutex_lock(jb->list_mutex);
+	for (np = jb->node_list; np; np = np->next) {
+		if (!np->visible) continue;
+
+		if (!highest || ntohl(highest->packet.header.ts) < ntohl(np->packet.header.ts)) {
+			highest = np;
+		}
+	}
+	switch_mutex_unlock(jb->list_mutex);
+
+	return highest ? highest : NULL;
+}
+
+static inline uint32_t jb_find_highest_ts(switch_jb_t *jb)
+{
+	switch_jb_node_t *highest = jb_find_highest_node(jb);
+
+	return highest ? highest->packet.header.ts : 0;
+}
+
 static inline void jb_hit(switch_jb_t *jb)
 {
 	jb->period_good_count++;
@@ -382,7 +408,7 @@ static inline void jb_hit(switch_jb_t *jb)
 	jb->consec_miss_count = 0;
 }
 
-static void jb_frame_inc(switch_jb_t *jb, int i)
+static void jb_frame_inc_line(switch_jb_t *jb, int i, int line)
 {
 	uint32_t old_frame_len = jb->frame_len;
 	
@@ -415,33 +441,36 @@ static void jb_frame_inc(switch_jb_t *jb, int i)
 		jb->highest_frame_len = jb->frame_len;
 	}
 
-	if (jb->type == SJB_VIDEO && (jb->frame_len > jb->min_frame_len || jb->frame_len == jb->min_frame_len)) {
-		if (jb->channel) {
-			if (jb->frame_len == jb->min_frame_len) {
-				jb_debug(jb, 2, "%s", "Allow BITRATE changes\n");
-				switch_channel_clear_flag(jb->channel, CF_VIDEO_BITRATE_UNMANAGABLE);
-			} else {
-				switch_core_session_message_t msg = { 0 };
-				int new_bitrate = 512;
+	if (jb->type == SJB_VIDEO && jb->channel) {
+		int ok = (jb->frame_len <= jb->min_frame_len + 1);
+		
+		if (switch_channel_test_flag(jb->channel, CF_VIDEO_BITRATE_UNMANAGABLE) && ok) {
+			jb_debug(jb, 2, "%s", "Allow BITRATE changes\n");
+			switch_channel_clear_flag(jb->channel, CF_VIDEO_BITRATE_UNMANAGABLE);
+			jb->bitrate_control = 0;
+		} else if (!ok) {
+			switch_core_session_message_t msg = { 0 };
+			jb->bitrate_control = 512;
 
-				msg.message_id = SWITCH_MESSAGE_INDICATE_BITRATE_REQ;
-				msg.numeric_arg = new_bitrate * 1024;
-				msg.from = __FILE__;
+			msg.message_id = SWITCH_MESSAGE_INDICATE_BITRATE_REQ;
+			msg.numeric_arg = jb->bitrate_control * 1024;
+			msg.from = __FILE__;
 
-				jb_debug(jb, 2, "Force BITRATE to %d\n", new_bitrate);
-				switch_core_session_receive_message(jb->session, &msg);
-
-				switch_channel_set_flag(jb->channel, CF_VIDEO_BITRATE_UNMANAGABLE);
+			jb_debug(jb, 2, "Force BITRATE to %d\n", jb->bitrate_control);
+			switch_core_session_receive_message(jb->session, &msg);
+			switch_channel_set_flag(jb->channel, CF_VIDEO_BITRATE_UNMANAGABLE);
 				
-			}
 		}
 	}
 
 	if (old_frame_len != jb->frame_len) {
-		jb_debug(jb, 2, "Change framelen from %u to %u\n", old_frame_len, jb->frame_len);
+		jb_debug(jb, 2, "%d Change framelen from %u to %u\n", line, old_frame_len, jb->frame_len);
 	}
 
 }
+
+#define jb_frame_inc(_jb, _i) jb_frame_inc_line(_jb, _i, __LINE__)
+
 
 static inline void jb_miss(switch_jb_t *jb)
 {
@@ -496,6 +525,14 @@ static inline void drop_oldest_frame(switch_jb_t *jb)
 	jb_debug(jb, 1, "Dropping oldest frame ts:%u\n", ntohl(ts));
 }
 
+static inline void drop_newest_frame(switch_jb_t *jb)
+{
+	uint32_t ts = jb_find_highest_ts(jb);
+
+	drop_ts(jb, ts);
+	jb_debug(jb, 1, "Dropping highest frame ts:%u\n", ntohl(ts));
+}
+
 static inline void add_node(switch_jb_t *jb, switch_rtp_packet_t *packet, switch_size_t len)
 {
 	switch_jb_node_t *node = new_node(jb);
@@ -513,19 +550,15 @@ static inline void add_node(switch_jb_t *jb, switch_rtp_packet_t *packet, switch
 	jb_debug(jb, (packet->header.m ? 1 : 2), "PUT packet last_ts:%u ts:%u seq:%u%s\n", 
 			 ntohl(jb->highest_wrote_ts), ntohl(node->packet.header.ts), ntohs(node->packet.header.seq), packet->header.m ? " <MARK>" : "");
 
-
-
-
-
-	if (jb->write_init && ((abs(((int)ntohs(packet->header.seq) - ntohs(jb->highest_wrote_seq))) >= jb->max_frame_len) || 
-						   (abs((int)((int64_t)ntohl(node->packet.header.ts) - (int64_t)ntohl(jb->highest_wrote_ts))) > (900000 * 5)))) {
-		jb_debug(jb, 2, "%s", "CHANGE DETECTED, PUNT\n");
-		switch_jb_reset(jb);
-	}
+	//if (jb->write_init && ((abs(((int)ntohs(packet->header.seq) - ntohs(jb->highest_wrote_seq))) >= jb->max_frame_len) || 
+						   //(abs((int)((int64_t)ntohl(node->packet.header.ts) - (int64_t)ntohl(jb->highest_wrote_ts))) > (900000 * 5)))) {
+		//jb_debug(jb, 2, "%s", "CHANGE DETECTED, PUNT\n");
+		//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "%s Jitter Buffer anomoly, max size may be too small...\n", 
+		//jb->type == SJB_AUDIO ? "Audio" : "Video");
+		//switch_jb_reset(jb);
+		
+	//}
  
-	 
-	 
-
 	if (!jb->write_init || ntohs(packet->header.seq) > ntohs(jb->highest_wrote_seq) || 
 		(ntohs(jb->highest_wrote_seq) > USHRT_MAX - 10 && ntohs(packet->header.seq) <= 10) ) {
 		jb->highest_wrote_seq = packet->header.seq;
@@ -550,10 +583,6 @@ static inline void add_node(switch_jb_t *jb, switch_rtp_packet_t *packet, switch
 	}
 	
 	if (!jb->write_init) jb->write_init = 1;
-
-	if (jb->complete_frames > jb->max_frame_len + MAX_FRAME_PADDING) {
-		drop_oldest_frame(jb);
-	}
 }
 
 static inline void increment_ts(switch_jb_t *jb)
@@ -834,7 +863,12 @@ SWITCH_DECLARE(switch_status_t) switch_jb_get_frames(switch_jb_t *jb, uint32_t *
 
 SWITCH_DECLARE(switch_status_t) switch_jb_set_frames(switch_jb_t *jb, uint32_t min_frame_len, uint32_t max_frame_len)
 {
+	int lowest = 0;
+
 	switch_mutex_lock(jb->mutex);
+
+	if (jb->frame_len == jb->min_frame_len) lowest = 1;
+
 	jb->min_frame_len = min_frame_len;
 	jb->max_frame_len = max_frame_len;
 
@@ -848,6 +882,10 @@ SWITCH_DECLARE(switch_status_t) switch_jb_set_frames(switch_jb_t *jb, uint32_t m
 	
 	if (jb->frame_len > jb->highest_frame_len) {
 		jb->highest_frame_len = jb->frame_len;
+	}
+
+	if (lowest) {
+		jb->frame_len = jb->min_frame_len;
 	}
 
 	switch_mutex_unlock(jb->mutex);
@@ -1052,12 +1090,13 @@ SWITCH_DECLARE(switch_status_t) switch_jb_get_packet(switch_jb_t *jb, switch_rtp
 	switch_status_t status;
 	
 	switch_mutex_lock(jb->mutex);
-	jb_debug(jb, 2, "GET PACKET %u/%u n:%d\n", jb->complete_frames , jb->frame_len, jb->visible_nodes);
 
 	if (jb->complete_frames < jb->frame_len) {
 		jb_debug(jb, 2, "BUFFERING %u/%u\n", jb->complete_frames , jb->frame_len);
 		switch_goto_status(SWITCH_STATUS_MORE_DATA, end);
 	}
+
+	jb_debug(jb, 2, "GET PACKET %u/%u n:%d\n", jb->complete_frames , jb->frame_len, jb->visible_nodes);
 
 	if (++jb->period_count >= PERIOD_LEN) {
 
@@ -1144,6 +1183,12 @@ SWITCH_DECLARE(switch_status_t) switch_jb_get_packet(switch_jb_t *jb, switch_rtp
  end:
 
 	switch_mutex_unlock(jb->mutex);
+
+	if (status == SWITCH_STATUS_SUCCESS) {
+		if (jb->complete_frames > jb->max_frame_len) {
+			drop_oldest_frame(jb);
+		}
+	}
 
 	return status;
 
