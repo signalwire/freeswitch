@@ -206,6 +206,10 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
         }];
         data.audioDevices = [];
 
+        if(!storage.data.selectedShare) {
+          storage.data.selectedShare = data.shareDevices[0]['id'];
+        }
+
         for (var i in jQuery.verto.videoDevices) {
           var device = jQuery.verto.videoDevices[i];
           if (!device.label) {
@@ -505,7 +509,7 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
                   cleanShareCall(that);
                 } else {
                   if (data.conf) {
-                    data.liveArray.destroy();  
+                    data.liveArray.destroy();
                     data.conf.destroy();
                   }
                   cleanCall();
