@@ -842,6 +842,13 @@ body .modal-body .btn-group .btn.active {
   /*color: #DDD;*/
 }
 
+.members-name {
+  width: 183px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 5px;
+}
+
 .chat-members .chat-member-item {
   padding: 8px 16px;
   height: 56px;
@@ -873,7 +880,7 @@ body .modal-body .btn-group .btn.active {
   margin: 0;
   font-size: 16px;
   display: inline-block;
-  line-height: 40px;
+  line-height: 18px;
 }
 
 .chat-members .chat-members-status i {
