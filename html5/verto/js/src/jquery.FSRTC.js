@@ -119,7 +119,7 @@
 
 	    if (this.options.useVideo) {
 		console.error(this.options.useVideo);
-		this.constraints.manditory.OfferToReceiveVideo = true;
+		this.constraints.mandatory.OfferToReceiveVideo = true;
 	    }
             
 	}
