@@ -1089,14 +1089,25 @@
 	checkRes(cam, func);
     }
 
-    $.FSRTC.checkPerms = function (runtime) {
+    $.FSRTC.checkPerms = function (runtime, check_audio, check_video) {
 	getUserMedia({
 	    constraints: {
-		audio: true,
-		video: true,
+		audio: check_audio,
+		video: check_video,
 	    },
 	    onsuccess: function(e) {e.stop(); console.info("media perm init complete"); if (runtime) {setTimeout(runtime, 100, true)}},
-	    onerror: function(e) {console.error("media perm init error"); if (runtime) {runtime(false)}}
+	    onerror: function(e) {
+		if (check_video && check_audio) {
+		    console.error("error, retesting with audio params only");
+		    return $.FSRTC.checkPerms(runtime, check_audio, false);
+		}
+
+		console.error("media perm init error");
+
+		if (runtime) {
+		    runtime(false)
+		}
+	    }
 	});
     }
 

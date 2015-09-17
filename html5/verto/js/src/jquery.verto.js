@@ -2602,7 +2602,7 @@
     $.verto.init = function(obj, runtime) {
 	$.FSRTC.checkPerms(function() {
 	    checkDevices(runtime);
-	});
+	}, true, true);
     }
 
     $.verto.genUUID = function () {
