@@ -1963,7 +1963,7 @@
         dialog.rtc = new $.FSRTC({
             callbacks: RTCcallbacks,
 	    localVideo: dialog.localVideo,
-            useVideo: dialog.videoStream,
+            useVideo: dialog.params.useVideo ? dialog.videoStream : null,
             useAudio: dialog.audioStream,
             useStereo: dialog.params.useStereo,
             videoParams: dialog.params.videoParams,
