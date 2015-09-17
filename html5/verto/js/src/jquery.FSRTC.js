@@ -102,26 +102,18 @@
 
 	if (moz) {
             this.constraints = {
-		offerToReceiveAudio: true
+		offerToReceiveAudio: true,
+		offerToReceiveVideo: this.options.useVideo ? true : false,
             };
-	    if (this.options.useVideo) {
-		this.constraints.offerToReceiveVideo = true;
-	    }
-
 	} else {
             this.constraints = {
 		optional: [{
 		    'DtlsSrtpKeyAgreement': 'true'
 		}],mandatory: {
-		    OfferToReceiveAudio: true
+		    OfferToReceiveAudio: true,
+		    OfferToReceiveVideo: this.options.useVideo ? true : false,
 		}
-	    };
-
-	    if (this.options.useVideo) {
-		console.error(this.options.useVideo);
-		this.constraints.mandatory.OfferToReceiveVideo = true;
-	    }
-            
+            };
 	}
 
         if (self.options.useVideo) {
@@ -149,9 +141,9 @@
             self.options.useVideo = null;
 	    self.options.localVideo = null;
             if (moz) {
-		delete self.constraints.offerToReceiveVideo;
+		self.constraints.offerToReceiveVideo = false;
 	    } else {
-		delete self.constraints.mandatory.OfferToReceiveVideo;
+		self.constraints.mandatory.OfferToReceiveVideo = false;
 	    }
         }
 
@@ -406,7 +398,6 @@
 
 	console.log("Audio constraints", mediaParams.audio);
 	console.log("Video constraints", mediaParams.video);
-	console.log("Device constraints", self.constraints);
 
 	if (self.options.useVideo && self.options.localVideo) {
             getUserMedia({
@@ -511,8 +502,8 @@
 	    }
 
 	} else {
-	    video = null;
-	    useVideo = null;
+	    video = false;
+	    useVideo = false;
 	}
 
 	return {audio: audio, video: video, useVideo: useVideo};
@@ -535,9 +526,9 @@
 	    
 	    if (screen) {
 		if (moz) {
-		    delete self.constraints.OfferToReceiveVideo;
+		    self.constraints.OfferToReceiveVideo = false;
 		} else {
-		    delete self.constraints.mandatory.OfferToReceiveVideo;
+		    self.constraints.mandatory.OfferToReceiveVideo = false;
 		}
 	    }
 	    
@@ -577,12 +568,12 @@
 
 	console.log("Audio constraints", mediaParams.audio);
 	console.log("Video constraints", mediaParams.video);
-	console.log("Device constraints", self.constraints);
+
 
         getUserMedia({
             constraints: {
-                audio: mediaParams.audio
-                //video: mediaParams.video
+                audio: mediaParams.audio,
+                video: mediaParams.video
             },
             video: mediaParams.useVideo,
             onsuccess: onSuccess,
