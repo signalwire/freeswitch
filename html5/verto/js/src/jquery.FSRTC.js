@@ -102,18 +102,26 @@
 
 	if (moz) {
             this.constraints = {
-		offerToReceiveAudio: true,
-		offerToReceiveVideo: this.options.useVideo ? true : false,
+		offerToReceiveAudio: true
             };
+	    if (this.options.useVideo) {
+		this.constraints.offerToReceiveVideo = true;
+	    }
+
 	} else {
             this.constraints = {
 		optional: [{
 		    'DtlsSrtpKeyAgreement': 'true'
 		}],mandatory: {
-		    OfferToReceiveAudio: true,
-		    OfferToReceiveVideo: this.options.useVideo ? true : false,
+		    OfferToReceiveAudio: true
 		}
-            };
+	    };
+
+	    if (this.options.useVideo) {
+		console.error(this.options.useVideo);
+		this.constraints.manditory.OfferToReceiveVideo = true;
+	    }
+            
 	}
 
         if (self.options.useVideo) {
@@ -141,9 +149,9 @@
             self.options.useVideo = null;
 	    self.options.localVideo = null;
             if (moz) {
-		self.constraints.offerToReceiveVideo = false;
+		delete self.constraints.offerToReceiveVideo;
 	    } else {
-		self.constraints.mandatory.OfferToReceiveVideo = false;
+		delete self.constraints.mandatory.OfferToReceiveVideo;
 	    }
         }
 
@@ -398,6 +406,7 @@
 
 	console.log("Audio constraints", mediaParams.audio);
 	console.log("Video constraints", mediaParams.video);
+	console.log("Device constraints", self.constraints);
 
 	if (self.options.useVideo && self.options.localVideo) {
             getUserMedia({
@@ -526,9 +535,9 @@
 	    
 	    if (screen) {
 		if (moz) {
-		    self.constraints.OfferToReceiveVideo = false;
+		    delete self.constraints.OfferToReceiveVideo;
 		} else {
-		    self.constraints.mandatory.OfferToReceiveVideo = false;
+		    delete self.constraints.mandatory.OfferToReceiveVideo;
 		}
 	    }
 	    
@@ -568,12 +577,12 @@
 
 	console.log("Audio constraints", mediaParams.audio);
 	console.log("Video constraints", mediaParams.video);
-
+	console.log("Device constraints", self.constraints);
 
         getUserMedia({
             constraints: {
-                audio: mediaParams.audio,
-                video: mediaParams.video
+                audio: mediaParams.audio
+                //video: mediaParams.video
             },
             video: mediaParams.useVideo,
             onsuccess: onSuccess,
