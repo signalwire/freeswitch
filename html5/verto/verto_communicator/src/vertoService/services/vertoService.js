@@ -508,8 +508,11 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
                 if (d.params.screenShare) {
                   cleanShareCall(that);
                 } else {
-                  if (data.conf) {
+                  if (data.liveArray) {
                     data.liveArray.destroy();
+                  }
+                  
+                  if (data.conf) {
                     data.conf.destroy();
                   }
                   cleanCall();
