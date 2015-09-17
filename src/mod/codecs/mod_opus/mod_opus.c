@@ -704,7 +704,7 @@ static switch_status_t switch_opus_encode_repacketize(switch_codec_t *codec,
 	/* work inside the available buffer to avoid other buffer allocations. *encoded_data_len will be SWITCH_RECOMMENDED_BUFFER_SIZE */
 	unsigned char *enc_ptr_buf =  (unsigned char *)encoded_data + (len / 2);
 	int nb_frames = codec->implementation->microseconds_per_packet / 20000 ; /* requested ptime: 20 ms * nb_frames */
-	int i, bytes = 0;
+	int frame_size, i, bytes = 0, want_fec = 0, toggle_fec = 0;
 	opus_int32 ret = 0;
 	opus_int32 total_len = 0;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
@@ -712,11 +712,30 @@ static switch_status_t switch_opus_encode_repacketize(switch_codec_t *codec,
 	if (!context) {
 		switch_goto_status(SWITCH_STATUS_FALSE, end);
 	}
-
+	opus_encoder_ctl(context->encoder_object, OPUS_GET_INBAND_FEC(&want_fec));
+	if (want_fec && context->codec_settings.useinbandfec) {
+		/* if FEC might be used , pack only 2 frames like: 80 ms = 2 x 40 ms , 120 ms = 2 x 60 ms  */
+		/* the first frame in the resulting payload must have FEC, the other must not ( avoid redundant FEC payload ) */
+		nb_frames = 2;
+		if (codec->implementation->microseconds_per_packet / 1000 == 100) { /* 100 ms = 20 ms * 5 . because there is no 50 ms frame in Opus */
+				nb_frames = 5;
+		}
+		toggle_fec = 1;
+	}
+	frame_size = (decoded_data_len / 2) / nb_frames;
+	if((frame_size * nb_frames) != context->enc_frame_size) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,"Encoder Error: Decoded Datalen %u Number of frames: %d Encoder frame size: %d\n",decoded_data_len,nb_frames,context->enc_frame_size);
+		switch_goto_status(SWITCH_STATUS_GENERR, end);
+	}
 	opus_repacketizer_init(rp);
+	dec_ptr_buf = (int16_t *)decoded_data;
 	for (i = 0; i < nb_frames; i++) {
-		dec_ptr_buf = (int16_t *)decoded_data + i * (decoded_data_len / 2 / nb_frames);
-		bytes = opus_encode(context->encoder_object, (opus_int16 *) dec_ptr_buf, context->enc_frame_size / nb_frames, enc_ptr_buf, len);
+		bytes = opus_encode(context->encoder_object, (opus_int16 *) dec_ptr_buf, frame_size, enc_ptr_buf, len);
+		 /* set inband FEC off for the next frame to be packed, the current frame may contain FEC */
+		if (toggle_fec == 1) {
+			toggle_fec = 0;
+			opus_encoder_ctl(context->encoder_object, OPUS_SET_INBAND_FEC(toggle_fec));
+		} 
 		if (bytes < 0) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Encoder Error: %s Decoded Datalen %u Codec NumberChans %u" \
 							  "Len %u DecodedDate %p EncodedData %p ContextEncoderObject %p enc_frame_size: %d\n",
@@ -724,23 +743,21 @@ static switch_status_t switch_opus_encode_repacketize(switch_codec_t *codec,
 							  (void *) decoded_data, (void *) encoded_data, (void *) context->encoder_object, context->enc_frame_size);
 			switch_goto_status(SWITCH_STATUS_GENERR, end);
 		}
-
 		/* enc_ptr_buf : Opus API manual:  "The application must ensure this pointer remains valid until the next call to opus_repacketizer_init() or opus_repacketizer_destroy()." */
 		ret = opus_repacketizer_cat(rp, enc_ptr_buf, bytes);
 		if (ret != OPUS_OK) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Opus encoder: error while repacketizing (cat) : %s !\n",opus_strerror(ret));
 			switch_goto_status(SWITCH_STATUS_GENERR, end);
 		}
-
 		enc_ptr_buf += bytes;
 		total_len += bytes;
+		dec_ptr_buf += frame_size ;
 	}
 	/* this will never happen, unless there is a huge and unsupported number of frames */
 	if (total_len + opus_repacketizer_get_nb_frames(rp) > len / 2) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Opus encoder: error while repacketizing: not enough buffer space\n");
 		switch_goto_status(SWITCH_STATUS_GENERR, end);
 	}
-
 	ret = opus_repacketizer_out(rp, encoded_data, total_len+opus_repacketizer_get_nb_frames(rp));
 
 	if (globals.debug || context->debug) {
@@ -749,10 +766,12 @@ static switch_status_t switch_opus_encode_repacketize(switch_codec_t *codec,
 	}
 
 	if (ret <= 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Opus encoder: error while repacketizing (out) : %s !\n", opus_strerror(ret));
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Opus encoder: error while repacketizing (out) : %s ! packed nb_frames: %d\n", opus_strerror(ret), opus_repacketizer_get_nb_frames(rp));
 		switch_goto_status(SWITCH_STATUS_GENERR, end);
 	}
-
+	if (want_fec) {
+		opus_encoder_ctl(context->encoder_object, OPUS_SET_INBAND_FEC(want_fec)); /*restore FEC state*/
+	}
 	*encoded_data_len = (uint32_t) ret;
 
 end:
