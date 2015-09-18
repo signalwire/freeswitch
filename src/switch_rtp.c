@@ -1895,14 +1895,14 @@ static int using_ice(switch_rtp_t *rtp_session)
 	return 0;
 }
 
-#define MAX_NACK 10
+#define MAX_NACK 1
 static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 {
 	int ret = 0;
 	int rtcp_ok = 0, rtcp_fb = 0;
 	switch_time_t now = switch_micro_time_now();
 	int rate = 0, nack_ttl = 0;
-	uint32_t cur_nack[MAX_NACK];
+	uint32_t cur_nack[MAX_NACK] = { 0 };
 
 	if (rtp_session->flags[SWITCH_RTP_FLAG_AUTO_CNG] && rtp_session->send_msg.header.ts && rtp_session->cng_pt != INVALID_PT &&
 		(rtp_session->timer.samplecount - rtp_session->last_write_samplecount >= rtp_session->samples_per_interval * 60)) {
@@ -7031,31 +7031,31 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 		}
 
 		if (!rtp_session->ts_norm.last_ssrc || send_msg->header.ssrc != rtp_session->ts_norm.last_ssrc) {
-#define USE_DELTA
-#ifdef USE_DELTA
-			if (rtp_session->ts_norm.last_ssrc) {
-				rtp_session->ts_norm.delta_ct = 1;
-				rtp_session->ts_norm.delta_ttl = 0;
-				if (rtp_session->ts_norm.delta) {
-					rtp_session->ts_norm.ts += rtp_session->ts_norm.delta;
+ 			if (switch_rtp_test_flag(rtp_session, SWITCH_RTP_FLAG_GEN_TS_DELTA)) {
+				if (rtp_session->ts_norm.last_ssrc) {
+					rtp_session->ts_norm.delta_ct = 1;
+					rtp_session->ts_norm.delta_ttl = 0;
+					if (rtp_session->ts_norm.delta) {
+						rtp_session->ts_norm.ts += rtp_session->ts_norm.delta;
+					}
 				}
 			}
-#endif
+
 			rtp_session->ts_norm.last_ssrc = send_msg->header.ssrc;
 			rtp_session->ts_norm.last_frame = ntohl(send_msg->header.ts);
 		}
 		
 
 		if (ntohl(send_msg->header.ts) != rtp_session->ts_norm.last_frame) {
-#ifdef USE_DELTA
-			int32_t delta = (int32_t) (ntohl(send_msg->header.ts) - rtp_session->ts_norm.last_frame);
+			if (switch_rtp_test_flag(rtp_session, SWITCH_RTP_FLAG_GEN_TS_DELTA)) {
+				int32_t delta = (int32_t) (ntohl(send_msg->header.ts) - rtp_session->ts_norm.last_frame);
 			
-			rtp_session->ts_norm.delta = delta;
-			rtp_session->ts_norm.ts += rtp_session->ts_norm.delta;
-#else
-			switch_core_timer_sync(&rtp_session->timer);
-			rtp_session->ts_norm.ts = rtp_session->timer.samplecount;
-#endif
+				rtp_session->ts_norm.delta = delta;
+				rtp_session->ts_norm.ts += rtp_session->ts_norm.delta;
+			} else {
+				switch_core_timer_sync(&rtp_session->timer);
+				rtp_session->ts_norm.ts = rtp_session->timer.samplecount;
+			}
 		}
 		
 		rtp_session->ts_norm.last_frame = ntohl(send_msg->header.ts);

@@ -402,6 +402,26 @@ static inline uint32_t jb_find_highest_ts(switch_jb_t *jb)
 }
 #endif
 
+
+static inline switch_jb_node_t *jb_find_penultimate_node(switch_jb_t *jb)
+{
+	switch_jb_node_t *np, *highest = NULL, *second_highest = NULL;
+
+	switch_mutex_lock(jb->list_mutex);
+	for (np = jb->node_list; np; np = np->next) {
+		if (!np->visible) continue;
+
+		if (!highest || ntohl(highest->packet.header.ts) < ntohl(np->packet.header.ts)) {
+			if (highest) second_highest = highest;
+			highest = np;
+		}
+	}
+	switch_mutex_unlock(jb->list_mutex);
+
+	return second_highest ? second_highest : highest;
+}
+
+
 static inline void jb_hit(switch_jb_t *jb)
 {
 	jb->period_good_count++;
@@ -480,9 +500,9 @@ static inline void jb_miss(switch_jb_t *jb)
 	jb->consec_good_count = 0;
 }
 
-static inline int verify_oldest_frame(switch_jb_t *jb)
+static inline int verify_penultimate_frame(switch_jb_t *jb)
 {
-	switch_jb_node_t *lowest = jb_find_lowest_node(jb), *np = NULL;
+	switch_jb_node_t *lowest = jb_find_penultimate_node(jb), *np = NULL;
 	int r = 0;
 
 	if (!lowest || !(lowest = jb_find_lowest_seq(jb, lowest->packet.header.ts))) {
@@ -511,9 +531,9 @@ static inline int verify_oldest_frame(switch_jb_t *jb)
 
  end:
 
-	if (!r && jb->session) {
-		switch_core_session_request_video_refresh(jb->session);
-	}
+	//if (!r && jb->session) {
+		//switch_core_session_request_video_refresh(jb->session);
+	//}
 
 	return r;
 }
@@ -572,7 +592,7 @@ static inline void add_node(switch_jb_t *jb, switch_rtp_packet_t *packet, switch
 			jb->complete_frames++;
 			jb_debug(jb, 2, "WRITE frame ts: %u complete=%u/%u n:%u\n", ntohl(node->packet.header.ts), jb->complete_frames , jb->frame_len, jb->visible_nodes);
 			jb->highest_wrote_ts = packet->header.ts;
-			verify_oldest_frame(jb);
+			verify_penultimate_frame(jb);
 		} else if (!jb->write_init) {
 			jb->highest_wrote_ts = packet->header.ts;
 		}
@@ -653,9 +673,9 @@ static inline switch_status_t jb_next_packet_by_seq(switch_jb_t *jb, switch_jb_n
 		if (jb->type == SJB_VIDEO) {
 			int x;
 
-			if (jb->session) {
-				switch_core_session_request_video_refresh(jb->session);
-			}
+			//if (jb->session) {
+			//	switch_core_session_request_video_refresh(jb->session);
+			//}
 			
 			for (x = 0; x < 10; x++) {
 				increment_seq(jb);
@@ -785,6 +805,10 @@ SWITCH_DECLARE(void) switch_jb_reset(switch_jb_t *jb)
 		switch_core_inthash_destroy(&jb->missing_seq_hash);
 		switch_core_inthash_init(&jb->missing_seq_hash);
 		switch_mutex_unlock(jb->mutex);
+
+		if (jb->session) {
+			switch_core_session_request_video_refresh(jb->session);
+		}
 	}
 
 	jb_debug(jb, 2, "%s", "RESET BUFFER\n");
@@ -1187,7 +1211,7 @@ SWITCH_DECLARE(switch_status_t) switch_jb_get_packet(switch_jb_t *jb, switch_rtp
 
 	switch_mutex_unlock(jb->mutex);
 
-	if (status == SWITCH_STATUS_SUCCESS) {
+	if (status == SWITCH_STATUS_SUCCESS && jb->type == SJB_AUDIO) {
 		if (jb->complete_frames > jb->max_frame_len) {
 			drop_oldest_frame(jb);
 		}
