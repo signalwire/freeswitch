@@ -175,6 +175,7 @@ struct sofia_private {
 	int destroy_me;
 	int is_call;
 	int is_static;
+	switch_time_t ping_sent;
 };
 
 #define set_param(ptr,val) if (ptr) {free(ptr) ; ptr = NULL;} if (val) {ptr = strdup(val);}

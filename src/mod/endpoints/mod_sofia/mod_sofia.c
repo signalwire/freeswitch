@@ -2452,6 +2452,7 @@ static int show_reg_callback(void *pArg, int argc, char **argv, char **columnNam
 							   "Agent:      \t%s\n"
 							   "Status:     \t%s(%s) EXP(%s) EXPSECS(%d)\n"
 							   "Ping-Status:\t%s\n"
+							   "Ping-Time:\t%0.2f\n"
 							   "Host:       \t%s\n"
 							   "IP:         \t%s\n"
 							   "Port:       \t%s\n"
@@ -2460,7 +2461,8 @@ static int show_reg_callback(void *pArg, int argc, char **argv, char **columnNam
 							   "MWI-Account:\t%s@%s\n\n",
 							   switch_str_nil(argv[0]), switch_str_nil(argv[1]), switch_str_nil(argv[2]), switch_str_nil(argv[3]),
 							   switch_str_nil(argv[7]), switch_str_nil(argv[4]), switch_str_nil(argv[5]), exp_buf, exp_secs, switch_str_nil(argv[18]),
-							   switch_str_nil(argv[11]), switch_str_nil(argv[12]), switch_str_nil(argv[13]), switch_str_nil(argv[14]),
+							   (float)atoll(switch_str_nil(argv[19]))/1000, switch_str_nil(argv[11]), switch_str_nil(argv[12]),
+							   switch_str_nil(argv[13]), switch_str_nil(argv[14]),
 							   switch_str_nil(argv[15]), switch_str_nil(argv[16]), switch_str_nil(argv[17]));
 	return 0;
 }
@@ -2494,6 +2496,7 @@ static int show_reg_callback_xml(void *pArg, int argc, char **argv, char **colum
 	cb->stream->write_function(cb->stream, "        <status>%s(%s) exp(%s) expsecs(%d)</status>\n", switch_str_nil(argv[4]), switch_str_nil(argv[5]),
 							   exp_buf, exp_secs);
 	cb->stream->write_function(cb->stream, "        <ping-status>%s</ping-status>\n", switch_str_nil(argv[18]));
+	cb->stream->write_function(cb->stream, "        <ping-time>%0.2f</ping-time>\n", (float)atoll(switch_str_nil(argv[19]))/1000);
 	cb->stream->write_function(cb->stream, "        <host>%s</host>\n", switch_str_nil(argv[11]));
 	cb->stream->write_function(cb->stream, "        <network-ip>%s</network-ip>\n", switch_str_nil(argv[12]));
 	cb->stream->write_function(cb->stream, "        <network-port>%s</network-port>\n", switch_str_nil(argv[13]));
@@ -2718,19 +2721,19 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 				if (!sql && argv[2] && !strcasecmp(argv[2], "pres") && argv[3]) {
 					sql = switch_mprintf("select call_id,sip_user,sip_host,contact,status,"
 										 "rpid,expires,user_agent,server_user,server_host,profile_name,hostname,"
-										 "network_ip,network_port,sip_username,sip_realm,mwi_user,mwi_host,ping_status"
+										 "network_ip,network_port,sip_username,sip_realm,mwi_user,mwi_host,ping_status,ping_time"
 										 " from sip_registrations where profile_name='%q' and presence_hosts like '%%%q%%'", profile->name, argv[3]);
 				}
 				if (!sql && argv[2] && !strcasecmp(argv[2], "reg") && argv[3]) {
 					sql = switch_mprintf("select call_id,sip_user,sip_host,contact,status,"
 										 "rpid,expires,user_agent,server_user,server_host,profile_name,hostname,"
-										 "network_ip,network_port,sip_username,sip_realm,mwi_user,mwi_host, ping_status"
+										 "network_ip,network_port,sip_username,sip_realm,mwi_user,mwi_host, ping_status,ping_time"
 										 " from sip_registrations where profile_name='%q' and contact like '%%%q%%'", profile->name, argv[3]);
 				}
 				if (!sql && argv[2] && !strcasecmp(argv[2], "reg")) {
 					sql = switch_mprintf("select call_id,sip_user,sip_host,contact,status,"
 										 "rpid,expires,user_agent,server_user,server_host,profile_name,hostname,"
-										 "network_ip,network_port,sip_username,sip_realm,mwi_user,mwi_host,ping_status"
+										 "network_ip,network_port,sip_username,sip_realm,mwi_user,mwi_host,ping_status,ping_time"
 										 " from sip_registrations where profile_name='%q'", profile->name);
 				}
 				if (!sql && argv[2] && !strcasecmp(argv[2], "user") && argv[3]) {
@@ -2757,7 +2760,7 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 
 					sql = switch_mprintf("select call_id,sip_user,sip_host,contact,status,"
 										 "rpid,expires,user_agent,server_user,server_host,profile_name,hostname,"
-										 "network_ip,network_port,sip_username,sip_realm,mwi_user,mwi_host,ping_status"
+										 "network_ip,network_port,sip_username,sip_realm,mwi_user,mwi_host,ping_status,ping_time"
 										 " from sip_registrations where profile_name='%q' and %s", profile->name, sqlextra);
 					switch_safe_free(dup);
 					switch_safe_free(sqlextra);
@@ -3022,21 +3025,21 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 
 					sql = switch_mprintf("select call_id,sip_user,sip_host,contact,status,"
 										 "rpid,expires,user_agent,server_user,server_host,profile_name,hostname,"
-										 "network_ip,network_port,sip_username,sip_realm,mwi_user,mwi_host,ping_status"
+										 "network_ip,network_port,sip_username,sip_realm,mwi_user,mwi_host,ping_status,ping_time"
 										 " from sip_registrations where profile_name='%q' and presence_hosts like '%%%q%%'", profile->name, argv[3]);
 				}
 				if (!sql && argv[2] && !strcasecmp(argv[2], "reg") && argv[3]) {
 
 					sql = switch_mprintf("select call_id,sip_user,sip_host,contact,status,"
 										 "rpid,expires,user_agent,server_user,server_host,profile_name,hostname,"
-										 "network_ip,network_port,sip_username,sip_realm,mwi_user,mwi_host,ping_status"
+										 "network_ip,network_port,sip_username,sip_realm,mwi_user,mwi_host,ping_status,ping_time"
 										 " from sip_registrations where profile_name='%q' and contact like '%%%q%%'", profile->name, argv[3]);
 				}
 				if (!sql && argv[2] && !strcasecmp(argv[2], "reg")) {
 
 					sql = switch_mprintf("select call_id,sip_user,sip_host,contact,status,"
 										 "rpid,expires,user_agent,server_user,server_host,profile_name,hostname,"
-										 "network_ip,network_port,sip_username,sip_realm,mwi_user,mwi_host,ping_status"
+										 "network_ip,network_port,sip_username,sip_realm,mwi_user,mwi_host,ping_status,ping_time"
 										 " from sip_registrations where profile_name='%q'", profile->name);
 				}
 				if (!sql && argv[2] && !strcasecmp(argv[2], "user") && argv[3]) {
@@ -3063,7 +3066,7 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 
 					sql = switch_mprintf("select call_id,sip_user,sip_host,contact,status,"
 										 "rpid,expires,user_agent,server_user,server_host,profile_name,hostname,"
-										 "network_ip,network_port,sip_username,sip_realm,mwi_user,mwi_host,ping_status"
+										 "network_ip,network_port,sip_username,sip_realm,mwi_user,mwi_host,ping_status,ping_time"
 										 " from sip_registrations where profile_name='%q' and %s", profile->name, sqlextra);
 					switch_safe_free(dup);
 					switch_safe_free(sqlextra);

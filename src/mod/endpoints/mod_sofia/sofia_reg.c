@@ -599,6 +599,7 @@ int sofia_reg_nat_callback(void *pArg, int argc, char **argv, char **columnNames
 	char to[512] = "", call_id[512] = "";
 	sofia_destination_t *dst = NULL;
 	switch_uuid_t uuid;
+	sofia_private_t *pvt;
 
 	switch_snprintf(to, sizeof(to), "sip:%s@%s", argv[1], argv[2]);
 
@@ -613,7 +614,15 @@ int sofia_reg_nat_callback(void *pArg, int argc, char **argv, char **columnNames
 	
 	nh = nua_handle(profile->nua, NULL, SIPTAG_FROM_STR(profile->url), SIPTAG_TO_STR(to), NUTAG_URL(dst->contact), SIPTAG_CONTACT_STR(profile->url),
 					SIPTAG_CALL_ID_STR(call_id), TAG_END());
-	nua_handle_bind(nh, &mod_sofia_globals.destroy_private);
+
+	pvt = malloc(sizeof(*pvt));
+	switch_assert(pvt);
+	memset(pvt, 0, sizeof(*pvt));
+	pvt->destroy_nh = 1;
+	pvt->destroy_me = 1;
+	pvt->ping_sent = switch_time_now();
+	nua_handle_bind(nh, pvt);
+
 	nua_options(nh, 
 				NTATAG_SIP_T2(5000),
 				NTATAG_SIP_T4(10000),
@@ -869,64 +878,70 @@ void sofia_reg_check_ping_expire(sofia_profile_t *profile, time_t now, int inter
 	char *sql;
 	int mean = interval / 2;
 	long next, irand;
+	char buf[32] = "";
+	int count;
 
 	if (now) {
 		if (sofia_test_pflag(profile, PFLAG_ALL_REG_OPTIONS_PING)) {
 			sql = switch_mprintf("select call_id,sip_user,sip_host,contact,status,rpid,"
-							"expires,user_agent,server_user,server_host,profile_name"
- " from sip_registrations where hostname='%s' and " 
- "profile_name='%s' and orig_hostname='%s' and "
- "ping_expires > 0 and ping_expires <= %ld", mod_sofia_globals.hostname, profile->name, mod_sofia_globals.hostname, (long) now); 
+								 "expires,user_agent,server_user,server_host,profile_name "
+								 "from sip_registrations where hostname='%s' and "
+								 "profile_name='%s' and orig_hostname='%s' and "
+								 "ping_expires > 0 and ping_expires <= %ld",
+								 mod_sofia_globals.hostname, profile->name, mod_sofia_globals.hostname, (long) now);
 			
 			sofia_glue_execute_sql_callback(profile, profile->dbh_mutex, sql, sofia_reg_nat_callback, profile);
 			switch_safe_free(sql);
 		} else if (sofia_test_pflag(profile, PFLAG_UDP_NAT_OPTIONS_PING)) {
-			sql = switch_mprintf(	" select call_id,sip_user,sip_host,contact,status,rpid, "
-						" expires,user_agent,server_user,server_host,profile_name "
-						" from sip_registrations where status like '%%UDP-NAT%%' "
- 						" and hostname='%s' and profile_name='%s' and ping_expires > 0 and ping_expires <= %ld ",
-						mod_sofia_globals.hostname, profile->name, (long) now); 
+			sql = switch_mprintf(" select call_id,sip_user,sip_host,contact,status,rpid, "
+								 " expires,user_agent,server_user,server_host,profile_name "
+								 " from sip_registrations where (status like '%%UDP-NAT%%' or force_ping=1)"
+								 " and hostname='%s' and profile_name='%s' and ping_expires > 0 and ping_expires <= %ld ",
+								 mod_sofia_globals.hostname, profile->name, (long) now);
 			
 			sofia_glue_execute_sql_callback(profile, profile->dbh_mutex, sql, sofia_reg_nat_callback, profile);
 			switch_safe_free(sql);
 		} else if (sofia_test_pflag(profile, PFLAG_NAT_OPTIONS_PING)) {
 			sql = switch_mprintf("select call_id,sip_user,sip_host,contact,status,rpid,"
-							"expires,user_agent,server_user,server_host,profile_name"
-							" from sip_registrations where (status like '%%NAT%%' "
- "or contact like '%%fs_nat=yes%%') and hostname='%s' " 
- "and profile_name='%s' and orig_hostname='%s' and "
- "ping_expires > 0 and ping_expires <= %ld", mod_sofia_globals.hostname, profile->name, mod_sofia_globals.hostname, (long) now); 
+								 "expires,user_agent,server_user,server_host,profile_name "
+								 "from sip_registrations where (status like '%%NAT%%' "
+								 "or contact like '%%fs_nat=yes%%' or force_ping=1) and hostname='%s' "
+								 "and profile_name='%s' and orig_hostname='%s' and "
+								 "ping_expires > 0 and ping_expires <= %ld",
+								 mod_sofia_globals.hostname, profile->name, mod_sofia_globals.hostname, (long) now);
 			
+			sofia_glue_execute_sql_callback(profile, profile->dbh_mutex, sql, sofia_reg_nat_callback, profile);
+			switch_safe_free(sql);
+		} else {
+			sql = switch_mprintf("select call_id,sip_user,sip_host,contact,status,rpid,"
+								 "expires,user_agent,server_user,server_host,profile_name "
+								 "from sip_registrations where force_ping=1 and hostname='%s' "
+								 "and profile_name='%s' and orig_hostname='%s' and "
+								 "ping_expires > 0 and ping_expires <= %ld",
+								 mod_sofia_globals.hostname, profile->name, mod_sofia_globals.hostname, (long) now);
+
 			sofia_glue_execute_sql_callback(profile, profile->dbh_mutex, sql, sofia_reg_nat_callback, profile);
 			switch_safe_free(sql);
 		}
 
-		if (sofia_test_pflag(profile, PFLAG_ALL_REG_OPTIONS_PING) ||
-			sofia_test_pflag(profile, PFLAG_UDP_NAT_OPTIONS_PING) || 
-			sofia_test_pflag(profile, PFLAG_NAT_OPTIONS_PING)) {
-			char buf[32] = "";
-			int count;
+		sql = switch_mprintf("select count(*) from sip_registrations where hostname='%q' and profile_name='%q' and ping_expires <= %ld",
+							 mod_sofia_globals.hostname, profile->name, (long) now);
 
-			sql = switch_mprintf("select count(*) from sip_registrations where hostname='%q' and profile_name='%q' and ping_expires <= %ld",
-                                      		mod_sofia_globals.hostname, profile->name, (long) now);
+		sofia_glue_execute_sql2str(profile, profile->dbh_mutex, sql, buf, sizeof(buf));
+		switch_safe_free(sql);
+		count = atoi(buf);
 
-        		sofia_glue_execute_sql2str(profile, profile->dbh_mutex, sql, buf, sizeof(buf));
-        		switch_safe_free(sql);
-        		count = atoi(buf);
+		/* only update if needed */
+		if (count) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG9, "Updating ping expires for profile %s\n", profile->name);
+			irand = mean + sofia_reg_uniform_distribution(interval);
+			next = (long) now + irand;
 
-			/* only update if needed */
-			if (count) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG9, "Updating ping expires for profile %s\n", profile->name);
-				irand = mean + sofia_reg_uniform_distribution(interval);
-				next = (long) now + irand;
-	
-				sql = switch_mprintf("update sip_registrations set ping_expires = %ld where hostname='%q' and profile_name='%q' and ping_expires <= %ld ",
-							next, mod_sofia_globals.hostname, profile->name, (long) now);
-				sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
-			}
+			sql = switch_mprintf("update sip_registrations set ping_expires = %ld where hostname='%q' and profile_name='%q' and ping_expires <= %ld ",
+								 next, mod_sofia_globals.hostname, profile->name, (long) now);
+			sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
 		}
 	}
-
 }
 
 
@@ -1252,6 +1267,7 @@ uint8_t sofia_reg_handle_register_token(nua_t *nua, sofia_profile_t *profile, nu
 	const char *agent = "unknown";
 	const char *pres_on_reg = NULL;
 	int send_pres = 0;
+	int force_ping = 0;
 	int is_tls = 0, is_tcp = 0, is_ws = 0, is_wss = 0;
 	char expbuf[35] = "";
 	time_t reg_time = switch_epoch_time_now(NULL);
@@ -1774,6 +1790,15 @@ uint8_t sofia_reg_handle_register_token(nua_t *nua, sofia_profile_t *profile, nu
 		mwi_host = (char *) reg_host;
 	}
 
+	/* per-account enable options ping on register */
+	if (v_event && *v_event && (var = switch_event_get_header(*v_event, "force_ping"))) {
+		if (switch_true(var)) {
+			force_ping = 1;
+		} else {
+			force_ping = 0;
+		}
+	}
+
 	if (regtype != REG_REGISTER) {
 		switch_goto_int(r, 0, end);
 	}
@@ -1880,22 +1905,22 @@ uint8_t sofia_reg_handle_register_token(nua_t *nua, sofia_profile_t *profile, nu
 			sql = switch_mprintf("insert into sip_registrations "
 					"(call_id,sip_user,sip_host,presence_hosts,contact,status,rpid,expires,"
 					"user_agent,server_user,server_host,profile_name,hostname,network_ip,network_port,sip_username,sip_realm,"
-					"mwi_user,mwi_host, orig_server_host, orig_hostname, sub_host, ping_status, ping_count) "
-					"values ('%q','%q', '%q','%q','%q','%q', '%q', %ld, '%q', '%q', '%q', '%q', '%q', '%q', '%q','%q','%q','%q','%q','%q','%q','%q', '%q', %d)", 
+					"mwi_user,mwi_host, orig_server_host, orig_hostname, sub_host, ping_status, ping_count, force_ping) "
+					"values ('%q','%q', '%q','%q','%q','%q', '%q', %ld, '%q', '%q', '%q', '%q', '%q', '%q', '%q','%q','%q','%q','%q','%q','%q','%q', '%q', %d, %d)",
 					call_id, to_user, reg_host, profile->presence_hosts ? profile->presence_hosts : "", 
 					contact_str, reg_desc, rpid, (long) reg_time + (long) exptime + profile->sip_expires_late_margin,
 					agent, from_user, guess_ip4, profile->name, mod_sofia_globals.hostname, network_ip, network_port_c, username, realm, 
-								 mwi_user, mwi_host, guess_ip4, mod_sofia_globals.hostname, sub_host, "Reachable", 0);
+								 mwi_user, mwi_host, guess_ip4, mod_sofia_globals.hostname, sub_host, "Reachable", 0, force_ping);
 		} else {
 			sql = switch_mprintf("update sip_registrations set call_id='%q',"
 								 "sub_host='%q', network_ip='%q',network_port='%q',"
 								 "presence_hosts='%q', server_host='%q', orig_server_host='%q',"
 								 "hostname='%q', orig_hostname='%q',"
-								 "expires = %ld where sip_user='%q' and sip_username='%q' and sip_host='%q' and contact='%q'", 
+								 "expires = %ld, force_ping=%d where sip_user='%q' and sip_username='%q' and sip_host='%q' and contact='%q'",
 								 call_id, sub_host, network_ip, network_port_c,
 								 profile->presence_hosts ? profile->presence_hosts : "", guess_ip4, guess_ip4,
                                                                  mod_sofia_globals.hostname, mod_sofia_globals.hostname,
-								 (long) reg_time + (long) exptime + profile->sip_expires_late_margin,
+								 (long) reg_time + (long) exptime + profile->sip_expires_late_margin, force_ping,
 								 to_user, username, reg_host, contact_str);
 		}				 
 
