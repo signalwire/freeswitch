@@ -39,10 +39,10 @@ body {
 /* This is an technique to align the block centered vertically
    and horizontally in a page. */
 .centered-block-frame {
+  display: flex;
   display: -webkit-flex; /* Safari */
   -webkit-justify-content: center; /* Safari 6.1+ */
   -webkit-align-items: center;
-  display: flex;
   justify-content: center;
   align-items: center;
   object-fit:inherit;
