@@ -376,7 +376,7 @@ static inline uint32_t jb_find_lowest_ts(switch_jb_t *jb)
 	return lowest ? lowest->packet.header.ts : 0;
 }
 
-
+#if 0
 static inline switch_jb_node_t *jb_find_highest_node(switch_jb_t *jb)
 {
 	switch_jb_node_t *np, *highest = NULL;
@@ -400,6 +400,7 @@ static inline uint32_t jb_find_highest_ts(switch_jb_t *jb)
 
 	return highest ? highest->packet.header.ts : 0;
 }
+#endif
 
 static inline void jb_hit(switch_jb_t *jb)
 {
@@ -525,6 +526,7 @@ static inline void drop_oldest_frame(switch_jb_t *jb)
 	jb_debug(jb, 1, "Dropping oldest frame ts:%u\n", ntohl(ts));
 }
 
+#if 0
 static inline void drop_newest_frame(switch_jb_t *jb)
 {
 	uint32_t ts = jb_find_highest_ts(jb);
@@ -532,6 +534,7 @@ static inline void drop_newest_frame(switch_jb_t *jb)
 	drop_ts(jb, ts);
 	jb_debug(jb, 1, "Dropping highest frame ts:%u\n", ntohl(ts));
 }
+#endif
 
 static inline void add_node(switch_jb_t *jb, switch_rtp_packet_t *packet, switch_size_t len)
 {

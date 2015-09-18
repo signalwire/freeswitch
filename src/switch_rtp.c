@@ -1902,7 +1902,7 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 	int rtcp_ok = 0, rtcp_fb = 0;
 	switch_time_t now = switch_micro_time_now();
 	int rate = 0, nack_ttl = 0;
-	uint32_t cur_nack[MAX_NACK - 1];
+	uint32_t cur_nack[MAX_NACK];
 
 	if (rtp_session->flags[SWITCH_RTP_FLAG_AUTO_CNG] && rtp_session->send_msg.header.ts && rtp_session->cng_pt != INVALID_PT &&
 		(rtp_session->timer.samplecount - rtp_session->last_write_samplecount >= rtp_session->samples_per_interval * 60)) {
@@ -2064,9 +2064,9 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 									  ntohs(*nack & 0xFFFF));
 				
 					rtcp_bytes += sizeof(switch_rtcp_ext_hdr_t) + sizeof(cur_nack[n]);
+					cur_nack[n] = 0;
 				}
 
-				cur_nack[n] = 0;
 				nack_ttl = 0;
 			}
 			
