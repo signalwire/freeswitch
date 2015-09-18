@@ -917,6 +917,7 @@ void conference_video_layer_set_banner(conference_member_t *member, mcu_layer_t 
 void conference_video_layer_set_logo(conference_member_t *member, mcu_layer_t *layer, const char *path);
 void conference_video_detach_video_layer(conference_member_t *member);
 void conference_video_check_used_layers(mcu_canvas_t *canvas);
+void conference_video_check_flush(conference_member_t *member);
 void conference_video_set_canvas_letterbox_bgcolor(mcu_canvas_t *canvas, char *color);
 void conference_video_set_canvas_bgcolor(mcu_canvas_t *canvas, char *color);
 void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, switch_bool_t freeze);
