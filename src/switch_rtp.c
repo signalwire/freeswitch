@@ -7050,7 +7050,10 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 			if (switch_rtp_test_flag(rtp_session, SWITCH_RTP_FLAG_GEN_TS_DELTA)) {
 				int32_t delta = (int32_t) (ntohl(send_msg->header.ts) - rtp_session->ts_norm.last_frame);
 			
-				rtp_session->ts_norm.delta = delta;
+				if (switch_rtp_test_flag(rtp_session, SWITCH_RTP_FLAG_VIDEO) && delta > 0 && delta < 90000) {
+					rtp_session->ts_norm.delta = delta;
+				}
+				
 				rtp_session->ts_norm.ts += rtp_session->ts_norm.delta;
 			} else {
 				switch_core_timer_sync(&rtp_session->timer);
