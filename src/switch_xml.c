@@ -1254,6 +1254,11 @@ static char *expand_vars(char *buf, char *ebuf, switch_size_t elen, switch_size_
 
 		*wp++ = *rp++;
 	}
+
+	if (wp == ep) {
+		return NULL;
+	}
+
 	*wp++ = '\0';
 	*newlen = strlen(ebuf);
 
@@ -1394,11 +1399,16 @@ static int preprocess(const char *cwd, const char *file, FILE *write_fd, int rle
 			break;
 		}
 
-		eblen = len *2;
+		eblen = len * 2;
 		ebuf = malloc(eblen);
 		memset(ebuf, 0, eblen);
 
-		bp = expand_vars(buf, ebuf, eblen, &cur, &err);
+		while (!(bp = expand_vars(buf, ebuf, eblen, &cur, &err))) {
+			eblen *= 2;
+			ebuf = realloc(ebuf, eblen);
+			memset(ebuf, 0, eblen);
+		}
+
 		line++;
 
 		if (err) {
