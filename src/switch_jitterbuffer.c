@@ -37,8 +37,8 @@
 #define MAX_MISSING_SEQ 20
 #define jb_debug(_jb, _level, _format, ...) if (_jb->debug_level >= _level) switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(_jb->session), SWITCH_LOG_ALERT, "JB:%p:%s lv:%d ln:%d sz:%u/%u/%u c:%u %u/%u/%u/%u %.2f%% ->" _format, (void *) _jb, (jb->type == SJB_AUDIO ? "aud" : "vid"), _level, __LINE__,  _jb->min_frame_len, _jb->max_frame_len, _jb->frame_len, _jb->period_count, _jb->consec_good_count, _jb->period_good_count, _jb->consec_miss_count, _jb->period_miss_count, _jb->period_miss_pct, __VA_ARGS__)
 
-const char *TOKEN_1 = "ONE";
-const char *TOKEN_2 = "TWO";
+//const char *TOKEN_1 = "ONE";
+//const char *TOKEN_2 = "TWO";
 
 struct switch_jb_s;
 
@@ -71,6 +71,7 @@ struct switch_jb_s {
 	uint32_t highest_frame_len;
 	uint32_t period_miss_count;
 	uint32_t consec_miss_count;
+	uint32_t period_miss_inc;
 	double period_miss_pct;
 	uint32_t period_good_count;
 	uint32_t consec_good_count;
@@ -485,7 +486,7 @@ static inline int verify_oldest_frame(switch_jb_t *jb)
 			uint32_t val = (uint32_t)htons(ntohs(np->prev->packet.header.seq) + 1);
 
 			if (!switch_core_inthash_find(jb->missing_seq_hash, val)) {
-				switch_core_inthash_insert(jb->missing_seq_hash, val, (void *) TOKEN_1);
+				switch_core_inthash_insert(jb->missing_seq_hash, val, (void *) (intptr_t) 1);
 			}
 			break;
 		}
@@ -634,7 +635,10 @@ static inline switch_status_t jb_next_packet_by_seq(switch_jb_t *jb, switch_jb_n
 		if (jb->type == SJB_VIDEO) {
 			int x;
 
-			jb_frame_inc(jb, 1);
+			if (jb->period_miss_count > 1 && !jb->period_miss_inc) {
+				jb->period_miss_inc++;
+				jb_frame_inc(jb, 1);
+			}
 
 			//if (jb->session) {
 			//	switch_core_session_request_video_refresh(jb->session);
@@ -795,6 +799,7 @@ SWITCH_DECLARE(void) switch_jb_reset(switch_jb_t *jb)
 	jb->period_good_count = 0;
 	jb->consec_good_count = 0;
 	jb->period_count = 0;
+	jb->period_miss_inc = 0;
 	jb->target_ts = 0;
 	jb->last_target_ts = 0;
 
@@ -942,9 +947,8 @@ SWITCH_DECLARE(uint32_t) switch_jb_pop_nack(switch_jb_t *jb)
 	switch_hash_index_t *hi = NULL;
 	uint32_t nack = 0;
 	uint16_t blp = 0;
-	uint16_t most = 0;
+	uint16_t least = 0;
 	int i = 0;
-	
 	void *val;
 	const void *var;
 
@@ -954,42 +958,54 @@ SWITCH_DECLARE(uint32_t) switch_jb_pop_nack(switch_jb_t *jb)
 
 	switch_mutex_lock(jb->mutex);
 
+ top:
+
 	for (hi = switch_core_hash_first(jb->missing_seq_hash); hi; hi = switch_core_hash_next(&hi)) {
 		uint16_t seq;
-		const char *token;
-		uint32_t ts;
-
+		//const char *token;
+		switch_time_t then = 0;
+		
 		switch_core_hash_this(hi, &var, NULL, &val);
-		token = (const char *) val;
+		//token = (const char *) val;
 
-		if (token == TOKEN_2) {
+		//if (token == TOKEN_2) {
 			//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "SKIP %u %s\n", ntohs(*((uint16_t *) var)), token);
 			//printf("WTf\n");
-			continue;
-		}
-
-		ts = (intptr_t)val;
-
-		if (ts == jb->highest_wrote_ts) {
-			continue;
-		}
-
+		//	continue;
+		//}
+		
 		seq = ntohs(*((uint16_t *) var));
+		then = (intptr_t) val;
 
-		if (!most || seq > most) {
-			most = seq;
+		if (then != 1 && switch_time_now() - then < 100000) {
+			//jb_debug(jb, 3, "NACKABLE seq %u too soon to repeat\n", seq);
+			continue;
+		}
+		
+		//if (then != 1) {
+		//	jb_debug(jb, 3, "NACKABLE seq %u not too soon to repeat %lu\n", seq, switch_time_now() - then);
+		//}
+
+		if (seq < ntohs(jb->target_seq) - jb->frame_len) {
+			jb_debug(jb, 3, "NACKABLE seq %u expired\n", seq);
+			switch_core_inthash_delete(jb->missing_seq_hash, (uint32_t)htons(seq));
+			goto top;
+		}
+
+		if (!least || seq < least) {
+			least = seq;
 		}
 	}
 
-	if (most && switch_core_inthash_delete(jb->missing_seq_hash, (uint32_t)htons(most))) {
-		jb_debug(jb, 3, "Found NACKABLE seq %u\n", most);
-		nack = (uint32_t) htons(most);
-		switch_core_inthash_insert(jb->missing_seq_hash, nack, (void *) TOKEN_2);
+	if (least && switch_core_inthash_delete(jb->missing_seq_hash, (uint32_t)htons(least))) {
+		jb_debug(jb, 3, "Found NACKABLE seq %u\n", least);
+		nack = (uint32_t) htons(least);
+		switch_core_inthash_insert(jb->missing_seq_hash, nack, (void *) (intptr_t)switch_time_now());
 
 		for(i = 0; i < 16; i++) {
-			if (switch_core_inthash_delete(jb->missing_seq_hash, (uint32_t)htons(most + i + 1))) {
-				switch_core_inthash_insert(jb->missing_seq_hash, (uint32_t)htons(most + i + 1), (void *) TOKEN_2);
-				jb_debug(jb, 3, "Found addtl NACKABLE seq %u\n", most + i + 1);
+			if (switch_core_inthash_delete(jb->missing_seq_hash, (uint32_t)htons(least + i + 1))) {
+				switch_core_inthash_insert(jb->missing_seq_hash, (uint32_t)htons(least + i + 1), (void *)(intptr_t)switch_time_now());
+				jb_debug(jb, 3, "Found addtl NACKABLE seq %u\n", least + i + 1);
 				blp |= (1 << i);
 			}
 		}
@@ -1026,7 +1042,14 @@ SWITCH_DECLARE(switch_status_t) switch_jb_put_packet(switch_jb_t *jb, switch_rtp
 		jb->next_seq = htons(got + 1);
 	} else {
 
-		switch_core_inthash_delete(jb->missing_seq_hash, (uint32_t)htons(got));
+		if (switch_core_inthash_delete(jb->missing_seq_hash, (uint32_t)htons(got))) {
+			if (got < ntohs(jb->target_seq)) {
+				jb_debug(jb, 2, "got nacked seq %u too late\n", got);
+				jb_frame_inc(jb, 1);
+			} else {
+				jb_debug(jb, 2, "got nacked %u saved the day!\n", got);
+			}
+		}
 
 		if (got > want) {
 			if (got - want > jb->max_frame_len && got - want > 17) {
@@ -1036,11 +1059,16 @@ SWITCH_DECLARE(switch_status_t) switch_jb_put_packet(switch_jb_t *jb, switch_rtp
 					switch_core_session_request_video_refresh(jb->session);
 				}
 			} else {
+
+				if (jb->frame_len < got - want) {
+					jb_frame_inc(jb, got - want - jb->frame_len);
+				}
+
 				jb_debug(jb, 2, "GOT %u WANTED %u; MARK SEQS MISSING %u - %u\n", got, want, want, got - 1);
 			
 				for (i = want; i < got; i++) {
 					jb_debug(jb, 2, "MARK MISSING %u ts:%u\n", i, ntohl(packet->header.ts));
-					switch_core_inthash_insert(jb->missing_seq_hash, (uint32_t)htons(i), (void *)(intptr_t)packet->header.ts);
+					switch_core_inthash_insert(jb->missing_seq_hash, (uint32_t)htons(i), (void *) (intptr_t) 1);
 				}
 			}
 		}
@@ -1104,13 +1132,14 @@ SWITCH_DECLARE(switch_status_t) switch_jb_get_packet(switch_jb_t *jb, switch_rtp
 		}
 
 		jb->period_count = 1;
+		jb->period_miss_inc = 0;
 		jb->period_miss_count = 0;
 		jb->period_good_count = 0;
 		jb->consec_miss_count = 0;
 		jb->consec_good_count = 0;
-
+#if 0
 		if (jb->type == SJB_VIDEO && jb->channel) {
-			//switch_time_t now = switch_micro_time_now();
+			//switch_time_t now = switch_time_now();
 			//int ok = (now - jb->last_bitrate_change) > 10000;
 			
 			if (switch_channel_test_flag(jb->channel, CF_VIDEO_BITRATE_UNMANAGABLE) && jb->frame_len == jb->min_frame_len) {
@@ -1132,6 +1161,7 @@ SWITCH_DECLARE(switch_status_t) switch_jb_get_packet(switch_jb_t *jb, switch_rtp
 				
 			}
 		}
+#endif
 	}
 
 	jb->period_miss_pct = ((double)jb->period_miss_count / jb->period_count) * 100;

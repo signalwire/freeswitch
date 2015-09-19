@@ -1895,7 +1895,7 @@ static int using_ice(switch_rtp_t *rtp_session)
 	return 0;
 }
 
-#define MAX_NACK 1
+#define MAX_NACK 10
 static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 {
 	int ret = 0;
@@ -3995,7 +3995,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_set_video_buffer_size(switch_rtp_t *r
 	}
 
 	if (!max_frames) {
-		max_frames = frames * 4;
+		max_frames = 40;
 	}
 
 	if (!rtp_session->vb) {
@@ -5395,8 +5395,13 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 
 	if (rtp_session->flags[SWITCH_RTP_FLAG_KILL_JB]) {
 		rtp_session->flags[SWITCH_RTP_FLAG_KILL_JB] = 0;
+
 		if (rtp_session->jb) {
 			switch_jb_destroy(&rtp_session->jb);
+		}
+
+		if (rtp_session->vb) {
+			switch_jb_destroy(&rtp_session->vb);
 		}
 	}
 
@@ -7300,7 +7305,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 		
 		if (rtp_session->flags[SWITCH_RTP_FLAG_NACK]) {
 			if (!rtp_session->vbw) {
-				switch_jb_create(&rtp_session->vbw, SJB_VIDEO, 10, 10, rtp_session->pool);
+				switch_jb_create(&rtp_session->vbw, SJB_VIDEO, 30, 30, rtp_session->pool);
 				//switch_jb_debug_level(rtp_session->vbw, 10);
 			}
 			switch_jb_push_packet(rtp_session->vbw, (switch_rtp_packet_t *)send_msg, bytes);
