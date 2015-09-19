@@ -2588,7 +2588,7 @@
 		    
 		})
 		.catch(function(err) {
-		    console.log(err.name + ": " + error.message);
+		    console.log(" Device Enumeration ERROR: " + err.name + ": " + err.message);
 		    runtime();
 		});
 	}
