@@ -32,6 +32,8 @@
 #include <switch_jitterbuffer.h>
 #include "private/switch_hashtable_private.h"
 
+#define NACK_TIME 20000
+#define RENACK_TIME 100000
 #define PERIOD_LEN 500
 #define MAX_FRAME_PADDING 2
 #define MAX_MISSING_SEQ 20
@@ -486,7 +488,7 @@ static inline int verify_oldest_frame(switch_jb_t *jb)
 			uint32_t val = (uint32_t)htons(ntohs(np->prev->packet.header.seq) + 1);
 
 			if (!switch_core_inthash_find(jb->missing_seq_hash, val)) {
-				switch_core_inthash_insert(jb->missing_seq_hash, val, (void *) (intptr_t) 1);
+				switch_core_inthash_insert(jb->missing_seq_hash, val, (void *)(intptr_t)(switch_time_now() - (RENACK_TIME - NACK_TIME)));
 			}
 			break;
 		}
@@ -977,7 +979,7 @@ SWITCH_DECLARE(uint32_t) switch_jb_pop_nack(switch_jb_t *jb)
 		seq = ntohs(*((uint16_t *) var));
 		then = (intptr_t) val;
 
-		if (then != 1 && switch_time_now() - then < 100000) {
+		if (then != 1 && switch_time_now() - then < RENACK_TIME) {
 			//jb_debug(jb, 3, "NACKABLE seq %u too soon to repeat\n", seq);
 			continue;
 		}
@@ -1068,7 +1070,7 @@ SWITCH_DECLARE(switch_status_t) switch_jb_put_packet(switch_jb_t *jb, switch_rtp
 			
 				for (i = want; i < got; i++) {
 					jb_debug(jb, 2, "MARK MISSING %u ts:%u\n", i, ntohl(packet->header.ts));
-					switch_core_inthash_insert(jb->missing_seq_hash, (uint32_t)htons(i), (void *) (intptr_t) 1);
+					switch_core_inthash_insert(jb->missing_seq_hash, (uint32_t)htons(i), (void *)(intptr_t)(switch_time_now() - (RENACK_TIME - NACK_TIME)));
 				}
 			}
 		}
