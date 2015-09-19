@@ -2014,7 +2014,7 @@ static void check_jb_sync(switch_core_session_t *session)
 
 	switch_rtp_get_video_buffer_size(v_engine->rtp_session, &min_frames, &max_frames, &cur_frames, NULL);
 
-	if (frames == cur_frames) {
+	if (cur_frames > min_frames || frames == min_frames) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), 
 						  SWITCH_LOG_DEBUG1, "%s %s \"%s\" A/V JB not changed %dms %u VFrames FPS %u\n", 
 						  switch_core_session_get_uuid(session),
@@ -3080,6 +3080,24 @@ static int dtls_ok(switch_core_session_t *session)
 #endif
 
 //?
+SWITCH_DECLARE(switch_call_direction_t) switch_ice_direction(switch_core_session_t *session)
+{
+	switch_call_direction_t r = switch_channel_direction(session->channel);
+
+	if (switch_channel_test_flag(session->channel, CF_3PCC)) {
+		r = (r == SWITCH_CALL_DIRECTION_INBOUND) ? SWITCH_CALL_DIRECTION_OUTBOUND : SWITCH_CALL_DIRECTION_INBOUND;
+	}
+
+	if ((switch_channel_test_flag(session->channel, CF_REINVITE) || switch_channel_test_flag(session->channel, CF_RECOVERING))
+		&& switch_channel_test_flag(session->channel, CF_AVPF)) {
+		r = SWITCH_CALL_DIRECTION_OUTBOUND;
+	}
+
+	return r;
+}
+
+
+//?
 static switch_status_t ip_choose_family(switch_media_handle_t *smh, const char *ip)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
@@ -3178,11 +3196,13 @@ static switch_status_t check_ice(switch_media_handle_t *smh, switch_media_type_t
 			if (!strcasecmp(attr->a_value, "passive") || !strcasecmp(attr->a_value, "actpass")) {
 				if (!engine->dtls_controller) {
 					engine->new_dtls = 1;
+					engine->new_ice = 1;
 				}
 				engine->dtls_controller = 1;
 			} else if (!strcasecmp(attr->a_value, "active")) {
 				if (engine->dtls_controller) {
 					engine->new_dtls = 1;
+					engine->new_ice = 1;
 				}
 				engine->dtls_controller = 0;
 			}
@@ -3200,6 +3220,7 @@ static switch_status_t check_ice(switch_media_handle_t *smh, switch_media_type_t
 				} else {
 					switch_set_string(engine->remote_dtls_fingerprint.str, p);
 					engine->new_dtls = 1;
+					engine->new_ice = 1;
 				}
 			}
 			
@@ -3414,7 +3435,8 @@ static switch_status_t check_ice(switch_media_handle_t *smh, switch_media_type_t
 									ICE_GOOGLE_JINGLE,
 									NULL
 #else
-									engine->dtls_controller ? (ICE_VANILLA | ICE_CONTROLLED) : ICE_VANILLA,
+									switch_ice_direction(smh->session) == 
+									SWITCH_CALL_DIRECTION_OUTBOUND ? ICE_VANILLA : (ICE_VANILLA | ICE_CONTROLLED),
 									&engine->ice_in
 #endif
 									);
@@ -3468,7 +3490,8 @@ static switch_status_t check_ice(switch_media_handle_t *smh, switch_media_type_t
 										ICE_GOOGLE_JINGLE,
 										NULL
 #else
-										engine->dtls_controller ? (ICE_VANILLA | ICE_CONTROLLED) : ICE_VANILLA,
+										switch_ice_direction(smh->session) == 
+										SWITCH_CALL_DIRECTION_OUTBOUND ? ICE_VANILLA : (ICE_VANILLA | ICE_CONTROLLED),
 										&engine->ice_in
 #endif
 										);
@@ -6171,7 +6194,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 									ICE_GOOGLE_JINGLE,
 									NULL
 #else
-									a_engine->dtls_controller ? (ICE_VANILLA | ICE_CONTROLLED) : ICE_VANILLA,
+									switch_ice_direction(session) == 
+									SWITCH_CALL_DIRECTION_OUTBOUND ? ICE_VANILLA : (ICE_VANILLA | ICE_CONTROLLED),
 									&a_engine->ice_in
 #endif
 									);
@@ -6223,7 +6247,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 											ICE_GOOGLE_JINGLE,
 											NULL
 #else
-											a_engine->dtls_controller ? (ICE_VANILLA | ICE_CONTROLLED) : ICE_VANILLA,
+											switch_ice_direction(session) == 
+											SWITCH_CALL_DIRECTION_OUTBOUND ? ICE_VANILLA : (ICE_VANILLA | ICE_CONTROLLED),
 											&a_engine->ice_in
 #endif
 										);
@@ -6233,11 +6258,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 		}
 
 		if (!zstr(a_engine->local_dtls_fingerprint.str) && switch_rtp_has_dtls() && dtls_ok(smh->session)) {
-			dtls_type_t xtype, dtype = switch_channel_direction(smh->session->channel) == SWITCH_CALL_DIRECTION_INBOUND ? DTLS_TYPE_CLIENT : DTLS_TYPE_SERVER;
+			dtls_type_t xtype, dtype = a_engine->dtls_controller ? DTLS_TYPE_CLIENT : DTLS_TYPE_SERVER;
 
-			if (switch_channel_test_flag(smh->session->channel, CF_3PCC)) {
-				dtype = (dtype == DTLS_TYPE_CLIENT) ? DTLS_TYPE_SERVER : DTLS_TYPE_CLIENT;
-			}
+			//if (switch_channel_test_flag(smh->session->channel, CF_3PCC)) {
+			//	dtype = (dtype == DTLS_TYPE_CLIENT) ? DTLS_TYPE_SERVER : DTLS_TYPE_CLIENT;
+			//}
 
 			xtype = DTLS_TYPE_RTP;
 			if (a_engine->rtcp_mux > 0 && smh->mparams->rtcp_audio_interval_msec) xtype |= DTLS_TYPE_RTCP;
@@ -6551,7 +6576,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 											ICE_GOOGLE_JINGLE,
 											NULL
 #else
-											v_engine->dtls_controller ? (ICE_VANILLA | ICE_CONTROLLED) : ICE_VANILLA,
+											switch_ice_direction(session) == 
+											SWITCH_CALL_DIRECTION_OUTBOUND ? ICE_VANILLA : (ICE_VANILLA | ICE_CONTROLLED),
 											&v_engine->ice_in
 #endif
 											);
@@ -6601,7 +6627,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 													ICE_GOOGLE_JINGLE,
 													NULL
 #else
-													v_engine->dtls_controller ? (ICE_VANILLA | ICE_CONTROLLED) : ICE_VANILLA,
+													switch_ice_direction(session) == 
+													SWITCH_CALL_DIRECTION_OUTBOUND ? ICE_VANILLA : (ICE_VANILLA | ICE_CONTROLLED),
 													&v_engine->ice_in
 #endif
 													);
@@ -6615,7 +6642,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 				
 				if (!zstr(v_engine->local_dtls_fingerprint.str) && switch_rtp_has_dtls() && dtls_ok(smh->session)) {
 					dtls_type_t xtype, 
-						dtype = switch_channel_direction(smh->session->channel) == SWITCH_CALL_DIRECTION_INBOUND ? DTLS_TYPE_CLIENT : DTLS_TYPE_SERVER;
+						dtype = v_engine->dtls_controller ? DTLS_TYPE_CLIENT : DTLS_TYPE_SERVER;
 					xtype = DTLS_TYPE_RTP;
 					if (v_engine->rtcp_mux > 0 && smh->mparams->rtcp_video_interval_msec) xtype |= DTLS_TYPE_RTCP;
 					
@@ -6715,13 +6742,17 @@ static const char *get_media_profile_name(switch_core_session_t *session, int se
 
 static char *get_setup(switch_rtp_engine_t *engine, switch_core_session_t *session, switch_sdp_type_t sdp_type)
 {
+
 	if (sdp_type == SDP_TYPE_REQUEST) {
 		engine->dtls_controller = 0;
+		engine->new_dtls = 1;
+		engine->new_ice = 1;
 		return "actpass";
 	} else {
 		return engine->dtls_controller ? "active" : "passive";
 	}
 }
+
 
 //?
 static void generate_m(switch_core_session_t *session, char *buf, size_t buflen, 

@@ -538,11 +538,11 @@ static inline void add_node(switch_jb_t *jb, switch_rtp_packet_t *packet, switch
 	jb_debug(jb, (packet->header.m ? 1 : 2), "PUT packet last_ts:%u ts:%u seq:%u%s\n", 
 			 ntohl(jb->highest_wrote_ts), ntohl(node->packet.header.ts), ntohs(node->packet.header.seq), packet->header.m ? " <MARK>" : "");
 
-	//if (jb->write_init && jb->type == SJB_VIDEO && ((abs(((int)ntohs(packet->header.seq) - ntohs(jb->highest_wrote_seq))) >= jb->max_frame_len) || 
-	//					   (abs((int)((int64_t)ntohl(node->packet.header.ts) - (int64_t)ntohl(jb->highest_wrote_ts))) > (900000 * 5)))) {
-	//	jb_debug(jb, 2, "CHANGE DETECTED, PUNT %u\n", abs(((int)ntohs(packet->header.seq) - ntohs(jb->highest_wrote_seq))));
-	//	switch_jb_reset(jb);
-	//}
+	if (jb->write_init && jb->type == SJB_VIDEO && ((abs(((int)ntohs(packet->header.seq) - ntohs(jb->highest_wrote_seq))) >= jb->max_frame_len) || 
+						   (abs((int)((int64_t)ntohl(node->packet.header.ts) - (int64_t)ntohl(jb->highest_wrote_ts))) > (900000 * 5)))) {
+		jb_debug(jb, 2, "CHANGE DETECTED, PUNT %u\n", abs(((int)ntohs(packet->header.seq) - ntohs(jb->highest_wrote_seq))));
+		switch_jb_reset(jb);
+	}
  
 	if (!jb->write_init || ntohs(packet->header.seq) > ntohs(jb->highest_wrote_seq) || 
 		(ntohs(jb->highest_wrote_seq) > USHRT_MAX - 10 && ntohs(packet->header.seq) <= 10) ) {
@@ -797,11 +797,6 @@ SWITCH_DECLARE(void) switch_jb_reset(switch_jb_t *jb)
 	jb->period_count = 0;
 	jb->target_ts = 0;
 	jb->last_target_ts = 0;
-	jb->frame_len = jb->min_frame_len;
-
-	if (jb->channel) {
-		switch_channel_video_sync(jb->channel);
-	}
 
 	switch_mutex_lock(jb->mutex);
 	hide_nodes(jb);
@@ -1034,11 +1029,19 @@ SWITCH_DECLARE(switch_status_t) switch_jb_put_packet(switch_jb_t *jb, switch_rtp
 		switch_core_inthash_delete(jb->missing_seq_hash, (uint32_t)htons(got));
 
 		if (got > want) {
-			jb_debug(jb, 2, "GOT %u WANTED %u; MARK SEQS MISSING %u - %u\n", got, want, want, got - 1);
+			if (got - want > jb->max_frame_len && got - want > 17) {
+				jb_debug(jb, 2, "Missing %u frames, Resetting\n", got - want);
+				switch_jb_reset(jb);
+				if (jb->session) {
+					switch_core_session_request_video_refresh(jb->session);
+				}
+			} else {
+				jb_debug(jb, 2, "GOT %u WANTED %u; MARK SEQS MISSING %u - %u\n", got, want, want, got - 1);
 			
-			for (i = want; i < got; i++) {
-				jb_debug(jb, 2, "MARK MISSING %u ts:%u\n", i, ntohl(packet->header.ts));
-				switch_core_inthash_insert(jb->missing_seq_hash, (uint32_t)htons(i), (void *)(intptr_t)packet->header.ts);
+				for (i = want; i < got; i++) {
+					jb_debug(jb, 2, "MARK MISSING %u ts:%u\n", i, ntohl(packet->header.ts));
+					switch_core_inthash_insert(jb->missing_seq_hash, (uint32_t)htons(i), (void *)(intptr_t)packet->header.ts);
+				}
 			}
 		}
 
