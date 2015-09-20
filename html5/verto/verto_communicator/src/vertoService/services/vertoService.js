@@ -199,7 +199,10 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
       bandwidth: bandwidth,
 
       refreshDevicesCallback : function refreshDevicesCallback() {
-        data.videoDevices = [];
+        data.videoDevices = [{
+	  id: 'none',
+	  label: 'No Camera'
+	}];
         data.shareDevices = [{
           id: 'screen',
           label: 'Screen'
