@@ -34,11 +34,6 @@
           templateUrl: 'partials/incall.html',
           controller: 'InCallController'
         }).
-        /*when('/contributors', {
-          title: 'Contributors',
-          templateUrl: 'partials/contributors.html',
-          controller: 'ContributorsController',
-        }).*/
       when('/browser-upgrade', {
         title: '',
         templateUrl: 'partials/browser_upgrade.html',
