@@ -54,7 +54,6 @@ SWITCH_DECLARE(void) switch_jb_reset(switch_jb_t *jb);
 SWITCH_DECLARE(void) switch_jb_debug_level(switch_jb_t *jb, uint8_t level);
 SWITCH_DECLARE(int) switch_jb_frame_count(switch_jb_t *jb);
 SWITCH_DECLARE(int) switch_jb_poll(switch_jb_t *jb);
-SWITCH_DECLARE(switch_status_t) switch_jb_push_packet(switch_jb_t *jb, switch_rtp_packet_t *packet, switch_size_t len);
 SWITCH_DECLARE(switch_status_t) switch_jb_put_packet(switch_jb_t *jb, switch_rtp_packet_t *packet, switch_size_t len);
 SWITCH_DECLARE(switch_size_t) switch_jb_get_last_read_len(switch_jb_t *jb);
 SWITCH_DECLARE(switch_status_t) switch_jb_get_packet(switch_jb_t *jb, switch_rtp_packet_t *packet, switch_size_t *len);

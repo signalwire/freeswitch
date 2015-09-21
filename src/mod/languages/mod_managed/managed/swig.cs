@@ -29739,7 +29739,7 @@ public class switch_chat_interface : IDisposable {
 namespace FreeSWITCH.Native {
 
 public enum switch_codec_control_command_t {
-  SCC_VIDEO_REFRESH = 0,
+  SCC_VIDEO_GEN_KEYFRAME = 0,
   SCC_VIDEO_BANDWIDTH,
   SCC_VIDEO_RESET,
   SCC_AUDIO_PACKET_LOSS,

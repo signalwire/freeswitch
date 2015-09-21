@@ -314,7 +314,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_codec_control(switch_core_sess
 
 
 #define switch_core_media_gen_key_frame(_session) switch_core_media_codec_control(_session, SWITCH_MEDIA_TYPE_VIDEO, SWITCH_IO_WRITE, \
-																				  SCC_VIDEO_REFRESH, SCCT_NONE, NULL, SCCT_NONE, NULL, NULL, NULL) \
+																				  SCC_VIDEO_GEN_KEYFRAME, SCCT_NONE, NULL, SCCT_NONE, NULL, NULL, NULL) \
 
 #define switch_core_media_write_bandwidth(_session, _val) switch_core_media_codec_control(_session, SWITCH_MEDIA_TYPE_VIDEO, SWITCH_IO_WRITE, \
 																						  SCC_VIDEO_BANDWIDTH, SCCT_STRING, _val, SCCT_NONE, NULL, NULL, NULL) \

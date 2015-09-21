@@ -6164,9 +6164,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 			switch_core_media_parse_rtp_bugs(&a_engine->rtp_bugs, val);
 		}
 		
-		if (switch_channel_test_flag(session->channel, CF_AVPF)) {
-			smh->mparams->manual_rtp_bugs = RTP_BUG_SEND_LINEAR_TIMESTAMPS;
-		}
+		//if (switch_channel_test_flag(session->channel, CF_AVPF)) {
+		//	smh->mparams->manual_rtp_bugs = RTP_BUG_SEND_LINEAR_TIMESTAMPS;
+		//}
 
 		switch_rtp_intentional_bugs(a_engine->rtp_session, a_engine->rtp_bugs | smh->mparams->manual_rtp_bugs);
 
@@ -10565,7 +10565,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_codec_control(switch_core_sess
 	}
 
 	if (codec) {
-		if (cmd == SCC_VIDEO_REFRESH) {
+		if (cmd == SCC_VIDEO_GEN_KEYFRAME) {
 			switch_time_t now = switch_micro_time_now();
 
 			if (smh->last_codec_refresh && (now - smh->last_codec_refresh) < VIDEO_REFRESH_FREQ) {
