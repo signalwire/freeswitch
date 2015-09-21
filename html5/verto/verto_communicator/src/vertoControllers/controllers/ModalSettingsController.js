@@ -27,7 +27,7 @@
         }
 
         $scope.resetSettings = function() {
-	  storage.reset();
+          storage.factoryReset();
         }
       }
     ]);

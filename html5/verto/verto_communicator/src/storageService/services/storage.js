@@ -47,6 +47,12 @@
       data: data,
       changeData: changeData,
       reset: function() {
+        data.ui_connected = false;
+        data.ws_connected = false;
+        data.cur_call = 0;
+        data.userStatus = 'disconnected';
+      },
+      factoryReset: function() {
         data.$reset(defaultSettings);
       },
     };
