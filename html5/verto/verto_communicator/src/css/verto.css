@@ -847,6 +847,7 @@ body .modal-body .btn-group .btn.active {
   overflow: hidden;
   text-overflow: ellipsis;
   margin-top: 5px;
+  white-space: nowrap;
 }
 
 .chat-members .chat-member-item {
