@@ -32,9 +32,9 @@
 #include <switch_jitterbuffer.h>
 #include "private/switch_hashtable_private.h"
 
-#define NACK_TIME 20000
+#define NACK_TIME 80000
 #define RENACK_TIME 100000
-#define PERIOD_LEN 500
+#define PERIOD_LEN 250
 #define MAX_FRAME_PADDING 2
 #define MAX_MISSING_SEQ 20
 #define jb_debug(_jb, _level, _format, ...) if (_jb->debug_level >= _level) switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(_jb->session), SWITCH_LOG_ALERT, "JB:%p:%s lv:%d ln:%d sz:%u/%u/%u/%u c:%u %u/%u/%u/%u %.2f%% ->" _format, (void *) _jb, (jb->type == SJB_AUDIO ? "aud" : "vid"), _level, __LINE__,  _jb->min_frame_len, _jb->max_frame_len, _jb->frame_len, _jb->visible_nodes, _jb->period_count, _jb->consec_good_count, _jb->period_good_count, _jb->consec_miss_count, _jb->period_miss_count, _jb->period_miss_pct, __VA_ARGS__)
@@ -450,6 +450,9 @@ static void jb_frame_inc_line(switch_jb_t *jb, int i, int line)
 
 	if (old_frame_len != jb->frame_len) {
 		jb_debug(jb, 2, "%d Change framelen from %u to %u\n", line, old_frame_len, jb->frame_len);
+		if (jb->session) {
+			switch_core_session_request_video_refresh(jb->session);
+		}
 	}
 
 }
@@ -488,7 +491,7 @@ static inline int verify_oldest_frame(switch_jb_t *jb)
 			uint32_t val = (uint32_t)htons(ntohs(np->prev->packet.header.seq) + 1);
 
 			if (!switch_core_inthash_find(jb->missing_seq_hash, val)) {
-				switch_core_inthash_insert(jb->missing_seq_hash, val, (void *)(intptr_t)(switch_time_now() - (RENACK_TIME - NACK_TIME)));
+				switch_core_inthash_insert(jb->missing_seq_hash, val, (void *)(intptr_t)1);
 			}
 			break;
 		}
@@ -1056,14 +1059,14 @@ SWITCH_DECLARE(switch_status_t) switch_jb_put_packet(switch_jb_t *jb, switch_rtp
 			} else {
 
 				if (jb->frame_len < got - want) {
-					jb_frame_inc(jb, got - want - jb->frame_len);
+					jb_frame_inc(jb, 1);
 				}
 
 				jb_debug(jb, 2, "GOT %u WANTED %u; MARK SEQS MISSING %u - %u\n", got, want, want, got - 1);
 			
 				for (i = want; i < got; i++) {
 					jb_debug(jb, 2, "MARK MISSING %u ts:%u\n", i, ntohl(packet->header.ts));
-					switch_core_inthash_insert(jb->missing_seq_hash, (uint32_t)htons(i), (void *)(intptr_t)(switch_time_now() - (RENACK_TIME - NACK_TIME)));
+					switch_core_inthash_insert(jb->missing_seq_hash, (uint32_t)htons(i), (void *)(intptr_t)1);
 				}
 			}
 		}
@@ -1136,7 +1139,7 @@ SWITCH_DECLARE(switch_status_t) switch_jb_get_packet(switch_jb_t *jb, switch_rtp
 		jb->period_good_count = 0;
 		jb->consec_miss_count = 0;
 		jb->consec_good_count = 0;
-#if 0
+
 		if (jb->type == SJB_VIDEO && jb->channel) {
 			//switch_time_t now = switch_time_now();
 			//int ok = (now - jb->last_bitrate_change) > 10000;
@@ -1145,6 +1148,9 @@ SWITCH_DECLARE(switch_status_t) switch_jb_get_packet(switch_jb_t *jb, switch_rtp
 				jb_debug(jb, 2, "%s", "Allow BITRATE changes\n");
 				switch_channel_clear_flag(jb->channel, CF_VIDEO_BITRATE_UNMANAGABLE);
 				jb->bitrate_control = 0;
+				if (jb->session) {
+					switch_core_session_request_video_refresh(jb->session);
+				}
 			} else if (!switch_channel_test_flag(jb->channel, CF_VIDEO_BITRATE_UNMANAGABLE) && jb->frame_len > jb->min_frame_len + 1) {
 				switch_core_session_message_t msg = { 0 };
 
@@ -1157,10 +1163,12 @@ SWITCH_DECLARE(switch_status_t) switch_jb_get_packet(switch_jb_t *jb, switch_rtp
 				jb_debug(jb, 2, "Force BITRATE to %d\n", jb->bitrate_control);
 				switch_core_session_receive_message(jb->session, &msg);
 				switch_channel_set_flag(jb->channel, CF_VIDEO_BITRATE_UNMANAGABLE);
-				
+				if (jb->session) {
+					switch_core_session_request_video_refresh(jb->session);
+				}
 			}
 		}
-#endif
+
 	}
 
 	jb->period_miss_pct = ((double)jb->period_miss_count / jb->period_count) * 100;
