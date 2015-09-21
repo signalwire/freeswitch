@@ -5158,6 +5158,13 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_rayo_load)
 	switch_api_interface_t *api_interface;
 	switch_application_interface_t *app_interface;
 
+
+	if (switch_event_reserve_subclass("rayo::cpa") != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", "rayo::cpa");
+		return SWITCH_STATUS_TERM;
+	}
+
+	
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Loading module\n");
@@ -5267,6 +5274,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_rayo_load)
  */
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_rayo_shutdown)
 {
+	switch_event_free_subclass("rayo::cpa");
+	
 	switch_status_t result = do_shutdown();
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Module shutdown\n");
 	return result;

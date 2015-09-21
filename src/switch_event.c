@@ -1993,6 +1993,22 @@ SWITCH_DECLARE(switch_status_t) switch_event_fire_detailed(const char *file, con
 	return SWITCH_STATUS_SUCCESS;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_event_get_custom_events(switch_console_callback_match_t **matches)
+{
+	switch_hash_index_t *hi = NULL;
+	const void *var;
+	void *val;
+	int x = 0;
+	
+	for (hi = switch_core_hash_first(CUSTOM_HASH); hi; hi = switch_core_hash_next(&hi)) {
+		switch_core_hash_this(hi, &var, NULL, &val);
+		switch_console_push_match(matches, (const char *) var);
+		x++;
+	}
+
+	return x ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_event_bind_removable(const char *id, switch_event_types_t event, const char *subclass_name,
 															switch_event_callback_t callback, void *user_data, switch_event_node_t **node)
 {

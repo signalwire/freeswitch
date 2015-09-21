@@ -1334,6 +1334,11 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_cv_load)
     switch_application_interface_t *app_interface;
     switch_api_interface_t *api_interface;
 
+	if (switch_event_reserve_subclass(MY_EVENT_VIDEO_DETECT) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", MY_EVENT_VIDEO_DETECT);
+		return SWITCH_STATUS_TERM;
+	}
+	
     *module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
     MODULE_INTERFACE = *module_interface;
@@ -1354,7 +1359,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_cv_load)
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_cv_shutdown)
 {
-    return SWITCH_STATUS_UNLOAD;
+
+	switch_event_free_subclass(MY_EVENT_VIDEO_DETECT);
+	
+	return SWITCH_STATUS_UNLOAD;
 }
 
 

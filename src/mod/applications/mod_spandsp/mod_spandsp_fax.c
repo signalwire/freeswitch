@@ -42,16 +42,6 @@
 #define DEFAULT_FEC_ENTRIES         3
 #define DEFAULT_FEC_SPAN            3
 
-#define SPANDSP_EVENT_TXFAXRESULT "spandsp::txfaxresult"
-#define SPANDSP_EVENT_RXFAXRESULT "spandsp::rxfaxresult"
-
-#define SPANDSP_EVENT_TXFAXPAGERESULT "spandsp::txfaxpageresult"
-#define SPANDSP_EVENT_RXFAXPAGERESULT "spandsp::rxfaxpageresult"
-
-#define SPANDSP_EVENT_TXFAXNEGOCIATERESULT "spandsp::txfaxnegociateresult"
-#define SPANDSP_EVENT_RXFAXNEGOCIATERESULT "spandsp::rxfaxnegociateresult"
-
-
 /*****************************************************************************
 	OUR DEFINES AND STRUCTS
 *****************************************************************************/

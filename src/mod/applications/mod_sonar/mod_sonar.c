@@ -218,6 +218,12 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sonar_load)
 {
 	switch_application_interface_t *app_interface;
 
+	if (switch_event_reserve_subclass("sonar::ping") != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", "sonar::ping");
+		return SWITCH_STATUS_TERM;
+	}
+
+	
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
@@ -233,6 +239,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sonar_load)
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_sonar_shutdown)
 {
 
+	switch_event_free_subclass("sonar::ping");
+	
 	return SWITCH_STATUS_SUCCESS;
 }
 
