@@ -843,7 +843,7 @@ body .modal-body .btn-group .btn.active {
 }
 
 .members-name {
-  width: 183px;
+  width: 160px;
   overflow: hidden;
   text-overflow: ellipsis;
   margin-top: 5px;
