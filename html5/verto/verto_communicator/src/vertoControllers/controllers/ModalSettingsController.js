@@ -25,6 +25,10 @@
         $scope.refreshDeviceList = function() {
           return verto.refreshDevices();
         }
+
+        $scope.resetSettings = function() {
+	  storage.reset();
+        }
       }
     ]);
 
