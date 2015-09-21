@@ -160,6 +160,12 @@ static switch_status_t do_config(void)
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_xml_rpc_load)
 {
+
+	if (switch_event_reserve_subclass("websocket::stophook") != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", "websocket::stophook");
+		return SWITCH_STATUS_TERM;
+	}
+	
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
@@ -1268,6 +1274,8 @@ void stop_all_websockets()
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_xml_rpc_shutdown)
 {
 
+	switch_event_free_subclass("websocket::stophook");
+	
 	/* Cann't find a way to stop the websockets, use this for a workaround before finding the real one that works */
 	stop_all_websockets();
 

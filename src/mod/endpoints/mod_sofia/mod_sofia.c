@@ -5690,6 +5690,102 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 	switch_application_interface_t *app_interface;
 	struct in_addr in;
 
+
+	if (switch_event_reserve_subclass(MY_EVENT_NOTIFY_REFER) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", MY_EVENT_NOTIFY_REFER);
+		return SWITCH_STATUS_TERM;
+	}
+
+	if (switch_event_reserve_subclass(MY_EVENT_NOTIFY_WATCHED_HEADER) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", MY_EVENT_NOTIFY_WATCHED_HEADER);
+		return SWITCH_STATUS_TERM;
+	}
+
+	if (switch_event_reserve_subclass(MY_EVENT_UNREGISTER) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", MY_EVENT_UNREGISTER);
+		return SWITCH_STATUS_TERM;
+	}
+
+	if (switch_event_reserve_subclass(MY_EVENT_PROFILE_START) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", MY_EVENT_PROFILE_START);
+		return SWITCH_STATUS_TERM;
+	}
+
+	if (switch_event_reserve_subclass(MY_EVENT_REINVITE) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", MY_EVENT_REINVITE);
+		return SWITCH_STATUS_TERM;
+	}
+
+	if (switch_event_reserve_subclass(MY_EVENT_REPLACED) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", MY_EVENT_REPLACED);
+		return SWITCH_STATUS_TERM;
+	}
+
+	if (switch_event_reserve_subclass(MY_EVENT_TRANSFEROR) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", MY_EVENT_TRANSFEROR);
+		return SWITCH_STATUS_TERM;
+	}
+
+	if (switch_event_reserve_subclass(MY_EVENT_TRANSFEREE) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", MY_EVENT_TRANSFEREE);
+		return SWITCH_STATUS_TERM;
+	}
+
+	if (switch_event_reserve_subclass(MY_EVENT_ERROR) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", MY_EVENT_ERROR);
+		return SWITCH_STATUS_TERM;
+	}
+
+	if (switch_event_reserve_subclass(MY_EVENT_INTERCEPTED) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", MY_EVENT_INTERCEPTED);
+		return SWITCH_STATUS_TERM;
+	}
+
+	if (switch_event_reserve_subclass(MY_EVENT_GATEWAY_STATE) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", MY_EVENT_GATEWAY_STATE);
+		return SWITCH_STATUS_TERM;
+	}
+
+	if (switch_event_reserve_subclass(MY_EVENT_SIP_USER_STATE) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", MY_EVENT_SIP_USER_STATE);
+		return SWITCH_STATUS_TERM;
+	}
+
+	if (switch_event_reserve_subclass(MY_EVENT_GATEWAY_DEL) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", MY_EVENT_GATEWAY_DEL);
+		return SWITCH_STATUS_TERM;
+	}
+
+	if (switch_event_reserve_subclass(MY_EVENT_EXPIRE) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", MY_EVENT_EXPIRE);
+		return SWITCH_STATUS_TERM;
+	}
+
+	if (switch_event_reserve_subclass(MY_EVENT_REGISTER_ATTEMPT) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", MY_EVENT_REGISTER_ATTEMPT);
+		return SWITCH_STATUS_TERM;
+	}
+
+	if (switch_event_reserve_subclass(MY_EVENT_REGISTER_FAILURE) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", MY_EVENT_REGISTER_FAILURE);
+		return SWITCH_STATUS_TERM;
+	}
+
+	if (switch_event_reserve_subclass(MY_EVENT_PRE_REGISTER) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", MY_EVENT_PRE_REGISTER);
+		return SWITCH_STATUS_TERM;
+	}
+
+	if (switch_event_reserve_subclass(MY_EVENT_REGISTER) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", MY_EVENT_REGISTER);
+		return SWITCH_STATUS_TERM;
+	}
+
+	if (switch_event_reserve_subclass(MY_EVENT_GATEWAY_ADD) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", MY_EVENT_GATEWAY_ADD);
+		return SWITCH_STATUS_TERM;
+	}
+	
 	memset(&mod_sofia_globals, 0, sizeof(mod_sofia_globals));
 	mod_sofia_globals.destroy_private.destroy_nh = 1;
 	mod_sofia_globals.destroy_private.is_static = 1;
@@ -5898,6 +5994,26 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_sofia_shutdown)
 	int i;
 	switch_status_t st;
 
+	switch_event_free_subclass(MY_EVENT_NOTIFY_REFER);
+	switch_event_free_subclass(MY_EVENT_NOTIFY_WATCHED_HEADER);
+	switch_event_free_subclass(MY_EVENT_UNREGISTER);
+	switch_event_free_subclass(MY_EVENT_PROFILE_START);
+	switch_event_free_subclass(MY_EVENT_REINVITE);
+	switch_event_free_subclass(MY_EVENT_REPLACED);
+	switch_event_free_subclass(MY_EVENT_TRANSFEROR);
+	switch_event_free_subclass(MY_EVENT_TRANSFEREE);
+	switch_event_free_subclass(MY_EVENT_ERROR);
+	switch_event_free_subclass(MY_EVENT_INTERCEPTED);
+	switch_event_free_subclass(MY_EVENT_GATEWAY_STATE);
+	switch_event_free_subclass(MY_EVENT_SIP_USER_STATE);
+	switch_event_free_subclass(MY_EVENT_GATEWAY_DEL);
+	switch_event_free_subclass(MY_EVENT_EXPIRE);
+	switch_event_free_subclass(MY_EVENT_REGISTER_ATTEMPT);
+	switch_event_free_subclass(MY_EVENT_REGISTER_FAILURE);
+	switch_event_free_subclass(MY_EVENT_PRE_REGISTER);
+	switch_event_free_subclass(MY_EVENT_REGISTER);
+	switch_event_free_subclass(MY_EVENT_GATEWAY_ADD);
+	
 	switch_console_del_complete_func("::sofia::list_profiles");
 	switch_console_set_complete("del sofia");
 

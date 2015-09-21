@@ -1835,6 +1835,46 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_rtmp_load)
 	switch_api_interface_t *api_interface;
 	rtmp_globals.pool = pool;
 
+	if (switch_event_reserve_subclass(RTMP_EVENT_CONNECT) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", RTMP_EVENT_CONNECT);
+		return SWITCH_STATUS_TERM;
+	}
+
+	if (switch_event_reserve_subclass(RTMP_EVENT_DISCONNECT) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", RTMP_EVENT_DISCONNECT);
+		return SWITCH_STATUS_TERM;
+	}
+
+	if (switch_event_reserve_subclass(RTMP_EVENT_REGISTER) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", RTMP_EVENT_REGISTER);
+		return SWITCH_STATUS_TERM;
+	}
+
+	if (switch_event_reserve_subclass(RTMP_EVENT_UNREGISTER) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", RTMP_EVENT_UNREGISTER);
+		return SWITCH_STATUS_TERM;
+	}
+
+	if (switch_event_reserve_subclass(RTMP_EVENT_LOGIN) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", RTMP_EVENT_LOGIN);
+		return SWITCH_STATUS_TERM;
+	}
+
+	if (switch_event_reserve_subclass(RTMP_EVENT_LOGOUT) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", RTMP_EVENT_LOGOUT);
+		return SWITCH_STATUS_TERM;
+	}
+
+	if (switch_event_reserve_subclass(RTMP_EVENT_DETACH) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", RTMP_EVENT_DETACH);
+		return SWITCH_STATUS_TERM;
+	}
+
+	if (switch_event_reserve_subclass(RTMP_EVENT_ATTACH) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", RTMP_EVENT_ATTACH);
+		return SWITCH_STATUS_TERM;
+	}
+	
 	memset(&rtmp_globals, 0, sizeof(rtmp_globals));
 
 	switch_mutex_init(&rtmp_globals.mutex, SWITCH_MUTEX_NESTED, pool);
@@ -1925,6 +1965,15 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_rtmp_shutdown)
 {
 	switch_hash_index_t *hi = NULL;
 
+	switch_event_free_subclass(RTMP_EVENT_CONNECT);
+	switch_event_free_subclass(RTMP_EVENT_DISCONNECT);
+	switch_event_free_subclass(RTMP_EVENT_REGISTER);
+	switch_event_free_subclass(RTMP_EVENT_UNREGISTER);
+	switch_event_free_subclass(RTMP_EVENT_LOGIN);
+	switch_event_free_subclass(RTMP_EVENT_LOGOUT);
+	switch_event_free_subclass(RTMP_EVENT_DETACH);
+	switch_event_free_subclass(RTMP_EVENT_ATTACH);
+	
 	switch_mutex_lock(rtmp_globals.mutex);
 	while ((hi = switch_core_hash_first_iter( rtmp_globals.profile_hash, hi))) {
 		void *val;	

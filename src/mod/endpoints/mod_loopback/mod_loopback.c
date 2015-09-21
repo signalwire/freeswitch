@@ -1195,6 +1195,12 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_loopback_load)
 {
 	switch_application_interface_t *app_interface;
 
+	if (switch_event_reserve_subclass("loopback::bowout") != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", "loopback::bowout");
+		return SWITCH_STATUS_TERM;
+	}
+
+	
 	memset(&globals, 0, sizeof(globals));
 
 	/* connect my internal structure to the blank pointer passed to me */
@@ -1212,6 +1218,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_loopback_load)
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_loopback_shutdown)
 {
+
+	switch_event_free_subclass("loopback::bowout");
+	
 	return SWITCH_STATUS_SUCCESS;
 }
 

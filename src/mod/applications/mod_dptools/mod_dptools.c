@@ -5828,6 +5828,11 @@ SWITCH_STANDARD_APP(deduplicate_dtmf_app_function)
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_dptools_shutdown)
 {
+
+	switch_event_free_subclass(FILE_STRING_CLOSE);
+	switch_event_free_subclass(FILE_STRING_FAIL);
+	switch_event_free_subclass(FILE_STRING_OPEN);
+
 	switch_event_unbind_callback(pickup_pres_event_handler);
 	switch_mutex_destroy(globals.pickup_mutex);
 	switch_core_hash_destroy(&globals.pickup_hash);
@@ -5844,6 +5849,21 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	switch_dialplan_interface_t *dp_interface;
 	switch_chat_interface_t *chat_interface;
 	switch_file_interface_t *file_interface;
+
+	if (switch_event_reserve_subclass(FILE_STRING_CLOSE) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", FILE_STRING_CLOSE);
+		return SWITCH_STATUS_TERM;
+	}
+
+	if (switch_event_reserve_subclass(FILE_STRING_FAIL) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", FILE_STRING_FAIL);
+		return SWITCH_STATUS_TERM;
+	}
+
+	if (switch_event_reserve_subclass(FILE_STRING_OPEN) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", FILE_STRING_OPEN);
+		return SWITCH_STATUS_TERM;
+	}
 
 	globals.pool = pool;
 	switch_core_hash_init(&globals.pickup_hash);

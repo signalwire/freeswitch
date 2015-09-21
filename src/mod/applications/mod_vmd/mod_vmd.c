@@ -516,6 +516,12 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_vmd_load)
 {
 	switch_application_interface_t *app_interface;
 	switch_api_interface_t *api_interface;
+
+	if (switch_event_reserve_subclass(VMD_EVENT_BEEP) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", VMD_EVENT_BEEP);
+		return SWITCH_STATUS_TERM;
+	}
+
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
@@ -607,6 +613,8 @@ SWITCH_STANDARD_APP(vmd_start_function)
  */
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_vmd_shutdown)
 {
+
+	switch_event_free_subclass(VMD_EVENT_BEEP);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Voicemail detection disabled\n");
 
 	return SWITCH_STATUS_SUCCESS;

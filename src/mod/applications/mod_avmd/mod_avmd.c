@@ -221,6 +221,13 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_avmd_load)
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
+
+	if (switch_event_reserve_subclass(AVMD_EVENT_BEEP) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", AVMD_EVENT_BEEP);
+		return SWITCH_STATUS_TERM;
+	}
+
+	
 	switch_log_printf(
 		SWITCH_CHANNEL_LOG,
 		SWITCH_LOG_NOTICE,
@@ -327,6 +334,8 @@ SWITCH_STANDARD_APP(avmd_start_function)
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_avmd_shutdown)
 {
 
+	switch_event_free_subclass(AVMD_EVENT_BEEP);
+	
 #ifdef FASTMATH
 	destroy_fast_acosf();
 #endif

@@ -3345,6 +3345,12 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_callcenter_load)
 	switch_api_interface_t *api_interface;
 	switch_status_t status;
 
+
+	if (switch_event_reserve_subclass(CALLCENTER_EVENT) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", CALLCENTER_EVENT);
+		return SWITCH_STATUS_TERM;
+	}
+
 	memset(&globals, 0, sizeof(globals));
 	globals.pool = pool;
 
@@ -3419,6 +3425,9 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_callcenter_shutdown)
 	switch_ssize_t keylen;
 	int sanity = 0;
 
+
+	switch_event_free_subclass(CALLCENTER_EVENT);
+	
 	switch_mutex_lock(globals.mutex);
 	if (globals.running == 1) {
 		globals.running = 0;

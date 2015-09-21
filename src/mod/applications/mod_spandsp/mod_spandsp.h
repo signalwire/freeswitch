@@ -49,6 +49,17 @@ typedef int zap_socket_t;
 #define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
 #include <spandsp.h>
 
+#define SPANDSP_EVENT_TXFAXRESULT "spandsp::txfaxresult"
+#define SPANDSP_EVENT_RXFAXRESULT "spandsp::rxfaxresult"
+
+#define SPANDSP_EVENT_TXFAXPAGERESULT "spandsp::txfaxpageresult"
+#define SPANDSP_EVENT_RXFAXPAGERESULT "spandsp::rxfaxpageresult"
+
+#define SPANDSP_EVENT_TXFAXNEGOCIATERESULT "spandsp::txfaxnegociateresult"
+#define SPANDSP_EVENT_RXFAXNEGOCIATERESULT "spandsp::rxfaxnegociateresult"
+
+
+
 /* The global stuff */
 struct spandsp_globals {
 	switch_memory_pool_t *pool;

@@ -1635,6 +1635,35 @@ static switch_bool_t auth_api_command(listener_t *listener, const char *api_cmd,
 
 }
 
+static void set_all_custom(listener_t *listener)
+{
+	switch_console_callback_match_t *events = NULL;
+	switch_console_callback_match_node_t *m;
+
+	if (switch_event_get_custom_events(&events) == SWITCH_STATUS_SUCCESS) {
+		for (m = events->head; m; m = m->next) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "ADDING CUSTOM EVENT: %s\n", m->val);
+			switch_core_hash_insert(listener->event_hash, m->val, MARKER);
+		}
+		
+		switch_console_free_matches(&events);
+	}
+}
+
+static void set_allowed_custom(listener_t *listener)
+{
+	switch_hash_index_t *hi = NULL;
+	const void *var;
+	void *val;
+
+	switch_assert(listener->allowed_event_hash);
+	
+	for (hi = switch_core_hash_first(listener->allowed_event_hash); hi; hi = switch_core_hash_next(&hi)) {
+		switch_core_hash_this(hi, &var, NULL, &val);
+		switch_core_hash_insert(listener->event_hash, (char *)var, MARKER);
+	}
+}
+
 static switch_status_t parse_command(listener_t *listener, switch_event_t **event, char *reply, uint32_t reply_len)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
@@ -2435,6 +2464,13 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 						for (x = 0; x < SWITCH_EVENT_ALL; x++) {
 							listener->event_list[x] = 1;
 						}
+
+						if (!listener->allowed_event_hash) {
+							set_all_custom(listener);
+						} else {
+							set_allowed_custom(listener);
+						}
+
 					}
 					if (type <= SWITCH_EVENT_ALL) {
 						listener->event_list[type] = 1;
@@ -2466,7 +2502,7 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 		uint8_t custom = 0;
 
 		strip_cr(cmd);
-		cur = cmd + 5;
+		cur = cmd + 8;
 
 		if (cur && (cur = strchr(cur, ' '))) {
 			for (cur++; cur; count++) {

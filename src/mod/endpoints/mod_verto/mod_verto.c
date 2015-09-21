@@ -5411,6 +5411,22 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_verto_load)
 	switch_cache_db_handle_t *dbh;
 	//switch_application_interface_t *app_interface = NULL;
 
+
+	if (switch_event_reserve_subclass(MY_EVENT_LOGIN) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", MY_EVENT_LOGIN);
+		return SWITCH_STATUS_TERM;
+	}
+	
+	if (switch_event_reserve_subclass(MY_EVENT_CLIENT_DISCONNECT) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", MY_EVENT_CLIENT_DISCONNECT);
+		return SWITCH_STATUS_TERM;
+	}
+	
+	if (switch_event_reserve_subclass(MY_EVENT_CLIENT_CONNECT) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", MY_EVENT_CLIENT_CONNECT);
+		return SWITCH_STATUS_TERM;
+	}
+	
 	memset(&globals, 0, sizeof(globals));
 	globals.pool = pool;
 #ifndef WIN32
@@ -5501,6 +5517,11 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_verto_load)
   Macro expands to: switch_status_t mod_verto_shutdown() */
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_verto_shutdown)
 {
+
+	switch_event_free_subclass(MY_EVENT_LOGIN);
+	switch_event_free_subclass(MY_EVENT_CLIENT_DISCONNECT);
+	switch_event_free_subclass(MY_EVENT_CLIENT_CONNECT);
+	
 	json_cleanup();
 	switch_core_hash_destroy(&json_GLOBALS.store_hash);
 

@@ -377,6 +377,24 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_bert_load)
 {
 	switch_application_interface_t *app_interface = NULL;
 
+	if (switch_event_reserve_subclass(BERT_EVENT_TIMEOUT) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", BERT_EVENT_TIMEOUT);
+		return SWITCH_STATUS_TERM;
+	}
+	
+
+	if (switch_event_reserve_subclass(BERT_EVENT_LOST_SYNC) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", BERT_EVENT_LOST_SYNC);
+		return SWITCH_STATUS_TERM;
+	}
+	
+	
+	if (switch_event_reserve_subclass(BERT_EVENT_IN_SYNC) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", BERT_EVENT_IN_SYNC);
+		return SWITCH_STATUS_TERM;
+	}
+	
+	
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
 	SWITCH_ADD_APP(app_interface, "bert_test", "Start BERT Test", "Start BERT Test", bert_test_function, "", SAF_NONE); 
@@ -385,6 +403,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_bert_load)
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_bert_shutdown)
 {
+	switch_event_free_subclass(BERT_EVENT_TIMEOUT);
+	switch_event_free_subclass(BERT_EVENT_LOST_SYNC);
+	switch_event_free_subclass(BERT_EVENT_IN_SYNC);
+	
 	return SWITCH_STATUS_UNLOAD;
 }
 

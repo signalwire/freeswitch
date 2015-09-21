@@ -254,6 +254,8 @@ SWITCH_DECLARE(void) switch_event_prep_for_delivery_detailed(const char *file, c
 SWITCH_DECLARE(switch_status_t) switch_event_bind(const char *id, switch_event_types_t event, const char *subclass_name, switch_event_callback_t callback,
 												  void *user_data);
 
+SWITCH_DECLARE(switch_status_t) switch_event_get_custom_events(switch_console_callback_match_t **matches);
+
 /*!
   \brief Bind an event callback to a specific event
   \param id an identifier token of the binder

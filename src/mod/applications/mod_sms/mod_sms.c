@@ -577,6 +577,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sms_load)
 	switch_chat_interface_t *chat_interface;
 	switch_chat_application_interface_t *chat_app_interface;
 
+	if (switch_event_reserve_subclass(MY_EVENT_DELIVERY_REPORT) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", MY_EVENT_DELIVERY_REPORT);
+		return SWITCH_STATUS_TERM;
+	}
 
 	if (switch_event_bind(modname, SWITCH_EVENT_CUSTOM, MY_EVENT_SEND_MESSAGE, event_handler, NULL) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
@@ -608,6 +612,8 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_sms_shutdown)
 {
 	switch_event_unbind_callback(event_handler);
 
+	switch_event_free_subclass(MY_EVENT_DELIVERY_REPORT);
+	
 	return SWITCH_STATUS_SUCCESS;
 }
 
