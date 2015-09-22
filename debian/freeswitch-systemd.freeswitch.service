@@ -14,7 +14,6 @@ Restart=always
 ; exec
 RuntimeDirectory=freeswitch
 RuntimeDirectoryMode=0755
-WorkingDirectory=/var/log/freeswitch
 User=freeswitch
 Group=freeswitch
 LimitCORE=infinity
