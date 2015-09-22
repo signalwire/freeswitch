@@ -82,6 +82,7 @@ struct switch_jb_s {
 	uint32_t samples_per_frame;
 	uint32_t samples_per_second;
 	uint32_t bitrate_control;
+	uint32_t video_low_bitrate;
 	uint8_t write_init;
 	uint8_t read_init;
 	uint8_t debug_level;
@@ -740,8 +741,19 @@ SWITCH_DECLARE(void) switch_jb_ts_mode(switch_jb_t *jb, uint32_t samples_per_fra
 
 SWITCH_DECLARE(void) switch_jb_set_session(switch_jb_t *jb, switch_core_session_t *session)
 {
+	const char *var;
+
 	jb->session = session;
 	jb->channel = switch_core_session_get_channel(session);
+
+	if (jb->type == SJB_VIDEO && (var = switch_channel_get_variable_dup(jb->channel, "jb_video_low_bitrate", SWITCH_FALSE, -1))) {
+		int tmp = atoi(var);
+
+		if (tmp > 128 && tmp < 10240) {
+			jb->video_low_bitrate = (uint32_t)tmp;
+		}
+	}
+
 }
 
 SWITCH_DECLARE(void) switch_jb_set_flag(switch_jb_t *jb, switch_jb_flag_t flag)
@@ -1140,7 +1152,7 @@ SWITCH_DECLARE(switch_status_t) switch_jb_get_packet(switch_jb_t *jb, switch_rtp
 		jb->consec_miss_count = 0;
 		jb->consec_good_count = 0;
 
-		if (jb->type == SJB_VIDEO && jb->channel) {
+		if (jb->type == SJB_VIDEO && jb->channel && jb->video_low_bitrate) {
 			//switch_time_t now = switch_time_now();
 			//int ok = (now - jb->last_bitrate_change) > 10000;
 			
@@ -1151,10 +1163,10 @@ SWITCH_DECLARE(switch_status_t) switch_jb_get_packet(switch_jb_t *jb, switch_rtp
 				if (jb->session) {
 					switch_core_session_request_video_refresh(jb->session);
 				}
-			} else if (!switch_channel_test_flag(jb->channel, CF_VIDEO_BITRATE_UNMANAGABLE) && jb->frame_len > jb->min_frame_len + 1) {
+			} else if (!switch_channel_test_flag(jb->channel, CF_VIDEO_BITRATE_UNMANAGABLE) && jb->frame_len > jb->min_frame_len * 2) {
 				switch_core_session_message_t msg = { 0 };
 
-				jb->bitrate_control = 512;
+				jb->bitrate_control = jb->video_low_bitrate;
 				
 				msg.message_id = SWITCH_MESSAGE_INDICATE_BITRATE_REQ;
 				msg.numeric_arg = jb->bitrate_control * 1024;
