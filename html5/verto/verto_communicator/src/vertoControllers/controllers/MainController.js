@@ -12,7 +12,7 @@
       $scope.verto = verto;
       $scope.storage = storage;
       $scope.call_history = angular.element("#call_history").hasClass('active');
-      $scope.chatStatus = angular.element('#wrapper').hasClass('toggled');
+      $rootScope.chatStatus = angular.element('#wrapper').hasClass('toggled');
 
       /**
        * (explanation) scope in another controller extends rootScope (singleton)
@@ -202,20 +202,20 @@
       };
 
       $scope.toggleChat = function() {
-        if ($scope.chatStatus && $rootScope.activePane === 'chat') {
+        if ($rootScope.chatStatus && $rootScope.activePane === 'chat') {
           $rootScope.chat_counter = 0;
         }
         angular.element('#wrapper').toggleClass('toggled');
-        $scope.chatStatus = angular.element('#wrapper').hasClass('toggled');
+        $rootScope.chatStatus = angular.element('#wrapper').hasClass('toggled');
       };
 
-      $scope.openChat = function() {
-        $scope.chatStatus = false;
+      $rootScope.openChat = function() {
+        $rootScope.chatStatus = false;
         angular.element('#wrapper').removeClass('toggled');
       };
 
       $scope.closeChat = function() {
-        $scope.chatStatus = true;
+        $rootScope.chatStatus = true;
         angular.element('#wrapper').addClass('toggled');
       };
 
@@ -240,11 +240,9 @@
           Fullscreen.cancel();
         }
 
-
-        console.log($scope.chatStatus);
-        if (!$scope.chatStatus) {
+        if (!$rootScope.chatStatus) {
           angular.element('#wrapper').toggleClass('toggled');
-          $scope.chatStatus = angular.element('#wrapper').hasClass('toggled');
+          $rootScope.chatStatus = angular.element('#wrapper').hasClass('toggled');
         }
 
         $rootScope.dialpadNumber = '';
