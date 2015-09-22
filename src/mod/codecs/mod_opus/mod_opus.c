@@ -253,6 +253,7 @@ static char *gen_fmtp(opus_codec_settings_t *settings, switch_memory_pool_t *poo
 	}
 
 	if (settings->stereo) {
+		settings->sprop_stereo = settings->stereo;
 		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "stereo=%d; ", settings->stereo);
 	}
 

@@ -181,10 +181,10 @@
 
         if (fmtpLineIndex === null) {
 	    // create an fmtp line
-	    sdpLines[opusIndex] = sdpLines[opusIndex] + '\r\na=fmtp:' + opusPayload.toString() + " stereo=1"
+	    sdpLines[opusIndex] = sdpLines[opusIndex] + '\r\na=fmtp:' + opusPayload.toString() + " stereo=1; sprop-stereo=1"
 	} else {
             // Append stereo=1 to fmtp line.
-            sdpLines[fmtpLineIndex] = sdpLines[fmtpLineIndex].concat('; stereo=1');
+            sdpLines[fmtpLineIndex] = sdpLines[fmtpLineIndex].concat('; stereo=1; sprop-stereo=1');
 	}
 
         sdp = sdpLines.join('\r\n');
