@@ -1185,7 +1185,7 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 				rtp_session->wrong_addrs = 0;
 			} else {
 				if ((rtp_session->dtls->state != DS_READY || !ice->ready || !ice->rready)) {
-					do_adj = 1;
+					do_adj++;
 				} else if (rtp_session->wrong_addrs > 5 || elapsed >= 3000) {
 					do_adj++;
 				}
@@ -1229,8 +1229,9 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 				ice->last_ok = now;
 				rtp_session->wrong_addrs = 0;
 			}
-
-			switch_socket_sendto(sock_output, from_addr, 0, (void *) rpacket, &bytes);
+			if (cmp) {
+				switch_socket_sendto(sock_output, from_addr, 0, (void *) rpacket, &bytes);
+			}
 		}
 	} else if (packet->header.type == SWITCH_STUN_BINDING_ERROR_RESPONSE) {
 		
