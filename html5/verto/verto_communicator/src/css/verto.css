@@ -36,6 +36,12 @@ body {
   height: 100%;
 }
 
+.modal-content .modal-footer button.btn-pull-left {
+  padding-left: 16px;
+  padding-right: 16px;
+  margin-left: 5px;
+}
+
 /* This is an technique to align the block centered vertically
    and horizontally in a page. */
 .centered-block-frame {

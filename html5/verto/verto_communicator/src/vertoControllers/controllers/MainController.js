@@ -83,7 +83,7 @@
        * Logout the user from verto server and
        * redirects him to login page.
        */
-      $scope.logout = function() {
+      $rootScope.logout = function() {
         var disconnect = function() {
           var disconnectCallback = function(v, connected) {
             console.debug('Redirecting to login page.');

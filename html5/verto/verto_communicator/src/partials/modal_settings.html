@@ -24,7 +24,6 @@
     </select>
 
     <a class="btn btn-primary" href="" ng-click="refreshDeviceList()">Refresh device list</a>
-    <a class="btn btn-primary" href="" ng-click="resetSettings()">Factory reset</a>
   </div>
 
   <div class="form-group">
@@ -113,6 +112,7 @@
 
 </div>
 <div class="modal-footer">
+  <button class="btn btn-danger pull-left btn-pull-left" ng-click="resetSettings()">Factory reset</button>
   <!-- <button class="btn btn-primary" ng-click="cancel()">Cancel</button> -->
   <button class="btn btn-primary" ng-click="ok()">Save Device Settings</button>
 </div>
