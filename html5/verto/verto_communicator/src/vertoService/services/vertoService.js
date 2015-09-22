@@ -335,6 +335,7 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
 
         function startConference(v, dialog, pvtData) {
           $rootScope.$emit('call.video', 'video');
+          $rootScope.$emit('call.conference', 'conference');
           data.chattingWith = pvtData.chatID;
           data.confRole = pvtData.role;
 
