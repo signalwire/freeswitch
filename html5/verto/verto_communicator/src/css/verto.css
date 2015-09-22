@@ -489,6 +489,7 @@ body .modal-body .btn-group .btn.active {
 
 #incall .panel {
   background: #333;
+  padding-top: 5px;
 }
 
 #incall .hangup-button {
