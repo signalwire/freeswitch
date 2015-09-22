@@ -1962,7 +1962,7 @@
 
         dialog.rtc = new $.FSRTC({
             callbacks: RTCcallbacks,
-	    localVideo: dialog.localVideo,
+	    localVideo: dialog.screenShare ? null : dialog.localVideo,
             useVideo: dialog.params.useVideo ? dialog.videoStream : null,
             useAudio: dialog.audioStream,
             useStereo: dialog.params.useStereo,
@@ -2093,7 +2093,9 @@
             break;
         case $.verto.enum.state.destroy:
             delete dialog.verto.dialogs[dialog.callID];
-	    if (!dialog.params.screenShare) {
+	    if (dialog.params.screenShare) {
+		dialog.rtc.stopPeer();
+	    } else {
 		dialog.rtc.stop();
 	    }
             break;

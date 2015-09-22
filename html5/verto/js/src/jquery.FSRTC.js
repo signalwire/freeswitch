@@ -287,6 +287,13 @@
         onSuccess, onError);
     };
 
+    $.FSRTC.prototype.stopPeer = function() {
+        if (self.peer) {
+            console.log("stopping peer");
+            self.peer.stop();
+        }
+    }
+
     $.FSRTC.prototype.stop = function() {
         var self = this;
 
