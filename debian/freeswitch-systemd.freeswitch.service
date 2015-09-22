@@ -8,8 +8,6 @@ After=syslog.target network.target local-fs.target
 ; service
 Type=forking
 PIDFile=/run/freeswitch/freeswitch.pid
-PermissionsStartOnly=true
-ExecStartPre=/bin/chown freeswitch:freeswitch /etc/freeswitch/tls
 ExecStart=/usr/bin/freeswitch -ncwait -nonat
 TimeoutSec=45s
 Restart=always
