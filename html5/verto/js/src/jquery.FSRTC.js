@@ -168,18 +168,24 @@
         var sdpLines = sdp.split('\r\n');
 
         // Find opus payload.
-        var opusIndex = findLine(sdpLines, 'a=rtpmap', 'opus/48000'),
-        opusPayload;
-        if (opusIndex) {
+        var opusIndex = findLine(sdpLines, 'a=rtpmap', 'opus/48000'), opusPayload;
+
+        if (!opusIndex) {
+	    return sdp;
+	} else {
             opusPayload = getCodecPayloadType(sdpLines[opusIndex]);
         }
 
         // Find the payload in fmtp line.
         var fmtpLineIndex = findLine(sdpLines, 'a=fmtp:' + opusPayload.toString());
-        if (fmtpLineIndex === null) return sdp;
 
-        // Append stereo=1 to fmtp line.
-        sdpLines[fmtpLineIndex] = sdpLines[fmtpLineIndex].concat('; stereo=1');
+        if (fmtpLineIndex === null) {
+	    // create an fmtp line
+	    sdpLines[opusIndex] = sdpLines[opusIndex] + '\r\na=fmtp:' + opusPayload.toString() + " stereo=1"
+	} else {
+            // Append stereo=1 to fmtp line.
+            sdpLines[fmtpLineIndex] = sdpLines[fmtpLineIndex].concat('; stereo=1');
+	}
 
         sdp = sdpLines.join('\r\n');
         return sdp;
