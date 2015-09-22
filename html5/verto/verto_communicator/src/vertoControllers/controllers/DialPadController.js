@@ -31,7 +31,18 @@
          * fill dialpad via querystring [?autocall=\d+]
          */
         if ($location.search().autocall) {
-          $rootScope.dialpadNumber = $location.search().autocall;
+            $rootScope.dialpadNumber = $location.search().autocall;
+	    delete $location.search().autocall;
+            call($rootScope.dialpadNumber);
+        }
+
+	/**
+	 * fill in dialpad via config.json
+	 */
+        if ('autocall' in verto.data) {
+          $rootScope.dialpadNumber = verto.data.autocall;
+	  delete verto.data.autocall;
+          call($rootScope.dialpadNumber);
         }
 
         /**
@@ -49,10 +60,7 @@
           verto.data.call.transfer($rootScope.dialpadNumber);
         };
 
-        /**
-         * Call to the number in the $rootScope.dialpadNumber.
-         */
-        $rootScope.call = function(extension) {
+        function call(extension) {
           storage.data.onHold = false;
           storage.data.cur_call = 0;
           $rootScope.dialpadNumber = extension;
@@ -78,6 +86,13 @@
           storage.data.called_number = $rootScope.dialpadNumber;
           CallHistory.add($rootScope.dialpadNumber, 'outbound');
           $location.path('/incall');
+        }
+
+        /**
+         * Call to the number in the $rootScope.dialpadNumber.
+         */
+        $rootScope.call = function(extension) {
+          return call(extension);
         }
       }
     ]);
