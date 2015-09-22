@@ -17,9 +17,6 @@
       <button tooltips="" tooltip-title="Snapshot" tooltip-side="bottom" tooltip-lazy="false" class="btn btn-material-blue-900" ng-click="snapshot()">
         <i class="mdi-image-photo-camera"></i>
       </button>
-      <button tooltips="" tooltip-title="Screenshare" tooltip-side="bottom" tooltip-lazy="false" class="btn btn-material-blue-900" ng-click="screenshare()">
-        <i class="mdi-hardware-desktop-windows"></i>
-      </button>
       <div class="btn-group">
         <button tooltips="" tooltip-title="Video Mode" tooltip-side="bottom" tooltip-lazy="false" type="button" class="btn btn-material-blue-900 dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
           <i class="mdi-action-view-module"></i>
@@ -41,6 +38,9 @@
       </button>
       <button tooltips="" tooltip-title="Toggle Fullscreen Mode" tooltip-side="bottom" tooltip-lazy="false" class="btn btn-material-blue-900" ng-click="goFullscreen()">
         <i class="" ng-class="{'mdi-navigation-fullscreen': !fullscreenEnabled, 'mdi-navigation-fullscreen-exit': fullscreenEnabled}"></i>
+      </button>
+      <button tooltips="" tooltip-title="Screenshare" tooltip-side="bottom" tooltip-lazy="false" class="btn btn-material-blue-900" ng-click="screenshare()">
+        <i class="mdi-hardware-desktop-windows"></i>
       </button>
       <button tooltips="" tooltip-title="Open/Close Chat" tooltip-side="right" tooltip-lazy="false" class="btn btn-material-blue-900" ng-click="toggleChat()" ng-show="fullscreenEnabled">
         <i class="mdi-communication-chat"></i>

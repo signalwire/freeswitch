@@ -391,7 +391,9 @@
         //};
         //
         //verto.hangup(hangupCallback);
-
+        if (verto.data.shareCall) {
+          verto.screenshareHangup();
+        }
         verto.hangup();
       };
 
