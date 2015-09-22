@@ -53,7 +53,9 @@
 #ifdef HAVE_SYS_PRCTL_H
 #include <sys/prctl.h>
 #endif
-
+#ifdef SOLARIS_PRIVILEGES
+#include <priv.h>
+#endif
 
 SWITCH_DECLARE_DATA switch_directories SWITCH_GLOBAL_dirs = { 0 };
 SWITCH_DECLARE_DATA switch_filenames SWITCH_GLOBAL_filenames = { 0 };
@@ -888,20 +890,54 @@ SWITCH_DECLARE(void) switch_core_set_globals(void)
 }
 
 
+SWITCH_DECLARE(int32_t) switch_core_set_process_privileges(void)
+{
+#ifdef SOLARIS_PRIVILEGES
+	priv_set_t *basicset;
+	
+	/* make the process privilege-aware */
+	setpflags(PRIV_AWARE, 1);
+
+	/* reset the privileges to basic */
+	basicset = priv_str_to_set("basic", ",", NULL);
+	if (setppriv(PRIV_SET, PRIV_EFFECTIVE, basicset) != 0) {
+		fprintf(stderr, "ERROR: Failed to acquire basic privileges (%s)\n", strerror(errno));
+	}
+	
+	/* we need high-resolution clock, and this requires a non-basic privilege */
+	if (priv_set(PRIV_ON, PRIV_EFFECTIVE, PRIV_PROC_CLOCK_HIGHRES, NULL) < 0) {
+		fprintf(stderr, "ERROR: Failed to acquire proc_clock_highres privilege (%s)\n", strerror(errno));
+		return -1;
+	}
+
+	/* need this for setrlimit */
+	if (priv_set(PRIV_ON, PRIV_EFFECTIVE, PRIV_SYS_RESOURCE, NULL) < 0) {
+		fprintf(stderr, "ERROR: Failed to acquire sys_resource privilege (%s)\n", strerror(errno));
+		return -1;
+	}
+	
+	/* we need to read directories belonging to other uid */
+	if (priv_set(PRIV_ON, PRIV_EFFECTIVE, PRIV_FILE_DAC_SEARCH, NULL) < 0) {
+		fprintf(stderr, "ERROR: Failed to acquire file_dac_search privilege (%s)\n", strerror(errno));
+		return -1;
+	}
+#endif
+	return 0;
+}
+
 SWITCH_DECLARE(int32_t) set_low_priority(void)
 {
-
-
 #ifdef WIN32
 	SetPriorityClass(GetCurrentProcess(), BELOW_NORMAL_PRIORITY_CLASS);
 #else
-#ifdef USE_SCHED_SETSCHEDULER
+#if defined(USE_SCHED_SETSCHEDULER) && ! defined(SOLARIS_PRIVILEGES)
 	/*
 	 * Try to use a normal scheduler
 	 */
 	struct sched_param sched = { 0 };
 	sched.sched_priority = 0;
-	if (sched_setscheduler(0, SCHED_OTHER, &sched)) {
+	if (sched_setscheduler(0, SCHED_OTHER, &sched) < 0) {
+		fprintf(stderr, "ERROR: Failed to set SCHED_OTHER scheduler (%s)\n", strerror(errno));
 		return -1;
 	}
 #endif
@@ -911,12 +947,12 @@ SWITCH_DECLARE(int32_t) set_low_priority(void)
 	 * setpriority() works on FreeBSD (6.2), nice() doesn't
 	 */
 	if (setpriority(PRIO_PROCESS, getpid(), 19) < 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Could not set nice level\n");
+		fprintf(stderr, "ERROR: Could not set nice level\n");
 		return -1;
 	}
 #else
 	if (nice(19) != 19) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Could not set nice level\n");
+		fprintf(stderr, "ERROR: Could not set nice level\n");
 		return -1;
 	}
 #endif
@@ -937,32 +973,60 @@ SWITCH_DECLARE(int32_t) set_realtime_priority(void)
 	 */
 	struct sched_param sched = { 0 };
 	sched.sched_priority = SWITCH_PRI_LOW;
-	if (sched_setscheduler(0, SCHED_FIFO, &sched)) {
+#endif
+
+#ifdef SOLARIS_PRIVILEGES
+	/* request the privileges to elevate the priority */
+	if (priv_set(PRIV_ON, PRIV_EFFECTIVE, PRIV_PROC_PRIOCNTL, NULL) < 0) {
+		fprintf(stderr, "WARN: Failed to acquire proc_priocntl privilege (%s)\n", strerror(errno));
+	} else {
+		if (sched_setscheduler(0, SCHED_FIFO, &sched) < 0) {
+			fprintf(stderr, "ERROR: Failed to set SCHED_FIFO scheduler (%s)\n", strerror(errno));
+		} else {
+			return 0;
+		}
+	}
+		
+	if (priv_set(PRIV_ON, PRIV_EFFECTIVE, PRIV_PROC_PRIOUP, NULL) < 0) {
+		fprintf(stderr, "ERROR: Failed to acquire proc_prioup privilege (%s)\n", strerror(errno));
+		return -1;
+	} else {
+		if (setpriority(PRIO_PROCESS, 0, -10) < 0) {
+			fprintf(stderr, "ERROR: Could not set nice level\n");
+			return -1;
+		}
+	}
+	return 0;
+#else
+
+#ifdef USE_SCHED_SETSCHEDULER
+	if (sched_setscheduler(0, SCHED_FIFO, &sched) < 0) {
+		fprintf(stderr, "ERROR: Failed to set SCHED_FIFO scheduler (%s)\n", strerror(errno));
 		sched.sched_priority = 0;
-		if (sched_setscheduler(0, SCHED_OTHER, &sched)) {
+		if (sched_setscheduler(0, SCHED_OTHER, &sched) < 0 ) {
+			fprintf(stderr, "ERROR: Failed to set SCHED_OTHER scheduler (%s)\n", strerror(errno));
 			return -1;
 		}
 	}
 #endif
-
-	
 
 #ifdef HAVE_SETPRIORITY
 	/*
 	 * setpriority() works on FreeBSD (6.2), nice() doesn't
 	 */
 	if (setpriority(PRIO_PROCESS, getpid(), -10) < 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Could not set nice level\n");
+		fprintf(stderr, "ERROR: Could not set nice level\n");
 		return -1;
 	}
 #else
 	if (nice(-10) != -10) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Could not set nice level\n");
+		fprintf(stderr, "ERROR: Could not set nice level\n");
 		return -1;
 	}
 #endif
 #endif
 	return 0;
+#endif
 }
 
 SWITCH_DECLARE(uint32_t) switch_core_cpu_count(void)
@@ -1006,7 +1070,7 @@ SWITCH_DECLARE(int32_t) change_user_group(const char *user, const char *group)
 		 */
 		runas_pw = getpwnam(user);
 		if (!runas_pw) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Unknown user \"%s\"\n", user);
+			fprintf(stderr, "ERROR: Unknown user \"%s\"\n", user);
 			return -1;
 		}
 		runas_uid = runas_pw->pw_uid;
@@ -1020,7 +1084,7 @@ SWITCH_DECLARE(int32_t) change_user_group(const char *user, const char *group)
 		 */
 		gr = getgrnam(group);
 		if (!gr) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Unknown group \"%s\"\n", group);
+			fprintf(stderr, "ERROR: Unknown group \"%s\"\n", group);
 			return -1;
 		}
 		runas_gid = gr->gr_gid;
@@ -1032,6 +1096,13 @@ SWITCH_DECLARE(int32_t) change_user_group(const char *user, const char *group)
 	}
 
 	if (runas_uid) {
+#ifdef SOLARIS_PRIVILEGES
+		/* request the privilege to set the UID */
+		if (priv_set(PRIV_ON, PRIV_EFFECTIVE, PRIV_PROC_SETID, NULL) < 0) {
+			fprintf(stderr, "ERROR: Failed to acquire proc_setid privilege (%s)\n", strerror(errno));
+			return -1;
+		}
+#endif
 #ifdef HAVE_SETGROUPS
 		/*
 		 * Drop all group memberships prior to changing anything
@@ -1039,7 +1110,7 @@ SWITCH_DECLARE(int32_t) change_user_group(const char *user, const char *group)
 		 * (which is not what we want...)
 		 */
 		if (setgroups(0, NULL) < 0) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failed to drop group access list\n");
+			fprintf(stderr, "ERROR: Failed to drop group access list\n");
 			return -1;
 		}
 #endif
@@ -1049,7 +1120,7 @@ SWITCH_DECLARE(int32_t) change_user_group(const char *user, const char *group)
 			 * (without loading the user's other groups)
 			 */
 			if (setgid(runas_gid) < 0) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failed to change gid!\n");
+				fprintf(stderr, "ERROR: Failed to change gid!\n");
 				return -1;
 			}
 		} else {
@@ -1057,7 +1128,7 @@ SWITCH_DECLARE(int32_t) change_user_group(const char *user, const char *group)
 			 * No group has been passed, use the user's primary group in this case
 			 */
 			if (setgid(runas_pw->pw_gid) < 0) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failed to change gid!\n");
+				fprintf(stderr, "ERROR: Failed to change gid!\n");
 				return -1;
 			}
 #ifdef HAVE_INITGROUPS
@@ -1066,7 +1137,7 @@ SWITCH_DECLARE(int32_t) change_user_group(const char *user, const char *group)
 			 * (This can be really useful for fine-grained access control)
 			 */
 			if (initgroups(runas_pw->pw_name, runas_pw->pw_gid) < 0) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failed to set group access list for user\n");
+				fprintf(stderr, "ERROR: Failed to set group access list for user\n");
 				return -1;
 			}
 #endif
@@ -1076,12 +1147,12 @@ SWITCH_DECLARE(int32_t) change_user_group(const char *user, const char *group)
 		 * Finally drop all privileges by switching to the new userid
 		 */
 		if (setuid(runas_uid) < 0) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failed to change uid!\n");
+			fprintf(stderr, "ERROR: Failed to change uid!\n");
 			return -1;
 		}
 #ifdef HAVE_SYS_PRCTL_H
 		if (prctl(PR_SET_DUMPABLE, 1) < 0) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failed to enable core dumps!\n");
+			fprintf(stderr, "ERROR: Failed to enable core dumps!\n");
 			return -1;
 		}
 #endif

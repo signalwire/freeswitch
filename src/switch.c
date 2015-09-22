@@ -1089,6 +1089,10 @@ int main(int argc, char *argv[])
 		reincarnate_protect(reincarnate_reexec ? argv : NULL);
 #endif
 
+	if (switch_core_set_process_privileges() < 0) {
+		return 255;
+	}
+	
 	switch (priority) {
 	case 2:
 		set_realtime_priority();
