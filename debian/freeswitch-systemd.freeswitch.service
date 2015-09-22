@@ -9,12 +9,12 @@ After=syslog.target network.target local-fs.target
 Type=forking
 PIDFile=/run/freeswitch/freeswitch.pid
 PermissionsStartOnly=true
-ExecStartPre=/bin/mkdir -p /run/freeswitch
-ExecStartPre=/bin/chown freeswitch:freeswitch /run/freeswitch
 ExecStart=/usr/bin/freeswitch -ncwait -nonat
 TimeoutSec=45s
 Restart=always
 ; exec
+RuntimeDirectory=freeswitch
+RuntimeDirectoryMode=0755
 WorkingDirectory=/run/freeswitch
 User=freeswitch
 Group=freeswitch
