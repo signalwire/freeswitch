@@ -5273,10 +5273,11 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_rayo_load)
  * Shutdown module.  Notifies threads to stop.
  */
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_rayo_shutdown)
-{
+{	
+	switch_status_t result;
+
 	switch_event_free_subclass("rayo::cpa");
-	
-	switch_status_t result = do_shutdown();
+	result = do_shutdown();
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Module shutdown\n");
 	return result;
 }
