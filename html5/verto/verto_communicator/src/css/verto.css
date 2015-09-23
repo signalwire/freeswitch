@@ -78,6 +78,10 @@ button.btn i {
   z-index:1001;
 }
 
+.googlelogin {
+    margin: 5px 0px;
+}
+
 .navbar .navbar-nav > li.navbar-item-icon > a {
   padding: 18px;
   height: 60px;
