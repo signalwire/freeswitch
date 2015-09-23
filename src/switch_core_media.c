@@ -9075,7 +9075,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_receive_message(switch_core_se
 				const char *val;
 				int ok = 0;
 				
-				if (!(val = switch_channel_get_variable(session->channel, "rtp_jitter_buffer_during_bridge")) || switch_false(val)) {
+				if (!switch_channel_test_flag(session->channel, CF_VIDEO) &&
+					(!(val = switch_channel_get_variable(session->channel, "rtp_jitter_buffer_during_bridge")) || switch_false(val))) {
 					if (switch_channel_test_flag(session->channel, CF_JITTERBUFFER) && switch_channel_test_cap_partner(session->channel, CC_FS_RTP)) {
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
 										  "%s PAUSE Jitterbuffer\n", switch_channel_get_name(session->channel));					

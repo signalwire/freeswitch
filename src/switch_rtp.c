@@ -5416,7 +5416,7 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 			}
 		}
 
-		if (rtp_session->jb && jb_valid(rtp_session)) {
+		if (rtp_session->jb && !rtp_session->pause_jb && jb_valid(rtp_session)) {
 			uint32_t read_ssrc = ntohl(rtp_session->last_rtp_hdr.ssrc);
 
 			if (rtp_session->recv_msg.header.m && rtp_session->recv_msg.header.pt != rtp_session->recv_te && 
