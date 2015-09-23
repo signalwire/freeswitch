@@ -620,7 +620,7 @@ void sofia_glue_set_extra_headers(switch_core_session_t *session, sip_t const *s
 	sip_unknown_t *un;
 	char name[512] = "";
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-	char *pstr;
+	char pstr[32];
 
 	
 	if (!sip || !channel) {
@@ -636,7 +636,7 @@ void sofia_glue_set_extra_headers(switch_core_session_t *session, sip_t const *s
 		}
 	}
 
-	pstr = switch_core_session_sprintf(session, "execute_on_%sprefix", prefix);
+	switch_snprintf(pstr, sizeof(pstr), "execute_on_%sprefix", prefix);
 	switch_channel_execute_on(channel, pstr);
 	switch_channel_api_on(channel, pstr);
 
