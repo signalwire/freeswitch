@@ -1549,11 +1549,6 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				break;
 			}
 
-			if (!zstr(msg->string_array_arg[0]) && !zstr(msg->string_array_arg[1])) {
-				switch_snprintf(ct, sizeof(ct), "%s/%s", msg->string_array_arg[0], msg->string_array_arg[1]);
-				ok = 1;
-			}
-
 			if (switch_stristr("send_message", tech_pvt->x_freeswitch_support_remote)) {
 				ok = 1;
 			}
@@ -1564,6 +1559,10 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 
 			if (ok) {
 				const char *pl = NULL;
+
+				if (!zstr(msg->string_array_arg[0]) && !zstr(msg->string_array_arg[1])) {
+					switch_snprintf(ct, sizeof(ct), "%s/%s", msg->string_array_arg[0], msg->string_array_arg[1]);
+				}
 
 				if (!zstr(msg->string_array_arg[2])) {
 					pl = msg->string_array_arg[2];
