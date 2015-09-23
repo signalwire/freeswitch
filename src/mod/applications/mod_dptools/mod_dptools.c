@@ -4529,6 +4529,90 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 	return cause;
 }
 
+switch_endpoint_interface_t *transfer_endpoint_interface;
+static switch_call_cause_t transfer_outgoing_channel(switch_core_session_t *session,
+												 switch_event_t *var_event,
+												 switch_caller_profile_t *outbound_profile,
+												 switch_core_session_t **new_session, switch_memory_pool_t **pool, switch_originate_flag_t flags,
+												 switch_call_cause_t *cancel_cause);
+switch_io_routines_t transfer_io_routines = {
+	/*.outgoing_channel */ transfer_outgoing_channel
+};
+
+static switch_status_t transfer_event_handler(switch_core_session_t *session)
+{
+	return SWITCH_STATUS_SUCCESS;
+}
+
+switch_state_handler_table_t transfer_event_handlers = {
+	/*.on_init */ transfer_event_handler
+};
+
+static switch_call_cause_t transfer_outgoing_channel(switch_core_session_t *session,
+												  switch_event_t *var_event,
+												  switch_caller_profile_t *outbound_profile,
+												  switch_core_session_t **new_session, switch_memory_pool_t **pool, switch_originate_flag_t flags,
+												  switch_call_cause_t *cancel_cause)
+{
+	int argc;
+	char *argv[3] = { 0 };
+	char *transfer_data;
+
+	switch_call_cause_t cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
+	switch_core_session_t *nsession;
+	switch_channel_t *nchannel;
+	char *name;
+	switch_caller_profile_t *caller_profile;
+
+	// Checking vars
+	if (zstr(outbound_profile->destination_number)) {
+		goto done;
+	}  else if (!(transfer_data = switch_core_session_strdup(session, outbound_profile->destination_number)) || (argc = switch_separate_string(transfer_data, '/', argv, (sizeof(argv) / sizeof(argv[0])))) < 1) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Transfer extension is not specified.\n");
+		goto error;
+	}
+
+	// Init new session and caller_profile
+	if (!(nsession = switch_core_session_request(transfer_endpoint_interface, SWITCH_CALL_DIRECTION_OUTBOUND, flags, pool))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Error Creating Session\n");
+		goto error;
+	}
+	nchannel = switch_core_session_get_channel(nsession);
+	caller_profile = switch_caller_profile_clone(nsession, outbound_profile);
+
+	if (!zstr(switch_event_get_header(var_event, "origination_caller_id_number"))) {
+		caller_profile->callee_id_number = switch_event_get_header(var_event, "origination_caller_id_number");
+	}
+	if (!zstr(switch_event_get_header(var_event, "origination_caller_id_name"))) {
+		caller_profile->callee_id_name = switch_event_get_header(var_event, "origination_caller_id_name");
+	}
+	name = switch_core_session_sprintf(nsession, "transfer/%s", transfer_data);
+	switch_channel_set_name(nchannel, name);
+	switch_channel_set_caller_profile(nchannel, caller_profile);
+	switch_channel_hangup(nchannel, SWITCH_CAUSE_REDIRECTION_TO_NEW_DESTINATION);
+
+	*new_session = nsession;
+	cause = SWITCH_CAUSE_SUCCESS;
+
+	// Call transfer
+	switch_ivr_session_transfer(session, argv[0], argv[2], argv[1]);
+
+	goto done;
+
+  error:
+
+	if (nsession) {
+		switch_core_session_destroy(&nsession);
+	}
+
+	if (pool) {
+		*pool = NULL;
+	}
+
+  done:
+	return cause;
+}
+
 #define HOLD_SYNTAX "[<display message>]"
 SWITCH_STANDARD_APP(hold_function)
 {
@@ -6428,6 +6512,11 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	pickup_endpoint_interface->interface_name = "pickup";
 	pickup_endpoint_interface->io_routines = &pickup_io_routines;
 	pickup_endpoint_interface->state_handler = &pickup_event_handlers;
+
+	transfer_endpoint_interface = (switch_endpoint_interface_t *) switch_loadable_module_create_interface(*module_interface, SWITCH_ENDPOINT_INTERFACE);
+	transfer_endpoint_interface->interface_name = "transfer";
+	transfer_endpoint_interface->io_routines = &transfer_io_routines;
+	transfer_endpoint_interface->state_handler = &transfer_event_handlers;
 
 	SWITCH_ADD_CHAT(chat_interface, "event", event_chat_send);
 	SWITCH_ADD_CHAT(chat_interface, "api", api_chat_send);
