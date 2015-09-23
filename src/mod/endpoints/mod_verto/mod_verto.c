@@ -2036,6 +2036,13 @@ static void untrack_pvt(verto_pvt_t *tech_pvt)
 	switch_thread_rwlock_unlock(globals.tech_rwlock);
 }
 
+switch_endpoint_interface_t *verto_endpoint_interface = NULL;
+
+static switch_status_t verto_on_destroy(switch_core_session_t *session)
+{
+	UNPROTECT_INTERFACE(verto_endpoint_interface);
+	return SWITCH_STATUS_SUCCESS;
+}
 
 static switch_status_t verto_on_hangup(switch_core_session_t *session)
 {
@@ -2244,7 +2251,7 @@ static switch_state_handler_table_t verto_state_handlers = {
 	/*.on_reset */ NULL,
 	/*.on_park */ NULL,
 	/*.on_reporting */ NULL,
-    /*.on_destroy */ NULL,
+    /*.on_destroy */ verto_on_destroy,
     SSH_FLAG_STICKY
 };
 
@@ -2478,11 +2485,13 @@ static int verto_recover_callback(switch_core_session_t *session)
 	const char *profile_name = NULL, *jsock_uuid_str = NULL;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 
+	PROTECT_INTERFACE(verto_endpoint_interface);
 
 	profile_name = switch_channel_get_variable(channel, "verto_profile_name");
 	jsock_uuid_str = switch_channel_get_variable(channel, "jsock_uuid_str");
 
 	if (!(profile_name && jsock_uuid_str && (profile = find_profile(profile_name)))) {
+		UNPROTECT_INTERFACE(verto_endpoint_interface);
 		return 0;
 	}
 
@@ -3297,6 +3306,8 @@ static switch_bool_t verto__invite_func(const char *method, cJSON *params, jsock
 	}
 
 	switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "origination_uuid", call_id);
+
+	PROTECT_INTERFACE(verto_endpoint_interface);
 	if ((reason = switch_core_session_outgoing_channel(NULL, var_event, "rtc",
 													   NULL, &session, NULL, SOF_NONE, &cancel_cause)) != SWITCH_CAUSE_SUCCESS) {
 		cJSON_AddItemToObject(obj, "message", cJSON_CreateString("Cannot create channel"));
@@ -3455,6 +3466,8 @@ static switch_bool_t verto__invite_func(const char *method, cJSON *params, jsock
 	if (!err) {
 		return SWITCH_TRUE;
 	}
+
+	UNPROTECT_INTERFACE(verto_endpoint_interface);
 
 	if (session) {
 		switch_core_session_destroy(&session);
@@ -4848,7 +4861,7 @@ static void run_profiles(void)
 
 //// ENDPOINT
 
-switch_endpoint_interface_t *verto_endpoint_interface;
+
 static switch_call_cause_t verto_outgoing_channel(switch_core_session_t *session,
 												  switch_event_t *var_event,
 												  switch_caller_profile_t *outbound_profile,
@@ -4934,6 +4947,8 @@ static switch_call_cause_t verto_outgoing_channel(switch_core_session_t *session
 {
 	switch_call_cause_t cause = SWITCH_CAUSE_CHANNEL_UNACCEPTABLE;
 	char *dest = NULL;
+
+	PROTECT_INTERFACE(verto_endpoint_interface);
 
 	if (!zstr(outbound_profile->destination_number)) {
 		dest = strdup(outbound_profile->destination_number);
@@ -5040,6 +5055,10 @@ static switch_call_cause_t verto_outgoing_channel(switch_core_session_t *session
 	}
 
  end:
+
+	if (cause != SWITCH_CAUSE_SUCCESS) {
+		UNPROTECT_INTERFACE(verto_endpoint_interface);
+	}
 
 	switch_safe_free(dest);
 
