@@ -1915,7 +1915,7 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 	canvas->video_timer_reset = 1;
 
 	packet = switch_core_alloc(conference->pool, SWITCH_RTP_MAX_BUF_LEN);
-
+	
 	while (conference_globals.running && !conference_utils_test_flag(conference, CFLAG_DESTRUCT) && conference_utils_test_flag(conference, CFLAG_VIDEO_MUXING)) {
 		switch_bool_t need_refresh = SWITCH_FALSE, send_keyframe = SWITCH_FALSE, need_reset = SWITCH_FALSE;
 		switch_time_t now;
@@ -2562,12 +2562,12 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 
 			write_frame.img = write_img;
 
+			wait_for_canvas(canvas);
+			
 			if (canvas->recording) {
 				conference_video_check_recording(conference, canvas, &write_frame);
 			}
 
-			wait_for_canvas(canvas);
-			
 			if (conference->canvas_count > 1) {
 				switch_image_t *img_copy = NULL;
 
