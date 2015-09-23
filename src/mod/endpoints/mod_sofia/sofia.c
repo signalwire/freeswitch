@@ -5872,14 +5872,24 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 		switch_channel_set_variable_printf(channel, "sip_network_ip", "%s", network_ip);
 		switch_channel_set_variable_printf(channel, "sip_network_port", "%d", network_port);
 
-		if ((caller_profile = switch_channel_get_caller_profile(channel))) {
+		if ((caller_profile = switch_channel_get_caller_profile(channel)) && !zstr(network_ip) &&
+			(zstr(caller_profile->network_addr) || strcmp(caller_profile->network_addr, network_ip))) {
 			caller_profile->network_addr = switch_core_strdup(caller_profile->pool, network_ip);
 		}
 
+		if (tech_pvt->mparams.last_sdp_response) {
+			tech_pvt->mparams.prev_sdp_response = tech_pvt->mparams.last_sdp_response;
+		}
 		tech_pvt->mparams.last_sdp_response = NULL;
+
 		if (sip->sip_payload && sip->sip_payload->pl_data) {
 			switch_core_media_set_sdp_codec_string(session, sip->sip_payload->pl_data, SDP_TYPE_RESPONSE);
-			tech_pvt->mparams.last_sdp_response = switch_core_session_strdup(session, sip->sip_payload->pl_data);
+
+			if (!zstr(tech_pvt->mparams.prev_sdp_response) && !strcmp(tech_pvt->mparams.prev_sdp_response, sip->sip_payload->pl_data)) {
+				tech_pvt->mparams.last_sdp_response = tech_pvt->mparams.prev_sdp_response;
+			} else {
+				tech_pvt->mparams.last_sdp_response = switch_core_session_strdup(session, sip->sip_payload->pl_data);
+			}
 		}
 
 		if (status > 299 && switch_channel_test_app_flag_key("T38", tech_pvt->channel, CF_APP_T38_REQ)) {
@@ -6575,6 +6585,15 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 				}
 			}
 		}
+
+		if (tech_pvt->mparams.last_sdp_str) {
+			tech_pvt->mparams.prev_sdp_str = tech_pvt->mparams.last_sdp_str;
+		}
+
+		if (tech_pvt->mparams.last_sdp_response) {
+			tech_pvt->mparams.prev_sdp_response = tech_pvt->mparams.last_sdp_response;
+		}
+
 		tech_pvt->mparams.last_sdp_str = NULL;
 		tech_pvt->mparams.last_sdp_response = NULL;
 		
@@ -8823,10 +8842,18 @@ void sofia_handle_sip_i_reinvite(switch_core_session_t *session,
 	}
 
 	if (channel) {
+		if (tech_pvt->mparams.last_sdp_str) {
+			tech_pvt->mparams.prev_sdp_str = tech_pvt->mparams.last_sdp_str;
+		}
 		tech_pvt->mparams.last_sdp_str = NULL;
+
 		if (sip->sip_payload && sip->sip_payload->pl_data) {
-			switch_channel_set_variable(channel, "sip_reinvite_sdp", sip->sip_payload->pl_data);
-			tech_pvt->mparams.last_sdp_str = switch_core_session_strdup(session, sip->sip_payload->pl_data);
+			if (!zstr(tech_pvt->mparams.prev_sdp_str) && strcmp(tech_pvt->mparams.prev_sdp_str, sip->sip_payload->pl_data)) {
+				switch_channel_set_variable(channel, "sip_reinvite_sdp", sip->sip_payload->pl_data);
+				tech_pvt->mparams.last_sdp_str = switch_core_session_strdup(session, sip->sip_payload->pl_data);
+			} else {
+				tech_pvt->mparams.last_sdp_str = tech_pvt->mparams.prev_sdp_str;
+			}
 		}
 		switch_channel_execute_on(channel, "execute_on_sip_reinvite");
 	}

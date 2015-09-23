@@ -1495,12 +1495,17 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		break;
 	case SWITCH_MESSAGE_INDICATE_MESSAGE:
 		{
-			char *ct = "text/plain";
+			char ct[256] = "text/plain";
 			int ok = 0;
 
 			if (!zstr(msg->string_array_arg[3]) && !strcmp(msg->string_array_arg[3], tech_pvt->caller_profile->uuid)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Not sending message back to sender\n");
 				break;
+			}
+
+			if (!zstr(msg->string_array_arg[0]) && !zstr(msg->string_array_arg[1])) {
+				switch_snprintf(ct, sizeof(ct), "%s/%s", msg->string_array_arg[0], msg->string_array_arg[1]);
+				ok = 1;
 			}
 
 			if (switch_stristr("send_message", tech_pvt->x_freeswitch_support_remote)) {
@@ -1535,32 +1540,24 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		break;
 	case SWITCH_MESSAGE_INDICATE_INFO:
 		{
-			char *ct = "freeswitch/data";
+			char ct[256] = "freeswitch/data";
 			int ok = 0;
-
-			if (!zstr(msg->string_array_arg[0]) && !zstr(msg->string_array_arg[1])) {
-				ct = switch_core_session_sprintf(session, "%s/%s", msg->string_array_arg[0], msg->string_array_arg[1]);
-				ok = 1;
-			}
 
 			if (switch_stristr("send_info", tech_pvt->x_freeswitch_support_remote)) {
 				ok = 1;
 			}
 
-			/* TODO: 1.4 remove this stanza */
-			if (switch_true(switch_channel_get_variable(channel, "fs_send_unspported_info"))) {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING,
-								  "fs_send_unspported_info is deprecated in favor of correctly spelled fs_send_unsupported_info\n");
-				ok = 1;
-			}
-
-			if (switch_true(switch_channel_get_variable(channel, "fs_send_unsupported_info"))) {
+			if (switch_true(switch_channel_get_variable_dup(channel, "fs_send_unsupported_info", SWITCH_FALSE, -1))) {
 				ok = 1;
 			}
 
 			if (ok) {
 				char *headers = sofia_glue_get_extra_headers(channel, SOFIA_SIP_INFO_HEADER_PREFIX);
 				const char *pl = NULL;
+
+				if (!zstr(msg->string_array_arg[0]) && !zstr(msg->string_array_arg[1])) {
+					switch_snprintf(ct, sizeof(ct), "%s/%s", msg->string_array_arg[0], msg->string_array_arg[1]);
+				}
 
 				if (!zstr(msg->string_array_arg[2])) {
 					pl = msg->string_array_arg[2];

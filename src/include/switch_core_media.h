@@ -1,3 +1,4 @@
+
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
@@ -107,6 +108,8 @@ typedef struct switch_core_media_params_s {
 	char *local_sdp_str;
 	char *last_sdp_str;
 	char *last_sdp_response;
+	char *prev_sdp_str;
+	char *prev_sdp_response;
 
 	char *stun_ip;
 	switch_port_t stun_port;
