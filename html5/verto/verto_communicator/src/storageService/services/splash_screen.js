@@ -116,7 +116,8 @@
             };
 
             if(verto.data.connecting || verto.data.connected) {
-              resolve(result); 
+              resolve(result);
+              return;
             };
 
             var checkUserStored = function() {
