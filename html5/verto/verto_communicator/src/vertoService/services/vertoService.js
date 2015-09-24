@@ -279,7 +279,7 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
           data.canVideo = true;
         }
 
-        if(callback) {
+        if(angular.isFunction(callback)) {
           callback();
         }
       },
