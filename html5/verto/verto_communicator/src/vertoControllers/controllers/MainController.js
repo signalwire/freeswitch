@@ -31,10 +31,6 @@
         $location.path('/');
       }
       
-      $rootScope.$on('config.http.success', function(ev) {
-        $scope.login();
-      });
-
       /**
        * Login the user to verto server and
        * redirects him to dialpad page.
