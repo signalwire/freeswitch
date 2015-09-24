@@ -22,6 +22,7 @@
 				console.debug("googlelogin: " + data.googlelogin);
 				if (data.googlelogin){
 					$scope.googlelogin = data.googlelogin;
+					$scope.googleclientid = data.googleclientid;
 				}
 
 				angular.extend(verto.data, data);
