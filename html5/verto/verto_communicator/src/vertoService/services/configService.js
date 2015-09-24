@@ -62,7 +62,7 @@ vertoService.service('config', ['$rootScope', '$http', '$location', 'storage', '
           verto.data.autologin_done = true;
         }
         
-        if(verto.data.login && verto.data.password && verto.data.name && verto.data.email) {
+        if(verto.data.login != '' && verto.data.password != '' && verto.data.name != '' && verto.data.email != '') {
           $rootScope.$emit('config.http.success', data);        
         }
         return response;
