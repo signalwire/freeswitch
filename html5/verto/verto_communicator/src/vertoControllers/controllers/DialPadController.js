@@ -4,9 +4,12 @@
   angular
     .module('vertoControllers')
     .controller('DialPadController', ['$rootScope', '$scope',
-      '$http', '$location', 'toastr', 'verto', 'storage', 'CallHistory',
-      function($rootScope, $scope, $http, $location, toastr, verto, storage, CallHistory) {
+      '$http', '$location', 'toastr', 'verto', 'storage', 'CallHistory', 'eventQueue',
+      function($rootScope, $scope, $http, $location, toastr, verto, storage, CallHistory, eventQueue) {
         console.debug('Executing DialPadController.');
+        
+        eventQueue.process();
+        
         $scope.call_history = CallHistory.all();
         $scope.history_control = CallHistory.all_control();
         $scope.has_history = Object.keys($scope.call_history).length;

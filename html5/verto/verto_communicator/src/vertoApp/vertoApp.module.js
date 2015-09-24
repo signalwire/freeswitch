@@ -54,8 +54,19 @@
     }
   ]);
 
-  vertoApp.run(['$rootScope', '$location', 'toastr', 'prompt',
-    function($rootScope, $location, toastr, prompt) {
+  vertoApp.run(['$rootScope', '$location', 'toastr', 'prompt', 'verto',
+    function($rootScope, $location, toastr, prompt, verto) {
+      
+      $rootScope.$on( "$routeChangeStart", function(event, next, current) {
+        if (!verto.data.connected) {
+          if ( next.templateUrl === "partials/login.html") {
+            // pass 
+          } else {
+            $location.path("/");
+          }
+        }
+      });
+      
       $rootScope.$on('$routeChangeSuccess', function(event, current, previous) {
         $rootScope.title = current.$$route.title;
       });

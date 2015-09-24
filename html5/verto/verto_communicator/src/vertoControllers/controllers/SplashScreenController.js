@@ -18,7 +18,7 @@
             link = activity;
           }
         }
-
+        
         $location.path(link);
       }
 
@@ -77,6 +77,7 @@
           redirectTo('/dialpad');
         } else {
           redirectTo('/login');
+          $location.path('/login');
         }
       });
 

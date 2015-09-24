@@ -4,7 +4,7 @@
   angular
     .module('vertoControllers')
     .controller('MainController',
-      function($scope, $rootScope, $location, $modal, $timeout, verto, storage, CallHistory, toastr, Fullscreen, prompt) {
+      function($scope, $rootScope, $location, $modal, $timeout, $q, verto, storage, CallHistory, toastr, Fullscreen, prompt, eventQueue) {
 
       console.debug('Executing MainController.');
 
@@ -245,22 +245,27 @@
       });
 
       $rootScope.$on('page.incall', function(event, data) {
-        if (storage.data.askRecoverCall) {
-          prompt({
-            title: 'Oops, Active Call in Course.',
-            message: 'It seems you were in a call before leaving the last time. Wanna go back to that?'
-          }).then(function() {
-            console.log('redirect to incall page');
-            $location.path('/incall');
-          }, function() {
-            storage.data.userStatus = 'connecting';
-            verto.hangup();
+        var page_incall = function() {
+          return $q(function(resolve, reject) {
+            if (storage.data.askRecoverCall) {
+              prompt({
+                title: 'Oops, Active Call in Course.',
+                message: 'It seems you were in a call before leaving the last time. Wanna go back to that?'
+              }).then(function() {
+                console.log('redirect to incall page');
+                $location.path('/incall');
+              }, function() {
+                storage.data.userStatus = 'connecting';
+                verto.hangup();
+              });
+            } else {
+              console.log('redirect to incall page');
+              $location.path('/incall');
+            }
+            resolve();
           });
-        } else {
-          console.log('redirect to incall page');
-          $location.path('/incall');
-        }
-
+        };
+        eventQueue.events.push(page_incall);
       });
 
       $scope.$on('event:google-plus-signin-success', function (event,authResult) {
