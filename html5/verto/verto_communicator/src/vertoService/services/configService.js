@@ -37,6 +37,7 @@ vertoService.service('config', ['$rootScope', '$http', '$location', 'storage', '
         console.debug("googlelogin: " + data.googlelogin);
         if (data.googlelogin){
           verto.data.googlelogin = data.googlelogin;
+          verto.data.googleclientid = data.googleclientid;
         }
         
         angular.extend(verto.data, data);
