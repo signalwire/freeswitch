@@ -24,33 +24,16 @@
        * @type {string}
        */
       $rootScope.dialpadNumber = '';
-
-
-      /**
-       * if user data saved, use stored data for logon
-       */
-      if (storage.data.ui_connected && storage.data.ws_connected) {
-        $scope.verto.data.name = storage.data.name;
-        $scope.verto.data.email = storage.data.email;
-        $scope.verto.data.login = storage.data.login;
-        $scope.verto.data.password = storage.data.password;
-
-        verto.connect(function(v, connected) {
-          $scope.$apply(function() {
-            if (connected) {
-              toastr.success('Nice to see you again.', 'Welcome back');
-              $location.path('/dialpad');
-            }
-          });
-        });
-
-      }
-
+      
       // If verto is not connected, redirects to login page.
       if (!verto.data.connected) {
         console.debug('MainController: WebSocket not connected. Redirecting to login.');
-        $location.path('/login');
+        $location.path('/');
       }
+      
+      $rootScope.$on('config.http.success', function(ev) {
+        $scope.login();
+      });
 
       /**
        * Login the user to verto server and
@@ -59,23 +42,20 @@
       $scope.login = function() {
         var connectCallback = function(v, connected) {
           $scope.$apply(function() {
-            if (connected) {
-              storage.data.ui_connected = verto.data.connected;
-              storage.data.ws_connected = verto.data.connected;
-              storage.data.name = verto.data.name;
-              storage.data.email = verto.data.email;
-              storage.data.login = verto.data.login;
-              storage.data.password = verto.data.password;
-
-              console.debug('Redirecting to dialpad page.');
-              toastr.success('Login successful.', 'Welcome');
-              $location.path('/dialpad');
-            } else {
-              toastr.error('There was an error while trying to login. Please try again.', 'Error');
-            }
+          verto.data.connecting = false;
+          if (connected) {
+            storage.data.ui_connected = verto.data.connected;
+            storage.data.ws_connected = verto.data.connected;
+            storage.data.name = verto.data.name;
+            storage.data.email = verto.data.email;
+            storage.data.login = verto.data.login;
+            storage.data.password = verto.data.password;
+            $location.path('/dialpad');
+          }
           });
         };
-
+        
+        verto.data.connecting = true;
         verto.connect(connectCallback);
       };
 

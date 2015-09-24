@@ -7,7 +7,6 @@
       '$http', '$location', 'toastr', 'verto', 'storage', 'CallHistory',
       function($rootScope, $scope, $http, $location, toastr, verto, storage, CallHistory) {
         console.debug('Executing DialPadController.');
-        $scope.checkBrowser();
         $scope.call_history = CallHistory.all();
         $scope.history_control = CallHistory.all_control();
         $scope.has_history = Object.keys($scope.call_history).length;

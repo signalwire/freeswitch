@@ -12,7 +12,6 @@
         }
         preRoute();
 
-
         verto.data.name = $scope.storage.data.name;
         verto.data.email = $scope.storage.data.email;
 

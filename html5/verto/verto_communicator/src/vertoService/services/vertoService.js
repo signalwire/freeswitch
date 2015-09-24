@@ -198,7 +198,7 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
       videoResolution: videoResolution,
       bandwidth: bandwidth,
 
-      refreshDevicesCallback : function refreshDevicesCallback() {
+      refreshDevicesCallback : function refreshDevicesCallback(callback) {
         data.videoDevices = [{
 	  id: 'none',
 	  label: 'No Camera'
@@ -278,11 +278,19 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
         } else {
           data.canVideo = true;
         }
+
+        if(callback) {
+          callback();
+        }
       },
 
       refreshDevices: function(callback) {
         console.debug('Attempting to refresh the devices.');
-        jQuery.verto.refreshDevices(this.refreshDevicesCallback);
+        if(callback) {
+          jQuery.verto.refreshDevices(callback);
+        } else {
+          jQuery.verto.refreshDevices(this.refreshDevicesCallback);
+        }
       },
 
       /**
@@ -538,7 +546,6 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
         function ourBootstrap() {
           // Checking if we have a failed connection attempt before
           // connecting again.
-          that.refreshDevicesCallback();
           if (data.instance && !data.instance.rpcClient.socketReady()) {
               clearTimeout(data.instance.rpcClient.to);
               data.instance.logout();
@@ -565,8 +572,16 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
           });
 
         }
+        
+        if(data.mediaPerm) {
+          ourBootstrap();
+        } else {
+          $.verto.init({}, ourBootstrap, false);
+        }
+      },
 
-        $.verto.init({}, ourBootstrap);
+      mediaPerm: function(callback) {
+        $.verto.init({}, callback, false);
       },
 
       /**

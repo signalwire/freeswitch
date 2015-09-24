@@ -2,7 +2,7 @@
   'use strict';
 
   var vertoControllers = angular.module('vertoControllers', [
-  	'ui.bootstrap',
+    'ui.bootstrap',
     'vertoService',
     'storageService',
     'ui.gravatar'

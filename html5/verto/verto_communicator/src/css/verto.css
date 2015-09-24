@@ -223,6 +223,29 @@ button.btn i {
   }
 }
 
+/* --- Splash Screen --- */
+.splash-errors {
+  background: rgba(249, 21, 21, 0.55);
+  color: white;
+  padding: 8px;
+  margin-top: 11px;
+}
+
+.splash-errors ul {
+  padding-start: 0em;
+  -moz-padding-start: 0em;
+  -webkit-padding-start: 0em;
+  padding-start: 0em;
+}
+
+.splash-errors li {
+  background-color: rgba(154, 36, 36, 0.28);
+  padding: 8px;
+  font-weight: bold;
+  list-style: none;
+}
+/* --- End of Splash Screen --- */
+
 
 /* --- Modal settings page --- */
 

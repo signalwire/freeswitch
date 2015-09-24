@@ -19,6 +19,11 @@
   vertoApp.config(['$routeProvider', 'gravatarServiceProvider',
     function($routeProvider, gravatarServiceProvider) {
       $routeProvider.
+      when('/', {
+        title: 'Loading',
+        templateUrl: 'partials/splash_screen.html',
+        controller: 'SplashScreenController'
+      }).
       when('/login', {
         title: 'Login',
         templateUrl: 'partials/login.html',
@@ -40,7 +45,7 @@
         controller: 'BrowserUpgradeController'
       }).
       otherwise({
-        redirectTo: '/login'
+        redirectTo: '/'
       });
 
       gravatarServiceProvider.defaults = {
@@ -61,17 +66,7 @@
         $rootScope.safeProtocol = true;
       }
 
-      $rootScope.checkBrowser = function() {
-        navigator.getUserMedia = navigator.getUserMedia ||
-          navigator.webkitGetUserMedia ||
-          navigator.mozGetUserMedia;
-
-        if (!navigator.getUserMedia) {
-          $location.path('/browser-upgrade');
-        }
-
-      };
-
+      
       $rootScope.promptInput = function(title, message, label, callback) {
         var ret = prompt({
           title: title,

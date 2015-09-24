@@ -2549,7 +2549,7 @@
 		
 		console.info("Audio Devices", $.verto.audioInDevices);
 		console.info("Video Devices", $.verto.videoDevices);
-		runtime();
+		runtime(true);
 	    });
 	} else {
 	    /* of course it's a totally different API CALL with different element names for the same exact thing */
@@ -2586,12 +2586,12 @@
 		    console.info("Audio IN Devices", $.verto.audioInDevices);
 		    console.info("Audio Out Devices", $.verto.audioOutDevices);
 		    console.info("Video Devices", $.verto.videoDevices);
-		    runtime();
+		    runtime(true);
 		    
 		})
 		.catch(function(err) {
 		    console.log(" Device Enumeration ERROR: " + err.name + ": " + err.message);
-		    runtime();
+		    runtime(false);
 		});
 	}
 
@@ -2601,9 +2601,16 @@
 	checkDevices(runtime);
     }
 
-    $.verto.init = function(obj, runtime) {
-	$.FSRTC.checkPerms(function() {
+    $.verto.init = function(obj, runtime, check) {
+        if(check == undefined) {
+            check = true;
+        }
+	$.FSRTC.checkPerms(function(status) {
+          if(check) {
 	    checkDevices(runtime);
+          } else {
+            runtime(status);
+          }
 	}, true, true);
     }
 
