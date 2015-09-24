@@ -101,22 +101,7 @@
 
               result['promise'] = configPromise;
               
-              var connectCallback = function(v, connected) {
-                  verto.data.connecting = false;
-                  if (connected) {
-                    storage.data.ui_connected = verto.data.connected;
-                    storage.data.ws_connected = verto.data.connected;
-                    storage.data.name = verto.data.name;
-                    storage.data.email = verto.data.email;
-                    storage.data.login = verto.data.login;
-                    storage.data.password = verto.data.password;
-                    resolve(result);
-                  }
-              };
-
-              verto.data.connecting = true;
-              verto.connect(connectCallback);
-
+              resolve(result);
           });
         };
 

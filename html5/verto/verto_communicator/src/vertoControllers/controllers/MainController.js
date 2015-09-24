@@ -30,12 +30,18 @@
         console.debug('MainController: WebSocket not connected. Redirecting to login.');
         $location.path('/');
       }
-      
+ 
+      $rootScope.$on('config.http.success', function(ev) {
+        $scope.login(false);
+      });
       /**
        * Login the user to verto server and
        * redirects him to dialpad page.
        */
-      $scope.login = function() {
+      $scope.login = function(redirect) {
+        if(redirect == undefined) {
+          redirect = true;
+        }
         var connectCallback = function(v, connected) {
           $scope.$apply(function() {
           verto.data.connecting = false;
@@ -46,7 +52,9 @@
             storage.data.email = verto.data.email;
             storage.data.login = verto.data.login;
             storage.data.password = verto.data.password;
-            $location.path('/dialpad');
+            if (redirect) {
+              $location.path('/dialpad');
+            }
           }
           });
         };
