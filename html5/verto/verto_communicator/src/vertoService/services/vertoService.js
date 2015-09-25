@@ -631,7 +631,7 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
         var call = data.instance.newCall({
           destination_number: destination,
           caller_id_name: data.name,
-          caller_id_number: data.login,
+          caller_id_number: data.callerid ? data.callerid : data.email,
           outgoingBandwidth: storage.data.outgoingBandwidth,
           incomingBandwidth: storage.data.incomingBandwidth,
           useVideo: storage.data.useVideo,
