@@ -175,7 +175,7 @@ static void do_sleep(switch_interval_time_t t)
 #elif defined(DARWIN)
 	t -= OFFSET;
 	ts.tv_sec = t / APR_USEC_PER_SEC;
-	ts.tv_nsec = (t % APR_USEC_PER_SEC) * 1000;
+	ts.tv_nsec = (t % APR_USEC_PER_SEC) * 850;
 	nanosleep(&ts, NULL);
 #else
 	apr_sleep(t);

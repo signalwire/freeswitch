@@ -1,6 +1,6 @@
 Name:           freeswitch-release       
 Version:        1 
-Release:        0
+Release:        6
 Summary:        FreeSWITCH Packages for Enterprise Linux repository configuration
 
 Group:          System Environment/Base 
@@ -52,6 +52,8 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Tue Sep 08 2015 Ken Rice <krice at freeswitch.org> - 5-0
+- Create New version for the 1.6 repository
 * Fri Jan 27 2012 Ken Rice <krice at freeswitch.org> - 5-0
 - Replace GPG key with correct key, and update primary URLs
 * Wed Dec 21 2011 Ken Rice <krice at freeswitch.org> - 5-0

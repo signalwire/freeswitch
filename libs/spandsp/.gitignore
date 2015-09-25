@@ -10,3 +10,5 @@ src/v27ter_tx_4800_rrc.h
 src/v29rx_rrc.h
 src/v29tx_rrc.h
 INSTALL
+test-data/itu/tiff-fx/Makefile
+test-data/itu/tiff-fx/Makefile.in

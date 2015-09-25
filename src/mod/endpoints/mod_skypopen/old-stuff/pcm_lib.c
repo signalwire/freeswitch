@@ -540,7 +540,7 @@ static inline unsigned int mul(unsigned int a, unsigned int b)
 static inline unsigned int muldiv32(unsigned int a, unsigned int b,
 				    unsigned int c, unsigned int *r)
 {
-	u_int64_t n = (u_int64_t) a * b;
+	uint64_t n = (u_int64_t) a * b;
 	if (c == 0) {
 		snd_BUG_ON(!n);
 		*r = 0;
@@ -1094,7 +1094,7 @@ EXPORT_SYMBOL(snd_pcm_hw_rule_add);
  * Apply the constraint of the given bitmap mask to a 32-bit mask parameter.
  */
 int snd_pcm_hw_constraint_mask(struct snd_pcm_runtime *runtime, snd_pcm_hw_param_t var,
-			       u_int32_t mask)
+			       uint32_t mask)
 {
 	struct snd_pcm_hw_constraints *constrs = &runtime->hw_constraints;
 	struct snd_mask *maskp = constrs_mask(constrs, var);
@@ -1114,12 +1114,12 @@ int snd_pcm_hw_constraint_mask(struct snd_pcm_runtime *runtime, snd_pcm_hw_param
  * Apply the constraint of the given bitmap mask to a 64-bit mask parameter.
  */
 int snd_pcm_hw_constraint_mask64(struct snd_pcm_runtime *runtime, snd_pcm_hw_param_t var,
-				 u_int64_t mask)
+				 uint64_t mask)
 {
 	struct snd_pcm_hw_constraints *constrs = &runtime->hw_constraints;
 	struct snd_mask *maskp = constrs_mask(constrs, var);
-	maskp->bits[0] &= (u_int32_t)mask;
-	maskp->bits[1] &= (u_int32_t)(mask >> 32);
+	maskp->bits[0] &= (uint32_t)mask;
+	maskp->bits[1] &= (uint32_t)(mask >> 32);
 	memset(maskp->bits + 2, 0, (SNDRV_MASK_MAX-64) / 8); /* clear rest */
 	if (! maskp->bits[0] && ! maskp->bits[1])
 		return -EINVAL;

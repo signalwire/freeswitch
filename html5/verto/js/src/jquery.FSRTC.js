@@ -29,11 +29,6 @@
  *
  */
 
-
-var iceTimerSent = 0;
-var iceTimerCompleted = 0;
-var iceTimer;
-
 (function($) {
 
     // Find the line in sdpLines that starts with |prefix|, and, if specified,
@@ -173,18 +168,24 @@ var iceTimer;
         var sdpLines = sdp.split('\r\n');
 
         // Find opus payload.
-        var opusIndex = findLine(sdpLines, 'a=rtpmap', 'opus/48000'),
-        opusPayload;
-        if (opusIndex) {
+        var opusIndex = findLine(sdpLines, 'a=rtpmap', 'opus/48000'), opusPayload;
+
+        if (!opusIndex) {
+	    return sdp;
+	} else {
             opusPayload = getCodecPayloadType(sdpLines[opusIndex]);
         }
 
         // Find the payload in fmtp line.
         var fmtpLineIndex = findLine(sdpLines, 'a=fmtp:' + opusPayload.toString());
-        if (fmtpLineIndex === null) return sdp;
 
-        // Append stereo=1 to fmtp line.
-        sdpLines[fmtpLineIndex] = sdpLines[fmtpLineIndex].concat('; stereo=1');
+        if (fmtpLineIndex === null) {
+	    // create an fmtp line
+	    sdpLines[opusIndex] = sdpLines[opusIndex] + '\r\na=fmtp:' + opusPayload.toString() + " stereo=1; sprop-stereo=1"
+	} else {
+            // Append stereo=1 to fmtp line.
+            sdpLines[fmtpLineIndex] = sdpLines[fmtpLineIndex].concat('; stereo=1; sprop-stereo=1');
+	}
 
         sdp = sdpLines.join('\r\n');
         return sdp;
@@ -292,6 +293,13 @@ var iceTimer;
         onSuccess, onError);
     };
 
+    $.FSRTC.prototype.stopPeer = function() {
+        if (self.peer) {
+            console.log("stopping peer");
+            self.peer.stop();
+        }
+    }
+
     $.FSRTC.prototype.stop = function() {
         var self = this;
 
@@ -305,7 +313,11 @@ var iceTimer;
         }
 
         if (self.localStream) {
-            self.localStream.stop();
+            if(typeof self.localStream.stop == 'function') {
+                self.localStream.stop();
+            } else {
+                self.localStream.active = false;
+            }
             self.localStream = null;
         }
 
@@ -319,7 +331,11 @@ var iceTimer;
         }
 
 	if (self.options.localVideoStream) {
-	    self.options.localVideoStream.stop();
+            if(typeof self.options.localVideoStream.stop == 'function') {
+	        self.options.localVideoStream.stop();
+            } else {
+                self.options.localVideoStream.active = false;
+            }
         }
 
         if (self.peer) {
@@ -507,8 +523,8 @@ var iceTimer;
 	    }
 
 	} else {
-	    video = null;
-	    useVideo = null;
+	    video = false;
+	    useVideo = false;
 	}
 
 	return {audio: audio, video: video, useVideo: useVideo};
@@ -536,7 +552,7 @@ var iceTimer;
 		    self.constraints.mandatory.OfferToReceiveVideo = false;
 		}
 	    }
-
+	    
             self.peer = RTCPeerConnection({
                 type: self.type,
                 attachStream: self.localStream,
@@ -604,12 +620,13 @@ var iceTimer;
     window.moz = !!navigator.mozGetUserMedia;
 
     function RTCPeerConnection(options) {
+	var gathering = false, done = false;
 
         var w = window,
         PeerConnection = w.mozRTCPeerConnection || w.webkitRTCPeerConnection,
         SessionDescription = w.mozRTCSessionDescription || w.RTCSessionDescription,
         IceCandidate = w.mozRTCIceCandidate || w.RTCIceCandidate;
-
+	
         var STUN = {
             url: !moz ? 'stun:stun.l.google.com:19302' : 'stun:23.21.150.121'
         };
@@ -655,104 +672,74 @@ var iceTimer;
         openOffererChannel();
         var x = 0;
 
-        peer.onicecandidate = function(event) {
-            if (event.candidate) {
-                options.onICE(event.candidate);
-		clearTimeout(iceTimer);
-		iceTimer = setTimeout(function() {
-		    iceTimerSent = 1;
+	function ice_handler() {
 
-		    if (iceTimerCompleted == 0) {
+	    done = true;
+	    gathering = null;
 
-			if (options.onICEComplete) {
-			    options.onICEComplete();
-			}
-
-			if (options.type == "offer") {
-			    /* new mozilla now tries to be like chrome but it takes them 10 seconds to complete the ICE 
-			       Booooooooo! This trickle thing is a waste of time...... We'll all have to re-code our engines 
-			       to handle partial setups to maybe save 100m
-			    */
-			    if ((!moz || (!options.sentICESDP && peer.localDescription.sdp.match(/a=candidate/)) && !x && options.onICESDP)) {
-				options.onICESDP(peer.localDescription);
-				//x = 1;
-				/*
-				  x = 1;
-				  peer.createOffer(function(sessionDescription) {
-				  sessionDescription.sdp = serializeSdp(sessionDescription.sdp);
-				  peer.setLocalDescription(sessionDescription);
-				  if (options.onICESDP) {
-                                  options.onICESDP(sessionDescription);
-				  }
-				  }, onSdpError, constraints);
-				*/
-			    }
-			} else {
-			    if (!x && options.onICESDP) {
-				options.onICESDP(peer.localDescription);
-				//x = 1;
-				/*
-				  x = 1;
-				  peer.createAnswer(function(sessionDescription) {
-				  sessionDescription.sdp = serializeSdp(sessionDescription.sdp);
-				  peer.setLocalDescription(sessionDescription);
-				  if (options.onICESDP) {
-                                  options.onICESDP(sessionDescription);
-				  }
-				  }, onSdpError, constraints);
-				*/
-			    }
-			}
-		    }
-		}, 1000);
-            } else {
-		if (iceTimerSent == 0) {
-		    clearTimeout(iceTimer);
-		    iceTimerCompleted = 1;
-
-                    if (options.onICEComplete) {
-			options.onICEComplete();
-                    }
-
-                    if (options.type == "offer") {
-			/* new mozilla now tries to be like chrome but it takes them 10 seconds to complete the ICE 
-			   Booooooooo! This trickle thing is a waste of time...... We'll all have to re-code our engines 
-			   to handle partial setups to maybe save 100m
-			*/
-			if ((!moz || (!options.sentICESDP && peer.localDescription.sdp.match(/a=candidate/)) && !x && options.onICESDP)) {
-                            options.onICESDP(peer.localDescription);
-                            //x = 1;
-                            /*
-                              x = 1;
-                              peer.createOffer(function(sessionDescription) {
-                              sessionDescription.sdp = serializeSdp(sessionDescription.sdp);
-                              peer.setLocalDescription(sessionDescription);
-                              if (options.onICESDP) {
-                              options.onICESDP(sessionDescription);
-                              }
-                              }, onSdpError, constraints);
-                            */
-			}
-                    } else {
-			if (!x && options.onICESDP) {
-                            options.onICESDP(peer.localDescription);
-                            //x = 1;
-                            /*
-                              x = 1;
-                              peer.createAnswer(function(sessionDescription) {
-                              sessionDescription.sdp = serializeSdp(sessionDescription.sdp);
-                              peer.setLocalDescription(sessionDescription);
-                              if (options.onICESDP) {
-                              options.onICESDP(sessionDescription);
-                              }
-                              }, onSdpError, constraints);
-                            */
-			}
-                    }
-		}
+            if (options.onICEComplete) {
+                options.onICEComplete();
             }
+	    
+            if (options.type == "offer") {
+                if ((!moz || (!options.sentICESDP && peer.localDescription.sdp.match(/a=candidate/)) && !x && options.onICESDP)) {
+                    options.onICESDP(peer.localDescription);
+                    //x = 1;
+                    /*
+                      x = 1;
+                      peer.createOffer(function(sessionDescription) {
+                      sessionDescription.sdp = serializeSdp(sessionDescription.sdp);
+                      peer.setLocalDescription(sessionDescription);
+                      if (options.onICESDP) {
+                      options.onICESDP(sessionDescription);
+                      }
+                      }, onSdpError, constraints);
+                    */
+                }
+            } else {
+                if (!x && options.onICESDP) {
+                    options.onICESDP(peer.localDescription);
+                    //x = 1;
+                    /*
+                      x = 1;
+                      peer.createAnswer(function(sessionDescription) {
+                      sessionDescription.sdp = serializeSdp(sessionDescription.sdp);
+                      peer.setLocalDescription(sessionDescription);
+                      if (options.onICESDP) {
+                      options.onICESDP(sessionDescription);
+                      }
+                      }, onSdpError, constraints);
+                    */
+                }
+            }
+        }
+
+        peer.onicecandidate = function(event) {
+
+	    if (done) {
+		return;
+	    }
+
+	    if (!gathering) {
+		gathering = setTimeout(ice_handler, 1000);
+	    }
+	    
+	    if (event) {
+		if (event.candidate) {
+		    options.onICE(event.candidate);
+		}
+	    } else {
+		done = true;
+
+		if (gathering) {
+		    clearTimeout(gathering);
+		    gathering = null;
+		}
+
+		ice_handler();
+	    }
         };
-	
+
         // attachStream = MediaStream;
         if (options.attachStream) peer.addStream(options.attachStream);
 
@@ -972,7 +959,11 @@ var iceTimer;
             stop: function() {
                 peer.close();
                 if (options.attachStream) {
+                  if(typeof options.attachStream.stop == 'function') {
                     options.attachStream.stop();
+                  } else {
+                    options.attachStream.active = false;
+                  }
                 }
             }
 
@@ -1094,7 +1085,13 @@ var iceTimer;
                 audio: ttl++ == 0,
                 video: video	    
 	    },
-	    onsuccess: function(e) {e.stop(); console.info(w + "x" + h + " supported."); $.FSRTC.validRes.push([w, h]); checkRes(cam, func);},
+	    onsuccess: function(e) {
+              if(typeof e.stop == 'function') {
+                e.stop(); 
+              } else {
+                e.active = false;
+              }
+              console.info(w + "x" + h + " supported."); $.FSRTC.validRes.push([w, h]); checkRes(cam, func);},
 	    onerror: function(e) {console.error( w + "x" + h + " not supported."); checkRes(cam, func);}
         });
     }
@@ -1123,14 +1120,35 @@ var iceTimer;
 	checkRes(cam, func);
     }
 
-    $.FSRTC.checkPerms = function (runtime) {
+    $.FSRTC.checkPerms = function (runtime, check_audio, check_video) {
 	getUserMedia({
 	    constraints: {
-		audio: true,
-		video: true,
+		audio: check_audio,
+		video: check_video,
 	    },
-	    onsuccess: function(e) {e.stop(); console.info("media perm init complete"); if (runtime) {setTimeout(runtime, 100, true)}},
-	    onerror: function(e) {console.error("media perm init error"); if (runtime) {runtime(false)}}
+	    onsuccess: function(e) {
+              if(typeof e.stop == 'function') {
+                e.stop(); 
+              } else {
+                e.active = false;
+              }
+              console.info("media perm init complete"); 
+              if (runtime) {
+                setTimeout(runtime, 100, true);
+              }
+            },
+	    onerror: function(e) {
+		if (check_video && check_audio) {
+		    console.error("error, retesting with audio params only");
+		    return $.FSRTC.checkPerms(runtime, check_audio, false);
+		}
+
+		console.error("media perm init error");
+
+		if (runtime) {
+		    runtime(false)
+		}
+	    }
 	});
     }
 

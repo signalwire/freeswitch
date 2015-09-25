@@ -315,12 +315,17 @@ JS_ODBC_FUNCTION_IMPL(GetData)
 			SQLULEN ColumnSize;
 			SQLCHAR name[1024] = "";
 			SQLCHAR *data = _colbuf;
-
+			SQLLEN pcbValue;
+			
 			SQLDescribeCol(_stmt, x, name, sizeof(name), &NameLength, &DataType, &ColumnSize, &DecimalDigits, &Nullable);
-			SQLGetData(_stmt, x, SQL_C_CHAR, _colbuf, _cblen, NULL);
+			SQLGetData(_stmt, x, SQL_C_CHAR, _colbuf, _cblen, &pcbValue);
 
 			if (name) {
-				arg->Set(String::NewFromUtf8(GetIsolate(), (const char *)name), String::NewFromUtf8(GetIsolate(), data ? (const char *)data : ""));
+				if (SQL_NULL_DATA == pcbValue) {
+					arg->Set(String::NewFromUtf8(GetIsolate(), (const char *)name), Null(info.GetIsolate()));
+				} else {
+	                arg->Set(String::NewFromUtf8(GetIsolate(), (const char *)name), String::NewFromUtf8(GetIsolate(), data ? (const char *)data : ""));
+				}
 			}
 		}
 

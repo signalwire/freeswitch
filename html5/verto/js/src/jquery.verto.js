@@ -1962,8 +1962,8 @@
 
         dialog.rtc = new $.FSRTC({
             callbacks: RTCcallbacks,
-	    localVideo: dialog.localVideo,
-            useVideo: dialog.videoStream,
+	    localVideo: dialog.screenShare ? null : dialog.localVideo,
+            useVideo: dialog.params.useVideo ? dialog.videoStream : null,
             useAudio: dialog.audioStream,
             useStereo: dialog.params.useStereo,
             videoParams: dialog.params.videoParams,
@@ -2093,7 +2093,9 @@
             break;
         case $.verto.enum.state.destroy:
             delete dialog.verto.dialogs[dialog.callID];
-	    if (!dialog.params.screenShare) {
+	    if (dialog.params.screenShare) {
+		dialog.rtc.stopPeer();
+	    } else {
 		dialog.rtc.stop();
 	    }
             break;
@@ -2588,7 +2590,7 @@
 		    
 		})
 		.catch(function(err) {
-		    console.log(err.name + ": " + error.message);
+		    console.log(" Device Enumeration ERROR: " + err.name + ": " + err.message);
 		    runtime();
 		});
 	}
@@ -2602,7 +2604,7 @@
     $.verto.init = function(obj, runtime) {
 	$.FSRTC.checkPerms(function() {
 	    checkDevices(runtime);
-	});
+	}, true, true);
     }
 
     $.verto.genUUID = function () {

@@ -24,7 +24,16 @@
 
         $scope.refreshDeviceList = function() {
           return verto.refreshDevices();
-        }
+        };
+
+        $scope.resetSettings = function() {
+	  if (confirm('Factory Reset Settings?')) {
+            storage.factoryReset();
+            $scope.logout();
+            $scope.ok();
+	    window.location.reload();
+	  };
+        };
       }
     ]);
 

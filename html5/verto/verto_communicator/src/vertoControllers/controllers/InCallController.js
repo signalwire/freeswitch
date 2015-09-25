@@ -20,6 +20,14 @@
         if (storage.data.videoCall) {
           $scope.callTemplate = 'partials/video_call.html';
         }
+        
+        $rootScope.$on('call.conference', function(event, data) {
+          $timeout(function() {
+            if($scope.chatStatus) {
+              $scope.openChat();
+            }
+          });
+        });
 
         $rootScope.$on('call.video', function(event, data) {
           $timeout(function() {

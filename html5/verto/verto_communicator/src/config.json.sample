@@ -1,0 +1,13 @@
+{
+      "extension": "3500",
+      "name": "Ken Rice",
+      "email": "krice@freeswitch.org",
+      "cid": "1008",
+      "textTo": "1000",
+      "login": "1008",
+      "password": "1234",
+      "autologin": "true",
+      "autocall": "3500",
+      "googlelogin": "true",
+      "wsURL": "wss://gamma.tollfreegateway.com/wss2"
+}

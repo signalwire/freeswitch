@@ -264,7 +264,7 @@ char *generate_pai_str(private_object_t *tech_pvt)
 	return pai;
 }
 
-static stfu_instance_t *sofia_get_jb(switch_core_session_t *session, switch_media_type_t type)
+static switch_jb_t *sofia_get_jb(switch_core_session_t *session, switch_media_type_t type)
 {
 	private_object_t *tech_pvt = (private_object_t *) switch_core_session_get_private(session);
 
@@ -1450,12 +1450,21 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 
 	case SWITCH_MESSAGE_INDICATE_3P_NOMEDIA:
 		{
-			nua_invite(tech_pvt->nh, NUTAG_MEDIA_ENABLE(0), SIPTAG_PAYLOAD_STR(msg->string_arg), TAG_END());
+			char *extra_headers = sofia_glue_get_extra_headers(channel, SOFIA_SIP_HEADER_PREFIX);
+
+			nua_invite(tech_pvt->nh, NUTAG_MEDIA_ENABLE(0), SIPTAG_PAYLOAD_STR(msg->string_arg), 
+					   TAG_IF(!zstr(extra_headers), SIPTAG_HEADER_STR(extra_headers)), TAG_END());
+			
+			switch_safe_free(extra_headers);
 		}
 		break;
 	case SWITCH_MESSAGE_INDICATE_3P_MEDIA:
 		{
-			nua_invite(tech_pvt->nh, NUTAG_MEDIA_ENABLE(0), SIPTAG_PAYLOAD_STR(""), TAG_END());
+			char *extra_headers = sofia_glue_get_extra_headers(channel, SOFIA_SIP_HEADER_PREFIX);
+			nua_invite(tech_pvt->nh, NUTAG_MEDIA_ENABLE(0), SIPTAG_PAYLOAD_STR(""), 
+					   TAG_IF(!zstr(extra_headers), SIPTAG_HEADER_STR(extra_headers)), TAG_END());
+
+			switch_safe_free(extra_headers);
 		}
 		break;
 
@@ -1532,17 +1541,12 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		break;
 	case SWITCH_MESSAGE_INDICATE_MESSAGE:
 		{
-			char *ct = "text/plain";
+			char ct[256] = "text/plain";
 			int ok = 0;
 
 			if (!zstr(msg->string_array_arg[3]) && !strcmp(msg->string_array_arg[3], tech_pvt->caller_profile->uuid)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Not sending message back to sender\n");
 				break;
-			}
-
-			if (!zstr(msg->string_array_arg[0]) && !zstr(msg->string_array_arg[1])) {
-				ct = switch_core_session_sprintf(session, "%s/%s", msg->string_array_arg[0], msg->string_array_arg[1]);
-				ok = 1;
 			}
 
 			if (switch_stristr("send_message", tech_pvt->x_freeswitch_support_remote)) {
@@ -1555,6 +1559,10 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 
 			if (ok) {
 				const char *pl = NULL;
+
+				if (!zstr(msg->string_array_arg[0]) && !zstr(msg->string_array_arg[1])) {
+					switch_snprintf(ct, sizeof(ct), "%s/%s", msg->string_array_arg[0], msg->string_array_arg[1]);
+				}
 
 				if (!zstr(msg->string_array_arg[2])) {
 					pl = msg->string_array_arg[2];
@@ -1573,32 +1581,24 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		break;
 	case SWITCH_MESSAGE_INDICATE_INFO:
 		{
-			char *ct = "freeswitch/data";
+			char ct[256] = "freeswitch/data";
 			int ok = 0;
-
-			if (!zstr(msg->string_array_arg[0]) && !zstr(msg->string_array_arg[1])) {
-				ct = switch_core_session_sprintf(session, "%s/%s", msg->string_array_arg[0], msg->string_array_arg[1]);
-				ok = 1;
-			}
 
 			if (switch_stristr("send_info", tech_pvt->x_freeswitch_support_remote)) {
 				ok = 1;
 			}
 
-			/* TODO: 1.4 remove this stanza */
-			if (switch_true(switch_channel_get_variable(channel, "fs_send_unspported_info"))) {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING,
-								  "fs_send_unspported_info is deprecated in favor of correctly spelled fs_send_unsupported_info\n");
-				ok = 1;
-			}
-
-			if (switch_true(switch_channel_get_variable(channel, "fs_send_unsupported_info"))) {
+			if (switch_true(switch_channel_get_variable_dup(channel, "fs_send_unsupported_info", SWITCH_FALSE, -1))) {
 				ok = 1;
 			}
 
 			if (ok) {
 				char *headers = sofia_glue_get_extra_headers(channel, SOFIA_SIP_INFO_HEADER_PREFIX);
 				const char *pl = NULL;
+
+				if (!zstr(msg->string_array_arg[0]) && !zstr(msg->string_array_arg[1])) {
+					switch_snprintf(ct, sizeof(ct), "%s/%s", msg->string_array_arg[0], msg->string_array_arg[1]);
+				}
 
 				if (!zstr(msg->string_array_arg[2])) {
 					pl = msg->string_array_arg[2];
@@ -2489,6 +2489,7 @@ static int show_reg_callback(void *pArg, int argc, char **argv, char **columnNam
 							   "Agent:      \t%s\n"
 							   "Status:     \t%s(%s) EXP(%s) EXPSECS(%d)\n"
 							   "Ping-Status:\t%s\n"
+							   "Ping-Time:\t%0.2f\n"
 							   "Host:       \t%s\n"
 							   "IP:         \t%s\n"
 							   "Port:       \t%s\n"
@@ -2497,7 +2498,8 @@ static int show_reg_callback(void *pArg, int argc, char **argv, char **columnNam
 							   "MWI-Account:\t%s@%s\n\n",
 							   switch_str_nil(argv[0]), switch_str_nil(argv[1]), switch_str_nil(argv[2]), switch_str_nil(argv[3]),
 							   switch_str_nil(argv[7]), switch_str_nil(argv[4]), switch_str_nil(argv[5]), exp_buf, exp_secs, switch_str_nil(argv[18]),
-							   switch_str_nil(argv[11]), switch_str_nil(argv[12]), switch_str_nil(argv[13]), switch_str_nil(argv[14]),
+							   (float)atoll(switch_str_nil(argv[19]))/1000, switch_str_nil(argv[11]), switch_str_nil(argv[12]),
+							   switch_str_nil(argv[13]), switch_str_nil(argv[14]),
 							   switch_str_nil(argv[15]), switch_str_nil(argv[16]), switch_str_nil(argv[17]));
 	return 0;
 }
@@ -2531,6 +2533,7 @@ static int show_reg_callback_xml(void *pArg, int argc, char **argv, char **colum
 	cb->stream->write_function(cb->stream, "        <status>%s(%s) exp(%s) expsecs(%d)</status>\n", switch_str_nil(argv[4]), switch_str_nil(argv[5]),
 							   exp_buf, exp_secs);
 	cb->stream->write_function(cb->stream, "        <ping-status>%s</ping-status>\n", switch_str_nil(argv[18]));
+	cb->stream->write_function(cb->stream, "        <ping-time>%0.2f</ping-time>\n", (float)atoll(switch_str_nil(argv[19]))/1000);
 	cb->stream->write_function(cb->stream, "        <host>%s</host>\n", switch_str_nil(argv[11]));
 	cb->stream->write_function(cb->stream, "        <network-ip>%s</network-ip>\n", switch_str_nil(argv[12]));
 	cb->stream->write_function(cb->stream, "        <network-port>%s</network-port>\n", switch_str_nil(argv[13]));
@@ -2761,19 +2764,19 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 				if (!sql && argv[2] && !strcasecmp(argv[2], "pres") && argv[3]) {
 					sql = switch_mprintf("select call_id,sip_user,sip_host,contact,status,"
 										 "rpid,expires,user_agent,server_user,server_host,profile_name,hostname,"
-										 "network_ip,network_port,sip_username,sip_realm,mwi_user,mwi_host,ping_status"
+										 "network_ip,network_port,sip_username,sip_realm,mwi_user,mwi_host,ping_status,ping_time"
 										 " from sip_registrations where profile_name='%q' and presence_hosts like '%%%q%%'", profile->name, argv[3]);
 				}
 				if (!sql && argv[2] && !strcasecmp(argv[2], "reg") && argv[3]) {
 					sql = switch_mprintf("select call_id,sip_user,sip_host,contact,status,"
 										 "rpid,expires,user_agent,server_user,server_host,profile_name,hostname,"
-										 "network_ip,network_port,sip_username,sip_realm,mwi_user,mwi_host, ping_status"
+										 "network_ip,network_port,sip_username,sip_realm,mwi_user,mwi_host, ping_status,ping_time"
 										 " from sip_registrations where profile_name='%q' and contact like '%%%q%%'", profile->name, argv[3]);
 				}
 				if (!sql && argv[2] && !strcasecmp(argv[2], "reg")) {
 					sql = switch_mprintf("select call_id,sip_user,sip_host,contact,status,"
 										 "rpid,expires,user_agent,server_user,server_host,profile_name,hostname,"
-										 "network_ip,network_port,sip_username,sip_realm,mwi_user,mwi_host,ping_status"
+										 "network_ip,network_port,sip_username,sip_realm,mwi_user,mwi_host,ping_status,ping_time"
 										 " from sip_registrations where profile_name='%q'", profile->name);
 				}
 				if (!sql && argv[2] && !strcasecmp(argv[2], "user") && argv[3]) {
@@ -2800,7 +2803,7 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 
 					sql = switch_mprintf("select call_id,sip_user,sip_host,contact,status,"
 										 "rpid,expires,user_agent,server_user,server_host,profile_name,hostname,"
-										 "network_ip,network_port,sip_username,sip_realm,mwi_user,mwi_host,ping_status"
+										 "network_ip,network_port,sip_username,sip_realm,mwi_user,mwi_host,ping_status,ping_time"
 										 " from sip_registrations where profile_name='%q' and %s", profile->name, sqlextra);
 					switch_safe_free(dup);
 					switch_safe_free(sqlextra);
@@ -3068,21 +3071,21 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 
 					sql = switch_mprintf("select call_id,sip_user,sip_host,contact,status,"
 										 "rpid,expires,user_agent,server_user,server_host,profile_name,hostname,"
-										 "network_ip,network_port,sip_username,sip_realm,mwi_user,mwi_host,ping_status"
+										 "network_ip,network_port,sip_username,sip_realm,mwi_user,mwi_host,ping_status,ping_time"
 										 " from sip_registrations where profile_name='%q' and presence_hosts like '%%%q%%'", profile->name, argv[3]);
 				}
 				if (!sql && argv[2] && !strcasecmp(argv[2], "reg") && argv[3]) {
 
 					sql = switch_mprintf("select call_id,sip_user,sip_host,contact,status,"
 										 "rpid,expires,user_agent,server_user,server_host,profile_name,hostname,"
-										 "network_ip,network_port,sip_username,sip_realm,mwi_user,mwi_host,ping_status"
+										 "network_ip,network_port,sip_username,sip_realm,mwi_user,mwi_host,ping_status,ping_time"
 										 " from sip_registrations where profile_name='%q' and contact like '%%%q%%'", profile->name, argv[3]);
 				}
 				if (!sql && argv[2] && !strcasecmp(argv[2], "reg")) {
 
 					sql = switch_mprintf("select call_id,sip_user,sip_host,contact,status,"
 										 "rpid,expires,user_agent,server_user,server_host,profile_name,hostname,"
-										 "network_ip,network_port,sip_username,sip_realm,mwi_user,mwi_host,ping_status"
+										 "network_ip,network_port,sip_username,sip_realm,mwi_user,mwi_host,ping_status,ping_time"
 										 " from sip_registrations where profile_name='%q'", profile->name);
 				}
 				if (!sql && argv[2] && !strcasecmp(argv[2], "user") && argv[3]) {
@@ -3109,7 +3112,7 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 
 					sql = switch_mprintf("select call_id,sip_user,sip_host,contact,status,"
 										 "rpid,expires,user_agent,server_user,server_host,profile_name,hostname,"
-										 "network_ip,network_port,sip_username,sip_realm,mwi_user,mwi_host,ping_status"
+										 "network_ip,network_port,sip_username,sip_realm,mwi_user,mwi_host,ping_status,ping_time"
 										 " from sip_registrations where profile_name='%q' and %s", profile->name, sqlextra);
 					switch_safe_free(dup);
 					switch_safe_free(sqlextra);
@@ -5737,6 +5740,102 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 	switch_application_interface_t *app_interface;
 	struct in_addr in;
 
+
+	if (switch_event_reserve_subclass(MY_EVENT_NOTIFY_REFER) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", MY_EVENT_NOTIFY_REFER);
+		return SWITCH_STATUS_TERM;
+	}
+
+	if (switch_event_reserve_subclass(MY_EVENT_NOTIFY_WATCHED_HEADER) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", MY_EVENT_NOTIFY_WATCHED_HEADER);
+		return SWITCH_STATUS_TERM;
+	}
+
+	if (switch_event_reserve_subclass(MY_EVENT_UNREGISTER) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", MY_EVENT_UNREGISTER);
+		return SWITCH_STATUS_TERM;
+	}
+
+	if (switch_event_reserve_subclass(MY_EVENT_PROFILE_START) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", MY_EVENT_PROFILE_START);
+		return SWITCH_STATUS_TERM;
+	}
+
+	if (switch_event_reserve_subclass(MY_EVENT_REINVITE) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", MY_EVENT_REINVITE);
+		return SWITCH_STATUS_TERM;
+	}
+
+	if (switch_event_reserve_subclass(MY_EVENT_REPLACED) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", MY_EVENT_REPLACED);
+		return SWITCH_STATUS_TERM;
+	}
+
+	if (switch_event_reserve_subclass(MY_EVENT_TRANSFEROR) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", MY_EVENT_TRANSFEROR);
+		return SWITCH_STATUS_TERM;
+	}
+
+	if (switch_event_reserve_subclass(MY_EVENT_TRANSFEREE) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", MY_EVENT_TRANSFEREE);
+		return SWITCH_STATUS_TERM;
+	}
+
+	if (switch_event_reserve_subclass(MY_EVENT_ERROR) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", MY_EVENT_ERROR);
+		return SWITCH_STATUS_TERM;
+	}
+
+	if (switch_event_reserve_subclass(MY_EVENT_INTERCEPTED) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", MY_EVENT_INTERCEPTED);
+		return SWITCH_STATUS_TERM;
+	}
+
+	if (switch_event_reserve_subclass(MY_EVENT_GATEWAY_STATE) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", MY_EVENT_GATEWAY_STATE);
+		return SWITCH_STATUS_TERM;
+	}
+
+	if (switch_event_reserve_subclass(MY_EVENT_SIP_USER_STATE) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", MY_EVENT_SIP_USER_STATE);
+		return SWITCH_STATUS_TERM;
+	}
+
+	if (switch_event_reserve_subclass(MY_EVENT_GATEWAY_DEL) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", MY_EVENT_GATEWAY_DEL);
+		return SWITCH_STATUS_TERM;
+	}
+
+	if (switch_event_reserve_subclass(MY_EVENT_EXPIRE) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", MY_EVENT_EXPIRE);
+		return SWITCH_STATUS_TERM;
+	}
+
+	if (switch_event_reserve_subclass(MY_EVENT_REGISTER_ATTEMPT) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", MY_EVENT_REGISTER_ATTEMPT);
+		return SWITCH_STATUS_TERM;
+	}
+
+	if (switch_event_reserve_subclass(MY_EVENT_REGISTER_FAILURE) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", MY_EVENT_REGISTER_FAILURE);
+		return SWITCH_STATUS_TERM;
+	}
+
+	if (switch_event_reserve_subclass(MY_EVENT_PRE_REGISTER) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", MY_EVENT_PRE_REGISTER);
+		return SWITCH_STATUS_TERM;
+	}
+
+	if (switch_event_reserve_subclass(MY_EVENT_REGISTER) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", MY_EVENT_REGISTER);
+		return SWITCH_STATUS_TERM;
+	}
+
+	if (switch_event_reserve_subclass(MY_EVENT_GATEWAY_ADD) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", MY_EVENT_GATEWAY_ADD);
+		return SWITCH_STATUS_TERM;
+	}
+	
 	memset(&mod_sofia_globals, 0, sizeof(mod_sofia_globals));
 	mod_sofia_globals.destroy_private.destroy_nh = 1;
 	mod_sofia_globals.destroy_private.is_static = 1;
@@ -5945,6 +6044,26 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_sofia_shutdown)
 	int i;
 	switch_status_t st;
 
+	switch_event_free_subclass(MY_EVENT_NOTIFY_REFER);
+	switch_event_free_subclass(MY_EVENT_NOTIFY_WATCHED_HEADER);
+	switch_event_free_subclass(MY_EVENT_UNREGISTER);
+	switch_event_free_subclass(MY_EVENT_PROFILE_START);
+	switch_event_free_subclass(MY_EVENT_REINVITE);
+	switch_event_free_subclass(MY_EVENT_REPLACED);
+	switch_event_free_subclass(MY_EVENT_TRANSFEROR);
+	switch_event_free_subclass(MY_EVENT_TRANSFEREE);
+	switch_event_free_subclass(MY_EVENT_ERROR);
+	switch_event_free_subclass(MY_EVENT_INTERCEPTED);
+	switch_event_free_subclass(MY_EVENT_GATEWAY_STATE);
+	switch_event_free_subclass(MY_EVENT_SIP_USER_STATE);
+	switch_event_free_subclass(MY_EVENT_GATEWAY_DEL);
+	switch_event_free_subclass(MY_EVENT_EXPIRE);
+	switch_event_free_subclass(MY_EVENT_REGISTER_ATTEMPT);
+	switch_event_free_subclass(MY_EVENT_REGISTER_FAILURE);
+	switch_event_free_subclass(MY_EVENT_PRE_REGISTER);
+	switch_event_free_subclass(MY_EVENT_REGISTER);
+	switch_event_free_subclass(MY_EVENT_GATEWAY_ADD);
+	
 	switch_console_del_complete_func("::sofia::list_profiles");
 	switch_console_set_complete("del sofia");
 

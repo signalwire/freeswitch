@@ -362,7 +362,8 @@ Description: Cross-Platform Scalable Multi-Protocol Soft Switch
 
 Package: libfreeswitch1
 Architecture: any
-Depends: \${shlibs:Depends}, \${misc:Depends}
+Depends: \${shlibs:Depends}, \${misc:Depends},
+ libyuv, libvpx (>= 1.4.0) | libvpx2
 Recommends:
 Suggests: libfreeswitch1-dbg
 Description: Cross-Platform Scalable Multi-Protocol Soft Switch
@@ -370,7 +371,7 @@ Description: Cross-Platform Scalable Multi-Protocol Soft Switch
  .
  This package contains the FreeSWITCH core library.
 
-Package: python-esl 
+Package: python-esl
 Section: python
 Architecture: any
 Depends: \${shlibs:Depends}, \${misc:Depends}, \${python:Depends}

@@ -744,7 +744,6 @@ struct conference_member {
 	char *video_logo;
 	char *video_mute_png;
 	char *video_reservation_id;
-	switch_media_flow_t video_flow;
 	switch_frame_buffer_t *fb;
 	switch_image_t *avatar_png_img;
 	switch_image_t *video_mute_img;
@@ -755,6 +754,7 @@ struct conference_member {
 	int good_img;
 	int auto_avatar;
 	int avatar_patched;
+	switch_media_flow_t video_media_flow;
 	mcu_canvas_t *canvas;
 	switch_image_t *pcanvas_img;
 };
@@ -917,6 +917,7 @@ void conference_video_layer_set_banner(conference_member_t *member, mcu_layer_t 
 void conference_video_layer_set_logo(conference_member_t *member, mcu_layer_t *layer, const char *path);
 void conference_video_detach_video_layer(conference_member_t *member);
 void conference_video_check_used_layers(mcu_canvas_t *canvas);
+void conference_video_check_flush(conference_member_t *member);
 void conference_video_set_canvas_letterbox_bgcolor(mcu_canvas_t *canvas, char *color);
 void conference_video_set_canvas_bgcolor(mcu_canvas_t *canvas, char *color);
 void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, switch_bool_t freeze);

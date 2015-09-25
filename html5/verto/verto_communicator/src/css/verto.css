@@ -36,13 +36,19 @@ body {
   height: 100%;
 }
 
+.modal-content .modal-footer button.btn-pull-left {
+  padding-left: 16px;
+  padding-right: 16px;
+  margin-left: 5px;
+}
+
 /* This is an technique to align the block centered vertically
    and horizontally in a page. */
 .centered-block-frame {
+  display: flex;
   display: -webkit-flex; /* Safari */
   -webkit-justify-content: center; /* Safari 6.1+ */
   -webkit-align-items: center;
-  display: flex;
   justify-content: center;
   align-items: center;
   object-fit:inherit;
@@ -70,6 +76,10 @@ button.btn i {
 
 ._720kb-tooltip {
   z-index:1001;
+}
+
+.googlelogin {
+    margin: 5px 0px;
 }
 
 .navbar .navbar-nav > li.navbar-item-icon > a {
@@ -483,6 +493,7 @@ body .modal-body .btn-group .btn.active {
 
 #incall .panel {
   background: #333;
+  padding-top: 5px;
 }
 
 #incall .hangup-button {
@@ -842,6 +853,14 @@ body .modal-body .btn-group .btn.active {
   /*color: #DDD;*/
 }
 
+.members-name {
+  width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 5px;
+  white-space: nowrap;
+}
+
 .chat-members .chat-member-item {
   padding: 8px 16px;
   height: 56px;
@@ -873,7 +892,7 @@ body .modal-body .btn-group .btn.active {
   margin: 0;
   font-size: 16px;
   display: inline-block;
-  line-height: 40px;
+  line-height: 18px;
 }
 
 .chat-members .chat-members-status i {

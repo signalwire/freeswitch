@@ -110,10 +110,4 @@ SWITCH_DECLARE(int) switch_u8_strlen(char *s);
 
 SWITCH_DECLARE(int) switch_u8_is_locale_utf8(char *locale);
 
-/* printf where the format string and arguments may be in UTF-8.
-   you can avoid this function and just use ordinary printf() if the current
-   locale is UTF-8. */
-SWITCH_DECLARE(int) switch_u8_vprintf(char *fmt, va_list ap);
-SWITCH_DECLARE(int) switch_u8_printf(char *fmt, ...);
-
 SWITCH_DECLARE(uint32_t) switch_u8_get_char(char *s, int *i);

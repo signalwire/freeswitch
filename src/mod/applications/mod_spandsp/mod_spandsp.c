@@ -772,6 +772,42 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_spandsp_init)
 	switch_application_interface_t *app_interface;
 	switch_api_interface_t *api_interface;
 
+
+	if (switch_event_reserve_subclass(MY_EVENT_TDD_RECV_MESSAGE) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", MY_EVENT_TDD_RECV_MESSAGE);
+		return SWITCH_STATUS_TERM;
+	}
+
+	if (switch_event_reserve_subclass(SPANDSP_EVENT_TXFAXNEGOCIATERESULT) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", SPANDSP_EVENT_TXFAXNEGOCIATERESULT);
+		return SWITCH_STATUS_TERM;
+	}
+
+	if (switch_event_reserve_subclass(SPANDSP_EVENT_RXFAXNEGOCIATERESULT) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", SPANDSP_EVENT_RXFAXNEGOCIATERESULT);
+		return SWITCH_STATUS_TERM;
+	}
+
+	if (switch_event_reserve_subclass(SPANDSP_EVENT_TXFAXPAGERESULT) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", SPANDSP_EVENT_TXFAXPAGERESULT);
+		return SWITCH_STATUS_TERM;
+	}
+
+	if (switch_event_reserve_subclass(SPANDSP_EVENT_RXFAXPAGERESULT) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", SPANDSP_EVENT_RXFAXPAGERESULT);
+		return SWITCH_STATUS_TERM;
+	}
+
+	if (switch_event_reserve_subclass(SPANDSP_EVENT_TXFAXRESULT) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", SPANDSP_EVENT_TXFAXRESULT);
+		return SWITCH_STATUS_TERM;
+	}
+
+	if (switch_event_reserve_subclass(SPANDSP_EVENT_RXFAXRESULT) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", SPANDSP_EVENT_RXFAXRESULT);
+		return SWITCH_STATUS_TERM;
+	}
+	
 	memset(&spandsp_globals, 0, sizeof(spandsp_globals));
 	spandsp_globals.pool = pool;
 
@@ -855,7 +891,14 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_spandsp_shutdown)
 	switch_event_unbind_callback(event_handler);
 	switch_event_unbind_callback(tdd_event_handler);
 
-
+	switch_event_free_subclass(MY_EVENT_TDD_RECV_MESSAGE);
+	switch_event_free_subclass(SPANDSP_EVENT_TXFAXNEGOCIATERESULT);
+	switch_event_free_subclass(SPANDSP_EVENT_RXFAXNEGOCIATERESULT);
+	switch_event_free_subclass(SPANDSP_EVENT_TXFAXPAGERESULT);
+	switch_event_free_subclass(SPANDSP_EVENT_RXFAXPAGERESULT);
+	switch_event_free_subclass(SPANDSP_EVENT_TXFAXRESULT);
+	switch_event_free_subclass(SPANDSP_EVENT_RXFAXRESULT);
+	
 	mod_spandsp_fax_shutdown();
 	mod_spandsp_dsp_shutdown();
 #if defined(MODEM_SUPPORT)

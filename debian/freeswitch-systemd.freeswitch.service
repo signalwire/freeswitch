@@ -8,14 +8,12 @@ After=syslog.target network.target local-fs.target
 ; service
 Type=forking
 PIDFile=/run/freeswitch/freeswitch.pid
-PermissionsStartOnly=true
-ExecStartPre=/bin/mkdir -p /run/freeswitch
-ExecStartPre=/bin/chown freeswitch:freeswitch /run/freeswitch
 ExecStart=/usr/bin/freeswitch -ncwait -nonat
 TimeoutSec=45s
 Restart=always
 ; exec
-WorkingDirectory=/var/log/freeswitch
+RuntimeDirectory=freeswitch
+RuntimeDirectoryMode=0755
 User=freeswitch
 Group=freeswitch
 LimitCORE=infinity

@@ -1014,6 +1014,12 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_curl_load)
 {
 	switch_api_interface_t *api_interface;
 	switch_application_interface_t *app_interface;
+
+	if (switch_event_reserve_subclass(HTTP_SENDFILE_ACK_EVENT) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", HTTP_SENDFILE_ACK_EVENT);
+		return SWITCH_STATUS_TERM;
+	}
+
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
@@ -1037,6 +1043,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_curl_load)
   Macro expands to: switch_status_t mod_cidlookup_shutdown() */
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_curl_shutdown)
 {
+
+	switch_event_free_subclass(HTTP_SENDFILE_ACK_EVENT);
+	
 	/* Cleanup dynamically allocated config settings */
 	return SWITCH_STATUS_SUCCESS;
 }

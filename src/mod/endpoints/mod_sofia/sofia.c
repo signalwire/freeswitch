@@ -5847,6 +5847,11 @@ static void sofia_handle_sip_r_options(switch_core_session_t *session, int statu
 		int sip_user_ping_max = profile->sip_user_ping_max;
 
 		char *sip_user = switch_mprintf("%s@%s", sip->sip_to->a_url->url_user, sip->sip_to->a_url->url_host);
+		int ping_time = 0;
+
+		if (sofia_private && sofia_private->ping_sent) {
+			ping_time = switch_time_now() - sofia_private->ping_sent;
+		}
 
 		sip_user_status.status = ping_status;
 		sip_user_status.status_len = sizeof(ping_status);
@@ -5862,8 +5867,8 @@ static void sofia_handle_sip_r_options(switch_core_session_t *session, int statu
 			if (sip_user_status.count >= 0) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Ping to sip user '%s@%s' failed with code %d - count %d, state %s\n",
 						  sip->sip_to->a_url->url_user, sip->sip_to->a_url->url_host, status, sip_user_status.count, sip_user_status.status);
-				sql = switch_mprintf("update sip_registrations set ping_count=%d where sip_user='%s' and sip_host='%s' and call_id='%q'", sip_user_status.count,
-						     sip->sip_to->a_url->url_user, sip->sip_to->a_url->url_host, call_id);
+				sql = switch_mprintf("update sip_registrations set ping_count=%d, ping_time=%d where sip_user='%s' and sip_host='%s' and call_id='%q'",
+									 sip_user_status.count, ping_time, sip->sip_to->a_url->url_user, sip->sip_to->a_url->url_host, call_id);
 				sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
 				switch_safe_free(sql);
 			}
@@ -5871,8 +5876,8 @@ static void sofia_handle_sip_r_options(switch_core_session_t *session, int statu
 				if (strcmp(sip_user_status.status, "Unreachable")) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Sip user '%s@%s' is now Unreachable\n",
 							  sip->sip_to->a_url->url_user, sip->sip_to->a_url->url_host);
-					sql = switch_mprintf("update sip_registrations set ping_status='Unreachable' where sip_user='%s' and sip_host='%s' and call_id='%q'",
-							     sip->sip_to->a_url->url_user, sip->sip_to->a_url->url_host, call_id);
+					sql = switch_mprintf("update sip_registrations set ping_status='Unreachable', ping_time=%d where sip_user='%s' and sip_host='%s' and call_id='%q'",
+										 ping_time, sip->sip_to->a_url->url_user, sip->sip_to->a_url->url_host, call_id);
 					sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
 					switch_safe_free(sql);
 					sofia_reg_fire_custom_sip_user_state_event(profile, sip_user, sip_user_status.contact, sip->sip_to->a_url->url_user,
@@ -5883,8 +5888,8 @@ static void sofia_handle_sip_r_options(switch_core_session_t *session, int statu
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Expire sip user '%s@%s' due to options failure\n",
 								  sip->sip_to->a_url->url_user, sip->sip_to->a_url->url_host);
 
-						sql = switch_mprintf("update sip_registrations set expires=%ld where sip_user='%s' and sip_host='%s' and call_id='%q'",
-								     (long) now, sip->sip_to->a_url->url_user, sip->sip_to->a_url->url_host, call_id);
+						sql = switch_mprintf("update sip_registrations set expires=%ld, ping_time=%d where sip_user='%s' and sip_host='%s' and call_id='%q'",
+											 (long) now, ping_time, sip->sip_to->a_url->url_user, sip->sip_to->a_url->url_host, call_id);
 						sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
 						switch_safe_free(sql);
 					}
@@ -5895,8 +5900,8 @@ static void sofia_handle_sip_r_options(switch_core_session_t *session, int statu
 			if (sip_user_status.count <= sip_user_ping_max) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Ping to sip user '%s@%s' succeeded with code %d - count %d, state %s\n",
 						  sip->sip_to->a_url->url_user, sip->sip_to->a_url->url_host, status, sip_user_status.count, sip_user_status.status);
-				sql = switch_mprintf("update sip_registrations set ping_count=%d where sip_user='%s' and sip_host='%s' and call_id='%q'", sip_user_status.count,
-						     sip->sip_to->a_url->url_user, sip->sip_to->a_url->url_host, call_id);
+				sql = switch_mprintf("update sip_registrations set ping_count=%d, ping_time=%d where sip_user='%s' and sip_host='%s' and call_id='%q'",
+									 sip_user_status.count, ping_time, sip->sip_to->a_url->url_user, sip->sip_to->a_url->url_host, call_id);
 				sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
 				switch_safe_free(sql);
 			}
@@ -5972,14 +5977,24 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 		switch_channel_set_variable_printf(channel, "sip_network_ip", "%s", network_ip);
 		switch_channel_set_variable_printf(channel, "sip_network_port", "%d", network_port);
 
-		if ((caller_profile = switch_channel_get_caller_profile(channel))) {
+		if ((caller_profile = switch_channel_get_caller_profile(channel)) && !zstr(network_ip) &&
+			(zstr(caller_profile->network_addr) || strcmp(caller_profile->network_addr, network_ip))) {
 			caller_profile->network_addr = switch_core_strdup(caller_profile->pool, network_ip);
 		}
 
+		if (tech_pvt->mparams.last_sdp_response) {
+			tech_pvt->mparams.prev_sdp_response = tech_pvt->mparams.last_sdp_response;
+		}
 		tech_pvt->mparams.last_sdp_response = NULL;
+
 		if (sip->sip_payload && sip->sip_payload->pl_data) {
 			switch_core_media_set_sdp_codec_string(session, sip->sip_payload->pl_data, SDP_TYPE_RESPONSE);
-			tech_pvt->mparams.last_sdp_response = switch_core_session_strdup(session, sip->sip_payload->pl_data);
+
+			if (!zstr(tech_pvt->mparams.prev_sdp_response) && !strcmp(tech_pvt->mparams.prev_sdp_response, sip->sip_payload->pl_data)) {
+				tech_pvt->mparams.last_sdp_response = tech_pvt->mparams.prev_sdp_response;
+			} else {
+				tech_pvt->mparams.last_sdp_response = switch_core_session_strdup(session, sip->sip_payload->pl_data);
+			}
 		}
 
 		if (status > 299 && switch_channel_test_app_flag_key("T38", tech_pvt->channel, CF_APP_T38_REQ)) {
@@ -6657,6 +6672,15 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 				}
 			}
 		}
+
+		if (tech_pvt->mparams.last_sdp_str) {
+			tech_pvt->mparams.prev_sdp_str = tech_pvt->mparams.last_sdp_str;
+		}
+
+		if (tech_pvt->mparams.last_sdp_response) {
+			tech_pvt->mparams.prev_sdp_response = tech_pvt->mparams.last_sdp_response;
+		}
+
 		tech_pvt->mparams.last_sdp_str = NULL;
 		tech_pvt->mparams.last_sdp_response = NULL;
 		
@@ -7509,6 +7533,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 
 			sofia_clear_flag(tech_pvt, TFLAG_NEW_SDP);
 			switch_channel_set_flag(tech_pvt->channel, CF_REINVITE);
+
 
 			if (tech_pvt->mparams.num_codecs) {
 				match = sofia_media_negotiate_sdp(session, r_sdp, SDP_TYPE_RESPONSE);
@@ -9089,10 +9114,18 @@ void sofia_handle_sip_i_reinvite(switch_core_session_t *session,
 	}
 
 	if (channel) {
+		if (tech_pvt->mparams.last_sdp_str) {
+			tech_pvt->mparams.prev_sdp_str = tech_pvt->mparams.last_sdp_str;
+		}
 		tech_pvt->mparams.last_sdp_str = NULL;
+
 		if (sip->sip_payload && sip->sip_payload->pl_data) {
-			switch_channel_set_variable(channel, "sip_reinvite_sdp", sip->sip_payload->pl_data);
-			tech_pvt->mparams.last_sdp_str = switch_core_session_strdup(session, sip->sip_payload->pl_data);
+			if (!zstr(tech_pvt->mparams.prev_sdp_str) && strcmp(tech_pvt->mparams.prev_sdp_str, sip->sip_payload->pl_data)) {
+				switch_channel_set_variable(channel, "sip_reinvite_sdp", sip->sip_payload->pl_data);
+				tech_pvt->mparams.last_sdp_str = switch_core_session_strdup(session, sip->sip_payload->pl_data);
+			} else {
+				tech_pvt->mparams.last_sdp_str = tech_pvt->mparams.prev_sdp_str;
+			}
 		}
 		switch_channel_execute_on(channel, "execute_on_sip_reinvite");
 	}
@@ -9505,7 +9538,7 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 				switch_channel_set_variable(channel, hp->name, hp->value);
 			}
 
-			ruser = switch_event_get_header(v_event, "username");
+			ruser = switch_event_get_header(v_event, "user_name");
 			rdomain = switch_event_get_header(v_event, "domain_name");
 
 			switch_channel_set_variable(channel, "requested_user_name", ruser);

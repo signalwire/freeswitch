@@ -559,13 +559,12 @@ AC_SUBST(SYS_XMLRPC_CFLAGS)
 AC_SUBST(SYS_XMLRPC_LDFLAGS)
 AM_CONDITIONAL([SYSTEM_XMLRPCC],[test "${enable_xmlrpcc}" = "yes"])
 
-PKG_CHECK_MODULES([LUA],[lua5.2],[have_lua=yes],[have_lua=no])
-if test "${have_lua}" = "no" ; then
-   PKG_CHECK_MODULES([LUA],[lua5.1],[have_lua=yes],[have_lua=no])
-fi
-if test "${have_lua}" = "no" ; then
-   PKG_CHECK_MODULES([LUA],[lua],[have_lua=yes],[have_lua=no])
-fi
+for luaversion in lua5.2 lua-5.2 lua5.1 lua-5.1 lua; do
+  PKG_CHECK_MODULES([LUA],[${luaversion}],[have_lua=yes],[have_lua=no])
+  if test ${have_lua} = yes; then
+    break
+  fi
+done
 if test x"${LUA_LIBS}" = x"" ; then
    LUA_LIBS="-llua"
 fi

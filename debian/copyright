@@ -488,27 +488,27 @@ License: BSD-2-clause
   * are met:
   *
   * 1. Redistributions of source code must retain the above copyright
-  *    notice, this list of conditions and the following disclaimer. 
+  *    notice, this list of conditions and the following disclaimer.
   *
   * 2. Redistributions in binary form must reproduce the above copyright
   *    notice, this list of conditions and the following disclaimer in
   *    the documentation and/or other materials provided with the
   *    distribution.
   *
-  * This work was supported in part by funding from the Defense Advanced 
-  * Research Projects Agency and the National Science Foundation of the 
+  * This work was supported in part by funding from the Defense Advanced
+  * Research Projects Agency and the National Science Foundation of the
   * United States of America, and the CMU Sphinx Speech Consortium.
   *
-  * THIS SOFTWARE IS PROVIDED BY CARNEGIE MELLON UNIVERSITY ``AS IS'' AND 
-  * ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
+  * THIS SOFTWARE IS PROVIDED BY CARNEGIE MELLON UNIVERSITY ``AS IS'' AND
+  * ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
   * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
   * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL CARNEGIE MELLON UNIVERSITY
   * NOR ITS EMPLOYEES BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-  * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT 
-  * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
-  * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY 
-  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
+  * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+  * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+  * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
   * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   *
   * ====================================================================
@@ -1515,24 +1515,24 @@ License: BSD-3-clause
 Files: libs/libsndfile/src/GSM610/*
 Copyright: 1992, 1993, 1994 by Jutta Degener and Carsten Bormann
 License:
- Their work was released under the following license which is 
+ Their work was released under the following license which is
  assumed to be compatible with The GNU Lesser General Public License.
- 
+ .
  ----------------------------------------------------------------------------
- 
+ .
  Copyright 1992, 1993, 1994 by Jutta Degener and Carsten Bormann,
  Technische Universitaet Berlin
- 
+ .
  Any use of this software is permitted provided that this notice is not
  removed and that neither the authors nor the Technische Universitaet Berlin
  are deemed to have made any representations as to the suitability of this
  software for any purpose nor are held responsible for any defects of
  this software.  THERE IS ABSOLUTELY NO WARRANTY FOR THIS SOFTWARE.
- 
+ .
  As a matter of courtesy, the authors request to be informed about uses
  this software has found, about bugs in this software, and about any
  improvements that may be of general interest.
- 
+ .
  Berlin, 28.11.1994
  Jutta Degener (jutta@cs.tu-berlin.de)
  Carsten Bormann (cabo@cs.tu-berlin.de)
@@ -1863,7 +1863,7 @@ Copyright: 2004 Polycom, Inc
  2006 Michael Jerris
  2001-2009 Steve Underwood <steveu@coppice.org>
  2001-2006 Steve Underwood
-Comment: Disclaimer: non-comercial use,gital Equipment Corporation, Maynard, Massachusetts. 
+Comment: Disclaimer: non-comercial use,gital Equipment Corporation, Maynard, Massachusetts.
 License: patent-mess
 
 Files: libs/libg722_1/autogen.sh
@@ -1878,24 +1878,24 @@ License: LGPL-2.1
 License: OpenLDAP
  /* Portions Copyright 1998-2002 The OpenLDAP Foundation
   * All rights reserved.
-  * 
+  *
   * Redistribution and use in source and binary forms, with or without
   * modification, are permitted only as authorized by the OpenLDAP
   * Public License.  A copy of this license is available at
   * http://www.OpenLDAP.org/license.html or in file LICENSE in the
   * top-level directory of the distribution.
-  * 
+  *
   * OpenLDAP is a registered trademark of the OpenLDAP Foundation.
-  * 
+  *
   * Individual files and/or contributed packages may be copyright by
   * other parties and subject to additional restrictions.
-  * 
+  *
   * This work is derived from the University of Michigan LDAP v3.3
   * distribution.  Information concerning this software is available
   * at: http://www.umich.edu/~dirsvcs/ldap/
-  * 
+  *
   * This work also contains materials derived from public sources.
-  * 
+  *
   * Additional information about OpenLDAP can be obtained at:
   *     http://www.openldap.org/
   */

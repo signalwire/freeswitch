@@ -199,12 +199,19 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
       bandwidth: bandwidth,
 
       refreshDevicesCallback : function refreshDevicesCallback() {
-        data.videoDevices = [];
+        data.videoDevices = [{
+	  id: 'none',
+	  label: 'No Camera'
+	}];
         data.shareDevices = [{
           id: 'screen',
           label: 'Screen'
         }];
         data.audioDevices = [];
+
+        if(!storage.data.selectedShare) {
+          storage.data.selectedShare = data.shareDevices[0]['id'];
+        }
 
         for (var i in jQuery.verto.videoDevices) {
           var device = jQuery.verto.videoDevices[i];
@@ -328,6 +335,7 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
 
         function startConference(v, dialog, pvtData) {
           $rootScope.$emit('call.video', 'video');
+          $rootScope.$emit('call.conference', 'conference');
           data.chattingWith = pvtData.chatID;
           data.confRole = pvtData.role;
 
@@ -413,6 +421,7 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
         function stopConference() {
           console.log('stopConference()');
           if (data.liveArray) {
+            data.liveArray.destroy();
             console.log('Has data.liveArray.');
             $rootScope.$emit('members.clear');
             data.liveArray = null;
@@ -503,6 +512,10 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
                 if (d.params.screenShare) {
                   cleanShareCall(that);
                 } else {
+                  if (data.liveArray) {
+                    data.liveArray.destroy();
+                  }
+                  
                   if (data.conf) {
                     data.conf.destroy();
                   }

@@ -113,6 +113,12 @@ Module: applications/mod_hash
 Description: Hash
  This module provides a hash API, a key-value in-memory datastore.
 
+Module: applications/mod_hiredis
+Description: Redis client support
+ This module provides a mechanism to use Redis as a datastore.
+Build-Depends: libhiredis-dev
+Depends: libhiredis0.10
+
 Module: applications/mod_httapi
 Description: HT-TAPI Hypertext Telephony API
  This module provides an API for controlling the switch by responding

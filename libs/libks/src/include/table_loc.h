@@ -83,25 +83,25 @@
  * were about 2^68 hashes to choose from.  I only tested about a
  * billion of those.
  */
-#define HASH_MIX(a, b, c) \
- do { \
-   a -= b; a -= c; a ^= (c >> 13); \
-   b -= c; b -= a; b ^= (a << 8); \
-   c -= a; c -= b; c ^= (b >> 13); \
-   a -= b; a -= c; a ^= (c >> 12); \
-   b -= c; b -= a; b ^= (a << 16); \
-   c -= a; c -= b; c ^= (b >> 5); \
-   a -= b; a -= c; a ^= (c >> 3); \
-   b -= c; b -= a; b ^= (a << 10); \
-   c -= a; c -= b; c ^= (b >> 15); \
- } while(0)
+#define HASH_MIX(a, b, c)						\
+	do {										\
+		a -= b; a -= c; a ^= (c >> 13);			\
+		b -= c; b -= a; b ^= (a << 8);			\
+		c -= a; c -= b; c ^= (b >> 13);			\
+		a -= b; a -= c; a ^= (c >> 12);			\
+		b -= c; b -= a; b ^= (a << 16);			\
+		c -= a; c -= b; c ^= (b >> 5);			\
+		a -= b; a -= c; a ^= (c >> 3);			\
+		b -= c; b -= a; b ^= (a << 10);			\
+		c -= a; c -= b; c ^= (b >> 15);			\
+	} while(0)
 
-#define SET_POINTER(pnt, val) \
-	do { \
-	  if ((pnt) != NULL) { \
-	    (*(pnt)) = (val); \
-          } \
-        } while(0)
+#define SET_POINTER(pnt, val)					\
+	do {										\
+		if ((pnt) != NULL) {					\
+			(*(pnt)) = (val);					\
+		}										\
+	} while(0)
 
 /*
  * The following macros take care of the mmap case.  When we are
@@ -117,9 +117,9 @@
 
 #else
 
-#define TABLE_POINTER(tab_p, type, pnt)	\
-     ((tab_p)->ta_mmap == NULL || (pnt) == NULL ? (pnt) : \
-      (type)((char *)((tab_p)->ta_mmap) + (long)(pnt)))
+#define TABLE_POINTER(tab_p, type, pnt)						\
+	((tab_p)->ta_mmap == NULL || (pnt) == NULL ? (pnt) :	\
+	 (type)((char *)((tab_p)->ta_mmap) + (long)(pnt)))
 
 #endif
 
@@ -127,8 +127,8 @@
  * Macros to get at the key and the data pointers
  */
 #define ENTRY_KEY_BUF(entry_p)		((entry_p)->te_key_buf)
-#define ENTRY_DATA_BUF(tab_p, entry_p)	\
-     (ENTRY_KEY_BUF(entry_p) + (entry_p)->te_key_size)
+#define ENTRY_DATA_BUF(tab_p, entry_p)					\
+	(ENTRY_KEY_BUF(entry_p) + (entry_p)->te_key_size)
 
 /*
  * Table structures...
@@ -142,10 +142,10 @@
  * faster.
  */
 typedef struct table_shell_st {
-  unsigned int		te_key_size;	/* size of data */
-  unsigned int		te_data_size;	/* size of data */
-  struct table_shell_st	*te_next_p;	/* pointer to next in the list */
-  /* NOTE: this does not have the te_key_buf field here */
+	unsigned int		te_key_size;	/* size of data */
+	unsigned int		te_data_size;	/* size of data */
+	struct table_shell_st	*te_next_p;	/* pointer to next in the list */
+	/* NOTE: this does not have the te_key_buf field here */
 } table_shell_t;
 
 /*
@@ -157,10 +157,10 @@ typedef struct table_shell_st {
  * changed to match.
  */
 typedef struct table_entry_st {
-  unsigned int		te_key_size;	/* size of data */
-  unsigned int		te_data_size;	/* size of data */
-  struct table_entry_st	*te_next_p;	/* pointer to next in the list */
-  unsigned char		te_key_buf[1];	/* 1st byte of key buf */
+	unsigned int		te_key_size;	/* size of data */
+	unsigned int		te_data_size;	/* size of data */
+	struct table_entry_st	*te_next_p;	/* pointer to next in the list */
+	unsigned char		te_key_buf[1];	/* 1st byte of key buf */
 } table_entry_t;
 
 /* external structure for debuggers be able to see void */
@@ -168,20 +168,20 @@ typedef table_entry_t	table_entry_ext_t;
 
 /* main table structure */
 typedef struct table_st {
-  unsigned int		ta_magic;	/* magic number */
-  unsigned int		ta_flags;	/* table's flags defined in table.h */
-  unsigned int		ta_bucket_n;	/* num of buckets, should be 2^X */
-  unsigned int		ta_entry_n;	/* num of entries in all buckets */
-  unsigned int		ta_data_align;	/* data alignment value */
-  table_entry_t		**ta_buckets;	/* array of linked lists */
-  table_linear_t	ta_linear;	/* linear tracking */
-  struct table_st	*ta_mmap;	/* mmaped table */
-  unsigned long		ta_file_size;	/* size of on-disk space */
+	unsigned int		ta_magic;	/* magic number */
+	unsigned int		ta_flags;	/* table's flags defined in table.h */
+	unsigned int		ta_bucket_n;	/* num of buckets, should be 2^X */
+	unsigned int		ta_entry_n;	/* num of entries in all buckets */
+	unsigned int		ta_data_align;	/* data alignment value */
+	table_entry_t		**ta_buckets;	/* array of linked lists */
+	table_linear_t	ta_linear;	/* linear tracking */
+	struct table_st	*ta_mmap;	/* mmaped table */
+	unsigned long		ta_file_size;	/* size of on-disk space */
   
-  void			*ta_mem_pool;	/* pointer to some memory pool */
-  table_mem_alloc_t	ta_alloc_func;	/* memory allocation function */
-  table_mem_resize_t	ta_resize_func;	/* memory resize function */
-  table_mem_free_t	ta_free_func;	/* memory free function */
+	void			*ta_mem_pool;	/* pointer to some memory pool */
+	table_mem_alloc_t	ta_alloc_func;	/* memory allocation function */
+	table_mem_resize_t	ta_resize_func;	/* memory resize function */
+	table_mem_free_t	ta_free_func;	/* memory free function */
 } table_t;
 
 /* external table structure for debuggers */
@@ -189,41 +189,53 @@ typedef table_t	table_ext_t;
 
 /* local comparison functions */
 typedef int	(*compare_t)(const void *element1_p, const void *element2_p,
-			     table_compare_t user_compare,
-			     const table_t *table_p, int *err_bp);
+						 table_compare_t user_compare,
+						 const table_t *table_p, int *err_bp);
 
 /*
  * to map error to string
  */
 typedef struct {
-  int		es_error;		/* error number */
-  char		*es_string;		/* assocaited string */
+	int		es_error;		/* error number */
+	char		*es_string;		/* assocaited string */
 } error_str_t;
 
 static	error_str_t	errors[] = {
-  { TABLE_ERROR_NONE,		"no error" },
-  { TABLE_ERROR_PNT,		"invalid table pointer" },
-  { TABLE_ERROR_ARG_NULL,	"buffer argument is null" },
-  { TABLE_ERROR_SIZE,		"incorrect size argument" },
-  { TABLE_ERROR_OVERWRITE,	"key exists and no overwrite" },
-  { TABLE_ERROR_NOT_FOUND,	"key does not exist" },
-  { TABLE_ERROR_ALLOC,		"error allocating memory" },
-  { TABLE_ERROR_LINEAR,		"linear access not in progress" },
-  { TABLE_ERROR_OPEN,		"could not open file" },
-  { TABLE_ERROR_SEEK,		"could not seek to position in file" },
-  { TABLE_ERROR_READ,		"could not read from file" },
-  { TABLE_ERROR_WRITE,		"could not write to file" },
-  { TABLE_ERROR_MMAP_NONE,	"no mmap support compiled in library" },
-  { TABLE_ERROR_MMAP,		"could not mmap the file" },
-  { TABLE_ERROR_MMAP_OP,	"operation not valid on mmap files" },
-  { TABLE_ERROR_EMPTY,		"table is empty" },
-  { TABLE_ERROR_NOT_EMPTY,	"table contains data" },
-  { TABLE_ERROR_ALIGNMENT,	"invalid alignment value" },
-  { TABLE_ERROR_COMPARE,	"problems with internal comparison" },
-  { TABLE_ERROR_FREE,		"memory free error" },
-  { 0 }
+	{ TABLE_ERROR_NONE,		"no error" },
+	{ TABLE_ERROR_PNT,		"invalid table pointer" },
+	{ TABLE_ERROR_ARG_NULL,	"buffer argument is null" },
+	{ TABLE_ERROR_SIZE,		"incorrect size argument" },
+	{ TABLE_ERROR_OVERWRITE,	"key exists and no overwrite" },
+	{ TABLE_ERROR_NOT_FOUND,	"key does not exist" },
+	{ TABLE_ERROR_ALLOC,		"error allocating memory" },
+	{ TABLE_ERROR_LINEAR,		"linear access not in progress" },
+	{ TABLE_ERROR_OPEN,		"could not open file" },
+	{ TABLE_ERROR_SEEK,		"could not seek to position in file" },
+	{ TABLE_ERROR_READ,		"could not read from file" },
+	{ TABLE_ERROR_WRITE,		"could not write to file" },
+	{ TABLE_ERROR_MMAP_NONE,	"no mmap support compiled in library" },
+	{ TABLE_ERROR_MMAP,		"could not mmap the file" },
+	{ TABLE_ERROR_MMAP_OP,	"operation not valid on mmap files" },
+	{ TABLE_ERROR_EMPTY,		"table is empty" },
+	{ TABLE_ERROR_NOT_EMPTY,	"table contains data" },
+	{ TABLE_ERROR_ALIGNMENT,	"invalid alignment value" },
+	{ TABLE_ERROR_COMPARE,	"problems with internal comparison" },
+	{ TABLE_ERROR_FREE,		"memory free error" },
+	{ 0 }
 };
 
 #define INVALID_ERROR	"invalid error code"
 
 #endif /* ! __TABLE_LOC_H__ */
+
+/* For Emacs:
+ * Local Variables:
+ * mode:c
+ * indent-tabs-mode:t
+ * tab-width:4
+ * c-basic-offset:4
+ * End:
+ * For VIM:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet:
+ */
+

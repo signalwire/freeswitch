@@ -636,7 +636,7 @@ void sofia_glue_set_extra_headers(switch_core_session_t *session, sip_t const *s
 	sip_unknown_t *un;
 	char name[512] = "";
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-	char *pstr;
+	char pstr[32];
 
 	
 	if (!sip || !channel) {
@@ -652,7 +652,7 @@ void sofia_glue_set_extra_headers(switch_core_session_t *session, sip_t const *s
 		}
 	}
 
-	pstr = switch_core_session_sprintf(session, "execute_on_%sprefix", prefix);
+	switch_snprintf(pstr, sizeof(pstr), "execute_on_%sprefix", prefix);
 	switch_channel_execute_on(channel, pstr);
 	switch_channel_api_on(channel, pstr);
 
@@ -2024,6 +2024,8 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		"   status           VARCHAR(255),\n"
 		"   ping_status      VARCHAR(255),\n"
 		"   ping_count       INTEGER,\n"
+		"   ping_time        BIGINT,\n"
+		"   force_ping       INTEGER,\n"
 		"   rpid             VARCHAR(255),\n"
 		"   expires          BIGINT,\n"
 		"   ping_expires     INTEGER not null default 0,\n"
@@ -2241,6 +2243,8 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 	switch_cache_db_test_reactive(dbh, "select ping_count from sip_registrations", NULL, "alter table sip_registrations add column ping_count INTEGER default 0");
 	switch_cache_db_test_reactive(dbh, "select ping_status from sip_registrations", NULL, "alter table sip_registrations add column ping_status VARCHAR(255) default 'Reachable'");
 	switch_cache_db_test_reactive(dbh, "select ping_expires from sip_registrations", NULL, "alter table sip_registrations add column ping_expires INTEGER not null default 0");
+	switch_cache_db_test_reactive(dbh, "select ping_time from sip_registrations", NULL, "alter table sip_registrations add column ping_time BIGINT not null default 0");
+	switch_cache_db_test_reactive(dbh, "select force_ping from sip_registrations", NULL, "alter table sip_registrations add column force_ping INTEGER not null default 0");
 	
 	test2 = switch_mprintf("%s;%s", test_sql, test_sql);
 			

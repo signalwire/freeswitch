@@ -369,16 +369,16 @@ static int period_to_usecs(struct snd_pcm_runtime *runtime)
 
 static int calc_boundary(struct snd_pcm_runtime *runtime)
 {
-	u_int64_t boundary;
+	uint64_t boundary;
 
-	boundary = (u_int64_t)runtime->buffer_size *
-		   (u_int64_t)runtime->period_size;
+	boundary = (uint64_t)runtime->buffer_size *
+		   (uint64_t)runtime->period_size;
 #if BITS_PER_LONG < 64
 	/* try to find lowest common multiple for buffer and period */
 	if (boundary > LONG_MAX - runtime->buffer_size) {
-		u_int32_t remainder = -1;
-		u_int32_t divident = runtime->buffer_size;
-		u_int32_t divisor = runtime->period_size;
+		uint32_t remainder = -1;
+		uint32_t divident = runtime->buffer_size;
+		uint32_t divisor = runtime->period_size;
 		while (remainder) {
 			remainder = divident % divisor;
 			if (remainder) {

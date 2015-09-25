@@ -2,5 +2,6 @@
 2. add lock for hiredis_profile for destroy vs running commands
 3. Look into refactor/cleanup of xml processing
 4. Add tab complete for profile names for APIs, and possibly for supported actions(and in theory look into key listing from redis)
+5. Add linked list session pvt structure for keeping track of limit incr's on a session by session basis
 
 

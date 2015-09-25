@@ -468,7 +468,7 @@ commands:
     -j Build debs in parallel
     -k Don't override pbuilder image configurations
     -K [/path/to/keyring.asc]
-       Use custom keyring file for sources.list in build environment 
+       Use custom keyring file for sources.list in build environment
        in the format of: apt-key exportall > /path/to/file.asc
     -l <modules>
     -m [ quicktest | non-dfsg ]
@@ -497,7 +497,7 @@ commands:
     -d Enable cowbuilder debug hook
     -k Don't override pbuilder image configurations
     -K [/path/to/keyring.asc]
-       Use custom keyring file for sources.list in build environment 
+       Use custom keyring file for sources.list in build environment
        in the format of: apt-key exportall > /path/to/file.asc
     -t Use system /etc/apt/sources.list in build environment
     -T [/path/to/sources.list]

@@ -12,7 +12,7 @@
       $scope.verto = verto;
       $scope.storage = storage;
       $scope.call_history = angular.element("#call_history").hasClass('active');
-      $scope.chatStatus = angular.element('#wrapper').hasClass('toggled');
+      $rootScope.chatStatus = angular.element('#wrapper').hasClass('toggled');
 
       /**
        * (explanation) scope in another controller extends rootScope (singleton)
@@ -83,11 +83,15 @@
        * Logout the user from verto server and
        * redirects him to login page.
        */
-      $scope.logout = function() {
+      $rootScope.logout = function() {
         var disconnect = function() {
           var disconnectCallback = function(v, connected) {
             console.debug('Redirecting to login page.');
             storage.reset();
+			if (typeof gapi !== 'undefined'){
+				console.debug(gapi);
+				gapi.auth.signOut();
+			}
             $location.path('/login');
           };
 
@@ -202,20 +206,20 @@
       };
 
       $scope.toggleChat = function() {
-        if ($scope.chatStatus && $rootScope.activePane === 'chat') {
+        if ($rootScope.chatStatus && $rootScope.activePane === 'chat') {
           $rootScope.chat_counter = 0;
         }
         angular.element('#wrapper').toggleClass('toggled');
-        $scope.chatStatus = angular.element('#wrapper').hasClass('toggled');
+        $rootScope.chatStatus = angular.element('#wrapper').hasClass('toggled');
       };
 
-      $scope.openChat = function() {
-        $scope.chatStatus = false;
+      $rootScope.openChat = function() {
+        $rootScope.chatStatus = false;
         angular.element('#wrapper').removeClass('toggled');
       };
 
       $scope.closeChat = function() {
-        $scope.chatStatus = true;
+        $rootScope.chatStatus = true;
         angular.element('#wrapper').addClass('toggled');
       };
 
@@ -240,11 +244,9 @@
           Fullscreen.cancel();
         }
 
-
-        console.log($scope.chatStatus);
-        if (!$scope.chatStatus) {
+        if (!$rootScope.chatStatus) {
           angular.element('#wrapper').toggleClass('toggled');
-          $scope.chatStatus = angular.element('#wrapper').hasClass('toggled');
+          $rootScope.chatStatus = angular.element('#wrapper').hasClass('toggled');
         }
 
         $rootScope.dialpadNumber = '';
@@ -275,6 +277,40 @@
           $location.path('/incall');
         }
 
+      });
+
+      $scope.$on('event:google-plus-signin-success', function (event,authResult) {
+        // Send login to server or save into cookie
+        console.log('Google+ Login Success');
+	console.log(authResult);
+	gapi.client.load('plus', 'v1', gapiClientLoaded);
+      });
+
+      function gapiClientLoaded() {
+	gapi.client.plus.people.get({userId: 'me'}).execute(handleEmailResponse);
+      }
+
+      function handleEmailResponse(resp){
+        var primaryEmail;
+	for (var i=0; i < resp.emails.length; i++) {
+	  if (resp.emails[i].type === 'account') primaryEmail = resp.emails[i].value;
+        }
+	console.debug("Primary Email: " + primaryEmail );
+	console.debug("display name: " + resp.displayName);
+	console.debug("imageurl: " + resp.image.url);
+	console.debug(resp);
+	console.debug(verto.data);
+	verto.data.email = primaryEmail;
+	verto.data.name = resp.displayName;
+	storage.data.name = verto.data.name;
+	storage.data.email = verto.data.email;
+
+	$scope.login();
+      }
+
+      $scope.$on('event:google-plus-signin-failure', function (event,authResult) {
+        // Auth failure or signout detected
+        console.log('Google+ Login Failure');
       });
 
       $rootScope.callActive = function(data) {
@@ -355,7 +391,9 @@
         //};
         //
         //verto.hangup(hangupCallback);
-
+        if (verto.data.shareCall) {
+          verto.screenshareHangup();
+        }
         verto.hangup();
       };
 

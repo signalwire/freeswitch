@@ -129,7 +129,7 @@ namespace MP4
 		}
 
 		ts = rt.last_frame;
-		if (!MP4ReadRtpPacket(fh, hint, rt.packet, (u_int8_t **) &buffer, &size, 0, header, true)) return false;
+		if (!MP4ReadRtpPacket(fh, hint, rt.packet, (uint8_t **) &buffer, &size, 0, header, true)) return false;
 		++rt.packet;
 		return true;
 	}

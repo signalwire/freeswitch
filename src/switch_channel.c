@@ -2100,10 +2100,8 @@ SWITCH_DECLARE(int) switch_channel_state_change_pending(switch_channel_t *channe
 
 SWITCH_DECLARE(int) switch_channel_check_signal(switch_channel_t *channel, switch_bool_t in_thread_only)
 {
-	if (!in_thread_only || switch_core_session_in_thread(channel->session)) {
-		switch_ivr_parse_all_signal_data(channel->session);
-	}
-
+	(void)in_thread_only;
+	switch_ivr_parse_next_signal_data(channel->session);
 	return 0;
 }
 
@@ -2525,21 +2523,21 @@ SWITCH_DECLARE(void) switch_channel_event_set_basic_data(switch_channel_t *chann
 								   switch_channel_test_flag(channel, CF_DIALPLAN) ? "true" : "false");
 
 
-	if ((v = switch_channel_get_variable(channel, "presence_id"))) {
+	if ((v = switch_channel_get_variable_dup(channel, "presence_id", SWITCH_FALSE, -1))) {
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Channel-Presence-ID", v);
 	}
 
-	if ((v = switch_channel_get_variable(channel, "presence_data"))) {
+	if ((v = switch_channel_get_variable_dup(channel, "presence_data", SWITCH_FALSE, -1))) {
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Channel-Presence-Data", v);
 	}
 
 
-	if ((v = switch_channel_get_variable(channel, "presence_data_cols"))) {
+	if ((v = switch_channel_get_variable_dup(channel, "presence_data_cols", SWITCH_FALSE, -1))) {
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Presence-Data-Cols", v);
 		switch_event_add_presence_data_cols(channel, event, "PD-");
 	}
 
-	if ((v = switch_channel_get_variable(channel, "call_uuid"))) {
+	if ((v = switch_channel_get_variable_dup(channel, "call_uuid", SWITCH_FALSE, -1))) {
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Channel-Call-UUID", v);
 	} else {
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Channel-Call-UUID", switch_core_session_get_uuid(channel->session));

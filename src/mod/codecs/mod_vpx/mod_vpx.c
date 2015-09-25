@@ -940,6 +940,8 @@ static switch_status_t switch_vpx_control(switch_codec_t *codec,
 										  switch_codec_control_command_t cmd, 
 										  switch_codec_control_type_t ctype,
 										  void *cmd_data,
+										  switch_codec_control_type_t atype,
+										  void *cmd_arg,
 										  switch_codec_control_type_t *rtype,
 										  void **ret_data) 
 {
@@ -958,7 +960,7 @@ static switch_status_t switch_vpx_control(switch_codec_t *codec,
 			}
 		}
 		break;
-	case SCC_VIDEO_REFRESH:
+	case SCC_VIDEO_GEN_KEYFRAME:
 		context->need_key_frame = 1;		
 		break;
 	case SCC_VIDEO_BANDWIDTH:
