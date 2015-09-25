@@ -313,7 +313,11 @@
         }
 
         if (self.localStream) {
-            self.localStream.stop();
+            if(typeof self.localStream.stop == 'function') {
+                self.localStream.stop();
+            } else {
+                self.localStream.active = false;
+            }
             self.localStream = null;
         }
 
@@ -327,7 +331,11 @@
         }
 
 	if (self.options.localVideoStream) {
-	    self.options.localVideoStream.stop();
+            if(typeof self.options.localVideoStream.stop == 'function') {
+	        self.options.localVideoStream.stop();
+            } else {
+                self.options.localVideoStream.active = false;
+            }
         }
 
         if (self.peer) {
@@ -951,7 +959,11 @@
             stop: function() {
                 peer.close();
                 if (options.attachStream) {
+                  if(typeof options.attachStream.stop == 'function') {
                     options.attachStream.stop();
+                  } else {
+                    options.attachStream.active = false;
+                  }
                 }
             }
 
@@ -1073,7 +1085,13 @@
                 audio: ttl++ == 0,
                 video: video	    
 	    },
-	    onsuccess: function(e) {e.stop(); console.info(w + "x" + h + " supported."); $.FSRTC.validRes.push([w, h]); checkRes(cam, func);},
+	    onsuccess: function(e) {
+              if(typeof e.stop == 'function') {
+                e.stop(); 
+              } else {
+                e.active = false;
+              }
+              console.info(w + "x" + h + " supported."); $.FSRTC.validRes.push([w, h]); checkRes(cam, func);},
 	    onerror: function(e) {console.error( w + "x" + h + " not supported."); checkRes(cam, func);}
         });
     }
@@ -1108,7 +1126,17 @@
 		audio: check_audio,
 		video: check_video,
 	    },
-	    onsuccess: function(e) {e.stop(); console.info("media perm init complete"); if (runtime) {setTimeout(runtime, 100, true)}},
+	    onsuccess: function(e) {
+              if(typeof e.stop == 'function') {
+                e.stop(); 
+              } else {
+                e.active = false;
+              }
+              console.info("media perm init complete"); 
+              if (runtime) {
+                setTimeout(runtime, 100, true);
+              }
+            },
 	    onerror: function(e) {
 		if (check_video && check_audio) {
 		    console.error("error, retesting with audio params only");
