@@ -13,6 +13,7 @@ body {
   overflow: hidden;
   white-space: nowrap;
   width: 160px;
+  display: inline-block;
 }
 
 .inline-block {

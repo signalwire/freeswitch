@@ -22,7 +22,7 @@
         <img gravatar-size="40" gravatar-src-once="member.email" class="img-circle" ng-class="{'chat-member-talking': member.status.audio.talking, 'chat-member-muted': member.status.audio.muted}" />
       </span>
       <!-- FIXME(italo): Put this whole block in a flex box to avoid defining fixed width.-->
-      <h4 class="chat-members-name"><div class="members-name">{{ member.name }}</div> <small>({{ member.number }})</small></h4>
+      <h4 class="chat-members-name"><div class="members-name">{{ member.name }}</div> <small class="ellipsis">({{ member.number }})</small></h4>
       <div class="pull-right action-buttons chat-members-action" ng-show="verto.data.confRole == 'moderator'">
         <div class="btn-group">
           <button type="button" class="btn btn-xs dropdown-toggle" data-toggle="dropdown">
