@@ -2601,17 +2601,25 @@
 	checkDevices(runtime);
     }
 
-    $.verto.init = function(obj, runtime, check) {
-        if(check == undefined) {
-            check = true;
-        }
-	$.FSRTC.checkPerms(function(status) {
-          if(check) {
+    $.verto.init = function(obj, runtime) {
+	if (!obj) {
+	    obj = {};
+	}
+
+	if (!obj.skipPermCheck && !obj.skipDeviceCheck) {
+	    $.FSRTC.checkPerms(function(status) {
+		checkDevices(runtime);
+	    }, true, true);
+	} else if (obj.skipPermCheck && !obj.skipDeviceCheck) {
 	    checkDevices(runtime);
-          } else {
-            runtime(status);
-          }
-	}, true, true);
+	} else if (!obj.skipPermCheck && obj.skipDeviceCheck) {
+	    $.FSRTC.checkPerms(function(status) {
+		runtime(status);
+	    }, true, true);
+	} else {
+	    runtime(null);
+	}
+
     }
 
     $.verto.genUUID = function () {

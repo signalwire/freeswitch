@@ -576,12 +576,12 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
         if(data.mediaPerm) {
           ourBootstrap();
         } else {
-          $.verto.init({}, ourBootstrap, false);
+            $.verto.init({skipDeviceCheck: true}, ourBootstrap);
         }
       },
 
       mediaPerm: function(callback) {
-        $.verto.init({}, callback, false);
+	  $.FSRTC.checkPerms(callback, true, true);
       },
 
       /**

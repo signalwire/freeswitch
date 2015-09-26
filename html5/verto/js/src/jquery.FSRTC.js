@@ -453,7 +453,10 @@
 
 	var audio;
 
-	if (obj.options.videoParams && obj.options.screenShare) {//obj.options.videoParams.chromeMediaSource == 'desktop') {
+	if (obj.options.useMic && obj.options.useMic === "none") {
+	    console.log("Microphone Disabled");
+	    audio = false;
+	} else if (obj.options.videoParams && obj.options.screenShare) {//obj.options.videoParams.chromeMediaSource == 'desktop') {
 
 	    //obj.options.videoParams = {
 	//	chromeMediaSource: 'screen',
@@ -523,6 +526,7 @@
 	    }
 
 	} else {
+	    console.log("Camera Disabled");
 	    video = false;
 	    useVideo = false;
 	}
@@ -590,17 +594,20 @@
 	console.log("Audio constraints", mediaParams.audio);
 	console.log("Video constraints", mediaParams.video);
 
+	if (mediaParams.audio || mediaParams.video) {
 
-        getUserMedia({
-            constraints: {
-                audio: mediaParams.audio,
+            getUserMedia({
+		constraints: {
+                    audio: mediaParams.audio,
                 video: mediaParams.video
-            },
-            video: mediaParams.useVideo,
-            onsuccess: onSuccess,
-            onerror: onError
-        });
-
+		},
+		video: mediaParams.useVideo,
+		onsuccess: onSuccess,
+		onerror: onError
+            });
+	} else {
+	    onSuccess(null);
+	}
 
 
 
