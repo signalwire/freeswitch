@@ -349,11 +349,11 @@
 
           $scope.answerCall();
           storage.data.called_number = data;
-          CallHistory.add(number, 'inbound', true);
+          CallHistory.add(data, 'inbound', true);
           $location.path('/incall');
         }, function() {
           $scope.declineCall();
-          CallHistory.add(number, 'inbound', false);
+          CallHistory.add(data, 'inbound', false);
         });
       });
 
