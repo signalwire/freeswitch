@@ -372,8 +372,11 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
             }
           });
 
-          console.log('>>> conf.listVideoLayouts();');
-          conf.listVideoLayouts();
+          if (data.confRole == "moderator") {
+            console.log('>>> conf.listVideoLayouts();');
+            conf.listVideoLayouts();
+          }
+
           data.conf = conf;
 
           data.liveArray = new $.verto.liveArray(
@@ -433,9 +436,13 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
             console.log('Has data.liveArray.');
             $rootScope.$emit('members.clear');
             data.liveArray = null;
-
           } else {
             console.log('Doesn\'t found data.liveArray.');
+          }
+
+          if (data.conf) {
+            data.conf.destroy();
+            data.conf = null;
           }
         }
 
@@ -458,6 +465,7 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
                   switch (params.pvtData.action) {
                     case "conference-liveArray-join":
                       console.log("conference-liveArray-join");
+                      stopConference();
                       startConference(v, dialog, params.pvtData);
                       break;
                     case "conference-liveArray-part":
@@ -520,13 +528,7 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
                 if (d.params.screenShare) {
                   cleanShareCall(that);
                 } else {
-                  if (data.liveArray) {
-                    data.liveArray.destroy();
-                  }
-                  
-                  if (data.conf) {
-                    data.conf.destroy();
-                  }
+                  stopConference();
                   cleanCall();
                 }
                 break;
