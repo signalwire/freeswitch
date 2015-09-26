@@ -143,8 +143,8 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
       $rootScope.$emit('page.incall', 'call');
     }
 
-    function callActive(last_state) {
-      $rootScope.$emit('call.active', last_state);
+    function callActive(last_state, params) {
+      $rootScope.$emit('call.active', last_state, params);
     }
 
     function calling() {
@@ -488,6 +488,7 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
                 });
                 break;
               default:
+                console.warn('Got a not implemented message:', msg, dialog, params);
                 break;
             }
           },
@@ -495,9 +496,7 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
           onDialogState: function(d) {
             if (!data.call) {
               data.call = d;
-              if (d.state.name !== 'ringing') {
-                inCall();
-              }
+
             }
 
             console.debug('onDialogState:', d);
@@ -517,7 +516,7 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
               case "active":
                 console.debug('Talking to:', d.cidString());
                 data.callState = 'active';
-                callActive(d.lastState.name);
+                callActive(d.lastState.name, d.params);
                 break;
               case "hangup":
                 console.debug('Call ended with cause: ' + d.cause);
@@ -531,6 +530,9 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
                   stopConference();
                   cleanCall();
                 }
+                break;
+              default:
+                console.warn('Got a not implemented state:', d);
                 break;
             }
           },

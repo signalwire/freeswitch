@@ -18,7 +18,7 @@
       console.log('Moving the video to element.');
       jQuery('video').removeClass('hide').appendTo(element);
       jQuery('video').css('display', 'block');
-      scope.callActive();
+      scope.callActive("", {useVideo: true});
 
       element.on('$destroy', function() {
         // Move the video back to the body.

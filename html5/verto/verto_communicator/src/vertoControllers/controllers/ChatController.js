@@ -122,7 +122,7 @@
       });
 
       $rootScope.$on('members.clear', function(event) {
-        $scope.$apply(function() {
+        $scope.$applyAsync(function() {
           clearConferenceChat();
           $scope.closeChat();
         });

@@ -302,7 +302,7 @@
         console.log('Google+ Login Failure');
       });
 
-      $rootScope.callActive = function(data) {
+      $rootScope.callActive = function(data, params) {
         verto.data.mutedMic = storage.data.mutedMic;
         verto.data.mutedVideo = storage.data.mutedVideo;
 
@@ -320,10 +320,16 @@
         storage.data.calling = false;
 
         storage.data.cur_call = 1;
+
+        $location.path('/incall');
+
+        if(params.useVideo) {
+          $rootScope.$emit('call.video', 'video');
+        }
       };
 
-      $rootScope.$on('call.active', function(event, data) {
-        $rootScope.callActive(data);
+      $rootScope.$on('call.active', function(event, data, params) {
+        $rootScope.callActive(data, params);
       });
 
       $rootScope.$on('call.calling', function(event, data) {
@@ -369,6 +375,7 @@
         if (!verto.data.call) {
           toastr.warning('There is no call to hangup.');
           $location.path('/dialpad');
+          return;
         }
 
         //var hangupCallback = function(v, hangup) {
@@ -383,7 +390,10 @@
         if (verto.data.shareCall) {
           verto.screenshareHangup();
         }
+
         verto.hangup();
+
+        $location.path('/dialpad');
       };
 
       $scope.answerCall = function() {
@@ -392,6 +402,7 @@
         verto.data.call.answer({
           useStereo: storage.data.useStereo,
           useCamera: storage.data.selectedVideo,
+          useVideo: storage.data.useVideo,
           useMic: storage.data.useMic,
           callee_id_name: verto.data.name,
           callee_id_number: verto.data.login
