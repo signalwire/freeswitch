@@ -6401,7 +6401,7 @@ static void t30_non_ecm_rx_status(void *user_data, int status)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE_NONSTD(void) t30_non_ecm_put_bit(void *user_data, int bit)
+SPAN_DECLARE(void) t30_non_ecm_put_bit(void *user_data, int bit)
 {
     t30_state_t *s;
     int res;
@@ -6499,7 +6499,7 @@ SPAN_DECLARE(void) t30_non_ecm_put(void *user_data, const uint8_t buf[], int len
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE_NONSTD(int) t30_non_ecm_get_bit(void *user_data)
+SPAN_DECLARE(int) t30_non_ecm_get_bit(void *user_data)
 {
     int bit;
     t30_state_t *s;
@@ -6705,7 +6705,7 @@ static void t30_hdlc_rx_status(void *user_data, int status)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE_NONSTD(void) t30_hdlc_accept(void *user_data, const uint8_t *msg, int len, int ok)
+SPAN_DECLARE(void) t30_hdlc_accept(void *user_data, const uint8_t *msg, int len, int ok)
 {
     t30_state_t *s;
 

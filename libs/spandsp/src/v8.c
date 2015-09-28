@@ -734,7 +734,7 @@ static void send_cm_jm(v8_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE_NONSTD(int) v8_tx(v8_state_t *s, int16_t *amp, int max_len)
+SPAN_DECLARE(int) v8_tx(v8_state_t *s, int16_t *amp, int max_len)
 {
     int len;
 
@@ -852,7 +852,7 @@ static void handle_modem_connect_tone(v8_state_t *s, int tone)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE_NONSTD(int) v8_rx(v8_state_t *s, const int16_t *amp, int len)
+SPAN_DECLARE(int) v8_rx(v8_state_t *s, const int16_t *amp, int len)
 {
     int residual_samples;
     int tone;

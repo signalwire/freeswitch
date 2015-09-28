@@ -284,7 +284,7 @@ SPAN_DECLARE(void) v17_rx_set_modem_status_handler(v17_rx_state_t *s, modem_stat
     \param len The number of samples in the buffer.
     \return The number of samples unprocessed.
 */
-SPAN_DECLARE_NONSTD(int) v17_rx(v17_rx_state_t *s, const int16_t amp[], int len);
+SPAN_DECLARE(int) v17_rx(v17_rx_state_t *s, const int16_t amp[], int len);
 
 /*! Fake processing of a missing block of received V.17 modem audio samples.
     (e.g due to packet loss).
@@ -293,7 +293,7 @@ SPAN_DECLARE_NONSTD(int) v17_rx(v17_rx_state_t *s, const int16_t amp[], int len)
     \param len The number of samples to fake.
     \return The number of samples unprocessed.
 */
-SPAN_DECLARE_NONSTD(int) v17_rx_fillin(v17_rx_state_t *s, int len);
+SPAN_DECLARE(int) v17_rx_fillin(v17_rx_state_t *s, int len);
 
 /*! Get a snapshot of the current equalizer coefficients.
     \brief Get a snapshot of the current equalizer coefficients.

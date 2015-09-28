@@ -110,9 +110,9 @@ SPAN_DECLARE(const char *) modem_connect_tone_to_str(int tone)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE_NONSTD(int) modem_connect_tones_tx(modem_connect_tones_tx_state_t *s,
-                                                int16_t amp[],
-                                                int len)
+SPAN_DECLARE(int) modem_connect_tones_tx(modem_connect_tones_tx_state_t *s,
+                                         int16_t amp[],
+                                         int len)
 {
     int16_t mod;
     int i;
@@ -456,9 +456,9 @@ static void v21_put_bit(void *user_data, int bit)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE_NONSTD(int) modem_connect_tones_rx(modem_connect_tones_rx_state_t *s,
-                                                const int16_t amp[],
-                                                int len)
+SPAN_DECLARE(int) modem_connect_tones_rx(modem_connect_tones_rx_state_t *s,
+                                         const int16_t amp[],
+                                         int len)
 {
     int i;
     int16_t notched;
@@ -700,7 +700,7 @@ SPAN_DECLARE_NONSTD(int) modem_connect_tones_rx(modem_connect_tones_rx_state_t *
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE_NONSTD(int) modem_connect_tones_rx_fillin(modem_connect_tones_rx_state_t *s, int len)
+SPAN_DECLARE(int) modem_connect_tones_rx_fillin(modem_connect_tones_rx_state_t *s, int len)
 {
     return 0;
 }

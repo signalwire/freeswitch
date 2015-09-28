@@ -299,7 +299,7 @@ static __inline__ void hdlc_rx_put_bit_core(hdlc_rx_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE_NONSTD(void) hdlc_rx_put_bit(hdlc_rx_state_t *s, int new_bit)
+SPAN_DECLARE(void) hdlc_rx_put_bit(hdlc_rx_state_t *s, int new_bit)
 {
     if (new_bit < 0)
     {
@@ -312,7 +312,7 @@ SPAN_DECLARE_NONSTD(void) hdlc_rx_put_bit(hdlc_rx_state_t *s, int new_bit)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE_NONSTD(void) hdlc_rx_put_byte(hdlc_rx_state_t *s, int new_byte)
+SPAN_DECLARE(void) hdlc_rx_put_byte(hdlc_rx_state_t *s, int new_byte)
 {
     int i;
 
@@ -332,7 +332,7 @@ SPAN_DECLARE_NONSTD(void) hdlc_rx_put_byte(hdlc_rx_state_t *s, int new_byte)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE_NONSTD(void) hdlc_rx_put(hdlc_rx_state_t *s, const uint8_t buf[], int len)
+SPAN_DECLARE(void) hdlc_rx_put(hdlc_rx_state_t *s, const uint8_t buf[], int len)
 {
     int i;
 
@@ -517,7 +517,7 @@ SPAN_DECLARE(int) hdlc_tx_corrupt_frame(hdlc_tx_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE_NONSTD(int) hdlc_tx_get_byte(hdlc_tx_state_t *s)
+SPAN_DECLARE(int) hdlc_tx_get_byte(hdlc_tx_state_t *s)
 {
     int i;
     int byte_in_progress;
@@ -636,7 +636,7 @@ SPAN_DECLARE_NONSTD(int) hdlc_tx_get_byte(hdlc_tx_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE_NONSTD(int) hdlc_tx_get_bit(hdlc_tx_state_t *s)
+SPAN_DECLARE(int) hdlc_tx_get_bit(hdlc_tx_state_t *s)
 {
     int txbit;
 
@@ -652,7 +652,7 @@ SPAN_DECLARE_NONSTD(int) hdlc_tx_get_bit(hdlc_tx_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE_NONSTD(int) hdlc_tx_get(hdlc_tx_state_t *s, uint8_t buf[], size_t max_len)
+SPAN_DECLARE(int) hdlc_tx_get(hdlc_tx_state_t *s, uint8_t buf[], size_t max_len)
 {
     size_t i;
     int x;

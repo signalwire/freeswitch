@@ -2134,7 +2134,7 @@ static void update_rx_timing(t38_gateway_state_t *s, int len)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE_NONSTD(int) t38_gateway_rx(t38_gateway_state_t *s, int16_t amp[], int len)
+SPAN_DECLARE(int) t38_gateway_rx(t38_gateway_state_t *s, int16_t amp[], int len)
 {
     int i;
 
@@ -2153,7 +2153,7 @@ SPAN_DECLARE_NONSTD(int) t38_gateway_rx(t38_gateway_state_t *s, int16_t amp[], i
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE_NONSTD(int) t38_gateway_rx_fillin(t38_gateway_state_t *s, int len)
+SPAN_DECLARE(int) t38_gateway_rx_fillin(t38_gateway_state_t *s, int len)
 {
     /* To mitigate the effect of lost packets on a packet network we should
        try to sustain the status quo. If there is no receive modem running, keep
@@ -2181,7 +2181,7 @@ SPAN_DECLARE_NONSTD(int) t38_gateway_rx_fillin(t38_gateway_state_t *s, int len)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE_NONSTD(int) t38_gateway_tx(t38_gateway_state_t *s, int16_t amp[], int max_len)
+SPAN_DECLARE(int) t38_gateway_tx(t38_gateway_state_t *s, int16_t amp[], int max_len)
 {
     int len;
 #if defined(LOG_FAX_AUDIO)

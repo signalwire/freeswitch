@@ -2772,7 +2772,7 @@ static int initial_timed_rx(void *user_data, const int16_t amp[], int len)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE_NONSTD(int) t31_rx(t31_state_t *s, int16_t amp[], int len)
+SPAN_DECLARE(int) t31_rx(t31_state_t *s, int16_t amp[], int len)
 {
     int i;
     int32_t power;
@@ -2822,7 +2822,7 @@ SPAN_DECLARE_NONSTD(int) t31_rx(t31_state_t *s, int16_t amp[], int len)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE_NONSTD(int) t31_rx_fillin(t31_state_t *s, int len)
+SPAN_DECLARE(int) t31_rx_fillin(t31_state_t *s, int len)
 {
     /* To mitigate the effect of lost packets on a packet network we should
        try to sustain the status quo. If there is no receive modem running, keep
@@ -2848,7 +2848,7 @@ SPAN_DECLARE_NONSTD(int) t31_rx_fillin(t31_state_t *s, int len)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE_NONSTD(int) t31_tx(t31_state_t *s, int16_t amp[], int max_len)
+SPAN_DECLARE(int) t31_tx(t31_state_t *s, int16_t amp[], int max_len)
 {
     int len;
 

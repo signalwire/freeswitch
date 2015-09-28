@@ -469,7 +469,7 @@ static complexf_t getbaud(v22bis_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE_NONSTD(int) v22bis_tx(v22bis_state_t *s, int16_t amp[], int len)
+SPAN_DECLARE(int) v22bis_tx(v22bis_state_t *s, int16_t amp[], int len)
 {
 #if defined(SPANDSP_USE_FIXED_POINT)
     complexi16_t v;

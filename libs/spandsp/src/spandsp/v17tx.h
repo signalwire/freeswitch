@@ -155,7 +155,7 @@ SPAN_DECLARE(void) v17_tx_set_modem_status_handler(v17_tx_state_t *s, modem_stat
     \param len The number of samples to be generated.
     \return The number of samples actually generated.
 */
-SPAN_DECLARE_NONSTD(int) v17_tx(v17_tx_state_t *s, int16_t amp[], int len);
+SPAN_DECLARE(int) v17_tx(v17_tx_state_t *s, int16_t amp[], int len);
 
 #if defined(__cplusplus)
 }

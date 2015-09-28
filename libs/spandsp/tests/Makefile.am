@@ -225,7 +225,7 @@ echo_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspand
 fax_decode_SOURCES = fax_decode.c
 fax_decode_LDADD = $(LIBDIR) -lspandsp
 
-fax_tests_SOURCES = fax_tests.c fax_utils.c media_monitor.cpp
+fax_tests_SOURCES = fax_tests.c fax_utils.c media_monitor.cpp fax_tester.c
 fax_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspandsp
 
 fsk_tests_SOURCES = fsk_tests.c

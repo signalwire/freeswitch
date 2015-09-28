@@ -1065,7 +1065,7 @@ static void lapm_hdlc_underflow(void *user_data)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE_NONSTD(void) lapm_receive(void *user_data, const uint8_t *frame, int len, int ok)
+SPAN_DECLARE(void) lapm_receive(void *user_data, const uint8_t *frame, int len, int ok)
 {
     lapm_state_t *s;
     v42_state_t *ss;

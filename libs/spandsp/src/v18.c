@@ -978,7 +978,7 @@ static void v18_textphone_put_async_byte(void *user_data, int byte)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE_NONSTD(int) v18_tx(v18_state_t *s, int16_t *amp, int max_len)
+SPAN_DECLARE(int) v18_tx(v18_state_t *s, int16_t *amp, int max_len)
 {
     int len;
     int lenx;
@@ -1006,7 +1006,7 @@ SPAN_DECLARE_NONSTD(int) v18_tx(v18_state_t *s, int16_t *amp, int max_len)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE_NONSTD(int) v18_rx(v18_state_t *s, const int16_t amp[], int len)
+SPAN_DECLARE(int) v18_rx(v18_state_t *s, const int16_t amp[], int len)
 {
     if (s->rx_suppression > 0)
     {
@@ -1037,7 +1037,7 @@ SPAN_DECLARE_NONSTD(int) v18_rx(v18_state_t *s, const int16_t amp[], int len)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE_NONSTD(int) v18_rx_fillin(v18_state_t *s, int len)
+SPAN_DECLARE(int) v18_rx_fillin(v18_state_t *s, int len)
 {
     if (s->rx_suppression > 0)
     {

@@ -152,7 +152,7 @@ SPAN_DECLARE(const char *) fax_modem_to_str(int modem)
 /*- End of function --------------------------------------------------------*/
 
 //static void fax_modems_hdlc_accept(void *user_data, const uint8_t *msg, int len, int ok)
-SPAN_DECLARE_NONSTD(void) fax_modems_hdlc_accept(void *user_data, const uint8_t *msg, int len, int ok)
+SPAN_DECLARE(void) fax_modems_hdlc_accept(void *user_data, const uint8_t *msg, int len, int ok)
 {
     fax_modems_state_t *s;
 
@@ -168,7 +168,7 @@ SPAN_DECLARE_NONSTD(void) fax_modems_hdlc_accept(void *user_data, const uint8_t 
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE_NONSTD(void) fax_modems_hdlc_tx_frame(void *user_data, const uint8_t *msg, int len)
+SPAN_DECLARE(void) fax_modems_hdlc_tx_frame(void *user_data, const uint8_t *msg, int len)
 {
     fax_modems_state_t *s;
 
@@ -206,7 +206,7 @@ static void v17_rx_status_handler(void *user_data, int status)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE_NONSTD(int) fax_modems_v17_v21_rx(void *user_data, const int16_t amp[], int len)
+SPAN_DECLARE(int) fax_modems_v17_v21_rx(void *user_data, const int16_t amp[], int len)
 {
     fax_modems_state_t *s;
 
@@ -224,7 +224,7 @@ SPAN_DECLARE_NONSTD(int) fax_modems_v17_v21_rx(void *user_data, const int16_t am
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE_NONSTD(int) fax_modems_v17_v21_rx_fillin(void *user_data, int len)
+SPAN_DECLARE(int) fax_modems_v17_v21_rx_fillin(void *user_data, int len)
 {
     fax_modems_state_t *s;
 
@@ -253,7 +253,7 @@ static void v27ter_rx_status_handler(void *user_data, int status)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE_NONSTD(int) fax_modems_v27ter_v21_rx(void *user_data, const int16_t amp[], int len)
+SPAN_DECLARE(int) fax_modems_v27ter_v21_rx(void *user_data, const int16_t amp[], int len)
 {
     fax_modems_state_t *s;
 
@@ -271,7 +271,7 @@ SPAN_DECLARE_NONSTD(int) fax_modems_v27ter_v21_rx(void *user_data, const int16_t
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE_NONSTD(int) fax_modems_v27ter_v21_rx_fillin(void *user_data, int len)
+SPAN_DECLARE(int) fax_modems_v27ter_v21_rx_fillin(void *user_data, int len)
 {
     fax_modems_state_t *s;
 
@@ -300,7 +300,7 @@ static void v29_rx_status_handler(void *user_data, int status)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE_NONSTD(int) fax_modems_v29_v21_rx(void *user_data, const int16_t amp[], int len)
+SPAN_DECLARE(int) fax_modems_v29_v21_rx(void *user_data, const int16_t amp[], int len)
 {
     fax_modems_state_t *s;
 
@@ -318,7 +318,7 @@ SPAN_DECLARE_NONSTD(int) fax_modems_v29_v21_rx(void *user_data, const int16_t am
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE_NONSTD(int) fax_modems_v29_v21_rx_fillin(void *user_data, int len)
+SPAN_DECLARE(int) fax_modems_v29_v21_rx_fillin(void *user_data, int len)
 {
     fax_modems_state_t *s;
 

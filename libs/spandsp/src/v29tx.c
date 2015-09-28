@@ -212,7 +212,7 @@ static __inline__ complexf_t getbaud(v29_tx_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE_NONSTD(int) v29_tx(v29_tx_state_t *s, int16_t amp[], int len)
+SPAN_DECLARE(int) v29_tx(v29_tx_state_t *s, int16_t amp[], int len)
 {
 #if defined(SPANDSP_USE_FIXED_POINT)
     complexi16_t v;

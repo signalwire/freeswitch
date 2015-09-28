@@ -41,7 +41,7 @@ extern "C"
     \return The number of samples actually generated. This will be zero when
             there is nothing to send.
 */
-SPAN_DECLARE_NONSTD(int) silence_gen(silence_gen_state_t *s, int16_t *amp, int max_len);
+SPAN_DECLARE(int) silence_gen(silence_gen_state_t *s, int16_t *amp, int max_len);
 
 /*! Set a silence generator context to output continuous silence.
     \brief Set a silence generator context to output continuous silence.
@@ -110,7 +110,7 @@ SPAN_DECLARE(int) silence_gen_free(silence_gen_state_t *s);
     \param len The length of the signal buffer
     \return 0.
 */
-SPAN_DECLARE_NONSTD(int) span_dummy_rx(void *user_data, const int16_t amp[], int len);
+SPAN_DECLARE(int) span_dummy_rx(void *user_data, const int16_t amp[], int len);
 
 /*! A dummy routine to use as a signal modifier callback, when we aren't
     really trying to process the signal. It just returns without affecting
@@ -131,7 +131,7 @@ SPAN_DECLARE(int) span_dummy_mod(void *user_data, int16_t amp[], int len);
     \param len The length of the signal buffer
     \return 0.
 */
-SPAN_DECLARE_NONSTD(int) span_dummy_rx_fillin(void *user_data, int len);
+SPAN_DECLARE(int) span_dummy_rx_fillin(void *user_data, int len);
 
 #if defined(__cplusplus)
 }

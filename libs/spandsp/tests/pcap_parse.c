@@ -113,7 +113,7 @@ typedef struct _null_hdr
 typedef struct _ipv6_hdr
 {
     char dontcare[6];
-    uint8_t nxt_header; /* we only need the next header, so we can determine, if the next header is UDP or not */
+    u_int8_t nxt_header; /* we only need the next header, so we can determine, if the next header is UDP or not */
     char dontcare2[33];
 } ipv6_hdr;
 #endif
