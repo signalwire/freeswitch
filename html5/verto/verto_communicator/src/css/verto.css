@@ -118,6 +118,10 @@ button.btn i {
   color: #F45A5A;
 }
 
+.mdi-navigation-more-vert.dark {
+  color: #333;
+}
+
 .incall-number {
   font-weight: bold;
   padding-top: 22px;
