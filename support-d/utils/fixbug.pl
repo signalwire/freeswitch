@@ -39,6 +39,7 @@ my $xs= new XML::Simple;
 my $r = $xs->XMLin($xml);
 
 my $sum = $r->{channel}->{item}->{summary};
+$sum =~ s/\"/\\"/g;
 
 if ($opts{msg} eq "edit") {
   $auto = 0;
