@@ -13,7 +13,8 @@ int main () {
   unsigned long long micro_total = 0;
   double micro_per = 0;
   double rate_per_sec = 0;
-  
+  int x = 0;
+
 #ifdef BENCHMARK
   switch_time_t small_start_ts, small_end_ts;
 #endif
@@ -42,7 +43,7 @@ int main () {
   }
 
   index = calloc(loops, sizeof(char *));
-  for ( int x = 0; x < loops; x++) {
+  for ( x = 0; x < loops; x++) {
     index[x] = switch_mprintf("%d", x);
   }
 
@@ -51,13 +52,13 @@ int main () {
 
   /* Insertion */
 #ifndef BENCHMARK
-  for ( int x = 0; x < loops; x++) {
+  for ( x = 0; x < loops; x++) {
     status = switch_core_hash_insert(hash, index[x], (void *) index[x]);
     ok(status == SWITCH_STATUS_SUCCESS, "Insert into the hash");
   }
 #else 
   small_start_ts = switch_time_now();
-  for ( int x = 0; x < loops; x++) {
+  for ( x = 0; x < loops; x++) {
     switch_core_hash_insert(hash, index[x], (void *) index[x]);
   }
   small_end_ts = switch_time_now();
@@ -72,7 +73,7 @@ int main () {
 
   /* Lookup */
 #ifndef BENCHMARK
-  for ( int x = 0; x < loops; x++) {
+  for ( x = 0; x < loops; x++) {
     char *data = NULL;
     data = switch_core_hash_find(hash, index[x]);
     ok(data != NULL, "Successful lookup");
@@ -80,7 +81,7 @@ int main () {
   }
 #else
   small_start_ts = switch_time_now();
-  for ( int x = 0; x < loops; x++) {
+  for ( x = 0; x < loops; x++) {
     if ( ! switch_core_hash_find(hash, index[x])) {
       fail("Failed to properly locate one of the values");
     }
@@ -97,7 +98,7 @@ int main () {
 
   /* Delete */
 #ifndef BENCHMARK
-  for ( int x = 0; x < loops; x++) {
+  for ( x = 0; x < loops; x++) {
     char *data = NULL;
     data = switch_core_hash_delete(hash, index[x]);
     ok(data != NULL, "Create a new hash");
@@ -105,7 +106,7 @@ int main () {
   }
 #else
   small_start_ts = switch_time_now();
-  for ( int x = 0; x < loops; x++) {
+  for ( x = 0; x < loops; x++) {
     if ( !switch_core_hash_delete(hash, index[x])) {
       fail("Failed to delete and return the value");
     }
@@ -124,7 +125,7 @@ int main () {
   /* END LOOPS */
 
   switch_core_hash_destroy(&hash);
-  for ( int x = 0; x < loops; x++) {
+  for ( x = 0; x < loops; x++) {
     free(index[x]);
   }
   free(index);

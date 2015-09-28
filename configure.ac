@@ -1671,7 +1671,6 @@ ac_cv_file_dbd_apr_dbd_mysql_c=no
 AC_CONFIG_FILES([Makefile
 		build/Makefile
 		src/Makefile
-		tests/unit/Makefile
 		src/mod/Makefile
 		src/mod/applications/mod_abstraction/Makefile
 		src/mod/applications/mod_avmd/Makefile

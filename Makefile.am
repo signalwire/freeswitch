@@ -1,5 +1,5 @@
 EXTRA_DIST =
-SUBDIRS = . src build tests/unit
+SUBDIRS = . src build
 AUTOMAKE_OPTIONS = foreign subdir-objects
 NAME = freeswitch
 
@@ -775,3 +775,15 @@ support:
 	@cp support-d/.screenrc ~
 	@cp support-d/.bashrc ~
 	@test -f ~/.cc-mode-installed || sh support-d/install-cc-mode.sh && touch ~/.cc-mode-installed
+
+# Using a non-recursive Makefile structure for the automated tests so that the tests have visibility into
+# targets in the rest of the FreeSWITCH tree. This greatly simplifies dependency tracking at the expense
+# of longer test target names. Since the tests are expected to be run easily and rapidly after minor source
+# changes this is the most effective structure.
+
+TESTS =
+check_PROGRAMS =
+
+include tests/unit/unit.mk
+
+
