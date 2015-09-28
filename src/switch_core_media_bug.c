@@ -545,6 +545,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_add(switch_core_session_t 
 		switch_event_fire(&event);
 	}
 
+	switch_core_media_hard_mute(session, SWITCH_FALSE);
+
 	return SWITCH_STATUS_SUCCESS;
 }
 

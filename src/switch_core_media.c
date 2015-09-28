@@ -7857,11 +7857,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_receive_message(switch_core_se
 		break;
 
 	case SWITCH_MESSAGE_INDICATE_HARD_MUTE:
-		{
-			if (session->bugs) {
+		if (a_engine->rtp_session) {
+			if (session->bugs && msg->numeric_arg) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, 
 								  "%s has a media bug, hard mute not allowed.\n", switch_channel_get_name(session->channel));
-			} else if (a_engine->rtp_session) {
+			} else {
 				if (msg->numeric_arg) {
 					switch_rtp_set_flag(a_engine->rtp_session, SWITCH_RTP_FLAG_MUTE);
 				} else {
