@@ -34,6 +34,10 @@ if ($prog =~ /wget/) {
 }
 
 my $xml = `$cmd $url 2>/dev/null`;
+if ($opts{debug}) {
+    print "URL $url\n";
+    print $xml;
+}
 
 my $xs= new XML::Simple;
 my $r = $xs->XMLin($xml);
