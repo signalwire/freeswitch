@@ -279,6 +279,8 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 				flush_video_queue(source->video_q);
 			}
 
+			switch_buffer_zero(audio_buffer);
+			
 			if (switch_core_timer_init(&timer, source->timer_name, source->interval, (int)source->samples, temp_pool) != SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Can't start timer.\n");
 				switch_dir_close(source->dir_handle);
@@ -325,7 +327,7 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 					if (source->chime_counter > 0) {
 						source->chime_counter -= (int32_t)source->samples;
 					}
-
+					
 					if (!switch_test_flag((&source->chime_fh), SWITCH_FILE_OPEN) && source->chime_counter <= 0) {
 						char *val;
 
