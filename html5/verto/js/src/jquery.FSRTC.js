@@ -316,7 +316,14 @@
             if(typeof self.localStream.stop == 'function') {
                 self.localStream.stop();
             } else {
-                self.localStream.active = false;
+		if (self.localStream.active){
+                    var tracks = self.localStream.getTracks();
+                    console.error(tracks);
+		    tracks.forEach(function(track, index){
+			console.log(track);
+			track.stop();
+		    })
+                }
             }
             self.localStream = null;
         }
@@ -334,7 +341,14 @@
             if(typeof self.options.localVideoStream.stop == 'function') {
 	        self.options.localVideoStream.stop();
             } else {
-                self.options.localVideoStream.active = false;
+		if (self.localVideoStream.active){
+                    var tracks = self.localVideoStream.getTracks();
+                    console.error(tracks);
+		    tracks.forEach(function(track, index){
+			console.log(track);
+			track.stop();
+		    })
+                }
             }
         }
 
