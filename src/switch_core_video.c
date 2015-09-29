@@ -470,9 +470,9 @@ SWITCH_DECLARE(switch_image_t *) switch_img_copy_rect(switch_image_t *img, uint3
 #endif
 }
 
+#ifdef SWITCH_HAVE_YUV	
 static inline void switch_img_draw_pixel(switch_image_t *img, int x, int y, switch_rgb_color_t *color)
 {
-#ifdef SWITCH_HAVE_YUV	
 	switch_yuv_color_t yuv;
 
 	if (x < 0 || y < 0 || x >= img->d_w || y >= img->d_h) return;
@@ -493,8 +493,8 @@ static inline void switch_img_draw_pixel(switch_image_t *img, int x, int y, swit
 		*(alpha + 2) = color->g;
 		*(alpha + 3) = color->b;
 	}
-#endif
 }
+#endif
 
 SWITCH_DECLARE(void) switch_img_fill(switch_image_t *img, int x, int y, int w, int h, switch_rgb_color_t *color)
 {
@@ -542,17 +542,17 @@ SWITCH_DECLARE(void) switch_img_fill(switch_image_t *img, int x, int y, int w, i
 #endif
 }
 
+#ifdef SWITCH_HAVE_YUV
 static inline void switch_img_get_yuv_pixel(switch_image_t *img, switch_yuv_color_t *yuv, int x, int y)
 {
-#ifdef SWITCH_HAVE_YUV		
 	// switch_assert(img->fmt == SWITCH_IMG_FMT_I420);
 	if (x < 0 || y < 0 || x >= img->d_w || y >= img->d_h) return;
 
 	yuv->y = *(img->planes[SWITCH_PLANE_Y] + img->stride[SWITCH_PLANE_Y] * y + x);
 	yuv->u = *(img->planes[SWITCH_PLANE_U] + img->stride[SWITCH_PLANE_U] * y / 2 + x / 2);
 	yuv->v = *(img->planes[SWITCH_PLANE_V] + img->stride[SWITCH_PLANE_V] * y / 2 + x / 2);
-#endif	
 }
+#endif
 
 static inline void switch_img_get_rgb_pixel(switch_image_t *img, switch_rgb_color_t *rgb, int x, int y)
 {
@@ -710,9 +710,9 @@ static inline void switch_color_rgb2yuv(switch_rgb_color_t *rgb, switch_yuv_colo
 
 #define CLAMP(val) MAX(0, MIN(val, 255))
 
+#ifdef SWITCH_HAVE_YUV	
 static inline void switch_color_yuv2rgb(switch_yuv_color_t *yuv, switch_rgb_color_t *rgb)
 {
-#ifdef SWITCH_HAVE_YUV	
 #if 0
 	int C = yuv->y - 16;
 	int D = yuv->u - 128;
@@ -727,8 +727,8 @@ static inline void switch_color_yuv2rgb(switch_yuv_color_t *yuv, switch_rgb_colo
 	rgb->r = CLAMP( yuv->y + ((22457 * (yuv->v-128)) >> 14));
 	rgb->g = CLAMP((yuv->y - ((715   * (yuv->v-128)) >> 10) - ((5532 * (yuv->u-128)) >> 14)));
 	rgb->b = CLAMP((yuv->y + ((28384 * (yuv->u-128)) >> 14)));
-#endif
  }
+#endif
 
 SWITCH_DECLARE(void) switch_color_set_yuv(switch_yuv_color_t *color, const char *str)
 {
