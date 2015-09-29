@@ -667,7 +667,7 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 			conference->fnode = conference->fnode->next;
 
 			if (conference->fnode) {
-				conference_video_fnode_check(conference->fnode);
+				conference_video_fnode_check(conference->fnode, -1);
 			}
 
 

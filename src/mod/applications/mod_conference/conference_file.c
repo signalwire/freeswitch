@@ -299,7 +299,7 @@ switch_status_t conference_file_play(conference_obj_t *conference, char *file, u
 	fnode->file = switch_core_strdup(fnode->pool, file);
 
 	if (!conference->fnode || (async && !conference->async_fnode)) {
-		conference_video_fnode_check(fnode);
+		conference_video_fnode_check(fnode, -1);
 	}
 
 	/* Queue the node */

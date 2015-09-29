@@ -1661,18 +1661,27 @@ void conference_video_patch_fnode(mcu_canvas_t *canvas, conference_file_node_t *
 		} else if (status == SWITCH_STATUS_IGNORE) {
 			if (canvas && fnode->layer_id > -1 ) {
 				conference_video_canvas_del_fnode_layer(canvas->conference, fnode);
+				fnode->canvas_id = canvas->canvas_id;
 			}
 		}
 	}
 }
 
-void conference_video_fnode_check(conference_file_node_t *fnode) {
-	mcu_canvas_t *canvas = fnode->conference->canvases[fnode->canvas_id];
-
+void conference_video_fnode_check(conference_file_node_t *fnode, int canvas_id) {
+	mcu_canvas_t *canvas = NULL;
+	
 	if (switch_core_file_has_video(&fnode->fh) && switch_core_file_read_video(&fnode->fh, NULL, SVR_CHECK) == SWITCH_STATUS_BREAK) {
 		int full_screen = 0;
 		char *res_id = NULL;
 
+		if (fnode->canvas_id == -1) {
+			if (canvas_id == -1) {
+				return;
+			}
+			fnode->canvas_id = canvas_id;
+		}
+		
+		canvas = fnode->conference->canvases[fnode->canvas_id];
 		if (fnode->fh.params && fnode->conference->canvas_count == 1) {
 			full_screen = switch_true(switch_event_get_header(fnode->fh.params, "full-screen"));
 		}
@@ -2298,7 +2307,7 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 			}
 			
 			if (check_async_file) {
-				if (switch_core_file_read_video(&conference->async_fnode->fh, &file_frame, SVR_BLOCK | SVR_FLUSH) == SWITCH_STATUS_SUCCESS) {
+				if (switch_core_file_read_video(&conference->async_fnode->fh, &file_frame, SVR_FLUSH) == SWITCH_STATUS_SUCCESS) {
 					if ((async_file_img = file_frame.img)) {
 						file_imgs[j++] = async_file_img;
 					}
@@ -2306,7 +2315,7 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 			}
 
 			if (check_file) {
-				if (switch_core_file_read_video(&conference->fnode->fh, &file_frame, SVR_BLOCK | SVR_FLUSH) == SWITCH_STATUS_SUCCESS) {
+				if (switch_core_file_read_video(&conference->fnode->fh, &file_frame, SVR_FLUSH) == SWITCH_STATUS_SUCCESS) {
 					if ((normal_file_img = file_frame.img)) {
 						file_imgs[j++] = normal_file_img;
 					}
@@ -2458,19 +2467,19 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 			switch_mutex_unlock(conference->member_mutex);
 		} else {
 
-			if (conference->async_fnode && conference->async_fnode->canvas_id == canvas->canvas_id) {
+			if (conference->async_fnode && (conference->async_fnode->canvas_id == canvas->canvas_id || conference->async_fnode->canvas_id == -1)) {
 				if (conference->async_fnode->layer_id > -1) {
 					conference_video_patch_fnode(canvas, conference->async_fnode);
 				} else {
-					conference_video_fnode_check(conference->async_fnode);
+					conference_video_fnode_check(conference->async_fnode, canvas->canvas_id);
 				}
 			}
 
-			if (conference->fnode && conference->fnode->canvas_id == canvas->canvas_id) {
+			if (conference->fnode && (conference->fnode->canvas_id == canvas->canvas_id || conference->fnode->canvas_id == -1)) {
 				if (conference->fnode->layer_id > -1) {
 					conference_video_patch_fnode(canvas, conference->fnode);
 				} else {
-					conference_video_fnode_check(conference->fnode);
+					conference_video_fnode_check(conference->fnode, canvas->canvas_id);
 				}
 			}
 
@@ -2542,7 +2551,7 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 			timestamp = canvas->timer.samplecount;
 
 			if (conference->playing_video_file) {
-				if (switch_core_file_read_video(&conference->fnode->fh, &write_frame, SVR_BLOCK | SVR_FLUSH) == SWITCH_STATUS_SUCCESS) {
+				if (switch_core_file_read_video(&conference->fnode->fh, &write_frame, SVR_FLUSH) == SWITCH_STATUS_SUCCESS) {
 					switch_img_free(&file_img);
 
 					if (canvas->play_file) {
