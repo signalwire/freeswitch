@@ -866,7 +866,7 @@ static switch_status_t open_encoder(h264_codec_context_t *context, uint32_t widt
 		av_opt_set_int(context->encoder_ctx->priv_data, "mb_info", SLICE_SIZE - 8, 0);
 	} else if (context->av_codec_id == AV_CODEC_ID_H264) {
 		context->encoder_ctx->profile = FF_PROFILE_H264_BASELINE;
-		context->encoder_ctx->level = 30;
+		context->encoder_ctx->level = 41;
 		av_opt_set(context->encoder_ctx->priv_data, "preset", "veryfast", 0);
 		av_opt_set(context->encoder_ctx->priv_data, "tune", "zerolatency", 0);
 		av_opt_set(context->encoder_ctx->priv_data, "profile", "baseline", 0);
