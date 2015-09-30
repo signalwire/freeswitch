@@ -4545,6 +4545,10 @@ struct file_string_context {
 
 typedef struct file_string_context file_string_context_t;
 
+#define FILE_STRING_OPEN "filestring::open"
+#define FILE_STRING_CLOSE "filestring::close"
+#define FILE_STRING_FAIL "filestring::fail"
+
 static switch_status_t next_file(switch_file_handle_t *handle)
 {
 	file_string_context_t *context = handle->private_info;
