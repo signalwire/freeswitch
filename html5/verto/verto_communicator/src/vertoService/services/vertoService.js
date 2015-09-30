@@ -1,8 +1,8 @@
 'use strict';
 
 /* Controllers */
-
-var videoQuality = [{
+var videoQuality = [];
+var videoQualitySource = [{
   id: 'qvga',
   label: 'QVGA 320x240',
   width: 320,
@@ -158,28 +158,28 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
     function updateResolutions(supportedResolutions) {
       console.debug('Attempting to sync supported and available resolutions');
 
-      var removed = 0;
+      //var removed = 0;
 
-      angular.forEach(videoQuality, function(resolution, id) {
-        var supported = false;
+      console.debug("VQ length: " + videoQualitySource.length);
+      console.debug(supportedResolutions);
+
+      angular.forEach(videoQualitySource, function(resolution, id) {
         angular.forEach(supportedResolutions, function(res) {
           var width = res[0];
           var height = res[1];
 
           if(resolution.width == width && resolution.height == height) {
-            supported = true;
+		videoQuality.push(resolution);
           }
         });
-
-        if(!supported) {
-          delete videoQuality[id];
-          ++removed;
-        }
       });
 
-      videoQuality.length = videoQuality.length - removed;
+      // videoQuality.length = videoQuality.length - removed;
+      console.debug("VQ length 2: " + videoQuality.length);
       data.videoQuality = videoQuality;
+      console.debug(videoQuality);
       data.vidQual = (videoQuality.length > 0) ? videoQuality[videoQuality.length - 1].id : null;
+      console.debug(data.vidQual);
 
       return videoQuality;
     };
@@ -553,6 +553,8 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
           if (data.instance && !data.instance.rpcClient.socketReady()) {
               clearTimeout(data.instance.rpcClient.to);
               data.instance.logout();
+	      data.instance.login();
+	      return;
           };
           data.instance = new jQuery.verto({
             login: data.login + '@' + data.hostname,
@@ -562,25 +564,24 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
             ringFile: "sounds/bell_ring2.wav",
             // TODO: Add options for this.
             audioParams: {
-                googEchoCancellation: storage.data.googEchoCancellation || false,
-                googNoiseSuppression: storage.data.googNoiseSuppression || false,
-                googHighpassFilter: storage.data.googHighpassFilter || false
+                googEchoCancellation: storage.data.googEchoCancellation || true,
+                googNoiseSuppression: storage.data.googNoiseSuppression || true,
+                googHighpassFilter: storage.data.googHighpassFilter || true
             },
             iceServers: storage.data.useSTUN
           }, callbacks);
 
-          data.instance.deviceParams({
-            useCamera: storage.data.selectedVideo,
-            useMic: storage.data.selectedAudio,
-            onResCheck: that.refreshVideoResolution
-          });
-
+	    data.instance.deviceParams({
+		useCamera: storage.data.selectedVideo,
+		useMic: storage.data.selectedAudio,
+		onResCheck: that.refreshVideoResolution
+	    });
         }
-        
-        if(data.mediaPerm) {
+
+        if (data.mediaPerm) {
           ourBootstrap();
         } else {
-            $.verto.init({skipDeviceCheck: true}, ourBootstrap);
+	    $.FSRTC.checkPerms(ourBootstrap, true, true);
         }
       },
 

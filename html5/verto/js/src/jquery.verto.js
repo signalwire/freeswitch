@@ -85,9 +85,6 @@
 
 	if (verto.options.deviceParams.useCamera) {
 	    $.FSRTC.getValidRes(verto.options.deviceParams.useCamera, verto.options.deviceParams.onResCheck);
-	} else {
-	    verto.options.deviceParams.useCamera = "any";
-	    $.FSRTC.getValidRes(undefined, undefined);
 	}
 
 	if (!verto.options.deviceParams.useMic) {
