@@ -789,7 +789,7 @@ void conference_video_layer_set_banner(conference_member_t *member, mcu_layer_t 
 		switch_img_fill(layer->canvas->img, layer->x_pos, layer->y_pos, layer->screen_w, layer->screen_h,
 						&layer->canvas->letterbox_bgcolor);
 
-		if (!strcasecmp(text, "allclear")) {
+		if (zstr(text) || !strcasecmp(text, "allclear")) {
 			switch_channel_set_variable(member->channel, "video_banner_text", NULL);
 		}
 
