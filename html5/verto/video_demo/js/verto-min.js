@@ -30,10 +30,10 @@ self.options.useAudio.play();self.remoteStream=stream;}
 function onOfferSDP(self,sdp){self.mediaData.SDP=self.stereoHack(sdp.sdp);console.log("Offer SDP");doCallback(self,"onOfferSDP");}
 $.FSRTC.prototype.answer=function(sdp,onSuccess,onError){this.peer.addAnswerSDP({type:"answer",sdp:sdp},onSuccess,onError);};$.FSRTC.prototype.stopPeer=function(){if(self.peer){console.log("stopping peer");self.peer.stop();}}
 $.FSRTC.prototype.stop=function(){var self=this;if(self.options.useVideo){self.options.useVideo.style.display='none';if(moz){self.options.useVideo['mozSrcObject']=null;}else{self.options.useVideo['src']='';}}
-if(self.localStream){if(typeof self.localStream.stop=='function'){self.localStream.stop();}else{self.localStream.active=false;}
+if(self.localStream){if(typeof self.localStream.stop=='function'){self.localStream.stop();}else{if(self.localStream.active){var tracks=self.localStream.getTracks();console.error(tracks);tracks.forEach(function(track,index){console.log(track);track.stop();})}}
 self.localStream=null;}
 if(self.options.localVideo){self.options.localVideo.style.display='none';if(moz){self.options.localVideo['mozSrcObject']=null;}else{self.options.localVideo['src']='';}}
-if(self.options.localVideoStream){if(typeof self.options.localVideoStream.stop=='function'){self.options.localVideoStream.stop();}else{self.options.localVideoStream.active=false;}}
+if(self.options.localVideoStream){if(typeof self.options.localVideoStream.stop=='function'){self.options.localVideoStream.stop();}else{if(self.localVideoStream.active){var tracks=self.localVideoStream.getTracks();console.error(tracks);tracks.forEach(function(track,index){console.log(track);track.stop();})}}}
 if(self.peer){console.log("stopping peer");self.peer.stop();}};$.FSRTC.prototype.getMute=function(){var self=this;return self.enabled;}
 $.FSRTC.prototype.setMute=function(what){var self=this;var audioTracks=self.localStream.getAudioTracks();for(var i=0,len=audioTracks.length;i<len;i++){switch(what){case"on":audioTracks[i].enabled=true;break;case"off":audioTracks[i].enabled=false;break;case"toggle":audioTracks[i].enabled=!audioTracks[i].enabled;default:break;}
 self.enabled=audioTracks[i].enabled;}
@@ -90,13 +90,11 @@ var resList=[[320,180],[320,240],[640,360],[640,480],[1280,720],[1920,1080]];var
 var video={mandatory:{},optional:[]}
 if(cam){video.optional=[{sourceId:cam}];}
 w=resList[resI][0];h=resList[resI][1];resI++;video.mandatory={"minWidth":w,"minHeight":h,"maxWidth":w,"maxHeight":h};if(window.moz){video=video.mandatory;if(!video.width)video.width=video.minWidth;if(!video.height)video.height=video.minHeight;if(!video.frameRate)video.frameRate=video.minFrameRate;}
-getUserMedia({constraints:{audio:ttl++==0,video:video},onsuccess:function(e){if(typeof e.stop=='function'){e.stop();}else{e.active=false;}
-console.info(w+"x"+h+" supported.");$.FSRTC.validRes.push([w,h]);checkRes(cam,func);},onerror:function(e){console.error(w+"x"+h+" not supported.");checkRes(cam,func);}});}
+getUserMedia({constraints:{audio:ttl++==0,video:video},onsuccess:function(e){e.getTracks().forEach(function(track){track.stop();});console.info(w+"x"+h+" supported.");$.FSRTC.validRes.push([w,h]);checkRes(cam,func);},onerror:function(e){console.error(w+"x"+h+" not supported.");checkRes(cam,func);}});}
 $.FSRTC.getValidRes=function(cam,func){var used=[];var cached=localStorage.getItem("res_"+cam);if(cached){var cache=$.parseJSON(cached);if(cache){$.FSRTC.validRes=cache.validRes;console.log("CACHED RES FOR CAM "+cam,cache);}else{console.error("INVALID CACHE");}
 return func?func(cache):null;}
 $.FSRTC.validRes=[];resI=0;checkRes(cam,func);}
-$.FSRTC.checkPerms=function(runtime,check_audio,check_video){getUserMedia({constraints:{audio:check_audio,video:check_video,},onsuccess:function(e){if(typeof e.stop=='function'){e.stop();}else{e.active=false;}
-console.info("media perm init complete");if(runtime){setTimeout(runtime,100,true);}},onerror:function(e){if(check_video&&check_audio){console.error("error, retesting with audio params only");return $.FSRTC.checkPerms(runtime,check_audio,false);}
+$.FSRTC.checkPerms=function(runtime,check_audio,check_video){getUserMedia({constraints:{audio:check_audio,video:check_video,},onsuccess:function(e){e.getTracks().forEach(function(track){track.stop();});console.info("media perm init complete");if(runtime){setTimeout(runtime,100,true);}},onerror:function(e){if(check_video&&check_audio){console.error("error, retesting with audio params only");return $.FSRTC.checkPerms(runtime,check_audio,false);}
 console.error("media perm init error");if(runtime){runtime(false)}}});}})(jQuery);(function($){$.JsonRpcClient=function(options){var self=this;this.options=$.extend({ajaxUrl:null,socketUrl:null,onmessage:null,login:null,passwd:null,sessid:null,loginParams:null,userVariables:null,getSocket:function(onmessage_cb){return self._getSocket(onmessage_cb);}},options);self.ws_cnt=0;this.wsOnMessage=function(event){self._wsOnMessage(event);};};$.JsonRpcClient.prototype._ws_socket=null;$.JsonRpcClient.prototype._ws_callbacks={};$.JsonRpcClient.prototype._current_id=1;$.JsonRpcClient.prototype.call=function(method,params,success_cb,error_cb){if(!params){params={};}
 if(this.options.sessid){params.sessid=this.options.sessid;}
 var request={jsonrpc:'2.0',method:method,params:params,id:this._current_id++};if(!success_cb){success_cb=function(e){console.log("Success: ",e);};}

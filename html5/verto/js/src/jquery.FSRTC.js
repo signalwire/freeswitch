@@ -1107,12 +1107,8 @@
                 video: video	    
 	    },
 	    onsuccess: function(e) {
-              if(typeof e.stop == 'function') {
-                e.stop(); 
-              } else {
-                e.active = false;
-              }
-              console.info(w + "x" + h + " supported."); $.FSRTC.validRes.push([w, h]); checkRes(cam, func);},
+		e.getTracks().forEach(function(track) {track.stop();});
+		console.info(w + "x" + h + " supported."); $.FSRTC.validRes.push([w, h]); checkRes(cam, func);},
 	    onerror: function(e) {console.error( w + "x" + h + " not supported."); checkRes(cam, func);}
         });
     }
@@ -1148,15 +1144,12 @@
 		video: check_video,
 	    },
 	    onsuccess: function(e) {
-              if(typeof e.stop == 'function') {
-                e.stop(); 
-              } else {
-                e.active = false;
-              }
-              console.info("media perm init complete"); 
-              if (runtime) {
-                setTimeout(runtime, 100, true);
-              }
+		e.getTracks().forEach(function(track) {track.stop();});
+		
+		console.info("media perm init complete"); 
+		if (runtime) {
+                    setTimeout(runtime, 100, true);
+		}
             },
 	    onerror: function(e) {
 		if (check_video && check_audio) {
