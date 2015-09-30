@@ -48,7 +48,9 @@
 #include <gd.h>
 #endif
 
+#ifdef SWITCH_HAVE_YUV
 static inline void switch_img_get_yuv_pixel(switch_image_t *img, switch_yuv_color_t *yuv, int x, int y);
+#endif
 
 static inline void switch_img_get_rgb_pixel(switch_image_t *img, switch_rgb_color_t *rgb, int x, int y);
 
@@ -58,14 +60,18 @@ static inline void switch_img_get_rgb_pixel(switch_image_t *img, switch_rgb_colo
 * \param[in]    rgb       RGB color pointer
 * \param[out]   yuv       YUV color pointer
 */
+#ifdef SWITCH_HAVE_YUV
 static inline void switch_color_rgb2yuv(switch_rgb_color_t *rgb, switch_yuv_color_t *yuv);
+#endif
 
 /*!\brief Convert YUV color to RGB
 *
 * \param[in]    yuv       YUV color pointer
 * \param[out]   rgb       RGB color pointer
 */
+#ifdef SWITCH_HAVE_YUV
 static inline void switch_color_yuv2rgb(switch_yuv_color_t *yuv, switch_rgb_color_t *rgb);
+#endif
 
 /*!\brief Draw a pixel on an image
 *
@@ -542,17 +548,17 @@ SWITCH_DECLARE(void) switch_img_fill(switch_image_t *img, int x, int y, int w, i
 #endif
 }
 
+#ifdef SWITCH_HAVE_YUV
 static inline void switch_img_get_yuv_pixel(switch_image_t *img, switch_yuv_color_t *yuv, int x, int y)
 {
-#ifdef SWITCH_HAVE_YUV		
 	// switch_assert(img->fmt == SWITCH_IMG_FMT_I420);
 	if (x < 0 || y < 0 || x >= img->d_w || y >= img->d_h) return;
 
 	yuv->y = *(img->planes[SWITCH_PLANE_Y] + img->stride[SWITCH_PLANE_Y] * y + x);
 	yuv->u = *(img->planes[SWITCH_PLANE_U] + img->stride[SWITCH_PLANE_U] * y / 2 + x / 2);
 	yuv->v = *(img->planes[SWITCH_PLANE_V] + img->stride[SWITCH_PLANE_V] * y / 2 + x / 2);
-#endif	
 }
+#endif
 
 static inline void switch_img_get_rgb_pixel(switch_image_t *img, switch_rgb_color_t *rgb, int x, int y)
 {
@@ -699,20 +705,20 @@ SWITCH_DECLARE(void) switch_color_set_rgb(switch_rgb_color_t *color, const char 
 	}
 }
 
+#ifdef SWITCH_HAVE_YUV
 static inline void switch_color_rgb2yuv(switch_rgb_color_t *rgb, switch_yuv_color_t *yuv)
 {
-#ifdef SWITCH_HAVE_YUV		
 	yuv->y = (uint8_t)(((rgb->r * 4897) >> 14) + ((rgb->g * 9611) >> 14) + ((rgb->b * 1876) >> 14));
 	yuv->u = (uint8_t)(- ((rgb->r * 2766) >> 14)  - ((5426 * rgb->g) >> 14) + rgb->b / 2 + 128);
 	yuv->v = (uint8_t)(rgb->r / 2 -((6855 * rgb->g) >> 14) - ((rgb->b * 1337) >> 14) + 128);
-#endif	
 }
+#endif
 
 #define CLAMP(val) MAX(0, MIN(val, 255))
 
+#ifdef SWITCH_HAVE_YUV
 static inline void switch_color_yuv2rgb(switch_yuv_color_t *yuv, switch_rgb_color_t *rgb)
 {
-#ifdef SWITCH_HAVE_YUV	
 #if 0
 	int C = yuv->y - 16;
 	int D = yuv->u - 128;
@@ -727,8 +733,8 @@ static inline void switch_color_yuv2rgb(switch_yuv_color_t *yuv, switch_rgb_colo
 	rgb->r = CLAMP( yuv->y + ((22457 * (yuv->v-128)) >> 14));
 	rgb->g = CLAMP((yuv->y - ((715   * (yuv->v-128)) >> 10) - ((5532 * (yuv->u-128)) >> 14)));
 	rgb->b = CLAMP((yuv->y + ((28384 * (yuv->u-128)) >> 14)));
-#endif
  }
+#endif
 
 SWITCH_DECLARE(void) switch_color_set_yuv(switch_yuv_color_t *color, const char *str)
 {
