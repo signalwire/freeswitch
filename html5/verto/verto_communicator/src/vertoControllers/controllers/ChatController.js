@@ -167,8 +167,17 @@
 
       $scope.confBanner = function(memberID) {
         console.log('$scope.confBanner');
-        var text = 'New Banner';
-        verto.data.conf.banner(memberID, text);
+        
+        prompt({
+          title: 'Please insert the banner text',
+          input: true,
+          label: '',
+          value: '',
+        }).then(function(text) {
+          if (text) {
+            verto.data.conf.banner(memberID, text);
+          }
+        });
       };
 
       $scope.confVolumeDown = function(memberID) {
