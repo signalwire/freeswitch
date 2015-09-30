@@ -25,7 +25,8 @@ vertoService.service('config', ['$rootScope', '$http', '$location', 'storage', '
        * Load the Configs before logging in
        * with cache buster
        */
-      var httpRequest = $http.get(window.location.pathname + '/config.json?cachebuster=' + Math.floor((Math.random()*1000000)+1));
+      var url = window.location.origin + window.location.pathname;
+      var httpRequest = $http.get(url + 'config.json?cachebuster=' + Math.floor((Math.random()*1000000)+1));
 
       var httpReturn = httpRequest.then(function(response) {
         var data = response.data;
