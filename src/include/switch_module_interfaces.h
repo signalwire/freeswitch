@@ -305,6 +305,12 @@ typedef enum {
 	SWITCH_VIDEO_ENCODE_SPEED_FAST
 } switch_video_encode_speed_t;
 
+typedef enum {
+	SWITCH_VIDEO_PROFILE_BASELINE,
+	SWITCH_VIDEO_PROFILE_MAIN,
+	SWITCH_VIDEO_PROFILE_HIGH
+} switch_video_profile_t;
+
 typedef struct switch_mm_s {
 	int samplerate;
 	int channels;
@@ -314,7 +320,9 @@ typedef struct switch_mm_s {
 	int vw;
 	int vh;
 	float fps;
+	float source_fps;
 	int vbuf;
+	switch_video_profile_t vprofile;
 	switch_video_encode_speed_t vencspd;
 } switch_mm_t;
 

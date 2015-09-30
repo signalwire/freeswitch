@@ -85,6 +85,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 	fh->mm.keyint = 60;
 	fh->mm.ab = 128;
 	fh->mm.vencspd = SWITCH_VIDEO_ENCODE_SPEED_DEFAULT;
+	fh->mm.vprofile = SWITCH_VIDEO_PROFILE_BASELINE;
 
 	if (*file_path == '{') {
 		char *timeout;
@@ -197,6 +198,18 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 				fh->mm.vencspd = SWITCH_VIDEO_ENCODE_SPEED_FAST;
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid video encode speed: %s\n", val);
+			}
+		}
+
+		if ((val = switch_event_get_header(fh->params, "vprofile"))) {
+			if (!strcasecmp(val, "baseline")) {
+				fh->mm.vprofile = SWITCH_VIDEO_PROFILE_BASELINE;
+			} else if (!strcasecmp(val, "main")) {
+				fh->mm.vprofile = SWITCH_VIDEO_PROFILE_MAIN;
+			} else if (!strcasecmp(val, "high")) {
+				fh->mm.vprofile = SWITCH_VIDEO_PROFILE_HIGH;
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid video profile: %s\n", val);
 			}
 		}
 	}

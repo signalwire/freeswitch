@@ -312,18 +312,34 @@ static switch_status_t add_stream(MediaStream *mst, AVFormatContext *fc, AVCodec
 		if (codec_id == AV_CODEC_ID_H264) {
 			c->ticks_per_frame = 2;
 
+			switch (mm->vprofile) {
+			case SWITCH_VIDEO_PROFILE_BASELINE:
+				av_opt_set(c->priv_data, "profile", "baseline", 0);
+				c->level = 41;
+				break;
+			case SWITCH_VIDEO_PROFILE_MAIN:
+				av_opt_set(c->priv_data, "profile", "main", 0);
+				av_opt_set(c->priv_data, "level", "5", 0);
+				break;
+			case SWITCH_VIDEO_PROFILE_HIGH:
+				av_opt_set(c->priv_data, "profile", "high", 0);
+				av_opt_set(c->priv_data, "level", "52", 0);
+				break;
+			}
+			
 			switch (mm->vencspd) {
-				case SWITCH_VIDEO_ENCODE_SPEED_SLOW:
-					av_opt_set(c->priv_data, "preset", "veryslow", 0);
-					break;
-				case SWITCH_VIDEO_ENCODE_SPEED_MEDIUM:
-					av_opt_set(c->priv_data, "preset", "medium", 0);
-					break;
-				case SWITCH_VIDEO_ENCODE_SPEED_FAST:
-					av_opt_set(c->priv_data, "preset", "ultrafast", 0);
-					break;
-				default:
-					break;
+			case SWITCH_VIDEO_ENCODE_SPEED_SLOW:
+				av_opt_set(c->priv_data, "preset", "veryslow", 0);
+				break;
+			case SWITCH_VIDEO_ENCODE_SPEED_MEDIUM:
+				av_opt_set(c->priv_data, "preset", "medium", 0);
+				break;
+			case SWITCH_VIDEO_ENCODE_SPEED_FAST:
+				av_opt_set(c->priv_data, "preset", "veryfast", 0);
+				av_opt_set(c->priv_data, "tune", "zerolatency", 0);
+				break;
+			default:
+				break;
 			}
 		}
 
@@ -1147,7 +1163,8 @@ static switch_status_t open_input_file(av_file_context_t *context, switch_file_h
 			if (switch_test_flag(handle, SWITCH_FILE_FLAG_VIDEO)) {
 				context->has_video = 1;
 			}
-			context->read_fps = (int)ceil(av_q2d(context->video_st.st->avg_frame_rate));
+			handle->mm.source_fps = ceil(av_q2d(context->video_st.st->avg_frame_rate));
+			context->read_fps = (int)handle->mm.source_fps;
 		}
 	}
 
@@ -1510,6 +1527,8 @@ static switch_status_t av_file_open(switch_file_handle_t *handle, const char *pa
 			handle->samplerate = 44100;
 			handle->mm.samplerate = 44100;
 			handle->mm.ab = 128;
+			//handle->mm.vencspd = SWITCH_VIDEO_ENCODE_SPEED_FAST;
+			handle->mm.vprofile = SWITCH_VIDEO_PROFILE_BASELINE;
 
 			if (!handle->mm.vb && handle->mm.vw && handle->mm.vh) {
 				switch(handle->mm.vh) {
