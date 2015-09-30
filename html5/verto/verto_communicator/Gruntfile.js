@@ -24,15 +24,16 @@ module.exports = function (grunt) {
   var debug = grunt.option('debug');
 
   var uglify_config = {
+    options: {
+      sourceMap: true,
+      sourceMapIncludeSources:true
+    }
   };
+  
   if (debug) {
-    uglify_config = {
-      options: {
-        beautify: debug ? true : false,
-        compress: debug ? false : true,
-	mangle: debug ? false : true
-      }
-    };
+    uglify_config['options']['mangle'] = debug ? false : true;
+    uglify_config['options']['beautify'] = debug ? false : true;
+    uglify_config['options']['compress'] = debug ? false : true;
   }
   // Project configuration.
   grunt.initConfig({
