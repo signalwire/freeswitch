@@ -1809,10 +1809,14 @@ static switch_status_t av_file_read_video(switch_file_handle_t *handle, switch_f
 	int fps = (int)ceil(handle->mm.fps);
 	int min_qsize = context->read_fps;
 
-	if (fps < min_qsize) {
+	if (fps && fps < min_qsize) {
 		min_qsize = fps;
 	}
 
+	if (!min_qsize) {
+		min_qsize = 1;
+	}
+	
 	if (!context->file_read_thread_running) {
 		return SWITCH_STATUS_FALSE;
 	}
@@ -1821,6 +1825,10 @@ static switch_status_t av_file_read_video(switch_file_handle_t *handle, switch_f
 		return SWITCH_STATUS_BREAK;
 	}
 
+	if (switch_queue_size(context->eh.video_queue) < min_qsize / 2) {
+		return SWITCH_STATUS_BREAK;
+	}
+	
 	while((flags & SVR_FLUSH) && switch_queue_size(context->eh.video_queue) > min_qsize) {
 		if (switch_queue_trypop(context->eh.video_queue, &pop) == SWITCH_STATUS_SUCCESS) {
 			switch_image_t *img = (switch_image_t *) pop;
@@ -1831,7 +1839,7 @@ static switch_status_t av_file_read_video(switch_file_handle_t *handle, switch_f
 	if (!context->file_read_thread_running) {
 		return SWITCH_STATUS_FALSE;
 	}
-	
+
 	if ((flags & SVR_BLOCK)) {
 		status = switch_queue_pop(context->eh.video_queue, &pop);
 	} else {

@@ -70,6 +70,7 @@ struct local_stream_context {
 	int last_h;
 	int serno;
 	int pop_count;
+	int video_sync;
 	switch_image_t *banner_img;
 	switch_time_t banner_timeout;
 	struct local_stream_context *next;
@@ -160,6 +161,7 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 	switch_memory_pool_t *temp_pool = NULL;
 	uint32_t dir_count = 0, do_shuffle = 0;
 	char *p;
+	int old_total = 0;	
 
 	switch_mutex_lock(globals.mutex);
 	THREADS++;
@@ -362,6 +364,16 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 
 				is_open = switch_test_flag(use_fh, SWITCH_FILE_OPEN);
 
+				if (is_open && source->total != old_total && source->total == 1) {
+					if (switch_core_file_has_video(&fh)) {
+						flush_video_queue(source->video_q);
+					}
+					
+					switch_buffer_zero(audio_buffer);
+				}
+
+				old_total = source->total;
+				
 				if (source->hup) {
 					source->hup = 0;
 					if (is_open) {
@@ -415,7 +427,7 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 						switch_core_file_read(&fh, abuf, &olen);
 						olen = source->samples;
 					}
-
+					
 					if (switch_core_file_read(use_fh, abuf, &olen) != SWITCH_STATUS_SUCCESS || !olen) {
 						switch_core_file_close(use_fh);
 						flush_video_queue(source->video_q);
@@ -453,6 +465,8 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 					break;
 				}
 
+				source->prebuf = source->samples * 2 * source->channels * 10;
+				
 				if (!is_open || used >= source->prebuf || (source->total && used > source->samples * 2 * source->channels)) {
 					void *pop;
 
@@ -760,7 +774,9 @@ static switch_status_t local_stream_file_read_video(switch_file_handle_t *handle
 	local_stream_context_t *context = handle->private_info;
 	switch_status_t status;
 	switch_time_t now;
-
+	int fps = (int)ceil(handle->mm.fps);
+	int min_qsize = fps;
+	
 	if (!(context->ready && context->source->ready)) {
 		return SWITCH_STATUS_FALSE;
 	}
@@ -798,7 +814,9 @@ static switch_status_t local_stream_file_read_video(switch_file_handle_t *handle
 		return SWITCH_STATUS_BREAK;
 	}
 
-	while(context->ready && context->source->ready && (flags & SVR_FLUSH) && switch_queue_size(context->video_q) > 1) {
+	context->video_sync = 1;
+
+	while(context->ready && context->source->ready && (flags & SVR_FLUSH) && switch_queue_size(context->video_q) > min_qsize) {
 		if (switch_queue_trypop(context->video_q, &pop) == SWITCH_STATUS_SUCCESS) {
 			switch_image_t *img = (switch_image_t *) pop;
 			switch_img_free(&img);
