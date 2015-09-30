@@ -41,7 +41,7 @@
 #include <libswscale/swscale.h>
 
 #define SCALE_FLAGS SWS_BICUBIC
-#define DFT_RECORD_OFFSET 350
+#define DFT_RECORD_OFFSET 0
 
 static switch_status_t av_file_close(switch_file_handle_t *handle);
 SWITCH_MODULE_LOAD_FUNCTION(mod_avformat_load);
@@ -1097,6 +1097,7 @@ struct av_file_context {
 	int file_read_thread_running;
 	switch_time_t video_start_time;
 	switch_image_t *last_img;
+	int read_fps;
 };
 
 typedef struct av_file_context av_file_context_t;
@@ -1146,6 +1147,7 @@ static switch_status_t open_input_file(av_file_context_t *context, switch_file_h
 			if (switch_test_flag(handle, SWITCH_FILE_FLAG_VIDEO)) {
 				context->has_video = 1;
 			}
+			context->read_fps = (int)ceil(av_q2d(context->video_st.st->avg_frame_rate));
 		}
 	}
 
@@ -1234,7 +1236,7 @@ static void *SWITCH_THREAD_FUNC file_read_thread_run(switch_thread_t *thread, vo
 
 	context->file_read_thread_running = 1;
 
-#define AUDIO_BUF_SEC 5
+#define AUDIO_BUF_SEC 1
 
 	while (context->file_read_thread_running) {
 		if (switch_buffer_inuse(context->audio_buffer) > AUDIO_BUF_SEC * context->audio_st.sample_rate * context->audio_st.channels * 2) {
@@ -1798,125 +1800,54 @@ end:
 	return status;
 }
 
+
 static switch_status_t av_file_read_video(switch_file_handle_t *handle, switch_frame_t *frame, switch_video_read_flag_t flags)
 {
-	av_file_context_t *context = (av_file_context_t *)handle->private_info;
 	void *pop;
-	MediaStream *mst = &context->video_st;
-	AVStream *st = mst->st;
-	int ticks = 0;
-	int max_delta = 1 * AV_TIME_BASE; // 1 second
-	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	
-	if (!context->has_video) return SWITCH_STATUS_FALSE;
+	av_file_context_t *context = (av_file_context_t *)handle->private_info;
+	switch_status_t status;
+	int fps = (int)ceil(handle->mm.fps);
+	int min_qsize = context->read_fps;
+
+	if (fps < min_qsize) {
+		min_qsize = fps;
+	}
+
+	if (!context->file_read_thread_running) {
+		return SWITCH_STATUS_FALSE;
+	}
 
 	if ((flags & SVR_CHECK)) {
 		return SWITCH_STATUS_BREAK;
 	}
 
-	if (flags & SVR_FLUSH) max_delta = 0.02 * AV_TIME_BASE;
-
-	if (context->last_img) {
-		if (mst->next_pts && (switch_time_now() - mst->next_pts > max_delta)) {
-			switch_img_free(&context->last_img); // too late
-		} else if (mst->next_pts && (switch_time_now() - mst->next_pts > -10000)) {
-			frame->img = context->last_img;
-			context->last_img = NULL;
-			return SWITCH_STATUS_SUCCESS;
+	while((flags & SVR_FLUSH) && switch_queue_size(context->eh.video_queue) > min_qsize) {
+		if (switch_queue_trypop(context->eh.video_queue, &pop) == SWITCH_STATUS_SUCCESS) {
+			switch_image_t *img = (switch_image_t *) pop;
+			switch_img_free(&img);
 		}
-
-		if (!(flags & SVR_BLOCK)) return SWITCH_STATUS_BREAK;
 	}
 
-	if (!context->file_read_thread_running && switch_queue_size(context->eh.video_queue) == 0) {
+	if (!context->file_read_thread_running) {
 		return SWITCH_STATUS_FALSE;
 	}
-
-	if (st->codec->time_base.num) {
-		ticks = st->parser ? st->parser->repeat_pict + 1 : st->codec->ticks_per_frame;
-		// mst->next_pts += ((int64_t)AV_TIME_BASE * st->codec->time_base.num * ticks) / st->codec->time_base.den;
-	}
-
-	if (!context->video_start_time) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "start: %" SWITCH_INT64_T_FMT " ticks: %d ticks_per_frame: %d st num:%d st den:%d codec num:%d codec den:%d start: %" SWITCH_TIME_T_FMT ", duration:%" SWITCH_INT64_T_FMT " nb_frames:%" SWITCH_INT64_T_FMT " q2d:%f\n",
-			context->video_start_time, ticks, st->codec->ticks_per_frame, st->time_base.num, st->time_base.den, st->codec->time_base.num, st->codec->time_base.den,
-			st->start_time, st->duration, st->nb_frames, av_q2d(st->time_base));
-	}
-
- again:
-
-	if (flags & SVR_BLOCK) {
+	
+	if ((flags & SVR_BLOCK)) {
 		status = switch_queue_pop(context->eh.video_queue, &pop);
 	} else {
 		status = switch_queue_trypop(context->eh.video_queue, &pop);
 	}
 
-	if (pop && status == SWITCH_STATUS_SUCCESS) {
-		switch_image_t *img = (switch_image_t *)pop;
-
-		// #define YIELD 40000 // use a constant FPS
-#ifdef YIELD
-		switch_yield(YIELD);
-		frame->img = img;
-		if (0) goto again;
-#else
-
-		uint64_t pts;
-		uint64_t now = switch_time_now();
-
-		pts = av_rescale_q(*((uint64_t *)img->user_priv), st->time_base, AV_TIME_BASE_Q);
-
-		if (!context->video_start_time) {
-			context->video_start_time = now - pts;
+	if (status == SWITCH_STATUS_SUCCESS) {
+		if (!pop) {
+			return SWITCH_STATUS_FALSE;
 		}
 
-		if (st->time_base.num == 0) {
-			mst->next_pts = 0;
-		} else {
-			//uint64_t last_pts = mst->next_pts;
-			mst->next_pts = context->video_start_time + pts;
-			//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "pts: %" SWITCH_INT64_T_FMT " last_pts: %" SWITCH_INT64_T_FMT " delta: %" SWITCH_INT64_T_FMT " frame_pts: %" SWITCH_INT64_T_FMT " nextpts: %" SWITCH_INT64_T_FMT ", num: %d, den:%d num:%d den:%d sleep: %" SWITCH_INT64_T_FMT "\n",
-			//pts, last_pts, mst->next_pts - last_pts, *((uint64_t *)img->user_priv), mst->next_pts, st->time_base.num, st->time_base.den, st->codec->time_base.num, st->codec->time_base.den, mst->next_pts - now);
-		}
-
-		if (pts == 0) mst->next_pts = 0;
-
-		if ((mst->next_pts && switch_time_now() - mst->next_pts > max_delta)) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG3, "picture is too late, off: %" SWITCH_INT64_T_FMT " queue size:%u\n", (int64_t)(switch_time_now() - mst->next_pts), switch_queue_size(context->eh.video_queue));
-			switch_img_free(&img);
-
-
-			if (switch_queue_size(context->eh.video_queue) > 0) {
-				goto again;
-			} else {
-				mst->next_pts = 0;
-				return SWITCH_STATUS_BREAK;
-			}
-		}
-
-		if (flags & SVR_BLOCK) {
-			while (switch_time_now() - mst->next_pts < -10000 / 2) {
-				switch_cond_next();
-			}
-			frame->img = img;
-		} else {
-			if (switch_time_now() - mst->next_pts > -10000 / 2) {
-				frame->img = img;
-			} else {
-				context->last_img = img;
-				return SWITCH_STATUS_BREAK;
-			}
-		}
-#endif
-
-	} else {
-		if ((flags & SVR_BLOCK)) {
-			switch_yield(10000);
-		}
-		return SWITCH_STATUS_BREAK;
+		frame->img = (switch_image_t *) pop;
+		return SWITCH_STATUS_SUCCESS;
 	}
 
-	return frame->img ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
+	return (flags & SVR_FLUSH) ? SWITCH_STATUS_BREAK : status;
 }
 
 static switch_status_t av_file_write_video(switch_file_handle_t *handle, switch_frame_t *frame)

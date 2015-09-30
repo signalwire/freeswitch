@@ -239,6 +239,7 @@ switch_status_t conference_file_play(conference_obj_t *conference, char *file, u
 
 	/* Open the file */
 	fnode->fh.pre_buffer_datalen = SWITCH_DEFAULT_FILE_BUFFER_LEN;
+	fnode->fh.mm.fps = conference->video_fps.fps;
 
 	if (switch_core_file_open(&fnode->fh, file, channels, conference->rate, flags, pool) != SWITCH_STATUS_SUCCESS) {
 		switch_event_t *event;
