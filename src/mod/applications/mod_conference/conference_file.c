@@ -86,11 +86,13 @@ switch_status_t conference_file_close(conference_obj_t *conference, conference_f
 		conference_al_close(node->al);
 	}
 #endif
-	if (switch_core_file_has_video(&node->fh) && conference->canvases[0] && node->canvas_id > -1) {
-		conference->canvases[node->canvas_id]->timer.interval = conference->video_fps.ms;
-		conference->canvases[node->canvas_id]->timer.samples = conference->video_fps.samples;
-		switch_core_timer_sync(&conference->canvases[node->canvas_id]->timer);
-		conference->canvases[node->canvas_id]->send_keyframe = 1;
+	if (conference->playing_video_file && switch_core_file_has_video(&node->fh) && conference->canvases[0] && node->canvas_id > -1) {
+		if (conference->canvases[node->canvas_id]->timer.timer_interface) {
+			conference->canvases[node->canvas_id]->timer.interval = conference->video_fps.ms;
+			conference->canvases[node->canvas_id]->timer.samples = conference->video_fps.samples;
+			switch_core_timer_sync(&conference->canvases[node->canvas_id]->timer);
+			conference->canvases[node->canvas_id]->send_keyframe = 1;
+		}
 		conference->playing_video_file = 0;
 	}
 	return switch_core_file_close(&node->fh);
