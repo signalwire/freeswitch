@@ -1184,7 +1184,7 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 				ice->last_ok = now;
 				rtp_session->wrong_addrs = 0;
 			} else {
-				if ((rtp_session->dtls->state != DS_READY || !ice->ready || !ice->rready)) {
+				if (((rtp_session->dtls && rtp_session->dtls->state != DS_READY) || !ice->ready || !ice->rready)) {
 					do_adj++;
 				} else if (rtp_session->wrong_addrs > 5 || elapsed >= 3000) {
 					do_adj++;
