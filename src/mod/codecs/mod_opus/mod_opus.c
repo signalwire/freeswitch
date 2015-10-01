@@ -165,11 +165,6 @@ static switch_status_t switch_opus_fmtp_parse(const char *fmtp, switch_codec_fmt
 							codec_fmtp->microseconds_per_packet = codec_settings->ptime * 1000;
 						}
 
-						if (!strcasecmp(data, "samplerate")) {
-							codec_settings->samplerate = atoi(arg);
-							codec_fmtp->actual_samples_per_second = codec_settings->samplerate;
-						}
-
 						if (!strcasecmp(data, "stereo")) {
 							codec_settings->stereo = atoi(arg);
 							codec_fmtp->stereo = codec_settings->stereo;
@@ -248,12 +243,7 @@ static char *gen_fmtp(opus_codec_settings_t *settings, switch_memory_pool_t *poo
 		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "maxptime=%d; ", settings->maxptime);
 	}
 
-	if (settings->samplerate) {
-		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "samplerate=%d; ", settings->samplerate);
-	}
-
 	if (settings->stereo) {
-		settings->sprop_stereo = settings->stereo;
 		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "stereo=%d; ", settings->stereo);
 	}
 
