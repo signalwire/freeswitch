@@ -506,6 +506,8 @@ static void *SWITCH_THREAD_FUNC video_thread_run(switch_thread_t *thread, void *
 		int ret = -1;
 
 		if (switch_queue_pop(eh->video_queue, &pop) == SWITCH_STATUS_SUCCESS) {
+            switch_img_free(&img);
+
 			if (!pop) {
 				goto endfor;
 			}
