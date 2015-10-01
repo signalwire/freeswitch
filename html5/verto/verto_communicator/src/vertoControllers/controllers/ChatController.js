@@ -180,6 +180,12 @@
         });
       };
 
+      $scope.confResetBanner = function(memberID) {
+        console.log('$scope.confResetBanner');
+        var text = 'reset';
+        verto.data.conf.banner(memberID, text);
+      };
+
       $scope.confVolumeDown = function(memberID) {
         console.log('$scope.confVolumeDown');
         verto.data.conf.volumeDown(memberID);
