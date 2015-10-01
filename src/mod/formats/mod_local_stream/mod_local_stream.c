@@ -379,7 +379,10 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 					}
 				}
 				
-				if (is_open) {
+				if (!is_open) {
+					switch_buffer_zero(audio_buffer);
+					break;
+				} else {
 					int svr = 0;
 
 					if (switch_core_has_video() && switch_core_file_has_video(use_fh)) {
