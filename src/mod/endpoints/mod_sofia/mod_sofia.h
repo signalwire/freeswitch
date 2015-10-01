@@ -96,6 +96,11 @@ typedef struct private_object private_object_t;
 #define MY_EVENT_RECOVERY_RECOVERED "sofia::recovery_recovered"
 #define MY_EVENT_ERROR "sofia::error"
 #define MY_EVENT_PROFILE_START "sofia::profile_start"
+#define MY_EVENT_TRANSFEROR "sofia::transferor" 
+#define MY_EVENT_TRANSFEREE "sofia::transferee" 
+#define MY_EVENT_REPLACED "sofia::replaced" 
+#define MY_EVENT_INTERCEPTED "sofia::intercepted" 
+#define MY_EVENT_NOTIFY_WATCHED_HEADER "sofia::notify_watched_header"
 
 #define MULTICAST_EVENT "multicast::event"
 #define SOFIA_REPLACES_HEADER "_sofia_replaces_"

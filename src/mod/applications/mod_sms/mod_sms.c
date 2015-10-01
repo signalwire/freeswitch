@@ -32,6 +32,7 @@
 #include <switch.h>
 #define SMS_CHAT_PROTO "GLOBAL_SMS"
 #define MY_EVENT_SEND_MESSAGE "SMS::SEND_MESSAGE"
+#define MY_EVENT_DELIVERY_REPORT "SMS::DELIVERY_REPORT"
 
 /* Prototypes */
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_sms_shutdown);
