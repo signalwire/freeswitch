@@ -5120,9 +5120,9 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 		if (switch_channel_test_flag(channel, CF_VIDEO_READY)) {
 			switch_mutex_lock(mh->file_mutex);
 			if (smh->video_write_fh && switch_channel_ready(session->channel) && switch_test_flag(smh->video_write_fh, SWITCH_FILE_OPEN)) {
-				switch_status_t wstatus = switch_core_file_read_video(smh->video_write_fh, &fr, 0);
+				switch_status_t wstatus = switch_core_file_read_video(smh->video_write_fh, &fr, SVR_FLUSH);
 				if (wstatus == SWITCH_STATUS_SUCCESS) {
-					switch_core_session_write_video_frame(session, &fr, SWITCH_IO_FLAG_NONE, SVR_FLUSH);
+					switch_core_session_write_video_frame(session, &fr, SWITCH_IO_FLAG_NONE, 0);
 					switch_img_free(&fr.img);
 				} else if (wstatus != SWITCH_STATUS_BREAK && wstatus != SWITCH_STATUS_IGNORE) {
 					smh->video_write_fh = NULL;

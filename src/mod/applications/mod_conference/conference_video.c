@@ -1493,7 +1493,9 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_write_thread_run(switch_thread_
 					if (last) {
 						int delta = now - last;
 						if (delta > member->conference->video_fps.ms * 5000) {
-							switch_core_session_request_video_refresh(member->session);							
+							printf("WTF %d %d\n", delta, member->conference->video_fps.ms * 5000);
+							switch_core_session_request_video_refresh(member->session);
+							
 						}
 					}
 

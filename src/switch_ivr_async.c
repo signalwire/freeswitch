@@ -1113,14 +1113,11 @@ static void *SWITCH_THREAD_FUNC recording_thread(switch_thread_t *thread, void *
 	switch_size_t bsize = SWITCH_RECOMMENDED_BUFFER_SIZE, samples = 0, inuse = 0;
 	unsigned char *data;
 	int channels = 1;
-	switch_codec_implementation_t read_impl = { 0 };
 
 	if (switch_core_session_read_lock(session) != SWITCH_STATUS_SUCCESS) {
 		return NULL;
 	}
 
-	switch_core_session_get_read_impl(session, &read_impl);
-	bsize = read_impl.decoded_bytes_per_packet;
 	rh = switch_core_media_bug_get_user_data(bug);
 	switch_buffer_create_dynamic(&rh->thread_buffer, 1024 * 512, 1024 * 64, 0);
 	rh->thread_ready = 1;

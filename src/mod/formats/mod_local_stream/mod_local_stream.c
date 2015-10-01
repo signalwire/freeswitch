@@ -70,6 +70,7 @@ struct local_stream_context {
 	int last_h;
 	int serno;
 	int pop_count;
+	int video_sync;
 	switch_image_t *banner_img;
 	switch_time_t banner_timeout;
 	struct local_stream_context *next;
@@ -89,7 +90,6 @@ struct local_stream_source {
 	char *timer_name;
 	local_stream_context_t *context_list;
 	int total;
-	int first;
 	switch_dir_t *dir_handle;
 	switch_mutex_t *mutex;
 	switch_memory_pool_t *pool;
@@ -161,6 +161,7 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 	switch_memory_pool_t *temp_pool = NULL;
 	uint32_t dir_count = 0, do_shuffle = 0;
 	char *p;
+	int old_total = 0;	
 
 	switch_mutex_lock(globals.mutex);
 	THREADS++;
@@ -363,6 +364,16 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 
 				is_open = switch_test_flag(use_fh, SWITCH_FILE_OPEN);
 
+				if (is_open && source->total != old_total && source->total == 1) {
+					if (switch_core_file_has_video(&fh)) {
+						flush_video_queue(source->video_q);
+					}
+					
+					switch_buffer_zero(audio_buffer);
+				}
+
+				old_total = source->total;
+				
 				if (source->hup) {
 					source->hup = 0;
 					if (is_open) {
@@ -380,22 +391,21 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 				}
 				
 				if (is_open) {
-					int svr = 0;
-
 					if (switch_core_has_video() && switch_core_file_has_video(use_fh)) {
 						switch_frame_t vid_frame = { 0 };
 
 						if (use_fh == &source->chime_fh && switch_core_file_has_video(&fh)) {
-							if (switch_core_file_read_video(&fh, &vid_frame, svr) == SWITCH_STATUS_SUCCESS) {
+							if (switch_core_file_read_video(&fh, &vid_frame, SVR_FLUSH) == SWITCH_STATUS_SUCCESS) {
 								switch_img_free(&vid_frame.img);
 							}
 						}
 
-						while (switch_core_file_read_video(use_fh, &vid_frame, svr) == SWITCH_STATUS_SUCCESS) {
+						if (switch_core_file_read_video(use_fh, &vid_frame, SVR_FLUSH) == SWITCH_STATUS_SUCCESS) {
 							if (vid_frame.img) {
 								int flush = 1;
 
 								source->has_video = 1;
+								
 								if (source->total) {
 									if (switch_queue_trypush(source->video_q, vid_frame.img) == SWITCH_STATUS_SUCCESS) {
 										flush = 0;
@@ -455,70 +465,69 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 					break;
 				}
 
-				source->prebuf = source->samples * 2 * source->channels;
-
-				if (!source->total) {
-					flush_video_queue(source->video_q);
-					switch_buffer_zero(audio_buffer);
-				} else if (used > source->samples * 2 * source->channels) {
-					//if (!is_open || used >= source->prebuf || (source->total && used > source->samples * 2 * source->channels)) {
+				source->prebuf = source->samples * 2 * source->channels * 10;
+				
+				if (!is_open || used >= source->prebuf || (source->total && used > source->samples * 2 * source->channels)) {
 					void *pop;
-					uint32_t bused;
-					
+
 					used = switch_buffer_read(audio_buffer, dist_buf, source->samples * 2 * source->channels);
 
-					bused = 0;
+					if (!source->total) {
+						flush_video_queue(source->video_q);
+					} else {
+						uint32_t bused = 0;
 
-					switch_mutex_lock(source->mutex);
-					for (cp = source->context_list; cp && RUNNING; cp = cp->next) {
+						switch_mutex_lock(source->mutex);
+						for (cp = source->context_list; cp && RUNNING; cp = cp->next) {
 							
-						if (source->has_video) {
-							switch_set_flag(cp->handle, SWITCH_FILE_FLAG_VIDEO);
-						} else {
-							switch_clear_flag(cp->handle, SWITCH_FILE_FLAG_VIDEO);
-						}
+							if (source->has_video) {
+								switch_set_flag(cp->handle, SWITCH_FILE_FLAG_VIDEO);
+							} else {
+								switch_clear_flag(cp->handle, SWITCH_FILE_FLAG_VIDEO);
+							}
 							
-						if (switch_test_flag(cp->handle, SWITCH_FILE_CALLBACK)) {
-							continue;
-						}
+							if (switch_test_flag(cp->handle, SWITCH_FILE_CALLBACK)) {
+								continue;
+							}
 							
-						switch_mutex_lock(cp->audio_mutex);
-						bused = (uint32_t)switch_buffer_inuse(cp->audio_buffer);
-						if (bused > source->samples * 768) {
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Flushing Stream Handle Buffer [%s() %s:%d] size: %u samples: %ld\n", 
-											  cp->func, cp->file, cp->line, bused, (long)source->samples);
-							switch_buffer_zero(cp->audio_buffer);
-						} else {
-							switch_buffer_write(cp->audio_buffer, dist_buf, used);
+							switch_mutex_lock(cp->audio_mutex);
+							bused = (uint32_t)switch_buffer_inuse(cp->audio_buffer);
+							if (bused > source->samples * 768) {
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Flushing Stream Handle Buffer [%s() %s:%d] size: %u samples: %ld\n", 
+												  cp->func, cp->file, cp->line, bused, (long)source->samples);
+								switch_buffer_zero(cp->audio_buffer);
+							} else {
+								switch_buffer_write(cp->audio_buffer, dist_buf, used);
+							}
+							switch_mutex_unlock(cp->audio_mutex);
 						}
-						switch_mutex_unlock(cp->audio_mutex);
-					}
-					switch_mutex_unlock(source->mutex);
+						switch_mutex_unlock(source->mutex);
 
 						
-					while (switch_queue_trypop(source->video_q, &pop) == SWITCH_STATUS_SUCCESS) {
-						switch_image_t *img = (switch_image_t *) pop;
-						switch_image_t *imgcp = NULL;
+						while (switch_queue_trypop(source->video_q, &pop) == SWITCH_STATUS_SUCCESS) {
+							switch_image_t *img = (switch_image_t *) pop;
+							switch_image_t *imgcp = NULL;
 
-						if (source->total == 1) {
-							switch_queue_push(source->context_list->video_q, img);
-						} else {
-							if (source->context_list) {
-								switch_mutex_lock(source->mutex);
-								for (cp = source->context_list; cp && RUNNING; cp = cp->next) {
-									if (cp->video_q) {
-										imgcp = NULL;
-										switch_img_copy(img, &imgcp);
-										if (imgcp) {
-											if (switch_queue_trypush(cp->video_q, imgcp) != SWITCH_STATUS_SUCCESS) {
-												flush_video_queue(cp->video_q);
+							if (source->total == 1) {
+								switch_queue_push(source->context_list->video_q, img);
+							} else {
+								if (source->context_list) {
+									switch_mutex_lock(source->mutex);
+									for (cp = source->context_list; cp && RUNNING; cp = cp->next) {
+										if (cp->video_q) {
+											imgcp = NULL;
+											switch_img_copy(img, &imgcp);
+											if (imgcp) {
+												if (switch_queue_trypush(cp->video_q, imgcp) != SWITCH_STATUS_SUCCESS) {
+													flush_video_queue(cp->video_q);
+												}
 											}
 										}
 									}
+									switch_mutex_unlock(source->mutex);
 								}
-								switch_mutex_unlock(source->mutex);
+								switch_img_free(&img);
 							}
-							switch_img_free(&img);
 						}
 					}
 				}
@@ -716,9 +725,6 @@ static switch_status_t local_stream_file_open(switch_file_handle_t *handle, cons
 	context->next = source->context_list;
 	source->context_list = context;
 	source->total++;
-	if (source->total == 1) {
-		source->first = 1;
-	}
 	switch_mutex_unlock(source->mutex);
 
   end:
@@ -808,7 +814,9 @@ static switch_status_t local_stream_file_read_video(switch_file_handle_t *handle
 		return SWITCH_STATUS_BREAK;
 	}
 
-	while(context->ready && context->source->ready && (flags & SVR_FLUSH) && switch_queue_size(context->video_q) > min_qsize / 2) {
+	context->video_sync = 1;
+
+	while(context->ready && context->source->ready && (flags & SVR_FLUSH) && switch_queue_size(context->video_q) > min_qsize) {
 		if (switch_queue_trypop(context->video_q, &pop) == SWITCH_STATUS_SUCCESS) {
 			switch_image_t *img = (switch_image_t *) pop;
 			switch_img_free(&img);
@@ -819,10 +827,6 @@ static switch_status_t local_stream_file_read_video(switch_file_handle_t *handle
 		return SWITCH_STATUS_FALSE;
 	}
 	
-	while (switch_queue_size(context->video_q) < 5) {
-		return SWITCH_STATUS_BREAK;
-	}
-
 	if ((flags & SVR_BLOCK)) {
 		status = switch_queue_pop(context->video_q, &pop);
 	} else {
@@ -885,7 +889,7 @@ static switch_status_t local_stream_file_read_video(switch_file_handle_t *handle
 		//switch_img_overlay(frame->img, context->banner_img, 0, frame->img->d_h - context->banner_img->d_h, 100);
 		switch_img_patch(frame->img, context->banner_img, 0, frame->img->d_h - context->banner_img->d_h);
 	}
-
+	
 	return SWITCH_STATUS_SUCCESS;
 }
 
