@@ -3125,6 +3125,7 @@ static switch_bool_t verto__attach_func(const char *method, cJSON *params, jsock
 
 	if (tech_pvt) {
 		switch_channel_clear_flag(tech_pvt->channel, CF_REINVITE);
+		switch_channel_clear_flag(tech_pvt->channel, CF_RECOVERING);
 		switch_clear_flag(tech_pvt, TFLAG_ATTACH_REQ);
 		if (switch_channel_test_flag(tech_pvt->channel, CF_CONFERENCE)) {
 			switch_channel_set_flag(tech_pvt->channel, CF_CONFERENCE_ADV);
