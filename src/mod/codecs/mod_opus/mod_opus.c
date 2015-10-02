@@ -308,6 +308,33 @@ static switch_bool_t switch_opus_has_fec(const uint8_t* payload,int payload_leng
 	return  SWITCH_FALSE;
 }
 
+/* this is only useful for fs = 8000 hz, the map is only used
+ * at the beginning of the call. */
+static int switch_opus_get_fec_bitrate(int fs, int loss)
+{
+	int threshold_bitrates[25] = {
+		15600,15200,15200,15200,14800,
+		14800,14800,14800,14400,14400,
+		14400,14000,14000,14000,13600,
+		13600,13600,13600,13200,13200,
+		13200,12800,12800,12800,12400
+	};
+
+	if (loss <= 0){
+		return SWITCH_STATUS_FALSE;
+	} 
+
+	if (fs == 8000) {
+		if (loss >=25) { 
+			return threshold_bitrates[24];
+		} else {
+			return threshold_bitrates[loss-1];
+		}
+	}
+
+	return SWITCH_STATUS_FALSE ; 
+}
+
 static switch_status_t switch_opus_info(void * encoded_data, uint32_t len, uint32_t samples_per_second, char *print_text)
 {
 	/* nb_silk_frames: number of silk-frames (10 or 20 ms) in an opus frame:  0, 1, 2 or 3 */
@@ -521,7 +548,20 @@ static switch_status_t switch_opus_init(switch_codec_t *codec, switch_codec_flag
 		}
 
 		if (opus_codec_settings.useinbandfec) {
+			/* FEC on the encoder: start the call with a preconfigured packet loss percentage */
+			int fec_bitrate = opus_codec_settings.maxaveragebitrate;
+			int loss_percent = opus_prefs.plpct ; 
 			opus_encoder_ctl(context->encoder_object, OPUS_SET_INBAND_FEC(opus_codec_settings.useinbandfec));
+			opus_encoder_ctl(context->encoder_object, OPUS_SET_PACKET_LOSS_PERC(loss_percent));
+			if (opus_prefs.keep_fec){  
+				fec_bitrate = switch_opus_get_fec_bitrate(enc_samplerate,loss_percent); 
+				 /* keep a bitrate for which the encoder will always add FEC */
+				if (fec_bitrate != SWITCH_STATUS_FALSE) {
+					opus_encoder_ctl(context->encoder_object, OPUS_SET_BITRATE(fec_bitrate)); 
+					/* will override the maxaveragebitrate set in opus.conf.xml  */ 
+					opus_codec_settings.maxaveragebitrate = fec_bitrate;
+				}
+			}
 		}
 
 		if (opus_codec_settings.usedtx) {
@@ -1009,18 +1049,21 @@ static switch_status_t switch_opus_control(switch_codec_t *codec,
 				plpct = 100;
 			}
 
-			calc = plpct % 10;
-			plpct = plpct - calc + ( calc ? 10 : 0);
-
-			if (opus_prefs.plpct > 0 && plpct < opus_prefs.plpct) {
-				plpct = opus_prefs.plpct;
-			}
-
-			if (plpct != context->old_plpct) {
+			if (opus_prefs.keep_fec) {
 				opus_encoder_ctl(context->encoder_object, OPUS_SET_PACKET_LOSS_PERC(plpct));
-
+			} else {
+				calc = plpct % 10;
+				plpct = plpct - calc + ( calc ? 10 : 0);
+			}
+			if (plpct != context->old_plpct) {
 				if (opus_prefs.keep_fec) {
-					switch_opus_keep_fec_enabled(codec);
+					if (plpct > 10) {
+					/* this will increase bitrate a little bit, just to keep FEC enabled */
+						switch_opus_keep_fec_enabled(codec);
+					}
+				} else {
+					/* this can have no effect because FEC is F(bitrate,packetloss), let the codec decide if FEC is to be used or not */
+					opus_encoder_ctl(context->encoder_object, OPUS_SET_PACKET_LOSS_PERC(plpct));
 				}
 
 				if (globals.debug || context->debug) {
