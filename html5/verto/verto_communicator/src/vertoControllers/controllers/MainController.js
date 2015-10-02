@@ -152,6 +152,10 @@
 
       };
 
+      $scope.showAbout = function() {
+        $scope.openModal('partials/about.html', 'AboutController');
+      };
+
       $scope.showContributors = function() {
         $scope.openModal('partials/contributors.html', 'ContributorsController');
       };

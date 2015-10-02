@@ -2,3 +2,4 @@ dist/
 .tmp/
 bower_components/
 node_modules/
+src/vertoControllers/controllers/AboutController.js

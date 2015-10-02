@@ -58,9 +58,15 @@
           </ul>
         </li>
         <li class="navbar-item-icon">
-          <a href="" ng-click="showContributors()">
+          <a href="" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
             <i class="mdi-action-loyalty"></i>
+            <span class="caret"></span>
           </a>
+          <ul class="dropdown-menu" role="menu">
+            <li><a href="" ng-click="showAbout()">About</a></li>
+            <li><a href="" ng-click="showContributors()">Contributors</a></li>
+            <li><a href="https://freeswitch.org/confluence/x/MQCT" target="_blank">Help</a></li>
+          </ul>
         </li>
 
       </ul>
