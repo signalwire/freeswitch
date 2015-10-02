@@ -156,7 +156,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session,
 
 	if (!switch_channel_media_ready(channel)) {
 		
-		for (elapsed=0; switch_channel_up(channel) && elapsed<(ms/20); elapsed++) {
+		for (elapsed=0; switch_channel_ready(channel) && elapsed<(ms/20); elapsed++) {
 			if (switch_channel_test_flag(channel, CF_BREAK)) {
 				switch_channel_clear_flag(channel, CF_BREAK);
 				switch_goto_status(SWITCH_STATUS_BREAK, end);
