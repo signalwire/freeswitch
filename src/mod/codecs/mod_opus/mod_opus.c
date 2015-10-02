@@ -63,8 +63,23 @@ static opus_codec_settings_t default_codec_settings = {
 	/*.cbr*/ 0,
 	/*.sprop_maxcapturerate*/ 0,
 	/*.sprop_stereo*/ 0,
-	/*.maxptime*/ 0,
-	/*.minptime*/ 0,
+	/*.maxptime*/ 40,
+	/*.minptime*/ 10,
+	/*.ptime*/ 0,
+	/*.samplerate*/ 0
+};
+
+static opus_codec_settings_t default_codec_settings_8k = {
+	/*.useinbandfec */ 1,
+	/*.usedtx */ 1,
+	/*.maxaveragebitrate */ 14000,
+	/*.maxplaybackrate */ 8000,
+	/*.stereo*/ 0,
+	/*.cbr*/ 0,
+	/*.sprop_maxcapturerate*/ 8000,
+	/*.sprop_stereo*/ 0,
+	/*.maxptime*/ 120,
+	/*.minptime*/ 10,
 	/*.ptime*/ 0,
 	/*.samplerate*/ 0
 };
@@ -1149,8 +1164,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_opus_load)
 	for (x = 0; x < 3; x++) {
 
 		settings.ptime = mss / 1000;
-		settings.maxptime = settings.ptime;
-		settings.minptime = settings.ptime;
 		settings.samplerate = rate;
 		settings.stereo = 0;
 		dft_fmtp = gen_fmtp(&settings, pool);
@@ -1208,11 +1221,21 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_opus_load)
 	mss = 10000;
 	rate = 8000;
 
+	settings = default_codec_settings_8k;
+
+	if (opus_prefs.maxaveragebitrate) {
+		settings.maxaveragebitrate = opus_prefs.maxaveragebitrate;
+	}
+	if (opus_prefs.maxplaybackrate) {
+		settings.maxplaybackrate = opus_prefs.maxplaybackrate;
+	}
+	if (opus_prefs.sprop_maxcapturerate) {
+		settings.sprop_maxcapturerate = opus_prefs.sprop_maxcapturerate;
+	}
+
 	for (x = 0; x < 3; x++) {
 		settings.stereo = 0;
 		settings.ptime = mss / 1000;
-		settings.maxptime = settings.ptime;
-		settings.minptime = settings.ptime;
 		settings.samplerate = rate;
 		dft_fmtp = gen_fmtp(&settings, pool);
 
@@ -1257,6 +1280,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_opus_load)
 		if (x == 1) { /*20 ms * 3  = 60 ms */
 			int nb_frames;
 			settings.stereo = 0;
+			settings.ptime = mss * 3 / 1000;
 			dft_fmtp = gen_fmtp(&settings, pool);
 			switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
 												 116,	/* the IANA code number */
@@ -1280,6 +1304,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_opus_load)
 			for (nb_frames = 4; nb_frames <= 6; nb_frames++) {
 				/*20 ms * nb_frames  = 80 ms , 100 ms , 120 ms */
 				settings.stereo = 0;
+				settings.ptime = mss * nb_frames / 1000;
 				dft_fmtp = gen_fmtp(&settings, pool);
 				switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
 													 116,	/* the IANA code number */
