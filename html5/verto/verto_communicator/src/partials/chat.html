@@ -24,10 +24,10 @@
       <!-- FIXME(italo): Put this whole block in a flex box to avoid defining fixed width.-->
       <h4 class="chat-members-name">
         <div class="members-name">{{ member.name }}</div> 
-	<small class="ellipsis">({{ member.number }})</small>
+	<small class="ellipsis members-number">({{ member.number }})</small>
 	
 	<div class="members-badges">
-	  <div ng-if="member.status.video.floor" class="label" ng-class="{'label-danger': member.status.video.floorLocked, 'label-info': !member.status.video.floorLocked}">Floor</div>
+   	  <div ng-if="member.status.video.floor" class="label badge-floor" ng-class="{'label-danger': member.status.video.floorLocked, 'label-info': !member.status.video.floorLocked}"><i class="mdi mdi-action-https lock-floor" ng-if="member.status.video.floorLocked"></i> <span>Floor</span></div>
           <div ng-if="member.status.video.reservationID == 'presenter'" class="label label-warning">Presenter</div>
 	</div>
       </h4>
