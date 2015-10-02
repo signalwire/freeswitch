@@ -6,7 +6,8 @@
     .controller('ContributorsController', ['$scope', '$http',
       'toastr',
       function($scope, $http, toastr) {
-        $http.get(window.location.pathname + '/contributors.txt')
+        var url = window.location.origin + window.location.pathname;
+        $http.get(url + 'contributors.txt')
           .success(function(data) {
 
             var contributors = [];
