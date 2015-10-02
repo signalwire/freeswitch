@@ -199,7 +199,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_set_terminators(switch_ivr_d
 
 
 	dmachine->realm->terminators = switch_core_strdup(dmachine->pool, terminators);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Digit parser %s: Setting terminators for realm '%s' to '%s'\n", 
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Digit parser %s: Setting terminators for realm '%s' to '%s'\n",
 					  dmachine->name, dmachine->realm->name, terminators);
 
 	return SWITCH_STATUS_SUCCESS;

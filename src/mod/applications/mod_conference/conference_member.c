@@ -125,7 +125,7 @@ void conference_member_bind_controls(conference_member_t *member, const char *co
 
 		for(i = 0; i < conference_loop_mapping_len(); i++) {
 			if (!strcasecmp(key, control_mappings[i].name)) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s binding '%s' to '%s'\n",
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s binding '%s' to '%s'\n",
 								  switch_core_session_get_name(member->session), digits, key);
 
 				conference_member_do_binding(member, control_mappings[i].handler, digits, data);

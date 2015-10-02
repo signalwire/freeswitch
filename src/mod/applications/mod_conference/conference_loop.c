@@ -583,7 +583,7 @@ void conference_loop_transfer(conference_member_t *member, caller_control_action
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session), SWITCH_LOG_ERROR, "Unable to allocate memory to duplicate transfer data.\n");
 		goto done;
 	}
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session), SWITCH_LOG_DEBUG, "Transfering to: %s, %s, %s\n", exten, dialplan, context);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session), SWITCH_LOG_INFO, "Transfering to: %s, %s, %s\n", exten, dialplan, context);
 
 	switch_ivr_session_transfer(member->session, exten, dialplan, context);
 
@@ -633,7 +633,7 @@ void conference_loop_exec_app(conference_member_t *member, caller_control_action
 		goto done;
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session), SWITCH_LOG_DEBUG, "Execute app: %s, %s\n", app, arg);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session), SWITCH_LOG_INFO, "Execute app: %s, %s\n", app, arg);
 
 	channel = switch_core_session_get_channel(member->session);
 
@@ -1388,7 +1388,7 @@ void conference_loop_output(conference_member_t *member)
 		return;
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG, "Channel leaving conference, cause: %s\n",
+	switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_INFO, "Channel leaving conference, cause: %s\n",
 					  switch_channel_cause2str(switch_channel_get_cause(channel)));
 
 	/* if it's an outbound channel, store the release cause in the conference struct, we might need it */
