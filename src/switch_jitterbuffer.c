@@ -1262,15 +1262,14 @@ SWITCH_DECLARE(switch_status_t) switch_jb_get_packet(switch_jb_t *jb, switch_rtp
 
 	if (plc) {
 		uint16_t seq;
-		uint32_t ts;
+		uint32_t ts = 0;
 
 		if (jb->samples_per_frame) {
 			seq = htons(jb->last_psuedo_seq);
+			ts = jb->last_target_ts;
 		} else {
 			seq = jb->last_target_seq;
 		}
-
-		ts = jb->last_target_ts;
 		
 		packet->header.seq = seq;
 		packet->header.ts = ts;

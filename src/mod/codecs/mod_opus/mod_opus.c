@@ -635,7 +635,7 @@ static switch_status_t switch_opus_decode(switch_codec_t *codec,
 	struct opus_context *context = codec->private_info;
 	int samples = 0;
 	int fec = 0, plc = 0;
-	int32_t frame_size;
+	int32_t frame_size = 0, last_frame_size = 0;
 	uint32_t frame_samples;
 
 	if (!context) {
@@ -649,7 +649,6 @@ static switch_status_t switch_opus_decode(switch_codec_t *codec,
 		switch_core_session_t *session = codec->session;
 		switch_channel_t *channel = switch_core_session_get_channel(session);
 		switch_jb_t *jb = NULL;
-		int got_frame = 0;
 
 		plc = 1;
 
@@ -675,40 +674,39 @@ static switch_status_t switch_opus_decode(switch_codec_t *codec,
 				frame.data = buf;
 				frame.buflen = sizeof(buf);
 				
+				if (globals.debug || context->debug) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Missing %s %u Checking JB\n", seq ? "SEQ" : "TS", seq ? seq : ts);
+				}
+				
 				if (switch_jb_peek_frame(jb, ts, seq, 1, &frame) == SWITCH_STATUS_SUCCESS) {
 					if (globals.debug || context->debug) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Lookahead frame found: %u -> %u\n", 
-										  codec->cur_frame->timestamp, frame.timestamp);
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Lookahead frame found: %u:%u\n", 
+										  frame.timestamp, frame.seq);
 					}
 
-					encoded_data = frame.data;
-					encoded_data_len = frame.datalen;
-
+					
 					if ((fec = switch_opus_has_fec(frame.data, frame.datalen))) {
-						got_frame = 1;
+						encoded_data = frame.data;
+						encoded_data_len = frame.datalen;
 					}
 					
 					if (globals.debug || context->debug) {
 						if (fec) {
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "FEC info available in packet with SEQ[%d] encoded_data_len: %d\n", 
-										  codec->cur_frame->seq, encoded_data_len);
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "FEC info available in packet with SEQ: %d LEN: %d\n", 
+											  frame.seq, frame.datalen);
 						} else {
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "NO FEC info in this packet with SEQ[%d] encoded_data_len: %d\n", 
-										  codec->cur_frame->seq, encoded_data_len );
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "NO FEC info in this packet with SEQ: %d LEN: %d\n", 
+											  frame.seq, frame.datalen);
 						}
 					}
 				}
 			}
 		}
 		
-		if (!got_frame) {
-			opus_decoder_ctl(context->decoder_object, OPUS_GET_LAST_PACKET_DURATION(&frame_size));
-		
-			if (!frame_size) {
-				frame_size = frame_samples - (frame_samples % (codec->implementation->actual_samples_per_second / 400));
-			}
-		}
 
+		opus_decoder_ctl(context->decoder_object, OPUS_GET_LAST_PACKET_DURATION(&last_frame_size));
+		if (last_frame_size) frame_size = last_frame_size;
+		
 		if (globals.debug || context->debug) {
 			if (opus_prefs.use_jb_lookahead || context->use_jb_lookahead) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "MISSING FRAME: %s\n", fec ? "Look-ahead FEC" : "PLC");
@@ -723,7 +721,8 @@ static switch_status_t switch_opus_decode(switch_codec_t *codec,
 	if (globals.debug || context->debug > 1) {
 		int samplerate = context->dec_frame_size * 1000 / (codec->implementation->microseconds_per_packet / 1000);
 		switch_opus_info(encoded_data, encoded_data_len,
-						 samplerate ? samplerate : codec->implementation->actual_samples_per_second, "decode");
+						 samplerate ? samplerate : codec->implementation->actual_samples_per_second, 
+						 !encoded_data ? "PLC correction" : fec ?  "FEC correction" : "decode");
 	}
 
 	samples = opus_decode(context->decoder_object, encoded_data, encoded_data_len, decoded_data, frame_size, fec);
