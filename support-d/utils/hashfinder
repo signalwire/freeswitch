@@ -35,9 +35,9 @@
 # hashfinder - Find origin of a particular line of code
 #
 
-
 my $file = shift;
 my $regex = shift;
+my $alt_file = shift;
 my $delim = "  ";
 
 $file and $regex or die "missing params.  Syntax: <file> <regex>";
@@ -58,13 +58,23 @@ sub doit($$) {
     $linematch = 1;
   }
 
-  open GIT, "git blame -n $file $rev|";
+ retry:
+
+  open GIT, "git blame -n $file $rev 2>&1|";
 
   my $mc = 0;
   my @matches = ();
 
   while (<GIT>) {
     my $matched = 0;
+
+	if (/fatal:/) {
+		if ($alt_file) {
+			$file = $alt_file;
+			$alt_file = undef;
+			goto retry;
+		}
+	}
 
     if ($linematch) {
       $matched = (/^\S+\s+$pattern\s+/);
@@ -80,7 +90,6 @@ sub doit($$) {
   }
 
   close(GIT);
-
 
   if ($mc > 5) {
     print $delim x $loops;
@@ -100,10 +109,11 @@ sub doit($$) {
     my ($hash, $lno, $author, $line);
     my $done = 0;
 
-    if (/$file/) {
+    if (/\//) {
       ($hash, $lno, $author, $line) = /(\S+)\s+\S+\s+(\S+)\s+(\([^\)]+\))\s*(.*)/;
       $done = 1;
     } else {
+		die $_;
       ($hash, $lno, $author, $line) = /(\S+)\s+(\S+)\s+(\([^\)]+\))\s*(.*)/;
     }
 
