@@ -146,13 +146,17 @@
       };
 
       $scope.confMuteMic = function(memberID) {
-        console.log('$scope.confMuteMic');
-        verto.data.conf.muteMic(memberID);
+        if(verto.data.confRole == 'moderator') {
+          console.log('$scope.confMuteMic');
+          verto.data.conf.muteMic(memberID);
+        }
       };
 
       $scope.confMuteVideo = function(memberID) {
-        console.log('$scope.confMuteVideo');
-        verto.data.conf.muteVideo(memberID);
+        if(verto.data.confRole == 'moderator') {
+          console.log('$scope.confMuteVideo');
+          verto.data.conf.muteVideo(memberID);
+        }
       };
 
       $scope.confPresenter = function(memberID) {
