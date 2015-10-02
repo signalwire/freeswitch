@@ -65,6 +65,7 @@ struct switch_jb_s {
 	uint32_t target_ts;
 	uint32_t last_target_ts;
 	uint16_t psuedo_seq;
+	uint16_t last_psuedo_seq;
 	uint32_t visible_nodes;
 	uint32_t complete_frames;
 	uint32_t frame_len;
@@ -581,6 +582,8 @@ static inline void increment_ts(switch_jb_t *jb)
 {
 	if (!jb->target_ts) return;
 
+	jb->last_psuedo_seq = jb->psuedo_seq;
+	jb->last_target_ts = jb->target_ts;
 	jb->target_ts = htonl((ntohl(jb->target_ts) + jb->samples_per_frame));
 	jb->psuedo_seq++;
 }
@@ -589,6 +592,7 @@ static inline void set_read_ts(switch_jb_t *jb, uint32_t ts)
 {
 	if (!ts) return;
 
+	jb->last_psuedo_seq = jb->psuedo_seq;
 	jb->last_target_ts = ts;
 	jb->target_ts = htonl((ntohl(jb->last_target_ts) + jb->samples_per_frame));
 	jb->psuedo_seq++;
@@ -597,6 +601,7 @@ static inline void set_read_ts(switch_jb_t *jb, uint32_t ts)
 
 static inline void increment_seq(switch_jb_t *jb)
 {
+	jb->last_target_seq = jb->target_seq;
 	jb->target_seq = htons((ntohs(jb->target_seq) + 1));
 }
 
@@ -828,13 +833,12 @@ SWITCH_DECLARE(void) switch_jb_reset(switch_jb_t *jb)
 SWITCH_DECLARE(switch_status_t) switch_jb_peek_frame(switch_jb_t *jb, uint32_t ts, uint16_t seq, int peek, switch_frame_t *frame)
 {
 	switch_jb_node_t *node = NULL;
-
 	if (seq) {
 		uint16_t want_seq = seq + peek;
-		node = switch_core_inthash_find(jb->node_hash, want_seq);
+		node = switch_core_inthash_find(jb->node_hash, htons(want_seq));
 	} else if (ts && jb->samples_per_frame) {
 		uint32_t want_ts = ts + (peek * jb->samples_per_frame);	
-		node = switch_core_inthash_find(jb->node_hash_ts, want_ts);
+		node = switch_core_inthash_find(jb->node_hash_ts, htonl(want_ts));
 	}
 
 	if (node) {
@@ -842,6 +846,7 @@ SWITCH_DECLARE(switch_status_t) switch_jb_peek_frame(switch_jb_t *jb, uint32_t t
 		frame->timestamp = ntohl(node->packet.header.ts);
 		frame->m = node->packet.header.m;
 		frame->datalen = node->len;
+
 		if (frame->data && frame->buflen > node->len) {
 			memcpy(frame->data, node->packet.body, node->len);
 		}
@@ -1129,7 +1134,8 @@ SWITCH_DECLARE(switch_status_t) switch_jb_get_packet(switch_jb_t *jb, switch_rtp
 {
 	switch_jb_node_t *node = NULL;
 	switch_status_t status;
-	
+	int plc = 0;
+
 	switch_mutex_lock(jb->mutex);
 
 	if (jb->complete_frames < jb->frame_len) {
@@ -1230,6 +1236,7 @@ SWITCH_DECLARE(switch_status_t) switch_jb_get_packet(switch_jb_t *jb, switch_rtp
 					switch_goto_status(SWITCH_STATUS_RESTART, end);
 				} else {
 					jb_debug(jb, 2, "%s", "Frame not found suggest PLC\n");
+					plc = 1;
 					switch_goto_status(SWITCH_STATUS_NOTFOUND, end);
 				}
 			}
@@ -1252,6 +1259,22 @@ SWITCH_DECLARE(switch_status_t) switch_jb_get_packet(switch_jb_t *jb, switch_rtp
 	}
 
  end:
+
+	if (plc) {
+		uint16_t seq;
+		uint32_t ts;
+
+		if (jb->samples_per_frame) {
+			seq = htons(jb->last_psuedo_seq);
+		} else {
+			seq = jb->last_target_seq;
+		}
+
+		ts = jb->last_target_ts;
+		
+		packet->header.seq = seq;
+		packet->header.ts = ts
+	}
 
 	switch_mutex_unlock(jb->mutex);
 

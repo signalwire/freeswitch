@@ -78,6 +78,8 @@ struct opus_context {
 	uint32_t debug;
 	uint32_t use_jb_lookahead;
 	opus_codec_settings_t codec_settings;
+	int look_check;
+	int look_ts;
 };
 
 struct {
@@ -610,6 +612,7 @@ static switch_status_t switch_opus_decode(switch_codec_t *codec,
 
 	if (*flag & SFF_PLC) {
 		switch_core_session_t *session = codec->session;
+		switch_channel_t *channel = switch_core_session_get_channel(session);
 		switch_jb_t *jb = NULL;
 		int got_frame = 0;
 
@@ -618,20 +621,40 @@ static switch_status_t switch_opus_decode(switch_codec_t *codec,
 		encoded_data = NULL;
 
 		if ((opus_prefs.use_jb_lookahead || context->use_jb_lookahead) && context->codec_settings.useinbandfec && session) {
-			if (opus_packet_get_bandwidth(codec->cur_frame->data) != OPUS_BANDWIDTH_FULLBAND && 
-				codec->cur_frame && (jb = switch_core_session_get_jb(session, SWITCH_MEDIA_TYPE_AUDIO))) {
+			if (!context->look_check) {
+				context->look_ts = switch_true(switch_channel_get_variable_dup(channel, "jb_use_timestamps", SWITCH_FALSE, -1));
+				context->look_check = 1;
+			}
+			if (codec->cur_frame && (jb = switch_core_session_get_jb(session, SWITCH_MEDIA_TYPE_AUDIO))) {
 				switch_frame_t frame = { 0 };
 				uint8_t buf[SWITCH_RTP_MAX_BUF_LEN];
+				uint32_t ts = 0;
+				uint16_t seq = 0;
+
+				if (context->look_ts) {
+					ts = codec->cur_frame->timestamp;
+				} else {
+					seq = codec->cur_frame->seq;
+				}
+
 				frame.data = buf;
 				frame.buflen = sizeof(buf);
+				
+				if (switch_jb_peek_frame(jb, ts, seq, 1, &frame) == SWITCH_STATUS_SUCCESS) {
+					if (globals.debug || context->debug) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Lookahead frame found: %u -> %u\n", 
+										  codec->cur_frame->timestamp, frame.timestamp);
+					}
 
-				if (switch_jb_peek_frame(jb, codec->cur_frame->timestamp, 0, 1, &frame)) {
-					got_frame = 1;
-					fec = 1;
 					encoded_data = frame.data;
 					encoded_data_len = frame.datalen;
+
+					if ((fec = switch_opus_has_fec(frame.data, frame.datalen))) {
+						got_frame = 1;
+					}
+					
 					if (globals.debug || context->debug) {
-						if (switch_opus_has_fec(frame.data, frame.datalen)) {
+						if (fec) {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "FEC info available in packet with SEQ[%d] encoded_data_len: %d\n", 
 										  codec->cur_frame->seq, encoded_data_len);
 						} else {
@@ -639,7 +662,7 @@ static switch_status_t switch_opus_decode(switch_codec_t *codec,
 										  codec->cur_frame->seq, encoded_data_len );
 						}
 					}
-				} 
+				}
 			}
 		}
 		
@@ -783,6 +806,13 @@ static switch_status_t opus_load_config(switch_bool_t reload)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Opening of %s failed\n", cf);
 		return status;
 	}
+
+	memset(&opus_prefs, 0, sizeof(opus_prefs));
+	opus_prefs.use_jb_lookahead = 1;
+	opus_prefs.keep_fec = 1;
+	opus_prefs.use_dtx = 1;
+	opus_prefs.plpct = 20;
+	opus_prefs.use_vbr = 1;
 
 	if ((settings = switch_xml_child(cfg, "settings"))) {
 		for (param = switch_xml_child(settings, "param"); param; param = param->next) {

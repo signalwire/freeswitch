@@ -4059,7 +4059,9 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_activate_jitter_buffer(switch_rtp_t *
 	} else {
 		status = switch_jb_create(&rtp_session->jb, SJB_AUDIO, queue_frames, max_queue_frames, rtp_session->pool);
 		switch_jb_set_session(rtp_session->jb, rtp_session->session);
-		switch_jb_ts_mode(rtp_session->jb, samples_per_packet, samples_per_second);
+		if (switch_true(switch_channel_get_variable_dup(switch_core_session_get_channel(rtp_session->session), "jb_use_timestamps", SWITCH_FALSE, -1))) {
+			switch_jb_ts_mode(rtp_session->jb, samples_per_packet, samples_per_second);
+		}
 		//switch_jb_debug_level(rtp_session->jb, 10);
 	}
 
@@ -5459,8 +5461,8 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 				{
 					(*flags) |= SFF_PLC;
 					status = SWITCH_STATUS_SUCCESS;
-					rtp_session->recv_msg.header = rtp_session->last_rtp_hdr;
 					*bytes = switch_jb_get_last_read_len(rtp_session->jb);
+					rtp_session->last_rtp_hdr = rtp_session->recv_msg.header;
 				}
 				break;
 			case SWITCH_STATUS_SUCCESS:
@@ -6803,10 +6805,10 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_zerocopy_read_frame(switch_rtp_t *rtp
 		if (frame->payload == rtp_session->recv_te) {
 			switch_set_flag(frame, SFF_RFC2833);
 		}
-		frame->timestamp = ntohl(rtp_session->recv_msg.header.ts);
-		frame->seq = (uint16_t) ntohs((uint16_t) rtp_session->recv_msg.header.seq);
+		frame->timestamp = ntohl(rtp_session->last_rtp_hdr.ts);
+		frame->seq = (uint16_t) ntohs((uint16_t) rtp_session->last_rtp_hdr.seq);
 		frame->ssrc = ntohl(rtp_session->last_rtp_hdr.ssrc);
-		frame->m = rtp_session->recv_msg.header.m ? SWITCH_TRUE : SWITCH_FALSE;
+		frame->m = rtp_session->last_rtp_hdr.m ? SWITCH_TRUE : SWITCH_FALSE;
 	}
 	
 #ifdef ENABLE_ZRTP
