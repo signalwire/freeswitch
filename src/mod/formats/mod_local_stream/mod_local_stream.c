@@ -118,6 +118,41 @@ struct local_stream_source {
 
 typedef struct local_stream_source local_stream_source_t;
 
+switch_status_t list_streams_full(const char *line, const char *cursor, switch_console_callback_match_t **matches, switch_bool_t show_aliases)
+{
+	local_stream_source_t *source;
+	switch_hash_index_t *hi;
+	void *val;
+	const void *vvar;
+	switch_console_callback_match_t *my_matches = NULL;
+	switch_status_t status = SWITCH_STATUS_FALSE;
+	
+	switch_mutex_lock(globals.mutex);
+	for (hi = switch_core_hash_first(globals.source_hash); hi; hi = switch_core_hash_next(&hi)) {
+		switch_core_hash_this(hi, &vvar, NULL, &val);
+
+		source = (local_stream_source_t *) val;
+		if (!show_aliases && strcmp((char *)vvar, source->name)) {
+			continue;
+		}
+
+		switch_console_push_match(&my_matches, (const char *) vvar);
+	}
+	switch_mutex_unlock(globals.mutex);
+	
+	if (my_matches) {
+		*matches = my_matches;
+		status = SWITCH_STATUS_SUCCESS;
+	}
+	
+	return status;
+}
+
+switch_status_t list_streams(const char *line, const char *cursor, switch_console_callback_match_t **matches)
+{
+	return list_streams_full(line, cursor, matches, SWITCH_TRUE);
+}
+
 static int do_rand(uint32_t count)
 {
 	double r;
@@ -1050,197 +1085,11 @@ static void event_handler(switch_event_t *event)
 	RUNNING = 0;
 }
 
-#define RELOAD_LOCAL_STREAM_SYNTAX "<local_stream_name>"
-SWITCH_STANDARD_API(reload_local_stream_function)
+#define LOCAL_STREAM_SYNTAX "<show|start|reload|stop|hup> <local_stream_name>"
+SWITCH_STANDARD_API(local_stream_function)
 {
 	local_stream_source_t *source = NULL;
-	char *mycmd = NULL, *argv[1] = { 0 };
-	char *local_stream_name = NULL;
-	int argc = 0;
-
-
-	if (zstr(cmd)) {
-		goto usage;
-	}
-
-	if (!(mycmd = strdup(cmd))) {
-		goto usage;
-	}
-
-	if ((argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) < 1) {
-		goto usage;
-	}
-
-	local_stream_name = argv[0];
-	if (zstr(local_stream_name)) {
-		goto usage;
-	}
-
-	switch_mutex_lock(globals.mutex);
-	source = switch_core_hash_find(globals.source_hash, local_stream_name);
-	switch_mutex_unlock(globals.mutex);
-
-	if (!source) {
-		stream->write_function(stream, "-ERR Cannot locate local_stream %s!\n", local_stream_name);
-		goto done;
-	}
-
-	source->full_reload = 1;
-	source->part_reload = 1;
-	stream->write_function(stream, "+OK");
-	goto done;
-
-  usage:
-	stream->write_function(stream, "-USAGE: %s\n", RELOAD_LOCAL_STREAM_SYNTAX);
-	switch_safe_free(mycmd);
-
-  done:
-
-	switch_safe_free(mycmd);
-	return SWITCH_STATUS_SUCCESS;
-}
-
-#define STOP_LOCAL_STREAM_SYNTAX "<local_stream_name>"
-SWITCH_STANDARD_API(stop_local_stream_function)
-{
-	local_stream_source_t *source = NULL;
-	char *mycmd = NULL, *argv[1] = { 0 };
-	char *local_stream_name = NULL;
-	int argc = 0;
-
-
-	if (zstr(cmd)) {
-		goto usage;
-	}
-
-	if (!(mycmd = strdup(cmd))) {
-		goto usage;
-	}
-
-	if ((argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) < 1) {
-		goto usage;
-	}
-
-	local_stream_name = argv[0];
-	if (zstr(local_stream_name)) {
-		goto usage;
-	}
-
-	switch_mutex_lock(globals.mutex);
-	source = switch_core_hash_find(globals.source_hash, local_stream_name);
-	switch_mutex_unlock(globals.mutex);
-
-	if (!source) {
-		stream->write_function(stream, "-ERR Cannot locate local_stream %s!\n", local_stream_name);
-		goto done;
-	}
-
-	source->stopped = 1;
-	stream->write_function(stream, "+OK");
-	goto done;
-
-  usage:
-	stream->write_function(stream, "-USAGE: %s\n", STOP_LOCAL_STREAM_SYNTAX);
-	switch_safe_free(mycmd);
-
-  done:
-
-	switch_safe_free(mycmd);
-	return SWITCH_STATUS_SUCCESS;
-}
-
-#define SHOW_LOCAL_STREAM_SYNTAX "[local_stream_name [xml]]"
-SWITCH_STANDARD_API(show_local_stream_function)
-{
-	local_stream_source_t *source = NULL;
-	char *mycmd = NULL, *argv[2] = { 0 };
-	char *local_stream_name = NULL;
-	int argc = 0;
-	switch_hash_index_t *hi;
-	const void *var;
-	void *val;
-	switch_bool_t xml = SWITCH_FALSE;
-
-	switch_mutex_lock(globals.mutex);
-
-	if (zstr(cmd)) {
-		for (hi = switch_core_hash_first(globals.source_hash); hi; hi = switch_core_hash_next(&hi)) {
-			switch_core_hash_this(hi, &var, NULL, &val);
-			if ((source = (local_stream_source_t *) val)) {
-				stream->write_function(stream, "%s,%s\n", source->name, source->location);
-			}
-		}
-	} else {
-		if (!(mycmd = strdup(cmd))) {
-			goto usage;
-		}
-
-		if ((argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
-			local_stream_name = argv[0];
-			if (argc > 1 && !strcasecmp("xml", argv[1])) {
-				xml = SWITCH_TRUE;
-			}
-		}
-
-		if (!local_stream_name) {
-			goto usage;
-		}
-
-		source = switch_core_hash_find(globals.source_hash, local_stream_name);
-		if (source) {
-			if (xml) {
-				stream->write_function(stream, "<?xml version=\"1.0\"?>\n<local_stream name=\"%s\">\n", source->name);
-				stream->write_function(stream, "  <location>%s</location>\n", source->location);
-				stream->write_function(stream, "  <channels>%d</channels>\n", source->channels);
-				stream->write_function(stream, "  <rate>%d</rate>\n", source->rate);
-				stream->write_function(stream, "  <interval>%d<interval>\n", source->interval);
-				stream->write_function(stream, "  <samples>%d</samples>\n", source->samples);
-				stream->write_function(stream, "  <prebuf>%d</prebuf>\n", source->prebuf);
-				stream->write_function(stream, "  <timer>%s</timer>\n", source->timer_name);
-				stream->write_function(stream, "  <total>%d</total>\n", source->total);
-				stream->write_function(stream, "  <shuffle>%s</shuffle>\n", (source->shuffle) ? "true" : "false");
-				stream->write_function(stream, "  <ready>%s</ready>\n", (source->ready) ? "true" : "false");
-				stream->write_function(stream, "  <stopped>%s</stopped>\n", (source->stopped) ? "true" : "false");
-				stream->write_function(stream, "</local_stream>\n");
-			} else {
-				stream->write_function(stream, "%s\n", source->name);
-				stream->write_function(stream, "  location: %s\n", source->location);
-				stream->write_function(stream, "  channels: %d\n", source->channels);
-				stream->write_function(stream, "  rate:     %d\n", source->rate);
-				stream->write_function(stream, "  interval: %d\n", source->interval);
-				stream->write_function(stream, "  samples:  %d\n", source->samples);
-				stream->write_function(stream, "  prebuf:   %d\n", source->prebuf);
-				stream->write_function(stream, "  timer:    %s\n", source->timer_name);
-				stream->write_function(stream, "  total:    %d\n", source->total);
-				stream->write_function(stream, "  shuffle:  %s\n", (source->shuffle) ? "true" : "false");
-				stream->write_function(stream, "  ready:    %s\n", (source->ready) ? "true" : "false");
-				stream->write_function(stream, "  stopped:  %s\n", (source->stopped) ? "true" : "false");
-				stream->write_function(stream, "  reloading: %s\n", (source->full_reload) ? "true" : "false");
-			}
-		} else {
-			stream->write_function(stream, "-ERR Cannot locate local_stream %s!\n", local_stream_name);
-			goto done;
-		}
-	}
-
-	stream->write_function(stream, "+OK");
-	goto done;
-
-  usage:
-	stream->write_function(stream, "-USAGE: %s\n", SHOW_LOCAL_STREAM_SYNTAX);
-
-  done:
-
-	switch_mutex_unlock(globals.mutex);
-	switch_safe_free(mycmd);
-	return SWITCH_STATUS_SUCCESS;
-}
-
-#define START_LOCAL_STREAM_SYNTAX "<local_stream_name>"
-SWITCH_STANDARD_API(start_local_stream_function)
-{
-	local_stream_source_t *source = NULL;
-	char *mycmd = NULL, *argv[8] = { 0 };
+	char *mycmd = NULL, *argv[5] = { 0 };
 	char *local_stream_name = NULL;
 	int argc = 0;
 	int ok = 0;
@@ -1257,68 +1106,124 @@ SWITCH_STANDARD_API(start_local_stream_function)
 		goto usage;
 	}
 
-	local_stream_name = argv[0];
+	local_stream_name = argv[1];
 
-	switch_mutex_lock(globals.mutex);
-	source = switch_core_hash_find(globals.source_hash, local_stream_name);
-	switch_mutex_unlock(globals.mutex);
-	if (source) {
-		source->stopped = 0;
-		stream->write_function(stream, "+OK stream: %s", source->name);
+	if (!strcasecmp(argv[0], "hup")) {
+		switch_mutex_lock(globals.mutex);
+		source = switch_core_hash_find(globals.source_hash, local_stream_name);
+		switch_mutex_unlock(globals.mutex);
+		
+		if (source) {
+			source->hup = 1;
+			stream->write_function(stream, "+OK hup stream: %s", source->name);
+			goto done;
+		}
+	} else if (!strcasecmp(argv[0], "stop")) {
+		switch_mutex_lock(globals.mutex); 
+		source = switch_core_hash_find(globals.source_hash, local_stream_name);
+		switch_mutex_unlock(globals.mutex); 
+
+		if (!source) {
+			stream->write_function(stream, "-ERR Cannot locate local_stream %s!\n", local_stream_name);
+			goto done;
+		}
+		
+		source->stopped = 1;
+		stream->write_function(stream, "+OK");
+	} else if (!strcasecmp(argv[0], "reload")) {
+		switch_mutex_lock(globals.mutex);
+		source = switch_core_hash_find(globals.source_hash, local_stream_name);
+		switch_mutex_unlock(globals.mutex);
+		
+		if (!source) {
+			stream->write_function(stream, "-ERR Cannot locate local_stream %s!\n", local_stream_name);
+			goto done;
+		}
+
+		source->full_reload = 1;
+		source->part_reload = 1;
+		stream->write_function(stream, "+OK");
+	} else if (!strcasecmp(argv[0], "start")) {
+		switch_mutex_lock(globals.mutex);
+		source = switch_core_hash_find(globals.source_hash, local_stream_name);
+		switch_mutex_unlock(globals.mutex);
+
+		if (source) {
+			source->stopped = 0;
+			stream->write_function(stream, "+OK stream: %s", source->name);
+			goto done;
+		}
+		
+		if ((ok = launch_streams(local_stream_name))) {
+			stream->write_function(stream, "+OK stream: %s", local_stream_name);
+			goto done;
+		}
+		
+	} else if (!strcasecmp(argv[0], "show")) {
+		switch_hash_index_t *hi;
+		const void *var;
+		void *val;
+		switch_bool_t xml = SWITCH_FALSE;
+
+		switch_mutex_lock(globals.mutex);
+		if (argc == 1) {
+			for (hi = switch_core_hash_first(globals.source_hash); hi; hi = switch_core_hash_next(&hi)) {
+				switch_core_hash_this(hi, &var, NULL, &val);
+				if ((source = (local_stream_source_t *) val)) {
+					stream->write_function(stream, "%s,%s\n", source->name, source->location);
+				}
+			}
+		} else {
+			if (argc == 4 && !strcasecmp("xml", argv[3])) {
+				xml = SWITCH_TRUE;
+			}
+
+			source = switch_core_hash_find(globals.source_hash, local_stream_name);
+
+			if (source) {
+				if (xml) {
+					stream->write_function(stream, "<?xml version=\"1.0\"?>\n<local_stream name=\"%s\">\n", source->name);
+					stream->write_function(stream, "  <location>%s</location>\n", source->location);
+					stream->write_function(stream, "  <channels>%d</channels>\n", source->channels);
+					stream->write_function(stream, "  <rate>%d</rate>\n", source->rate);
+					stream->write_function(stream, "  <interval>%d<interval>\n", source->interval);
+					stream->write_function(stream, "  <samples>%d</samples>\n", source->samples);
+					stream->write_function(stream, "  <prebuf>%d</prebuf>\n", source->prebuf);
+					stream->write_function(stream, "  <timer>%s</timer>\n", source->timer_name);
+					stream->write_function(stream, "  <total>%d</total>\n", source->total);
+					stream->write_function(stream, "  <shuffle>%s</shuffle>\n", (source->shuffle) ? "true" : "false");
+					stream->write_function(stream, "  <ready>%s</ready>\n", (source->ready) ? "true" : "false");
+					stream->write_function(stream, "  <stopped>%s</stopped>\n", (source->stopped) ? "true" : "false");
+					stream->write_function(stream, "</local_stream>\n");
+				} else {
+					stream->write_function(stream, "%s\n", source->name);
+					stream->write_function(stream, "  location: %s\n", source->location);
+					stream->write_function(stream, "  channels: %d\n", source->channels);
+					stream->write_function(stream, "  rate:     %d\n", source->rate);
+					stream->write_function(stream, "  interval: %d\n", source->interval);
+					stream->write_function(stream, "  samples:  %d\n", source->samples);
+					stream->write_function(stream, "  prebuf:   %d\n", source->prebuf);
+					stream->write_function(stream, "  timer:    %s\n", source->timer_name);
+					stream->write_function(stream, "  total:    %d\n", source->total);
+					stream->write_function(stream, "  shuffle:  %s\n", (source->shuffle) ? "true" : "false");
+					stream->write_function(stream, "  ready:    %s\n", (source->ready) ? "true" : "false");
+					stream->write_function(stream, "  stopped:  %s\n", (source->stopped) ? "true" : "false");
+					stream->write_function(stream, "  reloading: %s\n", (source->full_reload) ? "true" : "false");
+				}
+			} else {
+				stream->write_function(stream, "-ERR Cannot locate local_stream %s!\n", local_stream_name);
+			}
+		}
+		switch_mutex_unlock(globals.mutex);
+
 		goto done;
 	}
-
-	if ((ok = launch_streams(local_stream_name))) {
-		stream->write_function(stream, "+OK stream: %s", local_stream_name);
-		goto done;
-	}
-
-  usage:
-	stream->write_function(stream, "-USAGE: %s\n", START_LOCAL_STREAM_SYNTAX);
-
-  done:
-
-	switch_safe_free(mycmd);
-	return SWITCH_STATUS_SUCCESS;
-}
-
-#define HUP_LOCAL_STREAM_SYNTAX "<local_stream_name>"
-SWITCH_STANDARD_API(hup_local_stream_function)
-{
-	local_stream_source_t *source = NULL;
-	char *mycmd = NULL, *argv[8] = { 0 };
-	char *local_stream_name = NULL;
-	int argc = 0;
-
-	if (zstr(cmd)) {
-		goto usage;
-	}
-
-	if (!(mycmd = strdup(cmd))) {
-		goto usage;
-	}
-
-	if ((argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) < 1) {
-		goto usage;
-	}
-
-	local_stream_name = argv[0];
-
-	switch_mutex_lock(globals.mutex);
-	source = switch_core_hash_find(globals.source_hash, local_stream_name);
-	switch_mutex_unlock(globals.mutex);
-
-	if (source) {
-		source->hup = 1;
-		stream->write_function(stream, "+OK hup stream: %s", source->name);
-		goto done;
-	}
-
+	
 	goto done;
-
-  usage:
-	stream->write_function(stream, "-USAGE: %s\n", START_LOCAL_STREAM_SYNTAX);
-
+	
+ usage:
+	stream->write_function(stream, "-USAGE: %s\n", LOCAL_STREAM_SYNTAX);
+	
   done:
 
 	switch_safe_free(mycmd);
@@ -1356,15 +1261,16 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_local_stream_load)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind event handler!\n");
 	}
 
-
-
-	SWITCH_ADD_API(commands_api_interface, "hup_local_stream", "Skip to next file in local_stream", hup_local_stream_function, RELOAD_LOCAL_STREAM_SYNTAX);
-	SWITCH_ADD_API(commands_api_interface, "reload_local_stream", "Reloads a local_stream", reload_local_stream_function, RELOAD_LOCAL_STREAM_SYNTAX);
-	SWITCH_ADD_API(commands_api_interface, "stop_local_stream", "Stops and unloads a local_stream", stop_local_stream_function, STOP_LOCAL_STREAM_SYNTAX);
-	SWITCH_ADD_API(commands_api_interface, "start_local_stream", "Starts a new local_stream", start_local_stream_function, START_LOCAL_STREAM_SYNTAX);
-	SWITCH_ADD_API(commands_api_interface, "show_local_stream", "Shows a local stream", show_local_stream_function, SHOW_LOCAL_STREAM_SYNTAX);
-
+	SWITCH_ADD_API(commands_api_interface, "local_stream", "manage local streams", local_stream_function, LOCAL_STREAM_SYNTAX);
+	//	switch_console_set_complete("add sofia profile ::sofia::list_profiles start");
+	switch_console_set_complete("add local_stream show ::console::list_streams as xml");
+	switch_console_set_complete("add local_stream start");
+	switch_console_set_complete("add local_stream reload ::console::list_streams");
+	switch_console_set_complete("add local_stream stop ::console::list_streams");
+	switch_console_set_complete("add local_stream hup ::console::list_streams");
+	switch_console_add_complete_func("::console::list_streams", list_streams);
 	/* indicate that the module should continue to be loaded */
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
