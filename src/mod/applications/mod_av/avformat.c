@@ -1097,7 +1097,7 @@ static void mod_avformat_destroy_output_context(av_file_context_t *context)
 static switch_status_t open_input_file(av_file_context_t *context, switch_file_handle_t *handle, const char *filename)
 {
 	AVCodec *audio_codec = NULL;
-	AVCodec *video_codec;
+	AVCodec *video_codec = NULL;
 	int error;
 	int i;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
