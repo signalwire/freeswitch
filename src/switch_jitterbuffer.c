@@ -1273,7 +1273,7 @@ SWITCH_DECLARE(switch_status_t) switch_jb_get_packet(switch_jb_t *jb, switch_rtp
 		ts = jb->last_target_ts;
 		
 		packet->header.seq = seq;
-		packet->header.ts = ts
+		packet->header.ts = ts;
 	}
 
 	switch_mutex_unlock(jb->mutex);
