@@ -309,11 +309,13 @@ build_debs () {
     fi
     cow () {
       if ! $use_custom_sources; then
+        echo "Using system sources $keyring $distro $custom_sources_file"
         cowbuilder "$@" \
           --distribution $distro \
           --architecture $arch \
           --basepath $cow_img
       else
+        echo "Using custom sources $keyring $distro $custom_sources_file"
         cowbuilder "$@" \
           --distribution $distro \
           --architecture $arch \
