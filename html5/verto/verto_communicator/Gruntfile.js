@@ -131,6 +131,7 @@ module.exports = function (grunt) {
             routes: {
               '/partials': 'src/partials',
               '/config.json': 'src/config.json',
+              '/contributors.txt': 'src/contributors.txt',
               '/bower_components': './bower_components',
               '/js/src': '../js/src',
               '/js': './js'
