@@ -103,8 +103,8 @@
       </div>
 
       <span class="chat-members-status pull-right">
-        <i class="in-use" ng-class="{'mdi-av-mic': !member.status.audio.muted, 'mdi-av-mic-off': member.status.audio.muted, 'mic_talking': member.status.audio.talking}"></i>
-        <i ng-class="{'mdi-av-videocam': !member.status.video.muted, 'mdi-av-videocam-off': member.status.video.muted, 'in-use': (member.status.video && !member.status.video.muted), 'disabled': !member.status.video}"></i>
+        <i ng-click="confMuteMic(member.id)" class="in-use" ng-class="{'clickable': verto.data.confRole == 'moderator', 'mdi-av-mic': !member.status.audio.muted, 'mdi-av-mic-off': member.status.audio.muted, 'mic_talking': member.status.audio.talking}"></i>
+        <i ng-click="confMuteVideo(member.id)" ng-class="{'clickable': verto.data.confRole == 'moderator', 'mdi-av-videocam': !member.status.video.muted, 'mdi-av-videocam-off': member.status.video.muted, 'in-use': (member.status.video && !member.status.video.muted), 'disabled': !member.status.video}"></i>
       </span>
     </div>
   </div>
