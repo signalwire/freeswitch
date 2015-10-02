@@ -1055,6 +1055,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_opus_load)
 
 	settings = default_codec_settings;
 
+	settings.usedtx = opus_prefs.use_dtx;
+
 	if (opus_prefs.maxaveragebitrate) {
 		settings.maxaveragebitrate = opus_prefs.maxaveragebitrate;
 	}
