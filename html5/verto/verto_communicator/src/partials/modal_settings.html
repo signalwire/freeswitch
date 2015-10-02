@@ -48,12 +48,6 @@
     </div>
     <div class="checkbox">
       <label>
-        <input type="checkbox" name="use_dedenc" ng-value="mydata.useDedenc" ng-model="mydata.useDedenc">
-        Use Dedicated Remote Encoder
-      </label>
-    </div>
-    <div class="checkbox">
-      <label>
         <input type="checkbox" name="mirror_input" ng-value="mydata.mirrorInput" ng-model="mydata.mirrorInput">
         Scale Remote Video To Match Camera Resolution
       </label>
@@ -95,11 +89,18 @@
             ng-model="mydata.vidQual"
             ng-options="item.id as item.label for item in verto.videoQuality"></select>
   </div>
+  
+  <input type="hidden" name="use_dedenc" ng-value="mydata.useDedenc" ng-model="mydata.useDedenc">
+
+  <div ng-show="mydata.useDedenc">
+    <b>Using Dedicated Remote Encoder</b>
+  </div>
 
   <div class="form-group">
     <label for="outgoing-bandwidth">Max outgoing bandwidth:</label>
     <select name="outgoing_bandwidth" id="outgoing-bandwidth" class="form-control"
             ng-model="mydata.outgoingBandwidth"
+	    ng-change="checkUseDedRemoteEncoder(mydata.outgoingBandwidth)"
             ng-options="item.id as item.label for item in verto.bandwidth"></select>
   </div>
 
@@ -107,6 +108,7 @@
     <label for="incoming-bandwidth">Max incoming bandwidth:</label>
     <select name="incoming_bandwidth" id="incoming-bandwidth" class="form-control"
             ng-model="mydata.incomingBandwidth"
+	    ng-change="checkUseDedRemoteEncoder(mydata.incomingBandwidth)"
             ng-options="item.id as item.label for item in verto.bandwidth"></select>
   </div>
 
