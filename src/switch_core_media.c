@@ -4434,7 +4434,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 			}
 
 			if (best_te) {
-				if (sdp_type == SDP_TYPE_REQUEST) {
+				if (sdp_type == SDP_TYPE_RESPONSE) {
 					te = smh->mparams->te = (switch_payload_t) best_te;
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Set 2833 dtmf send payload to %u\n", 
 									  switch_channel_get_name(session->channel), best_te);
