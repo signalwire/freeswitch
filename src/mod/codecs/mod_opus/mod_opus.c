@@ -390,7 +390,7 @@ static switch_status_t switch_opus_info(void * encoded_data, uint32_t len, uint3
 
 	if ((nb_opus_frames = opus_packet_parse(encoded_data, len, NULL, frame_data, frame_sizes, NULL)) < 0 ) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s: OPUS_INVALID_PACKET ! frames: %d\n", print_text, nb_opus_frames);
-		return SWITCH_FALSE;
+		return SWITCH_STATUS_FALSE;
 	}
 
 	nb_samples = opus_packet_get_samples_per_frame(encoded_data, samples_per_second) * nb_opus_frames;
