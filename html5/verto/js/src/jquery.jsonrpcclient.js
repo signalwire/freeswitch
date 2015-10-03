@@ -97,8 +97,21 @@
 	if (socket !== null) {
 	    this.speedCB = cb;
 	    this.speedBytes = bytes;
-	    socket.send("#SPU");
-	    socket.send("#SPB\n" + new Array(bytes).join("."));
+	    socket.send("#SPU " + bytes);
+
+	    var loops = bytes / 1024;
+	    var rem = bytes % 1024;
+	    var i;
+	    var data = new Array(1024).join(".");
+	    for (i = 0; i < loops; i++) {
+		socket.send("#SPB " + data);
+	    }
+	    
+	    if (rem) {
+		socket.send("#SPB " + data);
+	    }
+
+	    socket.send("#SPE");
 	}
     };
 

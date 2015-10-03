@@ -1856,30 +1856,49 @@ static void client_run(jsock_t *jsock)
 				char *s = (char *) data;
 
 				if (*s == '#') {
-					char repl[80] = "", *s = (char *) data;
+					char repl[2048] = "";
 					switch_time_t a, b;
-
+					
 					if (s[1] == 'S' && s[2] == 'P') {
 
 						if (s[3] == 'U') {
+							int i, size = 0;
+							char *p = s+4;
+							int loops = 0;
+							int rem = 0;
 
+							if (!(size = atoi(p))) {
+								continue;
+							}
+							
 							a = switch_time_now();
-							bytes = ws_read_frame(&jsock->ws, &oc, &data);
+							do {
+								bytes = ws_read_frame(&jsock->ws, &oc, &data);
+								s = (char *) data;
+							} while (bytes && data && s[0] == '#' && s[3] == 'B');
 							b = switch_time_now();
 
 							if (!bytes || !data) continue;
 					
+							if (s[0] != '#') goto nm;
+
 							switch_snprintf(repl, sizeof(repl), "#SPU %ld", (b - a) / 1000);
 							ws_write_frame(&jsock->ws, WSOC_TEXT, repl, strlen(repl));
 
-
-							s = (char *) data;
-							s[3] = 'B';
+							loops = size / 1024;
+							rem = size % 1024;
+							switch_snprintf(repl, sizeof(repl), "#SPB ");
+							memset(repl+4, '.', 1024);
 							a = switch_time_now();
-							ws_write_frame(&jsock->ws, WSOC_TEXT, data, bytes);
+							for (i = 0; i < loops; i++) {
+								ws_write_frame(&jsock->ws, WSOC_TEXT, repl, 1024);
+							}
+							if (rem) {
+								ws_write_frame(&jsock->ws, WSOC_TEXT, repl, rem);
+							}
 							b = switch_time_now();
 
-							switch_snprintf(repl, sizeof(repl), "#SPD %ld", (b - a) / 1000);
+							switch_snprintf(repl, sizeof(repl), "#SPD %ld", ((b - a) / 1000) - 200);
 							ws_write_frame(&jsock->ws, WSOC_TEXT, repl, strlen(repl));
 						}
 					}
@@ -1887,6 +1906,7 @@ static void client_run(jsock_t *jsock)
 					continue;
 				}
 
+			nm:
 
 				if (process_input(jsock, data, bytes) != SWITCH_STATUS_SUCCESS) {
 					die("Input Error\n");

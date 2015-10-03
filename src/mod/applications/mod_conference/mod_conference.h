@@ -761,6 +761,7 @@ struct conference_member {
 	switch_image_t *pcanvas_img;
 	int max_bw_in;
 	int force_bw_in;
+	int max_bw_out;
 };
 
 typedef enum {

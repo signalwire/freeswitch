@@ -561,17 +561,30 @@ var callbacks = {
         if (success) {
 	    vertoHandle.rpcClient.speedTest(1024 * 256, function(e, obj) {
 		//console.error("Up: " + obj.upKPS, "Down: ", obj.downKPS);
-		
+		var vid = "default";
 		if (outgoingBandwidth === "default") {
-		    outgoingBandwidth = obj.upKPS * .75;
+		    outgoingBandwidth = Math.ceil(obj.upKPS * .75).toString();
+		    
+		    $("#vqual_hd").prop("checked", true);
+		    vid = "1280x720";
+
+		    if (outgoingBandwidth < 1024) {
+			$("#vqual_vga").prop("checked", true);
+			vid = "640x480";
+		    }
+		    if (outgoingBandwidth < 512) {
+			$("#vqual_qvga").prop("checked", true);
+			vid = "320x240";
+		    }
 		}
+
 		if (incomingBandwidth === "default") {
-		    incomingBandwidth = obj.downKPS * .75;
+		    incomingBandwidth = Math.ceil(obj.downKPS * .75).toString();
 		}
 
-		//console.error(outgoingBandwidth, incomingBandwidth);
+		console.info(outgoingBandwidth, incomingBandwidth);
 
-		$("#bwinfo").html("<b>Bandwidth: " + "Up: " + obj.upKPS + " Down: " + obj.downKPS + "</b>");
+		$("#bwinfo").html("<b>Bandwidth: " + "Up: " + obj.upKPS + " Down: " + obj.downKPS + " Vid: " + vid + "</b>");
 		online(true);
 		goto_page("main");
 		$("input[type='radio']").checkboxradio("refresh");
@@ -782,7 +795,7 @@ function docall() {
     $("#main_info").html("Trying");
 
     check_vid_res();
-
+    console.error(outgoingBandwidth, incomingBandwidth);
     cur_call = vertoHandle.newCall({
         destination_number: $("#ext").val(),
         caller_id_name: $("#cidname").val(),
