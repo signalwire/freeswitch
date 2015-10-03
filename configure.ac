@@ -834,6 +834,12 @@ AC_HEADER_DIRENT
 AC_HEADER_STDC
 AC_CHECK_HEADERS([sys/types.h sys/resource.h sched.h wchar.h sys/filio.h sys/ioctl.h sys/prctl.h sys/select.h netdb.h execinfo.h sys/time.h])
 
+# Solaris 11 privilege management
+AS_CASE([$host],
+  [*-*-solaris2.11], [AC_CHECK_HEADER([priv.h], [AC_DEFINE([SOLARIS_PRIVILEGES],[1],[Solaris 11 privilege management])])]
+)
+
+
 if test x"$ac_cv_header_wchar_h" = xyes; then
   HAVE_WCHAR_H_DEFINE=1
 else

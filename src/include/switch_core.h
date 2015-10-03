@@ -2243,6 +2243,12 @@ SWITCH_DECLARE(switch_core_flag_t) switch_core_flags(void);
 */
 SWITCH_DECLARE(switch_status_t) switch_core_management_exec(char *relative_oid, switch_management_action_t action, char *data, switch_size_t datalen);
 
+/*! 
+  \brief Switch on the privilege awareness for the process and request required privileges
+  \return 0 on success
+*/
+								
+SWITCH_DECLARE(int32_t) switch_core_set_process_privileges(void);
 
 /*! 
   \brief Set the maximum priority the process can obtain
