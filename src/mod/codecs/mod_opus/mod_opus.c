@@ -107,6 +107,7 @@ struct {
 	int plpct;
 	int asymmetric_samplerates;
 	int keep_fec;
+	int fec_decode;
 	int debuginfo;
 	uint32_t use_jb_lookahead;
 	switch_mutex_t *mutex;
@@ -224,9 +225,7 @@ static char *gen_fmtp(opus_codec_settings_t *settings, switch_memory_pool_t *poo
 {
 	char buf[256] = { 0 };
 
-	if (settings->useinbandfec) {
-		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "useinbandfec=1; ");
-	}
+	snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "useinbandfec=%d; ", settings->useinbandfec);
 
 	if (settings->usedtx) {
 		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "usedtx=1; ");
@@ -487,6 +486,8 @@ static switch_status_t switch_opus_init(switch_codec_t *codec, switch_codec_flag
 	} else {
 		opus_codec_settings.sprop_maxcapturerate = opus_codec_settings_remote.sprop_maxcapturerate;
 	}
+
+	opus_codec_settings.useinbandfec = opus_prefs.fec_decode;
 
 	opus_codec_settings.cbr = !opus_prefs.use_vbr;
 
@@ -919,6 +920,7 @@ static switch_status_t opus_load_config(switch_bool_t reload)
 	opus_prefs.use_dtx = 1;
 	opus_prefs.plpct = 20;
 	opus_prefs.use_vbr = 1;
+	opus_prefs.fec_decode = 1;
 
 	if ((settings = switch_xml_child(cfg, "settings"))) {
 		for (param = switch_xml_child(settings, "param"); param; param = param->next) {
@@ -937,8 +939,10 @@ static switch_status_t opus_load_config(switch_bool_t reload)
 				opus_prefs.asymmetric_samplerates = atoi(val);
 			} else if (!strcasecmp(key, "use-jb-lookahead")) {
 				opus_prefs.use_jb_lookahead = switch_true(val);
-			} else if (!strcasecmp(key, "keep-fec-enabled")) {
+			} else if (!strcasecmp(key, "keep-fec-enabled")) { /* encoder */
 				opus_prefs.keep_fec = atoi(val);
+			} else if (!strcasecmp(key, "advertise_useinbandfec")) { /*decoder, has meaning only for FMTP: useinbandfec=1 by default */
+				opus_prefs.fec_decode = atoi(val);
 			} else if (!strcasecmp(key, "maxaveragebitrate")) {
 				opus_prefs.maxaveragebitrate = atoi(val);
 				if (opus_prefs.maxaveragebitrate < 6000 || opus_prefs.maxaveragebitrate > 510000) {
@@ -1164,6 +1168,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_opus_load)
 
 	settings = default_codec_settings;
 
+	settings.useinbandfec = opus_prefs.fec_decode;
+
+	settings.cbr = !opus_prefs.use_vbr;
+
 	settings.usedtx = opus_prefs.use_dtx;
 
 	if (opus_prefs.maxaveragebitrate) {
@@ -1239,6 +1247,12 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_opus_load)
 	rate = 8000;
 
 	settings = default_codec_settings_8k;
+
+	settings.useinbandfec = opus_prefs.fec_decode;
+
+	settings.cbr = !opus_prefs.use_vbr;
+
+	settings.usedtx = opus_prefs.use_dtx;
 
 	if (opus_prefs.maxaveragebitrate) {
 		settings.maxaveragebitrate = opus_prefs.maxaveragebitrate;
