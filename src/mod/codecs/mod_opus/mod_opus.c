@@ -281,6 +281,7 @@ static switch_bool_t switch_opus_has_fec(const uint8_t* payload,int payload_leng
 	int nb_silk_frames, nb_opus_frames, n, i; 
 	opus_int16 frame_sizes[48];
 	const unsigned char *frame_data[48];
+	int frames;
 
 	if (payload == NULL || payload_length_bytes <= 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "corrupted packet (invalid size)\n");
@@ -317,6 +318,22 @@ static switch_bool_t switch_opus_has_fec(const uint8_t* payload,int payload_leng
 					return SWITCH_TRUE; /* one of the silk frames has FEC */ 
 				}
 			}
+		}
+	}
+
+	frames = opus_packet_parse(payload, payload_length_bytes, NULL, frame_data, frame_sizes, NULL);
+	
+	if (frames < 0) {
+		return SWITCH_FALSE;
+	}
+	
+	if (frame_sizes[0] <= 1) {
+		return SWITCH_FALSE;
+	}
+	
+	for (n = 0; n <= (payload[0]&0x4);n++) {
+		if (frame_data[0][0] & (0x80 >> ((n + 1) * (frames + 1) - 1))) {
+			return SWITCH_TRUE; /*this works only for 20 ms frames now, it will return VAD for 40 ms or 60 ms*/
 		}
 	}
 
