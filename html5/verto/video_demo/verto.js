@@ -559,8 +559,25 @@ var callbacks = {
 	ringing = false;
 
         if (success) {
-            online(true);
+	    vertoHandle.rpcClient.speedTest(1024 * 256, function(e, obj) {
+		//console.error("Up: " + obj.upKPS, "Down: ", obj.downKPS);
+		
+		if (outgoingBandwidth === "default") {
+		    outgoingBandwidth = obj.upKPS * .75;
+		}
+		if (incomingBandwidth === "default") {
+		    incomingBandwidth = obj.downKPS * .75;
+		}
 
+		//console.error(outgoingBandwidth, incomingBandwidth);
+
+		$("#bwinfo").html("<b>Bandwidth: " + "Up: " + obj.upKPS + " Down: " + obj.downKPS + "</b>");
+		online(true);
+		goto_page("main");
+		$("input[type='radio']").checkboxradio("refresh");
+		$("input[type='checkbox']").checkboxradio("refresh");
+	    });
+	    
 	    /*
             verto.subscribe("presence", {
                 handler: function(v, e) {
@@ -993,8 +1010,10 @@ function refresh_devices()
     $("#useshare").selectmenu('refresh', true);
 
     //$("input[type='radio']).checkboxradio({});
-    $("input[type='radio']").checkboxradio("refresh");
-    $("input[type='checkbox']").checkboxradio("refresh");
+
+
+    //$("input[type='radio']").checkboxradio("refresh");
+    //$("input[type='checkbox']").checkboxradio("refresh");
 
     //console.error($("#usecamera").find(":selected").val());
     //$.FSRTC.getValidRes($("#usecamera").find(":selected").val(), undefined);
@@ -1021,7 +1040,7 @@ function refresh_devices()
 
 function init() {
     cur_call = null;
-    goto_page("main");
+    goto_page("bwtest");
 
     $("#usecamera").selectmenu({});
     $("#usemic").selectmenu({});

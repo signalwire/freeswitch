@@ -657,6 +657,8 @@ typedef struct conference_obj {
 	int recording_members;
 	uint32_t video_floor_packets;
 	video_layout_t *new_personal_vlayout;
+	int max_bw_in;
+	int force_bw_in;
 } conference_obj_t;
 
 /* Relationship with another member */
@@ -757,6 +759,8 @@ struct conference_member {
 	switch_media_flow_t video_media_flow;
 	mcu_canvas_t *canvas;
 	switch_image_t *pcanvas_img;
+	int max_bw_in;
+	int force_bw_in;
 };
 
 typedef enum {

@@ -1844,15 +1844,50 @@ static void client_run(jsock_t *jsock)
 			switch_ssize_t bytes;
 			ws_opcode_t oc;
 			uint8_t *data;
-
+			
 			bytes = ws_read_frame(&jsock->ws, &oc, &data);
-	
+			
 			if (bytes < 0) {
 				die("BAD READ %" SWITCH_SSIZE_T_FMT "\n", bytes);
 				break;
 			}
 
 			if (bytes) {
+				char *s = (char *) data;
+
+				if (*s == '#') {
+					char repl[80] = "", *s = (char *) data;
+					switch_time_t a, b;
+
+					if (s[1] == 'S' && s[2] == 'P') {
+
+						if (s[3] == 'U') {
+
+							a = switch_time_now();
+							bytes = ws_read_frame(&jsock->ws, &oc, &data);
+							b = switch_time_now();
+
+							if (!bytes || !data) continue;
+					
+							switch_snprintf(repl, sizeof(repl), "#SPU %ld", (b - a) / 1000);
+							ws_write_frame(&jsock->ws, WSOC_TEXT, repl, strlen(repl));
+
+
+							s = (char *) data;
+							s[3] = 'B';
+							a = switch_time_now();
+							ws_write_frame(&jsock->ws, WSOC_TEXT, data, bytes);
+							b = switch_time_now();
+
+							switch_snprintf(repl, sizeof(repl), "#SPD %ld", (b - a) / 1000);
+							ws_write_frame(&jsock->ws, WSOC_TEXT, repl, strlen(repl));
+						}
+					}
+
+					continue;
+				}
+
+
 				if (process_input(jsock, data, bytes) != SWITCH_STATUS_SUCCESS) {
 					die("Input Error\n");
 				}

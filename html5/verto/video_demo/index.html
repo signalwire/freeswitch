@@ -91,7 +91,7 @@ div#preload { display: none; }
   <body>
     <div data-role="page" id="page-login" align="center">
       <div data-role="header" class="page-header">
-	FreeSWITCH Verto&trade; Video Transcoding Demo
+	FreeSWITCH Verto&trade; Video Transcoding Demo 
       </div>
 
     </div>
@@ -104,6 +104,18 @@ div#preload { display: none; }
       <div id="search" hidden="true">
 	<img src="images/search.gif"/>
 	</div>
+
+    </div>
+
+
+    <div data-role="page" id="page-bwtest" align="center">
+      <div data-role="header" class="page-header">
+	FreeSWITCH Verto&trade; Testing Network Connection
+      </div>
+
+      <h1>Testing Network Connection</h1>
+      	<img src="images/speed.gif"/>
+
 
     </div>
 
@@ -248,7 +260,7 @@ div#preload { display: none; }
 	
 	<div data-role="page" id="page-main" align="center">
 	<div data-role="header" class="pageheader">
-	  FreeSWITCH Verto&trade; Video Transcoding Demo
+	  FreeSWITCH Verto&trade; Video Transcoding Demo (<span id="bwinfo">*checking*</span>)
 	</div>
 	<br>
 <center>	<table width="1024" border="0">
@@ -347,7 +359,6 @@ if ($('#devices').is(':visible')) {
 }
 
 </script>
-
 <!--<button data-inline="true" id="showdemo" onclick="toggle_demo();">View Demo Extensions</button>-->
 <button data-inline="true" id="showdevices" onclick="toggle_device();">View Device Settings</button>
 <button data-inline="true"id="logoutbtn">Log Out</button>
