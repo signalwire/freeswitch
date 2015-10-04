@@ -7,6 +7,15 @@
     <action application="conference" data="6070@video-mcu-stereo"/>  
   </condition>
 </extension>
+<extension name="cdquality_stereo_conferences">
+  <condition field="destination_number" expression="^(6070).*?-screen$">
+    <action application="answer"/>
+    <action application="send_display" data="FreeSWITCH Conference|$1"/>
+    <action application="set" data="conference_member_flags=join-vid-floor"/>
+    <action application="conference" data="$1@video-mcu-stereo"/>
+  </condition>
+</extension>
+
 
 <extension name="conf">
   <condition field="destination_number" expression="^6070-moderator$">
