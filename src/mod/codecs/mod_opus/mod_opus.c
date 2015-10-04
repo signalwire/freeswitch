@@ -949,9 +949,9 @@ static switch_status_t opus_load_config(switch_bool_t reload)
 	memset(&opus_prefs, 0, sizeof(opus_prefs));
 	opus_prefs.use_jb_lookahead = 1;
 	opus_prefs.keep_fec = 1;
-	opus_prefs.use_dtx = 1;
+	opus_prefs.use_dtx = 0;
 	opus_prefs.plpct = 20;
-	opus_prefs.use_vbr = 1;
+	opus_prefs.use_vbr = 0;
 	opus_prefs.fec_decode = 1;
 
 	if ((settings = switch_xml_child(cfg, "settings"))) {

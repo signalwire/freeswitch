@@ -80,7 +80,7 @@ static const switch_payload_t INVALID_PT = 255;
 static switch_port_t START_PORT = RTP_START_PORT;
 static switch_port_t END_PORT = RTP_END_PORT;
 static switch_mutex_t *port_lock = NULL;
-static void do_flush(switch_rtp_t *rtp_session, int force);
+static switch_size_t do_flush(switch_rtp_t *rtp_session, int force, switch_size_t bytes_in);
 
 typedef srtp_hdr_t rtp_hdr_t;
 
@@ -434,6 +434,7 @@ struct switch_rtp {
 	switch_core_session_t *session;
 	payload_map_t **pmaps;
 	payload_map_t *pmap_tail;
+	int ice_adj;
 #ifdef ENABLE_ZRTP
 	zrtp_session_t *zrtp_session;
 	zrtp_profile_t *zrtp_profile;
@@ -1184,9 +1185,12 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 				ice->last_ok = now;
 				rtp_session->wrong_addrs = 0;
 			} else {
-				if (((rtp_session->dtls && rtp_session->dtls->state != DS_READY) || !ice->ready || !ice->rready) && rtp_session->wrong_addrs > 2) {
+				if (((rtp_session->dtls && rtp_session->dtls->state != DS_READY) || !ice->ready || !ice->rready) &&
+					rtp_session->wrong_addrs > 2 && rtp_session->ice_adj == 0) {
 					do_adj++;
-				} else if (rtp_session->wrong_addrs > 5 || elapsed >= 3000) {
+					rtp_session->ice_adj = 1;
+					rtp_session->wrong_addrs = 0;
+				} else if (rtp_session->wrong_addrs > 10 || elapsed >= 10000) {
 					do_adj++;
 				}
 
@@ -2715,7 +2719,8 @@ SWITCH_DECLARE(void) switch_rtp_reset(switch_rtp_t *rtp_session)
 	rtp_session->wrong_addrs = 0;
 	rtp_session->rtcp_sent_packets = 0;
 	rtp_session->rtcp_last_sent = 0;
-
+	rtp_session->ice_adj = 0;
+	
 	//switch_rtp_del_dtls(rtp_session, DTLS_TYPE_RTP|DTLS_TYPE_RTCP);
 	switch_rtp_set_flag(rtp_session, SWITCH_RTP_FLAG_PAUSE);
 	switch_rtp_set_flag(rtp_session, SWITCH_RTP_FLAG_MUTE);
@@ -4846,14 +4851,14 @@ static int jb_valid(switch_rtp_t *rtp_session)
 }
 
 
-static void do_flush(switch_rtp_t *rtp_session, int force)
+static switch_size_t do_flush(switch_rtp_t *rtp_session, int force, switch_size_t bytes_in)
 {
 	int was_blocking = 0;
 	switch_size_t bytes;
 	uint32_t flushed = 0;
 
 	if (!switch_rtp_ready(rtp_session)) {
-		return;
+		return 0;
 	}
 
 	reset_jitter_seq(rtp_session);
@@ -4863,7 +4868,7 @@ static void do_flush(switch_rtp_t *rtp_session, int force)
 			rtp_session->flags[SWITCH_RTP_FLAG_UDPTL] ||
 			rtp_session->flags[SWITCH_RTP_FLAG_DTMF_ON]
 			) {
-			return;
+			return 0;
 		}
 	}
 	
@@ -4872,7 +4877,8 @@ static void do_flush(switch_rtp_t *rtp_session, int force)
 	if (switch_rtp_ready(rtp_session) ) {
 
 		if (rtp_session->jb && !rtp_session->pause_jb && jb_valid(rtp_session)) {
-			switch_jb_reset(rtp_session->jb);
+			//switch_jb_reset(rtp_session->jb);
+			return bytes_in;
 		}
 
 		//if (rtp_session->vb) {
@@ -4881,6 +4887,7 @@ static void do_flush(switch_rtp_t *rtp_session, int force)
 
 		if (rtp_session->vbw) {
 			switch_jb_reset(rtp_session->vbw);
+			//return bytes_in;
 		}
 		
 		if (rtp_session->flags[SWITCH_RTP_FLAG_DEBUG_RTP_READ]) {
@@ -4937,6 +4944,8 @@ static void do_flush(switch_rtp_t *rtp_session, int force)
 	}
 	
 	READ_DEC(rtp_session);
+
+	return 0;
 }
 
 static int check_recv_payload(switch_rtp_t *rtp_session)
@@ -4975,10 +4984,39 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 	int sync = 0;
 	switch_time_t now;
 	switch_size_t xcheck_jitter = 0;
-
+	int tries = 0;
+	int block = 0;
+	
 	switch_assert(bytes);
  more:
 
+	tries++;
+
+	if (tries > 20) {
+		return SWITCH_STATUS_BREAK;
+	}
+		
+	if (block) {
+		int to = 20000;
+		int fdr = 0;
+
+		if (rtp_session->flags[SWITCH_RTP_FLAG_VIDEO]) {
+			to = 100000;
+		} else {
+			if (rtp_session->flags[SWITCH_RTP_FLAG_USE_TIMER] && rtp_session->timer.interval) {
+				to = rtp_session->timer.interval * 1000;
+			}
+		}
+
+		switch_poll(rtp_session->read_pollfd, 1, &fdr, to);
+		
+		if (rtp_session->flags[SWITCH_RTP_FLAG_USE_TIMER] && rtp_session->timer.interval) {
+			switch_core_timer_sync(&rtp_session->timer);
+		}
+		
+		block = 0;
+	}
+	
 	*bytes = sizeof(rtp_msg_t);
 	sync = 0;
 
@@ -5413,7 +5451,12 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 	if (rtp_session->recv_msg.header.version == 2 && *bytes) {
 
 		if (rtp_session->vb && jb_valid(rtp_session)) {
-			switch_jb_put_packet(rtp_session->vb, (switch_rtp_packet_t *) &rtp_session->recv_msg, *bytes);			
+			status = switch_jb_put_packet(rtp_session->vb, (switch_rtp_packet_t *) &rtp_session->recv_msg, *bytes);			
+
+			if (status == SWITCH_STATUS_TOO_LATE) {
+				goto more;
+			}
+			
 			status = SWITCH_STATUS_FALSE;
 			*bytes = 0;
 
@@ -5439,8 +5482,12 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 				reset_jitter_seq(rtp_session);
 			}
 
-			switch_jb_put_packet(rtp_session->jb, (switch_rtp_packet_t *) &rtp_session->recv_msg, *bytes);
+			status = switch_jb_put_packet(rtp_session->jb, (switch_rtp_packet_t *) &rtp_session->recv_msg, *bytes);
+			if (status == SWITCH_STATUS_TOO_LATE) {
+				goto more;
+			}
 
+			
 			status = SWITCH_STATUS_FALSE;
 			*bytes = 0;
 
@@ -5459,8 +5506,8 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 
 			switch(jstatus) {
 			case SWITCH_STATUS_MORE_DATA:
-				status = SWITCH_STATUS_BREAK;
-				break;
+				block = 1;
+				goto more;
 			case SWITCH_STATUS_NOTFOUND:
 				{
 					(*flags) |= SFF_PLC;
@@ -6351,8 +6398,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		check = !bytes;
 
 		if (rtp_session->flags[SWITCH_RTP_FLAG_FLUSH]) {
-			do_flush(rtp_session, SWITCH_FALSE);
-			bytes = 0;
+			bytes = do_flush(rtp_session, SWITCH_FALSE, bytes);
 			switch_rtp_clear_flag(rtp_session, SWITCH_RTP_FLAG_FLUSH);
 		}
 		
