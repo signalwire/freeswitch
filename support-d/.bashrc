@@ -5,6 +5,9 @@ export UNAME=`uname -s`
 
 if [ "`id -u`" = "0" ]; then
     if [ "${UNAME}" = "Linux" ]; then
+	if [ -d /usr/lib/ccache ]; then
+	    export PATH="/usr/lib/ccache:$PATH"
+	fi
 	export PATH="$PATH:/opt/bin:/usr/local/bin:/usr/local/sbin:/usr/local/freeswitch/bin"
 	if [ -d /usr/src/freeswitch.git/support-d/utils ]; then
 	    export PATH="/usr/src/freeswitch.git/support-d/utils:$PATH"
