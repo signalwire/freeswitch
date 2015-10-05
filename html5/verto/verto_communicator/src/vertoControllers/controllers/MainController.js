@@ -128,12 +128,16 @@
         );
       };
 
-      $rootScope.openModal = function(templateUrl, controller) {
-        var modalInstance = $modal.open({
+      $rootScope.openModal = function(templateUrl, controller, _options) {
+        var options = {
           animation: $scope.animationsEnabled,
           templateUrl: templateUrl,
           controller: controller,
-        });
+        };
+        
+        angular.extend(options, _options);
+
+        var modalInstance = $modal.open(options);
 
         modalInstance.result.then(
           function(result) {
@@ -149,7 +153,33 @@
             jQuery.material.init();
           }
         );
+        
+        return modalInstance;
+      };
 
+      $rootScope.$on('ws.close', onWSClose);
+      $rootScope.$on('ws.login', onWSLogin);
+
+      var ws_modalInstance;
+
+      function onWSClose(ev, data) {
+        if(ws_modalInstance) {
+          return;
+        };
+        var options = {
+          backdrop: 'static',
+          keyboard: false
+        };
+        ws_modalInstance = $scope.openModal('partials/ws_reconnect.html', 'ModalWsReconnectController', options);
+      };
+
+      function onWSLogin(ev, data) {
+        if(!ws_modalInstance) {
+          return;
+        };
+
+        ws_modalInstance.close();
+        ws_modalInstance = null;
       };
 
       $scope.showAbout = function() {

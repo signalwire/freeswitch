@@ -449,6 +449,7 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
         var callbacks = {
           onWSLogin: function(v, success) {
             data.connected = success;
+            $rootScope.$emit('ws.login', success);
             console.debug('Connected to verto server:', success);
 
             if (angular.isFunction(callback)) {
@@ -539,6 +540,8 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
 
           onWSClose: function(v, success) {
             console.debug('onWSClose:', success);
+
+            $rootScope.$emit('ws.close', success);
           },
 
           onEvent: function(v, e) {
