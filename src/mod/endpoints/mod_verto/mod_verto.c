@@ -1866,6 +1866,7 @@ static void client_run(jsock_t *jsock)
 							char *p = s+4;
 							int loops = 0;
 							int rem = 0;
+							int dur = 0, j = 0;
 
 							if (!(size = atoi(p))) {
 								continue;
@@ -1884,21 +1885,29 @@ static void client_run(jsock_t *jsock)
 
 							switch_snprintf(repl, sizeof(repl), "#SPU %ld", (b - a) / 1000);
 							ws_write_frame(&jsock->ws, WSOC_TEXT, repl, strlen(repl));
-
 							loops = size / 1024;
 							rem = size % 1024;
 							switch_snprintf(repl, sizeof(repl), "#SPB ");
 							memset(repl+4, '.', 1024);
-							a = switch_time_now();
-							for (i = 0; i < loops; i++) {
-								ws_write_frame(&jsock->ws, WSOC_TEXT, repl, 1024);
-							}
-							if (rem) {
-								ws_write_frame(&jsock->ws, WSOC_TEXT, repl, rem);
-							}
-							b = switch_time_now();
 
-							switch_snprintf(repl, sizeof(repl), "#SPD %ld", ((b - a) / 1000) - 200);
+							for (j = 0; j < 10 ; j++) {
+								int ddur = 0;
+								a = switch_time_now();
+								for (i = 0; i < loops; i++) {
+									ws_write_frame(&jsock->ws, WSOC_TEXT, repl, 1024);
+								}
+								if (rem) {
+									ws_write_frame(&jsock->ws, WSOC_TEXT, repl, rem);
+								}
+								b = switch_time_now();
+								ddur += ((b - a) / 1000);
+								dur += ddur;
+
+							}
+
+							dur /= j+1;
+
+							switch_snprintf(repl, sizeof(repl), "#SPD %d", dur);
 							ws_write_frame(&jsock->ws, WSOC_TEXT, repl, strlen(repl));
 						}
 					}

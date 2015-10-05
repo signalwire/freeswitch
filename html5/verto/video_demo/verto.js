@@ -197,7 +197,46 @@ function check_vid() {
     return use_vid;
 }
 
-// Attach audio output device to video element using device/sink ID.                                                                                            
+function do_speed_test(fn)
+{
+    goto_page("bwtest");
+
+    vertoHandle.rpcClient.speedTest(1024 * 256, function(e, obj) {
+	//console.error("Up: " + obj.upKPS, "Down: ", obj.downKPS);
+	var vid = "default";
+	if (outgoingBandwidth === "default") {
+	    outgoingBandwidth = Math.ceil(obj.upKPS * .75).toString();
+	    
+	    $("#vqual_hd").prop("checked", true);
+	    vid = "1280x720";
+
+	    if (outgoingBandwidth < 1024) {
+		$("#vqual_vga").prop("checked", true);
+		vid = "640x480";
+	    }
+	    if (outgoingBandwidth < 512) {
+		$("#vqual_qvga").prop("checked", true);
+		vid = "320x240";
+	    }
+	}
+
+	if (incomingBandwidth === "default") {
+	    incomingBandwidth = Math.ceil(obj.downKPS * .75).toString();
+	}
+
+	console.info(outgoingBandwidth, incomingBandwidth);
+
+	$("#bwinfo").html("<b>Bandwidth: " + "Up: " + obj.upKPS + " Down: " + obj.downKPS + " Vid: " + vid + "</b>");
+
+	if (fn) {
+	    fn();
+	}
+    });
+}
+
+
+// Attach audio output device to video element using device/sink ID.                                                                                           
+ 
 function attachSinkId(element, sinkId) {
     if (typeof element.sinkId !== 'undefined') {
 	element.setSinkId(sinkId)
@@ -559,54 +598,34 @@ var callbacks = {
 	ringing = false;
 
         if (success) {
-	    vertoHandle.rpcClient.speedTest(1024 * 256, function(e, obj) {
-		//console.error("Up: " + obj.upKPS, "Down: ", obj.downKPS);
-		var vid = "default";
-		if (outgoingBandwidth === "default") {
-		    outgoingBandwidth = Math.ceil(obj.upKPS * .75).toString();
-		    
-		    $("#vqual_hd").prop("checked", true);
-		    vid = "1280x720";
 
-		    if (outgoingBandwidth < 1024) {
-			$("#vqual_vga").prop("checked", true);
-			vid = "640x480";
-		    }
-		    if (outgoingBandwidth < 512) {
-			$("#vqual_qvga").prop("checked", true);
-			vid = "320x240";
-		    }
-		}
-
-		if (incomingBandwidth === "default") {
-		    incomingBandwidth = Math.ceil(obj.downKPS * .75).toString();
-		}
-
-		console.info(outgoingBandwidth, incomingBandwidth);
-
-		$("#bwinfo").html("<b>Bandwidth: " + "Up: " + obj.upKPS + " Down: " + obj.downKPS + " Vid: " + vid + "</b>");
+	    do_speed_test(function() {
+		
 		online(true);
 		goto_page("main");
+
 		$("input[type='radio']").checkboxradio("refresh");
 		$("input[type='checkbox']").checkboxradio("refresh");
+
+
+		/*
+		  verto.subscribe("presence", {
+                  handler: function(v, e) {
+                  console.error("PRESENCE:", e);
+                  }
+		  });
+		*/
+		
+		if (!window.location.hash) {
+                    goto_page("main");
+		}
+		
+		if (autocall) {
+		    autocall = false;
+		    docall();
+		}
 	    });
-	    
-	    /*
-            verto.subscribe("presence", {
-                handler: function(v, e) {
-                    console.error("PRESENCE:", e);
-                }
-		});
-	    */
 
-            if (!window.location.hash) {
-                goto_page("main");
-            }
-
-	    if (autocall) {
-		autocall = false;
-		docall();
-	    }
         } else {
             goto_page("main");
             goto_dialog("login-error");
@@ -1509,6 +1528,13 @@ function init() {
     $("#logoutbtn").click(function() {
         vertoHandle.logout();
         online(false);
+	$("#errordisplay").html("");
+    });
+
+    $("#speedbtn").click(function() {
+	do_speed_test(function() {
+	    goto_page("main");
+	});
 	$("#errordisplay").html("");
     });
 
