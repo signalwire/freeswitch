@@ -4856,7 +4856,8 @@ static switch_size_t do_flush(switch_rtp_t *rtp_session, int force, switch_size_
 	int was_blocking = 0;
 	switch_size_t bytes;
 	uint32_t flushed = 0;
-
+	switch_size_t bytes_out = 0;
+	
 	if (!switch_rtp_ready(rtp_session)) {
 		return 0;
 	}
@@ -4878,16 +4879,18 @@ static switch_size_t do_flush(switch_rtp_t *rtp_session, int force, switch_size_
 
 		if (rtp_session->jb && !rtp_session->pause_jb && jb_valid(rtp_session)) {
 			//switch_jb_reset(rtp_session->jb);
-			return bytes_in;
+			bytes_out = bytes_in;
+			goto end;
 		}
-
-		//if (rtp_session->vb) {
-		//	switch_jb_reset(rtp_session->vb);
-		//}
 
 		if (rtp_session->vbw) {
 			switch_jb_reset(rtp_session->vbw);
-			//return bytes_in;
+		}
+
+		if (rtp_session->vb) {
+			//switch_jb_reset(rtp_session->vb);
+			bytes_out = bytes_in;
+            goto end;
 		}
 		
 		if (rtp_session->flags[SWITCH_RTP_FLAG_DEBUG_RTP_READ]) {
@@ -4942,10 +4945,12 @@ static switch_size_t do_flush(switch_rtp_t *rtp_session, int force, switch_size_
 			switch_core_session_request_video_refresh(rtp_session->session);
 		}
 	}
+
+ end:
 	
 	READ_DEC(rtp_session);
 
-	return 0;
+	return bytes_out;
 }
 
 static int check_recv_payload(switch_rtp_t *rtp_session)
