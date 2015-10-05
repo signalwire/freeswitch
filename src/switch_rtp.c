@@ -5012,8 +5012,8 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 				to = rtp_session->timer.interval * 1000;
 			}
 		}
-
-		switch_poll(rtp_session->read_pollfd, 1, &fdr, to);
+		
+		poll_status = switch_poll(rtp_session->read_pollfd, 1, &fdr, to);
 		
 		if (rtp_session->flags[SWITCH_RTP_FLAG_USE_TIMER] && rtp_session->timer.interval) {
 			switch_core_timer_sync(&rtp_session->timer);
