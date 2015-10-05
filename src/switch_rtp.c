@@ -435,6 +435,9 @@ struct switch_rtp {
 	payload_map_t **pmaps;
 	payload_map_t *pmap_tail;
 	int ice_adj;
+	uint8_t has_rtp;
+	uint8_t has_rtcp;
+	uint8_t has_ice;
 #ifdef ENABLE_ZRTP
 	zrtp_session_t *zrtp_session;
 	zrtp_profile_t *zrtp_profile;
@@ -5025,6 +5028,15 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 	*bytes = sizeof(rtp_msg_t);
 	sync = 0;
 
+	rtp_session->has_rtp = 0;
+	rtp_session->has_ice = 0;
+	rtp_session->has_rtcp = 0;
+	if (rtp_session->dtls) {
+		rtp_session->dtls->bytes = 0;
+		rtp_session->dtls->data = NULL;
+	}
+	memset(&rtp_session->last_rtp_hdr, 0, sizeof(rtp_session->last_rtp_hdr));
+
 	if (poll_status == SWITCH_STATUS_SUCCESS) {
 		status = switch_socket_recvfrom(rtp_session->from_addr, rtp_session->sock_input, 0, (void *) &rtp_session->recv_msg, bytes);
 	} else {
@@ -5032,15 +5044,60 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 	}
 
 	if (*bytes) {
+		b = (unsigned char *) &rtp_session->recv_msg;
+
+		rtp_session->has_rtp = (rtp_session->recv_msg.header.version == 2);
+
+		if (rtp_session->flags[SWITCH_RTP_FLAG_RTCP_MUX]) {
+			switch(rtp_session->recv_msg.header.pt) {
+			case 64:        //  192 Full INTRA-frame request.
+			case 72:        //  200 Sender report.
+			case 73:        //  201 Receiver report.
+			case 74:        //  202 Source description.
+			case 75:        //  203 Goodbye.
+			case 76:        //  204 Application-defined.
+			case 77:        //  205 Transport layer FB message.
+			case 78:        //  206 Payload-specific FB message.
+			case 79:        //  207 Extended report.
+				rtp_session->has_rtcp = 1;
+				rtp_session->has_rtp = 0;
+				break;
+			default:
+				if (!check_recv_payload(rtp_session) && rtp_session->recv_msg.header.pt != rtp_session->recv_te &&
+					rtp_session->recv_msg.header.pt != rtp_session->cng_pt &&
+					rtp_session->rtcp_recv_msg_p->header.version == 2 && 
+					rtp_session->rtcp_recv_msg_p->header.type > 199 && rtp_session->rtcp_recv_msg_p->header.type < 208) {
+					rtp_session->has_rtcp = 1;
+					rtp_session->has_rtp = 0;
+				}
+				break;
+			}						
+		}
+
+		if ((*b >= 20) && (*b <= 64)) {
+			rtp_session->dtls->bytes = *bytes;
+			rtp_session->dtls->data = (void *) &rtp_session->recv_msg;
+			rtp_session->has_ice = 0;
+			rtp_session->has_rtp = 0;
+			rtp_session->has_rtcp = 0;
+		} else if (!rtp_session->has_rtp && !rtp_session->has_rtcp && rtp_session->ice.ice_user) {
+			if (*b == 0 || *b == 1) {
+				rtp_session->has_ice = 1;
+				rtp_session->has_rtp = 0;
+				rtp_session->has_rtcp = 0;
+			}
+		}
+		
+
 		rtp_session->missed_count = 0;
-		if (rtp_session->recv_msg.header.version == 2) {
+		if (rtp_session->has_rtp) {
 			switch_cp_addr(rtp_session->rtp_from_addr, rtp_session->from_addr);	
 			rtp_session->last_rtp_hdr = rtp_session->recv_msg.header;
 		}
 	}
 
 	if (!rtp_session->vb && (!rtp_session->jb || rtp_session->pause_jb || !jb_valid(rtp_session))) {
-		if (*bytes > rtp_header_len && (rtp_session->recv_msg.header.version == 2 && check_recv_payload(rtp_session))) {
+		if (*bytes > rtp_header_len && (rtp_session->has_rtp && check_recv_payload(rtp_session))) {
 			xcheck_jitter = *bytes;
 			check_jitter(rtp_session);
 		}
@@ -5059,8 +5116,6 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 
 
 	if (*bytes) {
-		b = (unsigned char *) &rtp_session->recv_msg;
-
 		*flags &= ~SFF_PROXY_PACKET;
 
 		//if (rtp_session->flags[SWITCH_RTP_FLAG_VIDEO]) {
@@ -5068,7 +5123,7 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 		//}
 
 		
-		if (*b == 0 || *b == 1) {
+		if (rtp_session->has_ice) {
 			if (rtp_session->ice.ice_user) {
 				handle_ice(rtp_session, &rtp_session->ice, (void *) &rtp_session->recv_msg, *bytes);
 			}
@@ -5085,27 +5140,6 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 			do_dtls(rtp_session, rtp_session->rtcp_dtls);
 		}
 
-		rtp_session->dtls->bytes = 0;
-
-		if (*bytes) {
-			char *b = (char *) &rtp_session->recv_msg;
-			
-			if ((*b >= 20) && (*b <= 64)) {
-				rtp_session->dtls->bytes = *bytes;
-				rtp_session->dtls->data = (void *) &rtp_session->recv_msg;
-			} else {
-				rtp_session->dtls->bytes = 0;
-				rtp_session->dtls->data = NULL;
-				
-				if (*b != 0 && *b != 1 && rtp_session->dtls->state != DS_READY) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, 
-									  "Drop %s packet %ld bytes (dtls not ready!) b=%u\n", rtp_type(rtp_session), (long)*bytes, *b);
-					*bytes = 0;
-				}
-				
-			}
-		}
-
 		do_dtls(rtp_session, rtp_session->dtls);
 
 		if (rtp_session->dtls && rtp_session->dtls->bytes) {
@@ -5117,11 +5151,7 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 	if (status == SWITCH_STATUS_SUCCESS && *bytes) { 
 		if (rtp_session->flags[SWITCH_RTP_FLAG_RTCP_MUX]) { 
 			*flags &= ~SFF_RTCP;
-			if (!check_recv_payload(rtp_session)  && 
-				rtp_session->recv_msg.header.pt != rtp_session->recv_te &&
-				rtp_session->recv_msg.header.pt != rtp_session->cng_pt &&
-				rtp_session->rtcp_recv_msg_p->header.version == 2 && 
-				rtp_session->rtcp_recv_msg_p->header.type > 199 && rtp_session->rtcp_recv_msg_p->header.type < 208) { //rtcp muxed
+			if (rtp_session->has_rtcp) {
 				*flags |= SFF_RTCP;
 
 				if (rtp_session->flags[SWITCH_RTP_FLAG_SECURE_RECV]) {
@@ -5144,7 +5174,11 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 		}
 	}
 
-	if (*bytes && !rtp_write_ready(rtp_session, *bytes, __LINE__)) {
+	
+
+	if ((*bytes && (!rtp_write_ready(rtp_session, *bytes, __LINE__) || !rtp_session->has_rtp || rtp_session->has_rtcp)) || sync) {
+		rtp_session->hot_hits = 0;
+		block = 1;
 		*bytes = 0;
 		goto more;
 	}
@@ -5168,8 +5202,8 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 						  my_host, switch_sockaddr_get_port(rtp_session->local_addr),
 						  old_host, rtp_session->remote_port,
 						  tx_host, switch_sockaddr_get_port(rtp_session->rtp_from_addr),
-						  rtp_session->recv_msg.header.pt, ntohl(rtp_session->recv_msg.header.ts), ntohs(rtp_session->recv_msg.header.seq), 
-						  rtp_session->recv_msg.header.m);
+						  rtp_session->last_rtp_hdr.pt, ntohl(rtp_session->last_rtp_hdr.ts), ntohs(rtp_session->last_rtp_hdr.seq), 
+						  rtp_session->last_rtp_hdr.m);
 
 	}
 
@@ -5178,22 +5212,12 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 		int r = (rand() % 10000) + 1;
 		if (r <= 200) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ALERT, 
-							  "Simulate dropped packet ......... ts: %u seq: %u\n", ntohl(rtp_session->recv_msg.header.ts), ntohs(rtp_session->recv_msg.header.seq));
+							  "Simulate dropped packet ......... ts: %u seq: %u\n", ntohl(rtp_session->last_rtp_hdr.ts), ntohs(rtp_session->last_rtp_hdr.seq));
 			*bytes = 0;
 		}
 	}
 #endif
 
-	
-	if (sync) {
-		if (!rtp_session->flags[SWITCH_RTP_FLAG_USE_TIMER] && rtp_session->timer.interval) {
-			switch_core_timer_sync(&rtp_session->timer);
-			reset_jitter_seq(rtp_session);
-		}
-		rtp_session->hot_hits = 0;
-
-		goto more;
-	}
 
 
  udptl:
@@ -5294,11 +5318,11 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 #endif
 			
 #ifdef ENABLE_SRTP
-			if (rtp_session->flags[SWITCH_RTP_FLAG_SECURE_RECV] && rtp_session->recv_msg.header.version == 2 && 
+			if (rtp_session->flags[SWITCH_RTP_FLAG_SECURE_RECV] && rtp_session->has_rtp && 
 				(check_recv_payload(rtp_session) || 
 				 rtp_session->recv_msg.header.pt == rtp_session->recv_te || 
 				 rtp_session->recv_msg.header.pt == rtp_session->cng_pt)) {
-				//if (rtp_session->flags[SWITCH_RTP_FLAG_SECURE_RECV] && (!rtp_session->ice.ice_user || rtp_session->recv_msg.header.version == 2)) {
+				//if (rtp_session->flags[SWITCH_RTP_FLAG_SECURE_RECV] && (!rtp_session->ice.ice_user || rtp_session->has_rtp)) {
 				int sbytes = (int) *bytes;
 				err_status_t stat = 0;
 
@@ -5364,14 +5388,14 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 		}
 
 
-		if (rtp_session->recv_msg.header.version == 2) {
+		if (rtp_session->has_rtp) {
 			if (rtp_session->recv_msg.header.cc > 0) { /* Contributing Source Identifiers (4 bytes = sizeof CSRC header)*/
 				rtp_session->recv_msg.ebody = RTP_BODY(rtp_session) + (rtp_session->recv_msg.header.cc * 4);
 			}
 
 			/* recalculate body length in case rtp extension used */
 			if (!rtp_session->flags[SWITCH_RTP_FLAG_PROXY_MEDIA] && !rtp_session->flags[SWITCH_RTP_FLAG_UDPTL] &&
-				rtp_session->recv_msg.header.version == 2 && rtp_session->recv_msg.header.x) { /* header extensions */
+				rtp_session->has_rtp && rtp_session->recv_msg.header.x) { /* header extensions */
 				uint16_t length;
 			
 				rtp_session->recv_msg.ext = (switch_rtp_hdr_ext_t *) RTP_BODY(rtp_session);
@@ -5390,7 +5414,7 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 
 #ifdef DEBUG_CHROME
 			
-			if (rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] && rtp_session->recv_msg.header.version == 2) {
+			if (rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] && rtp_session->has_rtp) {
 		
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, 
 								  "VIDEO: seq: %d ts: %u len: %ld %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x mark: %d\n",
@@ -5453,7 +5477,7 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 		}
 	}
 
-	if (rtp_session->recv_msg.header.version == 2 && *bytes) {
+	if (rtp_session->has_rtp && *bytes) {
 
 		if (rtp_session->vb && jb_valid(rtp_session)) {
 			status = switch_jb_put_packet(rtp_session->vb, (switch_rtp_packet_t *) &rtp_session->recv_msg, *bytes);			
@@ -5502,7 +5526,7 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 		}
 	}
 
-	if (!*bytes || rtp_session->recv_msg.header.version == 2) {
+	if (!*bytes || rtp_session->has_rtp) {
 		
 		if (rtp_session->jb && !rtp_session->pause_jb && jb_valid(rtp_session)) {
 			switch_status_t jstatus = switch_jb_get_packet(rtp_session->jb, (switch_rtp_packet_t *) &rtp_session->recv_msg, bytes);
@@ -6356,7 +6380,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		}
 
 
-		if (bytes && rtp_session->recv_msg.header.version == 2 && 
+		if (bytes && rtp_session->has_rtp && 
 			!rtp_session->flags[SWITCH_RTP_FLAG_PROXY_MEDIA] && !rtp_session->flags[SWITCH_RTP_FLAG_UDPTL] &&
 			rtp_session->recv_msg.header.pt != 13 && 
 			rtp_session->recv_msg.header.pt != rtp_session->recv_te && 
@@ -6522,7 +6546,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 
 			if (rtp_session->flags[SWITCH_RTP_FLAG_UDPTL]) {
 #if 0
-				if (rtp_session->recv_msg.header.version == 2 && check_recv_payload(rtp_session)) {
+				if (rtp_session->has_rtp && check_recv_payload(rtp_session)) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING, 
 									  "Ignoring udptl packet of size of %ld bytes that looks strikingly like a RTP packet.\n", (long)bytes);
 					bytes = 0;
