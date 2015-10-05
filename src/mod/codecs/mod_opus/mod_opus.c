@@ -159,21 +159,21 @@ static switch_bool_t switch_opus_show_audio_bandwidth(int audiobandwidth,char *a
 {
 	if (audiobandwidth == OPUS_BANDWIDTH_NARROWBAND) {
 		strncpy(audiobandwidth_str, "NARROWBAND",10);
-		return SWITCH_STATUS_SUCCESS;
+		return SWITCH_TRUE;
 	} else if (audiobandwidth == OPUS_BANDWIDTH_MEDIUMBAND) {
 		strncpy(audiobandwidth_str, "MEDIUMBAND",10);
-		return SWITCH_STATUS_SUCCESS;
+		return SWITCH_TRUE;
 	} else if (audiobandwidth == OPUS_BANDWIDTH_WIDEBAND) {
 		strncpy(audiobandwidth_str,"WIDEBAND",8);
-		return SWITCH_STATUS_SUCCESS;
+		return SWITCH_TRUE;
 	} else if (audiobandwidth == OPUS_BANDWIDTH_SUPERWIDEBAND) {
 		strncpy(audiobandwidth_str, "SUPERWIDEBAND",13);
-		return SWITCH_STATUS_SUCCESS;
+		return SWITCH_TRUE;
 	} else if (audiobandwidth == OPUS_BANDWIDTH_FULLBAND) {
 		strncpy(audiobandwidth_str, "FULLBAND",8);
-		return SWITCH_STATUS_SUCCESS;
+		return SWITCH_TRUE;
 	}
-	return SWITCH_STATUS_FALSE;
+	return SWITCH_FALSE;
 }
 
 static switch_status_t switch_opus_fmtp_parse(const char *fmtp, switch_codec_fmtp_t *codec_fmtp)
