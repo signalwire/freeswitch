@@ -6517,11 +6517,16 @@ void *SWITCH_THREAD_FUNC media_on_hold_thread_run(switch_thread_t *thread, void 
 				switch_channel_wait_for_flag(channel, CF_MEDIA_ACK, SWITCH_TRUE, 10000, NULL);
 				switch_channel_wait_for_flag(other_channel, CF_MEDIA_ACK, SWITCH_TRUE, 10000, NULL);
 
-				switch_ivr_media(switch_core_session_get_uuid(other_session), SMF_REBRIDGE|SMF_REPLYONLY_B);
-
-				if (switch_core_media_ready(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO)) {
-					switch_core_media_clear_rtp_flag(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO, SWITCH_RTP_FLAG_AUTOADJ);
+				if (switch_channel_direction(tech_pvt->channel) == SWITCH_CALL_DIRECTION_INBOUND) {
+					switch_ivr_media(switch_core_session_get_uuid(other_session), SMF_REBRIDGE|SMF_REPLYONLY_B);
+				} else {
+					switch_ivr_media(switch_core_session_get_uuid(other_session), SMF_REBRIDGE);
 				}
+
+
+				switch_core_media_clear_rtp_flag(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO, SWITCH_RTP_FLAG_AUTOADJ);
+				switch_core_media_clear_rtp_flag(other_session, SWITCH_MEDIA_TYPE_AUDIO, SWITCH_RTP_FLAG_AUTOADJ);
+
 
 				switch_core_media_toggle_hold(session, 1);
 			}
@@ -7335,7 +7340,9 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 						switch_core_session_message_t *msg;
 						private_object_t *other_tech_pvt;
 						int media_on_hold = switch_true(switch_channel_get_variable_dup(channel, "bypass_media_resume_on_hold", SWITCH_FALSE, -1));
-							
+
+						switch_core_media_clear_rtp_flag(other_session, SWITCH_MEDIA_TYPE_AUDIO, SWITCH_RTP_FLAG_AUTOADJ);
+						
 						if (switch_channel_test_flag(channel, CF_PROXY_MODE) && !is_t38 && 
 							((profile->media_options & MEDIA_OPT_MEDIA_ON_HOLD) || media_on_hold)) {
 							if (switch_stristr("sendonly", r_sdp) || switch_stristr("0.0.0.0", r_sdp)) {
@@ -7343,6 +7350,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 								switch_channel_set_variable(channel, SWITCH_R_SDP_VARIABLE, r_sdp);
 								switch_channel_clear_flag(channel, CF_PROXY_MODE);
 								switch_core_media_set_local_sdp(tech_pvt->session, NULL, SWITCH_FALSE);
+								switch_core_media_clear_rtp_flag(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO, SWITCH_RTP_FLAG_AUTOADJ);
 
 								if (!switch_channel_media_ready(channel)) {
 									if (switch_channel_direction(tech_pvt->channel) == SWITCH_CALL_DIRECTION_INBOUND) {
