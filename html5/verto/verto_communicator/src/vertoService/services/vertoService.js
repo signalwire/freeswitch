@@ -528,7 +528,9 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
                   cleanShareCall(that);
                 } else {
                   stopConference();
-                  cleanCall();
+                  if (!that.reloaded) {
+                    cleanCall();
+                  }
                 }
                 break;
               default:
@@ -571,6 +573,13 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
             iceServers: storage.data.useSTUN
           }, callbacks);
 
+          // We need to know when user reloaded page and not react to
+          // verto events in order to not stop the reload and redirect user back
+          // to the dialpad.
+          that.reloaded = false;
+          jQuery.verto.unloadJobs.push(function() {
+            that.reloaded = true;
+          });
 	    data.instance.deviceParams({
 		useCamera: storage.data.selectedVideo,
 		useMic: storage.data.selectedAudio,
