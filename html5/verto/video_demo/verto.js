@@ -204,7 +204,7 @@ function do_speed_test(fn)
     vertoHandle.rpcClient.speedTest(1024 * 256, function(e, obj) {
 	//console.error("Up: " + obj.upKPS, "Down: ", obj.downKPS);
 	var vid = "default";
-	if (outgoingBandwidth === "default") {
+	//if (outgoingBandwidth === "default") {
 	    outgoingBandwidth = Math.ceil(obj.upKPS * .75).toString();
 	    
 	    $("#vqual_hd").prop("checked", true);
@@ -218,7 +218,7 @@ function do_speed_test(fn)
 		$("#vqual_qvga").prop("checked", true);
 		vid = "320x240";
 	    }
-	}
+	//}
 
 	if (incomingBandwidth === "default") {
 	    incomingBandwidth = Math.ceil(obj.downKPS * .75).toString();
