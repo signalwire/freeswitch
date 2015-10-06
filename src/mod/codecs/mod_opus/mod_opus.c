@@ -338,7 +338,8 @@ static switch_bool_t switch_opus_has_fec(const uint8_t* payload,int payload_leng
 		return SWITCH_FALSE;
 	}
 	if (payload[0] & 0x80) {   
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "FEC in CELT_ONLY mode ?!\n");
+		/* this scares users and its harmless so commenting it */
+		//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "FEC in CELT_ONLY mode ?!\n");
 		return SWITCH_FALSE;
 	}
 			
