@@ -270,6 +270,10 @@ body .modal-body .btn-group .btn.active {
   color: #EEE;
 }
 
+.dedicated_encoder {
+  color: #0B3A84;
+}
+
 /* --- End of Modal settings page --- */
 
 
@@ -449,7 +453,7 @@ body .modal-body .btn-group .btn.active {
 }
 
 #dialpad .date {
-  margin-top: 15px; 
+  margin-top: 15px;
   display: block;
   font-size: 11px;
   color: #CCC;
@@ -568,7 +572,7 @@ body .modal-body .btn-group .btn.active {
 }
 
 #incall .phone li button .big-icon {
-  font-size: 36px; 
+  font-size: 36px;
 }
 
 #incall .video-wrapper {
@@ -1267,11 +1271,11 @@ body:-webkit-full-screen #incall .video-footer {
   body {
     overflow-x: hidden;
   }
-  
+
   #dialpad .call-history li {
     overflow-x: hidden;
   }
-   
+
   #sidebar-wrapper {
     margin-right: -750px;
   }
@@ -1321,7 +1325,7 @@ body:-webkit-full-screen #incall .video-footer {
     margin: 0 auto;
     float: none;
   }
-  
+
   #incall .phone li button {
     padding: 10px;
   }
@@ -1346,8 +1350,8 @@ body:-webkit-full-screen #incall .video-footer {
   }
 }
 
-@media screen 
-  and (min-device-width: 320px) 
+@media screen
+  and (min-device-width: 320px)
   and (max-device-width: 780px) {
 
   body {
@@ -1415,7 +1419,7 @@ body:-webkit-full-screen #incall .video-footer {
     margin: 0 auto;
     float: none;
   }
-  
+
   #incall.centered-block-frame {
     display: block;
     justify-content: none;
@@ -1436,7 +1440,7 @@ body:-webkit-full-screen #incall .video-footer {
     padding-top: calc(50% - 25%);
     padding-bottom: calc(50% - 25%);
   }
-  
+
   .contributors {
     -webkit-padding-start: 0px;
     text-align: center;

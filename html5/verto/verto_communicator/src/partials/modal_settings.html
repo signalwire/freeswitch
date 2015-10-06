@@ -89,11 +89,14 @@
             ng-model="mydata.vidQual"
             ng-options="item.id as item.label for item in verto.videoQuality"></select>
   </div>
-  
+
   <input type="hidden" name="use_dedenc" ng-value="mydata.useDedenc" ng-model="mydata.useDedenc">
 
-  <div ng-show="mydata.useDedenc">
-    <b>Using Dedicated Remote Encoder</b>
+  <h4>Dedicated Remote Encoder</h4>
+  <h5>Select a non default bandwidth to use a dedicated remote encoder.</h5>
+
+  <div ng-show="mydata.useDedenc" class="dedicated_encoder">
+    <p>Dedicated Remote Encoder enabled.</b>
   </div>
 
   <div class="form-group">
