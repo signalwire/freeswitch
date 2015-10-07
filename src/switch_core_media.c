@@ -8312,13 +8312,13 @@ SWITCH_DECLARE(void) switch_core_media_set_udptl_image_sdp(switch_core_session_t
 	uint32_t port;
 	const char *family = "IP4";
 	const char *username;
-	const char *bit_removal_on = "a=T38FaxFillBitRemoval\n";
+	const char *bit_removal_on = "a=T38FaxFillBitRemoval\r\n";
 	const char *bit_removal_off = "";
 	
-	const char *mmr_on = "a=T38FaxTranscodingMMR\n";
+	const char *mmr_on = "a=T38FaxTranscodingMMR\r\n";
 	const char *mmr_off = "";
 
-	const char *jbig_on = "a=T38FaxTranscodingJBIG\n";
+	const char *jbig_on = "a=T38FaxTranscodingJBIG\r\n";
 	const char *jbig_off = "";
 	const char *var;
 	int broken_boolean;
@@ -8381,46 +8381,46 @@ SWITCH_DECLARE(void) switch_core_media_set_udptl_image_sdp(switch_core_session_t
 
 
 	switch_snprintf(buf, sizeof(buf),
-					"v=0\n"
-					"o=%s %010u %010u IN %s %s\n"
-					"s=%s\n" "c=IN %s %s\n" "t=0 0\n", username, smh->owner_id, smh->session_id, family, ip, username, family, ip);
+					"v=0\r\n"
+					"o=%s %010u %010u IN %s %s\r\n"
+					"s=%s\r\n" "c=IN %s %s\r\n" "t=0 0\r\n", username, smh->owner_id, smh->session_id, family, ip, username, family, ip);
 
 	if (t38_options->T38FaxMaxBuffer) {
-		switch_snprintf(max_buf, sizeof(max_buf), "a=T38FaxMaxBuffer:%d\n", t38_options->T38FaxMaxBuffer);
+		switch_snprintf(max_buf, sizeof(max_buf), "a=T38FaxMaxBuffer:%d\r\n", t38_options->T38FaxMaxBuffer);
 	};
 
 	if (t38_options->T38FaxMaxDatagram) {
-		switch_snprintf(max_data, sizeof(max_data), "a=T38FaxMaxDatagram:%d\n", t38_options->T38FaxMaxDatagram);
+		switch_snprintf(max_data, sizeof(max_data), "a=T38FaxMaxDatagram:%d\r\n", t38_options->T38FaxMaxDatagram);
 	};
 
 
 	
 
 	if (broken_boolean) {
-		bit_removal_on = "a=T38FaxFillBitRemoval:1\n";
-		bit_removal_off = "a=T38FaxFillBitRemoval:0\n";
+		bit_removal_on = "a=T38FaxFillBitRemoval:1\r\n";
+		bit_removal_off = "a=T38FaxFillBitRemoval:0\r\n";
 
-		mmr_on = "a=T38FaxTranscodingMMR:1\n";
-		mmr_off = "a=T38FaxTranscodingMMR:0\n";
+		mmr_on = "a=T38FaxTranscodingMMR:1\r\n";
+		mmr_off = "a=T38FaxTranscodingMMR:0\r\n";
 
-		jbig_on = "a=T38FaxTranscodingJBIG:1\n";
-		jbig_off = "a=T38FaxTranscodingJBIG:0\n";
+		jbig_on = "a=T38FaxTranscodingJBIG:1\r\n";
+		jbig_off = "a=T38FaxTranscodingJBIG:0\r\n";
 
 	}
 	
 
 	switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf),
-					"m=image %d udptl t38\n"
-					"a=T38FaxVersion:%d\n"
-					"a=T38MaxBitRate:%d\n"
+					"m=image %d udptl t38\r\n"
+					"a=T38FaxVersion:%d\r\n"
+					"a=T38MaxBitRate:%d\r\n"
 					"%s"
 					"%s"
 					"%s"
-					"a=T38FaxRateManagement:%s\n"
+					"a=T38FaxRateManagement:%s\r\n"
 					"%s"
 					"%s"
-					"a=T38FaxUdpEC:%s\n",
-					//"a=T38VendorInfo:%s\n",
+					"a=T38FaxUdpEC:%s\r\n",
+					//"a=T38VendorInfo:%s\r\n",
 					port,
 					t38_options->T38FaxVersion,
 					t38_options->T38MaxBitRate,
@@ -8437,7 +8437,7 @@ SWITCH_DECLARE(void) switch_core_media_set_udptl_image_sdp(switch_core_session_t
 
 
 	if (insist) {
-		switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "m=audio 0 RTP/AVP 19\n");
+		switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "m=audio 0 RTP/AVP 19\r\n");
 	}
 
 	switch_core_media_set_local_sdp(session, buf, SWITCH_TRUE);
