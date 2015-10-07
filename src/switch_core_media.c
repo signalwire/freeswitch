@@ -1429,7 +1429,7 @@ SWITCH_DECLARE(void) switch_core_session_check_outgoing_crypto(switch_core_sessi
 	switch_media_handle_t *smh;
 	int i;
 
-	if (!switch_core_session_media_handle_ready(session) == SWITCH_STATUS_SUCCESS) {
+	if (switch_core_session_media_handle_ready(session) != SWITCH_STATUS_SUCCESS) {
 		return;
 	}
 
