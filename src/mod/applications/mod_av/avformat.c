@@ -491,12 +491,30 @@ static switch_status_t open_audio(AVFormatContext *fc, AVCodec *codec, MediaStre
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static int flush_video_queue(switch_queue_t *q, int min)
+{
+	void *pop;
+
+	if (switch_queue_size(q) > min) {
+		while (switch_queue_trypop(q, &pop) == SWITCH_STATUS_SUCCESS) {
+			switch_image_t *img = (switch_image_t *) pop;
+			switch_img_free(&img);
+			if (min && switch_queue_size(q) <= min) {
+				break;
+			}
+		}
+	}
+
+	return switch_queue_size(q);
+}
+
 static void *SWITCH_THREAD_FUNC video_thread_run(switch_thread_t *thread, void *obj)
 {
 	record_helper_t *eh = (record_helper_t *) obj;
 	void *pop = NULL;
 	switch_image_t *img = NULL, *tmp_img = NULL;
 	int d_w = 0, d_h = 0;
+	int size = 0, skip = 0, skip_freq = 0, skip_count = 0, skip_total = 0, skip_total_count = 0;
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "video thread start\n");
 	
@@ -504,6 +522,8 @@ static void *SWITCH_THREAD_FUNC video_thread_run(switch_thread_t *thread, void *
 		AVPacket pkt = { 0 };
 		int got_packet;
 		int ret = -1;
+
+	top:
 
 		if (switch_queue_pop(eh->video_queue, &pop) == SWITCH_STATUS_SUCCESS) {
             switch_img_free(&img);
@@ -525,6 +545,30 @@ static void *SWITCH_THREAD_FUNC video_thread_run(switch_thread_t *thread, void *
 			}
 		} else {
 			continue;
+		}
+
+		if (skip) {
+			if ((skip_total_count > 0 && !--skip_total_count) || ++skip_count >= skip_freq) {
+				skip_total_count = skip_total;
+				skip_count = 0;
+				skip--;
+				goto top;
+			}
+		} else {
+		
+			size = switch_queue_size(eh->video_queue);
+			
+			if (size > 5) {
+				skip = size;
+
+				if (size > 10) {
+					skip_freq = 3;
+					skip_total = 1;
+				} else {
+					skip_freq = 2;
+					skip_total = 1;
+				}
+			}
 		}
 		
 		//switch_mutex_lock(eh->mutex);
@@ -1578,23 +1622,6 @@ static switch_status_t av_file_truncate(switch_file_handle_t *handle, int64_t of
 	return SWITCH_STATUS_FALSE;
 }
 
-static void flush_video_queue(switch_queue_t *q, int min)
-{
-	void *pop;
-
-	if (switch_queue_size(q) <= min) {
-		return;
-	}
-
-	while (switch_queue_trypop(q, &pop) == SWITCH_STATUS_SUCCESS) {
-		switch_image_t *img = (switch_image_t *) pop;
-		switch_img_free(&img);
-		if (min && switch_queue_size(q) <= min) {
-			break;
-		}
-	}
-
-}
 
 static switch_status_t av_file_write(switch_file_handle_t *handle, void *data, size_t *len)
 {
