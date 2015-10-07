@@ -127,6 +127,13 @@ RTMP_INVOKE_FUNCTION(rtmp_i_connect)
 
 RTMP_INVOKE_FUNCTION(rtmp_i_createStream)
 {
+	rtmp_send_invoke_free(rsession, amfnumber, 0, 0,
+		amf0_str("_result"),
+		amf0_number_new(transaction_id),
+		amf0_null_new(),
+		amf0_number_new(rsession->next_streamid),
+		NULL);
+
 	switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rsession->uuid), SWITCH_LOG_INFO, "Replied to createStream (%u)\n", amf0_get_number(argv[1]));
 
 	rsession->next_streamid++;
@@ -136,13 +143,6 @@ RTMP_INVOKE_FUNCTION(rtmp_i_createStream)
 
 RTMP_INVOKE_FUNCTION(rtmp_i_initStream)
 {
-	rtmp_send_invoke_free(rsession, amfnumber, 0, 0,
-		amf0_str("_result"),
-		amf0_number_new(transaction_id),
-		amf0_null_new(),
-		amf0_number_new(rsession->next_streamid),
-		NULL);
-
 	switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rsession->uuid), SWITCH_LOG_INFO, "Received initStream (%u)\n", rsession->next_streamid);
 
 	rsession->next_streamid++;
