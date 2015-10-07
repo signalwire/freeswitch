@@ -97,7 +97,7 @@ int main () {
   micro_total = end_ts - start_ts;
   micro_per = micro_total / (double) loops;
   rate_per_sec = 1000000 / micro_per;
-  note("switch_event Total %ldus / %d loops, %.2f us per loop, %.0f loops per second\n", 
+  diag("switch_event Total %ldus / %d loops, %.2f us per loop, %.0f loops per second\n", 
        micro_total, loops, micro_per, rate_per_sec);
 
   switch_core_destroy();
