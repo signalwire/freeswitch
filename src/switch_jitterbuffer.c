@@ -1138,6 +1138,10 @@ SWITCH_DECLARE(switch_status_t) switch_jb_get_packet(switch_jb_t *jb, switch_rtp
 
 	switch_mutex_lock(jb->mutex);
 
+	if (jb->complete_frames == 0) {
+		switch_goto_status(SWITCH_STATUS_BREAK, end);
+	}
+
 	if (jb->complete_frames < jb->frame_len) {
 		jb_debug(jb, 2, "BUFFERING %u/%u\n", jb->complete_frames , jb->frame_len);
 		switch_goto_status(SWITCH_STATUS_MORE_DATA, end);

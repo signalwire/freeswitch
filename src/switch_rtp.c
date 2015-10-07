@@ -438,6 +438,8 @@ struct switch_rtp {
 	uint8_t has_rtp;
 	uint8_t has_rtcp;
 	uint8_t has_ice;
+	uint8_t punts;
+	uint8_t clean;
 #ifdef ENABLE_ZRTP
 	zrtp_session_t *zrtp_session;
 	zrtp_profile_t *zrtp_profile;
@@ -4060,20 +4062,22 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_activate_jitter_buffer(switch_rtp_t *
 		max_queue_frames = queue_frames * 3;
 	}
 
-	READ_INC(rtp_session);
+
 
 	if (rtp_session->jb) {
 		status = switch_jb_set_frames(rtp_session->jb, queue_frames, max_queue_frames);
 	} else {
+		READ_INC(rtp_session);
 		status = switch_jb_create(&rtp_session->jb, SJB_AUDIO, queue_frames, max_queue_frames, rtp_session->pool);
 		switch_jb_set_session(rtp_session->jb, rtp_session->session);
 		if (switch_true(switch_channel_get_variable_dup(switch_core_session_get_channel(rtp_session->session), "jb_use_timestamps", SWITCH_FALSE, -1))) {
 			switch_jb_ts_mode(rtp_session->jb, samples_per_packet, samples_per_second);
 		}
 		//switch_jb_debug_level(rtp_session->jb, 10);
+		READ_DEC(rtp_session);
 	}
 
-	READ_DEC(rtp_session);
+
 	
 	return status;
 }
@@ -5022,6 +5026,12 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 	tries++;
 
 	if (tries > 20) {
+		if (rtp_session->jb && !rtp_session->pause_jb && jb_valid(rtp_session)) {
+			switch_jb_reset(rtp_session->jb);
+		}
+		rtp_session->punts++;
+		rtp_session->clean = 0;
+		*bytes = 0;
 		return SWITCH_STATUS_BREAK;
 	}
 		
@@ -5108,8 +5118,8 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 			}
 		}
 
-		rtp_session->missed_count = 0;
 		if (rtp_session->has_rtp) {
+			rtp_session->missed_count = 0;
 			switch_cp_addr(rtp_session->rtp_from_addr, rtp_session->from_addr);	
 			rtp_session->last_rtp_hdr = rtp_session->recv_msg.header;
 		}
@@ -5554,8 +5564,12 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 
 			switch(jstatus) {
 			case SWITCH_STATUS_MORE_DATA:
-				block = 1;
-				goto more;
+				if (rtp_session->punts < 4) {
+					block = 1;
+					goto more;
+				}
+				*bytes = 0;
+				break;
 			case SWITCH_STATUS_NOTFOUND:
 				{
 					int pt = get_recv_payload(rtp_session);
@@ -5574,7 +5588,9 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 					rtp_session->stats.inbound.jb_packet_count++;
 					status = SWITCH_STATUS_SUCCESS;
 					rtp_session->last_rtp_hdr = rtp_session->recv_msg.header;
-
+					if (++rtp_session->clean > 200) {
+						rtp_session->punts = 0;
+					}
 					if (!xcheck_jitter) {
 						check_jitter(rtp_session);
 						xcheck_jitter = *bytes;
@@ -6217,9 +6233,9 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 					ret = -1;
 					goto end;
 				}
-				
+
 				if (rtp_session->max_missed_packets && read_loops == 1 && !rtp_session->flags[SWITCH_RTP_FLAG_VIDEO]) {
-					if (bytes) {
+					if (bytes && status == SWITCH_STATUS_SUCCESS) {
 						rtp_session->missed_count = 0;
 					} else if (++rtp_session->missed_count >= rtp_session->max_missed_packets) {
 						ret = -2;
