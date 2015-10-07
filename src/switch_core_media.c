@@ -7931,8 +7931,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 
 						if (ov_fmtp) {
 							pass_fmtp = ov_fmtp;
-						} else { //if (switch_true(switch_channel_get_variable_dup(session->channel, "rtp_mirror_fmtp", SWITCH_FALSE, -1))) { 
-							// seems to break eyebeam at least...
+						} else if (switch_true(switch_channel_get_variable_dup(session->channel, "rtp_mirror_fmtp", SWITCH_FALSE, -1))) { 
 							pass_fmtp = switch_channel_get_variable(session->channel, "rtp_video_fmtp");
 						}
 					}
