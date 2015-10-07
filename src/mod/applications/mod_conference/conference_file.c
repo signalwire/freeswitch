@@ -56,6 +56,11 @@ switch_status_t conference_file_close(conference_obj_t *conference, conference_f
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "milliseconds", "%ld", (long) node->fh.samples_in / (node->fh.native_rate / 1000));
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "samples", "%ld", (long) node->fh.samples_in);
 
+		if (node->layer_id && node->layer_id > -1) {
+			if (node->canvas_id < 0) node->canvas_id = 0;
+			conference_video_canvas_del_fnode_layer(conference, node);
+		}
+
 		if (node->fh.params) {
 			switch_event_merge(event, node->fh.params);
 		}

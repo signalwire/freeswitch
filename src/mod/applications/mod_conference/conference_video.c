@@ -1380,8 +1380,8 @@ void conference_video_canvas_set_fnode_layer(mcu_canvas_t *canvas, conference_fi
 		if (canvas->layout_floor_id > -1) {
 			idx = canvas->layout_floor_id;
 			xlayer = &canvas->layers[idx];
-
-			if (xlayer->fnode) {
+			
+			if (xlayer->fnode && xlayer->fnode != fnode) {
 				idx = -1;
 			}
 		}
