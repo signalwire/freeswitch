@@ -899,7 +899,7 @@ switch_status_t conference_say(conference_obj_t *conference, const char *text, u
 		fp = switch_core_strdup(pool, text);
 		switch_assert(fp);
 
-		if (!switch_event_create_brackets(fp, '{', '}', ',', &params, &new_fp, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
+		if (switch_event_create_brackets(fp, '{', '}', ',', &params, &new_fp, SWITCH_FALSE) != SWITCH_STATUS_SUCCESS) {
 			new_fp = fp;
 		}
 

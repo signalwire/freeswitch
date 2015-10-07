@@ -838,7 +838,7 @@ SWITCH_STANDARD_API(enum_function)
 
 		}
 
-		if (!enum_lookup(root, dest, &results, NULL, session) == SWITCH_STATUS_SUCCESS) {
+		if (enum_lookup(root, dest, &results, NULL, session) != SWITCH_STATUS_SUCCESS) {
 			stream->write_function(stream, "No Match!\n");
 			return SWITCH_STATUS_SUCCESS;
 		}
