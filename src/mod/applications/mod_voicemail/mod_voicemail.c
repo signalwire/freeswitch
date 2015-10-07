@@ -3290,7 +3290,7 @@ static switch_status_t voicemail_inject(const char *data, switch_core_session_t 
 									switch_event_create(&my_params, SWITCH_EVENT_REQUEST_PARAMS);
 									status =
 										deliver_vm(profile, ux, domain, path, 0, read_flags, my_params, pool, cid_name, cid_num, forwarded_by,
-												   SWITCH_TRUE, session ? switch_core_session_get_uuid(session) : NULL, NULL);
+												   SWITCH_TRUE, session ? switch_core_session_get_uuid(session) : NULL, session);
 									switch_event_destroy(&my_params);
 								}
 								continue;
@@ -3300,7 +3300,7 @@ static switch_status_t voicemail_inject(const char *data, switch_core_session_t 
 							switch_event_create(&my_params, SWITCH_EVENT_REQUEST_PARAMS);
 							status = deliver_vm(profile, ut, domain, path, 0, read_flags, 
 												my_params, pool, cid_name, cid_num, forwarded_by, SWITCH_TRUE, 
-												session ? switch_core_session_get_uuid(session) : NULL, NULL);
+												session ? switch_core_session_get_uuid(session) : NULL, session);
 							switch_event_destroy(&my_params);
 						}
 					}
@@ -3324,7 +3324,7 @@ static switch_status_t voicemail_inject(const char *data, switch_core_session_t 
 							switch_event_create(&my_params, SWITCH_EVENT_REQUEST_PARAMS);
 							status = deliver_vm(profile, ut, domain, path, 0, read_flags, 
 												my_params, pool, cid_name, cid_num, forwarded_by, SWITCH_TRUE,
-												session ? switch_core_session_get_uuid(session) : NULL, NULL);
+												session ? switch_core_session_get_uuid(session) : NULL, session);
 							switch_event_destroy(&my_params);
 						}
 					}
@@ -3339,7 +3339,7 @@ static switch_status_t voicemail_inject(const char *data, switch_core_session_t 
 				switch_event_create(&my_params, SWITCH_EVENT_REQUEST_PARAMS);
 				status = deliver_vm(profile, ut, domain, path, 0, read_flags, 
 									my_params, pool, cid_name, cid_num, forwarded_by, SWITCH_TRUE,
-									session ? switch_core_session_get_uuid(session) : NULL, NULL);
+									session ? switch_core_session_get_uuid(session) : NULL, session);
 				switch_event_destroy(&my_params);
 			} else {
 				status = SWITCH_STATUS_FALSE;
