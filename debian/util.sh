@@ -293,10 +293,10 @@ build_debs () {
         # Caller has explicitly set the custom sources file to empty string. They must intend to not use additional mirrors.
         use_custom_sources=false
     fi
-    if [ "$custom_source_file" == "/tmp/fs.sources.list" && ! -e "/tmp/fs.sources.list" ]; then
+    if [[ "$custom_source_file" == "/tmp/fs.sources.list" && ! -e "/tmp/fs.sources.list" ]]; then
         echo "deb http://files.freeswitch.org/repo/deb/debian/ jessie main" >> "/tmp/fs.sources.list"
     fi
-    if [ "$custom_keyring" == "/tmp/fs.asc" && ! -r "/tmp/fs.asc" ]; then
+    if [[ "$custom_keyring" == "/tmp/fs.asc" && ! -r "/tmp/fs.asc" ]]; then
         cat << EOF > "/tmp/fs.asc"
 -----BEGIN PGP PUBLIC KEY BLOCK-----
 Version: GnuPG v1.4.12 (GNU/Linux)
