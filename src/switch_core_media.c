@@ -1748,7 +1748,7 @@ SWITCH_DECLARE(switch_core_media_params_t *) switch_core_media_get_mparams(switc
 SWITCH_DECLARE(void) switch_core_media_prepare_codecs(switch_core_session_t *session, switch_bool_t force)
 {
 	const char *abs, *codec_string = NULL;
-	const char *ocodec = NULL;
+	const char *ocodec = NULL, *val;
 	switch_media_handle_t *smh;
 
 	switch_assert(session);
@@ -1778,6 +1778,14 @@ SWITCH_DECLARE(void) switch_core_media_prepare_codecs(switch_core_session_t *ses
 		goto ready;
 	}
 
+	val = switch_channel_get_variable_dup(session->channel, "media_mix_inbound_outbound_codecs", SWITCH_FALSE, -1);
+	if (!val || !switch_true(val)) {
+		if ((ocodec = switch_channel_get_variable(session->channel, SWITCH_ORIGINATOR_CODEC_VARIABLE))) {
+			codec_string = ocodec;
+			goto ready;
+		}
+	}
+	
 	if (!(codec_string = switch_channel_get_variable(session->channel, "codec_string"))) {
 		codec_string = switch_core_media_get_codec_string(smh->session);
 	}
@@ -1787,7 +1795,7 @@ SWITCH_DECLARE(void) switch_core_media_prepare_codecs(switch_core_session_t *ses
 		goto ready;
 	}
 
-	if ((ocodec = switch_channel_get_variable(session->channel, SWITCH_ORIGINATOR_CODEC_VARIABLE))) {
+	if (ocodec) {
 		if (!codec_string || (smh->media_flags[SCMF_DISABLE_TRANSCODING])) {
 			codec_string = ocodec;
 		} else {
