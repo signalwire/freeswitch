@@ -518,7 +518,7 @@ commands:
       Include otherwise avoided module
     -s [ paranoid | reckless ]
       Set FS bootstrap/build -j flags
-    -t Use system /etc/apt/sources.list in build environment
+    -t Use system /etc/apt/sources.list in build environment(does not include /etc/apt/sources.list.d/*.list)
     -T [/path/to/sources.list]
        Use custom /etc/apt/sources.list in build environment
     -u <suite-postfix>
