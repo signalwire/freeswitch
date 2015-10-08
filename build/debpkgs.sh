@@ -23,6 +23,8 @@ then
     exit 1
 fi
 
+echo "./build/debpkgs.sh script is building FreeSWITCH Debian packages"
+
 VERSION=`cat ./build/next-release.txt`
 echo "This Version: $VERSION"
 
@@ -70,7 +72,7 @@ EOF
 fi
 
 
-./debian/util.sh build-all -a $a -c $c -T $T -K $K -f ./build/modules.conf.most -j -bn -z9 -v$VERSION-$n~$HASH
+./debian/util.sh build-all -a "$a" -c "$c" -T $T -K $K -f ./build/modules.conf.most -j -bn -z9 -v$VERSION-$n~$HASH
 
 if [ $(ls -al ../freeswitch-mod* | wc -l) -lt 10 ]; then false; else true; fi
 
