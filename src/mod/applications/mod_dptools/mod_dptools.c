@@ -3146,6 +3146,8 @@ static void *SWITCH_THREAD_FUNC camp_music_thread(switch_thread_t *thread, void 
 	}
 
 	while (stake->running && switch_channel_ready(channel)) {
+		switch_ivr_parse_signal_data(session, SWITCH_TRUE, SWITCH_FALSE);
+
 		if (status != SWITCH_STATUS_BREAK) {
 			if (!strcasecmp(moh, "silence")) {
 				status = switch_ivr_collect_digits_callback(session, &args, 0, 0);

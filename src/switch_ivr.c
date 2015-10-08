@@ -820,14 +820,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_all_messages(switch_core_sessio
 }
 
 
-static switch_status_t switch_ivr_parse_signal_data(switch_core_session_t *session, switch_bool_t all)
+SWITCH_DECLARE(switch_status_t) switch_ivr_parse_signal_data(switch_core_session_t *session, switch_bool_t all, switch_bool_t only_session_thread)
 {
 	void *data;
 	switch_core_session_message_t msg = { 0 };
 	int i = 0;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 
-	if (!switch_core_session_in_thread(session)) {
+	if (only_session_thread && !switch_core_session_in_thread(session)) {
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -857,11 +857,11 @@ static switch_status_t switch_ivr_parse_signal_data(switch_core_session_t *sessi
 }
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_parse_all_signal_data(switch_core_session_t *session) {
-	return switch_ivr_parse_signal_data(session, SWITCH_TRUE);
+	return switch_ivr_parse_signal_data(session, SWITCH_TRUE, SWITCH_FALSE);
 }
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_parse_next_signal_data(switch_core_session_t *session) {
-	return switch_ivr_parse_signal_data(session, SWITCH_FALSE);
+	return switch_ivr_parse_signal_data(session, SWITCH_FALSE, SWITCH_FALSE);
 }
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_parse_all_events(switch_core_session_t *session)
