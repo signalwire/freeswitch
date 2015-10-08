@@ -137,10 +137,9 @@ create_orig () {
   {
     set -e
     local OPTIND OPTARG
-    local uver="" hrev="" bundle_deps=false modules_list="" zl=9e
+    local uver="" hrev="" bundle_deps=true modules_list="" zl=9e
     while getopts 'bm:nv:z:' o "$@"; do
       case "$o" in
-        b) bundle_deps=true;;
         m) modules_list="$OPTARG";;
         n) uver="nightly";;
         v) uver="$OPTARG";;
@@ -499,7 +498,6 @@ commands:
     [ This must be run as root! ]
 
     -a Specify architectures
-    -b Bundle downloaded libraries in source package
     -c Specify distributions
     -d Enable cowbuilder debug hook
     -f <modules.conf>
@@ -561,7 +559,6 @@ commands:
 
   create-orig <treeish>
 
-    -b Bundle downloaded libraries in source package
     -m [ quicktest | non-dfsg ]
       Choose custom list of modules to build
     -n Nightly build
