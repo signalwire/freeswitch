@@ -357,7 +357,7 @@ SWITCH_STANDARD_API(easyroute_function)
 			}
 		}
 
-		if (!route_lookup(destnum, &results, noat, separator) == SWITCH_STATUS_SUCCESS) {
+		if (route_lookup(destnum, &results, noat, separator) != SWITCH_STATUS_SUCCESS) {
 			stream->write_function(stream, "No Match!\n");
 			status = SWITCH_STATUS_SUCCESS;
 			goto done;
