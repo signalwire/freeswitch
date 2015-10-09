@@ -2424,15 +2424,30 @@ static void att_xfer_set_result(switch_channel_t *channel, switch_status_t statu
 	switch_channel_set_variable(channel, SWITCH_ATT_XFER_RESULT_VARIABLE, status == SWITCH_STATUS_SUCCESS ? "success" : "failure");
 }
 
-SWITCH_STANDARD_APP(att_xfer_function)
+struct att_obj {
+	switch_core_session_t *session;
+	const char *data;
+	int running;
+};
+
+void *SWITCH_THREAD_FUNC att_thread_run(switch_thread_t *thread, void *obj)
 {
+	struct att_obj *att = (struct att_obj *) obj;
+	switch_core_session_t *session = att->session;
 	switch_core_session_t *peer_session = NULL;
+	const char *data = att->data;
 	switch_call_cause_t cause = SWITCH_CAUSE_NORMAL_CLEARING;
 	switch_channel_t *channel = switch_core_session_get_channel(session), *peer_channel = NULL;
 	const char *bond = NULL;
 	switch_core_session_t *b_session = NULL;
 	switch_bool_t follow_recording = switch_true(switch_channel_get_variable(channel, "recording_follow_attxfer"));
-	
+
+	att->running = 1;
+
+	if (switch_core_session_read_lock(session) != SWITCH_STATUS_SUCCESS) {
+		return NULL;
+	}
+		
 	bond = switch_channel_get_partner_uuid(channel);
 	switch_channel_set_variable(channel, SWITCH_SOFT_HOLDING_UUID_VARIABLE, bond);
 	switch_core_event_hook_add_state_change(session, tmp_hanguphook);
@@ -2505,6 +2520,35 @@ SWITCH_STANDARD_APP(att_xfer_function)
 
 	switch_channel_set_variable(channel, SWITCH_SOFT_HOLDING_UUID_VARIABLE, NULL);
 	switch_channel_clear_flag(channel, CF_XFER_ZOMBIE);
+
+	switch_core_session_rwunlock(session);
+	att->running = 0;
+
+	return NULL;
+}
+
+SWITCH_STANDARD_APP(att_xfer_function)
+{
+	switch_thread_t *thread;
+	switch_threadattr_t *thd_attr = NULL;
+	switch_memory_pool_t *pool = switch_core_session_get_pool(session);
+	struct att_obj *att;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+
+	switch_threadattr_create(&thd_attr, pool);
+	switch_threadattr_detach_set(thd_attr, 1);
+	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
+	switch_threadattr_detach_set(thd_attr, 1);
+
+	att = switch_core_session_alloc(session, sizeof(*att));
+	att->running = -1;
+	att->session = session;
+	att->data = switch_core_session_strdup(session, data);
+	switch_thread_create(&thread, thd_attr, att_thread_run, att, pool);
+
+	while(att->running && switch_channel_up(channel)) {
+		switch_yield(100000);
+	}
 }
 
 SWITCH_STANDARD_APP(read_function)
