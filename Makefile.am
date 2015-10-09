@@ -781,9 +781,11 @@ support:
 # of longer test target names. Since the tests are expected to be run easily and rapidly after minor source
 # changes this is the most effective structure.
 
-TESTS =
 check_PROGRAMS =
 
 include tests/unit/unit.mk
 
+TESTS = $(check_PROGRAMS)
+
+tests: $(check_PROGRAMS)
 
