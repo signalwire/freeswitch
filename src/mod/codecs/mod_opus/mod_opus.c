@@ -953,7 +953,7 @@ static switch_status_t opus_load_config(switch_bool_t reload)
 	opus_prefs.use_dtx = 0;
 	opus_prefs.plpct = 20;
 	opus_prefs.use_vbr = 0;
-	opus_prefs.fec_decode = 1;
+	//opus_prefs.fec_decode = 1;
 
 	if ((settings = switch_xml_child(cfg, "settings"))) {
 		for (param = switch_xml_child(settings, "param"); param; param = param->next) {
