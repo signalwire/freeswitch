@@ -71,6 +71,7 @@
 #define WARN_SRTP_ERRS 10
 #define MAX_SRTP_ERRS 100
 #define NTP_TIME_OFFSET 2208988800UL
+#define ZRTP_MAGIC_COOKIE 0x5a525450
 static const switch_payload_t INVALID_PT = 255;
 
 #define DTMF_SANITY (rtp_session->one_second * 30)
@@ -5077,7 +5078,8 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 	if (*bytes) {
 		b = (unsigned char *) &rtp_session->recv_msg;
 
-		rtp_session->has_rtp = (rtp_session->recv_msg.header.version == 2);
+		/* version 2 probably rtp, zrtp cookie present means zrtp */
+		rtp_session->has_rtp = (rtp_session->recv_msg.header.version == 2 || ntohl(*(int *)(b+4)) == ZRTP_MAGIC_COOKIE);
 
 		if ((*b >= 20) && (*b <= 64)) {
 			rtp_session->dtls->bytes = *bytes;
@@ -5085,7 +5087,6 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 			rtp_session->has_ice = 0;
 			rtp_session->has_rtp = 0;
 			rtp_session->has_rtcp = 0;
-
 		} else if (*b == 0 || *b == 1) {
 			rtp_session->has_ice = 1;
 			rtp_session->has_rtp = 0;
