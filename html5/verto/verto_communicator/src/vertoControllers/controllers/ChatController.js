@@ -122,7 +122,7 @@
       });
 
       $rootScope.$on('members.clear', function(event) {
-        $scope.$apply(function() {
+        $scope.$applyAsync(function() {
           clearConferenceChat();
           $scope.closeChat();
         });
@@ -146,13 +146,17 @@
       };
 
       $scope.confMuteMic = function(memberID) {
-        console.log('$scope.confMuteMic');
-        verto.data.conf.muteMic(memberID);
+        if(verto.data.confRole == 'moderator') {
+          console.log('$scope.confMuteMic');
+          verto.data.conf.muteMic(memberID);
+        }
       };
 
       $scope.confMuteVideo = function(memberID) {
-        console.log('$scope.confMuteVideo');
-        verto.data.conf.muteVideo(memberID);
+        if(verto.data.confRole == 'moderator') {
+          console.log('$scope.confMuteVideo');
+          verto.data.conf.muteVideo(memberID);
+        }
       };
 
       $scope.confPresenter = function(memberID) {
@@ -167,7 +171,22 @@
 
       $scope.confBanner = function(memberID) {
         console.log('$scope.confBanner');
-        var text = 'New Banner';
+        
+        prompt({
+          title: 'Please insert the banner text',
+          input: true,
+          label: '',
+          value: '',
+        }).then(function(text) {
+          if (text) {
+            verto.data.conf.banner(memberID, text);
+          }
+        });
+      };
+
+      $scope.confResetBanner = function(memberID) {
+        console.log('$scope.confResetBanner');
+        var text = 'reset';
         verto.data.conf.banner(memberID, text);
       };
 

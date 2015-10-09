@@ -32,14 +32,16 @@
 
 #if !defined(_STDBOOL_H)
 #define _STDBOOL_H
+
 #ifdef _MSC_VER 
 #pragma warning (disable: 4005)
 #endif
+
 #if !defined(__cplusplus)
 
 #define _Bool   int
-#define false   0
 #define bool    int
+#define false   0
 #define true    (!false)
 
 #else

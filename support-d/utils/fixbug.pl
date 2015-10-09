@@ -34,11 +34,16 @@ if ($prog =~ /wget/) {
 }
 
 my $xml = `$cmd $url 2>/dev/null`;
+if ($opts{debug}) {
+    print "URL $url\n";
+    print $xml;
+}
 
 my $xs= new XML::Simple;
 my $r = $xs->XMLin($xml);
 
 my $sum = $r->{channel}->{item}->{summary};
+$sum =~ s/\"/\\"/g;
 
 if ($opts{msg} eq "edit") {
   $auto = 0;

@@ -288,7 +288,7 @@ SPAN_DECLARE(int) t38_core_send_data_multi_field(t38_core_state_t *s, int data_t
     \param len The length of the packet contents.
     \param seq_no The packet sequence number.
     \return 0 for OK, else -1. */
-SPAN_DECLARE_NONSTD(int) t38_core_rx_ifp_packet(t38_core_state_t *s, const uint8_t *buf, int len, uint16_t seq_no);
+SPAN_DECLARE(int) t38_core_rx_ifp_packet(t38_core_state_t *s, const uint8_t *buf, int len, uint16_t seq_no);
 
 /*! \brief Process a received T.38 IFP packet from a reliable stream (e.g. TCP).
     \param s The T.38 context.
@@ -296,7 +296,7 @@ SPAN_DECLARE_NONSTD(int) t38_core_rx_ifp_packet(t38_core_state_t *s, const uint8
     \param len The length of the packet contents.
     \param seq_no The packet sequence number, used for logging purposes.
     \return The length of the packet processed, or -1 if there is an error in the packet, or too few bytes of data to complete it. */
-SPAN_DECLARE_NONSTD(int) t38_core_rx_ifp_stream(t38_core_state_t *s, const uint8_t *buf, int len, uint16_t log_seq_no);
+SPAN_DECLARE(int) t38_core_rx_ifp_stream(t38_core_state_t *s, const uint8_t *buf, int len, uint16_t log_seq_no);
 
 /*! Set the method to be used for data rate management, as per the T.38 spec.
     \param s The T.38 context.

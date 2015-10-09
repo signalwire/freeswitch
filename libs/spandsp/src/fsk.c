@@ -200,7 +200,7 @@ SPAN_DECLARE(int) fsk_tx_free(fsk_tx_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE_NONSTD(int) fsk_tx(fsk_tx_state_t *s, int16_t amp[], int len)
+SPAN_DECLARE(int) fsk_tx(fsk_tx_state_t *s, int16_t amp[], int len)
 {
     int sample;
     int bit;
@@ -382,7 +382,7 @@ static void report_status_change(fsk_rx_state_t *s, int status)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE_NONSTD(int) fsk_rx(fsk_rx_state_t *s, const int16_t *amp, int len)
+SPAN_DECLARE(int) fsk_rx(fsk_rx_state_t *s, const int16_t *amp, int len)
 {
     int buf_ptr;
     int baudstate;
@@ -626,7 +626,7 @@ SPAN_DECLARE_NONSTD(int) fsk_rx(fsk_rx_state_t *s, const int16_t *amp, int len)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE_NONSTD(int) fsk_rx_fillin(fsk_rx_state_t *s, int len)
+SPAN_DECLARE(int) fsk_rx_fillin(fsk_rx_state_t *s, int len)
 {
     int buf_ptr;
     int i;

@@ -4,7 +4,7 @@
   angular
     .module('vertoControllers')
     .controller('MainController',
-      function($scope, $rootScope, $location, $modal, $timeout, verto, storage, CallHistory, toastr, Fullscreen, prompt) {
+      function($scope, $rootScope, $location, $modal, $timeout, $q, verto, storage, CallHistory, toastr, Fullscreen, prompt, eventQueue) {
 
       console.debug('Executing MainController.');
 
@@ -24,58 +24,42 @@
        * @type {string}
        */
       $rootScope.dialpadNumber = '';
-
-
-      /**
-       * if user data saved, use stored data for logon
-       */
-      if (storage.data.ui_connected && storage.data.ws_connected) {
-        $scope.verto.data.name = storage.data.name;
-        $scope.verto.data.email = storage.data.email;
-        $scope.verto.data.login = storage.data.login;
-        $scope.verto.data.password = storage.data.password;
-
-        verto.connect(function(v, connected) {
-          $scope.$apply(function() {
-            if (connected) {
-              toastr.success('Nice to see you again.', 'Welcome back');
-              $location.path('/dialpad');
-            }
-          });
-        });
-
-      }
-
+      
       // If verto is not connected, redirects to login page.
       if (!verto.data.connected) {
         console.debug('MainController: WebSocket not connected. Redirecting to login.');
-        $location.path('/login');
+        $location.path('/');
       }
-
+ 
+      $rootScope.$on('config.http.success', function(ev) {
+        $scope.login(false);
+      });
       /**
        * Login the user to verto server and
        * redirects him to dialpad page.
        */
-      $scope.login = function() {
+      $scope.login = function(redirect) {
+        if(redirect == undefined) {
+          redirect = true;
+        }
         var connectCallback = function(v, connected) {
           $scope.$apply(function() {
-            if (connected) {
-              storage.data.ui_connected = verto.data.connected;
-              storage.data.ws_connected = verto.data.connected;
-              storage.data.name = verto.data.name;
-              storage.data.email = verto.data.email;
-              storage.data.login = verto.data.login;
-              storage.data.password = verto.data.password;
-
-              console.debug('Redirecting to dialpad page.');
-              toastr.success('Login successful.', 'Welcome');
+          verto.data.connecting = false;
+          if (connected) {
+            storage.data.ui_connected = verto.data.connected;
+            storage.data.ws_connected = verto.data.connected;
+            storage.data.name = verto.data.name;
+            storage.data.email = verto.data.email;
+            storage.data.login = verto.data.login;
+            storage.data.password = verto.data.password;
+            if (redirect) {
               $location.path('/dialpad');
-            } else {
-              toastr.error('There was an error while trying to login. Please try again.', 'Error');
             }
+          }
           });
         };
-
+        
+        verto.data.connecting = true;
         verto.connect(connectCallback);
       };
 
@@ -144,12 +128,16 @@
         );
       };
 
-      $rootScope.openModal = function(templateUrl, controller) {
-        var modalInstance = $modal.open({
+      $rootScope.openModal = function(templateUrl, controller, _options) {
+        var options = {
           animation: $scope.animationsEnabled,
           templateUrl: templateUrl,
           controller: controller,
-        });
+        };
+        
+        angular.extend(options, _options);
+
+        var modalInstance = $modal.open(options);
 
         modalInstance.result.then(
           function(result) {
@@ -165,7 +153,37 @@
             jQuery.material.init();
           }
         );
+        
+        return modalInstance;
+      };
 
+      $rootScope.$on('ws.close', onWSClose);
+      $rootScope.$on('ws.login', onWSLogin);
+
+      var ws_modalInstance;
+
+      function onWSClose(ev, data) {
+        if(ws_modalInstance) {
+          return;
+        };
+        var options = {
+          backdrop: 'static',
+          keyboard: false
+        };
+        ws_modalInstance = $scope.openModal('partials/ws_reconnect.html', 'ModalWsReconnectController', options);
+      };
+
+      function onWSLogin(ev, data) {
+        if(!ws_modalInstance) {
+          return;
+        };
+
+        ws_modalInstance.close();
+        ws_modalInstance = null;
+      };
+
+      $scope.showAbout = function() {
+        $scope.openModal('partials/about.html', 'AboutController');
       };
 
       $scope.showContributors = function() {
@@ -261,22 +279,27 @@
       });
 
       $rootScope.$on('page.incall', function(event, data) {
-        if (storage.data.askRecoverCall) {
-          prompt({
-            title: 'Oops, Active Call in Course.',
-            message: 'It seems you were in a call before leaving the last time. Wanna go back to that?'
-          }).then(function() {
-            console.log('redirect to incall page');
-            $location.path('/incall');
-          }, function() {
-            storage.data.userStatus = 'connecting';
-            verto.hangup();
+        var page_incall = function() {
+          return $q(function(resolve, reject) {
+            if (storage.data.askRecoverCall) {
+              prompt({
+                title: 'Oops, Active Call in Course.',
+                message: 'It seems you were in a call before leaving the last time. Wanna go back to that?'
+              }).then(function() {
+                console.log('redirect to incall page');
+                $location.path('/incall');
+              }, function() {
+                storage.data.userStatus = 'connecting';
+                verto.hangup();
+              });
+            } else {
+              console.log('redirect to incall page');
+              $location.path('/incall');
+            }
+            resolve();
           });
-        } else {
-          console.log('redirect to incall page');
-          $location.path('/incall');
-        }
-
+        };
+        eventQueue.events.push(page_incall);
       });
 
       $scope.$on('event:google-plus-signin-success', function (event,authResult) {
@@ -313,7 +336,7 @@
         console.log('Google+ Login Failure');
       });
 
-      $rootScope.callActive = function(data) {
+      $rootScope.callActive = function(data, params) {
         verto.data.mutedMic = storage.data.mutedMic;
         verto.data.mutedVideo = storage.data.mutedVideo;
 
@@ -331,10 +354,16 @@
         storage.data.calling = false;
 
         storage.data.cur_call = 1;
+
+        $location.path('/incall');
+
+        if(params.useVideo) {
+          $rootScope.$emit('call.video', 'video');
+        }
       };
 
-      $rootScope.$on('call.active', function(event, data) {
-        $rootScope.callActive(data);
+      $rootScope.$on('call.active', function(event, data, params) {
+        $rootScope.callActive(data, params);
       });
 
       $rootScope.$on('call.calling', function(event, data) {
@@ -360,11 +389,11 @@
 
           $scope.answerCall();
           storage.data.called_number = data;
-          CallHistory.add(number, 'inbound', true);
+          CallHistory.add(data, 'inbound', true);
           $location.path('/incall');
         }, function() {
           $scope.declineCall();
-          CallHistory.add(number, 'inbound', false);
+          CallHistory.add(data, 'inbound', false);
         });
       });
 
@@ -380,6 +409,7 @@
         if (!verto.data.call) {
           toastr.warning('There is no call to hangup.');
           $location.path('/dialpad');
+          return;
         }
 
         //var hangupCallback = function(v, hangup) {
@@ -394,7 +424,10 @@
         if (verto.data.shareCall) {
           verto.screenshareHangup();
         }
+
         verto.hangup();
+
+        $location.path('/dialpad');
       };
 
       $scope.answerCall = function() {
@@ -403,6 +436,7 @@
         verto.data.call.answer({
           useStereo: storage.data.useStereo,
           useCamera: storage.data.selectedVideo,
+          useVideo: storage.data.useVideo,
           useMic: storage.data.useMic,
           callee_id_name: verto.data.name,
           callee_id_number: verto.data.login

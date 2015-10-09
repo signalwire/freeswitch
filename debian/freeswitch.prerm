@@ -3,9 +3,6 @@ set -e
 
 case "$1" in
   remove|upgrade|deconfigure)
-    if [ -d /etc/freeswitch ]; then
-      echo "We're about to remove a configured FreeSWITCH..." >&2
-    fi
     ;;
   failed-upgrade)
     ;;

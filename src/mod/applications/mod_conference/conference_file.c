@@ -56,6 +56,11 @@ switch_status_t conference_file_close(conference_obj_t *conference, conference_f
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "milliseconds", "%ld", (long) node->fh.samples_in / (node->fh.native_rate / 1000));
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "samples", "%ld", (long) node->fh.samples_in);
 
+		if (node->layer_id && node->layer_id > -1) {
+			if (node->canvas_id < 0) node->canvas_id = 0;
+			conference_video_canvas_del_fnode_layer(conference, node);
+		}
+
 		if (node->fh.params) {
 			switch_event_merge(event, node->fh.params);
 		}
@@ -86,11 +91,13 @@ switch_status_t conference_file_close(conference_obj_t *conference, conference_f
 		conference_al_close(node->al);
 	}
 #endif
-	if (switch_core_file_has_video(&node->fh) && conference->canvases[0] && node->canvas_id > -1) {
-		conference->canvases[node->canvas_id]->timer.interval = conference->video_fps.ms;
-		conference->canvases[node->canvas_id]->timer.samples = conference->video_fps.samples;
-		switch_core_timer_sync(&conference->canvases[node->canvas_id]->timer);
-		conference->canvases[node->canvas_id]->send_keyframe = 1;
+	if (conference->playing_video_file && switch_core_file_has_video(&node->fh) && conference->canvases[0] && node->canvas_id > -1) {
+		if (conference->canvases[node->canvas_id]->timer.timer_interface) {
+			conference->canvases[node->canvas_id]->timer.interval = conference->video_fps.ms;
+			conference->canvases[node->canvas_id]->timer.samples = conference->video_fps.samples;
+			switch_core_timer_sync(&conference->canvases[node->canvas_id]->timer);
+			conference->canvases[node->canvas_id]->send_keyframe = 1;
+		}
 		conference->playing_video_file = 0;
 	}
 	return switch_core_file_close(&node->fh);
@@ -239,6 +246,7 @@ switch_status_t conference_file_play(conference_obj_t *conference, char *file, u
 
 	/* Open the file */
 	fnode->fh.pre_buffer_datalen = SWITCH_DEFAULT_FILE_BUFFER_LEN;
+	fnode->fh.mm.fps = conference->video_fps.fps;
 
 	if (switch_core_file_open(&fnode->fh, file, channels, conference->rate, flags, pool) != SWITCH_STATUS_SUCCESS) {
 		switch_event_t *event;
@@ -299,7 +307,7 @@ switch_status_t conference_file_play(conference_obj_t *conference, char *file, u
 	fnode->file = switch_core_strdup(fnode->pool, file);
 
 	if (!conference->fnode || (async && !conference->async_fnode)) {
-		conference_video_fnode_check(fnode);
+		conference_video_fnode_check(fnode, -1);
 	}
 
 	/* Queue the node */

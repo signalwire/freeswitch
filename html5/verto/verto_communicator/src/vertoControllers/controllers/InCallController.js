@@ -10,7 +10,6 @@
 
         console.debug('Executing InCallController.');
         $scope.layout = null;
-        $scope.checkBrowser();
         $rootScope.dialpadNumber = '';
         $scope.callTemplate = 'partials/phone_call.html';
         $scope.dialpadTemplate = '';

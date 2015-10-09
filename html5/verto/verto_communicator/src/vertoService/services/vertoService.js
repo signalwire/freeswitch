@@ -1,8 +1,8 @@
 'use strict';
 
 /* Controllers */
-
-var videoQuality = [{
+var videoQuality = [];
+var videoQualitySource = [{
   id: 'qvga',
   label: 'QVGA 320x240',
   width: 320,
@@ -143,8 +143,8 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
       $rootScope.$emit('page.incall', 'call');
     }
 
-    function callActive(last_state) {
-      $rootScope.$emit('call.active', last_state);
+    function callActive(last_state, params) {
+      $rootScope.$emit('call.active', last_state, params);
     }
 
     function calling() {
@@ -158,28 +158,28 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
     function updateResolutions(supportedResolutions) {
       console.debug('Attempting to sync supported and available resolutions');
 
-      var removed = 0;
+      //var removed = 0;
 
-      angular.forEach(videoQuality, function(resolution, id) {
-        var supported = false;
+      console.debug("VQ length: " + videoQualitySource.length);
+      console.debug(supportedResolutions);
+
+      angular.forEach(videoQualitySource, function(resolution, id) {
         angular.forEach(supportedResolutions, function(res) {
           var width = res[0];
           var height = res[1];
 
           if(resolution.width == width && resolution.height == height) {
-            supported = true;
+		videoQuality.push(resolution);
           }
         });
-
-        if(!supported) {
-          delete videoQuality[id];
-          ++removed;
-        }
       });
 
-      videoQuality.length = videoQuality.length - removed;
+      // videoQuality.length = videoQuality.length - removed;
+      console.debug("VQ length 2: " + videoQuality.length);
       data.videoQuality = videoQuality;
+      console.debug(videoQuality);
       data.vidQual = (videoQuality.length > 0) ? videoQuality[videoQuality.length - 1].id : null;
+      console.debug(data.vidQual);
 
       return videoQuality;
     };
@@ -198,7 +198,7 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
       videoResolution: videoResolution,
       bandwidth: bandwidth,
 
-      refreshDevicesCallback : function refreshDevicesCallback() {
+      refreshDevicesCallback : function refreshDevicesCallback(callback) {
         data.videoDevices = [{
 	  id: 'none',
 	  label: 'No Camera'
@@ -278,11 +278,19 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
         } else {
           data.canVideo = true;
         }
+
+        if(angular.isFunction(callback)) {
+          callback();
+        }
       },
 
       refreshDevices: function(callback) {
         console.debug('Attempting to refresh the devices.');
-        jQuery.verto.refreshDevices(this.refreshDevicesCallback);
+        if(callback) {
+          jQuery.verto.refreshDevices(callback);
+        } else {
+          jQuery.verto.refreshDevices(this.refreshDevicesCallback);
+        }
       },
 
       /**
@@ -364,8 +372,11 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
             }
           });
 
-          console.log('>>> conf.listVideoLayouts();');
-          conf.listVideoLayouts();
+          if (data.confRole == "moderator") {
+            console.log('>>> conf.listVideoLayouts();');
+            conf.listVideoLayouts();
+          }
+
           data.conf = conf;
 
           data.liveArray = new $.verto.liveArray(
@@ -425,15 +436,20 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
             console.log('Has data.liveArray.');
             $rootScope.$emit('members.clear');
             data.liveArray = null;
-
           } else {
             console.log('Doesn\'t found data.liveArray.');
+          }
+
+          if (data.conf) {
+            data.conf.destroy();
+            data.conf = null;
           }
         }
 
         var callbacks = {
           onWSLogin: function(v, success) {
             data.connected = success;
+            $rootScope.$emit('ws.login', success);
             console.debug('Connected to verto server:', success);
 
             if (angular.isFunction(callback)) {
@@ -450,6 +466,7 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
                   switch (params.pvtData.action) {
                     case "conference-liveArray-join":
                       console.log("conference-liveArray-join");
+                      stopConference();
                       startConference(v, dialog, params.pvtData);
                       break;
                     case "conference-liveArray-part":
@@ -472,6 +489,7 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
                 });
                 break;
               default:
+                console.warn('Got a not implemented message:', msg, dialog, params);
                 break;
             }
           },
@@ -479,9 +497,7 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
           onDialogState: function(d) {
             if (!data.call) {
               data.call = d;
-              if (d.state.name !== 'ringing') {
-                inCall();
-              }
+
             }
 
             console.debug('onDialogState:', d);
@@ -501,7 +517,7 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
               case "active":
                 console.debug('Talking to:', d.cidString());
                 data.callState = 'active';
-                callActive(d.lastState.name);
+                callActive(d.lastState.name, d.params);
                 break;
               case "hangup":
                 console.debug('Call ended with cause: ' + d.cause);
@@ -512,21 +528,22 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
                 if (d.params.screenShare) {
                   cleanShareCall(that);
                 } else {
-                  if (data.liveArray) {
-                    data.liveArray.destroy();
+                  stopConference();
+                  if (!that.reloaded) {
+                    cleanCall();
                   }
-                  
-                  if (data.conf) {
-                    data.conf.destroy();
-                  }
-                  cleanCall();
                 }
+                break;
+              default:
+                console.warn('Got a not implemented state:', d);
                 break;
             }
           },
 
           onWSClose: function(v, success) {
             console.debug('onWSClose:', success);
+
+            $rootScope.$emit('ws.close', success);
           },
 
           onEvent: function(v, e) {
@@ -538,10 +555,11 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
         function ourBootstrap() {
           // Checking if we have a failed connection attempt before
           // connecting again.
-          that.refreshDevicesCallback();
           if (data.instance && !data.instance.rpcClient.socketReady()) {
               clearTimeout(data.instance.rpcClient.to);
               data.instance.logout();
+	      data.instance.login();
+	      return;
           };
           data.instance = new jQuery.verto({
             login: data.login + '@' + data.hostname,
@@ -551,22 +569,36 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
             ringFile: "sounds/bell_ring2.wav",
             // TODO: Add options for this.
             audioParams: {
-                googEchoCancellation: storage.data.googEchoCancellation || false,
-                googNoiseSuppression: storage.data.googNoiseSuppression || false,
-                googHighpassFilter: storage.data.googHighpassFilter || false
+                googEchoCancellation: storage.data.googEchoCancellation || true,
+                googNoiseSuppression: storage.data.googNoiseSuppression || true,
+                googHighpassFilter: storage.data.googHighpassFilter || true
             },
             iceServers: storage.data.useSTUN
           }, callbacks);
 
-          data.instance.deviceParams({
-            useCamera: storage.data.selectedVideo,
-            useMic: storage.data.selectedAudio,
-            onResCheck: that.refreshVideoResolution
+          // We need to know when user reloaded page and not react to
+          // verto events in order to not stop the reload and redirect user back
+          // to the dialpad.
+          that.reloaded = false;
+          jQuery.verto.unloadJobs.push(function() {
+            that.reloaded = true;
           });
-
+	    data.instance.deviceParams({
+		useCamera: storage.data.selectedVideo,
+		useMic: storage.data.selectedAudio,
+		onResCheck: that.refreshVideoResolution
+	    });
         }
 
-        $.verto.init({}, ourBootstrap);
+        if (data.mediaPerm) {
+          ourBootstrap();
+        } else {
+	    $.FSRTC.checkPerms(ourBootstrap, true, true);
+        }
+      },
+
+      mediaPerm: function(callback) {
+	  $.FSRTC.checkPerms(callback, true, true);
       },
 
       /**
@@ -616,7 +648,7 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
         var call = data.instance.newCall({
           destination_number: destination,
           caller_id_name: data.name,
-          caller_id_number: data.login,
+          caller_id_number: data.callerid ? data.callerid : data.email,
           outgoingBandwidth: storage.data.outgoingBandwidth,
           incomingBandwidth: storage.data.incomingBandwidth,
           useVideo: storage.data.useVideo,

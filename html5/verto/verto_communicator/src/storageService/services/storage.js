@@ -53,6 +53,8 @@
         data.userStatus = 'disconnected';
       },
       factoryReset: function() {
+        localStorage.clear();
+        // set defaultSettings again
         data.$reset(defaultSettings);
       },
     };

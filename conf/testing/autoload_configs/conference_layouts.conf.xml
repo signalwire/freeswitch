@@ -12,6 +12,7 @@
 	<image x="0" y="90" scale="180"/>
 	<image x="180" y="90" scale="180"/>
       </layout>
+
       <layout name="2x1-zoom" auto-3d-position="true">
 	<image x="0" y="0" scale="180" hscale="360" zoom="true"/>
 	<image x="180" y="0" scale="180" hscale="360" zoom="true"/>
@@ -314,6 +315,10 @@
 	<image x="180" y="300" scale="60"/>
 	<image x="240" y="300" scale="60"/>
 	<image x="300" y="300" scale="60"/>
+      </layout>
+      <layout name="2x1-presenter-zoom" auto-3d-position="true">
+	<image x="0" y="0" scale="180" hscale="360" zoom="true"/>
+	<image x="180" y="0" scale="180" hscale="360" zoom="true" reservation_id="presenter"/>
       </layout>
       <layout name="presenter-dual-vertical">
 	<image x="90" y="0" scale="180" floor-only="true"/>

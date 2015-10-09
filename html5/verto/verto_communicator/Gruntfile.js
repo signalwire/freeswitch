@@ -24,15 +24,16 @@ module.exports = function (grunt) {
   var debug = grunt.option('debug');
 
   var uglify_config = {
+    options: {
+      sourceMap: true,
+      sourceMapIncludeSources:true
+    }
   };
+  
   if (debug) {
-    uglify_config = {
-      options: {
-        beautify: debug ? true : false,
-        compress: debug ? false : true,
-	mangle: debug ? false : true
-      }
-    };
+    uglify_config['options']['mangle'] = debug ? false : true;
+    uglify_config['options']['beautify'] = debug ? false : true;
+    uglify_config['options']['compress'] = debug ? false : true;
   }
   // Project configuration.
   grunt.initConfig({
@@ -60,6 +61,26 @@ module.exports = function (grunt) {
         src: ['src/index.html'],
         ignorePath:  /\.\.\//
       }
+    },
+
+    revision: {
+      options: {
+        property: 'meta.revision',
+        ref: 'HEAD',
+        short: true
+      }
+    },
+    
+    preprocess: {
+      options: {
+	context: {
+          revision: '<%= meta.revision %>' 
+	}
+      },
+      js: {
+	src: 'src/vertoControllers/controllers/AboutController.source.js',
+	dest: 'src/vertoControllers/controllers/AboutController.js'
+      },
     },
 
     postcss: {
@@ -129,6 +150,8 @@ module.exports = function (grunt) {
             ],
             routes: {
               '/partials': 'src/partials',
+              '/config.json': 'src/config.json',
+              '/contributors.txt': 'src/contributors.txt',
               '/bower_components': './bower_components',
               '/js/src': '../js/src',
               '/js': './js'
@@ -283,6 +306,7 @@ module.exports = function (grunt) {
              '*.html',
              '*.json',
              'partials/**/*.html',
+             'img/*.png',
              'images/{,*/}*.{webp}',
              'css/fonts/{,*/}*.*',
              'sounds/*.*'
@@ -324,6 +348,9 @@ module.exports = function (grunt) {
      },
   });
 
+  grunt.loadNpmTasks('grunt-git-revision');
+  grunt.loadNpmTasks('grunt-preprocess');
+
   grunt.registerTask('serve', function (target) {
     var tasks = [
       'wiredep',
@@ -336,9 +363,13 @@ module.exports = function (grunt) {
     
     grunt.task.run(tasks);
   });
+
+  grunt.registerTask('default', ['build']);
   
   grunt.registerTask('build', [
     'clean:dist',
+    'revision',
+    'preprocess',
     'wiredep',
     'useminPrepare',
     'concurrent:dist',

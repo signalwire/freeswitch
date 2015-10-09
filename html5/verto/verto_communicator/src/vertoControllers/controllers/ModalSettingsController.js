@@ -34,6 +34,14 @@
 	    window.location.reload();
 	  };
         };
+
+        $scope.checkUseDedRemoteEncoder = function(option) {
+          if ($scope.mydata.incomingBandwidth != 'default' || $scope.mydata.outgoingBandwidth != 'default') {
+            $scope.mydata.useDedenc = true;
+          } else {
+            $scope.mydata.useDedenc = false;
+          }
+        };
       }
     ]);
 

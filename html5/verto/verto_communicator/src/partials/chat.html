@@ -19,13 +19,23 @@
 
     <div ng-repeat="member in members" class="chat-member-item">
       <span class="chat-members-avatar">
-        <img gravatar-size="40" gravatar-src-once="member.email" class="img-circle" ng-class="{'chat-member-talking': member.status.audio.talking, 'chat-member-muted': member.status.audio.muted}" />
+        <img gravatar-size="40" gravatar-src="::member.email" class="img-circle" ng-class="{'chat-member-talking': member.status.audio.talking, 'chat-member-muted': member.status.audio.muted}" />
       </span>
-      <h4 class="chat-members-name"><div class="members-name">{{ member.name }}</div> <small>({{ member.number }})</small></h4>
+      <!-- FIXME(italo): Put this whole block in a flex box to avoid defining fixed width.-->
+      <h4 class="chat-members-name">
+        <div class="members-name">{{ member.name }}</div> 
+	<small class="ellipsis members-number">({{ member.number }})</small>
+	
+	<div class="members-badges">
+   	  <div ng-if="member.status.video.floor" class="label badge-floor" ng-class="{'label-danger': member.status.video.floorLocked, 'label-info': !member.status.video.floorLocked}"><i class="mdi mdi-action-https lock-floor" ng-if="member.status.video.floorLocked"></i> <span>Floor</span></div>
+          <div ng-if="member.status.video.reservationID == 'presenter'" class="label label-warning">Presenter</div>
+	</div>
+      </h4>
+      
       <div class="pull-right action-buttons chat-members-action" ng-show="verto.data.confRole == 'moderator'">
         <div class="btn-group">
           <button type="button" class="btn btn-xs dropdown-toggle" data-toggle="dropdown">
-            <i class="mdi-navigation-more-vert" style="margin-right: 0px;"></i>
+            <i class="mdi-navigation-more-vert dark" style="margin-right: 0px;"></i>
           </button>
           <ul class="dropdown-menu slidedown pull-right">
             <li>
@@ -64,6 +74,12 @@
                 Banner
               </a>
             </li>
+	    <li>
+              <a href="" ng-click="confResetBanner(member.id)">
+                <span class="mdi-fw mdi-content-clear"></span>
+                Reset Banner
+              </a>
+            </li>
             <li>
               <a href="" ng-click="confVolumeDown(member.id)">
                 <span class="mdi-fw mdi-av-volume-down"></span>
@@ -87,8 +103,8 @@
       </div>
 
       <span class="chat-members-status pull-right">
-        <i class="in-use" ng-class="{'mdi-av-mic': !member.status.audio.muted, 'mdi-av-mic-off': member.status.audio.muted, 'mic_talking': member.status.audio.talking}"></i>
-        <i ng-class="{'mdi-av-videocam': !member.status.video.muted, 'mdi-av-videocam-off': member.status.video.muted, 'in-use': (member.status.video && !member.status.video.muted), 'disabled': !member.status.video}"></i>
+        <i ng-click="confMuteMic(member.id)" class="in-use" ng-class="{'clickable': verto.data.confRole == 'moderator', 'mdi-av-mic': !member.status.audio.muted, 'mdi-av-mic-off': member.status.audio.muted, 'mic_talking': member.status.audio.talking}"></i>
+        <i ng-click="confMuteVideo(member.id)" ng-class="{'clickable': verto.data.confRole == 'moderator', 'mdi-av-videocam': !member.status.video.muted, 'mdi-av-videocam-off': member.status.video.muted, 'in-use': (member.status.video && !member.status.video.muted), 'disabled': !member.status.video}"></i>
       </span>
     </div>
   </div>

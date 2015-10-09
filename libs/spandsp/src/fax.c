@@ -161,7 +161,7 @@ static void hdlc_underflow_handler(void *user_data)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE_NONSTD(int) fax_rx(fax_state_t *s, int16_t *amp, int len)
+SPAN_DECLARE(int) fax_rx(fax_state_t *s, int16_t *amp, int len)
 {
     int i;
 
@@ -180,7 +180,7 @@ SPAN_DECLARE_NONSTD(int) fax_rx(fax_state_t *s, int16_t *amp, int len)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE_NONSTD(int) fax_rx_fillin(fax_state_t *s, int len)
+SPAN_DECLARE(int) fax_rx_fillin(fax_state_t *s, int len)
 {
     /* To mitigate the effect of lost packets on a packet network we should
        try to sustain the status quo. If there is no receive modem running, keep
@@ -209,7 +209,7 @@ SPAN_DECLARE_NONSTD(int) fax_rx_fillin(fax_state_t *s, int len)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE_NONSTD(int) fax_tx(fax_state_t *s, int16_t *amp, int max_len)
+SPAN_DECLARE(int) fax_tx(fax_state_t *s, int16_t *amp, int max_len)
 {
     int len;
 #if defined(LOG_FAX_AUDIO)

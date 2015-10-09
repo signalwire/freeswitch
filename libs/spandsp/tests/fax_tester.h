@@ -40,32 +40,25 @@ typedef struct faxtester_state_s faxtester_state_t;
 typedef void (*faxtester_flush_handler_t)(faxtester_state_t *s, void *user_data, int which);
 
 /*!
-    FAX tester real time frame handler.
-    \brief FAX tester real time frame handler.
-    \param s The FAX tester context.
-    \param user_data An opaque pointer.
-    \param direction True for incoming, false for outgoing.
-    \param msg The HDLC message.
-    \param len The length of the message.
-*/
-typedef void (*faxtester_real_time_frame_handler_t)(faxtester_state_t *s,
-                                                    void *user_data,
-                                                    int direction,
-                                                    const uint8_t *msg,
-                                                    int len);
-
-typedef void (*faxtester_front_end_step_complete_handler_t)(faxtester_state_t *s, void *user_data);
-
-/*!
     FAX tester descriptor.
 */
 struct faxtester_state_s
 {
     /*! \brief The far end FAX context */
     fax_state_t *far_fax;
+    t38_terminal_state_t *far_t38;
+    
+    int far_tag;
 
     /*! \brief The far end T.38 terminal context */
     t38_terminal_state_t *far_t38_fax;
+    
+    t30_state_t *far_t30;
+
+    t30_exchanged_info_t expected_rx_info;
+
+    bool use_receiver_not_ready;
+    bool test_local_interrupt;
 
     /*! \brief Path for the FAX image test files. */
     char image_path[1024];
@@ -74,26 +67,22 @@ struct faxtester_state_s
     xmlDocPtr doc;
     /*! \brief Pointer to our current step in the test. */
     xmlNodePtr cur;
+    
+    int repeat_min;
+    int repeat_max;
+    int repeat_count;
+    xmlNodePtr repeat_start;
+    xmlNodePtr repeat_parent;
 
     faxtester_flush_handler_t flush_handler;
     void *flush_user_data;
-
-    /*! \brief A pointer to a callback routine to be called when frames are
-        exchanged. */
-    faxtester_real_time_frame_handler_t real_time_frame_handler;
-    /*! \brief An opaque pointer supplied in real time frame callbacks. */
-    void *real_time_frame_user_data;
-
-    faxtester_front_end_step_complete_handler_t front_end_step_complete_handler;
-    void *front_end_step_complete_user_data;
-
-    faxtester_front_end_step_complete_handler_t front_end_step_timeout_handler;
-    void *front_end_step_timeout_user_data;
 
     const uint8_t *image_buffer;
     int image_len;
     int image_ptr;
     int image_bit_ptr;
+
+    uint8_t image[1000000];
 
     int ecm_frame_size;
     int corrupt_crc;
@@ -194,26 +183,24 @@ void faxtester_set_transmit_on_idle(faxtester_state_t *s, int transmit_on_idle);
 */
 void faxtester_set_tep_mode(faxtester_state_t *s, int use_tep);
 
-void faxtester_set_real_time_frame_handler(faxtester_state_t *s, faxtester_real_time_frame_handler_t handler, void *user_data);
-
-void faxtester_set_front_end_step_complete_handler(faxtester_state_t *s, faxtester_front_end_step_complete_handler_t handler, void *user_data);
-
-void faxtester_set_front_end_step_timeout_handler(faxtester_state_t *s, faxtester_front_end_step_complete_handler_t handler, void *user_data);
-
 void faxtester_set_timeout(faxtester_state_t *s, int timeout);
 
-void faxtester_set_non_ecm_image_buffer(faxtester_state_t *s, const uint8_t *buf, int len);
+SPAN_DECLARE(int) faxtester_next_step(faxtester_state_t *s);
 
-void faxtester_set_ecm_image_buffer(faxtester_state_t *s, const uint8_t *buf, int len, int block, int frame_size, int crc_hit);
-
-/*! Initialise a FAX context.
-    \brief Initialise a FAX context.
+/*! Get the logging context associated with a FAX tester context.
+    \brief Get the logging context associated with a FAX tester context.
     \param s The FAX tester context.
-    \param calling_party true if the context is for a calling party. FALSE if the
-           context is for an answering party.
+    \return A pointer to the logging context */
+SPAN_DECLARE(logging_state_t *) faxtester_get_logging_state(faxtester_state_t *s);
+
+/*! Initialise a FAX tester context.
+    \brief Initialise a FAX tester context.
+    \param s The FAX tester context.
+    \param test_file The name of the file of XML test scripts.
+    \param test The name of the XML script test.
     \return A pointer to the FAX context, or NULL if there was a problem.
 */
-faxtester_state_t *faxtester_init(faxtester_state_t *s, int calling_party);
+faxtester_state_t *faxtester_init(faxtester_state_t *s, const char *test_file, const char *test);
 
 /*! Release a FAX context.
     \brief Release a FAX context.

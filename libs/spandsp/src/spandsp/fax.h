@@ -50,7 +50,7 @@ extern "C"
     \return The number of samples unprocessed. This should only be non-zero if
             the software has reached the end of the FAX call.
 */
-SPAN_DECLARE_NONSTD(int) fax_rx(fax_state_t *s, int16_t *amp, int len);
+SPAN_DECLARE(int) fax_rx(fax_state_t *s, int16_t *amp, int len);
 
 /*! Apply fake T.30 receive processing when a block of audio samples is missing (e.g due
     to packet loss).
@@ -60,7 +60,7 @@ SPAN_DECLARE_NONSTD(int) fax_rx(fax_state_t *s, int16_t *amp, int len);
     \return The number of samples unprocessed. This should only be non-zero if
             the software has reached the end of the FAX call.
 */
-SPAN_DECLARE_NONSTD(int) fax_rx_fillin(fax_state_t *s, int len);
+SPAN_DECLARE(int) fax_rx_fillin(fax_state_t *s, int len);
 
 /*! Apply T.30 transmit processing to generate a block of audio samples.
     \brief Apply T.30 transmit processing to generate a block of audio samples.
@@ -70,7 +70,7 @@ SPAN_DECLARE_NONSTD(int) fax_rx_fillin(fax_state_t *s, int len);
     \return The number of samples actually generated. This will be zero when
             there is nothing to send.
 */
-SPAN_DECLARE_NONSTD(int) fax_tx(fax_state_t *s, int16_t *amp, int max_len);
+SPAN_DECLARE(int) fax_tx(fax_state_t *s, int16_t *amp, int max_len);
 
 /*! Select whether silent audio will be sent when FAX transmit is idle.
     \brief Select whether silent audio will be sent when FAX transmit is idle.

@@ -19,6 +19,11 @@
   vertoApp.config(['$routeProvider', 'gravatarServiceProvider',
     function($routeProvider, gravatarServiceProvider) {
       $routeProvider.
+      when('/', {
+        title: 'Loading',
+        templateUrl: 'partials/splash_screen.html',
+        controller: 'SplashScreenController'
+      }).
       when('/login', {
         title: 'Login',
         templateUrl: 'partials/login.html',
@@ -40,7 +45,7 @@
         controller: 'BrowserUpgradeController'
       }).
       otherwise({
-        redirectTo: '/login'
+        redirectTo: '/'
       });
 
       gravatarServiceProvider.defaults = {
@@ -49,8 +54,19 @@
     }
   ]);
 
-  vertoApp.run(['$rootScope', '$location', 'toastr', 'prompt',
-    function($rootScope, $location, toastr, prompt) {
+  vertoApp.run(['$rootScope', '$location', 'toastr', 'prompt', 'verto',
+    function($rootScope, $location, toastr, prompt, verto) {
+      
+      $rootScope.$on( "$routeChangeStart", function(event, next, current) {
+        if (!verto.data.connected) {
+          if ( next.templateUrl === "partials/login.html") {
+            // pass 
+          } else {
+            $location.path("/");
+          }
+        }
+      });
+      
       $rootScope.$on('$routeChangeSuccess', function(event, current, previous) {
         $rootScope.title = current.$$route.title;
       });
@@ -61,17 +77,7 @@
         $rootScope.safeProtocol = true;
       }
 
-      $rootScope.checkBrowser = function() {
-        navigator.getUserMedia = navigator.getUserMedia ||
-          navigator.webkitGetUserMedia ||
-          navigator.mozGetUserMedia;
-
-        if (!navigator.getUserMedia) {
-          $location.path('/browser-upgrade');
-        }
-
-      };
-
+      
       $rootScope.promptInput = function(title, message, label, callback) {
         var ret = prompt({
           title: title,

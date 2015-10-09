@@ -57,7 +57,7 @@
 
 #include "spandsp/private/silence_gen.h"
 
-SPAN_DECLARE_NONSTD(int) silence_gen(silence_gen_state_t *s, int16_t *amp, int max_len)
+SPAN_DECLARE(int) silence_gen(silence_gen_state_t *s, int16_t *amp, int max_len)
 {
     if (s->remaining_samples != INT_MAX)
     {
@@ -151,7 +151,7 @@ SPAN_DECLARE(int) silence_gen_free(silence_gen_state_t *s)
 /* The following dummy routines, to absorb data, don't really have a proper home,
    so they have been put here. */
 
-SPAN_DECLARE_NONSTD(int) span_dummy_rx(void *user_data, const int16_t amp[], int len)
+SPAN_DECLARE(int) span_dummy_rx(void *user_data, const int16_t amp[], int len)
 {
     return 0;
 }
@@ -163,7 +163,7 @@ SPAN_DECLARE(int) span_dummy_mod(void *user_data, int16_t amp[], int len)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE_NONSTD(int) span_dummy_rx_fillin(void *user_data, int len)
+SPAN_DECLARE(int) span_dummy_rx_fillin(void *user_data, int len)
 {
     return 0;
 }

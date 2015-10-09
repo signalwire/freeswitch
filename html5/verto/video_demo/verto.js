@@ -984,6 +984,8 @@ function refresh_devices()
 
     $("#useshare").append(o);
 
+    $("#usemic").append(new Option("No Microphone", "none"));
+
     
     $("#usecamera").selectmenu('refresh', true);
     $("#usemic").selectmenu('refresh', true);
@@ -1593,7 +1595,7 @@ $(window).load(function() {
     $("#search").show();
     goto_page("enum");
     setTimeout(function() {
-	$.verto.init({}, init);
+	$.verto.init({skipPermCheck: false}, init);
     }, 1000);
 
 });

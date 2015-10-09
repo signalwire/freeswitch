@@ -930,7 +930,7 @@ video_layout_t *conference_video_get_layout(conference_obj_t *conference, const 
 void conference_video_check_avatar(conference_member_t *member, switch_bool_t force);
 void conference_video_find_floor(conference_member_t *member, switch_bool_t entering);
 void conference_video_destroy_canvas(mcu_canvas_t **canvasP);
-void conference_video_fnode_check(conference_file_node_t *fnode);
+void conference_video_fnode_check(conference_file_node_t *fnode, int canvas_id);
 switch_status_t conference_video_set_canvas_bgimg(mcu_canvas_t *canvas, const char *img_path);
 switch_status_t conference_al_parse_position(al_handle_t *al, const char *data);
 switch_status_t conference_video_thread_callback(switch_core_session_t *session, switch_frame_t *frame, void *user_data);

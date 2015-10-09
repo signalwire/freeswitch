@@ -85,7 +85,7 @@ static void restart_buffer(t38_non_ecm_buffer_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE_NONSTD(int) t38_non_ecm_buffer_get_bit(void *user_data)
+SPAN_DECLARE(int) t38_non_ecm_buffer_get_bit(void *user_data)
 {
     t38_non_ecm_buffer_state_t *s;
     int bit;

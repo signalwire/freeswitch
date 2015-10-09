@@ -31,8 +31,8 @@
 			<param name="encode" value="base64|true|false"/>
 			<!-- Number of retries in case of failure. Each specified URL is tried in turn. -->
 			<param name="retries" value="0"/>
-			<!-- Delay between retries (ms). -->
-			<param name="delay" value="5000"/>
+			<!-- Delay between retries in seconds. -->
+			<param name="delay" value="5"/>
 			<!-- Disable streaming if the server doesn't support it. -->
 			<param name="disable-100-continue" value="false"/>
 			<!-- If web posting failed, the CDR is written to a file. -->

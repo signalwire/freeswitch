@@ -119,7 +119,7 @@ SPAN_DECLARE(void) tone_gen_descriptor_free(tone_gen_descriptor_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE_NONSTD(int) tone_gen(tone_gen_state_t *s, int16_t amp[], int max_samples)
+SPAN_DECLARE(int) tone_gen(tone_gen_state_t *s, int16_t amp[], int max_samples)
 {
     int samples;
     int limit;

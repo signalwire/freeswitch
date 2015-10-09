@@ -1429,7 +1429,7 @@ SWITCH_DECLARE(void) switch_core_session_check_outgoing_crypto(switch_core_sessi
 	switch_media_handle_t *smh;
 	int i;
 
-	if (!switch_core_session_media_handle_ready(session) == SWITCH_STATUS_SUCCESS) {
+	if (switch_core_session_media_handle_ready(session) != SWITCH_STATUS_SUCCESS) {
 		return;
 	}
 
@@ -1748,7 +1748,7 @@ SWITCH_DECLARE(switch_core_media_params_t *) switch_core_media_get_mparams(switc
 SWITCH_DECLARE(void) switch_core_media_prepare_codecs(switch_core_session_t *session, switch_bool_t force)
 {
 	const char *abs, *codec_string = NULL;
-	const char *ocodec = NULL;
+	const char *ocodec = NULL, *val;
 	switch_media_handle_t *smh;
 
 	switch_assert(session);
@@ -1778,6 +1778,14 @@ SWITCH_DECLARE(void) switch_core_media_prepare_codecs(switch_core_session_t *ses
 		goto ready;
 	}
 
+	val = switch_channel_get_variable_dup(session->channel, "media_mix_inbound_outbound_codecs", SWITCH_FALSE, -1);
+	if (!val || !switch_true(val)) {
+		if ((ocodec = switch_channel_get_variable(session->channel, SWITCH_ORIGINATOR_CODEC_VARIABLE))) {
+			codec_string = ocodec;
+			goto ready;
+		}
+	}
+	
 	if (!(codec_string = switch_channel_get_variable(session->channel, "codec_string"))) {
 		codec_string = switch_core_media_get_codec_string(smh->session);
 	}
@@ -1787,7 +1795,7 @@ SWITCH_DECLARE(void) switch_core_media_prepare_codecs(switch_core_session_t *ses
 		goto ready;
 	}
 
-	if ((ocodec = switch_channel_get_variable(session->channel, SWITCH_ORIGINATOR_CODEC_VARIABLE))) {
+	if (ocodec) {
 		if (!codec_string || (smh->media_flags[SCMF_DISABLE_TRANSCODING])) {
 			codec_string = ocodec;
 		} else {
@@ -4053,6 +4061,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 					if (!best_te || map->rm_rate == a_engine->cur_payload_map->rm_rate) {
 						best_te = (switch_payload_t) map->rm_pt;
 						best_te_rate = map->rm_rate;
+						smh->mparams->recv_te = best_te;
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Set telephone-event payload to %u@%ld\n", best_te, best_te_rate);
 					}
 					continue;
@@ -4396,6 +4405,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 					if (!best_te || map->rm_rate == a_engine->cur_payload_map->adv_rm_rate) {
 						best_te = (switch_payload_t) map->rm_pt;
 						best_te_rate = map->rm_rate;
+						smh->mparams->recv_te = best_te;
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Set telephone-event payload to %u@%lu\n", best_te, best_te_rate);
 					}
 					continue;
@@ -4432,9 +4442,10 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 			}
 
 			if (best_te) {
-				if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
+				if (sdp_type == SDP_TYPE_RESPONSE) {
 					te = smh->mparams->te = (switch_payload_t) best_te;
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Set 2833 dtmf send payload to %u\n", best_te);
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Set 2833 dtmf send payload to %u\n", 
+									  switch_channel_get_name(session->channel), best_te);
 					switch_channel_set_variable(session->channel, "dtmf_type", "rfc2833");
 					smh->mparams->dtmf_type = DTMF_2833;
 					if (a_engine->rtp_session) {
@@ -4444,7 +4455,8 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 				} else {
 					te = smh->mparams->recv_te = smh->mparams->te = (switch_payload_t) best_te;
 					smh->mparams->te_rate = best_te_rate;
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Set 2833 dtmf send/recv payload to %u\n", te);
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Set 2833 dtmf send/recv payload to %u\n",
+									  switch_channel_get_name(session->channel), te);
 					switch_channel_set_variable(session->channel, "dtmf_type", "rfc2833");
 					smh->mparams->dtmf_type = DTMF_2833;
 					if (a_engine->rtp_session) {
@@ -5116,9 +5128,9 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 		if (switch_channel_test_flag(channel, CF_VIDEO_READY)) {
 			switch_mutex_lock(mh->file_mutex);
 			if (smh->video_write_fh && switch_channel_ready(session->channel) && switch_test_flag(smh->video_write_fh, SWITCH_FILE_OPEN)) {
-				switch_status_t wstatus = switch_core_file_read_video(smh->video_write_fh, &fr, SVR_FLUSH);
+				switch_status_t wstatus = switch_core_file_read_video(smh->video_write_fh, &fr, 0);
 				if (wstatus == SWITCH_STATUS_SUCCESS) {
-					switch_core_session_write_video_frame(session, &fr, SWITCH_IO_FLAG_NONE, 0);
+					switch_core_session_write_video_frame(session, &fr, SWITCH_IO_FLAG_NONE, SVR_FLUSH);
 					switch_img_free(&fr.img);
 				} else if (wstatus != SWITCH_STATUS_BREAK && wstatus != SWITCH_STATUS_IGNORE) {
 					smh->video_write_fh = NULL;
@@ -6303,13 +6315,15 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 		}
 
 		if (smh->mparams->te) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Set 2833 dtmf send payload to %u\n", smh->mparams->te);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Set 2833 dtmf send payload to %u\n",
+							  switch_channel_get_name(session->channel), smh->mparams->te);
 			switch_rtp_set_telephony_event(a_engine->rtp_session, smh->mparams->te);
 			switch_channel_set_variable_printf(session->channel, "rtp_2833_send_payload", "%d", smh->mparams->te);
 		}
 
 		if (smh->mparams->recv_te) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Set 2833 dtmf receive payload to %u\n", smh->mparams->recv_te);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Set 2833 dtmf receive payload to %u\n", 
+							  switch_channel_get_name(session->channel), smh->mparams->recv_te);
 			switch_rtp_set_telephony_recv_event(a_engine->rtp_session, smh->mparams->recv_te);
 			switch_channel_set_variable_printf(session->channel, "rtp_2833_recv_payload", "%d", smh->mparams->recv_te);
 		}
@@ -7925,8 +7939,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 
 						if (ov_fmtp) {
 							pass_fmtp = ov_fmtp;
-						} else { //if (switch_true(switch_channel_get_variable_dup(session->channel, "rtp_mirror_fmtp", SWITCH_FALSE, -1))) { 
-							// seems to break eyebeam at least...
+						} else if (switch_true(switch_channel_get_variable_dup(session->channel, "rtp_mirror_fmtp", SWITCH_FALSE, -1))) { 
 							pass_fmtp = switch_channel_get_variable(session->channel, "rtp_video_fmtp");
 						}
 					}
@@ -8306,13 +8319,13 @@ SWITCH_DECLARE(void) switch_core_media_set_udptl_image_sdp(switch_core_session_t
 	uint32_t port;
 	const char *family = "IP4";
 	const char *username;
-	const char *bit_removal_on = "a=T38FaxFillBitRemoval\n";
+	const char *bit_removal_on = "a=T38FaxFillBitRemoval\r\n";
 	const char *bit_removal_off = "";
 	
-	const char *mmr_on = "a=T38FaxTranscodingMMR\n";
+	const char *mmr_on = "a=T38FaxTranscodingMMR\r\n";
 	const char *mmr_off = "";
 
-	const char *jbig_on = "a=T38FaxTranscodingJBIG\n";
+	const char *jbig_on = "a=T38FaxTranscodingJBIG\r\n";
 	const char *jbig_off = "";
 	const char *var;
 	int broken_boolean;
@@ -8375,46 +8388,46 @@ SWITCH_DECLARE(void) switch_core_media_set_udptl_image_sdp(switch_core_session_t
 
 
 	switch_snprintf(buf, sizeof(buf),
-					"v=0\n"
-					"o=%s %010u %010u IN %s %s\n"
-					"s=%s\n" "c=IN %s %s\n" "t=0 0\n", username, smh->owner_id, smh->session_id, family, ip, username, family, ip);
+					"v=0\r\n"
+					"o=%s %010u %010u IN %s %s\r\n"
+					"s=%s\r\n" "c=IN %s %s\r\n" "t=0 0\r\n", username, smh->owner_id, smh->session_id, family, ip, username, family, ip);
 
 	if (t38_options->T38FaxMaxBuffer) {
-		switch_snprintf(max_buf, sizeof(max_buf), "a=T38FaxMaxBuffer:%d\n", t38_options->T38FaxMaxBuffer);
+		switch_snprintf(max_buf, sizeof(max_buf), "a=T38FaxMaxBuffer:%d\r\n", t38_options->T38FaxMaxBuffer);
 	};
 
 	if (t38_options->T38FaxMaxDatagram) {
-		switch_snprintf(max_data, sizeof(max_data), "a=T38FaxMaxDatagram:%d\n", t38_options->T38FaxMaxDatagram);
+		switch_snprintf(max_data, sizeof(max_data), "a=T38FaxMaxDatagram:%d\r\n", t38_options->T38FaxMaxDatagram);
 	};
 
 
 	
 
 	if (broken_boolean) {
-		bit_removal_on = "a=T38FaxFillBitRemoval:1\n";
-		bit_removal_off = "a=T38FaxFillBitRemoval:0\n";
+		bit_removal_on = "a=T38FaxFillBitRemoval:1\r\n";
+		bit_removal_off = "a=T38FaxFillBitRemoval:0\r\n";
 
-		mmr_on = "a=T38FaxTranscodingMMR:1\n";
-		mmr_off = "a=T38FaxTranscodingMMR:0\n";
+		mmr_on = "a=T38FaxTranscodingMMR:1\r\n";
+		mmr_off = "a=T38FaxTranscodingMMR:0\r\n";
 
-		jbig_on = "a=T38FaxTranscodingJBIG:1\n";
-		jbig_off = "a=T38FaxTranscodingJBIG:0\n";
+		jbig_on = "a=T38FaxTranscodingJBIG:1\r\n";
+		jbig_off = "a=T38FaxTranscodingJBIG:0\r\n";
 
 	}
 	
 
 	switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf),
-					"m=image %d udptl t38\n"
-					"a=T38FaxVersion:%d\n"
-					"a=T38MaxBitRate:%d\n"
+					"m=image %d udptl t38\r\n"
+					"a=T38FaxVersion:%d\r\n"
+					"a=T38MaxBitRate:%d\r\n"
 					"%s"
 					"%s"
 					"%s"
-					"a=T38FaxRateManagement:%s\n"
+					"a=T38FaxRateManagement:%s\r\n"
 					"%s"
 					"%s"
-					"a=T38FaxUdpEC:%s\n",
-					//"a=T38VendorInfo:%s\n",
+					"a=T38FaxUdpEC:%s\r\n",
+					//"a=T38VendorInfo:%s\r\n",
 					port,
 					t38_options->T38FaxVersion,
 					t38_options->T38MaxBitRate,
@@ -8431,7 +8444,7 @@ SWITCH_DECLARE(void) switch_core_media_set_udptl_image_sdp(switch_core_session_t
 
 
 	if (insist) {
-		switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "m=audio 0 RTP/AVP 19\n");
+		switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "m=audio 0 RTP/AVP 19\r\n");
 	}
 
 	switch_core_media_set_local_sdp(session, buf, SWITCH_TRUE);
@@ -8943,11 +8956,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_receive_message(switch_core_se
 		break;
 
 	case SWITCH_MESSAGE_INDICATE_HARD_MUTE:
-		{
-			if (session->bugs) {
+		if (a_engine->rtp_session) {
+			if (session->bugs && msg->numeric_arg) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, 
 								  "%s has a media bug, hard mute not allowed.\n", switch_channel_get_name(session->channel));
-			} else if (a_engine->rtp_session) {
+			} else {
 				if (msg->numeric_arg) {
 					switch_rtp_set_flag(a_engine->rtp_session, SWITCH_RTP_FLAG_MUTE);
 				} else {

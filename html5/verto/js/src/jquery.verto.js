@@ -85,9 +85,6 @@
 
 	if (verto.options.deviceParams.useCamera) {
 	    $.FSRTC.getValidRes(verto.options.deviceParams.useCamera, verto.options.deviceParams.onResCheck);
-	} else {
-	    verto.options.deviceParams.useCamera = "any";
-	    $.FSRTC.getValidRes(undefined, undefined);
 	}
 
 	if (!verto.options.deviceParams.useMic) {
@@ -2549,7 +2546,7 @@
 		
 		console.info("Audio Devices", $.verto.audioInDevices);
 		console.info("Video Devices", $.verto.videoDevices);
-		runtime();
+		runtime(true);
 	    });
 	} else {
 	    /* of course it's a totally different API CALL with different element names for the same exact thing */
@@ -2586,12 +2583,12 @@
 		    console.info("Audio IN Devices", $.verto.audioInDevices);
 		    console.info("Audio Out Devices", $.verto.audioOutDevices);
 		    console.info("Video Devices", $.verto.videoDevices);
-		    runtime();
+		    runtime(true);
 		    
 		})
 		.catch(function(err) {
 		    console.log(" Device Enumeration ERROR: " + err.name + ": " + err.message);
-		    runtime();
+		    runtime(false);
 		});
 	}
 
@@ -2602,9 +2599,24 @@
     }
 
     $.verto.init = function(obj, runtime) {
-	$.FSRTC.checkPerms(function() {
+	if (!obj) {
+	    obj = {};
+	}
+
+	if (!obj.skipPermCheck && !obj.skipDeviceCheck) {
+	    $.FSRTC.checkPerms(function(status) {
+		checkDevices(runtime);
+	    }, true, true);
+	} else if (obj.skipPermCheck && !obj.skipDeviceCheck) {
 	    checkDevices(runtime);
-	}, true, true);
+	} else if (!obj.skipPermCheck && obj.skipDeviceCheck) {
+	    $.FSRTC.checkPerms(function(status) {
+		runtime(status);
+	    }, true, true);
+	} else {
+	    runtime(null);
+	}
+
     }
 
     $.verto.genUUID = function () {

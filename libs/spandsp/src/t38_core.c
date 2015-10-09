@@ -347,7 +347,7 @@ static __inline__ int classify_seq_no_offset(int expected, int actual)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE_NONSTD(int) t38_core_rx_ifp_stream(t38_core_state_t *s, const uint8_t *buf, int len, uint16_t log_seq_no)
+SPAN_DECLARE(int) t38_core_rx_ifp_stream(t38_core_state_t *s, const uint8_t *buf, int len, uint16_t log_seq_no)
 {
     int i;
     int t30_indicator;
@@ -668,7 +668,7 @@ SPAN_DECLARE_NONSTD(int) t38_core_rx_ifp_stream(t38_core_state_t *s, const uint8
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE_NONSTD(int) t38_core_rx_ifp_packet(t38_core_state_t *s, const uint8_t *buf, int len, uint16_t seq_no)
+SPAN_DECLARE(int) t38_core_rx_ifp_packet(t38_core_state_t *s, const uint8_t *buf, int len, uint16_t seq_no)
 {
     int log_seq_no;
     int ptr;

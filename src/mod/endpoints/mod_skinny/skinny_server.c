@@ -150,12 +150,12 @@ switch_status_t skinny_create_incoming_session(listener_t *listener, uint32_t *l
 	}
 	/* First create the caller profile in the patterns Dialplan */
 	if (!(tech_pvt->caller_profile = switch_caller_profile_new(switch_core_session_get_pool(nsession),
-					NULL, listener->profile->patterns_dialplan, 
-					button->displayname, button->shortname, 
+					NULL, listener->profile->patterns_dialplan,
+					button->displayname, button->shortname,
 					listener->remote_ip, NULL, NULL, NULL,
 					"skinny" /* modname */,
-					listener->profile->patterns_context, 
-					"")) != 0) {
+					listener->profile->patterns_context,
+					""))) {
 		skinny_log_ls_msg(listener, nsession, SWITCH_LOG_CRIT, "Error Creating Session caller profile\n");
 		goto error;
 	}

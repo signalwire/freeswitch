@@ -6969,6 +6969,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 									NUTAG_MEDIA_ENABLE(0),
 									TAG_IF(!zstr(other_tech_pvt->user_via), SIPTAG_VIA_STR(other_tech_pvt->user_via)),
 									SIPTAG_CONTACT_STR(other_tech_pvt->reply_contact),
+									SIPTAG_CONTENT_TYPE_STR("application/sdp"),
 									SIPTAG_PAYLOAD_STR(r_sdp),
 									TAG_END());
 

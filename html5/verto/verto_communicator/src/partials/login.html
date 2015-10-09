@@ -29,6 +29,11 @@
           </div>
 
           <div class="form-group" ng-hide="!advanced">
+            <label class="control-label" for="login-callerid">Caller ID</label>
+            <input type="text" class="form-control" id="login-callerid" placeholder="Caller ID" ng-model="verto.data.callerid">
+          </div>
+
+          <div class="form-group" ng-hide="!advanced">
             <label class="control-label" for="login-hostname">Hostname</label>
             <input type="text" class="form-control" id="login-hostname" placeholder="Hostname" ng-model="verto.data.hostname">
           </div>

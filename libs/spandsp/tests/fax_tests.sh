@@ -94,7 +94,7 @@ LOCALTESTS_DIR=../test-data/local
 TIFFCMP=tiffcmp
 
 # Colour/gray -> bilevel by not allowing ECM
-#for OPTS in "-p AA" "-p TT" "-p GG" "-p TG" "-p GT"
+#for OPTS in "-p FAX-FAX" "-p T38-T38" "-p FAX-T38gateway-T38gateway-FAX" "-p T38-T38gateway-FAX" "-p FAX-T38gateway-T38"
 #do
 #    IN_FILE="${LOCALTESTS_DIR}/lenna-colour.tif"
 #    OUT_FILE="${LOCALTESTS_DIR}/lenna-colour-bilevel.tif"
@@ -118,7 +118,7 @@ TIFFCMP=tiffcmp
 #done
 
 # Colour/gray -> colour/gray
-#for OPTS in "-p AA -C -e" "-p TT -C -e" "-p GG -C -e" "-p TG -C -e" "-p GT -C -e"
+#for OPTS in "-p FAX-FAX -C -e" "-p T38-T38 -C -e" "-p FAX-T38gateway-T38gateway-FAX -C -e" "-p T38-T38gateway-FAX -C -e" "-p FAX-T38gateway-T38 -C -e"
 #do
 #    IN_FILE="${LOCALTESTS_DIR}/lenna-colour.tif"
 #    OUT_FILE="${LOCALTESTS_DIR}/lenna-colour-out.tif"
@@ -142,7 +142,7 @@ TIFFCMP=tiffcmp
 #done
 
 # Bi-level tests with image squashing
-for OPTS in "-p AA" "-p AA -e" "-p TT" "-p TT -e" "-p GG" "-p GG -e" "-p TG" "-p TG -e" "-p GT" "-p GT -e"
+for OPTS in "-p FAX-FAX" "-p FAX-FAX -e" "-p T38-T38" "-p T38-T38 -e" "-p FAX-T38gateway-T38gateway-FAX" "-p FAX-T38gateway-T38gateway-FAX -e" "-p T38-T38gateway-FAX" "-p T38-T38gateway-FAX -e" "-p FAX-T38gateway-T38" "-p FAX-T38gateway-T38 -e"
 do
     IN_FILE="${ITUTESTS_DIR}/bilevel_R8_77_A4.tif"
     OUT_FILE="${ITUTESTS_DIR}/bilevel_R8_77SQ_A4.tif"
@@ -241,7 +241,7 @@ do
 done
 
 # Bi-level tests
-for OPTS in "-p AA" "-p AA -e" "-p TT" "-p TT -e" "-p GG" "-p GG -e" "-p TG" "-p TG -e" "-p GT" "-p GT -e"
+for OPTS in "-p FAX-FAX" "-p FAX-FAX -e" "-p T38-T38" "-p T38-T38 -e" "-p FAX-T38gateway-T38gateway-FAX" "-p FAX-T38gateway-T38gateway-FAX -e" "-p T38-T38gateway-FAX" "-p T38-T38gateway-FAX -e" "-p FAX-T38gateway-T38" "-p FAX-T38gateway-T38 -e"
 do
     FILE="${ITUTESTS_DIR}/itutests.tif"
     run_fax_test

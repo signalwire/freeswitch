@@ -316,7 +316,14 @@
             if(typeof self.localStream.stop == 'function') {
                 self.localStream.stop();
             } else {
-                self.localStream.active = false;
+		if (self.localStream.active){
+                    var tracks = self.localStream.getTracks();
+                    console.error(tracks);
+		    tracks.forEach(function(track, index){
+			console.log(track);
+			track.stop();
+		    })
+                }
             }
             self.localStream = null;
         }
@@ -334,7 +341,14 @@
             if(typeof self.options.localVideoStream.stop == 'function') {
 	        self.options.localVideoStream.stop();
             } else {
-                self.options.localVideoStream.active = false;
+		if (self.localVideoStream.active){
+                    var tracks = self.localVideoStream.getTracks();
+                    console.error(tracks);
+		    tracks.forEach(function(track, index){
+			console.log(track);
+			track.stop();
+		    })
+                }
             }
         }
 
@@ -453,7 +467,10 @@
 
 	var audio;
 
-	if (obj.options.videoParams && obj.options.screenShare) {//obj.options.videoParams.chromeMediaSource == 'desktop') {
+	if (obj.options.useMic && obj.options.useMic === "none") {
+	    console.log("Microphone Disabled");
+	    audio = false;
+	} else if (obj.options.videoParams && obj.options.screenShare) {//obj.options.videoParams.chromeMediaSource == 'desktop') {
 
 	    //obj.options.videoParams = {
 	//	chromeMediaSource: 'screen',
@@ -523,6 +540,7 @@
 	    }
 
 	} else {
+	    console.log("Camera Disabled");
 	    video = false;
 	    useVideo = false;
 	}
@@ -590,17 +608,20 @@
 	console.log("Audio constraints", mediaParams.audio);
 	console.log("Video constraints", mediaParams.video);
 
+	if (mediaParams.audio || mediaParams.video) {
 
-        getUserMedia({
-            constraints: {
-                audio: mediaParams.audio,
+            getUserMedia({
+		constraints: {
+                    audio: mediaParams.audio,
                 video: mediaParams.video
-            },
-            video: mediaParams.useVideo,
-            onsuccess: onSuccess,
-            onerror: onError
-        });
-
+		},
+		video: mediaParams.useVideo,
+		onsuccess: onSuccess,
+		onerror: onError
+            });
+	} else {
+	    onSuccess(null);
+	}
 
 
 
@@ -1086,12 +1107,8 @@
                 video: video	    
 	    },
 	    onsuccess: function(e) {
-              if(typeof e.stop == 'function') {
-                e.stop(); 
-              } else {
-                e.active = false;
-              }
-              console.info(w + "x" + h + " supported."); $.FSRTC.validRes.push([w, h]); checkRes(cam, func);},
+		e.getTracks().forEach(function(track) {track.stop();});
+		console.info(w + "x" + h + " supported."); $.FSRTC.validRes.push([w, h]); checkRes(cam, func);},
 	    onerror: function(e) {console.error( w + "x" + h + " not supported."); checkRes(cam, func);}
         });
     }
@@ -1127,15 +1144,12 @@
 		video: check_video,
 	    },
 	    onsuccess: function(e) {
-              if(typeof e.stop == 'function') {
-                e.stop(); 
-              } else {
-                e.active = false;
-              }
-              console.info("media perm init complete"); 
-              if (runtime) {
-                setTimeout(runtime, 100, true);
-              }
+		e.getTracks().forEach(function(track) {track.stop();});
+		
+		console.info("media perm init complete"); 
+		if (runtime) {
+                    setTimeout(runtime, 100, true);
+		}
             },
 	    onerror: function(e) {
 		if (check_video && check_audio) {

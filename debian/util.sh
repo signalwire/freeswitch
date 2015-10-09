@@ -137,10 +137,9 @@ create_orig () {
   {
     set -e
     local OPTIND OPTARG
-    local uver="" hrev="" bundle_deps=false modules_list="" zl=9e
+    local uver="" hrev="" bundle_deps=true modules_list="" zl=9e
     while getopts 'bm:nv:z:' o "$@"; do
       case "$o" in
-        b) bundle_deps=true;;
         m) modules_list="$OPTARG";;
         n) uver="nightly";;
         v) uver="$OPTARG";;
@@ -275,8 +274,9 @@ build_debs () {
   {
     set -e
     local OPTIND OPTARG debug_hook=false hookdir="" cow_build_opts=""
-    local keep_pbuilder_config=false keyring="" custom_keyring=""
-    local use_custom_sources=false
+    local keep_pbuilder_config=false keyring="" custom_keyring="/tmp/fs.asc"
+    local use_custom_sources=true
+    local custom_sources_file="/tmp/fs.sources.list"
     while getopts 'BbdK:kT:t' o "$@"; do
       case "$o" in
         B) cow_build_opts="--debbuildopts '-B'";;
@@ -284,11 +284,56 @@ build_debs () {
         d) debug_hook=true;;
         k) keep_pbuilder_config=true;;
         K) custom_keyring="$OPTARG";;
-        t) use_custom_sources=true; custom_sources_file="/etc/apt/sources.list";;
-        T) use_custom_sources=true; custom_sources_file="$OPTARG";;
+        t) custom_sources_file="/etc/apt/sources.list";;
+        T) custom_sources_file="$OPTARG";;
       esac
     done
     shift $(($OPTIND-1))
+    if [ "$custom_sources_file" == "/etc/apt/sources.list" ]; then
+        # If you are using the system sources, then it is reasonable that you expect to use all of the supplementary repos too
+        cat /etc/apt/sources.list > /tmp/fs.sources.list
+        for X in /etc/apt/sources.list.d/*; do cat $X >> /tmp/fs.sources.list; done
+        custom_sources_file="/tmp/fs.sources.list"
+        apt-key exportall > "/tmp/fs.asc"
+        custom_keyring="/tmp/fs.asc"
+    fi
+    if [ "$custom_sources_file" == "" ]; then
+        # Caller has explicitly set the custom sources file to empty string. They must intend to not use additional mirrors.
+        use_custom_sources=false
+    fi
+    if [[ "$custom_source_file" == "/tmp/fs.sources.list" && ! -e "/tmp/fs.sources.list" ]]; then
+        echo "deb http://files.freeswitch.org/repo/deb/debian/ jessie main" >> "/tmp/fs.sources.list"
+    fi
+    if [[ "$custom_keyring" == "/tmp/fs.asc" && ! -r "/tmp/fs.asc" ]]; then
+        cat << EOF > "/tmp/fs.asc"
+-----BEGIN PGP PUBLIC KEY BLOCK-----
+Version: GnuPG v1.4.12 (GNU/Linux)
+
+mQGiBE8jEfIRBAC+Cca0fPQxhyhn0NMsPaMQJgTvqhWb5/f4Mel++kosmUQQ4fJq
+4U9NFvpfNyLp5MoHpnlDfAb+e57B2sr47NOJLTh83yQIAnvU+8O0Q4kvMaiiesX5
+CisApLBs6Vx28y7VWmLsY3vWu8mC7M+PORKfpBV8DWy/7569wQPx2SCsIwCgzv2T
+8YsnYsSVRrrmh46J1o4/ngsD/13ETX4ws/wNN+82RdqUxu7fjc0fNbUAb6XYddAb
+1hrw5npQulgUNWkpnVmIDRHDXLNMeT8nZDkxsA8AsT+u7ACfPFa2o3R8w9zOPSO+
+oSO0+Puhop2+z1gm6lmfMKq9HpeXG3yt/8zsEVUmOYT9m+vYEVghfpXtACVYheDq
+LzUuA/9E9HBiNPVhJ/mEpOk9bZ1gpwr3mjlpUbvX5aGwTJJ+YoTfZOCL7go3uQHn
+/sT35WoJ23wJCRlW0SYTFJqCoris9AhI+qw7xRTw9wb+txSI96uhafUUMCn6GLkN
++yAixqDwNHKkdax3GSGJtLB0t67QoBDIpcGog7ZfRMvWP3QLNLQ4RnJlZVNXSVRD
+SCBQYWNrYWdlIFNpZ25pbmcgS2V5IDxwYWNrYWdlc0BmcmVlc3dpdGNoLm9yZz6I
+YgQTEQIAIgUCTyMR8gIbAwYLCQgHAwIGFQgCCQoLBBYCAwECHgECF4AACgkQ127c
+dyXgEM879ACffY0HFi+mACtfFYmX/Uk/qGELSP4An1B8D5L4dLFFr1zV9YawQUbz
+O9/MuQENBE8jEfIQBAC7vnn855YDuz1gTsUMYDxfIRH5KPmDDEAf1WXoD3QG4qOQ
+xVW5nhp/bolh2CacAxdOjZePdhGkkdNOBpcu9NlTNRru0myGN8etbnzP3O5dq0io
+VMf23C5u9KPbxwRWS+WFtC4CRFn6DafDI1qa3Gv3CkiBWtKR0Wid2SQLzl3mVwAF
+EQP9HlwGjhBfFA26LlSMPhSo0Ll+sdcOJupJ21zmGeg7c0GpBnzDzyyJg04gbahs
+xWtW3Y/+B4LGM97o6lnu0OQI7MX5gY1G4Jgu6pgYv8tQd5XyU/CAJUA5VWTxUMIi
+JP6qlzm1bz4AAPmGw4mkS1u4N+vai21Zl4iyFIQFeiuU/K2ISQQYEQIACQUCTyMR
+8gIbDAAKCRDXbtx3JeAQzxReAJ4uvms1n7xV3CcJPQlM7ndX5MZU3QCgxp8zubcL
+/SsMvw7XApSHFs5ooYc=
+=Xc8P
+-----END PGP PUBLIC KEY BLOCK-----
+EOF
+    fi
+
     local distro="$(find_distro $1)" dsc="$2" arch="$3"
     if [ -z "$distro" ] || [ "$distro" = "auto" ]; then
       if ! (echo "$dsc" | grep -e '-[0-9]*~[a-z]*+[0-9]*'); then
@@ -309,11 +354,13 @@ build_debs () {
     fi
     cow () {
       if ! $use_custom_sources; then
+        echo "Using system sources $keyring $distro $custom_sources_file"
         cowbuilder "$@" \
           --distribution $distro \
           --architecture $arch \
           --basepath $cow_img
       else
+        echo "Using custom sources $keyring $distro $custom_sources_file"
         cowbuilder "$@" \
           --distribution $distro \
           --architecture $arch \
@@ -459,7 +506,6 @@ commands:
     [ This must be run as root! ]
 
     -a Specify architectures
-    -b Bundle downloaded libraries in source package
     -c Specify distributions
     -d Enable cowbuilder debug hook
     -f <modules.conf>
@@ -480,7 +526,7 @@ commands:
       Include otherwise avoided module
     -s [ paranoid | reckless ]
       Set FS bootstrap/build -j flags
-    -t Use system /etc/apt/sources.list in build environment
+    -t Use system /etc/apt/sources.list in build environment(does not include /etc/apt/sources.list.d/*.list)
     -T [/path/to/sources.list]
        Use custom /etc/apt/sources.list in build environment
     -u <suite-postfix>
@@ -521,7 +567,6 @@ commands:
 
   create-orig <treeish>
 
-    -b Bundle downloaded libraries in source package
     -m [ quicktest | non-dfsg ]
       Choose custom list of modules to build
     -n Nightly build

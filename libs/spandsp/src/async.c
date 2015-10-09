@@ -90,7 +90,7 @@ SPAN_DECLARE(const char *) signal_status_to_str(int status)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE_NONSTD(void) async_rx_put_bit(void *user_data, int bit)
+SPAN_DECLARE(void) async_rx_put_bit(void *user_data, int bit)
 {
     async_rx_state_t *s;
 
@@ -215,7 +215,7 @@ SPAN_DECLARE(int) async_rx_free(async_rx_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE_NONSTD(int) async_tx_get_bit(void *user_data)
+SPAN_DECLARE(int) async_tx_get_bit(void *user_data)
 {
     async_tx_state_t *s;
     int bit;

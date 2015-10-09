@@ -776,7 +776,7 @@ static __inline__ void process_half_baud(v22bis_state_t *s, const complexf_t *sa
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE_NONSTD(int) v22bis_rx(v22bis_state_t *s, const int16_t amp[], int len)
+SPAN_DECLARE(int) v22bis_rx(v22bis_state_t *s, const int16_t amp[], int len)
 {
     int i;
     int step;
@@ -919,7 +919,7 @@ SPAN_DECLARE_NONSTD(int) v22bis_rx(v22bis_state_t *s, const int16_t amp[], int l
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE_NONSTD(int) v22bis_rx_fillin(v22bis_state_t *s, int len)
+SPAN_DECLARE(int) v22bis_rx_fillin(v22bis_state_t *s, int len)
 {
     int i;
 

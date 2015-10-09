@@ -45,7 +45,7 @@ extern "C"
 
 SPAN_DECLARE(const char *) lapm_status_to_str(int status);
 
-SPAN_DECLARE_NONSTD(void) lapm_receive(void *user_data, const uint8_t *frame, int len, int ok);
+SPAN_DECLARE(void) lapm_receive(void *user_data, const uint8_t *frame, int len, int ok);
 
 SPAN_DECLARE(void) v42_start(v42_state_t *s);
 

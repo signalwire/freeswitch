@@ -8,6 +8,18 @@ body {
   padding-top: 60px;
 }
 
+.ellipsis {
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+  width: 160px;
+  display: inline-block;
+}
+
+.clickable {
+  cursor: pointer;
+}
+
 .inline-block {
   display: inline-block;
 }
@@ -108,6 +120,10 @@ button.btn i {
 
 .mdi-toggle-radio-button-on.disconnected {
   color: #F45A5A;
+}
+
+.mdi-navigation-more-vert.dark {
+  color: #333;
 }
 
 .incall-number {
@@ -223,12 +239,39 @@ button.btn i {
   }
 }
 
+/* --- Splash Screen --- */
+.splash-errors {
+  background: rgba(249, 21, 21, 0.55);
+  color: white;
+  padding: 8px;
+  margin-top: 11px;
+}
+
+.splash-errors ul {
+  padding-start: 0em;
+  -moz-padding-start: 0em;
+  -webkit-padding-start: 0em;
+  padding-start: 0em;
+}
+
+.splash-errors li {
+  background-color: rgba(154, 36, 36, 0.28);
+  padding: 8px;
+  font-weight: bold;
+  list-style: none;
+}
+/* --- End of Splash Screen --- */
+
 
 /* --- Modal settings page --- */
 
 body .modal-body .btn-group .btn.active {
   background: #009688;
   color: #EEE;
+}
+
+.dedicated_encoder {
+  color: #0B3A84;
 }
 
 /* --- End of Modal settings page --- */
@@ -410,7 +453,7 @@ body .modal-body .btn-group .btn.active {
 }
 
 #dialpad .date {
-  margin-top: 15px; 
+  margin-top: 15px;
   display: block;
   font-size: 11px;
   color: #CCC;
@@ -529,7 +572,7 @@ body .modal-body .btn-group .btn.active {
 }
 
 #incall .phone li button .big-icon {
-  font-size: 36px; 
+  font-size: 36px;
 }
 
 #incall .video-wrapper {
@@ -857,8 +900,29 @@ body .modal-body .btn-group .btn.active {
   width: 160px;
   overflow: hidden;
   text-overflow: ellipsis;
-  margin-top: 5px;
   white-space: nowrap;
+}
+
+.members-number {
+  font-size: 10px;
+}
+
+.members-badges {
+  font-size: 10px;
+  text-transform: uppercase;
+  margin-top: -2px;
+}
+
+.badge-floor span {
+  display: inline-block;
+}
+
+.lock-floor {
+  position: relative;
+  top: -3px;
+  display: inline-block;
+  font-size: 10px;
+  color: #FFF;
 }
 
 .chat-members .chat-member-item {
@@ -892,7 +956,8 @@ body .modal-body .btn-group .btn.active {
   margin: 0;
   font-size: 16px;
   display: inline-block;
-  line-height: 18px;
+  line-height: 16px;
+  margin-top: -3px;
 }
 
 .chat-members .chat-members-status i {
@@ -1206,11 +1271,11 @@ body:-webkit-full-screen #incall .video-footer {
   body {
     overflow-x: hidden;
   }
-  
+
   #dialpad .call-history li {
     overflow-x: hidden;
   }
-   
+
   #sidebar-wrapper {
     margin-right: -750px;
   }
@@ -1260,7 +1325,7 @@ body:-webkit-full-screen #incall .video-footer {
     margin: 0 auto;
     float: none;
   }
-  
+
   #incall .phone li button {
     padding: 10px;
   }
@@ -1285,8 +1350,8 @@ body:-webkit-full-screen #incall .video-footer {
   }
 }
 
-@media screen 
-  and (min-device-width: 320px) 
+@media screen
+  and (min-device-width: 320px)
   and (max-device-width: 780px) {
 
   body {
@@ -1354,7 +1419,7 @@ body:-webkit-full-screen #incall .video-footer {
     margin: 0 auto;
     float: none;
   }
-  
+
   #incall.centered-block-frame {
     display: block;
     justify-content: none;
@@ -1375,7 +1440,7 @@ body:-webkit-full-screen #incall .video-footer {
     padding-top: calc(50% - 25%);
     padding-bottom: calc(50% - 25%);
   }
-  
+
   .contributors {
     -webkit-padding-start: 0px;
     text-align: center;

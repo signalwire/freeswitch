@@ -576,7 +576,7 @@ SPAN_DECLARE(void) t30_front_end_status(void *user_data, int status);
     \brief Get a bit of received non-ECM image data.
     \param user_data An opaque pointer, which must point to the T.30 context.
     \return The next bit to transmit. */
-SPAN_DECLARE_NONSTD(int) t30_non_ecm_get_bit(void *user_data);
+SPAN_DECLARE(int) t30_non_ecm_get_bit(void *user_data);
 
 /*! Get a chunk of received non-ECM image data.
     \brief Get a bit of received non-ECM image data.
@@ -590,7 +590,7 @@ SPAN_DECLARE(int) t30_non_ecm_get(void *user_data, uint8_t buf[], int max_len);
     \brief Process a bit of received non-ECM image data
     \param user_data An opaque pointer, which must point to the T.30 context.
     \param bit The received bit. */
-SPAN_DECLARE_NONSTD(void) t30_non_ecm_put_bit(void *user_data, int bit);
+SPAN_DECLARE(void) t30_non_ecm_put_bit(void *user_data, int bit);
 
 /*! Process a chunk of received non-ECM image data.
     \brief Process a chunk of received non-ECM image data
@@ -605,7 +605,7 @@ SPAN_DECLARE(void) t30_non_ecm_put(void *user_data, const uint8_t buf[], int len
     \param msg The HDLC message.
     \param len The length of the message, in octets.
     \param ok True if the frame was received without error. */
-SPAN_DECLARE_NONSTD(void) t30_hdlc_accept(void *user_data, const uint8_t msg[], int len, int ok);
+SPAN_DECLARE(void) t30_hdlc_accept(void *user_data, const uint8_t msg[], int len, int ok);
 
 /*! Report the passage of time to the T.30 engine.
     \brief Report the passage of time to the T.30 engine.
