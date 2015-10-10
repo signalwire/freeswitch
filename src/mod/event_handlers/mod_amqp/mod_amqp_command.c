@@ -119,7 +119,7 @@ switch_status_t mod_amqp_command_create(char *name, switch_xml_t cfg)
 				if ( interval && interval > 0 ) {
 					profile->reconnect_interval_ms = interval;
 				}
-			} else if (!strncmp(var, "exchange", 8)) {
+			} else if (!strncmp(var, "exchange-name", 13)) {
 				exchange = switch_core_strdup(profile->pool, val);
 			} else if (!strncmp(var, "binding_key", 11)) {
 				binding_key = switch_core_strdup(profile->pool, val);

@@ -20,8 +20,8 @@
 	</connection>
       </connections>
       <params>
-	<param name="exchange" value="TAP.Events"/>
-	<param name="exchange_type" value="topic"/>
+	<param name="exchange-name" value="TAP.Events"/>
+	<param name="exchange-type" value="topic"/>
 	<param name="circuit_breaker_ms" value="10000"/>
 	<param name="reconnect_interval_ms" value="1000"/>
 	<param name="send_queue_size" value="5000"/>
@@ -54,7 +54,7 @@
 	</connection>
       </connections>
       <params>
-	<param name="exchange" value="TAP.Commands"/>
+	<param name="exchange-name" value="TAP.Commands"/>
 	<param name="binding_key" value="commandBindingKey"/>
 	<param name="reconnect_interval_ms" value="1000"/>
       </params>
