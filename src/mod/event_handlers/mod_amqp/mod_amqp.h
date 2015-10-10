@@ -128,6 +128,7 @@ typedef struct {
   char *name;
   
   char *exchange;
+  char *queue;
   char *binding_key;
 
   /* Note: The AMQP channel is not reentrant this MUTEX serializes sending events. */
