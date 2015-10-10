@@ -1529,7 +1529,7 @@ switch_status_t conference_api_sub_vid_logo_img(conference_member_t *member, swi
 	if (!strcasecmp(text, "allclear")) {
 		switch_channel_set_variable(member->channel, "video_logo_path", NULL);
 		member->video_logo = NULL;
-	} if (!strcasecmp(text, "clear")) {
+	} else if (!strcasecmp(text, "clear")) {
 		member->video_logo = NULL;
 	} else {
 		member->video_logo = switch_core_strdup(member->pool, text);
