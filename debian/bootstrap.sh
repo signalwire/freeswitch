@@ -1324,8 +1324,14 @@ for x in postinst postrm preinst prerm; do
   cp -a freeswitch.$x freeswitch-all.$x
 done
 cp -a freeswitch-doc.docs freeswitch-all.docs
-#cp -a freeswitch-systemd.freeswitch.service freeswitch-all.freeswitch.service
-cp -a freeswitch-sysvinit.freeswitch.default freeswitch-all.freeswitch.default
+
+cp -a freeswitch-systemd.freeswitch.service freeswitch-all.freeswitch.service
+cp -a freeswitch-systemd.freeswitch.tmpfile freeswitch-all.freeswitch.tmpfile
+cp -a freeswitch-systemd.freeswitch.default freeswitch-all.freeswitch.default
+
+cp -a freeswitch-systemd.freeswitch.default freeswitch-sysvinit.freeswitch.default 
+
+# TODO: FS-7928 need to add a condition and skip this for jessie and onward
 cp -a freeswitch-sysvinit.freeswitch.init freeswitch-all.freeswitch.init
 
 echo "Generating additional lintian overrides..." >&2
