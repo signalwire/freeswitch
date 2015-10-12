@@ -1452,7 +1452,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		{
 			char *extra_headers = sofia_glue_get_extra_headers(channel, SOFIA_SIP_HEADER_PREFIX);
 
-			nua_invite(tech_pvt->nh, NUTAG_MEDIA_ENABLE(0), SIPTAG_PAYLOAD_STR(msg->string_arg), 
+			nua_invite(tech_pvt->nh, NUTAG_MEDIA_ENABLE(0), SIPTAG_CONTENT_TYPE_STR("application/sdp"), SIPTAG_PAYLOAD_STR(msg->string_arg), 
 					   TAG_IF(!zstr(extra_headers), SIPTAG_HEADER_STR(extra_headers)), TAG_END());
 			
 			switch_safe_free(extra_headers);
