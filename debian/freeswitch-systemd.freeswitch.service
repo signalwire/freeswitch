@@ -10,7 +10,7 @@ Type=forking
 PIDFile=/run/freeswitch/freeswitch.pid
 Environment="DAEMON_OPTS=-nonat"
 EnvironmentFile=-/etc/default/freeswitch
-ExecStart=/usr/bin/freeswitch -u freeswitch -g freeswitch -ncwait ${DAEMON_OPTS}
+ExecStart=/usr/bin/freeswitch -u freeswitch -g freeswitch -ncwait $DAEMON_OPTS
 TimeoutSec=45s
 Restart=always
 ; exec

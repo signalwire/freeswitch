@@ -2,12 +2,33 @@
 ##### -*- mode:shell-script; indent-tabs-mode:nil; sh-basic-offset:2 -*-
 ##### Author: Travis Cross <tc@traviscross.com>
 
+codename="sid"
+modulelist_opt=""
+modules_add=""
+use_sysvinit=""
+while getopts "c:m:p:v" o; do
+  case "$o" in
+    c) codename="$OPTARG" ;;
+    m) modulelist_opt="$OPTARG" ;;
+    p) modules_add="$modules_add $OPTARG";;
+    v) use_sysvinit="true";;
+  esac
+done
+shift $(($OPTIND-1))
+
+if [ x${use_sysvinit} = x ]; then
+    case "$codename" in
+      wheezy|trusty|utopic) use_sysvinit="true";;
+      *) use_sysvinit="false";;
+    esac
+fi
+
 mod_dir="../src/mod"
 conf_dir="../conf"
 lang_dir="../conf/vanilla/lang"
 fs_description="FreeSWITCH is a scalable open source cross-platform telephony platform designed to route and interconnect popular communication protocols using audio, video, text or any other form of media."
 mod_build_depends="." mod_depends="." mod_recommends="." mod_suggests="."
-supported_debian_distros="squeeze wheezy jessie sid"
+supported_debian_distros="wheezy jessie stretch sid"
 supported_ubuntu_distros="trusty utopic"
 supported_distros="$supported_debian_distros $supported_ubuntu_distros"
 avoid_mods=(
@@ -46,11 +67,14 @@ avoid_mods_jessie=(
 avoid_mods_wheezy=(
   event_handlers/mod_amqp
   languages/mod_java
-)
-avoid_mods_squeeze=(
-  event_handlers/mod_amqp
-  formats/mod_vlc
   languages/mod_managed
+  applications/mod_av
+  applications/mod_cv
+  applications/mod_hiredis  
+  formats/mod_shout
+  applications/mod_sonar
+  applications/mod_soundtouch
+  formats/mod_vlc
 )
 avoid_mods_trusty=(
 )
@@ -75,12 +99,15 @@ freeswitch-dbg
 libfreeswitch1-dbg
 libfreeswitch-dev
 freeswitch-doc
-freeswitch-init
-freeswitch-sysvinit
-freeswitch-systemd
 freeswitch-lang
 freeswitch-timezones
 )
+
+if [ ${use_sysvinit} = "true" ]; then
+    manual_pkgs=( "${manual_pkgs[@]}" "freeswitch-sysvinit" )
+else
+    manual_pkgs=( "${manual_pkgs[@]}" "freeswitch-systemd" )
+fi
 
 err () {
   echo "$0 error: $1" >&2
@@ -285,16 +312,20 @@ list_freeswitch_all_dbg_replaces () {
 print_source_control () {
   local libtool_dep="libtool, libtool-bin"
   case "$codename" in
-    squeeze|wheezy|trusty) libtool_dep="libtool" ;;
+    wheezy|trusty) libtool_dep="libtool" ;;
   esac
-cat <<EOF
+  local debhelper_dep="debhelper (>= 8.0.0)"
+  if [ ${use_sysvinit} = "false" ]; then
+      debhelper_dep=${debhelper_dep}", dh-systemd"
+  fi
+  cat <<EOF
 Source: freeswitch
 Section: comm
 Priority: optional
 Maintainer: Travis Cross <tc@traviscross.com>
 Build-Depends:
 # for debian
- debhelper (>= 8.0.0),
+ ${debhelper_dep},
 # bootstrapping
  automake (>= 1.9), autoconf, ${libtool_dep},
 # core build
@@ -822,33 +853,6 @@ Description: documentation for FreeSWITCH
  This package contains Doxygen-produce documentation for FreeSWITCH.
  It may be an empty package at the moment.
 
-Package: freeswitch-init
-Architecture: all
-Depends: \${misc:Depends},
- freeswitch-sysvinit (= \${binary:Version}),
- freeswitch-systemd (= \${binary:Version})
-Description: FreeSWITCH startup configuration
- $(debian_wrap "${fs_description}")
- .
- This is a metapackage which depends on the default system startup
- packages for FreeSWITCH.
-
-Package: freeswitch-sysvinit
-Architecture: all
-Depends: \${misc:Depends}, lsb-base (>= 3.0-6)
-Description: FreeSWITCH SysV init script
- $(debian_wrap "${fs_description}")
- .
- This package contains the SysV init script for FreeSWITCH.
-
-Package: freeswitch-systemd
-Architecture: all
-Depends: \${misc:Depends}
-Description: FreeSWITCH systemd configuration
- $(debian_wrap "${fs_description}")
- .
- This package contains the systemd configuration for FreeSWITCH.
-
 ## misc
 
 ## languages
@@ -873,7 +877,37 @@ Description: Timezone files for FreeSWITCH
  .
  $(debian_wrap "This package includes the timezone files for FreeSWITCH.")
 
+## startup
+
 EOF
+
+if [ ${use_sysvinit} = "true" ]; then
+    cat <<EOF
+Package: freeswitch-sysvinit
+Architecture: all
+Depends: \${misc:Depends}, lsb-base (>= 3.0-6), sysvinit
+Conflicts: freeswitch-init
+Provides: freeswitch-init
+Description: FreeSWITCH SysV init script
+ $(debian_wrap "${fs_description}")
+ .
+ This package contains the SysV init script for FreeSWITCH.
+
+EOF
+else
+    cat <<EOF
+Package: freeswitch-systemd
+Architecture: all
+Depends: \${misc:Depends}, systemd
+Conflicts: freeswitch-init
+Provides: freeswitch-init
+Description: FreeSWITCH systemd configuration
+ $(debian_wrap "${fs_description}")
+ .
+ This package contains the systemd configuration for FreeSWITCH.
+
+EOF
+fi
 }
 
 print_mod_control () {
@@ -1262,17 +1296,6 @@ conf_merge () {
   fi
 }
 
-codename="sid"
-modulelist_opt=""
-modules_add=""
-while getopts "c:m:p:" o; do
-  case "$o" in
-    c) codename="$OPTARG" ;;
-    m) modulelist_opt="$OPTARG" ;;
-    p) modules_add="$modules_add $OPTARG";;
-  esac
-done
-shift $(($OPTIND-1))
 
 echo "Bootstrapping debian/ for ${codename}" >&2
 echo >&2
@@ -1325,14 +1348,16 @@ for x in postinst postrm preinst prerm; do
 done
 cp -a freeswitch-doc.docs freeswitch-all.docs
 
-cp -a freeswitch-systemd.freeswitch.service freeswitch-all.freeswitch.service
-cp -a freeswitch-systemd.freeswitch.tmpfile freeswitch-all.freeswitch.tmpfile
-cp -a freeswitch-systemd.freeswitch.default freeswitch-all.freeswitch.default
+if [ ${use_sysvinit} = "true" ]; then
+    cp -a freeswitch-sysvinit.freeswitch.init freeswitch-all.freeswitch.init
+    cp -a freeswitch-sysvinit.freeswitch.default freeswitch-all.freeswitch.default
+    echo -n freeswitch-sysvinit >freeswitch-init.provided_by
+else
+    cp -a freeswitch-systemd.freeswitch.service freeswitch-all.freeswitch.service
+    cp -a freeswitch-systemd.freeswitch.tmpfile freeswitch-all.freeswitch.tmpfile
+    echo -n freeswitch-systemd >freeswitch-init.provided_by
+fi
 
-cp -a freeswitch-systemd.freeswitch.default freeswitch-sysvinit.freeswitch.default 
-
-# TODO: FS-7928 need to add a condition and skip this for jessie and onward
-cp -a freeswitch-sysvinit.freeswitch.init freeswitch-all.freeswitch.init
 
 echo "Generating additional lintian overrides..." >&2
 grep -e '^Package:' control | while xread l; do
