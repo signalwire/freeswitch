@@ -165,8 +165,8 @@ static switch_status_t load_config(void)
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot find  SQL Database! (Where\'s the gateways table\?\?)\n");
 			}
 		}
-	} else if (globals.db_dsn) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open ODBC Connection (did you enable it?!)\n");
+	} else if (!globals.db_dsn) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open ODBC Connection (did you enable it?)\n");
 	}
 
   reallydone:
