@@ -536,7 +536,7 @@ SWITCH_MODULE_LOAD_FUNCTION(core_pcm_load)
 											 48000,	/* actual samples transferred per second */
 											 768000 * 2,	/* bits transferred per second */
 											 ms_per_frame,	/* number of microseconds per frame */
-											 samples_per_frame * 2,	/* number of samples per frame */
+											 samples_per_frame,	/* number of samples per frame */
 											 bytes_per_frame * 2,	/* number of bytes per frame decompressed */
 											 bytes_per_frame * 2,	/* number of bytes per frame compressed */
 											 2,	/* number of channels represented */
@@ -726,7 +726,7 @@ SWITCH_MODULE_LOAD_FUNCTION(core_pcm_load)
 											 48000,	/* actual samples transferred per second */
 											 768000 * 2,	/* bits transferred per second */
 											 ms_per_frame,	/* number of microseconds per frame */
-											 samples_per_frame * 2,	/* number of samples per frame */
+											 samples_per_frame,	/* number of samples per frame */
 											 bytes_per_frame * 2,	/* number of bytes per frame decompressed */
 											 bytes_per_frame * 2,	/* number of bytes per frame compressed */
 											 2,	/* number of channels represented */

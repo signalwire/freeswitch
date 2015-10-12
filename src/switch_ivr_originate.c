@@ -817,6 +817,9 @@ struct ringback {
 	switch_file_handle_t *fh;
 	int silence;
 	uint8_t asis;
+	int channels;
+	void *mux_buf;
+	int mux_buflen;
 };
 
 typedef struct ringback ringback_t;
@@ -825,12 +828,29 @@ static int teletone_handler(teletone_generation_session_t *ts, teletone_tone_map
 {
 	ringback_t *tto = ts->user_data;
 	int wrote;
+	void *buf;
+	int buflen;
 
 	if (!tto) {
 		return -1;
 	}
 	wrote = teletone_mux_tones(ts, map);
-	switch_buffer_write(tto->audio_buffer, ts->buffer, wrote * 2);
+	
+	if (tto->channels != 1) {
+		if (tto->mux_buflen < wrote * 2 * tto->channels) {
+			tto->mux_buflen = wrote * 2 * tto->channels;
+			tto->mux_buf = realloc(tto->mux_buf, tto->mux_buflen);
+		}
+		memcpy(tto->mux_buf, ts->buffer, wrote * 2);
+		switch_mux_channels((int16_t *) tto->mux_buf, wrote, 1, tto->channels);
+		buf = tto->mux_buf;
+		buflen = wrote * 2 * tto->channels;
+	} else {
+		buf = ts->buffer;
+		buflen = wrote * 2;
+	}
+
+	switch_buffer_write(tto->audio_buffer, buf, buflen);
 
 	return 0;
 }
@@ -925,7 +945,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 									   NULL,
 									   read_codec->implementation->actual_samples_per_second,
 									   read_codec->implementation->microseconds_per_packet / 1000,
-									   1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL,
+									   read_codec->implementation->number_of_channels, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL,
 									   switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Codec Error!\n");
 				if (caller_channel) {
@@ -993,6 +1013,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 
 					teletone_init_session(&ringback.ts, 0, teletone_handler, &ringback);
 					ringback.ts.rate = read_codec->implementation->actual_samples_per_second;
+					ringback.channels = read_codec->implementation->number_of_channels;
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Play Ringback Tone [%s]\n", ringback_data);
 					if (teletone_run(&ringback.ts, ringback_data)) {
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error Playing Tone\n");
@@ -1106,6 +1127,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 		ringback.fh = NULL;
 	} else if (ringback.audio_buffer) {
 		teletone_destroy_session(&ringback.ts);
+		switch_safe_free(ringback.mux_buf);
 		switch_buffer_destroy(&ringback.audio_buffer);
 	}
 
@@ -1237,21 +1259,21 @@ static switch_status_t setup_ringback(originate_global_t *oglobals, originate_st
 			} else {
 				switch_core_session_get_read_impl(oglobals->session, &peer_read_impl);
 			}
-			
+
 			if (switch_core_codec_init(write_codec,
 									   "L16",
 									   NULL,
 									   peer_read_impl.actual_samples_per_second,
 									   peer_read_impl.microseconds_per_packet / 1000,
-									   1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL,
+									   peer_read_impl.number_of_channels, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL,
 									   switch_core_session_get_pool(oglobals->session)) == SWITCH_STATUS_SUCCESS) {
 
 
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(oglobals->session), SWITCH_LOG_DEBUG,
-								  "Raw Codec Activation Success L16@%uhz 1 channel %dms\n",
-								  peer_read_impl.actual_samples_per_second, peer_read_impl.microseconds_per_packet / 1000);
+								  "Raw Codec Activation Success L16@%uhz %d channel %dms\n",
+								  peer_read_impl.actual_samples_per_second, peer_read_impl.number_of_channels, peer_read_impl.microseconds_per_packet / 1000);
 				write_frame->codec = write_codec;
-				write_frame->datalen = read_codec->implementation->decoded_bytes_per_packet;
+				write_frame->datalen = peer_read_impl.decoded_bytes_per_packet;
 				write_frame->samples = write_frame->datalen / 2;
 				memset(write_frame->data, 255, write_frame->datalen);
 				switch_core_session_set_read_codec(oglobals->session, write_codec);
@@ -1315,6 +1337,7 @@ static switch_status_t setup_ringback(originate_global_t *oglobals, originate_st
 
 			teletone_init_session(&ringback->ts, 0, teletone_handler, ringback);
 			ringback->ts.rate = read_codec->implementation->actual_samples_per_second;
+			ringback->channels = read_codec->implementation->number_of_channels;
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(oglobals->session), SWITCH_LOG_DEBUG, "Play Ringback Tone [%s]\n", ringback_data);
 			/* ringback->ts.debug = 1;
 			   ringback->ts.debug_stream = switch_core_get_console(); */
@@ -1779,7 +1802,7 @@ static void *SWITCH_THREAD_FUNC early_thread_run(switch_thread_t *thread, void *
 												   NULL,
 												   read_impl.actual_samples_per_second,
 												   read_impl.microseconds_per_packet / 1000,
-												   1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL,
+												   read_impl.number_of_channels, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL,
 												   switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
 							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Codec Error!\n");
 						}
@@ -3769,6 +3792,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				ringback.fh = NULL;
 			} else if (ringback.audio_buffer) {
 				teletone_destroy_session(&ringback.ts);
+				switch_safe_free(ringback.mux_buf);
 				switch_buffer_destroy(&ringback.audio_buffer);
 			}
 
