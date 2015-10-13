@@ -611,7 +611,6 @@ Description: VLC streaming
 Build-Depends: libvlc-dev (>= 2.0.0)
 Depends: vlc-nox
 Suggests: vlc-dbg
-Distro-Conflicts: squeeze
 
 Module: formats/mod_webm
 Description: Adds mod_webm

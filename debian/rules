@@ -101,9 +101,15 @@ override_dh_auto_install:
 	rm -f debian/tmp/usr/share/freeswitch/grammar/model/communicator/COPYING
 
 override_dh_installinit:
-	dh_installinit -pfreeswitch-sysvinit --name=freeswitch
-	dh_installinit -pfreeswitch-systemd --name=freeswitch
-	dh_installinit -pfreeswitch-all --name=freeswitch
+	if [ `cat debian/freeswitch-init.provided_by` = freeswitch-systemd ]; then \
+	  dh_systemd_enable -pfreeswitch-systemd --name=freeswitch; \
+	  dh_systemd_start  -pfreeswitch-systemd --name=freeswitch; \
+	  dh_systemd_enable -pfreeswitch-all --name=freeswitch; \
+	  dh_systemd_start  -pfreeswitch-all --name=freeswitch; \
+	else \
+	  dh_installinit -pfreeswitch-sysvinit --name=freeswitch; \
+	  dh_installinit -pfreeswitch-all --name=freeswitch; \
+	fi
 
 override_dh_makeshlibs:
 	dh_makeshlibs

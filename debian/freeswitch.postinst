@@ -37,9 +37,6 @@ case "$1" in
       mkdir -p /etc/freeswitch/tls/
       chown freeswitch:freeswitch /etc/freeswitch/tls
     fi
-    if [ -x /bin/systemctl -a x`systemctl is-enabled freeswitch` != "xenabled" ]; then
-       systemctl enable freeswitch
-    fi
     ;;
   abort-upgrade|abort-remove|abort-deconfigure)
     ;;
