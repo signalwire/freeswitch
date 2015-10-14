@@ -596,6 +596,7 @@ typedef enum {
 /* Invokable functions from flash */
 RTMP_INVOKE_FUNCTION(rtmp_i_connect);
 RTMP_INVOKE_FUNCTION(rtmp_i_createStream);
+RTMP_INVOKE_FUNCTION(rtmp_i_initStream);
 RTMP_INVOKE_FUNCTION(rtmp_i_noop);
 RTMP_INVOKE_FUNCTION(rtmp_i_play);
 RTMP_INVOKE_FUNCTION(rtmp_i_publish);
