@@ -928,7 +928,7 @@ SWITCH_DECLARE(int32_t) switch_core_set_process_privileges(void)
 SWITCH_DECLARE(int32_t) set_low_priority(void)
 {
 #ifdef WIN32
-	SetPriorityClass(GetCurrentProcess(), BELOW_NORMAL_PRIORITY_CLASS);
+	return SetPriorityClass(GetCurrentProcess(), BELOW_NORMAL_PRIORITY_CLASS);
 #else
 #if defined(USE_SCHED_SETSCHEDULER) && ! defined(SOLARIS_PRIVILEGES)
 	/*
@@ -964,7 +964,7 @@ SWITCH_DECLARE(int32_t) set_low_priority(void)
 SWITCH_DECLARE(int32_t) set_realtime_priority(void)
 {
 #ifdef WIN32
-	SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS);
+	return SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS);
 #else
 #ifdef USE_SCHED_SETSCHEDULER
 	/*
