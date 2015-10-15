@@ -956,9 +956,9 @@ SWITCH_DECLARE(int32_t) set_low_priority(void)
 		return -1;
 	}
 #endif
-#endif
 
 	return 0;
+#endif
 }
 
 SWITCH_DECLARE(int32_t) set_realtime_priority(void)
