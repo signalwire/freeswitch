@@ -753,7 +753,6 @@ static switch_status_t switch_opus_decode(switch_codec_t *codec,
 
 	if (*flag & SFF_PLC) {
 		switch_core_session_t *session = codec->session;
-		switch_channel_t *channel = switch_core_session_get_channel(session);
 		switch_jb_t *jb = NULL;
 
 		plc = 1;
@@ -761,6 +760,8 @@ static switch_status_t switch_opus_decode(switch_codec_t *codec,
 		encoded_data = NULL;
 
 		if ((opus_prefs.use_jb_lookahead || context->use_jb_lookahead) && context->codec_settings.useinbandfec && session) {
+			switch_channel_t *channel = switch_core_session_get_channel(session);
+
 			if (!context->look_check) {
 				context->look_ts = switch_true(switch_channel_get_variable_dup(channel, "jb_use_timestamps", SWITCH_FALSE, -1));
 				context->look_check = 1;
