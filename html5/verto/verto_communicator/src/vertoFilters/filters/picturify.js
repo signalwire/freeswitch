@@ -11,11 +11,11 @@
       var i = 0;
       width = width || 150; //default width
       if(regex64.test(text)) {
-        text = text.replace(regex64, '<a href="$1" target="_blank"><img width="'+ width +'" src="data:image/png;base64,$2"/></a>')
+        text = text.replace(regex64, '<a href="$1" target="_blank"><img class="chat-img" width="'+ width +'" src="data:image/png;base64,$2"/></a>')
       }
 
       do {
-        text = text.replace(regex, '<a $1href="$2"><img width="'+ width +'" src="$2"/></a>');
+        text = text.replace(regex, '<a $1href="$2"><img class="chat-img" width="'+ width +'" src="$2"/></a>');
       } while((!n || (n && i++ < n)) && regex.test(text));
 
       return text;
