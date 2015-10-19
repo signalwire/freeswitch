@@ -925,6 +925,10 @@ body .modal-body .btn-group .btn.active {
   color: #FFF;
 }
 
+.chat-img {
+  display: block;
+}
+
 .chat-members .chat-member-item {
   padding: 8px 16px;
   height: 56px;

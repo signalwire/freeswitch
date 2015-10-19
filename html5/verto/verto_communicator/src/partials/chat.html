@@ -23,15 +23,15 @@
       </span>
       <!-- FIXME(italo): Put this whole block in a flex box to avoid defining fixed width.-->
       <h4 class="chat-members-name">
-        <div class="members-name">{{ member.name }}</div> 
+        <div class="members-name">{{ member.name }}</div>
 	<small class="ellipsis members-number">({{ member.number }})</small>
-	
+
 	<div class="members-badges">
    	  <div ng-if="member.status.video.floor" class="label badge-floor" ng-class="{'label-danger': member.status.video.floorLocked, 'label-info': !member.status.video.floorLocked}"><i class="mdi mdi-action-https lock-floor" ng-if="member.status.video.floorLocked"></i> <span>Floor</span></div>
           <div ng-if="member.status.video.reservationID == 'presenter'" class="label label-warning">Presenter</div>
 	</div>
       </h4>
-      
+
       <div class="pull-right action-buttons chat-members-action" ng-show="verto.data.confRole == 'moderator'">
         <div class="btn-group">
           <button type="button" class="btn btn-xs dropdown-toggle" data-toggle="dropdown">
@@ -116,7 +116,7 @@
       </div>
       <div class="chat-message" ng-repeat="message in messages" title="Sent at {{ message.created_at|date }}.">
         <div class="chat-message-metadata">{{ message.from }}:</div>
-        <p class="chat-message-body">{{ message.body }}</p>
+        <p class="chat-message-body" ng-bind-html="message.body | linky:'_blank' | picturify:150:3 "></p>
       </div>
       <div id="chat-message-bottom"></div>
     </div>
