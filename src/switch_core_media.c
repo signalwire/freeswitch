@@ -3571,7 +3571,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 {
 	uint8_t match = 0;
 	uint8_t vmatch = 0;
-	switch_payload_t best_te = 0, te = 0, cng_pt = 0;
+	switch_payload_t best_te = 0, cng_pt = 0;
 	unsigned long best_te_rate = 8000, cng_rate = 8000;
 	sdp_media_t *m;
 	sdp_attribute_t *attr;
@@ -4061,7 +4061,6 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 					if (!best_te || map->rm_rate == a_engine->cur_payload_map->rm_rate) {
 						best_te = (switch_payload_t) map->rm_pt;
 						best_te_rate = map->rm_rate;
-						smh->mparams->recv_te = best_te;
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Set telephone-event payload to %u@%ld\n", best_te, best_te_rate);
 					}
 					continue;
@@ -4405,7 +4404,6 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 					if (!best_te || map->rm_rate == a_engine->cur_payload_map->adv_rm_rate) {
 						best_te = (switch_payload_t) map->rm_pt;
 						best_te_rate = map->rm_rate;
-						smh->mparams->recv_te = best_te;
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Set telephone-event payload to %u@%lu\n", best_te, best_te_rate);
 					}
 					continue;
@@ -4442,41 +4440,41 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 			}
 
 			if (best_te) {
-				if (sdp_type == SDP_TYPE_RESPONSE) {
-					te = smh->mparams->te = (switch_payload_t) best_te;
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Set 2833 dtmf send payload to %u\n", 
-									  switch_channel_get_name(session->channel), best_te);
+				smh->mparams->te_rate = best_te_rate;
+
+				if (sdp_type == SDP_TYPE_REQUEST) {
+					smh->mparams->te = smh->mparams->recv_te = (switch_payload_t) best_te;
 					switch_channel_set_variable(session->channel, "dtmf_type", "rfc2833");
 					smh->mparams->dtmf_type = DTMF_2833;
-					if (a_engine->rtp_session) {
-						switch_rtp_set_telephony_event(a_engine->rtp_session, (switch_payload_t) best_te);
-						switch_channel_set_variable_printf(session->channel, "rtp_2833_send_payload", "%d", best_te);
-					}
 				} else {
-					te = smh->mparams->recv_te = smh->mparams->te = (switch_payload_t) best_te;
-					smh->mparams->te_rate = best_te_rate;
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Set 2833 dtmf send/recv payload to %u\n",
-									  switch_channel_get_name(session->channel), te);
+					smh->mparams->te = (switch_payload_t) best_te;
 					switch_channel_set_variable(session->channel, "dtmf_type", "rfc2833");
 					smh->mparams->dtmf_type = DTMF_2833;
-					if (a_engine->rtp_session) {
-						switch_rtp_set_telephony_event(a_engine->rtp_session, te);
-						switch_channel_set_variable_printf(session->channel, "rtp_2833_send_payload", "%d", te);
-						switch_rtp_set_telephony_recv_event(a_engine->rtp_session, te);
-						switch_channel_set_variable_printf(session->channel, "rtp_2833_recv_payload", "%d", te);
-					}
 				}
+				
+				if (a_engine->rtp_session) {
+					switch_rtp_set_telephony_event(a_engine->rtp_session, smh->mparams->te);
+					switch_channel_set_variable_printf(session->channel, "rtp_2833_send_payload", "%d", smh->mparams->te);
+					switch_rtp_set_telephony_recv_event(a_engine->rtp_session, smh->mparams->recv_te);
+					switch_channel_set_variable_printf(session->channel, "rtp_2833_recv_payload", "%d", smh->mparams->recv_te);
+				}
+
+				
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Set 2833 dtmf send payload to %u recv payload to %u\n", 
+								  switch_channel_get_name(session->channel), smh->mparams->te, smh->mparams->recv_te);
+
+
 			} else {
 				/* by default, use SIP INFO if 2833 is not in the SDP */
 				if (!switch_false(switch_channel_get_variable(channel, "rtp_info_when_no_2833"))) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "No 2833 in SDP.  Disable 2833 dtmf and switch to INFO\n");
 					switch_channel_set_variable(session->channel, "dtmf_type", "info");
 					smh->mparams->dtmf_type = DTMF_INFO;
-					te = smh->mparams->recv_te = smh->mparams->te = 0;
+					smh->mparams->recv_te = smh->mparams->te = 0;
 				} else {
 					switch_channel_set_variable(session->channel, "dtmf_type", "none");
 					smh->mparams->dtmf_type = DTMF_NONE;
-					te = smh->mparams->recv_te = smh->mparams->te = 0;
+					smh->mparams->recv_te = smh->mparams->te = 0;
 				}
 			}
 
