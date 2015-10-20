@@ -321,7 +321,7 @@ static void mod_g711_load(switch_loadable_module_interface_t ** module_interface
 											 48000,	/* actual samples transferred per second */
 											 64000 * 6 * 2,	/* bits transferred per second */
 											 mpf * count,	/* number of microseconds per frame */
-											 spf * count * 6 * 2,	/* number of samples per frame */
+											 spf * count * 6,	/* number of samples per frame */
 											 bpf * count * 6 * 2,	/* number of bytes per frame decompressed */
 											 ebpf * count * 6 * 2,	/* number of bytes per frame compressed */
 											 2,	/* number of channels represented */
