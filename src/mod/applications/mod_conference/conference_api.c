@@ -2386,7 +2386,6 @@ switch_status_t conference_api_sub_record(conference_obj_t *conference, switch_s
 switch_status_t conference_api_sub_norecord(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv)
 {
 	int all, before = conference->record_count, ttl = 0;
-	switch_event_t *event;
 
 	switch_assert(conference != NULL);
 	switch_assert(stream != NULL);
@@ -2398,15 +2397,6 @@ switch_status_t conference_api_sub_norecord(conference_obj_t *conference, switch
 
 	if (!conference_record_stop(conference, stream, all ? NULL : argv[2]) && !all) {
 		stream->write_function(stream, "non-existant recording '%s'\n", argv[2]);
-	} else {
-		if (test_eflag(conference, EFLAG_RECORD) &&
-			switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
-			conference_event_add_data(conference, event);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "stop-recording");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Path", all ? "all" : argv[2]);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Other-Recordings", conference->record_count ? "true" : "false");
-			switch_event_fire(&event);
-		}
 	}
 
 	ttl = before - conference->record_count;
