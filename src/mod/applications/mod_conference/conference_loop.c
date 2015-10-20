@@ -745,6 +745,18 @@ void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, void *ob
 			}
 		}
 
+		if (switch_channel_test_flag(member->channel, CF_CONFERENCE_RESET_MEDIA)) {
+			switch_channel_clear_flag(member->channel, CF_CONFERENCE_RESET_MEDIA);
+			member->loop_loop = 1;
+				
+			if (conference_member_setup_media(member, member->conference)) {
+				switch_mutex_unlock(member->read_mutex);
+				break;
+			}
+			
+			goto do_continue;
+		}
+
 		if (switch_test_flag(read_frame, SFF_CNG)) {
 			if (member->conference->agc_level) {
 				member->nt_tally++;
@@ -945,18 +957,6 @@ void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, void *ob
 			}
 		}
 		
-		if (switch_channel_test_flag(member->channel, CF_CONFERENCE_RESET_MEDIA)) {
-			switch_channel_clear_flag(member->channel, CF_CONFERENCE_RESET_MEDIA);
-			member->loop_loop = 1;
-				
-			if (conference_member_setup_media(member, member->conference)) {
-				switch_mutex_unlock(member->read_mutex);
-				break;
-			}
-			
-			goto do_continue;
-		}
-
 		/* skip frames that are not actual media or when we are muted or silent */
 		if ((conference_utils_member_test_flag(member, MFLAG_TALKING) || member->energy_level == 0 || conference_utils_test_flag(member->conference, CFLAG_AUDIO_ALWAYS))
 			&& conference_utils_member_test_flag(member, MFLAG_CAN_SPEAK) &&	!conference_utils_test_flag(member->conference, CFLAG_WAIT_MOD)
