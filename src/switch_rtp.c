@@ -4018,7 +4018,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_set_video_buffer_size(switch_rtp_t *r
 	//switch_rtp_flush(rtp_session);
 	switch_core_session_request_video_refresh(rtp_session->session);
 
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG, "Setting video buffer %u Frames.\n", frames);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "Setting video buffer %u Frames.\n", frames);
 	
 	return SWITCH_STATUS_SUCCESS;
 }
