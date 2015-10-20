@@ -5082,8 +5082,10 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 		rtp_session->has_rtp = (rtp_session->recv_msg.header.version == 2 || ntohl(*(int *)(b+4)) == ZRTP_MAGIC_COOKIE);
 
 		if ((*b >= 20) && (*b <= 64)) {
-			rtp_session->dtls->bytes = *bytes;
-			rtp_session->dtls->data = (void *) &rtp_session->recv_msg;
+			if (rtp_session->dtls) {
+				rtp_session->dtls->bytes = *bytes;
+				rtp_session->dtls->data = (void *) &rtp_session->recv_msg;
+			}
 			rtp_session->has_ice = 0;
 			rtp_session->has_rtp = 0;
 			rtp_session->has_rtcp = 0;
