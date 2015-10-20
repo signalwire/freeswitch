@@ -1820,7 +1820,7 @@ SWITCH_DECLARE(void) switch_core_media_prepare_codecs(switch_core_session_t *ses
 
 
 
-static void check_jb(switch_core_session_t *session, const char *input, int32_t jb_msec, int32_t maxlen)
+static void check_jb(switch_core_session_t *session, const char *input, int32_t jb_msec, int32_t maxlen, switch_bool_t silent)
 {
 	const char *val;
 	switch_media_handle_t *smh;
@@ -1934,14 +1934,16 @@ static void check_jb(switch_core_session_t *session, const char *input, int32_t 
 			if (switch_rtp_activate_jitter_buffer(a_engine->rtp_session, qlen, maxqlen,
 												  a_engine->read_impl.samples_per_packet, 
 												  a_engine->read_impl.samples_per_second) == SWITCH_STATUS_SUCCESS) {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), 
-								  SWITCH_LOG_DEBUG, "Setting Jitterbuffer to %dms (%d frames) (%d max frames)\n", 
-								  jb_msec, qlen, maxqlen);
+				if (!silent) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), 
+									  SWITCH_LOG_DEBUG, "Setting Jitterbuffer to %dms (%d frames) (%d max frames)\n", 
+									  jb_msec, qlen, maxqlen);
+				}
 				switch_channel_set_flag(session->channel, CF_JITTERBUFFER);
 				if (!switch_false(switch_channel_get_variable(session->channel, "rtp_jitter_buffer_plc"))) {
 					switch_channel_set_flag(session->channel, CF_JITTERBUFFER_PLC);
 				}
-			} else {
+			} else if (!silent) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), 
 								  SWITCH_LOG_WARNING, "Error Setting Jitterbuffer to %dms (%d frames)\n", jb_msec, qlen);
 			}
@@ -2028,14 +2030,14 @@ static void check_jb_sync(switch_core_session_t *session)
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session),
-					  SWITCH_LOG_DEBUG, "%s %s \"%s\" Sync A/V JB to %dms %u VFrames FPS %u a:%s v:%s\n", 
+					  SWITCH_LOG_DEBUG1, "%s %s \"%s\" Sync A/V JB to %dms %u VFrames FPS %u a:%s v:%s\n", 
 					  switch_core_session_get_uuid(session),
 					  switch_channel_get_name(session->channel),
 					  switch_channel_get_variable_dup(session->channel, "caller_id_name", SWITCH_FALSE, -1),
 					  jb_sync_msec, frames, fps, sync_audio ? "yes" : "no", sync_video ? "yes" : "no");
 	
 	if (sync_audio) {
-		check_jb(session, NULL, jb_sync_msec, 0);
+		check_jb(session, NULL, jb_sync_msec, 0, SWITCH_TRUE);
 	}
 }
 
@@ -2213,7 +2215,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 				}
 			}
 
-			check_jb(session, NULL, 0, 0);
+			check_jb(session, NULL, 0, 0, SWITCH_FALSE);
 
 			engine->check_frames = 0;
 			engine->last_ts = 0;
@@ -6283,7 +6285,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 
 		}
 
-		check_jb(session, NULL, 0, 0);
+		check_jb(session, NULL, 0, 0, SWITCH_FALSE);
 
 		if ((val = switch_channel_get_variable(session->channel, "rtp_timeout_sec"))) {
 			int v = atoi(val);
@@ -8948,7 +8950,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_receive_message(switch_core_se
 	case SWITCH_MESSAGE_INDICATE_JITTER_BUFFER:
 		{
 			if (switch_rtp_ready(a_engine->rtp_session)) {
-				check_jb(session, msg->string_arg, 0, 0);
+				check_jb(session, msg->string_arg, 0, 0, SWITCH_FALSE);
 			}
 		}
 		break;
