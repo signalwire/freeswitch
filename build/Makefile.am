@@ -1,5 +1,6 @@
 MK=`echo $(MAKE) | $(AWK) '{printf "%5s\n", $$0}' `
 
+
 all:
 	@echo " +---------- FreeSWITCH Build Complete ----------+"
 	@echo " + FreeSWITCH has been successfully built.       +"
@@ -54,6 +55,13 @@ install:
 	@echo " +       Install/Re-install default config:        +"
 	@echo " +       ----------------------------------        +"
 	@echo " +               $(MK) samples                     +"
+if KNOWN_INIT
+	@echo " +                                                 +"
+	@echo " +       Install init scripts:                     +"
+	@echo " +       ---------------------                     +"
+	@echo " +                                                 +"
+	@echo " +       init/install_systemd.sh                   +"
+endif
 	@echo " +                                                 +"
 	@echo " +                                                 +"
 	@echo " +       Additional resources:                     +"

@@ -83,6 +83,8 @@ default_certsdir="$prefix/certs"
 default_fontsdir="$prefix/fonts"
 default_imagesdir="$prefix/images"
 
+bindir="$exec_prefix/bin"
+
 if test "${enable_fhs}" = "yes"; then
     eval full_datadir="${datadir}/freeswitch"
     eval datadir=$full_datadir
@@ -771,6 +773,32 @@ case "$host" in
     ;;
     *linux*)
 	APR_ADDTO([PLATFORM_CORE_LIBS], [-ldl -lcrypt -lrt])
+	if test -f /etc/os-release; then
+		DISTRO="$(source /etc/os-release && echo $ID$VERSION_ID)"
+		case "$DISTRO" in
+			*debian8*)
+				environmentfilelocation="default"
+				;;&
+			*centos7*)
+				environmentfilelocation="sysconfig"
+				;;&
+			*debian8*|*centos7*)
+				knowninit=false
+				if test -d /run/systemd/system; then
+					knowninit=true
+					AC_SUBST(DISTRO)
+					AC_SUBST(rundir)
+					AC_SUBST(environmentfilelocation)
+					AC_CONFIG_FILES([init/install_systemd.sh], [chmod +x init/install_systemd.sh])
+					AC_CONFIG_FILES([init/freeswitch.service])
+				fi
+				;;
+			*)
+				knowninit=false
+				;;
+		esac
+	fi
+	AM_CONDITIONAL([KNOWN_INIT], [test x$knowninit = xtrue])
     ;;
 esac
 

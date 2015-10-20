@@ -1,0 +1,62 @@
+#!/bin/bash
+# @DISTRO@ installer
+# Niek Vlessert
+
+USER=`whoami`
+DISTRO=@DISTRO@
+if [ $USER != "root" ] ; then
+	SUDO=`which sudo | awk -F"/" '{print $NF}'`
+	if [ -z $SUDO ] ; then
+		echo "No root and no sudo... please run this as root or install sudo and make sure your user has permissions to use it."
+		exit
+	else
+		read -p "The currently active user is not root but sudo is available... do you want to install using sudo? (y/n) " -n 1 -r
+		if ! [[ $REPLY =~ ^[yY]$ ]]
+		then
+			echo
+			exit
+		fi
+	fi
+fi
+
+echo
+echo "This will do several things on your @DISTRO@ installation:"
+echo "- Create user freeswitch and add it to group freeswitch"
+FSPATH=@prefix@
+if [[ $FSPATH == *"freeswitch"* ]]
+then
+	echo "- Set permissions on @prefix@ and files in @bindir@"
+fi
+echo "- Install systemd unit file"
+echo "- Install /etc/@environmentfilelocation@/freeswitch"
+echo 
+read -p "Do you want to continue? (y/n) " -n 1 -r
+if [[ $REPLY =~ ^[yY]$ ]]
+then
+	echo
+	echo "Installing..."
+	$SUDO groupadd freeswitch
+	if DISTRO="debian8"; then
+		$SUDO adduser --disabled-password  --quiet --system --home @confdir@ --gecos "FreeSWITCH open source softswitch" --ingroup freeswitch freeswitch
+	elif DISTRO="centos7"; then
+		$SUDO adduser --system --home @confdir@ -c "FreeSWITCH open source softswitch" -g freeswitch freeswitch
+	fi
+	if [[ $FSPATH == *"freeswitch"* ]]
+	then
+		$SUDO chown -R freeswitch:freeswitch @prefix@
+		$SUDO chmod -R ug=rwX,o= @prefix@
+		$SUDO chmod -R u=rwx,g=rx @bindir@/*
+	fi
+	$SUDO cp init/freeswitch.service /etc/systemd/system/
+	$SUDO cp init/freeswitch.tmpfile /etc/tmpfiles.d/freeswitch.conf
+	$SUDO cp init/freeswitch.default /etc/@environmentfilelocation@/freeswitch
+	$SUDO systemd-tmpfiles --clean --create
+	$SUDO systemctl daemon-reload
+	echo
+	if [ -f @confdir@/vars.xml ] ; then
+		echo "You may now start Freeswitch using 'systemctl start freeswitch'"
+	else
+		echo "Make sure your config files are in place in @confdir@, if they are you can start Freeswitch using 'systemctl start freeswitch'"
+	fi
+	echo "Then start fs_cli by running @bindir@/fs_cli"
+fi
