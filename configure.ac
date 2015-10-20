@@ -83,7 +83,7 @@ default_certsdir="$prefix/certs"
 default_fontsdir="$prefix/fonts"
 default_imagesdir="$prefix/images"
 
-bindir="$exec_prefix/bin"
+eval bindir_expanded="${bindir}"
 
 if test "${enable_fhs}" = "yes"; then
     eval full_datadir="${datadir}/freeswitch"
@@ -789,8 +789,9 @@ case "$host" in
 					AC_SUBST(DISTRO)
 					AC_SUBST(rundir)
 					AC_SUBST(environmentfilelocation)
-					AC_CONFIG_FILES([init/install_systemd.sh], [chmod +x init/install_systemd.sh])
-					AC_CONFIG_FILES([init/freeswitch.service])
+					AC_SUBST(bindir_expanded)
+					AC_CONFIG_FILES([build/startup/install_systemd.sh], [chmod +x build/startup/install_systemd.sh])
+					AC_CONFIG_FILES([build/startup/freeswitch.service])
 				fi
 				;;
 			*)

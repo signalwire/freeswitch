@@ -57,10 +57,10 @@ install:
 	@echo " +               $(MK) samples                     +"
 if KNOWN_INIT
 	@echo " +                                                 +"
-	@echo " +       Install init scripts:                     +"
-	@echo " +       ---------------------                     +"
+	@echo " +       Install startup scripts:                  +"
+	@echo " +       ------------------------                  +"
 	@echo " +                                                 +"
-	@echo " +       init/install_systemd.sh                   +"
+	@echo " +       build/startup/install_systemd.sh          +"
 endif
 	@echo " +                                                 +"
 	@echo " +                                                 +"

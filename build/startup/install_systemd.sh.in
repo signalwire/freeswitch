@@ -25,11 +25,11 @@ echo "- Create user freeswitch and add it to group freeswitch"
 FSPATH=@prefix@
 if [[ $FSPATH == *"freeswitch"* ]]
 then
-	echo "- Set permissions on @prefix@ and files in @bindir@"
+	echo "- Set permissions on @prefix@ and files in @bindir_expanded@"
 fi
 echo "- Install systemd unit file"
 echo "- Install /etc/@environmentfilelocation@/freeswitch"
-echo 
+echo
 read -p "Do you want to continue? (y/n) " -n 1 -r
 if [[ $REPLY =~ ^[yY]$ ]]
 then
@@ -45,7 +45,7 @@ then
 	then
 		$SUDO chown -R freeswitch:freeswitch @prefix@
 		$SUDO chmod -R ug=rwX,o= @prefix@
-		$SUDO chmod -R u=rwx,g=rx @bindir@/*
+		$SUDO chmod -R u=rwx,g=rx @bindir_expanded@/*
 	fi
 	$SUDO cp init/freeswitch.service /etc/systemd/system/
 	$SUDO cp init/freeswitch.tmpfile /etc/tmpfiles.d/freeswitch.conf
@@ -58,5 +58,5 @@ then
 	else
 		echo "Make sure your config files are in place in @confdir@, if they are you can start Freeswitch using 'systemctl start freeswitch'"
 	fi
-	echo "Then start fs_cli by running @bindir@/fs_cli"
+	echo "Then start fs_cli by running @bindir_expanded@/fs_cli"
 fi
