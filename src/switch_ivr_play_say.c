@@ -1006,7 +1006,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	int16_t *abuf = NULL;
 	switch_dtmf_t dtmf = { 0 };
-	uint32_t interval = 0, samples = 0, framelen, sample_start = 0;
+	uint32_t interval = 0, samples = 0, framelen, sample_start = 0, channels = 1;
 	uint32_t ilen = 0;
 	switch_size_t olen = 0, llen = 0;
 	switch_frame_t write_frame = { 0 };
@@ -1338,6 +1338,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 			write_frame.codec = switch_core_session_get_read_codec(session);
 			samples = read_impl.samples_per_packet;
 			framelen = read_impl.encoded_bytes_per_packet;
+			channels = read_impl.number_of_channels;
 			if (framelen == 0) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "%s cannot play or record native files with variable length data\n", switch_channel_get_name(channel));
 				
@@ -1356,6 +1357,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 			write_frame.codec = &codec;
 			samples = codec.implementation->samples_per_packet;
 			framelen = codec.implementation->decoded_bytes_per_packet;
+			channels = codec.implementation->number_of_channels;
 		}
 
 		last_native = test_native;
@@ -1363,8 +1365,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 		if (timer_name && !timer.samplecount) {
 			uint32_t len;
 
-			len = samples * 2;
-			if (switch_core_timer_init(&timer, timer_name, interval, samples / codec.implementation->number_of_channels, pool) != SWITCH_STATUS_SUCCESS) {
+			len = samples * 2 * channels;
+			if (switch_core_timer_init(&timer, timer_name, interval, samples, pool) != SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Setup timer failed!\n");
 				switch_core_codec_destroy(&codec);
 				switch_core_session_io_write_lock(session);
@@ -1386,7 +1388,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 			switch_core_service_session(session);
 		}
 
-		ilen = samples;
+		ilen = samples * channels;
 
 		if (switch_event_create(&event, SWITCH_EVENT_PLAYBACK_START) == SWITCH_STATUS_SUCCESS) {
 			switch_channel_event_set_data(channel, event);
