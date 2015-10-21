@@ -6728,7 +6728,7 @@ static const char *get_media_profile_name(switch_core_session_t *session, int se
 	switch_assert(session);
 
 	if (switch_channel_test_flag(session->channel, CF_AVPF)) {
-		if (switch_channel_test_flag(session->channel, CF_DTLS)) {
+		if (switch_channel_test_flag(session->channel, CF_DTLS) || secure) {
 			if (switch_channel_test_flag(session->channel, CF_AVPF_MOZ)) {
 				return "UDP/TLS/RTP/SAVPF";
 			} else {
