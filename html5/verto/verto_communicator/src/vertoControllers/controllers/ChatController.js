@@ -39,8 +39,8 @@
         console.log('chat.newMessage', data);
         $scope.$apply(function() {
           $scope.messages.push(data);
-          if (data.from != verto.data.name && (!$scope.chatStatus ||
-              $scope.activePane != 'chat')) {
+          if (data.from != verto.data.name &&
+              (!$scope.chatStatus && $scope.activePane != 'chat')) {
             ++$rootScope.chat_counter;
           }
           $timeout(function() {
