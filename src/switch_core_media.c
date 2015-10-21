@@ -1920,8 +1920,8 @@ static void check_jb(switch_core_session_t *session, const char *input, int32_t 
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR,
 							  "Invalid Jitterbuffer spec [%d] must be between 10 and 10000\n", jb_msec);
 		} else {
-			int qlen, maxqlen = 30;
-				
+			int qlen, maxqlen = 50;
+			
 			qlen = jb_msec / (a_engine->read_impl.microseconds_per_packet / 1000);
 
 			if (maxlen) {
