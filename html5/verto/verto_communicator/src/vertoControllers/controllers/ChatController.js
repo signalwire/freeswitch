@@ -116,6 +116,11 @@
           $scope.$apply(function() {
             // console.log('Updating', memberIdx, ' <', $scope.members[memberIdx],
               // '> with <', member, '>');
+            // Checking if it's me
+              if (member.name == verto.data.name && member.email == verto.data.email) {
+                verto.data.mutedMic = member.status.audio.muted;
+                verto.data.mutedVideo = member.status.video.muted;
+              }
             angular.extend($scope.members[memberIdx], member);
           });
         }
@@ -171,7 +176,7 @@
 
       $scope.confBanner = function(memberID) {
         console.log('$scope.confBanner');
-        
+
         prompt({
           title: 'Please insert the banner text',
           input: true,
