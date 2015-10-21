@@ -2425,7 +2425,7 @@ switch_status_t conference_api_sub_pauserec(conference_obj_t *conference, switch
 	}
 	stream->write_function(stream, "%s recording file %s\n",
 						   action == REC_ACTION_PAUSE ? "Pause" : "Resume", argv[2]);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,	"%s recording file %s\n",
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,	"%s recording file %s\n",
 					  action == REC_ACTION_PAUSE ? "Pause" : "Resume", argv[2]);
 
 	if (!conference_record_action(conference, argv[2], action)) {

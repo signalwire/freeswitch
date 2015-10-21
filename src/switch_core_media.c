@@ -6234,7 +6234,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 					interval = 5000;
 				}
 
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Activating RTCP PORT %d\n", remote_rtcp_port);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Activating RTCP PORT %d\n", remote_rtcp_port);
 				switch_rtp_activate_rtcp(a_engine->rtp_session, interval, remote_rtcp_port, a_engine->rtcp_mux > 0);
 				
 			}

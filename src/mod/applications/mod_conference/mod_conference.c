@@ -362,7 +362,7 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 				}
 			}
 			if (is_talking == 0) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Conference has been idle for over %d seconds, terminating\n", conference->terminate_on_silence);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Conference has been idle for over %d seconds, terminating\n", conference->terminate_on_silence);
 				conference_utils_set_flag(conference, CFLAG_DESTRUCT);
 			}
 		}
@@ -376,7 +376,7 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 				switch_channel_t *channel = switch_core_session_get_channel(imember->session);
 				char *rfile = switch_channel_expand_variables(channel, conference->auto_record);
 
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Auto recording file: %s\n", rfile);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Auto recording file: %s\n", rfile);
 				conference_record_launch_thread(conference, rfile, -1, SWITCH_TRUE);
 
 				if (rfile != conference->auto_record) {
@@ -2967,7 +2967,7 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 		if ((val = switch_channel_get_variable(channel, "sound_prefix")) && !zstr(val)) {
 			/* if no sound_prefix was set, use the channel sound_prefix */
 			conference->sound_prefix = switch_core_strdup(conference->pool, val);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "using channel sound prefix: %s\n", conference->sound_prefix);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "using channel sound prefix: %s\n", conference->sound_prefix);
 		}
 	}
 
