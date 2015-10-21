@@ -117,10 +117,10 @@
             // console.log('Updating', memberIdx, ' <', $scope.members[memberIdx],
               // '> with <', member, '>');
             // Checking if it's me
-              if (member.name == verto.data.name && member.email == verto.data.email) {
-                verto.data.mutedMic = member.status.audio.muted;
-                verto.data.mutedVideo = member.status.video.muted;
-              }
+            if (parseInt(member.id) == parseInt(verto.data.conferenceMemberID)) {
+              verto.data.mutedMic = member.status.audio.muted;
+              verto.data.mutedVideo = member.status.video.muted;
+            }
             angular.extend($scope.members[memberIdx], member);
           });
         }
