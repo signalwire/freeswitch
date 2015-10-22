@@ -842,6 +842,11 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 			}
 		}
 
+		if ((tech_pvt->mparams.last_sdp_str && strstr(tech_pvt->mparams.last_sdp_str, "a=setup")) || 
+			(tech_pvt->mparams.local_sdp_str && strstr(tech_pvt->mparams.local_sdp_str, "a=setup"))) {
+			session_timeout = 0;
+		}
+
 		if ((tech_pvt->session_timeout = session_timeout)) {
 			tech_pvt->session_refresher = switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND ? nua_local_refresher : nua_remote_refresher;
 		} else {
