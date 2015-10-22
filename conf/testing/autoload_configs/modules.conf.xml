@@ -6,6 +6,7 @@
     <load module="mod_logfile"/>
     <load module="mod_cdr_csv"/>
     <load module="mod_event_socket"/>
+    <load module="mod_esf"/>
     <load module="mod_sofia"/>
     <load module="mod_loopback"/>
     <load module="mod_rtc"/>
