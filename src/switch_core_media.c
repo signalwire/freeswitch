@@ -8662,7 +8662,7 @@ SWITCH_DECLARE(void) switch_core_media_patch_sdp(switch_core_session_t *session)
 				switch_core_media_choose_port(session, SWITCH_MEDIA_TYPE_VIDEO, 1);
 				clear_pmaps(v_engine);
 				pmap = switch_core_media_add_payload_map(session,
-														 SWITCH_MEDIA_TYPE_AUDIO,
+														 SWITCH_MEDIA_TYPE_VIDEO,
 														 "PROXY-VID",
 														 NULL,
 														 NULL,
@@ -8675,11 +8675,15 @@ SWITCH_DECLARE(void) switch_core_media_patch_sdp(switch_core_session_t *session)
 				v_engine->cur_payload_map = pmap;
 
 				switch_snprintf(vport_buf, sizeof(vport_buf), "%u", v_engine->adv_sdp_port);
+				
 				if (switch_channel_media_ready(session->channel) && !switch_rtp_ready(v_engine->rtp_session)) {
 					switch_channel_set_flag(session->channel, CF_VIDEO_POSSIBLE);
 					switch_channel_set_flag(session->channel, CF_REINVITE);
 					switch_core_media_activate_rtp(session);
 				}
+
+				v_engine->codec_negotiated = 1;
+				switch_core_media_set_video_codec(session, SWITCH_FALSE);
 			}
 
 			strncpy(q, p, 8);
