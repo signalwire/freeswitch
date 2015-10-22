@@ -473,7 +473,10 @@ SWITCH_STANDARD_APP(bcast_function)
 										 read_impl.actual_samples_per_second,
 										 ebuf, &encoded_datalen, &rate, &flag);
 
-				read_frame->data = encoded_data;
+				if (read_frame->buflen >= encoded_datalen) {
+					memcpy(read_frame->data, encoded_data, encoded_datalen);
+				}
+
 				read_frame->datalen = encoded_datalen;
 
 			} else {
