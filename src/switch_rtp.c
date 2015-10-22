@@ -5510,6 +5510,7 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 	}
 
 	if (rtp_session->has_rtp && *bytes) {
+		uint32_t read_ssrc = ntohl(rtp_session->last_rtp_hdr.ssrc);
 
 		if (rtp_session->vb && jb_valid(rtp_session)) {
 			status = switch_jb_put_packet(rtp_session->vb, (switch_rtp_packet_t *) &rtp_session->recv_msg, *bytes);			
@@ -5527,12 +5528,8 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 		}
 
 		if (rtp_session->jb && !rtp_session->pause_jb && jb_valid(rtp_session)) {
-			uint32_t read_ssrc = ntohl(rtp_session->last_rtp_hdr.ssrc);
 
-			if (rtp_session->last_rtp_hdr.m && rtp_session->last_rtp_hdr.pt != rtp_session->recv_te && 
-				!rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] && !(rtp_session->rtp_bugs & RTP_BUG_IGNORE_MARK_BIT)) {
-				switch_jb_reset(rtp_session->jb);
-			} else if (rtp_session->last_jb_read_ssrc && rtp_session->last_jb_read_ssrc != read_ssrc) {
+			if (rtp_session->last_jb_read_ssrc && rtp_session->last_jb_read_ssrc != read_ssrc) {
 				switch_jb_reset(rtp_session->jb);
 			}
 
@@ -5554,6 +5551,13 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 
 			if (!return_jb_packet) {
 				return status;
+			}
+		} else {
+			if (rtp_session->last_rtp_hdr.m && rtp_session->last_rtp_hdr.pt != rtp_session->recv_te && 
+				!rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] && !(rtp_session->rtp_bugs & RTP_BUG_IGNORE_MARK_BIT)) {
+				switch_rtp_set_flag(rtp_session, SWITCH_RTP_FLAG_FLUSH);
+			} else if (rtp_session->last_jb_read_ssrc && rtp_session->last_jb_read_ssrc != read_ssrc) {
+				switch_rtp_set_flag(rtp_session, SWITCH_RTP_FLAG_FLUSH);
 			}
 		}
 	}
