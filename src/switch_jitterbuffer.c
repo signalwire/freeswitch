@@ -37,7 +37,7 @@
 #define PERIOD_LEN 250
 #define MAX_FRAME_PADDING 2
 #define MAX_MISSING_SEQ 20
-#define jb_debug(_jb, _level, _format, ...) if (_jb->debug_level >= _level) switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(_jb->session), SWITCH_LOG_ALERT, "JB:%p:%s lv:%d ln:%d sz:%u/%u/%u/%u c:%u %u/%u/%u/%u %.2f%% ->" _format, (void *) _jb, (jb->type == SJB_AUDIO ? "aud" : "vid"), _level, __LINE__,  _jb->min_frame_len, _jb->max_frame_len, _jb->frame_len, _jb->visible_nodes, _jb->period_count, _jb->consec_good_count, _jb->period_good_count, _jb->consec_miss_count, _jb->period_miss_count, _jb->period_miss_pct, __VA_ARGS__)
+#define jb_debug(_jb, _level, _format, ...) if (_jb->debug_level >= _level) switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(_jb->session), SWITCH_LOG_ALERT, "JB:%p:%s lv:%d ln:%d sz:%u/%u/%u/%u c:%u %u/%u/%u/%u %.2f%% ->" _format, (void *) _jb, (jb->type == SJB_AUDIO ? "aud" : "vid"), _level, __LINE__,  _jb->min_frame_len, _jb->max_frame_len, _jb->frame_len, _jb->complete_frames, _jb->period_count, _jb->consec_good_count, _jb->period_good_count, _jb->consec_miss_count, _jb->period_miss_count, _jb->period_miss_pct, __VA_ARGS__)
 
 //const char *TOKEN_1 = "ONE";
 //const char *TOKEN_2 = "TWO";
@@ -96,6 +96,7 @@ struct switch_jb_s {
 	switch_mutex_t *list_mutex;
 	switch_memory_pool_t *pool;
 	int free_pool;
+	int drop_flag;
 	switch_jb_flag_t flags;
 	switch_jb_type_t type;
 	switch_core_session_t *session;
@@ -364,6 +365,36 @@ static inline uint32_t jb_find_lowest_ts(switch_jb_t *jb)
 	return lowest ? lowest->packet.header.ts : 0;
 }
 
+static inline void thin_frames(switch_jb_t *jb, int freq, int max)
+{
+	switch_jb_node_t *node;
+	int i = -1;
+	int dropped = 0;
+
+	switch_mutex_lock(jb->list_mutex);
+	node = jb->node_list;
+
+	for (node = jb->node_list; node && jb->complete_frames > jb->max_frame_len && dropped < max; node = node->next) {
+
+		if (node->visible) {
+			i++;
+		} else {
+			continue;
+		}
+
+		if ((i % freq) == 0) {
+			drop_ts(jb, node->packet.header.ts);
+			node = jb->node_list;
+			dropped++;
+		}
+	}
+
+	sort_free_nodes(jb);
+	switch_mutex_unlock(jb->list_mutex);	
+}
+
+
+
 #if 0
 static inline switch_jb_node_t *jb_find_highest_node(switch_jb_t *jb)
 {
@@ -388,8 +419,6 @@ static inline uint32_t jb_find_highest_ts(switch_jb_t *jb)
 
 	return highest ? highest->packet.header.ts : 0;
 }
-
-
 
 static inline switch_jb_node_t *jb_find_penultimate_node(switch_jb_t *jb)
 {
@@ -526,6 +555,16 @@ static inline void drop_newest_frame(switch_jb_t *jb)
 
 	drop_ts(jb, ts);
 	jb_debug(jb, 1, "Dropping highest frame ts:%u\n", ntohl(ts));
+}
+
+static inline void drop_second_newest_frame(switch_jb_t *jb)
+{
+	switch_jb_node_t *second_newest = jb_find_penultimate_node(jb);
+	
+	if (second_newest) {
+		drop_ts(jb, second_newest->packet.header.ts);
+		jb_debug(jb, 1, "Dropping second highest frame ts:%u\n", ntohl(second_newest->packet.header.ts));
+	}
 }
 #endif
 
@@ -802,7 +841,7 @@ SWITCH_DECLARE(void) switch_jb_reset(switch_jb_t *jb)
 
 	jb_debug(jb, 2, "%s", "RESET BUFFER\n");
 
-
+	jb->drop_flag = 0;
 	jb->last_target_seq = 0;
 	jb->target_seq = 0;
 	jb->write_init = 0;
@@ -1195,6 +1234,11 @@ SWITCH_DECLARE(switch_status_t) switch_jb_get_packet(switch_jb_t *jb, switch_rtp
 
 	jb->period_miss_pct = ((double)jb->period_miss_count / jb->period_count) * 100;
 
+	if (jb->period_miss_pct > 40.0f) {
+		jb_debug(jb, 2, "Miss percent %02f too high, resetting buffer.\n", jb->period_miss_pct);
+		//switch_jb_reset(jb);
+	}
+
 	if ((status = jb_next_packet(jb, &node)) == SWITCH_STATUS_SUCCESS) {
 		jb_debug(jb, 2, "Found next frame cur ts: %u seq: %u\n", htonl(node->packet.header.ts), htons(node->packet.header.seq));
 
@@ -1281,9 +1325,9 @@ SWITCH_DECLARE(switch_status_t) switch_jb_get_packet(switch_jb_t *jb, switch_rtp
 
 	switch_mutex_unlock(jb->mutex);
 
-	if (status == SWITCH_STATUS_SUCCESS && jb->type == SJB_AUDIO) {
+	if (status == SWITCH_STATUS_SUCCESS) {
 		if (jb->complete_frames > jb->max_frame_len) {
-			drop_oldest_frame(jb);
+			thin_frames(jb, 8, 25);
 		}
 	}
 
