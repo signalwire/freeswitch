@@ -554,8 +554,6 @@ mcu_layer_t *conference_video_get_layer_locked(conference_member_t *member)
 
 	if (!member || member->canvas_id < 0 || member->video_layer_id < 0) return NULL;
 	
-	switch_mutex_lock(member->conference->canvas_mutex);
-
 	canvas = member->conference->canvases[member->canvas_id];
 
 	if (!canvas) {
@@ -570,10 +568,6 @@ mcu_layer_t *conference_video_get_layer_locked(conference_member_t *member)
 	}
 	
  end:
-
-	if (!layer) {
-		switch_mutex_unlock(member->conference->canvas_mutex);
-	}
 
 	return layer;
 }
@@ -591,8 +585,6 @@ void conference_video_release_layer(mcu_layer_t **layer)
 	switch_mutex_unlock(canvas->mutex);
 
 	switch_assert(canvas->conference);
-
-	switch_mutex_unlock(canvas->conference->canvas_mutex);
 
 	*layer = NULL;
 }
