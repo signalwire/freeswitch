@@ -288,7 +288,7 @@ static iks *prompt_component_handle_input_error(struct rayo_actor *prompt, struc
 			RAYO_SEND_REPLY(prompt, RAYO_COMPONENT(prompt)->client_jid, iq);
 
 			/* done */
-			iks_delete(PROMPT_COMPONENT(prompt)->iq);
+			PROMPT_COMPONENT(prompt)->iq = NULL;
 			RAYO_RELEASE(prompt);
 			RAYO_DESTROY(prompt);
 
