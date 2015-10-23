@@ -41,7 +41,7 @@ SWITCH_STANDARD_APP(raw_app)
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	char *response = NULL, *profile_name = NULL, *cmd = NULL;
 	hiredis_profile_t *profile = NULL;
-	
+
 	if ( !zstr(data) ) {
 		profile_name = strdup(data);
 	} else {
@@ -63,7 +63,7 @@ SWITCH_STANDARD_APP(raw_app)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "hiredis: Unable to locate profile[%s]\n", profile_name);
 		return;
 	}
-	
+
 	if ( hiredis_profile_execute_sync(profile, cmd, &response) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "hiredis: profile[%s] error executing [%s] because [%s]\n", profile_name, cmd, response);
 	}
@@ -81,13 +81,13 @@ SWITCH_STANDARD_API(raw_api)
 	hiredis_profile_t *profile = NULL;
 	char *data = NULL, *input = NULL, *response = NULL;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	
+
 	if ( !zstr(cmd) ) {
 		input = strdup(cmd);
 	} else {
 		switch_goto_status(SWITCH_STATUS_GENERR, done);
 	}
-	
+
 	if ( (data = strchr(input, ' '))) {
 		*data = '\0';
 		data++;
@@ -101,7 +101,7 @@ SWITCH_STANDARD_API(raw_api)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "hiredis: Unable to locate profile[%s]\n", input);
 		switch_goto_status(SWITCH_STATUS_GENERR, done);
 	}
-	
+
 	if ( hiredis_profile_execute_sync(profile, data, &response) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "hiredis: profile[%s] error executing [%s] reason:[%s]\n", input, data, response);
 		switch_goto_status(SWITCH_STATUS_GENERR, done);
@@ -114,24 +114,26 @@ SWITCH_STANDARD_API(raw_api)
 	return status;
 }
 
-/* 
-SWITCH_LIMIT_INCR(name) static switch_status_t name (switch_core_session_t *session, const char *realm, const char *resource, 
+/*
+SWITCH_LIMIT_INCR(name) static switch_status_t name (switch_core_session_t *session, const char *realm, const char *resource,
                                                      const int max, const int interval)
 */
 SWITCH_LIMIT_INCR(hiredis_limit_incr)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	hiredis_profile_t *profile = NULL;
-	char *hashkey = NULL, *response = NULL;
+	char *hashkey = NULL, *response = NULL, *limit_key = NULL;
 	int64_t count = 0; /* Redis defines the incr action as to be performed on a 64 bit signed integer */
 	time_t now = switch_epoch_time_now(NULL);
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	hiredis_limit_pvt_t *limit_pvt = NULL;
+	switch_memory_pool_t *session_pool = switch_core_session_get_pool(session);
 
 	if ( zstr(realm) ) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "hiredis: realm must be defined\n");
 		switch_goto_status(SWITCH_STATUS_GENERR, done);
 	}
-	
+
 	profile = switch_core_hash_find(mod_hiredis_globals.profiles, realm);
 
 	if ( !profile ) {
@@ -140,10 +142,12 @@ SWITCH_LIMIT_INCR(hiredis_limit_incr)
 	}
 
 	if ( interval ) {
-		hashkey = switch_mprintf("incr %s_%d", resource, now % interval);
+		limit_key = switch_mprintf("%s_%d", resource, now % interval);
 	} else {
-		hashkey = switch_mprintf("incr %s", resource);
+		limit_key = switch_mprintf("%s", resource);
 	}
+
+	hashkey = switch_mprintf("incr %s", limit_key);
 
 	if ( hiredis_profile_execute_sync(profile, hashkey, &response) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "hiredis: profile[%s] error executing [%s] because [%s]\n", realm, hashkey, response);
@@ -153,6 +157,14 @@ SWITCH_LIMIT_INCR(hiredis_limit_incr)
 
 	switch_channel_set_variable(channel, "hiredis_raw_response", response);
 
+	limit_pvt = switch_core_alloc(session_pool, sizeof(hiredis_limit_pvt_t));
+	limit_pvt->next = switch_channel_get_private(channel, "hiredis_limit_pvt");
+	limit_pvt->realm = switch_core_strdup(session_pool, realm);
+	limit_pvt->resource = switch_core_strdup(session_pool, resource);
+	limit_pvt->limit_key = switch_core_strdup(session_pool, limit_key);
+	limit_pvt->inc = 1;
+	switch_channel_set_private(channel, "hiredis_limit_pvt", limit_pvt);
+
 	count = atoll(response);
 
 	if ( !count || count > max ) {
@@ -160,6 +172,7 @@ SWITCH_LIMIT_INCR(hiredis_limit_incr)
 	}
 
  done:
+	switch_safe_free(limit_key);
 	switch_safe_free(response);
 	switch_safe_free(hashkey);
 	return status;
@@ -174,31 +187,47 @@ SWITCH_LIMIT_RELEASE(hiredis_limit_release)
 	hiredis_profile_t *profile = switch_core_hash_find(mod_hiredis_globals.profiles, realm);
 	char *hashkey = NULL, *response = NULL;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	hiredis_limit_pvt_t *limit_pvt = switch_channel_get_private(channel, "hiredis_limit_pvt");
 
 	if ( !zstr(realm) ) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "hiredis: realm must be defined\n");
 		switch_goto_status(SWITCH_STATUS_GENERR, done);
 	}
-	
+
 	if ( !profile ) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "hiredis: Unable to locate profile[%s]\n", realm);
 		switch_goto_status(SWITCH_STATUS_GENERR, done);
 	}
 
+	/* If realm and resource are NULL, then clear all of the limits */
 	if ( !realm && !resource ) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "hiredis does not yet support release on NULL realm[%s] and resource[%s]\n", realm, resource);
-		switch_goto_status(SWITCH_STATUS_GENERR, done);
-	}
+		hiredis_limit_pvt_t *tmp = limit_pvt;
 
-	hashkey = switch_mprintf("decr %s", resource);
+		while (tmp) {
+			hashkey = switch_mprintf("decr %s", tmp->limit_key);
+			limit_pvt = tmp->next;
 
-	if ( hiredis_profile_execute_sync(profile, hashkey, &response) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "hiredis: profile[%s] error executing [%s] because [%s]\n", realm, hashkey, response);
+			if ( hiredis_profile_execute_sync(profile, hashkey, &response) != SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "hiredis: profile[%s] error executing [%s] because [%s]\n",
+								  tmp->realm, hashkey, response);
+			}
+
+			tmp = limit_pvt;
+			switch_safe_free(response);
+			switch_safe_free(hashkey);
+		}
+	} else {
+
+		hashkey = switch_mprintf("decr %s", limit_pvt->limit_key);
+
+		if ( hiredis_profile_execute_sync(profile, hashkey, &response) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "hiredis: profile[%s] error executing [%s] because [%s]\n", realm, hashkey, response);
+			switch_channel_set_variable(channel, "hiredis_raw_response", response);
+			switch_goto_status(SWITCH_STATUS_GENERR, done);
+		}
+
 		switch_channel_set_variable(channel, "hiredis_raw_response", response);
-		switch_goto_status(SWITCH_STATUS_GENERR, done);
 	}
-
-	switch_channel_set_variable(channel, "hiredis_raw_response", response);
 
  done:
 	switch_safe_free(response);
@@ -212,14 +241,14 @@ SWITCH_LIMIT_USAGE(name) static int name (const char *realm, const char *resourc
 SWITCH_LIMIT_USAGE(hiredis_limit_usage)
 {
 	hiredis_profile_t *profile = switch_core_hash_find(mod_hiredis_globals.profiles, realm);
-	int64_t count = 0; /* Redis defines the incr action as to be performed on a 64 bit signed integer */	
+	int64_t count = 0; /* Redis defines the incr action as to be performed on a 64 bit signed integer */
 	char *hashkey = NULL, *response = NULL;
-	
+
 	if ( !zstr(realm) ) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "hiredis: realm must be defined\n");
 		goto err;
 	}
-	
+
 	if ( !profile ) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "hiredis: Unable to locate profile[%s]\n", realm);
 		goto err;
@@ -237,7 +266,7 @@ SWITCH_LIMIT_USAGE(hiredis_limit_usage)
 	switch_safe_free(response);
 	switch_safe_free(hashkey);
 	return count;
-	
+
  err:
 	switch_safe_free(response);
 	switch_safe_free(hashkey);
@@ -251,7 +280,7 @@ SWITCH_LIMIT_RESET(hiredis_limit_reset)
 {
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
 					  "hiredis: unable to globally reset hiredis limit resources. Use 'hiredis_raw set resource_name 0'\n");
-		
+
 	return SWITCH_STATUS_GENERR;
 }
 
@@ -263,12 +292,12 @@ SWITCH_LIMIT_INTERVAL_RESET(hiredis_limit_interval_reset)
 	hiredis_profile_t *profile = switch_core_hash_find(mod_hiredis_globals.profiles, realm);
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	char *hashkey = NULL, *response = NULL;
-	
+
 	if ( !zstr(realm) ) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "hiredis: realm must be defined\n");
 		switch_goto_status(SWITCH_STATUS_GENERR, done);
 	}
-	
+
 	if ( !profile ) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "hiredis: Unable to locate profile[%s]\n", realm);
 		switch_goto_status(SWITCH_STATUS_GENERR, done);
@@ -306,7 +335,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_hiredis_load)
 	mod_hiredis_globals.pool = pool;
 
 	switch_core_hash_init(&(mod_hiredis_globals.profiles));
-	
+
 	if ( mod_hiredis_do_config() != SWITCH_STATUS_SUCCESS ) {
 		return SWITCH_STATUS_GENERR;
 	}

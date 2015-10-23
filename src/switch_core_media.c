@@ -1820,7 +1820,7 @@ SWITCH_DECLARE(void) switch_core_media_prepare_codecs(switch_core_session_t *ses
 
 
 
-static void check_jb(switch_core_session_t *session, const char *input, int32_t jb_msec, int32_t maxlen)
+static void check_jb(switch_core_session_t *session, const char *input, int32_t jb_msec, int32_t maxlen, switch_bool_t silent)
 {
 	const char *val;
 	switch_media_handle_t *smh;
@@ -1920,8 +1920,8 @@ static void check_jb(switch_core_session_t *session, const char *input, int32_t 
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR,
 							  "Invalid Jitterbuffer spec [%d] must be between 10 and 10000\n", jb_msec);
 		} else {
-			int qlen, maxqlen = 30;
-				
+			int qlen, maxqlen = 50;
+			
 			qlen = jb_msec / (a_engine->read_impl.microseconds_per_packet / 1000);
 
 			if (maxlen) {
@@ -1934,14 +1934,16 @@ static void check_jb(switch_core_session_t *session, const char *input, int32_t 
 			if (switch_rtp_activate_jitter_buffer(a_engine->rtp_session, qlen, maxqlen,
 												  a_engine->read_impl.samples_per_packet, 
 												  a_engine->read_impl.samples_per_second) == SWITCH_STATUS_SUCCESS) {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), 
-								  SWITCH_LOG_DEBUG, "Setting Jitterbuffer to %dms (%d frames) (%d max frames)\n", 
-								  jb_msec, qlen, maxqlen);
+				if (!silent) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), 
+									  SWITCH_LOG_DEBUG, "Setting Jitterbuffer to %dms (%d frames) (%d max frames)\n", 
+									  jb_msec, qlen, maxqlen);
+				}
 				switch_channel_set_flag(session->channel, CF_JITTERBUFFER);
 				if (!switch_false(switch_channel_get_variable(session->channel, "rtp_jitter_buffer_plc"))) {
 					switch_channel_set_flag(session->channel, CF_JITTERBUFFER_PLC);
 				}
-			} else {
+			} else if (!silent) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), 
 								  SWITCH_LOG_WARNING, "Error Setting Jitterbuffer to %dms (%d frames)\n", jb_msec, qlen);
 			}
@@ -2028,14 +2030,14 @@ static void check_jb_sync(switch_core_session_t *session)
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session),
-					  SWITCH_LOG_DEBUG, "%s %s \"%s\" Sync A/V JB to %dms %u VFrames FPS %u a:%s v:%s\n", 
+					  SWITCH_LOG_DEBUG1, "%s %s \"%s\" Sync A/V JB to %dms %u VFrames FPS %u a:%s v:%s\n", 
 					  switch_core_session_get_uuid(session),
 					  switch_channel_get_name(session->channel),
 					  switch_channel_get_variable_dup(session->channel, "caller_id_name", SWITCH_FALSE, -1),
 					  jb_sync_msec, frames, fps, sync_audio ? "yes" : "no", sync_video ? "yes" : "no");
 	
 	if (sync_audio) {
-		check_jb(session, NULL, jb_sync_msec, 0);
+		check_jb(session, NULL, jb_sync_msec, 0, SWITCH_TRUE);
 	}
 }
 
@@ -2213,7 +2215,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 				}
 			}
 
-			check_jb(session, NULL, 0, 0);
+			check_jb(session, NULL, 0, 0, SWITCH_FALSE);
 
 			engine->check_frames = 0;
 			engine->last_ts = 0;
@@ -3571,7 +3573,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 {
 	uint8_t match = 0;
 	uint8_t vmatch = 0;
-	switch_payload_t best_te = 0, te = 0, cng_pt = 0;
+	switch_payload_t best_te = 0, cng_pt = 0;
 	unsigned long best_te_rate = 8000, cng_rate = 8000;
 	sdp_media_t *m;
 	sdp_attribute_t *attr;
@@ -4061,7 +4063,6 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 					if (!best_te || map->rm_rate == a_engine->cur_payload_map->rm_rate) {
 						best_te = (switch_payload_t) map->rm_pt;
 						best_te_rate = map->rm_rate;
-						smh->mparams->recv_te = best_te;
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Set telephone-event payload to %u@%ld\n", best_te, best_te_rate);
 					}
 					continue;
@@ -4405,7 +4406,6 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 					if (!best_te || map->rm_rate == a_engine->cur_payload_map->adv_rm_rate) {
 						best_te = (switch_payload_t) map->rm_pt;
 						best_te_rate = map->rm_rate;
-						smh->mparams->recv_te = best_te;
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Set telephone-event payload to %u@%lu\n", best_te, best_te_rate);
 					}
 					continue;
@@ -4442,41 +4442,41 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 			}
 
 			if (best_te) {
-				if (sdp_type == SDP_TYPE_RESPONSE) {
-					te = smh->mparams->te = (switch_payload_t) best_te;
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Set 2833 dtmf send payload to %u\n", 
-									  switch_channel_get_name(session->channel), best_te);
+				smh->mparams->te_rate = best_te_rate;
+
+				if (sdp_type == SDP_TYPE_REQUEST) {
+					smh->mparams->te = smh->mparams->recv_te = (switch_payload_t) best_te;
 					switch_channel_set_variable(session->channel, "dtmf_type", "rfc2833");
 					smh->mparams->dtmf_type = DTMF_2833;
-					if (a_engine->rtp_session) {
-						switch_rtp_set_telephony_event(a_engine->rtp_session, (switch_payload_t) best_te);
-						switch_channel_set_variable_printf(session->channel, "rtp_2833_send_payload", "%d", best_te);
-					}
 				} else {
-					te = smh->mparams->recv_te = smh->mparams->te = (switch_payload_t) best_te;
-					smh->mparams->te_rate = best_te_rate;
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Set 2833 dtmf send/recv payload to %u\n",
-									  switch_channel_get_name(session->channel), te);
+					smh->mparams->te = (switch_payload_t) best_te;
 					switch_channel_set_variable(session->channel, "dtmf_type", "rfc2833");
 					smh->mparams->dtmf_type = DTMF_2833;
-					if (a_engine->rtp_session) {
-						switch_rtp_set_telephony_event(a_engine->rtp_session, te);
-						switch_channel_set_variable_printf(session->channel, "rtp_2833_send_payload", "%d", te);
-						switch_rtp_set_telephony_recv_event(a_engine->rtp_session, te);
-						switch_channel_set_variable_printf(session->channel, "rtp_2833_recv_payload", "%d", te);
-					}
 				}
+				
+				if (a_engine->rtp_session) {
+					switch_rtp_set_telephony_event(a_engine->rtp_session, smh->mparams->te);
+					switch_channel_set_variable_printf(session->channel, "rtp_2833_send_payload", "%d", smh->mparams->te);
+					switch_rtp_set_telephony_recv_event(a_engine->rtp_session, smh->mparams->recv_te);
+					switch_channel_set_variable_printf(session->channel, "rtp_2833_recv_payload", "%d", smh->mparams->recv_te);
+				}
+
+				
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Set 2833 dtmf send payload to %u recv payload to %u\n", 
+								  switch_channel_get_name(session->channel), smh->mparams->te, smh->mparams->recv_te);
+
+
 			} else {
 				/* by default, use SIP INFO if 2833 is not in the SDP */
 				if (!switch_false(switch_channel_get_variable(channel, "rtp_info_when_no_2833"))) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "No 2833 in SDP.  Disable 2833 dtmf and switch to INFO\n");
 					switch_channel_set_variable(session->channel, "dtmf_type", "info");
 					smh->mparams->dtmf_type = DTMF_INFO;
-					te = smh->mparams->recv_te = smh->mparams->te = 0;
+					smh->mparams->recv_te = smh->mparams->te = 0;
 				} else {
 					switch_channel_set_variable(session->channel, "dtmf_type", "none");
 					smh->mparams->dtmf_type = DTMF_NONE;
-					te = smh->mparams->recv_te = smh->mparams->te = 0;
+					smh->mparams->recv_te = smh->mparams->te = 0;
 				}
 			}
 
@@ -6234,7 +6234,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 					interval = 5000;
 				}
 
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Activating RTCP PORT %d\n", remote_rtcp_port);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Activating RTCP PORT %d\n", remote_rtcp_port);
 				switch_rtp_activate_rtcp(a_engine->rtp_session, interval, remote_rtcp_port, a_engine->rtcp_mux > 0);
 				
 			}
@@ -6285,7 +6285,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 
 		}
 
-		check_jb(session, NULL, 0, 0);
+		check_jb(session, NULL, 0, 0, SWITCH_FALSE);
 
 		if ((val = switch_channel_get_variable(session->channel, "rtp_timeout_sec"))) {
 			int v = atoi(val);
@@ -6728,7 +6728,7 @@ static const char *get_media_profile_name(switch_core_session_t *session, int se
 	switch_assert(session);
 
 	if (switch_channel_test_flag(session->channel, CF_AVPF)) {
-		if (switch_channel_test_flag(session->channel, CF_DTLS)) {
+		if (switch_channel_test_flag(session->channel, CF_DTLS) || secure) {
 			if (switch_channel_test_flag(session->channel, CF_AVPF_MOZ)) {
 				return "UDP/TLS/RTP/SAVPF";
 			} else {
@@ -8662,7 +8662,7 @@ SWITCH_DECLARE(void) switch_core_media_patch_sdp(switch_core_session_t *session)
 				switch_core_media_choose_port(session, SWITCH_MEDIA_TYPE_VIDEO, 1);
 				clear_pmaps(v_engine);
 				pmap = switch_core_media_add_payload_map(session,
-														 SWITCH_MEDIA_TYPE_AUDIO,
+														 SWITCH_MEDIA_TYPE_VIDEO,
 														 "PROXY-VID",
 														 NULL,
 														 NULL,
@@ -8675,11 +8675,15 @@ SWITCH_DECLARE(void) switch_core_media_patch_sdp(switch_core_session_t *session)
 				v_engine->cur_payload_map = pmap;
 
 				switch_snprintf(vport_buf, sizeof(vport_buf), "%u", v_engine->adv_sdp_port);
+				
 				if (switch_channel_media_ready(session->channel) && !switch_rtp_ready(v_engine->rtp_session)) {
 					switch_channel_set_flag(session->channel, CF_VIDEO_POSSIBLE);
 					switch_channel_set_flag(session->channel, CF_REINVITE);
 					switch_core_media_activate_rtp(session);
 				}
+
+				v_engine->codec_negotiated = 1;
+				switch_core_media_set_video_codec(session, SWITCH_FALSE);
 			}
 
 			strncpy(q, p, 8);
@@ -8950,7 +8954,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_receive_message(switch_core_se
 	case SWITCH_MESSAGE_INDICATE_JITTER_BUFFER:
 		{
 			if (switch_rtp_ready(a_engine->rtp_session)) {
-				check_jb(session, msg->string_arg, 0, 0);
+				check_jb(session, msg->string_arg, 0, 0, SWITCH_FALSE);
 			}
 		}
 		break;

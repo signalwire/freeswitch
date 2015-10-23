@@ -92,6 +92,7 @@ endpoints/mod_skinny
 endpoints/mod_skypopen
 endpoints/mod_sofia
 endpoints/mod_verto
+event_handlers/mod_amqp
 event_handlers/mod_cdr_csv
 event_handlers/mod_cdr_mongodb
 #event_handlers/mod_cdr_pg_csv
@@ -100,6 +101,7 @@ event_handlers/mod_erlang_event
 event_handlers/mod_event_multicast
 event_handlers/mod_event_socket
 event_handlers/mod_format_cdr
+event_handlers/mod_hiredis
 event_handlers/mod_json_cdr
 #event_handlers/mod_radius_cdr
 event_handlers/mod_odbc_cdr

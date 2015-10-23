@@ -842,6 +842,11 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 			}
 		}
 
+		if ((tech_pvt->mparams.last_sdp_str && strstr(tech_pvt->mparams.last_sdp_str, "a=setup")) || 
+			(tech_pvt->mparams.local_sdp_str && strstr(tech_pvt->mparams.local_sdp_str, "a=setup"))) {
+			session_timeout = 0;
+		}
+
 		if ((tech_pvt->session_timeout = session_timeout)) {
 			tech_pvt->session_refresher = switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND ? nua_local_refresher : nua_remote_refresher;
 		} else {
@@ -1452,7 +1457,9 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		{
 			char *extra_headers = sofia_glue_get_extra_headers(channel, SOFIA_SIP_HEADER_PREFIX);
 
-			nua_invite(tech_pvt->nh, NUTAG_MEDIA_ENABLE(0), SIPTAG_PAYLOAD_STR(msg->string_arg), 
+			nua_invite(tech_pvt->nh, NUTAG_MEDIA_ENABLE(0),
+					   TAG_IF(msg->string_arg, SIPTAG_CONTENT_TYPE_STR("application/sdp")), 
+					   TAG_IF(msg->string_arg, SIPTAG_PAYLOAD_STR(msg->string_arg)), 
 					   TAG_IF(!zstr(extra_headers), SIPTAG_HEADER_STR(extra_headers)), TAG_END());
 			
 			switch_safe_free(extra_headers);

@@ -1108,7 +1108,7 @@ SWITCH_STANDARD_API(local_stream_function)
 
 	local_stream_name = argv[1];
 
-	if (!strcasecmp(argv[0], "hup")) {
+	if (!strcasecmp(argv[0], "hup") && local_stream_name) {
 		switch_mutex_lock(globals.mutex);
 		source = switch_core_hash_find(globals.source_hash, local_stream_name);
 		switch_mutex_unlock(globals.mutex);
@@ -1118,7 +1118,7 @@ SWITCH_STANDARD_API(local_stream_function)
 			stream->write_function(stream, "+OK hup stream: %s", source->name);
 			goto done;
 		}
-	} else if (!strcasecmp(argv[0], "stop")) {
+	} else if (!strcasecmp(argv[0], "stop") && local_stream_name) {
 		switch_mutex_lock(globals.mutex); 
 		source = switch_core_hash_find(globals.source_hash, local_stream_name);
 		switch_mutex_unlock(globals.mutex); 
@@ -1130,7 +1130,7 @@ SWITCH_STANDARD_API(local_stream_function)
 		
 		source->stopped = 1;
 		stream->write_function(stream, "+OK");
-	} else if (!strcasecmp(argv[0], "reload")) {
+	} else if (!strcasecmp(argv[0], "reload") && local_stream_name) {
 		switch_mutex_lock(globals.mutex);
 		source = switch_core_hash_find(globals.source_hash, local_stream_name);
 		switch_mutex_unlock(globals.mutex);
@@ -1143,7 +1143,7 @@ SWITCH_STANDARD_API(local_stream_function)
 		source->full_reload = 1;
 		source->part_reload = 1;
 		stream->write_function(stream, "+OK");
-	} else if (!strcasecmp(argv[0], "start")) {
+	} else if (!strcasecmp(argv[0], "start") && local_stream_name) {
 		switch_mutex_lock(globals.mutex);
 		source = switch_core_hash_find(globals.source_hash, local_stream_name);
 		switch_mutex_unlock(globals.mutex);

@@ -146,6 +146,7 @@ static switch_frame_t *find_free_frame(switch_frame_buffer_t *fb, switch_frame_t
 		if (orig->packet) {
 			np->frame->packet = switch_core_alloc(fb->pool, SWITCH_RTP_MAX_BUF_LEN);
 		} else {
+			np->frame->packet = NULL;
 			np->frame->data = switch_core_alloc(fb->pool, SWITCH_RTP_MAX_BUF_LEN);
 			np->frame->buflen = SWITCH_RTP_MAX_BUF_LEN;
 		}
@@ -174,6 +175,7 @@ static switch_frame_t *find_free_frame(switch_frame_buffer_t *fb, switch_frame_t
 		np->frame->data = ((unsigned char *)np->frame->packet) + 12;
 		np->frame->datalen = orig->datalen;
 	} else {
+		np->frame->packet = NULL;
 		np->frame->packetlen = 0;
 		memcpy(np->frame->data, orig->data, orig->datalen);
 		np->frame->datalen = orig->datalen;
@@ -285,6 +287,7 @@ SWITCH_DECLARE(switch_status_t) switch_frame_dup(switch_frame_t *orig, switch_fr
 		memcpy(new_frame->packet, orig->packet, orig->packetlen);
 		new_frame->data = ((unsigned char *)new_frame->packet) + 12;
 	} else {
+		new_frame->packet = NULL;
 		new_frame->data = malloc(new_frame->buflen);
 		switch_assert(new_frame->data);
 		memcpy(new_frame->data, orig->data, orig->datalen);
@@ -304,23 +307,31 @@ SWITCH_DECLARE(switch_status_t) switch_frame_dup(switch_frame_t *orig, switch_fr
 
 SWITCH_DECLARE(switch_status_t) switch_frame_free(switch_frame_t **frame)
 {
-	if (!frame || !*frame || !switch_test_flag((*frame), SFF_DYNAMIC)) {
+	switch_frame_t * f;
+
+	if (!frame) {
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if ((*frame)->img) {
-		switch_img_free(&(*frame)->img);
+	f = *frame;
+
+	if (!f || !switch_test_flag(f, SFF_DYNAMIC)) {
+		return SWITCH_STATUS_FALSE;
 	}
 
-	if ((*frame)->packet) {
-		free((*frame)->packet);
-		(*frame)->packet = NULL;
-	} else {
-		switch_safe_free((*frame)->data);
-	}
-	
-	free(*frame);
 	*frame = NULL;
+
+	if (f->img) {
+		switch_img_free(&(f->img));
+	}
+
+	if (f->packet) {
+		switch_safe_free(f->packet);
+	} else {
+		switch_safe_free(f->data);
+	}
+
+	free(f);
 
 	return SWITCH_STATUS_SUCCESS;
 }

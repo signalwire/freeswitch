@@ -2030,6 +2030,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_rtmp_load)
 
 	rtmp_register_invoke_function("connect", rtmp_i_connect);
 	rtmp_register_invoke_function("createStream", rtmp_i_createStream);
+	rtmp_register_invoke_function("initStream", rtmp_i_initStream);
 	rtmp_register_invoke_function("closeStream", rtmp_i_noop);
 	rtmp_register_invoke_function("deleteStream", rtmp_i_noop);
 	rtmp_register_invoke_function("play", rtmp_i_play);

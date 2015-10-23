@@ -238,6 +238,7 @@ static struct dist_node *find_next(struct dist_list *list, int etotal, char **ex
 			list->last = -1;
 		}
 		match = NULL;
+		matches = 0;
 		for (np = list->nodes; np; np = np->next) {
 			if (np->cur_weight < list->target_weight) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "%s %d/%d\n", np->name, np->cur_weight, list->target_weight);

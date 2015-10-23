@@ -39,8 +39,8 @@
         console.log('chat.newMessage', data);
         $scope.$apply(function() {
           $scope.messages.push(data);
-          if (data.from != verto.data.name && (!$scope.chatStatus ||
-              $scope.activePane != 'chat')) {
+          if (data.from != verto.data.name &&
+              (!$scope.chatStatus && $scope.activePane != 'chat')) {
             ++$rootScope.chat_counter;
           }
           $timeout(function() {
@@ -116,6 +116,11 @@
           $scope.$apply(function() {
             // console.log('Updating', memberIdx, ' <', $scope.members[memberIdx],
               // '> with <', member, '>');
+            // Checking if it's me
+            if (parseInt(member.id) == parseInt(verto.data.conferenceMemberID)) {
+              verto.data.mutedMic = member.status.audio.muted;
+              verto.data.mutedVideo = member.status.video.muted;
+            }
             angular.extend($scope.members[memberIdx], member);
           });
         }
@@ -171,7 +176,7 @@
 
       $scope.confBanner = function(memberID) {
         console.log('$scope.confBanner');
-        
+
         prompt({
           title: 'Please insert the banner text',
           input: true,

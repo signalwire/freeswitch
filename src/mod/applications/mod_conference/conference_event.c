@@ -391,7 +391,9 @@ void conference_event_adv_la(conference_obj_t *conference, conference_member_t *
 		const char *event_channel = cookie ? cookie : uuid;
 		switch_event_t *variables;
 		switch_event_header_t *hp;
+		char idstr[128] = "";
 
+		snprintf(idstr, sizeof(idstr), "%d", member->id);
 		msg = cJSON_CreateObject();
 		data = json_add_child_obj(msg, "pvtData", NULL);
 
@@ -403,6 +405,7 @@ void conference_event_adv_la(conference_obj_t *conference, conference_member_t *
 		cJSON_AddItemToObject(data, "laName", cJSON_CreateString(conference->la_name));
 		cJSON_AddItemToObject(data, "role", cJSON_CreateString(conference_utils_member_test_flag(member, MFLAG_MOD) ? "moderator" : "participant"));
 		cJSON_AddItemToObject(data, "chatID", cJSON_CreateString(conference->chat_id));
+		cJSON_AddItemToObject(data, "conferenceMemberID", cJSON_CreateString(idstr));
 		cJSON_AddItemToObject(data, "canvasCount", cJSON_CreateNumber(conference->canvas_count));
 
 		if (conference_utils_member_test_flag(member, MFLAG_SECOND_SCREEN)) {

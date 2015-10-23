@@ -29,8 +29,16 @@ typedef struct hiredis_profile_s {
   int debug;
 
   hiredis_connection_t *conn;
-  hiredis_connection_t *conn_head;  
+  hiredis_connection_t *conn_head;
 } hiredis_profile_t;
+
+typedef struct hiredis_limit_pvt_s {
+  char *realm;
+  char *resource;
+  char *limit_key;
+  int inc;
+  struct hiredis_limit_pvt_s *next;
+} hiredis_limit_pvt_t;
 
 switch_status_t mod_hiredis_do_config();
 switch_status_t hiredis_profile_create(hiredis_profile_t **new_profile, char *name, uint8_t port);

@@ -56,7 +56,7 @@
 
     <video class="hide" id="webcam" autoplay="autoplay" style="width:100%; height:100%; object-fit:inherit;"></video>
 
-   
+
     <!--<script type="text/javascript" src="js/jquery/jquery.mobile.min.js"></script>-->
 
     <!-- build:js(.) scripts/vendor.js -->
@@ -66,6 +66,7 @@
     <script src="bower_components/angular-gravatar/build/angular-gravatar.js"></script>
     <script src="bower_components/bootstrap/dist/js/bootstrap.js"></script>
     <script src="bower_components/angular-toastr/dist/angular-toastr.tpls.js"></script>
+    <script src="bower_components/angular-sanitize/angular-sanitize.js"></script>
     <script src="bower_components/angular-route/angular-route.js"></script>
     <script src="bower_components/angular-bootstrap/ui-bootstrap-tpls.js"></script>
     <script src="bower_components/angular-prompt/dist/angular-prompt.js"></script>
@@ -87,14 +88,14 @@
     <!-- endbuild -->
 
     <!-- build:js(.) scripts/scripts.js -->
-    
+
     <script type="text/javascript" src="../js/src/jquery.jsonrpcclient.js"></script>
     <script type="text/javascript" src="../js/src/jquery.FSRTC.js"></script>
     <script type="text/javascript" src="../js/src/jquery.verto.js"></script>
-    
+
     <script type="text/javascript" src="js/3rd-party/getScreenId.js"></script>
     <script type="text/javascript" src="js/3rd-party/md5.min.js"></script>
-    
+
     <script type="text/javascript" src="src/vertoApp/vertoApp.module.js"></script>
 
     <script type="text/javascript" src="src/vertoControllers/vertoControllers.module.js"></script>
@@ -119,6 +120,9 @@
     <script type="text/javascript" src="src/vertoDirectives/directives/userStatus.js"></script>
     <script type="text/javascript" src="src/vertoDirectives/directives/videoTag.js"></script>
 
+    <script type="text/javascript" src="src/vertoFilters/vertoFilters.module.js"></script>
+    <script type="text/javascript" src="src/vertoFilters/filters/picturify.js"></script>
+
     <script type="text/javascript" src="src/vertoService/vertoService.module.js"></script>
     <script type="text/javascript" src="src/vertoService/services/vertoService.js"></script>
     <script type="text/javascript" src="src/vertoService/services/configService.js"></script>
@@ -133,4 +137,3 @@
 
   </body>
 </html>
-

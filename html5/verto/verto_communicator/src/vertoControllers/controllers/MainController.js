@@ -13,7 +13,7 @@
       $scope.storage = storage;
       $scope.call_history = angular.element("#call_history").hasClass('active');
       $rootScope.chatStatus = angular.element('#wrapper').hasClass('toggled');
-
+      $scope.showReconnectModal = true;
       /**
        * (explanation) scope in another controller extends rootScope (singleton)
        */
@@ -84,6 +84,7 @@
           }
 
           $scope.closeChat();
+          $scope.showReconnectModal = false;
           verto.disconnect(disconnectCallback);
 
           verto.hangup();
@@ -170,7 +171,9 @@
           backdrop: 'static',
           keyboard: false
         };
-        ws_modalInstance = $scope.openModal('partials/ws_reconnect.html', 'ModalWsReconnectController', options);
+          if ($scope.showReconnectModal) {
+            ws_modalInstance = $scope.openModal('partials/ws_reconnect.html', 'ModalWsReconnectController', options);
+          };
       };
 
       function onWSLogin(ev, data) {

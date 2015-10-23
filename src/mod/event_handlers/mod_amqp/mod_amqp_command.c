@@ -86,7 +86,7 @@ switch_status_t mod_amqp_command_create(char *name, switch_xml_t cfg)
 	switch_xml_t params, param, connections, connection;
 	switch_threadattr_t *thd_attr = NULL;
 	switch_memory_pool_t *pool;
-	char *exchange = NULL, *binding_key = NULL;
+	char *exchange = NULL, *binding_key = NULL, *queue = NULL;
 
 	if (switch_core_new_memory_pool(&pool) != SWITCH_STATUS_SUCCESS) {
 		goto err;
@@ -119,8 +119,10 @@ switch_status_t mod_amqp_command_create(char *name, switch_xml_t cfg)
 				if ( interval && interval > 0 ) {
 					profile->reconnect_interval_ms = interval;
 				}
-			} else if (!strncmp(var, "exchange", 8)) {
+			} else if (!strncmp(var, "exchange-name", 13)) {
 				exchange = switch_core_strdup(profile->pool, val);
+			} else if (!strncmp(var, "queue-name", 10)) {
+				queue = switch_core_strdup(profile->pool, val);
 			} else if (!strncmp(var, "binding_key", 11)) {
 				binding_key = switch_core_strdup(profile->pool, val);
 			}
@@ -129,6 +131,7 @@ switch_status_t mod_amqp_command_create(char *name, switch_xml_t cfg)
 
 	/* Handle defaults of string types */
 	profile->exchange = exchange ? exchange : switch_core_strdup(profile->pool, "TAP.Commands");
+	profile->queue = queue ? queue : NULL;
 	profile->binding_key = binding_key ? binding_key : switch_core_strdup(profile->pool, "commandBindingKey");
 
 	if ((connections = switch_xml_child(cfg, "connections")) != NULL) {
@@ -151,11 +154,8 @@ switch_status_t mod_amqp_command_create(char *name, switch_xml_t cfg)
 		}
 	}
 	profile->conn_active = NULL;
-
-	if ( mod_amqp_connection_open(profile->conn_root, &(profile->conn_active), profile->name, profile->custom_attr) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Profile[%s] was unable to connect to any connection\n", profile->name);
-	}
-
+	/* We are not going to open the command queue connection on create, but instead wait for the running thread to open it */
+	
 	/* Start the worker threads */
 	switch_threadattr_create(&thd_attr, profile->pool);
 	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
@@ -200,11 +200,24 @@ void * SWITCH_THREAD_FUNC mod_amqp_command_thread(switch_thread_t *thread, void 
 				continue;
 			}
 
+			/* Check if exchange already exists */ 
+			amqp_exchange_declare(profile->conn_active->state, 1,
+								  amqp_cstring_bytes(profile->exchange),
+								  amqp_cstring_bytes("topic"),
+								  0, /* passive */
+								  1, /* durable */
+								  amqp_empty_table);
+
+			if (mod_amqp_log_if_amqp_error(amqp_get_rpc_reply(profile->conn_active->state), "Checking for command exchange")) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Profile[%s] failed to create missing command exchange", profile->name);
+				continue;
+			}
+
 			/* Ensure we have a queue */
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Creating command queue");
 			recv_queue = amqp_queue_declare(profile->conn_active->state, // state
 											1,                           // channel
-											amqp_empty_bytes,            // queue name
+											profile->queue ? amqp_cstring_bytes(profile->queue) : amqp_empty_bytes, // queue name
 											0, 0,                        // passive, durable
 											0, 1,                        // exclusive, auto-delete
 											amqp_empty_table);           // args

@@ -499,7 +499,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_queue_dtmf(switch_channel_t *chan
 		int x = 0;
 
 		if (!sensitive) {
-			switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG, "RECV DTMF %c:%d\n", new_dtmf.digit, new_dtmf.duration);
+			switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_INFO, "RECV DTMF %c:%d\n", new_dtmf.digit, new_dtmf.duration);
 		}
 
 		if (new_dtmf.digit != 'w' && new_dtmf.digit != 'W') {

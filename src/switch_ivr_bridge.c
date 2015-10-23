@@ -77,27 +77,29 @@ static void video_bridge_thread(switch_core_session_t *session, void *obj)
 			switch_codec_t *b_codec = switch_core_session_get_video_write_codec(vh->session_b);
 			switch_file_handle_t *fh;
 
-			switch_assert(a_codec);
-			switch_assert(b_codec);
-
 			if (switch_channel_test_flag(channel, CF_VIDEO_REFRESH_REQ)) {
 				refresh_timer = refresh_cnt;
 			}
 
-			if (switch_channel_test_flag(channel, CF_VIDEO_DECODED_READ)) {
-				if (a_codec->implementation->impl_id == b_codec->implementation->impl_id && !switch_channel_test_flag(b_channel, CF_VIDEO_DECODED_READ)) {
-					if (set_decoded_read) {
-						switch_channel_clear_flag_recursive(channel, CF_VIDEO_DECODED_READ);
-						set_decoded_read = 0;
+			if (!switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
+				switch_assert(a_codec);
+				switch_assert(b_codec);
+
+				if (switch_channel_test_flag(channel, CF_VIDEO_DECODED_READ)) {
+					if (a_codec->implementation->impl_id == b_codec->implementation->impl_id && !switch_channel_test_flag(b_channel, CF_VIDEO_DECODED_READ)) {
+						if (set_decoded_read) {
+							switch_channel_clear_flag_recursive(channel, CF_VIDEO_DECODED_READ);
+							set_decoded_read = 0;
+							refresh_timer = refresh_cnt;
+						}
+					}
+				} else {
+					if (a_codec->implementation->impl_id != b_codec->implementation->impl_id || 
+						switch_channel_test_flag(b_channel, CF_VIDEO_DECODED_READ)) {
+						switch_channel_set_flag_recursive(channel, CF_VIDEO_DECODED_READ);
+						set_decoded_read = 1;
 						refresh_timer = refresh_cnt;
 					}
-				}
-			} else {
-				if (a_codec->implementation->impl_id != b_codec->implementation->impl_id || 
-					switch_channel_test_flag(b_channel, CF_VIDEO_DECODED_READ)) {
-					switch_channel_set_flag_recursive(channel, CF_VIDEO_DECODED_READ);
-					set_decoded_read = 1;
-					refresh_timer = refresh_cnt;
 				}
 			}
 
