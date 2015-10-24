@@ -11322,6 +11322,35 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_codec_control(switch_core_sess
 	return SWITCH_STATUS_FALSE;
 }
 
+SWITCH_DECLARE(switch_bool_t) switch_core_media_codec_get_cap(switch_core_session_t *session, 
+																switch_media_type_t mtype, 
+																switch_codec_flag_t flag) {
+	switch_rtp_engine_t *engine = NULL;
+	switch_media_handle_t *smh = NULL;
+	switch_codec_t *codec = NULL;
+
+	switch_assert(session);
+
+	if (!(smh = session->media_handle)) {
+		return SWITCH_FALSE;
+	}
+
+	if (!(engine = &smh->engines[mtype])) {
+		return SWITCH_FALSE;
+	}
+
+	codec = &engine->write_codec;
+	
+	if (!switch_core_codec_ready(codec)) {
+		return SWITCH_FALSE;
+	}
+
+	if (switch_test_flag(codec, flag)){
+		return SWITCH_TRUE;
+	}
+
+	return SWITCH_FALSE;
+}
 
 SWITCH_DECLARE(switch_status_t) switch_core_session_write_encoded_video_frame(switch_core_session_t *session, 
 																		switch_frame_t *frame, switch_io_flag_t flags, int stream_id)

@@ -755,6 +755,8 @@ typedef enum {
 	SWITCH_ZRTP_FLAG_SECURE_MITM_RECV,
 	SWITCH_RTP_FLAG_DEBUG_RTP_READ,
 	SWITCH_RTP_FLAG_DEBUG_RTP_WRITE,
+	SWITCH_RTP_FLAG_ESTIMATORS,
+	SWITCH_RTP_FLAG_ADJ_BITRATE_CAP,
 	SWITCH_RTP_FLAG_VIDEO,
 	SWITCH_RTP_FLAG_ENABLE_RTCP,
 	SWITCH_RTP_FLAG_RTCP_MUX,
@@ -1631,6 +1633,7 @@ typedef enum {
 	SWITCH_CODEC_FLAG_AAL2 = (1 << 6),
 	SWITCH_CODEC_FLAG_PASSTHROUGH = (1 << 7),
 	SWITCH_CODEC_FLAG_READY = (1 << 8),
+	SWITCH_CODEC_FLAG_HAS_ADJ_BITRATE = (1 << 14),
 	SWITCH_CODEC_FLAG_HAS_PLC = (1 << 15),
 	SWITCH_CODEC_FLAG_VIDEO_PATCHING = (1 << 16)
 } switch_codec_flag_enum_t;
@@ -2268,6 +2271,7 @@ typedef enum {
 	SCC_VIDEO_BANDWIDTH,
 	SCC_VIDEO_RESET,
 	SCC_AUDIO_PACKET_LOSS,
+	SCC_AUDIO_ADJUST_BITRATE,
 	SCC_DEBUG,
 	SCC_CODEC_SPECIFIC
 } switch_codec_control_command_t;
@@ -2585,6 +2589,12 @@ typedef struct switch_waitlist_s {
 
 struct switch_jb_s;
 typedef struct switch_jb_s switch_jb_t;
+
+//struct kalman_estimator_s;
+//typedef struct kalman_estimator_s kalman_estimator_t;
+
+//struct cusum_kalman_detector_s;
+//typedef struct cusum_kalman_detector_s cusum_kalman_detector_t;
 
 struct switch_img_txt_handle_s;
 typedef struct switch_img_txt_handle_s switch_img_txt_handle_t;
