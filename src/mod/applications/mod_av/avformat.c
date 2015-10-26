@@ -513,7 +513,7 @@ static void *SWITCH_THREAD_FUNC video_thread_run(switch_thread_t *thread, void *
 	record_helper_t *eh = (record_helper_t *) obj;
 	void *pop = NULL;
 	switch_image_t *img = NULL, *tmp_img = NULL;
-	int d_w = 0, d_h = 0;
+	int d_w = eh->video_st->width, d_h = eh->video_st->height;
 	int size = 0, skip = 0, skip_freq = 0, skip_count = 0, skip_total = 0, skip_total_count = 0;
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "video thread start\n");
