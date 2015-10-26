@@ -330,7 +330,6 @@ static switch_status_t add_stream(MediaStream *mst, AVFormatContext *fc, AVCodec
 				break;
 			case SWITCH_VIDEO_ENCODE_SPEED_FAST:
 				av_opt_set(c->priv_data, "preset", "veryfast", 0);
-				av_opt_set(c->priv_data, "tune", "zerolatency", 0);
 				break;
 			default:
 				break;
