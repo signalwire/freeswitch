@@ -858,8 +858,9 @@ static switch_status_t switch_opus_encode_repacketize(switch_codec_t *codec,
 	int16_t *dec_ptr_buf = decoded_data;
 	/* work inside the available buffer to avoid other buffer allocations. *encoded_data_len will be SWITCH_RECOMMENDED_BUFFER_SIZE */
 	unsigned char *enc_ptr_buf =  (unsigned char *)encoded_data + (len / 2);
-	int nb_frames = codec->implementation->microseconds_per_packet / 20000 ; /* requested ptime: 20 ms * nb_frames */
-	int frame_size, i, bytes = 0, want_fec = 0, toggle_fec = 0;
+	uint32_t nb_frames = codec->implementation->microseconds_per_packet / 20000 ; /* requested ptime: 20 ms * nb_frames */
+	uint32_t frame_size, i;
+	int bytes = 0, want_fec = 0, toggle_fec = 0;
 	opus_int32 ret = 0;
 	opus_int32 total_len = 0;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
@@ -879,7 +880,7 @@ static switch_status_t switch_opus_encode_repacketize(switch_codec_t *codec,
 	}
 	frame_size = (decoded_data_len / 2) / nb_frames;
 	if((frame_size * nb_frames) != context->enc_frame_size) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,"Encoder Error: Decoded Datalen %u Number of frames: %d Encoder frame size: %d\n",decoded_data_len,nb_frames,context->enc_frame_size);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,"Encoder Error: Decoded Datalen %u Number of frames: %u Encoder frame size: %u\n",decoded_data_len,nb_frames,context->enc_frame_size);
 		switch_goto_status(SWITCH_STATUS_GENERR, end);
 	}
 	opus_repacketizer_init(rp);
@@ -1080,13 +1081,13 @@ static switch_status_t switch_opus_control(switch_codec_t *codec,
 	switch(cmd) {
 	case SCC_CODEC_SPECIFIC:
 		{
-			const char *cmd = (const char *)cmd_data;
+			const char *command = (const char *)cmd_data;
 			const char *arg = (const char *)cmd_arg;
 			switch_codec_control_type_t reply_type = SCCT_STRING;
 			const char *reply = "ERROR INVALID COMMAND";
 
-			if (!zstr(cmd)) {
-				if (!strcasecmp(cmd, "jb_lookahead")) {
+			if (!zstr(command)) {
+				if (!strcasecmp(command, "jb_lookahead")) {
 					if (!zstr(arg)) {
 						context->use_jb_lookahead = switch_true(arg);
 					}

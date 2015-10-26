@@ -5850,7 +5850,7 @@ static void sofia_handle_sip_r_options(switch_core_session_t *session, int statu
 		int ping_time = 0;
 
 		if (sofia_private && sofia_private->ping_sent) {
-			ping_time = switch_time_now() - sofia_private->ping_sent;
+			ping_time = (int)(switch_time_now() - sofia_private->ping_sent);
 		}
 
 		sip_user_status.status = ping_status;

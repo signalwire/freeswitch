@@ -859,7 +859,7 @@ static inline switch_bool_t switch_strstr(char *s, char *q)
 
 	S = strdup(s);
 
-	assert(S != NULL);
+	switch_assert(S != NULL);
 
 	for (p = S; p && *p; p++) {
 		*p = (char) switch_toupper(*p);
@@ -871,7 +871,7 @@ static inline switch_bool_t switch_strstr(char *s, char *q)
 	}
 
 	Q = strdup(q);
-	assert(Q != NULL);
+	switch_assert(Q != NULL);
 
 	for (p = Q; p && *p; p++) {
 		*p = (char) switch_toupper(*p);

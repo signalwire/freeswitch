@@ -493,7 +493,7 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 					break;
 				}
 
-				source->prebuf = source->samples * 2 * source->channels;
+				source->prebuf = (uint32_t)(source->samples * 2 * source->channels);
 
 				if (!source->total) {
 					flush_video_queue(source->video_q);
@@ -806,8 +806,8 @@ static switch_status_t local_stream_file_read_video(switch_file_handle_t *handle
 	local_stream_context_t *context = handle->private_info;
 	switch_status_t status;
 	switch_time_t now;
-	int fps = (int)ceil(handle->mm.fps);
-	int min_qsize = fps;
+	unsigned int fps = (unsigned int)ceil(handle->mm.fps);
+	unsigned int min_qsize = fps;
 	
 	if (!(context->ready && context->source->ready)) {
 		return SWITCH_STATUS_FALSE;
