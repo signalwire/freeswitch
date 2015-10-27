@@ -7173,24 +7173,12 @@ SWITCH_DECLARE(void)switch_core_media_set_local_sdp(switch_core_session_t *sessi
 
 static void add_fb(char *buf, uint32_t buflen, int pt, int fir, int nack, int pli, int tmmbr)
 {
-	const char *zfir = "";
-	const char *ztmmbr = "";
-	char *sp = "";
-
 	if (fir) {
-		zfir = "fir";
+		switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=rtcp-fb:%d ccm fir\n", pt);
 	}
 
 	if (tmmbr) {
-		ztmmbr = "tmmbr";
-	}
-
-	if (fir && tmmbr) {
-		sp = " ";
-	}
-
-	if (!zstr(zfir) || !zstr(ztmmbr)) {
-		switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=rtcp-fb:%d ccm %s%s%s\n", pt, zfir, sp, ztmmbr);
+		switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=rtcp-fb:%d ccm tmmbr\n", pt);
 	}
 
 	if (nack) {
