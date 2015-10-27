@@ -84,6 +84,13 @@ static opus_codec_settings_t default_codec_settings_8k = {
 	/*.samplerate*/ 0
 };
 
+struct dec_stats {
+	uint32_t fec_counter;
+	uint32_t plc_counter;
+	uint32_t frame_counter;
+};
+typedef struct dec_stats dec_stats_t;
+
 struct opus_context {
 	OpusEncoder *encoder_object;
 	OpusDecoder *decoder_object;
@@ -95,6 +102,7 @@ struct opus_context {
 	opus_codec_settings_t codec_settings;
 	int look_check;
 	int look_ts;
+	dec_stats_t decoder_stats;
 };
 
 struct {
@@ -682,6 +690,11 @@ static switch_status_t switch_opus_destroy(switch_codec_t *codec)
 
 	if (context) {
 		if (context->decoder_object) {
+			switch_core_session_t *session = codec->session;
+			if (session) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,"Opus decoder stats: Frames[%d] PLC[%d] FEC[%d]\n", 
+										context->decoder_stats.frame_counter, context->decoder_stats.plc_counter-context->decoder_stats.fec_counter, context->decoder_stats.fec_counter); 
+			}
 			opus_decoder_destroy(context->decoder_object);
 			context->decoder_object = NULL;
 		}
@@ -832,6 +845,15 @@ static switch_status_t switch_opus_decode(switch_codec_t *codec,
 						 !encoded_data ? "PLC correction" : fec ?  "FEC correction" : "decode");
 	}
 
+	if (plc) {
+		context->decoder_stats.plc_counter++;
+	}
+	if (fec) {
+		context->decoder_stats.fec_counter++;
+	}
+	/* a frame for which we decode FEC will be counted twice */
+	context->decoder_stats.frame_counter++;
+
 	samples = opus_decode(context->decoder_object, encoded_data, encoded_data_len, decoded_data, frame_size, fec);
 
 	if (samples < 0) {
@@ -976,7 +998,7 @@ static switch_status_t opus_load_config(switch_bool_t reload)
 				opus_prefs.use_jb_lookahead = switch_true(val);
 			} else if (!strcasecmp(key, "keep-fec-enabled")) { /* encoder */
 				opus_prefs.keep_fec = atoi(val);
-			} else if (!strcasecmp(key, "advertise_useinbandfec")) { /*decoder, has meaning only for FMTP: useinbandfec=1 by default */
+			} else if (!strcasecmp(key, "advertise-useinbandfec")) { /*decoder, has meaning only for FMTP: useinbandfec=1 by default */
 				opus_prefs.fec_decode = atoi(val);
 			} else if (!strcasecmp(key, "maxaveragebitrate")) {
 				opus_prefs.maxaveragebitrate = atoi(val);
