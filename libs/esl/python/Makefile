@@ -14,6 +14,7 @@ _ESL.so: esl_wrap.o
 	$(CXX) $(SOLINK) esl_wrap.o $(MYLIB) $(LOCAL_LDFLAGS) -o _ESL.so -L. $(LIBS)
 
 install: _ESL.so
+	mkdir -p $(SITE_DIR)
 	install -m 755 _ESL.so $(SITE_DIR)
 	install -m 755 ESL.py $(SITE_DIR)
 
