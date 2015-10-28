@@ -19,7 +19,7 @@
         if (storage.data.videoCall) {
           $scope.callTemplate = 'partials/video_call.html';
         }
-        
+
         $rootScope.$on('call.conference', function(event, data) {
           $timeout(function() {
             if($scope.chatStatus) {
@@ -75,8 +75,30 @@
           verto.data.conf.setVideoLayout(layout);
         };
 
+
+        $scope.screenshare = function() {
+          if(verto.data.shareCall) {
+            verto.screenshareHangup();
+            return false;
+          }
+          verto.screenshare(storage.data.called_number);
+        };
+
         $scope.muteMic = verto.muteMic;
         $scope.muteVideo = verto.muteVideo;
+
+        $scope.$on('ScreenShareExtensionStatus', function(error) {
+          switch(error) {
+            case 'permission-denied':
+              toastr.info('Please allow the plugin in order to use Screen Share', 'Error'); break;
+            case 'not-installed':
+              toastr.warning('Please install the plugin in order to use Screen Share', 'Warning'); break;
+            case 'installed-disabled':
+              toastr.info('Please enable the plugin in order to use Screen Share', 'Error'); break;
+            // case 'not-chrome'
+            //   toastr.info('Please allow the plugin in order to use Screen Share', 'Error');
+          }
+        });
 
         $timeout(function() {
           console.log('broadcast time-start incall');

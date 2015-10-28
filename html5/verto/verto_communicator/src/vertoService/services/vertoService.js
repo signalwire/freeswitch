@@ -169,7 +169,7 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
           var height = res[1];
 
           if(resolution.width == width && resolution.height == height) {
-		videoQuality.push(resolution);
+            videoQuality.push(resolution);
           }
         });
       });
@@ -200,9 +200,9 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
 
       refreshDevicesCallback : function refreshDevicesCallback(callback) {
         data.videoDevices = [{
-	  id: 'none',
-	  label: 'No Camera'
-	}];
+          id: 'none',
+          label: 'No Camera'
+        }];
         data.shareDevices = [{
           id: 'screen',
           label: 'Screen'
@@ -556,10 +556,10 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
           // Checking if we have a failed connection attempt before
           // connecting again.
           if (data.instance && !data.instance.rpcClient.socketReady()) {
-              clearTimeout(data.instance.rpcClient.to);
-              data.instance.logout();
-	      data.instance.login();
-	      return;
+            clearTimeout(data.instance.rpcClient.to);
+            data.instance.logout();
+            data.instance.login();
+            return;
           };
           data.instance = new jQuery.verto({
             login: data.login + '@' + data.hostname,
@@ -583,22 +583,22 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
           jQuery.verto.unloadJobs.push(function() {
             that.reloaded = true;
           });
-	    data.instance.deviceParams({
-		useCamera: storage.data.selectedVideo,
-		useMic: storage.data.selectedAudio,
-		onResCheck: that.refreshVideoResolution
-	    });
+          data.instance.deviceParams({
+            useCamera: storage.data.selectedVideo,
+            useMic: storage.data.selectedAudio,
+            onResCheck: that.refreshVideoResolution
+          });
         }
 
         if (data.mediaPerm) {
           ourBootstrap();
         } else {
-	    $.FSRTC.checkPerms(ourBootstrap, true, true);
+          $.FSRTC.checkPerms(ourBootstrap, true, true);
         }
       },
 
       mediaPerm: function(callback) {
-	  $.FSRTC.checkPerms(callback, true, true);
+        $.FSRTC.checkPerms(callback, true, true);
       },
 
       /**
@@ -681,6 +681,12 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
         var that = this;
 
         getScreenId(function(error, sourceId, screen_constraints) {
+
+          if(error) {
+            $rootScope.$emit('ScreenShareExtensionStatus', error);
+            return;
+          }
+
           var call = data.instance.newCall({
             destination_number: destination + '-screen',
             caller_id_name: data.name + ' (Screen)',
@@ -697,6 +703,24 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
               avatar: "http://gravatar.com/avatar/" + md5(storage.data.email) + ".png?s=600"
             }
           });
+
+
+          call.rtc.options.callbacks.onStream = function(rtc, stream) {
+            if(stream) {
+              var StreamTrack = stream.getVideoTracks()[0];
+              StreamTrack.addEventListener('ended', stopSharing);
+              // (stream.getVideoTracks()[0]).onended = stopSharing;
+            }
+
+            console.log("stream started");
+            
+            function stopSharing() {
+              if(that.data.shareCall) {
+                that.screenshareHangup();
+                console.log("screenshare ended");
+              }
+            }
+          };
 
           data.shareCall = call;
 

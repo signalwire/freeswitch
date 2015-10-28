@@ -24,13 +24,13 @@
        * @type {string}
        */
       $rootScope.dialpadNumber = '';
-      
+
       // If verto is not connected, redirects to login page.
       if (!verto.data.connected) {
         console.debug('MainController: WebSocket not connected. Redirecting to login.');
         $location.path('/');
       }
- 
+
       $rootScope.$on('config.http.success', function(ev) {
         $scope.login(false);
       });
@@ -58,7 +58,7 @@
           }
           });
         };
-        
+
         verto.data.connecting = true;
         verto.connect(connectCallback);
       };
@@ -135,7 +135,7 @@
           templateUrl: templateUrl,
           controller: controller,
         };
-        
+
         angular.extend(options, _options);
 
         var modalInstance = $modal.open(options);
@@ -154,7 +154,7 @@
             jQuery.material.init();
           }
         );
-        
+
         return modalInstance;
       };
 
@@ -452,14 +452,6 @@
       $scope.declineCall = function() {
         $scope.hangup();
         $scope.incomingCall = false;
-      };
-
-      $scope.screenshare = function() {
-        if (verto.data.shareCall) {
-          verto.screenshareHangup();
-          return false;
-        }
-        verto.screenshare(storage.data.called_number);
       };
 
       $scope.play = function() {
