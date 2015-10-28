@@ -1213,15 +1213,18 @@ switch_status_t conference_api_sub_vid_layout(conference_obj_t *conference, swit
 
 	if (idx < 0 || idx > (int)(conference->canvas_count - 1)) idx = 0;
 
-	switch_mutex_lock(conference->canvas_mutex);
+
 	if (conference_utils_test_flag(conference, CFLAG_PERSONAL_CANVAS)) {
 		stream->write_function(stream, "Change personal canvas set to layout [%s]\n", vlayout->name);
+		switch_mutex_lock(conference->member_mutex);
 		conference->new_personal_vlayout = vlayout;
+		switch_mutex_unlock(conference->member_mutex);
 	} else {
 		stream->write_function(stream, "Change canvas %d to layout [%s]\n", idx + 1, vlayout->name);
+		switch_mutex_lock(conference->canvases[idx]->mutex);
 		conference->canvases[idx]->new_vlayout = vlayout;
+		switch_mutex_unlock(conference->canvases[idx]->mutex);
 	}
-	switch_mutex_unlock(conference->canvas_mutex);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -1579,8 +1582,6 @@ switch_status_t conference_api_sub_vid_res_id(conference_member_t *member, switc
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	switch_mutex_lock(member->conference->canvas_mutex);
-
 	if (!strcasecmp(text, "clear") || (member->video_reservation_id && !strcasecmp(text, member->video_reservation_id))) {
 		member->video_reservation_id = NULL;
 		stream->write_function(stream, "+OK reservation_id cleared\n");
@@ -1590,8 +1591,6 @@ switch_status_t conference_api_sub_vid_res_id(conference_member_t *member, switc
 	}
 
 	conference_video_detach_video_layer(member);
-
-	switch_mutex_unlock(member->conference->canvas_mutex);
 
 	return SWITCH_STATUS_SUCCESS;
 

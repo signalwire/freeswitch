@@ -694,12 +694,10 @@ switch_status_t conference_member_add(conference_obj_t *conference, conference_m
 	if (conference_utils_test_flag(conference, CFLAG_PERSONAL_CANVAS)) {
 		video_layout_t *vlayout = NULL;
 
-		switch_mutex_lock(conference->canvas_mutex);
 		if ((vlayout = conference_video_get_layout(conference, conference->video_layout_name, conference->video_layout_group))) {
 			conference_video_init_canvas(conference, vlayout, &member->canvas);
 			conference_video_init_canvas_layers(conference, member->canvas, vlayout);
 		}
-		switch_mutex_unlock(conference->canvas_mutex);
 	}
 
 	conference->members = member;

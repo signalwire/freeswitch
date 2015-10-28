@@ -882,7 +882,8 @@ switch_status_t conference_loop_dmachine_dispatcher(switch_ivr_dmachine_match_t 
 
 mcu_layer_t *conference_video_get_layer_locked(conference_member_t *member);
 void conference_video_release_layer(mcu_layer_t **layer);
-	
+mcu_canvas_t *conference_video_get_canvas_locked(conference_member_t *member);
+void conference_video_release_canvas(mcu_canvas_t **canvasP);
 int conference_member_setup_media(conference_member_t *member, conference_obj_t *conference);
 
 al_handle_t *conference_al_create(switch_memory_pool_t *pool);
