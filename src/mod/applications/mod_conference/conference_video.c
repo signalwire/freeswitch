@@ -1515,15 +1515,19 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_write_thread_run(switch_thread_
 			if (member->video_layer_id > -1 && member->canvas_id > -1) {
 				canvas = member->conference->canvases[member->canvas_id];
 				layer = &canvas->layers[member->video_layer_id];
+
+				if (!layer->need_patch || switch_thread_rwlock_tryrdlock(canvas->video_rwlock) != SWITCH_STATUS_SUCCESS) {
+					canvas = NULL;
+					layer = NULL;
+				}
 			}
+			switch_mutex_unlock(member->conference->canvas_mutex);
 
 			if (canvas && layer && layer->need_patch) {
-				switch_thread_rwlock_rdlock(canvas->video_rwlock);
 				conference_video_scale_and_patch(layer, NULL, SWITCH_FALSE);
 				layer->need_patch = 0;
 				switch_thread_rwlock_unlock(canvas->video_rwlock);
 			}
-			switch_mutex_unlock(member->conference->canvas_mutex);
 		}
 	}
 
