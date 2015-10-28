@@ -2681,6 +2681,8 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 		}
 	}
 
+	conference_close_open_files(conference);
+
 	switch_core_timer_destroy(&canvas->timer);
 	conference_video_destroy_canvas(&canvas);
 

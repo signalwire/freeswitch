@@ -860,7 +860,7 @@ void conference_member_add_file_data(conference_member_t *member, int16_t *data,
 void conference_send_notify(conference_obj_t *conference, const char *status, const char *call_id, switch_bool_t final);
 switch_status_t conference_file_close(conference_obj_t *conference, conference_file_node_t *node);
 void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *thread, void *obj);
-
+switch_status_t conference_close_open_files(conference_obj_t *conference);
 void conference_al_gen_arc(conference_obj_t *conference, switch_stream_handle_t *stream);
 void conference_al_process(al_handle_t *al, void *data, switch_size_t datalen, int rate);
 
