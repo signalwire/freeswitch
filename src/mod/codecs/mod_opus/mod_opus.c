@@ -898,7 +898,6 @@ static switch_status_t switch_opus_encode_repacketize(switch_codec_t *codec,
 		if (codec->implementation->microseconds_per_packet / 1000 == 100) { /* 100 ms = 20 ms * 5 . because there is no 50 ms frame in Opus */
 				nb_frames = 5;
 		}
-		toggle_fec = 1;
 	}
 	frame_size = (decoded_data_len / 2) / nb_frames;
 	if((frame_size * nb_frames) != context->enc_frame_size) {
@@ -908,12 +907,19 @@ static switch_status_t switch_opus_encode_repacketize(switch_codec_t *codec,
 	opus_repacketizer_init(rp);
 	dec_ptr_buf = (int16_t *)decoded_data;
 	for (i = 0; i < nb_frames; i++) {
+		 /* set inband FEC ON or OFF for the next Opus frame */
+		if (i == (nb_frames - 1) && want_fec) { 
+			/* When FEC is enabled for Opus frame N, LBRR is stored during regular encoding of */ 
+			/* this Opus frame N, and this LBRR data will be packed with the regular encoding */
+			/* data of Opus frame N+1. We enable FEC on our last Opus frame which is to be packed, just */
+			/* to actually have it stored in the first Opus frame, that is when switch_opus_encode_repacketize() */
+			/* is called again to pack the next big 80,100 or 120 ms frame. */ 
+			toggle_fec = 1; /* FEC ON for the last frame */
+		}
+
+		opus_encoder_ctl(context->encoder_object, OPUS_SET_INBAND_FEC(toggle_fec));
 		bytes = opus_encode(context->encoder_object, (opus_int16 *) dec_ptr_buf, frame_size, enc_ptr_buf, len);
-		 /* set inband FEC off for the next frame to be packed, the current frame may contain FEC */
-		if (toggle_fec == 1) {
-			toggle_fec = 0;
-			opus_encoder_ctl(context->encoder_object, OPUS_SET_INBAND_FEC(toggle_fec));
-		} 
+
 		if (bytes < 0) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Encoder Error: %s Decoded Datalen %u Codec NumberChans %u" \
 							  "Len %u DecodedDate %p EncodedData %p ContextEncoderObject %p enc_frame_size: %d\n",
