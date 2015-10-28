@@ -3404,9 +3404,31 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_crypto_key(switch_rtp_t *rtp_sess
 	switch_event_t *fsevent = NULL;
 	int idx = 0;
 	const char *var;
+	unsigned char b64_key[512] = "";
 
 	if (direction >= SWITCH_RTP_CRYPTO_MAX || keylen > SWITCH_RTP_MAX_CRYPTO_LEN) {
 		return SWITCH_STATUS_FALSE;
+	}
+
+	switch_b64_encode(key, keylen, b64_key, sizeof(b64_key));
+
+	if (switch_true(switch_core_get_variable("rtp_retain_crypto_keys"))) {
+		switch(direction) {
+			case SWITCH_RTP_CRYPTO_SEND:
+				switch_channel_set_variable(channel, "srtp_local_crypto_key", (const char *)b64_key);
+				break;
+			case SWITCH_RTP_CRYPTO_RECV:
+				switch_channel_set_variable(channel, "srtp_remote_crypto_key", (const char *)b64_key);
+				break;
+			case SWITCH_RTP_CRYPTO_SEND_RTCP:
+				switch_channel_set_variable(channel, "srtcp_local_crypto_key", (const char *)b64_key);
+				break;
+			case SWITCH_RTP_CRYPTO_RECV_RTCP:
+				switch_channel_set_variable(channel, "srtcp_remote_crypto_key", (const char *)b64_key);
+				break;
+			default:
+				break;
+		}
 	}
 
 	crypto_key = switch_core_alloc(rtp_session->pool, sizeof(*crypto_key));

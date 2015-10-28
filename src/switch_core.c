@@ -2300,9 +2300,15 @@ static void switch_load_core_config(const char *file)
 				} else if (!strcasecmp(var, "rtp-enable-zrtp")) {
 					switch_core_set_variable("zrtp_enabled", val);
 #endif
-                } else if (!strcasecmp(var, "switchname") && !zstr(val)) {
+				} else if (!strcasecmp(var, "switchname") && !zstr(val)) {
 					runtime.switchname = switch_core_strdup(runtime.memory_pool, val);
                     switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Set switchname to %s\n", runtime.switchname);
+				} else if (!strcasecmp(var, "rtp-retain-crypto-keys")) {
+					if (switch_true(val)) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
+										  "rtp-retain-crypto-keys enabled. Could be used to decrypt secure media.\n");
+					}
+					switch_core_set_variable("rtp_retain_crypto_keys", val);
 				}
 			}
 		}
