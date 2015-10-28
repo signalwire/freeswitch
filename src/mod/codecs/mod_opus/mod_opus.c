@@ -336,10 +336,17 @@ static char *gen_fmtp(opus_codec_settings_t *settings, switch_memory_pool_t *poo
 
 static switch_bool_t switch_opus_has_fec(const uint8_t* payload,int payload_length_bytes) 
 {
+	/* nb_silk_frames: number of silk-frames (10 or 20 ms) in an opus frame:  0, 1, 2 or 3 */
+	/* computed from the 5 MSB (configuration) of the TOC byte (payload[0]) */
+	/* nb_opus_frames: number of opus frames in the packet */
+	/* computed from the 2 LSB (p0p1) of the TOC byte */
+	/* p0p1 = 0  => nb_opus_frames = 1 */
+	/* p0p1 = 1 or 2  => nb_opus_frames = 2 */
+	/* p0p1 = 3  =>  given by the 6 LSB of payload[1] */
+
 	int nb_silk_frames, nb_opus_frames, n, i; 
 	opus_int16 frame_sizes[48];
 	const unsigned char *frame_data[48];
-	int frames;
 
 	if (payload == NULL || payload_length_bytes <= 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "corrupted packet (invalid size)\n");
@@ -351,7 +358,7 @@ static switch_bool_t switch_opus_has_fec(const uint8_t* payload,int payload_leng
 		return SWITCH_FALSE;
 	}
 			
-	if ((nb_opus_frames = opus_packet_parse(payload, payload_length_bytes, NULL, frame_data, frame_sizes, NULL)) < 0 ) {
+	if ((nb_opus_frames = opus_packet_parse(payload, payload_length_bytes, NULL, frame_data, frame_sizes, NULL)) <= 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "OPUS_INVALID_PACKET ! nb_opus_frames: %d\n", nb_opus_frames);
 		return SWITCH_FALSE;
 	}
@@ -363,37 +370,23 @@ static switch_bool_t switch_opus_has_fec(const uint8_t* payload,int payload_leng
 		if(nb_silk_frames  == 0) {
 			nb_silk_frames = 1;
 		}
-		if (nb_silk_frames == 1) {
-			for (n = 0; n <= (payload[0]&0x4) ; n++) { /* mono or stereo */
+		if ((nb_silk_frames == 1) && (nb_opus_frames == 1)) { 
+			for (n = 0; n <= (payload[0]&0x4) ; n++) { /* mono or stereo: 10,20 ms */
 				if (frame_data[0][0] & (0x80 >> ((n + 1) * (nb_silk_frames + 1) - 1))) {
-					return SWITCH_TRUE; /* 1st 20ms (or 10 ms) frame has FEC */				
+					return SWITCH_TRUE; /* frame has FEC */
 				}
 			}
 		} else {
 			opus_int16 LBRR_flag = 0 ;
-			for (i=0 ; i < nb_opus_frames; i++ ) { /* only mono */
+			for (i=0 ; i < nb_opus_frames; i++ ) { /* only mono Opus frames */
 				LBRR_flag = (frame_data[i][0] >> (7 - nb_silk_frames)) & 0x1;
 				if (LBRR_flag) {
 					return SWITCH_TRUE; /* one of the silk frames has FEC */ 
 				}
 			}
 		}
-	}
 
-	frames = opus_packet_parse(payload, payload_length_bytes, NULL, frame_data, frame_sizes, NULL);
-	
-	if (frames < 0) {
 		return SWITCH_FALSE;
-	}
-	
-	if (frame_sizes[0] <= 1) {
-		return SWITCH_FALSE;
-	}
-	
-	for (n = 0; n <= (payload[0]&0x4);n++) {
-		if (frame_data[0][0] & (0x80 >> ((n + 1) * (frames + 1) - 1))) {
-			return SWITCH_TRUE; /*this works only for 20 ms frames now, it will return VAD for 40 ms or 60 ms*/
-		}
 	}
 
 	return  SWITCH_FALSE;
@@ -428,21 +421,13 @@ static int switch_opus_get_fec_bitrate(int fs, int loss)
 
 static switch_status_t switch_opus_info(void * encoded_data, uint32_t len, uint32_t samples_per_second, char *print_text)
 {
-	/* nb_silk_frames: number of silk-frames (10 or 20 ms) in an opus frame:  0, 1, 2 or 3 */
-	/* computed from the 5 MSB (configuration) of the TOC byte (encoded_data[0]) */
-	/* nb_opus_frames: number of opus frames in the packet */
-	/* computed from the 2 LSB (p0p1) of the TOC byte */
-	/* p0p1 = 0  => nb_opus_frames= 1 */
-	/* p0p1 = 1 or 2  => nb_opus_frames= 2 */
-	/* p0p1 = 3  =>  given by the 6 LSB of  encoded_data[1] */
-
-	int nb_samples, nb_silk_frames, nb_opus_frames, n, i; 
+	int nb_samples, nb_opus_frames, nb_channels;
 	int audiobandwidth;
 	char audiobandwidth_str[32] = {0};
 	opus_int16 frame_sizes[48];
 	const unsigned char *frame_data[48];
 	char has_fec = 0;
-	uint8_t * payload = encoded_data ;
+	uint8_t * payload = encoded_data;
 
 	if (!encoded_data) {
 		return SWITCH_STATUS_FALSE;
@@ -454,38 +439,19 @@ static switch_status_t switch_opus_info(void * encoded_data, uint32_t len, uint3
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s: OPUS_INVALID_PACKET !\n", print_text);
 	}
 
-	if ((nb_opus_frames = opus_packet_parse(encoded_data, len, NULL, frame_data, frame_sizes, NULL)) < 0 ) {
+	if ((nb_opus_frames = opus_packet_parse(encoded_data, len, NULL, frame_data, frame_sizes, NULL)) <= 0 ) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s: OPUS_INVALID_PACKET ! frames: %d\n", print_text, nb_opus_frames);
 		return SWITCH_STATUS_FALSE;
 	}
 
 	nb_samples = opus_packet_get_samples_per_frame(encoded_data, samples_per_second) * nb_opus_frames;
-	nb_silk_frames  = 0;
 
-	if ((payload[0] >> 3 ) < 12) { /* config in silk-only : NB,MB,WB */
-		nb_silk_frames = (payload[0] >> 3) & 0x3;
-		if(nb_silk_frames  == 0) {
-			nb_silk_frames = 1;
-		}
-		if (nb_silk_frames == 1) { 
-			for (n = 0; n <= (payload[0]&0x4) ; n++) { /* mono or stereo */
-				if (frame_data[0][0] & (0x80 >> ((n + 1) * (nb_silk_frames + 1) - 1))){
-					has_fec = 1 ; /* 1st 20ms (or 10 ms) frame has fec */
-				}
-			}
-		} else {
-			opus_int16 LBRR_flag = 0 ;
-			for (i=0 ; i < nb_opus_frames; i++ ) { /* only mono */
-				LBRR_flag = (frame_data[i][0] >> (7 - nb_silk_frames)) & 0x1;
-				if (LBRR_flag) {
-					has_fec = 1;
-				}
-			}
-		}
-	}
+	has_fec = switch_opus_has_fec(payload, len);
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s: nb_opus_frames [%d] nb_silk_frames [%d] samples [%d] audio bandwidth [%s] bytes [%d] FEC[%s]\n", 
-							print_text, nb_opus_frames, nb_silk_frames, nb_samples, audiobandwidth_str, len, has_fec ? "yes" : "no" );
+	nb_channels = opus_packet_get_nb_channels(payload);
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s: opus_frames [%d] samples [%d] audio bandwidth [%s] bytes [%d] FEC[%s] channels[%d]\n", 
+							print_text, nb_opus_frames, nb_samples, audiobandwidth_str, len, has_fec ? "yes" : "no", nb_channels);
 
 	return SWITCH_STATUS_SUCCESS;
 } 
