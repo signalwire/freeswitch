@@ -16,6 +16,13 @@
   </condition>
 </extension>
 
+<extension name="conference-canvases" continue="true">
+  <condition field="destination_number" expression="(.*?)-canvas-(\d+)">
+    <action application="push" data="conference_member_flags=second-screen"/>
+    <action application="set" data="video_initial_watching_canvas=$2"/>
+    <action application="transfer" data="$1"/>
+  </condition>
+</extension>
 
 <extension name="conf">
   <condition field="destination_number" expression="^6070-moderator$">
