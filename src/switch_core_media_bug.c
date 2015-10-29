@@ -90,7 +90,7 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_media_bug_get_session(switch
 
 SWITCH_DECLARE(switch_frame_t *) switch_core_media_bug_get_video_ping_frame(switch_media_bug_t *bug)
 {
-	return bug->ping_frame;
+	return bug->video_ping_frame;
 }
 
 SWITCH_DECLARE(switch_frame_t *) switch_core_media_bug_get_write_replace_frame(switch_media_bug_t *bug)
@@ -603,17 +603,15 @@ static void *SWITCH_THREAD_FUNC video_bug_thread(switch_thread_t *thread, void *
 			}
 
 			switch_thread_rwlock_rdlock(bug->session->bug_rwlock);
-			//switch_mutex_lock(bug->read_mutex);
 			frame.img = other_q ? IMG : img;
-			bug->ping_frame = &frame;
+			bug->video_ping_frame = &frame;
 			if (bug->callback) {
 				if (bug->callback(bug, bug->user_data, SWITCH_ABC_TYPE_STREAM_VIDEO_PING) == SWITCH_FALSE
 					|| (bug->stop_time && bug->stop_time <= switch_epoch_time_now(NULL))) {
 					ok = SWITCH_FALSE;
 				}
 			}
-			bug->ping_frame = NULL;
-			//switch_mutex_unlock(bug->read_mutex);
+			bug->video_ping_frame = NULL;
 			switch_thread_rwlock_unlock(bug->session->bug_rwlock);
 
 			if (!ok) {
@@ -1021,14 +1019,14 @@ SWITCH_DECLARE(uint32_t) switch_core_media_bug_patch_video(switch_core_session_t
 		for (bp = orig_session->bugs; bp; bp = bp->next) {
 			if (!switch_test_flag(bp, SMBF_PRUNE) && !switch_test_flag(bp, SMBF_LOCK) && !strcmp(bp->function, "patch:video")) {
 				if (bp->ready && frame->img && switch_test_flag(bp, SMBF_VIDEO_PATCH)) {
-					bp->ping_frame = frame;
+					bp->video_ping_frame = frame;
 					if (bp->callback) {
 						if (bp->callback(bp, bp->user_data, SWITCH_ABC_TYPE_VIDEO_PATCH) == SWITCH_FALSE
 							|| (bp->stop_time && bp->stop_time <= switch_epoch_time_now(NULL))) {
 							ok = SWITCH_FALSE;
 						}
 					}
-					bp->ping_frame = NULL;
+					bp->video_ping_frame = NULL;
 				}
 
 				if (ok == SWITCH_FALSE) {
