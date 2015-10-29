@@ -1481,9 +1481,10 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 	case SWITCH_ABC_TYPE_READ_VIDEO_PING:
 	case SWITCH_ABC_TYPE_STREAM_VIDEO_PING:
 		if (rh->fh) {
-			if (!bug->ping_frame) break;
+			if (!bug->video_ping_frame) break;
 			
-			if ((len || bug->ping_frame->img) && switch_core_file_write_video(rh->fh, bug->ping_frame) != SWITCH_STATUS_SUCCESS && rh->hangup_on_error) {
+			if ((len || bug->video_ping_frame->img) && switch_core_file_write_video(rh->fh, bug->video_ping_frame) != SWITCH_STATUS_SUCCESS && 
+				rh->hangup_on_error) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error writing video to %s\n", rh->file);
 				switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 				switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
@@ -1716,12 +1717,12 @@ static switch_bool_t eavesdrop_callback(switch_media_bug_t *bug, void *user_data
 	case SWITCH_ABC_TYPE_STREAM_VIDEO_PING:
 		{
 
-			if (!bug->ping_frame || !bug->ping_frame->img) {
+			if (!bug->video_ping_frame || !bug->video_ping_frame->img) {
 				break;
 			}
 			
 			if (ep->eavesdropper && switch_core_session_read_lock(ep->eavesdropper) == SWITCH_STATUS_SUCCESS) {
-				if (switch_core_session_write_video_frame(ep->eavesdropper, bug->ping_frame, SWITCH_IO_FLAG_NONE, 0) != SWITCH_STATUS_SUCCESS) {
+				if (switch_core_session_write_video_frame(ep->eavesdropper, bug->video_ping_frame, SWITCH_IO_FLAG_NONE, 0) != SWITCH_STATUS_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error writing video to %s\n", switch_core_session_get_name(ep->eavesdropper));
 					ep->errs++;
 
