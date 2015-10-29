@@ -70,13 +70,14 @@ avoid_mods_wheezy=(
   languages/mod_managed
   applications/mod_av
   applications/mod_cv
-  applications/mod_hiredis  
+  applications/mod_hiredis
   formats/mod_shout
   applications/mod_sonar
   applications/mod_soundtouch
   formats/mod_vlc
 )
 avoid_mods_trusty=(
+  event_handlers/mod_amqp
 )
 avoid_mods_utopic=(
   directories/mod_ldap
