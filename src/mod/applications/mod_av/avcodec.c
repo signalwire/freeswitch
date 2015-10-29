@@ -25,6 +25,7 @@
  *
  * Seven Du <dujinfang@gmail.com>
  * Anthony Minessale <anthm@freeswitch.org>
+ * Emmanuel Schmidbauer <eschmidbauer@gmail.com>
  *
  * mod_avcodec -- Codec with libav.org
  *
@@ -1493,7 +1494,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_avcodec_load)
 											   switch_h264_init, switch_h264_encode, switch_h264_decode, switch_h264_control, switch_h264_destroy);
 
 	SWITCH_ADD_CODEC(codec_interface, "H263+ Video");
-	switch_core_codec_add_video_implementation(pool, codec_interface, 34, "H263-1998", NULL,
+	switch_core_codec_add_video_implementation(pool, codec_interface, 115, "H263-1998", NULL,
 											   switch_h264_init, switch_h264_encode, switch_h264_decode, switch_h264_control, switch_h264_destroy);
 
 	SWITCH_ADD_API(api_interface, "av_codec", "av_codec information", av_codec_api_function, "");
