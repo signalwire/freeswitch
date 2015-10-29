@@ -5,7 +5,7 @@
     .module('vertoControllers')
     .controller('InCallController', ['$rootScope', '$scope',
       '$http', '$location', '$modal', '$timeout', 'toastr', 'verto', 'storage', 'prompt', 'Fullscreen',
-      function($rootScope, $scope, $http, $location, $modal, $timeout, toatr,
+      function($rootScope, $scope, $http, $location, $modal, $timeout, toastr,
         verto, storage, prompt, Fullscreen) {
 
         console.debug('Executing InCallController.');
@@ -87,16 +87,17 @@
         $scope.muteMic = verto.muteMic;
         $scope.muteVideo = verto.muteVideo;
 
-        $scope.$on('ScreenShareExtensionStatus', function(error) {
+        $rootScope.$on('ScreenShareExtensionStatus', function(event, error) {
+          var pluginUrl = 'https://chrome.google.com/webstore/detail/screen-capturing/ajhifddimkapgcifgcodmmfdlknahffk';
           switch(error) {
             case 'permission-denied':
               toastr.info('Please allow the plugin in order to use Screen Share', 'Error'); break;
             case 'not-installed':
-              toastr.warning('Please install the plugin in order to use Screen Share', 'Warning'); break;
+              toastr.warning('Please <a target="_blank" class="install" href="'+ pluginUrl +'">install</a> the plugin in order to use Screen Share', 'Warning', { allowHtml: true }); break;
             case 'installed-disabled':
               toastr.info('Please enable the plugin in order to use Screen Share', 'Error'); break;
             // case 'not-chrome'
-            //   toastr.info('Please allow the plugin in order to use Screen Share', 'Error');
+            //   toastr.info('Chrome', 'Error');
           }
         });
 

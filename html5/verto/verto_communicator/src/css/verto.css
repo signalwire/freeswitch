@@ -8,6 +8,11 @@ body {
   padding-top: 60px;
 }
 
+.install {
+  color: white;
+  text-decoration: underline;
+}
+
 .ellipsis {
   text-overflow: ellipsis;
   overflow: hidden;

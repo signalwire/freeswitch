@@ -704,7 +704,7 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
             }
           });
 
-
+          // Override onStream callback in $.FSRTC instance
           call.rtc.options.callbacks.onStream = function(rtc, stream) {
             if(stream) {
               var StreamTrack = stream.getVideoTracks()[0];
@@ -712,8 +712,8 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
               // (stream.getVideoTracks()[0]).onended = stopSharing;
             }
 
-            console.log("stream started");
-            
+            console.log("screenshare started");
+
             function stopSharing() {
               if(that.data.shareCall) {
                 that.screenshareHangup();
