@@ -3350,10 +3350,14 @@ switch_status_t conference_video_thread_callback(switch_core_session_t *session,
 	if (conference_utils_test_flag(member->conference, CFLAG_VIDEO_MUXING)) {
 		switch_image_t *img_copy = NULL;
 
-		if (frame->img && (member->video_layer_id > -1 || member->canvas) && conference_utils_member_test_flag(member, MFLAG_CAN_BE_SEEN) &&
+		if (frame->img && (member->video_layer_id > -1 || member->canvas) && 
+			conference_utils_member_test_flag(member, MFLAG_CAN_BE_SEEN) &&
+			switch_queue_size(member->video_queue) < member->conference->video_fps.fps * 2 &&
 			!member->conference->playing_video_file) {
 			switch_img_copy(frame->img, &img_copy);
-			switch_queue_push(member->video_queue, img_copy);
+			if (switch_queue_trypush(member->video_queue, img_copy) != SWITCH_STATUS_SUCCESS) {
+				switch_img_free(&img_copy);
+			}
 		}
 
 		switch_thread_rwlock_unlock(member->conference->rwlock);
