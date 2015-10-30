@@ -88,6 +88,8 @@
     <select name="video_quality" id="video-quality" class="form-control"
             ng-model="mydata.vidQual"
             ng-options="item.id as item.label for item in verto.videoQuality"></select>
+
+    <a class="btn btn-primary" href="" ng-click="testSpeed()">Check Speed</a>
   </div>
 
   <input type="hidden" name="use_dedenc" ng-value="mydata.useDedenc" ng-model="mydata.useDedenc">

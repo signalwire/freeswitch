@@ -798,6 +798,30 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
       },
 
       /**
+       * Do speed test.
+       *
+       * @param callback
+       */
+      testSpeed: function(cb) {
+
+        data.instance.rpcClient.speedTest(1024 * 256, function(e, data) {
+          var outBand = Math.ceil(data.upKPS * .75),
+              inBand = Math.ceil(data.downKPS * .75);
+
+          storage.data.vidQual = 'hd';
+
+          if (outBand < 1024) {
+            storage.data.vidQual = 'vga';
+          }
+          if (outBand < 512) {
+            storage.data.vidQual = 'qvga';
+          }
+
+          if(cb) cb(data);
+          // console.info("Up: " + data.upKPS, "Down: ", data.downKPS);
+        });
+      },
+      /**
        * Mute the microphone for the current call.
        *
        * @param callback

@@ -26,6 +26,21 @@
           return verto.refreshDevices();
         };
 
+        $scope.rangeBandwidth = function(bandwidth) {
+          for(var i = 0; i < verto.videoQuality.length; i++) {
+
+          }
+        };
+
+        $scope.testSpeed = function() {
+          return verto.testSpeed(cb);
+
+          function cb(data) {
+
+            $scope.$apply();
+          }
+        };
+
         $scope.resetSettings = function() {
 	  if (confirm('Factory Reset Settings?')) {
             storage.factoryReset();

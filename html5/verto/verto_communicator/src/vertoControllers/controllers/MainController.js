@@ -52,10 +52,11 @@
             storage.data.email = verto.data.email;
             storage.data.login = verto.data.login;
             storage.data.password = verto.data.password;
+            verto.testSpeed();
+
             if (redirect && storage.data.preview) {
               $location.path('/preview');
-            }
-            else if (redirect) {
+            } else if (redirect) {
               $location.path('/dialpad');
             }
           }

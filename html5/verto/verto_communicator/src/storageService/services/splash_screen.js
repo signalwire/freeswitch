@@ -4,7 +4,7 @@
     .module('storageService')
     .service('splashscreen', ['$rootScope', '$q', 'storage', 'config', 'verto',
       function($rootScope, $q, storage, config, verto) {
-        
+
         var checkBrowser = function() {
           return $q(function(resolve, reject) {
             var activity = 'browser-upgrade';
@@ -22,10 +22,10 @@
             if (!navigator.getUserMedia) {
               result['status'] = 'error';
               result['message'] = 'Error: browser doesn\'t support WebRTC.';
-              reject(result); 
+              reject(result);
             }
 
-            resolve(result); 
+            resolve(result);
 
           });
         };
@@ -48,7 +48,7 @@
                 reject(result);
               }
               verto.data.mediaPerm = true;
-              resolve(result); 
+              resolve(result);
             });
           });
         };
@@ -62,13 +62,37 @@
               'activity': activity,
               'message': 'Refresh Media Devices.'
             };
-            
+
             verto.refreshDevices(function(status) {
               verto.refreshDevicesCallback(function() {
                 resolve(result);
               });
             });
 
+          });
+        };
+
+        var checkConnectionSpeed = function() {
+          return $q(function(resolve, reject) {
+            var activity = 'check-connection-speed';
+            var result = {
+              'status': 'success',
+              'soft': true,
+              'activity': activity,
+              'message': 'Check Connection Speed.'
+            };
+
+            if(!verto.instance) {
+              resolve(result);
+              return;
+            }
+
+            verto.testSpeed(cb);
+
+            function cb(data) {
+
+              resolve(result);
+            }
           });
         };
 
@@ -100,7 +124,7 @@
               });
 
               result['promise'] = configPromise;
-              
+
               resolve(result);
           });
         };
@@ -136,13 +160,13 @@
                   verto.data.connecting = false;
                   resolve(result);
                 });
-              }; 
+              };
             };
 
             if(storage.data.ui_connected && storage.data.ws_connected) {
-              checkUserStored(); 
+              checkUserStored();
             } else {
-              resolve(result); 
+              resolve(result);
             };
           });
         };
@@ -152,7 +176,8 @@
           checkMediaPerm,
           refreshMediaDevices,
           provisionConfig,
-          checkLogin
+          checkLogin,
+          checkConnectionSpeed
         ];
 
         var progress_message = [
@@ -160,12 +185,13 @@
           'Checking media permissions',
           'Refresh Media Devices.',
           'Provisioning configuration.',
-          'Checking login.'
+          'Checking login.',
+          'Check Connection Speed.'
         ];
-        
+
         var getProgressMessage = function(current_progress) {
           if(progress_message[current_progress] != undefined) {
-            return progress_message[current_progress]; 
+            return progress_message[current_progress];
           } else {
             return 'Please wait...';
           }
@@ -176,7 +202,7 @@
 
         var calculateProgress = function(index) {
           var _progress;
-          
+
           _progress = index + 1;
           progress_percentage = (_progress / progress.length) * 100;
           return progress_percentage;
@@ -186,12 +212,12 @@
           var fn, fn_return, status, interrupt, activity, soft, message, promise;
           interrupt = false;
           current_progress++;
-          
+
           if(current_progress >= progress.length) {
             $rootScope.$emit('progress.complete', current_progress);
             return;
           }
-          
+
           fn = progress[current_progress];
           fn_return = fn();
 
@@ -221,7 +247,7 @@
               emitNextProgress(fn_return);
             }
           );
-          
+
         };
 
         return {
@@ -232,4 +258,3 @@
         };
 
       }]);
- 
