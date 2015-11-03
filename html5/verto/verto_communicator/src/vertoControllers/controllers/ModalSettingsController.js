@@ -26,12 +26,6 @@
           return verto.refreshDevices();
         };
 
-        $scope.rangeBandwidth = function(bandwidth) {
-          for(var i = 0; i < verto.videoQuality.length; i++) {
-
-          }
-        };
-
         $scope.testSpeed = function() {
           return verto.testSpeed(cb);
 
