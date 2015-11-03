@@ -10757,12 +10757,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_video_frame(switch_cor
 				bug_frame.img = img;
 
 				if (bp->callback && switch_test_flag(bp, SMBF_WRITE_VIDEO_PING)) {
-					bp->ping_frame = &bug_frame;
+					bp->video_ping_frame = &bug_frame;
 					if (bp->callback(bp, bp->user_data, SWITCH_ABC_TYPE_WRITE_VIDEO_PING) == SWITCH_FALSE
 						|| (bp->stop_time && bp->stop_time <= switch_epoch_time_now(NULL))) {
 						ok = SWITCH_FALSE;
 					}
-					bp->ping_frame = NULL;
+					bp->video_ping_frame = NULL;
 				}
 
 				if (switch_core_media_bug_test_flag(bp, SMBF_SPY_VIDEO_STREAM_BLEG) && !patched) {
@@ -10990,12 +10990,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_video_frame(switch_core
 				
 
 				if (bp->callback && switch_test_flag(bp, SMBF_READ_VIDEO_PING)) {
-					bp->ping_frame = *frame;
+					bp->video_ping_frame = *frame;
 					if (bp->callback(bp, bp->user_data, SWITCH_ABC_TYPE_READ_VIDEO_PING) == SWITCH_FALSE
 						|| (bp->stop_time && bp->stop_time <= switch_epoch_time_now(NULL))) {
 						ok = SWITCH_FALSE;
 					}
-					bp->ping_frame = NULL;
+					bp->video_ping_frame = NULL;
 				}
 
 				if (switch_core_media_bug_test_flag(bp, SMBF_SPY_VIDEO_STREAM) && !patched) {
