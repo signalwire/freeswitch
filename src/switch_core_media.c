@@ -4379,8 +4379,13 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 				
 				switch_snprintf(tmp, sizeof(tmp), "%d", a_engine->cur_payload_map->recv_pt);
 				switch_channel_set_variable(session->channel, "rtp_audio_recv_pt", tmp);
-				
-				if (switch_core_codec_ready(&a_engine->read_codec) && strcasecmp(matches[0].imp->iananame, a_engine->read_codec.implementation->iananame)) {
+
+				if (switch_core_codec_ready(&a_engine->read_codec) && 
+					(strcasecmp(matches[0].imp->iananame, a_engine->read_codec.implementation->iananame) || 
+					 matches[0].imp->microseconds_per_packet != a_engine->read_codec.implementation->microseconds_per_packet ||
+					 matches[0].imp->samples_per_second != a_engine->read_codec.implementation->samples_per_second
+					 )) {
+
 					a_engine->reset_codec = 1;
 				}
 
