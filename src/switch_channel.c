@@ -930,32 +930,34 @@ SWITCH_DECLARE(const char *) switch_channel_get_variable_dup(switch_channel_t *c
 
 	switch_mutex_lock(channel->profile_mutex);
 
-	if (channel->scope_variables) {
-		switch_event_t *ep;
+	if (!zstr(varname)) {
+		if (channel->scope_variables) {
+			switch_event_t *ep;
 
-		for (ep = channel->scope_variables; ep; ep = ep->next) {
-			if ((v = switch_event_get_header_idx(ep, varname, idx))) {
-				break;
-			}
-		}
-	}
-
-	if (!v && (!channel->variables || !(v = switch_event_get_header_idx(channel->variables, varname, idx)))) {
-		switch_caller_profile_t *cp = switch_channel_get_caller_profile(channel);
-
-		if (cp) {
-			if (!strncmp(varname, "aleg_", 5)) {
-				cp = cp->originator_caller_profile;
-				varname += 5;
-			} else if (!strncmp(varname, "bleg_", 5)) {
-				cp = cp->originatee_caller_profile;
-				varname += 5;
+			for (ep = channel->scope_variables; ep; ep = ep->next) {
+				if ((v = switch_event_get_header_idx(ep, varname, idx))) {
+					break;
+				}
 			}
 		}
 
-		if (!cp || !(v = switch_caller_get_field_by_name(cp, varname))) {
-			if ((vdup = switch_core_get_variable_pdup(varname, switch_core_session_get_pool(channel->session)))) {
-				v = vdup;
+		if (!v && (!channel->variables || !(v = switch_event_get_header_idx(channel->variables, varname, idx)))) {
+			switch_caller_profile_t *cp = switch_channel_get_caller_profile(channel);
+
+			if (cp) {
+				if (!strncmp(varname, "aleg_", 5)) {
+					cp = cp->originator_caller_profile;
+					varname += 5;
+				} else if (!strncmp(varname, "bleg_", 5)) {
+					cp = cp->originatee_caller_profile;
+					varname += 5;
+				}
+			}
+
+			if (!cp || !(v = switch_caller_get_field_by_name(cp, varname))) {
+				if ((vdup = switch_core_get_variable_pdup(varname, switch_core_session_get_pool(channel->session)))) {
+					v = vdup;
+				}
 			}
 		}
 	}
