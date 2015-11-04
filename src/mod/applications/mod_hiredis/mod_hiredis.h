@@ -37,6 +37,7 @@ typedef struct hiredis_limit_pvt_s {
   char *resource;
   char *limit_key;
   int inc;
+  int interval;
   struct hiredis_limit_pvt_s *next;
 } hiredis_limit_pvt_t;
 
