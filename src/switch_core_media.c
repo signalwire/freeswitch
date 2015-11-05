@@ -1750,7 +1750,8 @@ SWITCH_DECLARE(void) switch_core_media_prepare_codecs(switch_core_session_t *ses
 	const char *abs, *codec_string = NULL;
 	const char *ocodec = NULL, *val;
 	switch_media_handle_t *smh;
-
+	char *tmp_codec_string;
+	
 	switch_assert(session);
 
 	if (!(smh = session->media_handle)) {
@@ -1806,16 +1807,16 @@ SWITCH_DECLARE(void) switch_core_media_prepare_codecs(switch_core_session_t *ses
 	}
 
  ready:
-	if (codec_string) {
-		char *tmp_codec_string = switch_core_session_strdup(smh->session, codec_string);
 
-
-		switch_channel_set_variable(session->channel, "rtp_use_codec_string", codec_string);
-		smh->codec_order_last = switch_separate_string(tmp_codec_string, ',', smh->codec_order, SWITCH_MAX_CODECS);
-		smh->mparams->num_codecs = switch_loadable_module_get_codecs_sorted(smh->codecs, SWITCH_MAX_CODECS, smh->codec_order, smh->codec_order_last);
-	} else {
-		smh->mparams->num_codecs = switch_loadable_module_get_codecs(smh->codecs, sizeof(smh->codecs) / sizeof(smh->codecs[0]));
+	if (!codec_string) {
+		codec_string = "PCMU@20i,PCMA@20i,speex@20i";
 	}
+	
+	tmp_codec_string = switch_core_session_strdup(smh->session, codec_string);
+	switch_channel_set_variable(session->channel, "rtp_use_codec_string", codec_string);
+	smh->codec_order_last = switch_separate_string(tmp_codec_string, ',', smh->codec_order, SWITCH_MAX_CODECS);
+	smh->mparams->num_codecs = switch_loadable_module_get_codecs_sorted(smh->codecs, SWITCH_MAX_CODECS, smh->codec_order, smh->codec_order_last);
+
 }
 
 
