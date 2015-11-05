@@ -3931,10 +3931,12 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 				switch_channel_set_variable(session->channel, "media_audio_mode", NULL);
 			}
 
-			if (sendonly) {
-				a_engine->smode = sdp_media_flow(sdp_sendonly);
-			} else if (recvonly) {
-				a_engine->smode = sdp_media_flow(sdp_recvonly);
+			if (sdp_type == SDP_TYPE_RESPONSE) {
+				if (sendonly) {
+					a_engine->smode = sdp_media_flow(sdp_sendonly);
+				} else if (recvonly) {
+					a_engine->smode = sdp_media_flow(sdp_recvonly);
+				}
 			}
 
 
