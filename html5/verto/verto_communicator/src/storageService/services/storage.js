@@ -21,6 +21,7 @@
           userStatus: 'disconnected',
           mutedVideo: false,
           mutedMic: false,
+          preview: true,
           selectedVideo: null,
           selectedAudio: null,
           selectedShare: null,

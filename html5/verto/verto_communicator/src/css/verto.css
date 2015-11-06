@@ -8,6 +8,10 @@ body {
   padding-top: 60px;
 }
 
+.panel.panel-material-blue-900 .panel-heading {
+  background-color: #0d47a1;
+}
+
 .install {
   color: white;
   text-decoration: underline;
@@ -1468,4 +1472,40 @@ body:-webkit-full-screen #incall .video-footer {
     margin-top: 0;
   }
 
+}
+
+.preview-wrapper {
+  position: relative;
+}
+
+.preview-wrapper video {
+  transform: scaleX(-1);
+}
+#mic-meter {
+  position: absolute;
+  bottom: 5px;
+  left: 10px;
+}
+#mic-meter .icon {
+  margin-left: 3px;
+  color: white;
+}
+#mic-meter .volumes {
+  width: 30px;
+}
+#mic-meter .volumes .volume-segment {
+  height: 10px;
+  width: 100%;
+  border-radius: 5px;
+  border: 2px solid white;
+  display: block;
+  margin-top: 1.5px;
+}
+
+#mic-meter .volumes .volume-segment.active {
+  background-color: white;
+}
+
+#preview .refresh {
+  margin: 15px 0px 0px 0px;
 }

@@ -41,6 +41,11 @@
           templateUrl: 'partials/incall.html',
           controller: 'InCallController'
         }).
+      when('/preview', {
+        title: 'Preview Video',
+        templateUrl: 'partials/preview.html',
+        controller: 'PreviewController'
+      }).
       when('/browser-upgrade', {
         title: '',
         templateUrl: 'partials/browser_upgrade.html',
