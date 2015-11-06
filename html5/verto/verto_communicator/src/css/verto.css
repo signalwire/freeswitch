@@ -1488,7 +1488,7 @@ body:-webkit-full-screen #incall .video-footer {
 }
 #mic-meter .icon {
   margin-left: 3px;
-  color: white;
+  color: #CCC;
 }
 #mic-meter .volumes {
   width: 30px;
@@ -1497,13 +1497,13 @@ body:-webkit-full-screen #incall .video-footer {
   height: 10px;
   width: 100%;
   border-radius: 5px;
-  border: 2px solid white;
+  border: 2px solid #CCC;
   display: block;
   margin-top: 1.5px;
 }
 
 #mic-meter .volumes .volume-segment.active {
-  background-color: white;
+  background-color: #CCC;
 }
 
 #preview .refresh {

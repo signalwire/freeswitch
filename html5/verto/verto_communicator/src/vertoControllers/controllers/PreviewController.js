@@ -37,8 +37,22 @@
         var meter;
         var streamObj = {};
 
+        function stopMedia(stream) {
+          if (typeof stream == 'function') {
+            stream.stop();
+          } else {
+            if (stream.active) {
+              var tracks = stream.getTracks();
+              tracks.forEach(function(track, index) {
+                track.stop();
+              })
+            }
+          }
+        }
         function handleMedia(stream) {
-          streamObj.stop ? streamObj.stop() : streamObj.active = false;
+          if (streamObj) {
+            stopMedia(streamObj);
+          }
 
           streamObj = stream;
           localVideo.src = window.URL.createObjectURL(stream);
@@ -97,45 +111,11 @@
           localVideo.src = null;
           meter.shutdown();
           meter.onaudioprocess = null;
-          streamObj.stop();
+          stopMedia(streamObj);
           $location.path('/dialpad');
           storage.data.preview = false;
         };
 
-        $scope.screenshare = function() {
-          if(verto.data.shareCall) {
-            verto.screenshareHangup();
-            return false;
-          }
-          verto.screenshare(storage.data.called_number);
-        };
-
-        $scope.call = function() {
-          if($rootScope.dialpadNumber) {
-            localVideo.src = null;
-            meter.shutdown();
-            meter.onaudioprocess = null;
-            streamObj.stop();
-          }
-          $rootScope.call($rootScope.dialpadNumber);
-        };
-
-        $scope.muteMic = verto.muteMic;
-        $scope.muteVideo = verto.muteVideo;
-
-        $rootScope.$on('ScreenShareExtensionStatus', function(event, error) {
-          var pluginUrl = 'https://chrome.google.com/webstore/detail/screen-capturing/ajhifddimkapgcifgcodmmfdlknahffk';
-          switch(error) {
-            case 'permission-denied':
-              toastr.info('Please allow the plugin in order to use Screen Share', 'Error'); break;
-            case 'not-installed':
-              toastr.warning('Please <a target="_blank" class="install" href="'+ pluginUrl +'">install</a> the plugin in order to use Screen Share', 'Warning', { allowHtml: true }); break;
-            case 'installed-disabled':
-              toastr.info('Please enable the plugin in order to use Screen Share', 'Error'); break;
-            // case 'not-chrome'
-            //   toastr.info('Chrome', 'Error');
-          }
-        });
         $scope.localVideo();
       }
     ]);
