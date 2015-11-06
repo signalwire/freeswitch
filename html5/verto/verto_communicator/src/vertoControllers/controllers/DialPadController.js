@@ -7,9 +7,9 @@
       '$http', '$location', 'toastr', 'verto', 'storage', 'CallHistory', 'eventQueue',
       function($rootScope, $scope, $http, $location, toastr, verto, storage, CallHistory, eventQueue) {
         console.debug('Executing DialPadController.');
-        
+
         eventQueue.process();
-        
+
         $scope.call_history = CallHistory.all();
         $scope.history_control = CallHistory.all_control();
         $scope.has_history = Object.keys($scope.call_history).length;
@@ -53,6 +53,10 @@
          */
         $scope.fillDialpadNumber = function(number) {
           $rootScope.dialpadNumber = number;
+        };
+
+        $scope.preview = function() {
+          $location.path('/preview');
         };
 
         $rootScope.transfer = function() {

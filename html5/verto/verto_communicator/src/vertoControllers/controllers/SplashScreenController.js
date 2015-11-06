@@ -3,10 +3,10 @@
 
   angular
   .module('vertoControllers')
-  .controller('SplashScreenController', ['$scope', '$rootScope', '$location', '$timeout', 'splashscreen', 'prompt', 'verto',
-    function($scope, $rootScope, $location, $timeout, splashscreen, prompt, verto) {
+  .controller('SplashScreenController', ['$scope', '$rootScope', '$location', '$timeout', 'storage', 'splashscreen', 'prompt', 'verto',
+    function($scope, $rootScope, $location, $timeout, storage, splashscreen, prompt, verto) {
       console.debug('Executing SplashScreenController.');
-      
+
       $scope.progress_percentage = splashscreen.progress_percentage;
       $scope.message = '';
       $scope.interrupt_next = false;
@@ -18,26 +18,26 @@
             link = activity;
           }
         }
-        
+
         $location.path(link);
       }
 
       var checkProgressState = function(current_progress, status, promise, activity, soft, interrupt, message) {
-        $scope.progress_percentage = splashscreen.calculate(current_progress); 
+        $scope.progress_percentage = splashscreen.calculate(current_progress);
         $scope.message = message;
 
         if(interrupt && status == 'error') {
           $scope.errors.push(message);
           if(!soft) {
-            redirectTo('', activity); 
+            redirectTo('', activity);
             return;
           } else {
-            message = message + '. Continue?'; 
+            message = message + '. Continue?';
           };
 
           if(!confirm(message)) {
-            $scope.interrupt_next = true;  
-          }; 
+            $scope.interrupt_next = true;
+          };
         };
 
         if($scope.interrupt_next) {
@@ -48,7 +48,7 @@
 
         return true;
       };
-      
+
       $rootScope.$on('progress.next', function(ev, current_progress, status, promise, activity, soft, interrupt, message) {
         $timeout(function() {
           if(promise) {
@@ -62,11 +62,11 @@
 
             return;
           }
-          
+
           if(!checkProgressState(current_progress, status, promise, activity, soft, interrupt, message)) {
             return;
           }
-          
+
           splashscreen.next();
         }, 400);
       });
@@ -74,7 +74,12 @@
       $rootScope.$on('progress.complete', function(ev, current_progress) {
         $scope.message = 'Complete';
         if(verto.data.connected) {
-          redirectTo('/dialpad');
+          if (storage.data.preview) {
+            $location.path('/preview');
+          }
+          else {
+            $location.path('/dialpad');
+          }
         } else {
           redirectTo('/login');
           $location.path('/login');
