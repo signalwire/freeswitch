@@ -538,7 +538,7 @@ static switch_xml_t switch_xml_err(switch_xml_root_t root, char *s, const char *
 static char *switch_xml_decode(char *s, char **ent, char t)
 {
 	char *e, *r = s, *m = s;
-	long b, c, d, l;
+	unsigned long b, c, d, l;
 
 	for (; *s; s++) {			/* normalize line endings */
 		while (*s == '\r') {
@@ -555,10 +555,17 @@ static char *switch_xml_decode(char *s, char **ent, char t)
 		if (!*s)
 			break;
 		else if (t != 'c' && !strncmp(s, "&#", 2)) {	/* character reference */
-			if (s[2] == 'x')
-				c = strtol(s + 3, &e, 16);	/* base 16 */
-			else
-				c = strtol(s + 2, &e, 10);	/* base 10 */
+			char *code = s + 2;
+			int base = 10;
+			if (*code == 'x') {
+				code++;
+				base = 16;
+			}
+			if (!isxdigit((int)*code)) { /* "&# 1;" and "&#-1;" are invalid */
+				s++;
+				continue;
+			}
+			c = strtoul(code, &e, base);
 			if (!c || *e != ';') {
 				s++;
 				continue;
@@ -566,10 +573,14 @@ static char *switch_xml_decode(char *s, char **ent, char t)
 			/* not a character ref */
 			if (c < 0x80)
 				*(s++) = (char) c;	/* US-ASCII subset */
-			else {				/* multi-byte UTF-8 sequence */
+			else if (c > 0x7FFFFFFF) { /* out of UTF-8 range */
+				s++;
+				continue;
+			} else {				/* multi-byte UTF-8 sequence */
 				for (b = 0, d = c; d; d /= 2)
 					b++;		/* number of bits in c */
 				b = (b - 2) / 5;	/* number of bytes in payload */
+				assert(b < 7);		/* because c <= 0x7FFFFFFF */
 				*(s++) = (char) ((0xFF << (7 - b)) | (c >> (6 * b)));	/* head */
 				while (b)
 					*(s++) = (char) (0x80 | ((c >> (6 * --b)) & 0x3F));	/* payload */
@@ -580,8 +591,8 @@ static char *switch_xml_decode(char *s, char **ent, char t)
 			for (b = 0; ent[b] && strncmp(s + 1, ent[b], strlen(ent[b])); b += 2);	/* find entity in entity list */
 
 			if (ent[b++]) {		/* found a match */
-				if ((c = (long) strlen(ent[b])) - 1 > (e = strchr(s, ';')) - s) {
-					l = (d = (long) (s - r)) + c + (long) strlen(e);	/* new length */
+				if ((c = (unsigned long) strlen(ent[b])) - 1 > (e = strchr(s, ';')) - s) {
+					l = (d = (unsigned long) (s - r)) + c + (unsigned long) strlen(e);	/* new length */
 					if (l) {
 						if (r == m) {
 							char *tmp = (char *) malloc(l);
@@ -618,7 +629,7 @@ static char *switch_xml_decode(char *s, char **ent, char t)
 
 	if (t == '*') {				/* normalize spaces for non-cdata attributes */
 		for (s = r; *s; s++) {
-			if ((l = (long) strspn(s, " ")))
+			if ((l = (unsigned long) strspn(s, " ")))
 				memmove(s, s + l, strlen(s + l) + 1);
 			while (*s && *s != ' ')
 				s++;
