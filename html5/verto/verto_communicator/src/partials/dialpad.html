@@ -1,4 +1,10 @@
-<div class="centered-block-frame" id="dialpad">
+<div ng-show="loading">
+  <h3 style="margin-top: 4%;" class="text-center">Calling to {{ dialpadNumber }}...</h3>
+  <svg class="spinner" width="65px" height="65px" viewBox="0 0 66 66" xmlns="http://www.w3.org/2000/svg">
+    <circle class="path" fill="none" stroke-width="6" stroke-linecap="round" cx="33" cy="33" r="30"></circle>
+  </svg>
+</div>
+<div class="centered-block-frame" id="dialpad" ng-show="!loading">
   <div id="call-history-wrapper">
     <div id="call_history" class="shadow-z-2 panel">
       <div class="panel-heading">

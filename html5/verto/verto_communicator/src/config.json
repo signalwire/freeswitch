@@ -1,4 +1,5 @@
 {
       "login": "1008",
-      "password": "1234"
+      "password": "1234",
+      "dedEncWatermark": 3072
 }

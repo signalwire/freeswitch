@@ -15,6 +15,9 @@
         $scope.ok = function() {
           storage.changeData($scope.mydata);
           verto.data.instance.iceServers(storage.data.useSTUN);
+          if (storage.data.autoBand) {
+            $scope.testSpeed();
+          }
           $modalInstance.close('Ok.');
         };
 
@@ -30,7 +33,8 @@
           return verto.testSpeed(cb);
 
           function cb(data) {
-
+            $scope.mydata.vidQual = storage.data.vidQual;
+            $scope.speedMsg = 'Up: ' + data.upKPS + ' Down: ' + data.downKPS;
             $scope.$apply();
           }
         };
@@ -44,11 +48,22 @@
 	  };
         };
 
-        $scope.checkUseDedRemoteEncoder = function(option) {
-          if ($scope.mydata.incomingBandwidth != 'default' || $scope.mydata.outgoingBandwidth != 'default') {
-            $scope.mydata.useDedenc = true;
+        $scope.checkAutoBand = function(option) {
+          $scope.mydata.useDedenc = false;
+          if (!option) {
+            $scope.mydata.outgoingBandwidth = 'default';
+            $scope.mydata.incomingBandwidth = 'default';
+            $scope.mydata.vidQual = 'hd';
           } else {
+            $scope.mydata.testSpeedJoin = true;
+          }
+        };
+
+        $scope.checkUseDedRemoteEncoder = function(option) {
+          if (['0', 'default', '5120'].indexOf(option) != -1) {
             $scope.mydata.useDedenc = false;
+          } else {
+            $scope.mydata.useDedenc = true;
           }
         };
       }

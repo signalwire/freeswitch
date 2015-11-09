@@ -84,37 +84,53 @@
   </div>
 
   <div class="form-group">
-    <label for="video-quality">Video quality:</label>
-    <select name="video_quality" id="video-quality" class="form-control"
-            ng-model="mydata.vidQual"
-            ng-options="item.id as item.label for item in verto.videoQuality"></select>
+    <label>Video settings:</label>
+    <!-- <a class="btn btn-primary" href="" ng-click="testSpeed()">Check Speed</a> -->
+    <span ng-bind="speedMsg"></span>
 
-    <a class="btn btn-primary" href="" ng-click="testSpeed()">Check Speed</a>
-  </div>
+    <input type="hidden" name="use_dedenc" ng-value="mydata.useDedenc" ng-model="mydata.useDedenc">
 
-  <input type="hidden" name="use_dedenc" ng-value="mydata.useDedenc" ng-model="mydata.useDedenc">
 
-  <h4>Dedicated Remote Encoder</h4>
-  <h5>Select a non default bandwidth to use a dedicated remote encoder.</h5>
+    <div ng-show="mydata.useDedenc" class="dedicated_encoder">
+      <p>Dedicated Remote Encoder enabled.</b>
+    </div>
 
-  <div ng-show="mydata.useDedenc" class="dedicated_encoder">
-    <p>Dedicated Remote Encoder enabled.</b>
-  </div>
+    <div class="checkbox">
+      <label>
+        <input type="checkbox" ng-model="mydata.autoBand" ng-change="checkAutoBand(mydata.autoBand)">
+        Auto
+      </label>
+    </div>
 
-  <div class="form-group">
-    <label for="outgoing-bandwidth">Max outgoing bandwidth:</label>
-    <select name="outgoing_bandwidth" id="outgoing-bandwidth" class="form-control"
-            ng-model="mydata.outgoingBandwidth"
-	    ng-change="checkUseDedRemoteEncoder(mydata.outgoingBandwidth)"
-            ng-options="item.id as item.label for item in verto.bandwidth"></select>
-  </div>
+    <div class="checkbox" ng-show="mydata.autoBand">
+      <label>
+        <input type="checkbox" ng-model="mydata.testSpeedJoin">
+        Check bandwidth before joining call
+      </label>
+    </div>
 
-  <div class="form-group">
-    <label for="incoming-bandwidth">Max incoming bandwidth:</label>
-    <select name="incoming_bandwidth" id="incoming-bandwidth" class="form-control"
-            ng-model="mydata.incomingBandwidth"
-	    ng-change="checkUseDedRemoteEncoder(mydata.incomingBandwidth)"
-            ng-options="item.id as item.label for item in verto.bandwidth"></select>
+    <div ng-show="!mydata.autoBand">
+      <label for="video-quality">Video quality:</label>
+      <select name="video_quality" id="video-quality" class="form-control"
+              ng-disabled="mydata.autoBand"
+              ng-model="mydata.vidQual"
+              ng-options="item.id as item.label for item in verto.videoQuality"></select>
+    </div>
+
+    <div ng-show="!mydata.autoBand">
+      <label for="incoming-bandwidth">Max incoming bandwidth:</label>
+      <select name="incoming_bandwidth" id="incoming-bandwidth" class="form-control"
+              ng-model="mydata.incomingBandwidth"
+  	    ng-change="checkUseDedRemoteEncoder(mydata.incomingBandwidth)"
+              ng-options="item.id as item.label for item in verto.bandwidth"></select>
+    </div>
+
+    <div ng-show="!mydata.autoBand">
+      <label for="outgoing-bandwidth">Max outgoing bandwidth:</label>
+      <select name="outgoing_bandwidth" id="outgoing-bandwidth" class="form-control"
+              ng-model="mydata.outgoingBandwidth"
+              ng-options="item.id as item.label for item in verto.bandwidth"></select>
+    </div>
   </div>
 
 </div>

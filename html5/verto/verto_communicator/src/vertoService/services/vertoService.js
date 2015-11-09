@@ -805,20 +805,29 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
       testSpeed: function(cb) {
 
         data.instance.rpcClient.speedTest(1024 * 256, function(e, data) {
-          var outBand = Math.ceil(data.upKPS * .75),
-              inBand = Math.ceil(data.downKPS * .75);
+          var upBand = Math.ceil(data.upKPS * .75),
+              downBand = Math.ceil(data.downKPS * .75);
 
-          storage.data.vidQual = 'hd';
 
-          if (outBand < 1024) {
-            storage.data.vidQual = 'vga';
+          if (storage.data.autoBand) {
+            storage.data.incomingBandwidth = downBand;
+            storage.data.outgoingBandwidth = upBand;
+            storage.data.useDedenc = downBand <= storage.data.dedEncWatermark;
+            storage.data.vidQual = 'hd';
+
+            if (upBand < 512) {
+              storage.data.vidQual = 'qvga';
+            }
+            else if (upBand < 1024) {
+              storage.data.vidQual = 'vga';
+            }
           }
-          if (outBand < 512) {
-            storage.data.vidQual = 'qvga';
+
+          if(cb) {
+            cb(data);
           }
 
-          if(cb) cb(data);
-          // console.info("Up: " + data.upKPS, "Down: ", data.downKPS);
+          $rootScope.$emit('testSpeed', data);
         });
       },
       /**

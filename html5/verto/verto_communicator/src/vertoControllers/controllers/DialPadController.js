@@ -97,8 +97,17 @@
         /**
          * Call to the number in the $rootScope.dialpadNumber.
          */
+        $scope.loading = false;
         $rootScope.call = function(extension) {
-          return call(extension);
+          if (!storage.data.testSpeedJoin || !$rootScope.dialpadNumber) {
+            return call(extension);
+          }
+          $scope.loading = true;
+
+          verto.testSpeed(function() {
+            $scope.loading = false;
+            call(extension);
+          });
         }
       }
     ]);
