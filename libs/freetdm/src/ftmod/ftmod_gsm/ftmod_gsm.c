@@ -1086,12 +1086,11 @@ static void *ftdm_gsm_run(ftdm_thread_t *me, void *obj)
 		ftdm_channel_lock(gsm_data->bchan);
 		ftdm_channel_advance_states(gsm_data->bchan);
 		if (FTDM_SUCCESS == status && (flags & FTDM_READ)) {
-			int n = 0, m = 0;
-
+			int n = 0;
 			n = read_channel(gsm_data->dchan, buffer, sizeof(buffer) - 1);
 			if (n > 0) {
-				m = strlen(buffer); /* TODO: Hum? is this needed? why not using the return val from read_channel? */
-				wat_span_process_read(span->span_id, buffer, m);
+				wat_span_process_read(span->span_id, buffer, n);
+				buffer[0] = 0;
 			}
 		}
 		ftdm_channel_advance_states(gsm_data->bchan);
