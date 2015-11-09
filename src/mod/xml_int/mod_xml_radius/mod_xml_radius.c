@@ -365,6 +365,7 @@ switch_status_t mod_xml_radius_add_params(switch_core_session_t *session, switch
 		char *skip_if_set = (char *) switch_xml_attr(param, "skip_if_set");
 		char *format = (char *) switch_xml_attr(param, "format");
 		char *other_leg = (char *) switch_xml_attr(param, "other_leg");
+                char *regex = (char *) switch_xml_attr(param, "regex");
 
 		attribute = rc_dict_findattr(handle, var);
 		
@@ -526,6 +527,24 @@ switch_status_t mod_xml_radius_add_params(switch_core_session_t *session, switch
 							if ( val == NULL && variable_secondary != NULL) {
 								val = switch_channel_get_variable(channel, variable_secondary);
 							}
+						}
+						
+						if ( regex && val ) {
+                                                        switch_regex_t *re = NULL;
+                                                        int ovector[30];
+                                                        int proceed;
+                                                        char replace[1024] = "";
+                                                        proceed = 0;
+                                                        proceed = switch_regex_perform(val, regex, &re, ovector, sizeof(ovector) / sizeof(ovector[0]));
+                                                        if ( proceed > 0 ) {
+                                                            switch_regex_copy_substring(val, ovector, proceed, proceed - 1, replace, sizeof(replace));
+							    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "original value: %s, regex: %s, result: %s\n", val, regex, replace);
+                                                            val = replace;
+                                                        }
+                                                        else {
+							    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "original value: %s, regex: %s, result: nomatch, value left intact\n", val, regex);
+                                                        }
+                                                        switch_regex_safe_free(re);
 						}
 						
 						if ( val == NULL && val_default != NULL) {
