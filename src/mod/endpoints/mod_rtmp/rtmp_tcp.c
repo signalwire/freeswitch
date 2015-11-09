@@ -136,7 +136,7 @@ again:
 			break;
 		}
 
-		if (*len != orig_len) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "sent %ld of %ld\n", *len, orig_len);
+		if (*len != orig_len) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "sent %"SWITCH_SIZE_T_FMT" of %"SWITCH_SIZE_T_FMT"\n", *len, orig_len);
 		buf += *len;
 		remaining -= *len;
 		*len = remaining;
