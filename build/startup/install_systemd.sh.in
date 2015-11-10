@@ -1,9 +1,8 @@
 #!/bin/bash
-# @DISTRO@ installer
 # Niek Vlessert
 
 USER=`whoami`
-DISTRO=@DISTRO@
+DISTRO=$(source /etc/os-release && echo $PRETTY_NAME)
 if [ $USER != "root" ] ; then
 	SUDO=`which sudo | awk -F"/" '{print $NF}'`
 	if [ -z $SUDO ] ; then
@@ -20,36 +19,34 @@ if [ $USER != "root" ] ; then
 fi
 
 echo
-echo "This will do several things on your @DISTRO@ installation:"
+echo "This will do several things on your $DISTRO installation:"
 echo "- Create user freeswitch and add it to group freeswitch"
 FSPATH=@prefix@
 if [[ $FSPATH == *"freeswitch"* ]]
 then
 	echo "- Set permissions on @prefix@ and files in @bindir_expanded@"
 fi
-echo "- Install systemd unit file"
-echo "- Install /etc/@environmentfilelocation@/freeswitch"
+echo "- Install systemd unit file and other required files"
 echo
 read -p "Do you want to continue? (y/n) " -n 1 -r
 if [[ $REPLY =~ ^[yY]$ ]]
 then
 	echo
 	echo "Installing..."
-	$SUDO groupadd freeswitch
-	if DISTRO="debian8"; then
-		$SUDO adduser --disabled-password  --quiet --system --home @confdir@ --gecos "FreeSWITCH open source softswitch" --ingroup freeswitch freeswitch
-	elif DISTRO="centos7"; then
-		$SUDO adduser --system --home @confdir@ -c "FreeSWITCH open source softswitch" -g freeswitch freeswitch
-	fi
+	$SUDO useradd -d @confdir@ -r -U -s /bin/false -c "FreeSWITCH open source softswitch" freeswitch
 	if [[ $FSPATH == *"freeswitch"* ]]
 	then
 		$SUDO chown -R freeswitch:freeswitch @prefix@
 		$SUDO chmod -R ug=rwX,o= @prefix@
 		$SUDO chmod -R u=rwx,g=rx @bindir_expanded@/*
 	fi
-	$SUDO cp init/freeswitch.service /etc/systemd/system/
-	$SUDO cp init/freeswitch.tmpfile /etc/tmpfiles.d/freeswitch.conf
-	$SUDO cp init/freeswitch.default /etc/@environmentfilelocation@/freeswitch
+	$SUDO cp build/startup/freeswitch.service /etc/systemd/system/
+	$SUDO cp build/startup/freeswitch.tmpfile /etc/tmpfiles.d/freeswitch.conf
+	if [ -d /etc/sysconfig ]; then
+                $SUDO cp build/startup/freeswitch.default /etc/sysconfig/freeswitch
+        else
+                $SUDO cp build/startup/freeswitch.default /etc/default/freeswitch
+        fi
 	$SUDO systemd-tmpfiles --clean --create
 	$SUDO systemctl daemon-reload
 	echo

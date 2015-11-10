@@ -5,11 +5,12 @@ After=syslog.target network.target local-fs.target
 [Service]
 ; service
 Type=forking
-PIDFile=@rundir@/freeswitch.pid
+PIDFile=@runtimedir@/freeswitch.pid
 PermissionsStartOnly=true
 Environment="DAEMON_OPTS=-nonat"
-EnvironmentFile=-/etc/@environmentfilelocation@/freeswitch
-ExecStart=@bindir@/freeswitch -u freeswitch -g freeswitch -ncwait -rp ${DAEMON_OPTS}
+EnvironmentFile=-/etc/sysconfig/freeswitch
+EnvironmentFile=-/etc/default/freeswitch
+ExecStart=@bindir_expanded@/freeswitch -u freeswitch -g freeswitch -ncwait -rp ${DAEMON_OPTS}
 TimeoutSec=20s
 Restart=on-failure
 ; exec
