@@ -5770,7 +5770,6 @@ static switch_status_t process_rtcp_report(switch_rtp_t *rtp_session, rtcp_msg_t
 	} else
 
 		if (msg->header.type == _RTCP_PT_SR || msg->header.type == _RTCP_PT_RR) {
-			struct switch_rtcp_report_block *report_block;
 			switch_time_t now;
 			switch_time_exp_t now_hr;
 			uint32_t sec, ntp_sec, ntp_usec, lsr_now;
@@ -5786,7 +5785,6 @@ static switch_status_t process_rtcp_report(switch_rtp_t *rtp_session, rtcp_msg_t
 			if (msg->header.type == _RTCP_PT_SR) { /* Sender report */
 				struct switch_rtcp_sender_report* sr = (struct switch_rtcp_sender_report*)msg->body;
 				
-				report_block = &sr->report_block;
 				rtp_session->stats.rtcp.packet_count += ntohl(sr->sender_info.pc);
 				rtp_session->stats.rtcp.octet_count += ntohl(sr->sender_info.oc);
 				packet_ssrc = sr->ssrc;
@@ -5842,32 +5840,36 @@ static switch_status_t process_rtcp_report(switch_rtp_t *rtp_session, rtcp_msg_t
 					rtp_session->rtcp_frame.reports[i].jitter = ntohl(report->jitter);
 					rtp_session->rtcp_frame.reports[i].lsr = ntohl(report->lsr);
 					rtp_session->rtcp_frame.reports[i].dlsr = ntohl(report->dlsr);
+					if (rtp_session->rtcp_frame.reports[i].lsr && !rtp_session->flags[SWITCH_RTP_FLAG_RTCP_PASSTHRU]) {
+						double rtt_now;
+						switch_time_exp_gmt(&now_hr,now);
+						/* Calculating RTT = A - DLSR - LSR */
+						rtt_now = (double)(lsr_now - rtp_session->rtcp_frame.reports[i].dlsr - rtp_session->rtcp_frame.reports[i].lsr)/65536;
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG3,
+									"Receiving an RTCP packet\n[%04d-%02d-%02d %02d:%02d:%02d.%d] SSRC[0x%x]\n"
+									"RTT[%f] = A[%u] - DLSR[%u] - LSR[%u]\n",
+									1900 + now_hr.tm_year, now_hr.tm_mday, now_hr.tm_mon, now_hr.tm_hour, now_hr.tm_min, now_hr.tm_sec, now_hr.tm_usec,
+									rtp_session->rtcp_frame.reports[i].ssrc, rtt_now,
+									lsr_now, rtp_session->rtcp_frame.reports[i].dlsr, rtp_session->rtcp_frame.reports[i].lsr);
+						if (!rtp_session->rtcp_frame.reports[i].rtt_avg) {
+							rtp_session->rtcp_frame.reports[i].rtt_avg = rtt_now;
+						} else {
+							rtp_session->rtcp_frame.reports[i].rtt_avg = (double)((rtp_session->rtcp_frame.reports[i].rtt_avg * .7) + (rtt_now * .3 ));
+						}
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG3, "RTT average %f\n",
+																							rtp_session->rtcp_frame.reports[i].rtt_avg);
+					}
 				}
 				rtp_session->rtcp_frame.report_count = (uint16_t)i;
 
 			} else { /* Receiver report */
 				struct switch_rtcp_receiver_report* rr = (struct switch_rtcp_receiver_report*)msg->body;
-				report_block = &rr->report_block;
 				packet_ssrc = rr->ssrc;
 				memset(&rtp_session->rtcp_frame, 0, sizeof(rtp_session->rtcp_frame));
 			}
 
-			/* Currently in passthru mode RTT will not be accurate, some work as to be done (something like mapping the NTP timestamp with a local one) to have RTT from both legs */
-			if (report_block->lsr && !rtp_session->flags[SWITCH_RTP_FLAG_RTCP_PASSTHRU]) {
-				switch_time_exp_gmt(&now_hr,now);
-				/* Calculating RTT = A - DLSR - LSR */
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG3,
-								  "Receiving an RTCP packet\n[%04d-%02d-%02d %02d:%02d:%02d.%d] SSRC[%u]\n"
-								  "RTT[%f] A[%u] - DLSR[%u] - LSR[%u]\n",
-								  1900 + now_hr.tm_year, now_hr.tm_mday, now_hr.tm_mon, now_hr.tm_hour, now_hr.tm_min, now_hr.tm_sec, now_hr.tm_usec,
-								  ntohl(packet_ssrc), (double)(lsr_now - ntohl(report_block->dlsr) - ntohl(report_block->lsr))/65536,
-								  lsr_now, ntohl(report_block->dlsr), ntohl(report_block->lsr));
-			}
-
 			rtp_session->rtcp_fresh_frame = 1;
 			rtp_session->stats.rtcp.peer_ssrc = ntohl(packet_ssrc);
-
-			
 		}
 	
 
