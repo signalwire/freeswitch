@@ -5508,7 +5508,7 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 	if (rtp_session->last_rtp_hdr.pt == rtp_session->recv_te || 
 		(*bytes < rtp_header_len && *bytes > 0) ||
 		rtp_session->flags[SWITCH_RTP_FLAG_PROXY_MEDIA] || rtp_session->flags[SWITCH_RTP_FLAG_UDPTL]) {
-		return SWITCH_STATUS_SUCCESS;
+		return SWITCH_STATUS_BREAK;
 	}
 
 	if (ts) {
@@ -6103,10 +6103,10 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 						goto rtcp;
 					}
 
-					//if (status != SWITCH_STATUS_FALSE) {
-					//	read_pretriggered = 1;
-					//	break;
-					//}
+					if (status == SWITCH_STATUS_BREAK) {
+						read_pretriggered = 1;
+						break;
+					}
 				}
 				
 			} else if ((rtp_session->flags[SWITCH_RTP_FLAG_AUTOFLUSH] || rtp_session->flags[SWITCH_RTP_FLAG_STICKY_FLUSH])) {
