@@ -9,6 +9,5 @@
       "autologin": "true",
       "autocall": "3500",
       "googlelogin": "true",
-      "wsURL": "wss://gamma.tollfreegateway.com/wss2",
-      "dedEncWatermark": 3072
+      "wsURL": "wss://gamma.tollfreegateway.com/wss2"
 }

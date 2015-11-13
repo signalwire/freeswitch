@@ -10,19 +10,26 @@
       $scope.storage = storage;
 
       $rootScope.$on('testSpeed', function(e, data) {
-        var dedEncWatermark = storage.data.dedEncWatermark;
         var vidQual = storage.data.vidQual;
+	var bwp = 4;
 
         $scope.bandDown = data.downKPS;
         $scope.bandUp = data.upKPS;
-        $scope.dedEnc = storage.data.useDedenc;
 
-        $scope.iconClass = 'mdi-device-signal-wifi-3-bar';
+        if (data.downKPS < 2000) {
+          bwp--;
+        }
 
-        if ($scope.bandDown < dedEncWatermark) {
-          $scope.iconClass = 'mdi-device-signal-wifi-1-bar dedenc';
-        } else if ($scope.bandDown >= 2*dedEncWatermark) {
-          $scope.iconClass = 'mdi-device-signal-wifi-4-bar';
+        if (data.upKPS < 2000) {
+           bwp--;
+        }
+
+        $scope.iconClass = 'mdi-device-signal-wifi-4-bar';                      
+
+        if (bwp < 4) {
+           $scope.iconClass = 'mdi-device-signal-wifi-3-bar';
+        } else if (bwp < 2) {
+           $scope.iconClass = 'mdi-device-signal-wifi-1-bar dedenc';
         }
 
         verto.videoQuality.forEach(function(vid) {

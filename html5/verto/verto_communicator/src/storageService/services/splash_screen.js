@@ -82,7 +82,7 @@
               'message': 'Check Connection Speed.'
             };
 
-            if (storage.data.autoBand && verto.instance) {
+            if (storage.data.autoBand && verto.data.instance) {
               verto.testSpeed(cb);
             } else {
               resolve(result);

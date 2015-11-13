@@ -3335,7 +3335,7 @@ static switch_bool_t verto__info_func(const char *method, cJSON *params, jsock_t
 
 static switch_bool_t verto__invite_func(const char *method, cJSON *params, jsock_t *jsock, cJSON **response)
 {
-	cJSON *obj = cJSON_CreateObject(), *screenShare = NULL, *dedEnc = NULL, *mirrorInput, *json_ptr = NULL;
+	cJSON *obj = cJSON_CreateObject(), *screenShare = NULL, *dedEnc = NULL, *mirrorInput, *json_ptr = NULL, *bandwidth = NULL;
 	switch_core_session_t *session = NULL;
 	switch_channel_t *channel;
 	switch_event_t *var_event;
@@ -3345,7 +3345,7 @@ static switch_bool_t verto__invite_func(const char *method, cJSON *params, jsock
 	cJSON *dialog;
 	verto_pvt_t *tech_pvt;
 	char name[512];
-	const char *var, *destination_number, *call_id = NULL, *sdp = NULL, *bandwidth = NULL, 
+	const char *var, *destination_number, *call_id = NULL, *sdp = NULL,
 		*caller_id_name = NULL, *caller_id_number = NULL, *remote_caller_id_name = NULL, *remote_caller_id_number = NULL,*context = NULL;
 	switch_event_header_t *hp;
 	
@@ -3417,15 +3417,19 @@ static switch_bool_t verto__invite_func(const char *method, cJSON *params, jsock
 		switch_channel_set_flag(channel, CF_VIDEO_MIRROR_INPUT);
 	}
 
-	if ((bandwidth = cJSON_GetObjectCstr(dialog, "outgoingBandwidth"))) {
-		if (strcasecmp(bandwidth, "default")) {
-			switch_channel_set_variable(channel, "rtp_video_max_bandwidth_in", bandwidth);
+	if ((bandwidth = cJSON_GetObjectItem(dialog, "outgoingBandwidth"))) {
+		if (!zstr(bandwidth->valuestring) && strcasecmp(bandwidth->valuestring, "default")) {
+			switch_channel_set_variable(channel, "rtp_video_max_bandwidth_in", bandwidth->valuestring);
+		} else if (bandwidth->valueint) {
+			switch_channel_set_variable_printf(channel, "rtp_video_max_bandwidth_in", "%d", bandwidth->valueint);
 		}
 	}
 
-	if ((bandwidth = cJSON_GetObjectCstr(dialog, "incomingBandwidth"))) {
-		if (strcasecmp(bandwidth, "default")) {
-			switch_channel_set_variable(channel, "rtp_video_max_bandwidth_out", bandwidth);
+	if ((bandwidth = cJSON_GetObjectItem(dialog, "incomingBandwidth"))) {
+		if (!zstr(bandwidth->valuestring) && strcasecmp(bandwidth->valuestring, "default")) {
+			switch_channel_set_variable(channel, "rtp_video_max_bandwidth_out", bandwidth->valuestring);
+		} else if (bandwidth->valueint) {
+			switch_channel_set_variable_printf(channel, "rtp_video_max_bandwidth_out", "%d", bandwidth->valueint);
 		}
 	}
 

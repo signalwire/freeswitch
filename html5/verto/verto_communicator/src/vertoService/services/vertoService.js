@@ -77,6 +77,12 @@ var bandwidth = [{
   id: '2048',
   label: '2mb'
 }, {
+  id: '3196',
+  label: '3mb'
+}, {
+  id: '4192',
+  label: '4mb'
+}, {
   id: '5120',
   label: '5mb'
 }, {
@@ -812,7 +818,7 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
           if (storage.data.autoBand) {
             storage.data.incomingBandwidth = downBand;
             storage.data.outgoingBandwidth = upBand;
-            storage.data.useDedenc = downBand <= storage.data.dedEncWatermark;
+            storage.data.useDedenc = false;
             storage.data.vidQual = 'hd';
 
             if (upBand < 512) {

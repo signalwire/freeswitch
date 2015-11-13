@@ -41,12 +41,6 @@ vertoService.service('config', ['$rootScope', '$http', '$location', 'storage', '
           verto.data.googleclientid = data.googleclientid;
         }
 
-        if (data.dedEncWatermark) {
-          storage.data.dedEncWatermark = data.dedEncWatermark;
-        } else {
-          storage.data.dedEncWatermark = 3072;
-        }
-        
         angular.extend(verto.data, data);
 
         /**
