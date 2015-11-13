@@ -8890,6 +8890,30 @@ SWITCH_DECLARE(switch_bool_t) switch_core_media_check_dtls(switch_core_session_t
 }
 
 
+SWITCH_DECLARE(switch_status_t) switch_core_media_set_outgoing_bitrate(switch_core_session_t *session, switch_media_type_t type, uint32_t bitrate)
+{
+	switch_media_handle_t *smh;
+	switch_rtp_engine_t *engine;
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	if (!(smh = session->media_handle)) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (switch_channel_down(session->channel)) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	engine = &smh->engines[type];
+
+	if (switch_core_codec_ready(&engine->write_codec)) {
+		status = switch_core_codec_control(&engine->write_codec, SCC_VIDEO_BANDWIDTH, 
+										   SCCT_INT, &bitrate, SCCT_NONE, NULL, NULL, NULL);
+	}
+	
+	return status;
+}
+
 //?
 SWITCH_DECLARE(switch_status_t) switch_core_media_receive_message(switch_core_session_t *session, switch_core_session_message_t *msg)
 {

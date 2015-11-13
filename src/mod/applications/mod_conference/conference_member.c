@@ -767,6 +767,19 @@ switch_status_t conference_member_add(conference_obj_t *conference, conference_m
 			conference_utils_member_set_flag_locked(member, MFLAG_NO_MINIMIZE_ENCODING);
 		}
 
+		if ((var = switch_channel_get_variable(member->channel, "rtp_video_max_bandwidth_in"))) {
+			member->max_bw_in = switch_parse_bandwidth_string(var);
+		}
+		
+		if ((var = switch_channel_get_variable(member->channel, "rtp_video_max_bandwidth_out"))) {
+			member->max_bw_out = switch_parse_bandwidth_string(var);;
+
+			if (member->max_bw_out < conference->video_codec_settings.video.bandwidth) {
+				conference_utils_member_set_flag_locked(member, MFLAG_NO_MINIMIZE_ENCODING);
+				switch_core_media_set_outgoing_bitrate(member->session, SWITCH_MEDIA_TYPE_VIDEO, member->max_bw_out);
+			}
+		}
+		
 		switch_channel_set_variable_printf(channel, "conference_member_id", "%d", member->id);
 		switch_channel_set_variable_printf(channel, "conference_moderator", "%s", conference_utils_member_test_flag(member, MFLAG_MOD) ? "true" : "false");
 		switch_channel_set_variable_printf(channel, "conference_ghost", "%s", conference_utils_member_test_flag(member, MFLAG_GHOST) ? "true" : "false");

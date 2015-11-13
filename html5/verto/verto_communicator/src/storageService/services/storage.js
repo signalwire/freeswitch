@@ -35,7 +35,9 @@
           askRecoverCall: false,
           googNoiseSuppression: true,
           googHighpassFilter: true,
-          googEchoCancellation: true
+          googEchoCancellation: true,
+          autoBand: true,
+          testSpeedJoin: true
        };
 
     data.$default(defaultSettings);

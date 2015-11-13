@@ -77,6 +77,12 @@ var bandwidth = [{
   id: '2048',
   label: '2mb'
 }, {
+  id: '3196',
+  label: '3mb'
+}, {
+  id: '4192',
+  label: '4mb'
+}, {
   id: '5120',
   label: '5mb'
 }, {
@@ -797,6 +803,39 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
         }
       },
 
+      /**
+       * Do speed test.
+       *
+       * @param callback
+       */
+      testSpeed: function(cb) {
+
+        data.instance.rpcClient.speedTest(1024 * 256, function(e, data) {
+          var upBand = Math.ceil(data.upKPS * .75),
+              downBand = Math.ceil(data.downKPS * .75);
+
+
+          if (storage.data.autoBand) {
+            storage.data.incomingBandwidth = downBand;
+            storage.data.outgoingBandwidth = upBand;
+            storage.data.useDedenc = false;
+            storage.data.vidQual = 'hd';
+
+            if (upBand < 512) {
+              storage.data.vidQual = 'qvga';
+            }
+            else if (upBand < 1024) {
+              storage.data.vidQual = 'vga';
+            }
+          }
+
+          if(cb) {
+            cb(data);
+          }
+
+          $rootScope.$emit('testSpeed', data);
+        });
+      },
       /**
        * Mute the microphone for the current call.
        *

@@ -52,10 +52,13 @@
             storage.data.email = verto.data.email;
             storage.data.login = verto.data.login;
             storage.data.password = verto.data.password;
+            if (storage.data.autoBand) {
+              verto.testSpeed();
+            }
+
             if (redirect && storage.data.preview) {
               $location.path('/preview');
-            }
-            else if (redirect) {
+            } else if (redirect) {
               $location.path('/dialpad');
             }
           }
@@ -180,6 +183,9 @@
       };
 
       function onWSLogin(ev, data) {
+        if(storage.data.autoBand) {
+          verto.testSpeed();
+        }
         if(!ws_modalInstance) {
           return;
         };

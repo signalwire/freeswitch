@@ -1828,13 +1828,66 @@ void conference_video_pop_next_image(conference_member_t *member, switch_image_t
 	*imgP = img;
 }
 
+void conference_video_set_incoming_bitrate(conference_member_t *member, int kps)
+{
+	switch_core_session_message_t msg = { 0 };
+	
+	msg.message_id = SWITCH_MESSAGE_INDICATE_BITRATE_REQ;
+	msg.numeric_arg = kps * 1024;
+	msg.from = __FILE__;
+	
+	switch_core_session_receive_message(member->session, &msg);	
+	member->managed_kps = kps;
+}
+
+void conference_video_set_max_incoming_bitrate_member(conference_member_t *member, int kps)
+{
+	member->max_bw_in = kps;
+	member->managed_kps = 0;
+}
+
+void conference_video_set_absolute_incoming_bitrate_member(conference_member_t *member, int kps)
+{
+	member->max_bw_in = 0;
+	member->force_bw_in = kps;
+	member->managed_kps = 0;
+	if (!conference_utils_test_flag(member->conference, CFLAG_MANAGE_INBOUND_VIDEO_BITRATE) && switch_channel_test_flag(member->channel, CF_VIDEO)) {
+		conference_video_set_incoming_bitrate(member, kps);
+	}
+}
+
+void conference_video_set_max_incoming_bitrate(conference_obj_t *conference, int kps)
+{
+	conference_member_t *imember;
+
+	switch_mutex_lock(conference->member_mutex);
+	for (imember = conference->members; imember; imember = imember->next) {
+		if (imember->channel && switch_channel_ready(imember->channel) && conference_utils_member_test_flag(imember, MFLAG_RUNNING)) {
+			conference_video_set_max_incoming_bitrate_member(imember, kps);
+		}
+	}
+	switch_mutex_unlock(conference->member_mutex);	
+}
+
+void conference_video_set_absolute_incoming_bitrate(conference_obj_t *conference, int kps)
+{
+	conference_member_t *imember;
+
+	switch_mutex_lock(conference->member_mutex);
+	for (imember = conference->members; imember; imember = imember->next) {
+		if (imember->channel && switch_channel_ready(imember->channel) && conference_utils_member_test_flag(imember, MFLAG_RUNNING)) {
+			conference_video_set_absolute_incoming_bitrate_member(imember, kps);
+		}
+	}
+	switch_mutex_unlock(conference->member_mutex);	
+}
+
 void conference_video_check_auto_bitrate(conference_member_t *member, mcu_layer_t *layer)
 {
 
 	if (switch_channel_test_flag(member->channel, CF_VIDEO_BITRATE_UNMANAGABLE)) {
 		member->managed_kps = 0;
 	} else if (conference_utils_test_flag(member->conference, CFLAG_MANAGE_INBOUND_VIDEO_BITRATE) && !member->managed_kps) {
-		switch_core_session_message_t msg = { 0 };
 		int kps;
 		int w = 320;
 		int h = 240;
@@ -1845,23 +1898,40 @@ void conference_video_check_auto_bitrate(conference_member_t *member, mcu_layer_
 				h = layer->screen_h;
 			}
 		}
-
-		if (!layer || !conference_utils_member_test_flag(member, MFLAG_CAN_BE_SEEN) || member->avatar_png_img) {
-			kps = 200;
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "%s auto-setting bitrate to %dkps because user's image is not visible\n",
+		
+		if (member->conference->force_bw_in || member->force_bw_in) {
+			if (!(kps = member->conference->force_bw_in)) {
+				kps = member->force_bw_in;
+			}
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "%s setting bitrate to %dkps because it was forced.\n",
 							  switch_channel_get_name(member->channel), kps);
 		} else {
-			kps = switch_calc_bitrate(w, h, 2, (int)(member->conference->video_fps.fps));
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "%s auto-setting bitrate to %dkps to accomodate %dx%d resolution\n",
-							  switch_channel_get_name(member->channel), kps, layer->screen_w, layer->screen_h);
+			int max = 0;
+
+			if (!layer || !conference_utils_member_test_flag(member, MFLAG_CAN_BE_SEEN) || member->avatar_png_img) {
+				kps = 256;
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "%s auto-setting bitrate to %dkps because user's image is not visible\n",
+								  switch_channel_get_name(member->channel), kps);
+			} else {
+				kps = switch_calc_bitrate(w, h, 1, (int)(member->conference->video_fps.fps));
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "%s auto-setting bitrate to %dkps to accomodate %dx%d resolution\n",
+								  switch_channel_get_name(member->channel), kps, layer->screen_w, layer->screen_h);
+			}
+			
+			if (member->conference->max_bw_in) {
+				max = member->conference->max_bw_in;
+			} else {
+				max = member->max_bw_in;
+			}
+
+			if (max && kps > max) {
+				kps = max;
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "%s overriding bitrate setting to %dkps because it was the max allowed.\n",
+								  switch_channel_get_name(member->channel), kps);
+			}
 		}
 
-		msg.message_id = SWITCH_MESSAGE_INDICATE_BITRATE_REQ;
-		msg.numeric_arg = kps * 1024;
-		msg.from = __FILE__;
-
-		switch_core_session_receive_message(member->session, &msg);
-		member->managed_kps = kps;
+		conference_video_set_incoming_bitrate(member, kps);
 	}
 }
 

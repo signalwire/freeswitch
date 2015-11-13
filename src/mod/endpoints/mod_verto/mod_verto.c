@@ -1844,15 +1844,79 @@ static void client_run(jsock_t *jsock)
 			switch_ssize_t bytes;
 			ws_opcode_t oc;
 			uint8_t *data;
-
+			
 			bytes = ws_read_frame(&jsock->ws, &oc, &data);
-	
+			
 			if (bytes < 0) {
 				die("BAD READ %" SWITCH_SSIZE_T_FMT "\n", bytes);
 				break;
 			}
 
 			if (bytes) {
+				char *s = (char *) data;
+
+				if (*s == '#') {
+					char repl[2048] = "";
+					switch_time_t a, b;
+					
+					if (s[1] == 'S' && s[2] == 'P') {
+
+						if (s[3] == 'U') {
+							int i, size = 0;
+							char *p = s+4;
+							int loops = 0;
+							int rem = 0;
+							int dur = 0, j = 0;
+
+							if (!(size = atoi(p))) {
+								continue;
+							}
+							
+							a = switch_time_now();
+							do {
+								bytes = ws_read_frame(&jsock->ws, &oc, &data);
+								s = (char *) data;
+							} while (bytes && data && s[0] == '#' && s[3] == 'B');
+							b = switch_time_now();
+
+							if (!bytes || !data) continue;
+					
+							if (s[0] != '#') goto nm;
+
+							switch_snprintf(repl, sizeof(repl), "#SPU %ld", (b - a) / 1000);
+							ws_write_frame(&jsock->ws, WSOC_TEXT, repl, strlen(repl));
+							loops = size / 1024;
+							rem = size % 1024;
+							switch_snprintf(repl, sizeof(repl), "#SPB ");
+							memset(repl+4, '.', 1024);
+
+							for (j = 0; j < 10 ; j++) {
+								int ddur = 0;
+								a = switch_time_now();
+								for (i = 0; i < loops; i++) {
+									ws_write_frame(&jsock->ws, WSOC_TEXT, repl, 1024);
+								}
+								if (rem) {
+									ws_write_frame(&jsock->ws, WSOC_TEXT, repl, rem);
+								}
+								b = switch_time_now();
+								ddur += ((b - a) / 1000);
+								dur += ddur;
+
+							}
+
+							dur /= j+1;
+
+							switch_snprintf(repl, sizeof(repl), "#SPD %d", dur);
+							ws_write_frame(&jsock->ws, WSOC_TEXT, repl, strlen(repl));
+						}
+					}
+
+					continue;
+				}
+
+			nm:
+
 				if (process_input(jsock, data, bytes) != SWITCH_STATUS_SUCCESS) {
 					die("Input Error\n");
 				}
@@ -3271,7 +3335,7 @@ static switch_bool_t verto__info_func(const char *method, cJSON *params, jsock_t
 
 static switch_bool_t verto__invite_func(const char *method, cJSON *params, jsock_t *jsock, cJSON **response)
 {
-	cJSON *obj = cJSON_CreateObject(), *screenShare = NULL, *dedEnc = NULL, *mirrorInput, *json_ptr = NULL;
+	cJSON *obj = cJSON_CreateObject(), *screenShare = NULL, *dedEnc = NULL, *mirrorInput, *json_ptr = NULL, *bandwidth = NULL;
 	switch_core_session_t *session = NULL;
 	switch_channel_t *channel;
 	switch_event_t *var_event;
@@ -3281,7 +3345,7 @@ static switch_bool_t verto__invite_func(const char *method, cJSON *params, jsock
 	cJSON *dialog;
 	verto_pvt_t *tech_pvt;
 	char name[512];
-	const char *var, *destination_number, *call_id = NULL, *sdp = NULL, *bandwidth = NULL, 
+	const char *var, *destination_number, *call_id = NULL, *sdp = NULL,
 		*caller_id_name = NULL, *caller_id_number = NULL, *remote_caller_id_name = NULL, *remote_caller_id_number = NULL,*context = NULL;
 	switch_event_header_t *hp;
 	
@@ -3353,15 +3417,19 @@ static switch_bool_t verto__invite_func(const char *method, cJSON *params, jsock
 		switch_channel_set_flag(channel, CF_VIDEO_MIRROR_INPUT);
 	}
 
-	if ((bandwidth = cJSON_GetObjectCstr(dialog, "outgoingBandwidth"))) {
-		if (strcasecmp(bandwidth, "default")) {
-			switch_channel_set_variable(channel, "rtp_video_max_bandwidth_in", bandwidth);
+	if ((bandwidth = cJSON_GetObjectItem(dialog, "outgoingBandwidth"))) {
+		if (!zstr(bandwidth->valuestring) && strcasecmp(bandwidth->valuestring, "default")) {
+			switch_channel_set_variable(channel, "rtp_video_max_bandwidth_in", bandwidth->valuestring);
+		} else if (bandwidth->valueint) {
+			switch_channel_set_variable_printf(channel, "rtp_video_max_bandwidth_in", "%d", bandwidth->valueint);
 		}
 	}
 
-	if ((bandwidth = cJSON_GetObjectCstr(dialog, "incomingBandwidth"))) {
-		if (strcasecmp(bandwidth, "default")) {
-			switch_channel_set_variable(channel, "rtp_video_max_bandwidth_out", bandwidth);
+	if ((bandwidth = cJSON_GetObjectItem(dialog, "incomingBandwidth"))) {
+		if (!zstr(bandwidth->valuestring) && strcasecmp(bandwidth->valuestring, "default")) {
+			switch_channel_set_variable(channel, "rtp_video_max_bandwidth_out", bandwidth->valuestring);
+		} else if (bandwidth->valueint) {
+			switch_channel_set_variable_printf(channel, "rtp_video_max_bandwidth_out", "%d", bandwidth->valueint);
 		}
 	}
 
