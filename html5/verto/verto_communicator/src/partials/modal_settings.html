@@ -84,10 +84,7 @@
   </div>
 
   <div class="form-group">
-    <label>Video settings:</label> <br><br>
-    <a class="btn btn-primary" href="" ng-click="testSpeed()">Check Speed</a> 
-    <span ng-bind="speedMsg"></span>
-
+    <label>Video settings:</label> <br>
     <input type="hidden" name="use_dedenc" ng-value="mydata.useDedenc" ng-model="mydata.useDedenc">
 
 
@@ -98,16 +95,18 @@
     <div class="checkbox">
       <label>
         <input type="checkbox" ng-model="mydata.autoBand" ng-change="checkAutoBand(mydata.autoBand)">
-        Auto
+        Automatically determine speed and resolution settings
       </label>
     </div>
 
     <div class="checkbox" ng-show="mydata.autoBand">
       <label>
         <input type="checkbox" ng-model="mydata.testSpeedJoin">
-        Check bandwidth before joining call
+        Recheck bandwidth before each outgoing call
       </label>
     </div>
+
+    <a ng-show="mydata.autoBand" class="btn btn-primary" href="" ng-click="testSpeed()">Check Network Speed</a> <span ng-bind="speedMsg"></span>
 
     <div ng-show="!mydata.autoBand">
       <label for="video-quality">Video quality:</label>
