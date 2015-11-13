@@ -410,6 +410,45 @@ switch_status_t conference_file_local_play(conference_obj_t *conference, switch_
 	return status;
 }
 
+switch_status_t conference_close_open_files(conference_obj_t *conference)
+{
+	int x = 0;
+
+	switch_mutex_lock(conference->mutex);
+	/* Close Unused Handles */
+	if (conference->fnode) {
+		conference_file_node_t *fnode, *cur;
+		switch_memory_pool_t *pool;
+
+		fnode = conference->fnode;
+		while (fnode) {
+			cur = fnode;
+			fnode = fnode->next;
+
+			if (cur->type != NODE_TYPE_SPEECH) {
+				conference_file_close(conference, cur);
+			}
+
+			pool = cur->pool;
+			switch_core_destroy_memory_pool(&pool);
+			x++;
+		}
+		conference->fnode = NULL;
+	}
+
+	if (conference->async_fnode) {
+		switch_memory_pool_t *pool;
+		conference_file_close(conference, conference->async_fnode);
+		pool = conference->async_fnode->pool;
+		conference->async_fnode = NULL;
+		switch_core_destroy_memory_pool(&pool);
+		x++;
+	}
+	switch_mutex_unlock(conference->mutex);
+
+	return x ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
+}
+
 /* For Emacs:
  * Local Variables:
  * mode:c
