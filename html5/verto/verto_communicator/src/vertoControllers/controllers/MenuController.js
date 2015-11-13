@@ -24,12 +24,12 @@
            bwp--;
         }
 
-        $scope.iconClass = 'mdi-device-signal-wifi-4-bar';                      
+        $scope.iconClass = 'mdi-device-signal-wifi-4-bar green';                      
 
         if (bwp < 4) {
-           $scope.iconClass = 'mdi-device-signal-wifi-3-bar';
+           $scope.iconClass = 'mdi-device-signal-wifi-3-bar yellow';
         } else if (bwp < 2) {
-           $scope.iconClass = 'mdi-device-signal-wifi-1-bar dedenc';
+           $scope.iconClass = 'mdi-device-signal-wifi-1-bar red';
         }
 
         verto.videoQuality.forEach(function(vid) {

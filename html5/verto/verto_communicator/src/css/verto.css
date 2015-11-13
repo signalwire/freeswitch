@@ -1506,8 +1506,16 @@ body:-webkit-full-screen #incall .video-footer {
   color: #333 !important;
 }
 
-.net-info .dedenc {
+.net-info .yellow {
   color: #e3d95b;
+}
+
+.net-info .green {
+  color: #00ae00;
+}
+
+.net-info .red {
+  color: #ae0000;
 }
 
 #mic-meter {
