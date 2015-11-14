@@ -266,17 +266,24 @@ SWITCH_DECLARE(const char *) API::executeString(const char *cmd)
 
 	this_check("");
 
-	mycmd = strdup(cmd);
+	SWITCH_STANDARD_STREAM(stream);
 
-	switch_assert(mycmd);
+	if (zstr(cmd)) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "No application specified\n");
+		stream.write_function(&stream, "-ERR No application specified");
+	} else {
+		mycmd = strdup(cmd);
 
-	if ((arg = strchr(mycmd, ' '))) {
-		*arg++ = '\0';
+		switch_assert(mycmd);
+
+		if ((arg = strchr(mycmd, ' '))) {
+			*arg++ = '\0';
+		}
+
+		switch_api_execute(mycmd, arg, session, &stream);
+		switch_safe_free(mycmd);
 	}
 
-	SWITCH_STANDARD_STREAM(stream);
-	switch_api_execute(mycmd, arg, session, &stream);
-	switch_safe_free(mycmd);
 	return (char *) stream.data;
 }
 
@@ -425,6 +432,11 @@ SWITCH_DECLARE(const char *)Event::getHeader(const char *header_name)
 {
 	this_check("");
 
+    if (zstr(header_name)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Trying to getHeader an invalid header!\n");
+		return NULL;
+    }
+
 	if (event) {
 		return switch_event_get_header(event, header_name);
 	} else {
@@ -449,6 +461,11 @@ SWITCH_DECLARE(bool) Event::addHeader(const char *header_name, const char *value
 SWITCH_DECLARE(bool) Event::delHeader(const char *header_name)
 {
 	this_check(false);
+
+	if (zstr(header_name)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Trying to delHeader an invalid header!\n");
+		return false;
+	}
 
 	if (event) {
 		return switch_event_del_header(event, header_name) == SWITCH_STATUS_SUCCESS ? true : false;
