@@ -88,6 +88,11 @@ void Session::setLUA(lua_State * state)
 
 int Session::originate(CoreSession *a_leg_session, char *dest, int timeout)
 {
+	if (zstr(dest)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing destination.\n");
+		return 0;
+	}
+
 	int x = CoreSession::originate(a_leg_session, dest, timeout);
 
 	if (x) {
@@ -356,7 +361,7 @@ Dbh::Dbh(char *dsn, char *user, char *pass)
 		dsn = tmp;
 	}
 
-	if (switch_cache_db_get_db_handle_dsn(&dbh, dsn) == SWITCH_STATUS_SUCCESS) {
+	if (!zstr(dsn) && switch_cache_db_get_db_handle_dsn(&dbh, dsn) == SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "DBH handle %p Connected.\n", (void *) dbh);
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Connection failed.  DBH NOT Connected.\n");
@@ -391,8 +396,12 @@ bool Dbh::connected()
 bool Dbh::test_reactive(char *test_sql, char *drop_sql, char *reactive_sql)
 {
   if (dbh) {
-    if (switch_cache_db_test_reactive(dbh, test_sql, drop_sql, reactive_sql) == SWITCH_TRUE) {
-      return true;
+    if (!zstr(test_sql) && !zstr(reactive_sql)) {
+      if (switch_cache_db_test_reactive(dbh, test_sql, drop_sql, reactive_sql) == SWITCH_TRUE) {
+        return true;
+      }
+    } else {
+      switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing parameters.\n");
     }
   } else {
     switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "DBH NOT Connected.\n");
@@ -431,6 +440,11 @@ int Dbh::query_callback(void *pArg, int argc, char **argv, char **cargv)
 
 bool Dbh::query(char *sql, SWIGLUA_FN lua_fun)
 {
+  if (zstr(sql)) {
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing SQL query.\n");
+    return false;
+  }
+
   if (dbh) {
     if (lua_fun.L) {
       if (switch_cache_db_execute_sql_callback(dbh, sql, query_callback, &lua_fun, NULL) == SWITCH_STATUS_SUCCESS) {
@@ -459,6 +473,11 @@ int Dbh::affected_rows()
 
 int Dbh::load_extension(const char *extension)
 {
+  if (zstr(extension)) {
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing extension name.\n");
+    return 0;
+  }
+
   if (dbh) {
     return switch_cache_db_load_extension(dbh, extension);
   }

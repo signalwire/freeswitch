@@ -996,6 +996,11 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to,
 	switch_bool_t rval = SWITCH_FALSE;
 	const char *err = NULL;
 
+	if (zstr(to)) {
+		err = "No to address specified";
+		goto end;
+	}
+
 	if (!zstr(file) && !zstr(convert_cmd) && !zstr(convert_ext)) {
 		if ((ext = strrchr(file, '.'))) {
 			dupfile = strdup(file);
