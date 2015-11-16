@@ -471,15 +471,17 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
                 if (params.pvtData) {
                   switch (params.pvtData.action) {
                     case "conference-liveArray-join":
-		      if (!params.pvtData.secondScreen && !params.pvtData.screenShare && !params.pvtData.videoOnly) {
+		      if (!params.pvtData.screenShare && !params.pvtData.videoOnly) {
 			  console.log("conference-liveArray-join");
 			  stopConference();
 			  startConference(v, dialog, params.pvtData);
 		      }
                       break;
                     case "conference-liveArray-part":
-                      console.log("conference-liveArray-part");
-                      stopConference();
+		      if (!params.pvtData.screenShare && !params.pvtData.videoOnly) {
+			  console.log("conference-liveArray-part");
+			  stopConference();
+		      }
                       break;
                   }
                 }
