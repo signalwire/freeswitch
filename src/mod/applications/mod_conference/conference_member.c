@@ -156,6 +156,35 @@ void conference_member_update_status_field(conference_member_t *member)
 	
 	switch_live_array_lock(member->conference->la);
 
+	if (!conference_utils_member_test_flag(member, MFLAG_CAN_SPEAK)) {
+		str = "MUTE";
+	} else if (switch_channel_test_flag(member->channel, CF_HOLD)) {
+		str = "HOLD";
+	} else if (member == member->conference->floor_holder) {
+		if (conference_utils_member_test_flag(member, MFLAG_TALKING)) {
+			str = "TALKING (FLOOR)";
+		} else {
+			str = "FLOOR";
+		}
+	} else if (conference_utils_member_test_flag(member, MFLAG_TALKING)) {
+		str = "TALKING";
+	} else {
+		str = "ACTIVE";
+	}
+
+	if (switch_channel_test_flag(member->channel, CF_VIDEO)) {
+		if (!conference_utils_member_test_flag(member, MFLAG_CAN_BE_SEEN)) {
+			vstr = " VIDEO (BLIND)";
+		} else {
+			vstr = " VIDEO";
+			if (member && member->id == member->conference->video_floor_holder) {
+				vstr = " VIDEO (FLOOR)";
+			}
+		}
+	}
+
+	switch_snprintf(display, sizeof(display), "%s%s", str, vstr);
+
 	if (conference_utils_test_flag(member->conference, CFLAG_JSON_STATUS)) {
 		json = cJSON_CreateObject();
 		audio = cJSON_CreateObject();
@@ -198,43 +227,19 @@ void conference_member_update_status_field(conference_member_t *member)
 			cJSON_AddItemToObject(json, "video", cJSON_CreateFalse());
 		}
 
+		if (conference_utils_test_flag(member->conference, CFLAG_JSON_STATUS)) {
+			cJSON_AddItemToObject(json, "oldStatus", cJSON_CreateString(display));
+		}
+
 		json_display = cJSON_PrintUnformatted(json);
 		cJSON_Delete(json);
-	} else {
-		if (!conference_utils_member_test_flag(member, MFLAG_CAN_SPEAK)) {
-			str = "MUTE";
-		} else if (switch_channel_test_flag(member->channel, CF_HOLD)) {
-			str = "HOLD";
-		} else if (member == member->conference->floor_holder) {
-			if (conference_utils_member_test_flag(member, MFLAG_TALKING)) {
-				str = "TALKING (FLOOR)";
-			} else {
-				str = "FLOOR";
-			}
-		} else if (conference_utils_member_test_flag(member, MFLAG_TALKING)) {
-			str = "TALKING";
-		} else {
-			str = "ACTIVE";
-		}
-
-		if (switch_channel_test_flag(member->channel, CF_VIDEO)) {
-			if (!conference_utils_member_test_flag(member, MFLAG_CAN_BE_SEEN)) {
-				vstr = " VIDEO (BLIND)";
-			} else {
-				vstr = " VIDEO";
-				if (member && member->id == member->conference->video_floor_holder) {
-					vstr = " VIDEO (FLOOR)";
-				}
-			}
-		}
-
-		switch_snprintf(display, sizeof(display), "%s%s", str, vstr);
 	}
+
+	switch_safe_free(member->status_field->valuestring);
 
 	if (json_display) {
 		member->status_field->valuestring = json_display;
 	} else {
-		free(member->status_field->valuestring);
 		member->status_field->valuestring = strdup(display);
 	}
 

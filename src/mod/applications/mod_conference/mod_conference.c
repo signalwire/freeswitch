@@ -1800,6 +1800,7 @@ SWITCH_STANDARD_APP(conference_function)
 			goto done;
 		}
 
+		conference->flags[CFLAG_JSON_STATUS] = 1;
 		conference_utils_set_cflags(cflags_str, conference->flags);
 
 		if (locked) {
@@ -1884,6 +1885,7 @@ SWITCH_STANDARD_APP(conference_function)
 				goto done;
 			}
 
+			conference->flags[CFLAG_JSON_STATUS] = 1;
 			conference_utils_set_cflags(cflags_str, conference->flags);
 
 			if (locked) {
