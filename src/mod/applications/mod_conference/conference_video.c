@@ -892,12 +892,10 @@ switch_status_t conference_video_attach_video_layer(conference_member_t *member,
 
 
 	if (!switch_channel_test_flag(channel, CF_VIDEO) && !member->avatar_png_img) {
-		printf("WTF %d\n", __LINE__);
 		return SWITCH_STATUS_FALSE;
 	}
 
 	if (switch_core_session_media_flow(member->session, SWITCH_MEDIA_TYPE_VIDEO) == SWITCH_MEDIA_FLOW_SENDONLY && !member->avatar_png_img) {
-		printf("WTF %d\n", __LINE__);
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -908,31 +906,26 @@ switch_status_t conference_video_attach_video_layer(conference_member_t *member,
 	layer->tagged = 0;
 
 	if (layer->fnode || layer->geometry.fileonly) {
-		printf("WTF %d\n", __LINE__);
 		switch_goto_status(SWITCH_STATUS_FALSE, end);
 	}
 
 	if (layer->geometry.flooronly && member->id != member->conference->video_floor_holder) {
-		printf("WTF %d\n", __LINE__);
 		switch_goto_status(SWITCH_STATUS_FALSE, end);
 	}
 
 	if (layer->geometry.res_id) {
 		if (!member->video_reservation_id || strcmp(layer->geometry.res_id, member->video_reservation_id)) {
-		printf("WTF %d\n", __LINE__);
 			switch_goto_status(SWITCH_STATUS_FALSE, end);
 		}
 	}
 
 	if (layer->member_id && layer->member_id == (int)member->id) {
 		member->video_layer_id = idx;
-		printf("WTF %d\n", __LINE__);
 		switch_goto_status(SWITCH_STATUS_BREAK, end);
 	}
 
 	if (layer->geometry.res_id || member->video_reservation_id) {
 		if (!layer->geometry.res_id || !member->video_reservation_id || strcmp(layer->geometry.res_id, member->video_reservation_id)) {
-			printf("WTF %d\n", __LINE__);
 			switch_goto_status(SWITCH_STATUS_FALSE, end);
 		}
 	}
@@ -3231,7 +3224,6 @@ void conference_video_set_floor_holder(conference_obj_t *conference, conference_
 
 		if ((canvas = conference_video_get_canvas_locked(member))) {
 			if (canvas->layout_floor_id > -1) {
-				printf("WTF ATTACH???\n");
 				conference_video_attach_video_layer(member, canvas, canvas->layout_floor_id);
 			}
 			conference_video_release_canvas(&canvas);
