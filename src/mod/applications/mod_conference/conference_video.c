@@ -617,11 +617,9 @@ void conference_video_detach_video_layer(conference_member_t *member)
 	mcu_layer_t *layer = NULL;
 	mcu_canvas_t *canvas = NULL;
 
-	if (member->canvas_id < 0) return;
+	if (member->canvas_id < 0 || member->video_layer_id < 0) return;
 
-	canvas = conference_video_get_canvas_locked(member);
-
-	if (!canvas || member->video_layer_id < 0) {
+	if (!(canvas = conference_video_get_canvas_locked(member))) {
 		return;
 	}
 
@@ -894,10 +892,12 @@ switch_status_t conference_video_attach_video_layer(conference_member_t *member,
 
 
 	if (!switch_channel_test_flag(channel, CF_VIDEO) && !member->avatar_png_img) {
+		printf("WTF %d\n", __LINE__);
 		return SWITCH_STATUS_FALSE;
 	}
 
 	if (switch_core_session_media_flow(member->session, SWITCH_MEDIA_TYPE_VIDEO) == SWITCH_MEDIA_FLOW_SENDONLY && !member->avatar_png_img) {
+		printf("WTF %d\n", __LINE__);
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -908,26 +908,31 @@ switch_status_t conference_video_attach_video_layer(conference_member_t *member,
 	layer->tagged = 0;
 
 	if (layer->fnode || layer->geometry.fileonly) {
+		printf("WTF %d\n", __LINE__);
 		switch_goto_status(SWITCH_STATUS_FALSE, end);
 	}
 
 	if (layer->geometry.flooronly && member->id != member->conference->video_floor_holder) {
+		printf("WTF %d\n", __LINE__);
 		switch_goto_status(SWITCH_STATUS_FALSE, end);
 	}
 
 	if (layer->geometry.res_id) {
 		if (!member->video_reservation_id || strcmp(layer->geometry.res_id, member->video_reservation_id)) {
+		printf("WTF %d\n", __LINE__);
 			switch_goto_status(SWITCH_STATUS_FALSE, end);
 		}
 	}
 
 	if (layer->member_id && layer->member_id == (int)member->id) {
 		member->video_layer_id = idx;
+		printf("WTF %d\n", __LINE__);
 		switch_goto_status(SWITCH_STATUS_BREAK, end);
 	}
 
 	if (layer->geometry.res_id || member->video_reservation_id) {
 		if (!layer->geometry.res_id || !member->video_reservation_id || strcmp(layer->geometry.res_id, member->video_reservation_id)) {
+			printf("WTF %d\n", __LINE__);
 			switch_goto_status(SWITCH_STATUS_FALSE, end);
 		}
 	}
@@ -1267,13 +1272,16 @@ void conference_video_write_canvas_image_to_codec_group(conference_obj_t *confer
 				}
 
 				if (!imember->session || !switch_channel_test_flag(imember->channel, CF_VIDEO) ||
-					switch_core_session_media_flow(imember->session, SWITCH_MEDIA_TYPE_VIDEO) == SWITCH_MEDIA_FLOW_RECVONLY ||
 					switch_core_session_read_lock(imember->session) != SWITCH_STATUS_SUCCESS) {
 					continue;
 				}
 
 				if (need_refresh) {
 					switch_core_session_request_video_refresh(imember->session);
+				}
+
+				if (switch_core_session_media_flow(imember->session, SWITCH_MEDIA_TYPE_VIDEO) == SWITCH_MEDIA_FLOW_RECVONLY) {
+					continue;
 				}
 
 				//switch_core_session_write_encoded_video_frame(imember->session, frame, 0, 0);
@@ -2184,7 +2192,7 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 			}
 
 			//VIDFLOOR
-			if (conference->canvas_count == 1 && canvas->layout_floor_id > -1 && imember->id == conference->video_floor_holder &&
+			if (canvas->layout_floor_id > -1 && imember->id == conference->video_floor_holder &&
 				imember->video_layer_id != canvas->layout_floor_id) {
 				conference_video_attach_video_layer(imember, canvas, canvas->layout_floor_id);
 			}
@@ -2681,7 +2689,6 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 				}
 
 				if (!imember->session || !switch_channel_test_flag(imember->channel, CF_VIDEO) ||
-					switch_core_session_media_flow(imember->session, SWITCH_MEDIA_TYPE_VIDEO) == SWITCH_MEDIA_FLOW_RECVONLY ||
 					switch_core_session_read_lock(imember->session) != SWITCH_STATUS_SUCCESS) {
 					continue;
 				}
@@ -2689,6 +2696,11 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 				if (need_refresh) {
 					switch_core_session_request_video_refresh(imember->session);
 				}
+
+				if (switch_core_session_media_flow(imember->session, SWITCH_MEDIA_TYPE_VIDEO) == SWITCH_MEDIA_FLOW_RECVONLY) {
+					continue;
+				}
+
 
 				if (send_keyframe) {
 					switch_core_media_gen_key_frame(imember->session);
@@ -3024,10 +3036,7 @@ void *SWITCH_THREAD_FUNC conference_video_super_muxing_thread_run(switch_thread_
 				continue;
 			}
 
-			if (switch_core_session_media_flow(imember->session, SWITCH_MEDIA_TYPE_VIDEO) == SWITCH_MEDIA_FLOW_RECVONLY) {
-				continue;
-			}
-
+			
 			if (!imember->session || !switch_channel_test_flag(imember->channel, CF_VIDEO) ||
 				switch_core_session_read_lock(imember->session) != SWITCH_STATUS_SUCCESS) {
 				continue;
@@ -3035,6 +3044,10 @@ void *SWITCH_THREAD_FUNC conference_video_super_muxing_thread_run(switch_thread_
 
 			if (need_refresh) {
 				switch_core_session_request_video_refresh(imember->session);
+			}
+
+			if (switch_core_session_media_flow(imember->session, SWITCH_MEDIA_TYPE_VIDEO) == SWITCH_MEDIA_FLOW_RECVONLY) {
+				continue;
 			}
 
 			if (send_keyframe) {
@@ -3213,11 +3226,17 @@ void conference_video_set_floor_holder(conference_obj_t *conference, conference_
 	}
 
 	//VIDFLOOR
-	if (conference->canvas_count == 1 && member && conference->canvases[0] && conference->canvases[0]->layout_floor_id > -1) {
-		conference_video_attach_video_layer(member, conference->canvases[0], conference->canvases[0]->layout_floor_id);
-	}
-
 	if (member) {
+		mcu_canvas_t *canvas = NULL;
+
+		if ((canvas = conference_video_get_canvas_locked(member))) {
+			if (canvas->layout_floor_id > -1) {
+				printf("WTF ATTACH???\n");
+				conference_video_attach_video_layer(member, canvas, canvas->layout_floor_id);
+			}
+			conference_video_release_canvas(&canvas);
+		}
+		
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Adding video floor %s\n",
 						  switch_channel_get_name(member->channel));
 

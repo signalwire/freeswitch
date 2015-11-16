@@ -3405,6 +3405,7 @@ static switch_bool_t verto__invite_func(const char *method, cJSON *params, jsock
 	}
 
 	if ((screenShare = cJSON_GetObjectItem(dialog, "screenShare")) && screenShare->type == cJSON_True) {
+		switch_channel_set_variable(channel, "video_screen_share", "true");
 		switch_channel_set_flag(channel, CF_VIDEO_ONLY);
 	}
 
