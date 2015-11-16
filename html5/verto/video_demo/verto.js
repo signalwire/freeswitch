@@ -716,6 +716,17 @@ $("#localmutebtn").click(function() {
 
 });
 
+$("#localvidmutebtn").click(function() {
+    var muted = cur_call.setVideoMute("toggle");
+
+    if (muted) {
+	display("Talking to: " + cur_call.cidString() + " [VIDEO LOCALLY MUTED]");
+    } else {
+	display("Talking to: " + cur_call.cidString());
+    }
+
+});
+
 $("#vmutebtn").click(function() {
     cur_call.dtmf("*0");
 });

@@ -1845,7 +1845,7 @@ void conference_video_pop_next_image(conference_member_t *member, switch_image_t
 void conference_video_set_incoming_bitrate(conference_member_t *member, int kps)
 {
 	switch_core_session_message_t msg = { 0 };
-	
+
 	msg.message_id = SWITCH_MESSAGE_INDICATE_BITRATE_REQ;
 	msg.numeric_arg = kps * 1024;
 	msg.from = __FILE__;
@@ -1902,7 +1902,7 @@ void conference_video_check_auto_bitrate(conference_member_t *member, mcu_layer_
 	if (switch_channel_test_flag(member->channel, CF_VIDEO_BITRATE_UNMANAGABLE)) {
 		member->managed_kps = 0;
 	} else if (conference_utils_test_flag(member->conference, CFLAG_MANAGE_INBOUND_VIDEO_BITRATE) && !member->managed_kps) {
-		int kps;
+		int kps = 256;
 		int w = 320;
 		int h = 240;
 
@@ -1922,11 +1922,7 @@ void conference_video_check_auto_bitrate(conference_member_t *member, mcu_layer_
 		} else {
 			int max = 0;
 
-			if (!layer || !conference_utils_member_test_flag(member, MFLAG_CAN_BE_SEEN) || member->avatar_png_img) {
-				kps = 256;
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "%s auto-setting bitrate to %dkps because user's image is not visible\n",
-								  switch_channel_get_name(member->channel), kps);
-			} else {
+			if (layer) {
 				kps = switch_calc_bitrate(w, h, 1, (int)(member->conference->video_fps.fps));
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "%s auto-setting bitrate to %dkps to accomodate %dx%d resolution\n",
 								  switch_channel_get_name(member->channel), kps, layer->screen_w, layer->screen_h);
@@ -1944,7 +1940,6 @@ void conference_video_check_auto_bitrate(conference_member_t *member, mcu_layer_
 								  switch_channel_get_name(member->channel), kps);
 			}
 		}
-
 		conference_video_set_incoming_bitrate(member, kps);
 	}
 }

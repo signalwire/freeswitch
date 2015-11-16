@@ -2226,6 +2226,16 @@
 	return dialog.rtc.getMute();
     };
 
+    $.verto.dialog.prototype.setVideoMute = function(what) {
+	var dialog = this;
+	return dialog.rtc.setVideoMute(what);
+    };
+
+    $.verto.dialog.prototype.getVideoMute = function() {
+	var dialog = this; 
+	return dialog.rtc.getVideoMute();
+    };
+
     $.verto.dialog.prototype.useStereo = function(on) {
         var dialog = this;
 

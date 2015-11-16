@@ -10894,12 +10894,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_video_frame(switch_core
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (switch_channel_test_flag(session->channel, CF_VIDEO_PAUSE_READ)) {
-		*frame = &runtime.dummy_cng_frame;
-		switch_yield(20000);
-		return SWITCH_STATUS_SUCCESS;
-	}
-
 	if (session->endpoint_interface->io_routines->read_video_frame) {
 		if ((status = session->endpoint_interface->io_routines->read_video_frame(session, frame, flags, stream_id)) == SWITCH_STATUS_SUCCESS) {
 			for (ptr = session->event_hooks.video_read_frame; ptr; ptr = ptr->next) {
@@ -10908,6 +10902,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_video_frame(switch_core
 				}
 			}
 		}
+	}
+
+	if (switch_channel_test_flag(session->channel, CF_VIDEO_PAUSE_READ)) {
+		*frame = &runtime.dummy_cng_frame;
+		switch_cond_next();
+		return SWITCH_STATUS_SUCCESS;
 	}
 
 	if (status == SWITCH_STATUS_INUSE) {
