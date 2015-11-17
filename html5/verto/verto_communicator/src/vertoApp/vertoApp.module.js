@@ -15,6 +15,7 @@
     'cgPrompt',
     '720kb.tooltips',
     'ui.gravatar',
+    'ui.bootstrap',
     'directive.g+signin',
   ]);
 

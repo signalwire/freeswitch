@@ -595,10 +595,6 @@ body .modal-body .btn-group .btn.active {
   transition-delay:0s;
 }
 
-#incall .video-hover-buttons .btn-group {
-  margin: 0;
-}
-
 #incall .video-hover-buttons .btn-group .dropdown-menu {
   height: 200px;
   overflow: auto;
@@ -766,6 +762,10 @@ body .modal-body .btn-group .btn.active {
     transition: all 0.5s ease;
 }
 
+.tooltip-inner {
+    padding: 8px 8px;
+    background-color: #000;
+}
 
 #sidebar-wrapper {
     right: 360px;
