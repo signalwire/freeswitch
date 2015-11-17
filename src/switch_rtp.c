@@ -419,6 +419,10 @@ struct switch_rtp {
 	uint32_t cng_count;
 	switch_rtp_bug_flag_t rtp_bugs;
 	switch_rtp_stats_t stats;
+	uint32_t clean_stream;
+	uint32_t bad_stream;
+	uint32_t recovering_stream;
+
 	uint32_t hot_hits;
 	uint32_t sync_packets;
 	int rtcp_interval;
@@ -1517,7 +1521,7 @@ static void do_mos(switch_rtp_t *rtp_session, int force) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG3, "%s %s %d consecutive flaws, adding %d flaw penalty\n", 
 							  rtp_session_name(rtp_session), rtp_type(rtp_session), 
 							  rtp_session->consecutive_flaws, penalty);
-
+			rtp_session->bad_stream++;
 			rtp_session->stats.inbound.flaws += penalty;
 		}
 
@@ -1616,12 +1620,12 @@ static void check_jitter(switch_rtp_t *rtp_session)
 			rtp_session->stats.inbound.loss[rtp_session->stats.inbound.last_loss] += lost;
 		}
 
+		rtp_session->bad_stream++;
 		rtp_session->stats.inbound.flaws += lost;
-		
 	} else {
 		rtp_session->stats.inbound.last_loss = 0;
 	}
-	    
+	
 	rtp_session->stats.inbound.last_processed_seq = seq;
 
 	/* Burst and Packet Loss */
@@ -1634,7 +1638,32 @@ static void check_jitter(switch_rtp_t *rtp_session)
 	} else {
 		do_mos(rtp_session, SWITCH_FALSE);
 	}
-		
+	
+	if (rtp_session->stats.inbound.last_loss || rtp_session->bad_stream) {
+		if (rtp_session->session && (!rtp_session->stats.inbound.error_log || rtp_session->stats.inbound.error_log->stop)) {
+			struct error_period *error = switch_core_session_alloc(rtp_session->session, sizeof(*error));
+			error->start = switch_micro_time_now();
+			error->next = rtp_session->stats.inbound.error_log;
+			rtp_session->stats.inbound.error_log = error;
+		}
+
+		if (!rtp_session->stats.inbound.last_loss) {
+			if (++rtp_session->recovering_stream > (rtp_session->one_second * 3)) {
+				if (rtp_session->session && rtp_session->stats.inbound.error_log) {
+					rtp_session->stats.inbound.error_log->stop = switch_micro_time_now();
+				}
+
+				rtp_session->bad_stream = 0;
+			}
+		} else {
+			rtp_session->recovering_stream = 0;
+			rtp_session->bad_stream++;
+		}
+	} else {
+		rtp_session->recovering_stream = 0;
+		rtp_session->clean_stream++;
+	}
+	
 
 	if ( diff_time < 0 ) {
 		diff_time = -diff_time;
@@ -4411,6 +4440,10 @@ SWITCH_DECLARE(void) switch_rtp_destroy(switch_rtp_t **rtp_session)
 
 	do_mos(*rtp_session, SWITCH_TRUE);
 
+	if ((*rtp_session)->stats.inbound.error_log && !(*rtp_session)->stats.inbound.error_log->stop) {
+		(*rtp_session)->stats.inbound.error_log->stop = switch_micro_time_now();
+	}
+
 	switch_mutex_lock((*rtp_session)->flag_mutex);
 
 	switch_rtp_kill_socket(*rtp_session);
@@ -6170,6 +6203,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 										 rtp_session_name(rtp_session),
 										  rtp_session->sync_packets, rtp_type(rtp_session));
 
+						rtp_session->bad_stream++;
 						rtp_session->stats.inbound.flaws += rtp_session->sync_packets;
 					}
 

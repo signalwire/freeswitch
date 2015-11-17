@@ -613,6 +613,14 @@ typedef enum {
 } switch_vad_flag_enum_t;
 typedef uint32_t switch_vad_flag_t;
 
+
+typedef struct error_period {
+	int64_t start;
+	int64_t stop;
+	struct error_period *next;
+} switch_error_period_t;
+
+
 typedef struct {
 	switch_size_t raw_bytes;
 	switch_size_t media_bytes;
@@ -648,6 +656,7 @@ typedef struct {
 	switch_size_t last_flaw;
 	double R;
 	double mos;
+	struct error_period *error_log;
 } switch_rtp_numbers_t;
 
 typedef struct {

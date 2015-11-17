@@ -2490,6 +2490,105 @@ SWITCH_DECLARE(int) switch_ivr_set_xml_profile_data(switch_xml_t xml, switch_cal
 	return off;
 }
 
+
+#define add_stat(_x, _i, _s)											\
+	switch_snprintf(var_val, sizeof(var_val), "%" SWITCH_SIZE_T_FMT, _i); \
+	x_tmp = switch_xml_add_child_d(_x, _s, loff++);						\
+	switch_xml_set_txt_d(x_tmp, var_val)
+
+#define add_stat_double(_x, _i, _s)										\
+	switch_snprintf(var_val, sizeof(var_val), "%0.2f", _i);				\
+	x_tmp = switch_xml_add_child_d(_x, _s, loff++);						\
+	switch_xml_set_txt_d(x_tmp, var_val)
+
+SWITCH_DECLARE(int) switch_ivr_set_xml_call_stats(switch_xml_t xml, switch_core_session_t *session, int off, switch_media_type_t type)
+{
+	const char *name = (type == SWITCH_MEDIA_TYPE_VIDEO) ? "video" : "audio";
+	switch_xml_t x_stat, x_in, x_out, x_tmp = NULL;
+	int loff = 0;
+	switch_rtp_stats_t *stats = switch_core_media_get_stats(session, type, NULL);
+	char var_val[35] = "";
+
+	if (!stats) return off;
+
+	if (!(x_stat = switch_xml_add_child_d(xml, name, off++))) {
+		abort();
+	}
+
+	if (!(x_in = switch_xml_add_child_d(x_stat, "inbound", off++))) {
+		abort();
+	}
+
+	if (!(x_out = switch_xml_add_child_d(x_stat, "outbound", off++))) {
+		abort();
+	}
+
+	stats->inbound.std_deviation = sqrt(stats->inbound.variance);
+
+	add_stat(x_in, stats->inbound.raw_bytes, "raw_bytes");
+	add_stat(x_in, stats->inbound.media_bytes, "media_bytes");
+	add_stat(x_in, stats->inbound.packet_count, "packet_count");
+	add_stat(x_in, stats->inbound.media_packet_count, "media_packet_count");
+	add_stat(x_in, stats->inbound.skip_packet_count, "skip_packet_count");
+	add_stat(x_in, stats->inbound.jb_packet_count, "jitter_packet_count");
+	add_stat(x_in, stats->inbound.dtmf_packet_count, "dtmf_packet_count");
+	add_stat(x_in, stats->inbound.cng_packet_count, "cng_packet_count");
+	add_stat(x_in, stats->inbound.flush_packet_count, "flush_packet_count");
+	add_stat(x_in, stats->inbound.largest_jb_size, "largest_jb_size");
+	add_stat_double(x_in, stats->inbound.min_variance, "jitter_min_variance");
+	add_stat_double(x_in, stats->inbound.max_variance, "jitter_max_variance");
+	add_stat_double(x_in, stats->inbound.lossrate, "jitter_loss_rate");
+	add_stat_double(x_in, stats->inbound.burstrate, "jitter_burst_rate");
+	add_stat_double(x_in, stats->inbound.mean_interval, "mean_interval");
+	add_stat(x_in, stats->inbound.flaws, "flaw_total");
+	add_stat_double(x_in, stats->inbound.R, "quality_percentage");
+	add_stat_double(x_in, stats->inbound.mos, "mos");
+	
+
+	if (stats->inbound.error_log) {
+		switch_xml_t x_err_log, x_err;
+		switch_error_period_t *ep;
+		int eoff = 0;
+
+		if (!(x_err_log = switch_xml_add_child_d(x_stat, "error-log", off++))) {
+			abort();
+		}
+		
+		for(ep = stats->inbound.error_log; ep; ep = ep->next) {
+
+			if (!(ep->start && ep->stop)) continue;
+
+			if (!(x_err = switch_xml_add_child_d(x_err_log, "error-period", eoff++))) {
+				abort();
+			}
+
+			switch_snprintf(var_val, sizeof(var_val), "%" SWITCH_TIME_T_FMT, ep->start);
+			x_tmp = switch_xml_add_child_d(x_err, "start", 0);
+			switch_xml_set_txt_d(x_tmp, var_val);
+
+			switch_snprintf(var_val, sizeof(var_val), "%" SWITCH_TIME_T_FMT, ep->stop);
+			x_tmp = switch_xml_add_child_d(x_err, "stop", 1);
+			switch_xml_set_txt_d(x_tmp, var_val);
+
+			switch_snprintf(var_val, sizeof(var_val), "%" SWITCH_TIME_T_FMT, (ep->stop - ep->start) / 1000);
+			x_tmp = switch_xml_add_child_d(x_err, "duration-msec", 2);
+			switch_xml_set_txt_d(x_tmp, var_val);
+		}
+	}
+
+	add_stat(x_out, stats->outbound.raw_bytes, "raw_bytes");
+	add_stat(x_out, stats->outbound.media_bytes, "media_bytes");
+	add_stat(x_out, stats->outbound.packet_count, "packet_count");
+	add_stat(x_out, stats->outbound.media_packet_count, "media_packet_count");
+	add_stat(x_out, stats->outbound.skip_packet_count, "skip_packet_count");
+	add_stat(x_out, stats->outbound.dtmf_packet_count, "dtmf_packet_count");
+	add_stat(x_out, stats->outbound.cng_packet_count, "cng_packet_count");
+	add_stat(x_out, stats->rtcp.packet_count, "rtcp_packet_count");
+	add_stat(x_out, stats->rtcp.octet_count, "rtcp_octet_count");
+	
+	return off;
+}
+
 static int switch_ivr_set_xml_chan_var(switch_xml_t xml, const char *var, const char *val, int off)
 {
 	char *data;
@@ -2583,6 +2682,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_generate_xml_cdr(switch_core_session_
 		switch_xml_set_txt_d(x_field, f);
 		free(f);
 	}
+
+	if (!(variables = switch_xml_add_child_d(cdr, "call-stats", cdr_off++))) {
+		goto error;
+	}
+
+	switch_ivr_set_xml_call_stats(variables, session, v_off, SWITCH_MEDIA_TYPE_AUDIO);
+	switch_ivr_set_xml_call_stats(variables, session, v_off, SWITCH_MEDIA_TYPE_VIDEO);
 
 
 	if (!(variables = switch_xml_add_child_d(cdr, "variables", cdr_off++))) {
@@ -2888,6 +2994,80 @@ static void switch_ivr_set_json_profile_data(cJSON *json, switch_caller_profile_
 	cJSON_AddItemToObject(json, "chan_name", cJSON_CreateString(caller_profile->chan_name));
 }
 
+#define add_jstat(_j, _i, _s)											\
+	switch_snprintf(var_val, sizeof(var_val), "%" SWITCH_SIZE_T_FMT, _i); \
+	cJSON_AddItemToObject(_j, _s, cJSON_CreateNumber(_i))				
+
+SWITCH_DECLARE(void) switch_ivr_set_json_call_stats(cJSON *json, switch_core_session_t *session, switch_media_type_t type)
+{
+	const char *name = (type == SWITCH_MEDIA_TYPE_VIDEO) ? "video" : "audio";
+	cJSON *j_stat, *j_in, *j_out;
+	switch_rtp_stats_t *stats = switch_core_media_get_stats(session, type, NULL);
+	char var_val[35] = "";
+
+	if (!stats) return;
+
+	j_stat = cJSON_CreateObject();
+	j_in = cJSON_CreateObject();
+	j_out = cJSON_CreateObject();
+
+	cJSON_AddItemToObject(json, name, j_stat);
+	cJSON_AddItemToObject(j_stat, "inbound", j_in);
+	cJSON_AddItemToObject(j_stat, "outbound", j_out);
+
+	stats->inbound.std_deviation = sqrt(stats->inbound.variance);
+
+	add_jstat(j_in, stats->inbound.raw_bytes, "raw_bytes");
+	add_jstat(j_in, stats->inbound.media_bytes, "media_bytes");
+	add_jstat(j_in, stats->inbound.packet_count, "packet_count");
+	add_jstat(j_in, stats->inbound.media_packet_count, "media_packet_count");
+	add_jstat(j_in, stats->inbound.skip_packet_count, "skip_packet_count");
+	add_jstat(j_in, stats->inbound.jb_packet_count, "jitter_packet_count");
+	add_jstat(j_in, stats->inbound.dtmf_packet_count, "dtmf_packet_count");
+	add_jstat(j_in, stats->inbound.cng_packet_count, "cng_packet_count");
+	add_jstat(j_in, stats->inbound.flush_packet_count, "flush_packet_count");
+	add_jstat(j_in, stats->inbound.largest_jb_size, "largest_jb_size");
+	add_jstat(j_in, stats->inbound.min_variance, "jitter_min_variance");
+	add_jstat(j_in, stats->inbound.max_variance, "jitter_max_variance");
+	add_jstat(j_in, stats->inbound.lossrate, "jitter_loss_rate");
+	add_jstat(j_in, stats->inbound.burstrate, "jitter_burst_rate");
+	add_jstat(j_in, stats->inbound.mean_interval, "mean_interval");
+	add_jstat(j_in, stats->inbound.flaws, "flaw_total");
+	add_jstat(j_in, stats->inbound.R, "quality_percentage");
+	add_jstat(j_in, stats->inbound.mos, "mos");
+	
+
+	if (stats->inbound.error_log) {
+		cJSON *j_err_log, *j_err;
+		switch_error_period_t *ep;
+
+		j_err_log = cJSON_CreateArray();
+		cJSON_AddItemToObject(j_in, "errorLog", j_err_log);
+
+		for(ep = stats->inbound.error_log; ep; ep = ep->next) {
+
+			if (!(ep->start && ep->stop)) continue;
+
+			j_err = cJSON_CreateObject();
+
+			cJSON_AddItemToObject(j_err, "start", cJSON_CreateNumber(ep->start));
+			cJSON_AddItemToObject(j_err, "stop", cJSON_CreateNumber(ep->stop));
+			cJSON_AddItemToObject(j_err, "durationMS", cJSON_CreateNumber((ep->stop - ep->start) / 1000));
+			cJSON_AddItemToArray(j_err_log, j_err);
+		}
+	}
+
+	add_jstat(j_out, stats->outbound.raw_bytes, "raw_bytes");
+	add_jstat(j_out, stats->outbound.media_bytes, "media_bytes");
+	add_jstat(j_out, stats->outbound.packet_count, "packet_count");
+	add_jstat(j_out, stats->outbound.media_packet_count, "media_packet_count");
+	add_jstat(j_out, stats->outbound.skip_packet_count, "skip_packet_count");
+	add_jstat(j_out, stats->outbound.dtmf_packet_count, "dtmf_packet_count");
+	add_jstat(j_out, stats->outbound.cng_packet_count, "cng_packet_count");
+	add_jstat(j_out, stats->rtcp.packet_count, "rtcp_packet_count");
+	add_jstat(j_out, stats->rtcp.octet_count, "rtcp_octet_count");
+}
+
 static void switch_ivr_set_json_chan_vars(cJSON *json, switch_channel_t *channel, switch_bool_t urlencode)
 {
 	switch_event_header_t *hi = switch_channel_variable_first(channel);
@@ -2925,7 +3105,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_generate_json_cdr(switch_core_session
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_caller_profile_t *caller_profile;
 	cJSON *variables, *j_main_cp, *j_caller_profile, *j_caller_extension, *j_caller_extension_apps, *j_times, *j_application,
-		*j_callflow, *j_profile, *j_inner_extension, *j_app_log, *j_apps, *j_o, *j_o_profiles, *j_channel_data;
+		*j_callflow, *j_profile, *j_inner_extension, *j_app_log, *j_apps, *j_o, *j_o_profiles, *j_channel_data, *callStats;
 	switch_app_log_t *app_log;
 	char tmp[512], *f;
 
@@ -2951,9 +3131,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_generate_json_cdr(switch_core_session
 		free(f);
 	}
 
+	callStats = cJSON_CreateObject();
+	cJSON_AddItemToObject(cdr, "callStats", callStats);
+	switch_ivr_set_json_call_stats(callStats, session, SWITCH_MEDIA_TYPE_AUDIO);
+	switch_ivr_set_json_call_stats(callStats, session, SWITCH_MEDIA_TYPE_VIDEO);
+
 	variables = cJSON_CreateObject();
 	cJSON_AddItemToObject(cdr, "variables", variables);
-
 	switch_ivr_set_json_chan_vars(variables, channel, urlencode);
 
 
