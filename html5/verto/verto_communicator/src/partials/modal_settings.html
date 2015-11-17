@@ -22,9 +22,16 @@
     <select name="microphone" id="settings-microphone" class="form-control"
             ng-model="mydata.selectedAudio" ng-options="item.id as item.label for item in verto.data.audioDevices">
     </select>
-
-    <a class="btn btn-primary" href="" ng-click="refreshDeviceList()">Refresh device list</a>
   </div>
+
+  <div class="form-group">
+    <label for="settings-microphone">Speaker:</label>
+    <select name="microphone" id="settings-microphone" class="form-control"
+            ng-model="mydata.selectedSpeaker" ng-options="item.id as item.label for item in verto.data.speakerDevices">
+    </select>
+  </div>
+
+  <a class="btn btn-primary" href="" ng-click="refreshDeviceList()">Refresh device list</a>
 
   <div class="form-group">
     <label for="settings-microphone">General settings:</label>

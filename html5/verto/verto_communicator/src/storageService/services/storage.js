@@ -25,6 +25,7 @@
           selectedVideo: null,
           selectedAudio: null,
           selectedShare: null,
+          selectedSpeaker: null,
           useStereo: true,
           useSTUN: true,
           useDedenc: false,

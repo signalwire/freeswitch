@@ -34,6 +34,11 @@
       $rootScope.$on('config.http.success', function(ev) {
         $scope.login(false);
       });
+
+      $rootScope.$on('changedSpeaker', function(event, speakerId) {
+        attachSinkId(myVideo, speakerId);
+      });
+
       /**
        * Login the user to verto server and
        * redirects him to dialpad page.

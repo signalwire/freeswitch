@@ -57,6 +57,17 @@
                 class="btn btn-material-blue-900" ng-click="toggleChat()" ng-show="fullscreenEnabled">
           <i class="mdi-communication-chat"></i>
         </button>
+        <div class="btn-group">
+          <button tooltip-placement="bottom" tooltip-title="Speaker" uib-tooltips="Speaker" type="button" class="btn btn-material-blue-900 dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            <i class="mdi-hardware-headset"></i>
+            <span class="caret"></span>
+          </button>
+          <ul class="dropdown-menu">
+            <li ng-repeat="speaker in verto.data.speakerDevices">
+              <a ng-click="confChangeSpeaker(speaker.id)">{{ speaker.label }}</a>
+            </li>
+          </ul>
+        </div>
       </div>
     </div>
     <div class="video-tag-wrapper" id="video-tag-wrapper" ng-dblclick="goFullscreen()" show-controls>
