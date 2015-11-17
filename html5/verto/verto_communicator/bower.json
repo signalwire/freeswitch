@@ -42,7 +42,7 @@
     "jquery-cookie": "~1.4.1",
     "jquery-json": "~2.5.1",
     "datatables": "~1.10.8",
-    "angular-bootstrap": "~0.13.3",
+    "angular-bootstrap": "~0.14.3",
     "bootstrap-material-design": "~0.3.0"
   },
   "resolutions": {

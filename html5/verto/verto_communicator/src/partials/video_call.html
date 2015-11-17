@@ -2,23 +2,30 @@
   <div class="video-wrapper">
     <div class="video-hover-buttons" ng-show="verto.data.callState == 'active'">
       <div id="moderator-tools" ng-show="verto.data.confRole == 'moderator'">
-      <button tooltips="" tooltip-title="Play" tooltip-side="bottom" tooltip-lazy="false" class="btn btn-material-blue-900" ng-click="play()">
+        <button tooltip-placement="bottom" tooltip-title="Play" uib-tooltip="Play"
+                class="btn btn-material-blue-900" ng-click="play()">
         <i class="mdi-av-play-circle-outline"></i>
       </button>
-      <button tooltips="" tooltip-title="Stop" tooltip-side="bottom" tooltip-lazy="false" class="btn btn-material-blue-900" ng-click="stop()">
+      <button tooltip-placement="bottom" tooltip-title="Stop" uib-tooltip="Stop"
+              class="btn btn-material-blue-900" ng-click="stop()">
         <i class="mdi-av-stop"></i>
       </button>
-      <button tooltips="" tooltip-title="Record" tooltip-side="bottom" tooltip-lazy="false" class="btn btn-material-blue-900" ng-click="record()">
+      <button tooltip-placement="bottom" tooltip-title="Record" uib-tooltip="Record"
+              class="btn btn-material-blue-900" ng-click="record()">
         <i class="mdi-toggle-radio-button-on"></i>
       </button>
-      <button tooltips="" tooltip-title="Stop Record" tooltip-side="bottom" tooltip-lazy="false" class="btn btn-material-blue-900" ng-click="stopRecord()">
+      <button tooltip-placement="bottom" tooltip-title="Stop Record" uib-tooltip="Stop Record"
+              class="btn btn-material-blue-900" ng-click="stopRecord()">
         <i class="mdi-image-switch-camera"></i>
       </button>
-      <button tooltips="" tooltip-title="Snapshot" tooltip-side="bottom" tooltip-lazy="false" class="btn btn-material-blue-900" ng-click="snapshot()">
+      <button tooltip-placement="bottom" tooltip-title="Snapshot" uib-tooltip="Snapshot"
+              tooltip-lazy="false" class="btn btn-material-blue-900" ng-click="snapshot()">
         <i class="mdi-image-photo-camera"></i>
       </button>
       <div class="btn-group">
-        <button tooltips="" tooltip-title="Video Mode" tooltip-side="bottom" tooltip-lazy="false" type="button" class="btn btn-material-blue-900 dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+        <button tooltip-placement="bottom" tooltip-title="Video Mode" uib-tooltip="Video Mode"
+                type="button" class="btn btn-material-blue-900 dropdown-toggle"
+                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
           <i class="mdi-action-view-module"></i>
           <span class="caret"></span>
         </button>
@@ -29,22 +36,28 @@
         </ul>
       </div>
       </div>
-      <br/>
-      <button tooltips="" tooltip-title="(un)Mute Mic" tooltip-side="bottom" tooltip-lazy="false" class="btn btn-material-blue-900" ng-click="muteMic(cbMuteMic)">
-        <i class="" ng-class="{'mdi-av-mic': !verto.data.mutedMic, 'mdi-av-mic-off': verto.data.mutedMic}"></i>
-      </button>
-      <button tooltips="" tooltip-title="(un)Mute Video" tooltip-side="bottom" tooltip-lazy="false" class="btn btn-material-blue-900" ng-click="muteVideo(cbMuteVideo)" ng-if="verto.data.canVideo">
-        <i class="" ng-class="{'mdi-av-videocam': !verto.data.mutedVideo, 'mdi-av-videocam-off': verto.data.mutedVideo}"></i>
-      </button>
-      <button tooltips="" tooltip-title="Toggle Fullscreen Mode" tooltip-side="bottom" tooltip-lazy="false" class="btn btn-material-blue-900" ng-click="goFullscreen()">
-        <i class="" ng-class="{'mdi-navigation-fullscreen': !fullscreenEnabled, 'mdi-navigation-fullscreen-exit': fullscreenEnabled}"></i>
-      </button>
-      <button tooltips="" tooltip-title="Screenshare" tooltip-side="bottom" tooltip-lazy="false" class="btn btn-material-blue-900" ng-click="screenshare()">
-        <i class="mdi-hardware-desktop-windows"></i>
-      </button>
-      <button tooltips="" tooltip-title="Open/Close Chat" tooltip-side="right" tooltip-lazy="false" class="btn btn-material-blue-900" ng-click="toggleChat()" ng-show="fullscreenEnabled">
-        <i class="mdi-communication-chat"></i>
-      </button>
+      <div class="user-tools">
+        <button tooltip-placement="bottom" tooltip-title="(un)Mute Mic" uib-tooltip="(un)Mute Mic"
+                class="btn btn-material-blue-900" ng-click="muteMic(cbMuteMic)">
+          <i class="" ng-class="{'mdi-av-mic': !verto.data.mutedMic, 'mdi-av-mic-off': verto.data.mutedMic}"></i>
+        </button>
+        <button tooltip-placement="bottom" tooltip-title="(un)Mute Video" uib-tooltip="(un)Mute Video"
+                class="btn btn-material-blue-900" ng-click="muteVideo(cbMuteVideo)" ng-if="verto.data.canVideo">
+          <i class="" ng-class="{'mdi-av-videocam': !verto.data.mutedVideo, 'mdi-av-videocam-off': verto.data.mutedVideo}"></i>
+        </button>
+        <button tooltip-placement="bottom" tooltip-title="Toggle Fullscreen Mode" uib-tooltip="Toggle Fullscreen Mode"
+                class="btn btn-material-blue-900" ng-click="goFullscreen()">
+          <i class="" ng-class="{'mdi-navigation-fullscreen': !fullscreenEnabled, 'mdi-navigation-fullscreen-exit': fullscreenEnabled}"></i>
+        </button>
+        <button tooltip-placement="bottom" tooltip-title="Screenshare" uib-tooltip="Screenshare"
+                class="btn btn-material-blue-900" ng-click="screenshare()">
+          <i class="mdi-hardware-desktop-windows"></i>
+        </button>
+        <button tooltip-placement="bottom" tooltip-title="Open/Close Chat" uib-tooltip="Open/Close Chat"
+                class="btn btn-material-blue-900" ng-click="toggleChat()" ng-show="fullscreenEnabled">
+          <i class="mdi-communication-chat"></i>
+        </button>
+      </div>
     </div>
     <div class="video-tag-wrapper" id="video-tag-wrapper" ng-dblclick="goFullscreen()" show-controls>
       <video-tag ng-class="{'invisible': (verto.data.callState != 'active')}"></video-tag>
@@ -69,4 +82,3 @@
     </div>
   </div>
 </div>
-
