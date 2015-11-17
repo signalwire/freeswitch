@@ -43,7 +43,7 @@
 	  if (confirm('Factory Reset Settings?')) {
             storage.factoryReset();
             $scope.logout();
-            $scope.ok();
+            $modalInstance.close('Ok.');
 	    window.location.reload();
 	  };
         };
@@ -54,6 +54,7 @@
             $scope.mydata.outgoingBandwidth = 'default';
             $scope.mydata.incomingBandwidth = 'default';
             $scope.mydata.vidQual = 'hd';
+            $scope.mydata.testSpeedJoin = false;
           } else {
             $scope.mydata.testSpeedJoin = true;
           }
