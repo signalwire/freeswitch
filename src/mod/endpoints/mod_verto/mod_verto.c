@@ -1234,6 +1234,12 @@ static void detach_calls(jsock_t *jsock)
 				switch_channel_hangup(tech_pvt->channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 				continue;
 			}
+
+			if (switch_channel_test_flag(tech_pvt->channel, CF_VIDEO_ONLY)) {
+				switch_channel_hangup(tech_pvt->channel, SWITCH_CAUSE_NORMAL_CLEARING);
+				continue;
+			}
+
 			switch_core_session_stop_media(tech_pvt->session);
 			tech_pvt->detach_time = switch_epoch_time_now(NULL);
 			globals.detached++;
@@ -2548,6 +2554,10 @@ static int verto_recover_callback(switch_core_session_t *session)
 	verto_profile_t *profile = NULL;
 	const char *profile_name = NULL, *jsock_uuid_str = NULL;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
+
+	if (switch_channel_test_flag(channel, CF_VIDEO_ONLY)) {
+		return 0;
+	}
 
 	PROTECT_INTERFACE(verto_endpoint_interface);
 
