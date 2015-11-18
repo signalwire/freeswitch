@@ -3430,7 +3430,7 @@ static switch_status_t check_ice(switch_media_handle_t *smh, switch_media_type_t
 
 	if (switch_channel_test_flag(smh->session->channel, CF_REINVITE)) {
 
-		if (v_engine->remote_ssrc) {
+		if (engine->remote_ssrc) {
 			switch_rtp_set_remote_ssrc(v_engine->rtp_session, v_engine->remote_ssrc);
 		}
 
