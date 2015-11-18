@@ -3218,6 +3218,11 @@ void conference_video_set_floor_holder(conference_obj_t *conference, conference_
 		conference_utils_clear_flag(conference, CFLAG_VID_FLOOR_LOCK);
 	}
 
+	if (member && member->video_reservation_id) {
+		/* no video floor when a reservation id is set */
+		return;
+	}
+
 	if ((!force && conference_utils_test_flag(conference, CFLAG_VID_FLOOR_LOCK))) {
 		return;
 	}
