@@ -75,6 +75,10 @@
           verto.data.conf.setVideoLayout(layout);
         };
 
+        $scope.confChangeSpeaker = function(speakerId) {
+          storage.data.selectedSpeaker = speakerId;
+          $rootScope.$emit('changedSpeaker', speakerId);
+        };
 
         $scope.screenshare = function() {
           if(verto.data.shareCall) {

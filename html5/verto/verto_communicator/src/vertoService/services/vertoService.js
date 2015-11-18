@@ -214,6 +214,7 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
           label: 'Screen'
         }];
         data.audioDevices = [];
+        data.speakerDevices = [];
 
         if(!storage.data.selectedShare) {
           storage.data.selectedShare = data.shareDevices[0]['id'];
@@ -267,6 +268,26 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
             continue;
           }
           data.audioDevices.push({
+            id: device.id,
+            label: device.label || device.id
+          });
+        }
+
+        for (var i in jQuery.verto.audioOutDevices) {
+          var device = jQuery.verto.audioOutDevices[i];
+          // Selecting the first source.
+          if (i == 0 && !storage.data.selectedSpeaker) {
+            storage.data.selectedSpeaker = device.id;
+          }
+
+          if (!device.label) {
+            data.speakerDevices.push({
+              id: 'Speaker ' + i,
+              label: 'Speaker ' + i
+            });
+            continue;
+          }
+          data.speakerDevices.push({
             id: device.id,
             label: device.label || device.id
           });
@@ -595,6 +616,7 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
           });
           data.instance.deviceParams({
             useCamera: storage.data.selectedVideo,
+            useSpeak: storage.data.selectedSpeaker,
             useMic: storage.data.selectedAudio,
             onResCheck: that.refreshVideoResolution
           });
@@ -664,6 +686,7 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
           useVideo: storage.data.useVideo,
           useStereo: storage.data.useStereo,
           useCamera: storage.data.selectedVideo,
+          useSpeak: storage.data.selectedSpeaker,
           useMic: storage.data.selectedAudio,
           dedEnc: storage.data.useDedenc,
           mirrorInput: storage.data.mirrorInput,
