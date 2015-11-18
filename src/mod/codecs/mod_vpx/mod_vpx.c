@@ -227,6 +227,7 @@ struct vpx_context {
 	uint8_t decoder_init;
 	switch_buffer_t *vpx_packet_buffer;
 	int got_key_frame;
+	int no_key_frame;
 	int got_start_frame;
 	uint32_t last_received_timestamp;
 	switch_bool_t last_received_complete_picture;
@@ -273,6 +274,7 @@ static switch_status_t init_decoder(switch_codec_t *codec)
 		context->last_received_complete_picture = 0;
 		context->decoder_init = 1;
 		context->got_key_frame = 0;
+		context->no_key_frame = 0;
 		context->got_start_frame = 0;
 		// the types of post processing to be done, should be combination of "vp8_postproc_level"
 		ppcfg.post_proc_flag = VP8_DEBLOCK;//VP8_DEMACROBLOCK | VP8_DEBLOCK;
@@ -812,7 +814,18 @@ static switch_status_t switch_vpx_decode(switch_codec_t *codec, switch_frame_t *
 		is_start = (*(unsigned char *)frame->data & 0x10);
 		is_keyframe = IS_VP8_KEY_FRAME((uint8_t *)frame->data);
 	}
-
+	
+	
+    if (context->got_key_frame <= 0) {
+        context->no_key_frame++;
+        //switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "no keyframe, %d\n", context->no_key_frame);
+        if (context->no_key_frame > 50) {
+            if ((is_keyframe = is_start)) {
+                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "no keyframe, treating start as key.\n");
+            }
+        }
+    }
+	
 	// if (is_keyframe) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "got key %d\n", is_keyframe);
 
 	if (context->need_decoder_reset != 0) {
@@ -845,9 +858,7 @@ static switch_status_t switch_vpx_decode(switch_codec_t *codec, switch_frame_t *
 	if (is_keyframe) {
 		if (context->got_key_frame <= 0) {
 			context->got_key_frame = 1;
-			if (!is_keyframe) {
-				get_refresh = 1;
-			}
+			context->no_key_frame = 0;
 		} else {
 			context->got_key_frame++;
 		}
@@ -855,6 +866,9 @@ static switch_status_t switch_vpx_decode(switch_codec_t *codec, switch_frame_t *
 		if ((--context->got_key_frame % 200) == 0) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Waiting for key frame %d\n", context->got_key_frame);
 		}
+
+		get_refresh = 1;
+		
 		if (!context->got_start_frame) {
 			switch_goto_status(SWITCH_STATUS_MORE_DATA, end);
 		}

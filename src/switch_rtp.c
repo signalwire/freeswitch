@@ -2266,7 +2266,7 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 			rtcp_bytes = sbytes;
 		}
 #endif
-//#define DEBUG_EXTRA
+		//#define DEBUG_EXTRA
 #ifdef DEBUG_EXTRA
 		{
 			const char *old_host;
@@ -2740,6 +2740,17 @@ SWITCH_DECLARE(void) switch_rtp_set_max_missed_packets(switch_rtp_t *rtp_session
 	rtp_session->max_missed_packets = max;
 }
 
+SWITCH_DECLARE(void) switch_rtp_reset_vb(switch_rtp_t *rtp_session)
+{
+	if (rtp_session->vb) {
+		switch_jb_reset(rtp_session->vb);
+	}
+
+	if (rtp_session->vbw) {
+		switch_jb_reset(rtp_session->vbw);
+	}
+}
+
 SWITCH_DECLARE(void) switch_rtp_reset(switch_rtp_t *rtp_session)
 {
 	if (!rtp_session) {
@@ -2762,12 +2773,7 @@ SWITCH_DECLARE(void) switch_rtp_reset(switch_rtp_t *rtp_session)
 	rtcp_stats_init(rtp_session);
 	
 	if (rtp_session->ice.ready) {
-		if (rtp_session->vb) {
-			switch_jb_reset(rtp_session->vb);
-		}
-		if (rtp_session->vbw) {
-			switch_jb_reset(rtp_session->vbw);
-		}
+		switch_rtp_reset_vb(rtp_session);
 		rtp_session->ice.ready = rtp_session->ice.rready = 0;
 	}
 
