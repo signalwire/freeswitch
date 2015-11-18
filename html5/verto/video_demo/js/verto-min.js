@@ -257,12 +257,17 @@ if(rtc.type=="offer"){if(dialog.state==$.verto.enum.state.active){dialog.setStat
 obj.dialogParams[i]=dialog.params[i];}
 dialog.verto.rpcClient.call(method,obj,function(e){dialog.processReply(method,true,e);},function(e){dialog.processReply(method,false,e);});};function checkStateChange(oldS,newS){if(newS==$.verto.enum.state.purge||$.verto.enum.states[oldS.name][newS.name]){return true;}
 return false;}
+function find_name(id){for(var i in $.verto.audioOutDevices){var source=$.verto.audioOutDevices[i];if(source.id===id){return(source.label);}}
+return id;}
+$.verto.dialog.prototype.setAudioDevice=function(sinkId,callback,arg){var dialog=this;var element=dialog.audioStream;if(typeof element.sinkId!=='undefined'){console.info("Dialog: "+dialog.callID+" Setting speaker:",element,find_name(sinkId));element.setSinkId(sinkId).then(function(){console.log("Dialog: "+dialog.callID+' Success, audio output device attached: '+sinkId);if(callback){callback(true,arg);}}).catch(function(error){var errorMessage=error;if(error.name==='SecurityError'){errorMessage="Dialog: "+dialog.callID+' You need to use HTTPS for selecting audio output '+'device: '+error;}
+if(callback){callback(false,arg);}
+console.error(errorMessage);});}else{console.warn("Dialog: "+dialog.callID+' Browser does not support output device selection.');if(callback){callback(false,arg);}}}
 $.verto.dialog.prototype.setState=function(state){var dialog=this;if(dialog.state==$.verto.enum.state.ringing){dialog.stopRinging();}
 if(dialog.state==state||!checkStateChange(dialog.state,state)){console.error("Dialog "+dialog.callID+": INVALID state change from "+dialog.state.name+" to "+state.name);dialog.hangup();return false;}
 console.log("Dialog "+dialog.callID+": state change from "+dialog.state.name+" to "+state.name);dialog.lastState=dialog.state;dialog.state=state;if(!dialog.causeCode){dialog.causeCode=16;}
 if(!dialog.cause){dialog.cause="NORMAL CLEARING";}
 if(dialog.callbacks.onDialogState){dialog.callbacks.onDialogState(this);}
-switch(dialog.state){case $.verto.enum.state.early:case $.verto.enum.state.active:var speaker=dialog.useSpeak;console.info("Using Speaker: ",speaker);if(speaker&&speaker!=="any"){var videoElement=dialog.audioStream;setTimeout(function(){console.info("Setting speaker:",videoElement,speaker);attachSinkId(videoElement,speaker);},500);}
+switch(dialog.state){case $.verto.enum.state.early:case $.verto.enum.state.active:var speaker=dialog.useSpeak;console.info("Using Speaker: ",speaker);if(speaker&&speaker!=="any"){setTimeout(function(){dialog.setAudioDevice(speaker);},500);}
 break;case $.verto.enum.state.trying:setTimeout(function(){if(dialog.state==$.verto.enum.state.trying){dialog.setState($.verto.enum.state.hangup);}},30000);break;case $.verto.enum.state.purge:dialog.setState($.verto.enum.state.destroy);break;case $.verto.enum.state.hangup:if(dialog.lastState.val>$.verto.enum.state.requesting.val&&dialog.lastState.val<$.verto.enum.state.hangup.val){dialog.sendMethod("verto.bye",{});}
 dialog.setState($.verto.enum.state.destroy);break;case $.verto.enum.state.destroy:delete dialog.verto.dialogs[dialog.callID];if(dialog.params.screenShare){dialog.rtc.stopPeer();}else{dialog.rtc.stop();}
 break;}

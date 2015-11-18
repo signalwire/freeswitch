@@ -36,7 +36,10 @@
       });
 
       $rootScope.$on('changedSpeaker', function(event, speakerId) {
-        attachSinkId(myVideo, speakerId);
+        // This should provide feedback
+	//setAudioPlaybackDevice(<id>[,<callback>[,<callback arg>]]);
+	// if callback is set it will be called as callback(<bool success/fail>, <device name>, <arg if you supplied it>)
+        verto.data.call.setAudioPlaybackDevice(speakerId);
       });
 
       /**
