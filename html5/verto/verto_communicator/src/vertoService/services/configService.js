@@ -40,7 +40,7 @@ vertoService.service('config', ['$rootScope', '$http', '$location', 'storage', '
           verto.data.googlelogin = data.googlelogin;
           verto.data.googleclientid = data.googleclientid;
         }
-        
+
         angular.extend(verto.data, data);
 
         /**
@@ -62,13 +62,13 @@ vertoService.service('config', ['$rootScope', '$http', '$location', 'storage', '
           console.debug("auto login per config.json");
           verto.data.autologin_done = true;
         }
-        
+
         if(verto.data.autologin && storage.data.name.length && storage.data.email.length && storage.data.login.length && storage.data.password.length) {
-          $rootScope.$emit('config.http.success', data);        
+          $rootScope.$emit('config.http.success', data);
         };
         return response;
       }, function(response) {
-        $rootScope.$emit('config.http.error', response);        
+        $rootScope.$emit('config.http.error', response);
         return response;
       });
 
@@ -79,4 +79,3 @@ vertoService.service('config', ['$rootScope', '$http', '$location', 'storage', '
       'configure': configure
     };
   }]);
-

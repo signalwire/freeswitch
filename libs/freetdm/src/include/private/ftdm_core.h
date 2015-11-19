@@ -512,6 +512,7 @@ struct ftdm_span {
 	fio_channel_request_t channel_request;
 	ftdm_span_start_t start;
 	ftdm_span_stop_t stop;
+	ftdm_span_destroy_t destroy;
 	ftdm_channel_sig_read_t sig_read;
 	ftdm_channel_sig_write_t sig_write;
 	ftdm_channel_sig_dtmf_t sig_queue_dtmf;

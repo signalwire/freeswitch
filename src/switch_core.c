@@ -393,11 +393,13 @@ SWITCH_DECLARE(char *) switch_core_get_variable_dup(const char *varname)
 {
 	char *val = NULL, *v;
 
-	switch_thread_rwlock_rdlock(runtime.global_var_rwlock);
-	if ((v = (char *) switch_event_get_header(runtime.global_vars, varname))) {
-		val = strdup(v);
+	if (varname) {
+		switch_thread_rwlock_rdlock(runtime.global_var_rwlock);
+		if ((v = (char *) switch_event_get_header(runtime.global_vars, varname))) {
+			val = strdup(v);
+		}
+		switch_thread_rwlock_unlock(runtime.global_var_rwlock);
 	}
-	switch_thread_rwlock_unlock(runtime.global_var_rwlock);
 
 	return val;
 }
@@ -406,11 +408,13 @@ SWITCH_DECLARE(char *) switch_core_get_variable_pdup(const char *varname, switch
 {
 	char *val = NULL, *v;
 
-	switch_thread_rwlock_rdlock(runtime.global_var_rwlock);
-	if ((v = (char *) switch_event_get_header(runtime.global_vars, varname))) {
-		val = switch_core_strdup(pool, v);
+	if (varname) {
+		switch_thread_rwlock_rdlock(runtime.global_var_rwlock);
+		if ((v = (char *) switch_event_get_header(runtime.global_vars, varname))) {
+			val = switch_core_strdup(pool, v);
+		}
+		switch_thread_rwlock_unlock(runtime.global_var_rwlock);
 	}
-	switch_thread_rwlock_unlock(runtime.global_var_rwlock);
 
 	return val;
 }
@@ -2300,9 +2304,15 @@ static void switch_load_core_config(const char *file)
 				} else if (!strcasecmp(var, "rtp-enable-zrtp")) {
 					switch_core_set_variable("zrtp_enabled", val);
 #endif
-                } else if (!strcasecmp(var, "switchname") && !zstr(val)) {
+				} else if (!strcasecmp(var, "switchname") && !zstr(val)) {
 					runtime.switchname = switch_core_strdup(runtime.memory_pool, val);
                     switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Set switchname to %s\n", runtime.switchname);
+				} else if (!strcasecmp(var, "rtp-retain-crypto-keys")) {
+					if (switch_true(val)) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
+										  "rtp-retain-crypto-keys enabled. Could be used to decrypt secure media.\n");
+					}
+					switch_core_set_variable("rtp_retain_crypto_keys", val);
 				}
 			}
 		}

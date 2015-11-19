@@ -82,21 +82,27 @@
 "ftdm gsm status <span_id|span_name>\n" \
 "ftdm gsm sms <span_id|span_name> <destination> <text>\n" \
 "ftdm gsm exec <span_id|span_name> <command string>\n" \
+"ftdm gsm call <span_id|span_name> [number]\n" \
 "--------------------------------------------------------------------------------\n"
 
 // Used to declare command handler
 #define COMMAND_HANDLER(name) \
-	ftdm_status_t fCMD_##name(ftdm_stream_handle_t *stream, char *argv[], int argc); \
-	ftdm_status_t fCMD_##name(ftdm_stream_handle_t *stream, char *argv[], int argc)
+	static ftdm_status_t gsm_cmd_##name(ftdm_stream_handle_t *stream, char *argv[], int argc); \
+	ftdm_status_t gsm_cmd_##name(ftdm_stream_handle_t *stream, char *argv[], int argc)
 
-// Used to define command entry in the command map.
-#define COMMAND(name, argc)  {#name, argc, fCMD_##name}
+// Used to define command entry in the command map
+#define COMMAND(name, argc)  {#name, argc, gsm_cmd_##name}
 
 /********************************************************************************/
 /*                                                                              */
 /*                                  types                                       */
 /*                                                                              */
 /********************************************************************************/
+
+typedef enum {
+	FTDM_GSM_RUNNING = (1 << 0),
+	FTDM_GSM_SPAN_STARTED = (1 << 1),
+} ftdm_gsm_flag_t;
 
 // private data
 typedef struct ftdm_gsm_span_data_s {
@@ -105,10 +111,26 @@ typedef struct ftdm_gsm_span_data_s {
 	ftdm_channel_t *bchan;
 	int32_t call_id;
 	uint32_t sms_id;
+	char conditional_forward_prefix[10];
+	char conditional_forward_number[50];
+	char immediate_forward_prefix[10];
+	struct {
+		char number[50];
+		char span[50];
+	} immediate_forward_numbers[10];
+	char disable_forward_number[50];
+	ftdm_sched_t *sched;
+	ftdm_timer_id_t conditional_forwarding_timer;
+	ftdm_timer_id_t immediate_forwarding_timer;
+	ftdm_bool_t init_conditional_forwarding;
+	ftdm_bool_t startup_forwarding_disabled;
+	char startup_commands[20][50];
+	ftdm_gsm_flag_t flags;
+	ftdm_bool_t sig_up;
 } ftdm_gsm_span_data_t;
 
 // command handler function type.
-typedef ftdm_status_t (*fCMD)(ftdm_stream_handle_t *stream, char *argv[], int argc);
+typedef ftdm_status_t (*command_handler_t)(ftdm_stream_handle_t *stream, char *argv[], int argc);
 
 typedef struct ftdm_gsm_exec_helper {
 	ftdm_span_t *span;
@@ -125,27 +147,28 @@ static ftdm_status_t init_wat_lib(void);
 static int wat_lib_initialized = 0;
 static FIO_API_FUNCTION(ftdm_gsm_api);
 
-
+/* ugh, wasteful since unlikely anyone will ever have more than 4 or 8 GSM spans, but we couldn't use ftdm_find_span()
+ * because during the stop sequence the internal span lock is held and we end up deadlocked, ideally libwat would just give
+ * us a pointer we provide instead of a span id */
+static ftdm_span_t * span_map[255] = { 0 };
 
 /* wat callbacks */
-int on_wat_span_write(unsigned char span_id, void *buffer, unsigned len);
+static int on_wat_span_write(unsigned char span_id, void *buffer, unsigned len);
 
-void on_wat_con_ind(unsigned char span_id, uint8_t call_id, wat_con_event_t *con_event);
-void on_wat_con_sts(unsigned char span_id, uint8_t call_id, wat_con_status_t *status);
-void on_wat_rel_ind(unsigned char span_id, uint8_t call_id, wat_rel_event_t *rel_event);
-void on_wat_rel_cfm(unsigned char span_id, uint8_t call_id);
-void on_wat_sms_ind(unsigned char span_id, wat_sms_event_t *sms_event);
-void on_wat_sms_sts(unsigned char span_id, uint8_t sms_id, wat_sms_status_t *status);
+static void on_wat_con_ind(unsigned char span_id, uint8_t call_id, wat_con_event_t *con_event);
+static void on_wat_con_sts(unsigned char span_id, uint8_t call_id, wat_con_status_t *status);
+static void on_wat_rel_ind(unsigned char span_id, uint8_t call_id, wat_rel_event_t *rel_event);
+static void on_wat_rel_cfm(unsigned char span_id, uint8_t call_id);
+static void on_wat_sms_ind(unsigned char span_id, wat_sms_event_t *sms_event);
+static void on_wat_sms_sts(unsigned char span_id, uint8_t sms_id, wat_sms_status_t *status);
 
+static void on_wat_log(uint8_t level, char *fmt, ...);
+static void *on_wat_malloc(size_t size);
+static void *on_wat_calloc(size_t nmemb, size_t size);
+static void on_wat_free(void *ptr);
+static void on_wat_log_span(uint8_t span_id, uint8_t level, char *fmt, ...);
 
-void on_wat_log(uint8_t level, char *fmt, ...);
-void *on_wat_malloc(size_t size);
-void *on_wat_calloc(size_t nmemb, size_t size);	
-void on_wat_free(void *ptr);
-void on_wat_log_span(uint8_t span_id, uint8_t level, char *fmt, ...);
-
-
-ftdm_span_t *GetSpanByID(unsigned char span_id, ftdm_gsm_span_data_t **gsm_data);
+static ftdm_span_t *get_span_by_id(uint8_t span_id, ftdm_gsm_span_data_t **gsm_data);
 
 static void *ftdm_gsm_run(ftdm_thread_t *me, void *obj);
 
@@ -166,18 +189,7 @@ static ftdm_io_interface_t g_ftdm_gsm_interface;
 /*                              implementation                                  */
 /*                                                                              */
 /********************************************************************************/
-static int read_channel(ftdm_channel_t *ftdm_chan , const void *buf, int size)
-{
-	ftdm_size_t outsize = size;
-	ftdm_status_t status = ftdm_channel_read(ftdm_chan, (void *)buf, &outsize);
-	if (FTDM_FAIL == status) {
-		return -1;
-	}
-	return (int)outsize;
-}
-
-
-int on_wat_span_write(unsigned char span_id, void *buffer, unsigned len)
+static int on_wat_span_write(unsigned char span_id, void *buffer, unsigned len)
 {
 	ftdm_span_t *span = NULL;
 	ftdm_status_t status = FTDM_FAIL;
@@ -200,79 +212,116 @@ int on_wat_span_write(unsigned char span_id, void *buffer, unsigned len)
 	return len;
 }
 
+static void ftdm_gsm_make_raw_call(ftdm_gsm_span_data_t *gsm_data, const char *number)
+{
+	wat_con_event_t con_event;
+
+	ftdm_channel_lock(gsm_data->bchan);
+
+	if (ftdm_test_flag(gsm_data->bchan, FTDM_CHANNEL_INUSE)) {
+		ftdm_log_chan(gsm_data->bchan, FTDM_LOG_ERROR, "Failed to place raw call to %s: channel busy\n", number);
+		goto done;
+	}
+
+	ftdm_log_chan(gsm_data->bchan, FTDM_LOG_INFO, "Placing raw call to %s\n", number);
+	ftdm_set_flag(gsm_data->bchan, FTDM_CHANNEL_INUSE);
+
+	gsm_data->call_id = GSM_OUTBOUND_CALL_ID;
+	memset(&con_event, 0, sizeof(con_event));
+	ftdm_set_string(con_event.called_num.digits, number);
+	wat_con_req(gsm_data->span->span_id, gsm_data->call_id , &con_event);
+
+done:
+	ftdm_channel_unlock(gsm_data->bchan);
+}
+
+static void ftdm_gsm_enable_conditional_forwarding(void *data)
+{
+	char number[255];
+	ftdm_gsm_span_data_t *gsm_data = data;
+	snprintf(number, sizeof(number), "%s%s", gsm_data->conditional_forward_prefix, gsm_data->conditional_forward_number);
+	ftdm_log_chan(gsm_data->bchan, FTDM_LOG_INFO, "Enabling conditional forwarding to %s\n", number);
+	ftdm_gsm_make_raw_call(data, number);
+}
+
 static void on_wat_span_status(unsigned char span_id, wat_span_status_t *status)
 {
+	ftdm_gsm_span_data_t *gsm_data = NULL;
+	ftdm_span_t *span = get_span_by_id(span_id, &gsm_data);
+
 	switch (status->type) {
 	case WAT_SPAN_STS_READY:
 		{
-			ftdm_log(FTDM_LOG_INFO, "span %d: Ready\n", span_id);
+			int i = 0;
+			ftdm_log(FTDM_LOG_INFO, "span %s: Ready\n", span->name);
+			for (i = 0; !ftdm_strlen_zero_buf(gsm_data->startup_commands[i]); i++) {
+				ftdm_log(FTDM_LOG_INFO, "span %d: Executing startup command '%s'\n", span_id, gsm_data->startup_commands[i]);
+				if (WAT_SUCCESS != wat_cmd_req(span_id, gsm_data->startup_commands[i], NULL, NULL)) {
+					ftdm_log(FTDM_LOG_ERROR, "span %d: Failed requesting execution of command '%s'\n", span_id, gsm_data->startup_commands[i]);
+				}
+			}
 		}
 		break;
 	case WAT_SPAN_STS_SIGSTATUS:
 		{
 			if (status->sts.sigstatus == WAT_SIGSTATUS_UP) {
-				ftdm_log(FTDM_LOG_INFO, "span %d: Signaling is now up\n", span_id);
+				ftdm_log_chan_msg(gsm_data->bchan, FTDM_LOG_INFO, "Signaling is now up\n");
+				gsm_data->sig_up = FTDM_TRUE;
 			} else {
-				ftdm_log(FTDM_LOG_INFO, "span %d: Signaling is now down\n", span_id);
+				ftdm_log_chan_msg(gsm_data->bchan, FTDM_LOG_INFO, "Signaling is now down\n");
+				gsm_data->sig_up = FTDM_FALSE;
+			}
+			if (gsm_data->init_conditional_forwarding == FTDM_TRUE && !ftdm_strlen_zero_buf(gsm_data->conditional_forward_number)) {
+				ftdm_sched_timer(gsm_data->sched, "conditional_forwarding_delay", 1000,
+						ftdm_gsm_enable_conditional_forwarding,
+						gsm_data,
+						&gsm_data->conditional_forwarding_timer);
+				gsm_data->init_conditional_forwarding = FTDM_FALSE;
 			}
 		}
 		break;
 	case WAT_SPAN_STS_SIM_INFO_READY:
 		{
-			ftdm_log(FTDM_LOG_INFO, "span %d: SIM information ready\n", span_id);
+			const wat_sim_info_t *sim_info = NULL;
+			ftdm_log(FTDM_LOG_INFO, "span %s: SIM information ready\n", span->name);
+			sim_info = wat_span_get_sim_info(span->span_id);
+			if (!ftdm_strlen_zero(sim_info->subscriber.digits)) {
+				ftdm_set_string(gsm_data->bchan->chan_number, sim_info->subscriber.digits);
+			}
 		}
 		break;
 	case WAT_SPAN_STS_ALARM:
 		{
-			ftdm_log(FTDM_LOG_INFO, "span %d: Alarm received\n", span_id);
+			ftdm_log(FTDM_LOG_INFO, "span %s: Alarm received\n", span->name);
 		}
 		break;
 	default:
 		{
-			ftdm_log(FTDM_LOG_INFO, "span %d: Unhandled span status notification %d\n", span_id, status->type);
+			ftdm_log(FTDM_LOG_INFO, "span %s: Unhandled span status notification %d\n", span->name, status->type);
 		}
-		break; 
+		break;
 	}
 }
 
-void on_wat_con_ind(unsigned char span_id, uint8_t call_id, wat_con_event_t *con_event)
+static void on_wat_con_ind(uint8_t span_id, uint8_t call_id, wat_con_event_t *con_event)
 {
 	ftdm_span_t *span = NULL;
 	ftdm_gsm_span_data_t *gsm_data = NULL;
 	
 	ftdm_log(FTDM_LOG_INFO, "s%d: Incoming call (id:%d) Calling Number:%s  Calling Name:\"%s\" type:%d plan:%d\n", span_id, call_id, con_event->calling_num.digits, con_event->calling_name, con_event->calling_num.type, con_event->calling_num.plan);
 	
-	if(!(span = GetSpanByID(span_id, &gsm_data))) {
-		return;
-	}	  
+	span = get_span_by_id(span_id, &gsm_data);
 
 	gsm_data->call_id = call_id;			
 	
-	#define ZERO_ARRAY(arr) memset(arr, 0, sizeof(arr))
-	// cid date
-	{
-		time_t t;
-		struct tm *tmp;
-		t = time(NULL);
-		tmp = localtime(&t);
-		if (tmp == NULL) {
-			ZERO_ARRAY(gsm_data->bchan->caller_data.cid_date);
-			strftime(gsm_data->bchan->caller_data.cid_date, sizeof(gsm_data->bchan->caller_data.cid_date), "%y/%m/%d", tmp);
-		}
-
-	}
-
 	// cid name
-	ZERO_ARRAY(gsm_data->bchan->caller_data.cid_name);
-	strncpy(gsm_data->bchan->caller_data.cid_name, con_event->calling_name,sizeof(gsm_data->bchan->caller_data.cid_name));
+	ftdm_set_string(gsm_data->bchan->caller_data.cid_name, con_event->calling_name);
 
-	// dnis
-	ZERO_ARRAY(gsm_data->bchan->caller_data.dnis.digits);
-	strncpy(gsm_data->bchan->caller_data.dnis.digits, con_event->calling_num.digits, FTDM_DIGITS_LIMIT);
-	
-	//collected
-	ZERO_ARRAY(gsm_data->bchan->caller_data.collected);
-	strncpy(gsm_data->bchan->caller_data.collected, con_event->calling_num.digits, FTDM_DIGITS_LIMIT);
+	// cid number
+	ftdm_set_string(gsm_data->bchan->caller_data.cid_num.digits, con_event->calling_num.digits);
+
+	// destination number
+	ftdm_set_string(gsm_data->bchan->caller_data.dnis.digits, gsm_data->bchan->chan_number);
 	
 	ftdm_set_state(gsm_data->bchan, FTDM_CHANNEL_STATE_RING);
 
@@ -282,91 +331,93 @@ void on_wat_con_ind(unsigned char span_id, uint8_t call_id, wat_con_event_t *con
 	
 }
 
-
-ftdm_span_t *GetSpanByID(unsigned char span_id, ftdm_gsm_span_data_t **gsm_data)
+static ftdm_span_t *get_span_by_id(unsigned char span_id, ftdm_gsm_span_data_t **gsm_data)
 {
-	ftdm_status_t ftdm_status = FTDM_FAIL;
 	ftdm_span_t *span = NULL;
-	if(gsm_data) {
+
+	if (gsm_data) {
 		(*gsm_data) = NULL;
 	}
 
-	ftdm_status = ftdm_span_find(span_id, &span);
-	if (ftdm_status != FTDM_SUCCESS) {
-		ftdm_log(FTDM_LOG_ERROR, "GetSpanByID - Failed to find span %d\n", span_id);
-		return NULL;
-	}
-
-	if(gsm_data) {
+	span = span_map[span_id];
+	if (gsm_data) {
 		(*gsm_data) = span->signal_data;
 	}
-
 	return span;
-
 }
 
-void on_wat_con_sts(unsigned char span_id, uint8_t call_id, wat_con_status_t *status)
+static void on_wat_con_sts(unsigned char span_id, uint8_t call_id, wat_con_status_t *status)
 {
-
 	ftdm_span_t *span = NULL;
-	//ftdm_status_t ftdm_status = FTDM_FAIL;
+	ftdm_channel_state_t state =  FTDM_CHANNEL_STATE_END;
 	ftdm_gsm_span_data_t *gsm_data = NULL;
 
-	if(!(span = GetSpanByID(span_id, &gsm_data))) {
+	if (!(span = get_span_by_id(span_id, &gsm_data))) {
 		return;
 	}
 
-
-
-	switch(status->type) {
-
+	switch (status->type) {
 		case WAT_CON_STATUS_TYPE_RINGING:
-			ftdm_log(FTDM_LOG_INFO, "on_wat_con_sts -  WAT_CON_STATUS_TYPE_RINGING\r\n");
-			ftdm_set_state(gsm_data->bchan, FTDM_CHANNEL_STATE_RINGING);
+			ftdm_log_chan_msg(gsm_data->bchan, FTDM_LOG_INFO, "Received ringing indication\n");
+			state = FTDM_CHANNEL_STATE_RINGING;
 		break;		
 	
 		case WAT_CON_STATUS_TYPE_ANSWER:
-			ftdm_log(FTDM_LOG_INFO, "on_wat_con_sts -  WAT_CON_STATUS_TYPE_ANSWER\r\n");
-			ftdm_set_state(gsm_data->bchan, FTDM_CHANNEL_STATE_PROGRESS_MEDIA);
+			ftdm_log_chan_msg(gsm_data->bchan, FTDM_LOG_INFO, "Received answer indication\n");
+			state = FTDM_CHANNEL_STATE_PROGRESS_MEDIA;
 		break;
-		default:
-			ftdm_log(FTDM_LOG_INFO, "on_wat_con_sts - Unhandled state %d\n", span_id);
 
-	};
-	
-	
-	return;
+		default:
+			ftdm_log_chan(gsm_data->bchan, FTDM_LOG_WARNING, "Unhandled indication status %d\n", status->type);
+		break;
+
+	}
+
+	if (state != FTDM_CHANNEL_STATE_END && gsm_data->bchan->state != FTDM_CHANNEL_STATE_DOWN) {
+		ftdm_set_state(gsm_data->bchan, state);
+	}
 }
 
-void on_wat_rel_ind(unsigned char span_id, uint8_t call_id, wat_rel_event_t *rel_event)
+static void on_wat_rel_ind(unsigned char span_id, uint8_t call_id, wat_rel_event_t *rel_event)
 {
 	ftdm_span_t *span = NULL;
-	//ftdm_status_t ftdm_status = FTDM_FAIL;
 	ftdm_gsm_span_data_t *gsm_data = NULL;
 
 	ftdm_log(FTDM_LOG_INFO, "s%d: Call hangup (id:%d) cause:%d\n", span_id, call_id, rel_event->cause);
 
-	if (!(span = GetSpanByID(span_id, &gsm_data))) {
+	if (!(span = get_span_by_id(span_id, &gsm_data))) {
 		return;
 	}
 
-	if (gsm_data->bchan->state == FTDM_CHANNEL_STATE_HANGUP ||
-	    gsm_data->bchan->state == FTDM_CHANNEL_STATE_DOWN) {
+	if (gsm_data->bchan->state == FTDM_CHANNEL_STATE_DOWN) {
+		/* This is most likely due to a call to enable call
+		 * forwarding, which does not run the state machine */
+		ftdm_clear_flag(gsm_data->bchan, FTDM_CHANNEL_INUSE);
+		wat_rel_req(span_id, call_id);
 		return;
 	}
 
-	ftdm_set_state(gsm_data->bchan, FTDM_CHANNEL_STATE_HANGUP);
+	if (gsm_data->bchan->state > FTDM_CHANNEL_STATE_DOWN &&
+		gsm_data->bchan->state < FTDM_CHANNEL_STATE_HANGUP) {
+		ftdm_set_state(gsm_data->bchan, FTDM_CHANNEL_STATE_HANGUP);
+	}
 }
 
-void on_wat_rel_cfm(unsigned char span_id, uint8_t call_id)
+static void on_wat_rel_cfm(unsigned char span_id, uint8_t call_id)
 {
 	ftdm_span_t *span = NULL;
-	//ftdm_status_t ftdm_status = FTDM_FAIL;
 	ftdm_gsm_span_data_t *gsm_data = NULL;
 
 	ftdm_log(FTDM_LOG_INFO, "s%d: Call hangup complete (id:%d)\n", span_id, call_id);
   
-	if(!(span = GetSpanByID(span_id, &gsm_data))) {
+	if (!(span = get_span_by_id(span_id, &gsm_data))) {
+		return;
+	}
+
+	if (gsm_data->bchan->state == FTDM_CHANNEL_STATE_DOWN) {
+		/* This is most likely due to a call to enable call
+		 * forwarding, which does not run the state machine */
+		ftdm_clear_flag(gsm_data->bchan, FTDM_CHANNEL_INUSE);
 		return;
 	}
 
@@ -378,17 +429,16 @@ void on_wat_rel_cfm(unsigned char span_id, uint8_t call_id)
 		ftdm_set_state(gsm_data->bchan, FTDM_CHANNEL_STATE_DOWN);
 		break;
 	}
-
 }
 
-void on_wat_sms_ind(unsigned char span_id, wat_sms_event_t *sms_event)
+static void on_wat_sms_ind(unsigned char span_id, wat_sms_event_t *sms_event)
 {
 	ftdm_span_t *span = NULL;
 	ftdm_channel_t *ftdmchan;
 
 	ftdm_gsm_span_data_t *gsm_data = NULL;
 
-	if(!(span = GetSpanByID(span_id, &gsm_data))) {
+	if(!(span = get_span_by_id(span_id, &gsm_data))) {
 		return;
 	}
 
@@ -411,19 +461,13 @@ void on_wat_sms_ind(unsigned char span_id, wat_sms_event_t *sms_event)
 	return;
 }
 
-void on_wat_sms_sts(unsigned char span_id, uint8_t sms_id, wat_sms_status_t *status)
+static void on_wat_sms_sts(unsigned char span_id, uint8_t sms_id, wat_sms_status_t *status)
 {
-
-	if(status->success) {
+	if (status->success) {
 		ftdm_log(FTDM_LOG_INFO, "Span %d SMS Send - OK\n", span_id );
-	}
-	else {
+	} else {
 		ftdm_log(FTDM_LOG_CRIT, "Span %d SMS Send - FAIL (%s)\n", span_id, status->error);
-
 	}
-	
-	
-	return;
 }
 
 static void on_wat_dtmf_ind(unsigned char span_id, const char *dtmf)
@@ -431,7 +475,7 @@ static void on_wat_dtmf_ind(unsigned char span_id, const char *dtmf)
 	ftdm_span_t *span = NULL;
 	ftdm_gsm_span_data_t *gsm_data = NULL;
 
-	if (!(span = GetSpanByID(span_id, &gsm_data))) {
+	if (!(span = get_span_by_id(span_id, &gsm_data))) {
 		return;
 	}
 
@@ -439,7 +483,7 @@ static void on_wat_dtmf_ind(unsigned char span_id, const char *dtmf)
 }
 
 
-void on_wat_log(uint8_t level, char *fmt, ...)
+static void on_wat_log(uint8_t level, char *fmt, ...)
 {
 	int ftdm_level;
 	char buff[4096];
@@ -466,22 +510,22 @@ void on_wat_log(uint8_t level, char *fmt, ...)
 }
 
 
-void *on_wat_malloc(size_t size)
+static void *on_wat_malloc(size_t size)
 {
 	return ftdm_malloc(size);
 }
 
-void *on_wat_calloc(size_t nmemb, size_t size)
+static void *on_wat_calloc(size_t nmemb, size_t size)
 {
 	return ftdm_calloc(nmemb, size);
 }	
 
-void on_wat_free(void *ptr)
+static void on_wat_free(void *ptr)
 {
 	ftdm_free(ptr);
 }
 
-void on_wat_log_span(uint8_t span_id, uint8_t level, char *fmt, ...)
+static void on_wat_log_span(uint8_t span_id, uint8_t level, char *fmt, ...)
 {
 	ftdm_span_t *span = NULL;
 	ftdm_gsm_span_data_t *gsm_data = NULL;
@@ -489,7 +533,7 @@ void on_wat_log_span(uint8_t span_id, uint8_t level, char *fmt, ...)
 	char buff[4096];
 	va_list argptr;
 
-	if (!(span = GetSpanByID(span_id, &gsm_data))) {
+	if (!(span = get_span_by_id(span_id, &gsm_data))) {
 		return;
 	}
 
@@ -507,7 +551,7 @@ void on_wat_log_span(uint8_t span_id, uint8_t level, char *fmt, ...)
 	
 	vsprintf(buff, fmt, argptr);
 
-	ftdm_log_chan_ex(gsm_data->dchan, __FILE__, __FTDM_FUNC__, __LINE__, ftdm_level, "%s", buff);
+	ftdm_log_chan_ex(gsm_data->bchan, __FILE__, __FTDM_FUNC__, __LINE__, ftdm_level, "%s", buff);
 
 	va_end(argptr);
 }
@@ -518,56 +562,62 @@ void on_wat_log_span(uint8_t span_id, uint8_t level, char *fmt, ...)
 /* span monitor thread */
 static FIO_CHANNEL_OUTGOING_CALL_FUNCTION(gsm_outgoing_call)
 {
-
 	return FTDM_SUCCESS;
 }
 
 static ftdm_status_t ftdm_gsm_start(ftdm_span_t *span)
 {
-	if (wat_span_start(span->span_id)) {
-		ftdm_log(FTDM_LOG_ERROR, "Failed to start span %s!\n", span->name);
-		return FTDM_FAIL;
-	}
-
+	ftdm_gsm_span_data_t *gsm_data = span->signal_data;
+	ftdm_set_flag(gsm_data, FTDM_GSM_SPAN_STARTED);
 	return ftdm_thread_create_detached(ftdm_gsm_run, span);
 }
 
 static ftdm_status_t ftdm_gsm_stop(ftdm_span_t *span)
 {
-	if (wat_span_stop(span->span_id)) {
-		ftdm_log(FTDM_LOG_ERROR, "Failed to stop span %s!\n", span->name);
-		return FTDM_FAIL;
+	ftdm_gsm_span_data_t *gsm_data = span->signal_data;
+	ftdm_clear_flag(gsm_data, FTDM_GSM_SPAN_STARTED);
+	while (ftdm_test_flag(gsm_data, FTDM_GSM_RUNNING)) {
+		ftdm_log(FTDM_LOG_DEBUG, "Waiting for GSM span %s\n", span->name);
+		ftdm_sleep(100);
 	}
+	return FTDM_SUCCESS;
+}
+
+static ftdm_status_t ftdm_gsm_destroy(ftdm_span_t *span)
+{
+	ftdm_gsm_span_data_t *gsm_data = span->signal_data;
+	ftdm_assert_return(gsm_data != NULL, FTDM_FAIL, "Span does not have GSM data!\n");
+	if (gsm_data->sched) {
+		ftdm_sched_destroy(&gsm_data->sched);
+	}
+	ftdm_free(gsm_data);
 	return FTDM_SUCCESS;
 }
 
 static FIO_CHANNEL_GET_SIG_STATUS_FUNCTION(ftdm_gsm_get_channel_sig_status)
 {
-	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_SIG_UP)) {
-		*status = FTDM_SIG_STATE_UP;
-	}
-	else {
-		*status = FTDM_SIG_STATE_DOWN;
-	}
-	*status = FTDM_SIG_STATE_UP;
+	ftdm_gsm_span_data_t *gsm_data = ftdmchan->span->signal_data;
+	*status = gsm_data->sig_up ? FTDM_SIG_STATE_UP : FTDM_SIG_STATE_DOWN;
 	return FTDM_SUCCESS;
-
 }
 
 static FIO_CHANNEL_SET_SIG_STATUS_FUNCTION(ftdm_gsm_set_channel_sig_status)
 {
-	return FTDM_SUCCESS;
+	ftdm_log(FTDM_LOG_ERROR, "You cannot set the signaling status for GSM channels (%s)\n", ftdmchan->span->name);
+	return FTDM_FAIL;
 }
 
 static FIO_SPAN_GET_SIG_STATUS_FUNCTION(ftdm_gsm_get_span_sig_status)
 {
-	*status = FTDM_SIG_STATE_UP;
+	ftdm_gsm_span_data_t *gsm_data = span->signal_data;
+	*status = gsm_data->sig_up ? FTDM_SIG_STATE_UP : FTDM_SIG_STATE_DOWN;
 	return FTDM_SUCCESS;
 }
 
 static FIO_SPAN_SET_SIG_STATUS_FUNCTION(ftdm_gsm_set_span_sig_status)
 {
-	return FTDM_SUCCESS;
+	ftdm_log(FTDM_LOG_ERROR, "You cannot set the signaling status for GSM spans (%s)\n", span->name);
+	return FTDM_FAIL;
 }
 
 static ftdm_state_map_t gsm_state_map = {
@@ -683,141 +733,173 @@ static ftdm_state_map_t gsm_state_map = {
 	}
 };
 
-static ftdm_status_t ftdm_gsm_state_advance(ftdm_channel_t *ftdmchan)
+#define immediate_forward_enabled(gsm_data) !ftdm_strlen_zero_buf(gsm_data->immediate_forward_numbers[0].number)
+
+static void perform_enable_immediate_forward(void *data)
 {
+	ftdm_span_t *fwd_span = NULL;
+	ftdm_gsm_span_data_t *fwd_gsm_data = NULL;
+	char *fwd_span_name = NULL;
+	char *number = NULL;
+	char cmd[100];
+	int i = 0;
+	ftdm_channel_t *ftdmchan = data;
+	ftdm_gsm_span_data_t *gsm_data = ftdmchan->span->signal_data;
 
-	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Executing state handler for %s\n", ftdm_channel_state2str(ftdmchan->state));
-	
-	ftdm_channel_complete_state(ftdmchan);
-
-		switch (ftdmchan->state) {
-
-		/* starting an incoming call */
-		case FTDM_CHANNEL_STATE_COLLECT: 
-			{
-				
-				
-			}
-			break;
-
-			/* starting an outgoing call */
-		case FTDM_CHANNEL_STATE_DIALING:
-			{
-				uint32_t interval = 0;
-				
-				ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Starting outgoing call with interval %d\n", interval);
-
-				{
-
-					ftdm_gsm_span_data_t *gsm_data;
-					wat_con_event_t con_event;
-					gsm_data = ftdmchan->span->signal_data;
-					gsm_data->call_id = GSM_OUTBOUND_CALL_ID;
-					memset(&con_event, 0, sizeof(con_event));
-					ftdm_set_string(con_event.called_num.digits, ftdmchan->caller_data.dnis.digits);
-					ftdm_log(FTDM_LOG_DEBUG, "Dialing number %s\n", con_event.called_num.digits);
-					wat_con_req(ftdmchan->span->span_id, gsm_data->call_id , &con_event);
- 
-					SEND_STATE_SIGNAL(FTDM_SIGEVENT_DIALING);
-					
-					
-				}
-
-				
-			}
-			break;
-
-			/* incoming call was offered */
-		case FTDM_CHANNEL_STATE_RING:
-
-			/* notify the user about the new call */
-
-			ftdm_log(FTDM_LOG_INFO, "Answering Incomming Call\r\n");
-			SEND_STATE_SIGNAL(FTDM_SIGEVENT_START);
-			
-			break;
-
-			/* the call is making progress */
-		case FTDM_CHANNEL_STATE_PROGRESS:
-		case FTDM_CHANNEL_STATE_PROGRESS_MEDIA:
-			{
-				SEND_STATE_SIGNAL(FTDM_SIGEVENT_PROGRESS_MEDIA);
-				ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_UP);
-			}
-			break;
-
-			/* the call was answered */
-		case FTDM_CHANNEL_STATE_UP:
-			{
-				if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND)) {
-				
-					SEND_STATE_SIGNAL(FTDM_SIGEVENT_UP);
-				}
-				else {
-						ftdm_gsm_span_data_t *gsm_data;
-						gsm_data = ftdmchan->span->signal_data;
-						wat_con_cfm(ftdmchan->span->span_id, gsm_data->call_id); 
-				}
-				
-				
-			}
-			break;
-
-			/* just got hangup */
-		case FTDM_CHANNEL_STATE_HANGUP:
-			{
-				ftdm_gsm_span_data_t *gsm_data;
-				gsm_data = ftdmchan->span->signal_data;
-				wat_rel_req(ftdmchan->span->span_id, gsm_data->call_id);
-				gsm_data->call_id = 0;
-				SEND_STATE_SIGNAL(FTDM_SIGEVENT_STOP);
-			}
-			break;
-
-		case FTDM_CHANNEL_STATE_TERMINATING:
-			{
-				SEND_STATE_SIGNAL(FTDM_SIGEVENT_STOP);
-			}
-			break;
-
-			/* finished call for good */
-		case FTDM_CHANNEL_STATE_DOWN: 
-			{
-				ftdm_channel_t *closed_chan;
-				closed_chan = ftdmchan;
-				ftdm_channel_close(&closed_chan);
-				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "State processing ended.\n");
-				SEND_STATE_SIGNAL(FTDM_SIGEVENT_STOP);
-			}
-			break;
-
-			/* INDICATE_RINGING doesn't apply to MFC/R2. maybe we could generate a tone */
-		case FTDM_CHANNEL_STATE_RINGING: 
-			ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "RINGING indicated, ignoring it as it doesn't apply to MFC/R2\n");
-			SEND_STATE_SIGNAL(FTDM_SIGEVENT_RINGING);
-				
-			break;
-
-			/* put the r2 channel back to IDLE, close ftdmchan and set it's state as DOWN */
-		case FTDM_CHANNEL_STATE_RESET:
-			{
-				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "RESET indicated, putting the R2 channel back to IDLE\n");
-				ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
-			}
-			break;
-
-		default:
-			{
-				ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Unhandled channel state change: %s\n", ftdm_channel_state2str(ftdmchan->state));
-			}
-			break;
+	for (i = 0; i < ftdm_array_len(gsm_data->immediate_forward_numbers); i++) {
+		fwd_span_name = gsm_data->immediate_forward_numbers[i].span;
+		fwd_span = NULL;
+		if (!ftdm_strlen_zero_buf(fwd_span_name) &&
+		    ftdm_span_find_by_name(fwd_span_name, &fwd_span) != FTDM_SUCCESS) {
+			continue;
+		}
+		fwd_gsm_data = fwd_span ? fwd_span->signal_data : NULL;
+		if (fwd_gsm_data && fwd_gsm_data->call_id) {
+			/* span busy, do not forward here */
+			continue;
+		}
+		number = gsm_data->immediate_forward_numbers[i].number;
+		break;
 	}
 
+	if (!number) {
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_INFO, "No numbers available to enable immediate forwarding\n");
+		return;
+	}
+
+	ftdm_log_chan(ftdmchan, FTDM_LOG_INFO, "Enabling immediate forwarding to %s\n", number);
+	snprintf(cmd, sizeof(cmd), "ATD%s%s", gsm_data->immediate_forward_prefix, number);
+	wat_cmd_req(ftdmchan->span->span_id, cmd, NULL, NULL);
+}
+
+static __inline__ void enable_immediate_forward(ftdm_channel_t *ftdmchan)
+{
+	ftdm_gsm_span_data_t *gsm_data = ftdmchan->span->signal_data;
+	ftdm_sched_timer(gsm_data->sched, "immediate_forwarding_delay", 1000,
+			perform_enable_immediate_forward,
+			ftdmchan,
+			&gsm_data->immediate_forwarding_timer);
+}
+
+static __inline__ void disable_all_forwarding(ftdm_channel_t *ftdmchan)
+{
+	char cmd[100];
+	ftdm_gsm_span_data_t *gsm_data = ftdmchan->span->signal_data;
+
+	if (ftdm_strlen_zero_buf(gsm_data->disable_forward_number)) {
+		return;
+	}
+
+	snprintf(cmd, sizeof(cmd), "ATD%s", gsm_data->disable_forward_number);
+	ftdm_log_chan(ftdmchan, FTDM_LOG_INFO, "Disabling GSM immediate forward dialing %s\n", gsm_data->disable_forward_number);
+	wat_cmd_req(ftdmchan->span->span_id, cmd, NULL, NULL);
+}
+
+static ftdm_status_t ftdm_gsm_state_advance(ftdm_channel_t *ftdmchan)
+{
+	ftdm_gsm_span_data_t *gsm_data = ftdmchan->span->signal_data;
+
+	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Executing GSM state handler for %s\n", ftdm_channel_state2str(ftdmchan->state));
+
+	ftdm_channel_complete_state(ftdmchan);
+
+	switch (ftdmchan->state) {
+
+	/* starting an outgoing call */
+	case FTDM_CHANNEL_STATE_DIALING:
+		{
+			uint32_t interval = 0;
+			wat_con_event_t con_event;
+
+			ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Starting outgoing call with interval %d\n", interval);
+
+			gsm_data->call_id = GSM_OUTBOUND_CALL_ID;
+			memset(&con_event, 0, sizeof(con_event));
+			ftdm_set_string(con_event.called_num.digits, ftdmchan->caller_data.dnis.digits);
+			ftdm_log(FTDM_LOG_DEBUG, "Dialing number %s\n", con_event.called_num.digits);
+			wat_con_req(ftdmchan->span->span_id, gsm_data->call_id , &con_event);
+
+			SEND_STATE_SIGNAL(FTDM_SIGEVENT_DIALING);
+		}
+		break;
+
+	/* incoming call was offered */
+	case FTDM_CHANNEL_STATE_RING:
+		{
+			/* notify the user about the new call */
+			ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Inbound call detected\n");
+			SEND_STATE_SIGNAL(FTDM_SIGEVENT_START);
+		}
+		break;
+
+	/* the call is making progress */
+	case FTDM_CHANNEL_STATE_PROGRESS:
+	case FTDM_CHANNEL_STATE_PROGRESS_MEDIA:
+		{
+			SEND_STATE_SIGNAL(FTDM_SIGEVENT_PROGRESS_MEDIA);
+			ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_UP);
+		}
+		break;
+
+	/* the call was answered */
+	case FTDM_CHANNEL_STATE_UP:
+		{
+			if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND)) {
+				SEND_STATE_SIGNAL(FTDM_SIGEVENT_UP);
+			} else {
+				wat_con_cfm(ftdmchan->span->span_id, gsm_data->call_id);
+			}
+			if (immediate_forward_enabled(gsm_data)) {
+				enable_immediate_forward(ftdmchan);
+			}
+		}
+		break;
+
+	/* just got hangup */
+	case FTDM_CHANNEL_STATE_HANGUP:
+		{
+			wat_rel_req(ftdmchan->span->span_id, gsm_data->call_id);
+			SEND_STATE_SIGNAL(FTDM_SIGEVENT_STOP);
+		}
+		break;
+
+	/* finished call for good */
+	case FTDM_CHANNEL_STATE_DOWN:
+		{
+			ftdm_channel_t *closed_chan;
+			gsm_data->call_id = 0;
+			closed_chan = ftdmchan;
+			ftdm_channel_close(&closed_chan);
+			ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "State processing ended.\n");
+			SEND_STATE_SIGNAL(FTDM_SIGEVENT_STOP);
+			if (immediate_forward_enabled(gsm_data)) {
+				disable_all_forwarding(ftdmchan);
+			}
+		}
+		break;
+
+	/* Outbound call is ringing */
+	case FTDM_CHANNEL_STATE_RINGING:
+		{
+			SEND_STATE_SIGNAL(FTDM_SIGEVENT_RINGING);
+		}
+		break;
+
+	case FTDM_CHANNEL_STATE_RESET:
+		{
+			ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
+		}
+		break;
+
+	default:
+		{
+			ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Unhandled channel state: %s\n", ftdm_channel_state2str(ftdmchan->state));
+		}
+		break;
+	}
 	
 	return FTDM_SUCCESS;
 }
-
-
 
 static ftdm_status_t init_wat_lib(void)
 {
@@ -898,6 +980,8 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_gsm_configure_span_signaling)
 	unsigned paramindex = 0;
 	const char *var = NULL;
 	const char *val = NULL;
+	char schedname[255];
+	int cmdindex = 0;
 
 	int codec = FTDM_CODEC_SLIN;
 	int interval = 20;
@@ -961,6 +1045,7 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_gsm_configure_span_signaling)
 	gsm_data->dchan = dchan;
 	gsm_data->bchan = bchan;
 
+	cmdindex = 0;
 	for (paramindex = 0; ftdm_parameters[paramindex].var; paramindex++) {
 		var = ftdm_parameters[paramindex].var;
 		val = ftdm_parameters[paramindex].val;
@@ -993,6 +1078,60 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_gsm_configure_span_signaling)
 				span_config.hardware_dtmf = WAT_FALSE;
 			}
 			ftdm_log(FTDM_LOG_DEBUG, "Configuring GSM span %s with hardware dtmf %s\n", span->name, val);
+		} else if (!strcasecmp(var, "conditional-forwarding-number")) {
+			ftdm_set_string(gsm_data->conditional_forward_number, val);
+			gsm_data->init_conditional_forwarding = FTDM_TRUE;
+		} else if (!strcasecmp(var, "conditional-forwarding-prefix")) {
+			ftdm_set_string(gsm_data->conditional_forward_prefix, val);
+		} else if (!strcasecmp(var, "immediate-forwarding-numbers")) {
+			char *state = NULL;
+			char *span_end = NULL;
+			char *number = NULL;
+			char *span_name = NULL;
+			int f = 0;
+			char *valdup = ftdm_strdup(val);
+			char *s = valdup;
+
+			if (!ftdm_strlen_zero_buf(gsm_data->immediate_forward_numbers[0].number)) {
+				ftdm_log(FTDM_LOG_ERROR, "immediate-forwarding-numbers already parsed! failed to parse: %s\n", val);
+				goto ifn_parse_done;
+			}
+
+			/* The string must be in the form [<span>:]<number>, optionally multiple elements separated by comma */
+			while ((number = strtok_r(s, ",", &state))) {
+				if (f == ftdm_array_len(gsm_data->immediate_forward_numbers)) {
+					ftdm_log(FTDM_LOG_ERROR, "Max number (%d) of immediate forwarding numbers reached!\n", f);
+					break;
+				}
+
+				s = NULL;
+				span_end = strchr(number, ':');
+				if (span_end) {
+					*span_end = '\0';
+					span_name = number;
+					number = (span_end + 1);
+					ftdm_set_string(gsm_data->immediate_forward_numbers[f].span, span_name);
+					ftdm_log(FTDM_LOG_DEBUG, "Parsed immediate forwarding to span %s number %s\n", span_name, number);
+				} else {
+					ftdm_log(FTDM_LOG_DEBUG, "Parsed immediate forwarding to number %s\n", number);
+				}
+				ftdm_set_string(gsm_data->immediate_forward_numbers[f].number, number);
+				f++;
+			}
+ifn_parse_done:
+			ftdm_safe_free(valdup);
+		} else if (!strcasecmp(var, "immediate-forwarding-prefix")) {
+			ftdm_set_string(gsm_data->immediate_forward_prefix, val);
+		} else if (!strcasecmp(var, "disable-forwarding-number")) {
+			ftdm_set_string(gsm_data->disable_forward_number, val);
+		} else if (!strcasecmp(var, "startup-command")) {
+			if (cmdindex < (ftdm_array_len(gsm_data->startup_commands) - 1)) {
+				ftdm_set_string(gsm_data->startup_commands[cmdindex], val);
+				ftdm_log(FTDM_LOG_DEBUG, "Adding startup command '%s' to GSM span %s\n", gsm_data->startup_commands[cmdindex], span->name);
+				cmdindex++;
+			} else {
+				ftdm_log(FTDM_LOG_ERROR, "Ignoring startup command '%s' ... max commands limit reached", val);
+			}
 		} else {
 			ftdm_log(FTDM_LOG_ERROR, "Ignoring unknown GSM parameter '%s'", var);
 		}
@@ -1001,6 +1140,7 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_gsm_configure_span_signaling)
 	/* Bind function pointers for control operations */
 	span->start = ftdm_gsm_start;
 	span->stop = ftdm_gsm_stop;
+	span->destroy = ftdm_gsm_destroy;
 	span->sig_read = NULL;
 	span->sig_write = NULL;
 	if (hwdtmf_detect || hwdtmf_generate) {
@@ -1032,9 +1172,20 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_gsm_configure_span_signaling)
 	ftdm_set_flag(span, FTDM_SPAN_USE_SKIP_STATES);
 
 	gsm_data->span = span;
+	span_map[span->span_id] = span;
 
+	/* Setup the scheduler */
+	snprintf(schedname, sizeof(schedname), "ftmod_gsm_%s", span->name);
+	if (ftdm_sched_create(&gsm_data->sched, schedname) != FTDM_SUCCESS) {
+		ftdm_log(FTDM_LOG_ERROR, "Failed to setup scheduler for span %s!\n", span->name);
+		ftdm_gsm_destroy(span);
+		return FTDM_FAIL;
+	}
+
+	/* Start the signaling stack */
 	if (wat_span_config(span->span_id, &span_config)) {
 		ftdm_log(FTDM_LOG_ERROR, "Failed to configure span %s for GSM signaling!!\n", span->name);
+		ftdm_gsm_destroy(span);
 		return FTDM_FAIL;
 	}
 
@@ -1055,14 +1206,16 @@ static void *ftdm_gsm_run(ftdm_thread_t *me, void *obj)
 	ftdm_interrupt_t *data_sources[2] = {NULL, NULL};
 	ftdm_wait_flag_t flags = FTDM_READ | FTDM_EVENTS;
 	ftdm_status_t status = FTDM_SUCCESS;
-	char buffer[1025] = { 0 };
+	ftdm_alarm_flag_t alarms;
+	char buffer[1024] = { 0 };
+	ftdm_size_t bufsize = 0;
 	int waitms = 0;
 	
-	ftdm_log(FTDM_LOG_INFO,"ftdm_gsm_run\r\n");
-
 	gsm_data = span->signal_data;
-
 	ftdm_assert_return(gsm_data != NULL, NULL, "No gsm data attached to span\n");
+
+	/* as long as this thread is running, this flag is set */
+	ftdm_set_flag(gsm_data, FTDM_GSM_RUNNING);
 
 	ftdm_log(FTDM_LOG_DEBUG, "GSM monitor thread for span %s started\n", span->name);
 	if (!gsm_data->dchan || ftdm_channel_open_chan(gsm_data->dchan) != FTDM_SUCCESS) {
@@ -1071,8 +1224,27 @@ static void *ftdm_gsm_run(ftdm_thread_t *me, void *obj)
 		goto done;
 	}
 
-	while (ftdm_running()) {
+	/* Do not start if the link layer is not ready yet */
+	ftdm_channel_get_alarms(gsm_data->dchan, &alarms);
+	if (alarms != FTDM_ALARM_NONE) {
+		ftdm_log(FTDM_LOG_WARNING, "Delaying initialization of span %s until alarms are cleared\n", span->name);
+		while (ftdm_running() && ftdm_test_flag(gsm_data, FTDM_GSM_SPAN_STARTED) && alarms != FTDM_ALARM_NONE) {
+			ftdm_channel_get_alarms(gsm_data->dchan, &alarms);
+			ftdm_sleep(100);
+		}
+		if (!ftdm_running() || !ftdm_test_flag(gsm_data, FTDM_GSM_SPAN_STARTED)) {
+			goto done;
+		}
+	}
+
+	if (wat_span_start(span->span_id)) {
+		ftdm_log(FTDM_LOG_ERROR, "Failed to start span %s!\n", span->name);
+		goto done;
+	}
+
+	while (ftdm_running() && ftdm_test_flag(gsm_data, FTDM_GSM_SPAN_STARTED)) {
 		wat_span_run(span->span_id);
+		ftdm_sched_run(gsm_data->sched);
 
 		waitms = wat_span_schedule_next(span->span_id);
 		if (waitms > GSM_POLL_INTERVAL_MS) {
@@ -1085,19 +1257,29 @@ static void *ftdm_gsm_run(ftdm_thread_t *me, void *obj)
 		/* check if this channel has a state change pending and process it if needed */
 		ftdm_channel_lock(gsm_data->bchan);
 		ftdm_channel_advance_states(gsm_data->bchan);
-		if (FTDM_SUCCESS == status && (flags & FTDM_READ)) {
-			int n = 0, m = 0;
 
-			n = read_channel(gsm_data->dchan, buffer, sizeof(buffer) - 1);
-			if (n > 0) {
-				m = strlen(buffer); /* TODO: Hum? is this needed? why not using the return val from read_channel? */
-				wat_span_process_read(span->span_id, buffer, m);
+		if (FTDM_SUCCESS == status && (flags & FTDM_READ)) {
+			bufsize = sizeof(buffer);
+			status = ftdm_channel_read(gsm_data->dchan, buffer, &bufsize);
+			if (status == FTDM_SUCCESS && bufsize > 0) {
+				wat_span_process_read(span->span_id, buffer, bufsize);
+				buffer[0] = 0;
 			}
 		}
+
 		ftdm_channel_advance_states(gsm_data->bchan);
 		ftdm_channel_unlock(gsm_data->bchan);
 
 		ftdm_span_trigger_signals(span);
+
+	}
+
+	if (wat_span_stop(span->span_id)) {
+		ftdm_log(FTDM_LOG_ERROR, "Failed to stop GSM span %s!\n", span->name);
+	}
+
+	if (wat_span_unconfig(span->span_id)) {
+		ftdm_log(FTDM_LOG_ERROR, "Failed to unconfigure GSM span %s!\n", span->name);
 	}
 
 done:
@@ -1105,7 +1287,8 @@ done:
 		ftdm_interrupt_destroy(&data_sources[0]);
 	}
 
-	ftdm_log(FTDM_LOG_DEBUG, "GSM thread ending.\n");
+	ftdm_log(FTDM_LOG_DEBUG, "GSM thread ending\n");
+	ftdm_clear_flag(gsm_data, FTDM_GSM_RUNNING);
 
 	return NULL;
 }
@@ -1124,41 +1307,17 @@ static FIO_IO_LOAD_FUNCTION(ftdm_gsm_io_init)
 
 	return (FTDM_SUCCESS);
 }
-static FIO_SIG_LOAD_FUNCTION(ftdm_gsm_init)
-{
-	/* this is called on module load */
-	return FTDM_SUCCESS;
-}
-
-static FIO_SIG_UNLOAD_FUNCTION(ftdm_gsm_destroy)
-{
-	/* this is called on module unload */
-	return FTDM_SUCCESS;
-}
 
 EX_DECLARE_DATA ftdm_module_t ftdm_module = { 
 	/* .name */ "gsm",
 	/* .io_load */ ftdm_gsm_io_init,
 	/* .io_unload */ NULL,
-	/* .sig_load */ ftdm_gsm_init,
+	/* .sig_load */ NULL,
 	/* .sig_configure */ NULL,
-	/* .sig_unload */ ftdm_gsm_destroy,
+	/* .sig_unload */ NULL,
 	/* .configure_span_signaling */ ftdm_gsm_configure_span_signaling
 };
 	
-
-/* For Emacs:
- * Local Variables:
- * mode:c
- * indent-tabs-mode:t
- * tab-width:4
- * c-basic-offset:4
- * End:
- * For VIM:
- * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet:
- */
-
-
 /********************************************************************************/
 /*                                                                              */
 /*                             COMMAND HANDLERS                                 */
@@ -1318,12 +1477,12 @@ COMMAND_HANDLER(exec)
 
 	span_id = atoi(argv[0]);
 	if (ftdm_span_find_by_name(argv[0], &span) != FTDM_SUCCESS && ftdm_span_find(span_id, &span) != FTDM_SUCCESS) {
-		stream->write_function(stream, "-ERR Failed to find GSM span '%s'\n",  argv[1]);
+		stream->write_function(stream, "-ERR Failed to find GSM span '%s'\n",  argv[0]);
 		return FTDM_FAIL;
 	}
 
 	if (!span || !span->signal_data || (span->start != ftdm_gsm_start)) {
-		stream->write_function(stream, "-ERR '%s' is not a valid GSM span\n",  argv[1]);
+		stream->write_function(stream, "-ERR '%s' is not a valid GSM span\n",  argv[0]);
 		return FTDM_FAIL;
 	}
 
@@ -1346,20 +1505,42 @@ COMMAND_HANDLER(exec)
 	return FTDM_SUCCESS;
 }
 
-//  command map
-struct {
-	const char*CMD; // command
-	int  Argc;      // minimum args
-	fCMD Handler;   // handling function
-}
-	GSM_COMMANDS[] = {
-		COMMAND(version, 0),
-		COMMAND(status, 1),
-		COMMAND(sms, 3),
-		COMMAND(exec, 2)
-	};
+// AT Command Handler
+COMMAND_HANDLER(call)
+{
+	int span_id = 0;
+	ftdm_span_t *span = NULL;
 
-// Commnand API entry point
+	span_id = atoi(argv[0]);
+	if (ftdm_span_find_by_name(argv[0], &span) != FTDM_SUCCESS && ftdm_span_find(span_id, &span) != FTDM_SUCCESS) {
+		stream->write_function(stream, "-ERR Failed to find GSM span '%s'\n",  argv[0]);
+		return FTDM_FAIL;
+	}
+
+	if (!span || !span->signal_data || (span->start != ftdm_gsm_start)) {
+		stream->write_function(stream, "-ERR '%s' is not a valid GSM span\n",  argv[0]);
+		return FTDM_FAIL;
+	}
+
+	ftdm_gsm_make_raw_call(span->signal_data, argv[1]);
+	stream->write_function(stream, "+OK\n");
+	return FTDM_SUCCESS;
+}
+
+//  command map
+static struct {
+	const char *cmd; // command
+	int argc;      // minimum args
+	command_handler_t handler;  // handling function
+} GSM_COMMANDS[] = {
+	COMMAND(version, 0),
+	COMMAND(status, 1),
+	COMMAND(sms, 3),
+	COMMAND(exec, 2),
+	COMMAND(call, 2),
+};
+
+// main command API entry point
 static FIO_API_FUNCTION(ftdm_gsm_api)
 {
 	
@@ -1375,32 +1556,37 @@ static FIO_API_FUNCTION(ftdm_gsm_api)
 		argc = ftdm_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 	}
 
-	if(argc > 0) {
-		for(i=0;i<sizeof(GSM_COMMANDS)/sizeof(GSM_COMMANDS[0]);i++) {
-			if(strcasecmp(argv[0],GSM_COMMANDS[i].CMD)==0) {
-				
-				if(argc -1 >= GSM_COMMANDS[i].Argc) {
+	if (argc > 0) {
+		for (i = 0; i< ftdm_array_len(GSM_COMMANDS); i++) {
+			if (strcasecmp(argv[0], GSM_COMMANDS[i].cmd) == 0) {
+				if (argc -1 >= GSM_COMMANDS[i].argc) {
 					syntax = FTDM_SUCCESS;
-					status = GSM_COMMANDS[i].Handler(stream, &argv[1], argc-1);
-					
+					status = GSM_COMMANDS[i].handler(stream, &argv[1], argc-1);
 				}
-				
 				break;
 			}
-
 		}
 	}
 
-	if(FTDM_SUCCESS != syntax) {
+	if (FTDM_SUCCESS != syntax) {
 		stream->write_function(stream, "%s", FT_SYNTAX);
+	} else if (FTDM_SUCCESS != status) {
+		stream->write_function(stream, "%s Command Failed\r\n", GSM_COMMANDS[i].cmd);
 	}
-	else
-	if(FTDM_SUCCESS != status) {
-		stream->write_function(stream, "%s Command Failed\r\n", GSM_COMMANDS[i].CMD);
-	}
+
 	ftdm_safe_free(mycmd);
 
 	return FTDM_SUCCESS;
 }
 
 
+/* For Emacs:
+ * Local Variables:
+ * mode:c
+ * indent-tabs-mode:t
+ * tab-width:4
+ * c-basic-offset:4
+ * End:
+ * For VIM:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet:
+ */

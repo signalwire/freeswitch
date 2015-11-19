@@ -19,9 +19,21 @@
     </div>
     <div id="navbar" class="navbar-collapse collapse">
       <ul class="nav navbar-nav navbar-right">
+        <li class="navbar-item-icon net-info" ng-show="(bandUp || bandDown) && storage.data.autoBand">
+          <a href="" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+            <i ng-class="iconClass"></i>
+            <span class="caret"></span>
+          </a>
+          <ul class="dropdown-menu drop-net-info" role="menu" ng-click="$event.stopPropagation()">
+            <li><a class="title">Bandwidth Info</a></li>
+            <li><a>Outgoing: {{bandUp}} Kbps</a></li>
+            <li><a>Incoming: {{bandDown}} Kbps</a></li>
+            <li><a>Video Resolution: {{vidRes}}</a></li>
+          </ul>
+        </li>
         <li>
           <a href="">
-              <i class="mdi-toggle-radio-button-on" user-status condition="storage.data.userStatus"></i>
+            <i class="mdi-toggle-radio-button-on" user-status condition="storage.data.userStatus"></i>
           </a>
         </li>
         <li>
@@ -29,7 +41,6 @@
               {{ storage.data.called_number && storage.data.userStatus == 'connecting' ? 'Last Call: ' : 'In Call: '  }} {{ storage.data.called_number  }}
           </a>
         </li>
-
         <li class="navbar-item-icon" ng-show="verto.data.connected">
           <a href="" ng-click="openModal('partials/modal_settings.html', 'ModalSettingsController')">
             <i class="mdi-action-settings"></i>

@@ -322,7 +322,7 @@ static switch_status_t my_on_reporting_cb(switch_core_session_t *session, cdr_pr
 			memset(cdr_text_escaped, 0, need_bytes);
 			if (profile->encode == ENCODING_DEFAULT) {
 				headers = switch_curl_slist_append(headers, "Content-Type: application/x-www-form-urlencoded");
-				switch_url_encode(cdr_text, cdr_text_escaped, need_bytes);
+				switch_url_encode_opt(cdr_text, cdr_text_escaped, need_bytes, SWITCH_TRUE);
 			} else {
 				headers = switch_curl_slist_append(headers, "Content-Type: application/x-www-form-base64-encoded");
 				switch_b64_encode((unsigned char *) cdr_text, need_bytes / 3, (unsigned char *) cdr_text_escaped, need_bytes);

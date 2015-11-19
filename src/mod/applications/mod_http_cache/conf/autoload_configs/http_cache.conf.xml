@@ -14,9 +14,9 @@
     <profile name="s3">
        <!-- Credentials for AWS account. -->
        <aws-s3>
-          <!-- 20 character key identifier -->
+          <!-- 20 character key identifier, can override with AWS_ACCESS_KEY_ID environment variable -->
           <access-key-id><![CDATA[AKIAIOSFODNN7EXAMPLE]]></access-key-id>
-          <!-- 40 character secret -->
+          <!-- 40 character secret, can override with AWS_SECRET_ACCESS_KEY environment variable -->
           <secret-access-key><![CDATA[wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY]]></secret-access-key>
           <!--base-url><![CDATA[s3.example.com]]></base-url-->
        </aws-s3>
@@ -29,3 +29,4 @@
   </profiles>
 
 </configuration>
+

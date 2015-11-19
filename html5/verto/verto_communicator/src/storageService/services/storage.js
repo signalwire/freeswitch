@@ -21,9 +21,11 @@
           userStatus: 'disconnected',
           mutedVideo: false,
           mutedMic: false,
+          preview: true,
           selectedVideo: null,
           selectedAudio: null,
           selectedShare: null,
+          selectedSpeaker: null,
           useStereo: true,
           useSTUN: true,
           useDedenc: false,
@@ -34,7 +36,9 @@
           askRecoverCall: false,
           googNoiseSuppression: true,
           googHighpassFilter: true,
-          googEchoCancellation: true
+          googEchoCancellation: true,
+          autoBand: true,
+          testSpeedJoin: true
        };
 
     data.$default(defaultSettings);

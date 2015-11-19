@@ -2162,10 +2162,18 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			const char *call_info = switch_channel_get_variable(channel, "presence_call_info_full");
 			const char *b_sdp = NULL;
 			int is_proxy = 0, is_3pcc = 0;
+			int send_sip_code = 183;
+			const char * p_send_sip_msg = sip_183_Session_progress;
 
 			b_sdp = switch_channel_get_variable(channel, SWITCH_B_SDP_VARIABLE);
 			is_proxy = (switch_channel_test_flag(channel, CF_PROXY_MODE) || switch_channel_test_flag(channel, CF_PROXY_MEDIA));
 			is_3pcc = (sofia_test_pflag(tech_pvt->profile, PFLAG_3PCC_PROXY) && sofia_test_flag(tech_pvt, TFLAG_3PCC));
+
+			// send 180 instead of 183 if variable "early_use_180" is "true"
+			if (switch_true(switch_channel_get_variable(channel, "early_use_180"))) {
+				send_sip_code = 180;
+				p_send_sip_msg = sip_180_Ringing;
+			}
 
 			if (b_sdp && is_proxy && !is_3pcc) {
 				switch_core_media_set_local_sdp(session, b_sdp, SWITCH_TRUE);
@@ -2205,7 +2213,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 						char *extra_headers = sofia_glue_get_extra_headers(channel, SOFIA_SIP_PROGRESS_HEADER_PREFIX);
 						if (sofia_use_soa(tech_pvt)) {
 
-							nua_respond(tech_pvt->nh, SIP_183_SESSION_PROGRESS,
+							nua_respond(tech_pvt->nh, send_sip_code, p_send_sip_msg,
 										TAG_IF(is_proxy, NUTAG_AUTOANSWER(0)),
 										SIPTAG_CONTACT_STR(tech_pvt->profile->url),
 										SOATAG_USER_SDP_STR(tech_pvt->mparams.local_sdp_str),
@@ -2217,7 +2225,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 										TAG_IF(switch_stristr("update_display", tech_pvt->x_freeswitch_support_remote),
 											   SIPTAG_HEADER_STR("X-FS-Support: " FREESWITCH_SUPPORT)), TAG_END());
 						} else {
-							nua_respond(tech_pvt->nh, SIP_183_SESSION_PROGRESS,
+							nua_respond(tech_pvt->nh, send_sip_code, p_send_sip_msg,
 										NUTAG_MEDIA_ENABLE(0),
 										SIPTAG_CONTACT_STR(tech_pvt->profile->url),
 										TAG_IF(!zstr(extra_headers), SIPTAG_HEADER_STR(extra_headers)),
@@ -2341,7 +2349,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 
 					if (sofia_use_soa(tech_pvt)) {
 						nua_respond(tech_pvt->nh,
-									SIP_183_SESSION_PROGRESS,
+									send_sip_code, p_send_sip_msg,
 									NUTAG_AUTOANSWER(0),
 									TAG_IF(sticky, NUTAG_PROXY(tech_pvt->record_route)),
 									TAG_IF(cid, SIPTAG_HEADER_STR(cid)),
@@ -2356,7 +2364,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 										   SIPTAG_HEADER_STR("X-FS-Support: " FREESWITCH_SUPPORT)), TAG_END());
 					} else {
 						nua_respond(tech_pvt->nh,
-									SIP_183_SESSION_PROGRESS,
+									send_sip_code, p_send_sip_msg,
 									NUTAG_AUTOANSWER(0),
 									NUTAG_MEDIA_ENABLE(0),
 									TAG_IF(sticky, NUTAG_PROXY(tech_pvt->record_route)),

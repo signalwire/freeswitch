@@ -220,6 +220,7 @@ struct switch_media_bug {
 	uint32_t record_pre_buffer_count;
 	uint32_t record_pre_buffer_max;
 	switch_frame_t *ping_frame;
+	switch_frame_t *video_ping_frame;
 	switch_frame_t *read_demux_frame;
 	switch_queue_t *read_video_queue;
 	switch_queue_t *write_video_queue;

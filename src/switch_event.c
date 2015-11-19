@@ -1932,9 +1932,10 @@ SWITCH_DECLARE(void) switch_event_prep_for_delivery_detailed(const char *file, c
 	char date[80] = "";
 	switch_size_t retsize;
 	switch_time_t ts = switch_micro_time_now();
+	uint64_t seq;
 
 	switch_mutex_lock(EVENT_QUEUE_MUTEX);
-	EVENT_SEQUENCE_NR++;
+	seq = ++EVENT_SEQUENCE_NR;
 	switch_mutex_unlock(EVENT_QUEUE_MUTEX);
 
 
@@ -1954,7 +1955,7 @@ SWITCH_DECLARE(void) switch_event_prep_for_delivery_detailed(const char *file, c
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Event-Calling-File", switch_cut_path(file));
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Event-Calling-Function", func);
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Event-Calling-Line-Number", "%d", line);
-	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Event-Sequence", "%" SWITCH_UINT64_T_FMT, (uint64_t) EVENT_SEQUENCE_NR);
+	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Event-Sequence", "%" SWITCH_UINT64_T_FMT, seq);
 
 
 }

@@ -90,7 +90,8 @@
             },
         }, options);
 
-	this.enabled = true;
+	this.audioEnabled = true;
+	this.videoEnabled = true;
 
 
         this.mediaData = {
@@ -360,7 +361,7 @@
 
     $.FSRTC.prototype.getMute = function() {
 	var self = this;
-	return self.enabled;
+	return self.audioEnabled;
     }
 
     $.FSRTC.prototype.setMute = function(what) {
@@ -381,10 +382,39 @@
 		break;
 	    }
 
-	    self.enabled = audioTracks[i].enabled;
+	    self.audioEnabled = audioTracks[i].enabled;
 	}
 
-	return !self.enabled;
+	return !self.audioEnabled;
+    }
+
+    $.FSRTC.prototype.getVideoMute = function() {
+	var self = this;
+	return self.videoEnabled;
+    }
+
+    $.FSRTC.prototype.setVideoMute = function(what) {
+	var self = this;
+	var videoTracks = self.localStream.getVideoTracks();	
+
+	for (var i = 0, len = videoTracks.length; i < len; i++ ) {
+	    switch(what) {
+	    case "on":
+		videoTracks[i].enabled = true;
+		break;
+	    case "off":
+		videoTracks[i].enabled = false;
+		break;
+	    case "toggle":
+		videoTracks[i].enabled = !videoTracks[i].enabled;
+	    default:
+		break;
+	    }
+
+	    self.videoEnabled = videoTracks[i].enabled;
+	}
+
+	return !self.videoEnabled;
     }
 
     $.FSRTC.prototype.createAnswer = function(params) {

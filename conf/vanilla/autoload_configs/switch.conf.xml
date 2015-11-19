@@ -152,6 +152,12 @@
 
     <param name="rtp-enable-zrtp" value="false"/>
 
+    <!--
+	 Store encryption keys for secure media in channel variables and call CDRs. Default: false.
+	 WARNING: If true, anyone with CDR access can decrypt secure media!
+    -->
+    <!-- <param name="rtp-retain-crypto-keys" value="true"/> -->
+
     <!-- <param name="core-db-dsn" value="pgsql://hostaddr=127.0.0.1 dbname=freeswitch user=freeswitch password='' options='-c client_min_messages=NOTICE'" /> -->
     <!-- <param name="core-db-dsn" value="dsn:username:password" /> -->
     <!-- 

@@ -378,13 +378,10 @@ void conference_event_la_command_handler(switch_live_array_t *la, const char *cm
 void conference_event_adv_la(conference_obj_t *conference, conference_member_t *member, switch_bool_t join)
 {
 
-	//if (switch_core_session_media_flow(member->session, SWITCH_MEDIA_TYPE_VIDEO) == SWITCH_MEDIA_FLOW_SENDONLY) {
 	switch_channel_set_flag(member->channel, CF_VIDEO_REFRESH_REQ);
 	switch_core_media_gen_key_frame(member->session);
-	//}
 
-	if (conference && conference->la && member->session &&
-		!switch_channel_test_flag(member->channel, CF_VIDEO_ONLY)) {
+	if (conference && conference->la && member->session) {
 		cJSON *msg, *data;
 		const char *uuid = switch_core_session_get_uuid(member->session);
 		const char *cookie = switch_channel_get_variable(member->channel, "event_channel_cookie");
@@ -410,6 +407,14 @@ void conference_event_adv_la(conference_obj_t *conference, conference_member_t *
 
 		if (conference_utils_member_test_flag(member, MFLAG_SECOND_SCREEN)) {
 			cJSON_AddItemToObject(data, "secondScreen", cJSON_CreateTrue());
+		}
+
+		if (switch_channel_test_flag(member->channel, CF_VIDEO_ONLY)) {
+			cJSON_AddItemToObject(data, "videoOnly", cJSON_CreateTrue());
+		}
+
+		if (switch_true(switch_channel_get_variable_dup(member->channel, "video_screen_share", SWITCH_FALSE, -1))) {
+			cJSON_AddItemToObject(data, "screenShare", cJSON_CreateTrue());
 		}
 
 		if (conference_utils_member_test_flag(member, MFLAG_MOD)) {

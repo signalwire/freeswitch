@@ -78,15 +78,18 @@ typedef enum {
 
 typedef struct wsh_s {
 	ws_socket_t sock;
-	char buffer[65536];
-	char wbuffer[65536];
+	char *buffer;
+	char *bbuffer;
+	char *body;
 	char *uri;
 	size_t buflen;
+	size_t bbuflen;
 	ssize_t datalen;
 	ssize_t wdatalen;
 	char *payload;
 	ssize_t plen;
 	ssize_t rplen;
+	ssize_t packetlen;
 	SSL *ssl;
 	int handshake;
 	uint8_t down;

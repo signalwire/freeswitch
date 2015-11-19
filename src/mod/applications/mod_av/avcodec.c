@@ -25,6 +25,7 @@
  *
  * Seven Du <dujinfang@gmail.com>
  * Anthony Minessale <anthm@freeswitch.org>
+ * Emmanuel Schmidbauer <eschmidbauer@gmail.com>
  *
  * mod_avcodec -- Codec with libav.org
  *
@@ -538,7 +539,7 @@ static void fs_rtp_parse_h263_rfc2190(h264_codec_context_t *context, AVPacket *p
 						mb_info_pos++;
 					} else {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
-							"Unable to split H263 packet! mb_info_pos=%d mb_info_count=%d pos=%d max=%ld\n", mb_info_pos, mb_info_count, pos, end - buf_base);
+						    "Unable to split H263 packet! mb_info_pos=%d mb_info_count=%d pos=%d max=%"SWITCH_SIZE_T_FMT"\n", mb_info_pos, mb_info_count, pos, (switch_size_t)(end - buf_base));
 					}
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Should Not Happen!!! mb_info_pos=%d mb_info_count=%d mb_info_size=%d\n", mb_info_pos, mb_info_count, mb_info_size);
@@ -799,7 +800,8 @@ static switch_status_t consume_nalu(h264_codec_context_t *context, switch_frame_
 
 static switch_status_t open_encoder(h264_codec_context_t *context, uint32_t width, uint32_t height)
 {
-
+	int sane = 0;
+	
 	if (!context->encoder) context->encoder = avcodec_find_encoder(context->av_codec_id);
 
 	if (!context->encoder) {
@@ -846,6 +848,11 @@ static switch_status_t open_encoder(h264_codec_context_t *context, uint32_t widt
 		context->bandwidth = switch_calc_bitrate(context->codec_settings.video.width, context->codec_settings.video.height, 0, 0) * 8;
 	}
 
+	if (context->bandwidth > sane) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "BITRATE TRUNCATED TO %d\n", sane);
+		context->bandwidth = sane * 8;
+	}
+	
 	//context->encoder_ctx->bit_rate = context->bandwidth * 1024;
 	context->encoder_ctx->width = context->codec_settings.video.width;
 	context->encoder_ctx->height = context->codec_settings.video.height;
@@ -1493,7 +1500,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_avcodec_load)
 											   switch_h264_init, switch_h264_encode, switch_h264_decode, switch_h264_control, switch_h264_destroy);
 
 	SWITCH_ADD_CODEC(codec_interface, "H263+ Video");
-	switch_core_codec_add_video_implementation(pool, codec_interface, 34, "H263-1998", NULL,
+	switch_core_codec_add_video_implementation(pool, codec_interface, 115, "H263-1998", NULL,
 											   switch_h264_init, switch_h264_encode, switch_h264_decode, switch_h264_control, switch_h264_destroy);
 
 	SWITCH_ADD_API(api_interface, "av_codec", "av_codec information", av_codec_api_function, "");

@@ -227,6 +227,7 @@ struct vpx_context {
 	uint8_t decoder_init;
 	switch_buffer_t *vpx_packet_buffer;
 	int got_key_frame;
+	int no_key_frame;
 	int got_start_frame;
 	uint32_t last_received_timestamp;
 	switch_bool_t last_received_complete_picture;
@@ -273,6 +274,7 @@ static switch_status_t init_decoder(switch_codec_t *codec)
 		context->last_received_complete_picture = 0;
 		context->decoder_init = 1;
 		context->got_key_frame = 0;
+		context->no_key_frame = 0;
 		context->got_start_frame = 0;
 		// the types of post processing to be done, should be combination of "vp8_postproc_level"
 		ppcfg.post_proc_flag = VP8_DEBLOCK;//VP8_DEMACROBLOCK | VP8_DEBLOCK;
@@ -298,7 +300,8 @@ static switch_status_t init_encoder(switch_codec_t *codec)
 	vpx_codec_enc_cfg_t *config = &context->config;
 	int token_parts = 1;
 	int cpus = switch_core_cpu_count();
-
+	int sane;
+	
 	if (!context->codec_settings.video.width) {
 		context->codec_settings.video.width = 1280;
 	}
@@ -310,15 +313,19 @@ static switch_status_t init_encoder(switch_codec_t *codec)
 	if (context->codec_settings.video.bandwidth == -1) {
 		context->codec_settings.video.bandwidth = 0;
 	}
-
+	
 	if (context->codec_settings.video.bandwidth) {
 		context->bandwidth = context->codec_settings.video.bandwidth;
 	} else {
 		context->bandwidth = switch_calc_bitrate(context->codec_settings.video.width, context->codec_settings.video.height, 0, 0);
+
 	}
 
-	if (context->bandwidth > 40960) {
-		context->bandwidth = 40960;
+	sane = switch_calc_bitrate(context->codec_settings.video.width, context->codec_settings.video.height, 4, 30);
+
+	if (context->bandwidth > sane) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(codec->session), SWITCH_LOG_WARNING, "BITRATE TRUNCATED TO %d\n", sane);
+		context->bandwidth = sane;
 	}
 
 	context->pkt = NULL;
@@ -812,7 +819,18 @@ static switch_status_t switch_vpx_decode(switch_codec_t *codec, switch_frame_t *
 		is_start = (*(unsigned char *)frame->data & 0x10);
 		is_keyframe = IS_VP8_KEY_FRAME((uint8_t *)frame->data);
 	}
-
+	
+	
+    if (context->got_key_frame <= 0) {
+        context->no_key_frame++;
+        //switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "no keyframe, %d\n", context->no_key_frame);
+        if (context->no_key_frame > 50) {
+            if ((is_keyframe = is_start)) {
+                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "no keyframe, treating start as key.\n");
+            }
+        }
+    }
+	
 	// if (is_keyframe) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "got key %d\n", is_keyframe);
 
 	if (context->need_decoder_reset != 0) {
@@ -845,9 +863,7 @@ static switch_status_t switch_vpx_decode(switch_codec_t *codec, switch_frame_t *
 	if (is_keyframe) {
 		if (context->got_key_frame <= 0) {
 			context->got_key_frame = 1;
-			if (!is_keyframe) {
-				get_refresh = 1;
-			}
+			context->no_key_frame = 0;
 		} else {
 			context->got_key_frame++;
 		}
@@ -855,6 +871,9 @@ static switch_status_t switch_vpx_decode(switch_codec_t *codec, switch_frame_t *
 		if ((--context->got_key_frame % 200) == 0) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Waiting for key frame %d\n", context->got_key_frame);
 		}
+
+		get_refresh = 1;
+		
 		if (!context->got_start_frame) {
 			switch_goto_status(SWITCH_STATUS_MORE_DATA, end);
 		}

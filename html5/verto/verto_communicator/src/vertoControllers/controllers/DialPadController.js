@@ -7,9 +7,9 @@
       '$http', '$location', 'toastr', 'verto', 'storage', 'CallHistory', 'eventQueue',
       function($rootScope, $scope, $http, $location, toastr, verto, storage, CallHistory, eventQueue) {
         console.debug('Executing DialPadController.');
-        
+
         eventQueue.process();
-        
+
         $scope.call_history = CallHistory.all();
         $scope.history_control = CallHistory.all_control();
         $scope.has_history = Object.keys($scope.call_history).length;
@@ -55,6 +55,10 @@
           $rootScope.dialpadNumber = number;
         };
 
+        $scope.preview = function() {
+          $location.path('/preview');
+        };
+
         $rootScope.transfer = function() {
           if (!$rootScope.dialpadNumber) {
             return false;
@@ -93,8 +97,17 @@
         /**
          * Call to the number in the $rootScope.dialpadNumber.
          */
+        $scope.loading = false;
         $rootScope.call = function(extension) {
-          return call(extension);
+          if (!storage.data.testSpeedJoin || !$rootScope.dialpadNumber) {
+            return call(extension);
+          }
+          $scope.loading = true;
+
+          verto.testSpeed(function() {
+            $scope.loading = false;
+            call(extension);
+          });
         }
       }
     ]);

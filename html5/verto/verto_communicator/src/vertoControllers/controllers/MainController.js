@@ -24,16 +24,24 @@
        * @type {string}
        */
       $rootScope.dialpadNumber = '';
-      
+
       // If verto is not connected, redirects to login page.
       if (!verto.data.connected) {
         console.debug('MainController: WebSocket not connected. Redirecting to login.');
         $location.path('/');
       }
- 
+
       $rootScope.$on('config.http.success', function(ev) {
         $scope.login(false);
       });
+
+      $rootScope.$on('changedSpeaker', function(event, speakerId) {
+        // This should provide feedback
+	//setAudioPlaybackDevice(<id>[,<callback>[,<callback arg>]]);
+	// if callback is set it will be called as callback(<bool success/fail>, <device name>, <arg if you supplied it>)
+        verto.data.call.setAudioPlaybackDevice(speakerId);
+      });
+
       /**
        * Login the user to verto server and
        * redirects him to dialpad page.
@@ -52,13 +60,19 @@
             storage.data.email = verto.data.email;
             storage.data.login = verto.data.login;
             storage.data.password = verto.data.password;
-            if (redirect) {
+            if (storage.data.autoBand) {
+              verto.testSpeed();
+            }
+
+            if (redirect && storage.data.preview) {
+              $location.path('/preview');
+            } else if (redirect) {
               $location.path('/dialpad');
             }
           }
           });
         };
-        
+
         verto.data.connecting = true;
         verto.connect(connectCallback);
       };
@@ -135,7 +149,7 @@
           templateUrl: templateUrl,
           controller: controller,
         };
-        
+
         angular.extend(options, _options);
 
         var modalInstance = $modal.open(options);
@@ -154,7 +168,7 @@
             jQuery.material.init();
           }
         );
-        
+
         return modalInstance;
       };
 
@@ -177,6 +191,9 @@
       };
 
       function onWSLogin(ev, data) {
+        if(storage.data.autoBand) {
+          verto.testSpeed();
+        }
         if(!ws_modalInstance) {
           return;
         };
@@ -452,14 +469,6 @@
       $scope.declineCall = function() {
         $scope.hangup();
         $scope.incomingCall = false;
-      };
-
-      $scope.screenshare = function() {
-        if (verto.data.shareCall) {
-          verto.screenshareHangup();
-          return false;
-        }
-        verto.screenshare(storage.data.called_number);
       };
 
       $scope.play = function() {

@@ -120,6 +120,8 @@
             if (parseInt(member.id) == parseInt(verto.data.conferenceMemberID)) {
               verto.data.mutedMic = member.status.audio.muted;
               verto.data.mutedVideo = member.status.video.muted;
+			  verto.data.call.setMute(member.status.audio.muted ? "off" : "on");
+			  verto.data.call.setVideoMute(member.status.video.muted ? "off" : "on");
             }
             angular.extend($scope.members[memberIdx], member);
           });

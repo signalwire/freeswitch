@@ -1075,6 +1075,27 @@
             console.error("Error: ", obj, args);
         };
 
+	/* back compat so jsonstatus can always be enabled */
+	function genRow(data) {
+	    if (typeof(data[4]) === "string" && data[4].indexOf("{") > -1) {
+		var tmp = $.parseJSON(data[4]);
+		data[4] = tmp.oldStatus;
+		data[5] = null;
+	    }
+	    return data;
+	}
+
+	function genArray(obj) {
+	    var data = obj.asArray();
+
+            for (var i in data) {
+		data[i] = genRow(data[i]);
+	    }
+
+	    return data;
+	}
+
+
         la.onChange = function(obj, args) {
             var index = 0;
             var iserr = 0;
@@ -1122,7 +1143,7 @@
                         return;
                     }
                     dt.fnClearTable();
-                    dt.fnAddData(obj.asArray());
+                    dt.fnAddData(genArray(obj));
                     dt.fnAdjustColumnSizing();
                     break;
                 case "add":
@@ -1133,9 +1154,9 @@
                     if (args.redraw > -1) {
                         // specific position, more costly
                         dt.fnClearTable();
-                        dt.fnAddData(obj.asArray());
+                        dt.fnAddData(genArray(obj));
                     } else {
-                        dt.fnAddData(args.data);
+                        dt.fnAddData(genRow(args.data));
                     }
                     dt.fnAdjustColumnSizing();
                     break;
@@ -1144,7 +1165,7 @@
                         return;
                     }
                     //console.debug(args, index);
-                    dt.fnUpdate(args.data, index);
+                    dt.fnUpdate(genRow(args.data), index);
                     dt.fnAdjustColumnSizing();
                     break;
                 case "del":
@@ -1157,7 +1178,7 @@
                 case "reorder":
                     // specific position, more costly
                     dt.fnClearTable();
-                    dt.fnAddData(obj.asArray());
+                    dt.fnAddData(genArray(obj));
                     break;
                 case "hide":
                     jq.hide();
@@ -2022,6 +2043,53 @@
         return false;
     }
 
+
+    // Attach audio output device to video element using device/sink ID.                                                                                           
+    function find_name(id) {
+	for (var i in $.verto.audioOutDevices) {
+	    var source = $.verto.audioOutDevices[i];
+	    if (source.id === id) {
+		return(source.label);
+	    }
+	}
+
+	return id;
+    }
+
+    $.verto.dialog.prototype.setAudioPlaybackDevice = function(sinkId, callback, arg) {
+	var dialog = this;
+	var element = dialog.audioStream;
+
+	if (typeof element.sinkId !== 'undefined') {
+	    var devname = find_name(sinkId);
+	    console.info("Dialog: " + dialog.callID + " Setting speaker:", element, devname);
+
+	    element.setSinkId(sinkId)
+		.then(function() {
+		    console.log("Dialog: " + dialog.callID + ' Success, audio output device attached: ' + sinkId);
+		    if (callback) {
+			callback(true, devname, arg);
+		    }
+		})
+		.catch(function(error) {
+		    var errorMessage = error;
+		    if (error.name === 'SecurityError') {
+			errorMessage = "Dialog: " + dialog.callID + ' You need to use HTTPS for selecting audio output ' +
+			    'device: ' + error;
+		    }
+		    if (callback) {
+			callback(false, null, arg);
+		    }
+		    console.error(errorMessage);
+		});
+	} else {
+	    console.warn("Dialog: " + dialog.callID + ' Browser does not support output device selection.');
+	    if (callback) {
+		callback(false, null, arg);
+	    }
+	}
+    }
+
     $.verto.dialog.prototype.setState = function(state) {
         var dialog = this;
 
@@ -2061,11 +2129,9 @@
 	    console.info("Using Speaker: ", speaker);
 
 	    if (speaker && speaker !== "any") {
-		var videoElement = dialog.audioStream;
-
 		setTimeout(function() {
-		    console.info("Setting speaker:", videoElement, speaker);
-		    attachSinkId(videoElement, speaker);}, 500);
+		    dialog.setAudioPlaybackDevice(speaker);
+		}, 500);
 	    }
 
 	    break;
@@ -2224,6 +2290,16 @@
     $.verto.dialog.prototype.getMute = function() {
 	var dialog = this; 
 	return dialog.rtc.getMute();
+    };
+
+    $.verto.dialog.prototype.setVideoMute = function(what) {
+	var dialog = this;
+	return dialog.rtc.setVideoMute(what);
+    };
+
+    $.verto.dialog.prototype.getVideoMute = function() {
+	var dialog = this; 
+	return dialog.rtc.getVideoMute();
     };
 
     $.verto.dialog.prototype.useStereo = function(on) {

@@ -1707,6 +1707,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_shout_load)
 
 	supported_formats[0] = "shout";
 	supported_formats[1] = "mp3";
+	supported_formats[2] = "mpga";
 
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);

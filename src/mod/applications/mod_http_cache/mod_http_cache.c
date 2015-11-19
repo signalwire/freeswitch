@@ -36,6 +36,8 @@
 #include <switch_curl.h>
 #include "aws.h"
 
+#include <stdlib.h>
+
 /* 253 max domain size + '/' + NUL byte */
 #define DOMAIN_BUF_SIZE 255
 
@@ -1532,21 +1534,35 @@ static switch_status_t do_config(url_cache_t *cache)
 				char *base_domain = NULL;
 				if (s3) {
 					switch_xml_t base_domain_xml = switch_xml_child(s3, "base-domain");
-					switch_xml_t id = switch_xml_child(s3, "access-key-id");
-					switch_xml_t secret = switch_xml_child(s3, "secret-access-key");
-					if (id && secret) {
-						access_key_id = switch_strip_whitespace(switch_xml_txt(id));
-						secret_access_key = switch_strip_whitespace(switch_xml_txt(secret));
-						if (zstr(access_key_id) || zstr(secret_access_key)) {
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Missing aws s3 credentials for profile \"%s\"\n", name);
-							switch_safe_free(access_key_id);
-							access_key_id = NULL;
-							switch_safe_free(secret_access_key);
-							secret_access_key = NULL;
-						}
+
+					/* check if environment variables set the keys */
+					access_key_id = getenv("AWS_ACCESS_KEY_ID");
+					secret_access_key = getenv("AWS_SECRET_ACCESS_KEY");
+					if (!zstr(access_key_id) && !zstr(secret_access_key)) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Using AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY environment variables for s3 access on profile \"%s\"\n", name);
+						access_key_id = strdup(access_key_id);
+						secret_access_key = strdup(secret_access_key);
 					} else {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Missing key id or secret\n");
-						continue;
+						/* use configuration for keys */
+						switch_xml_t id = switch_xml_child(s3, "access-key-id");
+						switch_xml_t secret = switch_xml_child(s3, "secret-access-key");
+						access_key_id = NULL;
+						secret_access_key = NULL;
+
+						if (id && secret) {
+							access_key_id = switch_strip_whitespace(switch_xml_txt(id));
+							secret_access_key = switch_strip_whitespace(switch_xml_txt(secret));
+							if (zstr(access_key_id) || zstr(secret_access_key)) {
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Missing aws s3 credentials for profile \"%s\"\n", name);
+								switch_safe_free(access_key_id);
+								access_key_id = NULL;
+								switch_safe_free(secret_access_key);
+								secret_access_key = NULL;
+							}
+						} else {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Missing key id or secret\n");
+							continue;
+						}
 					}
 					if (base_domain_xml) {
 						base_domain = switch_strip_whitespace(switch_xml_txt(base_domain_xml));

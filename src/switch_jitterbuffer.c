@@ -1234,9 +1234,9 @@ SWITCH_DECLARE(switch_status_t) switch_jb_get_packet(switch_jb_t *jb, switch_rtp
 
 	jb->period_miss_pct = ((double)jb->period_miss_count / jb->period_count) * 100;
 
-	if (jb->period_miss_pct > 40.0f) {
+	if (jb->period_miss_pct > 60.0f) {
 		jb_debug(jb, 2, "Miss percent %02f too high, resetting buffer.\n", jb->period_miss_pct);
-		//switch_jb_reset(jb);
+		switch_jb_reset(jb);
 	}
 
 	if ((status = jb_next_packet(jb, &node)) == SWITCH_STATUS_SUCCESS) {
@@ -1324,15 +1324,12 @@ SWITCH_DECLARE(switch_status_t) switch_jb_get_packet(switch_jb_t *jb, switch_rtp
 	}
 
 	switch_mutex_unlock(jb->mutex);
-
-	if (status == SWITCH_STATUS_SUCCESS) {
-		if (jb->complete_frames > jb->max_frame_len) {
-			thin_frames(jb, 8, 25);
-		}
+	
+	if (jb->complete_frames > jb->max_frame_len) {
+		thin_frames(jb, 8, 25);
 	}
 
 	return status;
-
 }
 
 
