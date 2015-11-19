@@ -83,6 +83,8 @@ default_certsdir="$prefix/certs"
 default_fontsdir="$prefix/fonts"
 default_imagesdir="$prefix/images"
 
+eval bindir_expanded="${bindir}"
+
 if test "${enable_fhs}" = "yes"; then
     eval full_datadir="${datadir}/freeswitch"
     eval datadir=$full_datadir
@@ -771,6 +773,14 @@ case "$host" in
     ;;
     *linux*)
 	APR_ADDTO([PLATFORM_CORE_LIBS], [-ldl -lcrypt -lrt])
+	systemdinit=false
+	if test -d /run/systemd/system; then
+		systemdinit=true
+		AC_SUBST(bindir_expanded)
+		AC_CONFIG_FILES([build/startup/install_systemd.sh], [chmod +x build/startup/install_systemd.sh])
+		AC_CONFIG_FILES([build/startup/freeswitch.service])
+	fi
+	AM_CONDITIONAL([SYSTEMD_INIT], [test x$systemdinit = xtrue])
     ;;
 esac
 

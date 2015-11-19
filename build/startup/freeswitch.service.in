@@ -1,0 +1,32 @@
+[Unit]
+Description=freeswitch
+After=syslog.target network.target local-fs.target
+
+[Service]
+; service
+Type=forking
+PIDFile=@runtimedir@/freeswitch.pid
+PermissionsStartOnly=true
+Environment="DAEMON_OPTS=-nonat"
+EnvironmentFile=-/etc/sysconfig/freeswitch
+EnvironmentFile=-/etc/default/freeswitch
+ExecStart=@bindir_expanded@/freeswitch -u freeswitch -g freeswitch -ncwait -rp ${DAEMON_OPTS}
+TimeoutSec=20s
+Restart=on-failure
+; exec
+User=root
+Group=daemon
+LimitCORE=infinity
+LimitNOFILE=100000
+LimitNPROC=60000
+;LimitSTACK=240
+LimitRTPRIO=infinity
+LimitRTTIME=7000000
+IOSchedulingClass=realtime
+IOSchedulingPriority=2
+CPUSchedulingPolicy=rr
+CPUSchedulingPriority=89
+UMask=0007
+
+[Install]
+WantedBy=multi-user.target
