@@ -199,6 +199,8 @@ struct url_cache {
 	int ssl_verifyhost;
 	/** True if http/https file formats should be loaded */
 	int enable_file_formats;
+	/** How long to wait, in seconds, for TCP connection.  If 0, use default value of 300 seconds */
+	long connect_timeout;
 };
 static url_cache_t gcache;
 
@@ -326,6 +328,9 @@ static switch_status_t http_put(url_cache_t *cache, http_profile_t *profile, swi
 	switch_curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1);
 	switch_curl_easy_setopt(curl_handle, CURLOPT_MAXREDIRS, 10);
 	switch_curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "freeswitch-http-cache/1.0");
+	if (cache->connect_timeout > 0) {
+		switch_curl_easy_setopt(curl_handle, CURLOPT_CONNECTTIMEOUT, cache->connect_timeout);
+	}
 	if (!cache->ssl_verifypeer) {
 		switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0L);
 	} else {
@@ -1075,6 +1080,9 @@ static switch_status_t http_get(url_cache_t *cache, http_profile_t *profile, cac
 		switch_curl_easy_setopt(curl_handle, CURLOPT_HEADERFUNCTION, get_header_callback);
 		switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEHEADER, (void *) url);
 		switch_curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "freeswitch-http-cache/1.0");
+		if (cache->connect_timeout > 0) {
+			switch_curl_easy_setopt(curl_handle, CURLOPT_CONNECTTIMEOUT, cache->connect_timeout);
+		}
 		if (!cache->ssl_verifypeer) {
 			switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0L);
 		} else {
@@ -1477,6 +1485,7 @@ static switch_status_t do_config(url_cache_t *cache)
 	cache->ssl_verifyhost = 1;
 	cache->ssl_verifypeer = 1;
 	cache->enable_file_formats = 0;
+	cache->connect_timeout = 0;
 
 	/* get params */
 	settings = switch_xml_child(cfg, "settings");
@@ -1513,6 +1522,9 @@ static switch_status_t do_config(url_cache_t *cache)
 			} else if (!strcasecmp(var, "ssl-verifypeer")) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Setting ssl-verifypeer to %s\n", val);
 				cache->ssl_verifypeer = !switch_false(val); /* only disable if explicitly set to false */
+			} else if (!strcasecmp(var, "connect-timeout")) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Setting connect-timeout to %s\n", val);
+				cache->connect_timeout = atoi(val);
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unsupported param: %s\n", var);
 			}
@@ -1620,6 +1632,11 @@ static switch_status_t do_config(url_cache_t *cache)
 	}
 	if (cache->prefetch_thread_count <= 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "prefetch-thread-count must be > 0\n");
+		status = SWITCH_STATUS_TERM;
+		goto done;
+	}
+	if (cache->connect_timeout < 0) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "connect-timeout must be >= 0\n");
 		status = SWITCH_STATUS_TERM;
 		goto done;
 	}
