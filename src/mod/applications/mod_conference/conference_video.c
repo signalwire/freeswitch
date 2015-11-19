@@ -3537,7 +3537,8 @@ switch_status_t conference_video_thread_callback(switch_core_session_t *session,
 			conference_member_t *fmember;
 
 			if ((fmember = conference_member_get(member->conference, member->conference->video_floor_holder))) {
-				switch_core_session_write_video_frame(fmember->session, frame, SWITCH_IO_FLAG_NONE, 0);
+				if (!conference_utils_member_test_flag(fmember, MFLAG_RECEIVING_VIDEO))
+					switch_core_session_write_video_frame(fmember->session, frame, SWITCH_IO_FLAG_NONE, 0);
 				switch_thread_rwlock_unlock(fmember->rwlock);
 			}
 		}
