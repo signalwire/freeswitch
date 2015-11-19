@@ -78,5 +78,6 @@
   <!-- Stock Video Avatars -->
   <X-PRE-PROCESS cmd="set" data="video_mute_png=$${images_dir}/default-mute.png"/>
   <X-PRE-PROCESS cmd="set" data="video_no_avatar_png=$${images_dir}/default-avatar.png"/>
-
+  <X-PRE-PROCESS cmd="set" data="api_on_startup=fsctl recover"/>
+  
 </include>
