@@ -150,6 +150,13 @@ static char *print_number(cJSON *item)
 	return str;
 }
 
+#define is_hexdigit(c) ((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'))
+static int scan_unicode(const char *ptr, unsigned int *uc)
+{
+	if (!is_hexdigit(*(ptr)) || !is_hexdigit(*(ptr+1)) || !is_hexdigit(*(ptr+2)) || !is_hexdigit(*(ptr+3))) return -1;
+	return sscanf(ptr, "%4x", uc);
+}
+
 /* Parse the input text into an unescaped cstring, and populate item. */
 static const unsigned char firstByteMark[7] = { 0x00, 0x00, 0xC0, 0xE0, 0xF0, 0xF8, 0xFC };
 static const char *parse_string(cJSON *item,const char *str)
@@ -177,8 +184,7 @@ static const char *parse_string(cJSON *item,const char *str)
 				case 'r': *ptr2++='\r';	break;
 				case 't': *ptr2++='\t';	break;
 				case 'u':	 /* transcode utf16 to utf8. */
-					if (sscanf(ptr+1,"%4x",&uc) < 1) break;
-
+					if (scan_unicode(ptr+1, &uc) < 1) break;
 					ptr+=4;	/* get the unicode char. */
 
 					if ((uc>=0xDC00 && uc<=0xDFFF) || uc==0)	break;	// check for invalid.
@@ -186,7 +192,7 @@ static const char *parse_string(cJSON *item,const char *str)
 					if (uc>=0xD800 && uc<=0xDBFF)	// UTF16 surrogate pairs.
 					{
 						if (ptr[1]!='\\' || ptr[2]!='u')	break;	// missing second-half of surrogate.
-						if (sscanf(ptr+3,"%4x",&uc2) < 1) break;
+						if (scan_unicode(ptr+3,&uc2) < 1) break;
 						ptr+=6;
 						if (uc2<0xDC00 || uc2>0xDFFF)		break;	// invalid second-half of surrogate.
 						uc=0x10000 | ((uc&0x3FF)<<10) | (uc2&0x3FF);
