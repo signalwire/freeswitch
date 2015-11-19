@@ -337,8 +337,6 @@ void conference_video_clear_layer(mcu_layer_t *layer)
 
 void conference_video_reset_layer(mcu_layer_t *layer)
 {
-	layer->tagged = 0;
-
 	switch_img_free(&layer->banner_img);
 	switch_img_free(&layer->logo_img);
 	switch_img_free(&layer->logo_text_img);
@@ -1974,9 +1972,11 @@ static void wait_for_canvas(mcu_canvas_t *canvas)
 
 static void personal_attach(mcu_layer_t *layer, conference_member_t *member)
 {
+	layer->tagged = 1;
+
 	if (layer->member_id != (int)member->id) {
 		const char *var = NULL;
-		
+
 		layer->mute_patched = 0;
 		layer->avatar_patched = 0;
 		switch_img_free(&layer->banner_img);
@@ -2386,6 +2386,10 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 
 					if (total < 1) total = 1;
 
+					if (conference->members_with_video == 1 && file_count) {
+						total = 0;
+					}
+					
 					if (conference->video_layout_group && (lg = switch_core_hash_find(conference->layout_group_hash, conference->video_layout_group))) {
 						if ((vlayout = conference_video_find_best_layout(conference, lg, total + file_count))) {
 							conference_video_init_canvas_layers(conference, imember->canvas, vlayout);
@@ -2423,24 +2427,30 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 
 			for (imember = conference->members; imember; imember = imember->next) {
 				int i = 0;
-				int got_floor = 0;
-
+				mcu_layer_t *floor_layer = NULL;
+				
 				if (!imember->session || !switch_channel_test_flag(imember->channel, CF_VIDEO || switch_core_session_media_flow(imember->session, SWITCH_MEDIA_TYPE_VIDEO) == SWITCH_MEDIA_FLOW_SENDONLY) ||
 					switch_core_session_read_lock(imember->session) != SWITCH_STATUS_SUCCESS) {
 					continue;
 				}
 
-				if (!file_count && imember->canvas->layout_floor_id > -1 && imember->conference->video_floor_holder) {
-
+				i = 0;
+				while (i < imember->canvas->total_layers) {
+					layer = &imember->canvas->layers[i++];
+					switch_img_fill(layer->canvas->img, layer->x_pos, layer->y_pos, layer->screen_w, layer->screen_h, &layer->canvas->bgcolor);
+				}
+				i = 0;
+				
+				if (!file_count && imember->canvas->layout_floor_id > -1 && imember->conference->video_floor_holder &&
+					imember->id != imember->conference->video_floor_holder) {
+					
 					if ((omember = conference_member_get(imember->conference, imember->conference->video_floor_holder))) {
-
 						if (conference->members_with_video + conference->members_with_avatar == 1 || imember != omember) {
 							layer = &imember->canvas->layers[imember->canvas->layout_floor_id];
-							personal_attach(layer, omember);
-							got_floor = 1;
+							floor_layer = layer;
 							layer = NULL;
 						}
-
+						
 						switch_thread_rwlock_unlock(omember->rwlock);
 					}
 				}
@@ -2450,28 +2460,38 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 					mcu_layer_t *layer = NULL;
 					switch_image_t *use_img = NULL;
 
-					if (!omember->session || !switch_channel_test_flag(omember->channel, CF_VIDEO) || switch_core_session_media_flow(omember->session, SWITCH_MEDIA_TYPE_VIDEO) == SWITCH_MEDIA_FLOW_SENDONLY) {
+					if (!omember->session || !switch_channel_test_flag(omember->channel, CF_VIDEO) ||
+						switch_core_session_media_flow(omember->session, SWITCH_MEDIA_TYPE_VIDEO) == SWITCH_MEDIA_FLOW_SENDONLY) {
 						continue;
 					}
-
+					
 					if (conference->members_with_video + conference->members_with_avatar != 1 && imember == omember) {
 						continue;
 					}
-					
-					if (!file_count && got_floor && omember->id == conference->video_floor_holder) {
-						layer = &imember->canvas->layers[imember->canvas->layout_floor_id];
-					} else {
 
-						if (got_floor || (file_count && i == imember->canvas->layout_floor_id)) {
-							i++;
-						}
-
-						if (i < imember->canvas->total_layers) {
-							layer = &imember->canvas->layers[i++];
-							personal_attach(layer, omember);
-						}
+					if (file_count && (conference->members_with_video + conference->members_with_avatar == 1)) {
+						floor_layer = NULL;
+						continue;
 					}
 					
+					if (!file_count && floor_layer && omember->id == conference->video_floor_holder) {
+						layer = floor_layer;
+					} else {
+						if (floor_layer || (file_count && i == imember->canvas->layout_floor_id)) {
+							if ((i+1) < imember->canvas->total_layers) {
+								i++;
+							}
+						}
+						
+						if (i < imember->canvas->total_layers) {
+							layer = &imember->canvas->layers[i++];
+						}
+					}
+
+					if (layer) {
+						personal_attach(layer, omember);
+					}
+
 					if (!layer && omember->al) {
 						conference_api_sub_position(omember, NULL, "0:0:0");
 					}
@@ -2528,12 +2548,7 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 						conference_video_scale_and_patch(layer, img, SWITCH_FALSE);
 					}
 				}
-
-				while (i < imember->canvas->total_layers) {
-					layer = &imember->canvas->layers[i++];
-					switch_img_fill(layer->canvas->img, layer->x_pos, layer->y_pos, layer->screen_w, layer->screen_h, &layer->canvas->bgcolor);
-				}
-
+				
 				switch_core_session_rwunlock(imember->session);
 			}
 
@@ -2711,7 +2726,7 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 
 				}
 			}
-
+			
 			switch_mutex_lock(conference->member_mutex);
 			for (imember = conference->members; imember; imember = imember->next) {
 				switch_frame_t *dupframe;
