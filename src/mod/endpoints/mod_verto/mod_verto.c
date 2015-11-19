@@ -3429,18 +3429,40 @@ static switch_bool_t verto__invite_func(const char *method, cJSON *params, jsock
 	}
 
 	if ((bandwidth = cJSON_GetObjectItem(dialog, "outgoingBandwidth"))) {
+		int core_bw = 0, bwval = 0;
+		const char *val;
+
+		if ((val = switch_channel_get_variable_dup(channel, "rtp_video_max_bandwidth_in", SWITCH_FALSE, -1))) {
+			core_bw = switch_parse_bandwidth_string(val);
+		}
+
 		if (!zstr(bandwidth->valuestring) && strcasecmp(bandwidth->valuestring, "default")) {
-			switch_channel_set_variable(channel, "rtp_video_max_bandwidth_in", bandwidth->valuestring);
+			bwval = atoi(bandwidth->valuestring);
 		} else if (bandwidth->valueint) {
-			switch_channel_set_variable_printf(channel, "rtp_video_max_bandwidth_in", "%d", bandwidth->valueint);
+			bwval = bandwidth->valueint;
+		}
+
+		if (bwval <= 0 || (core_bw && bwval < core_bw)) {
+			switch_channel_set_variable_printf(channel, "rtp_video_max_bandwidth_in", "%d", bwval);
 		}
 	}
 
 	if ((bandwidth = cJSON_GetObjectItem(dialog, "incomingBandwidth"))) {
+		int core_bw = 0, bwval = 0;
+		const char *val;
+
+		if ((val = switch_channel_get_variable_dup(channel, "rtp_video_max_bandwidth_out", SWITCH_FALSE, -1))) {
+			core_bw = switch_parse_bandwidth_string(val);
+		}
+
 		if (!zstr(bandwidth->valuestring) && strcasecmp(bandwidth->valuestring, "default")) {
-			switch_channel_set_variable(channel, "rtp_video_max_bandwidth_out", bandwidth->valuestring);
+			bwval = atoi(bandwidth->valuestring);
 		} else if (bandwidth->valueint) {
-			switch_channel_set_variable_printf(channel, "rtp_video_max_bandwidth_out", "%d", bandwidth->valueint);
+			bwval = bandwidth->valueint;
+		}
+
+		if (bwval <= 0 || (core_bw && bwval < core_bw)) {
+			switch_channel_set_variable_printf(channel, "rtp_video_max_bandwidth_out", "%d", bwval);
 		}
 	}
 

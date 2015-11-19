@@ -800,7 +800,8 @@ static switch_status_t consume_nalu(h264_codec_context_t *context, switch_frame_
 
 static switch_status_t open_encoder(h264_codec_context_t *context, uint32_t width, uint32_t height)
 {
-
+	int sane = 0;
+	
 	if (!context->encoder) context->encoder = avcodec_find_encoder(context->av_codec_id);
 
 	if (!context->encoder) {
@@ -847,6 +848,11 @@ static switch_status_t open_encoder(h264_codec_context_t *context, uint32_t widt
 		context->bandwidth = switch_calc_bitrate(context->codec_settings.video.width, context->codec_settings.video.height, 0, 0) * 8;
 	}
 
+	if (context->bandwidth > sane) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "BITRATE TRUNCATED TO %d\n", sane);
+		context->bandwidth = sane * 8;
+	}
+	
 	//context->encoder_ctx->bit_rate = context->bandwidth * 1024;
 	context->encoder_ctx->width = context->codec_settings.video.width;
 	context->encoder_ctx->height = context->codec_settings.video.height;

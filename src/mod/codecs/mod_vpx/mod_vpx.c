@@ -300,7 +300,8 @@ static switch_status_t init_encoder(switch_codec_t *codec)
 	vpx_codec_enc_cfg_t *config = &context->config;
 	int token_parts = 1;
 	int cpus = switch_core_cpu_count();
-
+	int sane;
+	
 	if (!context->codec_settings.video.width) {
 		context->codec_settings.video.width = 1280;
 	}
@@ -312,15 +313,19 @@ static switch_status_t init_encoder(switch_codec_t *codec)
 	if (context->codec_settings.video.bandwidth == -1) {
 		context->codec_settings.video.bandwidth = 0;
 	}
-
+	
 	if (context->codec_settings.video.bandwidth) {
 		context->bandwidth = context->codec_settings.video.bandwidth;
 	} else {
 		context->bandwidth = switch_calc_bitrate(context->codec_settings.video.width, context->codec_settings.video.height, 0, 0);
+
 	}
 
-	if (context->bandwidth > 40960) {
-		context->bandwidth = 40960;
+	sane = switch_calc_bitrate(context->codec_settings.video.width, context->codec_settings.video.height, 4, 30);
+
+	if (context->bandwidth > sane) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(codec->session), SWITCH_LOG_WARNING, "BITRATE TRUNCATED TO %d\n", sane);
+		context->bandwidth = sane;
 	}
 
 	context->pkt = NULL;
