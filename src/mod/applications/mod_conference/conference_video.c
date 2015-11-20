@@ -2285,13 +2285,19 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 					}
 
 					if (!layer->mute_patched) {
-
+						
+						if (!imember->video_mute_img) {
+							conference_video_vmute_snap(imember, SWITCH_FALSE);
+						}
+						
 						if (imember->video_mute_img || layer->mute_img) {
 							conference_video_clear_layer(layer);
-
-							if (!layer->mute_img && imember->video_mute_img) {
-								//layer->mute_img = switch_img_read_png(imember->video_mute_png, SWITCH_IMG_FMT_I420);
-								switch_img_copy(imember->video_mute_img, &layer->mute_img);
+							
+							if (!layer->mute_img) {								
+								if (imember->video_mute_img) {
+									//layer->mute_img = switch_img_read_png(imember->video_mute_png, SWITCH_IMG_FMT_I420);
+									switch_img_copy(imember->video_mute_img, &layer->mute_img);
+								}
 							}
 
 							if (layer->mute_img) {
