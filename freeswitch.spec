@@ -2360,9 +2360,9 @@ fi
 
 %files python
 %{MODINSTDIR}/mod_python*.so*
-%attr(0644, root, bin) /usr/lib/python*/site-packages/freeswitch.py*
-%attr(0755, root, bin) /usr/lib/python*/site-packages/_ESL.so*
-%attr(0755, root, bin) /usr/lib/python*/site-packages/ESL.py*
+%attr(0644, root, bin) /usr/lib*/python*/site-packages/freeswitch.py*
+%attr(0755, root, bin) /usr/lib*/python*/site-packages/_ESL.so*
+%attr(0755, root, bin) /usr/lib*/python*/site-packages/ESL.py*
 %dir %attr(0750, freeswitch, daemon) %{sysconfdir}/autoload_configs
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/python.conf.xml
 
