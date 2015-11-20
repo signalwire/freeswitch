@@ -773,14 +773,33 @@ case "$host" in
     ;;
     *linux*)
 	APR_ADDTO([PLATFORM_CORE_LIBS], [-ldl -lcrypt -lrt])
-	systemdinit=false
-	if test -d /run/systemd/system; then
-		systemdinit=true
-		AC_SUBST(bindir_expanded)
-		AC_CONFIG_FILES([build/startup/install_systemd.sh], [chmod +x build/startup/install_systemd.sh])
-		AC_CONFIG_FILES([build/startup/freeswitch.service])
+	if test -f /etc/os-release; then
+		DISTRO="$(source /etc/os-release && echo $ID$VERSION_ID)"
+		case "$DISTRO" in
+			*debian8*)
+				environmentfilelocation="default"
+				;;&
+			*centos7*)
+				environmentfilelocation="sysconfig"
+				;;&
+			*debian8*|*centos7*)
+				knowninit=false
+				if test -d /run/systemd/system; then
+					knowninit=true
+					AC_SUBST(DISTRO)
+					AC_SUBST(rundir)
+					AC_SUBST(environmentfilelocation)
+					AC_SUBST(bindir_expanded)
+					AC_CONFIG_FILES([build/startup/install_systemd.sh], [chmod +x build/startup/install_systemd.sh])
+					AC_CONFIG_FILES([build/startup/freeswitch.service])
+				fi
+				;;
+			*)
+				knowninit=false
+				;;
+		esac
 	fi
-	AM_CONDITIONAL([SYSTEMD_INIT], [test x$systemdinit = xtrue])
+	AM_CONDITIONAL([KNOWN_INIT], [test x$knowninit = xtrue])
     ;;
 esac
 
