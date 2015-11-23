@@ -2888,6 +2888,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_set_remote_address(switch_rtp_t *rtp_
 	switch_mutex_lock(rtp_session->write_mutex);
 
 	rtp_session->remote_addr = remote_addr;
+	switch_cp_addr(rtp_session->rtp_from_addr, rtp_session->remote_addr);
 
 	if (change_adv_addr) {
 		rtp_session->remote_host_str = switch_core_strdup(rtp_session->pool, host);
