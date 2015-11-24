@@ -391,7 +391,27 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
               if (message.action == 'response') {
                 // This is a response with the video layouts list.
                 if (message['conf-command'] == 'list-videoLayouts') {
-                  data.confLayouts = message.responseData.sort();
+                  var rdata = [];
+
+                  for (var i in message.responseData) {
+                    rdata.push(message.responseData[i].name);
+                  }
+
+                  var options = rdata.sort(function(a, b) {
+                    var ga = a.substring(0, 6) == "group:" ? true : false;
+                    var gb = b.substring(0, 6) == "group:" ? true : false;
+
+                    if ((ga || gb) && ga != gb) {
+                      return ga ? -1 : 1;
+                    }
+
+                    return ( ( a == b ) ? 0 : ( ( a > b ) ? 1 : -1 ) );
+                  });
+                  data.confLayoutsData = message.responseData;
+                  data.confLayouts = options;
+                } else if (message['conf-command'] == 'canvasInfo') {
+                  data.canvasInfo = message.responseData;
+                  $rootScope.$emit('conference.canvasInfo', message.responseData);
                 } else {
                   $rootScope.$emit('conference.broadcast', message);
                 }
@@ -402,6 +422,7 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
           if (data.confRole == "moderator") {
             console.log('>>> conf.listVideoLayouts();');
             conf.listVideoLayouts();
+            conf.modCommand('canvasInfo');
           }
 
           data.conf = conf;
@@ -911,6 +932,12 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
       */
       sendConferenceChat: function(message) {
         data.conf.sendChat(message, "message");
+      },
+      /*
+      * Method is used to set a member's resevartion Id.
+      */
+      setResevartionId: function(memberID, resID) {
+        data.conf.modCommand('vid-res-id', memberID, resID);
       },
       /*
       * Method is used to send user2user chats.

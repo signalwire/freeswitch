@@ -23,12 +23,12 @@
       </span>
       <!-- FIXME(italo): Put this whole block in a flex box to avoid defining fixed width.-->
       <h4 class="chat-members-name">
-        <div class="members-name">{{ member.name }}</div>
+        <div class="ellipsis members-name">{{ member.name }}</div>
 	<small class="ellipsis members-number">({{ member.number }})</small>
 
 	<div class="members-badges">
    	  <div ng-if="member.status.video.floor" class="label badge-floor" ng-class="{'label-danger': member.status.video.floorLocked, 'label-info': !member.status.video.floorLocked}"><i class="mdi mdi-action-https lock-floor" ng-if="member.status.video.floorLocked"></i> <span>Floor</span></div>
-          <div ng-if="member.status.video.reservationID == 'presenter'" class="label label-info">Presenter</div>
+          <div class="label label-info text-capitalize">{{ member.status.video.reservationID }}</div>
           <div ng-if="member.status.video.screenShare" class="label label-info">Screen Share</div>
 	</div>
       </h4>
@@ -55,12 +55,6 @@
               <a href="" ng-click="confMuteVideo(member.id)">
                 <span class="mdi-fw mdi-av-videocam-off"></span>
                 Mute/Unmute Video
-              </a>
-            </li>
-            <li>
-              <a href="" ng-click="confPresenter(member.id)">
-                <span class="mdi-fw mdi-action-picture-in-picture"></span>
-                Presenter
               </a>
             </li>
             <li>
@@ -97,6 +91,21 @@
               <a href="" ng-click="confTransfer(member.id)">
                 <span class="mdi-fw mdi-communication-call-made"></span>
                 Transfer
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="pull-right resevartion-menu chat-members-action" ng-show="verto.data.confRole == 'moderator' && resIDs.length > 0">
+        <div class="btn-group">
+          <button type="button" class="btn btn-xs dropdown-toggle" data-toggle="dropdown">
+            <i class="mdi-action-picture-in-picture icon" style="margin-right: 0px;"></i>
+          </button>
+          <ul class="dropdown-menu slidedown pull-right">
+            <li ng-repeat="resID in resIDs">
+              <a href="" class="text-capitalize" ng-class="{ 'selected': resID == member.status.video.reservationID }" ng-click="confResID(member.id, resID)">
+                {{ resID }}
               </a>
             </li>
           </ul>

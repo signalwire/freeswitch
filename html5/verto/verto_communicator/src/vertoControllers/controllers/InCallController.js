@@ -73,6 +73,8 @@
 
         $scope.confChangeVideoLayout = function(layout) {
           verto.data.conf.setVideoLayout(layout);
+          $scope.videoLayout = layout;
+          $rootScope.$emit('changedVideoLayout', layout);
         };
 
         $scope.confChangeSpeaker = function(speakerId) {
