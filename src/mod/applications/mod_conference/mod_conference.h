@@ -560,6 +560,7 @@ typedef struct conference_obj {
 	char *video_letterbox_bgcolor;
 	char *no_video_avatar;
 	conference_video_mode_t conference_video_mode;
+	int video_quality;
 	int members_with_video;
 	int members_with_avatar;
 	switch_codec_settings_t video_codec_settings;

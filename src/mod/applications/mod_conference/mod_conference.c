@@ -2410,6 +2410,7 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 	char *video_codec_bandwidth = NULL;
 	char *no_video_avatar = NULL;
 	conference_video_mode_t conference_video_mode = CONF_VIDEO_MODE_PASSTHROUGH;
+	int conference_video_quality = 1;
 	float fps = 15.0f;
 	uint32_t max_members = 0;
 	uint32_t announce_count = 0;
@@ -2721,6 +2722,15 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 				terminate_on_silence = val;
 			} else if (!strcasecmp(var, "endconf-grace-time") && !zstr(val)) {
 				endconference_grace_time = val;
+			} else if (!strcasecmp(var, "video-quality") && !zstr(val)) {
+				int tmp = atoi(val);
+
+				if (tmp > 0 && tmp < 5) {
+					conference_video_quality = tmp;
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Video quality must be between 1 and 4\n");
+				}
+				
 			} else if (!strcasecmp(var, "video-mode") && !zstr(val)) {
 				if (!strcasecmp(val, "passthrough")) {
 					conference_video_mode = CONF_VIDEO_MODE_PASSTHROUGH;
@@ -2789,8 +2799,8 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 	conference->caller_controls = switch_core_strdup(conference->pool, caller_controls);
 	conference->moderator_controls = switch_core_strdup(conference->pool, moderator_controls);
 	conference->broadcast_chat_messages = broadcast_chat_messages;
-
-
+	conference->video_quality = conference_video_quality;
+	
 	conference->conference_video_mode = conference_video_mode;
 
 	if (!switch_core_has_video() && (conference->conference_video_mode == CONF_VIDEO_MODE_MUX || conference->conference_video_mode == CONF_VIDEO_MODE_TRANSCODE)) {
@@ -2864,7 +2874,7 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 
 		if (video_codec_bandwidth) {
 			if (!strcasecmp(video_codec_bandwidth, "auto")) {
-				conference->video_codec_settings.video.bandwidth = switch_calc_bitrate(canvas_w, canvas_h, 2, (int)conference->video_fps.fps);
+				conference->video_codec_settings.video.bandwidth = switch_calc_bitrate(canvas_w, canvas_h, conference->video_quality, (int)conference->video_fps.fps);
 			} else {
 				conference->video_codec_settings.video.bandwidth = switch_parse_bandwidth_string(video_codec_bandwidth);
 			}
