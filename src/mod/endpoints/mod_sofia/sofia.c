@@ -5472,6 +5472,11 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 					sofia_set_flag(profile, TFLAG_LATE_NEGOTIATION);
 				}
 
+				if (sofia_test_flag(profile, TFLAG_INB_NOMEDIA) && !sofia_test_flag(profile, TFLAG_LATE_NEGOTIATION)) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "inbound-bypass-media  implictly enables inbound-late-negotiation\n");
+					sofia_set_flag(profile, TFLAG_LATE_NEGOTIATION);
+				}
+
 				if (sofia_test_pflag(profile, PFLAG_SEND_DISPLAY_UPDATE) && !sofia_test_pflag(profile, PFLAG_ALLOW_UPDATE)) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "send-display-update=true is set, but we can't comply because allow-update=false\n");
 					sofia_clear_pflag(profile, PFLAG_SEND_DISPLAY_UPDATE);
