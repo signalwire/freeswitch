@@ -321,7 +321,7 @@ static switch_status_t init_encoder(switch_codec_t *codec)
 
 	}
 
-	sane = switch_calc_bitrate(context->codec_settings.video.width, context->codec_settings.video.height, 1, 30);
+	sane = switch_calc_bitrate(1920, 1080, 1, 30);
 
 	if (context->bandwidth > sane) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(codec->session), SWITCH_LOG_WARNING, "BITRATE TRUNCATED FROM %d TO %d\n", context->bandwidth, sane);
