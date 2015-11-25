@@ -3259,7 +3259,9 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_dtls(switch_rtp_t *rtp_session, d
 	const char *kind = "";
 	BIO *bio;
 	DH *dh;
+#ifndef OPENSSL_NO_EC
 	EC_KEY* ecdh;
+#endif
 
 #ifndef HAVE_OPENSSL_DTLS_SRTP
 	return SWITCH_STATUS_FALSE;
@@ -3367,6 +3369,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_dtls(switch_rtp_t *rtp_session, d
 	SSL_set_read_ahead(dtls->ssl, 1);
 	//SSL_set_verify(dtls->ssl, (SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT), cb_verify_peer);
 
+#ifndef OPENSSL_NO_EC
 	ecdh = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
 	if (!ecdh) {
 		return SWITCH_STATUS_FALSE;
@@ -3374,6 +3377,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_dtls(switch_rtp_t *rtp_session, d
 	SSL_set_options(dtls->ssl, SSL_OP_SINGLE_ECDH_USE);
 	SSL_set_tmp_ecdh(dtls->ssl, ecdh);
 	EC_KEY_free(ecdh);
+#endif
 
 	SSL_set_verify(dtls->ssl, SSL_VERIFY_NONE, NULL);
 	SSL_set_app_data(dtls->ssl, dtls);
