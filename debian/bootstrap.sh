@@ -1009,6 +1009,7 @@ print_conf_install () {
   cat <<EOF
 conf/${conf} /usr/share/freeswitch/conf
 /usr/share/freeswitch/fonts
+/var/lib/freeswitch/images
 EOF
 }
 
