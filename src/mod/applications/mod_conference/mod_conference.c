@@ -2864,7 +2864,7 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 
 		if (video_codec_bandwidth) {
 			if (!strcasecmp(video_codec_bandwidth, "auto")) {
-				conference->video_codec_settings.video.bandwidth = switch_calc_bitrate(canvas_w, canvas_h, 1, (int)conference->video_fps.fps);
+				conference->video_codec_settings.video.bandwidth = switch_calc_bitrate(canvas_w, canvas_h, 2, (int)conference->video_fps.fps);
 			} else {
 				conference->video_codec_settings.video.bandwidth = switch_parse_bandwidth_string(video_codec_bandwidth);
 			}
