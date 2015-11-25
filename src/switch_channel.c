@@ -3799,7 +3799,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_answer(switch_channel_t *
 	}
 
 
-	if (switch_core_session_in_thread(channel->session)) {
+	if (switch_core_session_in_thread(channel->session) && !switch_channel_test_flag(channel, CF_PROXY_MODE)) {
 		const char *delay;
 
 		if (switch_channel_test_flag(channel, CF_VIDEO)) {
