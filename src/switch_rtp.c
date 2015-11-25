@@ -6728,6 +6728,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		case RESULT_GOTO_TIMERCHECK:
 			goto timer_check;
 		case RESULT_CONTINUE:
+			status = SWITCH_STATUS_SUCCESS;
 			goto result_continue;
 		}
 
