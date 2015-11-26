@@ -1008,8 +1008,6 @@ EOF
 print_conf_install () {
   cat <<EOF
 conf/${conf} /usr/share/freeswitch/conf
-/usr/share/freeswitch/fonts
-/var/lib/freeswitch/images
 EOF
 }
 
@@ -1346,6 +1344,10 @@ grep -e '^Package:' control | grep -v '^freeswitch-all$' | while xread l; do
   m="${l#*: }"
   conf_merge freeswitch-all.install $m.install
 done
+
+echo "/usr/share/freeswitch/fonts" >> freeswitch-all.install
+echo "/var/lib/freeswitch/images" >> freeswitch-all.install
+
 for x in postinst postrm preinst prerm; do
   cp -a freeswitch.$x freeswitch-all.$x
 done
