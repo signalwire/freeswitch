@@ -3446,11 +3446,10 @@ void conference_video_write_frame(conference_obj_t *conference, conference_membe
 				continue;
 			}
 			
-			if (!isession || !switch_channel_test_flag(imember->channel, CF_VIDEO) ) {
-				continue;
+			if (switch_channel_test_flag(imember->channel, CF_VIDEO) ) {
+				switch_core_session_request_video_refresh(imember->session);	
 			}
-		
-			switch_core_session_request_video_refresh(imember->session);	
+			
 			switch_core_session_rwunlock(isession);
 		}
 	}
