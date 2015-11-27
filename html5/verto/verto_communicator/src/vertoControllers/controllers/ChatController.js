@@ -49,6 +49,39 @@
         });
       });
 
+
+      $rootScope.$on('changedVideoLayout', function(event, layout) {
+        $scope.resIDs = getResByLayout(layout);
+
+        // remove resIDs param to clear every members resID.
+        // passing $scope.resIDs results in preserving resIDs compatible
+        // with the current layout
+        clearMembersResID($scope.resIDs);
+      });
+
+      $rootScope.$on('conference.canvasInfo', function(event, data) {
+        $scope.currentLayout = data[0].layoutName;
+        $scope.resIDs = getResByLayout($scope.currentLayout);
+      });
+
+      function getResByLayout(layout) {
+        var layoutsData = verto.data.confLayoutsData;
+        for (var i = 0; i < layoutsData.length; i++) {
+          if (layoutsData[i].name === layout) {
+            return layoutsData[i].resIDS;
+          }
+        }
+      }
+
+      // @preserve - a array of values to be preserved
+      function clearMembersResID(preserve) {
+        $scope.members.forEach(function(member) {
+          var resID = member.status.video.reservationID;
+          if (preserve && preserve.indexOf(resID) !== -1) return;
+            $scope.confResID(member.id, resID);
+        });
+      };
+
       function findMemberByUUID(uuid) {
         var found = false;
         for (var idx in $scope.members) {
@@ -169,6 +202,11 @@
       $scope.confPresenter = function(memberID) {
         console.log('$scope.confPresenter');
         verto.data.conf.presenter(memberID);
+      };
+
+      $scope.confResID = function(memberID, resID) {
+        console.log('Set', memberID, 'to', resID);
+        verto.setResevartionId(memberID, resID);
       };
 
       $scope.confVideoFloor = function(memberID) {

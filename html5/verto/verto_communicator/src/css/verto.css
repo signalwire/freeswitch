@@ -21,7 +21,6 @@ body {
   text-overflow: ellipsis;
   overflow: hidden;
   white-space: nowrap;
-  width: 160px;
   display: inline-block;
 }
 
@@ -604,12 +603,24 @@ body .modal-body .btn-group .btn.active {
   transition-delay:0s;
 }
 
+
+#incall .dropdown-menu .selected {
+  background-color: #ccc;
+  color: white;
+}
+
+#incall .dropdown-menu .selected:hover {
+  background-color: #ccc;
+  color: white;
+  cursor: pointer;
+}
+
 #incall .video-hover-buttons .btn-group .dropdown-menu {
   max-height: 200px;
   overflow: auto;
 }
 
-#incall .video-hover-buttons .btn-group ul li a:hover {
+#incall .video-hover-buttons .btn-group ul li a:not(.selected):hover {
   background-color: #EEE;
   cursor: pointer;
 }
@@ -906,13 +917,11 @@ body .modal-body .btn-group .btn.active {
 }
 
 .members-name {
-  width: 160px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  width: 140px;
 }
 
 .members-number {
+  width: 140px;
   font-size: 10px;
 }
 
@@ -970,6 +979,7 @@ body .modal-body .btn-group .btn.active {
   display: inline-block;
   line-height: 16px;
   margin-top: -3px;
+  width: 140px;
 }
 
 .chat-members .chat-members-status i {
@@ -1018,6 +1028,17 @@ body .modal-body .btn-group .btn.active {
   vertical-align: -2px;
 }
 
+.chat-members .resevartion-menu .icon {
+  color: #C5C5C5;
+}
+
+.chat-members .resevartion-menu .dropdown-menu {
+  min-width: 0;
+}
+
+.chat-members .resevartion-menu .dropdown-menu .selected {
+  font-weight: bold;
+}
 
 /*.chat-messages {*/
   /*border-top: 1px solid #E5E5E5;*/

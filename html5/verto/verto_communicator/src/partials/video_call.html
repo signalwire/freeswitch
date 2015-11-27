@@ -31,7 +31,7 @@
         </button>
         <ul class="dropdown-menu">
           <li ng-repeat="layout in verto.data.confLayouts">
-            <a ng-click="confChangeVideoLayout(layout)">{{ layout }}</a>
+            <a ng-click="confChangeVideoLayout(layout)" ng-class="{ 'selected': layout == videoLayout }">{{ layout }}</a>
           </li>
         </ul>
       </div>
