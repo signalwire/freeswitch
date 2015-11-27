@@ -8,6 +8,24 @@
 
       console.debug('Executing MainController.');
 
+      $rootScope.master = $location.search().master;
+      if ($location.search().watcher === 'true') {
+        $rootScope.watcher = true;
+        angular.element(document.body).addClass('watcher');
+        var dialpad;
+        var extension = dialpad = $location.search().extension;
+        var canvasID = $location.search().canvas_id;
+
+        if (dialpad) {
+          if (canvasID) {
+            dialpad += '-canvas-' + canvasID;
+          }
+          $rootScope.extension = extension;
+          $rootScope.canvasID = canvasID;
+          $location.search().autocall = dialpad;
+        }
+      }
+
       var myVideo = document.getElementById("webcam");
       $scope.verto = verto;
       $scope.storage = storage;
@@ -429,6 +447,11 @@
         if (!verto.data.call) {
           toastr.warning('There is no call to hangup.');
           $location.path('/dialpad');
+          return;
+        }
+
+        if ($rootScope.watcher) {
+          window.close();
           return;
         }
 

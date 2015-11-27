@@ -1,6 +1,6 @@
 <div class="panel panel-default shadow-z-0">
   <div class="video-wrapper">
-    <div class="video-hover-buttons" ng-show="verto.data.callState == 'active'">
+    <div class="video-hover-buttons" ng-show="verto.data.callState == 'active' && !watcher">
       <div id="moderator-tools" ng-show="verto.data.confRole == 'moderator'">
         <button tooltip-placement="bottom" tooltip-title="Play" uib-tooltip="Play"
                 class="btn btn-material-blue-900" ng-click="play()">
@@ -68,6 +68,17 @@
             </li>
           </ul>
         </div>
+        <div class="btn-group" ng-show="conf.canvasCount > 1">
+          <button tooltip-placement="bottom" tooltip-title="Popup" uib-tooltips="Popup" type="button" class="btn btn-material-blue-900 dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            <i class="mdi-image-filter-none"></i>
+            <span class="caret"></span>
+          </button>
+          <ul class="dropdown-menu">
+            <li ng-repeat="canvas in canvases">
+              <a ng-click="confPopup(canvas.id)">{{ canvas.name }}</a>
+            </li>
+          </ul>
+        </div>
       </div>
     </div>
     <div class="video-tag-wrapper" id="video-tag-wrapper" ng-dblclick="goFullscreen()" show-controls>
@@ -80,13 +91,14 @@
       <div class="row">
         <div class="col-md-6 col-xs-6 text-left">
           <div class="video-timer">
-            <timer start-time="start_time" autostart="false" interval="1000">{{hhours}}:{{mminutes}}:{{sseconds}}</timer>
+            <span ng-show="watcher" style="font-size: 18px">Room {{ extension }} - Canvas {{ canvasID }}</span>
+            <timer start-time="start_time" autostart="false" interval="1000" ng-if="!watcher">{{hhours}}:{{mminutes}}:{{sseconds}}</timer>
           </div>
         </div>
         <div class="col-md-6 col-xs-6 text-right">
           <button class="btn btn-danger" ng-click="hangup()">
             <i class="mdi-communication-call-end"></i>
-            End Call
+            {{ watcher ? 'Close' : 'End Call' }}
           </button>
         </div>
       </div>

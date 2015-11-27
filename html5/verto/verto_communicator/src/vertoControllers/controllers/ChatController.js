@@ -98,6 +98,11 @@
       });
 
       $rootScope.$on('members.del', function(event, uuid) {
+        if ($rootScope.watcher && $rootScope.master === uuid) {
+          verto.hangup();
+          window.close();
+        }
+
         $scope.$apply(function() {
           var memberIdx = findMemberByUUID(uuid);
           if (memberIdx != -1) {

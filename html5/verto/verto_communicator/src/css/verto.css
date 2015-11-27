@@ -850,6 +850,10 @@ body .modal-body .btn-group .btn.active {
         padding-right: 360px;
     }
 
+    .watcher #wrapper {
+      padding-right: 0;
+    }
+
     #wrapper.toggled {
         padding-right: 0;
     }
@@ -1544,4 +1548,43 @@ body:-webkit-full-screen #incall .video-footer {
 
 #preview .refresh {
   margin: 15px 0px 0px 0px;
+}
+
+.watcher {
+  padding: 0;
+  background-color: #333333;
+}
+
+.watcher .navbar, .watcher #sidebar-wrapper, .watcher #dialpad {
+  display: none;
+}
+
+.watcher #wrapper.toggled {
+  padding-right: 0;
+}
+
+.watcher #incall .panel {
+  margin: 0;
+}
+
+.watcher #video-tag-wrapper {
+  background: linear-gradient(to bottom, #272627, #27252A);
+  background-color: #27252A;
+}
+
+.watcher #incall .video-call {
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  max-width: none;
+  max-height: none;
+}
+
+.watcher #webcam {
+  max-width: 160.78vh;
+  margin: auto;
+}
+
+.watcher .spinner {
+  top: 20%;
 }

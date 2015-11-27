@@ -15,7 +15,6 @@
         $scope.dialpadTemplate = '';
         $scope.incall = true;
 
-
         if (storage.data.videoCall) {
           $scope.callTemplate = 'partials/video_call.html';
         }
@@ -25,6 +24,7 @@
             if($scope.chatStatus) {
               $scope.openChat();
             }
+            buildCanvasesData();
           });
         });
 
@@ -80,6 +80,22 @@
           $rootScope.$emit('changedSpeaker', speakerId);
         };
 
+        $scope.confPopup = function(canvas_id) {
+          var s = window.location.href;
+          var curCall = verto.data.call.callID;
+          var extension = verto.data.call.params.remote_caller_id_number;
+          var width = 465, height = 360;
+          var x = screen.width/2 - width/2
+          var y = screen.height/2 - height/2
+
+          s = s.replace(/\#.*/, '');
+          s += "#/?sessid=random&master=" + curCall + "&watcher=true&extension=" + extension+ "&canvas_id=" + canvas_id;
+
+          console.log("opening new window to " + s);
+          var popup = window.open(s, "canvas_window_" + canvas_id, "toolbar=0,location=0,menubar=0,directories=0,width=" + width + ",height=" + height, + ',left=' + x + ',top=' + y);
+          popup.moveTo(x, y);
+        };
+
         $scope.screenshare = function() {
           if(verto.data.shareCall) {
             verto.screenshareHangup();
@@ -87,6 +103,14 @@
           }
           verto.screenshare(storage.data.called_number);
         };
+
+        function buildCanvasesData() {
+          $scope.conf = verto.data.conf.params.laData;
+          $scope.canvases = [{ id: 1, name: 'Super Canvas' }];
+          for (var i = 1; i < $scope.conf.canvasCount; i++) {
+            $scope.canvases.push({ id: i+1, name: 'Canvas ' + (i+1) });
+          }
+        }
 
         $scope.muteMic = verto.muteMic;
         $scope.muteVideo = verto.muteVideo;
