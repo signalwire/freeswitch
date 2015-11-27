@@ -81,12 +81,14 @@
         };
 
         $scope.confPopup = function(canvas_id) {
+          var video = document.getElementById('webcam');
           var s = window.location.href;
           var curCall = verto.data.call.callID;
           var extension = verto.data.call.params.remote_caller_id_number;
-          var width = 465, height = 360;
-          var x = screen.width/2 - width/2
-          var y = screen.height/2 - height/2
+          var width = webcam.offsetWidth;
+          var height = webcam.offsetHeight + 100;
+          var x = (screen.width - width)/2
+          var y = (screen.height - height)/2
 
           s = s.replace(/\#.*/, '');
           s += "#/?sessid=random&master=" + curCall + "&watcher=true&extension=" + extension+ "&canvas_id=" + canvas_id;
