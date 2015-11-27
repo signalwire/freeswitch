@@ -28,7 +28,7 @@
  * Paul D. Tinsley <pdt at jackhammer.org>
  * Bret McDanel <trixter AT 0xdecafbad.com>
  * Raymond Chandler <intralanman@freeswitch.org>
- * Emmanuel Schmidbauer <e.schmidbauer@gmail.com>
+ * Emmanuel Schmidbauer <eschmidbauer@gmail.com>
  *
  *
  * mod_sofia.c -- SOFIA SIP Endpoint
@@ -1877,14 +1877,21 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		if (!zstr(msg->string_arg)) {
 
 			if (!switch_channel_test_flag(channel, CF_ANSWERED) && !sofia_test_flag(tech_pvt, TFLAG_BYE)) {
-				char *dest = (char *) msg->string_arg;
+				char *mydest = (char *) msg->string_arg;
 				char *argv[MAX_REDIR] = { 0 };
 				char *mydata = NULL, *newdest = NULL;
 				int argc = 0, i;
 				switch_size_t len = 0;
+				switch_call_cause_t sip_redirect_cause = SWITCH_CAUSE_NORMAL_UNSPECIFIED;
+				char *dest = switch_core_session_strdup(session, mydest);
+
+				if ((argc = switch_separate_string(dest, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) >= 2) {
+					const char *redirect_cause = argv[1];
+					sip_redirect_cause = switch_channel_str2cause(redirect_cause);
+				}
 
 				if (strchr(dest, ',')) {
-					mydata = switch_core_session_strdup(session, dest);
+					mydata = dest;
 					len = strlen(mydata) * 2;
 					newdest = switch_core_session_alloc(session, len);
 
@@ -1936,7 +1943,10 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 					tech_pvt->respond_phrase = "Moved Temporarily";
 				}
 
-				switch_channel_hangup(tech_pvt->channel, sofia_glue_sip_cause_to_freeswitch(tech_pvt->respond_code));
+				if (sip_redirect_cause == SWITCH_CAUSE_NONE) {
+					sip_redirect_cause = SWITCH_CAUSE_NORMAL_UNSPECIFIED;
+				}
+				switch_channel_hangup(tech_pvt->channel, sip_redirect_cause);
 
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Too late for redirecting, already answered\n");
