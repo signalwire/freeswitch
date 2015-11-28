@@ -299,6 +299,117 @@ end:
 	return;
 }
 
+char *find_channel_brackets(char *data, char start, char end, char **front, int *local_clobber)
+{
+	char *p;
+	char *last_end = NULL;
+
+	*front = NULL;
+	p = data;
+	while ((p = switch_strchr_strict(p, start, " "))) {
+		char *next_end = switch_find_end_paren(p, start, end);
+		if (!next_end) {
+			break;
+		}
+		if (!*front) {
+			*front = p;
+		}
+		*p = '[';
+		last_end = next_end;
+		*last_end = ']';
+		p = last_end + 1;
+	}
+	if (!last_end) {
+		if (local_clobber) {
+			*local_clobber = 0;
+		}
+		return data;
+	}
+
+	*last_end = '\0';
+	if (local_clobber) {
+		/* Would be nice to use switch_true to account for other valid boolean
+		   representations, but this is better than nothing: */
+		*local_clobber = strstr(data, "local_var_clobber=true") != NULL;
+	}
+	return last_end + 1;
+}
+
+char *find_channel_delim(char *p, const char **out)
+{
+	*out = "";
+	for (; *p; p++) {
+		if (*p == ',') {
+			*out = ",";
+			break;
+		}
+		if (*p == '|') {
+			*out = "|";
+			break;
+		}
+		if (!strncmp(p, SWITCH_ENT_ORIGINATE_DELIM, strlen(SWITCH_ENT_ORIGINATE_DELIM))) {
+			*out = SWITCH_ENT_ORIGINATE_DELIM;
+			break;
+		}
+	}
+	return p;
+}
+
+/* Read <..> and {..}, and inserts [..] before every leg dial string. */
+void output_flattened_dial_string(char *data, switch_stream_handle_t *stream)
+{
+	char *p;
+	char *vars_start_ent;
+	char *vars_start_all;
+	char *vars_start_leg;
+	int local_clobber_ent;
+	int local_clobber_all;
+	const char *delim;
+	char *leg_dial_string;
+
+	/* -3 because ":_:" is the longest delimiter, of length 3. */
+	p = find_channel_delim(end_of_p(data) - 3, &delim);
+	*p = '\0';
+
+	p = data;
+	p = find_channel_brackets(p, '<', '>', &vars_start_ent, &local_clobber_ent);
+	p = find_channel_brackets(p, '{', '}', &vars_start_all, &local_clobber_all);
+
+	while (*p) {
+		p = find_channel_brackets(p, '[', ']', &vars_start_leg, NULL);
+		if (vars_start_leg) {
+			if (vars_start_ent && !local_clobber_ent) {
+				stream->write_function(stream, "%s]", vars_start_ent);
+			}
+			if (vars_start_all && !local_clobber_all) {
+				stream->write_function(stream, "%s]", vars_start_all);
+			}
+			stream->write_function(stream, "%s]", vars_start_leg);
+		}
+
+		while (*p == ' ') p++;
+
+		if (*p) {
+			if (vars_start_all && (!vars_start_leg || local_clobber_all)) {
+				stream->write_function(stream, "%s]", vars_start_all);
+			}
+			if (vars_start_ent && (!vars_start_leg || local_clobber_ent)) {
+				stream->write_function(stream, "%s]", vars_start_ent);
+			}
+			leg_dial_string = p;
+			p = find_channel_delim(p, &delim);
+			if (*p) {
+				*p = '\0';
+				p += strlen(delim);
+				if (!strcmp(delim, SWITCH_ENT_ORIGINATE_DELIM)) {
+					p = find_channel_brackets(p, '{', '}', &vars_start_all, &local_clobber_all);
+				}
+			}
+			stream->write_function(stream, "%s%s", leg_dial_string, delim);
+		}
+	}
+}
+
 #define LIST_USERS_SYNTAX "[group <group>] [domain <domain>] [user <user>] [context <context>]"
 SWITCH_STANDARD_API(list_users_function)
 {
@@ -904,9 +1015,6 @@ SWITCH_STANDARD_API(group_call_function)
 	if (!zstr(domain)) {
 		switch_xml_t xml, x_domain, x_group;
 		switch_event_t *params;
-		switch_stream_handle_t dstream = { 0 };
-
-		SWITCH_STANDARD_STREAM(dstream);
 
 		switch_event_create(&params, SWITCH_EVENT_REQUEST_PARAMS);
 		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "group", group_name);
@@ -917,8 +1025,6 @@ SWITCH_STANDARD_API(group_call_function)
 			switch_xml_t x_user, x_users, x_param, x_params, my_x_user;
 
 			if ((x_users = switch_xml_child(x_group, "users"))) {
-				ok++;
-
 				for (x_user = switch_xml_child(x_users, "user"); x_user; x_user = x_user->next) {
 					const char *id = switch_xml_attr_soft(x_user, "id");
 					const char *x_user_type = switch_xml_attr_soft(x_user, "type");
@@ -1006,10 +1112,21 @@ SWITCH_STANDARD_API(group_call_function)
 					}
 
 					if (d_dest) {
-						dstream.write_function(&dstream, "%s%s", d_dest, call_delim);
+						switch_stream_handle_t dstream = { 0 };
+						SWITCH_STANDARD_STREAM(dstream);
+						dstream.write_function(&dstream, "%s", d_dest);
 
 						if (d_dest != dest) {
 							free(d_dest);
+						}
+						if (dstream.data) {
+							if (++ok > 1) {
+								stream->write_function(stream, "%s", call_delim);
+							}
+
+							output_flattened_dial_string((char*)dstream.data, stream);
+
+							free(dstream.data);
 						}
 					}
 
@@ -1019,30 +1136,6 @@ SWITCH_STANDARD_API(group_call_function)
 						xml_for_pointer = NULL;
 					}
 				}
-
-				if (ok && dstream.data) {
-					char *data = (char *) dstream.data;
-					char *p;
-
-					if ((p = strstr(end_of_p(data) - 3, call_delim))) {
-						*p = '\0';
-					}
-
-					for (p = data; p && *p; p++) {
-						if (*p == '{') {
-							*p = '[';
-						} else if (*p == '}') {
-							*p = ']';
-						}
-					}
-
-
-					stream->write_function(stream, "%s", data);
-					free(dstream.data);
-				} else {
-					ok = 0;
-				}
-
 			}
 		}
 		switch_xml_free(xml);
