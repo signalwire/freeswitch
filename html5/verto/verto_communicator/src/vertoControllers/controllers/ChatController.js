@@ -77,7 +77,7 @@
       function clearMembersResID(preserve) {
         $scope.members.forEach(function(member) {
           var resID = member.status.video.reservationID;
-          if (preserve && preserve.indexOf(resID) !== -1) return;
+          if (resID && preserve && preserve.indexOf(resID) !== -1) return;
             $scope.confResID(member.id, resID);
         });
       };
