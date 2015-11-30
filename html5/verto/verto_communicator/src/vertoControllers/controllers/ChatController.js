@@ -131,6 +131,11 @@
       });
 
       $rootScope.$on('members.del', function(event, uuid) {
+        if ($rootScope.watcher && $rootScope.master === uuid) {
+          verto.hangup();
+          window.close();
+        }
+
         $scope.$apply(function() {
           var memberIdx = findMemberByUUID(uuid);
           if (memberIdx != -1) {
@@ -229,6 +234,41 @@
         });
       };
 
+      $scope.confCanvasIn = function(memberID, canvasID) {
+        if (canvasID) {
+          verto.setCanvasIn(memberID, canvasID);
+          return;
+        }
+
+        shortPrompt('Please insert the Canvas Id', function(canvasID) {
+          console.log(memberID, canvasID);
+          verto.setCanvasIn(memberID, canvasID);
+        });
+
+      };
+
+      $scope.confCanvasOut = function(memberID, canvasID) {
+        if (canvasID) {
+          verto.setCanvasOut(memberID, canvasID);
+          return;
+        }
+
+        shortPrompt('Please insert the Canvas Id', function(canvasID) {
+          verto.setCanvasOut(memberID, canvasID);
+        });
+      };
+
+      $scope.confLayer = function(memberID, canvasID) {
+        if (canvasID) {
+          verto.setLayer(memberID, canvasID);
+          return;
+        }
+
+        shortPrompt('Please insert the Layer', function(canvasID) {
+          verto.setLayer(memberID, canvasID);
+        });
+      };
+
       $scope.confResetBanner = function(memberID) {
         console.log('$scope.confResetBanner');
         var text = 'reset';
@@ -259,6 +299,19 @@
           }
         });
       };
+
+      function shortPrompt(text, cb) {
+        prompt({
+          title: text,
+          input: true,
+          label: '',
+          value: '',
+        }).then(function(val) {
+          if (val && cb) {
+            cb(val);
+          }
+        });
+      }
     }
   ]);
 

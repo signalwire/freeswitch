@@ -605,6 +605,11 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
 
         var that = this;
         function ourBootstrap() {
+          var sessid = $location.search().sessid;
+          if (sessid === 'random') {
+            sessid = $.verto.genUUID();
+            $location.search().sessid = sessid;
+          }
           // Checking if we have a failed connection attempt before
           // connecting again.
           if (data.instance && !data.instance.rpcClient.socketReady()) {
@@ -625,6 +630,7 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
                 googNoiseSuppression: storage.data.googNoiseSuppression || true,
                 googHighpassFilter: storage.data.googHighpassFilter || true
             },
+            sessid: sessid,
             iceServers: storage.data.useSTUN
           }, callbacks);
 
@@ -635,6 +641,7 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
           jQuery.verto.unloadJobs.push(function() {
             that.reloaded = true;
           });
+
           data.instance.deviceParams({
             useCamera: storage.data.selectedVideo,
             useSpeak: storage.data.selectedSpeaker,
@@ -695,10 +702,10 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
        *
        * @param callback
        */
-      call: function(destination, callback) {
+      call: function(destination, callback, custom) {
         console.debug('Attempting to call destination ' + destination + '.');
 
-        var call = data.instance.newCall({
+        var call = data.instance.newCall(angular.extend({
           destination_number: destination,
           caller_id_name: data.name,
           caller_id_number: data.callerid ? data.callerid : data.email,
@@ -715,7 +722,7 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
             email : storage.data.email,
             avatar: "http://gravatar.com/avatar/" + md5(storage.data.email) + ".png?s=600"
           }
-        });
+        }, custom));
 
         data.call = call;
 
@@ -932,6 +939,15 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
       */
       sendConferenceChat: function(message) {
         data.conf.sendChat(message, "message");
+      },
+      setCanvasIn: function(memberID, canvasID) {
+        data.conf.modCommand('vid-canvas', memberID, canvasID);
+      },
+      setCanvasOut: function(memberID, canvasID) {
+        data.conf.modCommand('vid-watching-canvas', memberID, canvasID);
+      },
+      setLayer: function(memberID, canvasID) {
+        data.conf.modCommand('vid-layer', memberID, canvasID);
       },
       /*
       * Method is used to set a member's resevartion Id.
