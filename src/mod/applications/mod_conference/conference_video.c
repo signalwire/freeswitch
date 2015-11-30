@@ -2058,9 +2058,8 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 			canvas->send_keyframe = 1;
 		}
 
-		if (!conference->playing_video_file) {
-			switch_core_timer_next(&canvas->timer);
-		}
+		
+		switch_core_timer_next(&canvas->timer);
 
 		now = switch_micro_time_now();
 
@@ -2211,11 +2210,6 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 				continue;
 			}
 
-			if (conference->playing_video_file) {
-				switch_core_session_rwunlock(imember->session);
-				continue;
-			}
-
 			//VIDFLOOR
 			if (canvas->layout_floor_id > -1 && imember->id == conference->video_floor_holder &&
 				imember->video_layer_id != canvas->layout_floor_id) {
@@ -2224,6 +2218,13 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 
 			conference_video_pop_next_image(imember, &img);
 			layer = NULL;
+
+
+			if (conference->playing_video_file) {
+				switch_img_free(&img);
+				switch_core_session_rwunlock(imember->session);
+				continue;
+			}
 
 
 
@@ -2595,7 +2596,7 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 
 			switch_mutex_unlock(conference->member_mutex);
 		} else {
-
+			
 			if (conference->async_fnode && (conference->async_fnode->canvas_id == canvas->canvas_id || conference->async_fnode->canvas_id == -1)) {
 				if (conference->async_fnode->layer_id > -1) {
 					conference_video_patch_fnode(canvas, conference->async_fnode);
@@ -2686,20 +2687,20 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 					if (canvas->play_file) {
 						canvas->send_keyframe = 1;
 						canvas->play_file = 0;
-
-						canvas->timer.interval = 1;
-						canvas->timer.samples = 90;
 					}
 
-					write_img = file_img = write_frame.img;
+					switch_img_free(&file_img);
+					file_img = write_img = write_frame.img;
 
 					switch_core_timer_sync(&canvas->timer);
 					timestamp = canvas->timer.samplecount;
+				} else if (file_img) {
+					write_img = file_img;
 				}
 			} else if (file_img) {
 				switch_img_free(&file_img);
 			}
-
+			
 			write_frame.img = write_img;
 
 			wait_for_canvas(canvas);
@@ -2893,9 +2894,7 @@ void *SWITCH_THREAD_FUNC conference_video_super_muxing_thread_run(switch_thread_
 			canvas->send_keyframe = 1;
 		}
 
-		if (!conference->playing_video_file) {
-			switch_core_timer_next(&canvas->timer);
-		}
+		switch_core_timer_next(&canvas->timer);
 
 		now = switch_micro_time_now();
 
