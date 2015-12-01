@@ -1923,7 +1923,7 @@ void conference_video_check_auto_bitrate(conference_member_t *member, mcu_layer_
 			int max = 0;
 			switch_vid_params_t vid_params = { 0 };
 			
-			switch_core_media_get_vid_params(imember->session, &vid_params);
+			switch_core_media_get_vid_params(member->session, &vid_params);
 
 			if (w > vid_params.width || h > vid_params.height) {
 				w = vid_params.width;
