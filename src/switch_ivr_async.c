@@ -618,6 +618,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_feed(switch_ivr_dmachine_t *
 				status = istatus;
 			}
 		} else {
+			switch_mutex_unlock(dmachine->mutex);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "dmachine overflow error!\n");
 			status = SWITCH_STATUS_FALSE;
 		}
