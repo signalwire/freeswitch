@@ -2024,7 +2024,8 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 	int do_refresh = 0;
 	int last_file_count = 0;
 	int layout_applied = 0;
-	
+	int files_playing = 0;
+
 	canvas->video_timer_reset = 1;
 
 	packet = switch_core_alloc(conference->pool, SWITCH_RTP_MAX_BUF_LEN);
@@ -2104,11 +2105,13 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 		if (conference->async_fnode && switch_core_file_has_video(&conference->async_fnode->fh)) {
 			check_async_file = 1;
 			file_count++;
+			files_playing = 1;
 		}
 
 		if (conference->fnode && switch_core_file_has_video(&conference->fnode->fh)) {
 			check_file = 1;
 			file_count++;
+			files_playing = 1;
 		}
 
 		if (file_count != last_file_count) {
@@ -2417,18 +2420,28 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 			}
 			
 			if (check_async_file) {
-				if (switch_core_file_read_video(&conference->async_fnode->fh, &file_frame, SVR_FLUSH) == SWITCH_STATUS_SUCCESS) {
+				switch_status_t st = switch_core_file_read_video(&conference->async_fnode->fh, &file_frame, SVR_FLUSH);
+				
+				if (st == SWITCH_STATUS_SUCCESS) {
 					if ((async_file_img = file_frame.img)) {
+						switch_img_free(&file_imgs[j]);
 						file_imgs[j++] = async_file_img;
 					}
+				} else if (st == SWITCH_STATUS_BREAK) {
+					j++;
 				}
 			}
 
 			if (check_file) {
-				if (switch_core_file_read_video(&conference->fnode->fh, &file_frame, SVR_FLUSH) == SWITCH_STATUS_SUCCESS) {
+				switch_status_t st = switch_core_file_read_video(&conference->fnode->fh, &file_frame, SVR_FLUSH);
+
+				if (st == SWITCH_STATUS_SUCCESS) {
 					if ((normal_file_img = file_frame.img)) {
+						switch_img_free(&file_imgs[j]);
 						file_imgs[j++] = normal_file_img;
 					}
+				} else if (st == SWITCH_STATUS_BREAK) {
+					j++;
 				}
 			}
 
@@ -2441,13 +2454,15 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 					continue;
 				}
 
-				i = 0;
-				while (i < imember->canvas->total_layers) {
-					layer = &imember->canvas->layers[i++];
-					switch_img_fill(layer->canvas->img, layer->x_pos, layer->y_pos, layer->screen_w, layer->screen_h, &layer->canvas->bgcolor);
+				if (files_playing && !file_count) {
+					i = 0;
+					while (i < imember->canvas->total_layers) {
+						layer = &imember->canvas->layers[i++];
+						switch_img_fill(layer->canvas->img, layer->x_pos, layer->y_pos, layer->screen_w, layer->screen_h, &layer->canvas->bgcolor);
+					}
+					i = 0;
 				}
-				i = 0;
-				
+
 				if (!file_count && imember->canvas->layout_floor_id > -1 && imember->conference->video_floor_holder &&
 					imember->id != imember->conference->video_floor_holder) {
 					
@@ -2478,7 +2493,6 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 
 					if (file_count && (conference->members_with_video + conference->members_with_avatar == 1)) {
 						floor_layer = NULL;
-						continue;
 					}
 					
 					if (!file_count && floor_layer && omember->id == conference->video_floor_holder) {
@@ -2559,8 +2573,11 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 				switch_core_session_rwunlock(imember->session);
 			}
 
-			switch_img_free(&normal_file_img);
-			switch_img_free(&async_file_img);
+			if (files_playing && !file_count) {
+				switch_img_free(&file_imgs[0]);
+				switch_img_free(&file_imgs[1]);
+				files_playing = 0;
+			}
 
 			for (imember = conference->members; imember; imember = imember->next) {
 				switch_frame_t *dupframe;
