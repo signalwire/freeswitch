@@ -79,6 +79,7 @@ struct switch_ivr_dmachine {
 	void *user_data;
 	switch_mutex_t *mutex;
 	switch_status_t last_return;
+	uint8_t pinging;
 };
 
 
@@ -487,6 +488,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_ping(switch_ivr_dmachine_t *
 		return SWITCH_STATUS_SUCCESS;
 	}
 
+	if (dmachine->pinging) {
+		printf("doh\n");
+		return SWITCH_STATUS_BREAK;
+	}
+
+	dmachine->pinging = 1;
+
 	if (zstr(dmachine->digits) && !is_timeout) {
 		r = SWITCH_STATUS_SUCCESS;
 	} else if (dmachine->cur_digit_len > dmachine->max_digit_len) {
@@ -578,6 +586,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_ping(switch_ivr_dmachine_t *
 	}
 
 	dmachine->last_return = r;
+
+	dmachine->pinging = 0;
 
 	switch_mutex_unlock(dmachine->mutex);
 
