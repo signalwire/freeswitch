@@ -542,17 +542,10 @@
 	var bestFrameRate = obj.options.videoParams.vertoBestFrameRate;
 	delete obj.options.videoParams.vertoBestFrameRate;
 
-	if (window.moz) {
-	    video = obj.options.videoParams;
-	    if (!video.width) video.width = video.minWidth;
-	    if (!video.height) video.height = video.minHeight;
-	    if (!video.frameRate) video.frameRate = video.minFrameRate;
-	} else {
-	    video = {
-		mandatory: obj.options.videoParams,
-		optional: []
-            }	    	    
-	}
+	video = {
+	    mandatory: obj.options.videoParams,
+	    optional: []
+        }	    	    
 	
 	var useVideo = obj.options.useVideo;
 
@@ -1123,13 +1116,6 @@
 	    "maxWidth": w,
 	    "maxHeight": h
 	};
-
-	if (window.moz) {
-	    video = video.mandatory;
-	    if (!video.width) video.width = video.minWidth;
-	    if (!video.height) video.height = video.minHeight;
-	    if (!video.frameRate) video.frameRate = video.minFrameRate;
-	}
 
 	getUserMedia({
 	    constraints: {
