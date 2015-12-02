@@ -1577,12 +1577,7 @@ switch_status_t conference_api_sub_vid_res_id(conference_member_t *member, switc
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	if (zstr(text)) {
-		stream->write_function(stream, "-ERR missing arg\n");
-		return SWITCH_STATUS_SUCCESS;
-	}
-
-	if (!strcasecmp(text, "clear") || (member->video_reservation_id && !strcasecmp(text, member->video_reservation_id))) {
+	if (zstr(text) || !strcasecmp(text, "clear") || (member->video_reservation_id && !strcasecmp(text, member->video_reservation_id))) {
 		member->video_reservation_id = NULL;
 		stream->write_function(stream, "+OK reservation_id cleared\n");
 	} else {
