@@ -4200,10 +4200,30 @@ static struct rayo_actor *xmpp_stream_client_locate(struct xmpp_stream *stream, 
 }
 
 /**
+ * Handle stream resource binding
+ * @param stream the new stream
+ */
+static int on_xmpp_stream_bind(struct xmpp_stream *stream)
+{
+	if (!xmpp_stream_is_s2s(stream)) {
+		/* client belongs to stream */
+		struct rayo_client *client = rayo_client_create(xmpp_stream_get_jid(stream), xmpp_stream_get_jid(stream), PS_OFFLINE, rayo_client_send, NULL);
+		if (client) {
+			xmpp_stream_set_private(stream, client);
+		} else {
+			/* this went really bad... */
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "failed to create client entity!\n");
+			return 0;
+		}
+	}
+	return 1;
+}
+
+/**
  * Handle new stream creation
  * @param stream the new stream
  */
-static void on_xmpp_stream_ready(struct xmpp_stream *stream)
+static int on_xmpp_stream_ready(struct xmpp_stream *stream)
 {
 	if (xmpp_stream_is_s2s(stream)) {
 		if (xmpp_stream_is_incoming(stream)) {
@@ -4214,6 +4234,7 @@ static void on_xmpp_stream_ready(struct xmpp_stream *stream)
 			} else {
 				/* this went really bad... */
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "failed to create peer server entity!\n");
+				return 0;
 			}
 		} else {
 			/* send directed presence to domain */
@@ -4227,16 +4248,8 @@ static void on_xmpp_stream_ready(struct xmpp_stream *stream)
 			iks_insert_cdata(x, "chat", 4);
 			RAYO_SEND_MESSAGE(globals.server, xmpp_stream_get_jid(stream), presence);
 		}
-	} else {
-		/* client belongs to stream */
-		struct rayo_client *client = rayo_client_create(xmpp_stream_get_jid(stream), xmpp_stream_get_jid(stream), PS_OFFLINE, rayo_client_send, NULL);
-		if (client) {
-			xmpp_stream_set_private(stream, client);
-		} else {
-			/* this went really bad... */
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "failed to create client entity!\n");
-		}
 	}
+	return 1;
 }
 
 /**
@@ -4486,7 +4499,7 @@ static switch_status_t do_config(switch_memory_pool_t *pool, const char *config_
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Missing shared secret for %s domain.  Server dialback will not work\n", name);
 			}
 
-			globals.xmpp_context = xmpp_stream_context_create(name, shared_secret, on_xmpp_stream_ready, on_xmpp_stream_recv, on_xmpp_stream_destroy);
+			globals.xmpp_context = xmpp_stream_context_create(name, shared_secret, on_xmpp_stream_bind, on_xmpp_stream_ready, on_xmpp_stream_recv, on_xmpp_stream_destroy);
 			globals.server = rayo_server_create(name);
 
 			/* set up TLS */

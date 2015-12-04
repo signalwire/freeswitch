@@ -1,6 +1,6 @@
 /*
  * mod_rayo for FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2013, Grasshopper
+ * Copyright (C) 2013-2015, Grasshopper
  *
  * Version: MPL 1.1
  *
@@ -32,11 +32,12 @@
 struct xmpp_stream;
 struct xmpp_stream_context;
 
-typedef void (* xmpp_stream_ready_callback)(struct xmpp_stream *stream);
+typedef int (* xmpp_stream_bind_callback)(struct xmpp_stream *stream);
+typedef int (* xmpp_stream_ready_callback)(struct xmpp_stream *stream);
 typedef void (* xmpp_stream_recv_callback)(struct xmpp_stream *stream, iks *stanza);
 typedef void (* xmpp_stream_destroy_callback)(struct xmpp_stream *stream);
 
-extern struct xmpp_stream_context *xmpp_stream_context_create(const char *domain, const char *domain_secret, xmpp_stream_ready_callback ready, xmpp_stream_recv_callback recv, xmpp_stream_destroy_callback destroy);
+extern struct xmpp_stream_context *xmpp_stream_context_create(const char *domain, const char *domain_secret, xmpp_stream_bind_callback bind_cb, xmpp_stream_ready_callback ready, xmpp_stream_recv_callback recv, xmpp_stream_destroy_callback destroy);
 extern void xmpp_stream_context_add_cert(struct xmpp_stream_context *context, const char *cert_pem_file);
 extern void xmpp_stream_context_add_key(struct xmpp_stream_context *context, const char *key_pem_file);
 extern void xmpp_stream_context_add_user(struct xmpp_stream_context *context, const char *user, const char *password);
