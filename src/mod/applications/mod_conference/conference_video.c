@@ -1921,9 +1921,17 @@ void conference_video_check_auto_bitrate(conference_member_t *member, mcu_layer_
 							  switch_channel_get_name(member->channel), kps);
 		} else {
 			int max = 0;
+			switch_vid_params_t vid_params = { 0 };
+			
+			switch_core_media_get_vid_params(member->session, &vid_params);
+
+			if (w > vid_params.width || h > vid_params.height) {
+				w = vid_params.width;
+				h = vid_params.height;
+			}
 
 			if (layer) {
-				kps = switch_calc_bitrate(w, h, 1, (int)(member->conference->video_fps.fps));
+				kps = switch_calc_bitrate(w, h, member->conference->video_quality, (int)(member->conference->video_fps.fps));
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "%s auto-setting bitrate to %dkps to accomodate %dx%d resolution\n",
 								  switch_channel_get_name(member->channel), kps, layer->screen_w, layer->screen_h);
 			}
@@ -2024,7 +2032,8 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 	int do_refresh = 0;
 	int last_file_count = 0;
 	int layout_applied = 0;
-	
+	int files_playing = 0;
+
 	canvas->video_timer_reset = 1;
 
 	packet = switch_core_alloc(conference->pool, SWITCH_RTP_MAX_BUF_LEN);
@@ -2058,9 +2067,8 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 			canvas->send_keyframe = 1;
 		}
 
-		if (!conference->playing_video_file) {
-			switch_core_timer_next(&canvas->timer);
-		}
+		
+		switch_core_timer_next(&canvas->timer);
 
 		now = switch_micro_time_now();
 
@@ -2080,8 +2088,9 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 
 			switch_mutex_lock(conference->member_mutex);
 			for (imember = conference->members; imember; imember = imember->next) {
-				if (imember->channel && switch_channel_ready(imember->channel) && conference_utils_member_test_flag(imember, MFLAG_RUNNING) 
-					&& imember->canvas_id == canvas->canvas_id) {
+				if (imember->channel && switch_channel_ready(imember->channel) && switch_channel_test_flag(imember->channel, CF_VIDEO) && 
+					conference_utils_member_test_flag(imember, MFLAG_RUNNING) 
+					&& imember->canvas_id == canvas->canvas_id && imember->video_media_flow != SWITCH_MEDIA_FLOW_SENDONLY) {
 					canvas_count++;
 				}
 			}
@@ -2105,11 +2114,13 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 		if (conference->async_fnode && switch_core_file_has_video(&conference->async_fnode->fh)) {
 			check_async_file = 1;
 			file_count++;
+			files_playing = 1;
 		}
 
 		if (conference->fnode && switch_core_file_has_video(&conference->fnode->fh)) {
 			check_file = 1;
 			file_count++;
+			files_playing = 1;
 		}
 
 		if (file_count != last_file_count) {
@@ -2211,11 +2222,6 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 				continue;
 			}
 
-			if (conference->playing_video_file) {
-				switch_core_session_rwunlock(imember->session);
-				continue;
-			}
-
 			//VIDFLOOR
 			if (canvas->layout_floor_id > -1 && imember->id == conference->video_floor_holder &&
 				imember->video_layer_id != canvas->layout_floor_id) {
@@ -2224,6 +2230,13 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 
 			conference_video_pop_next_image(imember, &img);
 			layer = NULL;
+
+
+			if (conference->playing_video_file) {
+				switch_img_free(&img);
+				switch_core_session_rwunlock(imember->session);
+				continue;
+			}
 
 
 
@@ -2381,7 +2394,9 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 				
 				if (count_changed) {
 					int total = conference->members_with_video;
-					
+					int kps;
+					switch_vid_params_t vid_params = { 0 };
+
 					if (!conference_utils_test_flag(conference, CFLAG_VIDEO_REQUIRED_FOR_CANVAS)) {
 						total += conference->members_with_avatar;
 					}
@@ -2401,6 +2416,13 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 							conference_video_init_canvas_layers(conference, imember->canvas, vlayout);
 						}
 					}
+					
+					if (!switch_channel_test_flag(imember->channel, CF_VIDEO_BITRATE_UNMANAGABLE) && 
+						conference_utils_test_flag(conference, CFLAG_MANAGE_INBOUND_VIDEO_BITRATE)) {
+						switch_core_media_get_vid_params(imember->session, &vid_params);
+						kps = switch_calc_bitrate(vid_params.width, vid_params.height, conference->video_quality, (int)(imember->conference->video_fps.fps));
+						conference_video_set_incoming_bitrate(imember, kps);
+					}
 				}
 				
 				if (switch_core_session_media_flow(imember->session, SWITCH_MEDIA_TYPE_VIDEO) != SWITCH_MEDIA_FLOW_SENDONLY) {
@@ -2416,18 +2438,28 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 			}
 			
 			if (check_async_file) {
-				if (switch_core_file_read_video(&conference->async_fnode->fh, &file_frame, SVR_FLUSH) == SWITCH_STATUS_SUCCESS) {
+				switch_status_t st = switch_core_file_read_video(&conference->async_fnode->fh, &file_frame, SVR_FLUSH);
+				
+				if (st == SWITCH_STATUS_SUCCESS) {
 					if ((async_file_img = file_frame.img)) {
+						switch_img_free(&file_imgs[j]);
 						file_imgs[j++] = async_file_img;
 					}
+				} else if (st == SWITCH_STATUS_BREAK) {
+					j++;
 				}
 			}
 
 			if (check_file) {
-				if (switch_core_file_read_video(&conference->fnode->fh, &file_frame, SVR_FLUSH) == SWITCH_STATUS_SUCCESS) {
+				switch_status_t st = switch_core_file_read_video(&conference->fnode->fh, &file_frame, SVR_FLUSH);
+
+				if (st == SWITCH_STATUS_SUCCESS) {
 					if ((normal_file_img = file_frame.img)) {
+						switch_img_free(&file_imgs[j]);
 						file_imgs[j++] = normal_file_img;
 					}
+				} else if (st == SWITCH_STATUS_BREAK) {
+					j++;
 				}
 			}
 
@@ -2440,13 +2472,15 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 					continue;
 				}
 
-				i = 0;
-				while (i < imember->canvas->total_layers) {
-					layer = &imember->canvas->layers[i++];
-					switch_img_fill(layer->canvas->img, layer->x_pos, layer->y_pos, layer->screen_w, layer->screen_h, &layer->canvas->bgcolor);
+				if (files_playing && !file_count) {
+					i = 0;
+					while (i < imember->canvas->total_layers) {
+						layer = &imember->canvas->layers[i++];
+						switch_img_fill(layer->canvas->img, layer->x_pos, layer->y_pos, layer->screen_w, layer->screen_h, &layer->canvas->bgcolor);
+					}
+					i = 0;
 				}
-				i = 0;
-				
+
 				if (!file_count && imember->canvas->layout_floor_id > -1 && imember->conference->video_floor_holder &&
 					imember->id != imember->conference->video_floor_holder) {
 					
@@ -2477,7 +2511,6 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 
 					if (file_count && (conference->members_with_video + conference->members_with_avatar == 1)) {
 						floor_layer = NULL;
-						continue;
 					}
 					
 					if (!file_count && floor_layer && omember->id == conference->video_floor_holder) {
@@ -2539,8 +2572,6 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 							conference_video_scale_and_patch(layer, use_img, SWITCH_FALSE);
 						}
 					}
-
-					conference_video_check_auto_bitrate(omember, layer);
 				}
 
 				for (j = 0; j < file_count; j++) {
@@ -2558,8 +2589,11 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 				switch_core_session_rwunlock(imember->session);
 			}
 
-			switch_img_free(&normal_file_img);
-			switch_img_free(&async_file_img);
+			if (files_playing && !file_count) {
+				switch_img_free(&file_imgs[0]);
+				switch_img_free(&file_imgs[1]);
+				files_playing = 0;
+			}
 
 			for (imember = conference->members; imember; imember = imember->next) {
 				switch_frame_t *dupframe;
@@ -2595,7 +2629,7 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 
 			switch_mutex_unlock(conference->member_mutex);
 		} else {
-
+			
 			if (conference->async_fnode && (conference->async_fnode->canvas_id == canvas->canvas_id || conference->async_fnode->canvas_id == -1)) {
 				if (conference->async_fnode->layer_id > -1) {
 					conference_video_patch_fnode(canvas, conference->async_fnode);
@@ -2686,20 +2720,20 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 					if (canvas->play_file) {
 						canvas->send_keyframe = 1;
 						canvas->play_file = 0;
-
-						canvas->timer.interval = 1;
-						canvas->timer.samples = 90;
 					}
 
-					write_img = file_img = write_frame.img;
+					switch_img_free(&file_img);
+					file_img = write_img = write_frame.img;
 
 					switch_core_timer_sync(&canvas->timer);
 					timestamp = canvas->timer.samplecount;
+				} else if (file_img) {
+					write_img = file_img;
 				}
 			} else if (file_img) {
 				switch_img_free(&file_img);
 			}
-
+			
 			write_frame.img = write_img;
 
 			wait_for_canvas(canvas);
@@ -2893,9 +2927,7 @@ void *SWITCH_THREAD_FUNC conference_video_super_muxing_thread_run(switch_thread_
 			canvas->send_keyframe = 1;
 		}
 
-		if (!conference->playing_video_file) {
-			switch_core_timer_next(&canvas->timer);
-		}
+		switch_core_timer_next(&canvas->timer);
 
 		now = switch_micro_time_now();
 
@@ -3446,11 +3478,10 @@ void conference_video_write_frame(conference_obj_t *conference, conference_membe
 				continue;
 			}
 			
-			if (!isession || !switch_channel_test_flag(imember->channel, CF_VIDEO) ) {
-				continue;
+			if (switch_channel_test_flag(imember->channel, CF_VIDEO) ) {
+				switch_core_session_request_video_refresh(imember->session);	
 			}
-		
-			switch_core_session_request_video_refresh(imember->session);	
+			
 			switch_core_session_rwunlock(isession);
 		}
 	}

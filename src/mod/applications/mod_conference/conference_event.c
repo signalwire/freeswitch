@@ -42,6 +42,21 @@
 #include <mod_conference.h>
 
 
+static cJSON *get_canvas_info(mcu_canvas_t *canvas)
+{
+	cJSON *obj = cJSON_CreateObject();
+	
+	cJSON_AddItemToObject(obj, "canvasID", cJSON_CreateNumber(canvas->canvas_id));
+	cJSON_AddItemToObject(obj, "totalLayers", cJSON_CreateNumber(canvas->total_layers));
+	cJSON_AddItemToObject(obj, "layersUsed", cJSON_CreateNumber(canvas->layers_used));
+	cJSON_AddItemToObject(obj, "layoutFloorID", cJSON_CreateNumber(canvas->layout_floor_id));
+	if (canvas->vlayout) {
+		cJSON_AddItemToObject(obj, "layoutName", cJSON_CreateString(canvas->vlayout->name));
+	}
+	
+	return obj;
+}
+
 void conference_event_mod_channel_handler(const char *event_channel, cJSON *json, const char *key, switch_event_channel_id_t id)
 {
 	cJSON *data, *addobj = NULL;
@@ -63,6 +78,7 @@ void conference_event_mod_channel_handler(const char *event_channel, cJSON *json
 
 	if ((data = cJSON_GetObjectItem(json, "data"))) {
 		action = cJSON_GetObjectCstr(data, "command");
+
 		if ((jid = cJSON_GetObjectItem(data, "id"))) {
 			if (jid->valueint) {
 				switch_snprintf(cid, sizeof(cid), "%d", jid->valueint);
@@ -151,6 +167,68 @@ void conference_event_mod_channel_handler(const char *event_channel, cJSON *json
 			switch_thread_rwlock_unlock(conference->rwlock);
 		}
 		goto end;
+	} else if (!strcasecmp(action, "canvasInfo")) {
+		cJSON *j_member_id;
+		int member_id = 0;
+		int i = 0;
+		cJSON *array = cJSON_CreateArray();
+		conference_obj_t *conference;
+
+ 		if ((conference = conference_find(conference_name, NULL))) {
+
+			if ((j_member_id = cJSON_GetObjectItem(data, "memberID"))) {
+				if (j_member_id->valueint) {
+					member_id = j_member_id->valueint;
+				} else if (j_member_id->valuedouble) {
+					member_id = (int) j_member_id->valuedouble;
+				} else if (j_member_id->valuestring) {
+					member_id = atoi(j_member_id->valuestring);
+				}
+				if (member_id < 0) member_id = 0;
+			}
+		
+			if (member_id > 0) {
+				conference_member_t *member;
+				
+				if ((member = conference_member_get(conference, member_id))) {
+					mcu_canvas_t *canvas;
+					
+					if ((canvas = conference_video_get_canvas_locked(member))) {
+						cJSON *obj;
+						
+						if ((obj = get_canvas_info(canvas))) {
+							cJSON_AddItemToObject(obj, "layerID", cJSON_CreateNumber(member->video_layer_id));	
+							cJSON_AddItemToArray(array, obj);
+						}
+						
+						conference_video_release_canvas(&canvas);
+					}
+					
+					switch_thread_rwlock_unlock(member->rwlock);
+				}
+
+			} else {
+				switch_mutex_lock(conference->canvas_mutex);
+
+				for (i = 0; i <= conference->canvas_count; i++) {
+					mcu_canvas_t *canvas = conference->canvases[i];
+					if (canvas) {
+						cJSON *obj;
+
+						if ((obj = get_canvas_info(canvas))) {
+							cJSON_AddItemToArray(array, obj);
+						}
+					}
+				}
+
+				switch_mutex_unlock(conference->canvas_mutex);
+			}
+			
+			switch_thread_rwlock_unlock(conference->rwlock);
+		}
+	
+		addobj = array;
+		
 	} else if (!strcasecmp(action, "list-videoLayouts")) {
 		switch_hash_index_t *hi;
 		void *val;
@@ -161,17 +239,49 @@ void conference_event_mod_channel_handler(const char *event_channel, cJSON *json
 			switch_mutex_lock(conference_globals.setup_mutex);
 			if (conference->layout_hash) {
 				for (hi = switch_core_hash_first(conference->layout_hash); hi; hi = switch_core_hash_next(&hi)) {
+					video_layout_t *vlayout;
+					cJSON *obj = cJSON_CreateObject();
+					cJSON *resarray = cJSON_CreateArray();
+					int i;
+					
 					switch_core_hash_this(hi, &vvar, NULL, &val);
-					cJSON_AddItemToArray(array, cJSON_CreateString((char *)vvar));
+					vlayout = (video_layout_t *)val;
+					for (i = 0; i < vlayout->layers; i++) {
+						if (vlayout->images[i].res_id) {
+							cJSON_AddItemToArray(resarray, cJSON_CreateString((char *)vlayout->images[i].res_id));
+						}
+					}					
+					
+					cJSON_AddItemToObject(obj, "type", cJSON_CreateString("layout"));
+					cJSON_AddItemToObject(obj, "name", cJSON_CreateString((char *)vvar));
+					cJSON_AddItemToObject(obj, "resIDS", resarray);
+
+					cJSON_AddItemToArray(array, obj);
 				}
 			}
 
 			if (conference->layout_group_hash) {
 				for (hi = switch_core_hash_first(conference->layout_group_hash); hi; hi = switch_core_hash_next(&hi)) {
 					char *name;
+					cJSON *obj = cJSON_CreateObject();
+					cJSON *grouparray = cJSON_CreateArray();
+					layout_group_t *lg;
+					video_layout_node_t *vlnode;
+
 					switch_core_hash_this(hi, &vvar, NULL, &val);
+					lg = (layout_group_t *) val;
+
 					name = switch_mprintf("group:%s", (char *)vvar);
-					cJSON_AddItemToArray(array, cJSON_CreateString(name));
+					
+					for (vlnode = lg->layouts; vlnode; vlnode = vlnode->next) {
+						cJSON_AddItemToArray(grouparray, cJSON_CreateString(vlnode->vlayout->name));
+					}
+					
+					cJSON_AddItemToObject(obj, "type", cJSON_CreateString("layoutGroup"));
+					cJSON_AddItemToObject(obj, "name", cJSON_CreateString(name));
+					cJSON_AddItemToObject(obj, "groupLayouts", grouparray);
+
+					cJSON_AddItemToArray(array, obj);
 					free(name);
 				}
 			}

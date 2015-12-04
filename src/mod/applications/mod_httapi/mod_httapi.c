@@ -2206,7 +2206,7 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 
 	var = switch_event_get_header(client->params, "url");
 
-	if (client->record.action) {
+	if (var && client->record.action) {
 		if (strcmp(var, client->record.action)) {
 			switch_event_add_header_string(client->one_time_params, SWITCH_STACK_BOTTOM, "url", client->record.action);
 			httapi_sync(client);

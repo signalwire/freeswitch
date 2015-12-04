@@ -1697,7 +1697,22 @@
 			    $(vlselect_id).append(new Option("Choose a Layout", "none"));
 
 			    if (e.data.responseData) {
-				options = e.data.responseData.sort();
+				var rdata = [];
+
+				for (var i in e.data.responseData) {
+				    rdata.push(e.data.responseData[i].name);
+				}
+				
+				options = rdata.sort(function(a, b) {
+				    var ga = a.substring(0, 6) == "group:" ? true : false;
+				    var gb = b.substring(0, 6) == "group:" ? true : false;
+				    
+				    if ((ga || gb) && ga != gb) {
+					return ga ? -1 : 1;
+				    }
+				    
+				    return ( ( a == b ) ? 0 : ( ( a > b ) ? 1 : -1 ) );
+				});
 
 				for (var i in options) {
 				    $(vlselect_id).append(new Option(options[i], options[i]));

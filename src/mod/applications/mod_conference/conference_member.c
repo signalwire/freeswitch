@@ -1629,7 +1629,13 @@ int conference_member_setup_media(conference_member_t *member, conference_obj_t 
 
 	switch_mutex_lock(member->audio_out_mutex);
 
-	switch_core_session_get_read_impl(member->session, &read_impl);
+	if (!member->orig_read_impl.samples_per_second) {
+		switch_core_session_get_read_impl(member->session, &member->orig_read_impl);
+		member->native_rate = read_impl.samples_per_second;
+	}
+
+	read_impl = member->orig_read_impl;
+
 
 	if (switch_core_codec_ready(&member->read_codec)) {
 		switch_core_codec_destroy(&member->read_codec);
@@ -1644,9 +1650,6 @@ int conference_member_setup_media(conference_member_t *member, conference_obj_t 
 	if (member->read_resampler) {
 		switch_resample_destroy(&member->read_resampler);
 	}
-
-	switch_core_session_get_read_impl(member->session, &member->orig_read_impl);
-	member->native_rate = read_impl.samples_per_second;
 
 	/* Setup a Signed Linear codec for reading audio. */
 	if (switch_core_codec_init(&member->read_codec,

@@ -49,6 +49,39 @@
         });
       });
 
+
+      $rootScope.$on('changedVideoLayout', function(event, layout) {
+        $scope.resIDs = getResByLayout(layout);
+
+        // remove resIDs param to clear every members resID.
+        // passing $scope.resIDs results in preserving resIDs compatible
+        // with the current layout
+        clearMembersResID($scope.resIDs);
+      });
+
+      $rootScope.$on('conference.canvasInfo', function(event, data) {
+        $scope.currentLayout = data[0].layoutName;
+        $scope.resIDs = getResByLayout($scope.currentLayout);
+      });
+
+      function getResByLayout(layout) {
+        var layoutsData = verto.data.confLayoutsData;
+        for (var i = 0; i < layoutsData.length; i++) {
+          if (layoutsData[i].name === layout) {
+            return layoutsData[i].resIDS;
+          }
+        }
+      }
+
+      // @preserve - a array of values to be preserved
+      function clearMembersResID(preserve) {
+        $scope.members.forEach(function(member) {
+          var resID = member.status.video.reservationID;
+          if (resID && preserve && preserve.indexOf(resID) !== -1) return;
+            $scope.confResID(member.id, resID);
+        });
+      };
+
       function findMemberByUUID(uuid) {
         var found = false;
         for (var idx in $scope.members) {
@@ -98,6 +131,11 @@
       });
 
       $rootScope.$on('members.del', function(event, uuid) {
+        if ($rootScope.watcher && $rootScope.master === uuid) {
+          verto.hangup();
+          window.close();
+        }
+
         $scope.$apply(function() {
           var memberIdx = findMemberByUUID(uuid);
           if (memberIdx != -1) {
@@ -171,6 +209,11 @@
         verto.data.conf.presenter(memberID);
       };
 
+      $scope.confResID = function(memberID, resID) {
+        console.log('Set', memberID, 'to', resID);
+        verto.setResevartionId(memberID, resID);
+      };
+
       $scope.confVideoFloor = function(memberID) {
         console.log('$scope.confVideoFloor');
         verto.data.conf.videoFloor(memberID);
@@ -188,6 +231,41 @@
           if (text) {
             verto.data.conf.banner(memberID, text);
           }
+        });
+      };
+
+      $scope.confCanvasIn = function(memberID, canvasID) {
+        if (canvasID) {
+          verto.setCanvasIn(memberID, canvasID);
+          return;
+        }
+
+        shortPrompt('Please insert the Canvas Id', function(canvasID) {
+          console.log(memberID, canvasID);
+          verto.setCanvasIn(memberID, canvasID);
+        });
+
+      };
+
+      $scope.confCanvasOut = function(memberID, canvasID) {
+        if (canvasID) {
+          verto.setCanvasOut(memberID, canvasID);
+          return;
+        }
+
+        shortPrompt('Please insert the Canvas Id', function(canvasID) {
+          verto.setCanvasOut(memberID, canvasID);
+        });
+      };
+
+      $scope.confLayer = function(memberID, canvasID) {
+        if (canvasID) {
+          verto.setLayer(memberID, canvasID);
+          return;
+        }
+
+        shortPrompt('Please insert the Layer', function(canvasID) {
+          verto.setLayer(memberID, canvasID);
         });
       };
 
@@ -221,6 +299,19 @@
           }
         });
       };
+
+      function shortPrompt(text, cb) {
+        prompt({
+          title: text,
+          input: true,
+          label: '',
+          value: '',
+        }).then(function(val) {
+          if (val && cb) {
+            cb(val);
+          }
+        });
+      }
     }
   ]);
 

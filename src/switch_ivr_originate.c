@@ -1863,6 +1863,7 @@ static void *SWITCH_THREAD_FUNC early_thread_run(switch_thread_t *thread, void *
 		if (!session) continue;
 
 		if (switch_core_codec_ready((&read_codecs[i]))) {
+			switch_core_session_set_read_codec(session, NULL);
 			switch_core_codec_destroy(&read_codecs[i]);
 		}
 
