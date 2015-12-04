@@ -33,6 +33,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <memory.h>
+#include <string.h>
 #if defined(HAVE_TGMATH_H)
 #include <tgmath.h>
 #endif
