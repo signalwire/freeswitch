@@ -952,12 +952,17 @@ body .modal-body .btn-group .btn.active {
 
 .chat-members .chat-member-item {
   padding: 8px 16px;
-  height: 56px;
+  min-height: 56px;
+}
+
+.chat-members .chat-member-item.opened {
+  background-color: #F8F8F8;
 }
 
 .chat-members .chat-member-item:hover {
-  background-color: #E5E5E5;
+  background-color: #F8F8F8;
 }
+
 
 .chat-members .chat-members-avatar {
   width: 40px;
@@ -1608,4 +1613,73 @@ body:-webkit-full-screen #incall .video-footer {
 
 .watcher .spinner {
   top: 20%;
+}
+
+.admin-controls {
+  border: 1px solid rgba(204, 204, 204, 0.48);
+  background: #F3F3F3;
+  margin-top: 12px;
+  margin-bottom: 10px;
+  overflow: hidden;
+}
+
+.admin-controls .ctrl-section {
+  padding: 10px 0px;
+  padding-bottom: 0;
+}
+
+.admin-controls .ctrl-section:nth-child(1) {
+  border-right: 1px solid rgba(204, 204, 204, 0.48);
+}
+
+.admin-controls h3 {
+  font-size: 9px;
+  margin: 0 auto;
+  color: #AFAFAF;
+  text-transform: uppercase;
+  font-weight: 900;
+  text-align: center;
+  margin-top: -10px;
+  width: 100%;
+  background-color: rgba(224, 224, 224, 0.53);
+  padding: 5px;
+}
+
+.admin-controls .mdi-fw {
+  width: auto;
+  display: block;
+}
+
+.admin-controls .group .btn {
+  box-shadow: none;
+  color: #607D8B;
+  font-size: 8px;
+}
+
+.admin-controls .group .btn:hover {
+  box-shadow: none !important;
+}
+
+.admin-controls .group .btn:active {
+  box-shadow: none !important;
+}
+
+.admin-controls.ng-hide-add, .admin-controls.ng-hide-remove {
+  transition: 0s linear all;
+}
+.admin-controls.ng-hide-add-active,
+.admin-controls.ng-hide-remove-active {
+  transition: .2s linear all;
+}
+
+.admin-controls.ng-hide {
+  animation: growY .2s;
+}
+.admin-controls.ng-hide-remove {
+  animation: growY .2s reverse;
+}
+
+@keyframes growY {
+  from { max-height:2000px;}
+  to { max-height:0px;}
 }

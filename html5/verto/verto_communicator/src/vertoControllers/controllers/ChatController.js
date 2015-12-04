@@ -49,6 +49,11 @@
         });
       });
 
+      $rootScope.$on('call.conference', function(event, data) {
+        $timeout(function() {
+          $scope.conf = verto.data.conf.params.laData;
+        });
+      });
 
       $rootScope.$on('changedVideoLayout', function(event, layout) {
         $scope.resIDs = getResByLayout(layout);
@@ -176,6 +181,12 @@
       /**
        * Public methods.
        */
+
+      $scope.toggleModMenu = function(index) {
+        if (verto.data.confRole != 'moderator') return;
+        $scope.openId = $scope.openId == index ? null : index;
+      };
+
       $scope.send = function() {
         // Only conferencing chat is supported for now
         // but still calling method with the conference prefix
@@ -283,6 +294,16 @@
       $scope.confVolumeUp = function(memberID) {
         console.log('$scope.confVolumeUp');
         verto.data.conf.volumeUp(memberID);
+      };
+
+      $scope.confGainDown = function(memberID) {
+        console.log('$scope.confGainDown');
+        verto.data.conf.gainDown(memberID);
+      };
+
+      $scope.confGainUp = function(memberID) {
+        console.log('$scope.confGainUp');
+        verto.data.conf.gainUp(memberID);
       };
 
       $scope.confTransfer = function(memberID) {

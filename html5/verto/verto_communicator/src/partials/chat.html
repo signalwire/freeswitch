@@ -17,12 +17,12 @@
       <p class="text-center text-muted">There are no members to show.</p>
     </div>
 
-    <div ng-repeat="member in members" class="chat-member-item">
+    <div ng-repeat="member in members" class="chat-member-item" ng-class="{ opened: $index == openId }">
       <span class="chat-members-avatar">
         <img gravatar-size="40" gravatar-src="::member.email" class="img-circle" ng-class="{'chat-member-talking': member.status.audio.talking, 'chat-member-muted': member.status.audio.muted}" />
       </span>
       <!-- FIXME(italo): Put this whole block in a flex box to avoid defining fixed width.-->
-      <h4 class="chat-members-name">
+      <h4 class="chat-members-name" ng-class="{ 'clickable': verto.data.confRole == 'moderator' }" ng-click="toggleModMenu($index)">
         <div class="ellipsis members-name">{{ member.name }}</div>
 	<small class="ellipsis members-number">({{ member.number }})</small>
 
@@ -32,88 +32,6 @@
           <div ng-if="member.status.video.screenShare" class="label label-info">Screen Share</div>
 	</div>
       </h4>
-
-      <div class="pull-right action-buttons chat-members-action" ng-show="verto.data.confRole == 'moderator'">
-        <div class="btn-group">
-          <button type="button" class="btn btn-xs dropdown-toggle" data-toggle="dropdown">
-            <i class="mdi-navigation-more-vert dark" style="margin-right: 0px;"></i>
-          </button>
-          <ul class="dropdown-menu slidedown pull-right">
-            <li>
-              <a href="" ng-click="confKick(member.id)">
-                <span class="mdi-fw mdi-av-not-interested"></span>
-                Kick
-              </a>
-            </li>
-            <li>
-              <a href="" ng-click="confMuteMic(member.id)">
-                <span class="mdi-fw mdi-av-mic-off"></span>
-                Mute/Unmute Mic
-              </a>
-            </li>
-            <li>
-              <a href="" ng-click="confMuteVideo(member.id)">
-                <span class="mdi-fw mdi-av-videocam-off"></span>
-                Mute/Unmute Video
-              </a>
-            </li>
-            <li>
-              <a href="" ng-click="confVideoFloor(member.id)">
-                <span class="mdi-fw mdi-action-aspect-ratio"></span>
-                Video Floor
-              </a>
-            </li>
-            <li>
-              <a href="" ng-click="confBanner(member.id)">
-                <span class="mdi-fw mdi-av-subtitles"></span>
-                Banner
-              </a>
-            </li>
-	    <li>
-              <a href="" ng-click="confResetBanner(member.id)">
-                <span class="mdi-fw mdi-content-clear"></span>
-                Reset Banner
-              </a>
-            </li>
-            <li>
-              <a href="" ng-click="confVolumeDown(member.id)">
-                <span class="mdi-fw mdi-av-volume-down"></span>
-                Vol –
-              </a>
-            </li>
-            <li>
-              <a href="" ng-click="confVolumeUp(member.id)">
-                <span class="mdi-fw mdi-av-volume-up"></span>
-                Vol +
-              </a>
-            </li>
-            <li>
-              <a href="" ng-click="confTransfer(member.id)">
-                <span class="mdi-fw mdi-communication-call-made"></span>
-                Transfer
-              </a>
-            </li>
-            <li>
-              <a href="" ng-click="confCanvasIn(member.id)">
-                <span class="mdi-fw  mdi-image-switch-video"></span>
-                Canvas In
-              </a>
-            </li>
-            <li>
-              <a href="" ng-click="confCanvasOut(member.id)">
-                <span class="mdi-fw mdi-action-swap-horiz"></span>
-                Canvas Out
-              </a>
-            </li>
-            <li>
-              <a href="" ng-click="confLayer(member.id)">
-                <span class="mdi-fw mdi-action-view-carousel"></span>
-                Layer
-              </a>
-            </li>
-          </ul>
-        </div>
-      </div>
 
       <div class="pull-right resevartion-menu chat-members-action" ng-show="verto.data.confRole == 'moderator' && resIDs.length > 0">
         <div class="btn-group">
@@ -134,6 +52,124 @@
         <i ng-click="confMuteMic(member.id)" class="in-use" ng-class="{'clickable': verto.data.confRole == 'moderator', 'mdi-av-mic': !member.status.audio.muted, 'mdi-av-mic-off': member.status.audio.muted, 'mic_talking': member.status.audio.talking}"></i>
         <i ng-click="confMuteVideo(member.id)" ng-class="{'clickable': verto.data.confRole == 'moderator', 'mdi-av-videocam': !member.status.video.muted, 'mdi-av-videocam-off': member.status.video.muted, 'in-use': (member.status.video && !member.status.video.muted), 'disabled': !member.status.video}"></i>
       </span>
+
+      <div class="admin-controls" ng-if="verto.data.confRole == 'moderator'" ng-show="$index == $parent.openId">
+        <div>
+          <div class="col-md-6 ctrl-section">
+            <h3>General</h3>
+            <div class="group btn-group-justified">
+              <a href="" class="btn btn-xs" ng-click="confKick(member.id)" title="Kick">
+                <i class="mdi-fw mdi-av-not-interested"></i>
+                Kick
+              </a>
+              <a href="" class="btn btn-xs" ng-click="confVideoFloor(member.id)" title="Video Floor">
+                <i class="mdi-fw mdi-action-aspect-ratio"></i>
+                Floor
+              </a>
+              <a href="" class="btn btn-xs" ng-click="confTransfer(member.id)" title="Transfer">
+                <i class="mdi-fw mdi-communication-call-made"></i>
+                <span style="margin-left: -9px">Transfer</span>
+              </a>
+            </div>
+          </div>
+
+          <div class="col-md-6 ctrl-section">
+            <h3>Banner</h3>
+            <div class="group btn-group-justified">
+              <a href="" class="btn btn-xs" ng-click="confBanner(member.id)" title="Set">
+                <i class="mdi-fw mdi-toggle-radio-button-on"></i>
+                Set
+              </a>
+              <a href="" class="btn btn-xs" ng-click="confResetBanner(member.id)" title="Reset">
+                <i class="mdi-fw mdi-content-clear"></i>
+                Reset
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="col-md-6 ctrl-section" ng-if="conf.canvasCount > 1">
+            <h3>Canvas</h3>
+            <div class="group btn-group-justified">
+              <a href="" class="btn btn-xs" ng-click="confCanvasIn(member.id, 'prev')" title="Canvas In">
+                <i class="mdi-fw mdi-action-open-in-browser"></i>
+                Prev
+              </a>
+              <a href="" class="btn btn-xs" ng-click="confCanvasIn(member.id)" title="Canvas In">
+                <i class="mdi-fw mdi-action-open-in-browser"></i>
+                Id
+              </a>
+              <a href="" class="btn btn-xs" ng-click="confCanvasIn(member.id, 'next')" title="Canvas In">
+                <i class="mdi-fw mdi-action-open-in-browser"></i>
+                Next
+              </a>
+            </div>
+            <div class="group btn-group-justified">
+              <a href="" class="btn btn-xs" ng-click="confCanvasOut(member.id, 'prev')" title="Canvas Out">
+                <i class="mdi-fw mdi-fw mdi-action-system-update-tv"></i>
+                Prev
+              </a>
+              <a href="" class="btn btn-xs" ng-click="confCanvasOut(member.id)" title="Canvas Out">
+                <i class="mdi-fw mdi-fw mdi-action-system-update-tv"></i>
+                Id
+              </a>
+              <a href="" class="btn btn-xs" ng-click="confCanvasOut(member.id, 'next')" title="Canvas Out">
+                <i class="mdi-fw mdi-fw mdi-action-system-update-tv"></i>
+                Next
+              </a>
+            </div>
+            <div class="group btn-group-justified">
+              <a href="" class="btn btn-xs" ng-click="confLayer(member.id, 'prev')" title="Layer">
+                <i class="mdi-fw mdi-action-view-carousel"></i>
+                Prev
+              </a>
+              <a href="" class="btn btn-xs" ng-click="confLayer(member.id)" title="Layer">
+                <i class="mdi-fw mdi-action-view-carousel"></i>
+                Id
+              </a>
+              <a href="" class="btn btn-xs" ng-click="confLayer(member.id, 'next')" title="Layer">
+                <i class="mdi-fw mdi-action-view-carousel"></i>
+                Next
+              </a>
+            </div>
+          </div>
+
+          <div class="col-md-6 ctrl-section">
+            <h3>Audio/Video</h3>
+            <div class="group btn-group-justified">
+              <a href="" class="btn btn-xs" ng-click="confMuteMic(member.id)" title="Mute/Unmute Mic">
+                <i class="mdi-fw" ng-class="member.status.audio.muted ? 'mdi-av-mic-off' : 'mdi-av-mic'"></i>
+                {{ member.status.audio.muted ? 'Unmute' : 'Mute' }}
+              </a>
+              <a href="" ng-class="{ 'disabled': !member.status.video }" class="btn btn-xs" ng-click="confMuteVideo(member.id)" title="Mute/Unmute Video">
+                <i class="mdi-fw" ng-class="member.status.video.muted ? 'mdi-av-videocam-off' : 'mdi-av-videocam'"></i>
+                {{ member.status.video.muted ? 'Unmute' : 'Mute' }}
+              </a>
+            </div>
+            <div class="group btn-group-justified">
+              <a href="" class="btn btn-xs" ng-click="confVolumeDown(member.id)" title="Vol –">
+                <i class="mdi-fw mdi-av-volume-down"></i>
+                Vol –
+              </a>
+              <a href="" class="btn btn-xs" ng-click="confVolumeUp(member.id)" title="Vol +">
+                <i class="mdi-fw mdi-av-volume-up"></i>
+                Vol +
+              </a>
+            </div>
+            <div class="group btn-group-justified">
+              <a href="" class="btn btn-xs" ng-click="confGainDown(member.id)" title="Gain –">
+                <i class="mdi-fw mdi-av-volume-down"></i>
+                Gain –
+              </a>
+              <a href="" class="btn btn-xs" ng-click="confGainUp(member.id)" title="Gain +">
+                <i class="mdi-fw mdi-av-volume-up"></i>
+                Gain +
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
