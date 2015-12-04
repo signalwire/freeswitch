@@ -1352,23 +1352,22 @@
         };
 
         $.verto.conf.prototype.volumeDown = function(memberID) {
-            if (!this.params.hasVid) {
-                throw 'Conference has no video';
-            }
-            this.modCommand("volume_in", parseInt(memberID), "down");
+            this.modCommand("volume_out", parseInt(memberID), "down");
         };
 
         $.verto.conf.prototype.volumeUp = function(memberID) {
-            if (!this.params.hasVid) {
-                throw 'Conference has no video';
-            }
+            this.modCommand("volume_out", parseInt(memberID), "up");
+        };
+
+        $.verto.conf.prototype.gainDown = function(memberID) {
+            this.modCommand("volume_in", parseInt(memberID), "down");
+        };
+
+        $.verto.conf.prototype.gainUp = function(memberID) {
             this.modCommand("volume_in", parseInt(memberID), "up");
         };
 
         $.verto.conf.prototype.transfer = function(memberID, exten) {
-            if (!this.params.hasVid) {
-                throw 'Conference has no video';
-            }
             this.modCommand("transfer", parseInt(memberID), exten);
         };
 
@@ -1498,8 +1497,10 @@
             var tvpresenter_id = "tvpresenter_" + x;
             var tvfloor_id = "tvfloor_" + x;
             var box_id = "box_" + x;
-            var volup_id = "volume_in_up" + x;
-            var voldn_id = "volume_in_dn" + x;
+            var gainup_id = "gain_in_up" + x;
+            var gaindn_id = "gain_in_dn" + x;
+            var volup_id = "vol_in_up" + x;
+            var voldn_id = "vol_in_dn" + x;
             var transfer_id = "transfer" + x;
 	    
 
@@ -1509,6 +1510,8 @@
 
             html += "<button class='ctlbtn' id='" + kick_id + "'>Kick</button>" +
                 "<button class='ctlbtn' id='" + tmute_id + "'>Mute</button>" +
+                "<button class='ctlbtn' id='" + gainup_id + "'>Gain -</button>" +
+                "<button class='ctlbtn' id='" + gaindn_id + "'>Gain +</button>" +
                 "<button class='ctlbtn' id='" + voldn_id + "'>Vol -</button>" +
                 "<button class='ctlbtn' id='" + volup_id + "'>Vol +</button>" +
                 "<button class='ctlbtn' id='" + transfer_id + "'>Transfer</button>";
@@ -1640,12 +1643,20 @@
 		});
 	    }
 
-            $("#" + volup_id).click(function() {
+            $("#" + gainup_id).click(function() {
                 confMan.modCommand("volume_in", x, "up");
             });
 
-            $("#" + voldn_id).click(function() {
+            $("#" + gaindn_id).click(function() {
                 confMan.modCommand("volume_in", x, "down");
+            });
+
+            $("#" + volup_id).click(function() {
+                confMan.modCommand("volume_out", x, "up");
+            });
+
+            $("#" + voldn_id).click(function() {
+                confMan.modCommand("volume_out", x, "down");
             });
 
             return html;
