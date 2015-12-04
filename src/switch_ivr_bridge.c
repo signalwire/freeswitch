@@ -1698,6 +1698,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 		switch_call_cause_t cause = switch_channel_get_cause(peer_channel);
 		const char *hup = switch_channel_get_variable(caller_channel, SWITCH_HANGUP_AFTER_BRIDGE_VARIABLE);
 		int explicit = 0;
+        int answered = 0;
+		int early = 0;
 
 		if (cause == SWITCH_CAUSE_NONE) {
 			cause = SWITCH_CAUSE_NORMAL_CLEARING;
@@ -1718,16 +1720,21 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 			switch_channel_hangup(caller_channel, cause);
 		}
 
-		if ((state != CS_EXECUTE && state != CS_SOFT_EXECUTE && state != CS_PARK && state != CS_ROUTING) ||
-			(switch_channel_test_flag(peer_channel, CF_ANSWERED) && state < CS_HANGUP)) {
+		answered = switch_channel_test_flag(peer_channel, CF_ANSWERED);
+		early = switch_channel_test_flag(peer_channel, CF_EARLY_MEDIA);
+
+		if ((state != CS_EXECUTE && state != CS_SOFT_EXECUTE && state != CS_PARK && state != CS_ROUTING) || ((answered || early) && state < CS_HANGUP)) {
 			
 			if (!switch_channel_test_flag(caller_channel, CF_TRANSFER)) {
-				if (switch_true(switch_channel_get_variable(caller_channel, SWITCH_PARK_AFTER_BRIDGE_VARIABLE))) {
+
+				if ((answered && switch_true(switch_channel_get_variable(caller_channel, SWITCH_PARK_AFTER_BRIDGE_VARIABLE))) ||
+					switch_true(switch_channel_get_variable(caller_channel, SWITCH_PARK_AFTER_EARLY_BRIDGE_VARIABLE))) {
 					switch_ivr_park_session(session);
-				} else if ((var = switch_channel_get_variable(caller_channel, SWITCH_TRANSFER_AFTER_BRIDGE_VARIABLE))) {
+				} else if ((answered && (var = switch_channel_get_variable(caller_channel, SWITCH_TRANSFER_AFTER_BRIDGE_VARIABLE))) ||
+						   (var = switch_channel_get_variable(caller_channel, SWITCH_TRANSFER_AFTER_EARLY_BRIDGE_VARIABLE))) {
 					transfer_after_bridge(session, var);
-				} else {
-					if ((switch_channel_test_flag(peer_channel, CF_ANSWERED) && switch_true(hup))) {
+				} else if (answered) {
+					if (switch_true(hup)) {
 						if (switch_channel_test_flag(peer_channel, CF_INTERCEPTED)) {
 							switch_channel_set_flag(peer_channel, CF_INTERCEPT);
 						}
