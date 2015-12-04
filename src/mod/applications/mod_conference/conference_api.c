@@ -1583,9 +1583,8 @@ switch_status_t conference_api_sub_vid_res_id(conference_member_t *member, switc
 	} else {
 		member->video_reservation_id = switch_core_strdup(member->pool, text);
 		stream->write_function(stream, "+OK reservation_id %s\n", text);
+		conference_video_detach_video_layer(member);
 	}
-
-	conference_video_detach_video_layer(member);
 
 	return SWITCH_STATUS_SUCCESS;
 

@@ -615,14 +615,19 @@ void conference_video_detach_video_layer(conference_member_t *member)
 	mcu_layer_t *layer = NULL;
 	mcu_canvas_t *canvas = NULL;
 
-	if (member->canvas_id < 0 || member->video_layer_id < 0) return;
-
+	if (member->canvas_id < 0) return;
+	
 	if (!(canvas = conference_video_get_canvas_locked(member))) {
 		return;
 	}
 
 	switch_mutex_lock(canvas->mutex);
 
+	if (member->video_layer_id < 0) {
+		switch_mutex_unlock(canvas->mutex);
+		return;
+	}
+	
 	layer = &canvas->layers[member->video_layer_id];
 
 	if (layer->geometry.audio_position) {
