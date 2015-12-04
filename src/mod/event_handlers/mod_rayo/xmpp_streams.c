@@ -1,6 +1,6 @@
 /*
  * mod_rayo for FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2013, Grasshopper
+ * Copyright (C) 2013-2015, Grasshopper
  *
  * Version: MPL 1.1
  *
@@ -55,6 +55,8 @@ struct xmpp_stream_context {
 	switch_hash_t *users;
 	/** shared secret for server dialback */
 	const char *dialback_secret;
+	/** callback when a new resource is bound */
+	xmpp_stream_bind_callback bind_callback;
 	/** callback when a new stream is ready */
 	xmpp_stream_ready_callback ready_callback;
 	/** callback when a stream is destroyed */
@@ -539,17 +541,19 @@ static iks *on_iq_set_xmpp_session(struct xmpp_stream *stream, iks *node)
 
 	switch(stream->state) {
 		case XSS_RESOURCE_BOUND: {
-			reply = iks_new_iq_result(node);
-			stream->state = XSS_READY;
+			if (context->ready_callback && !context->ready_callback(stream)) {
+				reply = iks_new_error(node, STANZA_ERROR_INTERNAL_SERVER_ERROR);
+				stream->state = XSS_ERROR;
+			} else {
+				reply = iks_new_iq_result(node);
+				stream->state = XSS_READY;
 
-			/* add to available streams */
-			switch_mutex_lock(context->streams_mutex);
-			switch_core_hash_insert(context->routes, stream->jid, stream);
-			switch_mutex_unlock(context->streams_mutex);
-
-			if (context->ready_callback) {
-				context->ready_callback(stream);
+				/* add to available streams */
+				switch_mutex_lock(context->streams_mutex);
+				switch_core_hash_insert(context->routes, stream->jid, stream);
+				switch_mutex_unlock(context->streams_mutex);
 			}
+
 			break;
 		}
 		case XSS_AUTHENTICATED:
@@ -574,6 +578,7 @@ static iks *on_iq_set_xmpp_bind(struct xmpp_stream *stream, iks *node)
 
 	switch(stream->state) {
 		case XSS_AUTHENTICATED: {
+			struct xmpp_stream_context *context = stream->context;
 			iks *bind = iks_find(node, "bind");
 			iks *x;
 			/* get optional client resource ID */
@@ -585,14 +590,19 @@ static iks *on_iq_set_xmpp_bind(struct xmpp_stream *stream, iks *node)
 				switch_uuid_str(resource_id_buf, sizeof(resource_id_buf));
 				resource_id = switch_core_strdup(stream->pool, resource_id_buf);
 			}
-			stream->jid = switch_core_sprintf(stream->pool, "%s/%s", stream->jid, resource_id);
-			stream->state = XSS_RESOURCE_BOUND;
 
-			/* create reply */
-			reply = iks_new_iq_result(node);
-			x = iks_insert(reply, "bind");
-			iks_insert_attrib(x, "xmlns", IKS_NS_XMPP_BIND);
-			iks_insert_cdata(iks_insert(x, "jid"), stream->jid, strlen(stream->jid));
+			stream->jid = switch_core_sprintf(stream->pool, "%s/%s", stream->jid, resource_id);
+			if (context->bind_callback && !context->bind_callback(stream)) {
+				stream->jid = NULL;
+				reply = iks_new_error(node, STANZA_ERROR_CONFLICT);
+			} else {
+				stream->state = XSS_RESOURCE_BOUND;
+
+				reply = iks_new_iq_result(node);
+				x = iks_insert(reply, "bind");
+				iks_insert_attrib(x, "xmlns", IKS_NS_XMPP_BIND);
+				iks_insert_cdata(iks_insert(x, "jid"), stream->jid, strlen(stream->jid));
+			}
 			break;
 		}
 		default:
@@ -732,16 +742,16 @@ static void on_stream_dialback_result_valid(struct xmpp_stream *stream, iks *nod
 	/* TODO check domain pair and allow access if pending request exists */
 	switch_log_printf(SWITCH_CHANNEL_UUID_LOG(stream->id), SWITCH_LOG_DEBUG, "%s, %s:%i, valid dialback result\n", stream->jid, stream->address, stream->port);
 
-	/* this stream is routable */
-	stream->state = XSS_READY;
+	if (context->ready_callback && !context->ready_callback(stream)) {
+		stream->state = XSS_ERROR;
+	} else {
+		/* this stream is routable */
+		stream->state = XSS_READY;
 
-	/* add to available streams */
-	switch_mutex_lock(context->streams_mutex);
-	switch_core_hash_insert(context->routes, stream->jid, stream);
-	switch_mutex_unlock(context->streams_mutex);
-
-	if (context->ready_callback) {
-		context->ready_callback(stream);
+		/* add to available streams */
+		switch_mutex_lock(context->streams_mutex);
+		switch_core_hash_insert(context->routes, stream->jid, stream);
+		switch_mutex_unlock(context->streams_mutex);
 	}
 }
 
@@ -816,6 +826,18 @@ static void on_stream_dialback_result_key(struct xmpp_stream *stream, iks *node)
 		return;
 	}
 
+	/* this stream is not routable */
+	stream->state = XSS_READY;
+	stream->jid = switch_core_strdup(stream->pool, from);
+
+	if (context->ready_callback && !context->ready_callback(stream)) {
+		iks *error = iks_new_error(node, STANZA_ERROR_INTERNAL_SERVER_ERROR);
+		iks_send(stream->parser, error);
+		iks_delete(error);
+		stream->state = XSS_ERROR;
+		return;
+	}
+
 	/* TODO validate key */
 	reply = iks_new("db:result");
 	iks_insert_attrib(reply, "from", to);
@@ -823,14 +845,6 @@ static void on_stream_dialback_result_key(struct xmpp_stream *stream, iks *node)
 	iks_insert_attrib(reply, "type", "valid");
 	iks_send(stream->parser, reply);
 	iks_delete(reply);
-
-	/* this stream is not routable */
-	stream->state = XSS_READY;
-	stream->jid = switch_core_strdup(stream->pool, from);
-
-	if (context->ready_callback) {
-		context->ready_callback(stream);
-	}
 }
 
 /**
@@ -1014,6 +1028,11 @@ static void on_inbound_server_stream_start(struct xmpp_stream *stream, iks *node
 		case XSS_SECURE:
 			break;
 		case XSS_AUTHENTICATED: {
+			if (context->ready_callback && !context->ready_callback(stream)) {
+				stream->state = XSS_ERROR;
+				break;
+			}
+
 			/* all set */
 			xmpp_send_server_header_features(stream);
 			stream->state = XSS_READY;
@@ -1022,10 +1041,6 @@ static void on_inbound_server_stream_start(struct xmpp_stream *stream, iks *node
 			switch_mutex_lock(context->streams_mutex);
 			switch_core_hash_insert(context->routes, stream->jid, stream);
 			switch_mutex_unlock(context->streams_mutex);
-
-			if (context->ready_callback) {
-				context->ready_callback(stream);
-			}
 			break;
 		}
 		case XSS_SHUTDOWN:
@@ -1745,12 +1760,13 @@ void xmpp_stream_context_dump(struct xmpp_stream_context *context, switch_stream
  * Create a new XMPP stream context
  * @param domain for new streams
  * @param domain_secret domain shared secret for server dialback
+ * @param bind_cb callback function when a resource is bound to a new stream
  * @param ready callback function when new stream is ready
  * @param recv callback function when a new stanza is received
  * @param destroy callback function when a stream is destroyed
  * @return the context
  */
-struct xmpp_stream_context *xmpp_stream_context_create(const char *domain, const char *domain_secret, xmpp_stream_ready_callback ready, xmpp_stream_recv_callback recv, xmpp_stream_destroy_callback destroy)
+struct xmpp_stream_context *xmpp_stream_context_create(const char *domain, const char *domain_secret, xmpp_stream_bind_callback bind_cb, xmpp_stream_ready_callback ready, xmpp_stream_recv_callback recv, xmpp_stream_destroy_callback destroy)
 {
 	switch_memory_pool_t *pool;
 	struct xmpp_stream_context *context;
@@ -1762,6 +1778,7 @@ struct xmpp_stream_context *xmpp_stream_context_create(const char *domain, const
 	switch_core_hash_init(&context->routes);
 	switch_core_hash_init(&context->streams);
 	context->dialback_secret = switch_core_strdup(context->pool, domain_secret);
+	context->bind_callback = bind_cb;
 	context->ready_callback = ready;
 	context->destroy_callback = destroy;
 	context->recv_callback = recv;
