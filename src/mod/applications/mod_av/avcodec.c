@@ -850,7 +850,7 @@ static switch_status_t open_encoder(h264_codec_context_t *context, uint32_t widt
 
 	sane = switch_calc_bitrate(1920, 1080, 2, 30);
 
-	if (context->bandwidth > sane) {
+	if (context->bandwidth / 8 > sane) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "BITRATE TRUNCATED TO %d\n", sane);
 		context->bandwidth = sane * 8;
 	}
@@ -862,7 +862,7 @@ static switch_status_t open_encoder(h264_codec_context_t *context, uint32_t widt
 	context->encoder_ctx->time_base = (AVRational){1, 90};
 	context->encoder_ctx->max_b_frames = 0;
 	context->encoder_ctx->pix_fmt = AV_PIX_FMT_YUV420P;
-	context->encoder_ctx->thread_count = 1;//switch_core_cpu_count() > 4 ? 4 : 1;
+	context->encoder_ctx->thread_count = 1;//switch_core_cpu_count() > 2 ? 2 : 1;
 	context->encoder_ctx->bit_rate = context->bandwidth * 1024;
 	context->encoder_ctx->rc_max_rate = context->bandwidth * 1024;
 	context->encoder_ctx->rc_buffer_size = context->bandwidth * 1024 * 4;
@@ -882,15 +882,20 @@ static switch_status_t open_encoder(h264_codec_context_t *context, uint32_t widt
 		//av_opt_set_int(context->encoder_ctx->priv_data, "slice-max-size", SLICE_SIZE, 0);
 
 		// libx264-medium.ffpreset preset
+
 		context->encoder_ctx->coder_type = 1;  // coder = 1
 		context->encoder_ctx->flags|=CODEC_FLAG_LOOP_FILTER;   // flags=+loop
 		context->encoder_ctx->me_cmp|= 1;  // cmp=+chroma, where CHROMA = 1
 		context->encoder_ctx->me_method=ME_HEX;    // me_method=hex
-		context->encoder_ctx->me_subpel_quality = 7;   // subq=7
+		//context->encoder_ctx->me_subpel_quality = 7;   // subq=7
+
 		context->encoder_ctx->me_range = 16;   // me_range=16
 		context->encoder_ctx->max_b_frames = 3;    // bf=3
+
 		//context->encoder_ctx->refs = 3;    // refs=3
-		context->encoder_ctx->trellis = 1; // trellis=1
+		
+		//context->encoder_ctx->trellis = 1; // trellis=1
+		
 	}
 
 	// libx264-medium.ffpreset preset
@@ -960,7 +965,6 @@ static switch_status_t switch_h264_init(switch_codec_t *codec, switch_codec_flag
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "codec: id=%d %s\n", context->decoder->id, context->decoder->long_name);
 
 			context->decoder_ctx = avcodec_alloc_context3(context->decoder);
-
 			if (avcodec_open2(context->decoder_ctx, context->decoder, NULL) < 0) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error openning codec\n");
 				goto error;
