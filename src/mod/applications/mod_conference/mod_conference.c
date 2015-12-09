@@ -230,37 +230,6 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 	conference->auto_recording = 0;
 	conference->record_count = 0;
 
-
-
-	switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT);
-	conference_event_add_data(conference, event);
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "conference-create");
-	switch_event_fire(&event);
-
-	if (conference_utils_test_flag(conference, CFLAG_LIVEARRAY_SYNC)) {
-		char *p;
-
-		if (strchr(conference->name, '@')) {
-			conference->la_event_channel = switch_core_sprintf(conference->pool, "conference-liveArray.%s", conference->name);
-			conference->chat_event_channel = switch_core_sprintf(conference->pool, "conference-chat.%s", conference->name);
-			conference->mod_event_channel = switch_core_sprintf(conference->pool, "conference-mod.%s", conference->name);
-		} else {
-			conference->la_event_channel = switch_core_sprintf(conference->pool, "conference-liveArray.%s@%s", conference->name, conference->domain);
-			conference->chat_event_channel = switch_core_sprintf(conference->pool, "conference-chat.%s@%s", conference->name, conference->domain);
-			conference->mod_event_channel = switch_core_sprintf(conference->pool, "conference-mod.%s@%s", conference->name, conference->domain);
-		}
-
-		conference->la_name = switch_core_strdup(conference->pool, conference->name);
-		if ((p = strchr(conference->la_name, '@'))) {
-			*p = '\0';
-		}
-
-		switch_live_array_create(conference->la_event_channel, conference->la_name, conference_globals.event_channel_id, &conference->la);
-		switch_live_array_set_user_data(conference->la, conference);
-		switch_live_array_set_command_handler(conference->la, conference_event_la_command_handler);
-	}
-
-
 	while (conference_globals.running && !conference_utils_test_flag(conference, CFLAG_DESTRUCT)) {
 		switch_size_t file_sample_len = samples;
 		switch_size_t file_data_len = samples * 2 * conference->channels;
@@ -2440,7 +2409,8 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 	switch_channel_t *channel = NULL;
 	const char *force_rate = NULL, *force_interval = NULL, *force_channels = NULL, *presence_id = NULL;
 	uint32_t force_rate_i = 0, force_interval_i = 0, force_channels_i = 0, video_auto_floor_msec = 0;
-
+	switch_event_t *event;
+	
 	/* Validate the conference name */
 	if (zstr(name)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Record! no name.\n");
@@ -3195,6 +3165,36 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 		}
 	}
 
+
+	switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT);
+	conference_event_add_data(conference, event);
+	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "conference-create");
+	switch_event_fire(&event);
+
+	if (conference_utils_test_flag(conference, CFLAG_LIVEARRAY_SYNC)) {
+		char *p;
+
+		if (strchr(conference->name, '@')) {
+			conference->la_event_channel = switch_core_sprintf(conference->pool, "conference-liveArray.%s", conference->name);
+			conference->chat_event_channel = switch_core_sprintf(conference->pool, "conference-chat.%s", conference->name);
+			conference->mod_event_channel = switch_core_sprintf(conference->pool, "conference-mod.%s", conference->name);
+		} else {
+			conference->la_event_channel = switch_core_sprintf(conference->pool, "conference-liveArray.%s@%s", conference->name, conference->domain);
+			conference->chat_event_channel = switch_core_sprintf(conference->pool, "conference-chat.%s@%s", conference->name, conference->domain);
+			conference->mod_event_channel = switch_core_sprintf(conference->pool, "conference-mod.%s@%s", conference->name, conference->domain);
+		}
+
+		conference->la_name = switch_core_strdup(conference->pool, conference->name);
+		if ((p = strchr(conference->la_name, '@'))) {
+			*p = '\0';
+		}
+
+		switch_live_array_create(conference->la_event_channel, conference->la_name, conference_globals.event_channel_id, &conference->la);
+		switch_live_array_set_user_data(conference->la, conference);
+		switch_live_array_set_command_handler(conference->la, conference_event_la_command_handler);
+	}
+
+	
  end:
 
 	switch_mutex_unlock(conference_globals.hash_mutex);
