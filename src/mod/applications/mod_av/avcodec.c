@@ -845,7 +845,7 @@ static switch_status_t open_encoder(h264_codec_context_t *context, uint32_t widt
 	if (context->codec_settings.video.bandwidth) {
 		context->bandwidth = context->codec_settings.video.bandwidth * 8;
 	} else {
-		context->bandwidth = switch_calc_bitrate(context->codec_settings.video.width, context->codec_settings.video.height, 0, 0) * 8;
+		context->bandwidth = switch_calc_bitrate(context->codec_settings.video.width, context->codec_settings.video.height, 1, 15) * 8;
 	}
 
 	sane = switch_calc_bitrate(1920, 1080, 2, 30);

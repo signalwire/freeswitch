@@ -2725,10 +2725,10 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 			} else if (!strcasecmp(var, "video-quality") && !zstr(val)) {
 				int tmp = atoi(val);
 
-				if (tmp > 0 && tmp < 5) {
+				if (tmp > -1 && tmp < 5) {
 					conference_video_quality = tmp;
 				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Video quality must be between 1 and 4\n");
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Video quality must be between 0 and 4\n");
 				}
 				
 			} else if (!strcasecmp(var, "video-mode") && !zstr(val)) {
@@ -2874,7 +2874,7 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 
 		if (video_codec_bandwidth) {
 			if (!strcasecmp(video_codec_bandwidth, "auto")) {
-				conference->video_codec_settings.video.bandwidth = switch_calc_bitrate(canvas_w, canvas_h, conference->video_quality, (int)conference->video_fps.fps);
+				conference->video_codec_settings.video.bandwidth = switch_calc_bitrate(canvas_w, canvas_h, conference->video_quality, conference->video_fps.fps);
 			} else {
 				conference->video_codec_settings.video.bandwidth = switch_parse_bandwidth_string(video_codec_bandwidth);
 			}
