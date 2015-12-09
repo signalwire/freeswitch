@@ -82,8 +82,12 @@
       function clearMembersResID(preserve) {
         $scope.members.forEach(function(member) {
           var resID = member.status.video.reservationID;
+          console.debug("resID to clear: " + resID);
           if (resID && preserve && preserve.indexOf(resID) !== -1) return;
+          if (resID){
+            console.debug("clearing resid [" + resID + "] from [" + member.id + "]");
             $scope.confResID(member.id, resID);
+          }
         });
       };
 
