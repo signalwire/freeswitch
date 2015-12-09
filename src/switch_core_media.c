@@ -7475,11 +7475,16 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 			sr = "sendrecv";
 		}
 
-		//if ((var_val = switch_channel_get_variable(session->channel, "media_audio_mode"))) {
-		//	sr = var_val;
-		//} else {
-		//	sr = "sendrecv";
-		//}
+		if ((var_val = switch_channel_get_variable(session->channel, "origination_audio_mode"))) {
+			if (!strcasecmp(sr, "sendonly") || !strcasecmp(sr, "recvonly") || !strcasecmp(sr, "sendrecv")) {
+				sr = var_val;
+			}
+			switch_channel_set_variable(session->channel, "origination_audio_mode", NULL);
+		}
+
+		if (zstr(sr)) {
+			sr = "sendrecv";
+		}
 	}
 
 	if (!smh->owner_id) {
