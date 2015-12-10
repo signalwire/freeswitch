@@ -342,7 +342,7 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
             maxWidth: w,
             maxHeight: h,
             minFrameRate: 15,
-            vertoBestFrameRate: 30
+            vertoBestFrameRate: 15
           });
           videoQuality.forEach(function(qual){
             if (w === qual.width && h === qual.height) {
