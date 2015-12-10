@@ -38,7 +38,8 @@
           googHighpassFilter: true,
           googEchoCancellation: true,
           autoBand: true,
-          testSpeedJoin: true
+          testSpeedJoin: true,
+          bestFrameRate: 15
        };
 
     data.$default(defaultSettings);
