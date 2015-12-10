@@ -294,6 +294,28 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
         }
         console.debug('Devices were refreshed, checking that we have cameras.');
 
+        // Verify if selected devices are valid
+        var videoFlag = data.videoDevices.some(function(device) {
+          return device.id == storage.data.selectedVideo;
+        });
+
+        var shareFlag = data.shareDevices.some(function(device) {
+          return device.id == storage.data.selectedShare;
+        });
+
+        var audioFlag = data.audioDevices.some(function(device) {
+          return device.id == storage.data.selectedAudio;
+        });
+
+        var speakerFlag = data.speakerDevices.some(function(device) {
+          return device.id == storage.data.selectedSpeaker;
+        });
+
+        if (!videoFlag) storage.data.selectedVideo = data.videoDevices[0].id;
+        if (!shareFlag) storage.data.selectedShare = data.shareDevices[0].id;
+        if (!audioFlag) storage.data.selectedAudio = data.audioDevices[0].id;
+        if (!speakerFlag) storage.data.selectedSpeaker = data.speakerDevices[0].id;
+
         // This means that we cannot use video!
         if (data.videoDevices.length === 0) {
           console.log('No camera, disabling video.');
