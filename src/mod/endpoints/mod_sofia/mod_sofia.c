@@ -2638,6 +2638,7 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 							stream->write_function(stream, "%25s\t%32s\t%s\t%6.2f\t%u/%u\t%u/%u",
 												   pkey, gp->register_to, sofia_state_names[gp->state], gp->ping_time,
 												   gp->ib_failed_calls, gp->ib_calls, gp->ob_failed_calls, gp->ob_calls);
+							free(pkey);
 
 							if (gp->state == REG_STATE_FAILED || gp->state == REG_STATE_TRYING) {
 								time_t now = switch_epoch_time_now(NULL);
@@ -4949,6 +4950,7 @@ static int notify_csta_callback(void *pArg, int argc, char **argv, char **column
 	switch_safe_free(route_uri);
 	sofia_glue_free_destination(dst);
 
+	free(extra_headers);
 	free(id);
 	free(contact);
 
@@ -5207,6 +5209,7 @@ static void general_event_handler(switch_event_t *event)
 			const char *csta_event = switch_event_get_header(event, "Feature-Event");
 
 			char *ct = "application/x-as-feature-event+xml";
+			char *ct_m = NULL;
 
 			sofia_profile_t *profile;
 
@@ -5258,7 +5261,8 @@ static void general_event_handler(switch_event_t *event)
 
 						stream.write_function(&stream, "--%s--\r\n", boundary_string);
 
-						ct = switch_mprintf("multipart/mixed; boundary=\"%s\"", boundary_string);
+						ct_m = switch_mprintf("multipart/mixed; boundary=\"%s\"", boundary_string);
+						ct = ct_m;
 					} else {
 						char *fwd_type = NULL;
 
@@ -5295,6 +5299,7 @@ static void general_event_handler(switch_event_t *event)
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "missing something\n");
 			}
+			switch_safe_free(ct_m);
 		}
 		break;
 	case SWITCH_EVENT_SEND_MESSAGE:
