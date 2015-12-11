@@ -538,7 +538,7 @@ static switch_xml_t switch_xml_err(switch_xml_root_t root, char *s, const char *
 static char *switch_xml_decode(char *s, char **ent, char t)
 {
 	char *e, *r = s, *m = s;
-	long b, c, d, l;
+	unsigned long b, c, d, l;
 
 	for (; *s; s++) {			/* normalize line endings */
 		while (*s == '\r') {
@@ -555,10 +555,17 @@ static char *switch_xml_decode(char *s, char **ent, char t)
 		if (!*s)
 			break;
 		else if (t != 'c' && !strncmp(s, "&#", 2)) {	/* character reference */
-			if (s[2] == 'x')
-				c = strtol(s + 3, &e, 16);	/* base 16 */
-			else
-				c = strtol(s + 2, &e, 10);	/* base 10 */
+			char *code = s + 2;
+			int base = 10;
+			if (*code == 'x') {
+				code++;
+				base = 16;
+			}
+			if (!isxdigit((int)*code)) { /* "&# 1;" and "&#-1;" are invalid */
+				s++;
+				continue;
+			}
+			c = strtoul(code, &e, base);
 			if (!c || *e != ';') {
 				s++;
 				continue;
@@ -566,10 +573,14 @@ static char *switch_xml_decode(char *s, char **ent, char t)
 			/* not a character ref */
 			if (c < 0x80)
 				*(s++) = (char) c;	/* US-ASCII subset */
-			else {				/* multi-byte UTF-8 sequence */
+			else if (c > 0x7FFFFFFF) { /* out of UTF-8 range */
+				s++;
+				continue;
+			} else {				/* multi-byte UTF-8 sequence */
 				for (b = 0, d = c; d; d /= 2)
 					b++;		/* number of bits in c */
 				b = (b - 2) / 5;	/* number of bytes in payload */
+				assert(b < 7);		/* because c <= 0x7FFFFFFF */
 				*(s++) = (char) ((0xFF << (7 - b)) | (c >> (6 * b)));	/* head */
 				while (b)
 					*(s++) = (char) (0x80 | ((c >> (6 * --b)) & 0x3F));	/* payload */
@@ -580,8 +591,8 @@ static char *switch_xml_decode(char *s, char **ent, char t)
 			for (b = 0; ent[b] && strncmp(s + 1, ent[b], strlen(ent[b])); b += 2);	/* find entity in entity list */
 
 			if (ent[b++]) {		/* found a match */
-				if ((c = (long) strlen(ent[b])) - 1 > (e = strchr(s, ';')) - s) {
-					l = (d = (long) (s - r)) + c + (long) strlen(e);	/* new length */
+				if ((c = (unsigned long) strlen(ent[b])) - 1 > (e = strchr(s, ';')) - s) {
+					l = (d = (unsigned long) (s - r)) + c + (unsigned long) strlen(e);	/* new length */
 					if (l) {
 						if (r == m) {
 							char *tmp = (char *) malloc(l);
@@ -618,7 +629,7 @@ static char *switch_xml_decode(char *s, char **ent, char t)
 
 	if (t == '*') {				/* normalize spaces for non-cdata attributes */
 		for (s = r; *s; s++) {
-			if ((l = (long) strspn(s, " ")))
+			if ((l = (unsigned long) strspn(s, " ")))
 				memmove(s, s + l, strlen(s + l) + 1);
 			while (*s && *s != ' ')
 				s++;
@@ -2944,58 +2955,91 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_set_txt(switch_xml_t xml, const char *tx
    of NULL will remove the specified attribute.  Returns the tag given */
 SWITCH_DECLARE(switch_xml_t) switch_xml_set_attr(switch_xml_t xml, const char *name, const char *value)
 {
-	int l = 0, c;
+	int l = 0, attr_number, c;
+	/* After adding the first attribute, xml->attr = { name1, val1, name2, val2,
+	 * ..., nameN, valN, NULL, alloc_flags }. alloc_flags tracks how the memory
+	 * for each attr and value is managed. */
+	char *alloc_flags;
 
 	if (!xml)
 		return NULL;
 	while (xml->attr[l] && strcmp(xml->attr[l], name))
 		l += 2;
+	attr_number = l / 2;
+
 	if (!xml->attr[l]) {		/* not found, add as new attribute */
 		if (!value)
-			return xml;			/* nothing to do */
+			goto cleanup;		/* not found, no need to remove attribute */
 		if (xml->attr == SWITCH_XML_NIL) {	/* first attribute */
-			xml->attr = (char **) malloc(4 * sizeof(char *));
-			if (!xml->attr)
-				return NULL;
-			xml->attr[1] = strdup("");	/* empty list of malloced names/vals */
+			char ** tmp = (char **) malloc(4 * sizeof(char *));
+			if (!tmp)
+				goto cleanup;
+			xml->attr = tmp;
+			assert(l == 0);			/* name of SWITCH_XML_NIL is assumed to be empty */
+			xml->attr[0] = NULL;	/* terminator */
+			xml->attr[1] = NULL;	/* empty list of malloced names/vals */
 		} else {
 			char **tmp = (char **) realloc(xml->attr, (l + 4) * sizeof(char *));
 			if (!tmp)
-				return xml;
+				goto cleanup;
 			xml->attr = tmp;
 		}
+		/* Extend list of allocation flags for the new attribute */
+		alloc_flags = (char *)realloc(xml->attr[l + 1], attr_number + 1);
+		if (!alloc_flags)
+			goto cleanup;
+		alloc_flags[attr_number + 1] = '\0';	/* terminate list */
 
+		/* Add new attribute, the value will be set further below. */
 		xml->attr[l] = (char *) name;	/* set attribute name */
-		xml->attr[l + 2] = NULL;	/* null terminate attribute list */
-		xml->attr[l + 3] = (char *) realloc(xml->attr[l + 1], (c = (int) strlen(xml->attr[l + 1])) + 2);
-		strcpy(xml->attr[l + 3] + c, " ");	/* set name/value as not malloced */
+		name = NULL;					/* control of memory is transferred */
+		l += 2;
+
+		xml->attr[l] = NULL;			/* null terminate attribute list */
+		xml->attr[l + 1] = alloc_flags;
 		if (xml->flags & SWITCH_XML_DUP)
-			xml->attr[l + 3][c] = SWITCH_XML_NAMEM;
-	} else if (xml->flags & SWITCH_XML_DUP)
-		free((char *) name);	/* name was strduped */
-
-	for (c = l; xml->attr[c]; c += 2);	/* find end of attribute list */
-	if (xml->attr[c + 1][l / 2] & SWITCH_XML_TXTM)
-		free(xml->attr[l + 1]);	/* old val */
-	if (xml->flags & SWITCH_XML_DUP)
-		xml->attr[c + 1][l / 2] |= SWITCH_XML_TXTM;
-	else
-		xml->attr[c + 1][l / 2] &= ~SWITCH_XML_TXTM;
-
-	if (value)
-		xml->attr[l + 1] = (char *) value;	/* set attribute value */
-	else {						/* remove attribute */
-		char **tmp;
-		if (xml->attr[c + 1][l / 2] & SWITCH_XML_NAMEM)
-			free(xml->attr[l]);
-		memmove(xml->attr + l, xml->attr + l + 2, (c - l + 2) * sizeof(char *));
-		tmp = (char **) realloc(xml->attr, (c + 2) * sizeof(char *));
-		if (!tmp)
-			return xml;
-		xml->attr = tmp;
-		memmove(xml->attr[c + 1] + (l / 2), xml->attr[c + 1] + (l / 2) + 1, (c / 2) - (l / 2));	/* fix list of which name/vals are malloced */
+			alloc_flags[attr_number] = SWITCH_XML_NAMEM;
+		else
+			alloc_flags[attr_number] = ' ';		/* dummy value */
+	} else {
+		while (xml->attr[l]) l += 2;
+		alloc_flags = xml->attr[l + 1];
 	}
-	xml->flags &= ~SWITCH_XML_DUP;	/* clear strdup() flag */
+
+	c = 2 * attr_number;		/* index of the current attribute name */
+	/* l points to the index of the terminator name */
+
+	if (alloc_flags[attr_number] & SWITCH_XML_TXTM)
+		free(xml->attr[c + 1]);	/* old val */
+	if (xml->flags & SWITCH_XML_DUP)
+		alloc_flags[attr_number] |= SWITCH_XML_TXTM;
+	else
+		alloc_flags[attr_number] &= ~SWITCH_XML_TXTM;
+
+	if (value) {
+		xml->attr[c + 1] = (char *) value;	/* set attribute value */
+		value = NULL;				/* control of memory is transferred */
+	} else {						/* remove attribute */
+		char **tmp;
+		/* free name if it was dynamically allocated (value is handled above) */
+		if (alloc_flags[attr_number] & SWITCH_XML_NAMEM)
+			free(xml->attr[c]);
+
+		/* drop (name, value) pair from attribute list */
+		memmove(xml->attr + c, xml->attr + c + 2, (l - c) * sizeof(char *));
+		tmp = (char **) realloc(xml->attr, l * sizeof(char *));
+		if (tmp)			/* try to shrink when possible */
+			xml->attr = tmp;
+
+		memmove(alloc_flags + attr_number, alloc_flags + attr_number + 1, (l - c) / 2);	/* shrink allocation info */
+	}
+
+cleanup:
+	if (xml->flags & SWITCH_XML_DUP) {
+		free((char *) name);	/* name was strduped */
+		free((char *) value);	/* name was strduped, but an error occurred */
+		xml->flags &= ~SWITCH_XML_DUP;	/* clear strdup() flag */
+	}
 
 	return xml;
 }
