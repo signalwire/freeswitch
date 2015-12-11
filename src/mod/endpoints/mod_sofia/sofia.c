@@ -3384,6 +3384,7 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 
 		if (zstr(name) || switch_regex_match(name, "^[\\w\\.\\-\\_]+$") != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Ignoring invalid name '%s'\n", name ? name : "NULL");
+			free(pkey);
 			goto skip;
 		}
 
@@ -8697,9 +8698,7 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 		home = NULL;
 	}
 
-	if (etmp) {
-		switch_safe_free(etmp);
-	}
+	switch_safe_free(etmp);
 }
 
 
