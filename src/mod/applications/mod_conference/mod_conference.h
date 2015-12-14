@@ -246,6 +246,7 @@ typedef enum {
 	CFLAG_VIDEO_REQUIRED_FOR_CANVAS,
 	CFLAG_PERSONAL_CANVAS,
 	CFLAG_REFRESH_LAYOUT,
+	CFLAG_VIDEO_MUTE_EXIT_CANVAS,
 	/////////////////////////////////
 	CFLAG_MAX
 } conference_flag_t;
