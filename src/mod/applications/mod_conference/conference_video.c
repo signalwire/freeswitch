@@ -649,6 +649,7 @@ void conference_video_detach_video_layer(conference_member_t *member)
 	member->avatar_patched = 0;
 	conference_video_check_used_layers(canvas);
 	canvas->send_keyframe = 1;
+	member->managed_kps = 0;
 
 	if (conference_utils_test_flag(member->conference, CFLAG_JSON_STATUS)) {
 		conference_member_update_status_field(member);
@@ -876,7 +877,6 @@ void conference_video_layer_set_banner(conference_member_t *member, mcu_layer_t 
 
 void conference_video_reset_video_bitrate_counters(conference_member_t *member)
 {
-	member->managed_kps = 0;
 	member->blackouts = 0;
 	member->good_img = 0;
 	member->blanks = 0;
@@ -972,6 +972,7 @@ switch_status_t conference_video_attach_video_layer(conference_member_t *member,
 
 	switch_img_fill(canvas->img, layer->x_pos, layer->y_pos, layer->screen_w, layer->screen_h, &canvas->letterbox_bgcolor);
 	conference_video_reset_video_bitrate_counters(member);
+	member->managed_kps = 0;
 
 	if (conference_utils_test_flag(member->conference, CFLAG_JSON_STATUS)) {
 		conference_member_update_status_field(member);
