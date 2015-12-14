@@ -36,6 +36,7 @@
 
 #ifdef __cplusplus
 extern "C" {
+#include "mcast.h"
 #endif /* defined(__cplusplus) */
 #if EMACS_WORKS
 }
@@ -49,7 +50,7 @@ class McastHandle {
 	virtual ~McastHandle();
 	int send(const char *data);
 	char *recv(int ms = 0);
-	int filenum(void);
+	mcast_socket_t filenum(void);
 };
 
 #ifdef __cplusplus
