@@ -279,7 +279,7 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 					}
 				}
 
-				if (switch_channel_ready(channel) && switch_channel_test_flag(channel, CF_VIDEO) && imember->video_media_flow != SWITCH_MEDIA_FLOW_SENDONLY) {
+				if (switch_channel_ready(channel) && switch_channel_test_flag(channel, CF_VIDEO_READY) && imember->video_media_flow != SWITCH_MEDIA_FLOW_SENDONLY && (!conference_utils_test_flag(conference, CFLAG_VIDEO_MUTE_EXIT_CANVAS) || conference_utils_member_test_flag(imember, MFLAG_CAN_BE_SEEN))) {
 					members_with_video++;
 				}
 

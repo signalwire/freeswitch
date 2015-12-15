@@ -1858,7 +1858,7 @@ SWITCH_DECLARE(void) switch_channel_set_flag_value(switch_channel_t *channel, sw
 		switch_core_session_start_video_thread(channel->session);
 	}
 	
-	if (flag == CF_VIDEO_DECODED_READ) {
+	if (flag == CF_VIDEO_DECODED_READ && channel->flags[CF_VIDEO]) {
 		switch_core_session_request_video_refresh(channel->session);
 		if (!switch_core_session_in_video_thread(channel->session)) {
 			switch_channel_wait_for_flag(channel, CF_VIDEO_READY, SWITCH_TRUE, 10000, NULL);

@@ -675,7 +675,7 @@ static char *url_cache_get(url_cache_t *cache, http_profile_t *profile, switch_c
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Failed to download URL %s\n", url);
 			cache->errors++;
 		}
-	} else if (!u) {
+	} else if (!u || (u->status == CACHED_URL_RX_IN_PROGRESS && !download)) {
 		filename = DOWNLOAD_NEEDED;
 	} else {
 		/* Wait until file is downloaded */

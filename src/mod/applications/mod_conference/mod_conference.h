@@ -246,6 +246,7 @@ typedef enum {
 	CFLAG_VIDEO_REQUIRED_FOR_CANVAS,
 	CFLAG_PERSONAL_CANVAS,
 	CFLAG_REFRESH_LAYOUT,
+	CFLAG_VIDEO_MUTE_EXIT_CANVAS,
 	/////////////////////////////////
 	CFLAG_MAX
 } conference_flag_t;
@@ -1088,6 +1089,7 @@ switch_status_t conference_api_sub_transfer(conference_obj_t *conference, switch
 switch_status_t conference_api_sub_record(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv);
 switch_status_t conference_api_sub_norecord(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv);
 switch_status_t conference_api_sub_vid_bandwidth(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv);
+switch_status_t conference_api_sub_vid_personal(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv);
 switch_status_t conference_api_dispatch(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv, const char *cmdline, int argn);
 switch_status_t conference_api_sub_syntax(char **syntax);
 switch_status_t conference_api_main_real(const char *cmd, switch_core_session_t *session, switch_stream_handle_t *stream);
