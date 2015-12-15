@@ -50,7 +50,7 @@ if(obj.options.useVideo&&obj.options.localVideo){getUserMedia({constraints:{audi
 var video={};var bestFrameRate=obj.options.videoParams.vertoBestFrameRate;delete obj.options.videoParams.vertoBestFrameRate;video={mandatory:obj.options.videoParams,optional:[]}
 var useVideo=obj.options.useVideo;if(useVideo&&obj.options.useCamera&&obj.options.useCamera!=="none"){if(!video.optional){video.optional=[];}
 if(obj.options.useCamera!=="any"){video.optional.push({sourceId:obj.options.useCamera});}
-if(bestFrameRate){video.optional.push({minFrameRate:bestFrameRate});if(bestFrameRate<30){video.optional.push({maxFrameRate:bestFrameRate});}}}else{console.log("Camera Disabled");video=false;useVideo=false;}
+if(bestFrameRate){video.optional.push({minFrameRate:bestFrameRate});video.optional.push({maxFrameRate:bestFrameRate});}}else{console.log("Camera Disabled");video=false;useVideo=false;}
 return{audio:audio,video:video,useVideo:useVideo};}
 $.FSRTC.prototype.call=function(profile){checkCompat();var self=this;var screen=false;self.type="offer";if(self.options.videoParams&&self.options.screenShare){screen=true;}
 function onSuccess(stream){self.localStream=stream;if(screen){if(moz){self.constraints.OfferToReceiveVideo=false;}else{self.constraints.mandatory.OfferToReceiveVideo=false;}}

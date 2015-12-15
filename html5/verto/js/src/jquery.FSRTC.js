@@ -560,9 +560,7 @@
 
 	    if (bestFrameRate) {
 		video.optional.push({minFrameRate: bestFrameRate});
-		if (bestFrameRate < 30) {
-		    video.optional.push({maxFrameRate: bestFrameRate});
-		}
+		video.optional.push({maxFrameRate: bestFrameRate});
 	    }
 
 	} else {
