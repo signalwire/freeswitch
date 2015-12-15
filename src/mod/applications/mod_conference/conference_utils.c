@@ -193,6 +193,8 @@ void conference_utils_set_cflags(const char *flags, conference_flag_t *f)
 				f[CFLAG_VIDEO_BRIDGE_FIRST_TWO] = 1;
 			} else if (!strcasecmp(argv[i], "video-required-for-canvas")) {
 				f[CFLAG_VIDEO_REQUIRED_FOR_CANVAS] = 1;
+			} else if (!strcasecmp(argv[i], "video-mute-exit-canvas")) {
+				f[CFLAG_VIDEO_MUTE_EXIT_CANVAS] = 1;
 			} else if (!strcasecmp(argv[i], "manage-inbound-video-bitrate")) {
 				f[CFLAG_MANAGE_INBOUND_VIDEO_BITRATE] = 1;
 			} else if (!strcasecmp(argv[i], "video-muxing-personal-canvas")) {
