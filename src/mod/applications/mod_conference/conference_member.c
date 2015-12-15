@@ -708,15 +708,6 @@ switch_status_t conference_member_add(conference_obj_t *conference, conference_m
 
 	switch_queue_create(&member->dtmf_queue, 100, member->pool);
 
-	if (conference_utils_test_flag(conference, CFLAG_PERSONAL_CANVAS)) {
-		video_layout_t *vlayout = NULL;
-
-		if ((vlayout = conference_video_get_layout(conference, conference->video_layout_name, conference->video_layout_group))) {
-			conference_video_init_canvas(conference, vlayout, &member->canvas);
-			conference_video_init_canvas_layers(conference, member->canvas, vlayout);
-		}
-	}
-
 	conference->members = member;
 	conference_utils_member_set_flag_locked(member, MFLAG_INTREE);
 	switch_mutex_unlock(conference->member_mutex);

@@ -1089,6 +1089,7 @@ switch_status_t conference_api_sub_transfer(conference_obj_t *conference, switch
 switch_status_t conference_api_sub_record(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv);
 switch_status_t conference_api_sub_norecord(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv);
 switch_status_t conference_api_sub_vid_bandwidth(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv);
+switch_status_t conference_api_sub_vid_personal(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv);
 switch_status_t conference_api_dispatch(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv, const char *cmdline, int argn);
 switch_status_t conference_api_sub_syntax(char **syntax);
 switch_status_t conference_api_main_real(const char *cmd, switch_core_session_t *session, switch_stream_handle_t *stream);
