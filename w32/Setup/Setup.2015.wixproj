@@ -12,7 +12,7 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
     <OutputPath>bin\Win32\Debug\</OutputPath>
     <IntermediateOutputPath>obj\X86\$(Configuration)\</IntermediateOutputPath>
-    <DefineConstants>Debug;FreeSWITCHConfFilesDir=$(ProjectDir)..\..\conf\vanilla;FreeSWITCHSoundFilesDir=$(ProjectDir)..\..\Win32\debug\sounds;FreeSWITCHBaseDir=$(SolutionDir)Win32\$(Configuration);</DefineConstants>
+    <DefineConstants>Debug;FreeSWITCHConfFilesDir=$(ProjectDir)..\..\conf\vanilla;FreeSWITCHSoundFilesDir=$(ProjectDir)..\..\Win32\debug\sounds;FreeSWITCHBaseDir=$(SolutionDir)Win32\$(Configuration);PlatformDir=Win32;</DefineConstants>
     <WixVariables>
     </WixVariables>
   </PropertyGroup>
@@ -50,6 +50,14 @@
     <Folder Include="Fragments" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\libs\esl\fs_cli.2015.vcxproj">
+      <Name>fs_cli</Name>
+      <Project>{d2fb8043-d208-4aee-8f18-3b5857c871b9}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>True</DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>INSTALLFOLDER</RefTargetDir>
+    </ProjectReference>
     <ProjectReference Include="..\..\src\mod\applications\mod_commands\mod_commands.2015.vcxproj">
       <Name>mod_commands</Name>
       <Project>{30a5b29c-983e-4580-9fd0-d647ccdcc7eb}</Project>
@@ -409,8 +417,8 @@
   <Import Project="$(WixTargetsPath)" />
   <PropertyGroup>
     <PreBuildEvent>"$(WixToolPath)\heat.exe" dir "$(ProjectDir)..\..\conf\vanilla" -cg FreeSWITCHConfFiles -gg -scom -sreg -sfrag -srd -dr CONFLOCATION -var var.FreeSWITCHConfFilesDir -out "$(ProjectDir)Fragments\FreeSWITCHConfFiles.wxs"
-"$(WixToolPath)\heat.exe" dir "$(SolutionDir)Win32\$(Configuration)\sounds" -cg FreeSWITCHSoundFiles8 -gg -scom -sreg -sfrag -srd -dr SOUNDLOCATION -var var.FreeSWITCHSoundFilesDir -out "$(ProjectDir)Fragments\FreeSWITCHSoundFiles8.wxs"
-"$(WixToolPath)\heat.exe" dir "$(SolutionDir)Win32\$(Configuration)" -t $(ProjectDir)filter.xslt -cg FreeSWITCHBaseFiles -gg -scom -sreg -sfrag -srd -dr INSTALLLOCATION -var var.FreeSWITCHBaseDir -out "$(ProjectDir)Fragments\FreeSWITCHBaseFiles.wxs"</PreBuildEvent>
+"$(WixToolPath)\heat.exe" dir "$(SolutionDir)x64\$(Configuration)\sounds" -cg FreeSWITCHSoundFiles8 -gg -scom -sreg -sfrag -srd -dr SOUNDLOCATION -var var.FreeSWITCHSoundFilesDir -out "$(ProjectDir)Fragments\FreeSWITCHSoundFiles8.wxs"
+"$(WixToolPath)\heat.exe" dir "$(SolutionDir)x64\$(Configuration)" -t $(ProjectDir)filter.xslt -cg FreeSWITCHBaseFiles -gg -scom -sreg -sfrag -srd -dr INSTALLLOCATION -var var.FreeSWITCHBaseDir -out "$(ProjectDir)Fragments\FreeSWITCHBaseFiles.wxs"</PreBuildEvent>
   </PropertyGroup>
   <!--
 	To modify your build process, add your task inside one of the targets below and uncomment it.

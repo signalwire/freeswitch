@@ -17,6 +17,9 @@
         Arguments=" -service "/>
         <ServiceControl Id="StartService" Stop="both" Remove="uninstall" Name="FreeSWITCH" Wait="no" />
       </Component>
+      <Component Id="cmp5A06A4A7E1884331BC6C949456B5F293" Guid="*">
+        <File Id="filD71F29178BC541A58D2E1A110EF3503D" Name="fs_cli.exe" Source="$(var.FreeSwitchConsole.TargetDir)\fs_cli.exe" KeyPath="yes"/>
+      </Component>
     </DirectoryRef>
   </Fragment>
   <Fragment>
