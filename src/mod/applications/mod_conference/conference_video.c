@@ -2098,7 +2098,12 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 		if (last_personal != personal) {
 			do_refresh = 100;
 			count_changed = 1;
-			last_personal = personal;
+			if ((last_personal = personal)) {
+				switch_mutex_lock(conference->member_mutex);
+				conference->new_personal_vlayout = canvas->vlayout;
+				switch_mutex_unlock(conference->member_mutex);
+			}
+			conference_utils_set_flag(conference, CFLAG_REFRESH_LAYOUT);
 		}
 
 		if (members_with_video != conference->members_with_video) {
