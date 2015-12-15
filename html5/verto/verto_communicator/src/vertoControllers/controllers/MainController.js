@@ -470,6 +470,7 @@
 
         verto.hangup();
 
+        $rootScope.$emit('hangupCall');
         $location.path('/dialpad');
       };
 
