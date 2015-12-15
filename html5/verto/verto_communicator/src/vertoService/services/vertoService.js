@@ -93,6 +93,17 @@ var bandwidth = [{
   label: 'Server Default'
 }, ];
 
+var framerate = [{
+  id: '15',
+  label: '15 FPS'
+}, {
+  id: '20',
+  label: '20 FPS'
+}, {
+  id: '30',
+  label: '30 FPS'
+}, ];
+
 var vertoService = angular.module('vertoService', ['ngCookies']);
 
 vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'storage',
@@ -203,6 +214,7 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
       videoQuality: videoQuality,
       videoResolution: videoResolution,
       bandwidth: bandwidth,
+      framerate: framerate,
 
       refreshDevicesCallback : function refreshDevicesCallback(callback) {
         data.videoDevices = [{
@@ -364,7 +376,7 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
             maxWidth: w,
             maxHeight: h,
             minFrameRate: 15,
-            vertoBestFrameRate: 15
+            vertoBestFrameRate: storage.data.bestFrameRate
           });
           videoQuality.forEach(function(qual){
             if (w === qual.width && h === qual.height) {
