@@ -145,7 +145,8 @@ sub sendmsg($$$) {
 
   for(;;) {
     $e = $self->readhash(undef);
-    last if $e->{socketerror} or $e->{'content-type'} eq 'command/reply';
+    last if $e->{socketerror} or $e->{'content-type'} eq 'command/reply'
+                              or $e->{'content-type'} eq 'api/response';
     push @{$self->{events}}, $e;
   }
 
