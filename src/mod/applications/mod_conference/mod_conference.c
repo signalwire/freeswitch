@@ -2380,6 +2380,7 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 	char *no_video_avatar = NULL;
 	conference_video_mode_t conference_video_mode = CONF_VIDEO_MODE_PASSTHROUGH;
 	int conference_video_quality = 1;
+	int auto_kps_debounce = 5000;
 	float fps = 15.0f;
 	uint32_t max_members = 0;
 	uint32_t announce_count = 0;
@@ -2700,6 +2701,14 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Video quality must be between 0 and 4\n");
 				}
+			} else if (!strcasecmp(var, "video-kps-debounce") && !zstr(val)) {
+				int tmp = atoi(val);
+
+				if (tmp >= 0) {
+					auto_kps_debounce = tmp;
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "video-kps-debounce must be 0 or higher\n");
+				}
 				
 			} else if (!strcasecmp(var, "video-mode") && !zstr(val)) {
 				if (!strcasecmp(val, "passthrough")) {
@@ -2770,7 +2779,8 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 	conference->moderator_controls = switch_core_strdup(conference->pool, moderator_controls);
 	conference->broadcast_chat_messages = broadcast_chat_messages;
 	conference->video_quality = conference_video_quality;
-	
+	conference->auto_kps_debounce = auto_kps_debounce;
+
 	conference->conference_video_mode = conference_video_mode;
 
 	if (!switch_core_has_video() && (conference->conference_video_mode == CONF_VIDEO_MODE_MUX || conference->conference_video_mode == CONF_VIDEO_MODE_TRANSCODE)) {

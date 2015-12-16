@@ -564,6 +564,7 @@ typedef struct conference_obj {
 	int video_quality;
 	int members_with_video;
 	int members_with_avatar;
+	uint32_t auto_kps_debounce;
 	switch_codec_settings_t video_codec_settings;
 	uint32_t canvas_width;
 	uint32_t canvas_height;
@@ -749,12 +750,14 @@ struct conference_member {
 	char *video_mute_png;
 	char *video_reservation_id;
 	switch_vid_params_t vid_params;
+	uint32_t auto_kps_debounce_ticks;
 	switch_frame_buffer_t *fb;
 	switch_image_t *avatar_png_img;
 	switch_image_t *video_mute_img;
 	uint32_t floor_packets;
 	int blanks;
 	int managed_kps;
+	int managed_kps_set;
 	int blackouts;
 	int good_img;
 	int auto_avatar;

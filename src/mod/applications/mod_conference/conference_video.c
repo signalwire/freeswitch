@@ -610,6 +610,12 @@ void conference_video_release_canvas(mcu_canvas_t **canvasP)
 	*canvasP = NULL;
 }
 
+void conference_video_clear_managed_kps(conference_member_t *member)
+{
+	member->managed_kps_set = 0;
+	member->auto_kps_debounce_ticks = 0;
+}
+
 void conference_video_detach_video_layer(conference_member_t *member)
 {
 	mcu_layer_t *layer = NULL;
@@ -649,7 +655,7 @@ void conference_video_detach_video_layer(conference_member_t *member)
 	member->avatar_patched = 0;
 	conference_video_check_used_layers(canvas);
 	canvas->send_keyframe = 1;
-	member->managed_kps = 0;
+	conference_video_clear_managed_kps(member);
 
 	if (conference_utils_test_flag(member->conference, CFLAG_JSON_STATUS)) {
 		conference_member_update_status_field(member);
@@ -977,7 +983,7 @@ switch_status_t conference_video_attach_video_layer(conference_member_t *member,
 
 	switch_img_fill(canvas->img, layer->x_pos, layer->y_pos, layer->screen_w, layer->screen_h, &canvas->letterbox_bgcolor);
 	conference_video_reset_video_bitrate_counters(member);
-	member->managed_kps = 0;
+	conference_video_clear_managed_kps(member);
 
 	if (conference_utils_test_flag(member->conference, CFLAG_JSON_STATUS)) {
 		conference_member_update_status_field(member);
@@ -1838,7 +1844,7 @@ void conference_video_pop_next_image(conference_member_t *member, switch_image_t
 				if (member->blanks == member->conference->video_fps.fps * 5) {
 					member->blackouts++;
 					conference_video_check_avatar(member, SWITCH_TRUE);
-					member->managed_kps = 0;
+					conference_video_clear_managed_kps(member);
 
 					if (member->avatar_png_img) {
 						//if (layer) {
@@ -1857,31 +1863,52 @@ void conference_video_pop_next_image(conference_member_t *member, switch_image_t
 	*imgP = img;
 }
 
-void conference_video_set_incoming_bitrate(conference_member_t *member, int kps)
+void conference_video_set_incoming_bitrate(conference_member_t *member, int kps, switch_bool_t force)
 {
 	switch_core_session_message_t msg = { 0 };
+
+	if (switch_channel_test_flag(member->channel, CF_VIDEO_BITRATE_UNMANAGABLE)) {
+		return;
+	}
+
+	if (kps >= member->managed_kps) {
+		member->auto_kps_debounce_ticks = 0;
+	}
+
+	if (!force && kps < member->managed_kps && member->conference->auto_kps_debounce) {
+		member->auto_kps_debounce_ticks = member->conference->auto_kps_debounce / member->conference->video_fps.ms;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "%s setting bitrate debounce timer to %dms\n", 
+						  switch_channel_get_name(member->channel), member->conference->auto_kps_debounce);
+		member->managed_kps = kps;
+		member->managed_kps_set = 0;
+		return;
+	}
 
 	msg.message_id = SWITCH_MESSAGE_INDICATE_BITRATE_REQ;
 	msg.numeric_arg = kps * 1024;
 	msg.from = __FILE__;
 	
 	switch_core_session_receive_message(member->session, &msg);	
+
+	
+	member->managed_kps_set = 1;
 	member->managed_kps = kps;
+
 }
 
 void conference_video_set_max_incoming_bitrate_member(conference_member_t *member, int kps)
 {
 	member->max_bw_in = kps;
-	member->managed_kps = 0;
+	conference_video_clear_managed_kps(member);
 }
 
 void conference_video_set_absolute_incoming_bitrate_member(conference_member_t *member, int kps)
 {
 	member->max_bw_in = 0;
 	member->force_bw_in = kps;
-	member->managed_kps = 0;
+	conference_video_clear_managed_kps(member);
 	if (!conference_utils_test_flag(member->conference, CFLAG_MANAGE_INBOUND_VIDEO_BITRATE) && switch_channel_test_flag(member->channel, CF_VIDEO_READY)) {
-		conference_video_set_incoming_bitrate(member, kps);
+		conference_video_set_incoming_bitrate(member, kps, SWITCH_TRUE);
 	}
 }
 
@@ -1914,6 +1941,23 @@ void conference_video_set_absolute_incoming_bitrate(conference_obj_t *conference
 void conference_video_check_auto_bitrate(conference_member_t *member, mcu_layer_t *layer)
 {
 	switch_vid_params_t vid_params = { 0 };
+	int kps = 0;
+	int max = 0;
+	int min = 0;
+	int w, h;
+
+	if (!conference_utils_test_flag(member->conference, CFLAG_MANAGE_INBOUND_VIDEO_BITRATE) || 
+		switch_channel_test_flag(member->channel, CF_VIDEO_BITRATE_UNMANAGABLE)) {
+		return;
+	}
+
+	if (member->auto_kps_debounce_ticks) {
+		if (--member->auto_kps_debounce_ticks == 0) {
+			conference_video_set_incoming_bitrate(member, member->managed_kps, SWITCH_TRUE);
+		}
+
+		return;
+	}
 	
 	switch_core_media_get_vid_params(member->session, &vid_params);
 
@@ -1922,59 +1966,63 @@ void conference_video_check_auto_bitrate(conference_member_t *member, mcu_layer_
 	}
 	
 	if (vid_params.width != member->vid_params.width || vid_params.height != member->vid_params.height) {
-		member->managed_kps = 0;
+		conference_video_clear_managed_kps(member);
 	}
 
 	member->vid_params = vid_params;
 
-	if (switch_channel_test_flag(member->channel, CF_VIDEO_BITRATE_UNMANAGABLE)) {
-		member->managed_kps = 0;
-	} else if (conference_utils_test_flag(member->conference, CFLAG_MANAGE_INBOUND_VIDEO_BITRATE) && !member->managed_kps) {
-		int kps = 0;
-		int max = 0;
-		int min = 0;
+	if (member->managed_kps_set) {
+		return;
+	}
 
-		kps = switch_calc_bitrate(layer->screen_w, layer->screen_h, member->conference->video_quality, (int)(member->conference->video_fps.fps));
-		min = switch_calc_bitrate(vid_params.width, vid_params.height, member->conference->video_quality, (int)(member->conference->video_fps.fps)) / 4;
+	if ((vid_params.width * vid_params.height) < (layer->screen_w * layer->screen_h)) {
+		w = vid_params.width;
+		h = vid_params.height;
+	} else {
+		w = layer->screen_w;
+		h = layer->screen_h;
+	}
+
+	kps = switch_calc_bitrate(w, h, member->conference->video_quality, (int)(member->conference->video_fps.fps));
+	min = switch_calc_bitrate(vid_params.width, vid_params.height, member->conference->video_quality, (int)(member->conference->video_fps.fps)) / 2;
 		
-		if (member->conference->max_bw_in) {
-			max = member->conference->max_bw_in;
-		} else {
-			max = member->max_bw_in;
-		}
+	if (member->conference->max_bw_in) {
+		max = member->conference->max_bw_in;
+	} else {
+		max = member->max_bw_in;
+	}
 
-		if (member->conference->force_bw_in || member->force_bw_in) {
-			if (!(kps = member->conference->force_bw_in)) {
-				kps = member->force_bw_in;
-			}
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "%s setting bitrate to %dkps because it was forced.\n",
+	if (member->conference->force_bw_in || member->force_bw_in) {
+		if (!(kps = member->conference->force_bw_in)) {
+			kps = member->force_bw_in;
+		}
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "%s setting bitrate to %dkps because it was forced.\n",
+						  switch_channel_get_name(member->channel), kps);
+	} else {
+		if (layer && conference_utils_member_test_flag(member, MFLAG_CAN_BE_SEEN)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "%s auto-setting bitrate to %dkps to accomodate %dx%d resolution\n",
+							  switch_channel_get_name(member->channel), kps, layer->screen_w, layer->screen_h);
+		} else {
+			kps = min;
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "%s auto-setting bitrate to %dkps because the user is not visible\n",
 							  switch_channel_get_name(member->channel), kps);
-		} else {
-			if (layer && conference_utils_member_test_flag(member, MFLAG_CAN_BE_SEEN)) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "%s auto-setting bitrate to %dkps to accomodate %dx%d resolution\n",
-								  switch_channel_get_name(member->channel), kps, layer->screen_w, layer->screen_h);
-			} else {
-				kps = min;
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "%s auto-setting bitrate to %dkps because the user is not visible\n",
-								  switch_channel_get_name(member->channel), kps);
-			}
+		}
+	}
+
+	if (kps) {
+		if (max && kps > max) {
+			kps = max;
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "%s overriding bitrate setting to %dkps because it was the max allowed.\n",
+							  switch_channel_get_name(member->channel), kps);
 		}
 
-		if (kps) {
-			if (max && kps > max) {
-				kps = max;
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "%s overriding bitrate setting to %dkps because it was the max allowed.\n",
-								  switch_channel_get_name(member->channel), kps);
-			}
-
-			if (min && kps < min) {
-				kps = min;
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "%s overriding bitrate setting to %dkps because it was the min allowed.\n",
-								  switch_channel_get_name(member->channel), kps);
-			}
-
-			conference_video_set_incoming_bitrate(member, kps);
+		if (min && kps < min) {
+			kps = min;
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "%s overriding bitrate setting to %dkps because it was the min allowed.\n",
+							  switch_channel_get_name(member->channel), kps);
 		}
+
+		conference_video_set_incoming_bitrate(member, kps, SWITCH_FALSE);
 	}
 }
 
@@ -2483,7 +2531,7 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 						conference_utils_test_flag(conference, CFLAG_MANAGE_INBOUND_VIDEO_BITRATE)) {
 						switch_core_media_get_vid_params(imember->session, &vid_params);
 						kps = switch_calc_bitrate(vid_params.width, vid_params.height, conference->video_quality, (int)(imember->conference->video_fps.fps));
-						conference_video_set_incoming_bitrate(imember, kps);
+						conference_video_set_incoming_bitrate(imember, kps, SWITCH_TRUE);
 					}
 				}
 				
