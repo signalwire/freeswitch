@@ -1945,11 +1945,6 @@ void conference_video_check_auto_bitrate(conference_member_t *member, mcu_layer_
 		} else {
 			int max = 0;
 			
-			if (w > vid_params.width || h > vid_params.height) {
-				w = vid_params.width;
-				h = vid_params.height;
-			}
-			
 			if (layer) {
 				kps = switch_calc_bitrate(w, h, member->conference->video_quality, (int)(member->conference->video_fps.fps));
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "%s auto-setting bitrate to %dkps to accomodate %dx%d resolution\n",
