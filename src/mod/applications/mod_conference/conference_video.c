@@ -1832,7 +1832,6 @@ void conference_video_pop_next_image(conference_member_t *member, switch_image_t
 				member->good_img = 0;
 
 				if (member->blanks == member->conference->video_fps.fps || (member->blanks % (int)(member->conference->video_fps.fps * 10)) == 0) {
-					member->managed_kps = 0;
 					switch_core_session_request_video_refresh(member->session);
 				}
 
@@ -1925,17 +1924,19 @@ void conference_video_check_auto_bitrate(conference_member_t *member, mcu_layer_
 	if (switch_channel_test_flag(member->channel, CF_VIDEO_BITRATE_UNMANAGABLE)) {
 		member->managed_kps = 0;
 	} else if (conference_utils_test_flag(member->conference, CFLAG_MANAGE_INBOUND_VIDEO_BITRATE) && !member->managed_kps) {
-		int kps = 256;
-		int w = 320;
-		int h = 240;
+		int kps = 0;
+		int max = 0;
+		int min = 0;
 
-		if (layer) {
-			if (layer->screen_w > 320 && layer->screen_h > 240) {
-				w = layer->screen_w;
-				h = layer->screen_h;
-			}
-		}
+		kps = switch_calc_bitrate(layer->screen_w, layer->screen_h, member->conference->video_quality, (int)(member->conference->video_fps.fps));
+		min = kps / 4;
 		
+		if (member->conference->max_bw_in) {
+			max = member->conference->max_bw_in;
+		} else {
+			max = member->max_bw_in;
+		}
+
 		if (member->conference->force_bw_in || member->force_bw_in) {
 			if (!(kps = member->conference->force_bw_in)) {
 				kps = member->force_bw_in;
@@ -1943,27 +1944,29 @@ void conference_video_check_auto_bitrate(conference_member_t *member, mcu_layer_
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "%s setting bitrate to %dkps because it was forced.\n",
 							  switch_channel_get_name(member->channel), kps);
 		} else {
-			int max = 0;
-			
-			if (layer) {
-				kps = switch_calc_bitrate(w, h, member->conference->video_quality, (int)(member->conference->video_fps.fps));
+			if (layer && conference_utils_member_test_flag(member, MFLAG_CAN_BE_SEEN)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "%s auto-setting bitrate to %dkps to accomodate %dx%d resolution\n",
 								  switch_channel_get_name(member->channel), kps, layer->screen_w, layer->screen_h);
-			}
-			
-			if (member->conference->max_bw_in) {
-				max = member->conference->max_bw_in;
 			} else {
-				max = member->max_bw_in;
+				kps = min;
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "%s auto-setting bitrate to %dkps because the user is not visible\n",
+								  switch_channel_get_name(member->channel), kps);
 			}
+		}
 
+		if (kps) {
 			if (max && kps > max) {
 				kps = max;
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "%s overriding bitrate setting to %dkps because it was the max allowed.\n",
 								  switch_channel_get_name(member->channel), kps);
 			}
-		}
-		if (kps) {
+
+			if (min && kps < min) {
+				kps = min;
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "%s overriding bitrate setting to %dkps because it was the min allowed.\n",
+								  switch_channel_get_name(member->channel), kps);
+			}
+
 			conference_video_set_incoming_bitrate(member, kps);
 		}
 	}
