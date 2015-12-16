@@ -1920,6 +1920,12 @@ void conference_video_check_auto_bitrate(conference_member_t *member, mcu_layer_
 	if (!switch_channel_test_flag(member->channel, CF_VIDEO_READY) || !vid_params.width || !vid_params.height) {
 		return;
 	}
+	
+	if (vid_params.width != member->vid_params.width || vid_params.height != member->vid_params.height) {
+		member->managed_kps = 0;
+	}
+
+	member->vid_params = vid_params;
 
 	if (switch_channel_test_flag(member->channel, CF_VIDEO_BITRATE_UNMANAGABLE)) {
 		member->managed_kps = 0;
@@ -1929,7 +1935,7 @@ void conference_video_check_auto_bitrate(conference_member_t *member, mcu_layer_
 		int min = 0;
 
 		kps = switch_calc_bitrate(layer->screen_w, layer->screen_h, member->conference->video_quality, (int)(member->conference->video_fps.fps));
-		min = kps / 4;
+		min = switch_calc_bitrate(vid_params.width, vid_params.height, member->conference->video_quality, (int)(member->conference->video_fps.fps)) / 4;
 		
 		if (member->conference->max_bw_in) {
 			max = member->conference->max_bw_in;
