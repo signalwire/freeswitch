@@ -1943,9 +1943,9 @@ void conference_video_set_absolute_incoming_bitrate(conference_obj_t *conference
 void conference_video_check_auto_bitrate(conference_member_t *member, mcu_layer_t *layer)
 {
 	switch_vid_params_t vid_params = { 0 };
-	int kps = 0;
+	int kps = 0, kps_in = 0;
 	int max = 0;
-	int min_in = 0, min_layer = 0, min = 0;
+	int min_layer = 0, min = 0;
 	
 	if (!conference_utils_test_flag(member->conference, CFLAG_MANAGE_INBOUND_VIDEO_BITRATE) || 
 		switch_channel_test_flag(member->channel, CF_VIDEO_BITRATE_UNMANAGABLE)) {
@@ -1981,13 +1981,21 @@ void conference_video_check_auto_bitrate(conference_member_t *member, mcu_layer_
 		return;
 	}
 
-	kps = switch_calc_bitrate(layer->screen_w, layer->screen_h, member->conference->video_quality, (int)(member->conference->video_fps.fps));
-	min_layer = kps / 2;
-	min = min_in = switch_calc_bitrate(vid_params.width, vid_params.height, member->conference->video_quality, (int)(member->conference->video_fps.fps)) / 2;
+	if ((kps_in = switch_calc_bitrate(vid_params.width, vid_params.height, 
+									  member->conference->video_quality, (int)(member->conference->video_fps.fps))) < 512) {
+		kps_in = 512;
+	}
 
+	if (layer) {
+		kps = switch_calc_bitrate(layer->screen_w, layer->screen_h, member->conference->video_quality, (int)(member->conference->video_fps.fps));
+	} else {
+		kps = kps_in;
+	}
+
+	min_layer = kps / 2;
+	min = kps_in / 2;
 	
 	if (min_layer > min) min = min_layer;
-	
 	
 	if (member->conference->max_bw_in) {
 		max = member->conference->max_bw_in;
