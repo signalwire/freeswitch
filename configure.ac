@@ -51,6 +51,9 @@ if test "${enable_64}" = "yes"; then
    esac
 fi
 
+# use mtmalloc on Solaris SPARC if available
+AS_CASE([$host], [sparc-*-solaris2*], [AC_CHECK_LIB(mtmalloc, malloc)])
+
 # Whether to follow FHS
 AC_ARG_ENABLE([fhs],[AS_HELP_STRING([--disable-fhs],
 	[Do Not follow the FHS when placing files and directories (default only when not specifying prefix])],[enable_fhs="$enableval"],[enable_fhs="yes"])
