@@ -614,6 +614,7 @@ void conference_video_clear_managed_kps(conference_member_t *member)
 {
 	member->managed_kps_set = 0;
 	member->auto_kps_debounce_ticks = 0;
+	member->layer_loops = 0;
 }
 
 void conference_video_detach_video_layer(conference_member_t *member)
@@ -886,6 +887,7 @@ void conference_video_reset_video_bitrate_counters(conference_member_t *member)
 	member->blackouts = 0;
 	member->good_img = 0;
 	member->blanks = 0;
+	member->layer_loops = 0;
 }
 
 switch_status_t conference_video_attach_video_layer(conference_member_t *member, mcu_canvas_t *canvas, int idx)
@@ -1062,6 +1064,7 @@ void conference_video_init_canvas_layers(conference_obj_t *conference, mcu_canva
 		mcu_layer_t *layer = &canvas->layers[i];
 		if (layer->member) {
 			//conference_video_detach_video_layer(layer->member);
+			conference_video_clear_managed_kps(layer->member);
 			layer->member->video_layer_id = -1;
 			layer->member = NULL;
 		}
@@ -1890,7 +1893,6 @@ void conference_video_set_incoming_bitrate(conference_member_t *member, int kps,
 	
 	switch_core_session_receive_message(member->session, &msg);	
 
-	
 	member->managed_kps_set = 1;
 	member->managed_kps = kps;
 
@@ -1951,17 +1953,21 @@ void conference_video_check_auto_bitrate(conference_member_t *member, mcu_layer_
 		return;
 	}
 
+	switch_core_media_get_vid_params(member->session, &vid_params);
+
+	if (!switch_channel_test_flag(member->channel, CF_VIDEO_READY) || !vid_params.width || !vid_params.height) {
+		return;
+	}
+
+	if (member->layer_loops < 10) {
+		return;
+	}
+
+
 	if (member->auto_kps_debounce_ticks) {
 		if (--member->auto_kps_debounce_ticks == 0) {
 			conference_video_set_incoming_bitrate(member, member->managed_kps, SWITCH_TRUE);
 		}
-
-		return;
-	}
-	
-	switch_core_media_get_vid_params(member->session, &vid_params);
-
-	if (!switch_channel_test_flag(member->channel, CF_VIDEO_READY) || !vid_params.width || !vid_params.height) {
 		return;
 	}
 	
@@ -1975,7 +1981,7 @@ void conference_video_check_auto_bitrate(conference_member_t *member, mcu_layer_
 		return;
 	}
 
-	if ((vid_params.width * vid_params.height) < (layer->screen_w * layer->screen_h)) {
+	if (!layer || (vid_params.width * vid_params.height) < (layer->screen_w * layer->screen_h)) {
 		w = vid_params.width;
 		h = vid_params.height;
 	} else {
@@ -2010,11 +2016,17 @@ void conference_video_check_auto_bitrate(conference_member_t *member, mcu_layer_
 	}
 
 	if (kps) {
+
+		if (min > max) {
+			min = max;
+		}
+
 		if (max && kps > max) {
 			kps = max;
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "%s overriding bitrate setting to %dkps because it was the max allowed.\n",
 							  switch_channel_get_name(member->channel), kps);
 		}
+
 
 		if (min && kps < min) {
 			kps = min;
@@ -2381,6 +2393,7 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 				}
 			}
 
+			imember->layer_loops++;
 			conference_video_check_auto_bitrate(imember, layer);
 
 			if (layer) {
@@ -3404,7 +3417,7 @@ void conference_video_set_floor_holder(conference_obj_t *conference, conference_
 
 			if (conference->last_video_floor_holder && (imember = conference_member_get(conference, conference->last_video_floor_holder))) {
 				switch_core_session_request_video_refresh(imember->session);
-
+				conference_video_clear_managed_kps(imember);
 				if (conference_utils_member_test_flag(imember, MFLAG_VIDEO_BRIDGE)) {
 					conference_utils_set_flag(conference, CFLAG_VID_FLOOR_LOCK);
 				}
@@ -3447,6 +3460,7 @@ void conference_video_set_floor_holder(conference_obj_t *conference, conference_
 		switch_core_session_video_reinit(member->session);
 		conference->video_floor_holder = member->id;
 		conference_member_update_status_field(member);
+		conference_video_clear_managed_kps(member);
 	} else {
 		conference->video_floor_holder = 0;
 	}

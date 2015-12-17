@@ -751,6 +751,7 @@ struct conference_member {
 	char *video_reservation_id;
 	switch_vid_params_t vid_params;
 	uint32_t auto_kps_debounce_ticks;
+	uint32_t layer_loops;
 	switch_frame_buffer_t *fb;
 	switch_image_t *avatar_png_img;
 	switch_image_t *video_mute_img;
