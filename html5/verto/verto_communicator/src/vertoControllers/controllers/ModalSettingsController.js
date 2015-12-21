@@ -12,6 +12,8 @@
         $scope.verto = verto;
         $scope.mydata = angular.copy(storage.data);
 
+        $scope.speakerFeature = typeof document.getElementById('webcam').sinkId !== 'undefined';
+
         $scope.ok = function() {
           if ($scope.mydata.selectedSpeaker != storage.data.selectedSpeaker) {
             $rootScope.$emit('changedSpeaker', $scope.mydata.selectedSpeaker);

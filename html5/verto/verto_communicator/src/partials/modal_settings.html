@@ -24,8 +24,13 @@
   </div>
 
   <div class="form-group">
-    <label for="settings-microphone">Speaker:</label>
-    <select name="microphone" id="settings-microphone" class="form-control"
+    <label for="settings-microphone">
+      Speaker:
+      <span ng-show="!speakerFeature" class="unsupported">
+        Your browser doesn't seem to support this feature
+      </span>
+    </label>
+    <select name="microphone" id="settings-microphone" class="form-control" ng-disabled="!speakerFeature"
             ng-model="mydata.selectedSpeaker" ng-options="item.id as item.label for item in verto.data.speakerDevices">
     </select>
   </div>

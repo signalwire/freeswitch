@@ -54,10 +54,9 @@
       });
 
       $rootScope.$on('changedSpeaker', function(event, speakerId) {
-        // This should provide feedback
-	//setAudioPlaybackDevice(<id>[,<callback>[,<callback arg>]]);
-	// if callback is set it will be called as callback(<bool success/fail>, <device name>, <arg if you supplied it>)
-        verto.data.call.setAudioPlaybackDevice(speakerId);
+        if (verto.data.call) {
+          verto.data.call.setAudioPlaybackDevice(speakerId, sinkIdCallback);
+        }
       });
 
       /**
@@ -527,6 +526,13 @@
           });
       };
 
+      function sinkIdCallback(success, deviceName) {
+        if (success) {
+          toastr.info('Speaker is now <span class="install">' + deviceName + '</a>', 'Success', { allowHtml: true });
+        } else {
+          toastr.error('Your browser doesn\'t seem to support this feature', 'Error');
+        }
+      }
 
     }
   );
