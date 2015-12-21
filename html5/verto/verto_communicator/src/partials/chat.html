@@ -188,7 +188,7 @@
     <div class="chat-message-input">
       <form ng-submit="send()" >
         <div class="chat-message-input-group">
-          <textarea ng-model="message" ng-keyup="($event.keyCode == 13 && $event.shiftKey !== true) && send()" required="required" class="form-control input-sm" placeholder="Type your message here..."></textarea>
+          <textarea ng-model="message" ng-keydown="($event.keyCode == 13 && $event.shiftKey !== true) && send($event)" required="required" class="form-control input-sm" placeholder="Type your message here..."></textarea>
           <button class="btn btn-success btn-sm" type="submit">
             Send
             <span class="mdi-navigation-arrow-forward chat-message-input-group-icon-button"></span>
