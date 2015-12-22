@@ -10424,7 +10424,7 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 			} else if (!strcasecmp(un->un_name, "Geolocation")) {
 				switch_channel_set_variable(channel, "sip_geolocation", un->un_value);
 			} else if (!strcasecmp(un->un_name, "Geolocation-Error")) {
-				switch_channel_set_variable(channel, "sip_geolocation", un->un_value);
+				switch_channel_set_variable(channel, "sip_geolocation_error", un->un_value);
 			} else if (!strcasecmp(un->un_name, "userLocation")) {
 				switch_channel_set_variable(channel, "sip_user_location", un->un_value);
 			} else if (!strncasecmp(un->un_name, "X-", 2) || !strncasecmp(un->un_name, "P-", 2) || !strcasecmp(un->un_name, "User-to-User")) {
