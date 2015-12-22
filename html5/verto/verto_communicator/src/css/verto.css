@@ -1679,6 +1679,11 @@ body:-webkit-full-screen #incall .video-footer {
   animation: growY .2s reverse;
 }
 
+.unsupported {
+  color: grey;
+  font-size: 10px;
+}
+
 @keyframes growY {
   from { max-height:2000px;}
   to { max-height:0px;}
