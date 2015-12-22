@@ -195,10 +195,11 @@
         $scope.openId = $scope.openId == index ? null : index;
       };
 
-      $scope.send = function() {
+      $scope.send = function(event) {
         // Only conferencing chat is supported for now
         // but still calling method with the conference prefix
         // so we know that explicitly.
+        event.preventDefault();
         verto.sendConferenceChat($scope.message);
         $scope.message = CLEAN_MESSAGE;
       };
