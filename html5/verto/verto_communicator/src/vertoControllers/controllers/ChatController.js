@@ -123,6 +123,10 @@
         $scope.members.push(translateMember(member));
       }
 
+      $rootScope.$on('hangupCall', function() {
+        $scope.openId = null;
+      });
+
       $rootScope.$on('members.boot', function(event, members) {
         $scope.$apply(function() {
           clearConferenceChat();
