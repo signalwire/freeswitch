@@ -1237,7 +1237,7 @@ static switch_status_t synth_channel_set_header(speech_channel_t *schannel, int 
 		} else if (!strcasecmp("neutral", val)) {
 			synth_hdr->voice_param.gender = VOICE_GENDER_NEUTRAL;
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(schannel->session_uuid), SWITCH_LOG_WARNING, "(%s) ignoring invalid voice gender, %s\n", schannel->name, val);
+			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_WARNING, "(%s) ignoring invalid voice gender, %s\n", schannel->name, val);
 			break;
 		}
 		mrcp_resource_header_property_add(msg, SYNTHESIZER_HEADER_VOICE_GENDER);
