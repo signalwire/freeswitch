@@ -746,15 +746,24 @@ void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, void *ob
 		}
 
 		if (switch_channel_test_flag(member->channel, CF_CONFERENCE_RESET_MEDIA)) {
+			member->reset_media = 10;
+			switch_channel_audio_sync(member->channel);
 			switch_channel_clear_flag(member->channel, CF_CONFERENCE_RESET_MEDIA);
-			member->loop_loop = 1;
-				
+		}
+
+		if (member->reset_media) {
+			if (--member->reset_media > 0) {
+				goto do_continue;
+			}
+
 			if (conference_member_setup_media(member, member->conference)) {
 				switch_mutex_unlock(member->read_mutex);
 				break;
 			}
+
+			member->loop_loop = 1;
 			
-			goto do_continue;
+			goto do_continue;			
 		}
 
 		if (switch_test_flag(read_frame, SFF_CNG)) {
@@ -1199,10 +1208,10 @@ void conference_loop_output(conference_member_t *member)
 		uint32_t mux_used = 0;
 
 
-		if (switch_channel_test_flag(member->channel, CF_CONFERENCE_RESET_MEDIA)) {
-			switch_cond_next();
-			continue;
-		}
+		//if (member->reset_media || switch_channel_test_flag(member->channel, CF_CONFERENCE_RESET_MEDIA)) {
+		//	switch_cond_next();
+		//	continue;
+		//}
 
 		switch_mutex_lock(member->write_mutex);
 

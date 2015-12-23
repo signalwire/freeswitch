@@ -2740,6 +2740,15 @@ SWITCH_DECLARE(void) switch_rtp_set_max_missed_packets(switch_rtp_t *rtp_session
 	rtp_session->max_missed_packets = max;
 }
 
+SWITCH_DECLARE(void) switch_rtp_reset_jb(switch_rtp_t *rtp_session)
+{
+	if (switch_rtp_ready(rtp_session)) {
+		if (rtp_session->jb) {
+			switch_jb_reset(rtp_session->jb);
+		}
+	}
+}
+
 SWITCH_DECLARE(void) switch_rtp_reset_vb(switch_rtp_t *rtp_session)
 {
 	if (rtp_session->vb) {
