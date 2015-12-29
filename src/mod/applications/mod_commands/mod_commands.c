@@ -418,8 +418,9 @@ SWITCH_STANDARD_API(list_users_function)
 	int32_t arg = 0;
 	switch_xml_t xml_root, x_domains, x_domain_tag;
 	switch_xml_t gts, gt, uts, ut;
-	char *_user = NULL, *_domain = NULL, *_search_context = NULL, *_group = NULL;
-
+	char *_user = NULL, *_search_context = NULL, *_group = NULL, *section = "directory";
+	char *tag_name = NULL, *key_name = NULL, *key_value = NULL;
+	char *_domain = NULL;
 
 	if ((pdata = strdup(cmd))) {
 		argc = switch_separate_string(pdata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
@@ -444,13 +445,19 @@ SWITCH_STANDARD_API(list_users_function)
 			}
 		}
 	}
+	
+	if (_domain) {
+		tag_name = "domain";
+		key_name = "name";
+		key_value = _domain;
+	}
 
 	stream->write_function(stream, "userid|context|domain|group|contact|callgroup|effective_caller_id_name|effective_caller_id_number\n");
 
-	if (switch_xml_locate("directory", NULL, NULL, NULL, &xml_root, &x_domains, NULL, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
+	if (switch_xml_locate(section, tag_name, key_name, key_value, &xml_root, &x_domains, NULL, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
 		struct user_struct us = { 0 };
 
-		for (x_domain_tag = switch_xml_child(x_domains, "domain"); x_domain_tag; x_domain_tag = x_domain_tag->next) {
+		for (x_domain_tag = _domain ? x_domains : switch_xml_child(x_domains, "domain"); x_domain_tag; x_domain_tag = x_domain_tag->next) {
 			switch_xml_t x_vars, x_var;
 
 			us.dname = (char*)switch_xml_attr_soft(x_domain_tag, "name");
