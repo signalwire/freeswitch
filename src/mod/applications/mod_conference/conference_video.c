@@ -2595,8 +2595,9 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 				int i = 0;
 				mcu_layer_t *floor_layer = NULL;
 				
-				if (!imember->session || !switch_channel_test_flag(imember->channel, CF_VIDEO || switch_core_session_media_flow(imember->session, SWITCH_MEDIA_TYPE_VIDEO) == SWITCH_MEDIA_FLOW_SENDONLY) ||
-					switch_core_session_read_lock(imember->session) != SWITCH_STATUS_SUCCESS) {
+				if (!imember->session || !switch_channel_test_flag(imember->channel, CF_VIDEO) ||
+					(switch_core_session_media_flow(imember->session, SWITCH_MEDIA_TYPE_VIDEO) == SWITCH_MEDIA_FLOW_SENDONLY) ||
+					(switch_core_session_read_lock(imember->session) != SWITCH_STATUS_SUCCESS)) {
 					continue;
 				}
 
