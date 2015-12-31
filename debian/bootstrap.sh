@@ -851,7 +851,7 @@ Depends: \${misc:Depends}
 Description: documentation for FreeSWITCH
  $(debian_wrap "${fs_description}")
  .
- This package contains Doxygen-produce documentation for FreeSWITCH.
+ This package contains Doxygen-produced documentation for FreeSWITCH.
  It may be an empty package at the moment.
 
 ## misc
