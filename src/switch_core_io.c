@@ -121,13 +121,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 
 	switch_mutex_lock(session->read_codec->mutex);
 
-	switch_thread_rwlock_rdlock(session->bug_rwlock);
-	if (session->bugs) {
-		bug_locked = 1;
-	} else {
-		switch_thread_rwlock_unlock(session->bug_rwlock);
-	}
-
   top:
 	
 	for(i = 0; i < 2; i++) {
@@ -239,6 +232,15 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 		goto done;
 	}
 
+	if (!bug_locked) {
+		switch_thread_rwlock_rdlock(session->bug_rwlock);
+		if (session->bugs) {
+			bug_locked = 1;
+		} else {
+			switch_thread_rwlock_unlock(session->bug_rwlock);
+		}
+	}
+	
 	if (session->bugs && !((*frame)->flags & SFF_CNG) && !((*frame)->flags & SFF_NOT_AUDIO)) {
 		switch_media_bug_t *bp;
 		switch_bool_t ok = SWITCH_TRUE;
@@ -915,12 +917,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 
  bail_out:
 
-	if (global_prune) {
-		switch_core_media_bug_prune(session);
-	}
-
 	if (bug_locked) {
 		switch_thread_rwlock_unlock(session->bug_rwlock);
+	}
+
+	if (global_prune) {
+		switch_core_media_bug_prune(session);
 	}
 
 	return status;
