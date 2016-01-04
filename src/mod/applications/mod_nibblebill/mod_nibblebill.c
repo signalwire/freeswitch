@@ -457,7 +457,7 @@ static switch_status_t do_billing(switch_core_session_t *session)
 	double lowbal_amt = globals.lowbal_amt;
 	double balance;
 	double minimum_charge = 0;
-	double rounding_factor = 1;
+	double rounding_factor = 0;
 	double excess = 0;
 	double rounded_billed = 0;
 	int billsecs = 0;
@@ -609,7 +609,7 @@ static switch_status_t do_billing(switch_core_session_t *session)
 			/* we're going to make an assumption that final billing is done here. So we'll see how this goes. */
 			/* round total billed up as required */
 
-			rounded_billed = ceilf((float)(nibble_data->total * rounding_factor)) / rounding_factor;
+			rounded_billed = rounding_factor > 0 ? ceilf((float)(nibble_data->total * rounding_factor)) / rounding_factor : nibble_data->total;
 
 			if (rounded_billed < minimum_charge)
 			{
