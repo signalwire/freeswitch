@@ -960,7 +960,8 @@ void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, void *ob
 		/* skip frames that are not actual media or when we are muted or silent */
 		if ((conference_utils_member_test_flag(member, MFLAG_TALKING) || member->energy_level == 0 || conference_utils_test_flag(member->conference, CFLAG_AUDIO_ALWAYS))
 			&& conference_utils_member_test_flag(member, MFLAG_CAN_SPEAK) &&	!conference_utils_test_flag(member->conference, CFLAG_WAIT_MOD)
-			&& (member->conference->count > 1 || (member->conference->record_count && member->conference->count >= member->conference->min_recording_participants))) {
+			&& (!conference_utils_test_flag(member->conference, CFLAG_WAIT_MIN_MEMBERS) || (member->conference->record_count && member->conference->count >= member->conference->min_recording_participants))) {
+
 			switch_audio_resampler_t *read_resampler = member->read_resampler;
 			void *data;
 			uint32_t datalen;
@@ -1366,6 +1367,25 @@ void conference_loop_output(conference_member_t *member)
 			switch_core_timer_next(&timer);
 		} else {
 			switch_cond_next();
+		}
+
+		if (member->conference->wait_min_members_timeout && switch_epoch_time_now(NULL) - member->join_time >= member->conference->wait_min_members_timeout &&
+			conference_utils_test_flag(member->conference, CFLAG_WAIT_MIN_MEMBERS))
+		{
+			if (!zstr(member->conference->wait_min_members_timeout_message)) {
+				conference_member_play_file(member, member->conference->wait_min_members_timeout_message, 0, SWITCH_TRUE);
+			}
+			member->loop_loop = SWITCH_FALSE;
+			break;
+		}
+		if (member->conference->wait_mod_timeout && switch_epoch_time_now(NULL) - member->join_time >= member->conference->wait_mod_timeout &&
+			conference_utils_test_flag(member->conference, CFLAG_WAIT_MOD))
+		{
+			if (!zstr(member->conference->wait_mod_timeout_message)) {
+				conference_member_play_file(member, member->conference->wait_mod_timeout_message, 0, SWITCH_TRUE);
+			}
+			member->loop_loop = SWITCH_FALSE;
+			break;
 		}
 
 	} /* Rinse ... Repeat */

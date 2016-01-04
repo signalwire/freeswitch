@@ -313,14 +313,14 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 
 		if (conference->perpetual_sound && !conference->async_fnode) {
 			conference_file_play(conference, conference->perpetual_sound, CONF_DEFAULT_LEADIN, NULL, 1);
-		} else if (conference->moh_sound && ((nomoh == 0 && conference->count == 1)
+		} else if (conference->moh_sound && ((nomoh == 0 && conference_utils_test_flag(conference, CFLAG_WAIT_MIN_MEMBERS))
 											 || conference_utils_test_flag(conference, CFLAG_WAIT_MOD)) && !conference->async_fnode && !conference->fnode) {
 			conference_file_play(conference, conference->moh_sound, CONF_DEFAULT_LEADIN, NULL, 1);
 		}
 
 
 		/* Find if no one talked for more than x number of second */
-		if (conference->terminate_on_silence && conference->count > 1) {
+		if (conference->terminate_on_silence && !conference_utils_test_flag(conference, CFLAG_WAIT_MIN_MEMBERS)) {
 			int is_talking = 0;
 
 			for (imember = conference->members; imember; imember = imember->next) {
@@ -1097,6 +1097,21 @@ void conference_xlist(conference_obj_t *conference, switch_xml_t x_conference, i
 		switch_xml_set_attr_d(x_conference, "enter_sound", "true");
 	}
 
+	if (conference->min_members > 0) {
+		switch_snprintf(i, sizeof(i), "%d", conference->min_members);
+		switch_xml_set_attr_d(x_conference, "min_members", ival);
+	}
+
+	if (conference->wait_min_members_timeout > 0) {
+		switch_snprintf(i, sizeof(i), "%d", conference->wait_min_members_timeout);
+		switch_xml_set_attr_d(x_conference, "wait_min_members_timeout", ival);
+	}
+
+	if (conference->wait_mod_timeout > 0) {
+		switch_snprintf(i, sizeof(i), "%d", conference->wait_mod_timeout);
+		switch_xml_set_attr_d(x_conference, "wait_mod_timeout", ival);
+	}
+
 	if (conference->max_members > 0) {
 		switch_snprintf(i, sizeof(i), "%d", conference->max_members);
 		switch_xml_set_attr_d(x_conference, "max_members", ival);
@@ -1808,9 +1823,12 @@ SWITCH_STANDARD_APP(conference_function)
 
 		/* if the conference exists, get the pointer to it */
 		if (!conference) {
-			const char *max_members_str;
-			const char *endconference_grace_time_str;
-			const char *auto_record_str;
+			const char *max_members_str = NULL;
+			const char *endconference_grace_time_str = NULL;
+			const char *auto_record_str = NULL;
+			const char *min_members_str = NULL;
+			const char *wait_min_members_timeout_str = NULL;
+			const char *wait_mod_timeout_str = NULL;
 
 			/* no conference yet, so check for join-only flag */
 			if (flags_str) {
@@ -1823,9 +1841,9 @@ SWITCH_STANDARD_APP(conference_function)
 				}
 
 				if (mflags[MFLAG_JOIN_ONLY]) {
-					switch_event_t *event;
-					switch_xml_t jos_xml;
-					char *val;
+					switch_event_t *event = NULL;
+					switch_xml_t jos_xml = NULL;
+					char *val = NULL;
 					/* send event */
 					switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT);
 					switch_channel_event_set_basic_data(channel, event);
@@ -1884,9 +1902,48 @@ SWITCH_STANDARD_APP(conference_function)
 			/* Set the minimum number of members (once you go above it you cannot go below it) */
 			conference->min = 1;
 
+			/* check for variable used to specify override for min_members */
+			if (!zstr(min_members_str = switch_channel_get_variable(channel, "conference_min_members"))) {
+				uint32_t min_members_val = 0;
+				errno = 0;		/* sanity first */
+				min_members_val = strtol(min_members_str, NULL, 0);	/* base 0 lets 0x... for hex 0... for octal and base 10 otherwise through */
+				if (errno == ERANGE || errno == EINVAL || (int32_t) min_members_val < 0) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+									  "conference_min_members variable %s is invalid, not setting a limit\n", min_members_str);
+				} else {
+					conference->min_members = min_members_val;
+				}
+			}
+
+			/* check for variable used to specify override for wait_min_members_timeout */
+			if (!zstr(wait_min_members_timeout_str = switch_channel_get_variable(channel, "conference_wait_min_members_timeout"))) {
+				int32_t wait_min_members_timeout_val = 0;
+				errno = 0;		/* sanity first */
+				wait_min_members_timeout_val = strtol(wait_min_members_timeout_str, NULL, 0);	/* base 0 lets 0x... for hex 0... for octal and base 10 otherwise through */
+				if (errno == ERANGE || errno == EINVAL || (int32_t) wait_min_members_timeout_val < 0) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+									  "conference_wait_min_members_timeout variable %s is invalid, not setting a limit\n", wait_min_members_timeout_str);
+				} else {
+					conference->wait_min_members_timeout = wait_min_members_timeout_val;
+				}
+			}
+
+			/* check for variable used to specify override for wait_min_members_timeout */
+			if (!zstr(wait_mod_timeout_str = switch_channel_get_variable(channel, "conference_wait_mod_timeout"))) {
+				int32_t wait_mod_timeout_val = 0;
+				errno = 0;		/* sanity first */
+				wait_mod_timeout_val = strtol(wait_mod_timeout_str, NULL, 0);	/* base 0 lets 0x... for hex 0... for octal and base 10 otherwise through */
+				if (errno == ERANGE || errno == EINVAL || (int32_t) wait_mod_timeout_val < 0) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+									  "conference_wait_mod_timeout variable %s is invalid, not setting a limit\n", wait_mod_timeout_str);
+				} else {
+					conference->wait_mod_timeout = wait_mod_timeout_val;
+				}
+			}
+
 			/* check for variable used to specify override for max_members */
 			if (!zstr(max_members_str = switch_channel_get_variable(channel, "conference_max_members"))) {
-				uint32_t max_members_val;
+				uint32_t max_members_val = 0;
 				errno = 0;		/* sanity first */
 				max_members_val = strtol(max_members_str, NULL, 0);	/* base 0 lets 0x... for hex 0... for octal and base 10 otherwise through */
 				if (errno == ERANGE || errno == EINVAL || (int32_t) max_members_val < 0 || max_members_val == 1) {
@@ -1899,7 +1956,7 @@ SWITCH_STANDARD_APP(conference_function)
 
 			/* check for variable to override endconference_grace_time profile value */
 			if (!zstr(endconference_grace_time_str = switch_channel_get_variable(channel, "conference_endconference_grace_time"))) {
-				uint32_t grace_time_val;
+				uint32_t grace_time_val = 0;
 				errno = 0;		/* sanity first */
 				grace_time_val = strtol(endconference_grace_time_str, NULL, 0);	/* base 0 lets 0x... for hex 0... for octal and base 10 otherwise through */
 				if (errno == ERANGE || errno == EINVAL || (int32_t) grace_time_val < 0) {
@@ -1914,6 +1971,10 @@ SWITCH_STANDARD_APP(conference_function)
 
 			/* Indicate the conference is dynamic */
 			conference_utils_set_flag_locked(conference, CFLAG_DYNAMIC);
+
+			if (conference->min_members) {
+				conference_utils_set_flag_locked(conference, CFLAG_WAIT_MIN_MEMBERS);
+			}
 
 			/* acquire a read lock on the thread so it can't leave without us */
 			if (switch_thread_rwlock_tryrdlock(conference->rwlock) != SWITCH_STATUS_SUCCESS) {
@@ -1948,7 +2009,7 @@ SWITCH_STANDARD_APP(conference_function)
 			int pin_retries = conference->pin_retries;
 			int pin_valid = 0;
 			switch_status_t status = SWITCH_STATUS_SUCCESS;
-			char *supplied_pin_value;
+			char *supplied_pin_value = NULL;
 
 			/* Answer the channel */
 			switch_channel_answer(channel);
@@ -2368,6 +2429,13 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 	char *perpetual_sound = NULL;
 	char *moh_sound = NULL;
 	char *outcall_templ = NULL;
+	char *wait_min_members_timeout_message = NULL;
+	char *wait_mod_timeout_message = NULL;
+	char *endconf_mod_exit_message = NULL;
+	char *endconf_message = NULL;
+	uint32_t min_members = 0;
+	int32_t wait_min_members_timeout = 0;
+	int32_t wait_mod_timeout = 0;
 	char *video_layout_name = NULL;
 	char *video_layout_group = NULL;
 	char *video_canvas_size = NULL;
@@ -2592,6 +2660,14 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 				kicked_sound = val;
 			} else if (!strcasecmp(var, "join-only-sound") && !zstr(val)) {
 				join_only_sound = val;
+			} else if (!strcasecmp(var, "wait-min-members-timeout-message") && !zstr(val)) {
+				wait_min_members_timeout_message = val;
+			} else if (!strcasecmp(var, "wait-mod-timeout-message") && !zstr(val)) {
+				wait_mod_timeout_message = val;
+			} else if (!strcasecmp(var, "endconf-mod-exit-message") && !zstr(val)) {
+				endconf_mod_exit_message = val;
+			} else if (!strcasecmp(var, "endconf-message") && !zstr(val)) {
+				endconf_message = val;
 			} else if (!strcasecmp(var, "pin") && !zstr(val)) {
 				pin = val;
 			} else if (!strcasecmp(var, "moderator-pin") && !zstr(val)) {
@@ -2649,6 +2725,27 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 			} else if (!strcasecmp(var, "sound-prefix") && !zstr(val)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "override sound-prefix with: %s\n", val);
 				sound_prefix = val;
+			} else if (!strcasecmp(var, "min-members") && !zstr(val)) {
+				errno = 0;		/* sanity first */
+				min_members = strtol(val, NULL, 0);	/* base 0 lets 0x... for hex 0... for octal and base 10 otherwise through */
+				if (errno == ERANGE || errno == EINVAL || (int32_t) min_members < 0) {
+					min_members = 0;	/* set to 0 to disable min counts */
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "min-members %s is invalid, not setting a limit\n", val);
+				}
+			} else if (!strcasecmp(var, "wait-min-members-timeout") && !zstr(val)) {
+				errno = 0;		/* sanity first */
+				wait_min_members_timeout = strtoll(val, NULL, 0);	/* base 0 lets 0x... for hex 0... for octal and base 10 otherwise through */
+				if (errno == ERANGE || errno == EINVAL || (int32_t) wait_min_members_timeout < 0) {
+					wait_min_members_timeout = 0;	/* set to 0 to disable timeout waiting for min_members */
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "wait-min-members-timeout %s is invalid, not setting a limit\n", val);
+				}
+			} else if (!strcasecmp(var, "wait-mod-timeout") && !zstr(val)) {
+				errno = 0;		/* sanity first */
+				wait_mod_timeout = strtoll(val, NULL, 0);	/* base 0 lets 0x... for hex 0... for octal and base 10 otherwise through */
+				if (errno == ERANGE || errno == EINVAL || (int32_t) wait_mod_timeout < 0) {
+					wait_mod_timeout = 0;	/* set to 0 to disable timeout waiting for moderator */
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "wait-mod-timeout %s is invalid, not setting a limit\n", val);
+				}
 			} else if (!strcasecmp(var, "max-members") && !zstr(val)) {
 				errno = 0;		/* sanity first */
 				max_members = strtol(val, NULL, 0);	/* base 0 lets 0x... for hex 0... for octal and base 10 otherwise through */
@@ -3027,6 +3124,22 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 		conference->is_unlocked_sound = switch_core_strdup(conference->pool, is_unlocked_sound);
 	}
 
+	if (!zstr(wait_min_members_timeout_message)) {
+		conference->wait_min_members_timeout_message = switch_core_strdup(conference->pool, wait_min_members_timeout_message);
+	}
+
+	if (!zstr(wait_mod_timeout_message)) {
+		conference->wait_mod_timeout_message = switch_core_strdup(conference->pool, wait_mod_timeout_message);
+	}
+
+	if (!zstr(endconf_mod_exit_message)) {
+		conference->endconf_mod_exit_message = switch_core_strdup(conference->pool, endconf_mod_exit_message);
+	}
+
+	if (!zstr(endconf_message)) {
+		conference->endconf_message = switch_core_strdup(conference->pool, endconf_message);
+	}
+
 	if (!zstr(energy_level)) {
 		conference->energy_level = atoi(energy_level);
 		if (conference->energy_level < 0) {
@@ -3047,6 +3160,11 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 			conference->agc_level = level;
 		}
 	}
+
+	/* its going to be 0 by default, set to a value otherwise so this should be safe */
+	conference->min_members = min_members;
+	conference->wait_min_members_timeout = wait_min_members_timeout;
+	conference->wait_mod_timeout = wait_mod_timeout;
 
 	if (!zstr(maxmember_sound)) {
 		conference->maxmember_sound = switch_core_strdup(conference->pool, maxmember_sound);
