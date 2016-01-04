@@ -190,12 +190,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 		if (status == SWITCH_STATUS_INUSE) {
 			*frame = &runtime.dummy_cng_frame;
 			switch_yield(20000);
-			return SWITCH_STATUS_SUCCESS;
+			switch_goto_status(SWITCH_STATUS_SUCCESS, bail_out);
 		}
 
 		if (!SWITCH_READ_ACCEPTABLE(status) || !session->read_codec || !switch_core_codec_ready(session->read_codec)) {
 			*frame = NULL;
-			return SWITCH_STATUS_FALSE;
+			switch_goto_status(SWITCH_STATUS_FALSE, bail_out);
 		}
 
 		switch_mutex_lock(session->codec_read_mutex);
@@ -205,7 +205,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "%s has no read codec.\n", switch_channel_get_name(session->channel));
 			switch_channel_hangup(session->channel, SWITCH_CAUSE_INCOMPATIBLE_DESTINATION);
 			*frame = &runtime.dummy_cng_frame;
-			return SWITCH_STATUS_FALSE;
+			switch_goto_status(SWITCH_STATUS_FALSE, bail_out);
 		}
 
 		switch_mutex_lock(session->read_codec->mutex);
@@ -905,14 +905,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 		*frame = &runtime.dummy_cng_frame;
 	}
 
-	if (global_prune) {
-		switch_core_media_bug_prune(session);
-	}
-
-	if (bug_locked) {
-		switch_thread_rwlock_unlock(session->bug_rwlock);
-	}
-
 	switch_mutex_unlock(session->read_codec->mutex);
 	switch_mutex_unlock(session->codec_read_mutex);
 
@@ -921,6 +913,15 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 		switch_channel_set_callstate(session->channel, CCS_ACTIVE);
 	}
 
+ bail_out:
+
+	if (global_prune) {
+		switch_core_media_bug_prune(session);
+	}
+
+	if (bug_locked) {
+		switch_thread_rwlock_unlock(session->bug_rwlock);
+	}
 
 	return status;
 }
