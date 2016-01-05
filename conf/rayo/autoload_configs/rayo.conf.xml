@@ -68,7 +68,7 @@
 			<start application="spandsp_start_tone_detect" data="1"/>
 			<stop application="spandsp_stop_tone_detect" data=""/>
 			<!-- map tone events to Rayo CPA signal type -->
-			<event class="CUSTOM" subclass="DETECTED_TONE" type-header="Detected-Tone">
+			<event class="DETECTED_TONE" type-header="Detected-Tone">
 				<signal-type header-value="SIT" value="sit"/>
 				<signal-type header-value="BUSY_TONE" value="busy"/>
 				<signal-type header-value="REORDER_TONE" value="congestion"/>
