@@ -1910,6 +1910,7 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 	add_listener(listener);
 
 	while (listener_is_ready(listener)) {
+		switch_safe_free(request);
 		status = skinny_read_packet(listener, &request);
 
 		if (status != SWITCH_STATUS_SUCCESS) {
@@ -1932,10 +1933,12 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 				default: 
 					skinny_log_l_msg(listener, SWITCH_LOG_DEBUG, "Communication Error\n");
 			}
+			switch_safe_free(request);
 			switch_clear_flag_locked(listener, LFLAG_RUNNING);
 			break;
 		}
 		if (!listener_is_ready(listener)) {
+			switch_safe_free(request);
 			break;
 		}
 
@@ -1944,13 +1947,14 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 		}
 
 		if (skinny_handle_request(listener, request) != SWITCH_STATUS_SUCCESS) {
-			switch_clear_flag_locked(listener, LFLAG_RUNNING);
 			switch_safe_free(request);
+			switch_clear_flag_locked(listener, LFLAG_RUNNING);
 			break;
 		} else {
 			switch_safe_free(request);
 		}
 	}
+	switch_safe_free(request);
 
 	remove_listener(listener);
 

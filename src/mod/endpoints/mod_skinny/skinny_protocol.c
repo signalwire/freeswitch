@@ -141,6 +141,7 @@ switch_status_t skinny_read_packet(listener_t *listener, skinny_message_t **req)
 		}
 
 		if (!listener_is_ready(listener)) {
+			switch_safe_free(request);
 			break;
 		}
 		if (!switch_status_is_timeup(status) && !SWITCH_STATUS_IS_BREAK(status) && (status != SWITCH_STATUS_SUCCESS)) {
