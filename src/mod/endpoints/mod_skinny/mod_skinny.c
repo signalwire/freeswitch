@@ -2725,11 +2725,17 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_skinny_load)
 		return SWITCH_STATUS_TERM;
 	}
 	switch_mutex_init(&globals.mutex, SWITCH_MUTEX_NESTED, globals.pool);
+
+	switch_mutex_lock(globals.mutex);
 	switch_core_hash_init(&globals.profile_hash);
 	globals.running = 1;
 	globals.auto_restart = SWITCH_TRUE;
+	switch_mutex_unlock(globals.mutex);
 
+	/* load_skinny_config does it's own locking */
 	load_skinny_config();
+
+	switch_mutex_lock(globals.mutex);
 
 	/* at least one profile */
 	if (switch_core_hash_empty( globals.profile_hash)) {
@@ -2794,7 +2800,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_skinny_load)
 	skinny_api_register(module_interface);
 
 	/* launch listeners */
-	switch_mutex_lock(globals.mutex);
 	for (hi = switch_core_hash_first(globals.profile_hash); hi; hi = switch_core_hash_next(&hi)) {
 		void *val;
 		skinny_profile_t *profile;
