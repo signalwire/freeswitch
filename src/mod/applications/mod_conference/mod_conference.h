@@ -769,6 +769,7 @@ struct conference_member {
 	int max_bw_in;
 	int force_bw_in;
 	int max_bw_out;
+	int reset_media;
 };
 
 typedef enum {

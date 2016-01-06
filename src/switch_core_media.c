@@ -2120,6 +2120,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 		return SWITCH_STATUS_FALSE;
 	}
 
+	if (switch_channel_test_flag(session->channel, CF_LEG_HOLDING)) {
+		return SWITCH_STATUS_INUSE;
+	}
+	
 	if (smh->read_mutex[type] && switch_mutex_trylock(smh->read_mutex[type]) != SWITCH_STATUS_SUCCESS) {
 		/* return CNG, another thread is already reading  */
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG1, "%s is already being read for %s\n", 
@@ -2180,7 +2184,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 				if (type == SWITCH_MEDIA_TYPE_VIDEO) {
 					switch_core_media_set_video_codec(session, 1);
 				} else {
-					if (switch_core_media_set_codec(session, 1, 0) != SWITCH_STATUS_SUCCESS) {
+					if (switch_core_media_set_codec(session, 1, smh->mparams->codec_flags) != SWITCH_STATUS_SUCCESS) {
 						*frame = NULL;
 						switch_goto_status(SWITCH_STATUS_GENERR, end);
 					}
@@ -2777,6 +2781,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_set_codec(switch_core_session_
 		if (!force) {
 			switch_goto_status(SWITCH_STATUS_SUCCESS, end);
 		}
+
 		if (strcasecmp(a_engine->read_impl.iananame, a_engine->cur_payload_map->iananame) ||
 			(uint32_t) a_engine->read_impl.microseconds_per_packet / 1000 != a_engine->cur_payload_map->codec_ms ||
 			a_engine->read_impl.samples_per_second != a_engine->cur_payload_map->rm_rate ) {
@@ -2802,7 +2807,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_set_codec(switch_core_session_
 							  "Changing Codec from %s@%dms@%dhz to %s@%dms@%luhz\n",
 							  a_engine->read_impl.iananame, 
 							  a_engine->read_impl.microseconds_per_packet / 1000,
-							  a_engine->read_impl.samples_per_second,
+							  a_engine->read_impl.actual_samples_per_second,
 
 							  a_engine->cur_payload_map->iananame, 
 							  a_engine->cur_payload_map->codec_ms,
@@ -2859,6 +2864,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_set_codec(switch_core_session_
 	}
 
 	a_engine->write_codec.session = session;
+
+	if (switch_rtp_ready(a_engine->rtp_session)) {
+		switch_channel_audio_sync(session->channel);
+		switch_rtp_reset_jb(a_engine->rtp_session);
+	}
 
 	switch_channel_set_variable(session->channel, "rtp_use_codec_name", a_engine->cur_payload_map->iananame);
 	switch_channel_set_variable(session->channel, "rtp_use_codec_fmtp", a_engine->cur_payload_map->rm_fmtp);
@@ -4383,24 +4393,28 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 				switch_snprintf(tmp, sizeof(tmp), "%d", a_engine->cur_payload_map->recv_pt);
 				switch_channel_set_variable(session->channel, "rtp_audio_recv_pt", tmp);
 
-				if (switch_core_codec_ready(&a_engine->read_codec) && 
-					(strcasecmp(matches[0].imp->iananame, a_engine->read_codec.implementation->iananame) || 
-					 matches[0].imp->microseconds_per_packet != a_engine->read_codec.implementation->microseconds_per_packet ||
-					 matches[0].imp->samples_per_second != a_engine->read_codec.implementation->samples_per_second
-					 )) {
+				if (a_engine->read_impl.iananame) {
+					if (!switch_core_codec_ready(&a_engine->read_codec) || 
+						((strcasecmp(matches[0].imp->iananame, a_engine->read_impl.iananame) || 
+						  matches[0].imp->microseconds_per_packet != a_engine->read_impl.microseconds_per_packet ||
+						  matches[0].imp->samples_per_second != a_engine->read_impl.samples_per_second
+						  ))) {
 
-					a_engine->reset_codec = 1;
-				}
-
-				if (switch_core_media_set_codec(session, 0, smh->mparams->codec_flags) == SWITCH_STATUS_SUCCESS) {
-					if (check_ice(smh, SWITCH_MEDIA_TYPE_AUDIO, sdp, m) == SWITCH_STATUS_FALSE) {
-						match = 0;
-					} else {
-						got_audio = 1;
+						a_engine->reset_codec = 1;
 					}
-				} else {
+				} else if (switch_core_media_set_codec(session, 0, smh->mparams->codec_flags) != SWITCH_STATUS_SUCCESS) {
 					match = 0;
 				}
+
+				if (match) {
+					if (check_ice(smh, SWITCH_MEDIA_TYPE_AUDIO, sdp, m) == SWITCH_STATUS_FALSE) {
+						match = 0;
+						got_audio = 0;
+					} else {
+						got_audio = 1;
+					}				
+				}
+
 			}
 
 			for (map = m->m_rtpmaps; map; map = map->rm_next) {
@@ -8920,6 +8934,28 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_set_outgoing_bitrate(switch_co
 }
 
 //?
+SWITCH_DECLARE(switch_status_t) switch_core_media_reset_jb(switch_core_session_t *session, switch_media_type_t type)
+{
+	switch_media_handle_t *smh;
+	switch_rtp_engine_t *engine;
+
+	switch_assert(session);
+
+	if (!(smh = session->media_handle)) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	engine = &smh->engines[type];
+
+	if (switch_rtp_ready(engine->rtp_session)) {
+		switch_rtp_reset_jb(engine->rtp_session);
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	return SWITCH_STATUS_FALSE;
+}
+
+//?
 SWITCH_DECLARE(switch_status_t) switch_core_media_receive_message(switch_core_session_t *session, switch_core_session_message_t *msg)
 {
 	switch_media_handle_t *smh;
@@ -8943,6 +8979,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_receive_message(switch_core_se
 
 	case SWITCH_MESSAGE_RESAMPLE_EVENT:
 		{
+			if (switch_rtp_ready(a_engine->rtp_session)) {
+				switch_channel_audio_sync(session->channel);
+				switch_rtp_reset_jb(a_engine->rtp_session);
+			}
+			
 			if (switch_channel_test_flag(session->channel, CF_CONFERENCE)) {
 				switch_channel_set_flag(session->channel, CF_CONFERENCE_RESET_MEDIA);
 			}
@@ -9211,12 +9252,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_receive_message(switch_core_se
 	case SWITCH_MESSAGE_INDICATE_AUDIO_SYNC:
 		if (switch_rtp_ready(a_engine->rtp_session)) {
 			rtp_flush_read_buffer(a_engine->rtp_session, SWITCH_RTP_FLUSH_ONCE);
+			switch_rtp_reset_jb(a_engine->rtp_session);
 		}
 		goto end;
 
 	case SWITCH_MESSAGE_INDICATE_VIDEO_SYNC:
 		if (switch_rtp_ready(v_engine->rtp_session)) {
 			switch_rtp_flush(v_engine->rtp_session);
+			switch_rtp_reset_jb(v_engine->rtp_session);
 		}
 		goto end;
 	case SWITCH_MESSAGE_INDICATE_3P_MEDIA:

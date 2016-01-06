@@ -350,27 +350,36 @@ SWITCH_DECLARE(switch_channel_callstate_t) switch_channel_str2callstate(const ch
 SWITCH_DECLARE(void) switch_channel_perform_audio_sync(switch_channel_t *channel, const char *file, const char *func, int line)
 {
 	if (switch_channel_media_up(channel)) {
-		switch_core_session_message_t msg = { 0 };
-		msg.message_id = SWITCH_MESSAGE_INDICATE_AUDIO_SYNC;
-		msg.from = channel->name;
-		msg._file = file;
-		msg._func = func;
-		msg._line = line;
-		switch_core_session_receive_message(channel->session, &msg);
+		switch_core_session_message_t *msg = NULL;
+
+		msg = switch_core_session_alloc(channel->session, sizeof(*msg));
+		MESSAGE_STAMP_FFL(msg);
+		msg->message_id = SWITCH_MESSAGE_INDICATE_AUDIO_SYNC;
+		msg->from = channel->name;
+		msg->_file = file;
+		msg->_func = func;
+		msg->_line = line;
+
+		switch_core_session_queue_message(channel->session, msg);
 	}
 }
 
 
 SWITCH_DECLARE(void) switch_channel_perform_video_sync(switch_channel_t *channel, const char *file, const char *func, int line)
 {
+
 	if (switch_channel_media_up(channel)) {
-		switch_core_session_message_t msg = { 0 };
-		msg.message_id = SWITCH_MESSAGE_INDICATE_VIDEO_SYNC;
-		msg.from = channel->name;
-		msg._file = file;
-		msg._func = func;
-		msg._line = line;
-		switch_core_session_receive_message(channel->session, &msg);
+		switch_core_session_message_t *msg = NULL;
+
+		msg = switch_core_session_alloc(channel->session, sizeof(*msg));
+		MESSAGE_STAMP_FFL(msg);
+		msg->message_id = SWITCH_MESSAGE_INDICATE_VIDEO_SYNC;
+		msg->from = channel->name;
+		msg->_file = file;
+		msg->_func = func;
+		msg->_line = line;
+
+		switch_core_session_queue_message(channel->session, msg);
 	}
 }
 
