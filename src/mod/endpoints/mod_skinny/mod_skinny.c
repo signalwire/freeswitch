@@ -2450,9 +2450,7 @@ static switch_status_t load_skinny_config(void)
 				skinny_profile_respawn(profile, 0);
 
 				/* Register profile */
-				switch_mutex_lock(globals.mutex);
 				switch_core_hash_insert(globals.profile_hash, profile->name, profile);
-				switch_mutex_unlock(globals.mutex);
 				profile = NULL;
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
