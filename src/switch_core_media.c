@@ -2139,9 +2139,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 
 	while (smh->media_flags[SCMF_RUNNING] && engine->read_frame.datalen == 0) {
 		engine->read_frame.flags = SFF_NONE;
-
 		status = switch_rtp_zerocopy_read_frame(engine->rtp_session, &engine->read_frame, flags);
-
 		if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) {
 			if (status == SWITCH_STATUS_TIMEOUT) {
 
@@ -4535,6 +4533,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 				case SWITCH_MEDIA_FLOW_RECVONLY:
 					switch_channel_set_variable(smh->session->channel, "video_media_flow", "sendonly");
 					v_engine->smode = SWITCH_MEDIA_FLOW_SENDONLY;
+					switch_channel_set_flag(smh->session->channel, CF_VIDEO_READY);
 					break;
 				case SWITCH_MEDIA_FLOW_SENDONLY:
 					switch_channel_set_variable(smh->session->channel, "video_media_flow", "recvonly");
@@ -5067,7 +5066,8 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 			continue;
 		}
 
-		if (!switch_channel_test_flag(channel, CF_VIDEO_DECODED_READ) && (++xloops > 20 || switch_channel_test_flag(channel, CF_VIDEO_PASSIVE))) {
+		if (!switch_channel_test_flag(channel, CF_VIDEO_READY) && 
+			switch_channel_test_flag(channel, CF_VIDEO_DECODED_READ) && (++xloops > 10 || switch_channel_test_flag(channel, CF_VIDEO_PASSIVE))) {
 			switch_channel_set_flag(channel, CF_VIDEO_READY);
 		}
 	
@@ -5109,10 +5109,6 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 			}
 		}
 
-		if (v_engine->smode == SWITCH_MEDIA_FLOW_SENDONLY) {
-			switch_channel_set_flag(channel, CF_VIDEO_READY);
-		}
-
 		//if (!smh->video_write_fh || !switch_channel_test_flag(channel, CF_VIDEO_READY)) {
 		status = switch_core_session_read_video_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 		
@@ -5143,10 +5139,6 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 			switch_core_media_gen_key_frame(session);
 		}
 
-		if (v_engine->smode == SWITCH_MEDIA_FLOW_SENDONLY) {
-			send_blank = 1;
-		}
-
 		if (switch_channel_test_flag(channel, CF_VIDEO_READY)) {
 			switch_mutex_lock(mh->file_mutex);
 			if (smh->video_write_fh && switch_channel_ready(session->channel) && switch_test_flag(smh->video_write_fh, SWITCH_FILE_OPEN)) {
@@ -5163,7 +5155,7 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 				send_blank = 0;
 			} 
 			switch_mutex_unlock(mh->file_mutex);
-		} else if (switch_channel_test_flag(channel, CF_VIDEO_DECODED_READ)) {
+		} else if (switch_channel_test_flag(channel, CF_VIDEO_DECODED_READ) || v_engine->smode == SWITCH_MEDIA_FLOW_SENDONLY) {
 			send_blank = 1;
 		}
 
@@ -11001,14 +10993,15 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_video_frame(switch_core
 
 		decode_status = switch_core_codec_decode_video((*frame)->codec, *frame);
 		
-		if ((*frame)->img && switch_channel_test_flag(session->channel, CF_VIDEO_DEBUG_READ)) {
+		if ((*frame)->img) {// && switch_channel_test_flag(session->channel, CF_VIDEO_DEBUG_READ)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "IMAGE %dx%d %dx%d\n", 
 							  (*frame)->img->w, (*frame)->img->h, (*frame)->img->d_w, (*frame)->img->d_h);
 		}
 
-
 		if ((*frame)->img && (*frame)->img->d_w && (*frame)->img->d_h && ++smh->ready_loops > 5) {
-			switch_channel_set_flag(session->channel, CF_VIDEO_READY);
+			if (!switch_channel_test_flag(session->channel, CF_VIDEO_READY)) {
+				switch_channel_set_flag(session->channel, CF_VIDEO_READY);
+			}
 			smh->vid_params.width = (*frame)->img->d_w;
 			smh->vid_params.height = (*frame)->img->d_h;
 		}

@@ -379,6 +379,7 @@ SWITCH_DECLARE(void) switch_channel_perform_video_sync(switch_channel_t *channel
 		msg->_func = func;
 		msg->_line = line;
 
+		switch_core_session_request_video_refresh(channel->session);
 		switch_core_session_queue_message(channel->session, msg);
 	}
 }
@@ -1869,9 +1870,6 @@ SWITCH_DECLARE(void) switch_channel_set_flag_value(switch_channel_t *channel, sw
 	
 	if (flag == CF_VIDEO_DECODED_READ && channel->flags[CF_VIDEO]) {
 		switch_core_session_request_video_refresh(channel->session);
-		if (!switch_core_session_in_video_thread(channel->session)) {
-			switch_channel_wait_for_flag(channel, CF_VIDEO_READY, SWITCH_TRUE, 10000, NULL);
-		}
 	}
 }
 
@@ -3812,10 +3810,6 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_answer(switch_channel_t *
 	if (switch_core_session_in_thread(channel->session) && !switch_channel_test_flag(channel, CF_PROXY_MODE)) {
 		const char *delay;
 
-		if (switch_channel_test_flag(channel, CF_VIDEO)) {
-			switch_channel_wait_for_flag(channel, CF_VIDEO_READY, SWITCH_TRUE, 10000, NULL);
-		}
-		
 		if ((delay = switch_channel_get_variable(channel, "answer_delay"))) {
 			uint32_t msec = atoi(delay);
 			
