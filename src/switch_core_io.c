@@ -69,7 +69,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 {
 	switch_io_event_hook_read_frame_t *ptr;
 	switch_status_t status = SWITCH_STATUS_FALSE;
-	int need_codec, perfect, bug_locked = 0, global_prune = 0, do_bugs = 0, do_resample = 0, is_cng = 0, tap_only = 0;
+	int need_codec, perfect, do_bugs = 0, do_resample = 0, is_cng = 0, tap_only = 0;
 	switch_codec_implementation_t codec_impl;
 	unsigned int flag = 0;
 	int i;
@@ -183,12 +183,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 		if (status == SWITCH_STATUS_INUSE) {
 			*frame = &runtime.dummy_cng_frame;
 			switch_yield(20000);
-			switch_goto_status(SWITCH_STATUS_SUCCESS, bail_out);
+			return SWITCH_STATUS_SUCCESS;
 		}
 
 		if (!SWITCH_READ_ACCEPTABLE(status) || !session->read_codec || !switch_core_codec_ready(session->read_codec)) {
 			*frame = NULL;
-			switch_goto_status(SWITCH_STATUS_FALSE, bail_out);
+			return SWITCH_STATUS_FALSE;
 		}
 
 		switch_mutex_lock(session->codec_read_mutex);
@@ -198,7 +198,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "%s has no read codec.\n", switch_channel_get_name(session->channel));
 			switch_channel_hangup(session->channel, SWITCH_CAUSE_INCOMPATIBLE_DESTINATION);
 			*frame = &runtime.dummy_cng_frame;
-			switch_goto_status(SWITCH_STATUS_FALSE, bail_out);
+			return SWITCH_STATUS_FALSE;
 		}
 
 		switch_mutex_lock(session->read_codec->mutex);
@@ -232,19 +232,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 		goto done;
 	}
 
-	if (!bug_locked) {
-		switch_thread_rwlock_rdlock(session->bug_rwlock);
-		if (session->bugs) {
-			bug_locked = 1;
-		} else {
-			switch_thread_rwlock_unlock(session->bug_rwlock);
-		}
-	}
-	
 	if (session->bugs && !((*frame)->flags & SFF_CNG) && !((*frame)->flags & SFF_NOT_AUDIO)) {
 		switch_media_bug_t *bp;
 		switch_bool_t ok = SWITCH_TRUE;
 		int prune = 0;
+
+		switch_thread_rwlock_rdlock(session->bug_rwlock);
 
 		for (bp = session->bugs; bp; bp = bp->next) {
 			ok = SWITCH_TRUE;
@@ -282,9 +275,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 				prune++;
 			}
 		}
+		switch_thread_rwlock_unlock(session->bug_rwlock);
 
 		if (prune) {
-			global_prune++;
+			switch_core_media_bug_prune(session);
 		}
 	}
 
@@ -305,6 +299,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 		int prune = 0;		
 
 		if (session->bugs && switch_test_flag((*frame), SFF_CNG)) {
+			switch_thread_rwlock_rdlock(session->bug_rwlock);
 			for (bp = session->bugs; bp; bp = bp->next) {
 				ok = SWITCH_TRUE;
 
@@ -347,9 +342,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 					prune++;
 				}
 			}
+			switch_thread_rwlock_unlock(session->bug_rwlock);
 
 			if (prune) {
-				global_prune++;
+				switch_core_media_bug_prune(session);
 			}
 			
 		
@@ -442,6 +438,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 			} else {
 				switch_codec_t *use_codec = read_frame->codec;
 				if (do_bugs) {
+					switch_thread_rwlock_wrlock(session->bug_rwlock);
+					if (!session->bugs) {
+						switch_thread_rwlock_unlock(session->bug_rwlock);
+						goto done;
+					}
+
 					if (!switch_core_codec_ready(&session->bug_codec) && switch_core_codec_ready(read_frame->codec)) {
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Setting BUG Codec %s:%d\n",
 										  read_frame->codec->implementation->iananame, read_frame->codec->implementation->ianacode);
@@ -455,6 +457,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 					if (switch_core_codec_ready(&session->bug_codec)) {
 						use_codec = &session->bug_codec;
 					}
+					switch_thread_rwlock_unlock(session->bug_rwlock);
+
+					switch_thread_rwlock_wrlock(session->bug_rwlock);
+					if (!session->bugs) {
+						do_bugs = 0;
+					}
+					switch_thread_rwlock_unlock(session->bug_rwlock);
+					if (!do_bugs) goto done;
 				}
 
 				if (!switch_test_flag(read_frame->codec, SWITCH_CODEC_FLAG_HAS_PLC) &&
@@ -472,8 +482,15 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 				} else {
 					switch_codec_t *codec = use_codec;
 
+					switch_thread_rwlock_rdlock(session->bug_rwlock);
+
 					if (!switch_core_codec_ready(codec)) {
 						codec = read_frame->codec;
+					}
+					
+					if (!switch_core_codec_ready(codec)) {
+						switch_thread_rwlock_unlock(session->bug_rwlock);
+						goto done;
 					}
 					
 					codec->cur_frame = read_frame;
@@ -486,10 +503,17 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 													  session->raw_read_frame.data, &session->raw_read_frame.datalen, &session->raw_read_frame.rate, 
 													  &read_frame->flags);
 
+					if (status == SWITCH_STATUS_NOT_INITALIZED) {
+						switch_thread_rwlock_unlock(session->bug_rwlock);
+						goto done;
+					}
+
 					session->raw_read_frame.samples = session->raw_read_frame.datalen / 2;
 					session->raw_read_frame.channels = codec->implementation->number_of_channels;
 					codec->cur_frame = NULL;
 					session->read_codec->cur_frame = NULL;
+					switch_thread_rwlock_unlock(session->bug_rwlock);
+
 				}
 				
 				if (status == SWITCH_STATUS_SUCCESS && session->read_impl.number_of_channels == 1) {
@@ -623,6 +647,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 			switch_media_bug_t *bp;
 			switch_bool_t ok = SWITCH_TRUE;
 			int prune = 0;
+			switch_thread_rwlock_rdlock(session->bug_rwlock);
 
 			for (bp = session->bugs; bp; bp = bp->next) {
 				ok = SWITCH_TRUE;
@@ -663,9 +688,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 
 
 			}
-
+			switch_thread_rwlock_unlock(session->bug_rwlock);
 			if (prune) {
-				global_prune++;
+				switch_core_media_bug_prune(session);
 			}
 		}
 
@@ -673,6 +698,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 			switch_media_bug_t *bp;
 			switch_bool_t ok = SWITCH_TRUE;
 			int prune = 0;
+			switch_thread_rwlock_rdlock(session->bug_rwlock);
 
 			for (bp = session->bugs; bp; bp = bp->next) {
 				ok = SWITCH_TRUE;
@@ -723,9 +749,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 					prune++;
 				}
 			}
-
+			switch_thread_rwlock_unlock(session->bug_rwlock);
 			if (prune) {
-				global_prune++;
+				switch_core_media_bug_prune(session);
 			}
 		}
 
@@ -853,7 +879,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 			switch_media_bug_t *bp;
 			switch_bool_t ok = SWITCH_TRUE;
 			int prune = 0;
-
+			switch_thread_rwlock_rdlock(session->bug_rwlock);
 			for (bp = session->bugs; bp; bp = bp->next) {
 				ok = SWITCH_TRUE;
 
@@ -892,9 +918,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 					prune++;
 				}
 			}
-
+			switch_thread_rwlock_unlock(session->bug_rwlock);
 			if (prune) {
-				global_prune++;
+				switch_core_media_bug_prune(session);
 			}
 		}
 	}
@@ -915,15 +941,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 		switch_channel_set_callstate(session->channel, CCS_ACTIVE);
 	}
 
- bail_out:
-
-	if (bug_locked) {
-		switch_thread_rwlock_unlock(session->bug_rwlock);
-	}
-
-	if (global_prune) {
-		switch_core_media_bug_prune(session);
-	}
 
 	return status;
 }
