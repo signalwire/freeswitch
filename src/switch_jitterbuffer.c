@@ -1088,8 +1088,6 @@ SWITCH_DECLARE(switch_status_t) switch_jb_put_packet(switch_jb_t *jb, switch_rtp
 	uint32_t i;
 	uint16_t want = ntohs(jb->next_seq), got = ntohs(packet->header.seq);
 
-	switch_assert(len <= SWITCH_RTP_MAX_BUF_LEN);
-
 	switch_mutex_lock(jb->mutex);
 
 	if (!want) want = got;

@@ -5132,7 +5132,7 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 		block = 0;
 	}
 	
-	*bytes = SWITCH_RTP_MAX_BUF_LEN;
+	*bytes = sizeof(rtp_msg_t);
 	sync = 0;
 
 	rtp_session->has_rtp = 0;
