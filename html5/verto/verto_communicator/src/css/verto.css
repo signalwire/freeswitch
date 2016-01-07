@@ -764,7 +764,7 @@ body .modal-body .btn-group .btn.active {
 }
 
 #sidebar-wrapper {
-    z-index: 1000;
+    z-index: 8;
     position: fixed;
     width: 0;
     height: calc(100% - 60px);
@@ -1685,4 +1685,50 @@ body:-webkit-full-screen #incall .video-footer {
 @keyframes growY {
   from { max-height:2000px;}
   to { max-height:0px;}
+}
+
+#settings {
+  z-index: 9;
+  position: fixed;
+  background: rgba(10, 56, 127, 0.9);
+  width: 100%;
+  transition: .4s ease-out;
+  color: white;
+  max-height: 80%;
+  overflow: auto;
+  top: -100%;
+  padding: 15px 0;
+}
+
+#settings select {
+  color: white;
+}
+
+#settings option {
+  color: #000;
+}
+
+#settings .content {
+  width: 80%;
+  height: 100%;
+  margin: auto;
+}
+
+#settings.toggled {
+  top: 67px;
+}
+
+#settings .form-group .form-control:focus {
+  background-image: linear-gradient(#d2d2d2, #d2d2d2), linear-gradient(#d2d2d2, #d2d2d2)
+}
+
+#settings .checkbox input[type=checkbox]:checked + .checkbox-material .check,
+#settings .checkbox input[type=checkbox]:checked + .checkbox-material .check:before,
+#settings .checkbox-default input[type=checkbox]:checked + .checkbox-material .check:before {
+  color: white;
+}
+
+#settings .btn {
+  color: rgba(0, 10, 66, 0.84);
+  background-color: #E8E8E8;
 }

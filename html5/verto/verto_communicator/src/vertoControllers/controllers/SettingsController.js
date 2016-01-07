@@ -3,16 +3,25 @@
 
   angular
     .module('vertoControllers')
-    .controller('ModalSettingsController', ['$scope', '$http',
-      '$location', '$modalInstance', '$rootScope', 'storage', 'verto', 'toastr',
-      function($scope, $http, $location, $modalInstance, $rootScope, storage, verto, toastr) {
+    .controller('SettingsController', ['$scope', '$http',
+      '$location', '$rootScope', 'storage', 'verto',
+      function($scope, $http, $location, $rootScope, storage, verto) {
         console.debug('Executing ModalSettingsController.');
 
+        $.material.init();
+
+        $scope.speakerFeature = typeof document.getElementById('webcam').sinkId !== 'undefined';
         $scope.storage = storage;
         $scope.verto = verto;
         $scope.mydata = angular.copy(storage.data);
 
-        $scope.speakerFeature = typeof document.getElementById('webcam').sinkId !== 'undefined';
+        $rootScope.$on('toggledSettings', function(e, status) {
+          if (status) {
+            $scope.mydata = angular.copy(storage.data);
+          } else {
+            $scope.ok();
+          }
+        });
 
         $scope.ok = function() {
           if ($scope.mydata.selectedSpeaker != storage.data.selectedSpeaker) {
@@ -24,11 +33,6 @@
           if (storage.data.autoBand) {
             $scope.testSpeed();
           }
-          $modalInstance.close('Ok.');
-        };
-
-        $scope.cancel = function() {
-          $modalInstance.dismiss('cancel');
         };
 
         $scope.refreshDeviceList = function() {
@@ -60,7 +64,6 @@
 	  if (confirm('Factory Reset Settings?')) {
             storage.factoryReset();
             $scope.logout();
-            $modalInstance.close('Ok.');
 	    window.location.reload();
 	  };
         };
