@@ -4814,7 +4814,11 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 					} else if (!strcasecmp(var, "hold-music")) {
 						profile->hold_music = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "outbound-proxy")) {
-						profile->outbound_proxy = switch_core_strdup(profile->pool, val);
+						if (strncasecmp(val, "sip:", 4) && strncasecmp(val, "sips:", 5)) {
+							profile->outbound_proxy = switch_core_sprintf(profile->pool, "sip:%s", val);
+						} else {
+							profile->outbound_proxy = switch_core_strdup(profile->pool, val);
+						}
 					} else if (!strcasecmp(var, "rtcp-audio-interval-msec")) {
 						profile->rtcp_audio_interval_msec = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "rtcp-video-interval-msec")) {
