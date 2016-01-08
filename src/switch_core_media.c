@@ -5110,7 +5110,7 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 		}
 
 		//if (!smh->video_write_fh || !switch_channel_test_flag(channel, CF_VIDEO_READY)) {
-		status = switch_core_session_read_video_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
+		status = switch_core_session_read_video_frame(session, &read_frame, smh->video_write_fh ? SWITCH_IO_FLAG_NOBLOCK : SWITCH_IO_FLAG_NONE, 0);
 		
 		if (!SWITCH_READ_ACCEPTABLE(status)) {
 			switch_cond_next();
@@ -9244,14 +9244,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_receive_message(switch_core_se
 	case SWITCH_MESSAGE_INDICATE_AUDIO_SYNC:
 		if (switch_rtp_ready(a_engine->rtp_session)) {
 			rtp_flush_read_buffer(a_engine->rtp_session, SWITCH_RTP_FLUSH_ONCE);
-			switch_rtp_reset_jb(a_engine->rtp_session);
+			//switch_rtp_reset_jb(a_engine->rtp_session);
 		}
 		goto end;
 
 	case SWITCH_MESSAGE_INDICATE_VIDEO_SYNC:
 		if (switch_rtp_ready(v_engine->rtp_session)) {
 			switch_rtp_flush(v_engine->rtp_session);
-			switch_rtp_reset_jb(v_engine->rtp_session);
+			//switch_rtp_reset_jb(v_engine->rtp_session);
 		}
 		goto end;
 	case SWITCH_MESSAGE_INDICATE_3P_MEDIA:
@@ -10998,10 +10998,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_video_frame(switch_core
 							  (*frame)->img->w, (*frame)->img->h, (*frame)->img->d_w, (*frame)->img->d_h);
 		}
 
-		if ((*frame)->img && (*frame)->img->d_w && (*frame)->img->d_h && ++smh->ready_loops > 5) {
-			if (!switch_channel_test_flag(session->channel, CF_VIDEO_READY)) {
-				switch_channel_set_flag(session->channel, CF_VIDEO_READY);
-			}
+		if ((*frame)->img && (*frame)->img->d_w && (*frame)->img->d_h) {
 			smh->vid_params.width = (*frame)->img->d_w;
 			smh->vid_params.height = (*frame)->img->d_h;
 		}
@@ -11019,6 +11016,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_video_frame(switch_core
 
 		if (decode_status == SWITCH_STATUS_MORE_DATA || !(*frame)->img) {
 			goto top;
+		}		
+	}
+
+	if (!switch_channel_test_flag(session->channel, CF_VIDEO_READY) && *frame) {
+		if (((switch_channel_test_flag(session->channel, CF_VIDEO_DECODED_READ) && (*frame)->img) || (*frame)->m) && ++smh->ready_loops > 5) {
+			switch_channel_set_flag(session->channel, CF_VIDEO_READY);
 		}
 	}
 
