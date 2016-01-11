@@ -1958,7 +1958,7 @@ static int sofia_dialog_probe_callback(void *pArg, int argc, char **argv, char *
 	char *remote_user;
 	char *remote_host;
 	char *remote_uri;
-	char *local_user_param = "";
+	char *local_user_param = NULL;
 	char remote_display_buf[512];
 	char *buf_to_free = NULL;
 	int bInternal = 0;
@@ -2091,13 +2091,14 @@ static int sofia_dialog_probe_callback(void *pArg, int argc, char **argv, char *
 							  data,
 							  uuid, call_id, to_tag, from_tag, direction,
 							  state,
-							  local_user, local_user, local_host, local_user_param,
+							  local_user, local_user, local_host, switch_str_nil(local_user_param),
 							  local_user, local_host,
 							  !strcasecmp(event_status, "hold") ? "no" : "yes",
 							  remote_display_buf, remote_user, remote_host,
 							  remote_uri
 							  );
 	switch_core_hash_insert(h->hash, key, tmp);
+	switch_safe_free(local_user_param);
 	switch_safe_free(buf_to_free);
 
 	h->rowcount++;

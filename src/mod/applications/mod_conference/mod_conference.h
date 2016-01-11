@@ -246,6 +246,7 @@ typedef enum {
 	CFLAG_VIDEO_REQUIRED_FOR_CANVAS,
 	CFLAG_PERSONAL_CANVAS,
 	CFLAG_REFRESH_LAYOUT,
+	CFLAG_VIDEO_MUTE_EXIT_CANVAS,
 	/////////////////////////////////
 	CFLAG_MAX
 } conference_flag_t;
@@ -560,8 +561,10 @@ typedef struct conference_obj {
 	char *video_letterbox_bgcolor;
 	char *no_video_avatar;
 	conference_video_mode_t conference_video_mode;
+	int video_quality;
 	int members_with_video;
 	int members_with_avatar;
+	uint32_t auto_kps_debounce;
 	switch_codec_settings_t video_codec_settings;
 	uint32_t canvas_width;
 	uint32_t canvas_height;
@@ -746,12 +749,16 @@ struct conference_member {
 	char *video_logo;
 	char *video_mute_png;
 	char *video_reservation_id;
+	switch_vid_params_t vid_params;
+	uint32_t auto_kps_debounce_ticks;
+	uint32_t layer_loops;
 	switch_frame_buffer_t *fb;
 	switch_image_t *avatar_png_img;
 	switch_image_t *video_mute_img;
 	uint32_t floor_packets;
 	int blanks;
 	int managed_kps;
+	int managed_kps_set;
 	int blackouts;
 	int good_img;
 	int auto_avatar;
@@ -762,6 +769,7 @@ struct conference_member {
 	int max_bw_in;
 	int force_bw_in;
 	int max_bw_out;
+	int reset_media;
 };
 
 typedef enum {
@@ -1087,6 +1095,7 @@ switch_status_t conference_api_sub_transfer(conference_obj_t *conference, switch
 switch_status_t conference_api_sub_record(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv);
 switch_status_t conference_api_sub_norecord(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv);
 switch_status_t conference_api_sub_vid_bandwidth(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv);
+switch_status_t conference_api_sub_vid_personal(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv);
 switch_status_t conference_api_dispatch(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv, const char *cmdline, int argn);
 switch_status_t conference_api_sub_syntax(char **syntax);
 switch_status_t conference_api_main_real(const char *cmd, switch_core_session_t *session, switch_stream_handle_t *stream);

@@ -51,6 +51,7 @@
 #endif
 #ifndef WIN32
 #include <poll.h>
+#define closesocket(x) close(x)
 #endif
 #include <switch_utils.h>
 #include "mcast.h"
@@ -67,7 +68,7 @@ int mcast_socket_create(const char *host, int16_t port, mcast_handle_t *handle, 
 		family = AF_INET6;
 	}
 	
-	if ((!(flags & MCAST_SEND) && !(flags & MCAST_RECV)) || (handle->sock = (int)socket(family, SOCK_DGRAM, 0)) <= 0 ) {
+	if ((!(flags & MCAST_SEND) && !(flags & MCAST_RECV)) || (handle->sock = (mcast_socket_t)socket(family, SOCK_DGRAM, 0)) != mcast_sock_invalid ) {
 		return -1;
 	}
 
@@ -84,7 +85,7 @@ int mcast_socket_create(const char *host, int16_t port, mcast_handle_t *handle, 
 	}
 	
 	if ( setsockopt(handle->sock, SOL_SOCKET, SO_REUSEADDR, (void *)&one, sizeof(one)) != 0 ) {
-		close(handle->sock);
+		mcast_socket_close(handle);
 		return -1;
 	}
 	
@@ -101,14 +102,12 @@ int mcast_socket_create(const char *host, int16_t port, mcast_handle_t *handle, 
 			mreq.imr_interface.s_addr = htonl(INADDR_ANY);
 
 			if (setsockopt(handle->sock, IPPROTO_IP, IP_ADD_MEMBERSHIP, (void *)&mreq, sizeof(mreq)) < 0) {
-				close(handle->sock);
-				handle->sock = -1;
+				mcast_socket_close(handle);
 				return -1;
 			}
 
 			if (bind(handle->sock, (struct sockaddr *) &handle->recv_addr, sizeof(handle->recv_addr)) < 0) {
-				close(handle->sock);
-				handle->sock = -1;
+				mcast_socket_close(handle);
 				return -1;
 			}
 
@@ -139,9 +138,7 @@ int mcast_socket_create(const char *host, int16_t port, mcast_handle_t *handle, 
 			setsockopt(handle->sock, IPPROTO_IPV6, IPV6_JOIN_GROUP, (const char *)&mreq, sizeof(mreq));
 
 			if (bind(handle->sock, (struct sockaddr *) &handle->recv_addr6, sizeof(handle->recv_addr6)) < 0) {
-				printf("FUCK (%s) %s\n", host, strerror(errno));
-				close(handle->sock);
-				handle->sock = -1;
+				mcast_socket_close(handle);
 				return -1;
 			}
 		}
@@ -185,15 +182,15 @@ int mcast_socket_create(const char *host, int16_t port, mcast_handle_t *handle, 
 
 void mcast_socket_close(mcast_handle_t *handle)
 {
-	if (handle->sock > -1) {
-		close(handle->sock);
-		handle->sock = -1;
+	if (handle->sock != mcast_sock_invalid) {
+		closesocket(handle->sock);
+		handle->sock = mcast_sock_invalid;
 	}
 }
 
 ssize_t mcast_socket_send(mcast_handle_t *handle, void *data, size_t datalen)
 {
-	if (handle->sock <= -1) {
+	if (handle->sock != mcast_sock_invalid) {
 		return -1;
 	}
 

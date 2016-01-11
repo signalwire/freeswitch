@@ -93,6 +93,17 @@ var bandwidth = [{
   label: 'Server Default'
 }, ];
 
+var framerate = [{
+  id: '15',
+  label: '15 FPS'
+}, {
+  id: '20',
+  label: '20 FPS'
+}, {
+  id: '30',
+  label: '30 FPS'
+}, ];
+
 var vertoService = angular.module('vertoService', ['ngCookies']);
 
 vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'storage',
@@ -203,6 +214,7 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
       videoQuality: videoQuality,
       videoResolution: videoResolution,
       bandwidth: bandwidth,
+      framerate: framerate,
 
       refreshDevicesCallback : function refreshDevicesCallback(callback) {
         data.videoDevices = [{
@@ -294,6 +306,28 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
         }
         console.debug('Devices were refreshed, checking that we have cameras.');
 
+        // Verify if selected devices are valid
+        var videoFlag = data.videoDevices.some(function(device) {
+          return device.id == storage.data.selectedVideo;
+        });
+
+        var shareFlag = data.shareDevices.some(function(device) {
+          return device.id == storage.data.selectedShare;
+        });
+
+        var audioFlag = data.audioDevices.some(function(device) {
+          return device.id == storage.data.selectedAudio;
+        });
+
+        var speakerFlag = data.speakerDevices.some(function(device) {
+          return device.id == storage.data.selectedSpeaker;
+        });
+
+        if (!videoFlag) storage.data.selectedVideo = data.videoDevices[0].id;
+        if (!shareFlag) storage.data.selectedShare = data.shareDevices[0].id;
+        if (!audioFlag) storage.data.selectedAudio = data.audioDevices[0].id;
+        if (!speakerFlag) storage.data.selectedSpeaker = data.speakerDevices[0].id;
+
         // This means that we cannot use video!
         if (data.videoDevices.length === 0) {
           console.log('No camera, disabling video.');
@@ -342,7 +376,7 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
             maxWidth: w,
             maxHeight: h,
             minFrameRate: 15,
-            vertoBestFrameRate: 30
+            vertoBestFrameRate: storage.data.bestFrameRate
           });
           videoQuality.forEach(function(qual){
             if (w === qual.width && h === qual.height) {
@@ -391,7 +425,27 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
               if (message.action == 'response') {
                 // This is a response with the video layouts list.
                 if (message['conf-command'] == 'list-videoLayouts') {
-                  data.confLayouts = message.responseData.sort();
+                  var rdata = [];
+
+                  for (var i in message.responseData) {
+                    rdata.push(message.responseData[i].name);
+                  }
+
+                  var options = rdata.sort(function(a, b) {
+                    var ga = a.substring(0, 6) == "group:" ? true : false;
+                    var gb = b.substring(0, 6) == "group:" ? true : false;
+
+                    if ((ga || gb) && ga != gb) {
+                      return ga ? -1 : 1;
+                    }
+
+                    return ( ( a == b ) ? 0 : ( ( a > b ) ? 1 : -1 ) );
+                  });
+                  data.confLayoutsData = message.responseData;
+                  data.confLayouts = options;
+                } else if (message['conf-command'] == 'canvasInfo') {
+                  data.canvasInfo = message.responseData;
+                  $rootScope.$emit('conference.canvasInfo', message.responseData);
                 } else {
                   $rootScope.$emit('conference.broadcast', message);
                 }
@@ -402,6 +456,7 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
           if (data.confRole == "moderator") {
             console.log('>>> conf.listVideoLayouts();');
             conf.listVideoLayouts();
+            conf.modCommand('canvasInfo');
           }
 
           data.conf = conf;
@@ -584,6 +639,11 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
 
         var that = this;
         function ourBootstrap() {
+          var sessid = $location.search().sessid;
+          if (sessid === 'random') {
+            sessid = $.verto.genUUID();
+            $location.search().sessid = sessid;
+          }
           // Checking if we have a failed connection attempt before
           // connecting again.
           if (data.instance && !data.instance.rpcClient.socketReady()) {
@@ -604,6 +664,7 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
                 googNoiseSuppression: storage.data.googNoiseSuppression || true,
                 googHighpassFilter: storage.data.googHighpassFilter || true
             },
+            sessid: sessid,
             iceServers: storage.data.useSTUN
           }, callbacks);
 
@@ -614,6 +675,7 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
           jQuery.verto.unloadJobs.push(function() {
             that.reloaded = true;
           });
+
           data.instance.deviceParams({
             useCamera: storage.data.selectedVideo,
             useSpeak: storage.data.selectedSpeaker,
@@ -674,10 +736,10 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
        *
        * @param callback
        */
-      call: function(destination, callback) {
+      call: function(destination, callback, custom) {
         console.debug('Attempting to call destination ' + destination + '.');
 
-        var call = data.instance.newCall({
+        var call = data.instance.newCall(angular.extend({
           destination_number: destination,
           caller_id_name: data.name,
           caller_id_number: data.callerid ? data.callerid : data.email,
@@ -694,7 +756,7 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
             email : storage.data.email,
             avatar: "http://gravatar.com/avatar/" + md5(storage.data.email) + ".png?s=600"
           }
-        });
+        }, custom));
 
         data.call = call;
 
@@ -911,6 +973,21 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
       */
       sendConferenceChat: function(message) {
         data.conf.sendChat(message, "message");
+      },
+      setCanvasIn: function(memberID, canvasID) {
+        data.conf.modCommand('vid-canvas', memberID, canvasID);
+      },
+      setCanvasOut: function(memberID, canvasID) {
+        data.conf.modCommand('vid-watching-canvas', memberID, canvasID);
+      },
+      setLayer: function(memberID, canvasID) {
+        data.conf.modCommand('vid-layer', memberID, canvasID);
+      },
+      /*
+      * Method is used to set a member's resevartion Id.
+      */
+      setResevartionId: function(memberID, resID) {
+        data.conf.modCommand('vid-res-id', memberID, resID);
       },
       /*
       * Method is used to send user2user chats.

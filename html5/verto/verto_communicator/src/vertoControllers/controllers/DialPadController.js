@@ -10,6 +10,15 @@
 
         eventQueue.process();
 
+        if ($location.search().autocall) {
+            $rootScope.dialpadNumber = $location.search().autocall;
+            delete $location.search().autocall;
+            call($rootScope.dialpadNumber);
+            if($rootScope.watcher) {
+              return;
+            }
+        }
+
         $scope.call_history = CallHistory.all();
         $scope.history_control = CallHistory.all_control();
         $scope.has_history = Object.keys($scope.call_history).length;
@@ -32,11 +41,6 @@
         /**
          * fill dialpad via querystring [?autocall=\d+]
          */
-        if ($location.search().autocall) {
-            $rootScope.dialpadNumber = $location.search().autocall;
-	    delete $location.search().autocall;
-            call($rootScope.dialpadNumber);
-        }
 
 	/**
 	 * fill in dialpad via config.json
@@ -81,6 +85,13 @@
           if (verto.data.call) {
             console.debug('A call is already in progress.');
             return false;
+          }
+
+          if (extension.indexOf('-canvas-') != -1) {
+            $rootScope.watcher = true;
+            verto.call($rootScope.dialpadNumber, null, { useCamera: false, useMic: false, caller_id_name: null, userVariables: {}, caller_id_number: null, mirrorInput: false });
+            $location.path('/incall');
+            return;
           }
 
           storage.data.mutedVideo = false;

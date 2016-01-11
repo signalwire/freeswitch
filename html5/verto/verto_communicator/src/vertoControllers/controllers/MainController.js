@@ -8,6 +8,24 @@
 
       console.debug('Executing MainController.');
 
+      $rootScope.master = $location.search().master;
+      if ($location.search().watcher === 'true') {
+        $rootScope.watcher = true;
+        angular.element(document.body).addClass('watcher');
+        var dialpad;
+        var extension = dialpad = $location.search().extension;
+        var canvasID = $location.search().canvas_id;
+
+        if (dialpad) {
+          if (canvasID) {
+            dialpad += '-canvas-' + canvasID;
+          }
+          $rootScope.extension = extension;
+          $rootScope.canvasID = canvasID;
+          $location.search().autocall = dialpad;
+        }
+      }
+
       var myVideo = document.getElementById("webcam");
       $scope.verto = verto;
       $scope.storage = storage;
@@ -36,10 +54,9 @@
       });
 
       $rootScope.$on('changedSpeaker', function(event, speakerId) {
-        // This should provide feedback
-	//setAudioPlaybackDevice(<id>[,<callback>[,<callback arg>]]);
-	// if callback is set it will be called as callback(<bool success/fail>, <device name>, <arg if you supplied it>)
-        verto.data.call.setAudioPlaybackDevice(speakerId);
+        if (verto.data.call) {
+          verto.data.call.setAudioPlaybackDevice(speakerId, sinkIdCallback);
+        }
       });
 
       /**
@@ -432,6 +449,11 @@
           return;
         }
 
+        if ($rootScope.watcher) {
+          window.close();
+          return;
+        }
+
         //var hangupCallback = function(v, hangup) {
         //  if (hangup) {
         //    $location.path('/dialpad');
@@ -447,6 +469,7 @@
 
         verto.hangup();
 
+        $rootScope.$emit('hangupCall');
         $location.path('/dialpad');
       };
 
@@ -504,6 +527,13 @@
           });
       };
 
+      function sinkIdCallback(success, deviceName) {
+        if (success) {
+          toastr.info('Speaker is now <span class="install">' + deviceName + '</a>', 'Success', { allowHtml: true });
+        } else {
+          toastr.error('Your browser doesn\'t seem to support this feature', 'Error');
+        }
+      }
 
     }
   );

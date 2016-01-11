@@ -28,7 +28,7 @@
  * Paul D. Tinsley <pdt at jackhammer.org>
  * Bret McDanel <trixter AT 0xdecafbad.com>
  * Raymond Chandler <intralanman@freeswitch.org>
- * Emmanuel Schmidbauer <e.schmidbauer@gmail.com>
+ * Emmanuel Schmidbauer <eschmidbauer@gmail.com>
  *
  *
  * mod_sofia.c -- SOFIA SIP Endpoint
@@ -463,7 +463,7 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 				switch_snprintf(reason, sizeof(reason), "%s", val);
 			} else {
 				if ((switch_channel_test_flag(channel, CF_INTERCEPT) || cause == SWITCH_CAUSE_PICKED_OFF || cause == SWITCH_CAUSE_LOSE_RACE)
-					&& switch_false(switch_channel_get_variable(channel, "ignore_completed_elsewhere"))) {
+					&& !switch_true(switch_channel_get_variable(channel, "ignore_completed_elsewhere"))) {
 					switch_snprintf(reason, sizeof(reason), "SIP;cause=200;text=\"Call completed elsewhere\"");
 				} else if (cause > 0 && cause < 128) {
 					switch_snprintf(reason, sizeof(reason), "Q.850;cause=%d;text=\"%s\"", cause, switch_channel_cause2str(cause));
@@ -1877,14 +1877,21 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		if (!zstr(msg->string_arg)) {
 
 			if (!switch_channel_test_flag(channel, CF_ANSWERED) && !sofia_test_flag(tech_pvt, TFLAG_BYE)) {
-				char *dest = (char *) msg->string_arg;
+				char *mydest = (char *) msg->string_arg;
 				char *argv[MAX_REDIR] = { 0 };
 				char *mydata = NULL, *newdest = NULL;
 				int argc = 0, i;
 				switch_size_t len = 0;
+				switch_call_cause_t sip_redirect_cause = SWITCH_CAUSE_NORMAL_UNSPECIFIED;
+				char *dest = switch_core_session_strdup(session, mydest);
+
+				if ((argc = switch_separate_string(dest, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) >= 2) {
+					const char *redirect_cause = argv[1];
+					sip_redirect_cause = switch_channel_str2cause(redirect_cause);
+				}
 
 				if (strchr(dest, ',')) {
-					mydata = switch_core_session_strdup(session, dest);
+					mydata = dest;
 					len = strlen(mydata) * 2;
 					newdest = switch_core_session_alloc(session, len);
 
@@ -1936,7 +1943,10 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 					tech_pvt->respond_phrase = "Moved Temporarily";
 				}
 
-				switch_channel_hangup(tech_pvt->channel, sofia_glue_sip_cause_to_freeswitch(tech_pvt->respond_code));
+				if (sip_redirect_cause == SWITCH_CAUSE_NONE) {
+					sip_redirect_cause = SWITCH_CAUSE_NORMAL_UNSPECIFIED;
+				}
+				switch_channel_hangup(tech_pvt->channel, sip_redirect_cause);
 
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Too late for redirecting, already answered\n");
@@ -2628,6 +2638,7 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 							stream->write_function(stream, "%25s\t%32s\t%s\t%6.2f\t%u/%u\t%u/%u",
 												   pkey, gp->register_to, sofia_state_names[gp->state], gp->ping_time,
 												   gp->ib_failed_calls, gp->ib_calls, gp->ob_failed_calls, gp->ob_calls);
+							free(pkey);
 
 							if (gp->state == REG_STATE_FAILED || gp->state == REG_STATE_TRYING) {
 								time_t now = switch_epoch_time_now(NULL);
@@ -4939,6 +4950,7 @@ static int notify_csta_callback(void *pArg, int argc, char **argv, char **column
 	switch_safe_free(route_uri);
 	sofia_glue_free_destination(dst);
 
+	free(extra_headers);
 	free(id);
 	free(contact);
 
@@ -5197,6 +5209,7 @@ static void general_event_handler(switch_event_t *event)
 			const char *csta_event = switch_event_get_header(event, "Feature-Event");
 
 			char *ct = "application/x-as-feature-event+xml";
+			char *ct_m = NULL;
 
 			sofia_profile_t *profile;
 
@@ -5248,7 +5261,8 @@ static void general_event_handler(switch_event_t *event)
 
 						stream.write_function(&stream, "--%s--\r\n", boundary_string);
 
-						ct = switch_mprintf("multipart/mixed; boundary=\"%s\"", boundary_string);
+						ct_m = switch_mprintf("multipart/mixed; boundary=\"%s\"", boundary_string);
+						ct = ct_m;
 					} else {
 						char *fwd_type = NULL;
 
@@ -5285,6 +5299,7 @@ static void general_event_handler(switch_event_t *event)
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "missing something\n");
 			}
+			switch_safe_free(ct_m);
 		}
 		break;
 	case SWITCH_EVENT_SEND_MESSAGE:

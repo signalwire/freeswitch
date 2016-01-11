@@ -69,8 +69,15 @@ extern "C" {
 typedef WS_SSIZE_T ssize_t;
 #endif
 
+#ifndef WIN32
+typedef int mcast_socket_t;
+#else
+typedef SOCKET mcast_socket_t;
+#endif
+#define mcast_sock_invalid (mcast_socket_t)-1
+
 typedef struct {
-	int sock;
+	mcast_socket_t sock;
 	unsigned char ttl;
 	struct sockaddr_in send_addr;
 	struct sockaddr_in recv_addr;

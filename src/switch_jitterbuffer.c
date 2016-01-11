@@ -1088,6 +1088,11 @@ SWITCH_DECLARE(switch_status_t) switch_jb_put_packet(switch_jb_t *jb, switch_rtp
 	uint32_t i;
 	uint16_t want = ntohs(jb->next_seq), got = ntohs(packet->header.seq);
 
+	if (len >= sizeof(switch_rtp_packet_t)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "trying to put %" SWITCH_SIZE_T_FMT " bytes exceeding buffer, truncate to %" SWITCH_SIZE_T_FMT "\n", len, sizeof(switch_rtp_packet_t));
+		len = sizeof(switch_rtp_packet_t);
+	}
+
 	switch_mutex_lock(jb->mutex);
 
 	if (!want) want = got;

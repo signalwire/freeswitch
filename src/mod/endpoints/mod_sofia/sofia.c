@@ -3384,6 +3384,7 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 
 		if (zstr(name) || switch_regex_match(name, "^[\\w\\.\\-\\_]+$") != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Ignoring invalid name '%s'\n", name ? name : "NULL");
+			free(pkey);
 			goto skip;
 		}
 
@@ -4813,7 +4814,11 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 					} else if (!strcasecmp(var, "hold-music")) {
 						profile->hold_music = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "outbound-proxy")) {
-						profile->outbound_proxy = switch_core_strdup(profile->pool, val);
+						if (strncasecmp(val, "sip:", 4) && strncasecmp(val, "sips:", 5)) {
+							profile->outbound_proxy = switch_core_sprintf(profile->pool, "sip:%s", val);
+						} else {
+							profile->outbound_proxy = switch_core_strdup(profile->pool, val);
+						}
 					} else if (!strcasecmp(var, "rtcp-audio-interval-msec")) {
 						profile->rtcp_audio_interval_msec = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "rtcp-video-interval-msec")) {
@@ -5469,6 +5474,11 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 
 				if (sofia_test_flag(profile, TFLAG_ZRTP_PASSTHRU) && !sofia_test_flag(profile, TFLAG_LATE_NEGOTIATION)) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "ZRTP passthrough implictly enables inbound-late-negotiation\n");
+					sofia_set_flag(profile, TFLAG_LATE_NEGOTIATION);
+				}
+
+				if (sofia_test_flag(profile, TFLAG_INB_NOMEDIA) && !sofia_test_flag(profile, TFLAG_LATE_NEGOTIATION)) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "inbound-bypass-media  implictly enables inbound-late-negotiation\n");
 					sofia_set_flag(profile, TFLAG_LATE_NEGOTIATION);
 				}
 
@@ -8692,9 +8702,7 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 		home = NULL;
 	}
 
-	if (etmp) {
-		switch_safe_free(etmp);
-	}
+	switch_safe_free(etmp);
 }
 
 
@@ -10421,6 +10429,8 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 				switch_channel_set_variable(channel, "sip_geolocation", un->un_value);
 			} else if (!strcasecmp(un->un_name, "Geolocation-Error")) {
 				switch_channel_set_variable(channel, "sip_geolocation_error", un->un_value);
+			} else if (!strcasecmp(un->un_name, "userLocation")) {
+				switch_channel_set_variable(channel, "sip_user_location", un->un_value);
 			} else if (!strncasecmp(un->un_name, "X-", 2) || !strncasecmp(un->un_name, "P-", 2) || !strcasecmp(un->un_name, "User-to-User")) {
 				if (!zstr(un->un_value)) {
 					char new_name[512] = "";

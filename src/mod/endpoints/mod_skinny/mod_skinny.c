@@ -2450,9 +2450,7 @@ static switch_status_t load_skinny_config(void)
 				skinny_profile_respawn(profile, 0);
 
 				/* Register profile */
-				switch_mutex_lock(globals.mutex);
 				switch_core_hash_insert(globals.profile_hash, profile->name, profile);
-				switch_mutex_unlock(globals.mutex);
 				profile = NULL;
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
@@ -2498,6 +2496,7 @@ static void skinny_user_to_device_event_handler(switch_event_t *event)
 					send_data(listener, message_type,
 							application_id, line_instance, call_id, transaction_id, data_length,
 							data);
+					break;
 				case USER_TO_DEVICE_DATA_VERSION1_MESSAGE:
 					data_length = strlen(data); /* we ignore data_length sent */
 					send_extended_data(listener, message_type,
@@ -2724,11 +2723,17 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_skinny_load)
 		return SWITCH_STATUS_TERM;
 	}
 	switch_mutex_init(&globals.mutex, SWITCH_MUTEX_NESTED, globals.pool);
+
+	switch_mutex_lock(globals.mutex);
 	switch_core_hash_init(&globals.profile_hash);
 	globals.running = 1;
 	globals.auto_restart = SWITCH_TRUE;
+	switch_mutex_unlock(globals.mutex);
 
+	/* load_skinny_config does it's own locking */
 	load_skinny_config();
+
+	switch_mutex_lock(globals.mutex);
 
 	/* at least one profile */
 	if (switch_core_hash_empty( globals.profile_hash)) {
@@ -2793,7 +2798,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_skinny_load)
 	skinny_api_register(module_interface);
 
 	/* launch listeners */
-	switch_mutex_lock(globals.mutex);
 	for (hi = switch_core_hash_first(globals.profile_hash); hi; hi = switch_core_hash_next(&hi)) {
 		void *val;
 		skinny_profile_t *profile;

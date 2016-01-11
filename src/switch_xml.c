@@ -538,7 +538,7 @@ static switch_xml_t switch_xml_err(switch_xml_root_t root, char *s, const char *
 static char *switch_xml_decode(char *s, char **ent, char t)
 {
 	char *e, *r = s, *m = s;
-	long b, c, d, l;
+	unsigned long b, c, d, l;
 
 	for (; *s; s++) {			/* normalize line endings */
 		while (*s == '\r') {
@@ -555,10 +555,17 @@ static char *switch_xml_decode(char *s, char **ent, char t)
 		if (!*s)
 			break;
 		else if (t != 'c' && !strncmp(s, "&#", 2)) {	/* character reference */
-			if (s[2] == 'x')
-				c = strtol(s + 3, &e, 16);	/* base 16 */
-			else
-				c = strtol(s + 2, &e, 10);	/* base 10 */
+			char *code = s + 2;
+			int base = 10;
+			if (*code == 'x') {
+				code++;
+				base = 16;
+			}
+			if (!isxdigit((int)*code)) { /* "&# 1;" and "&#-1;" are invalid */
+				s++;
+				continue;
+			}
+			c = strtoul(code, &e, base);
 			if (!c || *e != ';') {
 				s++;
 				continue;
@@ -566,10 +573,14 @@ static char *switch_xml_decode(char *s, char **ent, char t)
 			/* not a character ref */
 			if (c < 0x80)
 				*(s++) = (char) c;	/* US-ASCII subset */
-			else {				/* multi-byte UTF-8 sequence */
+			else if (c > 0x7FFFFFFF) { /* out of UTF-8 range */
+				s++;
+				continue;
+			} else {				/* multi-byte UTF-8 sequence */
 				for (b = 0, d = c; d; d /= 2)
 					b++;		/* number of bits in c */
 				b = (b - 2) / 5;	/* number of bytes in payload */
+				assert(b < 7);		/* because c <= 0x7FFFFFFF */
 				*(s++) = (char) ((0xFF << (7 - b)) | (c >> (6 * b)));	/* head */
 				while (b)
 					*(s++) = (char) (0x80 | ((c >> (6 * --b)) & 0x3F));	/* payload */
@@ -580,27 +591,14 @@ static char *switch_xml_decode(char *s, char **ent, char t)
 			for (b = 0; ent[b] && strncmp(s + 1, ent[b], strlen(ent[b])); b += 2);	/* find entity in entity list */
 
 			if (ent[b++]) {		/* found a match */
-				if ((c = (long) strlen(ent[b])) - 1 > (e = strchr(s, ';')) - s) {
-					l = (d = (long) (s - r)) + c + (long) strlen(e);	/* new length */
+				if ((c = (unsigned long) strlen(ent[b])) - 1 > (e = strchr(s, ';')) - s) {
+					l = (d = (unsigned long) (s - r)) + c + (unsigned long) strlen(e);	/* new length */
 					if (l) {
 						if (r == m) {
-							char *tmp = (char *) malloc(l);
-							if (tmp) {
-								r = strcpy(tmp, r);
-							} else {
-								if (r)
-									free(r);
-								return NULL;
-							}
+							char *tmp = (char *) switch_must_malloc(l);
+							r = strcpy(tmp, r);
 						} else {
-							char *tmp = (char *) realloc(r, l);
-							if (tmp) {
-								r = tmp;
-							} else {
-								if (r)
-									free(r);
-								return NULL;
-							}
+							r = (char *) switch_must_realloc(r, l);
 						}
 					}
 					e = strchr((s = r + d), ';');	/* fix up pointers */
@@ -618,7 +616,7 @@ static char *switch_xml_decode(char *s, char **ent, char t)
 
 	if (t == '*') {				/* normalize spaces for non-cdata attributes */
 		for (s = r; *s; s++) {
-			if ((l = (long) strspn(s, " ")))
+			if ((l = (unsigned long) strspn(s, " ")))
 				memmove(s, s + l, strlen(s + l) + 1);
 			while (*s && *s != ' ')
 				s++;
@@ -672,19 +670,11 @@ static void switch_xml_char_content(switch_xml_root_t root, char *s, switch_size
 		xml->txt = s;			/* initial character content */
 	else {						/* allocate our own memory and make a copy */
 		if ((xml->flags & SWITCH_XML_TXTM)) {	/* allocate some space */
-			char *tmp = (char *) realloc(xml->txt, (l = strlen(xml->txt)) + len);
-			if (tmp) {
-				xml->txt = tmp;
-			} else {
-				return;
-			}
+			xml->txt = (char *) switch_must_realloc(xml->txt, (l = strlen(xml->txt)) + len);
 		} else {
-			char *tmp = (char *) malloc((l = strlen(xml->txt)) + len);
-			if (tmp) {
-				xml->txt = strcpy(tmp, xml->txt);
-			} else {
-				return;
-			}
+			char *tmp = (char *) switch_must_malloc((l = strlen(xml->txt)) + len);
+
+			xml->txt = strcpy(tmp, xml->txt);
 		}
 		strcpy(xml->txt + l, s);	/* add new char content */
 		if (s != m)
@@ -748,38 +738,29 @@ static void switch_xml_proc_inst(switch_xml_root_t root, char *s, switch_size_t 
 	}
 
 	if (!root->pi || !root->pi[0]) {
-		root->pi = (char ***) malloc(sizeof(char **));
-		if (!root->pi)
-			return;
+		root->pi = (char ***) switch_must_malloc(sizeof(char **));
 		*(root->pi) = NULL;		/* first pi */
 	}
 
 	while (root->pi[i] && strcmp(target, root->pi[i][0]))
 		i++;					/* find target */
 	if (!root->pi[i]) {			/* new target */
-		char ***ssstmp = (char ***) realloc(root->pi, sizeof(char **) * (i + 2));
-		if (!ssstmp)
-			return;
+		char ***ssstmp = (char ***) switch_must_realloc(root->pi, sizeof(char **) * (i + 2));
+
 		root->pi = ssstmp;
 		if (!root->pi)
 			return;
-		root->pi[i] = (char **) malloc(sizeof(char *) * 3);
-		if (!root->pi[i])
-			return;
+		root->pi[i] = (char **) switch_must_malloc(sizeof(char *) * 3);
 		root->pi[i][0] = target;
 		root->pi[i][1] = (char *) (root->pi[i + 1] = NULL);	/* terminate pi list */
-		root->pi[i][2] = strdup("");	/* empty document position list */
+		root->pi[i][2] = switch_must_strdup("");	/* empty document position list */
 	}
 
 	while (root->pi[i][j])
 		j++;					/* find end of instruction list for this target */
-	sstmp = (char **) realloc(root->pi[i], sizeof(char *) * (j + 3));
-	if (!sstmp)
-		return;
+	sstmp = (char **) switch_must_realloc(root->pi[i], sizeof(char *) * (j + 3));
 	root->pi[i] = sstmp;
-	stmp = (char *) realloc(root->pi[i][j + 1], j + 1);
-	if (!stmp)
-		return;
+	stmp = (char *) switch_must_realloc(root->pi[i][j + 1], j + 1);
 	root->pi[i][j + 2] = stmp;
 	strcpy(root->pi[i][j + 2] + j - 1, (root->xml.name) ? ">" : "<");
 	root->pi[i][j + 1] = NULL;	/* null terminate pi list for this target */
@@ -793,7 +774,7 @@ static short switch_xml_internal_dtd(switch_xml_root_t root, char *s, switch_siz
 	int i, j;
 	char **sstmp;
 
-	pe = (char **) memcpy(malloc(sizeof(SWITCH_XML_NIL)), SWITCH_XML_NIL, sizeof(SWITCH_XML_NIL));
+	pe = (char **) memcpy(switch_must_malloc(sizeof(SWITCH_XML_NIL)), SWITCH_XML_NIL, sizeof(SWITCH_XML_NIL));
 
 	for (s[len] = '\0'; s;) {
 		while (*s && *s != '<' && *s != '%')
@@ -813,11 +794,7 @@ static short switch_xml_internal_dtd(switch_xml_root_t root, char *s, switch_siz
 			}
 
 			for (i = 0, ent = (*c == '%') ? pe : root->ent; ent[i]; i++);
-			sstmp = (char **) realloc(ent, (i + 3) * sizeof(char *));	/* space for next ent */
-			if (!sstmp) {
-				switch_xml_err(root, v, "Allocation Error!");
-				break;
-			}
+			sstmp = (char **) switch_must_realloc(ent, (i + 3) * sizeof(char *));	/* space for next ent */
 			ent = sstmp;
 			if (*c == '%')
 				pe = ent;
@@ -889,20 +866,15 @@ static short switch_xml_internal_dtd(switch_xml_root_t root, char *s, switch_siz
 				}
 
 				if (!root->attr[i]) {	/* new tag name */
-					root->attr = (!i) ? (char ***) malloc(2 * sizeof(char **))
-						: (char ***) realloc(root->attr, (i + 2) * sizeof(char **));
-					root->attr[i] = (char **) malloc(2 * sizeof(char *));
+					root->attr = (!i) ? (char ***) switch_must_malloc(2 * sizeof(char **))
+						: (char ***) switch_must_realloc(root->attr, (i + 2) * sizeof(char **));
+					root->attr[i] = (char **) switch_must_malloc(2 * sizeof(char *));
 					root->attr[i][0] = t;	/* set tag name */
 					root->attr[i][1] = (char *) (root->attr[i + 1] = NULL);
 				}
 
 				for (j = 1; root->attr[i][j]; j += 3);	/* find end of list */
-				sstmp = (char **) realloc(root->attr[i], (j + 4) * sizeof(char *));
-
-				if (!sstmp) {
-					switch_xml_err(root, t, "Allocation Error!");
-					break;
-				}
+				sstmp = (char **) switch_must_realloc(root->attr[i], (j + 4) * sizeof(char *));
 
 				root->attr[i] = sstmp;
 				root->attr[i][j + 3] = NULL;	/* null terminate list */
@@ -937,7 +909,7 @@ static char *switch_xml_str2utf8(char **s, switch_size_t *len)
 	if (be == -1)
 		return NULL;			/* not UTF-16 */
 
-	u = (char *) malloc(max);
+	u = (char *) switch_must_malloc(max);
 	for (sl = 2; sl < *len - 1; sl += 2) {
 		c = (be) ? (((*s)[sl] & 0xFF) << 8) | ((*s)[sl + 1] & 0xFF)	/* UTF-16BE */
 			: (((*s)[sl + 1] & 0xFF) << 8) | ((*s)[sl] & 0xFF);	/* UTF-16LE */
@@ -949,9 +921,7 @@ static char *switch_xml_str2utf8(char **s, switch_size_t *len)
 
 		while (l + 6 > max) {
 			char *tmp;
-			tmp = (char *) realloc(u, max += SWITCH_XML_BUFSIZE);
-			if (!tmp)
-				return NULL;
+			tmp = (char *) switch_must_realloc(u, max += SWITCH_XML_BUFSIZE);
 			u = tmp;
 		}
 		if (c < 0x80)
@@ -965,7 +935,7 @@ static char *switch_xml_str2utf8(char **s, switch_size_t *len)
 				u[l++] = (char) (0x80 | ((c >> (6 * --b)) & 0x3F));	/* payload */
 		}
 	}
-	return *s = (char *) realloc(u, *len = l);
+	return *s = (char *) switch_must_realloc(u, *len = l);
 }
 
 /* frees a tag attribute list */
@@ -995,7 +965,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_str_dynamic(char *s, switch_bool_t
 	char *data;
 
 	switch_assert(s);
-	data = dup ? strdup(s) : s;
+	data = dup ? switch_must_strdup(s) : s;
 
 	if ((root = (switch_xml_root_t) switch_xml_parse_str(data, strlen(data)))) {
 		root->dynamic = 1;		/* Make sure we free the memory is switch_xml_free() */
@@ -1045,10 +1015,10 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_str(char *s, switch_size_t len)
 				for (i = 0; (a = root->attr[i]) && strcmp(a[0], d); i++);
 
 			for (l = 0; *s && *s != '/' && *s != '>'; l += 2) {	/* new attrib */
-				attr = (l) ? (char **) realloc(attr, (l + 4) * sizeof(char *))
-					: (char **) malloc(4 * sizeof(char *));	/* allocate space */
-				attr[l + 3] = (l) ? (char *) realloc(attr[l + 1], (l / 2) + 2)
-					: (char *) malloc(2);	/* mem for list of maloced vals */
+				attr = (l) ? (char **) switch_must_realloc(attr, (l + 4) * sizeof(char *))
+					: (char **) switch_must_malloc(4 * sizeof(char *));	/* allocate space */
+				attr[l + 3] = (l) ? (char *) switch_must_realloc(attr[l + 1], (l / 2) + 2)
+					: (char *) switch_must_malloc(2);	/* mem for list of maloced vals */
 				strcpy(attr[l + 3] + (l / 2), " ");	/* value is not malloced */
 				attr[l + 2] = NULL;	/* null terminate list */
 				attr[l + 1] = (char *) "";	/* temporary attribute value */
@@ -1165,17 +1135,12 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_fp(FILE * fp)
 	switch_size_t l, len = 0;
 	char *s;
 
-	if (!(s = (char *) malloc(SWITCH_XML_BUFSIZE)))
-		return NULL;
+	s = (char *) switch_must_malloc(SWITCH_XML_BUFSIZE);
+	
 	do {
 		len += (l = fread((s + len), 1, SWITCH_XML_BUFSIZE, fp));
 		if (l == SWITCH_XML_BUFSIZE) {
-			char *tmp = s;
-			s = (char *) realloc(s, len + SWITCH_XML_BUFSIZE);
-			if (!s) {
-				free(tmp);
-				return NULL;
-			}
+			s = (char *) switch_must_realloc(s, len + SWITCH_XML_BUFSIZE);
 		}
 	} while (s && l == SWITCH_XML_BUFSIZE);
 
@@ -1204,9 +1169,8 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_fd(int fd)
 		return NULL;
 	}
 
-	m = malloc(st.st_size);
-	if (!m)
-		return NULL;
+	m = switch_must_malloc(st.st_size);
+
 	if (!(0<(l = read(fd, m, st.st_size)))
 		|| !(root = (switch_xml_root_t) switch_xml_parse_str((char *) m, l))) {
 		free(m);
@@ -1346,8 +1310,8 @@ static FILE *preprocess_glob(const char *cwd, const char *pattern, FILE *write_f
 	}
 
 	for (n = 0; n < glob_data.gl_pathc; ++n) {
-		dir_path = strdup(glob_data.gl_pathv[n]);
-		switch_assert(dir_path);
+		dir_path = switch_must_strdup(glob_data.gl_pathv[n]);
+
 		if ((e = strrchr(dir_path, *SWITCH_PATH_SEPARATOR))) {
 			*e = '\0';
 		}
@@ -1400,12 +1364,12 @@ static int preprocess(const char *cwd, const char *file, FILE *write_fd, int rle
 		}
 
 		eblen = len * 2;
-		ebuf = malloc(eblen);
+		ebuf = switch_must_malloc(eblen);
 		memset(ebuf, 0, eblen);
 
 		while (!(bp = expand_vars(buf, ebuf, eblen, &cur, &err))) {
 			eblen *= 2;
-			ebuf = realloc(ebuf, eblen);
+			ebuf = switch_must_realloc(ebuf, eblen);
 			memset(ebuf, 0, eblen);
 		}
 
@@ -1595,8 +1559,8 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_file_simple(const char *file)
 	if ((fd = open(file, O_RDONLY, 0)) > -1) {
 		fstat(fd, &st);
 		if (!st.st_size) goto error;
-		m = malloc(st.st_size);
-		switch_assert(m);
+		m = switch_must_malloc(st.st_size);
+
 		if (!(0<(l = read(fd, m, st.st_size)))) goto error;
 		if (!(root = (switch_xml_root_t) switch_xml_parse_str((char *) m, l))) goto error;
 		root->dynamic = 1;
@@ -2051,7 +2015,7 @@ static void switch_xml_user_cache(const char *key, const char *user_name, const 
 		switch_safe_free(expires_lookup);
 	}
 	if (expires) {
-		char *expires_val = malloc(1024);
+		char *expires_val = switch_must_malloc(1024);
 		if (sprintf(expires_val, "%ld", (long)expires)) {
 			switch_core_hash_insert(CACHE_EXPIRES_HASH, mega_key, expires_val);
 		} else {
@@ -2072,7 +2036,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate_user_merged(const char *key, c
 	int i, nkeys;
 
 	if (strchr(key, ':')) {
-		kdup = strdup(key);
+		kdup = switch_must_strdup(key);
 		nkeys  = switch_split(kdup, ':', keys);
 	} else {
 		keys[0] = (char *)key;
@@ -2445,10 +2409,7 @@ static char *switch_xml_ampencode(const char *s, switch_size_t len, char **dst, 
 
 	while (s != e) {
 		while (*dlen + 10 > *max) {
-			char *tmp = (char *) realloc(*dst, *max += SWITCH_XML_BUFSIZE);
-			if (!tmp)
-				return *dst;
-			*dst = tmp;
+			*dst = (char *) switch_must_realloc(*dst, *max += SWITCH_XML_BUFSIZE);
 		}
 
 		if (immune) {
@@ -2563,10 +2524,7 @@ static char *switch_xml_toxml_r(switch_xml_t xml, char **s, switch_size_t *len, 
 	*s = switch_xml_ampencode(txt + start, xml->off - start, s, len, max, 0);
 
 	while (*len + strlen(xml->name) + 5 + (strlen(XML_INDENT) * (*count)) + 1 > *max) {	/* reallocate s */
-		char *tmp = *s;
-		*s = (char *) realloc(*s, *max += SWITCH_XML_BUFSIZE);
-		if (!*s)
-			return tmp;
+		*s = (char *) switch_must_realloc(*s, *max += SWITCH_XML_BUFSIZE);
 	}
 
 	if (*len && *(*s + (*len) - 1) == '>') {
@@ -2581,10 +2539,7 @@ static char *switch_xml_toxml_r(switch_xml_t xml, char **s, switch_size_t *len, 
 		if (switch_xml_attr(xml, xml->attr[i]) != xml->attr[i + 1])
 			continue;
 		while (*len + strlen(xml->attr[i]) + 7 + (strlen(XML_INDENT) * (*count)) > *max) {	/* reallocate s */
-			char *tmp = (char *) realloc(*s, *max += SWITCH_XML_BUFSIZE);
-			if (!tmp)
-				return *s;
-			*s = tmp;
+			*s = (char *) switch_must_realloc(*s, *max += SWITCH_XML_BUFSIZE);
 		}
 
 		*len += sprintf(*s + *len, " %s=\"", xml->attr[i]);
@@ -2597,10 +2552,7 @@ static char *switch_xml_toxml_r(switch_xml_t xml, char **s, switch_size_t *len, 
 		if (!attr[i][j + 1] || switch_xml_attr(xml, attr[i][j]) != attr[i][j + 1])
 			continue;			/* skip duplicates and non-values */
 		while (*len + strlen(attr[i][j]) + 8 + (strlen(XML_INDENT) * (*count)) > *max) {	/* reallocate s */
-			char *tmp = (char *) realloc(*s, *max += SWITCH_XML_BUFSIZE);
-			if (!tmp)
-				return *s;
-			*s = tmp;
+			*s = (char *) switch_must_realloc(*s, *max += SWITCH_XML_BUFSIZE);
 		}
 
 		*len += sprintf(*s + *len, " %s=\"", attr[i][j]);
@@ -2619,10 +2571,7 @@ static char *switch_xml_toxml_r(switch_xml_t xml, char **s, switch_size_t *len, 
 	}
 
 	while (*len + strlen(xml->name) + 5 + (strlen(XML_INDENT) * (*count)) > *max) {	/* reallocate s */
-		char *tmp = *s;
-		*s = (char *) realloc(*s, *max += SWITCH_XML_BUFSIZE);
-		if (!*s)
-			return tmp;
+		*s = (char *) switch_must_realloc(*s, *max += SWITCH_XML_BUFSIZE);
 	}
 
 	if (xml->child || xml->txt) {
@@ -2653,8 +2602,8 @@ static char *switch_xml_toxml_r(switch_xml_t xml, char **s, switch_size_t *len, 
 
 SWITCH_DECLARE(char *) switch_xml_toxml_nolock(switch_xml_t xml, switch_bool_t prn_header)
 {
-	char *s = (char *) malloc(SWITCH_XML_BUFSIZE);
-	switch_assert(s);
+	char *s = (char *) switch_must_malloc(SWITCH_XML_BUFSIZE);
+
 	return switch_xml_toxml_buf(xml, s, SWITCH_XML_BUFSIZE, 0, prn_header);
 }
 
@@ -2663,8 +2612,7 @@ SWITCH_DECLARE(char *) switch_xml_toxml(switch_xml_t xml, switch_bool_t prn_head
 {
 	char *r, *s;
 
-	s = (char *) malloc(SWITCH_XML_BUFSIZE);
-	switch_assert(s);
+	s = (char *) switch_must_malloc(SWITCH_XML_BUFSIZE);
 
 	r = switch_xml_toxml_buf(xml, s, SWITCH_XML_BUFSIZE, 0, prn_header);
 
@@ -2676,10 +2624,10 @@ SWITCH_DECLARE(char *) switch_xml_tohtml(switch_xml_t xml, switch_bool_t prn_hea
 	char *r, *s, *h;
 	switch_size_t rlen = 0;
 	switch_size_t len = SWITCH_XML_BUFSIZE;
-	s = (char *) malloc(SWITCH_XML_BUFSIZE);
-	switch_assert(s);
-	h = (char *) malloc(SWITCH_XML_BUFSIZE);
-	switch_assert(h);
+
+	s = (char *) switch_must_malloc(SWITCH_XML_BUFSIZE);
+	h = (char *) switch_must_malloc(SWITCH_XML_BUFSIZE);
+
 	r = switch_xml_toxml_buf(xml, s, SWITCH_XML_BUFSIZE, 0, prn_header);
 	h = switch_xml_ampencode(r, 0, &h, &rlen, &len, 1);
 	switch_safe_free(r);
@@ -2693,7 +2641,7 @@ SWITCH_DECLARE(char *) switch_xml_toxml_buf(switch_xml_t xml, char *buf, switch_
 	switch_xml_t p = (xml) ? xml->parent : NULL;
 	switch_xml_root_t root = (switch_xml_root_t) xml;
 	switch_size_t len = 0, max = buflen;
-	char *s, *t, *n, *r;
+	char *s, *t, *n;
 	int i, j, k;
 	uint32_t count = 0;
 
@@ -2706,10 +2654,7 @@ SWITCH_DECLARE(char *) switch_xml_toxml_buf(switch_xml_t xml, char *buf, switch_
 	}
 
 	if (!xml || !xml->name) {
-		if (!(r = (char *) realloc(s, len + 1))) {
-			abort();
-		}
-		return r;
+		return (char *) switch_must_realloc(s, len + 1);
 	}
 
 	while (root->xml.parent) {
@@ -2723,10 +2668,7 @@ SWITCH_DECLARE(char *) switch_xml_toxml_buf(switch_xml_t xml, char *buf, switch_
 				continue;		/* not pre-root */
 			}
 			while (len + strlen(t = root->pi[i][0]) + strlen(n) + 7 > max) {
-				if (!(r = (char *) realloc(s, max += SWITCH_XML_BUFSIZE))) {
-					abort();
-				}
-				s = r;
+				s = (char *) switch_must_realloc(s, max += SWITCH_XML_BUFSIZE);
 			}
 			len += sprintf(s + len, "<?%s%s%s?>", t, *n ? " " : "", n);
 		}
@@ -2741,20 +2683,13 @@ SWITCH_DECLARE(char *) switch_xml_toxml_buf(switch_xml_t xml, char *buf, switch_
 				continue;		/* not post-root */
 			}
 			while (len + strlen(t = root->pi[i][0]) + strlen(n) + 7 > max) {
-				if (!(r = (char *) realloc(s, max += SWITCH_XML_BUFSIZE))) {
-					abort();
-				}
-				s = r;
+				s = (char *) switch_must_realloc(s, max += SWITCH_XML_BUFSIZE);
 			}
 			len += sprintf(s + len, "\n<?%s%s%s?>", t, *n ? " " : "", n);
 		}
 	}
 
-	if (!(r = (char *) realloc(s, len + 1))) {
-		abort();
-	}
-
-	return r;
+	return (char *) switch_must_realloc(s, len + 1);
 }
 
 /* free the memory allocated for the switch_xml structure */
@@ -2856,14 +2791,13 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_new(const char *name)
 	static const char *ent[] = { "lt;", "&#60;", "gt;", "&#62;", "quot;", "&#34;",
 		"apos;", "&#39;", "amp;", "&#38;", NULL
 	};
-	switch_xml_root_t root = (switch_xml_root_t) malloc(sizeof(struct switch_xml_root));
-	if (!root)
-		return NULL;
+	switch_xml_root_t root = (switch_xml_root_t) switch_must_malloc(sizeof(struct switch_xml_root));
+
 	memset(root, '\0', sizeof(struct switch_xml_root));
 	root->xml.name = (char *) name;
 	root->cur = &root->xml;
 	strcpy(root->err, root->xml.txt = (char *) "");
-	root->ent = (char **) memcpy(malloc(sizeof(ent)), ent, sizeof(ent));
+	root->ent = (char **) memcpy(switch_must_malloc(sizeof(ent)), ent, sizeof(ent));
 	root->attr = root->pi = (char ***) (root->xml.attr = SWITCH_XML_NIL);
 	return &root->xml;
 }
@@ -2916,8 +2850,8 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_add_child(switch_xml_t xml, const char *
 
 	if (!xml)
 		return NULL;
-	if (!(child = (switch_xml_t) malloc(sizeof(struct switch_xml))))
-		return NULL;
+	child = (switch_xml_t) switch_must_malloc(sizeof(struct switch_xml));
+
 	memset(child, '\0', sizeof(struct switch_xml));
 	child->name = (char *) name;
 	child->attr = SWITCH_XML_NIL;
@@ -2954,20 +2888,15 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_set_attr(switch_xml_t xml, const char *n
 		if (!value)
 			return xml;			/* nothing to do */
 		if (xml->attr == SWITCH_XML_NIL) {	/* first attribute */
-			xml->attr = (char **) malloc(4 * sizeof(char *));
-			if (!xml->attr)
-				return NULL;
-			xml->attr[1] = strdup("");	/* empty list of malloced names/vals */
+			xml->attr = (char **) switch_must_malloc(4 * sizeof(char *));
+			xml->attr[1] = switch_must_strdup("");	/* empty list of malloced names/vals */
 		} else {
-			char **tmp = (char **) realloc(xml->attr, (l + 4) * sizeof(char *));
-			if (!tmp)
-				return xml;
-			xml->attr = tmp;
+			xml->attr = (char **) switch_must_realloc(xml->attr, (l + 4) * sizeof(char *));
 		}
 
 		xml->attr[l] = (char *) name;	/* set attribute name */
 		xml->attr[l + 2] = NULL;	/* null terminate attribute list */
-		xml->attr[l + 3] = (char *) realloc(xml->attr[l + 1], (c = (int) strlen(xml->attr[l + 1])) + 2);
+		xml->attr[l + 3] = (char *) switch_must_realloc(xml->attr[l + 1], (c = (int) strlen(xml->attr[l + 1])) + 2);
 		strcpy(xml->attr[l + 3] + c, " ");	/* set name/value as not malloced */
 		if (xml->flags & SWITCH_XML_DUP)
 			xml->attr[l + 3][c] = SWITCH_XML_NAMEM;
@@ -2985,14 +2914,10 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_set_attr(switch_xml_t xml, const char *n
 	if (value)
 		xml->attr[l + 1] = (char *) value;	/* set attribute value */
 	else {						/* remove attribute */
-		char **tmp;
 		if (xml->attr[c + 1][l / 2] & SWITCH_XML_NAMEM)
 			free(xml->attr[l]);
 		memmove(xml->attr + l, xml->attr + l + 2, (c - l + 2) * sizeof(char *));
-		tmp = (char **) realloc(xml->attr, (c + 2) * sizeof(char *));
-		if (!tmp)
-			return xml;
-		xml->attr = tmp;
+		xml->attr = (char **) switch_must_realloc(xml->attr, (c + 2) * sizeof(char *));
 		memmove(xml->attr[c + 1] + (l / 2), xml->attr[c + 1] + (l / 2) + 1, (c / 2) - (l / 2));	/* fix list of which name/vals are malloced */
 	}
 	xml->flags &= ~SWITCH_XML_DUP;	/* clear strdup() flag */
@@ -3636,14 +3561,7 @@ static int globextend(const char *path, glob_t *pglob, size_t *limit)
 	}
 
 	newsize = sizeof(*pathv) * (2 + pglob->gl_pathc + pglob->gl_offs);
-	pathv = pglob->gl_pathv ? realloc((char *) pglob->gl_pathv, newsize) : malloc(newsize);
-	if (pathv == NULL) {
-		if (pglob->gl_pathv) {
-			free(pglob->gl_pathv);
-			pglob->gl_pathv = NULL;
-		}
-		return (GLOB_NOSPACE);
-	}
+	pathv = pglob->gl_pathv ? switch_must_realloc((char *) pglob->gl_pathv, newsize) : switch_must_malloc(newsize);
 
 	if (pglob->gl_pathv == NULL && pglob->gl_offs > 0) {
 		/* first time around -- clear initial gl_offs items */
@@ -3656,10 +3574,9 @@ static int globextend(const char *path, glob_t *pglob, size_t *limit)
 	for (p = path; *p++;)
 		continue;
 	len = (size_t) (p - path);
-	if ((copy = malloc(len)) != NULL) {
-		memcpy(copy, path, len);
-		pathv[pglob->gl_offs + pglob->gl_pathc++] = copy;
-	}
+	copy = switch_must_malloc(len);
+	memcpy(copy, path, len);
+	pathv[pglob->gl_offs + pglob->gl_pathc++] = copy;
 	pathv[pglob->gl_offs + pglob->gl_pathc] = NULL;
 	return (copy == NULL ? GLOB_NOSPACE : 0);
 }

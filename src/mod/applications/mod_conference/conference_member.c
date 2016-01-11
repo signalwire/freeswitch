@@ -708,15 +708,6 @@ switch_status_t conference_member_add(conference_obj_t *conference, conference_m
 
 	switch_queue_create(&member->dtmf_queue, 100, member->pool);
 
-	if (conference_utils_test_flag(conference, CFLAG_PERSONAL_CANVAS)) {
-		video_layout_t *vlayout = NULL;
-
-		if ((vlayout = conference_video_get_layout(conference, conference->video_layout_name, conference->video_layout_group))) {
-			conference_video_init_canvas(conference, vlayout, &member->canvas);
-			conference_video_init_canvas_layers(conference, member->canvas, vlayout);
-		}
-	}
-
 	conference->members = member;
 	conference_utils_member_set_flag_locked(member, MFLAG_INTREE);
 	switch_mutex_unlock(conference->member_mutex);
@@ -1646,7 +1637,7 @@ int conference_member_setup_media(conference_member_t *member, conference_obj_t 
 	}
 
 	switch_core_session_get_read_impl(member->session, &member->orig_read_impl);
-	member->native_rate = read_impl.samples_per_second;
+	member->native_rate = member->orig_read_impl.samples_per_second;
 
 	/* Setup a Signed Linear codec for reading audio. */
 	if (switch_core_codec_init(&member->read_codec,

@@ -230,37 +230,6 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 	conference->auto_recording = 0;
 	conference->record_count = 0;
 
-
-
-	switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT);
-	conference_event_add_data(conference, event);
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "conference-create");
-	switch_event_fire(&event);
-
-	if (conference_utils_test_flag(conference, CFLAG_LIVEARRAY_SYNC)) {
-		char *p;
-
-		if (strchr(conference->name, '@')) {
-			conference->la_event_channel = switch_core_sprintf(conference->pool, "conference-liveArray.%s", conference->name);
-			conference->chat_event_channel = switch_core_sprintf(conference->pool, "conference-chat.%s", conference->name);
-			conference->mod_event_channel = switch_core_sprintf(conference->pool, "conference-mod.%s", conference->name);
-		} else {
-			conference->la_event_channel = switch_core_sprintf(conference->pool, "conference-liveArray.%s@%s", conference->name, conference->domain);
-			conference->chat_event_channel = switch_core_sprintf(conference->pool, "conference-chat.%s@%s", conference->name, conference->domain);
-			conference->mod_event_channel = switch_core_sprintf(conference->pool, "conference-mod.%s@%s", conference->name, conference->domain);
-		}
-
-		conference->la_name = switch_core_strdup(conference->pool, conference->name);
-		if ((p = strchr(conference->la_name, '@'))) {
-			*p = '\0';
-		}
-
-		switch_live_array_create(conference->la_event_channel, conference->la_name, conference_globals.event_channel_id, &conference->la);
-		switch_live_array_set_user_data(conference->la, conference);
-		switch_live_array_set_command_handler(conference->la, conference_event_la_command_handler);
-	}
-
-
 	while (conference_globals.running && !conference_utils_test_flag(conference, CFLAG_DESTRUCT)) {
 		switch_size_t file_sample_len = samples;
 		switch_size_t file_data_len = samples * 2 * conference->channels;
@@ -310,7 +279,7 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 					}
 				}
 
-				if (switch_channel_ready(channel) && switch_channel_test_flag(channel, CF_VIDEO) && imember->video_media_flow != SWITCH_MEDIA_FLOW_SENDONLY) {
+				if (switch_channel_ready(channel) && switch_channel_test_flag(channel, CF_VIDEO_READY) && imember->video_media_flow != SWITCH_MEDIA_FLOW_SENDONLY && (!conference_utils_test_flag(conference, CFLAG_VIDEO_MUTE_EXIT_CANVAS) || conference_utils_member_test_flag(imember, MFLAG_CAN_BE_SEEN))) {
 					members_with_video++;
 				}
 
@@ -2410,6 +2379,8 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 	char *video_codec_bandwidth = NULL;
 	char *no_video_avatar = NULL;
 	conference_video_mode_t conference_video_mode = CONF_VIDEO_MODE_PASSTHROUGH;
+	int conference_video_quality = 1;
+	int auto_kps_debounce = 30000;
 	float fps = 15.0f;
 	uint32_t max_members = 0;
 	uint32_t announce_count = 0;
@@ -2439,7 +2410,8 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 	switch_channel_t *channel = NULL;
 	const char *force_rate = NULL, *force_interval = NULL, *force_channels = NULL, *presence_id = NULL;
 	uint32_t force_rate_i = 0, force_interval_i = 0, force_channels_i = 0, video_auto_floor_msec = 0;
-
+	switch_event_t *event;
+	
 	/* Validate the conference name */
 	if (zstr(name)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Record! no name.\n");
@@ -2721,6 +2693,23 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 				terminate_on_silence = val;
 			} else if (!strcasecmp(var, "endconf-grace-time") && !zstr(val)) {
 				endconference_grace_time = val;
+			} else if (!strcasecmp(var, "video-quality") && !zstr(val)) {
+				int tmp = atoi(val);
+
+				if (tmp > -1 && tmp < 5) {
+					conference_video_quality = tmp;
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Video quality must be between 0 and 4\n");
+				}
+			} else if (!strcasecmp(var, "video-kps-debounce") && !zstr(val)) {
+				int tmp = atoi(val);
+
+				if (tmp >= 0) {
+					auto_kps_debounce = tmp;
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "video-kps-debounce must be 0 or higher\n");
+				}
+				
 			} else if (!strcasecmp(var, "video-mode") && !zstr(val)) {
 				if (!strcasecmp(val, "passthrough")) {
 					conference_video_mode = CONF_VIDEO_MODE_PASSTHROUGH;
@@ -2789,7 +2778,8 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 	conference->caller_controls = switch_core_strdup(conference->pool, caller_controls);
 	conference->moderator_controls = switch_core_strdup(conference->pool, moderator_controls);
 	conference->broadcast_chat_messages = broadcast_chat_messages;
-
+	conference->video_quality = conference_video_quality;
+	conference->auto_kps_debounce = auto_kps_debounce;
 
 	conference->conference_video_mode = conference_video_mode;
 
@@ -2864,7 +2854,7 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 
 		if (video_codec_bandwidth) {
 			if (!strcasecmp(video_codec_bandwidth, "auto")) {
-				conference->video_codec_settings.video.bandwidth = switch_calc_bitrate(canvas_w, canvas_h, 1, (int)conference->video_fps.fps);
+				conference->video_codec_settings.video.bandwidth = switch_calc_bitrate(canvas_w, canvas_h, conference->video_quality, conference->video_fps.fps);
 			} else {
 				conference->video_codec_settings.video.bandwidth = switch_parse_bandwidth_string(video_codec_bandwidth);
 			}
@@ -3185,6 +3175,36 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 		}
 	}
 
+
+	switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT);
+	conference_event_add_data(conference, event);
+	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "conference-create");
+	switch_event_fire(&event);
+
+	if (conference_utils_test_flag(conference, CFLAG_LIVEARRAY_SYNC)) {
+		char *p;
+
+		if (strchr(conference->name, '@')) {
+			conference->la_event_channel = switch_core_sprintf(conference->pool, "conference-liveArray.%s", conference->name);
+			conference->chat_event_channel = switch_core_sprintf(conference->pool, "conference-chat.%s", conference->name);
+			conference->mod_event_channel = switch_core_sprintf(conference->pool, "conference-mod.%s", conference->name);
+		} else {
+			conference->la_event_channel = switch_core_sprintf(conference->pool, "conference-liveArray.%s@%s", conference->name, conference->domain);
+			conference->chat_event_channel = switch_core_sprintf(conference->pool, "conference-chat.%s@%s", conference->name, conference->domain);
+			conference->mod_event_channel = switch_core_sprintf(conference->pool, "conference-mod.%s@%s", conference->name, conference->domain);
+		}
+
+		conference->la_name = switch_core_strdup(conference->pool, conference->name);
+		if ((p = strchr(conference->la_name, '@'))) {
+			*p = '\0';
+		}
+
+		switch_live_array_create(conference->la_event_channel, conference->la_name, conference_globals.event_channel_id, &conference->la);
+		switch_live_array_set_user_data(conference->la, conference);
+		switch_live_array_set_command_handler(conference->la, conference_event_la_command_handler);
+	}
+
+	
  end:
 
 	switch_mutex_unlock(conference_globals.hash_mutex);

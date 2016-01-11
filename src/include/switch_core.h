@@ -227,6 +227,29 @@ struct switch_core_session;
 struct switch_core_runtime;
 struct switch_core_port_allocator;
 
+
+static inline void *switch_must_malloc(size_t _b)
+{
+	void *m = malloc(_b);
+	switch_assert(m);
+	return m;
+}
+
+static inline void *switch_must_realloc(void *_b, size_t _z)
+{
+	void *m = realloc(_b, _z);
+	switch_assert(m);
+	return m;
+}
+
+static inline char *switch_must_strdup(const char *_s)
+{
+	char *s = strdup(_s);
+	switch_assert(s);
+	return s;
+}
+
+
 /*!
   \defgroup core1 Core Library 
   \ingroup FREESWITCH

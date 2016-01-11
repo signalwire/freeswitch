@@ -391,9 +391,10 @@ switch_status_t mod_amqp_producer_create(char *name, switch_xml_t cfg)
 /* This should only be called in a single threaded context from the producer profile send thread */
 switch_status_t mod_amqp_producer_send(mod_amqp_producer_profile_t *profile, mod_amqp_message_t *msg)
 {
-	amqp_table_entry_t messageTableEntries[1];
+	amqp_table_entry_t messageTableEntries[2];
 	amqp_basic_properties_t props;
 	int status;
+	uint64_t timestamp;
 
 	if (! profile->conn_active) {
 		/* No connection, so we can not send the message. */
@@ -415,9 +416,13 @@ switch_status_t mod_amqp_producer_send(mod_amqp_producer_profile_t *profile, mod
 		props.timestamp = (uint64_t)time(NULL);
 		props.headers.num_entries = 1;
 		props.headers.entries = messageTableEntries;
+		timestamp = (uint64_t)switch_micro_time_now();
 		messageTableEntries[0].key = amqp_cstring_bytes("x_Liquid_MessageSentTimeStamp");
 		messageTableEntries[0].value.kind = AMQP_FIELD_KIND_TIMESTAMP;
-		messageTableEntries[0].value.value.u64 = (uint64_t)switch_micro_time_now();
+		messageTableEntries[0].value.value.u64 = (uint64_t)(timestamp / 1000000);
+		messageTableEntries[1].key = amqp_cstring_bytes("x_Liquid_MessageSentTimeStampMicro");
+		messageTableEntries[1].value.kind = AMQP_FIELD_KIND_U64;
+		messageTableEntries[1].value.value.u64 = timestamp;
 	}
 
 	status = amqp_basic_publish(

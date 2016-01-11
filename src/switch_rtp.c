@@ -2740,6 +2740,15 @@ SWITCH_DECLARE(void) switch_rtp_set_max_missed_packets(switch_rtp_t *rtp_session
 	rtp_session->max_missed_packets = max;
 }
 
+SWITCH_DECLARE(void) switch_rtp_reset_jb(switch_rtp_t *rtp_session)
+{
+	if (switch_rtp_ready(rtp_session)) {
+		if (rtp_session->jb) {
+			switch_jb_reset(rtp_session->jb);
+		}
+	}
+}
+
 SWITCH_DECLARE(void) switch_rtp_reset_vb(switch_rtp_t *rtp_session)
 {
 	if (rtp_session->vb) {
@@ -2888,6 +2897,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_set_remote_address(switch_rtp_t *rtp_
 	switch_mutex_lock(rtp_session->write_mutex);
 
 	rtp_session->remote_addr = remote_addr;
+	switch_cp_addr(rtp_session->rtp_from_addr, rtp_session->remote_addr);
 
 	if (change_adv_addr) {
 		rtp_session->remote_host_str = switch_core_strdup(rtp_session->pool, host);
@@ -3259,7 +3269,9 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_dtls(switch_rtp_t *rtp_session, d
 	const char *kind = "";
 	BIO *bio;
 	DH *dh;
+#ifndef OPENSSL_NO_EC
 	EC_KEY* ecdh;
+#endif
 
 #ifndef HAVE_OPENSSL_DTLS_SRTP
 	return SWITCH_STATUS_FALSE;
@@ -3367,6 +3379,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_dtls(switch_rtp_t *rtp_session, d
 	SSL_set_read_ahead(dtls->ssl, 1);
 	//SSL_set_verify(dtls->ssl, (SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT), cb_verify_peer);
 
+#ifndef OPENSSL_NO_EC
 	ecdh = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
 	if (!ecdh) {
 		return SWITCH_STATUS_FALSE;
@@ -3374,6 +3387,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_dtls(switch_rtp_t *rtp_session, d
 	SSL_set_options(dtls->ssl, SSL_OP_SINGLE_ECDH_USE);
 	SSL_set_tmp_ecdh(dtls->ssl, ecdh);
 	EC_KEY_free(ecdh);
+#endif
 
 	SSL_set_verify(dtls->ssl, SSL_VERIFY_NONE, NULL);
 	SSL_set_app_data(dtls->ssl, dtls);
@@ -6724,6 +6738,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		case RESULT_GOTO_TIMERCHECK:
 			goto timer_check;
 		case RESULT_CONTINUE:
+			status = SWITCH_STATUS_SUCCESS;
 			goto result_continue;
 		}
 

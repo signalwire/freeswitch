@@ -1889,7 +1889,7 @@ static void client_run(jsock_t *jsock)
 					
 							if (s[0] != '#') goto nm;
 
-							switch_snprintf(repl, sizeof(repl), "#SPU %ld", (b - a) / 1000);
+							switch_snprintf(repl, sizeof(repl), "#SPU %ld", (long)((b - a) / 1000));
 							ws_write_frame(&jsock->ws, WSOC_TEXT, repl, strlen(repl));
 							loops = size / 1024;
 							rem = size % 1024;
@@ -1906,7 +1906,7 @@ static void client_run(jsock_t *jsock)
 									ws_write_frame(&jsock->ws, WSOC_TEXT, repl, rem);
 								}
 								b = switch_time_now();
-								ddur += ((b - a) / 1000);
+								ddur += (int)((b - a) / 1000);
 								dur += ddur;
 
 							}

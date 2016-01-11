@@ -72,7 +72,9 @@
 			<!-- <ComponentRef Id="ProductComponent" /> -->
 			<!-- The following Ref pulls in FreeSWITCHconsole.wxs items -->
 			<ComponentRef Id="cmpBEF12B96A80D45AC32F3B692E94A57C9"/>
-			<!-- Note: The following ComponentGroupRef is required to pull in generated authoring from project references. -->
+      <!-- This following Ref Pulls in fs_cli.exe-->
+      <ComponentRef Id="cmp5A06A4A7E1884331BC6C949456B5F293"/>
+      <!-- Note: The following ComponentGroupRef is required to pull in generated authoring from project references. -->
 			<ComponentGroupRef Id="FreeSWITCHBaseFiles" />
 			<?if $(var.Platform) != x64 ?>
 			  <MergeRef Id="CrtFiles_x86"/>

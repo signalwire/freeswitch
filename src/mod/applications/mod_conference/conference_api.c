@@ -103,7 +103,8 @@ api_command_t conference_api_sub_commands[] = {
 	{"vid-write-png", (void_fn_t) & conference_api_sub_write_png, CONF_API_SUB_ARGS_SPLIT, "vid-write-png", "<path>"},
 	{"vid-fps", (void_fn_t) & conference_api_sub_vid_fps, CONF_API_SUB_ARGS_SPLIT, "vid-fps", "<fps>"},
 	{"vid-bgimg", (void_fn_t) & conference_api_sub_canvas_bgimg, CONF_API_SUB_ARGS_SPLIT, "vid-bgimg", "<file> | clear [<canvas-id>]"},
-	{"vid-bandwidth", (void_fn_t) & conference_api_sub_vid_bandwidth, CONF_API_SUB_ARGS_SPLIT, "vid-bandwidth", "<BW>"}
+	{"vid-bandwidth", (void_fn_t) & conference_api_sub_vid_bandwidth, CONF_API_SUB_ARGS_SPLIT, "vid-bandwidth", "<BW>"},
+	{"vid-personal", (void_fn_t) & conference_api_sub_vid_personal, CONF_API_SUB_ARGS_SPLIT, "vid-personal", "[on|off]"}
 };
 
 switch_status_t conference_api_sub_pause_play(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv)
@@ -1000,6 +1001,29 @@ switch_status_t conference_api_sub_volume_out(conference_member_t *member, switc
 	return SWITCH_STATUS_SUCCESS;
 }
 
+switch_status_t conference_api_sub_vid_personal(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv)
+{
+	int on = 0;
+
+	if (!conference->canvases[0]) {
+		stream->write_function(stream, "-ERR conference is not in mixing mode\n");
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	if (argv[2]) {
+		on = switch_true(argv[2]);
+		if (on) {
+			conference_utils_set_flag(conference, CFLAG_PERSONAL_CANVAS);
+		} else {
+			conference_utils_clear_flag(conference, CFLAG_PERSONAL_CANVAS);
+		}
+	}
+
+	stream->write_function(stream, "+OK personal is %s\n", on ? "on" : "off");
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 switch_status_t conference_api_sub_vid_bandwidth(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv)
 {
 	uint32_t i;
@@ -1577,20 +1601,14 @@ switch_status_t conference_api_sub_vid_res_id(conference_member_t *member, switc
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	if (zstr(text)) {
-		stream->write_function(stream, "-ERR missing arg\n");
-		return SWITCH_STATUS_SUCCESS;
-	}
-
-	if (!strcasecmp(text, "clear") || (member->video_reservation_id && !strcasecmp(text, member->video_reservation_id))) {
+	if (zstr(text) || !strcasecmp(text, "clear") || (member->video_reservation_id && !strcasecmp(text, member->video_reservation_id))) {
 		member->video_reservation_id = NULL;
 		stream->write_function(stream, "+OK reservation_id cleared\n");
 	} else {
 		member->video_reservation_id = switch_core_strdup(member->pool, text);
 		stream->write_function(stream, "+OK reservation_id %s\n", text);
+		conference_video_detach_video_layer(member);
 	}
-
-	conference_video_detach_video_layer(member);
 
 	return SWITCH_STATUS_SUCCESS;
 

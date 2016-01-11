@@ -43,6 +43,7 @@
 #include "floating_fudge.h"
 #include <stdlib.h>
 #include <memory.h>
+#include <string.h>
 
 #include "spandsp/telephony.h"
 #include "spandsp/fast_convert.h"

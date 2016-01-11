@@ -42,7 +42,7 @@
 #include <mod_conference.h>
 
 
-inline switch_bool_t conference_cdr_test_mflag(conference_cdr_node_t *np, member_flag_t mflag)
+static inline switch_bool_t conference_cdr_test_mflag(conference_cdr_node_t *np, member_flag_t mflag)
 {
 	return !!np->mflags[mflag];
 }

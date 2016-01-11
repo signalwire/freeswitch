@@ -454,26 +454,26 @@ build_all () {
     dsc_opts="$dsc_opts -f${modtmp}"; fi
   [ -n "$orig" ] || orig="$(create_orig $orig_opts HEAD | tail -n1)"
   mkdir -p ../log
-  > ../log/changes
+  > ../log/changes.txt
   echo; echo; echo; echo
   trap 'echo "Killing children...">&2; for x in $(jobs -p); do kill $x; done' EXIT
   if [ "${orig:0:2}" = ".." ]; then
-    echo "true" > ../log/builds-ok
+    echo "true" > ../log/builds-ok.txt
     for distro in $distros; do
       echo "Creating $distro dsc..." >&2
-      local dsc="$(create_dsc $dsc_opts $distro $orig 2>../log/$distro | tail -n1)"
+      local dsc="$(create_dsc $dsc_opts $distro $orig 2>../log/$distro.txt | tail -n1)"
       echo "Done creating $distro dsc." >&2
       if [ "${dsc:0:2}" = ".." ]; then
         local lopts="-b"
         for arch in $archs; do
           {
             echo "Building $distro-$arch debs..." >&2
-            local changes="$(build_debs $lopts $deb_opts $distro $dsc $arch 2>../log/$distro-$arch | tail -n1)"
+            local changes="$(build_debs $lopts $deb_opts $distro $dsc $arch 2>../log/$distro-$arch.txt | tail -n1)"
             echo "Done building $distro-$arch debs." >&2
             if [ "${changes:0:2}" = ".." ]; then
-              echo "$changes" >> ../log/changes
+              echo "$changes" >> ../log/changes.txt
             else
-              echo "false" > ../log/builds-ok
+              echo "false" > ../log/builds-ok.txt
             fi
           } &
           $par || wait
@@ -485,8 +485,8 @@ build_all () {
   fi
   [ -z "$modlist" ] || rm -f $modtmp
   trap - EXIT
-  cat ../log/changes
-  test "$(cat ../log/builds-ok)" = true || exit 1
+  cat ../log/changes.txt
+  test "$(cat ../log/builds-ok.txt)" = true || exit 1
 }
 
 usage () {

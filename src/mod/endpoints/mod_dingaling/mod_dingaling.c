@@ -1931,6 +1931,8 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 	struct private_object *tech_pvt = NULL;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
+	switch_channel_set_variable(channel, "jitterbuffer_msec", "1p");
+
 	tech_pvt = switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
 
@@ -2382,12 +2384,6 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 	switch (msg->message_id) {
 	case SWITCH_MESSAGE_INDICATE_ANSWER:
 		channel_answer_channel(session);
-		break;
-	case SWITCH_MESSAGE_INDICATE_BRIDGE:
-		rtp_flush_read_buffer(tech_pvt->transports[LDL_TPORT_RTP].rtp_session, SWITCH_RTP_FLUSH_STICK);
-		break;
-	case SWITCH_MESSAGE_INDICATE_UNBRIDGE:
-		rtp_flush_read_buffer(tech_pvt->transports[LDL_TPORT_RTP].rtp_session, SWITCH_RTP_FLUSH_UNSTICK);
 		break;
 	case SWITCH_MESSAGE_INDICATE_STUN_ERROR:
 		//switch_channel_hangup(switch_core_session_get_channel(session), SWITCH_CAUSE_NORMAL_CLEARING);

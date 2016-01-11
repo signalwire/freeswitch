@@ -350,27 +350,37 @@ SWITCH_DECLARE(switch_channel_callstate_t) switch_channel_str2callstate(const ch
 SWITCH_DECLARE(void) switch_channel_perform_audio_sync(switch_channel_t *channel, const char *file, const char *func, int line)
 {
 	if (switch_channel_media_up(channel)) {
-		switch_core_session_message_t msg = { 0 };
-		msg.message_id = SWITCH_MESSAGE_INDICATE_AUDIO_SYNC;
-		msg.from = channel->name;
-		msg._file = file;
-		msg._func = func;
-		msg._line = line;
-		switch_core_session_receive_message(channel->session, &msg);
+		switch_core_session_message_t *msg = NULL;
+
+		msg = switch_core_session_alloc(channel->session, sizeof(*msg));
+		MESSAGE_STAMP_FFL(msg);
+		msg->message_id = SWITCH_MESSAGE_INDICATE_AUDIO_SYNC;
+		msg->from = channel->name;
+		msg->_file = file;
+		msg->_func = func;
+		msg->_line = line;
+
+		switch_core_session_queue_message(channel->session, msg);
 	}
 }
 
 
 SWITCH_DECLARE(void) switch_channel_perform_video_sync(switch_channel_t *channel, const char *file, const char *func, int line)
 {
+
 	if (switch_channel_media_up(channel)) {
-		switch_core_session_message_t msg = { 0 };
-		msg.message_id = SWITCH_MESSAGE_INDICATE_VIDEO_SYNC;
-		msg.from = channel->name;
-		msg._file = file;
-		msg._func = func;
-		msg._line = line;
-		switch_core_session_receive_message(channel->session, &msg);
+		switch_core_session_message_t *msg = NULL;
+
+		msg = switch_core_session_alloc(channel->session, sizeof(*msg));
+		MESSAGE_STAMP_FFL(msg);
+		msg->message_id = SWITCH_MESSAGE_INDICATE_VIDEO_SYNC;
+		msg->from = channel->name;
+		msg->_file = file;
+		msg->_func = func;
+		msg->_line = line;
+
+		switch_core_session_request_video_refresh(channel->session);
+		switch_core_session_queue_message(channel->session, msg);
 	}
 }
 
@@ -1858,11 +1868,8 @@ SWITCH_DECLARE(void) switch_channel_set_flag_value(switch_channel_t *channel, sw
 		switch_core_session_start_video_thread(channel->session);
 	}
 	
-	if (flag == CF_VIDEO_DECODED_READ) {
+	if (flag == CF_VIDEO_DECODED_READ && channel->flags[CF_VIDEO]) {
 		switch_core_session_request_video_refresh(channel->session);
-		if (!switch_core_session_in_video_thread(channel->session)) {
-			switch_channel_wait_for_flag(channel, CF_VIDEO_READY, SWITCH_TRUE, 10000, NULL);
-		}
 	}
 }
 
@@ -1995,8 +2002,9 @@ SWITCH_DECLARE(void) switch_channel_clear_flag(switch_channel_t *channel, switch
 		ACTIVE = 1;
 	}
 
-	if (flag == CF_VIDEO_PASSIVE) {
+	if (flag == CF_VIDEO_PASSIVE && channel->flags[CF_VIDEO]) {
 		channel->flags[CF_VIDEO_READY] = 1;
+
 		if (channel->flags[flag]) {
 			CLEAR = 1;
 		}
@@ -3799,13 +3807,9 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_answer(switch_channel_t *
 	}
 
 
-	if (switch_core_session_in_thread(channel->session)) {
+	if (switch_core_session_in_thread(channel->session) && !switch_channel_test_flag(channel, CF_PROXY_MODE)) {
 		const char *delay;
 
-		if (switch_channel_test_flag(channel, CF_VIDEO)) {
-			switch_channel_wait_for_flag(channel, CF_VIDEO_READY, SWITCH_TRUE, 10000, NULL);
-		}
-		
 		if ((delay = switch_channel_get_variable(channel, "answer_delay"))) {
 			uint32_t msec = atoi(delay);
 			

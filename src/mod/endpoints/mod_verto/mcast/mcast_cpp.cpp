@@ -65,7 +65,7 @@ char *McastHandle::recv(int ms)
 	return NULL;
 }
 
-int McastHandle::filenum(void)
+mcast_socket_t McastHandle::filenum(void)
 {
 	return handle.sock;
 }

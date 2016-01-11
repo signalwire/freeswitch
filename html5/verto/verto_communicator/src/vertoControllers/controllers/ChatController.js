@@ -1,3 +1,4 @@
+
 (function() {
   'use strict';
 
@@ -49,6 +50,48 @@
         });
       });
 
+      $rootScope.$on('call.conference', function(event, data) {
+        $timeout(function() {
+          $scope.conf = verto.data.conf.params.laData;
+        });
+      });
+
+      $rootScope.$on('changedVideoLayout', function(event, layout) {
+        $scope.resIDs = getResByLayout(layout);
+
+        // remove resIDs param to clear every members resID.
+        // passing $scope.resIDs results in preserving resIDs compatible
+        // with the current layout
+        clearMembersResID($scope.resIDs);
+      });
+
+      $rootScope.$on('conference.canvasInfo', function(event, data) {
+        $scope.currentLayout = data[0].layoutName;
+        $scope.resIDs = getResByLayout($scope.currentLayout);
+      });
+
+      function getResByLayout(layout) {
+        var layoutsData = verto.data.confLayoutsData;
+        for (var i = 0; i < layoutsData.length; i++) {
+          if (layoutsData[i].name === layout) {
+            return layoutsData[i].resIDS;
+          }
+        }
+      }
+
+      // @preserve - a array of values to be preserved
+      function clearMembersResID(preserve) {
+        $scope.members.forEach(function(member) {
+          var resID = member.status.video.reservationID;
+          console.debug("resID to clear: " + resID);
+          if (resID && preserve && preserve.indexOf(resID) !== -1) return;
+          if (resID){
+            console.debug("clearing resid [" + resID + "] from [" + member.id + "]");
+            $scope.confResID(member.id, resID);
+          }
+        });
+      };
+
       function findMemberByUUID(uuid) {
         var found = false;
         for (var idx in $scope.members) {
@@ -81,6 +124,10 @@
         $scope.members.push(translateMember(member));
       }
 
+      $rootScope.$on('hangupCall', function() {
+        $scope.openId = null;
+      });
+
       $rootScope.$on('members.boot', function(event, members) {
         $scope.$apply(function() {
           clearConferenceChat();
@@ -98,6 +145,11 @@
       });
 
       $rootScope.$on('members.del', function(event, uuid) {
+        if ($rootScope.watcher && $rootScope.master === uuid) {
+          verto.hangup();
+          window.close();
+        }
+
         $scope.$apply(function() {
           var memberIdx = findMemberByUUID(uuid);
           if (memberIdx != -1) {
@@ -138,10 +190,19 @@
       /**
        * Public methods.
        */
-      $scope.send = function() {
+
+      $scope.toggleModMenu = function(index) {
+        if (verto.data.confRole != 'moderator') return;
+        $scope.openId = $scope.openId == index ? null : index;
+      };
+
+      $scope.send = function(event) {
         // Only conferencing chat is supported for now
         // but still calling method with the conference prefix
         // so we know that explicitly.
+        if (event && event.type == 'keydown') {
+          event.preventDefault();
+        }
         verto.sendConferenceChat($scope.message);
         $scope.message = CLEAN_MESSAGE;
       };
@@ -171,6 +232,11 @@
         verto.data.conf.presenter(memberID);
       };
 
+      $scope.confResID = function(memberID, resID) {
+        console.log('Set', memberID, 'to', resID);
+        verto.setResevartionId(memberID, resID);
+      };
+
       $scope.confVideoFloor = function(memberID) {
         console.log('$scope.confVideoFloor');
         verto.data.conf.videoFloor(memberID);
@@ -191,6 +257,41 @@
         });
       };
 
+      $scope.confCanvasIn = function(memberID, canvasID) {
+        if (canvasID) {
+          verto.setCanvasIn(memberID, canvasID);
+          return;
+        }
+
+        shortPrompt('Please insert the Canvas Id', function(canvasID) {
+          console.log(memberID, canvasID);
+          verto.setCanvasIn(memberID, canvasID);
+        });
+
+      };
+
+      $scope.confCanvasOut = function(memberID, canvasID) {
+        if (canvasID) {
+          verto.setCanvasOut(memberID, canvasID);
+          return;
+        }
+
+        shortPrompt('Please insert the Canvas Id', function(canvasID) {
+          verto.setCanvasOut(memberID, canvasID);
+        });
+      };
+
+      $scope.confLayer = function(memberID, canvasID) {
+        if (canvasID) {
+          verto.setLayer(memberID, canvasID);
+          return;
+        }
+
+        shortPrompt('Please insert the Layer', function(canvasID) {
+          verto.setLayer(memberID, canvasID);
+        });
+      };
+
       $scope.confResetBanner = function(memberID) {
         console.log('$scope.confResetBanner');
         var text = 'reset';
@@ -207,6 +308,16 @@
         verto.data.conf.volumeUp(memberID);
       };
 
+      $scope.confGainDown = function(memberID) {
+        console.log('$scope.confGainDown');
+        verto.data.conf.gainDown(memberID);
+      };
+
+      $scope.confGainUp = function(memberID) {
+        console.log('$scope.confGainUp');
+        verto.data.conf.gainUp(memberID);
+      };
+
       $scope.confTransfer = function(memberID) {
         console.log('$scope.confTransfer');
         prompt({
@@ -221,6 +332,19 @@
           }
         });
       };
+
+      function shortPrompt(text, cb) {
+        prompt({
+          title: text,
+          input: true,
+          label: '',
+          value: '',
+        }).then(function(val) {
+          if (val && cb) {
+            cb(val);
+          }
+        });
+      }
     }
   ]);
 

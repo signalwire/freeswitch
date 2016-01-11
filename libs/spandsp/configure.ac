@@ -151,6 +151,7 @@ AC_ARG_ENABLE(builtin_tiff,
 AC_FUNC_ERROR_AT_LINE
 AC_FUNC_VPRINTF
 AC_FUNC_MEMCMP
+AC_FUNC_MEMMOVE
 if test "${ax_cv_c_compiler_vendor}" = "gnu"
   then
     AC_FUNC_REALLOC
