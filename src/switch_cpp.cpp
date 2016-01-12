@@ -718,7 +718,7 @@ SWITCH_DECLARE(void) CoreSession::hangup(const char *cause)
 	sanity_check_noreturn;	
     switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "CoreSession::hangup\n");
 	this->begin_allow_threads();
-    switch_channel_hangup(channel, zstr(cause) ? SWITCH_CAUSE_NORMAL_CLEARING : switch_channel_str2cause(cause));
+    switch_channel_hangup(channel, switch_channel_str2cause(cause));
 	this->end_allow_threads();
 }
 
