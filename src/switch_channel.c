@@ -204,18 +204,21 @@ SWITCH_DECLARE(const char *) switch_channel_cause2str(switch_call_cause_t cause)
 SWITCH_DECLARE(switch_call_cause_t) switch_channel_str2cause(const char *str)
 {
 	uint8_t x;
-	switch_call_cause_t cause = SWITCH_CAUSE_NONE;
+	switch_call_cause_t cause = SWITCH_CAUSE_NORMAL_CLEARING;
 
-	if (*str > 47 && *str < 58) {
-		cause = atoi(str);
-	} else {
-		for (x = 0; x < (sizeof(CAUSE_CHART) / sizeof(struct switch_cause_table)) - 1 && CAUSE_CHART[x].name; x++) {
-			if (!strcasecmp(CAUSE_CHART[x].name, str)) {
-				cause = CAUSE_CHART[x].cause;
-				break;
+	if (!zstr(str)) {
+		if (*str > 47 && *str < 58) {
+			cause = atoi(str);
+		} else {
+			for (x = 0; x < (sizeof(CAUSE_CHART) / sizeof(struct switch_cause_table)) - 1 && CAUSE_CHART[x].name; x++) {
+				if (!strcasecmp(CAUSE_CHART[x].name, str)) {
+					cause = CAUSE_CHART[x].cause;
+					break;
+				}
 			}
 		}
 	}
+
 	return cause;
 }
 
