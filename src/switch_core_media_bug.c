@@ -1095,7 +1095,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_enumerate(switch_core_sess
 
 SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove_all_function(switch_core_session_t *session, const char *function)
 {
-	switch_media_bug_t *bp;
+	switch_media_bug_t *bp, *last = NULL;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
 	if (session->bugs) {
@@ -1116,8 +1116,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove_all_function(switch
 			}
 			switch_core_media_bug_destroy(bp);
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Removing BUG from %s\n", switch_channel_get_name(session->channel));
+
+			if (last) {
+				last->next = bp->next;
+			} else {
+				session->bugs = bp->next;
+			}
+			last = bp;
 		}
-		session->bugs = NULL;
 		switch_thread_rwlock_unlock(session->bug_rwlock);
 		status = SWITCH_STATUS_SUCCESS;
 	}
