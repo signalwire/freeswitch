@@ -1014,7 +1014,9 @@ SWITCH_DECLARE(switch_status_t) switch_poll(switch_pollfd_t *aprset, int32_t num
 	if (aprset) {
 		st = apr_poll((apr_pollfd_t *) aprset, numsock, nsds, timeout);
 
-		if (st == APR_TIMEUP) {
+		if (numsock == 1 && ((aprset[0].rtnevents & APR_POLLERR) || (aprset[0].rtnevents & APR_POLLHUP) || (aprset[0].rtnevents & APR_POLLNVAL))) {
+			st = SWITCH_STATUS_GENERR;
+		} else if (st == APR_TIMEUP) {
 			st = SWITCH_STATUS_TIMEOUT;
 		}
 	}
