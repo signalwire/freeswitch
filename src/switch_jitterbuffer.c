@@ -37,7 +37,7 @@
 #define PERIOD_LEN 250
 #define MAX_FRAME_PADDING 2
 #define MAX_MISSING_SEQ 20
-#define jb_debug(_jb, _level, _format, ...) if (_jb->debug_level >= _level) switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(_jb->session), SWITCH_LOG_ALERT, "JB:%p:%s lv:%d ln:%d sz:%u/%u/%u/%u c:%u %u/%u/%u/%u %.2f%% ->" _format, (void *) _jb, (jb->type == SJB_AUDIO ? "aud" : "vid"), _level, __LINE__,  _jb->min_frame_len, _jb->max_frame_len, _jb->frame_len, _jb->complete_frames, _jb->period_count, _jb->consec_good_count, _jb->period_good_count, _jb->consec_miss_count, _jb->period_miss_count, _jb->period_miss_pct, __VA_ARGS__)
+#define jb_debug(_jb, _level, _format, ...) if (_jb->debug_level >= _level) switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(_jb->session), SWITCH_LOG_ALERT, "JB:%p:%s lv:%d ln:%.4d sz:%.3u/%.3u/%.3u/%.3u c:%.3u %.3u/%.3u/%.3u/%.3u %.2f%% ->" _format, (void *) _jb, (jb->type == SJB_AUDIO ? "aud" : "vid"), _level, __LINE__,  _jb->min_frame_len, _jb->max_frame_len, _jb->frame_len, _jb->complete_frames, _jb->period_count, _jb->consec_good_count, _jb->period_good_count, _jb->consec_miss_count, _jb->period_miss_count, _jb->period_miss_pct, __VA_ARGS__)
 
 //const char *TOKEN_1 = "ONE";
 //const char *TOKEN_2 = "TWO";
@@ -585,19 +585,35 @@ static inline void add_node(switch_jb_t *jb, switch_rtp_packet_t *packet, switch
 	jb_debug(jb, (packet->header.m ? 1 : 2), "PUT packet last_ts:%u ts:%u seq:%u%s\n", 
 			 ntohl(jb->highest_wrote_ts), ntohl(node->packet.header.ts), ntohs(node->packet.header.seq), packet->header.m ? " <MARK>" : "");
 
-	if (jb->write_init && jb->type == SJB_VIDEO && ((abs(((int)ntohs(packet->header.seq) - ntohs(jb->highest_wrote_seq))) >= jb->max_frame_len) || 
-						   (abs((int)((int64_t)ntohl(node->packet.header.ts) - (int64_t)ntohl(jb->highest_wrote_ts))) > (900000 * 5)))) {
-		jb_debug(jb, 2, "CHANGE DETECTED, PUNT %u\n", abs(((int)ntohs(packet->header.seq) - ntohs(jb->highest_wrote_seq))));
-		switch_jb_reset(jb);
+	if (jb->write_init && jb->type == SJB_VIDEO) {
+		int seq_diff = 0, ts_diff = 0;
+
+		if (ntohs(jb->highest_wrote_seq) > (USHRT_MAX - 100) && ntohs(packet->header.seq) < 100) {
+			seq_diff = (USHRT_MAX - ntohs(jb->highest_wrote_seq)) + ntohs(packet->header.seq);
+		} else {
+			seq_diff = abs(((int)ntohs(packet->header.seq) - ntohs(jb->highest_wrote_seq)));
+		}
+		
+		if (ntohl(jb->highest_wrote_ts) > (UINT_MAX - 1000) && ntohl(node->packet.header.ts) < 1000) {
+			ts_diff = (UINT_MAX - ntohl(node->packet.header.ts)) + ntohl(node->packet.header.ts);
+		} else {
+			ts_diff = abs((int)((int64_t)ntohl(node->packet.header.ts) - (int64_t)ntohl(jb->highest_wrote_ts)));
+		}
+		
+		if (((seq_diff >= jb->max_frame_len) || (ts_diff > (900000 * 5)))) {
+			jb_debug(jb, 2, "CHANGE DETECTED, PUNT %u\n", abs(((int)ntohs(packet->header.seq) - ntohs(jb->highest_wrote_seq))));
+			switch_jb_reset(jb);
+		}
 	}
  
 	if (!jb->write_init || ntohs(packet->header.seq) > ntohs(jb->highest_wrote_seq) || 
-		(ntohs(jb->highest_wrote_seq) > USHRT_MAX - 10 && ntohs(packet->header.seq) <= 10) ) {
+		(ntohs(jb->highest_wrote_seq) > USHRT_MAX - 100 && ntohs(packet->header.seq) < 100) ) {
 		jb->highest_wrote_seq = packet->header.seq;
 	}
 
 	if (jb->type == SJB_VIDEO) {
-		if (jb->write_init && htons(packet->header.seq) >= htons(jb->highest_wrote_seq) && (ntohl(node->packet.header.ts) > ntohl(jb->highest_wrote_ts))) {
+		if (jb->write_init && ((htons(packet->header.seq) >= htons(jb->highest_wrote_seq) && (ntohl(node->packet.header.ts) > ntohl(jb->highest_wrote_ts))) ||
+							   (ntohl(jb->highest_wrote_ts) > (UINT_MAX - 1000) && ntohl(node->packet.header.ts) < 1000))) {
 			jb->complete_frames++;
 			jb_debug(jb, 2, "WRITE frame ts: %u complete=%u/%u n:%u\n", ntohl(node->packet.header.ts), jb->complete_frames , jb->frame_len, jb->visible_nodes);
 			jb->highest_wrote_ts = packet->header.ts;
@@ -669,7 +685,9 @@ static inline switch_status_t jb_next_packet_by_seq(switch_jb_t *jb, switch_jb_n
 	}
 
 	if (!jb->target_seq) {
-		if ((node = jb_find_lowest_seq(jb, 0))) {
+		if ((node = switch_core_inthash_find(jb->node_hash, jb->target_seq))) {
+			jb_debug(jb, 2, "FOUND rollover seq: %u\n", ntohs(jb->target_seq));
+		} else if ((node = jb_find_lowest_seq(jb, 0))) {
 			jb_debug(jb, 2, "No target seq using seq: %u as a starting point\n", ntohs(node->packet.header.seq));
 		} else {
 			jb_debug(jb, 1, "%s", "No nodes available....\n");
