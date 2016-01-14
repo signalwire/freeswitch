@@ -2113,9 +2113,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 		return SWITCH_STATUS_FALSE;
 	}
 
-	switch_assert(engine->rtp_session != NULL);
-
-
 	if (!switch_channel_up_nosig(session->channel) || !switch_rtp_ready(engine->rtp_session) || switch_channel_test_flag(session->channel, CF_NOT_READY)) {
 		return SWITCH_STATUS_FALSE;
 	}
