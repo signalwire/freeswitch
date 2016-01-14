@@ -38,13 +38,6 @@
 
 #include "mod_amqp.h"
 
-void mod_amqp_producer_msg_destroy(mod_amqp_message_t **msg)
-{
-	if (!msg || !*msg) return;
-	switch_safe_free((*msg)->pjson);
-	switch_safe_free(*msg);
-}
-
 switch_status_t mod_amqp_producer_routing_key(mod_amqp_producer_profile_t *profile, char routingKey[MAX_AMQP_ROUTING_KEY_LENGTH],
 											  switch_event_t* evt, mod_amqp_keypart_t routingKeyEventHeaderNames[])
 {
@@ -115,7 +108,7 @@ void mod_amqp_producer_event_handler(switch_event_t* evt)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "AMQP message queue full. Messages will be dropped for %.1fs! (Queue capacity %d)",
 						  profile->circuit_breaker_ms / 1000.0, queue_size);
 
-		mod_amqp_producer_msg_destroy(&amqp_message);
+		mod_amqp_util_msg_destroy(&amqp_message);
 	}
 }
 
@@ -155,7 +148,7 @@ switch_status_t mod_amqp_producer_destroy(mod_amqp_producer_profile_t **prof) {
 	profile->conn_root = NULL;
 
 	while (profile->send_queue && switch_queue_trypop(profile->send_queue, (void**)&msg) == SWITCH_STATUS_SUCCESS) {
-		mod_amqp_producer_msg_destroy(&msg);
+		mod_amqp_util_msg_destroy(&msg);
 	}
 
 	if (pool) {
@@ -497,7 +490,7 @@ void * SWITCH_THREAD_FUNC mod_amqp_producer_thread(switch_thread_t *thread, void
 			switch (mod_amqp_producer_send(profile, msg)) {
 			case SWITCH_STATUS_SUCCESS:
 				/* Success: prepare for next message */
-				mod_amqp_producer_msg_destroy(&msg);
+				mod_amqp_util_msg_destroy(&msg);
 				break;
 
 			case SWITCH_STATUS_NOT_INITALIZED:
@@ -541,7 +534,7 @@ void * SWITCH_THREAD_FUNC mod_amqp_producer_thread(switch_thread_t *thread, void
 	}
 
 	/* Abort the current message */
-	mod_amqp_producer_msg_destroy(&msg);
+	mod_amqp_util_msg_destroy(&msg);
 
 	// Terminate the thread
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Event sender thread stopped\n");
