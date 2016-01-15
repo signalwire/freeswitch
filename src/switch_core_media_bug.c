@@ -1101,7 +1101,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove_all_function(switch
 	if (session->bugs) {
 		switch_thread_rwlock_wrlock(session->bug_rwlock);
 		for (bp = session->bugs; bp; bp = bp->next) {
-			if ((bp->thread_id && bp->thread_id != switch_thread_self()) || switch_test_flag(bp, SMBF_LOCK)) {
+			if (!switch_test_flag(session, SSF_DESTROYABLE) && 
+				((bp->thread_id && bp->thread_id != switch_thread_self()) || switch_test_flag(bp, SMBF_LOCK))) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "BUG is thread locked skipping.\n");
 				continue;
 			}
