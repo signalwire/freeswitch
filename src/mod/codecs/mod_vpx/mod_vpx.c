@@ -425,6 +425,46 @@ static switch_status_t init_encoder(switch_codec_t *codec)
 		}
 	} else if (context->flags & SWITCH_CODEC_FLAG_ENCODE) {
 
+// #define SHOW(field) fprintf(stderr, "    %-28s = %d\n", #field, config->field);
+
+#ifdef SHOW
+		fprintf(stderr, "Codec: %s\n", vpx_codec_iface_name(context->encoder_interface));
+
+		SHOW(g_usage);
+		SHOW(g_threads);
+		SHOW(g_profile);
+		SHOW(g_w);
+		SHOW(g_h);
+		SHOW(g_bit_depth);
+		SHOW(g_input_bit_depth);
+		SHOW(g_timebase.num);
+		SHOW(g_timebase.den);
+		SHOW(g_error_resilient);
+		SHOW(g_pass);
+		SHOW(g_lag_in_frames);
+		SHOW(rc_dropframe_thresh);
+		SHOW(rc_resize_allowed);
+		SHOW(rc_scaled_width);
+		SHOW(rc_scaled_height);
+		SHOW(rc_resize_up_thresh);
+		SHOW(rc_resize_down_thresh);
+		SHOW(rc_end_usage);
+		SHOW(rc_target_bitrate);
+		SHOW(rc_min_quantizer);
+		SHOW(rc_max_quantizer);
+		SHOW(rc_undershoot_pct);
+		SHOW(rc_overshoot_pct);
+		SHOW(rc_buf_sz);
+		SHOW(rc_buf_initial_sz);
+		SHOW(rc_buf_optimal_sz);
+		SHOW(rc_2pass_vbr_bias_pct);
+		SHOW(rc_2pass_vbr_minsection_pct);
+		SHOW(rc_2pass_vbr_maxsection_pct);
+		SHOW(kf_mode);
+		SHOW(kf_min_dist);
+		SHOW(kf_max_dist);
+#endif
+
 		if (vpx_codec_enc_init(&context->encoder, context->encoder_interface, config, 0 & VPX_CODEC_USE_OUTPUT_PARTITION) != VPX_CODEC_OK) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec init error: [%d:%s]\n", context->encoder.err, context->encoder.err_detail);
 			return SWITCH_STATUS_FALSE;
