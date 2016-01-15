@@ -51,7 +51,7 @@ SWITCH_BEGIN_EXTERN_C
 
 typedef struct {
 	switch_rtp_hdr_t header;
-	char body[SWITCH_RTP_MAX_BUF_LEN];
+	char body[SWITCH_RTP_MAX_BUF_LEN+4+sizeof(char *)];
 } switch_rtp_packet_t;
 
 typedef enum {
