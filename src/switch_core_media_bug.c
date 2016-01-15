@@ -1104,13 +1104,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove_all_function(switch
 			if (!switch_test_flag(session, SSF_DESTROYABLE) && 
 				((bp->thread_id && bp->thread_id != switch_thread_self()) || switch_test_flag(bp, SMBF_LOCK))) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "BUG is thread locked skipping.\n");
+				last = bp;
 				continue;
 			}
 			
 			if (!zstr(function) && strcmp(bp->function, function)) {
+				last = bp;
 				continue;
 			}
-
 
 			if (bp->callback) {
 				bp->callback(bp, bp->user_data, SWITCH_ABC_TYPE_CLOSE);
