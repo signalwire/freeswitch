@@ -1124,7 +1124,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove_all_function(switch
 			} else {
 				session->bugs = bp->next;
 			}
-			last = bp;
 		}
 		switch_thread_rwlock_unlock(session->bug_rwlock);
 		status = SWITCH_STATUS_SUCCESS;
