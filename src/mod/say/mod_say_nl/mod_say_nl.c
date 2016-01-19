@@ -39,6 +39,7 @@
  * 
  * Anthony Minessale II <anthm@freeswitch.org>
  * Michael B. Murdock <mike@mmurdock.org>
+ * Leo Noordergraaf <leo.noordergraaf@deanconnect.nl>
  *
  * mod_say_nl.c -- Say for nl
  *
@@ -86,14 +87,13 @@ static switch_status_t play_group(switch_say_method_t method, int a, int b, int 
 
 	if (a) {
 		say_file("digits/%d.wav", a);
-		say_file("digits/hundred.wav");
+		say_file("digits/honderd.wav");
 	}
 
 	if (b) {
 		if (b > 1) {
 			if (c) {
-				say_file("digits/%d.wav", c);
-				say_file("currency/and.wav");
+				say_file("digits/%d-en.wav", c);
 			}
 			say_file("digits/%d0.wav", b);
 		} else {
@@ -103,6 +103,7 @@ static switch_status_t play_group(switch_say_method_t method, int a, int b, int 
 	}
 
 	if (c) {
+		say_file("digits/%d.wav", c);
 		if (method == SSM_COUNTED) {
 			say_file("digits/h-%d.wav", c);
 		} else {
@@ -156,10 +157,10 @@ static switch_status_t nl_say_general_count(switch_core_session_t *session, char
 		switch (say_args->method) {
 		case SSM_COUNTED:
 		case SSM_PRONOUNCED:
-			if ((status = play_group(SSM_PRONOUNCED, places[8], places[7], places[6], "digits/million.wav", session, args)) != SWITCH_STATUS_SUCCESS) {
+			if ((status = play_group(SSM_PRONOUNCED, places[8], places[7], places[6], "digits/miljoen.wav", session, args)) != SWITCH_STATUS_SUCCESS) {
 				return status;
 			}
-			if ((status = play_group(SSM_PRONOUNCED, places[5], places[4], places[3], "digits/thousand.wav", session, args)) != SWITCH_STATUS_SUCCESS) {
+			if ((status = play_group(SSM_PRONOUNCED, places[5], places[4], places[3], "digits/duizend.wav", session, args)) != SWITCH_STATUS_SUCCESS) {
 				return status;
 			}
 			if ((status = play_group(say_args->method, places[2], places[1], places[0], NULL, session, args)) != SWITCH_STATUS_SUCCESS) {
@@ -201,7 +202,9 @@ static switch_status_t nl_say_time(switch_core_session_t *session, char *tosay, 
 				if ((p = strchr(tme, ':'))) {
 					*p++ = '\0';
 					minutes = atoi(p);
-					hours = atoi(tme);
+					if (tme) {
+						hours = atoi(tme);
+					}
 				} else {
 					minutes = atoi(tme);
 				}
@@ -226,28 +229,23 @@ static switch_status_t nl_say_time(switch_core_session_t *session, char *tosay, 
 
 		if (hours) {
 			say_num(hours, SSM_PRONOUNCED);
-			if (hours == 1) {
-				say_file("time/hour.wav");
-			} else {
-				say_file("time/hours.wav");
-			}
 		} else {
 			say_file("digits/0.wav");
-			say_file("time/hours.wav");
 		}
+		say_file("time/uur.wav");
 
 		if (minutes) {
 			say_num(minutes, SSM_PRONOUNCED);
 			if (minutes == 1) {
-				say_file("time/minute.wav");
+				say_file("time/minuut.wav");
 			} else {
-				say_file("time/minutes.wav");
+				say_file("time/minuten.wav");
 			}
 		} else {
 			say_file("digits/0.wav");
-			say_file("time/minutes.wav");
+			say_file("time/minuten.wav");
 		}
-
+/* LN: Not in use
 		if (seconds) {
 			say_num(seconds, SSM_PRONOUNCED);
 			if (seconds == 1) {
@@ -259,7 +257,7 @@ static switch_status_t nl_say_time(switch_core_session_t *session, char *tosay, 
 			say_file("digits/0.wav");
 			say_file("time/seconds.wav");
 		}
-
+*/
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -297,36 +295,20 @@ static switch_status_t nl_say_time(switch_core_session_t *session, char *tosay, 
 
 	if (say_date) {
 		say_file("time/day-%d.wav", tm.tm_wday);
-		say_file("time/mon-%d.wav", tm.tm_mon);
 		say_num(tm.tm_mday, SSM_COUNTED);
-		say_num(tm.tm_year + 1900, SSM_PRONOUNCED);
+		say_file("time/mon-%d.wav", tm.tm_mon);
+		/* say_num(tm.tm_year + 1900, SSM_PRONOUNCED); */
+	}
+
+	if (say_date && say_time) {
+		say_file("time/om.wav");
 	}
 
 	if (say_time) {
-		int32_t hour = tm.tm_hour, pm = 0;
+		say_num(tm.tm_hour, SSM_PRONOUNCED);
+		say_file("time/uur.wav");
 
-		if (hour > 12) {
-			hour -= 12;
-			pm = 1;
-		} else if (hour == 12) {
-			pm = 1;
-		} else if (hour == 0) {
-			hour = 12;
-			pm = 0;
-		}
-
-		say_num(hour, SSM_PRONOUNCED);
-
-		if (tm.tm_min > 9) {
-			say_num(tm.tm_min, SSM_PRONOUNCED);
-		} else if (tm.tm_min) {
-			say_file("time/oh.wav");
-			say_num(tm.tm_min, SSM_PRONOUNCED);
-		} else {
-			say_file("time/oclock.wav");
-		}
-
-		say_file("time/%s.wav", pm ? "p-m" : "a-m");
+		say_num(tm.tm_min, SSM_PRONOUNCED);
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -361,7 +343,7 @@ static switch_status_t nl_say_money(switch_core_session_t *session, char *tosay,
 
 	/* If negative say "negative" */
 	if (sbuf[0] == '-') {
-		say_file("currency/negative.wav");
+		say_file("currency/min.wav");
 		dollars++;
 	}
 
@@ -369,29 +351,20 @@ static switch_status_t nl_say_money(switch_core_session_t *session, char *tosay,
 	if (( status = nl_say_general_count(session, dollars, say_args, args)) != SWITCH_STATUS_SUCCESS ) {
 		return status;
 	}
-
-	if (atoi(dollars) == 1) {
-		say_file("currency/dollar.wav");
-	} else {
-		say_file("currency/dollars.wav");
-	}
+	say_file("currency/euro.wav");
 
 	/* Say "and" */
-	say_file("currency/and.wav");
+	say_file("currency/en.wav");
 
 	/* Say cents */
 	if (cents) {
 		if (( status = nl_say_general_count(session, cents, say_args, args)) != SWITCH_STATUS_SUCCESS) {
 			return status;
 		}
-		if (atoi(cents) == 1) {
-			say_file("currency/cent.wav");
-		} else {
-			say_file("currency/cents.wav");
-		}
+		say_file("currency/cent.wav");
 	} else {
 		say_file("digits/0.wav");
-		say_file("currency/cents.wav");
+		say_file("currency/cent.wav");
 	}
 
 	return SWITCH_STATUS_SUCCESS;
