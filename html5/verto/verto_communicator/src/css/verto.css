@@ -403,7 +403,6 @@ body .modal-body .btn-group .btn.active {
 }
 
 .call_direction {
-  position: absolute;
   margin-top: 6px;
 }
 
@@ -452,7 +451,6 @@ body .modal-body .btn-group .btn.active {
   overflow: hidden;
   overflow-wrap: break-word;
   margin-left: 26px !important;
-  position: absolute;
 }
 
 #dialpad .dialpad-number {
