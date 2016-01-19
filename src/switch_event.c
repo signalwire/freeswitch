@@ -2240,6 +2240,10 @@ SWITCH_DECLARE(char *) switch_event_expand_headers_check(switch_event_t *event, 
 					p++;
 					continue;
 				} else if (*(p + 1) == '\\') {
+					if (len + 1 >= olen) {
+						resize(1);
+					}
+
 					*c++ = *p++;
 					len++;
 					continue;
@@ -2264,6 +2268,10 @@ SWITCH_DECLARE(char *) switch_event_expand_headers_check(switch_event_t *event, 
 			}
 
 			if (nv) {
+				if (len + 1 >= olen) {
+					resize(1);
+				}
+
 				*c++ = *p;
 				len++;
 				nv = 0;
@@ -2464,11 +2472,12 @@ SWITCH_DECLARE(char *) switch_event_expand_headers_check(switch_event_t *event, 
 				vtype = 0;
 				br = 0;
 			}
-			if (len + 1 >= olen) {
-				resize(1);
-			}
 
 			if (sp) {
+				if (len + 1 >= olen) {
+					resize(1);
+				}
+
 				*c++ = ' ';
 				sp = 0;
 				len++;
@@ -2477,6 +2486,10 @@ SWITCH_DECLARE(char *) switch_event_expand_headers_check(switch_event_t *event, 
 			if (*p == '$') {
 				p--;
 			} else {
+				if (len + 1 >= olen) {
+					resize(1);
+				}
+
 				*c++ = *p;
 				len++;
 			}

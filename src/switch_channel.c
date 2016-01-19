@@ -3883,6 +3883,10 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables_check(switch_channel_t *c
 					p++;
 					continue;
 				} else if (*(p + 1) == '\\') {
+					if (len + 1 >= olen) {
+						resize(1);
+					}
+
 					*c++ = *p++;
 					len++;
 					continue;
@@ -3908,6 +3912,10 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables_check(switch_channel_t *c
 			}
 
 			if (nv) {
+				if (len + 1 >= olen) {
+					resize(1);
+				}
+
 				*c++ = *p;
 				len++;
 				nv = 0;
@@ -4103,11 +4111,12 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables_check(switch_channel_t *c
 				vname = NULL;
 				br = 0;
 			}
-			if (len + 1 >= olen) {
-				resize(1);
-			}
 
 			if (sp) {
+				if (len + 1 >= olen) {
+					resize(1);
+				}
+
 				*c++ = ' ';
 				sp = 0;
 				len++;
@@ -4116,6 +4125,10 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables_check(switch_channel_t *c
 			if (*p == '$') {
 				p--;
 			} else {
+				if (len + 1 >= olen) {
+					resize(1);
+				}
+
 				*c++ = *p;
 				len++;
 			}
