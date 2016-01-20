@@ -4191,6 +4191,7 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 
 					sofia_clear_pflag(profile, PFLAG_CHANNEL_XML_FETCH_ON_NIGHTMARE_TRANSFER);
 					sofia_clear_pflag(profile, PFLAG_FIRE_TRANFER_EVENTS);
+					sofia_clear_pflag(profile, PFLAG_BLIND_AUTH_ENFORCE_RESULT);
 					profile->shutdown_type = "false";
 					profile->local_network = "localnet.auto";
 					sofia_set_flag(profile, TFLAG_ENABLE_SOA);
@@ -5469,6 +5470,12 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 						}  else {
 							sofia_clear_pflag(profile, PFLAG_FIRE_TRANFER_EVENTS);
 						}
+                                        } else if (!strcasecmp(var, "enforce-blind-auth-result")) {
+                                                if(switch_true(val)) {
+                                                        sofia_set_pflag(profile, PFLAG_BLIND_AUTH_ENFORCE_RESULT);
+                                                }  else {
+                                                        sofia_clear_pflag(profile, PFLAG_BLIND_AUTH_ENFORCE_RESULT);
+                                                }
 					}
 				}
 
@@ -9434,6 +9441,7 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 
 	if (!is_auth && sofia_test_pflag(profile, PFLAG_AUTH_CALLS) && sofia_test_pflag(profile, PFLAG_BLIND_AUTH)) {
 		char *user;
+		switch_status_t blind_result = SWITCH_STATUS_FALSE;
 
 		if (!strcmp(network_ip, profile->sipip) && network_port == profile->sip_port) {
 			calling_myself++;
@@ -9441,10 +9449,11 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 
 		if (sip && sip->sip_from) {
 			user = switch_core_session_sprintf(session, "%s@%s", sip->sip_from->a_url->url_user, sip->sip_from->a_url->url_host);
-			switch_ivr_set_user(session, user);
+			blind_result = switch_ivr_set_user(session, user);
 		}
-
-		is_auth++;
+		if(!sofia_test_pflag(profile, PFLAG_BLIND_AUTH_ENFORCE_RESULT) || blind_result == SWITCH_STATUS_SUCCESS) {
+			is_auth++;
+		}
 	}
 
 	if (!is_auth &&
