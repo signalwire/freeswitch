@@ -1591,7 +1591,9 @@ static void our_sofia_event_callback(nua_event_t event,
 		sofia_handle_sip_i_info(nua, profile, nh, session, sip, de, tags);
 		break;
 	case nua_i_update:
-		sofia_update_callee_id(session, profile, sip, SWITCH_TRUE);
+		if (session) {
+			sofia_update_callee_id(session, profile, sip, SWITCH_TRUE);
+		}
 		break;
 	case nua_r_update:
 		if (session && tech_pvt && locked) {
