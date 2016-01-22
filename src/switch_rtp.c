@@ -5261,6 +5261,7 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 			if (rtp_session->has_rtcp) {
 				*flags |= SFF_RTCP;
 
+#ifdef ENABLE_SRTP
 				if (rtp_session->flags[SWITCH_RTP_FLAG_SECURE_RECV]) {
 					int sbytes = (int) *bytes;
 					err_status_t stat = 0;
@@ -5275,7 +5276,7 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 					
 					*bytes = sbytes;
 				}
-
+#endif
 				return SWITCH_STATUS_SUCCESS;
 			}
 		}
