@@ -71,7 +71,7 @@ api_command_t conference_api_sub_commands[] = {
 	{"unvmute", (void_fn_t) & conference_api_sub_unvmute, CONF_API_SUB_MEMBER_TARGET, "unvmute", "<[member_id|all]|last|non_moderator> [<quiet>]"},
 	{"deaf", (void_fn_t) & conference_api_sub_deaf, CONF_API_SUB_MEMBER_TARGET, "deaf", "<[member_id|all]|last|non_moderator>"},
 	{"undeaf", (void_fn_t) & conference_api_sub_undeaf, CONF_API_SUB_MEMBER_TARGET, "undeaf", "<[member_id|all]|last|non_moderator>"},
-	{"relate", (void_fn_t) & conference_api_sub_relate, CONF_API_SUB_ARGS_SPLIT, "relate", "<member_id> <other_member_id> [nospeak|nohear|clear]"},
+	{"relate", (void_fn_t) & conference_api_sub_relate, CONF_API_SUB_ARGS_SPLIT, "relate", "<member_id>[,<member_id>] <other_member_id>[,<other_member_id>] [nospeak|nohear|clear]"},
 	{"lock", (void_fn_t) & conference_api_sub_lock, CONF_API_SUB_ARGS_SPLIT, "lock", ""},
 	{"unlock", (void_fn_t) & conference_api_sub_unlock, CONF_API_SUB_ARGS_SPLIT, "unlock", ""},
 	{"agc", (void_fn_t) & conference_api_sub_agc, CONF_API_SUB_ARGS_SPLIT, "agc", ""},
@@ -1937,35 +1937,134 @@ switch_status_t conference_api_sub_stop(conference_obj_t *conference, switch_str
 	return SWITCH_STATUS_SUCCESS;
 }
 
+void _conference_api_sub_relate_show_member_relationships(conference_obj_t *conference, switch_stream_handle_t *stream, uint32_t member_id)
+{
+	conference_member_t *member;
+	for (member = conference->members; member; member = member->next) {
+		conference_relationship_t *rel;
+
+		if (member_id > 0 && member->id != member_id) continue;
+
+		for (rel = member->relationships; rel; rel = rel->next) {
+			stream->write_function(stream, "%d -> %d %s%s%s\n", member->id, rel->id,
+								   (rel->flags & RFLAG_CAN_SPEAK) ? "SPEAK " : "NOSPEAK ",
+								   (rel->flags & RFLAG_CAN_HEAR) ? "HEAR " : "NOHEAR ",
+								   (rel->flags & RFLAG_CAN_SEND_VIDEO) ? "SENDVIDEO " : "NOSENDVIDEO ");
+		}
+	}
+}
+
+void _conference_api_sub_relate_clear_member_relationship(conference_obj_t *conference, switch_stream_handle_t *stream, uint32_t id, uint32_t oid)
+{
+	conference_member_t *member = NULL, *other_member = NULL;
+	if ((member = conference_member_get(conference, id))) {
+		conference_member_del_relationship(member, oid);
+		other_member = conference_member_get(conference, oid);
+
+		if (other_member) {
+			if (conference_utils_member_test_flag(other_member, MFLAG_RECEIVING_VIDEO)) {
+				conference_utils_member_clear_flag(other_member, MFLAG_RECEIVING_VIDEO);
+				if (conference->floor_holder) {
+					switch_core_session_request_video_refresh(conference->floor_holder->session);
+				}
+			}
+			switch_thread_rwlock_unlock(other_member->rwlock);
+		}
+
+		stream->write_function(stream, "relationship %u->%u cleared.\n", id, oid);
+		switch_thread_rwlock_unlock(member->rwlock);
+	} else {
+		stream->write_function(stream, "relationship %u->%u not found.\n", id, oid);
+	}
+}
+
+void _conference_api_sub_relate_set_member_relationship(conference_obj_t *conference, switch_stream_handle_t *stream, uint32_t id, uint32_t oid, uint8_t nospeak, uint8_t nohear, uint8_t sendvideo, char *action)
+{
+
+	conference_member_t *member = NULL, *other_member = NULL;
+
+	if ((member = conference_member_get(conference, id))) {
+		other_member = conference_member_get(conference, oid);
+	}
+
+	if (member && other_member) {
+		conference_relationship_t *rel = NULL;
+
+		if (sendvideo && conference_utils_member_test_flag(other_member, MFLAG_RECEIVING_VIDEO) && (! (nospeak || nohear))) {
+			stream->write_function(stream, "member %d already receiving video", oid);
+			goto skip;
+		}
+
+		if ((rel = conference_member_get_relationship(member, other_member))) {
+			rel->flags = 0;
+		} else {
+			rel = conference_member_add_relationship(member, oid);
+		}
+
+		if (rel) {
+			switch_set_flag(rel, RFLAG_CAN_SPEAK | RFLAG_CAN_HEAR);
+			if (nospeak) {
+				switch_clear_flag(rel, RFLAG_CAN_SPEAK);
+				conference_utils_member_clear_flag_locked(member, MFLAG_TALKING);
+			}
+			if (nohear) {
+				switch_clear_flag(rel, RFLAG_CAN_HEAR);
+			}
+			if (sendvideo) {
+				switch_set_flag(rel, RFLAG_CAN_SEND_VIDEO);
+				conference_utils_member_set_flag(other_member, MFLAG_RECEIVING_VIDEO);
+				switch_core_session_request_video_refresh(member->session);
+			}
+
+			stream->write_function(stream, "ok %u->%u %s set\n", id, oid, action);
+		} else {
+			stream->write_function(stream, "error!\n");
+		}
+	} else {
+		stream->write_function(stream, "relationship %u->%u not found.\n", id, oid);
+	}
+
+skip:
+	if (member) {
+		switch_thread_rwlock_unlock(member->rwlock);
+	}
+
+	if (other_member) {
+		switch_thread_rwlock_unlock(other_member->rwlock);
+	}
+}
+
 switch_status_t conference_api_sub_relate(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv)
 {
 	uint8_t nospeak = 0, nohear = 0, sendvideo = 0, clear = 0;
+	int members = 0;
+	int other_members = 0;
+	char *members_array[100] = { 0 };
+	char *other_members_array[100] = { 0 };
+	char *lbuf_members = NULL, *lbuf_other_members = NULL, *action = NULL;
 
 	switch_assert(conference != NULL);
 	switch_assert(stream != NULL);
 
 	if (argc <= 3) {
-		conference_member_t *member;
-
 		switch_mutex_lock(conference->mutex);
 
 		if (conference->relationship_total) {
-			uint32_t member_id = 0;
-
-			if (argc == 3) member_id = atoi(argv[2]);
-
-			for (member = conference->members; member; member = member->next) {
-				conference_relationship_t *rel;
-
-				if (member_id > 0 && member->id != member_id) continue;
-
-				for (rel = member->relationships; rel; rel = rel->next) {
-					stream->write_function(stream, "%d -> %d %s%s%s\n", member->id, rel->id,
-										   (rel->flags & RFLAG_CAN_SPEAK) ? "SPEAK " : "NOSPEAK ",
-										   (rel->flags & RFLAG_CAN_HEAR) ? "HEAR " : "NOHEAR ",
-										   (rel->flags & RFLAG_CAN_SEND_VIDEO) ? "SENDVIDEO " : "NOSENDVIDEO ");
+			if (argc == 3) {
+				char *lbuf = NULL;
+				lbuf = strdup(argv[2]);
+				members = switch_separate_string(lbuf, ',', members_array, (sizeof(members_array) / sizeof(members_array[0])));
+				if (members) {
+					int i;
+					uint32_t member_id;
+					for (i = 0; i < members && members_array[i]; i++) {
+						member_id = atoi(members_array[i]);
+						_conference_api_sub_relate_show_member_relationships(conference, stream, member_id);
+					}
 				}
+				switch_safe_free(lbuf);
 			}
+
 		} else {
 			stream->write_function(stream, "No relationships\n");
 		}
@@ -1988,88 +2087,30 @@ switch_status_t conference_api_sub_relate(conference_obj_t *conference, switch_s
 		return SWITCH_STATUS_GENERR;
 	}
 
-	if (clear) {
-		conference_member_t *member = NULL, *other_member = NULL;
-		uint32_t id = atoi(argv[2]);
-		uint32_t oid = atoi(argv[3]);
-
-		if ((member = conference_member_get(conference, id))) {
-			conference_member_del_relationship(member, oid);
-			other_member = conference_member_get(conference, oid);
-
-			if (other_member) {
-				if (conference_utils_member_test_flag(other_member, MFLAG_RECEIVING_VIDEO)) {
-					conference_utils_member_clear_flag(other_member, MFLAG_RECEIVING_VIDEO);
-					if (conference->floor_holder) {
-						switch_core_session_request_video_refresh(conference->floor_holder->session);
-					}
+	lbuf_members = strdup(argv[2]);
+	lbuf_other_members = strdup(argv[3]);
+	action = strdup(argv[4]);
+	members = switch_separate_string(lbuf_members, ',', members_array, (sizeof(members_array) / sizeof(members_array[0])));
+	other_members = switch_separate_string(lbuf_other_members, ',', other_members_array, (sizeof(other_members_array) / sizeof(other_members_array[0])));
+	if (members && other_members) {
+		int i, i2;
+		uint32_t member_id, other_member_id;
+		for (i = 0; i < members && members_array[i]; i++) {
+			member_id = atoi(members_array[i]);
+			for (i2 = 0; i2 < other_members && other_members_array[i2]; i2++) {
+				other_member_id = atoi(other_members_array[i2]);
+				if (clear) {
+					_conference_api_sub_relate_clear_member_relationship(conference, stream, member_id, other_member_id);
 				}
-				switch_thread_rwlock_unlock(other_member->rwlock);
-			}
-
-			stream->write_function(stream, "relationship %u->%u cleared.\n", id, oid);
-			switch_thread_rwlock_unlock(member->rwlock);
-		} else {
-			stream->write_function(stream, "relationship %u->%u not found.\n", id, oid);
-		}
-		return SWITCH_STATUS_SUCCESS;
-	}
-
-	if (nospeak || nohear || sendvideo) {
-		conference_member_t *member = NULL, *other_member = NULL;
-		uint32_t id = atoi(argv[2]);
-		uint32_t oid = atoi(argv[3]);
-
-		if ((member = conference_member_get(conference, id))) {
-			other_member = conference_member_get(conference, oid);
-		}
-
-		if (member && other_member) {
-			conference_relationship_t *rel = NULL;
-
-			if (sendvideo && conference_utils_member_test_flag(other_member, MFLAG_RECEIVING_VIDEO) && (! (nospeak || nohear))) {
-				stream->write_function(stream, "member %d already receiving video", oid);
-				goto skip;
-			}
-
-			if ((rel = conference_member_get_relationship(member, other_member))) {
-				rel->flags = 0;
-			} else {
-				rel = conference_member_add_relationship(member, oid);
-			}
-
-			if (rel) {
-				switch_set_flag(rel, RFLAG_CAN_SPEAK | RFLAG_CAN_HEAR);
-				if (nospeak) {
-					switch_clear_flag(rel, RFLAG_CAN_SPEAK);
-					conference_utils_member_clear_flag_locked(member, MFLAG_TALKING);
+				if (nospeak || nohear || sendvideo) {
+					_conference_api_sub_relate_set_member_relationship(conference, stream, member_id, other_member_id, nospeak, nohear, sendvideo, action);
 				}
-				if (nohear) {
-					switch_clear_flag(rel, RFLAG_CAN_HEAR);
-				}
-				if (sendvideo) {
-					switch_set_flag(rel, RFLAG_CAN_SEND_VIDEO);
-					conference_utils_member_set_flag(other_member, MFLAG_RECEIVING_VIDEO);
-					switch_core_session_request_video_refresh(member->session);
-				}
-
-				stream->write_function(stream, "ok %u->%u %s set\n", id, oid, argv[4]);
-			} else {
-				stream->write_function(stream, "error!\n");
 			}
-		} else {
-			stream->write_function(stream, "relationship %u->%u not found.\n", id, oid);
-		}
-
-	skip:
-		if (member) {
-			switch_thread_rwlock_unlock(member->rwlock);
-		}
-
-		if (other_member) {
-			switch_thread_rwlock_unlock(other_member->rwlock);
 		}
 	}
+	switch_safe_free(lbuf_members);
+	switch_safe_free(lbuf_other_members);
+	switch_safe_free(action);
 
 	return SWITCH_STATUS_SUCCESS;
 }
