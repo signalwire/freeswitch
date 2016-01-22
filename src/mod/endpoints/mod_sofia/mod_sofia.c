@@ -24,7 +24,7 @@
  * Contributor(s):
  *
  * Anthony Minessale II <anthm@freeswitch.org>
- * Ken Rice <krice at cometsig.com>
+ * Ken Rice <krice at freeswitch.org>
  * Paul D. Tinsley <pdt at jackhammer.org>
  * Bret McDanel <trixter AT 0xdecafbad.com>
  * Raymond Chandler <intralanman@freeswitch.org>
