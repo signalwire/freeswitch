@@ -29,6 +29,7 @@
  * Bret McDanel <trixter AT 0xdecafbad.com>
  * Raymond Chandler <intralanman@freeswitch.org>
  * Emmanuel Schmidbauer <eschmidbauer@gmail.com>
+ * Kathleen King <kathleen.king@quentustech.com>
  *
  *
  * mod_sofia.c -- SOFIA SIP Endpoint
@@ -3460,16 +3461,16 @@ static switch_status_t cmd_profile(char **argv, int argc, switch_stream_handle_t
 		goto done;
 	}
 
-		if (!strcasecmp(argv[1], "capture")) {
-			   if (argc > 2) {
-					   int value = switch_true(argv[2]);
-					   nua_set_params(profile->nua, TPTAG_CAPT(value ? mod_sofia_globals.capture_server : NULL), TAG_END());
-					   stream->write_function(stream, "%s sip capturing on %s", value ? "Enabled" : "Disabled", profile->name);
-			   } else {
-					   stream->write_function(stream, "Usage: sofia profile <name> capture <on/off>\n");
-			   }
-			   goto done;
+	if (!strcasecmp(argv[1], "capture")) {
+		if (argc > 2) {
+			int value = switch_true(argv[2]);
+			nua_set_params(profile->nua, TPTAG_CAPT(value ? mod_sofia_globals.capture_server : NULL), TAG_END());
+			stream->write_function(stream, "%s sip capturing on %s", value ? "Enabled" : "Disabled", profile->name);
+		} else {
+			stream->write_function(stream, "Usage: sofia profile <name> capture <on/off>\n");
 		}
+		goto done;
+	}
 
 	if (!strcasecmp(argv[1], "watchdog")) {
 		if (argc > 2) {
@@ -6014,50 +6015,29 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 
 
 	SWITCH_ADD_API(api_interface, "sofia", "Sofia Controls", sofia_function, "<cmd> <args>");
-	SWITCH_ADD_API(api_interface, "sofia_gateway_data", "Get data from a sofia gateway", sofia_gateway_data_function,
-				   "<gateway_name> [ivar|ovar|var] <name>");
-	switch_console_set_complete("add sofia help");
-	switch_console_set_complete("add sofia status");
-	switch_console_set_complete("add sofia xmlstatus");
+	SWITCH_ADD_API(api_interface, "sofia_gateway_data", "Get data from a sofia gateway", sofia_gateway_data_function, "<gateway_name> [ivar|ovar|var] <name>");
+	switch_console_set_complete("add sofia ::[help:status");
+	switch_console_set_complete("add sofia status profile ::sofia::list_profiles reg");
+	switch_console_set_complete("add sofia status gateway ::sofia::list_gateways");
 
 	switch_console_set_complete("add sofia loglevel ::[all:default:tport:iptsec:nea:nta:nth_client:nth_server:nua:soa:sresolv:stun ::[0:1:2:3:4:5:6:7:8:9");
 	switch_console_set_complete("add sofia tracelevel ::[console:alert:crit:err:warning:notice:info:debug");
 
-	switch_console_set_complete("add sofia global siptrace ::[on:off");
-	switch_console_set_complete("add sofia global standby ::[on:off");
-	switch_console_set_complete("add sofia global capture  ::[on:off");
-	switch_console_set_complete("add sofia global watchdog ::[on:off");
-
+	switch_console_set_complete("add sofia global ::[siptrace::standby::capture::watchdog ::[on:off");
 	switch_console_set_complete("add sofia global debug ::[presence:sla:none");
 
-
-	switch_console_set_complete("add sofia profile");
 	switch_console_set_complete("add sofia profile restart all");
-
-	switch_console_set_complete("add sofia profile ::sofia::list_profiles start");
+	switch_console_set_complete("add sofia profile ::sofia::list_profiles ::[start:rescan:restart:check_sync");
 	switch_console_set_complete("add sofia profile ::sofia::list_profiles stop wait");
-	switch_console_set_complete("add sofia profile ::sofia::list_profiles rescan");
-	switch_console_set_complete("add sofia profile ::sofia::list_profiles restart");
+	switch_console_set_complete("add sofia profile ::sofia::list_profiles flush_inbound_reg reboot");
+	switch_console_set_complete("add sofia profile ::sofia::list_profiles ::[register:unregister all");
+	switch_console_set_complete("add sofia profile ::sofia::list_profiles ::[register:unregister:killgw ::sofia::list_profile_gateway");
+	switch_console_set_complete("add sofia profile ::sofia::list_profiles killgw _all_");
+	switch_console_set_complete("add sofia profile ::sofia::list_profiles ::[siptrace:capture:watchdog ::[on:off");
+	switch_console_set_complete("add sofia profile ::sofia::list_profiles gwlist ::[up:down");
 
-	switch_console_set_complete("add sofia profile ::sofia::list_profiles flush_inbound_reg");
-	switch_console_set_complete("add sofia profile ::sofia::list_profiles check_sync");
-	switch_console_set_complete("add sofia profile ::sofia::list_profiles register ::sofia::list_profile_gateway");
-	switch_console_set_complete("add sofia profile ::sofia::list_profiles unregister ::sofia::list_profile_gateway");
-	switch_console_set_complete("add sofia profile ::sofia::list_profiles killgw ::sofia::list_profile_gateway");
-	switch_console_set_complete("add sofia profile ::sofia::list_profiles siptrace on");
-	switch_console_set_complete("add sofia profile ::sofia::list_profiles siptrace off");
-	switch_console_set_complete("add sofia profile ::sofia::list_profiles capture on");
-	switch_console_set_complete("add sofia profile ::sofia::list_profiles capture off");
-	switch_console_set_complete("add sofia profile ::sofia::list_profiles watchdog on");
-	switch_console_set_complete("add sofia profile ::sofia::list_profiles watchdog off");
+	switch_console_set_complete("add sofia recover flush");
 
-	switch_console_set_complete("add sofia profile ::sofia::list_profiles gwlist up");
-	switch_console_set_complete("add sofia profile ::sofia::list_profiles gwlist down");
-
-	switch_console_set_complete("add sofia status profile ::sofia::list_profiles");
-	switch_console_set_complete("add sofia status profile ::sofia::list_profiles reg");
-	switch_console_set_complete("add sofia status gateway ::sofia::list_gateways");
-	switch_console_set_complete("add sofia xmlstatus profile ::sofia::list_profiles");
 	switch_console_set_complete("add sofia xmlstatus profile ::sofia::list_profiles reg");
 	switch_console_set_complete("add sofia xmlstatus gateway ::sofia::list_gateways");
 
