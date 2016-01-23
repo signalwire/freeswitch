@@ -497,12 +497,15 @@ static void octet_bit_field(logging_state_t *log,
     {
         if ((tag = yeah) == NULL)
             tag = "Set";
+        /*endif*/
     }
     else
     {
         if ((tag = neigh) == NULL)
             tag = "Not set";
+        /*endif*/
     }
+    /*endif*/
     /* Eh, voila! */
     span_log(log, SPAN_LOG_FLOW, "  %s= %s: %s\n", s, desc, tag);
 }
@@ -528,6 +531,7 @@ static void octet_field(logging_state_t *log,
     /* Edit the bit string for display. */
     for (i = start;  i < end;  i++)
         s[7 - i + ((i < 4)  ?  1  :  0)] = (uint8_t) ((octet >> i) & 1) + '0';
+    /*endfor*/
 
     /* Find the right tag to display. */
     octet = (uint8_t) ((octet >> start) & ((0xFF + (1 << (end - start))) & 0xFF));
@@ -539,7 +543,9 @@ static void octet_field(logging_state_t *log,
             tag = tags[i].str;
             break;
         }
+        /*endif*/
     }
+    /*endfor*/
     /* Eh, voila! */
     span_log(log, SPAN_LOG_FLOW, "  %s= %s: %s\n", s, desc, tag);
 }
@@ -670,6 +676,7 @@ SPAN_DECLARE(void) t30_decode_dis_dtc_dcs(t30_state_t *s, const uint8_t *pkt, in
 
     if (!span_log_test(&s->logging, SPAN_LOG_FLOW))
         return;
+    /*endif*/
     frame_type = pkt[2] & 0xFE;
     log = &s->logging;
     if (len <= 2)
@@ -677,6 +684,7 @@ SPAN_DECLARE(void) t30_decode_dis_dtc_dcs(t30_state_t *s, const uint8_t *pkt, in
         span_log(log, SPAN_LOG_FLOW, "  Frame is short\n");
         return;
     }
+    /*endif*/
 
     span_log(log, SPAN_LOG_FLOW, "%s:\n", t30_frametype(pkt[2]));
     if (len <= 3)
@@ -684,6 +692,7 @@ SPAN_DECLARE(void) t30_decode_dis_dtc_dcs(t30_state_t *s, const uint8_t *pkt, in
         span_log(log, SPAN_LOG_FLOW, "  Frame is short\n");
         return;
     }
+    /*endif*/
     octet_bit_field(log, pkt, 1, "Store and forward Internet fax (T.37)", NULL, NULL);
     octet_reserved_bit(log, pkt, 2, 0);
     octet_bit_field(log, pkt, 3, "Real-time Internet fax (T.38)", NULL, NULL);
@@ -699,12 +708,14 @@ SPAN_DECLARE(void) t30_decode_dis_dtc_dcs(t30_state_t *s, const uint8_t *pkt, in
         octet_bit_field(log, pkt, 6, "V.8 capabilities", NULL, NULL);
         octet_bit_field(log, pkt, 7, "Preferred octets", "64 octets", "256 octets");
     }
+    /*endif*/
     octet_reserved_bit(log, pkt, 8, 0);
     if (len <= 4)
     {
         span_log(log, SPAN_LOG_FLOW, "  Frame is short\n");
         return;
     }
+    /*endif*/
 
     if (frame_type == T30_DCS)
     {
@@ -718,6 +729,7 @@ SPAN_DECLARE(void) t30_decode_dis_dtc_dcs(t30_state_t *s, const uint8_t *pkt, in
         octet_bit_field(log, pkt, 10, "Can receive fax", NULL, NULL);
         octet_field(log, pkt, 11, 14, "Supported data signalling rates", available_signalling_rate_tags);
     }
+    /*endif*/
     octet_bit_field(log, pkt, 15, "R8x7.7lines/mm and/or 200x200pels/25.4mm", NULL, NULL);
     octet_bit_field(log, pkt, 16, "2-D coding", NULL, NULL);
     if (len <= 5)
@@ -725,6 +737,7 @@ SPAN_DECLARE(void) t30_decode_dis_dtc_dcs(t30_state_t *s, const uint8_t *pkt, in
         span_log(log, SPAN_LOG_FLOW, "  Frame is short\n");
         return;
     }
+    /*endif*/
 
     if (frame_type == T30_DCS)
     {
@@ -738,14 +751,17 @@ SPAN_DECLARE(void) t30_decode_dis_dtc_dcs(t30_state_t *s, const uint8_t *pkt, in
         octet_field(log, pkt, 19, 20, "Recording length", available_recording_length_tags);
         octet_field(log, pkt, 21, 23, "Receiver's minimum scan line time", available_minimum_scan_line_time_tags);
     }
+    /*endif*/
     octet_bit_field(log, pkt, 24, "Extension indicator", NULL, NULL);
     if (!(pkt[5] & DISBIT8))
         return;
+    /*endif*/
     if (len <= 6)
     {
         span_log(log, SPAN_LOG_FLOW, "  Frame is short\n");
         return;
     }
+    /*endif*/
 
     octet_reserved_bit(log, pkt, 25, 0);
     octet_bit_field(log, pkt, 26, "Compressed/uncompressed mode", "Uncompressed", "Compressed");
@@ -754,17 +770,20 @@ SPAN_DECLARE(void) t30_decode_dis_dtc_dcs(t30_state_t *s, const uint8_t *pkt, in
         octet_bit_field(log, pkt, 28, "Frame size", "64 octets", "256 octets");
     else
         octet_reserved_bit(log, pkt, 28, 0);
+    /*endif*/
     octet_reserved_bit(log, pkt, 29, 0);
     octet_reserved_bit(log, pkt, 30, 0);
     octet_bit_field(log, pkt, 31, "T.6 coding", NULL, NULL);
     octet_bit_field(log, pkt, 32, "Extension indicator", NULL, NULL);
     if (!(pkt[6] & DISBIT8))
         return;
+    /*endif*/
     if (len <= 7)
     {
         span_log(log, SPAN_LOG_FLOW, "  Frame is short\n");
         return;
     }
+    /*endif*/
 
     octet_bit_field(log, pkt, 33, "\"Field not valid\" supported", NULL, NULL);
     if (frame_type == T30_DCS)
@@ -777,6 +796,7 @@ SPAN_DECLARE(void) t30_decode_dis_dtc_dcs(t30_state_t *s, const uint8_t *pkt, in
         octet_bit_field(log, pkt, 34, "Multiple selective polling", NULL, NULL);
         octet_bit_field(log, pkt, 35, "Polled sub-address", NULL, NULL);
     }
+    /*endif*/
     octet_bit_field(log, pkt, 36, "T.43 coding", NULL, NULL);
     octet_bit_field(log, pkt, 37, "Plane interleave", NULL, NULL);
     octet_bit_field(log, pkt, 38, "Voice coding with 32kbit/s ADPCM (Rec. G.726)", NULL, NULL);
@@ -784,11 +804,13 @@ SPAN_DECLARE(void) t30_decode_dis_dtc_dcs(t30_state_t *s, const uint8_t *pkt, in
     octet_bit_field(log, pkt, 40, "Extension indicator", NULL, NULL);
     if (!(pkt[7] & DISBIT8))
         return;
+    /*endif*/
     if (len <= 8)
     {
         span_log(log, SPAN_LOG_FLOW, "  Frame is short\n");
         return;
     }
+    /*endif*/
     octet_bit_field(log, pkt, 41, "R8x15.4lines/mm", NULL, NULL);
     octet_bit_field(log, pkt, 42, "300x300pels/25.4mm", NULL, NULL);
     octet_bit_field(log, pkt, 43, "R16x15.4lines/mm and/or 400x400pels/25.4mm", NULL, NULL);
@@ -806,14 +828,17 @@ SPAN_DECLARE(void) t30_decode_dis_dtc_dcs(t30_state_t *s, const uint8_t *pkt, in
         octet_bit_field(log, pkt, 46, "Minimum scan line time for higher resolutions", "T15.4 = 1/2 T7.7", "T15.4 = T7.7");
         octet_bit_field(log, pkt, 47, "Selective polling", NULL, NULL);
     }
+    /*endif*/
     octet_bit_field(log, pkt, 48, "Extension indicator", NULL, NULL);
     if (!(pkt[8] & DISBIT8))
         return;
+    /*endif*/
     if (len <= 9)
     {
         span_log(log, SPAN_LOG_FLOW, "  Frame is short\n");
         return;
     }
+    /*endif*/
 
     octet_bit_field(log, pkt, 49, "Sub-addressing", NULL, NULL);
     if (frame_type == T30_DCS)
@@ -826,6 +851,7 @@ SPAN_DECLARE(void) t30_decode_dis_dtc_dcs(t30_state_t *s, const uint8_t *pkt, in
         octet_bit_field(log, pkt, 50, "Password", NULL, NULL);
         octet_bit_field(log, pkt, 51, "Ready to transmit a data file (polling)", NULL, NULL);
     }
+    /*endif*/
     octet_reserved_bit(log, pkt, 52, 0);
     octet_bit_field(log, pkt, 53, "Binary file transfer (BFT)", NULL, NULL);
     octet_bit_field(log, pkt, 54, "Document transfer mode (DTM)", NULL, NULL);
@@ -833,11 +859,13 @@ SPAN_DECLARE(void) t30_decode_dis_dtc_dcs(t30_state_t *s, const uint8_t *pkt, in
     octet_bit_field(log, pkt, 56, "Extension indicator", NULL, NULL);
     if (!(pkt[9] & DISBIT8))
         return;
+    /*endif*/
     if (len <= 10)
     {
         span_log(log, SPAN_LOG_FLOW, "  Frame is short\n");
         return;
     }
+    /*endif*/
 
     octet_bit_field(log, pkt, 57, "Basic transfer mode (BTM)", NULL, NULL);
     octet_reserved_bit(log, pkt, 58, 0);
@@ -845,6 +873,7 @@ SPAN_DECLARE(void) t30_decode_dis_dtc_dcs(t30_state_t *s, const uint8_t *pkt, in
         octet_reserved_bit(log, pkt, 59, 0);
     else
         octet_bit_field(log, pkt, 59, "Ready to transfer a character or mixed mode document (polling)", NULL, NULL);
+    /*endif*/
     octet_bit_field(log, pkt, 60, "Character mode", NULL, NULL);
     octet_reserved_bit(log, pkt, 61, 0);
     octet_bit_field(log, pkt, 62, "Mixed mode (Annex E/T.4)", NULL, NULL);
@@ -852,11 +881,13 @@ SPAN_DECLARE(void) t30_decode_dis_dtc_dcs(t30_state_t *s, const uint8_t *pkt, in
     octet_bit_field(log, pkt, 64, "Extension indicator", NULL, NULL);
     if (!(pkt[10] & DISBIT8))
         return;
+    /*endif*/
     if (len <= 11)
     {
         span_log(log, SPAN_LOG_FLOW, "  Frame is short\n");
         return;
     }
+    /*endif*/
 
     octet_bit_field(log, pkt, 65, "Processable mode 26 (Rec. T.505)", NULL, NULL);
     octet_bit_field(log, pkt, 66, "Digital network capability", NULL, NULL);
@@ -865,20 +896,24 @@ SPAN_DECLARE(void) t30_decode_dis_dtc_dcs(t30_state_t *s, const uint8_t *pkt, in
         octet_bit_field(log, pkt, 68, "Full colour mode", NULL, NULL);
     else
         octet_bit_field(log, pkt, 68, "JPEG coding", NULL, NULL);
+    /*endif*/
     octet_bit_field(log, pkt, 69, "Full colour mode", NULL, NULL);
     if (frame_type == T30_DCS)
         octet_bit_field(log, pkt, 70, "Preferred Huffman tables", NULL, NULL);
     else
         octet_reserved_bit(log, pkt, 70, 0);
+    /*endif*/
     octet_bit_field(log, pkt, 71, "12bits/pel component", NULL, NULL);
     octet_bit_field(log, pkt, 72, "Extension indicator", NULL, NULL);
     if (!(pkt[11] & DISBIT8))
         return;
+    /*endif*/
     if (len <= 12)
     {
         span_log(log, SPAN_LOG_FLOW, "  Frame is short\n");
         return;
     }
+    /*endif*/
 
     octet_bit_field(log, pkt, 73, "No subsampling (1:1:1)", NULL, NULL);
     octet_bit_field(log, pkt, 74, "Custom illuminant", NULL, NULL);
@@ -890,11 +925,13 @@ SPAN_DECLARE(void) t30_decode_dis_dtc_dcs(t30_state_t *s, const uint8_t *pkt, in
     octet_bit_field(log, pkt, 80, "Extension indicator", NULL, NULL);
     if (!(pkt[12] & DISBIT8))
         return;
+    /*endif*/
     if (len <= 13)
     {
         span_log(log, SPAN_LOG_FLOW, "  Frame is short\n");
         return;
     }
+    /*endif*/
 
     octet_bit_field(log, pkt, 81, "HKM key management", NULL, NULL);
     octet_bit_field(log, pkt, 82, "RSA key management", NULL, NULL);
@@ -906,11 +943,13 @@ SPAN_DECLARE(void) t30_decode_dis_dtc_dcs(t30_state_t *s, const uint8_t *pkt, in
     octet_bit_field(log, pkt, 88, "Extension indicator", NULL, NULL);
     if (!(pkt[13] & DISBIT8))
         return;
+    /*endif*/
     if (len <= 14)
     {
         span_log(log, SPAN_LOG_FLOW, "  Frame is short\n");
         return;
     }
+    /*endif*/
 
     octet_bit_field(log, pkt, 89, "Alternative hashing system 2", NULL, NULL);
     octet_bit_field(log, pkt, 90, "Alternative hashing system 3", NULL, NULL);
@@ -925,6 +964,7 @@ SPAN_DECLARE(void) t30_decode_dis_dtc_dcs(t30_state_t *s, const uint8_t *pkt, in
         span_log(log, SPAN_LOG_FLOW, "  Frame is short\n");
         return;
     }
+    /*endif*/
 
     octet_bit_field(log, pkt, 97, "Colour/gray-scale 300pels/25.4mm x 300lines/25.4mm or 400pels/25.4mm x 400lines/25.4mm resolution", NULL, NULL);
     octet_bit_field(log, pkt, 98, "100pels/25.4mm x 100lines/25.4mm for colour/gray scale", NULL, NULL);
@@ -939,16 +979,19 @@ SPAN_DECLARE(void) t30_decode_dis_dtc_dcs(t30_state_t *s, const uint8_t *pkt, in
         octet_bit_field(log, pkt, 100, "Extended BFT Negotiations capable", NULL, NULL);
         octet_bit_field(log, pkt, 101, "Internet Selective Polling address (ISP)", NULL, NULL);
     }
+    /*endif*/
     octet_bit_field(log, pkt, 102, "Internet Routing Address (IRA)", NULL, NULL);
     octet_reserved_bit(log, pkt, 103, 0);
     octet_bit_field(log, pkt, 104, "Extension indicator", NULL, NULL);
     if (!(pkt[15] & DISBIT8))
         return;
+    /*endif*/
     if (len <= 16)
     {
         span_log(log, SPAN_LOG_FLOW, "  Frame is short\n");
         return;
     }
+    /*endif*/
 
     octet_bit_field(log, pkt, 105, "600pels/25.4mm x 600lines/25.4mm", NULL, NULL);
     octet_bit_field(log, pkt, 106, "1200pels/25.4mm x 1200lines/25.4mm", NULL, NULL);
@@ -960,11 +1003,13 @@ SPAN_DECLARE(void) t30_decode_dis_dtc_dcs(t30_state_t *s, const uint8_t *pkt, in
     octet_bit_field(log, pkt, 112, "Extension indicator", NULL, NULL);
     if (!(pkt[16] & DISBIT8))
         return;
+    /*endif*/
     if (len <= 17)
     {
         span_log(log, SPAN_LOG_FLOW, "  Frame is short\n");
         return;
     }
+    /*endif*/
 
     octet_bit_field(log, pkt, 113, "Double sided printing capability (alternate mode)", NULL, NULL);
     octet_bit_field(log, pkt, 114, "Double sided printing capability (continuous mode)", NULL, NULL);
@@ -972,17 +1017,20 @@ SPAN_DECLARE(void) t30_decode_dis_dtc_dcs(t30_state_t *s, const uint8_t *pkt, in
         octet_bit_field(log, pkt, 115, "Black and white mixed raster content profile (MRCbw)", NULL, NULL);
     else
         octet_reserved_bit(log, pkt, 115, 0);
+    /*endif*/
     octet_bit_field(log, pkt, 116, "T.45 (run length colour encoded)", NULL, NULL);
     octet_field(log, pkt, 117, 118, "Shared memory", shared_data_memory_capacity_tags);
     octet_bit_field(log, pkt, 119, "T.44 colour space", NULL, NULL);
     octet_bit_field(log, pkt, 120, "Extension indicator", NULL, NULL);
     if (!(pkt[17] & DISBIT8))
         return;
+    /*endif*/
     if (len <= 18)
     {
         span_log(log, SPAN_LOG_FLOW, "  Frame is short\n");
         return;
     }
+    /*endif*/
 
     octet_bit_field(log, pkt, 121, "Flow control capability for T.38 communication", NULL, NULL);
     octet_bit_field(log, pkt, 122, "K>4", NULL, NULL);
@@ -992,6 +1040,7 @@ SPAN_DECLARE(void) t30_decode_dis_dtc_dcs(t30_state_t *s, const uint8_t *pkt, in
     octet_bit_field(log, pkt, 128, "Extension indicator", NULL, NULL);
     if (!(pkt[18] & DISBIT8))
         return;
+    /*endif*/
 
     span_log(log, SPAN_LOG_FLOW, "  Extended beyond the current T.30 specification!\n");
 }

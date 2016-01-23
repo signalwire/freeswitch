@@ -2712,6 +2712,7 @@ static int send_cfr_sequence(t30_state_t *s, int start)
         s->step++;
         if (send_csa_frame(s))
             break;
+        /*endif*/
         /* Fall through */
     case 1:
         s->step++;
@@ -5721,6 +5722,7 @@ static void set_phase(t30_state_t *s, int phase)
     case T30_PHASE_D_TX:
         if (!s->far_end_detected  &&  s->timer_t0_t1 > 0)
         {
+            /* Switch from T0 to T1 */
             s->timer_t0_t1 = ms_to_samples(DEFAULT_TIMER_T1);
             s->far_end_detected = true;
         }
@@ -5822,7 +5824,10 @@ static void set_state(t30_state_t *s, int state)
 static void repeat_last_command(t30_state_t *s)
 {
     s->step = 0;
-    if (++s->retries >= MAX_COMMAND_TRIES)
+    /* If T0 or T1 are in progress we do not want to apply a limit to the maximum number of retries. We
+       let T0 or T1 terminate things if the far end doesn't communicate. */
+    s->retries++;
+    if (s->timer_t0_t1 == 0  &&  s->retries >= MAX_COMMAND_TRIES)
     {
         span_log(&s->logging, SPAN_LOG_FLOW, "Too many retries. Giving up.\n");
         switch (s->state)
@@ -6667,6 +6672,7 @@ static void t30_hdlc_rx_status(void *user_data, int status)
     case SIG_STATUS_FRAMING_OK:
         if (!s->far_end_detected  &&  s->timer_t0_t1 > 0)
         {
+            /* Switch from T0 to T1 */
             s->timer_t0_t1 = ms_to_samples(DEFAULT_TIMER_T1);
             s->far_end_detected = true;
             if (s->phase == T30_PHASE_A_CED  ||  s->phase == T30_PHASE_A_CNG)
