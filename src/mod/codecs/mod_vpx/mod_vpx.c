@@ -186,7 +186,7 @@ static inline int IS_VP8_KEY_FRAME(uint8_t *data)
 	if (S && (PID == 0)) {
 		return __IS_VP8_KEY_FRAME(*data);
 	} else {
-		if (PID > 0) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "PID: %d\n", PID);
+		// if (PID > 0) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "PID: %d\n", PID);
 		return 0;
 	}
 }
@@ -251,7 +251,7 @@ static switch_status_t init_decoder(switch_codec_t *codec)
 
 	if (context->flags & SWITCH_CODEC_FLAG_DECODE && !context->decoder_init) {
 		vp8_postproc_cfg_t ppcfg;
-		
+
 		//if (context->decoder_init) {
 		//	vpx_codec_destroy(&context->decoder);
 		//	context->decoder_init = 0;
@@ -260,11 +260,11 @@ static switch_status_t init_decoder(switch_codec_t *codec)
 		cfg.threads = switch_core_cpu_count();
 
 		if (!context->is_vp9) { // vp8 only
-			dec_flags = VPX_CODEC_USE_POSTPROC;
+			// dec_flags = VPX_CODEC_USE_POSTPROC;
 		}
 
 		if (vpx_codec_dec_init(&context->decoder, context->decoder_interface, &cfg, dec_flags) != VPX_CODEC_OK) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec init error: [%d:%s]\n", context->encoder.err, context->encoder.err_detail);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec %s init error: [%d:%s]\n", vpx_codec_iface_name(context->decoder_interface), context->encoder.err, context->encoder.err_detail);
 			return SWITCH_STATUS_FALSE;
 		}
 
@@ -466,7 +466,7 @@ static switch_status_t init_encoder(switch_codec_t *codec)
 #endif
 
 		if (vpx_codec_enc_init(&context->encoder, context->encoder_interface, config, 0 & VPX_CODEC_USE_OUTPUT_PARTITION) != VPX_CODEC_OK) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec init error: [%d:%s]\n", context->encoder.err, context->encoder.err_detail);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec %s init error: [%d:%s]\n", vpx_codec_iface_name(context->encoder_interface), context->encoder.err, context->encoder.err_detail);
 			return SWITCH_STATUS_FALSE;
 		}
 		
