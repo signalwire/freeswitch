@@ -427,7 +427,7 @@ SWITCH_DECLARE(void) switch_json_add_presence_data_cols(switch_event_t *event, c
 
 SWITCH_DECLARE(void) switch_event_launch_dispatch_threads(uint32_t max);
 
-SWITCH_DECLARE(uint32_t) switch_event_channel_broadcast(const char *event_channel, cJSON **json, const char *key, switch_event_channel_id_t id);
+SWITCH_DECLARE(switch_status_t) switch_event_channel_broadcast(const char *event_channel, cJSON **json, const char *key, switch_event_channel_id_t id);
 SWITCH_DECLARE(uint32_t) switch_event_channel_unbind(const char *event_channel, switch_event_channel_func_t func);
 SWITCH_DECLARE(switch_status_t) switch_event_channel_bind(const char *event_channel, switch_event_channel_func_t func, switch_event_channel_id_t *id);
 														  
