@@ -908,6 +908,11 @@ SWITCH_DECLARE(const char *) switch_get_addr(char *buf, switch_size_t len, switc
 	return buf;
 }
 
+SWITCH_DECLARE(int) switch_socket_fd_get(switch_socket_t *sock)
+{
+	return apr_socket_fd_get(sock);
+}
+
 SWITCH_DECLARE(uint16_t) switch_sockaddr_get_port(switch_sockaddr_t *sa)
 {
 	return sa->port;

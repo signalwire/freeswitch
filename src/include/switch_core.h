@@ -2652,6 +2652,19 @@ SWITCH_DECLARE(switch_status_t) switch_core_del_registration(const char *user, c
 */
 SWITCH_DECLARE(switch_status_t) switch_core_expire_registration(int force);
 
+/*!
+ \brief Get RTP port range start value
+ \param[in] void
+ \param[out] RTP port range start value
+*/
+SWITCH_DECLARE(uint16_t) switch_core_get_rtp_port_range_start_port(void);
+
+/*!
+ \brief Get RTP port range end value
+ \param[in] void
+ \param[out] RTP port range end value
+*/
+SWITCH_DECLARE(uint16_t) switch_core_get_rtp_port_range_end_port(void);
 
 SWITCH_DECLARE(char *) switch_say_file_handle_get_variable(switch_say_file_handle_t *sh, const char *var);
 SWITCH_DECLARE(char *) switch_say_file_handle_get_path(switch_say_file_handle_t *sh);

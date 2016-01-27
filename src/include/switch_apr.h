@@ -1103,6 +1103,12 @@ SWITCH_DECLARE(switch_status_t) switch_socket_accept(switch_socket_t ** new_sock
  */
 SWITCH_DECLARE(switch_status_t) switch_socket_connect(switch_socket_t *sock, switch_sockaddr_t *sa);
 
+/**
+ * Get socket fd for the switch socket passed
+ * @param sock The socket we wish to have fd
+ */
+SWITCH_DECLARE(int) switch_socket_fd_get(switch_socket_t *sock);
+
 SWITCH_DECLARE(uint16_t) switch_sockaddr_get_port(switch_sockaddr_t *sa);
 SWITCH_DECLARE(const char *) switch_get_addr(char *buf, switch_size_t len, switch_sockaddr_t *in);
 SWITCH_DECLARE(switch_status_t) switch_getnameinfo(char **hostname, switch_sockaddr_t *sa, int32_t flags);
