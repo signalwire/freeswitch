@@ -2730,6 +2730,10 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_set_local_address(switch_rtp_t *rtp_s
 
 SWITCH_DECLARE(void) switch_rtp_set_max_missed_packets(switch_rtp_t *rtp_session, uint32_t max)
 {
+	if (!switch_rtp_ready(rtp_session) || rtp_session->flags[SWITCH_RTP_FLAG_UDPTL]) {
+		return;
+	}
+
 	if (rtp_session->missed_count >= max) {
 		
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING,
@@ -2834,6 +2838,9 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_udptl_mode(switch_rtp_t *rtp_session)
 		memset(&rtp_session->timer, 0, sizeof(rtp_session->timer));
 		switch_rtp_clear_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER);
 	}
+
+	rtp_session->missed_count = 0;
+	rtp_session->max_missed_packets = 0;
 
 	rtp_session->flags[SWITCH_RTP_FLAG_ENABLE_RTCP] = 0;
 
@@ -6320,7 +6327,8 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 					goto end;
 				}
 
-				if (rtp_session->max_missed_packets && read_loops == 1 && !rtp_session->flags[SWITCH_RTP_FLAG_VIDEO]) {
+				if (rtp_session->max_missed_packets && read_loops == 1 && !rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] && 
+					!rtp_session->flags[SWITCH_RTP_FLAG_UDPTL]) {
 					if (bytes && status == SWITCH_STATUS_SUCCESS) {
 						rtp_session->missed_count = 0;
 					} else if (++rtp_session->missed_count >= rtp_session->max_missed_packets) {
