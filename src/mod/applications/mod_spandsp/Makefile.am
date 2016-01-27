@@ -16,9 +16,9 @@ mod_spandsp_la_LIBADD   = $(switch_builddir)/libfreeswitch.la $(SPANDSP_LA) $(TI
 mod_spandsp_la_LDFLAGS  = -avoid-version -module -no-undefined -shared
 
 $(SPANDSP_LA): $(TIFF_LA) $(SPANDSP_DIR) $(SPANDSP_DIR)/.update
-	cd $(SPANDSP_BUILDDIR) && $(MAKE) -j1 CPPFLAGS="$(CPPFLAGS) -I$(TIFF_BUILDDIR)/libtiff -I$(TIFF_DIR)/libtiff" CFLAGS="$(CFLAGS)"
+	cd $(SPANDSP_BUILDDIR) && $(MAKE) CPPFLAGS="$(CPPFLAGS) -I$(TIFF_BUILDDIR)/libtiff -I$(TIFF_DIR)/libtiff" CFLAGS="$(CFLAGS)"
 	$(TOUCH_TARGET)
 
 $(TIFF_LA): $(TIFF_DIR) $(TIFF_DIR)/.update
-	cd $(TIFF_BUILDDIR) && $(MAKE) -j1
+	cd $(TIFF_BUILDDIR) && $(MAKE)
 	$(TOUCH_TARGET)
