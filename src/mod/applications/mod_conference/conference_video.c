@@ -1828,7 +1828,7 @@ void conference_video_pop_next_image(conference_member_t *member, switch_image_t
 				break;
 			}
 			size = switch_queue_size(member->video_queue);
-		} while(size > 1);
+		} while(size > 0);
 
 		if (conference_utils_member_test_flag(member, MFLAG_CAN_BE_SEEN) && member->video_layer_id > -1 && switch_core_session_media_flow(member->session, SWITCH_MEDIA_TYPE_VIDEO) != SWITCH_MEDIA_FLOW_SENDONLY) {
 			if (img) {
