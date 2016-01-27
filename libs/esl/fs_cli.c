@@ -68,6 +68,7 @@ typedef struct {
 	char prompt_color[12];
 	char input_text_color[12];
 	char output_text_color[12];
+	char prompt_string[512];
 } cli_profile_t;
 
 static const int log_uuid_short_length = 8;
@@ -99,7 +100,9 @@ static History *myhistory;
 static HistEvent ev;
 #endif
 
-
+static char hostname[256] = "";
+static char switchname[256] = "";
+static char switch_hostname[256] = "";
 static esl_mutex_t *MUTEX = NULL;
 
 static void _sleep_ns(int secs, long nsecs) {
@@ -1300,6 +1303,8 @@ static void read_config(const char *dft_cfile, const char *cfile) {
 				profiles[pcount-1].use_history_file = !esl_true(val);
 			} else if(!strcasecmp(var, "prompt-color")) {
 				esl_set_string(profiles[pcount-1].prompt_color, match_color(val));
+			} else if(!strcasecmp(var, "prompt-string")) {
+				esl_set_string(profiles[pcount-1].prompt_string, val);
 			} else if(!strcasecmp(var, "input-text-color")) {
 				esl_set_string(profiles[pcount-1].input_text_color, match_color(val));
 			} else if(!strcasecmp(var, "output-text-color")) {
@@ -1339,6 +1344,58 @@ static void clear_el_buffer(void) {
 	memset((char*)lf->buffer, 0, len);
 #endif
 }
+
+static void expand_prompt(char *s, size_t len, cli_profile_t *profile)
+{
+	char tmp[512] = "";
+	char *p, *q = tmp;
+
+	for (p = s; p && *p; p++) {
+		if (*p == '%') {
+			p++;
+			
+			switch(*p) {
+			case 's':
+				esl_copy_string(q, switchname, len - (q - &tmp[0]));
+				q += strlen(switchname);
+				break;
+			case 'h':
+				esl_copy_string(q, hostname, len - (q - &tmp[0]));
+				q += strlen(hostname);
+				break;
+			case 'H':
+				esl_copy_string(q, switch_hostname, len - (q - &tmp[0]));
+				q += strlen(switch_hostname);
+				break;
+			case 'p':
+				esl_copy_string(q, profile->name, len - (q - &tmp[0]));
+				q += strlen(profile->name);
+				break;
+			case 'o':
+				esl_copy_string(q, profile->host, len - (q - &tmp[0]));
+				q += strlen(profile->host);
+				break;
+			case 'P':
+				{
+					char ptmp[35] = "";
+					esl_snprintf(ptmp, sizeof(ptmp), "%d", profile->port);
+					esl_copy_string(q, ptmp, len - (q - &tmp[0]));
+					q += strlen(ptmp);
+				}
+				break;
+			case '%':
+				*q++ = '%';
+				break;
+			}
+		} else {
+			*q++ = *p;
+		}
+	}
+
+	esl_copy_string(s, tmp, len);
+
+}
+
 
 int main(int argc, char *argv[])
 {
@@ -1403,6 +1460,7 @@ int main(int argc, char *argv[])
 	int loops = 2, reconnect = 0;
 	char *ccheck;
 
+	gethostname(hostname, sizeof(hostname));
 
 	esl_mutex_create(&MUTEX);
 			
@@ -1430,7 +1488,7 @@ int main(int argc, char *argv[])
 
 	strncpy(internal_profile.host, "127.0.0.1", sizeof(internal_profile.host));
 	strncpy(internal_profile.pass, "ClueCon", sizeof(internal_profile.pass));
-	strncpy(internal_profile.name, "internal", sizeof(internal_profile.name));
+	strncpy(internal_profile.name, hostname, sizeof(internal_profile.name));
 	internal_profile.port = 8021;
 	set_fn_keys(&internal_profile);
 	esl_set_string(internal_profile.prompt_color, prompt_color);
@@ -1541,10 +1599,17 @@ int main(int argc, char *argv[])
 	}
 	if (!profile) {
 		if (get_profile("default", &profile)) {
-			esl_log(ESL_LOG_DEBUG, "profile default does not exist using builtin profile\n");
-			profile = &internal_profile;
+			if (!esl_strlen_zero(profiles[0].name)) {
+				profile = &profiles[0];
+			}
 		}
 	}
+	
+	if (!profile) {
+		esl_log(ESL_LOG_DEBUG, "no profiles found, using builtin profile\n");
+		profile = &internal_profile;
+	}
+
 	if (temp_log < 0 ) {
 		esl_global_set_default_logger(profile->debug);
 	}
@@ -1582,25 +1647,7 @@ int main(int argc, char *argv[])
 	esl_set_string(prompt_color, profile->prompt_color);
 	esl_set_string(input_text_color, profile->input_text_color);
 	esl_set_string(output_text_color, profile->output_text_color);
-	if (argv_host) {
-		if (argv_port && profile->port != 8021) {
-			snprintf(bare_prompt_str, sizeof(bare_prompt_str), "freeswitch@%s:%u@%s> ", profile->host, profile->port, profile->name);
-		} else {
-			snprintf(bare_prompt_str, sizeof(bare_prompt_str), "freeswitch@%s@%s> ", profile->host, profile->name);
-		}
-	} else {
-		snprintf(bare_prompt_str, sizeof(bare_prompt_str), "freeswitch@%s> ", profile->name);
-	}
-	bare_prompt_str_len = (int)strlen(bare_prompt_str);
-	if (feature_level) {
-#if HAVE_DECL_EL_PROMPT_ESC
-		snprintf(prompt_str, sizeof(prompt_str), "\1%s\1%s\1%s\1", prompt_color, bare_prompt_str, input_text_color);
-#else
-		snprintf(prompt_str, sizeof(prompt_str), "%s%s%s", prompt_color, bare_prompt_str, input_text_color);
-#endif
-	} else {
-		snprintf(prompt_str, sizeof(prompt_str), "%s", bare_prompt_str);
-	}
+
  connect:
 	connected = 0;
 	while (--loops > 0) {
@@ -1656,6 +1703,42 @@ int main(int argc, char *argv[])
 		esl_disconnect(&handle);
 		return 0;
 	}
+
+	snprintf(cmd_str, sizeof(cmd_str), "api switchname\n\n");
+	esl_send_recv(global_handle, cmd_str);
+	if (global_handle->last_sr_event && global_handle->last_sr_event->body) {
+		esl_set_string(switchname, global_handle->last_sr_event->body);
+	} else {
+		esl_set_string(switchname, profile->name);
+	}
+
+
+	snprintf(cmd_str, sizeof(cmd_str), "api hostname\n\n");
+	esl_send_recv(global_handle, cmd_str);
+	if (global_handle->last_sr_event && global_handle->last_sr_event->body) {
+		esl_set_string(switch_hostname, global_handle->last_sr_event->body);
+	} else {
+		esl_set_string(switch_hostname, profile->name);
+	}
+
+	if (!esl_strlen_zero(profile->prompt_string)) {
+		expand_prompt(profile->prompt_string, sizeof(profile->prompt_string), profile);
+		snprintf(bare_prompt_str, sizeof(bare_prompt_str), "%s> ", profile->prompt_string);
+	} else {
+		snprintf(bare_prompt_str, sizeof(bare_prompt_str), "freeswitch@%s> ", switchname);
+	}
+
+	bare_prompt_str_len = (int)strlen(bare_prompt_str);
+	if (feature_level) {
+#if HAVE_DECL_EL_PROMPT_ESC
+		snprintf(prompt_str, sizeof(prompt_str), "\1%s\1%s\1%s\1", prompt_color, bare_prompt_str, input_text_color);
+#else
+		snprintf(prompt_str, sizeof(prompt_str), "%s%s%s", prompt_color, bare_prompt_str, input_text_color);
+#endif
+	} else {
+		snprintf(prompt_str, sizeof(prompt_str), "%s", bare_prompt_str);
+	}
+
 
 #ifdef HAVE_LIBEDIT
 	el = el_init(__FILE__, stdin, stdout, stderr);
