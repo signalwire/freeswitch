@@ -2925,6 +2925,29 @@ static int list_result_callback(void *pArg, int argc, char **argv, char **column
 	return 0;
 }
 
+
+struct list_result_json {
+	const char *name;
+	const char *format;
+	int row_process;
+	switch_stream_handle_t *stream;
+	cJSON *json_reply;
+};
+
+static int list_result_json_callback(void *pArg, int argc, char **argv, char **columnNames)
+{
+	struct list_result_json *cbt = (struct list_result_json *) pArg;
+	cJSON *o = cJSON_CreateObject();
+	int i = 0;
+
+	cbt->row_process++;
+	for ( i = 0; i < argc; i++) {
+		cJSON_AddItemToObject(o, columnNames[i], cJSON_CreateString(argv[i]));
+	}
+	cJSON_AddItemToArray(cbt->json_reply, o);
+	return 0;
+}
+
 #define CC_CONFIG_API_SYNTAX "callcenter_config <target> <args>,\n"\
 "\tcallcenter_config agent add [name] [type] | \n" \
 "\tcallcenter_config agent del [name] | \n" \
@@ -3124,7 +3147,7 @@ SWITCH_STANDARD_API(cc_config_api_function)
 			switch_safe_free(sql);
 			stream->write_function(stream, "%s", "+OK\n");
 		}
-
+		
 	} else if (section && !strcasecmp(section, "tier")) {
 		if (action && !strcasecmp(action, "add")) {
 			if (argc-initial_argc < 2) {
@@ -3414,11 +3437,171 @@ done:
 	return SWITCH_STATUS_SUCCESS;
 }
 
+
+SWITCH_STANDARD_JSON_API(json_callcenter_config_function)
+{
+	
+	cJSON *data = cJSON_GetObjectItem(json, "data");
+	const char *error = NULL;
+	const char *arguments = cJSON_GetObjectCstr(data, "arguments");
+
+	/* Validate the arguments - try to keep it similar to the CLI api */
+	if(zstr(arguments)){
+		return SWITCH_STATUS_FALSE;
+	}
+
+	/* Prepare the JSON for list of agents */
+	if(!strcasecmp(arguments, "agent list")){
+		struct list_result_json cbt;
+		char *sql;
+		cbt.row_process = 0;
+		cbt.json_reply = cJSON_CreateArray();
+		sql = switch_mprintf("SELECT * FROM agents");
+		cc_execute_sql_callback(NULL /* queue */, NULL /* mutex */, sql, list_result_json_callback, &cbt /* Call back variables */);
+		switch_safe_free(sql);
+		*json_reply = cbt.json_reply;
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	/* Prepare the JSON for list of queues */
+	if(!strcasecmp(arguments, "queue list")){
+		cJSON *reply = cJSON_CreateArray();
+		switch_hash_index_t *hi;
+        switch_mutex_lock(globals.mutex);
+        
+        for (hi = switch_core_hash_first(globals.queue_hash); hi; hi = switch_core_hash_next(&hi)) {
+        	cJSON *o = cJSON_CreateObject();
+            void *val = NULL;
+            const void *key;
+            switch_ssize_t keylen;
+            cc_queue_t *queue;
+            switch_core_hash_this(hi, &key, &keylen, &val);
+            queue = (cc_queue_t *) val;
+            cJSON_AddItemToObject(o, "name", cJSON_CreateString(queue->name));
+            cJSON_AddItemToObject(o, "strategy", cJSON_CreateString(queue->strategy));
+            cJSON_AddItemToObject(o, "moh_sound", cJSON_CreateString(queue->moh));
+            cJSON_AddItemToObject(o, "time_base_score", cJSON_CreateString(queue->time_base_score));
+            cJSON_AddItemToObject(o, "tier_rules_apply", cJSON_CreateString(queue->tier_rules_apply ? "true" : "false"));
+            cJSON_AddItemToObject(o, "tier_rule_wait_second", cJSON_CreateNumber(queue->tier_rule_wait_second));
+            cJSON_AddItemToObject(o, "tier_rule_wait_multiply_level", cJSON_CreateString(queue->tier_rule_wait_multiply_level ? "true": "false"));
+            cJSON_AddItemToObject(o, "tier_rule_no_agent_no_wait", cJSON_CreateString(queue->tier_rule_no_agent_no_wait ? "true": "false"));
+            cJSON_AddItemToObject(o, "discard_abandoned_after", cJSON_CreateNumber(queue->discard_abandoned_after));
+            cJSON_AddItemToObject(o, "abandoned_resume_allowed", cJSON_CreateString(queue->abandoned_resume_allowed ? "true": "false"));
+            cJSON_AddItemToObject(o, "max_wait_time", cJSON_CreateNumber(queue->max_wait_time));
+            cJSON_AddItemToObject(o, "max_wait_time_with_no_agent", cJSON_CreateNumber(queue->max_wait_time_with_no_agent));
+            cJSON_AddItemToObject(o, "max_wait_time_with_no_agent_time_reached", cJSON_CreateNumber(queue->max_wait_time_with_no_agent_time_reached));
+            cJSON_AddItemToObject(o, "record_template", cJSON_CreateString(queue->record_template));
+        	cJSON_AddItemToArray(reply, o);
+            queue = NULL;
+        }
+        switch_mutex_unlock(globals.mutex);
+		*json_reply = reply;
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	/* Prepare the JSON for list of agents for a queue */
+	if(!strcasecmp(arguments, "queue list agents")){
+		struct list_result_json cbt;
+		const char *queue_name = cJSON_GetObjectCstr(data, "queue_name");
+		char *sql;
+		cJSON *error_reply = cJSON_CreateObject();
+
+		if (zstr(queue_name)) {
+			error = "Missing data attribute: queue_name";
+			cJSON_AddItemToObject(error_reply, "error", cJSON_CreateString(error));
+			*json_reply = error_reply;
+			return SWITCH_STATUS_FALSE;
+		}
+		cbt.row_process = 0;
+		cbt.json_reply = cJSON_CreateArray();
+		sql = switch_mprintf("SELECT agents.* FROM agents,tiers WHERE tiers.agent = agents.name AND tiers.queue = '%q'", queue_name);
+		cc_execute_sql_callback(NULL /* queue */, NULL /* mutex */, sql, list_result_json_callback, &cbt /* Call back variables */);
+		switch_safe_free(sql);
+		*json_reply = cbt.json_reply;
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	/* Prepare the JSON for list of callers for a queue */
+	if(!strcasecmp(arguments, "queue list members")){
+		struct list_result_json cbt;
+		const char *queue_name = cJSON_GetObjectCstr(data, "queue_name");
+		char *sql;
+		cJSON *error_reply = cJSON_CreateObject();
+
+		if (zstr(queue_name)) {
+			error = "Missing data attribute: queue_name";
+			cJSON_AddItemToObject(error_reply, "error", cJSON_CreateString(error));
+			*json_reply = error_reply;
+			return SWITCH_STATUS_FALSE;
+		}
+		cbt.row_process = 0;
+		cbt.json_reply = cJSON_CreateArray();
+		sql = switch_mprintf("SELECT  *,(%" SWITCH_TIME_T_FMT "-joined_epoch)+base_score+skill_score AS score FROM members WHERE queue = '%q' ORDER BY score DESC;", local_epoch_time_now(NULL), queue_name);
+		cc_execute_sql_callback(NULL /* queue */, NULL /* mutex */, sql, list_result_json_callback, &cbt /* Call back variables */);
+		switch_safe_free(sql);
+		*json_reply = cbt.json_reply;
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	/* Prepare the JSON for list of tiers for a queue */
+	if(!strcasecmp(arguments, "queue list tiers")){
+		struct list_result_json cbt;
+		const char *queue_name = cJSON_GetObjectCstr(data, "queue_name");
+		char *sql;
+		cJSON *error_reply = cJSON_CreateObject();
+
+		if (zstr(queue_name)) {
+			error = "Missing data attribute: queue_name";
+			cJSON_AddItemToObject(error_reply, "error", cJSON_CreateString(error));
+			*json_reply = error_reply;
+			return SWITCH_STATUS_FALSE;
+		}
+		cbt.row_process = 0;
+		cbt.json_reply = cJSON_CreateArray();
+		sql = switch_mprintf("SELECT * FROM tiers WHERE queue = '%q';", queue_name);
+		cc_execute_sql_callback(NULL /* queue */, NULL /* mutex */, sql, list_result_json_callback, &cbt /* Call back variables */);
+		switch_safe_free(sql);
+		*json_reply = cbt.json_reply;
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	/* Prepare the JSON for list of all callers */
+	if(!strcasecmp(arguments, "member list")){
+		struct list_result_json cbt;
+		char *sql;
+		cbt.row_process = 0;
+		cbt.json_reply = cJSON_CreateArray();
+		sql = switch_mprintf("SELECT  *,(%" SWITCH_TIME_T_FMT "-joined_epoch)+base_score+skill_score AS score FROM members ORDER BY score DESC;", local_epoch_time_now(NULL));
+		cc_execute_sql_callback(NULL /* queue */, NULL /* mutex */, sql, list_result_json_callback, &cbt /* Call back variables */);
+		switch_safe_free(sql);
+		*json_reply = cbt.json_reply;
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	/* Prepare the JSON for list of all tiers */
+	if(!strcasecmp(arguments, "tier list")){
+		struct list_result_json cbt;
+		char *sql;
+		cbt.row_process = 0;
+		cbt.json_reply = cJSON_CreateArray();
+		sql = switch_mprintf("SELECT * FROM tiers ORDER BY level, position");
+		cc_execute_sql_callback(NULL /* queue */, NULL /* mutex */, sql, list_result_json_callback, &cbt /* Call back variables */);
+		switch_safe_free(sql);
+		*json_reply = cbt.json_reply;
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	/* if nothing was executed from above, it should return error */
+	return SWITCH_STATUS_FALSE;
+	
+}
+
 /* Macro expands to: switch_status_t mod_callcenter_load(switch_loadable_module_interface_t **module_interface, switch_memory_pool_t *pool) */
 SWITCH_MODULE_LOAD_FUNCTION(mod_callcenter_load)
 {
 	switch_application_interface_t *app_interface;
 	switch_api_interface_t *api_interface;
+	switch_json_api_interface_t *json_api_interface;
 	switch_status_t status;
 
 
@@ -3450,6 +3633,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_callcenter_load)
 
 	SWITCH_ADD_APP(app_interface, "callcenter", "CallCenter", CC_DESC, callcenter_function, CC_USAGE, SAF_NONE);
 	SWITCH_ADD_API(api_interface, "callcenter_config", "Config of callcenter", cc_config_api_function, CC_CONFIG_API_SYNTAX);
+
+	SWITCH_ADD_JSON_API(json_api_interface, "callcenter_config", "JSON Callcenter API", json_callcenter_config_function, "");
 
 	switch_console_set_complete("add callcenter_config agent add");
 	switch_console_set_complete("add callcenter_config agent del");
