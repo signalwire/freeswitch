@@ -342,8 +342,8 @@
             if(typeof self.options.localVideoStream.stop == 'function') {
 	        self.options.localVideoStream.stop();
             } else {
-		if (self.localVideoStream.active){
-                    var tracks = self.localVideoStream.getTracks();
+		if (self.options.localVideoStream.active){
+                    var tracks = self.options.localVideoStream.getTracks();
                     console.error(tracks);
 		    tracks.forEach(function(track, index){
 			console.log(track);
