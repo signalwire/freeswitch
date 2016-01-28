@@ -131,6 +131,7 @@
       <select name="video_quality" id="video-quality" class="form-control"
               ng-disabled="mydata.autoBand"
               ng-model="mydata.vidQual"
+              ng-change="checkVideoQuality(mydata.vidQual)"
               ng-options="item.id as item.label for item in verto.videoQuality"></select>
     </div>
 
