@@ -3798,14 +3798,16 @@ static switch_bool_t verto__broadcast_func(const char *method, cJSON *params, js
 	if (jsock->profile->mcast_pub.sock != ws_sock_invalid) {
 		if ((json_text = cJSON_PrintUnformatted(params))) {
 
-			if ( mcast_socket_send(&jsock->profile->mcast_pub, json_text, strlen(json_text) + 1) < 0 ) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "multicast socket send error!\n");
+			if (mcast_socket_send(&jsock->profile->mcast_pub, json_text, strlen(json_text) + 1) <= 0) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "multicast socket send error! %s\n", strerror(errno));
+				r = SWITCH_FALSE;
+				cJSON_AddItemToObject(*response, "message", cJSON_CreateString("MCAST Data Send failure!"));
+			} else {
+				r = SWITCH_TRUE;
+				cJSON_AddItemToObject(*response, "message", cJSON_CreateString("MCAST Data Sent"));
 			}
-
 			free(json_text);
 			json_text = NULL;
-			r = SWITCH_TRUE;
-			cJSON_AddItemToObject(*response, "message", cJSON_CreateString("MCAST Data Sent"));
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "JSON ERROR!\n");
 		}
@@ -4480,6 +4482,10 @@ static switch_status_t parse_config(const char *cf)
 			add_profile(profile);
 
 			profile->local_network = "localnet.auto";
+
+			profile->mcast_sub.sock = ws_sock_invalid;
+			profile->mcast_pub.sock = ws_sock_invalid;
+
 
 			for (param = switch_xml_child(xprofile, "param"); param; param = param->next) {
 				char *var = NULL;

@@ -68,7 +68,7 @@ int mcast_socket_create(const char *host, int16_t port, mcast_handle_t *handle, 
 		family = AF_INET6;
 	}
 	
-	if ((!(flags & MCAST_SEND) && !(flags & MCAST_RECV)) || (handle->sock = (mcast_socket_t)socket(family, SOCK_DGRAM, 0)) != mcast_sock_invalid ) {
+	if ((!(flags & MCAST_SEND) && !(flags & MCAST_RECV)) || (handle->sock = (mcast_socket_t)socket(family, SOCK_DGRAM, 0)) == mcast_sock_invalid ) {
 		return -1;
 	}
 
@@ -190,7 +190,8 @@ void mcast_socket_close(mcast_handle_t *handle)
 
 ssize_t mcast_socket_send(mcast_handle_t *handle, void *data, size_t datalen)
 {
-	if (handle->sock != mcast_sock_invalid) {
+	if (handle->sock == mcast_sock_invalid) {
+		errno = EINVAL;
 		return -1;
 	}
 
@@ -202,6 +203,7 @@ ssize_t mcast_socket_send(mcast_handle_t *handle, void *data, size_t datalen)
 	if (handle->family == AF_INET6) {
 		return sendto(handle->sock, data, (int)datalen, 0, (struct sockaddr *) &handle->send_addr6, sizeof(handle->send_addr6));
 	} else {
+		//printf("WTF %d %p %ld %s\n", handle->sock, (void *)data, datalen, inet_ntoa(handle->send_addr.sin_addr));
 		return sendto(handle->sock, data, (int)datalen, 0, (struct sockaddr *) &handle->send_addr, sizeof(handle->send_addr));
 	}
 }
@@ -209,6 +211,11 @@ ssize_t mcast_socket_send(mcast_handle_t *handle, void *data, size_t datalen)
 ssize_t mcast_socket_recv(mcast_handle_t *handle, void *data, size_t datalen, int ms)
 {
 	socklen_t addrlen = sizeof(handle->recv_addr);
+
+	if (handle->sock == mcast_sock_invalid) {
+		errno = EINVAL;
+		return -1;
+	}
 
 	if (data == NULL || datalen == 0) {
 		data = handle->buffer;
