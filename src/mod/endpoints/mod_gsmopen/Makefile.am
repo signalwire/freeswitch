@@ -19,9 +19,9 @@ mod_gsmopen_la_LDFLAGS  = -avoid-version -module -no-undefined -lctb-0.16 -lgsmm
 BUILT_SOURCES = $(TIFF_LA) $(SPANDSP_LA)
 
 $(SPANDSP_LA): $(TIFF_LA) $(SPANDSP_DIR) $(SPANDSP_DIR)/.update
-	cd $(SPANDSP_BUILDDIR) && $(MAKE) -j1 CPPFLAGS="$(CPPFLAGS) -I$(TIFF_BUILDDIR)/libtiff -I$(TIFF_DIR)/libtiff" CFLAGS="$(CFLAGS)"
+	cd $(SPANDSP_BUILDDIR) && $(MAKE) CPPFLAGS="$(CPPFLAGS) -I$(TIFF_BUILDDIR)/libtiff -I$(TIFF_DIR)/libtiff" CFLAGS="$(CFLAGS)"
 	$(TOUCH_TARGET)
 
 $(TIFF_LA): $(TIFF_DIR) $(TIFF_DIR)/.update
-	cd $(TIFF_BUILDDIR) && $(MAKE) -j1
+	cd $(TIFF_BUILDDIR) && $(MAKE)
 	$(TOUCH_TARGET)

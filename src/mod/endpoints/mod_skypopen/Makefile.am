@@ -19,9 +19,9 @@ mod_skypopen_la_LDFLAGS  = -avoid-version -module -no-undefined -shared -lX11
 BUILT_SOURCES = $(TIFF_LA) $(SPANDSP_LA)
 
 $(SPANDSP_LA): $(TIFF_LA) $(SPANDSP_DIR) $(SPANDSP_DIR)/.update
-	cd $(SPANDSP_BUILDDIR) && $(MAKE) -j1 CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS) -I$(TIFF_BUILDDIR)/libtiff -I$(TIFF_DIR)/libtiff"
+	cd $(SPANDSP_BUILDDIR) && $(MAKE) CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS) -I$(TIFF_BUILDDIR)/libtiff -I$(TIFF_DIR)/libtiff"
 	$(TOUCH_TARGET)
 
 $(TIFF_LA): $(TIFF_DIR) $(TIFF_DIR)/.update
-	cd $(TIFF_BUILDDIR) && $(MAKE) -j1
+	cd $(TIFF_BUILDDIR) && $(MAKE)
 	$(TOUCH_TARGET)
