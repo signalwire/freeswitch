@@ -560,12 +560,15 @@ cc_queue_t *queue_set_config(cc_queue_t *queue)
 
 static int cc_execute_sql_affected_rows(char *sql) {
 	switch_cache_db_handle_t *dbh = NULL;
+	int res = 0;
 	if (!(dbh = cc_get_db_handle())) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB\n");
 		return -1;
 	}
 	switch_cache_db_execute_sql(dbh, sql, NULL);
-	return switch_cache_db_affected_rows(dbh);
+	res = switch_cache_db_affected_rows(dbh);
+	switch_cache_db_release_db_handle(&dbh);
+	return res;
 }
 
 char *cc_execute_sql2str(cc_queue_t *queue, switch_mutex_t *mutex, char *sql, char *resbuf, size_t len)
