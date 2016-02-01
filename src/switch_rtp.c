@@ -7405,8 +7405,8 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 			rtp_session->flags[SWITCH_RTP_FLAG_RESET] = 1;
 		}
 
-		if (!switch_rtp_ready(rtp_session) || rtp_session->sending_dtmf || !this_ts || 
-			(!rtp_session->flags[SWITCH_RTP_FLAG_RESET] && this_ts < rtp_session->last_write_ts)) {
+		if (!switch_rtp_ready(rtp_session) || rtp_session->sending_dtmf ||
+			(!rtp_session->flags[SWITCH_RTP_FLAG_RESET] && this_ts > rtp_session->one_second && this_ts < rtp_session->last_write_ts)) {
 			send = 0;
 		}
 	}
