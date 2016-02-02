@@ -1458,6 +1458,9 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		{
 			char *extra_headers = sofia_glue_get_extra_headers(channel, SOFIA_SIP_HEADER_PREFIX);
 
+			switch_channel_clear_flag(tech_pvt->channel, CF_MEDIA_ACK);
+			switch_channel_set_flag(tech_pvt->channel, CF_REQ_MEDIA);
+			
 			nua_invite(tech_pvt->nh, NUTAG_MEDIA_ENABLE(0),
 					   TAG_IF(msg->string_arg, SIPTAG_CONTENT_TYPE_STR("application/sdp")), 
 					   TAG_IF(msg->string_arg, SIPTAG_PAYLOAD_STR(msg->string_arg)), 
@@ -1469,6 +1472,12 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 	case SWITCH_MESSAGE_INDICATE_3P_MEDIA:
 		{
 			char *extra_headers = sofia_glue_get_extra_headers(channel, SOFIA_SIP_HEADER_PREFIX);
+
+			switch_channel_clear_flag(tech_pvt->channel, CF_MEDIA_ACK);
+			switch_channel_clear_flag(tech_pvt->channel, CF_MEDIA_SET);
+			switch_channel_set_flag(tech_pvt->channel, CF_REQ_MEDIA);
+
+
 			nua_invite(tech_pvt->nh, NUTAG_MEDIA_ENABLE(0), SIPTAG_PAYLOAD_STR(""), 
 					   TAG_IF(!zstr(extra_headers), SIPTAG_HEADER_STR(extra_headers)), TAG_END());
 
