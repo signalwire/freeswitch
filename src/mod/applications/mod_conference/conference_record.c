@@ -60,6 +60,11 @@ void conference_record_launch_thread(conference_obj_t *conference, char *path, i
 		return;
 	}
 
+	if (conference_utils_test_flag(conference, CFLAG_PERSONAL_CANVAS)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Personal Canvas enabled, recording not permitted.\n");
+		return;
+	}
+
 	rec->conference = conference;
 	rec->path = switch_core_strdup(pool, path);
 	rec->pool = pool;
