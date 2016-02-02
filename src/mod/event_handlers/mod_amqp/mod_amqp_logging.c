@@ -40,72 +40,68 @@
 
 switch_status_t mod_amqp_logging_recv(const switch_log_node_t *node, switch_log_level_t level)
 {
-  switch_hash_index_t *hi = NULL;
-  mod_amqp_message_t *msg = NULL;
-  mod_amqp_logging_profile_t *logging = NULL;
-  char *json = NULL;
+	switch_hash_index_t *hi = NULL;
+	mod_amqp_message_t *msg = NULL;
+	mod_amqp_logging_profile_t *logging = NULL;
+	char *json = NULL;
 
-  if (!strcmp(node->file, "mod_amqp_logging.c")) {
-    return SWITCH_STATUS_SUCCESS;
-  }
+	if (!strcmp(node->file, "mod_amqp_logging.c")) {
+		return SWITCH_STATUS_SUCCESS;
+	}
 
-  /*
-    1. Loop through logging hash of profiles. Check for a profile that accepts this logging level, and file regex.
-    2. If event not already parsed/created, then create it now
-    3. Queue copy of event into logging profile send queue
-    4. Destroy local event copy
-   */
-  for (hi = switch_core_hash_first(globals.logging_hash); hi; hi = switch_core_hash_next(&hi)) {
-    switch_core_hash_this(hi, NULL, NULL, (void **)&logging);
+	/*
+	  1. Loop through logging hash of profiles. Check for a profile that accepts this logging level, and file regex.
+	  2. If event not already parsed/created, then create it now
+	  3. Queue copy of event into logging profile send queue
+	  4. Destroy local event copy
+	*/
+	for (hi = switch_core_hash_first(globals.logging_hash); hi; hi = switch_core_hash_next(&hi)) {
+		switch_core_hash_this(hi, NULL, NULL, (void **)&logging);
 
-    if ( logging && switch_log_check_mask(logging->log_level_mask, level) ) {
-      char file[128] = {0};
-      if ( !json ) {
-	cJSON *body = NULL;
-	char date[80] = "";
-	switch_time_exp_t tm;
+		if ( logging && switch_log_check_mask(logging->log_level_mask, level) ) {
+			char file[128] = {0};
+			if ( !json ) {
+				cJSON *body = NULL;
+				char date[80] = "";
+				switch_time_exp_t tm;
 
-	switch_time_exp_lt(&tm, node->timestamp);
-	switch_snprintf(date, sizeof(date), "%0.4d-%0.2d-%0.2d %0.2d:%0.2d:%0.2d.%0.6d",
-			tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec, tm.tm_usec);
+				switch_time_exp_lt(&tm, node->timestamp);
+				switch_snprintf(date, sizeof(date), "%0.4d-%0.2d-%0.2d %0.2d:%0.2d:%0.2d.%0.6d",
+								tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec, tm.tm_usec);
 
-	/* Create cJSON body */
-	body = cJSON_CreateObject();
+				/* Create cJSON body */
+				body = cJSON_CreateObject();
 
-	cJSON_AddItemToObject(body, "file", cJSON_CreateString((const char *) node->file));
-	cJSON_AddItemToObject(body, "function", cJSON_CreateString((const char *) node->func));
-	cJSON_AddItemToObject(body, "line", cJSON_CreateNumber((double) node->line));
-	cJSON_AddItemToObject(body, "level", cJSON_CreateString(switch_log_level2str(node->level)));
-	cJSON_AddItemToObject(body, "timestamp", cJSON_CreateString((const char *)date));
-	cJSON_AddItemToObject(body, "timestamp_epoch", cJSON_CreateNumber((double) node->timestamp / 1000000));
-	
-	cJSON_AddItemToObject(body, "content", cJSON_CreateString(node->content ));
+				cJSON_AddItemToObject(body, "file", cJSON_CreateString((const char *) node->file));
+				cJSON_AddItemToObject(body, "function", cJSON_CreateString((const char *) node->func));
+				cJSON_AddItemToObject(body, "line", cJSON_CreateNumber((double) node->line));
+				cJSON_AddItemToObject(body, "level", cJSON_CreateString(switch_log_level2str(node->level)));
+				cJSON_AddItemToObject(body, "timestamp", cJSON_CreateString((const char *)date));
+				cJSON_AddItemToObject(body, "timestamp_epoch", cJSON_CreateNumber((double) node->timestamp / 1000000));
+				cJSON_AddItemToObject(body, "content", cJSON_CreateString(node->content ));
 
-	json = cJSON_Print(body);
-	cJSON_Delete(body);
-      }
+				json = cJSON_Print(body);
+				cJSON_Delete(body);
+			}
 
-      /* Create message */
-      switch_malloc(msg, sizeof(mod_amqp_message_t));
-      msg->pjson = strdup(json);
-      strcpy(file, node->file);
-      switch_replace_char(file, '.', '_', 0);
+			/* Create message */
+			switch_malloc(msg, sizeof(mod_amqp_message_t));
+			msg->pjson = strdup(json);
+			strcpy(file, node->file);
+			switch_replace_char(file, '.', '_', 0);
 
-      snprintf(msg->routing_key, sizeof(msg->routing_key), "%s.%s.%s.%s", switch_core_get_hostname(), node->userdata, switch_log_level2str(node->level), file);
+			snprintf(msg->routing_key, sizeof(msg->routing_key), "%s.%s.%s.%s", switch_core_get_hostname(), node->userdata, switch_log_level2str(node->level), file);
 
-      switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "AMQP Created message with routing key[%s]\n", msg->routing_key);
+			if (switch_queue_trypush(logging->send_queue, msg) != SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "AMQP logging message queue full. Messages will be dropped!\n");
+				return SWITCH_STATUS_SUCCESS;
+			}
+		}
+	}
 
-      if (switch_queue_trypush(logging->send_queue, msg) != SWITCH_STATUS_SUCCESS) {
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "AMQP logging message queue full. Messages will be dropped!\n");
+
+	switch_safe_free(json);
 	return SWITCH_STATUS_SUCCESS;
-      }
-    }
-  }
-
-
-  switch_safe_free(json);
-  return SWITCH_STATUS_SUCCESS;
-
 }
 
 switch_status_t mod_amqp_logging_destroy(mod_amqp_logging_profile_t **prof)
