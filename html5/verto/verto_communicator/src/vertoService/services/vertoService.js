@@ -326,7 +326,7 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
         if (!videoFlag) storage.data.selectedVideo = data.videoDevices[0].id;
         if (!shareFlag) storage.data.selectedShare = data.shareDevices[0].id;
         if (!audioFlag) storage.data.selectedAudio = data.audioDevices[0].id;
-        if (!speakerFlag) storage.data.selectedSpeaker = data.speakerDevices[0].id;
+        if (!speakerFlag && data.speakerDevices > 0) storage.data.selectedSpeaker = data.speakerDevices[0].id;
 
         // This means that we cannot use video!
         if (data.videoDevices.length === 0) {
