@@ -128,10 +128,10 @@ static switch_bool_t avmd_callback(switch_media_bug_t * bug, void *user_data, sw
 static void init_avmd_session_data(avmd_session_t *avmd_session,  switch_core_session_t *fs_session);
 
 
-/*! \brief The avmd session data initialization function
+/*! \brief The avmd session data initialization function.
  * @author Eric des Courtis
- * @param avmd_session A reference to a avmd session
- * @param fs_session A reference to a FreeSWITCH session
+ * @param avmd_session A reference to a avmd session.
+ * @param fs_session A reference to a FreeSWITCH session.
  */
 static void init_avmd_session_data(avmd_session_t *avmd_session,  switch_core_session_t *fs_session)
 {
@@ -159,7 +159,7 @@ static void init_avmd_session_data(avmd_session_t *avmd_session,  switch_core_se
 }
 
 
-/*! \brief The callback function that is called when new audio data becomes available
+/*! \brief The callback function that is called when new audio data becomes available.
  *
  * @author Eric des Courtis
  * @param bug A reference to the media bug.
@@ -203,7 +203,7 @@ static switch_bool_t avmd_callback(switch_media_bug_t * bug, void *user_data, sw
 	return SWITCH_TRUE;
 }
 
-/*! \brief FreeSWITCH module loading function
+/*! \brief FreeSWITCH module loading function.
  *
  * @author Eric des Courtis
  * @return Load success or failure.
@@ -255,7 +255,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_avmd_load)
 }
 
 /*! \brief FreeSWITCH application handler function.
- *  This handles calls made from applications such as LUA and the dialplan
+ *  This handles calls made from applications such as LUA and the dialplan.
  *
  * @author Eric des Courtis
  * @return Success or failure of the function.
@@ -321,7 +321,7 @@ SWITCH_STANDARD_APP(avmd_start_function)
 	switch_channel_set_private(channel, "_avmd_", bug);
 }
 
-/*! \brief Called when the module shuts down
+/*! \brief Called when the module shuts down.
  *
  * @author Eric des Courtis
  * @return The success or failure of the function.
@@ -476,10 +476,10 @@ end:
 	return SWITCH_STATUS_SUCCESS;
 }
 
-/*! \brief Process one frame of data with avmd algorithm
+/*! \brief Process one frame of data with avmd algorithm.
  * @author Eric des Courtis
- * @param session An avmd session
- * @param frame A audio frame
+ * @param session An avmd session.
+ * @param frame An audio frame.
  */
 static void avmd_process(avmd_session_t *session, switch_frame_t *frame)
 {
@@ -506,9 +506,7 @@ static void avmd_process(avmd_session_t *session, switch_frame_t *frame)
 	b = &session->b;
 
 	/*! If beep has already been detected skip the CPU heavy stuff */
-	if(session->state.beep_state == BEEP_DETECTED){
-		return;
-	}
+	if (session->state.beep_state == BEEP_DETECTED) return;
 
 	/*! Precompute values used heavily in the inner loop */
 	sine_len_i = SINE_LEN(session->rate);
@@ -523,12 +521,12 @@ static void avmd_process(avmd_session_t *session, switch_frame_t *frame)
 	//switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session->session), SWITCH_LOG_INFO, "<<< AVMD sine_len_i=%d >>>\n", sine_len_i);
 
 	/*! INNER LOOP -- OPTIMIZATION TARGET */
-	for(pos = session->pos; pos < (GET_CURRENT_POS(b) - P); pos++){
+	for (pos = session->pos; pos < (GET_CURRENT_POS(b) - P); pos++) {
 		if ((pos % sine_len_i) == 0) {
 			/*! Get a desa2 frequency estimate every sine len */
 			f = desa2(b, pos);
 
-			if(f < MIN_FREQUENCY_R(session->rate) || f > MAX_FREQUENCY_R(session->rate)) {
+			if (f < MIN_FREQUENCY_R(session->rate) || f > MAX_FREQUENCY_R(session->rate)) {
 				v = 99999.0;
 				RESET_SMA_BUFFER(&session->sma_b);
 				RESET_SMA_BUFFER(&session->sqa_b);
@@ -543,24 +541,20 @@ static void avmd_process(avmd_session_t *session, switch_frame_t *frame)
 			}
 
 			/*! If variance is less than threshold then we have detection */
-			if(v < VARIANCE_THRESHOLD){
+			if (v < VARIANCE_THRESHOLD) {
 
 				switch_channel_set_variable_printf(channel, "avmd_total_time", "%d", (int)(switch_micro_time_now() - session->start_time) / 1000);
 				switch_channel_execute_on(channel, "execute_on_avmd_beep");
 
 				/*! Throw an event to FreeSWITCH */
 				status = switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, AVMD_EVENT_BEEP);
-				if(status != SWITCH_STATUS_SUCCESS) {
-					return;
-				}
+				if (status != SWITCH_STATUS_SUCCESS) return;
 
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Beep-Status", "stop");
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Unique-ID", switch_core_session_get_uuid(session->session));
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call-command", "avmd");
 
-				if ((switch_event_dup(&event_copy, event)) != SWITCH_STATUS_SUCCESS) {
-					return;
-				}
+				if ((switch_event_dup(&event_copy, event)) != SWITCH_STATUS_SUCCESS) return;
 
 				switch_core_session_queue_event(session->session, &event);
 				switch_event_fire(&event_copy);
