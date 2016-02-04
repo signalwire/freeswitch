@@ -663,6 +663,12 @@ typedef struct conference_obj {
 	video_layout_t *new_personal_vlayout;
 	int max_bw_in;
 	int force_bw_in;
+
+	/* special use case, scalling shared h264 canvas*/
+	int scale_h264_canvas_width;
+	int scale_h264_canvas_height;
+	int scale_h264_canvas_fps_divisor;
+	char *scale_h264_canvas_bandwidth;
 } conference_obj_t;
 
 /* Relationship with another member */
@@ -794,6 +800,9 @@ typedef struct codec_set_s {
 	switch_codec_t codec;
 	switch_frame_t frame;
 	uint8_t *packet;
+	switch_image_t *scaled_img;
+	uint8_t fps_divisor;
+	uint32_t frame_count;
 } codec_set_t;
 
 typedef void (*conference_key_callback_t) (conference_member_t *, struct caller_control_actions *);

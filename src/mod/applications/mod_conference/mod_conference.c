@@ -2411,7 +2411,12 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 	const char *force_rate = NULL, *force_interval = NULL, *force_channels = NULL, *presence_id = NULL;
 	uint32_t force_rate_i = 0, force_interval_i = 0, force_channels_i = 0, video_auto_floor_msec = 0;
 	switch_event_t *event;
-	
+
+	int scale_h264_canvas_width = 0;
+	int scale_h264_canvas_height = 0;
+	int scale_h264_canvas_fps_divisor = 0;
+	char *scale_h264_canvas_bandwidth = NULL;
+
 	/* Validate the conference name */
 	if (zstr(name)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Record! no name.\n");
@@ -2720,6 +2725,28 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "video-mode invalid, valid settings are 'passthrough', 'transcode' and 'mux'\n");
 				}
+			} else if (!strcasecmp(var, "scale-h264-canvas-size") && !zstr(val)) {
+				char *p;
+
+				if ((scale_h264_canvas_width = atoi(val))) {
+					if ((p = strchr(val, 'x'))) {
+						p++;
+						if (*p) {
+							scale_h264_canvas_height = atoi(p);
+						}
+					}
+				}
+
+				if (scale_h264_canvas_width < 320 || scale_h264_canvas_width < 180) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid scale-h264-canvas-size, falling back to 320x180\n");
+					scale_h264_canvas_width = 320;
+					scale_h264_canvas_width = 180;
+				}
+			} else if (!strcasecmp(var, "scale-h264-canvas-fps-divisor") && !zstr(val)) {
+				scale_h264_canvas_fps_divisor = atoi(val);
+				if (scale_h264_canvas_fps_divisor < 0) scale_h264_canvas_fps_divisor = 0;
+			} else if (!strcasecmp(var, "scale-h264-canvas-bandwidth") && !zstr(val)) {
+				scale_h264_canvas_bandwidth = val;
 			}
 		}
 
@@ -2782,6 +2809,11 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 	conference->auto_kps_debounce = auto_kps_debounce;
 
 	conference->conference_video_mode = conference_video_mode;
+
+	conference->scale_h264_canvas_width = scale_h264_canvas_width;
+	conference->scale_h264_canvas_height = scale_h264_canvas_height;
+	conference->scale_h264_canvas_fps_divisor = scale_h264_canvas_fps_divisor;
+	conference->scale_h264_canvas_bandwidth = switch_core_strdup(conference->pool, scale_h264_canvas_bandwidth);
 
 	if (!switch_core_has_video() && (conference->conference_video_mode == CONF_VIDEO_MODE_MUX || conference->conference_video_mode == CONF_VIDEO_MODE_TRANSCODE)) {
 		conference->conference_video_mode = CONF_VIDEO_MODE_PASSTHROUGH;
