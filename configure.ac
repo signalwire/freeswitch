@@ -1291,9 +1291,13 @@ PKG_CHECK_MODULES([SHOUT], [shout >= 2.2.2],[
   AM_CONDITIONAL([HAVE_SHOUT],[true])],[
   AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_SHOUT],[false])])
 
-PKG_CHECK_MODULES([MP3LAME], [mp3lame],[
-  AM_CONDITIONAL([HAVE_MP3LAME],[true])],[
-  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_MP3LAME],[false])])
+mp3lame=false
+AC_CHECK_LIB([mp3lame], [lame_init],[
+  AC_CHECK_HEADER([lame/lame.h],[
+    mp3lame=true
+    AC_SUBST([MP3LAME_LIBS], [-lmp3lame])
+    AC_SUBST([MP3LAME_CFLAGS], [$CPPFLAGS])])])
+AM_CONDITIONAL([HAVE_MP3LAME],[$mp3lame])
 
 PKG_CHECK_MODULES([AVCODEC], [libavcodec >= 53.35.0],[
   AM_CONDITIONAL([HAVE_AVCODEC],[true])],[
