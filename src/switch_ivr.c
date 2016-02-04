@@ -1623,6 +1623,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_3p_media(const char *uuid, switch_med
 			switch_channel_wait_for_flag(channel, CF_REQ_MEDIA, SWITCH_FALSE, 10000, NULL);
 			switch_channel_wait_for_flag(channel, CF_MEDIA_ACK, SWITCH_TRUE, 10000, NULL);
 			switch_channel_wait_for_flag(channel, CF_MEDIA_SET, SWITCH_TRUE, 10000, NULL);
+			switch_channel_wait_for_flag(channel, CF_3P_MEDIA_REQUESTED, SWITCH_FALSE, 10000, NULL);
 			//switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 		}
 
@@ -1640,6 +1641,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_3p_media(const char *uuid, switch_med
 			switch_channel_wait_for_flag(other_channel, CF_REQ_MEDIA, SWITCH_FALSE, 10000, NULL);
 			switch_channel_wait_for_flag(other_channel, CF_MEDIA_ACK, SWITCH_TRUE, 10000, NULL);
 			switch_channel_wait_for_flag(other_channel, CF_MEDIA_SET, SWITCH_TRUE, 10000, NULL);
+			switch_channel_wait_for_flag(other_channel, CF_3P_MEDIA_REQUESTED, SWITCH_FALSE, 10000, NULL);
 			//switch_core_session_read_frame(other_session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 			switch_channel_clear_state_handler(other_channel, NULL);
 			switch_core_session_rwunlock(other_session);

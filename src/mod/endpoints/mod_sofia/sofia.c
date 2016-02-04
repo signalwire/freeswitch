@@ -6978,7 +6978,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 			}
 
 			if (switch_channel_test_flag(channel, CF_3P_NOMEDIA_REQUESTED)) {
-				switch_channel_clear_flag(channel, CF_3P_NOMEDIA_REQUESTED);
+				
 				if (switch_channel_test_flag(channel, CF_3P_NOMEDIA_REQUESTED_BLEG)) {
 					switch_core_session_t *other_session;
 					
@@ -7010,12 +7010,12 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 					switch_channel_set_variable(channel, SWITCH_R_SDP_VARIABLE, r_sdp);
 				}
 				
+				switch_channel_clear_flag(channel, CF_3P_NOMEDIA_REQUESTED);
 				goto done;
 
 			} else if (switch_channel_test_flag(channel, CF_3P_MEDIA_REQUESTED)) {
 				uint8_t match = 0;
 				
-				switch_channel_clear_flag(channel, CF_3P_MEDIA_REQUESTED);
 				switch_channel_clear_flag(channel, CF_PROXY_MODE);
 				
 				switch_core_media_choose_port(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO, 0);
@@ -7055,12 +7055,14 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 							//TAG_IF(sofia_test_pflag(tech_pvt->profile, PFLAG_DISABLE_100REL), NUTAG_INCLUDE_EXTRA_SDP(1)),
 							TAG_END());
 					
+					switch_channel_clear_flag(channel, CF_3P_MEDIA_REQUESTED);
 					goto done;
 				}
 
 				switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "NO CODECS");
 				switch_channel_hangup(channel, SWITCH_CAUSE_INCOMPATIBLE_DESTINATION);
 
+				switch_channel_clear_flag(channel, CF_3P_MEDIA_REQUESTED);
 				goto done;
 				//ss_state = nua_callstate_ready;
 				//goto state_process;
