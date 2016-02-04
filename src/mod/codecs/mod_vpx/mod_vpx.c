@@ -41,7 +41,6 @@
 #define SLICE_SIZE SWITCH_DEFAULT_VIDEO_SIZE
 #define KEY_FRAME_MIN_FREQ 250000
 
-
 /*	http://tools.ietf.org/html/draft-ietf-payload-vp8-10
 
 	The first octets after the RTP header are the VP8 payload descriptor, with the following structure.
@@ -96,26 +95,30 @@ typedef struct {
 	unsigned pid:3;
 } vp8_payload_descriptor_t;
 
-#ifdef WHAT_THEY_FUCKING_SAY
 typedef struct {
 	unsigned have_pid:1;
+	unsigned have_p_layer:1;
 	unsigned have_layer_ind:1;
-	unsigned have_ref_ind:1;
+	unsigned is_flexible:1;
 	unsigned start:1;
 	unsigned end:1;
 	unsigned have_ss:1;
-	unsigned have_su:1;
 	unsigned zero:1;
 } vp9_payload_descriptor_t;
 
-#else
 typedef struct {
-	unsigned dunno:6;
-	unsigned start:1;
-	unsigned key:1;
-} vp9_payload_descriptor_t;
-#endif
+	unsigned n_s:3;
+	unsigned y:1;
+	unsigned g:1;
+	unsigned zero:0;
+} vp9_ss_t;
 
+typedef struct {
+	unsigned t:3;
+	unsigned u:1;
+	unsigned r:2;
+	unsigned zero:2;
+} vp9_n_g_t;
 
 #else /* ELSE LITTLE */
 
@@ -128,24 +131,36 @@ typedef struct {
 	unsigned extended:1;
 } vp8_payload_descriptor_t;
 
-#ifdef WHAT_THEY_FUCKING_SAY
 typedef struct {
 	unsigned zero:1;
-	unsigned have_su:1;
 	unsigned have_ss:1;
 	unsigned end:1;
 	unsigned start:1;
-	unsigned have_ref_ind:1;
+	unsigned is_flexible:1;
 	unsigned have_layer_ind:1;
+	unsigned have_p_layer:1;
 	unsigned have_pid:1;
 } vp9_payload_descriptor_t;
-#else
+
 typedef struct {
-	unsigned key:1;
-	unsigned start:1;
-	unsigned dunno:6;
-} vp9_payload_descriptor_t;
-#endif
+	unsigned zero:4;
+	unsigned g:1;
+	unsigned y:1;
+	unsigned n_s:3;
+} vp9_ss_t;
+
+typedef struct {
+	unsigned zero:2;
+	unsigned r:2;
+	unsigned u:1;
+	unsigned t:3;
+} vp9_n_g_t;
+
+typedef struct {
+	unsigned d:1;
+	unsigned s:3;
+	unsigned gof_idx:4;
+} vp9_layer_t;
 
 #endif
 
@@ -153,6 +168,37 @@ typedef union {
 	vp8_payload_descriptor_t vp8;
 	vp9_payload_descriptor_t vp9;
 } vpx_payload_descriptor_t;
+
+#define kMaxVp9NumberOfSpatialLayers 16
+
+typedef struct {
+	switch_bool_t has_received_sli;
+	uint8_t picture_id_sli;
+	switch_bool_t has_received_rpsi;
+	uint64_t picture_id_rpsi;
+	int16_t picture_id;  // Negative value to skip pictureId.
+
+	switch_bool_t inter_pic_predicted;  // This layer frame is dependent on previously
+	                           // coded frame(s).
+	switch_bool_t flexible_mode;
+	switch_bool_t ss_data_available;
+
+	int tl0_pic_idx;  // Negative value to skip tl0PicIdx.
+	uint8_t temporal_idx;
+	uint8_t spatial_idx;
+	switch_bool_t temporal_up_switch;
+	switch_bool_t inter_layer_predicted;  // Frame is dependent on directly lower spatial
+	                             // layer frame.
+	uint8_t gof_idx;
+
+	// SS data.
+	size_t num_spatial_layers;
+	switch_bool_t spatial_layer_resolution_present;
+	uint16_t width[kMaxVp9NumberOfSpatialLayers];
+	uint16_t height[kMaxVp9NumberOfSpatialLayers];
+	// GofInfoVP9 gof;
+} vp9_info_t;
+
 
 #ifdef _MSC_VER
 #pragma pack(pop, r1)
@@ -191,7 +237,7 @@ static inline int IS_VP8_KEY_FRAME(uint8_t *data)
 	}
 }
 
-#define IS_VP9_KEY_FRAME(byte) ((byte) & 0x01)
+#define IS_VP9_KEY_FRAME(byte) ((((byte) & 0x10) == 0) && ((byte) & 0x02))
 #define IS_VP9_START_PKT(byte) ((byte) & 0x02)
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_vpx_load);
@@ -200,6 +246,7 @@ SWITCH_MODULE_DEFINITION(mod_vpx, mod_vpx_load, NULL, NULL);
 struct vpx_context {
 	switch_codec_t *codec;
 	int is_vp9;
+	vp9_info_t vp9;
 	int lossless;
 	vpx_codec_iface_t *encoder_interface;
 	vpx_codec_iface_t *decoder_interface;
@@ -330,7 +377,7 @@ static switch_status_t init_encoder(switch_codec_t *codec)
 
 	context->pkt = NULL;
 
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(codec->session), SWITCH_LOG_DEBUG1, 
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(codec->session), SWITCH_LOG_NOTICE,
 					  "VPX reset encoder picture from %dx%d to %dx%d %u BW\n", 
 					  config->g_w, config->g_h, context->codec_settings.video.width, context->codec_settings.video.height, context->bandwidth);
 
@@ -358,6 +405,11 @@ static switch_status_t init_encoder(switch_codec_t *codec)
 			config->rc_max_quantizer = 63;
 		}
 
+		config->temporal_layering_mode = VP9E_TEMPORAL_LAYERING_MODE_NOLAYERING;
+		config->ts_number_layers = 1;
+		config->ts_rate_decimator[0] = 1;
+		config->ts_periodicity = 1;
+		config->ts_layer_id[0] = 0;
 	} else {
 
 		// settings
@@ -425,7 +477,7 @@ static switch_status_t init_encoder(switch_codec_t *codec)
 		}
 	} else if (context->flags & SWITCH_CODEC_FLAG_ENCODE) {
 
-// #define SHOW(field) fprintf(stderr, "    %-28s = %d\n", #field, config->field);
+		// #define SHOW(field) fprintf(stderr, "    %-28s = %d\n", #field, config->field);
 
 #ifdef SHOW
 		fprintf(stderr, "Codec: %s\n", vpx_codec_iface_name(context->encoder_interface));
@@ -606,7 +658,59 @@ static switch_status_t consume_partition(vpx_context_t *context, switch_frame_t 
 
 	if (context->is_vp9) {
 		payload_descriptor->vp9.start = start;
-		payload_descriptor->vp9.key = key;
+
+		if (1) {
+			// payload_descriptor->vp9.have_p_layer = key; // key?
+			payload_descriptor->vp9.have_pid = 0;
+
+			if (start) {
+				// context->vp9.picture_id++;
+			}
+
+			// if (context->vp9.picture_id > 0x7f) { // todo rewind to 0
+			// 	*body++ = context->vp9.picture_id >> 8;
+			// 	*body++ = context->vp9.picture_id & 0xff;
+			// 	payload_size--;
+			// 	frame->datalen++;
+			// } else {
+			// 	*body++ = context->vp9.picture_id;
+			// }
+
+			// payload_size--;
+			// frame->datalen++;
+
+			if (key) {
+				vp9_ss_t *ss = (vp9_ss_t *)body;
+
+				payload_descriptor->vp9.have_ss = 1;
+				ss->n_s = 0;
+				ss->g = 0;
+				ss->y = 0;
+				ss->zero = 0;
+				body++;
+				payload_size--;
+				frame->datalen++;
+
+				if (0) { // y ?
+					uint16_t *w;
+					uint16_t *h;
+
+					ss->y = 1;
+
+					w = (uint16_t *)body;
+					body+=2;
+					h = (uint16_t *)body;
+					body+=2;
+
+					*w = (uint16_t)context->codec_settings.video.width;
+					*h = (uint16_t)context->codec_settings.video.height;
+
+					payload_size-= (ss->n_s + 1) * 4;
+					frame->datalen+= (ss->n_s + 1) * 4;
+				}
+			}
+		}
+
 	} else {
 		payload_descriptor->vp8.start = start;
 	}
@@ -623,9 +727,13 @@ static switch_status_t consume_partition(vpx_context_t *context, switch_frame_t 
 		frame->m = 0;
 		return SWITCH_STATUS_MORE_DATA;
 	}
+
+	if (frame->m && context->is_vp9) {
+		payload_descriptor->vp9.end = 1;
+	}
 }
 
-static void reset_codec_encoder(switch_codec_t *codec)
+static switch_status_t reset_codec_encoder(switch_codec_t *codec)
 {
 	vpx_context_t *context = (vpx_context_t *)codec->private_info;
 
@@ -637,7 +745,7 @@ static void reset_codec_encoder(switch_codec_t *codec)
 	context->framecount = 0;
 	context->encoder_init = 0;
 	context->pkt = NULL;
-	init_encoder(codec);
+	return init_encoder(codec);
 }
 
 static switch_status_t switch_vpx_encode(switch_codec_t *codec, switch_frame_t *frame)
@@ -656,7 +764,9 @@ static switch_status_t switch_vpx_encode(switch_codec_t *codec, switch_frame_t *
 	}
 
 	if (context->need_encoder_reset != 0) {
-		reset_codec_encoder(codec);
+		if (reset_codec_encoder(codec) != SWITCH_STATUS_SUCCESS) {
+			return SWITCH_STATUS_FALSE;
+		}
 		context->need_encoder_reset = 0;
 	}
 
@@ -678,13 +788,17 @@ static switch_status_t switch_vpx_encode(switch_codec_t *codec, switch_frame_t *
 
 	
 	if (!context->encoder_init) {
-		init_encoder(codec);
+		if (init_encoder(codec) != SWITCH_STATUS_SUCCESS) {
+			return SWITCH_STATUS_FALSE;
+		}
 	}
 
 	if (context->change_bandwidth) {
 		context->codec_settings.video.bandwidth = context->change_bandwidth;
 		context->change_bandwidth = 0;
-		init_encoder(codec);
+		if (init_encoder(codec) != SWITCH_STATUS_SUCCESS) {
+			return SWITCH_STATUS_FALSE;
+		}
 	}
 
 	now = switch_time_now();
@@ -709,7 +823,7 @@ static switch_status_t switch_vpx_encode(switch_codec_t *codec, switch_frame_t *
 	if ((err = vpx_codec_encode(&context->encoder,
 						 (vpx_image_t *) frame->img,
 						 pts,
-						 dur, 
+						 dur,
 						 vpx_flags,
 						 VPX_DL_REALTIME)) != VPX_CODEC_OK) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "VPX encode error %d:%s:%s\n",
@@ -814,27 +928,92 @@ static switch_status_t buffer_vp8_packets(vpx_context_t *context, switch_frame_t
 	return SWITCH_STATUS_SUCCESS;
 }
 
+// https://tools.ietf.org/id/draft-ietf-payload-vp9-01.txt
+
 static switch_status_t buffer_vp9_packets(vpx_context_t *context, switch_frame_t *frame)
 {
 	uint8_t *data = (uint8_t *)frame->data;
 	uint8_t *vp9  = (uint8_t *)frame->data;
+	vp9_payload_descriptor_t *desc = (vp9_payload_descriptor_t *)vp9;
 	int len = 0;
 
-	// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%02x %02x %02x %02x %d %d\n", *data, *(data+1), *(data+2), *(data+3), frame->m, frame->datalen);
+	// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%02x %02x %02x %02x m=%d start=%d end=%d len=%d\n", *data, *(data+1), *(data+2), *(data+3), frame->m, desc->start, desc->end, frame->datalen);
 
-	if (switch_buffer_inuse(context->vpx_packet_buffer)) { // middle packet
-		if (IS_VP9_START_PKT(*vp9)) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "got invalid vp9 packet, packet loss? resetting buffer\n");
-			switch_buffer_zero(context->vpx_packet_buffer);
+	vp9++;
+
+	if (desc->is_flexible) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "VP9 Flexiable mode is not supported yet\n");
+		switch_buffer_zero(context->vpx_packet_buffer);
+		goto end;
+	}
+
+	if (desc->have_pid) {
+		uint16_t pid = 0;
+
+		pid = *vp9 & 0x7f;
+
+		if (*vp9 & 0x80) {
+			vp9++;
+			pid = (pid << 8) + *vp9;
 		}
-	} else { // start packet
-		if (!IS_VP9_START_PKT(*vp9)) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "got invalid vp9 packet, packet loss? waiting for a start packet\n");
-			goto end;
+
+		vp9++;
+		// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "have pid: %d start=%d end=%d\n", pid, desc->start, desc->end);
+	}
+
+	if (desc->have_layer_ind) {
+		vp9_layer_t *layer = (vp9_layer_t *)vp9;
+
+		vp9 += 2;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "have layer idx: %d\n", layer->s);
+	}
+
+	if (desc->have_ss) {
+		vp9_ss_t *ss = (vp9_ss_t *)(vp9++);
+
+		context->got_key_frame = 1;
+		context->got_start_frame = 1;
+		// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "have ss: %02x n_s: %d y:%d g:%d\n", *(uint8_t *)ss, ss->n_s, ss->y, ss->g);
+
+		if (ss->y) {
+			int i;
+
+			for (i=0; i<=ss->n_s; i++) {
+				int width = ntohs(*(uint16_t *)vp9);
+				int height = ntohs(*(uint16_t *)(vp9 + 2));
+				vp9 += 4;
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "SS: %d %dx%d\n", i, width, height);
+			}
+		}
+
+		if (ss->g) {
+			int i;
+			uint8_t ng = *vp9++;
+
+			for (i = 0; ng > 0 && i < ng; i++) {
+				vp9_n_g_t *n_g = (vp9_n_g_t *)(vp9++);
+				vp9 += n_g->r;
+			}
 		}
 	}
 
-	vp9 = data + 1;
+	if (vp9 - data >= frame->datalen) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid VP9 Packet\n");
+		switch_buffer_zero(context->vpx_packet_buffer);
+		goto end;
+	}
+
+	if (switch_buffer_inuse(context->vpx_packet_buffer)) { // middle packet
+		if (desc->start) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "got invalid vp9 packet, packet loss? resetting buffer\n");
+			switch_buffer_zero(context->vpx_packet_buffer);
+		}
+	} else { // start packet
+		if (!desc->start) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "got invalid vp9 packet, packet loss? waiting for a start packet\n");
+			goto end;
+		}
+	}
 
 	len = frame->datalen - (vp9 - data);
 	switch_buffer_write(context->vpx_packet_buffer, vp9, len);
@@ -860,7 +1039,6 @@ static switch_status_t switch_vpx_decode(switch_codec_t *codec, switch_frame_t *
 		is_keyframe = IS_VP8_KEY_FRAME((uint8_t *)frame->data);
 	}
 	
-	
     if (context->got_key_frame <= 0) {
         context->no_key_frame++;
         //switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "no keyframe, %d\n", context->no_key_frame);
@@ -870,7 +1048,7 @@ static switch_status_t switch_vpx_decode(switch_codec_t *codec, switch_frame_t *
             }
         }
     }
-	
+
 	// if (is_keyframe) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "got key %d\n", is_keyframe);
 
 	if (context->need_decoder_reset != 0) {
@@ -927,7 +1105,7 @@ static switch_status_t switch_vpx_decode(switch_codec_t *codec, switch_frame_t *
 		switch_goto_status(SWITCH_STATUS_SUCCESS, end);
 	}
 
-	//printf("READ buf:%ld got_key:%d st:%d m:%d\n", switch_buffer_inuse(context->vpx_packet_buffer), context->got_key_frame, status, frame->m);
+	// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "====READ buf:%ld got_key:%d st:%d m:%d\n", switch_buffer_inuse(context->vpx_packet_buffer), context->got_key_frame, status, frame->m);
 
 	len = switch_buffer_inuse(context->vpx_packet_buffer);
 
@@ -961,6 +1139,7 @@ static switch_status_t switch_vpx_decode(switch_codec_t *codec, switch_frame_t *
 			frame->img = NULL;
 		} else {
 			frame->img = (switch_image_t *) vpx_codec_get_frame(decoder, &context->dec_iter);
+			// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%dx%d\n", frame->img->d_w, frame->img->d_h);
 		}
 		
 		switch_buffer_zero(context->vpx_packet_buffer);
