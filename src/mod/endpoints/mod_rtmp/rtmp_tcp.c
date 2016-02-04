@@ -301,6 +301,10 @@ switch_status_t rtmp_tcp_init(rtmp_profile_t *profile, const char *bindaddr, rtm
 	if (switch_socket_opt_set(io_tcp->listen_socket, SWITCH_SO_TCP_NODELAY, 1)) {
 		goto fail;
 	}
+	if (1) {
+		switch_socket_opt_set(io_tcp->listen_socket, SWITCH_SO_RCVBUF, 1572864);
+		switch_socket_opt_set(io_tcp->listen_socket, SWITCH_SO_SNDBUF, 1572864);
+	}
 	if (switch_socket_bind(io_tcp->listen_socket, sa)) {
 		goto fail;
 	}

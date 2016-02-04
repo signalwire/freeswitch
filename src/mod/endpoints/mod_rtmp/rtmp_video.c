@@ -583,7 +583,7 @@ switch_status_t rtmp_write_video_frame(switch_core_session_t *session, switch_fr
 	rtmp_rtp2rtmpH264(helper, frame);
 
 	if (helper->send) {
-		uint16_t used = switch_buffer_inuse(helper->rtmp_buf);
+		uint32_t used = switch_buffer_inuse(helper->rtmp_buf);
 		const void *rtmp_data = NULL;
 
 		switch_buffer_peek_zerocopy(helper->rtmp_buf, &rtmp_data);
@@ -632,6 +632,11 @@ switch_status_t rtmp_write_video_frame(switch_core_session_t *session, switch_fr
 				switch_core_session_request_video_refresh(session);
 				switch_core_session_rwunlock(other_session);
 			}
+		}
+
+		if (rsession->video_send_queue && switch_queue_size(rsession->video_send_queue) > 30) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Need a key frame\n");
+			switch_channel_set_flag(channel, CF_VIDEO_REFRESH_REQ);
 		}
 skip:
 		switch_buffer_zero(helper->rtmp_buf);

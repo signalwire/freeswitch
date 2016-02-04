@@ -911,7 +911,6 @@ switch_status_t rtmp_session_request(rtmp_profile_t *profile, rtmp_session_t **n
 	{
 		char buf[1024];
 #ifndef _WIN32
-#else
 		snprintf(buf, sizeof(buf), "/tmp/rtmp-%s-in.txt", (*newsession)->uuid);
 		(*newsession)->io_debug_in = fopen(buf, "w");
 		snprintf(buf, sizeof(buf), "/tmp/rtmp-%s-out.txt", (*newsession)->uuid);
