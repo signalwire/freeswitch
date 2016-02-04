@@ -1285,7 +1285,7 @@ typedef enum {
   \brief Channel States (these are the defaults, CS_SOFT_EXECUTE, CS_EXCHANGE_MEDIA, and CS_CONSUME_MEDIA are often overridden by specific apps)
 <pre>
 CS_NEW       - Channel is newly created.
-CS_INIT      - Channel has been initilized.
+CS_INIT      - Channel has been initialized.
 CS_ROUTING   - Channel is looking for an extension to execute.
 CS_SOFT_EXECUTE  - Channel is ready to execute from 3rd party control.
 CS_EXECUTE   - Channel is executing it's dialplan.
@@ -1296,7 +1296,7 @@ CS_HIBERNATE - Channel is in a sleep state.
 CS_RESET 	 - Channel is in a reset state.
 CS_HANGUP    - Channel is flagged for hangup and ready to end.
 CS_REPORTING - Channel is ready to collect call detail.
-CS_DESTROY      - Channel is ready to be destroyed and out of the state machine
+CS_DESTROY      - Channel is ready to be destroyed and out of the state machine.
 </pre>
  */
 typedef enum {
