@@ -117,7 +117,7 @@ typedef struct {
 	uint8_t ignore_ring_ready;
 	int monitor_early_media_ring_count;
 	int monitor_early_media_ring_total;
-	int cancel_timeout;
+	switch_bool_t cancel_timeout;
 	int continue_on_timeout;
 	int ringback_ok;
 	int sending_ringback;
@@ -262,9 +262,6 @@ static int check_per_channel_timeouts(originate_global_t *oglobals,
 
 	time_t elapsed = switch_epoch_time_now(NULL) - start;
 
-	if (oglobals->cancel_timeout > 0) {
-		return 0;
-	}
 	for (i = 0; i < max; i++) {
 		if (originate_status[i].peer_channel && switch_channel_get_state(originate_status[i].peer_channel) != CS_DESTROY &&
 			switch_channel_get_state(originate_status[i].peer_channel) != CS_REPORTING) {
@@ -738,8 +735,10 @@ static uint8_t check_channel_status(originate_global_t *oglobals, originate_stat
 			if (!zstr(oglobals->key)) {
 				struct key_collect *collect;
 
-				if (oglobals->cancel_timeout < 0) {
-					oglobals->cancel_timeout = 1;
+				if (oglobals->cancel_timeout == SWITCH_TRUE) {
+					/* cancel timeout for this leg only */
+					originate_status[i].per_channel_progress_timelimit_sec = 0;
+					originate_status[i].per_channel_timelimit_sec = 0;
 				}
 
 				if ((collect = switch_core_session_alloc(originate_status[i].peer_session, sizeof(*collect)))) {
@@ -2277,7 +2276,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 #endif
 
 	if (switch_true(switch_event_get_header(var_event, "group_confirm_cancel_timeout"))) {
-		oglobals.cancel_timeout = -1;
+		oglobals.cancel_timeout = SWITCH_TRUE;
 	}
 
 	if ((var = switch_event_get_header(var_event, "group_confirm_key"))) {
