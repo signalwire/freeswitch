@@ -1806,6 +1806,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_3p_nomedia(const char *uuid, switch_m
 				switch_channel_set_flag(other_channel, CF_RESET);
 				switch_channel_set_flag(other_channel, CF_REDIRECT);
 
+				switch_channel_set_variable(channel, SWITCH_R_SDP_VARIABLE, NULL);
 				switch_channel_set_flag(channel, CF_3P_NOMEDIA_REQUESTED);
 				switch_core_session_receive_message(session, &msg);
 
@@ -1819,24 +1820,24 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_3p_nomedia(const char *uuid, switch_m
 					switch_channel_wait_for_state(other_channel, channel, CS_PARK);
 				}
 				
-				
-				switch_channel_set_flag(other_channel, CF_3P_NOMEDIA_REQUESTED);
-				switch_channel_set_flag(other_channel, CF_3P_NOMEDIA_REQUESTED_BLEG);
-				
+					
 				if (!switch_core_session_in_thread(session)) {
 					switch_channel_wait_for_state(channel, NULL, CS_PARK);
 				}
 
 				switch_channel_wait_for_flag(channel, CF_REQ_MEDIA, SWITCH_FALSE, 10000, NULL);
 				switch_channel_wait_for_flag(channel, CF_MEDIA_ACK, SWITCH_TRUE, 10000, NULL);
-				//switch_channel_wait_for_flag(channel, CF_MEDIA_SET, SWITCH_TRUE, 10000, NULL);
-
+				switch_channel_wait_for_flag(channel, CF_3P_NOMEDIA_REQUESTED, SWITCH_FALSE, 10000, NULL);
 
 				msg.string_arg = switch_channel_get_variable(channel, SWITCH_R_SDP_VARIABLE);
+				switch_channel_set_flag(other_channel, CF_3P_NOMEDIA_REQUESTED);
+				switch_channel_set_flag(other_channel, CF_3P_NOMEDIA_REQUESTED_BLEG);
+
+
 				switch_core_session_receive_message(other_session, &msg);
 				switch_channel_wait_for_flag(other_channel, CF_REQ_MEDIA, SWITCH_FALSE, 10000, NULL);
-				//switch_channel_wait_for_flag(other_channel, CF_MEDIA_SET, SWITCH_TRUE, 10000, NULL);
 				switch_channel_wait_for_flag(other_channel, CF_MEDIA_ACK, SWITCH_TRUE, 10000, NULL);
+				switch_channel_wait_for_flag(other_channel, CF_3P_NOMEDIA_REQUESTED, SWITCH_FALSE, 10000, NULL);
 			}
 
 			if (other_channel) {
