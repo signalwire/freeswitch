@@ -9,11 +9,11 @@ extern size_t next_power_of_2(size_t v)
 
     v++;
 
-    do{
+    do {
         prev = v;
         v &= ~tmp;
         tmp <<= 1;
-    }while(v != 0);
+    } while (v != 0);
 
     prev <<= 1;
 
