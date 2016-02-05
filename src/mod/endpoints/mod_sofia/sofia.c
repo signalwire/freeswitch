@@ -6758,7 +6758,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 	}
 
 	if (session) {
-		if (switch_channel_test_flag(channel, CF_ANSWERED) && (status == 180 || status == 183) && !r_sdp) {
+		if ((switch_channel_test_flag(channel, CF_ANSWERED) && (status == 180 || status == 183) && !r_sdp) || (ss_state == nua_callstate_ready && status >= 300)) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Channel %s skipping state [%s][%d]\n",
 							  switch_channel_get_name(channel), nua_callstate_name(ss_state), status);
 			goto done;
@@ -9157,7 +9157,14 @@ void sofia_handle_sip_i_reinvite(switch_core_session_t *session,
 				tech_pvt->mparams.last_sdp_str = tech_pvt->mparams.prev_sdp_str;
 			}
 		}
-		switch_channel_execute_on(channel, "execute_on_sip_reinvite");
+
+		if (switch_core_media_check_udptl_mode(session, SWITCH_MEDIA_TYPE_AUDIO)) {
+			/* Refuse all re-invites once we are doing T.38 */
+			nua_respond(nh, SIP_488_NOT_ACCEPTABLE, TAG_END());
+			switch_channel_hangup(channel, SWITCH_CAUSE_INCOMPATIBLE_DESTINATION);
+		} else {
+			switch_channel_execute_on(channel, "execute_on_sip_reinvite");
+		}
 	}
 
 }

@@ -253,6 +253,7 @@ SWITCH_DECLARE(void) switch_core_media_set_telephony_event(switch_core_session_t
 SWITCH_DECLARE(void) switch_core_media_set_telephony_recv_event(switch_core_session_t *session, switch_media_type_t type, switch_payload_t te);
 SWITCH_DECLARE(switch_rtp_stats_t *) switch_core_media_stats(switch_core_session_t *session, switch_media_type_t type, switch_memory_pool_t *pool);
 SWITCH_DECLARE(switch_status_t) switch_core_media_udptl_mode(switch_core_session_t *session, switch_media_type_t type);
+SWITCH_DECLARE(switch_bool_t) switch_core_media_check_udptl_mode(switch_core_session_t *session, switch_media_type_t type);
 
 SWITCH_DECLARE(void) switch_core_media_set_rtp_flag(switch_core_session_t *session, switch_media_type_t type, switch_rtp_flag_t flag);
 SWITCH_DECLARE(void) switch_core_media_clear_rtp_flag(switch_core_session_t *session, switch_media_type_t type, switch_rtp_flag_t flag);
