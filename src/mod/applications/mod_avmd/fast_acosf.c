@@ -82,7 +82,7 @@ extern void init_fast_acosf(void)
 
     if (acos_table == NULL) {
         ret = access(ACOS_TABLE_FILENAME, F_OK);
-        if(ret == 0) compute_table();
+        if (ret == 0) compute_table();
 
         acos_fd = open(ACOS_TABLE_FILENAME, O_RDONLY);
         if (acos_fd == -1) perror("Could not open file " ACOS_TABLE_FILENAME);
