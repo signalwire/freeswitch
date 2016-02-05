@@ -65,13 +65,11 @@ extern void compute_table(void)
 
     acos_table_file = fopen(ACOS_TABLE_FILENAME, "w");
 
-
-    for(i = 0; i < (1 << 25); i++){
-	f = acosf(float_from_index(i));
-	ret = fwrite(&f, sizeof(f), 1, acos_table_file);
-	assert(ret != 0);
+    for (i = 0; i < (1 << 25); i++) {
+        f = acosf(float_from_index(i));
+        ret = fwrite(&f, sizeof(f), 1, acos_table_file);
+        assert(ret != 0);
     }
-
 
     ret = fclose(acos_table_file);
     assert(ret != EOF);
@@ -82,13 +80,13 @@ extern void init_fast_acosf(void)
 {
     int ret;
 
-    if(acos_table == NULL){
-	ret = access(ACOS_TABLE_FILENAME, F_OK);
-	if(ret == 0) compute_table();
+    if (acos_table == NULL) {
+        ret = access(ACOS_TABLE_FILENAME, F_OK);
+        if (ret == 0) compute_table();
 
         acos_fd = open(ACOS_TABLE_FILENAME, O_RDONLY);
-	if(acos_fd == -1) perror("Could not open file " ACOS_TABLE_FILENAME);
-	assert(acos_fd != -1);
+        if (acos_fd == -1) perror("Could not open file " ACOS_TABLE_FILENAME);
+        assert(acos_fd != -1);
         acos_table = (float *)mmap(
             NULL,
             ACOS_TABLE_LENGTH * sizeof(float),
@@ -136,5 +134,3 @@ static float float_from_index(uint32_t d)
 
 
 #endif
-
-
