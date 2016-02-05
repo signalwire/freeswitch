@@ -21,11 +21,11 @@ extern double goertzel(circ_buffer_t *b, size_t pos, double f, size_t num)
 
     coeff = 2.0 * cos(2.0 * M_PI * f);
 
-    for(i = 0; i < num; i++){
-	/* TODO: optimize to avoid GET_SAMPLE when possible */
-	s = GET_SAMPLE(b, i + pos) + (coeff * p) - p2;
-	p2 = p;
-	p = s;
+    for (i = 0; i < num; i++) {
+	    /* TODO: optimize to avoid GET_SAMPLE when possible */
+	    s = GET_SAMPLE(b, i + pos) + (coeff * p) - p2;
+	    p2 = p;
+	    p = s;
     }
 
     return (p2 * p2) + (p * p) - (coeff * p2 * p);

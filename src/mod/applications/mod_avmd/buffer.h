@@ -29,7 +29,7 @@ extern size_t next_power_of_2(size_t v);
 	(b)->pos++; \
 	(b)->pos &= (b)->mask; \
 	(b)->lpos++; \
-	if((b)->backlog < (b)->buf_len) (b)->backlog++; \
+	if ((b)->backlog < (b)->buf_len) (b)->backlog++; \
     }
 
 #define DEC_POS(b) \
@@ -37,27 +37,27 @@ extern size_t next_power_of_2(size_t v);
 	(b)->pos--; \
 	(b)->pos &= (b)->mask; \
 	(b)->lpos--; \
-	if(((b)->backlog - 1) < (b)->backlog) (b)->backlog--; \
+	if (((b)->backlog - 1) < (b)->backlog) (b)->backlog--; \
     }
 
 #define GET_SAMPLE(b, i) ((b)->buf[(i) & (b)->mask])
 #define SET_SAMPLE(b, i, v) ((b)->buf[(i) & (b)->mask] = (v))
 
 #define INSERT_FRAME(b, f, l) \
-    do{ \
-	for((b)->i = 0; (b)->i < (l); (b)->i++){ \
+    do { \
+	for ((b)->i = 0; (b)->i < (l); (b)->i++) { \
 	    SET_SAMPLE((b), ((b)->i + (b)->pos), (f)[(b)->i]); \
 	} \
 	(b)->pos += (l); \
 	(b)->lpos += (l); \
 	(b)->pos %= (b)->buf_len; \
 	(b)->backlog += (l); \
-	if((b)->backlog > (b)->buf_len) (b)->backlog = (b)->buf_len; \
-    }while(0)
+	if ((b)->backlog > (b)->buf_len) (b)->backlog = (b)->buf_len; \
+    } while (0)
 
 #define INSERT_INT16_FRAME(b, f, l) \
     { \
-	for((b)->i = 0; (b)->i < (l); (b)->i++){ \
+	for ((b)->i = 0; (b)->i < (l); (b)->i++) { \
 	    SET_SAMPLE( \
 		(b), \
 		((b)->i + (b)->pos), \
@@ -72,7 +72,7 @@ extern size_t next_power_of_2(size_t v);
 	(b)->lpos += (l); \
 	(b)->pos &= (b)->mask; \
 	(b)->backlog += (l); \
-	if((b)->backlog > (b)->buf_len) (b)->backlog = (b)->buf_len; \
+	if ((b)->backlog > (b)->buf_len) (b)->backlog = (b)->buf_len; \
     }
 
 
@@ -95,10 +95,10 @@ extern size_t next_power_of_2(size_t v);
 #define GET_CURRENT_SAMPLE(b) GET_SAMPLE((b), GET_CURRENT_POS((b)))
 
 #define ADD_SAMPLE(b, s) \
-    do{ \
+    do { \
 	INC_POS((b)); \
 	SET_SAMPLE((b), GET_CURRENT_POS((b)), (s)); \
-    }while(0)
+    } while (0)
 
 #endif
 

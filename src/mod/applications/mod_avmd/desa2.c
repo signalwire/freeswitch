@@ -35,7 +35,7 @@ extern double desa2(circ_buffer_t *b, size_t i)
     x2sq = x2 * x2;
 
     d = 2.0 * ((x2sq) - (x1 * x3));
-    if(d == 0.0) return 0.0;
+    if (d == 0.0) return 0.0;
 
     n = ((x2sq) - (x0 * x4)) - ((x1 * x1) - (x0 * x2)) - ((x3 * x3) - (x2 * x4));
 
@@ -46,14 +46,10 @@ extern double desa2(circ_buffer_t *b, size_t i)
     result = 0.5 * acos(n/d);
 #endif
 
-    if(ISNAN(result)){
-	result = 0.0;
-    }
-
+    if (ISNAN(result)) result = 0.0;
 
     return result;
 
 }
 
 #endif
-
