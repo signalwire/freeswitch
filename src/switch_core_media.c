@@ -9587,7 +9587,7 @@ SWITCH_DECLARE(switch_bool_t) switch_core_media_check_udptl_mode(switch_core_ses
 	switch_assert(session);
 
 	if (!(smh = session->media_handle)) {
-		return SWITCH_STATUS_FALSE;
+		return SWITCH_FALSE;
 	}
 
 	if (switch_rtp_ready(smh->engines[type].rtp_session)) {
