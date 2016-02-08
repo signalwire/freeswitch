@@ -214,7 +214,7 @@ static unsigned char console_eofkey(EditLine *el, int ch)
 		return CC_EOF;
 	} else {
 		if (line->cursor != line->lastchar) {
-			line->cursor++;
+			el_cursor(el, 1);
 			el_deletestr(el, 1);
 		}
 		return CC_REDISPLAY;
