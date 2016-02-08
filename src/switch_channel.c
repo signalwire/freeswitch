@@ -2113,8 +2113,7 @@ SWITCH_DECLARE(int) switch_channel_state_change_pending(switch_channel_t *channe
 
 SWITCH_DECLARE(int) switch_channel_check_signal(switch_channel_t *channel, switch_bool_t in_thread_only)
 {
-	(void)in_thread_only;
-	switch_ivr_parse_next_signal_data(channel->session);
+	switch_ivr_parse_signal_data(channel->session, SWITCH_FALSE, in_thread_only);
 	return 0;
 }
 
