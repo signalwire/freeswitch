@@ -1414,6 +1414,7 @@ AS_IF([test "x$enable_core_libedit_support" != "xno"],[
   PKG_CHECK_MODULES([LIBEDIT], [libedit >= 2.11],,[
     AC_MSG_RESULT([no])
     AC_CHECK_LIB([edit], [el_line], [LIBEDIT_LIBS=-ledit])
+    AC_CHECK_LIB([edit], [el_cursor], [ac_cv_has_el_cursor=yes])
     AC_CHECK_HEADER([histedit.h], [], [unset LIBEDIT_LIBS])
     AS_IF([test "x$LIBEDIT_LIBS" = "x"], [
       AC_MSG_ERROR([You need to either install libedit-dev (>= 2.11) or configure with --disable-core-libedit-support])
@@ -1451,6 +1452,9 @@ AS_IF([test "x$enable_core_libedit_support" != "xno"], [
   # If making changes here, don't forget to run autoheader and
   # update libs/esl/src/include/esl_config_auto.h.in manually.
   AC_DEFINE([HAVE_LIBEDIT], [1], [Define to 1 if you have libedit is available])
+if test x$ac_cv_has_el_cursor = xyes; then
+  AC_DEFINE([HAVE_EL_CURSOR], [1], [Define to 1 if you have libedit el_cursor support])
+fi
   save_LIBS="${LIBS}"
   save_CPPFLAGS="${CPPFLAGS}"
   LIBS="${LIBEDIT_LIBS}"
