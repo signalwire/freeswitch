@@ -1298,14 +1298,19 @@ static FILE *preprocess_glob(const char *cwd, const char *pattern, FILE *write_f
 	char *dir_path = NULL, *e = NULL;
 	glob_t glob_data;
 	size_t n;
+	int glob_return;
 
 	if (!switch_is_file_path(pattern)) {
 		full_path = switch_mprintf("%s%s%s", cwd, SWITCH_PATH_SEPARATOR, pattern);
 		pattern = full_path;
 	}
 
-	if (glob(pattern, GLOB_NOCHECK, NULL, &glob_data) != 0) {
+	glob_return = glob(pattern, GLOB_ERR, NULL, &glob_data);
+	if (glob_return == GLOB_NOSPACE || glob_return == GLOB_ABORTED) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error including %s\n", pattern);
+		goto end;
+	} else if (glob_return == GLOB_NOMATCH) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "No files to include at %s\n", pattern);
 		goto end;
 	}
 
@@ -1324,7 +1329,7 @@ static FILE *preprocess_glob(const char *cwd, const char *pattern, FILE *write_f
 	}
 	globfree(&glob_data);
 
-  end:
+ end:
 
 	switch_safe_free(full_path);
 
