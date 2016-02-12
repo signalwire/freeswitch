@@ -621,20 +621,10 @@
         <step dir="R" type="HDLC" modem="V.21" tag="DIS" value="FF C8 01 ..." timeout="60000"/>
         <step dir="R" type="SILENCE"/>
 
-        <step dir="R" type="HDLC" modem="V.21" tag="DIS" value="FF C8 01 ..."/>
-        <step dir="R" type="SILENCE"/>
-
-        <step dir="R" type="HDLC" modem="V.21" tag="DIS" value="FF C8 01 ..."/>
-        <step dir="R" type="SILENCE"/>
-
-        <step dir="R" type="HDLC" modem="V.21" tag="DIS" value="FF C8 01 ..."/>
-        <step dir="R" type="SILENCE"/>
-
-        <step dir="R" type="HDLC" modem="V.21" tag="DIS" value="FF C8 01 ..."/>
-        <step dir="R" type="SILENCE"/>
-
-        <step dir="R" type="HDLC" modem="V.21" tag="DIS" value="FF C8 01 ..."/>
-        <step dir="R" type="SILENCE"/>
+        <repeat min="5" max="5">
+            <step dir="R" type="HDLC" modem="V.21" tag="DIS" value="FF C8 01 ..."/>
+            <step dir="R" type="SILENCE"/>
+        </repeat>
 
         <step dir="R" type="HDLC" modem="V.21" tag="DCN" value="FF C8 5F"/>
         <step dir="R" type="SILENCE"/>
@@ -647,6 +637,78 @@
         <step dir="T" type="SET" tag="IDENT" value="+0123456789"/>
 
         <step dir="R" type="CNG"/>
+
+        <step type="WAIT" value="75"/>
+
+        <step dir="R" type="CLEAR" timein="55000" timeout="65000"/>
+        <step type="STATUS" value="T0_EXPIRED"/>
+    </test>
+    <test name="T1-after-EOM">
+        <!-- After and EOM exchange the far end no longer responds. -->
+        <step type="CALL" value="etsi_300_242_a4_white.tif"/>
+
+        <step dir="R" type="CED"/>
+        <step dir="R" type="HDLC" modem="V.21" tag="DIS" value="FF C8 01 ..." timeout="60000"/>
+        <step dir="R" type="SILENCE"/>
+
+        <step type="WAIT" value="75"/>
+        <step dir="T" type="PREAMBLE" modem="V.21"/>
+        <step dir="T" type="HDLC" tag="DCS" value="FF C8 41 00 50 00"/>
+        <step dir="T" type="POSTAMBLE"/>
+        <step type="WAIT" value="75"/>
+        <step dir="T" type="TCF" modem="V.27ter/4800" value="900"/>
+
+        <step dir="R" type="HDLC" modem="V.21" tag="CFR" value="FF C8 21"/>
+        <step dir="R" type="SILENCE"/>
+
+        <step type="WAIT" value="75"/>
+        <step dir="T" type="MSG" modem="V.27ter/4800" value="etsi_300_242_a4_white.tif"/>
+        <step type="WAIT" value="75"/>
+        <step dir="T" type="PREAMBLE" modem="V.21"/>
+        <step dir="T" type="HDLC" tag="EOM" value="FF C8 71"/>
+        <step dir="T" type="POSTAMBLE"/>
+
+        <step dir="R" type="HDLC" modem="V.21" tag="MCF" value="FF C8 31"/>
+        <step dir="R" type="SILENCE"/>
+
+        <step dir="R" type="HDLC" modem="V.21" tag="DIS" value="FF C8 01 ..." timeout="60000"/>
+        <step dir="R" type="SILENCE"/>
+
+        <repeat min="5" max="5">
+            <step dir="R" type="HDLC" modem="V.21" tag="DIS" value="FF C8 01 ..."/>
+            <step dir="R" type="SILENCE"/>
+        </repeat>
+
+        <step dir="R" type="HDLC" modem="V.21" tag="DCN" value="FF C8 5F"/>
+        <step dir="R" type="SILENCE"/>
+
+        <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
+        <step type="STATUS" value="T1_EXPIRED"/>
+    </test>
+    <test name="T1-after-EOMx">
+        <!-- After and EOM exchange the far end no longer responds. -->
+        <step type="ANSWER" value="etsi_300_242_a4_white.tif"/>
+
+        <step dir="R" type="CNG"/>
+
+        <step dir="T" type="CED"/>
+        <step type="WAIT" value="75"/>
+        <step dir="T" type="PREAMBLE" modem="V.21"/>
+        <step dir="T" type="HDLC" tag="DIS" value="FF C8 01 00 50 00"/>
+        <step dir="T" type="POSTAMBLE"/>
+
+        <step dir="R" type="HDLC" modem="V.21" tag="DCS+" value="FF C8 C1 00 ..."/>
+        <step dir="R" type="TCF" modem="V.27ter/4800" timeout="10000"/>
+
+        <step type="WAIT" value="75"/>
+        <step dir="T" type="PREAMBLE" modem="V.21"/>
+        <step dir="T" type="HDLC" tag="CFR" value="FF C8 21"/>
+        <step dir="T" type="POSTAMBLE"/>
+
+        <step dir="T" type="SET" tag="TXFILE" value="etsi_300_242_a4_white.tif"/>
+
+        <step dir="R" type="MSG" modem="V.27ter/4800" timeout="60000"/>
+        <step dir="R" type="HDLC" modem="V.21" tag="EOM" value="FF C8 F1"/>
 
         <step type="WAIT" value="75"/>
 

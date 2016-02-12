@@ -439,9 +439,9 @@ static void start_final_pause(t30_state_t *s);
 static void decode_20digit_msg(t30_state_t *s, char *msg, const uint8_t *pkt, int len);
 static void decode_url_msg(t30_state_t *s, char *msg, const uint8_t *pkt, int len);
 static int decode_nsf_nss_nsc(t30_state_t *s, uint8_t *msg[], const uint8_t *pkt, int len);
-static void set_min_scan_time(t30_state_t *s);
 static int send_cfr_sequence(t30_state_t *s, int start);
 static int build_dcs(t30_state_t *s);
+static void set_min_scan_time(t30_state_t *s);
 static void timer_t2_start(t30_state_t *s);
 static void timer_t2_flagged_start(t30_state_t *s);
 static void timer_t2_dropped_start(t30_state_t *s);
@@ -2521,6 +2521,9 @@ static void send_dcn(t30_state_t *s)
 static void return_to_phase_b(t30_state_t *s, int with_fallback)
 {
     /* This is what we do after things like T30_EOM is exchanged. */
+    span_log(&s->logging, SPAN_LOG_PROTOCOL_WARNING, "Returning to phase B\n");
+    /* Run the T1 timer, like we do on first detecting the far end. */
+    s->timer_t0_t1 = ms_to_samples(DEFAULT_TIMER_T1);
     set_state(s, (s->calling_party)  ?  T30_STATE_T  :  T30_STATE_R);
 }
 /*- End of function --------------------------------------------------------*/
@@ -3143,6 +3146,58 @@ static int process_rx_dcs(t30_state_t *s, const uint8_t *msg, int len)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void assess_copy_quality(t30_state_t *s, uint8_t fcf)
+{
+    int quality;
+    
+    quality = copy_quality(s);
+    switch (quality)
+    {
+    case T30_COPY_QUALITY_PERFECT:
+    case T30_COPY_QUALITY_GOOD:
+        rx_end_page(s);
+        break;
+    case T30_COPY_QUALITY_POOR:
+        rx_end_page(s);
+        break;
+    case T30_COPY_QUALITY_BAD:
+        /* Some people want to keep even the bad pages */
+        if (s->keep_bad_pages)
+            rx_end_page(s);
+        /*endif*/
+        break;
+    }
+    /*endswitch*/
+
+    if (s->phase_d_handler)
+        s->phase_d_handler(s->phase_d_user_data, fcf);
+    /*endif*/
+    if (fcf == T30_EOP)
+        terminate_operation_in_progress(s);
+    else
+        rx_start_page(s);
+    /*endif*/
+
+    switch (quality)
+    {
+    case T30_COPY_QUALITY_PERFECT:
+    case T30_COPY_QUALITY_GOOD:
+        s->last_rx_page_result = T30_MCF;
+        break;
+    case T30_COPY_QUALITY_POOR:
+        s->last_rx_page_result = T30_RTP;
+        break;
+    case T30_COPY_QUALITY_BAD:
+    default:
+        s->last_rx_page_result = T30_RTN;
+        break;
+    }
+    /*endswitch*/
+    set_state(s, T30_STATE_III_Q);
+    send_simple_frame(s, s->last_rx_page_result);
+}
+/*- End of function --------------------------------------------------------*/
+
 static int send_response_to_pps(t30_state_t *s)
 {
     queue_phase(s, T30_PHASE_D_TX);
@@ -3290,6 +3345,7 @@ static int process_rx_pps(t30_state_t *s, const uint8_t *msg, int len)
                         /* Use the length of the first frame as our model for what the length should be */
                         if (s->ecm_len[frame_no] == 64)
                             expected_len = 64;
+                        /*endif*/
                         first = false;
                     }
                     /*endif*/
@@ -4083,58 +4139,6 @@ static void process_state_f_doc_non_ecm(t30_state_t *s, const uint8_t *msg, int 
 }
 /*- End of function --------------------------------------------------------*/
 
-static void assess_copy_quality(t30_state_t *s, uint8_t fcf)
-{
-    int quality;
-    
-    quality = copy_quality(s);
-    switch (quality)
-    {
-    case T30_COPY_QUALITY_PERFECT:
-    case T30_COPY_QUALITY_GOOD:
-        rx_end_page(s);
-        break;
-    case T30_COPY_QUALITY_POOR:
-        rx_end_page(s);
-        break;
-    case T30_COPY_QUALITY_BAD:
-        /* Some people want to keep even the bad pages */
-        if (s->keep_bad_pages)
-            rx_end_page(s);
-        /*endif*/
-        break;
-    }
-    /*endswitch*/
-
-    if (s->phase_d_handler)
-        s->phase_d_handler(s->phase_d_user_data, fcf);
-    /*endif*/
-    if (fcf == T30_EOP)
-        terminate_operation_in_progress(s);
-    else
-        rx_start_page(s);
-    /*endif*/
-
-    switch (quality)
-    {
-    case T30_COPY_QUALITY_PERFECT:
-    case T30_COPY_QUALITY_GOOD:
-        s->last_rx_page_result = T30_MCF;
-        break;
-    case T30_COPY_QUALITY_POOR:
-        s->last_rx_page_result = T30_RTP;
-        break;
-    case T30_COPY_QUALITY_BAD:
-    default:
-        s->last_rx_page_result = T30_RTN;
-        break;
-    }
-    /*endswitch*/
-    set_state(s, T30_STATE_III_Q);
-    send_simple_frame(s, s->last_rx_page_result);
-}
-/*- End of function --------------------------------------------------------*/
-
 static void process_state_f_post_doc_non_ecm(t30_state_t *s, const uint8_t *msg, int len)
 {
     uint8_t fcf;
@@ -4725,6 +4729,7 @@ static void process_state_ii_q(t30_state_t *s, const uint8_t *msg, int len)
             t30_set_status(s, T30_ERR_TX_BADPG);
             break;
         }
+        /*endswitch*/
         terminate_call(s);
         break;
     case T30_CRP:
@@ -6088,6 +6093,8 @@ static void timer_t2_expired(t30_state_t *s)
             /* We didn't receive a response to our T30_MCF after T30_EOM, so we must be OK
                to proceed to phase B, and pretty much act like its the beginning of a call. */
             span_log(&s->logging, SPAN_LOG_FLOW, "Returning to phase B after %s\n", t30_frametype(s->next_rx_step));
+            /* Run the T1 timer, like we do on first detecting the far end. */
+            s->timer_t0_t1 = ms_to_samples(DEFAULT_TIMER_T1);
             s->dis_received = false;
             set_phase(s, T30_PHASE_B_TX);
             timer_t2_start(s);
