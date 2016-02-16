@@ -246,14 +246,20 @@ static iks *stop_output_component(struct rayo_actor *component, struct rayo_mess
 {
 	iks *iq = msg->payload;
 	iks *result = NULL;
+	switch_core_session_t *session = NULL;
 	switch_stream_handle_t stream = { 0 };
 	char *command = switch_mprintf("%s stop", RAYO_JID(component));
 	SWITCH_STANDARD_STREAM(stream);
 	OUTPUT_COMPONENT(component)->stop = 1;
+	if (!strcmp(RAYO_ACTOR(component)->type, RAT_CALL_COMPONENT)) {
+		session = (switch_core_session_t *)data;
+	}
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s stopping\n", RAYO_JID(component));
 	switch_api_execute("fileman", command, NULL, &stream);
 	if (!zstr((char *)stream.data) && !strncmp((char *)stream.data, "+OK", 3)) {
 		result = iks_new_iq_result(iq);
+	} else if (session && switch_channel_get_state(switch_core_session_get_channel(session)) >= CS_HANGUP) {
+		result = iks_new_error_detailed(iq, STANZA_ERROR_UNEXPECTED_REQUEST, "call has ended");
 	} else if (!zstr((char *)stream.data)) {
 		result = iks_new_error_detailed_printf(iq, STANZA_ERROR_INTERNAL_SERVER_ERROR, "%s", (char *)stream.data);
 	} else {
@@ -271,13 +277,19 @@ static iks *pause_output_component(struct rayo_actor *component, struct rayo_mes
 {
 	iks *iq = msg->payload;
 	iks *result = NULL;
+	switch_core_session_t *session = NULL;
 	switch_stream_handle_t stream = { 0 };
 	char *command = switch_mprintf("%s pause", RAYO_JID(component));
 	SWITCH_STANDARD_STREAM(stream);
+	if (!strcmp(RAYO_ACTOR(component)->type, RAT_CALL_COMPONENT)) {
+		session = (switch_core_session_t *)data;
+	}
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s pausing\n", RAYO_JID(component));
 	switch_api_execute("fileman", command, NULL, &stream);
 	if (!zstr((char *)stream.data) && !strncmp((char *)stream.data, "+OK", 3)) {
 		result = iks_new_iq_result(iq);
+	} else if (session && switch_channel_get_state(switch_core_session_get_channel(session)) >= CS_HANGUP) {
+		result = iks_new_error_detailed(iq, STANZA_ERROR_UNEXPECTED_REQUEST, "call has ended");
 	} else if (!zstr((char *)stream.data)) {
 		result = iks_new_error_detailed_printf(iq, STANZA_ERROR_INTERNAL_SERVER_ERROR, "%s", (char *)stream.data);
 	} else {
@@ -295,13 +307,19 @@ static iks *resume_output_component(struct rayo_actor *component, struct rayo_me
 {
 	iks *iq = msg->payload;
 	iks *result = NULL;
+	switch_core_session_t *session = NULL;
 	switch_stream_handle_t stream = { 0 };
 	char *command = switch_mprintf("%s resume", RAYO_JID(component));
 	SWITCH_STANDARD_STREAM(stream);
+	if (!strcmp(RAYO_ACTOR(component)->type, RAT_CALL_COMPONENT)) {
+		session = (switch_core_session_t *)data;
+	}
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s resuming\n", RAYO_JID(component));
 	switch_api_execute("fileman", command, NULL, &stream);
 	if (!zstr((char *)stream.data) && !strncmp((char *)stream.data, "+OK", 3)) {
 		result = iks_new_iq_result(iq);
+	} else if (session && switch_channel_get_state(switch_core_session_get_channel(session)) >= CS_HANGUP) {
+		result = iks_new_error_detailed(iq, STANZA_ERROR_UNEXPECTED_REQUEST, "call has ended");
 	} else if (!zstr((char *)stream.data)) {
 		result = iks_new_error_detailed_printf(iq, STANZA_ERROR_INTERNAL_SERVER_ERROR, "%s", (char *)stream.data);
 	} else {
@@ -319,13 +337,19 @@ static iks *speed_up_output_component(struct rayo_actor *component, struct rayo_
 {
 	iks *iq = msg->payload;
 	iks *result = NULL;
+	switch_core_session_t *session = NULL;
 	switch_stream_handle_t stream = { 0 };
 	char *command = switch_mprintf("%s speed:+", RAYO_JID(component));
 	SWITCH_STANDARD_STREAM(stream);
+	if (!strcmp(RAYO_ACTOR(component)->type, RAT_CALL_COMPONENT)) {
+		session = (switch_core_session_t *)data;
+	}
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s speeding up\n", RAYO_JID(component));
 	switch_api_execute("fileman", command, NULL, &stream);
 	if (!zstr((char *)stream.data) && !strncmp((char *)stream.data, "+OK", 3)) {
 		result = iks_new_iq_result(iq);
+	} else if (session && switch_channel_get_state(switch_core_session_get_channel(session)) >= CS_HANGUP) {
+		result = iks_new_error_detailed(iq, STANZA_ERROR_UNEXPECTED_REQUEST, "call has ended");
 	} else if (!zstr((char *)stream.data)) {
 		result = iks_new_error_detailed_printf(iq, STANZA_ERROR_INTERNAL_SERVER_ERROR, "%s", (char *)stream.data);
 	} else {
@@ -343,13 +367,19 @@ static iks *speed_down_output_component(struct rayo_actor *component, struct ray
 {
 	iks *iq = msg->payload;
 	iks *result = NULL;
+	switch_core_session_t *session = NULL;
 	switch_stream_handle_t stream = { 0 };
 	char *command = switch_mprintf("%s speed:-", RAYO_JID(component));
 	SWITCH_STANDARD_STREAM(stream);
+	if (!strcmp(RAYO_ACTOR(component)->type, RAT_CALL_COMPONENT)) {
+		session = (switch_core_session_t *)data;
+	}
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s slowing down\n", RAYO_JID(component));
 	switch_api_execute("fileman", command, NULL, &stream);
 	if (!zstr((char *)stream.data) && !strncmp((char *)stream.data, "+OK", 3)) {
 		result = iks_new_iq_result(iq);
+	} else if (session && switch_channel_get_state(switch_core_session_get_channel(session)) >= CS_HANGUP) {
+		result = iks_new_error_detailed(iq, STANZA_ERROR_UNEXPECTED_REQUEST, "call has ended");
 	} else if (!zstr((char *)stream.data)) {
 		result = iks_new_error_detailed_printf(iq, STANZA_ERROR_INTERNAL_SERVER_ERROR, "%s", (char *)stream.data);
 	} else {
@@ -367,13 +397,19 @@ static iks *volume_up_output_component(struct rayo_actor *component, struct rayo
 {
 	iks *iq = msg->payload;
 	iks *result = NULL;
+	switch_core_session_t *session = NULL;
 	switch_stream_handle_t stream = { 0 };
 	char *command = switch_mprintf("%s volume:+", RAYO_JID(component));
 	SWITCH_STANDARD_STREAM(stream);
+	if (!strcmp(RAYO_ACTOR(component)->type, RAT_CALL_COMPONENT)) {
+		session = (switch_core_session_t *)data;
+	}
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s increasing volume\n", RAYO_JID(component));
 	switch_api_execute("fileman", command, NULL, &stream);
 	if (!zstr((char *)stream.data) && !strncmp((char *)stream.data, "+OK", 3)) {
 		result = iks_new_iq_result(iq);
+	} else if (session && switch_channel_get_state(switch_core_session_get_channel(session)) >= CS_HANGUP) {
+		result = iks_new_error_detailed(iq, STANZA_ERROR_UNEXPECTED_REQUEST, "call has ended");
 	} else if (!zstr((char *)stream.data)) {
 		result = iks_new_error_detailed_printf(iq, STANZA_ERROR_INTERNAL_SERVER_ERROR, "%s", (char *)stream.data);
 	} else {
@@ -391,13 +427,19 @@ static iks *volume_down_output_component(struct rayo_actor *component, struct ra
 {
 	iks *iq = msg->payload;
 	iks *result = NULL;
+	switch_core_session_t *session = NULL;
 	switch_stream_handle_t stream = { 0 };
 	char *command = switch_mprintf("%s volume:-", RAYO_JID(component));
 	SWITCH_STANDARD_STREAM(stream);
+	if (!strcmp(RAYO_ACTOR(component)->type, RAT_CALL_COMPONENT)) {
+		session = (switch_core_session_t *)data;
+	}
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s lowering volume\n", RAYO_JID(component));
 	switch_api_execute("fileman", command, NULL, &stream);
 	if (!zstr((char *)stream.data) && !strncmp((char *)stream.data, "+OK", 3)) {
 		result = iks_new_iq_result(iq);
+	} else if (session && switch_channel_get_state(switch_core_session_get_channel(session)) >= CS_HANGUP) {
+		result = iks_new_error_detailed(iq, STANZA_ERROR_UNEXPECTED_REQUEST, "call has ended");
 	} else if (!zstr((char *)stream.data)) {
 		result = iks_new_error_detailed_printf(iq, STANZA_ERROR_INTERNAL_SERVER_ERROR, "%s", (char *)stream.data);
 	} else {
@@ -418,16 +460,22 @@ static iks *seek_output_component(struct rayo_actor *component, struct rayo_mess
 
 	if (VALIDATE_RAYO_OUTPUT_SEEK(seek)) {
 		iks *result = NULL;
+		switch_core_session_t *session = NULL;
 		int is_forward = !strcmp("forward", iks_find_attrib(seek, "direction"));
 		int amount_ms = iks_find_int_attrib(seek, "amount");
 		char *command = switch_mprintf("%s seek:%s%i", RAYO_JID(component),
 			is_forward ? "+" : "-", amount_ms);
 		switch_stream_handle_t stream = { 0 };
 		SWITCH_STANDARD_STREAM(stream);
+		if (!strcmp(RAYO_ACTOR(component)->type, RAT_CALL_COMPONENT)) {
+			session = (switch_core_session_t *)data;
+		}
 
 		switch_api_execute("fileman", command, NULL, &stream);
 		if (!zstr((char *)stream.data) && !strncmp((char *)stream.data, "+OK", 3)) {
 			result = iks_new_iq_result(iq);
+		} else if (session && switch_channel_get_state(switch_core_session_get_channel(session)) >= CS_HANGUP) {
+			result = iks_new_error_detailed(iq, STANZA_ERROR_UNEXPECTED_REQUEST, "call has ended");
 		} else if (!zstr((char *)stream.data)) {
 			result = iks_new_error_detailed_printf(iq, STANZA_ERROR_INTERNAL_SERVER_ERROR, "%s", (char *)stream.data);
 		} else {
@@ -634,27 +682,27 @@ static switch_status_t rayo_file_close(switch_file_handle_t *handle)
 		struct output_component *output = OUTPUT_COMPONENT(context->component);
 
 		/* send completion and destroy */
-		if (output->stop) {
+		if (!strcmp(RAYO_ACTOR(context->component)->type, RAT_CALL_COMPONENT)) {
+			/* call output... check for hangup */
+			switch_core_session_t *session = switch_core_session_locate(RAYO_ACTOR(context->component)->parent->id);
+			if (session) {
+				if (switch_channel_get_state(switch_core_session_get_channel(session)) >= CS_HANGUP) {
+					rayo_component_send_complete(context->component, COMPONENT_COMPLETE_HANGUP);
+				} else if (output->stop) {
+					rayo_component_send_complete(context->component, COMPONENT_COMPLETE_STOP);
+				} else {
+					rayo_component_send_complete(context->component, OUTPUT_FINISH);
+				}
+				switch_core_session_rwunlock(session);
+			} else {
+				/* session is gone */
+				rayo_component_send_complete(context->component, COMPONENT_COMPLETE_HANGUP);
+			}
+		} else if (output->stop) {
 			rayo_component_send_complete(context->component, COMPONENT_COMPLETE_STOP);
 		} else {
-			if (!strcmp(RAYO_ACTOR(context->component)->type, RAT_CALL_COMPONENT)) {
-				/* call output... check for hangup */
-				switch_core_session_t *session = switch_core_session_locate(RAYO_ACTOR(context->component)->parent->id);
-				if (session) {
-					if (switch_channel_get_state(switch_core_session_get_channel(session)) >= CS_HANGUP) {
-						rayo_component_send_complete(context->component, COMPONENT_COMPLETE_HANGUP);
-					} else {
-						rayo_component_send_complete(context->component, OUTPUT_FINISH);
-					}
-					switch_core_session_rwunlock(session);
-				} else {
-					/* session is gone */
-					rayo_component_send_complete(context->component, COMPONENT_COMPLETE_HANGUP);
-				}
-			} else {
-				/* mixer output... finished */
-				rayo_component_send_complete(context->component, OUTPUT_FINISH);
-			}
+			/* mixer output... finished */
+			rayo_component_send_complete(context->component, OUTPUT_FINISH);
 		}
 		/* TODO timed out */
 
