@@ -1254,7 +1254,7 @@ SWITCH_STANDARD_API(fileman_api)
 				}
 				switch_mutex_unlock(fileman_globals.mutex);
 			} else {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "fileman API failed for ID %s\n", zstr(id) : "<null>" : id);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "fileman API failed for ID %s\n", zstr(id) ? "<null>" : id);
 				switch_mutex_unlock(fileman_globals.mutex);
 				stream->write_function(stream, "-ERR file handle not found\n");
 			}
