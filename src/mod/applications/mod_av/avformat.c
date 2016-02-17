@@ -1297,6 +1297,7 @@ static switch_status_t open_input_file(av_file_context_t *context, switch_file_h
 			context->video_st.st = context->fc->streams[i];
 			if (switch_test_flag(handle, SWITCH_FILE_FLAG_VIDEO)) {
 				context->has_video = 1;
+				handle->duration = av_rescale_q(context->video_st.st->duration, context->video_st.st->time_base, AV_TIME_BASE_Q);
 			}
 			handle->mm.source_fps = ceil(av_q2d(context->video_st.st->avg_frame_rate));
 			context->read_fps = (int)handle->mm.source_fps;
@@ -2170,6 +2171,7 @@ static switch_status_t av_file_read_video(switch_file_handle_t *handle, switch_f
 
 		pts = av_rescale_q(*((uint64_t *)img->user_priv), st->time_base, AV_TIME_BASE_Q);
 		// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "pkt_pts: %lld pts: %lld queue size: %u\n", *((uint64_t *)img->user_priv), pts, switch_queue_size(context->eh.video_queue));
+		handle->vpos = pts;
 
 		if (!context->video_start_time) {
 			context->video_start_time = now - pts;
