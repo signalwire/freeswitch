@@ -276,7 +276,7 @@ build_debs () {
     local OPTIND OPTARG debug_hook=false hookdir="" cow_build_opts=""
     local keep_pbuilder_config=false keyring="" custom_keyring="/tmp/fs.asc"
     local use_custom_sources=true
-    local custom_sources_file="/tmp/fs.sources.list"
+    local custom_sources_file="/etc/apt/sources.list"
     while getopts 'BbdK:kT:t' o "$@"; do
       case "$o" in
         B) cow_build_opts="--debbuildopts '-B'";;
