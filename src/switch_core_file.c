@@ -292,7 +292,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Spool dir is set.  Make sure [%s] is also a valid path\n", fh->spool_path);
 		}
 		UNPROTECT_INTERFACE(fh->file_interface);
-		switch_goto_status(status, fail);
+		goto fail;
 	}
 
 	fh->real_channels = fh->channels;
@@ -305,7 +305,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "File [%s] not created!\n", file_path);
 		fh->file_interface->file_close(fh);
 		UNPROTECT_INTERFACE(fh->file_interface);
-		switch_goto_status(status, fail);
+		goto fail;
 	}
 
 	if (to) {
