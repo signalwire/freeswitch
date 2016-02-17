@@ -105,7 +105,15 @@
             verto.screenshareHangup();
             return false;
           }
-          verto.screenshare(storage.data.called_number);
+          if (verto.data.conf) {
+            console.log('Screenshare inside conferece: ', verto.data.conf);
+            // Setting the destination of the screenshare call as the conference
+            // number we last joined
+            verto.screenshare(verto.data.conf.params.laData.laName);
+          }
+          else {
+            verto.screenshare(storage.data.called_number);
+          }
         };
 
         function buildCanvasesData() {
