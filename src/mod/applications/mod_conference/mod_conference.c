@@ -1259,6 +1259,15 @@ void conference_fnode_toggle_pause(conference_file_node_t *fnode, switch_stream_
 	}
 }
 
+void conference_fnode_check_status(conference_file_node_t *fnode, switch_stream_handle_t *stream)
+{
+	if (fnode) {
+		stream->write_function(stream, "+OK %"SWITCH_INT64_T_FMT "/%" SWITCH_INT64_T_FMT " %s\n",
+			fnode->fh.vpos, fnode->fh.duration, fnode->fh.file_path);
+	} else {
+		stream->write_function(stream, "-ERR Nothing is playing\n");
+	}
+}
 
 void conference_fnode_seek(conference_file_node_t *fnode, switch_stream_handle_t *stream, char *arg)
 {

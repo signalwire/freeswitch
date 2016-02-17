@@ -55,6 +55,7 @@ api_command_t conference_api_sub_commands[] = {
 	{"auto-3d-position", (void_fn_t) & conference_api_sub_auto_position, CONF_API_SUB_ARGS_SPLIT, "auto-3d-position", "[on|off]"},
 	{"play", (void_fn_t) & conference_api_sub_play, CONF_API_SUB_ARGS_SPLIT, "play", "<file_path> [async|<member_id> [nomux]]"},
 	{"pause_play", (void_fn_t) & conference_api_sub_pause_play, CONF_API_SUB_ARGS_SPLIT, "pause", "[<member_id>]"},
+	{"play_status", (void_fn_t) & conference_api_sub_play_status, CONF_API_SUB_ARGS_SPLIT, "play_status", "[<member_id>]"},
 	{"file_seek", (void_fn_t) & conference_api_sub_file_seek, CONF_API_SUB_ARGS_SPLIT, "file_seek", "[+-]<val> [<member_id>]"},
 	{"say", (void_fn_t) & conference_api_sub_say, CONF_API_SUB_ARGS_AS_ONE, "say", "<text>"},
 	{"saymember", (void_fn_t) & conference_api_sub_saymember, CONF_API_SUB_ARGS_AS_ONE, "saymember", "<member_id> <text>"},
@@ -124,6 +125,34 @@ switch_status_t conference_api_sub_pause_play(conference_obj_t *conference, swit
 		if ((member = conference_member_get(conference, id))) {
 			switch_mutex_lock(member->fnode_mutex);
 			conference_fnode_toggle_pause(member->fnode, stream);
+			switch_mutex_unlock(member->fnode_mutex);
+			switch_thread_rwlock_unlock(member->rwlock);
+			return SWITCH_STATUS_SUCCESS;
+		} else {
+			stream->write_function(stream, "Member: %u not found.\n", id);
+		}
+	}
+
+	return SWITCH_STATUS_GENERR;
+}
+
+switch_status_t conference_api_sub_play_status(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv)
+{
+	if (argc == 2) {
+		switch_mutex_lock(conference->mutex);
+		conference_fnode_check_status(conference->fnode, stream);
+		switch_mutex_unlock(conference->mutex);
+
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	if (argc == 3) {
+		uint32_t id = atoi(argv[2]);
+		conference_member_t *member;
+
+		if ((member = conference_member_get(conference, id))) {
+			switch_mutex_lock(member->fnode_mutex);
+			conference_fnode_check_status(member->fnode, stream);
 			switch_mutex_unlock(member->fnode_mutex);
 			switch_thread_rwlock_unlock(member->rwlock);
 			return SWITCH_STATUS_SUCCESS;
