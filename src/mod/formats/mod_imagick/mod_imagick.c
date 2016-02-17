@@ -161,6 +161,7 @@ static switch_status_t imagick_file_open(switch_file_handle_t *handle, const cha
 	}
 
 	context->pagecount = GetImageListLength(context->images);
+	handle->duration = context->pagecount;
 
 	if (context->max) {
 		context->samples = (handle->samplerate / 1000) * context->max;
@@ -359,6 +360,7 @@ static switch_status_t imagick_file_seek(switch_file_handle_t *handle, unsigned 
 		context->pagenumber = page;
 		context->same_page = 0;
 		*cur_sample = page;
+		handle->vpos = page;
 	}
 
 	return status;
