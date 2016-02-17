@@ -1274,11 +1274,27 @@ PKG_CHECK_MODULES([SNDFILE], [sndfile >= 1.0.20],[
   AM_CONDITIONAL([HAVE_SNDFILE],[true])],[
   AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_SNDFILE],[false])])
 
-PKG_CHECK_MODULES([VPX], [vpx2 >= 1.4.0],[
-  AM_CONDITIONAL([HAVE_VPX],[true])],[
-    PKG_CHECK_MODULES([VPX], [vpx >= 1.4.0],[
-      AM_CONDITIONAL([HAVE_VPX],[true])],[
-      AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_VPX],[false])])])
+ac_cv_have_vpx=no
+PKG_CHECK_MODULES([VPX], [vpx2 >= 1.5.0],[
+  ac_cv_have_vpx=yes],[
+    PKG_CHECK_MODULES([VPX], [vpx >= 1.5.0],[
+      ac_cv_have_vpx=yes],[
+      AC_MSG_RESULT([no]); ac_cv_have_vpx=no])])
+
+vpx_atleast_15=no
+
+if test x"$ac_cv_have_vpx" = xyes; then
+AC_MSG_CHECKING(whether libvpx is at least version 1.5)
+save_CPPFLAGS="${CPPFLAGS}"
+CPPFLAGS="${VPX_CFLAGS} ${save_CPPFLAGS}"
+AC_TRY_COMPILE([
+#include <vpx/vpx_image.h>
+], [vpx_color_range_t foo = VPX_CR_FULL_RANGE;],[vpx_atleast_15=yes],[vpx_atleast_15=no])
+AC_MSG_RESULT($vpx_atleast_15)
+CPPFLAGS="${save_CPPFLAGS}"
+fi
+
+AM_CONDITIONAL([HAVE_VPX],[test "x$vpx_atleast_15" != "xno"])
 
 SWITCH_AM_CFLAGS="$VPX_CFLAGS $SWITCH_AM_CFLAGS"
 SWITCH_AM_CXXFLAGS="$VPX_CFLAGS $SWITCH_AM_CXXFLAGS"
