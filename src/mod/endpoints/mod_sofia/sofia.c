@@ -2659,64 +2659,88 @@ void *SWITCH_THREAD_FUNC sofia_profile_worker_thread_run(switch_thread_t *thread
 	uint32_t ireg_loops = profile->ireg_seconds;					/* Number of loop iterations done when we haven't checked for registrations */
 	uint32_t iping_loops = profile->iping_freq;					/* Number of loop iterations done when we haven't checked for ping expires */
 	uint32_t gateway_loops = GATEWAY_SECONDS;			/* Number of loop iterations done when we haven't checked for gateways */
+	void *pop;
+	int tick = 0, x = 0;
 
 	sofia_set_pflag_locked(profile, PFLAG_WORKER_RUNNING);
 
 	while ((mod_sofia_globals.running == 1 && sofia_test_pflag(profile, PFLAG_RUNNING))) {
 
-		if (profile->watchdog_enabled) {
-			uint32_t event_diff = 0, step_diff = 0, event_fail = 0, step_fail = 0;
+		if (tick) {
+			if (profile->watchdog_enabled) {
+				uint32_t event_diff = 0, step_diff = 0, event_fail = 0, step_fail = 0;
 
-			if (profile->step_timeout) {
-				step_diff = (uint32_t) ((switch_time_now() - profile->last_root_step) / 1000);
+				if (profile->step_timeout) {
+					step_diff = (uint32_t) ((switch_time_now() - profile->last_root_step) / 1000);
 
-				if (step_diff > profile->step_timeout) {
-					step_fail = 1;
+					if (step_diff > profile->step_timeout) {
+						step_fail = 1;
+					}
+				}
+
+				if (profile->event_timeout) {
+					event_diff = (uint32_t) ((switch_time_now() - profile->last_sip_event) / 1000);
+
+					if (event_diff > profile->event_timeout) {
+						event_fail = 1;
+					}
+				}
+
+				if (step_fail && profile->event_timeout && !event_fail) {
+					step_fail = 0;
+				}
+
+				if (event_fail || step_fail) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Profile %s: SIP STACK FAILURE DETECTED BY WATCHDOG!\n"
+									  "GOODBYE CRUEL WORLD, I'M LEAVING YOU TODAY....GOODBYE, GOODBYE, GOOD BYE\n", profile->name);
+					switch_yield(2000000);
+					watchdog_triggered_abort();
 				}
 			}
 
-			if (profile->event_timeout) {
-				event_diff = (uint32_t) ((switch_time_now() - profile->last_sip_event) / 1000);
 
-				if (event_diff > profile->event_timeout) {
-					event_fail = 1;
+			if (!sofia_test_pflag(profile, PFLAG_STANDBY)) {
+				if (++ireg_loops >= (uint32_t)profile->ireg_seconds) {
+					time_t now = switch_epoch_time_now(NULL);
+					sofia_reg_check_expire(profile, now, 0);
+					ireg_loops = 0;
 				}
-			}
-
-			if (step_fail && profile->event_timeout && !event_fail) {
-				step_fail = 0;
-			}
-
-			if (event_fail || step_fail) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Profile %s: SIP STACK FAILURE DETECTED BY WATCHDOG!\n"
-								  "GOODBYE CRUEL WORLD, I'M LEAVING YOU TODAY....GOODBYE, GOODBYE, GOOD BYE\n", profile->name);
-				switch_yield(2000000);
-				watchdog_triggered_abort();
-			}
-		}
-
-
-		if (!sofia_test_pflag(profile, PFLAG_STANDBY)) {
-			if (++ireg_loops >= (uint32_t)profile->ireg_seconds) {
-				time_t now = switch_epoch_time_now(NULL);
-				sofia_reg_check_expire(profile, now, 0);
-				ireg_loops = 0;
-			}
 	
-			if(++iping_loops >= (uint32_t)profile->iping_freq) {
-				time_t now = switch_epoch_time_now(NULL);
-				sofia_reg_check_ping_expire(profile, now, profile->iping_seconds);
-				iping_loops = 0;
+				if(++iping_loops >= (uint32_t)profile->iping_freq) {
+					time_t now = switch_epoch_time_now(NULL);
+					sofia_reg_check_ping_expire(profile, now, profile->iping_seconds);
+					iping_loops = 0;
+				}
+
+				if (++gateway_loops >= GATEWAY_SECONDS) {
+					sofia_reg_check_gateway(profile, switch_epoch_time_now(NULL));
+					sofia_sub_check_gateway(profile, switch_epoch_time_now(NULL));
+					gateway_loops = 0;
+				}
 			}
 
-			if (++gateway_loops >= GATEWAY_SECONDS) {
-				sofia_reg_check_gateway(profile, switch_epoch_time_now(NULL));
-				sofia_sub_check_gateway(profile, switch_epoch_time_now(NULL));
-				gateway_loops = 0;
-			}
+			tick = 0;
 		}
 
-		switch_yield(1000000);
+		if (switch_queue_pop_timeout(mod_sofia_globals.general_event_queue, &pop, 100000) == SWITCH_STATUS_SUCCESS) {
+			
+			do {
+				switch_event_t *event = (switch_event_t *) pop;
+				general_event_handler(event);
+				switch_event_destroy(&event);
+
+				pop = NULL;
+				switch_queue_trypop(mod_sofia_globals.general_event_queue, &pop);
+			} while (pop);
+
+		}
+
+		sofia_glue_fire_events(profile);
+
+		if (++x == 10) {
+			tick = 1;
+			x = 0;
+		}
 
 	}
 

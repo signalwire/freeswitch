@@ -365,6 +365,7 @@ struct mod_sofia_globals {
 	char hostname[512];
 	switch_queue_t *presence_queue;
 	switch_queue_t *msg_queue;
+	switch_queue_t *general_event_queue;
 	switch_thread_t *msg_queue_thread[SOFIA_MAX_MSG_QUEUE];
 	int msg_queue_len;
 	struct sofia_private destroy_private;
@@ -1193,6 +1194,7 @@ void sofia_glue_fire_events(sofia_profile_t *profile);
 void sofia_event_fire(sofia_profile_t *profile, switch_event_t **event);
 void sofia_queue_message(sofia_dispatch_event_t *de);
 int sofia_glue_check_nat(sofia_profile_t *profile, const char *network_ip);
+void general_event_handler(switch_event_t *event);
 
 switch_status_t sofia_glue_ext_address_lookup(sofia_profile_t *profile, char **ip, switch_port_t *port,
 											  const char *sourceip, switch_memory_pool_t *pool);

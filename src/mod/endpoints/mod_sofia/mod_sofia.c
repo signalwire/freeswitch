@@ -5008,7 +5008,7 @@ static int notify_callback(void *pArg, int argc, char **argv, char **columnNames
 	return 0;
 }
 
-static void general_event_handler(switch_event_t *event)
+void general_event_handler(switch_event_t *event)
 {
 	switch (event->event_id) {
 	case SWITCH_EVENT_NOTIFY:
@@ -5546,6 +5546,14 @@ static void general_event_handler(switch_event_t *event)
 	}
 }
 
+static void general_queue_event_handler(switch_event_t *event)
+{
+	switch_event_t *dup;
+	switch_event_dup(&dup, event);
+	switch_queue_push(mod_sofia_globals.general_event_queue, dup);
+}
+
+
 void write_csta_xml_chunk(switch_event_t *event, switch_stream_handle_t stream, const char *csta_event, char *fwdtype)
 {
 	const char *device = switch_event_get_header(event, "device");
@@ -5882,6 +5890,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 	mod_sofia_globals.auto_nat = (switch_nat_get_type() ? 1 : 0);
 
 	switch_queue_create(&mod_sofia_globals.presence_queue, SOFIA_QUEUE_SIZE, mod_sofia_globals.pool);
+	switch_queue_create(&mod_sofia_globals.general_event_queue, SOFIA_QUEUE_SIZE, mod_sofia_globals.pool);
 
 	mod_sofia_globals.cpu_count = switch_core_cpu_count();
 	mod_sofia_globals.max_msg_queues = (mod_sofia_globals.cpu_count / 2) + 1;
@@ -5952,27 +5961,27 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 		return SWITCH_STATUS_GENERR;
 	}
 
-	if (switch_event_bind(modname, SWITCH_EVENT_TRAP, SWITCH_EVENT_SUBCLASS_ANY, general_event_handler, NULL) != SWITCH_STATUS_SUCCESS) {
+	if (switch_event_bind(modname, SWITCH_EVENT_TRAP, SWITCH_EVENT_SUBCLASS_ANY, general_queue_event_handler, NULL) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
 		return SWITCH_STATUS_GENERR;
 	}
 
-	if (switch_event_bind(modname, SWITCH_EVENT_NOTIFY, SWITCH_EVENT_SUBCLASS_ANY, general_event_handler, NULL) != SWITCH_STATUS_SUCCESS) {
+	if (switch_event_bind(modname, SWITCH_EVENT_NOTIFY, SWITCH_EVENT_SUBCLASS_ANY, general_queue_event_handler, NULL) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
 		return SWITCH_STATUS_GENERR;
 	}
 
-	if (switch_event_bind(modname, SWITCH_EVENT_PHONE_FEATURE, SWITCH_EVENT_SUBCLASS_ANY, general_event_handler, NULL) != SWITCH_STATUS_SUCCESS) {
+	if (switch_event_bind(modname, SWITCH_EVENT_PHONE_FEATURE, SWITCH_EVENT_SUBCLASS_ANY, general_queue_event_handler, NULL) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
 		return SWITCH_STATUS_GENERR;
 	}
 
-	if (switch_event_bind(modname, SWITCH_EVENT_SEND_MESSAGE, SWITCH_EVENT_SUBCLASS_ANY, general_event_handler, NULL) != SWITCH_STATUS_SUCCESS) {
+	if (switch_event_bind(modname, SWITCH_EVENT_SEND_MESSAGE, SWITCH_EVENT_SUBCLASS_ANY, general_queue_event_handler, NULL) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
 		return SWITCH_STATUS_GENERR;
 	}
 
-	if (switch_event_bind(modname, SWITCH_EVENT_SEND_INFO, SWITCH_EVENT_SUBCLASS_ANY, general_event_handler, NULL) != SWITCH_STATUS_SUCCESS) {
+	if (switch_event_bind(modname, SWITCH_EVENT_SEND_INFO, SWITCH_EVENT_SUBCLASS_ANY, general_queue_event_handler, NULL) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
 		return SWITCH_STATUS_GENERR;
 	}
@@ -6075,7 +6084,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_sofia_shutdown)
 
 	switch_event_unbind_callback(sofia_presence_event_handler);
 
-	switch_event_unbind_callback(general_event_handler);
+	switch_event_unbind_callback(general_queue_event_handler);
 	switch_event_unbind_callback(event_handler);
 
 	switch_queue_push(mod_sofia_globals.presence_queue, NULL);

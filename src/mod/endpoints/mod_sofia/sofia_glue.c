@@ -2476,9 +2476,6 @@ switch_bool_t sofia_glue_execute_sql_callback(sofia_profile_t *profile,
 
 	switch_cache_db_release_db_handle(&dbh);
 
-
-	sofia_glue_fire_events(profile);
-
 	return ret;
 }
 
@@ -2514,9 +2511,6 @@ char *sofia_glue_execute_sql2str(sofia_profile_t *profile, switch_mutex_t *mutex
 	}
 
 	switch_cache_db_release_db_handle(&dbh);
-
-
-	sofia_glue_fire_events(profile);
 
 	return ret;
 }
