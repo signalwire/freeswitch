@@ -112,7 +112,8 @@ struct jsock_s {
 	struct passwd pw;
 #endif
 
-	int drop;
+	uint8_t drop;
+	uint8_t nodelete;
 	ws_socket_t local_sock;
 	SSL *ssl;
 

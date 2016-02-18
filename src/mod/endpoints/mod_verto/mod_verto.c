@@ -1113,6 +1113,7 @@ static void attach_jsock(jsock_t *jsock)
 			switch_core_hash_delete(globals.jsock_hash, jsock->uuid_str);
 			ws_write_json(jp, &msg, SWITCH_TRUE);
 			cJSON_Delete(msg);
+			jp->nodelete = 1;
 			jp->drop = 1;
 		}
 	}
@@ -1126,6 +1127,10 @@ static void attach_jsock(jsock_t *jsock)
 
 static void detach_jsock(jsock_t *jsock)
 {
+	if (jsock->nodelete) {
+		return;
+	}
+
 	switch_mutex_lock(globals.jsock_mutex);
 	switch_core_hash_delete(globals.jsock_hash, jsock->uuid_str);
 	switch_mutex_unlock(globals.jsock_mutex);
