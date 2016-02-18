@@ -61,7 +61,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_hash_insert_destructor(switch_hash_t
 
 	r = switch_hashtable_insert_destructor(hash, strdup(key), (void *)data, HASHTABLE_FLAG_FREE_KEY | HASHTABLE_DUP_CHECK, destructor);
 	
-	return r ? SWITCH_STATUS_FALSE : SWITCH_STATUS_SUCCESS;
+	return r ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_hash_insert_locked(switch_hash_t *hash, const char *key, const void *data, switch_mutex_t *mutex)
@@ -262,12 +262,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_inthash_destroy(switch_inthash_t **h
 SWITCH_DECLARE(switch_status_t) switch_core_inthash_insert(switch_inthash_t *hash, uint32_t key, const void *data)
 {
 	uint32_t *k = NULL;
+	int r = 0;
 
 	switch_zmalloc(k, sizeof(*k));
 	*k = key;
-	switch_hashtable_insert_destructor(hash, k, (void *)data, HASHTABLE_FLAG_FREE_KEY | HASHTABLE_DUP_CHECK, NULL);
+	r = switch_hashtable_insert_destructor(hash, k, (void *)data, HASHTABLE_FLAG_FREE_KEY | HASHTABLE_DUP_CHECK, NULL);
 
-	return SWITCH_STATUS_SUCCESS;
+	return r ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
 }
 
 SWITCH_DECLARE(void *) switch_core_inthash_delete(switch_inthash_t *hash, uint32_t key)
