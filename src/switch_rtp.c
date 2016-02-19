@@ -6366,10 +6366,16 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			}
 			poll_loop = 0;
 		} else {
+
+			if (!switch_rtp_ready(rtp_session)) {
+				ret = -1;
+				goto end;
+			}
+			
 			if (!SWITCH_STATUS_IS_BREAK(poll_status) && poll_status != SWITCH_STATUS_TIMEOUT) {
 				char tmp[128] = "";
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Poll failed with error: %d [%s]\n",
-					poll_status, switch_strerror_r(poll_status, tmp, sizeof(tmp)));
+								  poll_status, switch_strerror_r(poll_status, tmp, sizeof(tmp)));
 				ret = -1;
 				goto end;
 			}
