@@ -29,7 +29,7 @@
 #define VARIA_DATA_MASK (0x87FFFFF8)
 #define CONST_DATA_MASK (0x38000000)
 
-#define ACOS_TABLE_LENGTH (1<<25)
+#define ACOS_TABLE_LENGTH (1 << 25)
 #define ACOS_TABLE_FILENAME "/tmp/acos_table.dat"
 
 typedef union {
@@ -65,7 +65,7 @@ extern void compute_table(void)
 
     acos_table_file = fopen(ACOS_TABLE_FILENAME, "w");
 
-    for (i = 0; i < (1 << 25); i++) {
+    for (i = 0; i < ACOS_TABLE_LENGTH; i++) {
         f = acosf(float_from_index(i));
         ret = fwrite(&f, sizeof(f), 1, acos_table_file);
         assert(ret != 0);
