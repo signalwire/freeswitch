@@ -1413,6 +1413,18 @@ PKG_CHECK_MODULES([AMQP], [librabbitmq >= 0.5.2],[
   AM_CONDITIONAL([HAVE_AMQP],[true])],[
   AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_AMQP],[false])])
 
+PKG_CHECK_MODULES([H2O], [libh2o-evloop >= 0.11.0],[
+  AM_CONDITIONAL([HAVE_H2O],[true])],[
+  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_H2O],[false])])
+
+PKG_CHECK_MODULES([BROTLIENC], [libbrotlienc >= 0.1.0],[
+  AM_CONDITIONAL([HAVE_BROTLIENC],[true])],[
+  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_BROTLIENC],[false])])
+
+PKG_CHECK_MODULES([BROTLIDEC], [libbrotlidec >= 0.1.0],[
+  AM_CONDITIONAL([HAVE_BROTLIDEC],[true])],[
+  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_BROTLIDEC],[false])])
+
 PKG_CHECK_MODULES([TAP], [tap >= 0.1.0],[
   AM_CONDITIONAL([HAVE_TAP],[true])],[
   AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_TAP],[false])])
@@ -1746,6 +1758,7 @@ AC_CONFIG_FILES([Makefile
 		src/mod/applications/mod_rss/Makefile
 		src/mod/applications/mod_skel/Makefile
 		src/mod/applications/mod_sms/Makefile
+		src/mod/applications/mod_sms_flowroute/Makefile
 		src/mod/applications/mod_snapshot/Makefile
 		src/mod/applications/mod_snom/Makefile
 		src/mod/applications/mod_sonar/Makefile

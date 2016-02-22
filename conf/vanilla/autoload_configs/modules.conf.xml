@@ -71,6 +71,7 @@
     <!--<load module="mod_fsk"/>-->
     <!--<load module="mod_spy"/>-->
     <!--<load module="mod_sms"/>-->
+    <!--<load module="mod_sms_flowroute"/>-->
     <!--<load module="mod_smpp"/>-->
     <!--<load module="mod_random"/>-->
     <load module="mod_httapi"/>
