@@ -2117,10 +2117,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (switch_channel_test_flag(session->channel, CF_LEG_HOLDING)) {
-		return SWITCH_STATUS_INUSE;
-	}
-	
 	if (smh->read_mutex[type] && switch_mutex_trylock(smh->read_mutex[type]) != SWITCH_STATUS_SUCCESS) {
 		/* return CNG, another thread is already reading  */
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG1, "%s is already being read for %s\n", 
@@ -2155,6 +2151,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 			goto end;
 		}
 
+		if (switch_channel_test_flag(session->channel, CF_LEG_HOLDING)) {
+			status = SWITCH_STATUS_INUSE;
+			goto end;
+		}
+	
 		if (type == SWITCH_MEDIA_TYPE_VIDEO && engine->read_frame.m) {
 			if (!smh->vid_started) {
 				smh->vid_started = switch_epoch_time_now(NULL);
