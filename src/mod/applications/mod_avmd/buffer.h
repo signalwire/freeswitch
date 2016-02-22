@@ -87,6 +87,7 @@ extern size_t next_power_of_2(size_t v);
 	(bf)->pos = 0; \
 	(bf)->lpos = 0; \
 	(bf)->backlog = 0; \
+	(bf)->i = 0; \
     }
 
 //#define DESTROY_CIRC_BUFFER(b) free((b)->buf)
