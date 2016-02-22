@@ -41,10 +41,11 @@ typedef struct {
 
 #define APPEND_SMA_VAL(b, v) \
     { \
-	INC_SMA_POS(b); \
 	(b)->sma -= ((b)->data[(b)->pos] / (BUFF_TYPE)(b)->len); \
 	(b)->data[(b)->pos] = (v); \
-	(b)->sma += ((b)->data[(b)->pos] / (BUFF_TYPE)(b)->len); \
+	(((b)->lpos) >= ((b)->len)) ? ((b)->sma += ((b)->data[(b)->pos] / (BUFF_TYPE)(b)->len)) : \
+        ((b)->sma = ((((b)->sma)*((b)->pos)) + ((b)->data[(b)->pos])) / ((BUFF_TYPE)(((b)->pos) + 1)))  ; \
+	INC_SMA_POS(b); \
     }
 
 #define RESET_SMA_BUFFER(b) \

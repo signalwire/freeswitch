@@ -25,6 +25,22 @@
  *
  * This module detects voicemail beeps using a generalized approach.
  *
+ * Mofdifications:
+ *
+ *      Piotr Gregor <piotrek.gregor@gmail.com>
+ *      FS-8808 :   code refactor
+ *      FS-8809 :   fix MAP_POPULATE undeclared
+ *      FS-8810 :   fix float-int-float fast arc cosine
+ *                  mapping construction (reuse)
+ *      FS-8852 :   use predefined table length instead
+ *                  of hardcoded computation
+ *      FS-8853 :   enable change of resolution (and size)
+ *                  of fast arc cos table
+ *      FS-8854 :   initialize circular buffer
+ *      FS-8855 :   fix APPEND_SMA_VAL macro and avmd_process
+ *                  callback so that the variance of tone's
+ *                  frequency estimation is correctly
+ *                  calculated
  */
 
 #include <switch.h>
@@ -59,9 +75,20 @@
 #define TO_HZ(r, f) (((r) * (f)) / (2.0 * M_PI))
 /*! Minimum beep frequency in Hertz */
 #define MIN_FREQUENCY (300.0)
+/*! Minimum frequency as digital normalized frequency */
 #define MIN_FREQUENCY_R(r) ((2.0 * M_PI * MIN_FREQUENCY) / (r))
-/*! Maximum beep frequency in Hertz */
+/*! 
+ * Maximum beep frequency in Hertz
+ * Note: The maximum frequency the DESA-2 algorithm can uniquely
+ * identify is 0.25 of the sampling rate. All the frequencies
+ * below that level are detected unambiguously. This means 2kHz
+ * for 8kHz audio. All the frequencies above 0.25 sampling rate
+ * will be aliased to some frequency below that threshold.
+ * This is not a problem here as we are interested in detection
+ * of any sine wave instead of detection of particular frequency.
+ */
 #define MAX_FREQUENCY (2500.0)
+/*! Maximum frequency as digital normalized frequency */
 #define MAX_FREQUENCY_R(r) ((2.0 * M_PI * MAX_FREQUENCY) / (r))
 /* decrease this value to eliminate false positives */
 #define VARIANCE_THRESHOLD (0.001)
@@ -560,6 +587,8 @@ end:
 
 /*! \brief Process one frame of data with avmd algorithm.
  * @author Eric des Courtis
+ * @par Modifications: Piotr Gregor (FS-8852, FS-8853, FS-8854, FS-8855)
+ *      (improved variance estimation calculation)
  * @param session An avmd session.
  * @param frame An audio frame.
  */
@@ -587,25 +616,25 @@ static void avmd_process(avmd_session_t *session, switch_frame_t *frame)
 
 	b = &session->b;
 
-	/*! If beep has already been detected skip the CPU heavy stuff */
+	/* If beep has already been detected skip the CPU heavy stuff */
 	if (session->state.beep_state == BEEP_DETECTED) return;
 
-	/*! Precompute values used heavily in the inner loop */
+	/* Precompute values used heavily in the inner loop */
 	sine_len_i = SINE_LEN(session->rate);
 	//sine_len = (double)sine_len_i;
 	//beep_len_i = BEEP_LEN(session->rate);
 
 	channel = switch_core_session_get_channel(session->session);
 
-	/*! Insert frame of 16 bit samples into buffer */
+	/* Insert frame of 16 bit samples into buffer */
 	INSERT_INT16_FRAME(b, (int16_t *)(frame->data), frame->samples);
 
 	//switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session->session), SWITCH_LOG_INFO, "<<< AVMD sine_len_i=%d >>>\n", sine_len_i);
 
-	/*! INNER LOOP -- OPTIMIZATION TARGET */
+	/* INNER LOOP -- OPTIMIZATION TARGET */
 	for (pos = session->pos; pos < (GET_CURRENT_POS(b) - P); pos++) {
 		if ((pos % sine_len_i) == 0) {
-			/*! Get a desa2 frequency estimate every sine len */
+			/* Get a desa2 frequency estimate every sine len */
 			f = desa2(b, pos);
 
 			if (f < MIN_FREQUENCY_R(session->rate) || f > MAX_FREQUENCY_R(session->rate)) {
@@ -624,14 +653,13 @@ static void avmd_process(avmd_session_t *session, switch_frame_t *frame)
                     session->sma_b.sma, session->sqa_b.sma);
 			}
 
-			/*! If variance is less than threshold then we have detection */
-			if (v < VARIANCE_THRESHOLD) {
-
+			/* If variance is less than threshold then we have detection */
+			if (v < VARIANCE_THRESHOLD && (session->sma_b.pos > 1)) {
 				switch_channel_set_variable_printf(channel, "avmd_total_time",
-                    "[%d]", (int)(switch_micro_time_now() - session->start_time) / 1000);
+                        "[%d]", (int)(switch_micro_time_now() - session->start_time) / 1000);
 				switch_channel_execute_on(channel, "execute_on_avmd_beep");
 
-				/*! Throw an event to FreeSWITCH */
+				/* Throw an event to FreeSWITCH */
 				status = switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, AVMD_EVENT_BEEP);
 				if (status != SWITCH_STATUS_SUCCESS) return;
 
@@ -646,14 +674,14 @@ static void avmd_process(avmd_session_t *session, switch_frame_t *frame)
 				switch_event_fire(&event_copy);
 
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session->session), SWITCH_LOG_DEBUG,
-                    "<<< AVMD - Beep Detected >>>\n");
+                        "<<< AVMD - Beep Detected f = [%f] >>>\n", TO_HZ(session->rate, session->sma_b.sma));
 				switch_channel_set_variable(channel, "avmd_detect", "TRUE");
 				RESET_SMA_BUFFER(&session->sma_b);
 				RESET_SMA_BUFFER(&session->sqa_b);
 				session->state.beep_state = BEEP_DETECTED;
 
 				return;
-			}
+            }
 
 			//amp = 0.0;
 			//success = 0.0;
