@@ -2682,6 +2682,38 @@ SWITCH_STANDARD_APP(callcenter_function)
 		cc_base_score_int += ((long) local_epoch_time_now(NULL) - atol(start_epoch));
 	}
 
+	/* for xml_cdr needs */
+	switch_channel_set_variable_printf(member_channel, "cc_queue_joined_epoch", "%" SWITCH_TIME_T_FMT, local_epoch_time_now(NULL));
+	switch_channel_set_variable(member_channel, "cc_queue", queue_name);
+
+	/* We have a previous abandoned user, let's try to recover his place */
+	if (abandoned_epoch > 0) {
+		char res[256];
+
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_DEBUG, "Member %s <%s> restoring it previous position in queue %s\n", switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_name")), switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_number")), queue_name);
+
+		/* Update abandoned member */
+		sql = switch_mprintf("UPDATE members SET session_uuid = '%q', state = '%q', rejoined_epoch = '%" SWITCH_TIME_T_FMT "' WHERE uuid = '%q' AND state = '%q'",
+				member_session_uuid, cc_member_state2str(CC_MEMBER_STATE_WAITING), local_epoch_time_now(NULL), member_uuid, cc_member_state2str(CC_MEMBER_STATE_ABANDONED));
+		cc_execute_sql(queue, sql, NULL);
+		switch_safe_free(sql);
+
+		/* Confirm we took that member in */
+		sql = switch_mprintf("SELECT abandoned_epoch FROM members WHERE uuid = '%q' AND session_uuid = '%q' AND state = '%q' AND queue = '%q'", member_uuid, member_session_uuid, cc_member_state2str(CC_MEMBER_STATE_WAITING), queue_name);
+		cc_execute_sql2str(NULL, NULL, sql, res, sizeof(res));
+		switch_safe_free(sql);
+		abandoned_epoch = atol(res);
+
+		if (abandoned_epoch == 0) {
+			/* Failed to get the member !!! */
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_ERROR, "Member %s <%s> restoring action failed in queue %s, joining again\n", switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_name")), switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_number")), queue_name);
+			//queue_rwunlock(queue);
+		} else {
+
+		}
+
+	}
+
 	if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CALLCENTER_EVENT) == SWITCH_STATUS_SUCCESS) {
 		switch_channel_event_set_data(member_channel, event);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Queue", queue_name);
@@ -2692,9 +2724,7 @@ SWITCH_STANDARD_APP(callcenter_function)
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Member-CID-Number", switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_number")));
 		switch_event_fire(&event);
 	}
-	/* for xml_cdr needs */
-	switch_channel_set_variable_printf(member_channel, "cc_queue_joined_epoch", "%" SWITCH_TIME_T_FMT, local_epoch_time_now(NULL));
-	switch_channel_set_variable(member_channel, "cc_queue", queue_name);
+
 
 	if (abandoned_epoch == 0) {
 		/* Add the caller to the member queue */
@@ -2716,30 +2746,6 @@ SWITCH_STANDARD_APP(callcenter_function)
 				cc_member_state2str(CC_MEMBER_STATE_WAITING));
 		cc_execute_sql(queue, sql, NULL);
 		switch_safe_free(sql);
-	} else {
-		char res[256];
-
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_DEBUG, "Member %s <%s> restoring it previous position in queue %s\n", switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_name")), switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_number")), queue_name);
-
-		/* Update abandoned member */
-		sql = switch_mprintf("UPDATE members SET session_uuid = '%q', state = '%q', rejoined_epoch = '%" SWITCH_TIME_T_FMT "' WHERE uuid = '%q' AND state = '%q'",
-				member_session_uuid, cc_member_state2str(CC_MEMBER_STATE_WAITING), local_epoch_time_now(NULL), member_uuid, cc_member_state2str(CC_MEMBER_STATE_ABANDONED)); 
-		cc_execute_sql(queue, sql, NULL);
-		switch_safe_free(sql);
-
-		/* Confirm we took that member in */
-		sql = switch_mprintf("SELECT abandoned_epoch FROM members WHERE uuid = '%q' AND session_uuid = '%q' AND state = '%q' AND queue = '%q'", member_uuid, member_session_uuid, cc_member_state2str(CC_MEMBER_STATE_WAITING), queue_name);
-		cc_execute_sql2str(NULL, NULL, sql, res, sizeof(res));
-		switch_safe_free(sql);
-
-		if (atol(res) == 0) {
-			/* Failed to get the member !!! */
-			/* TODO Loop back to just create a uuid and add the member as a new member */
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_ERROR, "Member %s <%s> restoring action failed in queue %s, exiting\n", switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_name")), switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_number")), queue_name);
-			queue_rwunlock(queue);
-			goto end;
-		}
-
 	}
 
 	/* Send Event with queue count */
