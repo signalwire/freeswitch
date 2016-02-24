@@ -5159,7 +5159,7 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 
 	if (*bytes) {
 		b = (unsigned char *) &rtp_session->recv_msg;
-
+		
 		/* version 2 probably rtp, zrtp cookie present means zrtp */
 		rtp_session->has_rtp = (rtp_session->recv_msg.header.version == 2 || ntohl(*(int *)(b+4)) == ZRTP_MAGIC_COOKIE);
 
@@ -6276,11 +6276,6 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 				pt = 20000;
 			}
 			
-
-			if ((io_flags & SWITCH_IO_FLAG_NOBLOCK)) {
-				pt = 0;
-			}
-
 			if (rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] && !rtp_session->flags[SWITCH_RTP_FLAG_PROXY_MEDIA]) {
 				pt = 200000;
 			}
@@ -6289,6 +6284,10 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 				if (switch_jb_poll(rtp_session->vb)) {
 					pt = 0;
 				}
+			}
+
+			if ((io_flags & SWITCH_IO_FLAG_NOBLOCK)) {
+				pt = 0;
 			}
 			
 			poll_status = switch_poll(rtp_session->read_pollfd, 1, &fdr, pt);
@@ -6397,8 +6396,8 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 				ret = -1;
 				goto end;
 			}
-
-		
+			
+			
 			if ((!(io_flags & SWITCH_IO_FLAG_NOBLOCK)) && 
 				(rtp_session->dtmf_data.out_digit_dur == 0) && !rtp_session->flags[SWITCH_RTP_FLAG_ENABLE_RTCP]) {
 				return_cng_frame();
@@ -6506,7 +6505,6 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 							switch_core_timer_sync(&rtp_session->timer);
 							reset_jitter_seq(rtp_session);
 						}
-						
 						goto recvfrom;
 					}
 				}
