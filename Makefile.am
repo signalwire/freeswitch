@@ -27,7 +27,7 @@ AM_LIBAPU_LIBS := $(subst $(switch_builddir)/,,$(shell ./libs/apr-util/apu-1-con
 endif
 
 AM_CFLAGS   = $(SWITCH_AM_CFLAGS) $(SWITCH_ANSI_CFLAGS) 
-AM_CPPFLAGS = $(SWITCH_AM_CXXFLAGS) -I$(switch_srcdir)/libs/sofia-sip/libsofia-sip-ua/sdp -I$(switch_srcdir)/libs/sofia-sip/libsofia-sip-ua/su -I$(switch_builddir)/libs/sofia-sip/libsofia-sip-ua/su
+AM_CPPFLAGS = -I$(switch_srcdir)/libs/libvpx $(SWITCH_AM_CXXFLAGS) -I$(switch_srcdir)/libs/sofia-sip/libsofia-sip-ua/sdp -I$(switch_srcdir)/libs/sofia-sip/libsofia-sip-ua/su -I$(switch_builddir)/libs/sofia-sip/libsofia-sip-ua/su
 AM_LDFLAGS  = $(SWITCH_AM_LDFLAGS) $(AM_LIBAPR_LDFLAGS) $(AM_LIBAPU_LDFLAGS)
 
 DEFAULT_SOUNDS=en-us-callie-8000
@@ -120,9 +120,10 @@ CORE_CFLAGS += -I$(switch_srcdir)/libs/srtp/crypto/include -Ilibs/srtp/crypto/in
 CORE_CFLAGS += -I$(switch_builddir)/libs/spandsp/src -I$(switch_srcdir)/libs/spandsp/src 
 CORE_CFLAGS += -I$(switch_builddir)/libs/tiff-4.0.2/libtiff -I$(switch_srcdir)/libs/tiff-4.0.2/libtiff
 CORE_CFLAGS += -DSWITCH_HAVE_YUV
+CORE_CFLAGS += -DSWITCH_HAVE_VPX
 
 APR_LIBS   = $(AM_LIBAPU_LIBS) $(AM_LIBAPR_LIBS)
-CORE_LIBS=
+CORE_LIBS=libs/libvpx/libvpx.a
 if SYSTEM_APRUTIL
 CORE_LIBS += $(AM_LIBAPU_LINKLIBTOOL)
 else
@@ -149,10 +150,6 @@ endif
 
 if HAVE_PNG
 CORE_CFLAGS += -DSWITCH_HAVE_PNG $(LIBPNG_CFLAGS)
-endif
-
-if HAVE_VPX
-CORE_CFLAGS += -DSWITCH_HAVE_VPX $(VPX_CFLAGS)
 endif
 
 if HAVE_FREETYPE
@@ -201,9 +198,9 @@ libfreeswitch_libyuv_la_CPPFLAGS = -O2 -fomit-frame-pointer -Ilibs/libyuv/includ
 CORE_LIBS+=libfreeswitch_libyuv.la
 
 lib_LTLIBRARIES	         = libfreeswitch.la
-libfreeswitch_la_CFLAGS  = $(CORE_CFLAGS) $(SQLITE_CFLAGS) $(FREETYPE_CFLAGS) $(CURL_CFLAGS) $(PCRE_CFLAGS) $(SPEEX_CFLAGS) $(LIBEDIT_CFLAGS) $(openssl_CFLAGS) $(VPX_CFLAGS) $(AM_CFLAGS)
+libfreeswitch_la_CFLAGS  = $(CORE_CFLAGS) $(SQLITE_CFLAGS) $(FREETYPE_CFLAGS) $(CURL_CFLAGS) $(PCRE_CFLAGS) $(SPEEX_CFLAGS) $(LIBEDIT_CFLAGS) $(openssl_CFLAGS)  $(AM_CFLAGS)
 libfreeswitch_la_LDFLAGS = -version-info 1:0:0 $(AM_LDFLAGS) $(PLATFORM_CORE_LDFLAGS) -no-undefined
-libfreeswitch_la_LIBADD  = $(CORE_LIBS) $(APR_LIBS) $(SQLITE_LIBS) $(FREETYPE_LIBS) $(CURL_LIBS) $(PCRE_LIBS) $(SPEEX_LIBS) $(LIBEDIT_LIBS) $(openssl_LIBS) $(VPX_LIBS) $(PLATFORM_CORE_LIBS)
+libfreeswitch_la_LIBADD  = $(CORE_LIBS) $(APR_LIBS) $(SQLITE_LIBS) $(FREETYPE_LIBS) $(CURL_LIBS) $(PCRE_LIBS) $(SPEEX_LIBS) $(LIBEDIT_LIBS) $(openssl_LIBS) $(PLATFORM_CORE_LIBS)
 libfreeswitch_la_DEPENDENCIES = $(BUILT_SOURCES)
 
 if HAVE_PNG
@@ -347,6 +344,7 @@ libfreeswitch_la_SOURCES = \
 	src/switch_curl.c \
 	src/switch_hashtable.c\
 	src/switch_utf8.c \
+	src/switch_vpx.c \
 	libs/libtpl-1.5/src/tpl.c \
 	libs/libteletone/src/libteletone_detect.c \
 	libs/libteletone/src/libteletone_generate.c \
@@ -516,6 +514,12 @@ libs/libedit/src/.libs/libedit.a:
 
 libs/libzrtp/libzrtp.a:
 	cd libs/libzrtp && $(MAKE)
+
+libs/libvpx/Makefile:
+	cd libs/libvpx && sh ./configure --enable-pic --disable-docs --disable-examples --disable-install-bins --disable-install-srcs --disable-unit-tests
+
+libs/libvpx/libvpx.a: libs/libvpx/Makefile
+	@cd libs/libvpx && $(MAKE)
 
 libs/sofia-sip/Makefile:
 	cd libs/sofia-sip && sh ./configure.gnu $(MY_DEFAULT_ARGS)

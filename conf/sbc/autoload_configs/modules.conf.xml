@@ -42,7 +42,6 @@
     <load module="mod_amr"/>
     <!--<load module="mod_ilbc"/>-->
     <load module="mod_h26x"/>
-    <load module="mod_vpx"/>
     <!--<load module="mod_siren"/>-->
 
     <!-- Timers -->

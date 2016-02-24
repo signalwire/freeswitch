@@ -241,7 +241,7 @@ static inline int IS_VP8_KEY_FRAME(uint8_t *data)
 #define IS_VP9_START_PKT(byte) ((byte) & 0x02)
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_vpx_load);
-SWITCH_MODULE_DEFINITION(mod_vpx, mod_vpx_load, NULL, NULL);
+SWITCH_MODULE_DEFINITION(CORE_VPX_MODULE, mod_vpx_load, NULL, NULL);
 
 struct vpx_context {
 	switch_codec_t *codec;

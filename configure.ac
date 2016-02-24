@@ -895,8 +895,6 @@ CPPFLAGS="$save_CPPFLAGS"
 
 AX_HAVE_CPU_SET
 
-AC_CHECK_LIB(vpx, vpx_img_alloc, [AC_DEFINE(HAVE_VPX, 1, [Define if you have vpx()])])
-
 AC_CHECK_LIB(rt, clock_gettime, [AC_DEFINE(HAVE_CLOCK_GETTIME, 1, [Define if you have clock_gettime()])])
 AC_CHECK_LIB(rt, clock_getres, [AC_DEFINE(HAVE_CLOCK_GETRES, 1, [Define if you have clock_getres()])])
 AC_CHECK_LIB(rt, clock_nanosleep, [AC_DEFINE(HAVE_CLOCK_NANOSLEEP, 1, [Define if you have clock_nanosleep()])])
@@ -1267,32 +1265,6 @@ PKG_CHECK_MODULES([LDNS], [libldns >= 1.6.6],[
 PKG_CHECK_MODULES([SNDFILE], [sndfile >= 1.0.20],[
   AM_CONDITIONAL([HAVE_SNDFILE],[true])],[
   AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_SNDFILE],[false])])
-
-ac_cv_have_vpx=no
-PKG_CHECK_MODULES([VPX], [vpx2 >= 1.5.0],[
-  ac_cv_have_vpx=yes],[
-    PKG_CHECK_MODULES([VPX], [vpx >= 1.5.0],[
-      ac_cv_have_vpx=yes],[
-      AC_MSG_RESULT([no]); ac_cv_have_vpx=no])])
-
-vpx_atleast_15=no
-
-if test x"$ac_cv_have_vpx" = xyes; then
-AC_MSG_CHECKING(whether libvpx is at least version 1.5)
-save_CPPFLAGS="${CPPFLAGS}"
-CPPFLAGS="${VPX_CFLAGS} ${save_CPPFLAGS}"
-AC_TRY_COMPILE([
-#include <vpx/vpx_image.h>
-], [vpx_color_range_t foo = VPX_CR_FULL_RANGE;],[vpx_atleast_15=yes],[vpx_atleast_15=no])
-AC_MSG_RESULT($vpx_atleast_15)
-CPPFLAGS="${save_CPPFLAGS}"
-fi
-
-AM_CONDITIONAL([HAVE_VPX],[test "x$vpx_atleast_15" != "xno"])
-
-SWITCH_AM_CFLAGS="$VPX_CFLAGS $SWITCH_AM_CFLAGS"
-SWITCH_AM_CXXFLAGS="$VPX_CFLAGS $SWITCH_AM_CXXFLAGS"
-SWITCH_AM_CPPFLAGS="$VPX_CFLAGS $SWITCH_AM_CPPFLAGS"
 
 PKG_CHECK_MODULES([MPG123], [libmpg123 >= 1.20.1],[
   AM_CONDITIONAL([HAVE_MPG123],[true])],[
@@ -1775,7 +1747,6 @@ AC_CONFIG_FILES([Makefile
 		src/mod/codecs/mod_siren/Makefile
 		src/mod/codecs/mod_skel_codec/Makefile
 		src/mod/codecs/mod_theora/Makefile
-		src/mod/codecs/mod_vpx/Makefile
 		src/mod/dialplans/mod_dialplan_asterisk/Makefile
 		src/mod/dialplans/mod_dialplan_directory/Makefile
 		src/mod/dialplans/mod_dialplan_xml/Makefile

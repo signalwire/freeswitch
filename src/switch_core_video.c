@@ -31,8 +31,8 @@
 
 #ifdef SWITCH_HAVE_VPX
 #include "vpx/vpx_image.h"
-#if VPX_IMAGE_ABI_VERSION != (3)
-#error VPX_IMAGE_ABI_VERSION is not (3)
+#if VPX_IMAGE_ABI_VERSION != (4)
+#error VPX_IMAGE_ABI_VERSION is not (4)
 #endif
 #endif
 

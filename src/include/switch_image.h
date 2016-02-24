@@ -28,7 +28,7 @@ extern "C" {
    * types, removing or reassigning enums, adding/removing/rearranging
    * fields to structures
    */
-#define VPX_IMAGE_ABI_VERSION (3) /**<\hideinitializer*/
+#define VPX_IMAGE_ABI_VERSION (4) /**<\hideinitializer*/
 
 
 #define VPX_IMG_FMT_PLANAR     0x100  /**< Image is a planar format. */

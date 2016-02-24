@@ -6,7 +6,6 @@ config.log
 config.nice
 config.status
 config.sub
-configure
 depcomp
 install-sh
 libtool
@@ -829,3 +828,15 @@ unimrcp/build/compile
 /ldns/
 /portaudio/
 portaudio.*.log
+apr-util/configure
+apr-util/xml/expat/configure
+apr/configure
+iksemel/configure
+libdingaling/configure
+libyuv/Makefile
+libyuv/convert
+sofia-sip/configure
+spandsp/configure
+srtp/configure
+tiff-4.0.2/configure
+unimrcp/configure

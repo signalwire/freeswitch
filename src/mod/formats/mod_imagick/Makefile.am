@@ -1,7 +1,6 @@
 include $(top_srcdir)/build/modmake.rulesam
 MODNAME=mod_imagick
 
-if HAVE_VPX
 if HAVE_MAGICK
 
 mod_LTLIBRARIES = mod_imagick.la
@@ -15,11 +14,4 @@ install: error
 all: error
 error:
 	$(error You must install libmagickcore-dev to build mod_imagick)
-endif
-
-else
-install: error
-all: error
-error:
-	$(error You must install libvpx2-dev to build mod_imagick)
 endif
