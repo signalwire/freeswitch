@@ -1,7 +1,6 @@
 include $(top_srcdir)/build/modmake.rulesam
 MODNAME=mod_openh264
 
-if HAVE_YUV
 if HAVE_VPX
 
 OPENH264_DIR=/usr/local/
@@ -18,12 +17,3 @@ all: error
 error:
 	$(error You must install libvpx2-dev to build mod_openh264)
 endif
-
-
-else
-install: error
-all: error
-error:
-	$(error You must install libyuv-dev to build mod_openh264)
-endif
-

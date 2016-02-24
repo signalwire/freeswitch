@@ -1,7 +1,6 @@
 include $(top_srcdir)/build/modmake.rulesam
 MODNAME=mod_imagick
 
-if HAVE_YUV
 if HAVE_VPX
 if HAVE_MAGICK
 
@@ -24,12 +23,3 @@ all: error
 error:
 	$(error You must install libvpx2-dev to build mod_imagick)
 endif
-
-
-else
-install: error
-all: error
-error:
-	$(error You must install libyuv-dev to build mod_imagick)
-endif
-

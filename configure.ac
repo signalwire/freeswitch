@@ -785,12 +785,6 @@ if test "x$have_libz" = "xyes"  ; then
 APR_ADDTO([PLATFORM_CORE_LIBS], [-lz])
 fi
 
-PKG_CHECK_MODULES([YUV], [libyuv >= 0.0.1280],
-			 [AC_MSG_RESULT([yes]);AM_CONDITIONAL([HAVE_YUV],[true])],
-			 [AC_MSG_RESULT([no]);AM_CONDITIONAL([HAVE_YUV],[false])])
-
-APR_ADDTO([PLATFORM_CORE_LIBS], [${YUV_LIBS}])
-
 PKG_CHECK_MODULES([MPG123], [libmpg123 >= 1.20.1],[
   AM_CONDITIONAL([HAVE_MPG123],[true])],[
   AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_MPG123],[false])])

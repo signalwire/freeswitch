@@ -115,9 +115,11 @@ CORE_CFLAGS  = $(AM_LIBAPR_CFLAGS) $(AM_LIBAPR_CPPFLAGS)
 CORE_CFLAGS += $(AM_LIBAPU_CPPFLAGS)
 CORE_CFLAGS += -I$(switch_srcdir)/libs/libtpl-1.5/src
 CORE_CFLAGS += -I$(switch_srcdir)/libs/srtp/include
+CORE_CFLAGS += -I$(switch_srcdir)/libs/libyuv/include
 CORE_CFLAGS += -I$(switch_srcdir)/libs/srtp/crypto/include -Ilibs/srtp/crypto/include
 CORE_CFLAGS += -I$(switch_builddir)/libs/spandsp/src -I$(switch_srcdir)/libs/spandsp/src 
 CORE_CFLAGS += -I$(switch_builddir)/libs/tiff-4.0.2/libtiff -I$(switch_srcdir)/libs/tiff-4.0.2/libtiff
+CORE_CFLAGS += -DSWITCH_HAVE_YUV
 
 APR_LIBS   = $(AM_LIBAPU_LIBS) $(AM_LIBAPR_LIBS)
 CORE_LIBS=
@@ -153,10 +155,6 @@ if HAVE_VPX
 CORE_CFLAGS += -DSWITCH_HAVE_VPX $(VPX_CFLAGS)
 endif
 
-if HAVE_YUV
-CORE_CFLAGS += -DSWITCH_HAVE_YUV $(YUV_CFLAGS)
-endif
-
 if HAVE_FREETYPE
 CORE_CFLAGS += -DSWITCH_HAVE_FREETYPE $(LIBFREETYPE_CFLAGS)
 endif
@@ -164,10 +162,44 @@ endif
 ##
 ## libfreeswitch
 ##
-noinst_LTLIBRARIES        = libfreeswitch_spandsp.la
+noinst_LTLIBRARIES        = libfreeswitch_spandsp.la libfreeswitch_libyuv.la
 libfreeswitch_spandsp_la_SOURCES = libs/spandsp/src/plc.c libs/spandsp/src/alloc.c libs/spandsp/src/bit_operations.c
 libfreeswitch_spandsp_la_CFLAGS  = -Ilibs/spandsp/src $(CORE_CFLAGS) $(AM_CFLAGS)
 CORE_LIBS+=libfreeswitch_spandsp.la
+
+libfreeswitch_libyuv_la_SOURCES = \
+    libs/libyuv/source/compare.cc           \
+    libs/libyuv/source/compare_common.cc    \
+    libs/libyuv/source/compare_gcc.cc       \
+    libs/libyuv/source/convert.cc           \
+    libs/libyuv/source/convert_argb.cc      \
+    libs/libyuv/source/convert_from.cc      \
+    libs/libyuv/source/convert_from_argb.cc \
+    libs/libyuv/source/convert_to_argb.cc   \
+    libs/libyuv/source/convert_to_i420.cc   \
+    libs/libyuv/source/cpu_id.cc            \
+    libs/libyuv/source/planar_functions.cc  \
+    libs/libyuv/source/rotate.cc            \
+    libs/libyuv/source/rotate_any.cc        \
+    libs/libyuv/source/rotate_argb.cc       \
+    libs/libyuv/source/rotate_common.cc     \
+    libs/libyuv/source/rotate_gcc.cc        \
+    libs/libyuv/source/rotate_mips.cc       \
+    libs/libyuv/source/row_any.cc           \
+    libs/libyuv/source/row_common.cc        \
+    libs/libyuv/source/row_mips.cc          \
+    libs/libyuv/source/row_gcc.cc           \
+    libs/libyuv/source/scale.cc             \
+    libs/libyuv/source/scale_any.cc         \
+    libs/libyuv/source/scale_argb.cc        \
+    libs/libyuv/source/scale_common.cc      \
+    libs/libyuv/source/scale_gcc.cc         \
+    libs/libyuv/source/scale_mips.cc        \
+    libs/libyuv/source/video_common.cc
+
+libfreeswitch_libyuv_la_CPPFLAGS = -O2 -fomit-frame-pointer -Ilibs/libyuv/include
+CORE_LIBS+=libfreeswitch_libyuv.la
+
 lib_LTLIBRARIES	         = libfreeswitch.la
 libfreeswitch_la_CFLAGS  = $(CORE_CFLAGS) $(SQLITE_CFLAGS) $(FREETYPE_CFLAGS) $(CURL_CFLAGS) $(PCRE_CFLAGS) $(SPEEX_CFLAGS) $(LIBEDIT_CFLAGS) $(openssl_CFLAGS) $(VPX_CFLAGS) $(AM_CFLAGS)
 libfreeswitch_la_LDFLAGS = -version-info 1:0:0 $(AM_LDFLAGS) $(PLATFORM_CORE_LDFLAGS) -no-undefined

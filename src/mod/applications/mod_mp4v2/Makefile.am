@@ -1,7 +1,6 @@
 include $(top_srcdir)/build/modmake.rulesam
 MODNAME=mod_mp4v2
 
-if HAVE_YUV
 if HAVE_VPX
 
 mod_LTLIBRARIES = mod_mp4v2.la
@@ -16,12 +15,3 @@ all: error
 error:
 	$(error You must install libvpx2-dev to build mod_mp4v2)
 endif
-
-
-else
-install: error
-all: error
-error:
-	$(error You must install libyuv-dev to build mod_mp4v2)
-endif
-

@@ -1,7 +1,6 @@
 include $(top_srcdir)/build/modmake.rulesam
 MODNAME=mod_fsv
 
-if HAVE_YUV
 if HAVE_VPX
 
 mod_LTLIBRARIES = mod_fsv.la
@@ -16,13 +15,3 @@ all: error
 error:
 	$(error You must install libvpx2-dev to build mod_fsv)
 endif
-
-
-else
-install: error
-all: error
-error:
-	$(error You must install libyuv-dev to build mod_fsv)
-endif
-
-
