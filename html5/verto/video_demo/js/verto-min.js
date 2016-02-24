@@ -33,7 +33,7 @@ $.FSRTC.prototype.stop=function(){var self=this;if(self.options.useVideo){self.o
 if(self.localStream){if(typeof self.localStream.stop=='function'){self.localStream.stop();}else{if(self.localStream.active){var tracks=self.localStream.getTracks();console.error(tracks);tracks.forEach(function(track,index){console.log(track);track.stop();})}}
 self.localStream=null;}
 if(self.options.localVideo){self.options.localVideo.style.display='none';if(moz){self.options.localVideo['mozSrcObject']=null;}else{self.options.localVideo['src']='';}}
-if(self.options.localVideoStream){if(typeof self.options.localVideoStream.stop=='function'){self.options.localVideoStream.stop();}else{if(self.localVideoStream.active){var tracks=self.localVideoStream.getTracks();console.error(tracks);tracks.forEach(function(track,index){console.log(track);track.stop();})}}}
+if(self.options.localVideoStream){if(typeof self.options.localVideoStream.stop=='function'){self.options.localVideoStream.stop();}else{if(self.options.localVideoStream.active){var tracks=self.options.localVideoStream.getTracks();console.error(tracks);tracks.forEach(function(track,index){console.log(track);track.stop();})}}}
 if(self.peer){console.log("stopping peer");self.peer.stop();}};$.FSRTC.prototype.getMute=function(){var self=this;return self.audioEnabled;}
 $.FSRTC.prototype.setMute=function(what){var self=this;var audioTracks=self.localStream.getAudioTracks();for(var i=0,len=audioTracks.length;i<len;i++){switch(what){case"on":audioTracks[i].enabled=true;break;case"off":audioTracks[i].enabled=false;break;case"toggle":audioTracks[i].enabled=!audioTracks[i].enabled;default:break;}
 self.audioEnabled=audioTracks[i].enabled;}
