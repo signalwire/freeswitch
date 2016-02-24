@@ -34,8 +34,6 @@
 
 
 #include <switch.h>
-#include <libyuv.h>
-
 
 #if defined(__clang__)
 /* the imagemagick header files are very badly broken on clang.  They really should be fixing this, in the mean time, this dirty hack works */
@@ -263,12 +261,7 @@ static switch_status_t read_page(pdf_file_context_t *context)
 			return SWITCH_STATUS_FALSE;
 		}
 
-		RAWToI420(storage, w * 3,
-			context->img->planes[0], context->img->stride[0],
-			context->img->planes[1], context->img->stride[1],
-			context->img->planes[2], context->img->stride[2],
-			context->img->d_w, context->img->d_h);
-
+		switch_img_from_raw(context->img, storage, SWITCH_IMG_FMT_BGR24, w, h);
 		free(storage);
 	} else {
 		switch_image_t *img = switch_img_alloc(NULL, SWITCH_IMG_FMT_ARGB, image->columns, image->rows, 0);

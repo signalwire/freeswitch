@@ -1642,8 +1642,7 @@ int  vlc_write_video_imem_get_callback(void *data, const char *cookie, int64_t *
 		}
 		
 		*output = context->video_frame_buffer;
-		*size = 0;
-		switch_img_convert(img, SWITCH_CONVERT_FMT_YUYV, *output, size);
+		switch_img_to_raw(img, *output, *size, SWITCH_IMG_FMT_YUY2);
 		switch_img_free(&img);
 		return 0;
 	}

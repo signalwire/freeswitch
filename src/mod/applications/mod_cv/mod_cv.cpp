@@ -39,7 +39,6 @@ using namespace std;
 using namespace cv;
 
 #include <switch.h>
-#include <libyuv.h>
 
 #include <cv.h>
 #include "cvaux.h"
@@ -724,12 +723,7 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
             switch_assert(context->rawImage->width * 3 == context->rawImage->widthStep);
         }
 
-        libyuv::I420ToRGB24(frame->img->planes[0], frame->img->stride[0],
-                            frame->img->planes[1], frame->img->stride[1],
-                            frame->img->planes[2], frame->img->stride[2],
-                            (uint8_t *)context->rawImage->imageData, context->rawImage->widthStep,
-                            context->rawImage->width, context->rawImage->height);
-
+        switch_img_to_raw(frame->img, context->rawImage->imageData, context->rawImage->widthStep * context->h, SWITCH_IMG_FMT_RGB24);
         detectAndDraw(context);
 
         if (context->detected.simo_count > 20) {
@@ -824,11 +818,7 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
     }
 
     if (context->rawImage && (context->debug || !context->overlay_count)) {
-        libyuv::RGB24ToI420((uint8_t *)context->rawImage->imageData, context->w * 3,
-                            frame->img->planes[0], frame->img->stride[0],
-                            frame->img->planes[1], frame->img->stride[1],
-                            frame->img->planes[2], frame->img->stride[2],
-                            context->rawImage->width, context->rawImage->height);
+        switch_img_from_raw(frame->img, (uint8_t *)context->rawImage->imageData, SWITCH_IMG_FMT_RGB24, context->rawImage->width, context->rawImage->height);
     }
 
     int abs = 0;

@@ -339,7 +339,30 @@ SWITCH_DECLARE(switch_status_t) switch_img_fit(switch_image_t **srcP, int width,
 SWITCH_DECLARE(switch_img_position_t) parse_img_position(const char *name);
 SWITCH_DECLARE(switch_img_fit_t) parse_img_fit(const char *name);
 SWITCH_DECLARE(void) switch_img_find_position(switch_img_position_t pos, int sw, int sh, int iw, int ih, int *xP, int *yP);
-SWITCH_DECLARE(switch_status_t) switch_img_convert(switch_image_t *src, switch_convert_fmt_t fmt, void *dest, switch_size_t *size);
+
+/*!\brief convert img to raw format
+*
+* dest should be pre-allocated and big enough for the target fmt
+*
+* \param[in]    src       The image descriptor
+* \param[in]    dest      The target memory address
+* \param[in]    size      The size of target memory address used for bounds check
+* \param[in]    fmt       The target format
+*/
+SWITCH_DECLARE(switch_status_t) switch_img_to_raw(switch_image_t *src, void *dest, switch_size_t size, switch_img_fmt_t fmt);
+/*!\brief convert raw memory to switch_img_t
+*
+* if dest is NULL then a new img is created, user should destroy it later,
+* otherwize it will re-used the dest img, and the dest img size must match the src width and height,
+* width and height can be 0 in the latter case and it will figure out according to the dest img
+*
+* \param[in]    dest      The image descriptor
+* \param[in]    src       The raw data memory address
+* \param[in]    fmt       The raw data format
+* \param[in]    width     The raw data width
+* \param[in]    height    The raw data height
+*/
+SWITCH_DECLARE(switch_status_t) switch_img_from_raw(switch_image_t *dest, void *src, switch_img_fmt_t fmt, int width, int height);
 SWITCH_DECLARE(switch_image_t *) switch_img_write_text_img(int w, int h, switch_bool_t full, const char *text);
 
 SWITCH_DECLARE(switch_image_t *) switch_img_read_file(const char* file_name);

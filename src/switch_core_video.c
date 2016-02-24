@@ -1936,29 +1936,121 @@ SWITCH_DECLARE(switch_status_t) switch_img_fit(switch_image_t **srcP, int width,
 	return SWITCH_STATUS_FALSE;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_img_convert(switch_image_t *src, switch_convert_fmt_t fmt, void *dest, switch_size_t *size)
+static inline uint32_t switch_img_fmt2fourcc(switch_img_fmt_t fmt)
 {
 #ifdef SWITCH_HAVE_YUV
-	switch_assert(src->fmt == SWITCH_IMG_FMT_I420);
+	uint32_t fourcc;
 
-	switch (fmt) {
-	case SWITCH_CONVERT_FMT_YUYV:
-		{
-			switch_size_t size_in = *size;
-			ConvertFromI420(src->planes[0], src->stride[0],
-							src->planes[1], src->stride[1],
-							src->planes[2], src->stride[2],
-							dest, size_in,
-							src->d_w, src->d_h,
-							FOURCC_YUY2);  
-			*size = src->d_w * src->d_h * 2;
+	switch(fmt) {
+		case SWITCH_IMG_FMT_NONE:      fourcc = FOURCC_ANY ; break;
+		case SWITCH_IMG_FMT_RGB24:     fourcc = FOURCC_24BG; break;
+		case SWITCH_IMG_FMT_RGB32:     fourcc = FOURCC_ANY ; break;
+		case SWITCH_IMG_FMT_RGB565:    fourcc = FOURCC_ANY ; break;
+		case SWITCH_IMG_FMT_RGB555:    fourcc = FOURCC_ANY ; break;
+		case SWITCH_IMG_FMT_UYVY:      fourcc = FOURCC_ANY ; break;
+		case SWITCH_IMG_FMT_YUY2:      fourcc = FOURCC_YUY2; break;
+		case SWITCH_IMG_FMT_YVYU:      fourcc = FOURCC_ANY ; break;
+		case SWITCH_IMG_FMT_BGR24:     fourcc = FOURCC_RAW ; break;
+		case SWITCH_IMG_FMT_RGB32_LE:  fourcc = FOURCC_ANY ; break;
+		case SWITCH_IMG_FMT_ARGB:      fourcc = FOURCC_ANY ; break;
+		case SWITCH_IMG_FMT_ARGB_LE:   fourcc = FOURCC_ANY ; break;
+		case SWITCH_IMG_FMT_RGB565_LE: fourcc = FOURCC_ANY ; break;
+		case SWITCH_IMG_FMT_RGB555_LE: fourcc = FOURCC_ANY ; break;
+		case SWITCH_IMG_FMT_YV12:      fourcc = FOURCC_ANY ; break;
+		case SWITCH_IMG_FMT_I420:      fourcc = FOURCC_I420; break;
+		case SWITCH_IMG_FMT_VPXYV12:   fourcc = FOURCC_ANY ; break;
+		case SWITCH_IMG_FMT_VPXI420:   fourcc = FOURCC_ANY ; break;
+		case SWITCH_IMG_FMT_I422:      fourcc = FOURCC_ANY ; break;
+		case SWITCH_IMG_FMT_I444:      fourcc = FOURCC_ANY ; break;
+		case SWITCH_IMG_FMT_I440:      fourcc = FOURCC_ANY ; break;
+		case SWITCH_IMG_FMT_444A:      fourcc = FOURCC_ANY ; break;
+		case SWITCH_IMG_FMT_I42016:    fourcc = FOURCC_ANY ; break;
+		case SWITCH_IMG_FMT_I42216:    fourcc = FOURCC_ANY ; break;
+		case SWITCH_IMG_FMT_I44416:    fourcc = FOURCC_ANY ; break;
+		case SWITCH_IMG_FMT_I44016:    fourcc = FOURCC_ANY ; break;
+		default: fourcc = FOURCC_ANY;
+    }
 
-			return SWITCH_STATUS_SUCCESS;
-		}
-	default:
-		abort();
-		break;
+    return fourcc;
+#else
+    return 0xFFFFFFFF;
+#endif
+}
+
+SWITCH_DECLARE(switch_status_t) switch_img_to_raw(switch_image_t *src, void *dest, switch_size_t size, switch_img_fmt_t fmt)
+{
+#ifdef SWITCH_HAVE_YUV
+	uint32_t fourcc;
+	int ret;
+
+	switch_assert(src->fmt == SWITCH_IMG_FMT_I420); // todo: support other formats
+	switch_assert(dest);
+
+	fourcc = switch_img_fmt2fourcc(fmt);
+
+	if (fourcc == FOURCC_ANY) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "unsupported format: %d\n", fmt);
+		return SWITCH_STATUS_FALSE;
 	}
+
+	ret = ConvertFromI420(src->planes[0], src->stride[0],
+					src->planes[1], src->stride[1],
+					src->planes[2], src->stride[2],
+					dest, size,
+					src->d_w, src->d_h,
+					fourcc);
+
+	return ret == 0 ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
+#else
+	return SWITCH_STATUS_FALSE;
+#endif
+}
+
+SWITCH_DECLARE(switch_status_t) switch_img_from_raw(switch_image_t *dest, void *src, switch_img_fmt_t fmt, int width, int height)
+{
+#ifdef SWITCH_HAVE_YUV
+	uint32_t fourcc;
+	int ret;
+
+	fourcc = switch_img_fmt2fourcc(fmt);
+
+	if (fourcc == FOURCC_ANY) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "unsupported format: %d\n", fmt);
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (!dest && width > 0 && height > 0) dest = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, width, height, 1);
+	if (!dest) return SWITCH_STATUS_FALSE;
+
+	if (width == 0 || height == 0) {
+		width = dest->d_w;
+		height = dest->d_h;
+	}
+
+/*
+	int ConvertToI420(const uint8* src_frame, size_t src_size,
+                  uint8* dst_y, int dst_stride_y,
+                  uint8* dst_u, int dst_stride_u,
+                  uint8* dst_v, int dst_stride_v,
+                  int crop_x, int crop_y,
+                  int src_width, int src_height,
+                  int crop_width, int crop_height,
+                  enum RotationMode rotation,
+                  uint32 format);
+
+	src_size is only used when FOURCC_MJPG which we don't support so always 0
+*/
+
+	ret = ConvertToI420(src, 0,
+					dest->planes[0], dest->stride[0],
+					dest->planes[1], dest->stride[1],
+					dest->planes[2], dest->stride[2],
+					0, 0,
+					width, height,
+					width, height,
+					0, fourcc);
+
+	return ret == 0 ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
 #else
 	return SWITCH_STATUS_FALSE;
 #endif
