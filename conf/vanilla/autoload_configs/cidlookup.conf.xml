@@ -1,7 +1,7 @@
 <configuration name="cidlookup.conf" description="cidlookup Configuration">
   <settings>
     <!-- comment out url to not setup a url based lookup -->
-    <param name="url" value="http://query.voipcnam.com/query.php?api_key=MYAPIKEY&number=${caller_id_number}"/>
+    <param name="url" value="http://query.voipcnam.com/query.php?api_key=MYAPIKEY&amp;number=${caller_id_number}"/>
 
     <!-- comment out whitepages-apikey to not use whitepages.com, you must
          get an API key from http://developer.whitepages.com/ -->
