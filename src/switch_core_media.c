@@ -66,7 +66,14 @@ typedef struct secure_settings_s {
 	char *remote_crypto_key;
 } switch_secure_settings_t;
 
+typedef struct core_video_globals_s {
+	int cpu_count;
+	int cur_cpu;
+	switch_memory_pool_t *pool;
+	switch_mutex_t *mutex;
+} core_video_globals_t;
 
+static core_video_globals_t video_globals = { 0 };
 
 struct media_helper {
 	switch_core_session_t *session;
@@ -5008,6 +5015,27 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_set_video_file(switch_core_ses
 	return SWITCH_STATUS_SUCCESS;
 }
 
+int next_cpu(void)
+{
+	int x = 0;
+
+	switch_mutex_lock(video_globals.mutex);
+	x = video_globals.cur_cpu++;
+	if (video_globals.cur_cpu == video_globals.cpu_count) {
+		video_globals.cur_cpu = 0;
+	}
+	switch_mutex_unlock(video_globals.mutex);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Binding to CPU %d\n", x);
+
+	return x;
+}
+
+static void bind_cpu(void)
+{
+	switch_core_thread_set_cpu_affinity(next_cpu());
+}
+
+
 static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, void *obj)
 {
 	struct media_helper *mh = obj;
@@ -5028,6 +5056,8 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 	if (!(smh = session->media_handle)) {
 		return NULL;
 	}
+
+	bind_cpu();
 
 	if ((var = switch_channel_get_variable(session->channel, "core_video_blank_image"))) {
 		blank_img = switch_img_read_png(var, SWITCH_IMG_FMT_I420);
@@ -10283,11 +10313,18 @@ SWITCH_DECLARE (void) switch_core_media_recover_session(switch_core_session_t *s
 SWITCH_DECLARE(void) switch_core_media_init(void)
 {
 	switch_core_gen_certs(DTLS_SRTP_FNAME ".pem");	
+
+	video_globals.cpu_count = switch_core_cpu_count();
+	video_globals.cur_cpu = 0;
+
+	switch_core_new_memory_pool(&video_globals.pool);
+	switch_mutex_init(&video_globals.mutex, SWITCH_MUTEX_NESTED, video_globals.pool);
+
 }
 
 SWITCH_DECLARE(void) switch_core_media_deinit(void)
 {
-	
+	switch_core_destroy_memory_pool(&video_globals.pool);
 }
 
 static int payload_number(const char *name)
