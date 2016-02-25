@@ -336,7 +336,7 @@ Build-Depends:
  libedit-dev (>= 2.11),
  libsqlite3-dev,
  wget, pkg-config,
- libyuv-dev, libvpx-dev (>= 1.4.0) | libvpx2-dev,
+ libyuv-dev, yasm,
 # core codecs
  libogg-dev, libspeex-dev, libspeexdsp-dev,
 # configure options
@@ -370,7 +370,7 @@ Conflicts: $(list_freeswitch_all_replaces)
 Depends: \${shlibs:Depends}, \${perl:Depends}, \${misc:Depends},
  freeswitch-music-default (>= 1.0.8),
  freeswitch-sounds-en-us-callie (>= 1.0.25) | freeswitch-sounds,
- libyuv, libvpx (>= 1.4.0) | libvpx2,
+ libyuv, yasm,
  $(debian_wrap "${mod_depends}")
 Recommends:
  $(debian_wrap "${mod_recommends}")
@@ -395,7 +395,7 @@ Description: Cross-Platform Scalable Multi-Protocol Soft Switch
 Package: libfreeswitch1
 Architecture: any
 Depends: \${shlibs:Depends}, \${misc:Depends},
- libyuv, libvpx (>= 1.4.0) | libvpx2
+ libyuv, yasm
 Recommends:
 Suggests: libfreeswitch1-dbg
 Description: Cross-Platform Scalable Multi-Protocol Soft Switch

@@ -445,7 +445,7 @@ build_all () {
   [ -n "$distros" ] || distros="$(default_distros)"
   ! $depinst || aptitude install -y \
     rsync git less cowbuilder ccache \
-    devscripts equivs build-essential
+    devscripts equivs build-essential yasm
   [ -n "$orig" ] || orig="$(create_orig $orig_opts HEAD | tail -n1)"
   if [ -n "$modlist" ]; then
     local modtmp="$(mktemp /tmp/modules-XXXXXXXXXX.conf)"
