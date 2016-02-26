@@ -513,13 +513,22 @@
 	    audio = false;
 	} else {
 	    audio = {
-		mandatory: obj.options.audioParams,
+		mandatory: {},
 		optional: []
 	    };
 
 	    if (obj.options.useMic !== "any") {
 		audio.optional = [{sourceId: obj.options.useMic}]
 	    }
+
+	    if (obj.options.audioParams) {
+		for (var key in obj.options.audioParams) {
+		    var con = {};
+		    con[key] = obj.options.audioParams[key];
+		    audio.optional.push(con);
+		}
+	    }
+
 
 	}
 
