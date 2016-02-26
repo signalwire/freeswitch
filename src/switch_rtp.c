@@ -7291,7 +7291,6 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 		
 		rtp_session->ts_norm.last_frame = ntohl(send_msg->header.ts);
 		send_msg->header.ts = htonl(rtp_session->ts_norm.ts);
-		printf("WTF %d\n", rtp_session->ts_norm.ts);
 	}
 
 	send_msg->header.ssrc = htonl(rtp_session->ssrc);
