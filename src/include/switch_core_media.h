@@ -168,6 +168,8 @@ typedef struct switch_core_media_params_s {
 	uint32_t video_key_freq;
 	uint32_t video_key_first;
 
+	switch_thread_t *video_write_thread;
+
 } switch_core_media_params_t;
 
 static inline const char *switch_media_type2str(switch_media_type_t type)

@@ -783,7 +783,7 @@ static switch_status_t switch_vpx_encode(switch_codec_t *codec, switch_frame_t *
 		context->codec_settings.video.height = height;
 		reset_codec_encoder(codec);
 		frame->flags |= SFF_PICTURE_RESET;
-		context->need_key_frame = 1;
+		context->need_key_frame = 3;
 	}
 
 	
@@ -803,7 +803,7 @@ static switch_status_t switch_vpx_encode(switch_codec_t *codec, switch_frame_t *
 
 	now = switch_time_now();
 
-	if (context->need_key_frame != 0) {
+	if (context->need_key_frame > 0) {
 		// force generate a key frame
 
 		if (!context->last_key_frame || (now - context->last_key_frame) > KEY_FRAME_MIN_FREQ) {

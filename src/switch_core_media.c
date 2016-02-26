@@ -71,6 +71,7 @@ typedef struct core_video_globals_s {
 	int cur_cpu;
 	switch_memory_pool_t *pool;
 	switch_mutex_t *mutex;
+	uint32_t fps;
 } core_video_globals_t;
 
 static core_video_globals_t video_globals = { 0 };
@@ -229,6 +230,7 @@ struct switch_media_handle_s {
 	time_t vid_started;
 	int ready_loops;
 
+	switch_thread_t *video_write_thread;
 };
 
 static switch_srtp_crypto_suite_t SUITES[CRYPTO_INVALID] = {
@@ -1964,7 +1966,7 @@ static void check_jb(switch_core_session_t *session, const char *input, int32_t 
 static void check_jb_sync(switch_core_session_t *session)
 {
 	int32_t jb_sync_msec = 0;
-	uint32_t fps, frames = 0;
+	uint32_t fps = 0, frames = 0;
 	uint32_t min_frames = 0;
 	uint32_t max_frames = 0;
 	uint32_t cur_frames = 0;
@@ -2037,12 +2039,16 @@ static void check_jb_sync(switch_core_session_t *session)
 		sync_video = 1;
 	}
 
+	if (fps) {
+		video_globals.fps = fps;
+	}
+
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session),
 					  SWITCH_LOG_DEBUG1, "%s %s \"%s\" Sync A/V JB to %dms %u VFrames FPS %u a:%s v:%s\n", 
 					  switch_core_session_get_uuid(session),
 					  switch_channel_get_name(session->channel),
 					  switch_channel_get_variable_dup(session->channel, "caller_id_name", SWITCH_FALSE, -1),
-					  jb_sync_msec, frames, fps, sync_audio ? "yes" : "no", sync_video ? "yes" : "no");
+					  jb_sync_msec, frames, video_globals.fps, sync_audio ? "yes" : "no", sync_video ? "yes" : "no");
 	
 	if (sync_audio) {
 		check_jb(session, NULL, jb_sync_msec, 0, SWITCH_TRUE);
@@ -2163,6 +2169,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 			goto end;
 		}
 	
+		if (status == SWITCH_STATUS_BREAK) {
+			goto end;
+		}
+
 		if (type == SWITCH_MEDIA_TYPE_VIDEO && engine->read_frame.m) {
 			if (!smh->vid_started) {
 				smh->vid_started = switch_epoch_time_now(NULL);
@@ -4955,6 +4965,73 @@ SWITCH_DECLARE(switch_file_handle_t *) switch_core_media_get_video_file(switch_c
 }
 
 
+static void *SWITCH_THREAD_FUNC video_write_thread(switch_thread_t *thread, void *obj)
+{
+	switch_core_session_t *session = (switch_core_session_t *) obj;
+	switch_media_handle_t *smh;
+	unsigned char *buf = NULL;
+	switch_frame_t fr = { 0 };
+	switch_rtp_engine_t *v_engine;
+	int buflen = SWITCH_RTP_MAX_BUF_LEN;
+	switch_timer_t timer = { 0 };
+	int fps;
+
+	if (switch_core_session_read_lock(session) != SWITCH_STATUS_SUCCESS) {
+		return NULL;
+	}
+	
+	if (!(smh = session->media_handle)) {
+		return NULL;
+	}
+
+	v_engine = &smh->engines[SWITCH_MEDIA_TYPE_VIDEO];	
+
+
+	buf = switch_core_session_alloc(session, buflen);
+	fr.packet = buf;
+	fr.packetlen = buflen;
+	fr.data = buf + 12;
+	fr.buflen = buflen - 12;
+	switch_core_media_gen_key_frame(session);
+
+	
+	if (smh->video_write_fh->mm.source_fps) {
+		fps = (int) smh->video_write_fh->mm.source_fps;
+	} else {
+		fps = video_globals.fps;
+	}
+
+	if (!fps) {
+		fps = 15;
+	}
+
+
+	switch_core_timer_init(&timer, "soft", (int)(1000 / fps) , 1, switch_core_session_get_pool(session));
+
+	while (switch_channel_up_nosig(session->channel) && smh->video_write_fh && switch_test_flag(smh->video_write_fh, SWITCH_FILE_OPEN)) {
+		switch_status_t wstatus;
+
+		switch_core_timer_next(&timer);
+		switch_mutex_lock(v_engine->mh.file_mutex);
+		wstatus = switch_core_file_read_video(smh->video_write_fh, &fr, SVR_BLOCK);
+
+		if (wstatus == SWITCH_STATUS_SUCCESS) {
+			switch_core_session_write_video_frame(session, &fr, SWITCH_IO_FLAG_NONE, SVR_FLUSH);
+			switch_img_free(&fr.img);
+		} else if (wstatus != SWITCH_STATUS_BREAK && wstatus != SWITCH_STATUS_IGNORE) {
+			smh->video_write_fh = NULL;
+		}
+		switch_mutex_unlock(v_engine->mh.file_mutex);
+
+	}
+
+	switch_core_timer_destroy(&timer);
+
+	switch_core_session_rwunlock(session);
+
+	return NULL;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_core_media_set_video_file(switch_core_session_t *session, switch_file_handle_t *fh, switch_rw_t rw)
 {
 	switch_media_handle_t *smh;
@@ -5004,7 +5081,24 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_set_video_file(switch_core_ses
 		}
 
 		switch_core_media_gen_key_frame(session);
+
+		if (fh) {
+			switch_threadattr_t *thd_attr = NULL;
+			
+			switch_threadattr_create(&thd_attr, switch_core_session_get_pool(session));
+			switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
+			switch_thread_create(&smh->video_write_thread, thd_attr, video_write_thread, session, switch_core_session_get_pool(session));
+		}
+
 		smh->video_write_fh = fh;
+		
+
+		if (!fh && smh->video_write_thread) {
+			switch_status_t st;
+			switch_thread_join(&st, smh->video_write_thread);
+		}
+		
+
 	}
 
 	if (!fh) switch_channel_video_sync(session->channel);
@@ -5045,9 +5139,9 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 	switch_frame_t *read_frame = NULL;
 	switch_media_handle_t *smh;
 	uint32_t loops = 0, xloops = 0, vloops = 0;
+	switch_image_t *blank_img = NULL;
 	switch_frame_t fr = { 0 };
 	unsigned char *buf = NULL;
-	switch_image_t *blank_img = NULL;
 	switch_rgb_color_t bgcolor;
 	switch_rtp_engine_t *v_engine = NULL;
 	
@@ -5139,13 +5233,13 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 		}
 
 		//if (!smh->video_write_fh || !switch_channel_test_flag(channel, CF_VIDEO_READY)) {
-		status = switch_core_session_read_video_frame(session, &read_frame, smh->video_write_fh ? SWITCH_IO_FLAG_NOBLOCK : SWITCH_IO_FLAG_NONE, 0);
-		
+		status = switch_core_session_read_video_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
+
 		if (!SWITCH_READ_ACCEPTABLE(status)) {
 			switch_cond_next();
 			continue;
 		}
-		
+
 		//if (switch_test_flag(read_frame, SFF_CNG)) {
 		//	continue;
 		//}
@@ -5167,19 +5261,11 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 			fr.buflen = buflen - 12;
 			switch_core_media_gen_key_frame(session);
 		}
+		
 
 		if (switch_channel_test_flag(channel, CF_VIDEO_READY)) {
 			switch_mutex_lock(mh->file_mutex);
-			if (smh->video_write_fh && switch_channel_ready(session->channel) && switch_test_flag(smh->video_write_fh, SWITCH_FILE_OPEN)) {
-				switch_status_t wstatus = switch_core_file_read_video(smh->video_write_fh, &fr, 0);
-				if (wstatus == SWITCH_STATUS_SUCCESS) {
-					switch_core_session_write_video_frame(session, &fr, SWITCH_IO_FLAG_NONE, SVR_FLUSH);
-					switch_img_free(&fr.img);
-				} else if (wstatus != SWITCH_STATUS_BREAK && wstatus != SWITCH_STATUS_IGNORE) {
-					smh->video_write_fh = NULL;
-				}
-				send_blank = 0;
-			} else if (smh->video_read_fh && switch_test_flag(smh->video_read_fh, SWITCH_FILE_OPEN) && read_frame->img) {
+			if (smh->video_read_fh && switch_test_flag(smh->video_read_fh, SWITCH_FILE_OPEN) && read_frame->img) {
 				switch_core_file_write_video(smh->video_read_fh, read_frame);
 				send_blank = 0;
 			} 
