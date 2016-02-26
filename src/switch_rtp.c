@@ -7250,7 +7250,12 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 		 */
 
 		if (!rtp_session->ts_norm.ts) {
-			rtp_session->ts_norm.ts = (uint32_t) rand() % 1000000 + 1;
+			if (switch_rtp_test_flag(rtp_session, SWITCH_RTP_FLAG_GEN_TS_DELTA)) {
+				rtp_session->ts_norm.ts = (uint32_t) rand() % 1000000 + 1;
+			} else {
+				switch_core_timer_sync(&rtp_session->timer);
+				rtp_session->ts_norm.ts = rtp_session->timer.samplecount;
+			}
 		}
 
 		if (!rtp_session->ts_norm.last_ssrc || send_msg->header.ssrc != rtp_session->ts_norm.last_ssrc) {
@@ -7286,7 +7291,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 		
 		rtp_session->ts_norm.last_frame = ntohl(send_msg->header.ts);
 		send_msg->header.ts = htonl(rtp_session->ts_norm.ts);
-
+		printf("WTF %d\n", rtp_session->ts_norm.ts);
 	}
 
 	send_msg->header.ssrc = htonl(rtp_session->ssrc);
