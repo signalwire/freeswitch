@@ -231,6 +231,7 @@ struct switch_media_handle_s {
 	int ready_loops;
 
 	switch_thread_t *video_write_thread;
+	int video_write_thread_running;
 };
 
 static switch_srtp_crypto_suite_t SUITES[CRYPTO_INVALID] = {
@@ -5008,12 +5009,16 @@ static void *SWITCH_THREAD_FUNC video_write_thread(switch_thread_t *thread, void
 
 	switch_core_timer_init(&timer, "soft", (int)(1000 / fps) , 1, switch_core_session_get_pool(session));
 
-	while (switch_channel_up_nosig(session->channel) && smh->video_write_fh && switch_test_flag(smh->video_write_fh, SWITCH_FILE_OPEN)) {
-		switch_status_t wstatus;
+	while (smh->video_write_thread_running > 0 && 
+		   switch_channel_up_nosig(session->channel) && smh->video_write_fh && switch_test_flag(smh->video_write_fh, SWITCH_FILE_OPEN)) {
+		switch_status_t wstatus = SWITCH_STATUS_FALSE;
 
 		switch_core_timer_next(&timer);
 		switch_mutex_lock(v_engine->mh.file_mutex);
-		wstatus = switch_core_file_read_video(smh->video_write_fh, &fr, SVR_BLOCK);
+
+		if (smh->video_write_fh) {
+			wstatus = switch_core_file_read_video(smh->video_write_fh, &fr, SVR_BLOCK);
+		}
 
 		if (wstatus == SWITCH_STATUS_SUCCESS) {
 			switch_core_session_write_video_frame(session, &fr, SWITCH_IO_FLAG_NONE, SVR_FLUSH);
@@ -5022,12 +5027,13 @@ static void *SWITCH_THREAD_FUNC video_write_thread(switch_thread_t *thread, void
 			smh->video_write_fh = NULL;
 		}
 		switch_mutex_unlock(v_engine->mh.file_mutex);
-
 	}
 
 	switch_core_timer_destroy(&timer);
 
 	switch_core_session_rwunlock(session);
+
+	smh->video_write_thread_running = 0;
 
 	return NULL;
 }
@@ -5058,6 +5064,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_set_video_file(switch_core_ses
 	switch_mutex_lock(v_engine->mh.file_mutex);
 
 	if (rw == SWITCH_RW_READ) {
+
+		if (fh && smh->video_read_fh) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "File is already open\n");
+			switch_mutex_unlock(v_engine->mh.file_mutex);
+			return SWITCH_STATUS_FALSE; 
+		}
+
 		
 		if (fh) {
 			switch_channel_set_flag_recursive(session->channel, CF_VIDEO_DECODED_READ);
@@ -5074,6 +5087,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_set_video_file(switch_core_ses
 		smh->video_read_fh = fh;
 
 	} else {
+
+		if (fh && smh->video_write_fh) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "File is already open\n");
+			switch_mutex_unlock(v_engine->mh.file_mutex);
+			return SWITCH_STATUS_FALSE; 
+		}
+
 		if (fh) {
 			switch_channel_set_flag(session->channel, CF_VIDEO_WRITE_FILE_ATTACHED);
 		} else {
@@ -5087,18 +5107,21 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_set_video_file(switch_core_ses
 			
 			switch_threadattr_create(&thd_attr, switch_core_session_get_pool(session));
 			switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
+			smh->video_write_thread_running = 1;
 			switch_thread_create(&smh->video_write_thread, thd_attr, video_write_thread, session, switch_core_session_get_pool(session));
 		}
 
 		smh->video_write_fh = fh;
-		
 
 		if (!fh && smh->video_write_thread) {
 			switch_status_t st;
+			smh->video_write_thread_running = -1;
+			switch_mutex_unlock(v_engine->mh.file_mutex);
 			switch_thread_join(&st, smh->video_write_thread);
+			switch_mutex_lock(v_engine->mh.file_mutex);
+			smh->video_write_thread = NULL;
 		}
 		
-
 	}
 
 	if (!fh) switch_channel_video_sync(session->channel);
