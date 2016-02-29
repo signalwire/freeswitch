@@ -543,6 +543,16 @@ if test "${enable_debug}" = "yes"; then
 
 fi
 
+AC_ARG_ENABLE(libyuv,
+[AC_HELP_STRING([--disable-libyuv],[build without libyuv])],[enable_libyuv="$enableval"],[enable_libyuv="yes"])
+
+AM_CONDITIONAL([ENABLE_LIBYUV],[test "${enable_libyuv}" = "yes"])
+
+AC_ARG_ENABLE(libvpx,
+[AC_HELP_STRING([--disable-libvpx],[build without libvpx])],[enable_libvpx="$enableval"],[enable_libvpx="yes"])
+
+AM_CONDITIONAL([ENABLE_LIBVPX],[test "${enable_libvpx}" = "yes"])
+
 AC_ARG_ENABLE(cpp,
 [AC_HELP_STRING([--disable-cpp],[build without cpp code])],[enable_cpp="$enableval"],[enable_cpp="yes"])
 

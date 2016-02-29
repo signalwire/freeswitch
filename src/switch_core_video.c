@@ -1936,9 +1936,9 @@ SWITCH_DECLARE(switch_status_t) switch_img_fit(switch_image_t **srcP, int width,
 	return SWITCH_STATUS_FALSE;
 }
 
+#ifdef SWITCH_HAVE_YUV
 static inline uint32_t switch_img_fmt2fourcc(switch_img_fmt_t fmt)
 {
-#ifdef SWITCH_HAVE_YUV
 	uint32_t fourcc;
 
 	switch(fmt) {
@@ -1972,10 +1972,8 @@ static inline uint32_t switch_img_fmt2fourcc(switch_img_fmt_t fmt)
     }
 
     return fourcc;
-#else
-    return 0xFFFFFFFF;
-#endif
 }
+#endif
 
 SWITCH_DECLARE(switch_status_t) switch_img_to_raw(switch_image_t *src, void *dest, switch_size_t size, switch_img_fmt_t fmt)
 {

@@ -26,8 +26,12 @@ AM_LIBAPU_LDFLAGS := $(shell ./libs/apr-util/apu-1-config --ldflags)
 AM_LIBAPU_LIBS := $(subst $(switch_builddir)/,,$(shell ./libs/apr-util/apu-1-config \--libs))
 endif
 
+
 AM_CFLAGS   = $(SWITCH_AM_CFLAGS) $(SWITCH_ANSI_CFLAGS) 
-AM_CPPFLAGS = -I$(switch_srcdir)/libs/libvpx $(SWITCH_AM_CXXFLAGS) -I$(switch_srcdir)/libs/sofia-sip/libsofia-sip-ua/sdp -I$(switch_srcdir)/libs/sofia-sip/libsofia-sip-ua/su -I$(switch_builddir)/libs/sofia-sip/libsofia-sip-ua/su
+AM_CPPFLAGS =
+AM_CPPFLAGS += -I$(switch_srcdir)/libs/libvpx
+AM_CPPFLAGS += $(SWITCH_AM_CXXFLAGS) -I$(switch_srcdir)/libs/sofia-sip/libsofia-sip-ua/sdp
+AM_CPPFLAGS += -I$(switch_srcdir)/libs/sofia-sip/libsofia-sip-ua/su -I$(switch_builddir)/libs/sofia-sip/libsofia-sip-ua/su
 AM_LDFLAGS  = $(SWITCH_AM_LDFLAGS) $(AM_LIBAPR_LDFLAGS) $(AM_LIBAPU_LDFLAGS)
 
 DEFAULT_SOUNDS=en-us-callie-8000
@@ -115,15 +119,23 @@ CORE_CFLAGS  = $(AM_LIBAPR_CFLAGS) $(AM_LIBAPR_CPPFLAGS)
 CORE_CFLAGS += $(AM_LIBAPU_CPPFLAGS)
 CORE_CFLAGS += -I$(switch_srcdir)/libs/libtpl-1.5/src
 CORE_CFLAGS += -I$(switch_srcdir)/libs/srtp/include
+if ENABLE_LIBYUV
 CORE_CFLAGS += -I$(switch_srcdir)/libs/libyuv/include
+CORE_CFLAGS += -DSWITCH_HAVE_YUV
+endif
 CORE_CFLAGS += -I$(switch_srcdir)/libs/srtp/crypto/include -Ilibs/srtp/crypto/include
 CORE_CFLAGS += -I$(switch_builddir)/libs/spandsp/src -I$(switch_srcdir)/libs/spandsp/src 
 CORE_CFLAGS += -I$(switch_builddir)/libs/tiff-4.0.2/libtiff -I$(switch_srcdir)/libs/tiff-4.0.2/libtiff
-CORE_CFLAGS += -DSWITCH_HAVE_YUV
+if ENABLE_LIBVPX
 CORE_CFLAGS += -DSWITCH_HAVE_VPX
+endif
 
 APR_LIBS   = $(AM_LIBAPU_LIBS) $(AM_LIBAPR_LIBS)
-CORE_LIBS=libs/libvpx/libvpx.a
+CORE_LIBS=
+
+if ENABLE_LIBVPX
+CORE_LIBS += libs/libvpx/libvpx.a
+endif
 if SYSTEM_APRUTIL
 CORE_LIBS += $(AM_LIBAPU_LINKLIBTOOL)
 else
@@ -159,11 +171,15 @@ endif
 ##
 ## libfreeswitch
 ##
-noinst_LTLIBRARIES        = libfreeswitch_spandsp.la libfreeswitch_libyuv.la
+noinst_LTLIBRARIES        = libfreeswitch_spandsp.la
+if ENABLE_LIBYUV
+noinst_LTLIBRARIES += libfreeswitch_libyuv.la
+endif
 libfreeswitch_spandsp_la_SOURCES = libs/spandsp/src/plc.c libs/spandsp/src/alloc.c libs/spandsp/src/bit_operations.c
 libfreeswitch_spandsp_la_CFLAGS  = -Ilibs/spandsp/src $(CORE_CFLAGS) $(AM_CFLAGS)
 CORE_LIBS+=libfreeswitch_spandsp.la
 
+if ENABLE_LIBYUV
 libfreeswitch_libyuv_la_SOURCES = \
     libs/libyuv/source/compare.cc           \
     libs/libyuv/source/compare_common.cc    \
@@ -196,6 +212,7 @@ libfreeswitch_libyuv_la_SOURCES = \
 
 libfreeswitch_libyuv_la_CPPFLAGS = -O2 -fomit-frame-pointer -Ilibs/libyuv/include
 CORE_LIBS+=libfreeswitch_libyuv.la
+endif
 
 lib_LTLIBRARIES	         = libfreeswitch.la
 libfreeswitch_la_CFLAGS  = $(CORE_CFLAGS) $(SQLITE_CFLAGS) $(FREETYPE_CFLAGS) $(CURL_CFLAGS) $(PCRE_CFLAGS) $(SPEEX_CFLAGS) $(LIBEDIT_CFLAGS) $(openssl_CFLAGS)  $(AM_CFLAGS)

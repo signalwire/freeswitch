@@ -32,6 +32,8 @@
  */
 
 #include <switch.h>
+#ifdef SWITCH_HAVE_YUV
+#ifdef SWITCH_HAVE_VPX
 #include <vpx/vpx_encoder.h>
 #include <vpx/vpx_decoder.h>
 #include <vpx/vp8cx.h>
@@ -1269,6 +1271,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_vpx_load)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+#endif
+#endif
 /* For Emacs:
  * Local Variables:
  * mode:c
