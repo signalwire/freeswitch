@@ -5147,9 +5147,11 @@ int next_cpu(void)
 	return x;
 }
 
-static void bind_cpu(void)
+SWITCH_DECLARE(void) switch_core_autobind_cpu(void)
 {
-	switch_core_thread_set_cpu_affinity(next_cpu());
+	if (video_globals.cpu_count > 1) {
+		switch_core_thread_set_cpu_affinity(next_cpu());
+	}
 }
 
 
@@ -5174,7 +5176,7 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 		return NULL;
 	}
 
-	bind_cpu();
+	switch_core_autobind_cpu();
 
 	if ((var = switch_channel_get_variable(session->channel, "core_video_blank_image"))) {
 		blank_img = switch_img_read_png(var, SWITCH_IMG_FMT_I420);

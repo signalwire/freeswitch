@@ -1486,6 +1486,8 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_write_thread_run(switch_thread_
 		return NULL;
 	}
 
+	switch_core_autobind_cpu();
+
 	while(conference_utils_member_test_flag(member, MFLAG_RUNNING)) {
 		if (switch_queue_pop(member->mux_out_queue, &pop) == SWITCH_STATUS_SUCCESS) {
 			mcu_layer_t *layer = NULL;

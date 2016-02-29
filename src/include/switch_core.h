@@ -2735,6 +2735,8 @@ SWITCH_DECLARE(const char *)switch_version_revision_human(void);
 SWITCH_DECLARE(const char *)switch_version_full(void);
 SWITCH_DECLARE(const char *)switch_version_full_human(void);
 
+SWITCH_DECLARE(void) switch_core_autobind_cpu(void);
+
 SWITCH_END_EXTERN_C
 #endif
 /* For Emacs:
