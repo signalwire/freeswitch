@@ -1393,6 +1393,7 @@ again:
 						}
 #endif			
 
+						context->vid_ready = 1;
 						switch_queue_push(context->eh.video_queue, img);
 						context->last_vid_push = switch_time_now();
 					}
