@@ -16856,6 +16856,11 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_switch_version_full_human() {
 }
 
 
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_core_autobind_cpu() {
+  switch_core_autobind_cpu();
+}
+
+
 SWIGEXPORT void SWIGSTDCALL CSharp_switch_loadable_module_interface_module_name_set(void * jarg1, char * jarg2) {
   switch_loadable_module_interface *arg1 = (switch_loadable_module_interface *) 0 ;
   char *arg2 = (char *) 0 ;

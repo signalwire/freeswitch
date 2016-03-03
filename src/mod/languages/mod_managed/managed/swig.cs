@@ -3359,6 +3359,10 @@ public class freeswitch {
     return ret;
   }
 
+  public static void switch_core_autobind_cpu() {
+    freeswitchPINVOKE.switch_core_autobind_cpu();
+  }
+
   public static switch_status_t switch_loadable_module_init(switch_bool_t autoload) {
     switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_loadable_module_init((int)autoload);
     return ret;
@@ -11853,6 +11857,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_version_full_human")]
   public static extern string switch_version_full_human();
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_autobind_cpu")]
+  public static extern void switch_core_autobind_cpu();
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_loadable_module_interface_module_name_set")]
   public static extern void switch_loadable_module_interface_module_name_set(HandleRef jarg1, string jarg2);
