@@ -1942,7 +1942,10 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 	int rate = 0, nack_ttl = 0;
 	uint32_t cur_nack[MAX_NACK] = { 0 };
 
-	if (rtp_session->flags[SWITCH_RTP_FLAG_AUTO_CNG] && rtp_session->send_msg.header.ts && rtp_session->cng_pt != INVALID_PT &&
+	if (!rtp_session->flags[SWITCH_RTP_FLAG_UDPTL] &&
+		rtp_session->flags[SWITCH_RTP_FLAG_AUTO_CNG] &&
+		rtp_session->send_msg.header.ts &&
+		rtp_session->cng_pt != INVALID_PT &&
 		(rtp_session->timer.samplecount - rtp_session->last_write_samplecount >= rtp_session->samples_per_interval * 60)) {
 		uint8_t data[10] = { 0 };
 		switch_frame_flag_t frame_flags = SFF_NONE;
@@ -7080,11 +7083,13 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_zerocopy_read_frame(switch_rtp_t *rtp
 	if (bytes < 0) {
 		frame->datalen = 0;
 		return bytes == -2 ? SWITCH_STATUS_TIMEOUT : SWITCH_STATUS_GENERR;
-	} else if (bytes < rtp_header_len) {
-		frame->datalen = 0;
-		return SWITCH_STATUS_BREAK;
-	} else {
-		bytes -= rtp_header_len;
+	} else if (!rtp_session->flags[SWITCH_RTP_FLAG_UDPTL]) {
+		if (bytes < rtp_header_len) {
+			frame->datalen = 0;
+			return SWITCH_STATUS_BREAK;
+		} else {
+			bytes -= rtp_header_len;
+		}
 	}
 
 	frame->datalen = bytes;
@@ -7201,8 +7206,9 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 		if ((rtp_session->rtp_bugs & RTP_BUG_NEVER_SEND_MARKER)) {
 			m = 0;
 		} else {
-			if ((!rtp_session->flags[SWITCH_RTP_FLAG_RESET] && (rtp_session->ts - rtp_session->last_write_ts > rtp_session->samples_per_interval * 10))
-				|| rtp_session->ts == rtp_session->samples_per_interval) {
+			if (!rtp_session->flags[SWITCH_RTP_FLAG_UDPTL] &&
+				((!rtp_session->flags[SWITCH_RTP_FLAG_RESET] && (rtp_session->ts - rtp_session->last_write_ts > rtp_session->samples_per_interval * 10))
+				|| rtp_session->ts == rtp_session->samples_per_interval)) {
 				m++;
 			}
 			
