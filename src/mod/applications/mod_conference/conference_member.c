@@ -1638,7 +1638,7 @@ int conference_member_setup_media(conference_member_t *member, conference_obj_t 
 		switch_resample_destroy(&member->read_resampler);
 	}
 
-	switch_core_session_get_read_impl(member->session, &member->orig_read_impl);
+	switch_core_session_get_real_read_impl(member->session, &member->orig_read_impl);
 	member->native_rate = member->orig_read_impl.samples_per_second;
 
 	/* Setup a Signed Linear codec for reading audio. */
