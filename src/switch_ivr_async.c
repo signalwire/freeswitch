@@ -1131,16 +1131,21 @@ static void *SWITCH_THREAD_FUNC recording_thread(switch_thread_t *thread, void *
 		return NULL;
 	}
 
-	switch_core_session_get_read_impl(session, &read_impl);
-	bsize = read_impl.decoded_bytes_per_packet;
 	rh = switch_core_media_bug_get_user_data(bug);
 	switch_buffer_create_dynamic(&rh->thread_buffer, 1024 * 512, 1024 * 64, 0);
 	rh->thread_ready = 1;
 
 	channels = switch_core_media_bug_test_flag(bug, SMBF_STEREO) ? 2 : rh->read_impl.number_of_channels;
-	data = switch_core_session_alloc(session, bsize);
+	data = switch_core_session_alloc(session, SWITCH_RECOMMENDED_BUFFER_SIZE);
 
 	while(switch_test_flag(rh->fh, SWITCH_FILE_OPEN)) {
+		if (switch_core_file_has_video(rh->fh)) {
+			switch_core_session_get_read_impl(session, &read_impl);
+			if (read_impl.decoded_bytes_per_packet > 0 && read_impl.decoded_bytes_per_packet <= SWITCH_RECOMMENDED_BUFFER_SIZE) {
+				bsize = read_impl.decoded_bytes_per_packet;
+			}
+		}
+
 		switch_mutex_lock(rh->buffer_mutex);
 		inuse = switch_buffer_inuse(rh->thread_buffer);
 
