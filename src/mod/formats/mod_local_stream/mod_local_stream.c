@@ -114,12 +114,16 @@ struct local_stream_source {
 	switch_queue_t *video_q;
 	int has_video;
 	switch_image_t *blank_img;
+	switch_image_t *logo_img;
 	switch_image_t *cover_art;
 	char *banner_txt;
 	int serno;
 	switch_size_t abuflen;
 	switch_byte_t *abuf;
 	switch_timer_t timer;
+	int logo_always;
+	switch_img_position_t logo_pos;
+	int logo_opacity;
 };
 
 typedef struct local_stream_source local_stream_source_t;
@@ -741,6 +745,9 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 		switch_core_file_close(&source->chime_fh);
 	}
 
+	switch_img_free(&source->blank_img);
+	switch_img_free(&source->logo_img);
+
 	source->ready = 0;
 	switch_mutex_lock(globals.mutex);
 	switch_core_hash_delete(globals.source_hash, source->name);
@@ -1053,6 +1060,26 @@ static switch_status_t local_stream_file_read_video(switch_file_handle_t *handle
 		//switch_img_patch(frame->img, context->banner_img, 0, 0);
 	}
 
+	if (frame->img && context->source->logo_img && 
+		(context->source->logo_always || context->banner_img) && frame->img->d_w >= context->source->logo_img->d_w) {
+		int x = 0, y = 0;
+		
+		switch_img_find_position(context->source->logo_pos,
+								 frame->img->d_w, frame->img->d_h, 
+								 context->source->logo_img->d_w, context->source->logo_img->d_h,
+								 &x, &y);
+
+		if (context->banner_img) {
+			y -= context->banner_img->d_h;
+		}
+
+		if (context->source->logo_opacity > 0 && context->source->logo_opacity < 100) {
+			switch_img_overlay(frame->img, context->source->logo_img, x, y, context->source->logo_opacity);
+		} else {
+			switch_img_patch(frame->img, context->source->logo_img, x, y);
+		}
+	}
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -1170,6 +1197,17 @@ static void launch_thread(const char *name, const char *path, switch_xml_t direc
 			source->timer_name = switch_core_strdup(source->pool, val);
 		} else if (!strcasecmp(var, "blank-img") && !zstr(val)) {
 			source->blank_img = switch_img_read_png(val, SWITCH_IMG_FMT_I420);
+		} else if (!strcasecmp(var, "logo-img") && !zstr(val)) {
+			source->logo_img = switch_img_read_png(val, SWITCH_IMG_FMT_ARGB);
+		} else if (!strcasecmp(var, "logo-always") && !zstr(val)) {
+			source->logo_always = switch_true(val);
+		} else if (!strcasecmp(var, "logo-position") && !zstr(val)) {
+			source->logo_pos = parse_img_position(val);
+		} else if (!strcasecmp(var, "logo-opacity") && !zstr(val)) {
+			source->logo_opacity = atoi(val);
+			if (source->logo_opacity < 0 && source->logo_opacity > 100) {
+				source->logo_opacity = 0;
+			}
 		}
 	}
 
