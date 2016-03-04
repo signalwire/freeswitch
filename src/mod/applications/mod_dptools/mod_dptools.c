@@ -2810,7 +2810,6 @@ SWITCH_STANDARD_APP(playback_function)
 	status = switch_ivr_play_file(session, &fh, file, &args);
 	switch_assert(!(fh.flags & SWITCH_FILE_OPEN));
 
-
 	switch (status) {
 	case SWITCH_STATUS_SUCCESS:
 	case SWITCH_STATUS_BREAK:
@@ -4782,9 +4781,9 @@ static switch_status_t next_file(switch_file_handle_t *handle)
 
 
 	if (switch_test_flag((&context->fh), SWITCH_FILE_NATIVE)) {
-		switch_set_flag(handle, SWITCH_FILE_NATIVE);
+		switch_set_flag_locked(handle, SWITCH_FILE_NATIVE);
 	} else {
-		switch_clear_flag(handle, SWITCH_FILE_NATIVE);
+		switch_clear_flag_locked(handle, SWITCH_FILE_NATIVE);
 	}
 
 
@@ -5003,9 +5002,9 @@ static switch_status_t file_url_file_open(switch_file_handle_t *handle, const ch
 		handle->max_samples = 0;
 
 		if (switch_test_flag(fh, SWITCH_FILE_NATIVE)) {
-			switch_set_flag(handle, SWITCH_FILE_NATIVE);
+			switch_set_flag_locked(handle, SWITCH_FILE_NATIVE);
 		} else {
-			switch_clear_flag(handle, SWITCH_FILE_NATIVE);
+			switch_clear_flag_locked(handle, SWITCH_FILE_NATIVE);
 		}
 	}
 	return status;

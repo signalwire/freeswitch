@@ -80,6 +80,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 		switch_set_flag(fh, SWITCH_FILE_FLAG_FREE_POOL);
 	}
 
+	switch_mutex_init(&fh->flag_mutex, SWITCH_MUTEX_NESTED, fh->memory_pool);
+
 	fh->mm.samplerate = 44100;
 	fh->mm.channels = 1;
 	fh->mm.keyint = 60;
@@ -259,7 +261,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 	fh->line = line;
 
 	if (switch_test_flag(fh, SWITCH_FILE_FLAG_VIDEO) && !fh->file_interface->file_read_video) {
-		switch_clear_flag(fh, SWITCH_FILE_FLAG_VIDEO);
+		switch_clear_flag_locked(fh, SWITCH_FILE_FLAG_VIDEO);
 	}
 
 	if (spool_path) {
@@ -341,12 +343,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "File has %d channels, muxing to %d channel%s will occur.\n", fh->real_channels, fh->channels, fh->channels == 1 ? "" : "s");
 	}
 
-	switch_set_flag(fh, SWITCH_FILE_OPEN);
+	switch_set_flag_locked(fh, SWITCH_FILE_OPEN);
 	return status;
 
   fail:
 
-	switch_clear_flag(fh, SWITCH_FILE_OPEN);
+	switch_clear_flag_locked(fh, SWITCH_FILE_OPEN);
 
 	if (fh->params) {
 		switch_event_destroy(&fh->params);
@@ -387,7 +389,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_read(switch_file_handle_t *fh, 
 	}
 
 	if (switch_test_flag(fh, SWITCH_FILE_DONE)) {
-		switch_clear_flag(fh, SWITCH_FILE_DONE);
+		switch_clear_flag_locked(fh, SWITCH_FILE_DONE);
 		*len = 0;
 		return SWITCH_STATUS_FALSE;
 	}
@@ -410,7 +412,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_read(switch_file_handle_t *fh, 
 				
 
 				if (status != SWITCH_STATUS_SUCCESS || !rlen) {
-					switch_set_flag(fh, SWITCH_FILE_BUFFER_DONE);
+					switch_set_flag_locked(fh, SWITCH_FILE_BUFFER_DONE);
 				} else {
 					fh->samples_in += rlen;
 					if (fh->real_channels != fh->channels && !switch_test_flag(fh, SWITCH_FILE_NOMUX)) {
@@ -425,7 +427,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_read(switch_file_handle_t *fh, 
 		*len = asis ? rlen : rlen / 2 / fh->channels;
 
 		if (*len == 0) {
-			switch_set_flag(fh, SWITCH_FILE_DONE);
+			switch_set_flag_locked(fh, SWITCH_FILE_DONE);
 			goto top;
 		} else {
 			status = SWITCH_STATUS_SUCCESS;
@@ -438,7 +440,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_read(switch_file_handle_t *fh, 
 		}
 
 		if (status != SWITCH_STATUS_SUCCESS || !*len) {
-			switch_set_flag(fh, SWITCH_FILE_DONE);
+			switch_set_flag_locked(fh, SWITCH_FILE_DONE);
 			goto top;
 		}
 
@@ -659,7 +661,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_seek(switch_file_handle_t *fh, 
 		}
 	}
 
-	switch_set_flag(fh, SWITCH_FILE_SEEK);
+	switch_set_flag_locked(fh, SWITCH_FILE_SEEK);
 	status = fh->file_interface->file_seek(fh, cur_pos, samples, whence);
 
 	fh->offset_pos = *cur_pos;
@@ -744,17 +746,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_close(switch_file_handle_t *fh)
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (fh->params) {
-		switch_event_destroy(&fh->params);
-	}
-
-	fh->samples_in = 0;
-	fh->max_samples = 0;
-
-	if (fh->buffer) {
-		switch_buffer_destroy(&fh->buffer);
-	}
-
 	if (fh->pre_buffer) {
 		if (switch_test_flag(fh, SWITCH_FILE_FLAG_WRITE)) {
 			switch_size_t rlen, blen;
@@ -777,8 +768,19 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_close(switch_file_handle_t *fh)
 		switch_buffer_destroy(&fh->pre_buffer);
 	}
 
-	switch_clear_flag(fh, SWITCH_FILE_OPEN);
+	switch_clear_flag_locked(fh, SWITCH_FILE_OPEN);
 	status = fh->file_interface->file_close(fh);
+
+	if (fh->params) {
+		switch_event_destroy(&fh->params);
+	}
+
+	fh->samples_in = 0;
+	fh->max_samples = 0;
+
+	if (fh->buffer) {
+		switch_buffer_destroy(&fh->buffer);
+	}
 
 	switch_resample_destroy(&fh->resampler);
 
@@ -807,6 +809,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_close(switch_file_handle_t *fh)
 	}
 
 	UNPROTECT_INTERFACE(fh->file_interface);
+	fh->file_interface = NULL;
 
 	return status;
 }

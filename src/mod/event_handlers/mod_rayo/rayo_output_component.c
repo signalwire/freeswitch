@@ -626,9 +626,9 @@ static switch_status_t next_file(switch_file_handle_t *handle)
 	handle->interval = context->fh.interval;
 
 	if (switch_test_flag((&context->fh), SWITCH_FILE_NATIVE)) {
-		switch_set_flag(handle, SWITCH_FILE_NATIVE);
+		switch_set_flag_locked(handle, SWITCH_FILE_NATIVE);
 	} else {
-		switch_clear_flag(handle, SWITCH_FILE_NATIVE);
+		switch_clear_flag_locked(handle, SWITCH_FILE_NATIVE);
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -878,13 +878,13 @@ static switch_status_t fileman_file_open(switch_file_handle_t *handle, const cha
 	handle->interval = context->fh.interval;
 
 	if (switch_test_flag((&context->fh), SWITCH_FILE_NATIVE)) {
-		switch_set_flag(handle, SWITCH_FILE_NATIVE);
+		switch_set_flag_locked(handle, SWITCH_FILE_NATIVE);
 	} else {
-		switch_clear_flag(handle, SWITCH_FILE_NATIVE);
+		switch_clear_flag_locked(handle, SWITCH_FILE_NATIVE);
 	}
 
 	if (handle->params && switch_true(switch_event_get_header(handle->params, "pause"))) {
-		switch_set_flag(handle, SWITCH_FILE_PAUSE);
+		switch_set_flag_locked(handle, SWITCH_FILE_PAUSE);
 	}
 
 	if (handle->seekable && start_offset_ms) {
@@ -1071,7 +1071,7 @@ static switch_status_t fileman_file_read(switch_file_handle_t *handle, void *dat
 		if (switch_test_flag(fh, SWITCH_FILE_SEEK)) {
 			/* file position has changed flush the buffer */
 			switch_buffer_zero(fh->audio_buffer);
-			switch_clear_flag(fh, SWITCH_FILE_SEEK);
+			switch_clear_flag_locked(fh, SWITCH_FILE_SEEK);
 		}
 
 		/* generate speed frames */
@@ -1216,15 +1216,15 @@ static switch_status_t fileman_process_cmd(const char *cmd, switch_file_handle_t
 
 			return SWITCH_STATUS_FALSE;
 		} else if (!strcasecmp(cmd, "pause")) {
-			switch_set_flag(fhp, SWITCH_FILE_PAUSE);
+			switch_set_flag_locked(fhp, SWITCH_FILE_PAUSE);
 			return SWITCH_STATUS_SUCCESS;
 		} else if (!strcasecmp(cmd, "resume")) {
-			switch_clear_flag(fhp, SWITCH_FILE_PAUSE);
+			switch_clear_flag_locked(fhp, SWITCH_FILE_PAUSE);
 			return SWITCH_STATUS_SUCCESS;
 		} else if (!strcasecmp(cmd, "stop")) {
 			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(context->uuid), SWITCH_LOG_DEBUG, "Stopping file\n");
 			context->done = 1;
-			switch_set_flag(fhp, SWITCH_FILE_DONE);
+			switch_set_flag_locked(fhp, SWITCH_FILE_DONE);
 			return SWITCH_STATUS_SUCCESS;
 		} else if (!strcasecmp(cmd, "truncate")) {
 			switch_core_file_truncate(fhp, 0);

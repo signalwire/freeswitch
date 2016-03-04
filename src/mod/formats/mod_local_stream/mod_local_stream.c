@@ -592,14 +592,16 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 						if (!cp->ready) {
 							continue;
 						}
-
-						switch_mutex_lock(cp->audio_mutex);
 						
+						switch_mutex_lock(cp->audio_mutex);
+
 						if (switch_test_flag(cp->handle, SWITCH_FILE_OPEN)) {
-							if (source->has_video) {
-								switch_set_flag(cp->handle, SWITCH_FILE_FLAG_VIDEO);
+							if (source->has_video && !switch_test_flag(cp->handle, SWITCH_FILE_FLAG_VIDEO)) {
+								switch_set_flag_locked(cp->handle, SWITCH_FILE_FLAG_VIDEO);
 							} else {
-								switch_clear_flag(cp->handle, SWITCH_FILE_FLAG_VIDEO);
+								if (switch_test_flag(cp->handle, SWITCH_FILE_FLAG_VIDEO)) {
+									switch_clear_flag_locked(cp->handle, SWITCH_FILE_FLAG_VIDEO);
+								}
 							}
 							
 							if (switch_test_flag(cp->handle, SWITCH_FILE_CALLBACK)) {
@@ -854,7 +856,7 @@ static switch_status_t local_stream_file_open(switch_file_handle_t *handle, cons
 
 	if (!switch_core_has_video() || 
 		(switch_test_flag(handle, SWITCH_FILE_FLAG_VIDEO) && !source->has_video && !source->blank_img && !source->cover_art && !source->banner_txt)) {
-		switch_clear_flag(handle, SWITCH_FILE_FLAG_VIDEO);
+		switch_clear_flag_locked(handle, SWITCH_FILE_FLAG_VIDEO);
 	}
 
 	context->source = source;
@@ -888,9 +890,11 @@ static switch_status_t local_stream_file_close(switch_file_handle_t *handle)
 
 	//pool = context->pool;
 	source = context->source;
-	context->ready = 0;
 
 	switch_mutex_lock(source->mutex);
+	switch_clear_flag_locked(handle, SWITCH_FILE_OPEN);
+	context->ready = 0;
+
 	for (cp = source->context_list; cp; cp = cp->next) {
 		if (cp == context) {
 			if (last) {

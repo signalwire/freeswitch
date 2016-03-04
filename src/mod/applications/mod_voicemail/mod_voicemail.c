@@ -935,9 +935,9 @@ static switch_status_t control_playback(switch_core_session_t *session, void *in
 
 			if (dtmf->digit == *cc->profile->pause_key) {
 				if (switch_test_flag(fh, SWITCH_FILE_PAUSE)) {
-					switch_clear_flag(fh, SWITCH_FILE_PAUSE);
+					switch_clear_flag_locked(fh, SWITCH_FILE_PAUSE);
 				} else {
-					switch_set_flag(fh, SWITCH_FILE_PAUSE);
+					switch_set_flag_locked(fh, SWITCH_FILE_PAUSE);
 				}
 				return SWITCH_STATUS_SUCCESS;
 			}

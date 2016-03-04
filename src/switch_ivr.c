@@ -3874,13 +3874,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_process_fh(switch_core_session_t *ses
 			return SWITCH_STATUS_FALSE;
 		} else if (!strcasecmp(cmd, "pause")) {
 			if (switch_test_flag(fhp, SWITCH_FILE_PAUSE)) {
-				switch_clear_flag(fhp, SWITCH_FILE_PAUSE);
+				switch_clear_flag_locked(fhp, SWITCH_FILE_PAUSE);
 			} else {
-				switch_set_flag(fhp, SWITCH_FILE_PAUSE);
+				switch_set_flag_locked(fhp, SWITCH_FILE_PAUSE);
 			}
 			return SWITCH_STATUS_SUCCESS;
 		} else if (!strcasecmp(cmd, "stop")) {
-			switch_set_flag(fhp, SWITCH_FILE_DONE);
+			switch_set_flag_locked(fhp, SWITCH_FILE_DONE);
 			return SWITCH_STATUS_FALSE;
 		} else if (!strcasecmp(cmd, "truncate")) {
 			switch_core_file_truncate(fhp, 0);

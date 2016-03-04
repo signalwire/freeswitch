@@ -2986,9 +2986,9 @@ static switch_status_t file_open(switch_file_handle_t *handle, const char *path,
 	handle->flags |= SWITCH_FILE_NOMUX;
 
 	if (switch_test_flag((&context->fh), SWITCH_FILE_NATIVE)) {
-		switch_set_flag(handle, SWITCH_FILE_NATIVE);
+		switch_set_flag_locked(handle, SWITCH_FILE_NATIVE);
 	} else {
-		switch_clear_flag(handle, SWITCH_FILE_NATIVE);
+		switch_clear_flag_locked(handle, SWITCH_FILE_NATIVE);
 	}
 
 	return SWITCH_STATUS_SUCCESS;

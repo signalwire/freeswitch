@@ -347,9 +347,9 @@ switch_status_t FSSession::StreamInputCallback(switch_core_session_t *session, v
 			return SWITCH_STATUS_FALSE;
 		} else if (!strcasecmp(ret, "pause")) {
 			if (switch_test_flag(fh, SWITCH_FILE_PAUSE)) {
-				switch_clear_flag(fh, SWITCH_FILE_PAUSE);
+				switch_clear_flag_locked(fh, SWITCH_FILE_PAUSE);
 			} else {
-				switch_set_flag(fh, SWITCH_FILE_PAUSE);
+				switch_set_flag_locked(fh, SWITCH_FILE_PAUSE);
 			}
 			return SWITCH_STATUS_SUCCESS;
 		} else if (!strcasecmp(ret, "truncate")) {
@@ -416,9 +416,9 @@ switch_status_t FSSession::RecordInputCallback(switch_core_session_t *session, v
 
 		if (!strcasecmp(ret, "pause")) {
 			if (switch_test_flag(fh, SWITCH_FILE_PAUSE)) {
-				switch_clear_flag(fh, SWITCH_FILE_PAUSE);
+				switch_clear_flag_locked(fh, SWITCH_FILE_PAUSE);
 			} else {
-				switch_set_flag(fh, SWITCH_FILE_PAUSE);
+				switch_set_flag_locked(fh, SWITCH_FILE_PAUSE);
 			}
 			return SWITCH_STATUS_SUCCESS;
 		} else if (!strcasecmp(ret, "restart")) {

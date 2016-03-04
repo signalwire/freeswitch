@@ -557,7 +557,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 	if (sample_start > 0) {
 		uint32_t pos = 0;
 		switch_core_file_seek(fh, &pos, sample_start, SEEK_SET);
-		switch_clear_flag(fh, SWITCH_FILE_SEEK);
+		switch_clear_flag_locked(fh, SWITCH_FILE_SEEK);
 		fh->samples = 0;
 	}
 
@@ -1306,7 +1306,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 			uint32_t pos = 0;
 			switch_core_file_seek(fh, &pos, 0, SEEK_SET);
 			switch_core_file_seek(fh, &pos, sample_start, SEEK_CUR);
-			switch_clear_flag(fh, SWITCH_FILE_SEEK);
+			switch_clear_flag_locked(fh, SWITCH_FILE_SEEK);
 		}
 
 		if (switch_core_file_get_string(fh, SWITCH_AUDIO_COL_STR_TITLE, &p) == SWITCH_STATUS_SUCCESS) {
@@ -1589,7 +1589,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 				if (!switch_test_flag(fh, SWITCH_FILE_NATIVE)) {
 					olen /= 2;
 				}
-				switch_set_flag(fh, SWITCH_FILE_BREAK_ON_CHANGE);
+				switch_set_flag_locked(fh, SWITCH_FILE_BREAK_ON_CHANGE);
 
 				if ((rstatus = switch_core_file_read(fh, abuf, &olen)) == SWITCH_STATUS_BREAK) {
 					continue;
@@ -1651,7 +1651,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 			if (switch_test_flag(fh, SWITCH_FILE_SEEK)) {
 				/* file position has changed flush the buffer */
 				switch_buffer_zero(fh->audio_buffer);
-				switch_clear_flag(fh, SWITCH_FILE_SEEK);
+				switch_clear_flag_locked(fh, SWITCH_FILE_SEEK);
 			}
 
 
@@ -1733,11 +1733,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 
 					if (args && (args->read_frame_callback)) {
 						int ok = 1;
-						switch_set_flag(fh, SWITCH_FILE_CALLBACK);
+						switch_set_flag_locked(fh, SWITCH_FILE_CALLBACK);
 						if ((status = args->read_frame_callback(session, read_frame, args->user_data)) != SWITCH_STATUS_SUCCESS) {
 							ok = 0;
 						}
-						switch_clear_flag(fh, SWITCH_FILE_CALLBACK);
+						switch_clear_flag_locked(fh, SWITCH_FILE_CALLBACK);
 						if (!ok) {
 							break;
 						}

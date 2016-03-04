@@ -390,6 +390,7 @@ struct switch_file_handle {
 	char *stream_name;
 	char *modname;
 	switch_mm_t mm;
+	switch_mutex_t *flag_mutex;
 };
 
 /*! \brief Abstract interface to an asr module */
