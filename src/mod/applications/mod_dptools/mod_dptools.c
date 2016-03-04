@@ -2808,6 +2808,8 @@ SWITCH_STANDARD_APP(playback_function)
 	switch_channel_set_variable(channel, SWITCH_PLAYBACK_TERMINATOR_USED, "");
 
 	status = switch_ivr_play_file(session, &fh, file, &args);
+	switch_assert(!(fh.flags & SWITCH_FILE_OPEN));
+
 
 	switch (status) {
 	case SWITCH_STATUS_SUCCESS:

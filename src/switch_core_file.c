@@ -782,6 +782,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_close(switch_file_handle_t *fh)
 
 	switch_resample_destroy(&fh->resampler);
 
+	if (switch_test_flag(fh, SWITCH_FILE_FLAG_FREE_POOL)) {
+		switch_core_destroy_memory_pool(&fh->memory_pool);
+	}
+
+	fh->memory_pool = NULL;
+
+	switch_safe_free(fh->dbuf);
 
 	if (fh->spool_path) {
 		char *command;
@@ -799,15 +806,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_close(switch_file_handle_t *fh)
 		free(command);
 	}
 
-
 	UNPROTECT_INTERFACE(fh->file_interface);
-
-	if (switch_test_flag(fh, SWITCH_FILE_FLAG_FREE_POOL)) {
-		switch_core_destroy_memory_pool(&fh->memory_pool);
-	}
-
-	switch_safe_free(fh->dbuf);
-
 
 	return status;
 }
