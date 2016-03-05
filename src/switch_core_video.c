@@ -580,11 +580,13 @@ static inline void switch_img_get_rgb_pixel(switch_image_t *img, switch_rgb_colo
 #endif	
 }
 
-SWITCH_DECLARE(void) switch_img_overlay(switch_image_t *IMG, switch_image_t *img, int x, int y, uint8_t alpha)
+SWITCH_DECLARE(void) switch_img_overlay(switch_image_t *IMG, switch_image_t *img, int x, int y, uint8_t percent)
 {
 	int i, j, len, max_h;
 	switch_rgb_color_t RGB = {0}, rgb = {0}, c = {0};
 	int xoff = 0, yoff = 0;
+	uint8_t alpha = (int8_t)((255 * percent) / 100);
+
 
 	switch_assert(IMG->fmt == SWITCH_IMG_FMT_I420);
 

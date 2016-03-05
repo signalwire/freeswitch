@@ -123,7 +123,8 @@ struct local_stream_source {
 	switch_timer_t timer;
 	int logo_always;
 	switch_img_position_t logo_pos;
-	int logo_opacity;
+	uint8_t logo_opacity;
+	uint8_t text_opacity;
 };
 
 typedef struct local_stream_source local_stream_source_t;
@@ -1061,9 +1062,7 @@ static switch_status_t local_stream_file_read_video(switch_file_handle_t *handle
 	}
 
 	if (frame->img && context->banner_img && frame->img->d_w >= context->banner_img->d_w) {
-		//switch_img_overlay(frame->img, context->banner_img, 0, frame->img->d_h - context->banner_img->d_h, 100);
-		switch_img_patch(frame->img, context->banner_img, 0, frame->img->d_h - context->banner_img->d_h);
-		//switch_img_patch(frame->img, context->banner_img, 0, 0);
+		switch_img_overlay(frame->img, context->banner_img, 0, frame->img->d_h - context->banner_img->d_h, context->source->text_opacity);
 	}
 
 	if (frame->img && context->source->logo_img && 
@@ -1079,11 +1078,7 @@ static switch_status_t local_stream_file_read_video(switch_file_handle_t *handle
 			y -= context->banner_img->d_h;
 		}
 
-		if (context->source->logo_opacity > 0 && context->source->logo_opacity < 100) {
-			switch_img_overlay(frame->img, context->source->logo_img, x, y-1, context->source->logo_opacity);
-		} else {
-			switch_img_patch(frame->img, context->source->logo_img, x, y-1);
-		}
+		switch_img_overlay(frame->img, context->source->logo_img, x, y, context->source->logo_opacity);
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -1156,6 +1151,8 @@ static void launch_thread(const char *name, const char *path, switch_xml_t direc
 	source->stopped = 0;
 	source->hup = 0;
 	source->chime_freq = 30;
+	source->logo_opacity = source->text_opacity = 100;
+
 	for (param = switch_xml_child(directory, "param"); param; param = param->next) {
 		char *var = (char *) switch_xml_attr_soft(param, "name");
 		char *val = (char *) switch_xml_attr_soft(param, "value");
@@ -1213,6 +1210,11 @@ static void launch_thread(const char *name, const char *path, switch_xml_t direc
 			source->logo_opacity = atoi(val);
 			if (source->logo_opacity < 0 && source->logo_opacity > 100) {
 				source->logo_opacity = 0;
+			}
+		} else if (!strcasecmp(var, "text-opacity") && !zstr(val)) {
+			source->text_opacity = atoi(val);
+			if (source->text_opacity < 0 && source->text_opacity > 100) {
+				source->text_opacity = 0;
 			}
 		}
 	}
