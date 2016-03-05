@@ -358,8 +358,8 @@ SWITCH_DECLARE(void) switch_img_patch(switch_image_t *IMG, switch_image_t *img, 
 	len /= 2;
 
 	for (i = y; i < max_h; i += 2) {
-		memcpy(IMG->planes[SWITCH_PLANE_U] + IMG->stride[SWITCH_PLANE_U] * i / 2 + x / 2, img->planes[SWITCH_PLANE_U] + img->stride[SWITCH_PLANE_U] * (i - y + yoff) / 2 + xoff / 2, len);
-		memcpy(IMG->planes[SWITCH_PLANE_V] + IMG->stride[SWITCH_PLANE_V] * i / 2 + x / 2, img->planes[SWITCH_PLANE_V] + img->stride[SWITCH_PLANE_V] * (i - y + yoff) / 2 + xoff / 2, len);
+		memcpy(IMG->planes[SWITCH_PLANE_U] + IMG->stride[SWITCH_PLANE_U] * (i / 2) + x / 2, img->planes[SWITCH_PLANE_U] + img->stride[SWITCH_PLANE_U] * ((i - y + yoff) / 2) + xoff / 2, len);
+		memcpy(IMG->planes[SWITCH_PLANE_V] + IMG->stride[SWITCH_PLANE_V] * (i / 2) + x / 2, img->planes[SWITCH_PLANE_V] + img->stride[SWITCH_PLANE_V] * ((i - y + yoff) / 2) + xoff / 2, len);
 	}
 }
 
@@ -529,8 +529,8 @@ SWITCH_DECLARE(void) switch_img_fill(switch_image_t *img, int x, int y, int w, i
 		len /= 2;
 
 		for (i = y; i < max_h; i += 2) {
-			memset(img->planes[SWITCH_PLANE_U] + img->stride[SWITCH_PLANE_U] * i / 2 + x / 2, yuv_color.u, len);
-			memset(img->planes[SWITCH_PLANE_V] + img->stride[SWITCH_PLANE_V] * i / 2 + x / 2, yuv_color.v, len);
+			memset(img->planes[SWITCH_PLANE_U] + img->stride[SWITCH_PLANE_U] * (i / 2) + x / 2, yuv_color.u, len);
+			memset(img->planes[SWITCH_PLANE_V] + img->stride[SWITCH_PLANE_V] * (i / 2) + x / 2, yuv_color.v, len);
 		}
 	} else if (img->fmt == SWITCH_IMG_FMT_ARGB) {
 		for (i = 0; i < img->d_w; i++) {
@@ -555,8 +555,8 @@ static inline void switch_img_get_yuv_pixel(switch_image_t *img, switch_yuv_colo
 	if (x < 0 || y < 0 || x >= img->d_w || y >= img->d_h) return;
 
 	yuv->y = *(img->planes[SWITCH_PLANE_Y] + img->stride[SWITCH_PLANE_Y] * y + x);
-	yuv->u = *(img->planes[SWITCH_PLANE_U] + img->stride[SWITCH_PLANE_U] * y / 2 + x / 2);
-	yuv->v = *(img->planes[SWITCH_PLANE_V] + img->stride[SWITCH_PLANE_V] * y / 2 + x / 2);
+	yuv->u = *(img->planes[SWITCH_PLANE_U] + img->stride[SWITCH_PLANE_U] * (y / 2) + x / 2);
+	yuv->v = *(img->planes[SWITCH_PLANE_V] + img->stride[SWITCH_PLANE_V] * (y / 2) + x / 2);
 }
 #endif
 
@@ -1203,14 +1203,14 @@ SWITCH_DECLARE(void) switch_img_patch_hole(switch_image_t *IMG, switch_image_t *
 			int size = rect->x > x ? rect->x - x : 0;
 
 			size /= 2;
-			memcpy(IMG->planes[SWITCH_PLANE_U] + IMG->stride[SWITCH_PLANE_U] * i / 2 + x / 2, img->planes[SWITCH_PLANE_U] + img->stride[SWITCH_PLANE_U] * (i - y) / 2, size);
-			memcpy(IMG->planes[SWITCH_PLANE_V] + IMG->stride[SWITCH_PLANE_V] * i / 2 + x / 2, img->planes[SWITCH_PLANE_V] + img->stride[SWITCH_PLANE_V] * (i - y) / 2, size);
+			memcpy(IMG->planes[SWITCH_PLANE_U] + IMG->stride[SWITCH_PLANE_U] * (i / 2) + x / 2, img->planes[SWITCH_PLANE_U] + img->stride[SWITCH_PLANE_U] * ((i - y) / 2), size);
+			memcpy(IMG->planes[SWITCH_PLANE_V] + IMG->stride[SWITCH_PLANE_V] * (i / 2) + x / 2, img->planes[SWITCH_PLANE_V] + img->stride[SWITCH_PLANE_V] * ((i - y) / 2), size);
 			size = MIN(img->d_w - rect->w - size, IMG->d_w - (rect->x + rect->w)) / 2;
-			memcpy(IMG->planes[SWITCH_PLANE_U] + IMG->stride[SWITCH_PLANE_U] * i / 2 + (rect->x + rect->w) / 2, img->planes[SWITCH_PLANE_U] + img->stride[SWITCH_PLANE_U] * (i - y) / 2 + (rect->w + (rect->x - x)) / 2, size);
-			memcpy(IMG->planes[SWITCH_PLANE_V] + IMG->stride[SWITCH_PLANE_V] * i / 2 + (rect->x + rect->w) / 2, img->planes[SWITCH_PLANE_V] + img->stride[SWITCH_PLANE_V] * (i - y) / 2 + (rect->w + (rect->x - x)) / 2, size);
+			memcpy(IMG->planes[SWITCH_PLANE_U] + IMG->stride[SWITCH_PLANE_U] * (i / 2) + (rect->x + rect->w) / 2, img->planes[SWITCH_PLANE_U] + img->stride[SWITCH_PLANE_U] * ((i - y) / 2) + (rect->w + (rect->x - x)) / 2, size);
+			memcpy(IMG->planes[SWITCH_PLANE_V] + IMG->stride[SWITCH_PLANE_V] * (i / 2) + (rect->x + rect->w) / 2, img->planes[SWITCH_PLANE_V] + img->stride[SWITCH_PLANE_V] * ((i - y) / 2) + (rect->w + (rect->x - x)) / 2, size);
 		} else {
-			memcpy(IMG->planes[SWITCH_PLANE_U] + IMG->stride[SWITCH_PLANE_U] * i / 2 + x / 2, img->planes[SWITCH_PLANE_U] + img->stride[SWITCH_PLANE_U] * (i - y) / 2, len);
-			memcpy(IMG->planes[SWITCH_PLANE_V] + IMG->stride[SWITCH_PLANE_V] * i / 2 + x / 2, img->planes[SWITCH_PLANE_V] + img->stride[SWITCH_PLANE_V] * (i - y) / 2, len);
+			memcpy(IMG->planes[SWITCH_PLANE_U] + IMG->stride[SWITCH_PLANE_U] * (i / 2) + x / 2, img->planes[SWITCH_PLANE_U] + img->stride[SWITCH_PLANE_U] * ((i - y) / 2), len);
+			memcpy(IMG->planes[SWITCH_PLANE_V] + IMG->stride[SWITCH_PLANE_V] * (i / 2) + x / 2, img->planes[SWITCH_PLANE_V] + img->stride[SWITCH_PLANE_V] * ((i - y) / 2), len);
 		}
 	}
 }
