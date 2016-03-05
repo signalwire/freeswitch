@@ -1165,6 +1165,8 @@ SWITCH_DECLARE(switch_image_t *) switch_img_write_text_img(int w, int h, switch_
                                  txt, NULL, fg, bg, 0, 0);
 	switch_img_txt_handle_destroy(&txthandle);
 
+	switch_safe_free(duptxt);
+
 	return txtimg;
 }
 
