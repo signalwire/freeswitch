@@ -183,6 +183,8 @@ static int do_rand(uint32_t count)
 {
 	int r = 0;
 
+	if (count == 0) return 0;
+
 	switch_mutex_lock(globals.mutex);
 	r = (rand() % count) + 1;
 	switch_mutex_unlock(globals.mutex);
