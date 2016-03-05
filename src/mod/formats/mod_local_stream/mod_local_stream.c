@@ -1078,7 +1078,7 @@ static switch_status_t local_stream_file_read_video(switch_file_handle_t *handle
 		}
 
 		if (context->source->logo_opacity > 0 && context->source->logo_opacity < 100) {
-			switch_img_patch(frame->img, context->source->logo_img, x, y-1, context->source->logo_opacity);
+			switch_img_overlay(frame->img, context->source->logo_img, x, y-1, context->source->logo_opacity);
 		} else {
 			switch_img_patch(frame->img, context->source->logo_img, x, y-1);
 		}
