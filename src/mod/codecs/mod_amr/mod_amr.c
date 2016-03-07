@@ -360,9 +360,11 @@ static switch_status_t switch_amr_encode(switch_codec_t *codec,
 		return SWITCH_STATUS_FALSE;
 	}
 
+#ifndef AMR_PASSTHROUGH
 	if (globals.debug) {
 			switch_amr_info(shift_buf, *encoded_data_len, switch_test_flag(context, AMR_OPT_OCTET_ALIGN) ? 1 : 0, "AMR encoder");
 	}
+#endif
 
 	return SWITCH_STATUS_SUCCESS;
 #endif
@@ -387,10 +389,11 @@ static switch_status_t switch_amr_decode(switch_codec_t *codec,
 		return SWITCH_STATUS_FALSE;
 	}
 
+#ifndef AMR_PASSTHROUGH
 	if (globals.debug) {
 			switch_amr_info(buf, encoded_data_len, switch_test_flag(context, AMR_OPT_OCTET_ALIGN) ? 1 : 0, "AMR decoder");
 	}
-
+#endif
 	if (switch_test_flag(context, AMR_OPT_OCTET_ALIGN)) { 
 		/*Octed Aligned*/
 		if (!switch_amr_unpack_oa(buf, tmp, encoded_data_len)) {
@@ -409,6 +412,7 @@ static switch_status_t switch_amr_decode(switch_codec_t *codec,
 #endif
 }
 
+#ifndef AMR_PASSTHROUGH
 #define AMRWB_DEBUG_SYNTAX "<on|off>"
 SWITCH_STANDARD_API(mod_amr_debug)
 {
@@ -427,14 +431,15 @@ SWITCH_STANDARD_API(mod_amr_debug)
 		}
 	return SWITCH_STATUS_SUCCESS;
 }
+#endif
 
 /* Registration */
 SWITCH_MODULE_LOAD_FUNCTION(mod_amr_load)
 {
 	switch_codec_interface_t *codec_interface;
-	switch_api_interface_t *commands_api_interface;
 
 #ifndef AMR_PASSTHROUGH
+	switch_api_interface_t *commands_api_interface;
 	char *cf = "amr.conf";
 	switch_xml_t cfg, xml, settings, param;
 
@@ -458,11 +463,12 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_amr_load)
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
 	SWITCH_ADD_CODEC(codec_interface, "AMR");
+#ifndef AMR_PASSTHROUGH
 	SWITCH_ADD_API(commands_api_interface, "amr_debug", "Set AMR Debug", mod_amr_debug, AMRWB_DEBUG_SYNTAX);
 
 	switch_console_set_complete("add amr_debug on");
 	switch_console_set_complete("add amr_debug off");
-
+#endif
 	switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
 										 96,	/* the IANA code number */
 										 "AMR",	/* the IANA code name */
