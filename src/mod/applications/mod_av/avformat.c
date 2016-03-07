@@ -1502,8 +1502,6 @@ static switch_status_t av_file_open(switch_file_handle_t *handle, const char *pa
 	handle->private_info = context;
 	context->pool = handle->memory_pool;
 
-	switch_core_timer_init(&context->video_timer, "soft", 66, 1, context->pool);
-
 	context->offset = DFT_RECORD_OFFSET;
 	if (handle->params && (tmp = switch_event_get_header(handle->params, "av_video_offset"))) {
 		context->offset = atoi(tmp);
@@ -1530,7 +1528,7 @@ static switch_status_t av_file_open(switch_file_handle_t *handle, const char *pa
 		if (context->has_video) {
 			switch_queue_create(&context->eh.video_queue, SWITCH_CORE_QUEUE_LEN, handle->memory_pool);
 			switch_mutex_init(&context->eh.mutex, SWITCH_MUTEX_NESTED, handle->memory_pool);
-
+			switch_core_timer_init(&context->video_timer, "soft", 66, 1, context->pool);
 		}
 
 		{
@@ -2093,7 +2091,7 @@ static switch_status_t av_file_write_video(switch_file_handle_t *handle, switch_
 		//switch_threadattr_priority_set(thd_attr, SWITCH_PRI_REALTIME);
 		switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
 		switch_thread_create(&context->eh.video_thread, thd_attr, video_thread_run, &context->eh, handle->memory_pool);
-		switch_core_timer_init(&context->video_timer, "soft", 66, 1, context->pool);
+		switch_core_timer_init(&context->video_timer, "soft", 1, 1, context->pool);
 		switch_buffer_zero(context->audio_buffer);
 		context->audio_st.frame->pts = 0;
 		context->audio_st.next_pts = 0;
