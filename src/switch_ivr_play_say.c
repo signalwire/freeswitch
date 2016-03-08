@@ -380,7 +380,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 	int restart_limit_on_dtmf = 0;
 	const char *prefix, *var, *video_file = NULL;
 	int vid_play_file_flags = SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT | SWITCH_FILE_FLAG_VIDEO;
-
+	int echo_on = 0;
 
 	if (switch_channel_pre_answer(channel) != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_FALSE;
@@ -575,6 +575,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 		}
 
 		if (!switch_test_flag(&vfh, SWITCH_FILE_OPEN)) { 
+			echo_on = 1;
+			switch_channel_set_flag_recursive(channel, CF_VIDEO_DECODED_READ);
 			switch_channel_set_flag(channel, CF_VIDEO_ECHO);
 		}
 
@@ -654,8 +656,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 							  "Raw Codec Activation Failed %s@%uhz %u channels %dms\n", codec_name, fh->samplerate,
 							  fh->channels, read_impl.microseconds_per_packet / 1000);
 			if (switch_core_file_has_video(fh)) {
-				switch_channel_clear_flag(channel, CF_VIDEO_ECHO);
-				switch_channel_clear_flag_recursive(channel, CF_VIDEO_DECODED_READ);
+				if (echo_on) {
+					switch_channel_clear_flag(channel, CF_VIDEO_ECHO);
+					switch_channel_clear_flag_recursive(channel, CF_VIDEO_DECODED_READ);
+					echo_on = 0;
+				}
 				switch_core_media_set_video_file(session, NULL, SWITCH_RW_READ);
 				if (switch_test_flag(&vfh, SWITCH_FILE_OPEN)) {
 					switch_core_media_set_video_file(session, NULL, SWITCH_RW_WRITE);
@@ -867,10 +872,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 	if (fill_cng || waste_resources) {
 		switch_core_codec_destroy(&write_codec);
 	}
-
+	
 	if (switch_core_file_has_video(fh)) {
-		switch_channel_clear_flag(channel, CF_VIDEO_ECHO);
-		switch_channel_clear_flag_recursive(channel, CF_VIDEO_DECODED_READ);
+		if (echo_on) {
+			switch_channel_clear_flag(channel, CF_VIDEO_ECHO);
+			switch_channel_clear_flag_recursive(channel, CF_VIDEO_DECODED_READ);
+			echo_on = 0;
+		}
 		switch_core_media_set_video_file(session, NULL, SWITCH_RW_READ);
 		if (switch_test_flag(&vfh, SWITCH_FILE_OPEN)) {
 			switch_core_media_set_video_file(session, NULL, SWITCH_RW_WRITE);

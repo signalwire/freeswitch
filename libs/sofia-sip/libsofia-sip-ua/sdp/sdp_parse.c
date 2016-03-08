@@ -921,13 +921,13 @@ static void parse_bandwidth(sdp_parser_t *p, char *r, sdp_bandwidth_t **result)
   }
 
   if (su_casematch(name, "CT"))
-    modifier = sdp_bw_ct, name = NULL;
+    modifier = sdp_bw_ct, name = "CT";
   else if (su_casematch(name, "TIAS") == 1)
-    modifier = sdp_bw_tias, name = NULL;
+    modifier = sdp_bw_tias, name = "TIAS";
   else if (su_casematch(name, "AS") == 1)
-    modifier = sdp_bw_as, name = NULL;
+    modifier = sdp_bw_as, name = "AS";
   else
-    modifier = sdp_bw_x;
+	modifier = sdp_bw_x, name = "BW-X";
 
   if (STRICT(p))
     PARSE_CHECK_REST(p, r, "b");

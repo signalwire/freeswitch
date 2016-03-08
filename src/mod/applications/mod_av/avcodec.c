@@ -843,17 +843,19 @@ static switch_status_t open_encoder(h264_codec_context_t *context, uint32_t widt
 	}
 
 	if (context->codec_settings.video.bandwidth) {
-		context->bandwidth = context->codec_settings.video.bandwidth * 8;
+		context->bandwidth = context->codec_settings.video.bandwidth;
 	} else {
-		context->bandwidth = switch_calc_bitrate(context->codec_settings.video.width, context->codec_settings.video.height, 1, 15) * 8;
+		context->bandwidth = switch_calc_bitrate(context->codec_settings.video.width, context->codec_settings.video.height, 1, 15);
 	}
 
 	sane = switch_calc_bitrate(1920, 1080, 2, 30);
 
-	if (context->bandwidth / 8 > sane) {
+	if (context->bandwidth > sane) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "BITRATE TRUNCATED TO %d\n", sane);
-		context->bandwidth = sane * 8;
+		context->bandwidth = sane;
 	}
+
+	context->bandwidth *= 3;
 	
 	//context->encoder_ctx->bit_rate = context->bandwidth * 1024;
 	context->encoder_ctx->width = context->codec_settings.video.width;

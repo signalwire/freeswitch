@@ -173,6 +173,7 @@ typedef struct switch_rtp_engine_s {
 	switch_thread_id_t thread_id;
 	uint8_t new_ice;
 	uint8_t new_dtls;
+	uint32_t sdp_bw;
 } switch_rtp_engine_t;
 
 struct switch_media_handle_s {
@@ -2646,20 +2647,29 @@ static void switch_core_session_parse_codec_settings(switch_core_session_t *sess
 	switch(type) {
 	case SWITCH_MEDIA_TYPE_AUDIO:
 		break;
-	case SWITCH_MEDIA_TYPE_VIDEO:
-		{
-			const char *bwv = switch_channel_get_variable(session->channel, "rtp_video_max_bandwidth");
+	case SWITCH_MEDIA_TYPE_VIDEO: {
+		uint32_t system_bw = 0;
 
-			if (!bwv) {
-				bwv = switch_channel_get_variable(session->channel, "rtp_video_max_bandwidth_out");
-			}
-
-			if (!bwv) {
-				bwv = "1mb";
-			}
-			
-			engine->codec_settings.video.bandwidth = switch_parse_bandwidth_string(bwv);
+		const char *bwv = switch_channel_get_variable(session->channel, "rtp_video_max_bandwidth");
+		
+		if (!bwv) {
+			bwv = switch_channel_get_variable(session->channel, "rtp_video_max_bandwidth_out");
 		}
+		
+		if (!bwv) {
+			bwv = "1mb";
+		}
+		
+		system_bw = switch_parse_bandwidth_string(bwv);
+
+		printf("%d %d\n", engine->sdp_bw, system_bw);
+		
+		if (engine->sdp_bw && engine->sdp_bw <= system_bw) {
+			engine->codec_settings.video.bandwidth = engine->sdp_bw;
+		} else {
+			engine->codec_settings.video.bandwidth = system_bw;
+		}
+	}
 		break;
 	default:
 		break;
@@ -4039,7 +4049,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 					maxptime = atoi(attr->a_value);
 				} else if (got_crypto < 1 && !strcasecmp(attr->a_name, "crypto") && !zstr(attr->a_value)) {
 					int crypto_tag;
-
+					
 					if (!(smh->mparams->ndlb & SM_NDLB_ALLOW_CRYPTO_IN_AVP) && 
 						!switch_true(switch_channel_get_variable(session->channel, "rtp_allow_crypto_in_avp"))) {
 						if (m->m_proto != sdp_proto_srtp && !got_webrtc) {
@@ -4547,6 +4557,18 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 			v_engine->rmode = sdp_media_flow(m->m_mode);
 
 			if (sdp_type == SDP_TYPE_REQUEST) {
+				sdp_bandwidth_t *bw;
+				int tias = 0;
+				
+				for (bw = m->m_bandwidths; bw; bw = bw->b_next) {
+					if (bw->b_modifier == sdp_bw_as && !tias) {
+						v_engine->sdp_bw = bw->b_value / 1024;
+					} else if (bw->b_modifier == sdp_bw_tias) {
+						tias = 1;
+						v_engine->sdp_bw = bw->b_value / 1024;
+					}
+				}
+
 				switch(v_engine->rmode) {
 				case SWITCH_MEDIA_FLOW_RECVONLY:
 					switch_channel_set_variable(smh->session->channel, "video_media_flow", "sendonly");
