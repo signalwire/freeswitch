@@ -735,6 +735,37 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_truncate(switch_file_handle_t *
 
 }
 
+SWITCH_DECLARE(switch_status_t) switch_core_file_command(switch_file_handle_t *fh, switch_file_command_t command)
+{
+	switch_status_t status = SWITCH_STATUS_FALSE;
+	
+	switch_assert(fh != NULL);
+	switch_assert(fh->file_interface != NULL);
+
+	if (!switch_test_flag(fh, SWITCH_FILE_OPEN)) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	switch(command) {
+	case SCFC_FLUSH_AUDIO:
+		if (fh->pre_buffer) {
+			switch_buffer_zero(fh->pre_buffer);
+		}
+		break;
+	default:
+		break;
+	}
+
+	if (fh->file_interface->file_command) {
+		switch_mutex_lock(fh->flag_mutex);
+		status = fh->file_interface->file_command(fh, command);
+		switch_mutex_unlock(fh->flag_mutex);
+	}
+
+	return status;
+}
+
+
 SWITCH_DECLARE(switch_status_t) switch_core_file_close(switch_file_handle_t *fh)
 {
 	switch_status_t status;

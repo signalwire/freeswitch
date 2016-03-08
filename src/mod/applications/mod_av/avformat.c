@@ -1770,6 +1770,23 @@ static switch_status_t av_file_write(switch_file_handle_t *handle, void *data, s
 	return status;
 }
 
+static switch_status_t av_file_command(switch_file_handle_t *handle, switch_file_command_t command)
+{
+	av_file_context_t *context = (av_file_context_t *)handle->private_info;
+
+	switch(command) {
+	case SCFC_FLUSH_AUDIO:
+		switch_mutex_lock(context->mutex);		
+		switch_buffer_zero(context->audio_buffer);
+		switch_mutex_unlock(context->mutex);		
+		break;
+	default:
+		break;
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 static switch_status_t av_file_close(switch_file_handle_t *handle)
 {
 	av_file_context_t *context = (av_file_context_t *)handle->private_info;
@@ -1840,9 +1857,8 @@ static switch_status_t av_file_read(switch_file_handle_t *handle, void *data, si
 	}
 
 	switch_mutex_lock(context->mutex);
-	size = switch_buffer_inuse(context->audio_buffer);
-	if (size > *len * context->audio_st.channels * 2) size = *len * context->audio_st.channels * 2;
-	if (size) size = switch_buffer_read(context->audio_buffer, data, size);
+
+	size = switch_buffer_read(context->audio_buffer, data, need);
 	switch_mutex_unlock(context->mutex);
 
 	if (size == 0) {
@@ -2174,6 +2190,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_avformat_load)
 	file_interface->file_seek = av_file_seek;
 	file_interface->file_set_string = av_file_set_string;
 	file_interface->file_get_string = av_file_get_string;
+	file_interface->file_command = av_file_command;
 
 	SWITCH_ADD_API(api_interface, "av_format", "av information", av_format_api_function, "");
 

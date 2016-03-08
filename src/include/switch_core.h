@@ -1929,6 +1929,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_get_string(_In_ switch_file_han
 */
 SWITCH_DECLARE(switch_status_t) switch_core_file_close(_In_ switch_file_handle_t *fh);
 
+SWITCH_DECLARE(switch_status_t) switch_core_file_command(switch_file_handle_t *fh, switch_file_command_t command);
+
 SWITCH_DECLARE(switch_status_t) switch_core_file_truncate(switch_file_handle_t *fh, int64_t offset);
 SWITCH_DECLARE(switch_bool_t) switch_core_file_has_video(switch_file_handle_t *fh);
 
