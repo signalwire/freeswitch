@@ -1065,7 +1065,7 @@ static switch_status_t switch_core_media_build_crypto(switch_media_handle_t *smh
 		*p-- = '\0';
 	}
 
-	if (!index) index = ctype + 1;
+	if (index == SWITCH_NO_CRYPTO_TAG) index = ctype + 1;
 
 	engine->ssec[ctype].local_crypto_key = switch_core_session_sprintf(smh->session, "%d %s inline:%s", index, SUITES[ctype].name, b64_key);
 	switch_channel_set_variable_name_printf(smh->session->channel, engine->ssec[ctype].local_crypto_key, "rtp_last_%s_local_crypto_key", type2str(type));
@@ -1461,10 +1461,10 @@ SWITCH_DECLARE(void) switch_core_session_check_outgoing_crypto(switch_core_sessi
 
 	for (i = 0; smh->crypto_suite_order[i] != CRYPTO_INVALID; i++) {
 		switch_core_media_build_crypto(session->media_handle,
-									   SWITCH_MEDIA_TYPE_AUDIO, 0, smh->crypto_suite_order[i], SWITCH_RTP_CRYPTO_SEND, 0);
+									   SWITCH_MEDIA_TYPE_AUDIO, SWITCH_NO_CRYPTO_TAG, smh->crypto_suite_order[i], SWITCH_RTP_CRYPTO_SEND, 0);
 
 		switch_core_media_build_crypto(session->media_handle,
-									   SWITCH_MEDIA_TYPE_VIDEO, 0, smh->crypto_suite_order[i], SWITCH_RTP_CRYPTO_SEND, 0);
+									   SWITCH_MEDIA_TYPE_VIDEO, SWITCH_NO_CRYPTO_TAG, smh->crypto_suite_order[i], SWITCH_RTP_CRYPTO_SEND, 0);
 	}
 
 }
