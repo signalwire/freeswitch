@@ -779,7 +779,7 @@ switch_status_t conference_member_add(conference_obj_t *conference, conference_m
 			}
 		
 			if ((var = switch_channel_get_variable(member->channel, "rtp_video_max_bandwidth_out"))) {
-				member->max_bw_out = switch_parse_bandwidth_string(var);;
+				member->max_bw_out = switch_parse_bandwidth_string(var);
 
 				if (member->max_bw_out < conference->video_codec_settings.video.bandwidth) {
 					conference_utils_member_set_flag_locked(member, MFLAG_NO_MINIMIZE_ENCODING);
