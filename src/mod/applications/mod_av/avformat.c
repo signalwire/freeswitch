@@ -1817,7 +1817,7 @@ static switch_status_t av_file_close(switch_file_handle_t *handle)
 			int x;
 			
 			switch_color_set_rgb(&bgcolor, "#000000");
-			x = (int)handle->mm.fps * 3;
+			x = (int)handle->mm.fps * 1;
 
 			if (x <= 0) x = 100;
 			
