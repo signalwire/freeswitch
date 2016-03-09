@@ -2044,7 +2044,11 @@ static void check_jb_sync(switch_core_session_t *session)
 
 	if (fps) {
 		video_globals.fps = fps;
-		smh->vid_params.fps = fps;
+
+		if (smh->vid_params.fps != fps) {
+			switch_channel_set_variable_printf(session->channel, "video_fps", "%d", fps);
+			smh->vid_params.fps = fps;
+		}
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session),
@@ -11193,10 +11197,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_wait_for_video_input_params(
 		switch_frame_t *read_frame;
 		switch_status_t status;
 		
-		if (switch_channel_test_flag(session->channel, CF_VIDEO_READY) && smh->vid_params.width && smh->vid_params.height) {
+		if (switch_channel_test_flag(session->channel, CF_VIDEO_READY) && smh->vid_params.width && smh->vid_params.height && smh->vid_params.fps) {
 			return SWITCH_STATUS_SUCCESS;
 		}
 
+		switch_core_session_request_video_refresh(session);
 		status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 
 		if (!SWITCH_READ_ACCEPTABLE(status)) {
@@ -11291,14 +11296,22 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_video_frame(switch_core
 
 		decode_status = switch_core_codec_decode_video((*frame)->codec, *frame);
 		
-		if ((*frame)->img) {//((*frame)->img && switch_channel_test_flag(session->channel, CF_VIDEO_DEBUG_READ)) {
+		if ((*frame)->img && switch_channel_test_flag(session->channel, CF_VIDEO_DEBUG_READ)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "IMAGE %dx%d %dx%d\n", 
 							  (*frame)->img->w, (*frame)->img->h, (*frame)->img->d_w, (*frame)->img->d_h);
 		}
 
 		if ((*frame)->img && (*frame)->img->d_w && (*frame)->img->d_h) {
-			smh->vid_params.width = (*frame)->img->d_w;
-			smh->vid_params.height = (*frame)->img->d_h;
+
+			if ((*frame)->img->d_w != smh->vid_params.width) {
+				switch_channel_set_variable_printf(session->channel, "video_width", "%d", (*frame)->img->d_w);
+				smh->vid_params.width = (*frame)->img->d_w;
+			}
+
+			if ((*frame)->img->d_h != smh->vid_params.height) {
+				switch_channel_set_variable_printf(session->channel, "video_height", "%d", (*frame)->img->d_h);
+				smh->vid_params.height = (*frame)->img->d_h;
+			}
 		}
 
 		if (switch_test_flag((*frame), SFF_WAIT_KEY_FRAME)) {
