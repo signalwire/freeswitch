@@ -1183,7 +1183,7 @@ switch_status_t conference_video_init_canvas(conference_obj_t *conference, video
 	return SWITCH_STATUS_SUCCESS;
 }
 
-int conference_video_flush_queue(switch_queue_t *q)
+int conference_video_flush_queue(switch_queue_t *q, int min)
 {
 	switch_image_t *img;
 	void *pop;
@@ -1191,7 +1191,7 @@ int conference_video_flush_queue(switch_queue_t *q)
 
 	if (!q) return 0;
 
-	while (switch_queue_size(q) > 1 && switch_queue_trypop(q, &pop) == SWITCH_STATUS_SUCCESS && pop) {
+	while (switch_queue_size(q) > min && switch_queue_trypop(q, &pop) == SWITCH_STATUS_SUCCESS && pop) {
 		img = (switch_image_t *)pop;
 		switch_img_free(&img);
 		r++;
@@ -1207,7 +1207,7 @@ void conference_video_destroy_canvas(mcu_canvas_t **canvasP) {
 
 	switch_img_free(&canvas->img);
 	switch_img_free(&canvas->bgimg);
-	conference_video_flush_queue(canvas->video_queue);
+	conference_video_flush_queue(canvas->video_queue, 0);
 
 	for (i = 0; i < MCU_MAX_LAYERS; i++) {
 		switch_img_free(&canvas->layers[i].img);
@@ -1660,7 +1660,7 @@ void conference_video_check_flush(conference_member_t *member)
 		return;
 	}
 
-	flushed = conference_video_flush_queue(member->video_queue);
+	flushed = conference_video_flush_queue(member->video_queue, 1);
 
 	if (flushed && member->auto_avatar) {
 		switch_channel_video_sync(member->channel);
