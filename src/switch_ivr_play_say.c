@@ -416,35 +416,34 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 		fh->samples = 0;
 	}
 
-	if ((vval = switch_channel_get_variable(channel, "record_sample_rate"))) {
+
+	if ((p = switch_channel_get_variable(channel, "record_sample_rate")) || (fh->params && (p = switch_event_get_header(fh->params, "record_sample_rate")))) {
 		int tmp = 0;
 
-		tmp = atoi(vval);
+		tmp = atoi(p);
 
 		if (switch_is_valid_rate(tmp)) {
 			fh->samplerate = tmp;
 		}
 	}
 
-
-	if ((vval = switch_channel_get_variable(channel, "record_fill_cng"))) {
-
-		if (!strcasecmp(vval, "true")) {
+	if ((p = switch_channel_get_variable(channel, "record_fill_cng")) || (fh->params && (p = switch_event_get_header(fh->params, "record_fill_cng")))) {
+		if (!strcasecmp(p, "true")) {
 			fill_cng = 1400;
 		} else {
-			if ((fill_cng = atoi(vval)) < 0) {
+			if ((fill_cng = atoi(p)) < 0) {
 				fill_cng = 0;
 			}
 		}
 	}
 
+	if ((p = switch_channel_get_variable(channel, "record_waste_resources")) || 
+		(fh->params && (p = switch_event_get_header(fh->params, "record_waste_resources")))) {
 
-	if ((vval = switch_channel_get_variable(channel, "record_waste_resources"))) {
-
-		if (!strcasecmp(vval, "true")) {
+		if (!strcasecmp(p, "true")) {
 			waste_resources = 1400;
 		} else {
-			if ((waste_resources = atoi(vval)) < 0) {
+			if ((waste_resources = atoi(p)) < 0) {
 				waste_resources = 0;
 			}
 		}
@@ -585,6 +584,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 		switch_core_media_set_video_file(session, fh, SWITCH_RW_READ);
 	} else if (switch_channel_test_flag(channel, CF_VIDEO)) {
 		switch_channel_set_flag(channel, CF_VIDEO_BLANK);
+	}
+
+
+	if ((p = switch_channel_get_variable(channel, "record_indication")) || (fh->params && (p = switch_event_get_header(fh->params, "record_indication")))) {
+		switch_ivr_play_file(session, NULL, p, NULL);
 	}
 
 	if (sample_start > 0) {
