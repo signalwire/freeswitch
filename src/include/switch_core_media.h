@@ -39,6 +39,7 @@
 SWITCH_BEGIN_EXTERN_C
 
 #define SWITCH_MAX_CAND_ACL 25
+#define SWITCH_NO_CRYPTO_TAG -1
 
 typedef enum {
 	DTMF_2833,
