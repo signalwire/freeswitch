@@ -1716,7 +1716,7 @@ cd ../..
 %pre
 %ifos linux
 if ! /usr/bin/id freeswitch &>/dev/null; then
-       /usr/sbin/useradd -r -g daemon -s /bin/false -c "The FreeSWITCH Open Source Voice Platform" -d %{prefix} freeswitch || \
+       /usr/sbin/useradd -r -g daemon -s /bin/false -c "The FreeSWITCH Open Source Voice Platform" -d %{LOCALSTATEDIR} freeswitch || \
                 %logmsg "Unexpected error adding user \"freeswitch\". Aborting installation."
 fi
 %endif
