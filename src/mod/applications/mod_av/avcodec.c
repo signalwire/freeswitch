@@ -1144,6 +1144,8 @@ process:
 		const uint8_t *p = pkt->data;
 		int i = 0;
 
+		*got_output = 0;
+
 		if (context->av_codec_id == AV_CODEC_ID_H263) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG5, "Encoded frame %" SWITCH_INT64_T_FMT " (size=%5d) [0x%02x 0x%02x 0x%02x 0x%02x] got_output: %d slices: %d\n", context->pts, pkt->size, *((uint8_t *)pkt->data), *((uint8_t *)(pkt->data + 1)), *((uint8_t *)(pkt->data + 2)), *((uint8_t *)(pkt->data + 3)), *got_output, avctx->slices);
 
