@@ -1586,7 +1586,7 @@ void conference_video_check_recording(conference_obj_t *conference, mcu_canvas_t
 			continue;
 		}
 
-		if (switch_test_flag((&imember->rec->fh), SWITCH_FILE_OPEN) && switch_core_file_has_video(&imember->rec->fh)) {
+		if (switch_test_flag((&imember->rec->fh), SWITCH_FILE_OPEN) && switch_core_file_has_video(&imember->rec->fh, SWITCH_TRUE)) {
 			switch_core_file_write_video(&imember->rec->fh, frame);
 		}
 	}
@@ -1696,7 +1696,7 @@ void conference_video_patch_fnode(mcu_canvas_t *canvas, conference_file_node_t *
 void conference_video_fnode_check(conference_file_node_t *fnode, int canvas_id) {
 	mcu_canvas_t *canvas = NULL;
 	
-	if (switch_core_file_has_video(&fnode->fh) && switch_core_file_read_video(&fnode->fh, NULL, SVR_CHECK) == SWITCH_STATUS_BREAK) {
+	if (switch_core_file_has_video(&fnode->fh, SWITCH_TRUE) && switch_core_file_read_video(&fnode->fh, NULL, SVR_CHECK) == SWITCH_STATUS_BREAK) {
 		int full_screen = 0;
 		char *res_id = NULL;
 
@@ -2220,13 +2220,13 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 			do_refresh = 100;
 		}
 
-		if (conference->async_fnode && switch_core_file_has_video(&conference->async_fnode->fh)) {
+		if (conference->async_fnode && switch_core_file_has_video(&conference->async_fnode->fh, SWITCH_TRUE)) {
 			check_async_file = 1;
 			file_count++;
 			files_playing = 1;
 		}
 
-		if (conference->fnode && switch_core_file_has_video(&conference->fnode->fh)) {
+		if (conference->fnode && switch_core_file_has_video(&conference->fnode->fh, SWITCH_TRUE)) {
 			check_file = 1;
 			file_count++;
 			files_playing = 1;

@@ -91,7 +91,7 @@ switch_status_t conference_file_close(conference_obj_t *conference, conference_f
 		conference_al_close(node->al);
 	}
 #endif
-	if (conference->playing_video_file && switch_core_file_has_video(&node->fh) && conference->canvases[0] && node->canvas_id > -1) {
+	if (conference->playing_video_file && switch_core_file_has_video(&node->fh, SWITCH_FALSE) && conference->canvases[0] && node->canvas_id > -1) {
 		if (conference->canvases[node->canvas_id]->timer.timer_interface) {
 			conference->canvases[node->canvas_id]->timer.interval = conference->video_fps.ms;
 			conference->canvases[node->canvas_id]->timer.samples = conference->video_fps.samples;

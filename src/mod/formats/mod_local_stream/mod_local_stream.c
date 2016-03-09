@@ -358,7 +358,7 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 
 			switch_buffer_zero(audio_buffer);
 
-			if (switch_core_file_has_video(&fh)) {
+			if (switch_core_file_has_video(&fh, SWITCH_FALSE)) {
 				flush_video_queue(source->video_q);
 			}
 
@@ -425,7 +425,7 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 				}
 			}
 			
-			if (title && (source->cover_art || switch_core_file_has_video(&fh))) {
+			if (title && (source->cover_art || switch_core_file_has_video(&fh, SWITCH_TRUE))) {
 				const char *format = "#cccccc:#333333:FreeSans.ttf:3%:";
 				
 				if (artist) {
@@ -466,7 +466,7 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 						}
 
 
-						if (switch_core_file_has_video(&source->chime_fh)) {
+						if (switch_core_file_has_video(&source->chime_fh, SWITCH_FALSE)) {
 							flush_video_queue(source->video_q);
 						}
 
@@ -479,7 +479,7 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 
 			retry:
 
-				source->has_video = switch_core_file_has_video(use_fh) || source->cover_art || source->banner_txt;
+				source->has_video = switch_core_file_has_video(use_fh, SWITCH_TRUE) || source->cover_art || source->banner_txt;
 
 				is_open = switch_test_flag(use_fh, SWITCH_FILE_OPEN);
 
@@ -503,10 +503,10 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 				if (is_open) {
 					int svr = 0;
 
-					if (switch_core_has_video() && switch_core_file_has_video(use_fh)) {
+					if (switch_core_has_video() && switch_core_file_has_video(use_fh, SWITCH_TRUE)) {
 						switch_frame_t vid_frame = { 0 };
 
-						if (use_fh == &source->chime_fh && switch_core_file_has_video(&fh)) {
+						if (use_fh == &source->chime_fh && switch_core_file_has_video(&fh, SWITCH_TRUE)) {
 							if (switch_core_file_read_video(&fh, &vid_frame, svr) == SWITCH_STATUS_SUCCESS) {
 								switch_img_free(&vid_frame.img);
 							}
@@ -599,14 +599,6 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 						switch_mutex_lock(cp->audio_mutex);
 
 						if (switch_test_flag(cp->handle, SWITCH_FILE_OPEN)) {
-							if (source->has_video && !switch_test_flag(cp->handle, SWITCH_FILE_FLAG_VIDEO)) {
-								switch_set_flag_locked(cp->handle, SWITCH_FILE_FLAG_VIDEO);
-							} else {
-								if (switch_test_flag(cp->handle, SWITCH_FILE_FLAG_VIDEO)) {
-									switch_clear_flag_locked(cp->handle, SWITCH_FILE_FLAG_VIDEO);
-								}
-							}
-							
 							if (switch_test_flag(cp->handle, SWITCH_FILE_CALLBACK)) {
 								switch_mutex_unlock(cp->audio_mutex);
 								continue;
@@ -992,7 +984,7 @@ static switch_status_t local_stream_file_read_video(switch_file_handle_t *handle
 		return SWITCH_STATUS_FALSE;
 	}
 	
-	while (switch_queue_size(context->video_q) < 5) {
+	while (!(flags & SVR_BLOCK) && switch_queue_size(context->video_q) < 5) {
 		return SWITCH_STATUS_BREAK;
 	}
 
@@ -1093,6 +1085,16 @@ static switch_status_t local_stream_file_read(switch_file_handle_t *handle, void
 	if (!(context->ready && context->source->ready)) {
 		*len = 0;
 		return SWITCH_STATUS_FALSE;
+	}
+	
+	if (context->source->has_video)  {
+		if (!switch_test_flag(handle, SWITCH_FILE_FLAG_VIDEO)) {
+			switch_set_flag_locked(handle, SWITCH_FILE_FLAG_VIDEO);
+		}
+	} else {
+		if (switch_test_flag(handle, SWITCH_FILE_FLAG_VIDEO)) {
+			switch_clear_flag_locked(handle, SWITCH_FILE_FLAG_VIDEO);
+		}
 	}
 
 	switch_mutex_lock(context->audio_mutex);

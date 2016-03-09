@@ -1139,7 +1139,7 @@ static void *SWITCH_THREAD_FUNC recording_thread(switch_thread_t *thread, void *
 	data = switch_core_session_alloc(session, SWITCH_RECOMMENDED_BUFFER_SIZE);
 
 	while(switch_test_flag(rh->fh, SWITCH_FILE_OPEN)) {
-		if (switch_core_file_has_video(rh->fh)) {
+		if (switch_core_file_has_video(rh->fh, SWITCH_TRUE)) {
 			switch_core_session_get_read_impl(session, &read_impl);
 			if (read_impl.decoded_bytes_per_packet > 0 && read_impl.decoded_bytes_per_packet <= SWITCH_RECOMMENDED_BUFFER_SIZE) {
 				bsize = read_impl.decoded_bytes_per_packet;
@@ -1352,7 +1352,7 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 				}
 
 				
-				//if (switch_core_file_has_video(rh->fh)) {
+				//if (switch_core_file_has_video(rh->fh, SWITCH_TRUE)) {
 					//switch_core_media_set_video_file(session, NULL, SWITCH_RW_READ);
 					//switch_channel_clear_flag_recursive(session->channel, CF_VIDEO_DECODED_READ);
 				//}
@@ -2551,7 +2551,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 			return SWITCH_STATUS_GENERR;
 		}
 
-		if (switch_core_file_has_video(fh)) {
+		if (switch_core_file_has_video(fh, SWITCH_TRUE)) {
 			//switch_core_media_set_video_file(session, fh, SWITCH_RW_READ);
 			//switch_channel_set_flag_recursive(session->channel, CF_VIDEO_DECODED_READ);
 			

@@ -360,6 +360,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 	switch_dtmf_t dtmf = { 0 };
 	switch_file_handle_t lfh = { 0 };
 	switch_file_handle_t vfh = { 0 };
+	switch_file_handle_t ind_fh = { 0 };
 	switch_frame_t *read_frame;
 	switch_codec_t codec, write_codec = { 0 };
 	char *codec_name;
@@ -370,7 +371,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 	uint32_t org_silence_hits = 0;
 	int asis = 0;
 	int32_t sample_start = 0;
-	int waste_resources = 0, fill_cng = 0;
+	int waste_resources = 1400, fill_cng = 0;
 	switch_codec_implementation_t read_impl = { 0 };
 	switch_frame_t write_frame = { 0 };
 	unsigned char write_buf[SWITCH_RECOMMENDED_BUFFER_SIZE] = { 0 };
@@ -417,58 +418,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 	}
 
 
-	if ((p = switch_channel_get_variable(channel, "record_sample_rate")) || (fh->params && (p = switch_event_get_header(fh->params, "record_sample_rate")))) {
+	if ((p = switch_channel_get_variable(channel, "record_sample_rate"))) {
 		int tmp = 0;
 
 		tmp = atoi(p);
 
 		if (switch_is_valid_rate(tmp)) {
 			fh->samplerate = tmp;
-		}
-	}
-
-	if ((p = switch_channel_get_variable(channel, "record_fill_cng")) || (fh->params && (p = switch_event_get_header(fh->params, "record_fill_cng")))) {
-		if (!strcasecmp(p, "true")) {
-			fill_cng = 1400;
-		} else {
-			if ((fill_cng = atoi(p)) < 0) {
-				fill_cng = 0;
-			}
-		}
-	}
-
-	if ((p = switch_channel_get_variable(channel, "record_waste_resources")) || 
-		(fh->params && (p = switch_event_get_header(fh->params, "record_waste_resources")))) {
-
-		if (!strcasecmp(p, "true")) {
-			waste_resources = 1400;
-		} else {
-			if ((waste_resources = atoi(p)) < 0) {
-				waste_resources = 0;
-			}
-		}
-	}
-
-
-	if (fill_cng || waste_resources) {
-		if (switch_core_codec_init(&write_codec,
-								   "L16",
-								   NULL,
-								   NULL,
-								   read_impl.actual_samples_per_second,
-								   read_impl.microseconds_per_packet / 1000,
-								   read_impl.number_of_channels,
-								   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL,
-								   switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Raw Codec Activated, ready to waste resources!\n");
-			write_frame.data = write_buf;
-			write_frame.buflen = sizeof(write_buf);
-			write_frame.datalen = read_impl.decoded_bytes_per_packet;
-			write_frame.samples = write_frame.datalen / 2;
-			write_frame.codec = &write_codec;
-		} else {
-			arg_recursion_check_stop(args);
-			return SWITCH_STATUS_FALSE;
 		}
 	}
 
@@ -550,7 +506,66 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 		return SWITCH_STATUS_GENERR;
 	}
 	
-	if (switch_core_file_has_video(fh)) {
+
+	if ((p = switch_channel_get_variable(channel, "record_fill_cng")) || (fh->params && (p = switch_event_get_header(fh->params, "record_fill_cng")))) {
+		if (!strcasecmp(p, "true")) {
+			fill_cng = 1400;
+		} else {
+			if ((fill_cng = atoi(p)) < 0) {
+				fill_cng = 0;
+			}
+		}
+	}
+
+	if ((p = switch_channel_get_variable(channel, "record_indication")) || (fh->params && (p = switch_event_get_header(fh->params, "record_indication")))) {
+		int flags = SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT;
+		waste_resources = 1400;
+		
+		if (switch_core_file_open(&ind_fh,
+								  p,
+								  read_impl.number_of_channels,
+								  read_impl.actual_samples_per_second, flags, NULL) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Indication file invalid\n");
+		}
+	}
+
+	if ((p = switch_channel_get_variable(channel, "record_waste_resources")) || 
+		(fh->params && (p = switch_event_get_header(fh->params, "record_waste_resources")))) {
+
+		if (!strcasecmp(p, "true")) {
+			waste_resources = 1400;
+		} else {
+			if ((waste_resources = atoi(p)) < 0) {
+				waste_resources = 0;
+			}
+		}
+	}
+	
+	if (fill_cng || waste_resources) {
+		if (switch_core_codec_init(&write_codec,
+								   "L16",
+								   NULL,
+								   NULL,
+								   read_impl.actual_samples_per_second,
+								   read_impl.microseconds_per_packet / 1000,
+								   read_impl.number_of_channels,
+								   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL,
+								   switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Raw Codec Activated, ready to waste resources!\n");
+			write_frame.data = write_buf;
+			write_frame.buflen = sizeof(write_buf);
+			write_frame.datalen = read_impl.decoded_bytes_per_packet;
+			write_frame.samples = write_frame.datalen / 2;
+			write_frame.codec = &write_codec;
+		} else {
+			arg_recursion_check_stop(args);
+			return SWITCH_STATUS_FALSE;
+		}
+	}
+
+
+
+	if (switch_core_file_has_video(fh, SWITCH_TRUE)) {
 		switch_core_session_request_video_refresh(session);	
 		
 		if ((p = switch_channel_get_variable(channel, "record_play_video")) || 
@@ -565,7 +580,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Failure opening video playback file.\n");
 			}
 
-			if (switch_core_file_has_video(fh)) {
+			if (switch_core_file_has_video(&vfh, SWITCH_TRUE)) {
 				switch_core_media_set_video_file(session, &vfh, SWITCH_RW_WRITE);
 				switch_core_media_gen_key_frame(session);
 			} else {
@@ -584,11 +599,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 		switch_core_media_set_video_file(session, fh, SWITCH_RW_READ);
 	} else if (switch_channel_test_flag(channel, CF_VIDEO)) {
 		switch_channel_set_flag(channel, CF_VIDEO_BLANK);
-	}
-
-
-	if ((p = switch_channel_get_variable(channel, "record_indication")) || (fh->params && (p = switch_event_get_header(fh->params, "record_indication")))) {
-		switch_ivr_play_file(session, NULL, p, NULL);
 	}
 
 	if (sample_start > 0) {
@@ -661,16 +671,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR,
 							  "Raw Codec Activation Failed %s@%uhz %u channels %dms\n", codec_name, fh->samplerate,
 							  fh->channels, read_impl.microseconds_per_packet / 1000);
-			if (switch_core_file_has_video(fh)) {
+			if (switch_core_file_has_video(fh, SWITCH_FALSE)) {
 				if (echo_on) {
 					switch_channel_clear_flag(channel, CF_VIDEO_ECHO);
 					switch_channel_clear_flag_recursive(channel, CF_VIDEO_DECODED_READ);
 					echo_on = 0;
 				}
 				switch_core_media_set_video_file(session, NULL, SWITCH_RW_READ);
-				if (switch_test_flag(&vfh, SWITCH_FILE_OPEN)) {
-					switch_core_media_set_video_file(session, NULL, SWITCH_RW_WRITE);
-				}
+				switch_core_media_set_video_file(session, NULL, SWITCH_RW_WRITE);
 			}
 			switch_channel_clear_flag(channel, CF_VIDEO_BLANK);
 			switch_core_file_close(fh);
@@ -810,7 +818,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Failure opening video playback file.\n");
 				}
 				
-				if (switch_core_file_has_video(fh)) {
+				if (switch_core_file_has_video(&vfh, SWITCH_TRUE)) {
 					//switch_core_media_set_video_file(session, &vfh, SWITCH_RW_WRITE);
 					switch_core_media_gen_key_frame(session);
 				} else {
@@ -848,7 +856,20 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 			}
 		}
 
-		if (fill_cng) {
+		write_frame.datalen = read_impl.decoded_bytes_per_packet;
+		write_frame.samples = write_frame.datalen / 2;
+
+		if (switch_test_flag(&ind_fh, SWITCH_FILE_OPEN)) {
+			switch_size_t olen = write_frame.codec->implementation->samples_per_packet;
+			
+			if (switch_core_file_read(&ind_fh, write_frame.data, &olen) == SWITCH_STATUS_SUCCESS) {
+				write_frame.samples = olen;
+				write_frame.datalen = olen * 2 * ind_fh.channels;;
+			} else {
+				switch_core_file_close(&ind_fh);
+			}
+
+		} else if (fill_cng) {
 			switch_generate_sln_silence((int16_t *) write_frame.data, write_frame.samples, read_impl.number_of_channels, fill_cng);
 		} else if (waste_resources) {
 			switch_generate_sln_silence((int16_t *) write_frame.data, write_frame.samples, read_impl.number_of_channels, waste_resources);
@@ -867,8 +888,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 				break;
 			}
 		}
+		
 
-		if (waste_resources) {
+		if (waste_resources || switch_test_flag(&ind_fh, SWITCH_FILE_OPEN)) {
 			if (switch_core_session_write_frame(session, &write_frame, SWITCH_IO_FLAG_NONE, 0) != SWITCH_STATUS_SUCCESS) {
 				break;
 			}
@@ -879,16 +901,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 		switch_core_codec_destroy(&write_codec);
 	}
 	
-	if (switch_core_file_has_video(fh)) {
+	if (switch_core_file_has_video(fh, SWITCH_FALSE)) {
 		if (echo_on) {
 			switch_channel_clear_flag(channel, CF_VIDEO_ECHO);
 			switch_channel_clear_flag_recursive(channel, CF_VIDEO_DECODED_READ);
 			echo_on = 0;
 		}
 		switch_core_media_set_video_file(session, NULL, SWITCH_RW_READ);
-		if (switch_test_flag(&vfh, SWITCH_FILE_OPEN)) {
-			switch_core_media_set_video_file(session, NULL, SWITCH_RW_WRITE);
-		}
+		switch_core_media_set_video_file(session, NULL, SWITCH_RW_WRITE);
 	}
 	switch_channel_clear_flag(channel, CF_VIDEO_BLANK);
 	switch_core_file_close(fh);
@@ -1375,7 +1395,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 		switch_channel_set_private(channel, "__fh", fh);
 		switch_core_session_io_rwunlock(session);
 
-		if (switch_core_file_has_video(fh)) {
+		if (switch_core_file_has_video(fh, SWITCH_TRUE)) {
 			switch_core_media_set_video_file(session, fh, SWITCH_RW_WRITE);
 		}
 
@@ -1452,10 +1472,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 				switch_channel_set_private(channel, "__fh", NULL);
 				switch_core_session_io_rwunlock(session);
 
-				if (switch_core_file_has_video(fh)) {
-					//switch_channel_clear_flag_recursive(channel, CF_VIDEO_DECODED_READ);
-					switch_core_media_set_video_file(session, NULL, SWITCH_RW_WRITE);
-				}
+				switch_core_media_set_video_file(session, NULL, SWITCH_RW_WRITE);
 
 				switch_core_file_close(fh);
 
@@ -1479,10 +1496,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 				switch_channel_set_private(channel, "__fh", NULL);
 				switch_core_session_io_rwunlock(session);
 
-				if (switch_core_file_has_video(fh)) {
-					//switch_channel_clear_flag_recursive(channel, CF_VIDEO_DECODED_READ);
-					switch_core_media_set_video_file(session, NULL, SWITCH_RW_WRITE);
-				}
+				switch_core_media_set_video_file(session, NULL, SWITCH_RW_WRITE);
 				switch_core_file_close(fh);
 
 				switch_core_session_reset(session, SWITCH_TRUE, SWITCH_FALSE);
@@ -1509,10 +1523,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 				switch_core_session_io_write_lock(session);
 				switch_channel_set_private(channel, "__fh", NULL);
 				switch_core_session_io_rwunlock(session);
-				if (switch_core_file_has_video(fh)) {
-					//switch_channel_clear_flag_recursive(channel, CF_VIDEO_DECODED_READ);
-					switch_core_media_set_video_file(session, NULL, SWITCH_RW_WRITE);
-				}
+
+				switch_core_media_set_video_file(session, NULL, SWITCH_RW_WRITE);
+
 				switch_core_file_close(fh);
 				switch_core_session_reset(session, SWITCH_TRUE, SWITCH_FALSE);
 				status = SWITCH_STATUS_GENERR;
@@ -1921,11 +1934,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 		switch_core_session_io_write_lock(session);
 		switch_channel_set_private(channel, "__fh", NULL);
 		switch_core_session_io_rwunlock(session);
-
-		if (switch_core_file_has_video(fh)) {
-			//switch_channel_clear_flag_recursive(channel, CF_VIDEO_DECODED_READ);
-			switch_core_media_set_video_file(session, NULL, SWITCH_RW_WRITE);
-		}
+		
+		switch_core_media_set_video_file(session, NULL, SWITCH_RW_WRITE);
 		switch_core_file_close(fh);
 
 		if (fh->audio_buffer) {
@@ -2088,6 +2098,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_silence(switch_core_session_
   end:
 
 	if (abuf) {
+
 		switch_core_file_close(&fh);
 		free(abuf);
 	}
