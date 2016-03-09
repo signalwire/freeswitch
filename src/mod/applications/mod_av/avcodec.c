@@ -1100,7 +1100,8 @@ static switch_status_t switch_h264_encode(switch_codec_t *codec, switch_frame_t 
 		}
 	}
 
-	if (*got_output) { // Could be more delayed frames
+#if 0
+	if (*got_output) { // TODO: Could be more delayed frames, flush when frame == NULL
 		ret = avcodec_encode_video2(avctx, pkt, NULL, got_output);
 		if (ret < 0) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Encoding Error %d\n", ret);
@@ -1112,6 +1113,7 @@ static switch_status_t switch_h264_encode(switch_codec_t *codec, switch_frame_t 
 			goto process;
 		}
 	}
+#endif
 
 	fill_avframe(avframe, img);
 
@@ -1138,7 +1140,7 @@ static switch_status_t switch_h264_encode(switch_codec_t *codec, switch_frame_t 
 		context->need_key_frame = 0;
 	}
 
-process:
+// process:
 
 	if (*got_output) {
 		const uint8_t *p = pkt->data;
