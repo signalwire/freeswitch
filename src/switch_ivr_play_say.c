@@ -536,10 +536,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 
 		file_flags |= SWITCH_FILE_FLAG_VIDEO;
 		switch_channel_set_flag_recursive(channel, CF_VIDEO_DECODED_READ);
-		fh->mm.fps = switch_core_media_get_video_fps(session);
+		switch_core_session_wait_for_video_input_params(session, 10000);
 		switch_core_media_get_vid_params(session, &vid_params);
 		fh->mm.vw = vid_params.width;
 		fh->mm.vh = vid_params.height;
+		fh->mm.fps = vid_params.fps;
 	}
 
 	if (switch_core_file_open(fh, file, fh->channels, read_impl.actual_samples_per_second, file_flags, NULL) != SWITCH_STATUS_SUCCESS) {
@@ -579,7 +580,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 			switch_channel_set_flag_recursive(channel, CF_VIDEO_DECODED_READ);
 			switch_channel_set_flag(channel, CF_VIDEO_ECHO);
 		}
-
+		
 		switch_core_media_set_video_file(session, fh, SWITCH_RW_READ);
 	} else if (switch_channel_test_flag(channel, CF_VIDEO)) {
 		switch_channel_set_flag(channel, CF_VIDEO_BLANK);

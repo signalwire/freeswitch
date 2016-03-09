@@ -143,6 +143,7 @@ typedef struct record_helper_s {
 	switch_queue_t *video_queue;
 	switch_thread_t *video_thread;
 	switch_mm_t *mm;
+	int finalize;
 } record_helper_t;
 
 static void log_packet(const AVFormatContext *fmt_ctx, const AVPacket *pkt)
@@ -514,6 +515,7 @@ static void *SWITCH_THREAD_FUNC video_thread_run(switch_thread_t *thread, void *
 	switch_image_t *img = NULL, *tmp_img = NULL;
 	int d_w = eh->video_st->width, d_h = eh->video_st->height;
 	int size = 0, skip = 0, skip_freq = 0, skip_count = 0, skip_total = 0, skip_total_count = 0;
+	uint64_t delta = 0, last_ts = 0;
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "video thread start\n");
 	
@@ -557,7 +559,7 @@ static void *SWITCH_THREAD_FUNC video_thread_run(switch_thread_t *thread, void *
 		
 			size = switch_queue_size(eh->video_queue);
 			
-			if (size > 5) {
+			if (size > 5 && !eh->finalize) {
 				skip = size;
 
 				if (size > 10) {
@@ -585,14 +587,25 @@ static void *SWITCH_THREAD_FUNC video_thread_run(switch_thread_t *thread, void *
 		fill_avframe(eh->video_st->frame, img);
 		switch_core_timer_sync(eh->timer);
 		
-		if (eh->video_st->frame->pts == eh->timer->samplecount) {
+		if (eh->finalize && delta) {
+			eh->video_st->frame->pts += delta;
+		} else if (eh->video_st->frame->pts == eh->timer->samplecount) {
 			// never use the same pts, or the encoder coughs
 			eh->video_st->frame->pts++;
 		} else {
+			uint64_t delta_tmp = eh->timer->samplecount - last_ts;
+
+			if (delta_tmp > 1) {
+				delta = delta_tmp;
+			}
+
 			eh->video_st->frame->pts = eh->timer->samplecount;
 		}
-		// eh->video_st->frame->pts = switch_time_now() / 1000 - eh->video_st->next_pts;
-		// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "pts: %lld\n", eh->video_st->frame->pts);
+		
+		last_ts = eh->video_st->frame->pts;
+
+		//eh->video_st->frame->pts = switch_time_now() / 1000 - eh->video_st->next_pts;
+		//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "pts: %ld\n", eh->video_st->frame->pts);
 
 		/* encode the image */
 		ret = avcodec_encode_video2(eh->video_st->st->codec, &pkt, eh->video_st->frame, &got_packet);
@@ -1573,7 +1586,7 @@ static switch_status_t av_file_open(switch_file_handle_t *handle, const char *pa
 	if (fmt->video_codec != AV_CODEC_ID_NONE) {
 		const AVCodecDescriptor *desc;
 
-		if (handle->stream_name && (!strcasecmp(handle->stream_name, "rtmp") || !strcasecmp(handle->stream_name, "youtube"))) {
+		if ((handle->stream_name && (!strcasecmp(handle->stream_name, "rtmp") || !strcasecmp(handle->stream_name, "youtube"))) || !strcasecmp(ext, "mp4")) {
 			if (fmt->video_codec != AV_CODEC_ID_H264 ) {
 				fmt->video_codec = AV_CODEC_ID_H264; // force H264
 			}
@@ -1608,7 +1621,7 @@ static switch_status_t av_file_open(switch_file_handle_t *handle, const char *pa
 				}
 			}
 
-			if (handle->mm.fps > 0.0f) {
+			if (handle->stream_name && handle->mm.fps > 0.0f) {
 				handle->mm.keyint = (int) 2.0f * handle->mm.fps;
 			}
 		}
@@ -1684,6 +1697,7 @@ static switch_status_t av_file_write(switch_file_handle_t *handle, void *data, s
 	}
 
 	if (!context->vid_ready) {
+		switch_buffer_zero(context->audio_buffer);
 		return status;
 	}
 
@@ -1793,16 +1807,39 @@ static switch_status_t av_file_close(switch_file_handle_t *handle)
 	switch_status_t status;
 
 	context->closed = 1;
+	context->eh.finalize = 1;
 
 	if (context->eh.video_queue) {
+
+
+		if (switch_test_flag(handle, SWITCH_FILE_FLAG_WRITE)) {
+			switch_rgb_color_t bgcolor;
+			int x;
+			
+			switch_color_set_rgb(&bgcolor, "#000000");
+			x = (int)handle->mm.fps * 1;
+
+			if (x <= 0) x = 100;
+			
+			while(handle->mm.vw && x-- > 0) {
+				switch_image_t *blank_img = NULL;
+				if ((blank_img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, handle->mm.vw, handle->mm.vh, 1))) {
+					switch_img_fill(blank_img, 0, 0, blank_img->d_w, blank_img->d_h, &bgcolor);
+					switch_queue_push(context->eh.video_queue, blank_img);
+				}
+			}
+
+		}
 		switch_queue_push(context->eh.video_queue, NULL);
+	}
+
+	if (switch_test_flag(handle, SWITCH_FILE_FLAG_WRITE)) {
+		av_file_write(handle, NULL, NULL);
 	}
 
 	if (context->eh.video_thread) {
 		switch_thread_join(&status, context->eh.video_thread);
 	}
-	
-	av_file_write(handle, NULL, NULL);
 
 	if (context->file_read_thread_running && context->file_read_thread) {
 		context->file_read_thread_running = 0;
@@ -1857,7 +1894,6 @@ static switch_status_t av_file_read(switch_file_handle_t *handle, void *data, si
 	}
 
 	switch_mutex_lock(context->mutex);
-
 	size = switch_buffer_read(context->audio_buffer, data, need);
 	switch_mutex_unlock(context->mutex);
 

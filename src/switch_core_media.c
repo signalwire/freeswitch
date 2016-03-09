@@ -2044,6 +2044,7 @@ static void check_jb_sync(switch_core_session_t *session)
 
 	if (fps) {
 		video_globals.fps = fps;
+		smh->vid_params.fps = fps;
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session),
@@ -11171,6 +11172,44 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_video_frame(switch_cor
 	return status;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_core_session_wait_for_video_input_params(switch_core_session_t *session, uint32_t timeout_ms)
+{
+	switch_media_handle_t *smh;
+	switch_codec_implementation_t read_impl = { 0 };
+
+	switch_assert(session != NULL);
+
+	if (!(smh = session->media_handle)) {
+		return SWITCH_STATUS_FALSE;
+	}
+	
+	if (!switch_channel_test_flag(session->channel, CF_VIDEO_DECODED_READ)) {
+		return SWITCH_STATUS_GENERR;;
+	}
+
+	switch_core_session_get_read_impl(session, &read_impl);
+		
+	while(switch_channel_ready(session->channel) && timeout_ms > 0) {
+		switch_frame_t *read_frame;
+		switch_status_t status;
+		
+		status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
+
+		if (!SWITCH_READ_ACCEPTABLE(status)) {
+			break;
+		}
+
+		if (switch_channel_test_flag(session->channel, CF_VIDEO_READY) && smh->vid_params.width && smh->vid_params.height && smh->vid_params.fps) {
+			return SWITCH_STATUS_SUCCESS;
+		}
+
+		timeout_ms -= (read_impl.microseconds_per_packet / 1000);
+	}
+
+	return SWITCH_STATUS_TIMEOUT;
+	
+}
+
 SWITCH_DECLARE(switch_status_t) switch_core_session_read_video_frame(switch_core_session_t *session, switch_frame_t **frame, switch_io_flag_t flags,
 																	 int stream_id)
 {
@@ -11252,7 +11291,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_video_frame(switch_core
 
 		decode_status = switch_core_codec_decode_video((*frame)->codec, *frame);
 		
-		if ((*frame)->img && switch_channel_test_flag(session->channel, CF_VIDEO_DEBUG_READ)) {
+		if ((*frame)->img) {//((*frame)->img && switch_channel_test_flag(session->channel, CF_VIDEO_DEBUG_READ)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "IMAGE %dx%d %dx%d\n", 
 							  (*frame)->img->w, (*frame)->img->h, (*frame)->img->d_w, (*frame)->img->d_h);
 		}

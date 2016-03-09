@@ -348,6 +348,7 @@ SWITCH_DECLARE(switch_bool_t) switch_core_session_in_video_thread(switch_core_se
 SWITCH_DECLARE(switch_bool_t) switch_core_media_check_dtls(switch_core_session_t *session, switch_media_type_t type);
 SWITCH_DECLARE(switch_status_t) switch_core_media_set_outgoing_bitrate(switch_core_session_t *session, switch_media_type_t type, uint32_t bitrate);
 SWITCH_DECLARE(switch_status_t) switch_core_media_reset_jb(switch_core_session_t *session, switch_media_type_t type);
+SWITCH_DECLARE(switch_status_t) switch_core_session_wait_for_video_input_params(switch_core_session_t *session, uint32_t timeout_ms);
 																
 SWITCH_END_EXTERN_C
 #endif
