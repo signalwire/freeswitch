@@ -536,6 +536,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 
 		file_flags |= SWITCH_FILE_FLAG_VIDEO;
 		switch_channel_set_flag_recursive(channel, CF_VIDEO_DECODED_READ);
+		switch_core_session_request_video_refresh(session);
 		switch_core_session_wait_for_video_input_params(session, 10000);
 		switch_core_media_get_vid_params(session, &vid_params);
 		fh->mm.vw = vid_params.width;

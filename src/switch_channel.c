@@ -3246,6 +3246,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_hangup(switch_chan
 		switch_event_t *event;
 		const char *var;
 
+
 		switch_mutex_lock(channel->profile_mutex);
 		if (channel->hold_record && !channel->hold_record->off) {
 			channel->hold_record->off = switch_time_now();

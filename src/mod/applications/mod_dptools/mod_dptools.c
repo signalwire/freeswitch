@@ -1356,6 +1356,27 @@ SWITCH_STANDARD_APP(redirect_function)
 	switch_core_session_receive_message(session, &msg);
 }
 
+SWITCH_STANDARD_APP(video_set_decode_function)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	char *txt = (char *) data;
+	int on = 0, wait = 0;
+
+	if (txt) {
+		on = !strcasecmp(txt, "on");
+		wait = !strcasecmp(txt, "wait");
+	}
+
+	if (data && (on || wait)) {
+		switch_channel_set_flag_recursive(channel, CF_VIDEO_DECODED_READ);
+		if (wait) {
+			switch_core_session_wait_for_video_input_params(session, 10000);
+		}
+	} else {
+		switch_channel_clear_flag_recursive(channel, CF_VIDEO_DECODED_READ);
+	}
+}
+
 SWITCH_STANDARD_APP(video_refresh_function)
 {
 	switch_core_session_message_t msg = { 0 };
@@ -6149,6 +6170,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 				   SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "video_refresh", "Send video refresh.", "Send video refresh.", video_refresh_function, "",
 				   SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_APP(app_interface, "video_decode", "Set video decode.", "Set video decode.", video_set_decode_function, "[[on|wait]|off]",
+				   SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "send_info", "Send info", "Send info", send_info_function, "<info>", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "jitterbuffer", "Send session jitterbuffer", "Send a jitterbuffer message to a session.", 
 				   jitterbuffer_function, "<jitterbuffer_data>", SAF_SUPPORT_NOMEDIA);

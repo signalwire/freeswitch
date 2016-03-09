@@ -628,6 +628,26 @@ static void *SWITCH_THREAD_FUNC video_thread_run(switch_thread_t *thread, void *
 
  endfor:
 
+	for(;;) {
+		AVPacket pkt = { 0 };
+		int got_packet = 0;
+		int ret = 0;
+
+		av_init_packet(&pkt);
+
+		ret = avcodec_encode_video2(eh->video_st->st->codec, &pkt, eh->video_st->frame, &got_packet);
+
+		if (ret < 0) {
+			break;
+		} else if (got_packet) {
+			switch_mutex_lock(eh->mutex);
+			ret = write_frame(eh->fc, &eh->video_st->st->codec->time_base, eh->video_st->st, &pkt);
+			switch_mutex_unlock(eh->mutex);
+			av_free_packet(&pkt);
+			if (ret < 0) break;
+		}
+	}
+
 	while(switch_queue_trypop(eh->video_queue, &pop) == SWITCH_STATUS_SUCCESS) {
 		if (!pop) break;
 		img = (switch_image_t *) pop;
@@ -1296,7 +1316,7 @@ static void *SWITCH_THREAD_FUNC file_read_thread_run(switch_thread_t *thread, vo
 		pkt.data = NULL;
 		pkt.size = 0;
 
-		if ((error = av_read_frame(context->fc, &pkt)) < 0) {
+		if (context->video_st.st && (error = av_read_frame(context->fc, &pkt)) < 0) {
 			if (error == AVERROR_EOF) {
 				eof = 1;
 				/* just make sure*/
@@ -1725,6 +1745,14 @@ static switch_status_t av_file_write(switch_file_handle_t *handle, void *data, s
 	//inuse = switch_buffer_inuse(context->audio_buffer);
 	//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "inuse: %d samples: %d bytes: %d\n", inuse, context->audio_st.frame->nb_samples, bytes);
 
+	if (context->closed) {
+		inuse = switch_buffer_inuse(context->audio_buffer);
+		if (inuse < bytes) {
+			char buf[SWITCH_RECOMMENDED_BUFFER_SIZE] = {0};
+			switch_buffer_write(context->audio_buffer, buf, bytes - inuse);
+		}
+	}
+	
 	
 	while ((inuse = switch_buffer_inuse(context->audio_buffer)) >= bytes) {
 		AVPacket pkt = { 0 };
@@ -1810,35 +1838,15 @@ static switch_status_t av_file_close(switch_file_handle_t *handle)
 	context->eh.finalize = 1;
 
 	if (context->eh.video_queue) {
-
-
-		if (switch_test_flag(handle, SWITCH_FILE_FLAG_WRITE)) {
-			switch_rgb_color_t bgcolor;
-			int x;
-			
-			switch_color_set_rgb(&bgcolor, "#000000");
-			x = (int)handle->mm.fps * 1;
-
-			if (x <= 0) x = 100;
-			
-			while(handle->mm.vw && x-- > 0) {
-				switch_image_t *blank_img = NULL;
-				if ((blank_img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, handle->mm.vw, handle->mm.vh, 1))) {
-					switch_img_fill(blank_img, 0, 0, blank_img->d_w, blank_img->d_h, &bgcolor);
-					switch_queue_push(context->eh.video_queue, blank_img);
-				}
-			}
-
-		}
 		switch_queue_push(context->eh.video_queue, NULL);
-	}
-
-	if (switch_test_flag(handle, SWITCH_FILE_FLAG_WRITE)) {
-		av_file_write(handle, NULL, NULL);
 	}
 
 	if (context->eh.video_thread) {
 		switch_thread_join(&status, context->eh.video_thread);
+	}
+
+	if (switch_test_flag(handle, SWITCH_FILE_FLAG_WRITE)) {
+		av_file_write(handle, NULL, NULL);
 	}
 
 	if (context->file_read_thread_running && context->file_read_thread) {

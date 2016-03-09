@@ -11193,14 +11193,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_wait_for_video_input_params(
 		switch_frame_t *read_frame;
 		switch_status_t status;
 		
+		if (switch_channel_test_flag(session->channel, CF_VIDEO_READY) && smh->vid_params.width && smh->vid_params.height) {
+			return SWITCH_STATUS_SUCCESS;
+		}
+
 		status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 
 		if (!SWITCH_READ_ACCEPTABLE(status)) {
-			break;
-		}
-
-		if (switch_channel_test_flag(session->channel, CF_VIDEO_READY) && smh->vid_params.width && smh->vid_params.height && smh->vid_params.fps) {
-			return SWITCH_STATUS_SUCCESS;
+			return SWITCH_STATUS_FALSE;
 		}
 
 		timeout_ms -= (read_impl.microseconds_per_packet / 1000);
