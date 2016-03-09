@@ -43,6 +43,58 @@
 #define SCALE_FLAGS SWS_BICUBIC
 #define DFT_RECORD_OFFSET 0
 
+
+#ifndef AVUTIL_TIMESTAMP_H
+#define AVUTIL_TIMESTAMP_H
+
+#define AV_TS_MAX_STRING_SIZE 32
+
+/**
+ * Fill the provided buffer with a string containing a timestamp
+ * representation.
+ *
+ * @param buf a buffer with size in bytes of at least AV_TS_MAX_STRING_SIZE
+ * @param ts the timestamp to represent
+ * @return the buffer in input
+ */
+static inline char *av_ts_make_string(char *buf, int64_t ts)
+{
+    if (ts == AV_NOPTS_VALUE) snprintf(buf, AV_TS_MAX_STRING_SIZE, "NOPTS");
+    else                      snprintf(buf, AV_TS_MAX_STRING_SIZE, "%"PRId64"", ts);
+    return buf;
+}
+
+/**
+ * Convenience macro, the return value should be used only directly in
+ * function arguments but never stand-alone.
+ */
+#define av_ts2str(ts) av_ts_make_string((char[AV_TS_MAX_STRING_SIZE]){0}, ts)
+
+/**
+ * Fill the provided buffer with a string containing a timestamp time
+ * representation.
+ *
+ * @param buf a buffer with size in bytes of at least AV_TS_MAX_STRING_SIZE
+ * @param ts the timestamp to represent
+ * @param tb the timebase of the timestamp
+ * @return the buffer in input
+ */
+static inline char *av_ts_make_time_string(char *buf, int64_t ts, AVRational *tb)
+{
+    if (ts == AV_NOPTS_VALUE) snprintf(buf, AV_TS_MAX_STRING_SIZE, "NOPTS");
+    else                      snprintf(buf, AV_TS_MAX_STRING_SIZE, "%.6g", av_q2d(*tb) * ts);
+    return buf;
+}
+
+/**
+ * Convenience macro, the return value should be used only directly in
+ * function arguments but never stand-alone.
+ */
+#define av_ts2timestr(ts, tb) av_ts_make_time_string((char[AV_TS_MAX_STRING_SIZE]){0}, ts, tb)
+
+#endif /* AVUTIL_TIMESTAMP_H */
+
+
 static switch_status_t av_file_close(switch_file_handle_t *handle);
 SWITCH_MODULE_LOAD_FUNCTION(mod_avformat_load);
 
@@ -148,13 +200,13 @@ typedef struct record_helper_s {
 
 static void log_packet(const AVFormatContext *fmt_ctx, const AVPacket *pkt)
 {
-	// AVRational *time_base = &fmt_ctx->streams[pkt->stream_index]->time_base;
+	AVRational *time_base = &fmt_ctx->streams[pkt->stream_index]->time_base;
 
-	// printf("pts:%s pts_time:%s dts:%s dts_time:%s duration:%s duration_time:%s stream_index:%d\n",
-	// 	   av_ts2str(pkt->pts), av_ts2timestr(pkt->pts, time_base),
-	// 	   av_ts2str(pkt->dts), av_ts2timestr(pkt->dts, time_base),
-	// 	   av_ts2str(pkt->duration), av_ts2timestr(pkt->duration, time_base),
-	// 	   pkt->stream_index);
+	printf("pts:%s pts_time:%s dts:%s dts_time:%s duration:%s duration_time:%s stream_index:%d\n",
+		   av_ts2str(pkt->pts), av_ts2timestr(pkt->pts, time_base),
+		   av_ts2str(pkt->dts), av_ts2timestr(pkt->dts, time_base),
+		   av_ts2str(pkt->duration), av_ts2timestr(pkt->duration, time_base),
+		   pkt->stream_index);
 }
 
 static int mod_avformat_alloc_output_context2(AVFormatContext **avctx, AVOutputFormat *oformat,
