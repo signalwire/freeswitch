@@ -138,8 +138,8 @@ SWITCH_STANDARD_API(mod_smpp_send_api)
 		switch_goto_status(SWITCH_STATUS_GENERR, done);
 	}
 	
-	switch_event_add_header_string(message, SWITCH_STACK_BOTTOM, "destination_addr", argv[1]);
-	switch_event_add_header_string(message, SWITCH_STACK_BOTTOM, "source_addr", argv[2]);
+	switch_event_add_header_string(message, SWITCH_STACK_BOTTOM, "to_user", argv[1]);
+	switch_event_add_header_string(message, SWITCH_STACK_BOTTOM, "from_user", argv[2]);
 	switch_event_set_body(message, argv[3]);
 
 	if (mod_smpp_gateway_send_message(gateway, message) != SWITCH_STATUS_SUCCESS) {
