@@ -740,6 +740,7 @@ SWITCH_DECLARE(void) CoreSession::setVariable(char *var, char *val)
 {
 	this_check_void();
 	sanity_check_noreturn;
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "CoreSession::setVariable('%s', '%s')\n", var, val);
 	switch_channel_set_variable_var_check(channel, var, val, SWITCH_FALSE);
 }
 
