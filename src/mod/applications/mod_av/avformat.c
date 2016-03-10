@@ -407,8 +407,9 @@ static switch_status_t add_stream(MediaStream *mst, AVFormatContext *fc, AVCodec
 		c->b_frame_strategy = 1;  // b_strategy=1
 		c->qcompress = 0.6; // qcomp=0.6
 		c->qmin = 10;   // qmin=10
-		c->qmax = 51;   // qmax=51
+		c->qmax = 31;   // qmax=31
 		c->max_qdiff = 4;   // qdiff=4
+		av_opt_set(c->priv_data, "crf", "18", 0);
 
 
 		if (codec_id == AV_CODEC_ID_VP8) {
