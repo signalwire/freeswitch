@@ -766,8 +766,8 @@ static switch_status_t consume_nalu(h264_codec_context_t *context, switch_frame_
 			return SWITCH_STATUS_MORE_DATA;
 		}
 
-		frame->m = 1;
-		return SWITCH_STATUS_SUCCESS;
+		frame->m = context->nalus[context->nalu_current_index].len ? 0 : 1;
+		return frame->m ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_MORE_DATA;
 	} else {
 		uint8_t nalu_hdr = *(uint8_t *)(nalu->start);
 		uint8_t nri = nalu_hdr & 0x60;
