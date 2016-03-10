@@ -359,6 +359,14 @@ static switch_status_t add_stream(MediaStream *mst, AVFormatContext *fc, AVCodec
 		if (codec_id == AV_CODEC_ID_H264) {
 			c->ticks_per_frame = 2;
 
+
+			c->coder_type = 1;  // coder = 1
+			c->flags|=CODEC_FLAG_LOOP_FILTER;   // flags=+loop
+			c->me_cmp|= 1;  // cmp=+chroma, where CHROMA = 1
+			c->me_method=ME_HEX;    // me_method=hex
+			c->me_range = 16;   // me_range=16
+			c->max_b_frames = 3;    // bf=3
+			
 			switch (mm->vprofile) {
 			case SWITCH_VIDEO_PROFILE_BASELINE:
 				av_opt_set(c->priv_data, "profile", "baseline", 0);
@@ -367,10 +375,12 @@ static switch_status_t add_stream(MediaStream *mst, AVFormatContext *fc, AVCodec
 			case SWITCH_VIDEO_PROFILE_MAIN:
 				av_opt_set(c->priv_data, "profile", "main", 0);
 				av_opt_set(c->priv_data, "level", "5", 0);
+				c->level = 5;
 				break;
 			case SWITCH_VIDEO_PROFILE_HIGH:
 				av_opt_set(c->priv_data, "profile", "high", 0);
 				av_opt_set(c->priv_data, "level", "52", 0);
+				c->level = 52;
 				break;
 			}
 			
@@ -382,12 +392,24 @@ static switch_status_t add_stream(MediaStream *mst, AVFormatContext *fc, AVCodec
 				av_opt_set(c->priv_data, "preset", "medium", 0);
 				break;
 			case SWITCH_VIDEO_ENCODE_SPEED_FAST:
+				//av_opt_set(c->priv_data, "tune", "zerolatency", 0);
 				av_opt_set(c->priv_data, "preset", "veryfast", 0);
 				break;
 			default:
 				break;
 			}
 		}
+
+		c->gop_size = 250;  // g=250
+		c->keyint_min = 25; // keyint_min=25
+		c->scenechange_threshold = 40;  // sc_threshold=40
+		c->i_quant_factor = 0.71; // i_qfactor=0.71
+		c->b_frame_strategy = 1;  // b_strategy=1
+		c->qcompress = 0.6; // qcomp=0.6
+		c->qmin = 10;   // qmin=10
+		c->qmax = 51;   // qmax=51
+		c->max_qdiff = 4;   // qdiff=4
+
 
 		if (codec_id == AV_CODEC_ID_VP8) {
 			av_set_options_string(c, "quality=realtime", "=", ":");
@@ -567,9 +589,13 @@ static void *SWITCH_THREAD_FUNC video_thread_run(switch_thread_t *thread, void *
 	switch_image_t *img = NULL, *tmp_img = NULL;
 	int d_w = eh->video_st->width, d_h = eh->video_st->height;
 	int size = 0, skip = 0, skip_freq = 0, skip_count = 0, skip_total = 0, skip_total_count = 0;
-	uint64_t delta = 0, last_ts = 0;
+	uint64_t hard_delta = 0, delta = 0, last_ts = 0;
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "video thread start\n");
+
+	if (eh->mm->fps) {
+		hard_delta = 1000 / eh->mm->fps;
+	}
 	
 	for(;;) {
 		AVPacket pkt = { 0 };
@@ -605,6 +631,7 @@ static void *SWITCH_THREAD_FUNC video_thread_run(switch_thread_t *thread, void *
 				skip_total_count = skip_total;
 				skip_count = 0;
 				skip--;
+
 				goto top;
 			}
 		} else {
@@ -634,24 +661,33 @@ static void *SWITCH_THREAD_FUNC video_thread_run(switch_thread_t *thread, void *
 			ret = av_frame_make_writable(eh->video_st->frame);
 		}
 
-		if (ret < 0) continue;
+		if (ret < 0) {
+			continue;
+		}
 
 		fill_avframe(eh->video_st->frame, img);
-		switch_core_timer_sync(eh->timer);
 		
-		if (eh->finalize && delta) {
+		if (hard_delta) {
+			delta = hard_delta;
+		}
+
+		if ((eh->finalize && delta) || hard_delta) {
 			eh->video_st->frame->pts += delta;
-		} else if (eh->video_st->frame->pts == eh->timer->samplecount) {
-			// never use the same pts, or the encoder coughs
-			eh->video_st->frame->pts++;
 		} else {
-			uint64_t delta_tmp = eh->timer->samplecount - last_ts;
-
-			if (delta_tmp > 1) {
-				delta = delta_tmp;
+			switch_core_timer_sync(eh->timer);
+		
+			if (eh->video_st->frame->pts == eh->timer->samplecount) {
+				// never use the same pts, or the encoder coughs
+				eh->video_st->frame->pts++;
+			} else {
+				uint64_t delta_tmp = eh->timer->samplecount - last_ts;
+				
+				if (delta_tmp > 10) {
+					delta = delta_tmp;
+				}
+				
+				eh->video_st->frame->pts = eh->timer->samplecount;
 			}
-
-			eh->video_st->frame->pts = eh->timer->samplecount;
 		}
 		
 		last_ts = eh->video_st->frame->pts;
@@ -1655,14 +1691,17 @@ static switch_status_t av_file_open(switch_file_handle_t *handle, const char *pa
 		handle->mm.ab = 128;
 	}
 
+	handle->mm.vb = switch_calc_bitrate(handle->mm.vw, handle->mm.vh, 1, handle->mm.fps);
+
 	if (fmt->video_codec != AV_CODEC_ID_NONE) {
 		const AVCodecDescriptor *desc;
 
-		if ((handle->stream_name && (!strcasecmp(handle->stream_name, "rtmp") || !strcasecmp(handle->stream_name, "youtube"))) || !strcasecmp(ext, "mp4")) {
+		if ((handle->stream_name && (!strcasecmp(handle->stream_name, "rtmp") || !strcasecmp(handle->stream_name, "youtube")))) {
+			
 			if (fmt->video_codec != AV_CODEC_ID_H264 ) {
 				fmt->video_codec = AV_CODEC_ID_H264; // force H264
 			}
-			
+
 			fmt->audio_codec = AV_CODEC_ID_AAC;
 			handle->samplerate = 44100;
 			handle->mm.samplerate = 44100;
@@ -1688,7 +1727,7 @@ static switch_status_t av_file_open(switch_file_handle_t *handle, const char *pa
 					handle->mm.vb = 4500;
 					break;
 				default:
-					handle->mm.vb = (handle->mm.vw * handle->mm.vh) / 175;
+					handle->mm.vb = switch_calc_bitrate(handle->mm.vw, handle->mm.vh, 1, handle->mm.fps);
 					break;
 				}
 			}
@@ -1708,6 +1747,7 @@ static switch_status_t av_file_open(switch_file_handle_t *handle, const char *pa
 		context->audio_st.sample_rate = handle->samplerate;
 
 		add_stream(&context->audio_st, context->fc, &context->audio_codec, fmt->audio_codec, &handle->mm);
+
 		if (open_audio(context->fc, context->audio_codec, &context->audio_st) != SWITCH_STATUS_SUCCESS) {
 			switch_goto_status(SWITCH_STATUS_GENERR, end);
 		}

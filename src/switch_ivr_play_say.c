@@ -492,7 +492,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 		file_flags |= SWITCH_FILE_FLAG_VIDEO;
 		switch_channel_set_flag_recursive(channel, CF_VIDEO_DECODED_READ);
 		switch_core_session_request_video_refresh(session);
-		switch_core_session_wait_for_video_input_params(session, 10000);
+		if (switch_core_session_wait_for_video_input_params(session, 10000) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Unable to establish inbound video stream\n");
+			switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
+			arg_recursion_check_stop(args);
+			return SWITCH_STATUS_GENERR;
+		}
 		switch_core_media_get_vid_params(session, &vid_params);
 		fh->mm.vw = vid_params.width;
 		fh->mm.vh = vid_params.height;
