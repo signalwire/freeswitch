@@ -5701,46 +5701,68 @@ SWIGEXPORT void SWIGSTDCALL CSharp_delete_switch_t38_options_t(void * jarg1) {
 }
 
 
-SWIGEXPORT void SWIGSTDCALL CSharp_switch_vid_params_t_width_set(void * jarg1, int jarg2) {
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_vid_params_t_width_set(void * jarg1, unsigned long jarg2) {
   switch_vid_params_s *arg1 = (switch_vid_params_s *) 0 ;
-  int arg2 ;
+  uint32_t arg2 ;
   
   arg1 = (switch_vid_params_s *)jarg1; 
-  arg2 = (int)jarg2; 
+  arg2 = (uint32_t)jarg2; 
   if (arg1) (arg1)->width = arg2;
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_switch_vid_params_t_width_get(void * jarg1) {
-  int jresult ;
+SWIGEXPORT unsigned long SWIGSTDCALL CSharp_switch_vid_params_t_width_get(void * jarg1) {
+  unsigned long jresult ;
   switch_vid_params_s *arg1 = (switch_vid_params_s *) 0 ;
-  int result;
+  uint32_t result;
   
   arg1 = (switch_vid_params_s *)jarg1; 
-  result = (int) ((arg1)->width);
-  jresult = result; 
+  result = (uint32_t) ((arg1)->width);
+  jresult = (unsigned long)result; 
   return jresult;
 }
 
 
-SWIGEXPORT void SWIGSTDCALL CSharp_switch_vid_params_t_height_set(void * jarg1, int jarg2) {
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_vid_params_t_height_set(void * jarg1, unsigned long jarg2) {
   switch_vid_params_s *arg1 = (switch_vid_params_s *) 0 ;
-  int arg2 ;
+  uint32_t arg2 ;
   
   arg1 = (switch_vid_params_s *)jarg1; 
-  arg2 = (int)jarg2; 
+  arg2 = (uint32_t)jarg2; 
   if (arg1) (arg1)->height = arg2;
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_switch_vid_params_t_height_get(void * jarg1) {
-  int jresult ;
+SWIGEXPORT unsigned long SWIGSTDCALL CSharp_switch_vid_params_t_height_get(void * jarg1) {
+  unsigned long jresult ;
   switch_vid_params_s *arg1 = (switch_vid_params_s *) 0 ;
-  int result;
+  uint32_t result;
   
   arg1 = (switch_vid_params_s *)jarg1; 
-  result = (int) ((arg1)->height);
-  jresult = result; 
+  result = (uint32_t) ((arg1)->height);
+  jresult = (unsigned long)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_vid_params_t_fps_set(void * jarg1, unsigned long jarg2) {
+  switch_vid_params_s *arg1 = (switch_vid_params_s *) 0 ;
+  uint32_t arg2 ;
+  
+  arg1 = (switch_vid_params_s *)jarg1; 
+  arg2 = (uint32_t)jarg2; 
+  if (arg1) (arg1)->fps = arg2;
+}
+
+
+SWIGEXPORT unsigned long SWIGSTDCALL CSharp_switch_vid_params_t_fps_get(void * jarg1) {
+  unsigned long jresult ;
+  switch_vid_params_s *arg1 = (switch_vid_params_s *) 0 ;
+  uint32_t result;
+  
+  arg1 = (switch_vid_params_s *)jarg1; 
+  result = (uint32_t) ((arg1)->fps);
+  jresult = (unsigned long)result; 
   return jresult;
 }
 
@@ -14204,6 +14226,20 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_file_close(void * jarg1) {
 }
 
 
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_file_command(void * jarg1, int jarg2) {
+  int jresult ;
+  switch_file_handle_t *arg1 = (switch_file_handle_t *) 0 ;
+  switch_file_command_t arg2 ;
+  switch_status_t result;
+  
+  arg1 = (switch_file_handle_t *)jarg1; 
+  arg2 = (switch_file_command_t)jarg2; 
+  result = (switch_status_t)switch_core_file_command(arg1,arg2);
+  jresult = result; 
+  return jresult;
+}
+
+
 SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_file_truncate(void * jarg1, long long jarg2) {
   int jresult ;
   switch_file_handle_t *arg1 = (switch_file_handle_t *) 0 ;
@@ -14218,13 +14254,15 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_file_truncate(void * jarg1, long l
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_file_has_video(void * jarg1) {
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_file_has_video(void * jarg1, int jarg2) {
   int jresult ;
   switch_file_handle_t *arg1 = (switch_file_handle_t *) 0 ;
+  switch_bool_t arg2 ;
   switch_bool_t result;
   
   arg1 = (switch_file_handle_t *)jarg1; 
-  result = (switch_bool_t)switch_core_file_has_video(arg1);
+  arg2 = (switch_bool_t)jarg2; 
+  result = (switch_bool_t)switch_core_file_has_video(arg1,arg2);
   jresult = result; 
   return jresult;
 }
@@ -24974,6 +25012,28 @@ SWIGEXPORT void * SWIGSTDCALL CSharp_switch_file_interface_file_get_string_get(v
 }
 
 
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_file_interface_file_command_set(void * jarg1, void * jarg2) {
+  switch_file_interface *arg1 = (switch_file_interface *) 0 ;
+  switch_status_t (*arg2)(switch_file_handle_t *,switch_file_command_t) = (switch_status_t (*)(switch_file_handle_t *,switch_file_command_t)) 0 ;
+  
+  arg1 = (switch_file_interface *)jarg1; 
+  arg2 = (switch_status_t (*)(switch_file_handle_t *,switch_file_command_t))jarg2; 
+  if (arg1) (arg1)->file_command = arg2;
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_file_interface_file_command_get(void * jarg1) {
+  void * jresult ;
+  switch_file_interface *arg1 = (switch_file_interface *) 0 ;
+  switch_status_t (*result)(switch_file_handle_t *,switch_file_command_t) = 0 ;
+  
+  arg1 = (switch_file_interface *)jarg1; 
+  result = (switch_status_t (*)(switch_file_handle_t *,switch_file_command_t)) ((arg1)->file_command);
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
 SWIGEXPORT void SWIGSTDCALL CSharp_switch_file_interface_extens_set(void * jarg1, void * jarg2) {
   switch_file_interface *arg1 = (switch_file_interface *) 0 ;
   char **arg2 = (char **) 0 ;
@@ -26526,6 +26586,28 @@ SWIGEXPORT void * SWIGSTDCALL CSharp_switch_file_handle_mm_get(void * jarg1) {
   
   arg1 = (switch_file_handle *)jarg1; 
   result = (switch_mm_t *)& ((arg1)->mm);
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_file_handle_flag_mutex_set(void * jarg1, void * jarg2) {
+  switch_file_handle *arg1 = (switch_file_handle *) 0 ;
+  switch_mutex_t *arg2 = (switch_mutex_t *) 0 ;
+  
+  arg1 = (switch_file_handle *)jarg1; 
+  arg2 = (switch_mutex_t *)jarg2; 
+  if (arg1) (arg1)->flag_mutex = arg2;
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_file_handle_flag_mutex_get(void * jarg1) {
+  void * jresult ;
+  switch_file_handle *arg1 = (switch_file_handle *) 0 ;
+  switch_mutex_t *result = 0 ;
+  
+  arg1 = (switch_file_handle *)jarg1; 
+  result = (switch_mutex_t *) ((arg1)->flag_mutex);
   jresult = (void *)result; 
   return jresult;
 }
