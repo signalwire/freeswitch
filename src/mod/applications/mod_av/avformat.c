@@ -476,6 +476,7 @@ static switch_status_t open_video(AVFormatContext *fc, AVCodec *codec, MediaStre
 	/* allocate and init a re-usable frame */
 	mst->frame = alloc_picture(c->pix_fmt, c->width, c->height);
 	switch_assert(mst->frame);
+	mst->frame->pts = 0;
 
 	// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "pix_fmt: %d\n", c->pix_fmt);
 	switch_assert(c->pix_fmt == AV_PIX_FMT_YUV420P); // always I420 for NOW
@@ -1006,8 +1007,8 @@ SWITCH_STANDARD_APP(record_av_function)
 				switch_buffer_read(buffer, audio_st.frame->data[0], bytes);
 				/* convert to destination format */
 				ret = avresample_convert(audio_st.resample_ctx,
-						(uint8_t **)audio_st.frame->data, 0, out_samples,
-						audio_st.tmp_frame->data, 0, audio_st.frame->nb_samples);
+						audio_st.tmp_frame->data, 0, out_samples,
+						(uint8_t **)audio_st.frame->data, 0, audio_st.frame->nb_samples);
 
 				if (ret < 0) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error while converting %d samples, error text: %s\n",
@@ -1856,14 +1857,13 @@ static switch_status_t av_file_write(switch_file_handle_t *handle, void *data, s
 		
 		if (context->audio_st.resample_ctx) { // need resample
 			int out_samples = avresample_get_out_samples(context->audio_st.resample_ctx, context->audio_st.frame->nb_samples);
-
 			av_frame_make_writable(context->audio_st.frame);
 			av_frame_make_writable(context->audio_st.tmp_frame);
 			switch_buffer_read(context->audio_buffer, context->audio_st.frame->data[0], bytes);
 			/* convert to destination format */
 			ret = avresample_convert(context->audio_st.resample_ctx,
-									 (uint8_t **)context->audio_st.frame->data, 0, out_samples,
-									 context->audio_st.tmp_frame->data, 0, context->audio_st.frame->nb_samples);
+									 context->audio_st.tmp_frame->data, 0, out_samples,
+									 (uint8_t **)context->audio_st.frame->data, 0, context->audio_st.frame->nb_samples);
 			
 			if (ret < 0) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error while converting %d samples, error text: %s\n",
