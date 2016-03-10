@@ -449,6 +449,7 @@ void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, 
 		
 		if (layer->banner_img && !layer->banner_patched) {
 			switch_img_fill(layer->canvas->img, layer->x_pos + layer->geometry.border, layer->y_pos + layer->geometry.border, layer->screen_w, layer->screen_h, &layer->canvas->letterbox_bgcolor);
+			switch_img_fit(&layer->banner_img, layer->screen_w, layer->screen_h, SWITCH_FIT_SIZE);
 			switch_img_patch(IMG, layer->banner_img, layer->x_pos + layer->geometry.border, layer->y_pos + (layer->screen_h - layer->banner_img->d_h) + layer->geometry.border);
 
 			if (!freeze) {

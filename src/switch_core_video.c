@@ -1061,7 +1061,7 @@ SWITCH_DECLARE(uint32_t) switch_img_txt_handle_render(switch_img_txt_handle_t *h
 		pen.y += slot->advance.y >> 6;
 	}
 
-	ret = width + slot->bitmap.width * 3;
+	ret = width + slot->bitmap.width * 5;
 
 	FT_Done_Face(face);
 
@@ -1127,6 +1127,7 @@ SWITCH_DECLARE(switch_image_t *) switch_img_write_text_img(int w, int h, switch_
     len = strlen(txt);
 
     if (len < 5) len = 5;
+
 
 	switch_img_txt_handle_create(&txthandle, font_face, fg, bg, font_size, 0, NULL);
 	switch_color_set_rgb(&bgcolor, bg);
