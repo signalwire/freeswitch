@@ -72,6 +72,7 @@ typedef struct core_video_globals_s {
 	switch_memory_pool_t *pool;
 	switch_mutex_t *mutex;
 	uint32_t fps;
+	uint32_t synced;
 } core_video_globals_t;
 
 static core_video_globals_t video_globals = { 0 };
@@ -356,11 +357,21 @@ SWITCH_DECLARE(uint32_t) switch_core_media_get_video_fps(switch_core_session_t *
 		return 0;
 	}
 	
-	fps = switch_round_to_step(smh->vid_frames / (now - smh->vid_started), 5);
-	if (fps < 15) fps = 15;
+	fps = switch_round_to_step(smh->vid_frames / (now - smh->vid_started), 5);	
 
-	smh->vid_started = switch_epoch_time_now(NULL);
-	smh->vid_frames = 1;
+	if (smh->vid_frames > 1000) {
+		smh->vid_started = switch_epoch_time_now(NULL);
+		smh->vid_frames = 1;
+	}
+
+	if (fps > 0) {
+		video_globals.fps = fps;
+	
+		if (smh->vid_params.fps != fps) {
+			switch_channel_set_variable_printf(session->channel, "video_fps", "%d", fps);
+			smh->vid_params.fps = fps;
+		}
+	}
 
 	return fps;
 }
@@ -2011,14 +2022,8 @@ static void check_jb_sync(switch_core_session_t *session)
 		}
 	}
 	
-	if (smh->vid_frames < 10) {
-		fps = 30; 
-	} else {
-		fps = switch_core_media_get_video_fps(session);
-	}
+	fps = switch_core_media_get_video_fps(session);
 	
-	if (fps < 15) return;
-
 	switch_rtp_get_video_buffer_size(v_engine->rtp_session, &min_frames, &max_frames, &cur_frames, NULL);
 
 	if (!frames) {
@@ -2042,15 +2047,6 @@ static void check_jb_sync(switch_core_session_t *session)
 		sync_video = 1;
 	}
 
-	if (fps) {
-		video_globals.fps = fps;
-
-		if (smh->vid_params.fps != fps) {
-			switch_channel_set_variable_printf(session->channel, "video_fps", "%d", fps);
-			smh->vid_params.fps = fps;
-		}
-	}
-
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session),
 					  SWITCH_LOG_DEBUG1, "%s %s \"%s\" Sync A/V JB to %dms %u VFrames FPS %u a:%s v:%s\n", 
 					  switch_core_session_get_uuid(session),
@@ -2061,6 +2057,8 @@ static void check_jb_sync(switch_core_session_t *session)
 	if (sync_audio) {
 		check_jb(session, NULL, jb_sync_msec, 0, SWITCH_TRUE);
 	}
+
+	video_globals.synced++;
 }
 
 
@@ -2182,11 +2180,16 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 		}
 
 		if (type == SWITCH_MEDIA_TYPE_VIDEO && engine->read_frame.m) {
+			
 			if (!smh->vid_started) {
 				smh->vid_started = switch_epoch_time_now(NULL);
 			}
 			smh->vid_frames++;
 
+			if ((smh->vid_frames % 15) == 0) {
+				switch_core_media_get_video_fps(session);
+			}
+			
 			if (smh->vid_frames == 1 || ((smh->vid_frames % 300) == 0)) {
 				check_jb_sync(session);
 			}
@@ -5383,6 +5386,7 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 		if (switch_channel_test_flag(channel, CF_VIDEO_READY) && !switch_test_flag(read_frame, SFF_CNG)) {
 			switch_mutex_lock(mh->file_read_mutex);
 			if (smh->video_read_fh && switch_test_flag(smh->video_read_fh, SWITCH_FILE_OPEN) && read_frame->img) {
+				smh->video_read_fh->mm.fps = smh->vid_params.fps;
 				switch_core_file_write_video(smh->video_read_fh, read_frame);
 			} 
 			switch_mutex_unlock(mh->file_read_mutex);
@@ -11201,7 +11205,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_wait_for_video_input_params(
 		switch_frame_t *read_frame;
 		switch_status_t status;
 		
-		if (switch_channel_test_flag(session->channel, CF_VIDEO_READY) && smh->vid_params.width && smh->vid_params.height && smh->vid_params.fps) {
+		if (video_globals.synced && 
+			switch_channel_test_flag(session->channel, CF_VIDEO_READY) && smh->vid_params.width && smh->vid_params.height && smh->vid_params.fps) {
 			return SWITCH_STATUS_SUCCESS;
 		}
 

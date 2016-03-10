@@ -593,16 +593,16 @@ static void *SWITCH_THREAD_FUNC video_thread_run(switch_thread_t *thread, void *
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "video thread start\n");
 
-	if (eh->mm->fps) {
-		hard_delta = 1000 / eh->mm->fps;
-	}
-	
 	for(;;) {
 		AVPacket pkt = { 0 };
 		int got_packet;
 		int ret = -1;
 
 	top:
+
+		if (eh->mm->fps) {
+			hard_delta = 1000 / eh->mm->fps;
+		}
 
 		if (switch_queue_pop(eh->video_queue, &pop) == SWITCH_STATUS_SUCCESS) {
             switch_img_free(&img);
