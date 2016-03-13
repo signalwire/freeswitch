@@ -393,8 +393,6 @@ SWITCH_DECLARE(void) switch_img_patch_rect(switch_image_t *IMG, int X, int Y, sw
 
 SWITCH_DECLARE(void) switch_img_copy(switch_image_t *img, switch_image_t **new_img)
 {
-	int i = 0;
-
 	switch_assert(img);
 	switch_assert(new_img);
 
@@ -413,31 +411,17 @@ SWITCH_DECLARE(void) switch_img_copy(switch_image_t *img, switch_image_t **new_i
 	switch_assert(*new_img);
 
 	if (img->fmt == SWITCH_IMG_FMT_I420) {
-		for (i = 0; i < (*new_img)->h; i++) {
-			memcpy((*new_img)->planes[SWITCH_PLANE_Y] + (*new_img)->stride[SWITCH_PLANE_Y] * i, img->planes[SWITCH_PLANE_Y] + img->stride[SWITCH_PLANE_Y] * i, img->d_w);
-		}
-
-		for (i = 0; i < (*new_img)->h / 2; i++) {
-			memcpy((*new_img)->planes[SWITCH_PLANE_U] + (*new_img)->stride[SWITCH_PLANE_U] * i, img->planes[SWITCH_PLANE_U] + img->stride[SWITCH_PLANE_U] * i, img->d_w / 2);
-			memcpy((*new_img)->planes[SWITCH_PLANE_V] + (*new_img)->stride[SWITCH_PLANE_V] * i, img->planes[SWITCH_PLANE_V] + img->stride[SWITCH_PLANE_V] * i, img->d_w / 2);
-		}
+		I420Copy(img->planes[SWITCH_PLANE_Y], img->stride[SWITCH_PLANE_Y],
+				 img->planes[SWITCH_PLANE_U], img->stride[SWITCH_PLANE_U],
+				 img->planes[SWITCH_PLANE_V], img->stride[SWITCH_PLANE_V],
+				 (*new_img)->planes[SWITCH_PLANE_Y], (*new_img)->stride[SWITCH_PLANE_Y],
+				 (*new_img)->planes[SWITCH_PLANE_U], (*new_img)->stride[SWITCH_PLANE_U],
+				 (*new_img)->planes[SWITCH_PLANE_V], (*new_img)->stride[SWITCH_PLANE_V],
+				 img->d_w, img->d_h);
 	} else if (img->fmt == SWITCH_IMG_FMT_ARGB) {
-		if (img->stride[SWITCH_PLANE_PACKED] == img->d_w * 4 &&
-			(*new_img)->stride[SWITCH_PLANE_PACKED] == (*new_img)->d_w * 4) { // fast copy
-			memcpy((*new_img)->planes[SWITCH_PLANE_PACKED], img->planes[SWITCH_PLANE_PACKED], img->d_w * img->d_h * 4);
-		} else if (img->stride[SWITCH_PLANE_PACKED] > img->d_w * 4) {
-			uint8_t *dst = (*new_img)->planes[SWITCH_PLANE_PACKED];
-			uint8_t *src = img->planes[SWITCH_PLANE_PACKED];
-			int i;
-
-			for (i = 0; i < img->d_h; i++) {
-				memcpy(dst, src, img->d_w * 4);
-				dst += (*new_img)->stride[SWITCH_PLANE_PACKED];
-				src += img->stride[SWITCH_PLANE_PACKED];
-			}
-		} else { //should not happen
-			abort();
-		}
+		ARGBCopy(img->planes[SWITCH_PLANE_PACKED], img->stride[SWITCH_PLANE_PACKED],
+				 (*new_img)->planes[SWITCH_PLANE_PACKED], (*new_img)->stride[SWITCH_PLANE_PACKED],
+				 img->d_w, img->d_h);
 	}
 
 }
