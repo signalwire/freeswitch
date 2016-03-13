@@ -1336,6 +1336,24 @@ Requires:        %{name} = %{version}-%{release}
 Provides XML-RPC interface for the FreeSWITCH Open Source telephone platform.
 
 ######################################################################################################################
+#			FreeSWITCH ESL language modules
+######################################################################################################################
+
+%package	-n perl-ESL
+Summary:	The Perl ESL module allows for native interaction with FreeSWITCH over the event socket interface.
+Group:		System Environment/Libraries
+
+%description	-n perl-ESL
+The Perl ESL module allows for native interaction with FreeSWITCH over the event socket interface.
+
+%package	-n python-ESL
+Summary:	The Python ESL module allows for native interaction with FreeSWITCH over the event socket interface.
+Group:		System Environment/Libraries
+
+%description	-n python-ESL
+The Python ESL module allows for native interaction with FreeSWITCH over the event socket interface.
+
+######################################################################################################################
 #				FreeSWITCH basic config module
 ######################################################################################################################
 
@@ -1646,6 +1664,7 @@ unset MODULES
 
 cd libs/esl
 %{__make} pymod
+%{__make} perlmod
 
 
 ######################################################################################################################
@@ -1665,6 +1684,7 @@ cd libs/esl
 #install the esl stuff
 cd libs/esl
 %{__make} DESTDIR=%{buildroot} pymod-install
+%{__make} DESTDIR=%{buildroot} perlmod-install
 
 %if %{build_py26_esl}
 #install esl for python 26
@@ -2378,9 +2398,6 @@ fi
 
 %files python
 %{MODINSTDIR}/mod_python*.so*
-%attr(0644, root, bin) /usr/lib*/python*/site-packages/freeswitch.py*
-%attr(0755, root, bin) /usr/lib*/python*/site-packages/_ESL.so*
-%attr(0755, root, bin) /usr/lib*/python*/site-packages/ESL.py*
 %dir %attr(0750, freeswitch, daemon) %{sysconfdir}/autoload_configs
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/python.conf.xml
 
@@ -2517,11 +2534,31 @@ fi
 %{MODINSTDIR}/mod_xml_curl.so*
 
 ######################################################################################################################
+#			FreeSWITCH ESL language modules
+######################################################################################################################
+
+%files	-n perl-ESL
+%defattr(644,root,root,755)
+%{perl_archlib}/ESL.pm
+%{perl_archlib}/ESL.so
+%{perl_archlib}/ESL.la
+%dir %{perl_archlib}/ESL
+%{perl_archlib}/ESL/Dispatch.pm
+%{perl_archlib}/ESL/IVR.pm
+
+%files	-n python-ESL
+%attr(0644, root, bin) /usr/lib*/python*/site-packages/freeswitch.py*
+%attr(0755, root, bin) /usr/lib*/python*/site-packages/_ESL.so*
+%attr(0755, root, bin) /usr/lib*/python*/site-packages/ESL.py*
+
+######################################################################################################################
 #
 #						Changelog
 #
 ######################################################################################################################
 %changelog
+* Sun Mar 13 2016 - Matthew Vale
+- add perl and python ESL language module packages
 * Thu Jul 09 2015 - Artur Zaprzała
 - add systemd service file for CentOS 7
 * Thu Jun 25 2015 - s.safarov@gmail.com
