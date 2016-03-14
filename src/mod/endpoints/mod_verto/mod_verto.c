@@ -1113,6 +1113,7 @@ static void attach_jsock(jsock_t *jsock)
 			switch_core_hash_delete(globals.jsock_hash, jsock->uuid_str);
 			ws_write_json(jp, &msg, SWITCH_TRUE);
 			cJSON_Delete(msg);
+			jp->nodelete = 1;
 			jp->drop = 1;
 		}
 	}
@@ -1126,6 +1127,10 @@ static void attach_jsock(jsock_t *jsock)
 
 static void detach_jsock(jsock_t *jsock)
 {
+	if (jsock->nodelete) {
+		return;
+	}
+
 	switch_mutex_lock(globals.jsock_mutex);
 	switch_core_hash_delete(globals.jsock_hash, jsock->uuid_str);
 	switch_mutex_unlock(globals.jsock_mutex);
@@ -3798,14 +3803,16 @@ static switch_bool_t verto__broadcast_func(const char *method, cJSON *params, js
 	if (jsock->profile->mcast_pub.sock != ws_sock_invalid) {
 		if ((json_text = cJSON_PrintUnformatted(params))) {
 
-			if ( mcast_socket_send(&jsock->profile->mcast_pub, json_text, strlen(json_text) + 1) < 0 ) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "multicast socket send error!\n");
+			if (mcast_socket_send(&jsock->profile->mcast_pub, json_text, strlen(json_text) + 1) <= 0) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "multicast socket send error! %s\n", strerror(errno));
+				r = SWITCH_FALSE;
+				cJSON_AddItemToObject(*response, "message", cJSON_CreateString("MCAST Data Send failure!"));
+			} else {
+				r = SWITCH_TRUE;
+				cJSON_AddItemToObject(*response, "message", cJSON_CreateString("MCAST Data Sent"));
 			}
-
 			free(json_text);
 			json_text = NULL;
-			r = SWITCH_TRUE;
-			cJSON_AddItemToObject(*response, "message", cJSON_CreateString("MCAST Data Sent"));
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "JSON ERROR!\n");
 		}
@@ -4480,6 +4487,10 @@ static switch_status_t parse_config(const char *cf)
 			add_profile(profile);
 
 			profile->local_network = "localnet.auto";
+
+			profile->mcast_sub.sock = ws_sock_invalid;
+			profile->mcast_pub.sock = ws_sock_invalid;
+
 
 			for (param = switch_xml_child(xprofile, "param"); param; param = param->next) {
 				char *var = NULL;

@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2016, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -444,6 +444,8 @@ struct cc_queue {
 	uint32_t max_wait_time;
 	uint32_t max_wait_time_with_no_agent;
 	uint32_t max_wait_time_with_no_agent_time_reached;
+	uint32_t calls_answered;
+	uint32_t calls_abandoned;
 
 	switch_mutex_t *mutex;
 
@@ -560,12 +562,15 @@ cc_queue_t *queue_set_config(cc_queue_t *queue)
 
 static int cc_execute_sql_affected_rows(char *sql) {
 	switch_cache_db_handle_t *dbh = NULL;
+	int res = 0;
 	if (!(dbh = cc_get_db_handle())) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB\n");
 		return -1;
 	}
 	switch_cache_db_execute_sql(dbh, sql, NULL);
-	return switch_cache_db_affected_rows(dbh);
+	res = switch_cache_db_affected_rows(dbh);
+	switch_cache_db_release_db_handle(&dbh);
+	return res;
 }
 
 char *cc_execute_sql2str(cc_queue_t *queue, switch_mutex_t *mutex, char *sql, char *resbuf, size_t len)
@@ -719,6 +724,8 @@ static cc_queue_t *load_queue(const char *queue_name)
 
 		queue->last_agent_exist = 0;
 		queue->last_agent_exist_check = 0;
+		queue->calls_answered = 0;
+		queue->calls_abandoned = 0;
 
 		switch_mutex_init(&queue->mutex, SWITCH_MUTEX_NESTED, queue->pool);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Added queue %s\n", queue->name);
@@ -2675,6 +2682,38 @@ SWITCH_STANDARD_APP(callcenter_function)
 		cc_base_score_int += ((long) local_epoch_time_now(NULL) - atol(start_epoch));
 	}
 
+	/* for xml_cdr needs */
+	switch_channel_set_variable_printf(member_channel, "cc_queue_joined_epoch", "%" SWITCH_TIME_T_FMT, local_epoch_time_now(NULL));
+	switch_channel_set_variable(member_channel, "cc_queue", queue_name);
+
+	/* We have a previous abandoned user, let's try to recover his place */
+	if (abandoned_epoch > 0) {
+		char res[256];
+
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_DEBUG, "Member %s <%s> restoring it previous position in queue %s\n", switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_name")), switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_number")), queue_name);
+
+		/* Update abandoned member */
+		sql = switch_mprintf("UPDATE members SET session_uuid = '%q', state = '%q', rejoined_epoch = '%" SWITCH_TIME_T_FMT "' WHERE uuid = '%q' AND state = '%q'",
+				member_session_uuid, cc_member_state2str(CC_MEMBER_STATE_WAITING), local_epoch_time_now(NULL), member_uuid, cc_member_state2str(CC_MEMBER_STATE_ABANDONED));
+		cc_execute_sql(queue, sql, NULL);
+		switch_safe_free(sql);
+
+		/* Confirm we took that member in */
+		sql = switch_mprintf("SELECT abandoned_epoch FROM members WHERE uuid = '%q' AND session_uuid = '%q' AND state = '%q' AND queue = '%q'", member_uuid, member_session_uuid, cc_member_state2str(CC_MEMBER_STATE_WAITING), queue_name);
+		cc_execute_sql2str(NULL, NULL, sql, res, sizeof(res));
+		switch_safe_free(sql);
+		abandoned_epoch = atol(res);
+
+		if (abandoned_epoch == 0) {
+			/* Failed to get the member !!! */
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_ERROR, "Member %s <%s> restoring action failed in queue %s, joining again\n", switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_name")), switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_number")), queue_name);
+			//queue_rwunlock(queue);
+		} else {
+
+		}
+
+	}
+
 	if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CALLCENTER_EVENT) == SWITCH_STATUS_SUCCESS) {
 		switch_channel_event_set_data(member_channel, event);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Queue", queue_name);
@@ -2685,9 +2724,7 @@ SWITCH_STANDARD_APP(callcenter_function)
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Member-CID-Number", switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_number")));
 		switch_event_fire(&event);
 	}
-	/* for xml_cdr needs */
-	switch_channel_set_variable_printf(member_channel, "cc_queue_joined_epoch", "%" SWITCH_TIME_T_FMT, local_epoch_time_now(NULL));
-	switch_channel_set_variable(member_channel, "cc_queue", queue_name);
+
 
 	if (abandoned_epoch == 0) {
 		/* Add the caller to the member queue */
@@ -2709,30 +2746,6 @@ SWITCH_STANDARD_APP(callcenter_function)
 				cc_member_state2str(CC_MEMBER_STATE_WAITING));
 		cc_execute_sql(queue, sql, NULL);
 		switch_safe_free(sql);
-	} else {
-		char res[256];
-
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_DEBUG, "Member %s <%s> restoring it previous position in queue %s\n", switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_name")), switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_number")), queue_name);
-
-		/* Update abandoned member */
-		sql = switch_mprintf("UPDATE members SET session_uuid = '%q', state = '%q', rejoined_epoch = '%" SWITCH_TIME_T_FMT "' WHERE uuid = '%q' AND state = '%q'",
-				member_session_uuid, cc_member_state2str(CC_MEMBER_STATE_WAITING), local_epoch_time_now(NULL), member_uuid, cc_member_state2str(CC_MEMBER_STATE_ABANDONED)); 
-		cc_execute_sql(queue, sql, NULL);
-		switch_safe_free(sql);
-
-		/* Confirm we took that member in */
-		sql = switch_mprintf("SELECT abandoned_epoch FROM members WHERE uuid = '%q' AND session_uuid = '%q' AND state = '%q' AND queue = '%q'", member_uuid, member_session_uuid, cc_member_state2str(CC_MEMBER_STATE_WAITING), queue_name);
-		cc_execute_sql2str(NULL, NULL, sql, res, sizeof(res));
-		switch_safe_free(sql);
-
-		if (atol(res) == 0) {
-			/* Failed to get the member !!! */
-			/* TODO Loop back to just create a uuid and add the member as a new member */
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_ERROR, "Member %s <%s> restoring action failed in queue %s, exiting\n", switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_name")), switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_number")), queue_name);
-			queue_rwunlock(queue);
-			goto end;
-		}
-
 	}
 
 	/* Send Event with queue count */
@@ -2868,6 +2881,7 @@ SWITCH_STANDARD_APP(callcenter_function)
 						  switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_name")),
 						  switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_number")),
 						  queue_name, cc_member_cancel_reason2str(h->member_cancel_reason));
+		queue->calls_abandoned++;
 
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_DEBUG, "Member %s <%s> is answered by an agent in queue %s\n", switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_name")), switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_number")), queue_name);
@@ -2880,6 +2894,7 @@ SWITCH_STANDARD_APP(callcenter_function)
 
 		/* Update some channel variables for xml_cdr needs */
 		switch_channel_set_variable_printf(member_channel, "cc_cause", "%s", "answered");
+		queue->calls_answered++;
 
 	}
 
@@ -3297,7 +3312,12 @@ SWITCH_STANDARD_API(cc_config_api_function)
 			/* queue list */
 			if (argc-initial_argc < 1) {
 				switch_hash_index_t *hi;
-				stream->write_function(stream, "%s", "name|strategy|moh_sound|time_base_score|tier_rules_apply|tier_rule_wait_second|tier_rule_wait_multiply_level|tier_rule_no_agent_no_wait|discard_abandoned_after|abandoned_resume_allowed|max_wait_time|max_wait_time_with_no_agent|max_wait_time_with_no_agent_time_reached|record_template\n");
+				stream->write_function(stream, "%s",
+				                       "name|strategy|moh_sound|time_base_score|tier_rules_apply|"\
+				                       "tier_rule_wait_second|tier_rule_wait_multiply_level|"\
+				                       "tier_rule_no_agent_no_wait|discard_abandoned_after|"\
+				                       "abandoned_resume_allowed|max_wait_time|max_wait_time_with_no_agent|"\
+				                       "max_wait_time_with_no_agent_time_reached|record_template|calls_answered|calls_abandoned\n");
 				switch_mutex_lock(globals.mutex);
 				for (hi = switch_core_hash_first(globals.queue_hash); hi; hi = switch_core_hash_next(&hi)) {
 					void *val = NULL;
@@ -3306,7 +3326,23 @@ SWITCH_STANDARD_API(cc_config_api_function)
 					cc_queue_t *queue;
 					switch_core_hash_this(hi, &key, &keylen, &val);
 					queue = (cc_queue_t *) val;
-					stream->write_function(stream, "%s|%s|%s|%s|%s|%d|%s|%s|%d|%s|%d|%d|%d|%s\n", queue->name, queue->strategy, queue->moh, queue->time_base_score, (queue->tier_rules_apply?"true":"false"), queue->tier_rule_wait_second, (queue->tier_rule_wait_multiply_level?"true":"false"), (queue->tier_rule_no_agent_no_wait?"true":"false"), queue->discard_abandoned_after, (queue->abandoned_resume_allowed?"true":"false"), queue->max_wait_time, queue->max_wait_time_with_no_agent, queue->max_wait_time_with_no_agent_time_reached, queue->record_template);
+					stream->write_function(stream, "%s|%s|%s|%s|%s|%d|%s|%s|%d|%s|%d|%d|%d|%s|%d|%d\n",
+					                       queue->name,
+					                       queue->strategy,
+					                       queue->moh,
+					                       queue->time_base_score,
+					                       (queue->tier_rules_apply?"true":"false"),
+					                       queue->tier_rule_wait_second,
+					                       (queue->tier_rule_wait_multiply_level?"true":"false"),
+					                       (queue->tier_rule_no_agent_no_wait?"true":"false"),
+					                       queue->discard_abandoned_after,
+					                       (queue->abandoned_resume_allowed?"true":"false"),
+					                       queue->max_wait_time,
+					                       queue->max_wait_time_with_no_agent,
+					                       queue->max_wait_time_with_no_agent_time_reached,
+					                       queue->record_template,
+					                       queue->calls_answered,
+					                       queue->calls_abandoned);
 					queue = NULL;
 				}
 				switch_mutex_unlock(globals.mutex);

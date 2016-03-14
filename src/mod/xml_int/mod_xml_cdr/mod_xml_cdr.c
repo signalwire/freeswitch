@@ -26,6 +26,7 @@
  * Brian West <brian@freeswitch.org>
  * Bret McDanel <trixter AT 0xdecafbad.com>
  * Justin Cassidy <xachenant@hotmail.com>
+ * Emmanuel Schmidbauer <eschmidbauer@gmail.com>
  *
  * mod_xml_cdr.c -- XML CDR Module to files or curl
  *
@@ -200,6 +201,8 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 	int is_b;
 	const char *a_prefix = "";
 	char url_joiner = '?';
+	int prefix_a;
+	const char *prefix_a_var = NULL;
 
 	if (globals.shutdown) {
 		return SWITCH_STATUS_SUCCESS;
@@ -212,7 +215,14 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 			return SWITCH_STATUS_SUCCESS;
 		}
 	}
-	if (!is_b && globals.prefix_a)
+
+	// channel variable can over-ride global setting "prefix-a-leg"
+	if ((prefix_a_var = switch_channel_get_variable(channel, "prefix-a-leg"))) {
+		prefix_a = switch_true(prefix_a_var);
+	} else {
+		prefix_a = globals.prefix_a;
+	}
+	if (!is_b && prefix_a)
 		a_prefix = "a_";
 
 	if (switch_ivr_generate_xml_cdr(session, &cdr) != SWITCH_STATUS_SUCCESS) {

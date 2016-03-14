@@ -25,6 +25,8 @@
  * 
  * Anthony Minessale II <anthm@freeswitch.org>
  * Brian K. West <brian@freeswitch.org>
+ * Dragos Oancea <dragos.oancea@athonet.com>
+ * Federico Favaro <federico.favaro@athonet.com>
  *
  * The amr codec itself is not distributed with this module.
  *
@@ -106,112 +108,90 @@ struct amr_codec_settings {
 	switch_byte_t ptime;
 	switch_byte_t channels;
 	switch_byte_t flags;
+	switch_byte_t enc_modes;
+	switch_byte_t enc_mode;
+
 };
 typedef struct amr_codec_settings amr_codec_settings_t;
-
-static amr_codec_settings_t default_codec_settings = {
-	/*.dtx_mode */ AMR_DTX_ENABLED,
-	/*.change_period */ 0,
-	/*.max_ptime */ 0,
-	/*.ptime */ 0,
-	/*.channels */ 0,
-	/*.flags */ 0,
-};
-
 
 struct amr_context {
 	void *encoder_state;
 	void *decoder_state;
 	switch_byte_t enc_modes;
 	switch_byte_t enc_mode;
+	amr_codec_settings_t codec_settings;
+	switch_byte_t flags;
+	int dtx_mode;
 };
 
 #define AMR_DEFAULT_BITRATE AMR_BITRATE_1220
 
 static struct {
 	switch_byte_t default_bitrate;
+	int debug;
 } globals;
 
-static switch_status_t switch_amr_fmtp_parse(const char *fmtp, switch_codec_fmtp_t *codec_fmtp)
+static const int switch_amr_frame_sizes[] = {12,13,15,17,19,20,26,31,5,0};
+
+#define AMR_OUT_MAX_SIZE 32
+
+static switch_bool_t switch_amr_unpack_oa(unsigned char *buf, uint8_t *tmp, int encoded_data_len)
 {
-	if (codec_fmtp) {
-		amr_codec_settings_t *codec_settings = NULL;
-		if (codec_fmtp->private_info) {
-			codec_settings = codec_fmtp->private_info;
-			memcpy(codec_settings, &default_codec_settings, sizeof(*codec_settings));
-		}
+	uint8_t *tocs;
+	int index;
+	int framesz;
 
-		if (fmtp) {
-			int x, argc;
-			char *argv[10];
-			char *fmtp_dup = strdup(fmtp);
-
-			switch_assert(fmtp_dup);
-
-			argc = switch_separate_string((char *) fmtp_dup, ';', argv, (sizeof(argv) / sizeof(argv[0])));
-			for (x = 0; x < argc; x++) {
-				char *data = argv[x];
-				char *arg;
-				switch_assert(data);
-				while (*data == ' ') {
-					data++;
-				}
-				if ((arg = strchr(data, '='))) {
-					*arg++ = '\0';
-					/*
-					   if (!strcasecmp(data, "bitrate")) {
-					   bit_rate = atoi(arg);
-					   }
-					 */
-					if (codec_settings) {
-						if (!strcasecmp(data, "octet-align")) {
-							if (atoi(arg)) {
-								switch_set_flag(codec_settings, AMR_OPT_OCTET_ALIGN);
-							}
-						} else if (!strcasecmp(data, "mode-change-neighbor")) {
-							if (atoi(arg)) {
-								switch_set_flag(codec_settings, AMR_OPT_MODE_CHANGE_NEIGHBOR);
-							}
-						} else if (!strcasecmp(data, "crc")) {
-							if (atoi(arg)) {
-								switch_set_flag(codec_settings, AMR_OPT_CRC);
-							}
-						} else if (!strcasecmp(data, "robust-sorting")) {
-							if (atoi(arg)) {
-								switch_set_flag(codec_settings, AMR_OPT_ROBUST_SORTING);
-							}
-						} else if (!strcasecmp(data, "interveaving")) {
-							if (atoi(arg)) {
-								switch_set_flag(codec_settings, AMR_OPT_INTERLEAVING);
-							}
-						} else if (!strcasecmp(data, "mode-change-period")) {
-							codec_settings->change_period = atoi(arg);
-						} else if (!strcasecmp(data, "ptime")) {
-							codec_settings->ptime = (switch_byte_t) atoi(arg);
-						} else if (!strcasecmp(data, "channels")) {
-							codec_settings->channels = (switch_byte_t) atoi(arg);
-						} else if (!strcasecmp(data, "maxptime")) {
-							codec_settings->max_ptime = (switch_byte_t) atoi(arg);
-						} else if (!strcasecmp(data, "mode-set")) {
-							int y, m_argc;
-							char *m_argv[7];
-							m_argc = switch_separate_string(arg, ',', m_argv, (sizeof(m_argv) / sizeof(m_argv[0])));
-							for (y = 0; y < m_argc; y++) {
-								codec_settings->enc_modes |= (1 << atoi(m_argv[y]));
-							}
-						} else if (!strcasecmp(data, "dtx")) {
-							codec_settings->dtx_mode = (atoi(arg)) ? AMR_DTX_ENABLED : AMR_DTX_DISABLED;
-						}
-					}
-
-				}
-			}
-			free(fmtp_dup);
-		}
-		//codec_fmtp->bits_per_second = bit_rate;
-		return SWITCH_STATUS_SUCCESS;
+	buf++; /*CMR skip*/
+	tocs = buf;
+	index = ((tocs[0]>>3) & 0xf);
+	buf++; /*point to voice payload*/
+	if (index > 9) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "AMR decoder (OA): Bad AMRWB TOC, index = %i", index);
+		return SWITCH_FALSE;
 	}
-	return SWITCH_STATUS_FALSE;
+	framesz = switch_amr_frame_sizes[index];
+	if (framesz > encoded_data_len - 1) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "AMR decoder (OA): Truncated AMR frame\n");
+		return SWITCH_FALSE;
+	}
+	tmp[0] = tocs[0];
+	memcpy(&tmp[1], buf, framesz);
+
+	return SWITCH_TRUE;
+}
+ 
+static switch_bool_t switch_amr_info(unsigned char *encoded_buf, int encoded_data_len, int payload_format, char *print_text) 
+{
+	uint8_t *tocs;
+	int framesz, index, not_last_frame, q, ft;
+
+	if (!encoded_buf) {
+		return SWITCH_FALSE;
+	}
+	
+	/* payload format can be OA (octed-aligned) or BE (bandwidth efficient)*/
+
+	if (payload_format) {
+		/* OA */
+		encoded_buf++;/*CMR skip*/
+		tocs = encoded_buf; 
+		index = (tocs[0] >> 3) & 0x0f;
+		framesz = switch_amr_frame_sizes[index];
+		not_last_frame = (tocs[0] >> 7) & 1; 
+		q = (tocs[0] >> 2) & 1; 
+		ft = tocs[0] >> 3 ;
+		ft &= ~(1 << 5); /* Frame Type*/
+	} else {
+		/* BE mode not supported yet */
+		return SWITCH_FALSE;
+	}
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s (%s): FT: [0x%x] Q: [0x%x] Frame flag: [%d]\n", 
+													print_text, payload_format ? "OA":"BE", ft, q, not_last_frame);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s (%s): AMR encoded voice payload sz: [%d] : | encoded_data_len: [%d]\n", 
+													print_text, payload_format ? "OA":"BE", framesz, encoded_data_len);
+
+	return SWITCH_TRUE;
 }
 
 #endif
@@ -228,7 +208,7 @@ static switch_status_t switch_amr_init(switch_codec_t *codec, switch_codec_flag_
 
 	struct amr_context *context = NULL;
 	switch_codec_fmtp_t codec_fmtp;
-	amr_codec_settings_t amr_codec_settings;
+	amr_codec_settings_t amr_codec_settings = { 0 };
 	int encoding, decoding;
 	int x, i, argc;
 	char *argv[10];
@@ -243,7 +223,57 @@ static switch_status_t switch_amr_init(switch_codec_t *codec, switch_codec_flag_
 
 		memset(&codec_fmtp, '\0', sizeof(struct switch_codec_fmtp));
 		codec_fmtp.private_info = &amr_codec_settings;
-		switch_amr_fmtp_parse(codec->fmtp_in, &codec_fmtp);
+		context->codec_settings = amr_codec_settings;
+
+		if (codec->fmtp_in) {
+			argc = switch_separate_string(codec->fmtp_in, ';', argv, (sizeof(argv) / sizeof(argv[0])));
+			for (x = 0; x < argc; x++) {
+				char *data = argv[x];
+				char *arg;
+				while (*data && *data == ' ') {
+					data++;
+				}
+				if ((arg = strchr(data, '='))) {
+					*arg++ = '\0';
+					if (!strcasecmp(data, "octet-align")) {
+						if (atoi(arg)) {
+							switch_set_flag(context, AMR_OPT_OCTET_ALIGN);
+						}
+					} else if (!strcasecmp(data, "mode-change-neighbor")) {
+						if (atoi(arg)) {
+							switch_set_flag(context, AMR_OPT_MODE_CHANGE_NEIGHBOR);
+						}
+					} else if (!strcasecmp(data, "crc")) {
+						if (atoi(arg)) {
+							switch_set_flag(context, AMR_OPT_CRC);
+						}
+					} else if (!strcasecmp(data, "robust-sorting")) {
+						if (atoi(arg)) {
+							switch_set_flag(context, AMR_OPT_ROBUST_SORTING);
+						}
+					} else if (!strcasecmp(data, "interleaving")) {
+						if (atoi(arg)) {
+							switch_set_flag(context, AMR_OPT_INTERLEAVING);
+						}
+					} else if (!strcasecmp(data, "mode-change-period")) {
+						context->codec_settings.change_period = atoi(arg);
+					} else if (!strcasecmp(data, "ptime")) {
+						context->codec_settings.ptime = (switch_byte_t) atoi(arg);
+					} else if (!strcasecmp(data, "channels")) {
+						context->codec_settings.channels = (switch_byte_t) atoi(arg);
+					} else if (!strcasecmp(data, "maxptime")) {
+						context->codec_settings.max_ptime = (switch_byte_t) atoi(arg);
+					} else if (!strcasecmp(data, "mode-set")) {
+						int y, m_argc;
+						char *m_argv[8];
+						m_argc = switch_separate_string(arg, ',', m_argv, (sizeof(m_argv) / sizeof(m_argv[0])));
+						for (y = 0; y < m_argc; y++) {
+							context->enc_modes |= (1 << atoi(m_argv[y]));
+						}
+					}
+				}
+			}
+		}
 
 		if (context->enc_modes) {
 			for (i = 7; i > -1; i++) {
@@ -309,12 +339,32 @@ static switch_status_t switch_amr_encode(switch_codec_t *codec,
 	return SWITCH_STATUS_FALSE;
 #else
 	struct amr_context *context = codec->private_info;
+	int n;
+	unsigned char *shift_buf = encoded_data;
 
 	if (!context) {
 		return SWITCH_STATUS_FALSE;
 	}
 
-	*encoded_data_len = Encoder_Interface_Encode(context->encoder_state, context->enc_mode, (int16_t *) decoded_data, (switch_byte_t *) encoded_data, 0);
+	n = Encoder_Interface_Encode(context->encoder_state, context->enc_mode, (int16_t *) decoded_data, (switch_byte_t *) encoded_data + 1, 0);
+	if (n < 0) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "AMR encoder: Encoder_Interface_Encode() ERROR!\n");
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (switch_test_flag(context, AMR_OPT_OCTET_ALIGN)) {
+		*(switch_byte_t *) encoded_data = 0xf0; /*CMR*/
+		*encoded_data_len = n + 1;
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "AMR encoder: BE mode not supported!\n");
+		return SWITCH_STATUS_FALSE;
+	}
+
+#ifndef AMR_PASSTHROUGH
+	if (globals.debug) {
+			switch_amr_info(shift_buf, *encoded_data_len, switch_test_flag(context, AMR_OPT_OCTET_ALIGN) ? 1 : 0, "AMR encoder");
+	}
+#endif
 
 	return SWITCH_STATUS_SUCCESS;
 #endif
@@ -332,23 +382,64 @@ static switch_status_t switch_amr_decode(switch_codec_t *codec,
 	return SWITCH_STATUS_FALSE;
 #else
 	struct amr_context *context = codec->private_info;
+	unsigned char *buf = encoded_data;
+	uint8_t tmp[AMR_OUT_MAX_SIZE]; 
 
 	if (!context) {
 		return SWITCH_STATUS_FALSE;
 	}
 
-	Decoder_Interface_Decode(context->decoder_state, (unsigned char *) encoded_data, (int16_t *) decoded_data, 0);
+#ifndef AMR_PASSTHROUGH
+	if (globals.debug) {
+			switch_amr_info(buf, encoded_data_len, switch_test_flag(context, AMR_OPT_OCTET_ALIGN) ? 1 : 0, "AMR decoder");
+	}
+#endif
+	if (switch_test_flag(context, AMR_OPT_OCTET_ALIGN)) { 
+		/*Octed Aligned*/
+		if (!switch_amr_unpack_oa(buf, tmp, encoded_data_len)) {
+			return SWITCH_STATUS_FALSE;
+		}
+	} else { 
+		/*"Bandwidth Efficient"*/
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "AMR decoder: BE mode not supported!\n");
+		return SWITCH_STATUS_FALSE;
+	}
+
+	Decoder_Interface_Decode(context->decoder_state, tmp, (int16_t *) decoded_data, 0);
 	*decoded_data_len = codec->implementation->decoded_bytes_per_packet;
 
 	return SWITCH_STATUS_SUCCESS;
 #endif
 }
 
+#ifndef AMR_PASSTHROUGH
+#define AMRWB_DEBUG_SYNTAX "<on|off>"
+SWITCH_STANDARD_API(mod_amr_debug)
+{
+		if (zstr(cmd)) {
+			stream->write_function(stream, "-USAGE: %s\n", AMRWB_DEBUG_SYNTAX);
+		} else {
+			if (!strcasecmp(cmd, "on")) {
+				globals.debug = 1;
+				stream->write_function(stream, "AMR Debug: on\n");
+			} else if (!strcasecmp(cmd, "off")) {
+				globals.debug = 0;
+				stream->write_function(stream, "AMR Debug: off\n");
+			} else {
+				stream->write_function(stream, "-USAGE: %s\n", AMRWB_DEBUG_SYNTAX);
+			}	
+		}
+	return SWITCH_STATUS_SUCCESS;
+}
+#endif
+
 /* Registration */
 SWITCH_MODULE_LOAD_FUNCTION(mod_amr_load)
 {
 	switch_codec_interface_t *codec_interface;
+
 #ifndef AMR_PASSTHROUGH
+	switch_api_interface_t *commands_api_interface;
 	char *cf = "amr.conf";
 	switch_xml_t cfg, xml, settings, param;
 
@@ -368,17 +459,20 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_amr_load)
 	}
 #endif
 
-	/* connect my internal structure to the blank pointer passed to me */
+/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
 	SWITCH_ADD_CODEC(codec_interface, "AMR");
 #ifndef AMR_PASSTHROUGH
-	codec_interface->parse_fmtp = switch_amr_fmtp_parse;
-#endif 
+	SWITCH_ADD_API(commands_api_interface, "amr_debug", "Set AMR Debug", mod_amr_debug, AMRWB_DEBUG_SYNTAX);
+
+	switch_console_set_complete("add amr_debug on");
+	switch_console_set_complete("add amr_debug off");
+#endif
 	switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
 										 96,	/* the IANA code number */
 										 "AMR",	/* the IANA code name */
-										 "octet-align=0",	/* default fmtp to send (can be overridden by the init function) */
+										 "octet-align=1",	/* default fmtp to send (can be overridden by the init function) */
 										 8000,	/* samples transferred per second */
 										 8000,	/* actual samples transferred per second */
 										 12200,	/* bits transferred per second */

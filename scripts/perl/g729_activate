@@ -1,0 +1,39 @@
+#!/usr/bin/perl
+
+use IPC::Run qw( run );
+use ESL;
+
+if(!$ARGV[0]) {
+  print "$0 [licensecode]\n";
+  exit 0;
+}
+
+my $code = $ARGV[0];
+
+chdir("/data/tmp");
+
+my $UNZIP;
+$UNZIP     = "/usr/bin/unzip"       if !(-x $UNZIP);
+$UNZIP     = "/usr/local/bin/unzip" if !(-x $UNZIP);
+
+my $in = "$code\n\nY\n";
+my $err;
+my $out;
+
+my $activator = run ( ['/usr/bin/validator'],
+   	            '<pty<', \$in, '>pty>', \$output );
+
+if($output =~ m/Success/) {
+  if(-f "licences.zip") {
+    run( [ $UNZIP, '-o', "-d", "/etc/freeswitch", 'licences.zip'], \$in, \$out, \$err );
+    run( [ '/usr/bin/pkill', '-HUP', 'freeswitch_licence_server'], \$in, \$out, \$err );
+    my $c = new ESL::ESLconnection("localhost", "8021", "ClueCon");
+    my $e = $c->sendRecv('api g729_count');
+    my $count = $e->getBody();
+    print "Success, License count: $count\n";
+    exit 0;
+  }
+} else {
+  print "Failed to activate.";
+  exit 1;
+}

@@ -276,7 +276,7 @@ build_debs () {
     local OPTIND OPTARG debug_hook=false hookdir="" cow_build_opts=""
     local keep_pbuilder_config=false keyring="" custom_keyring="/tmp/fs.asc"
     local use_custom_sources=true
-    local custom_sources_file="/tmp/fs.sources.list"
+    local custom_sources_file="/etc/apt/sources.list"
     while getopts 'BbdK:kT:t' o "$@"; do
       case "$o" in
         B) cow_build_opts="--debbuildopts '-B'";;
@@ -445,7 +445,7 @@ build_all () {
   [ -n "$distros" ] || distros="$(default_distros)"
   ! $depinst || aptitude install -y \
     rsync git less cowbuilder ccache \
-    devscripts equivs build-essential
+    devscripts equivs build-essential yasm
   [ -n "$orig" ] || orig="$(create_orig $orig_opts HEAD | tail -n1)"
   if [ -n "$modlist" ]; then
     local modtmp="$(mktemp /tmp/modules-XXXXXXXXXX.conf)"

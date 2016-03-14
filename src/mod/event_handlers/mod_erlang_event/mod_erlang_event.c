@@ -382,6 +382,7 @@ static void remove_session_elem_from_listener(listener_t *listener, session_elem
 static void destroy_session_elem(session_elem_t *session_element)
 {
 	switch_core_session_t *session;
+	void *pop;
 
 	/* wait for readers */
 	switch_thread_rwlock_wrlock(session_element->rwlock);
@@ -395,6 +396,13 @@ static void destroy_session_elem(session_elem_t *session_element)
 		switch_core_session_soft_unlock(session);
 		switch_core_session_rwunlock(session);
 	}
+
+	while (switch_queue_trypop(session_element->event_queue, &pop) == SWITCH_STATUS_SUCCESS) {
+		switch_event_t *event = (switch_event_t *) pop;
+		switch_event_destroy(&event);
+	}
+
+	switch_core_hash_destroy(&session_element->event_hash);
 	switch_core_destroy_memory_pool(&session_element->pool);
 }
 

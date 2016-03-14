@@ -204,18 +204,21 @@ SWITCH_DECLARE(const char *) switch_channel_cause2str(switch_call_cause_t cause)
 SWITCH_DECLARE(switch_call_cause_t) switch_channel_str2cause(const char *str)
 {
 	uint8_t x;
-	switch_call_cause_t cause = SWITCH_CAUSE_NONE;
+	switch_call_cause_t cause = SWITCH_CAUSE_NORMAL_CLEARING;
 
-	if (*str > 47 && *str < 58) {
-		cause = atoi(str);
-	} else {
-		for (x = 0; x < (sizeof(CAUSE_CHART) / sizeof(struct switch_cause_table)) - 1 && CAUSE_CHART[x].name; x++) {
-			if (!strcasecmp(CAUSE_CHART[x].name, str)) {
-				cause = CAUSE_CHART[x].cause;
-				break;
+	if (!zstr(str)) {
+		if (*str > 47 && *str < 58) {
+			cause = atoi(str);
+		} else {
+			for (x = 0; x < (sizeof(CAUSE_CHART) / sizeof(struct switch_cause_table)) - 1 && CAUSE_CHART[x].name; x++) {
+				if (!strcasecmp(CAUSE_CHART[x].name, str)) {
+					cause = CAUSE_CHART[x].cause;
+					break;
+				}
 			}
 		}
 	}
+
 	return cause;
 }
 
@@ -2110,8 +2113,7 @@ SWITCH_DECLARE(int) switch_channel_state_change_pending(switch_channel_t *channe
 
 SWITCH_DECLARE(int) switch_channel_check_signal(switch_channel_t *channel, switch_bool_t in_thread_only)
 {
-	(void)in_thread_only;
-	switch_ivr_parse_next_signal_data(channel->session);
+	switch_ivr_parse_signal_data(channel->session, SWITCH_FALSE, in_thread_only);
 	return 0;
 }
 
@@ -3243,6 +3245,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_hangup(switch_chan
 		switch_channel_state_t last_state;
 		switch_event_t *event;
 		const char *var;
+
 
 		switch_mutex_lock(channel->profile_mutex);
 		if (channel->hold_record && !channel->hold_record->off) {

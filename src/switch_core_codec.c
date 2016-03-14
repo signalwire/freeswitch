@@ -333,8 +333,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_get_real_read_impl(switch_co
 		*impp = session->real_read_impl;
 		return SWITCH_STATUS_SUCCESS;
 	} else {
-		memset(impp, 0, sizeof(*impp));
-		impp->number_of_channels = 1;
+		return switch_core_session_get_read_impl(session, impp);
 	}
 
 	return SWITCH_STATUS_FALSE;

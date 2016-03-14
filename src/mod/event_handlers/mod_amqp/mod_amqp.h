@@ -146,17 +146,46 @@ typedef struct {
   char *custom_attr;
 } mod_amqp_command_profile_t;
 
+typedef struct {
+  char *name;
+  
+  char *exchange;
+  char *exchange_type;
+  int exchange_durable;
+  int exchange_auto_delete;
+
+  uint32_t log_level_mask;
+
+  /* Note: The AMQP channel is not reentrant this MUTEX serializes sending events. */
+  mod_amqp_connection_t *conn_root;
+  mod_amqp_connection_t *conn_active;
+  
+  int reconnect_interval_ms;
+
+  /* Logging thread */
+  switch_thread_t *logging_thread;
+  switch_queue_t *send_queue;
+  unsigned int send_queue_size;
+
+  switch_mutex_t *mutex;
+  switch_bool_t running;
+  char *custom_attr;
+  switch_memory_pool_t *pool;
+} mod_amqp_logging_profile_t;
+
 struct {
   switch_memory_pool_t *pool;
   
   switch_hash_t *producer_hash;
   switch_hash_t *command_hash;
+  switch_hash_t *logging_hash;
 } globals;
 
 /* utils */
 switch_status_t mod_amqp_do_config(switch_bool_t reload);
 int mod_amqp_log_if_amqp_error(amqp_rpc_reply_t x, char const *context);
 int mod_amqp_count_chars(const char* string, char ch);
+void mod_amqp_util_msg_destroy(mod_amqp_message_t **msg);
 
 /* connection */
 switch_status_t mod_amqp_connection_create(mod_amqp_connection_t **conn, switch_xml_t cfg, switch_memory_pool_t *pool);
@@ -178,6 +207,12 @@ switch_status_t mod_amqp_producer_create(char *name, switch_xml_t cfg);
 void * SWITCH_THREAD_FUNC mod_amqp_producer_thread(switch_thread_t *thread, void *data);
 
 char *amqp_util_encode(char *key, char *dest);
+
+/* logging */
+switch_status_t mod_amqp_logging_recv(const switch_log_node_t *node, switch_log_level_t level);
+switch_status_t mod_amqp_logging_create(char *name, switch_xml_t cfg);
+switch_status_t mod_amqp_logging_destroy(mod_amqp_logging_profile_t **prof);
+void * SWITCH_THREAD_FUNC mod_amqp_logging_thread(switch_thread_t *thread, void *data);
 
 #endif /* MOD_AMQP_H */
 

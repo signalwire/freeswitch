@@ -982,24 +982,30 @@ SWITCH_DECLARE(int32_t) set_realtime_priority(void)
 #ifdef SOLARIS_PRIVILEGES
 	/* request the privileges to elevate the priority */
 	if (priv_set(PRIV_ON, PRIV_EFFECTIVE, PRIV_PROC_PRIOCNTL, NULL) < 0) {
+#ifdef PRIV_PROC_PRIOUP
+		/* fallback to PRIV_PROC_PRIOUP on SmartOS */
 		fprintf(stderr, "WARN: Failed to acquire proc_priocntl privilege (%s)\n", strerror(errno));
-	} else {
-		if (sched_setscheduler(0, SCHED_FIFO, &sched) < 0) {
-			fprintf(stderr, "ERROR: Failed to set SCHED_FIFO scheduler (%s)\n", strerror(errno));
-		} else {
-			return 0;
-		}
-	}
-		
-	if (priv_set(PRIV_ON, PRIV_EFFECTIVE, PRIV_PROC_PRIOUP, NULL) < 0) {
-		fprintf(stderr, "ERROR: Failed to acquire proc_prioup privilege (%s)\n", strerror(errno));
-		return -1;
-	} else {
-		if (setpriority(PRIO_PROCESS, 0, -10) < 0) {
-			fprintf(stderr, "ERROR: Could not set nice level\n");
+		if (priv_set(PRIV_ON, PRIV_EFFECTIVE, PRIV_PROC_PRIOUP, NULL) < 0) {
+			fprintf(stderr, "ERROR: Failed to acquire proc_prioup privilege (%s)\n", strerror(errno));
 			return -1;
 		}
+#else
+		fprintf(stderr, "ERROR: Failed to acquire proc_priocntl privilege (%s)\n", strerror(errno));
+		return -1;
+#endif
 	}
+
+	if (sched_setscheduler(0, SCHED_FIFO, &sched) < 0) {
+		fprintf(stderr, "WARN: Failed to set SCHED_FIFO scheduler (%s)\n", strerror(errno));
+	} else {
+		return 0;
+	}
+
+	if (setpriority(PRIO_PROCESS, 0, -10) < 0) {
+		fprintf(stderr, "ERROR: Could not set nice level\n");
+		return -1;
+	}
+
 	return 0;
 #else
 

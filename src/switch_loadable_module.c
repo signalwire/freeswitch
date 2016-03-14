@@ -1876,7 +1876,11 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_init(switch_bool_t autolo
 	switch_loadable_module_load_module("", "CORE_SOFTTIMER_MODULE", SWITCH_FALSE, &err);
 	switch_loadable_module_load_module("", "CORE_PCM_MODULE", SWITCH_FALSE, &err);
 	switch_loadable_module_load_module("", "CORE_SPEEX_MODULE", SWITCH_FALSE, &err);
-
+#ifdef SWITCH_HAVE_YUV
+#ifdef SWITCH_HAVE_VPX
+	switch_loadable_module_load_module("", "CORE_VPX_MODULE", SWITCH_FALSE, &err);
+#endif
+#endif
 
 	if ((xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
 		switch_xml_t mods, ld;

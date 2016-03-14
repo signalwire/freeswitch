@@ -1573,7 +1573,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_3p_media(const char *uuid, switch_med
 	if ((session = switch_core_session_locate(uuid))) {
 		channel = switch_core_session_get_channel(session);
 		
-		if (switch_channel_test_flag(channel, CF_MEDIA_TRANS)) {
+		if (switch_channel_test_flag(channel, CF_MEDIA_TRANS) || !switch_channel_test_flag(channel, CF_PROXY_MODE)) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR,  "Operation is invalid\n");
 			switch_core_session_rwunlock(session);
 			return SWITCH_STATUS_INUSE;
 		}
@@ -1584,70 +1585,71 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_3p_media(const char *uuid, switch_med
 			swap = 1;
 		}
 
-		if (switch_channel_test_flag(channel, CF_PROXY_MODE)) {
-			status = SWITCH_STATUS_SUCCESS;
 
-			/* If we had early media in bypass mode before, it is no longer relevant */
-			if (switch_channel_test_flag(channel, CF_EARLY_MEDIA)) {
-				switch_core_session_message_t msg2 = { 0 };
+		status = SWITCH_STATUS_SUCCESS;
+
+		/* If we had early media in bypass mode before, it is no longer relevant */
+		if (switch_channel_test_flag(channel, CF_EARLY_MEDIA)) {
+			switch_core_session_message_t msg2 = { 0 };
 				
-				msg2.message_id = SWITCH_MESSAGE_INDICATE_CLEAR_PROGRESS;
-				msg2.from = __FILE__;
-				switch_core_session_receive_message(session, &msg2);
-			}
+			msg2.message_id = SWITCH_MESSAGE_INDICATE_CLEAR_PROGRESS;
+			msg2.from = __FILE__;
+			switch_core_session_receive_message(session, &msg2);
+		}
 			
-			if ((flags & SMF_REPLYONLY_A)) {
-				msg.numeric_arg = 1;
-			}
+		if ((flags & SMF_REPLYONLY_A)) {
+			msg.numeric_arg = 1;
+		}
 			
-			switch_channel_set_flag(channel, CF_3P_MEDIA_REQUESTED);
+		switch_channel_set_flag(channel, CF_3P_MEDIA_REQUESTED);
 
-			if (switch_core_session_receive_message(session, &msg) != SWITCH_STATUS_SUCCESS) {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Can't re-establsh media on %s\n", switch_channel_get_name(channel));
-				switch_channel_clear_flag(channel, CF_3P_MEDIA_REQUESTED);
-				switch_core_session_rwunlock(session);
-				return SWITCH_STATUS_GENERR;
-			}
-
-			if ((flags & SMF_REPLYONLY_B)) {
-				msg.numeric_arg = 1;
-			} else {
-				msg.numeric_arg = 0;
-			}
-
-			if ((flags & SMF_IMMEDIATE)) {
-				switch_channel_wait_for_flag(channel, CF_REQ_MEDIA, SWITCH_FALSE, 250, NULL);
-				switch_yield(250000);
-			} else {
-				switch_channel_wait_for_flag(channel, CF_REQ_MEDIA, SWITCH_FALSE, 10000, NULL);
-				switch_channel_wait_for_flag(channel, CF_MEDIA_ACK, SWITCH_TRUE, 10000, NULL);
-				switch_channel_wait_for_flag(channel, CF_MEDIA_SET, SWITCH_TRUE, 10000, NULL);
-				//switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
-			}
-
-			if ((flags & SMF_REBRIDGE)
-				&& (other_uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BRIDGE_VARIABLE))
-				&& (other_session = switch_core_session_locate(other_uuid))) {
-
-				other_channel = switch_core_session_get_channel(other_session);
-				switch_assert(other_channel != NULL);
-				
-				switch_channel_set_flag(other_channel, CF_3P_MEDIA_REQUESTED);
-				switch_channel_set_variable(other_channel, "rtp_secure_media", "optional");
-				
-				switch_core_session_receive_message(other_session, &msg);
-				switch_channel_wait_for_flag(other_channel, CF_REQ_MEDIA, SWITCH_FALSE, 10000, NULL);
-				switch_channel_wait_for_flag(other_channel, CF_MEDIA_ACK, SWITCH_TRUE, 10000, NULL);
-				switch_channel_wait_for_flag(other_channel, CF_MEDIA_SET, SWITCH_TRUE, 10000, NULL);
-				//switch_core_session_read_frame(other_session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
-				switch_channel_clear_state_handler(other_channel, NULL);
-				switch_core_session_rwunlock(other_session);
-			}
-			if (other_channel) {
-				switch_channel_clear_state_handler(channel, NULL);
-			}
+		if (switch_core_session_receive_message(session, &msg) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Can't re-establsh media on %s\n", switch_channel_get_name(channel));
+			switch_channel_clear_flag(channel, CF_3P_MEDIA_REQUESTED);
+			switch_core_session_rwunlock(session);
+			return SWITCH_STATUS_GENERR;
 		}
 
+		if ((flags & SMF_REPLYONLY_B)) {
+			msg.numeric_arg = 1;
+		} else {
+			msg.numeric_arg = 0;
+		}
+
+		if ((flags & SMF_IMMEDIATE)) {
+			switch_channel_wait_for_flag(channel, CF_REQ_MEDIA, SWITCH_FALSE, 250, NULL);
+			switch_yield(250000);
+		} else {
+			switch_channel_wait_for_flag(channel, CF_REQ_MEDIA, SWITCH_FALSE, 10000, NULL);
+			switch_channel_wait_for_flag(channel, CF_MEDIA_ACK, SWITCH_TRUE, 10000, NULL);
+			switch_channel_wait_for_flag(channel, CF_MEDIA_SET, SWITCH_TRUE, 10000, NULL);
+			switch_channel_wait_for_flag(channel, CF_3P_MEDIA_REQUESTED, SWITCH_FALSE, 10000, NULL);
+			//switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
+		}
+
+		if ((flags & SMF_REBRIDGE)
+			&& (other_uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BRIDGE_VARIABLE))
+			&& (other_session = switch_core_session_locate(other_uuid))) {
+
+			other_channel = switch_core_session_get_channel(other_session);
+			switch_assert(other_channel != NULL);
+				
+			switch_channel_set_flag(other_channel, CF_3P_MEDIA_REQUESTED);
+			switch_channel_set_variable(other_channel, "rtp_secure_media", "optional");
+				
+			switch_core_session_receive_message(other_session, &msg);
+			switch_channel_wait_for_flag(other_channel, CF_REQ_MEDIA, SWITCH_FALSE, 10000, NULL);
+			switch_channel_wait_for_flag(other_channel, CF_MEDIA_ACK, SWITCH_TRUE, 10000, NULL);
+			switch_channel_wait_for_flag(other_channel, CF_MEDIA_SET, SWITCH_TRUE, 10000, NULL);
+			switch_channel_wait_for_flag(other_channel, CF_3P_MEDIA_REQUESTED, SWITCH_FALSE, 10000, NULL);
+			//switch_core_session_read_frame(other_session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
+			switch_channel_clear_state_handler(other_channel, NULL);
+			switch_core_session_rwunlock(other_session);
+		}
+		if (other_channel) {
+			switch_channel_clear_state_handler(channel, NULL);
+		}
+	
 		switch_channel_clear_flag(channel, CF_MEDIA_TRANS);
 		switch_core_session_rwunlock(session);
 
@@ -1781,7 +1783,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_3p_nomedia(const char *uuid, switch_m
 		status = SWITCH_STATUS_SUCCESS;
 		channel = switch_core_session_get_channel(session);
 		
-		if (switch_channel_test_flag(channel, CF_MEDIA_TRANS)) {
+		if (switch_channel_test_flag(channel, CF_MEDIA_TRANS) || (!(flags & SMF_FORCE) && switch_channel_test_flag(channel, CF_PROXY_MODE))) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR,  "Operation is invalid\n");
 			switch_core_session_rwunlock(session);
 			return SWITCH_STATUS_INUSE;
 		}
@@ -1803,6 +1806,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_3p_nomedia(const char *uuid, switch_m
 				switch_channel_set_flag(other_channel, CF_RESET);
 				switch_channel_set_flag(other_channel, CF_REDIRECT);
 
+				switch_channel_set_variable(channel, SWITCH_R_SDP_VARIABLE, NULL);
 				switch_channel_set_flag(channel, CF_3P_NOMEDIA_REQUESTED);
 				switch_core_session_receive_message(session, &msg);
 
@@ -1816,23 +1820,27 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_3p_nomedia(const char *uuid, switch_m
 					switch_channel_wait_for_state(other_channel, channel, CS_PARK);
 				}
 				
+					
+				if (!switch_core_session_in_thread(session)) {
+					switch_channel_wait_for_state(channel, NULL, CS_PARK);
+				}
+
+				switch_channel_wait_for_flag(channel, CF_REQ_MEDIA, SWITCH_FALSE, 10000, NULL);
+				switch_channel_wait_for_flag(channel, CF_MEDIA_ACK, SWITCH_TRUE, 10000, NULL);
+				switch_channel_wait_for_flag(channel, CF_3P_NOMEDIA_REQUESTED, SWITCH_FALSE, 10000, NULL);
+
 				msg.string_arg = switch_channel_get_variable(channel, SWITCH_R_SDP_VARIABLE);
 				switch_channel_set_flag(other_channel, CF_3P_NOMEDIA_REQUESTED);
 				switch_channel_set_flag(other_channel, CF_3P_NOMEDIA_REQUESTED_BLEG);
-				
+
+
 				switch_core_session_receive_message(other_session, &msg);
 				switch_channel_wait_for_flag(other_channel, CF_REQ_MEDIA, SWITCH_FALSE, 10000, NULL);
-				switch_channel_wait_for_flag(other_channel, CF_MEDIA_SET, SWITCH_TRUE, 10000, NULL);
+				switch_channel_wait_for_flag(other_channel, CF_MEDIA_ACK, SWITCH_TRUE, 10000, NULL);
+				switch_channel_wait_for_flag(other_channel, CF_3P_NOMEDIA_REQUESTED, SWITCH_FALSE, 10000, NULL);
 			}
 
 			if (other_channel) {
-				if (!switch_core_session_in_thread(session)) {
-					switch_channel_wait_for_state(channel, NULL, CS_PARK);
-					switch_channel_wait_for_flag(channel, CF_REQ_MEDIA, SWITCH_FALSE, 10000, NULL);
-					switch_channel_wait_for_flag(channel, CF_MEDIA_ACK, SWITCH_TRUE, 10000, NULL);
-					switch_channel_wait_for_flag(channel, CF_MEDIA_SET, SWITCH_TRUE, 10000, NULL);
-				}
-
 				if (swap) {
 					switch_ivr_signal_bridge(other_session, session);
 				} else {
@@ -3866,13 +3874,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_process_fh(switch_core_session_t *ses
 			return SWITCH_STATUS_FALSE;
 		} else if (!strcasecmp(cmd, "pause")) {
 			if (switch_test_flag(fhp, SWITCH_FILE_PAUSE)) {
-				switch_clear_flag(fhp, SWITCH_FILE_PAUSE);
+				switch_clear_flag_locked(fhp, SWITCH_FILE_PAUSE);
 			} else {
-				switch_set_flag(fhp, SWITCH_FILE_PAUSE);
+				switch_set_flag_locked(fhp, SWITCH_FILE_PAUSE);
 			}
 			return SWITCH_STATUS_SUCCESS;
 		} else if (!strcasecmp(cmd, "stop")) {
-			switch_set_flag(fhp, SWITCH_FILE_DONE);
+			switch_set_flag_locked(fhp, SWITCH_FILE_DONE);
 			return SWITCH_STATUS_FALSE;
 		} else if (!strcasecmp(cmd, "truncate")) {
 			switch_core_file_truncate(fhp, 0);

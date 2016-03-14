@@ -56,11 +56,23 @@
 
         $scope.checkAutoBand = function(option) {
           $scope.mydata.useDedenc = false;
+          var bestres = videoQuality[videoQuality.length-1];
+          $scope.mydata.vidQual = bestres.id;
+          storage.data.vidQual = bestres.id;
+          verto.data.instance.videoParams({
+            minWidth: bestres.width,
+            minHeight: bestres.height,
+            maxWidth: bestres.width,
+            maxHeight: bestres.height,
+            minFrameRate: 15,
+            vertoBestFrameRate: storage.data.bestFrameRate
+          });
+          storage.data.vidQual = bestres.id;
           if (!option) {
             $scope.mydata.outgoingBandwidth = 'default';
             $scope.mydata.incomingBandwidth = 'default';
-            $scope.mydata.vidQual = 'hd';
             $scope.mydata.testSpeedJoin = false;
+
           } else {
             $scope.mydata.testSpeedJoin = true;
           }
@@ -73,6 +85,22 @@
             $scope.mydata.useDedenc = true;
           }
         };
+
+        $scope.checkVideoQuality = function(resolution) {
+          var w = videoResolution[resolution]['width'];
+          var h = videoResolution[resolution]['height'];
+          storage.data.vidQual = resolution;
+          verto.data.instance.videoParams({
+            minWidth: w,
+            minHeight: h,
+            maxWidth: w,
+            maxHeight: h,
+            minFrameRate: 15,
+            vertoBestFrameRate: storage.data.bestFrameRate
+          });
+
+        };
+
       }
     ]);
 

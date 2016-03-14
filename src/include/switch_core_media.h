@@ -39,6 +39,7 @@
 SWITCH_BEGIN_EXTERN_C
 
 #define SWITCH_MAX_CAND_ACL 25
+#define SWITCH_NO_CRYPTO_TAG -1
 
 typedef enum {
 	DTMF_2833,
@@ -168,6 +169,8 @@ typedef struct switch_core_media_params_s {
 	uint32_t video_key_freq;
 	uint32_t video_key_first;
 
+	switch_thread_t *video_write_thread;
+
 } switch_core_media_params_t;
 
 static inline const char *switch_media_type2str(switch_media_type_t type)
@@ -253,6 +256,7 @@ SWITCH_DECLARE(void) switch_core_media_set_telephony_event(switch_core_session_t
 SWITCH_DECLARE(void) switch_core_media_set_telephony_recv_event(switch_core_session_t *session, switch_media_type_t type, switch_payload_t te);
 SWITCH_DECLARE(switch_rtp_stats_t *) switch_core_media_stats(switch_core_session_t *session, switch_media_type_t type, switch_memory_pool_t *pool);
 SWITCH_DECLARE(switch_status_t) switch_core_media_udptl_mode(switch_core_session_t *session, switch_media_type_t type);
+SWITCH_DECLARE(switch_bool_t) switch_core_media_check_udptl_mode(switch_core_session_t *session, switch_media_type_t type);
 
 SWITCH_DECLARE(void) switch_core_media_set_rtp_flag(switch_core_session_t *session, switch_media_type_t type, switch_rtp_flag_t flag);
 SWITCH_DECLARE(void) switch_core_media_clear_rtp_flag(switch_core_session_t *session, switch_media_type_t type, switch_rtp_flag_t flag);
@@ -337,12 +341,15 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_lock_unlock(switch_core_s
 SWITCH_DECLARE(void) switch_core_session_stop_media(switch_core_session_t *session);
 SWITCH_DECLARE(switch_media_flow_t) switch_core_session_media_flow(switch_core_session_t *session, switch_media_type_t type);
 SWITCH_DECLARE(switch_status_t) switch_core_media_get_vid_params(switch_core_session_t *session, switch_vid_params_t *vid_params);
+SWITCH_DECLARE(switch_status_t) switch_core_media_lock_video_file(switch_core_session_t *session, switch_rw_t rw);
+SWITCH_DECLARE(switch_status_t) switch_core_media_unlock_video_file(switch_core_session_t *session, switch_rw_t rw);
 SWITCH_DECLARE(switch_status_t) switch_core_media_set_video_file(switch_core_session_t *session, switch_file_handle_t *fh, switch_rw_t rw);
 SWITCH_DECLARE(switch_file_handle_t *) switch_core_media_get_video_file(switch_core_session_t *session, switch_rw_t rw);
 SWITCH_DECLARE(switch_bool_t) switch_core_session_in_video_thread(switch_core_session_t *session);
 SWITCH_DECLARE(switch_bool_t) switch_core_media_check_dtls(switch_core_session_t *session, switch_media_type_t type);
 SWITCH_DECLARE(switch_status_t) switch_core_media_set_outgoing_bitrate(switch_core_session_t *session, switch_media_type_t type, uint32_t bitrate);
 SWITCH_DECLARE(switch_status_t) switch_core_media_reset_jb(switch_core_session_t *session, switch_media_type_t type);
+SWITCH_DECLARE(switch_status_t) switch_core_session_wait_for_video_input_params(switch_core_session_t *session, uint32_t timeout_ms);
 																
 SWITCH_END_EXTERN_C
 #endif

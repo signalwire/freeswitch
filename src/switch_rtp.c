@@ -1942,7 +1942,10 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 	int rate = 0, nack_ttl = 0;
 	uint32_t cur_nack[MAX_NACK] = { 0 };
 
-	if (rtp_session->flags[SWITCH_RTP_FLAG_AUTO_CNG] && rtp_session->send_msg.header.ts && rtp_session->cng_pt != INVALID_PT &&
+	if (!rtp_session->flags[SWITCH_RTP_FLAG_UDPTL] &&
+		rtp_session->flags[SWITCH_RTP_FLAG_AUTO_CNG] &&
+		rtp_session->send_msg.header.ts &&
+		rtp_session->cng_pt != INVALID_PT &&
 		(rtp_session->timer.samplecount - rtp_session->last_write_samplecount >= rtp_session->samples_per_interval * 60)) {
 		uint8_t data[10] = { 0 };
 		switch_frame_flag_t frame_flags = SFF_NONE;
@@ -2730,6 +2733,10 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_set_local_address(switch_rtp_t *rtp_s
 
 SWITCH_DECLARE(void) switch_rtp_set_max_missed_packets(switch_rtp_t *rtp_session, uint32_t max)
 {
+	if (!switch_rtp_ready(rtp_session) || rtp_session->flags[SWITCH_RTP_FLAG_UDPTL]) {
+		return;
+	}
+
 	if (rtp_session->missed_count >= max) {
 		
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING,
@@ -2834,6 +2841,9 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_udptl_mode(switch_rtp_t *rtp_session)
 		memset(&rtp_session->timer, 0, sizeof(rtp_session->timer));
 		switch_rtp_clear_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER);
 	}
+
+	rtp_session->missed_count = 0;
+	rtp_session->max_missed_packets = 0;
 
 	rtp_session->flags[SWITCH_RTP_FLAG_ENABLE_RTCP] = 0;
 
@@ -5152,7 +5162,7 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 
 	if (*bytes) {
 		b = (unsigned char *) &rtp_session->recv_msg;
-
+		
 		/* version 2 probably rtp, zrtp cookie present means zrtp */
 		rtp_session->has_rtp = (rtp_session->recv_msg.header.version == 2 || ntohl(*(int *)(b+4)) == ZRTP_MAGIC_COOKIE);
 
@@ -5261,6 +5271,7 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 			if (rtp_session->has_rtcp) {
 				*flags |= SFF_RTCP;
 
+#ifdef ENABLE_SRTP
 				if (rtp_session->flags[SWITCH_RTP_FLAG_SECURE_RECV]) {
 					int sbytes = (int) *bytes;
 					err_status_t stat = 0;
@@ -5275,7 +5286,7 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 					
 					*bytes = sbytes;
 				}
-
+#endif
 				return SWITCH_STATUS_SUCCESS;
 			}
 		}
@@ -6268,11 +6279,6 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 				pt = 20000;
 			}
 			
-
-			if ((io_flags & SWITCH_IO_FLAG_NOBLOCK)) {
-				pt = 0;
-			}
-
 			if (rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] && !rtp_session->flags[SWITCH_RTP_FLAG_PROXY_MEDIA]) {
 				pt = 200000;
 			}
@@ -6281,6 +6287,10 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 				if (switch_jb_poll(rtp_session->vb)) {
 					pt = 0;
 				}
+			}
+
+			if ((io_flags & SWITCH_IO_FLAG_NOBLOCK)) {
+				pt = 0;
 			}
 			
 			poll_status = switch_poll(rtp_session->read_pollfd, 1, &fdr, pt);
@@ -6319,7 +6329,8 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 					goto end;
 				}
 
-				if (rtp_session->max_missed_packets && read_loops == 1 && !rtp_session->flags[SWITCH_RTP_FLAG_VIDEO]) {
+				if (rtp_session->max_missed_packets && read_loops == 1 && !rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] && 
+					!rtp_session->flags[SWITCH_RTP_FLAG_UDPTL]) {
 					if (bytes && status == SWITCH_STATUS_SUCCESS) {
 						rtp_session->missed_count = 0;
 					} else if (++rtp_session->missed_count >= rtp_session->max_missed_packets) {
@@ -6357,10 +6368,16 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			}
 			poll_loop = 0;
 		} else {
+
+			if (!switch_rtp_ready(rtp_session)) {
+				ret = -1;
+				goto end;
+			}
+			
 			if (!SWITCH_STATUS_IS_BREAK(poll_status) && poll_status != SWITCH_STATUS_TIMEOUT) {
 				char tmp[128] = "";
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Poll failed with error: %d [%s]\n",
-					poll_status, switch_strerror_r(poll_status, tmp, sizeof(tmp)));
+								  poll_status, switch_strerror_r(poll_status, tmp, sizeof(tmp)));
 				ret = -1;
 				goto end;
 			}
@@ -6382,8 +6399,8 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 				ret = -1;
 				goto end;
 			}
-
-		
+			
+			
 			if ((!(io_flags & SWITCH_IO_FLAG_NOBLOCK)) && 
 				(rtp_session->dtmf_data.out_digit_dur == 0) && !rtp_session->flags[SWITCH_RTP_FLAG_ENABLE_RTCP]) {
 				return_cng_frame();
@@ -6491,7 +6508,6 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 							switch_core_timer_sync(&rtp_session->timer);
 							reset_jitter_seq(rtp_session);
 						}
-						
 						goto recvfrom;
 					}
 				}
@@ -7067,11 +7083,13 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_zerocopy_read_frame(switch_rtp_t *rtp
 	if (bytes < 0) {
 		frame->datalen = 0;
 		return bytes == -2 ? SWITCH_STATUS_TIMEOUT : SWITCH_STATUS_GENERR;
-	} else if (bytes < rtp_header_len) {
-		frame->datalen = 0;
-		return SWITCH_STATUS_BREAK;
-	} else {
-		bytes -= rtp_header_len;
+	} else if (!rtp_session->flags[SWITCH_RTP_FLAG_UDPTL]) {
+		if (bytes < rtp_header_len) {
+			frame->datalen = 0;
+			return SWITCH_STATUS_BREAK;
+		} else {
+			bytes -= rtp_header_len;
+		}
 	}
 
 	frame->datalen = bytes;
@@ -7188,8 +7206,9 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 		if ((rtp_session->rtp_bugs & RTP_BUG_NEVER_SEND_MARKER)) {
 			m = 0;
 		} else {
-			if ((!rtp_session->flags[SWITCH_RTP_FLAG_RESET] && (rtp_session->ts - rtp_session->last_write_ts > rtp_session->samples_per_interval * 10))
-				|| rtp_session->ts == rtp_session->samples_per_interval) {
+			if (!rtp_session->flags[SWITCH_RTP_FLAG_UDPTL] &&
+				((!rtp_session->flags[SWITCH_RTP_FLAG_RESET] && (rtp_session->ts - rtp_session->last_write_ts > rtp_session->samples_per_interval * 10))
+				|| rtp_session->ts == rtp_session->samples_per_interval)) {
 				m++;
 			}
 			
@@ -7237,7 +7256,12 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 		 */
 
 		if (!rtp_session->ts_norm.ts) {
-			rtp_session->ts_norm.ts = (uint32_t) rand() % 1000000 + 1;
+			if (switch_rtp_test_flag(rtp_session, SWITCH_RTP_FLAG_GEN_TS_DELTA)) {
+				rtp_session->ts_norm.ts = (uint32_t) rand() % 1000000 + 1;
+			} else {
+				switch_core_timer_sync(&rtp_session->timer);
+				rtp_session->ts_norm.ts = rtp_session->timer.samplecount;
+			}
 		}
 
 		if (!rtp_session->ts_norm.last_ssrc || send_msg->header.ssrc != rtp_session->ts_norm.last_ssrc) {
@@ -7273,7 +7297,6 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 		
 		rtp_session->ts_norm.last_frame = ntohl(send_msg->header.ts);
 		send_msg->header.ts = htonl(rtp_session->ts_norm.ts);
-
 	}
 
 	send_msg->header.ssrc = htonl(rtp_session->ssrc);
@@ -7396,8 +7419,8 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 			rtp_session->flags[SWITCH_RTP_FLAG_RESET] = 1;
 		}
 
-		if (!switch_rtp_ready(rtp_session) || rtp_session->sending_dtmf || !this_ts || 
-			(!rtp_session->flags[SWITCH_RTP_FLAG_RESET] && this_ts < rtp_session->last_write_ts)) {
+		if (!switch_rtp_ready(rtp_session) || rtp_session->sending_dtmf ||
+			(!rtp_session->flags[SWITCH_RTP_FLAG_RESET] && this_ts > rtp_session->one_second && this_ts < rtp_session->last_write_ts)) {
 			send = 0;
 		}
 	}

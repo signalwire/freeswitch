@@ -1095,29 +1095,36 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_enumerate(switch_core_sess
 
 SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove_all_function(switch_core_session_t *session, const char *function)
 {
-	switch_media_bug_t *bp;
+	switch_media_bug_t *bp, *last = NULL;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
 	if (session->bugs) {
 		switch_thread_rwlock_wrlock(session->bug_rwlock);
 		for (bp = session->bugs; bp; bp = bp->next) {
-			if ((bp->thread_id && bp->thread_id != switch_thread_self()) || switch_test_flag(bp, SMBF_LOCK)) {
+			if (!switch_test_flag(session, SSF_DESTROYABLE) && 
+				((bp->thread_id && bp->thread_id != switch_thread_self()) || switch_test_flag(bp, SMBF_LOCK))) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "BUG is thread locked skipping.\n");
+				last = bp;
 				continue;
 			}
 			
 			if (!zstr(function) && strcmp(bp->function, function)) {
+				last = bp;
 				continue;
 			}
-
 
 			if (bp->callback) {
 				bp->callback(bp, bp->user_data, SWITCH_ABC_TYPE_CLOSE);
 			}
 			switch_core_media_bug_destroy(bp);
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Removing BUG from %s\n", switch_channel_get_name(session->channel));
+
+			if (last) {
+				last->next = bp->next;
+			} else {
+				session->bugs = bp->next;
+			}
 		}
-		session->bugs = NULL;
 		switch_thread_rwlock_unlock(session->bug_rwlock);
 		status = SWITCH_STATUS_SUCCESS;
 	}

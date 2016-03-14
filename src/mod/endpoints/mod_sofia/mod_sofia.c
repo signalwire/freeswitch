@@ -24,11 +24,12 @@
  * Contributor(s):
  *
  * Anthony Minessale II <anthm@freeswitch.org>
- * Ken Rice <krice at cometsig.com>
+ * Ken Rice <krice at freeswitch.org>
  * Paul D. Tinsley <pdt at jackhammer.org>
  * Bret McDanel <trixter AT 0xdecafbad.com>
  * Raymond Chandler <intralanman@freeswitch.org>
  * Emmanuel Schmidbauer <eschmidbauer@gmail.com>
+ * Kathleen King <kathleen.king@quentustech.com>
  *
  *
  * mod_sofia.c -- SOFIA SIP Endpoint
@@ -1457,6 +1458,9 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		{
 			char *extra_headers = sofia_glue_get_extra_headers(channel, SOFIA_SIP_HEADER_PREFIX);
 
+			switch_channel_clear_flag(tech_pvt->channel, CF_MEDIA_ACK);
+			switch_channel_set_flag(tech_pvt->channel, CF_REQ_MEDIA);
+			
 			nua_invite(tech_pvt->nh, NUTAG_MEDIA_ENABLE(0),
 					   TAG_IF(msg->string_arg, SIPTAG_CONTENT_TYPE_STR("application/sdp")), 
 					   TAG_IF(msg->string_arg, SIPTAG_PAYLOAD_STR(msg->string_arg)), 
@@ -1468,6 +1472,12 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 	case SWITCH_MESSAGE_INDICATE_3P_MEDIA:
 		{
 			char *extra_headers = sofia_glue_get_extra_headers(channel, SOFIA_SIP_HEADER_PREFIX);
+
+			switch_channel_clear_flag(tech_pvt->channel, CF_MEDIA_ACK);
+			switch_channel_clear_flag(tech_pvt->channel, CF_MEDIA_SET);
+			switch_channel_set_flag(tech_pvt->channel, CF_REQ_MEDIA);
+
+
 			nua_invite(tech_pvt->nh, NUTAG_MEDIA_ENABLE(0), SIPTAG_PAYLOAD_STR(""), 
 					   TAG_IF(!zstr(extra_headers), SIPTAG_HEADER_STR(extra_headers)), TAG_END());
 
@@ -1767,36 +1777,17 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 									   TAG_IF(!zstr(tech_pvt->route_uri), NUTAG_PROXY(tech_pvt->route_uri)),
 									   TAG_IF(!zstr_buf(message), SIPTAG_HEADER_STR(message)),
 									   TAG_IF(!zstr(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)), TAG_END());
-						} else if ((ua && (switch_stristr("aastra", ua) && !switch_stristr("Intelligate", ua)))) {
-							snprintf(message, sizeof(message), "P-Asserted-Identity: \"%s\" <sip:%s@%s>", name, number, tech_pvt->profile->sipip);
+						} else if (ua && ((switch_stristr("aastra", ua) && !switch_stristr("Intelligate", ua)) ||
+										  (switch_stristr("cisco/spa50", ua) || switch_stristr("cisco/spa525", ua)) ||
+										  switch_stristr("Yealink", ua) ||
+										  switch_stristr("Panasonic", ua))) {
+							snprintf(message, sizeof(message), "P-Asserted-Identity: \"%s\" <sip:%s@%s>", name, number, tech_pvt->profile->printable_sipip);
 
 							sofia_set_flag_locked(tech_pvt, TFLAG_UPDATING_DISPLAY);
 							nua_update(tech_pvt->nh,
 									   NUTAG_SESSION_TIMER(tech_pvt->session_timeout),
 									   NUTAG_SESSION_REFRESHER(tech_pvt->session_refresher),
 									   TAG_IF(call_info, SIPTAG_CALL_INFO_STR(call_info)),
-									   TAG_IF(!zstr(tech_pvt->route_uri), NUTAG_PROXY(tech_pvt->route_uri)),
-									   TAG_IF(!zstr_buf(message), SIPTAG_HEADER_STR(message)),
-									   TAG_IF(!zstr(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)), TAG_END());
-						} else if ((ua && (switch_stristr("cisco/spa50", ua) || switch_stristr("cisco/spa525", ua)))) {
-							snprintf(message, sizeof(message), "P-Asserted-Identity: \"%s\" <sip:%s@%s>", name, number, tech_pvt->profile->sipip);
-
-							sofia_set_flag_locked(tech_pvt, TFLAG_UPDATING_DISPLAY);
-							nua_update(tech_pvt->nh,
-									   NUTAG_SESSION_TIMER(tech_pvt->session_timeout),
-									   NUTAG_SESSION_REFRESHER(tech_pvt->session_refresher),
-									   TAG_IF(call_info, SIPTAG_CALL_INFO_STR(call_info)),
-									   TAG_IF(!zstr(tech_pvt->route_uri), NUTAG_PROXY(tech_pvt->route_uri)),
-									   TAG_IF(!zstr_buf(message), SIPTAG_HEADER_STR(message)),
-									   TAG_IF(!zstr(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)), TAG_END());
-						} else if ((ua && (switch_stristr("Yealink", ua)))) {
-							snprintf(message, sizeof(message), "P-Asserted-Identity: \"%s\" <sip:%s@%s>", name, number, tech_pvt->profile->sipip);
-
-							sofia_set_flag_locked(tech_pvt, TFLAG_UPDATING_DISPLAY);
-							nua_update(tech_pvt->nh,
-									   NUTAG_SESSION_TIMER(tech_pvt->session_timeout),
-									   NUTAG_SESSION_REFRESHER(tech_pvt->session_refresher),
-						TAG_IF(call_info, SIPTAG_CALL_INFO_STR(call_info)),
 									   TAG_IF(!zstr(tech_pvt->route_uri), NUTAG_PROXY(tech_pvt->route_uri)),
 									   TAG_IF(!zstr_buf(message), SIPTAG_HEADER_STR(message)),
 									   TAG_IF(!zstr(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)), TAG_END());
@@ -3449,16 +3440,16 @@ static switch_status_t cmd_profile(char **argv, int argc, switch_stream_handle_t
 		goto done;
 	}
 
-		if (!strcasecmp(argv[1], "capture")) {
-			   if (argc > 2) {
-					   int value = switch_true(argv[2]);
-					   nua_set_params(profile->nua, TPTAG_CAPT(value ? mod_sofia_globals.capture_server : NULL), TAG_END());
-					   stream->write_function(stream, "%s sip capturing on %s", value ? "Enabled" : "Disabled", profile->name);
-			   } else {
-					   stream->write_function(stream, "Usage: sofia profile <name> capture <on/off>\n");
-			   }
-			   goto done;
+	if (!strcasecmp(argv[1], "capture")) {
+		if (argc > 2) {
+			int value = switch_true(argv[2]);
+			nua_set_params(profile->nua, TPTAG_CAPT(value ? mod_sofia_globals.capture_server : NULL), TAG_END());
+			stream->write_function(stream, "%s sip capturing on %s", value ? "Enabled" : "Disabled", profile->name);
+		} else {
+			stream->write_function(stream, "Usage: sofia profile <name> capture <on/off>\n");
 		}
+		goto done;
+	}
 
 	if (!strcasecmp(argv[1], "watchdog")) {
 		if (argc > 2) {
@@ -6003,50 +5994,29 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 
 
 	SWITCH_ADD_API(api_interface, "sofia", "Sofia Controls", sofia_function, "<cmd> <args>");
-	SWITCH_ADD_API(api_interface, "sofia_gateway_data", "Get data from a sofia gateway", sofia_gateway_data_function,
-				   "<gateway_name> [ivar|ovar|var] <name>");
-	switch_console_set_complete("add sofia help");
-	switch_console_set_complete("add sofia status");
-	switch_console_set_complete("add sofia xmlstatus");
+	SWITCH_ADD_API(api_interface, "sofia_gateway_data", "Get data from a sofia gateway", sofia_gateway_data_function, "<gateway_name> [ivar|ovar|var] <name>");
+	switch_console_set_complete("add sofia ::[help:status");
+	switch_console_set_complete("add sofia status profile ::sofia::list_profiles reg");
+	switch_console_set_complete("add sofia status gateway ::sofia::list_gateways");
 
 	switch_console_set_complete("add sofia loglevel ::[all:default:tport:iptsec:nea:nta:nth_client:nth_server:nua:soa:sresolv:stun ::[0:1:2:3:4:5:6:7:8:9");
 	switch_console_set_complete("add sofia tracelevel ::[console:alert:crit:err:warning:notice:info:debug");
 
-	switch_console_set_complete("add sofia global siptrace ::[on:off");
-	switch_console_set_complete("add sofia global standby ::[on:off");
-	switch_console_set_complete("add sofia global capture  ::[on:off");
-	switch_console_set_complete("add sofia global watchdog ::[on:off");
-
+	switch_console_set_complete("add sofia global ::[siptrace::standby::capture::watchdog ::[on:off");
 	switch_console_set_complete("add sofia global debug ::[presence:sla:none");
 
-
-	switch_console_set_complete("add sofia profile");
 	switch_console_set_complete("add sofia profile restart all");
-
-	switch_console_set_complete("add sofia profile ::sofia::list_profiles start");
+	switch_console_set_complete("add sofia profile ::sofia::list_profiles ::[start:rescan:restart:check_sync");
 	switch_console_set_complete("add sofia profile ::sofia::list_profiles stop wait");
-	switch_console_set_complete("add sofia profile ::sofia::list_profiles rescan");
-	switch_console_set_complete("add sofia profile ::sofia::list_profiles restart");
+	switch_console_set_complete("add sofia profile ::sofia::list_profiles flush_inbound_reg reboot");
+	switch_console_set_complete("add sofia profile ::sofia::list_profiles ::[register:unregister all");
+	switch_console_set_complete("add sofia profile ::sofia::list_profiles ::[register:unregister:killgw ::sofia::list_profile_gateway");
+	switch_console_set_complete("add sofia profile ::sofia::list_profiles killgw _all_");
+	switch_console_set_complete("add sofia profile ::sofia::list_profiles ::[siptrace:capture:watchdog ::[on:off");
+	switch_console_set_complete("add sofia profile ::sofia::list_profiles gwlist ::[up:down");
 
-	switch_console_set_complete("add sofia profile ::sofia::list_profiles flush_inbound_reg");
-	switch_console_set_complete("add sofia profile ::sofia::list_profiles check_sync");
-	switch_console_set_complete("add sofia profile ::sofia::list_profiles register ::sofia::list_profile_gateway");
-	switch_console_set_complete("add sofia profile ::sofia::list_profiles unregister ::sofia::list_profile_gateway");
-	switch_console_set_complete("add sofia profile ::sofia::list_profiles killgw ::sofia::list_profile_gateway");
-	switch_console_set_complete("add sofia profile ::sofia::list_profiles siptrace on");
-	switch_console_set_complete("add sofia profile ::sofia::list_profiles siptrace off");
-	switch_console_set_complete("add sofia profile ::sofia::list_profiles capture on");
-	switch_console_set_complete("add sofia profile ::sofia::list_profiles capture off");
-	switch_console_set_complete("add sofia profile ::sofia::list_profiles watchdog on");
-	switch_console_set_complete("add sofia profile ::sofia::list_profiles watchdog off");
+	switch_console_set_complete("add sofia recover flush");
 
-	switch_console_set_complete("add sofia profile ::sofia::list_profiles gwlist up");
-	switch_console_set_complete("add sofia profile ::sofia::list_profiles gwlist down");
-
-	switch_console_set_complete("add sofia status profile ::sofia::list_profiles");
-	switch_console_set_complete("add sofia status profile ::sofia::list_profiles reg");
-	switch_console_set_complete("add sofia status gateway ::sofia::list_gateways");
-	switch_console_set_complete("add sofia xmlstatus profile ::sofia::list_profiles");
 	switch_console_set_complete("add sofia xmlstatus profile ::sofia::list_profiles reg");
 	switch_console_set_complete("add sofia xmlstatus gateway ::sofia::list_gateways");
 

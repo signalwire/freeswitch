@@ -291,6 +291,7 @@ typedef enum {
 	PFLAG_PROXY_REFER,
 	PFLAG_CHANNEL_XML_FETCH_ON_NIGHTMARE_TRANSFER,
 	PFLAG_FIRE_TRANFER_EVENTS,
+	PFLAG_BLIND_AUTH_ENFORCE_RESULT,
 
 	/* No new flags below this line */
 	PFLAG_MAX
@@ -597,6 +598,7 @@ struct sofia_profile {
 
 	char *sdp_username;
 	char *sipip;
+	char *printable_sipip;
 	char *extsipip;
 	char *url;
 	char *public_url;

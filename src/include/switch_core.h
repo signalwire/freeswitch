@@ -1443,18 +1443,18 @@ SWITCH_DECLARE(void *) switch_core_hash_delete(_In_ switch_hash_t *hash, _In_z_ 
   \param hash the hash to delete from
   \param key the key from which to delete the data
   \param mutex optional mutex to lock
-  \return SWITCH_STATUS_SUCCESS if the data is deleted
+  \return a pointer to the deleted data
 */
-SWITCH_DECLARE(switch_status_t) switch_core_hash_delete_locked(_In_ switch_hash_t *hash, _In_z_ const char *key, _In_opt_ switch_mutex_t *mutex);
+SWITCH_DECLARE(void *) switch_core_hash_delete_locked(_In_ switch_hash_t *hash, _In_z_ const char *key, _In_opt_ switch_mutex_t *mutex);
 
 /*! 
   \brief Delete data from a hash based on desired key
   \param hash the hash to delete from
   \param key the key from which to delete the data
   \param mutex optional rwlock to wrlock
-  \return SWITCH_STATUS_SUCCESS if the data is deleted
+  \return a pointer to the deleted data
 */
-SWITCH_DECLARE(switch_status_t) switch_core_hash_delete_wrlock(_In_ switch_hash_t *hash, _In_z_ const char *key, _In_opt_ switch_thread_rwlock_t *rwlock);
+SWITCH_DECLARE(void *) switch_core_hash_delete_wrlock(_In_ switch_hash_t *hash, _In_z_ const char *key, _In_opt_ switch_thread_rwlock_t *rwlock);
 
 /*! 
   \brief Delete data from a hash based on callback function
@@ -1929,8 +1929,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_get_string(_In_ switch_file_han
 */
 SWITCH_DECLARE(switch_status_t) switch_core_file_close(_In_ switch_file_handle_t *fh);
 
+SWITCH_DECLARE(switch_status_t) switch_core_file_command(switch_file_handle_t *fh, switch_file_command_t command);
+
 SWITCH_DECLARE(switch_status_t) switch_core_file_truncate(switch_file_handle_t *fh, int64_t offset);
-SWITCH_DECLARE(switch_bool_t) switch_core_file_has_video(switch_file_handle_t *fh);
+SWITCH_DECLARE(switch_bool_t) switch_core_file_has_video(switch_file_handle_t *fh, switch_bool_t CHECK_OPEN);
 
 
 ///\}
@@ -2734,6 +2736,8 @@ SWITCH_DECLARE(const char *)switch_version_revision(void);
 SWITCH_DECLARE(const char *)switch_version_revision_human(void);
 SWITCH_DECLARE(const char *)switch_version_full(void);
 SWITCH_DECLARE(const char *)switch_version_full_human(void);
+
+SWITCH_DECLARE(void) switch_core_autobind_cpu(void);
 
 SWITCH_END_EXTERN_C
 #endif

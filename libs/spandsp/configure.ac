@@ -37,6 +37,7 @@ m4_include(m4/ax_c99_features.m4)
 m4_include(m4/ax_check_export_capability.m4)
 m4_include(m4/ax_check_arm_neon.m4)
 m4_include(m4/ax_func_aligned_alloc.m4)
+m4_include(m4/memmove.m4)
 
 AC_CONFIG_SRCDIR([src/tone_generate.c])
 AC_CONFIG_AUX_DIR([config])
@@ -152,6 +153,7 @@ AC_FUNC_ERROR_AT_LINE
 AC_FUNC_VPRINTF
 AC_FUNC_MEMCMP
 AC_FUNC_MEMMOVE
+
 if test "${ax_cv_c_compiler_vendor}" = "gnu"
   then
     AC_FUNC_REALLOC

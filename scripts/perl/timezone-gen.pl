@@ -2,6 +2,9 @@
 
 use strict;
 use Getopt::Long;
+use XML::Entities;
+use HTML::Entities;
+
 
 my $base   = "/usr/share/zoneinfo";
 my $output = "timezones.conf.xml";
@@ -70,7 +73,7 @@ print $out " " x 4, "<timezones>\n";
 
 my $lastprefix = "";
 foreach my $zone ( sort( keys(%zones) ) ) {
-    my $str = $zones{$zone};
+    my $str = encode_entities($zones{$zone});
     next if ( !$str );
 
     my $newprefix = $zone;

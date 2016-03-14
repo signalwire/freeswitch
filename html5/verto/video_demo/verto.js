@@ -1441,11 +1441,11 @@ function init() {
 
 	},
 
-//	audioParams: {
-//	    googAutoGainControl: false,
-//	    googNoiseSuppression: false,
-//	    googHighpassFilter: false
-//	},
+	audioParams: {
+	    googAutoGainControl: false,
+	    googNoiseSuppression: false,
+	    googHighpassFilter: false
+	},
 
 	iceServers: $("#use_stun").is(':checked')
     },callbacks);

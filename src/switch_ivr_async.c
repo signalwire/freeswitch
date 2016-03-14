@@ -1048,6 +1048,8 @@ struct record_helper {
 	switch_thread_t *thread;
 	switch_mutex_t *buffer_mutex;
 	int thread_ready;
+	uint32_t writes;
+	uint32_t vwrites;
 	const char *completion_cause;
 };
 
@@ -1129,16 +1131,21 @@ static void *SWITCH_THREAD_FUNC recording_thread(switch_thread_t *thread, void *
 		return NULL;
 	}
 
-	switch_core_session_get_read_impl(session, &read_impl);
-	bsize = read_impl.decoded_bytes_per_packet;
 	rh = switch_core_media_bug_get_user_data(bug);
 	switch_buffer_create_dynamic(&rh->thread_buffer, 1024 * 512, 1024 * 64, 0);
 	rh->thread_ready = 1;
 
 	channels = switch_core_media_bug_test_flag(bug, SMBF_STEREO) ? 2 : rh->read_impl.number_of_channels;
-	data = switch_core_session_alloc(session, bsize);
+	data = switch_core_session_alloc(session, SWITCH_RECOMMENDED_BUFFER_SIZE);
 
 	while(switch_test_flag(rh->fh, SWITCH_FILE_OPEN)) {
+		if (switch_core_file_has_video(rh->fh, SWITCH_TRUE)) {
+			switch_core_session_get_read_impl(session, &read_impl);
+			if (read_impl.decoded_bytes_per_packet > 0 && read_impl.decoded_bytes_per_packet <= SWITCH_RECOMMENDED_BUFFER_SIZE) {
+				bsize = read_impl.decoded_bytes_per_packet;
+			}
+		}
+
 		switch_mutex_lock(rh->buffer_mutex);
 		inuse = switch_buffer_inuse(rh->thread_buffer);
 
@@ -1253,7 +1260,7 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 
 			switch_core_file_write(&rh->in_fh, mask ? null_data : nframe->data, &len);
 			rh->last_read_time = now;
-			
+			rh->writes++;
 		}
 		break;
 	case SWITCH_ABC_TYPE_TAP_NATIVE_WRITE:
@@ -1292,7 +1299,7 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 			
 			switch_core_file_write(&rh->out_fh, mask ? null_data : nframe->data, &len);
 			rh->last_write_time = now;
-			
+			rh->writes++;
 		}
 		break;
 	case SWITCH_ABC_TYPE_CLOSE:
@@ -1345,35 +1352,39 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 				}
 
 				
-				//if (switch_core_file_has_video(rh->fh)) {
+				//if (switch_core_file_has_video(rh->fh, SWITCH_TRUE)) {
 					//switch_core_media_set_video_file(session, NULL, SWITCH_RW_READ);
 					//switch_channel_clear_flag_recursive(session->channel, CF_VIDEO_DECODED_READ);
 				//}
 
 				switch_core_file_close(rh->fh);
 
-				
-
-				if (rh->fh->samples_out < rh->fh->samplerate * rh->min_sec) {
+				if (!rh->writes && !rh->vwrites) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Discarding empty file %s\n", rh->file);
+					switch_channel_set_variable(channel, "RECORD_DISCARDED", "true");
+					switch_file_remove(rh->file, switch_core_session_get_pool(session));
+					set_completion_cause(rh, "empty-file");
+				} else if (rh->fh->samples_out < rh->fh->samplerate * rh->min_sec) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Discarding short file %s\n", rh->file);
 					switch_channel_set_variable(channel, "RECORD_DISCARDED", "true");
 					switch_file_remove(rh->file, switch_core_session_get_pool(session));
 					set_completion_cause(rh, "input-too-short");
-				}
-
-				if (switch_channel_down_nosig(channel)) {
-					/* We got hung up */
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Channel is hung up\n");
-					if (rh->speech_detected) {
-						/* Treat it as equivalent with final-silence */
-						set_completion_cause(rh, "success-silence");
-					} else {
-						/* Treat it as equivalent with inital-silence timeout */
-						set_completion_cause(rh, "no-input-timeout");
-					}
 				} else {
-					/* Set the completion_cause to maxtime reached, unless it's already set */
-					set_completion_cause(rh, "success-maxtime");
+
+					if (switch_channel_down_nosig(channel)) {
+						/* We got hung up */
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Channel is hung up\n");
+						if (rh->speech_detected) {
+							/* Treat it as equivalent with final-silence */
+							set_completion_cause(rh, "success-silence");
+						} else {
+							/* Treat it as equivalent with inital-silence timeout */
+							set_completion_cause(rh, "no-input-timeout");
+						}
+					} else {
+						/* Set the completion_cause to maxtime reached, unless it's already set */
+						set_completion_cause(rh, "success-maxtime");
+					}
 				}
 			}
 			
@@ -1441,7 +1452,9 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 						}
 						return SWITCH_FALSE;
 					}
-
+					
+					rh->writes++;
+					
 					/* check for silence timeout */
 					if (rh->silence_threshold) {
 						switch_codec_implementation_t read_impl = { 0 };
@@ -1500,6 +1513,7 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 				switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
 				return SWITCH_FALSE;
 			}
+			rh->vwrites++;
 		}
 		break;
 
@@ -2537,7 +2551,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 			return SWITCH_STATUS_GENERR;
 		}
 
-		if (switch_core_file_has_video(fh)) {
+		if (switch_core_file_has_video(fh, SWITCH_TRUE)) {
 			//switch_core_media_set_video_file(session, fh, SWITCH_RW_READ);
 			//switch_channel_set_flag_recursive(session->channel, CF_VIDEO_DECODED_READ);
 			
@@ -2562,8 +2576,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 		out_file = switch_core_session_sprintf(session, "%s-out.%s", file, ext);
 		rh->in_fh.pre_buffer_datalen = rh->out_fh.pre_buffer_datalen = fh->pre_buffer_datalen;
 		channels = 1;
-		switch_set_flag(&rh->in_fh, SWITCH_FILE_NATIVE);
-		switch_set_flag(&rh->out_fh, SWITCH_FILE_NATIVE);
+		switch_set_flag_locked(&rh->in_fh, SWITCH_FILE_NATIVE);
+		switch_set_flag_locked(&rh->out_fh, SWITCH_FILE_NATIVE);
 
 		if (switch_core_file_open(&rh->in_fh, in_file, channels, read_impl.actual_samples_per_second, file_flags, NULL) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error opening %s\n", in_file);

@@ -1591,7 +1591,9 @@ static void our_sofia_event_callback(nua_event_t event,
 		sofia_handle_sip_i_info(nua, profile, nh, session, sip, de, tags);
 		break;
 	case nua_i_update:
-		sofia_update_callee_id(session, profile, sip, SWITCH_TRUE);
+		if (session) {
+			sofia_update_callee_id(session, profile, sip, SWITCH_TRUE);
+		}
 		break;
 	case nua_r_update:
 		if (session && tech_pvt && locked) {
@@ -4191,6 +4193,7 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 
 					sofia_clear_pflag(profile, PFLAG_CHANNEL_XML_FETCH_ON_NIGHTMARE_TRANSFER);
 					sofia_clear_pflag(profile, PFLAG_FIRE_TRANFER_EVENTS);
+					sofia_clear_pflag(profile, PFLAG_BLIND_AUTH_ENFORCE_RESULT);
 					profile->shutdown_type = "false";
 					profile->local_network = "localnet.auto";
 					sofia_set_flag(profile, TFLAG_ENABLE_SOA);
@@ -5469,6 +5472,12 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 						}  else {
 							sofia_clear_pflag(profile, PFLAG_FIRE_TRANFER_EVENTS);
 						}
+                                        } else if (!strcasecmp(var, "enforce-blind-auth-result")) {
+                                                if(switch_true(val)) {
+                                                        sofia_set_pflag(profile, PFLAG_BLIND_AUTH_ENFORCE_RESULT);
+                                                }  else {
+                                                        sofia_clear_pflag(profile, PFLAG_BLIND_AUTH_ENFORCE_RESULT);
+                                                }
 					}
 				}
 
@@ -6749,7 +6758,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 	}
 
 	if (session) {
-		if (switch_channel_test_flag(channel, CF_ANSWERED) && (status == 180 || status == 183) && !r_sdp) {
+		if ((switch_channel_test_flag(channel, CF_ANSWERED) && (status == 180 || status == 183) && !r_sdp) || (ss_state == nua_callstate_ready && status >= 300)) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Channel %s skipping state [%s][%d]\n",
 							  switch_channel_get_name(channel), nua_callstate_name(ss_state), status);
 			goto done;
@@ -6969,7 +6978,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 			}
 
 			if (switch_channel_test_flag(channel, CF_3P_NOMEDIA_REQUESTED)) {
-				switch_channel_clear_flag(channel, CF_3P_NOMEDIA_REQUESTED);
+				
 				if (switch_channel_test_flag(channel, CF_3P_NOMEDIA_REQUESTED_BLEG)) {
 					switch_core_session_t *other_session;
 					
@@ -7001,12 +7010,12 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 					switch_channel_set_variable(channel, SWITCH_R_SDP_VARIABLE, r_sdp);
 				}
 				
+				switch_channel_clear_flag(channel, CF_3P_NOMEDIA_REQUESTED);
 				goto done;
 
 			} else if (switch_channel_test_flag(channel, CF_3P_MEDIA_REQUESTED)) {
 				uint8_t match = 0;
 				
-				switch_channel_clear_flag(channel, CF_3P_MEDIA_REQUESTED);
 				switch_channel_clear_flag(channel, CF_PROXY_MODE);
 				
 				switch_core_media_choose_port(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO, 0);
@@ -7046,12 +7055,14 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 							//TAG_IF(sofia_test_pflag(tech_pvt->profile, PFLAG_DISABLE_100REL), NUTAG_INCLUDE_EXTRA_SDP(1)),
 							TAG_END());
 					
+					switch_channel_clear_flag(channel, CF_3P_MEDIA_REQUESTED);
 					goto done;
 				}
 
 				switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "NO CODECS");
 				switch_channel_hangup(channel, SWITCH_CAUSE_INCOMPATIBLE_DESTINATION);
 
+				switch_channel_clear_flag(channel, CF_3P_MEDIA_REQUESTED);
 				goto done;
 				//ss_state = nua_callstate_ready;
 				//goto state_process;
@@ -9146,7 +9157,14 @@ void sofia_handle_sip_i_reinvite(switch_core_session_t *session,
 				tech_pvt->mparams.last_sdp_str = tech_pvt->mparams.prev_sdp_str;
 			}
 		}
-		switch_channel_execute_on(channel, "execute_on_sip_reinvite");
+
+		if (switch_core_media_check_udptl_mode(session, SWITCH_MEDIA_TYPE_AUDIO)) {
+			/* Refuse all re-invites once we are doing T.38 */
+			nua_respond(nh, SIP_488_NOT_ACCEPTABLE, TAG_END());
+			switch_channel_hangup(channel, SWITCH_CAUSE_INCOMPATIBLE_DESTINATION);
+		} else {
+			switch_channel_execute_on(channel, "execute_on_sip_reinvite");
+		}
 	}
 
 }
@@ -9434,6 +9452,7 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 
 	if (!is_auth && sofia_test_pflag(profile, PFLAG_AUTH_CALLS) && sofia_test_pflag(profile, PFLAG_BLIND_AUTH)) {
 		char *user;
+		switch_status_t blind_result = SWITCH_STATUS_FALSE;
 
 		if (!strcmp(network_ip, profile->sipip) && network_port == profile->sip_port) {
 			calling_myself++;
@@ -9441,10 +9460,11 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 
 		if (sip && sip->sip_from) {
 			user = switch_core_session_sprintf(session, "%s@%s", sip->sip_from->a_url->url_user, sip->sip_from->a_url->url_host);
-			switch_ivr_set_user(session, user);
+			blind_result = switch_ivr_set_user(session, user);
 		}
-
-		is_auth++;
+		if(!sofia_test_pflag(profile, PFLAG_BLIND_AUTH_ENFORCE_RESULT) || blind_result == SWITCH_STATUS_SUCCESS) {
+			is_auth++;
+		}
 	}
 
 	if (!is_auth &&

@@ -408,6 +408,7 @@ elif test "x${ax_cv_c_compiler_vendor}" = "xclang" ; then
 elif test "x${ax_cv_c_compiler_vendor}" = "xgnu" ; then
     APR_ADDTO(SWITCH_AM_CFLAGS, -fPIC)
     APR_ADDTO(SWITCH_AM_CXXFLAGS, -fPIC)
+    AC_SUBST([AM_MOD_AVMD_CXXFLAGS], [-std=gnu99])      # FS-8809, needed for MAP_POPULATE
     if test "$ac_cv_gcc_supports_w_no_unused_result" = yes; then
       APR_ADDTO(SWITCH_AM_CFLAGS, -Werror)
     fi
@@ -541,6 +542,16 @@ if test "${enable_debug}" = "yes"; then
 	fi
 
 fi
+
+AC_ARG_ENABLE(libyuv,
+[AC_HELP_STRING([--disable-libyuv],[build without libyuv])],[enable_libyuv="$enableval"],[enable_libyuv="yes"])
+
+AM_CONDITIONAL([ENABLE_LIBYUV],[test "${enable_libyuv}" = "yes"])
+
+AC_ARG_ENABLE(libvpx,
+[AC_HELP_STRING([--disable-libvpx],[build without libvpx])],[enable_libvpx="$enableval"],[enable_libvpx="yes"])
+
+AM_CONDITIONAL([ENABLE_LIBVPX],[test "${enable_libvpx}" = "yes"])
 
 AC_ARG_ENABLE(cpp,
 [AC_HELP_STRING([--disable-cpp],[build without cpp code])],[enable_cpp="$enableval"],[enable_cpp="yes"])
@@ -784,12 +795,6 @@ if test "x$have_libz" = "xyes"  ; then
 APR_ADDTO([PLATFORM_CORE_LIBS], [-lz])
 fi
 
-PKG_CHECK_MODULES([YUV], [libyuv >= 0.0.1280],
-			 [AC_MSG_RESULT([yes]);AM_CONDITIONAL([HAVE_YUV],[true])],
-			 [AC_MSG_RESULT([no]);AM_CONDITIONAL([HAVE_YUV],[false])])
-
-APR_ADDTO([PLATFORM_CORE_LIBS], [${YUV_LIBS}])
-
 PKG_CHECK_MODULES([MPG123], [libmpg123 >= 1.20.1],[
   AM_CONDITIONAL([HAVE_MPG123],[true])],[
   AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_MPG123],[false])])
@@ -899,8 +904,6 @@ AC_FUNC_STRERROR_R
 CPPFLAGS="$save_CPPFLAGS"
 
 AX_HAVE_CPU_SET
-
-AC_CHECK_LIB(vpx, vpx_img_alloc, [AC_DEFINE(HAVE_VPX, 1, [Define if you have vpx()])])
 
 AC_CHECK_LIB(rt, clock_gettime, [AC_DEFINE(HAVE_CLOCK_GETTIME, 1, [Define if you have clock_gettime()])])
 AC_CHECK_LIB(rt, clock_getres, [AC_DEFINE(HAVE_CLOCK_GETRES, 1, [Define if you have clock_getres()])])
@@ -1273,16 +1276,6 @@ PKG_CHECK_MODULES([SNDFILE], [sndfile >= 1.0.20],[
   AM_CONDITIONAL([HAVE_SNDFILE],[true])],[
   AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_SNDFILE],[false])])
 
-PKG_CHECK_MODULES([VPX], [vpx2 >= 1.4.0],[
-  AM_CONDITIONAL([HAVE_VPX],[true])],[
-    PKG_CHECK_MODULES([VPX], [vpx >= 1.4.0],[
-      AM_CONDITIONAL([HAVE_VPX],[true])],[
-      AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_VPX],[false])])])
-
-SWITCH_AM_CFLAGS="$VPX_CFLAGS $SWITCH_AM_CFLAGS"
-SWITCH_AM_CXXFLAGS="$VPX_CFLAGS $SWITCH_AM_CXXFLAGS"
-SWITCH_AM_CPPFLAGS="$VPX_CFLAGS $SWITCH_AM_CPPFLAGS"
-
 PKG_CHECK_MODULES([MPG123], [libmpg123 >= 1.20.1],[
   AM_CONDITIONAL([HAVE_MPG123],[true])],[
   AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_MPG123],[false])])
@@ -1291,9 +1284,13 @@ PKG_CHECK_MODULES([SHOUT], [shout >= 2.2.2],[
   AM_CONDITIONAL([HAVE_SHOUT],[true])],[
   AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_SHOUT],[false])])
 
-PKG_CHECK_MODULES([MP3LAME], [mp3lame],[
-  AM_CONDITIONAL([HAVE_MP3LAME],[true])],[
-  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_MP3LAME],[false])])
+mp3lame=false
+AC_CHECK_LIB([mp3lame], [lame_init],[
+  AC_CHECK_HEADER([lame/lame.h],[
+    mp3lame=true
+    AC_SUBST([MP3LAME_LIBS], [-lmp3lame])
+    AC_SUBST([MP3LAME_CFLAGS], [$CPPFLAGS])])])
+AM_CONDITIONAL([HAVE_MP3LAME],[$mp3lame])
 
 PKG_CHECK_MODULES([AVCODEC], [libavcodec >= 53.35.0],[
   AM_CONDITIONAL([HAVE_AVCODEC],[true])],[
@@ -1409,6 +1406,7 @@ AS_IF([test "x$enable_core_libedit_support" != "xno"],[
   PKG_CHECK_MODULES([LIBEDIT], [libedit >= 2.11],,[
     AC_MSG_RESULT([no])
     AC_CHECK_LIB([edit], [el_line], [LIBEDIT_LIBS=-ledit])
+    AC_CHECK_LIB([edit], [el_cursor], [ac_cv_has_el_cursor=yes])
     AC_CHECK_HEADER([histedit.h], [], [unset LIBEDIT_LIBS])
     AS_IF([test "x$LIBEDIT_LIBS" = "x"], [
       AC_MSG_ERROR([You need to either install libedit-dev (>= 2.11) or configure with --disable-core-libedit-support])
@@ -1446,6 +1444,9 @@ AS_IF([test "x$enable_core_libedit_support" != "xno"], [
   # If making changes here, don't forget to run autoheader and
   # update libs/esl/src/include/esl_config_auto.h.in manually.
   AC_DEFINE([HAVE_LIBEDIT], [1], [Define to 1 if you have libedit is available])
+if test x$ac_cv_has_el_cursor = xyes; then
+  AC_DEFINE([HAVE_EL_CURSOR], [1], [Define to 1 if you have libedit el_cursor support])
+fi
   save_LIBS="${LIBS}"
   save_CPPFLAGS="${CPPFLAGS}"
   LIBS="${LIBEDIT_LIBS}"
@@ -1756,7 +1757,6 @@ AC_CONFIG_FILES([Makefile
 		src/mod/codecs/mod_siren/Makefile
 		src/mod/codecs/mod_skel_codec/Makefile
 		src/mod/codecs/mod_theora/Makefile
-		src/mod/codecs/mod_vpx/Makefile
 		src/mod/dialplans/mod_dialplan_asterisk/Makefile
 		src/mod/dialplans/mod_dialplan_directory/Makefile
 		src/mod/dialplans/mod_dialplan_xml/Makefile

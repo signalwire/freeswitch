@@ -342,8 +342,8 @@
             if(typeof self.options.localVideoStream.stop == 'function') {
 	        self.options.localVideoStream.stop();
             } else {
-		if (self.localVideoStream.active){
-                    var tracks = self.localVideoStream.getTracks();
+		if (self.options.localVideoStream.active){
+                    var tracks = self.options.localVideoStream.getTracks();
                     console.error(tracks);
 		    tracks.forEach(function(track, index){
 			console.log(track);
@@ -513,13 +513,22 @@
 	    audio = false;
 	} else {
 	    audio = {
-		mandatory: obj.options.audioParams,
+		mandatory: {},
 		optional: []
 	    };
 
 	    if (obj.options.useMic !== "any") {
 		audio.optional = [{sourceId: obj.options.useMic}]
 	    }
+
+	    if (obj.options.audioParams) {
+		for (var key in obj.options.audioParams) {
+		    var con = {};
+		    con[key] = obj.options.audioParams[key];
+		    audio.optional.push(con);
+		}
+	    }
+
 
 	}
 

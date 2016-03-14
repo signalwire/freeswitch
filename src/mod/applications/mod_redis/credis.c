@@ -45,6 +45,9 @@
 #include <sys/socket.h>
 #include <netdb.h>
 #include <netinet/tcp.h>
+#if defined(__FreeBSD__)
+#include <netinet/in.h>
+#endif
 #include <arpa/inet.h>
 #endif
 #include <fcntl.h>

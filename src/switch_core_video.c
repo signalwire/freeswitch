@@ -31,8 +31,8 @@
 
 #ifdef SWITCH_HAVE_VPX
 #include "vpx/vpx_image.h"
-#if VPX_IMAGE_ABI_VERSION != (3)
-#error VPX_IMAGE_ABI_VERSION is not (3)
+#if VPX_IMAGE_ABI_VERSION != (4)
+#error VPX_IMAGE_ABI_VERSION is not (4)
 #endif
 #endif
 
@@ -358,8 +358,8 @@ SWITCH_DECLARE(void) switch_img_patch(switch_image_t *IMG, switch_image_t *img, 
 	len /= 2;
 
 	for (i = y; i < max_h; i += 2) {
-		memcpy(IMG->planes[SWITCH_PLANE_U] + IMG->stride[SWITCH_PLANE_U] * i / 2 + x / 2, img->planes[SWITCH_PLANE_U] + img->stride[SWITCH_PLANE_U] * (i - y + yoff) / 2 + xoff / 2, len);
-		memcpy(IMG->planes[SWITCH_PLANE_V] + IMG->stride[SWITCH_PLANE_V] * i / 2 + x / 2, img->planes[SWITCH_PLANE_V] + img->stride[SWITCH_PLANE_V] * (i - y + yoff) / 2 + xoff / 2, len);
+		memcpy(IMG->planes[SWITCH_PLANE_U] + IMG->stride[SWITCH_PLANE_U] * (i / 2) + x / 2, img->planes[SWITCH_PLANE_U] + img->stride[SWITCH_PLANE_U] * ((i - y + yoff) / 2) + xoff / 2, len);
+		memcpy(IMG->planes[SWITCH_PLANE_V] + IMG->stride[SWITCH_PLANE_V] * (i / 2) + x / 2, img->planes[SWITCH_PLANE_V] + img->stride[SWITCH_PLANE_V] * ((i - y + yoff) / 2) + xoff / 2, len);
 	}
 }
 
@@ -529,8 +529,8 @@ SWITCH_DECLARE(void) switch_img_fill(switch_image_t *img, int x, int y, int w, i
 		len /= 2;
 
 		for (i = y; i < max_h; i += 2) {
-			memset(img->planes[SWITCH_PLANE_U] + img->stride[SWITCH_PLANE_U] * i / 2 + x / 2, yuv_color.u, len);
-			memset(img->planes[SWITCH_PLANE_V] + img->stride[SWITCH_PLANE_V] * i / 2 + x / 2, yuv_color.v, len);
+			memset(img->planes[SWITCH_PLANE_U] + img->stride[SWITCH_PLANE_U] * (i / 2) + x / 2, yuv_color.u, len);
+			memset(img->planes[SWITCH_PLANE_V] + img->stride[SWITCH_PLANE_V] * (i / 2) + x / 2, yuv_color.v, len);
 		}
 	} else if (img->fmt == SWITCH_IMG_FMT_ARGB) {
 		for (i = 0; i < img->d_w; i++) {
@@ -555,8 +555,8 @@ static inline void switch_img_get_yuv_pixel(switch_image_t *img, switch_yuv_colo
 	if (x < 0 || y < 0 || x >= img->d_w || y >= img->d_h) return;
 
 	yuv->y = *(img->planes[SWITCH_PLANE_Y] + img->stride[SWITCH_PLANE_Y] * y + x);
-	yuv->u = *(img->planes[SWITCH_PLANE_U] + img->stride[SWITCH_PLANE_U] * y / 2 + x / 2);
-	yuv->v = *(img->planes[SWITCH_PLANE_V] + img->stride[SWITCH_PLANE_V] * y / 2 + x / 2);
+	yuv->u = *(img->planes[SWITCH_PLANE_U] + img->stride[SWITCH_PLANE_U] * (y / 2) + x / 2);
+	yuv->v = *(img->planes[SWITCH_PLANE_V] + img->stride[SWITCH_PLANE_V] * (y / 2) + x / 2);
 }
 #endif
 
@@ -580,11 +580,13 @@ static inline void switch_img_get_rgb_pixel(switch_image_t *img, switch_rgb_colo
 #endif	
 }
 
-SWITCH_DECLARE(void) switch_img_overlay(switch_image_t *IMG, switch_image_t *img, int x, int y, uint8_t alpha)
+SWITCH_DECLARE(void) switch_img_overlay(switch_image_t *IMG, switch_image_t *img, int x, int y, uint8_t percent)
 {
 	int i, j, len, max_h;
 	switch_rgb_color_t RGB = {0}, rgb = {0}, c = {0};
 	int xoff = 0, yoff = 0;
+	uint8_t alpha = (int8_t)((255 * percent) / 100);
+
 
 	switch_assert(IMG->fmt == SWITCH_IMG_FMT_I420);
 
@@ -1059,7 +1061,7 @@ SWITCH_DECLARE(uint32_t) switch_img_txt_handle_render(switch_img_txt_handle_t *h
 		pen.y += slot->advance.y >> 6;
 	}
 
-	ret = width + slot->bitmap.width * 3;
+	ret = width + slot->bitmap.width * 5;
 
 	FT_Done_Face(face);
 
@@ -1126,6 +1128,7 @@ SWITCH_DECLARE(switch_image_t *) switch_img_write_text_img(int w, int h, switch_
 
     if (len < 5) len = 5;
 
+
 	switch_img_txt_handle_create(&txthandle, font_face, fg, bg, font_size, 0, NULL);
 	switch_color_set_rgb(&bgcolor, bg);
 
@@ -1165,6 +1168,8 @@ SWITCH_DECLARE(switch_image_t *) switch_img_write_text_img(int w, int h, switch_
                                  txt, NULL, fg, bg, 0, 0);
 	switch_img_txt_handle_destroy(&txthandle);
 
+	switch_safe_free(duptxt);
+
 	return txtimg;
 }
 
@@ -1201,14 +1206,14 @@ SWITCH_DECLARE(void) switch_img_patch_hole(switch_image_t *IMG, switch_image_t *
 			int size = rect->x > x ? rect->x - x : 0;
 
 			size /= 2;
-			memcpy(IMG->planes[SWITCH_PLANE_U] + IMG->stride[SWITCH_PLANE_U] * i / 2 + x / 2, img->planes[SWITCH_PLANE_U] + img->stride[SWITCH_PLANE_U] * (i - y) / 2, size);
-			memcpy(IMG->planes[SWITCH_PLANE_V] + IMG->stride[SWITCH_PLANE_V] * i / 2 + x / 2, img->planes[SWITCH_PLANE_V] + img->stride[SWITCH_PLANE_V] * (i - y) / 2, size);
+			memcpy(IMG->planes[SWITCH_PLANE_U] + IMG->stride[SWITCH_PLANE_U] * (i / 2) + x / 2, img->planes[SWITCH_PLANE_U] + img->stride[SWITCH_PLANE_U] * ((i - y) / 2), size);
+			memcpy(IMG->planes[SWITCH_PLANE_V] + IMG->stride[SWITCH_PLANE_V] * (i / 2) + x / 2, img->planes[SWITCH_PLANE_V] + img->stride[SWITCH_PLANE_V] * ((i - y) / 2), size);
 			size = MIN(img->d_w - rect->w - size, IMG->d_w - (rect->x + rect->w)) / 2;
-			memcpy(IMG->planes[SWITCH_PLANE_U] + IMG->stride[SWITCH_PLANE_U] * i / 2 + (rect->x + rect->w) / 2, img->planes[SWITCH_PLANE_U] + img->stride[SWITCH_PLANE_U] * (i - y) / 2 + (rect->w + (rect->x - x)) / 2, size);
-			memcpy(IMG->planes[SWITCH_PLANE_V] + IMG->stride[SWITCH_PLANE_V] * i / 2 + (rect->x + rect->w) / 2, img->planes[SWITCH_PLANE_V] + img->stride[SWITCH_PLANE_V] * (i - y) / 2 + (rect->w + (rect->x - x)) / 2, size);
+			memcpy(IMG->planes[SWITCH_PLANE_U] + IMG->stride[SWITCH_PLANE_U] * (i / 2) + (rect->x + rect->w) / 2, img->planes[SWITCH_PLANE_U] + img->stride[SWITCH_PLANE_U] * ((i - y) / 2) + (rect->w + (rect->x - x)) / 2, size);
+			memcpy(IMG->planes[SWITCH_PLANE_V] + IMG->stride[SWITCH_PLANE_V] * (i / 2) + (rect->x + rect->w) / 2, img->planes[SWITCH_PLANE_V] + img->stride[SWITCH_PLANE_V] * ((i - y) / 2) + (rect->w + (rect->x - x)) / 2, size);
 		} else {
-			memcpy(IMG->planes[SWITCH_PLANE_U] + IMG->stride[SWITCH_PLANE_U] * i / 2 + x / 2, img->planes[SWITCH_PLANE_U] + img->stride[SWITCH_PLANE_U] * (i - y) / 2, len);
-			memcpy(IMG->planes[SWITCH_PLANE_V] + IMG->stride[SWITCH_PLANE_V] * i / 2 + x / 2, img->planes[SWITCH_PLANE_V] + img->stride[SWITCH_PLANE_V] * (i - y) / 2, len);
+			memcpy(IMG->planes[SWITCH_PLANE_U] + IMG->stride[SWITCH_PLANE_U] * (i / 2) + x / 2, img->planes[SWITCH_PLANE_U] + img->stride[SWITCH_PLANE_U] * ((i - y) / 2), len);
+			memcpy(IMG->planes[SWITCH_PLANE_V] + IMG->stride[SWITCH_PLANE_V] * (i / 2) + x / 2, img->planes[SWITCH_PLANE_V] + img->stride[SWITCH_PLANE_V] * ((i - y) / 2), len);
 		}
 	}
 }
@@ -1936,29 +1941,119 @@ SWITCH_DECLARE(switch_status_t) switch_img_fit(switch_image_t **srcP, int width,
 	return SWITCH_STATUS_FALSE;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_img_convert(switch_image_t *src, switch_convert_fmt_t fmt, void *dest, switch_size_t *size)
+#ifdef SWITCH_HAVE_YUV
+static inline uint32_t switch_img_fmt2fourcc(switch_img_fmt_t fmt)
+{
+	uint32_t fourcc;
+
+	switch(fmt) {
+		case SWITCH_IMG_FMT_NONE:      fourcc = FOURCC_ANY ; break;
+		case SWITCH_IMG_FMT_RGB24:     fourcc = FOURCC_24BG; break;
+		case SWITCH_IMG_FMT_RGB32:     fourcc = FOURCC_ANY ; break;
+		case SWITCH_IMG_FMT_RGB565:    fourcc = FOURCC_ANY ; break;
+		case SWITCH_IMG_FMT_RGB555:    fourcc = FOURCC_ANY ; break;
+		case SWITCH_IMG_FMT_UYVY:      fourcc = FOURCC_ANY ; break;
+		case SWITCH_IMG_FMT_YUY2:      fourcc = FOURCC_YUY2; break;
+		case SWITCH_IMG_FMT_YVYU:      fourcc = FOURCC_ANY ; break;
+		case SWITCH_IMG_FMT_BGR24:     fourcc = FOURCC_RAW ; break;
+		case SWITCH_IMG_FMT_RGB32_LE:  fourcc = FOURCC_ANY ; break;
+		case SWITCH_IMG_FMT_ARGB:      fourcc = FOURCC_ANY ; break;
+		case SWITCH_IMG_FMT_ARGB_LE:   fourcc = FOURCC_ANY ; break;
+		case SWITCH_IMG_FMT_RGB565_LE: fourcc = FOURCC_ANY ; break;
+		case SWITCH_IMG_FMT_RGB555_LE: fourcc = FOURCC_ANY ; break;
+		case SWITCH_IMG_FMT_YV12:      fourcc = FOURCC_ANY ; break;
+		case SWITCH_IMG_FMT_I420:      fourcc = FOURCC_I420; break;
+		case SWITCH_IMG_FMT_VPXYV12:   fourcc = FOURCC_ANY ; break;
+		case SWITCH_IMG_FMT_VPXI420:   fourcc = FOURCC_ANY ; break;
+		case SWITCH_IMG_FMT_I422:      fourcc = FOURCC_ANY ; break;
+		case SWITCH_IMG_FMT_I444:      fourcc = FOURCC_ANY ; break;
+		case SWITCH_IMG_FMT_I440:      fourcc = FOURCC_ANY ; break;
+		case SWITCH_IMG_FMT_444A:      fourcc = FOURCC_ANY ; break;
+		case SWITCH_IMG_FMT_I42016:    fourcc = FOURCC_ANY ; break;
+		case SWITCH_IMG_FMT_I42216:    fourcc = FOURCC_ANY ; break;
+		case SWITCH_IMG_FMT_I44416:    fourcc = FOURCC_ANY ; break;
+		case SWITCH_IMG_FMT_I44016:    fourcc = FOURCC_ANY ; break;
+		default: fourcc = FOURCC_ANY;
+    }
+
+    return fourcc;
+}
+#endif
+
+SWITCH_DECLARE(switch_status_t) switch_img_to_raw(switch_image_t *src, void *dest, switch_size_t size, switch_img_fmt_t fmt)
 {
 #ifdef SWITCH_HAVE_YUV
-	switch_assert(src->fmt == SWITCH_IMG_FMT_I420);
+	uint32_t fourcc;
+	int ret;
 
-	switch (fmt) {
-	case SWITCH_CONVERT_FMT_YUYV:
-		{
-			switch_size_t size_in = *size;
-			ConvertFromI420(src->planes[0], src->stride[0],
-							src->planes[1], src->stride[1],
-							src->planes[2], src->stride[2],
-							dest, size_in,
-							src->d_w, src->d_h,
-							FOURCC_YUY2);  
-			*size = src->d_w * src->d_h * 2;
+	switch_assert(src->fmt == SWITCH_IMG_FMT_I420); // todo: support other formats
+	switch_assert(dest);
 
-			return SWITCH_STATUS_SUCCESS;
-		}
-	default:
-		abort();
-		break;
+	fourcc = switch_img_fmt2fourcc(fmt);
+
+	if (fourcc == FOURCC_ANY) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "unsupported format: %d\n", fmt);
+		return SWITCH_STATUS_FALSE;
 	}
+
+	ret = ConvertFromI420(src->planes[0], src->stride[0],
+					src->planes[1], src->stride[1],
+					src->planes[2], src->stride[2],
+					dest, size,
+					src->d_w, src->d_h,
+					fourcc);
+
+	return ret == 0 ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
+#else
+	return SWITCH_STATUS_FALSE;
+#endif
+}
+
+SWITCH_DECLARE(switch_status_t) switch_img_from_raw(switch_image_t *dest, void *src, switch_img_fmt_t fmt, int width, int height)
+{
+#ifdef SWITCH_HAVE_YUV
+	uint32_t fourcc;
+	int ret;
+
+	fourcc = switch_img_fmt2fourcc(fmt);
+
+	if (fourcc == FOURCC_ANY) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "unsupported format: %d\n", fmt);
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (!dest && width > 0 && height > 0) dest = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, width, height, 1);
+	if (!dest) return SWITCH_STATUS_FALSE;
+
+	if (width == 0 || height == 0) {
+		width = dest->d_w;
+		height = dest->d_h;
+	}
+
+/*
+	int ConvertToI420(const uint8* src_frame, size_t src_size,
+                  uint8* dst_y, int dst_stride_y,
+                  uint8* dst_u, int dst_stride_u,
+                  uint8* dst_v, int dst_stride_v,
+                  int crop_x, int crop_y,
+                  int src_width, int src_height,
+                  int crop_width, int crop_height,
+                  enum RotationMode rotation,
+                  uint32 format);
+
+	src_size is only used when FOURCC_MJPG which we don't support so always 0
+*/
+
+	ret = ConvertToI420(src, 0,
+					dest->planes[0], dest->stride[0],
+					dest->planes[1], dest->stride[1],
+					dest->planes[2], dest->stride[2],
+					0, 0,
+					width, height,
+					width, height,
+					0, fourcc);
+
+	return ret == 0 ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
 #else
 	return SWITCH_STATUS_FALSE;
 #endif

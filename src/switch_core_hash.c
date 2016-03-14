@@ -57,39 +57,45 @@ SWITCH_DECLARE(switch_status_t) switch_core_hash_destroy(switch_hash_t **hash)
 
 SWITCH_DECLARE(switch_status_t) switch_core_hash_insert_destructor(switch_hash_t *hash, const char *key, const void *data, hashtable_destructor_t destructor)
 {
-	switch_hashtable_insert_destructor(hash, strdup(key), (void *)data, HASHTABLE_FLAG_FREE_KEY | HASHTABLE_DUP_CHECK, destructor);
+	int r = 0;
+
+	r = switch_hashtable_insert_destructor(hash, strdup(key), (void *)data, HASHTABLE_FLAG_FREE_KEY | HASHTABLE_DUP_CHECK, destructor);
 	
-	return SWITCH_STATUS_SUCCESS;
+	return r ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_hash_insert_locked(switch_hash_t *hash, const char *key, const void *data, switch_mutex_t *mutex)
 {
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
 	if (mutex) {
 		switch_mutex_lock(mutex);
 	}
 
-	switch_core_hash_insert(hash, key, data);
+	status = switch_core_hash_insert(hash, key, data);
 
 	if (mutex) {
 		switch_mutex_unlock(mutex);
 	}
 
-	return SWITCH_STATUS_SUCCESS;
+	return status;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_hash_insert_wrlock(switch_hash_t *hash, const char *key, const void *data, switch_thread_rwlock_t *rwlock)
 {
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
 	if (rwlock) {
 		switch_thread_rwlock_wrlock(rwlock);
 	}
 
-	switch_core_hash_insert(hash, key, data);
+	status = switch_core_hash_insert(hash, key, data);
 
 	if (rwlock) {
 		switch_thread_rwlock_unlock(rwlock);
 	}
 
-	return SWITCH_STATUS_SUCCESS;
+	return status;
 }
 
 SWITCH_DECLARE(void *) switch_core_hash_delete(switch_hash_t *hash, const char *key)
@@ -97,8 +103,10 @@ SWITCH_DECLARE(void *) switch_core_hash_delete(switch_hash_t *hash, const char *
 	return switch_hashtable_remove(hash, (void *)key);
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_hash_delete_locked(switch_hash_t *hash, const char *key, switch_mutex_t *mutex)
+SWITCH_DECLARE(void *) switch_core_hash_delete_locked(switch_hash_t *hash, const char *key, switch_mutex_t *mutex)
 {
+	void *ret = NULL;
+
 	if (mutex) {
 		switch_mutex_lock(mutex);
 	}
@@ -109,22 +117,24 @@ SWITCH_DECLARE(switch_status_t) switch_core_hash_delete_locked(switch_hash_t *ha
 		switch_mutex_unlock(mutex);
 	}
 
-	return SWITCH_STATUS_SUCCESS;
+	return ret;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_hash_delete_wrlock(switch_hash_t *hash, const char *key, switch_thread_rwlock_t *rwlock)
+SWITCH_DECLARE(void *) switch_core_hash_delete_wrlock(switch_hash_t *hash, const char *key, switch_thread_rwlock_t *rwlock)
 {
+	void *ret = NULL;
+
 	if (rwlock) {
 		switch_thread_rwlock_wrlock(rwlock);
 	}
 
-	switch_core_hash_delete(hash, key);
+	ret = switch_core_hash_delete(hash, key);
 
 	if (rwlock) {
 		switch_thread_rwlock_unlock(rwlock);
 	}
 
-	return SWITCH_STATUS_SUCCESS;
+	return ret;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_hash_delete_multi(switch_hash_t *hash, switch_hash_delete_callback_t callback, void *pData) {
@@ -252,12 +262,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_inthash_destroy(switch_inthash_t **h
 SWITCH_DECLARE(switch_status_t) switch_core_inthash_insert(switch_inthash_t *hash, uint32_t key, const void *data)
 {
 	uint32_t *k = NULL;
+	int r = 0;
 
 	switch_zmalloc(k, sizeof(*k));
 	*k = key;
-	switch_hashtable_insert_destructor(hash, k, (void *)data, HASHTABLE_FLAG_FREE_KEY | HASHTABLE_DUP_CHECK, NULL);
+	r = switch_hashtable_insert_destructor(hash, k, (void *)data, HASHTABLE_FLAG_FREE_KEY | HASHTABLE_DUP_CHECK, NULL);
 
-	return SWITCH_STATUS_SUCCESS;
+	return r ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
 }
 
 SWITCH_DECLARE(void *) switch_core_inthash_delete(switch_inthash_t *hash, uint32_t key)

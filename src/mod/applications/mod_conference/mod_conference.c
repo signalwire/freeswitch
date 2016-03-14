@@ -3134,7 +3134,7 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 
 	if (video_canvas_count < 1) video_canvas_count = 1;
 
-	if (conference_utils_test_flag(conference, CFLAG_PERSONAL_CANVAS) && video_canvas_count) {
+	if (conference_utils_test_flag(conference, CFLAG_PERSONAL_CANVAS) && video_canvas_count > 1) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Personal Canvas and Multi-Canvas modes are not compatable. 1 canvas will be used.\n");
 		video_canvas_count = 1;
 	}

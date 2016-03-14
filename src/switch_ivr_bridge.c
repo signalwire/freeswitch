@@ -333,6 +333,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 	time_t answer_limit = 0;
 	const char *exec_app = NULL;
 	const char *exec_data = NULL;
+	switch_codec_implementation_t read_impl = { 0 };
 
 #ifdef SWITCH_VIDEO_IN_THREADS
 	struct vid_helper vh = { 0 };
@@ -344,6 +345,9 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 	if (!(session_b = switch_core_session_locate(data->b_uuid))) {
 		return NULL;
 	}
+
+	switch_core_session_get_read_impl(session_a, &read_impl);
+
 
 	input_callback = data->input_callback;
 	user_data = data->session_data;
@@ -405,8 +409,6 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 	}
 
 	if ((silence_var = switch_channel_get_variable(chan_a, "bridge_generate_comfort_noise"))) {
-		switch_codec_implementation_t read_impl = { 0 };
-		switch_core_session_get_read_impl(session_a, &read_impl);
 
 		if (!switch_channel_media_up(chan_a)) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_ERROR, "Channel has no media!\n");
@@ -683,7 +685,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 			if (switch_test_flag(read_frame, SFF_CNG)) {
 				if (silence_val) {
 					switch_generate_sln_silence((int16_t *) silence_frame.data, silence_frame.samples, 
-												read_frame->codec->implementation->number_of_channels, silence_val);
+												read_impl.number_of_channels, silence_val);
 					read_frame = &silence_frame;
 				} else if (!switch_channel_test_flag(chan_b, CF_ACCEPT_CNG)) {
 					continue;

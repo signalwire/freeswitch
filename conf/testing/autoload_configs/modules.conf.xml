@@ -23,7 +23,6 @@
     <load module="mod_g723_1"/>
     <load module="mod_g729"/>
     <load module="mod_amr"/>
-    <load module="mod_vpx"/>
     <load module="mod_opus"/>
     <load module="mod_sndfile"/>
     <load module="mod_native_file"/>

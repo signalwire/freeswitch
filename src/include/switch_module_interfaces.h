@@ -289,6 +289,8 @@ struct switch_file_interface {
 	switch_status_t (*file_set_string) (switch_file_handle_t *fh, switch_audio_col_t col, const char *string);
 	/*! function to get meta data */
 	switch_status_t (*file_get_string) (switch_file_handle_t *fh, switch_audio_col_t col, const char **string);
+	/*! function to control the underlying tech of the file  */
+	switch_status_t (*file_command) (switch_file_handle_t *fh, switch_file_command_t command);
 	/*! list of supported file extensions */
 	char **extens;
 	switch_thread_rwlock_t *rwlock;
@@ -299,10 +301,10 @@ struct switch_file_interface {
 };
 
 typedef enum {
-	SWITCH_VIDEO_ENCODE_SPEED_DEFAULT,
-	SWITCH_VIDEO_ENCODE_SPEED_SLOW,
+	SWITCH_VIDEO_ENCODE_SPEED_DEFAULT = 0,
+	SWITCH_VIDEO_ENCODE_SPEED_FAST = 0,
 	SWITCH_VIDEO_ENCODE_SPEED_MEDIUM,
-	SWITCH_VIDEO_ENCODE_SPEED_FAST
+	SWITCH_VIDEO_ENCODE_SPEED_SLOW
 } switch_video_encode_speed_t;
 
 typedef enum {
@@ -390,6 +392,7 @@ struct switch_file_handle {
 	char *stream_name;
 	char *modname;
 	switch_mm_t mm;
+	switch_mutex_t *flag_mutex;
 };
 
 /*! \brief Abstract interface to an asr module */

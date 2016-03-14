@@ -60,4 +60,24 @@
       </params>
     </profile>
   </commands>
+  <logging>
+    <profile name="default">
+      <connections>
+	<connection name="primary">
+	  <param name="hostname" value="localhost"/>
+	  <param name="virtualhost" value="/"/>
+	  <param name="username" value="guest"/>
+	  <param name="password" value="guest"/>
+	  <param name="port" value="5672"/>
+	  <param name="heartbeat" value="0"/>
+	</connection>
+      </connections>
+      <params>
+	<param name="exchange-name" value="TAP.Logging"/>
+	<param name="send_queue_size" value="5000"/>
+	<param name="reconnect_interval_ms" value="1000"/>
+	<param name="log-levels" value="debug,info,notice,warning,err,crit,alert"/>
+      </params>
+    </profile>
+  </logging>
 </configuration>

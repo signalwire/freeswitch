@@ -771,8 +771,6 @@ void faxtester_set_tx_type(void *user_data, int type, int bit_rate, int short_tr
     s = (faxtester_state_t *) user_data;
     t = &s->modems;
     span_log(&s->logging, SPAN_LOG_FLOW, "Set tx type %d\n", type);
-    if (s->current_tx_type == type)
-        return;
     if (use_hdlc)
     {
         get_bit_func = (get_bit_func_t) hdlc_tx_get_bit;
@@ -782,6 +780,12 @@ void faxtester_set_tx_type(void *user_data, int type, int bit_rate, int short_tr
     {
         get_bit_func = non_ecm_get_bit;
         get_bit_user_data = (void *) s;
+    }
+    if (type == s->current_tx_type)
+    {
+        if (type == T30_MODEM_PAUSE)
+            silence_gen_alter(&t->silence_gen, ms_to_samples(short_train));
+        return;
     }
     switch (type)
     {
@@ -1314,6 +1318,8 @@ SPAN_DECLARE(int) faxtester_next_step(faxtester_state_t *s)
         else if (strcasecmp((const char *) parms.type, "CLEAR") == 0)
         {
             span_log(&s->logging, SPAN_LOG_FLOW, "Far end should drop the call\n");
+            faxtester_set_rx_type(s, T30_MODEM_NONE, 0, false, false);
+            faxtester_set_tx_type(s, T30_MODEM_PAUSE, 0, s->timeout_x, false);
             s->test_for_call_clear = true;
             s->call_clear_timer = 0;
         }
@@ -1648,6 +1654,8 @@ SPAN_DECLARE(int) faxtester_next_step(faxtester_state_t *s)
         else if (strcasecmp((const char *) parms.type, "CLEAR") == 0)
         {
             span_log(&s->logging, SPAN_LOG_FLOW, "Time to drop the call\n");
+            faxtester_set_rx_type(s, T30_MODEM_NONE, 0, false, false);
+            faxtester_set_tx_type(s, T30_MODEM_PAUSE, 0, s->timeout_x, false);
             t30_terminate(s->far_t30);
             free_node_parms(&parms);
             return 0;

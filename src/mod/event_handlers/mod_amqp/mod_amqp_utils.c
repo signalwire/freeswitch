@@ -144,6 +144,30 @@ switch_status_t mod_amqp_do_config(switch_bool_t reload)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unable to locate commands section for mod_amqp\n" );
 	}
 
+	if ((profiles = switch_xml_child(cfg, "logging"))) {
+		if ((profile = switch_xml_child(profiles, "profile"))) {
+			for (; profile; profile = profile->next)	{
+				char *name = (char *) switch_xml_attr_soft(profile, "name");
+
+				if (zstr(name)) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to load mod_amqp profile. Check configs missing name attr\n");
+					continue;
+				}
+				name = switch_core_strdup(globals.pool, name);
+
+				if ( mod_amqp_logging_create(name, profile) != SWITCH_STATUS_SUCCESS) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to load mod_amqp profile [%s]. Check configs\n", name);
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Loaded mod_amqp profile [%s] successfully\n", name);
+				}
+			}
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Unable to locate a profile for mod_amqp\n" );
+		}
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unable to locate logging section for mod_amqp\n" );
+	}
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -182,6 +206,14 @@ char *amqp_util_encode(char *key, char *dest) {
 	*dest = '\0';
 	return dest;
 }
+
+void mod_amqp_util_msg_destroy(mod_amqp_message_t **msg)
+{
+	if (!msg || !*msg) return;
+	switch_safe_free((*msg)->pjson);
+	switch_safe_free(*msg);
+}
+
 
 
 /* For Emacs:

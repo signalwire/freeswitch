@@ -1340,6 +1340,23 @@ static switch_status_t vlc_file_av_close(switch_file_handle_t *handle)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static switch_status_t vlc_file_command(switch_file_handle_t *handle, switch_file_command_t command)
+{
+	vlc_file_context_t *context = handle->private_info;
+
+	switch(command) {
+	case SCFC_FLUSH_AUDIO:
+		switch_mutex_lock(context->audio_mutex);		
+		switch_buffer_zero(context->audio_buffer);
+		switch_mutex_unlock(context->audio_mutex);		
+		break;
+	default:
+		break;
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 static switch_status_t vlc_file_close(switch_file_handle_t *handle)
 {
 	vlc_file_context_t *context = handle->private_info;
@@ -1642,8 +1659,7 @@ int  vlc_write_video_imem_get_callback(void *data, const char *cookie, int64_t *
 		}
 		
 		*output = context->video_frame_buffer;
-		*size = 0;
-		switch_img_convert(img, SWITCH_CONVERT_FMT_YUYV, *output, size);
+		switch_img_to_raw(img, *output, *size, SWITCH_IMG_FMT_YUY2);
 		switch_img_free(&img);
 		return 0;
 	}
@@ -2609,6 +2625,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_vlc_load)
 	file_interface->extens = vlc_file_supported_formats;
 	file_interface->file_open = vlc_file_open;
 	file_interface->file_close = vlc_file_close;
+	file_interface->file_command = vlc_file_command;
 	file_interface->file_read = vlc_file_read;
 	file_interface->file_write = vlc_file_write;
 	file_interface->file_read_video = vlc_file_read_video;

@@ -74,7 +74,6 @@ codecs/mod_sangoma_codec
 codecs/mod_silk
 codecs/mod_siren
 codecs/mod_theora
-codecs/mod_vpx
 dialplans/mod_dialplan_asterisk
 dialplans/mod_dialplan_directory
 dialplans/mod_dialplan_xml
@@ -103,6 +102,7 @@ event_handlers/mod_event_multicast
 event_handlers/mod_event_socket
 event_handlers/mod_format_cdr
 event_handlers/mod_json_cdr
+event_handlers/mod_kazoo
 #event_handlers/mod_radius_cdr
 event_handlers/mod_odbc_cdr
 event_handlers/mod_rayo

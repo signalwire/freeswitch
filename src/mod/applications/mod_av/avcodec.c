@@ -766,8 +766,8 @@ static switch_status_t consume_nalu(h264_codec_context_t *context, switch_frame_
 			return SWITCH_STATUS_MORE_DATA;
 		}
 
-		frame->m = 1;
-		return SWITCH_STATUS_SUCCESS;
+		frame->m = context->nalus[context->nalu_current_index].len ? 0 : 1;
+		return frame->m ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_MORE_DATA;
 	} else {
 		uint8_t nalu_hdr = *(uint8_t *)(nalu->start);
 		uint8_t nri = nalu_hdr & 0x60;
@@ -843,17 +843,19 @@ static switch_status_t open_encoder(h264_codec_context_t *context, uint32_t widt
 	}
 
 	if (context->codec_settings.video.bandwidth) {
-		context->bandwidth = context->codec_settings.video.bandwidth * 8;
+		context->bandwidth = context->codec_settings.video.bandwidth;
 	} else {
-		context->bandwidth = switch_calc_bitrate(context->codec_settings.video.width, context->codec_settings.video.height, 1, 15) * 8;
+		context->bandwidth = switch_calc_bitrate(context->codec_settings.video.width, context->codec_settings.video.height, 1, 15);
 	}
 
 	sane = switch_calc_bitrate(1920, 1080, 2, 30);
 
-	if (context->bandwidth / 8 > sane) {
+	if (context->bandwidth > sane) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "BITRATE TRUNCATED TO %d\n", sane);
-		context->bandwidth = sane * 8;
+		context->bandwidth = sane;
 	}
+
+	context->bandwidth *= 3;
 	
 	//context->encoder_ctx->bit_rate = context->bandwidth * 1024;
 	context->encoder_ctx->width = context->codec_settings.video.width;
@@ -1098,7 +1100,8 @@ static switch_status_t switch_h264_encode(switch_codec_t *codec, switch_frame_t 
 		}
 	}
 
-	if (*got_output) { // Could be more delayed frames
+#if 0
+	if (*got_output) { // TODO: Could be more delayed frames, flush when frame == NULL
 		ret = avcodec_encode_video2(avctx, pkt, NULL, got_output);
 		if (ret < 0) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Encoding Error %d\n", ret);
@@ -1110,6 +1113,7 @@ static switch_status_t switch_h264_encode(switch_codec_t *codec, switch_frame_t 
 			goto process;
 		}
 	}
+#endif
 
 	fill_avframe(avframe, img);
 
@@ -1136,11 +1140,13 @@ static switch_status_t switch_h264_encode(switch_codec_t *codec, switch_frame_t 
 		context->need_key_frame = 0;
 	}
 
-process:
+// process:
 
 	if (*got_output) {
 		const uint8_t *p = pkt->data;
 		int i = 0;
+
+		*got_output = 0;
 
 		if (context->av_codec_id == AV_CODEC_ID_H263) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG5, "Encoded frame %" SWITCH_INT64_T_FMT " (size=%5d) [0x%02x 0x%02x 0x%02x 0x%02x] got_output: %d slices: %d\n", context->pts, pkt->size, *((uint8_t *)pkt->data), *((uint8_t *)(pkt->data + 1)), *((uint8_t *)(pkt->data + 2)), *((uint8_t *)(pkt->data + 3)), *got_output, avctx->slices);

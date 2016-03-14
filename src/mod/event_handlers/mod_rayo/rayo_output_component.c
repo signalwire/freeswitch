@@ -1,6 +1,6 @@
 /*
  * mod_rayo for FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2013-2015, Grasshopper
+ * Copyright (C) 2013-2016, Grasshopper
  *
  * Version: MPL 1.1
  *
@@ -245,15 +245,29 @@ static iks *start_mixer_output_component(struct rayo_actor *mixer, struct rayo_m
 static iks *stop_output_component(struct rayo_actor *component, struct rayo_message *msg, void *data)
 {
 	iks *iq = msg->payload;
+	iks *result = NULL;
+	switch_core_session_t *session = NULL;
 	switch_stream_handle_t stream = { 0 };
 	char *command = switch_mprintf("%s stop", RAYO_JID(component));
 	SWITCH_STANDARD_STREAM(stream);
 	OUTPUT_COMPONENT(component)->stop = 1;
+	if (!strcmp(RAYO_ACTOR(component)->type, RAT_CALL_COMPONENT)) {
+		session = (switch_core_session_t *)data;
+	}
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s stopping\n", RAYO_JID(component));
 	switch_api_execute("fileman", command, NULL, &stream);
+	if (!zstr((char *)stream.data) && !strncmp((char *)stream.data, "+OK", 3)) {
+		result = iks_new_iq_result(iq);
+	} else if (session && switch_channel_get_state(switch_core_session_get_channel(session)) >= CS_HANGUP) {
+		result = iks_new_error_detailed(iq, STANZA_ERROR_UNEXPECTED_REQUEST, "call has ended");
+	} else if (!zstr((char *)stream.data)) {
+		result = iks_new_error_detailed_printf(iq, STANZA_ERROR_INTERNAL_SERVER_ERROR, "%s", (char *)stream.data);
+	} else {
+		result = iks_new_error(iq, STANZA_ERROR_INTERNAL_SERVER_ERROR);
+	}
 	switch_safe_free(stream.data);
 	switch_safe_free(command);
-	return iks_new_iq_result(iq);
+	return result;
 }
 
 /**
@@ -262,14 +276,28 @@ static iks *stop_output_component(struct rayo_actor *component, struct rayo_mess
 static iks *pause_output_component(struct rayo_actor *component, struct rayo_message *msg, void *data)
 {
 	iks *iq = msg->payload;
+	iks *result = NULL;
+	switch_core_session_t *session = NULL;
 	switch_stream_handle_t stream = { 0 };
 	char *command = switch_mprintf("%s pause", RAYO_JID(component));
 	SWITCH_STANDARD_STREAM(stream);
+	if (!strcmp(RAYO_ACTOR(component)->type, RAT_CALL_COMPONENT)) {
+		session = (switch_core_session_t *)data;
+	}
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s pausing\n", RAYO_JID(component));
 	switch_api_execute("fileman", command, NULL, &stream);
+	if (!zstr((char *)stream.data) && !strncmp((char *)stream.data, "+OK", 3)) {
+		result = iks_new_iq_result(iq);
+	} else if (session && switch_channel_get_state(switch_core_session_get_channel(session)) >= CS_HANGUP) {
+		result = iks_new_error_detailed(iq, STANZA_ERROR_UNEXPECTED_REQUEST, "call has ended");
+	} else if (!zstr((char *)stream.data)) {
+		result = iks_new_error_detailed_printf(iq, STANZA_ERROR_INTERNAL_SERVER_ERROR, "%s", (char *)stream.data);
+	} else {
+		result = iks_new_error(iq, STANZA_ERROR_INTERNAL_SERVER_ERROR);
+	}
 	switch_safe_free(stream.data);
 	switch_safe_free(command);
-	return iks_new_iq_result(iq);
+	return result;
 }
 
 /**
@@ -278,14 +306,28 @@ static iks *pause_output_component(struct rayo_actor *component, struct rayo_mes
 static iks *resume_output_component(struct rayo_actor *component, struct rayo_message *msg, void *data)
 {
 	iks *iq = msg->payload;
+	iks *result = NULL;
+	switch_core_session_t *session = NULL;
 	switch_stream_handle_t stream = { 0 };
 	char *command = switch_mprintf("%s resume", RAYO_JID(component));
 	SWITCH_STANDARD_STREAM(stream);
+	if (!strcmp(RAYO_ACTOR(component)->type, RAT_CALL_COMPONENT)) {
+		session = (switch_core_session_t *)data;
+	}
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s resuming\n", RAYO_JID(component));
 	switch_api_execute("fileman", command, NULL, &stream);
+	if (!zstr((char *)stream.data) && !strncmp((char *)stream.data, "+OK", 3)) {
+		result = iks_new_iq_result(iq);
+	} else if (session && switch_channel_get_state(switch_core_session_get_channel(session)) >= CS_HANGUP) {
+		result = iks_new_error_detailed(iq, STANZA_ERROR_UNEXPECTED_REQUEST, "call has ended");
+	} else if (!zstr((char *)stream.data)) {
+		result = iks_new_error_detailed_printf(iq, STANZA_ERROR_INTERNAL_SERVER_ERROR, "%s", (char *)stream.data);
+	} else {
+		result = iks_new_error(iq, STANZA_ERROR_INTERNAL_SERVER_ERROR);
+	}
 	switch_safe_free(stream.data);
 	switch_safe_free(command);
-	return iks_new_iq_result(iq);
+	return result;
 }
 
 /**
@@ -294,14 +336,28 @@ static iks *resume_output_component(struct rayo_actor *component, struct rayo_me
 static iks *speed_up_output_component(struct rayo_actor *component, struct rayo_message *msg, void *data)
 {
 	iks *iq = msg->payload;
+	iks *result = NULL;
+	switch_core_session_t *session = NULL;
 	switch_stream_handle_t stream = { 0 };
 	char *command = switch_mprintf("%s speed:+", RAYO_JID(component));
 	SWITCH_STANDARD_STREAM(stream);
+	if (!strcmp(RAYO_ACTOR(component)->type, RAT_CALL_COMPONENT)) {
+		session = (switch_core_session_t *)data;
+	}
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s speeding up\n", RAYO_JID(component));
 	switch_api_execute("fileman", command, NULL, &stream);
+	if (!zstr((char *)stream.data) && !strncmp((char *)stream.data, "+OK", 3)) {
+		result = iks_new_iq_result(iq);
+	} else if (session && switch_channel_get_state(switch_core_session_get_channel(session)) >= CS_HANGUP) {
+		result = iks_new_error_detailed(iq, STANZA_ERROR_UNEXPECTED_REQUEST, "call has ended");
+	} else if (!zstr((char *)stream.data)) {
+		result = iks_new_error_detailed_printf(iq, STANZA_ERROR_INTERNAL_SERVER_ERROR, "%s", (char *)stream.data);
+	} else {
+		result = iks_new_error(iq, STANZA_ERROR_INTERNAL_SERVER_ERROR);
+	}
 	switch_safe_free(stream.data);
 	switch_safe_free(command);
-	return iks_new_iq_result(iq);
+	return result;
 }
 
 /**
@@ -310,14 +366,28 @@ static iks *speed_up_output_component(struct rayo_actor *component, struct rayo_
 static iks *speed_down_output_component(struct rayo_actor *component, struct rayo_message *msg, void *data)
 {
 	iks *iq = msg->payload;
+	iks *result = NULL;
+	switch_core_session_t *session = NULL;
 	switch_stream_handle_t stream = { 0 };
 	char *command = switch_mprintf("%s speed:-", RAYO_JID(component));
 	SWITCH_STANDARD_STREAM(stream);
+	if (!strcmp(RAYO_ACTOR(component)->type, RAT_CALL_COMPONENT)) {
+		session = (switch_core_session_t *)data;
+	}
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s slowing down\n", RAYO_JID(component));
 	switch_api_execute("fileman", command, NULL, &stream);
+	if (!zstr((char *)stream.data) && !strncmp((char *)stream.data, "+OK", 3)) {
+		result = iks_new_iq_result(iq);
+	} else if (session && switch_channel_get_state(switch_core_session_get_channel(session)) >= CS_HANGUP) {
+		result = iks_new_error_detailed(iq, STANZA_ERROR_UNEXPECTED_REQUEST, "call has ended");
+	} else if (!zstr((char *)stream.data)) {
+		result = iks_new_error_detailed_printf(iq, STANZA_ERROR_INTERNAL_SERVER_ERROR, "%s", (char *)stream.data);
+	} else {
+		result = iks_new_error(iq, STANZA_ERROR_INTERNAL_SERVER_ERROR);
+	}
 	switch_safe_free(stream.data);
 	switch_safe_free(command);
-	return iks_new_iq_result(iq);
+	return result;
 }
 
 /**
@@ -326,14 +396,28 @@ static iks *speed_down_output_component(struct rayo_actor *component, struct ray
 static iks *volume_up_output_component(struct rayo_actor *component, struct rayo_message *msg, void *data)
 {
 	iks *iq = msg->payload;
+	iks *result = NULL;
+	switch_core_session_t *session = NULL;
 	switch_stream_handle_t stream = { 0 };
 	char *command = switch_mprintf("%s volume:+", RAYO_JID(component));
 	SWITCH_STANDARD_STREAM(stream);
+	if (!strcmp(RAYO_ACTOR(component)->type, RAT_CALL_COMPONENT)) {
+		session = (switch_core_session_t *)data;
+	}
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s increasing volume\n", RAYO_JID(component));
 	switch_api_execute("fileman", command, NULL, &stream);
+	if (!zstr((char *)stream.data) && !strncmp((char *)stream.data, "+OK", 3)) {
+		result = iks_new_iq_result(iq);
+	} else if (session && switch_channel_get_state(switch_core_session_get_channel(session)) >= CS_HANGUP) {
+		result = iks_new_error_detailed(iq, STANZA_ERROR_UNEXPECTED_REQUEST, "call has ended");
+	} else if (!zstr((char *)stream.data)) {
+		result = iks_new_error_detailed_printf(iq, STANZA_ERROR_INTERNAL_SERVER_ERROR, "%s", (char *)stream.data);
+	} else {
+		result = iks_new_error(iq, STANZA_ERROR_INTERNAL_SERVER_ERROR);
+	}
 	switch_safe_free(stream.data);
 	switch_safe_free(command);
-	return iks_new_iq_result(iq);
+	return result;
 }
 
 /**
@@ -342,14 +426,28 @@ static iks *volume_up_output_component(struct rayo_actor *component, struct rayo
 static iks *volume_down_output_component(struct rayo_actor *component, struct rayo_message *msg, void *data)
 {
 	iks *iq = msg->payload;
+	iks *result = NULL;
+	switch_core_session_t *session = NULL;
 	switch_stream_handle_t stream = { 0 };
 	char *command = switch_mprintf("%s volume:-", RAYO_JID(component));
 	SWITCH_STANDARD_STREAM(stream);
+	if (!strcmp(RAYO_ACTOR(component)->type, RAT_CALL_COMPONENT)) {
+		session = (switch_core_session_t *)data;
+	}
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s lowering volume\n", RAYO_JID(component));
 	switch_api_execute("fileman", command, NULL, &stream);
+	if (!zstr((char *)stream.data) && !strncmp((char *)stream.data, "+OK", 3)) {
+		result = iks_new_iq_result(iq);
+	} else if (session && switch_channel_get_state(switch_core_session_get_channel(session)) >= CS_HANGUP) {
+		result = iks_new_error_detailed(iq, STANZA_ERROR_UNEXPECTED_REQUEST, "call has ended");
+	} else if (!zstr((char *)stream.data)) {
+		result = iks_new_error_detailed_printf(iq, STANZA_ERROR_INTERNAL_SERVER_ERROR, "%s", (char *)stream.data);
+	} else {
+		result = iks_new_error(iq, STANZA_ERROR_INTERNAL_SERVER_ERROR);
+	}
 	switch_safe_free(stream.data);
 	switch_safe_free(command);
-	return iks_new_iq_result(iq);
+	return result;
 }
 
 /**
@@ -361,19 +459,32 @@ static iks *seek_output_component(struct rayo_actor *component, struct rayo_mess
 	iks *seek = iks_find(iq, "seek");
 
 	if (VALIDATE_RAYO_OUTPUT_SEEK(seek)) {
+		iks *result = NULL;
+		switch_core_session_t *session = NULL;
 		int is_forward = !strcmp("forward", iks_find_attrib(seek, "direction"));
 		int amount_ms = iks_find_int_attrib(seek, "amount");
 		char *command = switch_mprintf("%s seek:%s%i", RAYO_JID(component),
 			is_forward ? "+" : "-", amount_ms);
 		switch_stream_handle_t stream = { 0 };
 		SWITCH_STANDARD_STREAM(stream);
+		if (!strcmp(RAYO_ACTOR(component)->type, RAT_CALL_COMPONENT)) {
+			session = (switch_core_session_t *)data;
+		}
 
 		switch_api_execute("fileman", command, NULL, &stream);
-
+		if (!zstr((char *)stream.data) && !strncmp((char *)stream.data, "+OK", 3)) {
+			result = iks_new_iq_result(iq);
+		} else if (session && switch_channel_get_state(switch_core_session_get_channel(session)) >= CS_HANGUP) {
+			result = iks_new_error_detailed(iq, STANZA_ERROR_UNEXPECTED_REQUEST, "call has ended");
+		} else if (!zstr((char *)stream.data)) {
+			result = iks_new_error_detailed_printf(iq, STANZA_ERROR_INTERNAL_SERVER_ERROR, "%s", (char *)stream.data);
+		} else {
+			result = iks_new_error(iq, STANZA_ERROR_INTERNAL_SERVER_ERROR);
+		}
 		switch_safe_free(stream.data);
 		switch_safe_free(command);
 
-		return iks_new_iq_result(iq);
+		return result;
 	}
 	return iks_new_error(iq, STANZA_ERROR_BAD_REQUEST);
 }
@@ -515,9 +626,9 @@ static switch_status_t next_file(switch_file_handle_t *handle)
 	handle->interval = context->fh.interval;
 
 	if (switch_test_flag((&context->fh), SWITCH_FILE_NATIVE)) {
-		switch_set_flag(handle, SWITCH_FILE_NATIVE);
+		switch_set_flag_locked(handle, SWITCH_FILE_NATIVE);
 	} else {
-		switch_clear_flag(handle, SWITCH_FILE_NATIVE);
+		switch_clear_flag_locked(handle, SWITCH_FILE_NATIVE);
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -571,27 +682,27 @@ static switch_status_t rayo_file_close(switch_file_handle_t *handle)
 		struct output_component *output = OUTPUT_COMPONENT(context->component);
 
 		/* send completion and destroy */
-		if (output->stop) {
+		if (!strcmp(RAYO_ACTOR(context->component)->type, RAT_CALL_COMPONENT)) {
+			/* call output... check for hangup */
+			switch_core_session_t *session = switch_core_session_locate(RAYO_ACTOR(context->component)->parent->id);
+			if (session) {
+				if (switch_channel_get_state(switch_core_session_get_channel(session)) >= CS_HANGUP) {
+					rayo_component_send_complete(context->component, COMPONENT_COMPLETE_HANGUP);
+				} else if (output->stop) {
+					rayo_component_send_complete(context->component, COMPONENT_COMPLETE_STOP);
+				} else {
+					rayo_component_send_complete(context->component, OUTPUT_FINISH);
+				}
+				switch_core_session_rwunlock(session);
+			} else {
+				/* session is gone */
+				rayo_component_send_complete(context->component, COMPONENT_COMPLETE_HANGUP);
+			}
+		} else if (output->stop) {
 			rayo_component_send_complete(context->component, COMPONENT_COMPLETE_STOP);
 		} else {
-			if (!strcmp(RAYO_ACTOR(context->component)->type, RAT_CALL_COMPONENT)) {
-				/* call output... check for hangup */
-				switch_core_session_t *session = switch_core_session_locate(RAYO_ACTOR(context->component)->parent->id);
-				if (session) {
-					if (switch_channel_get_state(switch_core_session_get_channel(session)) >= CS_HANGUP) {
-						rayo_component_send_complete(context->component, COMPONENT_COMPLETE_HANGUP);
-					} else {
-						rayo_component_send_complete(context->component, OUTPUT_FINISH);
-					}
-					switch_core_session_rwunlock(session);
-				} else {
-					/* session is gone */
-					rayo_component_send_complete(context->component, COMPONENT_COMPLETE_HANGUP);
-				}
-			} else {
-				/* mixer output... finished */
-				rayo_component_send_complete(context->component, OUTPUT_FINISH);
-			}
+			/* mixer output... finished */
+			rayo_component_send_complete(context->component, OUTPUT_FINISH);
 		}
 		/* TODO timed out */
 
@@ -693,6 +804,8 @@ struct fileman_file_context {
 	const char *uuid;
 	/** fileman control ID */
 	const char *id;
+	/** done flag */
+	int done;
 };
 
 /**
@@ -765,13 +878,13 @@ static switch_status_t fileman_file_open(switch_file_handle_t *handle, const cha
 	handle->interval = context->fh.interval;
 
 	if (switch_test_flag((&context->fh), SWITCH_FILE_NATIVE)) {
-		switch_set_flag(handle, SWITCH_FILE_NATIVE);
+		switch_set_flag_locked(handle, SWITCH_FILE_NATIVE);
 	} else {
-		switch_clear_flag(handle, SWITCH_FILE_NATIVE);
+		switch_clear_flag_locked(handle, SWITCH_FILE_NATIVE);
 	}
 
 	if (handle->params && switch_true(switch_event_get_header(handle->params, "pause"))) {
-		switch_set_flag(handle, SWITCH_FILE_PAUSE);
+		switch_set_flag_locked(handle, SWITCH_FILE_PAUSE);
 	}
 
 	if (handle->seekable && start_offset_ms) {
@@ -861,7 +974,11 @@ static switch_status_t fileman_file_read(switch_file_handle_t *handle, void *dat
 		int do_speed = 1;
 		size_t read_bytes = 0;
 
-		if (switch_test_flag(handle, SWITCH_FILE_PAUSE)) {
+		if (context->done) {
+			/* done with this file */
+			status = SWITCH_STATUS_FALSE;
+			goto done;
+		} else if (switch_test_flag(handle, SWITCH_FILE_PAUSE)) {
 			//switch_log_printf(SWITCH_CHANNEL_UUID_LOG(context->uuid), SWITCH_LOG_DEBUG, "Read pause frame\n");
 			memset(context->abuf, 255, *len * 2);
 			do_speed = 0;
@@ -954,7 +1071,7 @@ static switch_status_t fileman_file_read(switch_file_handle_t *handle, void *dat
 		if (switch_test_flag(fh, SWITCH_FILE_SEEK)) {
 			/* file position has changed flush the buffer */
 			switch_buffer_zero(fh->audio_buffer);
-			switch_clear_flag(fh, SWITCH_FILE_SEEK);
+			switch_clear_flag_locked(fh, SWITCH_FILE_SEEK);
 		}
 
 		/* generate speed frames */
@@ -1099,14 +1216,16 @@ static switch_status_t fileman_process_cmd(const char *cmd, switch_file_handle_t
 
 			return SWITCH_STATUS_FALSE;
 		} else if (!strcasecmp(cmd, "pause")) {
-			switch_set_flag(fhp, SWITCH_FILE_PAUSE);
+			switch_set_flag_locked(fhp, SWITCH_FILE_PAUSE);
 			return SWITCH_STATUS_SUCCESS;
 		} else if (!strcasecmp(cmd, "resume")) {
-			switch_clear_flag(fhp, SWITCH_FILE_PAUSE);
+			switch_clear_flag_locked(fhp, SWITCH_FILE_PAUSE);
 			return SWITCH_STATUS_SUCCESS;
 		} else if (!strcasecmp(cmd, "stop")) {
-			switch_set_flag(fhp, SWITCH_FILE_DONE);
-			return SWITCH_STATUS_FALSE;
+			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(context->uuid), SWITCH_LOG_DEBUG, "Stopping file\n");
+			context->done = 1;
+			switch_set_flag_locked(fhp, SWITCH_FILE_DONE);
+			return SWITCH_STATUS_SUCCESS;
 		} else if (!strcasecmp(cmd, "truncate")) {
 			switch_core_file_truncate(fhp, 0);
 		} else if (!strcasecmp(cmd, "restart")) {
@@ -1175,12 +1294,17 @@ SWITCH_STANDARD_API(fileman_api)
 			switch_mutex_lock(fileman_globals.mutex);
 			fh = (switch_file_handle_t *)switch_core_hash_find(fileman_globals.hash, id);
 			if (fh) {
-				fileman_process_cmd(cmd, fh);
+				if (fileman_process_cmd(cmd, fh) == SWITCH_STATUS_SUCCESS) {
+					stream->write_function(stream, "+OK\n");
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "fileman API failed for file %s\n", zstr(fh->file_path) ? "<null>" : fh->file_path);
+					stream->write_function(stream, "-ERR API call failed");
+				}
 				switch_mutex_unlock(fileman_globals.mutex);
-				stream->write_function(stream, "+OK\n");
 			} else {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "fileman API failed for ID %s\n", zstr(id) ? "<null>" : id);
 				switch_mutex_unlock(fileman_globals.mutex);
-				stream->write_function(stream, "-ERR No file handle!\n");
+				stream->write_function(stream, "-ERR file handle not found\n");
 			}
 			goto done;
 		}
