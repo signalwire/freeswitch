@@ -210,8 +210,8 @@ install_vc() {
 	fi	
 
 	cd /usr/src/freeswitch.git/html5/verto/verto_communicator
-	apt-get update
-	apt-get install npm nodejs-legacy
+	apt-get update 
+	apt-get install npm nodejs-legacy -y
 	npm install -g grunt grunt-cli bower
 	npm install
 	bower --allow-root install
