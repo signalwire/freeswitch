@@ -2144,11 +2144,13 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 		int j = 0, personal = conference_utils_test_flag(conference, CFLAG_PERSONAL_CANVAS) ? 1 : 0;
 		
 		if (!personal) {
+			switch_mutex_lock(conference->canvas_mutex);
 			switch_mutex_lock(canvas->mutex);
 			if (canvas->new_vlayout) {
 				conference_video_init_canvas_layers(conference, canvas, NULL);
 			}
 			switch_mutex_unlock(canvas->mutex);
+			switch_mutex_unlock(conference->canvas_mutex);
 		}
 
 		if (canvas->video_timer_reset) {
