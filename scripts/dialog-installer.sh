@@ -101,7 +101,7 @@ is_private_ip() {
 }
 
 verify_ip_fqdn() {
-	DNSIP=`dig +noall +answer @4.2.2.2 $FQDN | cut -d'	' -f3` 
+	DNSIP=`dig +noall +answer @4.2.2.2 $FQDN | awk '{print $5}'`
 
 	dialog --title "NO DNS For this FQDN" --clear \
 		--menu "The FQDN and IP Address do not match what is available in Public DNS Servers." 15 60 5 \
@@ -164,7 +164,7 @@ install_certs() {
 			NEED_CERTS_INSTALL=0
 		else
 			echo "Renewing LetsEncrypt Certs as they will expire in the next 30 days."
-			./letsencrypt-auto renew
+			./letsencrypt-auto renew  --manual-public-ip-logging-ok
 		fi
 	else
 		echo "Setting up LetsEncrypt and getting you some nice new Certs for this Server."
@@ -264,7 +264,7 @@ if [ "x$PRIVIP" != "x$IPADDR" ]; then
 	elif [ $VIPFQDN -eq 1 ]; then
 		echo "Skipping LetsEncrypt\n"
 	else 
-		get_dletsencrypt
+		get_letsencrypt
 		install_certs
 	fi
 else
