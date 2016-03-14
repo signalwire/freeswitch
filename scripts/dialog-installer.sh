@@ -17,7 +17,18 @@ install_prereqs() {
 	#install the prereqs
 	echo "Making sure we have the prereqs for this script to run. Please Stand by..."
 	apt-get update 2>&1 >/dev/null
-	apt-get install -y curl dialog git 2>&1 >/dev/null
+	apt-get install -y curl dialog git ntpdate 2>&1 >/dev/null
+
+	# See if ntpd is running if it is, stop it set the current time as rpi has no RTC and this is needed
+	# for SSL to function properly
+
+	if pgrep "ntpd" >/dev/null ; then
+		/etc/init.d/ntp stop
+		ntpdate pool.ntp.org
+		/etc/init.d/ntp start
+	else
+		ntpdate pool.ntp.org
+	fi
 }
 
 welcome_screen() {
@@ -132,13 +143,14 @@ config_fs_repos() {
 }
 
 get_fs_source() {
+	echo "REPO = $REPO"
 	if [ ! -d /usr/src/freeswitch.git ]; then
 		cd /usr/src
 		git clone $REPO freeswitch.git
 	else
 		cd /usr/src/freeswitch.git
 		git clean -fdx
-		git reset -hard origin/$FS_REV
+		git reset --hard origin/$FS_REV
 		git pull
 	fi
 }
@@ -192,7 +204,9 @@ build_fs() {
 		rm -rf /usr/local/freeswitch/{bin,mod,lib}/*
 	fi
 	cd /usr/src/freeswitch.git
-	./bootstrap.sh -j
+	if [ ! -d /usr/src/freeswitch.git/configure ]; then
+		./bootstrap.sh -j
+	fi
 	./configure -C
 	make -j$JLIMIT install
 	make uhd-sounds-install
@@ -238,6 +252,7 @@ freeswitch_raspbian_source() {
 		libtiff5-dev libperl-dev libgdbm-dev libdb-dev gettext libssl-dev libcurl4-openssl-dev libpcre3-dev libspeex-dev \
 		libspeexdsp-dev libsqlite3-dev libedit-dev libldns-dev libpq-dev libsndfile-dev libopus-dev liblua5.1-0-dev 2>&1 | \
 		awk -W interactive '/Progress/ { print }'| sed -u 's/[^0-9]//g' | dialog --gauge "Please wait.\n Installing Build Requirements..." 10 70 0
+	build_fs
 
 }
 
@@ -245,13 +260,13 @@ freeswitch_raspbian_source() {
 welcome_screen
 fs_ver_select
 get_network_settings
+config_fs_repos
 
 if [ "$ID" = "debian" ]; then
-	config_fs_repos
 	freeswitch_debian_source
 elif [ "$ID" = "raspbian" ]; then	
-	#freeswitch_raspbiani123
 	JLIMIT="3"
+	freeswitch_raspbian_source
 fi
 
 install_vc
