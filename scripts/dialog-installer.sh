@@ -4,7 +4,6 @@
 #
 ########################################################
 # TODO: FreeSWITCH AutoStart
-# TODO: Install on Raspbian
 # TODO: Allow Selection of Source or Package Install on Debian
 
 DIALOG=${DIALOG=dialog}
@@ -283,6 +282,6 @@ if [ "x$PRIVIP" != "x$IPADDR" ]; then
 		install_certs
 	fi
 else
-	echo "Skipping LetsEncrypt. Since we are on Private IP Space";
+	echo "Skipping LetsEncrypt. Since we are on a Private IP Address";
 fi
 
