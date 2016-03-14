@@ -250,7 +250,7 @@ namespace FreeSWITCH {
             }
         }
 
-        public void BlockUntilUnloadIsSafe() {
+        public virtual void BlockUntilUnloadIsSafe() {
             if (isUnloading) throw new InvalidOperationException("PluginManager is already unloading.");
             isUnloading = true;
             unloadCount = ApiExecutors.Count + AppExecutors.Count;
@@ -308,6 +308,38 @@ namespace FreeSWITCH {
             return true;
         }
 
+    }
+
+    internal class EmbeddedPluginManager : PluginManager {
+        
+        // This is for cases where FreeSWITCH is "embedded", that is a .NET app hosts the FS core lib itself.
+        // In such a case, there may be plugins defined in the main process that need to share address space
+        // and be loaded from the main assembly. This class plus changes in Loader.cs (null filenames=embedded)
+        // work together to allow such plugins to work. These plugins cannot be reloaded. 
+
+        Assembly asm;
+        public EmbeddedPluginManager(Assembly asm) {
+            this.asm = asm;
+            var allTypes = asm.GetExportedTypes();
+            var opts = GetOptions(allTypes);
+            AddApiPlugins(allTypes, opts);
+            AddAppPlugins(allTypes, opts);
+        }
+
+        protected override bool LoadInternal(string fileName) {
+            throw new NotImplementedException("EmbeddedPluginManager should not have Load[Internal] called.");
+        }
+
+        public override void BlockUntilUnloadIsSafe() {
+            throw new NotImplementedException("EmbeddedPluginManager should never be unloaded.");
+        }
+
+    }
+
+    public static class EmbeddedLoader {
+        public static void LoadEmbeddedPlugins(Assembly asm) {
+            Loader.LoadEmbeddedPlugins(asm);
+        }
     }
 
 }
