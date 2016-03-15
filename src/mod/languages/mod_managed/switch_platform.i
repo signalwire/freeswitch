@@ -29,6 +29,17 @@ typedef unsigned long in_addr_t;
   }
 %}
 
+// const char ** -> out string
+%typemap(imtype, out="string") const char ** "ref global::System.IntPtr"
+%typemap(cstype, out="string") const char ** "out string"
+%typemap(csin,
+        pre="var $csinput_ptr = global::System.IntPtr.Zero;",
+        post="if($csinput_ptr != global::System.IntPtr.Zero)\n"
+             "\t$csinput = global::System.Runtime.InteropServices.Marshal.PtrToStringAnsi($csinput_ptr);\n"
+             "else\n"
+             "\t$csinput = null;"
+) const char ** "ref $csinput_ptr"
+
 %newobject EventConsumer::pop;
 %newobject Session;
 %newobject CoreSession;
