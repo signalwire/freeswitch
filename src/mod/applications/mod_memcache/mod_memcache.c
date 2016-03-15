@@ -51,6 +51,18 @@ static struct {
 	char *memcached_str;
 } globals;
 
+#define BYTES_PER_SAMPLE 2
+
+struct memcache_context {
+	memcached_st *memcached;
+	char *path;
+	int ok;
+	size_t offset;
+	size_t remaining;
+	void *data;
+};
+typedef struct memcache_context memcache_context_t;
+
 static switch_event_node_t *NODE = NULL;
 
 static switch_status_t config_callback_memcached(switch_xml_config_item_t *data, const char *newvalue, switch_config_callback_type_t callback_type,
@@ -431,10 +443,149 @@ SWITCH_STANDARD_API(memcache_function)
 	return status;
 }
 
+
+static switch_status_t memcache_file_open(switch_file_handle_t *handle, const char *path)
+{
+	memcache_context_t *context;
+	size_t string_length = 0;
+	uint32_t flags = 0;
+	memcached_return rc;
+
+	if (handle->offset_pos) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Offset unsupported.\n");
+		return SWITCH_STATUS_GENERR;
+	}
+
+	context = switch_core_alloc(handle->memory_pool, sizeof(*context));
+
+	/* Clone memcached struct so we're thread safe */
+	context->memcached = memcached_clone(NULL, globals.memcached);
+	if (!context->memcached) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error cloning memcached object\n");
+		return SWITCH_STATUS_FALSE;
+	}
+
+	/* All of the actual data is read into the buffer here, the memcache_file_read
+	 * function just iterates over the buffer
+	 */
+	if (switch_test_flag(handle, SWITCH_FILE_FLAG_READ)) {
+		handle->private_info = context;
+
+		context->data = memcached_get(context->memcached, path, strlen(path), &string_length, &flags, &rc);
+
+		if (context->data && rc == MEMCACHED_SUCCESS) {
+			context->ok = 1;
+			context->offset = 0;
+			context->remaining = string_length / BYTES_PER_SAMPLE;
+			return SWITCH_STATUS_SUCCESS;
+		} else {
+			memcached_free(context->memcached);
+			context->memcached = NULL;
+			switch_safe_free(context->data);
+			context->data = NULL;
+			context->ok = 0;
+			return SWITCH_STATUS_FALSE;
+		}
+	} else if (switch_test_flag(handle, SWITCH_FILE_FLAG_WRITE)) {
+		if (switch_test_flag(handle, SWITCH_FILE_WRITE_OVER)) {
+			memcached_free(context->memcached);
+			context->memcached = NULL;
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unsupported file mode.\n");
+			return SWITCH_STATUS_GENERR;
+		}
+
+		context->path = switch_core_strdup(handle->memory_pool, path);
+
+		if (! switch_test_flag(handle, SWITCH_FILE_WRITE_APPEND)) {
+			/* If not appending, we need to write an empty string to the key so that
+			 * memcache_file_write appends do the right thing
+			*/
+			rc = memcached_set(context->memcached, context->path, strlen(context->path), "", 0, 0, 0);
+			if (rc != MEMCACHED_SUCCESS) {
+				memcached_free(context->memcached);
+				context->memcached = NULL;
+				return SWITCH_STATUS_GENERR;
+			}
+		}
+
+		context->ok = 1;
+		handle->private_info = context;
+
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "File opened with unknown flags!\n");
+	return SWITCH_STATUS_GENERR;
+}
+
+static switch_status_t memcache_file_close(switch_file_handle_t *handle)
+{
+	memcache_context_t *memcache_context = handle->private_info;
+
+	if (memcache_context->data) {
+		switch_safe_free(memcache_context->data);
+		memcache_context->data = NULL;
+	}
+	if (memcache_context->memcached) {
+		memcached_free(memcache_context->memcached);
+		memcache_context->memcached = NULL;
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t memcache_file_read(switch_file_handle_t *handle, void *data, size_t *len)
+{
+	memcache_context_t *context= handle->private_info;
+
+	if (context->ok) {
+		if (context->remaining <= 0) {
+			return SWITCH_STATUS_FALSE;
+		}
+
+		if (*len > (size_t) context->remaining) {
+			*len = context->remaining;
+		}
+
+		memcpy(data, (uint8_t *)context->data + (context->offset * BYTES_PER_SAMPLE), *len * BYTES_PER_SAMPLE);
+
+		context->offset += (int32_t)*len;
+		context->remaining -= (int32_t)*len;
+
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	return SWITCH_STATUS_FALSE;
+}
+
+static switch_status_t memcache_file_write(switch_file_handle_t *handle, void *data, size_t *len)
+{
+	memcache_context_t *context = handle->private_info;
+	memcached_return rc;
+
+	/* Append this chunk */
+	if (context->ok) {
+		rc = memcached_append(context->memcached, context->path, strlen(context->path), data, *len, 0, 0);
+
+		if (rc != MEMCACHED_SUCCESS) {
+			context->ok = 0;
+			return SWITCH_STATUS_FALSE;
+		}
+
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	return SWITCH_STATUS_FALSE;
+}
+
+
+static char *supported_formats[SWITCH_MAX_CODECS] = { 0 };
+
 /* Macro expands to: switch_status_t mod_memcache_load(switch_loadable_module_interface_t **module_interface, switch_memory_pool_t *pool) */
 SWITCH_MODULE_LOAD_FUNCTION(mod_memcache_load)
 {
 	switch_api_interface_t *api_interface;
+	switch_file_interface_t *file_interface;
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
@@ -448,6 +599,16 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_memcache_load)
 	}
 
 	SWITCH_ADD_API(api_interface, "memcache", "Memcache API", memcache_function, "syntax");
+
+	/* file interface */
+	supported_formats[0] = "memcache";
+	file_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_FILE_INTERFACE);
+	file_interface->interface_name = modname;
+	file_interface->extens         = supported_formats;
+	file_interface->file_open      = memcache_file_open;
+	file_interface->file_close     = memcache_file_close;
+	file_interface->file_read      = memcache_file_read;
+	file_interface->file_write     = memcache_file_write;
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_NOUNLOAD;
