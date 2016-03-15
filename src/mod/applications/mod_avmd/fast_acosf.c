@@ -1,3 +1,4 @@
+#include <switch.h>
 #include <stdio.h>
 #include <stdlib.h>
 #ifndef _MSC_VER
@@ -12,6 +13,7 @@
 #include <assert.h>
 #include <errno.h>
 #include <math.h>
+#include <string.h>
 #ifndef _MSC_VER
 #include <unistd.h>
 #endif
@@ -56,57 +58,94 @@ static float strip_float(float f)
 }
 #endif
 
-extern void compute_table(void)
+extern int compute_table(void)
 {
     uint32_t i;
-    float f;
-    FILE *acos_table_file;
-    size_t ret;
+    float   f;
+    FILE    *acos_table_file;
+    size_t  res;
 
     acos_table_file = fopen(ACOS_TABLE_FILENAME, "w");
 
     for (i = 0; i < ACOS_TABLE_LENGTH; i++) {
         f = acosf(float_from_index(i));
-        ret = fwrite(&f, sizeof(f), 1, acos_table_file);
-        assert(ret != 0);
+        res = fwrite(&f, sizeof(f), 1, acos_table_file);
+        if (res != 1) {
+            goto fail;
+        }
     }
 
-    ret = fclose(acos_table_file);
-    assert(ret != EOF);
+    res = fclose(acos_table_file);
+    if (res != 0) {
+        return -2;
+    }
+    return 0;
+
+fail:
+    fclose(acos_table_file);
+    return -1;
 }
 
-
-extern void init_fast_acosf(void)
+extern int init_fast_acosf(void)
 {
-    int ret;
+    int     ret, errsv;
+    FILE    *acos_fp;
+    char    err[150];
 
     if (acos_table == NULL) {
         ret = access(ACOS_TABLE_FILENAME, F_OK);
-        if (ret == 0) compute_table();
+        if (ret == -1) {
+            /* file doesn't exist, bad permissions,
+             * or some other error occured */
+            errsv = errno;
+            strerror_r(errsv, err, 150);
+            if (errsv != ENOENT) return -1;
+            else {
+	            switch_log_printf(
+		            SWITCH_CHANNEL_LOG,
+		            SWITCH_LOG_NOTICE,
+		            "File [%s] doesn't exist. Creating file...\n", ACOS_TABLE_FILENAME
+		        );
+                ret = compute_table();
+                if (ret != 0) return -2;
+            }
+        } else {
+	        switch_log_printf(
+	            SWITCH_CHANNEL_LOG,
+		        SWITCH_LOG_INFO,
+		        "Using previously created file [%s]\n", ACOS_TABLE_FILENAME
+		    );
+        }
+    }
 
-        acos_fd = open(ACOS_TABLE_FILENAME, O_RDONLY);
-        if (acos_fd == -1) perror("Could not open file " ACOS_TABLE_FILENAME);
-        assert(acos_fd != -1);
-        acos_table = (float *)mmap(
-            NULL,
+    acos_fp = fopen(ACOS_TABLE_FILENAME, "r");
+    if (acos_fp == NULL) return -3;
+    /* can't fail */
+    acos_fd = fileno(acos_fp);
+    acos_table = (float *) mmap(
+            NULL,                               /* kernel chooses the address at which to create the mapping */
             ACOS_TABLE_LENGTH * sizeof(float),
             PROT_READ,
-            MAP_SHARED | MAP_POPULATE,
+            MAP_SHARED | MAP_POPULATE,          /* read-ahead on the file.  Later accesses  to  the  mapping
+                                                 * will not be blocked by page faults */
             acos_fd,
             0
-        );
-    }
+            );
+    if (acos_table == MAP_FAILED) return -4;
+
+    return 0;
 }
 
-extern void destroy_fast_acosf(void)
+extern int destroy_fast_acosf(void)
 {
-    int ret;
-
-    ret = munmap(acos_table, ACOS_TABLE_LENGTH);
-    assert(ret != -1);
-    ret = close(acos_fd);
-    assert(ret != -1);
+    if (munmap(acos_table, ACOS_TABLE_LENGTH) == -1) return -1;
+    if (acos_fd != -1) {
+        if (close(acos_fd) == -1) return -2;
+    }
+    /* disable use of fast arc cosine file */
     acos_table = NULL;
+
+    return 0;
 }
 
 extern float fast_acosf(float x)

@@ -93,7 +93,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_avmd_shutdown);
 SWITCH_STANDARD_API(avmd_api_main);
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_avmd_load);
-SWITCH_MODULE_DEFINITION(mod_avmd, mod_avmd_load, NULL, NULL);
+SWITCH_MODULE_DEFINITION(mod_avmd, mod_avmd_load, mod_avmd_shutdown, NULL);
 SWITCH_STANDARD_APP(avmd_start_function);
 
 /*! Status of the beep detection */
@@ -206,10 +206,16 @@ static switch_bool_t avmd_callback(switch_media_bug_t * bug, void *user_data, sw
 /*! \brief FreeSWITCH module loading function.
  *
  * @author Eric des Courtis
- * @return Load success or failure.
+ * @par    Changes: Piotr Gregor, 07 Feb 2016 (FS-8809, FS-8810)
+ * @return On success SWITCH_STATUS_SUCCES,
+ *         on failure SWITCH_STATUS_TERM.
  */
 SWITCH_MODULE_LOAD_FUNCTION(mod_avmd_load)
 {
+#ifdef FASTMATH
+    char    err[150];
+    int     ret;
+#endif
 
 	switch_application_interface_t *app_interface;
 	switch_api_interface_t *api_interface;
@@ -218,7 +224,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_avmd_load)
 
 
 	if (switch_event_reserve_subclass(AVMD_EVENT_BEEP) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", AVMD_EVENT_BEEP);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+                "Couldn't register subclass [%s]!\n", AVMD_EVENT_BEEP);
 		return SWITCH_STATUS_TERM;
 	}
 
@@ -227,14 +234,66 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_avmd_load)
 		SWITCH_CHANNEL_LOG,
 		SWITCH_LOG_NOTICE,
 		"Advanced Voicemail detection enabled\n"
-		);
+	);
 
 #ifdef FASTMATH
-	init_fast_acosf();
+    ret = init_fast_acosf();
+    if (ret != 0) {
+        strerror_r(errno, err, 150);
+        switch (ret) {
+
+            case -1:
+	            switch_log_printf(
+		            SWITCH_CHANNEL_LOG,
+		            SWITCH_LOG_ERROR,
+		            "Can't access file [%s], error [%s]\n",
+                    ACOS_TABLE_FILENAME, err
+		        );
+                break;
+
+            case -2:
+	            switch_log_printf(
+		            SWITCH_CHANNEL_LOG,
+		            SWITCH_LOG_ERROR,
+		            "Error creating file [%s], error [%s]\n",
+                    ACOS_TABLE_FILENAME, err
+		        );
+                break;
+
+            case -3:
+	            switch_log_printf(
+		            SWITCH_CHANNEL_LOG,
+		            SWITCH_LOG_ERROR,
+		            "Access rights are OK but can't open file [%s], error [%s]\n",
+                    ACOS_TABLE_FILENAME, err
+		        );
+                break;
+
+            case -4:
+	            switch_log_printf(
+		            SWITCH_CHANNEL_LOG,
+		            SWITCH_LOG_ERROR,
+		            "Access rights are OK but can't mmap file [%s], error [%s]\n",
+                    ACOS_TABLE_FILENAME, err
+		        );
+                break;
+
+            default:
+	            switch_log_printf(
+		            SWITCH_CHANNEL_LOG,
+		            SWITCH_LOG_ERROR,
+		            "Unknown error [%d] while initializing fast cos table [%s], "
+                    "errno [%s]\n", ret, ACOS_TABLE_FILENAME, err
+		        );
+                return SWITCH_STATUS_TERM;
+        }
+        return SWITCH_STATUS_TERM;
+    } else
 	switch_log_printf(
 		SWITCH_CHANNEL_LOG,
 		SWITCH_LOG_NOTICE,
-		"Advanced Voicemail detection: fast math enabled\n"
+		"Advanced Voicemail detection: fast math enabled, arc cosine table "
+        "is [%s]\n", ACOS_TABLE_FILENAME
 		);
 #endif
 
@@ -246,7 +305,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_avmd_load)
 		avmd_start_function,
 		"[start] [stop]",
 		SAF_NONE
-		);
+	);
 
 	SWITCH_ADD_API(api_interface, "avmd", "Voicemail beep detection", avmd_api_main, AVMD_SYNTAX);
 
@@ -328,11 +387,34 @@ SWITCH_STANDARD_APP(avmd_start_function)
  */
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_avmd_shutdown)
 {
+#ifdef FASTMATH
+	int res;
+#endif
 
 	switch_event_free_subclass(AVMD_EVENT_BEEP);
 	
 #ifdef FASTMATH
-	destroy_fast_acosf();
+	res = destroy_fast_acosf();
+    if (res != 0) {
+        switch (res) {
+            case -1:
+	            switch_log_printf(
+		            SWITCH_CHANNEL_LOG,
+		            SWITCH_LOG_ERROR,
+		            "Failed unmap arc cosine table\n"
+		        );
+                break;
+            case -2:
+	            switch_log_printf(
+		            SWITCH_CHANNEL_LOG,
+		            SWITCH_LOG_ERROR,
+		            "Failed closing arc cosine table\n"
+		        );
+                break;
+            default:
+            break;
+        }
+    }
 #endif
 
 	switch_log_printf(
@@ -537,13 +619,16 @@ static void avmd_process(avmd_session_t *session, switch_frame_t *frame)
 				/* calculate variance */
 				v = session->sqa_b.sma - (session->sma_b.sma * session->sma_b.sma);
 
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session->session), SWITCH_LOG_DEBUG, "<<< AVMD v=%f f=%f %fHz sma=%f sqa=%f >>>\n", v, f, TO_HZ(session->rate, f), session->sma_b.sma, session->sqa_b.sma);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session->session), SWITCH_LOG_DEBUG,
+                    "<<< AVMD v=[%f] f=[%f] [%f]Hz sma=[%f] sqa=[%f] >>>\n", v, f, TO_HZ(session->rate, f),
+                    session->sma_b.sma, session->sqa_b.sma);
 			}
 
 			/*! If variance is less than threshold then we have detection */
 			if (v < VARIANCE_THRESHOLD) {
 
-				switch_channel_set_variable_printf(channel, "avmd_total_time", "%d", (int)(switch_micro_time_now() - session->start_time) / 1000);
+				switch_channel_set_variable_printf(channel, "avmd_total_time",
+                    "[%d]", (int)(switch_micro_time_now() - session->start_time) / 1000);
 				switch_channel_execute_on(channel, "execute_on_avmd_beep");
 
 				/*! Throw an event to FreeSWITCH */
@@ -551,7 +636,8 @@ static void avmd_process(avmd_session_t *session, switch_frame_t *frame)
 				if (status != SWITCH_STATUS_SUCCESS) return;
 
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Beep-Status", "stop");
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Unique-ID", switch_core_session_get_uuid(session->session));
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Unique-ID",
+                    switch_core_session_get_uuid(session->session));
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call-command", "avmd");
 
 				if ((switch_event_dup(&event_copy, event)) != SWITCH_STATUS_SUCCESS) return;
@@ -559,7 +645,8 @@ static void avmd_process(avmd_session_t *session, switch_frame_t *frame)
 				switch_core_session_queue_event(session->session, &event);
 				switch_event_fire(&event_copy);
 
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session->session), SWITCH_LOG_DEBUG, "<<< AVMD - Beep Detected >>>\n");
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session->session), SWITCH_LOG_DEBUG,
+                    "<<< AVMD - Beep Detected >>>\n");
 				switch_channel_set_variable(channel, "avmd_detect", "TRUE");
 				RESET_SMA_BUFFER(&session->sma_b);
 				RESET_SMA_BUFFER(&session->sqa_b);
