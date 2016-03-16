@@ -82,14 +82,16 @@ SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_custom_query, globals.custom_query)
 static int route_callback(void *pArg, int argc, char **argv, char **columnNames)
 {
 	route_callback_t *cbt = (route_callback_t *) pArg;
-
-	switch_copy_string(cbt->gateway, argv[0], 128);
-	switch_copy_string(cbt->group, argv[1], 128);
-	switch_copy_string(cbt->limit, argv[2], 128);
-	switch_copy_string(cbt->techprofile, argv[3], 128);
-	switch_copy_string(cbt->acctcode, argv[4], 128);
-	switch_copy_string(cbt->translated, argv[5], 60);
-
+	if (argc >= 6) {
+		switch_copy_string(cbt->gateway, argv[0], 128);
+		switch_copy_string(cbt->group, argv[1], 128);
+		switch_copy_string(cbt->limit, argv[2], 128);
+		switch_copy_string(cbt->techprofile, argv[3], 128);
+		switch_copy_string(cbt->acctcode, argv[4], 128);
+		switch_copy_string(cbt->translated, argv[5], 60);
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "sql for route_callback only returning %d fields\n", argc);
+	}
 	return 0;
 }
 
