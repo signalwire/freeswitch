@@ -375,6 +375,11 @@ void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, 
 		return;
 	}
 
+	if (layer->clear) {
+		conference_video_clear_layer(layer);
+		layer->clear = 0;
+	}
+
 	if (layer->refresh) {
 		switch_img_fill(layer->canvas->img, layer->x_pos, layer->y_pos, layer->screen_w, layer->screen_h, &layer->canvas->letterbox_bgcolor);
 		layer->refresh = 0;
@@ -551,14 +556,16 @@ mcu_layer_t *conference_video_get_layer_locked(conference_member_t *member)
 	mcu_layer_t *layer = NULL;
 	mcu_canvas_t *canvas = NULL;
 
-	if (!member || member->canvas_id < 0 || member->video_layer_id < 0) return NULL;
-
 	if ((canvas = conference_video_get_canvas_locked(member))) {
 		switch_mutex_lock(canvas->mutex);
-		layer = &canvas->layers[member->video_layer_id];
+
+		if (member->video_layer_id > -1) {
+			layer = &canvas->layers[member->video_layer_id];
+		}
 
 		if (!layer) {
 			switch_mutex_unlock(canvas->mutex);
+			conference_video_release_canvas(&canvas);
 		}
 	}
 	
@@ -585,10 +592,11 @@ mcu_canvas_t *conference_video_get_canvas_locked(conference_member_t *member)
 {
 	mcu_canvas_t *canvas = NULL;
 
-	if (!member || member->canvas_id < 0 || member->video_layer_id < 0) return NULL;
-
 	switch_mutex_lock(member->conference->canvas_mutex);
-	canvas = member->conference->canvases[member->canvas_id];
+
+	if (member->canvas_id > -1 && member->video_layer_id > -1) {
+		canvas = member->conference->canvases[member->canvas_id];
+	}
 
 	if (!canvas) {
 	   	switch_mutex_unlock(member->conference->canvas_mutex);
@@ -1356,21 +1364,22 @@ void conference_video_vmute_snap(conference_member_t *member, switch_bool_t clea
 	if (member->canvas_id > -1 && member->video_layer_id > -1) {
 		mcu_layer_t *layer = NULL;
 		mcu_canvas_t *canvas = NULL;
-
-		canvas = conference_video_get_canvas_locked(member);
 		
-		switch_mutex_lock(canvas->mutex);
-		layer = &canvas->layers[member->video_layer_id];
-		switch_img_free(&layer->mute_img);
-		switch_img_free(&member->video_mute_img);
+		if ((canvas = conference_video_get_canvas_locked(member))) {
+			
+			switch_mutex_lock(canvas->mutex);
+			layer = &canvas->layers[member->video_layer_id];
+			switch_img_free(&layer->mute_img);
+			switch_img_free(&member->video_mute_img);
 
-		if (!clear && layer->cur_img) {
-			switch_img_copy(layer->cur_img, &member->video_mute_img);
-			switch_img_copy(layer->cur_img, &layer->mute_img);
+			if (!clear && layer->cur_img) {
+				switch_img_copy(layer->cur_img, &member->video_mute_img);
+				switch_img_copy(layer->cur_img, &layer->mute_img);
+			}
+
+			switch_mutex_unlock(canvas->mutex);
+			conference_video_release_canvas(&canvas);
 		}
-
-		switch_mutex_unlock(canvas->mutex);
-		conference_video_release_canvas(&canvas);
 	}
 }
 
@@ -1539,18 +1548,17 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_write_thread_run(switch_thread_
 				canvas = member->conference->canvases[member->canvas_id];
 				layer = &canvas->layers[member->video_layer_id];
 
-				if (!layer->need_patch || switch_thread_rwlock_tryrdlock(canvas->video_rwlock) != SWITCH_STATUS_SUCCESS) {
-					canvas = NULL;
-					layer = NULL;
+				if (layer->need_patch && switch_thread_rwlock_tryrdlock(canvas->video_rwlock) == SWITCH_STATUS_SUCCESS) {
+					if (layer->need_patch) {
+						conference_video_scale_and_patch(layer, NULL, SWITCH_FALSE);
+						layer->need_patch = 0;
+					}
+					switch_thread_rwlock_unlock(canvas->video_rwlock);
 				}
 			}
 			switch_mutex_unlock(member->conference->canvas_mutex);
-
-			if (canvas && layer && layer->need_patch) {
-				conference_video_scale_and_patch(layer, NULL, SWITCH_FALSE);
-				layer->need_patch = 0;
-				switch_thread_rwlock_unlock(canvas->video_rwlock);
-			}
+			
+			
 		}
 	}
 
@@ -2144,13 +2152,10 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 		int j = 0, personal = conference_utils_test_flag(conference, CFLAG_PERSONAL_CANVAS) ? 1 : 0;
 		
 		if (!personal) {
-			switch_mutex_lock(conference->canvas_mutex);
-			switch_mutex_lock(canvas->mutex);
-			if (canvas->new_vlayout) {
+			if (canvas->new_vlayout && switch_mutex_trylock(conference->canvas_mutex) == SWITCH_STATUS_SUCCESS) {
 				conference_video_init_canvas_layers(conference, canvas, NULL);
+				switch_mutex_unlock(conference->canvas_mutex);
 			}
-			switch_mutex_unlock(canvas->mutex);
-			switch_mutex_unlock(conference->canvas_mutex);
 		}
 
 		if (canvas->video_timer_reset) {

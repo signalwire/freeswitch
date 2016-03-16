@@ -490,11 +490,9 @@ switch_status_t conference_api_sub_unvmute(conference_member_t *member, switch_s
 	if (switch_core_session_media_flow(member->session, SWITCH_MEDIA_TYPE_VIDEO) == SWITCH_MEDIA_FLOW_SENDONLY) {
 		return SWITCH_STATUS_SUCCESS;
 	}
-
-	layer = conference_video_get_layer_locked(member);
-
-	if (layer) {
-		conference_video_clear_layer(layer);
+	
+	if ((layer = conference_video_get_layer_locked(member))) {
+		layer->clear = 1;
 		conference_video_release_layer(&layer);
 	}
 
