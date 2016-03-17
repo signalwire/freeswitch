@@ -31,7 +31,9 @@ case "$1" in
     done
     if [ ! -d "/etc/freeswitch" ]; then
       mkdir -p /etc/freeswitch/
-      cp -a /usr/share/freeswitch/conf/vanilla/* /etc/freeswitch/
+      if [ -e /usr/share/freeswitch/conf/vanilla/freeswitch.xml ]; then
+        cp -a /usr/share/freeswitch/conf/vanilla/* /etc/freeswitch/
+      fi
     fi
     if [ ! -d "/etc/freeswitch/tls" ]; then
       mkdir -p /etc/freeswitch/tls/
