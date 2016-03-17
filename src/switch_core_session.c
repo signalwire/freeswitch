@@ -315,7 +315,7 @@ SWITCH_DECLARE(void) switch_core_session_hupall_endpoint(const switch_endpoint_i
 	void *val;
 	switch_core_session_t *session;
 	switch_memory_pool_t *pool;
-    struct str_node *head = NULL, *np;
+	struct str_node *head = NULL, *np;
 	
 	switch_core_new_memory_pool(&pool);
 	
@@ -327,8 +327,8 @@ SWITCH_DECLARE(void) switch_core_session_hupall_endpoint(const switch_endpoint_i
 			if (switch_core_session_read_lock(session) == SWITCH_STATUS_SUCCESS) {
 				if (session->endpoint_interface == endpoint_interface) {
 					np = switch_core_alloc(pool, sizeof(*np));
-                    np->str = switch_core_strdup(pool, session->uuid_str);
-                    np->next = head;
+					np->str = switch_core_strdup(pool, session->uuid_str);
+					np->next = head;
 					head = np;
 				}
 				switch_core_session_rwunlock(session);

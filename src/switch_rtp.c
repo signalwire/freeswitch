@@ -1727,10 +1727,10 @@ static void rtcp_generate_sender_info(switch_rtp_t *rtp_session, struct switch_r
 
 	switch_time_exp_gmt(&now_hr,now);
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG10,"Sending an RTCP packet[%04d-%02d-%02d %02d:%02d:%02d.%d] lsr[%u] msw[%u] lsw[%u] stats_ssrc[%u]\n",
-                1900 + now_hr.tm_year,  now_hr.tm_mday, now_hr.tm_mon, now_hr.tm_hour, now_hr.tm_min, now_hr.tm_sec, now_hr.tm_usec,
-                (ntohl(sr->ntp_lsw)&0xffff0000)>>16 | (ntohl(sr->ntp_msw)&0x0000ffff)<<16,
-                ntohl(sr->ntp_msw),ntohl(sr->ntp_lsw), rtp_session->stats.rtcp.ssrc
-	);
+			1900 + now_hr.tm_year,  now_hr.tm_mday, now_hr.tm_mon, now_hr.tm_hour, now_hr.tm_min, now_hr.tm_sec, now_hr.tm_usec,
+			(ntohl(sr->ntp_lsw)&0xffff0000)>>16 | (ntohl(sr->ntp_msw)&0x0000ffff)<<16,
+			ntohl(sr->ntp_msw),ntohl(sr->ntp_lsw), rtp_session->stats.rtcp.ssrc
+			);
 }
 
 //#define DEBUG_RTCP
@@ -1769,11 +1769,11 @@ static void rtcp_generate_report_block(switch_rtp_t *rtp_session, struct switch_
 
 #ifdef DEBUG_RTCP
 			if (rtp_session->flags[SWITCH_RTP_FLAG_VIDEO])
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "rtcp_generate_sr: stats_ssrc[%u]\nreceived[%d]\nexpected[%d]\ncum[%d]\nlost[%d|%d/256]pkt\nlast_seq[%d]\ncyc[%d]\nlast_rpt_seq[%d]\ncyc[%d]\nssrc[%d]\n",
-               rtp_session->remote_ssrc, stats->period_pkt_count, expected_pkt,
-               stats->cum_lost, pkt_lost, rtcp_report_block->fraction, stats->high_ext_seq_recv&0x0000ffff,
-               stats->cycle, stats->last_rpt_ext_seq&0x0000ffff, stats->last_rpt_cycle, rtp_session->stats.rtcp.peer_ssrc
-       );
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "rtcp_generate_sr: stats_ssrc[%u]\nreceived[%d]\nexpected[%d]\ncum[%d]\nlost[%d|%d/256]pkt\nlast_seq[%d]\ncyc[%d]\nlast_rpt_seq[%d]\ncyc[%d]\nssrc[%d]\n",
+						rtp_session->remote_ssrc, stats->period_pkt_count, expected_pkt,
+						stats->cum_lost, pkt_lost, rtcp_report_block->fraction, stats->high_ext_seq_recv&0x0000ffff,
+						stats->cycle, stats->last_rpt_ext_seq&0x0000ffff, stats->last_rpt_cycle, rtp_session->stats.rtcp.peer_ssrc
+						);
 #endif
 	rtcp_report_block->highest_sequence_number_received = htonl(stats->high_ext_seq_recv);
 
@@ -1851,7 +1851,7 @@ static int rtcp_stats(switch_rtp_t *rtp_session)
 		if (pkt_seq < max_seq) {
 			stats->cycle++;
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "rtcp_stats:[cycle change] pkt_seq[%d] cycle[%d] max_seq[%d] stats_ssrc[%u] local_ts[%u]\n",
-                  pkt_seq, stats->cycle, max_seq, stats->ssrc, rtp_session->timer.samplecount);
+					pkt_seq, stats->cycle, max_seq, stats->ssrc, rtp_session->timer.samplecount);
 		}
 		pkt_extended_seq = stats->cycle << 16 | pkt_seq; /* getting the extended packet extended sequence ID */
 		if (pkt_extended_seq > stats->high_ext_seq_recv) {
@@ -1878,7 +1878,7 @@ static int rtcp_stats(switch_rtp_t *rtp_session)
 	stats->pkt_count++;
 #ifdef DEBUG_RTCP
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG10, "rtcp_stats: period_pkt_count[%d]last_seq[%d]cycle[%d]stats_ssrc[%u]local_ts[%u]\n",
-                 stats->period_pkt_count, pkt_seq, stats->cycle, stats->ssrc, rtp_session->timer.samplecount);
+			stats->period_pkt_count, pkt_seq, stats->cycle, stats->ssrc, rtp_session->timer.samplecount);
 #endif
 	/* Interarrival jitter calculation */
 	pkt_tsdiff = abs((int)rtp_session->timer.samplecount - (int)ntohl(hdr->ts));  /* relative transit times for this packet */
@@ -1893,7 +1893,7 @@ static int rtcp_stats(switch_rtp_t *rtp_session)
 
 #ifdef DEBUG_RTCP
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG10, "rtcp_stats: pkt_ts[%d]local_ts[%d]diff[%d]pkt_spacing[%d]inter_jitter[%f]seq[%d]stats_ssrc[%d]",
-               ntohl(hdr->ts), rtp_session->timer.samplecount, pkt_tsdiff, packet_spacing_diff, stats->inter_jitter, ntohs(hdr->seq), stats->ssrc);
+			ntohl(hdr->ts), rtp_session->timer.samplecount, pkt_tsdiff, packet_spacing_diff, stats->inter_jitter, ntohs(hdr->seq), stats->ssrc);
 #endif
 	return 1;
 }
@@ -3917,10 +3917,10 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 	
 	/* Burst and Packet Loss */
 	rtp_session->stats.inbound.lossrate = 0;
-    rtp_session->stats.inbound.burstrate = 0;
-    memset(rtp_session->stats.inbound.loss, 0, sizeof(rtp_session->stats.inbound.loss));
-    rtp_session->stats.inbound.last_loss = 0;
-    rtp_session->stats.inbound.last_processed_seq = -1;
+	rtp_session->stats.inbound.burstrate = 0;
+	memset(rtp_session->stats.inbound.loss, 0, sizeof(rtp_session->stats.inbound.loss));
+	rtp_session->stats.inbound.last_loss = 0;
+	rtp_session->stats.inbound.last_processed_seq = -1;
 
 	rtp_session->ready = 1;
 	*new_rtp_session = rtp_session;
@@ -4983,7 +4983,7 @@ static switch_size_t do_flush(switch_rtp_t *rtp_session, int force, switch_size_
 		if (rtp_session->vb) {
 			//switch_jb_reset(rtp_session->vb);
 			bytes_out = bytes_in;
-            goto end;
+			goto end;
 		}
 		
 		if (rtp_session->flags[SWITCH_RTP_FLAG_DEBUG_RTP_READ]) {
@@ -6308,7 +6308,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 				switch_rtp_clear_flag(rtp_session, SWITCH_RTP_FLAG_BREAK);
 				bytes = 0;
 				reset_jitter_seq(rtp_session);
-                return_cng_frame();
+				return_cng_frame();
 			}
 
 		}

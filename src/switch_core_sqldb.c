@@ -3524,12 +3524,12 @@ switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_
 				//runtime.odbc_dsn = NULL;
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Database Error [%s]\n", err);
 				//switch_cache_db_release_db_handle(&sql_manager.dbh);
-                                if (switch_stristr("read-only", err)) { 
-                                        switch_safe_free(err);
-                                } else {
-                                        switch_safe_free(err);
-                                        goto top;
-                                }
+				if (switch_stristr("read-only", err)) { 
+					switch_safe_free(err);
+				} else {
+					switch_safe_free(err);
+					goto top;
+				}
 			}
 		}
 		break;

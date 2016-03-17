@@ -5096,16 +5096,16 @@ static switch_bool_t video_write_overlay_callback(switch_media_bug_t *bug, void 
 	switch_core_session_t *session = switch_core_media_bug_get_session(bug);
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	
-    switch (type) {
-    case SWITCH_ABC_TYPE_INIT:
-        {			
-        }
-        break;
-    case SWITCH_ABC_TYPE_CLOSE:
-        {
+	switch (type) {
+	case SWITCH_ABC_TYPE_INIT:
+		{			
+		}
+		break;
+	case SWITCH_ABC_TYPE_CLOSE:
+		{
 			switch_img_free(&oht->img);
-        }
-        break;
+		}
+		break;
 	case SWITCH_ABC_TYPE_WRITE_VIDEO_PING:
 		if (switch_channel_test_flag(channel, CF_VIDEO_DECODED_READ)) {
 			switch_frame_t *frame = switch_core_media_bug_get_video_ping_frame(bug);
@@ -5121,12 +5121,12 @@ static switch_bool_t video_write_overlay_callback(switch_media_bug_t *bug, void 
 				switch_img_free(&oimg);
 			}
 		}
-        break;
-    default:
-        break;
-    }
+		break;
+	default:
+		break;
+	}
 
-    return SWITCH_TRUE;
+	return SWITCH_TRUE;
 }
 
 
@@ -5150,7 +5150,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_video_write_overlay_session(switch_co
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_status_t status;
 	switch_media_bug_flag_t bflags = SMBF_WRITE_VIDEO_PING;
-    switch_media_bug_t *bug;
+	switch_media_bug_t *bug;
 	overly_helper_t *oht;
 	switch_image_t *img;
 

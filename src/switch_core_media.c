@@ -186,8 +186,8 @@ struct switch_media_handle_s {
 	switch_mutex_t *read_mutex[2];
 	switch_mutex_t *write_mutex[2];
 	char *codec_order[SWITCH_MAX_CODECS];
-    int codec_order_last;
-    const switch_codec_implementation_t *codecs[SWITCH_MAX_CODECS];
+	int codec_order_last;
+	const switch_codec_implementation_t *codecs[SWITCH_MAX_CODECS];
 
 	int payload_space;
 	char *origin;
@@ -3829,16 +3829,16 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 					char tmp[32] = "";
 
 
-                    if (!switch_channel_test_flag(other_channel, CF_ANSWERED)) {
-                        switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session),
-                                          SWITCH_LOG_WARNING, "%s Error Passing T.38 to unanswered channel %s\n",
-                                          switch_channel_get_name(session->channel), switch_channel_get_name(other_channel));
-                        switch_core_session_rwunlock(other_session);
+					if (!switch_channel_test_flag(other_channel, CF_ANSWERED)) {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session),
+										SWITCH_LOG_WARNING, "%s Error Passing T.38 to unanswered channel %s\n",
+										switch_channel_get_name(session->channel), switch_channel_get_name(other_channel));
+						switch_core_session_rwunlock(other_session);
 
-                        pass = 0;
-                        match = 0;
-                        goto done;
-                    }
+						pass = 0;
+						match = 0;
+						goto done;
+					}
 
 
 					if (switch_true(switch_channel_get_variable(session->channel, "t38_broken_boolean")) && 

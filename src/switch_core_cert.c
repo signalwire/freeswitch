@@ -110,8 +110,7 @@ static const EVP_MD *get_evp_by_name(const char *name)
  * Solaris 10 with the Sun Studio compilers doesn't have strsep in the
  * C library either.
  */
-char
-    *strsep(char **stringp, const char *delim)
+char *strsep(char **stringp, const char *delim)
 {
 	char *res;
 

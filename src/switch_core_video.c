@@ -129,10 +129,10 @@ struct fit_el {
 
 
 static struct fit_el IMG_FIT_TABLE[] = {
-       	{SWITCH_FIT_SIZE, "fit-size"},
-       	{SWITCH_FIT_SCALE, "fit-scale"},
-       	{SWITCH_FIT_SIZE_AND_SCALE, "fit-size-and-scale"},
-		{SWITCH_FIT_NONE, NULL}
+	{SWITCH_FIT_SIZE, "fit-size"},
+	{SWITCH_FIT_SCALE, "fit-scale"},
+	{SWITCH_FIT_SIZE_AND_SCALE, "fit-size-and-scale"},
+	{SWITCH_FIT_NONE, NULL}
 };
 
 
@@ -813,9 +813,9 @@ SWITCH_DECLARE(switch_status_t) switch_img_txt_handle_create(switch_img_txt_hand
 	new_handle->pool = pool;
 	new_handle->free_pool = free_pool;
 
-    if (zstr(font_family)) {
+	if (zstr(font_family)) {
 		font_family = switch_core_sprintf(new_handle->pool, "%s%s%s",SWITCH_GLOBAL_dirs.fonts_dir, SWITCH_PATH_SEPARATOR, "FreeMono.ttf");
-    }
+	}
 
 	if (!switch_is_file_path(font_family)) {
 		new_handle->font_family = switch_core_sprintf(new_handle->pool, "%s%s%s",SWITCH_GLOBAL_dirs.fonts_dir, SWITCH_PATH_SEPARATOR, font_family);
@@ -910,7 +910,7 @@ static void draw_bitmap(switch_img_txt_handle_t *handle, switch_image_t *img, FT
 		case FT_PIXEL_MODE_LCD_V:
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "unsupported pixel mode %d\n", bitmap->pixel_mode);
 			return;
-    }
+	}
 
 	for ( i = x, p = 0; i < x_max; i++, p++ ) {
 		for ( j = y, q = 0; j < y_max; j++, q++ ) {
@@ -1081,11 +1081,11 @@ SWITCH_DECLARE(switch_image_t *) switch_img_write_text_img(int w, int h, switch_
 	char *txt = "Value Optimized Out!";
 	int argc = 0;
 	char *argv[6] = { 0 };
-    switch_rgb_color_t bgcolor = { 0 };
-    int pre_width = 0, width = 0, font_size = 0, height = 0;
+	switch_rgb_color_t bgcolor = { 0 };
+	int pre_width = 0, width = 0, font_size = 0, height = 0;
 	int len = 0;
 	char *duptxt = strdup(text);
-    switch_img_txt_handle_t *txthandle = NULL;
+	switch_img_txt_handle_t *txthandle = NULL;
 	switch_image_t *txtimg = NULL;
 	int x = 0, y = 0;
 
@@ -1124,15 +1124,15 @@ SWITCH_DECLARE(switch_image_t *) switch_img_write_text_img(int w, int h, switch_
 	while (*txt == ' ') txt++;
 	while (end_of(txt) == ' ') end_of(txt) = '\0';
 	
-    len = strlen(txt);
+	len = strlen(txt);
 
-    if (len < 5) len = 5;
+	if (len < 5) len = 5;
 
 
 	switch_img_txt_handle_create(&txthandle, font_face, fg, bg, font_size, 0, NULL);
 	switch_color_set_rgb(&bgcolor, bg);
 
-    pre_width = switch_img_txt_handle_render(txthandle,
+	pre_width = switch_img_txt_handle_render(txthandle,
 											 NULL,
 											 font_size / 2, font_size / 2,
 											 txt, NULL, fg, bg, 0, 0);
@@ -1162,10 +1162,10 @@ SWITCH_DECLARE(switch_image_t *) switch_img_write_text_img(int w, int h, switch_
 		x = (txtimg->d_w / 2) - (pre_width / 2);
 	}
 
-    switch_img_txt_handle_render(txthandle,
-                                 txtimg,
-                                 x, y,
-                                 txt, NULL, fg, bg, 0, 0);
+	switch_img_txt_handle_render(txthandle,
+								txtimg,
+								x, y,
+								txt, NULL, fg, bg, 0, 0);
 	switch_img_txt_handle_destroy(&txthandle);
 
 	switch_safe_free(duptxt);
@@ -1974,9 +1974,9 @@ static inline uint32_t switch_img_fmt2fourcc(switch_img_fmt_t fmt)
 		case SWITCH_IMG_FMT_I44416:    fourcc = FOURCC_ANY ; break;
 		case SWITCH_IMG_FMT_I44016:    fourcc = FOURCC_ANY ; break;
 		default: fourcc = FOURCC_ANY;
-    }
+	}
 
-    return fourcc;
+	return fourcc;
 }
 #endif
 
@@ -2032,14 +2032,14 @@ SWITCH_DECLARE(switch_status_t) switch_img_from_raw(switch_image_t *dest, void *
 
 /*
 	int ConvertToI420(const uint8* src_frame, size_t src_size,
-                  uint8* dst_y, int dst_stride_y,
-                  uint8* dst_u, int dst_stride_u,
-                  uint8* dst_v, int dst_stride_v,
-                  int crop_x, int crop_y,
-                  int src_width, int src_height,
-                  int crop_width, int crop_height,
-                  enum RotationMode rotation,
-                  uint32 format);
+			uint8* dst_y, int dst_stride_y,
+			uint8* dst_u, int dst_stride_u,
+			uint8* dst_v, int dst_stride_v,
+			int crop_x, int crop_y,
+			int src_width, int src_height,
+			int crop_width, int crop_height,
+			enum RotationMode rotation,
+			uint32 format);
 
 	src_size is only used when FOURCC_MJPG which we don't support so always 0
 */
@@ -2085,10 +2085,10 @@ SWITCH_DECLARE(switch_status_t) switch_img_scale(switch_image_t *src, switch_ima
 						kFilterBox);
 	} else if (src->fmt == SWITCH_IMG_FMT_ARGB) {
 		ret = ARGBScale(src->planes[SWITCH_PLANE_PACKED], src->d_w * 4,
-              src->d_w, src->d_h,
-              dest->planes[SWITCH_PLANE_PACKED], width * 4,
-              width, height,
-              kFilterBox);
+				src->d_w, src->d_h,
+				dest->planes[SWITCH_PLANE_PACKED], width * 4,
+				width, height,
+				kFilterBox);
 	}
 
 	if (ret != 0) {
