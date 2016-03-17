@@ -67,12 +67,15 @@ SWITCH_DECLARE_CONSTRUCTOR EventConsumer::EventConsumer(const char *event_name, 
 SWITCH_DECLARE(int) EventConsumer::bind(const char *event_name, const char *subclass_name)
 {
 	switch_event_types_t event_id = SWITCH_EVENT_CUSTOM;
-	switch_name_event(event_name, &event_id);
 
 	if (!ready) {
 		return 0;
 	}
 
+	if (switch_name_event(event_name, &event_id) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Can't bind to %s, event not found\n", event_name);
+		return 0;
+	}
 
 	if (zstr(subclass_name)) {
 		subclass_name = NULL;
@@ -83,10 +86,10 @@ SWITCH_DECLARE(int) EventConsumer::bind(const char *event_name, const char *subc
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "bound to %s %s\n", event_name, switch_str_nil(subclass_name));
 		node_index++;
 		return 1;
-	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot bind to %s %s\n", event_name, switch_str_nil(subclass_name));
-		return 0;
 	}
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot bind to %s %s\n", event_name, switch_str_nil(subclass_name));
+	return 0;
 }
 
 
