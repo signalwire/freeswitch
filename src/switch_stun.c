@@ -414,7 +414,7 @@ SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_get_xor_mapped_address(swit
 		}
 	}
 
-    ip->port ^= ntohl(header->cookie) >> 16;
+	ip->port ^= ntohl(header->cookie) >> 16;
 	*port = ip->port;
 
 	return 1;
@@ -585,9 +585,9 @@ SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_add_use_candidate(switch_st
 SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_add_controlling(switch_stun_packet_t *packet)
 {
 	switch_stun_packet_attribute_t *attribute;
-    char buf[8];
+	char buf[8];
 
-    switch_stun_random_string(buf, 8, NULL);
+	switch_stun_random_string(buf, 8, NULL);
 
 	attribute = (switch_stun_packet_attribute_t *) ((uint8_t *) & packet->first_attribute + ntohs(packet->header.length));
 	attribute->type = htons(SWITCH_STUN_ATTR_CONTROLLING);
@@ -600,9 +600,9 @@ SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_add_controlling(switch_stun
 SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_add_controlled(switch_stun_packet_t *packet)
 {
 	switch_stun_packet_attribute_t *attribute;
-    char buf[8];
+	char buf[8];
 
-    switch_stun_random_string(buf, 8, NULL);
+	switch_stun_random_string(buf, 8, NULL);
 
 	attribute = (switch_stun_packet_attribute_t *) ((uint8_t *) & packet->first_attribute + ntohs(packet->header.length));
 	attribute->type = htons(SWITCH_STUN_ATTR_CONTROLLED);

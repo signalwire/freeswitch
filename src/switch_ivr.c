@@ -1848,8 +1848,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_3p_nomedia(const char *uuid, switch_m
 				}
 
 				if (switch_core_session_in_thread(session)) {
-                    switch_yield(100000);
-                } else {
+					switch_yield(100000);
+				} else {
 					switch_channel_wait_for_state(other_channel, channel, CS_HIBERNATE);
 				}
 
@@ -1948,8 +1948,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_nomedia(const char *uuid, switch_medi
 				}
 
 				if (switch_core_session_in_thread(session)) {
-                    switch_yield(100000);
-                } else {
+					switch_yield(100000);
+				} else {
 					switch_channel_wait_for_state(other_channel, channel, CS_HIBERNATE);
 				}
 
@@ -3820,9 +3820,9 @@ SWITCH_DECLARE(switch_bool_t) switch_ivr_uuid_force_exists(const char *uuid)
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_process_fh(switch_core_session_t *session, const char *cmd, switch_file_handle_t *fhp)
 {
-    if (zstr(cmd)) {
+	if (zstr(cmd)) {
 		return SWITCH_STATUS_SUCCESS;	
-    }
+	}
 
 	if (fhp) {
 		if (!switch_test_flag(fhp, SWITCH_FILE_OPEN)) {
@@ -3926,11 +3926,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_process_fh(switch_core_session_t *ses
 		}
 	}
 
-    if (!strcmp(cmd, "true") || !strcmp(cmd, "undefined")) {
+	if (!strcmp(cmd, "true") || !strcmp(cmd, "undefined")) {
 		return SWITCH_STATUS_SUCCESS;
-    }
+	}
 
-    return SWITCH_STATUS_FALSE;
+	return SWITCH_STATUS_FALSE;
 	
 }
 

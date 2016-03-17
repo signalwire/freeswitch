@@ -1041,15 +1041,15 @@ static switch_status_t switch_vpx_decode(switch_codec_t *codec, switch_frame_t *
 		is_keyframe = IS_VP8_KEY_FRAME((uint8_t *)frame->data);
 	}
 	
-    if (context->got_key_frame <= 0) {
-        context->no_key_frame++;
-        //switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "no keyframe, %d\n", context->no_key_frame);
-        if (context->no_key_frame > 50) {
-            if ((is_keyframe = is_start)) {
-                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "no keyframe, treating start as key.\n");
-            }
-        }
-    }
+	if (context->got_key_frame <= 0) {
+		context->no_key_frame++;
+		//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "no keyframe, %d\n", context->no_key_frame);
+		if (context->no_key_frame > 50) {
+			if ((is_keyframe = is_start)) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "no keyframe, treating start as key.\n");
+			}
+		}
+	}
 
 	// if (is_keyframe) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "got key %d\n", is_keyframe);
 

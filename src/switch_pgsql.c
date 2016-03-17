@@ -124,8 +124,8 @@ static int db_is_up(switch_pgsql_handle_t *handle)
 		goto done;
 	}
   
-    /* Try a non-blocking read on the connection to gobble up any EOF from a closed connection and mark the connection BAD if it is closed. */
-    PQconsumeInput(handle->con);
+	/* Try a non-blocking read on the connection to gobble up any EOF from a closed connection and mark the connection BAD if it is closed. */
+	PQconsumeInput(handle->con);
 
 	if (PQstatus(handle->con) == CONNECTION_BAD) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "PQstatus returned bad connection; reconnecting...\n");

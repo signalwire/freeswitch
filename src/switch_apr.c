@@ -631,9 +631,9 @@ struct apr_threadattr_t {
 /* this needs to be revisited when apr for windows supports thread priority settings */
 /* search for WIN32 in this file */
 struct apr_threadattr_t {
-    apr_pool_t *pool;
-    apr_int32_t detach;
-    apr_size_t stacksize;
+	apr_pool_t *pool;
+	apr_int32_t detach;
+	apr_size_t stacksize;
 	int priority;
 };
 #endif
@@ -802,13 +802,13 @@ SWITCH_DECLARE(switch_status_t) switch_sockaddr_create(switch_sockaddr_t **sa, s
 	new_sa->pool = pool;
 	memset(new_sa, 0, sizeof(*new_sa));
 
-    new_sa->family = family;
-    new_sa->sa.sin.sin_family = family;
+	new_sa->family = family;
+	new_sa->sa.sin.sin_family = family;
 
-    new_sa->salen = sizeof(struct sockaddr_in);
-    new_sa->addr_str_len = 16;
-    new_sa->ipaddr_ptr = &(new_sa->sa.sin.sin_addr);
-    new_sa->ipaddr_len = sizeof(struct in_addr);
+	new_sa->salen = sizeof(struct sockaddr_in);
+	new_sa->addr_str_len = 16;
+	new_sa->ipaddr_ptr = &(new_sa->sa.sin.sin_addr);
+	new_sa->ipaddr_len = sizeof(struct in_addr);
 
 	*sa = new_sa;
 	return SWITCH_STATUS_SUCCESS;
@@ -1310,7 +1310,7 @@ SWITCH_DECLARE(int) switch_atomic_dec(volatile switch_atomic_t *mem)
 
 SWITCH_DECLARE(char *) switch_strerror(switch_status_t statcode, char *buf, switch_size_t bufsize)
 {
-       return apr_strerror(statcode, buf, bufsize);
+	return apr_strerror(statcode, buf, bufsize);
 }
 
 /* For Emacs:

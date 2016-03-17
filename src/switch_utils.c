@@ -1838,7 +1838,7 @@ SWITCH_DECLARE(switch_status_t) switch_find_local_ip(char *buf, int len, int *ma
 #endif
 SWITCH_DECLARE(switch_status_t) switch_find_interface_ip(char *buf, int len, int *mask, const char *ifname, int family)
 {
-        switch_status_t status = SWITCH_STATUS_FALSE;
+	switch_status_t status = SWITCH_STATUS_FALSE;
 
 #ifdef HAVE_GETIFADDRS
 

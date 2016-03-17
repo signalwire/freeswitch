@@ -52,8 +52,8 @@ struct profile_timer
 	/* last calculated percentage of idle time */
 	double last_percentage_of_idle_time;
 	double *percentage_of_idle_time_ring;
-        unsigned int last_idle_time_index;
-        unsigned int cpu_idle_smoothing_depth;
+	unsigned int last_idle_time_index;
+	unsigned int cpu_idle_smoothing_depth;
 
 #ifdef __linux__
 	/* the cpu feature gets disabled on errors */
@@ -83,14 +83,14 @@ struct profile_timer
 
 #ifdef __linux__
 static int read_cpu_stats(switch_profile_timer_t *p, 
-		      unsigned long long *user, 
-                      unsigned long long *nice, 
-                      unsigned long long *system, 
-                      unsigned long long *idle, 
-                      unsigned long long *iowait, 
-                      unsigned long long *irq, 
-                      unsigned long long *softirq, 
-                      unsigned long long *steal)
+		unsigned long long *user, 
+		unsigned long long *nice, 
+		unsigned long long *system, 
+		unsigned long long *idle, 
+		unsigned long long *iowait, 
+		unsigned long long *irq, 
+		unsigned long long *softirq, 
+		unsigned long long *steal)
 {
 // the output of proc should not change that often from one kernel to other
 // see fs/proc/proc_misc.c or fs/proc/stat.c in the Linux kernel for more details
@@ -307,15 +307,15 @@ SWITCH_DECLARE(switch_profile_timer_t *)switch_new_profile_timer(void)
   switch_profile_timer_t *p = calloc(1, sizeof(switch_profile_timer_t));
 
   if ( runtime.cpu_idle_smoothing_depth && runtime.cpu_idle_smoothing_depth > 0 ) {
-    p->cpu_idle_smoothing_depth = runtime.cpu_idle_smoothing_depth;
+	  p->cpu_idle_smoothing_depth = runtime.cpu_idle_smoothing_depth;
   } else {
-    p->cpu_idle_smoothing_depth = 30;
+	  p->cpu_idle_smoothing_depth = 30;
   }
 
   p->percentage_of_idle_time_ring = calloc(1, sizeof(double) * p->cpu_idle_smoothing_depth);
 
   for ( x = 0; x < p->cpu_idle_smoothing_depth; x++ ) {
-    p->percentage_of_idle_time_ring[x] = 100.0;
+	  p->percentage_of_idle_time_ring[x] = 100.0;
   }
 
   return p;

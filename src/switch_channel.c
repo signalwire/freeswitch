@@ -239,16 +239,16 @@ struct switch_callstate_table {
 	switch_channel_callstate_t callstate;
 };
 static struct switch_callstate_table CALLSTATE_CHART[] = {
-    {"DOWN", CCS_DOWN},
-    {"DIALING", CCS_DIALING},
-    {"RINGING", CCS_RINGING},
-    {"EARLY", CCS_EARLY},
-    {"ACTIVE", CCS_ACTIVE},
-    {"HELD", CCS_HELD},
-    {"RING_WAIT", CCS_RING_WAIT},
-    {"HANGUP", CCS_HANGUP},
+	{"DOWN", CCS_DOWN},
+	{"DIALING", CCS_DIALING},
+	{"RINGING", CCS_RINGING},
+	{"EARLY", CCS_EARLY},
+	{"ACTIVE", CCS_ACTIVE},
+	{"HELD", CCS_HELD},
+	{"RING_WAIT", CCS_RING_WAIT},
+	{"HANGUP", CCS_HANGUP},
 	{"UNHELD", CCS_UNHELD},
-    {NULL, 0}
+	{NULL, 0}
 };
 
 struct switch_device_state_table {
@@ -256,14 +256,14 @@ struct switch_device_state_table {
 	switch_device_state_t device_state;
 };
 static struct switch_device_state_table DEVICE_STATE_CHART[] = {
-    {"DOWN", SDS_DOWN},
-    {"RINGING", SDS_RINGING},
-    {"ACTIVE", SDS_ACTIVE},
-    {"ACTIVE_MULTI", SDS_ACTIVE_MULTI},
-    {"HELD", SDS_HELD},
-    {"UNHELD", SDS_UNHELD},
-    {"HANGUP", SDS_HANGUP},
-    {NULL, 0}
+	{"DOWN", SDS_DOWN},
+	{"RINGING", SDS_RINGING},
+	{"ACTIVE", SDS_ACTIVE},
+	{"ACTIVE_MULTI", SDS_ACTIVE_MULTI},
+	{"HELD", SDS_HELD},
+	{"UNHELD", SDS_UNHELD},
+	{"HANGUP", SDS_HANGUP},
+	{NULL, 0}
 };
 
 

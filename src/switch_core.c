@@ -348,7 +348,7 @@ SWITCH_DECLARE(const char *) switch_core_get_hostname(void)
 
 SWITCH_DECLARE(const char *) switch_core_get_switchname(void)
 {
-    if (!zstr(runtime.switchname)) return runtime.switchname;
+	if (!zstr(runtime.switchname)) return runtime.switchname;
 	return runtime.hostname;
 }
 
@@ -2312,7 +2312,7 @@ static void switch_load_core_config(const char *file)
 #endif
 				} else if (!strcasecmp(var, "switchname") && !zstr(val)) {
 					runtime.switchname = switch_core_strdup(runtime.memory_pool, val);
-                    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Set switchname to %s\n", runtime.switchname);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Set switchname to %s\n", runtime.switchname);
 				} else if (!strcasecmp(var, "rtp-retain-crypto-keys")) {
 					if (switch_true(val)) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
