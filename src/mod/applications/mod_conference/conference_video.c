@@ -1233,6 +1233,7 @@ void conference_video_write_canvas_image_to_codec_group(conference_obj_t *confer
 	conference_member_t *imember;
 	switch_frame_t write_frame = { 0 }, *frame = NULL;
 	switch_status_t encode_status = SWITCH_STATUS_FALSE;
+	switch_image_t *scaled_img = codec_set->scaled_img;
 
 	write_frame = codec_set->frame;
 	frame = &write_frame;
@@ -1252,6 +1253,16 @@ void conference_video_write_canvas_image_to_codec_group(conference_obj_t *confer
 
 	if (send_keyframe) {
 		switch_core_codec_control(&codec_set->codec, SCC_VIDEO_GEN_KEYFRAME, SCCT_NONE, NULL, SCCT_NONE, NULL, NULL, NULL);
+	}
+
+	if (scaled_img) {
+		if (!send_keyframe && codec_set->fps_divisor > 1 && (codec_set->frame_count++) % codec_set->fps_divisor) {
+			// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Skip one frame, total: %d\n", codec_set->frame_count);
+			return;
+		}
+
+		switch_img_scale(frame->img, &scaled_img, scaled_img->d_w, scaled_img->d_h);
+		frame->img = scaled_img;
 	}
 
 	do {
@@ -2320,6 +2331,28 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 								write_codecs[i]->frame.data = ((uint8_t *)write_codecs[i]->frame.packet) + 12;
 								write_codecs[i]->frame.packetlen = buflen;
 								write_codecs[i]->frame.buflen = buflen - 12;
+								if (conference->scale_h264_canvas_width > 0 && conference->scale_h264_canvas_height > 0 && !strcmp(check_codec->implementation->iananame, "H264")) {
+									int32_t bw = -1;
+
+									write_codecs[i]->fps_divisor = conference->scale_h264_canvas_fps_divisor;
+									write_codecs[i]->scaled_img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, conference->scale_h264_canvas_width, conference->scale_h264_canvas_height, 16);
+
+									if (conference->scale_h264_canvas_bandwidth) {
+										if (strcasecmp(conference->scale_h264_canvas_bandwidth, "auto")) {
+											bw = switch_parse_bandwidth_string(conference->scale_h264_canvas_bandwidth);
+										}
+									}
+
+									if (bw == -1) {
+										float fps = conference->video_fps.fps;
+
+										if (write_codecs[i]->fps_divisor) fps /= write_codecs[i]->fps_divisor;
+
+										bw = switch_calc_bitrate(conference->scale_h264_canvas_width, conference->scale_h264_canvas_height, conference->video_quality, fps);
+									}
+
+									switch_core_codec_control(&write_codecs[i]->codec, SCC_VIDEO_BANDWIDTH, SCCT_INT, &bw, SCCT_NONE, NULL, NULL, NULL);
+								}
 								switch_set_flag((&write_codecs[i]->frame), SFF_RAW_RTP);
 
 							}
@@ -2984,6 +3017,7 @@ pp						conference_video_set_incoming_bitrate(imember, kps, SWITCH_TRUE);
 	for (i = 0; i < MAX_MUX_CODECS; i++) {
 		if (write_codecs[i] && switch_core_codec_ready(&write_codecs[i]->codec)) {
 			switch_core_codec_destroy(&write_codecs[i]->codec);
+			switch_img_free(&(write_codecs[i]->scaled_img));
 		}
 	}
 
