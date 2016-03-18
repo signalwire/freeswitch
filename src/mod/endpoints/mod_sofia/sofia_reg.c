@@ -1447,14 +1447,29 @@ uint8_t sofia_reg_handle_register_token(nua_t *nua, sofia_profile_t *profile, nu
 
 
 		if (sip->sip_path) {
-			if ((path_val = sip_header_as_string(nua_handle_home(nh), (void *) sip->sip_path))) {
-				char *path_stripped = sofia_glue_get_url_from_contact(path_val, SWITCH_TRUE);
-				su_free(nua_handle_home(nh), path_val);
-				path_val = path_stripped;
-				path_encoded_len = (int)(strlen(path_val) * 3) + 1;
+			char *path_stripped = NULL;
+			char *path_val_to_encode = NULL;
+			su_strlst_t *path_list = su_strlst_create(nua_handle_home(nh));
+			sip_path_t *next_path = sip->sip_path;
+			for (; next_path; next_path = next_path->r_next) {
+				path_val = sip_header_as_string(nua_handle_home(nh), (void *) next_path);
+				if (path_val) {
+					path_stripped = sofia_glue_get_url_from_contact(path_val, SWITCH_TRUE);
+					su_free(nua_handle_home(nh), path_val);
+					su_strlst_dup_append(path_list, path_stripped);
+					switch_safe_free(path_stripped);
+				}
+			}
+
+			path_val = su_strlst_join(path_list, nua_handle_home(nh), ",");
+			path_val_to_encode = su_strlst_join(path_list, nua_handle_home(nh), "%2C");
+			su_strlst_destroy(path_list);
+			if (path_val_to_encode) {
+				path_encoded_len = (int)(strlen(path_val_to_encode) * 3) + 1;
 				switch_zmalloc(path_encoded, path_encoded_len);
 				switch_copy_string(path_encoded, ";fs_path=", 10);
-				switch_url_encode(path_val, path_encoded + 9, path_encoded_len - 9);
+				switch_url_encode(path_val_to_encode, path_encoded + 9, path_encoded_len - 9);
+				su_free(nua_handle_home(nh), path_val_to_encode);
 			}
 		} else if (is_nat) {
 			char my_contact_str[1024];
@@ -2195,7 +2210,7 @@ uint8_t sofia_reg_handle_register_token(nua_t *nua, sofia_profile_t *profile, nu
 	switch_safe_free(display_m);
 	switch_safe_free(dup_mwi_account);
 	switch_safe_free(utmp);
-	switch_safe_free(path_val);
+	su_free(nua_handle_home(nh), path_val);
 	switch_safe_free(token_val);
 
 	if (auth_params) {
