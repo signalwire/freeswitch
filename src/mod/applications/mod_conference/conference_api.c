@@ -1161,6 +1161,8 @@ switch_status_t conference_api_sub_write_png(conference_obj_t *conference, switc
 switch_status_t conference_api_sub_vid_layout(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv)
 {
 	video_layout_t *vlayout = NULL;
+	char *group_name = NULL;
+
 	int idx = 0;
 
 	if (!argv[2]) {
@@ -1186,7 +1188,6 @@ switch_status_t conference_api_sub_vid_layout(conference_obj_t *conference, swit
 
 	if (!strncasecmp(argv[2], "group", 5)) {
 		layout_group_t *lg = NULL;
-		char *group_name = NULL;
 		int xx = 4;
 
 		if ((group_name = strchr(argv[2], ':'))) {
@@ -1195,7 +1196,7 @@ switch_status_t conference_api_sub_vid_layout(conference_obj_t *conference, swit
 		} else {
 			group_name = argv[3];
 		}
-
+		
 		if (!group_name) {
 			stream->write_function(stream, "Group name not specified.\n");
 			return SWITCH_STATUS_SUCCESS;
@@ -1206,33 +1207,30 @@ switch_status_t conference_api_sub_vid_layout(conference_obj_t *conference, swit
 					conference->video_layout_group = switch_core_strdup(conference->pool, group_name);
 					conference_utils_set_flag(conference, CFLAG_REFRESH_LAYOUT);
 					return SWITCH_STATUS_SUCCESS;
-				} else {
-					vlayout = conference_video_find_best_layout(conference, lg, 0);
 				}
-			}
-
-			if (!vlayout) {
-				stream->write_function(stream, "Invalid group layout [%s]\n", group_name);
-				return SWITCH_STATUS_SUCCESS;
+			} else {
+				group_name = NULL;
 			}
 
 			stream->write_function(stream, "Change to layout group [%s]\n", group_name);
-			conference->video_layout_group = switch_core_strdup(conference->pool, group_name);			
 			
 			if (argv[xx]) {
-				idx = atoi(argv[xx]);
+				if ((idx = atoi(argv[xx])) > 0) {
+					idx--;
+				}
 			}
 		}
 	}
 
 	if (!vlayout && (vlayout = switch_core_hash_find(conference->layout_hash, argv[2]))) {
-		conference->video_layout_group = NULL;
 		if (argv[3]) {
-			idx = atoi(argv[3]);
+			if ((idx = atoi(argv[3]))) {
+				idx--;
+			}
 		}
 	}
 
-	if (!vlayout) {
+	if (!vlayout && !group_name) {
 		stream->write_function(stream, "Invalid layout [%s]\n", argv[2]);
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -1246,9 +1244,15 @@ switch_status_t conference_api_sub_vid_layout(conference_obj_t *conference, swit
 		conference->new_personal_vlayout = vlayout;
 		switch_mutex_unlock(conference->member_mutex);
 	} else {
-		stream->write_function(stream, "Change canvas %d to layout [%s]\n", idx + 1, vlayout->name);
+
 		switch_mutex_lock(conference->canvases[idx]->mutex);
-		conference->canvases[idx]->new_vlayout = vlayout;
+		if (vlayout) {
+			stream->write_function(stream, "Change canvas %d to layout [%s]\n", idx + 1, vlayout->name);
+			conference->canvases[idx]->new_vlayout = vlayout;
+		} else if (group_name) {
+			conference->canvases[idx]->video_layout_group = switch_core_strdup(conference->pool, group_name);
+			conference_utils_set_flag(conference, CFLAG_REFRESH_LAYOUT);
+		}
 		switch_mutex_unlock(conference->canvases[idx]->mutex);
 	}
 

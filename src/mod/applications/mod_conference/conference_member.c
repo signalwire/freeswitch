@@ -736,11 +736,11 @@ switch_status_t conference_member_add(conference_obj_t *conference, conference_m
 
 		channel = switch_core_session_get_channel(member->session);
 
-		conference_video_check_avatar(member, SWITCH_FALSE);
-
 		if (switch_true(switch_channel_get_variable_dup(member->channel, "video_second_screen", SWITCH_FALSE, -1))) {
 			conference_utils_member_set_flag(member, MFLAG_SECOND_SCREEN);
 		}
+
+		conference_video_check_avatar(member, SWITCH_FALSE);
 
 		if ((var = switch_channel_get_variable_dup(member->channel, "video_initial_canvas", SWITCH_FALSE, -1))) {
 			uint32_t id = atoi(var) - 1;

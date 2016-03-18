@@ -338,12 +338,18 @@ switch_bool_t conference_utils_test_mflag(conference_obj_t *conference, member_f
 void conference_utils_member_set_flag(conference_member_t *member, member_flag_t flag)
 {
 	member->flags[flag] = 1;
+
+	if (flag == MFLAG_SECOND_SCREEN) {
+		member->flags[MFLAG_CAN_SPEAK] = 0;
+		member->flags[MFLAG_CAN_HEAR] = 0;
+		member->flags[MFLAG_CAN_BE_SEEN] = 0;
+	}
 }
 
 void conference_utils_member_set_flag_locked(conference_member_t *member, member_flag_t flag)
 {
 	switch_mutex_lock(member->flag_mutex);
-	member->flags[flag] = 1;
+	conference_utils_member_set_flag(member, flag);
 	switch_mutex_unlock(member->flag_mutex);
 }
 

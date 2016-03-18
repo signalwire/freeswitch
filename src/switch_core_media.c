@@ -3625,7 +3625,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	const char *val;
 	const char *crypto = NULL;
-	int got_crypto = 0, got_video_crypto = 0, got_audio = 0, got_avp = 0, got_video_avp = 0, got_video_savp = 0, got_savp = 0, got_udptl = 0, got_webrtc = 0;
+	int got_crypto = 0, got_video_crypto = 0, got_audio = 0, saw_audio = 0, got_avp = 0, got_video_avp = 0, got_video_savp = 0, got_savp = 0, got_udptl = 0, got_webrtc = 0;
 	int scrooge = 0;
 	sdp_parser_t *parser = NULL;
 	sdp_session_t *sdp;
@@ -3665,6 +3665,8 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 		sdp_parser_free(parser);
 		return 0;
 	}
+
+	switch_channel_clear_flag(channel, CF_AUDIO_PAUSE);
 
 	if (dtls_ok(session) && (tmp = switch_channel_get_variable(smh->session->channel, "webrtc_enable_dtls")) && switch_false(tmp)) {
 		switch_channel_clear_flag(smh->session->channel, CF_DTLS_OK);
@@ -3749,6 +3751,10 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 
 		if (!m->m_port) {
 			continue;
+		}
+
+		if (m->m_type == sdp_media_audio) {
+			saw_audio = 1;
 		}
 
 		ptime = dptime;
@@ -3929,7 +3935,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 					break;
 				}
 			}
-
+			
 			for (attr = sdp->sdp_attributes; attr; attr = attr->a_next) {
 				if (zstr(attr->a_name)) {
 					continue;
@@ -4779,6 +4785,35 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 			}
 		}
 	}
+
+	if (!saw_audio) {
+		payload_map_t *pmap;
+
+		a_engine->rmode = SWITCH_MEDIA_FLOW_DISABLED;
+		switch_channel_set_variable(smh->session->channel, "audio_media_flow", "inactive");
+		
+
+		pmap = switch_core_media_add_payload_map(session,
+												 SWITCH_MEDIA_TYPE_AUDIO,
+												 "L16",
+												 NULL,
+												 NULL,
+												 SDP_TYPE_REQUEST,
+												 97,
+												 8000,
+												 20,
+												 1,
+												 SWITCH_TRUE);
+
+		pmap->remote_sdp_ip = "127.0.0.1";
+		pmap->remote_sdp_port = 9999;
+		pmap->agreed_pt = 97;
+		pmap->recv_pt = 97;
+		pmap->codec_ms = 20;
+		a_engine->cur_payload_map = pmap;
+		switch_channel_set_flag(channel, CF_AUDIO_PAUSE);
+	}
+
 
 	if (!match && vmatch) match = 1;
 
@@ -6480,7 +6515,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 			if (!strcasecmp(val, "passthru")) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Activating RTCP PASSTHRU PORT %d\n", remote_rtcp_port);
 				switch_rtp_activate_rtcp(a_engine->rtp_session, -1, remote_rtcp_port, a_engine->rtcp_mux > 0);
-			} else {
+			} else if (remote_rtcp_port) {
 				int interval = atoi(val);
 				if (interval < 100 || interval > 500000) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR,
@@ -7766,6 +7801,10 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 					username, smh->owner_id, smh->session_id, family, ip, username, family, ip, srbuf);
 
 
+	if (a_engine->rmode == SWITCH_MEDIA_FLOW_DISABLED) {
+		goto video;
+	}
+
 	if (switch_channel_test_flag(smh->session->channel, CF_ICE)) {
 		gen_ice(session, SWITCH_MEDIA_TYPE_AUDIO, ip, port);
 		switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=msid-semantic: WMS %s\r\n", smh->msid);
@@ -8058,6 +8097,8 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 		}
 
 	}
+
+ video:
 
 	if (!switch_channel_test_flag(session->channel, CF_VIDEO_POSSIBLE)) {
 		if (switch_channel_test_flag(session->channel, CF_VIDEO_SDP_RECVD)) {
@@ -9128,6 +9169,10 @@ SWITCH_DECLARE(switch_bool_t) switch_core_media_check_dtls(switch_core_session_t
 	}
 	
 	engine = &smh->engines[type];
+
+	if (engine->rmode == SWITCH_MEDIA_FLOW_DISABLED) {
+		return SWITCH_TRUE;
+	}
 
 	do {
 		if (engine->rtp_session) checking = check_engine(engine);

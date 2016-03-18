@@ -1340,7 +1340,13 @@ video_layout_t *conference_video_find_best_layout(conference_obj_t *conference, 
 {
 	video_layout_node_t *vlnode = NULL, *last = NULL;
 
-	if (!count) count = conference->members_with_video + conference->members_with_avatar;
+	if (!count) {
+		count = conference->members_with_video;
+
+		if (!conference_utils_test_flag(conference, CFLAG_VIDEO_REQUIRED_FOR_CANVAS)) {
+			count += conference->members_with_avatar;
+		}
+	}
 
 	for (vlnode = lg->layouts; vlnode; vlnode = vlnode->next) {
 		if (vlnode->vlayout->layers >= (int)count) {
@@ -1621,6 +1627,10 @@ void conference_video_check_avatar(conference_member_t *member, switch_bool_t fo
 	mcu_canvas_t *canvas;
 
 	if (member->canvas_id < 0) {
+		return;
+	}
+
+	if (conference_utils_member_test_flag(member, MFLAG_SECOND_SCREEN)) {
 		return;
 	}
 
@@ -2149,6 +2159,7 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 	int last_personal = conference_utils_test_flag(conference, CFLAG_PERSONAL_CANVAS) ? 1 : 0;
 
 	canvas->video_timer_reset = 1;
+	canvas->video_layout_group = conference->video_layout_group;
 
 	packet = switch_core_alloc(conference->pool, SWITCH_RTP_MAX_BUF_LEN);
 	
@@ -2161,7 +2172,8 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 		switch_image_t *async_file_img = NULL, *normal_file_img = NULL, *file_imgs[2] = { 0 };
 		switch_frame_t file_frame = { 0 };
 		int j = 0, personal = conference_utils_test_flag(conference, CFLAG_PERSONAL_CANVAS) ? 1 : 0;
-		
+		int video_count = 0;
+
 		if (!personal) {
 			if (canvas->new_vlayout && switch_mutex_trylock(conference->canvas_mutex) == SWITCH_STATUS_SUCCESS) {
 				conference_video_init_canvas_layers(conference, canvas, NULL);
@@ -2180,7 +2192,24 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 			canvas->send_keyframe = 1;
 		}
 
-		
+		video_count = 0;
+
+		switch_mutex_lock(conference->member_mutex);
+		for (imember = conference->members; imember; imember = imember->next) {
+			int no_muted = conference_utils_test_flag(imember->conference, CFLAG_VIDEO_MUTE_EXIT_CANVAS);
+			int no_av = conference_utils_test_flag(imember->conference, CFLAG_VIDEO_REQUIRED_FOR_CANVAS);
+			int seen = conference_utils_member_test_flag(imember, MFLAG_CAN_BE_SEEN);
+			
+			if (imember->channel && switch_channel_ready(imember->channel) && switch_channel_test_flag(imember->channel, CF_VIDEO_READY) && 
+				!conference_utils_member_test_flag(imember, MFLAG_SECOND_SCREEN) &&
+				conference_utils_member_test_flag(imember, MFLAG_RUNNING) && (!no_muted || seen) && (!no_av || imember->avatar_png_img)
+				&& imember->canvas_id == canvas->canvas_id && imember->video_media_flow != SWITCH_MEDIA_FLOW_SENDONLY) {
+				video_count++;
+			}
+		}
+		canvas->video_count = video_count;
+		switch_mutex_unlock(conference->member_mutex);
+
 		switch_core_timer_next(&canvas->timer);
 
 		now = switch_micro_time_now();
@@ -2204,28 +2233,18 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 		if (members_with_avatar != conference->members_with_avatar) {
 			count_changed = 1;
 		}
+	
+		if (conference_utils_test_flag(conference, CFLAG_REFRESH_LAYOUT)) {
+			count_changed = 1;
+			conference_utils_clear_flag(conference, CFLAG_REFRESH_LAYOUT);
+		}
 
 		if (count_changed && !personal) {
 			layout_group_t *lg = NULL;
 			video_layout_t *vlayout = NULL;
-			int canvas_count = 0;
-			
-			switch_mutex_lock(conference->member_mutex);
-			for (imember = conference->members; imember; imember = imember->next) {
-				int no_muted = conference_utils_test_flag(imember->conference, CFLAG_VIDEO_MUTE_EXIT_CANVAS);
-				int no_av = conference_utils_test_flag(imember->conference, CFLAG_VIDEO_REQUIRED_FOR_CANVAS);
-				int seen = conference_utils_member_test_flag(imember, MFLAG_CAN_BE_SEEN);
 
-				if (imember->channel && switch_channel_ready(imember->channel) && switch_channel_test_flag(imember->channel, CF_VIDEO_READY) && 
-					conference_utils_member_test_flag(imember, MFLAG_RUNNING) && (!no_muted || seen) && (!no_av || imember->avatar_png_img)
-					&& imember->canvas_id == canvas->canvas_id && imember->video_media_flow != SWITCH_MEDIA_FLOW_SENDONLY) {
-					canvas_count++;
-				}
-			}
-			switch_mutex_unlock(conference->member_mutex);
-
-			if (conference->video_layout_group && (lg = switch_core_hash_find(conference->layout_group_hash, conference->video_layout_group))) {
-				if ((vlayout = conference_video_find_best_layout(conference, lg, canvas_count))) {
+			if (canvas->video_layout_group && (lg = switch_core_hash_find(conference->layout_group_hash, canvas->video_layout_group))) {
+				if ((vlayout = conference_video_find_best_layout(conference, lg, canvas->video_count))) {
 					switch_mutex_lock(conference->member_mutex);
 					canvas->new_vlayout = vlayout;
 					switch_mutex_unlock(conference->member_mutex);
@@ -2534,11 +2553,6 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 
 			switch_mutex_lock(conference->member_mutex);
 
-			if (conference_utils_test_flag(conference, CFLAG_REFRESH_LAYOUT)) {
-				count_changed = 1;
-				conference_utils_clear_flag(conference, CFLAG_REFRESH_LAYOUT);
-			}
-			
 			for (imember = conference->members; imember; imember = imember->next) {
 
 				if (!imember->session || !switch_channel_test_flag(imember->channel, CF_VIDEO_READY) ||
@@ -2547,7 +2561,7 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 				}
 
 				if (!imember->canvas) {
-					if ((vlayout = conference_video_get_layout(conference, conference->video_layout_name, conference->video_layout_group))) {
+					if ((vlayout = conference_video_get_layout(conference, conference->video_layout_name, canvas->video_layout_group))) {
 						conference_video_init_canvas(conference, vlayout, &imember->canvas);
 						conference_video_init_canvas_layers(conference, imember->canvas, vlayout);
 					} else {
@@ -2584,7 +2598,7 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 						total = 0;
 					}
 					
-					if (conference->video_layout_group && (lg = switch_core_hash_find(conference->layout_group_hash, conference->video_layout_group))) {
+					if (canvas->video_layout_group && (lg = switch_core_hash_find(conference->layout_group_hash, canvas->video_layout_group))) {
 						if ((vlayout = conference_video_find_best_layout(conference, lg, total + file_count))) {
 							conference_video_init_canvas_layers(conference, imember->canvas, vlayout);
 						}

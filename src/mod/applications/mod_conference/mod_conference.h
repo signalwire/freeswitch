@@ -485,6 +485,8 @@ typedef struct mcu_canvas_s {
 	int refresh;
 	int send_keyframe;
 	int play_file;
+	int video_count;
+	char *video_layout_group;
 	switch_rgb_color_t bgcolor;
 	switch_rgb_color_t border_color;
 	switch_rgb_color_t letterbox_bgcolor;

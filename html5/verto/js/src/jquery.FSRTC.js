@@ -103,7 +103,7 @@
 
 	if (moz) {
             this.constraints = {
-		offerToReceiveAudio: true,
+		offerToReceiveAudio: this.options.useSpeak === "none" ? false : true,
 		offerToReceiveVideo: this.options.useVideo ? true : false,
             };
 	} else {
@@ -111,7 +111,7 @@
 		optional: [{
 		    'DtlsSrtpKeyAgreement': 'true'
 		}],mandatory: {
-		    OfferToReceiveAudio: true,
+		    OfferToReceiveAudio: this.options.useSpeak === "none" ? false : true,
 		    OfferToReceiveVideo: this.options.useVideo ? true : false,
 		}
             };
