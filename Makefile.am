@@ -533,7 +533,7 @@ libs/libzrtp/libzrtp.a:
 	cd libs/libzrtp && $(MAKE)
 
 libs/libvpx/Makefile:
-	cd libs/libvpx && CC=$(CC) CXX=$(CXX) ./configure --enable-pic --disable-docs --disable-examples --disable-install-bins --disable-install-srcs --disable-unit-tests --extra-cflags="-fvisibility=hidden"
+	cd libs/libvpx && CC=$(CC) CXX=$(CXX) CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" LDFLAGS="$(LDFLAGS)" ./configure --enable-pic --disable-docs --disable-examples --disable-install-bins --disable-install-srcs --disable-unit-tests --extra-cflags="-fvisibility=hidden"
 
 libs/libvpx/libvpx.a: libs/libvpx/Makefile
 	@cd libs/libvpx && $(MAKE)
