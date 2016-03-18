@@ -2592,7 +2592,7 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 						conference_utils_test_flag(conference, CFLAG_MANAGE_INBOUND_VIDEO_BITRATE)) {
 						switch_core_media_get_vid_params(imember->session, &vid_params);
 						kps = switch_calc_bitrate(vid_params.width, vid_params.height, conference->video_quality, (int)(imember->conference->video_fps.fps));
-pp						conference_video_set_incoming_bitrate(imember, kps, SWITCH_TRUE);
+						conference_video_set_incoming_bitrate(imember, kps, SWITCH_TRUE);
 					}
 				}
 				
