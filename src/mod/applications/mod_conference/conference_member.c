@@ -738,6 +738,10 @@ switch_status_t conference_member_add(conference_obj_t *conference, conference_m
 
 		conference_video_check_avatar(member, SWITCH_FALSE);
 
+		if (switch_true(switch_channel_get_variable_dup(member->channel, "video_second_screen", SWITCH_FALSE, -1))) {
+			conference_utils_member_set_flag(member, MFLAG_SECOND_SCREEN);
+		}
+
 		if ((var = switch_channel_get_variable_dup(member->channel, "video_initial_canvas", SWITCH_FALSE, -1))) {
 			uint32_t id = atoi(var) - 1;
 			if (id < conference->canvas_count) {
@@ -748,16 +752,16 @@ switch_status_t conference_member_add(conference_obj_t *conference, conference_m
 
 		if ((var = switch_channel_get_variable_dup(member->channel, "video_initial_watching_canvas", SWITCH_FALSE, -1))) {
 			uint32_t id = atoi(var) - 1;
-
+			
 			if (id == 0) {
 				id = conference->canvas_count;
 			}
-
+			
 			if (id <= conference->canvas_count && conference->canvases[id]) {
 				member->watching_canvas_id = id;
 			}
 		}
-
+		
 		conference_video_reset_member_codec_index(member);
 
 		if (has_video) {

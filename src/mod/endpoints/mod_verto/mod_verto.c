@@ -3350,7 +3350,7 @@ static switch_bool_t verto__info_func(const char *method, cJSON *params, jsock_t
 
 static switch_bool_t verto__invite_func(const char *method, cJSON *params, jsock_t *jsock, cJSON **response)
 {
-	cJSON *obj = cJSON_CreateObject(), *screenShare = NULL, *dedEnc = NULL, *mirrorInput, *json_ptr = NULL, *bandwidth = NULL;
+	cJSON *obj = cJSON_CreateObject(), *screenShare = NULL, *dedEnc = NULL, *mirrorInput, *json_ptr = NULL, *bandwidth = NULL, *canvas = NULL;
 	switch_core_session_t *session = NULL;
 	switch_channel_t *channel;
 	switch_event_t *var_event;
@@ -3431,6 +3431,21 @@ static switch_bool_t verto__invite_func(const char *method, cJSON *params, jsock
 	if ((mirrorInput = cJSON_GetObjectItem(dialog, "mirrorInput")) && mirrorInput->type == cJSON_True) {
 		switch_channel_set_variable(channel, "video_mirror_input", "true");
 		switch_channel_set_flag(channel, CF_VIDEO_MIRROR_INPUT);
+	}
+
+	if ((canvas = cJSON_GetObjectItem(dialog, "conferenceCanvasID"))) {
+		int canvas_id = 0;
+		
+		if (!zstr(canvas->valuestring)) {
+			canvas_id = atoi(canvas->valuestring);
+		} else if (canvas->valueint) {
+			canvas_id = canvas->valueint;
+		}
+
+		if (canvas_id >= 0) {
+			switch_channel_set_variable_printf(channel, "video_initial_watching_canvas", "%d", canvas_id);
+			switch_channel_set_variable(channel, "video_second_screen", "true");
+		}
 	}
 
 	if ((bandwidth = cJSON_GetObjectItem(dialog, "outgoingBandwidth"))) {
