@@ -4,8 +4,8 @@
   angular
     .module('vertoControllers')
     .controller('ModalSettingsController', ['$scope', '$http',
-      '$location', '$modalInstance', '$rootScope', 'storage', 'verto',
-      function($scope, $http, $location, $modalInstance, $rootScope, storage, verto) {
+      '$location', '$modalInstance', '$rootScope', 'storage', 'verto', 'toastr',
+      function($scope, $http, $location, $modalInstance, $rootScope, storage, verto, toastr) {
         console.debug('Executing ModalSettingsController.');
 
         $scope.storage = storage;
@@ -33,6 +33,17 @@
 
         $scope.refreshDeviceList = function() {
           return verto.refreshDevices();
+        };
+
+        $scope.showPreview = function() {
+         $modalInstance.close('Ok.');
+         if (!verto.data.call) {
+           $location.path('/preview');
+           return;
+         }
+         else {
+           toastr.warning('Can\'t display preview settings during a call');
+         }
         };
 
         $scope.testSpeed = function() {
