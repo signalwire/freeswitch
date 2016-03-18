@@ -2541,21 +2541,23 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 			
 			for (imember = conference->members; imember; imember = imember->next) {
 
-				if (!imember->session || !switch_channel_test_flag(imember->channel, CF_VIDEO_READY) || !imember->canvas ||
+				if (!imember->session || !switch_channel_test_flag(imember->channel, CF_VIDEO_READY) ||
 					switch_core_session_read_lock(imember->session) != SWITCH_STATUS_SUCCESS) {
 					continue;
-				}
-
-				if (conference->new_personal_vlayout) {
-					conference_video_init_canvas_layers(conference, imember->canvas, conference->new_personal_vlayout);
-					layout_applied++;
 				}
 
 				if (!imember->canvas) {
 					if ((vlayout = conference_video_get_layout(conference, conference->video_layout_name, conference->video_layout_group))) {
 						conference_video_init_canvas(conference, vlayout, &imember->canvas);
 						conference_video_init_canvas_layers(conference, imember->canvas, vlayout);
+					} else {
+						continue;
 					}
+				}
+
+				if (conference->new_personal_vlayout) {
+					conference_video_init_canvas_layers(conference, imember->canvas, conference->new_personal_vlayout);
+					layout_applied++;
 				}
 				
 				if (switch_channel_test_flag(imember->channel, CF_VIDEO_REFRESH_REQ)) {
