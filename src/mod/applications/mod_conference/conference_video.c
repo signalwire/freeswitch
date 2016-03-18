@@ -2711,6 +2711,10 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 
 					use_img = omember->pcanvas_img;
 					
+					if (files_playing && layer && layer == &imember->canvas->layers[imember->canvas->layout_floor_id]) {
+						use_img = NULL;
+					}
+					
 					if (layer) {
 
 						if (use_img && !omember->avatar_png_img) {
