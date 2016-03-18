@@ -1308,11 +1308,15 @@
             this.modCommand("vid-write-png", null, file);
         };
 
-        $.verto.conf.prototype.setVideoLayout = function(layout) {
+        $.verto.conf.prototype.setVideoLayout = function(layout, canvasID) {
             if (!this.params.hasVid) {
                 throw 'Conference has no video';
             }
-            this.modCommand("vid-layout", null, layout);
+	    if (canvasID) {
+		this.modCommand("vid-layout", null, [layout, canvasID]);
+	    } else {
+		this.modCommand("vid-layout", null, layout);
+	    }
         };
 
         $.verto.conf.prototype.kick = function(memberID) {
