@@ -1242,18 +1242,7 @@ static ftdm_status_t state_advance(ftdm_channel_t *chan)
 				pri_hangup(isdn_data->spri.pri, call, caller_data->hangup_cause);
 
 				if (chan_priv->peerhangup) {
-					/* Call is inbound and hangup has been initiated by peer */
-					if (!ftdm_test_flag(chan, FTDM_CHANNEL_OUTBOUND)) {
-						ftdm_set_state_locked(chan, FTDM_CHANNEL_STATE_HANGUP_COMPLETE);
-					} else if (caller_data->hangup_cause == PRI_CAUSE_NO_USER_RESPONSE) {
-						/* Can happen when we have a DL link expire or some timer expired */
-						ftdm_set_state_locked(chan, FTDM_CHANNEL_STATE_HANGUP_COMPLETE);
-					} else if (caller_data->hangup_cause == PRI_CAUSE_DESTINATION_OUT_OF_ORDER) {
-						/* Can happen when we have a DL link expire or some timer expired */
-						ftdm_set_state_locked(chan, FTDM_CHANNEL_STATE_HANGUP_COMPLETE);
-					} else if (caller_data->hangup_cause == PRI_CAUSE_INVALID_NUMBER_FORMAT) {
-						ftdm_set_state_locked(chan, FTDM_CHANNEL_STATE_HANGUP_COMPLETE);
-					}
+					ftdm_set_state_locked(chan, FTDM_CHANNEL_STATE_HANGUP_COMPLETE);
 				}
 			}
 		}
