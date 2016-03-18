@@ -2508,7 +2508,7 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 			
 			for (imember = conference->members; imember; imember = imember->next) {
 
-				if (!imember->session || !switch_channel_test_flag(imember->channel, CF_VIDEO_READY) ||
+				if (!imember->session || !switch_channel_test_flag(imember->channel, CF_VIDEO_READY) || !imember->canvas ||
 					switch_core_session_read_lock(imember->session) != SWITCH_STATUS_SUCCESS) {
 					continue;
 				}
@@ -2559,7 +2559,7 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 						conference_utils_test_flag(conference, CFLAG_MANAGE_INBOUND_VIDEO_BITRATE)) {
 						switch_core_media_get_vid_params(imember->session, &vid_params);
 						kps = switch_calc_bitrate(vid_params.width, vid_params.height, conference->video_quality, (int)(imember->conference->video_fps.fps));
-						conference_video_set_incoming_bitrate(imember, kps, SWITCH_TRUE);
+pp						conference_video_set_incoming_bitrate(imember, kps, SWITCH_TRUE);
 					}
 				}
 				
@@ -2605,7 +2605,7 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 				int i = 0;
 				mcu_layer_t *floor_layer = NULL;
 				
-				if (!imember->session || !switch_channel_test_flag(imember->channel, CF_VIDEO) ||
+				if (!imember->session || !switch_channel_test_flag(imember->channel, CF_VIDEO) || !imember->canvas ||
 					(switch_core_session_media_flow(imember->session, SWITCH_MEDIA_TYPE_VIDEO) == SWITCH_MEDIA_FLOW_SENDONLY) ||
 					(switch_core_session_read_lock(imember->session) != SWITCH_STATUS_SUCCESS)) {
 					continue;
