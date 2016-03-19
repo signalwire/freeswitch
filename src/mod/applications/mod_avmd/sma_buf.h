@@ -31,7 +31,8 @@ typedef struct {
 
 #define GET_SMA_SAMPLE(b, p) ((b)->data[(p) % (b)->len])
 #define SET_SMA_SAMPLE(b, p, v) ((b)->data[(p) % (b)->len] = (v))
-#define GET_CURRENT_SMA_POS(b) ((b)->lpos)
+#define GET_CURRENT_SMA_POS(b) ((b)->pos)
+#define GET_CURRENT_SMA_LPOS(b) ((b)->lpos)
 
 #define INC_SMA_POS(b) \
     { \
@@ -52,6 +53,8 @@ typedef struct {
     { \
 	(b)->sma = 0.0; \
 	(void)memset((b)->data, 0, sizeof(BUFF_TYPE) * (b)->len); \
+	(b)->pos = 0; \
+	(b)->lpos = 0; \
     }
 
 /*

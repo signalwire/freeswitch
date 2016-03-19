@@ -25,22 +25,9 @@
  *
  * This module detects voicemail beeps using a generalized approach.
  *
- * Mofdifications:
- *
- *      Piotr Gregor <piotrek.gregor@gmail.com>
- *      FS-8808 :   code refactor
- *      FS-8809 :   fix MAP_POPULATE undeclared
- *      FS-8810 :   fix float-int-float fast arc cosine
- *                  mapping construction (reuse)
- *      FS-8852 :   use predefined table length instead
- *                  of hardcoded computation
- *      FS-8853 :   enable change of resolution (and size)
- *                  of fast arc cos table
- *      FS-8854 :   initialize circular buffer
- *      FS-8855 :   fix APPEND_SMA_VAL macro and avmd_process
- *                  callback so that the variance of tone's
- *                  frequency estimation is correctly
- *                  calculated
+ * Modifications:
+ *      Piotr Gregor <piotrek.gregor@gmail.com>:
+ *      FS-8808, FS-8809, FS-8810, FS-8852, FS-8853, FS-8854, FS-8855
  */
 
 #include <switch.h>
@@ -91,7 +78,7 @@
 /*! Maximum frequency as digital normalized frequency */
 #define MAX_FREQUENCY_R(r) ((2.0 * M_PI * MAX_FREQUENCY) / (r))
 /* decrease this value to eliminate false positives */
-#define VARIANCE_THRESHOLD (0.001)
+#define VARIANCE_THRESHOLD (0.0001)
 
 #include "amplitude.h"
 #include "buffer.h"
@@ -233,7 +220,7 @@ static switch_bool_t avmd_callback(switch_media_bug_t * bug, void *user_data, sw
 /*! \brief FreeSWITCH module loading function.
  *
  * @author Eric des Courtis
- * @par    Changes: Piotr Gregor, 07 Feb 2016 (FS-8809, FS-8810)
+ * @par    Modifications: Piotr Gregor
  * @return On success SWITCH_STATUS_SUCCES,
  *         on failure SWITCH_STATUS_TERM.
  */
@@ -587,8 +574,7 @@ end:
 
 /*! \brief Process one frame of data with avmd algorithm.
  * @author Eric des Courtis
- * @par Modifications: Piotr Gregor (FS-8852, FS-8853, FS-8854, FS-8855)
- *      (improved variance estimation calculation)
+ * @par Modifications: Piotr Gregor
  * @param session An avmd session.
  * @param frame An audio frame.
  */
