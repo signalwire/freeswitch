@@ -38,7 +38,7 @@
         </li>
         <li>
           <a href="" class="incall-number" ng-show="storage.data.called_number">
-              {{ storage.data.called_number && storage.data.userStatus == 'connecting' ? 'Last Call: ' : 'In Call: '  }} {{ storage.data.called_number  }}
+              {{ storage.data.called_number && storage.data.userStatus != 'connected' ? 'Last Call: ' : 'In Call: '  }} {{ storage.data.called_number  }}
           </a>
         </li>
         <li class="navbar-item-icon" ng-show="verto.data.connected">
