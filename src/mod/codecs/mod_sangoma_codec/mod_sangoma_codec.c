@@ -864,14 +864,13 @@ static switch_status_t switch_sangoma_destroy(switch_codec_t *codec)
 
 	if (sess->encoder.txrtp) {
 		sngtc_free_transcoding_session(&sess->encoder.reply);
-		memset(&sess->encoder, 0, sizeof(sess->encoder));
 	}
 	if (sess->decoder.txrtp) {
 		sngtc_free_transcoding_session(&sess->decoder.reply);
-		memset(&sess->decoder, 0, sizeof(sess->decoder));
 	}
 	
 	switch_core_hash_delete(g_sessions_hash, sess->hashkey);
+	memset(sess, 0, sizeof(*sess));
 
 	switch_mutex_unlock(g_sessions_lock);
 	return SWITCH_STATUS_SUCCESS;
