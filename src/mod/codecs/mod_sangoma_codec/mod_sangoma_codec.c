@@ -333,18 +333,16 @@ static switch_status_t switch_sangoma_init(switch_codec_t *codec, switch_codec_f
 	if (!(sess = switch_core_alloc(codec->memory_pool, sizeof(*sess)))) {
 		return SWITCH_STATUS_FALSE;
 	}
-	memset(sess, 0, sizeof(*sess));
-
 	sess->encoder.lastrxseqno = -1;
 	sess->decoder.lastrxseqno = -1;
 
 	sess->pool = codec->memory_pool;
 	sess->impl = codec->implementation;
+	switch_assert(sess->pool);
+	switch_assert(sess->impl);
 
 	vcodec = get_codec_from_iana(codec->implementation->ianacode, codec->implementation->bits_per_second);
 	
-	switch_mutex_lock(g_sessions_lock);
-
 	if (encoding) {
 		sess->encoder.request.usr_priv = sess;
 		sess->encoder.request.a.host_ip = g_rtpip;
@@ -370,13 +368,15 @@ static switch_status_t switch_sangoma_init(switch_codec_t *codec, switch_codec_f
 
 	}
 
+	switch_mutex_lock(g_sessions_lock);
+
 	sess->sessid = g_next_session_id++;
 	switch_snprintf(sess->hashkey, sizeof(sess->hashkey), SANGOMA_SESS_HASH_KEY_FORMAT, sess->sessid);
 	switch_core_hash_insert(g_sessions_hash, sess->hashkey, sess);
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Sangoma init done for codec %s/%s, iana = %d\n", codec->implementation->iananame, vcodec->fs_name, codec->implementation->ianacode);
 	switch_mutex_unlock(g_sessions_lock);
 
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Sangoma init done for codec %s/%s, iana = %d\n", codec->implementation->iananame, vcodec->fs_name, codec->implementation->ianacode);
 	codec->private_info = sess;
 
 	return SWITCH_STATUS_SUCCESS;
