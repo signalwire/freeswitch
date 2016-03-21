@@ -1318,9 +1318,8 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 
 	switch (msg->message_id) {
 
-#if 1
 	case SWITCH_MESSAGE_INDICATE_VIDEO_REFRESH_REQ:
-		{
+		if (!switch_channel_test_flag(channel, CF_AVPF)) {
 			//const char *ua = switch_channel_get_variable(tech_pvt->channel, "sip_user_agent");
 			//if (ua && switch_stristr("polycom", ua)) {
 
@@ -1341,7 +1340,6 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				//}
 		}
 		break;
-#endif
 	case SWITCH_MESSAGE_INDICATE_BROADCAST:
 		{
 			const char *ip = NULL, *port = NULL;
