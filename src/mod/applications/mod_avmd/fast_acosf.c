@@ -20,7 +20,7 @@
 #include "fast_acosf.h"
 #include "options.h"
 
-#ifdef FASTMATH
+#ifdef AVMD_FAST_MATH
 
 
 typedef union {

@@ -42,6 +42,20 @@
 #define ISNAN(x) (isnan(x))
 #endif
 
+
+#include "amplitude.h"
+#include "buffer.h"
+#include "desa2.h"
+//#include "goertzel.h"
+#include "psi.h"
+#include "sma_buf.h"
+#include "options.h"
+
+#ifdef AVMD_FAST_MATH
+#include "fast_acosf.h"
+#endif
+
+
 /*! Calculate how many audio samples per ms based on the rate */
 #define SAMPLES_PER_MS(r, m) ((r) / (1000/(m)))
 /*! Minimum beep length */
@@ -80,16 +94,9 @@
 /* decrease this value to eliminate false positives */
 #define VARIANCE_THRESHOLD (0.0001)
 
-#include "amplitude.h"
-#include "buffer.h"
-#include "desa2.h"
-//#include "goertzel.h"
-#include "psi.h"
-#include "sma_buf.h"
-#include "options.h"
-
-#ifdef FASTMATH
-#include "fast_acosf.h"
+#ifdef AVMD_REQUIRE_CONTINUOUS_STREAK
+    /* increase this value to eliminate false positives */
+    #define SAMPLES_CONSECUTIVE_STREAK 3
 #endif
 
 /*! Syntax of the API call. */
@@ -135,6 +142,10 @@ typedef struct {
 	/* freq_table_t ft; */
 	avmd_state_t state;
 	switch_time_t start_time;
+#ifdef AVMD_REQUIRE_CONTINUOUS_STREAK
+    size_t samples_streak; /* number of DESA samples in single streak without reset
+                              needed to validate SMA estimator, half the size of SMA buffer */
+#endif
 } avmd_session_t;
 
 static void avmd_process(avmd_session_t *session, switch_frame_t *frame);
@@ -151,13 +162,19 @@ static void init_avmd_session_data(avmd_session_t *avmd_session,  switch_core_se
 {
 	/*! This is a worst case sample rate estimate */
 	avmd_session->rate = 48000;
-	INIT_CIRC_BUFFER(&avmd_session->b, (size_t)BEEP_LEN(avmd_session->rate), (size_t)FRAME_LEN(avmd_session->rate), fs_session);
+	INIT_CIRC_BUFFER(&avmd_session->b,
+            (size_t)BEEP_LEN(avmd_session->rate),
+            (size_t)FRAME_LEN(avmd_session->rate),
+            fs_session);
 
 	avmd_session->session = fs_session;
 	avmd_session->pos = 0;
 	avmd_session->f = 0.0;
 	avmd_session->state.last_beep = 0;
 	avmd_session->state.beep_state = BEEP_NOTDETECTED;
+#ifdef AVMD_REQUIRE_CONTINUOUS_STREAK
+    avmd_session->samples_streak = SAMPLES_CONSECUTIVE_STREAK;
+#endif
 
 	INIT_SMA_BUFFER(
 		&avmd_session->sma_b,
@@ -226,7 +243,7 @@ static switch_bool_t avmd_callback(switch_media_bug_t * bug, void *user_data, sw
  */
 SWITCH_MODULE_LOAD_FUNCTION(mod_avmd_load)
 {
-#ifdef FASTMATH
+#ifdef AVMD_FAST_MATH
     char    err[150];
     int     ret;
 #endif
@@ -250,7 +267,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_avmd_load)
 		"Advanced Voicemail detection enabled\n"
 	);
 
-#ifdef FASTMATH
+#ifdef AVMD_FAST_MATH
     ret = init_fast_acosf();
     if (ret != 0) {
         strerror_r(errno, err, 150);
@@ -401,13 +418,13 @@ SWITCH_STANDARD_APP(avmd_start_function)
  */
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_avmd_shutdown)
 {
-#ifdef FASTMATH
+#ifdef AVMD_FAST_MATH
 	int res;
 #endif
 
 	switch_event_free_subclass(AVMD_EVENT_BEEP);
 	
-#ifdef FASTMATH
+#ifdef AVMD_FAST_MATH
 	res = destroy_fast_acosf();
     if (res != 0) {
         switch (res) {
@@ -625,22 +642,39 @@ static void avmd_process(avmd_session_t *session, switch_frame_t *frame)
 
 			if (f < MIN_FREQUENCY_R(session->rate) || f > MAX_FREQUENCY_R(session->rate)) {
 				v = 99999.0;
+#ifdef AVMD_REQUIRE_CONTINUOUS_STREAK
 				RESET_SMA_BUFFER(&session->sma_b);
 				RESET_SMA_BUFFER(&session->sqa_b);
+                session->samples_streak = SAMPLES_CONSECUTIVE_STREAK;
+#endif
 			} else {
 				APPEND_SMA_VAL(&session->sma_b, f);
 				APPEND_SMA_VAL(&session->sqa_b, f * f);
-
+#ifdef AVMD_REQUIRE_CONTINUOUS_STREAK
+                if (session->samples_streak > 0)
+                    --session->samples_streak;
+#endif
 				/* calculate variance */
 				v = session->sqa_b.sma - (session->sma_b.sma * session->sma_b.sma);
-
+#ifdef AVMD_DEBUG
+#ifdef AVMD_REQUIRE_CONTINUOUS_STREAK
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session->session), SWITCH_LOG_DEBUG,
-                    "<<< AVMD v=[%f] f=[%f] [%f]Hz sma=[%f] sqa=[%f] >>>\n", v, f, TO_HZ(session->rate, f),
-                    session->sma_b.sma, session->sqa_b.sma);
+                    "<<< AVMD v[%f] f[%f] [%f]Hz\tsma[%f][%f]Hz\tsqa[%f]\tstreak[%zu] pos[%zu] >>>\n", v, f, TO_HZ(session->rate, f),
+                    session->sma_b.sma, TO_HZ(session->rate, session->sma_b.sma), session->sqa_b.sma, session->samples_streak, session->sma_b.pos);
+#else
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session->session), SWITCH_LOG_DEBUG,
+                    "<<< AVMD v[%f] f[%f] [%f]Hz\tsma[%f][%f]Hz\tsqa[%f]\tpos[%zu] >>>\n", v, f, TO_HZ(session->rate, f),
+                    session->sma_b.sma, TO_HZ(session->rate, session->sma_b.sma), session->sqa_b.sma, session->sma_b.pos);
+#endif
+#endif
 			}
 
 			/* If variance is less than threshold then we have detection */
+#ifdef AVMD_REQUIRE_CONTINUOUS_STREAK
+			if (v < VARIANCE_THRESHOLD && (session->sma_b.pos > 1) && (session->samples_streak == 0)) {
+#else
 			if (v < VARIANCE_THRESHOLD && (session->sma_b.pos > 1)) {
+#endif
 				switch_channel_set_variable_printf(channel, "avmd_total_time",
                         "[%d]", (int)(switch_micro_time_now() - session->start_time) / 1000);
 				switch_channel_execute_on(channel, "execute_on_avmd_beep");
@@ -659,8 +693,10 @@ static void avmd_process(avmd_session_t *session, switch_frame_t *frame)
 				switch_core_session_queue_event(session->session, &event);
 				switch_event_fire(&event_copy);
 
+#ifdef AVMD_REPORT_STATUS
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session->session), SWITCH_LOG_DEBUG,
                         "<<< AVMD - Beep Detected f = [%f] >>>\n", TO_HZ(session->rate, session->sma_b.sma));
+#endif
 				switch_channel_set_variable(channel, "avmd_detect", "TRUE");
 				RESET_SMA_BUFFER(&session->sma_b);
 				RESET_SMA_BUFFER(&session->sqa_b);
@@ -675,6 +711,8 @@ static void avmd_process(avmd_session_t *session, switch_frame_t *frame)
 		}
 	}
 	session->pos = pos;
+
+    return;
 }
 
 /* For Emacs:

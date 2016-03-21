@@ -10,7 +10,7 @@
 #include "desa2.h"
 #include "options.h"
 
-#ifdef FASTMATH
+#ifdef AVMD_FAST_MATH
 #include "fast_acosf.h"
 #endif
 
@@ -40,7 +40,7 @@ extern double desa2(circ_buffer_t *b, size_t i)
     n = ((x2sq) - (x0 * x4)) - ((x1 * x1) - (x0 * x2)) - ((x3 * x3) - (x2 * x4));
 
 
-#ifdef FASTMATH
+#ifdef AVMD_FAST_MATH
     result = 0.5 * (double)fast_acosf((float)n/d);
 #else
     result = 0.5 * acos(n/d);

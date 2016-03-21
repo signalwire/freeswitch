@@ -7,7 +7,7 @@
 /*! \brief Arc cosine table initialization.
  *
  * @author Eric des Courtis
- * @par    Changes: Piotr Gregor, 07 Feb 2016 (FS-8809, FS-8810)
+ * @par    Modifications: Piotr Gregor < piotrek.gregor gmail.com >
  * @return 0 on success, negative value otherwise:
  *          -1 can't access arc cos table with error != NOENT,
  *          -2 table creation failed (compute_table)
@@ -19,7 +19,7 @@ extern int init_fast_acosf(void);
 /*! \brief Arc cosine table deinitialization.
  *
  * @author Eric des Courtis
- * @par    Changes: Piotr Gregor, 09 Feb 2016 (FS-8809, FS-8810)
+ * @par    Modifications: Piotr Gregor < piotrek.gregor gmail.com >
  * @return 0 on success, negative value otherwise:
  *          -1 munmap failed,
  *          -2 close failed
@@ -35,7 +35,7 @@ extern float fast_acosf(float x);
 /*! \brief Arc cosine table creation.
  *
  * @author Eric des Courtis
- * @par    Changes: Piotr Gregor, 07 Feb 2016 (FS-8809, FS-8810)
+ * @par    Modifications: Piotr Gregor < piotrek.gregor gmail.com >
  * @return 0 on success, negative value otherwise:
  *          -1 fwrite failed,
  *          -2 fclose failed
