@@ -92,13 +92,14 @@ extern size_t next_power_of_2(size_t v);
 
 //#define DESTROY_CIRC_BUFFER(b) free((b)->buf)
 #define GET_BACKLOG_POS(b) ((b)->lpos - (b)->backlog)
-#define GET_CURRENT_POS(b) ((b)->lpos)
-#define GET_CURRENT_SAMPLE(b) GET_SAMPLE((b), GET_CURRENT_POS((b)))
+#define GET_CURRENT_POS(b) ((b)->pos)
+#define GET_CURRENT_LPOS(b) ((b)->lpos)
+#define GET_CURRENT_SAMPLE(b) GET_SAMPLE((b), GET_CURRENT_LPOS((b)))
 
 #define ADD_SAMPLE(b, s) \
     do { \
 	INC_POS((b)); \
-	SET_SAMPLE((b), GET_CURRENT_POS((b)), (s)); \
+	SET_SAMPLE((b), GET_CURRENT_LPOS((b)), (s)); \
     } while (0)
 
 #endif
