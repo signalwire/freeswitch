@@ -181,6 +181,7 @@ typedef struct h264_codec_context_s {
 	AVCodecContext *encoder_ctx;
 	AVFrame *encoder_avframe;
 	AVPacket encoder_avpacket;
+	AVFrame *decoder_avframe;
 	our_h264_nalu_t nalus[MAX_NALUS];
 	enum AVCodecID av_codec_id;
 	uint16_t last_seq; // last received frame->seq
@@ -990,22 +991,9 @@ error:
 
 static void __attribute__((unused)) fill_avframe(AVFrame *pict, switch_image_t *img)
 {
-	int i;
-	uint8_t *y = img->planes[0];
-	uint8_t *u = img->planes[1];
-	uint8_t *v = img->planes[2];
-
-	/* Y */
-	for (i = 0; i < pict->height; i++) {
-		memcpy(&pict->data[0][i * pict->linesize[0]], y + i * img->stride[0], pict->width);
-	}
-
-	/* U/V */
-	for(i = 0; i < pict->height / 2; i++) {
-		memcpy(&pict->data[1][i * pict->linesize[1]], u + i * img->stride[1], pict->width / 2);
-		memcpy(&pict->data[2][i * pict->linesize[2]], v + i * img->stride[2], pict->width / 2);
-	}
-
+	switch_I420_copy2(img->planes, img->stride,
+					  pict->data, pict->linesize,
+					  img->d_w, img->d_h);
 }
 
 static switch_status_t switch_h264_encode(switch_codec_t *codec, switch_frame_t *frame)
@@ -1237,57 +1225,40 @@ static switch_status_t switch_h264_decode(switch_codec_t *codec, switch_frame_t 
 
 		if (size > 0) {
 			av_init_packet(&pkt);
-			pkt.data = NULL;
-			pkt.size = 0;
 			switch_buffer_write(context->nalu_buffer, ff_input_buffer_padding, sizeof(ff_input_buffer_padding));
 			switch_buffer_peek_zerocopy(context->nalu_buffer, (const void **)&pkt.data);
 			pkt.size = size;
-			picture = av_frame_alloc();
-			assert(picture);
+
+			if (!context->decoder_avframe) context->decoder_avframe = av_frame_alloc();
+			picture = context->decoder_avframe;
+			switch_assert(picture);
 			decoded_len = avcodec_decode_video2(avctx, picture, &got_picture, &pkt);
 
-			// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "buffer: %d got pic: %d len: %d [%dx%d]\n", size, got_picture, decoded_len, avctx->width, avctx->height);
+			// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "buffer: %d got pic: %d len: %d [%dx%d]\n", size, got_picture, decoded_len, picture->width, picture->height);
 
 			if (got_picture && decoded_len > 0) {
-				int width = avctx->width;
-				int height = avctx->height;
-				int i;
+				int width = picture->width;
+				int height = picture->height;
 				
 				if (!context->img || (context->img->d_w != width || context->img->d_h != height)) {
-					//context->img = switch_img_wrap(NULL, SWITCH_IMG_FMT_I420, width, height, 0, picture->data[0]);
+					switch_img_free(&context->img);
 					context->img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, width, height, 1);
-					assert(context->img);
+					switch_assert(context->img);
 				}
-
+#if 0
 				context->img->w = picture->linesize[0];
 				context->img->h = picture->linesize[1];
 				context->img->d_w = width;
 				context->img->d_h = height;
-
-				//context->img->planes[0] = picture->data[0];
-				//context->img->planes[1] = picture->data[1];
-				//context->img->planes[2] = picture->data[2];
-				//context->img->stride[0] = picture->linesize[0];
-				//context->img->stride[1] = picture->linesize[1];
-				//context->img->stride[2] = picture->linesize[2];
-				
-				for (i = 0; i < height; i++) {
-					memcpy(context->img->planes[SWITCH_PLANE_Y] + context->img->stride[SWITCH_PLANE_Y] * i, 
-						   picture->data[SWITCH_PLANE_Y] + picture->linesize[SWITCH_PLANE_Y] * i, width);
-				}
-				
-				for (i = 0; i < height / 2; i++) {
-					memcpy(context->img->planes[SWITCH_PLANE_U] + context->img->stride[SWITCH_PLANE_U] * i, 
-						   picture->data[SWITCH_PLANE_U] + picture->linesize[SWITCH_PLANE_U] * i, width / 2);
-					memcpy(context->img->planes[SWITCH_PLANE_V] + context->img->stride[SWITCH_PLANE_V] * i, 
-						   picture->data[SWITCH_PLANE_V] + picture->linesize[SWITCH_PLANE_V] * i, width / 2);
-				}
+#endif
+				switch_I420_copy2(picture->data, picture->linesize,
+								 context->img->planes, context->img->stride,
+								 width, height);
 
 				frame->img = context->img;
 			}
 
-			av_frame_free(&picture);
-			av_free_packet(&pkt);
+			av_frame_unref(picture);
 		}
 
 		switch_buffer_zero(context->nalu_buffer);
@@ -1364,6 +1335,10 @@ static switch_status_t switch_h264_destroy(switch_codec_t *codec)
 
 	if (context->encoder_avframe) {
 		av_frame_free(&context->encoder_avframe);
+	}
+
+	if (context->decoder_avframe) {
+		av_frame_free(&context->decoder_avframe);
 	}
 
 	return SWITCH_STATUS_SUCCESS;

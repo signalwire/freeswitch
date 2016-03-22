@@ -368,6 +368,19 @@ SWITCH_DECLARE(switch_image_t *) switch_img_write_text_img(int w, int h, switch_
 SWITCH_DECLARE(switch_image_t *) switch_img_read_file(const char* file_name);
 SWITCH_DECLARE(switch_status_t) switch_img_letterbox(switch_image_t *img, switch_image_t **imgP, int width, int height, const char *color);
 SWITCH_DECLARE(switch_bool_t) switch_core_has_video(void);
+
+/*!\brief I420 to I420 Copy*/
+
+SWITCH_DECLARE(switch_status_t) switch_I420_copy(const uint8_t* src_y, int src_stride_y,
+												 const uint8_t* src_u, int src_stride_u,
+												 const uint8_t* src_v, int src_stride_v,
+												 uint8_t* dst_y, int dst_stride_y,
+												 uint8_t* dst_u, int dst_stride_u,
+												 uint8_t* dst_v, int dst_stride_v,
+												 int width, int height);
+SWITCH_DECLARE(switch_status_t) switch_I420_copy2(uint8_t *src_planes[], int src_stride[],
+												  uint8_t *dst_planes[], int dst_stride[],
+												  int width, int height);
 /** @} */
 
 SWITCH_END_EXTERN_C

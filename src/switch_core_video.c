@@ -2182,6 +2182,33 @@ SWITCH_DECLARE(switch_image_t *) switch_img_read_file(const char* file_name)
 }
 #endif
 
+SWITCH_DECLARE(switch_status_t) switch_I420_copy(const uint8* src_y, int src_stride_y,
+												 const uint8* src_u, int src_stride_u,
+												 const uint8* src_v, int src_stride_v,
+												 uint8* dst_y, int dst_stride_y,
+												 uint8* dst_u, int dst_stride_u,
+												 uint8* dst_v, int dst_stride_v,
+												 int width, int height)
+{
+	int ret = I420Copy(src_y, src_stride_y, src_u, src_stride_u, src_v, src_stride_v,
+					   dst_y, dst_stride_y, dst_u, dst_stride_u, dst_v, dst_stride_v,
+					   width, height);
+	return ret == 0 ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_I420_copy2(uint8_t *src_planes[], int src_stride[],
+												  uint8_t *dst_planes[], int dst_stride[],
+												  int width, int height)
+{
+	int ret = I420Copy(src_planes[SWITCH_PLANE_Y], src_stride[SWITCH_PLANE_Y],
+					   src_planes[SWITCH_PLANE_U], src_stride[SWITCH_PLANE_U],
+					   src_planes[SWITCH_PLANE_V], src_stride[SWITCH_PLANE_V],
+					   dst_planes[SWITCH_PLANE_Y], dst_stride[SWITCH_PLANE_Y],
+					   dst_planes[SWITCH_PLANE_U], dst_stride[SWITCH_PLANE_U],
+					   dst_planes[SWITCH_PLANE_V], dst_stride[SWITCH_PLANE_V],
+					   width, height);
+	return ret == 0 ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
+}
 /* For Emacs:
  * Local Variables:
  * mode:c
