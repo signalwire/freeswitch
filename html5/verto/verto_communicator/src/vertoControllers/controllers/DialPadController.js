@@ -89,7 +89,17 @@
 
           if (extension.indexOf('-canvas-') != -1) {
             $rootScope.watcher = true;
-            verto.call($rootScope.dialpadNumber, null, { useCamera: false, useMic: false, caller_id_name: null, userVariables: {}, caller_id_number: null, mirrorInput: false });
+            verto.call($rootScope.dialpadNumber, null,
+              {
+                useCamera: "none",
+                useMic: "none",
+                useSpeak: "none",
+                caller_id_name: null,
+                userVariables: {},
+                caller_id_number: null,
+                mirrorInput: false
+              }
+            );
             $location.path('/incall');
             return;
           }
