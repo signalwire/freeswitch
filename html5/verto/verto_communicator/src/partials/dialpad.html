@@ -1,6 +1,15 @@
 <div ng-show="loading">
-  <h3 style="margin-top: 4%;" class="text-center">Calling to {{ dialpadNumber }}...</h3>
-  <svg class="spinner" width="65px" height="65px" viewBox="0 0 66 66" xmlns="http://www.w3.org/2000/svg">
+  <h2 ng-show="cancelled" style="margin-top: 4%;" class="text-center">Cancelling...</h2>
+  <span ng-show="!cancelled">
+      <h2 style="margin-top: 4%;" class="text-center">Determining your speed...</h2>
+      <h4 style="margin-top: 4%;" class="text-center">
+          Calling to {{ dialpadNumber }}...
+          <a class="btn btn-sm btn-raised btn-warning" ng-click="cancel()">
+              Cancel<div class="ripple-container"></div>
+          </a>
+      </h4>
+  </span>
+  <svg class="spinner" width="35px" height="35px" viewBox="0 0 66 66" xmlns="http://www.w3.org/2000/svg">
     <circle class="path" fill="none" stroke-width="6" stroke-linecap="round" cx="33" cy="33" r="30"></circle>
   </svg>
 </div>

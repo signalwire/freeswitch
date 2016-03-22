@@ -109,6 +109,7 @@
          * Call to the number in the $rootScope.dialpadNumber.
          */
         $scope.loading = false;
+        $scope.cancelled = false;
         $rootScope.call = function(extension) {
           if (!storage.data.testSpeedJoin || !$rootScope.dialpadNumber) {
             return call(extension);
@@ -116,9 +117,18 @@
           $scope.loading = true;
 
           verto.testSpeed(function() {
-            $scope.loading = false;
-            call(extension);
+            if ($scope.cancelled) {
+              $scope.cancelled = false;
+              $scope.loading = false;
+              return;
+            } else {
+              call(extension);
+            }
           });
+        }
+
+        $rootScope.cancel = function() {
+          $scope.cancelled = true;
         }
       }
     ]);
