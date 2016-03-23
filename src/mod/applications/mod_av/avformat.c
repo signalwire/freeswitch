@@ -282,8 +282,15 @@ static switch_status_t add_stream(MediaStream *mst, AVFormatContext *fc, AVCodec
 	int buffer_bytes = 2097152; /* 2 mb */
 	int fps = 15;
 
-	/* find the encoder */
-	*codec = avcodec_find_encoder(codec_id);
+	if (mm->try_hardware_encoder && codec_id == AV_CODEC_ID_H264) {
+		*codec = avcodec_find_encoder_by_name("nvenc_h264");
+	}
+
+	if (!*codec) {
+		/* find the encoder */
+		*codec = avcodec_find_encoder(codec_id);
+	}
+
 	if (!(*codec)) {
 		// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not find encoder for '%s'\n", avcodec_get_name(codec_id));
 		return status;

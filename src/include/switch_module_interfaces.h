@@ -326,6 +326,7 @@ typedef struct switch_mm_s {
 	int vbuf;
 	switch_video_profile_t vprofile;
 	switch_video_encode_speed_t vencspd;
+	uint8_t try_hardware_encoder;
 } switch_mm_t;
 
 /*! an abstract representation of a file handle (some parameters based on compat with libsndfile) */
@@ -633,6 +634,7 @@ struct switch_video_codec_settings {
 	uint32_t bandwidth;
 	int32_t width;
 	int32_t height;
+	uint8_t try_hardware_encoder;
 };
 
 union switch_codec_settings {

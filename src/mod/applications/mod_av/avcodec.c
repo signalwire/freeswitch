@@ -188,6 +188,7 @@ typedef struct h264_codec_context_s {
 	our_h264_nalu_t nalus[MAX_NALUS];
 	enum AVCodecID av_codec_id;
 	uint16_t last_seq; // last received frame->seq
+	int hw_encoder;
 } h264_codec_context_t;
 
 static uint8_t ff_input_buffer_padding[FF_INPUT_BUFFER_PADDING_SIZE] = { 0 };
@@ -815,7 +816,20 @@ static switch_status_t open_encoder(h264_codec_context_t *context, uint32_t widt
 {
 	int sane = 0;
 	
-	if (!context->encoder) context->encoder = avcodec_find_encoder(context->av_codec_id);
+	if (!context->encoder) {
+		if (context->av_codec_id == AV_CODEC_ID_H264) {
+			if (context->codec_settings.video.try_hardware_encoder && (context->encoder = avcodec_find_encoder_by_name("nvenc_h264"))) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "NVENC HW CODEC ENABLED\n");
+				context->hw_encoder = 1;
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "NVENC HW CODEC NOT PRESENT\n");
+			}
+		}
+
+		if (!context->encoder) {
+			context->encoder = avcodec_find_encoder(context->av_codec_id);
+		}
+	}
 
 	if (!context->encoder) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot find encoder id: %d\n", context->av_codec_id);
@@ -891,39 +905,42 @@ static switch_status_t open_encoder(h264_codec_context_t *context, uint32_t widt
 	} else if (context->av_codec_id == AV_CODEC_ID_H264) {
 		context->encoder_ctx->profile = FF_PROFILE_H264_BASELINE;
 		context->encoder_ctx->level = 41;
-		av_opt_set(context->encoder_ctx->priv_data, "preset", "veryfast", 0);
-		av_opt_set(context->encoder_ctx->priv_data, "tune", "zerolatency", 0);
-		av_opt_set(context->encoder_ctx->priv_data, "profile", "baseline", 0);
-		//av_opt_set_int(context->encoder_ctx->priv_data, "slice-max-size", SLICE_SIZE, 0);
 
-		// libx264-medium.ffpreset preset
+		if (context->hw_encoder) {
+			av_opt_set(context->encoder_ctx->priv_data, "preset", "llhq", 0);
+			
+		} else {
+			av_opt_set(context->encoder_ctx->priv_data, "preset", "veryfast", 0);
+			av_opt_set(context->encoder_ctx->priv_data, "tune", "zerolatency", 0);
+			av_opt_set(context->encoder_ctx->priv_data, "profile", "baseline", 0);
+			//av_opt_set_int(context->encoder_ctx->priv_data, "slice-max-size", SLICE_SIZE, 0);
 
-		context->encoder_ctx->coder_type = 1;  // coder = 1
-		context->encoder_ctx->flags|=CODEC_FLAG_LOOP_FILTER;   // flags=+loop
-		context->encoder_ctx->me_cmp|= 1;  // cmp=+chroma, where CHROMA = 1
-		context->encoder_ctx->me_method=ME_HEX;    // me_method=hex
-		//context->encoder_ctx->me_subpel_quality = 7;   // subq=7
+			// libx264-medium.ffpreset preset
 
-		context->encoder_ctx->me_range = 16;   // me_range=16
-		context->encoder_ctx->max_b_frames = 3;    // bf=3
+			context->encoder_ctx->coder_type = 1;  // coder = 1
+			context->encoder_ctx->flags|=CODEC_FLAG_LOOP_FILTER;   // flags=+loop
+			context->encoder_ctx->me_cmp|= 1;  // cmp=+chroma, where CHROMA = 1
+			context->encoder_ctx->me_method=ME_HEX;    // me_method=hex
+			//context->encoder_ctx->me_subpel_quality = 7;   // subq=7
 
-		//context->encoder_ctx->refs = 3;    // refs=3
-		
-		//context->encoder_ctx->trellis = 1; // trellis=1
+			context->encoder_ctx->me_range = 16;   // me_range=16
+			context->encoder_ctx->max_b_frames = 3;    // bf=3
+
+			//context->encoder_ctx->refs = 3;    // refs=3
+
+			// libx264-medium.ffpreset preset
+			context->encoder_ctx->gop_size = 250;  // g=250
+			context->encoder_ctx->keyint_min = 25; // keyint_min=25
+			context->encoder_ctx->scenechange_threshold = 40;  // sc_threshold=40
+			context->encoder_ctx->i_quant_factor = 0.71; // i_qfactor=0.71
+			context->encoder_ctx->b_frame_strategy = 1;  // b_strategy=1
+			context->encoder_ctx->qcompress = 0.6; // qcomp=0.6
+			context->encoder_ctx->qmin = 10;   // qmin=10
+			context->encoder_ctx->qmax = 51;   // qmax=51
+			context->encoder_ctx->max_qdiff = 4;   // qdiff=4
+		}
 	}
-
-	// libx264-medium.ffpreset preset
-	context->encoder_ctx->gop_size = 250;  // g=250
-	context->encoder_ctx->keyint_min = 25; // keyint_min=25
-	context->encoder_ctx->scenechange_threshold = 40;  // sc_threshold=40
-	context->encoder_ctx->i_quant_factor = 0.71; // i_qfactor=0.71
-	context->encoder_ctx->b_frame_strategy = 1;  // b_strategy=1
-	context->encoder_ctx->qcompress = 0.6; // qcomp=0.6
-	context->encoder_ctx->qmin = 10;   // qmin=10
-	context->encoder_ctx->qmax = 51;   // qmax=51
-	context->encoder_ctx->max_qdiff = 4;   // qdiff=4
-
-
+	
 	if (avcodec_open2(context->encoder_ctx, context->encoder, NULL) < 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not open codec\n");
 		return SWITCH_STATUS_FALSE;

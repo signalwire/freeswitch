@@ -1665,6 +1665,7 @@ SWITCH_DECLARE(switch_status_t) switch_media_handle_create(switch_media_handle_t
 		session->media_handle->engines[SWITCH_MEDIA_TYPE_VIDEO].payload_map = switch_core_alloc(session->pool, sizeof(payload_map_t));
 		session->media_handle->engines[SWITCH_MEDIA_TYPE_VIDEO].cur_payload_map = session->media_handle->engines[SWITCH_MEDIA_TYPE_VIDEO].payload_map;
 		session->media_handle->engines[SWITCH_MEDIA_TYPE_VIDEO].cur_payload_map->current = 1;
+		session->media_handle->engines[SWITCH_MEDIA_TYPE_VIDEO].codec_settings.video.try_hardware_encoder = 1;
 
 		switch_channel_set_flag(session->channel, CF_DTLS_OK);
 
@@ -2657,10 +2658,13 @@ static void switch_core_session_parse_codec_settings(switch_core_session_t *sess
 		break;
 	case SWITCH_MEDIA_TYPE_VIDEO: {
 		uint32_t system_bw = 0;
+		const char *var = NULL, *bwv;
 
-		const char *bwv = switch_channel_get_variable(session->channel, "rtp_video_max_bandwidth");
-		
-		if (!bwv) {
+		if ((var = switch_channel_get_variable(session->channel, "video_try_hardare_encoder"))) {
+			engine->codec_settings.video.try_hardware_encoder = switch_true(var);
+		}
+
+		if (!(bwv = switch_channel_get_variable(session->channel, "rtp_video_max_bandwidth"))) {
 			bwv = switch_channel_get_variable(session->channel, "rtp_video_max_bandwidth_out");
 		}
 		

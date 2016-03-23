@@ -88,6 +88,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 	fh->mm.ab = 128;
 	fh->mm.vencspd = SWITCH_VIDEO_ENCODE_SPEED_DEFAULT;
 	fh->mm.vprofile = SWITCH_VIDEO_PROFILE_BASELINE;
+	fh->mm.try_hardware_encoder = 1;
 
 	if (*file_path == '{') {
 		char *timeout;
@@ -166,6 +167,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 			if (tmp > 0) {
 				fh->mm.vh = tmp;
 			}
+		}
+
+		if ((val = switch_event_get_header(fh->params, "try_hardware_encoder"))) {
+			fh->mm.try_hardware_encoder = switch_true(val);
 		}
 
 		if ((val = switch_event_get_header(fh->params, "fps"))) {
