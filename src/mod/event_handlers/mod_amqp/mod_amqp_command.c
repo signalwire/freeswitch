@@ -53,7 +53,7 @@ switch_status_t mod_amqp_command_destroy(mod_amqp_command_profile_t **prof)
 	pool = profile->pool;
 
 	if (profile->name) {
-		switch_core_hash_delete(globals.command_hash, profile->name);
+		switch_core_hash_delete(mod_amqp_globals.command_hash, profile->name);
 	}
 
 	profile->running = 0;
@@ -165,7 +165,7 @@ switch_status_t mod_amqp_command_create(char *name, switch_xml_t cfg)
 		goto err;
 	}
 
-	if ( switch_core_hash_insert(globals.command_hash, name, (void *) profile) != SWITCH_STATUS_SUCCESS) {
+	if ( switch_core_hash_insert(mod_amqp_globals.command_hash, name, (void *) profile) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to insert new profile [%s] into mod_amqp profile hash\n", name);
 		goto err;
 	}
@@ -219,7 +219,7 @@ static void mod_amqp_command_response(mod_amqp_command_profile_t *profile, char 
 
 	switch_safe_free(json_output);
 
-	if (status < 0) {
+	if (status != AMQP_STATUS_OK) {
 		const char *errstr = amqp_error_string2(-status);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Profile[%s] failed to send event on connection[%s]: %s\n",
 						  profile->name, profile->conn_active->name, errstr);

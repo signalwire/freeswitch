@@ -173,13 +173,15 @@ typedef struct {
   switch_memory_pool_t *pool;
 } mod_amqp_logging_profile_t;
 
-struct {
+typedef struct mod_amqp_globals_s {
   switch_memory_pool_t *pool;
-  
+
   switch_hash_t *producer_hash;
   switch_hash_t *command_hash;
   switch_hash_t *logging_hash;
-} globals;
+} mod_amqp_globals_t;
+
+extern mod_amqp_globals_t mod_amqp_globals;
 
 /* utils */
 switch_status_t mod_amqp_do_config(switch_bool_t reload);

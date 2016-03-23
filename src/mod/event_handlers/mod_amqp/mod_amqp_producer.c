@@ -128,7 +128,7 @@ switch_status_t mod_amqp_producer_destroy(mod_amqp_producer_profile_t **prof) {
 
 	if (profile->name) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Profile[%s] shutting down...\n", profile->name);
-		switch_core_hash_delete(globals.producer_hash, profile->name);
+		switch_core_hash_delete(mod_amqp_globals.producer_hash, profile->name);
 	}
 
 	profile->running = 0;
@@ -366,7 +366,7 @@ switch_status_t mod_amqp_producer_create(char *name, switch_xml_t cfg)
 		}
 	}
 
-	if ( switch_core_hash_insert(globals.producer_hash, name, (void *) profile) != SWITCH_STATUS_SUCCESS) {
+	if ( switch_core_hash_insert(mod_amqp_globals.producer_hash, name, (void *) profile) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to insert new profile [%s] into mod_amqp profile hash\n", name);
 		goto err;
 	}
