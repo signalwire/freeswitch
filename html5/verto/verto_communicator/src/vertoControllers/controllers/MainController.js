@@ -4,7 +4,7 @@
   angular
     .module('vertoControllers')
     .controller('MainController',
-      function($scope, $rootScope, $location, $modal, $timeout, $q, verto, storage, CallHistory, toastr, Fullscreen, prompt, eventQueue) {
+      function($scope, $rootScope, $location, $modal, $timeout, $q, verto, storage, CallHistory, toastr, Fullscreen, prompt, eventQueue, $translate) {
 
       console.debug('Executing MainController.');
 
@@ -123,8 +123,8 @@
 
         if (verto.data.call) {
           prompt({
-            title: 'Oops, Active Call in Course.',
-            message: 'It seems that you are in a call. Do you want to hang up?'
+            title: $translate.instant('TITLE_ACTIVE_CALL'),
+            message: $translate.instant('MESSAGE_ACTIVE_CALL_HANGUP')
           }).then(function() {
             disconnect();
           });
@@ -326,8 +326,8 @@
           return $q(function(resolve, reject) {
             if (storage.data.askRecoverCall) {
               prompt({
-                title: 'Oops, Active Call in Course.',
-                message: 'It seems you were in a call before leaving the last time. Wanna go back to that?'
+                title: $translate.instant('TITLE_ACTIVE_CALL'),
+                message: $translate.instant('MESSAGE_ACTIVE_CALL_BACK')
               }).then(function() {
                 console.log('redirect to incall page');
                 $location.path('/incall');
@@ -423,8 +423,8 @@
         storage.data.mutedMic = false;
 
         prompt({
-          title: 'Incoming Call',
-          message: 'from ' + data
+          title: $translate.instant('TITLE_INCOMING_CALL'),
+          message: $translate.instant('MESSAGE_INCOMING_CALL') + data
         }).then(function() {
           var call_start = new Date(storage.data.call_start);
           $rootScope.start_time = call_start;
@@ -450,7 +450,7 @@
        */
       $scope.hangup = function() {
         if (!verto.data.call) {
-          toastr.warning('There is no call to hangup.');
+          toastr.warning($translate.instant('MESSAGE_NO_HANGUP_CALL'));
           $location.path('/dialpad');
           return;
         }
@@ -501,7 +501,7 @@
       };
 
       $scope.play = function() {
-        var file = $scope.promptInput('Please, enter filename', '', 'File',
+        var file = $scope.promptInput($translate.instant('MESSAGE_ENTER_FILENAME'), '', 'File',
           function(file) {
             verto.data.conf.play(file);
             console.log('play file :', file);
@@ -514,7 +514,7 @@
       };
 
       $scope.record = function() {
-        var file = $scope.promptInput('Please, enter filename', '', 'File',
+        var file = $scope.promptInput($translate.instant('MESSAGE_ENTER_FILENAME'), '', 'File',
           function(file) {
             verto.data.conf.record(file);
             console.log('recording file :', file);
@@ -526,7 +526,7 @@
       };
 
       $scope.snapshot = function() {
-        var file = $scope.promptInput('Please, enter filename', '', 'File',
+        var file = $scope.promptInput($translate.instant('MESSAGE_ENTER_FILENAME'), '', 'File',
           function(file) {
             verto.data.conf.snapshot(file);
             console.log('snapshot file :', file);

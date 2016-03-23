@@ -1728,6 +1728,10 @@ body:-webkit-full-screen #incall .video-footer {
   color: white;
 }
 
+#settings .checkbox .checkbox-material .check {
+  margin-right: 10px;
+}
+
 #settings .btn {
   color: rgba(0, 10, 66, 0.84);
   background-color: #E8E8E8;

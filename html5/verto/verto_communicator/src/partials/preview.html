@@ -2,7 +2,7 @@
   <div class="col-md-4 col-sm-12 col-xs-12 centered-block">
     <div class="panel panel-material-blue-900 shadow-z-2 ">
       <div class="panel-heading">
-        <h3 class="panel-title text-center">Setup your camera and microphone settings</h3>
+        <h3 class="panel-title text-center">{{ 'TITLE_PREVIEW_SETTINGS' | translate }}</h3>
       </div>
       <div class="panel-body">
         <div class="preview-wrapper">
@@ -20,13 +20,13 @@
         </div>
         <form name="form">
           <div class="form-group col-md-5 col-sm-12 col-xs-12" ng-show="true">
-            <label for="settings-camera">Camera:</label>
+            <label for="settings-camera">{{ 'CAMERA_SETTINGS' | translate }}</label>
             <select name="camera" id="settings-camera" class="form-control" ng-model="storage.data.selectedVideo"
                     ng-options="item.id as item.label for item in verto.data.videoDevices" ng-change="localVideo()" >
             </select>
           </div>
           <div class="form-group col-md-5 col-sm-12 col-xs-12" ng-show="true">
-            <label for="settings-microphone">Microphone:</label>
+            <label for="settings-microphone">{{ 'MIC_SETTINGS' | translate }}</label>
             <select name="microphone" id="settings-microphone" class="form-control" ng-model="storage.data.selectedAudio"
                     ng-options="item.id as item.label for item in verto.data.audioDevices" ng-change="localVideo()">
             </select>
@@ -36,8 +36,8 @@
           </a>
 
           <div class="form-group text-center">
-            <button type="submit" class="btn btn-success" ng-click="endPreview()" title="Save">
-              Save
+            <button type="submit" class="btn btn-success" ng-click="endPreview()" title="{{ 'SAVE' | translate }}">
+              {{ 'SAVE' | translate }}
             </button>
           </div>
         </form>

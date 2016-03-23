@@ -3,21 +3,21 @@
     <div class="col-md-4">
 
       <div class="form-group" ng-show="mydata.useVideo">
-        <label for="settings-camera">Camera:</label>
+        <label for="settings-camera">{{ 'CAMERA_SETTINGS' | translate }}</label>
         <select name="camera" id="settings-camera" class="form-control"
                 ng-model="mydata.selectedVideo" ng-options="item.id as item.label for item in verto.data.videoDevices">
         </select>
       </div>
 
       <div class="form-group" ng-show="mydata.useVideo">
-        <label for="settings-share-device">Share device:</label>
+        <label for="settings-share-device">{{ 'SHARE_DEVICE' | translate }}</label>
         <select name="share-device" id="settings-share-device" class="form-control"
                 ng-model="mydata.selectedShare" ng-options="item.id as item.label for item in verto.data.shareDevices">
         </select>
       </div>
 
       <div class="form-group">
-        <label for="settings-microphone">Microphone:</label>
+        <label for="settings-microphone">{{ 'MIC_SETTINGS' | translate}}</label>
         <select name="microphone" id="settings-microphone" class="form-control"
                 ng-model="mydata.selectedAudio" ng-options="item.id as item.label for item in verto.data.audioDevices">
         </select>
@@ -25,9 +25,9 @@
 
       <div class="form-group">
         <label for="settings-microphone">
-          Speaker:
+          {{ 'SPEAKER' | translate }}
           <span ng-show="!speakerFeature" class="unsupported">
-            Your browser doesn't seem to support this feature
+            {{ 'SPEAKER_FEATURE' | translate }}
           </span>
         </label>
         <select name="microphone" id="settings-microphone" class="form-control" ng-disabled="!speakerFeature"
@@ -36,67 +36,67 @@
       </div>
 
       <div class="form-group">
-        <label for="settings-framerate">Best frame rate:</label>
+        <label for="settings-framerate">{{ 'BEST_FRAME_RATE' | translate }}</label>
         <select name="settings-framerate" id="settings-framerate" class="form-control"
                 ng-model="mydata.bestFrameRate"
                 ng-options="item.id as item.label for item in verto.framerate"></select>
       </div>
 
-      <a class="btn btn-primary" href="" ng-click="showPreview()">Preview Settings</a>
-      <a class="btn btn-primary" href="" ng-click="refreshDeviceList()">Refresh device list</a>
+      <a class="btn btn-primary" href="" ng-click="showPreview()">{{ 'PREVIEW_SETTINGS' | translate }}</a>
+      <a class="btn btn-primary" href="" ng-click="refreshDeviceList()">{{ 'REFRESH_DEVICE_LIST' | translate }}</a>
     </div>
     <div class="col-md-4">
       <div class="form-group">
-        <label for="settings-microphone">General settings:</label>
+        <label for="settings-microphone">{{ 'GENERAL_SETTINGS' | translate }}</label>
         <div class="checkbox">
           <label>
             <input type="checkbox" name="use_video" value="mydata.useVideo" ng-model="mydata.useVideo">
-            Use Video
+            <span ng-bind="'USE_VIDEO' | translate"></span>
           </label>
         </div>
         <div class="checkbox">
           <label>
             <input type="checkbox" name="use_stereo_audio" ng-value="mydata.useStereo" ng-model="mydata.useStereo">
-            Stereo Audio
+            <span ng-bind="'USE_STEREO_AUDIO' | translate"></span>
           </label>
         </div>
         <div class="checkbox">
           <label>
             <input type="checkbox" name="use_stun" ng-value="mydata.useSTUN" ng-model="mydata.useSTUN">
-            Use STUN
+            <span ng-bind="'USE_STUN' | translate"></span>
           </label>
         </div>
         <div class="checkbox">
           <label>
             <input type="checkbox" name="mirror_input" ng-value="mydata.mirrorInput" ng-model="mydata.mirrorInput">
-            Scale Remote Video To Match Camera Resolution
+            <span ng-bind="'SCALE_VIDEO' | translate"></span>
           </label>
         </div>
         <div class="checkbox">
           <label>
             <input type="checkbox" name="ask_recover_call" ng-value="mydata.askRecoverCall" ng-model="mydata.askRecoverCall">
-            Ask before recovering call
+            <span ng-bind="'ASK_BEFORE_RECOVER' | translate"></span>
           </label>
         </div>
 
         <div class="form-group">
-          <label for="settings-microphone">Audio settings:</label>
+          <label for="settings-microphone">{{ 'AUDIO_SETTINGS' | translate }}</label>
           <div class="checkbox">
             <label>
               <input type="checkbox" name="googEchoCancellation" value="mydata.googEchoCancellation" ng-model="mydata.googEchoCancellation">
-              Echo Cancellation
+              <span ng-bind="'ECHO_CANCEL' | translate"></span>
             </label>
           </div>
           <div class="checkbox">
             <label>
               <input type="checkbox" name="googNoiseSuppression" value="mydata.googNoiseSuppression" ng-model="mydata.googNoiseSuppression">
-              Noise Suppression
+              <span ng-bind="'NOISE_SUPPRESSION' | translate"></span>
             </label>
           </div>
           <div class="checkbox">
             <label>
               <input type="checkbox" name="googHighpassFilter" value="mydata.googHighpassFilter" ng-model="mydata.googHighpassFilter">
-              Highpass Filter
+              <span ng-bind="'HIGHPASS_FILTER' | translate"></span>
             </label>
           </div>
         </div>
@@ -106,32 +106,32 @@
     <div class="col-md-4">
 
       <div class="form-group">
-        <label>Video settings:</label> <br>
+        <label>{{ 'VIDEO_SETTINGS' | translate }}</label> <br>
         <input type="hidden" name="use_dedenc" ng-value="mydata.useDedenc" ng-model="mydata.useDedenc">
 
 
         <div ng-show="mydata.useDedenc" class="dedicated_encoder">
-          <p>Dedicated Remote Encoder enabled.</b>
+          <p>{{ 'REMOTE_ENCODER' | translate }}</b>
         </div>
 
         <div class="checkbox">
           <label>
             <input type="checkbox" ng-model="mydata.autoBand" ng-change="checkAutoBand(mydata.autoBand)">
-            Automatically determine speed and resolution settings
+            <span ng-bind="'AUTO_SPEED_RES' | translate"></span>
           </label>
         </div>
 
         <div class="checkbox" ng-show="mydata.autoBand">
           <label>
             <input type="checkbox" ng-model="mydata.testSpeedJoin">
-            Recheck bandwidth before each outgoing call
+            <span ng-bind="'RECHECK_BANDWIDTH' | translate"></span>
           </label>
         </div>
 
-        <a ng-show="mydata.autoBand" class="btn btn-primary" href="" ng-click="testSpeed()">Check Network Speed</a> <span ng-bind="speedMsg"></span>
+        <a ng-show="mydata.autoBand" class="btn btn-primary" href="" ng-click="testSpeed()">{{ 'CHECK_NETWORK_SPEED' | translate }}</a> <span ng-bind="speedMsg"></span>
 
         <div ng-show="!mydata.autoBand">
-          <label for="video-quality">Video quality:</label>
+          <label for="video-quality">{{ 'VIDEO_QUALITY' | translate }}</label>
           <select name="video_quality" id="video-quality" class="form-control"
                   ng-disabled="mydata.autoBand"
                   ng-model="mydata.vidQual"
@@ -140,7 +140,7 @@
         </div>
 
         <div ng-show="!mydata.autoBand">
-          <label for="incoming-bandwidth">Max incoming bandwidth:</label>
+          <label for="incoming-bandwidth">{{ 'MAX_INCOMING_BANDWIDTH' | translate }}</label>
           <select name="incoming_bandwidth" id="incoming-bandwidth" class="form-control"
                   ng-model="mydata.incomingBandwidth"
       	    ng-change="checkUseDedRemoteEncoder(mydata.incomingBandwidth)"
@@ -148,7 +148,7 @@
         </div>
 
         <div ng-show="!mydata.autoBand">
-          <label for="outgoing-bandwidth">Max outgoing bandwidth:</label>
+          <label for="outgoing-bandwidth">{{ 'MAX_OUTGOING_BANDWIDTH' | translate }}</label>
           <select name="outgoing_bandwidth" id="outgoing-bandwidth" class="form-control"
                   ng-model="mydata.outgoingBandwidth"
                   ng-options="item.id as item.label for item in verto.bandwidth"></select>

@@ -120,6 +120,7 @@ module.exports = function (grunt) {
             '<%= config.app %>/**/*.html',
             '.tmp/styles/{,*/}*.css',
             '<%= config.app %>/images/{,*/}*',
+            '<%= config.app %>/locales/{,*/}*',
             '.tmp/**/*.js',
             '<%= config.app %>/**/*.js'
           ],
@@ -150,6 +151,7 @@ module.exports = function (grunt) {
             ],
             routes: {
               '/partials': 'src/partials',
+              '/locales': 'src/locales',
               '/config.json': 'src/config.json',
               '/contributors.txt': 'src/contributors.txt',
               '/bower_components': './bower_components',
@@ -309,7 +311,8 @@ module.exports = function (grunt) {
              'img/*.png',
              'images/{,*/}*.{webp}',
              'css/fonts/{,*/}*.*',
-             'sounds/*.*'
+             'sounds/*.*',
+             'locales/*.*'
            ]
          }, {
            expand: true,

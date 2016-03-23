@@ -1,35 +1,35 @@
 <div class="modal-header">
-  <h3 class="modal-title">Login Information</h3>
+  <h3 class="modal-title">{{ 'LOGIN_INFORMATION' | translate}}</h3>
 </div>
 <div class="modal-body">
 
   <div class="form-group">
-    <label for="name">Name:</label>
+    <label for="name">{{ 'NAME' | translate}}</label>
     <input type="text" name="name" class="form-control" ng-model="storage.data.name" ng-value="storage.data.name"/>
   </div>
   
   <div class="form-group">
-    <label for="email">Email:</label>
+    <label for="email">{{ 'EMAIL' | translate}}</label>
     <input type="text" name="email" class="form-control" ng-model="storage.data.email" ng-value="storage.data.email"/>
   </div>
 
   <div class="form-group">
-    <label class="control-label" for="user">User</label>
+    <label class="control-label" for="user">{{ 'USER' | translate}}</label>
     <input type="text" class="form-control" id="user" placeholder="User" ng-model="storage.data.login">
   </div>
   
   <div class="form-group">
-    <label class="control-label" for="password">Password</label>
+    <label class="control-label" for="password">{{ 'PASSWORD' | translate}}</label>
     <input type="password" class="form-control" id="password" placeholder="Password" ng-model="verto.data.password">
   </div>
 
   <div class="form-group">
-    <label class="control-label" for="callerid">Caller ID</label>
+    <label class="control-label" for="callerid">{{ 'CALLER_ID' | translate}}</label>
     <input type="text" class="form-control" id="callerid" placeholder="Caller ID" ng-model="verto.data.callerid">
   </div>
 
 </div>
 <div class="modal-footer">
   <!-- <button class="btn btn-primary" ng-click="cancel()">Cancel</button> -->
-  <button class="btn btn-primary" ng-click="ok()">Save Login Information</button>
+  <button class="btn btn-primary" ng-click="ok()">{{ 'SAVE_LOGIN_INFORMATION' | translate}}</button>
 </div>
