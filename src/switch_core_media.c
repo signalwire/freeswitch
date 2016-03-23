@@ -4504,14 +4504,16 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 			if (best_te) {
 				smh->mparams->te_rate = best_te_rate;
 
-				if (sdp_type == SDP_TYPE_REQUEST) {
-					smh->mparams->te = smh->mparams->recv_te = (switch_payload_t) best_te;
-					switch_channel_set_variable(session->channel, "dtmf_type", "rfc2833");
-					smh->mparams->dtmf_type = DTMF_2833;
-				} else {
-					smh->mparams->te = (switch_payload_t) best_te;
-					switch_channel_set_variable(session->channel, "dtmf_type", "rfc2833");
-					smh->mparams->dtmf_type = DTMF_2833;
+				if (smh->mparams->dtmf_type == DTMF_AUTO) {
+					if (sdp_type == SDP_TYPE_REQUEST) {
+						smh->mparams->te = smh->mparams->recv_te = (switch_payload_t) best_te;
+						switch_channel_set_variable(session->channel, "dtmf_type", "rfc2833");
+						smh->mparams->dtmf_type = DTMF_2833;
+					} else {
+						smh->mparams->te = (switch_payload_t) best_te;
+						switch_channel_set_variable(session->channel, "dtmf_type", "rfc2833");
+						smh->mparams->dtmf_type = DTMF_2833;
+					}
 				}
 				
 				if (a_engine->rtp_session) {
