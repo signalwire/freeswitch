@@ -493,8 +493,18 @@ static switch_status_t open_audio(AVFormatContext *fc, AVCodec *codec, MediaStre
 	c = mst->st->codec;
 
 	ret = avcodec_open2(c, codec, NULL);
+
+	if (ret == AVERROR_EXPERIMENTAL) {
+		const AVCodecDescriptor *desc = avcodec_descriptor_get(c->codec_id);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Codec [%s] is experimental feature in libavcodec, never mind\n", desc->name);
+		c->strict_std_compliance = FF_COMPLIANCE_EXPERIMENTAL;
+		ret = avcodec_open2(c, codec, NULL);
+	}
+
 	if (ret < 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not open audio codec: %s\n", get_error_text(ret));
+		const AVCodecDescriptor *desc = avcodec_descriptor_get(c->codec_id);
+
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not open audio codec [%s], error: %s\n", desc->name, get_error_text(ret));
 		return status;
 	}
 
