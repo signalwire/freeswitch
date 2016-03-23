@@ -2407,7 +2407,7 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 			}
 
 			//VIDFLOOR
-			if (canvas->layout_floor_id > -1 && imember->id == conference->video_floor_holder &&
+			if (conference->canvas_count == 1 && canvas->layout_floor_id > -1 && imember->id == conference->video_floor_holder &&
 				imember->video_layer_id != canvas->layout_floor_id) {
 				conference_video_attach_video_layer(imember, canvas, canvas->layout_floor_id);
 			}
@@ -3462,6 +3462,10 @@ void conference_video_set_floor_holder(conference_obj_t *conference, conference_
 
 	if (!member) {
 		conference_utils_clear_flag(conference, CFLAG_VID_FLOOR_LOCK);
+	}
+
+	if (conference->canvas_count > 1) {
+		return;
 	}
 
 	if (member && member->video_reservation_id) {
