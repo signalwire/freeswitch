@@ -725,7 +725,7 @@ static void *SWITCH_THREAD_FUNC video_thread_run(switch_thread_t *thread, void *
 
 		av_init_packet(&pkt);
 
-		ret = avcodec_encode_video2(eh->video_st->st->codec, &pkt, eh->video_st->frame, &got_packet);
+		ret = avcodec_encode_video2(eh->video_st->st->codec, &pkt, NULL, &got_packet);
 
 		if (ret < 0) {
 			break;
@@ -735,6 +735,8 @@ static void *SWITCH_THREAD_FUNC video_thread_run(switch_thread_t *thread, void *
 			switch_mutex_unlock(eh->mutex);
 			av_free_packet(&pkt);
 			if (ret < 0) break;
+		} else {
+			break;
 		}
 	}
 
