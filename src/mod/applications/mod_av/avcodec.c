@@ -736,12 +736,13 @@ static switch_status_t consume_h263p_bitstream(h264_codec_context_t *context, sw
 
 static switch_status_t consume_nalu(h264_codec_context_t *context, switch_frame_t *frame)
 {
+	AVPacket *pkt = &context->encoder_avpacket;
 	our_h264_nalu_t *nalu = &context->nalus[context->nalu_current_index];
 
 	if (!nalu->len) {
 		frame->datalen = 0;
 		frame->m = 0;
-		if (context->encoder_avpacket.size > 0) av_free_packet(&context->encoder_avpacket);
+		if (pkt->size > 0) av_free_packet(pkt);
 		// if (context->encoder_avframe->data[0]) av_freep(&context->encoder_avframe->data[0]);
 		context->nalu_current_index = 0;
 		return SWITCH_STATUS_NOTFOUND;
@@ -768,7 +769,15 @@ static switch_status_t consume_nalu(h264_codec_context_t *context, switch_frame_
 		}
 
 		frame->m = context->nalus[context->nalu_current_index].len ? 0 : 1;
-		return frame->m ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_MORE_DATA;
+		if (frame->m)
+		{
+			if (pkt->size > 0) {
+				av_packet_unref(pkt);
+			}
+			return SWITCH_STATUS_SUCCESS;
+		} else {
+			return SWITCH_STATUS_MORE_DATA;
+		}
 	} else {
 		uint8_t nalu_hdr = *(uint8_t *)(nalu->start);
 		uint8_t nri = nalu_hdr & 0x60;
@@ -784,6 +793,10 @@ static switch_status_t consume_nalu(h264_codec_context_t *context, switch_frame_
 			frame->datalen = left + 2;
 			frame->m = 1;
 			context->nalu_current_index++;
+			if (pkt->size > 0) {
+				av_packet_unref(pkt);
+			}
+			
 			return SWITCH_STATUS_SUCCESS;
 		} else {
 			uint8_t start = nalu->start == nalu->eat ? 0x80 : 0;
