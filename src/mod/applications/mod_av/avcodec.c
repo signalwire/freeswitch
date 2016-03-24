@@ -91,7 +91,11 @@ static const uint8_t *fs_avc_find_startcode_internal(const uint8_t *p, const uin
 
 const uint8_t *fs_avc_find_startcode(const uint8_t *p, const uint8_t *end){
     const uint8_t *out= fs_avc_find_startcode_internal(p, end);
-    if(p<out && out<end && !out[-1]) out--;
+
+    if (p < out && out < end && !out[-1]) {
+		out--;
+	}
+
     return out;
 }
 
@@ -150,8 +154,7 @@ typedef struct h263_state_s {
     int quant;
 } h263_state_t;
 
-typedef struct our_h264_nalu_s
-{
+typedef struct our_h264_nalu_s {
 	const uint8_t *start;
 	const uint8_t *eat;
 	uint32_t len;
@@ -729,66 +732,59 @@ static switch_status_t consume_h263p_bitstream(h264_codec_context_t *context, sw
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "len: %d, mark:%d %02x %02x %02x %02x\n", frame->datalen, frame->m, *p, *(p+1), *(p+2), *(p+3));
 	}
 
-	if (frame->m) av_free_packet(&context->encoder_avpacket);
+	if (frame->m) {
+		av_free_packet(&context->encoder_avpacket);
+		return SWITCH_STATUS_SUCCESS;
+	}
 
-	return frame->m ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_MORE_DATA;
+	return SWITCH_STATUS_MORE_DATA;
 }
 
 static switch_status_t consume_h264_bitstream(h264_codec_context_t *context, switch_frame_t *frame)
 {
 	AVPacket *pkt = &context->encoder_avpacket;
 	our_h264_nalu_t *nalu = &context->nalus[context->nalu_current_index];
+	uint8_t nalu_hdr = *(uint8_t *)(nalu->start);
+	uint8_t nalu_type = nalu_hdr & 0x1f;
+	uint8_t nri = nalu_hdr & 0x60;
+	int left = nalu->len - (nalu->eat - nalu->start);
+	uint8_t *p = frame->data;
+	uint8_t start = nalu->start == nalu->eat ? 0x80 : 0;
 
 	if (nalu->len <= SLICE_SIZE) {
-		uint8_t nalu_hdr = *(uint8_t *)(nalu->start);
-		uint8_t nalu_type = nalu_hdr & 0x1f;
-
 		memcpy(frame->data, nalu->start, nalu->len);
 		frame->datalen = nalu->len;
 		context->nalu_current_index++;
-		if (nalu_type == 6 || nalu_type == 7 || nalu_type == 8) {
+
+		if (nalu_type == 6 || nalu_type == 7 || nalu_type == 8 || context->nalus[context->nalu_current_index].len) {
 			frame->m = 0;
 			return SWITCH_STATUS_MORE_DATA;
 		}
 
-		if (context->nalus[context->nalu_current_index].len) {
-			frame->m = 0;
-			return SWITCH_STATUS_MORE_DATA;
-		} else {
-			if (pkt->size > 0) av_packet_unref(pkt);
+		if (pkt->size > 0) av_packet_unref(pkt);
 
-			return SWITCH_STATUS_SUCCESS;
-		}
-	} else {
-		uint8_t nalu_hdr = *(uint8_t *)(nalu->start);
-		uint8_t nri = nalu_hdr & 0x60;
-		uint8_t nalu_type = nalu_hdr & 0x1f;
-		int left = nalu->len - (nalu->eat - nalu->start);
-		uint8_t *p = frame->data;
-
-		if (left <= (SLICE_SIZE - 2)) {
-			p[0] = nri | 28; // FU-A
-			p[1] = 0x40 | nalu_type;
-			memcpy(p+2, nalu->eat, left);
-			nalu->eat += left;
-			frame->datalen = left + 2;
-			frame->m = 1;
-			context->nalu_current_index++;
-			if (pkt->size > 0) av_packet_unref(pkt);
-
-			return SWITCH_STATUS_SUCCESS;
-		} else {
-			uint8_t start = nalu->start == nalu->eat ? 0x80 : 0;
-
-			p[0] = nri | 28; // FU-A
-			p[1] = start | nalu_type;
-			if (start) nalu->eat++;
-			memcpy(p+2, nalu->eat, SLICE_SIZE - 2);
-			nalu->eat += (SLICE_SIZE - 2);
-			frame->datalen = SLICE_SIZE;
-			return SWITCH_STATUS_MORE_DATA;
-		}
+		return SWITCH_STATUS_SUCCESS;
 	}
+
+	if (left <= (SLICE_SIZE - 2)) {
+		p[0] = nri | 28; // FU-A
+		p[1] = 0x40 | nalu_type;
+		memcpy(p+2, nalu->eat, left);
+		nalu->eat += left;
+		frame->datalen = left + 2;
+		frame->m = 1;
+		context->nalu_current_index++;
+		if (pkt->size > 0) av_packet_unref(pkt);
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	p[0] = nri | 28; // FU-A
+	p[1] = start | nalu_type;
+	if (start) nalu->eat++;
+	memcpy(p+2, nalu->eat, SLICE_SIZE - 2);
+	nalu->eat += (SLICE_SIZE - 2);
+	frame->datalen = SLICE_SIZE;
+	return SWITCH_STATUS_MORE_DATA;
 }
 
 static switch_status_t consume_nalu(h264_codec_context_t *context, switch_frame_t *frame)
@@ -806,11 +802,13 @@ static switch_status_t consume_nalu(h264_codec_context_t *context, switch_frame_
 
 	if (context->av_codec_id == AV_CODEC_ID_H263) {
 		return consume_h263_bitstream(context, frame);
-	} else if (context->av_codec_id == AV_CODEC_ID_H263P) {
+	} 
+
+	if (context->av_codec_id == AV_CODEC_ID_H263P) {
 		return consume_h263p_bitstream(context, frame);
-	} else {
-		return consume_h264_bitstream(context, frame);
 	}
+
+	return consume_h264_bitstream(context, frame);
 }
 
 static switch_status_t open_encoder(h264_codec_context_t *context, uint32_t width, uint32_t height)
@@ -912,7 +910,6 @@ static switch_status_t open_encoder(h264_codec_context_t *context, uint32_t widt
 		//context->encoder_ctx->refs = 3;    // refs=3
 		
 		//context->encoder_ctx->trellis = 1; // trellis=1
-		
 	}
 
 	// libx264-medium.ffpreset preset
@@ -938,65 +935,61 @@ static switch_status_t open_encoder(h264_codec_context_t *context, uint32_t widt
 static switch_status_t switch_h264_init(switch_codec_t *codec, switch_codec_flag_t flags, const switch_codec_settings_t *codec_settings)
 {
 	int encoding, decoding;
+	h264_codec_context_t *context = NULL;
 
 	encoding = (flags & SWITCH_CODEC_FLAG_ENCODE);
 	decoding = (flags & SWITCH_CODEC_FLAG_DECODE);
 
 	if (!(encoding || decoding)) {
 		return SWITCH_STATUS_FALSE;
-	} else {
-		h264_codec_context_t *context = NULL;
-		if (codec->fmtp_in) {
-			codec->fmtp_out = switch_core_strdup(codec->memory_pool, codec->fmtp_in);
-		}
-
-		context = switch_core_alloc(codec->memory_pool, sizeof(h264_codec_context_t));
-		switch_assert(context);
-		memset(context, 0, sizeof(*context));
-
-		if (codec_settings) {
-			context->codec_settings = *codec_settings;
-		}
-
-		if (!strcmp(codec->implementation->iananame, "H263")) {
-			context->av_codec_id = AV_CODEC_ID_H263;
-		} else if (!strcmp(codec->implementation->iananame, "H263-1998")) {
-			context->av_codec_id = AV_CODEC_ID_H263P;
-		} else {
-			context->av_codec_id = AV_CODEC_ID_H264;
-		}
-
-		if (decoding) {
-			context->decoder = avcodec_find_decoder(context->av_codec_id);
-
-			if (!context->decoder && context->av_codec_id == AV_CODEC_ID_H263P) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Cannot find AV_CODEC_ID_H263P decoder, trying AV_CODEC_ID_H263 instead\n");
-				context->decoder = avcodec_find_decoder(AV_CODEC_ID_H263);
-			}
-
-			if (!context->decoder) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot find codec id %d\n", context->av_codec_id);
-				goto error;
-			}
-
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "codec: id=%d %s\n", context->decoder->id, context->decoder->long_name);
-
-			context->decoder_ctx = avcodec_alloc_context3(context->decoder);
-			if (avcodec_open2(context->decoder_ctx, context->decoder, NULL) < 0) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error openning codec\n");
-				goto error;
-			}
-		}
-
-		if (encoding) {
-			// never mind
-		}
-
-		switch_buffer_create_dynamic(&(context->nalu_buffer), H264_NALU_BUFFER_SIZE, H264_NALU_BUFFER_SIZE * 8, 0);
-		codec->private_info = context;
-
-		return SWITCH_STATUS_SUCCESS;
 	}
+
+	if (codec->fmtp_in) {
+		codec->fmtp_out = switch_core_strdup(codec->memory_pool, codec->fmtp_in);
+	}
+
+	context = switch_core_alloc(codec->memory_pool, sizeof(h264_codec_context_t));
+	switch_assert(context);
+	memset(context, 0, sizeof(*context));
+
+	if (codec_settings) {
+		context->codec_settings = *codec_settings;
+	}
+
+	if (!strcmp(codec->implementation->iananame, "H263")) {
+		context->av_codec_id = AV_CODEC_ID_H263;
+	} else if (!strcmp(codec->implementation->iananame, "H263-1998")) {
+		context->av_codec_id = AV_CODEC_ID_H263P;
+	} else {
+		context->av_codec_id = AV_CODEC_ID_H264;
+	}
+
+	if (decoding) {
+		context->decoder = avcodec_find_decoder(context->av_codec_id);
+
+		if (!context->decoder && context->av_codec_id == AV_CODEC_ID_H263P) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Cannot find AV_CODEC_ID_H263P decoder, trying AV_CODEC_ID_H263 instead\n");
+			context->decoder = avcodec_find_decoder(AV_CODEC_ID_H263);
+		}
+
+		if (!context->decoder) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot find codec id %d\n", context->av_codec_id);
+			goto error;
+		}
+
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "codec: id=%d %s\n", context->decoder->id, context->decoder->long_name);
+
+		context->decoder_ctx = avcodec_alloc_context3(context->decoder);
+		if (avcodec_open2(context->decoder_ctx, context->decoder, NULL) < 0) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error openning codec\n");
+			goto error;
+		}
+	}
+
+	switch_buffer_create_dynamic(&(context->nalu_buffer), H264_NALU_BUFFER_SIZE, H264_NALU_BUFFER_SIZE * 8, 0);
+	codec->private_info = context;
+
+	return SWITCH_STATUS_SUCCESS;
 
 error:
 	// todo, do some clean up
@@ -1031,7 +1024,8 @@ static switch_status_t switch_h264_encode(switch_codec_t *codec, switch_frame_t 
 	height = img->d_h;
 
 	if (context->av_codec_id == AV_CODEC_ID_H263 && (!is_valid_h263_dimension(width, height))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "You want %dx%d, but valid H263 sizes are 128x96, 176x144, 352x288, 704x576, and 1408x1152. Try H.263+\n", width, height);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
+						  "You want %dx%d, but valid H263 sizes are 128x96, 176x144, 352x288, 704x576, and 1408x1152. Try H.263+\n", width, height);
 		goto error;
 	}
 
@@ -1151,7 +1145,10 @@ static switch_status_t switch_h264_encode(switch_codec_t *codec, switch_frame_t 
 		*got_output = 0;
 
 		if (context->av_codec_id == AV_CODEC_ID_H263) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG5, "Encoded frame %" SWITCH_INT64_T_FMT " (size=%5d) [0x%02x 0x%02x 0x%02x 0x%02x] got_output: %d slices: %d\n", context->pts, pkt->size, *((uint8_t *)pkt->data), *((uint8_t *)(pkt->data + 1)), *((uint8_t *)(pkt->data + 2)), *((uint8_t *)(pkt->data + 3)), *got_output, avctx->slices);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG5,
+							  "Encoded frame %" SWITCH_INT64_T_FMT " (size=%5d) [0x%02x 0x%02x 0x%02x 0x%02x] got_output: %d slices: %d\n",
+							  context->pts, pkt->size, *((uint8_t *)pkt->data), *((uint8_t *)(pkt->data + 1)), *((uint8_t *)(pkt->data + 2)),
+							  *((uint8_t *)(pkt->data + 3)), *got_output, avctx->slices);
 
 #ifdef H263_MODE_B
 			fs_rtp_parse_h263_rfc2190(context, pkt);
@@ -1160,12 +1157,17 @@ static switch_status_t switch_h264_encode(switch_codec_t *codec, switch_frame_t 
 			context->nalu_current_index = 0;
 			return consume_nalu(context, frame);
 		} else if (context->av_codec_id == AV_CODEC_ID_H263P){
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG5, "Encoded frame %" SWITCH_INT64_T_FMT " (size=%5d) [0x%02x 0x%02x 0x%02x 0x%02x] got_output: %d slices: %d\n", context->pts, pkt->size, *((uint8_t *)pkt->data), *((uint8_t *)(pkt->data + 1)), *((uint8_t *)(pkt->data + 2)), *((uint8_t *)(pkt->data + 3)), *got_output, avctx->slices);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG5,
+							  "Encoded frame %" SWITCH_INT64_T_FMT " (size=%5d) [0x%02x 0x%02x 0x%02x 0x%02x] got_output: %d slices: %d\n",
+							  context->pts, pkt->size, *((uint8_t *)pkt->data), *((uint8_t *)(pkt->data + 1)), *((uint8_t *)(pkt->data + 2)),
+							  *((uint8_t *)(pkt->data + 3)), *got_output, avctx->slices);
 			fs_rtp_parse_h263_rfc4629(context, pkt);
 			context->nalu_current_index = 0;
 			return consume_nalu(context, frame);
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG5, "Encoded frame %" SWITCH_INT64_T_FMT " (size=%5d) nalu_type=0x%x %d\n", context->pts, pkt->size, *((uint8_t *)pkt->data +4), *got_output);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG5,
+							  "Encoded frame %" SWITCH_INT64_T_FMT " (size=%5d) nalu_type=0x%x %d\n",
+							  context->pts, pkt->size, *((uint8_t *)pkt->data +4), *got_output);
 		}
 		/* split into nalus */
 		memset(context->nalus, 0, sizeof(context->nalus));
@@ -1405,8 +1407,9 @@ static unsigned get_codecs_sorted(const AVCodecDescriptor ***rcodecs)
 		return 0;
 	}
 	desc = NULL;
-	while ((desc = avcodec_descriptor_next(desc)))
+	while ((desc = avcodec_descriptor_next(desc))) {
 		codecs[i++] = desc;
+	}
 	switch_assert(i == nb_codecs);
 	qsort(codecs, nb_codecs, sizeof(*codecs), compare_codec_desc);
 	*rcodecs = codecs;
@@ -1419,8 +1422,9 @@ static void print_codecs_for_id(switch_stream_handle_t *stream, enum AVCodecID i
 
 	stream->write_function(stream, " (%s: ", encoder ? "encoders" : "decoders");
 
-	while ((codec = next_codec_for_id(id, codec, encoder)))
+	while ((codec = next_codec_for_id(id, codec, encoder))) {
 		stream->write_function(stream, "%s ", codec->name);
+	}
 
 	stream->write_function(stream, ")");
 }
