@@ -40,14 +40,15 @@
         };
 
         $scope.showPreview = function() {
-         $modalInstance.close('Ok.');
-         if (!verto.data.call) {
-           $location.path('/preview');
-           return;
-         }
-         else {
-           toastr.warning('Can\'t display preview settings during a call');
-         }
+          var settingsEl = angular.element(document.querySelector('#settings'));
+          settingsEl.toggleClass('toggled');
+          if (!verto.data.call) {
+            $location.path('/preview');
+            return;
+          }
+          else {
+            toastr.warning('Can\'t display preview settings during a call');
+          }
         };
 
         $scope.testSpeed = function() {
