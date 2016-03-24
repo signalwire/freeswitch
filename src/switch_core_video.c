@@ -396,6 +396,7 @@ SWITCH_DECLARE(void) switch_img_copy(switch_image_t *img, switch_image_t **new_i
 	switch_assert(img);
 	switch_assert(new_img);
 
+#ifdef SWITCH_HAVE_YUV
 	if (img->fmt != SWITCH_IMG_FMT_I420 && img->fmt != SWITCH_IMG_FMT_ARGB) return;
 
 	if (*new_img != NULL) {
@@ -423,7 +424,9 @@ SWITCH_DECLARE(void) switch_img_copy(switch_image_t *img, switch_image_t **new_i
 				 (*new_img)->planes[SWITCH_PLANE_PACKED], (*new_img)->stride[SWITCH_PLANE_PACKED],
 				 img->d_w, img->d_h);
 	}
-
+#else
+	return;
+#endif
 }
 
 SWITCH_DECLARE(switch_image_t *) switch_img_copy_rect(switch_image_t *img, uint32_t x, uint32_t y, uint32_t w, uint32_t h)
@@ -2190,16 +2193,21 @@ SWITCH_DECLARE(switch_status_t) switch_I420_copy(const uint8_t *src_y, int src_s
 												 uint8_t *dst_v, int dst_stride_v,
 												 int width, int height)
 {
+#ifdef SWITCH_HAVE_YUV
 	int ret = I420Copy(src_y, src_stride_y, src_u, src_stride_u, src_v, src_stride_v,
 					   dst_y, dst_stride_y, dst_u, dst_stride_u, dst_v, dst_stride_v,
 					   width, height);
 	return ret == 0 ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
+#else
+	return SWITCH_STATUS_FALSE;
+#endif
 }
 
 SWITCH_DECLARE(switch_status_t) switch_I420_copy2(uint8_t *src_planes[], int src_stride[],
 												  uint8_t *dst_planes[], int dst_stride[],
 												  int width, int height)
 {
+#ifdef SWITCH_HAVE_YUV
 	int ret = I420Copy(src_planes[SWITCH_PLANE_Y], src_stride[SWITCH_PLANE_Y],
 					   src_planes[SWITCH_PLANE_U], src_stride[SWITCH_PLANE_U],
 					   src_planes[SWITCH_PLANE_V], src_stride[SWITCH_PLANE_V],
@@ -2208,6 +2216,9 @@ SWITCH_DECLARE(switch_status_t) switch_I420_copy2(uint8_t *src_planes[], int src
 					   dst_planes[SWITCH_PLANE_V], dst_stride[SWITCH_PLANE_V],
 					   width, height);
 	return ret == 0 ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
+#else
+	return SWITCH_STATUS_FALSE;
+#endif
 }
 /* For Emacs:
  * Local Variables:
