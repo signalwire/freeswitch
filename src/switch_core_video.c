@@ -2182,12 +2182,12 @@ SWITCH_DECLARE(switch_image_t *) switch_img_read_file(const char* file_name)
 }
 #endif
 
-SWITCH_DECLARE(switch_status_t) switch_I420_copy(const uint8* src_y, int src_stride_y,
-												 const uint8* src_u, int src_stride_u,
-												 const uint8* src_v, int src_stride_v,
-												 uint8* dst_y, int dst_stride_y,
-												 uint8* dst_u, int dst_stride_u,
-												 uint8* dst_v, int dst_stride_v,
+SWITCH_DECLARE(switch_status_t) switch_I420_copy(const uint8_t *src_y, int src_stride_y,
+												 const uint8_t *src_u, int src_stride_u,
+												 const uint8_t *src_v, int src_stride_v,
+												 uint8_t *dst_y, int dst_stride_y,
+												 uint8_t *dst_u, int dst_stride_u,
+												 uint8_t *dst_v, int dst_stride_v,
 												 int width, int height)
 {
 	int ret = I420Copy(src_y, src_stride_y, src_u, src_stride_u, src_v, src_stride_v,
