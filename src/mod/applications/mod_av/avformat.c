@@ -367,12 +367,14 @@ static switch_status_t add_stream(MediaStream *mst, AVFormatContext *fc, AVCodec
 			c->ticks_per_frame = 2;
 
 
-			c->coder_type = 1;  // coder = 1
 			c->flags|=CODEC_FLAG_LOOP_FILTER;   // flags=+loop
 			c->me_cmp|= 1;  // cmp=+chroma, where CHROMA = 1
-			c->me_method=ME_HEX;    // me_method=hex
 			c->me_range = 16;   // me_range=16
 			c->max_b_frames = 3;    // bf=3
+
+			av_opt_set_int(c->priv_data, "b_strategy", 1, 0);
+			av_opt_set_int(c->priv_data, "motion_est", ME_HEX, 0);
+			av_opt_set_int(c->priv_data, "coder", 1, 0);
 
 			switch (mm->vprofile) {
 			case SWITCH_VIDEO_PROFILE_BASELINE:
@@ -409,14 +411,12 @@ static switch_status_t add_stream(MediaStream *mst, AVFormatContext *fc, AVCodec
 
 		c->gop_size = 250;  // g=250
 		c->keyint_min = 25; // keyint_min=25
-		c->scenechange_threshold = 40;  // sc_threshold=40
 		c->i_quant_factor = 0.71; // i_qfactor=0.71
-		c->b_frame_strategy = 1;  // b_strategy=1
 		c->qcompress = 0.6; // qcomp=0.6
 		c->qmin = 10;   // qmin=10
 		c->qmax = 31;   // qmax=31
 		c->max_qdiff = 4;   // qdiff=4
-		av_opt_set(c->priv_data, "crf", "18", 0);
+		av_opt_set_int(c->priv_data, "crf", 18, 0);
 
 
 		if (codec_id == AV_CODEC_ID_VP8) {
@@ -726,7 +726,7 @@ static void *SWITCH_THREAD_FUNC video_thread_run(switch_thread_t *thread, void *
 			switch_mutex_lock(eh->mutex);
 			ret = write_frame(eh->fc, &eh->video_st->st->codec->time_base, eh->video_st->st, &pkt);
 			switch_mutex_unlock(eh->mutex);
-			av_free_packet(&pkt);
+			av_packet_unref(&pkt);
 		}
 
 		eh->in_callback = 0;
@@ -750,7 +750,7 @@ static void *SWITCH_THREAD_FUNC video_thread_run(switch_thread_t *thread, void *
 			switch_mutex_lock(eh->mutex);
 			ret = write_frame(eh->fc, &eh->video_st->st->codec->time_base, eh->video_st->st, &pkt);
 			switch_mutex_unlock(eh->mutex);
-			av_free_packet(&pkt);
+			av_packet_unref(&pkt);
 			if (ret < 0) break;
 		} else {
 			break;
@@ -1094,7 +1094,7 @@ SWITCH_STANDARD_APP(record_av_function)
 
 		if (got_packet) {
 			ret = write_frame(fc, &video_st.st->codec->time_base, video_st.st, &pkt);
-			av_free_packet(&pkt);
+			av_packet_unref(&pkt);
 			goto again;
 		}
 	}
@@ -1484,13 +1484,13 @@ again:
 
 			if ((error = avcodec_decode_video2(context->video_st.st->codec, vframe, &got_data, &pkt)) < 0) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not decode frame (error '%s')\n", get_error_text(error));
-				av_free_packet(&pkt);
+				av_packet_unref(&pkt);
 				av_frame_free(&vframe);
 				break;
 			}
 
 			// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "pkt: %d, pts: %lld dts: %lld\n", pkt.size, pkt.pts, pkt.dts);
-			av_free_packet(&pkt);
+			av_packet_unref(&pkt);
 
 			//if (switch_queue_size(context->eh.video_queue) > 300) {
 			//	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Dropping frames\n");
@@ -1587,12 +1587,12 @@ again:
 
 			if ((error = avcodec_decode_audio4(context->audio_st.st->codec, &in_frame, &got_data, &pkt)) < 0) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not decode frame (error '%s')\n", get_error_text(error));
-				av_free_packet(&pkt);
+				av_packet_unref(&pkt);
 				break;
 			}
 
 			// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "pkt: %d, decodedddd: %d pts: %lld dts: %lld\n", pkt.size, error, pkt.pts, pkt.dts);
-			av_free_packet(&pkt);
+			av_packet_unref(&pkt);
 
 			if (got_data) {
 				// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "got data frm->format: %d samples: %d\n", in_frame.format, in_frame.nb_samples);
