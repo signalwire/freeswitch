@@ -27,7 +27,7 @@
  * Anthony Minessale <anthm@freeswitch.org>
  * Emmanuel Schmidbauer <eschmidbauer@gmail.com>
  *
- * mod_avcodec -- Codec with libav.org
+ * mod_avcodec -- Codec with libav.org and ffmpeg
  *
  */
 
@@ -425,9 +425,12 @@ static switch_status_t buffer_h263_rfc4629_packets(h264_codec_context_t *context
 	return SWITCH_STATUS_SUCCESS;
 }
 
+#ifndef H263_MODE_B
+/* this function is depracated from ffmpeg 3.0 and
+   https://lists.libav.org/pipermail/libav-devel/2015-October/072782.html
+*/
 void rtp_callback(struct AVCodecContext *avctx, void *data, int size, int mb_nb)
 {
-#ifndef H263_MODE_B
 	uint8_t *d = data;
 	uint32_t code = (ntohl(*(uint32_t *)data) & 0xFFFFFC00) >> 10;
 	h264_codec_context_t *context = (h264_codec_context_t *)avctx->opaque;
@@ -454,8 +457,8 @@ void rtp_callback(struct AVCodecContext *avctx, void *data, int size, int mb_nb)
 		size > 1500 ? "===============Exceedding MTU===============" : "");
 #endif
 
-#endif
 }
+#endif
 
 const uint8_t *fs_h263_find_resync_marker_reverse(const uint8_t *restrict start,
 												  const uint8_t *restrict end)
@@ -734,7 +737,7 @@ static switch_status_t consume_h263p_bitstream(h264_codec_context_t *context, sw
 	}
 
 	if (frame->m) {
-		av_free_packet(&context->encoder_avpacket);
+		av_packet_unref(&context->encoder_avpacket);
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -796,14 +799,14 @@ static switch_status_t consume_nalu(h264_codec_context_t *context, switch_frame_
 	if (!nalu->len) {
 		frame->datalen = 0;
 		frame->m = 0;
-		if (pkt->size > 0) av_free_packet(pkt);
+		if (pkt->size > 0) av_packet_unref(pkt);
 		context->nalu_current_index = 0;
 		return SWITCH_STATUS_NOTFOUND;
 	}
 
 	if (context->av_codec_id == AV_CODEC_ID_H263) {
 		return consume_h263_bitstream(context, frame);
-	} 
+	}
 
 	if (context->av_codec_id == AV_CODEC_ID_H263P) {
 		return consume_h263p_bitstream(context, frame);
@@ -895,10 +898,23 @@ static switch_status_t open_encoder(h264_codec_context_t *context, uint32_t widt
 	context->encoder_ctx->bit_rate = context->bandwidth * 1024;
 	context->encoder_ctx->rc_max_rate = context->bandwidth * 1024;
 	context->encoder_ctx->rc_buffer_size = context->bandwidth * 1024 * 4;
-	context->encoder_ctx->rtp_payload_size = SLICE_SIZE;
 
 	if (context->av_codec_id == AV_CODEC_ID_H263 || context->av_codec_id == AV_CODEC_ID_H263P) {
+#ifndef H263_MODE_B
+#    if defined(__ICL) || defined (__INTEL_COMPILER)
+#        define FF_DISABLE_DEPRECATION_WARNINGS __pragma(warning(push)) __pragma(warning(disable:1478))
+#        define FF_ENABLE_DEPRECATION_WARNINGS  __pragma(warning(pop))
+#    elif defined(_MSC_VER)
+#        define FF_DISABLE_DEPRECATION_WARNINGS __pragma(warning(push)) __pragma(warning(disable:4996))
+#        define FF_ENABLE_DEPRECATION_WARNINGS  __pragma(warning(pop))
+#    else
+#        define FF_DISABLE_DEPRECATION_WARNINGS _Pragma("GCC diagnostic ignored \"-Wdeprecated-declarations\"")
+#        define FF_ENABLE_DEPRECATION_WARNINGS  _Pragma("GCC diagnostic warning \"-Wdeprecated-declarations\"")
+#    endif
+FF_DISABLE_DEPRECATION_WARNINGS
 		context->encoder_ctx->rtp_callback = rtp_callback;
+FF_ENABLE_DEPRECATION_WARNINGS
+#endif
 		context->encoder_ctx->rc_min_rate = context->encoder_ctx->rc_max_rate;
 		context->encoder_ctx->opaque = context;
 		av_opt_set_int(context->encoder_ctx->priv_data, "mb_info", SLICE_SIZE - 8, 0);
@@ -908,39 +924,32 @@ static switch_status_t open_encoder(h264_codec_context_t *context, uint32_t widt
 
 		if (context->hw_encoder) {
 			av_opt_set(context->encoder_ctx->priv_data, "preset", "llhq", 0);
-			
 		} else {
 			av_opt_set(context->encoder_ctx->priv_data, "preset", "veryfast", 0);
 			av_opt_set(context->encoder_ctx->priv_data, "tune", "zerolatency", 0);
 			av_opt_set(context->encoder_ctx->priv_data, "profile", "baseline", 0);
-			//av_opt_set_int(context->encoder_ctx->priv_data, "slice-max-size", SLICE_SIZE, 0);
+			av_opt_set_int(context->encoder_ctx->priv_data, "slice-max-size", SLICE_SIZE, 0);
+			av_opt_set_int(context->encoder_ctx->priv_data, "sc_threshold", 40, 0);
+			av_opt_set_int(context->encoder_ctx->priv_data, "b_strategy", 1, 0);
+			av_opt_set_int(context->encoder_ctx->priv_data, "crf",  18, 0);
 
 			// libx264-medium.ffpreset preset
 
-			context->encoder_ctx->coder_type = 1;  // coder = 1
 			context->encoder_ctx->flags|=CODEC_FLAG_LOOP_FILTER;   // flags=+loop
 			context->encoder_ctx->me_cmp|= 1;  // cmp=+chroma, where CHROMA = 1
-			context->encoder_ctx->me_method=ME_HEX;    // me_method=hex
-			//context->encoder_ctx->me_subpel_quality = 7;   // subq=7
-
 			context->encoder_ctx->me_range = 16;   // me_range=16
 			context->encoder_ctx->max_b_frames = 3;    // bf=3
-
 			//context->encoder_ctx->refs = 3;    // refs=3
-
-			// libx264-medium.ffpreset preset
 			context->encoder_ctx->gop_size = 250;  // g=250
 			context->encoder_ctx->keyint_min = 25; // keyint_min=25
-			context->encoder_ctx->scenechange_threshold = 40;  // sc_threshold=40
 			context->encoder_ctx->i_quant_factor = 0.71; // i_qfactor=0.71
-			context->encoder_ctx->b_frame_strategy = 1;  // b_strategy=1
 			context->encoder_ctx->qcompress = 0.6; // qcomp=0.6
 			context->encoder_ctx->qmin = 10;   // qmin=10
 			context->encoder_ctx->qmax = 51;   // qmax=51
 			context->encoder_ctx->max_qdiff = 4;   // qdiff=4
 		}
 	}
-	
+
 	if (avcodec_open2(context->encoder_ctx, context->encoder, NULL) < 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not open codec\n");
 		return SWITCH_STATUS_FALSE;
