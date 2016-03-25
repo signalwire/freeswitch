@@ -373,7 +373,7 @@ static switch_status_t add_stream(MediaStream *mst, AVFormatContext *fc, AVCodec
 			c->me_method=ME_HEX;    // me_method=hex
 			c->me_range = 16;   // me_range=16
 			c->max_b_frames = 3;    // bf=3
-			
+
 			switch (mm->vprofile) {
 			case SWITCH_VIDEO_PROFILE_BASELINE:
 				av_opt_set(c->priv_data, "profile", "baseline", 0);
@@ -694,21 +694,21 @@ static void *SWITCH_THREAD_FUNC video_thread_run(switch_thread_t *thread, void *
 			eh->video_st->frame->pts += delta;
 		} else {
 			switch_core_timer_sync(eh->timer);
-		
+
 			if (eh->video_st->frame->pts == eh->timer->samplecount) {
 				// never use the same pts, or the encoder coughs
 				eh->video_st->frame->pts++;
 			} else {
 				uint64_t delta_tmp = eh->timer->samplecount - last_ts;
-				
+
 				if (delta_tmp > 10) {
 					delta = delta_tmp;
 				}
-				
+
 				eh->video_st->frame->pts = eh->timer->samplecount;
 			}
 		}
-		
+
 		last_ts = eh->video_st->frame->pts;
 
 		//eh->video_st->frame->pts = switch_time_now() / 1000 - eh->video_st->next_pts;
@@ -1264,6 +1264,7 @@ struct av_file_context {
 	switch_image_t *last_img;
 	int read_fps;
 	switch_time_t last_vid_push;
+	int64_t seek_ts;
 };
 
 typedef struct av_file_context av_file_context_t;
@@ -1296,6 +1297,9 @@ static switch_status_t open_input_file(av_file_context_t *context, switch_file_h
 		switch_goto_status(SWITCH_STATUS_FALSE, err);
 	}
 
+	handle->seekable = context->fc->iformat->read_seek2 ? 1 : (context->fc->iformat->read_seek ? 1 : 0);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "file %s is %sseekable\n", filename, handle->seekable ? "" : "not ");
+
 	/** Get information on the input file (number of streams etc.). */
 	if ((error = avformat_find_stream_info(context->fc, NULL)) < 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not open find stream info (error '%s')\n", get_error_text(error));
@@ -1312,6 +1316,7 @@ static switch_status_t open_input_file(av_file_context_t *context, switch_file_h
 			context->video_st.st = context->fc->streams[i];
 			if (switch_test_flag(handle, SWITCH_FILE_FLAG_VIDEO)) {
 				context->has_video = 1;
+				handle->duration = av_rescale_q(context->video_st.st->duration, context->video_st.st->time_base, AV_TIME_BASE_Q);
 			}
 			handle->mm.source_fps = ceil(av_q2d(context->video_st.st->avg_frame_rate));
 			context->read_fps = (int)handle->mm.source_fps;
@@ -1365,14 +1370,18 @@ static switch_status_t open_input_file(av_file_context_t *context, switch_file_h
 				av_opt_set_int(resample_ctx, "in_channel_count",   c->channels,       0);
 				av_opt_set_int(resample_ctx, "in_sample_rate",     c->sample_rate,    0);
 				av_opt_set_int(resample_ctx, "in_sample_fmt",      c->sample_fmt,     0);
-				av_opt_set_int(resample_ctx, "in_channel_layout",  c->channel_layout, 0);
+				av_opt_set_int(resample_ctx, "in_channel_layout",
+					(c->channel_layout == 0 && c->channels == 2) ? AV_CH_LAYOUT_STEREO : c->channel_layout, 0);
 				av_opt_set_int(resample_ctx, "out_channel_count",  handle->channels,  0);
 				av_opt_set_int(resample_ctx, "out_sample_rate",    handle->samplerate,0);
 				av_opt_set_int(resample_ctx, "out_sample_fmt",     AV_SAMPLE_FMT_S16, 0);
 				av_opt_set_int(resample_ctx, "out_channel_layout", handle->channels == 2 ? AV_CH_LAYOUT_STEREO : AV_CH_LAYOUT_MONO, 0);
 
 				if ((ret = avresample_open(resample_ctx)) < 0) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to initialize the resampling context\n");
+					char errbuf[1024];
+					av_strerror(ret, errbuf, 1024);
+
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to initialize the resampling context, ret=%d: %s\n", ret, errbuf);
 					av_free(resample_ctx);
 					switch_goto_status(SWITCH_STATUS_FALSE, err);
 				}
@@ -1411,11 +1420,33 @@ static void *SWITCH_THREAD_FUNC file_read_thread_run(switch_thread_t *thread, vo
 	while (context->file_read_thread_running && !context->closed) {
 		int vid_frames = 0;
 
+		if (context->seek_ts >= 0) {
+			int ret = 0;
+			int stream_id = -1;
+
+			switch_mutex_lock(context->mutex);
+			switch_buffer_zero(context->audio_buffer);
+			switch_mutex_unlock(context->mutex);
+
+			if (context->eh.video_queue) {
+				flush_video_queue(context->eh.video_queue, 0);
+			}
+
+			// if (context->has_audio) stream_id = context->audio_st.st->index;
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "seeking to %" SWITCH_INT64_T_FMT "\n", context->seek_ts);
+			ret = avformat_seek_file(context->fc, stream_id, 0, context->seek_ts, INT64_MAX, 0);
+			context->seek_ts = -1;
+			context->video_st.next_pts = 0;
+			context->video_start_time = 0;
+
+			avcodec_flush_buffers(context->video_st.st->codec);
+		}
+
 		if (context->has_video) {
 			vid_frames = switch_queue_size(context->eh.video_queue);
 		}
 
-		if (switch_buffer_inuse(context->audio_buffer) > AUDIO_BUF_SEC * context->audio_st.sample_rate * context->audio_st.channels * 2 && 
+		if (switch_buffer_inuse(context->audio_buffer) > AUDIO_BUF_SEC * context->audio_st.sample_rate * context->audio_st.channels * 2 &&
 			(!context->has_video || vid_frames > 5)) {
 			switch_yield(context->has_video ? 1000 : 10000);
 			continue;
@@ -1514,7 +1545,7 @@ again:
 
 				img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, vframe->width, vframe->height, 1);
 				if (img) {
-					uint64_t *pts = malloc(sizeof(uint64_t));
+					int64_t *pts = malloc(sizeof(int64_t));
 
 					if (pts) {
 #ifdef ALT_WAY
@@ -1643,7 +1674,7 @@ static switch_status_t av_file_open(switch_file_handle_t *handle, const char *pa
 	memset(context, 0, sizeof(av_file_context_t));
 	handle->private_info = context;
 	context->pool = handle->memory_pool;
-
+	context->seek_ts = -1;
 	context->offset = DFT_RECORD_OFFSET;
 	if (handle->params && (tmp = switch_event_get_header(handle->params, "av_video_offset"))) {
 		context->offset = atoi(tmp);
@@ -1718,7 +1749,7 @@ static switch_status_t av_file_open(switch_file_handle_t *handle, const char *pa
 		const AVCodecDescriptor *desc;
 
 		if ((handle->stream_name && (!strcasecmp(handle->stream_name, "rtmp") || !strcasecmp(handle->stream_name, "youtube")))) {
-			
+
 			if (fmt->video_codec != AV_CODEC_ID_H264 ) {
 				fmt->video_codec = AV_CODEC_ID_H264; // force H264
 			}
@@ -1989,7 +2020,15 @@ static switch_status_t av_file_close(switch_file_handle_t *handle)
 
 static switch_status_t av_file_seek(switch_file_handle_t *handle, unsigned int *cur_sample, int64_t samples, int whence)
 {
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "seek not implemented\n");
+	av_file_context_t *context = (av_file_context_t *)handle->private_info;
+
+	if (whence == SEEK_SET) {
+		handle->pos = handle->offset_pos = samples;
+	}
+
+	context->seek_ts = samples / handle->native_rate * AV_TIME_BASE;
+	*cur_sample = context->seek_ts;
+
 	return SWITCH_STATUS_FALSE;
 }
 
@@ -2151,6 +2190,7 @@ static switch_status_t av_file_read_video(switch_file_handle_t *handle, switch_f
 
 		pts = av_rescale_q(*((uint64_t *)img->user_priv), st->time_base, AV_TIME_BASE_Q);
 		// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "pkt_pts: %lld pts: %lld queue size: %u\n", *((uint64_t *)img->user_priv), pts, switch_queue_size(context->eh.video_queue));
+		handle->vpos = pts;
 
 		if (!context->video_start_time) {
 			context->video_start_time = now - pts;

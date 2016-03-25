@@ -123,6 +123,33 @@ static switch_status_t imagick_file_open(switch_file_handle_t *handle, const cha
 	context->image_info = AcquireImageInfo();
 	switch_set_string(context->image_info->filename, path);
 
+	if (handle->params) {
+		const char *max = switch_event_get_header(handle->params, "img_ms");
+		const char *autoplay = switch_event_get_header(handle->params, "autoplay");
+		const char *density = switch_event_get_header(handle->params, "density");
+		const char *quality = switch_event_get_header(handle->params, "quality");
+		int tmp;
+
+		if (max) {
+			tmp = atol(max);
+			context->max = tmp;
+		}
+
+		if (autoplay) {
+			context->autoplay = atoi(autoplay);
+		}
+
+		if (density) {
+			context->image_info->density = strdup(density);
+		}
+
+		if (quality) {
+			tmp = atoi(quality);
+
+			if (tmp > 0) context->image_info->quality = tmp;
+		}
+	}
+
 	context->images = ReadImages(context->image_info, context->exception);
 	if (context->exception->severity != UndefinedException) {
 		CatchException(context->exception);
@@ -134,21 +161,7 @@ static switch_status_t imagick_file_open(switch_file_handle_t *handle, const cha
 	}
 
 	context->pagecount = GetImageListLength(context->images);
-
-	if (handle->params) {
-		const char *max = switch_event_get_header(handle->params, "img_ms");
-		const char *autoplay = switch_event_get_header(handle->params, "autoplay");
-		int tmp;
-
-		if (max) {
-			tmp = atol(max);
-			context->max = tmp;
-		}
-
-		if (autoplay) {
-			context->autoplay = atoi(autoplay);
-		}
-	}
+	handle->duration = context->pagecount;
 
 	if (context->max) {
 		context->samples = (handle->samplerate / 1000) * context->max;
@@ -347,6 +360,7 @@ static switch_status_t imagick_file_seek(switch_file_handle_t *handle, unsigned 
 		context->pagenumber = page;
 		context->same_page = 0;
 		*cur_sample = page;
+		handle->vpos = page;
 	}
 
 	return status;

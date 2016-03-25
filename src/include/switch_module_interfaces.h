@@ -394,6 +394,10 @@ struct switch_file_handle {
 	char *modname;
 	switch_mm_t mm;
 	switch_mutex_t *flag_mutex;
+	/*! total video duration, or total page in pdf*/
+	int64_t duration;
+	/*! current video position, or current page in pdf */
+	int64_t vpos;
 };
 
 /*! \brief Abstract interface to an asr module */

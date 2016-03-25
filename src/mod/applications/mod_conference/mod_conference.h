@@ -967,6 +967,7 @@ int conference_member_noise_gate_check(conference_member_t *member);
 void conference_member_check_channels(switch_frame_t *frame, conference_member_t *member, switch_bool_t in);
 
 void conference_fnode_toggle_pause(conference_file_node_t *fnode, switch_stream_handle_t *stream);
+void conference_fnode_check_status(conference_file_node_t *fnode, switch_stream_handle_t *stream);
 
 // static conference_relationship_t *conference_member_get_relationship(conference_member_t *member, conference_member_t *other_member);
 // static void conference_list(conference_obj_t *conference, switch_stream_handle_t *stream, char *delim);
@@ -1062,6 +1063,7 @@ switch_status_t conference_api_sub_position(conference_member_t *member, switch_
 switch_status_t conference_api_sub_conference_video_vmute_snap(conference_member_t *member, switch_stream_handle_t *stream, void *data);
 switch_status_t conference_api_sub_dtmf(conference_member_t *member, switch_stream_handle_t *stream, void *data);
 switch_status_t conference_api_sub_pause_play(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv);
+switch_status_t conference_api_sub_play_status(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv);
 switch_status_t conference_api_sub_play(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv);
 switch_status_t conference_api_sub_say(conference_obj_t *conference, switch_stream_handle_t *stream, const char *text);
 switch_status_t conference_api_sub_dial(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv);
