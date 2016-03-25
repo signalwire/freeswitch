@@ -2906,6 +2906,8 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 			}
 		}
 
+		conference->video_codec_settings.video.try_hardware_encoder = 1;
+
 		if (zstr(video_layout_name)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "No video-layout-name specified, using " CONFERENCE_MUX_DEFAULT_LAYOUT "\n");
 			video_layout_name = CONFERENCE_MUX_DEFAULT_LAYOUT;
