@@ -1421,7 +1421,6 @@ static void *SWITCH_THREAD_FUNC file_read_thread_run(switch_thread_t *thread, vo
 		int vid_frames = 0;
 
 		if (context->seek_ts >= 0) {
-			int ret = 0;
 			int stream_id = -1;
 
 			switch_mutex_lock(context->mutex);
@@ -1434,7 +1433,7 @@ static void *SWITCH_THREAD_FUNC file_read_thread_run(switch_thread_t *thread, vo
 
 			// if (context->has_audio) stream_id = context->audio_st.st->index;
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "seeking to %" SWITCH_INT64_T_FMT "\n", context->seek_ts);
-			ret = avformat_seek_file(context->fc, stream_id, 0, context->seek_ts, INT64_MAX, 0);
+			avformat_seek_file(context->fc, stream_id, 0, context->seek_ts, INT64_MAX, 0);
 			context->seek_ts = -1;
 			context->video_st.next_pts = 0;
 			context->video_start_time = 0;
