@@ -2660,7 +2660,7 @@ static void switch_core_session_parse_codec_settings(switch_core_session_t *sess
 		uint32_t system_bw = 0;
 		const char *var = NULL, *bwv;
 
-		if ((var = switch_channel_get_variable(session->channel, "video_try_hardare_encoder"))) {
+		if ((var = switch_channel_get_variable(session->channel, "video_try_hardware_encoder"))) {
 			engine->codec_settings.video.try_hardware_encoder = switch_true(var);
 		}
 
