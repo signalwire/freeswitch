@@ -1254,6 +1254,7 @@ void conference_xlist(conference_obj_t *conference, switch_xml_t x_conference, i
 void conference_fnode_toggle_pause(conference_file_node_t *fnode, switch_stream_handle_t *stream)
 {
 	if (fnode) {
+		switch_core_file_command(&fnode->fh, SCFC_PAUSE_READ);
 		if (switch_test_flag(fnode, NFLAG_PAUSE)) {
 			stream->write_function(stream, "+OK Resume\n");
 			switch_clear_flag(fnode, NFLAG_PAUSE);

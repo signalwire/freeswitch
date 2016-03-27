@@ -1265,6 +1265,7 @@ struct av_file_context {
 	int read_fps;
 	switch_time_t last_vid_push;
 	int64_t seek_ts;
+	switch_bool_t read_paused;
 };
 
 typedef struct av_file_context av_file_context_t;
@@ -1434,7 +1435,7 @@ static void *SWITCH_THREAD_FUNC file_read_thread_run(switch_thread_t *thread, vo
 			// if (context->has_audio) stream_id = context->audio_st.st->index;
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "seeking to %" SWITCH_INT64_T_FMT "\n", context->seek_ts);
 			avformat_seek_file(context->fc, stream_id, 0, context->seek_ts, INT64_MAX, 0);
-			context->seek_ts = -1;
+			context->seek_ts = -2;
 			context->video_st.next_pts = 0;
 			context->video_start_time = 0;
 
@@ -1964,6 +1965,15 @@ static switch_status_t av_file_command(switch_file_handle_t *handle, switch_file
 		switch_buffer_zero(context->audio_buffer);
 		switch_mutex_unlock(context->mutex);		
 		break;
+	case SCFC_PAUSE_READ:
+		if (context->read_paused) {
+			context->read_paused = SWITCH_FALSE;
+			context->video_st.next_pts = 0;
+			context->video_start_time = 0;
+		} else {
+			context->read_paused = SWITCH_TRUE;
+		}
+		break;
 	default:
 		break;
 	}
@@ -2138,6 +2148,63 @@ static switch_status_t av_file_read_video(switch_file_handle_t *handle, switch_f
 		do_fl = 1;
 	}
 
+	if (!context->file_read_thread_running && switch_queue_size(context->eh.video_queue) == 0) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (context->read_paused) {
+		int sanity = 10;
+
+		if (context->seek_ts == -2) { // just seeked, try read a new img
+		again1:
+			status = switch_queue_trypop(context->eh.video_queue, &pop);
+			if (pop && status == SWITCH_STATUS_SUCCESS) {
+				context->seek_ts = -1;
+				switch_img_free(&context->last_img);
+				context->last_img = (switch_image_t *)pop;
+				switch_img_copy(context->last_img, &frame->img);
+				context->vid_ready = 1;
+				return SWITCH_STATUS_SUCCESS;
+			}
+
+			if (context->last_img) { // repeat the last img
+				switch_img_copy(context->last_img, &frame->img);
+				context->vid_ready = 1;
+				context->seek_ts = -1;
+				return SWITCH_STATUS_SUCCESS;
+			}
+
+			if ((flags & SVR_BLOCK) && sanity-- > 0) {
+				switch_yield(10000);
+				goto again1;
+			}
+
+			return SWITCH_STATUS_BREAK;
+		}
+
+		if (context->last_img) { // repeat the last img
+			if ((flags & SVR_BLOCK)) switch_yield(100000);
+			switch_img_copy(context->last_img, &frame->img);
+			context->vid_ready = 1;
+			return SWITCH_STATUS_SUCCESS;
+		}
+
+		if ((flags & SVR_BLOCK)) {
+			status = switch_queue_pop(context->eh.video_queue, &pop);
+		} else {
+			status = switch_queue_trypop(context->eh.video_queue, &pop);
+		}
+
+		if (pop && status == SWITCH_STATUS_SUCCESS) {
+			context->last_img = (switch_image_t *)pop;
+			switch_img_copy(context->last_img, &frame->img);
+			context->vid_ready = 1;
+			return SWITCH_STATUS_SUCCESS;
+		}
+
+		return SWITCH_STATUS_BREAK;
+	}
+
 	if (context->last_img) {
 		if (mst->next_pts && (switch_time_now() - mst->next_pts > max_delta)) {
 			switch_img_free(&context->last_img); // too late
@@ -2157,10 +2224,6 @@ static switch_status_t av_file_read_video(switch_file_handle_t *handle, switch_f
 			}
 			return SWITCH_STATUS_BREAK;
 		}
-	}
-
-	if (!context->file_read_thread_running && switch_queue_size(context->eh.video_queue) == 0) {
-		return SWITCH_STATUS_FALSE;
 	}
 
 	if (st->codec->time_base.num) {

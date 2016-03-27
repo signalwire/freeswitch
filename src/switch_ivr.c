@@ -3878,6 +3878,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_process_fh(switch_core_session_t *ses
 			} else {
 				switch_set_flag_locked(fhp, SWITCH_FILE_PAUSE);
 			}
+
+			switch_core_file_command(fhp, SCFC_PAUSE_READ);
+
 			return SWITCH_STATUS_SUCCESS;
 		} else if (!strcasecmp(cmd, "stop")) {
 			switch_set_flag_locked(fhp, SWITCH_FILE_DONE);
