@@ -10,11 +10,13 @@
 #define __AVMD_OPTIONS_H__
 
 
-/* #define AVMD_DEBUG 1 */
+/* define/undefine this to enable/disable printing of avmd
+ * intermediate computations to log */
+/*#define AVMD_DEBUG */
 
 /* define/undef this to enable/disable reporting of beep
  * detection status after session ended */
-#define AVMD_REPORT_STATUS 1
+#define AVMD_REPORT_STATUS
 
 /* define/undefine this to enable/disable faster computation
  * of arcus cosine - table will be created mapping floats
@@ -25,7 +27,16 @@
 /* define/undefine this to classify avmd beep detection as valid
  * only when there is required number of consecutive elements
  * in the SMA buffer without reset */
-#define AVMD_REQUIRE_CONTINUOUS_STREAK 5
+#define AVMD_REQUIRE_CONTINUOUS_STREAK
+
+/* define number of samples to skip starting from the beginning
+ *  of frame and after reset */
+#define AVMD_SAMLPE_TO_SKIP_N 6
+
+/* define/undefine this to enable/disable simplified estimation
+ * of frequency based on approximation of sin(x) with (x)
+ * in the range x=[0,PI/2] */
+#define AVMD_SIMPLIFIED_ESTIMATION
 
 /* define/undefine to enable/disable avmd on incoming audio */
 #define AVMD_INBOUND_CHANNEL
