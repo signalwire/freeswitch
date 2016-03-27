@@ -9491,6 +9491,10 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 		}
 	}
 
+
+	tech_pvt->mparams.remote_ip = switch_core_session_strdup(session, network_ip);
+	tech_pvt->mparams.remote_port = network_port;
+
 	if (!is_auth &&
 		(sofia_test_pflag(profile, PFLAG_AUTH_CALLS)
 		 || (!sofia_test_pflag(profile, PFLAG_BLIND_AUTH) && (sip->sip_proxy_authorization || sip->sip_authorization)))) {
@@ -9516,11 +9520,6 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 		}
 		is_auth++;
 	}
-
-
-
-	tech_pvt->mparams.remote_ip = switch_core_session_strdup(session, network_ip);
-	tech_pvt->mparams.remote_port = network_port;
 
 	channel = tech_pvt->channel = switch_core_session_get_channel(session);
 

@@ -97,6 +97,7 @@ typedef struct private_object private_object_t;
 #define MY_EVENT_ERROR "sofia::error"
 #define MY_EVENT_PROFILE_START "sofia::profile_start"
 #define MY_EVENT_NOTIFY_WATCHED_HEADER "sofia::notify_watched_header"
+#define MY_EVENT_WRONG_CALL_STATE "sofia::wrong_call_state"
 
 #define MY_EVENT_TRANSFEROR "sofia::transferor"
 #define MY_EVENT_TRANSFEREE "sofia::transferee"
