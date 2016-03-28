@@ -343,6 +343,11 @@ switch_status_t sofia_on_destroy(switch_core_session_t *session)
 
 	if (tech_pvt) {
 
+		if (tech_pvt->proxy_refer_msg) {
+			msg_ref_destroy(tech_pvt->proxy_refer_msg);
+			tech_pvt->proxy_refer_msg = NULL;
+		}
+
 		if (tech_pvt->respond_phrase) {
 			switch_yield(100000);
 		}
@@ -1318,6 +1323,44 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 
 	switch (msg->message_id) {
 
+	case SWITCH_MESSAGE_INDICATE_DEFLECT: {
+		
+		char *extra_headers = sofia_glue_get_extra_headers(channel, SOFIA_SIP_HEADER_PREFIX);
+		char ref_to[1024] = "";
+		const char *var;
+
+		if (!strcasecmp(msg->string_arg, "sip:")) {
+			const char *format = strchr(tech_pvt->profile->sipip, ':') ? "sip:%s@[%s]" : "sip:%s@%s";
+
+			switch_snprintf(ref_to, sizeof(ref_to), format, msg->string_arg, tech_pvt->profile->sipip);
+		} else {
+			switch_set_string(ref_to, msg->string_arg);
+		}
+
+		nua_refer(tech_pvt->nh, SIPTAG_REFER_TO_STR(ref_to), SIPTAG_REFERRED_BY_STR(tech_pvt->contact_url),
+				  TAG_IF(!zstr(extra_headers), SIPTAG_HEADER_STR(extra_headers)),
+				  TAG_END());
+
+		if (msg->string_array_arg[0]) {
+			tech_pvt->proxy_refer_uuid = (char *)msg->string_array_arg[0];
+		} else {
+			switch_mutex_unlock(tech_pvt->sofia_mutex);
+			sofia_wait_for_reply(tech_pvt, 9999, 10);
+			switch_mutex_lock(tech_pvt->sofia_mutex);
+
+			if ((var = switch_channel_get_variable(tech_pvt->channel, "sip_refer_reply"))) {
+				msg->string_reply = switch_core_session_strdup(session, var);
+			} else {
+				msg->string_reply = "no reply";
+			}
+
+			switch_channel_hangup(tech_pvt->channel, SWITCH_CAUSE_BLIND_TRANSFER);
+		}
+
+		switch_safe_free(extra_headers);
+	}
+		break;
+
 	case SWITCH_MESSAGE_INDICATE_VIDEO_REFRESH_REQ:
 		if (!switch_channel_test_flag(channel, CF_AVPF)) {
 			//const char *ua = switch_channel_get_variable(tech_pvt->channel, "sip_user_agent");
@@ -1943,34 +1986,6 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			}
 		}
 		break;
-	case SWITCH_MESSAGE_INDICATE_DEFLECT:
-		{
-			char *extra_headers = sofia_glue_get_extra_headers(channel, SOFIA_SIP_HEADER_PREFIX);
-			char ref_to[1024] = "";
-			const char *var;
-
-			if (!strcasecmp(msg->string_arg, "sip:")) {
-				const char *format = strchr(tech_pvt->profile->sipip, ':') ? "sip:%s@[%s]" : "sip:%s@%s";
-				switch_snprintf(ref_to, sizeof(ref_to), format, msg->string_arg, tech_pvt->profile->sipip);
-			} else {
-				switch_set_string(ref_to, msg->string_arg);
-			}
-			nua_refer(tech_pvt->nh, SIPTAG_REFER_TO_STR(ref_to), SIPTAG_REFERRED_BY_STR(tech_pvt->contact_url),
-						TAG_IF(!zstr(extra_headers), SIPTAG_HEADER_STR(extra_headers)),
-						TAG_END());
-			switch_mutex_unlock(tech_pvt->sofia_mutex);
-			sofia_wait_for_reply(tech_pvt, 9999, 10);
-			switch_mutex_lock(tech_pvt->sofia_mutex);
-			if ((var = switch_channel_get_variable(tech_pvt->channel, "sip_refer_reply"))) {
-				msg->string_reply = switch_core_session_strdup(session, var);
-			} else {
-				msg->string_reply = "no reply";
-			}
-			switch_channel_hangup(tech_pvt->channel, SWITCH_CAUSE_BLIND_TRANSFER);
-			switch_safe_free(extra_headers);
-		}
-		break;
-
 	case SWITCH_MESSAGE_INDICATE_RESPOND:
 		{
 
@@ -2007,6 +2022,16 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 					}
 				}
 
+				if (tech_pvt->proxy_refer_uuid) {
+					if (tech_pvt->proxy_refer_msg) {
+						nua_respond(tech_pvt->nh, code, su_strdup(nua_handle_home(tech_pvt->nh), reason), SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
+									SIPTAG_EXPIRES_STR("60"), NUTAG_WITH_THIS_MSG(tech_pvt->proxy_refer_msg), TAG_END());
+						msg_ref_destroy(tech_pvt->proxy_refer_msg);
+						tech_pvt->proxy_refer_msg = NULL;
+					}
+					goto end_lock;
+				}
+				
 				if (code == 302 && !zstr(msg->string_arg)) {
 					char *p;
 

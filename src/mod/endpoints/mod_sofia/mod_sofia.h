@@ -801,6 +801,8 @@ struct private_object {
 	char *x_freeswitch_support_local;
 	char *last_sent_callee_id_name;
 	char *last_sent_callee_id_number;
+	char *proxy_refer_uuid;
+	msg_t *proxy_refer_msg;
 	switch_mutex_t *flag_mutex;
 	switch_mutex_t *sofia_mutex;
 	switch_payload_t te;
