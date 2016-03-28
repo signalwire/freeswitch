@@ -84,12 +84,30 @@ static void sofia_handle_sip_r_options(switch_core_session_t *session, int statu
 									   nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip,
 								sofia_dispatch_event_t *de, tagi_t tags[]);
 
+
 void sofia_handle_sip_r_notify(switch_core_session_t *session, int status,
 							   char const *phrase,
 							   nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip,
 								sofia_dispatch_event_t *de, tagi_t tags[])
 {
+	private_object_t *tech_pvt = switch_core_session_get_private(session);
+	switch_core_session_t *other_session;
+	
+	if (tech_pvt->proxy_refer_uuid && (other_session = switch_core_session_locate(tech_pvt->proxy_refer_uuid))) {
+		switch_core_session_message_t *msg;
+		
+		msg = switch_core_session_alloc(other_session, sizeof(*msg));
+		msg->message_id = SWITCH_MESSAGE_INDICATE_RESPOND;
+		msg->from = __FILE__;
+		msg->numeric_arg = status;
+		msg->string_arg = switch_core_session_strdup(other_session, phrase);
+		switch_core_session_queue_message(other_session, msg);
+		switch_core_session_rwunlock(other_session);
+	} else {
+		tech_pvt->proxy_refer_uuid = NULL;
+	}
 
+	
 	if (status == 481 && sip && !sip->sip_retry_after && sip->sip_call_id && (!sofia_private || !sofia_private->is_call)) {
 		char *sql;
 
@@ -517,6 +535,27 @@ static void sofia_parse_all_invite_headers(sip_t const *sip, switch_core_session
 	}
 }
 
+static switch_status_t sofia_pass_notify(switch_core_session_t *session, const char *uuid, const char *payload)
+{
+	switch_core_session_t *other_session;
+		
+	if ((other_session = switch_core_session_locate(uuid))) {
+		switch_core_session_message_t *msg;
+				
+		msg = switch_core_session_alloc(other_session, sizeof(*msg));
+		MESSAGE_STAMP_FFL(msg);
+		msg->message_id = SWITCH_MESSAGE_INDICATE_BLIND_TRANSFER_RESPONSE;
+		msg->string_arg = switch_core_session_strdup(other_session, payload);
+		msg->from = __FILE__;
+		switch_core_session_queue_message(other_session, msg);
+		switch_core_session_rwunlock(other_session);
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	return SWITCH_STATUS_FALSE;
+}
+
+
 void sofia_handle_sip_i_notify(switch_core_session_t *session, int status,
 							   char const *phrase,
 							   nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip,
@@ -551,24 +590,21 @@ void sofia_handle_sip_i_notify(switch_core_session_t *session, int status,
 	}
 
 
-	if (sofia_test_pflag(profile, PFLAG_PROXY_REFER) && sip->sip_payload && sip->sip_payload->pl_data &&
-		sip->sip_content_type && sip->sip_content_type->c_type && 
-		switch_stristr("sipfrag", sip->sip_content_type->c_type)) {
-		switch_core_session_t *other_session;
-		if (switch_core_session_get_partner(session, &other_session) == SWITCH_STATUS_SUCCESS) {
-			switch_core_session_message_t *msg;
-			
-			msg = switch_core_session_alloc(other_session, sizeof(*msg));
-			MESSAGE_STAMP_FFL(msg);
-			msg->message_id = SWITCH_MESSAGE_INDICATE_BLIND_TRANSFER_RESPONSE;
-			msg->string_arg = switch_core_session_strdup(other_session, sip->sip_payload->pl_data);
-			msg->from = __FILE__;
-			switch_core_session_queue_message(other_session, msg);
-			switch_core_session_rwunlock(other_session);
-			
-			nua_respond(nh, SIP_202_ACCEPTED, NUTAG_WITH_THIS_MSG(de->data->e_msg), TAG_END());
-			goto end;
+	if (tech_pvt && tech_pvt->proxy_refer_uuid && sofia_test_pflag(profile, PFLAG_PROXY_REFER) && sip->sip_payload && sip->sip_payload->pl_data &&
+		sip->sip_content_type && sip->sip_content_type->c_type && switch_stristr("sipfrag", sip->sip_content_type->c_type)) {
+
+		if (sofia_pass_notify(session, tech_pvt->proxy_refer_uuid, sip->sip_payload->pl_data) == SWITCH_STATUS_SUCCESS) {
+			if (tech_pvt->proxy_refer_msg) {
+				msg_ref_destroy(tech_pvt->proxy_refer_msg);
+				tech_pvt->proxy_refer_msg = NULL;
+			}
+			tech_pvt->proxy_refer_msg = msg_ref_create(de->data->e_msg);
+			//nua_respond(nh, SIP_202_ACCEPTED, NUTAG_WITH_THIS_MSG(de->data->e_msg), TAG_END());
+		} else {
+			switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 		}
+
+		goto end;
 	}
 
 	/* For additional NOTIFY event packages see http://www.iana.org/assignments/sip-events. */
@@ -1288,6 +1324,34 @@ static void notify_watched_header(switch_core_session_t *session, const char *ms
 	}
 }
 
+
+static void sofia_handle_sip_r_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, switch_core_session_t *session, int status, const char *phrase, sip_t const *sip, sofia_dispatch_event_t *de, tagi_t tags[])
+{
+	private_object_t *tech_pvt = switch_core_session_get_private(session);
+	switch_core_session_t *other_session;
+
+	if (status < 200) {
+		return;
+	}
+	
+	if (tech_pvt->proxy_refer_uuid && (other_session = switch_core_session_locate(tech_pvt->proxy_refer_uuid))) {
+		switch_core_session_message_t *msg;
+
+		msg = switch_core_session_alloc(other_session, sizeof(*msg));
+		msg->message_id = SWITCH_MESSAGE_INDICATE_RESPOND;
+		msg->from = __FILE__;
+		msg->numeric_arg = status;
+		msg->string_arg = switch_core_session_strdup(other_session, phrase);
+		switch_core_session_queue_message(other_session, msg);
+		switch_core_session_rwunlock(other_session);
+	} else {
+		tech_pvt->proxy_refer_uuid = NULL;
+	}
+}
+
+
+
+
 //sofia_dispatch_event_t *de
 static void our_sofia_event_callback(nua_event_t event,
 						  int status,
@@ -1552,7 +1616,9 @@ static void our_sofia_event_callback(nua_event_t event,
 		sofia_handle_sip_i_bye(session, status, phrase, nua, profile, nh, sofia_private, sip, de, tags);
 		break;
 	case nua_r_notify:
-		sofia_handle_sip_r_notify(session, status, phrase, nua, profile, nh, sofia_private, sip, de, tags);
+		if (session) {
+			sofia_handle_sip_r_notify(session, status, phrase, nua, profile, nh, sofia_private, sip, de, tags);
+		}
 		break;
 	case nua_i_notify:
 		sofia_handle_sip_i_notify(session, status, phrase, nua, profile, nh, sofia_private, sip, de, tags);
@@ -1601,6 +1667,9 @@ static void our_sofia_event_callback(nua_event_t event,
 		}
 		break;
 	case nua_r_refer:
+		if (session) {
+			sofia_handle_sip_r_refer(nua, profile, nh, session, status, phrase, sip, de, tags);
+		}
 		break;
 	case nua_i_refer:
 		if (session) {
@@ -7986,6 +8055,29 @@ nua_handle_t *sofia_global_nua_handle_by_replaces(sip_replaces_t *replaces)
 
 }
 
+static switch_status_t sofia_process_proxy_refer(switch_core_session_t *session, const char *refer_to)
+{
+	switch_core_session_t *other_session;
+	private_object_t *tech_pvt = switch_core_session_get_private(session);
+	
+	if (switch_core_session_get_partner(session, &other_session) == SWITCH_STATUS_SUCCESS) {
+		switch_core_session_message_t *msg;
+		
+		tech_pvt->proxy_refer_uuid = switch_core_session_strdup(session, switch_core_session_get_uuid(other_session));
+		msg = switch_core_session_alloc(other_session, sizeof(*msg));
+		MESSAGE_STAMP_FFL(msg);
+		msg->message_id = SWITCH_MESSAGE_INDICATE_DEFLECT;
+		msg->string_arg = switch_core_session_strdup(other_session, refer_to);
+		msg->string_array_arg[0] = switch_core_session_strdup(other_session, switch_core_session_get_uuid(session));
+		msg->from = __FILE__;
+		switch_core_session_queue_message(other_session, msg);
+		switch_core_session_rwunlock(other_session);
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	return SWITCH_STATUS_FALSE;
+}
+
 void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, switch_core_session_t *session, sip_t const *sip,
 								sofia_dispatch_event_t *de, tagi_t tags[])
 {
@@ -8018,26 +8110,17 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 		full_ref_to = sip_header_as_string(home, (void *) sip->sip_refer_to);
 	}
 
-	
-	if (sofia_test_pflag(profile, PFLAG_PROXY_REFER)) {
-		switch_core_session_t *other_session;
-
-		if (switch_core_session_get_partner(session, &other_session) == SWITCH_STATUS_SUCCESS) {
-			switch_core_session_message_t *msg;
-			
-			msg = switch_core_session_alloc(other_session, sizeof(*msg));
-			MESSAGE_STAMP_FFL(msg);
-			msg->message_id = SWITCH_MESSAGE_INDICATE_DEFLECT;
-			msg->string_arg = switch_core_session_strdup(other_session, full_ref_to);
-			msg->from = __FILE__;
-			switch_core_session_queue_message(other_session, msg);
-			switch_core_session_rwunlock(other_session);
-			
-			nua_respond(nh, SIP_202_ACCEPTED, NUTAG_WITH_THIS_MSG(de->data->e_msg), SIPTAG_EXPIRES_STR("60"), TAG_END());
+	if (full_ref_to && sofia_test_pflag(profile, PFLAG_PROXY_REFER)) {
+		if (sofia_process_proxy_refer(session, full_ref_to) == SWITCH_STATUS_SUCCESS) {
+			if (tech_pvt->proxy_refer_msg) {
+				msg_ref_destroy(tech_pvt->proxy_refer_msg);
+				tech_pvt->proxy_refer_msg = NULL;
+			}
+			tech_pvt->proxy_refer_msg = msg_ref_create(de->data->e_msg);
+			//nua_respond(nh, SIP_202_ACCEPTED, NUTAG_WITH_THIS_MSG(de->data->e_msg), SIPTAG_EXPIRES_STR("60"), TAG_END());
 			goto done;
 		}
 	}
-
 
 	from = sip->sip_from;
 	//to = sip->sip_to;
