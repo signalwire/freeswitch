@@ -26,8 +26,8 @@
  * This module detects voicemail beeps using a generalized approach.
  *
  * Modifications:
- *      Piotr Gregor <piotrek.gregor@gmail.com>:
- *      FS-8808, FS-8809, FS-8810, FS-8852, FS-8853, FS-8854, FS-8855
+ *      Piotr Gregor <piotrek.gregor gmail.com>:
+ *      FS-8808, FS-8809, FS-8810, FS-8852, FS-8853, FS-8854, FS-8855, FS-8860, FS-8861
  */
 
 #include <switch.h>
@@ -225,7 +225,9 @@ static switch_bool_t avmd_callback(switch_media_bug_t * bug, void *user_data, sw
 		return SWITCH_TRUE;
 
 	case SWITCH_ABC_TYPE_WRITE_REPLACE:
-		break;
+		frame = switch_core_media_bug_get_write_replace_frame(bug);
+		avmd_process(avmd_session, frame);
+		return SWITCH_TRUE;
 
 	default:
 		break;
@@ -356,6 +358,7 @@ SWITCH_STANDARD_APP(avmd_start_function)
 	switch_status_t status;
 	switch_channel_t *channel;
 	avmd_session_t *avmd_session;
+    switch_media_bug_flag_t flags = 0;
 
 	if (session == NULL)
 		return;
@@ -387,6 +390,14 @@ SWITCH_STANDARD_APP(avmd_start_function)
 
 	init_avmd_session_data(avmd_session, session);
 
+#ifdef AVMD_INBOUND_CHANNEL
+    flags |= SMBF_READ_REPLACE;
+#endif
+#ifdef AVMD_OUTBOUND_CHANNEL
+    flags |= SMBF_WRITE_REPLACE;
+#endif
+    switch_assert(flags != 0);
+
 	status = switch_core_media_bug_add(
 		session,
 		"avmd",
@@ -394,7 +405,7 @@ SWITCH_STANDARD_APP(avmd_start_function)
 		avmd_callback,
 		avmd_session,
 		0,
-		SMBF_READ_REPLACE,
+		flags,
 		&bug
 		);
 
@@ -476,6 +487,7 @@ SWITCH_STANDARD_API(avmd_api_main)
 	char *ccmd = NULL;
 	char *uuid;
 	char *command;
+    switch_core_media_flag_t flags = 0;
 
 	/* No command? Display usage */
 	if (zstr(cmd)) {
@@ -546,6 +558,14 @@ SWITCH_STANDARD_API(avmd_api_main)
 
 	init_avmd_session_data(avmd_session, fs_session);
 
+#ifdef AVMD_INBOUND_CHANNEL
+    flags |= SMBF_READ_REPLACE;
+#endif
+#ifdef AVMD_OUTBOUND_CHANNEL
+    flags |= SMBF_WRITE_REPLACE;
+#endif
+    switch_assert(flags != 0);
+
 	/* Add a media bug that allows me to intercept the
 	* reading leg of the audio stream */
 	status = switch_core_media_bug_add(
@@ -555,7 +575,7 @@ SWITCH_STANDARD_API(avmd_api_main)
 		avmd_callback,
 		avmd_session,
 		0,
-		SMBF_READ_REPLACE,
+		flags,
 		&bug
 		);
 
@@ -704,7 +724,6 @@ static void avmd_process(avmd_session_t *session, switch_frame_t *frame)
 
 				return;
             }
-
 			//amp = 0.0;
 			//success = 0.0;
 			//error = 0.0;
