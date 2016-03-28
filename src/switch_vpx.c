@@ -40,12 +40,15 @@
 #include <vpx/vp8dx.h>
 #include <vpx/vp8.h>
 
+// #define DEBUG_VP9
+
 #define SLICE_SIZE SWITCH_DEFAULT_VIDEO_SIZE
 #define KEY_FRAME_MIN_FREQ 250000
 
 /*	http://tools.ietf.org/html/draft-ietf-payload-vp8-10
 
 	The first octets after the RTP header are the VP8 payload descriptor, with the following structure.
+#endif
 
 	     0 1 2 3 4 5 6 7
 	    +-+-+-+-+-+-+-+-+
@@ -112,7 +115,7 @@ typedef struct {
 	unsigned n_s:3;
 	unsigned y:1;
 	unsigned g:1;
-	unsigned zero:0;
+	unsigned zero:3;
 } vp9_ss_t;
 
 typedef struct {
@@ -121,6 +124,13 @@ typedef struct {
 	unsigned r:2;
 	unsigned zero:2;
 } vp9_n_g_t;
+
+typedef struct {
+	unsigned temporal_id:3;
+	unsigned temporal_up_switch:1;
+	unsigned spatial_id:3;
+	unsigned inter_layer_predicted:1;
+} vp9_p_layer_t;
 
 #else /* ELSE LITTLE */
 
@@ -145,7 +155,7 @@ typedef struct {
 } vp9_payload_descriptor_t;
 
 typedef struct {
-	unsigned zero:4;
+	unsigned zero:3;
 	unsigned g:1;
 	unsigned y:1;
 	unsigned n_s:3;
@@ -159,10 +169,11 @@ typedef struct {
 } vp9_n_g_t;
 
 typedef struct {
-	unsigned d:1;
-	unsigned s:3;
-	unsigned gof_idx:4;
-} vp9_layer_t;
+	unsigned inter_layer_predicted:1;
+	unsigned spatial_id:3;
+	unsigned temporal_up_switch:1;
+	unsigned temporal_id:3;
+} vp9_p_layer_t;
 
 #endif
 
@@ -239,8 +250,8 @@ static inline int IS_VP8_KEY_FRAME(uint8_t *data)
 	}
 }
 
-#define IS_VP9_KEY_FRAME(byte) ((((byte) & 0x10) == 0) && ((byte) & 0x02))
-#define IS_VP9_START_PKT(byte) ((byte) & 0x02)
+#define IS_VP9_KEY_FRAME(byte) ((((byte) & 0x40) == 0) && ((byte) & 0x0A))
+#define IS_VP9_START_PKT(byte) ((byte) & 0x08)
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_vpx_load);
 SWITCH_MODULE_DEFINITION(CORE_VPX_MODULE, mod_vpx_load, NULL, NULL);
@@ -663,28 +674,38 @@ static switch_status_t consume_partition(vpx_context_t *context, switch_frame_t 
 
 		if (1) {
 			// payload_descriptor->vp9.have_p_layer = key; // key?
-			payload_descriptor->vp9.have_pid = 0;
+			payload_descriptor->vp9.have_pid = 1;
 
-			if (start) {
-				// context->vp9.picture_id++;
+			if (payload_descriptor->vp9.have_pid) {
+
+				if (context->vp9.picture_id < 0) context->vp9.picture_id = 0;
+
+				if (context->vp9.picture_id > 0x7f) {
+					*body++ = (context->vp9.picture_id >> 8) | 0x80;
+					*body++ = context->vp9.picture_id & 0xff;
+					payload_size--;
+					frame->datalen++;
+				} else {
+					*body++ = context->vp9.picture_id;
+				}
+
+
+				payload_size--;
+				frame->datalen++;
 			}
 
-			// if (context->vp9.picture_id > 0x7f) { // todo rewind to 0
-			// 	*body++ = context->vp9.picture_id >> 8;
-			// 	*body++ = context->vp9.picture_id & 0xff;
-			// 	payload_size--;
-			// 	frame->datalen++;
-			// } else {
-			// 	*body++ = context->vp9.picture_id;
-			// }
-
-			// payload_size--;
-			// frame->datalen++;
+			if (start) {
+				context->vp9.picture_id++;
+#ifdef DEBUG_VP9
+				// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "sending pid: %d\n", context->vp9.picture_id);
+#endif
+			}
 
 			if (key) {
 				vp9_ss_t *ss = (vp9_ss_t *)body;
 
 				payload_descriptor->vp9.have_ss = 1;
+				payload_descriptor->vp9.have_p_layer = 0;
 				ss->n_s = 0;
 				ss->g = 0;
 				ss->y = 0;
@@ -710,6 +731,8 @@ static switch_status_t consume_partition(vpx_context_t *context, switch_frame_t 
 					payload_size-= (ss->n_s + 1) * 4;
 					frame->datalen+= (ss->n_s + 1) * 4;
 				}
+			} else {
+				payload_descriptor->vp9.have_p_layer = 1;
 			}
 		}
 
@@ -939,58 +962,99 @@ static switch_status_t buffer_vp9_packets(vpx_context_t *context, switch_frame_t
 	vp9_payload_descriptor_t *desc = (vp9_payload_descriptor_t *)vp9;
 	int len = 0;
 
-	// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%02x %02x %02x %02x m=%d start=%d end=%d len=%d\n", *data, *(data+1), *(data+2), *(data+3), frame->m, desc->start, desc->end, frame->datalen);
+#ifdef DEBUG_VP9
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%02x %02x %02x %02x m=%d len=%4d "
+					"have_pid=%d "
+					"have_p_layer=%d "
+					"have_layer_ind=%d "
+					"is_flexible=%d "
+					"start=%d "
+					"end=%d "
+					"have_ss=%d "
+					"zero=%d\n",
+					*data, *(data+1), *(data+2), *(data+3), frame->m, frame->datalen,
+					desc->have_pid,
+					desc->have_p_layer,
+					desc->have_layer_ind,
+					desc->is_flexible,
+					desc->start,
+					desc->end,
+					desc->have_ss,
+					desc->zero);
+#endif
 
 	vp9++;
-
-	if (desc->is_flexible) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "VP9 Flexiable mode is not supported yet\n");
-		switch_buffer_zero(context->vpx_packet_buffer);
-		goto end;
-	}
 
 	if (desc->have_pid) {
 		uint16_t pid = 0;
 
-		pid = *vp9 & 0x7f;
+		pid = *vp9 & 0x7f;	//0 bit is M , 1-7 bit is pid.
 
-		if (*vp9 & 0x80) {
+		if (*vp9 & 0x80) {	//if (M==1)
 			vp9++;
 			pid = (pid << 8) + *vp9;
 		}
 
 		vp9++;
-		// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "have pid: %d start=%d end=%d\n", pid, desc->start, desc->end);
+
+#ifdef DEBUG_VP9
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "have pid: %d start=%d end=%d\n", pid, desc->start, desc->end);
+#endif
+
 	}
 
 	if (desc->have_layer_ind) {
-		vp9_layer_t *layer = (vp9_layer_t *)vp9;
+#ifdef DEBUG_VP9
+		vp9_p_layer_t *layer = (vp9_p_layer_t *)vp9;
 
-		vp9 += 2;
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "have layer idx: %d\n", layer->s);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "temporal_id=%d temporal_up_switch=%d spatial_id=%d inter_layer_predicted=%d\n",
+			layer->temporal_id, layer->temporal_up_switch, layer->spatial_id, layer->inter_layer_predicted);
+#endif
+
+		vp9++;
+		if (!desc->is_flexible) {
+			vp9++; // TL0PICIDX
+		}
+	}
+
+	//When P and F are both set to one, indicating a non-key frame in flexible mode
+	if (desc->have_p_layer && desc->is_flexible) { // P & F set, P_DIFF
+		if (*vp9 & 1) { // N
+			vp9++;
+			if (*vp9 & 1) { // N
+				vp9++;
+				if (*vp9 & 1) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid VP9 packet!");
+					switch_buffer_zero(context->vpx_packet_buffer);
+					goto end;
+				}
+			}
+		}
+		vp9++;
 	}
 
 	if (desc->have_ss) {
 		vp9_ss_t *ss = (vp9_ss_t *)(vp9++);
 
-		context->got_key_frame = 1;
-		context->got_start_frame = 1;
-		// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "have ss: %02x n_s: %d y:%d g:%d\n", *(uint8_t *)ss, ss->n_s, ss->y, ss->g);
-
+#ifdef DEBUG_VP9
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "have ss: %02x n_s: %d y:%d g:%d\n", *(uint8_t *)ss, ss->n_s, ss->y, ss->g);
+#endif
 		if (ss->y) {
 			int i;
 
 			for (i=0; i<=ss->n_s; i++) {
+#ifdef DEBUG_VP9
 				int width = ntohs(*(uint16_t *)vp9);
 				int height = ntohs(*(uint16_t *)(vp9 + 2));
-				vp9 += 4;
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "SS: %d %dx%d\n", i, width, height);
+#endif
+				vp9 += 4;
 			}
 		}
 
 		if (ss->g) {
 			int i;
-			uint8_t ng = *vp9++;
+			uint8_t ng = *vp9++;	//N_G indicates the number of frames in a GOF
 
 			for (i = 0; ng > 0 && i < ng; i++) {
 				vp9_n_g_t *n_g = (vp9_n_g_t *)(vp9++);
@@ -1000,14 +1064,14 @@ static switch_status_t buffer_vp9_packets(vpx_context_t *context, switch_frame_t
 	}
 
 	if (vp9 - data >= frame->datalen) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid VP9 Packet\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Invalid VP9 Packet %" SWITCH_SSIZE_T_FMT " > %d\n", vp9 - data, frame->datalen);
 		switch_buffer_zero(context->vpx_packet_buffer);
 		goto end;
 	}
 
 	if (switch_buffer_inuse(context->vpx_packet_buffer)) { // middle packet
 		if (desc->start) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "got invalid vp9 packet, packet loss? resetting buffer\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "got invalid vp9 packet, packet loss? resetting buffer\n");
 			switch_buffer_zero(context->vpx_packet_buffer);
 		}
 	} else { // start packet
@@ -1021,7 +1085,10 @@ static switch_status_t buffer_vp9_packets(vpx_context_t *context, switch_frame_t
 	switch_buffer_write(context->vpx_packet_buffer, vp9, len);
 
 end:
-	// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "buffered %d bytes, buffer size: %" SWITCH_SIZE_T_FMT "\n", len, switch_buffer_inuse(context->vpx_packet_buffer));
+
+#ifdef DEBUG_VP9
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "buffered %d bytes, buffer size: %" SWITCH_SIZE_T_FMT "\n", len, switch_buffer_inuse(context->vpx_packet_buffer));
+#endif
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -1034,24 +1101,42 @@ static switch_status_t switch_vpx_decode(switch_codec_t *codec, switch_frame_t *
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	int is_start = 0, is_keyframe = 0, get_refresh = 0;
 
+#if 0
+	vp9_payload_descriptor_t *desc = (vp9_payload_descriptor_t *)frame->data;
+	uint8_t *data = frame->data;
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%02x %02x %02x %02x m=%d start=%d end=%d m=%d len=%d\n",
+		*data, *(data+1), *(data+2), *(data+3), frame->m, desc->start, desc->end, frame->m, frame->datalen);
+#endif
+
 	if (context->is_vp9) {
-		is_start = is_keyframe = IS_VP9_KEY_FRAME(*(unsigned char *)frame->data);
+		is_keyframe = IS_VP9_KEY_FRAME(*(unsigned char *)frame->data);
+		is_start = IS_VP9_START_PKT(*(unsigned char *)frame->data);
+
+#ifdef DEBUG_VP9
+		if (is_keyframe) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "================Got a key frame!!!!========================\n");
+		}
+#endif
 	} else { // vp8
 		is_start = (*(unsigned char *)frame->data & 0x10);
 		is_keyframe = IS_VP8_KEY_FRAME((uint8_t *)frame->data);
+
+#ifdef DEBUG_VP9
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "VP8\n");
+#endif
 	}
-	
-	if (context->got_key_frame <= 0) {
+
+    if (!is_keyframe && context->got_key_frame <= 0) {
 		context->no_key_frame++;
 		//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "no keyframe, %d\n", context->no_key_frame);
 		if (context->no_key_frame > 50) {
 			if ((is_keyframe = is_start)) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "no keyframe, treating start as key.\n");
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "no keyframe, treating start as key. frames=%d\n", context->no_key_frame);
 			}
 		}
-	}
+    }
 
-	// if (is_keyframe) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "got key %d\n", is_keyframe);
+	// if (is_keyframe) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "got key %d\n", context->got_key_frame);
 
 	if (context->need_decoder_reset != 0) {
 		vpx_codec_destroy(&context->decoder);
@@ -1093,7 +1178,7 @@ static switch_status_t switch_vpx_decode(switch_codec_t *codec, switch_frame_t *
 		}
 
 		get_refresh = 1;
-		
+
 		if (!context->got_start_frame) {
 			switch_goto_status(SWITCH_STATUS_MORE_DATA, end);
 		}
@@ -1114,7 +1199,6 @@ static switch_status_t switch_vpx_decode(switch_codec_t *codec, switch_frame_t *
 	//if (frame->m && (status != SWITCH_STATUS_SUCCESS || !len)) {
 		//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "WTF????? %d %ld\n", status, len);
 	//}
-
 
 	if (status == SWITCH_STATUS_SUCCESS && frame->m && len) {
 		uint8_t *data;
@@ -1139,9 +1223,15 @@ static switch_status_t switch_vpx_decode(switch_codec_t *codec, switch_frame_t *
 		
 		if (corrupted) {
 			frame->img = NULL;
+#ifdef DEBUG_VP9
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "corrupted!!\n");
+#endif
 		} else {
 			frame->img = (switch_image_t *) vpx_codec_get_frame(decoder, &context->dec_iter);
-			// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%dx%d\n", frame->img->d_w, frame->img->d_h);
+
+#ifdef DEBUG_VP9
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "decoded: %dx%d\n", frame->img->d_w, frame->img->d_h);
+#endif
 		}
 		
 		switch_buffer_zero(context->vpx_packet_buffer);
