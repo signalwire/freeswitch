@@ -2134,6 +2134,7 @@ static switch_status_t av_file_read_video(switch_file_handle_t *handle, switch_f
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	double fl_to = 0.02;
 	int do_fl = 0;
+	int smaller_ts = context->read_fps;
 
 	if (!context->has_video) return SWITCH_STATUS_FALSE;
 
@@ -2141,7 +2142,11 @@ static switch_status_t av_file_read_video(switch_file_handle_t *handle, switch_f
 		return SWITCH_STATUS_BREAK;
 	}
 
-	fl_to = (1000 / context->read_fps) * 1000;
+	if (handle->mm.fps > 0 && handle->mm.fps < smaller_ts) {
+		smaller_ts = handle->mm.fps;
+	}
+
+	fl_to = (1000 / smaller_ts) * 1000;
 	//printf("WTF %d (%f)\n",switch_queue_size(context->eh.video_queue), fl_to);
 	if (flags & SVR_FLUSH) {
 		max_delta = fl_to;
@@ -2271,10 +2276,10 @@ static switch_status_t av_file_read_video(switch_file_handle_t *handle, switch_f
 		if (pts == 0 || context->video_start_time == 0) mst->next_pts = 0;
 
 		if ((mst->next_pts && (now - mst->next_pts) > max_delta)) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "picture is too late, off: %" SWITCH_INT64_T_FMT " max delta: %" SWITCH_INT64_T_FMT " queue size:%u\n", (int64_t)(now - mst->next_pts), max_delta, switch_queue_size(context->eh.video_queue));
+			//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "picture is too late, off: %" SWITCH_INT64_T_FMT " max delta: %" SWITCH_INT64_T_FMT " queue size:%u fps:%u/%0.2f\n", (int64_t)(now - mst->next_pts), max_delta, switch_queue_size(context->eh.video_queue), context->read_fps, handle->mm.fps);
 			switch_img_free(&img);
-			max_delta = AV_TIME_BASE;
-
+			//max_delta = AV_TIME_BASE;
+		
 			if (switch_queue_size(context->eh.video_queue) > 0) {
 				// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "WTF again\n");
 				goto again;
@@ -2282,7 +2287,7 @@ static switch_status_t av_file_read_video(switch_file_handle_t *handle, switch_f
 				mst->next_pts = 0;
 				context->video_start_time = 0;
 				return SWITCH_STATUS_BREAK;
-			}
+			} 
 		}
 
 		if ((flags & SVR_BLOCK) || do_fl) {
