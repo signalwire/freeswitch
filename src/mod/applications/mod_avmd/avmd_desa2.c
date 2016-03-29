@@ -6,12 +6,12 @@
 #else
 #define ISNAN(x) (isnan(x))
 #endif
-#include "buffer.h"
-#include "desa2.h"
-#include "options.h"
+#include "avmd_buffer.h"
+#include "avmd_desa2.h"
+#include "avmd_options.h"
 
 #ifdef AVMD_FAST_MATH
-#include "fast_acosf.h"
+#include "avmd_fast_acosf.h"
 #endif
 
 extern double desa2(circ_buffer_t *b, size_t i)

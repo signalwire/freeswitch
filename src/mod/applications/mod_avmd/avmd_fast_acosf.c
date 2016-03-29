@@ -17,8 +17,8 @@
 #ifndef _MSC_VER
 #include <unistd.h>
 #endif
-#include "fast_acosf.h"
-#include "options.h"
+#include "avmd_fast_acosf.h"
+#include "avmd_options.h"
 
 #ifdef AVMD_FAST_MATH
 

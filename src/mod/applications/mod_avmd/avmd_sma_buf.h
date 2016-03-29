@@ -7,7 +7,7 @@
 #endif
 #include <string.h>
 #include <assert.h>
-#include "buffer.h"
+#include "avmd_buffer.h"
 
 typedef struct {
     size_t len;

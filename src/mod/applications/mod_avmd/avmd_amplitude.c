@@ -1,7 +1,7 @@
 #ifndef __AMPLITUDE_H__
 #include <math.h>
-#include "amplitude.h"
-#include "psi.h"
+#include "avmd_amplitude.h"
+#include "avmd_psi.h"
 
 /*! \brief
  * @author Eric des Courtis

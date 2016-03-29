@@ -43,16 +43,16 @@
 #endif
 
 
-#include "amplitude.h"
-#include "buffer.h"
-#include "desa2.h"
-//#include "goertzel.h"
-#include "psi.h"
-#include "sma_buf.h"
-#include "options.h"
+#include "avmd_amplitude.h"
+#include "avmd_buffer.h"
+#include "avmd_desa2.h"
+//#include "avmd_goertzel.h"
+#include "avmd_psi.h"
+#include "avmd_sma_buf.h"
+#include "avmd_options.h"
 
 #ifdef AVMD_FAST_MATH
-#include "fast_acosf.h"
+#include "avmd_fast_acosf.h"
 #endif
 
 

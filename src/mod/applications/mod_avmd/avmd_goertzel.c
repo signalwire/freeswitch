@@ -1,7 +1,7 @@
 #ifndef __GOERTZEL_H__
 #include <math.h>
-#include "goertzel.h"
-#include "buffer.h"
+#include "avmd_goertzel.h"
+#include "avmd_buffer.h"
 
 /*! \brief Identify frequency components of a signal
  * @author Eric des Courtis
