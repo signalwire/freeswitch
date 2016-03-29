@@ -67,9 +67,10 @@
         prefix: 'locales/locale-',
         suffix: '.json'
       })
-      .registerAvailableLanguageKeys(['en', 'it'], {
+      .registerAvailableLanguageKeys(['en', 'it', 'fr'], {
         'en' : 'en', 'en_GB': 'en', 'en_US': 'en',
-        'it' : 'it', 'it_IT' : 'it'
+        'it' : 'it', 'it_IT' : 'it',
+        'fr' : 'fr', 'fr_FR': 'fr'
       })
       .preferredLanguage('en')
       .fallbackLanguage('en')
