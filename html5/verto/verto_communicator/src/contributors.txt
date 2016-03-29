@@ -2,6 +2,7 @@
   "Jonatas Oliveira <jonatas@evolux.net.br>",
   "Ítalo Rossi <italo@evolux.net.br>",
   "Stefan Yohansson <stefan@evolux.net.br>",
+  "Victor Torres <victor@evolux.net.br>",
   "João Mesquita <jmesquita@indicium.com.ar>",
   "Ken Rice <krice@freeswitch.org>",
   "Brian West <brian@freeswitch.org>"
