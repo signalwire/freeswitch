@@ -2006,6 +2006,7 @@ static void *SWITCH_THREAD_FUNC client_thread(switch_thread_t *thread, void *obj
 	if (switch_event_create_subclass(&s_event, SWITCH_EVENT_CUSTOM, MY_EVENT_CLIENT_DISCONNECT) == SWITCH_STATUS_SUCCESS) {
 		switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "verto_profile_name", jsock->profile->name);
 		switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "verto_client_address", jsock->name);
+		switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "verto_login", switch_str_nil(jsock->uid));
 		switch_event_fire(&s_event);
 	}
 	switch_thread_rwlock_wrlock(jsock->rwlock);
