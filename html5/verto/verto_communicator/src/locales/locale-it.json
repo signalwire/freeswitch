@@ -56,7 +56,7 @@
   "CHAT_TITLE_MUTE_UNMUTE_MIC": "Mute/Unmute Mic",
   "CHAT_MUTE_MIC": "Mute",
   "CHAT_UNMUTE_MIC": "Unmute",
-  "CHAT_TITLE_MUTE_UNMUTE_MIC": "Mute/Unmute Video",
+  "CHAT_TITLE_MUTE_UNMUTE_VIDEO": "Mute/Unmute Video",
   "CHAT_NO_MESSAGES": "Non ci sono messaggi da mostrare.",
   "CHAT_SEND_MESSAGE": "Invia",
   "CHAT_TYPE_MESSAGE": "Scrivi il tuo messaggio qui...",
@@ -141,4 +141,3 @@
   "ERROR_PROVISIONING_CONF": "Errore: Recupero configurazione fallito.",
   "PLEASE_WAIT": "Attendere prego..."
 }
-

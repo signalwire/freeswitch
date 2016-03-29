@@ -55,7 +55,7 @@
   "CHAT_TITLE_MUTE_UNMUTE_MIC": "Mute/Unmute Mic",
   "CHAT_MUTE_MIC": "Mute",
   "CHAT_UNMUTE_MIC": "Unmute",
-  "CHAT_TITLE_MUTE_UNMUTE_MIC": "Mute/Unmute Video",
+  "CHAT_TITLE_MUTE_UNMUTE_VIDEO": "Mute/Unmute Video",
   "CHAT_NO_MESSAGES": "There are no messages to show.",
   "CHAT_SEND_MESSAGE": "Send",
   "CHAT_TYPE_MESSAGE": "Type your message here...",
@@ -75,7 +75,7 @@
   "HELP": "Help",
   "CONTRIBUTORS": "Contributors",
   "TITLE_PREVIEW_SETTINGS": "Setup your camera and microphone settings",
-  "CAMERA__SETTNGS": "Camera:",
+  "CAMERA_SETTNGS": "Camera:",
   "MIC_SETTINGS": "Microphone:",
   "SAVE": "Save",
   "LOADING": "Loading",
@@ -138,6 +138,14 @@
   "CHECK_CONNECTION_SPEED": "Check Connection Speed.",
   "ERROR_PERMISSION_MEDIA": "Error: Media Permission Denied",
   "ERROR_PROVISIONING_CONF": "Error: Provision failed.",
-  "PLEASE_WAIT": "Please wait..."
+  "PLEASE_WAIT": "Please wait...",
+  "CANCEL": "Cancel",
+  "CHAT_TITLE_VOL_MINUS": "Volume -",
+  "CHAT_TITLE_VOL_PLUS": "Volume +",
+  "CHAT_TITLE_GAIN_MINUS": "Gain -",
+  "CHAT_TITLE_GAIN_PLUS": "Gain +",
+  "CHAT_VOL_MINUS": "Vol -",
+  "CHAT_VOL_PLUS": "Vol +",
+  "CHAT_GAIN_MINUS": "Gain -",
+  "CHAT_GAIN_PLUS": "Gain +"
 }
-

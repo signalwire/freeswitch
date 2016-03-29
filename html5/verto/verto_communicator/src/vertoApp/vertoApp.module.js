@@ -67,10 +67,17 @@
         prefix: 'locales/locale-',
         suffix: '.json'
       })
-      .registerAvailableLanguageKeys(['en', 'it', 'fr'], {
-        'en' : 'en', 'en_GB': 'en', 'en_US': 'en',
-        'it' : 'it', 'it_IT' : 'it',
-        'fr' : 'fr', 'fr_FR': 'fr'
+      .registerAvailableLanguageKeys(['en', 'it', 'pt'], {
+        'en': 'en',
+        'en_GB': 'en',
+        'en_US': 'en',
+        'it': 'it',
+        'it_IT': 'it',
+		'fr': 'fr',
+		'fr_FR': 'fr',
+        'pt': 'pt',
+        'pt_BR': 'pt',
+        'pt_PT': 'pt'
       })
       .preferredLanguage('en')
       .fallbackLanguage('en')
