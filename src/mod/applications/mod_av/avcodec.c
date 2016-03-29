@@ -937,12 +937,13 @@ FF_ENABLE_DEPRECATION_WARNINGS
 
 			context->encoder_ctx->flags|=CODEC_FLAG_LOOP_FILTER;   // flags=+loop
 			context->encoder_ctx->me_cmp|= 1;  // cmp=+chroma, where CHROMA = 1
-			context->encoder_ctx->me_range = 16;   // me_range=16
+			context->encoder_ctx->me_range = 21;   // me_range=16
 			context->encoder_ctx->max_b_frames = 3;    // bf=3
 			//context->encoder_ctx->refs = 3;    // refs=3
 			context->encoder_ctx->gop_size = 250;  // g=250
 			context->encoder_ctx->keyint_min = 25; // keyint_min=25
 			context->encoder_ctx->i_quant_factor = 0.71; // i_qfactor=0.71
+			context->encoder_ctx->b_quant_factor = 0.76923078; // Qscale difference between P-frames and B-frames.
 			context->encoder_ctx->qcompress = 0.6; // qcomp=0.6
 			context->encoder_ctx->qmin = 10;   // qmin=10
 			context->encoder_ctx->qmax = 51;   // qmax=51
