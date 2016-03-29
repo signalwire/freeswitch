@@ -1,5 +1,15 @@
-#ifndef __BUFFER_H__
-#define __BUFFER_H__
+/*
+ * @brief   Circular buffer.
+ *
+ * @author Eric des Courtis
+ * @par    Modifications: Piotr Gregor < piotrek.gregor gmail.com >
+ */
+
+
+#ifndef __AVMD_BUFFER_H__
+#define __AVMD_BUFFER_H__
+
+
 #include <stdlib.h>
 #include <assert.h>
 
@@ -55,6 +65,10 @@ extern size_t next_power_of_2(size_t v);
 	if ((b)->backlog > (b)->buf_len) (b)->backlog = (b)->buf_len; \
     } while (0)
 
+
+/*		    ((f)[(b)->i] >= 0) ? \
+		    ((BUFF_TYPE)(f)[(b)->i] / (BUFF_TYPE)INT16_MAX): \
+		    (0.0 - ((BUFF_TYPE)(f)[(b)->i] / (BUFF_TYPE)INT16_MIN)) \ */
 #define INSERT_INT16_FRAME(b, f, l) \
     { \
 	for ((b)->i = 0; (b)->i < (l); (b)->i++) { \
@@ -62,9 +76,7 @@ extern size_t next_power_of_2(size_t v);
 		(b), \
 		((b)->i + (b)->pos), \
 		( \
-		    ((f)[(b)->i] >= 0) ? \
-		    ((BUFF_TYPE)(f)[(b)->i] / (BUFF_TYPE)INT16_MAX): \
-		    (0.0 - ((BUFF_TYPE)(f)[(b)->i] / (BUFF_TYPE)INT16_MIN)) \
+		    (BUFF_TYPE)(f)[(b)->i] \
 		) \
 	    ); \
 	} \
@@ -102,5 +114,4 @@ extern size_t next_power_of_2(size_t v);
 	SET_SAMPLE((b), GET_CURRENT_LPOS((b)), (s)); \
     } while (0)
 
-#endif
-
+#endif /* __AVMD_BUFFER_H__ */

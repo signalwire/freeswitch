@@ -1,5 +1,15 @@
-#ifndef __SMA_BUFFER_H__
-#define __SMA_BUFFER_H__
+/*
+ * @brief   SMA buffer.
+ *
+ * @author Eric des Courtis
+ * @par    Modifications: Piotr Gregor < piotrek.gregor gmail.com >
+ */
+
+
+#ifndef __AVMD_SMA_BUFFER_H__
+#define __AVMD_SMA_BUFFER_H__
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #ifndef _MSC_VER
@@ -64,7 +74,11 @@ typedef struct {
     }while(0);
 
 */
-#endif
+
+
+#endif /* __AVMD_SMA_BUFFER_H__ */
+
+
 /*
 
 int main(void)

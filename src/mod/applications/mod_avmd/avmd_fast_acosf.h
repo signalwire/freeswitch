@@ -1,8 +1,16 @@
-#ifndef __FAST_ACOSF_H__
-#define __FAST_ACOSF_H__
+/*
+ * @brief   Fast arithmetic using precomputed arc cosine table.
+ * @author  Eric des Courtis
+ * @par     Modifications: Piotr Gregor < piotrek.gregor gmail.com >
+ */
+
+
+#ifndef __AVMD_FAST_ACOSF_H__
+#define __AVMD_FAST_ACOSF_H__
 
 
 #define ACOS_TABLE_FILENAME "/tmp/acos_table.dat"
+
 
 /*! \brief Arc cosine table initialization.
  *
@@ -42,5 +50,4 @@ extern float fast_acosf(float x);
  */
 extern int compute_table(void);
 
-#endif
-
+#endif /* __AVMD_FAST_ACOSF_H__ */
