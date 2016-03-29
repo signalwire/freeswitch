@@ -603,6 +603,15 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 		switch_safe_free(bye_headers);
 	}
 
+	if (cause == SWITCH_CAUSE_WRONG_CALL_STATE) {
+		switch_event_t *s_event;
+		if (switch_event_create_subclass(&s_event, SWITCH_EVENT_CUSTOM, MY_EVENT_WRONG_CALL_STATE) == SWITCH_STATUS_SUCCESS) {
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "network_ip", tech_pvt->mparams.remote_ip);
+			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "network_port", "%d", tech_pvt->mparams.remote_port);
+			switch_event_fire(&s_event);
+		}
+	}
+
 	sofia_clear_flag(tech_pvt, TFLAG_IO);
 
 	if (tech_pvt->sofia_private) {
