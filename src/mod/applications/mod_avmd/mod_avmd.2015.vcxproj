@@ -124,21 +124,21 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="amplitude.h" />
-    <ClInclude Include="buffer.h" />
-    <ClInclude Include="desa2.h" />
-    <ClInclude Include="fast_acosf.h" />
-    <ClInclude Include="goertzel.h" />
-    <ClInclude Include="options.h" />
-    <ClInclude Include="psi.h" />
-    <ClInclude Include="sma_buf.h" />
+    <ClInclude Include="avmd_amplitude.h" />
+    <ClInclude Include="avmd_buffer.h" />
+    <ClInclude Include="avmd_desa2.h" />
+    <ClInclude Include="avmd_fast_acosf.h" />
+    <ClInclude Include="avmd_goertzel.h" />
+    <ClInclude Include="avmd_options.h" />
+    <ClInclude Include="avmd_psi.h" />
+    <ClInclude Include="avmd_sma_buf.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="amplitude.c" />
-    <ClCompile Include="buffer.c" />
-    <ClCompile Include="desa2.c" />
-    <ClCompile Include="fast_acosf.c" />
-    <ClCompile Include="goertzel.c" />
+    <ClCompile Include="avmd_amplitude.c" />
+    <ClCompile Include="avmd_buffer.c" />
+    <ClCompile Include="avmd_desa2.c" />
+    <ClCompile Include="avmd_fast_acosf.c" />
+    <ClCompile Include="avmd_goertzel.c" />
     <ClCompile Include="mod_avmd.c" />
   </ItemGroup>
   <ItemGroup>

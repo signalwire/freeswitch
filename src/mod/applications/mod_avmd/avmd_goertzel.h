@@ -4,7 +4,7 @@
 #ifndef _MSC_VER
 #include <stdint.h>
 #endif
-#include "buffer.h"
+#include "avmd_buffer.h"
 
 #if !defined(M_PI)
 /* C99 systems may not define M_PI */
