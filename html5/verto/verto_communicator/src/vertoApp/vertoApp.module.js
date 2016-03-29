@@ -17,10 +17,11 @@
     'ui.gravatar',
     'ui.bootstrap',
     'directive.g+signin',
+    'pascalprecht.translate',
   ]);
 
-  vertoApp.config(['$routeProvider', 'gravatarServiceProvider',
-    function($routeProvider, gravatarServiceProvider) {
+  vertoApp.config(['$routeProvider', 'gravatarServiceProvider', '$translateProvider',
+    function($routeProvider, gravatarServiceProvider, $translateProvider) {
       $routeProvider.
       when('/', {
         title: 'Loading',
@@ -59,6 +60,21 @@
       gravatarServiceProvider.defaults = {
         default: 'mm'  // Mystery man as default for missing avatars
       };
+
+
+      $translateProvider
+      .useStaticFilesLoader({
+        prefix: 'locales/locale-',
+        suffix: '.json'
+      })
+      .registerAvailableLanguageKeys(['en', 'it'], {
+        'en' : 'en', 'en_GB': 'en', 'en_US': 'en',
+        'it' : 'it', 'it_IT' : 'it'
+      })
+      .preferredLanguage('en')
+      .fallbackLanguage('en')
+      .determinePreferredLanguage()
+      .useSanitizeValueStrategy(null);
     }
   ]);
 

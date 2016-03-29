@@ -2,14 +2,14 @@
   <div class="col-md-6 centered-block">
     <div class="card">
       <div class="card-body text-center">
-	<h2>Loading</h2>
+	<h2>{{ 'LOADING' | translate }}</h2>
 	<div class="progress progress-striped active">
 	  <div class="progress-bar" ng-class="{'progress-bar-danger': interrupt_next}" style="width: {{ progress_percentage }}%"></div>
 	</div>
 	<div ng-bind="message"></div>
 	
 	<div class="splash-errors" ng-if="errors.length">
-	  <h4>Errors</h4>
+	  <h4>{{ 'ERRORS' | translate }}</h4>
 	  <ul ng-repeat="error in errors">
 	    <li>{{ ::error }}</li>
 	  </ul>

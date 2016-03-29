@@ -4,8 +4,8 @@
   angular
     .module('vertoControllers')
     .controller('SettingsController', ['$scope', '$http',
-      '$location', '$rootScope', 'storage', 'verto',
-      function($scope, $http, $location, $rootScope, storage, verto) {
+      '$location', '$rootScope', 'storage', 'verto', '$translate',
+      function($scope, $http, $location, $rootScope, storage, verto, $translate) {
         console.debug('Executing ModalSettingsController.');
 
         $.material.init();
@@ -47,7 +47,7 @@
             return;
           }
           else {
-            toastr.warning('Can\'t display preview settings during a call');
+            toastr.warning($translate.instant('MESSAGE_DISPLAY_SETTINGS'));
           }
         };
 

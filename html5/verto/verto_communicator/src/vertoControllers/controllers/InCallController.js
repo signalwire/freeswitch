@@ -4,9 +4,9 @@
   angular
     .module('vertoControllers')
     .controller('InCallController', ['$rootScope', '$scope',
-      '$http', '$location', '$modal', '$timeout', 'toastr', 'verto', 'storage', 'prompt', 'Fullscreen',
+      '$http', '$location', '$modal', '$timeout', 'toastr', 'verto', 'storage', 'prompt', 'Fullscreen', '$translate',
       function($rootScope, $scope, $http, $location, $modal, $timeout, toastr,
-        verto, storage, prompt, Fullscreen) {
+        verto, storage, prompt, Fullscreen, $translate) {
 
         console.debug('Executing InCallController.');
         $scope.layout = null;
@@ -55,8 +55,8 @@
          */
         $scope.videoCall = function() {
           prompt({
-            title: 'Would you like to activate video for this call?',
-            message: 'Video will be active during the next calls.'
+            title: $translate.instant('TITLE_ENABLE_VIDEO'),
+            message: $translate.instant('MESSAGE_ENABLE_VIDEO')
           }).then(function() {
             storage.data.videoCall = true;
             $scope.callTemplate = 'partials/video_call.html';

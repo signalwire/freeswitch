@@ -5,9 +5,9 @@
   angular
   .module('vertoControllers')
   .controller('ChatController', ['$scope', '$rootScope', '$http',
-    '$location', '$anchorScroll', '$timeout', 'verto', 'prompt',
+    '$location', '$anchorScroll', '$timeout', 'verto', 'prompt', '$translate',
     function($scope, $rootScope, $http, $location, $anchorScroll, $timeout,
-      verto, prompt) {
+      verto, prompt, $translate) {
       console.debug('Executing ChatController.');
 
       function scrollToChatBottom() {
@@ -246,7 +246,7 @@
         console.log('$scope.confBanner');
 
         prompt({
-          title: 'Please insert the banner text',
+          title: $translate.instant('TITLE_INSERT_BANNER'),
           input: true,
           label: '',
           value: '',
@@ -263,7 +263,7 @@
           return;
         }
 
-        shortPrompt('Please insert the Canvas Id', function(canvasID) {
+        shortPrompt($translate.instant('TITLE_INSERT_CANVAS_ID'), function(canvasID) {
           console.log(memberID, canvasID);
           verto.setCanvasIn(memberID, canvasID);
         });
@@ -276,7 +276,7 @@
           return;
         }
 
-        shortPrompt('Please insert the Canvas Id', function(canvasID) {
+        shortPrompt($translate.instant('TITLE_INSERT_CANVAS_ID'), function(canvasID) {
           verto.setCanvasOut(memberID, canvasID);
         });
       };
@@ -287,7 +287,7 @@
           return;
         }
 
-        shortPrompt('Please insert the Layer', function(canvasID) {
+        shortPrompt($translate.instant('TITLE_INSERT_LAYER'), function(canvasID) {
           verto.setLayer(memberID, canvasID);
         });
       };
@@ -321,10 +321,10 @@
       $scope.confTransfer = function(memberID) {
         console.log('$scope.confTransfer');
         prompt({
-          title: 'Transfer party?',
-          message: 'To what destination would you like to transfer this call?',
+          title: $translate.instant('TITLE_TRANSFER'),
+          message: $translate.instant('MESSAGE_TRANSFER'),
           input: true,
-          label: 'Destination',
+          label: $translate.instant('LABEL_TRANSFER'),
           value: '',
         }).then(function(exten) {
           if (exten) {
