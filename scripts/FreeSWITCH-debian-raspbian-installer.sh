@@ -259,9 +259,10 @@ freeswitch_raspbian_source() {
 welcome_screen
 fs_ver_select
 get_network_settings
-config_fs_repos
 
 if [ "$ID" = "debian" ]; then
+	## These only work on Jessie at this time
+	config_fs_repos
 	freeswitch_debian_source
 elif [ "$ID" = "raspbian" ]; then	
 	JLIMIT="3"
