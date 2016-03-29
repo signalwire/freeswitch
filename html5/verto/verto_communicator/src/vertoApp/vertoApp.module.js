@@ -67,14 +67,15 @@
         prefix: 'locales/locale-',
         suffix: '.json'
       })
-      .registerAvailableLanguageKeys(['en', 'it', 'pt'], {
+      .registerAvailableLanguageKeys(['en', 'it', 'pt', 'fr'], {
         'en': 'en',
         'en_GB': 'en',
         'en_US': 'en',
         'it': 'it',
         'it_IT': 'it',
-		'fr': 'fr',
-		'fr_FR': 'fr',
+    		'fr': 'fr',
+    		'fr_FR': 'fr',
+        'fr_CA': 'fr',
         'pt': 'pt',
         'pt_BR': 'pt',
         'pt_PT': 'pt'
