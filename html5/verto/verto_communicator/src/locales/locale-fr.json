@@ -138,5 +138,6 @@
   "CHECK_CONNECTION_SPEED": "Vérifiez votre vitesse de connection à Internet.",
   "ERROR_PERMISSION_MEDIA": "Erreur: La permission d'accéder aux périphériques multimedia as été refusée",
   "ERROR_PROVISIONING_CONF": "Erreur: La configuration as échouée.",
-  "PLEASE_WAIT": "Merci de patienter..."
+  "PLEASE_WAIT": "Merci de patienter...",
+  "CANCEL": "Annuler",
 }
