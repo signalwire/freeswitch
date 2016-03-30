@@ -67,7 +67,7 @@
         prefix: 'locales/locale-',
         suffix: '.json'
       })
-      .registerAvailableLanguageKeys(['en', 'it', 'pt', 'fr'], {
+      .registerAvailableLanguageKeys(['en', 'it', 'pt', 'fr', 'de', 'es', 'pl', 'ru', 'sv', 'id'], {
         'en': 'en',
         'en_GB': 'en',
         'en_US': 'en',
@@ -78,7 +78,20 @@
         'fr_CA': 'fr',
         'pt': 'pt',
         'pt_BR': 'pt',
-        'pt_PT': 'pt'
+        'pt_PT': 'pt',
+        'de': 'de',
+        'de_DE': 'de',
+        'es': 'es',
+        'es_ES': 'es',
+        'pl': 'pl',
+        'pl_PL': 'pl',
+        'ru': 'ru',
+        'ru_RU': 'ru',
+        'sv': 'sv',
+        'sv_SV': 'sv',
+        'sv_FI': 'sv',
+        'id': 'id'
+        'id_ID': 'id'
       })
       .preferredLanguage('en')
       .determinePreferredLanguage()
