@@ -81,8 +81,8 @@
         'pt_PT': 'pt'
       })
       .preferredLanguage('en')
-      .fallbackLanguage('en')
       .determinePreferredLanguage()
+      .fallbackLanguage('en')
       .useSanitizeValueStrategy(null);
     }
   ]);
