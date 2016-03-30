@@ -49,8 +49,8 @@
   "CHAT_CANVAS": "Canvas",
   "CHAT_CANVAS_IN": "Canvas In",
   "CHAT_CANVAS_OUT": "Canvas Out",
-  "CHAT_PREV": "Prev",
-  "CHAT_NEXT": "Next",
+  "CHAT_PREV": "Precedente",
+  "CHAT_NEXT": "Successivo",
   "CHAT_LAYER": "Layer",
   "CHAT_AUDIO_VIDEO": "Audio/Video",
   "CHAT_TITLE_MUTE_UNMUTE_MIC": "Mute/Unmute Mic",
@@ -139,5 +139,15 @@
   "CHECK_CONNECTION_SPEED": "Verifica velocità connessione.",
   "ERROR_PERMISSION_MEDIA": "Errore: permesso sui dispositivi negato",
   "ERROR_PROVISIONING_CONF": "Errore: Recupero configurazione fallito.",
-  "PLEASE_WAIT": "Attendere prego..."
+  "PLEASE_WAIT": "Attendere prego...",
+  "CANCEL": "Cancella",
+  "CHAT_TITLE_VOL_MINUS": "Volume -",
+  "CHAT_TITLE_VOL_PLUS": "Volume +",
+  "CHAT_TITLE_GAIN_MINUS": "Guadagno -",
+  "CHAT_TITLE_GAIN_PLUS": "Guadagno +",
+  "CHAT_VOL_MINUS": "Vol -",
+  "CHAT_VOL_PLUS": "Vol +",
+  "CHAT_GAIN_MINUS": "Guadagno -",
+  "CHAT_GAIN_PLUS": "Guadagno +"
+
 }
