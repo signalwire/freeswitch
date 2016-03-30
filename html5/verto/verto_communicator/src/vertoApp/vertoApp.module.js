@@ -90,7 +90,7 @@
         'sv': 'sv',
         'sv_SV': 'sv',
         'sv_FI': 'sv',
-        'id': 'id'
+		'id': 'id',
         'id_ID': 'id'
       })
       .preferredLanguage('en')
