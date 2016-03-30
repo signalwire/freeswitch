@@ -2164,6 +2164,7 @@ static switch_status_t verto_connect(switch_core_session_t *session, const char 
 
 		switch_channel_set_variable(tech_pvt->channel, "verto_user", jsock->uid);
 		switch_channel_set_variable(tech_pvt->channel, "presence_id", jsock->uid);
+		switch_channel_set_variable(tech_pvt->channel, "verto_client_address", jsock->name);
 		switch_channel_set_variable(tech_pvt->channel, "chat_proto", VERTO_CHAT_PROTO);
 		switch_channel_set_variable(tech_pvt->channel, "verto_host", jsock->domain);
 
@@ -2662,6 +2663,7 @@ static switch_bool_t verto__answer_func(const char *method, cJSON *params, jsock
 
 		tech_pvt->r_sdp = switch_core_session_strdup(session, sdp);
 		switch_channel_set_variable(tech_pvt->channel, SWITCH_R_SDP_VARIABLE, sdp);		
+		switch_channel_set_variable(tech_pvt->channel, "verto_client_address", jsock->name);
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Remote SDP %s:\n%s\n", switch_channel_get_name(tech_pvt->channel), sdp);
 		switch_core_media_set_sdp_codec_string(session, sdp, SDP_TYPE_RESPONSE);
 
@@ -3508,6 +3510,7 @@ static switch_bool_t verto__invite_func(const char *method, cJSON *params, jsock
 	switch_channel_set_variable(channel, "jsock_uuid_str", jsock->uuid_str);
 	switch_channel_set_variable(channel, "verto_user", jsock->uid);
 	switch_channel_set_variable(channel, "presence_id", jsock->uid);
+	switch_channel_set_variable(channel, "verto_client_address", jsock->name);
 	switch_channel_set_variable(channel, "chat_proto", VERTO_CHAT_PROTO);
 	switch_channel_set_variable(channel, "verto_host", jsock->domain);
 	switch_channel_set_variable(channel, "event_channel_cookie", tech_pvt->jsock_uuid);
