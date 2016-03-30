@@ -4,8 +4,8 @@
   angular
     .module('vertoControllers')
     .controller('SettingsController', ['$scope', '$http',
-      '$location', '$rootScope', 'storage', 'verto', '$translate',
-      function($scope, $http, $location, $rootScope, storage, verto, $translate) {
+      '$location', '$rootScope', 'storage', 'verto', '$translate', 'toastr',
+      function($scope, $http, $location, $rootScope, storage, verto, $translate, toastr) {
         console.debug('Executing ModalSettingsController.');
 
         $.material.init();
