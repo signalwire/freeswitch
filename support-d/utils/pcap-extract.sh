@@ -5,6 +5,8 @@ shift
 law=$1
 shift
 
+if [ -z $pcap ] ; then echo "usage $0 <pcap file> [<mu-law|a-law>]"; exit 255 ; fi
+
 if [ -z $law ] ; then law="mu-law" ; fi
 
 for ssrc in $(tshark -n -r $pcap -Y rtp -T fields -e rtp.ssrc -Eseparator=, | sort -u) ; do
