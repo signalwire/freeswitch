@@ -74,6 +74,13 @@ const char *conference_utils_combine_flag_var(switch_core_session_t *session, co
 					ret = switch_core_session_sprintf(session, "%s|%s", ret, val);
 				}
 			}
+		} else if (!strncasecmp(var, var_name, strlen(var_name)) && switch_true(val)) {
+			char *p = var + strlen(var_name);
+
+			if (*p == '_' && *(p+1)) {
+				p++;
+				ret = switch_core_session_sprintf(session, "%s|%s", ret, p);
+			}
 		}
 	}
 
@@ -129,6 +136,8 @@ void conference_utils_set_mflags(const char *flags, member_flag_t *f)
 				f[MFLAG_GHOST] = 1;
 			} else if (!strcasecmp(argv[i], "join-only")) {
 				f[MFLAG_JOIN_ONLY] = 1;
+			} else if (!strcasecmp(argv[i], "flip-video")) {
+				f[MFLAG_FLIP_VIDEO] = 1;
 			} else if (!strcasecmp(argv[i], "positional")) {
 				f[MFLAG_POSITIONAL] = 1;
 			} else if (!strcasecmp(argv[i], "no-positional")) {

@@ -208,6 +208,7 @@ typedef enum {
 	MFLAG_CAN_BE_SEEN,
 	MFLAG_SECOND_SCREEN,
 	MFLAG_SILENT,
+	MFLAG_FLIP_VIDEO,
 	///////////////////////////
 	MFLAG_MAX
 } member_flag_t;
@@ -1105,6 +1106,7 @@ switch_status_t conference_api_sub_watching_canvas(conference_member_t *member, 
 switch_status_t conference_api_sub_canvas(conference_member_t *member, switch_stream_handle_t *stream, void *data);
 switch_status_t conference_api_sub_layer(conference_member_t *member, switch_stream_handle_t *stream, void *data);
 switch_status_t conference_api_sub_kick(conference_member_t *member, switch_stream_handle_t *stream, void *data);
+switch_status_t conference_api_sub_vid_flip(conference_member_t *member, switch_stream_handle_t *stream, void *data);
 switch_status_t conference_api_sub_transfer(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv);
 switch_status_t conference_api_sub_record(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv);
 switch_status_t conference_api_sub_norecord(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv);

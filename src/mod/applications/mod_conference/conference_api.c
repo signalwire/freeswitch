@@ -62,6 +62,7 @@ api_command_t conference_api_sub_commands[] = {
 	{"stop", (void_fn_t) & conference_api_sub_stop, CONF_API_SUB_ARGS_SPLIT, "stop", "<[current|all|async|last]> [<member_id>]"},
 	{"dtmf", (void_fn_t) & conference_api_sub_dtmf, CONF_API_SUB_MEMBER_TARGET, "dtmf", "<[member_id|all|last|non_moderator]> <digits>"},
 	{"kick", (void_fn_t) & conference_api_sub_kick, CONF_API_SUB_MEMBER_TARGET, "kick", "<[member_id|all|last|non_moderator]> [<optional sound file>]"},
+	{"vid-flip", (void_fn_t) & conference_api_sub_vid_flip, CONF_API_SUB_MEMBER_TARGET, "vid-flip", "<[member_id|all|last|non_moderator]>"},
 	{"hup", (void_fn_t) & conference_api_sub_hup, CONF_API_SUB_MEMBER_TARGET, "hup", "<[member_id|all|last|non_moderator]>"},
 	{"mute", (void_fn_t) & conference_api_sub_mute, CONF_API_SUB_MEMBER_TARGET, "mute", "<[member_id|all]|last|non_moderator> [<quiet>]"},
 	{"tmute", (void_fn_t) & conference_api_sub_tmute, CONF_API_SUB_MEMBER_TARGET, "tmute", "<[member_id|all]|last|non_moderator> [<quiet>]"},
@@ -647,6 +648,36 @@ switch_status_t conference_api_sub_kick(conference_member_t *member, switch_stre
 		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 			conference_member_add_event_data(member, event);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "kick-member");
+			switch_event_fire(&event);
+		}
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
+switch_status_t conference_api_sub_vid_flip(conference_member_t *member, switch_stream_handle_t *stream, void *data)
+{
+	switch_event_t *event;
+
+	if (member == NULL) {
+		return SWITCH_STATUS_GENERR;
+	}
+
+	if (conference_utils_member_test_flag(member, MFLAG_FLIP_VIDEO)) {
+		conference_utils_member_clear_flag_locked(member, MFLAG_FLIP_VIDEO);
+	} else {
+		conference_utils_member_set_flag_locked(member, MFLAG_FLIP_VIDEO);
+	}
+
+	if (stream != NULL) {
+		stream->write_function(stream, "OK flipped %u\n", member->id);
+	}
+
+	if (member->conference && test_eflag(member->conference, EFLAG_KICK_MEMBER)) {
+		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+			conference_member_add_event_data(member, event);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "vid-flip-member");
 			switch_event_fire(&event);
 		}
 	}
