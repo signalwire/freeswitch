@@ -2214,34 +2214,36 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 						switch_goto_status(SWITCH_STATUS_GENERR, end);
 					}
 				}
-
-				if ((val = switch_channel_get_variable(session->channel, "rtp_timeout_sec"))) {
-					int v = atoi(val);
-					if (v >= 0) {
-						rtp_timeout_sec = v;
-					}
-				}
 				
-				if ((val = switch_channel_get_variable(session->channel, "rtp_hold_timeout_sec"))) {
-					int v = atoi(val);
-					if (v >= 0) {
-						rtp_hold_timeout_sec = v;
+				if (type == SWITCH_MEDIA_TYPE_AUDIO && engine->read_impl.samples_per_second) {
+					if ((val = switch_channel_get_variable(session->channel, "rtp_timeout_sec"))) {
+						int v = atoi(val);
+						if (v >= 0) {
+							rtp_timeout_sec = v;
+						}
 					}
-				}
-
-				if (rtp_timeout_sec) {
-					engine->max_missed_packets = (engine->read_impl.samples_per_second * rtp_timeout_sec) /
-						engine->read_impl.samples_per_packet;
-
-					switch_rtp_set_max_missed_packets(engine->rtp_session, engine->max_missed_packets);
-					if (!rtp_hold_timeout_sec) {
-						rtp_hold_timeout_sec = rtp_timeout_sec * 10;
+				
+					if ((val = switch_channel_get_variable(session->channel, "rtp_hold_timeout_sec"))) {
+						int v = atoi(val);
+						if (v >= 0) {
+							rtp_hold_timeout_sec = v;
+						}
 					}
-				}
 
-				if (rtp_hold_timeout_sec) {
-					engine->max_missed_hold_packets = (engine->read_impl.samples_per_second * rtp_hold_timeout_sec) /
-						engine->read_impl.samples_per_packet;
+					if (rtp_timeout_sec) {
+						engine->max_missed_packets = (engine->read_impl.samples_per_second * rtp_timeout_sec) /
+							engine->read_impl.samples_per_packet;
+
+						switch_rtp_set_max_missed_packets(engine->rtp_session, engine->max_missed_packets);
+						if (!rtp_hold_timeout_sec) {
+							rtp_hold_timeout_sec = rtp_timeout_sec * 10;
+						}
+					}
+
+					if (rtp_hold_timeout_sec) {
+						engine->max_missed_hold_packets = (engine->read_impl.samples_per_second * rtp_hold_timeout_sec) /
+							engine->read_impl.samples_per_packet;
+					}
 				}
 			}
 
@@ -2827,7 +2829,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_set_codec(switch_core_session_
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Deactivating read resampler\n");
 				switch_mutex_unlock(session->resample_mutex);
 			}
-
+			
 			if (session->write_resampler) {
 				switch_mutex_lock(session->resample_mutex);
 				switch_resample_destroy(&session->write_resampler);
