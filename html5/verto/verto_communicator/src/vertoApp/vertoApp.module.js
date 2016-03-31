@@ -67,7 +67,7 @@
         prefix: 'locales/locale-',
         suffix: '.json'
       })
-      .registerAvailableLanguageKeys(['en', 'it', 'pt', 'fr', 'de', 'es', 'pl', 'ru', 'sv', 'id'], {
+      .registerAvailableLanguageKeys(['en', 'it', 'pt', 'fr', 'de', 'es', 'pl', 'ru', 'sv', 'id', 'zh'], {
         'en': 'en',
         'en_GB': 'en',
         'en_US': 'en',
@@ -91,7 +91,11 @@
         'sv_SV': 'sv',
         'sv_FI': 'sv',
 		'id': 'id',
-        'id_ID': 'id'
+        'id_ID': 'id',
+        'zh': 'zh',
+        'zh_CN': 'zh',
+        'zh_TW': 'zh',
+        'zh_HK': 'zh'
       })
       .preferredLanguage('en')
       .determinePreferredLanguage()
