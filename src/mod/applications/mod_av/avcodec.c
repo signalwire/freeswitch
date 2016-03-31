@@ -923,7 +923,8 @@ FF_ENABLE_DEPRECATION_WARNINGS
 		context->encoder_ctx->level = 41;
 
 		if (context->hw_encoder) {
-			av_opt_set(context->encoder_ctx->priv_data, "preset", "llhq", 0);
+			av_opt_set(context->encoder_ctx->priv_data, "preset", "llhp", 0);
+			av_opt_set_int(context->encoder_ctx->priv_data, "2pass", 1, 0);
 		} else {
 			av_opt_set(context->encoder_ctx->priv_data, "preset", "veryfast", 0);
 			av_opt_set(context->encoder_ctx->priv_data, "tune", "zerolatency", 0);
