@@ -552,7 +552,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 			
 			if ((bypass_media_after_bridge || switch_channel_test_flag(chan_b, CF_BYPASS_MEDIA_AFTER_BRIDGE)) && switch_channel_test_flag(chan_a, CF_ANSWERED)
 				&& switch_channel_test_flag(chan_b, CF_ANSWERED)) {
-				switch_ivr_nomedia(switch_core_session_get_uuid(session_a), SMF_REBRIDGE);
+				switch_ivr_3p_nomedia(switch_core_session_get_uuid(session_a), SMF_REBRIDGE);
 				bypass_media_after_bridge = 0;
 				switch_channel_clear_flag(chan_b, CF_BYPASS_MEDIA_AFTER_BRIDGE);
 				goto end_of_bridge_loop;
@@ -781,7 +781,8 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 	switch_channel_clear_flag(chan_a, CF_BRIDGED);
 	
 	if (switch_channel_test_flag(chan_a, CF_LEG_HOLDING) || switch_channel_test_flag(chan_a, CF_HANGUP_HELD)) {
-		if (switch_channel_ready(chan_b) && switch_channel_get_state(chan_b) != CS_PARK && !data->other_leg_data->clean_exit) {
+		if (switch_channel_ready(chan_b) &&
+			switch_channel_get_state(chan_b) != CS_PARK && !data->other_leg_data->clean_exit && !switch_channel_test_flag(chan_b, CF_3P_NOMEDIA_REQUESTED)) {
 			const char *ext = switch_channel_get_variable(chan_a, "hold_hangup_xfer_exten");
 			
 			switch_channel_stop_broadcast(chan_b);

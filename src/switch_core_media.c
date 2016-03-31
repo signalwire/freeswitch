@@ -175,6 +175,7 @@ typedef struct switch_rtp_engine_s {
 	uint8_t new_ice;
 	uint8_t new_dtls;
 	uint32_t sdp_bw;
+	uint8_t reject_avp;
 } switch_rtp_engine_t;
 
 struct switch_media_handle_s {
@@ -3683,7 +3684,8 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 	v_engine->new_ice = 1;
 	a_engine->new_dtls = 1;
 	a_engine->new_ice = 1;
-
+	a_engine->reject_avp = 0;
+			
 	switch_core_session_parse_crypto_prefs(session);
 
 	clear_pmaps(a_engine);
@@ -3905,6 +3907,8 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 			/* do nothing here, mod_fax will trigger a response (if it's listening =/) */
 			match = 1;
 			goto done;
+		} else if (m->m_type == sdp_media_audio && m->m_port && got_audio && got_savp) {
+			a_engine->reject_avp = 1;
 		} else if (m->m_type == sdp_media_audio && m->m_port && !got_audio) {
 			sdp_rtpmap_t *map;
 			int ice = 0;
@@ -4957,7 +4961,7 @@ SWITCH_DECLARE(int) switch_core_media_toggle_hold(switch_core_session_t *session
 			if (b_channel && (switch_channel_test_flag(session->channel, CF_BYPASS_MEDIA_AFTER_HOLD) ||
 							  switch_channel_test_flag(b_channel, CF_BYPASS_MEDIA_AFTER_HOLD) || bypass_after_hold_a || bypass_after_hold_b)) {
 				/* try to stay out from media stream */
-				switch_ivr_nomedia(switch_core_session_get_uuid(session), SMF_REBRIDGE);
+				switch_ivr_bg_media(switch_core_session_get_uuid(session), SMF_REBRIDGE, SWITCH_FALSE, SWITCH_TRUE, 200);
 			}
 
 			if (a_engine->max_missed_packets && a_engine->rtp_session) {
@@ -8027,6 +8031,10 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 		//switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=encryption:optional\r\n");
 		}
 
+		if (a_engine->reject_avp) {
+			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "m=audio 0 RTP/AVP 19\r\n");
+		}
+		
 	} else if (smh->mparams->num_codecs) {
 		int i;
 		int cur_ptime = 0, this_ptime = 0, cng_type = 0;
