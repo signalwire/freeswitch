@@ -503,17 +503,17 @@ body .modal-body .btn-group .btn.active {
 }*/
 
 #incall .video-call {
-  width: 81vw;
   height: 82vw;
   max-height: calc(100% - 1vw);
   max-width: 146.78vh;
-  margin: auto;
+  margin: 7px auto;
   position: absolute;
   top: 0;
   bottom: 0;
   left: 0;
   right: 0;
   margin-top: auto;
+  padding: 1px;
 }
 
 #incall .avatar {
