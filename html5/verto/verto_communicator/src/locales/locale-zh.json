@@ -110,7 +110,7 @@
   "REFRESH_DEVICE_LIST": "刷新设备列表",
   "GENERAL_SETTINGS": "通话设置：",
   "USE_VIDEO": "启用视频",
-  "USE_STEREO_AUDIO": "单体声",
+  "USE_STEREO_AUDIO": "立体声",
   "USE_STUN": "启用STUN",
   "SCALE_VIDEO": "自动缩放远端视频到本地摄像头分辨率",
   "ASK_BEFORE_RECOVER": "在恢复上一次通话前询问",
