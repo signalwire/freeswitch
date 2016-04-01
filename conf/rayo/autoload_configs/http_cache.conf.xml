@@ -13,5 +13,9 @@
     <param name="ssl-verifypeer" value="true"/>
     <!-- verify host name matches certificate -->
     <param name="ssl-verifyhost" value="true"/>
+    <!-- default is 300 seconds, override here -->
+    <!--param name="connect-timeout" value="300"/-->
+    <!-- default is 300 seconds, override here -->
+    <!--param name="download-timeout" value="300"/-->
   </settings>
 </configuration>

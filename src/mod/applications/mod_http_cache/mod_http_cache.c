@@ -1,6 +1,6 @@
 /*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2015, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2016, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -53,6 +53,8 @@ SWITCH_STANDARD_API(http_cache_remove);
 SWITCH_STANDARD_API(http_cache_prefetch);
 
 #define DOWNLOAD_NEEDED "download"
+#define DOWNLOAD 1
+#define PREFETCH 2
 
 typedef struct url_cache url_cache_t;
 
@@ -201,6 +203,8 @@ struct url_cache {
 	int enable_file_formats;
 	/** How long to wait, in seconds, for TCP connection.  If 0, use default value of 300 seconds */
 	long connect_timeout;
+	/** How long to wait, in nanoseconds, for download of file.  If 0, use default value of 300 seconds (300 * 10^6 ns) */
+	long download_timeout_ns;
 };
 static url_cache_t gcache;
 
@@ -614,7 +618,7 @@ static void url_cache_clear(url_cache_t *cache, switch_core_session_t *session)
  * @param profile optional profile
  * @param session the (optional) session requesting the URL
  * @param url The URL
- * @param download If true, the file will be downloaded if it does not exist in the cache.
+ * @param download If DOWNLOAD, the file will be downloaded if it does not exist in the cache.  If PREFETCH, the file will be downloaded if not in cache and not being downloaded by another thread.
  * @param refresh If true, existing cache entry is invalidated
  * @param pool The pool to use for allocating the filename
  * @return The filename or NULL if there is an error
@@ -642,6 +646,9 @@ static char *url_cache_get(url_cache_t *cache, http_profile_t *profile, switch_c
 		} else if (refresh) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Cached URL manually expired.\n");
 			url_cache_remove_soft(cache, session, u); /* will get permanently deleted upon replacement */
+			u = NULL;
+		} else if (u->status == CACHED_URL_RX_IN_PROGRESS && switch_time_now() >= (u->download_time + cache->download_timeout_ns)) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Download of URL has timed out.\n");
 			u = NULL;
 		}
 	}
@@ -675,7 +682,7 @@ static char *url_cache_get(url_cache_t *cache, http_profile_t *profile, switch_c
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Failed to download URL %s\n", url);
 			cache->errors++;
 		}
-	} else if (!u || (u->status == CACHED_URL_RX_IN_PROGRESS && !download)) {
+	} else if (!u || (u->status == CACHED_URL_RX_IN_PROGRESS && download != DOWNLOAD)) {
 		filename = DOWNLOAD_NEEDED;
 	} else {
 		/* Wait until file is downloaded */
@@ -683,7 +690,7 @@ static char *url_cache_get(url_cache_t *cache, http_profile_t *profile, switch_c
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Waiting for URL %s to be available\n", url);
 			u->waiters++;
 			url_cache_unlock(cache, session);
-			while(u->status == CACHED_URL_RX_IN_PROGRESS) {
+			while(u->status == CACHED_URL_RX_IN_PROGRESS && switch_time_now() < (u->download_time + cache->download_timeout_ns)) {
 				switch_sleep(10 * 1000); /* 10 ms */
 			}
 			url_cache_lock(cache, session);
@@ -1174,7 +1181,7 @@ SWITCH_STANDARD_API(http_cache_prefetch)
 	}
 
 	/* send to thread pool */
-	url = strdup(cmd);
+	url = switch_mprintf("{prefetch=true}%s", cmd);
 	if (switch_queue_trypush(gcache.prefetch_queue, url) != SWITCH_STATUS_SUCCESS) {
 		switch_safe_free(url);
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Failed to queue prefetch request\n");
@@ -1188,7 +1195,7 @@ SWITCH_STANDARD_API(http_cache_prefetch)
 
 #define HTTP_GET_SYNTAX "{param=val}<url>"
 /**
- * Get a file from the cache, download if it isn' cached
+ * Get a file from the cache, download if it isn't cached
  */
 SWITCH_STANDARD_API(http_cache_get)
 {
@@ -1199,6 +1206,8 @@ SWITCH_STANDARD_API(http_cache_get)
 	char *filename;
 	switch_event_t *params = NULL;
 	char *url;
+	int refresh = SWITCH_FALSE;
+	int download = DOWNLOAD;
 
 	if (zstr(cmd)) {
 		stream->write_function(stream, "USAGE: %s\n", HTTP_GET_SYNTAX);
@@ -1219,9 +1228,13 @@ SWITCH_STANDARD_API(http_cache_get)
 	}
 	if (params) {
 		profile = url_cache_http_profile_find(&gcache, switch_event_get_header(params, "profile"));
+		if (switch_true(switch_event_get_header(params, "prefetch"))) {
+			download = PREFETCH;
+		}
+		refresh = switch_true(switch_event_get_header(params, "refresh"));
 	}
 
-	filename = url_cache_get(&gcache, profile, session, url, 1, params ? switch_true(switch_event_get_header(params, "refresh")) : SWITCH_FALSE, pool);
+	filename = url_cache_get(&gcache, profile, session, url, download, refresh, pool);
 	if (filename) {
 		stream->write_function(stream, "%s", filename);
 
@@ -1485,7 +1498,8 @@ static switch_status_t do_config(url_cache_t *cache)
 	cache->ssl_verifyhost = 1;
 	cache->ssl_verifypeer = 1;
 	cache->enable_file_formats = 0;
-	cache->connect_timeout = 0;
+	cache->connect_timeout = 300;
+	cache->download_timeout_ns = 300 * 1000 * 1000;
 
 	/* get params */
 	settings = switch_xml_child(cfg, "settings");
@@ -1523,8 +1537,17 @@ static switch_status_t do_config(url_cache_t *cache)
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Setting ssl-verifypeer to %s\n", val);
 				cache->ssl_verifypeer = !switch_false(val); /* only disable if explicitly set to false */
 			} else if (!strcasecmp(var, "connect-timeout")) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Setting connect-timeout to %s\n", val);
-				cache->connect_timeout = atoi(val);
+				int int_val = atoi(val);
+				if (int_val > 0) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Setting connect-timeout to %s\n", val);
+					cache->connect_timeout = int_val;
+				}
+			} else if (!strcasecmp(var, "download-timeout")) {
+				int int_val = atoi(val);
+				if (int_val > 0) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Setting download-timeout to %s\n", val);
+					cache->download_timeout_ns = int_val * 1000 * 1000;
+				}
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unsupported param: %s\n", var);
 			}
@@ -1632,11 +1655,6 @@ static switch_status_t do_config(url_cache_t *cache)
 	}
 	if (cache->prefetch_thread_count <= 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "prefetch-thread-count must be > 0\n");
-		status = SWITCH_STATUS_TERM;
-		goto done;
-	}
-	if (cache->connect_timeout < 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "connect-timeout must be >= 0\n");
 		status = SWITCH_STATUS_TERM;
 		goto done;
 	}
