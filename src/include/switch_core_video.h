@@ -97,7 +97,13 @@ typedef struct switch_png_s {
 	int h;
 } switch_png_t;
 
-
+typedef enum {
+	SRM_NONE = 0,  // No rotation.
+	SRM_90 = 90,  // Rotate 90 degrees clockwise.
+	SRM_180 = 180,  // Rotate 180 degrees.
+	SRM_270 = 270,  // Rotate 270 degrees clockwise.
+} switch_image_rotation_mode_t;
+	
 
 /*!\brief Open a descriptor, allocating storage for the underlying image
 *
@@ -209,7 +215,7 @@ SWITCH_DECLARE(void) switch_img_patch_rect(switch_image_t *IMG, int X, int Y, sw
 */
 
 SWITCH_DECLARE(void) switch_img_copy(switch_image_t *img, switch_image_t **new_img);
-
+SWITCH_DECLARE(void) switch_img_rotate_copy(switch_image_t *img, switch_image_t **new_img, switch_image_rotation_mode_t mode);
 
 /*!\brief Flip the image vertically (top for bottom)
 *
@@ -220,7 +226,7 @@ SWITCH_DECLARE(void) switch_img_copy(switch_image_t *img, switch_image_t **new_i
 *
 * \return 0 if the requested rectangle is valid, nonzero otherwise.
 */
-SWITCH_DECLARE(void) switch_img_flip(switch_image_t *img);
+SWITCH_DECLARE(void) switch_img_rotate(switch_image_t **img, switch_image_rotation_mode_t mode);
 
 /*!\brief Close an image descriptor
 *

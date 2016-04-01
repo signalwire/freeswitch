@@ -658,29 +658,37 @@ switch_status_t conference_api_sub_kick(conference_member_t *member, switch_stre
 
 switch_status_t conference_api_sub_vid_flip(conference_member_t *member, switch_stream_handle_t *stream, void *data)
 {
-	switch_event_t *event;
+	char *arg = (char *) data;
 
 	if (member == NULL) {
 		return SWITCH_STATUS_GENERR;
 	}
 
-	if (conference_utils_member_test_flag(member, MFLAG_FLIP_VIDEO)) {
+	if (conference_utils_member_test_flag(member, MFLAG_FLIP_VIDEO) && !arg) {
 		conference_utils_member_clear_flag_locked(member, MFLAG_FLIP_VIDEO);
+		conference_utils_member_clear_flag_locked(member, MFLAG_ROTATE_VIDEO);
 	} else {
 		conference_utils_member_set_flag_locked(member, MFLAG_FLIP_VIDEO);
+
+		if (arg) {
+			if (!strcasecmp(arg, "rotate")) {
+				conference_utils_member_set_flag_locked(member, MFLAG_ROTATE_VIDEO);
+			} else if (switch_is_number(arg)) {
+				int num = atoi(arg);
+
+				if (num == 0 || num == 90 || num == 180 || num == 270) {
+					member->flip = num;
+				}
+			}
+		} else {
+			member->flip = 180;
+		}
 	}
 
 	if (stream != NULL) {
 		stream->write_function(stream, "OK flipped %u\n", member->id);
 	}
 
-	if (member->conference && test_eflag(member->conference, EFLAG_KICK_MEMBER)) {
-		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
-			conference_member_add_event_data(member, event);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "vid-flip-member");
-			switch_event_fire(&event);
-		}
-	}
 
 	return SWITCH_STATUS_SUCCESS;
 }

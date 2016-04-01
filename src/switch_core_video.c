@@ -228,10 +228,36 @@ SWITCH_DECLARE(int) switch_img_set_rect(switch_image_t  *img,
 #endif
 }
 
-SWITCH_DECLARE(void) switch_img_flip(switch_image_t *img)
+SWITCH_DECLARE(void) switch_img_rotate(switch_image_t **img, switch_image_rotation_mode_t mode)
 {
+	switch_image_t *tmp_img;
+
+	switch_assert(img);
+
 #ifdef SWITCH_HAVE_VPX
-	vpx_img_flip((vpx_image_t *)img);
+
+	if ((*img)->fmt != SWITCH_IMG_FMT_I420) return;
+
+	if (mode == SRM_90 || mode == SRM_270) {
+		tmp_img = switch_img_alloc(NULL, (*img)->fmt, (*img)->d_h, (*img)->d_w, 1);
+	} else {
+		tmp_img = switch_img_alloc(NULL, (*img)->fmt, (*img)->d_w, (*img)->d_h, 1);
+	}
+
+	switch_assert(tmp_img);
+
+	I420Rotate((*img)->planes[SWITCH_PLANE_Y], (*img)->stride[SWITCH_PLANE_Y],
+			   (*img)->planes[SWITCH_PLANE_U], (*img)->stride[SWITCH_PLANE_U],
+			   (*img)->planes[SWITCH_PLANE_V], (*img)->stride[SWITCH_PLANE_V],
+			   tmp_img->planes[SWITCH_PLANE_Y], tmp_img->stride[SWITCH_PLANE_Y],
+			   tmp_img->planes[SWITCH_PLANE_U], tmp_img->stride[SWITCH_PLANE_U],
+			   tmp_img->planes[SWITCH_PLANE_V], tmp_img->stride[SWITCH_PLANE_V],
+			   (*img)->d_w, (*img)->d_h, mode);
+
+
+	switch_img_free(img);
+	*img = tmp_img;
+
 #endif
 }
 
@@ -424,6 +450,44 @@ SWITCH_DECLARE(void) switch_img_copy(switch_image_t *img, switch_image_t **new_i
 				 (*new_img)->planes[SWITCH_PLANE_PACKED], (*new_img)->stride[SWITCH_PLANE_PACKED],
 				 img->d_w, img->d_h);
 	}
+#else
+	return;
+#endif
+}
+
+
+SWITCH_DECLARE(void) switch_img_rotate_copy(switch_image_t *img, switch_image_t **new_img, switch_image_rotation_mode_t mode)
+{
+	switch_assert(img);
+	switch_assert(new_img);
+
+#ifdef SWITCH_HAVE_YUV
+	if (img->fmt != SWITCH_IMG_FMT_I420) abort();
+
+	if (*new_img != NULL) {
+		if (img->fmt != (*new_img)->fmt || img->d_w != (*new_img)->d_w || img->d_h != (*new_img)->d_w) {
+			switch_img_free(new_img);
+		}
+	}
+
+	if (*new_img == NULL) {
+		if (mode == SRM_90 || mode == SRM_270) {
+			*new_img = switch_img_alloc(NULL, img->fmt, img->d_h, img->d_w, 1);
+		} else {
+			*new_img = switch_img_alloc(NULL, img->fmt, img->d_w, img->d_h, 1);
+		}
+	}
+
+	switch_assert(*new_img);
+
+
+	I420Rotate(img->planes[SWITCH_PLANE_Y], img->stride[SWITCH_PLANE_Y],
+			   img->planes[SWITCH_PLANE_U], img->stride[SWITCH_PLANE_U],
+			   img->planes[SWITCH_PLANE_V], img->stride[SWITCH_PLANE_V],
+			   (*new_img)->planes[SWITCH_PLANE_Y], (*new_img)->stride[SWITCH_PLANE_Y],
+			   (*new_img)->planes[SWITCH_PLANE_U], (*new_img)->stride[SWITCH_PLANE_U],
+			   (*new_img)->planes[SWITCH_PLANE_V], (*new_img)->stride[SWITCH_PLANE_V],
+			   img->d_w, img->d_h, mode);
 #else
 	return;
 #endif

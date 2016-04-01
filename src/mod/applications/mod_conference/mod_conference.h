@@ -209,6 +209,7 @@ typedef enum {
 	MFLAG_SECOND_SCREEN,
 	MFLAG_SILENT,
 	MFLAG_FLIP_VIDEO,
+	MFLAG_ROTATE_VIDEO,
 	///////////////////////////
 	MFLAG_MAX
 } member_flag_t;
@@ -780,6 +781,8 @@ struct conference_member {
 	int force_bw_in;
 	int max_bw_out;
 	int reset_media;
+	int flip;
+	int flip_count;
 };
 
 typedef enum {

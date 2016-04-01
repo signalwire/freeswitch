@@ -499,6 +499,7 @@ void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, 
 			switch_img_fit(&layer->logo_img, ew, eh, layer->logo_fit);
 
 			switch_img_find_position(layer->logo_pos, ew, eh, layer->logo_img->d_w, layer->logo_img->d_h, &ex, &ey);
+
 			switch_img_patch(IMG, layer->logo_img, layer->x_pos + ex + layer->geometry.border, layer->y_pos + ey + layer->geometry.border);
 			if (layer->logo_text_img) {
 				int tx = 0, ty = 0;
@@ -3728,12 +3729,26 @@ switch_status_t conference_video_thread_callback(switch_core_session_t *session,
 			conference_utils_member_test_flag(member, MFLAG_CAN_BE_SEEN) &&
 			switch_queue_size(member->video_queue) < member->conference->video_fps.fps * 2 &&
 			!member->conference->playing_video_file) {
-			switch_img_copy(frame->img, &img_copy);
-			
-			if (conference_utils_member_test_flag(member, MFLAG_FLIP_VIDEO)) {
-				switch_img_flip(img_copy);
-			}
 
+			if (conference_utils_member_test_flag(member, MFLAG_FLIP_VIDEO) || conference_utils_member_test_flag(member, MFLAG_ROTATE_VIDEO)) {
+				if (conference_utils_member_test_flag(member, MFLAG_ROTATE_VIDEO)) {
+					if (member->flip_count++ > (int)(member->conference->video_fps.fps / 2)) {
+						member->flip += 90;
+						if (member->flip > 270) {
+							member->flip = 0;
+						}
+						member->flip_count = 0;
+					}
+
+					switch_img_rotate_copy(frame->img, &img_copy, member->flip);
+				} else {
+					switch_img_rotate_copy(frame->img, &img_copy, member->flip);
+				}
+
+			} else {
+				switch_img_copy(frame->img, &img_copy);
+			}
+			
 			if (switch_queue_trypush(member->video_queue, img_copy) != SWITCH_STATUS_SUCCESS) {
 				switch_img_free(&img_copy);
 			}
