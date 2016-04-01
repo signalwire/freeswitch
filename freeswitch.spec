@@ -153,6 +153,8 @@ BuildRequires: sqlite-devel
 BuildRequires: ldns-devel
 BuildRequires: libedit-devel
 BuildRequires: perl
+BuildRequires: nasm
+BuildRequires: yasm
 %if 0%{?fedora} >= 8 || 0%{?rhel} >= 6
 BuildRequires: perl-ExtUtils-Embed
 %endif
