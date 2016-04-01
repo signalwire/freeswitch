@@ -203,6 +203,9 @@ struct switch_rtp_vad_data {
 	uint8_t start_count;
 	uint8_t scan_freq;
 	time_t next_scan;
+	switch_time_t start_talking;
+	switch_time_t stop_talking;
+	switch_time_t total_talk_time;
 	int fire_events;
 };
 
@@ -4446,6 +4449,29 @@ SWITCH_DECLARE(uint8_t) switch_rtp_ready(switch_rtp_t *rtp_session)
 	return ret;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_rtp_sync_stats(switch_rtp_t *rtp_session)
+{
+	if (!rtp_session) {
+		return SWITCH_STATUS_FALSE;
+	}
+	
+	if (rtp_session->flags[SWITCH_RTP_FLAG_VAD]) {
+		switch_channel_t *channel = switch_core_session_get_channel(rtp_session->vad_data.session);
+
+		switch_channel_set_variable_printf(channel, "vad_total_talk_time_ms", "%u", (uint32_t)rtp_session->vad_data.total_talk_time / 1000);
+		switch_channel_set_variable_printf(channel, "vad_total_talk_time_sec", "%u", (uint32_t)rtp_session->vad_data.total_talk_time / 1000000);
+	}
+
+	do_mos(rtp_session, SWITCH_TRUE);
+
+	if (rtp_session->stats.inbound.error_log && !rtp_session->stats.inbound.error_log->stop) {
+		rtp_session->stats.inbound.error_log->stop = switch_micro_time_now();
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
 SWITCH_DECLARE(void) switch_rtp_destroy(switch_rtp_t **rtp_session)
 {
 	void *pop;
@@ -4468,10 +4494,8 @@ SWITCH_DECLARE(void) switch_rtp_destroy(switch_rtp_t **rtp_session)
 	READ_DEC((*rtp_session));
 	WRITE_DEC((*rtp_session));
 
-	do_mos(*rtp_session, SWITCH_TRUE);
-
-	if ((*rtp_session)->stats.inbound.error_log && !(*rtp_session)->stats.inbound.error_log->stop) {
-		(*rtp_session)->stats.inbound.error_log->stop = switch_micro_time_now();
+	if ((*rtp_session)->flags[SWITCH_RTP_FLAG_VAD]) {
+		switch_rtp_disable_vad(*rtp_session);
 	}
 
 	switch_mutex_lock((*rtp_session)->flag_mutex);
@@ -4531,10 +4555,6 @@ SWITCH_DECLARE(void) switch_rtp_destroy(switch_rtp_t **rtp_session)
 				switch_socket_close(sock);
 			}
 		}
-	}
-
-	if ((*rtp_session)->flags[SWITCH_RTP_FLAG_VAD]) {
-		switch_rtp_disable_vad(*rtp_session);
 	}
 
 #ifdef ENABLE_SRTP
@@ -7314,7 +7334,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 		uint32_t len = sizeof(decoded);
 		time_t now = switch_epoch_time_now(NULL);
 		send = 0;
-
+		
 		if (rtp_session->vad_data.scan_freq && rtp_session->vad_data.next_scan <= now) {
 			rtp_session->vad_data.bg_count = rtp_session->vad_data.bg_level = 0;
 			rtp_session->vad_data.next_scan = now + rtp_session->vad_data.scan_freq;
@@ -7355,7 +7375,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 					} else {
 						if (score > rtp_session->vad_data.bg_level && !switch_test_flag(&rtp_session->vad_data, SWITCH_VAD_FLAG_TALKING)) {
 							uint32_t diff = score - rtp_session->vad_data.bg_level;
-
+							
 							if (rtp_session->vad_data.hangover_hits) {
 								rtp_session->vad_data.hangover_hits--;
 							}
@@ -7363,6 +7383,9 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 							if (diff >= rtp_session->vad_data.diff_level || ++rtp_session->vad_data.hangunder_hits >= rtp_session->vad_data.hangunder) {
 
 								switch_set_flag(&rtp_session->vad_data, SWITCH_VAD_FLAG_TALKING);
+
+								rtp_session->vad_data.start_talking = switch_time_now();
+
 								if (!(rtp_session->rtp_bugs & RTP_BUG_NEVER_SEND_MARKER)) {
 									send_msg->header.m = 1;
 								}
@@ -7384,10 +7407,14 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 							}
 							if (switch_test_flag(&rtp_session->vad_data, SWITCH_VAD_FLAG_TALKING)) {
 								if (++rtp_session->vad_data.hangover_hits >= rtp_session->vad_data.hangover) {
+									rtp_session->vad_data.stop_talking = switch_time_now();
+									rtp_session->vad_data.total_talk_time += (rtp_session->vad_data.stop_talking - rtp_session->vad_data.start_talking);
+
 									switch_clear_flag(&rtp_session->vad_data, SWITCH_VAD_FLAG_TALKING);
+									
 									rtp_session->vad_data.hangover_hits = rtp_session->vad_data.hangunder_hits = rtp_session->vad_data.cng_count = 0;
 									if (switch_test_flag(&rtp_session->vad_data, SWITCH_VAD_FLAG_EVENTS_NOTALK)) {
-
+										
 										if ((rtp_session->vad_data.fire_events & VAD_FIRE_NOT_TALK)) {
 											switch_event_t *event;
 											if (switch_event_create(&event, SWITCH_EVENT_NOTALK) == SWITCH_STATUS_SUCCESS) {
@@ -7672,6 +7699,9 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_enable_vad(switch_rtp_t *rtp_session,
 	rtp_session->vad_data.start = 0;
 	rtp_session->vad_data.next_scan = switch_epoch_time_now(NULL);
 	rtp_session->vad_data.scan_freq = 0;
+	if (switch_test_flag(&rtp_session->vad_data, SWITCH_VAD_FLAG_TALKING)) {
+		rtp_session->vad_data.start_talking = switch_time_now();
+	}
 	switch_rtp_set_flag(rtp_session, SWITCH_RTP_FLAG_VAD);
 	switch_set_flag(&rtp_session->vad_data, SWITCH_VAD_FLAG_CNG);
 	return SWITCH_STATUS_SUCCESS;
