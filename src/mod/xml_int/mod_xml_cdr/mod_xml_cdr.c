@@ -502,6 +502,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load)
 
 	if (switch_event_bind_removable(modname, SWITCH_EVENT_TRAP, SWITCH_EVENT_SUBCLASS_ANY, event_handler, NULL, &globals.node) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
+		switch_core_remove_state_handler(&state_handlers);
 		return SWITCH_STATUS_GENERR;
 	}
 
@@ -517,6 +518,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load)
 	/* parse the config */
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", cf);
+		switch_event_unbind(&globals.node);
+		switch_core_remove_state_handler(&state_handlers);
+		switch_thread_rwlock_destroy(globals.log_path_lock);
 		return SWITCH_STATUS_FALSE;
 	}
 

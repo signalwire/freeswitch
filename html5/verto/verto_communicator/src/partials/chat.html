@@ -2,19 +2,19 @@
   <ul class="nav nav-tabs" role="tablist" ng-init="activePane = 'members'">
     <li role="presentation" ng-class="{'active': activePane == 'members'}">
       <a ng-click="activePane = 'members'" href="">
-        Members
+        {{ 'CHAT_TITLE_MEMBERS' | translate}}
       </a>
     </li>
     <li role="presentation" ng-class="{'active': activePane == 'chat'}">
       <a ng-click="activePane = 'chat'" href="">
-        Chat
+        {{ 'CHAT_TITLE' | translate }}
       </a>
     </li>
   </ul>
 
   <div class="chat-members" ng-show="activePane == 'members'">
     <div ng-show="!members.length">
-      <p class="text-center text-muted">There are no members to show.</p>
+      <p class="text-center text-muted">{{ 'CHAT_NO_MEMBERS' | translate }}</p>
     </div>
 
     <div ng-repeat="member in members" class="chat-member-item" ng-class="{ opened: $index == openId }">
@@ -56,33 +56,33 @@
       <div class="admin-controls" ng-if="verto.data.confRole == 'moderator'" ng-show="$index == $parent.openId">
         <div>
           <div class="col-md-6 ctrl-section">
-            <h3>General</h3>
+            <h3>{{ 'CHAT_GENERAL' | translate }}</h3>
             <div class="group btn-group-justified">
-              <a href="" class="btn btn-xs" ng-click="confKick(member.id)" title="Kick">
+              <a href="" class="btn btn-xs" ng-click="confKick(member.id)" title="{{ 'CHAT_TITLE_KICK' | translate }}">
                 <i class="mdi-fw mdi-av-not-interested"></i>
-                Kick
+                {{ 'CHAT_KICK' | translate }}
               </a>
-              <a href="" class="btn btn-xs" ng-click="confVideoFloor(member.id)" title="Video Floor">
+              <a href="" class="btn btn-xs" ng-click="confVideoFloor(member.id)" title="{{ 'CHAT_TITLE_VIDEO_FLOOR' | translate }}">
                 <i class="mdi-fw mdi-action-aspect-ratio"></i>
-                Floor
+                {{ 'CHAT_FLOOR' | translate }}
               </a>
-              <a href="" class="btn btn-xs" ng-click="confTransfer(member.id)" title="Transfer">
+              <a href="" class="btn btn-xs" ng-click="confTransfer(member.id)" title="{{ 'CHAT_TITLE_TRANSFER' | translate }}">
                 <i class="mdi-fw mdi-communication-call-made"></i>
-                <span style="margin-left: -9px">Transfer</span>
+                <span style="margin-left: -9px">{{ 'CHAT_TRANSFER' | translate }}</span>
               </a>
             </div>
           </div>
 
           <div class="col-md-6 ctrl-section">
-            <h3>Banner</h3>
+            <h3>{{ 'CHAT_BANNER' | translate }}</h3>
             <div class="group btn-group-justified">
-              <a href="" class="btn btn-xs" ng-click="confBanner(member.id)" title="Set">
+              <a href="" class="btn btn-xs" ng-click="confBanner(member.id)" title="{{ 'CHAT_TITLE_SET' | translate }}">
                 <i class="mdi-fw mdi-toggle-radio-button-on"></i>
-                Set
+                {{ 'CHAT_SET' | translate }}
               </a>
-              <a href="" class="btn btn-xs" ng-click="confResetBanner(member.id)" title="Reset">
+              <a href="" class="btn btn-xs" ng-click="confResetBanner(member.id)" title="{{ 'CHAT_TITLE_RESET' | translate }}">
                 <i class="mdi-fw mdi-content-clear"></i>
-                Reset
+                {{ 'CHAT_RESET' | translate }}
               </a>
             </div>
           </div>
@@ -90,81 +90,81 @@
 
         <div>
           <div class="col-md-6 ctrl-section" ng-if="conf.canvasCount > 1">
-            <h3>Canvas</h3>
+            <h3>{{ 'CHAT_CANVAS' | translate }}</h3>
             <div class="group btn-group-justified">
-              <a href="" class="btn btn-xs" ng-click="confCanvasIn(member.id, 'prev')" title="Canvas In">
+              <a href="" class="btn btn-xs" ng-click="confCanvasIn(member.id, 'prev')" title="{{ 'CHAT_CANVAS_IN' | translate }}">
                 <i class="mdi-fw mdi-action-open-in-browser"></i>
-                Prev
+                {{ 'CHAT_PREV' | translate }}
               </a>
-              <a href="" class="btn btn-xs" ng-click="confCanvasIn(member.id)" title="Canvas In">
+              <a href="" class="btn btn-xs" ng-click="confCanvasIn(member.id)" title="{{ 'CHAT_CANVAS_IN' | translate }}">
                 <i class="mdi-fw mdi-action-open-in-browser"></i>
                 Id
               </a>
-              <a href="" class="btn btn-xs" ng-click="confCanvasIn(member.id, 'next')" title="Canvas In">
+              <a href="" class="btn btn-xs" ng-click="confCanvasIn(member.id, 'next')" title="{{ 'CHAT_CANVAS_IN' | translate }}">
                 <i class="mdi-fw mdi-action-open-in-browser"></i>
-                Next
+                {{ 'CHAT_NEXT' | translate }}
               </a>
             </div>
             <div class="group btn-group-justified">
-              <a href="" class="btn btn-xs" ng-click="confCanvasOut(member.id, 'prev')" title="Canvas Out">
+              <a href="" class="btn btn-xs" ng-click="confCanvasOut(member.id, 'prev')" title="{{ 'CHAT_CANVAS_OUT' | translate }}">
                 <i class="mdi-fw mdi-fw mdi-action-system-update-tv"></i>
-                Prev
+                {{ 'CHAT_PREV' | translate }}
               </a>
-              <a href="" class="btn btn-xs" ng-click="confCanvasOut(member.id)" title="Canvas Out">
+              <a href="" class="btn btn-xs" ng-click="confCanvasOut(member.id)" title="{{ 'CHAT_CANVAS_OUT' | translate }}">
                 <i class="mdi-fw mdi-fw mdi-action-system-update-tv"></i>
                 Id
               </a>
-              <a href="" class="btn btn-xs" ng-click="confCanvasOut(member.id, 'next')" title="Canvas Out">
+              <a href="" class="btn btn-xs" ng-click="confCanvasOut(member.id, 'next')" title="{{ 'CHAT_CANVAS_OUT' | translate }}">
                 <i class="mdi-fw mdi-fw mdi-action-system-update-tv"></i>
-                Next
+                {{ 'CHAT_NEXT' | translate }}
               </a>
             </div>
             <div class="group btn-group-justified">
-              <a href="" class="btn btn-xs" ng-click="confLayer(member.id, 'prev')" title="Layer">
+              <a href="" class="btn btn-xs" ng-click="confLayer(member.id, 'prev')" title="{{ 'CHAT_LAYER' | translate }}">
                 <i class="mdi-fw mdi-action-view-carousel"></i>
-                Prev
+                {{ 'CHAT_PREV' | translate }}
               </a>
-              <a href="" class="btn btn-xs" ng-click="confLayer(member.id)" title="Layer">
+              <a href="" class="btn btn-xs" ng-click="confLayer(member.id)" title="{{ 'CHAT_LAYER' | translate }}">
                 <i class="mdi-fw mdi-action-view-carousel"></i>
                 Id
               </a>
-              <a href="" class="btn btn-xs" ng-click="confLayer(member.id, 'next')" title="Layer">
+              <a href="" class="btn btn-xs" ng-click="confLayer(member.id, 'next')" title="{{ 'CHAT_LAYER' | translate }}">
                 <i class="mdi-fw mdi-action-view-carousel"></i>
-                Next
+                {{ 'CHAT_NEXT' | translate }}
               </a>
             </div>
           </div>
 
           <div class="col-md-6 ctrl-section">
-            <h3>Audio/Video</h3>
+            <h3>{{ 'CHAT_AUDIO_VIDEO' | translate }}</h3>
             <div class="group btn-group-justified">
-              <a href="" class="btn btn-xs" ng-click="confMuteMic(member.id)" title="Mute/Unmute Mic">
+              <a href="" class="btn btn-xs" ng-click="confMuteMic(member.id)" title="{{ 'CHAT_TITLE_MUTE_UNMUTE_MIC' | translate }}">
                 <i class="mdi-fw" ng-class="member.status.audio.muted ? 'mdi-av-mic-off' : 'mdi-av-mic'"></i>
-                {{ member.status.audio.muted ? 'Unmute' : 'Mute' }}
+                {{ member.status.audio.muted ? 'CHAT_UNMUTE_MIC' : 'CHAT_MUTE_MIC' | translate }}
               </a>
-              <a href="" ng-class="{ 'disabled': !member.status.video }" class="btn btn-xs" ng-click="confMuteVideo(member.id)" title="Mute/Unmute Video">
+              <a href="" ng-class="{ 'disabled': !member.status.video }" class="btn btn-xs" ng-click="confMuteVideo(member.id)" title="{{ 'CHAT_TITLE_MUTE_UNMUTE_VIDEO' | translate }}">
                 <i class="mdi-fw" ng-class="member.status.video.muted ? 'mdi-av-videocam-off' : 'mdi-av-videocam'"></i>
-                {{ member.status.video.muted ? 'Unmute' : 'Mute' }}
+                {{ member.status.video.muted ? 'CHAT_UNMUTE_MIC' : 'CHAT_MUTE_MIC' | translate }}
               </a>
             </div>
             <div class="group btn-group-justified">
-              <a href="" class="btn btn-xs" ng-click="confVolumeDown(member.id)" title="Vol –">
+              <a href="" class="btn btn-xs" ng-click="confVolumeDown(member.id)" title="{{ 'CHAT_TITLE_VOL_MINUS' | translate }}">
                 <i class="mdi-fw mdi-av-volume-down"></i>
-                Vol –
+                {{ 'CHAT_VOL_MINUS' | translate }}
               </a>
-              <a href="" class="btn btn-xs" ng-click="confVolumeUp(member.id)" title="Vol +">
+              <a href="" class="btn btn-xs" ng-click="confVolumeUp(member.id)" title="{{ 'CHAT_TITLE_VOL_MINUS' | translate }}">
                 <i class="mdi-fw mdi-av-volume-up"></i>
-                Vol +
+                {{ 'CHAT_VOL_PLUS' | translate }}
               </a>
             </div>
             <div class="group btn-group-justified">
-              <a href="" class="btn btn-xs" ng-click="confGainDown(member.id)" title="Gain –">
+              <a href="" class="btn btn-xs" ng-click="confGainDown(member.id)" title="{{ 'CHAT_TITLE_VOL_MINUS' | translate }}">
                 <i class="mdi-fw mdi-av-volume-down"></i>
-                Gain –
+                {{ 'CHAT_GAIN_MINUS' | translate }}
               </a>
-              <a href="" class="btn btn-xs" ng-click="confGainUp(member.id)" title="Gain +">
+              <a href="" class="btn btn-xs" ng-click="confGainUp(member.id)" title="{{ 'CHAT_TITLE_VOL_MINUS' | translate }}">
                 <i class="mdi-fw mdi-av-volume-up"></i>
-                Gain +
+                {{ 'CHAT_GAIN_PLUS' | translate }}
               </a>
             </div>
           </div>
@@ -176,7 +176,7 @@
   <div class="chat-history" ng-show="activePane == 'chat'">
     <div class="chat-messages">
       <div class="chat-message" ng-show="!messages.length">
-        <p class="text-center text-muted">There are no messages to show.</p>
+        <p class="text-center text-muted">{{ 'CHAT_NO_MESSAGES' | translate }}</p>
       </div>
       <div class="chat-message" ng-repeat="message in messages" title="Sent at {{ message.created_at|date }}.">
         <div class="chat-message-metadata">{{ message.from }}:</div>
@@ -188,9 +188,9 @@
     <div class="chat-message-input">
       <form ng-submit="send()" >
         <div class="chat-message-input-group">
-          <textarea ng-model="message" ng-keydown="($event.keyCode == 13 && $event.shiftKey !== true) && send($event)" required="required" class="form-control input-sm" placeholder="Type your message here..."></textarea>
+          <textarea ng-model="message" ng-keydown="($event.keyCode == 13 && $event.shiftKey !== true) && send($event)" required="required" class="form-control input-sm" placeholder="{{ 'CHAT_TYPE_MESSAGE' | translate }}"></textarea>
           <button class="btn btn-success btn-sm" type="submit">
-            Send
+            {{ 'CHAT_SEND_MESSAGE' | translate }}
             <span class="mdi-navigation-arrow-forward chat-message-input-group-icon-button"></span>
           </button>
         </div>

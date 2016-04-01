@@ -1073,7 +1073,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_enumerate(switch_core_sess
 	stream->write_function(stream, "<media-bugs>\n");
 
 	if (session->bugs) {
-        switch_thread_rwlock_rdlock(session->bug_rwlock);
+		switch_thread_rwlock_rdlock(session->bug_rwlock);
 		for (bp = session->bugs; bp; bp = bp->next) {
 			int thread_locked = (bp->thread_id && bp->thread_id == switch_thread_self());
 			stream->write_function(stream, 

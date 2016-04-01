@@ -59,23 +59,23 @@ static void (*cJSON_free)(void *ptr) = glue_free;
 
 static char* cJSON_strdup(const char* str)
 {
-      size_t len;
-      char* copy;
-      const char *s = str ? str : "";
+	size_t len;
+	char* copy;
+	const char *s = str ? str : "";
 
-      len = strlen(s) + 1;
-      if (!(copy = (char*)cJSON_malloc(len))) return 0;
-      memcpy(copy,s,len);
-      return copy;
+	len = strlen(s) + 1;
+	if (!(copy = (char*)cJSON_malloc(len))) return 0;
+	memcpy(copy,s,len);
+	return copy;
 }
 
 SWITCH_DECLARE(void)cJSON_InitHooks(cJSON_Hooks* hooks)
 {
-    if (!hooks) { /* Reset hooks */
-        cJSON_malloc = malloc;
-        cJSON_free = free;
-        return;
-    }
+	if (!hooks) { /* Reset hooks */
+		cJSON_malloc = malloc;
+		cJSON_free = free;
+		return;
+	}
 
 	cJSON_malloc = (hooks->malloc_fn)?hooks->malloc_fn:malloc;
 	cJSON_free	 = (hooks->free_fn)?hooks->free_fn:free;

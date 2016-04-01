@@ -141,7 +141,9 @@ namespace FreeSWITCH {
         
         static void watcher_Changed(object sender, FileSystemEventArgs e) {
             Action<string> queueFile = fileName => {
-                var currentPi = pluginInfos.FirstOrDefault(p => string.Compare(fileName, p.FileName, StringComparison.OrdinalIgnoreCase) == 0);
+                var currentPi = pluginInfos
+                    .Where(x => !string.IsNullOrEmpty(x.FileName))
+                    .FirstOrDefault(p => string.Compare(fileName, p.FileName, StringComparison.OrdinalIgnoreCase) == 0);
                 if (currentPi != null) {
                     var noReload = currentPi.Manager.ApiExecutors.Any(x => (x.PluginOptions & PluginOptions.NoAutoReload) == PluginOptions.NoAutoReload) ||
                                    currentPi.Manager.AppExecutors.Any(x => (x.PluginOptions & PluginOptions.NoAutoReload) == PluginOptions.NoAutoReload);
@@ -259,7 +261,7 @@ namespace FreeSWITCH {
             System.Threading.Interlocked.Increment(ref appDomainCount);
             setup.ApplicationName = Path.GetFileName(fileName) + "_" + appDomainCount;
             var domain = AppDomain.CreateDomain(setup.ApplicationName, null, setup);
-                
+
             PluginManager pm;
             try {
                 pm = (PluginManager)domain.CreateInstanceAndUnwrap(pmType.Assembly.FullName, pmType.FullName, null);
@@ -276,9 +278,17 @@ namespace FreeSWITCH {
                 return;
             }
 
+            addPlugin(fileName, domain, pm);
+        }
+
+        static void addPlugin(string fileName, AppDomain domain, PluginManager pm) {
             // Update dictionaries atomically
             lock (loaderLock) {
-                unloadFile(fileName);
+                if (!string.IsNullOrEmpty(fileName)) {
+                    if (domain == null) throw new ApplicationException("File based plugins must specify an AppDomain.");
+                    unloadFile(fileName);
+                }
+                if (domain == null) domain = AppDomain.CurrentDomain;
 
                 var pi = new PluginInfo { FileName = fileName, Domain = domain, Manager = pm };
                 pluginInfos.Add(pi);
@@ -296,6 +306,11 @@ namespace FreeSWITCH {
                 pm.ApiExecutors.ForEach(x => printLoaded(x, "Api"));
                 Log.WriteLine(LogLevel.Info, "Finished loading {0} into domain {1}.", pi.FileName, pi.Domain.FriendlyName);
             }
+        }
+
+        public static void LoadEmbeddedPlugins(Assembly asm) {
+            var pm = new EmbeddedPluginManager(asm);
+            addPlugin(null, null, pm);
         }
 
         static void unloadFile(string fileName) {

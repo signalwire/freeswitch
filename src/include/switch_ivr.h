@@ -600,6 +600,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_3p_media(const char *uuid, switch_med
 SWITCH_DECLARE(switch_status_t) switch_ivr_nomedia(const char *uuid, switch_media_flag_t flags);
 SWITCH_DECLARE(switch_status_t) switch_ivr_3p_nomedia(const char *uuid, switch_media_flag_t flags);
 
+SWITCH_DECLARE(void) switch_ivr_bg_media(const char *uuid, switch_media_flag_t flags, switch_bool_t on, switch_bool_t is3p, uint32_t delay);
+
 /*!
   \brief Signal the session with a protocol specific hold message.
   \param uuid the uuid of the session to hold

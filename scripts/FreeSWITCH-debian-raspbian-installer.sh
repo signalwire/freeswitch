@@ -4,7 +4,6 @@
 #
 ########################################################
 # TODO: FreeSWITCH AutoStart
-# TODO: Install on Raspbian
 # TODO: Allow Selection of Source or Package Install on Debian
 
 DIALOG=${DIALOG=dialog}
@@ -17,7 +16,18 @@ install_prereqs() {
 	#install the prereqs
 	echo "Making sure we have the prereqs for this script to run. Please Stand by..."
 	apt-get update 2>&1 >/dev/null
-	apt-get install -y curl dialog git 2>&1 >/dev/null
+	apt-get install -y curl dialog git ntpdate 2>&1 >/dev/null
+
+	# See if ntpd is running if it is, stop it set the current time as rpi has no RTC and this is needed
+	# for SSL to function properly
+
+	if pgrep "ntpd" >/dev/null ; then
+		/etc/init.d/ntp stop
+		ntpdate pool.ntp.org
+		/etc/init.d/ntp start
+	else
+		ntpdate pool.ntp.org
+	fi
 }
 
 welcome_screen() {
@@ -101,7 +111,7 @@ is_private_ip() {
 }
 
 verify_ip_fqdn() {
-	DNSIP=`dig +noall +answer @4.2.2.2 $FQDN | cut -d'	' -f3` 
+	DNSIP=`dig +noall +answer @4.2.2.2 $FQDN | awk '{print $5}'`
 
 	dialog --title "NO DNS For this FQDN" --clear \
 		--menu "The FQDN and IP Address do not match what is available in Public DNS Servers." 15 60 5 \
@@ -132,13 +142,14 @@ config_fs_repos() {
 }
 
 get_fs_source() {
+	echo "REPO = $REPO"
 	if [ ! -d /usr/src/freeswitch.git ]; then
 		cd /usr/src
 		git clone $REPO freeswitch.git
 	else
 		cd /usr/src/freeswitch.git
 		git clean -fdx
-		git reset -hard origin/$FS_REV
+		git reset --hard origin/$FS_REV
 		git pull
 	fi
 }
@@ -164,7 +175,7 @@ install_certs() {
 			NEED_CERTS_INSTALL=0
 		else
 			echo "Renewing LetsEncrypt Certs as they will expire in the next 30 days."
-			./letsencrypt-auto renew
+			./letsencrypt-auto renew  --manual-public-ip-logging-ok
 		fi
 	else
 		echo "Setting up LetsEncrypt and getting you some nice new Certs for this Server."
@@ -192,7 +203,9 @@ build_fs() {
 		rm -rf /usr/local/freeswitch/{bin,mod,lib}/*
 	fi
 	cd /usr/src/freeswitch.git
-	./bootstrap.sh -j
+	if [ ! -d /usr/src/freeswitch.git/configure ]; then
+		./bootstrap.sh -j
+	fi
 	./configure -C
 	make -j$JLIMIT install
 	make uhd-sounds-install
@@ -238,6 +251,7 @@ freeswitch_raspbian_source() {
 		libtiff5-dev libperl-dev libgdbm-dev libdb-dev gettext libssl-dev libcurl4-openssl-dev libpcre3-dev libspeex-dev \
 		libspeexdsp-dev libsqlite3-dev libedit-dev libldns-dev libpq-dev libsndfile-dev libopus-dev liblua5.1-0-dev 2>&1 | \
 		awk -W interactive '/Progress/ { print }'| sed -u 's/[^0-9]//g' | dialog --gauge "Please wait.\n Installing Build Requirements..." 10 70 0
+	build_fs
 
 }
 
@@ -247,11 +261,12 @@ fs_ver_select
 get_network_settings
 
 if [ "$ID" = "debian" ]; then
+	## These only work on Jessie at this time
 	config_fs_repos
 	freeswitch_debian_source
 elif [ "$ID" = "raspbian" ]; then	
-	#freeswitch_raspbiani123
 	JLIMIT="3"
+	freeswitch_raspbian_source
 fi
 
 install_vc
@@ -264,10 +279,10 @@ if [ "x$PRIVIP" != "x$IPADDR" ]; then
 	elif [ $VIPFQDN -eq 1 ]; then
 		echo "Skipping LetsEncrypt\n"
 	else 
-		get_dletsencrypt
+		get_letsencrypt
 		install_certs
 	fi
 else
-	echo "Skipping LetsEncrypt. Since we are on Private IP Space";
+	echo "Skipping LetsEncrypt. Since we are on a Private IP Address";
 fi
 

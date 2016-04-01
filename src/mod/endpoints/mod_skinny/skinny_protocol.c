@@ -320,7 +320,7 @@ void skinny_line_get(listener_t *listener, uint32_t instance, struct line_stat_r
 	switch_assert(listener->profile);
 	switch_assert(listener->device_name);
 
-	helper.button = switch_core_alloc(listener->pool, sizeof(struct line_stat_res_message));
+	helper.button = calloc(sizeof(struct line_stat_res_message),1);
 
 	if ((sql = switch_mprintf(
 					"SELECT '%d' AS wanted_position, position, label, value, caller_name "
@@ -363,7 +363,7 @@ void skinny_speed_dial_get(listener_t *listener, uint32_t instance, struct speed
 	switch_assert(listener->profile);
 	switch_assert(listener->device_name);
 
-	helper.button = switch_core_alloc(listener->pool, sizeof(struct speed_dial_stat_res_message));
+	helper.button = calloc(sizeof(struct speed_dial_stat_res_message),1);
 
 	if ((sql = switch_mprintf(
 					"SELECT '%d' AS wanted_position, position, label, value, settings "
@@ -407,7 +407,7 @@ void skinny_service_url_get(listener_t *listener, uint32_t instance, struct serv
 	switch_assert(listener->profile);
 	switch_assert(listener->device_name);
 
-	helper.button = switch_core_alloc(listener->pool, sizeof(struct service_url_stat_res_message));
+	helper.button = calloc(sizeof(struct service_url_stat_res_message), 1);
 
 	if ((sql = switch_mprintf(
 					"SELECT '%d' AS wanted_position, position, label, value, settings "
@@ -453,7 +453,7 @@ void skinny_feature_get(listener_t *listener, uint32_t instance, struct feature_
 	switch_assert(listener->profile);
 	switch_assert(listener->device_name);
 
-	helper.button = switch_core_alloc(listener->pool, sizeof(struct feature_stat_res_message));
+	helper.button = calloc(sizeof(struct feature_stat_res_message), 1);
 
 	if ((sql = switch_mprintf(
 					"SELECT '%d' AS wanted_position, position, label, value, settings "

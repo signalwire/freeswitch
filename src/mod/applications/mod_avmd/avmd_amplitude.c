@@ -1,7 +1,9 @@
-#ifndef __AMPLITUDE_H__
+#ifndef __AVMD_AMPLITUDE_H__
+
+
 #include <math.h>
-#include "amplitude.h"
-#include "psi.h"
+#include "avmd_amplitude.h"
+#include "avmd_psi.h"
 
 /*! \brief
  * @author Eric des Courtis
@@ -10,14 +12,13 @@
  * @param f Frequency estimate
  * @return The amplitude at position i 
  */
-extern double amplitude(circ_buffer_t *b, size_t i, double f)
+extern double avmd_amplitude(circ_buffer_t *b, size_t i, double f)
 {
     double result;
-
     result = sqrt(PSI(b, i) / sin(f * f));
-
     return result;
 }
 
-#endif
+
+#endif /* __AVMD_AMPLITUDE_H__ */
 

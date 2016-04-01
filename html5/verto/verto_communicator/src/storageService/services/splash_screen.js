@@ -2,8 +2,8 @@
 
   angular
     .module('storageService')
-    .service('splashscreen', ['$rootScope', '$q', 'storage', 'config', 'verto',
-      function($rootScope, $q, storage, config, verto) {
+    .service('splashscreen', ['$rootScope', '$q', 'storage', 'config', 'verto', '$translate',
+      function($rootScope, $q, storage, config, verto, $translate) {
 
         var checkBrowser = function() {
           return $q(function(resolve, reject) {
@@ -12,16 +12,15 @@
               'activity': activity,
               'soft': false,
               'status': 'success',
-              'message': 'Checking browser compability.'
+              'message': $translate.instant('BROWSER_COMPATIBILITY')
             };
-
             navigator.getUserMedia = navigator.getUserMedia ||
               navigator.webkitGetUserMedia ||
               navigator.mozGetUserMedia;
 
             if (!navigator.getUserMedia) {
               result['status'] = 'error';
-              result['message'] = 'Error: browser doesn\'t support WebRTC.';
+              result['message'] = $translate.instant('BROWSER_WITHOUT_WEBRTC');
               reject(result);
             }
 
@@ -37,13 +36,13 @@
               'activity': activity,
               'soft': false,
               'status': 'success',
-              'message': 'Checking media permissions'
+              'message': $translate.instant('CHECK_PERMISSION_MEDIA')
             };
 
             verto.mediaPerm(function(status) {
               if(!status) {
                 result['status'] = 'error';
-                result['message'] = 'Error: Media Permission Denied';
+                result['message'] = $translate.instant('ERROR_PERMISSION_MEDIA');
                 verto.data.mediaPerm = false;
                 reject(result);
               }
@@ -60,7 +59,7 @@
               'status': 'success',
               'soft': true,
               'activity': activity,
-              'message': 'Refresh Media Devices.'
+              'message': $translate.instant('REFRESH_MEDIA_DEVICES')
             };
 
             verto.refreshDevices(function(status) {
@@ -79,7 +78,7 @@
               'status': 'success',
               'soft': true,
               'activity': activity,
-              'message': 'Check Connection Speed.'
+              'message': $translate.instant('CHECK_CONNECTION_SPEED')
             };
 
             if (storage.data.autoBand && verto.data.instance) {
@@ -101,7 +100,7 @@
               'status': 'promise',
               'soft': true,
               'activity': activity,
-              'message': 'Provisioning configuration.'
+              'message': $translate.instant('CHECK_PROVISIONING_CONF')
             };
 
             var configResponse = config.configure();
@@ -116,7 +115,7 @@
                   return result;
                 } else {
                   result['status'] = 'error';
-                  result['message'] = 'Error: Provision failed.';
+                  result['message'] = $translate.instant('ERROR_PROVISIONING_CONF');
                   return result;
                 }
               });
@@ -134,7 +133,7 @@
               'status': 'success',
               'soft': true,
               'activity': activity,
-              'message': 'Checking login.'
+              'message': $translate.instant('CHECK_LOGIN'),
             };
 
             if(verto.data.connecting || verto.data.connected) {
@@ -179,19 +178,19 @@
         ];
 
         var progress_message = [
-          'Checking browser compability.',
-          'Checking media permissions',
-          'Refresh Media Devices.',
-          'Provisioning configuration.',
-          'Checking login.',
-          'Check Connection Speed.'
+          $translate.instant('BROWSER_COMPATIBILITY'),
+          $translate.instant('CHECK_PERMISSION_MEDIA'),
+          $translate.instant('REFRESH_MEDIA_DEVICES'),
+          $translate.instant('CHECK_PROVISIONING_CONF'),
+          $translate.instant('CHECK_LOGIN'),
+          $translate.instant('CHECK_CONNECTION_SPEED'),
         ];
 
         var getProgressMessage = function(current_progress) {
           if(progress_message[current_progress] != undefined) {
             return progress_message[current_progress];
           } else {
-            return 'Please wait...';
+            return $translate.instant('PLEASE_WAIT');
           }
         };
 

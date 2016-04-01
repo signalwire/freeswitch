@@ -2,13 +2,13 @@
   <div class="container-fluid">
     <div class="https-untrusted navbar-center" ng-show="!safeProtocol">
       <div class="https-message">
-        This Connection is Untrusted.
+        {{ 'MESSAGE_CONNECTION_UNTRUSTED' | translate }}
       </div>
     </div>
 
     <div class="navbar-header">
       <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
-        <span class="sr-only">Toggle navigation</span>
+        <span class="sr-only">{{ 'MESSAGE_TOGGLE_NAVIGATION' | translate }}</span>
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
@@ -25,10 +25,10 @@
             <span class="caret"></span>
           </a>
           <ul class="dropdown-menu drop-net-info" role="menu" ng-click="$event.stopPropagation()">
-            <li><a class="title">Bandwidth Info</a></li>
-            <li><a>Outgoing: {{bandUp}} Kbps</a></li>
-            <li><a>Incoming: {{bandDown}} Kbps</a></li>
-            <li><a>Video Resolution: {{vidRes}}</a></li>
+            <li><a class="title">{{ 'BANDWIDTH_INFO' | translate }}</a></li>
+            <li><a>{{ 'BANDWIDTH_INFO_OUTGOING' | translate }} {{bandUp}} Kbps</a></li>
+            <li><a>{{ 'BANDWIDTH_INFO_INCOMING' | translate }} {{bandDown}} Kbps</a></li>
+            <li><a>{{ 'BANDWIDTH_INFO_VIDEO_RES' | translate }} {{vidRes}}</a></li>
           </ul>
         </li>
         <li>
@@ -38,11 +38,11 @@
         </li>
         <li>
           <a href="" class="incall-number" ng-show="storage.data.called_number">
-              {{ storage.data.called_number && storage.data.userStatus == 'connecting' ? 'Last Call: ' : 'In Call: '  }} {{ storage.data.called_number  }}
+              {{ storage.data.called_number && storage.data.userStatus != 'connected' ?  'LAST_CALL' : 'IN_CALL' | translate  }} {{ storage.data.called_number  }}
           </a>
         </li>
         <li class="navbar-item-icon" ng-show="verto.data.connected">
-          <a href="" ng-click="openModal('partials/modal_settings.html', 'ModalSettingsController')">
+          <a href="" ng-click="toggleSettings()">
             <i class="mdi-action-settings"></i>
           </a>
         </li>
@@ -63,10 +63,10 @@
             <span class="caret"></span>
           </a>
           <ul class="dropdown-menu" role="menu">
-            <li><a href="#/?sessid=random" target="_blank">Open New Window</a></li>
-            <li><a href="" ng-click="openModal('partials/modal_logininfo.html', 'ModalLoginInformationController')">Change Login Information</a></li>
+            <li><a href="#/?sessid=random" target="_blank">{{ 'OPEN_NEW_WINDOW' | translate}}</a></li>
+            <li><a href="" ng-click="openModal('partials/modal_logininfo.html', 'ModalLoginInformationController')">{{ 'CHANGE_LOGIN_INFO' | translate}}</a></li>
             <!--<li><a href="#">View Device Settings</a></li>-->
-            <li><a href="" ng-click="logout()">Logout</a></li>
+            <li><a href="" ng-click="logout()">{{ 'LOGOUT' | translate}}</a></li>
           </ul>
         </li>
         <li class="navbar-item-icon">
@@ -75,9 +75,9 @@
             <span class="caret"></span>
           </a>
           <ul class="dropdown-menu" role="menu">
-            <li><a href="" ng-click="showAbout()">About</a></li>
-            <li><a href="" ng-click="showContributors()">Contributors</a></li>
-            <li><a href="https://freeswitch.org/confluence/x/MQCT" target="_blank">Help</a></li>
+            <li><a href="" ng-click="showAbout()">{{ 'ABOUT' | translate}}</a></li>
+            <li><a href="" ng-click="showContributors()">{{ 'CONTRIBUTORS' | translate}}</a></li>
+            <li><a href="https://freeswitch.org/confluence/x/MQCT" target="_blank">{{ 'HELP' | translate}}</a></li>
           </ul>
         </li>
 

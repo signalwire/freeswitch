@@ -1,5 +1,5 @@
 #ifndef __BUFFER_H__
-#include "buffer.h"
+#include "avmd_buffer.h"
 #endif
 
 extern size_t next_power_of_2(size_t v)

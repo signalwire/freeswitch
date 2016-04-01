@@ -1,4 +1,6 @@
-#ifndef __DESA2_H__
+#ifndef __AVMD_DESA2_H__
+
+
 #include <stdio.h>
 #ifdef WIN32
 #include <float.h>
@@ -6,15 +8,15 @@
 #else
 #define ISNAN(x) (isnan(x))
 #endif
-#include "buffer.h"
-#include "desa2.h"
-#include "options.h"
+#include "avmd_buffer.h"
+#include "avmd_desa2.h"
+#include "avmd_options.h"
 
-#ifdef FASTMATH
-#include "fast_acosf.h"
+#ifdef AVMD_FAST_MATH
+#include "avmd_fast_acosf.h"
 #endif
 
-extern double desa2(circ_buffer_t *b, size_t i)
+extern double avmd_desa2(circ_buffer_t *b, size_t i)
 {
     double d;
     double n;
@@ -33,14 +35,11 @@ extern double desa2(circ_buffer_t *b, size_t i)
     x4 = GET_SAMPLE((b), ((i) + 4));
 
     x2sq = x2 * x2;
-
     d = 2.0 * ((x2sq) - (x1 * x3));
     if (d == 0.0) return 0.0;
-
     n = ((x2sq) - (x0 * x4)) - ((x1 * x1) - (x0 * x2)) - ((x3 * x3) - (x2 * x4));
 
-
-#ifdef FASTMATH
+#ifdef AVMD_FAST_MATH
     result = 0.5 * (double)fast_acosf((float)n/d);
 #else
     result = 0.5 * acos(n/d);
@@ -52,4 +51,4 @@ extern double desa2(circ_buffer_t *b, size_t i)
 
 }
 
-#endif
+#endif /* __AVMD_DESA2_H__ */

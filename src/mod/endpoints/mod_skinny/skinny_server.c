@@ -116,6 +116,9 @@ switch_status_t skinny_create_incoming_session(listener_t *listener, uint32_t *l
 
 	if (!button || !button->shortname[0]) {
 		skinny_log_l(listener, SWITCH_LOG_CRIT, "Line %d not found on device\n", *line_instance_p);
+		if ( button ) {
+			switch_safe_free(button);
+		}
 		goto error;
 	}
 
@@ -199,11 +202,17 @@ error:
 	}
 
 	listener->profile->ib_failed_calls++;
+	if ( button ) {
+		switch_safe_free(button);
+	}
 	return SWITCH_STATUS_FALSE;
 
 done:
 	*session = nsession;
 	listener->profile->ib_calls++;
+	if ( button ) {
+		switch_safe_free(button);
+	}
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -1524,6 +1533,7 @@ switch_status_t skinny_handle_stimulus_message(listener_t *listener, skinny_mess
 					return SWITCH_STATUS_FALSE;
 				}
 				skinny_session_process_dest(session, listener, line_instance, button_speed_dial->line, '\0', 0);
+				switch_safe_free(button_speed_dial);
 			}
 			break;
 		case SKINNY_BUTTON_HOLD:
@@ -1582,10 +1592,12 @@ switch_status_t skinny_handle_stimulus_message(listener_t *listener, skinny_mess
 				skinny_create_incoming_session(listener, &line_instance, &session);
 				if ( ! session ) {
 					skinny_log_l_msg(listener, SWITCH_LOG_CRIT, "Unable to handle stimulus message, couldn't create incoming session.\n");
+					switch_safe_free(button_line);
 					return SWITCH_STATUS_FALSE;
 				}
 				skinny_session_process_dest(session, listener, line_instance, NULL, '\0', 0);
 			}
+			switch_safe_free(button_line);
 			break;
 
 		default:
@@ -1709,6 +1721,8 @@ switch_status_t skinny_handle_speed_dial_stat_request(listener_t *listener, skin
 
 	send_speed_dial_stat_res(listener, request->data.speed_dial_req.number, button->line, button->label);
 
+	switch_safe_free(button);
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -1724,6 +1738,8 @@ switch_status_t skinny_handle_line_stat_request(listener_t *listener, skinny_mes
 	skinny_line_get(listener, request->data.line_req.number, &button);
 
 	memcpy(&message->data.line_res, button, sizeof(struct line_stat_res_message));
+
+	switch_safe_free(button);
 
 	skinny_send_reply(listener, message, SWITCH_TRUE);
 
@@ -2407,6 +2423,8 @@ switch_status_t skinny_handle_service_url_stat_request(listener_t *listener, ski
 
 	skinny_send_reply(listener, message, SWITCH_TRUE);
 
+	switch_safe_free(button);
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -2424,6 +2442,8 @@ switch_status_t skinny_handle_feature_stat_request(listener_t *listener, skinny_
 	memcpy(&message->data.feature_res, button, sizeof(struct feature_stat_res_message));
 
 	skinny_send_reply(listener, message, SWITCH_TRUE);
+
+	switch_safe_free(button);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -2568,7 +2588,7 @@ switch_status_t skinny_handle_updatecapabilities(listener_t *listener, skinny_me
 	}
 	i = 0;
 	pos = 0;
-	codec_string = switch_core_alloc(listener->pool, string_len+1);
+	codec_string = calloc(string_len+1, 1);
 	for (string_pos = 0; string_pos < string_len; string_pos++) {
 		char *codec = codec_order[i];
 		switch_assert(i < n);
@@ -2591,6 +2611,7 @@ switch_status_t skinny_handle_updatecapabilities(listener_t *listener, skinny_me
 	}
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
 			"Codecs %s supported.\n", codec_string);
+	switch_safe_free(codec_string);
 	return SWITCH_STATUS_SUCCESS;
 }
 

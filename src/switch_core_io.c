@@ -116,7 +116,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "%s has no read codec.\n", switch_channel_get_name(session->channel));
 		switch_channel_hangup(session->channel, SWITCH_CAUSE_INCOMPATIBLE_DESTINATION);
 		*frame = &runtime.dummy_cng_frame;
-        return SWITCH_STATUS_FALSE;
+		return SWITCH_STATUS_FALSE;
 	}
 
 	switch_mutex_lock(session->read_codec->mutex);
@@ -928,8 +928,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
   even_more_done:
 
 	if (!*frame ||
-                (!switch_test_flag(*frame, SFF_PROXY_PACKET) &&
-                    (!(*frame)->codec || !(*frame)->codec->implementation || !switch_core_codec_ready((*frame)->codec)))) {
+			(!switch_test_flag(*frame, SFF_PROXY_PACKET) &&
+			 (!(*frame)->codec || !(*frame)->codec->implementation || !switch_core_codec_ready((*frame)->codec)))) {
 		*frame = &runtime.dummy_cng_frame;
 	}
 

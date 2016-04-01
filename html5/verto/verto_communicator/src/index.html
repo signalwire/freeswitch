@@ -49,6 +49,7 @@
   <body>
 
     <div ng-include="'partials/menu.html'"></div>
+    <div ng-include="'partials/settings.html'"></div>
 
     <div id="wrapper" class="toggled">
       <!-- Sidebar -->
@@ -96,6 +97,8 @@
     <script src="bower_components/datatables/media/js/jquery.dataTables.js"></script>
     <script src="bower_components/bootstrap-material-design/dist/js/material.js"></script>
     <script src="bower_components/bootstrap-material-design/dist/js/ripples.js"></script>
+    <script src="bower_components/angular-translate/angular-translate.js"></script>
+    <script src="bower_components/angular-translate-loader-static-files/angular-translate-loader-static-files.js"></script>
     <!-- endbower -->
     <!-- endbuild -->
 
@@ -125,7 +128,7 @@
     <script type="text/javascript" src="src/vertoControllers/controllers/ModalDialpadController.js"></script>
     <script type="text/javascript" src="src/vertoControllers/controllers/ModalWsReconnectController.js"></script>
     <script type="text/javascript" src="src/vertoControllers/controllers/ModalLoginInformationController.js"></script>
-    <script type="text/javascript" src="src/vertoControllers/controllers/ModalSettingsController.js"></script>
+    <script type="text/javascript" src="src/vertoControllers/controllers/SettingsController.js"></script>
     <script type="text/javascript" src="src/vertoControllers/controllers/PreviewController.js"></script>
 
     <script type="text/javascript" src="src/vertoDirectives/vertoDirectives.module.js"></script>

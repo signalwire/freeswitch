@@ -2,28 +2,28 @@
   <div class="video-wrapper">
     <div class="video-hover-buttons" ng-show="verto.data.callState == 'active' && !watcher">
       <div id="moderator-tools" ng-show="verto.data.confRole == 'moderator'">
-        <button tooltip-placement="bottom" tooltip-title="Play" uib-tooltip="Play"
+        <button tooltip-placement="bottom" tooltip-title="{{'MESSAGE_PLAY' | translate}}"  uib-tooltip="{{'MESSAGE_PLAY' | translate}}"
                 class="btn btn-material-blue-900" ng-click="play()">
         <i class="mdi-av-play-circle-outline"></i>
       </button>
-      <button tooltip-placement="bottom" tooltip-title="Stop" uib-tooltip="Stop"
+      <button tooltip-placement="bottom" tooltip-title="{{'MESSAGE_STOP' | translate}}" uib-tooltip="{{'MESSAGE_STOP' | translate}}"
               class="btn btn-material-blue-900" ng-click="stop()">
         <i class="mdi-av-stop"></i>
       </button>
-      <button tooltip-placement="bottom" tooltip-title="Record" uib-tooltip="Record"
+      <button tooltip-placement="bottom" tooltip-title="{{'MESSAGE_RECORD' | translate}}" uib-tooltip="{{'MESSAGE_RECORD' | translate}}"
               class="btn btn-material-blue-900" ng-click="record()">
         <i class="mdi-toggle-radio-button-on"></i>
       </button>
-      <button tooltip-placement="bottom" tooltip-title="Stop Record" uib-tooltip="Stop Record"
+      <button tooltip-placement="bottom" tooltip-title="{{'MESSAGE_STOP_RECORD' | translate}}" uib-tooltip="{{'MESSAGE_STOP_RECORD' | translate}}"
               class="btn btn-material-blue-900" ng-click="stopRecord()">
         <i class="mdi-image-switch-camera"></i>
       </button>
-      <button tooltip-placement="bottom" tooltip-title="Snapshot" uib-tooltip="Snapshot"
+      <button tooltip-placement="bottom" tooltip-title="{{'MESSAGE_SNAPSHOT' | translate}}" uib-tooltip="{{'MESSAGE_SNAPSHOT' | translate}}"
               tooltip-lazy="false" class="btn btn-material-blue-900" ng-click="snapshot()">
         <i class="mdi-image-photo-camera"></i>
       </button>
       <div class="btn-group">
-        <button tooltip-placement="bottom" tooltip-title="Video Mode" uib-tooltip="Video Mode"
+        <button tooltip-placement="bottom" tooltip-title="{{'MESSAGE_VIDEO_MODE' | translate}}" uib-tooltip="{{'MESSAGE_VIDEO_MODE' | translate}}"
                 type="button" class="btn btn-material-blue-900 dropdown-toggle"
                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
           <i class="mdi-action-view-module"></i>
@@ -37,28 +37,28 @@
       </div>
       </div>
       <div class="user-tools">
-        <button tooltip-placement="bottom" tooltip-title="(un)Mute Mic" uib-tooltip="(un)Mute Mic"
+        <button tooltip-placement="bottom" tooltip-title="{{'MESSAGE_MUTE_MIC' | translate}}" uib-tooltip="{{'MESSAGE_MUTE_MIC' | translate}}"
                 class="btn btn-material-blue-900" ng-click="muteMic(cbMuteMic)">
           <i class="" ng-class="{'mdi-av-mic': !verto.data.mutedMic, 'mdi-av-mic-off': verto.data.mutedMic}"></i>
         </button>
-        <button tooltip-placement="bottom" tooltip-title="(un)Mute Video" uib-tooltip="(un)Mute Video"
+        <button tooltip-placement="bottom" tooltip-title="{{'MESSAGE_MUTE_VIDEO' | translate}}" uib-tooltip="{{'MESSAGE_MUTE_VIDEO' | translate}}"
                 class="btn btn-material-blue-900" ng-click="muteVideo(cbMuteVideo)" ng-if="verto.data.canVideo">
           <i class="" ng-class="{'mdi-av-videocam': !verto.data.mutedVideo, 'mdi-av-videocam-off': verto.data.mutedVideo}"></i>
         </button>
-        <button tooltip-placement="bottom" tooltip-title="Toggle Fullscreen Mode" uib-tooltip="Toggle Fullscreen Mode"
+        <button tooltip-placement="bottom" tooltip-title="{{'MESSAGE_FULLSCREEN' | translate}}" uib-tooltip="{{'MESSAGE_FULLSCREEN' | translate}}"
                 class="btn btn-material-blue-900" ng-click="goFullscreen()">
           <i class="" ng-class="{'mdi-navigation-fullscreen': !fullscreenEnabled, 'mdi-navigation-fullscreen-exit': fullscreenEnabled}"></i>
         </button>
-        <button tooltip-placement="bottom" tooltip-title="Screenshare" uib-tooltip="Screenshare"
+        <button tooltip-placement="bottom" tooltip-title="{{'MESSAGE_SCREENSHARE' | translate}}" uib-tooltip="{{'MESSAGE_SCREENSHARE' | translate}}"
                 class="btn btn-material-blue-900" ng-click="screenshare()">
           <i class="mdi-hardware-desktop-windows"></i>
         </button>
-        <button tooltip-placement="bottom" tooltip-title="Open/Close Chat" uib-tooltip="Open/Close Chat"
+        <button tooltip-placement="bottom" tooltip-title="{{'MESSAGE_OPEN_CLOSE_CHAT' | translate}}" uib-tooltip="{{'MESSAGE_OPEN_CLOSE_CHAT' | translate}}"
                 class="btn btn-material-blue-900" ng-click="toggleChat()" ng-show="fullscreenEnabled">
           <i class="mdi-communication-chat"></i>
         </button>
         <div class="btn-group">
-          <button tooltip-placement="bottom" tooltip-title="Speaker" uib-tooltips="Speaker" type="button" class="btn btn-material-blue-900 dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          <button tooltip-placement="bottom" tooltip-title="{{'MESSAGE_SPEAKER' | translate}}" uib-tooltips="{{'MESSAGE_SPEAKER' | translate}}" type="button" class="btn btn-material-blue-900 dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
             <i class="mdi-hardware-headset"></i>
             <span class="caret"></span>
           </button>
@@ -69,7 +69,7 @@
           </ul>
         </div>
         <div class="btn-group" ng-show="conf.canvasCount > 1">
-          <button tooltip-placement="bottom" tooltip-title="Popup" uib-tooltips="Popup" type="button" class="btn btn-material-blue-900 dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          <button tooltip-placement="bottom" tooltip-title="{{'MESSAGE_POPUP' | translate}}" uib-tooltips="{{'MESSAGE_POPUP' | translate}}" type="button" class="btn btn-material-blue-900 dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
             <i class="mdi-image-filter-none"></i>
             <span class="caret"></span>
           </button>
@@ -96,9 +96,9 @@
           </div>
         </div>
         <div class="col-md-6 col-xs-6 text-right">
-          <button class="btn btn-danger" ng-click="hangup()">
+          <button class="btn btn-danger" ng-click="hangup()" translate>
             <i class="mdi-communication-call-end"></i>
-            {{ watcher ? 'Close' : 'End Call' }}
+            {{ watcher ? 'BUTTON_CLOSE' : 'BUTTON_END_CALL' }}
           </button>
         </div>
       </div>

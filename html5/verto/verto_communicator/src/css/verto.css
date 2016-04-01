@@ -143,7 +143,7 @@ button.btn i {
   -webkit-animation: rotator 1.4s linear infinite;
           animation: rotator 1.4s linear infinite;
   position: absolute;
-  top: 35%;
+  top: 50%;
   left: 50%;
   margin-left: -35px;
   zoom: 2;
@@ -503,17 +503,17 @@ body .modal-body .btn-group .btn.active {
 }*/
 
 #incall .video-call {
-  width: 81vw;
   height: 82vw;
   max-height: calc(100% - 1vw);
   max-width: 146.78vh;
-  margin: auto;
+  margin: 7px auto;
   position: absolute;
   top: 0;
   bottom: 0;
   left: 0;
   right: 0;
   margin-top: auto;
+  padding: 1px;
 }
 
 #incall .avatar {
@@ -764,7 +764,7 @@ body .modal-body .btn-group .btn.active {
 }
 
 #sidebar-wrapper {
-    z-index: 1000;
+    z-index: 8;
     position: fixed;
     width: 0;
     height: calc(100% - 60px);
@@ -1685,4 +1685,54 @@ body:-webkit-full-screen #incall .video-footer {
 @keyframes growY {
   from { max-height:2000px;}
   to { max-height:0px;}
+}
+
+#settings {
+  z-index: 9;
+  position: fixed;
+  background: rgba(10, 56, 127, 0.9);
+  width: 100%;
+  transition: .4s ease-out;
+  color: white;
+  max-height: 80%;
+  overflow: auto;
+  top: -100%;
+  padding: 15px 0;
+}
+
+#settings select {
+  color: white;
+}
+
+#settings option {
+  color: #000;
+}
+
+#settings .content {
+  width: 80%;
+  height: 100%;
+  margin: auto;
+}
+
+#settings.toggled {
+  top: 67px;
+}
+
+#settings .form-group .form-control:focus {
+  background-image: linear-gradient(#d2d2d2, #d2d2d2), linear-gradient(#d2d2d2, #d2d2d2)
+}
+
+#settings .checkbox input[type=checkbox]:checked + .checkbox-material .check,
+#settings .checkbox input[type=checkbox]:checked + .checkbox-material .check:before,
+#settings .checkbox-default input[type=checkbox]:checked + .checkbox-material .check:before {
+  color: white;
+}
+
+#settings .checkbox .checkbox-material .check {
+  margin-right: 10px;
+}
+
+#settings .btn {
+  color: rgba(0, 10, 66, 0.84);
+  background-color: #E8E8E8;
 }

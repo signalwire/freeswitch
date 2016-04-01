@@ -279,7 +279,12 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 					}
 				}
 
-				if (switch_channel_ready(channel) && switch_channel_test_flag(channel, CF_VIDEO_READY) && imember->video_media_flow != SWITCH_MEDIA_FLOW_SENDONLY && (!conference_utils_test_flag(conference, CFLAG_VIDEO_MUTE_EXIT_CANVAS) || conference_utils_member_test_flag(imember, MFLAG_CAN_BE_SEEN))) {
+				if (switch_channel_ready(channel) && 
+					switch_channel_test_flag(channel, CF_VIDEO_READY) && 
+					imember->video_media_flow != SWITCH_MEDIA_FLOW_SENDONLY && 
+					!conference_utils_member_test_flag(imember, MFLAG_SECOND_SCREEN) && 
+					(!conference_utils_test_flag(conference, CFLAG_VIDEO_MUTE_EXIT_CANVAS) || 
+					 conference_utils_member_test_flag(imember, MFLAG_CAN_BE_SEEN))) {
 					members_with_video++;
 				}
 
@@ -1249,6 +1254,7 @@ void conference_xlist(conference_obj_t *conference, switch_xml_t x_conference, i
 void conference_fnode_toggle_pause(conference_file_node_t *fnode, switch_stream_handle_t *stream)
 {
 	if (fnode) {
+		switch_core_file_command(&fnode->fh, SCFC_PAUSE_READ);
 		if (switch_test_flag(fnode, NFLAG_PAUSE)) {
 			stream->write_function(stream, "+OK Resume\n");
 			switch_clear_flag(fnode, NFLAG_PAUSE);
@@ -1259,6 +1265,15 @@ void conference_fnode_toggle_pause(conference_file_node_t *fnode, switch_stream_
 	}
 }
 
+void conference_fnode_check_status(conference_file_node_t *fnode, switch_stream_handle_t *stream)
+{
+	if (fnode) {
+		stream->write_function(stream, "+OK %"SWITCH_INT64_T_FMT "/%" SWITCH_INT64_T_FMT " %s\n",
+			fnode->fh.vpos, fnode->fh.duration, fnode->fh.file_path);
+	} else {
+		stream->write_function(stream, "-ERR Nothing is playing\n");
+	}
+}
 
 void conference_fnode_seek(conference_file_node_t *fnode, switch_stream_handle_t *stream, char *arg)
 {
@@ -2411,7 +2426,12 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 	const char *force_rate = NULL, *force_interval = NULL, *force_channels = NULL, *presence_id = NULL;
 	uint32_t force_rate_i = 0, force_interval_i = 0, force_channels_i = 0, video_auto_floor_msec = 0;
 	switch_event_t *event;
-	
+
+	int scale_h264_canvas_width = 0;
+	int scale_h264_canvas_height = 0;
+	int scale_h264_canvas_fps_divisor = 0;
+	char *scale_h264_canvas_bandwidth = NULL;
+
 	/* Validate the conference name */
 	if (zstr(name)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Record! no name.\n");
@@ -2720,6 +2740,28 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "video-mode invalid, valid settings are 'passthrough', 'transcode' and 'mux'\n");
 				}
+			} else if (!strcasecmp(var, "scale-h264-canvas-size") && !zstr(val)) {
+				char *p;
+
+				if ((scale_h264_canvas_width = atoi(val))) {
+					if ((p = strchr(val, 'x'))) {
+						p++;
+						if (*p) {
+							scale_h264_canvas_height = atoi(p);
+						}
+					}
+				}
+
+				if (scale_h264_canvas_width < 320 || scale_h264_canvas_width < 180) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid scale-h264-canvas-size, falling back to 320x180\n");
+					scale_h264_canvas_width = 320;
+					scale_h264_canvas_width = 180;
+				}
+			} else if (!strcasecmp(var, "scale-h264-canvas-fps-divisor") && !zstr(val)) {
+				scale_h264_canvas_fps_divisor = atoi(val);
+				if (scale_h264_canvas_fps_divisor < 0) scale_h264_canvas_fps_divisor = 0;
+			} else if (!strcasecmp(var, "scale-h264-canvas-bandwidth") && !zstr(val)) {
+				scale_h264_canvas_bandwidth = val;
 			}
 		}
 
@@ -2782,6 +2824,11 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 	conference->auto_kps_debounce = auto_kps_debounce;
 
 	conference->conference_video_mode = conference_video_mode;
+
+	conference->scale_h264_canvas_width = scale_h264_canvas_width;
+	conference->scale_h264_canvas_height = scale_h264_canvas_height;
+	conference->scale_h264_canvas_fps_divisor = scale_h264_canvas_fps_divisor;
+	conference->scale_h264_canvas_bandwidth = switch_core_strdup(conference->pool, scale_h264_canvas_bandwidth);
 
 	if (!switch_core_has_video() && (conference->conference_video_mode == CONF_VIDEO_MODE_MUX || conference->conference_video_mode == CONF_VIDEO_MODE_TRANSCODE)) {
 		conference->conference_video_mode = CONF_VIDEO_MODE_PASSTHROUGH;
@@ -2859,6 +2906,8 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 				conference->video_codec_settings.video.bandwidth = switch_parse_bandwidth_string(video_codec_bandwidth);
 			}
 		}
+
+		conference->video_codec_settings.video.try_hardware_encoder = 1;
 
 		if (zstr(video_layout_name)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "No video-layout-name specified, using " CONFERENCE_MUX_DEFAULT_LAYOUT "\n");

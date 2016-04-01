@@ -57,33 +57,33 @@ switch_create_hashtable(switch_hashtable_t **hp, unsigned int minsize,
 						unsigned int (*hashf) (void*),
 						int (*eqf) (void*,void*))
 {
-    switch_hashtable_t *h;
-    unsigned int pindex, size = primes[0];
+	switch_hashtable_t *h;
+	unsigned int pindex, size = primes[0];
 
-    /* Check requested hashtable isn't too large */
-    if (minsize > (1u << 30)) {*hp = NULL; return SWITCH_STATUS_FALSE;}
-    /* Enforce size as prime */
-    for (pindex=0; pindex < prime_table_length; pindex++) {
-        if (primes[pindex] > minsize) { 
+	/* Check requested hashtable isn't too large */
+	if (minsize > (1u << 30)) {*hp = NULL; return SWITCH_STATUS_FALSE;}
+	/* Enforce size as prime */
+	for (pindex=0; pindex < prime_table_length; pindex++) {
+		if (primes[pindex] > minsize) { 
 			size = primes[pindex]; 
 			break; 
 		}
-    }
-    h = (switch_hashtable_t *) malloc(sizeof(switch_hashtable_t));
+	}
+	h = (switch_hashtable_t *) malloc(sizeof(switch_hashtable_t));
 
-    if (NULL == h) abort(); /*oom*/
+	if (NULL == h) abort(); /*oom*/
 
-    h->table = (struct entry **)malloc(sizeof(struct entry*) * size);
+	h->table = (struct entry **)malloc(sizeof(struct entry*) * size);
 
-    if (NULL == h->table) abort(); /*oom*/
+	if (NULL == h->table) abort(); /*oom*/
 
-    memset(h->table, 0, size * sizeof(struct entry *));
-    h->tablelength  = size;
-    h->primeindex   = pindex;
-    h->entrycount   = 0;
-    h->hashfn       = hashf;
-    h->eqfn         = eqf;
-    h->loadlimit    = (unsigned int) ceil(size * max_load_factor);
+	memset(h->table, 0, size * sizeof(struct entry *));
+	h->tablelength  = size;
+	h->primeindex   = pindex;
+	h->entrycount   = 0;
+	h->hashfn       = hashf;
+	h->eqfn         = eqf;
+	h->loadlimit    = (unsigned int) ceil(size * max_load_factor);
 
 	*hp = h;
 	return SWITCH_STATUS_SUCCESS;
@@ -93,17 +93,17 @@ switch_create_hashtable(switch_hashtable_t **hp, unsigned int minsize,
 static int
 hashtable_expand(switch_hashtable_t *h)
 {
-    /* Double the size of the table to accomodate more entries */
-    struct entry **newtable;
-    struct entry *e;
-    struct entry **pE;
-    unsigned int newsize, i, index;
-    /* Check we're not hitting max capacity */
-    if (h->primeindex == (prime_table_length - 1)) return 0;
-    newsize = primes[++(h->primeindex)];
+	/* Double the size of the table to accomodate more entries */
+	struct entry **newtable;
+	struct entry *e;
+	struct entry **pE;
+	unsigned int newsize, i, index;
+	/* Check we're not hitting max capacity */
+	if (h->primeindex == (prime_table_length - 1)) return 0;
+	newsize = primes[++(h->primeindex)];
 
-    newtable = (struct entry **)malloc(sizeof(struct entry*) * newsize);
-    if (NULL != newtable)
+	newtable = (struct entry **)malloc(sizeof(struct entry*) * newsize);
+	if (NULL != newtable)
 		{
 			memset(newtable, 0, newsize * sizeof(struct entry *));
 			/* This algorithm is not 'stable'. ie. it reverses the list
@@ -119,8 +119,8 @@ hashtable_expand(switch_hashtable_t *h)
 			switch_safe_free(h->table);
 			h->table = newtable;
 		}
-    /* Plan B: realloc instead */
-    else 
+	/* Plan B: realloc instead */
+	else 
 		{
 			newtable = (struct entry **)
 				realloc(h->table, newsize * sizeof(struct entry *));
@@ -141,30 +141,30 @@ hashtable_expand(switch_hashtable_t *h)
 				}
 			}
 		}
-    h->tablelength = newsize;
-    h->loadlimit   = (unsigned int) ceil(newsize * max_load_factor);
-    return -1;
+	h->tablelength = newsize;
+	h->loadlimit   = (unsigned int) ceil(newsize * max_load_factor);
+	return -1;
 }
 
 /*****************************************************************************/
 SWITCH_DECLARE(unsigned int)
 switch_hashtable_count(switch_hashtable_t *h)
 {
-    return h->entrycount;
+	return h->entrycount;
 }
 
 static void * _switch_hashtable_remove(switch_hashtable_t *h, void *k, unsigned int hashvalue, unsigned int index) {
-    /* TODO: consider compacting the table when the load factor drops enough,
-     *       or provide a 'compact' method. */
+	/* TODO: consider compacting the table when the load factor drops enough,
+	 *       or provide a 'compact' method. */
 
-    struct entry *e;
-    struct entry **pE;
-    void *v;
+	struct entry *e;
+	struct entry **pE;
+	void *v;
 
 
-    pE = &(h->table[index]);
-    e = *pE;
-    while (NULL != e) {
+	pE = &(h->table[index]);
+	e = *pE;
+	while (NULL != e) {
 		/* Check hash value to short circuit heavier comparison */
 		if ((hashvalue == e->h) && (h->eqfn(k, e->k))) {
 			*pE = e->next;
@@ -186,22 +186,22 @@ static void * _switch_hashtable_remove(switch_hashtable_t *h, void *k, unsigned 
 		pE = &(e->next);
 		e = e->next;
 	}
-    return NULL;
+	return NULL;
 }
 
 /*****************************************************************************/
 SWITCH_DECLARE(int)
 switch_hashtable_insert_destructor(switch_hashtable_t *h, void *k, void *v, hashtable_flag_t flags, hashtable_destructor_t destructor)
 {
-    struct entry *e;
+	struct entry *e;
 	unsigned int hashvalue = hash(h, k);
-    unsigned index = indexFor(h->tablelength, hashvalue);
+	unsigned index = indexFor(h->tablelength, hashvalue);
 
 	if (flags & HASHTABLE_DUP_CHECK) {
 		_switch_hashtable_remove(h, k, hashvalue, index);
 	}
 
-    if (++(h->entrycount) > h->loadlimit)
+	if (++(h->entrycount) > h->loadlimit)
 		{
 			/* Ignore the return value. If expand fails, we should
 			 * still try cramming just this value into the existing table
@@ -210,33 +210,33 @@ switch_hashtable_insert_destructor(switch_hashtable_t *h, void *k, void *v, hash
 			hashtable_expand(h);
 			index = indexFor(h->tablelength, hashvalue);
 		}
-    e = (struct entry *)malloc(sizeof(struct entry));
-    if (NULL == e) { --(h->entrycount); return 0; } /*oom*/
-    e->h = hashvalue;
-    e->k = k;
-    e->v = v;
+	e = (struct entry *)malloc(sizeof(struct entry));
+	if (NULL == e) { --(h->entrycount); return 0; } /*oom*/
+	e->h = hashvalue;
+	e->k = k;
+	e->v = v;
 	e->flags = flags;
 	e->destructor = destructor;
-    e->next = h->table[index];
-    h->table[index] = e;
-    return -1;
+	e->next = h->table[index];
+	h->table[index] = e;
+	return -1;
 }
 
 /*****************************************************************************/
 SWITCH_DECLARE(void *) /* returns value associated with key */
 switch_hashtable_search(switch_hashtable_t *h, void *k)
 {
-    struct entry *e;
-    unsigned int hashvalue, index;
-    hashvalue = hash(h,k);
-    index = indexFor(h->tablelength,hashvalue);
-    e = h->table[index];
-    while (NULL != e) {
+	struct entry *e;
+	unsigned int hashvalue, index;
+	hashvalue = hash(h,k);
+	index = indexFor(h->tablelength,hashvalue);
+	e = h->table[index];
+	while (NULL != e) {
 		/* Check hash value to short circuit heavier comparison */
 		if ((hashvalue == e->h) && (h->eqfn(k, e->k))) return e->v;
 		e = e->next;
 	}
-    return NULL;
+	return NULL;
 }
 
 /*****************************************************************************/
@@ -252,9 +252,9 @@ switch_hashtable_remove(switch_hashtable_t *h, void *k)
 SWITCH_DECLARE(void)
 switch_hashtable_destroy(switch_hashtable_t **h)
 {
-    unsigned int i;
-    struct entry *e, *f;
-    struct entry **table = (*h)->table;
+	unsigned int i;
+	struct entry *e, *f;
+	struct entry **table = (*h)->table;
 
 	for (i = 0; i < (*h)->tablelength; i++) {
 		e = table[i];
@@ -274,8 +274,8 @@ switch_hashtable_destroy(switch_hashtable_t **h)
 			switch_safe_free(f); 
 		}
 	}
-    
-    switch_safe_free((*h)->table);
+
+	switch_safe_free((*h)->table);
 	free(*h);
 	*h = NULL;
 }

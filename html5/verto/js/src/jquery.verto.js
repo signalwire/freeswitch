@@ -1308,11 +1308,15 @@
             this.modCommand("vid-write-png", null, file);
         };
 
-        $.verto.conf.prototype.setVideoLayout = function(layout) {
+        $.verto.conf.prototype.setVideoLayout = function(layout, canvasID) {
             if (!this.params.hasVid) {
                 throw 'Conference has no video';
             }
-            this.modCommand("vid-layout", null, layout);
+	    if (canvasID) {
+		this.modCommand("vid-layout", null, [layout, canvasID]);
+	    } else {
+		this.modCommand("vid-layout", null, layout);
+	    }
         };
 
         $.verto.conf.prototype.kick = function(memberID) {
@@ -1439,7 +1443,7 @@
 
 		    var vlhtml =  "<div id='" + vlayout_id + "'><br>" +
 			"<b>Video Layout Canvas " + (j+1) + 
-			"</b> <select onChange='$.verto.modfuncs.change_video_layout(\"" + vlayout_id + "\", \"" + j + "\")' id='" + vlselect_id + "'></select> " +
+			"</b> <select onChange='$.verto.modfuncs.change_video_layout(\"" + vlayout_id + "\", \"" + (j+1) + "\")' id='" + vlselect_id + "'></select> " +
 			"<br><br></div>";
 		    jq.append(vlhtml);
 		}
@@ -2154,7 +2158,7 @@
 	    var speaker = dialog.useSpeak;
 	    console.info("Using Speaker: ", speaker);
 
-	    if (speaker && speaker !== "any") {
+	    if (speaker && speaker !== "any" && speaker !== "none") {
 		setTimeout(function() {
 		    dialog.setAudioPlaybackDevice(speaker);
 		}, 500);

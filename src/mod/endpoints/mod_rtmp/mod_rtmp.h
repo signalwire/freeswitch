@@ -515,6 +515,7 @@ struct rtmp_session {
 	uint32_t media_streamid;			/* < The stream id that was used for the last "play" command,
 											where we should send media */
 	switch_size_t dropped_video_frame;
+	switch_queue_t *video_send_queue;
 
 	uint8_t media_debug;
 };

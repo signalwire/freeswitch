@@ -552,7 +552,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 			
 			if ((bypass_media_after_bridge || switch_channel_test_flag(chan_b, CF_BYPASS_MEDIA_AFTER_BRIDGE)) && switch_channel_test_flag(chan_a, CF_ANSWERED)
 				&& switch_channel_test_flag(chan_b, CF_ANSWERED)) {
-				switch_ivr_nomedia(switch_core_session_get_uuid(session_a), SMF_REBRIDGE);
+				switch_ivr_3p_nomedia(switch_core_session_get_uuid(session_a), SMF_REBRIDGE);
 				bypass_media_after_bridge = 0;
 				switch_channel_clear_flag(chan_b, CF_BYPASS_MEDIA_AFTER_BRIDGE);
 				goto end_of_bridge_loop;
@@ -781,7 +781,8 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 	switch_channel_clear_flag(chan_a, CF_BRIDGED);
 	
 	if (switch_channel_test_flag(chan_a, CF_LEG_HOLDING) || switch_channel_test_flag(chan_a, CF_HANGUP_HELD)) {
-		if (switch_channel_ready(chan_b) && switch_channel_get_state(chan_b) != CS_PARK && !data->other_leg_data->clean_exit) {
+		if (switch_channel_ready(chan_b) &&
+			switch_channel_get_state(chan_b) != CS_PARK && !data->other_leg_data->clean_exit && !switch_channel_test_flag(chan_b, CF_3P_NOMEDIA_REQUESTED)) {
 			const char *ext = switch_channel_get_variable(chan_a, "hold_hangup_xfer_exten");
 			
 			switch_channel_stop_broadcast(chan_b);
@@ -1026,7 +1027,7 @@ static switch_status_t uuid_bridge_on_soft_execute(switch_core_session_t *sessio
 		if (switch_ivr_wait_for_answer(session, other_session) != SWITCH_STATUS_SUCCESS) {
 			if (switch_true(switch_channel_get_variable(channel, "uuid_bridge_continue_on_cancel"))) {
 				switch_channel_set_state(channel, CS_EXECUTE);
-                        } else if (switch_true(switch_channel_get_variable(channel, "uuid_bridge_park_on_cancel"))) {
+			} else if (switch_true(switch_channel_get_variable(channel, "uuid_bridge_park_on_cancel"))) {
 				switch_ivr_park_session(session);
 			} else if (!switch_channel_test_flag(channel, CF_TRANSFER)) {
 				switch_channel_hangup(channel, SWITCH_CAUSE_ORIGINATOR_CANCEL);
@@ -1700,7 +1701,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 		switch_call_cause_t cause = switch_channel_get_cause(peer_channel);
 		const char *hup = switch_channel_get_variable(caller_channel, SWITCH_HANGUP_AFTER_BRIDGE_VARIABLE);
 		int explicit = 0;
-        int answered = 0;
+		int answered = 0;
 		int early = 0;
 
 		if (cause == SWITCH_CAUSE_NONE) {

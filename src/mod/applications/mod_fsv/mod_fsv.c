@@ -367,7 +367,8 @@ SWITCH_STANDARD_APP(play_fsv_function)
 		goto end;
 	}
 	switch_core_session_set_read_codec(session, &codec);
-	
+	switch_channel_set_flag(channel, CF_VIDEO_WRITING);
+
 	while (switch_channel_ready(channel)) {
 
 		if (read(fd, &bytes, sizeof(bytes)) != sizeof(bytes)) {
@@ -464,9 +465,8 @@ SWITCH_STANDARD_APP(play_fsv_function)
 		switch_core_timer_destroy(&timer);
 	}
 
-
 	switch_core_session_set_read_codec(session, NULL);
-
+	switch_channel_clear_flag(channel, CF_VIDEO_WRITING);
 
 	if (switch_core_codec_ready(&codec)) {
 		switch_core_codec_destroy(&codec);
@@ -510,6 +510,8 @@ SWITCH_STANDARD_APP(play_yuv_function)
 
 	switch_channel_answer(channel);
 
+	switch_core_session_request_video_refresh(session);
+
 	switch_channel_audio_sync(channel);
 	switch_core_session_raw_read(session);
 
@@ -529,7 +531,7 @@ SWITCH_STANDARD_APP(play_yuv_function)
 		done = switch_micro_time_now() + (to * 1000);
 	}
 
-	switch_channel_set_flag(channel, CF_VIDEO_DECODED_READ);
+	// switch_channel_set_flag(channel, CF_VIDEO_DECODED_READ);
 
 	while (switch_channel_ready(channel) && !switch_channel_test_flag(channel, CF_VIDEO)) {
 		if ((++loops % 100) == 0) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Waiting for video......\n");
@@ -555,7 +557,7 @@ SWITCH_STANDARD_APP(play_yuv_function)
 
 	yuv = img->planes[SWITCH_PLANE_PACKED];
 
-	// switch_channel_set_flag(channel, CF_VIDEO_PASSIVE);
+	switch_channel_set_flag(channel, CF_VIDEO_WRITING);
 	//SWITCH_RTP_MAX_BUF_LEN
 	vid_buffer = switch_core_session_alloc(session, SWITCH_RTP_MAX_BUF_LEN);
 
@@ -653,7 +655,7 @@ SWITCH_STANDARD_APP(play_yuv_function)
 
 	switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
 	switch_core_session_video_reset(session);
-	// switch_channel_clear_flag(channel, CF_VIDEO_PASSIVE);
+	switch_channel_clear_flag(channel, CF_VIDEO_WRITING);
 }
 
 

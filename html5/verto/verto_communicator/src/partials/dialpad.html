@@ -1,6 +1,15 @@
 <div ng-show="loading">
-  <h3 style="margin-top: 4%;" class="text-center">Calling to {{ dialpadNumber }}...</h3>
-  <svg class="spinner" width="65px" height="65px" viewBox="0 0 66 66" xmlns="http://www.w3.org/2000/svg">
+  <h2 ng-show="cancelled" style="margin-top: 4%;" class="text-center">{{ 'CANCELLING' | translate}}</h2>
+  <span ng-show="!cancelled">
+      <h2 style="margin-top: 4%;" class="text-center">{{ 'DETERMINING_SPEED' | translate}}</h2>
+      <h4 style="margin-top: 4%;" class="text-center">
+          {{ 'CALLING_TO' | translate}} {{ dialpadNumber }}...
+          <a class="btn btn-sm btn-raised btn-warning" ng-click="cancel()">
+              Cancel<div class="ripple-container"></div>
+          </a>
+      </h4>
+  </span>
+  <svg class="spinner" width="35px" height="35px" viewBox="0 0 66 66" xmlns="http://www.w3.org/2000/svg">
     <circle class="path" fill="none" stroke-width="6" stroke-linecap="round" cx="33" cy="33" r="30"></circle>
   </svg>
 </div>
@@ -10,7 +19,7 @@
       <div class="panel-heading">
         <div class="panel-title">
             <i class="mdi-navigation-arrow-back back-icon" ng-click="viewCallsList()" ng-if="call_list"></i>
-            <span ng-if="!call_list">Call History</span>
+            <span ng-if="!call_list">{{ 'CALL_HISTORY' | translate}}</span>
             <span ng-if="call_list">{{ call_list[0].number }}</span>
 
             <span class="pull-right pull-right-margin dropdown">
@@ -18,14 +27,14 @@
                 <i class="mdi-navigation-more-vert"></i>
               </a>
               <ul class="dropdown-menu">
-                  <li><a href="" ng-click="clearCallHistory()">Clear History</a></li>
+                  <li><a href="" ng-click="clearCallHistory()">{{ 'CLEAR_CALL_HISTORY' | translate}}</a></li>
               </ul>
             </span>
         </div>
       </div>
       <ul class="call-history">
         <div ng-if="!has_history">
-          <p class="text-center text-muted">No history calls.</p>
+          <p class="text-center text-muted">{{ 'NO_CALL_HISTORY' | translate}}</p>
         </div>
 
         <li ng-repeat="number in history_control track by number" ng-if="!call_list">
@@ -63,7 +72,7 @@
               <i class="mdi-action-settings-phone"></i>
             </a>
           </span>
-          <input name="dialpadnumber" type="text" class="form-control text-center" placeholder="Enter an extension" ng-model="dialpadNumber" autofocus/>
+          <input name="dialpadnumber" type="text" class="form-control text-center" placeholder="{{ 'ENTER_EXTENSION' | translate}}" ng-model="dialpadNumber" autofocus/>
           <span class="input-group-btn">
             <a href="" ng-click="backspace()">
               <i class="mdi-content-backspace"></i>
@@ -154,7 +163,7 @@
             </div>
           </div>
           <div class="form-group text-center">
-            <button type="submit" class="btn btn-success btn-fab" ng-click="call(dialpadNumber)" title="Call Extension">
+            <button type="submit" class="btn btn-success btn-fab" ng-click="call(dialpadNumber)" title="{{ 'CALL_EXTENSION' | translate}}">
               <i class="mdi-communication-call"></i>
             </button>
           </div>

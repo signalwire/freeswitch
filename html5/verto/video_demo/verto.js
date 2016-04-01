@@ -799,6 +799,7 @@ function docall() {
 
     check_vid_res();
     console.error(outgoingBandwidth, incomingBandwidth);
+
     cur_call = vertoHandle.newCall({
         destination_number: $("#ext").val(),
         caller_id_name: $("#cidname").val(),
@@ -807,9 +808,9 @@ function docall() {
 	incomingBandwidth: incomingBandwidth,
         useVideo: check_vid(),
         useStereo: $("#use_stereo").is(':checked'),
-	useCamera: sessid ? "none" : $("#usecamera").find(":selected").val(),
-	useMic: $("#usemic").find(":selected").val(),
-	useSpeak: $("#usespeak").find(":selected").val(),
+	useCamera: (sessid || canvas_id) ? "none" : $("#usecamera").find(":selected").val(),
+	useMic: (sessid || canvas_id) ? "none" : $("#usemic").find(":selected").val(),
+	useSpeak: (sessid || canvas_id) ? "none" : $("#usespeak").find(":selected").val(),
 	dedEnc: $("#use_dedenc").is(':checked'),
 	mirrorInput: $("#mirror_input").is(':checked'),
         userVariables: {

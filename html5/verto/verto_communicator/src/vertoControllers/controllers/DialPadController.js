@@ -89,7 +89,17 @@
 
           if (extension.indexOf('-canvas-') != -1) {
             $rootScope.watcher = true;
-            verto.call($rootScope.dialpadNumber, null, { useCamera: false, useMic: false, caller_id_name: null, userVariables: {}, caller_id_number: null, mirrorInput: false });
+            verto.call($rootScope.dialpadNumber, null,
+              {
+                useCamera: "none",
+                useMic: "none",
+                useSpeak: "none",
+                caller_id_name: null,
+                userVariables: {},
+                caller_id_number: null,
+                mirrorInput: false
+              }
+            );
             $location.path('/incall');
             return;
           }
@@ -109,6 +119,7 @@
          * Call to the number in the $rootScope.dialpadNumber.
          */
         $scope.loading = false;
+        $scope.cancelled = false;
         $rootScope.call = function(extension) {
           if (!storage.data.testSpeedJoin || !$rootScope.dialpadNumber) {
             return call(extension);
@@ -116,9 +127,18 @@
           $scope.loading = true;
 
           verto.testSpeed(function() {
-            $scope.loading = false;
-            call(extension);
+            if ($scope.cancelled) {
+              $scope.cancelled = false;
+              $scope.loading = false;
+              return;
+            } else {
+              call(extension);
+            }
           });
+        }
+
+        $rootScope.cancel = function() {
+          $scope.cancelled = true;
         }
       }
     ]);

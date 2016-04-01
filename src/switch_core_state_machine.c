@@ -60,6 +60,76 @@ static void switch_core_standard_on_hangup(switch_core_session_t *session)
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Standard HANGUP, cause: %s\n",
 					  switch_channel_get_name(session->channel), switch_channel_cause2str(switch_channel_get_cause(session->channel)));
 
+	if (switch_true(switch_channel_get_variable(session->channel, "log_audio_stats_on_hangup"))) {
+		switch_rtp_stats_t *audio_stats = NULL;
+
+		switch_core_media_set_stats(session);
+		audio_stats = switch_core_media_get_stats(session, SWITCH_MEDIA_TYPE_AUDIO, switch_core_session_get_pool(session));
+		if (audio_stats) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session),
+					SWITCH_LOG_DEBUG,
+					"%s Call statistics:\n"
+					"in_raw_bytes: %d\n"
+					"in_media_bytes: %d\n"
+					"in_packet_count: %d\n"
+					"in_media_packet_count: %d\n"
+					"in_skip_packet_count: %d\n"
+					"in_jitter_packet_count: %d\n"
+					"in_dtmf_packet_count: %d\n"
+					"in_cng_packet_count: %d\n"
+					"in_flush_packet_count: %d\n"
+					"in_largest_jb_size: %d\n\n"
+					"in_jitter_min_variance: %lf\n"
+					"in_jitter_max_variance: %lf\n"
+					"in_jitter_loss_rate: %lf\n"
+					"in_jitter_burst_rate: %lf\n"
+					"in_mean_interval: %lf\n\n"
+					"in_flaw_total: %d\n"
+					"in_quality_percentage: %lf\n"
+					"in_mos: %lf\n\n"
+					"out_raw_bytes: %d\n"
+					"out_media_bytes: %d\n"
+					"out_packet_count: %d\n"
+					"out_media_packet_count: %d\n"
+					"out_skip_packet_count: %d\n"
+					"out_dtmf_packet_count: %d\n"
+					"out_cng_packet_count: %d\n\n"
+					"rtcp_packet_count: %d\n"
+					"rtcp_octet_count: %d\n",
+				switch_channel_get_name(session->channel),
+				(int)audio_stats->inbound.raw_bytes,
+				(int)audio_stats->inbound.media_bytes,
+				(int)audio_stats->inbound.packet_count,
+				(int)audio_stats->inbound.media_packet_count,
+				(int)audio_stats->inbound.skip_packet_count,
+				(int)audio_stats->inbound.jb_packet_count,
+				(int)audio_stats->inbound.dtmf_packet_count,
+				(int)audio_stats->inbound.cng_packet_count,
+				(int)audio_stats->inbound.flush_packet_count,
+				(int)audio_stats->inbound.largest_jb_size,
+				audio_stats->inbound.min_variance,
+				audio_stats->inbound.max_variance,
+				audio_stats->inbound.lossrate,
+				audio_stats->inbound.burstrate,
+				audio_stats->inbound.mean_interval,
+				(int)audio_stats->inbound.flaws,
+				audio_stats->inbound.R,
+				audio_stats->inbound.mos,
+				(int)audio_stats->outbound.raw_bytes,
+				(int)audio_stats->outbound.media_bytes,
+				(int)audio_stats->outbound.packet_count,
+				(int)audio_stats->outbound.media_packet_count,
+				(int)audio_stats->outbound.skip_packet_count,
+				(int)audio_stats->outbound.dtmf_packet_count,
+				(int)audio_stats->outbound.cng_packet_count,
+				(int)audio_stats->rtcp.packet_count,
+				(int)audio_stats->rtcp.octet_count
+					);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "%s Missing call statistics!\n",
+					switch_channel_get_name(session->channel));
+		}
+	}
 
 	rec = switch_channel_test_flag(session->channel, CF_RECOVERING);
 	switch_channel_clear_flag(session->channel, CF_RECOVERING);

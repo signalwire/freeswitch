@@ -1557,6 +1557,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_unhold_uuid(const char *uuid)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+
+
+
+
 SWITCH_DECLARE(switch_status_t) switch_ivr_3p_media(const char *uuid, switch_media_flag_t flags)
 {
 	const char *other_uuid = NULL;
@@ -1813,7 +1817,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_3p_nomedia(const char *uuid, switch_m
 				if (!switch_core_session_in_thread(session)) {
 					switch_channel_set_state(channel, CS_PARK);
 				}
+
 				switch_channel_set_state(other_channel, CS_PARK);
+				
 				if (switch_core_session_in_thread(session)) {
 					switch_yield(100000);
 				} else {
@@ -1848,8 +1854,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_3p_nomedia(const char *uuid, switch_m
 				}
 
 				if (switch_core_session_in_thread(session)) {
-                    switch_yield(100000);
-                } else {
+					switch_yield(100000);
+				} else {
 					switch_channel_wait_for_state(other_channel, channel, CS_HIBERNATE);
 				}
 
@@ -1884,6 +1890,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_nomedia(const char *uuid, switch_medi
 	msg.from = __FILE__;
 
 	if ((session = switch_core_session_locate(uuid))) {
+
 		status = SWITCH_STATUS_SUCCESS;
 		channel = switch_core_session_get_channel(session);
 
@@ -1948,8 +1955,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_nomedia(const char *uuid, switch_medi
 				}
 
 				if (switch_core_session_in_thread(session)) {
-                    switch_yield(100000);
-                } else {
+					switch_yield(100000);
+				} else {
 					switch_channel_wait_for_state(other_channel, channel, CS_HIBERNATE);
 				}
 
@@ -1968,6 +1975,64 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_nomedia(const char *uuid, switch_medi
 
 	return status;
 }
+
+typedef struct {
+	switch_memory_pool_t *pool;
+	const char *uuid;
+	switch_media_flag_t flags;
+	switch_bool_t on;
+	switch_bool_t is3p;
+	uint32_t delay;
+} media_job_t;
+
+static void *SWITCH_THREAD_FUNC media_thread_run(switch_thread_t *thread, void *obj)
+{
+	media_job_t *job = (media_job_t *) obj;
+
+	if (job->delay) {
+		switch_yield(job->delay * 1000);
+	}
+
+	if (job->on) {
+		if (job->is3p) {
+			switch_ivr_3p_media(job->uuid, job->flags);
+		} else {
+			switch_ivr_media(job->uuid, job->flags);
+		}
+	} else {
+		if (job->is3p) {
+			switch_ivr_3p_nomedia(job->uuid, job->flags);
+		} else {
+			switch_ivr_nomedia(job->uuid, job->flags);
+		}
+	}
+
+	return NULL;
+}
+
+
+SWITCH_DECLARE(void) switch_ivr_bg_media(const char *uuid, switch_media_flag_t flags, switch_bool_t on, switch_bool_t is3p, uint32_t delay)
+{
+	switch_thread_data_t *td;
+	switch_memory_pool_t *pool;
+	media_job_t *job;
+
+	switch_core_new_memory_pool(&pool);
+	td = switch_core_alloc(pool, sizeof(*td));
+	job = switch_core_alloc(pool, sizeof(*job));
+	td->func = media_thread_run;
+	job->pool = pool;
+	job->uuid = switch_core_strdup(pool, uuid);
+	job->flags = flags;
+	job->on = on;
+	job->is3p = is3p;
+	job->delay = delay;
+	td->obj = job;
+	td->pool = pool;
+	switch_thread_pool_launch_thread(&td);
+	
+}
+
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_t *session, const char *extension, const char *dialplan,
 															const char *context)
@@ -2008,6 +2073,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_
 	/* reset temp hold music */
 	switch_channel_set_variable(channel, SWITCH_TEMP_HOLD_MUSIC_VARIABLE, NULL);
 
+	switch_channel_execute_on(channel, "execute_on_blind_transfer");
+	
 	if ((profile = switch_channel_get_caller_profile(channel))) {
 		const char *var;
 
@@ -3820,9 +3887,9 @@ SWITCH_DECLARE(switch_bool_t) switch_ivr_uuid_force_exists(const char *uuid)
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_process_fh(switch_core_session_t *session, const char *cmd, switch_file_handle_t *fhp)
 {
-    if (zstr(cmd)) {
+	if (zstr(cmd)) {
 		return SWITCH_STATUS_SUCCESS;	
-    }
+	}
 
 	if (fhp) {
 		if (!switch_test_flag(fhp, SWITCH_FILE_OPEN)) {
@@ -3878,6 +3945,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_process_fh(switch_core_session_t *ses
 			} else {
 				switch_set_flag_locked(fhp, SWITCH_FILE_PAUSE);
 			}
+
+			switch_core_file_command(fhp, SCFC_PAUSE_READ);
+
 			return SWITCH_STATUS_SUCCESS;
 		} else if (!strcasecmp(cmd, "stop")) {
 			switch_set_flag_locked(fhp, SWITCH_FILE_DONE);
@@ -3926,11 +3996,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_process_fh(switch_core_session_t *ses
 		}
 	}
 
-    if (!strcmp(cmd, "true") || !strcmp(cmd, "undefined")) {
+	if (!strcmp(cmd, "true") || !strcmp(cmd, "undefined")) {
 		return SWITCH_STATUS_SUCCESS;
-    }
+	}
 
-    return SWITCH_STATUS_FALSE;
+	return SWITCH_STATUS_FALSE;
 	
 }
 

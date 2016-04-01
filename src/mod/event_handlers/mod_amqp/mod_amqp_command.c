@@ -53,7 +53,7 @@ switch_status_t mod_amqp_command_destroy(mod_amqp_command_profile_t **prof)
 	pool = profile->pool;
 
 	if (profile->name) {
-		switch_core_hash_delete(globals.command_hash, profile->name);
+		switch_core_hash_delete(mod_amqp_globals.command_hash, profile->name);
 	}
 
 	profile->running = 0;
@@ -165,7 +165,7 @@ switch_status_t mod_amqp_command_create(char *name, switch_xml_t cfg)
 		goto err;
 	}
 
-	if ( switch_core_hash_insert(globals.command_hash, name, (void *) profile) != SWITCH_STATUS_SUCCESS) {
+	if ( switch_core_hash_insert(mod_amqp_globals.command_hash, name, (void *) profile) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to insert new profile [%s] into mod_amqp profile hash\n", name);
 		goto err;
 	}
@@ -184,6 +184,7 @@ static void mod_amqp_command_response(mod_amqp_command_profile_t *profile, char 
 	char *json_output = NULL;
 	amqp_basic_properties_t props;
 	cJSON *message = NULL;
+	int amqp_status = AMQP_STATUS_OK;
 
 	if (! profile->conn_active) {
 		/* No connection, so we can not send the message. */
@@ -207,7 +208,7 @@ static void mod_amqp_command_response(mod_amqp_command_profile_t *profile, char 
 	props._flags = AMQP_BASIC_CONTENT_TYPE_FLAG;
 	props.content_type = amqp_cstring_bytes("text/json");
 
-	status = amqp_basic_publish(
+	amqp_status = amqp_basic_publish(
 								profile->conn_active->state,
 								1,
 								amqp_cstring_bytes(fs_resp_exchange),
@@ -219,8 +220,8 @@ static void mod_amqp_command_response(mod_amqp_command_profile_t *profile, char 
 
 	switch_safe_free(json_output);
 
-	if (status < 0) {
-		const char *errstr = amqp_error_string2(-status);
+	if (amqp_status != AMQP_STATUS_OK) {
+		const char *errstr = amqp_error_string2(-amqp_status);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Profile[%s] failed to send event on connection[%s]: %s\n",
 						  profile->name, profile->conn_active->name, errstr);
 

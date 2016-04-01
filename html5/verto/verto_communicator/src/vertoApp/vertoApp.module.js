@@ -17,10 +17,11 @@
     'ui.gravatar',
     'ui.bootstrap',
     'directive.g+signin',
+    'pascalprecht.translate',
   ]);
 
-  vertoApp.config(['$routeProvider', 'gravatarServiceProvider',
-    function($routeProvider, gravatarServiceProvider) {
+  vertoApp.config(['$routeProvider', 'gravatarServiceProvider', '$translateProvider',
+    function($routeProvider, gravatarServiceProvider, $translateProvider) {
       $routeProvider.
       when('/', {
         title: 'Loading',
@@ -59,6 +60,47 @@
       gravatarServiceProvider.defaults = {
         default: 'mm'  // Mystery man as default for missing avatars
       };
+
+
+      $translateProvider
+      .useStaticFilesLoader({
+        prefix: 'locales/locale-',
+        suffix: '.json'
+      })
+      .registerAvailableLanguageKeys(['en', 'it', 'pt', 'fr', 'de', 'es', 'pl', 'ru', 'sv', 'id', 'zh'], {
+        'en': 'en',
+        'en_GB': 'en',
+        'en_US': 'en',
+        'it': 'it',
+        'it_IT': 'it',
+        'fr': 'fr',
+        'fr_FR': 'fr',
+        'fr_CA': 'fr',
+        'pt': 'pt',
+        'pt_BR': 'pt',
+        'pt_PT': 'pt',
+        'de': 'de',
+        'de_DE': 'de',
+        'es': 'es',
+        'es_ES': 'es',
+        'pl': 'pl',
+        'pl_PL': 'pl',
+        'ru': 'ru',
+        'ru_RU': 'ru',
+        'sv': 'sv',
+        'sv_SV': 'sv',
+        'sv_FI': 'sv',
+		'id': 'id',
+        'id_ID': 'id',
+        'zh': 'zh',
+        'zh_CN': 'zh',
+        'zh_TW': 'zh',
+        'zh_HK': 'zh'
+      })
+      .preferredLanguage('en')
+      .determinePreferredLanguage()
+      .fallbackLanguage('en')
+      .useSanitizeValueStrategy(null);
     }
   ]);
 

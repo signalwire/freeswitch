@@ -55,7 +55,7 @@ switch_status_t mod_amqp_logging_recv(const switch_log_node_t *node, switch_log_
 	  3. Queue copy of event into logging profile send queue
 	  4. Destroy local event copy
 	*/
-	for (hi = switch_core_hash_first(globals.logging_hash); hi; hi = switch_core_hash_next(&hi)) {
+	for (hi = switch_core_hash_first(mod_amqp_globals.logging_hash); hi; hi = switch_core_hash_next(&hi)) {
 		switch_core_hash_this(hi, NULL, NULL, (void **)&logging);
 
 		if ( logging && switch_log_check_mask(logging->log_level_mask, level) ) {
@@ -121,7 +121,7 @@ switch_status_t mod_amqp_logging_destroy(mod_amqp_logging_profile_t **prof)
 
 	if (profile->name) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Profile[%s] shutting down...\n", profile->name);
-		switch_core_hash_delete(globals.logging_hash, profile->name);
+		switch_core_hash_delete(mod_amqp_globals.logging_hash, profile->name);
 	}
 
 	profile->running = 0;
@@ -269,7 +269,7 @@ switch_status_t mod_amqp_logging_create(char *name, switch_xml_t cfg)
 		goto err;
 	}
 
-	if ( switch_core_hash_insert(globals.logging_hash, name, (void *) profile) != SWITCH_STATUS_SUCCESS) {
+	if ( switch_core_hash_insert(mod_amqp_globals.logging_hash, name, (void *) profile) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to insert new profile [%s] into mod_amqp profile hash\n", name);
 		goto err;
 	}

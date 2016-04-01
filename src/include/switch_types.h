@@ -2551,7 +2551,8 @@ typedef enum {
 	SWITCH_MEDIA_FLOW_SENDRECV = 0,
 	SWITCH_MEDIA_FLOW_SENDONLY,
 	SWITCH_MEDIA_FLOW_RECVONLY,
-	SWITCH_MEDIA_FLOW_INACTIVE
+	SWITCH_MEDIA_FLOW_INACTIVE,
+	SWITCH_MEDIA_FLOW_DISABLED
 } switch_media_flow_t;
 
 typedef enum {
@@ -2599,7 +2600,8 @@ typedef enum {
 } switch_vid_spy_fmt_t;
 
 typedef enum {
-	SCFC_FLUSH_AUDIO
+	SCFC_FLUSH_AUDIO,
+	SCFC_PAUSE_READ
 } switch_file_command_t;
 
 SWITCH_END_EXTERN_C

@@ -3,16 +3,25 @@
 
   angular
     .module('vertoControllers')
-    .controller('ModalSettingsController', ['$scope', '$http',
-      '$location', '$modalInstance', '$rootScope', 'storage', 'verto',
-      function($scope, $http, $location, $modalInstance, $rootScope, storage, verto) {
+    .controller('SettingsController', ['$scope', '$http',
+      '$location', '$rootScope', 'storage', 'verto', '$translate', 'toastr',
+      function($scope, $http, $location, $rootScope, storage, verto, $translate, toastr) {
         console.debug('Executing ModalSettingsController.');
 
+        $.material.init();
+
+        $scope.speakerFeature = typeof document.getElementById('webcam').sinkId !== 'undefined';
         $scope.storage = storage;
         $scope.verto = verto;
         $scope.mydata = angular.copy(storage.data);
 
-        $scope.speakerFeature = typeof document.getElementById('webcam').sinkId !== 'undefined';
+        $rootScope.$on('toggledSettings', function(e, status) {
+          if (status) {
+            $scope.mydata = angular.copy(storage.data);
+          } else {
+            $scope.ok();
+          }
+        });
 
         $scope.ok = function() {
           if ($scope.mydata.selectedSpeaker != storage.data.selectedSpeaker) {
@@ -24,15 +33,22 @@
           if (storage.data.autoBand) {
             $scope.testSpeed();
           }
-          $modalInstance.close('Ok.');
-        };
-
-        $scope.cancel = function() {
-          $modalInstance.dismiss('cancel');
         };
 
         $scope.refreshDeviceList = function() {
           return verto.refreshDevices();
+        };
+
+        $scope.showPreview = function() {
+          var settingsEl = angular.element(document.querySelector('#settings'));
+          settingsEl.toggleClass('toggled');
+          if (!verto.data.call) {
+            $location.path('/preview');
+            return;
+          }
+          else {
+            toastr.warning($translate.instant('MESSAGE_DISPLAY_SETTINGS'));
+          }
         };
 
         $scope.testSpeed = function() {
@@ -49,7 +65,6 @@
 	  if (confirm('Factory Reset Settings?')) {
             storage.factoryReset();
             $scope.logout();
-            $modalInstance.close('Ok.');
 	    window.location.reload();
 	  };
         };

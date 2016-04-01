@@ -129,7 +129,7 @@ switch_status_t mod_amqp_do_config(switch_bool_t reload)
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to load mod_amqp profile. Check configs missing name attr\n");
 					continue;
 				}
-				name = switch_core_strdup(globals.pool, name);
+				name = switch_core_strdup(mod_amqp_globals.pool, name);
 
 				if ( mod_amqp_command_create(name, profile) != SWITCH_STATUS_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to load mod_amqp profile [%s]. Check configs\n", name);
@@ -153,7 +153,7 @@ switch_status_t mod_amqp_do_config(switch_bool_t reload)
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to load mod_amqp profile. Check configs missing name attr\n");
 					continue;
 				}
-				name = switch_core_strdup(globals.pool, name);
+				name = switch_core_strdup(mod_amqp_globals.pool, name);
 
 				if ( mod_amqp_logging_create(name, profile) != SWITCH_STATUS_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to load mod_amqp profile [%s]. Check configs\n", name);

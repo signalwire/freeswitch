@@ -97,6 +97,7 @@ typedef struct private_object private_object_t;
 #define MY_EVENT_ERROR "sofia::error"
 #define MY_EVENT_PROFILE_START "sofia::profile_start"
 #define MY_EVENT_NOTIFY_WATCHED_HEADER "sofia::notify_watched_header"
+#define MY_EVENT_WRONG_CALL_STATE "sofia::wrong_call_state"
 
 #define MY_EVENT_TRANSFEROR "sofia::transferor"
 #define MY_EVENT_TRANSFEREE "sofia::transferee"
@@ -365,6 +366,7 @@ struct mod_sofia_globals {
 	char hostname[512];
 	switch_queue_t *presence_queue;
 	switch_queue_t *msg_queue;
+	switch_queue_t *general_event_queue;
 	switch_thread_t *msg_queue_thread[SOFIA_MAX_MSG_QUEUE];
 	int msg_queue_len;
 	struct sofia_private destroy_private;
@@ -800,6 +802,8 @@ struct private_object {
 	char *x_freeswitch_support_local;
 	char *last_sent_callee_id_name;
 	char *last_sent_callee_id_number;
+	char *proxy_refer_uuid;
+	msg_t *proxy_refer_msg;
 	switch_mutex_t *flag_mutex;
 	switch_mutex_t *sofia_mutex;
 	switch_payload_t te;
@@ -1193,6 +1197,7 @@ void sofia_glue_fire_events(sofia_profile_t *profile);
 void sofia_event_fire(sofia_profile_t *profile, switch_event_t **event);
 void sofia_queue_message(sofia_dispatch_event_t *de);
 int sofia_glue_check_nat(sofia_profile_t *profile, const char *network_ip);
+void general_event_handler(switch_event_t *event);
 
 switch_status_t sofia_glue_ext_address_lookup(sofia_profile_t *profile, char **ip, switch_port_t *port,
 											  const char *sourceip, switch_memory_pool_t *pool);

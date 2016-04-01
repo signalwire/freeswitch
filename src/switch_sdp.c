@@ -4,13 +4,13 @@
 
 sdp_connection_t *sdp_media_connections(sdp_media_t const *m)
 {
-  if (m) {
-    if (m->m_connections)
-      return m->m_connections;
-    if (m->m_session)
-      return m->m_session->sdp_connection;
-  }
-  return NULL;
+	if (m) {
+		if (m->m_connections)
+			return m->m_connections;
+		if (m->m_session)
+			return m->m_session->sdp_connection;
+	}
+	return NULL;
 }
 
 #include <su_alloc.c>
