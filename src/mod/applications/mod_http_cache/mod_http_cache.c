@@ -203,8 +203,8 @@ struct url_cache {
 	int enable_file_formats;
 	/** How long to wait, in seconds, for TCP connection.  If 0, use default value of 300 seconds */
 	long connect_timeout;
-	/** How long to wait, in nanoseconds, for download of file.  If 0, use default value of 300 seconds (300 * 10^6 ns) */
-	long download_timeout_ns;
+	/** How long to wait, in seconds, for download of file.  If 0, use default value of 300 seconds */
+	long download_timeout;
 };
 static url_cache_t gcache;
 
@@ -625,6 +625,7 @@ static void url_cache_clear(url_cache_t *cache, switch_core_session_t *session)
  */
 static char *url_cache_get(url_cache_t *cache, http_profile_t *profile, switch_core_session_t *session, const char *url, int download, int refresh, switch_memory_pool_t *pool)
 {
+	switch_time_t download_timeout_ns = cache->download_timeout * 1000 * 1000;
 	char *filename = NULL;
 	cached_url_t *u = NULL;
 	if (zstr(url)) {
@@ -647,7 +648,7 @@ static char *url_cache_get(url_cache_t *cache, http_profile_t *profile, switch_c
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Cached URL manually expired.\n");
 			url_cache_remove_soft(cache, session, u); /* will get permanently deleted upon replacement */
 			u = NULL;
-		} else if (u->status == CACHED_URL_RX_IN_PROGRESS && switch_time_now() >= (u->download_time + cache->download_timeout_ns)) {
+		} else if (u->status == CACHED_URL_RX_IN_PROGRESS && switch_time_now() >= (u->download_time + download_timeout_ns)) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Download of URL has timed out.\n");
 			u = NULL;
 		}
@@ -690,7 +691,7 @@ static char *url_cache_get(url_cache_t *cache, http_profile_t *profile, switch_c
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Waiting for URL %s to be available\n", url);
 			u->waiters++;
 			url_cache_unlock(cache, session);
-			while(u->status == CACHED_URL_RX_IN_PROGRESS && switch_time_now() < (u->download_time + cache->download_timeout_ns)) {
+			while(u->status == CACHED_URL_RX_IN_PROGRESS && switch_time_now() < (u->download_time + download_timeout_ns)) {
 				switch_sleep(10 * 1000); /* 10 ms */
 			}
 			url_cache_lock(cache, session);
@@ -1089,6 +1090,9 @@ static switch_status_t http_get(url_cache_t *cache, http_profile_t *profile, cac
 		switch_curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "freeswitch-http-cache/1.0");
 		if (cache->connect_timeout > 0) {
 			switch_curl_easy_setopt(curl_handle, CURLOPT_CONNECTTIMEOUT, cache->connect_timeout);
+		}
+		if (cache->download_timeout > 0) {
+			switch_curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, cache->download_timeout);
 		}
 		if (!cache->ssl_verifypeer) {
 			switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0L);
@@ -1499,7 +1503,7 @@ static switch_status_t do_config(url_cache_t *cache)
 	cache->ssl_verifypeer = 1;
 	cache->enable_file_formats = 0;
 	cache->connect_timeout = 300;
-	cache->download_timeout_ns = 300 * 1000 * 1000;
+	cache->download_timeout = 300;
 
 	/* get params */
 	settings = switch_xml_child(cfg, "settings");
@@ -1546,7 +1550,7 @@ static switch_status_t do_config(url_cache_t *cache)
 				int int_val = atoi(val);
 				if (int_val > 0) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Setting download-timeout to %s\n", val);
-					cache->download_timeout_ns = int_val * 1000 * 1000;
+					cache->download_timeout = int_val;
 				}
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unsupported param: %s\n", var);
