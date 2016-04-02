@@ -230,11 +230,11 @@ SWITCH_DECLARE(int) switch_img_set_rect(switch_image_t  *img,
 
 SWITCH_DECLARE(void) switch_img_rotate(switch_image_t **img, switch_image_rotation_mode_t mode)
 {
+#ifdef SWITCH_HAVE_YUV
 	switch_image_t *tmp_img;
 
 	switch_assert(img);
 
-#ifdef SWITCH_HAVE_VPX
 
 	if ((*img)->fmt != SWITCH_IMG_FMT_I420) return;
 
@@ -252,7 +252,7 @@ SWITCH_DECLARE(void) switch_img_rotate(switch_image_t **img, switch_image_rotati
 			   tmp_img->planes[SWITCH_PLANE_Y], tmp_img->stride[SWITCH_PLANE_Y],
 			   tmp_img->planes[SWITCH_PLANE_U], tmp_img->stride[SWITCH_PLANE_U],
 			   tmp_img->planes[SWITCH_PLANE_V], tmp_img->stride[SWITCH_PLANE_V],
-			   (*img)->d_w, (*img)->d_h, mode);
+			   (*img)->d_w, (*img)->d_h, (int)mode);
 
 
 	switch_img_free(img);
@@ -487,7 +487,7 @@ SWITCH_DECLARE(void) switch_img_rotate_copy(switch_image_t *img, switch_image_t 
 			   (*new_img)->planes[SWITCH_PLANE_Y], (*new_img)->stride[SWITCH_PLANE_Y],
 			   (*new_img)->planes[SWITCH_PLANE_U], (*new_img)->stride[SWITCH_PLANE_U],
 			   (*new_img)->planes[SWITCH_PLANE_V], (*new_img)->stride[SWITCH_PLANE_V],
-			   img->d_w, img->d_h, mode);
+			   img->d_w, img->d_h, (int)mode);
 #else
 	return;
 #endif
