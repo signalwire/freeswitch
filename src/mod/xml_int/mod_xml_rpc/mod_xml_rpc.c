@@ -534,6 +534,7 @@ static abyss_bool http_directory_auth(TSession *r, char *domain_name)
 
 				ResponseAddField(r, "freeswitch-user", (box ? box : user));
 				ResponseAddField(r, "freeswitch-domain", domain_name);
+				ResponseStatus(r, 200);
 				rval = TRUE;
 				goto done;
 			}
@@ -707,6 +708,11 @@ abyss_bool auth_hook(TSession * r)
 	char *domain_name, *e;
 	abyss_bool ret = FALSE;
 
+	/* Default to 500 status to avoid assert. It should be
+	   overridden later if we actually handle it or if the
+	   default handler in abyss handles it. */
+	ResponseStatus(r, 500);
+
 	if (globals.enable_websocket && !strncmp(r->requestInfo.uri, "/socket", 7)) {
 		// Chrome has no Authorization support yet
 		// https://code.google.com/p/chromium/issues/detail?id=123862
@@ -826,6 +832,11 @@ abyss_bool handler_hook(TSession * r)
 	if (!r || !(info = &r->requestInfo) || !(uri = info->uri)) {
 		return FALSE;
 	}
+
+	/* Default to 500 status to avoid assert. It should be
+	   overridden later if we actually handle it or if the
+	   default handler in abyss handles it. */
+	ResponseStatus(r, 500);
 
 	stream.data = r;
 	stream.write_function = http_stream_write;
