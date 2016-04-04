@@ -1829,7 +1829,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 									   TAG_IF(!zstr(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)), TAG_END());
 						} else if (ua && ((switch_stristr("aastra", ua) && !switch_stristr("Intelligate", ua)) ||
 										  (switch_stristr("cisco/spa50", ua) || switch_stristr("cisco/spa525", ua)) ||
-										  switch_stristr("Yealink", ua) ||
+										  switch_stristr("Yealink", ua) || switch_stristr("Mitel", ua) ||
 										  switch_stristr("Panasonic", ua))) {
 							snprintf(message, sizeof(message), "P-Asserted-Identity: \"%s\" <sip:%s@%s>", name, number, tech_pvt->profile->printable_sipip);
 
