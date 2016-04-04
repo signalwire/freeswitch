@@ -100,23 +100,6 @@ override_dh_auto_install:
 	dh_auto_install -- -C libs/esl pymod-install
 	rm -f debian/tmp/usr/share/freeswitch/grammar/model/communicator/COPYING
 
-override_dh_installinit:
-	if [ `cat debian/freeswitch-init.provided_by` = freeswitch-systemd ]; then \
-	  dh_systemd_enable -pfreeswitch-systemd --name=freeswitch; \
-	  dh_systemd_start  -pfreeswitch-systemd --name=freeswitch; \
-	  dh_systemd_enable -pfreeswitch-all --name=freeswitch; \
-	  dh_systemd_start  -pfreeswitch-all --name=freeswitch; \
-	else \
-	  dh_installinit -pfreeswitch-sysvinit --name=freeswitch; \
-	  dh_installinit -pfreeswitch-all --name=freeswitch; \
-	fi
-
-override_dh_makeshlibs:
-	dh_makeshlibs
-	sed \
-	  -e '/^libfreeswitch 1/{s/freeswitch-all/libfreeswitch1/g}' \
-	  -i debian/freeswitch-all/DEBIAN/shlibs
-
 debian-bootstrap: debian/.stamp-bootstrap
 debian/.stamp-bootstrap:
 	(cd debian && ./bootstrap.sh)
