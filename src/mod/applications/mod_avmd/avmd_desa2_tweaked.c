@@ -1,6 +1,6 @@
 #ifndef __AVMD_DESA2_TWEAKED_H__
 
-
+#include <switch.h>
 #include <stdio.h>
 #ifdef WIN32
 #include <float.h>
@@ -15,9 +15,6 @@
 #ifdef AVMD_FAST_MATH
 #include "avmd_fast_acosf.h"
 #endif
-
-#include <switch.h>
-
 
 double
 avmd_desa2_tweaked(circ_buffer_t *b, size_t i)
