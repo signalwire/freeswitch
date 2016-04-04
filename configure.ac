@@ -411,6 +411,7 @@ elif test "x${ax_cv_c_compiler_vendor}" = "xgnu" ; then
     AC_SUBST([AM_MOD_AVMD_CXXFLAGS], [-std=gnu99])      # FS-8809, needed for MAP_POPULATE
     if test "$ac_cv_gcc_supports_w_no_unused_result" = yes; then
       APR_ADDTO(SWITCH_AM_CFLAGS, -Werror)
+      APR_ADDTO(SWITCH_AM_CFLAGS, -Wno-unused-result)
     fi
     if test "${enable_64}" = "yes"; then
 	case "$host" in
