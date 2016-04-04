@@ -21,7 +21,7 @@
 #		define ZRTP_PLATFORM ZP_ANDROID
 #	elif defined(__FreeBSD__)
 #		define ZRTP_PLATFORM ZP_BSD
-#	elif defined(linux) || defined(__linux)
+#	elif defined(linux) || defined(__linux__) || defined(__linux)
 #		include <linux/version.h>
 #		define ZRTP_PLATFORM ZP_LINUX
 #	elif defined(__MACOSX__) || defined (__APPLE__) || defined (__MACH__)
@@ -88,7 +88,13 @@
  */
 #define ZRTP_BYTE_ORDER ZBO_BIG_ENDIAN
 
-#elif defined(ARM) || defined(_ARM_) || defined(ARMV4) || defined(__arm__)
+#elif defined(__AARCH64EB__)
+/*
+ * aarch64, big endian
+ */
+#define ZRTP_BYTE_ORDER ZBO_BIG_ENDIAN
+
+#elif defined(ARM) || defined(_ARM_) || defined(ARMV4) || defined(__arm__) || defined(__AARCH64EL__)
 /*
  * ARM, default to little endian
  */
