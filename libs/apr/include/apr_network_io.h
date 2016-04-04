@@ -632,6 +632,13 @@ APR_DECLARE(apr_status_t) apr_socket_opt_get(apr_socket_t *sock,
                                              apr_int32_t opt, apr_int32_t *on);
 
 /**
+ * Get Socket fd for the socket passed
+ * @param sock The socket to quesry for the socket fd
+ */
+APR_DECLARE(int) apr_socket_fd_get(apr_socket_t *sock);
+
+
+/**
  * Query socket timeout for the specified socket
  * @param sock The socket to query
  * @param t Socket timeout returned from the query.

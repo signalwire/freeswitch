@@ -2133,6 +2133,20 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			}
 		}
 		break;
+	case SWITCH_MESSAGE_INDICATE_ALERTING:
+		{
+			char *extra_header = sofia_glue_get_extra_headers(channel, SOFIA_SIP_PROGRESS_HEADER_PREFIX);
+			const char *call_info = switch_channel_get_variable(channel, "presence_call_info_full");
+			char *cid = generate_pai_str(tech_pvt);
+			nua_respond(tech_pvt->nh, SIP_180_RINGING,
+						SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
+						TAG_IF(cid, SIPTAG_HEADER_STR(cid)),
+						TAG_IF(call_info, SIPTAG_CALL_INFO_STR(call_info)),
+						TAG_IF(!zstr(extra_header), SIPTAG_HEADER_STR(extra_header)),
+						TAG_IF(switch_stristr("update_display", tech_pvt->x_freeswitch_support_remote),
+							   SIPTAG_HEADER_STR("X-FS-Support: " FREESWITCH_SUPPORT)), TAG_END());
+		}
+		break;
 	case SWITCH_MESSAGE_INDICATE_RINGING:
 		{
 			switch_ring_ready_t ring_ready_val = msg->numeric_arg;
