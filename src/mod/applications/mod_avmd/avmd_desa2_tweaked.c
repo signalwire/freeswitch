@@ -20,8 +20,7 @@
 
 
 double
-avmd_desa2_tweaked(circ_buffer_t *b, size_t i,
-        switch_core_session_t *session)
+avmd_desa2_tweaked(circ_buffer_t *b, size_t i)
 {
     double d;
     double n;

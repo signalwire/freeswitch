@@ -35,8 +35,7 @@
  * from this partial result using
  *      0.5 * acos(n/d)
  */
-double avmd_desa2_tweaked(circ_buffer_t *b, size_t i,
-                            switch_core_session_t *session);
+double avmd_desa2_tweaked(circ_buffer_t *b, size_t i);
 
 
 #endif  /* __AVMD_DESA2_TWEAKED_H__ */

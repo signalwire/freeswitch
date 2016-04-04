@@ -208,24 +208,62 @@ static void init_avmd_session_data(avmd_session_t *avmd_session,
 static switch_bool_t avmd_callback(switch_media_bug_t * bug,
                                         void *user_data, switch_abc_type_t type)
 {
-	avmd_session_t *avmd_session;
-	switch_codec_t *read_codec;
-	switch_frame_t *frame;
+	avmd_session_t          *avmd_session;
+	switch_codec_t          *read_codec;
+	switch_frame_t          *frame;
+    switch_core_session_t   *fs_session;
 
 
 	avmd_session = (avmd_session_t *) user_data;
 	if (avmd_session == NULL) {
+        switch_log_printf(
+                SWITCH_CHANNEL_LOG,
+			    SWITCH_LOG_ERROR,
+			    "No avmd session assigned!\n"
+		);
+		return SWITCH_FALSE;
+	}
+	fs_session = avmd_session->session;
+	if (fs_session == NULL) {
+        switch_log_printf(
+                SWITCH_CHANNEL_LOG,
+			    SWITCH_LOG_ERROR,
+			    "No FreeSWITCH session assigned!\n"
+		);
 		return SWITCH_FALSE;
 	}
 
 	switch (type) {
 
 	case SWITCH_ABC_TYPE_INIT:
-		read_codec = switch_core_session_get_read_codec(avmd_session->session);
-		avmd_session->rate = read_codec->implementation->samples_per_second;
+		read_codec = switch_core_session_get_read_codec(fs_session);
+        if (read_codec == NULL) {
+            switch_log_printf(
+			    SWITCH_CHANNEL_SESSION_LOG(fs_session),
+			    SWITCH_LOG_WARNING,
+			    "No codec assigned, default session rate to 8000 samples/s\n"
+			);
+		    avmd_session->rate = 8000;
+        } else {
+            if (read_codec->implementation == NULL) {
+                switch_log_printf(
+			        SWITCH_CHANNEL_SESSION_LOG(fs_session),
+			        SWITCH_LOG_WARNING,
+			        "No codec implementation assigned, default session rate to 8000 samples/s\n"
+			    );
+		        avmd_session->rate = 8000;
+            } else {
+                avmd_session->rate = read_codec->implementation->samples_per_second;
+            }
+        }
 		avmd_session->start_time = switch_micro_time_now();
 		/* avmd_session->vmd_codec.channels = 
          *                  read_codec->implementation->number_of_channels; */
+        switch_log_printf(
+                SWITCH_CHANNEL_SESSION_LOG(fs_session),
+			    SWITCH_LOG_INFO,
+			    "Avmd session started, [%u] samples/s\n", avmd_session->rate
+		);
 		break;
 
 	case SWITCH_ABC_TYPE_READ_REPLACE:
@@ -368,8 +406,14 @@ SWITCH_STANDARD_APP(avmd_start_function)
 	avmd_session_t *avmd_session;
     switch_media_bug_flag_t flags = 0;
 
-	if (session == NULL)
+	if (session == NULL) {
+        switch_log_printf(
+                SWITCH_CHANNEL_LOG,
+			    SWITCH_LOG_ERROR,
+			    "No FreeSWITCH session assigned!\n"
+		);
 		return;
+    }
 
 	channel = switch_core_session_get_channel(session);
 
@@ -500,7 +544,8 @@ SWITCH_STANDARD_API(avmd_api_main)
 
 	/* No command? Display usage */
 	if (zstr(cmd)) {
-		stream->write_function(stream, "-USAGE: %s\n", AVMD_SYNTAX);
+		stream->write_function(stream, "-ERR, bad command!\n"
+                "-USAGE: %s\n\n", AVMD_SYNTAX);
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -512,7 +557,8 @@ SWITCH_STANDARD_API(avmd_api_main)
 	/* If we don't have the expected number of parameters
 	* display usage */
 	if (argc != AVMD_PARAMS) {
-		stream->write_function(stream, "-USAGE: %s\n", AVMD_SYNTAX);
+		stream->write_function(stream, "-ERR, avmd takes [%u] parameters!\n"
+                "-USAGE: %s\n\n", AVMD_PARAMS, AVMD_SYNTAX);
 		goto end;
 	}
 
@@ -524,7 +570,8 @@ SWITCH_STANDARD_API(avmd_api_main)
 
 	/* If the session was not found exit */
 	if (fs_session == NULL) {
-		stream->write_function(stream, "-USAGE: %s\n", AVMD_SYNTAX);
+		stream->write_function(stream, "-ERR, no FreeSWITCH session for uuid [%s]!"
+                "\n-USAGE: %s\n\n", uuid, AVMD_SYNTAX);
 		goto end;
 	}
 
@@ -541,7 +588,7 @@ SWITCH_STANDARD_API(avmd_api_main)
 			switch_channel_set_private(channel, "_avmd_", NULL);
 			switch_core_media_bug_remove(fs_session, &bug);
 			switch_safe_free(ccmd);
-			stream->write_function(stream, "+OK\n");
+			stream->write_function(stream, "+OK\n[%s] stopped.\n", uuid);
 			goto end;
 		}
 
@@ -557,7 +604,8 @@ SWITCH_STANDARD_API(avmd_api_main)
 
 	/* If we don't see the expected start exit */
 	if (strcasecmp(command, "start") != 0) {
-		stream->write_function(stream, "-USAGE: %s\n", AVMD_SYNTAX);
+		stream->write_function(stream, "-ERR, did you mean\n"
+                "api avmd %s start ?\n-USAGE: %s\n\n", uuid, AVMD_SYNTAX);
 		goto end;
 	}
 
@@ -595,9 +643,10 @@ SWITCH_STANDARD_API(avmd_api_main)
 		switch_log_printf(
 			SWITCH_CHANNEL_SESSION_LOG(session),
 			SWITCH_LOG_ERROR,
-			"Failure hooking to stream\n"
+			"Failed to add media bug!\n"
 			);
-
+		stream->write_function(stream,
+                "-ERR, [%s] failed to add media bug!\n\n", uuid);
 		goto end;
 	}
 
@@ -605,7 +654,7 @@ SWITCH_STANDARD_API(avmd_api_main)
 	switch_channel_set_private(channel, "_avmd_", bug);
 
 	/* Everything went according to plan! Notify the user */
-	stream->write_function(stream, "+OK\n");
+	stream->write_function(stream, "+OK, start\n\n");
 
 
 end:
@@ -667,7 +716,7 @@ static void avmd_process(avmd_session_t *session, switch_frame_t *frame)
 	/*for (pos = session->pos; pos < (GET_CURRENT_POS(b) - P); pos++) { */
 		if ((sample_n % sine_len_i) == 0) {
 			/* Get a desa2 frequency estimate every sine len */
-			omega = avmd_desa2_tweaked(b, pos + sample_n, session->session);
+			omega = avmd_desa2_tweaked(b, pos + sample_n);
 
 			if (omega < -0.999999 || omega > 0.999999) {
 #ifdef AVMD_DEBUG
