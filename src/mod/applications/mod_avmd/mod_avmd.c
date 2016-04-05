@@ -291,8 +291,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_avmd_load)
 	}
 	
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE,
-		"Advanced Voicemail detection enabled\n"
-	);
+		"Advanced voicemail detection enabled\n");
 
 #ifdef AVMD_FAST_MATH
     ret = init_fast_acosf();
@@ -335,7 +334,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_avmd_load)
 	switch_log_printf(
 		SWITCH_CHANNEL_LOG,
 		SWITCH_LOG_NOTICE,
-		"Advanced Voicemail detection: fast math enabled, arc cosine table "
+		"Advanced voicemail detection: fast math enabled, arc cosine table "
         "is [%s]\n", ACOS_TABLE_FILENAME
 		);
 #endif
@@ -346,6 +345,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_avmd_load)
 
 	SWITCH_ADD_API(api_interface, "avmd", "Voicemail beep detection",
             avmd_api_main, AVMD_SYNTAX);
+
+	switch_console_set_complete("add avmd ::console::list_uuid ::[start:stop");
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
@@ -466,7 +467,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_avmd_shutdown)
 #endif
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE,
-		"Advanced Voicemail detection disabled\n");
+		"Advanced voicemail detection disabled\n");
 
 	return SWITCH_STATUS_SUCCESS;
 }
