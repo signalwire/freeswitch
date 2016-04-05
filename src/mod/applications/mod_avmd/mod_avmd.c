@@ -19,16 +19,14 @@
  *
  * Contributor(s):
  *
+ * Piotr Gregor <piotrek.gregor gmail.com>:
  * Eric des Courtis <eric.des.courtis@benbria.com>
  *
  * mod_avmd.c -- Advanced Voicemail Detection Module
  *
- * This module detects voicemail beeps using a generalized approach.
- *
- * Modifications:
- *      Piotr Gregor <piotrek.gregor gmail.com>:
- *      FS-8808, FS-8809, FS-8810, FS-8852, FS-8853, FS-8854, FS-8855,
- *      FS-8860, FS-8861, FS-8875
+ * This module detects single frequency tones (used in voicemail to denote
+ * the moment caller's voice is started to be recorded, aka. beep sounds,
+ * beeps) using modified DESA-2 algorithm.
  */
 
 #include <switch.h>
@@ -99,7 +97,7 @@
 #endif
 
 /*! Syntax of the API call. */
-#define AVMD_SYNTAX "<uuid> <command>"
+#define AVMD_SYNTAX "<uuid> <start|stop>"
 
 /*! Number of expected parameters in api call. */
 #define AVMD_PARAMS 2
@@ -113,10 +111,9 @@
 
 /* Prototypes */
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_avmd_shutdown);
-SWITCH_STANDARD_API(avmd_api_main);
-
 SWITCH_MODULE_LOAD_FUNCTION(mod_avmd_load);
 SWITCH_MODULE_DEFINITION(mod_avmd, mod_avmd_load, mod_avmd_shutdown, NULL);
+SWITCH_STANDARD_API(avmd_api_main);
 SWITCH_STANDARD_APP(avmd_start_function);
 
 /*! Status of the beep detection */
@@ -216,20 +213,14 @@ static switch_bool_t avmd_callback(switch_media_bug_t * bug,
 
 	avmd_session = (avmd_session_t *) user_data;
 	if (avmd_session == NULL) {
-        switch_log_printf(
-                SWITCH_CHANNEL_LOG,
-			    SWITCH_LOG_ERROR,
-			    "No avmd session assigned!\n"
-		);
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+			    "No avmd session assigned!\n");
 		return SWITCH_FALSE;
 	}
 	fs_session = avmd_session->session;
 	if (fs_session == NULL) {
-        switch_log_printf(
-                SWITCH_CHANNEL_LOG,
-			    SWITCH_LOG_ERROR,
-			    "No FreeSWITCH session assigned!\n"
-		);
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+			    "No FreeSWITCH session assigned!\n");
 		return SWITCH_FALSE;
 	}
 
@@ -238,19 +229,13 @@ static switch_bool_t avmd_callback(switch_media_bug_t * bug,
 	case SWITCH_ABC_TYPE_INIT:
 		read_codec = switch_core_session_get_read_codec(fs_session);
         if (read_codec == NULL) {
-            switch_log_printf(
-			    SWITCH_CHANNEL_SESSION_LOG(fs_session),
-			    SWITCH_LOG_WARNING,
-			    "No codec assigned, default session rate to 8000 samples/s\n"
-			);
+            switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_session), SWITCH_LOG_WARNING,
+			    "No codec assigned, default session rate to 8000 samples/s\n");
 		    avmd_session->rate = 8000;
         } else {
             if (read_codec->implementation == NULL) {
-                switch_log_printf(
-			        SWITCH_CHANNEL_SESSION_LOG(fs_session),
-			        SWITCH_LOG_WARNING,
-			        "No codec implementation assigned, default session rate to 8000 samples/s\n"
-			    );
+                switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_session), SWITCH_LOG_WARNING,
+			        "No codec implementation assigned, default session rate to 8000 samples/s\n");
 		        avmd_session->rate = 8000;
             } else {
                 avmd_session->rate = read_codec->implementation->samples_per_second;
@@ -259,11 +244,8 @@ static switch_bool_t avmd_callback(switch_media_bug_t * bug,
 		avmd_session->start_time = switch_micro_time_now();
 		/* avmd_session->vmd_codec.channels = 
          *                  read_codec->implementation->number_of_channels; */
-        switch_log_printf(
-                SWITCH_CHANNEL_SESSION_LOG(fs_session),
-			    SWITCH_LOG_INFO,
-			    "Avmd session started, [%u] samples/s\n", avmd_session->rate
-		);
+        switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_session),SWITCH_LOG_INFO,
+			    "Avmd session started, [%u] samples/s\n", avmd_session->rate);
 		break;
 
 	case SWITCH_ABC_TYPE_READ_REPLACE:
@@ -308,9 +290,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_avmd_load)
 		return SWITCH_STATUS_TERM;
 	}
 	
-	switch_log_printf(
-		SWITCH_CHANNEL_LOG,
-		SWITCH_LOG_NOTICE,
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE,
 		"Advanced Voicemail detection enabled\n"
 	);
 
@@ -321,48 +301,33 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_avmd_load)
         switch (ret) {
 
             case -1:
-	            switch_log_printf(
-		            SWITCH_CHANNEL_LOG,
-		            SWITCH_LOG_ERROR,
+	            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
 		            "Can't access file [%s], error [%s]\n",
-                    ACOS_TABLE_FILENAME, err
-		        );
+                    ACOS_TABLE_FILENAME, err);
                 break;
 
             case -2:
-	            switch_log_printf(
-		            SWITCH_CHANNEL_LOG,
-		            SWITCH_LOG_ERROR,
+	            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
 		            "Error creating file [%s], error [%s]\n",
-                    ACOS_TABLE_FILENAME, err
-		        );
+                    ACOS_TABLE_FILENAME, err);
                 break;
 
             case -3:
-	            switch_log_printf(
-		            SWITCH_CHANNEL_LOG,
-		            SWITCH_LOG_ERROR,
+	            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
 		            "Access rights are OK but can't open file [%s], error [%s]\n",
-                    ACOS_TABLE_FILENAME, err
-		        );
+                    ACOS_TABLE_FILENAME, err);
                 break;
 
             case -4:
-	            switch_log_printf(
-		            SWITCH_CHANNEL_LOG,
-		            SWITCH_LOG_ERROR,
+	            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
 		            "Access rights are OK but can't mmap file [%s], error [%s]\n",
-                    ACOS_TABLE_FILENAME, err
-		        );
+                    ACOS_TABLE_FILENAME, err);
                 break;
 
             default:
-	            switch_log_printf(
-		            SWITCH_CHANNEL_LOG,
-		            SWITCH_LOG_ERROR,
+	            switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_ERROR,
 		            "Unknown error [%d] while initializing fast cos table [%s], "
-                    "errno [%s]\n", ret, ACOS_TABLE_FILENAME, err
-		        );
+                    "errno [%s]\n", ret, ACOS_TABLE_FILENAME, err);
                 return SWITCH_STATUS_TERM;
         }
         return SWITCH_STATUS_TERM;
@@ -375,18 +340,12 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_avmd_load)
 		);
 #endif
 
-	SWITCH_ADD_APP(
-		app_interface,
-		"avmd",
-		"Beep detection",
-		"Advanced detection of voicemail beeps",
-		avmd_start_function,
-		"[start] [stop]",
-		SAF_NONE
-	);
+	SWITCH_ADD_APP(app_interface, "avmd","Beep detection",
+            "Advanced detection of voicemail beeps", avmd_start_function,
+            AVMD_SYNTAX, SAF_NONE);
 
 	SWITCH_ADD_API(api_interface, "avmd", "Voicemail beep detection",
-                                            avmd_api_main, AVMD_SYNTAX);
+            avmd_api_main, AVMD_SYNTAX);
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
@@ -493,18 +452,12 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_avmd_shutdown)
     if (res != 0) {
         switch (res) {
             case -1:
-	            switch_log_printf(
-		            SWITCH_CHANNEL_LOG,
-		            SWITCH_LOG_ERROR,
-		            "Failed unmap arc cosine table\n"
-		        );
+	            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+		            "Failed unmap arc cosine table\n");
                 break;
             case -2:
-	            switch_log_printf(
-		            SWITCH_CHANNEL_LOG,
-		            SWITCH_LOG_ERROR,
-		            "Failed closing arc cosine table\n"
-		        );
+	            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+		            "Failed closing arc cosine table\n");
                 break;
             default:
             break;
@@ -512,11 +465,8 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_avmd_shutdown)
     }
 #endif
 
-	switch_log_printf(
-		SWITCH_CHANNEL_LOG,
-		SWITCH_LOG_NOTICE,
-		"Advanced Voicemail detection disabled\n"
-		);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE,
+		"Advanced Voicemail detection disabled\n");
 
 	return SWITCH_STATUS_SUCCESS;
 }
