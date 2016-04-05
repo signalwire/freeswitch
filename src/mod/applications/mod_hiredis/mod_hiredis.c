@@ -198,14 +198,12 @@ SWITCH_LIMIT_RELEASE(hiredis_limit_release)
 			profile = switch_core_hash_find(mod_hiredis_globals.profiles, limit_pvt->realm);
 			hashkey = switch_mprintf("decr %s", tmp->limit_key);
 
-			if ( limit_pvt && (limit_pvt->interval > 0) && (hiredis_profile_execute_sync(profile, hashkey, &response) != SWITCH_STATUS_SUCCESS)) {
+			if ( tmp && (tmp->interval > 0) && (hiredis_profile_execute_sync(profile, hashkey, &response) != SWITCH_STATUS_SUCCESS)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "hiredis: profile[%s] error executing [%s] because [%s]\n",
 								  tmp->realm, hashkey, response);
 			}
 
-			limit_pvt = tmp->next;
-
-			tmp = limit_pvt;
+			tmp = tmp->next;
 			switch_safe_free(response);
 			switch_safe_free(hashkey);
 		}
