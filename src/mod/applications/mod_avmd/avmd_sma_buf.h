@@ -32,8 +32,6 @@ typedef struct {
 	(void)memset((b), 0, sizeof(sma_buffer_t)); \
 	(b)->len = (l); \
 	(b)->data = (BUFF_TYPE *)switch_core_session_alloc((s), sizeof(BUFF_TYPE) * (l)); \
-	assert((b)->data != NULL); \
-	(void)memset((b)->data, 0, sizeof(BUFF_TYPE) * (l)); \
 	(b)->sma = 0.0; \
 	(b)->pos = 0; \
 	(b)->lpos = 0; \
