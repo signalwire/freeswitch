@@ -1359,6 +1359,8 @@ CF_STOP_BROADCAST	- Signal to stop broadcast
 CF_AUDIO_PAUSE      - Audio is not ready to read/write
 CF_VIDEO_PAUSE      - Video is not ready to read/write
 
+CF_MEDIA_SET        - Session has read codec assigned
+
 </pre>
  */
 

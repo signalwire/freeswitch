@@ -206,7 +206,12 @@ static switch_bool_t avmd_callback(switch_media_bug_t * bug,
                                         void *user_data, switch_abc_type_t type)
 {
 	avmd_session_t          *avmd_session;
+#ifdef AVMD_OUTBOUND_CHANNEL
 	switch_codec_t          *read_codec;
+#endif
+#ifdef AVMD_INBOUND_CHANNEL
+    switch_codec_t          *write_codec;
+#endif
 	switch_frame_t          *frame;
     switch_core_session_t   *fs_session;
 
@@ -227,20 +232,39 @@ static switch_bool_t avmd_callback(switch_media_bug_t * bug,
 	switch (type) {
 
 	case SWITCH_ABC_TYPE_INIT:
+#ifdef AVMD_OUTBOUND_CHANNEL
 		read_codec = switch_core_session_get_read_codec(fs_session);
         if (read_codec == NULL) {
             switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_session), SWITCH_LOG_WARNING,
-			    "No codec assigned, default session rate to 8000 samples/s\n");
+			    "No read codec assigned, default session rate to 8000 samples/s\n");
 		    avmd_session->rate = 8000;
         } else {
             if (read_codec->implementation == NULL) {
                 switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_session), SWITCH_LOG_WARNING,
-			        "No codec implementation assigned, default session rate to 8000 samples/s\n");
+			        "No read codec implementation assigned, default session rate to 8000 samples/s\n");
 		        avmd_session->rate = 8000;
             } else {
                 avmd_session->rate = read_codec->implementation->samples_per_second;
             }
         }
+#endif
+#ifdef AVMD_INBOUND_CHANNEL
+		write_codec = switch_core_session_get_write_codec(fs_session);
+        if (write_codec == NULL) {
+            switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_session), SWITCH_LOG_WARNING,
+			    "No write codec assigned, default session rate to 8000 samples/s\n");
+		    avmd_session->rate = 8000;
+        } else {
+            if (write_codec->implementation == NULL) {
+                switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_session), SWITCH_LOG_WARNING,
+			        "No write codec implementation assigned, default session rate to 8000 samples/s\n");
+		        avmd_session->rate = 8000;
+            } else {
+                avmd_session->rate = write_codec->implementation->samples_per_second;
+            }
+        }
+#endif
+
 		avmd_session->start_time = switch_micro_time_now();
 		/* avmd_session->vmd_codec.channels = 
          *                  read_codec->implementation->number_of_channels; */
@@ -473,7 +497,8 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_avmd_shutdown)
 }
 
 /*! \brief FreeSWITCH API handler function.
- *  This function handles API calls such as the ones from mod_event_socket and in some cases
+ *  This function handles API calls such as the ones
+ *  from mod_event_socket and in some cases
  *  scripts such as LUA scripts.
  *
  *  @author Eric des Courtis
@@ -527,9 +552,56 @@ SWITCH_STANDARD_API(avmd_api_main)
 	}
 
 	/* Get current channel of the session to tag the session
-	* This indicates that our module is present */
+	* This indicates that our module is present
+    * At this moment this cannot return NULL, it will either
+    * succeed or assert failed, but we make ourself secure anyway */
 	channel = switch_core_session_get_channel(fs_session);
+	if (channel == NULL) {
+		stream->write_function(stream, "-ERR, no channel for FreeSWITCH session [%s]!"
+                "\nPlease report this to the developers.\n\n", uuid);
+		goto end;
+	}
+#ifdef AVMD_OUTBOUND_CHANNEL
+    if (SWITCH_CALL_DIRECTION_OUTBOUND != switch_channel_direction(channel)) {
+		stream->write_function(stream, "-ERR, channel for FreeSWITCH session [%s]"
+                "\nis not outbound.\n\n", uuid);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING,
+			"Channel [%s] is not outbound!\n", switch_channel_get_name(channel));
+    } else {
+        flags |= SMBF_READ_REPLACE;
+    }
+#endif
+#ifdef AVMD_INBOUND_CHANNEL
+    if (SWITCH_CALL_DIRECTION_INBOUND != switch_channel_direction(channel)) {
+		stream->write_function(stream, "-ERR, channel for FreeSWITCH session [%s]"
+                "\nis not inbound.\n\n", uuid);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING,
+			"Channel [%s] is not inbound!\n", switch_channel_get_name(channel));
+    } else {
+        flags |= SMBF_WRITE_REPLACE;
+    }
+#endif
+    if(flags == 0) {
+		stream->write_function(stream, "-ERR, can't set direction for channel [%s]\n"
+               " for FreeSWITCH session [%s]. Please check avmd configuration.\n\n",
+               switch_channel_get_name(channel), uuid);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR,
+			"Can't set direction for channel [%s]\n", switch_channel_get_name(channel));
+        goto end;
+    }
 
+
+#ifdef AVMD_OUTBOUND_CHANNEL
+    if (switch_channel_test_flag(channel, CF_MEDIA_SET) == 0) {
+		stream->write_function(stream, "-ERR, channel [%s] for FreeSWITCH session [%s]"
+                "\nhas no read codec assigned yet. Please try again.\n\n",
+                switch_channel_get_name(channel), uuid);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR,
+			"Failed to start session. Channel [%s] has no codec assigned yet.\n",
+            switch_channel_get_name(channel));
+        goto end;
+    }
+#endif
 	/* Is this channel already set? */
 	bug = (switch_media_bug_t *) switch_channel_get_private(channel, "_avmd_");
 	/* If yes */
@@ -544,11 +616,8 @@ SWITCH_STANDARD_API(avmd_api_main)
 		}
 
 		/* We have already started */
-		switch_log_printf(
-			SWITCH_CHANNEL_SESSION_LOG(session),
-			SWITCH_LOG_WARNING,
-			"Cannot run 2 at once on the same channel!\n"
-			);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING,
+			"Cannot run 2 at once on the same channel!\n");
 
 		goto end;
 	}
@@ -566,14 +635,6 @@ SWITCH_STANDARD_API(avmd_api_main)
                                             fs_session, sizeof(avmd_session_t));
 
 	init_avmd_session_data(avmd_session, fs_session);
-
-#ifdef AVMD_INBOUND_CHANNEL
-    flags |= SMBF_READ_REPLACE;
-#endif
-#ifdef AVMD_OUTBOUND_CHANNEL
-    flags |= SMBF_WRITE_REPLACE;
-#endif
-    switch_assert(flags != 0);
 
 	/* Add a media bug that allows me to intercept the
 	* reading leg of the audio stream */
