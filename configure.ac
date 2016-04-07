@@ -453,7 +453,7 @@ fi
 
 case "${ax_cv_c_compiler_vendor}" in
 sun)
-	VISIBILITY_FLAG=
+	VISIBILITY_FLAG=-xldscope=hidden
 ;;
 *)
 	VISIBILITY_FLAG=-fvisibility=hidden
