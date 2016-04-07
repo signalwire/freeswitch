@@ -2,7 +2,11 @@
  * @brief   Options controlling avmd module.
  *
  * @author Eric des Courtis
- * @par    Modifications: Piotr Gregor < piotrek.gregor gmail.com >
+ *
+ * Contributor(s):
+ *
+ * Piotr Gregor <piotrek.gregor gmail.com>:
+ * Eric des Courtis <eric.des.courtis@benbria.com>
  */
 
 
@@ -30,7 +34,7 @@
 #define AVMD_REQUIRE_CONTINUOUS_STREAK
 
 /* define number of samples to skip starting from the beginning
- *  of frame and after reset */
+ * of the frame and after reset */
 #define AVMD_SAMLPE_TO_SKIP_N 6
 
 /* define/undefine this to enable/disable simplified estimation
