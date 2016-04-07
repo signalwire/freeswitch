@@ -451,6 +451,16 @@ if test "${enable_address_sanitizer}" = "yes"; then
 fi
 
 
+case "${ax_cv_c_compiler_vendor}" in
+sun)
+	VISIBILITY_FLAG=-xldscope=hidden
+;;
+*)
+	VISIBILITY_FLAG=-fvisibility=hidden
+;;
+esac
+AC_SUBST(VISIBILITY_FLAG)
+
 #
 # gcc visibility cflag checks
 #
