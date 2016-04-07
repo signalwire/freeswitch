@@ -656,8 +656,13 @@ SWITCH_STANDARD_API(avmd_api_main)
                 "\n has no read codec assigned yet. Please try again.\n\n",
                 switch_channel_get_name(channel), uuid);
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_session), SWITCH_LOG_ERROR,
+<<<<<<< HEAD
 			"Failed to start session. Channel [%s] has no codec assigned yet."
             " Please try again\n", switch_channel_get_name(channel));
+=======
+			"Failed to start session. Channel [%s] has no codec assigned yet.\n",
+            switch_channel_get_name(channel));
+>>>>>>> FS-9031: [avmd] Check session initialization
         goto end;
     }
 #endif
@@ -680,24 +685,35 @@ SWITCH_STANDARD_API(avmd_api_main)
                 " for FreeSWITCH session [%s]\n", uuid);
         switch (res) {
             case -1:
+<<<<<<< HEAD
 		        stream->write_function(stream, "-ERR, buffer error\n\n");
                 switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_session),
                     SWITCH_LOG_ERROR, "Failed to init avmd session."
                     " Buffer error!\n");
             break;
             case -2:
+=======
+>>>>>>> FS-9031: [avmd] Check session initialization
 		        stream->write_function(stream, "-ERR, SMA buffer size is 0\n\n");
                 switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_session),
                     SWITCH_LOG_ERROR, "Failed to init avmd session."
                     " SMA buffer size is 0!\n");
                 break;
+<<<<<<< HEAD
             case -3:
+=======
+            case -2:
+>>>>>>> FS-9031: [avmd] Check session initialization
 		        stream->write_function(stream, "-ERR, SMA buffer error\n\n");
                 switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_session),
                     SWITCH_LOG_ERROR, "Failed to init avmd session."
                     " SMA buffer error\n");
                 break;
+<<<<<<< HEAD
             case -4:
+=======
+            case -3:
+>>>>>>> FS-9031: [avmd] Check session initialization
 		        stream->write_function(stream, "-ERR, SMA sqa buffer error\n\n");
                 switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_session),
                     SWITCH_LOG_ERROR, "Failed to init avmd session."
@@ -738,11 +754,19 @@ SWITCH_STANDARD_API(avmd_api_main)
 	/* Set the vmd tag to detect an existing vmd media bug */
 	switch_channel_set_private(channel, "_avmd_", bug);
 
+<<<<<<< HEAD
 	/* OK */
+=======
+	/* Everything went according to plan! Notify the user */
+>>>>>>> FS-9031: [avmd] Check session initialization
 	stream->write_function(stream, "+OK\n [%s] [%s] started!\n\n",
             uuid, switch_channel_get_name(channel));
     switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_session), SWITCH_LOG_INFO,
             "Avmd on channel [%s] started!\n", switch_channel_get_name(channel));
+<<<<<<< HEAD
+=======
+
+>>>>>>> FS-9031: [avmd] Check session initialization
 
 end:
 
