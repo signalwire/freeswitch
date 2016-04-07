@@ -129,7 +129,11 @@ typedef struct {
 #pragma pack(push, r1, 1)
 #endif
 
-
+typedef struct switch_rtcp_sdes_unit_s {
+	unsigned char type;
+	unsigned char length;
+	char value[];
+} switch_rtcp_sdes_unit_t;
 
 typedef struct {
 	uint32_t ssrc;
