@@ -163,8 +163,10 @@ static void init_avmd_session_data(avmd_session_t *avmd_session,
 static void init_avmd_session_data(avmd_session_t *avmd_session,
                                     switch_core_session_t *fs_session)
 {
-    /*! This is a worst case sample rate estimate */
-    avmd_session->rate = 48000;
+    size_t buf_sz;
+
+	/*! This is a worst case sample rate estimate */
+	avmd_session->rate = 48000;
 	INIT_CIRC_BUFFER(&avmd_session->b,
             (size_t)BEEP_LEN(avmd_session->rate),
             (size_t)FRAME_LEN(avmd_session->rate),
@@ -184,16 +186,32 @@ static void init_avmd_session_data(avmd_session_t *avmd_session,
     avmd_session->samples_streak = SAMPLES_CONSECUTIVE_STREAK;
 #endif
     avmd_session->sample_count = 0;
-	INIT_SMA_BUFFER(
-		&avmd_session->sma_b,
-		BEEP_LEN(avmd_session->rate) / SINE_LEN(avmd_session->rate),
-		fs_session
-		);
-	INIT_SMA_BUFFER(
-		&avmd_session->sqa_b,
-		BEEP_LEN(avmd_session->rate) / SINE_LEN(avmd_session->rate),
-		fs_session
-		);
+
+    buf_sz = BEEP_LEN(avmd_session->rate) / SINE_LEN(avmd_session->rate);
+    if (buf_sz < 1) {
+            switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_session),
+                    SWITCH_LOG_ERROR, "Failed to init avmd session."
+                    " SMA buffer size is 0!\n");
+            return;
+    }
+
+    INIT_SMA_BUFFER(&avmd_session->sma_b, buf_sz, fs_session);
+    if (avmd_session->sma_b.data == NULL) {
+            switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_session),
+                    SWITCH_LOG_ERROR, "Failed to init avmd session."
+                    " SMA buffer error\n");
+            return;
+    }
+    memset(avmd_session->sma_b.data, 0, sizeof(BUFF_TYPE) * buf_sz);
+
+    INIT_SMA_BUFFER(&avmd_session->sqa_b, buf_sz, fs_session);
+    if (avmd_session->sqa_b.data == NULL) {
+            switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_session),
+                    SWITCH_LOG_ERROR, "Failed to init avmd session."
+                    " SMA sqa buffer error\n");
+            return;
+    }
+    memset(avmd_session->sqa_b.data, 0, sizeof(BUFF_TYPE) * buf_sz);
 }
 
 
