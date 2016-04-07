@@ -151,7 +151,7 @@ typedef struct {
 static void avmd_process(avmd_session_t *session, switch_frame_t *frame);
 static switch_bool_t avmd_callback(switch_media_bug_t * bug,
                                     void *user_data, switch_abc_type_t type);
-static void init_avmd_session_data(avmd_session_t *avmd_session,
+static int init_avmd_session_data(avmd_session_t *avmd_session,
                                     switch_core_session_t *fs_session);
 
 
@@ -160,7 +160,7 @@ static void init_avmd_session_data(avmd_session_t *avmd_session,
  * @param avmd_session A reference to a avmd session.
  * @param fs_session A reference to a FreeSWITCH session.
  */
-static void init_avmd_session_data(avmd_session_t *avmd_session,
+static int init_avmd_session_data(avmd_session_t *avmd_session,
                                     switch_core_session_t *fs_session)
 {
     size_t buf_sz;
@@ -172,10 +172,7 @@ static void init_avmd_session_data(avmd_session_t *avmd_session,
             (size_t)FRAME_LEN(avmd_session->rate),
             fs_session);
     if (avmd_session->b.buf == NULL) {
-            switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_session),
-                    SWITCH_LOG_ERROR, "Failed to init avmd session."
-                    " Buffer error\n");
-            return;
+            return -1;
     }
 	avmd_session->session = fs_session;
 	avmd_session->pos = 0;
@@ -189,29 +186,21 @@ static void init_avmd_session_data(avmd_session_t *avmd_session,
 
     buf_sz = BEEP_LEN(avmd_session->rate) / SINE_LEN(avmd_session->rate);
     if (buf_sz < 1) {
-            switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_session),
-                    SWITCH_LOG_ERROR, "Failed to init avmd session."
-                    " SMA buffer size is 0!\n");
-            return;
+            return -2;
     }
 
     INIT_SMA_BUFFER(&avmd_session->sma_b, buf_sz, fs_session);
     if (avmd_session->sma_b.data == NULL) {
-            switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_session),
-                    SWITCH_LOG_ERROR, "Failed to init avmd session."
-                    " SMA buffer error\n");
-            return;
+            return -3;
     }
     memset(avmd_session->sma_b.data, 0, sizeof(BUFF_TYPE) * buf_sz);
 
     INIT_SMA_BUFFER(&avmd_session->sqa_b, buf_sz, fs_session);
     if (avmd_session->sqa_b.data == NULL) {
-            switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_session),
-                    SWITCH_LOG_ERROR, "Failed to init avmd session."
-                    " SMA sqa buffer error\n");
-            return;
+            return -4;
     }
     memset(avmd_session->sqa_b.data, 0, sizeof(BUFF_TYPE) * buf_sz);
+    return 0;
 }
 
 
@@ -405,6 +394,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_avmd_load)
  */
 SWITCH_STANDARD_APP(avmd_start_function)
 {
+    int res;
 	switch_media_bug_t *bug;
 	switch_status_t status;
 	switch_channel_t *channel;
@@ -412,11 +402,8 @@ SWITCH_STANDARD_APP(avmd_start_function)
     switch_media_bug_flag_t flags = 0;
 
 	if (session == NULL) {
-        switch_log_printf(
-                SWITCH_CHANNEL_LOG,
-			    SWITCH_LOG_ERROR,
-			    "No FreeSWITCH session assigned!\n"
-		);
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+			    "No FreeSWITCH session assigned!\n");
 		return;
     }
 
@@ -442,7 +429,37 @@ SWITCH_STANDARD_APP(avmd_start_function)
 	avmd_session = (avmd_session_t *)switch_core_session_alloc(
                                             session, sizeof(avmd_session_t));
 
-	init_avmd_session_data(avmd_session, session);
+	res = init_avmd_session_data(avmd_session, session);
+    if (res != 0) {
+        switch (res) {
+            case -1:
+                switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session),
+                    SWITCH_LOG_ERROR, "Failed to init avmd session."
+                    " Buffer error!\n");
+            break;
+            case -2:
+                switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session),
+                    SWITCH_LOG_ERROR, "Failed to init avmd session."
+                    " SMA buffer size is 0!\n");
+                break;
+            case -3:
+                switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session),
+                    SWITCH_LOG_ERROR, "Failed to init avmd session."
+                    " SMA buffer error\n");
+                break;
+            case -4:
+                switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session),
+                    SWITCH_LOG_ERROR, "Failed to init avmd session."
+                    " SMA sqa buffer error\n");
+                break;
+            default:
+                switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session),
+                    SWITCH_LOG_ERROR, "Failed to init avmd session."
+                    " Unknown error\n");
+                break;
+        }
+		return;
+    }
 
 #ifdef AVMD_INBOUND_CHANNEL
     flags |= SMBF_READ_REPLACE;
@@ -520,6 +537,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_avmd_shutdown)
  */
 SWITCH_STANDARD_API(avmd_api_main)
 {
+    int res;
 	switch_core_session_t *fs_session = NULL;
 	switch_media_bug_t *bug;
 	avmd_session_t *avmd_session;
@@ -528,7 +546,7 @@ SWITCH_STANDARD_API(avmd_api_main)
 	int argc;
 	char *argv[AVMD_PARAMS];
 	char *ccmd = NULL;
-	char *uuid;
+	char *uuid, *uuid_dup;
 	char *command;
     switch_core_media_flag_t flags = 0;
 
@@ -572,13 +590,40 @@ SWITCH_STANDARD_API(avmd_api_main)
 	channel = switch_core_session_get_channel(fs_session);
 	if (channel == NULL) {
 		stream->write_function(stream, "-ERR, no channel for FreeSWITCH session [%s]!"
-                "\nPlease report this to the developers\n\n", uuid);
+                "\n Please report this to the developers.\n\n", uuid);
 		goto end;
 	}
+
+	/* Is this channel already set? */
+	bug = (switch_media_bug_t *) switch_channel_get_private(channel, "_avmd_");
+	/* If yes */
+	if (bug != NULL) {
+		/* If we have a stop remove audio bug */
+		if (strcasecmp(command, "stop") == 0) {
+            uuid_dup = switch_core_strdup(switch_core_session_get_pool(fs_session), uuid);
+			switch_channel_set_private(channel, "_avmd_", NULL);
+			switch_core_media_bug_remove(fs_session, &bug);
+			switch_safe_free(ccmd);
+			stream->write_function(stream, "+OK\n [%s] [%s] stopped.\n\n",
+                    uuid_dup, switch_channel_get_name(channel));
+		    switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_session), SWITCH_LOG_INFO,
+			    "Avmd on channel [%s] stopped!\n", switch_channel_get_name(channel));
+			goto end;
+		}
+
+		/* We have already started */
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_session),
+                SWITCH_LOG_ERROR, "Avmd already started!\n");
+		stream->write_function(stream, "-ERR, avmd for FreeSWITCH session [%s]"
+                "\n already started\n\n", uuid);
+
+		goto end;
+	}
+
 #ifdef AVMD_OUTBOUND_CHANNEL
     if (SWITCH_CALL_DIRECTION_OUTBOUND != switch_channel_direction(channel)) {
 		stream->write_function(stream, "-ERR, channel for FreeSWITCH session [%s]"
-                "\nis not outbound\n\n", uuid);
+                "\n is not outbound.\n\n", uuid);
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_session), SWITCH_LOG_WARNING,
 			"Channel [%s] is not outbound!\n", switch_channel_get_name(channel));
     } else {
@@ -588,7 +633,7 @@ SWITCH_STANDARD_API(avmd_api_main)
 #ifdef AVMD_INBOUND_CHANNEL
     if (SWITCH_CALL_DIRECTION_INBOUND != switch_channel_direction(channel)) {
 		stream->write_function(stream, "-ERR, channel for FreeSWITCH session [%s]"
-                "\nis not inbound.\n\n", uuid);
+                "\n is not inbound.\n\n", uuid);
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_session), SWITCH_LOG_WARNING,
 			"Channel [%s] is not inbound!\n", switch_channel_get_name(channel));
     } else {
@@ -608,39 +653,19 @@ SWITCH_STANDARD_API(avmd_api_main)
 #ifdef AVMD_OUTBOUND_CHANNEL
     if (switch_channel_test_flag(channel, CF_MEDIA_SET) == 0) {
 		stream->write_function(stream, "-ERR, channel [%s] for FreeSWITCH session [%s]"
-                "\nhas no read codec assigned yet. Please try again\n\n",
+                "\n has no read codec assigned yet. Please try again.\n\n",
                 switch_channel_get_name(channel), uuid);
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_session), SWITCH_LOG_ERROR,
 			"Failed to start session. Channel [%s] has no codec assigned yet."
-            " Please try again\n",
-            switch_channel_get_name(channel));
+            " Please try again\n", switch_channel_get_name(channel));
         goto end;
     }
 #endif
-	/* Is this channel already set? */
-	bug = (switch_media_bug_t *) switch_channel_get_private(channel, "_avmd_");
-	/* If yes */
-	if (bug != NULL) {
-		/* If we have a stop remove audio bug */
-		if (strcasecmp(command, "stop") == 0) {
-			switch_channel_set_private(channel, "_avmd_", NULL);
-			switch_core_media_bug_remove(fs_session, &bug);
-			switch_safe_free(ccmd);
-			stream->write_function(stream, "+OK, [%s] stopped\n", uuid);
-			goto end;
-		}
-
-		/* We have already started */
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_session), SWITCH_LOG_WARNING,
-			"Cannot run 2 at once on the same channel!\n");
-
-		goto end;
-	}
 
 	/* If we don't see the expected start exit */
 	if (strcasecmp(command, "start") != 0) {
 		stream->write_function(stream, "-ERR, did you mean\n"
-                "api avmd %s start ?\n-USAGE: %s\n\n", uuid, AVMD_SYNTAX);
+                " api avmd %s start ?\n-USAGE: %s\n\n", uuid, AVMD_SYNTAX);
 		goto end;
 	}
 
@@ -649,7 +674,44 @@ SWITCH_STANDARD_API(avmd_api_main)
 	avmd_session = (avmd_session_t *) switch_core_session_alloc(
                                             fs_session, sizeof(avmd_session_t));
 
-	init_avmd_session_data(avmd_session, fs_session);
+	res = init_avmd_session_data(avmd_session, fs_session);
+    if (res != 0) {
+		stream->write_function(stream, "-ERR, failed to initialize avmd session\n"
+                " for FreeSWITCH session [%s]\n", uuid);
+        switch (res) {
+            case -1:
+		        stream->write_function(stream, "-ERR, buffer error\n\n");
+                switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_session),
+                    SWITCH_LOG_ERROR, "Failed to init avmd session."
+                    " Buffer error!\n");
+            break;
+            case -2:
+		        stream->write_function(stream, "-ERR, SMA buffer size is 0\n\n");
+                switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_session),
+                    SWITCH_LOG_ERROR, "Failed to init avmd session."
+                    " SMA buffer size is 0!\n");
+                break;
+            case -3:
+		        stream->write_function(stream, "-ERR, SMA buffer error\n\n");
+                switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_session),
+                    SWITCH_LOG_ERROR, "Failed to init avmd session."
+                    " SMA buffer error\n");
+                break;
+            case -4:
+		        stream->write_function(stream, "-ERR, SMA sqa buffer error\n\n");
+                switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_session),
+                    SWITCH_LOG_ERROR, "Failed to init avmd session."
+                    " SMA sqa buffer error\n");
+                break;
+            default:
+		        stream->write_function(stream, "-ERR, unknown error\n\n");
+                switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_session),
+                    SWITCH_LOG_ERROR, "Failed to init avmd session."
+                    " Unknown error\n");
+                break;
+        }
+		goto end;
+    }
 
 	/* Add a media bug that allows me to intercept the
 	* reading leg of the audio stream */
@@ -677,10 +739,10 @@ SWITCH_STANDARD_API(avmd_api_main)
 	switch_channel_set_private(channel, "_avmd_", bug);
 
 	/* OK */
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_session), SWITCH_LOG_INFO,
-			"Avmd session on channel [%s] started\n", switch_channel_get_name(channel));
-	stream->write_function(stream, "+OK, start\n\n");
-
+	stream->write_function(stream, "+OK\n [%s] [%s] started!\n\n",
+            uuid, switch_channel_get_name(channel));
+    switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_session), SWITCH_LOG_INFO,
+            "Avmd on channel [%s] started!\n", switch_channel_get_name(channel));
 
 end:
 
