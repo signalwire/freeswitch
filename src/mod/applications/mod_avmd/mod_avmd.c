@@ -163,13 +163,18 @@ static void init_avmd_session_data(avmd_session_t *avmd_session,
 static void init_avmd_session_data(avmd_session_t *avmd_session,
                                     switch_core_session_t *fs_session)
 {
-	/*! This is a worst case sample rate estimate */
-	avmd_session->rate = 48000;
+    /*! This is a worst case sample rate estimate */
+    avmd_session->rate = 48000;
 	INIT_CIRC_BUFFER(&avmd_session->b,
             (size_t)BEEP_LEN(avmd_session->rate),
             (size_t)FRAME_LEN(avmd_session->rate),
             fs_session);
-
+    if (avmd_session->b.buf == NULL) {
+            switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_session),
+                    SWITCH_LOG_ERROR, "Failed to init avmd session."
+                    " Buffer error\n");
+            return;
+    }
 	avmd_session->session = fs_session;
 	avmd_session->pos = 0;
 	avmd_session->f = 0.0;
@@ -179,13 +184,11 @@ static void init_avmd_session_data(avmd_session_t *avmd_session,
     avmd_session->samples_streak = SAMPLES_CONSECUTIVE_STREAK;
 #endif
     avmd_session->sample_count = 0;
-
 	INIT_SMA_BUFFER(
 		&avmd_session->sma_b,
 		BEEP_LEN(avmd_session->rate) / SINE_LEN(avmd_session->rate),
 		fs_session
 		);
-
 	INIT_SMA_BUFFER(
 		&avmd_session->sqa_b,
 		BEEP_LEN(avmd_session->rate) / SINE_LEN(avmd_session->rate),
@@ -269,7 +272,7 @@ static switch_bool_t avmd_callback(switch_media_bug_t * bug,
 		/* avmd_session->vmd_codec.channels = 
          *                  read_codec->implementation->number_of_channels; */
         switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_session),SWITCH_LOG_INFO,
-			    "Avmd session started, [%u] samples/s\n", avmd_session->rate);
+			    "Avmd session initialized, [%u] samples/s\n", avmd_session->rate);
 		break;
 
 	case SWITCH_ABC_TYPE_READ_REPLACE:
@@ -411,14 +414,10 @@ SWITCH_STANDARD_APP(avmd_start_function)
 			switch_core_media_bug_remove(session, &bug);
 			return;
 		}
-
 		/* We have already started */
 		switch_log_printf(
 			SWITCH_CHANNEL_SESSION_LOG(session),
-			SWITCH_LOG_WARNING,
-			"Cannot run 2 at once on the same channel!\n"
-			);
-
+			SWITCH_LOG_WARNING, "Cannot run 2 at once on the same channel!\n");
 		return;
 	}
 
@@ -447,11 +446,8 @@ SWITCH_STANDARD_APP(avmd_start_function)
 		);
 
 	if (status != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(
-			SWITCH_CHANNEL_SESSION_LOG(session),
-			SWITCH_LOG_ERROR,
-			"Failure hooking to stream\n"
-			);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session),
+			SWITCH_LOG_ERROR, "Failure hooking to stream\n");
 
 		return;
 	}
@@ -558,14 +554,14 @@ SWITCH_STANDARD_API(avmd_api_main)
 	channel = switch_core_session_get_channel(fs_session);
 	if (channel == NULL) {
 		stream->write_function(stream, "-ERR, no channel for FreeSWITCH session [%s]!"
-                "\nPlease report this to the developers.\n\n", uuid);
+                "\nPlease report this to the developers\n\n", uuid);
 		goto end;
 	}
 #ifdef AVMD_OUTBOUND_CHANNEL
     if (SWITCH_CALL_DIRECTION_OUTBOUND != switch_channel_direction(channel)) {
 		stream->write_function(stream, "-ERR, channel for FreeSWITCH session [%s]"
-                "\nis not outbound.\n\n", uuid);
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING,
+                "\nis not outbound\n\n", uuid);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_session), SWITCH_LOG_WARNING,
 			"Channel [%s] is not outbound!\n", switch_channel_get_name(channel));
     } else {
         flags |= SMBF_READ_REPLACE;
@@ -575,7 +571,7 @@ SWITCH_STANDARD_API(avmd_api_main)
     if (SWITCH_CALL_DIRECTION_INBOUND != switch_channel_direction(channel)) {
 		stream->write_function(stream, "-ERR, channel for FreeSWITCH session [%s]"
                 "\nis not inbound.\n\n", uuid);
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING,
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_session), SWITCH_LOG_WARNING,
 			"Channel [%s] is not inbound!\n", switch_channel_get_name(channel));
     } else {
         flags |= SMBF_WRITE_REPLACE;
@@ -583,9 +579,9 @@ SWITCH_STANDARD_API(avmd_api_main)
 #endif
     if(flags == 0) {
 		stream->write_function(stream, "-ERR, can't set direction for channel [%s]\n"
-               " for FreeSWITCH session [%s]. Please check avmd configuration.\n\n",
+               " for FreeSWITCH session [%s]. Please check avmd configuration\n\n",
                switch_channel_get_name(channel), uuid);
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR,
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_session), SWITCH_LOG_ERROR,
 			"Can't set direction for channel [%s]\n", switch_channel_get_name(channel));
         goto end;
     }
@@ -594,10 +590,11 @@ SWITCH_STANDARD_API(avmd_api_main)
 #ifdef AVMD_OUTBOUND_CHANNEL
     if (switch_channel_test_flag(channel, CF_MEDIA_SET) == 0) {
 		stream->write_function(stream, "-ERR, channel [%s] for FreeSWITCH session [%s]"
-                "\nhas no read codec assigned yet. Please try again.\n\n",
+                "\nhas no read codec assigned yet. Please try again\n\n",
                 switch_channel_get_name(channel), uuid);
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR,
-			"Failed to start session. Channel [%s] has no codec assigned yet.\n",
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_session), SWITCH_LOG_ERROR,
+			"Failed to start session. Channel [%s] has no codec assigned yet."
+            " Please try again\n",
             switch_channel_get_name(channel));
         goto end;
     }
@@ -611,12 +608,12 @@ SWITCH_STANDARD_API(avmd_api_main)
 			switch_channel_set_private(channel, "_avmd_", NULL);
 			switch_core_media_bug_remove(fs_session, &bug);
 			switch_safe_free(ccmd);
-			stream->write_function(stream, "+OK\n[%s] stopped.\n", uuid);
+			stream->write_function(stream, "+OK, [%s] stopped\n", uuid);
 			goto end;
 		}
 
 		/* We have already started */
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING,
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_session), SWITCH_LOG_WARNING,
 			"Cannot run 2 at once on the same channel!\n");
 
 		goto end;
@@ -651,12 +648,8 @@ SWITCH_STANDARD_API(avmd_api_main)
 
 	/* If adding a media bug fails exit */
 	if (status != SWITCH_STATUS_SUCCESS) {
-
-		switch_log_printf(
-			SWITCH_CHANNEL_SESSION_LOG(session),
-			SWITCH_LOG_ERROR,
-			"Failed to add media bug!\n"
-			);
+        switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_session),
+			SWITCH_LOG_ERROR, "Failed to add media bug!\n");
 		stream->write_function(stream,
                 "-ERR, [%s] failed to add media bug!\n\n", uuid);
 		goto end;
@@ -665,7 +658,9 @@ SWITCH_STANDARD_API(avmd_api_main)
 	/* Set the vmd tag to detect an existing vmd media bug */
 	switch_channel_set_private(channel, "_avmd_", bug);
 
-	/* Everything went according to plan! Notify the user */
+	/* OK */
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_session), SWITCH_LOG_INFO,
+			"Avmd session on channel [%s] started\n", switch_channel_get_name(channel));
 	stream->write_function(stream, "+OK, start\n\n");
 
 
@@ -845,7 +840,7 @@ static void avmd_process(avmd_session_t *session, switch_frame_t *frame)
 				switch_event_fire(&event_copy);
 
 #ifdef AVMD_REPORT_STATUS
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session->session), SWITCH_LOG_NOTICE,
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session->session), SWITCH_LOG_INFO,
                         "<<< AVMD - Beep Detected: f = [%f], variance = [%f] >>>\n",
                         TO_HZ(session->rate, sma_digital_freq), v);
 #endif
