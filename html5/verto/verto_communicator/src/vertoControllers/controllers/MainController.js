@@ -8,6 +8,12 @@
 
       console.debug('Executing MainController.');
 
+      if (storage.data.language && storage.data.language !== 'browser') {
+        $translate.use(storage.data.language);
+      } else {
+        storage.data.language = 'browser';
+      }
+
       $rootScope.master = $location.search().master;
       if ($location.search().watcher === 'true') {
         $rootScope.watcher = true;
