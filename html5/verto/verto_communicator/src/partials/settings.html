@@ -80,6 +80,14 @@
         </div>
 
         <div class="form-group">
+          <label for="settings-language">{{ 'LANGUAGE' | translate }}</label>
+          <select name="mylanguage" id="settings-language" class="form-control"
+                  ng-model="mydata.language" ng-change="changedLanguage(mydata.language)"
+                  ng-options="item.id as item.name for item in languages">
+          </select>
+        </div>
+
+        <div class="form-group">
           <label for="settings-microphone">{{ 'AUDIO_SETTINGS' | translate }}</label>
           <div class="checkbox">
             <label>

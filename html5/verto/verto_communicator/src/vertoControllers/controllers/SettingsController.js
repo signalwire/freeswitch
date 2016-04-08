@@ -4,8 +4,8 @@
   angular
     .module('vertoControllers')
     .controller('SettingsController', ['$scope', '$http',
-      '$location', '$rootScope', 'storage', 'verto', '$translate', 'toastr',
-      function($scope, $http, $location, $rootScope, storage, verto, $translate, toastr) {
+      '$location', '$rootScope', 'storage', 'verto', '$translate', 'toastr', 'configLanguages',
+      function($scope, $http, $location, $rootScope, storage, verto, $translate, toastr, configLanguages) {
         console.debug('Executing ModalSettingsController.');
 
         $.material.init();
@@ -14,6 +14,15 @@
         $scope.storage = storage;
         $scope.verto = verto;
         $scope.mydata = angular.copy(storage.data);
+        $scope.languages = configLanguages.languages;
+        $scope.languages.unshift({id: 'browser', name : $translate.instant('BROWSER_LANGUAGE')});
+        $scope.mydata.language = storage.data.language || 'browser';
+
+        $rootScope.$on('$translateChangeSuccess', function () {
+          $translate('BROWSER_LANGUAGE').then(function (translation) {
+          $scope.languages[0].name = translation;
+          });
+        });
 
         $rootScope.$on('toggledSettings', function(e, status) {
           if (status) {
@@ -32,6 +41,20 @@
 
           if (storage.data.autoBand) {
             $scope.testSpeed();
+          }
+        };
+
+        $scope.changedLanguage = function(langKey){
+          if (langKey === 'browser'){
+           storage.data.language = 'browser';
+            var browserlang = $translate.preferredLanguage();
+            $translate.use(browserlang).then(
+              function(lang) {}, function(fail_lang) {
+                $translate.use('en');
+               });
+          } else {
+            $translate.use(langKey);
+            storage.data.language = langKey;
           }
         };
 

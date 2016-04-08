@@ -39,7 +39,8 @@
           googEchoCancellation: true,
           autoBand: true,
           testSpeedJoin: true,
-          bestFrameRate: "15"
+          bestFrameRate: "15",
+          language: undefined
        };
 
     data.$default(defaultSettings);

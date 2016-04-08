@@ -147,5 +147,7 @@
   "CHAT_VOL_MINUS": "Vol -",
   "CHAT_VOL_PLUS": "Vol +",
   "CHAT_GAIN_MINUS": "Gain -",
-  "CHAT_GAIN_PLUS": "Gain +"
+  "CHAT_GAIN_PLUS": "Gain +",
+  "LANGUAGE": "Language:",
+  "BROWSER_LANGUAGE": "Browser Language"
 }

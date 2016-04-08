@@ -20,8 +20,58 @@
     'pascalprecht.translate',
   ]);
 
-  vertoApp.config(['$routeProvider', 'gravatarServiceProvider', '$translateProvider',
-    function($routeProvider, gravatarServiceProvider, $translateProvider) {
+  vertoApp.constant('configLanguages', {
+    'languages' : [
+         {id: 'en', name: 'English'},
+         {id: 'it', name: 'Italiano'},
+         {id: 'fr', name: 'Français'},
+         {id: 'de', name: 'Deutsch'},
+         {id: 'pt', name: 'Português'},
+         {id: 'pl', name: 'Polski'},
+         {id: 'zh', name: '中國'},
+         {id: 'ru', name: 'Pусский'},
+         {id: 'sv', name: 'Svenska'},
+         {id: 'da', name: 'Dansk'},
+         {id: 'es', name: 'Español'},
+         {id: 'id', name: 'Indonesia'}
+    ],
+
+    'dialects' : {
+        'en': 'en',
+        'en_GB': 'en',
+        'en_US': 'en',
+        'it': 'it',
+        'it_IT': 'it',
+        'fr': 'fr',
+        'fr_FR': 'fr',
+        'fr_CA': 'fr',
+        'pt': 'pt',
+        'pt_BR': 'pt',
+        'pt_PT': 'pt',
+        'de': 'de',
+        'de_DE': 'de',
+        'es': 'es',
+        'es_ES': 'es',
+        'pl': 'pl',
+        'pl_PL': 'pl',
+        'ru': 'ru',
+        'ru_RU': 'ru',
+        'sv': 'sv',
+        'sv_SV': 'sv',
+        'sv_FI': 'sv',
+        'da': 'da',
+        'da_DK': 'da',
+        'id': 'id',
+        'id_ID': 'id',
+        'zh': 'zh',
+        'zh_CN': 'zh',
+        'zh_TW': 'zh',
+        'zh_HK': 'zh'
+    }
+  });
+
+  vertoApp.config(['$routeProvider', 'gravatarServiceProvider', '$translateProvider', 'configLanguages',
+    function($routeProvider, gravatarServiceProvider, $translateProvider, configLanguages) {
       $routeProvider.
       when('/', {
         title: 'Loading',
@@ -61,44 +111,17 @@
         default: 'mm'  // Mystery man as default for missing avatars
       };
 
+      var reg_langs = [];
+      angular.forEach(configLanguages.languages, function(value, key) {
+        reg_langs.push(value.id);
+      });
 
       $translateProvider
       .useStaticFilesLoader({
         prefix: 'locales/locale-',
         suffix: '.json'
       })
-      .registerAvailableLanguageKeys(['en', 'it', 'pt', 'fr', 'da', 'de', 'es', 'pl', 'ru', 'sv', 'id', 'zh'], {
-        'en': 'en',
-        'en_GB': 'en',
-        'en_US': 'en',
-        'it': 'it',
-        'it_IT': 'it',
-        'fr': 'fr',
-        'fr_FR': 'fr',
-        'fr_CA': 'fr',
-        'pt': 'pt',
-        'pt_BR': 'pt',
-        'pt_PT': 'pt',
-        'da': 'da',
-        'da_DK': 'da',
-        'de': 'de',
-        'de_DE': 'de',
-        'es': 'es',
-        'es_ES': 'es',
-        'pl': 'pl',
-        'pl_PL': 'pl',
-        'ru': 'ru',
-        'ru_RU': 'ru',
-        'sv': 'sv',
-        'sv_SV': 'sv',
-        'sv_FI': 'sv',
-        'id': 'id',
-        'id_ID': 'id',
-        'zh': 'zh',
-        'zh_CN': 'zh',
-        'zh_TW': 'zh',
-        'zh_HK': 'zh'
-      })
+      .registerAvailableLanguageKeys(reg_langs, configLanguages.dialects)
       .preferredLanguage('en')
       .determinePreferredLanguage()
       .fallbackLanguage('en')
