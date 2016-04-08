@@ -83,7 +83,8 @@
  * for 8kHz audio. All the frequencies above 0.25 sampling rate
  * will be aliased to some frequency below that threshold.
  * This is not a problem here as we are interested in detection
- * of any sine wave instead of detection of particular frequency.
+ * of any constant amplitude anf frequency sine wave instead
+ * of detection of particular frequency.
  */
 #define MAX_FREQUENCY (2500.0)
 /*! Maximum frequency as digital normalized frequency */
@@ -105,7 +106,7 @@
 /*! FreeSWITCH CUSTOM event type. */
 #define AVMD_EVENT_BEEP "avmd::beep"
 
-#define AVMD_CHAR_BUF_LEN 10
+#define AVMD_CHAR_BUF_LEN 20
 #define AVMD_BUF_LINEAR_LEN 160
 
 
@@ -184,7 +185,7 @@ static int init_avmd_session_data(avmd_session_t *avmd_session,
 #endif
     avmd_session->sample_count = 0;
 
-    buf_sz = BEEP_LEN(avmd_session->rate) / SINE_LEN(avmd_session->rate);
+    buf_sz = BEEP_LEN((uint32_t)avmd_session->rate) / (uint32_t)SINE_LEN(avmd_session->rate);
     if (buf_sz < 1) {
             return -2;
     }
@@ -338,25 +339,21 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_avmd_load)
 		            "Can't access file [%s], error [%s]\n",
                     ACOS_TABLE_FILENAME, err);
                 break;
-
             case -2:
 	            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
 		            "Error creating file [%s], error [%s]\n",
                     ACOS_TABLE_FILENAME, err);
                 break;
-
             case -3:
 	            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
 		            "Access rights are OK but can't open file [%s], error [%s]\n",
                     ACOS_TABLE_FILENAME, err);
                 break;
-
             case -4:
 	            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
 		            "Access rights are OK but can't mmap file [%s], error [%s]\n",
                     ACOS_TABLE_FILENAME, err);
                 break;
-
             default:
 	            switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_ERROR,
 		            "Unknown error [%d] while initializing fast cos table [%s], "
@@ -604,19 +601,22 @@ SWITCH_STANDARD_API(avmd_api_main)
 			switch_channel_set_private(channel, "_avmd_", NULL);
 			switch_core_media_bug_remove(fs_session, &bug);
 			switch_safe_free(ccmd);
+#ifdef AVMD_REPORT_STATUS
 			stream->write_function(stream, "+OK\n [%s] [%s] stopped.\n\n",
                     uuid_dup, switch_channel_get_name(channel));
 		    switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_session), SWITCH_LOG_INFO,
 			    "Avmd on channel [%s] stopped!\n", switch_channel_get_name(channel));
+#endif
 			goto end;
 		}
 
+#ifdef AVMD_REPORT_STATUS
 		/* We have already started */
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_session),
                 SWITCH_LOG_ERROR, "Avmd already started!\n");
 		stream->write_function(stream, "-ERR, avmd for FreeSWITCH session [%s]"
                 "\n already started\n\n", uuid);
-
+#endif
 		goto end;
 	}
 
@@ -739,11 +739,12 @@ SWITCH_STANDARD_API(avmd_api_main)
 	switch_channel_set_private(channel, "_avmd_", bug);
 
 	/* OK */
+#ifdef AVMD_REPORT_STATUS
 	stream->write_function(stream, "+OK\n [%s] [%s] started!\n\n",
             uuid, switch_channel_get_name(channel));
     switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_session), SWITCH_LOG_INFO,
             "Avmd on channel [%s] started!\n", switch_channel_get_name(channel));
-
+#endif
 end:
 
 	if (fs_session) {
@@ -763,6 +764,7 @@ end:
  */
 static void avmd_process(avmd_session_t *session, switch_frame_t *frame)
 {
+    int res;
 	switch_event_t *event;
 	switch_status_t status;
 	switch_event_t *event_copy;
@@ -787,7 +789,7 @@ static void avmd_process(avmd_session_t *session, switch_frame_t *frame)
 	if (session->state.beep_state == BEEP_DETECTED) return;
 
 	/* Precompute values used heavily in the inner loop */
-	sine_len_i = SINE_LEN(session->rate);
+	sine_len_i = (uint32_t) SINE_LEN(session->rate);
 	//sine_len = (double)sine_len_i;
 	//beep_len_i = BEEP_LEN(session->rate);
 
@@ -897,7 +899,6 @@ static void avmd_process(avmd_session_t *session, switch_frame_t *frame)
     #else
                 sma_digital_freq =  0.5 * acos(session->sma_b.sma);
     #endif /* AVMD_FAST_MATH */
-                snprintf(buf, AVMD_CHAR_BUF_LEN, "%f", TO_HZ(session->rate, sma_digital_freq));
 				switch_channel_set_variable_printf(channel, "avmd_total_time",
                         "[%d]", (int)(switch_micro_time_now() - session->start_time) / 1000);
 				switch_channel_execute_on(channel, "execute_on_avmd_beep");
@@ -910,8 +911,21 @@ static void avmd_process(avmd_session_t *session, switch_frame_t *frame)
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Unique-ID",
                     switch_core_session_get_uuid(session->session));
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call-command", "avmd");
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "frequency", buf);
-                snprintf(buf, AVMD_CHAR_BUF_LEN, "%f", v);
+                res = snprintf(buf, AVMD_CHAR_BUF_LEN, "%f",
+                            TO_HZ(session->rate, sma_digital_freq));
+                if (res < 0 || res > AVMD_CHAR_BUF_LEN - 1) {
+				    switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session->session), SWITCH_LOG_ERROR,
+                        "Frequency truncated [%s], [%d] attempted!\n", buf, res);
+				    switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "frequency", "ERROR (TRUNCATED)");
+                }
+                switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "frequency", buf);
+
+                res = snprintf(buf, AVMD_CHAR_BUF_LEN, "%f", v);
+                if (res < 0 || res > AVMD_CHAR_BUF_LEN - 1) {
+				    switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session->session), SWITCH_LOG_ERROR,
+                        "Error, truncated [%s], [%d] attempeted!\n", buf, res);
+				    switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "variance", "ERROR (TRUNCATED)");
+                }
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "variance", buf);
 
 				if ((switch_event_dup(&event_copy, event)) != SWITCH_STATUS_SUCCESS) return;
