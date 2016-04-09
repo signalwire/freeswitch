@@ -57,13 +57,13 @@
 #define SAMPLES_PER_MS(r, m) ((r) / (1000/(m)))
 /*! Minimum beep length */
 #define BEEP_TIME (2)
-/*! How often to evaluate the output of desa2 in ms */
+/*! How often to evaluate the output of DESA-2 in ms */
 #define SINE_TIME (2*0.125)
-/*! How long in samples does desa2 results get evaluated */
+/*! How long in samples does DESA-2 results get evaluated */
 #define SINE_LEN(r) SAMPLES_PER_MS((r), SINE_TIME)
 /*! How long in samples is the minimum beep length */
 #define BEEP_LEN(r) SAMPLES_PER_MS((r), BEEP_TIME)
-/*! Number of points in desa2 sample */
+/*! Number of points in DESA-2 sample */
 #define P (5)
 /*! Guesstimate frame length in ms */
 #define FRAME_TIME (20)
@@ -83,7 +83,7 @@
  * for 8kHz audio. All the frequencies above 0.25 sampling rate
  * will be aliased to some frequency below that threshold.
  * This is not a problem here as we are interested in detection
- * of any constant amplitude anf frequency sine wave instead
+ * of any constant amplitude and frequency sine wave instead
  * of detection of particular frequency.
  */
 #define MAX_FREQUENCY (2500.0)
@@ -152,16 +152,14 @@ typedef struct {
 static void avmd_process(avmd_session_t *session, switch_frame_t *frame);
 static switch_bool_t avmd_callback(switch_media_bug_t * bug,
                                     void *user_data, switch_abc_type_t type);
-static int init_avmd_session_data(avmd_session_t *avmd_session,
-                                    switch_core_session_t *fs_session);
-
 
 /*! \brief The avmd session data initialization function.
  * @author Eric des Courtis
  * @param avmd_session A reference to a avmd session.
  * @param fs_session A reference to a FreeSWITCH session.
  */
-static int init_avmd_session_data(avmd_session_t *avmd_session,
+static switch_status_t
+init_avmd_session_data(avmd_session_t *avmd_session,
                                     switch_core_session_t *fs_session)
 {
     size_t buf_sz;
@@ -173,7 +171,7 @@ static int init_avmd_session_data(avmd_session_t *avmd_session,
             (size_t)FRAME_LEN(avmd_session->rate),
             fs_session);
     if (avmd_session->b.buf == NULL) {
-            return -1;
+            return SWITCH_STATUS_MEMERR;
     }
 	avmd_session->session = fs_session;
 	avmd_session->pos = 0;
@@ -187,21 +185,21 @@ static int init_avmd_session_data(avmd_session_t *avmd_session,
 
     buf_sz = BEEP_LEN((uint32_t)avmd_session->rate) / (uint32_t)SINE_LEN(avmd_session->rate);
     if (buf_sz < 1) {
-            return -2;
+            return SWITCH_STATUS_MORE_DATA;
     }
 
     INIT_SMA_BUFFER(&avmd_session->sma_b, buf_sz, fs_session);
     if (avmd_session->sma_b.data == NULL) {
-            return -3;
+            return SWITCH_STATUS_FALSE;
     }
     memset(avmd_session->sma_b.data, 0, sizeof(BUFF_TYPE) * buf_sz);
 
     INIT_SMA_BUFFER(&avmd_session->sqa_b, buf_sz, fs_session);
     if (avmd_session->sqa_b.data == NULL) {
-            return -4;
+            return SWITCH_STATUS_FALSE;
     }
     memset(avmd_session->sqa_b.data, 0, sizeof(BUFF_TYPE) * buf_sz);
-    return 0;
+    return SWITCH_STATUS_SUCCESS;
 }
 
 
@@ -391,11 +389,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_avmd_load)
  */
 SWITCH_STANDARD_APP(avmd_start_function)
 {
-    int res;
-	switch_media_bug_t *bug;
-	switch_status_t status;
-	switch_channel_t *channel;
-	avmd_session_t *avmd_session;
+	switch_media_bug_t  *bug;
+	switch_status_t     status;
+	switch_channel_t    *channel;
+	avmd_session_t      *avmd_session;
     switch_media_bug_flag_t flags = 0;
 
 	if (session == NULL) {
@@ -426,34 +423,30 @@ SWITCH_STANDARD_APP(avmd_start_function)
 	avmd_session = (avmd_session_t *)switch_core_session_alloc(
                                             session, sizeof(avmd_session_t));
 
-	res = init_avmd_session_data(avmd_session, session);
-    if (res != 0) {
-        switch (res) {
-            case -1:
+	status = init_avmd_session_data(avmd_session, session);
+    if (status != SWITCH_STATUS_SUCCESS) {
+        switch (status) {
+            case SWITCH_STATUS_MEMERR:
                 switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session),
                     SWITCH_LOG_ERROR, "Failed to init avmd session."
                     " Buffer error!\n");
             break;
-            case -2:
+            case SWITCH_STATUS_MORE_DATA:
                 switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session),
                     SWITCH_LOG_ERROR, "Failed to init avmd session."
                     " SMA buffer size is 0!\n");
                 break;
-            case -3:
+            case SWITCH_STATUS_FALSE:
                 switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session),
                     SWITCH_LOG_ERROR, "Failed to init avmd session."
-                    " SMA buffer error\n");
-                break;
-            case -4:
-                switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session),
-                    SWITCH_LOG_ERROR, "Failed to init avmd session."
-                    " SMA sqa buffer error\n");
+                    " SMA buffers error\n");
                 break;
             default:
                 switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session),
                     SWITCH_LOG_ERROR, "Failed to init avmd session."
                     " Unknown error\n");
                 break;
+
         }
 		return;
     }
@@ -534,24 +527,23 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_avmd_shutdown)
  */
 SWITCH_STANDARD_API(avmd_api_main)
 {
-    int res;
-	switch_core_session_t *fs_session = NULL;
-	switch_media_bug_t *bug;
-	avmd_session_t *avmd_session;
-	switch_channel_t *channel;
-	switch_status_t status;
-	int argc;
-	char *argv[AVMD_PARAMS];
-	char *ccmd = NULL;
-	char *uuid, *uuid_dup;
-	char *command;
+	switch_media_bug_t  *bug;
+	avmd_session_t      *avmd_session;
+	switch_channel_t    *channel;
+	int     argc;
+	char    *argv[AVMD_PARAMS];
+	char    *ccmd = NULL;
+	char    *uuid, *uuid_dup;
+	char    *command;
     switch_core_media_flag_t flags = 0;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	switch_core_session_t   *fs_session = NULL;
 
 	/* No command? Display usage */
 	if (zstr(cmd)) {
 		stream->write_function(stream, "-ERR, bad command!\n"
                 "-USAGE: %s\n\n", AVMD_SYNTAX);
-		return SWITCH_STATUS_SUCCESS;
+		goto end;
 	}
 
 	/* Duplicated contents of original string */
@@ -587,7 +579,7 @@ SWITCH_STANDARD_API(avmd_api_main)
 	channel = switch_core_session_get_channel(fs_session);
 	if (channel == NULL) {
 		stream->write_function(stream, "-ERR, no channel for FreeSWITCH session [%s]!"
-                "\n Please report this to the developers.\n\n", uuid);
+                "\n Please report this to the developers\n\n", uuid);
 		goto end;
 	}
 
@@ -602,7 +594,7 @@ SWITCH_STANDARD_API(avmd_api_main)
 			switch_core_media_bug_remove(fs_session, &bug);
 			switch_safe_free(ccmd);
 #ifdef AVMD_REPORT_STATUS
-			stream->write_function(stream, "+OK\n [%s] [%s] stopped.\n\n",
+			stream->write_function(stream, "+OK\n [%s] [%s] stopped\n\n",
                     uuid_dup, switch_channel_get_name(channel));
 		    switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_session), SWITCH_LOG_INFO,
 			    "Avmd on channel [%s] stopped!\n", switch_channel_get_name(channel));
@@ -623,7 +615,7 @@ SWITCH_STANDARD_API(avmd_api_main)
 #ifdef AVMD_OUTBOUND_CHANNEL
     if (SWITCH_CALL_DIRECTION_OUTBOUND != switch_channel_direction(channel)) {
 		stream->write_function(stream, "-ERR, channel for FreeSWITCH session [%s]"
-                "\n is not outbound.\n\n", uuid);
+                "\n is not outbound\n\n", uuid);
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_session), SWITCH_LOG_WARNING,
 			"Channel [%s] is not outbound!\n", switch_channel_get_name(channel));
     } else {
@@ -633,7 +625,7 @@ SWITCH_STANDARD_API(avmd_api_main)
 #ifdef AVMD_INBOUND_CHANNEL
     if (SWITCH_CALL_DIRECTION_INBOUND != switch_channel_direction(channel)) {
 		stream->write_function(stream, "-ERR, channel for FreeSWITCH session [%s]"
-                "\n is not inbound.\n\n", uuid);
+                "\n is not inbound\n\n", uuid);
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_session), SWITCH_LOG_WARNING,
 			"Channel [%s] is not inbound!\n", switch_channel_get_name(channel));
     } else {
@@ -671,37 +663,30 @@ SWITCH_STANDARD_API(avmd_api_main)
 
 	/* Allocate memory attached to this FreeSWITCH session for
 	* use in the callback routine and to store state information */
-	avmd_session = (avmd_session_t *) switch_core_session_alloc(
+    avmd_session = (avmd_session_t *) switch_core_session_alloc(
                                             fs_session, sizeof(avmd_session_t));
-
-	res = init_avmd_session_data(avmd_session, fs_session);
-    if (res != 0) {
+    status = init_avmd_session_data(avmd_session, fs_session);
+    if (status != SWITCH_STATUS_SUCCESS) {
 		stream->write_function(stream, "-ERR, failed to initialize avmd session\n"
                 " for FreeSWITCH session [%s]\n", uuid);
-        switch (res) {
-            case -1:
+        switch (status) {
+            case SWITCH_STATUS_MEMERR:
 		        stream->write_function(stream, "-ERR, buffer error\n\n");
                 switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_session),
                     SWITCH_LOG_ERROR, "Failed to init avmd session."
                     " Buffer error!\n");
             break;
-            case -2:
+            case SWITCH_STATUS_MORE_DATA:
 		        stream->write_function(stream, "-ERR, SMA buffer size is 0\n\n");
                 switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_session),
                     SWITCH_LOG_ERROR, "Failed to init avmd session."
                     " SMA buffer size is 0!\n");
                 break;
-            case -3:
+            case SWITCH_STATUS_FALSE:
 		        stream->write_function(stream, "-ERR, SMA buffer error\n\n");
                 switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_session),
                     SWITCH_LOG_ERROR, "Failed to init avmd session."
-                    " SMA buffer error\n");
-                break;
-            case -4:
-		        stream->write_function(stream, "-ERR, SMA sqa buffer error\n\n");
-                switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_session),
-                    SWITCH_LOG_ERROR, "Failed to init avmd session."
-                    " SMA sqa buffer error\n");
+                    " SMA buffers error\n");
                 break;
             default:
 		        stream->write_function(stream, "-ERR, unknown error\n\n");
@@ -744,6 +729,7 @@ SWITCH_STANDARD_API(avmd_api_main)
             uuid, switch_channel_get_name(channel));
     switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_session), SWITCH_LOG_INFO,
             "Avmd on channel [%s] started!\n", switch_channel_get_name(channel));
+    switch_assert(status == SWITCH_STATUS_SUCCESS);
 #endif
 end:
 
@@ -765,38 +751,38 @@ end:
 static void avmd_process(avmd_session_t *session, switch_frame_t *frame)
 {
     int res;
-	switch_event_t *event;
-	switch_status_t status;
-	switch_event_t *event_copy;
-	switch_channel_t *channel;
+    switch_event_t      *event;
+    switch_status_t     status;
+    switch_event_t      *event_copy;
+    switch_channel_t    *channel;
 
-	circ_buffer_t *b;
-	size_t pos;
-	double omega;
+    circ_buffer_t       *b;
+    size_t              pos;
+    double              omega;
 #ifdef AVMD_DEBUG
     double f;
 #endif
-	double v;
-    double sma_digital_freq;
-	uint32_t sine_len_i;
-    char buf[AVMD_CHAR_BUF_LEN];
-    int sample_to_skip_n = AVMD_SAMLPE_TO_SKIP_N;
-    size_t sample_n = 0;
+    double      v;
+    double      sma_digital_freq;
+    uint32_t    sine_len_i;
+    char        buf[AVMD_CHAR_BUF_LEN];
+    int         sample_to_skip_n = AVMD_SAMLPE_TO_SKIP_N;
+    size_t      sample_n = 0;
 
-	b = &session->b;
+    b = &session->b;
 
-	/* If beep has already been detected skip the CPU heavy stuff */
-	if (session->state.beep_state == BEEP_DETECTED) return;
+    /* If beep has already been detected skip the CPU heavy stuff */
+    if (session->state.beep_state == BEEP_DETECTED) return;
 
-	/* Precompute values used heavily in the inner loop */
-	sine_len_i = (uint32_t) SINE_LEN(session->rate);
-	//sine_len = (double)sine_len_i;
-	//beep_len_i = BEEP_LEN(session->rate);
+    /* Precompute values used heavily in the inner loop */
+    sine_len_i = (uint32_t) SINE_LEN(session->rate);
+    //sine_len = (double)sine_len_i;
+    //beep_len_i = BEEP_LEN(session->rate);
 
-	channel = switch_core_session_get_channel(session->session);
+    channel = switch_core_session_get_channel(session->session);
 
-	/* Insert frame of 16 bit samples into buffer */
-	INSERT_INT16_FRAME(b, (int16_t *)(frame->data), frame->samples);
+    /* Insert frame of 16 bit samples into buffer */
+    INSERT_INT16_FRAME(b, (int16_t *)(frame->data), frame->samples);
     session->sample_count += frame->samples;
 
     /* INNER LOOP -- OPTIMIZATION TARGET */
@@ -886,7 +872,7 @@ static void avmd_process(avmd_session_t *session, switch_frame_t *frame)
 			}
 
             /* DECISION */
-			/* If variance is less than threshold
+            /* If variance is less than threshold
              * and we have at least two estimates
              * then we have detection */
 #ifdef AVMD_REQUIRE_CONTINUOUS_STREAK
