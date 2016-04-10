@@ -4295,7 +4295,7 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 					profile->paid_type = PAID_DEFAULT;
 					profile->bind_attempts = 2;
 					profile->bind_attempt_interval = 5;
-
+					profile->dtmf_type = DTMF_2833;
 					profile->tls_verify_policy = TPTLS_VERIFY_NONE;
 					/* lib default */
 					profile->tls_verify_depth = 2;
