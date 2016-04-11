@@ -103,7 +103,7 @@ SWITCH_STANDARD_API(raw_api)
 	}
 
 	if ( hiredis_profile_execute_sync(profile, data, &response) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "hiredis: profile[%s] error executing [%s] reason:[%s]\n", input, data, response);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "hiredis: profile[%s] error executing [%s] reason:[%s]\n", input, data, response ? response : "");
 		switch_goto_status(SWITCH_STATUS_GENERR, done);
 	}
 

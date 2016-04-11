@@ -13,12 +13,19 @@ typedef struct mod_hiredis_global_s {
 
 extern mod_hiredis_global_t mod_hiredis_globals;
 
+typedef struct mod_hiredis_context_s {
+  struct hiredis_connection_s *connection;
+  redisContext *context;
+} hiredis_context_t;
+
 typedef struct hiredis_connection_s {
   char *host;
   char *password;
   uint32_t port;
-  redisContext *context;
+  switch_interval_time_t timeout_us;
   struct timeval timeout;
+  switch_memory_pool_t *pool;
+  switch_queue_t *context_pool;
 
   struct hiredis_connection_s *next;
 } hiredis_connection_t;
@@ -28,7 +35,6 @@ typedef struct hiredis_profile_s {
   char *name;
   int debug;
 
-  hiredis_connection_t *conn;
   hiredis_connection_t *conn_head;
 } hiredis_profile_t;
 
@@ -44,7 +50,7 @@ typedef struct hiredis_limit_pvt_s {
 switch_status_t mod_hiredis_do_config();
 switch_status_t hiredis_profile_create(hiredis_profile_t **new_profile, char *name, uint8_t port);
 switch_status_t hiredis_profile_destroy(hiredis_profile_t **old_profile);
-switch_status_t hiredis_profile_connection_add(hiredis_profile_t *profile, char *host, char *password, uint32_t port, uint32_t timeout_ms);
+switch_status_t hiredis_profile_connection_add(hiredis_profile_t *profile, char *host, char *password, uint32_t port, uint32_t timeout_ms, uint32_t max_connections);
 
 switch_status_t hiredis_profile_execute_sync(hiredis_profile_t *profile, const char *data, char **response);
 
