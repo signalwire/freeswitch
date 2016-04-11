@@ -91,7 +91,7 @@ api_command_t conference_api_sub_commands[] = {
 	{"pin", (void_fn_t) & conference_api_sub_pin, CONF_API_SUB_ARGS_SPLIT, "pin", "<pin#>"},
 	{"nopin", (void_fn_t) & conference_api_sub_pin, CONF_API_SUB_ARGS_SPLIT, "nopin", ""},
 	{"get", (void_fn_t) & conference_api_sub_get, CONF_API_SUB_ARGS_SPLIT, "get", "<parameter-name>"},
-	{"set", (void_fn_t) & conference_api_sub_set, CONF_API_SUB_ARGS_SPLIT, "set", "<max_members|sound_prefix|caller_id_name|caller_id_number|endconference_grace_time> <value>"},
+	{"set", (void_fn_t) & conference_api_sub_set, CONF_API_SUB_ARGS_SPLIT, "set", "<max_members|min_members|wait_min_members_timeout|wait_mod_timeout|sound_prefix|caller_id_name|caller_id_number|endconference_grace_time> <value>"},
 	{"file-vol", (void_fn_t) & conference_api_sub_file_vol, CONF_API_SUB_ARGS_SPLIT, "file-vol", "<vol#>"},
 	{"floor", (void_fn_t) & conference_api_sub_floor, CONF_API_SUB_MEMBER_TARGET, "floor", "<member_id|last>"},
 	{"vid-floor", (void_fn_t) & conference_api_sub_vid_floor, CONF_API_SUB_MEMBER_TARGET, "vid-floor", "<member_id|last> [force]"},
@@ -2738,6 +2738,15 @@ switch_status_t conference_api_sub_get(conference_obj_t *conference,
 		} else if (strcasecmp(argv[2], "count_ghosts") == 0) {
 			stream->write_function(stream, "%d",
 								   conference->count_ghosts);
+		} else if (strcasecmp(argv[2], "min_members") == 0) {
+			stream->write_function(stream, "%d",
+					conference->min_members);
+		} else if (strcasecmp(argv[2], "wait_min_members_timeout") == 0) {
+			stream->write_function(stream, "%d",
+					conference->wait_min_members_timeout);
+		} else if (strcasecmp(argv[2], "wait_mod_timeout") == 0) {
+			stream->write_function(stream, "%d",
+					conference->wait_mod_timeout);
 		} else if (strcasecmp(argv[2], "max_members") == 0) {
 			stream->write_function(stream, "%d",
 								   conference->max_members);
@@ -2789,6 +2798,30 @@ switch_status_t conference_api_sub_set(conference_obj_t *conference,
 			if (new_max >= 0) {
 				stream->write_function(stream, "%d", conference->max_members);
 				conference->max_members = new_max;
+			} else {
+				ret_status = SWITCH_STATUS_FALSE;
+			}
+		} else if (strcasecmp(argv[2], "min_members") == 0) {
+			int new_min = atoi(argv[3]);
+			if (new_min >= 0 && (!conference->count || conference_utils_test_flag(conference, CFLAG_WAIT_MIN_MEMBERS))) {
+				stream->write_function(stream, "%d", conference->min_members);
+				conference->min_members = new_min;
+			} else {
+				ret_status = SWITCH_STATUS_FALSE;
+			}
+		} else if (strcasecmp(argv[2], "wait_min_members_timeout") == 0) {
+			int32_t new_min = atoll(argv[3]);
+			if (new_min >= 0 && (!conference->count || conference_utils_test_flag(conference, CFLAG_WAIT_MIN_MEMBERS))) {
+				stream->write_function(stream, "%d", conference->wait_min_members_timeout);
+				conference->wait_min_members_timeout = new_min;
+			} else {
+				ret_status = SWITCH_STATUS_FALSE;
+			}
+		} else if (strcasecmp(argv[2], "wait_mod_timeout") == 0) {
+			int32_t new_timeout = atoll(argv[3]);
+			if (new_timeout >= 0 && conference_utils_test_flag(conference, CFLAG_WAIT_MOD)) {
+				stream->write_function(stream, "%d", conference->wait_mod_timeout);
+				conference->wait_mod_timeout = new_timeout;
 			} else {
 				ret_status = SWITCH_STATUS_FALSE;
 			}

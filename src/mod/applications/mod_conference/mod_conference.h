@@ -249,6 +249,7 @@ typedef enum {
 	CFLAG_PERSONAL_CANVAS,
 	CFLAG_REFRESH_LAYOUT,
 	CFLAG_VIDEO_MUTE_EXIT_CANVAS,
+	CFLAG_WAIT_MIN_MEMBERS,
 	/////////////////////////////////
 	CFLAG_MAX
 } conference_flag_t;
@@ -557,6 +558,13 @@ typedef struct conference_obj {
 	int auto_record_canvas;
 	char *record_filename;
 	char *outcall_templ;
+	char *wait_min_members_timeout_message;
+	char *wait_mod_timeout_message;
+	char *endconf_mod_exit_message;
+	char *endconf_message;
+	uint32_t min_members;
+	int32_t wait_min_members_timeout;
+	int32_t wait_mod_timeout;
 	char *video_layout_name;
 	char *video_layout_group;
 	char *video_canvas_bgcolor;
