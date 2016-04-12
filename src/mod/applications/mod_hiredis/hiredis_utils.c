@@ -45,20 +45,20 @@ switch_status_t mod_hiredis_do_config()
 	if ( (profiles = switch_xml_child(cfg, "profiles")) != NULL) {
 		for (profile = switch_xml_child(profiles, "profile"); profile; profile = profile->next) {		
 			hiredis_profile_t *new_profile = NULL;
-			int debug = 0;
+			uint8_t ignore_connect_fail = 0;
 			char *name = (char *) switch_xml_attr_soft(profile, "name");
 
 			// Load params
 			if ( (params = switch_xml_child(profile, "params")) != NULL) {
 				for (param = switch_xml_child(params, "param"); param; param = param->next) {
 					char *var = (char *) switch_xml_attr_soft(param, "name");
-					if ( ! strncmp(var, "debug", 5) ) {
-						debug = atoi(switch_xml_attr_soft(param, "value"));
+					if ( !strncmp(var, "ignore-connect-fail", 19) ) {
+						ignore_connect_fail = switch_true(switch_xml_attr_soft(param, "value"));
 					}
 				}
 			}
 
-			if ( hiredis_profile_create(&new_profile, name, debug) == SWITCH_STATUS_SUCCESS) {
+			if ( hiredis_profile_create(&new_profile, name, ignore_connect_fail) == SWITCH_STATUS_SUCCESS ) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Created profile[%s]\n", name);
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to create profile[%s]\n", name);
@@ -77,7 +77,7 @@ switch_status_t mod_hiredis_do_config()
 						} else if ( !strncmp(var, "port", 4) ) {
 							port = atoi(switch_xml_attr_soft(param, "value"));
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "hiredis: adding conn[%u == %s]\n", port, switch_xml_attr_soft(param, "value"));
-						} else if ( !strncmp(var, "timeout_ms", 10) ) {
+						} else if ( !strncmp(var, "timeout-ms", 10) || !strncmp(var, "timeout_ms", 10) ) {
 							timeout_ms = atoi(switch_xml_attr_soft(param, "value"));
 						} else if ( !strncmp(var, "password", 8) ) {
 							password = (char *) switch_xml_attr_soft(param, "value");

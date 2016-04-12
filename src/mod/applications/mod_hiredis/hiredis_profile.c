@@ -93,7 +93,7 @@ static hiredis_context_t *hiredis_connection_get_context(hiredis_connection_t *c
 	return NULL;
 }
 
-switch_status_t hiredis_profile_create(hiredis_profile_t **new_profile, char *name, uint8_t port)
+switch_status_t hiredis_profile_create(hiredis_profile_t **new_profile, char *name, uint8_t ignore_connect_fail)
 {
 	hiredis_profile_t *profile = NULL;
 	switch_memory_pool_t *pool = NULL;
@@ -105,6 +105,7 @@ switch_status_t hiredis_profile_create(hiredis_profile_t **new_profile, char *na
 	profile->pool = pool;
 	profile->name = name ? switch_core_strdup(profile->pool, name) : "default";
 	profile->conn_head = NULL;
+	profile->ignore_connect_fail = ignore_connect_fail;
 
 	switch_core_hash_insert(mod_hiredis_globals.profiles, name, (void *) profile);
 
@@ -260,7 +261,7 @@ switch_status_t hiredis_profile_execute_sync(hiredis_profile_t *profile, const c
 			return SWITCH_STATUS_GENERR;
 		}
 	}
-	return SWITCH_STATUS_GENERR;
+	return SWITCH_STATUS_SOCKERR;
 }
 
 

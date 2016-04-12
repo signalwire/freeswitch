@@ -1,6 +1,6 @@
 /*
 * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
-* Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
+* Copyright (C) 2005-2016, Anthony Minessale II <anthm@freeswitch.org>
 *
 * Version: MPL 1.1
 *
@@ -23,6 +23,7 @@
 *
 * Contributor(s):
 * William King <william.king@quentustech.com>
+* Chris Rienzo <chris.rienzo@citrix.com>
 *
 * mod_hiredis.c -- Redis DB access module
 *
@@ -149,9 +150,13 @@ SWITCH_LIMIT_INCR(hiredis_limit_incr)
 
 	hashkey = switch_mprintf("incr %s", limit_key);
 
-	if ( hiredis_profile_execute_sync(profile, hashkey, &response) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "hiredis: profile[%s] error executing [%s] because [%s]\n", realm, hashkey, response);
-		switch_channel_set_variable(channel, "hiredis_raw_response", response);
+	if ( (status = hiredis_profile_execute_sync(profile, hashkey, &response)) != SWITCH_STATUS_SUCCESS ) {
+		if ( status == SWITCH_STATUS_SOCKERR && profile->ignore_connect_fail ) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "hiredis: ignoring profile[%s] connection error executing [%s]\n", realm, hashkey);
+			switch_goto_status(SWITCH_STATUS_SUCCESS, done);
+		}
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "hiredis: profile[%s] error executing [%s] because [%s]\n", realm, hashkey, response ? response : "");
+		switch_channel_set_variable(channel, "hiredis_raw_response", response ? response : "");
 		switch_goto_status(SWITCH_STATUS_GENERR, done);
 	}
 
@@ -212,7 +217,11 @@ SWITCH_LIMIT_RELEASE(hiredis_limit_release)
 
 		hashkey = switch_mprintf("decr %s", limit_pvt->limit_key);
 
-		if ( hiredis_profile_execute_sync(profile, hashkey, &response) != SWITCH_STATUS_SUCCESS) {
+		if ( ( status = hiredis_profile_execute_sync(profile, hashkey, &response) ) != SWITCH_STATUS_SUCCESS ) {
+			if ( status == SWITCH_STATUS_SOCKERR && profile->ignore_connect_fail ) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "hiredis: ignoring profile[%s] connection error executing [%s]\n", realm, hashkey);
+				switch_goto_status(SWITCH_STATUS_SUCCESS, done);
+			}
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "hiredis: profile[%s] error executing [%s] because [%s]\n", realm, hashkey, response);
 			switch_channel_set_variable(channel, "hiredis_raw_response", response);
 			switch_goto_status(SWITCH_STATUS_GENERR, done);

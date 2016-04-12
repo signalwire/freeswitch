@@ -16,7 +16,7 @@
 	</connection>
       </connections>
       <params>
-	<param name="debug" value="1"/>
+	<param name="ignore-connect-fail" value="true"/>
       </params>
     </profile>
   </profiles>
