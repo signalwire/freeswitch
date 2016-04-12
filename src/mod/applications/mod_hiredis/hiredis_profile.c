@@ -202,7 +202,9 @@ static hiredis_context_t *hiredis_profile_get_context(hiredis_profile_t *profile
 
 static switch_status_t hiredis_context_execute_sync(hiredis_context_t *context, const char *data, char **resp, switch_core_session_t *session)
 {
-	redisReply *response = redisCommand(context->context, data);
+	redisReply *response;
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "hiredis: %s\n", data);
+	response = redisCommand(context->context, data);
 	if ( !response ) {
 		*resp = NULL;
 		return SWITCH_STATUS_GENERR;

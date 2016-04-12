@@ -66,10 +66,10 @@ SWITCH_STANDARD_APP(raw_app)
 	}
 
 	if ( hiredis_profile_execute_sync(profile, cmd, &response, session) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "hiredis: profile[%s] error executing [%s] because [%s]\n", profile_name, cmd, response);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "hiredis: profile[%s] error executing [%s] because [%s]\n", profile_name, cmd, response ? response : "");
 	}
 
-	switch_channel_set_variable(channel, "hiredis_raw_response", response);
+	switch_channel_set_variable(channel, "hiredis_raw_response", response ? response : "");
 
  done:
 	switch_safe_free(profile_name);
@@ -108,7 +108,9 @@ SWITCH_STANDARD_API(raw_api)
 		switch_goto_status(SWITCH_STATUS_GENERR, done);
 	}
 
-	stream->write_function(stream, response);
+	if (response) {
+		stream->write_function(stream, response);
+	}
  done:
 	switch_safe_free(input);
 	switch_safe_free(response);
@@ -132,6 +134,11 @@ SWITCH_LIMIT_INCR(hiredis_limit_incr)
 
 	if ( zstr(realm) ) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "hiredis: realm must be defined\n");
+		switch_goto_status(SWITCH_STATUS_GENERR, done);
+	}
+
+	if ( interval < 0 ) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "hiredis: interval must be >= 0\n");
 		switch_goto_status(SWITCH_STATUS_GENERR, done);
 	}
 
@@ -160,7 +167,16 @@ SWITCH_LIMIT_INCR(hiredis_limit_incr)
 		switch_goto_status(SWITCH_STATUS_GENERR, done);
 	}
 
-	switch_channel_set_variable(channel, "hiredis_raw_response", response);
+	/* set expiration for interval on first increment */
+	if ( interval && !strcmp("1", response ? response : "") ) {
+		char *expire_response = NULL;
+		char *expire_cmd = switch_mprintf("expire %s %d", limit_key, interval);
+		hiredis_profile_execute_sync(profile, expire_cmd, &expire_response, session);
+		switch_safe_free(expire_cmd);
+		switch_safe_free(expire_response);
+	}
+
+	switch_channel_set_variable(channel, "hiredis_raw_response", response ? response : "");
 
 	limit_pvt = switch_core_alloc(session_pool, sizeof(hiredis_limit_pvt_t));
 	limit_pvt->next = switch_channel_get_private(channel, "hiredis_limit_pvt");
@@ -171,7 +187,7 @@ SWITCH_LIMIT_INCR(hiredis_limit_incr)
 	limit_pvt->interval = interval;
 	switch_channel_set_private(channel, "hiredis_limit_pvt", limit_pvt);
 
-	count = atoll(response);
+	count = atoll(response ? response : "");
 
 	if ( !count || count > max ) {
 		switch_goto_status(SWITCH_STATUS_GENERR, done);
@@ -200,17 +216,20 @@ SWITCH_LIMIT_RELEASE(hiredis_limit_release)
 		hiredis_limit_pvt_t *tmp = limit_pvt;
 
 		while (tmp) {
-			profile = switch_core_hash_find(mod_hiredis_globals.profiles, limit_pvt->realm);
-			hashkey = switch_mprintf("decr %s", tmp->limit_key);
+			/* Rate limited resources are not auto-decremented, they will expire. */
+			if (!tmp->interval) {
+				profile = switch_core_hash_find(mod_hiredis_globals.profiles, limit_pvt->realm);
+				hashkey = switch_mprintf("decr %s", tmp->limit_key);
 
-			if ( hiredis_profile_execute_sync(profile, hashkey, &response, session) != SWITCH_STATUS_SUCCESS ) {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "hiredis: profile[%s] error executing [%s] because [%s]\n",
-								  tmp->realm, hashkey, response);
+				if ( hiredis_profile_execute_sync(profile, hashkey, &response, session) != SWITCH_STATUS_SUCCESS ) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "hiredis: profile[%s] error executing [%s] because [%s]\n",
+									  tmp->realm, hashkey, response ? response : "");
+				}
+
+				switch_safe_free(response);
+				switch_safe_free(hashkey);
 			}
-
 			tmp = tmp->next;
-			switch_safe_free(response);
-			switch_safe_free(hashkey);
 		}
 	} else {
 		profile = switch_core_hash_find(mod_hiredis_globals.profiles, limit_pvt->realm);
@@ -222,12 +241,12 @@ SWITCH_LIMIT_RELEASE(hiredis_limit_release)
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "hiredis: ignoring profile[%s] connection error executing [%s]\n", realm, hashkey);
 				switch_goto_status(SWITCH_STATUS_SUCCESS, done);
 			}
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "hiredis: profile[%s] error executing [%s] because [%s]\n", realm, hashkey, response);
-			switch_channel_set_variable(channel, "hiredis_raw_response", response);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "hiredis: profile[%s] error executing [%s] because [%s]\n", realm, hashkey, response ? response : "");
+			switch_channel_set_variable(channel, "hiredis_raw_response", response ? response : "");
 			switch_goto_status(SWITCH_STATUS_GENERR, done);
 		}
 
-		switch_channel_set_variable(channel, "hiredis_raw_response", response);
+		switch_channel_set_variable(channel, "hiredis_raw_response", response ? response : "");
 	}
 
  done:
@@ -258,11 +277,11 @@ SWITCH_LIMIT_USAGE(hiredis_limit_usage)
 	hashkey = switch_mprintf("get %s", resource);
 
 	if ( hiredis_profile_execute_sync(profile, hashkey, &response, NULL) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "hiredis: profile[%s] error executing [%s] because [%s]\n", realm, hashkey, response);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "hiredis: profile[%s] error executing [%s] because [%s]\n", realm, hashkey, response ? response : "");
 		goto err;
 	}
 
-	count = atoll(response);
+	count = atoll(response ? response : "");
 
 	switch_safe_free(response);
 	switch_safe_free(hashkey);
@@ -290,6 +309,7 @@ SWITCH_LIMIT_RESET(hiredis_limit_reset)
 */
 SWITCH_LIMIT_INTERVAL_RESET(hiredis_limit_interval_reset)
 {
+	/* TODO this doesn't work since the key has the interval in it */
 	hiredis_profile_t *profile = switch_core_hash_find(mod_hiredis_globals.profiles, realm);
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	char *hashkey = NULL, *response = NULL;
@@ -307,7 +327,7 @@ SWITCH_LIMIT_INTERVAL_RESET(hiredis_limit_interval_reset)
 	hashkey = switch_mprintf("set %s 0", resource);
 
 	if ( hiredis_profile_execute_sync(profile, hashkey, &response, NULL) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "hiredis: profile[%s] error executing [%s] because [%s]\n", realm, hashkey, response);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "hiredis: profile[%s] error executing [%s] because [%s]\n", realm, hashkey, response ? response : "");
 		switch_goto_status(SWITCH_STATUS_GENERR, done);
 	}
 
