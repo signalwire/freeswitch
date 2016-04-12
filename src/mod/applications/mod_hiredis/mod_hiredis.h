@@ -46,11 +46,11 @@ typedef struct hiredis_limit_pvt_s {
   struct hiredis_limit_pvt_s *next;
 } hiredis_limit_pvt_t;
 
-switch_status_t mod_hiredis_do_config();
+switch_status_t mod_hiredis_do_config(void);
 switch_status_t hiredis_profile_create(hiredis_profile_t **new_profile, char *name, uint8_t ignore_connect_fail);
 switch_status_t hiredis_profile_destroy(hiredis_profile_t **old_profile);
 switch_status_t hiredis_profile_connection_add(hiredis_profile_t *profile, char *host, char *password, uint32_t port, uint32_t timeout_ms, uint32_t max_connections);
 
-switch_status_t hiredis_profile_execute_sync(hiredis_profile_t *profile, const char *data, char **response);
+switch_status_t hiredis_profile_execute_sync(hiredis_profile_t *profile, const char *data, char **response, switch_core_session_t *session);
 
 #endif /* MOD_HIREDIS_H */
