@@ -560,6 +560,7 @@ static handle_rfc2833_result_t handle_rfc2833(switch_rtp_t *rtp_session, switch_
 		
 		rtp_session->dtmf_data.last_digit = 0;
 		rtp_session->dtmf_data.in_digit_ts = 0;
+		rtp_session->dtmf_data.in_digit_queued = 0;
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Failed DTMF sanity check.\n");
 	}
 
@@ -593,6 +594,7 @@ static handle_rfc2833_result_t handle_rfc2833(switch_rtp_t *rtp_session, switch_
 			rtp_session->dtmf_data.last_digit = 0;
 			rtp_session->dtmf_data.in_digit_ts = 0;
 			rtp_session->dtmf_data.in_digit_sanity = 0;
+			rtp_session->dtmf_data.in_digit_queued = 0;
 		}
 
 		end = packet[1] & 0x80 ? 1 : 0;
@@ -630,6 +632,16 @@ static handle_rfc2833_result_t handle_rfc2833(switch_rtp_t *rtp_session, switch_
 							  key, in_digit_seq, rtp_session->dtmf_data.in_digit_seq,
 				   ts, duration, rtp_session->last_rtp_hdr.m, end, end && !rtp_session->dtmf_data.in_digit_ts ? "ignored" : "");
 #endif
+
+
+			if (rtp_session->dtmf_data.in_digit_ts && rtp_session->dtmf_data.in_digit_ts != ts) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "TS changed from last packet, resetting....\n");
+				rtp_session->dtmf_data.last_digit = 0;
+				rtp_session->dtmf_data.in_digit_ts = 0;
+				rtp_session->dtmf_data.in_digit_sanity = 0;
+				rtp_session->dtmf_data.in_digit_queued = 0;
+			}
+
 
 			if (!rtp_session->dtmf_data.in_digit_queued && rtp_session->dtmf_data.in_digit_ts) {
 				if ((rtp_session->rtp_bugs & RTP_BUG_IGNORE_DTMF_DURATION)) {
