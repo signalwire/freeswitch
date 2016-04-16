@@ -1205,6 +1205,8 @@ void sofia_reg_check_socket(sofia_profile_t *profile, const char *call_id, const
 void sofia_reg_close_handles(sofia_profile_t *profile);
 
 void write_csta_xml_chunk(switch_event_t *event, switch_stream_handle_t stream, const char *csta_event, char *fwd_type);
+void sofia_glue_clear_soa(switch_core_session_t *session, switch_bool_t partner);
+
 /* For Emacs:
  * Local Variables:
  * mode:c
