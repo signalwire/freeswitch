@@ -165,8 +165,8 @@ static switch_status_t process_event(switch_event_t *event)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_core_session_t *session = NULL;
-	char *username[4] = { NULL };
-	char *domain[4] = { NULL };
+	char *username[5] = { NULL };
+	char *domain[5] = { NULL };
 	char key[512];
 	char *uuid = NULL, *my_uuid = NULL;
 	int i;
@@ -190,6 +190,18 @@ static switch_status_t process_event(switch_event_t *event)
 
 	username[3] = switch_event_get_header(event, "variable_sip_to_user");
 	domain[3] = switch_event_get_header(event, "variable_domain_name");
+
+	username[4] = switch_event_get_header(event, "variable_verto_user");
+	domain[4] = switch_event_get_header(event, "variable_verto_host");
+
+	if (username[4] && domain[4]) {
+		char *argv[5] = { 0 };
+		int argc = 0;
+		argc = switch_split(username[4], '@', argv);
+		if (argc > 0) {
+			username[4] = argv[0];
+		}
+	}
 
 	for (i = 0; i < 4; i++) {
 
