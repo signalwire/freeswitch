@@ -81,10 +81,13 @@
  * identify is 0.25 of the sampling rate. All the frequencies
  * below that level are detected unambiguously. This means 2kHz
  * for 8kHz audio. All the frequencies above 0.25 sampling rate
- * will be aliased to some frequency below that threshold.
+ * will be aliased to frequencies below that threshold,
+ * i.e. OMEGA > PI/2 will be aliased to PI - OMEGA.
  * This is not a problem here as we are interested in detection
  * of any constant amplitude and frequency sine wave instead
  * of detection of particular frequency.
+ * In case of DESA-1, frequencies up to 0.5 sampling rate are
+ * identified uniquely.
  */
 #define MAX_FREQUENCY (2500.0)
 /*! Maximum frequency as digital normalized frequency */
@@ -115,6 +118,8 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_avmd_shutdown);
 SWITCH_MODULE_LOAD_FUNCTION(mod_avmd_load);
 SWITCH_MODULE_DEFINITION(mod_avmd, mod_avmd_load, mod_avmd_shutdown, NULL);
 SWITCH_STANDARD_API(avmd_api_main);
+SWITCH_STANDARD_APP(avmd_start_app);
+SWITCH_STANDARD_APP(avmd_stop_app);
 SWITCH_STANDARD_APP(avmd_start_function);
 
 /*! Status of the beep detection */
@@ -368,6 +373,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_avmd_load)
 		);
 #endif
 
+	SWITCH_ADD_APP(app_interface, "avmd_start","Start avmd detection",
+            "Start avmd detection", avmd_start_app, "", SAF_NONE);
+	SWITCH_ADD_APP(app_interface, "avmd_stop","Stop avmd detection",
+            "Stop avmd detection", avmd_stop_app, "", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "avmd","Beep detection",
             "Advanced detection of voicemail beeps", avmd_start_function,
             AVMD_SYNTAX, SAF_NONE);
@@ -382,45 +391,82 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_avmd_load)
 }
 
 /*! \brief FreeSWITCH application handler function.
- *  This handles calls made from applications such as LUA and the dialplan.
+ *  This handles avmd start request calls made from applications
+ *  such as LUA and the dialplan.
  *
- * @author Eric des Courtis
  * @return Success or failure of the function.
  */
-SWITCH_STANDARD_APP(avmd_start_function)
+SWITCH_STANDARD_APP(avmd_start_app)
 {
 	switch_media_bug_t  *bug;
 	switch_status_t     status;
 	switch_channel_t    *channel;
 	avmd_session_t      *avmd_session;
-    switch_media_bug_flag_t flags = 0;
+    switch_core_media_flag_t flags = 0;
 
 	if (session == NULL) {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
-			    "No FreeSWITCH session assigned!\n");
-		return;
-    }
-
-	channel = switch_core_session_get_channel(session);
-
-	/* Is this channel already using avmd ? */
-	bug = (switch_media_bug_t *) switch_channel_get_private(channel, "_avmd_");
-	/* If it is using avmd */
-	if (bug != NULL) {
-		/* If we have a stop remove audio bug */
-		if (strcasecmp(data, "stop") == 0) {
-			switch_channel_set_private(channel, "_avmd_", NULL);
-			switch_core_media_bug_remove(session, &bug);
-			return;
-		}
-		/* We have already started */
-		switch_log_printf(
-			SWITCH_CHANNEL_SESSION_LOG(session),
-			SWITCH_LOG_WARNING, "Cannot run 2 at once on the same channel!\n");
+        switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR,
+			    "FreeSWITCH is NULL! Please report to developers\n");
 		return;
 	}
 
-	avmd_session = (avmd_session_t *)switch_core_session_alloc(
+	/* Get current channel of the session to tag the session
+	* This indicates that our module is present
+    * At this moment this cannot return NULL, it will either
+    * succeed or assert failed, but we make ourself secure anyway */
+	channel = switch_core_session_get_channel(session);
+	if (channel == NULL) {
+        switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR,
+                "No channel for FreeSWITCH session! Please report this "
+                "to the developers.\n");
+        return;
+	}
+
+	/* Is this channel already set? */
+	bug = (switch_media_bug_t *) switch_channel_get_private(channel, "_avmd_");
+	/* If yes */
+	if (bug != NULL) {
+		/* We have already started */
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session),
+                SWITCH_LOG_ERROR, "Avmd already started!\n");
+        return;
+	}
+
+#ifdef AVMD_OUTBOUND_CHANNEL
+    if (SWITCH_CALL_DIRECTION_OUTBOUND != switch_channel_direction(channel)) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING,
+			"Channel [%s] is not outbound!\n", switch_channel_get_name(channel));
+    } else {
+        flags |= SMBF_READ_REPLACE;
+    }
+#endif
+#ifdef AVMD_INBOUND_CHANNEL
+    if (SWITCH_CALL_DIRECTION_INBOUND != switch_channel_direction(channel)) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING,
+			"Channel [%s] is not inbound!\n", switch_channel_get_name(channel));
+    } else {
+        flags |= SMBF_WRITE_REPLACE;
+    }
+#endif
+    if(flags == 0) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR,
+			"Can't set direction for channel [%s]\n", switch_channel_get_name(channel));
+        return;
+    }
+
+
+#ifdef AVMD_OUTBOUND_CHANNEL
+    if (switch_channel_test_flag(channel, CF_MEDIA_SET) == 0) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR,
+			"Failed to start session. Channel [%s] has no codec assigned yet."
+            " Please try again\n", switch_channel_get_name(channel));
+        return;
+    }
+#endif
+
+	/* Allocate memory attached to this FreeSWITCH session for
+	* use in the callback routine and to store state information */
+	avmd_session = (avmd_session_t *) switch_core_session_alloc(
                                             session, sizeof(avmd_session_t));
 
 	status = init_avmd_session_data(avmd_session, session);
@@ -451,14 +497,8 @@ SWITCH_STANDARD_APP(avmd_start_function)
 		return;
     }
 
-#ifdef AVMD_INBOUND_CHANNEL
-    flags |= SMBF_READ_REPLACE;
-#endif
-#ifdef AVMD_OUTBOUND_CHANNEL
-    flags |= SMBF_WRITE_REPLACE;
-#endif
-    switch_assert(flags != 0);
-
+	/* Add a media bug that allows me to intercept the
+	* reading leg of the audio stream */
 	status = switch_core_media_bug_add(
 		session,
 		"avmd",
@@ -470,14 +510,107 @@ SWITCH_STANDARD_APP(avmd_start_function)
 		&bug
 		);
 
+	/* If adding a media bug fails exit */
 	if (status != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session),
-			SWITCH_LOG_ERROR, "Failure hooking to stream\n");
-
+        switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session),
+			SWITCH_LOG_ERROR, "Failed to add media bug!\n");
 		return;
 	}
 
+	/* Set the avmd tag to detect an existing avmd media bug */
 	switch_channel_set_private(channel, "_avmd_", bug);
+
+	/* OK */
+    switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO,
+            "Avmd on channel [%s] started!\n", switch_channel_get_name(channel));
+}
+
+/*! \brief FreeSWITCH application handler function.
+ *  This handles avmd stop request calls made from applications
+ *  such as LUA and the dialplan.
+ *
+ * @return Success or failure of the function.
+ */
+SWITCH_STANDARD_APP(avmd_stop_app)
+{
+	switch_media_bug_t  *bug;
+	switch_channel_t    *channel;
+
+	if (session == NULL) {
+        switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR,
+			    "FreeSWITCH is NULL! Please report to developers\n");
+		return;
+	}
+
+	/* Get current channel of the session to tag the session
+	* This indicates that our module is present
+    * At this moment this cannot return NULL, it will either
+    * succeed or assert failed, but we make ourself secure anyway */
+	channel = switch_core_session_get_channel(session);
+	if (channel == NULL) {
+        switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR,
+                "No channel for FreeSWITCH session! Please report this "
+                "to the developers.\n");
+        return;
+	}
+
+	/* Is this channel already set? */
+	bug = (switch_media_bug_t *) switch_channel_get_private(channel, "_avmd_");
+	/* If yes */
+	if (bug == NULL) {
+		/* We have not started avmd on this channel */
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session),
+                SWITCH_LOG_ERROR, "Stop failed - avmd has not yet been started"
+                " on this channel [%s]!\n", switch_channel_get_name(channel));
+        return;
+	}
+
+    switch_channel_set_private(channel, "_avmd_", NULL);
+    switch_core_media_bug_remove(session, &bug);
+    switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO,
+			    "Avmd on channel [%s] stopped!\n", switch_channel_get_name(channel));
+    return;
+}
+
+/*! \brief FreeSWITCH application handler function.
+ *  This handles calls made from applications such as LUA and the dialplan.
+ *
+ * @author Eric des Courtis
+ * @return Success or failure of the function.
+ */
+SWITCH_STANDARD_APP(avmd_start_function)
+{
+	switch_media_bug_t  *bug;
+	switch_channel_t    *channel;
+
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
+			    "YOU ARE USING DEPRECATED APP INTERFACE."
+                " Please read documentation about new syntax\n");
+	if (session == NULL) {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+			    "No FreeSWITCH session assigned!\n");
+		return;
+    }
+
+	channel = switch_core_session_get_channel(session);
+
+	/* Is this channel already using avmd ? */
+	bug = (switch_media_bug_t *) switch_channel_get_private(channel, "_avmd_");
+	/* If it is using avmd */
+	if (bug != NULL) {
+		/* If we have a stop remove audio bug */
+		if (strcasecmp(data, "stop") == 0) {
+			switch_channel_set_private(channel, "_avmd_", NULL);
+			switch_core_media_bug_remove(session, &bug);
+			return;
+		}
+		/* We have already started */
+		switch_log_printf(
+			SWITCH_CHANNEL_SESSION_LOG(session),
+			SWITCH_LOG_WARNING, "Cannot run 2 at once on the same channel!\n");
+		return;
+	}
+    avmd_start_app(session, NULL);
 }
 
 /*! \brief Called when the module shuts down.
@@ -592,7 +725,6 @@ SWITCH_STANDARD_API(avmd_api_main)
             uuid_dup = switch_core_strdup(switch_core_session_get_pool(fs_session), uuid);
 			switch_channel_set_private(channel, "_avmd_", NULL);
 			switch_core_media_bug_remove(fs_session, &bug);
-			switch_safe_free(ccmd);
 #ifdef AVMD_REPORT_STATUS
 			stream->write_function(stream, "+OK\n [%s] [%s] stopped\n\n",
                     uuid_dup, switch_channel_get_name(channel));
@@ -611,6 +743,16 @@ SWITCH_STANDARD_API(avmd_api_main)
 #endif
 		goto end;
 	}
+
+	if (strcasecmp(command, "stop") == 0) {
+        uuid_dup = switch_core_strdup(switch_core_session_get_pool(fs_session), uuid);
+        stream->write_function(stream, "+ERR, avmd has not yet been started on\n"
+                " [%s] [%s]\n\n", uuid_dup, switch_channel_get_name(channel));
+        switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_session), SWITCH_LOG_ERROR,
+                "Stop failed - avmd has not yet been started on channel [%s]!\n",
+                switch_channel_get_name(channel));
+        goto end;
+    }
 
 #ifdef AVMD_OUTBOUND_CHANNEL
     if (SWITCH_CALL_DIRECTION_OUTBOUND != switch_channel_direction(channel)) {
