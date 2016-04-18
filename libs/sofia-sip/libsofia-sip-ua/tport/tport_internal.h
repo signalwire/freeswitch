@@ -306,6 +306,8 @@ struct tport_master {
   su_socket_t         mr_capt_sock;
   char               *mr_capt_name;	/**< Servername for capturing received/sent data */  
   tport_primary_t    *mr_primaries;        /**< List of primary contacts */
+  unsigned	      mr_prot_ver;	/* hep version */
+  unsigned	      mr_agent_id;      /* agent version */
 
   tport_params_t      mr_params[1];
 
@@ -485,6 +487,12 @@ void tport_dump_iovec(tport_t const *self, msg_t *msg,
 
 void tport_capt_msg(tport_t const *self, msg_t *msg, size_t n,
                     su_iovec_t const iov[], size_t iovused, char const *what);
+
+int tport_capt_msg_hepv2(tport_t const *self, msg_t *msg, size_t n,
+                    su_iovec_t const iov[], size_t iovused, char const *what, char **buffer);                    
+
+int tport_capt_msg_hepv3(tport_t const *self, msg_t *msg, size_t n,
+                    su_iovec_t const iov[], size_t iovused, char const *what, char **buffer);                                        
 
 int tport_tcp_ping(tport_t *self, su_time_t now);
 int tport_tcp_pong(tport_t *self);
