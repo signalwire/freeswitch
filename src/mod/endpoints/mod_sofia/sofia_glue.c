@@ -644,7 +644,7 @@ void sofia_glue_set_extra_headers(switch_core_session_t *session, sip_t const *s
 	}
 
 	for (un = sip->sip_unknown; un; un = un->un_next) {
-		if ((!strncasecmp(un->un_name, "X-", 2) && strncasecmp(un->un_name, "X-FS-", 5)) || !strncasecmp(un->un_name, "P-", 2)) {
+		if ((!strncasecmp(un->un_name, "X-", 2) && strncasecmp(un->un_name, "X-FS-", 5)) || !strncasecmp(un->un_name, "P-", 2) || !strncasecmp(un->un_name, "On", 2)) {
 			if (!zstr(un->un_value)) {
 				switch_snprintf(name, sizeof(name), "%s%s", prefix, un->un_name);
 				switch_channel_set_variable(channel, name, un->un_value);
