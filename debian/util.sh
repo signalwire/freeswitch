@@ -260,6 +260,7 @@ get_sources () {
     prefix=`echo $distro | awk -F/ '{print $1}'`
     suffix="`echo $distro | awk -F/ '{print $2}'`"
     if test -n "$suffix" ; then full="$tgt_distro/$suffix" ; else full="$tgt_distro" ; fi
+    if [ "$distro" == "trusty" -a "$components" == "main" ] ; then components="main universe"; echo "Forcing components to include universe"; fi
     printf "$type $path $full $components\n"
   done < "$2"
 }
