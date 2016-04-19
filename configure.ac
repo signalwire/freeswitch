@@ -819,7 +819,7 @@ if test "x$have_libz" = "xyes"  ; then
 APR_ADDTO([PLATFORM_CORE_LIBS], [-lz])
 fi
 
-PKG_CHECK_MODULES([MPG123], [libmpg123 >= 1.20.1],[
+PKG_CHECK_MODULES([MPG123], [libmpg123 >= 1.16.0],[
   AM_CONDITIONAL([HAVE_MPG123],[true])],[
   AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_MPG123],[false])])
 
@@ -1300,7 +1300,7 @@ PKG_CHECK_MODULES([SNDFILE], [sndfile >= 1.0.20],[
   AM_CONDITIONAL([HAVE_SNDFILE],[true])],[
   AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_SNDFILE],[false])])
 
-PKG_CHECK_MODULES([MPG123], [libmpg123 >= 1.20.1],[
+PKG_CHECK_MODULES([MPG123], [libmpg123 >= 1.16.0],[
   AM_CONDITIONAL([HAVE_MPG123],[true])],[
   AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_MPG123],[false])])
 
@@ -1379,7 +1379,7 @@ PKG_CHECK_MODULES([OPUS], [opus >= 1.1],[
   AM_CONDITIONAL([HAVE_OPUS],[true])],[
   AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_OPUS],[false])])
 
-PKG_CHECK_MODULES([SOUNDTOUCH], [soundtouch >= 1.7.1],[
+PKG_CHECK_MODULES([SOUNDTOUCH], [soundtouch >= 1.7.0],[
   AM_CONDITIONAL([HAVE_SOUNDTOUCH],[true])],[
   AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_SOUNDTOUCH],[false])])
 

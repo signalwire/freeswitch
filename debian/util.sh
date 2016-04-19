@@ -292,7 +292,9 @@ build_debs () {
     if [ "$custom_sources_file" == "/etc/apt/sources.list" ]; then
         # If you are using the system sources, then it is reasonable that you expect to use all of the supplementary repos too
         cat /etc/apt/sources.list > /tmp/fs.sources.list
-        for X in /etc/apt/sources.list.d/*; do cat $X >> /tmp/fs.sources.list; done
+	if [ "$(ls -A /etc/apt/sources.list.d)" ]; then
+		for X in /etc/apt/sources.list.d/*; do cat $X >> /tmp/fs.sources.list; done
+	fi
         custom_sources_file="/tmp/fs.sources.list"
         apt-key exportall > "/tmp/fs.asc"
         custom_keyring="/tmp/fs.asc"
