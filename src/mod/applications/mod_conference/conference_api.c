@@ -1317,6 +1317,7 @@ switch_status_t conference_api_sub_vid_layout(conference_obj_t *conference, swit
 		if (vlayout) {
 			stream->write_function(stream, "Change canvas %d to layout [%s]\n", idx + 1, vlayout->name);
 			conference->canvases[idx]->new_vlayout = vlayout;
+			conference->canvases[idx]->video_layout_group = NULL;
 		} else if (group_name) {
 			conference->canvases[idx]->video_layout_group = switch_core_strdup(conference->pool, group_name);
 			conference_utils_set_flag(conference, CFLAG_REFRESH_LAYOUT);
