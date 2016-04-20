@@ -432,6 +432,7 @@ struct cc_queue {
 	uint32_t announce_freq;
 	char *record_template;
 	char *time_base_score;
+	uint32_t ring_progressively_delay;
 
 	switch_bool_t tier_rules_apply;
 	uint32_t tier_rule_wait_second;
@@ -542,6 +543,7 @@ cc_queue_t *queue_set_config(cc_queue_t *queue)
 	SWITCH_CONFIG_SET_ITEM(queue->config[i++], "announce-frequency", SWITCH_CONFIG_INT, 0, &queue->announce_freq, 0, &config_int_0_86400, NULL, NULL);
 	SWITCH_CONFIG_SET_ITEM(queue->config[i++], "record-template", SWITCH_CONFIG_STRING, 0, &queue->record_template, NULL, &queue->config_str_pool, NULL, NULL);
 	SWITCH_CONFIG_SET_ITEM(queue->config[i++], "time-base-score", SWITCH_CONFIG_STRING, 0, &queue->time_base_score, "queue", &queue->config_str_pool, NULL, NULL);
+	SWITCH_CONFIG_SET_ITEM(queue->config[i++], "ring-progressively-delay", SWITCH_CONFIG_INT, 0, &queue->ring_progressively_delay, NULL, &config_int_0_86400, NULL, NULL);
 
 	SWITCH_CONFIG_SET_ITEM(queue->config[i++], "tier-rules-apply", SWITCH_CONFIG_BOOL, 0, &queue->tier_rules_apply, SWITCH_FALSE, NULL, NULL, NULL);
 	SWITCH_CONFIG_SET_ITEM(queue->config[i++], "tier-rule-wait-second", SWITCH_CONFIG_INT, 0, &queue->tier_rule_wait_second, 0, &config_int_0_86400, NULL, NULL);
@@ -1701,13 +1703,13 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 		}
 
 
-		if (!strcasecmp(h->queue_strategy,"ring-all")) {
+		if (!strcasecmp(h->queue_strategy,"ring-all") || !strcasecmp(h->queue_strategy,"ring-progressively")) {
 			char res[256];
 			/* Map the Agent to the member */
 			sql = switch_mprintf("UPDATE members SET serving_agent = '%q', serving_system = 'single_box', state = '%q'"
-					" WHERE state = '%q' AND uuid = '%q' AND system = 'single_box' AND serving_agent = 'ring-all'",
+					" WHERE state = '%q' AND uuid = '%q' AND system = 'single_box' AND serving_agent = '%q'",
 					h->agent_name, cc_member_state2str(CC_MEMBER_STATE_TRYING),
-					cc_member_state2str(CC_MEMBER_STATE_TRYING), h->member_uuid);
+					cc_member_state2str(CC_MEMBER_STATE_TRYING), h->member_uuid, h->queue_strategy);
 			cc_execute_sql(NULL, sql, NULL);
 
 			switch_safe_free(sql);
@@ -1725,6 +1727,8 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 			switch_core_session_hupall_matching_var("cc_member_pre_answer_uuid", h->member_uuid, SWITCH_CAUSE_LOSE_RACE);
 
 		}
+
+
 		t_agent_answered = local_epoch_time_now(NULL);
 
 		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CALLCENTER_EVENT) == SWITCH_STATUS_SUCCESS) {
@@ -2079,9 +2083,9 @@ static int agents_callback(void *pArg, int argc, char **argv, char **columnNames
 		}
 	}
 
-	if (!strcasecmp(cbt->strategy,"ring-all")) {
+	if (!strcasecmp(cbt->strategy,"ring-all") || !strcasecmp(cbt->strategy,"ring-progressively")) {
 		/* Check if member is a ring-all mode */
-		sql = switch_mprintf("SELECT count(*) FROM members WHERE serving_agent = 'ring-all' AND uuid = '%q' AND system = 'single_box'", cbt->member_uuid);
+		sql = switch_mprintf("SELECT count(*) FROM members WHERE serving_agent = '%q' AND uuid = '%q' AND system = 'single_box'", cbt->strategy, cbt->member_uuid);
 		cc_execute_sql2str(NULL, NULL, sql, res, sizeof(res));
 
 		switch_safe_free(sql);
@@ -2135,6 +2139,15 @@ static int agents_callback(void *pArg, int argc, char **argv, char **columnNames
 				h->busy_delay_time = atoi(agent_busy_delay_time);
 				h->no_answer_delay_time = atoi(agent_no_answer_delay_time);
 
+				if (!strcasecmp(cbt->strategy, "ring-progressively")) {
+					switch_core_session_t *member_session = switch_core_session_locate(cbt->member_session_uuid);
+					if (member_session) {
+						switch_channel_t *member_channel = switch_core_session_get_channel(member_session);
+						switch_channel_set_variable_printf(member_channel, "cc_last_originated_call", "%" SWITCH_TIME_T_FMT, local_epoch_time_now(NULL));
+						switch_core_session_rwunlock(member_session);
+					}
+				}
+
 				if (!strcasecmp(cbt->strategy, "top-down")) {
 					switch_core_session_t *member_session = switch_core_session_locate(cbt->member_session_uuid);
 					if (member_session) {
@@ -2162,6 +2175,8 @@ static int agents_callback(void *pArg, int argc, char **argv, char **columnNames
 
 			if (!strcasecmp(cbt->strategy,"ring-all")) {
 				return 0;
+			} else if (!strcasecmp(cbt->strategy,"ring-progressively")) {
+				return 1;
 			} else {
 				return 1;
 			}
@@ -2176,6 +2191,7 @@ static int members_callback(void *pArg, int argc, char **argv, char **columnName
 	char *queue_name = NULL;
 	char *queue_strategy = NULL;
 	char *queue_record_template = NULL;
+	uint32_t ring_progressively_delay = 10; /* default ring-progressively-delay set to 10 seconds */
 	switch_bool_t tier_rules_apply;
 	uint32_t tier_rule_wait_second;
 	switch_bool_t tier_rule_wait_multiply_level;
@@ -2185,6 +2201,7 @@ static int members_callback(void *pArg, int argc, char **argv, char **columnName
 	const char *member_state = NULL;
 	const char *member_abandoned_epoch = NULL;
 	const char *serving_agent = NULL;
+	const char *last_originated_call = NULL;
 	memset(&cbt, 0, sizeof(cbt));
 
 	cbt.queue_name = argv[0];
@@ -2209,6 +2226,9 @@ static int members_callback(void *pArg, int argc, char **argv, char **columnName
 		tier_rule_wait_multiply_level = queue->tier_rule_wait_multiply_level;
 		tier_rule_no_agent_no_wait = queue->tier_rule_no_agent_no_wait;
 		discard_abandoned_after = queue->discard_abandoned_after;
+		if (queue->ring_progressively_delay) {
+			ring_progressively_delay = queue->ring_progressively_delay;
+		}
 
 		if (queue->record_template) {
 			queue_record_template = strdup(queue->record_template);
@@ -2237,14 +2257,48 @@ static int members_callback(void *pArg, int argc, char **argv, char **columnName
 	/* member is ring-all but not the queue */
 	if (!strcasecmp(serving_agent, "ring-all") && (strcasecmp(queue_strategy, "ring-all") != 0)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Queue '%s' changed strategy, adjusting member parameters", queue_name);
-		sql = switch_mprintf("UPDATE members SET serving_agent = '', state = '%s' WHERE uuid = '%s' AND state = '%s' AND serving_agent = 'ring-all'", cc_member_state2str(CC_MEMBER_STATE_WAITING), cbt.member_uuid, cc_member_state2str(CC_MEMBER_STATE_TRYING));
+		/* member was ring-all, becomes ring-progressively (no state change because of strategy similarities) */
+		if (!strcasecmp(queue_strategy, "ring-progressively")) {
+			sql = switch_mprintf("UPDATE members SET serving_agent = 'ring-progressively' WHERE uuid = '%s' AND state = '%s' AND serving_agent = 'ring-all'", cbt.member_uuid, cc_member_state2str(CC_MEMBER_STATE_TRYING));
+		} else {
+			sql = switch_mprintf("UPDATE members SET serving_agent = '', state = '%s' WHERE uuid = '%s' AND state = '%s' AND serving_agent = 'ring-all'", cc_member_state2str(CC_MEMBER_STATE_WAITING), cbt.member_uuid, cc_member_state2str(CC_MEMBER_STATE_TRYING));
+		}
+		cc_execute_sql(NULL, sql, NULL);
+		switch_safe_free(sql);
+	}
+	/* member is ring-progressively but not the queue */
+	else if (!strcasecmp(serving_agent, "ring-progressively") && (strcasecmp(queue_strategy, "ring-progressively") != 0)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Queue '%s' changed strategy, adjusting member parameters", queue_name);
+		/* member was ring-progressively, becomes ring-all (no state change because of strategy similarities) */
+		if (!strcasecmp(queue_strategy, "ring-all")) {
+			sql = switch_mprintf("UPDATE members SET serving_agent = 'ring-all' WHERE uuid = '%s' AND state = '%s' AND serving_agent = 'ring-progressively'", cbt.member_uuid, cc_member_state2str(CC_MEMBER_STATE_TRYING));
+		} else {
+			sql = switch_mprintf("UPDATE members SET serving_agent = '', state = '%s' WHERE uuid = '%s' AND state = '%s' AND serving_agent = 'ring-progressively'", cc_member_state2str(CC_MEMBER_STATE_WAITING), cbt.member_uuid, cc_member_state2str(CC_MEMBER_STATE_TRYING));
+		}
 		cc_execute_sql(NULL, sql, NULL);
 		switch_safe_free(sql);
 	}
 	/* Queue is now ring-all and not the member */
 	else if (!strcasecmp(queue_strategy, "ring-all") && (strcasecmp(serving_agent, "ring-all") != 0)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Queue '%s' changed strategy, adjusting member parameters", queue_name);
-		sql = switch_mprintf("UPDATE members SET serving_agent = 'ring-all', state = '%s' WHERE uuid = '%s' AND state = '%s' AND serving_agent = ''", cc_member_state2str(CC_MEMBER_STATE_TRYING), cbt.member_uuid, cc_member_state2str(CC_MEMBER_STATE_WAITING));
+		/* member was ring-progressively, its state is already set to TRYING */
+		if (!strcasecmp(serving_agent, "ring-progressively")) {
+			sql = switch_mprintf("UPDATE members SET serving_agent = 'ring-all' WHERE uuid = '%s' AND state = '%s' AND serving_agent = 'ring-progressively'", cbt.member_uuid, cc_member_state2str(CC_MEMBER_STATE_TRYING));
+		} else {
+			sql = switch_mprintf("UPDATE members SET serving_agent = 'ring-all', state = '%s' WHERE uuid = '%s' AND state = '%s' AND serving_agent = ''", cc_member_state2str(CC_MEMBER_STATE_TRYING), cbt.member_uuid, cc_member_state2str(CC_MEMBER_STATE_WAITING));
+		}
+		cc_execute_sql(NULL, sql, NULL);
+		switch_safe_free(sql);
+	}
+	/* Queue is now ring-progressively and not the member */
+	else if (!strcasecmp(queue_strategy, "ring-progressively") && (strcasecmp(serving_agent, "ring-progressively") != 0)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Queue '%s' changed strategy, adjusting member parameters", queue_name);
+		/* member was ring-all, its state is already set to TRYING */
+		if (!strcasecmp(serving_agent, "ring-all")) {
+			sql = switch_mprintf("UPDATE members SET serving_agent = 'ring-progressively' WHERE uuid = '%s' AND state = '%s' AND serving_agent = 'ring-all'", cbt.member_uuid, cc_member_state2str(CC_MEMBER_STATE_TRYING));
+		} else {
+			sql = switch_mprintf("UPDATE members SET serving_agent = 'ring-progressively', state = '%s' WHERE uuid = '%s' AND state = '%s' AND serving_agent = ''", cc_member_state2str(CC_MEMBER_STATE_TRYING), cbt.member_uuid, cc_member_state2str(CC_MEMBER_STATE_WAITING));
+		}
 		cc_execute_sql(NULL, sql, NULL);
 		switch_safe_free(sql);
 	}
@@ -2327,7 +2381,7 @@ static int members_callback(void *pArg, int argc, char **argv, char **columnName
 			sql_order_by = switch_mprintf("level, agents.talk_time, position");
 		} else if (!strcasecmp(queue_strategy, "agent-with-fewest-calls")) {
 			sql_order_by = switch_mprintf("level, agents.calls_answered, position");
-		} else if (!strcasecmp(queue_strategy, "ring-all")) {
+		} else if (!strcasecmp(queue_strategy, "ring-all") || !strcasecmp(queue_strategy, "ring-progressively")) {
 			sql = switch_mprintf("UPDATE members SET state = '%q' WHERE state = '%q' AND uuid = '%q' AND system = 'single_box'",
 					cc_member_state2str(CC_MEMBER_STATE_TRYING), cc_member_state2str(CC_MEMBER_STATE_WAITING), cbt.member_uuid);
 			cc_execute_sql(NULL, sql, NULL);
@@ -2351,6 +2405,24 @@ static int members_callback(void *pArg, int argc, char **argv, char **columnName
 				sql_order_by);
 		switch_safe_free(sql_order_by);
 
+	}
+
+	if (!strcasecmp(queue->strategy, "ring-progressively")) {
+		switch_core_session_t *member_session = switch_core_session_locate(cbt.member_session_uuid);
+		
+		if (member_session) {
+			switch_channel_t *member_channel = switch_core_session_get_channel(member_session);
+			last_originated_call = switch_channel_get_variable(member_channel, "cc_last_originated_call");
+			
+			if (last_originated_call && switch_channel_ready(member_channel) && ((long) local_epoch_time_now(NULL) < atoi(last_originated_call) + ring_progressively_delay) && !switch_true(switch_channel_get_variable(member_channel, "cc_agent_found"))) {
+				/* We wait for 500 ms here */
+				switch_yield(500000);
+				switch_core_session_rwunlock(member_session);
+				goto end;
+			}
+			
+			switch_core_session_rwunlock(member_session);
+		}
 	}
 
 	cc_execute_sql_callback(NULL /* queue */, NULL /* mutex */, sql, agents_callback, &cbt /* Call back variables */);
@@ -2402,9 +2474,9 @@ void *SWITCH_THREAD_FUNC cc_agent_dispatch_thread_run(switch_thread_t *thread, v
 	while (globals.running == 1) {
 		char *sql = NULL;
 		sql = switch_mprintf("SELECT queue,uuid,session_uuid,cid_number,cid_name,joined_epoch,(%" SWITCH_TIME_T_FMT "-joined_epoch)+base_score+skill_score AS score, state, abandoned_epoch, serving_agent FROM members"
-				" WHERE state = '%q' OR state = '%q' OR (serving_agent = 'ring-all' AND state = '%q') ORDER BY score DESC",
+				" WHERE state = '%q' OR state = '%q' OR (serving_agent = 'ring-all' AND state = '%q') OR (serving_agent = 'ring-progressively' AND state = '%q') ORDER BY score DESC",
 				local_epoch_time_now(NULL),
-				cc_member_state2str(CC_MEMBER_STATE_WAITING), cc_member_state2str(CC_MEMBER_STATE_ABANDONED), cc_member_state2str(CC_MEMBER_STATE_TRYING));
+				cc_member_state2str(CC_MEMBER_STATE_WAITING), cc_member_state2str(CC_MEMBER_STATE_ABANDONED), cc_member_state2str(CC_MEMBER_STATE_TRYING), cc_member_state2str(CC_MEMBER_STATE_TRYING));
 
 		cc_execute_sql_callback(NULL /* queue */, NULL /* mutex */, sql, members_callback, NULL /* Call back variables */);
 		switch_safe_free(sql);
@@ -2730,9 +2802,17 @@ SWITCH_STANDARD_APP(callcenter_function)
 
 
 	if (abandoned_epoch == 0) {
+		char *strategy_str = NULL;
 		/* Add the caller to the member queue */
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_DEBUG, "Member %s <%s> joining queue %s\n", switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_name")), switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_number")), queue_name);
 
+		if (!strcasecmp(queue->strategy,"ring-all")) {
+			strategy_str = "ring-all";
+		} else if (!strcasecmp(queue->strategy,"ring-progressively")) {
+			strategy_str = "ring-progressively";
+		} else {
+			strategy_str = "";
+		}
 		sql = switch_mprintf("INSERT INTO members"
 				" (queue,system,uuid,session_uuid,system_epoch,joined_epoch,base_score,skill_score,cid_number,cid_name,serving_agent,serving_system,state)"
 				" VALUES('%q','single_box','%q','%q','%q','%" SWITCH_TIME_T_FMT "','%d','%d','%q','%q','%q','','%q')", 
@@ -2745,7 +2825,7 @@ SWITCH_STANDARD_APP(callcenter_function)
 				0 /*TODO SKILL score*/,
 				switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_number")),
 				switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_name")),
-				(!strcasecmp(queue->strategy,"ring-all")?"ring-all":""),
+				strategy_str,
 				cc_member_state2str(CC_MEMBER_STATE_WAITING));
 		cc_execute_sql(queue, sql, NULL);
 		switch_safe_free(sql);
@@ -3320,7 +3400,7 @@ SWITCH_STANDARD_API(cc_config_api_function)
 				                       "tier_rule_wait_second|tier_rule_wait_multiply_level|"\
 				                       "tier_rule_no_agent_no_wait|discard_abandoned_after|"\
 				                       "abandoned_resume_allowed|max_wait_time|max_wait_time_with_no_agent|"\
-				                       "max_wait_time_with_no_agent_time_reached|record_template|calls_answered|calls_abandoned\n");
+				                       "max_wait_time_with_no_agent_time_reached|record_template|calls_answered|calls_abandoned|ring_progressively_delay\n");
 				switch_mutex_lock(globals.mutex);
 				for (hi = switch_core_hash_first(globals.queue_hash); hi; hi = switch_core_hash_next(&hi)) {
 					void *val = NULL;
@@ -3329,7 +3409,7 @@ SWITCH_STANDARD_API(cc_config_api_function)
 					cc_queue_t *queue;
 					switch_core_hash_this(hi, &key, &keylen, &val);
 					queue = (cc_queue_t *) val;
-					stream->write_function(stream, "%s|%s|%s|%s|%s|%d|%s|%s|%d|%s|%d|%d|%d|%s|%d|%d\n",
+					stream->write_function(stream, "%s|%s|%s|%s|%s|%d|%s|%s|%d|%s|%d|%d|%d|%s|%d|%d|%d\n",
 					                       queue->name,
 					                       queue->strategy,
 					                       queue->moh,
@@ -3345,7 +3425,8 @@ SWITCH_STANDARD_API(cc_config_api_function)
 					                       queue->max_wait_time_with_no_agent_time_reached,
 					                       queue->record_template,
 					                       queue->calls_answered,
-					                       queue->calls_abandoned);
+					                       queue->calls_abandoned,
+					                       queue->ring_progressively_delay);
 					queue = NULL;
 				}
 				switch_mutex_unlock(globals.mutex);
