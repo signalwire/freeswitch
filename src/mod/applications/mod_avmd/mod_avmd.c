@@ -107,7 +107,9 @@
 #define AVMD_PARAMS 2
 
 /*! FreeSWITCH CUSTOM event type. */
-#define AVMD_EVENT_BEEP "avmd::beep"
+#define AVMD_EVENT_BEEP             "avmd::beep"
+#define AVMD_EVENT_SESSION_START    "avmd::session_start"
+#define AVMD_EVENT_SESSION_STOP     "avmd::session_stop"
 
 #define AVMD_CHAR_BUF_LEN 20
 #define AVMD_BUF_LINEAR_LEN 160
@@ -325,6 +327,16 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_avmd_load)
 	if (switch_event_reserve_subclass(AVMD_EVENT_BEEP) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
                 "Couldn't register subclass [%s]!\n", AVMD_EVENT_BEEP);
+		return SWITCH_STATUS_TERM;
+	}
+	if (switch_event_reserve_subclass(AVMD_EVENT_SESSION_START) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+                "Couldn't register subclass [%s]!\n", AVMD_EVENT_SESSION_START);
+		return SWITCH_STATUS_TERM;
+	}
+	if (switch_event_reserve_subclass(AVMD_EVENT_SESSION_STOP) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+                "Couldn't register subclass [%s]!\n", AVMD_EVENT_SESSION_STOP);
 		return SWITCH_STATUS_TERM;
 	}
 	
@@ -625,6 +637,8 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_avmd_shutdown)
 #endif
 
 	switch_event_free_subclass(AVMD_EVENT_BEEP);
+	switch_event_free_subclass(AVMD_EVENT_SESSION_START);
+	switch_event_free_subclass(AVMD_EVENT_SESSION_STOP);
 	
 #ifdef AVMD_FAST_MATH
 	res = destroy_fast_acosf();
