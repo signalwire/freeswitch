@@ -35,6 +35,7 @@ DIRECTORIES = [
   'build',
   'buildtools',
   'google_apis',  # Needed by build/common.gypi.
+  'native_client',
   'net',
   'testing',
   'third_party/binutils',
@@ -49,7 +50,7 @@ DIRECTORIES = [
   'third_party/libjpeg_turbo',
   'third_party/libsrtp',
   'third_party/libudev',
-  'third_party/libvpx_new',
+  'third_party/libvpx',
   'third_party/libyuv',
   'third_party/llvm-build',
   'third_party/lss',

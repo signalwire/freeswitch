@@ -86,8 +86,6 @@ def main():
   env = os.environ.copy()
 
   # Avoid downloading NaCl toolchain as part of the Chromium hooks.
-  env.setdefault('GYP_DEFINES', '')
-  env['GYP_DEFINES'] += ' disable_nacl=1'
   env['GYP_CHROMIUM_NO_ACTION'] = '1'
   gclient_cmd = 'gclient.bat' if sys.platform.startswith('win') else 'gclient'
   args = [

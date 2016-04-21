@@ -128,13 +128,14 @@ if(TEST)
   if (JPEG_FOUND)
     target_link_libraries(libyuv_unittest ${JPEG_LIBRARY})
   endif()
-endif()
+  
+  if(NACL AND NACL_LIBC STREQUAL "newlib")
+    target_link_libraries(libyuv_unittest glibc-compat)
+  endif()
 
-if(NACL AND NACL_LIBC STREQUAL "newlib")
-  target_link_libraries(libyuv_unittest glibc-compat)
+  target_link_libraries(libyuv_unittest gflags)
+  
 endif()
-
-target_link_libraries(libyuv_unittest gflags)
 
 install(TARGETS ${ly_lib_name} DESTINATION lib)
 install(FILES ${ly_header_files} DESTINATION include/libyuv)

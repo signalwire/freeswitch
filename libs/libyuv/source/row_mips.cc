@@ -498,8 +498,8 @@ void MirrorRow_DSPR2(const uint8* src, uint8* dst, int width) {
 
 void MirrorUVRow_DSPR2(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
                             int width) {
-  int x = 0;
-  int y = 0;
+  int x;
+  int y;
   __asm__ __volatile__ (
     ".set push                                    \n"
     ".set noreorder                               \n"
@@ -579,7 +579,7 @@ void MirrorUVRow_DSPR2(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
         [dst_u] "+r" (dst_u),
         [dst_v] "+r" (dst_v),
         [x] "=&r" (x),
-        [y] "+r" (y)
+        [y] "=&r" (y)
       : [width] "r" (width)
       : "t0", "t1", "t2", "t3", "t4",
       "t5", "t7", "t8", "t9"
