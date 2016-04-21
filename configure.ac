@@ -411,6 +411,7 @@ elif test "x${ax_cv_c_compiler_vendor}" = "xgnu" ; then
     AC_SUBST([AM_MOD_AVMD_CXXFLAGS], [-std=gnu99])      # FS-8809, needed for MAP_POPULATE
     if test "$ac_cv_gcc_supports_w_no_unused_result" = yes; then
       APR_ADDTO(SWITCH_AM_CFLAGS, -Werror)
+      APR_ADDTO(SWITCH_AM_CFLAGS, -Wno-unused-result)
     fi
     if test "${enable_64}" = "yes"; then
 	case "$host" in
@@ -449,6 +450,16 @@ if test "${enable_address_sanitizer}" = "yes"; then
   fi
 fi
 
+
+case "${ax_cv_c_compiler_vendor}" in
+sun)
+	VISIBILITY_FLAG=-xldscope=hidden
+;;
+*)
+	VISIBILITY_FLAG=-fvisibility=hidden
+;;
+esac
+AC_SUBST(VISIBILITY_FLAG)
 
 #
 # gcc visibility cflag checks
@@ -1395,7 +1406,7 @@ PKG_CHECK_MODULES([SMPP34], [libsmpp34 >= 1.10],[
   AM_CONDITIONAL([HAVE_SMPP34],[true])],[
   AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_SMPP34],[false])])
 
-PKG_CHECK_MODULES([HIREDIS], [hiredis >= 0.11.0],[
+PKG_CHECK_MODULES([HIREDIS], [hiredis >= 0.10.0],[
   AM_CONDITIONAL([HAVE_HIREDIS],[true])],[
   AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_HIREDIS],[false])])
 
@@ -1902,7 +1913,7 @@ AC_SUBST(OUR_DISABLED_INSTALL_MODS)
 AC_SUBST(OUR_DISABLED_UNINSTALL_MODS)
 AC_SUBST(AM_MAKEFLAGS)
 
-ac_configure_args="$ac_configure_args CONFIGURE_CFLAGS='$CFLAGS $CPPFLAGS' CONFIGURE_CXXFLAGS='$CXXFLAGS $CPPFLAGS' CONFIGURE_LDFLAGS='$LDFLAGS' "
+ac_configure_args="$ac_configure_args --with-modinstdir=${modulesdir} CONFIGURE_CFLAGS='$CFLAGS $CPPFLAGS' CONFIGURE_CXXFLAGS='$CXXFLAGS $CPPFLAGS' CONFIGURE_LDFLAGS='$LDFLAGS' "
 
 #	--prefix='$prefix' --exec_prefix='$exec_prefix' --libdir='$libdir' --libexecdir='$libexecdir' --bindir='$bindir' --sbindir='$sbindir' \
 #	--localstatedir='$localstatedir' --datadir='$datadir'"

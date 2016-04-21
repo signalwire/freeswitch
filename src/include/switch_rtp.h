@@ -311,6 +311,8 @@ SWITCH_DECLARE(uint8_t) switch_rtp_ready(switch_rtp_t *rtp_session);
 */
 SWITCH_DECLARE(void) switch_rtp_destroy(switch_rtp_t **rtp_session);
 
+SWITCH_DECLARE(switch_status_t) switch_rtp_sync_stats(switch_rtp_t *rtp_session);
+
 /*! 
   \brief Acvite ICE on an RTP session
   \return SWITCH_STATUS_SUCCESS

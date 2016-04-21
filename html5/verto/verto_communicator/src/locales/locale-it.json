@@ -148,6 +148,8 @@
   "CHAT_VOL_MINUS": "Vol -",
   "CHAT_VOL_PLUS": "Vol +",
   "CHAT_GAIN_MINUS": "Guadagno -",
-  "CHAT_GAIN_PLUS": "Guadagno +"
+  "CHAT_GAIN_PLUS": "Guadagno +",
+  "LANGUAGE": "Lingua:",
+  "BROWSER_LANGUAGE": "Lingua del browser"
 
 }

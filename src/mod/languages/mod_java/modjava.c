@@ -259,7 +259,7 @@ static switch_status_t load_config(JavaVMOption **javaOptions, int *optionCount,
                 }
                 ++i;
             }
-            (*javaOptions)[i].optionString = "-Djava.library.path=" SWITCH_PREFIX_DIR SWITCH_PATH_SEPARATOR "mod";
+			(*javaOptions)[i].optionString = switch_core_sprintf(memoryPool, "-Djava.library.path=%s", SWITCH_GLOBAL_dirs.mod_dir);
         }
 
 	/*

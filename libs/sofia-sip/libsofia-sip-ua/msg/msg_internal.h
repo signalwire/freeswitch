@@ -130,12 +130,114 @@ struct hep_iphdr{
         struct in_addr hp_dst;      /* source and dest address */
 };
 
+/* HEPv2 */
+struct hep_timehdr{
+    uint32_t tv_sec;         /* seconds */
+    uint32_t tv_usec;        /* useconds */
+    uint16_t captid;          /* Capture ID node */
+};
+
 #if SU_HAVE_IN6
 struct hep_ip6hdr {
 	struct in6_addr hp6_src;        /* source address */
 	struct in6_addr hp6_dst;        /* destination address */
 };
 #endif
+
+/* HEPv3 types */
+
+#if (defined __SUNPRO_CC) || defined(__SUNPRO_C) || defined(_MSC_VER)
+#define PACKED
+#endif
+#ifndef PACKED
+#define PACKED __attribute__ ((__packed__))
+#endif
+
+#ifdef _MSC_VER
+#pragma pack(push, 1)
+#endif
+
+struct hep_chunk {
+       uint16_t vendor_id;
+       uint16_t type_id;
+       uint16_t length;
+} PACKED;
+
+typedef struct hep_chunk hep_chunk_t;
+
+struct hep_chunk_uint8 {
+       hep_chunk_t chunk;
+       uint8_t data;
+} PACKED;
+
+typedef struct hep_chunk_uint8 hep_chunk_uint8_t;
+
+struct hep_chunk_uint16 {
+       hep_chunk_t chunk;
+       uint16_t data;
+} PACKED;
+
+typedef struct hep_chunk_uint16 hep_chunk_uint16_t;
+
+struct hep_chunk_uint32 {
+       hep_chunk_t chunk;
+       uint32_t data;
+} PACKED;
+
+typedef struct hep_chunk_uint32 hep_chunk_uint32_t;
+
+struct hep_chunk_str {
+       hep_chunk_t chunk;
+       char *data;
+} PACKED;
+
+typedef struct hep_chunk_str hep_chunk_str_t;
+
+struct hep_chunk_ip4 {
+       hep_chunk_t chunk;
+       struct in_addr data;
+} PACKED;
+
+typedef struct hep_chunk_ip4 hep_chunk_ip4_t;
+
+struct hep_chunk_ip6 {
+       hep_chunk_t chunk;
+       struct in6_addr data;
+} PACKED;
+
+typedef struct hep_chunk_ip6 hep_chunk_ip6_t;
+
+struct hep_chunk_payload {
+    hep_chunk_t chunk;
+    char *data;
+} PACKED;
+
+typedef struct hep_chunk_payload hep_chunk_payload_t;
+
+struct hep_ctrl {
+    char id[4];
+    uint16_t length;
+} PACKED;
+
+typedef struct hep_ctrl hep_ctrl_t;
+
+struct hep_generic {
+        hep_ctrl_t         header;
+        hep_chunk_uint8_t  ip_family;
+        hep_chunk_uint8_t  ip_proto;
+        hep_chunk_uint16_t src_port;
+        hep_chunk_uint16_t dst_port;
+        hep_chunk_uint32_t time_sec;
+        hep_chunk_uint32_t time_usec;
+        hep_chunk_uint8_t  proto_t;
+        hep_chunk_uint32_t capt_id;
+} PACKED;
+
+#ifdef _MSC_VER
+#pragma pack(pop)
+#endif
+
+typedef struct hep_generic hep_generic_t;
 
 /** Maximum size when streaming. */
 #define MSG_SSIZE_MAX (USIZE_MAX)

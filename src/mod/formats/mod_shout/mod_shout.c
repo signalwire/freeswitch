@@ -35,7 +35,11 @@
 #include <switch.h>
 #include "mpg123.h"
 #include <shout/shout.h>
+#ifdef WIN32
+#include <lame.h>
+#else
 #include <lame/lame.h>
+#endif
 #include <switch_curl.h>
 
 #define OUTSCALE 8192 * 2

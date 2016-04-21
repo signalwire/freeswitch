@@ -767,6 +767,9 @@ static switch_status_t consume_h264_bitstream(h264_codec_context_t *context, swi
 
 		if (pkt->size > 0) av_packet_unref(pkt);
 
+		switch_clear_flag(frame, SFF_CNG);
+		frame->m = 1;
+
 		return SWITCH_STATUS_SUCCESS;
 	}
 

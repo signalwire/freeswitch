@@ -2132,7 +2132,8 @@ static switch_status_t verto_on_hangup(switch_core_session_t *session)
 		cJSON *params = NULL;
 		cJSON *msg = jrpc_new_req("verto.bye", tech_pvt->call_id, &params);
 		switch_call_cause_t cause = switch_channel_get_cause(tech_pvt->channel);
-		
+		switch_channel_set_variable(tech_pvt->channel, "verto_hangup_disposition", "send_bye");
+
 		cJSON_AddItemToObject(params, "causeCode", cJSON_CreateNumber(cause));
 		cJSON_AddItemToObject(params, "cause", cJSON_CreateString(switch_channel_cause2str(cause)));
 		jsock_queue_event(jsock, &msg, SWITCH_TRUE);
@@ -2743,6 +2744,7 @@ static switch_bool_t verto__bye_func(const char *method, cJSON *params, jsock_t 
 	if ((session = switch_core_session_locate(call_id))) {
 		verto_pvt_t *tech_pvt = switch_core_session_get_private_class(session, SWITCH_PVT_SECONDARY);
 		tech_pvt->remote_hangup_cause = cause;
+		switch_channel_set_variable(tech_pvt->channel, "verto_hangup_disposition", "recv_bye");
 		switch_channel_hangup(tech_pvt->channel, cause);
 
 		cJSON_AddItemToObject(obj, "message", cJSON_CreateString("CALL ENDED"));

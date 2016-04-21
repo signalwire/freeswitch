@@ -120,7 +120,7 @@ static int find_unprintable(const char *s)
 	const char *p;
 
 	for(p = s; p && *p; p++) {
-		if (*p < 10 || *p == 27) {
+		if (*p < 9 || *p == 27) {
 			return 1;
 		}
 	}

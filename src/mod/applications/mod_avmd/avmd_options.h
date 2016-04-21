@@ -2,7 +2,11 @@
  * @brief   Options controlling avmd module.
  *
  * @author Eric des Courtis
- * @par    Modifications: Piotr Gregor < piotrek.gregor gmail.com >
+ *
+ * Contributor(s):
+ *
+ * Piotr Gregor <piotrek.gregor gmail.com>:
+ * Eric des Courtis <eric.des.courtis@benbria.com>
  */
 
 
@@ -12,7 +16,7 @@
 
 /* define/undefine this to enable/disable printing of avmd
  * intermediate computations to log */
-/*#define AVMD_DEBUG */
+/*#define AVMD_DEBUG*/
 
 /* define/undef this to enable/disable reporting of beep
  * detection status after session ended */
@@ -30,7 +34,7 @@
 #define AVMD_REQUIRE_CONTINUOUS_STREAK
 
 /* define number of samples to skip starting from the beginning
- *  of frame and after reset */
+ * of the frame and after reset */
 #define AVMD_SAMLPE_TO_SKIP_N 6
 
 /* define/undefine this to enable/disable simplified estimation
@@ -38,11 +42,11 @@
  * in the range x=[0,PI/2] */
 #define AVMD_SIMPLIFIED_ESTIMATION
 
-/* define/undefine to enable/disable avmd on incoming audio */
-#define AVMD_INBOUND_CHANNEL
+/* define/undefine to enable/disable avmd on internal channel */
+/*#define AVMD_INBOUND_CHANNEL*/
 
-/* define/undefine to enable/disable avmd on outgoing audio */
-/*#define AVMD_OUTBOUND_CHANNEL*/
+/* define/undefine to enable/disable avmd on external channel */
+#define AVMD_OUTBOUND_CHANNEL
 
 
 #endif /* __AVMD_OPTIONS_H__ */

@@ -278,6 +278,7 @@ SWITCH_DECLARE(void) switch_core_media_resume(switch_core_session_t *session);
 SWITCH_DECLARE(void) switch_core_media_init(void);
 SWITCH_DECLARE(void) switch_core_media_deinit(void);
 SWITCH_DECLARE(void) switch_core_media_set_stats(switch_core_session_t *session);
+SWITCH_DECLARE(void) switch_core_media_sync_stats(switch_core_session_t *session);
 SWITCH_DECLARE(void) switch_core_session_wake_video_thread(switch_core_session_t *session);
 SWITCH_DECLARE(void) switch_core_session_clear_crypto(switch_core_session_t *session);
 

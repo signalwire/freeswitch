@@ -948,13 +948,6 @@ typedef struct {
 #pragma pack(push, r1, 1)
 #endif
 
-typedef struct switch_rtcp_sdes_unit_s {
-	unsigned char type;
-	unsigned char length;
-	char value[];
-} switch_rtcp_sdes_unit_t;
-
-
 #if SWITCH_BYTE_ORDER == __BIG_ENDIAN
 typedef struct switch_rtcp_hdr_s {
 	unsigned version:2;			/* protocol version                  */
@@ -1049,6 +1042,7 @@ typedef enum {
 	SWITCH_MESSAGE_INDICATE_UNBRIDGE,
 	SWITCH_MESSAGE_INDICATE_TRANSFER,
 	SWITCH_MESSAGE_INDICATE_RINGING,
+	SWITCH_MESSAGE_INDICATE_ALERTING,
 	SWITCH_MESSAGE_INDICATE_MEDIA,
 	SWITCH_MESSAGE_INDICATE_3P_MEDIA,
 	SWITCH_MESSAGE_INDICATE_NOMEDIA,
@@ -1357,6 +1351,8 @@ CF_STOP_BROADCAST	- Signal to stop broadcast
 
 CF_AUDIO_PAUSE      - Audio is not ready to read/write
 CF_VIDEO_PAUSE      - Video is not ready to read/write
+
+CF_MEDIA_SET        - Session has read codec assigned
 
 </pre>
  */

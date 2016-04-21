@@ -3281,6 +3281,28 @@ SWITCH_DECLARE(int) switch_stream_system(const char *cmd, switch_stream_handle_t
 
 }
 
+SWITCH_DECLARE(uint16_t) switch_core_get_rtp_port_range_start_port()
+{
+	uint16_t start_port = 0;
+
+	/* By default pass rtp port range start value as zero in order to get actual
+	 * RTP port range start value as configured */
+	start_port = (uint16_t)switch_rtp_set_start_port((switch_port_t)start_port);
+
+	return start_port;
+}
+
+SWITCH_DECLARE(uint16_t) switch_core_get_rtp_port_range_end_port()
+{
+	uint16_t end_port = 0;
+
+	/* By default pass rtp port range end value as zero in order to get actual
+	 * RTP port range end value as configured */
+	end_port = (uint16_t)switch_rtp_set_end_port((switch_port_t)end_port);
+
+	return end_port;
+}
+
 /* For Emacs:
  * Local Variables:
  * mode:c

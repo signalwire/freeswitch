@@ -126,7 +126,7 @@
   <ItemGroup>
     <ClInclude Include="avmd_amplitude.h" />
     <ClInclude Include="avmd_buffer.h" />
-    <ClInclude Include="avmd_desa2.h" />
+    <ClInclude Include="avmd_desa2_tweaked.h" />
     <ClInclude Include="avmd_fast_acosf.h" />
     <ClInclude Include="avmd_goertzel.h" />
     <ClInclude Include="avmd_options.h" />
@@ -136,7 +136,7 @@
   <ItemGroup>
     <ClCompile Include="avmd_amplitude.c" />
     <ClCompile Include="avmd_buffer.c" />
-    <ClCompile Include="avmd_desa2.c" />
+    <ClCompile Include="avmd_desa2_tweaked.c" />
     <ClCompile Include="avmd_fast_acosf.c" />
     <ClCompile Include="avmd_goertzel.c" />
     <ClCompile Include="mod_avmd.c" />

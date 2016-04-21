@@ -197,7 +197,7 @@ static void flush_listener(listener_t *listener, switch_bool_t flush_log, switch
 {
 	void *pop;
 
-	if (listener->log_queue) {
+	if (flush_log && listener->log_queue) {
 		while (switch_queue_trypop(listener->log_queue, &pop) == SWITCH_STATUS_SUCCESS) {
 			switch_log_node_t *dnode = (switch_log_node_t *) pop;
 			if (dnode) {
@@ -206,7 +206,7 @@ static void flush_listener(listener_t *listener, switch_bool_t flush_log, switch
 		}
 	}
 
-	if (listener->event_queue) {
+	if (flush_events && listener->event_queue) {
 		while (switch_queue_trypop(listener->event_queue, &pop) == SWITCH_STATUS_SUCCESS) {
 			switch_event_t *pevent = (switch_event_t *) pop;
 			if (!pop)

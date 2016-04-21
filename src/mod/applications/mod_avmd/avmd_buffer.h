@@ -11,7 +11,6 @@
 
 
 #include <stdlib.h>
-#include <assert.h>
 
 #ifndef INT16_MIN
 #define INT16_MIN              (-32767-1)
@@ -95,7 +94,6 @@ extern size_t next_power_of_2(size_t v);
 	(bf)->buf_len = CALC_BUFF_LEN((fl), (bl)); \
 	(bf)->mask = (bf)->buf_len - 1; \
 	(bf)->buf = (BUFF_TYPE *) switch_core_session_alloc(s, (bf)->buf_len * sizeof(BUFF_TYPE)); \
-	assert((bf)->buf != NULL); \
 	(bf)->pos = 0; \
 	(bf)->lpos = 0; \
 	(bf)->backlog = 0; \

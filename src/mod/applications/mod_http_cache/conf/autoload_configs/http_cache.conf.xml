@@ -9,7 +9,9 @@
     <param name="ssl-verifyhost" value="true"/>
     <param name="ssl-verifypeer" value="true"/>
     <!-- default is 300 seconds, override here -->
-    <!--param name="connect-timeout" value="300"/>
+    <!--param name="connect-timeout" value="300"/-->
+    <!-- default is 300 seconds, override here -->
+    <!--param name="download-timeout" value="300"/-->
   </settings>
 
   <profiles>

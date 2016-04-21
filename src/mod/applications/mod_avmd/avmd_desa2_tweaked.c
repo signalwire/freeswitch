@@ -1,6 +1,6 @@
 #ifndef __AVMD_DESA2_TWEAKED_H__
 
-
+#include <switch.h>
 #include <stdio.h>
 #ifdef WIN32
 #include <float.h>
@@ -16,12 +16,8 @@
 #include "avmd_fast_acosf.h"
 #endif
 
-#include <switch.h>
-
-
 double
-avmd_desa2_tweaked(circ_buffer_t *b, size_t i,
-        switch_core_session_t *session)
+avmd_desa2_tweaked(circ_buffer_t *b, size_t i)
 {
     double d;
     double n;

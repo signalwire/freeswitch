@@ -1535,12 +1535,38 @@ static void set_stats(switch_core_session_t *session, switch_media_type_t type, 
 	}
 }
 
+SWITCH_DECLARE(void) switch_core_media_sync_stats(switch_core_session_t *session)
+{
+	switch_media_handle_t *smh;
+	switch_rtp_engine_t *a_engine, *v_engine;
+
+	switch_assert(session);
+
+	if (!(smh = session->media_handle)) {
+		return;
+	}
+
+	a_engine = &smh->engines[SWITCH_MEDIA_TYPE_AUDIO];
+	v_engine = &smh->engines[SWITCH_MEDIA_TYPE_VIDEO];	
+
+	if (a_engine->rtp_session) {
+		switch_rtp_sync_stats(a_engine->rtp_session);
+	}
+
+	if (v_engine->rtp_session) {
+		switch_rtp_sync_stats(v_engine->rtp_session);
+	}
+
+}
+
 SWITCH_DECLARE(void) switch_core_media_set_stats(switch_core_session_t *session)
 {
 	
 	if (!session->media_handle) {
 		return;
 	}
+
+	switch_core_media_sync_stats(session);
 
 	set_stats(session, SWITCH_MEDIA_TYPE_AUDIO, "audio");
 	set_stats(session, SWITCH_MEDIA_TYPE_VIDEO, "video");
