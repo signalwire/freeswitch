@@ -40,9 +40,6 @@ using namespace cv;
 
 #include <switch.h>
 
-#include <cv.h>
-#include "cvaux.h"
-#include "cxmisc.h"
 #include "highgui.h"
 #include <stdio.h>
 #include <stdlib.h>
