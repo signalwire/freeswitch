@@ -3087,6 +3087,24 @@ void sofia_event_fire(sofia_profile_t *profile, switch_event_t **event)
 	*event = NULL;
 }
 
+void sofia_glue_clear_soa(switch_core_session_t *session, switch_bool_t partner)
+{
+	switch_core_session_t *other_session;
+	struct private_object *tech_pvt = switch_core_session_get_private(session);
+
+	sofia_clear_flag(tech_pvt, TFLAG_ENABLE_SOA);
+
+	if (partner && switch_core_session_get_partner(session, &other_session) == SWITCH_STATUS_SUCCESS) {
+		if (switch_core_session_compare(session, other_session)) {
+			struct private_object *other_tech_pvt = switch_core_session_get_private(other_session);
+			
+			sofia_clear_flag(other_tech_pvt, TFLAG_ENABLE_SOA);
+		}
+		switch_core_session_rwunlock(other_session);
+	}
+
+}
+
 
 /* For Emacs:
  * Local Variables:
