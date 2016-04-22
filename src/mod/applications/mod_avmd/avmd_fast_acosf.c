@@ -20,8 +20,6 @@
 #include "avmd_fast_acosf.h"
 #include "avmd_options.h"
 
-#ifdef AVMD_FAST_MATH
-
 
 typedef union {
     uint32_t i;
@@ -315,6 +313,3 @@ dump_table_summary(void)
 }
 
 #endif /* FAST_ACOSF_TESTING */
-
-
-#endif
