@@ -20,6 +20,7 @@ use_neon = current_cpu == "arm64" || (current_cpu == "arm" && (arm_use_neon || a
 
 source_set("libyuv") {
   sources = [
+    # Headers
     "include/libyuv.h",
     "include/libyuv/basic_types.h",
     "include/libyuv/compare.h",
@@ -40,7 +41,7 @@ source_set("libyuv") {
     "include/libyuv/version.h",
     "include/libyuv/video_common.h",
 
-    # sources.
+    # Source Files
     "source/compare.cc",
     "source/compare_common.cc",
     "source/compare_gcc.cc",
@@ -113,6 +114,7 @@ source_set("libyuv") {
 if (use_neon) {
   static_library("libyuv_neon") {
     sources = [
+      # ARM Source Files
       "source/compare_neon.cc",
       "source/compare_neon64.cc",
       "source/rotate_neon.cc",

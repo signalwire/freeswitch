@@ -208,7 +208,22 @@ libfreeswitch_libyuv_la_SOURCES = \
     libs/libyuv/source/scale_common.cc      \
     libs/libyuv/source/scale_gcc.cc         \
     libs/libyuv/source/scale_mips.cc        \
-    libs/libyuv/source/video_common.cc
+    libs/libyuv/source/video_common.cc      \
+    libs/libyuv/source/compare_neon64.cc    \
+    libs/libyuv/source/compare_neon.cc      \
+    libs/libyuv/source/compare_win.cc       \
+    libs/libyuv/source/convert_jpeg.cc      \
+    libs/libyuv/source/mjpeg_decoder.cc     \
+    libs/libyuv/source/mjpeg_validate.cc    \
+    libs/libyuv/source/rotate_neon64.cc     \
+    libs/libyuv/source/rotate_neon.cc       \
+    libs/libyuv/source/rotate_win.cc        \
+    libs/libyuv/source/row_neon64.cc        \
+    libs/libyuv/source/row_neon.cc          \
+    libs/libyuv/source/row_win.cc           \
+    libs/libyuv/source/scale_neon64.cc      \
+    libs/libyuv/source/scale_neon.cc        \
+    libs/libyuv/source/scale_win.cc
 
 libfreeswitch_libyuv_la_CPPFLAGS = -O2 -fomit-frame-pointer -Ilibs/libyuv/include
 CORE_LIBS+=libfreeswitch_libyuv.la

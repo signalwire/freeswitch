@@ -1917,8 +1917,7 @@ int InterpolatePlane(const uint8* src0, int src_stride0,
 #endif
 
   for (y = 0; y < height; ++y) {
-    InterpolateRow(dst, src0, src1 - src0,
-                   width, interpolation);
+    InterpolateRow(dst, src0, src1 - src0, width, interpolation);
     src0 += src_stride0;
     src1 += src_stride1;
     dst += dst_stride;

@@ -317,16 +317,11 @@ void I422ToRGB24Row_NEON(const uint8* src_y,
 }
 
 #define ARGBTORGB565                                                           \
-    "vshr.u8    d20, d20, #3                   \n"  /* B                    */ \
-    "vshr.u8    d21, d21, #2                   \n"  /* G                    */ \
-    "vshr.u8    d22, d22, #3                   \n"  /* R                    */ \
-    "vmovl.u8   q8, d20                        \n"  /* B                    */ \
-    "vmovl.u8   q9, d21                        \n"  /* G                    */ \
-    "vmovl.u8   q10, d22                       \n"  /* R                    */ \
-    "vshl.u16   q9, q9, #5                     \n"  /* G                    */ \
-    "vshl.u16   q10, q10, #11                  \n"  /* R                    */ \
-    "vorr       q0, q8, q9                     \n"  /* BG                   */ \
-    "vorr       q0, q0, q10                    \n"  /* BGR                  */
+    "vshll.u8    q0, d22, #8                   \n"  /* R                    */ \
+    "vshll.u8    q8, d21, #8                   \n"  /* G                    */ \
+    "vshll.u8    q9, d20, #8                   \n"  /* B                    */ \
+    "vsri.16     q0, q8, #5                    \n"  /* RG                   */ \
+    "vsri.16     q0, q9, #11                   \n"  /* RGB                  */
 
 void I422ToRGB565Row_NEON(const uint8* src_y,
                           const uint8* src_u,
@@ -359,19 +354,13 @@ void I422ToRGB565Row_NEON(const uint8* src_y,
 }
 
 #define ARGBTOARGB1555                                                         \
-    "vshr.u8    q10, q10, #3                   \n"  /* B                    */ \
-    "vshr.u8    d22, d22, #3                   \n"  /* R                    */ \
-    "vshr.u8    d23, d23, #7                   \n"  /* A                    */ \
-    "vmovl.u8   q8, d20                        \n"  /* B                    */ \
-    "vmovl.u8   q9, d21                        \n"  /* G                    */ \
-    "vmovl.u8   q10, d22                       \n"  /* R                    */ \
-    "vmovl.u8   q11, d23                       \n"  /* A                    */ \
-    "vshl.u16   q9, q9, #5                     \n"  /* G                    */ \
-    "vshl.u16   q10, q10, #10                  \n"  /* R                    */ \
-    "vshl.u16   q11, q11, #15                  \n"  /* A                    */ \
-    "vorr       q0, q8, q9                     \n"  /* BG                   */ \
-    "vorr       q1, q10, q11                   \n"  /* RA                   */ \
-    "vorr       q0, q0, q1                     \n"  /* BGRA                 */
+    "vshll.u8    q0, d23, #8                   \n"  /* A                    */ \
+    "vshll.u8    q8, d22, #8                   \n"  /* R                    */ \
+    "vshll.u8    q9, d21, #8                   \n"  /* G                    */ \
+    "vshll.u8    q10, d20, #8                  \n"  /* B                    */ \
+    "vsri.16     q0, q8, #1                    \n"  /* AR                   */ \
+    "vsri.16     q0, q9, #6                    \n"  /* ARG                  */ \
+    "vsri.16     q0, q10, #11                  \n"  /* ARGB                 */
 
 void I422ToARGB1555Row_NEON(const uint8* src_y,
                             const uint8* src_u,

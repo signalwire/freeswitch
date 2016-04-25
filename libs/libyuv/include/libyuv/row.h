@@ -41,6 +41,12 @@ extern "C" {
     (defined(__i386__) && !defined(__SSE2__))
 #define LIBYUV_DISABLE_X86
 #endif
+// MemorySanitizer does not support assembly code yet. http://crbug.com/344505
+#if defined(__has_feature)
+#if __has_feature(memory_sanitizer)
+#define LIBYUV_DISABLE_X86
+#endif
+#endif
 // True if compiling for SSSE3 as a requirement.
 #if defined(__SSSE3__) || (defined(_M_IX86_FP) && (_M_IX86_FP >= 3))
 #define LIBYUV_SSSE3_ONLY

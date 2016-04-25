@@ -323,8 +323,8 @@ void I422ToRGB24Row_NEON(const uint8* src_y,
 
 #define ARGBTORGB565                                                           \
     "shll       v0.8h,  v22.8b, #8             \n"  /* R                    */ \
-    "shll       v20.8h, v20.8b, #8             \n"  /* B                    */ \
     "shll       v21.8h, v21.8b, #8             \n"  /* G                    */ \
+    "shll       v20.8h, v20.8b, #8             \n"  /* B                    */ \
     "sri        v0.8h,  v21.8h, #5             \n"  /* RG                   */ \
     "sri        v0.8h,  v20.8h, #11            \n"  /* RGB                  */
 
@@ -363,8 +363,8 @@ void I422ToRGB565Row_NEON(const uint8* src_y,
 #define ARGBTOARGB1555                                                         \
     "shll       v0.8h,  v23.8b, #8             \n"  /* A                    */ \
     "shll       v22.8h, v22.8b, #8             \n"  /* R                    */ \
-    "shll       v20.8h, v20.8b, #8             \n"  /* B                    */ \
     "shll       v21.8h, v21.8b, #8             \n"  /* G                    */ \
+    "shll       v20.8h, v20.8b, #8             \n"  /* B                    */ \
     "sri        v0.8h,  v22.8h, #1             \n"  /* AR                   */ \
     "sri        v0.8h,  v21.8h, #6             \n"  /* ARG                  */ \
     "sri        v0.8h,  v20.8h, #11            \n"  /* ARGB                 */

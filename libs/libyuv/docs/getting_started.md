@@ -162,6 +162,10 @@ mipsel
     ninja -j7 -C out/Debug libyuv_unittest_apk
     ninja -j7 -C out/Release libyuv_unittest_apk
 
+arm32 disassembly:
+
+    third_party/android_tools/ndk/toolchains/arm-linux-androideabi-4.9/prebuilt/linux-x86_64/bin/arm-linux-androideabi-objdump -d out/Release/obj/source/libyuv.row_neon.o
+
 arm64 disassembly:
 
     third_party/android_tools/ndk/toolchains/aarch64-linux-android-4.9/prebuilt/linux-x86_64/bin/aarch64-linux-android-objdump -d out/Release/obj/source/libyuv.row_neon64.o
@@ -180,10 +184,15 @@ Running test with C code:
 
 #### Building with GN
 
-    call gn gen out/Release "--args=is_debug=false target_cpu=\"x86\""
-    call gn gen out/Debug "--args=is_debug=true target_cpu=\"x86\""
+    gn gen out/Release "--args=is_debug=false target_cpu=\"x86\""
+    gn gen out/Debug "--args=is_debug=true target_cpu=\"x86\""
     ninja -C out/Release
     ninja -C out/Debug
+
+### Building Offical with GN
+
+    gn gen out/Official "--args=is_debug=false is_official_build=true is_chrome_branded=true"
+    ninja -C out/Official
 
 ### Linux
 

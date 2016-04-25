@@ -5,10 +5,6 @@ solutions = [{
   'managed': False,
   'custom_deps': {
     # Skip syncing some large dependencies Libyuv will never need.
-    'src/chrome/tools/test/reference_build/chrome_linux': None,
-    'src/chrome/tools/test/reference_build/chrome_mac': None,
-    'src/chrome/tools/test/reference_build/chrome_win': None,
-    'src/native_client': None,
     'src/third_party/cld_2/src': None,
     'src/third_party/ffmpeg': None,
     'src/third_party/hunspell_dictionaries': None,
