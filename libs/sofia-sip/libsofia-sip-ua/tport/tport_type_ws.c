@@ -267,26 +267,15 @@ ssize_t tport_send_stream_ws(tport_t const *self, msg_t *msg,
 			  msg_iovec_t iov[],
 			  size_t iovlen)
 {
-  size_t i, j, n, m, size = 0;
+  size_t i, j, m, size = 0;
   ssize_t nerror;
   tport_ws_t *wstp = (tport_ws_t *)self;
 
-  enum { WSBUFSIZE = 2048 };
+  wstp->wstp_buflen = 0;
 
   for (i = 0; i < iovlen; i = j) {
-    char *buf = wstp->wstp_buffer;
-    unsigned wsbufsize = WSBUFSIZE;
-
-    if (i + 1 == iovlen) {
-		buf = NULL;		/* Don't bother copying single chunk */
-	}
-
-    if (buf &&
-		(char *)iov[i].siv_base - buf < WSBUFSIZE &&
-		(char *)iov[i].siv_base - buf >= 0) {
-		wsbufsize = buf + WSBUFSIZE - (char *)iov[i].siv_base;
-		assert(wsbufsize <= WSBUFSIZE);
-    }
+	char *buf = NULL;
+    unsigned wsbufsize = sizeof(wstp->wstp_buffer);
 
     for (j = i, m = 0; buf && j < iovlen; j++) {
 		if (m + iov[j].siv_len > wsbufsize) {
@@ -304,8 +293,20 @@ ssize_t tport_send_stream_ws(tport_t const *self, msg_t *msg,
       iov[j].siv_base = buf, iov[j].siv_len = m;
 	}
 
-	nerror = ws_feed_buf(&wstp->ws, buf, m);
+	nerror = 0;
 	
+	if (m + wstp->wstp_buflen >= wsbufsize) {
+		nerror = -1;
+		errno = ENOMEM;
+	} else {
+		if (memcpy(wstp->wstp_buffer + wstp->wstp_buflen, buf, m)) {
+			wstp->wstp_buflen += m;
+		} else {
+			nerror = -1;
+			errno = ENOMEM;
+		}
+	}
+
     SU_DEBUG_9(("tport_ws_writevec: vec %p %p %lu ("MOD_ZD")\n",
 		(void *)&wstp->ws, (void *)iov[i].siv_base, (LU)iov[i].siv_len,
 		nerror));
@@ -317,17 +318,13 @@ ssize_t tport_send_stream_ws(tport_t const *self, msg_t *msg,
       SU_DEBUG_3(("ws_write: %s\n", strerror(err)));
       return -1;
     }
-
-    n = (size_t)nerror;
-    size += n;
-
-    /* Return if the write buffer is full for now */
-    if (n != m)
-      break;
   }
 
-  ws_send_buf(&wstp->ws, WSOC_TEXT);
-
+  if (wstp->wstp_buflen) {
+	  *(wstp->wstp_buffer + wstp->wstp_buflen) = '\0';
+	  ws_write_frame(&wstp->ws, WSOC_TEXT, wstp->wstp_buffer, wstp->wstp_buflen);
+	  size = wstp->wstp_buflen;
+  }
 
   return size;
 }

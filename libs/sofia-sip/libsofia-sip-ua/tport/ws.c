@@ -1,3 +1,4 @@
+#include <switch.h>
 #include "ws.h"
 #include <pthread.h>
 
@@ -146,7 +147,7 @@ static int cheezy_get_var(char *data, char *name, char *buf, size_t buflen)
   } while((p = (strstr(p,"\n")+1))!=(char *)1);
 
 
-  if (p != (char *)1 && *p!='\0') {
+  if (p && p != (char *)1 && *p!='\0') {
     char *v, *e = 0;
 
     v = strchr(p, ':');
@@ -264,7 +265,7 @@ int ws_handshake(wsh_t *wsh)
 		}
 	}
 
-	if (bytes > sizeof(wsh->buffer) -1) {
+	if (bytes > wsh->buflen -1) {
 		goto err;
 	}
 
@@ -362,7 +363,7 @@ ssize_t ws_raw_read(wsh_t *wsh, void *data, size_t bytes, int block)
 				}
 			}
 
-		} while (r == -1 && err == SSL_ERROR_WANT_READ && wsh->x < 100);
+		} while (r == -1 && err == SSL_ERROR_WANT_READ && wsh->x < 1000);
 
 		goto end;
 	}
@@ -382,9 +383,9 @@ ssize_t ws_raw_read(wsh_t *wsh, void *data, size_t bytes, int block)
 				ms_sleep(10);
 			}
 		}
-	} while (r == -1 && xp_is_blocking(xp_errno()) && wsh->x < 100);
+	} while (r == -1 && xp_is_blocking(xp_errno()) && wsh->x < 1000);
 	
-	if (wsh->x >= 1000 || (block && wsh->x >= 100)) {
+	if (wsh->x >= 10000 || (block && wsh->x >= 1000)) {
 		r = -1;
 	}
 
@@ -596,7 +597,15 @@ int ws_init(wsh_t *wsh, ws_socket_t sock, SSL_CTX *ssl_ctx, int close_sock, int 
 		wsh->close_sock = 1;
 	}
 
-	wsh->buflen = sizeof(wsh->buffer);
+	wsh->buflen = 1024 * 64;
+	wsh->bbuflen = wsh->buflen;
+
+	wsh->buffer = malloc(wsh->buflen);
+	wsh->bbuffer = malloc(wsh->bbuflen);
+	//printf("init %p %ld\n", (void *) wsh->bbuffer, wsh->bbuflen);
+	//memset(wsh->buffer, 0, wsh->buflen);
+	//memset(wsh->bbuffer, 0, wsh->bbuflen);
+
 	wsh->secure = ssl_ctx ? 1 : 0;
 
 	setup_socket(sock);
@@ -644,6 +653,12 @@ void ws_destroy(wsh_t *wsh)
 		SSL_free(wsh->ssl);
 		wsh->ssl = NULL;
 	}
+
+	if (wsh->buffer) free(wsh->buffer);
+	if (wsh->bbuffer) free(wsh->bbuffer);
+
+	wsh->buffer = wsh->bbuffer = NULL;
+
 }
 
 ssize_t ws_close(wsh_t *wsh, int16_t reason) 
@@ -685,6 +700,20 @@ ssize_t ws_close(wsh_t *wsh, int16_t reason)
 	
 }
 
+
+uint64_t hton64(uint64_t val)
+{
+	if (__BYTE_ORDER == __BIG_ENDIAN) return (val);
+	else return __bswap_64(val);
+}
+
+uint64_t ntoh64(uint64_t val)
+{
+	if (__BYTE_ORDER == __BIG_ENDIAN) return (val);
+	else return __bswap_64(val);
+}
+
+
 ssize_t ws_read_frame(wsh_t *wsh, ws_opcode_t *oc, uint8_t **data)
 {
 	
@@ -692,6 +721,10 @@ ssize_t ws_read_frame(wsh_t *wsh, ws_opcode_t *oc, uint8_t **data)
 	char *maskp;
 	int ll = 0;
 	int frag = 0;
+	int blen;
+
+	wsh->body = wsh->bbuffer;
+	wsh->packetlen = 0;
 
  again:
 	need = 2;
@@ -745,12 +778,11 @@ ssize_t ws_read_frame(wsh_t *wsh, ws_opcode_t *oc, uint8_t **data)
 			int fin = (wsh->buffer[0] >> 7) & 1;
 			int mask = (wsh->buffer[1] >> 7) & 1;
 			
-			if (fin) {
-				if (*oc == WSOC_CONTINUATION) {
-					frag = 1;
-				} else {
-					frag = 0;
-				}
+
+			if (!fin && *oc != WSOC_CONTINUATION) {
+				frag = 1;
+			} else if (fin && *oc == WSOC_CONTINUATION) {
+				frag = 0;
 			}
 
 			if (mask) {
@@ -765,23 +797,33 @@ ssize_t ws_read_frame(wsh_t *wsh, ws_opcode_t *oc, uint8_t **data)
 
 			wsh->plen = wsh->buffer[1] & 0x7f;
 			wsh->payload = &wsh->buffer[2];
-
+			
 			if (wsh->plen == 127) {
 				uint64_t *u64;
+				int more = 0;
 
 				need += 8;
 
 				if (need > wsh->datalen) {
 					/* too small - protocol err */
-					*oc = WSOC_CLOSE;
-					return ws_close(wsh, WS_PROTO_ERR);
-				}
+					//*oc = WSOC_CLOSE;
+					//return ws_close(wsh, WS_PROTO_ERR);
 
+					more = ws_raw_read(wsh, wsh->buffer + wsh->datalen, need - wsh->datalen, WS_BLOCK);
+
+					if (more < need - wsh->datalen) {
+						*oc = WSOC_CLOSE;
+						return ws_close(wsh, WS_PROTO_ERR);
+					} else {
+						wsh->datalen += more;
+					}
+
+
+				}
+				
 				u64 = (uint64_t *) wsh->payload;
 				wsh->payload += 8;
-
-				wsh->plen = ntohl((u_long)*u64);
-
+				wsh->plen = ntoh64(*u64);
 			} else if (wsh->plen == 126) {
 				uint16_t *u16;
 
@@ -811,16 +853,30 @@ ssize_t ws_read_frame(wsh_t *wsh, ws_opcode_t *oc, uint8_t **data)
 				return ws_close(wsh, WS_PROTO_ERR);
 			}
 
-			if ((need + wsh->datalen) > (ssize_t)wsh->buflen) {
-				/* too big - Ain't nobody got time fo' dat */
-				*oc = WSOC_CLOSE;
-				return ws_close(wsh, WS_DATA_TOO_BIG);				
+			blen = wsh->body - wsh->bbuffer;
+
+			if (need + blen > (ssize_t)wsh->bbuflen) {
+				void *tmp;
+				
+				wsh->bbuflen = need + blen + wsh->rplen;
+
+				if ((tmp = realloc(wsh->bbuffer, wsh->bbuflen))) {
+					wsh->bbuffer = tmp;
+				} else {
+					abort();
+				}
+
+				wsh->body = wsh->bbuffer + blen;
 			}
 
 			wsh->rplen = wsh->plen - need;
-
+			
+			if (wsh->rplen) {
+				memcpy(wsh->body, wsh->payload, wsh->rplen);
+			}
+			
 			while(need) {
-				ssize_t r = ws_raw_read(wsh, wsh->payload + wsh->rplen, need, WS_BLOCK);
+				ssize_t r = ws_raw_read(wsh, wsh->body + wsh->rplen, need, WS_BLOCK);
 
 				if (r < 1) {
 					/* invalid read - protocol err .. */
@@ -837,28 +893,30 @@ ssize_t ws_read_frame(wsh_t *wsh, ws_opcode_t *oc, uint8_t **data)
 				ssize_t i;
 
 				for (i = 0; i < wsh->datalen; i++) {
-					wsh->payload[i] ^= maskp[i % 4];
+					wsh->body[i] ^= maskp[i % 4];
 				}
 			}
 			
 
 			if (*oc == WSOC_PING) {
-				ws_write_frame(wsh, WSOC_PONG, wsh->payload, wsh->rplen);
+				ws_write_frame(wsh, WSOC_PONG, wsh->body, wsh->rplen);
 				goto again;
 			}
+
+			*(wsh->body+wsh->rplen) = '\0';
+			wsh->packetlen += wsh->rplen;
+			wsh->body += wsh->rplen;
 
 			if (frag) {
 				goto again;
 			}
+
+			*data = (uint8_t *)wsh->bbuffer;
 			
-
-			*(wsh->payload+wsh->rplen) = '\0';
-			*data = (uint8_t *)wsh->payload;
-
-			//printf("READ[%ld][%d]-----------------------------:\n[%s]\n-------------------------------\n", wsh->rplen, *oc, (char *)*data);
+			//printf("READ[%ld][%d]-----------------------------:\n[%s]\n-------------------------------\n", wsh->packetlen, *oc, (char *)*data);
 
 
-			return wsh->rplen;
+			return wsh->packetlen;
 		}
 		break;
 	default:
@@ -870,36 +928,6 @@ ssize_t ws_read_frame(wsh_t *wsh, ws_opcode_t *oc, uint8_t **data)
 		break;
 	}
 }
-
-ssize_t ws_feed_buf(wsh_t *wsh, void *data, size_t bytes)
-{
-
-	if (bytes + wsh->wdatalen > wsh->buflen) {
-		return -1;
-	}
-
-	memcpy(wsh->wbuffer + wsh->wdatalen, data, bytes);
-	
-	wsh->wdatalen += bytes;
-
-	return bytes;
-}
-
-ssize_t ws_send_buf(wsh_t *wsh, ws_opcode_t oc)
-{
-	ssize_t r = 0;
-
-	if (!wsh->wdatalen) {
-		return -1;
-	}
-	
-	r = ws_write_frame(wsh, oc, wsh->wbuffer, wsh->wdatalen);
-	
-	wsh->wdatalen = 0;
-
-	return r;
-}
-
 
 ssize_t ws_write_frame(wsh_t *wsh, ws_opcode_t oc, void *data, size_t bytes)
 {
@@ -934,7 +962,7 @@ ssize_t ws_write_frame(wsh_t *wsh, ws_opcode_t oc, void *data, size_t bytes)
 		hlen += 8;
 		
 		u64 = (uint64_t *) &hdr[2];
-		*u64 = htonl(bytes);
+		*u64 = hton64(bytes);
 	}
 
 	if (wsh->write_buffer_len < (hlen + bytes + 1)) {
