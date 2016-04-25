@@ -1286,16 +1286,11 @@ map_modules "mod_filter" \
   "gencontrol_per_cat" \
   "gencontrol_per_mod geninstall_per_mod genoverrides_per_mod"
 
-##### Not sure if this is needed at all... if this is supposed to be included somewhere it should be for just the freeswitch package
-#if [ ${use_sysvinit} = "true" ]; then
-#    cp -a freeswitch-sysvinit.freeswitch.init freeswitch-all.freeswitch.init
-#    cp -a freeswitch-sysvinit.freeswitch.default freeswitch-all.freeswitch.default
-#    echo -n freeswitch-sysvinit >freeswitch-init.provided_by
-#else
-#    cp -a freeswitch-systemd.freeswitch.service freeswitch-all.freeswitch.service
-#    cp -a freeswitch-systemd.freeswitch.tmpfile freeswitch-all.freeswitch.tmpfile
-#    echo -n freeswitch-systemd >freeswitch-init.provided_by
-#fi
+if [ ${use_sysvinit} = "true" ]; then
+  echo -n freeswitch-sysvinit >freeswitch-init.provided_by
+else
+  echo -n freeswitch-systemd >freeswitch-init.provided_by
+fi
 
 
 echo "Generating additional lintian overrides..." >&2
