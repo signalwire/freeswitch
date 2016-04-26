@@ -561,7 +561,6 @@ Description: Cross-Platform Scalable Multi-Protocol Soft Switch
 Package: freeswitch-meta-all
 Architecture: any
 Depends: \${misc:Depends}, freeswitch (= \${binary:Version}),
-Recommends:
  freeswitch-init (= \${binary:Version}),
  freeswitch-lang (= \${binary:Version}),
  freeswitch-timezones (= \${binary:Version}),
@@ -613,7 +612,6 @@ Recommends:
  freeswitch-mod-stress (= \${binary:Version}),
  freeswitch-mod-translate (= \${binary:Version}),
  freeswitch-mod-valet-parking (= \${binary:Version}),
- freeswitch-mod-vmd (= \${binary:Version}),
  freeswitch-mod-voicemail (= \${binary:Version}),
  freeswitch-mod-voicemail-ivr (= \${binary:Version}),
  freeswitch-mod-flite (= \${binary:Version}),
@@ -666,7 +664,9 @@ Recommends:
  freeswitch-mod-xml-curl (= \${binary:Version}),
  freeswitch-mod-xml-rpc (= \${binary:Version}),
  freeswitch-mod-xml-scgi (= \${binary:Version}),
+Recommends:
 Suggests:
+ freeswitch-mod-vmd (= \${binary:Version}),
  freeswitch-mod-vlc (= \${binary:Version}),
 Description: Cross-Platform Scalable Multi-Protocol Soft Switch
  $(debian_wrap "${fs_description}")
