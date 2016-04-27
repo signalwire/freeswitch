@@ -2195,6 +2195,21 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 
 		video_count = 0;
 
+		if (conference->async_fnode && switch_core_file_has_video(&conference->async_fnode->fh, SWITCH_TRUE)) {
+			check_async_file = 1;
+			file_count++;
+			video_count++;
+			files_playing = 1;
+		}
+
+		if (conference->fnode && switch_core_file_has_video(&conference->fnode->fh, SWITCH_TRUE)) {
+			check_file = 1;
+			file_count++;
+			video_count++;
+			files_playing = 1;
+		}
+
+
 		switch_mutex_lock(conference->member_mutex);
 		for (imember = conference->members; imember; imember = imember->next) {
 			int no_muted = conference_utils_test_flag(imember->conference, CFLAG_VIDEO_MUTE_EXIT_CANVAS);
@@ -2203,10 +2218,11 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 			
 			if (imember->channel && switch_channel_ready(imember->channel) && switch_channel_test_flag(imember->channel, CF_VIDEO_READY) && 
 				!conference_utils_member_test_flag(imember, MFLAG_SECOND_SCREEN) &&
-				conference_utils_member_test_flag(imember, MFLAG_RUNNING) && (!no_muted || seen) && (!no_av || imember->avatar_png_img)
+				conference_utils_member_test_flag(imember, MFLAG_RUNNING) && (!no_muted || seen) && (!no_av || (no_av && !imember->avatar_png_img))
 				&& imember->canvas_id == canvas->canvas_id && imember->video_media_flow != SWITCH_MEDIA_FLOW_SENDONLY) {
 				video_count++;
 			}
+			
 		}
 		canvas->video_count = video_count;
 		switch_mutex_unlock(conference->member_mutex);
@@ -2240,10 +2256,21 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 			conference_utils_clear_flag(conference, CFLAG_REFRESH_LAYOUT);
 		}
 
+		if (count_changed) {
+			need_refresh = 1;
+			send_keyframe = 1;
+			do_refresh = 100;
+		}
+
+
+		if (file_count != last_file_count) {
+			count_changed = 1;
+		}
+
 		if (count_changed && !personal) {
 			layout_group_t *lg = NULL;
 			video_layout_t *vlayout = NULL;
-
+			
 			if (canvas->video_layout_group && (lg = switch_core_hash_find(conference->layout_group_hash, canvas->video_layout_group))) {
 				if ((vlayout = conference_video_find_best_layout(conference, lg, canvas->video_count))) {
 					switch_mutex_lock(conference->member_mutex);
@@ -2252,28 +2279,7 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 				}
 			}
 		}
-		
-		if (count_changed) {
-			need_refresh = 1;
-			send_keyframe = 1;
-			do_refresh = 100;
-		}
 
-		if (conference->async_fnode && switch_core_file_has_video(&conference->async_fnode->fh, SWITCH_TRUE)) {
-			check_async_file = 1;
-			file_count++;
-			files_playing = 1;
-		}
-
-		if (conference->fnode && switch_core_file_has_video(&conference->fnode->fh, SWITCH_TRUE)) {
-			check_file = 1;
-			file_count++;
-			files_playing = 1;
-		}
-
-		if (file_count != last_file_count) {
-			count_changed = 1;
-		}
 
 		last_file_count = file_count;
 
