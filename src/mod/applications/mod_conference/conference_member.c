@@ -724,9 +724,6 @@ switch_status_t conference_member_add(conference_obj_t *conference, conference_m
 			conference->count_ghosts++;
 		} else {
 			conference->count++;
-			if (conference->min_members && conference->count >= conference->min_members) {
-				conference_utils_clear_flag_locked(conference, CFLAG_WAIT_MIN_MEMBERS);
-			}
 		}
 
 		if (conference_utils_member_test_flag(member, MFLAG_ENDCONF)) {
@@ -817,7 +814,7 @@ switch_status_t conference_member_add(conference_obj_t *conference, conference_m
 			conference_utils_clear_flag(conference, CFLAG_WAIT_MOD);
 		}
 
-		if (!conference_utils_test_flag(conference, CFLAG_WAIT_MIN_MEMBERS)) {
+		if (conference->count > 1) {
 			if ((conference->moh_sound && !conference_utils_test_flag(conference, CFLAG_WAIT_MOD)) ||
 				(conference_utils_test_flag(conference, CFLAG_WAIT_MOD) && !switch_true(switch_channel_get_variable(channel, "conference_permanent_wait_mod_moh")))) {
 				/* stop MoH if any */
@@ -829,9 +826,9 @@ switch_status_t conference_member_add(conference_obj_t *conference, conference_m
 				if (conference_utils_test_flag(conference, CFLAG_ENTER_SOUND) && !conference_utils_member_test_flag(member, MFLAG_SILENT)) {
 					if (!zstr(enter_sound)) {
 						conference_file_play(conference, (char *)enter_sound, CONF_DEFAULT_LEADIN,
-											 switch_core_session_get_channel(member->session), !conference_utils_test_flag(conference, CFLAG_WAIT_MOD) ? 0 : 1);
+											 switch_core_session_get_channel(member->session), 0);
 					} else {
-						conference_file_play(conference, conference->enter_sound, CONF_DEFAULT_LEADIN, switch_core_session_get_channel(member->session), !conference_utils_test_flag(conference, CFLAG_WAIT_MOD) ? 0 : 1);
+						conference_file_play(conference, conference->enter_sound, CONF_DEFAULT_LEADIN, switch_core_session_get_channel(member->session), 0);
 					}
 				}
 			}
@@ -1194,13 +1191,6 @@ switch_status_t conference_member_del(conference_obj_t *conference, conference_m
 			if (!--conference->end_count) {
 				//conference_utils_set_flag_locked(conference, CFLAG_DESTRUCT);
 				conference->endconference_time = switch_epoch_time_now(NULL);
-				if (conference_utils_member_test_flag(member, MFLAG_MOD) && !zstr(conference->endconf_mod_exit_message)) {
-					conference_file_play(conference, conference->endconf_mod_exit_message, 0, channel, 0);
-				} else {
-					if (!zstr(conference->endconf_message)) {
-						conference_file_play(conference, conference->endconf_message, 0, channel, 0);
-					}
-				}
 			}
 		}
 
@@ -1218,7 +1208,7 @@ switch_status_t conference_member_del(conference_obj_t *conference, conference_m
 			if (!exit_sound && conference->exit_sound && conference_utils_test_flag(conference, CFLAG_EXIT_SOUND) && !conference_utils_member_test_flag(member, MFLAG_SILENT)) {
 				conference_file_play(conference, conference->exit_sound, 0, channel, 0);
 			}
-			if (!conference_utils_test_flag(conference, CFLAG_WAIT_MIN_MEMBERS) && conference->alone_sound && !conference_utils_test_flag(conference, CFLAG_WAIT_MOD) && !conference_utils_member_test_flag(member, MFLAG_GHOST)) {
+			if (conference->count == 1 && conference->alone_sound && !conference_utils_test_flag(conference, CFLAG_WAIT_MOD) && !conference_utils_member_test_flag(member, MFLAG_GHOST)) {
 				conference_file_stop(conference, FILE_STOP_ASYNC);
 				conference_file_play(conference, conference->alone_sound, 0, channel, 0);
 			}
