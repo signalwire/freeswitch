@@ -596,12 +596,12 @@ int tport_capt_msg_hepv3 (tport_t const *self, msg_t *msg, size_t n,
    struct hep_generic *hg=NULL;
    unsigned int buflen=0, iplen=0,tlen=0, payload_len = 0;
    su_time_t now;
-   hep_chunk_ip4_t src_ip4 = { 0 }, dst_ip4 = { 0 };
+   hep_chunk_ip4_t src_ip4 = {{0}}, dst_ip4 = {{0}};
    hep_chunk_t payload_chunk;
    int orig_n = 0;
       
 #if SU_HAVE_IN6
-   hep_chunk_ip6_t src_ip6 = { 0 }, dst_ip6 = { 0 };
+   hep_chunk_ip6_t src_ip6 = {{0}}, dst_ip6 = {{0}};
 #endif   
 
    int eth_frame_len = 16000;
