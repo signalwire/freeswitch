@@ -558,7 +558,7 @@ int tport_capt_msg_hepv2 (tport_t const *self, msg_t *msg, size_t n,
         hep_time.tv_usec = now.tv_usec;
 
         hep_time.captid = mr->mr_agent_id;
-        memcpy((void*)*buffer+buflen, &hep_time, sizeof(struct hep_timehdr));
+        memcpy((char*)*buffer+buflen, &hep_time, sizeof(struct hep_timehdr));
         buflen += sizeof(struct hep_timehdr);
    }                    
    
@@ -596,12 +596,12 @@ int tport_capt_msg_hepv3 (tport_t const *self, msg_t *msg, size_t n,
    struct hep_generic *hg=NULL;
    unsigned int buflen=0, iplen=0,tlen=0, payload_len = 0;
    su_time_t now;
-   hep_chunk_ip4_t src_ip4, dst_ip4;       
+   hep_chunk_ip4_t src_ip4 = { 0 }, dst_ip4 = { 0 };
    hep_chunk_t payload_chunk;
    int orig_n = 0;
       
 #if SU_HAVE_IN6
-   hep_chunk_ip6_t src_ip6, dst_ip6;          
+   hep_chunk_ip6_t src_ip6 = { 0 }, dst_ip6 = { 0 };
 #endif   
 
    int eth_frame_len = 16000;
@@ -771,26 +771,26 @@ int tport_capt_msg_hepv3 (tport_t const *self, msg_t *msg, size_t n,
     /* IPv4 */
    if(su->su_family == AF_INET) {
         /* SRC IP */
-        memcpy((void*) *buffer+buflen, &src_ip4, sizeof(struct hep_chunk_ip4));
+        memcpy((char*) *buffer+buflen, &src_ip4, sizeof(struct hep_chunk_ip4));
         buflen += sizeof(struct hep_chunk_ip4);
 
-        memcpy((void*) *buffer+buflen, &dst_ip4, sizeof(struct hep_chunk_ip4));
+        memcpy((char*) *buffer+buflen, &dst_ip4, sizeof(struct hep_chunk_ip4));
         buflen += sizeof(struct hep_chunk_ip4);
     }
 #if SU_HAVE_IN6
       /* IPv6 */
     else if(su->su_family == AF_INET6) {
         /* SRC IPv6 */
-        memcpy((void*) *buffer+buflen, &src_ip4, sizeof(struct hep_chunk_ip6));
+        memcpy((char*) *buffer+buflen, &src_ip4, sizeof(struct hep_chunk_ip6));
         buflen += sizeof(struct hep_chunk_ip6);
 
-        memcpy((void*) *buffer+buflen, &dst_ip6, sizeof(struct hep_chunk_ip6));
+        memcpy((char*) *buffer+buflen, &dst_ip6, sizeof(struct hep_chunk_ip6));
         buflen += sizeof(struct hep_chunk_ip6);
     }
 #endif
 
     /* PAYLOAD CHUNK */
-    memcpy((void*) *buffer+buflen, &payload_chunk,  sizeof(struct hep_chunk));
+    memcpy((char*) *buffer+buflen, &payload_chunk,  sizeof(struct hep_chunk));
     buflen +=  sizeof(struct hep_chunk);
 
    /* PAYLOAD */
