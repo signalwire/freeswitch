@@ -373,7 +373,7 @@ Depends: \${misc:Depends}, freeswitch (= \${binary:Version})
 Recommends:
  freeswitch-doc (= \${binary:Version}),
  freeswitch-mod-commands (= \${binary:Version}),
- freeswitch-init (= \${binary:Version}),
+ freeswitch-init,
  freeswitch-lang (= \${binary:Version}),
  freeswitch-timezones (= \${binary:Version}),
  freeswitch-music,
@@ -407,7 +407,7 @@ Depends: \${misc:Depends}, freeswitch (= \${binary:Version}),
  freeswitch-mod-console (= \${binary:Version}),
  freeswitch-mod-say-en (= \${binary:Version})
 Recommends:
- freeswitch-init (= \${binary:Version}),
+ freeswitch-init,
  freeswitch-lang (= \${binary:Version}),
  freeswitch-timezones (= \${binary:Version}),
  freeswitch-meta-codecs (= \${binary:Version}),
@@ -429,6 +429,7 @@ Description: Cross-Platform Scalable Multi-Protocol Soft Switch
 Package: freeswitch-meta-vanilla
 Architecture: any
 Depends: \${misc:Depends}, freeswitch (= \${binary:Version}),
+ freeswitch-init,
  freeswitch-mod-console (= \${binary:Version}),
  freeswitch-mod-logfile (= \${binary:Version}),
  freeswitch-mod-enum (= \${binary:Version}),
@@ -462,7 +463,6 @@ Depends: \${misc:Depends}, freeswitch (= \${binary:Version}),
  freeswitch-mod-lua (= \${binary:Version}),
  freeswitch-mod-say-en (= \${binary:Version}),
 Recommends:
- freeswitch-init (= \${binary:Version}),
  freeswitch-lang (= \${binary:Version}),
  freeswitch-timezones (= \${binary:Version}),
  freeswitch-music,
@@ -478,7 +478,7 @@ Package: freeswitch-meta-sorbet
 Architecture: any
 Depends: \${misc:Depends}, freeswitch (= \${binary:Version}),
 Recommends:
- freeswitch-init (= \${binary:Version}),
+ freeswitch-init,
  freeswitch-lang (= \${binary:Version}),
  freeswitch-timezones (= \${binary:Version}),
  freeswitch-meta-codecs (= \${binary:Version}),
@@ -559,7 +559,7 @@ Description: Cross-Platform Scalable Multi-Protocol Soft Switch
 Package: freeswitch-meta-all
 Architecture: any
 Depends: \${misc:Depends}, freeswitch (= \${binary:Version}),
- freeswitch-init (= \${binary:Version}),
+ freeswitch-init,
  freeswitch-lang (= \${binary:Version}),
  freeswitch-timezones (= \${binary:Version}),
  freeswitch-meta-codecs (= \${binary:Version}),
