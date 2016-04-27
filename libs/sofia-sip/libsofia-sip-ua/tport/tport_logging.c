@@ -781,7 +781,7 @@ int tport_capt_msg_hepv3 (tport_t const *self, msg_t *msg, size_t n,
       /* IPv6 */
     else if(su->su_family == AF_INET6) {
         /* SRC IPv6 */
-        memcpy((char*) *buffer+buflen, &src_ip4, sizeof(struct hep_chunk_ip6));
+        memcpy((char*) *buffer+buflen, &src_ip6, sizeof(struct hep_chunk_ip6));
         buflen += sizeof(struct hep_chunk_ip6);
 
         memcpy((char*) *buffer+buflen, &dst_ip6, sizeof(struct hep_chunk_ip6));
