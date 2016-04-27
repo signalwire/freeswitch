@@ -1,3 +1,4 @@
+#include <switch.h>
 #include "ws.h"
 #include <pthread.h>
 
