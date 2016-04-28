@@ -2224,6 +2224,11 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 			}
 			
 		}
+
+		if (video_count != canvas->video_count) {
+			count_changed = 1;
+		}
+
 		canvas->video_count = video_count;
 		switch_mutex_unlock(conference->member_mutex);
 
