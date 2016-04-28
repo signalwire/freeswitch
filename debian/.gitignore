@@ -9,6 +9,7 @@
 /freeswitch-autotools.install
 /freeswitch-mod-*.install
 /freeswitch-conf-*.install
+/freeswitch-init.provided_by
 /freeswitch-lang-*.install
 /freeswitch-music-*.install
 /freeswitch-sounds-*.install
