@@ -1,0 +1,52 @@
+<configuration name="avmd.conf" description="AVMD config">
+    <settings>
+
+    <!-- Edit these settings to change default behaviour
+         of each avmd session. Settings can be overwritten
+         by values passed dynamically per each session -->
+
+
+        <!-- Global settings -->
+
+            <!-- define/undefine this to enable/disable printing of avmd
+                 intermediate computations to log -->
+            <param name="debug" value="0"/>
+
+            <!-- define/undef this to enable/disable reporting of beep
+                 detection status after session ended -->
+            <param name="report_status" value="1"/>
+
+            <!-- define/undefine this to enable/disable faster computation
+                 of arcus cosine - table will be created mapping floats
+                 to integers and returning arc cos values given these integer
+                 indices into table -->
+            <param name="fast_math" value="0"/>
+        <!-- Global settings end -->
+
+
+        <!-- Per call (session) settings. These settings can be overwritten
+             with custom/different values per each avmd session -->
+
+            <!-- define/undefine this to classify avmd beep detection as valid
+                 only when there is required number of consecutive elements
+                 in the SMA buffer without reset -->
+            <param name="require_continuous_streak" value="1"/>
+
+            <!-- define number of samples to skip starting from the beginning
+                 of the frame and after reset -->
+            <param name="sample_n_to_skeep" value="6"/>
+
+            <!-- define/undefine this to enable/disable simplified estimation
+                 of frequency based on approximation of sin(x) with (x)
+                 in the range x=[0,PI/2] -->
+            <param name="simplified_estimation" value="1"/>
+
+            <!-- define/undefine to enable/disable avmd on internal channel -->
+            <param name="inbound_channel" value="0"/>
+
+            <!-- define/undefine to enable/disable avmd on external channel -->
+            <param name="outbound_channel" value="1"/>
+        <!-- Per call settings end -->
+    </settings>
+</configuration>
+

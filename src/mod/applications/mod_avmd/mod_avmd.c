@@ -19,8 +19,8 @@
  *
  * Contributor(s):
  *
- * Piotr Gregor <piotrek.gregor gmail.com>:
  * Eric des Courtis <eric.des.courtis@benbria.com>
+ * Piotr Gregor <piotrek.gregor gmail.com>:
  *
  * mod_avmd.c -- Advanced Voicemail Detection Module
  *
@@ -48,9 +48,7 @@
 #include "avmd_sma_buf.h"
 #include "avmd_options.h"
 
-#ifdef AVMD_FAST_MATH
 #include "avmd_fast_acosf.h"
-#endif
 
 
 /*! Calculate how many audio samples per ms based on the rate */
@@ -101,10 +99,11 @@
 #endif
 
 /*! Syntax of the API call. */
-#define AVMD_SYNTAX "<uuid> <start|stop>"
+#define AVMD_SYNTAX "<uuid> < start | stop | set [inbound|outbound|default] | load [inbound|outbound] | reload | show>"
 
 /*! Number of expected parameters in api call. */
-#define AVMD_PARAMS 2
+#define AVMD_PARAMS_MIN 1u
+#define AVMD_PARAMS_MAX 2u
 
 enum avmd_event
 {
@@ -112,14 +111,15 @@ enum avmd_event
     AVMD_EVENT_SESSION_START = 1,
     AVMD_EVENT_SESSION_STOP = 2
 };
+/* This array MUST be NULL terminated! */
 const char* avmd_events_str[] = {   [AVMD_EVENT_BEEP] =             "avmd::beep",
                                     [AVMD_EVENT_SESSION_START] =    "avmd::start",
                                     [AVMD_EVENT_SESSION_STOP] =     "avmd::stop",
-                                    NULL
+                                    NULL                                            /* MUST be last and always here */
 };
 
-#define AVMD_CHAR_BUF_LEN 20
-#define AVMD_BUF_LINEAR_LEN 160
+#define AVMD_CHAR_BUF_LEN 20u
+#define AVMD_BUF_LINEAR_LEN 160u
 
 
 /* Prototypes */
@@ -130,6 +130,17 @@ SWITCH_STANDARD_API(avmd_api_main);
 SWITCH_STANDARD_APP(avmd_start_app);
 SWITCH_STANDARD_APP(avmd_stop_app);
 SWITCH_STANDARD_APP(avmd_start_function);
+
+struct avmd_settings {
+    uint8_t     debug;
+    uint8_t     report_status;
+    uint8_t     fast_math;
+    uint8_t     require_continuous_streak;
+    uint16_t    sample_n_to_skeep;
+    uint8_t     simplified_estimation;
+    uint8_t     inbound_channnel;
+    uint8_t     outbound_channnel;
+};
 
 /*! Status of the beep detection */
 typedef enum {
@@ -146,13 +157,15 @@ typedef struct {
 /*! Type that holds session information pertinent to the avmd module. */
 typedef struct {
 	/*! Internal FreeSWITCH session. */
-	switch_core_session_t *session;
-	uint32_t rate;
-	circ_buffer_t b;
-	sma_buffer_t sma_b;
-	sma_buffer_t sqa_b;
-	size_t pos;
-	double f;
+	switch_core_session_t   *session;
+    switch_mutex_t          *mutex;
+    struct avmd_settings    settings;
+	uint32_t        rate;
+	circ_buffer_t   b;
+	sma_buffer_t    sma_b;
+	sma_buffer_t    sqa_b;
+	size_t          pos;
+	double          f;
 	/* freq_table_t ft; */
 	avmd_state_t state;
 	switch_time_t start_time;
@@ -163,7 +176,14 @@ typedef struct {
     size_t sample_count;
 } avmd_session_t;
 
-static void avmd_process(avmd_session_t *s, switch_frame_t *frame);
+struct avmd_globals
+{
+    switch_mutex_t          *mutex;
+    struct avmd_settings    settings;
+    switch_memory_pool_t    *pool;
+} avmd_globals;
+
+static void avmd_process(avmd_session_t *session, switch_frame_t *frame);
 
 static switch_bool_t avmd_callback(switch_media_bug_t * bug,
                                     void *user_data, switch_abc_type_t type);
@@ -177,16 +197,43 @@ static void
 avmd_fire_event(enum avmd_event type, switch_core_session_t *fs_s,
                     double freq, double v);
 
+/* API [set default], reset to factory settings */
+static void avmd_set_xml_default_configuration(switch_mutex_t *mutex);
+/* API [set inbound], set inbound = 1, outbound = 0 */
+static void avmd_set_xml_inbound_configuration(switch_mutex_t *mutex);
+/* API [set outbound], set inbound = 0, outbound = 1 */
+static void avmd_set_xml_outbound_configuration(switch_mutex_t *mutex);
+
+/* API [reload], reload XML configuration data from RAM */
+static switch_status_t avmd_load_xml_configuration(switch_mutex_t *mutex);
+/* API [load inbound], reload + set inbound */
+static switch_status_t avmd_load_xml_inbound_configuration(switch_mutex_t *mutex);
+/* API [load outbound], reload + set outbound */
+static switch_status_t avmd_load_xml_outbound_configuration(switch_mutex_t *mutex);
+
+/* bind callback */
+static void
+avmd_reloadxml_event_handler(switch_event_t *event);
+
+/* API command */
+static void
+avmd_show(switch_stream_handle_t *stream, switch_mutex_t *mutex);
+
 /*! \brief The avmd session data initialization function.
- * @author Eric des Courtis
  * @param avmd_session A reference to a avmd session.
  * @param fs_session A reference to a FreeSWITCH session.
  */
 static switch_status_t
 init_avmd_session_data(avmd_session_t *avmd_session,
-                                    switch_core_session_t *fs_session)
+        switch_core_session_t *fs_session, switch_mutex_t *mutex)
 {
-    size_t buf_sz;
+    size_t          buf_sz;
+    switch_status_t status = SWITCH_STATUS_SUCCESS;
+
+    if (mutex != NULL)
+    {
+        switch_mutex_lock(mutex);
+    }
 
 	/*! This is a worst case sample rate estimate */
 	avmd_session->rate = 48000;
@@ -195,7 +242,8 @@ init_avmd_session_data(avmd_session_t *avmd_session,
             (size_t)FRAME_LEN(avmd_session->rate),
             fs_session);
     if (avmd_session->b.buf == NULL) {
-            return SWITCH_STATUS_MEMERR;
+            status =  SWITCH_STATUS_MEMERR;
+            goto end;
     }
 	avmd_session->session = fs_session;
 	avmd_session->pos = 0;
@@ -205,31 +253,40 @@ init_avmd_session_data(avmd_session_t *avmd_session,
 #ifdef AVMD_REQUIRE_CONTINUOUS_STREAK
     avmd_session->samples_streak = SAMPLES_CONSECUTIVE_STREAK;
 #endif
+    memset(&avmd_session->settings, 0, sizeof(struct avmd_settings));
+	switch_mutex_init(&avmd_session->mutex, SWITCH_MUTEX_DEFAULT,
+            switch_core_session_get_pool(fs_session));
     avmd_session->sample_count = 0;
 
     buf_sz = BEEP_LEN((uint32_t)avmd_session->rate) / (uint32_t)SINE_LEN(avmd_session->rate);
     if (buf_sz < 1) {
-            return SWITCH_STATUS_MORE_DATA;
+            status = SWITCH_STATUS_MORE_DATA;
+            goto end;
     }
 
     INIT_SMA_BUFFER(&avmd_session->sma_b, buf_sz, fs_session);
     if (avmd_session->sma_b.data == NULL) {
-            return SWITCH_STATUS_FALSE;
+            status = SWITCH_STATUS_FALSE;
+            goto end;
     }
     memset(avmd_session->sma_b.data, 0, sizeof(BUFF_TYPE) * buf_sz);
 
     INIT_SMA_BUFFER(&avmd_session->sqa_b, buf_sz, fs_session);
     if (avmd_session->sqa_b.data == NULL) {
-            return SWITCH_STATUS_FALSE;
+            status = SWITCH_STATUS_FALSE;
+            goto end;
     }
     memset(avmd_session->sqa_b.data, 0, sizeof(BUFF_TYPE) * buf_sz);
-    return SWITCH_STATUS_SUCCESS;
+end:
+    if (mutex != NULL)
+    {
+        switch_mutex_unlock(mutex);
+    }
+    return status;
 }
 
 
 /*! \brief The callback function that is called when new audio data becomes available.
- *
- * @author Eric des Courtis
  * @param bug A reference to the media bug.
  * @param user_data The session information for this call.
  * @param type The switch callback type.
@@ -365,8 +422,9 @@ avmd_fire_event(enum avmd_event type, switch_core_session_t *fs_s, double freq, 
 
     status = switch_event_create_subclass(&event,
             SWITCH_EVENT_CUSTOM, avmd_events_str[type]);
-    if (status != SWITCH_STATUS_SUCCESS)
+    if (status != SWITCH_STATUS_SUCCESS) {
         return;
+    }
     switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Unique-ID",
                     switch_core_session_get_uuid(fs_s));
     switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call-command", "avmd");
@@ -406,27 +464,233 @@ avmd_fire_event(enum avmd_event type, switch_core_session_t *fs_s, double freq, 
             return;
     }
 
-    if ((switch_event_dup(&event_copy, event)) != SWITCH_STATUS_SUCCESS)
+    if ((switch_event_dup(&event_copy, event)) != SWITCH_STATUS_SUCCESS) {
         return;
+    }
 
     switch_core_session_queue_event(fs_s, &event);
     switch_event_fire(&event_copy);
     return;
 }
 
-/*! \brief FreeSWITCH module loading function.
- *
- * @author Eric des Courtis
- * @par    Modifications: Piotr Gregor
- * @return On success SWITCH_STATUS_SUCCES,
- *         on failure SWITCH_STATUS_TERM.
- */
+int
+avmd_parse_u8_user_input(const char *input, uint8_t *output,
+                    uint8_t min, uint8_t max)
+{
+	char            *pCh;
+    unsigned long   helper;
+    helper = strtoul(input, &pCh, 10);
+    if (helper < min || helper > UINT8_MAX || helper > max || (pCh == input) || (*pCh != '\0')) {
+        return -1;
+    }
+    *output= helper;
+    return 0;
+}
+
+int
+avmd_parse_u16_user_input(const char *input, uint16_t *output,
+                    uint16_t min, uint16_t max)
+{
+	char            *pCh;
+    unsigned long   helper;
+    if (min > max) {
+        return -1;
+    }
+    helper = strtoul(input, &pCh, 10);
+    if (helper < min || helper > UINT16_MAX || helper > max || (pCh == input) || (*pCh != '\0')) {
+        return -1;
+    }
+    *output= helper;
+    return 0;
+}
+
+static void avmd_set_xml_default_configuration(switch_mutex_t *mutex)
+{
+    if (mutex != NULL) {
+        switch_mutex_lock(mutex);
+    }
+
+    avmd_globals.settings.debug = 0;
+    avmd_globals.settings.report_status = 1;
+    avmd_globals.settings.fast_math = 0;
+    avmd_globals.settings.require_continuous_streak = 1;
+    avmd_globals.settings.sample_n_to_skeep = 6;
+    avmd_globals.settings.simplified_estimation = 1;
+    avmd_globals.settings.inbound_channnel = 0;
+    avmd_globals.settings.outbound_channnel = 1;
+
+    if (mutex != NULL) {
+        switch_mutex_unlock(avmd_globals.mutex);
+    }
+	return;
+}
+
+static void
+avmd_set_xml_inbound_configuration(switch_mutex_t *mutex)
+{
+    if (mutex != NULL) {
+        switch_mutex_lock(mutex);
+    }
+
+    avmd_globals.settings.inbound_channnel = 1;
+    avmd_globals.settings.outbound_channnel = 0;
+
+    if (mutex != NULL) {
+        switch_mutex_unlock(avmd_globals.mutex);
+    }
+	return;
+}
+
+static void
+avmd_set_xml_outbound_configuration(switch_mutex_t *mutex)
+{
+    if (mutex != NULL) {
+        switch_mutex_lock(mutex);
+    }
+
+    avmd_globals.settings.inbound_channnel = 0;
+    avmd_globals.settings.outbound_channnel = 1;
+
+    if (mutex != NULL) {
+        switch_mutex_unlock(avmd_globals.mutex);
+    }
+	return;
+}
+
+static switch_status_t
+avmd_load_xml_configuration(switch_mutex_t *mutex)
+{
+	switch_xml_t xml = NULL, x_lists = NULL, x_list = NULL, cfg = NULL;
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	if (mutex != NULL) {
+        switch_mutex_lock(mutex);
+    }
+
+	if ((xml = switch_xml_open_cfg("avmd.conf", &cfg, NULL)) == NULL) {
+        status = SWITCH_STATUS_TERM;
+    } else {
+		status = SWITCH_STATUS_SUCCESS;
+
+		if ((x_lists = switch_xml_child(cfg, "settings"))) {
+			for (x_list = switch_xml_child(x_lists, "param"); x_list; x_list = x_list->next) {
+				const char *name = switch_xml_attr(x_list, "name");
+				const char *value = switch_xml_attr(x_list, "value");
+
+				if (zstr(name)) {
+					continue;
+				}
+				if (zstr(value)) {
+					continue;
+				}
+
+				if (!strcmp(name, "debug")) {
+						avmd_globals.settings.debug = switch_true(value) ? 1 : 0;
+                } else if (!strcmp(name, "report_status")) {
+						avmd_globals.settings.report_status = switch_true(value) ? 1 : 0;
+				} else if (!strcmp(name, "fast_math")) {
+						avmd_globals.settings.fast_math = switch_true(value) ? 1 : 0;
+				} else if (!strcmp(name, "require_continuous_streak")) {
+						avmd_globals.settings.require_continuous_streak = switch_true(value) ? 1 : 0;
+				} else if (!strcmp(name, "sample_n_to_skeep")) {
+                    if(avmd_parse_u16_user_input(value, &avmd_globals.settings.sample_n_to_skeep, 0, UINT16_MAX) == -1)
+                    {
+                        status = SWITCH_STATUS_TERM;
+                        goto done;
+                    }
+				} else if (!strcmp(name, "simplified_estimation")) {
+						avmd_globals.settings.simplified_estimation = switch_true(value) ? 1 : 0;
+				} else if (!strcmp(name, "inbound_channel")) {
+						avmd_globals.settings.inbound_channnel = switch_true(value) ? 1 : 0;
+				} else if (!strcmp(name, "outbound_channel")) {
+						avmd_globals.settings.outbound_channnel = switch_true(value) ? 1 : 0;
+				}
+			}
+		}
+
+ done:
+
+		switch_xml_free(xml);
+	}
+
+    if (mutex != NULL) {
+        switch_mutex_unlock(mutex);
+    }
+
+	return status;
+}
+static switch_status_t avmd_load_xml_inbound_configuration(switch_mutex_t *mutex)
+{
+    if (avmd_load_xml_configuration(mutex) != SWITCH_STATUS_SUCCESS) {
+        return SWITCH_STATUS_TERM;
+    }
+
+    if (mutex != NULL) {
+        switch_mutex_lock(mutex);
+    }
+
+    avmd_globals.settings.inbound_channnel = 1;
+    avmd_globals.settings.outbound_channnel = 0;
+
+    if (mutex != NULL) {
+        switch_mutex_unlock(avmd_globals.mutex);
+    }
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t avmd_load_xml_outbound_configuration(switch_mutex_t *mutex)
+{
+    if (avmd_load_xml_configuration(mutex) != SWITCH_STATUS_SUCCESS) {
+        return SWITCH_STATUS_TERM;
+    }
+
+	if (mutex != NULL) {
+        switch_mutex_lock(mutex);
+    }
+
+    avmd_globals.settings.inbound_channnel = 0;
+    avmd_globals.settings.outbound_channnel = 1;
+
+	if (mutex != NULL) {
+        switch_mutex_unlock(avmd_globals.mutex);
+    }
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static void
+avmd_show(switch_stream_handle_t *stream, switch_mutex_t *mutex)
+{
+    const char *line = "=================================================================================================";
+    if (stream == NULL) {
+        return;
+    }
+
+    if (mutex != NULL) {
+        switch_mutex_lock(mutex);
+    }
+
+    stream->write_function(stream, "\n\n");
+    stream->write_function(stream, "%s\n\n", line);
+    stream->write_function(stream, "%s\n", "Avmd global settings\n\n");
+    stream->write_function(stream, "debug                   \t%u\n", avmd_globals.settings.debug);
+    stream->write_function(stream, "report status           \t%u\n", avmd_globals.settings.report_status);
+    stream->write_function(stream, "fast_math               \t%u\n", avmd_globals.settings.fast_math);
+    stream->write_function(stream, "require continuous treak\t%u\n", avmd_globals.settings.require_continuous_streak);
+    stream->write_function(stream, "sample n to skeep       \t%u\n", avmd_globals.settings.sample_n_to_skeep);
+    stream->write_function(stream, "simplified estimation   \t%u\n", avmd_globals.settings.simplified_estimation);
+    stream->write_function(stream, "inbound channel         \t%u\n", avmd_globals.settings.inbound_channnel);
+    stream->write_function(stream, "outbound channel        \t%u\n", avmd_globals.settings.outbound_channnel);
+    stream->write_function(stream, "\n\n");
+
+    if (mutex != NULL) {
+        switch_mutex_unlock(mutex);
+    }
+}
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_avmd_load)
 {
-#ifdef AVMD_FAST_MATH
     char    err[150];
     int     ret;
-#endif
 
 	switch_application_interface_t *app_interface;
 	switch_api_interface_t *api_interface;
@@ -438,51 +702,72 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_avmd_load)
                 "Couldn't register avmd events!\n");
 		return SWITCH_STATUS_TERM;
 	}
-	
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE,
-		"Advanced voicemail detection enabled\n");
 
-#ifdef AVMD_FAST_MATH
-    ret = init_fast_acosf();
-    if (ret != 0) {
-        strerror_r(errno, err, 150);
-        switch (ret) {
-
-            case -1:
-	            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
-		            "Can't access file [%s], error [%s]\n",
-                    ACOS_TABLE_FILENAME, err);
-                break;
-            case -2:
-	            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
-		            "Error creating file [%s], error [%s]\n",
-                    ACOS_TABLE_FILENAME, err);
-                break;
-            case -3:
-	            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
-		            "Access rights are OK but can't open file [%s], error [%s]\n",
-                    ACOS_TABLE_FILENAME, err);
-                break;
-            case -4:
-	            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
-		            "Access rights are OK but can't mmap file [%s], error [%s]\n",
-                    ACOS_TABLE_FILENAME, err);
-                break;
-            default:
-	            switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_ERROR,
-		            "Unknown error [%d] while initializing fast cos table [%s], "
-                    "errno [%s]\n", ret, ACOS_TABLE_FILENAME, err);
-                return SWITCH_STATUS_TERM;
-        }
+    memset(&avmd_globals, 0, sizeof(avmd_globals));
+    if (pool == NULL) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+                "No memory pool assigned!\n");
         return SWITCH_STATUS_TERM;
-    } else
-	switch_log_printf(
-		SWITCH_CHANNEL_LOG,
-		SWITCH_LOG_NOTICE,
-		"Advanced voicemail detection: fast math enabled, arc cosine table "
-        "is [%s]\n", ACOS_TABLE_FILENAME
-		);
-#endif
+    }
+	switch_mutex_init(&avmd_globals.mutex, SWITCH_MUTEX_DEFAULT, pool);
+    avmd_globals.pool = pool;
+
+    if (avmd_load_xml_configuration(NULL) != SWITCH_STATUS_SUCCESS)
+    {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+                "Couldn't load XML configuration\n");
+        return SWITCH_STATUS_TERM;
+    }
+
+	if ((switch_event_bind(modname, SWITCH_EVENT_RELOADXML, NULL,
+                    avmd_reloadxml_event_handler, NULL) != SWITCH_STATUS_SUCCESS)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+                "Couldn't bind our reloadxml handler! Module will not react "
+                "to changes made in XML configuration\n");
+		/* Not so severe to prevent further loading, well - it depends, anyway */
+	}
+
+    if (avmd_globals.settings.fast_math == 1) {
+        ret = init_fast_acosf();
+        if (ret != 0) {
+            strerror_r(errno, err, 150);
+            switch (ret) {
+
+                case -1:
+	                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+		                "Can't access file [%s], error [%s]\n",
+                        ACOS_TABLE_FILENAME, err);
+                    break;
+                case -2:
+	                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+		                "Error creating file [%s], error [%s]\n",
+                        ACOS_TABLE_FILENAME, err);
+                    break;
+                case -3:
+	                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+		                "Access rights are OK but can't open file [%s], error [%s]\n",
+                        ACOS_TABLE_FILENAME, err);
+                    break;
+                case -4:
+	                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+		                "Access rights are OK but can't mmap file [%s], error [%s]\n",
+                        ACOS_TABLE_FILENAME, err);
+                    break;
+                default:
+	                switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_ERROR,
+		                "Unknown error [%d] while initializing fast cos table [%s], "
+                        "errno [%s]\n", ret, ACOS_TABLE_FILENAME, err);
+                    return SWITCH_STATUS_TERM;
+            }
+            return SWITCH_STATUS_TERM;
+        } else
+	    switch_log_printf(
+		    SWITCH_CHANNEL_LOG,
+		    SWITCH_LOG_NOTICE,
+		    "Advanced voicemail detection: fast math enabled, arc cosine table "
+            "is [%s]\n", ACOS_TABLE_FILENAME
+		    );
+    }
 
 	SWITCH_ADD_APP(app_interface, "avmd_start","Start avmd detection",
             "Start avmd detection", avmd_start_app, "", SAF_NONE);
@@ -496,17 +781,22 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_avmd_load)
             avmd_api_main, AVMD_SYNTAX);
 
 	switch_console_set_complete("add avmd ::console::list_uuid ::[start:stop");
+	switch_console_set_complete("add avmd set inbound");    /* set inbound = 1, outbound = 0 */
+	switch_console_set_complete("add avmd set outbound");   /* set inbound = 0, outbound = 1 */
+	switch_console_set_complete("add avmd set default");    /* restore to factory settings */
+	switch_console_set_complete("add avmd load inbound");   /* reload + set inbound */
+	switch_console_set_complete("add avmd load outbound");  /* reload + set outbound */
+	switch_console_set_complete("add avmd reload");         /* reload XML (it loads from FS installation
+                                                             * folder, not module's conf/autoload_configs */
+	switch_console_set_complete("add avmd show");
+
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE,
+		"Advanced voicemail detection enabled\n");
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
 }
 
-/*! \brief FreeSWITCH application handler function.
- *  This handles avmd start request calls made from applications
- *  such as LUA and the dialplan.
- *
- * @return Success or failure of the function.
- */
 SWITCH_STANDARD_APP(avmd_start_app)
 {
 	switch_media_bug_t  *bug;
@@ -543,44 +833,49 @@ SWITCH_STANDARD_APP(avmd_start_app)
         return;
 	}
 
-#ifdef AVMD_OUTBOUND_CHANNEL
-    if (SWITCH_CALL_DIRECTION_OUTBOUND != switch_channel_direction(channel)) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING,
-			"Channel [%s] is not outbound!\n", switch_channel_get_name(channel));
+    switch_mutex_lock(avmd_globals.mutex);
+
+    if (avmd_globals.settings.outbound_channnel == 1) {
+        if (SWITCH_CALL_DIRECTION_OUTBOUND != switch_channel_direction(channel)) {
+		    switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING,
+			    "Channel [%s] is not outbound!\n", switch_channel_get_name(channel));
+        } else {
+            flags |= SMBF_READ_REPLACE;
+        }
+    } else if (avmd_globals.settings.inbound_channnel == 1) {
+        if (SWITCH_CALL_DIRECTION_INBOUND != switch_channel_direction(channel)) {
+		    switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING,
+			    "Channel [%s] is not inbound!\n", switch_channel_get_name(channel));
+        } else {
+            flags |= SMBF_WRITE_REPLACE;
+        }
     } else {
-        flags |= SMBF_READ_REPLACE;
-    }
-#endif
-#ifdef AVMD_INBOUND_CHANNEL
-    if (SWITCH_CALL_DIRECTION_INBOUND != switch_channel_direction(channel)) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING,
-			"Channel [%s] is not inbound!\n", switch_channel_get_name(channel));
-    } else {
-        flags |= SMBF_WRITE_REPLACE;
-    }
-#endif
-    if(flags == 0) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR,
 			"Can't set direction for channel [%s]\n", switch_channel_get_name(channel));
-        return;
+        goto end;
     }
 
 
-#ifdef AVMD_OUTBOUND_CHANNEL
-    if (switch_channel_test_flag(channel, CF_MEDIA_SET) == 0) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR,
-			"Failed to start session. Channel [%s] has no codec assigned yet."
-            " Please try again\n", switch_channel_get_name(channel));
-        return;
+    if (avmd_globals.settings.outbound_channnel == 1) {
+        if (switch_channel_test_flag(channel, CF_MEDIA_SET) == 0) {
+		    switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR,
+			    "Failed to start session. Channel [%s] has no codec assigned yet."
+                " Please try again\n", switch_channel_get_name(channel));
+            goto end;
+        }
     }
-#endif
 
 	/* Allocate memory attached to this FreeSWITCH session for
 	* use in the callback routine and to store state information */
 	avmd_session = (avmd_session_t *) switch_core_session_alloc(
                                             session, sizeof(avmd_session_t));
+    if (avmd_session == NULL) {
+		    switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR,
+			    "Can't allocate memory for avmd session!\n");
+            goto end;
+    }
 
-	status = init_avmd_session_data(avmd_session, session);
+	status = init_avmd_session_data(avmd_session, session, NULL);
     if (status != SWITCH_STATUS_SUCCESS) {
         switch (status) {
             case SWITCH_STATUS_MEMERR:
@@ -605,7 +900,7 @@ SWITCH_STANDARD_APP(avmd_start_app)
                 break;
 
         }
-		return;
+        goto end;
     }
 
 	/* Add a media bug that allows me to intercept the
@@ -625,7 +920,7 @@ SWITCH_STANDARD_APP(avmd_start_app)
 	if (status != SWITCH_STATUS_SUCCESS) {
         switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session),
 			SWITCH_LOG_ERROR, "Failed to add media bug!\n");
-		return;
+        goto end;
 	}
 
 	/* Set the avmd tag to detect an existing avmd media bug */
@@ -637,14 +932,12 @@ SWITCH_STANDARD_APP(avmd_start_app)
     switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO,
             "Avmd on channel [%s] started!\n", switch_channel_get_name(channel));
 #endif
+
+end:
+    switch_mutex_unlock(avmd_globals.mutex);
+    return;
 }
 
-/*! \brief FreeSWITCH application handler function.
- *  This handles avmd stop request calls made from applications
- *  such as LUA and the dialplan.
- *
- * @return Success or failure of the function.
- */
 SWITCH_STANDARD_APP(avmd_stop_app)
 {
 	switch_media_bug_t  *bug;
@@ -691,9 +984,6 @@ SWITCH_STANDARD_APP(avmd_stop_app)
 
 /*! \brief FreeSWITCH application handler function.
  *  This handles calls made from applications such as LUA and the dialplan.
- *
- * @author Eric des Courtis
- * @return Success or failure of the function.
  */
 SWITCH_STANDARD_APP(avmd_start_function)
 {
@@ -730,36 +1020,35 @@ SWITCH_STANDARD_APP(avmd_start_function)
     avmd_start_app(session, NULL);
 }
 
-/*! \brief Called when the module shuts down.
- *
- * @author Eric des Courtis
- * @return The success or failure of the function.
- */
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_avmd_shutdown)
 {
-#ifdef AVMD_FAST_MATH
 	int res;
-#endif
+
+    switch_mutex_lock(avmd_globals.mutex);
 
     avmd_unregister_all_events();
-
-#ifdef AVMD_FAST_MATH
-	res = destroy_fast_acosf();
-    if (res != 0) {
-        switch (res) {
-            case -1:
-	            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
-		            "Failed unmap arc cosine table\n");
+	
+    if (avmd_globals.settings.fast_math == 1) {
+	    res = destroy_fast_acosf();
+        if (res != 0) {
+            switch (res) {
+                case -1:
+	                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+		                "Failed unmap arc cosine table\n");
+                    break;
+                case -2:
+	                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+		                "Failed closing arc cosine table\n");
+                    break;
+                default:
                 break;
-            case -2:
-	            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
-		            "Failed closing arc cosine table\n");
-                break;
-            default:
-            break;
+            }
         }
     }
-#endif
+
+	switch_event_unbind_callback(avmd_reloadxml_event_handler);
+
+    switch_mutex_unlock(avmd_globals.mutex);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE,
 		"Advanced voicemail detection disabled\n");
@@ -771,23 +1060,21 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_avmd_shutdown)
  *  This function handles API calls such as the ones
  *  from mod_event_socket and in some cases
  *  scripts such as LUA scripts.
- *
- *  @author Eric des Courtis
- *  @return The success or failure of the function.
  */
 SWITCH_STANDARD_API(avmd_api_main)
 {
 	switch_media_bug_t  *bug;
 	avmd_session_t      *avmd_session;
 	switch_channel_t    *channel;
-	int     argc;
-	char    *argv[AVMD_PARAMS];
-	char    *ccmd = NULL;
-	char    *uuid, *uuid_dup;
-	char    *command;
-    switch_core_media_flag_t flags = 0;
-	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	switch_core_session_t   *fs_session = NULL;
+    int         argc;
+    const char  *uuid, *uuid_dup;
+    const char  *command;
+    char        *dupped = NULL, *argv[AVMD_PARAMS_MAX + 1] = { 0 };
+    switch_core_media_flag_t    flags = 0;
+    switch_status_t             status = SWITCH_STATUS_SUCCESS;
+    switch_core_session_t       *fs_session = NULL;
+
+    switch_mutex_lock(avmd_globals.mutex);
 
 	/* No command? Display usage */
 	if (zstr(cmd)) {
@@ -797,17 +1084,121 @@ SWITCH_STANDARD_API(avmd_api_main)
 	}
 
 	/* Duplicated contents of original string */
-	ccmd = strdup(cmd);
+	dupped = strdup(cmd);
+	switch_assert(dupped);
 	/* Separate the arguments */
-	argc = switch_separate_string(ccmd, ' ', argv, AVMD_PARAMS);
+	argc = switch_separate_string((char*)dupped, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 
 	/* If we don't have the expected number of parameters
 	* display usage */
-	if (argc != AVMD_PARAMS) {
-		stream->write_function(stream, "-ERR, avmd takes [%u] parameters!\n"
-                "-USAGE: %s\n\n", AVMD_PARAMS, AVMD_SYNTAX);
+	if (argc < AVMD_PARAMS_MIN) {
+		stream->write_function(stream, "-ERR, avmd takes [%u] min and [%u] max parameters!\n"
+                "-USAGE: %s\n\n", AVMD_PARAMS_MIN, AVMD_PARAMS_MAX, AVMD_SYNTAX);
 		goto end;
 	}
+
+    command = argv[0];
+    if (strcasecmp(command, "reload") == 0) {
+        if (avmd_load_xml_configuration(NULL) != SWITCH_STATUS_SUCCESS)
+        {
+            stream->write_function(stream, "-ERR, couldn't reload XML configuration\n");
+            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+                "Couldn't reload XML configuration\n");
+        }
+        if (avmd_globals.settings.report_status == 1) {
+            stream->write_function(stream, "+OK\n XML reloaded\n\n");
+            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,
+                    "XML reloaded\n");
+        }
+        goto end;
+    }
+    if (strcasecmp(command, "load") == 0) {
+        if (argc != 2) {
+            stream->write_function(stream, "-ERR, load command takes 1 parameter!\n"
+                "-USAGE: %s\n\n", AVMD_SYNTAX);
+            goto end;
+        }
+        command = argv[1];
+        if (strcasecmp(command, "inbound") == 0) {
+            status = avmd_load_xml_inbound_configuration(NULL);
+            if (avmd_globals.settings.report_status == 1) {
+                if (status != SWITCH_STATUS_SUCCESS) {
+                    stream->write_function(stream, "-ERR, couldn't load XML configuration\n");
+                    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+                        "Couldn't load XML configuration\n");
+                } else {
+                    stream->write_function(stream, "+OK\n inbound "
+                            "XML configuration loaded\n\n");
+                    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,
+                            "Inbound XML configuration loaded\n");
+                }
+                goto end;
+            }
+        } else if (strcasecmp(command, "outbound") == 0) {
+            status = avmd_load_xml_outbound_configuration(NULL);
+            if (avmd_globals.settings.report_status == 1) {
+                if (status != SWITCH_STATUS_SUCCESS) {
+                    stream->write_function(stream, "-ERR, couldn't load XML configuration\n");
+                    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+                        "Couldn't load XML configuration\n");
+                } else {
+                    stream->write_function(stream, "+OK\n outbound "
+                            "XML configuration loaded\n\n");
+                    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,
+                            "Outbound XML configuration loaded\n");
+                }
+                goto end;
+            }
+        } else {
+            stream->write_function(stream, "-ERR, load command: bad syntax!\n"
+                "-USAGE: %s\n\n", AVMD_SYNTAX);
+        }
+        goto end;
+    }
+    if (strcasecmp(command, "set") == 0) {
+        if (argc != 2) {
+            stream->write_function(stream, "-ERR, set command takes 1 parameter!\n"
+                "-USAGE: %s\n\n", AVMD_SYNTAX);
+            goto end;
+        }
+        command = argv[1];
+        if (strcasecmp(command, "inbound") == 0) {
+            avmd_set_xml_inbound_configuration(NULL);
+            if (avmd_globals.settings.report_status == 1) {
+                stream->write_function(stream, "+OK\n inbound "
+                        "XML configuration loaded\n\n");
+                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,
+                        "Inbound XML configuration loaded\n");
+            }
+        } else if (strcasecmp(command, "outbound") == 0) {
+            avmd_set_xml_outbound_configuration(NULL);
+            if (avmd_globals.settings.report_status == 1) {
+                stream->write_function(stream, "+OK\n outbound "
+                        "XML configuration loaded\n\n");
+                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,
+                        "Outbound XML configuration loaded\n");
+            }
+        } else if (strcasecmp(command, "default") == 0) {
+            avmd_set_xml_default_configuration(NULL);
+            if (avmd_globals.settings.report_status == 1) {
+                stream->write_function(stream, "+OK\n reset "
+                        "to factory settings\n\n");
+                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,
+                        "Reset to factory settings\n");
+            }
+        } else {
+            stream->write_function(stream, "-ERR, set command: bad syntax!\n"
+                "-USAGE: %s\n\n", AVMD_SYNTAX);
+        }
+        goto end;
+    }
+    if (strcasecmp(command, "show") == 0) {
+        avmd_show(stream, NULL);
+        if (avmd_globals.settings.report_status == 1) {
+            stream->write_function(stream, "+OK\n show\n\n");
+        }
+        goto end;
+    }
 
 	uuid = argv[0];
 	command = argv[1];
@@ -843,22 +1234,21 @@ SWITCH_STANDARD_API(avmd_api_main)
 			switch_channel_set_private(channel, "_avmd_", NULL);
 			switch_core_media_bug_remove(fs_session, &bug);
             avmd_fire_event(AVMD_EVENT_SESSION_STOP, fs_session, 0, 0);
-#ifdef AVMD_REPORT_STATUS
-			stream->write_function(stream, "+OK\n [%s] [%s] stopped\n\n",
-                    uuid_dup, switch_channel_get_name(channel));
-		    switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_session), SWITCH_LOG_INFO,
-			    "Avmd on channel [%s] stopped!\n", switch_channel_get_name(channel));
-#endif
+            if (avmd_globals.settings.report_status == 1) {
+			    stream->write_function(stream, "+OK\n [%s] [%s] stopped\n\n",
+                        uuid_dup, switch_channel_get_name(channel));
+		        switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_session), SWITCH_LOG_INFO,
+			        "Avmd on channel [%s] stopped!\n", switch_channel_get_name(channel));
+            }
 			goto end;
 		}
-
-#ifdef AVMD_REPORT_STATUS
-		/* We have already started */
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_session),
-                SWITCH_LOG_ERROR, "Avmd already started!\n");
-		stream->write_function(stream, "-ERR, avmd for FreeSWITCH session [%s]"
-                "\n already started\n\n", uuid);
-#endif
+        if (avmd_globals.settings.report_status == 1) {
+		    /* We have already started */
+		    switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_session),
+                    SWITCH_LOG_ERROR, "Avmd already started!\n");
+		    stream->write_function(stream, "-ERR, avmd for FreeSWITCH session [%s]"
+                    "\n already started\n\n", uuid);
+        }
 		goto end;
 	}
 
@@ -872,27 +1262,25 @@ SWITCH_STANDARD_API(avmd_api_main)
         goto end;
     }
 
-#ifdef AVMD_OUTBOUND_CHANNEL
-    if (SWITCH_CALL_DIRECTION_OUTBOUND != switch_channel_direction(channel)) {
-		stream->write_function(stream, "-ERR, channel for FreeSWITCH session [%s]"
-                "\n is not outbound\n\n", uuid);
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_session), SWITCH_LOG_WARNING,
-			"Channel [%s] is not outbound!\n", switch_channel_get_name(channel));
+    if (avmd_globals.settings.outbound_channnel == 1) {
+        if (SWITCH_CALL_DIRECTION_OUTBOUND != switch_channel_direction(channel)) {
+		    stream->write_function(stream, "-ERR, channel for FreeSWITCH session [%s]"
+                    "\n is not outbound\n\n", uuid);
+		    switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_session), SWITCH_LOG_WARNING,
+			    "Channel [%s] is not outbound!\n", switch_channel_get_name(channel));
+        } else {
+            flags |= SMBF_READ_REPLACE;
+        }
+    } else if (avmd_globals.settings.inbound_channnel == 1) {
+        if (SWITCH_CALL_DIRECTION_INBOUND != switch_channel_direction(channel)) {
+		    stream->write_function(stream, "-ERR, channel for FreeSWITCH session [%s]"
+                    "\n is not inbound\n\n", uuid);
+	    	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_session), SWITCH_LOG_WARNING,
+			    "Channel [%s] is not inbound!\n", switch_channel_get_name(channel));
+        } else {
+            flags |= SMBF_WRITE_REPLACE;
+        }
     } else {
-        flags |= SMBF_READ_REPLACE;
-    }
-#endif
-#ifdef AVMD_INBOUND_CHANNEL
-    if (SWITCH_CALL_DIRECTION_INBOUND != switch_channel_direction(channel)) {
-		stream->write_function(stream, "-ERR, channel for FreeSWITCH session [%s]"
-                "\n is not inbound\n\n", uuid);
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_session), SWITCH_LOG_WARNING,
-			"Channel [%s] is not inbound!\n", switch_channel_get_name(channel));
-    } else {
-        flags |= SMBF_WRITE_REPLACE;
-    }
-#endif
-    if(flags == 0) {
 		stream->write_function(stream, "-ERR, can't set direction for channel [%s]\n"
                " for FreeSWITCH session [%s]. Please check avmd configuration\n\n",
                switch_channel_get_name(channel), uuid);
@@ -902,17 +1290,17 @@ SWITCH_STANDARD_API(avmd_api_main)
     }
 
 
-#ifdef AVMD_OUTBOUND_CHANNEL
-    if (switch_channel_test_flag(channel, CF_MEDIA_SET) == 0) {
-		stream->write_function(stream, "-ERR, channel [%s] for FreeSWITCH session [%s]"
-                "\n has no read codec assigned yet. Please try again.\n\n",
-                switch_channel_get_name(channel), uuid);
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_session), SWITCH_LOG_ERROR,
-			"Failed to start session. Channel [%s] has no codec assigned yet."
-            " Please try again\n", switch_channel_get_name(channel));
-        goto end;
+    if (avmd_globals.settings.outbound_channnel == 1) {
+        if (switch_channel_test_flag(channel, CF_MEDIA_SET) == 0) {
+		    stream->write_function(stream, "-ERR, channel [%s] for FreeSWITCH session [%s]"
+                    "\n has no read codec assigned yet. Please try again.\n\n",
+                    switch_channel_get_name(channel), uuid);
+		    switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_session), SWITCH_LOG_ERROR,
+			    "Failed to start session. Channel [%s] has no codec assigned yet."
+                " Please try again\n", switch_channel_get_name(channel));
+            goto end;
+        }
     }
-#endif
 
 	/* If we don't see the expected start exit */
 	if (strcasecmp(command, "start") != 0) {
@@ -925,7 +1313,7 @@ SWITCH_STANDARD_API(avmd_api_main)
 	* use in the callback routine and to store state information */
     avmd_session = (avmd_session_t *) switch_core_session_alloc(
                                             fs_session, sizeof(avmd_session_t));
-    status = init_avmd_session_data(avmd_session, fs_session);
+    status = init_avmd_session_data(avmd_session, fs_session, NULL);
     if (status != SWITCH_STATUS_SUCCESS) {
 		stream->write_function(stream, "-ERR, failed to initialize avmd session\n"
                 " for FreeSWITCH session [%s]\n", uuid);
@@ -985,27 +1373,27 @@ SWITCH_STANDARD_API(avmd_api_main)
 
 	/* OK */
     avmd_fire_event(AVMD_EVENT_SESSION_START, fs_session, 0, 0);
-#ifdef AVMD_REPORT_STATUS
-	stream->write_function(stream, "+OK\n [%s] [%s] started!\n\n",
-            uuid, switch_channel_get_name(channel));
-    switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_session), SWITCH_LOG_INFO,
-            "Avmd on channel [%s] started!\n", switch_channel_get_name(channel));
-    switch_assert(status == SWITCH_STATUS_SUCCESS);
-#endif
+    if (avmd_globals.settings.report_status == 1) {
+	    stream->write_function(stream, "+OK\n [%s] [%s] started!\n\n",
+                uuid, switch_channel_get_name(channel));
+        switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_session), SWITCH_LOG_INFO,
+                "Avmd on channel [%s] started!\n", switch_channel_get_name(channel));
+        switch_assert(status == SWITCH_STATUS_SUCCESS);
+    }
 end:
 
 	if (fs_session) {
 		switch_core_session_rwunlock(fs_session);
 	}
 
-	switch_safe_free(ccmd);
+	switch_safe_free(dupped);
+
+    switch_mutex_unlock(avmd_globals.mutex);
 
 	return SWITCH_STATUS_SUCCESS;
 }
 
 /*! \brief Process one frame of data with avmd algorithm.
- * @author Eric des Courtis
- * @par Modifications: Piotr Gregor
  * @param session An avmd session.
  * @param frame An audio frame.
  */
@@ -1088,17 +1476,20 @@ static void avmd_process(avmd_session_t *s, switch_frame_t *frame)
                 }
 
                 /* saturate */
-                if (omega < -0.9999)
+                if (omega < -0.9999) {
                     omega = -0.9999;
-                if (omega > 0.9999)
+                }
+                if (omega > 0.9999) {
                     omega = 0.9999;
+                }
 
                 /* append */
 				APPEND_SMA_VAL(&s->sma_b, omega);
 				APPEND_SMA_VAL(&s->sqa_b, omega * omega);
 #ifdef AVMD_REQUIRE_CONTINUOUS_STREAK
-                if (s->samples_streak > 0)
+                if (s->samples_streak > 0) {
                     --s->samples_streak;
+                }
 #endif
 				/* calculate variance (biased estimator) */
 				v = s->sqa_b.sma - (s->sma_b.sma * s->sma_b.sma);
@@ -1171,6 +1562,13 @@ done:
     return;
 }
 
+static void
+avmd_reloadxml_event_handler(switch_event_t *event)
+{
+    avmd_load_xml_configuration(avmd_globals.mutex);
+}
+
+
 /* For Emacs:
  * Local Variables:
  * mode:c
@@ -1181,4 +1579,3 @@ done:
  * For VIM:
  * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet:
  */
-

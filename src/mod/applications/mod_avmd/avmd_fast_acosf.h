@@ -1,7 +1,9 @@
 /*
  * @brief   Fast arithmetic using precomputed arc cosine table.
- * @author  Eric des Courtis
- * @par     Modifications: Piotr Gregor < piotrek.gregor gmail.com >
+ * Contributor(s):
+ *
+ * Eric des Courtis <eric.des.courtis@benbria.com>
+ * Piotr Gregor <piotrek.gregor gmail.com>
  */
 
 
@@ -14,8 +16,6 @@
 
 /*! \brief Arc cosine table initialization.
  *
- * @author Eric des Courtis
- * @par    Modifications: Piotr Gregor < piotrek.gregor gmail.com >
  * @return 0 on success, negative value otherwise:
  *          -1 can't access arc cos table with error != NOENT,
  *          -2 table creation failed (compute_table)
@@ -26,8 +26,6 @@ extern int init_fast_acosf(void);
 
 /*! \brief Arc cosine table deinitialization.
  *
- * @author Eric des Courtis
- * @par    Modifications: Piotr Gregor < piotrek.gregor gmail.com >
  * @return 0 on success, negative value otherwise:
  *          -1 munmap failed,
  *          -2 close failed
@@ -36,14 +34,11 @@ extern int destroy_fast_acosf(void);
 
 /*! \brief  Return arc cos for this argument.
  * @details Uses previously created and mmapped file.
- * @author  Eric des Courtis
  */
 extern float fast_acosf(float x);
 
 /*! \brief Arc cosine table creation.
  *
- * @author Eric des Courtis
- * @par    Modifications: Piotr Gregor < piotrek.gregor gmail.com >
  * @return 0 on success, negative value otherwise:
  *          -1 fwrite failed,
  *          -2 fclose failed

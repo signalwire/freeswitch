@@ -1,8 +1,10 @@
 /*
  * @brief   SMA buffer.
  *
- * @author Eric des Courtis
- * @par    Modifications: Piotr Gregor < piotrek.gregor gmail.com >
+ * Contributor(s):
+ *
+ * Eric des Courtis <eric.des.courtis@benbria.com>
+ * Piotr Gregor <piotrek.gregor gmail.com>
  */
 
 
