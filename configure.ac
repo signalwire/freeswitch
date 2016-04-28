@@ -377,6 +377,16 @@ if test "$ax_cv_c_compiler_vendor" = "gnu"; then
         [ac_cv_gcc_supports_w_no_unused_result=no])])
   CFLAGS="$saved_CFLAGS"
   AC_MSG_RESULT($ac_cv_gcc_supports_w_no_unused_result)
+
+  saved_CFLAGS="$CFLAGS"
+  AC_CACHE_CHECK([whether compiler supports -Wno-misleading-indentation],
+    [ac_cv_gcc_supports_w_no_misleading_indentation], [
+      CFLAGS="$CFLAGS -Wno-misleading-indentation -Wno-error=misleading-indentation"
+      AC_TRY_COMPILE([],[return 0;],
+        [ac_cv_gcc_supports_w_no_misleading_indentation=yes],
+        [ac_cv_gcc_supports_w_no_misleading_indentation=no])])
+  CFLAGS="$saved_CFLAGS"
+  AC_MSG_RESULT($ac_cv_gcc_supports_w_no_misleading_indentation)
 fi
 
 # tweak compiler specific flags
@@ -412,6 +422,9 @@ elif test "x${ax_cv_c_compiler_vendor}" = "xgnu" ; then
     if test "$ac_cv_gcc_supports_w_no_unused_result" = yes; then
       APR_ADDTO(SWITCH_AM_CFLAGS, -Werror)
       APR_ADDTO(SWITCH_AM_CFLAGS, -Wno-unused-result)
+    fi
+    if test "$ac_cv_gcc_supports_w_no_misleading_indentation" = yes; then
+      APR_ADDTO(SWITCH_AM_CFLAGS, -Wno-misleading-indentation)
     fi
     if test "${enable_64}" = "yes"; then
 	case "$host" in
