@@ -483,7 +483,7 @@ avmd_parse_u8_user_input(const char *input, uint8_t *output,
     if (helper < min || helper > UINT8_MAX || helper > max || (pCh == input) || (*pCh != '\0')) {
         return -1;
     }
-    *output= helper;
+    *output = (uint8_t) helper;
     return 0;
 }
 
@@ -500,7 +500,7 @@ avmd_parse_u16_user_input(const char *input, uint16_t *output,
     if (helper < min || helper > UINT16_MAX || helper > max || (pCh == input) || (*pCh != '\0')) {
         return -1;
     }
-    *output= helper;
+    *output = (uint16_t) helper;
     return 0;
 }
 
@@ -689,8 +689,10 @@ avmd_show(switch_stream_handle_t *stream, switch_mutex_t *mutex)
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_avmd_load)
 {
+#ifndef WIN32
     char    err[150];
     int     ret;
+#endif
 
 	switch_application_interface_t *app_interface;
 	switch_api_interface_t *api_interface;
@@ -727,6 +729,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_avmd_load)
 		/* Not so severe to prevent further loading, well - it depends, anyway */
 	}
 
+#ifndef WIN32
     if (avmd_globals.settings.fast_math == 1) {
         ret = init_fast_acosf();
         if (ret != 0) {
@@ -768,6 +771,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_avmd_load)
             "is [%s]\n", ACOS_TABLE_FILENAME
 		    );
     }
+#endif
 
 	SWITCH_ADD_APP(app_interface, "avmd_start","Start avmd detection",
             "Start avmd detection", avmd_start_app, "", SAF_NONE);
@@ -1022,12 +1026,15 @@ SWITCH_STANDARD_APP(avmd_start_function)
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_avmd_shutdown)
 {
+#ifndef WIN32
 	int res;
+#endif
 
     switch_mutex_lock(avmd_globals.mutex);
 
     avmd_unregister_all_events();
-	
+
+#ifndef WIN32
     if (avmd_globals.settings.fast_math == 1) {
 	    res = destroy_fast_acosf();
         if (res != 0) {
@@ -1045,6 +1052,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_avmd_shutdown)
             }
         }
     }
+#endif
 
 	switch_event_unbind_callback(avmd_reloadxml_event_handler);
 
@@ -1494,13 +1502,13 @@ static void avmd_process(avmd_session_t *s, switch_frame_t *frame)
 				/* calculate variance (biased estimator) */
 				v = s->sqa_b.sma - (s->sma_b.sma * s->sma_b.sma);
 #ifdef AVMD_DEBUG
-    #ifdef  AVMD_FAST_MATH
+    #if !defined(WIN32) && defined(AVMD_FAST_MATH)
                 f =  0.5 * (double) fast_acosf((float)omega);
                 sma_digital_freq =  0.5 * (double) fast_acosf((float)s->sma_b.sma);
     #else
                 f = 0.5 * acos(omega);
                 sma_digital_freq =  0.5 * acos(s->sma_b.sma);
-    #endif /* AVMD_FAST_MATH */
+    #endif /* !WIN32 && AVMD_FAST_MATH */
     #ifdef AVMD_REQUIRE_CONTINUOUS_STREAK
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(s->session), SWITCH_LOG_DEBUG,
                     "<<< AVMD v[%.10f]\tomega[%f]\tf[%f] [%f]Hz\t\tsma[%f][%f]Hz\t\tsqa[%f]\t"
@@ -1527,11 +1535,11 @@ static void avmd_process(avmd_session_t *s, switch_frame_t *frame)
 #else
 			if (v < VARIANCE_THRESHOLD && (s->sma_b.lpos > 1)) {
 #endif
-    #ifdef  AVMD_FAST_MATH
+    #if !defined(WIN32) && defined(AVMD_FAST_MATH)
                 sma_digital_freq =  0.5 * (double) fast_acosf((float)s->sma_b.sma);
     #else
                 sma_digital_freq =  0.5 * acos(s->sma_b.sma);
-    #endif /* AVMD_FAST_MATH */
+    #endif /* !WIN32 && AVMD_FAST_MATH */
 
 				switch_channel_set_variable_printf(channel, "avmd_total_time",
                         "[%d]", (int)(switch_micro_time_now() - s->start_time) / 1000);
