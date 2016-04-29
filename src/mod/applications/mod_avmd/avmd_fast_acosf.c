@@ -1,3 +1,6 @@
+#ifndef WIN32   /* currently we support fast acosf computation only on UNIX/Linux */
+
+
 #include <switch.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -312,4 +315,5 @@ dump_table_summary(void)
     printf("i [%d] from float [%f]\n", index_from_float(f), f);
 }
 
-#endif /* FAST_ACOSF_TESTING */
+#endif  /* FAST_ACOSF_TESTING */
+#endif  /* WIN32 */

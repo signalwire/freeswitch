@@ -1,3 +1,4 @@
+#ifndef WIN32   /* currently we support fast acosf computation only on UNIX/Linux */
 /*
  * @brief   Fast arithmetic using precomputed arc cosine table.
  * Contributor(s):
@@ -46,3 +47,4 @@ extern float fast_acosf(float x);
 extern int compute_table(void);
 
 #endif /* __AVMD_FAST_ACOSF_H__ */
+#endif
