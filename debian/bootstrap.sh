@@ -373,7 +373,7 @@ Depends: \${misc:Depends}, freeswitch (= \${binary:Version})
 Recommends:
  freeswitch-doc (= \${binary:Version}),
  freeswitch-mod-commands (= \${binary:Version}),
- freeswitch-init (= \${binary:Version}),
+ freeswitch-init,
  freeswitch-lang (= \${binary:Version}),
  freeswitch-timezones (= \${binary:Version}),
  freeswitch-music,
@@ -407,7 +407,7 @@ Depends: \${misc:Depends}, freeswitch (= \${binary:Version}),
  freeswitch-mod-console (= \${binary:Version}),
  freeswitch-mod-say-en (= \${binary:Version})
 Recommends:
- freeswitch-init (= \${binary:Version}),
+ freeswitch-init,
  freeswitch-lang (= \${binary:Version}),
  freeswitch-timezones (= \${binary:Version}),
  freeswitch-meta-codecs (= \${binary:Version}),
@@ -429,6 +429,7 @@ Description: Cross-Platform Scalable Multi-Protocol Soft Switch
 Package: freeswitch-meta-vanilla
 Architecture: any
 Depends: \${misc:Depends}, freeswitch (= \${binary:Version}),
+ freeswitch-init,
  freeswitch-mod-console (= \${binary:Version}),
  freeswitch-mod-logfile (= \${binary:Version}),
  freeswitch-mod-enum (= \${binary:Version}),
@@ -462,7 +463,6 @@ Depends: \${misc:Depends}, freeswitch (= \${binary:Version}),
  freeswitch-mod-lua (= \${binary:Version}),
  freeswitch-mod-say-en (= \${binary:Version}),
 Recommends:
- freeswitch-init (= \${binary:Version}),
  freeswitch-lang (= \${binary:Version}),
  freeswitch-timezones (= \${binary:Version}),
  freeswitch-music,
@@ -478,7 +478,7 @@ Package: freeswitch-meta-sorbet
 Architecture: any
 Depends: \${misc:Depends}, freeswitch (= \${binary:Version}),
 Recommends:
- freeswitch-init (= \${binary:Version}),
+ freeswitch-init,
  freeswitch-lang (= \${binary:Version}),
  freeswitch-timezones (= \${binary:Version}),
  freeswitch-meta-codecs (= \${binary:Version}),
@@ -510,7 +510,6 @@ Recommends:
  freeswitch-mod-lcr (= \${binary:Version}),
  freeswitch-mod-nibblebill (= \${binary:Version}),
  freeswitch-mod-oreka (= \${binary:Version}),
- freeswitch-mod-random (= \${binary:Version}),
  freeswitch-mod-redis (= \${binary:Version}),
  freeswitch-mod-rss (= \${binary:Version}),
  freeswitch-mod-sms (= \${binary:Version}),
@@ -529,7 +528,6 @@ Recommends:
  freeswitch-mod-pocketsphinx (= \${binary:Version}),
  freeswitch-mod-tts-commandline (= \${binary:Version}),
  freeswitch-mod-dialplan-xml (= \${binary:Version}),
- freeswitch-mod-html5 (= \${binary:Version}),
  freeswitch-mod-loopback (= \${binary:Version}),
  freeswitch-mod-rtmp (= \${binary:Version}),
  freeswitch-mod-skinny (= \${binary:Version}),
@@ -561,8 +559,7 @@ Description: Cross-Platform Scalable Multi-Protocol Soft Switch
 Package: freeswitch-meta-all
 Architecture: any
 Depends: \${misc:Depends}, freeswitch (= \${binary:Version}),
-Recommends:
- freeswitch-init (= \${binary:Version}),
+ freeswitch-init,
  freeswitch-lang (= \${binary:Version}),
  freeswitch-timezones (= \${binary:Version}),
  freeswitch-meta-codecs (= \${binary:Version}),
@@ -594,17 +591,14 @@ Recommends:
  freeswitch-mod-hash (= \${binary:Version}),
  freeswitch-mod-httapi (= \${binary:Version}),
  freeswitch-mod-http-cache (= \${binary:Version}),
- freeswitch-mod-ladspa (= \${binary:Version}),
  freeswitch-mod-lcr (= \${binary:Version}),
  freeswitch-mod-memcache (= \${binary:Version}),
  freeswitch-mod-nibblebill (= \${binary:Version}),
  freeswitch-mod-oreka (= \${binary:Version}),
- freeswitch-mod-random (= \${binary:Version}),
  freeswitch-mod-redis (= \${binary:Version}),
  freeswitch-mod-rss (= \${binary:Version}),
  freeswitch-mod-sms (= \${binary:Version}),
  freeswitch-mod-snapshot (= \${binary:Version}),
- freeswitch-mod-snipe-hunt (= \${binary:Version}),
  freeswitch-mod-snom (= \${binary:Version}),
  freeswitch-mod-sonar (= \${binary:Version}),
  freeswitch-mod-soundtouch (= \${binary:Version}),
@@ -613,7 +607,6 @@ Recommends:
  freeswitch-mod-stress (= \${binary:Version}),
  freeswitch-mod-translate (= \${binary:Version}),
  freeswitch-mod-valet-parking (= \${binary:Version}),
- freeswitch-mod-vmd (= \${binary:Version}),
  freeswitch-mod-voicemail (= \${binary:Version}),
  freeswitch-mod-voicemail-ivr (= \${binary:Version}),
  freeswitch-mod-flite (= \${binary:Version}),
@@ -624,9 +617,7 @@ Recommends:
  freeswitch-mod-dialplan-directory (= \${binary:Version}),
  freeswitch-mod-dialplan-xml (= \${binary:Version}),
  freeswitch-mod-ldap (= \${binary:Version}),
- freeswitch-mod-alsa (= \${binary:Version}),
  freeswitch-mod-dingaling (= \${binary:Version}),
- freeswitch-mod-html5 (= \${binary:Version}),
  freeswitch-mod-loopback (= \${binary:Version}),
  freeswitch-mod-portaudio (= \${binary:Version}),
  freeswitch-mod-rtmp (= \${binary:Version}),
@@ -635,16 +626,12 @@ Recommends:
  freeswitch-mod-sofia (= \${binary:Version}),
  freeswitch-mod-cdr-csv (= \${binary:Version}),
  freeswitch-mod-cdr-mongodb (= \${binary:Version}),
- freeswitch-mod-cdr-pg-csv (= \${binary:Version}),
  freeswitch-mod-cdr-sqlite (= \${binary:Version}),
  freeswitch-mod-erlang-event (= \${binary:Version}),
  freeswitch-mod-event-multicast (= \${binary:Version}),
  freeswitch-mod-event-socket (= \${binary:Version}),
- freeswitch-mod-event-test (= \${binary:Version}),
- freeswitch-mod-event-zmq (= \${binary:Version}),
  freeswitch-mod-json-cdr (= \${binary:Version}),
  freeswitch-mod-kazoo (= \${binary:Version}),
- freeswitch-mod-radius-cdr (= \${binary:Version}),
  freeswitch-mod-snmp (= \${binary:Version}),
  freeswitch-mod-local-stream (= \${binary:Version}),
  freeswitch-mod-native-file (= \${binary:Version}),
@@ -666,7 +653,9 @@ Recommends:
  freeswitch-mod-xml-curl (= \${binary:Version}),
  freeswitch-mod-xml-rpc (= \${binary:Version}),
  freeswitch-mod-xml-scgi (= \${binary:Version}),
+Recommends:
 Suggests:
+ freeswitch-mod-vmd (= \${binary:Version}),
  freeswitch-mod-vlc (= \${binary:Version}),
 Description: Cross-Platform Scalable Multi-Protocol Soft Switch
  $(debian_wrap "${fs_description}")
@@ -692,7 +681,6 @@ Depends: \${misc:Depends}, freeswitch (= \${binary:Version}),
  freeswitch-mod-silk (= \${binary:Version}),
  freeswitch-mod-spandsp (= \${binary:Version}),
  freeswitch-mod-theora (= \${binary:Version}),
- freeswitch-mod-vp8 (= \${binary:Version})
 Suggests:
  freeswitch-mod-ilbc (= \${binary:Version}),
  freeswitch-mod-siren (= \${binary:Version})

@@ -377,6 +377,16 @@ if test "$ax_cv_c_compiler_vendor" = "gnu"; then
         [ac_cv_gcc_supports_w_no_unused_result=no])])
   CFLAGS="$saved_CFLAGS"
   AC_MSG_RESULT($ac_cv_gcc_supports_w_no_unused_result)
+
+  saved_CFLAGS="$CFLAGS"
+  AC_CACHE_CHECK([whether compiler supports -Wno-misleading-indentation],
+    [ac_cv_gcc_supports_w_no_misleading_indentation], [
+      CFLAGS="$CFLAGS -Wno-misleading-indentation -Wno-error=misleading-indentation"
+      AC_TRY_COMPILE([],[return 0;],
+        [ac_cv_gcc_supports_w_no_misleading_indentation=yes],
+        [ac_cv_gcc_supports_w_no_misleading_indentation=no])])
+  CFLAGS="$saved_CFLAGS"
+  AC_MSG_RESULT($ac_cv_gcc_supports_w_no_misleading_indentation)
 fi
 
 # tweak compiler specific flags
@@ -412,6 +422,9 @@ elif test "x${ax_cv_c_compiler_vendor}" = "xgnu" ; then
     if test "$ac_cv_gcc_supports_w_no_unused_result" = yes; then
       APR_ADDTO(SWITCH_AM_CFLAGS, -Werror)
       APR_ADDTO(SWITCH_AM_CFLAGS, -Wno-unused-result)
+    fi
+    if test "$ac_cv_gcc_supports_w_no_misleading_indentation" = yes; then
+      APR_ADDTO(SWITCH_AM_CFLAGS, -Wno-misleading-indentation)
     fi
     if test "${enable_64}" = "yes"; then
 	case "$host" in
@@ -806,7 +819,7 @@ if test "x$have_libz" = "xyes"  ; then
 APR_ADDTO([PLATFORM_CORE_LIBS], [-lz])
 fi
 
-PKG_CHECK_MODULES([MPG123], [libmpg123 >= 1.20.1],[
+PKG_CHECK_MODULES([MPG123], [libmpg123 >= 1.16.0],[
   AM_CONDITIONAL([HAVE_MPG123],[true])],[
   AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_MPG123],[false])])
 
@@ -1287,7 +1300,7 @@ PKG_CHECK_MODULES([SNDFILE], [sndfile >= 1.0.20],[
   AM_CONDITIONAL([HAVE_SNDFILE],[true])],[
   AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_SNDFILE],[false])])
 
-PKG_CHECK_MODULES([MPG123], [libmpg123 >= 1.20.1],[
+PKG_CHECK_MODULES([MPG123], [libmpg123 >= 1.16.0],[
   AM_CONDITIONAL([HAVE_MPG123],[true])],[
   AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_MPG123],[false])])
 
@@ -1366,7 +1379,7 @@ PKG_CHECK_MODULES([OPUS], [opus >= 1.1],[
   AM_CONDITIONAL([HAVE_OPUS],[true])],[
   AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_OPUS],[false])])
 
-PKG_CHECK_MODULES([SOUNDTOUCH], [soundtouch >= 1.7.1],[
+PKG_CHECK_MODULES([SOUNDTOUCH], [soundtouch >= 1.7.0],[
   AM_CONDITIONAL([HAVE_SOUNDTOUCH],[true])],[
   AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_SOUNDTOUCH],[false])])
 

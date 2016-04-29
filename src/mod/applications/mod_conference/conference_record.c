@@ -60,6 +60,11 @@ void conference_record_launch_thread(conference_obj_t *conference, char *path, i
 		return;
 	}
 
+	if (conference->conference_video_mode == CONF_VIDEO_MODE_PASSTHROUGH) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Video Passthru enabled, recording not permitted.\n");
+		return;
+	}
+
 	if (conference_utils_test_flag(conference, CFLAG_PERSONAL_CANVAS)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Personal Canvas enabled, recording not permitted.\n");
 		return;
@@ -229,7 +234,7 @@ void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *thread, v
 
 	flags = SWITCH_FILE_FLAG_WRITE | SWITCH_FILE_DATA_SHORT;
 
-	if (conference->members_with_video && conference_utils_test_flag(conference, CFLAG_TRANSCODE_VIDEO)) {
+	if (conference_utils_test_flag(conference, CFLAG_TRANSCODE_VIDEO)) {
 		flags |= SWITCH_FILE_FLAG_VIDEO;
 		if (canvas) {
 			char *orig_path = rec->path;

@@ -166,11 +166,11 @@ static inline int sem_destroy(sem_t * sem)
 #define sem_wait(sem) (semaphore_wait(*sem) )
 #define sem_post(sem) semaphore_signal(*sem)
 #define sem_destroy(sem) semaphore_destroy(mach_task_self(),*sem)
-#define thread_sleep(nms) /* { struct timespec ts;ts.tv_sec=0; ts.tv_nsec = 1000*nms;nanosleep(&ts, NULL);} */
+#define thread_sleep(nms) { struct timespec ts;ts.tv_sec=0; ts.tv_nsec = 1000*nms;nanosleep(&ts, NULL);}
 #else
 #include <unistd.h>
 #include <sched.h>
-#define thread_sleep(nms) sched_yield();/* {struct timespec ts;ts.tv_sec=0; ts.tv_nsec = 1000*nms;nanosleep(&ts, NULL);} */
+#define thread_sleep(nms) {struct timespec ts;ts.tv_sec=0; ts.tv_nsec = 1000*nms;nanosleep(&ts, NULL);}
 #endif
 /* Not Windows. Assume pthreads */
 
@@ -213,7 +213,7 @@ static INLINE void sync_read(pthread_mutex_t *const mutex, int mb_col,
                              const int nsync) {
     while (mb_col > (protected_read(mutex, last_row_current_mb_col) - nsync)) {
         x86_pause_hint();
-        thread_sleep(0);
+        thread_sleep(1);
     }
 }
 

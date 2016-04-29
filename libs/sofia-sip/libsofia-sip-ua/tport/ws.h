@@ -25,6 +25,17 @@
 //#include "sha1.h"
 #include <openssl/ssl.h>
 
+#if defined(_MSC_VER) || defined(__APPLE__) || defined(__FreeBSD__) || (defined(__SVR4) && defined(__sun)) 
+#define __bswap_64(x) \
+  x = (x>>56) | \
+    ((x<<40) & 0x00FF000000000000) | \
+    ((x<<24) & 0x0000FF0000000000) | \
+    ((x<<8)  & 0x000000FF00000000) | \
+    ((x>>8)  & 0x00000000FF000000) | \
+    ((x>>24) & 0x0000000000FF0000) | \
+    ((x>>40) & 0x000000000000FF00) | \
+    (x<<56)
+#endif
 #ifdef _MSC_VER
 #ifndef strncasecmp
 #define strncasecmp _strnicmp
@@ -78,15 +89,17 @@ typedef enum {
 
 typedef struct wsh_s {
 	ws_socket_t sock;
-	char buffer[65536];
-	char wbuffer[65536];
+	char *buffer;
+	char *bbuffer;
+	char *body;
 	char *uri;
 	size_t buflen;
+	size_t bbuflen;
 	ssize_t datalen;
-	ssize_t wdatalen;
 	char *payload;
 	ssize_t plen;
 	ssize_t rplen;
+	ssize_t packetlen;
 	SSL *ssl;
 	int handshake;
 	uint8_t down;

@@ -385,7 +385,7 @@ ssize_t ws_raw_read(wsh_t *wsh, void *data, size_t bytes, int block)
 		}
 	} while (r == -1 && xp_is_blocking(xp_errno()) && wsh->x < 1000);
 	
-	if (wsh->x >= 1000 || (block && wsh->x >= 100)) {
+	if (wsh->x >= 10000 || (block && wsh->x >= 1000)) {
 		r = -1;
 	}
 
@@ -929,7 +929,7 @@ ssize_t ws_read_frame(wsh_t *wsh, ws_opcode_t *oc, uint8_t **data)
 	}
 }
 
-#if 0
+
 ssize_t ws_feed_buf(wsh_t *wsh, void *data, size_t bytes)
 {
 
@@ -937,9 +937,9 @@ ssize_t ws_feed_buf(wsh_t *wsh, void *data, size_t bytes)
 		return -1;
 	}
 
-	memcpy(wsh->wbuffer + wsh->wdatalen, data, bytes);
+	memcpy((unsigned char *)wsh->write_buffer + wsh->write_buffer_len, data, bytes);
 	
-	wsh->wdatalen += bytes;
+	wsh->write_buffer_len += bytes;
 
 	return bytes;
 }
@@ -953,13 +953,13 @@ ssize_t ws_send_buf(wsh_t *wsh, ws_opcode_t oc)
 		return -1;
 	}
 	
-	r = ws_write_frame(wsh, oc, wsh->wbuffer, wsh->wdatalen);
+	r = ws_write_frame(wsh, oc, wsh->write_buffer, wsh->write_buffer_len);
 	
 	wsh->wdatalen = 0;
 
 	return r;
 }
-#endif 
+
 
 ssize_t ws_write_frame(wsh_t *wsh, ws_opcode_t oc, void *data, size_t bytes)
 {

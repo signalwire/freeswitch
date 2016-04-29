@@ -403,8 +403,8 @@ static switch_status_t init_encoder(switch_codec_t *codec)
 	config->g_h = context->codec_settings.video.height;	
 	config->rc_target_bitrate = context->bandwidth;
 	config->g_lag_in_frames = 0;
-	config->kf_max_dist = 2000;
-	config->g_threads = 1;//(cpus > 1) ? 2 : 1;
+	config->kf_max_dist = 360;//2000;
+	config->g_threads = cpus - 1;//(cpus > 1) ? 2 : 1;
 	
 	if (context->is_vp9) {
 		//config->rc_dropframe_thresh = 2;
@@ -435,7 +435,7 @@ static switch_status_t init_encoder(switch_codec_t *codec)
 		config->rc_end_usage = VPX_CBR;
 		//config->g_pass = VPX_RC_ONE_PASS;
 		config->kf_mode = VPX_KF_AUTO;
-		config->kf_max_dist = 1000;
+		config->kf_max_dist = 360;//1000;
 
 		//config->kf_mode = VPX_KF_DISABLED;
 		config->rc_resize_allowed = 1;
@@ -545,7 +545,7 @@ static switch_status_t init_encoder(switch_codec_t *codec)
 				vpx_codec_control(&context->encoder, VP8E_SET_CPUUSED, -8);
 			}
 
-			vpx_codec_control(&context->encoder, VP8E_SET_STATIC_THRESHOLD, 100);
+			vpx_codec_control(&context->encoder, VP8E_SET_STATIC_THRESHOLD, 1000);
 			vpx_codec_control(&context->encoder, VP8E_SET_TOKEN_PARTITIONS, token_parts);
 			vpx_codec_control(&context->encoder, VP9E_SET_TUNE_CONTENT, VP9E_CONTENT_SCREEN);
 
