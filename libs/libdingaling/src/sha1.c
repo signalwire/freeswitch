@@ -62,7 +62,7 @@
 #pragma clang diagnostic ignored "-Wunused-const-variable"
 #endif
 
-#ifndef lint
+#if 0
 static const char rcsid[] =
 	"$Id: sha1.c 680 2003-07-25 21:57:38Z asaddi $";
 #endif /* !lint */
