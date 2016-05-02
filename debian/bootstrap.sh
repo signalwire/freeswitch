@@ -361,11 +361,20 @@ Description: Cross-Platform Scalable Multi-Protocol Soft Switch
 Package: python-esl
 Section: python
 Architecture: any
-Depends: \${shlibs:Depends}, \${misc:Depends}, \${python:Depends}
+Depends: \${shlibs:Depends}, \${misc:Depends}, \${python:Depends}, freeswitch-mod-esl (= \${binary:Version})
 Description: Cross-Platform Scalable Multi-Protocol Soft Switch
  $(debian_wrap "${fs_description}")
  .
- This package contains the FreeSWITCH core library.
+ This package contains the Python binding for FreeSWITCH Event Socket Library (ESL).
+
+Package: libesl-perl
+Section: perl
+Architecture: any
+Depends: \${shlibs:Depends}, \${misc:Depends}, \${perl:Depends}, freeswitch-mod-esl (= \${binary:Version})
+Description: Cross-Platform Scalable Multi-Protocol Soft Switch
+ $(debian_wrap "${fs_description}")
+ .
+ This package contains the Perl binding for FreeSWITCH Event Socket Library (ESL).
 
 Package: freeswitch-meta-bare
 Architecture: any
