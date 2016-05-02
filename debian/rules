@@ -85,6 +85,7 @@ override_dh_auto_configure: .stamp-configure
 	@$(call show_vars)
 	make -j$(NJOBS)
 	make -C libs/esl pymod
+	make -C libs/esl perlmod
 	touch $@
 
 override_dh_auto_build: .stamp-build
@@ -98,6 +99,7 @@ override_dh_strip:
 override_dh_auto_install:
 	dh_auto_install
 	dh_auto_install -- -C libs/esl pymod-install
+	dh_auto_install -- -C libs/esl perlmod-install
 	rm -f debian/tmp/usr/share/freeswitch/grammar/model/communicator/COPYING
 
 override_dh_installinit:
