@@ -1244,6 +1244,7 @@ struct av_file_context {
 	switch_timer_t video_timer;
 	int offset;
 	int audio_start;
+	int aud_ready;
 	int vid_ready;
 	int audio_ready;
 	int closed;
@@ -1861,8 +1862,17 @@ static switch_status_t av_file_write(switch_file_handle_t *handle, void *data, s
 	}
 
 	if (!context->vid_ready) {
-		switch_buffer_zero(context->audio_buffer);
-		return status;
+		if (switch_test_flag(handle, SWITCH_FILE_FLAG_VIDEO)) {
+			switch_buffer_zero(context->audio_buffer);
+			return status;
+		} else if (!context->aud_ready) { // audio only recording
+			int ret = avformat_write_header(context->fc, NULL);
+			if (ret < 0) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error occurred when opening output file: %s\n", get_error_text(ret));
+				return SWITCH_STATUS_FALSE;
+			}
+			context->aud_ready = 1;
+		}
 	}
 
 	if (data && len) {
