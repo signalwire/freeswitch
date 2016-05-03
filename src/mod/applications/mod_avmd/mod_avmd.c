@@ -99,12 +99,14 @@
 #endif
 
 /*! Syntax of the API call. */
-#define AVMD_SYNTAX "<uuid> < start | stop | set [inbound|outbound|default] | load [inbound|outbound] | reload | show>"
+#define AVMD_SYNTAX "<uuid> < start | stop | set [inbound|outbound|default] | load [inbound|outbound] | reload | show >"
 
 /*! Number of expected parameters in api call. */
 #define AVMD_PARAMS_MIN 1u
 #define AVMD_PARAMS_MAX 2u
 
+/* don't forget to update avmd_events_str table
+ * if you modify this */
 enum avmd_event
 {
     AVMD_EVENT_BEEP = 0,
@@ -136,6 +138,7 @@ struct avmd_settings {
     uint8_t     report_status;
     uint8_t     fast_math;
     uint8_t     require_continuous_streak;
+    uint16_t    sample_n_continuous_streak;
     uint16_t    sample_n_to_skeep;
     uint8_t     simplified_estimation;
     uint8_t     inbound_channnel;
@@ -211,7 +214,7 @@ static switch_status_t avmd_load_xml_inbound_configuration(switch_mutex_t *mutex
 /* API [load outbound], reload + set outbound */
 static switch_status_t avmd_load_xml_outbound_configuration(switch_mutex_t *mutex);
 
-/* bind callback */
+/* bind reloadxml callback */
 static void
 avmd_reloadxml_event_handler(switch_event_t *event);
 
@@ -514,6 +517,7 @@ static void avmd_set_xml_default_configuration(switch_mutex_t *mutex)
     avmd_globals.settings.report_status = 1;
     avmd_globals.settings.fast_math = 0;
     avmd_globals.settings.require_continuous_streak = 1;
+    avmd_globals.settings.sample_n_continuous_streak = 15;
     avmd_globals.settings.sample_n_to_skeep = 6;
     avmd_globals.settings.simplified_estimation = 1;
     avmd_globals.settings.inbound_channnel = 0;
@@ -592,8 +596,16 @@ avmd_load_xml_configuration(switch_mutex_t *mutex)
 						avmd_globals.settings.fast_math = switch_true(value) ? 1 : 0;
 				} else if (!strcmp(name, "require_continuous_streak")) {
 						avmd_globals.settings.require_continuous_streak = switch_true(value) ? 1 : 0;
+				} else if (!strcmp(name, "sample_n_continuous_streak")) {
+                    if(avmd_parse_u16_user_input(value,
+                                &avmd_globals.settings.sample_n_continuous_streak, 0, UINT16_MAX) == -1)
+                    {
+                        status = SWITCH_STATUS_TERM;
+                        goto done;
+                    }
 				} else if (!strcmp(name, "sample_n_to_skeep")) {
-                    if(avmd_parse_u16_user_input(value, &avmd_globals.settings.sample_n_to_skeep, 0, UINT16_MAX) == -1)
+                    if(avmd_parse_u16_user_input(value,
+                                &avmd_globals.settings.sample_n_to_skeep, 0, UINT16_MAX) == -1)
                     {
                         status = SWITCH_STATUS_TERM;
                         goto done;
@@ -675,7 +687,8 @@ avmd_show(switch_stream_handle_t *stream, switch_mutex_t *mutex)
     stream->write_function(stream, "debug                   \t%u\n", avmd_globals.settings.debug);
     stream->write_function(stream, "report status           \t%u\n", avmd_globals.settings.report_status);
     stream->write_function(stream, "fast_math               \t%u\n", avmd_globals.settings.fast_math);
-    stream->write_function(stream, "require continuous treak\t%u\n", avmd_globals.settings.require_continuous_streak);
+    stream->write_function(stream, "require continuous streak\t%u\n", avmd_globals.settings.require_continuous_streak);
+    stream->write_function(stream, "sample n continuous streak\t%u\n", avmd_globals.settings.sample_n_continuous_streak);
     stream->write_function(stream, "sample n to skeep       \t%u\n", avmd_globals.settings.sample_n_to_skeep);
     stream->write_function(stream, "simplified estimation   \t%u\n", avmd_globals.settings.simplified_estimation);
     stream->write_function(stream, "inbound channel         \t%u\n", avmd_globals.settings.inbound_channnel);
@@ -1528,8 +1541,8 @@ static void avmd_process(avmd_session_t *s, switch_frame_t *frame)
 
             /* DECISION */
             /* If variance is less than threshold
-             * and we have at least two estimates
-             * then we have detection */
+             * and we have at least two estimates and more than required by continuous
+             * streak option then we have detection */
 #ifdef AVMD_REQUIRE_CONTINUOUS_STREAK
 			if (v < VARIANCE_THRESHOLD && (s->sma_b.lpos > 1) && (s->samples_streak == 0)) {
 #else

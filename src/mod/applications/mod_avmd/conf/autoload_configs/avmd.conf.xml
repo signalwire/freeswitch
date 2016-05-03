@@ -32,6 +32,10 @@
                  in the SMA buffer without reset -->
             <param name="require_continuous_streak" value="1"/>
 
+            <!-- required number of consecutive elements in the SMA buffer
+                 without reset -->
+            <param name="sample_n_continuous_streak" value="15"/>
+
             <!-- define number of samples to skip starting from the beginning
                  of the frame and after reset -->
             <param name="sample_n_to_skeep" value="6"/>
