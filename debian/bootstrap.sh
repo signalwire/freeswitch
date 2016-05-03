@@ -361,7 +361,7 @@ Description: Cross-Platform Scalable Multi-Protocol Soft Switch
 Package: python-esl
 Section: python
 Architecture: any
-Depends: \${shlibs:Depends}, \${misc:Depends}, \${python:Depends}, freeswitch-mod-esl (= \${binary:Version})
+Depends: \${shlibs:Depends}, \${misc:Depends}, \${python:Depends}
 Description: Cross-Platform Scalable Multi-Protocol Soft Switch
  $(debian_wrap "${fs_description}")
  .
@@ -370,7 +370,7 @@ Description: Cross-Platform Scalable Multi-Protocol Soft Switch
 Package: libesl-perl
 Section: perl
 Architecture: any
-Depends: \${shlibs:Depends}, \${misc:Depends}, \${perl:Depends}, freeswitch-mod-esl (= \${binary:Version})
+Depends: \${shlibs:Depends}, \${misc:Depends}, \${perl:Depends}
 Description: Cross-Platform Scalable Multi-Protocol Soft Switch
  $(debian_wrap "${fs_description}")
  .
