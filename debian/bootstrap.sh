@@ -1054,6 +1054,13 @@ genlang () {
   test -f $f.tmpl && cat $f.tmpl >> $f
 }
 
+geninstall_perl () {
+  local archlib
+  eval `perl -V:archlib`
+  echo $archlib/ESL.\* >libesl-perl.install
+  echo $archlib/ESL/\*.\* >>libesl-perl.install
+}
+
 accumulate_mod_deps () {
   local x=""
   # build-depends
@@ -1289,6 +1296,7 @@ echo "Generating debian/ (modules)..." >&2
 map_modules "mod_filter" \
   "gencontrol_per_cat" \
   "gencontrol_per_mod geninstall_per_mod genoverrides_per_mod"
+geninstall_perl
 
 if [ ${use_sysvinit} = "true" ]; then
   echo -n freeswitch-sysvinit >freeswitch-init.provided_by
