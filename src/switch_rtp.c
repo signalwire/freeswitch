@@ -1234,9 +1234,10 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 				ice->missed_count = 0;
 				ice->rready = 1;
 
-				for (i = 0; i <= ice->ice_params->cand_idx[ice->proto]; i++) {
+				for (i = 0; i < ice->ice_params->cand_idx[ice->proto]; i++) {
 					if (ice->ice_params->cands[i][ice->proto].con_port == port) {
-						if (!strcmp(ice->ice_params->cands[i][ice->proto].con_addr, host) && 
+						if (!strcmp(ice->ice_params->cands[i][ice->proto].con_addr, host) &&
+							ice->ice_params->cands[i][ice->proto].cand_type &&
 							!strcmp(ice->ice_params->cands[i][ice->proto].cand_type, "relay")) {
 							
 							if (elapsed < 1000) {
