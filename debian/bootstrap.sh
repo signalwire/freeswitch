@@ -331,6 +331,7 @@ cat <<EOF
 Package: freeswitch-all
 Architecture: any
 Depends: freeswitch-meta-all (= \${binary:Version})
+Conflicts: freeswitch-all (<= 1.6.7)
 Description: Cross-Platform Scalable Multi-Protocol Soft Switch
  $(debian_wrap "${fs_description}")
  .
@@ -342,6 +343,7 @@ Depends: \${shlibs:Depends}, \${perl:Depends}, \${misc:Depends},
  libfreeswitch1 (= \${binary:Version})
 Recommends:
 Suggests: freeswitch-dbg
+Conflicts: freeswitch-all (<= 1.6.7)
 Description: Cross-Platform Scalable Multi-Protocol Soft Switch
  $(debian_wrap "${fs_description}")
  .
@@ -353,6 +355,7 @@ Depends: \${shlibs:Depends}, \${misc:Depends},
  yasm
 Recommends:
 Suggests: libfreeswitch1-dbg
+Conflicts: freeswitch-all (<= 1.6.7)
 Description: Cross-Platform Scalable Multi-Protocol Soft Switch
  $(debian_wrap "${fs_description}")
  .
@@ -365,7 +368,16 @@ Depends: \${shlibs:Depends}, \${misc:Depends}, \${python:Depends}
 Description: Cross-Platform Scalable Multi-Protocol Soft Switch
  $(debian_wrap "${fs_description}")
  .
- This package contains the FreeSWITCH core library.
+ This package contains the Python binding for FreeSWITCH Event Socket Library (ESL).
+
+Package: libesl-perl
+Section: perl
+Architecture: any
+Depends: \${shlibs:Depends}, \${misc:Depends}, \${perl:Depends}
+Description: Cross-Platform Scalable Multi-Protocol Soft Switch
+ $(debian_wrap "${fs_description}")
+ .
+ This package contains the Perl binding for FreeSWITCH Event Socket Library (ESL).
 
 Package: freeswitch-meta-bare
 Architecture: any
@@ -570,6 +582,7 @@ Depends: \${misc:Depends}, freeswitch (= \${binary:Version}),
  freeswitch-sounds,
  freeswitch-mod-abstraction (= \${binary:Version}),
  freeswitch-mod-avmd (= \${binary:Version}),
+ freeswitch-mod-av (= \${binary:Version}),
  freeswitch-mod-blacklist (= \${binary:Version}),
  freeswitch-mod-callcenter (= \${binary:Version}),
  freeswitch-mod-cidlookup (= \${binary:Version}),
@@ -840,7 +853,7 @@ else
 Package: freeswitch-systemd
 Architecture: all
 Depends: \${misc:Depends}, systemd
-Conflicts: freeswitch-init
+Conflicts: freeswitch-init, freeswitch-all (<= 1.6.7)
 Provides: freeswitch-init
 Description: FreeSWITCH systemd configuration
  $(debian_wrap "${fs_description}")
@@ -860,6 +873,7 @@ Architecture: any
 $(debian_wrap "Depends: \${shlibs:Depends}, \${misc:Depends}, libfreeswitch1 (= \${binary:Version}), ${depends}")
 $(debian_wrap "Recommends: ${recommends}")
 $(debian_wrap "Suggests: freeswitch-${module_name//_/-}-dbg, ${suggests}")
+Conflicts: freeswitch-all (<= 1.6.7)
 Description: ${description} for FreeSWITCH
  $(debian_wrap "${fs_description}")
  .
@@ -937,6 +951,7 @@ print_conf_control () {
 Package: freeswitch-conf-${conf//_/-}
 Architecture: all
 Depends: \${misc:Depends}
+Conflicts: freeswitch-all (<= 1.6.7)
 Description: FreeSWITCH ${conf} configuration
  $(debian_wrap "${fs_description}")
  .
@@ -971,6 +986,7 @@ Package: freeswitch-lang-${lang//_/-}
 Architecture: all
 Depends: \${misc:Depends}
 Recommends: freeswitch-sounds-${lang}
+Conflicts: freeswitch-all (<= 1.6.7)
 Description: ${lang_name} language files for FreeSWITCH
  $(debian_wrap "${fs_description}")
  .
@@ -1036,6 +1052,13 @@ genlang () {
   local f=$p.lintian-overrides
   (print_edit_warning; print_lang_overrides "$p") > $f
   test -f $f.tmpl && cat $f.tmpl >> $f
+}
+
+geninstall_perl () {
+  local archlib
+  eval `perl -V:archlib`
+  echo $archlib/ESL.\* >libesl-perl.install
+  echo $archlib/ESL/\*.\* >>libesl-perl.install
 }
 
 accumulate_mod_deps () {
@@ -1273,6 +1296,7 @@ echo "Generating debian/ (modules)..." >&2
 map_modules "mod_filter" \
   "gencontrol_per_cat" \
   "gencontrol_per_mod geninstall_per_mod genoverrides_per_mod"
+geninstall_perl
 
 if [ ${use_sysvinit} = "true" ]; then
   echo -n freeswitch-sysvinit >freeswitch-init.provided_by

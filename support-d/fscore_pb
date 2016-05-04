@@ -85,21 +85,23 @@ if [ -z $user ] ; then
 fi
 
 post_cmd=""
-command -v wget >/dev/null 2>&1
-if [ $? -eq 0 ]; then
-    post_cmd="wget --output-file=/dev/null --output-document=/tmp/fscore_pb.tmp/pb_out --http-user=pastebin --http-password=freeswitch https://pastebin.freeswitch.org --post-file=$post_file"
-    echo -n "paste=Send&remember=0&poster=$user&format=none&expiry=f&code2=" > $post_file
-fi
+#command -v wget >/dev/null 2>&1
+#if [ $? -eq 0 ]; then
+#    post_cmd="curl -d name=fscore_pb --data-urlencode text@$post_file https://newpastebin.freeswitch.org/api/create"
+#    post_cmd="wget --output-file=/dev/null --output-document=/tmp/fscore_pb.tmp/pb_out --http-user=pastebin --http-password=freeswitch https://pastebin.freeswitch.org --post-file=$post_file"
+#    echo -n "paste=Send&remember=0&poster=$user&format=none&expiry=f&code2=" > $post_file
+#fi
 
 if [ -z "$post_cmd" ]; then
     command -v curl >/dev/null 2>&1
     if [ $? -eq 0 ]; then 
-	post_cmd="curl -o /tmp/fscore_pb.tmp/pb_out --user pastebin:freeswitch http://pastebin.freeswitch.org -d paste=Send -d remember=0 -d poster=$user -d format=none -d expiry=f --data-urlencode code2@$post_file"
+	post_cmd="curl -o /tmp/fscore_pb.tmp/pb_out -d name=fscore_pb --data-urlencode text@$post_file https://pastebin.freeswitch.org/api/create"
+	# post_cmd="curl -o /tmp/fscore_pb.tmp/pb_out --user pastebin:freeswitch http://pastebin.freeswitch.org -d paste=Send -d remember=0 -d poster=$user -d format=none -d expiry=f --data-urlencode code2@$post_file"
     fi
 fi
 
 if [ -z "$post_cmd" ]; then
-  echo "Unable to locate wget or curl."
+  echo "Unable to locate curl."
   exit 255
 fi
 
@@ -174,8 +176,8 @@ mv $post_file $tmpdir
 
 echo "Finished."
 if [ -e /tmp/fscore_pb.tmp/pb_out ]; then
-    pb=`cat /tmp/fscore_pb.tmp/pb_out | grep parent_pid | awk -F \" '{print $6}'`
-    echo "Please report http://pastebin.freeswitch.org/$pb to the developers."
+    pb=`cat /tmp/fscore_pb.tmp/pb_out`
+    echo "Please report $pb to the developers."
 else
     echo "Please check recent posts on http://pastebin.freeswitch.org/ and find your issue to report to the developers."
 fi

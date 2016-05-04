@@ -70,18 +70,6 @@ static switch_status_t png_file_open(switch_file_handle_t *handle, const char *p
 		return SWITCH_STATUS_MEMERR;
 	}
 
-	if (!switch_test_flag(handle, SWITCH_FILE_FLAG_VIDEO)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Video only\n");
-		return SWITCH_STATUS_GENERR; 
-	}
-
-	memset(context, 0, sizeof(png_file_context_t));
-
-	if (!(context->img = switch_img_read_png(path, SWITCH_IMG_FMT_I420))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening %s\n", path);
-		return SWITCH_STATUS_GENERR;
-	}
-
 	if (switch_test_flag(handle, SWITCH_FILE_FLAG_WRITE)) {
 		return SWITCH_STATUS_GENERR;
 	}
@@ -90,6 +78,7 @@ static switch_status_t png_file_open(switch_file_handle_t *handle, const char *p
 		flags |= SWITCH_FOPEN_READ;
 	}
 
+	memset(context, 0, sizeof(png_file_context_t));
 	context->max = 10000;
 
 	if (handle->params) {
@@ -115,13 +104,27 @@ static switch_status_t png_file_open(switch_file_handle_t *handle, const char *p
 									  switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Failed to open audio file %s\n", audio_file);
 									  context->audio_fh = NULL;
 			}
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Open file [%s]\n", audio_file);
 		}
 	}
 
 	if (context->max) {
 		context->samples = (handle->samplerate / 1000) * context->max;
 	}
-	
+
+	if (!switch_test_flag(handle, SWITCH_FILE_FLAG_VIDEO)) {
+		if (!context->audio_fh) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Channel has no video and audio_file is not set!\n");
+			return SWITCH_STATUS_GENERR;
+		}
+	} else {
+		if (!(context->img = switch_img_read_png(path, SWITCH_IMG_FMT_I420))) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening %s\n", path);
+			return SWITCH_STATUS_GENERR;
+		}
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Open file [%s]\n", path);
+	}
+
 	handle->format = 0;
 	handle->sections = 0;
 	handle->seekable = 0;
@@ -130,10 +133,7 @@ static switch_status_t png_file_open(switch_file_handle_t *handle, const char *p
 	handle->private_info = context;
 	context->pool = handle->memory_pool;
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Opening File [%s]\n", path);
-
 	return SWITCH_STATUS_SUCCESS;
-
 }
 
 static switch_status_t png_file_close(switch_file_handle_t *handle)
