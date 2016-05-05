@@ -105,8 +105,11 @@ int __isnan(double);
 #define AVMD_SYNTAX "<uuid> < start | stop | set [inbound|outbound|default] | load [inbound|outbound] | reload | show >"
 
 /*! Number of expected parameters in api call. */
-#define AVMD_PARAMS_MIN 1u
-#define AVMD_PARAMS_MAX 2u
+#define AVMD_PARAMS_API_MIN 1u
+#define AVMD_PARAMS_API_MAX 2u
+#define AVMD_PARAMS_APP_MAX 30u
+#define AVMD_PARAMS_APP_START_MIN 0u
+#define AVMD_PARAMS_APP_START_MAX 20u
 
 /* don't forget to update avmd_events_str table
  * if you modify this */
@@ -126,6 +129,12 @@ const char* avmd_events_str[] = {   [AVMD_EVENT_BEEP] =             "avmd::beep"
 #define AVMD_CHAR_BUF_LEN 20u
 #define AVMD_BUF_LINEAR_LEN 160u
 
+enum avmd_app
+{
+    AVMD_APP_START_APP = 0,
+    AVMD_APP_STOP_APP = 1,
+    AVMD_APP_START_FUNCTION = 2     /* deprecated since version 1.6.8 */
+};
 
 /* Prototypes */
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_avmd_shutdown);
@@ -225,9 +234,11 @@ avmd_reloadxml_event_handler(switch_event_t *event);
 static void
 avmd_show(switch_stream_handle_t *stream, switch_mutex_t *mutex);
 
-/*! \brief The avmd session data initialization function.
- * @param avmd_session A reference to a avmd session.
- * @param fs_session A reference to a FreeSWITCH session.
+
+/*! \brief  The avmd session data initialization function.
+ * @param   avmd_session A reference to a avmd session.
+ * @param   fs_session A reference to a FreeSWITCH session.
+ * @details Avmd globals mutex must be locked.
  */
 static switch_status_t
 init_avmd_session_data(avmd_session_t *avmd_session,
@@ -259,7 +270,7 @@ init_avmd_session_data(avmd_session_t *avmd_session,
 #ifdef AVMD_REQUIRE_CONTINUOUS_STREAK
     avmd_session->samples_streak = SAMPLES_CONSECUTIVE_STREAK;
 #endif
-    memset(&avmd_session->settings, 0, sizeof(struct avmd_settings));
+    memcpy(&avmd_session->settings, &avmd_globals.settings, sizeof(struct avmd_settings));
 	switch_mutex_init(&avmd_session->mutex, SWITCH_MUTEX_DEFAULT,
             switch_core_session_get_pool(fs_session));
     avmd_session->sample_count = 0;
@@ -733,8 +744,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_avmd_load)
     if (avmd_load_xml_configuration(NULL) != SWITCH_STATUS_SUCCESS)
     {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
-                "Couldn't load XML configuration\n");
-        return SWITCH_STATUS_TERM;
+                "Couldn't load XML configuration! Loading default settings\n");
+        avmd_set_xml_default_configuration(NULL);
     }
 
 	if ((switch_event_bind(modname, SWITCH_EVENT_RELOADXML, NULL,
@@ -817,6 +828,180 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_avmd_load)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+void
+avmd_config_dump(avmd_session_t *s)
+{
+    struct avmd_settings *settings;
+
+    if (s == NULL) return;
+    settings = &s->settings;
+    switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(s->session), SWITCH_LOG_INFO,
+            "Avmd dynamic configuration: debug [%u], report_status [%u], fast_math [%u],"
+            " require_continuous_streak [%u], sample_n_continuous_streak [%u], "
+            "sample_n_to_skeep [%u], simplified_estimation [%u], "
+            "inbound_channel [%u], outbound_channel [%u]\n",
+            settings->debug, settings->report_status, settings->fast_math,
+            settings->require_continuous_streak, settings->sample_n_continuous_streak,
+            settings->sample_n_to_skeep, settings->simplified_estimation,
+            settings->inbound_channnel, settings->outbound_channnel);
+    return;
+}
+
+static switch_status_t
+avmd_parse_cmd_data_one_entry(char *candidate, struct avmd_settings *settings)
+{
+    char        *candidate_parsed[3];
+    int         argc;
+    const char *key;
+    const char *val;
+
+    if (settings == NULL) return SWITCH_STATUS_TERM;
+    if (candidate == NULL) return SWITCH_STATUS_NOOP;
+
+    argc = switch_separate_string(candidate, '=', candidate_parsed, (sizeof(candidate_parsed) / sizeof(candidate_parsed[0])));
+    if (argc > 2) {
+        /* currently we accept only option=value syntax */
+        return SWITCH_STATUS_IGNORE;
+    }
+
+    /* this may be option parameter if valid */
+    key = candidate_parsed[0];      /* option name */      
+    if (zstr(key)) {
+        /* empty key */
+        return SWITCH_STATUS_NOT_INITALIZED;
+    }
+    val = candidate_parsed[1];      /* value of the option: whole string starting at 1 past the '=' */
+    if (zstr(val)) {
+        /* nothing after "=" found, empty value */
+        return SWITCH_STATUS_MORE_DATA;
+    }
+    /* candidate string has "=" somewhere in the middle and some value,
+     * try to find what option it is by comparing at most given number of bytes */
+    if (!strcmp(key, "debug")) {
+        settings->debug = switch_true(val);
+    } else if (!strcmp(key, "report_status")) {
+        settings->report_status = switch_true(val);
+    } else if (!strcmp(key, "fast_math")) {
+        settings->fast_math = switch_true(val);
+    } else if (!strcmp(key, "require_continuous_streak")) {
+        settings->require_continuous_streak = switch_true(val);
+    } else if (!strcmp(key, "sample_n_continuous_streak")) {
+        if(avmd_parse_u16_user_input(val, &settings->sample_n_continuous_streak, 0, UINT16_MAX) == -1) {
+            return SWITCH_STATUS_FALSE;
+        }
+    } else if (!strcmp(key, "sample_n_to_skeep")) {
+        if(avmd_parse_u16_user_input(val, &settings->sample_n_to_skeep, 0, UINT16_MAX) == -1) {
+            return SWITCH_STATUS_FALSE;
+        }
+    } else if (!strcmp(key, "simplified_estimation")) {
+        settings->simplified_estimation = switch_true(val);
+    } else if (!strcmp(key, "inbound_channel")) {
+        settings->inbound_channnel = switch_true(val);
+    } else if (!strcmp(key, "outbound_channel")) {
+        settings->outbound_channnel = switch_true(val);
+    } else {
+        return SWITCH_STATUS_NOTFOUND;
+    }
+    return SWITCH_STATUS_SUCCESS;
+}
+
+/* RCU style: reads, copies and then updates only if everything is fine,
+ * if it returns SWITCH_STATUS_SUCCESS parsing went OK and avmd settings
+ * are updated accordingly to @cmd_data, if SWITCH_STATUS_FALSE then
+ * parsing error occurred and avmd session is being left untouched */
+static switch_status_t
+avmd_parse_cmd_data(avmd_session_t *s, const char *cmd_data, enum avmd_app app)
+{
+	char *mydata;
+    struct avmd_settings    settings;
+	int argc = 0, idx;
+	char *argv[AVMD_PARAMS_APP_MAX * 2] = { 0 };
+    switch_status_t status = SWITCH_STATUS_SUCCESS;
+
+    if (s == NULL) {
+        return SWITCH_STATUS_NOOP;
+    }
+	if (zstr(cmd_data)) {
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+    /* copy current settings first */
+    memcpy(&settings, &s->settings, sizeof (struct avmd_settings));
+    switch (app)
+    {
+        case AVMD_APP_START_APP:
+            /* avmd_start_app */
+
+            /* try to parse settings */
+            mydata = switch_core_session_strdup(s->session, cmd_data);
+            argc = switch_separate_string(mydata, ',', argv, (sizeof(argv) / sizeof(argv[0])));
+            if (argc < AVMD_PARAMS_APP_START_MIN || argc > AVMD_PARAMS_APP_START_MAX) {
+                switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(s->session), SWITCH_LOG_ERROR,
+                "Syntax Error, avmd_start APP takes [%u] to [%u] parameters\n",
+                AVMD_PARAMS_APP_START_MIN, AVMD_PARAMS_APP_START_MAX);
+                switch_goto_status(SWITCH_STATUS_MORE_DATA, fail);
+            }
+            /* iterate over params, check if they mean something to us, set */
+            idx = 0;
+            while (idx < argc) {
+                status = avmd_parse_cmd_data_one_entry(argv[idx], &settings);
+                if (status != SWITCH_STATUS_SUCCESS) {
+                    switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(s->session), SWITCH_LOG_ERROR,
+                            "Error parsing option [%d] [%s]\n", idx + 1, argv[idx]);    /* idx + 1 to report option 0 as 1 for users convenience */
+                    switch (status)
+                    {
+                        case SWITCH_STATUS_TERM:
+                            switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(s->session), SWITCH_LOG_ERROR,
+                                    "NULL settings struct passed to parser\n");
+                            break;
+                        case SWITCH_STATUS_NOOP:
+                            switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(s->session), SWITCH_LOG_ERROR,
+                                    "NULL settings string passed to parser\n");
+                            break;
+                        case SWITCH_STATUS_IGNORE:
+                            switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(s->session), SWITCH_LOG_ERROR,
+                                    "Syntax error. Currently we accept only option=value syntax\n");
+                            break;
+                        case SWITCH_STATUS_NOT_INITALIZED:
+                            switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(s->session), SWITCH_LOG_ERROR,
+                                    "Syntax error. No key specified\n");
+                            break;
+                        case SWITCH_STATUS_MORE_DATA:
+                            switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(s->session), SWITCH_LOG_ERROR,
+                                    "Syntax error. No value for the key? Currently we accept only option=value syntax\n");
+                            break;
+                        case SWITCH_STATUS_FALSE:
+                            switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(s->session), SWITCH_LOG_ERROR,
+                                    "Bad value for this option\n");
+                            break;
+                        case SWITCH_STATUS_NOTFOUND:
+                            switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(s->session), SWITCH_LOG_ERROR,
+                                    "Option not found. Please check option name is correct\n");
+                            break;
+                        default:
+                            break;
+                    }
+                    status = SWITCH_STATUS_FALSE;
+                    goto fail;
+                }
+                ++idx;
+            }
+            /* OK */
+            goto end_copy;
+        default:
+            switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(s->session), SWITCH_LOG_ERROR,
+                "There is no app with index [%u] for avmd\n", app);
+            switch_goto_status(SWITCH_STATUS_NOTFOUND, fail);
+    }
+
+end_copy:
+    /* commit the change */
+    memcpy(&s->settings, &settings, sizeof (struct avmd_settings));
+    return SWITCH_STATUS_SUCCESS;
+fail:
+    return status;
+}
+
 SWITCH_STANDARD_APP(avmd_start_app)
 {
 	switch_media_bug_t  *bug;
@@ -895,7 +1080,7 @@ SWITCH_STANDARD_APP(avmd_start_app)
             goto end;
     }
 
-	status = init_avmd_session_data(avmd_session, session, NULL);
+    status = init_avmd_session_data(avmd_session, session, NULL);
     if (status != SWITCH_STATUS_SUCCESS) {
         switch (status) {
             case SWITCH_STATUS_MEMERR:
@@ -918,9 +1103,36 @@ SWITCH_STANDARD_APP(avmd_start_app)
                     SWITCH_LOG_ERROR, "Failed to init avmd session."
                     " Unknown error\n");
                 break;
-
         }
         goto end;
+    }
+
+    /* dynamic configuation */
+    status = avmd_parse_cmd_data(avmd_session, data, AVMD_APP_START_APP);
+    switch (status) {
+        case SWITCH_STATUS_SUCCESS:
+            break;
+        case SWITCH_STATUS_NOOP:
+            switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session),
+                    SWITCH_LOG_ERROR, "Failed to set dynamic parameters for avmd session."
+                    " Session is NULL! Default settings are loaded\n");
+            goto end;
+        case SWITCH_STATUS_FALSE:
+            switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session),
+                    SWITCH_LOG_ERROR, "Failed to set dynamic parameters for avmd session."
+                    " Parsing error, please check the parameters passed to this APP."
+                    " Default settings are loaded\n");
+            goto end;
+        default:
+            switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session),
+                    SWITCH_LOG_ERROR, "Failed to set dynamic parameteres for avmd session."
+                    " Unknown error. Default settings are loaded\n");
+            goto end;
+    }
+
+    if (avmd_session->settings.debug == 1) {
+        /* report dynamic parameters */
+        avmd_config_dump(avmd_session);
     }
 
 	/* Add a media bug that allows me to intercept the
@@ -1093,7 +1305,7 @@ SWITCH_STANDARD_API(avmd_api_main)
     int         argc;
     const char  *uuid, *uuid_dup;
     const char  *command;
-    char        *dupped = NULL, *argv[AVMD_PARAMS_MAX + 1] = { 0 };
+    char        *dupped = NULL, *argv[AVMD_PARAMS_API_MAX + 1] = { 0 };
     switch_core_media_flag_t    flags = 0;
     switch_status_t             status = SWITCH_STATUS_SUCCESS;
     switch_core_session_t       *fs_session = NULL;
@@ -1115,9 +1327,9 @@ SWITCH_STANDARD_API(avmd_api_main)
 
 	/* If we don't have the expected number of parameters
 	* display usage */
-	if (argc < AVMD_PARAMS_MIN) {
+	if (argc < AVMD_PARAMS_API_MIN) {
 		stream->write_function(stream, "-ERR, avmd takes [%u] min and [%u] max parameters!\n"
-                "-USAGE: %s\n\n", AVMD_PARAMS_MIN, AVMD_PARAMS_MAX, AVMD_SYNTAX);
+                "-USAGE: %s\n\n", AVMD_PARAMS_API_MIN, AVMD_PARAMS_API_MAX, AVMD_SYNTAX);
 		goto end;
 	}
 
