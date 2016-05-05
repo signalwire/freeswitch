@@ -477,6 +477,9 @@ switch_hash_t *create_default_filter() {
 	switch_core_hash_insert(filter, "whistle_application_name", "1");
 	switch_core_hash_insert(filter, "whistle_application_response", "1");
 	switch_core_hash_insert(filter, "whistle_event_name", "1");
+	switch_core_hash_insert(filter, "kazoo_application_name", "1");
+	switch_core_hash_insert(filter, "kazoo_application_response", "1");
+	switch_core_hash_insert(filter, "kazoo_event_name", "1");
 	switch_core_hash_insert(filter, "sip_auto_answer_notify", "1");
 	switch_core_hash_insert(filter, "eavesdrop_group", "1");
 	switch_core_hash_insert(filter, "origination_caller_id_name", "1");
@@ -489,6 +492,21 @@ switch_hash_t *create_default_filter() {
 	switch_core_hash_insert(filter, "effective_caller_id_number", "1");
 	switch_core_hash_insert(filter, "effective_callee_id_name", "1");
 	switch_core_hash_insert(filter, "effective_callee_id_number", "1");
+	switch_core_hash_insert(filter, "variable_destination_number", "1");
+	switch_core_hash_insert(filter, "variable_effective_callee_id_name", "1");
+	switch_core_hash_insert(filter, "variable_effective_callee_id_number", "1");
+	switch_core_hash_insert(filter, "variable_record_silence_hits", "1");
+	switch_core_hash_insert(filter, "variable_refer_uuid", "1");
+	switch_core_hash_insert(filter, "variable_sip_call_id", "1");
+	switch_core_hash_insert(filter, "variable_sip_h_Referred-By", "1");
+	switch_core_hash_insert(filter, "variable_sip_h_X-AUTH-PORT", "1");
+	switch_core_hash_insert(filter, "variable_sip_loopback_req_uri", "1");
+	switch_core_hash_insert(filter, "variable_sip_received_port", "1");
+	switch_core_hash_insert(filter, "variable_sip_refer_to", "1");
+	switch_core_hash_insert(filter, "variable_sip_req_host", "1");
+	switch_core_hash_insert(filter, "variable_sip_req_uri", "1");
+	switch_core_hash_insert(filter, "variable_transfer_source", "1");
+	switch_core_hash_insert(filter, "variable_uuid", "1");
 
 	/* Registration headers */
 	switch_core_hash_insert(filter, "call-id", "1");
@@ -570,6 +588,7 @@ switch_hash_t *create_default_filter() {
 	switch_core_hash_insert(filter, "variable_fax_timezone", "1");
 	switch_core_hash_insert(filter, "variable_fax_doc_id", "1");
 	switch_core_hash_insert(filter, "variable_fax_doc_database", "1");
+	switch_core_hash_insert(filter, "variable_has_t38", "1");
 
 	/* Secure headers */
 	switch_core_hash_insert(filter, "variable_sdp_secure_savp_only", "1");

@@ -340,7 +340,8 @@ static int read_cookie_from_file(char *filename) {
 static switch_status_t config(void) {
 	char *cf = "kazoo.conf";
 	switch_xml_t cfg, xml, child, param;
-	globals.send_all_headers = globals.send_all_private_headers = 0;
+	globals.send_all_headers = 0;
+	globals.send_all_private_headers = 1;
 	globals.connection_timeout = 500;
 	globals.receive_timeout = 200;
 	globals.receive_msg_preallocate = 2000;
