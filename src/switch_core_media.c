@@ -10095,6 +10095,9 @@ SWITCH_DECLARE(void) switch_core_media_set_sdp_codec_string(switch_core_session_
 		return;
 	}
 
+	if (!r_sdp) {
+		return;
+	}
 
 	if ((parser = sdp_parse(NULL, r_sdp, (int) strlen(r_sdp), 0))) {
 
