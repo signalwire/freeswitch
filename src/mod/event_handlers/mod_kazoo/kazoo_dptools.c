@@ -141,7 +141,7 @@ SWITCH_STANDARD_APP(multiset_function) {
 
 		arg = switch_core_session_strdup(session, arg);
 		argc = switch_split(arg, delim, array);
-		
+
 		for(i = 0; i < argc; i++) {
 			base_set(session, array[i], SWITCH_STACK_BOTTOM);
 		}
@@ -178,7 +178,7 @@ SWITCH_STANDARD_APP(unset_function) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "UNSET [%s]\n", (char *) data);
 		switch_channel_set_variable(switch_core_session_get_channel(session), data, NULL);
 	}
-	
+
 	if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_DATA) == SWITCH_STATUS_SUCCESS) {
 		switch_channel_event_set_data(channel, event);
 		switch_event_fire(&event);
@@ -242,7 +242,7 @@ void add_kz_dptools(switch_loadable_module_interface_t **module_interface, switc
 	SWITCH_ADD_APP(app_interface, "kz_unset", UNSET_SHORT_DESC, UNSET_LONG_DESC, unset_function, UNSET_SYNTAX,
 				   SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC | SAF_ZOMBIE_EXEC);
 	SWITCH_ADD_APP(app_interface, "kz_multiunset", MULTISET_SHORT_DESC, MULTISET_LONG_DESC, multiunset_function, MULTIUNSET_SYNTAX,
-				   SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC | SAF_ZOMBIE_EXEC);  
+				   SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC | SAF_ZOMBIE_EXEC);
         SWITCH_ADD_APP(app_interface, "kz_export", EXPORT_SHORT_DESC, EXPORT_LONG_DESC, export_function, EXPORT_SYNTAX,
                                    SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC | SAF_ZOMBIE_EXEC);
 }

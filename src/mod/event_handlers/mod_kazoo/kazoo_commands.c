@@ -148,5 +148,5 @@ void add_kz_commands(switch_loadable_module_interface_t **module_interface, swit
 	SWITCH_ADD_API(api_interface, "kz_uuid_setvar_multi", UUID_SET_DESC, uuid_setvar_multi_function, UUID_MULTISET_SYNTAX);
 	switch_console_set_complete("add kz_uuid_setvar_multi ::console::list_uuid");
 	SWITCH_ADD_API(api_interface, "kz_uuid_setvar", UUID_MULTISET_DESC, uuid_setvar_function, UUID_SET_SYNTAX);
-	switch_console_set_complete("add kz_uuid_setvar ::console::list_uuid");  
+	switch_console_set_complete("add kz_uuid_setvar ::console::list_uuid");
 }
