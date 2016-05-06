@@ -1092,7 +1092,7 @@ static void *SWITCH_THREAD_FUNC handle_node(switch_thread_t *thread, void *obj) 
 				ei_x_new(&received_msg->buf);
 			}
 		}
-                
+
 		while (switch_queue_trypop(ei_node->send_msgs, &pop) == SWITCH_STATUS_SUCCESS
 			   && ++send_msg_count <= globals.send_msg_batch) {
 			ei_send_msg_t *send_msg = (ei_send_msg_t *) pop;
