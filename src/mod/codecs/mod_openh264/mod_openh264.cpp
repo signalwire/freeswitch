@@ -1,6 +1,6 @@
 /*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2015, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2016, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -43,7 +43,7 @@
 #define NAL_HEADER_ADD_0X30BYTES 50
 #endif
 
-#define FPS 15.0f // frame rate
+#define FPS 30.0f // frame rate
 #define H264_NALU_BUFFER_SIZE 65536
 #define SLICE_SIZE SWITCH_DEFAULT_VIDEO_SIZE //NALU Slice Size
 
@@ -80,6 +80,7 @@ typedef struct h264_codec_context_s {
 } h264_codec_context_t;
 
 int FillSpecificParameters(h264_codec_context_t *context) {
+	int sane = 0;
 	SEncParamExt *param;
 	
 	param = &context->encoder_params;
@@ -98,11 +99,16 @@ int FillSpecificParameters(h264_codec_context_t *context) {
 		context->bandwidth = switch_calc_bitrate(context->codec_settings.video.width, context->codec_settings.video.height, 1, 15);
 	}
 
-	if (context->bandwidth > 5120) {
-		context->bandwidth = 5120;
+	sane = switch_calc_bitrate(1920, 1080, 2, 30);
+
+	if (context->bandwidth > sane) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "BITRATE TRUNCATED TO %d\n", sane);
+		context->bandwidth = sane;
 	}
 
-	/* Test for temporal, spatial, SNR scalability */
+	context->bandwidth *= 1024;
+
+	param->fMaxFrameRate         = FPS * 2;
 	param->iPicWidth             = context->codec_settings.video.width; // width of picture in samples
 	param->iPicHeight            = context->codec_settings.video.height;		 // height of picture in samples
 	param->iTargetBitrate        = context->bandwidth;
@@ -132,18 +138,16 @@ int FillSpecificParameters(h264_codec_context_t *context) {
 	int iIndexLayer = 0;
 	param->sSpatialLayers[iIndexLayer].iVideoWidth	= context->codec_settings.video.width;
 	param->sSpatialLayers[iIndexLayer].iVideoHeight	= context->codec_settings.video.height;
-	param->sSpatialLayers[iIndexLayer].fFrameRate	= (double) (FPS * 1.0f);
+	param->sSpatialLayers[iIndexLayer].fFrameRate	= FPS;
 	// param->sSpatialLayers[iIndexLayer].iQualityLayerNum = 1;
 	param->sSpatialLayers[iIndexLayer].iSpatialBitrate  = param->iTargetBitrate;
-	//param->sSpatialLayers[iIndexLayer].iMaxSpatialBitrate  = param->iTargetBitrate;
-	//param->sSpatialLayers[iIndexLayer].uiLevelIdc = LEVEL_3_1;
+	param->sSpatialLayers[iIndexLayer].iMaxSpatialBitrate  = UNSPECIFIED_BIT_RATE;
+	param->sSpatialLayers[iIndexLayer].uiLevelIdc = LEVEL_4_1;
 	param->sSpatialLayers[iIndexLayer].uiProfileIdc = PRO_BASELINE;
-
 
 	param->iUsageType = CAMERA_VIDEO_REAL_TIME;
 	param->bEnableFrameCroppingFlag = 1;
-	//param->iMaxBitrate = 1250000;
-	//param->iTargetBitrate = 1250000;
+	param->iMaxBitrate = UNSPECIFIED_BIT_RATE;
 
 #ifdef MT_ENABLED
 	param->sSpatialLayers[iIndexLayer].sSliceCfg.uiSliceMode = SM_DYN_SLICE;
@@ -513,7 +517,7 @@ static switch_status_t init_encoder(h264_codec_context_t *context, uint32_t widt
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Codec ready; picture size %dx%d Bandwidth: %d\n",
-					  context->encoder_params.iPicWidth, context->encoder_params.iPicHeight, context->codec_settings.video.bandwidth);
+					  context->encoder_params.iPicWidth, context->encoder_params.iPicHeight, context->bandwidth);
 
 
 	context->encoder_initialized = SWITCH_TRUE;
@@ -796,6 +800,10 @@ static switch_status_t switch_h264_destroy(switch_codec_t *codec)
 SWITCH_MODULE_LOAD_FUNCTION(mod_openh264_load)
 {
 	switch_codec_interface_t *codec_interface;
+	OpenH264Version ver;
+
+	ver = WelsGetCodecVersion();
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "OpenH264 version %u.%u.%u.%u\n", ver.uMajor, ver.uMinor, ver.uRevision, ver.uReserved);
 
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
@@ -803,7 +811,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_openh264_load)
 	SWITCH_ADD_CODEC(codec_interface, "H264 Video (with Cisco OpenH264)");
 	switch_core_codec_add_video_implementation(pool, codec_interface, 99, "H264", NULL,
 											   switch_h264_init, switch_h264_encode, switch_h264_decode, switch_h264_control, switch_h264_destroy);
-
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
