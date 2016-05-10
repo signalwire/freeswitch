@@ -245,7 +245,7 @@ create_dsc () {
 }
 
 fmt_debug_hook () {
-    cat <<'EOF'
+  cat <<'EOF'
 #!/bin/bash
 export debian_chroot="cow"
 cd /tmp/buildd/*/debian/..
@@ -290,24 +290,24 @@ build_debs () {
     done
     shift $(($OPTIND-1))
     if [ "$custom_sources_file" == "/etc/apt/sources.list" ]; then
-        # If you are using the system sources, then it is reasonable that you expect to use all of the supplementary repos too
-        cat /etc/apt/sources.list > /tmp/fs.sources.list
-	if [ "$(ls -A /etc/apt/sources.list.d)" ]; then
-		for X in /etc/apt/sources.list.d/*; do cat $X >> /tmp/fs.sources.list; done
-	fi
-        custom_sources_file="/tmp/fs.sources.list"
-        apt-key exportall > "/tmp/fs.asc"
-        custom_keyring="/tmp/fs.asc"
+      # If you are using the system sources, then it is reasonable that you expect to use all of the supplementary repos too
+      cat /etc/apt/sources.list > /tmp/fs.sources.list
+      if [ "$(ls -A /etc/apt/sources.list.d)" ]; then
+        for X in /etc/apt/sources.list.d/*; do cat $X >> /tmp/fs.sources.list; done
+      fi
+      custom_sources_file="/tmp/fs.sources.list"
+      apt-key exportall > "/tmp/fs.asc"
+      custom_keyring="/tmp/fs.asc"
     fi
     if [ "$custom_sources_file" == "" ]; then
-        # Caller has explicitly set the custom sources file to empty string. They must intend to not use additional mirrors.
-        use_custom_sources=false
+      # Caller has explicitly set the custom sources file to empty string. They must intend to not use additional mirrors.
+      use_custom_sources=false
     fi
     if [[ "$custom_source_file" == "/tmp/fs.sources.list" && ! -e "/tmp/fs.sources.list" ]]; then
-        echo "deb http://files.freeswitch.org/repo/deb/debian/ jessie main" >> "/tmp/fs.sources.list"
+      echo "deb http://files.freeswitch.org/repo/deb/debian/ jessie main" >> "/tmp/fs.sources.list"
     fi
     if [[ "$custom_keyring" == "/tmp/fs.asc" && ! -r "/tmp/fs.asc" ]]; then
-        cat << EOF > "/tmp/fs.asc"
+      cat << EOF > "/tmp/fs.asc"
 -----BEGIN PGP PUBLIC KEY BLOCK-----
 Version: GnuPG v1.4.12 (GNU/Linux)
 
