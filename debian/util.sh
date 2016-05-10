@@ -199,7 +199,7 @@ create_dsc () {
         m) modules_list="$OPTARG";;
         p) modules_add="$modules_add $OPTARG";;
         s) speed="$OPTARG";;
-        u) suite_postfix="$OPTARG"; suite_postfix_p=true; ;;
+        u) suite_postfix="$OPTARG"; suite_postfix_p=true;;
         z) zl="$OPTARG";;
       esac
     done
