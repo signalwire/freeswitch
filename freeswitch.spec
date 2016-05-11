@@ -1543,7 +1543,7 @@ LOGGERS_MODULES="loggers/mod_console loggers/mod_graylog2 loggers/mod_logfile lo
 #						Phrase engine language modules
 #
 ######################################################################################################################
-SAY_MODULES="say/mod_say_de say/mod_say_en say/mod_say_fr say/mod_say_he say/mod_say_ru say/mod_say_sv"
+SAY_MODULES="say/mod_say_de say/mod_say_en say/mod_say_es say/mod_say_pt say/mod_say_fr say/mod_say_he say/mod_say_ru say/mod_say_sv"
 
 ######################################################################################################################
 #
@@ -2442,7 +2442,7 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/lang/es/demo/*.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/lang/es/vm/*.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/lang/es/dir/*.xml
-%{MODINSTDIR}/mod_say_en.so*
+%{MODINSTDIR}/mod_say_es.so*
 
 %files lang-pt
 %dir %attr(0750, freeswitch, daemon) %{sysconfdir}/lang/pt
@@ -2453,7 +2453,7 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/lang/pt/demo/*.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/lang/pt/vm/*.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/lang/pt/dir/*.xml
-%{MODINSTDIR}/mod_say_en.so*
+%{MODINSTDIR}/mod_say_pt.so*
 
 %files lang-sv
 %dir %attr(0750, freeswitch, daemon) %{sysconfdir}/lang/sv
