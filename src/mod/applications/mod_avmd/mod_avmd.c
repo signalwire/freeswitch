@@ -38,8 +38,11 @@
 #ifdef WIN32
 #include <float.h>
 #define ISNAN(x) (!!(_isnan(x)))
+#define ISINF(x) (isinf(x))
 #else
-#define ISNAN(x) (isnan(x))
+int __isnan(double);
+#define ISNAN(x) (__isnan(x))
+#define ISINF(x) (__isinf(x))
 #endif
 
 
@@ -1471,7 +1474,7 @@ static void avmd_process(avmd_session_t *s, switch_frame_t *frame)
                 sample_to_skip_n = AVMD_SAMLPE_TO_SKIP_N;
 #endif
 			} else {
-                if (isnan(omega)) {
+                if (ISNAN(omega)) {
 #ifdef AVMD_DEBUG
 	                switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(s->session),
                             SWITCH_LOG_DEBUG, "<<< AVMD, SKIP NaN >>>\n");
