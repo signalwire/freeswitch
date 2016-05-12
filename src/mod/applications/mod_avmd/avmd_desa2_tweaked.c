@@ -5,8 +5,11 @@
 #ifdef WIN32
 #include <float.h>
 #define ISNAN(x) (!!(_isnan(x)))
+#define ISINF(x) (isinf(x))
 #else
-#define ISNAN(x) (isnan(x))
+int __isnan(double);
+#define ISNAN(x) (__isnan(x))
+#define ISINF(x) (__isinf(x))
 #endif
 #include "avmd_buffer.h"
 #include "avmd_desa2_tweaked.h"
@@ -48,7 +51,7 @@ avmd_desa2_tweaked(circ_buffer_t *b, size_t i)
  we do simplified, modified for speed version : */
 
     result = n/d;
-    if (isinf(result)) {
+    if (ISINF(result)) {
         if (n < 0.0)
             return -10.0;
         else

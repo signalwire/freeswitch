@@ -5,8 +5,11 @@
 #ifdef WIN32
 #include <float.h>
 #define ISNAN(x) (!!(_isnan(x)))
+#define ISINF(x) (isinf(x))
 #else
-#define ISNAN(x) (isnan(x))
+int __isnan(double);
+#define ISNAN(x) (__isnan(x))
+#define ISINF(x) (__isinf(x))
 #endif
 #include "avmd_buffer.h"
 #include "avmd_desa2.h"
