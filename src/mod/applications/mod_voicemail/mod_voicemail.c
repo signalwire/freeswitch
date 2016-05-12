@@ -28,7 +28,7 @@
  * John Wehle (john@feith.com)
  * Raymond Chandler <intralanman@gmail.com>
  * Kristin King <kristin.king@quentustech.com>
- * Emmanuel Schmidbauer <e.schmidbauer@gmail.com>
+ * Emmanuel Schmidbauer <eschmidbauer@gmail.com>
  *
  * mod_voicemail.c -- Voicemail Module
  *
@@ -181,6 +181,7 @@ struct vm_profile {
 	switch_bool_t auto_playback_recordings;
 	switch_bool_t db_password_override;
 	switch_bool_t allow_empty_password_auth;
+	switch_bool_t send_full_vm_header;
 	switch_thread_rwlock_t *rwlock;
 	switch_memory_pool_t *pool;
 	uint32_t flags;
@@ -689,6 +690,7 @@ vm_profile_t *profile_set_config(vm_profile_t *profile)
 	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "allow-empty-password-auth", SWITCH_CONFIG_BOOL, CONFIG_RELOADABLE,
 						   &profile->allow_empty_password_auth, SWITCH_TRUE, NULL, NULL, NULL);
 	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "auto-playback-recordings", SWITCH_CONFIG_BOOL, CONFIG_RELOADABLE, &profile->auto_playback_recordings, SWITCH_FALSE, NULL, NULL, NULL); 
+	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "send-full-vm-header", SWITCH_CONFIG_BOOL, CONFIG_RELOADABLE, &profile->send_full_vm_header, SWITCH_FALSE, NULL, NULL, NULL);
 
 	switch_assert(i < VM_PROFILE_CONFIGITEM_COUNT);
 
@@ -1935,11 +1937,13 @@ static void update_mwi(vm_profile_t *profile, const char *id, const char *domain
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "MWI-Messages-Waiting", yn);
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Update-Reason", update_reason);
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "MWI-Message-Account", "%s@%s", id, domain_name);
-	/* 
-	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "MWI-Voice-Message", "%d/%d (%d/%d)", total_new_messages, total_saved_messages,
-							total_new_urgent_messages, total_saved_urgent_messages);
-	*/
-	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "MWI-Voice-Message", "%d/%d", total_new_messages, total_saved_messages);
+
+	if (profile->send_full_vm_header) {
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "MWI-Voice-Message", "%d/%d (%d/%d)", total_new_messages, total_saved_messages,
+								total_new_urgent_messages, total_saved_urgent_messages);
+	} else {
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "MWI-Voice-Message", "%d/%d", total_new_messages, total_saved_messages);
+	}
 
 	switch_event_fire(&event);
 
