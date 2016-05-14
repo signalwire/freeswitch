@@ -49,6 +49,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_callcenter_load);
  */
 SWITCH_MODULE_DEFINITION(mod_callcenter, mod_callcenter_load, mod_callcenter_shutdown, NULL);
 
+static switch_status_t load_agent(const char *agent_name, switch_event_t *params);
+static switch_status_t load_tiers(switch_bool_t load_all, const char *queue_name, const char *agent_name, switch_event_t *params);
 static const char *global_cf = "callcenter.conf";
 
 struct cc_status_table {
@@ -674,10 +676,10 @@ end:
 	return ret;
 }
 
-static cc_queue_t *load_queue(const char *queue_name)
+static cc_queue_t *load_queue(const char *queue_name, switch_bool_t request_agents, switch_bool_t request_tiers)
 {
 	cc_queue_t *queue = NULL;
-	switch_xml_t x_queues, x_queue, cfg, xml;
+	switch_xml_t x_queues, x_queue, cfg, xml, x_agents, x_agent;
 	switch_event_t *event = NULL;
 	switch_event_t *params = NULL;
 
@@ -735,6 +737,20 @@ static cc_queue_t *load_queue(const char *queue_name)
 
 	}
 
+	/* Importing from XML config Agents */
+	if (queue && request_agents && (x_agents = switch_xml_child(cfg, "agents"))) {
+		for (x_agent = switch_xml_child(x_agents, "agent"); x_agent; x_agent = x_agent->next) {
+			const char *agent = switch_xml_attr(x_agent, "name");
+			if (agent) {
+				load_agent(agent, params);
+			}
+		}
+	}
+	/* Importing from XML config Agent Tiers */
+	if (queue && request_tiers) {
+		load_tiers(SWITCH_TRUE, NULL, NULL, params);
+	}
+
 end:
 
 	if (xml) {
@@ -755,7 +771,7 @@ static cc_queue_t *get_queue(const char *queue_name)
 
 	switch_mutex_lock(globals.mutex);
 	if (!(queue = switch_core_hash_find(globals.queue_hash, queue_name))) {
-		queue = load_queue(queue_name);
+		queue = load_queue(queue_name, SWITCH_FALSE, SWITCH_FALSE);
 	}
 	if (queue) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "[%s] rwlock\n", queue->name);
@@ -1255,11 +1271,10 @@ cc_status_t cc_tier_del(const char *queue_name, const char *agent)
 	return result;
 }
 
-static switch_status_t load_agent(const char *agent_name)
+static switch_status_t load_agent(const char *agent_name, switch_event_t *params)
 {
 	switch_xml_t x_agents, x_agent, cfg, xml;
-
-	if (!(xml = switch_xml_open_cfg(global_cf, &cfg, NULL))) {
+	if (!(xml = switch_xml_open_cfg(global_cf, &cfg, params))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", global_cf);
 		return SWITCH_STATUS_FALSE;
 	}
@@ -1348,12 +1363,12 @@ static switch_status_t load_tier(const char *queue, const char *agent, const cha
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t load_tiers(switch_bool_t load_all, const char *queue_name, const char *agent_name)
+static switch_status_t load_tiers(switch_bool_t load_all, const char *queue_name, const char *agent_name, switch_event_t *params)
 {
 	switch_xml_t x_tiers, x_tier, cfg, xml;
 	switch_status_t result = SWITCH_STATUS_FALSE;
 
-	if (!(xml = switch_xml_open_cfg(global_cf, &cfg, NULL))) {
+	if (!(xml = switch_xml_open_cfg(global_cf, &cfg, params))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", global_cf);
 		return SWITCH_STATUS_FALSE;
 	}
@@ -1453,7 +1468,7 @@ static switch_status_t load_config(void)
 	/* Loading queue into memory struct */
 	if ((x_queues = switch_xml_child(cfg, "queues"))) {
 		for (x_queue = switch_xml_child(x_queues, "queue"); x_queue; x_queue = x_queue->next) {
-			load_queue(switch_xml_attr_soft(x_queue, "name"));
+			load_queue(switch_xml_attr_soft(x_queue, "name"), SWITCH_FALSE, SWITCH_FALSE);
 		}
 	}
 
@@ -1462,13 +1477,13 @@ static switch_status_t load_config(void)
 		for (x_agent = switch_xml_child(x_agents, "agent"); x_agent; x_agent = x_agent->next) {
 			const char *agent = switch_xml_attr(x_agent, "name");
 			if (agent) {
-				load_agent(agent);
+				load_agent(agent, NULL);
 			}
 		}
 	}
 
 	/* Importing from XML config Agent Tiers */
-	load_tiers(SWITCH_TRUE, NULL, NULL);
+	load_tiers(SWITCH_TRUE, NULL, NULL, NULL);
 
 end:
 	switch_mutex_unlock(globals.mutex);
@@ -3158,7 +3173,7 @@ SWITCH_STANDARD_API(cc_config_api_function)
 				goto done;
 			} else {
 				const char *agent = argv[0 + initial_argc];
-				switch (load_agent(agent)) {
+				switch (load_agent(agent, NULL)) {
 					case SWITCH_STATUS_SUCCESS:
 						stream->write_function(stream, "%s", "+OK\n");
 						break;
@@ -3351,7 +3366,7 @@ SWITCH_STANDARD_API(cc_config_api_function)
 				if (!strcasecmp(queue, "all")) {
 					load_all = SWITCH_TRUE;
 				}
-				switch (load_tiers(load_all, queue, agent)) {
+				switch (load_tiers(load_all, queue, agent, NULL)) {
 					case SWITCH_STATUS_SUCCESS:
 						stream->write_function(stream, "%s", "+OK\n");
 						break;
@@ -3379,8 +3394,7 @@ SWITCH_STANDARD_API(cc_config_api_function)
 			} else {
 				const char *queue_name = argv[0 + initial_argc];
 				cc_queue_t *queue = NULL;
-				if ((queue = get_queue(queue_name))) {
-					queue_rwunlock(queue);
+				if ((queue = load_queue(queue_name, SWITCH_TRUE, SWITCH_TRUE))) {
 					stream->write_function(stream, "%s", "+OK\n");
 				} else {
 					stream->write_function(stream, "%s", "-ERR Invalid Queue not found!\n");
@@ -3406,8 +3420,7 @@ SWITCH_STANDARD_API(cc_config_api_function)
 				const char *queue_name = argv[0 + initial_argc];
 				cc_queue_t *queue = NULL;
 				destroy_queue(queue_name);
-				if ((queue = get_queue(queue_name))) {
-					queue_rwunlock(queue);
+				if ((queue = load_queue(queue_name, SWITCH_TRUE, SWITCH_TRUE))) {
 					stream->write_function(stream, "%s", "+OK\n");
 				} else {
 					stream->write_function(stream, "%s", "-ERR Invalid Queue not found!\n");
