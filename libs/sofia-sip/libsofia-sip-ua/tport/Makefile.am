@@ -15,7 +15,8 @@ AM_CPPFLAGS = 		-I$(srcdir)/../bnf -I../bnf \
 			-I$(srcdir)/../http -I../http \
 			-I$(srcdir)/../url -I../url \
 			-I$(srcdir)/../sip -I../sip \
-			-I$(srcdir)/../su -I../su
+			-I$(srcdir)/../su -I../su \
+			-I$(srcdir)/include
 
 # ----------------------------------------------------------------------
 # Build targets
