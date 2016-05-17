@@ -1459,7 +1459,7 @@ void conference_video_canvas_set_fnode_layer(mcu_canvas_t *canvas, conference_fi
 	fnode->layer_id = idx;
 	fnode->canvas_id = canvas->canvas_id;
 
-	if (layer->member_id > -1) {
+	if (layer->member_id > 0) {
 		conference_member_t *member;
 
 		if ((member = conference_member_get(canvas->conference, layer->member_id))) {
