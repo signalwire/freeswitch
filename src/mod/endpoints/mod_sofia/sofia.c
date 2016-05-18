@@ -2027,15 +2027,18 @@ void sofia_process_dispatch_event_in_thread(sofia_dispatch_event_t **dep)
 	sofia_dispatch_event_t *de = *dep;
 	switch_memory_pool_t *pool;
 	//sofia_profile_t *profile = (*dep)->profile;
-
+	switch_thread_data_t *td;
 
 	switch_core_new_memory_pool(&pool);
 
 	*dep = NULL;
 	de->pool = pool;
 
+	td = switch_core_alloc(pool, sizeof(*td));
+	td->func = sofia_msg_thread_run_once;
+	td->obj = de;
 
-
+	switch_thread_pool_launch_thread(&td);
 }
 
 void sofia_process_dispatch_event(sofia_dispatch_event_t **dep)
