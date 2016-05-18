@@ -515,7 +515,9 @@ SWITCH_STANDARD_APP(socket_function)
 
 		switch_ivr_parse_all_events(session);
 
-		if (switch_test_flag(listener, LFLAG_RESUME) || ((var = switch_channel_get_variable(channel, "socket_resume")) && switch_true(var))) {
+		if (switch_channel_get_state(channel) != CS_HIBERNATE && 
+			!switch_channel_test_flag(channel, CF_REDIRECT) && !switch_channel_test_flag(channel, CF_TRANSFER) && !switch_channel_test_flag(channel, CF_RESET) 
+			&& (switch_test_flag(listener, LFLAG_RESUME) || ((var = switch_channel_get_variable(channel, "socket_resume")) && switch_true(var)))) {
 			switch_channel_set_state(channel, CS_EXECUTE);
 		}
 
@@ -2771,7 +2773,7 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 		channel = switch_core_session_get_channel(listener->session);
 	}
 
-	if (channel && 
+	if (channel && switch_channel_get_state(channel) != CS_HIBERNATE &&
 		!switch_channel_test_flag(channel, CF_REDIRECT) && !switch_channel_test_flag(channel, CF_TRANSFER) && !switch_channel_test_flag(channel, CF_RESET) &&
 		(switch_test_flag(listener, LFLAG_RESUME) || ((var = switch_channel_get_variable(channel, "socket_resume")) && switch_true(var)))) {
 		switch_channel_set_state(channel, CS_RESET);
