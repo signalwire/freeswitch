@@ -501,6 +501,8 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Sending CANCEL to %s\n", switch_channel_get_name(channel));
 				if (!tech_pvt->got_bye) {
 					switch_channel_set_variable(channel, "sip_hangup_disposition", "send_cancel");
+					switch_channel_set_variable(channel, "sip_invite_failure_status", "487");
+					switch_channel_set_variable(channel, "sip_invite_failure_phrase", "CANCEL");
 				}
 				if (!sofia_test_flag(tech_pvt, TFLAG_BYE)) {
 					nua_cancel(tech_pvt->nh,

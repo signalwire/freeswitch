@@ -1531,6 +1531,8 @@ static void our_sofia_event_callback(nua_event_t event,
 
 		if (sip && channel) {
 			switch_channel_set_variable(channel, "sip_hangup_disposition", "recv_cancel");
+			switch_channel_set_variable(channel, "sip_invite_failure_status", "487");
+			switch_channel_set_variable(channel, "sip_invite_failure_phrase", "CANCEL");
 
 			if (sip->sip_reason) {
 				char *reason_header = sip_header_as_string(nh->nh_home, (void *) sip->sip_reason);
@@ -6042,7 +6044,6 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 									  tagi_t tags[])
 {
 	char *call_info = NULL;
-
 	if (sip && session) {
 		switch_channel_t *channel = switch_core_session_get_channel(session);
 		const char *uuid;
@@ -6068,8 +6069,13 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 		if (status >= 400) {
 			char status_str[5];
 			switch_snprintf(status_str, sizeof(status_str), "%d", status);
+			switch_channel_set_variable(channel, "sip_invite_failure_status", status_str);
+			switch_channel_set_variable(channel, "sip_invite_failure_phrase", phrase);
 			switch_channel_set_variable_partner(channel, "sip_invite_failure_status", status_str);
 			switch_channel_set_variable_partner(channel, "sip_invite_failure_phrase", phrase);
+		} else {
+			switch_channel_set_variable_partner(channel, "sip_invite_failure_status", NULL);
+			switch_channel_set_variable_partner(channel, "sip_invite_failure_phrase", NULL);
 		}
 
 		if (status >= 400 && sip->sip_reason && sip->sip_reason->re_protocol && (!strcasecmp(sip->sip_reason->re_protocol, "Q.850")
