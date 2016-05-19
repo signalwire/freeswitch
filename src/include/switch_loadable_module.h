@@ -117,7 +117,7 @@ SWITCH_DECLARE(switch_endpoint_interface_t *) switch_loadable_module_get_endpoin
  */
 SWITCH_DECLARE(switch_codec_interface_t *) switch_loadable_module_get_codec_interface(const char *name, const char *modname);
 
-SWITCH_DECLARE(char *) switch_parse_codec_buf(char *buf, uint32_t *interval, uint32_t *rate, uint32_t *bit, uint32_t *channels, char **modname);
+SWITCH_DECLARE(char *) switch_parse_codec_buf(char *buf, uint32_t *interval, uint32_t *rate, uint32_t *bit, uint32_t *channels, char **modname, char **fmtp);
 
 /*!
   \brief Retrieve the dialplan interface by it's registered name
@@ -272,7 +272,7 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs(const switch_codec_impleme
   \return the number of elements added to the array
   \note this function only considers codecs that are listed in the "prefs" array and ignores the rest.
 */
-SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_implementation_t **array, int arraylen, char **prefs, int preflen);
+SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_implementation_t **array, char fmtp_array[SWITCH_MAX_CODECS][MAX_FMTP_LEN], int arraylen, char **prefs, int preflen);
 
 /*!
   \brief Execute a registered API command
