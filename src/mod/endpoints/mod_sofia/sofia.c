@@ -6526,6 +6526,12 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 						switch_core_media_proxy_remote_addr(session, NULL);
 					}
 
+					if (status == 415) {
+						int new_status = 488;
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Overriding %d %s with %d\n", status, phrase, new_status);
+						status = new_status;
+					}
+
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Passing %d %s to other leg\n%s\n", status, phrase, switch_str_nil(r_sdp));
 					
 					if (switch_core_session_compare(session, other_session)) {
