@@ -2704,11 +2704,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_write_frame(switch_core_sessio
 		return SWITCH_STATUS_GENERR;
 	}
 
-
-	if (!engine->read_codec.implementation || !switch_core_codec_ready(&engine->read_codec)) {
-		return SWITCH_STATUS_FALSE;
-	}
-
 	if (!switch_test_flag(frame, SFF_CNG) && !switch_test_flag(frame, SFF_PROXY_PACKET)) {
 		if (engine->read_impl.encoded_bytes_per_packet) {
 			bytes = engine->read_impl.encoded_bytes_per_packet;
