@@ -1122,6 +1122,8 @@ elif test "$ac_cv_sizeof_long" = "8"; then
     case "$host" in
         *pc-solaris2*)
         ;;
+	sparc-*-solaris2*)
+	;;
         *-solaris2*|*apple-darwin*|*-openbsd*)
 	    if test "$ac_cv_sizeof_long_long" = "8"; then
 	        int64_t_fmt='#define SWITCH_INT64_T_FMT "lld"'
