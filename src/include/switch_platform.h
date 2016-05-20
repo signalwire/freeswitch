@@ -279,7 +279,7 @@ typedef intptr_t switch_ssize_t;
 
 #endif
 
-#if defined(__sun__) && defined(__x86_64)
+#if defined(__sun__) && (defined(__x86_64) || defined(__arch64__))
 #define SWITCH_TIME_T_FMT SWITCH_SIZE_T_FMT
 #else
 #define SWITCH_TIME_T_FMT SWITCH_INT64_T_FMT
