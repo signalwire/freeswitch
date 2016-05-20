@@ -1079,10 +1079,6 @@ switch_status_t conference_api_sub_vid_personal(conference_obj_t *conference, sw
 	if (argv[2]) {
 		on = switch_true(argv[2]);
 		if (on) {
-			if (conference->record_count > 0) {
-				stream->write_function(stream, "-ERR conference is recording, not enabling vid-personal.\n");
-				return SWITCH_STATUS_SUCCESS;
-			}
 			conference_utils_set_flag(conference, CFLAG_PERSONAL_CANVAS);
 		} else {
 			conference_utils_clear_flag(conference, CFLAG_PERSONAL_CANVAS);
@@ -2512,11 +2508,6 @@ switch_status_t conference_api_sub_record(conference_obj_t *conference, switch_s
 
 	if (conference->conference_video_mode == CONF_VIDEO_MODE_PASSTHROUGH) {
 		stream->write_function(stream, "-ERR Video Passthru enabled, recording not permitted.\n");
-		return SWITCH_STATUS_SUCCESS;
-	}
-
-	if (conference_utils_test_flag(conference, CFLAG_PERSONAL_CANVAS)) {
-		stream->write_function(stream, "-ERR Personal Canvas enabled, recording not permitted.\n");
 		return SWITCH_STATUS_SUCCESS;
 	}
 

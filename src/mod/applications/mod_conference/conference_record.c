@@ -65,11 +65,6 @@ void conference_record_launch_thread(conference_obj_t *conference, char *path, i
 		return;
 	}
 
-	if (conference_utils_test_flag(conference, CFLAG_PERSONAL_CANVAS)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Personal Canvas enabled, recording not permitted.\n");
-		return;
-	}
-
 	rec->conference = conference;
 	rec->path = switch_core_strdup(pool, path);
 	rec->pool = pool;
@@ -235,9 +230,10 @@ void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *thread, v
 	flags = SWITCH_FILE_FLAG_WRITE | SWITCH_FILE_DATA_SHORT;
 
 	if (conference_utils_test_flag(conference, CFLAG_TRANSCODE_VIDEO)) {
+		char *orig_path = rec->path;
 		flags |= SWITCH_FILE_FLAG_VIDEO;
+
 		if (canvas) {
-			char *orig_path = rec->path;
 			rec->path = switch_core_sprintf(rec->pool, "{channels=%d,samplerate=%d,vw=%d,vh=%d,fps=%0.2f}%s",
 											conference->channels,
 											conference->rate,
@@ -245,9 +241,18 @@ void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *thread, v
 											canvas->height,
 											conference->video_fps.fps,
 											orig_path);
+		} else {
+			rec->path = switch_core_sprintf(rec->pool, "{channels=%d,samplerate=%d,vw=%d,vh=%d,fps=%0.2f}%s",
+											conference->channels,
+											conference->rate,
+											conference->canvas_width,
+											conference->canvas_height,
+											conference->video_fps.fps,
+											orig_path);
+
 		}
 	}
-
+	
 	if (switch_core_file_open(&member->rec->fh, rec->path, (uint8_t) conference->channels, conference->rate, flags, rec->pool) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening File [%s]\n", rec->path);
 
@@ -390,6 +395,7 @@ void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *thread, v
 		switch_mutex_unlock(conference->mutex);
 		switch_core_file_close(&member->rec->fh);
 	}
+
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Recording of %s Stopped\n", rec->path);
 	if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_event_add_data(conference, event);
