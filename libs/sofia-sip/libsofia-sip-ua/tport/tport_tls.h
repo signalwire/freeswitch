@@ -83,6 +83,7 @@ tls_t *tls_init_master(tls_issues_t *tls_issues);
 tls_t *tls_init_secondary(tls_t *tls_master, int sock, int accept);
 void tls_free(tls_t *tls);
 int tls_get_socket(tls_t *tls);
+void tls_log_errors(unsigned level, char const *s, unsigned long e);
 ssize_t tls_read(tls_t *tls);
 void *tls_read_buffer(tls_t *tls, size_t N);
 int tls_want_read(tls_t *tls, int events);

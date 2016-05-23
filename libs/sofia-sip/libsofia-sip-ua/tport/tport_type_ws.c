@@ -385,22 +385,37 @@ static int tport_ws_init_primary_secure(tport_primary_t *pri,
   SSL_CTX_sess_set_remove_cb(wspri->ssl_ctx, NULL);
   wspri->ws_secure = 1;
 
-  if ( !wspri->ssl_ctx ) goto done;
+  if ( !wspri->ssl_ctx ) {
+      tls_log_errors(3, "tport_ws_init_primary_secure", 0);
+      goto done;
+  }
 
   if (chain) {
-	  SSL_CTX_use_certificate_chain_file(wspri->ssl_ctx, chain);
+	  if ( !SSL_CTX_use_certificate_chain_file(wspri->ssl_ctx, chain) ) {
+            tls_log_errors(3, "tport_ws_init_primary_secure", 0);
+          }
   }
 
   /* set the local certificate from CertFile */
-  SSL_CTX_use_certificate_file(wspri->ssl_ctx, cert, SSL_FILETYPE_PEM);
+  if ( !SSL_CTX_use_certificate_file(wspri->ssl_ctx, cert, SSL_FILETYPE_PEM) ) {
+      tls_log_errors(3, "tport_ws_init_primary_secure", 0);
+      goto done;
+  }
   /* set the private key from KeyFile */
-  SSL_CTX_use_PrivateKey_file(wspri->ssl_ctx, key, SSL_FILETYPE_PEM);
+  if ( !SSL_CTX_use_PrivateKey_file(wspri->ssl_ctx, key, SSL_FILETYPE_PEM) ) {
+      tls_log_errors(3, "tport_ws_init_primary_secure", 0);
+      goto done;
+  }
   /* verify private key */
   if ( !SSL_CTX_check_private_key(wspri->ssl_ctx) ) {
-	  goto done;
+      tls_log_errors(3, "tport_ws_init_primary_secure", 0);
+      goto done;
   }
 
-  SSL_CTX_set_cipher_list(wspri->ssl_ctx, "!eNULL:!aNULL:!DSS:HIGH:@STRENGTH");
+  if ( !SSL_CTX_set_cipher_list(wspri->ssl_ctx, "!eNULL:!aNULL:!DSS:HIGH:@STRENGTH") ) {
+      tls_log_errors(3, "tport_ws_init_primary_secure", 0);
+      goto done;
+  }
 
   ret = tport_ws_init_primary(pri, tpn, ai, tags, return_culprit);
 
