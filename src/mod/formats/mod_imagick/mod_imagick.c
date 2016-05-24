@@ -61,8 +61,15 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_imagick_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_imagick_shutdown);
 SWITCH_MODULE_DEFINITION(mod_imagick, mod_imagick_load, mod_imagick_shutdown, NULL);
 
+typedef enum pdf_loading_state_s {
+	PLS_LOADING,
+	PLS_BREAK,
+	PLS_DONE
+} pdf_loading_state_t;
+
 struct pdf_file_context {
 	switch_memory_pool_t *pool;
+	switch_mutex_t *mutex;
 	switch_image_t *img;
 	int reads;
 	int sent;
@@ -75,16 +82,51 @@ struct pdf_file_context {
 	Image *images;
 	ExceptionInfo *exception;
 	int autoplay;
+	const char *path;
+	int lazy;
+	pdf_loading_state_t loading_state;
 	switch_time_t next_play_time;
 };
 
 typedef struct pdf_file_context pdf_file_context_t;
+
+static void *SWITCH_THREAD_FUNC open_pdf_thread_run(switch_thread_t *thread, void *obj)
+{
+	pdf_file_context_t *context = (pdf_file_context_t *)obj;
+	int pagenumber = context->lazy;
+	char path[1024];
+
+	while (context->loading_state == PLS_LOADING) {
+		Image *tmp_images;
+		switch_snprintf(path, sizeof(path), "%s[%d]", context->path, pagenumber);
+		switch_set_string(context->image_info->filename, path);
+		if ((tmp_images = ReadImages(context->image_info, context->exception))) {
+			pagenumber++;
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s page %d loaded\n", context->path, pagenumber);
+			AppendImageToList(&context->images, tmp_images);
+			context->pagecount = pagenumber;
+		} else {
+			break;
+		}
+	}
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "read file: %s %s, pagecount: %d\n",
+		context->path, context->loading_state == PLS_BREAK ? "break" : "done", pagenumber);
+
+	switch_mutex_lock(context->mutex);
+	context->loading_state = PLS_DONE;
+	switch_mutex_unlock(context->mutex);
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Read Images Thread Ended.\n");
+	return NULL;
+}
 
 static switch_status_t imagick_file_open(switch_file_handle_t *handle, const char *path)
 {
 	pdf_file_context_t *context;
 	char *ext;
 	unsigned int flags = 0;
+	char range_path[1024];
 
 	if ((ext = strrchr((char *)path, '.')) == 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Format\n");
@@ -121,13 +163,14 @@ static switch_status_t imagick_file_open(switch_file_handle_t *handle, const cha
 
 	context->exception = AcquireExceptionInfo();
 	context->image_info = AcquireImageInfo();
-	switch_set_string(context->image_info->filename, path);
+	context->path = switch_core_strdup(handle->memory_pool, path);
 
 	if (handle->params) {
 		const char *max = switch_event_get_header(handle->params, "img_ms");
 		const char *autoplay = switch_event_get_header(handle->params, "autoplay");
 		const char *density = switch_event_get_header(handle->params, "density");
 		const char *quality = switch_event_get_header(handle->params, "quality");
+		const char *lazy = switch_event_get_header(handle->params, "lazy");
 		int tmp;
 
 		if (max) {
@@ -148,6 +191,23 @@ static switch_status_t imagick_file_open(switch_file_handle_t *handle, const cha
 
 			if (tmp > 0) context->image_info->quality = tmp;
 		}
+		if (lazy) {
+			int tmp = atoi(lazy);
+
+			if (tmp >= 0) {
+				context->lazy = tmp;
+			} else {
+				context->lazy = 1;
+			}
+		}
+	}
+
+	if (context->lazy) {
+		switch_snprintf(range_path, sizeof(range_path), "%s[0-%d]", path, context->lazy - 1);
+		switch_set_string(context->image_info->filename, range_path);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "loading first %d page%s\n", context->lazy, context->lazy > 1 ? "s" : "");
+	} else {
+		switch_set_string(context->image_info->filename, path);
 	}
 
 	context->images = ReadImages(context->image_info, context->exception);
@@ -175,7 +235,20 @@ static switch_status_t imagick_file_open(switch_file_handle_t *handle, const cha
 	handle->private_info = context;
 	context->pool = handle->memory_pool;
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Opening File [%s], pagecount: %d\n", path, context->pagecount);
+	if (context->lazy) {
+		switch_thread_t *thread;
+		switch_threadattr_t *thd_attr = NULL;
+
+		switch_mutex_init(&context->mutex, SWITCH_MUTEX_NESTED, context->pool);
+		context->loading_state = PLS_LOADING;
+		switch_thread_create(&thread, thd_attr, open_pdf_thread_run, context, context->pool);
+	}
+
+	if (context->lazy) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Opening File %s, read the first %d page(s)", path, context->lazy);
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Opening File %s", path);
+	}
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -183,6 +256,18 @@ static switch_status_t imagick_file_open(switch_file_handle_t *handle, const cha
 static switch_status_t imagick_file_close(switch_file_handle_t *handle)
 {
 	pdf_file_context_t *context = (pdf_file_context_t *)handle->private_info;
+
+	if (context->lazy) {
+		switch_mutex_lock(context->mutex);
+		if (context->loading_state == PLS_LOADING) context->loading_state = PLS_BREAK;
+		switch_mutex_unlock(context->mutex);
+
+		while (context->loading_state != PLS_DONE) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "waiting for pdf loading thread done, loading_state: %d\n", context->loading_state);
+			switch_yield(1000000);
+			switch_cond_next();
+		}
+	}
 
 	switch_img_free(&context->img);
 
