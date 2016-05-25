@@ -116,9 +116,6 @@ switch_status_t skinny_create_incoming_session(listener_t *listener, uint32_t *l
 
 	if (!button || !button->shortname[0]) {
 		skinny_log_l(listener, SWITCH_LOG_CRIT, "Line %d not found on device\n", *line_instance_p);
-		if ( button ) {
-			switch_safe_free(button);
-		}
 		goto error;
 	}
 
@@ -202,17 +199,13 @@ error:
 	}
 
 	listener->profile->ib_failed_calls++;
-	if ( button ) {
-		switch_safe_free(button);
-	}
+	switch_safe_free(button);
 	return SWITCH_STATUS_FALSE;
 
 done:
 	*session = nsession;
 	listener->profile->ib_calls++;
-	if ( button ) {
-		switch_safe_free(button);
-	}
+	switch_safe_free(button);
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -1531,11 +1524,12 @@ switch_status_t skinny_handle_stimulus_message(listener_t *listener, skinny_mess
 				}
 				if ( !session ) {
 					skinny_log_l_msg(listener, SWITCH_LOG_CRIT, "Unable to handle speed dial stimulus message, couldn't create incoming session.\n");
+					switch_safe_free(button_speed_dial);
 					return SWITCH_STATUS_FALSE;
 				}
 				skinny_session_process_dest(session, listener, line_instance, button_speed_dial->line, '\0', 0);
-				switch_safe_free(button_speed_dial);
 			}
+			switch_safe_free(button_speed_dial);
 			break;
 		case SKINNY_BUTTON_HOLD:
 			session = skinny_profile_find_session(listener->profile, listener, &line_instance, call_id);
