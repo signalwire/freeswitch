@@ -1480,7 +1480,7 @@ void conference_video_launch_muxing_write_thread(conference_member_t *member)
 	switch_mutex_lock(conference_globals.hash_mutex);
 	if (!member->video_muxing_write_thread) {
 		switch_threadattr_create(&thd_attr, member->pool);
-		switch_threadattr_priority_set(thd_attr, SWITCH_PRI_REALTIME);
+		//switch_threadattr_priority_set(thd_attr, SWITCH_PRI_REALTIME);
 		switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
 		switch_thread_create(&member->video_muxing_write_thread, thd_attr, conference_video_muxing_write_thread_run, member, member->pool);
 	}
@@ -1493,7 +1493,7 @@ void conference_video_launch_muxing_thread(conference_obj_t *conference, mcu_can
 	switch_mutex_lock(conference_globals.hash_mutex);
 	if (!canvas->video_muxing_thread) {
 		switch_threadattr_create(&thd_attr, conference->pool);
-		switch_threadattr_priority_set(thd_attr, SWITCH_PRI_REALTIME);
+		//switch_threadattr_priority_set(thd_attr, SWITCH_PRI_REALTIME);
 		switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
 		conference_utils_set_flag(conference, CFLAG_VIDEO_MUXING);
 		switch_thread_create(&canvas->video_muxing_thread, thd_attr,
