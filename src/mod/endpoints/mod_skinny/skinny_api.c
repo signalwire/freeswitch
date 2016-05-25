@@ -94,6 +94,7 @@ static switch_status_t skinny_api_list_devices(const char *line, const char *cur
 		return status;
 	}
 	if (!(argc = switch_separate_string(myline, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) || argc < 4) {
+		switch_safe_free(myline);
 		return status;
 	}
 
@@ -114,6 +115,8 @@ static switch_status_t skinny_api_list_devices(const char *line, const char *cur
 		*matches = h.my_matches;
 		status = SWITCH_STATUS_SUCCESS;
 	}
+
+	switch_safe_free(myline);
 
 	return status;
 }
