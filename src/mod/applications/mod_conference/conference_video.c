@@ -330,9 +330,13 @@ void conference_video_reset_image(switch_image_t *img, switch_rgb_color_t *color
 
 void conference_video_clear_layer(mcu_layer_t *layer)
 {
-	switch_img_fill(layer->canvas->img, layer->x_pos, layer->y_pos, layer->screen_w, layer->screen_h, &layer->canvas->bgcolor);
+	if (layer->canvas && layer->canvas->img) {
+		switch_img_fill(layer->canvas->img, layer->x_pos, layer->y_pos, layer->screen_w, layer->screen_h, &layer->canvas->bgcolor);
+	}
+
 	layer->banner_patched = 0;
 	layer->refresh = 1;
+	
 }
 
 void conference_video_reset_layer(mcu_layer_t *layer)
@@ -641,8 +645,7 @@ void conference_video_detach_video_layer(conference_member_t *member)
 	switch_mutex_lock(canvas->mutex);
 
 	if (member->video_layer_id < 0) {
-		switch_mutex_unlock(canvas->mutex);
-		return;
+		goto end;
 	}
 	
 	layer = &canvas->layers[member->video_layer_id];
@@ -675,6 +678,8 @@ void conference_video_detach_video_layer(conference_member_t *member)
 	if (canvas->bgimg) {
 		conference_video_set_canvas_bgimg(canvas, NULL);
 	}
+
+ end:
 
 	switch_mutex_unlock(canvas->mutex);
 	conference_video_release_canvas(&canvas);
