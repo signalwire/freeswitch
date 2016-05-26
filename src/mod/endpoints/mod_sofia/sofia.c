@@ -6919,8 +6919,9 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 
 	if (channel && (status == 180 || status == 183) && switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
 		const char *full_to = NULL;
-		const char *val;
-		if ((val = switch_channel_get_variable(channel, "sip_auto_answer")) && switch_true(val)) {
+		const char *var;
+		if ((var = switch_channel_get_variable(channel, "sip_auto_answer")) && switch_true(var) &&
+                    !((var = switch_channel_get_variable(channel, "sip_auto_answer_suppress_notify")) && switch_true(var))) {
 			full_to = switch_str_nil(switch_channel_get_variable(channel, "sip_full_to"));
 
 			nua_notify(nh,
