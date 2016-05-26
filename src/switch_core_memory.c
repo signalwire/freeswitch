@@ -37,6 +37,7 @@
 
 //#define DEBUG_ALLOC
 //#define DEBUG_ALLOC2
+//#define DEBUG_ALLOC_CUTOFF 0 /* Lower to zero to log all pool allocations when DEBUG_ALLOC is defined */
 //#define DESTROY_POOLS
 //#define INSTANTLY_DESTROY_POOLS
 //#define LOCK_MORE
@@ -44,6 +45,9 @@
 //#define SWITCH_POOL_RECYCLE
 #ifndef SWITCH_POOL_RECYCLE
 #define PER_POOL_LOCK 1
+#endif
+#ifndef DEBUG_ALLOC_CUTOFF
+#define DEBUG_ALLOC_CUTOFF 500
 #endif
 
 static struct {
@@ -79,7 +83,7 @@ SWITCH_DECLARE(void *) switch_core_perform_session_alloc(switch_core_session_t *
 #endif
 
 #ifdef DEBUG_ALLOC
-	if (memory > 500)
+	if (memory > DEBUG_ALLOC_CUTOFF)
 		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_CONSOLE, "%p %p Session Allocate %s %d\n", 
 						  (void *) session->pool, (void *) session, apr_pool_tag(session->pool, NULL), (int) memory);
 #endif
@@ -247,7 +251,7 @@ SWITCH_DECLARE(char *) switch_core_perform_session_strdup(switch_core_session_t 
 
 #ifdef DEBUG_ALLOC
 	len = strlen(todup);
-	if (len > 500)
+	if (len > DEBUG_ALLOC_CUTOFF)
 		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_CONSOLE, "%p %p Sess Strdup Allocate %s %ld\n", 
 						  (void *) session->pool, (void *)session, apr_pool_tag(session->pool, NULL), strlen(todup));
 #endif
@@ -286,7 +290,7 @@ SWITCH_DECLARE(char *) switch_core_perform_strdup(switch_memory_pool_t *pool, co
 	len = strlen(todup) + 1;
 
 #ifdef DEBUG_ALLOC
-	if (len > 500)
+	if (len > DEBUG_ALLOC_CUTOFF)
 		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_CONSOLE, "%p Core Strdup Allocate %s %d\n", 
 						  (void *) pool, apr_pool_tag(pool, NULL), (int)len);
 #endif
@@ -457,7 +461,7 @@ SWITCH_DECLARE(void *) switch_core_perform_alloc(switch_memory_pool_t *pool, swi
 #endif
 
 #ifdef DEBUG_ALLOC
-	if (memory > 500)
+	if (memory > DEBUG_ALLOC_CUTOFF)
 		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_CONSOLE, "%p Core Allocate %s %d\n", 
 						  (void *) pool, apr_pool_tag(pool, NULL), (int) memory);
 	/*switch_assert(memory < 20000); */
