@@ -3347,6 +3347,10 @@ static switch_status_t check_ice(switch_media_handle_t *smh, switch_media_type_t
 	const char *val;
 	int ice_seen = 0, cid = 0, ai = 0;
 
+	if (switch_true(switch_channel_get_variable_dup(smh->session->channel, "ignore_sdp_ice", SWITCH_FALSE, -1))) {
+		return SWITCH_STATUS_BREAK;
+	}
+
 	//if (engine->ice_in.is_chosen[0] && engine->ice_in.is_chosen[1]) {
 		//return SWITCH_STATUS_SUCCESS;
 	//}
