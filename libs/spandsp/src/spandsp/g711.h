@@ -50,9 +50,12 @@ specification by other means.
 #if !defined(_SPANDSP_G711_H_)
 #define _SPANDSP_G711_H_
 
+/*! The A-law alternate mark inversion mask */
+#define G711_ALAW_AMI_MASK          0x55
+
 /* The usual values to use on idle channels, to emulate silence */
 /*! Idle value for A-law channels */
-#define G711_ALAW_IDLE_OCTET        0x5D
+#define G711_ALAW_IDLE_OCTET        (0x80 ^ G711_ALAW_AMI_MASK)
 /*! Idle value for u-law channels */
 #define G711_ULAW_IDLE_OCTET        0xFF
 
@@ -191,9 +194,6 @@ static __inline__ int16_t ulaw_to_linear(uint8_t ulaw)
  * For further information see John C. Bellamy's Digital Telephony, 1982,
  * John Wiley & Sons, pps 98-111 and 472-476.
  */
-
-/*! The A-law alternate mark inversion mask */
-#define G711_ALAW_AMI_MASK      0x55
 
 /*! \brief Encode a linear sample to A-law
     \param linear The sample to encode.
