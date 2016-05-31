@@ -2635,6 +2635,7 @@ switch_status_t conference_api_sub_recording(conference_obj_t *conference, switc
 		if (strcasecmp(argv[2], "start") == 0) {
 			argv[1] = argv[2];
 			argv[2] = argv[3];
+			argv[3] = argv[4];
 			return conference_api_sub_record(conference,stream,4,argv);
 		} else if (strcasecmp(argv[2], "stop") == 0) {
 			argv[1] = argv[2];
