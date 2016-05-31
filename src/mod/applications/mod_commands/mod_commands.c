@@ -5443,12 +5443,12 @@ SWITCH_STANDARD_API(show_function)
 				}
 				if (strchr(argv[2], '%')) {
 					sprintf(sql,
-						"select * from channels where hostname='%s' and uuid like '%s' or name like '%s' or cid_name like '%s' or cid_num like '%s' or presence_data like '%s' order by created_epoch",
-						switch_core_get_switchname(), argv[2], argv[2], argv[2], argv[2], argv[2]);
+						"select * from channels where hostname='%s' and uuid like '%s' or name like '%s' or cid_name like '%s' or cid_num like '%s' or presence_data like '%s' or accountcode like '%s' order by created_epoch",
+						switch_core_get_switchname(), argv[2], argv[2], argv[2], argv[2], argv[2], argv[2]);
 				} else {
 					sprintf(sql,
-						"select * from channels where hostname='%s' and uuid like '%%%s%%' or name like '%%%s%%' or cid_name like '%%%s%%' or cid_num like '%%%s%%' or presence_data like '%%%s%%' order by created_epoch",
-						switch_core_get_switchname(), argv[2], argv[2], argv[2], argv[2], argv[2]);
+						"select * from channels where hostname='%s' and uuid like '%%%s%%' or name like '%%%s%%' or cid_name like '%%%s%%' or cid_num like '%%%s%%' or presence_data like '%%%s%%' or accountcode like '%%%s%%' order by created_epoch",
+						switch_core_get_switchname(), argv[2], argv[2], argv[2], argv[2], argv[2], argv[2]);
 				}
 				if (argv[4] && !strcasecmp(argv[3], "as")) {
 					as = argv[4];
