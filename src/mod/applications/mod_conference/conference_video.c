@@ -2314,7 +2314,7 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 		members_with_avatar = conference->members_with_avatar;
 
 		if (conference_utils_test_flag(conference, CFLAG_VIDEO_BRIDGE_FIRST_TWO)) {
-			if (conference->members_with_video < 3) {
+			if (conference->members_seeing_video < 3) {
 				switch_yield(20000);
 				continue;
 			}
@@ -3729,7 +3729,7 @@ switch_status_t conference_video_thread_callback(switch_core_session_t *session,
 
 
 	if (conference_utils_test_flag(member->conference, CFLAG_VIDEO_BRIDGE_FIRST_TWO)) {
-		if (member->conference->members_with_video < 3) {
+		if (member->conference->members_seeing_video < 3) {
 			conference_video_write_frame(member->conference, member, frame);
 			conference_video_check_recording(member->conference, NULL, frame);
 			switch_thread_rwlock_unlock(member->conference->rwlock);

@@ -166,7 +166,7 @@ void conference_utils_set_cflags(const char *flags, conference_flag_t *f)
 	if (flags) {
 		char *dup = strdup(flags);
 		char *p;
-		char *argv[10] = { 0 };
+		char *argv[25] = { 0 };
 		int i, argc = 0;
 
 		for (p = dup; p && *p; p++) {
