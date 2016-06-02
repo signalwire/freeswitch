@@ -6217,11 +6217,11 @@ static void gen_ice(switch_core_session_t *session, switch_media_type_t type, co
 
 	engine = &smh->engines[type];
 
-#ifdef RTCP_MUX
-	if (!engine->rtcp_mux) {//  && type == SWITCH_MEDIA_TYPE_AUDIO) {
-		engine->rtcp_mux = SWITCH_TRUE;
-	}
-#endif
+	//#ifdef RTCP_MUX
+	//if (!engine->rtcp_mux) {//  && type == SWITCH_MEDIA_TYPE_AUDIO) {
+	//	engine->rtcp_mux = SWITCH_TRUE;
+	//}
+	//#endif
 
 	if (!smh->msid) {
 		switch_stun_random_string(tmp, 32, NULL);
@@ -7681,7 +7681,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 	a_engine = &smh->engines[SWITCH_MEDIA_TYPE_AUDIO];
 	v_engine = &smh->engines[SWITCH_MEDIA_TYPE_VIDEO];
 
-	if (switch_true(switch_channel_get_variable(session->channel, "rtcp_mux"))) {
+	if (sdp_type == SDP_TYPE_REQUEST || switch_true(switch_channel_get_variable(session->channel, "rtcp_mux"))) {
 		a_engine->rtcp_mux = 1;
 		v_engine->rtcp_mux = 1;
 	}
