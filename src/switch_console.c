@@ -352,7 +352,7 @@ SWITCH_DECLARE(switch_status_t) switch_console_execute(char *xcmd, int rec, swit
 	int argc;
 	char *argv[128];
 	int x;
-	char *dup = strdup(xcmd);
+	char *dup = NULL;
 	char *cmd;
 
 	switch_status_t status = SWITCH_STATUS_FALSE;
@@ -362,6 +362,10 @@ SWITCH_DECLARE(switch_status_t) switch_console_execute(char *xcmd, int rec, swit
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Too much recursion!\n");
 		goto end;
 	}
+
+	while (*xcmd == ' ') xcmd++;
+
+	dup = strdup(xcmd);
 
 	if (!strncasecmp(xcmd, "alias", 5)) {
 		argc = 1;
