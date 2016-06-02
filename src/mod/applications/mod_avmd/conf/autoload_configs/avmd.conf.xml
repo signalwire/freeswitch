@@ -38,7 +38,7 @@
 
             <!-- define number of samples to skip starting from the beginning
                  of the frame and after reset -->
-            <param name="sample_n_to_skeep" value="6"/>
+            <param name="sample_n_to_skip" value="6"/>
 
             <!-- define/undefine this to enable/disable simplified estimation
                  of frequency based on approximation of sin(x) with (x)
