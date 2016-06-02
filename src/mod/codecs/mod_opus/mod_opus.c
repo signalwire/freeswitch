@@ -1244,27 +1244,27 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_opus_load)
 		codec_interface->implementations->codec_control = switch_opus_control;
 
 		settings.stereo = 1;
-		if (x < 2) {
-			dft_fmtp = gen_fmtp(&settings, pool);
-			switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
-												 116,	/* the IANA code number */
-												 "opus",/* the IANA code name */
-												 dft_fmtp,	/* default fmtp to send (can be overridden by the init function) */
-												 rate,	/* samples transferred per second */
-												 rate,	/* actual samples transferred per second */
-												 bits,	/* bits transferred per second */
-												 mss,	/* number of microseconds per frame */
-												 samples,	/* number of samples per frame */
-												 bytes * 2,	/* number of bytes per frame decompressed */
-												 0,	/* number of bytes per frame compressed */
-												 2,/* number of channels represented */
-												 1,	/* number of frames per network packet */
-												 switch_opus_init,	/* function to initialize a codec handle using this implementation */
-												 switch_opus_encode,	/* function to encode raw data into encoded data */
-												 switch_opus_decode,	/* function to decode encoded data into raw data */
-												 switch_opus_destroy);	/* deinitalize a codec handle using this implementation */
-			codec_interface->implementations->codec_control = switch_opus_control;
-		}
+
+		dft_fmtp = gen_fmtp(&settings, pool);
+		switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
+											 116,	/* the IANA code number */
+											 "opus",/* the IANA code name */
+											 dft_fmtp,	/* default fmtp to send (can be overridden by the init function) */
+											 rate,	/* samples transferred per second */
+											 rate,	/* actual samples transferred per second */
+											 bits,	/* bits transferred per second */
+											 mss,	/* number of microseconds per frame */
+											 samples,	/* number of samples per frame */
+											 bytes * 2,	/* number of bytes per frame decompressed */
+											 0,	/* number of bytes per frame compressed */
+											 2,/* number of channels represented */
+											 1,	/* number of frames per network packet */
+											 switch_opus_init,	/* function to initialize a codec handle using this implementation */
+											 switch_opus_encode,	/* function to encode raw data into encoded data */
+											 switch_opus_decode,	/* function to decode encoded data into raw data */
+											 switch_opus_destroy);	/* deinitalize a codec handle using this implementation */
+		codec_interface->implementations->codec_control = switch_opus_control;
+	
 		bytes *= 2;
 		samples *= 2;
 		mss *= 2;

@@ -205,15 +205,15 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 					for (impl = ptr->implementations; impl; impl = impl->next) {
 						if (impl->bits_per_second) {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE,
-											  "Adding Codec %s %d %s %dhz %dms %dbps\n",
+											  "Adding Codec %s %d %s %dhz %dms %dch %dbps\n",
 											  impl->iananame, impl->ianacode,
 											  ptr->interface_name, impl->actual_samples_per_second, 
-											  impl->microseconds_per_packet / 1000, impl->bits_per_second);
+											  impl->microseconds_per_packet / 1000, impl->number_of_channels, impl->bits_per_second);
 						} else {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE,
-											  "Adding Codec %s %d %s %dhz %dms (VBR)\n",
+											  "Adding Codec %s %d %s %dhz %dms %dch (VBR)\n",
 											  impl->iananame, impl->ianacode,
-											  ptr->interface_name, impl->actual_samples_per_second, impl->microseconds_per_packet / 1000);
+											  ptr->interface_name, impl->actual_samples_per_second, impl->microseconds_per_packet / 1000, impl->number_of_channels);
 						}
 
 						node = switch_core_alloc(new_module->pool, sizeof(*node));
