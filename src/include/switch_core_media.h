@@ -286,6 +286,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_get_payload_code(switch_core
 																	 switch_media_type_t type,
 																	 const char *iananame,
 																	 uint32_t rate,
+																	 const char *fmtp_in,
 																	 switch_payload_t *ptP,
 																	 switch_payload_t *recv_ptP,
 																	 char **fmtpP);
