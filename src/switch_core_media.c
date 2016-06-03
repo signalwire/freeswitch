@@ -4858,9 +4858,6 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 
 					if (vmatch && vmatch_pt) {
 						const char *other_pt = switch_channel_get_variable_partner(channel, "rtp_video_pt");
-						const char *other_fmtp = switch_channel_get_variable_partner(channel, "rtp_video_fmtp");
-
-						const char *foo = switch_channel_get_partner_uuid(channel);
 
 						if (other_pt) {
 							int opt = atoi(other_pt);
