@@ -3403,7 +3403,7 @@ static void parse_bri_pri_spans(switch_xml_t cfg, switch_xml_t spans)
 				//switch_core_strdup(pool, val);
 				const switch_codec_implementation_t *codec = NULL;
 				int num_codecs;
-				num_codecs = switch_loadable_module_get_codecs_sorted(&codec, 1, &val, 1);
+				num_codecs = switch_loadable_module_get_codecs_sorted(&codec, NULL, 1, &val, 1);
 				if (num_codecs != 1 || !codec) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
 					"Failed finding codec %s for unrestricted digital calls\n", val);
