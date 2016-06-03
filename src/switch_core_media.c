@@ -3342,10 +3342,10 @@ static switch_bool_t ip_possible(switch_media_handle_t *smh, const char *ip)
 static switch_status_t check_ice(switch_media_handle_t *smh, switch_media_type_t type, sdp_session_t *sdp, sdp_media_t *m)
 {
 	switch_rtp_engine_t *engine = &smh->engines[type];
-	sdp_attribute_t *attr;
+	sdp_attribute_t *attr = NULL, *attrs[2] = { 0 };
 	int i = 0, got_rtcp_mux = 0;
 	const char *val;
-	int ice_seen = 0, cid = 0, ai = 0;
+	int ice_seen = 0, cid = 0, ai = 0, attr_idx = 0, cand_seen = 0;
 
 	if (switch_true(switch_channel_get_variable_dup(smh->session->channel, "ignore_sdp_ice", SWITCH_FALSE, -1))) {
 		return SWITCH_STATUS_BREAK;
@@ -3364,157 +3364,161 @@ static switch_status_t check_ice(switch_media_handle_t *smh, switch_media_type_t
 	engine->remote_ssrc = 0;
 
 	if (m) {
-		attr = m->m_attributes;
+		attrs[0] = m->m_attributes;
+		attrs[1] = sdp->sdp_attributes;
 	} else {
-		attr = sdp->sdp_attributes;
+		attrs[0] = sdp->sdp_attributes;
 	}
 
-	for (; attr; attr = attr->a_next) {
-		char *data;
-		char *fields[15];
-		int argc = 0, j = 0;
+	for (attr_idx = 0; attr_idx < 2 && !(ice_seen && cand_seen); attr_idx++) {
+		for (attr = attrs[attr_idx]; attr; attr = attr->a_next) {
+			char *data;
+			char *fields[15];
+			int argc = 0, j = 0;
 
-		if (zstr(attr->a_name)) {
-			continue;
-		}
+			if (zstr(attr->a_name)) {
+				continue;
+			}
 		
-		if (!strcasecmp(attr->a_name, "ice-ufrag")) {
-			if (engine->ice_in.ufrag && !strcmp(engine->ice_in.ufrag, attr->a_value)) {
-				engine->new_ice = 0;
-			} else {
-				engine->ice_in.ufrag = switch_core_session_strdup(smh->session, attr->a_value);
-				engine->new_ice = 1;
-			}
-			ice_seen++;
-		} else if (!strcasecmp(attr->a_name, "ice-pwd")) {
-			if (!engine->ice_in.pwd || strcmp(engine->ice_in.pwd, attr->a_value)) {
-				engine->ice_in.pwd = switch_core_session_strdup(smh->session, attr->a_value);
-			}
-		} else if (!strcasecmp(attr->a_name, "ice-options")) {
-			engine->ice_in.options = switch_core_session_strdup(smh->session, attr->a_value);
-		} else if (!strcasecmp(attr->a_name, "setup")) {
-			if (!strcasecmp(attr->a_value, "passive") || !strcasecmp(attr->a_value, "actpass")) {
-				if (!engine->dtls_controller) {
-					engine->new_dtls = 1;
-					engine->new_ice = 1;
-				}
-				engine->dtls_controller = 1;
-			} else if (!strcasecmp(attr->a_value, "active")) {
-				if (engine->dtls_controller) {
-					engine->new_dtls = 1;
-					engine->new_ice = 1;
-				}
-				engine->dtls_controller = 0;
-			}
-		} else if (switch_rtp_has_dtls() && dtls_ok(smh->session) && !strcasecmp(attr->a_name, "fingerprint") && !zstr(attr->a_value)) {
-			char *p;
-
-			engine->remote_dtls_fingerprint.type = switch_core_session_strdup(smh->session, attr->a_value);
-			
-			if ((p = strchr(engine->remote_dtls_fingerprint.type, ' '))) {
-				*p++ = '\0';
-
-				if (switch_channel_test_flag(smh->session->channel, CF_REINVITE) && !switch_channel_test_flag(smh->session->channel, CF_RECOVERING) &&
-					!zstr(engine->remote_dtls_fingerprint.str) && !strcmp(engine->remote_dtls_fingerprint.str, p)) {
-						engine->new_dtls = 0;
+			if (!strcasecmp(attr->a_name, "ice-ufrag")) {
+				if (engine->ice_in.ufrag && !strcmp(engine->ice_in.ufrag, attr->a_value)) {
+					engine->new_ice = 0;
 				} else {
-					switch_set_string(engine->remote_dtls_fingerprint.str, p);
-					engine->new_dtls = 1;
+					engine->ice_in.ufrag = switch_core_session_strdup(smh->session, attr->a_value);
 					engine->new_ice = 1;
 				}
-			}
+				ice_seen++;
+			} else if (!strcasecmp(attr->a_name, "ice-pwd")) {
+				if (!engine->ice_in.pwd || strcmp(engine->ice_in.pwd, attr->a_value)) {
+					engine->ice_in.pwd = switch_core_session_strdup(smh->session, attr->a_value);
+				}
+			} else if (!strcasecmp(attr->a_name, "ice-options")) {
+				engine->ice_in.options = switch_core_session_strdup(smh->session, attr->a_value);
+			} else if (!strcasecmp(attr->a_name, "setup")) {
+				if (!strcasecmp(attr->a_value, "passive") || !strcasecmp(attr->a_value, "actpass")) {
+					if (!engine->dtls_controller) {
+						engine->new_dtls = 1;
+						engine->new_ice = 1;
+					}
+					engine->dtls_controller = 1;
+				} else if (!strcasecmp(attr->a_value, "active")) {
+					if (engine->dtls_controller) {
+						engine->new_dtls = 1;
+						engine->new_ice = 1;
+					}
+					engine->dtls_controller = 0;
+				}
+			} else if (switch_rtp_has_dtls() && dtls_ok(smh->session) && !strcasecmp(attr->a_name, "fingerprint") && !zstr(attr->a_value)) {
+				char *p;
+
+				engine->remote_dtls_fingerprint.type = switch_core_session_strdup(smh->session, attr->a_value);
+			
+				if ((p = strchr(engine->remote_dtls_fingerprint.type, ' '))) {
+					*p++ = '\0';
+
+					if (switch_channel_test_flag(smh->session->channel, CF_REINVITE) && !switch_channel_test_flag(smh->session->channel, CF_RECOVERING) &&
+						!zstr(engine->remote_dtls_fingerprint.str) && !strcmp(engine->remote_dtls_fingerprint.str, p)) {
+						engine->new_dtls = 0;
+					} else {
+						switch_set_string(engine->remote_dtls_fingerprint.str, p);
+						engine->new_dtls = 1;
+						engine->new_ice = 1;
+					}
+				}
 			
 
-			//if (strcasecmp(engine->remote_dtls_fingerprint.type, "sha-256")) {
-			//	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_WARNING, "Unsupported fingerprint type.\n");
+				//if (strcasecmp(engine->remote_dtls_fingerprint.type, "sha-256")) {
+				//	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_WARNING, "Unsupported fingerprint type.\n");
 				//engine->local_dtls_fingerprint.type = NULL;
 				//engine->remote_dtls_fingerprint.type = NULL;
-			//}
+				//}
 
 
-			generate_local_fingerprint(smh, type);
-			switch_channel_set_flag(smh->session->channel, CF_DTLS);
+				generate_local_fingerprint(smh, type);
+				switch_channel_set_flag(smh->session->channel, CF_DTLS);
 			
-		} else if (!engine->remote_ssrc && !strcasecmp(attr->a_name, "ssrc") && attr->a_value) {
-			engine->remote_ssrc = (uint32_t) atol(attr->a_value);
+			} else if (!engine->remote_ssrc && !strcasecmp(attr->a_name, "ssrc") && attr->a_value) {
+				engine->remote_ssrc = (uint32_t) atol(attr->a_value);
 
-			if (engine->rtp_session && engine->remote_ssrc) {
-				switch_rtp_set_remote_ssrc(engine->rtp_session, engine->remote_ssrc);
-			}
+				if (engine->rtp_session && engine->remote_ssrc) {
+					switch_rtp_set_remote_ssrc(engine->rtp_session, engine->remote_ssrc);
+				}
 	
 
 #ifdef RTCP_MUX
-		} else if (!strcasecmp(attr->a_name, "rtcp-mux")) {
-			engine->rtcp_mux = SWITCH_TRUE;
-			engine->remote_rtcp_port = engine->cur_payload_map->remote_sdp_port;
-			got_rtcp_mux++;
+			} else if (!strcasecmp(attr->a_name, "rtcp-mux")) {
+				engine->rtcp_mux = SWITCH_TRUE;
+				engine->remote_rtcp_port = engine->cur_payload_map->remote_sdp_port;
+				got_rtcp_mux++;
 #endif
-		} else if (!strcasecmp(attr->a_name, "candidate")) {
-			switch_channel_set_flag(smh->session->channel, CF_ICE);
+			} else if (!strcasecmp(attr->a_name, "candidate")) {
+				switch_channel_set_flag(smh->session->channel, CF_ICE);
 
-			if (!engine->cand_acl_count) {
-				engine->cand_acl[engine->cand_acl_count++] = "wan.auto";
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_WARNING, "NO candidate ACL defined, Defaulting to wan.auto\n");
-			}
+				if (!engine->cand_acl_count) {
+					engine->cand_acl[engine->cand_acl_count++] = "wan.auto";
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_WARNING, "NO candidate ACL defined, Defaulting to wan.auto\n");
+				}
 
 
-			if (!switch_stristr(" udp ", attr->a_value)) {
-				continue;
-			}
+				if (!switch_stristr(" udp ", attr->a_value)) {
+					continue;
+				}
 
-			data = switch_core_session_strdup(smh->session, attr->a_value);
+				data = switch_core_session_strdup(smh->session, attr->a_value);
 			
-			argc = switch_split(data, ' ', fields);
+				argc = switch_split(data, ' ', fields);
 			
-			cid = fields[1] ? atoi(fields[1]) - 1 : 0;
+				cid = fields[1] ? atoi(fields[1]) - 1 : 0;
 
-			if (argc < 5 || engine->ice_in.cand_idx[cid] >= MAX_CAND - 1) {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_WARNING, "Invalid data\n");
-				continue;
-			}
+				if (argc < 5 || engine->ice_in.cand_idx[cid] >= MAX_CAND - 1) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_WARNING, "Invalid data\n");
+					continue;
+				}
 
-			for (i = 0; i < argc; i++) {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_DEBUG1, "CAND %d [%s]\n", i, fields[i]);
-			}
+				for (i = 0; i < argc; i++) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_DEBUG1, "CAND %d [%s]\n", i, fields[i]);
+				}
 
-			if (!ip_possible(smh, fields[4])) {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_DEBUG, 
-								  "Drop %s Candidate cid: %d proto: %s type: %s addr: %s:%s (no network path)\n", 
-								  type == SWITCH_MEDIA_TYPE_VIDEO ? "video" : "audio",
-								  cid+1, fields[2], fields[7], fields[4], fields[5]);
-				continue;
-			} else {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_DEBUG, 
-								  "Save %s Candidate cid: %d proto: %s type: %s addr: %s:%s\n", 
-								  type == SWITCH_MEDIA_TYPE_VIDEO ? "video" : "audio",
-								  cid+1, fields[2], fields[7], fields[4], fields[5]);
-			}
+				if (!ip_possible(smh, fields[4])) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_DEBUG, 
+									  "Drop %s Candidate cid: %d proto: %s type: %s addr: %s:%s (no network path)\n", 
+									  type == SWITCH_MEDIA_TYPE_VIDEO ? "video" : "audio",
+									  cid+1, fields[2], fields[7], fields[4], fields[5]);
+					continue;
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_DEBUG, 
+									  "Save %s Candidate cid: %d proto: %s type: %s addr: %s:%s\n", 
+									  type == SWITCH_MEDIA_TYPE_VIDEO ? "video" : "audio",
+									  cid+1, fields[2], fields[7], fields[4], fields[5]);
+				}
 		
 			
-			engine->ice_in.cands[engine->ice_in.cand_idx[cid]][cid].foundation = switch_core_session_strdup(smh->session, fields[0]);
-			engine->ice_in.cands[engine->ice_in.cand_idx[cid]][cid].component_id = atoi(fields[1]);
-			engine->ice_in.cands[engine->ice_in.cand_idx[cid]][cid].transport = switch_core_session_strdup(smh->session, fields[2]);
-			engine->ice_in.cands[engine->ice_in.cand_idx[cid]][cid].priority = atol(fields[3]);
-			engine->ice_in.cands[engine->ice_in.cand_idx[cid]][cid].con_addr = switch_core_session_strdup(smh->session, fields[4]);
-			engine->ice_in.cands[engine->ice_in.cand_idx[cid]][cid].con_port = (switch_port_t)atoi(fields[5]);
+				engine->ice_in.cands[engine->ice_in.cand_idx[cid]][cid].foundation = switch_core_session_strdup(smh->session, fields[0]);
+				engine->ice_in.cands[engine->ice_in.cand_idx[cid]][cid].component_id = atoi(fields[1]);
+				engine->ice_in.cands[engine->ice_in.cand_idx[cid]][cid].transport = switch_core_session_strdup(smh->session, fields[2]);
+				engine->ice_in.cands[engine->ice_in.cand_idx[cid]][cid].priority = atol(fields[3]);
+				engine->ice_in.cands[engine->ice_in.cand_idx[cid]][cid].con_addr = switch_core_session_strdup(smh->session, fields[4]);
+				engine->ice_in.cands[engine->ice_in.cand_idx[cid]][cid].con_port = (switch_port_t)atoi(fields[5]);
 				
-			j = 6;
+				j = 6;
 
-			while(j < argc && fields[j+1]) {
-				if (!strcasecmp(fields[j], "typ")) {
-					engine->ice_in.cands[engine->ice_in.cand_idx[cid]][cid].cand_type = switch_core_session_strdup(smh->session, fields[j+1]);							
-				} else if (!strcasecmp(fields[j], "raddr")) {
-					engine->ice_in.cands[engine->ice_in.cand_idx[cid]][cid].raddr = switch_core_session_strdup(smh->session, fields[j+1]);
-				} else if (!strcasecmp(fields[j], "rport")) {
-					engine->ice_in.cands[engine->ice_in.cand_idx[cid]][cid].rport = (switch_port_t)atoi(fields[j+1]);
-				} else if (!strcasecmp(fields[j], "generation")) {
-					engine->ice_in.cands[engine->ice_in.cand_idx[cid]][cid].generation = switch_core_session_strdup(smh->session, fields[j+1]);
-				}
+				while(j < argc && fields[j+1]) {
+					if (!strcasecmp(fields[j], "typ")) {
+						engine->ice_in.cands[engine->ice_in.cand_idx[cid]][cid].cand_type = switch_core_session_strdup(smh->session, fields[j+1]);							
+					} else if (!strcasecmp(fields[j], "raddr")) {
+						engine->ice_in.cands[engine->ice_in.cand_idx[cid]][cid].raddr = switch_core_session_strdup(smh->session, fields[j+1]);
+					} else if (!strcasecmp(fields[j], "rport")) {
+						engine->ice_in.cands[engine->ice_in.cand_idx[cid]][cid].rport = (switch_port_t)atoi(fields[j+1]);
+					} else if (!strcasecmp(fields[j], "generation")) {
+						engine->ice_in.cands[engine->ice_in.cand_idx[cid]][cid].generation = switch_core_session_strdup(smh->session, fields[j+1]);
+					}
 				
-				j += 2;
+					j += 2;
+				}
+
+				cand_seen++;
+				engine->ice_in.cand_idx[cid]++;
 			}
-			
-			engine->ice_in.cand_idx[cid]++;
 		}
 	}
 
