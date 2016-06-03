@@ -4260,6 +4260,8 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 					profile->dtmf_duration = 100;
 					profile->rtp_digit_delay = 40;
 					profile->sip_force_expires = 0;
+					profile->sip_force_expires_min = 0;
+					profile->sip_force_expires_max = 0;
 					profile->sip_expires_max_deviation = 0;
 					profile->sip_expires_late_margin = 60;
 					profile->sip_subscription_max_deviation = 0;
@@ -5513,6 +5515,20 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 							profile->sip_expires_late_margin = sip_expires_late_margin;
 						} else {
 							profile->sip_expires_late_margin = 60;
+						}
+					} else if (!strcasecmp(var, "sip-force-expires-min")) {
+						int32_t sip_force_expires_min = atoi(val);
+						if (sip_force_expires_min >= 0) {
+							profile->sip_force_expires_min = sip_force_expires_min;
+						} else {
+							profile->sip_force_expires_min = 0;
+						}
+					} else if (!strcasecmp(var, "sip-force-expires-max")) {
+						int32_t sip_force_expires_max = atoi(val);
+						if (sip_force_expires_max >= 0) {
+							profile->sip_force_expires_max = sip_force_expires_max;
+						} else {
+							profile->sip_force_expires_max = 0;
 						}
 					} else if (!strcasecmp(var, "sip-force-expires")) {
 						int32_t sip_force_expires = atoi(val);
