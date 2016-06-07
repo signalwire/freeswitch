@@ -344,6 +344,7 @@ typedef enum {
 	TFLAG_REINVITED,
 	TFLAG_PASS_ACK,
 	TFLAG_KEEPALIVE,
+	TFLAG_SKIP_EARLY,
 	/* No new flags below this line */
 	TFLAG_MAX
 } TFLAGS;
