@@ -23,6 +23,7 @@
           mutedMic: false,
           preview: true,
           selectedVideo: null,
+          selectedVideoName: null,
           selectedAudio: null,
           selectedShare: null,
           selectedSpeaker: null,

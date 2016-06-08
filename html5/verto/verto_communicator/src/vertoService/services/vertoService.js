@@ -113,6 +113,35 @@ var framerate = [{
   label: '30 FPS'
 }, ];
 
+var updateReq;
+
+var updateVideoSize = function(ms) {
+    if (!ms) ms = 500;
+    
+    clearTimeout(updateReq);
+    updateReq = setTimeout(function () {
+        var videoElem = jQuery('#webcam');
+        videoElem.width("");
+        videoElem.height("");
+	
+        var w = videoElem.width();
+        var h = videoElem.height();
+        var new_w, new_h;
+        var aspect = 1920 / 1080;
+        var videoContainer = jQuery('div.video-wrapper');
+        if (w > h) {
+            new_w = videoContainer.width();
+            new_h = Math.round(videoContainer.width() / aspect);
+        } else {
+            new_h = videoContainer.height();
+            new_w = Math.round(videoContainer.height() / aspect);
+        }
+        videoElem.width(new_w);
+        videoElem.height(new_h);
+        console.log('Setting video size to ' + new_w + '/' + new_h);
+    }, ms);
+}
+
 var vertoService = angular.module('vertoService', ['ngCookies']);
 
 vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'storage',
@@ -317,7 +346,13 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
 
         // Verify if selected devices are valid
         var videoFlag = data.videoDevices.some(function(device) {
-          return device.id == storage.data.selectedVideo;
+          console.log('Evaluating device ', device);
+          if (device.label == storage.data.selectedVideoName) {
+            console.log('Matched video selection by name: ', device.label);
+            storage.data.selectedVideo = device.id;
+            return true;
+          }
+          return device.id == storage.data.selectedVideo && storage.data.selectedVideo !== "none";
         });
 
         var shareFlag = data.shareDevices.some(function(device) {
@@ -332,7 +367,10 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
           return device.id == storage.data.selectedSpeaker;
         });
 
-        if (!videoFlag) storage.data.selectedVideo = data.videoDevices[0].id;
+        console.log('Storage Video: ', storage.data.selectedVideo);
+        console.log('Video Flag: ', videoFlag)
+
+        if (!videoFlag) storage.data.selectedVideo = data.videoDevices[data.videoDevices.length - 1].id;
         if (!shareFlag) storage.data.selectedShare = data.shareDevices[0].id;
         if (!audioFlag) storage.data.selectedAudio = data.audioDevices[0].id;
         if (!speakerFlag && data.speakerDevices.length > 0) storage.data.selectedSpeaker = data.speakerDevices[0].id;
@@ -484,7 +522,6 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
 
           data.liveArray.onChange = function(obj, args) {
             // console.log('liveArray.onChange', obj, args);
-
             switch (args.action) {
               case 'bootObj':
                 $rootScope.$emit('members.boot', args.data);
@@ -560,6 +597,7 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
 			  console.log("conference-liveArray-join");
 			  stopConference();
 			  startConference(v, dialog, params.pvtData);
+			  updateVideoSize();
 		      }
                       break;
                     case "conference-liveArray-part":
@@ -616,6 +654,7 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
                 console.debug('Talking to:', d.cidString());
                 data.callState = 'active';
                 callActive(d.lastState.name, d.params);
+		updateVideoSize();
                 break;
               case "hangup":
                 console.debug('Call ended with cause: ' + d.cause);

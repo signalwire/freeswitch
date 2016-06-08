@@ -1,4 +1,4 @@
-JSFILES=src/jquery.FSRTC.js src/jquery.jsonrpcclient.js src/jquery.verto.js
+JSFILES=src/jquery.FSRTC.js src/jquery.jsonrpcclient.js src/jquery.verto.js src/vendor/adapter-latest.js
 
 all: jsmin verto-min.js
 

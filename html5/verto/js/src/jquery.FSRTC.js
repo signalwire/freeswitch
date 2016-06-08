@@ -100,22 +100,10 @@
             candidateList: []
         };
 
-
-	if (moz) {
-            this.constraints = {
-		offerToReceiveAudio: this.options.useSpeak === "none" ? false : true,
-		offerToReceiveVideo: this.options.useVideo ? true : false,
-            };
-	} else {
-            this.constraints = {
-		optional: [{
-		    'DtlsSrtpKeyAgreement': 'true'
-		}],mandatory: {
-		    OfferToReceiveAudio: this.options.useSpeak === "none" ? false : true,
-		    OfferToReceiveVideo: this.options.useVideo ? true : false,
-		}
-            };
-	}
+	this.constraints = {
+	    offerToReceiveAudio: this.options.useSpeak === "none" ? false : true,
+	    offerToReceiveVideo: this.options.useVideo ? true : false,
+	};
 
         if (self.options.useVideo) {
             self.options.useVideo.style.display = 'none';
@@ -133,19 +121,11 @@
         if (obj) {
             self.options.useVideo = obj;
 	    self.options.localVideo = local;
-	    if (moz) {
-		self.constraints.offerToReceiveVideo = true;
-	    } else {
-		self.constraints.mandatory.OfferToReceiveVideo = true;
-	    }
+	    self.constraints.offerToReceiveVideo = true;
         } else {
             self.options.useVideo = null;
 	    self.options.localVideo = null;
-            if (moz) {
-		self.constraints.offerToReceiveVideo = false;
-	    } else {
-		self.constraints.mandatory.OfferToReceiveVideo = false;
-	    }
+	    self.constraints.offerToReceiveVideo = false;
         }
 
         if (self.options.useVideo) {
@@ -193,18 +173,9 @@
     };
 
     function setCompat() {
-        $.FSRTC.moz = !!navigator.mozGetUserMedia;
-        //navigator.getUserMedia || (navigator.getUserMedia = navigator.mozGetUserMedia || navigator.webkitGetUserMedia || navigator.msGetUserMedia);
-        if (!navigator.getUserMedia) {
-            navigator.getUserMedia = navigator.mozGetUserMedia || navigator.webkitGetUserMedia || navigator.msGetUserMedia;
-        }
     }
 
     function checkCompat() {
-        if (!navigator.getUserMedia) {
-            alert('This application cannot function in this browser.');
-            return false;
-        }
         return true;
     }
 
@@ -258,6 +229,21 @@
         doCallback(self, "onICESDP", msg);
     }
 
+    FSRTCattachMediaStream = function(element, stream) {
+	if (element && element.id && attachMediaStream) {
+	    attachMediaStream(element, stream);
+	} else {
+            if (typeof element.srcObject !== 'undefined') {
+		element.srcObject = stream;
+	    } else if (typeof element.src !== 'undefined') {
+		element.src = URL.createObjectURL(stream);
+	    } else {
+		console.error('Error attaching stream to element.');
+	    }
+	}
+    }
+
+    
     function onRemoteStream(self, stream) {
         if (self.options.useVideo) {
             self.options.useVideo.style.display = 'block';
@@ -266,16 +252,8 @@
         var element = self.options.useAudio;
         console.log("REMOTE STREAM", stream, element);
 
-        if (typeof element.srcObject !== 'undefined') {
-            element.srcObject = stream;
-        } else if (typeof element.mozSrcObject !== 'undefined') {
-            element.mozSrcObject = stream;
-        } else if (typeof element.src !== 'undefined') {
-            element.src = URL.createObjectURL(stream);
-        } else {
-            console.error('Error attaching stream to element.');
-        }
-
+	FSRTCattachMediaStream(element, stream);
+	
         self.options.useAudio.play();
         self.remoteStream = stream;
     }
@@ -306,11 +284,7 @@
 
         if (self.options.useVideo) {
             self.options.useVideo.style.display = 'none';
-            if (moz) {
-                self.options.useVideo['mozSrcObject'] = null;
-            } else {
-                self.options.useVideo['src'] = '';
-            }
+            self.options.useVideo['src'] = '';
         }
 
         if (self.localStream) {
@@ -331,11 +305,7 @@
 
         if (self.options.localVideo) {
             self.options.localVideo.style.display = 'none';
-            if (moz) {
-                self.options.localVideo['mozSrcObject'] = null;
-            } else {
-                self.options.localVideo['src'] = '';
-            }
+            self.options.localVideo['src'] = '';
         }
 
 	if (self.options.localVideoStream) {
@@ -426,7 +396,7 @@
         function onSuccess(stream) {
             self.localStream = stream;
 
-            self.peer = RTCPeerConnection({
+            self.peer = FSRTCPeerConnection({
                 type: self.type,
                 attachStream: self.localStream,
                 onICE: function(candidate) {
@@ -469,8 +439,8 @@
 		constraints: {
                     audio: false,
                     video: {
-			mandatory: self.options.videoParams,
-			optional: []
+			//mandatory: self.options.videoParams,
+			//optional: []
                     },
 		},
 		localVideo: self.options.localVideo,
@@ -501,31 +471,29 @@
 	    console.log("Microphone Disabled");
 	    audio = false;
 	} else if (obj.options.videoParams && obj.options.screenShare) {//obj.options.videoParams.chromeMediaSource == 'desktop') {
-
-	    //obj.options.videoParams = {
-	//	chromeMediaSource: 'screen',
-	//	maxWidth:screen.width,
-	//	maxHeight:screen.height
-	//	chromeMediaSourceId = sourceId;
-	  //  };
-
-	    console.error("SCREEN SHARE");
+	    console.error("SCREEN SHARE", obj.options.videoParams);
 	    audio = false;
 	} else {
 	    audio = {
-		mandatory: {},
-		optional: []
+		//mandatory: {},
+		//optional: []
+            advanced: []
 	    };
 
 	    if (obj.options.useMic !== "any") {
-		audio.optional = [{sourceId: obj.options.useMic}]
+		//audio.optional = [{sourceId: obj.options.useMic}]
+		audio.deviceId = {exact: obj.options.useMic};
 	    }
 
+	    //FIXME
 	    if (obj.options.audioParams) {
 		for (var key in obj.options.audioParams) {
 		    var con = {};
-		    con[key] = obj.options.audioParams[key];
-		    audio.optional.push(con);
+		    //con[key] = obj.options.audioParams[key];
+		    if (obj.options.audioParams[key]) {
+			con.exact = key;
+			audio.advanced.push(con);
+		    }
 		}
 	    }
 
@@ -536,10 +504,8 @@
             getUserMedia({
 		constraints: {
                     audio: false,
-                    video: {
-			mandatory: obj.options.videoParams,
-			optional: []
-                    },
+                    video: obj.options.videoParams
+                    
 		},
 		localVideo: obj.options.localVideo,
 		onsuccess: function(e) {self.options.localVideoStream = e; console.log("local video ready");},
@@ -549,33 +515,48 @@
 
 	var video = {};
 	var bestFrameRate = obj.options.videoParams.vertoBestFrameRate;
+	var minFrameRate = obj.options.videoParams.minFrameRate || 15;
 	delete obj.options.videoParams.vertoBestFrameRate;
 
-	video = {
-	    mandatory: obj.options.videoParams,
-	    optional: []
-        }	    	    
-	
-	var useVideo = obj.options.useVideo;
-
-	if (useVideo && obj.options.useCamera && obj.options.useCamera !== "none") {
-	    if (!video.optional) {
-		video.optional = [];
-	    }
-
-	    if (obj.options.useCamera !== "any") {
-		video.optional.push({sourceId: obj.options.useCamera});
-	    }
-
-	    if (bestFrameRate) {
-		video.optional.push({minFrameRate: bestFrameRate});
-		video.optional.push({maxFrameRate: bestFrameRate});
-	    }
-
+	if (obj.options.screenShare) {
+	    // fix for chrome to work for now, will need to change once we figure out how to do this in a non-mandatory style constraint.
+	    video = {
+		mandatory: obj.options.videoParams
+	    };
 	} else {
-	    console.log("Camera Disabled");
-	    video = false;
-	    useVideo = false;
+
+	    video = {
+		//mandatory: obj.options.videoParams,
+		width: {min: obj.options.videoParams.minWidth, max: obj.options.videoParams.maxWidth},
+		height: {min: obj.options.videoParams.minHeight, max: obj.options.videoParams.maxHeight}
+	    };
+	    
+            
+	    
+	    var useVideo = obj.options.useVideo;
+
+	    if (useVideo && obj.options.useCamera && obj.options.useCamera !== "none") {
+		//if (!video.optional) {
+		//video.optional = [];
+		//}
+
+		
+		if (obj.options.useCamera !== "any") {
+		    //video.optional.push({sourceId: obj.options.useCamera});
+		    video.deviceId = obj.options.useCamera;
+		}
+
+		if (bestFrameRate) {
+		    //video.optional.push({minFrameRate: bestFrameRate});
+		    //video.optional.push({maxFrameRate: bestFrameRate});
+		    video.frameRate = {ideal: bestFrameRate, min: minFrameRate, max: 30};
+		}
+
+	    } else {
+		console.log("Camera Disabled");
+		video = false;
+		useVideo = false;
+	    }
 	}
 
 	return {audio: audio, video: video, useVideo: useVideo};
@@ -597,14 +578,10 @@
 	    self.localStream = stream;
 	    
 	    if (screen) {
-		if (moz) {
-		    self.constraints.OfferToReceiveVideo = false;
-		} else {
-		    self.constraints.mandatory.OfferToReceiveVideo = false;
-		}
+		self.constraints.offerToReceiveVideo = false;
 	    }
 	    
-            self.peer = RTCPeerConnection({
+            self.peer = FSRTCPeerConnection({
                 type: self.type,
                 attachStream: self.localStream,
                 onICE: function(candidate) {
@@ -671,57 +648,23 @@
     // 2013, @muazkh - github.com/muaz-khan
     // MIT License - https://www.webrtc-experiment.com/licence/
     // Documentation - https://github.com/muaz-khan/WebRTC-Experiment/tree/master/RTCPeerConnection
-    window.moz = !!navigator.mozGetUserMedia;
-
-    function RTCPeerConnection(options) {
+    
+    function FSRTCPeerConnection(options) {
 	var gathering = false, done = false;
-
-        var w = window,
-        PeerConnection = w.mozRTCPeerConnection || w.webkitRTCPeerConnection,
-        SessionDescription = w.mozRTCSessionDescription || w.RTCSessionDescription,
-        IceCandidate = w.mozRTCIceCandidate || w.RTCIceCandidate;
-	
-        var STUN = {
-            url: !moz ? 'stun:stun.l.google.com:19302' : 'stun:23.21.150.121'
-        };
-
-        var iceServers = null;
+	var config = {};
+        var default_ice = {
+	    urls: ['stun:stun.l.google.com:19302']
+	};
 
         if (options.iceServers) {
-            var tmp = options.iceServers;
-
-            if (typeof(tmp) === "boolean") {
-                tmp = null;
-            }
-
-            if (tmp && !(typeof(tmp) == "object" && tmp.constructor === Array)) {
-                console.warn("iceServers must be an array, reverting to default ice servers");
-                tmp = null;
-            }
-
-            iceServers = {
-                iceServers: tmp || [STUN]
-            };
-
-            if (!moz && !tmp) {
-                iceServers.iceServers = [STUN];
-            }
+            if (typeof(options.iceServers) === "boolean") {
+		config.iceServers = [default_ice];
+            } else {
+		config.iceServers = options.iceServers;
+	    }
         }
 
-        var optional = {
-            optional: []
-        };
-
-        if (!moz) {
-            optional.optional = [{
-                DtlsSrtpKeyAgreement: true
-            },
-            {
-                RtpDataChannels: options.onChannelMessage ? true : false
-            }];
-        }
-
-        var peer = new PeerConnection(iceServers, optional);
+        var peer = new window.RTCPeerConnection(config);
 
         openOffererChannel();
         var x = 0;
@@ -736,34 +679,10 @@
             }
 	    
             if (options.type == "offer") {
-                if ((!moz || (!options.sentICESDP && peer.localDescription.sdp.match(/a=candidate/)) && !x && options.onICESDP)) {
-                    options.onICESDP(peer.localDescription);
-                    //x = 1;
-                    /*
-                      x = 1;
-                      peer.createOffer(function(sessionDescription) {
-                      sessionDescription.sdp = serializeSdp(sessionDescription.sdp);
-                      peer.setLocalDescription(sessionDescription);
-                      if (options.onICESDP) {
-                      options.onICESDP(sessionDescription);
-                      }
-                      }, onSdpError, constraints);
-                    */
-                }
+                options.onICESDP(peer.localDescription);
             } else {
                 if (!x && options.onICESDP) {
                     options.onICESDP(peer.localDescription);
-                    //x = 1;
-                    /*
-                      x = 1;
-                      peer.createAnswer(function(sessionDescription) {
-                      sessionDescription.sdp = serializeSdp(sessionDescription.sdp);
-                      peer.setLocalDescription(sessionDescription);
-                      if (options.onICESDP) {
-                      options.onICESDP(sessionDescription);
-                      }
-                      }, onSdpError, constraints);
-                    */
                 }
             }
         }
@@ -821,10 +740,10 @@
             //console.debug('on:add:stream', remoteMediaStream);
         };
 
-        var constraints = options.constraints || {
-	    offerToReceiveAudio: true,
-	    offerToReceiveVideo: true   
-        };
+        //var constraints = options.constraints || {
+	  //  offerToReceiveAudio: true,
+	    //offerToReceiveVideo: true   
+        //};
 
         // onOfferSDP(RTCSessionDescription)
         function createOffer() {
@@ -834,13 +753,8 @@
                 sessionDescription.sdp = serializeSdp(sessionDescription.sdp);
                 peer.setLocalDescription(sessionDescription);
                 options.onOfferSDP(sessionDescription);
-		/* old mozilla behaviour the SDP was already great right away */
-                if (moz && options.onICESDP && sessionDescription.sdp.match(/a=candidate/)) {
-                    options.onICESDP(sessionDescription);
-		    options.sentICESDP = 1;
-                }
             },
-            onSdpError, constraints);
+				onSdpError, options.constraints);
         }
 
         // onAnswerSDP(RTCSessionDescription)
@@ -848,7 +762,7 @@
             if (options.type != "answer") return;
 
             //options.offerSDP.sdp = addStereo(options.offerSDP.sdp);
-            peer.setRemoteDescription(new SessionDescription(options.offerSDP), onSdpSuccess, onSdpError);
+            peer.setRemoteDescription(new window.RTCSessionDescription(options.offerSDP), onSdpSuccess, onSdpError);
             peer.createAnswer(function(sessionDescription) {
                 sessionDescription.sdp = serializeSdp(sessionDescription.sdp);
                 peer.setLocalDescription(sessionDescription);
@@ -856,11 +770,11 @@
                     options.onAnswerSDP(sessionDescription);
                 }
             },
-            onSdpError, constraints);
+            onSdpError);
         }
 
-        // if Mozilla Firefox & DataChannel; offer/answer will be created later
-        if ((options.onChannelMessage && !moz) || !options.onChannelMessage) {
+
+        if ((options.onChannelMessage) || !options.onChannelMessage) {
             createOffer();
             createAnswer();
         }
@@ -899,9 +813,6 @@
         }
 
         function serializeSdp(sdp) {
-            //if (!moz) sdp = setBandwidth(sdp);
-            //sdp = getInteropSDP(sdp);
-            //console.debug(sdp);
             return sdp;
         }
 
@@ -909,28 +820,17 @@
         var channel;
 
         function openOffererChannel() {
-            if (!options.onChannelMessage || (moz && !options.onOfferSDP)) return;
+            if (!options.onChannelMessage) return;
 
             _openOffererChannel();
 
-            if (!moz) return;
-            navigator.mozGetUserMedia({
-                audio: true,
-                fake: true
-            },
-            function(stream) {
-                peer.addStream(stream);
-                createOffer();
-            },
-            useless);
+            return;
         }
 
         function _openOffererChannel() {
-            channel = peer.createDataChannel(options.channel || 'RTCDataChannel', moz ? {} : {
+            channel = peer.createDataChannel(options.channel || 'RTCDataChannel', {
                 reliable: false
             });
-
-            if (moz) channel.binaryType = 'blob';
 
             setChannelEvents();
         }
@@ -955,8 +855,6 @@
             };
         }
 
-        if (options.onAnswerSDP && moz && options.onChannelMessage) openAnswererChannel();
-
         function openAnswererChannel() {
             peer.ondatachannel = function(event) {
                 channel = event.channel;
@@ -964,16 +862,7 @@
                 setChannelEvents();
             };
 
-            if (!moz) return;
-            navigator.mozGetUserMedia({
-                audio: true,
-                fake: true
-            },
-            function(stream) {
-                peer.addStream(stream);
-                createAnswer();
-            },
-            useless);
+            return;
         }
 
         // fake:true is also available on chrome under a flag!
@@ -993,10 +882,10 @@
         return {
             addAnswerSDP: function(sdp, cbSuccess, cbError) {
 
-                peer.setRemoteDescription(new SessionDescription(sdp), cbSuccess ? cbSuccess : onSdpSuccess, cbError ? cbError : onSdpError);
+                peer.setRemoteDescription(new window.RTCSessionDescription(sdp), cbSuccess ? cbSuccess : onSdpSuccess, cbError ? cbError : onSdpError);
             },
             addICE: function(candidate) {
-                peer.addIceCandidate(new IceCandidate({
+                peer.addIceCandidate(new window.RTCIceCandidate({
                     sdpMLineIndex: candidate.sdpMLineIndex,
                     candidate: candidate.candidate
                 }));
@@ -1026,14 +915,14 @@
 
     // getUserMedia
     var video_constraints = {
-        mandatory: {},
-        optional: []
+        //mandatory: {},
+        //optional: []
     };
 
     function getUserMedia(options) {
         var n = navigator,
         media;
-        n.getMedia = n.webkitGetUserMedia || n.mozGetUserMedia;
+        n.getMedia = n.getUserMedia;
         n.getMedia(options.constraints || {
             audio: true,
             video: video_constraints
@@ -1044,15 +933,8 @@
         });
 
         function streaming(stream) {
-            //var video = options.video;
-            //var localVideo = options.localVideo;
-            //if (video) {
-              //  video[moz ? 'mozSrcObject' : 'src'] = moz ? stream : window.webkitURL.createObjectURL(stream);
-                //video.play();
-            //}
-
             if (options.localVideo) {
-                options.localVideo[moz ? 'mozSrcObject' : 'src'] = moz ? stream : window.webkitURL.createObjectURL(stream);
+                options.localVideo['src'] = window.URL.createObjectURL(stream);
 		options.localVideo.style.display = 'block';
             }
 
@@ -1108,23 +990,26 @@
 	}
 
 	var video = {
-            mandatory: {},
-            optional: []
+            //mandatory: {},
+            //optional: []
         }	
-
+	//FIXME
 	if (cam) {
-	    video.optional = [{sourceId: cam}];
+	    //video.optional = [{sourceId: cam}];
+	    video.deviceId = {exact: cam};
 	}
 	
 	w = resList[resI][0];
 	h = resList[resI][1];
 	resI++;
 
-	video.mandatory = {
-	    "minWidth": w,
-	    "minHeight": h,
-	    "maxWidth": w,
-	    "maxHeight": h
+	video = {
+	    width: w,
+	    height: h
+	    //"minWidth": w,
+	    //"minHeight": h,
+	    //"maxWidth": w,
+	    //"maxHeight": h
 	};
 
 	getUserMedia({
