@@ -10046,11 +10046,9 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 											user, ipv6 ? "[" : "", host, ipv6 ? "]" : "", port, sofia_glue_transport2str(transport));
 
 			if (sofia_glue_check_nat(profile, tech_pvt->mparams.remote_ip)) {
-				url = (sofia_glue_transport_has_tls(transport)) ? profile->tls_public_url : profile->public_url;
 				check_nat = 1;
-			} else {
-				url = (sofia_glue_transport_has_tls(transport)) ? profile->tls_url : profile->url;
 			}
+			url = sofia_glue_get_profile_url(profile, tech_pvt->mparams.remote_ip, transport);
 
 			if (!url) {
 				if (check_nat) {
@@ -10085,11 +10083,7 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 
 		} else {
 			const char *url = NULL;
-			if (sofia_glue_check_nat(profile, tech_pvt->mparams.remote_ip)) {
-				url = (sofia_glue_transport_has_tls(transport)) ? profile->tls_public_url : profile->public_url;
-			} else {
-				url = (sofia_glue_transport_has_tls(transport)) ? profile->tls_url : profile->url;
-			}
+			url = sofia_glue_get_profile_url(profile, tech_pvt->mparams.remote_ip, transport);
 
 			if (url) {
 				const char *brackets = NULL;

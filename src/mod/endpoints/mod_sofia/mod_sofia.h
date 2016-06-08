@@ -1028,6 +1028,7 @@ void sofia_presence_set_chat_hash(private_object_t *tech_pvt, sip_t const *sip);
 switch_status_t sofia_on_hangup(switch_core_session_t *session);
 char *sofia_glue_get_url_from_contact(char *buf, uint8_t to_dup);
 char *sofia_glue_get_path_from_contact(char *buf);
+char *sofia_glue_get_profile_url(sofia_profile_t *profile, char *remote_ip, const sofia_transport_t transport);
 void sofia_presence_set_hash_key(char *hash_key, int32_t len, sip_t const *sip);
 void sofia_glue_sql_close(sofia_profile_t *profile, time_t prune);
 int sofia_glue_init_sql(sofia_profile_t *profile);

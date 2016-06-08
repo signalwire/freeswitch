@@ -931,15 +931,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 																		   ipv6 ? "[" : "", ip_addr, ipv6 ? "]" : "", tech_pvt->profile->extsipport);
 				}
 			} else {
-				if (sofia_glue_transport_has_tls(tech_pvt->transport)) {
-					tech_pvt->invite_contact = tech_pvt->profile->tls_url;
-				} else {
-					if (!zstr(tech_pvt->mparams.remote_ip) && sofia_glue_check_nat(tech_pvt->profile, tech_pvt->mparams.remote_ip)) {
-						tech_pvt->invite_contact = tech_pvt->profile->public_url;
-					} else {
-						tech_pvt->invite_contact = tech_pvt->profile->url;
-					}
-				}
+				sofia_glue_get_profile_url(tech_pvt->profile, tech_pvt->mparams.remote_ip, tech_pvt->transport);
 			}
 		}
 
@@ -3105,6 +3097,33 @@ void sofia_glue_clear_soa(switch_core_session_t *session, switch_bool_t partner)
 
 }
 
+char *sofia_glue_get_profile_url(sofia_profile_t *profile, char *remote_ip, const sofia_transport_t transport)
+{
+	char *url = NULL;
+	int check_nat = 0;
+
+	if (!zstr(remote_ip) && sofia_glue_check_nat(profile, remote_ip)) {
+		check_nat = 1;
+	}
+
+	if (sofia_glue_transport_has_tls(transport)) {
+		if (check_nat && profile->tls_public_url) {
+			url = profile->tls_public_url;
+		} else {
+			url = profile->tls_url;
+		}
+	} else {
+		if (check_nat && profile->public_url) {
+			url = profile->public_url;
+		} else {
+			url = profile->url;
+		}
+	}
+
+	if (!url) url = profile->url;
+
+	return url;
+}
 
 /* For Emacs:
  * Local Variables:
