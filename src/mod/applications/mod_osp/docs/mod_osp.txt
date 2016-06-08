@@ -43,7 +43,7 @@ OSP provider parameter names ane values cab be:
  - http-retry-limit: HTTP retry times. The default is 2.
  - http-timeout: HTTP timeout. The default is 10000 in ms.
  - work-mode: OSP module work mode (direct and indirect). The default is "direct".
- - service-type: OSP service type (voice and npquery). The default is "voice".
+ - service-type: OSP service type (voice, npquery and cnamquery (this option has not been implemented)). The default is "voice".
  - max-destinations: Max destinations OSP server will return. It is up to 12. The default is 12.
 
 3 OSP Applications
@@ -54,7 +54,7 @@ The OSP applications are called in dial plan like this:
 *PROFILE* is an OSP service provider profile name configured in osp.conf.xml. If data attribute is not provided or its value is empty, profile name "default" is used.
 
 3.1 OSPLookup Application
-osplookup application does OSP authorization request and gets first supported destination for inbound calls. It exports a set channel variables for FreeSWITCH dial plan logic.
+osplookup application does OSP authorization request and gets first supported destination for inbound calls. It exports a set of channel variables for FreeSWITCH dial plan logic.
 osplookup application accepts two sets of channel variables that are used to pass additional inbound call information and outbound control parameters to OSP module. It also exports a set of channel variables for outbound channels and FreeSWITCH dial plan logic.
 
 3.1.1 Inbound Call Information
@@ -64,7 +64,9 @@ osplookup application accepts two sets of channel variables that are used to pas
 
 3.1.2 Outbound Control Parameters
  - osp_networkid_userparam: The URI user parameter name that is used to present destination network ID. For example, sip:callednumber;networkid=dnid@host.
- - osp_networkid_uriparam: The URI parameter name that is used to present destination network ID. For example, sip:callednumber @host;networkid=dnid.
+ - osp_networkid_uriparam: The URI parameter name that is used to present destination network ID. For example, sip:callednumber@host;networkid=dnid.
+ - osp_outstring_userparam: The URI user parameter string. For example, sip:callednumber;outstring@host.
+ - osp_outstring_uriparam: The URI parameter string. For example, sip:callednumber@host;outstring.
  - osp_user_phone: Flag to add "user=phone" URI parameter. The default is "disabled".
  - osp_outbound_proxy: Outbound proxy IP address channel variable.
 
@@ -79,7 +81,7 @@ osplookup application accepts two sets of channel variables that are used to pas
  - osp_termiation_cause: Destination termination cause. It will be used by ospnext application and OSP module state handlers.
 
 3.2 OSPNext Application
-ospnext application gets next supported destination for inbound calls. It exports a set channel variables for FreeSWITCH dial plan logic.
+ospnext application gets next supported destination for inbound calls. It exports a set of channel variables for FreeSWITCH dial plan logic.
 ospnext application accepts a set of channel variables exported by osplookup application to pass OSP call transaction information to OSP module. It also exports a set of channel variables for outbound channels and FreeSWITCH dial plan logic.
 
 3.2.1 Transaction Parameters
@@ -157,7 +159,7 @@ OSP module state handler accepts a set of channel variables exported by osplooku
 
       <!-- OSP work mode, direct or indirect -->
       <param name="work-mode" value="direct"/>
-      <!-- OSP service type, voice or npquery -->
+      <!-- OSP service type, voice, npquery or cnamquery -->
       <param name="service-type" value="voice"/>
       <!-- Max number of destinations -->
       <param name="max-destinations" value="12"/>
@@ -176,15 +178,14 @@ OSP module state handler accepts a set of channel variables exported by osplooku
     </extension>
 
     <!--
-        Tag anything pass thru here as an outside_call so you can make sure not
-        to create any routing loops based on the conditions that it came from 
-        the outside of the switch.  
+         Tag anything pass thru here as an outside_call so you can make sure
+         not to create any routing loops based on the conditions that it came
+         from the outside of the switch.
     -->
 
     <extension name="outside_call" continue="true">
       <condition>
         <action application="set" data="outside_call=true"/>
-        <action application="export" data="RFC2822_DATE=${strftime(%a, %d %b %Y %T %z)}"/>
       </condition>
     </extension>
 
@@ -206,27 +207,68 @@ OSP module state handler accepts a set of channel variables exported by osplooku
 
   <!-- OSP lookup application logic -->
   <context name="osp_lookup">
-    <extension name="lookup">
+    <!--
+         Inbound information parameters
+    -->
+    <extension name="prepare_inbound" continue="true">
       <condition>
-        <!-- Inbound information parameters -->
-        <!-- Actual source device -->
+        <!-- Actual source device from P-Source-Device -->
         <action application="set" data="osp_source_device=${sip_h_P-Source-Device}"/>
-        <!-- Source network ID -->
+
+        <!-- Actual source device from SDP connection -->
+        <!--
+        <condition field="${switch_r_sdp}" expression="c=IN IP4 (.*?)(/|\r)" break="never">
+          <action application="set" data="osp_source_device=$1"/>
+        </condition>
+        -->
+
+        <!-- Source network ID from P-Network-ID -->
         <action application="set" data="osp_source_nid=${sip_h_P-Network-ID}"/>
-        <!-- Custom info -->
-        <action application="set" data="osp_custom_info_4=${sip_h_P-Custom-Info}"/>
-        <!-- Outbound control parameters -->
+
+        <!-- Source network ID from otg -->
+        <!--
+        <condition field="${sip_from_params};" expression="otg=(.*?);" break="never">
+          <action application="set" data="osp_source_nid=$1"/>
+        </condition>
+        -->
+
+        <!-- Custom info, index starting from 1 -->
+        <action application="set" data="osp_custom_info_1=${sip_h_P-Custom-Info}"/>
+      </condition>
+    </extension>
+
+    <!--
+         Outbound control parameters
+    -->
+    <extension name="prepare_outbound" continue="true">
+      <condition>
         <!-- Destination network ID parameter name, "sip:callednumber;dnidname=dnidvalue@host" -->
         <!-- <action application="set" data="osp_networkid_userparam=networkid"/> -->
+
         <!-- Destination network ID parameter name, "sip:callednumber@host;dnidname=dnidvalue" -->
         <action application="set" data="osp_networkid_uriparam=networkid"/>
+
+        <!-- Fixed outbound parameter string, "sip:callednumber;outboundstring@host" -->
+        <!-- <action application="set" data="osp_outstring_userparam=outboundstring"/> -->
+
+        <!-- Fixed outbound parameter string, "sip:callednumber@host;outboundstring" -->
+        <!-- <action application="set" data="osp_outstring_uriparam=transport=udp"/> -->
+
         <!-- Append "user=phone" -->
         <!-- <action application="set" data="osp_user_phone=enabled"/> -->
+
         <!-- Outbound proxy -->
         <!-- <action application="set" data="osp_outbound_proxy=${network_addr}"/> -->
+      </condition>
+    </extension>
+
+    <extension name="lookup">
+      <condition>
         <!-- OSP lookup application with default OSP profile -->
         <action application="osplookup" data="default"/>
-        <!-- Debug info -->
+        <!--
+             Debug info
+        -->
         <!-- OSP profile name -->
         <action application="log" data="DEBUG osp_profile_name = ${osp_profile_name}"/>
         <!-- OSP transaction handle -->
@@ -265,10 +307,18 @@ OSP module state handler accepts a set of channel variables exported by osplooku
       <condition>
         <!-- Bridge control parameters -->
         <action application="set" data="continue_on_fail=true"/>
-        <action application="set" data="hangup_after_bridge=false"/>
+        <action application="set" data="hangup_after_bridge=true"/>
+        <!-- Timeout for without media -->
+        <action application="set" data="progress_timeout=5"/>
+        <!-- Timeout after ringing -->
+        <action application="set" data="call_timeout=60"/>
+        <!-- To proxy media, comment out the following line -->
+        <action application="set" data="bypass_media=true"/>
         <!-- Bridge call legs -->
         <action application="bridge" data="${osp_auto_route}"/>
-        <!-- Debug info -->
+        <!--
+             Debug info
+        -->
         <!-- Destination termination cause for failed call -->
         <action application="log" data="DEBUG last_bridge_hangup_cause = ${last_bridge_hangup_cause}"/>
         <!-- Jump out to run OSP Next -->
@@ -283,7 +333,9 @@ OSP module state handler accepts a set of channel variables exported by osplooku
       <condition>
         <!-- OSP next application -->
         <action application="ospnext"/>
-        <!-- Debug info -->
+        <!--
+             Debug info
+        -->
         <!-- OSP next application status -->
         <action application="log" data="DEBUG osp_next_status = ${osp_next_status}"/>
         <!-- Count of current destination, starting from 1 -->

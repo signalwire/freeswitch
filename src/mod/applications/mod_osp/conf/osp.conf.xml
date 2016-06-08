@@ -44,7 +44,7 @@
 
 			<!-- OSP work mode, direct or indirect -->
 			<param name="work-mode" value="direct"/>
-			<!-- OSP service type, voice or npquery -->
+			<!-- OSP service type, voice, npquery or cnamquery -->
 			<param name="service-type" value="voice"/>
 			<!-- Max number of destinations -->
 			<param name="max-destinations" value="12"/>
