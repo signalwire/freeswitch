@@ -84,6 +84,7 @@ struct pdf_file_context {
 	int autoplay;
 	const char *path;
 	int lazy;
+	char *lazy_cookie;
 	pdf_loading_state_t loading_state;
 	switch_time_t next_play_time;
 };
@@ -106,6 +107,18 @@ static void *SWITCH_THREAD_FUNC open_pdf_thread_run(switch_thread_t *thread, voi
 			AppendImageToList(&context->images, tmp_images);
 			context->pagecount = pagenumber;
 		} else {
+			switch_event_t *event = NULL;
+
+			if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, "imagick::info") == SWITCH_STATUS_SUCCESS) {
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "type", "loaded");
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "filename", context->path);
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "pagecount", "%d", context->pagecount);
+				if (context->lazy_cookie) {
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "cookie", context->lazy_cookie);
+				}
+				switch_event_fire(&event);
+			}
+
 			break;
 		}
 	}
@@ -171,6 +184,7 @@ static switch_status_t imagick_file_open(switch_file_handle_t *handle, const cha
 		const char *density = switch_event_get_header(handle->params, "density");
 		const char *quality = switch_event_get_header(handle->params, "quality");
 		const char *lazy = switch_event_get_header(handle->params, "lazy");
+		const char *lazy_cookie = switch_event_get_header(handle->params, "cookie");
 		int tmp;
 
 		if (max) {
@@ -191,6 +205,7 @@ static switch_status_t imagick_file_open(switch_file_handle_t *handle, const cha
 
 			if (tmp > 0) context->image_info->quality = tmp;
 		}
+
 		if (lazy) {
 			int tmp = atoi(lazy);
 
@@ -199,6 +214,10 @@ static switch_status_t imagick_file_open(switch_file_handle_t *handle, const cha
 			} else {
 				context->lazy = 1;
 			}
+		}
+
+		if (lazy_cookie) {
+			context->lazy_cookie = switch_core_strdup(handle->memory_pool, lazy_cookie);
 		}
 	}
 
