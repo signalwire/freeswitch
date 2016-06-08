@@ -3192,7 +3192,7 @@ static int do_dtls(switch_rtp_t *rtp_session, switch_dtls_t *dtls)
 		ret = SSL_get_error(dtls->ssl, ret);
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "%s DTLS packet read err %d\n", rtp_type(rtp_session), ret);
 	}
-
+	
 	if (dtls_states[dtls->state]) {
 		r = dtls_states[dtls->state](rtp_session, dtls);
 	}
@@ -3396,8 +3396,11 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_dtls(switch_rtp_t *rtp_session, d
 	//SSL_CTX_set_verify(dtls->ssl_ctx, SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, NULL);
 	SSL_CTX_set_verify(dtls->ssl_ctx, SSL_VERIFY_NONE, NULL); 
 
-	SSL_CTX_set_cipher_list(dtls->ssl_ctx, "ALL");
-		
+	SSL_CTX_set_cipher_list(dtls->ssl_ctx, "ECDH:!RC4:!SSLv3:RSA_WITH_AES_128_CBC_SHA");
+	//SSL_CTX_set_cipher_list(dtls->ssl_ctx, "ECDHE-RSA-AES256-GCM-SHA384");
+	//SSL_CTX_set_cipher_list(dtls->ssl_ctx, "ALL:!ADH:!LOW:!EXP:!MD5:@STRENGTH");
+	//SSL_CTX_set_cipher_list(dtls->ssl_ctx, "SUITEB128");
+	SSL_CTX_set_read_ahead(dtls->ssl_ctx, 1);
 #ifdef HAVE_OPENSSL_DTLS_SRTP
 	//SSL_CTX_set_tlsext_use_srtp(dtls->ssl_ctx, "SRTP_AES128_CM_SHA1_80:SRTP_AES128_CM_SHA1_32");
 	SSL_CTX_set_tlsext_use_srtp(dtls->ssl_ctx, "SRTP_AES128_CM_SHA1_80");
@@ -3456,11 +3459,11 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_dtls(switch_rtp_t *rtp_session, d
 	SSL_set_verify(dtls->ssl, SSL_VERIFY_NONE, NULL);
 	SSL_set_app_data(dtls->ssl, dtls);
 
-	BIO_ctrl(dtls->read_bio, BIO_CTRL_DGRAM_SET_MTU, 1400, NULL);
-	BIO_ctrl(dtls->write_bio, BIO_CTRL_DGRAM_SET_MTU, 1400, NULL);
-	SSL_set_mtu(dtls->ssl, 1400);
-	BIO_ctrl(dtls->write_bio, BIO_C_SET_BUFF_SIZE, 1400, NULL);
-	BIO_ctrl(dtls->read_bio, BIO_C_SET_BUFF_SIZE, 1400, NULL);
+	//BIO_ctrl(dtls->read_bio, BIO_CTRL_DGRAM_SET_MTU, 1400, NULL);
+	//BIO_ctrl(dtls->write_bio, BIO_CTRL_DGRAM_SET_MTU, 1400, NULL);
+	//SSL_set_mtu(dtls->ssl, 1400);
+	//BIO_ctrl(dtls->write_bio, BIO_C_SET_BUFF_SIZE, 1400, NULL);
+	//BIO_ctrl(dtls->read_bio, BIO_C_SET_BUFF_SIZE, 1400, NULL);
 
 
 
@@ -4145,7 +4148,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_set_video_buffer_size(switch_rtp_t *r
 	}
 	
 	if (!max_frames || frames >= max_frames) {
-		max_frames = frames + 8;
+		max_frames = frames * 10;
 	}
 
 	rtp_session->last_max_vb_frames = max_frames;
@@ -4202,7 +4205,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_activate_jitter_buffer(switch_rtp_t *
 	}
 
 	if (max_queue_frames < queue_frames) {
-		max_queue_frames = queue_frames * 6;
+		max_queue_frames = queue_frames * 3;
 	}
 
 

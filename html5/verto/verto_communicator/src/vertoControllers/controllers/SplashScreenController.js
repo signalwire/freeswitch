@@ -74,7 +74,7 @@
       $rootScope.$on('progress.complete', function(ev, current_progress) {
         $scope.message = 'Complete';
         if(verto.data.connected) {
-          if (storage.data.preview) {
+          if (0 && storage.data.preview) {
             $location.path('/preview');
           }
           else {

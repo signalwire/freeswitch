@@ -11,7 +11,10 @@
         $scope.storage = storage;
         console.debug('Executing PreviewController.');
         var localVideo = document.getElementById('videopreview');
-        var volumes = document.querySelector('#mic-meter .volumes').children;
+        var volumes = document.querySelector('#mic-meter .volumes');
+        if (volumes) {
+          volumes = volumes.children;
+        }
 
         $scope.localVideo = function() {
           var constraints = {
@@ -31,10 +34,13 @@
 
           });
         };
+        var audioContext = null;
+        if (typeof AudioContext !== "undefined") {
+          audioContext = new AudioContext();
+        }
 
-        var audioContext = new AudioContext();
         var mediaStreamSource = null;
-        var meter;
+        var meter = null;
         var streamObj = {};
 
         function stopMedia(stream) {
@@ -55,13 +61,12 @@
           }
 
           streamObj = stream;
-          localVideo.src = window.URL.createObjectURL(stream);
-
-          mediaStreamSource = audioContext.createMediaStreamSource(stream);
-          meter = createAudioMeter(audioContext);
-          mediaStreamSource.connect(meter);
-
-          renderMic();
+          FSRTCattachMediaStream(localVideo, stream);
+          if (audioContext) {
+            mediaStreamSource = audioContext.createMediaStreamSource(stream);
+            meter = createAudioMeter(audioContext);
+            mediaStreamSource.connect(meter);
+          };
         }
 
         function renderMic() {
@@ -109,8 +114,10 @@
 
         $scope.endPreview = function() {
           localVideo.src = null;
-          meter.shutdown();
-          meter.onaudioprocess = null;
+          if (audioContext) {
+            meter.shutdown();
+            meter.onaudioprocess = null;
+          };
           stopMedia(streamObj);
           $location.path('/dialpad');
           storage.data.preview = false;

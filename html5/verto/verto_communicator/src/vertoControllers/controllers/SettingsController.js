@@ -33,6 +33,15 @@
         });
 
         $scope.ok = function() {
+          console.log('Camera Selected is', $scope.mydata.selectedVideo, $scope.verto.data.videoDevices);
+
+          angular.forEach(verto.data.videoDevices, function(video) {
+            console.log('checking video ', video);
+            if (video.id == $scope.mydata.selectedVideo) {
+              $scope.mydata.selectedVideoName = video.label;
+              console.log('Setting selectedVideoName to ', video.label);
+            }
+          })
           if ($scope.mydata.selectedSpeaker != storage.data.selectedSpeaker) {
             $rootScope.$emit('changedSpeaker', $scope.mydata.selectedSpeaker);
           }

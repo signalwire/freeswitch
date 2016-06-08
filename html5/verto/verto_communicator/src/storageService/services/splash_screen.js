@@ -14,11 +14,7 @@
               'status': 'success',
               'message': $translate.instant('BROWSER_COMPATIBILITY')
             };
-            navigator.getUserMedia = navigator.getUserMedia ||
-              navigator.webkitGetUserMedia ||
-              navigator.mozGetUserMedia;
-
-            if (!navigator.getUserMedia) {
+            if (!navigator.mediaDevices.getUserMedia) {
               result['status'] = 'error';
               result['message'] = $translate.instant('BROWSER_WITHOUT_WEBRTC');
               reject(result);
