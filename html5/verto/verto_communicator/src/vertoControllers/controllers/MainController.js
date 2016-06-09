@@ -290,6 +290,11 @@
         $rootScope.$emit('toggledSettings', settingsEl.hasClass('toggled'));
       };
 
+      $scope.closeSettings = function() {
+        var settingsEl = angular.element(document.querySelector('#settings'));
+        settingsEl.removeClass('toggled');
+      };
+
       $scope.goFullscreen = function() {
         if (storage.data.userStatus !== 'connected') {
           return;
