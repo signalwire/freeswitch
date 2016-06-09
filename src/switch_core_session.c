@@ -719,6 +719,7 @@ static const char *message_names[] = {
 	"UNBRIDGE",
 	"TRANSFER",
 	"RINGING",
+	"ALERTING",
 	"MEDIA",
 	"3P_MEDIA",
 	"NOMEDIA",
