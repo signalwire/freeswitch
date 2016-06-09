@@ -18,6 +18,7 @@
     'ui.bootstrap',
     'directive.g+signin',
     'pascalprecht.translate',
+    'angular-click-outside',
   ]);
 
   vertoApp.constant('configLanguages', {
