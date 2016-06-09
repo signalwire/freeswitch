@@ -417,6 +417,8 @@ static struct {
 	char *odbc_dsn;
 	char *dbname;
 	switch_bool_t reserve_agents;
+	switch_bool_t truncate_tiers;
+	switch_bool_t truncate_agents;
 	int32_t threads;
 	int32_t running;
 	switch_mutex_t *mutex;
@@ -1428,8 +1430,12 @@ static switch_status_t load_config(void)
 				globals.dbname = strdup(val);
 			} else if (!strcasecmp(var, "odbc-dsn")) {
 				globals.odbc_dsn = strdup(val);
-			} else if(!strcasecmp(var, "reserve-agents")) {
+			} else if (!strcasecmp(var, "reserve-agents")) {
 				globals.reserve_agents = switch_true(val);
+			} else if (!strcasecmp(var, "truncate-tiers-on-load")) {
+				globals.truncate_tiers = switch_true(val);
+			} else if (!strcasecmp(var, "truncate-agents-on-load")) {
+				globals.truncate_agents = switch_true(val);
 			}
 		}
 	}
@@ -1464,6 +1470,20 @@ static switch_status_t load_config(void)
 						 cc_member_state2str(CC_MEMBER_STATE_ABANDONED));
 	cc_execute_sql(NULL, sql, NULL);
 	switch_safe_free(sql);
+
+	/* Truncating tiers if needed */
+	if (globals.truncate_tiers) {
+		sql = switch_mprintf("delete from tiers;");
+		cc_execute_sql(NULL, sql, NULL);
+		switch_safe_free(sql);
+	}
+
+	/* Truncating agents if needed */
+	if (globals.truncate_agents) {
+		sql = switch_mprintf("delete from agents;");
+		cc_execute_sql(NULL, sql, NULL);
+		switch_safe_free(sql);
+	}
 
 	/* Loading queue into memory struct */
 	if ((x_queues = switch_xml_child(cfg, "queues"))) {
