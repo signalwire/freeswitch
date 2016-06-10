@@ -3780,7 +3780,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 	sdp_media_t *m;
 	sdp_attribute_t *attr;
 	int ptime = 0, dptime = 0, maxptime = 0, dmaxptime = 0;
-	int sendonly = 0, recvonly = 0;
+	int sendonly = 0, recvonly = 0, inactive = 0;
 	int greedy = 0, x = 0, skip = 0;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	const char *val;
@@ -4093,6 +4093,10 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 					switch_channel_set_variable(smh->session->channel, "audio_media_flow", "recvonly");
 					a_engine->smode = SWITCH_MEDIA_FLOW_RECVONLY;
 					break;
+				case SWITCH_MEDIA_FLOW_INACTIVE:
+					switch_channel_set_variable(smh->session->channel, "audio_media_flow", "inactive");
+					a_engine->smode = SWITCH_MEDIA_FLOW_INACTIVE;
+					break;
 				default:
 					switch_channel_set_variable(smh->session->channel, "audio_media_flow", "sendrecv");
 					a_engine->smode = SWITCH_MEDIA_FLOW_SENDRECV;
@@ -4112,7 +4116,6 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 					sendonly = 1;
 					switch_channel_set_variable(session->channel, "media_audio_mode", "recvonly");
 				} else if (sendonly < 2 && !strcasecmp(attr->a_name, "inactive")) {
-					sendonly = 1;
 					switch_channel_set_variable(session->channel, "media_audio_mode", "inactive");
 				} else if (!strcasecmp(attr->a_name, "recvonly")) {
 					switch_channel_set_variable(session->channel, "media_audio_mode", "sendonly");
@@ -4140,7 +4143,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 			}
 
 
-			if (sendonly != 1 && recvonly != 1) {
+			if (sendonly != 1 && recvonly != 1 && inactive != 1) {
 				switch_channel_set_variable(session->channel, "media_audio_mode", NULL);
 			}
 
@@ -4149,6 +4152,8 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 					a_engine->smode = sdp_media_flow(sdp_sendonly);
 				} else if (recvonly) {
 					a_engine->smode = sdp_media_flow(sdp_recvonly);
+				} else if (inactive) {
+					a_engine->smode = sdp_media_flow(sdp_inactive);
 				}
 			}
 
@@ -4758,6 +4763,10 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 				case SWITCH_MEDIA_FLOW_SENDONLY:
 					switch_channel_set_variable(smh->session->channel, "video_media_flow", "recvonly");
 					v_engine->smode = SWITCH_MEDIA_FLOW_RECVONLY;
+					break;
+				case SWITCH_MEDIA_FLOW_INACTIVE:
+					switch_channel_set_variable(smh->session->channel, "video_media_flow", "inactive");
+					v_engine->smode = SWITCH_MEDIA_FLOW_INACTIVE;
 					break;
 				default:
 					switch_channel_set_variable(smh->session->channel, "video_media_flow", "sendrecv");
@@ -7940,12 +7949,14 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 			sr = "sendonly";
 		} else if (a_engine->smode == SWITCH_MEDIA_FLOW_RECVONLY) {
 			sr = "recvonly";
+		} else if (a_engine->smode == SWITCH_MEDIA_FLOW_INACTIVE) {
+			sr = "inactive";
 		} else {
 			sr = "sendrecv";
 		}
 
 		if ((var_val = switch_channel_get_variable(session->channel, "origination_audio_mode"))) {
-			if (!strcasecmp(sr, "sendonly") || !strcasecmp(sr, "recvonly") || !strcasecmp(sr, "sendrecv")) {
+			if (!strcasecmp(sr, "sendonly") || !strcasecmp(sr, "recvonly") || !strcasecmp(sr, "sendrecv") || !strcasecmp(sr, "inactive")) {
 				sr = var_val;
 			}
 			switch_channel_set_variable(session->channel, "origination_audio_mode", NULL);
@@ -8452,6 +8463,8 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 						switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "%s", "a=sendonly\r\n");
 					} else if (v_engine->smode == SWITCH_MEDIA_FLOW_RECVONLY) {
 						switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "%s", "a=recvonly\r\n");
+					} else if (v_engine->smode == SWITCH_MEDIA_FLOW_INACTIVE) {
+						switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "%s", "a=inactive\r\n");
 					}
 
 				} else if (smh->mparams->num_codecs) {
@@ -11222,8 +11235,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_encoded_video_frame(sw
 	switch_io_event_hook_video_write_frame_t *ptr;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
-	if (switch_core_session_media_flow(session, SWITCH_MEDIA_TYPE_VIDEO) == SWITCH_MEDIA_FLOW_RECVONLY) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG3, "Writing video to RECVONLY session\n");
+	if (switch_core_session_media_flow(session, SWITCH_MEDIA_TYPE_VIDEO) == SWITCH_MEDIA_FLOW_RECVONLY || switch_core_session_media_flow(session, SWITCH_MEDIA_TYPE_VIDEO) == SWITCH_MEDIA_FLOW_INACTIVE) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG3, "Writing video to RECVONLY/INACTIVE session\n");
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -11293,8 +11306,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_video_frame(switch_cor
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (switch_core_session_media_flow(session, SWITCH_MEDIA_TYPE_VIDEO) == SWITCH_MEDIA_FLOW_RECVONLY) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG3, "Writing video to RECVONLY session\n");
+	if (switch_core_session_media_flow(session, SWITCH_MEDIA_TYPE_VIDEO) == SWITCH_MEDIA_FLOW_RECVONLY || switch_core_session_media_flow(session, SWITCH_MEDIA_TYPE_VIDEO) == SWITCH_MEDIA_FLOW_INACTIVE) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG3, "Writing video to RECVONLY/INACTIVE session\n");
 		return SWITCH_STATUS_SUCCESS;
 	}
 
