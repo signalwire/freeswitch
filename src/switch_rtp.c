@@ -5175,7 +5175,11 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 		if (rtp_session->flags[SWITCH_RTP_FLAG_USE_TIMER] && rtp_session->timer.interval) {
 			switch_core_timer_sync(&rtp_session->timer);
 		}
-		
+
+		if (rtp_session->session) {
+			switch_ivr_parse_all_messages(rtp_session->session);
+		}
+
 		block = 0;
 	}
 	
