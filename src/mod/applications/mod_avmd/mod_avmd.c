@@ -822,13 +822,13 @@ avmd_parse_cmd_data_one_entry(char *candidate, struct avmd_settings *settings)
     /* candidate string has "=" somewhere in the middle and some value,
      * try to find what option it is by comparing at most given number of bytes */
     if (!strcmp(key, "debug")) {
-        settings->debug = switch_true(val);
+        settings->debug = (uint8_t) switch_true(val);
     } else if (!strcmp(key, "report_status")) {
-        settings->report_status = switch_true(val);
+        settings->report_status = (uint8_t) switch_true(val);
     } else if (!strcmp(key, "fast_math")) {
-        settings->fast_math = switch_true(val);
+        settings->fast_math = (uint8_t) switch_true(val);
     } else if (!strcmp(key, "require_continuous_streak")) {
-        settings->require_continuous_streak = switch_true(val);
+        settings->require_continuous_streak = (uint8_t) switch_true(val);
     } else if (!strcmp(key, "sample_n_continuous_streak")) {
         if(avmd_parse_u16_user_input(val, &settings->sample_n_continuous_streak, 0, UINT16_MAX) == -1) {
             return SWITCH_STATUS_FALSE;
@@ -838,11 +838,11 @@ avmd_parse_cmd_data_one_entry(char *candidate, struct avmd_settings *settings)
             return SWITCH_STATUS_FALSE;
         }
     } else if (!strcmp(key, "simplified_estimation")) {
-        settings->simplified_estimation = switch_true(val);
+        settings->simplified_estimation = (uint8_t) switch_true(val);
     } else if (!strcmp(key, "inbound_channel")) {
-        settings->inbound_channnel = switch_true(val);
+        settings->inbound_channnel = (uint8_t) switch_true(val);
     } else if (!strcmp(key, "outbound_channel")) {
-        settings->outbound_channnel = switch_true(val);
+        settings->outbound_channnel = (uint8_t) switch_true(val);
     } else {
         return SWITCH_STATUS_NOTFOUND;
     }
