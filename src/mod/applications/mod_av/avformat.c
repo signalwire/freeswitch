@@ -1459,6 +1459,8 @@ static void *SWITCH_THREAD_FUNC file_read_thread_run(switch_thread_t *thread, vo
 
 		if (context->video_st.st && (error = av_read_frame(context->fc, &pkt)) < 0) {
 			if (error == AVERROR_EOF) {
+				if (!context->has_video) break;
+
 				eof = 1;
 				/* just make sure*/
 				pkt.data = NULL;

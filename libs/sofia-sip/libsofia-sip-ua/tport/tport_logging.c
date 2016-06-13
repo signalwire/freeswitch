@@ -694,13 +694,13 @@ int tport_capt_msg_hepv3 (tport_t const *self, msg_t *msg, size_t n,
    /* SRC PORT */
     hg->src_port.chunk.vendor_id = htons(0x0000);
     hg->src_port.chunk.type_id   = htons(0x0007);
-    hg->src_port.data = dst ? htons(su->su_port) : htons(su_self->su_port);
+    hg->src_port.data = dst ? su->su_port : su_self->su_port;
     hg->src_port.chunk.length = htons(sizeof(hg->src_port));
 
     /* DST PORT */
     hg->dst_port.chunk.vendor_id = htons(0x0000);
     hg->dst_port.chunk.type_id   = htons(0x0008);
-    hg->dst_port.data = dst ? htons(su_self->su_port) : htons(su->su_port);
+    hg->dst_port.data = dst ? su_self->su_port : su->su_port;
     hg->dst_port.chunk.length = htons(sizeof(hg->dst_port));
 
 

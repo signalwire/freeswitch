@@ -149,5 +149,6 @@
   "CHAT_GAIN_MINUS": "Gain -",
   "CHAT_GAIN_PLUS": "Gain +",
   "LANGUAGE": "Language:",
-  "BROWSER_LANGUAGE": "Browser Language"
+  "BROWSER_LANGUAGE": "Browser Language",
+  "FACTORY_RESET_SETTINGS": "Factory Reset Settings"
 }

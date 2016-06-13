@@ -137,7 +137,6 @@ enum { tls_buffer_size = 16384 };
  * Log the TLS error specified by the error code @a e and all the errors in
  * the queue. The error code @a e implies no error, and it is not logged.
  */
-static
 void tls_log_errors(unsigned level, char const *s, unsigned long e)
 {
   if (e == 0)
@@ -449,12 +448,22 @@ int tls_init_context(tls_t *tls, tls_issues_t const *ti)
 
 void tls_free(tls_t *tls)
 {
+  int ret;
   if (!tls)
     return;
 
   if (tls->con != NULL) {
-	SSL_shutdown(tls->con);
-	SSL_free(tls->con), tls->con = NULL;
+    do {
+      ret = SSL_shutdown(tls->con);
+      if (ret == -1) {
+        /* The return value -1 means that the connection wasn't actually established */
+        /* so it should be safe to not call shutdown again. We need to clear the eror */
+        /* queue for other connections though. */
+        tls_log_errors(3, "tls_free", 0);
+        ret = 1;
+      }
+    } while (ret != 1);
+    SSL_free(tls->con), tls->con = NULL;
   }
 
   if (tls->ctx != NULL && tls->type != tls_slave) {
@@ -498,13 +507,18 @@ tls_t *tls_init_master(tls_issues_t *ti)
 
   RAND_pseudo_bytes(sessionId, sizeof(sessionId));
 
-  SSL_CTX_set_session_id_context(tls->ctx,
+  if (!SSL_CTX_set_session_id_context(tls->ctx,
                                  (void*) sessionId,
-				 sizeof(sessionId));
+				 sizeof(sessionId))) {
+    tls_log_errors(3, "tls_init_master", 0);
+  }
 
-  if (ti->CAfile != NULL)
+  if (ti->CAfile != NULL) {
     SSL_CTX_set_client_CA_list(tls->ctx,
                                SSL_load_client_CA_file(ti->CAfile));
+    if (tls->ctx->client_CA == NULL)
+      tls_log_errors(3, "tls_init_master", 0);
+  }
 
 #if 0
   if (sock != -1) {
@@ -576,6 +590,7 @@ int tls_post_connection_check(tport_t *self, tls_t *tls)
   if (!tls) return -1;
 
   if (!(cipher = SSL_get_current_cipher(tls->con))) {
+    tls_log_errors(3, "tls_post_connection_check", 0);
     SU_DEBUG_7(("%s(%p): %s\n", __func__, (void*)self,
                 "OpenSSL failed to return an SSL_CIPHER object to us."));
     return SSL_ERROR_SSL;

@@ -1079,10 +1079,6 @@ switch_status_t conference_api_sub_vid_personal(conference_obj_t *conference, sw
 	if (argv[2]) {
 		on = switch_true(argv[2]);
 		if (on) {
-			if (conference->record_count > 0) {
-				stream->write_function(stream, "-ERR conference is recording, not enabling vid-personal.\n");
-				return SWITCH_STATUS_SUCCESS;
-			}
 			conference_utils_set_flag(conference, CFLAG_PERSONAL_CANVAS);
 		} else {
 			conference_utils_clear_flag(conference, CFLAG_PERSONAL_CANVAS);
@@ -2515,11 +2511,6 @@ switch_status_t conference_api_sub_record(conference_obj_t *conference, switch_s
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	if (conference_utils_test_flag(conference, CFLAG_PERSONAL_CANVAS)) {
-		stream->write_function(stream, "-ERR Personal Canvas enabled, recording not permitted.\n");
-		return SWITCH_STATUS_SUCCESS;
-	}
-
 	if (argv[3]) {
 
 		if (argv[3]) {
@@ -2635,6 +2626,7 @@ switch_status_t conference_api_sub_recording(conference_obj_t *conference, switc
 		if (strcasecmp(argv[2], "start") == 0) {
 			argv[1] = argv[2];
 			argv[2] = argv[3];
+			argv[3] = argv[4];
 			return conference_api_sub_record(conference,stream,4,argv);
 		} else if (strcasecmp(argv[2], "stop") == 0) {
 			argv[1] = argv[2];

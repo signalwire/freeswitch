@@ -945,7 +945,7 @@ static int get_codecs(struct private_object *tech_pvt)
 		}
 		
 		if (codec_string) {
-			if ((tech_pvt->num_codecs = switch_loadable_module_get_codecs_sorted(tech_pvt->codecs,
+			if ((tech_pvt->num_codecs = switch_loadable_module_get_codecs_sorted(tech_pvt->codecs, NULL,
 																				 SWITCH_MAX_CODECS, codec_order_p, codec_order_last)) <= 0) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "NO codecs?\n");
 				return 0;

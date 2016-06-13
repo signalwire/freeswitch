@@ -344,6 +344,7 @@ typedef enum {
 	TFLAG_REINVITED,
 	TFLAG_PASS_ACK,
 	TFLAG_KEEPALIVE,
+	TFLAG_SKIP_EARLY,
 	/* No new flags below this line */
 	TFLAG_MAX
 } TFLAGS;
@@ -738,6 +739,8 @@ struct sofia_profile {
 	char *tls_verify_in_subjects_str;
 	su_strlst_t *tls_verify_in_subjects;
 	uint32_t sip_force_expires;
+	uint32_t sip_force_expires_min;
+	uint32_t sip_force_expires_max;
 	uint32_t sip_expires_max_deviation;
 	uint32_t sip_expires_late_margin;
 	uint32_t sip_subscription_max_deviation;

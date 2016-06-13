@@ -2346,11 +2346,12 @@ static void core_event_handler(switch_event_t *event)
 	case SWITCH_EVENT_CHANNEL_EXECUTE: {
 		
 		new_sql() = switch_mprintf("update channels set application='%q',application_data='%q',"
-								   "presence_id='%q',presence_data='%q' where uuid='%q'",
+								   "presence_id='%q',presence_data='%q',accountcode='%q' where uuid='%q'",
 								   switch_event_get_header_nil(event, "application"),
 								   switch_event_get_header_nil(event, "application-data"),
 								   switch_event_get_header_nil(event, "channel-presence-id"),
 								   switch_event_get_header_nil(event, "channel-presence-data"),
+								   switch_event_get_header_nil(event, "variable_accountcode"),
 								   switch_event_get_header_nil(event, "unique-id")
 								   );
 
@@ -2361,18 +2362,20 @@ static void core_event_handler(switch_event_t *event)
 		{
 			if ((extra_cols = parse_presence_data_cols(event))) {
 				new_sql() = switch_mprintf("update channels set "
-										   "presence_id='%q',presence_data='%q', call_uuid='%q',%s where uuid='%q'",
+										   "presence_id='%q',presence_data='%q',accountcode='%q',call_uuid='%q',%s where uuid='%q'",
 										   switch_event_get_header_nil(event, "channel-presence-id"),
 										   switch_event_get_header_nil(event, "channel-presence-data"),
+										   switch_event_get_header_nil(event, "variable_accountcode"),
 										   switch_event_get_header_nil(event, "channel-call-uuid"),
 										   extra_cols,
 										   switch_event_get_header_nil(event, "unique-id"));
 				free(extra_cols);
 			} else {
 				new_sql() = switch_mprintf("update channels set "
-										   "presence_id='%q',presence_data='%q', call_uuid='%q' where uuid='%q'",
+										   "presence_id='%q',presence_data='%q',accountcode='%q',call_uuid='%q' where uuid='%q'",
 										   switch_event_get_header_nil(event, "channel-presence-id"),
 										   switch_event_get_header_nil(event, "channel-presence-data"),
+										   switch_event_get_header_nil(event, "variable_accountcode"),
 										   switch_event_get_header_nil(event, "channel-call-uuid"),
 										   switch_event_get_header_nil(event, "unique-id"));
 			}
@@ -2463,7 +2466,7 @@ static void core_event_handler(switch_event_t *event)
 				if ((extra_cols = parse_presence_data_cols(event))) {
 					new_sql() = switch_mprintf("update channels set state='%s',cid_name='%q',cid_num='%q',callee_name='%q',callee_num='%q',"
 											   "sent_callee_name='%q',sent_callee_num='%q',"
-											   "ip_addr='%s',dest='%q',dialplan='%q',context='%q',presence_id='%q',presence_data='%q',%s "
+											   "ip_addr='%s',dest='%q',dialplan='%q',context='%q',presence_id='%q',presence_data='%q',accountcode='%q',%s "
 											   "where uuid='%s'",
 											   switch_event_get_header_nil(event, "channel-state"),
 											   switch_event_get_header_nil(event, "caller-caller-id-name"),
@@ -2478,13 +2481,14 @@ static void core_event_handler(switch_event_t *event)
 											   switch_event_get_header_nil(event, "caller-context"),
 											   switch_event_get_header_nil(event, "channel-presence-id"),
 											   switch_event_get_header_nil(event, "channel-presence-data"),
+											   switch_event_get_header_nil(event, "variable_accountcode"),
 											   extra_cols,
 											   switch_event_get_header_nil(event, "unique-id"));
 					free(extra_cols);
 				} else {
 					new_sql() = switch_mprintf("update channels set state='%s',cid_name='%q',cid_num='%q',callee_name='%q',callee_num='%q',"
 											   "sent_callee_name='%q',sent_callee_num='%q',"
-											   "ip_addr='%s',dest='%q',dialplan='%q',context='%q',presence_id='%q',presence_data='%q' "
+											   "ip_addr='%s',dest='%q',dialplan='%q',context='%q',presence_id='%q',presence_data='%q',accountcode='%q' "
 											   "where uuid='%s'",
 											   switch_event_get_header_nil(event, "channel-state"),
 											   switch_event_get_header_nil(event, "caller-caller-id-name"),
@@ -2499,6 +2503,7 @@ static void core_event_handler(switch_event_t *event)
 											   switch_event_get_header_nil(event, "caller-context"),
 											   switch_event_get_header_nil(event, "channel-presence-id"),
 											   switch_event_get_header_nil(event, "channel-presence-data"),
+											   switch_event_get_header_nil(event, "variable_accountcode"),
 											   switch_event_get_header_nil(event, "unique-id"));
 				}
 				break;
@@ -2705,6 +2710,7 @@ static char create_channels_sql[] =
 	"   hostname VARCHAR(256),\n"
 	"   presence_id VARCHAR(4096),\n"
 	"   presence_data VARCHAR(4096),\n"
+	"   accountcode VARCHAR(256),\n"
 	"   callstate  VARCHAR(64),\n"
 	"   callee_name  VARCHAR(1024),\n"
 	"   callee_num  VARCHAR(256),\n"
@@ -2804,6 +2810,7 @@ static char detailed_calls_sql[] =
 	"a.hostname as hostname,"
 	"a.presence_id as presence_id,"
 	"a.presence_data as presence_data,"
+	"a.accountcode as accountcode,"
 	"a.callstate as callstate,"
 	"a.callee_name as callee_name,"
 	"a.callee_num as callee_num,"
@@ -2835,6 +2842,7 @@ static char detailed_calls_sql[] =
 	"b.hostname as b_hostname,"
 	"b.presence_id as b_presence_id,"
 	"b.presence_data as b_presence_data,"
+	"b.accountcode as b_accountcode,"
 	"b.callstate as b_callstate,"
 	"b.callee_name as b_callee_name,"
 	"b.callee_num as b_callee_num,"
@@ -2874,6 +2882,7 @@ static char basic_calls_sql[] =
 
 	"a.presence_id as presence_id,"
 	"a.presence_data as presence_data,"
+	"a.accountcode as accountcode,"
 	"a.callstate as callstate,"
 	"a.callee_name as callee_name,"
 	"a.callee_num as callee_num,"
@@ -2897,6 +2906,7 @@ static char basic_calls_sql[] =
 	
 	"b.presence_id as b_presence_id,"
 	"b.presence_data as b_presence_data,"
+	"b.accountcode as b_accountcode,"
 	"b.callstate as b_callstate,"
 	"b.callee_name as b_callee_name,"
 	"b.callee_num as b_callee_num,"
@@ -3437,7 +3447,7 @@ switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_
 			char *err;
 			int result = 0;
 
-			switch_cache_db_test_reactive(sql_manager.dbh, "select call_uuid, read_bit_rate, sent_callee_name, initial_cid_name, initial_cid_num, initial_ip_addr, initial_dest, initial_dialplan, initial_context from channels", "DROP TABLE channels", create_channels_sql);
+			switch_cache_db_test_reactive(sql_manager.dbh, "select call_uuid, read_bit_rate, sent_callee_name, initial_cid_name, initial_cid_num, initial_ip_addr, initial_dest, initial_dialplan, initial_context, accountcode from channels", "DROP TABLE channels", create_channels_sql);
 			switch_cache_db_test_reactive(sql_manager.dbh, "select call_uuid from calls", "DROP TABLE calls", create_calls_sql);
 			switch_cache_db_test_reactive(sql_manager.dbh, "select * from basic_calls where sent_callee_name=''", "DROP VIEW basic_calls", basic_calls_sql);
 			switch_cache_db_test_reactive(sql_manager.dbh, "select * from detailed_calls where sent_callee_name=''", "DROP VIEW detailed_calls", detailed_calls_sql);

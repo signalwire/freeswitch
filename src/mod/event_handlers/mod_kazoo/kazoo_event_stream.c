@@ -37,7 +37,7 @@ static char *my_dup(const char *s) {
 	size_t len = strlen(s) + 1;
 	void *new = malloc(len);
 	switch_assert(new);
-	
+
 	return (char *) memcpy(new, s, len);
 }
 
@@ -58,21 +58,21 @@ static int is_private_header(const char *name) {
 
 static switch_status_t kazoo_event_dup(switch_event_t **clone, switch_event_t *event, switch_hash_t *filter) {
 	switch_event_header_t *header;
-	
+
 	if (switch_event_create_subclass(clone, SWITCH_EVENT_CLONE, event->subclass_name) != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_GENERR;
 	}
-	
+
 	(*clone)->event_id = event->event_id;
 	(*clone)->event_user_data = event->event_user_data;
 	(*clone)->bind_user_data = event->bind_user_data;
 	(*clone)->flags = event->flags;
-	
+
 	for (header = event->headers; header; header = header->next) {
 		if (event->subclass_name && !strcmp(header->name, "Event-Subclass")) {
 			continue;
 		}
-		
+
 		if (strncmp(header->name, globals.kazoo_var_prefix, globals.var_prefix_length)
 			&& filter
 			&& !switch_core_hash_find(filter, header->name)
@@ -82,7 +82,7 @@ static switch_status_t kazoo_event_dup(switch_event_t **clone, switch_event_t *e
 			{
 				continue;
 			}
-		
+
         if (header->idx) {
             int i;
             for (i = 0; i < header->idx; i++) {
@@ -92,33 +92,33 @@ static switch_status_t kazoo_event_dup(switch_event_t **clone, switch_event_t *e
             switch_event_add_header_string(*clone, SWITCH_STACK_BOTTOM, header->name, header->value);
         }
     }
-	
+
     if (event->body) {
         (*clone)->body = DUP(event->body);
     }
-	
+
     (*clone)->key = event->key;
-	
+
     return SWITCH_STATUS_SUCCESS;
 }
 
 static void event_handler(switch_event_t *event) {
 	switch_event_t *clone = NULL;
 	ei_event_stream_t *event_stream = (ei_event_stream_t *) event->bind_user_data;
-	
+
 	/* if mod_kazoo or the event stream isn't running dont push a new event */
 	if (!switch_test_flag(event_stream, LFLAG_RUNNING) || !switch_test_flag(&globals, LFLAG_RUNNING)) {
 		return;
 	}
-	
+
 	if (event->event_id == SWITCH_EVENT_CUSTOM) {
 		ei_event_binding_t *event_binding = event_stream->bindings;
 		unsigned short int found = 0;
-		
+
 		if (!event->subclass_name) {
 			return;
 		}
-		
+
 		while(event_binding != NULL) {
 			if (event_binding->type == SWITCH_EVENT_CUSTOM) {
 				if(event_binding->subclass_name
@@ -238,9 +238,9 @@ static void *SWITCH_THREAD_FUNC event_stream_loop(switch_thread_t *thread, void 
 				} else {
 					ei_x_new_with_version(&ebuf);
 				}
-                                
+
 				ei_encode_switch_event(&ebuf, event);
-                                
+
 				if (globals.event_stream_preallocate > 0 && ebuf.buffsz > globals.event_stream_preallocate) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "increased event stream buffer size to %d\n", ebuf.buffsz);
 				}

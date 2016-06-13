@@ -1683,6 +1683,18 @@ uint8_t sofia_reg_handle_register_token(nua_t *nua, sofia_profile_t *profile, nu
 				}
 			}
 
+			if ( (( exp_var = atoi(switch_event_get_header_nil(*v_event, "sip-force-expires-min")) )) ||
+			     (( exp_var = profile->sip_force_expires_min )) ) {
+				if ( (exp_var > 0) && (exptime < exp_var) ) {
+					exptime = exp_var;
+				}
+			}
+			if ( (( exp_var = atoi(switch_event_get_header_nil(*v_event, "sip-force-expires-max")) )) ||
+			     (( exp_var = profile->sip_force_expires_max )) ) {
+				if ( (exp_var > 0) && (exptime > exp_var) ) {
+					exptime = exp_var;
+				}
+			}
 			if ( (( exp_var = atoi(switch_event_get_header_nil(*v_event, "sip-force-expires")) )) ||
 			     (( exp_var = profile->sip_force_expires )) ) {
 				if (exp_var > 0) {

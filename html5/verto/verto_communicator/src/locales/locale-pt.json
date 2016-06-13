@@ -147,5 +147,6 @@
   "CHAT_VOL_MINUS": "Vol -",
   "CHAT_VOL_PLUS": "Vol +",
   "CHAT_GAIN_MINUS": "Ganho -",
-  "CHAT_GAIN_PLUS": "Ganho +"
+  "CHAT_GAIN_PLUS": "Ganho +",
+  "FACTORY_RESET_SETTINGS": "Redefinir configurações"
 }

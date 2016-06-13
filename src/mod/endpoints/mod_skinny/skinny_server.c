@@ -116,9 +116,6 @@ switch_status_t skinny_create_incoming_session(listener_t *listener, uint32_t *l
 
 	if (!button || !button->shortname[0]) {
 		skinny_log_l(listener, SWITCH_LOG_CRIT, "Line %d not found on device\n", *line_instance_p);
-		if ( button ) {
-			switch_safe_free(button);
-		}
 		goto error;
 	}
 
@@ -202,17 +199,13 @@ error:
 	}
 
 	listener->profile->ib_failed_calls++;
-	if ( button ) {
-		switch_safe_free(button);
-	}
+	switch_safe_free(button);
 	return SWITCH_STATUS_FALSE;
 
 done:
 	*session = nsession;
 	listener->profile->ib_calls++;
-	if ( button ) {
-		switch_safe_free(button);
-	}
+	switch_safe_free(button);
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -1246,27 +1239,27 @@ switch_status_t skinny_handle_register(listener_t *listener, skinny_message_t *r
 					listener->soft_key_set_set = switch_core_strdup(profile->pool, value);
 				} else if (!strcasecmp(name, "ext-voicemail")) {
 					if (!listener->ext_voicemail || strcmp(value,listener->ext_voicemail)) {
-						listener->ext_voicemail = switch_core_strdup(profile->pool, value);
+						listener->ext_voicemail = switch_core_strdup(listener->pool, value);
 					}
 				} else if (!strcasecmp(name, "ext-redial")) {
 					if (!listener->ext_redial || strcmp(value,listener->ext_redial)) {
-						listener->ext_redial = switch_core_strdup(profile->pool, value);
+						listener->ext_redial = switch_core_strdup(listener->pool, value);
 					}
 				} else if (!strcasecmp(name, "ext-meetme")) {
 					if (!listener->ext_meetme || strcmp(value,listener->ext_meetme)) {
-						listener->ext_meetme = switch_core_strdup(profile->pool, value);
+						listener->ext_meetme = switch_core_strdup(listener->pool, value);
 					}
 				} else if (!strcasecmp(name, "ext-pickup")) {
 					if (!listener->ext_pickup || strcmp(value,listener->ext_pickup)) {
-						listener->ext_pickup = switch_core_strdup(profile->pool, value);
+						listener->ext_pickup = switch_core_strdup(listener->pool, value);
 					}
 				} else if (!strcasecmp(name, "ext-cfwdall")) {
 					if (!listener->ext_cfwdall || strcmp(value,listener->ext_cfwdall)) {
-						listener->ext_cfwdall = switch_core_strdup(profile->pool, value);
+						listener->ext_cfwdall = switch_core_strdup(listener->pool, value);
 					}
 				} else if (!strcasecmp(name, "ext-autodial")) {
 					if (!listener->ext_autodial || strcmp(value,listener->ext_autodial)) {
-						listener->ext_autodial = switch_core_strdup(profile->pool, value);
+						listener->ext_autodial = switch_core_strdup(listener->pool, value);
 					}
 				}
 			}
@@ -1531,11 +1524,12 @@ switch_status_t skinny_handle_stimulus_message(listener_t *listener, skinny_mess
 				}
 				if ( !session ) {
 					skinny_log_l_msg(listener, SWITCH_LOG_CRIT, "Unable to handle speed dial stimulus message, couldn't create incoming session.\n");
+					switch_safe_free(button_speed_dial);
 					return SWITCH_STATUS_FALSE;
 				}
 				skinny_session_process_dest(session, listener, line_instance, button_speed_dial->line, '\0', 0);
-				switch_safe_free(button_speed_dial);
 			}
+			switch_safe_free(button_speed_dial);
 			break;
 		case SKINNY_BUTTON_HOLD:
 			session = skinny_profile_find_session(listener->profile, listener, &line_instance, call_id);

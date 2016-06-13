@@ -360,7 +360,7 @@ static switch_status_t init_encoder(switch_codec_t *codec)
 	vpx_codec_enc_cfg_t *config = &context->config;
 	int token_parts = 1;
 	int cpus = switch_core_cpu_count();
-	int sane;
+	int sane, threads = 1;
 	
 	if (!context->codec_settings.video.width) {
 		context->codec_settings.video.width = 1280;
@@ -404,7 +404,9 @@ static switch_status_t init_encoder(switch_codec_t *codec)
 	config->rc_target_bitrate = context->bandwidth;
 	config->g_lag_in_frames = 0;
 	config->kf_max_dist = 360;//2000;
-	config->g_threads = cpus - 1;//(cpus > 1) ? 2 : 1;
+	threads = cpus / 4;
+	if (threads < 0) threads = 1;
+	config->g_threads = threads;
 	
 	if (context->is_vp9) {
 		//config->rc_dropframe_thresh = 2;

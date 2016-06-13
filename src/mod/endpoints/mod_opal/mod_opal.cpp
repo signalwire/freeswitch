@@ -730,7 +730,7 @@ void FSConnection::SetCodecs()
     {
         char *codec_order[SWITCH_MAX_CODECS];
         int codec_order_last = switch_separate_string((char *)codec_string.GetPointer(), ',', codec_order, SWITCH_MAX_CODECS);
-        numCodecs = switch_loadable_module_get_codecs_sorted(codecs, SWITCH_MAX_CODECS, codec_order, codec_order_last);
+        numCodecs = switch_loadable_module_get_codecs_sorted(codecs, NULL, SWITCH_MAX_CODECS, codec_order, codec_order_last);
     }
 
     for (int i = 0; i < numCodecs; i++) {

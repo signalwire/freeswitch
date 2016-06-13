@@ -53,16 +53,16 @@ static switch_status_t api_erlang_status(switch_stream_handle_t *stream) {
 	char ipbuf[25];
 	const char *ip_addr;
 	ei_node_t *ei_node;
-	
+
 	switch_socket_addr_get(&sa, SWITCH_FALSE, globals.acceptor);
-	
+
 	port = switch_sockaddr_get_port(sa);
 	ip_addr = switch_get_addr(ipbuf, sizeof (ipbuf), sa);
-	
+
 	stream->write_function(stream, "Running %s\n", VERSION);
 	stream->write_function(stream, "Listening for new Erlang connections on %s:%u with cookie %s\n", ip_addr, port, globals.ei_cookie);
 	stream->write_function(stream, "Registered as Erlang node %s, visible as %s\n", globals.ei_cnode.thisnodename, globals.ei_cnode.thisalivename);
-	
+
 	if (globals.ei_compat_rel) {
 		stream->write_function(stream, "Using Erlang compatibility mode: %d\n", globals.ei_compat_rel);
 	}
@@ -75,7 +75,7 @@ static switch_status_t api_erlang_status(switch_stream_handle_t *stream) {
 		stream->write_function(stream, "Connected to:\n");
 		while(ei_node != NULL) {
 			unsigned int year, day, hour, min, sec, delta;
-			
+
 			delta = (switch_micro_time_now() - ei_node->created_time) / 1000000;
 			sec = delta % 60;
 			min = delta / 60 % 60;
@@ -88,14 +88,14 @@ static switch_status_t api_erlang_status(switch_stream_handle_t *stream) {
 		}
 	}
 	switch_thread_rwlock_unlock(globals.ei_nodes_lock);
-	
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
 static switch_status_t api_erlang_event_filter(switch_stream_handle_t *stream) {
 	switch_hash_index_t *hi = NULL;
 	int column = 0;
-	
+
 	for (hi = (switch_hash_index_t *)switch_core_hash_first_iter(globals.event_filter, hi); hi; hi = switch_core_hash_next(&hi)) {
 		const void *key;
 		void *val;
@@ -106,20 +106,20 @@ static switch_status_t api_erlang_event_filter(switch_stream_handle_t *stream) {
 			column = 0;
 		}
 	}
-	
+
 	if (++column > 2) {
 		stream->write_function(stream, "\n");
 		column = 0;
 	}
-	
+
 	stream->write_function(stream, "%-50s", globals.kazoo_var_prefix);
-	
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
 static switch_status_t api_erlang_nodes_list(switch_stream_handle_t *stream) {
 	ei_node_t *ei_node;
-	
+
 	switch_thread_rwlock_rdlock(globals.ei_nodes_lock);
 	ei_node = globals.ei_nodes;
 	while(ei_node != NULL) {
@@ -127,14 +127,14 @@ static switch_status_t api_erlang_nodes_list(switch_stream_handle_t *stream) {
 		ei_node = ei_node->next;
 	}
 	switch_thread_rwlock_unlock(globals.ei_nodes_lock);
-	
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
 static switch_status_t api_erlang_nodes_count(switch_stream_handle_t *stream) {
 	ei_node_t *ei_node;
 	int count = 0;
-	
+
 	switch_thread_rwlock_rdlock(globals.ei_nodes_lock);
 	ei_node = globals.ei_nodes;
 	while(ei_node != NULL) {
@@ -142,9 +142,9 @@ static switch_status_t api_erlang_nodes_count(switch_stream_handle_t *stream) {
 		ei_node = ei_node->next;
 	}
 	switch_thread_rwlock_unlock(globals.ei_nodes_lock);
-	
+
 	stream->write_function(stream, "%d\n", count);
-	
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -152,7 +152,7 @@ static switch_status_t api_complete_erlang_node(const char *line, const char *cu
 	switch_console_callback_match_t *my_matches = NULL;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	ei_node_t *ei_node;
-	
+
 	switch_thread_rwlock_rdlock(globals.ei_nodes_lock);
 	ei_node = globals.ei_nodes;
 	while(ei_node != NULL) {
@@ -160,34 +160,34 @@ static switch_status_t api_complete_erlang_node(const char *line, const char *cu
 		ei_node = ei_node->next;
 	}
 	switch_thread_rwlock_unlock(globals.ei_nodes_lock);
-	
+
 	if (my_matches) {
 		*matches = my_matches;
 		status = SWITCH_STATUS_SUCCESS;
 	}
-	
+
 	return status;
 }
 
 static switch_status_t handle_node_api_event_stream(ei_event_stream_t *event_stream, switch_stream_handle_t *stream) {
 	ei_event_binding_t *binding;
 	int column = 0;
-	
+
 	switch_mutex_lock(event_stream->socket_mutex);
 	if (event_stream->connected == SWITCH_FALSE) {
 		switch_sockaddr_t *sa;
 		uint16_t port;
 		char ipbuf[25] = {0};
 		const char *ip_addr;
-		
+
 		switch_socket_addr_get(&sa, SWITCH_TRUE, event_stream->acceptor);
 		port = switch_sockaddr_get_port(sa);
 		ip_addr = switch_get_addr(ipbuf, sizeof (ipbuf), sa);
-		
+
 		if (zstr(ip_addr)) {
 			ip_addr = globals.ip;
 		}
-		
+
 		stream->write_function(stream, "%s:%d -> disconnected\n"
 							   ,ip_addr, port);
 	} else {
@@ -195,7 +195,7 @@ static switch_status_t handle_node_api_event_stream(ei_event_stream_t *event_str
 							   ,event_stream->local_ip, event_stream->local_port
 							   ,event_stream->remote_ip, event_stream->remote_port);
 	}
-	
+
 	binding = event_stream->bindings;
 	while(binding != NULL) {
 		if (binding->type == SWITCH_EVENT_CUSTOM) {
@@ -203,22 +203,22 @@ static switch_status_t handle_node_api_event_stream(ei_event_stream_t *event_str
 		} else {
 			stream->write_function(stream, "%-50s", switch_event_name(binding->type));
 		}
-		
+
 		if (++column > 2) {
 			stream->write_function(stream, "\n");
 			column = 0;
 		}
-		
+
 		binding = binding->next;
 	}
 	switch_mutex_unlock(event_stream->socket_mutex);
-	
+
 	if (!column) {
 		stream->write_function(stream, "\n");
 	} else {
 		stream->write_function(stream, "\n\n");
 	}
-	
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -232,13 +232,13 @@ static switch_status_t handle_node_api_event_streams(ei_node_t *ei_node, switch_
 		event_stream = event_stream->next;
 	}
 	switch_mutex_unlock(ei_node->event_streams_mutex);
-	
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
 static switch_status_t handle_node_api_command(ei_node_t *ei_node, switch_stream_handle_t *stream, uint32_t command) {
 	unsigned int year, day, hour, min, sec, delta;
-	
+
 	switch (command) {
 	case API_COMMAND_DISCONNECT:
 		stream->write_function(stream, "Disconnecting erlang node %s at managers request\n", ei_node->peer_nodename);
@@ -251,7 +251,7 @@ static switch_status_t handle_node_api_command(ei_node_t *ei_node, switch_stream
 		hour = delta / 3600 % 24;
 		day = delta / 86400 % 7;
 		year = delta / 31556926 % 12;
-		
+
 		stream->write_function(stream, "Uptime           %d years, %d days, %d hours, %d minutes, %d seconds\n", year, day, hour, min, sec);
 		stream->write_function(stream, "Local Address    %s:%d\n", ei_node->local_ip, ei_node->local_port);
 		stream->write_function(stream, "Remote Address   %s:%d\n", ei_node->remote_ip, ei_node->remote_port);
@@ -265,28 +265,28 @@ static switch_status_t handle_node_api_command(ei_node_t *ei_node, switch_stream
 	default:
 		break;
 	}
-	
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
 static switch_status_t api_erlang_node_command(switch_stream_handle_t *stream, const char *nodename, uint32_t command) {
 	ei_node_t *ei_node;
-	
+
 	switch_thread_rwlock_rdlock(globals.ei_nodes_lock);
 	ei_node = globals.ei_nodes;
 	while(ei_node != NULL) {
 		int length = strlen(ei_node->peer_nodename);
-		
+
 		if (!strncmp(ei_node->peer_nodename, nodename, length)) {
 			handle_node_api_command(ei_node, stream, command);
 			switch_thread_rwlock_unlock(globals.ei_nodes_lock);
 			return SWITCH_STATUS_SUCCESS;
 		}
-		
+
 		ei_node = ei_node->next;
 	}
 	switch_thread_rwlock_unlock(globals.ei_nodes_lock);
-	
+
 	return SWITCH_STATUS_NOTFOUND;
 }
 
@@ -296,7 +296,7 @@ static int read_cookie_from_file(char *filename) {
 	char *end;
 	struct stat buf;
 	ssize_t res;
-	
+
 	if (!stat(filename, &buf)) {
 		if ((buf.st_mode & S_IRWXG) || (buf.st_mode & S_IRWXO)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s must only be accessible by owner only.\n", filename);
@@ -311,24 +311,24 @@ static int read_cookie_from_file(char *filename) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to open cookie file %s : %d.\n", filename, errno);
 			return 2;
 		}
-		
+
 		if ((res = read(fd, cookie, MAXATOMLEN)) < 1) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to read cookie file %s : %d.\n", filename, errno);
 		}
-		
+
 		cookie[MAXATOMLEN] = '\0';
-		
+
 		/* replace any end of line characters with a null */
 		if ((end = strchr(cookie, '\n'))) {
 			*end = '\0';
 		}
-		
+
 		if ((end = strchr(cookie, '\r'))) {
 			*end = '\0';
 		}
-		
+
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Set cookie from file %s: %s\n", filename, cookie);
-		
+
 		set_pref_ei_cookie(cookie);
 		return 0;
 	} else {
@@ -340,7 +340,8 @@ static int read_cookie_from_file(char *filename) {
 static switch_status_t config(void) {
 	char *cf = "kazoo.conf";
 	switch_xml_t cfg, xml, child, param;
-	globals.send_all_headers = globals.send_all_private_headers = 0;
+	globals.send_all_headers = 0;
+	globals.send_all_private_headers = 1;
 	globals.connection_timeout = 500;
 	globals.receive_timeout = 200;
 	globals.receive_msg_preallocate = 2000;
@@ -348,7 +349,7 @@ static switch_status_t config(void) {
 	globals.send_msg_batch = 10;
 	globals.event_stream_framing = 2;
 	globals.port = 0;
-	
+
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to open configuration file %s\n", cf);
 		return SWITCH_STATUS_FALSE;
@@ -357,7 +358,7 @@ static switch_status_t config(void) {
 			for (param = switch_xml_child(child, "param"); param; param = param->next) {
 				char *var = (char *) switch_xml_attr_soft(param, "name");
 				char *val = (char *) switch_xml_attr_soft(param, "value");
-				
+
 				if (!strcmp(var, "listen-ip")) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Set bind ip address: %s\n", val);
 					set_pref_ip(val);
@@ -412,19 +413,19 @@ static switch_status_t config(void) {
 				}
 			}
 		}
-		
+
 		if ((child = switch_xml_child(cfg, "event-filter"))) {
 			switch_hash_t *filter;
-			
+
 			switch_core_hash_init(&filter);
 			for (param = switch_xml_child(child, "header"); param; param = param->next) {
 				char *var = (char *) switch_xml_attr_soft(param, "name");
 				switch_core_hash_insert(filter, var, "1");
 			}
-			
+
 			globals.event_filter = filter;
 		}
-		
+
 		switch_xml_free(xml);
 	}
 
@@ -432,17 +433,17 @@ static switch_status_t config(void) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid receive message preallocate value, disabled\n");
 		globals.receive_msg_preallocate = 0;
 	}
-	
+
 	if (globals.event_stream_preallocate < 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid event stream preallocate value, disabled\n");
 		globals.event_stream_preallocate = 0;
 	}
-	
+
 	if (globals.send_msg_batch < 1) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid send message batch size, reverting to default\n");
 		globals.send_msg_batch = 10;
 	}
-	
+
 	if (!globals.event_filter) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Event filter not found in configuration, using default\n");
 		globals.event_filter = create_default_filter();
@@ -452,7 +453,7 @@ static switch_status_t config(void) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid event stream framing value, using default\n");
 		globals.event_stream_framing = 2;
 	}
-	
+
 	if (zstr(globals.kazoo_var_prefix)) {
 		set_pref_kazoo_var_prefix("variable_ecallmgr*");
 		globals.var_prefix_length = 17; //ignore the *
@@ -461,33 +462,33 @@ static switch_status_t config(void) {
 		 * free the pointer if it was not drawn from the XML */
 		char *buf;
 		int size = switch_snprintf(NULL, 0, "variable_%s*", globals.kazoo_var_prefix) + 1;
-		
+
 		switch_malloc(buf, size);
 		switch_snprintf(buf, size, "variable_%s*", globals.kazoo_var_prefix);
 		switch_safe_free(globals.kazoo_var_prefix);
 		globals.kazoo_var_prefix = buf;
 		globals.var_prefix_length = size - 2; //ignore the *
 	}
-	
+
 	if (!globals.num_worker_threads) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Number of worker threads not found in configuration, using default\n");
 		globals.num_worker_threads = 10;
 	}
-	
+
 	if (zstr(globals.ip)) {
 		set_pref_ip("0.0.0.0");
 	}
-	
+
 	if (zstr(globals.ei_cookie)) {
 		int res;
 		char *home_dir = getenv("HOME");
 		char path_buf[1024];
-		
+
 		if (!zstr(home_dir)) {
 			/* $HOME/.erlang.cookie */
 			switch_snprintf(path_buf, sizeof (path_buf), "%s%s%s", home_dir, SWITCH_PATH_SEPARATOR, ".erlang.cookie");
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Checking for cookie at path: %s\n", path_buf);
-			
+
 			res = read_cookie_from_file(path_buf);
 			if (res) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "No cookie or valid cookie file specified, using default cookie\n");
@@ -495,15 +496,15 @@ static switch_status_t config(void) {
 			}
 		}
 	}
-	
+
 	if (!globals.ei_nodename) {
 		set_pref_ei_nodename("freeswitch");
 	}
-	
+
 	if (!globals.nat_map) {
 		globals.nat_map = 0;
 	}
-	
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -512,38 +513,38 @@ static switch_status_t create_acceptor() {
 	uint16_t port;
     char ipbuf[25];
     const char *ip_addr;
-	
+
 	/* if the config has specified an erlang release compatibility then pass that along to the erlang interface */
 	if (globals.ei_compat_rel) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Compatability with OTP R%d requested\n", globals.ei_compat_rel);
 		ei_set_compat_rel(globals.ei_compat_rel);
 	}
-	
+
 	if (!(globals.acceptor = create_socket_with_port(globals.pool, globals.port))) {
 		return SWITCH_STATUS_SOCKERR;
 	}
-	
+
 	switch_socket_addr_get(&sa, SWITCH_FALSE, globals.acceptor);
-	
+
 	port = switch_sockaddr_get_port(sa);
 	ip_addr = switch_get_addr(ipbuf, sizeof (ipbuf), sa);
-	
+
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Erlang connection acceptor listening on %s:%u\n", ip_addr, port);
-	
+
 	/* try to initialize the erlang interface */
 	if (create_ei_cnode(ip_addr, globals.ei_nodename, &globals.ei_cnode) != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_SOCKERR;
 	}
-	
+
 	/* tell the erlang port manager where we can be reached.  this returns a file descriptor pointing to epmd or -1 */
 	if ((globals.epmdfd = ei_publish(&globals.ei_cnode, port)) == -1) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
 						  "Failed to publish port to epmd. Try starting it yourself or run an erl shell with the -sname or -name option.\n");
 		return SWITCH_STATUS_SOCKERR;
 	}
-	
+
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Connected to epmd and published erlang cnode name %s at port %d\n", globals.ei_cnode.thisnodename, port);
-	
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -552,7 +553,7 @@ SWITCH_STANDARD_API(exec_api_cmd)
 	char *argv[1024] = { 0 };
 	int unknown_command = 1, argc = 0;
 	char *mycmd = NULL;
-	
+
 	const char *usage_string = "USAGE:\n"
 		"--------------------------------------------------------------------------------------------------------------------\n"
 		"erlang status                            - provides an overview of the current status\n"
@@ -564,28 +565,28 @@ SWITCH_STANDARD_API(exec_api_cmd)
 		"erlang node <node_name> event_streams    - lists the event streams for an Erlang node\n"
 		"erlang node <node_name> fetch_bindings   - lists the XML fetch bindings for an Erlang node\n"
 		"---------------------------------------------------------------------------------------------------------------------\n";
-	
+
 	if (zstr(cmd)) {
 		stream->write_function(stream, "%s", usage_string);
 		return SWITCH_STATUS_SUCCESS;
 	}
-	
+
 	if (!(mycmd = strdup(cmd))) {
 		return SWITCH_STATUS_MEMERR;
 	}
-	
+
 	if (!(argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
 		stream->write_function(stream, "%s", usage_string);
 		switch_safe_free(mycmd);
 		return SWITCH_STATUS_SUCCESS;
 	}
-	
+
 	if (zstr(argv[0])) {
 		stream->write_function(stream, "%s", usage_string);
 		switch_safe_free(mycmd);
 		return SWITCH_STATUS_SUCCESS;
 	}
-	
+
 	if (!strncmp(argv[0], "status", 6)) {
 		unknown_command = 0;
 		api_erlang_status(stream);
@@ -615,11 +616,11 @@ SWITCH_STANDARD_API(exec_api_cmd)
 			api_erlang_node_command(stream, argv[1], API_COMMAND_BINDINGS);
 		}
 	}
-	
+
 	if (unknown_command) {
 		stream->write_function(stream, "%s", usage_string);
 	}
-	
+
 	switch_safe_free(mycmd);
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -627,28 +628,28 @@ SWITCH_STANDARD_API(exec_api_cmd)
 SWITCH_MODULE_LOAD_FUNCTION(mod_kazoo_load) {
 	switch_api_interface_t *api_interface = NULL;
 	switch_application_interface_t *app_interface = NULL;
-	
+
 	memset(&globals, 0, sizeof(globals));
-	
+
 	globals.pool = pool;
 	globals.ei_nodes = NULL;
-	
+
 	if(config() != SWITCH_STATUS_SUCCESS) {
 		// TODO: what would we need to clean up here?
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Improper configuration!\n");
 		return SWITCH_STATUS_TERM;
 	}
-	
+
 	if(create_acceptor() != SWITCH_STATUS_SUCCESS) {
 		// TODO: what would we need to clean up here
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to create erlang connection acceptor!\n");
 		close_socket(&globals.acceptor);
 		return SWITCH_STATUS_TERM;
 	}
-	
+
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
-	
+
 	/* create an api for cli debug commands */
 	SWITCH_ADD_API(api_interface, "erlang", KAZOO_DESC, exec_api_cmd, KAZOO_SYNTAX);
 	switch_console_set_complete("add erlang status");
@@ -660,13 +661,13 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_kazoo_load) {
 	switch_console_set_complete("add erlang node ::erlang::node event_streams");
 	switch_console_set_complete("add erlang node ::erlang::node fetch_bindings");
 	switch_console_add_complete_func("::erlang::node", api_complete_erlang_node);
-	
+
 	switch_thread_rwlock_create(&globals.ei_nodes_lock, pool);
-	
+
 	switch_set_flag(&globals, LFLAG_RUNNING);
-	
+
 	/* create all XML fetch agents */
-	bind_fetch_agents();	
+	bind_fetch_agents();
 
 	/* add our modified commands */
 	add_kz_commands(module_interface, api_interface);
@@ -680,13 +681,13 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_kazoo_load) {
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_kazoo_shutdown) {
 	int sanity = 0;
-	
+
 	switch_console_set_complete("del erlang");
 	switch_console_del_complete_func("::erlang::node");
-	
+
 	/* stop taking new requests and start shuting down the threads */
 	switch_clear_flag(&globals, LFLAG_RUNNING);
-	
+
 	/* give everyone time to cleanly shutdown */
 	while (switch_atomic_read(&globals.threads)) {
 		switch_yield(100000);
@@ -695,52 +696,52 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_kazoo_shutdown) {
 			break;
 		}
 	}
-	
+
 	if (globals.event_filter) {
 		switch_core_hash_destroy(&globals.event_filter);
 	}
-	
+
 	switch_thread_rwlock_wrlock(globals.ei_nodes_lock);
 	switch_thread_rwlock_unlock(globals.ei_nodes_lock);
 	switch_thread_rwlock_destroy(globals.ei_nodes_lock);
-	
+
 	/* close the connection to epmd and the acceptor */
 	close_socketfd(&globals.epmdfd);
 	close_socket(&globals.acceptor);
-	
+
 	/* remove all XML fetch agents */
 	unbind_fetch_agents();
-	
+
 	/* Close the port we reserved for uPnP/Switch behind firewall, if necessary */
 	//	if (globals.nat_map && switch_nat_get_type()) {
 	//		switch_nat_del_mapping(globals.port, SWITCH_NAT_TCP);
 	//	}
-	
+
 	/* clean up our allocated preferences */
 	switch_safe_free(globals.ip);
 	switch_safe_free(globals.ei_cookie);
 	switch_safe_free(globals.ei_nodename);
 	switch_safe_free(globals.kazoo_var_prefix);
-	
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
 SWITCH_MODULE_RUNTIME_FUNCTION(mod_kazoo_runtime) {
 	switch_os_socket_t os_socket;
-	
+
 	switch_atomic_inc(&globals.threads);
-	
+
 	switch_os_sock_get(&os_socket, globals.acceptor);
-	
+
 	while (switch_test_flag(&globals, LFLAG_RUNNING)) {
 		int nodefd;
 		ErlConnect conn;
-		
+
 		/* zero out errno because ei_accept doesn't differentiate between a */
 		/* failed authentication or a socket failure, or a client version */
 		/* mismatch or a godzilla attack (and a godzilla attack is highly likely) */
 		errno = 0;
-		
+
 		/* wait here for an erlang node to connect, timming out to check if our module is still running every now-and-again */
 		if ((nodefd = ei_accept_tmo(&globals.ei_cnode, (int) os_socket, &conn, globals.connection_timeout)) == ERL_ERROR) {
 			if (erl_errno == ETIMEDOUT) {
@@ -753,19 +754,19 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_kazoo_runtime) {
 			}
 			continue;
 		}
-		
+
 		if (!switch_test_flag(&globals, LFLAG_RUNNING)) {
 			break;
 		}
-		
+
 		/* NEW ERLANG NODE CONNECTION! Hello friend! */
 		new_kazoo_node(nodefd, &conn);
 	}
-	
+
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Erlang connection acceptor shut down\n");
-	
+
 	switch_atomic_dec(&globals.threads);
-	
+
 	return SWITCH_STATUS_TERM;
 }
 

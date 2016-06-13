@@ -233,7 +233,7 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 	while (conference_globals.running && !conference_utils_test_flag(conference, CFLAG_DESTRUCT)) {
 		switch_size_t file_sample_len = samples;
 		switch_size_t file_data_len = samples * 2 * conference->channels;
-		int has_file_data = 0, members_with_video = 0, members_with_avatar = 0;
+		int has_file_data = 0, members_with_video = 0, members_with_avatar = 0, members_seeing_video = 0;
 		uint32_t conference_energy = 0;
 		int nomoh = 0;
 		conference_member_t *floor_holder;
@@ -288,6 +288,13 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 					members_with_video++;
 				}
 
+				if (switch_channel_ready(channel) && 
+					switch_channel_test_flag(channel, CF_VIDEO_READY) && 
+					imember->video_media_flow != SWITCH_MEDIA_FLOW_SENDONLY && 
+					!conference_utils_member_test_flag(imember, MFLAG_SECOND_SCREEN)) {
+					members_seeing_video++;
+				}
+
 				if (imember->avatar_png_img && !switch_channel_test_flag(channel, CF_VIDEO)) {
 					members_with_avatar++;
 				}
@@ -310,6 +317,7 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 		}
 
 		conference->members_with_video = members_with_video;
+		conference->members_seeing_video = members_seeing_video;
 		conference->members_with_avatar = members_with_avatar;
 
 		if (floor_holder != conference->floor_holder) {

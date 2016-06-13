@@ -2252,6 +2252,13 @@ SWITCH_DECLARE(switch_status_t) switch_play_and_get_digits(switch_core_session_t
 														   const char *transfer_on_failure)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
+	char *var_name_invalid = NULL;
+
+	if (!zstr(digits_regex) && !zstr(var_name)) {
+		var_name_invalid = switch_mprintf("%s_invalid", var_name);
+		switch_channel_set_variable(channel, var_name_invalid, NULL);
+		switch_safe_free(var_name_invalid);
+	}
 
 	while (switch_channel_ready(channel) && max_tries) {
 		switch_status_t status;
@@ -2277,21 +2284,20 @@ SWITCH_DECLARE(switch_status_t) switch_play_and_get_digits(switch_core_session_t
 		if (!(status == SWITCH_STATUS_TOO_SMALL && strlen(digit_buffer) == 0)) {
 			if (status == SWITCH_STATUS_SUCCESS) {
 				if (!zstr(digit_buffer)) {
-					char *invalid_var = NULL;
 					if (zstr(digits_regex)) {
 						return SWITCH_STATUS_SUCCESS;
 					}
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG1, "Test Regex [%s][%s]\n", digit_buffer, digits_regex);
 
-					invalid_var = switch_mprintf("%s_invalid", var_name);
 					if (switch_regex_match(digit_buffer, digits_regex) == SWITCH_STATUS_SUCCESS) {
-						switch_channel_set_variable(channel, invalid_var, NULL);
-						switch_safe_free(invalid_var);
 						return SWITCH_STATUS_SUCCESS;
 					} else {
 						switch_channel_set_variable(channel, var_name, NULL);
-						switch_channel_set_variable(channel, invalid_var, digit_buffer);
-						switch_safe_free(invalid_var);
+						if (!zstr(var_name)) {
+							var_name_invalid = switch_mprintf("%s_invalid", var_name);
+							switch_channel_set_variable(channel, var_name_invalid, digit_buffer);
+							switch_safe_free(var_name_invalid);
+						}
 					}
 				}
 			}

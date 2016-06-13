@@ -568,6 +568,7 @@ typedef struct conference_obj {
 	conference_video_mode_t conference_video_mode;
 	int video_quality;
 	int members_with_video;
+	int members_seeing_video;
 	int members_with_avatar;
 	uint32_t auto_kps_debounce;
 	switch_codec_settings_t video_codec_settings;

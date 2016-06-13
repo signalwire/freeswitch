@@ -2000,6 +2000,16 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_SWITCH_RTCP_VIDEO_INTERVAL_MSEC_get() {
 }
 
 
+SWIGEXPORT int SWIGSTDCALL CSharp_MAX_FMTP_LEN_get() {
+  int jresult ;
+  int result;
+  
+  result = (int)(256);
+  jresult = result; 
+  return jresult;
+}
+
+
 SWIGEXPORT double SWIGSTDCALL CSharp_JITTER_VARIANCE_THRESHOLD_get() {
   double jresult ;
   double result;
@@ -17340,7 +17350,7 @@ SWIGEXPORT void * SWIGSTDCALL CSharp_switch_loadable_module_get_codec_interface(
 }
 
 
-SWIGEXPORT char * SWIGSTDCALL CSharp_switch_parse_codec_buf(char * jarg1, void * jarg2, void * jarg3, void * jarg4, void * jarg5, void * jarg6) {
+SWIGEXPORT char * SWIGSTDCALL CSharp_switch_parse_codec_buf(char * jarg1, void * jarg2, void * jarg3, void * jarg4, void * jarg5, void * jarg6, void * jarg7) {
   char * jresult ;
   char *arg1 = (char *) 0 ;
   uint32_t *arg2 = (uint32_t *) 0 ;
@@ -17348,6 +17358,7 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_switch_parse_codec_buf(char * jarg1, void *
   uint32_t *arg4 = (uint32_t *) 0 ;
   uint32_t *arg5 = (uint32_t *) 0 ;
   char **arg6 = (char **) 0 ;
+  char **arg7 = (char **) 0 ;
   char *result = 0 ;
   
   arg1 = (char *)jarg1; 
@@ -17356,7 +17367,8 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_switch_parse_codec_buf(char * jarg1, void *
   arg4 = (uint32_t *)jarg4; 
   arg5 = (uint32_t *)jarg5; 
   arg6 = (char **)jarg6; 
-  result = (char *)switch_parse_codec_buf(arg1,arg2,arg3,arg4,arg5,arg6);
+  arg7 = (char **)jarg7; 
+  result = (char *)switch_parse_codec_buf(arg1,arg2,arg3,arg4,arg5,arg6,arg7);
   jresult = SWIG_csharp_string_callback((const char *)result); 
   return jresult;
 }
@@ -17612,19 +17624,21 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_loadable_module_get_codecs(void * jarg1
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_switch_loadable_module_get_codecs_sorted(void * jarg1, int jarg2, void * jarg3, int jarg4) {
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_loadable_module_get_codecs_sorted(void * jarg1, void * jarg2, int jarg3, void * jarg4, int jarg5) {
   int jresult ;
   switch_codec_implementation_t **arg1 = (switch_codec_implementation_t **) 0 ;
-  int arg2 ;
-  char **arg3 = (char **) 0 ;
-  int arg4 ;
+  char (*arg2)[256] ;
+  int arg3 ;
+  char **arg4 = (char **) 0 ;
+  int arg5 ;
   int result;
   
   arg1 = (switch_codec_implementation_t **)jarg1; 
-  arg2 = (int)jarg2; 
-  arg3 = (char **)jarg3; 
-  arg4 = (int)jarg4; 
-  result = (int)switch_loadable_module_get_codecs_sorted((switch_codec_implementation const **)arg1,arg2,arg3,arg4);
+  arg2 = (char (*)[256])jarg2; 
+  arg3 = (int)jarg3; 
+  arg4 = (char **)jarg4; 
+  arg5 = (int)jarg5; 
+  result = (int)switch_loadable_module_get_codecs_sorted((switch_codec_implementation const **)arg1,(char (*)[256])arg2,arg3,arg4,arg5);
   jresult = result; 
   return jresult;
 }
