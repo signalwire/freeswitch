@@ -6480,7 +6480,6 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 							 (switch_channel_test_flag(tech_pvt->channel, CF_T38_PASSTHRU) && (has_t38 || status > 299)))) {
 
 			if (sofia_test_flag(tech_pvt, TFLAG_SENT_UPDATE)) {
-				const char *wait_for_ack = switch_channel_get_variable(channel, "sip_wait_for_aleg_ack");
 				sofia_clear_flag_locked(tech_pvt, TFLAG_SENT_UPDATE);
 
 				if ((uuid = switch_channel_get_partner_uuid(channel)) && (other_session = switch_core_session_locate(uuid))) {
@@ -6497,21 +6496,12 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 					}
 
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Passing %d %s to other leg\n%s\n", status, phrase, switch_str_nil(r_sdp));
-
-					if (switch_true(wait_for_ack)) {
-						switch_core_session_t *other_session;
-
-						if (switch_core_session_get_partner(session, &other_session) == SWITCH_STATUS_SUCCESS) {
-							if (switch_core_session_compare(session, other_session)) {
-								private_object_t *other_tech_pvt = switch_core_session_get_private(other_session);
-
-								if (!sofia_test_flag(tech_pvt, TFLAG_3PCC) && !sofia_test_flag(other_tech_pvt, TFLAG_3PCC)) {
-									sofia_set_flag(other_tech_pvt, TFLAG_PASS_ACK);
-								}
-							}
-							switch_core_session_rwunlock(other_session);
-						}
+					
+					if (switch_core_session_compare(session, other_session)) {
+						private_object_t *other_tech_pvt = switch_core_session_get_private(other_session);
+						sofia_set_flag(other_tech_pvt, TFLAG_PASS_ACK);
 					}
+
 
 					if (status == 491 && (switch_channel_test_flag(tech_pvt->channel, CF_T38_PASSTHRU) ||
 										  switch_channel_test_flag(channel, CF_PROXY_MODE))) {
