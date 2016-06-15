@@ -1659,7 +1659,7 @@ int  vlc_write_video_imem_get_callback(void *data, const char *cookie, int64_t *
 		}
 		
 		*output = context->video_frame_buffer;
-		switch_img_to_raw(img, *output, *size, SWITCH_IMG_FMT_YUY2);
+		switch_img_to_raw(img, *output, 0, SWITCH_IMG_FMT_YUY2);
 		switch_img_free(&img);
 		return 0;
 	}

@@ -720,7 +720,7 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
             switch_assert(context->rawImage->width * 3 == context->rawImage->widthStep);
         }
 
-        switch_img_to_raw(frame->img, context->rawImage->imageData, context->rawImage->widthStep * context->h, SWITCH_IMG_FMT_RGB24);
+        switch_img_to_raw(frame->img, context->rawImage->imageData, context->rawImage->widthStep, SWITCH_IMG_FMT_RGB24);
         detectAndDraw(context);
 
         if (context->detected.simo_count > 20) {

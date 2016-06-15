@@ -352,10 +352,10 @@ SWITCH_DECLARE(void) switch_img_find_position(switch_img_position_t pos, int sw,
 *
 * \param[in]    src       The image descriptor
 * \param[in]    dest      The target memory address
-* \param[in]    size      The size of target memory address used for bounds check
+* \param[in]    stride    Bytes in a row for the destination. Pass 0 if the buffer has contiguous rows. Can be negative. A multiple of 16 is optimal.
 * \param[in]    fmt       The target format
 */
-SWITCH_DECLARE(switch_status_t) switch_img_to_raw(switch_image_t *src, void *dest, switch_size_t size, switch_img_fmt_t fmt);
+SWITCH_DECLARE(switch_status_t) switch_img_to_raw(switch_image_t *src, void *dest, int stride, switch_img_fmt_t fmt);
 /*!\brief convert raw memory to switch_img_t
 *
 * if dest is NULL then a new img is created, user should destroy it later,
