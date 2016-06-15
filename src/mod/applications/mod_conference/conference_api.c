@@ -2529,6 +2529,10 @@ switch_status_t conference_api_sub_record(conference_obj_t *conference, switch_s
 
 	if (id == 0 && conference->canvases[0]) id = 1;
 	
+	if (id > conference->canvas_count) {
+		id = 1;
+	}
+
 	if (id > 0) {
 		stream->write_function(stream, "Record file %s canvas %d\n", argv[2], id);
 	} else {
