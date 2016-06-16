@@ -1627,7 +1627,8 @@ typedef enum {
 	SWITCH_CODEC_FLAG_AAL2 = (1 << 6),
 	SWITCH_CODEC_FLAG_PASSTHROUGH = (1 << 7),
 	SWITCH_CODEC_FLAG_READY = (1 << 8),
-	SWITCH_CODEC_FLAG_HAS_PLC = (1 << 15)
+	SWITCH_CODEC_FLAG_HAS_PLC = (1 << 15),
+	SWITCH_CODEC_FLAG_VIDEO_PATCHING = (1 << 16)
 } switch_codec_flag_enum_t;
 typedef uint32_t switch_codec_flag_t;
 
@@ -1769,7 +1770,8 @@ typedef enum {
 	SMBF_WRITE_VIDEO_STREAM = (1 << 20),
 	SMBF_VIDEO_PATCH = (1 << 21),
 	SMBF_SPY_VIDEO_STREAM = (1 << 22),
-	SMBF_SPY_VIDEO_STREAM_BLEG = (1 << 23)
+	SMBF_SPY_VIDEO_STREAM_BLEG = (1 << 23),
+	SMBF_READ_VIDEO_PATCH = (1 << 24)
 } switch_media_bug_flag_enum_t;
 typedef uint32_t switch_media_bug_flag_t;
 

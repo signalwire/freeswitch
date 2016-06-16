@@ -299,6 +299,7 @@ struct vpx_context {
 	switch_memory_pool_t *pool;
 	switch_buffer_t *pbuffer;
 	switch_time_t start_time;
+	switch_image_t *patch_img;
 };
 typedef struct vpx_context vpx_context_t;
 
@@ -1264,6 +1265,12 @@ end:
 		switch_set_flag(frame, SFF_WAIT_KEY_FRAME);
 	}
 
+	if (frame->img && (codec->flags & SWITCH_CODEC_FLAG_VIDEO_PATCHING)) {
+		switch_img_free(&context->patch_img);
+		switch_img_copy(frame->img, &context->patch_img);
+		frame->img = context->patch_img;
+	}
+
 	return status;
 }
 
@@ -1326,6 +1333,9 @@ static switch_status_t switch_vpx_destroy(switch_codec_t *codec)
 	vpx_context_t *context = (vpx_context_t *)codec->private_info;
 
 	if (context) {
+		
+		switch_img_free(&context->patch_img);
+
 		if ((codec->flags & SWITCH_CODEC_FLAG_ENCODE)) {
 			vpx_codec_destroy(&context->encoder);
 		}

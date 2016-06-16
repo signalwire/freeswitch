@@ -1167,7 +1167,7 @@ SWITCH_STANDARD_APP(cv_bug_start_function)
     int x, n;
     char *argv[25] = { 0 };
     int argc;
-	switch_media_bug_flag_t flags = SMBF_READ_VIDEO_PING;
+	switch_media_bug_flag_t flags = SMBF_READ_VIDEO_PING | SMBF_READ_VIDEO_PATCH;
 	const char *function = "mod_cv";
 
     if ((bug = (switch_media_bug_t *) switch_channel_get_private(channel, "_cv_bug_"))) {
@@ -1228,7 +1228,7 @@ SWITCH_STANDARD_API(cv_bug_api_function)
     char *nested_cascade_path = NULL;
     char *lbuf = NULL;
     int x, n, i;
-	switch_media_bug_flag_t flags = SMBF_READ_VIDEO_PING;
+	switch_media_bug_flag_t flags = SMBF_READ_VIDEO_PING | SMBF_READ_VIDEO_PATCH;
 	const char *function = "mod_cv";
 
     if (zstr(cmd)) {
