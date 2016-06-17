@@ -9233,8 +9233,6 @@ void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t 
 			} else if (!strncasecmp(sip->sip_content_type->c_type, "application", 11) && !strcasecmp(sip->sip_content_type->c_subtype, "dtmf")) {
 				int tmp = atoi(sip->sip_payload->pl_data);
 				dtmf.digit = switch_rfc2833_to_char(tmp);
-			} else {
-				goto end;
 			}
 
 			if (dtmf.digit) {
@@ -9268,8 +9266,8 @@ void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t 
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING,
 									  "IGNORE INFO DTMF(%c) (This channel was not configured to use INFO DTMF!)\n", dtmf.digit);
 				}
+				goto end;
 			}
-			goto end;
 		}
 
 		if ((clientcode_header = sofia_glue_get_unknown_header(sip, "x-clientcode"))) {
