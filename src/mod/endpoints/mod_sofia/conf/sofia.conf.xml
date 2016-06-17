@@ -495,11 +495,30 @@
              really need to change this.
         -->
         <!-- <param name="renegotiate-codec-on-hold" value="true"/> -->
-
         <!-- Turn on proxy hold when proxy media and proxy mode are disabled 
              By default it is not set
         --> 
         <!-- <param name="proxy-hold" value="true"/> -->
+        <!-- Choose the proxy notify events. Default is not set
+
+             all - every in-dialogs call sip notify will be proxy to the core pbx or b2bua
+             <param name="proxy-notify-events" value="all"/>
+
+             <eventlist> - only event list sip notify will be proxy to the core pbx or b2bua
+                           this option provide users to specific events to be proxy through
+                           e.g talk,conference
+             <param name="proxy-notify-events" value="talk,conference"/>
+        -->
+        <!-- Choose the proxy info content type. Default is not set.
+
+             all - every in-dialogs call sip infos will be proxy to the core pbx or b2bua
+             <param name="proxy-info-content-types" value="all"/>
+
+             <info_content_type_list> - only content type list of sip info will be proxy to the core pbx
+                                   or b2bua this option provide users to specific infos to be proxy through
+                                   e.g application/pause-recording,application/resume-recording
+             <param name="proxy-info-content-types" value="application/pause-recording,application/resume-recording"/>
+        -->
       </settings>
     </profile>
   </profiles>

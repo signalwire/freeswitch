@@ -679,6 +679,29 @@ void sofia_handle_sip_i_notify(switch_core_session_t *session, int status,
 
 	/* if no session, assume it could be an incoming notify from a gateway subscription */
 	if (session) {
+		if (!zstr(profile->proxy_notify_events) && (!strcasecmp(profile->proxy_notify_events, "all") || strstr(profile->proxy_notify_events, sip->sip_event->o_type))) {
+			switch_core_session_t *other_session;
+			if (switch_core_session_get_partner(session, &other_session) == SWITCH_STATUS_SUCCESS) {
+				private_object_t *other_tech_pvt = switch_core_session_get_private(other_session);
+				const char *full_to = NULL;
+				char *pl = NULL;
+				char *unknown = NULL;
+
+				full_to = switch_str_nil(switch_channel_get_variable(switch_core_session_get_channel(other_session), "sip_full_to"));
+				if (sip->sip_payload && sip->sip_payload->pl_data) {
+					pl = switch_core_session_strdup(other_session, (char*)sip->sip_payload->pl_data);
+				}
+				unknown = sofia_glue_get_non_extra_unknown_headers(sip);
+				nua_notify(other_tech_pvt->nh, NUTAG_NEWSUB(1), NUTAG_SUBSTATE(nua_substate_active),
+							TAG_IF((full_to), SIPTAG_TO_STR(full_to)), SIPTAG_SUBSCRIPTION_STATE_STR("active"),
+							SIPTAG_EVENT_STR(sip->sip_event->o_type), TAG_IF(!zstr(unknown), SIPTAG_HEADER_STR(unknown)),
+							TAG_IF(!zstr(pl), SIPTAG_PAYLOAD_STR(pl)), TAG_END());
+				switch_safe_free(unknown);
+				switch_core_session_rwunlock(other_session);
+			}
+			nua_respond(nh, SIP_200_OK, NUTAG_WITH_THIS_MSG(de->data->e_msg), TAG_END());
+			goto end;
+		}
 		/* make sure we have a proper "talk" event */
 		if (strcasecmp(sip->sip_event->o_type, "talk")) {
 			goto error;
@@ -5621,6 +5644,10 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 						}  else {
 							sofia_clear_pflag(profile, PFLAG_PROXY_HOLD);
 						}
+					} else if (!strcasecmp(var, "proxy-notify-events")) {
+						profile->proxy_notify_events = switch_core_strdup(profile->pool, val);
+					} else if (!strcasecmp(var, "proxy-info-content-types")) {
+						profile->proxy_info_content_types = switch_core_strdup(profile->pool, val);
 					}
 				}
 
@@ -9114,8 +9141,37 @@ void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t 
 		assert(switch_core_session_get_private(session));
 
 		sofia_glue_set_extra_headers(session, sip, SOFIA_SIP_INFO_HEADER_PREFIX);
+		if (!zstr(profile->proxy_info_content_types) && sip && sip->sip_content_type && sip->sip_content_type->c_type && sip->sip_content_type->c_subtype &&
+			(!strcasecmp(profile->proxy_info_content_types,"all") || strstr(profile->proxy_info_content_types,sip->sip_content_type->c_type))) {
+			switch_core_session_t *other_session;
 
+			if (switch_core_session_get_partner(session, &other_session) == SWITCH_STATUS_SUCCESS) {
+				char *pl = NULL;
+				char *ct = NULL;
+				char *extra_headers = NULL;
+				char *unknown = NULL;
+				private_object_t *other_tech_pvt = switch_core_session_get_private(other_session);
 
+				ct = switch_core_session_strdup(other_session, (char*)sip->sip_content_type->c_type);
+				if (sip->sip_payload && sip->sip_payload->pl_data) {
+					pl = switch_core_session_strdup(other_session,(char*)sip->sip_payload->pl_data);
+				}
+				unknown = sofia_glue_get_non_extra_unknown_headers(sip);
+
+                                extra_headers = sofia_glue_get_extra_headers(channel, SOFIA_SIP_INFO_HEADER_PREFIX);
+
+				nua_info(other_tech_pvt->nh,
+						SIPTAG_CONTENT_TYPE_STR(ct),
+						TAG_IF(!zstr(extra_headers), SIPTAG_HEADER_STR(extra_headers)),
+						TAG_IF(!zstr(unknown), SIPTAG_HEADER_STR(unknown)),
+						TAG_IF(!zstr(other_tech_pvt->user_via), SIPTAG_VIA_STR(other_tech_pvt->user_via)),
+						TAG_IF(!zstr(pl), SIPTAG_PAYLOAD_STR(pl)),
+						TAG_END());
+				switch_safe_free(extra_headers);
+				switch_safe_free(unknown);
+				switch_core_session_rwunlock(other_session);
+			}
+		}
 
 		if (sip && sip->sip_content_type && sip->sip_content_type->c_type && !strcasecmp(sip->sip_content_type->c_type, "freeswitch/data")) {
 			char *data = NULL;
