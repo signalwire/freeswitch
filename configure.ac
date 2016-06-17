@@ -793,7 +793,7 @@ case "$host" in
     ;;
     *openbsd*)
         APR_ADDTO(CPPFLAGS, -I/usr/local/include)
-        APR_ADDTO(LDFLAGS, -L/usr/local/lib)
+        APR_ADDTO(LDFLAGS, -L/usr/local/lib -ltermcap)
         APR_ADDTO(SWITCH_AM_CFLAGS, -I/usr/local/include)
     ;;
     *netbsd*)
