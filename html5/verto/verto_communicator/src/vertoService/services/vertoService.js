@@ -3,6 +3,11 @@
 /* Controllers */
 var videoQuality = [];
 var videoQualitySource = [{
+  id: 'qqvga',
+  label: 'QQVGA 160x120',
+  width: 160,
+  height: 120
+}, {
   id: 'qvga',
   label: 'QVGA 320x240',
   width: 320,
@@ -35,6 +40,10 @@ var videoQualitySource = [{
 }, ];
 
 var videoResolution = {
+  qqvga: {
+    width: 160,
+    height: 120
+  },
   qvga: {
     width: 320,
     height: 240
@@ -910,7 +919,10 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
             storage.data.useDedenc = false;
             storage.data.vidQual = 'hd';
 
-            if (upBand < 512) {
+            if (upBand < 256) {
+              storage.data.vidQual = 'qqvga';
+            }
+            else if (upBand < 512) {
               storage.data.vidQual = 'qvga';
             }
             else if (upBand < 1024) {

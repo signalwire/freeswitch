@@ -140,7 +140,12 @@ function real_size() {
 
 function check_vid_res()
 {
-    if ($("#vqual_qvga").is(':checked')) {
+    if ($("#vqual_qqvga").is(':checked')) {
+	vid_width = 160;
+	vid_height = 120;
+	local_vid_width = 80;
+	local_vid_height = 60;
+    } else if ($("#vqual_qvga").is(':checked')) {
 	vid_width = 320;
 	vid_height = 240;
 	local_vid_width = 160;
@@ -217,6 +222,10 @@ function do_speed_test(fn)
 	    if (outgoingBandwidth < 512) {
 		$("#vqual_qvga").prop("checked", true);
 		vid = "320x240";
+	    }
+	    if (outgoingBandwidth < 256) {
+		$("#vqual_qqvga").prop("checked", true);
+		vid = "160x120";
 	    }
 	//}
 
@@ -1314,6 +1323,15 @@ function init() {
     });
 
 
+
+    $("#vqual_qqvga").prop("checked", vqual === "qqvga").change(function(e) {
+        if ($("#vqual_qqvga").is(':checked')) {
+	    vqual = "qqvga";
+	    $.cookie("verto_demo_vqual", vqual, {
+		expires: 365
+	    });
+	}
+    });
 
     $("#vqual_qvga").prop("checked", vqual === "qvga").change(function(e) {
         if ($("#vqual_qvga").is(':checked')) {
