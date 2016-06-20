@@ -376,7 +376,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_hiredis_load)
 
 	SWITCH_ADD_LIMIT(limit_interface, "hiredis", hiredis_limit_incr, hiredis_limit_release, hiredis_limit_usage,
 					 hiredis_limit_reset, hiredis_limit_status, hiredis_limit_interval_reset);
-	SWITCH_ADD_APP(app_interface, "hiredis_raw", "hiredis_raw", "hiredis_raw", raw_app, "", SAF_NONE);
+	SWITCH_ADD_APP(app_interface, "hiredis_raw", "hiredis_raw", "hiredis_raw", raw_app, "", SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC | SAF_ZOMBIE_EXEC);
 	SWITCH_ADD_API(api_interface, "hiredis_raw", "hiredis_raw", raw_api, "");
 
 	return SWITCH_STATUS_SUCCESS;
