@@ -1,6 +1,6 @@
 /*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2016, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -849,16 +849,21 @@ static switch_bool_t callprogress_detector_process_buffer(switch_media_bug_t *bu
 		tone_detector_process_buffer(detector, frame->data, frame->samples, &detected_tone);
 		if (detected_tone) {
 			switch_event_t *event = NULL;
-			switch_channel_t *channel = NULL;
+			switch_channel_t *channel = switch_core_session_get_channel(session);
+			const char *execute_on_tone_var = switch_core_session_sprintf(session, "execute_on_spandsp_tone_detect_%s", detected_tone);
+			const char *api_on_tone_var = switch_core_session_sprintf(session, "api_on_spandsp_tone_detect_%s", detected_tone);
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "DETECTED TONE: %s\n", detected_tone);
+			switch_channel_execute_on(channel, execute_on_tone_var);
+			switch_channel_api_on(channel, api_on_tone_var);
 			if (switch_event_create(&event, SWITCH_EVENT_DETECTED_TONE) == SWITCH_STATUS_SUCCESS) {
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Detected-Tone", detected_tone);
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Unique-ID", switch_core_session_get_uuid(session));
-
-				channel = switch_core_session_get_channel(session);
-				if (channel) switch_channel_event_set_data(channel, event);
-
+				switch_channel_event_set_data(channel, event);
 				switch_event_fire(&event);
+			}
+			if (switch_true(switch_channel_get_variable(channel, "spandsp_tone_detect_stop_on_tone"))) {
+				/* all done */
+				return SWITCH_FALSE;
 			}
 		}
 		break;
