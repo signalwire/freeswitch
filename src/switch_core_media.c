@@ -5255,7 +5255,7 @@ static void *SWITCH_THREAD_FUNC video_write_thread(switch_thread_t *thread, void
 	switch_core_media_gen_key_frame(session);
 
 	
-	if (smh->video_write_fh->mm.source_fps) {
+	if (mh->video_write_fh && smh->video_write_fh->mm.source_fps) {
 		fps = (int) smh->video_write_fh->mm.source_fps;
 	} else {
 		fps = video_globals.fps;
