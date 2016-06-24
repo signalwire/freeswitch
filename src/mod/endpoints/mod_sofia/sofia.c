@@ -4364,17 +4364,15 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s [%s]\n", var, val);
 					
-					if (!strcasecmp(var, "debug")) {
+					if (!strcasecmp(var, "debug") && val) {
 						profile->debug = atoi(val);
 					} else if (!strcasecmp(var, "parse-invite-tel-params")) {
 						profile->parse_invite_tel_params = switch_true(val);
-					} else if (!strcasecmp(var, "keepalive-method")) {
-						if (!zstr(val)) {
-							if (!strcasecmp(val, "info")) {
-								profile->keepalive = KA_INFO;
-							} else {
-								profile->keepalive = KA_MESSAGE;								
-							}
+					} else if (!strcasecmp(var, "keepalive-method") && !zstr(val)) {
+						if (!strcasecmp(val, "info")) {
+							profile->keepalive = KA_INFO;
+						} else {
+							profile->keepalive = KA_MESSAGE;
 						}
 					} else if (!strcasecmp(var, "bind-attempts") && val) {
 						int ba = atoi(val) - 1;
@@ -4455,17 +4453,17 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 						} else {
 							profile->mndlb &= ~SM_NDLB_NEVER_PATCH_REINVITE;
 						}
-					} else if (!strcasecmp(var, "registration-thread-frequency")) {
+					} else if (!strcasecmp(var, "registration-thread-frequency") && !zstr(val)) {
 						profile->ireg_seconds = atoi(val);
 						if (profile->ireg_seconds < 0) {
 							profile->ireg_seconds = IREG_SECONDS;
 						}
-					} else if (!strcasecmp(var, "ping-mean-interval")) {
+					} else if (!strcasecmp(var, "ping-mean-interval") && !zstr(val)) {
 						profile->iping_seconds = atoi(val);
 						if (profile->iping_seconds < 0) {
 							profile->iping_seconds = IPING_SECONDS;
 						}
-					} else if (!strcasecmp(var, "ping-thread-frequency")) {
+					} else if (!strcasecmp(var, "ping-thread-frequency") && !zstr(val)) {
 						profile->iping_freq = atoi(val);
 						if (profile->iping_freq < 0) {
 							profile->iping_freq = IPING_FREQUENCY;
@@ -4540,7 +4538,7 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 						} else {
 							sofia_clear_pflag(profile, PFLAG_LIBERAL_DTMF);
 						}
-					} else if (!strcasecmp(var, "rtp-digit-delay")) {
+					} else if (!strcasecmp(var, "rtp-digit-delay") && !zstr(val)) {
 						int delay = atoi(val);
 						if (delay < 0) {
 							delay = 0;
@@ -4548,11 +4546,10 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 						profile->rtp_digit_delay = (uint32_t) delay;
 					} else if (!strcasecmp(var, "watchdog-enabled")) {
 						profile->watchdog_enabled = switch_true(val);
-					} else if (!strcasecmp(var, "watchdog-step-timeout")) {
+					} else if (!strcasecmp(var, "watchdog-step-timeout") && !zstr(val)) {
 						profile->step_timeout = atoi(val);
-					} else if (!strcasecmp(var, "watchdog-event-timeout")) {
+					} else if (!strcasecmp(var, "watchdog-event-timeout") && !zstr(val)) {
 						profile->event_timeout = atoi(val);
-
 					} else if (!strcasecmp(var, "in-dialog-chat")) {
 						if (switch_true(val)) {
 							sofia_set_pflag(profile, PFLAG_IN_DIALOG_CHAT);
@@ -4608,9 +4605,9 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 							sofia_clear_pflag(profile, PFLAG_PRESENCE_PROBE_ON_REGISTER);
 						}
 					} else if (!strcasecmp(var, "send-presence-on-register")) {
-						if (switch_true(val) || !strcasecmp(val, "all")) {
+						if (val && (switch_true(val) || !strcasecmp(val, "all"))) {
 							sofia_set_pflag(profile, PFLAG_PRESENCE_ON_REGISTER);
-						} else if (!strcasecmp(val, "first-only")) {
+						} else if (val && !strcasecmp(val, "first-only")) {
 							sofia_clear_pflag(profile, PFLAG_PRESENCE_ON_REGISTER);
 							sofia_set_pflag(profile, PFLAG_PRESENCE_ON_FIRST_REGISTER);
 						} else {
@@ -4623,22 +4620,21 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 						} else {
 							sofia_clear_pflag(profile, PFLAG_CID_IN_1XX);
 						}
-
 					} else if (!strcasecmp(var, "disable-hold")) {
 						if (switch_true(val)) {
 							sofia_set_media_flag(profile, SCMF_DISABLE_HOLD);
 						} else {
 							sofia_clear_media_flag(profile, SCMF_DISABLE_HOLD);
 						}
-					} else if (!strcasecmp(var, "auto-jitterbuffer-msec")) {
+					} else if (!strcasecmp(var, "auto-jitterbuffer-msec") && !zstr(val)) {
 						int msec = atoi(val);
 						if (msec > 19) {
 							profile->jb_msec = switch_core_strdup(profile->pool, val);
 						}
 					} else if (!strcasecmp(var, "dtmf-type")) {
-						if (!strcasecmp(val, "rfc2833")) {
+						if (val && !strcasecmp(val, "rfc2833")) {
 							profile->dtmf_type = DTMF_2833;
-						} else if (!strcasecmp(val, "info")) {
+						} else if (val && !strcasecmp(val, "info")) {
 							profile->dtmf_type = DTMF_INFO;
 						} else {
 							profile->dtmf_type = DTMF_NONE;
@@ -4711,12 +4707,12 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 						} else {
 							sofia_clear_flag(profile, TFLAG_ZRTP_PASSTHRU);
 						}
-					} else if (!strcasecmp(var, "force-subscription-expires")) {
+					} else if (!strcasecmp(var, "force-subscription-expires") && !zstr(val)) {
 						int tmp = atoi(val);
 						if (tmp > 0) {
 							profile->force_subscription_expires = tmp;
 						}
-					} else if (!strcasecmp(var, "force-publish-expires")) {
+					} else if (!strcasecmp(var, "force-publish-expires") && !zstr(val)) {
 						int tmp = atoi(val);
 						if (tmp > 0) {
 							profile->force_publish_expires = tmp;
@@ -4724,7 +4720,7 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 					} else if (!strcasecmp(var, "send-message-query-on-register")) {
 						if (switch_true(val)) {
 							sofia_set_pflag(profile, PFLAG_MESSAGE_QUERY_ON_REGISTER);
-						} else if (!strcasecmp(val, "first-only")) {
+						} else if (val && !strcasecmp(val, "first-only")) {
 							sofia_clear_pflag(profile, PFLAG_MESSAGE_QUERY_ON_REGISTER);
 							sofia_set_pflag(profile, PFLAG_MESSAGE_QUERY_ON_FIRST_REGISTER);
 						} else {
@@ -4779,20 +4775,20 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 						}
 					} else if (!strcasecmp(var, "user-agent-filter")) {
 						profile->user_agent_filter = switch_core_strdup(profile->pool, val);
-					} else if (!strcasecmp(var, "max-registrations-per-extension")) {
+					} else if (!strcasecmp(var, "max-registrations-per-extension") && !zstr(val)) {
 						profile->max_registrations_perext = atoi(val);
-					} else if (!strcasecmp(var, "rfc2833-pt")) {
+					} else if (!strcasecmp(var, "rfc2833-pt") && !zstr(val)) {
 						profile->te = (switch_payload_t) atoi(val);
-					} else if (!strcasecmp(var, "cng-pt") && !sofia_test_media_flag(profile, SCMF_SUPPRESS_CNG)) {
+					} else if (!strcasecmp(var, "cng-pt") && !sofia_test_media_flag(profile, SCMF_SUPPRESS_CNG) && !zstr(val)) {
 						profile->cng_pt = (switch_payload_t) atoi(val);
-					} else if (!strcasecmp(var, "sip-port")) {
+					} else if (!strcasecmp(var, "sip-port") && !zstr(val)) {
 						if (!strcasecmp(val, "auto")) {
 							sofia_set_pflag(profile, PFLAG_AUTO_ASSIGN_PORT);
 						} else {
 							profile->sip_port = (switch_port_t) atoi(val);
 							if (!profile->extsipport) profile->extsipport = profile->sip_port;
 						}
-					} else if (!strcasecmp(var, "vad")) {
+					} else if (!strcasecmp(var, "vad") && !zstr(val)) {
 						if (!strcasecmp(val, "in")) {
 							profile->vflags |= VAD_IN;
 						} else if (!strcasecmp(val, "out")) {
@@ -4829,7 +4825,7 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 						} else {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid ext-rtp-ip\n");
 						}
-					} else if (!strcasecmp(var, "rtp-ip")) {
+					} else if (!strcasecmp(var, "rtp-ip") && val) {
 						char *ip = mod_sofia_globals.guess_ip;
 						char buf[64];
 
@@ -4864,7 +4860,7 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Max IPs configured for profile %s.\n", profile->name);
 							}
 						}
-					} else if (!strcasecmp(var, "sip-ip")) {
+					} else if (!strcasecmp(var, "sip-ip") && val) {
 						char *ip = mod_sofia_globals.guess_ip;
 						char buf[64];
 
@@ -4922,7 +4918,7 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid ext-sip-ip\n");
 						}
 					} else if (!strcasecmp(var, "local-network-acl")) {
-						if (!strcasecmp(var, "none")) {
+						if (val && !strcasecmp(val, "none")) {
 							profile->local_network = NULL;
 						} else {
 							profile->local_network = switch_core_strdup(profile->pool, val);
@@ -4941,7 +4937,7 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 						profile->timer_name = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "hold-music")) {
 						profile->hold_music = switch_core_strdup(profile->pool, val);
-					} else if (!strcasecmp(var, "outbound-proxy")) {
+					} else if (!strcasecmp(var, "outbound-proxy") && val) {
 						if (strncasecmp(val, "sip:", 4) && strncasecmp(val, "sips:", 5)) {
 							profile->outbound_proxy = switch_core_sprintf(profile->pool, "sip:%s", val);
 						} else {
@@ -4951,22 +4947,22 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 						profile->rtcp_audio_interval_msec = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "rtcp-video-interval-msec")) {
 						profile->rtcp_video_interval_msec = switch_core_strdup(profile->pool, val);
-					} else if (!strcasecmp(var, "session-timeout")) {
+					} else if (!strcasecmp(var, "session-timeout") && !zstr(val)) {
 						int v_session_timeout = atoi(val);
 						if (v_session_timeout >= 0) {
 							profile->session_timeout = v_session_timeout;
 						}
-					} else if (!strcasecmp(var, "max-proceeding")) {
+					} else if (!strcasecmp(var, "max-proceeding") && !zstr(val)) {
 						int v_max_proceeding = atoi(val);
 						if (v_max_proceeding >= 0) {
 							profile->max_proceeding = v_max_proceeding;
 						}
-					} else if (!strcasecmp(var, "rtp-timeout-sec")) {
+					} else if (!strcasecmp(var, "rtp-timeout-sec") && !zstr(val)) {
 						int v = atoi(val);
 						if (v >= 0) {
 							profile->rtp_timeout_sec = v;
 						}
-					} else if (!strcasecmp(var, "rtp-hold-timeout-sec")) {
+					} else if (!strcasecmp(var, "rtp-hold-timeout-sec") && !zstr(val)) {
 						int v = atoi(val);
 						if (v >= 0) {
 							profile->rtp_hold_timeout_sec = v;
@@ -4983,7 +4979,7 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 						} else {
 							profile->mflags |= MFLAG_REGISTER;
 						}
-					} else if (!strcasecmp(var, "media-option")) {
+					} else if (!strcasecmp(var, "media-option") && !zstr(val)) {
 						if (!strcasecmp(val, "resume-media-on-hold")) {
 							profile->media_options |= MEDIA_OPT_MEDIA_ON_HOLD;
 						} else if (!strcasecmp(val, "bypass-media-after-att-xfer")) {
@@ -5001,10 +4997,10 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 					} else if (!strcasecmp(var, "pnp-provision-url")) {
 						profile->pnp_prov_url = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "manage-presence")) {
-						if (!strcasecmp(val, "passive")) {
+						if (val && !strcasecmp(val, "passive")) {
 							profile->pres_type = PRES_TYPE_PASSIVE;
 
-						} else if (!strcasecmp(val, "pnp")) {
+						} else if (val && !strcasecmp(val, "pnp")) {
 							profile->pres_type = PRES_TYPE_PNP;
 						} else if (switch_true(val)) {
 							profile->pres_type = PRES_TYPE_FULL;
@@ -5012,9 +5008,9 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 							profile->pres_type = 0;
 						}
 					} else if (!strcasecmp(var, "presence-hold-state")) {
-						if (!strcasecmp(val, "confirmed")) {
+						if (val && !strcasecmp(val, "confirmed")) {
 							profile->pres_held_type = PRES_HELD_CONFIRMED;
-						} else if (!strcasecmp(val, "terminated")) {
+						} else if (val && !strcasecmp(val, "terminated")) {
 							profile->pres_held_type = PRES_HELD_TERMINATED;
 						} else {
 							profile->pres_held_type = 0;
@@ -5031,7 +5027,7 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 							profile->pres_type = PRES_TYPE_FULL;
 							sofia_set_pflag(profile, PFLAG_MULTIREG);
 
-						} else if (!strcasecmp(val, "sylantro")) {
+						} else if (val && !strcasecmp(val, "sylantro")) {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
 											  "Sylantro support has been removed.\n"
 											  "It was incomplete anyway, and we fully support the broadsoft SCA shared line spec.");
@@ -5063,9 +5059,9 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 						} else {
 							sofia_clear_pflag(profile, PFLAG_UNREG_OPTIONS_FAIL);
 						}
-					} else if (!strcasecmp(var, "sip-user-ping-max")) {
+					} else if (!strcasecmp(var, "sip-user-ping-max") && !zstr(val)) {
 						profile->sip_user_ping_max = atoi(val);
-					} else if (!strcasecmp(var, "sip-user-ping-min")) {
+					} else if (!strcasecmp(var, "sip-user-ping-min") && !zstr(val)) {
 						profile->sip_user_ping_min = atoi(val);
 					} else if (!strcasecmp(var, "require-secure-rtp")) {
 						if (switch_true(val)) {
@@ -5079,9 +5075,9 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 					if (found) continue;
 					
 					if (!strcasecmp(var, "multiple-registrations")) {
-						if (!strcasecmp(val, "call-id")) {
+						if (val && !strcasecmp(val, "call-id")) {
 							sofia_set_pflag(profile, PFLAG_MULTIREG);
-						} else if (!strcasecmp(val, "contact") || switch_true(val)) {
+						} else if (val && (!strcasecmp(val, "contact") || switch_true(val))) {
 							sofia_set_pflag(profile, PFLAG_MULTIREG);
 							sofia_set_pflag(profile, PFLAG_MULTIREG_CONTACT);
 						} else if (!switch_true(val)) {
@@ -5146,7 +5142,7 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 					} else if (!strcasecmp(var, "contact-user")) {
 						profile->contact_user = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "nat-options-ping")) {
-						if (!strcasecmp(val, "udp-only")) {
+						if (val && !strcasecmp(val, "udp-only")) {
 							sofia_set_pflag(profile, PFLAG_UDP_NAT_OPTIONS_PING);
 						} else if (switch_true(val)) {
 							sofia_set_pflag(profile, PFLAG_NAT_OPTIONS_PING);
@@ -5161,9 +5157,9 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 							sofia_clear_pflag(profile, PFLAG_ALL_REG_OPTIONS_PING);
 						}
 					} else if (!strcasecmp(var, "inbound-codec-negotiation")) {
-						if (!strcasecmp(val, "greedy")) {
+						if (val && !strcasecmp(val, "greedy")) {
 							sofia_set_media_flag(profile, SCMF_CODEC_GREEDY);
-						} else if (!strcasecmp(val, "scrooge")) {
+						} else if (val && !strcasecmp(val, "scrooge")) {
 							sofia_set_media_flag(profile, SCMF_CODEC_GREEDY);
 							sofia_set_media_flag(profile, SCMF_CODEC_SCROOGE);
 						} else {
@@ -5206,9 +5202,9 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 						} else {
 							sofia_clear_pflag(profile, PFLAG_EXTENDED_INFO_PARSING);
 						}
-					} else if (!strcasecmp(var, "nonce-ttl")) {
+					} else if (!strcasecmp(var, "nonce-ttl") && !zstr(val)) {
 						profile->nonce_ttl = atoi(val);
-					} else if (!strcasecmp(var, "max-auth-validity")) {
+					} else if (!strcasecmp(var, "max-auth-validity") && !zstr(val)) {
 						profile->max_auth_validity = atoi(val);
 					} else if (!strcasecmp(var, "accept-blind-reg")) {
 						if (switch_true(val)) {
@@ -5264,7 +5260,7 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 						} else {
 							sofia_clear_pflag(profile, PFLAG_ENABLE_RFC5626);
 						}
-					} else if (!strcasecmp(var, "minimum-session-expires")) {
+					} else if (!strcasecmp(var, "minimum-session-expires") && !zstr(val)) {
 						profile->minimum_session_expires = atoi(val);
 						/* per RFC 4028: minimum_session_expires must be > 90 */
 						if (profile->minimum_session_expires < 90) {
@@ -5301,7 +5297,7 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 							sofia_clear_pflag(profile, PFLAG_PARSE_ALL_INVITE_HEADERS);
 						}
 					} else if (!strcasecmp(var, "bitpacking")) {
-						if (!strcasecmp(val, "aal2")) {
+						if (val && !strcasecmp(val, "aal2")) {
 							profile->codec_flags = SWITCH_CODEC_FLAG_AAL2;
 						} else {
 							profile->codec_flags = 0;
@@ -5310,7 +5306,7 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 						profile->sdp_username = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "context")) {
 						profile->context = switch_core_strdup(profile->pool, val);
-					} else if (!strcasecmp(var, "apply-nat-acl")) {
+					} else if (!strcasecmp(var, "apply-nat-acl") && !zstr(val)) {
 						if (!strcasecmp(val,"none")) {
 							profile->nat_acl_count = 0;
 						} else if (profile->nat_acl_count < SOFIA_MAX_ACL) {
@@ -5322,7 +5318,7 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 						} else {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Max acl records of %d reached\n", SOFIA_MAX_ACL);
 						}
-					} else if (!strcasecmp(var, "apply-inbound-acl")) {
+					} else if (!strcasecmp(var, "apply-inbound-acl") && !zstr(val)) {
 						if (!strcasecmp(val,"none")) {
 							profile->acl_count = 0;
 						} else if (profile->acl_count < SOFIA_MAX_ACL) {
@@ -5348,7 +5344,7 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 						} else {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Max acl records of %d reached\n", SOFIA_MAX_ACL);
 						}
-					} else if (!strcasecmp(var, "apply-proxy-acl")) {
+					} else if (!strcasecmp(var, "apply-proxy-acl") && !zstr(val)) {
 						if (!strcasecmp(val,"none")) {
 							profile->proxy_acl_count = 0;
 						} else if (profile->proxy_acl_count < SOFIA_MAX_ACL) {
@@ -5356,7 +5352,7 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 						} else {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Max acl records of %d reached\n", SOFIA_MAX_ACL);
 						}
-					} else if (!strcasecmp(var, "apply-register-acl")) {
+					} else if (!strcasecmp(var, "apply-register-acl") && !zstr(val)) {
 						if (!strcasecmp(val,"none")) {
 							profile->reg_acl_count = 0;
 						} else if (profile->reg_acl_count < SOFIA_MAX_ACL) {
@@ -5365,7 +5361,7 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Max acl records of %d reached\n", SOFIA_MAX_ACL);
 						}
 
-					} else if (!strcasecmp(var, "apply-candidate-acl")) {
+					} else if (!strcasecmp(var, "apply-candidate-acl") && !zstr(val)) {
 						if (!strcasecmp(val,"none")) {
 							profile->cand_acl_count = 0;
 						} else if (profile->cand_acl_count < SWITCH_MAX_CAND_ACL) {
@@ -5387,7 +5383,7 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 						}
 					} else if (!strcasecmp(var, "dialplan")) {
 						profile->dialplan = switch_core_strdup(profile->pool, val);
-					} else if (!strcasecmp(var, "max-calls")) {
+					} else if (!strcasecmp(var, "max-calls") && !zstr(val)) {
 						profile->max_calls = atoi(val);
 					} else if (!strcasecmp(var, "codec-prefs")) {
 						profile->inbound_codec_string = switch_core_strdup(profile->pool, val);
@@ -5398,7 +5394,7 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 						profile->outbound_codec_string = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "challenge-realm")) {
 						profile->challenge_realm = switch_core_strdup(profile->pool, val);
-					} else if (!strcasecmp(var, "dtmf-duration")) {
+					} else if (!strcasecmp(var, "dtmf-duration") && !zstr(val)) {
 						uint32_t dur = atoi(val);
 						if (dur >= switch_core_min_dtmf_duration(0) && dur <= switch_core_max_dtmf_duration(0)) {
 							profile->dtmf_duration = dur;
@@ -5451,7 +5447,7 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 							sofia_clear_pflag(profile, PFLAG_TLS);
 						}
 					} else if (!strcasecmp(var, "tls-bind-params")) {
-						if (switch_stristr("transport=tls", val)) {
+						if (val && switch_stristr("transport=tls", val)) {
 							profile->tls_bind_params = switch_core_strdup(profile->pool, val);
 						} else {
 							profile->tls_bind_params = switch_core_sprintf(profile->pool, "%s;transport=tls", val);
@@ -5460,11 +5456,11 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 						profile->tls_only = switch_true(val);
 					} else if (!strcasecmp(var, "tls-verify-date")) {
 						profile->tls_verify_date = switch_true(val);
-					} else if (!strcasecmp(var, "tls-verify-depth")) {
+					} else if (!strcasecmp(var, "tls-verify-depth") && !zstr(val)) {
 						profile->tls_verify_depth = atoi(val);
 					} else if (!strcasecmp(var, "tls-verify-policy")) {
 						profile->tls_verify_policy = sofia_glue_str2tls_verify_policy(val);
-					} else if (!strcasecmp(var, "tls-sip-port")) {
+					} else if (!strcasecmp(var, "tls-sip-port") && !zstr(val)) {
 						if (!strcasecmp(val, "auto")) {
 							sofia_set_pflag(profile, PFLAG_AUTO_ASSIGN_TLS_PORT);
 						} else {
@@ -5501,79 +5497,79 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 								profile->tls_version |= SOFIA_TLS_VERSION_TLSv1_2;
 							ps=pe+1;
 						}
-					} else if (!strcasecmp(var, "tls-timeout")) {
+					} else if (!strcasecmp(var, "tls-timeout") && !zstr(val)) {
 						int v = atoi(val);
 						profile->tls_timeout = v > 0 ? (unsigned int)v : 300;
-					} else if (!strcasecmp(var, "timer-T1")) {
+					} else if (!strcasecmp(var, "timer-T1") && !zstr(val)) {
 						int v = atoi(val);
 						if (v > 0) {
 							profile->timer_t1 = v;
 						} else {
 							profile->timer_t1 = 500;
 						}
-					} else if (!strcasecmp(var, "timer-T1X64")) {
+					} else if (!strcasecmp(var, "timer-T1X64") && !zstr(val)) {
 						int v = atoi(val);
 						if (v > 0) {
 							profile->timer_t1x64 = v;
 						} else {
 							profile->timer_t1x64 = 32000;
 						}
-					} else if (!strcasecmp(var, "timer-T2")) {
+					} else if (!strcasecmp(var, "timer-T2") && !zstr(val)) {
 						int v = atoi(val);
 						if (v > 0) {
 							profile->timer_t2 = v;
 						} else {
 							profile->timer_t2 = 4000;
 						}
-					} else if (!strcasecmp(var, "timer-T4")) {
+					} else if (!strcasecmp(var, "timer-T4") && !zstr(val)) {
 						int v = atoi(val);
 						if (v > 0) {
 							profile->timer_t4 = v;
 						} else {
 							profile->timer_t4 = 4000;
 						}
-										} else if (!strcasecmp(var, "sip-options-respond-503-on-busy")) {
-												if (switch_true(val)) {
-														sofia_set_pflag(profile, PFLAG_OPTIONS_RESPOND_503_ON_BUSY);
-												} else {
-														sofia_clear_pflag(profile, PFLAG_OPTIONS_RESPOND_503_ON_BUSY);
-												}
-					} else if (!strcasecmp(var, "sip-expires-late-margin")) {
+					} else if (!strcasecmp(var, "sip-options-respond-503-on-busy")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_OPTIONS_RESPOND_503_ON_BUSY);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_OPTIONS_RESPOND_503_ON_BUSY);
+						}
+					} else if (!strcasecmp(var, "sip-expires-late-margin") && !zstr(val)) {
 						int32_t sip_expires_late_margin = atoi(val);
 						if (sip_expires_late_margin >= 0) {
 							profile->sip_expires_late_margin = sip_expires_late_margin;
 						} else {
 							profile->sip_expires_late_margin = 60;
 						}
-					} else if (!strcasecmp(var, "sip-force-expires-min")) {
+					} else if (!strcasecmp(var, "sip-force-expires-min") && !zstr(val)) {
 						int32_t sip_force_expires_min = atoi(val);
 						if (sip_force_expires_min >= 0) {
 							profile->sip_force_expires_min = sip_force_expires_min;
 						} else {
 							profile->sip_force_expires_min = 0;
 						}
-					} else if (!strcasecmp(var, "sip-force-expires-max")) {
+					} else if (!strcasecmp(var, "sip-force-expires-max") && !zstr(val)) {
 						int32_t sip_force_expires_max = atoi(val);
 						if (sip_force_expires_max >= 0) {
 							profile->sip_force_expires_max = sip_force_expires_max;
 						} else {
 							profile->sip_force_expires_max = 0;
 						}
-					} else if (!strcasecmp(var, "sip-force-expires")) {
+					} else if (!strcasecmp(var, "sip-force-expires") && !zstr(val)) {
 						int32_t sip_force_expires = atoi(val);
 						if (sip_force_expires >= 0) {
 							profile->sip_force_expires = sip_force_expires;
 						} else {
 							profile->sip_force_expires = 0;
 						}
-					} else if (!strcasecmp(var, "sip-expires-max-deviation")) {
+					} else if (!strcasecmp(var, "sip-expires-max-deviation") && !zstr(val)) {
 						int32_t sip_expires_max_deviation = atoi(val);
 						if (sip_expires_max_deviation >= 0) {
 							profile->sip_expires_max_deviation = sip_expires_max_deviation;
 						} else {
 							profile->sip_expires_max_deviation = 0;
 						}
-					} else if (!strcasecmp(var, "sip-subscription-max-deviation")) {
+					} else if (!strcasecmp(var, "sip-subscription-max-deviation") && !zstr(val)) {
 						int32_t sip_subscription_max_deviation = atoi(val);
 						if (sip_subscription_max_deviation >= 0) {
 							profile->sip_subscription_max_deviation = sip_subscription_max_deviation;
@@ -5588,7 +5584,9 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 							sofia_clear_pflag(profile, PFLAG_NO_CONNECTION_REUSE);
 						}
 					} else if (!strcasecmp(var, "p-asserted-id-parse")) {
-						if (!strncasecmp(val, "default", 7)) {
+						if (!val) {
+							profile->paid_type = PAID_DEFAULT;
+						} else 	if (!strncasecmp(val, "default", 7)) {
 							profile->paid_type = PAID_DEFAULT;
 						} else if (!strncasecmp(val, "user-only", 9)) {
 							profile->paid_type = PAID_USER;
@@ -5611,18 +5609,18 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 						}  else {
 							sofia_clear_pflag(profile, PFLAG_FIRE_TRANFER_EVENTS);
 						}
-                                        } else if (!strcasecmp(var, "enforce-blind-auth-result")) {
-                                                if(switch_true(val)) {
-                                                        sofia_set_pflag(profile, PFLAG_BLIND_AUTH_ENFORCE_RESULT);
-                                                }  else {
-                                                        sofia_clear_pflag(profile, PFLAG_BLIND_AUTH_ENFORCE_RESULT);
-                                                }
-                                        } else if (!strcasecmp(var, "proxy-hold")) {
-                                                if(switch_true(val)) {
-                                                        sofia_set_pflag(profile, PFLAG_PROXY_HOLD);
-                                                }  else {
-                                                        sofia_clear_pflag(profile, PFLAG_PROXY_HOLD);
-                                                }
+					} else if (!strcasecmp(var, "enforce-blind-auth-result")) {
+						if(switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_BLIND_AUTH_ENFORCE_RESULT);
+						}  else {
+							sofia_clear_pflag(profile, PFLAG_BLIND_AUTH_ENFORCE_RESULT);
+						}
+					} else if (!strcasecmp(var, "proxy-hold")) {
+						if(switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_PROXY_HOLD);
+						}  else {
+							sofia_clear_pflag(profile, PFLAG_PROXY_HOLD);
+						}
 					}
 				}
 
