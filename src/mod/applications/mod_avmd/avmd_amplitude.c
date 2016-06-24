@@ -1,4 +1,9 @@
-#ifndef __AVMD_AMPLITUDE_H__
+/*
+ * Contributor(s):
+ *
+ * Eric des Courtis <eric.des.courtis@benbria.com>
+ * Piotr Gregor     <piotrgregor@rsyncme.org>
+ */
 
 
 #include <math.h>
@@ -11,7 +16,3 @@ double avmd_amplitude(circ_buffer_t *b, size_t i, double f) {
     result = sqrt(PSI(b, i) / sin(f * f));
     return result;
 }
-
-
-#endif /* __AVMD_AMPLITUDE_H__ */
-

@@ -1,5 +1,9 @@
-#ifndef __AVMD_DESA2_H__
-
+/*
+ * Contributor(s):
+ *
+ * Eric des Courtis <eric.des.courtis@benbria.com>
+ * Piotr Gregor     <piotrgregor@rsyncme.org>
+ */
 
 #include <stdio.h>
 #ifdef WIN32
@@ -63,5 +67,3 @@ double avmd_desa2(circ_buffer_t *b, size_t i, double *amplitude) {
     return result;
 
 }
-
-#endif /* __AVMD_DESA2_H__ */

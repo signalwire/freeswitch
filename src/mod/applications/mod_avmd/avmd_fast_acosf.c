@@ -1,25 +1,39 @@
+/* 
+ * Contributor(s):
+ *
+ * Eric des Courtis <eric.des.courtis@benbria.com>
+ * Piotr Gregor     <piotrgregor@rsyncme.org>
+ */
+
+
 #ifndef WIN32   /* currently we support fast acosf computation only on UNIX/Linux */
 
 
 #include <switch.h>
 #include <stdio.h>
 #include <stdlib.h>
+
 #ifndef _MSC_VER
-#include <stdint.h>
+    #include <stdint.h>
 #endif
+
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+
 #ifndef _MSC_VER
-#include <sys/mman.h>
+    #include <sys/mman.h>
 #endif
+
 #include <assert.h>
 #include <errno.h>
 #include <math.h>
 #include <string.h>
+
 #ifndef _MSC_VER
-#include <unistd.h>
+    #include <unistd.h>
 #endif
+
 #include "avmd_fast_acosf.h"
 #include "avmd_options.h"
 

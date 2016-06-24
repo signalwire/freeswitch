@@ -7,7 +7,11 @@
  *          be checked for convergence in the same time.
  *          If the partial results converge then frequency
  *          converges too.
- * @author  Piotr Gregor < piotrek.gregor gmail.com >
+ *
+ * Contributor(s):
+ *
+ * Piotr Gregor     <piotrgregor@rsyncme.org>
+ *
  * @date    20 Mar 2016
  */
 
