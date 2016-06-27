@@ -251,23 +251,30 @@ SWITCH_STANDARD_API(mod_mongo_find_n_function)
 					mongoc_cursor_t *cursor = mongoc_collection_find(col, query_options, 0, n, 0, query, fields, NULL);
 					if (cursor && !mongoc_cursor_error(cursor, &error)) {
 						/* get results from cursor */
+						switch_stream_handle_t result_stream = { 0 };
 						const bson_t *result;
-						stream->write_function(stream, "-OK\n[");
+						SWITCH_STANDARD_STREAM(result_stream);
+
 						if (mongoc_cursor_more(cursor) && mongoc_cursor_next(cursor, &result)) {
 							char *json_result;
 							json_result = bson_as_json(result, NULL);
-							stream->write_function(stream, "%s", json_result);
+							result_stream.write_function(&result_stream, "%s", json_result);
 							bson_free(json_result);
 						}
 						while (mongoc_cursor_more(cursor) && mongoc_cursor_next(cursor, &result)) {
 							char *json_result;
 							json_result = bson_as_json(result, NULL);
-							stream->write_function(stream, ",%s", json_result);
+							result_stream.write_function(&result_stream, ",%s", json_result);
 							bson_free(json_result);
 						}
-						stream->write_function(stream, "]\n");
+						if (!mongoc_cursor_error(cursor, &error)) {
+							stream->write_function(stream, "-OK\n[%s]", zstr((char *)result_stream.data) ? "" :(char *)result_stream.data);
+						} else {
+							stream->write_function(stream, "-ERR\nquery failed: %s", error.message);
+						}
+						switch_safe_free(result_stream.data);
 					} else {
-						stream->write_function(stream, "-ERR\nquery failed!\n");
+						stream->write_function(stream, "-ERR\nquery failed: %s", error.message);
 					}
 					if (cursor) {
 						mongoc_cursor_destroy(cursor);
@@ -342,6 +349,8 @@ SWITCH_STANDARD_API(mod_mongo_find_one_function)
 							json_result = bson_as_json(result, NULL);
 							stream->write_function(stream, "-OK\n%s\n", json_result);
 							bson_free(json_result);
+						} else if (mongoc_cursor_error(cursor, &error)) {
+							stream->write_function(stream, "-ERR\nquery failed: %s\n", error.message);
 						} else {
 							/* empty set */
 							stream->write_function(stream, "-OK\n{}\n");
