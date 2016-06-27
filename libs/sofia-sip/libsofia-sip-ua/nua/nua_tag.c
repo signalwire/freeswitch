@@ -2796,6 +2796,13 @@ tag_typedef_t nutag_auth_cache = INTTAG_TYPEDEF(auth_cache);
  * Reference tag for NUTAG_AUTH_CACHE().
  */
 
+/**@def NUTAG_AUTO_INVITE_100(x)
+ */
+tag_typedef_t nutag_auto_invite_100 = INTTAG_TYPEDEF(auto_invite_100);
+
+/**@def NUTAG_AUTO_INVITE_100(x)
+ * Reference tag for NUTAG_AUTO_INVITE_100().
+ */
 
 /**@def NUTAG_DETECT_NETWORK_UPDATES(x)
  *

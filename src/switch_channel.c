@@ -3305,6 +3305,13 @@ static switch_status_t send_ind(switch_channel_t *channel, switch_core_session_m
 	return switch_core_session_perform_receive_message(channel->session, &msg, file, func, line);
 }
 
+SWITCH_DECLARE(switch_status_t) switch_channel_perform_acknowledge_call(switch_channel_t *channel,
+																		const char *file, const char *func, int line)
+{
+	send_ind(channel, SWITCH_MESSAGE_INDICATE_ACKNOWLEDGE_CALL, file, func, line);
+
+	return SWITCH_STATUS_SUCCESS;
+}
 
 SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_ring_ready_value(switch_channel_t *channel,
 																			 switch_ring_ready_t rv,

@@ -55,6 +55,7 @@ static switch_status_t sofia_on_init(switch_core_session_t *session);
 
 static switch_status_t sofia_on_exchange_media(switch_core_session_t *session);
 static switch_status_t sofia_on_soft_execute(switch_core_session_t *session);
+static switch_status_t sofia_acknowledge_call(switch_core_session_t *session);
 static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session, switch_event_t *var_event,
 												  switch_caller_profile_t *outbound_profile, switch_core_session_t **new_session,
 												  switch_memory_pool_t **pool, switch_originate_flag_t flags, switch_call_cause_t *cancel_cause);
@@ -136,6 +137,14 @@ static switch_status_t sofia_on_routing(switch_core_session_t *session)
 	private_object_t *tech_pvt = (private_object_t *) switch_core_session_get_private(session);
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_assert(tech_pvt != NULL);
+
+	if (sofia_test_pflag(tech_pvt->profile, PFLAG_AUTO_INVITE_100) &&
+		!switch_channel_test_flag(channel, CF_ANSWERED) &&
+		switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_INBOUND) {
+		if (sofia_acknowledge_call(session) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Call appears to be already acknowledged\n");
+		}
+	}
 
 	if (!sofia_test_flag(tech_pvt, TFLAG_HOLD_LOCK)) {
 		sofia_clear_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
@@ -642,6 +651,19 @@ static switch_status_t sofia_on_soft_execute(switch_core_session_t *session)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static switch_status_t sofia_acknowledge_call(switch_core_session_t *session)
+{
+	struct private_object *tech_pvt = switch_core_session_get_private(session);
+
+	if (!tech_pvt->sent_100) {
+		nua_respond(tech_pvt->nh, SIP_100_TRYING, TAG_END());
+		tech_pvt->sent_100 = 1;
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	return SWITCH_STATUS_FALSE;
+}
+
 static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 {
 	private_object_t *tech_pvt = (private_object_t *) switch_core_session_get_private(session);
@@ -655,6 +677,10 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 	int is_3pcc = 0;
 	char *sticky = NULL;
 	const char *call_info = switch_channel_get_variable(channel, "presence_call_info_full");
+
+	if(sofia_acknowledge_call(session) == SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Dialplan did not acknowledge_call; sent 100 Trying");
+	}
 
 	if (switch_channel_test_flag(channel, CF_CONFERENCE) && !switch_stristr(";isfocus", tech_pvt->reply_contact)) {
 		tech_pvt->reply_contact = switch_core_session_sprintf(session, "%s;isfocus", tech_pvt->reply_contact);
@@ -2176,6 +2202,12 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 					}
 				}
 
+				/* Dialplan should really use acknowledge_call application instead of respond application to send 100 */
+				if (code == 100) {
+					status = sofia_acknowledge_call(session);
+					goto end_lock;
+				}
+
 				if (tech_pvt->proxy_refer_uuid) {
 					if (tech_pvt->proxy_refer_msg) {
 						nua_respond(tech_pvt->nh, code, su_strdup(nua_handle_home(tech_pvt->nh), reason), SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
@@ -2295,9 +2327,16 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 							   SIPTAG_HEADER_STR("X-FS-Support: " FREESWITCH_SUPPORT)), TAG_END());
 		}
 		break;
+	case SWITCH_MESSAGE_INDICATE_ACKNOWLEDGE_CALL:
+		status = sofia_acknowledge_call(session);
+		break;
 	case SWITCH_MESSAGE_INDICATE_RINGING:
 		{
 			switch_ring_ready_t ring_ready_val = msg->numeric_arg;
+
+			if(sofia_acknowledge_call(session) == SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Dialplan did not acknowledge_call; sent 100 Trying");
+			}
 
 			if (!switch_channel_test_flag(channel, CF_RING_READY) && !sofia_test_flag(tech_pvt, TFLAG_BYE) &&
 				!switch_channel_test_flag(channel, CF_EARLY_MEDIA) && !switch_channel_test_flag(channel, CF_ANSWERED)) {
@@ -2359,6 +2398,10 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			int is_proxy = 0, is_3pcc_proxy = 0;
 			int send_sip_code = 183;
 			const char * p_send_sip_msg = sip_183_Session_progress;
+
+			if(sofia_acknowledge_call(session) == SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Dialplan did not acknowledge_call; sent 100 Trying");
+			}
 
 			b_sdp = switch_channel_get_variable(channel, SWITCH_B_SDP_VARIABLE);
 			is_proxy = (switch_channel_test_flag(channel, CF_PROXY_MODE) || switch_channel_test_flag(channel, CF_PROXY_MEDIA));

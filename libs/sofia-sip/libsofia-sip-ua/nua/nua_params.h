@@ -115,6 +115,9 @@ struct nua_handle_preferences
   /** Enable Retry-After */
   unsigned         nhp_retry_after_enable:1;
 
+  /** Enable/Disable automatic 100 Trying when receiving INVITE */
+  unsigned         nhp_auto_invite_100:1;
+
   unsigned:0;
 
   /* Default lifetime for implicit subscriptions created by REFER */
@@ -215,6 +218,7 @@ struct nua_handle_preferences
     unsigned nhb_proxy:1;
     unsigned nhb_timer_autorequire:1;
     unsigned nhb_retry_after_enable:1;
+    unsigned nhb_auto_invite_100:1;
     unsigned :0;
   } set_bits;
     unsigned set_unsigned[2];
