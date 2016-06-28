@@ -1624,20 +1624,22 @@ switch_status_t conference_api_sub_vid_logo_img(conference_member_t *member, swi
 		goto end;
 	}
 
-	if (!strcasecmp(text, "allclear")) {
-		switch_channel_set_variable(member->channel, "video_logo_path", NULL);
-		member->video_logo = NULL;
-	} else if (!strcasecmp(text, "clear")) {
-		member->video_logo = NULL;
-	} else {
-		member->video_logo = switch_core_strdup(member->pool, text);
-	}
+	if (!zstr(text)) {
+		if (!strcasecmp(text, "allclear")) {
+			switch_channel_set_variable(member->channel, "video_logo_path", NULL);
+			member->video_logo = NULL;
+		} else if (!strcasecmp(text, "clear")) {
+			member->video_logo = NULL;
+		} else {
+			member->video_logo = switch_core_strdup(member->pool, text);
+		}
 
-	conference_video_layer_set_logo(member, layer, text);
+		conference_video_layer_set_logo(member, layer, text);
+	}
 
  end:
 
-	stream->write_function(stream, "+OK\n");
+	stream->write_function(stream, "%s\n", member->video_logo ? member->video_logo : "_undef_");
 
 	conference_video_release_layer(&layer);
 
