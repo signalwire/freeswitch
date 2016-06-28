@@ -691,35 +691,6 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 		}
 	}
 
-
-	/* Close Unused Handles */
-	if (conference->fnode) {
-		conference_file_node_t *fnode, *cur;
-		switch_memory_pool_t *pool;
-
-		fnode = conference->fnode;
-		while (fnode) {
-			cur = fnode;
-			fnode = fnode->next;
-
-			if (cur->type != NODE_TYPE_SPEECH) {
-				conference_file_close(conference, cur);
-			}
-
-			pool = cur->pool;
-			switch_core_destroy_memory_pool(&pool);
-		}
-		conference->fnode = NULL;
-	}
-
-	if (conference->async_fnode) {
-		switch_memory_pool_t *pool;
-		conference_file_close(conference, conference->async_fnode);
-		pool = conference->async_fnode->pool;
-		conference->async_fnode = NULL;
-		switch_core_destroy_memory_pool(&pool);
-	}
-
 	switch_mutex_lock(conference->member_mutex);
 	for (imember = conference->members; imember; imember = imember->next) {
 		switch_channel_t *channel;
@@ -768,7 +739,6 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 	}
 	switch_mutex_unlock(conference_globals.hash_mutex);
 
-
 	conference_utils_clear_flag(conference, CFLAG_VIDEO_MUXING);
 
 	for (x = 0; x <= conference->canvas_count; x++) {
@@ -777,6 +747,34 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 			switch_thread_join(&st, conference->canvases[x]->video_muxing_thread);
 			conference->canvases[x]->video_muxing_thread = NULL;
 		}
+	}
+
+	/* Close Unused Handles */
+	if (conference->fnode) {
+		conference_file_node_t *fnode, *cur;
+		switch_memory_pool_t *pool;
+
+		fnode = conference->fnode;
+		while (fnode) {
+			cur = fnode;
+			fnode = fnode->next;
+
+			if (cur->type != NODE_TYPE_SPEECH) {
+				conference_file_close(conference, cur);
+			}
+
+			pool = cur->pool;
+			switch_core_destroy_memory_pool(&pool);
+		}
+		conference->fnode = NULL;
+	}
+
+	if (conference->async_fnode) {
+		switch_memory_pool_t *pool;
+		conference_file_close(conference, conference->async_fnode);
+		pool = conference->async_fnode->pool;
+		conference->async_fnode = NULL;
+		switch_core_destroy_memory_pool(&pool);
 	}
 
 	/* Wait till everybody is out */
