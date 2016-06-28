@@ -522,7 +522,8 @@ typedef struct conference_record {
 typedef enum {
 	CONF_VIDEO_MODE_PASSTHROUGH,
 	CONF_VIDEO_MODE_TRANSCODE,
-	CONF_VIDEO_MODE_MUX
+	CONF_VIDEO_MODE_MUX,
+	CONF_VIDEO_MODE_NONE
 } conference_video_mode_t;
 
 /* Conference Object */
