@@ -2506,11 +2506,6 @@ switch_status_t conference_api_sub_record(conference_obj_t *conference, switch_s
 		return SWITCH_STATUS_GENERR;
 	}
 
-	if (conference->conference_video_mode == CONF_VIDEO_MODE_PASSTHROUGH) {
-		stream->write_function(stream, "-ERR Video Passthru enabled, recording not permitted.\n");
-		return SWITCH_STATUS_SUCCESS;
-	}
-
 	if (argv[3]) {
 
 		if (argv[3]) {
