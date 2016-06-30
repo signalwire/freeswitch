@@ -1354,6 +1354,10 @@ video_layout_t *conference_video_find_best_layout(conference_obj_t *conference, 
 		}
 	}
 
+	if (!lg) {
+		return NULL;
+	}
+
 	for (vlnode = lg->layouts; vlnode; vlnode = vlnode->next) {
 		if (vlnode->vlayout->layers >= (int)count) {
 			break;
