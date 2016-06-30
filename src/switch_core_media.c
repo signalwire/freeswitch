@@ -1827,6 +1827,8 @@ SWITCH_DECLARE(void) switch_core_media_prepare_codecs(switch_core_session_t *ses
 		return;
 	}
 
+	ocodec = switch_channel_get_variable(session->channel, SWITCH_ORIGINATOR_CODEC_VARIABLE);
+
 	smh->payload_space = 0;
 
 	switch_assert(smh->session != NULL);
@@ -1837,11 +1839,10 @@ SWITCH_DECLARE(void) switch_core_media_prepare_codecs(switch_core_session_t *ses
 	}
 
 	val = switch_channel_get_variable_dup(session->channel, "media_mix_inbound_outbound_codecs", SWITCH_FALSE, -1);
-	if (!val || !switch_true(val)) {
-		if ((ocodec = switch_channel_get_variable(session->channel, SWITCH_ORIGINATOR_CODEC_VARIABLE))) {
-			codec_string = ocodec;
-			goto ready;
-		}
+
+	if ((!val || !switch_true(val) || smh->media_flags[SCMF_DISABLE_TRANSCODING]) && ocodec) {
+		codec_string = ocodec;
+		goto ready;
 	}
 	
 	if (!(codec_string = switch_channel_get_variable(session->channel, "codec_string"))) {
@@ -1854,13 +1855,7 @@ SWITCH_DECLARE(void) switch_core_media_prepare_codecs(switch_core_session_t *ses
 	}
 
 	if (ocodec) {
-		if (!codec_string || (smh->media_flags[SCMF_DISABLE_TRANSCODING])) {
-			codec_string = ocodec;
-		} else {
-			if (!(codec_string = switch_core_session_sprintf(smh->session, "%s,%s", ocodec, codec_string))) {
-				codec_string = ocodec;
-			}
-		}
+		codec_string = switch_core_session_sprintf(smh->session, "%s,%s", ocodec, codec_string);
 	}
 
  ready:
