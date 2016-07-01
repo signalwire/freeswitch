@@ -125,6 +125,7 @@ struct local_stream_source {
 	switch_img_position_t logo_pos;
 	uint8_t logo_opacity;
 	uint8_t text_opacity;
+	switch_mm_t mm;
 };
 
 typedef struct local_stream_source local_stream_source_t;
@@ -478,6 +479,10 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 				}
 
 			retry:
+
+				if (switch_core_file_has_video(use_fh, SWITCH_TRUE)) {
+					source->mm = use_fh->mm;
+				}
 
 				source->has_video = switch_core_file_has_video(use_fh, SWITCH_TRUE) || source->cover_art || source->banner_txt;
 
@@ -934,8 +939,9 @@ static switch_status_t local_stream_file_read_video(switch_file_handle_t *handle
 	switch_status_t status;
 	switch_time_t now;
 	unsigned int fps = (unsigned int)ceil(handle->mm.fps);
-	unsigned int min_qsize = fps;
-	
+	unsigned int min_qsize = fps / 2;
+	unsigned int buf_qsize = 5;
+
 	if (!(context->ready && context->source->ready)) {
 		return SWITCH_STATUS_FALSE;
 	}
@@ -973,7 +979,12 @@ static switch_status_t local_stream_file_read_video(switch_file_handle_t *handle
 		return SWITCH_STATUS_BREAK;
 	}
 
-	while(context->ready && context->source->ready && (flags & SVR_FLUSH) && switch_queue_size(context->video_q) > min_qsize / 2) {
+	if (handle->mm.fps >= context->source->mm.source_fps) {
+		min_qsize = 1;
+		buf_qsize = 1;
+	}
+
+	while(context->ready && context->source->ready && (flags & SVR_FLUSH) && switch_queue_size(context->video_q) > min_qsize) {
 		if (switch_queue_trypop(context->video_q, &pop) == SWITCH_STATUS_SUCCESS) {
 			switch_image_t *img = (switch_image_t *) pop;
 			switch_img_free(&img);
@@ -984,7 +995,7 @@ static switch_status_t local_stream_file_read_video(switch_file_handle_t *handle
 		return SWITCH_STATUS_FALSE;
 	}
 	
-	while (!(flags & SVR_BLOCK) && switch_queue_size(context->video_q) < 5) {
+	while (!(flags & SVR_BLOCK) && switch_queue_size(context->video_q) < buf_qsize) {
 		return SWITCH_STATUS_BREAK;
 	}
 
