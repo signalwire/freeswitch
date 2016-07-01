@@ -1740,6 +1740,12 @@ static switch_status_t http_cache_file_open(switch_file_handle_t *handle, const 
 		switch_clear_flag_locked(handle, SWITCH_FILE_NATIVE);
 	}
 
+	if (switch_test_flag(&context->fh, SWITCH_FILE_FLAG_VIDEO)) {
+		switch_set_flag_locked(handle, SWITCH_FILE_FLAG_VIDEO);
+	} else {
+		switch_clear_flag_locked(handle, SWITCH_FILE_FLAG_VIDEO);
+	}
+
 	return status;
 }
 
@@ -1789,6 +1795,30 @@ static switch_status_t http_file_write(switch_file_handle_t *handle, void *data,
 {
 	struct http_context *context = (struct http_context *)handle->private_info;
 	return switch_core_file_write(&context->fh, data, len);
+}
+
+/**
+ * Read from HTTP video file
+ * @param handle
+ * @param frame
+ * @return
+ */
+static switch_status_t http_file_read_video(switch_file_handle_t *handle, switch_frame_t *frame, switch_video_read_flag_t flags)
+{
+	struct http_context *context = (struct http_context *)handle->private_info;
+	return switch_core_file_read_video(&context->fh, frame, flags);
+}
+
+/**
+ * Write to HTTP video file
+ * @param handle
+ * @param frame
+ * @return
+ */
+static switch_status_t http_file_write_video(switch_file_handle_t *handle, switch_frame_t *frame)
+{
+	struct http_context *context = (struct http_context *)handle->private_info;
+	return switch_core_file_write_video(&context->fh, frame);
 }
 
 /**
@@ -1851,6 +1881,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_http_cache_load)
 	file_interface->file_close = http_file_close;
 	file_interface->file_read = http_file_read;
 	file_interface->file_write = http_file_write;
+	file_interface->file_read_video = http_file_read_video;
+	file_interface->file_write_video = http_file_write_video;
 
 	if (gcache.enable_file_formats) {
 		file_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_FILE_INTERFACE);
@@ -1860,6 +1892,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_http_cache_load)
 		file_interface->file_close = http_file_close;
 		file_interface->file_read = http_file_read;
 		file_interface->file_write = http_file_write;
+		file_interface->file_read_video = http_file_read_video;
+		file_interface->file_write_video = http_file_write_video;
 
 		file_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_FILE_INTERFACE);
 		file_interface->interface_name = modname;
@@ -1868,6 +1902,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_http_cache_load)
 		file_interface->file_close = http_file_close;
 		file_interface->file_read = http_file_read;
 		file_interface->file_write = http_file_write;
+		file_interface->file_read_video = http_file_read_video;
+		file_interface->file_write_video = http_file_write_video;
 	}
 
 	/* create the queue from configuration */
