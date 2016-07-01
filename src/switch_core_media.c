@@ -4069,6 +4069,9 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 
 			if (!sendonly && (m->m_mode == sdp_sendonly || m->m_mode == sdp_inactive)) {
 				sendonly = 1;
+				if (m->m_mode == sdp_inactive) {
+					inactive = 1;
+				}
 			}
 
 			if (!sendonly && m->m_connections && m->m_connections->c_address && !strcmp(m->m_connections->c_address, "0.0.0.0")) {
@@ -4143,12 +4146,17 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 			}
 
 			if (sdp_type == SDP_TYPE_RESPONSE) {
-				if (sendonly) {
+				if (inactive) {
+					// When freeswitch had previously sent inactive in sip request. it should remain inactive otherwise smode should be sendrecv
+					if (a_engine->smode==SWITCH_MEDIA_FLOW_INACTIVE) {
+						a_engine->smode = sdp_media_flow(sdp_inactive);
+					} else {
+						a_engine->smode = sdp_media_flow(sdp_sendrecv);
+					}
+				} else if (sendonly) {
 					a_engine->smode = sdp_media_flow(sdp_sendonly);
 				} else if (recvonly) {
 					a_engine->smode = sdp_media_flow(sdp_recvonly);
-				} else if (inactive) {
-					a_engine->smode = sdp_media_flow(sdp_inactive);
 				}
 			}
 
