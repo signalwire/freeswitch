@@ -33,9 +33,10 @@
  * to corresponding frequencies is nonlinear.
  * The actual frequency estimation can be retrieved later
  * from this partial result using
- *      0.5 * acos(n/d)
+ *      0.5 * acos(returned_value)
+ * Amplitude estimation is returned by address.
  */
-double avmd_desa2_tweaked(circ_buffer_t *b, size_t i);
+double avmd_desa2_tweaked(circ_buffer_t *b, size_t i, double *amplitude) __attribute__ ((nonnull(1,3)));
 
 
 #endif  /* __AVMD_DESA2_TWEAKED_H__ */

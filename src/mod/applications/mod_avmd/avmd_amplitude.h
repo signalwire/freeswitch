@@ -1,7 +1,10 @@
 /*
  * @brief   Estimation of amplitude using DESA-2 algorithm.
- * @author Eric des Courtis
- * @par    Modifications: Piotr Gregor < piotrek.gregor gmail.com >
+ *
+ * Contributor(s):
+ *
+ * Eric des Courtis <eric.des.courtis@benbria.com>
+ * Piotr Gregor <piotrek.gregor gmail.com>:
  */
 
 
@@ -12,7 +15,7 @@
 #include "avmd_buffer.h"
 
 
-extern double avmd_amplitude(circ_buffer_t *, size_t i, double f);
+double avmd_amplitude(circ_buffer_t *, size_t i, double f) __attribute__ ((nonnull(1)));
 
 
 #endif /* __AVMD_AMPLITUDE_H__ */
