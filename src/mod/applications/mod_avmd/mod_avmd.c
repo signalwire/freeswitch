@@ -175,6 +175,8 @@ typedef struct {
 	circ_buffer_t   b;
 	sma_buffer_t    sma_b;
 	sma_buffer_t    sqa_b;
+	sma_buffer_t    sma_amp_b;
+	sma_buffer_t    sqa_amp_b;
 	size_t          pos;
 	double          f;
 	/* freq_table_t ft; */
@@ -199,7 +201,7 @@ static switch_status_t avmd_register_all_events(void);
 static void avmd_unregister_all_events(void);
 
 static void
-avmd_fire_event(enum avmd_event type, switch_core_session_t *fs_s, double freq, double v, avmd_beep_state_t beep_status, uint8_t info);
+avmd_fire_event(enum avmd_event type, switch_core_session_t *fs_s, double freq, double v_freq, double amp, double v_amp, avmd_beep_state_t beep_status, uint8_t info);
 
 /* API [set default], reset to factory settings */
 static void avmd_set_xml_default_configuration(switch_mutex_t *mutex);
@@ -276,6 +278,20 @@ init_avmd_session_data(avmd_session_t *avmd_session, switch_core_session_t *fs_s
             goto end;
     }
     memset(avmd_session->sqa_b.data, 0, sizeof(BUFF_TYPE) * buf_sz);
+
+    INIT_SMA_BUFFER(&avmd_session->sma_amp_b, buf_sz, fs_session);
+    if (avmd_session->sma_amp_b.data == NULL) {
+            status = SWITCH_STATUS_FALSE;
+            goto end;
+    }
+    memset(avmd_session->sma_amp_b.data, 0, sizeof(BUFF_TYPE) * buf_sz);
+
+    INIT_SMA_BUFFER(&avmd_session->sqa_amp_b, buf_sz, fs_session);
+    if (avmd_session->sqa_amp_b.data == NULL) {
+            status = SWITCH_STATUS_FALSE;
+            goto end;
+    }
+    memset(avmd_session->sqa_amp_b.data, 0, sizeof(BUFF_TYPE) * buf_sz);
 end:
     if (mutex != NULL)
     {
@@ -407,8 +423,7 @@ avmd_unregister_all_events(void)
 }
 
 static void
-avmd_fire_event(enum avmd_event type, switch_core_session_t *fs_s, double freq, double v, avmd_beep_state_t beep_status, uint8_t info)
-{
+avmd_fire_event(enum avmd_event type, switch_core_session_t *fs_s, double freq, double v_freq, double amp, double v_amp, avmd_beep_state_t beep_status, uint8_t info) {
     int res;
     switch_event_t      *event;
     switch_status_t     status;
@@ -421,23 +436,36 @@ avmd_fire_event(enum avmd_event type, switch_core_session_t *fs_s, double freq, 
     }
     switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Unique-ID", switch_core_session_get_uuid(fs_s));
     switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call-command", "avmd");
-    switch (type)
-    {
+    switch (type) {
         case AVMD_EVENT_BEEP:
             switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Beep-Status", "DETECTED");
             res = snprintf(buf, AVMD_CHAR_BUF_LEN, "%f", freq);
             if (res < 0 || res > AVMD_CHAR_BUF_LEN - 1) {
                 switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_s), SWITCH_LOG_ERROR, "Frequency truncated [%s], [%d] attempted!\n", buf, res);
-                switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "frequency", "ERROR (TRUNCATED)");
+                switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Frequency", "ERROR (TRUNCATED)");
             }
-            switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "frequency", buf);
+            switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Frequency", buf);
 
-            res = snprintf(buf, AVMD_CHAR_BUF_LEN, "%f", v);
+            res = snprintf(buf, AVMD_CHAR_BUF_LEN, "%f", v_freq);
             if (res < 0 || res > AVMD_CHAR_BUF_LEN - 1) {
                 switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_s), SWITCH_LOG_ERROR, "Error, truncated [%s], [%d] attempeted!\n", buf, res);
-                switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "variance", "ERROR (TRUNCATED)");
+                switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Frequency-variance", "ERROR (TRUNCATED)");
             }
-            switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "variance", buf);
+            switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Frequency-variance", buf);
+
+            res = snprintf(buf, AVMD_CHAR_BUF_LEN, "%f", amp);
+            if (res < 0 || res > AVMD_CHAR_BUF_LEN - 1) {
+                switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_s), SWITCH_LOG_ERROR, "Amplitude truncated [%s], [%d] attempted!\n", buf, res);
+                switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Amplitude", "ERROR (TRUNCATED)");
+            }
+            switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Amplitude", buf);
+
+            res = snprintf(buf, AVMD_CHAR_BUF_LEN, "%f", v_amp);
+            if (res < 0 || res > AVMD_CHAR_BUF_LEN - 1) {
+                switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_s), SWITCH_LOG_ERROR, "Error, truncated [%s], [%d] attempeted!\n", buf, res);
+                switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Amplitude-variance", "ERROR (TRUNCATED)");
+            }
+            switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Amplitude-variance", buf);
             break;
 
         case AVMD_EVENT_SESSION_START:
@@ -1055,7 +1083,7 @@ SWITCH_STANDARD_APP(avmd_start_app)
         goto end;
 	}
 	switch_channel_set_private(channel, "_avmd_", bug); /* Set the avmd tag to detect an existing avmd media bug */
-    avmd_fire_event(AVMD_EVENT_SESSION_START, session, 0, 0, 0, 0);
+    avmd_fire_event(AVMD_EVENT_SESSION_START, session, 0, 0, 0, 0, 0, 0);
     if (avmd_session->settings.report_status == 1) {
         switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Avmd on channel [%s] started!\n", switch_channel_get_name(channel));
     }
@@ -1113,9 +1141,9 @@ SWITCH_STANDARD_APP(avmd_stop_app)
     switch_channel_set_private(channel, "_avmd_", NULL);
     switch_core_media_bug_remove(session, &bug);
     if (avmd_found == 1) {
-        avmd_fire_event(AVMD_EVENT_SESSION_STOP, session, 0, 0, beep_status, 1);
+        avmd_fire_event(AVMD_EVENT_SESSION_STOP, session, 0, 0, 0, 0, beep_status, 1);
     } else {
-        avmd_fire_event(AVMD_EVENT_SESSION_STOP, session, 0, 0, beep_status, 0);
+        avmd_fire_event(AVMD_EVENT_SESSION_STOP, session, 0, 0, 0, 0, beep_status, 0);
     }
     if (report_status == 1) {
         switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Avmd on channel [%s] stopped, beep status: [%s]\n",
@@ -1379,7 +1407,7 @@ SWITCH_STANDARD_API(avmd_api_main)
             uuid_dup = switch_core_strdup(switch_core_session_get_pool(fs_session), uuid);
 			switch_channel_set_private(channel, "_avmd_", NULL);
 			switch_core_media_bug_remove(fs_session, &bug);
-            avmd_fire_event(AVMD_EVENT_SESSION_STOP, fs_session, 0, 0, 0, 0);
+            avmd_fire_event(AVMD_EVENT_SESSION_STOP, fs_session, 0, 0, 0, 0, 0, 0);
             if (avmd_globals.settings.report_status == 1) {
 			    stream->write_function(stream, "+OK\n [%s] [%s] stopped\n\n",
                         uuid_dup, switch_channel_get_name(channel));
@@ -1500,7 +1528,7 @@ SWITCH_STANDARD_API(avmd_api_main)
 
 	switch_channel_set_private(channel, "_avmd_", bug); /* Set the vmd tag to detect an existing vmd media bug */
 
-    avmd_fire_event(AVMD_EVENT_SESSION_START, fs_session, 0, 0, 0, 0);
+    avmd_fire_event(AVMD_EVENT_SESSION_START, fs_session, 0, 0, 0, 0, 0, 0);
     if (avmd_globals.settings.report_status == 1) {
 	    stream->write_function(stream, "+OK\n [%s] [%s] started!\n\n",
                 uuid, switch_channel_get_name(channel));
@@ -1529,9 +1557,9 @@ static void avmd_process(avmd_session_t *s, switch_frame_t *frame) {
     switch_channel_t    *channel;
     circ_buffer_t       *b;
     size_t              pos;
-    double      omega;
+    double      omega, amplitude;
     double      f;
-    double      v;
+    double      v, v_amp;
     double      sma_digital_freq;
     uint32_t    sine_len_i;
     int         sample_to_skip_n = s->settings.sample_n_to_skip;
@@ -1559,7 +1587,7 @@ static void avmd_process(avmd_session_t *s, switch_frame_t *frame) {
 	/*for (pos = session->pos; pos < (GET_CURRENT_POS(b) - P); pos++) { */
 		if ((sample_n % sine_len_i) == 0) {
 			/* Get a desa2 frequency estimate every sine len */
-			omega = avmd_desa2_tweaked(b, pos + sample_n);
+			omega = avmd_desa2_tweaked(b, pos + sample_n, &amplitude);
 
 			if (omega < -0.999999 || omega > 0.999999) {
                 if (s->settings.debug == 1) {
@@ -1569,6 +1597,8 @@ static void avmd_process(avmd_session_t *s, switch_frame_t *frame) {
                 if (s->settings.require_continuous_streak == 1) {
                     RESET_SMA_BUFFER(&s->sma_b);
                     RESET_SMA_BUFFER(&s->sqa_b);
+                    RESET_SMA_BUFFER(&s->sma_amp_b);
+                    RESET_SMA_BUFFER(&s->sqa_amp_b);
                     s->samples_streak = s->settings.sample_n_continuous_streak;
                     sample_to_skip_n = s->settings.sample_n_to_skip;
                 }
@@ -1603,12 +1633,15 @@ static void avmd_process(avmd_session_t *s, switch_frame_t *frame) {
 
 				APPEND_SMA_VAL(&s->sma_b, omega); /* append */
 				APPEND_SMA_VAL(&s->sqa_b, omega * omega);
+				APPEND_SMA_VAL(&s->sma_amp_b, amplitude); /* append */
+				APPEND_SMA_VAL(&s->sqa_amp_b, amplitude * amplitude);
                 if (s->settings.require_continuous_streak == 1) {
                     if (s->samples_streak > 0) {
                         --s->samples_streak;
                     }
                 }
-				v = s->sqa_b.sma - (s->sma_b.sma * s->sma_b.sma); /* calculate variance (biased estimator) */
+				v = s->sqa_b.sma - (s->sma_b.sma * s->sma_b.sma); /* calculate variance of omega(biased estimator) */
+				v_amp = s->sqa_amp_b.sma - (s->sma_amp_b.sma * s->sma_amp_b.sma); /* calculate variance of amplitude (biased estimator) */
                 if (s->settings.debug == 1) {
 #if !defined(WIN32) && defined(AVMD_FAST_MATH)
                     f =  0.5 * (double) fast_acosf((float)omega);
@@ -1619,11 +1652,16 @@ static void avmd_process(avmd_session_t *s, switch_frame_t *frame) {
 #endif /* !WIN32 && AVMD_FAST_MATH */
                     if (s->settings.require_continuous_streak == 1) {
                         switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(s->session), SWITCH_LOG_DEBUG, "<<< AVMD v[%.10f]\tomega[%f]\tf[%f] [%f]Hz\t\tsma[%f][%f]Hz\t\tsqa[%f]\t"
-                                "streak[%zu] pos[%zu] sample_n[%zu] lpos[%zu] s[%zu]>>>\n", v, omega, f, TO_HZ(s->rate, f), s->sma_b.sma, TO_HZ(s->rate, sma_digital_freq), s->sqa_b.sma, s->samples_streak,
-                                s->sma_b.pos, sample_n, s->sma_b.lpos, pos);
+                                "amplitude[%f]\tv_amp[%f]\t"
+                                "streak[%zu] pos[%zu] sample_n[%zu] lpos[%zu] s[%zu]>>>\n", v, omega, f, TO_HZ(s->rate, f), s->sma_b.sma, TO_HZ(s->rate, sma_digital_freq), s->sqa_b.sma,
+                                amplitude, v_amp,
+                                s->samples_streak, s->sma_b.pos, sample_n, s->sma_b.lpos, pos);
                     } else {
-                        switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(s->session), SWITCH_LOG_DEBUG, "<<< AVMD v[%.10f]\tomega[%f]\tf[%f] [%f]Hz\t\tsma[%f][%f]Hz\t\tsqa[%f]\tpos[%zu]"
-                                " sample_n[%zu] lpos[%zu] s[%zu]>>>\n", v, omega, f, TO_HZ(s->rate, f), s->sma_b.sma, TO_HZ(s->rate, sma_digital_freq), s->sqa_b.sma, s->sma_b.pos, sample_n, s->sma_b.lpos, pos);
+                        switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(s->session), SWITCH_LOG_DEBUG, "<<< AVMD v[%.10f]\tomega[%f]\tf[%f] [%f]Hz\t\tsma[%f][%f]Hz\t\tsqa[%f]\t"
+                                "amplitude[%f]\tv_amp[%f]\t"
+                                "pos[%zu] sample_n[%zu] lpos[%zu] s[%zu]>>>\n", v, omega, f, TO_HZ(s->rate, f), s->sma_b.sma, TO_HZ(s->rate, sma_digital_freq), s->sqa_b.sma,
+                                amplitude, v_amp,
+                                s->sma_b.pos, sample_n, s->sma_b.lpos, pos);
                     }
                 }
 			}
@@ -1641,13 +1679,15 @@ static void avmd_process(avmd_session_t *s, switch_frame_t *frame) {
 
 				switch_channel_set_variable_printf(channel, "avmd_total_time", "[%d]", (int)(switch_micro_time_now() - s->start_time) / 1000);
 				switch_channel_execute_on(channel, "execute_on_avmd_beep");
-				avmd_fire_event(AVMD_EVENT_BEEP, s->session, TO_HZ(s->rate, sma_digital_freq), v, 0, 0);
+				avmd_fire_event(AVMD_EVENT_BEEP, s->session, TO_HZ(s->rate, sma_digital_freq), v, s->sma_amp_b.sma, v_amp, 0, 0);
                 if (s->settings.report_status == 1) {
-                    switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(s->session), SWITCH_LOG_INFO, "<<< AVMD - Beep Detected: f = [%f], variance = [%f] >>>\n", TO_HZ(s->rate, sma_digital_freq), v);
+                    switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(s->session), SWITCH_LOG_INFO, "<<< AVMD - Beep Detected: f = [%f] variance = [%f], amplitude = [%f] variance = [%f] >>>\n", TO_HZ(s->rate, sma_digital_freq), v, s->sma_amp_b.sma, v_amp);
                 }
 				switch_channel_set_variable(channel, "avmd_detect", "TRUE");
 				RESET_SMA_BUFFER(&s->sma_b);
 				RESET_SMA_BUFFER(&s->sqa_b);
+				RESET_SMA_BUFFER(&s->sma_amp_b);
+				RESET_SMA_BUFFER(&s->sqa_amp_b);
 				s->state.beep_state = BEEP_DETECTED;
 				goto done;
             }
