@@ -931,7 +931,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 																		   ipv6 ? "[" : "", ip_addr, ipv6 ? "]" : "", tech_pvt->profile->extsipport);
 				}
 			} else {
-				sofia_glue_get_profile_url(tech_pvt->profile, tech_pvt->mparams.remote_ip, tech_pvt->transport);
+				tech_pvt->invite_contact = sofia_glue_get_profile_url(tech_pvt->profile, tech_pvt->mparams.remote_ip, tech_pvt->transport);
 			}
 		}
 
