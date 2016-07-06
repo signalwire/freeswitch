@@ -902,10 +902,10 @@ SWITCH_DECLARE(switch_status_t) switch_jb_peek_frame(switch_jb_t *jb, uint32_t t
 		frame->seq = ntohs(node->packet.header.seq);
 		frame->timestamp = ntohl(node->packet.header.ts);
 		frame->m = node->packet.header.m;
-		frame->datalen = node->len;
+		frame->datalen = node->len - 12;
 
-		if (frame->data && frame->buflen > node->len) {
-			memcpy(frame->data, node->packet.body, node->len);
+		if (frame->data && frame->buflen > node->len - 12) {
+			memcpy(frame->data, node->packet.body, node->len - 12);
 		}
 		return SWITCH_STATUS_SUCCESS;
 	}
