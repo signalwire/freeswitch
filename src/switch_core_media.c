@@ -7716,7 +7716,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 	int is_outbound = switch_channel_direction(session->channel) == SWITCH_CALL_DIRECTION_OUTBOUND;
 	const char *vbw;
 	int bw = 256;
-	uint8_t fir = 0, nack = 0, pli = 0, tmmbr = 0;
+	uint8_t fir = 0, nack = 0, pli = 0, tmmbr = 0, has_vid = 0;
 
 	switch_assert(session);
 
@@ -8306,7 +8306,26 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 
  video:
 
-	if (!switch_channel_test_flag(session->channel, CF_VIDEO_POSSIBLE)) {
+
+	if (!switch_channel_test_flag(session->channel, CF_VIDEO_POSSIBLE) && sdp_type == SDP_TYPE_REQUEST) {
+		has_vid = 0;
+	} else {
+		int i;
+
+		for (i = 0; i < smh->mparams->num_codecs; i++) {
+			const switch_codec_implementation_t *imp = smh->codecs[i];
+			
+			
+			if (imp->codec_type == SWITCH_CODEC_TYPE_VIDEO) {
+				has_vid = 1;
+				break;
+			}
+		}
+
+	}
+
+
+	if (!has_vid) {
 		if (switch_channel_test_flag(session->channel, CF_VIDEO_SDP_RECVD)) {
 			switch_channel_clear_flag(session->channel, CF_VIDEO_SDP_RECVD);
 			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "m=video 0 %s 19\r\n", 
