@@ -1379,25 +1379,21 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		break;
 
 	case SWITCH_MESSAGE_INDICATE_VIDEO_REFRESH_REQ:
-		if (!switch_channel_test_flag(channel, CF_AVPF)) {
-			//const char *ua = switch_channel_get_variable(tech_pvt->channel, "sip_user_agent");
-			//if (ua && switch_stristr("polycom", ua)) {
-
-				//const char *pl = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n<media_control>\n<vc_primitive>\n<to_encoder>\n<picture_fast_update>\n</picture_fast_update>\n</to_encoder>\n</vc_primitive>\n</media_control>";
-				const char *pl = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n<media_control><vc_primitive><to_encoder><picture_fast_update /></to_encoder></vc_primitive></media_control>\n";
-				switch_time_t now = switch_micro_time_now();
+		if (!switch_channel_test_flag(channel, CF_AVPF) && switch_true(switch_core_get_variable("sofia_send_info_vid_refresh"))) {
+			const char *pl = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n<media_control><vc_primitive><to_encoder><picture_fast_update /></to_encoder></vc_primitive></media_control>\n";
+			switch_time_t now = switch_micro_time_now();
+			
+			if (!tech_pvt->last_vid_info || (now - tech_pvt->last_vid_info) > 500000) {
 				
-				if (!tech_pvt->last_vid_info || (now - tech_pvt->last_vid_info) > 500000) {
-					
-					tech_pvt->last_vid_info = now;
-					
-					if (!zstr(msg->string_arg)) {
-						pl = msg->string_arg;
-					}
-					
-					nua_info(tech_pvt->nh, SIPTAG_CONTENT_TYPE_STR("application/media_control+xml"), SIPTAG_PAYLOAD_STR(pl), TAG_END());
+				tech_pvt->last_vid_info = now;
+				
+				if (!zstr(msg->string_arg)) {
+					pl = msg->string_arg;
 				}
-				//}
+				
+				nua_info(tech_pvt->nh, SIPTAG_CONTENT_TYPE_STR("application/media_control+xml"), SIPTAG_PAYLOAD_STR(pl), TAG_END());
+			}
+			
 		}
 		break;
 	case SWITCH_MESSAGE_INDICATE_BROADCAST:
