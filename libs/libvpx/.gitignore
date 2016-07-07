@@ -4,6 +4,7 @@
 Makefile
 config.mk
 libs-*.mk
+libs.doxy
 vp8_rtcd.h
 vp9_rtcd.h
 vpx_config.asm
