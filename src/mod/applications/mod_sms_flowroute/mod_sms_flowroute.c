@@ -418,6 +418,7 @@ switch_status_t mod_sms_flowroute_profile_send_message(mod_sms_flowroute_profile
 		goto err;
 	}
 	
+	h2o_timeout_dispose(msg->ctx.loop, msg->ctx.io_timeout);
 	switch_mutex_destroy(msg->mutex);
 	switch_safe_free(msg->req.base);
 	switch_safe_free(msg);
@@ -427,6 +428,7 @@ switch_status_t mod_sms_flowroute_profile_send_message(mod_sms_flowroute_profile
 	if ( msg && msg->mutex ) {
 		switch_mutex_destroy(msg->mutex);
 	}	
+	h2o_timeout_dispose(msg->ctx.loop, msg->ctx.io_timeout);
 	switch_safe_free(msg->req.base);
 	switch_safe_free(msg);	
 	return SWITCH_STATUS_GENERR;
