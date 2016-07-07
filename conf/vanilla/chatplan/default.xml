@@ -6,7 +6,7 @@
       <condition field="to" expression="^(.*)$">
 	<!--	<action application="lua" data="test.lua"/> -->
 
-	<action application="reply" data="Hello, you said: ${_body}"/>
+	<action application="reply" data="Hello, you said: ${body}"/>
       </condition>
     </extension>
 

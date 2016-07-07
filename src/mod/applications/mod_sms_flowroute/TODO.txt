@@ -1,0 +1,30 @@
+
+
+
+
+
+For inbound, these are known leaks on per module load(not per message). These will likely require additions to libh2o to add a destroy function.
+
+=================================================================
+==4164==ERROR: LeakSanitizer: detected memory leaks
+
+Direct leak of 1104 byte(s) in 26 object(s) allocated from:
+    #0 0x4c1e28 in __interceptor_malloc (/usr/local/freeswitch_sms_flowroute/bin/freeswitch+0x4c1e28)
+        #1 0x7f868d71acbd in wcsdup /build/glibc-h_iKOs/glibc-2.19/wcsmbs/wcsdup.c:30
+
+Direct leak of 184 byte(s) in 1 object(s) allocated from:
+    #0 0x4c1e28 in __interceptor_malloc (/usr/local/freeswitch_sms_flowroute/bin/freeswitch+0x4c1e28)
+        #1 0x7f867cdcbaee in h2o_mem_alloc /usr/src/h2o/include/h2o/memory.h:298
+	    #2 0x7f867cdcbaee in create_socket /usr/src/h2o/lib/common/socket/evloop.c.h:361
+
+Indirect leak of 184 byte(s) in 1 object(s) allocated from:
+    #0 0x4c1e28 in __interceptor_malloc (/usr/local/freeswitch_sms_flowroute/bin/freeswitch+0x4c1e28)
+        #1 0x7f867cdcbaee in h2o_mem_alloc /usr/src/h2o/include/h2o/memory.h:298
+	    #2 0x7f867cdcbaee in create_socket /usr/src/h2o/lib/common/socket/evloop.c.h:361
+
+Indirect leak of 88 byte(s) in 1 object(s) allocated from:
+    #0 0x4c1e28 in __interceptor_malloc (/usr/local/freeswitch_sms_flowroute/bin/freeswitch+0x4c1e28)
+        #1 0x7f867cdc9e12 in h2o_mem_alloc /usr/src/h2o/include/h2o/memory.h:298
+	    #2 0x7f867cdc9e12 in h2o_multithread_create_queue /usr/src/h2o/lib/common/multithread.c:106
+
+SUMMARY: AddressSanitizer: 1560 byte(s) leaked in 29 allocation(s).

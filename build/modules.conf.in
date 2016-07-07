@@ -40,6 +40,7 @@ applications/mod_httapi
 #applications/mod_redis
 #applications/mod_rss
 applications/mod_sms
+#applications/mod_sms_flowroute
 #applications/mod_snapshot
 #applications/mod_snom
 #applications/mod_sonar
