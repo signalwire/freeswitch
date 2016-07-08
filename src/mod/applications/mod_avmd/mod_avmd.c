@@ -1560,7 +1560,7 @@ static void avmd_process(avmd_session_t *s, switch_frame_t *frame) {
     size_t              pos;
     double      omega, amplitude;
     double      f;
-    double      v, v_amp;
+    double      v, v_amp = 0.0;
     double      sma_digital_freq;
     uint32_t    sine_len_i;
     int         sample_to_skip_n = s->settings.sample_n_to_skip;
