@@ -15,6 +15,11 @@
 #include "avmd_buffer.h"
 
 
+#ifdef WIN32
+#define __attribute__(x)
+#endif
+
+
 double avmd_amplitude(circ_buffer_t *, size_t i, double f) __attribute__ ((nonnull(1)));
 
 

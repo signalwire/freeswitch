@@ -35,6 +35,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+
 #ifdef WIN32
 #include <float.h>
 #define ISNAN(x) (!!(_isnan(x)))
