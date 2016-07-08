@@ -244,14 +244,11 @@ static switch_status_t switch_opus_fmtp_parse(const char *fmtp, switch_codec_fmt
 
 						if (!strcasecmp(data, "stereo")) {
 							codec_settings->stereo = atoi(arg);
-							if(codec_settings->stereo)
-								codec_fmtp->stereo = 1;
+							codec_fmtp->stereo = codec_settings->stereo;
 						}
 
 						if (!strcasecmp(data, "sprop-stereo")) {
 							codec_settings->sprop_stereo = atoi(arg);
-							if(codec_settings->sprop_stereo)
-								codec_fmtp->stereo = 1;
 						}
 
 						if (!strcasecmp(data, "maxaveragebitrate")) {
@@ -632,7 +629,7 @@ static switch_status_t switch_opus_init(switch_codec_t *codec, switch_codec_flag
 			}
 		}
 
-		context->decoder_object = opus_decoder_create(dec_samplerate, codec->implementation->number_of_channels, &err);
+		context->decoder_object = opus_decoder_create(dec_samplerate, (!context->codec_settings.sprop_stereo ? codec->implementation->number_of_channels : 2), &err);
 
 		switch_set_flag(codec, SWITCH_CODEC_FLAG_HAS_PLC);
 
@@ -730,7 +727,7 @@ static switch_status_t switch_opus_decode(switch_codec_t *codec,
 		return SWITCH_STATUS_FALSE;
 	}
 
-	frame_samples = *decoded_data_len / 2 / codec->implementation->number_of_channels);
+	frame_samples = *decoded_data_len / 2 / (!context->codec_settings.sprop_stereo ? codec->implementation->number_of_channels : 2);
 	frame_size = frame_samples - (frame_samples % (codec->implementation->actual_samples_per_second / 400));
 
 	if (*flag & SFF_PLC) {
@@ -831,7 +828,7 @@ static switch_status_t switch_opus_decode(switch_codec_t *codec,
 		return SWITCH_STATUS_GENERR;
 	}
 
-	*decoded_data_len = samples * 2 * codec->implementation->number_of_channels;
+	*decoded_data_len = samples * 2 * (!context->codec_settings.sprop_stereo ? codec->implementation->number_of_channels : 2);
 
 	return SWITCH_STATUS_SUCCESS;
 }
