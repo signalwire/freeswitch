@@ -614,18 +614,21 @@ static inline void add_node(switch_jb_t *jb, switch_rtp_packet_t *packet, switch
 	if (jb->type == SJB_VIDEO) {
 		if (jb->write_init && ((htons(packet->header.seq) >= htons(jb->highest_wrote_seq) && (ntohl(node->packet.header.ts) > ntohl(jb->highest_wrote_ts))) ||
 							   (ntohl(jb->highest_wrote_ts) > (UINT_MAX - 1000) && ntohl(node->packet.header.ts) < 1000))) {
-			jb->complete_frames++;
-			jb_debug(jb, 2, "WRITE frame ts: %u complete=%u/%u n:%u\n", ntohl(node->packet.header.ts), jb->complete_frames , jb->frame_len, jb->visible_nodes);
 			jb->highest_wrote_ts = packet->header.ts;
 			//verify_oldest_frame(jb);
 		} else if (!jb->write_init) {
 			jb->highest_wrote_ts = packet->header.ts;
 		}
+		
+		jb->complete_frames++;
+		jb_debug(jb, 2, "WRITE frame ts: %u complete=%u/%u n:%u\n", ntohl(node->packet.header.ts), jb->complete_frames , jb->frame_len, jb->visible_nodes);
+
 	} else {
-		if (jb->write_init) {
-			jb_debug(jb, 2, "WRITE frame ts: %u complete=%u/%u n:%u\n", ntohl(node->packet.header.ts), jb->complete_frames , jb->frame_len, jb->visible_nodes);
-			jb->complete_frames++;
-		} else {
+		
+		jb_debug(jb, 2, "WRITE frame ts: %u complete=%u/%u n:%u\n", ntohl(node->packet.header.ts), jb->complete_frames , jb->frame_len, jb->visible_nodes);
+		jb->complete_frames++;
+
+		if (!jb->write_init) {
 			jb->highest_wrote_ts = packet->header.ts;
 		}
 	}
@@ -1269,10 +1272,12 @@ SWITCH_DECLARE(switch_status_t) switch_jb_get_packet(switch_jb_t *jb, switch_rtp
 			(ntohs(jb->highest_read_seq) > USHRT_MAX - 10 && ntohs(node->packet.header.seq) <= 10) ) {
 			jb->highest_read_seq = node->packet.header.seq;
 		}
+
+		jb->complete_frames--;
+		jb_debug(jb, 2, "READ frame ts: %u complete=%u/%u n:%u\n", ntohl(node->packet.header.ts), jb->complete_frames , jb->frame_len, jb->visible_nodes);
+
 		
 		if (jb->read_init && htons(node->packet.header.seq) >= htons(jb->highest_read_seq) && (ntohl(node->packet.header.ts) > ntohl(jb->highest_read_ts))) {
-			jb->complete_frames--;
-			jb_debug(jb, 2, "READ frame ts: %u complete=%u/%u n:%u\n", ntohl(node->packet.header.ts), jb->complete_frames , jb->frame_len, jb->visible_nodes);
 			jb->highest_read_ts = node->packet.header.ts;
 		} else if (!jb->read_init) {
 			jb->highest_read_ts = node->packet.header.ts;
