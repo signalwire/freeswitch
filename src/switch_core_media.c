@@ -7422,7 +7422,7 @@ static void generate_m(switch_core_session_t *session, char *buf, size_t buflen,
 	}
 
 	if (!zstr(a_engine->local_dtls_fingerprint.type) && secure) {
-		switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=fingerprint:%s %s\na=setup:%s\r\n", a_engine->local_dtls_fingerprint.type, 
+		switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=fingerprint:%s %s\r\na=setup:%s\r\n", a_engine->local_dtls_fingerprint.type, 
 						a_engine->local_dtls_fingerprint.str, get_setup(a_engine, session, sdp_type));
 	}
 	
@@ -8087,7 +8087,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 				switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtpmap:%d telephone-event/%d\r\n", 
 								smh->mparams->te, smh->mparams->te_rate);
 			} else {
-				switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtpmap:%d telephone-event/%d\na=fmtp:%d 0-16\r\n", 
+				switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtpmap:%d telephone-event/%d\r\na=fmtp:%d 0-16\r\n", 
 								smh->mparams->te, smh->mparams->te_rate, smh->mparams->te);
 			}
 		}
@@ -8572,8 +8572,8 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 
 
 				if (!zstr(v_engine->local_dtls_fingerprint.type)) {
-					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=fingerprint:%s %s\na=setup:%s\r\n", v_engine->local_dtls_fingerprint.type, 
-									v_engine->local_dtls_fingerprint.str, get_setup(v_engine, session, sdp_type));
+					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=fingerprint:%s %s\r\na=setup:%s\r\n",
+									v_engine->local_dtls_fingerprint.type, v_engine->local_dtls_fingerprint.str, get_setup(v_engine, session, sdp_type));
 				}
 
 
