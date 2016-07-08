@@ -21,6 +21,11 @@
 #include <switch.h>
 
 
+#ifdef WIN32
+#define __attribute__(x)
+#endif
+
+
 /* Instead of returning digital frequency estimation using
  *      result = 0.5 * acos(n/d),
  * which involves expensive computation of arc cosine on

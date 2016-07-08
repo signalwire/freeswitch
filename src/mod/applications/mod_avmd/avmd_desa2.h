@@ -15,6 +15,12 @@
 #include <math.h>
 #include "avmd_buffer.h"
 
+
+#ifdef WIN32
+#define __attribute__(x)
+#endif
+
+
 /* Returns digital frequency estimation and amplitude estimation. */
 extern double avmd_desa2(circ_buffer_t *b, size_t i, double *amplitude) __attribute__ ((nonnull(1,3)));
 
