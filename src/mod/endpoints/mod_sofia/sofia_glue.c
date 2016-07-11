@@ -159,6 +159,7 @@ void sofia_glue_attach_private(switch_core_session_t *session, sofia_profile_t *
 	switch_channel_set_cap(tech_pvt->channel, CC_PROXY_MEDIA);
 	switch_channel_set_cap(tech_pvt->channel, CC_JITTERBUFFER);
 	switch_channel_set_cap(tech_pvt->channel, CC_FS_RTP);
+	switch_channel_set_cap(tech_pvt->channel, CC_RTP_RTT);
 	switch_channel_set_cap(tech_pvt->channel, CC_QUEUEABLE_DTMF_DELAY);
 
 

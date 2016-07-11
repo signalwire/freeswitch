@@ -790,6 +790,13 @@ struct conference_member {
 	int reset_media;
 	int flip;
 	int flip_count;
+
+	switch_mutex_t *text_mutex;
+	switch_buffer_t *text_buffer;
+	char *text_framedata;
+	uint32_t text_framesize;
+
+
 };
 
 typedef enum {
@@ -971,6 +978,7 @@ void conference_video_fnode_check(conference_file_node_t *fnode, int canvas_id);
 switch_status_t conference_video_set_canvas_bgimg(mcu_canvas_t *canvas, const char *img_path);
 switch_status_t conference_al_parse_position(al_handle_t *al, const char *data);
 switch_status_t conference_video_thread_callback(switch_core_session_t *session, switch_frame_t *frame, void *user_data);
+switch_status_t conference_text_thread_callback(switch_core_session_t *session, switch_frame_t *frame, void *user_data);
 void *SWITCH_THREAD_FUNC conference_video_muxing_write_thread_run(switch_thread_t *thread, void *obj);
 void conference_member_check_agc_levels(conference_member_t *member);
 void conference_member_clear_avg(conference_member_t *member);

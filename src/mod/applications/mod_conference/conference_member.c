@@ -1148,6 +1148,13 @@ switch_status_t conference_member_del(conference_obj_t *conference, conference_m
 	lock_member(member);
 	conference_utils_member_clear_flag(member, MFLAG_INTREE);
 
+	
+	switch_safe_free(member->text_framedata);
+	member->text_framesize = 0;
+	if (member->text_buffer) {
+		switch_buffer_destroy(&member->text_buffer);
+	}
+
 	if (member->rec) {
 		conference->recording_members--;
 	}

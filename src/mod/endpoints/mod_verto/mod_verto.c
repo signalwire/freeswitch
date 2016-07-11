@@ -130,6 +130,10 @@ static switch_bool_t check_name(const char *name)
 }
 
 
+static switch_status_t verto_read_text_frame(switch_core_session_t *session, switch_frame_t **frame, switch_io_flag_t flags, int stream_id);
+static switch_status_t verto_write_text_frame(switch_core_session_t *session, switch_frame_t *frame, switch_io_flag_t flags, int stream_id);
+static void set_text_funcs(switch_core_session_t *session);
+
 static verto_profile_t *find_profile(const char *name);
 static jsock_t *get_jsock(const char *uuid);
 
@@ -2116,6 +2120,11 @@ switch_endpoint_interface_t *verto_endpoint_interface = NULL;
 
 static switch_status_t verto_on_destroy(switch_core_session_t *session)
 {
+	verto_pvt_t *tech_pvt = switch_core_session_get_private_class(session, SWITCH_PVT_SECONDARY);
+
+	switch_buffer_destroy(&tech_pvt->text_read_buffer);
+	switch_buffer_destroy(&tech_pvt->text_write_buffer);
+
 	UNPROTECT_INTERFACE(verto_endpoint_interface);
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -2576,6 +2585,7 @@ static int verto_recover_callback(switch_core_session_t *session)
 	}
 
 	tech_pvt = switch_core_session_alloc(session, sizeof(*tech_pvt));
+	tech_pvt->pool = switch_core_session_get_pool(session);
 	tech_pvt->session = session;
 	tech_pvt->channel = channel;
 	tech_pvt->jsock_uuid = (char *) jsock_uuid_str;
@@ -3261,7 +3271,7 @@ static void parse_user_vars(cJSON *obj, switch_core_session_t *session)
 
 static switch_bool_t verto__info_func(const char *method, cJSON *params, jsock_t *jsock, cJSON **response)
 {
-	cJSON *msg = NULL, *dialog = NULL;
+	cJSON *msg = NULL, *dialog = NULL, *txt = NULL;
 	const char *call_id = NULL, *dtmf = NULL;
 	switch_bool_t r = SWITCH_TRUE;
 	char *proto = VERTO_CHAT_PROTO;
@@ -3298,6 +3308,43 @@ static switch_bool_t verto__info_func(const char *method, cJSON *params, jsock_t
 		}
 	}
 	
+	if ((txt = cJSON_GetObjectItem(params, "txt"))) {
+		switch_core_session_t *session;
+
+		if ((session = switch_core_session_locate(call_id))) {
+			verto_pvt_t *tech_pvt = switch_core_session_get_private_class(session, SWITCH_PVT_SECONDARY);
+			char charbuf[2] = "";
+			char *chardata = NULL;
+			cJSON *data;
+			
+			if ((data = cJSON_GetObjectItem(txt, "code"))) {
+				charbuf[0] = data->valueint;
+				chardata = charbuf;
+			} else if ((data = cJSON_GetObjectItem(txt, "chars"))) {
+				if (data->valuestring) {
+					chardata = data->valuestring;
+				} else if (data->valueint) {
+					charbuf[0] = data->valueint;
+					chardata = charbuf;
+				}
+			}
+
+
+			if (chardata) {
+				switch_mutex_lock(tech_pvt->text_read_mutex);
+				switch_buffer_write(tech_pvt->text_read_buffer, chardata, strlen(chardata));
+				switch_mutex_unlock(tech_pvt->text_read_mutex);
+			
+				if ((switch_mutex_trylock(tech_pvt->text_cond_mutex) == SWITCH_STATUS_SUCCESS)) {
+					switch_thread_cond_signal(tech_pvt->text_cond);
+					switch_mutex_unlock(tech_pvt->text_cond_mutex);
+				}
+			}
+			switch_core_session_rwunlock(session);
+		}
+		
+	}
+
 	if ((msg = cJSON_GetObjectItem(params, "msg"))) {
 		switch_event_t *event;
 		char *to = (char *) cJSON_GetObjectCstr(msg, "to");
@@ -3380,6 +3427,8 @@ static switch_bool_t verto__info_func(const char *method, cJSON *params, jsock_t
 	return r;
 }
 
+
+
 static switch_bool_t verto__invite_func(const char *method, cJSON *params, jsock_t *jsock, cJSON **response)
 {
 	cJSON *obj = cJSON_CreateObject(), *screenShare = NULL, *dedEnc = NULL, *mirrorInput, *bandwidth = NULL, *canvas = NULL;
@@ -3431,12 +3480,13 @@ static switch_bool_t verto__invite_func(const char *method, cJSON *params, jsock
 
 	tech_pvt = switch_core_session_alloc(session, sizeof(*tech_pvt));
 	tech_pvt->session = session;
+	tech_pvt->pool = switch_core_session_get_pool(session);
 	tech_pvt->channel = channel;
 	tech_pvt->jsock_uuid = switch_core_session_strdup(session, jsock->uuid_str);
 	tech_pvt->r_sdp = switch_core_session_strdup(session, sdp);
 	switch_core_media_set_sdp_codec_string(session, sdp, SDP_TYPE_REQUEST);
 	switch_core_session_set_private_class(session, tech_pvt, SWITCH_PVT_SECONDARY);
-
+	set_text_funcs(session);
 
 	tech_pvt->call_id = switch_core_session_strdup(session, call_id);
 	if ((tech_pvt->smh = switch_core_session_get_media_handle(session))) {
@@ -5042,6 +5092,115 @@ switch_io_routines_t verto_io_routines = {
 	/*.outgoing_channel */ verto_outgoing_channel
 };
 
+
+switch_io_routines_t verto_io_override = {
+	/*.outgoing_channel */ NULL,
+	/*.read_frame */ NULL,
+	/*.write_frame */ NULL,
+	/*.kill_channel */ NULL,
+	/*.send_dtmf */ NULL,
+	/*.receive_message */ NULL,
+	/*.receive_event */ NULL,
+	/*.state_change */ NULL,
+	/*.read_video_frame */ NULL,
+	/*.write_video_frame */ NULL,
+	/*.read_text_frame */ verto_read_text_frame,
+	/*.write_text_frame */ verto_write_text_frame,
+	/*.state_run*/ NULL,
+	/*.get_jb*/ NULL
+};
+
+
+static switch_status_t verto_read_text_frame(switch_core_session_t *session, switch_frame_t **frame, switch_io_flag_t flags, int stream_id)
+{
+	verto_pvt_t *tech_pvt = switch_core_session_get_private_class(session, SWITCH_PVT_SECONDARY);
+	switch_status_t status;
+	
+	switch_mutex_lock(tech_pvt->text_cond_mutex);
+
+	status = switch_thread_cond_timedwait(tech_pvt->text_cond, tech_pvt->text_cond_mutex, 100000);
+	switch_mutex_unlock(tech_pvt->text_cond_mutex);
+
+	*frame = &tech_pvt->text_read_frame;
+	(*frame)->flags = 0;
+
+	switch_mutex_lock(tech_pvt->text_read_mutex);
+	if (switch_buffer_inuse(tech_pvt->text_read_buffer)) {
+		status = SWITCH_STATUS_SUCCESS;
+		tech_pvt->text_read_frame.datalen = switch_buffer_read(tech_pvt->text_read_buffer, tech_pvt->text_read_frame.data, 100);
+	} else {
+		(*frame)->flags |= SFF_CNG;
+		tech_pvt->text_read_frame.datalen = 2;
+		status = SWITCH_STATUS_BREAK;
+	}
+	switch_mutex_unlock(tech_pvt->text_read_mutex);
+
+
+
+	return status;
+}
+
+static switch_status_t verto_write_text_frame(switch_core_session_t *session, switch_frame_t *frame, switch_io_flag_t flags, int stream_id)
+{
+	verto_pvt_t *tech_pvt = switch_core_session_get_private_class(session, SWITCH_PVT_SECONDARY);
+
+	switch_mutex_lock(tech_pvt->text_write_mutex);
+
+	
+	if (frame) {
+		switch_buffer_write(tech_pvt->text_write_buffer, frame->data, frame->datalen);
+	}
+
+	if (switch_buffer_inuse(tech_pvt->text_write_buffer)) {
+		uint32_t datalen;
+		switch_byte_t data[SWITCH_RTP_MAX_BUF_LEN] = "";
+
+		if ((datalen = switch_buffer_read(tech_pvt->text_write_buffer, data, 100))) {
+			cJSON *obj = NULL, *txt = NULL, *params = NULL;
+			jsock_t *jsock;
+
+			obj = jrpc_new_req("verto.info", tech_pvt->call_id, &params);
+			txt = json_add_child_obj(params, "txt", NULL);
+			cJSON_AddItemToObject(txt, "chars", cJSON_CreateString((char *)data));
+
+			if ((jsock = get_jsock(tech_pvt->jsock_uuid))) {
+				jsock_queue_event(jsock, &obj, SWITCH_TRUE);
+				switch_thread_rwlock_unlock(jsock->rwlock);
+			} else {
+				cJSON_Delete(obj);
+			}
+		}
+	}
+	
+
+	switch_mutex_unlock(tech_pvt->text_write_mutex);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
+
+static void set_text_funcs(switch_core_session_t *session)
+{
+	if ((switch_core_session_override_io_routines(session, &verto_io_override) == SWITCH_STATUS_SUCCESS)) {
+		verto_pvt_t *tech_pvt = switch_core_session_get_private_class(session, SWITCH_PVT_SECONDARY);
+
+		tech_pvt->text_read_frame.data = tech_pvt->text_read_frame_data;
+
+		switch_mutex_init(&tech_pvt->text_read_mutex, SWITCH_MUTEX_NESTED, tech_pvt->pool);
+		switch_mutex_init(&tech_pvt->text_write_mutex, SWITCH_MUTEX_NESTED, tech_pvt->pool);
+		switch_mutex_init(&tech_pvt->text_cond_mutex, SWITCH_MUTEX_NESTED, tech_pvt->pool);
+		switch_thread_cond_create(&tech_pvt->text_cond, tech_pvt->pool);
+
+		switch_buffer_create_dynamic(&tech_pvt->text_read_buffer, 512, 1024, 0);
+		switch_buffer_create_dynamic(&tech_pvt->text_write_buffer, 512, 1024, 0);
+
+		switch_channel_set_flag(switch_core_session_get_channel(session), CF_TEXT);
+		switch_core_session_start_text_thread(session);
+	}
+}
+
+
 static char *verto_get_dial_string(const char *uid, switch_stream_handle_t *rstream)
 {
 	jsock_t *jsock;
@@ -5187,11 +5346,14 @@ static switch_call_cause_t verto_outgoing_channel(switch_core_session_t *session
 		char name[512];
 		
 		tech_pvt = switch_core_session_alloc(*new_session, sizeof(*tech_pvt));
+		tech_pvt->pool = switch_core_session_get_pool(*new_session);
 		tech_pvt->session = *new_session;
 		tech_pvt->channel = channel;
 		tech_pvt->jsock_uuid = switch_core_session_strdup(*new_session, jsock_uuid_str);
+
 		switch_core_session_set_private_class(*new_session, tech_pvt, SWITCH_PVT_SECONDARY);
-		
+		set_text_funcs(*new_session);
+
 		if (session) {
 			switch_channel_t *ochannel = switch_core_session_get_channel(session);
 			

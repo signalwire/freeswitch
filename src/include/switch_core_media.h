@@ -122,9 +122,11 @@ typedef struct switch_core_media_params_s {
 
 	switch_rtp_bug_flag_t manual_rtp_bugs;
 	switch_rtp_bug_flag_t manual_video_rtp_bugs;
+	switch_rtp_bug_flag_t manual_text_rtp_bugs;
 
 	char *rtcp_audio_interval_msec;
 	char *rtcp_video_interval_msec;
+	char *rtcp_text_interval_msec;
 
 
 	char *extrtpip;
@@ -331,10 +333,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_codec_control(switch_core_sess
 
 
 SWITCH_DECLARE(switch_timer_t *) switch_core_media_get_timer(switch_core_session_t *session, switch_media_type_t mtype);
-SWITCH_DECLARE(void) switch_core_media_start_video_function(switch_core_session_t *session, switch_video_function_t video_function, void *user_data);
-SWITCH_DECLARE(void) switch_core_media_end_video_function(switch_core_session_t *session);
+SWITCH_DECLARE(void) switch_core_media_start_engine_function(switch_core_session_t *session, switch_media_type_t type, switch_engine_function_t engine_function, void *user_data);
+SWITCH_DECLARE(void) switch_core_media_end_engine_function(switch_core_session_t *session, switch_media_type_t type);
 SWITCH_DECLARE(switch_status_t) switch_core_session_start_video_thread(switch_core_session_t *session);
-SWITCH_DECLARE(int) switch_core_media_check_video_function(switch_core_session_t *session);
+SWITCH_DECLARE(int) switch_core_media_check_engine_function(switch_core_session_t *session, switch_media_type_t type);
 SWITCH_DECLARE(void) switch_core_session_video_reinit(switch_core_session_t *session);
 SWITCH_DECLARE(switch_status_t) switch_core_media_read_lock_unlock(switch_core_session_t *session, switch_media_type_t type, switch_bool_t lock);
 
@@ -353,7 +355,23 @@ SWITCH_DECLARE(switch_bool_t) switch_core_media_check_dtls(switch_core_session_t
 SWITCH_DECLARE(switch_status_t) switch_core_media_set_outgoing_bitrate(switch_core_session_t *session, switch_media_type_t type, uint32_t bitrate);
 SWITCH_DECLARE(switch_status_t) switch_core_media_reset_jb(switch_core_session_t *session, switch_media_type_t type);
 SWITCH_DECLARE(switch_status_t) switch_core_session_wait_for_video_input_params(switch_core_session_t *session, uint32_t timeout_ms);
-																
+
+
+SWITCH_DECLARE(switch_status_t) switch_core_session_set_text_read_callback(switch_core_session_t *session, 
+																		   switch_core_text_thread_callback_func_t func, void *user_data);
+SWITCH_DECLARE(switch_status_t) switch_core_session_text_read_callback(switch_core_session_t *session, switch_frame_t *frame);
+SWITCH_DECLARE(switch_status_t) switch_core_session_read_text_frame(switch_core_session_t *session, switch_frame_t **frame, switch_io_flag_t flags,
+																	int stream_id);
+
+SWITCH_DECLARE(switch_status_t) switch_core_session_write_text_frame(switch_core_session_t *session, switch_frame_t *frame, switch_io_flag_t flags,
+																	 int stream_id);
+
+SWITCH_DECLARE(switch_status_t) switch_rtp_text_factory_create(switch_rtp_text_factory_t **tfP, switch_memory_pool_t *pool);
+SWITCH_DECLARE(switch_status_t) switch_rtp_text_factory_destroy(switch_rtp_text_factory_t **tfP);															
+
+SWITCH_DECLARE(switch_status_t) switch_core_session_print(switch_core_session_t *session, const char *data);
+SWITCH_DECLARE(switch_status_t) switch_core_session_printf(switch_core_session_t *session, const char *fmt, ...);
+	
 SWITCH_END_EXTERN_C
 #endif
 /* For Emacs:

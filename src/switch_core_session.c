@@ -1469,6 +1469,10 @@ SWITCH_DECLARE(void) switch_core_session_perform_destroy(switch_core_session_t *
 					  switch_channel_get_name((*session)->channel), switch_channel_state_name(switch_channel_get_state((*session)->channel)));
 
 
+	if ((*session)->text_buffer) {
+		switch_buffer_destroy(&(*session)->text_buffer);
+	}
+
 	switch_core_session_reset(*session, SWITCH_TRUE, SWITCH_TRUE);
 
 	switch_core_media_bug_remove_all(*session);
@@ -1878,6 +1882,19 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_thread_launch(switch_core_se
  end:
 
 	return status;
+}
+
+SWITCH_DECLARE(const char *) switch_core_session_get_text_buffer(switch_core_session_t *session)
+{
+	const char *buf = NULL;
+	
+	if (session->text_buffer) {
+		switch_mutex_lock(session->text_mutex);
+		buf = (const char *)switch_core_session_strdup(session, (const char *) switch_buffer_get_head_pointer(session->text_buffer));
+		switch_mutex_unlock(session->text_mutex);
+	}
+
+	return buf;
 }
 
 SWITCH_DECLARE(void) switch_core_session_launch_thread(switch_core_session_t *session, switch_thread_start_t func, void *obj)
@@ -2944,6 +2961,17 @@ SWITCH_DECLARE(void) switch_core_session_raw_read(switch_core_session_t *session
 
 	switch_core_session_set_codec_slin(session, session->sdata);
 }
+
+SWITCH_DECLARE(switch_status_t) switch_core_session_override_io_routines(switch_core_session_t *session, switch_io_routines_t *ior)
+{
+	if (session->endpoint_interface && switch_channel_test_cap(session->channel, CC_IO_OVERRIDE)) {
+		session->io_override = ior;
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	return SWITCH_STATUS_FALSE;
+}
+
 
 /* For Emacs:
  * Local Variables:

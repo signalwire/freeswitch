@@ -53,6 +53,12 @@ struct switch_buffer {
 	int32_t loops;
 };
 
+
+SWITCH_DECLARE(void *) switch_buffer_get_head_pointer(switch_buffer_t *buffer)
+{
+	return buffer->head;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_buffer_reset_partition_data(switch_buffer_t *buffer)
 {
 	if (!switch_test_flag(buffer, SWITCH_BUFFER_FLAG_PARTITION)) {

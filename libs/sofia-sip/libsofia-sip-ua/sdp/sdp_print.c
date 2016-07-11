@@ -583,6 +583,7 @@ static void print_media(sdp_printer_t *p,
     case sdp_media_control:     media = "control"; break;
     case sdp_media_message:     media = "message"; break;
     case sdp_media_image  :     media = "image"; break;
+    case sdp_media_text   :     media = "text"; break;
     default:                    media = m->m_type_name;
     }
 

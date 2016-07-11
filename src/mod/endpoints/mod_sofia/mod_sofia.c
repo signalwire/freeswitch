@@ -62,6 +62,8 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 static switch_status_t sofia_write_frame(switch_core_session_t *session, switch_frame_t *frame, switch_io_flag_t flags, int stream_id);
 static switch_status_t sofia_read_video_frame(switch_core_session_t *session, switch_frame_t **frame, switch_io_flag_t flags, int stream_id);
 static switch_status_t sofia_write_video_frame(switch_core_session_t *session, switch_frame_t *frame, switch_io_flag_t flags, int stream_id);
+static switch_status_t sofia_read_text_frame(switch_core_session_t *session, switch_frame_t **frame, switch_io_flag_t flags, int stream_id);
+static switch_status_t sofia_write_text_frame(switch_core_session_t *session, switch_frame_t *frame, switch_io_flag_t flags, int stream_id);
 static switch_status_t sofia_kill_channel(switch_core_session_t *session, int sig);
 
 /* BODY OF THE MODULE */
@@ -916,6 +918,16 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 	}
 
 	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t sofia_read_text_frame(switch_core_session_t *session, switch_frame_t **frame, switch_io_flag_t flags, int stream_id)
+{
+	return switch_core_media_read_frame(session, frame, flags, stream_id, SWITCH_MEDIA_TYPE_TEXT);
+}
+
+static switch_status_t sofia_write_text_frame(switch_core_session_t *session, switch_frame_t *frame, switch_io_flag_t flags, int stream_id)
+{
+	return switch_core_media_write_frame(session, frame, flags, stream_id, SWITCH_MEDIA_TYPE_TEXT);
 }
 
 static switch_status_t sofia_read_video_frame(switch_core_session_t *session, switch_frame_t **frame, switch_io_flag_t flags, int stream_id)
@@ -4279,6 +4291,8 @@ switch_io_routines_t sofia_io_routines = {
 	/*.state_change */ NULL,
 	/*.read_video_frame */ sofia_read_video_frame,
 	/*.write_video_frame */ sofia_write_video_frame,
+	/*.read_text_frame */ sofia_read_text_frame,
+	/*.write_text_frame */ sofia_write_text_frame,
 	/*.state_run*/ NULL,
 	/*.get_jb*/ sofia_get_jb
 };

@@ -3066,6 +3066,61 @@ SWITCH_STANDARD_API(uuid_chat)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+#define UUID_CAPTURE_TEXT_SYNTAX "<uuid> <on|off>"
+SWITCH_STANDARD_API(uuid_capture_text)
+{
+	switch_core_session_t *tsession = NULL;
+	char *uuid = NULL, *onoff = NULL;
+
+	if (!zstr(cmd) && (uuid = strdup(cmd))) {
+		if ((onoff = strchr(uuid, ' '))) {
+			*onoff++ = '\0';
+		}
+	}
+
+	if (zstr(uuid) || zstr(onoff)) {
+		stream->write_function(stream, "-USAGE: %s\n", UUID_CAPTURE_TEXT_SYNTAX);
+	} else {
+		if ((tsession = switch_core_session_locate(uuid))) {
+			switch_ivr_capture_text(tsession, switch_true(onoff));
+		} else {
+			stream->write_function(stream, "-ERR No such channel %s!\n", uuid);
+		}
+	}
+
+	switch_safe_free(uuid);
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
+#define UUID_SEND_TEXT_SYNTAX "<uuid> <text>"
+SWITCH_STANDARD_API(uuid_send_text)
+{
+	switch_core_session_t *tsession = NULL;
+	char *uuid = NULL, *text = NULL;
+
+	if (!zstr(cmd) && (uuid = strdup(cmd))) {
+		if ((text = strchr(uuid, ' '))) {
+			*text++ = '\0';
+		}
+	}
+
+	if (zstr(uuid) || zstr(text)) {
+		stream->write_function(stream, "-USAGE: %s\n", UUID_SEND_TEXT_SYNTAX);
+	} else {
+		if ((tsession = switch_core_session_locate(uuid))) {
+			switch_core_session_print(tsession, text);
+			switch_core_session_print(tsession, "\r\n");
+			switch_core_session_rwunlock(tsession);
+		} else {
+			stream->write_function(stream, "-ERR No such channel %s!\n", uuid);
+		}
+	}
+
+	switch_safe_free(uuid);
+	return SWITCH_STATUS_SUCCESS;
+}
+
 #define UUID_DROP_DTMF_SYNTAX "<uuid> [on | off ] [ mask_digits <digits> | mask_file <file>]"
 SWITCH_STANDARD_API(uuid_drop_dtmf)
 {
@@ -7197,6 +7252,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "uuid_broadcast", "Execute dialplan application", uuid_broadcast_function, BROADCAST_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_buglist", "List media bugs on a session", uuid_buglist_function, BUGLIST_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_chat", "Send a chat message", uuid_chat, UUID_CHAT_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "uuid_send_text", "Send text in real-time", uuid_send_text, UUID_SEND_TEXT_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "uuid_capture_text", "start/stop capture_text", uuid_capture_text, UUID_CAPTURE_TEXT_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_codec_debug", "Send codec a debug message", uuid_codec_debug_function, CODEC_DEBUG_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_codec_param", "Send codec a param", uuid_codec_param_function, CODEC_PARAM_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_debug_media", "Debug media", uuid_debug_media_function, DEBUG_MEDIA_SYNTAX);
@@ -7376,6 +7433,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add uuid_broadcast ::console::list_uuid");
 	switch_console_set_complete("add uuid_buglist ::console::list_uuid");
 	switch_console_set_complete("add uuid_chat ::console::list_uuid");
+	switch_console_set_complete("add uuid_send_text ::console::list_uuid");
+	switch_console_set_complete("add uuid_capture_text ::console::list_uuid");
 	switch_console_set_complete("add uuid_codec_debug ::console::list_uuid audio");
 	switch_console_set_complete("add uuid_codec_debug ::console::list_uuid video");
 	switch_console_set_complete("add uuid_codec_param ::console::list_uuid audio read");

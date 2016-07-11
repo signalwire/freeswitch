@@ -249,6 +249,42 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 
 		floor_holder = conference->floor_holder;
 
+		for (imember = conference->members; imember; imember = imember->next) {
+			if (!zstr(imember->text_framedata)) {
+				switch_frame_t frame = { 0 };
+				char *framedata;
+				uint32_t framedatalen;
+				const char *caller_id_name = switch_channel_get_variable(imember->channel, "caller_id_name");
+				unsigned char CR[3] = TEXT_UNICODE_LINEFEED;
+
+				
+				switch_mutex_lock(imember->text_mutex);
+
+				framedatalen = strlen(imember->text_framedata) + strlen(caller_id_name) + 6;
+
+				switch_zmalloc(framedata, framedatalen);
+				
+				switch_snprintf(framedata, framedatalen, "%s::\n%s", caller_id_name, imember->text_framedata);
+				memcpy(framedata + strlen(framedata), CR, sizeof(CR));
+				
+
+				frame.data = framedata;
+				frame.datalen = framedatalen;
+
+				for (omember = conference->members; omember; omember = omember->next) {
+					if (omember != imember) {
+						switch_core_session_write_text_frame(omember->session, &frame, 0, 0);
+					}
+				}
+				
+				free(framedata);
+				
+				imember->text_framedata[0] = '\0';
+
+				switch_mutex_unlock(imember->text_mutex);
+			}
+		}
+
 		/* Read one frame of audio from each member channel and save it for redistribution */
 		for (imember = conference->members; imember; imember = imember->next) {
 			uint32_t buf_read = 0;
@@ -1610,6 +1646,65 @@ SWITCH_STANDARD_APP(conference_auto_function)
 }
 
 
+switch_status_t conference_text_thread_callback(switch_core_session_t *session, switch_frame_t *frame, void *user_data)
+{
+	conference_member_t *member = (conference_member_t *)user_data;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_size_t inuse = 0;
+
+	if (!member) return SWITCH_STATUS_FALSE;
+
+
+	switch_mutex_lock(member->text_mutex);
+	if (!member->text_buffer) {
+		switch_buffer_create_dynamic(&member->text_buffer, 512, 1024, 0);
+		switch_zmalloc(member->text_framedata, 1024);
+		member->text_framesize = 1024;
+	}
+
+	if (frame->data && frame->datalen && !(frame->flags & SFF_CNG)) {
+		switch_buffer_write(member->text_buffer, frame->data, frame->datalen);
+	}
+
+	inuse = switch_buffer_inuse(member->text_buffer);
+
+	if (zstr(member->text_framedata) && inuse && (switch_channel_test_flag(channel, CF_TEXT_IDLE) || switch_test_flag(frame, SFF_TEXT_LINE_BREAK))) {
+		int bytes = 0, ok = 0;
+		char *p;
+
+		if (inuse + 1 > member->text_framesize) {
+			void *tmp = malloc(inuse + 1024);
+			memcpy(tmp, member->text_framedata, member->text_framesize);
+
+			switch_assert(tmp);
+			
+			member->text_framesize = inuse + 1024;
+			
+			free(member->text_framedata);
+			member->text_framedata = tmp;
+
+		}
+
+		bytes = switch_buffer_read(member->text_buffer, member->text_framedata, inuse);
+		*(member->text_framedata + bytes) = '\0'; 
+
+		for(p = member->text_framedata; p && *p; p++) {
+			if (*p > 32 && *p < 127) {
+				ok++;
+			}
+		}
+
+		if (!ok) {
+			member->text_framedata[0] = '\0';
+		}
+
+	}
+	
+	switch_mutex_unlock(member->text_mutex);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 /* Application interface function that is called from the dialplan to join the channel to a conference */
 SWITCH_STANDARD_APP(conference_function)
 {
@@ -2123,6 +2218,7 @@ SWITCH_STANDARD_APP(conference_function)
 	switch_mutex_init(&member.fnode_mutex, SWITCH_MUTEX_NESTED, member.pool);
 	switch_mutex_init(&member.audio_in_mutex, SWITCH_MUTEX_NESTED, member.pool);
 	switch_mutex_init(&member.audio_out_mutex, SWITCH_MUTEX_NESTED, member.pool);
+	switch_mutex_init(&member.text_mutex, SWITCH_MUTEX_NESTED, member.pool);
 	switch_thread_rwlock_create(&member.rwlock, member.pool);
 
 	if (conference_member_setup_media(&member, conference)) {
@@ -2197,6 +2293,7 @@ SWITCH_STANDARD_APP(conference_function)
 
 	/* Chime in the core video thread */
 	switch_core_session_set_video_read_callback(session, conference_video_thread_callback, (void *)&member);
+	switch_core_session_set_text_read_callback(session, conference_text_thread_callback, (void *)&member);
 
 	if (switch_channel_test_flag(channel, CF_VIDEO_ONLY)) {
 		while(conference_utils_member_test_flag((&member), MFLAG_RUNNING) && switch_channel_ready(channel)) {
@@ -2211,6 +2308,7 @@ SWITCH_STANDARD_APP(conference_function)
 	}
 
 	switch_core_session_set_video_read_callback(session, NULL, NULL);
+	switch_core_session_set_text_read_callback(session, NULL, NULL);
 
 	switch_channel_set_private(channel, "_conference_autocall_list_", NULL);
 

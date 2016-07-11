@@ -1020,6 +1020,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_stop_video_write_overlay_session(swit
 SWITCH_DECLARE(switch_status_t) switch_ivr_video_write_overlay_session(switch_core_session_t *session, const char *img_path, 
 																	   switch_img_position_t pos, uint8_t alpha);
 
+SWITCH_DECLARE(switch_status_t) switch_ivr_capture_text(switch_core_session_t *session, switch_bool_t on);
 
 /** @} */
 
