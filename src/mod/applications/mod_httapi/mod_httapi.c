@@ -1288,7 +1288,6 @@ static size_t file_callback(void *ptr, size_t size, size_t nmemb, void *data)
 {
 	register unsigned int realsize = (unsigned int) (size * nmemb);
 	client_t *client = data;
-	char *zero = "\0";
 
 	client->bytes += realsize;
 
@@ -1299,7 +1298,6 @@ static size_t file_callback(void *ptr, size_t size, size_t nmemb, void *data)
 	}
 
 	switch_buffer_write(client->buffer, ptr, realsize);
-	switch_buffer_write(client->buffer, zero, 1);
 	
 	return realsize;
 }
@@ -2313,6 +2311,9 @@ SWITCH_STANDARD_APP(httapi_function)
 				const char *ct = switch_event_get_header(client->headers, "content-type");
 
 				if (switch_stristr("text/xml", ct)) {
+					char *zero = "\0";
+					switch_buffer_write(client->buffer, zero, 1);
+
 					status = parse_xml(client);
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Received unsupported content-type %s\n", ct);
