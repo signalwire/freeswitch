@@ -1871,82 +1871,6 @@ SWITCH_DECLARE(void) switch_core_media_prepare_codecs(switch_core_session_t *ses
 
 }
 
-static void adjust_jb(switch_core_session_t *session, int new_ptime_ms)
-{
-	const char *val;
-	switch_media_handle_t *smh;
-	switch_rtp_engine_t *a_engine = NULL;
-	int maxlen = 0;
-	int32_t jb_msec = 0 ;
-	int qlen, maxqlen = 50;
-
-	switch_assert(session);
-
-	if (!(smh = session->media_handle)) {
-		return;
-	}
-
-	a_engine = &smh->engines[SWITCH_MEDIA_TYPE_AUDIO];
-
-	if ((val = switch_channel_get_variable(session->channel, "jitterbuffer_msec")) || (val = smh->mparams->jb_msec)) {
-		char *p;
-
-		if (!jb_msec) {
-			jb_msec = atoi(val);
-
-			if (strchr(val, 'p') && jb_msec > 0) {
-				jb_msec *= -1;
-			} else {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG3, "Will not adjust JB size, token 'p' not specified\n");
-				return;
-			}
-					
-			if ((p = strchr(val, ':'))) {
-				p++;
-				maxlen = atoi(p);
-
-				if (strchr(p, 'p') && maxlen > 0) {
-					maxlen *= -1;
-				}
-			}
-		}
-
-		if (jb_msec < 0 && jb_msec > -1000) {
-			jb_msec = new_ptime_ms * abs(jb_msec);
-		}
-
-		if (maxlen < 0 && maxlen > -1000) {
-			maxlen = new_ptime_ms * abs(maxlen);
-		}
-
-		if (jb_msec < 10 || jb_msec > 10000) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR,
-							  "Invalid Jitterbuffer spec [%d] must be between 10 and 10000\n", jb_msec);
-		} else {
-			qlen = jb_msec / new_ptime_ms;
-			if (maxlen) {
-				maxqlen = maxlen / new_ptime_ms;
-			}
-			if (maxqlen < qlen) {
-				maxqlen = qlen * 5;
-			}
-			if (switch_rtp_activate_jitter_buffer(a_engine->rtp_session, qlen, maxqlen, 
-					a_engine->read_impl.samples_per_packet, a_engine->read_impl.samples_per_second) == SWITCH_STATUS_SUCCESS) {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), 
-									  SWITCH_LOG_DEBUG, "Adjusting Jitterbuffer to %dms (%d frames) (%d max frames)\n", 
-									  jb_msec, qlen, maxqlen);
-				switch_channel_set_flag(session->channel, CF_JITTERBUFFER);
-				if (!switch_false(switch_channel_get_variable(session->channel, "rtp_jitter_buffer_plc"))) {
-					switch_channel_set_flag(session->channel, CF_JITTERBUFFER_PLC);
-				}
-			} else {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), 
-								  SWITCH_LOG_DEBUG, "Error adjusting Jitterbuffer to %dms (%d frames)\n", jb_msec, qlen);
-			}
-		}
-	}
-}
-
 static void check_jb(switch_core_session_t *session, const char *input, int32_t jb_msec, int32_t maxlen, switch_bool_t silent)
 {
 	const char *val;
@@ -2493,6 +2417,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 
 							if (engine->last_codec_ms && engine->last_codec_ms == codec_ms) {
 								engine->mismatch_count++;
+							} else {
+								engine->mismatch_count = 0;
 							}
 
 							engine->last_codec_ms = codec_ms;
@@ -2549,9 +2475,17 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 								codec_ms = codec_ms / (int) (engine->read_frame.seq - engine->last_seq);
 						}
 
+						if (codec_ms && codec_ms != engine->cur_payload_map->codec_ms) {
+							if (engine->last_codec_ms && engine->last_codec_ms == codec_ms) {
+								engine->mismatch_count++;
+							}
+						} else {
+							engine->mismatch_count = 0;
+						}
+
 						engine->last_codec_ms = codec_ms;
 
-						if (codec_ms != engine->cur_payload_map->codec_ms && codec_ms) {
+						if (engine->mismatch_count > MAX_MISMATCH_FRAMES) {
 
 							if (codec_ms > 120) {
 								/*will show too many times with packet loss*/
@@ -2566,14 +2500,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 
 							if (codec_ms != engine->cur_payload_map->codec_ms) {
 								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING,
-												  "[%s]: Asynchronous PTIME supported, adjusting JB size. Remote PTIME changed from [%d] to [%d]\n",
+												  "[%s]: Packet size change detected. Remote PTIME changed from [%d] to [%d]\n",
 												  is_vbr?"VBR":"CBR",
 												  (int) engine->cur_payload_map->codec_ms,
 												  (int) codec_ms
 												  );
 			 					engine->cur_payload_map->codec_ms = codec_ms;
-								/* adjust audio JB size, but do not substitute the codec */
-								adjust_jb(session,codec_ms);
 								engine->reset_codec = 2;
 
 								if (switch_channel_test_flag(session->channel, CF_CONFERENCE)) {
@@ -5770,6 +5702,24 @@ SWITCH_DECLARE(switch_bool_t) switch_core_session_in_video_thread(switch_core_se
 }
 
 
+SWITCH_DECLARE(void) switch_core_media_parse_media_flags(switch_core_session_t *session)
+{
+	const char *var;
+	switch_media_handle_t *smh;
+
+	if (!(smh = session->media_handle)) {
+		return;
+	}
+
+	if ((var = switch_channel_get_variable(session->channel, "rtp_media_autofix_timing"))) {
+		if (switch_true(var)) {
+			switch_media_handle_set_media_flag(smh, SCMF_AUTOFIX_TIMING);
+		} else {
+			switch_media_handle_clear_media_flag(smh, SCMF_AUTOFIX_TIMING);
+		}
+	}
+}
+
 //?
 #define RA_PTR_LEN 512
 SWITCH_DECLARE(switch_status_t) switch_core_media_proxy_remote_addr(switch_core_session_t *session, const char *sdp_str)
@@ -6404,6 +6354,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 		return SWITCH_STATUS_FALSE;
 	}
 
+	switch_core_media_parse_media_flags(session);
 
 	if (switch_rtp_ready(a_engine->rtp_session)) {
 		switch_rtp_reset_media_timer(a_engine->rtp_session);

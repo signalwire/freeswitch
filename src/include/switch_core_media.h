@@ -230,6 +230,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_choose_ports(switch_core_sessi
 SWITCH_DECLARE(void) switch_core_media_check_dtmf_type(switch_core_session_t *session);
 SWITCH_DECLARE(void) switch_core_media_absorb_sdp(switch_core_session_t *session);
 SWITCH_DECLARE(switch_status_t) switch_core_media_proxy_remote_addr(switch_core_session_t *session, const char *sdp_str);
+SWITCH_DECLARE(void) switch_core_media_parse_media_flags(switch_core_session_t *session);
 SWITCH_DECLARE(void) switch_core_media_deactivate_rtp(switch_core_session_t *session);
 SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_session_t *session);
 SWITCH_DECLARE(switch_status_t) switch_core_media_ext_address_lookup(switch_core_session_t *session, char **ip, switch_port_t *port, const char *sourceip);
