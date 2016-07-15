@@ -1603,6 +1603,71 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_write_thread_run(switch_thread_
 	return NULL;
 }
 
+void conference_video_member_video_mute_banner(mcu_canvas_t *canvas, mcu_layer_t *layer, conference_member_t *member)
+{
+	const char *text = "VIDEO MUTED";
+	char *dup = NULL;
+	const char *var, *tmp = NULL;
+	const char *fg = "";
+	const char *bg = "";
+	const char *font_face = "";
+	const char *font_scale = "";
+	const char *font_scale_percentage = "";
+	char *parsed = NULL;
+	switch_event_t *params = NULL;
+	switch_image_t *text_img;
+	char text_str[256] = "";
+
+	if ((var = switch_channel_get_variable_dup(member->channel, "video_mute_banner", SWITCH_FALSE, -1))) {
+		text = var;
+	} else if (member->conference->video_mute_banner) {
+		text = member->conference->video_mute_banner;
+	}
+
+	if (*text == '{') {
+		dup = strdup(text);
+		text = dup;
+
+		if (switch_event_create_brackets((char *)text, '{', '}', ',', &params, &parsed, SWITCH_FALSE) != SWITCH_STATUS_SUCCESS || !parsed) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Parse Error!\n");
+		} else {
+			text = parsed;
+		}
+	}
+
+	if ((tmp = strchr(text, '}'))) {
+		text = tmp + 1;
+	}
+
+	if (params) {
+		if ((var = switch_event_get_header(params, "fg"))) {
+			fg = var;
+		}
+
+		if ((var = switch_event_get_header(params, "bg"))) {
+			bg = var;
+		}
+
+		if ((var = switch_event_get_header(params, "font_face"))) {
+			font_face = var;
+		}
+
+		if ((var = switch_event_get_header(params, "font_scale"))) {
+			font_scale = var;
+			font_scale_percentage = "%";
+		}
+	}
+
+	switch_snprintf(text_str, sizeof(text_str), "%s:%s:%s:%s%s:%s", fg, bg, font_face, font_scale, font_scale_percentage, text);
+	text_img = switch_img_write_text_img(layer->screen_w, layer->screen_h, SWITCH_TRUE, text_str);
+	switch_img_patch(canvas->img, text_img, layer->x_pos, layer->y_pos);
+	switch_img_free(&text_img);
+
+	if (params) switch_event_destroy(&params);
+
+	switch_safe_free(dup);
+}
+
 void conference_video_check_recording(conference_obj_t *conference, mcu_canvas_t *canvas, switch_frame_t *frame)
 {
 	conference_member_t *imember;
@@ -2508,7 +2573,6 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 				if (conference_utils_member_test_flag(imember, MFLAG_CAN_BE_SEEN) || switch_core_session_media_flow(imember->session, SWITCH_MEDIA_TYPE_VIDEO) == SWITCH_MEDIA_FLOW_SENDONLY || switch_core_session_media_flow(imember->session, SWITCH_MEDIA_TYPE_VIDEO) == SWITCH_MEDIA_FLOW_INACTIVE || conference_utils_test_flag(imember->conference, CFLAG_VIDEO_MUTE_EXIT_CANVAS)) {
 					layer->mute_patched = 0;
 				} else {
-					switch_image_t *tmp;
 
 					if (img && img != imember->avatar_png_img) {
 						switch_img_free(&img);
@@ -2536,10 +2600,7 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 						}
 
 
-						tmp = switch_img_write_text_img(layer->screen_w, layer->screen_h, SWITCH_TRUE, "VIDEO MUTED");
-						switch_img_patch(canvas->img, tmp, layer->x_pos, layer->y_pos);
-						switch_img_free(&tmp);
-
+						conference_video_member_video_mute_banner(canvas, layer, imember);
 						layer->mute_patched = 1;
 					}
 				}
@@ -2791,11 +2852,8 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 								layer->mute_patched = 0;
 							} else if (!conference_utils_test_flag(imember->conference, CFLAG_VIDEO_MUTE_EXIT_CANVAS)) {
 								if (!layer->mute_patched) {
-									switch_image_t *tmp;
 									conference_video_scale_and_patch(layer, omember->video_mute_img ? omember->video_mute_img : omember->pcanvas_img, SWITCH_FALSE);
-									tmp = switch_img_write_text_img(layer->screen_w, layer->screen_h, SWITCH_TRUE, "VIDEO MUTED");
-									switch_img_patch(imember->canvas->img, tmp, layer->x_pos, layer->y_pos);
-									switch_img_free(&tmp);
+									conference_video_member_video_mute_banner(imember->canvas, layer, imember);
 									layer->mute_patched = 1;
 								}
 
