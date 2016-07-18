@@ -3766,7 +3766,9 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 	a_engine->new_dtls = 1;
 	a_engine->new_ice = 1;
 	a_engine->reject_avp = 0;
-			
+
+	switch_media_handle_set_media_flag(smh, SCMF_RECV_SDP);
+	
 	switch_core_session_parse_crypto_prefs(session);
 
 	clear_pmaps(a_engine);
@@ -8258,7 +8260,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
  video:
 
 
-	if (!switch_channel_test_flag(session->channel, CF_VIDEO_POSSIBLE) && sdp_type == SDP_TYPE_REQUEST) {
+	if (!switch_channel_test_flag(session->channel, CF_VIDEO_POSSIBLE) && switch_media_handle_test_media_flag(smh, SCMF_RECV_SDP)) {
 		has_vid = 0;
 	} else {
 		int i;
