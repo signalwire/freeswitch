@@ -3880,116 +3880,120 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 			got_udptl++;
 		}
 
-		if (got_udptl && m->m_type == sdp_media_image && m->m_port) {
-			switch_t38_options_t *t38_options = switch_core_media_process_udptl(session, sdp, m);
+		if (got_udptl && m->m_type == sdp_media_image) {
+			switch_channel_set_flag(session->channel, CF_IMAGE_SDP);
 
-			if (switch_channel_test_app_flag_key("T38", session->channel, CF_APP_T38_NEGOTIATED)) {
+			if (m->m_port) {
+				switch_t38_options_t *t38_options = switch_core_media_process_udptl(session, sdp, m);
+
+				if (switch_channel_test_app_flag_key("T38", session->channel, CF_APP_T38_NEGOTIATED)) {
+					match = 1;
+					goto done;
+				}
+
+				if (switch_true(switch_channel_get_variable(channel, "refuse_t38"))) {
+					switch_channel_clear_app_flag_key("T38", session->channel, CF_APP_T38);
+					match = 0;
+					goto done;
+				} else {
+					const char *var = switch_channel_get_variable(channel, "t38_passthru");
+					int pass = switch_channel_test_flag(smh->session->channel, CF_T38_PASSTHRU);
+
+
+					if (switch_channel_test_app_flag_key("T38", session->channel, CF_APP_T38)) {
+						if (proceed) *proceed = 0;
+					}
+
+					if (var) {
+						if (!(pass = switch_true(var))) {
+							if (!strcasecmp(var, "once")) {
+								pass = 2;
+							}
+						}
+					}
+
+					if ((pass == 2 && switch_channel_test_flag(smh->session->channel, CF_T38_PASSTHRU)) 
+						|| !switch_channel_test_flag(session->channel, CF_REINVITE) ||
+					
+						switch_channel_test_flag(session->channel, CF_PROXY_MODE) || 
+						switch_channel_test_flag(session->channel, CF_PROXY_MEDIA) || 
+						!switch_rtp_ready(a_engine->rtp_session)) {
+						pass = 0;
+					}
+				
+					if (pass && switch_core_session_get_partner(session, &other_session) == SWITCH_STATUS_SUCCESS) {
+						switch_channel_t *other_channel = switch_core_session_get_channel(other_session);
+						switch_core_session_message_t *msg;
+						char *remote_host = switch_rtp_get_remote_host(a_engine->rtp_session);
+						switch_port_t remote_port = switch_rtp_get_remote_port(a_engine->rtp_session);
+						char tmp[32] = "";
+
+
+						if (!switch_channel_test_flag(other_channel, CF_ANSWERED)) {
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session),
+											  SWITCH_LOG_WARNING, "%s Error Passing T.38 to unanswered channel %s\n",
+											  switch_channel_get_name(session->channel), switch_channel_get_name(other_channel));
+							switch_core_session_rwunlock(other_session);
+
+							pass = 0;
+							match = 0;
+							goto done;
+						}
+
+
+						if (switch_true(switch_channel_get_variable(session->channel, "t38_broken_boolean")) && 
+							switch_true(switch_channel_get_variable(session->channel, "t38_pass_broken_boolean"))) {
+							switch_channel_set_variable(other_channel, "t38_broken_boolean", "true");
+						}
+					
+						a_engine->cur_payload_map->remote_sdp_ip = switch_core_session_strdup(session, t38_options->remote_ip);
+						a_engine->cur_payload_map->remote_sdp_port = t38_options->remote_port;
+
+						if (remote_host && remote_port && !strcmp(remote_host, a_engine->cur_payload_map->remote_sdp_ip) && remote_port == a_engine->cur_payload_map->remote_sdp_port) {
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Audio params are unchanged for %s.\n",
+											  switch_channel_get_name(session->channel));
+						} else {
+							const char *err = NULL;
+
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Audio params changed for %s from %s:%d to %s:%d\n",
+											  switch_channel_get_name(session->channel),
+											  remote_host, remote_port, a_engine->cur_payload_map->remote_sdp_ip, a_engine->cur_payload_map->remote_sdp_port);
+						
+							switch_snprintf(tmp, sizeof(tmp), "%d", a_engine->cur_payload_map->remote_sdp_port);
+							switch_channel_set_variable(session->channel, SWITCH_REMOTE_MEDIA_IP_VARIABLE, a_engine->cur_payload_map->remote_sdp_ip);
+							switch_channel_set_variable(session->channel, SWITCH_REMOTE_MEDIA_PORT_VARIABLE, tmp);
+
+							if (switch_rtp_set_remote_address(a_engine->rtp_session, a_engine->cur_payload_map->remote_sdp_ip,
+															  a_engine->cur_payload_map->remote_sdp_port, 0, SWITCH_TRUE, &err) != SWITCH_STATUS_SUCCESS) {
+								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "AUDIO RTP REPORTS ERROR: [%s]\n", err);
+								switch_channel_hangup(channel, SWITCH_CAUSE_INCOMPATIBLE_DESTINATION);
+							}
+
+							switch_core_media_check_autoadj(session);
+						}
+
+					
+
+						switch_core_media_copy_t38_options(t38_options, other_session);
+
+						switch_channel_set_flag(smh->session->channel, CF_T38_PASSTHRU);
+						switch_channel_set_flag(other_session->channel, CF_T38_PASSTHRU);
+					
+						msg = switch_core_session_alloc(other_session, sizeof(*msg));
+						msg->message_id = SWITCH_MESSAGE_INDICATE_REQUEST_IMAGE_MEDIA;
+						msg->from = __FILE__;
+						msg->string_arg = switch_core_session_strdup(other_session, r_sdp);
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Passing T38 req to other leg.\n%s\n", r_sdp);
+						switch_core_session_queue_message(other_session, msg);
+						switch_core_session_rwunlock(other_session);
+					}
+				}
+
+
+				/* do nothing here, mod_fax will trigger a response (if it's listening =/) */
 				match = 1;
 				goto done;
 			}
-
-			if (switch_true(switch_channel_get_variable(channel, "refuse_t38"))) {
-				switch_channel_clear_app_flag_key("T38", session->channel, CF_APP_T38);
-				match = 0;
-				goto done;
-			} else {
-				const char *var = switch_channel_get_variable(channel, "t38_passthru");
-				int pass = switch_channel_test_flag(smh->session->channel, CF_T38_PASSTHRU);
-
-
-				if (switch_channel_test_app_flag_key("T38", session->channel, CF_APP_T38)) {
-					if (proceed) *proceed = 0;
-				}
-
-				if (var) {
-					if (!(pass = switch_true(var))) {
-						if (!strcasecmp(var, "once")) {
-							pass = 2;
-						}
-					}
-				}
-
-				if ((pass == 2 && switch_channel_test_flag(smh->session->channel, CF_T38_PASSTHRU)) 
-					|| !switch_channel_test_flag(session->channel, CF_REINVITE) ||
-					
-					switch_channel_test_flag(session->channel, CF_PROXY_MODE) || 
-					switch_channel_test_flag(session->channel, CF_PROXY_MEDIA) || 
-					!switch_rtp_ready(a_engine->rtp_session)) {
-					pass = 0;
-				}
-				
-				if (pass && switch_core_session_get_partner(session, &other_session) == SWITCH_STATUS_SUCCESS) {
-					switch_channel_t *other_channel = switch_core_session_get_channel(other_session);
-					switch_core_session_message_t *msg;
-					char *remote_host = switch_rtp_get_remote_host(a_engine->rtp_session);
-					switch_port_t remote_port = switch_rtp_get_remote_port(a_engine->rtp_session);
-					char tmp[32] = "";
-
-
-					if (!switch_channel_test_flag(other_channel, CF_ANSWERED)) {
-						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session),
-										SWITCH_LOG_WARNING, "%s Error Passing T.38 to unanswered channel %s\n",
-										switch_channel_get_name(session->channel), switch_channel_get_name(other_channel));
-						switch_core_session_rwunlock(other_session);
-
-						pass = 0;
-						match = 0;
-						goto done;
-					}
-
-
-					if (switch_true(switch_channel_get_variable(session->channel, "t38_broken_boolean")) && 
-						switch_true(switch_channel_get_variable(session->channel, "t38_pass_broken_boolean"))) {
-						switch_channel_set_variable(other_channel, "t38_broken_boolean", "true");
-					}
-					
-					a_engine->cur_payload_map->remote_sdp_ip = switch_core_session_strdup(session, t38_options->remote_ip);
-					a_engine->cur_payload_map->remote_sdp_port = t38_options->remote_port;
-
-					if (remote_host && remote_port && !strcmp(remote_host, a_engine->cur_payload_map->remote_sdp_ip) && remote_port == a_engine->cur_payload_map->remote_sdp_port) {
-						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Audio params are unchanged for %s.\n",
-										  switch_channel_get_name(session->channel));
-					} else {
-						const char *err = NULL;
-
-						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Audio params changed for %s from %s:%d to %s:%d\n",
-										  switch_channel_get_name(session->channel),
-										  remote_host, remote_port, a_engine->cur_payload_map->remote_sdp_ip, a_engine->cur_payload_map->remote_sdp_port);
-						
-						switch_snprintf(tmp, sizeof(tmp), "%d", a_engine->cur_payload_map->remote_sdp_port);
-						switch_channel_set_variable(session->channel, SWITCH_REMOTE_MEDIA_IP_VARIABLE, a_engine->cur_payload_map->remote_sdp_ip);
-						switch_channel_set_variable(session->channel, SWITCH_REMOTE_MEDIA_PORT_VARIABLE, tmp);
-
-						if (switch_rtp_set_remote_address(a_engine->rtp_session, a_engine->cur_payload_map->remote_sdp_ip,
-														  a_engine->cur_payload_map->remote_sdp_port, 0, SWITCH_TRUE, &err) != SWITCH_STATUS_SUCCESS) {
-							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "AUDIO RTP REPORTS ERROR: [%s]\n", err);
-							switch_channel_hangup(channel, SWITCH_CAUSE_INCOMPATIBLE_DESTINATION);
-						}
-
-						switch_core_media_check_autoadj(session);
-					}
-
-					
-
-					switch_core_media_copy_t38_options(t38_options, other_session);
-
-					switch_channel_set_flag(smh->session->channel, CF_T38_PASSTHRU);
-					switch_channel_set_flag(other_session->channel, CF_T38_PASSTHRU);
-					
-					msg = switch_core_session_alloc(other_session, sizeof(*msg));
-					msg->message_id = SWITCH_MESSAGE_INDICATE_REQUEST_IMAGE_MEDIA;
-					msg->from = __FILE__;
-					msg->string_arg = switch_core_session_strdup(other_session, r_sdp);
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Passing T38 req to other leg.\n%s\n", r_sdp);
-					switch_core_session_queue_message(other_session, msg);
-					switch_core_session_rwunlock(other_session);
-				}
-			}
-
-
-			/* do nothing here, mod_fax will trigger a response (if it's listening =/) */
-			match = 1;
-			goto done;
 		} else if (m->m_type == sdp_media_audio && m->m_port && got_audio && got_savp) {
 			a_engine->reject_avp = 1;
 		} else if (m->m_type == sdp_media_audio && m->m_port && !got_audio) {
@@ -8257,6 +8261,12 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 
 	}
 
+	if (switch_channel_test_flag(session->channel, CF_IMAGE_SDP)) {
+		switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "m=image 0 UDPTL T38\r\n", SWITCH_VA_NONE);
+
+	}
+
+
  video:
 
 
@@ -8814,6 +8824,7 @@ SWITCH_DECLARE(void) switch_core_media_set_udptl_image_sdp(switch_core_session_t
 
 	a_engine = &smh->engines[SWITCH_MEDIA_TYPE_AUDIO];
 
+	switch_channel_clear_flag(session->channel, CF_IMAGE_SDP);
 
 	switch_assert(t38_options);
 
