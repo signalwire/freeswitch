@@ -927,6 +927,23 @@ static switch_status_t sofia_read_text_frame(switch_core_session_t *session, swi
 
 static switch_status_t sofia_write_text_frame(switch_core_session_t *session, switch_frame_t *frame, switch_io_flag_t flags, int stream_id)
 {
+	if (switch_channel_test_flag(switch_core_session_get_channel(session), CF_MSRP)) {
+		switch_msrp_session_t *msrp_session = switch_core_media_get_msrp_session(session);
+
+		if (frame && msrp_session) {
+			switch_msrp_msg_t msrp_msg = { 0 };
+
+			msrp_msg.headers[MSRP_H_CONTENT_TYPE] = "message/cpim";
+			// msrp_msg.headers[MSRP_H_CONTENT_TYPE] = "text/plain";
+			msrp_msg.payload = frame->data;
+			msrp_msg.payload_bytes = frame->datalen;
+
+			return switch_msrp_send(msrp_session, &msrp_msg);
+		}
+
+		return SWITCH_STATUS_FALSE;
+	}
+
 	return switch_core_media_write_frame(session, frame, flags, stream_id, SWITCH_MEDIA_TYPE_TEXT);
 }
 

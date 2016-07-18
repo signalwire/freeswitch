@@ -35,6 +35,7 @@
 
 
 #include <switch.h>
+#include <switch_msrp.h>
 
 SWITCH_BEGIN_EXTERN_C
 
@@ -371,7 +372,9 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_text_factory_destroy(switch_rtp_text_
 
 SWITCH_DECLARE(switch_status_t) switch_core_session_print(switch_core_session_t *session, const char *data);
 SWITCH_DECLARE(switch_status_t) switch_core_session_printf(switch_core_session_t *session, const char *fmt, ...);
-	
+
+SWITCH_DECLARE(switch_msrp_session_t *) switch_core_media_get_msrp_session(switch_core_session_t *session);
+
 SWITCH_END_EXTERN_C
 #endif
 /* For Emacs:

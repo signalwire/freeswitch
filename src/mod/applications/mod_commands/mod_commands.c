@@ -7498,6 +7498,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add file_exists");
 	switch_console_set_complete("add getcputime");
 
+	switch_msrp_load_apis_and_applications(module_interface);
+
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_NOUNLOAD;
 }

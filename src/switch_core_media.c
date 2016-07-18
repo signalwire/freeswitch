@@ -24,6 +24,7 @@
  * Contributor(s):
  * 
  * Anthony Minessale II <anthm@freeswitch.org>
+ * Seven Du <dujinfang@gmail.com>
  *
  * switch_core_media.c -- Core Media
  *
@@ -55,7 +56,6 @@ static void gen_ice(switch_core_session_t *session, switch_media_type_t type, co
 #define TEXT_PERIOD_TIMEOUT 3000
 #define MAX_RED_FRAMES 25
 #define RED_PACKET_SIZE 100
-
 
 typedef enum {
 	SMF_INIT = (1 << 0),
@@ -217,6 +217,7 @@ struct switch_media_handle_s {
 	switch_core_media_flag_t media_flags[SCMF_MAX];
 	smh_flag_t flags;
 	switch_rtp_engine_t engines[SWITCH_MEDIA_TYPE_TOTAL];
+	switch_msrp_session_t *msrp_session;
 	switch_mutex_t *read_mutex[SWITCH_MEDIA_TYPE_TOTAL];
 	switch_mutex_t *write_mutex[SWITCH_MEDIA_TYPE_TOTAL];
 	char *codec_order[SWITCH_MAX_CODECS];
@@ -1702,8 +1703,7 @@ SWITCH_DECLARE(void) switch_media_handle_destroy(switch_core_session_t *session)
 	switch_core_session_unset_write_codec(session);
 	switch_core_media_deactivate_rtp(session);
 
-
-
+	if (smh->msrp_session) switch_msrp_session_destroy(&smh->msrp_session);
 }
 
 
@@ -2415,6 +2415,42 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 
 	if (!smh->media_flags[SCMF_RUNNING]) {
 		return SWITCH_STATUS_FALSE;
+	}
+
+	if (type == SWITCH_MEDIA_TYPE_TEXT && smh->msrp_session) {
+		switch_msrp_session_t *msrp_session = smh->msrp_session;
+		switch_frame_t *rframe = &msrp_session->frame;
+
+		msrp_msg_t *msrp_msg = switch_msrp_session_pop_msg(msrp_session);
+
+		if (0 && msrp_msg && msrp_msg->method == MSRP_METHOD_SEND) { /*echo back*/
+			char *p;
+			p = msrp_msg->headers[MSRP_H_TO_PATH];
+			msrp_msg->headers[MSRP_H_TO_PATH] = msrp_msg->headers[MSRP_H_FROM_PATH];
+			msrp_msg->headers[MSRP_H_FROM_PATH] = p;
+			switch_msrp_send(msrp_session, msrp_msg);
+		}
+
+		if (msrp_msg && msrp_msg->method == MSRP_METHOD_SEND) {
+			rframe->data = msrp_session->frame_data;
+			rframe->datalen = msrp_msg->payload_bytes;
+			rframe->packetlen = msrp_msg->payload_bytes;
+			memcpy(rframe->data, msrp_msg->payload, msrp_msg->payload_bytes);
+			rframe->m = 1;
+
+			*frame = rframe;
+
+			switch_safe_free(msrp_msg);
+			msrp_msg = NULL;
+			status = SWITCH_STATUS_SUCCESS;
+
+			return status;
+		}
+
+		*frame = NULL;
+		status = SWITCH_STATUS_FALSE;
+
+		return status;
 	}
 
 	engine = &smh->engines[type];
@@ -4051,7 +4087,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	const char *val;
 	const char *crypto = NULL;
-	int got_crypto = 0, got_video_crypto = 0, got_audio = 0, saw_audio = 0, got_avp = 0, got_video_avp = 0, got_video_savp = 0, got_savp = 0, got_udptl = 0, got_webrtc = 0, got_text = 0, got_text_crypto = 0;
+	int got_crypto = 0, got_video_crypto = 0, got_audio = 0, saw_audio = 0, got_avp = 0, got_video_avp = 0, got_video_savp = 0, got_savp = 0, got_udptl = 0, got_webrtc = 0, got_text = 0, got_text_crypto = 0, got_msrp = 0;
 	int scrooge = 0;
 	sdp_parser_t *parser = NULL;
 	sdp_session_t *sdp;
@@ -4231,6 +4267,97 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 			}
 		} else if (m->m_proto == sdp_proto_udptl) {
 			got_udptl++;
+		} else if (m->m_proto == sdp_proto_msrp || m->m_proto == sdp_proto_msrps){
+			got_msrp++;
+		}
+
+		if(got_msrp && m->m_type == sdp_media_message) {
+			if (!smh->msrp_session) {
+				smh->msrp_session = switch_msrp_session_new(switch_core_session_get_pool(session), m->m_proto == sdp_proto_msrps);
+			}
+
+			if (!smh->msrp_session) {
+				goto endmsrp;
+			}
+
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "MSRP session created\n");
+
+			for (attr = m->m_attributes; attr; attr = attr->a_next) {
+				// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "[%s]=[%s]\n", attr->a_name, attr->a_value);
+				if (!strcasecmp(attr->a_name, "path") && attr->a_value) {
+					smh->msrp_session->remote_path = switch_core_session_strdup(session, attr->a_value);
+					switch_channel_set_variable(session->channel, "sip_msrp_remote_path", attr->a_value);
+				} else if (!strcasecmp(attr->a_name, "accept-types") && attr->a_value) {
+					smh->msrp_session->remote_accept_types = switch_core_session_strdup(session, attr->a_value);
+					switch_channel_set_variable(session->channel, "sip_msrp_remote_accept_types", attr->a_value);
+				} else if (!strcasecmp(attr->a_name, "accept-wrapped-types") && attr->a_value) {
+					smh->msrp_session->remote_accept_wrapped_types = switch_core_session_strdup(session, attr->a_value);
+					switch_channel_set_variable(session->channel, "sip_msrp_remote_accept_wrapped_types", attr->a_value);
+				} else if (!strcasecmp(attr->a_name, "setup") && attr->a_value) {
+					smh->msrp_session->remote_setup = switch_core_session_strdup(session, attr->a_value);
+					switch_channel_set_variable(session->channel, "sip_msrp_remote_setup", attr->a_value);
+				} else if (!strcasecmp(attr->a_name, "file-selector") && attr->a_value) {
+					char *tmp = switch_mprintf("%s", attr->a_value);
+					char *argv[4] = { 0 };
+					int argc;
+					int i;
+
+					smh->msrp_session->remote_file_selector = switch_core_session_strdup(session, attr->a_value);
+					switch_channel_set_variable(session->channel, "sip_msrp_remote_file_selector", attr->a_value);
+
+					argc = switch_separate_string(tmp, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+
+					for(i = 0; i<argc; i++) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "::::%s\n", switch_str_nil(argv[i]));
+						if (zstr(argv[i])) {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ERRRRRRR\n");
+							continue;
+						}
+						if (!strncasecmp(argv[i], "name:", 5)) {
+							char *p = argv[i] + 5;
+							int len = strlen(p);
+
+							if (*p == '"') {
+								*(p + len - 1) = '\0';
+								p++;
+							}
+							switch_channel_set_variable(session->channel, "sip_msrp_file_name", p);
+						} else if (!strncasecmp(argv[i], "type:", 5)) {
+							switch_channel_set_variable(session->channel, "sip_msrp_file_type", argv[i] + 5);
+						}
+						if (!strncasecmp(argv[i], "size:", 5)) {
+							switch_channel_set_variable(session->channel, "sip_msrp_file_size", argv[i] + 5);
+						}
+						if (!strncasecmp(argv[i], "hash:", 5)) {
+							switch_channel_set_variable(session->channel, "sip_msrp_file_hash", argv[i] + 5);
+						}
+					}
+					switch_safe_free(tmp);
+				} else if (!strcasecmp(attr->a_name, "file-transfer-id") && attr->a_value) {
+					switch_channel_set_variable(session->channel, "sip_msrp_file_transfer_id", attr->a_value);
+				} else if (!strcasecmp(attr->a_name, "file-disposition") && attr->a_value) {
+					switch_channel_set_variable(session->channel, "sip_msrp_file_disposition", attr->a_value);
+				} else if (!strcasecmp(attr->a_name, "file-date") && attr->a_value) {
+					switch_channel_set_variable(session->channel, "sip_msrp_file_date", attr->a_value);
+				} else if (!strcasecmp(attr->a_name, "file-icon") && attr->a_value) {
+					switch_channel_set_variable(session->channel, "sip_msrp_file_icon", attr->a_value);
+				} else if (!strcasecmp(attr->a_name, "file-range") && attr->a_value) {
+					switch_channel_set_variable(session->channel, "sip_msrp_file_range", attr->a_value);
+				}
+			}
+
+			smh->msrp_session->call_id = switch_core_session_get_uuid(session);
+			smh->msrp_session->local_accept_types = smh->msrp_session->remote_accept_types;
+			smh->msrp_session->local_accept_wrapped_types = smh->msrp_session->remote_accept_types;
+			smh->msrp_session->local_setup = smh->msrp_session->remote_setup;
+
+			switch_channel_set_flag(session->channel, CF_TEXT);
+			switch_channel_set_flag(session->channel, CF_TEXT_POSSIBLE);
+			switch_channel_set_flag(session->channel, CF_MSRP);
+
+			switch_core_session_start_text_thread(session);
+
+			endmsrp:;
 		}
 
 		if (got_udptl && m->m_type == sdp_media_image) {
@@ -6748,8 +6875,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_choose_port(switch_core_sessio
 		if (!zstr(smh->mparams->extrtpip)) { /* and we've got an ext-rtp-ip, eg, from verto config */
 			use_ip = smh->mparams->extrtpip; /* let's use it for composing local sdp to send to client */
 			/*
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, 
-						"%s will use %s instead of %s in SDP, because we're originating and we have an ext-rtp-ip setting\n", 
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR,
+						"%s will use %s instead of %s in SDP, because we're originating and we have an ext-rtp-ip setting\n",
 						switch_channel_get_name(smh->session->channel), smh->mparams->extrtpip, smh->mparams->rtpip);
 			*/
 		}
@@ -7508,7 +7635,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 		
 	text:
 
-
+		if (switch_channel_test_flag(session->channel, CF_MSRP)) { // skip RTP RTT
+			goto video;
+		}
 
 		if (switch_channel_test_flag(session->channel, CF_TEXT_POSSIBLE) && t_engine->cur_payload_map->rm_encoding && t_engine->cur_payload_map->remote_sdp_port) {
 			/******************************************************************************************/
@@ -9729,7 +9858,85 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 
 	}
 
-	///TEXT 
+msrp:
+
+	if (smh->msrp_session) {
+		switch_msrp_session_t *msrp_session = smh->msrp_session;
+
+		if (!zstr(msrp_session->remote_path)) {
+			if (zstr(msrp_session->local_path)) {
+				msrp_session->local_path = switch_core_session_sprintf(session,
+					"msrp%s://%s:%d/%s;tcp",
+					msrp_session->secure ? "s" : "",
+					ip, msrp_session->local_port, msrp_session->call_id);
+			}
+
+			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf),
+				"m=message %d TCP/%sMSRP *\n"
+				"a=path:%s\n"
+				"a=accept-types:%s\n"
+				"a=accept-wrapped-types:%s\n"
+				"a=setup:passive\n",
+				msrp_session->local_port,
+				msrp_session->secure ? "TLS/" : "",
+				msrp_session->local_path,
+				msrp_session->local_accept_types,
+				msrp_session->local_accept_wrapped_types);
+		} else {
+			char *uuid = switch_core_session_get_uuid(session);
+			const char *file_selector = switch_channel_get_variable(session->channel, "sip_msrp_local_file_selector");
+
+			if (zstr(msrp_session->local_path)) {
+				msrp_session->local_path = switch_core_session_sprintf(session,
+					"msrp%s://%s:%d/%s;tcp",
+					msrp_session->secure ? "s" : "",
+					ip, msrp_session->local_port, uuid);
+			}
+
+			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf),
+				"m=message %d TCP/%sMSRP *\n"
+				"a=path:%s\n"
+				"a=accept-types:message/cpim text/* application/im-iscomposing+xml\n"
+				"a=accept-wrapped-types:*\n"
+				"a=setup:passive\n",
+				msrp_session->local_port,
+				msrp_session->secure ? "TLS/" : "",
+				msrp_session->local_path);
+
+			if (!zstr(file_selector)) {
+				switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf),
+					"a=sendonly\na=file-selector:%s\n", file_selector);
+			}
+		}
+
+		goto no_rtt;
+	} else if (switch_channel_test_cap(session->channel, CC_RTP_RTT) && (
+		// switch_channel_test_flag(session->channel, CF_TEXT_POSSIBLE) ||
+		switch_channel_var_true(session->channel, "sip_enable_msrp") ||
+		switch_channel_var_true(session->channel, "sip_enable_msrps"))) {
+
+		smh->msrp_session = switch_msrp_session_new(switch_core_session_get_pool(session), switch_channel_var_true(session->channel, "sip_enable_msrps"));
+
+		if (!smh->msrp_session) {
+			goto endmsrp;
+		}
+
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "MSRP session created\n");
+
+		smh->msrp_session->call_id = switch_core_session_get_uuid(session);
+
+		switch_channel_set_flag(session->channel, CF_TEXT);
+		switch_channel_set_flag(session->channel, CF_TEXT_POSSIBLE);
+		switch_channel_set_flag(session->channel, CF_MSRP);
+
+		switch_core_session_start_text_thread(session);
+
+		goto msrp;
+
+		endmsrp: ;
+	}
+
+	// RTP TEXT
 
 	if (sdp_type == SDP_TYPE_RESPONSE && !switch_channel_test_flag(session->channel, CF_TEXT_POSSIBLE)) {
 		if (switch_channel_test_flag(session->channel, CF_TEXT_SDP_RECVD)) {
@@ -9993,9 +10200,8 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 		}
 
 	}
-	
 
-
+	no_rtt:
 
 	if (map) {
 		switch_event_destroy(&map);
@@ -10767,7 +10973,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_reset_jb(switch_core_session_t
 SWITCH_DECLARE(switch_status_t) switch_core_media_receive_message(switch_core_session_t *session, switch_core_session_message_t *msg)
 {
 	switch_media_handle_t *smh;
-	switch_rtp_engine_t *a_engine, *v_engine;//, *t_engine;
+	switch_rtp_engine_t *a_engine, *v_engine, *t_engine;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
 	switch_assert(session);
@@ -10782,7 +10988,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_receive_message(switch_core_se
 
 	a_engine = &smh->engines[SWITCH_MEDIA_TYPE_AUDIO];
 	v_engine = &smh->engines[SWITCH_MEDIA_TYPE_VIDEO];
-	//t_engine = &smh->engines[SWITCH_MEDIA_TYPE_TEXT];
+	t_engine = &smh->engines[SWITCH_MEDIA_TYPE_TEXT];
 
 	switch (msg->message_id) {
 
@@ -10925,6 +11131,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_receive_message(switch_core_se
 			if (direction && *direction == 'v') {
 				direction++;
 				rtp = v_engine->rtp_session;
+			} else if (direction && *direction == 't' && t_engine) {
+				direction++;
+				rtp = t_engine->rtp_session;
 			}
 
 			if (switch_rtp_ready(rtp) && !zstr(direction) && !zstr(msg->string_array_arg[1])) {
@@ -13427,6 +13636,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_text_frame(switch_core
 	switch_io_event_hook_text_write_frame_t *ptr;
 	switch_rtp_engine_t *t_engine;
 	switch_io_write_text_frame_t write_text_frame = NULL;
+	int is_msrp = switch_channel_test_flag(session->channel, CF_MSRP);
 
 	switch_assert(session);
 
@@ -13456,7 +13666,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_text_frame(switch_core
 
 	t_engine = &smh->engines[SWITCH_MEDIA_TYPE_TEXT];
 
-	if (switch_channel_test_cap(session->channel, CC_RTP_RTT)) {
+	if (!is_msrp && switch_channel_test_cap(session->channel, CC_RTP_RTT)) {
 
 		if (frame) {
 			char *str = (char *) frame->data;
@@ -13522,7 +13732,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_text_frame(switch_core
 	}
 
 
-	if (switch_channel_test_cap(session->channel, CC_RTP_RTT)) {
+	if (!is_msrp && switch_channel_test_cap(session->channel, CC_RTP_RTT)) {
 		if (t_engine->red_pt) {
 			t_engine->tf->red_pos++;
 			if (t_engine->tf->red_pos == t_engine->tf->red_max) {
@@ -13538,7 +13748,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_text_frame(switch_core
 	}
 
 	return status;
-		}
+}
 
 SWITCH_DECLARE(switch_status_t) switch_core_session_printf(switch_core_session_t *session, const char *fmt, ...)
 {
@@ -13615,6 +13825,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_print(switch_core_session_t 
 	return SWITCH_STATUS_SUCCESS;
 }
 
+SWITCH_DECLARE(switch_msrp_session_t *) switch_core_media_get_msrp_session(switch_core_session_t *session)
+{
+	if (!session->media_handle) return NULL;
+
+	return session->media_handle->msrp_session;
+}
 
 
 /* For Emacs:
