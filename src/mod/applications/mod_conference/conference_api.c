@@ -1564,6 +1564,8 @@ switch_status_t conference_api_sub_clear_vid_floor(conference_obj_t *conference,
 	//conference_video_set_floor_holder(conference, NULL);
 	switch_mutex_unlock(conference->mutex);
 
+	stream->write_function(stream, "OK floor Cleared\n", SWITCH_VA_NONE);
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
