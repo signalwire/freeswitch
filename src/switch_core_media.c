@@ -8381,6 +8381,24 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 				}
 
 				switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "\r\n");
+				
+
+				if (!(vbw = switch_channel_get_variable(smh->session->channel, "rtp_video_max_bandwidth"))) {
+					vbw = switch_channel_get_variable(smh->session->channel, "rtp_video_max_bandwidth_in");
+				}
+
+				if (!vbw) {
+					vbw = "1mb";
+				}
+
+				bw = switch_parse_bandwidth_string(vbw);
+				
+				if (bw > 0) {
+					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "b=AS:%d\r\n", bw);
+					//switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "b=TIAS:%d\r\n", bw);
+				}
+
+
 
 				if (v_engine->codec_negotiated) {
 					const char *of;
@@ -8547,22 +8565,6 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 					} else {
 						switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtcp:%d IN %s %s\r\n", v_port + 1, family, ip);
 					}
-				}
-
-
-				if (!(vbw = switch_channel_get_variable(smh->session->channel, "rtp_video_max_bandwidth"))) {
-					vbw = switch_channel_get_variable(smh->session->channel, "rtp_video_max_bandwidth_in");
-				}
-
-				if (!vbw) {
-					vbw = "1mb";
-				}
-
-				bw = switch_parse_bandwidth_string(vbw);
-				
-				if (bw > 0) {
-					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "b=AS:%d\r\n", bw);
-					//switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "b=TIAS:%d\r\n", bw);
 				}
 
 				if (sdp_type == SDP_TYPE_REQUEST) {
