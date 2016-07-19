@@ -2399,6 +2399,7 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 	char *video_letterbox_bgcolor = NULL;
 	char *video_codec_bandwidth = NULL;
 	char *no_video_avatar = NULL;
+	char *video_mute_banner = NULL;
 	conference_video_mode_t conference_video_mode = CONF_VIDEO_MODE_PASSTHROUGH;
 	int conference_video_quality = 1;
 	int auto_kps_debounce = 30000;
@@ -2586,6 +2587,8 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 				video_codec_bandwidth = val;
 			} else if (!strcasecmp(var, "video-no-video-avatar") && !zstr(val)) {
 				no_video_avatar = val;
+			} else if (!strcasecmp(var, "video-mute-banner") && !zstr(val)) {
+				video_mute_banner = val;
 			} else if (!strcasecmp(var, "exit-sound") && !zstr(val)) {
 				exit_sound = val;
 			} else if (!strcasecmp(var, "alone-sound") && !zstr(val)) {
@@ -2885,6 +2888,10 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 
 		if (!video_letterbox_bgcolor) {
 			video_letterbox_bgcolor = "#000000";
+		}
+
+		if (video_mute_banner) {
+		    conference->video_mute_banner = switch_core_strdup(conference->pool, video_mute_banner);
 		}
 
 		if (no_video_avatar) {
