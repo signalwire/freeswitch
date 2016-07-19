@@ -1976,22 +1976,6 @@ esac
 AC_OUTPUT
 
 ##
-## Registering for ClueCon
-##
-if ! test -f noreg -o -f /noreg; then
-echo ""
-echo ""
-echo $ECHO_N "Registering you for ClueCon http://www.cluecon.com $ECHO_C" 1>&6
-sleep 1
-echo $ECHO_N ".$ECHO_C" 1>&6
-sleep 1
-echo $ECHO_N ".$ECHO_C" 1>&6
-sleep 1
-AC_MSG_RESULT([ See you in August. ;-)])
-echo ""
-fi
-
-##
 ## Configuration summary
 ##
 
