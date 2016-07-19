@@ -1072,12 +1072,12 @@ static switch_status_t buffer_vp9_packets(vpx_context_t *context, switch_frame_t
 		goto end;
 	}
 
-	if (switch_buffer_inuse(context->vpx_packet_buffer)) { // middle packet
-		if (desc->start) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "got invalid vp9 packet, packet loss? resetting buffer\n");
-			switch_buffer_zero(context->vpx_packet_buffer);
-		}
-	} else { // start packet
+	if (!switch_buffer_inuse(context->vpx_packet_buffer)) { // middle packet
+		//if (desc->start) {
+		//	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "got invalid vp9 packet, packet loss? resetting buffer\n");
+		//	switch_buffer_zero(context->vpx_packet_buffer);
+		//}
+		//} else { // start packet
 		if (!desc->start) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "got invalid vp9 packet, packet loss? waiting for a start packet\n");
 			goto end;
