@@ -9159,16 +9159,9 @@ void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t 
 		if (sip && sip->sip_content_type && sip->sip_content_type->c_type && sip->sip_content_type->c_subtype &&
 			sip->sip_payload && sip->sip_payload->pl_data) {
 			if (!strncasecmp(sip->sip_content_type->c_type, "application", 11) && !strcasecmp(sip->sip_content_type->c_subtype, "media_control+xml")) {
-				switch_core_session_t *other_session;
-
 				if (switch_channel_test_flag(channel, CF_VIDEO)) {
 					switch_core_media_gen_key_frame(session);
-					if (switch_core_session_get_partner(session, &other_session) == SWITCH_STATUS_SUCCESS) {
-						sofia_glue_build_vid_refresh_message(other_session, sip->sip_payload->pl_data);
-						switch_core_session_rwunlock(other_session);
-					} else {
-						switch_channel_set_flag(channel, CF_VIDEO_REFRESH_REQ);
-					}
+					switch_channel_set_flag(channel, CF_VIDEO_REFRESH_REQ);
 				}
 
 			} else if (!strncasecmp(sip->sip_content_type->c_type, "application", 11) &&

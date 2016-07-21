@@ -1926,6 +1926,15 @@ static void check_jb(switch_core_session_t *session, const char *input, int32_t 
 					switch_rtp_set_video_buffer_size(v_engine->rtp_session, frames, max_frames);
 				}
 				return;
+			} else if (!strcasecmp(input, "vpause")) {
+				switch_rtp_pause_jitter_buffer(v_engine->rtp_session, SWITCH_TRUE);
+				return;
+			} else if (!strcasecmp(input, "vresume")) {
+				switch_rtp_pause_jitter_buffer(v_engine->rtp_session, SWITCH_FALSE);
+				return;
+			} else if (!strcasecmp(input, "vstop")) {
+				switch_rtp_deactivate_jitter_buffer(v_engine->rtp_session);
+				return;
 			} else if (!strncasecmp(input, "vdebug:", 7)) {
 				s = input + 7;
 				
@@ -2050,6 +2059,11 @@ static void check_jb_sync(switch_core_session_t *session)
 	}
 	
 	fps = switch_core_media_get_video_fps(session);
+
+
+	if (switch_test_flag(smh, SMF_JB_PAUSED)) {
+		return;
+	}
 	
 	switch_rtp_get_video_buffer_size(v_engine->rtp_session, &min_frames, &max_frames, &cur_frames, NULL);
 
@@ -2637,7 +2651,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_write_frame(switch_core_sessio
 		return SWITCH_STATUS_GENERR;
 	}
 
-	if (!switch_test_flag(frame, SFF_CNG) && !switch_test_flag(frame, SFF_PROXY_PACKET)) {
+	if (type == SWITCH_MEDIA_TYPE_AUDIO && !switch_test_flag(frame, SFF_CNG) && !switch_test_flag(frame, SFF_PROXY_PACKET)) {
 		if (engine->read_impl.encoded_bytes_per_packet) {
 			bytes = engine->read_impl.encoded_bytes_per_packet;
 			frames = ((int) frame->datalen / bytes);
@@ -9630,19 +9644,29 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_receive_message(switch_core_se
 	case SWITCH_MESSAGE_INDICATE_BRIDGE:
 		{
 
-			if (switch_rtp_ready(a_engine->rtp_session)) {
+			if (switch_rtp_ready(a_engine->rtp_session) || switch_rtp_ready(v_engine->rtp_session)) {
 				const char *val;
-				int ok = 0;
-				
-				if (!switch_channel_test_flag(session->channel, CF_VIDEO) &&
+
+				if (
 					(!(val = switch_channel_get_variable(session->channel, "rtp_jitter_buffer_during_bridge")) || switch_false(val))) {
 					if (switch_channel_test_flag(session->channel, CF_JITTERBUFFER) && switch_channel_test_cap_partner(session->channel, CC_FS_RTP)) {
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
 										  "%s PAUSE Jitterbuffer\n", switch_channel_get_name(session->channel));					
-						switch_rtp_pause_jitter_buffer(a_engine->rtp_session, SWITCH_TRUE);
+						if (a_engine->rtp_session) {
+							switch_rtp_pause_jitter_buffer(a_engine->rtp_session, SWITCH_TRUE);
+						}
+
+						if (v_engine->rtp_session) {
+							switch_rtp_pause_jitter_buffer(v_engine->rtp_session, SWITCH_TRUE);
+						}
 						switch_set_flag(smh, SMF_JB_PAUSED);
 					}
 				}
+			}
+
+			if (switch_rtp_ready(a_engine->rtp_session)) {
+				const char *val;
+				int ok = 0;
 				
 				if (switch_channel_test_flag(session->channel, CF_PASS_RFC2833) && switch_channel_test_flag_partner(session->channel, CF_FS_RTP)) {
 					switch_rtp_set_flag(a_engine->rtp_session, SWITCH_RTP_FLAG_PASS_RFC2833);
@@ -9689,18 +9713,26 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_receive_message(switch_core_se
 		}
 		goto end;
 	case SWITCH_MESSAGE_INDICATE_UNBRIDGE:
-		if (switch_rtp_ready(a_engine->rtp_session)) {
-			
+
+		if (switch_rtp_ready(a_engine->rtp_session) || switch_rtp_ready(v_engine->rtp_session)) {
 			if (switch_test_flag(smh, SMF_JB_PAUSED)) {
 				switch_clear_flag(smh, SMF_JB_PAUSED);
 				if (switch_channel_test_flag(session->channel, CF_JITTERBUFFER)) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
 									  "%s RESUME Jitterbuffer\n", switch_channel_get_name(session->channel));					
-					switch_rtp_pause_jitter_buffer(a_engine->rtp_session, SWITCH_FALSE);
+					if (a_engine->rtp_session) {
+						switch_rtp_pause_jitter_buffer(a_engine->rtp_session, SWITCH_FALSE);
+					}
+
+					if (v_engine->rtp_session) {
+						switch_rtp_pause_jitter_buffer(v_engine->rtp_session, SWITCH_FALSE);
+					}
 				}
 			}
-			
+		}
 
+		if (switch_rtp_ready(a_engine->rtp_session)) {
+			
 			if (switch_rtp_test_flag(a_engine->rtp_session, SWITCH_RTP_FLAG_PASS_RFC2833)) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s deactivate passthru 2833 mode.\n",
 								  switch_channel_get_name(session->channel));
@@ -11272,7 +11304,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_video_frame(switch_cor
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	switch_time_t now = switch_micro_time_now();
 	switch_codec_t *codec = switch_core_session_get_video_write_codec(session);
-	switch_timer_t *timer;
+	//switch_timer_t *timer;
 	switch_media_handle_t *smh;
 	switch_image_t *dup_img = NULL, *img = frame->img;
 	switch_status_t encode_status;
@@ -11422,6 +11454,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_video_frame(switch_cor
 	frame = &write_frame;
 	frame->img = img;
 
+#if 0
 	if (!switch_test_flag(frame, SFF_USE_VIDEO_TIMESTAMP)) {
 
 		if (!(timer = switch_core_media_get_timer(session, SWITCH_MEDIA_TYPE_VIDEO))) {
@@ -11435,6 +11468,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_video_frame(switch_cor
 
 		frame->timestamp = timer->samplecount;
 	}
+#endif
 
 	switch_clear_flag(frame, SFF_SAME_IMAGE);
 	frame->m = 0;

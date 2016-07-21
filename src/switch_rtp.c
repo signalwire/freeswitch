@@ -4060,7 +4060,7 @@ SWITCH_DECLARE(switch_jb_t *) switch_rtp_get_jitter_buffer(switch_rtp_t *rtp_ses
 SWITCH_DECLARE(switch_status_t) switch_rtp_pause_jitter_buffer(switch_rtp_t *rtp_session, switch_bool_t pause)
 {
 	
-	if (!switch_rtp_ready(rtp_session) || !rtp_session->jb) {
+	if (!switch_rtp_ready(rtp_session) || (!rtp_session->jb && !rtp_session->vb)) {
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -4069,7 +4069,11 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_pause_jitter_buffer(switch_rtp_t *rtp
 	}
 
 	if (rtp_session->pause_jb && !pause) {
-		switch_jb_reset(rtp_session->jb);
+		if (rtp_session->vb) {
+			switch_jb_reset(rtp_session->vb);
+		} else {
+			switch_jb_reset(rtp_session->jb);
+		}
 	}
 
 	rtp_session->pause_jb = pause ? 1 : 0;
@@ -5639,7 +5643,7 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 	if (rtp_session->has_rtp && *bytes) {
 		uint32_t read_ssrc = ntohl(rtp_session->last_rtp_hdr.ssrc);
 
-		if (rtp_session->vb && jb_valid(rtp_session)) {
+		if (rtp_session->vb && jb_valid(rtp_session) && !rtp_session->pause_jb) {
 			status = switch_jb_put_packet(rtp_session->vb, (switch_rtp_packet_t *) &rtp_session->recv_msg, *bytes);			
 
 			if (status == SWITCH_STATUS_TOO_LATE) {
@@ -5734,7 +5738,7 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 			}
 		}
 		
-		if (rtp_session->vb && jb_valid(rtp_session)) {
+		if (rtp_session->vb && jb_valid(rtp_session) && !rtp_session->pause_jb) {
 			switch_status_t vstatus = switch_jb_get_packet(rtp_session->vb, (switch_rtp_packet_t *) &rtp_session->recv_msg, bytes);
 			status = vstatus;
 
@@ -6324,7 +6328,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 				pt = 200000;
 			}
 
-			if (rtp_session->vb) {
+			if (rtp_session->vb && !rtp_session->pause_jb) {
 				if (switch_jb_poll(rtp_session->vb)) {
 					pt = 0;
 				}
@@ -6333,12 +6337,12 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			if ((io_flags & SWITCH_IO_FLAG_NOBLOCK)) {
 				pt = 0;
 			}
-			
+
 			poll_status = switch_poll(rtp_session->read_pollfd, 1, &fdr, pt);
 
 
 			//if (rtp_session->flags[SWITCH_RTP_FLAG_VIDEO]) {
-			//	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING, "WTF Poll %d\n", poll_status);
+			//	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING, "WTF Poll %d %d\n", pt, poll_status);
 			//}
 			
 			if (!rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] && rtp_session->dtmf_data.out_digit_dur > 0) {
@@ -6355,7 +6359,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		}
 		
 			
-		if (poll_status == SWITCH_STATUS_SUCCESS || (rtp_session->vb && switch_jb_poll(rtp_session->vb))) {
+		if (poll_status == SWITCH_STATUS_SUCCESS || (rtp_session->vb && !rtp_session->pause_jb && switch_jb_poll(rtp_session->vb))) {
 
 			got_rtp_poll = 1;
 
@@ -7289,7 +7293,6 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 			send_msg->header.m = (m && !(rtp_session->rtp_bugs & RTP_BUG_NEVER_SEND_MARKER)) ? 1 : 0;
 		}
 	}
-
 
 	if (switch_rtp_test_flag(rtp_session, SWITCH_RTP_FLAG_GEN_TS_DELTA) || switch_rtp_test_flag(rtp_session, SWITCH_RTP_FLAG_VIDEO)) {
 		/* Normalize the timestamps to our own base by generating a made up starting point then adding the measured deltas to that base 
