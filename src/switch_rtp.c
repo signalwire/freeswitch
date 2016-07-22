@@ -452,6 +452,7 @@ struct switch_rtp {
 	uint8_t has_ice;
 	uint8_t punts;
 	uint8_t clean;
+	uint32_t last_max_vb_frames;
 #ifdef ENABLE_ZRTP
 	zrtp_session_t *zrtp_session;
 	zrtp_profile_t *zrtp_profile;
@@ -4110,9 +4111,15 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_set_video_buffer_size(switch_rtp_t *r
 	}
 
 	if (!max_frames) {
-		max_frames = 50;
+		max_frames = rtp_session->last_max_vb_frames;
+	}
+	
+	if (!max_frames || frames >= max_frames) {
+		max_frames = frames + 8;
 	}
 
+	rtp_session->last_max_vb_frames = max_frames;
+	
 	if (!rtp_session->vb) {
 		switch_jb_create(&rtp_session->vb, SJB_VIDEO, frames, max_frames, rtp_session->pool);
 		switch_jb_set_session(rtp_session->vb, rtp_session->session);
