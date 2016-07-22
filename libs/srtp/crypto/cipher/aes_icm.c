@@ -284,12 +284,15 @@ aes_icm_set_octet(aes_icm_ctx_t *c,
 
 err_status_t
 aes_icm_set_iv(aes_icm_ctx_t *c, void *iv, int direction) {
-  v128_t *nonce = (v128_t *) iv;
+  v128_t nonce;
+
+  /* set nonce (for alignment) */
+  v128_copy_octet_string(&nonce, iv);
 
   debug_print(mod_aes_icm, 
-	      "setting iv: %s", v128_hex_string(nonce)); 
+	      "setting iv: %s", v128_hex_string(&nonce)); 
  
-  v128_xor(&c->counter, &c->offset, nonce);
+  v128_xor(&c->counter, &c->offset, &nonce);
   
   debug_print(mod_aes_icm, 
 	      "set_counter: %s", v128_hex_string(&c->counter)); 
