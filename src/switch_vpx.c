@@ -42,6 +42,12 @@
 
 // #define DEBUG_VP9
 
+#ifdef DEBUG_VP9
+#define VPX_SWITCH_LOG_LEVEL SWITCH_LOG_ERROR
+#else
+#define VPX_SWITCH_LOG_LEVEL SWITCH_LOG_DEBUG1
+#endif
+
 #define SLICE_SIZE SWITCH_DEFAULT_VIDEO_SIZE
 #define KEY_FRAME_MIN_FREQ 250000
 
@@ -291,6 +297,7 @@ struct vpx_context {
 	int got_start_frame;
 	uint32_t last_received_timestamp;
 	switch_bool_t last_received_complete_picture;
+	uint16_t last_received_seq;
 	int need_key_frame;
 	int need_encoder_reset;
 	int need_decoder_reset;
@@ -333,6 +340,7 @@ static switch_status_t init_decoder(switch_codec_t *codec)
 		context->last_ts = 0;
 		context->last_received_timestamp = 0;
 		context->last_received_complete_picture = 0;
+		context->last_received_seq = 0;
 		context->decoder_init = 1;
 		context->got_key_frame = 0;
 		context->no_key_frame = 0;
@@ -406,7 +414,7 @@ static switch_status_t init_encoder(switch_codec_t *codec)
 	config->g_lag_in_frames = 0;
 	config->kf_max_dist = 360;//2000;
 	threads = cpus / 4;
-	if (threads < 0) threads = 1;
+	if (threads < 1) threads = 1;
 	config->g_threads = threads;
 	
 	if (context->is_vp9) {
@@ -967,7 +975,7 @@ static switch_status_t buffer_vp9_packets(vpx_context_t *context, switch_frame_t
 
 #ifdef DEBUG_VP9
 	switch_log_printf(SWITCH_CHANNEL_LOG, frame->m ? SWITCH_LOG_ERROR : SWITCH_LOG_INFO,
-					"[%02x %02x %02x %02x] m=%d len=%4d seq=%d ts=%d ssrc=%u "
+					"[%02x %02x %02x %02x] m=%d len=%4d seq=%d ts=%u ssrc=%u "
 					"have_pid=%d "
 					"have_p_layer=%d "
 					"have_layer_ind=%d "
@@ -1111,11 +1119,16 @@ static switch_status_t switch_vpx_decode(switch_codec_t *codec, switch_frame_t *
 		is_keyframe = IS_VP9_KEY_FRAME(*(unsigned char *)frame->data);
 		is_start = IS_VP9_START_PKT(*(unsigned char *)frame->data);
 
-#ifdef DEBUG_VP9
 		if (is_keyframe) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "================Got a key frame!!!!========================\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, VPX_SWITCH_LOG_LEVEL, "================Got a key frame!!!!========================\n");
 		}
-#endif
+
+		if (context->last_received_seq && context->last_received_seq + 1 != frame->seq) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, VPX_SWITCH_LOG_LEVEL, "Packet loss detected last=%d got=%d lost=%d\n", context->last_received_seq, frame->seq, frame->seq - context->last_received_seq);
+			if (is_keyframe && context->vpx_packet_buffer) switch_buffer_zero(context->vpx_packet_buffer);
+		}
+
+		context->last_received_seq = frame->seq;
 	} else { // vp8
 		is_start = (*(unsigned char *)frame->data & 0x10);
 		is_keyframe = IS_VP8_KEY_FRAME((uint8_t *)frame->data);
@@ -1210,8 +1223,15 @@ static switch_status_t switch_vpx_decode(switch_codec_t *codec, switch_frame_t *
 		err = vpx_codec_decode(decoder, data, (unsigned int)len, NULL, 0);
 
 		if (err != VPX_CODEC_OK) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Error decoding %" SWITCH_SIZE_T_FMT " bytes, [%d:%s:%s]\n",
+			switch_log_printf(SWITCH_CHANNEL_LOG, VPX_SWITCH_LOG_LEVEL, "Error decoding %" SWITCH_SIZE_T_FMT " bytes, [%d:%s:%s]\n",
 							  len, err, vpx_codec_error(decoder), vpx_codec_error_detail(decoder));
+
+
+			if (err == VPX_CODEC_MEM_ERROR) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "VPX MEM ERROR, resetting decoder!\n");
+				context->need_decoder_reset = 1;
+			}
+
 			switch_goto_status(SWITCH_STATUS_RESTART, end);
 		}
 
