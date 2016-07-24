@@ -966,7 +966,8 @@ static switch_status_t buffer_vp9_packets(vpx_context_t *context, switch_frame_t
 	int len = 0;
 
 #ifdef DEBUG_VP9
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%02x %02x %02x %02x m=%d len=%4d "
+	switch_log_printf(SWITCH_CHANNEL_LOG, frame->m ? SWITCH_LOG_ERROR : SWITCH_LOG_INFO,
+					"[%02x %02x %02x %02x] m=%d len=%4d seq=%d ts=%d ssrc=%u "
 					"have_pid=%d "
 					"have_p_layer=%d "
 					"have_layer_ind=%d "
@@ -975,7 +976,7 @@ static switch_status_t buffer_vp9_packets(vpx_context_t *context, switch_frame_t
 					"end=%d "
 					"have_ss=%d "
 					"zero=%d\n",
-					*data, *(data+1), *(data+2), *(data+3), frame->m, frame->datalen,
+					*data, *(data+1), *(data+2), *(data+3), frame->m, frame->datalen, frame->seq, frame->timestamp, frame->ssrc,
 					desc->have_pid,
 					desc->have_p_layer,
 					desc->have_layer_ind,
@@ -1001,7 +1002,7 @@ static switch_status_t buffer_vp9_packets(vpx_context_t *context, switch_frame_t
 		vp9++;
 
 #ifdef DEBUG_VP9
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "have pid: %d start=%d end=%d\n", pid, desc->start, desc->end);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "have pid: %d start=%d end=%d\n", pid, desc->start, desc->end);
 #endif
 
 	}
@@ -1072,12 +1073,7 @@ static switch_status_t buffer_vp9_packets(vpx_context_t *context, switch_frame_t
 		goto end;
 	}
 
-	if (!switch_buffer_inuse(context->vpx_packet_buffer)) { // middle packet
-		//if (desc->start) {
-		//	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "got invalid vp9 packet, packet loss? resetting buffer\n");
-		//	switch_buffer_zero(context->vpx_packet_buffer);
-		//}
-		//} else { // start packet
+	if (!switch_buffer_inuse(context->vpx_packet_buffer)) { // start packet
 		if (!desc->start) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "got invalid vp9 packet, packet loss? waiting for a start packet\n");
 			goto end;
@@ -1090,7 +1086,7 @@ static switch_status_t buffer_vp9_packets(vpx_context_t *context, switch_frame_t
 end:
 
 #ifdef DEBUG_VP9
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "buffered %d bytes, buffer size: %" SWITCH_SIZE_T_FMT "\n", len, switch_buffer_inuse(context->vpx_packet_buffer));
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "buffered %d bytes, buffer size: %" SWITCH_SIZE_T_FMT "\n", len, switch_buffer_inuse(context->vpx_packet_buffer));
 #endif
 
 	return SWITCH_STATUS_SUCCESS;
