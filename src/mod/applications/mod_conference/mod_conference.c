@@ -2250,7 +2250,7 @@ SWITCH_STANDARD_APP(conference_function)
 
 	if (conference) {
 		switch_mutex_lock(conference->mutex);
-		if (conference_utils_test_flag(conference, CFLAG_DYNAMIC) && conference->count == 0) {
+		if (conference_utils_test_flag(conference, CFLAG_DYNAMIC) && conference->count == 0 && conference->count_ghosts == 0) {
 			conference_utils_set_flag_locked(conference, CFLAG_DESTRUCT);
 		}
 		switch_mutex_unlock(conference->mutex);
