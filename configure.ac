@@ -1705,6 +1705,22 @@ else
 	AC_MSG_WARN([python support disabled, building mod_python will fail!])
 fi
 
+#
+# SNMP checks for mod_snmp
+#
+AC_PATH_PROG([NET_SNMP_CONFIG], [net-snmp-config], [no])
+if test "$NET_SNMP_CONFIG" != "no"; then
+	AC_MSG_CHECKING([for Net-SNMP libraries via net-snmp-config])
+	SNMP_LIBS="`$NET_SNMP_CONFIG --base-agent-libs`"
+else
+	# net-snmp-config not in path, fallback to sensible defaults
+	SNMP_LIBS="-lnetsnmpmibs -lnetsnmpagent -lnetsnmp"
+fi
+
+# fix linking error on Solaris patched Net-SNMP
+AS_CASE([$host], [*-solaris2*], [AC_CHECK_LIB([dladm], [dladm_open], [SNMP_LIBS="$SNMP_LIBS -ldladm"])])
+AC_SUBST(SNMP_LIBS)
+
 CHECK_ERLANG
 
 # we never use this, and hard setting it will make cross compile work better
