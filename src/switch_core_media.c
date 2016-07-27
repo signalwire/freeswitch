@@ -11304,7 +11304,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_video_frame(switch_cor
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	switch_time_t now = switch_micro_time_now();
 	switch_codec_t *codec = switch_core_session_get_video_write_codec(session);
-	//switch_timer_t *timer;
+	switch_timer_t *timer;
 	switch_media_handle_t *smh;
 	switch_image_t *dup_img = NULL, *img = frame->img;
 	switch_status_t encode_status;
@@ -11454,7 +11454,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_video_frame(switch_cor
 	frame = &write_frame;
 	frame->img = img;
 
-#if 0
+
 	if (!switch_test_flag(frame, SFF_USE_VIDEO_TIMESTAMP)) {
 
 		if (!(timer = switch_core_media_get_timer(session, SWITCH_MEDIA_TYPE_VIDEO))) {
@@ -11468,7 +11468,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_video_frame(switch_cor
 
 		frame->timestamp = timer->samplecount;
 	}
-#endif
+
 
 	switch_clear_flag(frame, SFF_SAME_IMAGE);
 	frame->m = 0;
