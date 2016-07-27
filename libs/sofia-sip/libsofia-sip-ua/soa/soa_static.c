@@ -1061,9 +1061,11 @@ int soa_sdp_mode_set(sdp_session_t const *user,
       continue;
     }
 
-    send_mode = (sdp_mode_t)(um->m_mode & sdp_sendonly);
-    if (rm)
-      send_mode = (rm->m_mode & sdp_recvonly) ? sdp_sendonly : 0;
+	if (um->m_mode) { /* when its inactive, keep it inactive */
+		send_mode = (sdp_mode_t)(um->m_mode & sdp_sendonly);
+		if (rm)
+			send_mode = (rm->m_mode & sdp_recvonly) ? sdp_sendonly : 0;
+	} else send_mode = um->m_mode;
 
     recv_mode = (sdp_mode_t)(um->m_mode & sdp_recvonly);
 
