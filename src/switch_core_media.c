@@ -7718,6 +7718,10 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 			smh->mparams->rtcp_video_interval_msec = SWITCH_RTCP_VIDEO_INTERVAL_MSEC;
 		}
 
+		if (switch_true(switch_channel_get_variable(session->channel, "add_ice_candidates"))) {
+			switch_channel_set_flag(session->channel, CF_ICE);
+		}
+
 		if ( switch_rtp_has_dtls() && dtls_ok(session)) {
 			if (switch_channel_test_flag(session->channel, CF_AVPF) ||
 				switch_true(switch_channel_get_variable(smh->session->channel, "rtp_use_dtls"))) {
