@@ -693,7 +693,10 @@ static switch_status_t consume_h263_bitstream(h264_codec_context_t *context, swi
 #endif
 	}
 
-	if (!context->nalus[context->nalu_current_index].len) frame->m = 1;
+	if (!context->nalus[context->nalu_current_index].len) {
+		av_packet_unref(&context->encoder_avpacket);
+		frame->m = 1;
+	}
 
 #if 0
 	{
