@@ -1039,7 +1039,7 @@ SWITCH_DECLARE(uint32_t) switch_jb_pop_nack(switch_jb_t *jb)
 
  top:
 
-	for (hi = switch_core_hash_first(jb->missing_seq_hash); hi; hi = switch_core_hash_next(&hi)) {
+	for (hi = switch_core_hash_first_iter(jb->missing_seq_hash, hi); hi; hi = switch_core_hash_next(&hi)) {
 		uint16_t seq;
 		//const char *token;
 		switch_time_t then = 0;
@@ -1075,6 +1075,8 @@ SWITCH_DECLARE(uint32_t) switch_jb_pop_nack(switch_jb_t *jb)
 			least = seq;
 		}
 	}
+
+	switch_safe_free(hi);
 
 	if (least && switch_core_inthash_delete(jb->missing_seq_hash, (uint32_t)htons(least))) {
 		jb_debug(jb, 3, "Found NACKABLE seq %u\n", least);

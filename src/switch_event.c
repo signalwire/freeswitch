@@ -2752,6 +2752,7 @@ static void unsub_all_switch_event_channel(void)
 		free(head);
 	}
 
+	switch_safe_free(hi);
 	switch_thread_rwlock_unlock(event_channel_manager.rwlock);
 }
 
