@@ -6102,6 +6102,16 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_choose_port(switch_core_sessio
 		use_ip = smh->mparams->rtpip;
 	}
 
+	if (zstr(smh->mparams->remote_ip)) { /* no remote_ip, we're originating */
+		if (!zstr(smh->mparams->extrtpip)) { /* and we've got an ext-rtp-ip, eg, from verto config */
+			use_ip = smh->mparams->extrtpip; /* let's use it for composing local sdp to send to client */
+			/*
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, 
+						"%s will use %s instead of %s in SDP, because we're originating and we have an ext-rtp-ip setting\n", 
+						switch_channel_get_name(smh->session->channel), smh->mparams->extrtpip, smh->mparams->rtpip);
+			*/
+		}
+	}
 	engine->adv_sdp_port = sdp_port;
 	engine->adv_sdp_ip = smh->mparams->adv_sdp_audio_ip = smh->mparams->extrtpip = switch_core_session_strdup(session, use_ip);
 
