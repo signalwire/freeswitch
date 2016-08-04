@@ -342,10 +342,7 @@ static switch_status_t buffer_h263_packets(h264_codec_context_t *context, switch
 			}
 		}
 		// return SWITCH_STATUS_RESTART;
-	} else if (delta < 1) {
-		// probabaly stream changed
-		return SWITCH_STATUS_RESTART;
-	} else { // delta == 1
+	} else {
 		context->last_seq = frame->seq;
 	}
 
