@@ -500,7 +500,7 @@ static int restore_socket(ws_socket_t sock)
 #endif
 
 
-static int establish_logical_layer(wsh_t *wsh)
+int establish_logical_layer(wsh_t *wsh)
 {
 
 	if (!wsh->sanity) {

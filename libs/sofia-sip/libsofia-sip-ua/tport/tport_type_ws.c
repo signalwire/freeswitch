@@ -461,6 +461,7 @@ int tport_ws_init_secondary(tport_t *self, int socket, int accepted,
   tport_ws_t *wstp = (tport_ws_t *)self;
 
   self->tp_has_connection = 1;
+  self->tp_params->tpp_keepalive = 5000;
 
   /* override the default 30 minute timeout on tport connections */
   self->tp_params->tpp_idle = UINT_MAX;
@@ -496,7 +497,7 @@ int tport_ws_init_secondary(tport_t *self, int socket, int accepted,
   wstp->ws_initialized = 1;
   self->tp_pre_framed = 1;
   
-
+  tport_set_secondary_timer(self);
 
   return 0;
 }
@@ -592,6 +593,20 @@ int tport_ws_next_timer(tport_t *self,
 			 su_time_t *return_target,
 			 char const **return_why)
 {
+	tport_ws_t *wstp = (tport_ws_t *)self;
+
+	if (establish_logical_layer(&wstp->ws) < 0) {
+		if (wstp->tos++ == 1) {
+			tport_close(self);
+			SU_DEBUG_7(("%s(%p): %s to " TPN_FORMAT "%s\n",
+						__func__, (void *)self,
+						"timeout establishing connection\n", TPN_ARGS(self->tp_name), ""));
+			return -1;
+		}
+	} else {
+		self->tp_params->tpp_keepalive = 30000;
+	}
+
   return
     tport_next_recv_timeout(self, return_target, return_why) |
     tport_next_keepalive(self, return_target, return_why);
