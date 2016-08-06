@@ -1239,6 +1239,7 @@ SWITCH_STANDARD_API(av_format_api_function)
 struct av_file_context {
 	switch_memory_pool_t *pool;
 	switch_mutex_t *mutex;
+	switch_thread_cond_t *cond;
 	switch_buffer_t *buf;
 	switch_buffer_t *audio_buffer;
 	switch_timer_t video_timer;
@@ -1261,6 +1262,7 @@ struct av_file_context {
 	record_helper_t eh;
 	switch_thread_t *file_read_thread;
 	int file_read_thread_running;
+	int file_read_thread_started;
 	switch_time_t video_start_time;
 	switch_image_t *last_img;
 	int read_fps;
@@ -1417,7 +1419,11 @@ static void *SWITCH_THREAD_FUNC file_read_thread_run(switch_thread_t *thread, vo
 	int sync  = 0;
 	int eof = 0;
 
+	switch_mutex_lock(context->mutex);
+	context->file_read_thread_started = 1;
 	context->file_read_thread_running = 1;
+	switch_thread_cond_signal(context->cond);
+	switch_mutex_unlock(context->mutex);
 
 	while (context->file_read_thread_running && !context->closed) {
 		int vid_frames = 0;
@@ -1684,6 +1690,7 @@ static switch_status_t av_file_open(switch_file_handle_t *handle, const char *pa
 	}
 
 	switch_mutex_init(&context->mutex, SWITCH_MUTEX_NESTED, handle->memory_pool);
+	switch_thread_cond_create(&context->cond, handle->memory_pool);
 	switch_buffer_create_dynamic(&context->audio_buffer, 512, 512, 0);
 
 	if (!context->audio_buffer) {
@@ -2063,6 +2070,12 @@ static switch_status_t av_file_read(switch_file_handle_t *handle, void *data, si
 		memset(data, 0, *len * handle->channels * 2);
 		return SWITCH_STATUS_SUCCESS;
 	}
+
+	switch_mutex_lock(context->mutex);
+	while (!context->file_read_thread_started) {
+		switch_thread_cond_wait(context->cond, context->mutex);
+	}
+	switch_mutex_unlock(context->mutex);
 
 	if (!context->file_read_thread_running && switch_buffer_inuse(context->audio_buffer) == 0) {
 		*len = 0;
