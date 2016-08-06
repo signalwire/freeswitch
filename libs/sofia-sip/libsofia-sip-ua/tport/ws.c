@@ -547,9 +547,9 @@ static int establish_logical_layer(wsh_t *wsh)
 
 			wsh->sanity--;
 
-			//if (!wsh->block) {
-			//	return -2;
-			//}
+			if (!wsh->block) {
+				return -2;
+			}
 
 		} while (wsh->sanity > 0);
 		
