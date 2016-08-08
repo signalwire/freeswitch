@@ -182,7 +182,7 @@ typedef struct {
 	double          f;
 	/* freq_table_t ft; */
 	avmd_state_t state;
-	switch_time_t start_time;
+	switch_time_t start_time, stop_time, detection_start_time, detection_stop_time;
     size_t samples_streak; /* number of DESA samples in single streak without reset needed to validate SMA estimator */
     size_t sample_count;
 } avmd_session_t;
@@ -202,7 +202,8 @@ static switch_status_t avmd_register_all_events(void);
 static void avmd_unregister_all_events(void);
 
 static void
-avmd_fire_event(enum avmd_event type, switch_core_session_t *fs_s, double freq, double v_freq, double amp, double v_amp, avmd_beep_state_t beep_status, uint8_t info);
+avmd_fire_event(enum avmd_event type, switch_core_session_t *fs_s, double freq, double v_freq, double amp, double v_amp, avmd_beep_state_t beep_status, uint8_t info,
+        switch_time_t detection_start_time, switch_time_t detection_stop_time, switch_time_t start_time, switch_time_t stop_time);
 
 /* API [set default], reset to factory settings */
 static void avmd_set_xml_default_configuration(switch_mutex_t *mutex);
@@ -259,6 +260,8 @@ init_avmd_session_data(avmd_session_t *avmd_session, switch_core_session_t *fs_s
     memcpy(&avmd_session->settings, &avmd_globals.settings, sizeof(struct avmd_settings));
 	switch_mutex_init(&avmd_session->mutex, SWITCH_MUTEX_DEFAULT, switch_core_session_get_pool(fs_session));
     avmd_session->sample_count = 0;
+    avmd_session->detection_start_time = 0;
+    avmd_session->detection_stop_time = 0;
 
     buf_sz = BEEP_LEN((uint32_t)avmd_session->rate) / (uint32_t)SINE_LEN(avmd_session->rate);
     if (buf_sz < 1) {
@@ -424,9 +427,11 @@ avmd_unregister_all_events(void)
 }
 
 static void
-avmd_fire_event(enum avmd_event type, switch_core_session_t *fs_s, double freq, double v_freq, double amp, double v_amp, avmd_beep_state_t beep_status, uint8_t info) {
+avmd_fire_event(enum avmd_event type, switch_core_session_t *fs_s, double freq, double v_freq, double amp, double v_amp, avmd_beep_state_t beep_status, uint8_t info,
+        switch_time_t detection_start_time, switch_time_t detection_stop_time, switch_time_t start_time, switch_time_t stop_time) {
     int res;
     switch_event_t      *event;
+    switch_time_t       detection_time, total_time;
     switch_status_t     status;
     switch_event_t      *event_copy;
     char                buf[AVMD_CHAR_BUF_LEN];
@@ -467,9 +472,23 @@ avmd_fire_event(enum avmd_event type, switch_core_session_t *fs_s, double freq, 
                 switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Amplitude-variance", "ERROR (TRUNCATED)");
             }
             switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Amplitude-variance", buf);
+
+            detection_time = detection_stop_time - detection_start_time;
+            res = snprintf(buf, AVMD_CHAR_BUF_LEN, "%" PRId64 "", detection_time);
+            if (res < 0 || res > AVMD_CHAR_BUF_LEN - 1) {
+                switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_s), SWITCH_LOG_ERROR, "Detection time truncated [%s], [%d] attempted!\n", buf, res);
+                switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Detection-time", "ERROR (TRUNCATED)");
+            }
+            switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Detection-time", buf);
             break;
 
         case AVMD_EVENT_SESSION_START:
+            res = snprintf(buf, AVMD_CHAR_BUF_LEN, "%" PRId64 "", start_time);
+            if (res < 0 || res > AVMD_CHAR_BUF_LEN - 1) {
+                switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_s), SWITCH_LOG_ERROR, "Start time truncated [%s], [%d] attempted!\n", buf, res);
+                switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Start-time", "ERROR (TRUNCATED)");
+            }
+            switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Start-time", buf);
             break;
 
         case AVMD_EVENT_SESSION_STOP:
@@ -478,6 +497,13 @@ avmd_fire_event(enum avmd_event type, switch_core_session_t *fs_s, double freq, 
                 switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_s), SWITCH_LOG_ERROR, "Error, avmd session object not found in media bug!\n");
                 switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "stop-status", "ERROR (AVMD SESSION OBJECT NOT FOUND IN MEDIA BUG)");
             }
+            total_time = stop_time - start_time;
+            res = snprintf(buf, AVMD_CHAR_BUF_LEN, "%" PRId64 "", total_time);
+            if (res < 0 || res > AVMD_CHAR_BUF_LEN - 1) {
+                switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_s), SWITCH_LOG_ERROR, "Total time truncated [%s], [%d] attempted!\n", buf, res);
+                switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Total-time", "ERROR (TRUNCATED)");
+            }
+            switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Total-time", buf);
             break;
 
         default:
@@ -1084,7 +1110,7 @@ SWITCH_STANDARD_APP(avmd_start_app)
         goto end;
 	}
 	switch_channel_set_private(channel, "_avmd_", bug); /* Set the avmd tag to detect an existing avmd media bug */
-    avmd_fire_event(AVMD_EVENT_SESSION_START, session, 0, 0, 0, 0, 0, 0);
+    avmd_fire_event(AVMD_EVENT_SESSION_START, session, 0, 0, 0, 0, 0, 0, 0, 0, avmd_session->start_time, 0);
     if (avmd_session->settings.report_status == 1) {
         switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Avmd on channel [%s] started!\n", switch_channel_get_name(channel));
     }
@@ -1099,6 +1125,7 @@ SWITCH_STANDARD_APP(avmd_stop_app)
 	switch_media_bug_t  *bug;
 	switch_channel_t    *channel;
     avmd_session_t      *avmd_session;
+    switch_time_t       start_time, stop_time, total_time;
     uint8_t             report_status = 0, avmd_found = 1;
     avmd_beep_state_t   beep_status = BEEP_NOTDETECTED;
 
@@ -1137,18 +1164,20 @@ SWITCH_STANDARD_APP(avmd_stop_app)
         switch_mutex_lock(avmd_session->mutex);
         report_status = avmd_session->settings.report_status;
         beep_status = avmd_session->state.beep_state;
+        avmd_session->stop_time = switch_micro_time_now();
+        start_time = avmd_session->start_time;
+        stop_time = avmd_session->stop_time;
+        total_time = stop_time - start_time;
         switch_mutex_unlock(avmd_session->mutex);
     }
     switch_channel_set_private(channel, "_avmd_", NULL);
     switch_core_media_bug_remove(session, &bug);
     if (avmd_found == 1) {
-        avmd_fire_event(AVMD_EVENT_SESSION_STOP, session, 0, 0, 0, 0, beep_status, 1);
-    } else {
-        avmd_fire_event(AVMD_EVENT_SESSION_STOP, session, 0, 0, 0, 0, beep_status, 0);
-    }
-    if (report_status == 1) {
-        switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Avmd on channel [%s] stopped, beep status: [%s]\n",
-                switch_channel_get_name(channel), beep_status == BEEP_DETECTED ? "DETECTED" : "NOTDETECTED");
+        avmd_fire_event(AVMD_EVENT_SESSION_STOP, session, 0, 0, 0, 0, beep_status, 1, 0, 0, start_time, stop_time);
+        if (report_status == 1) {
+            switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Avmd on channel [%s] stopped, beep status: [%s], total running time [%" PRId64 "] [us]\n",
+                    switch_channel_get_name(channel), beep_status == BEEP_DETECTED ? "DETECTED" : "NOTDETECTED", total_time);
+        }
     }
     return;
 }
@@ -1405,15 +1434,19 @@ SWITCH_STANDARD_API(avmd_api_main)
 	if (bug != NULL) {
 		/* If we have a stop remove audio bug */
 		if (strcasecmp(command, "stop") == 0) {
+            avmd_session = (avmd_session_t*) switch_core_media_bug_get_user_data(bug);
+            if (avmd_session == NULL) {
+                switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_session), SWITCH_LOG_ERROR, "Stop failed - no avmd session object"
+                        " on this channel [%s]!\n", switch_channel_get_name(channel));
+                goto end;
+            }
             uuid_dup = switch_core_strdup(switch_core_session_get_pool(fs_session), uuid);
 			switch_channel_set_private(channel, "_avmd_", NULL);
 			switch_core_media_bug_remove(fs_session, &bug);
-            avmd_fire_event(AVMD_EVENT_SESSION_STOP, fs_session, 0, 0, 0, 0, 0, 0);
+            avmd_fire_event(AVMD_EVENT_SESSION_STOP, fs_session, 0, 0, 0, 0, 0, 0, 0, 0, avmd_session->start_time, avmd_session->stop_time);
             if (avmd_globals.settings.report_status == 1) {
-			    stream->write_function(stream, "+OK\n [%s] [%s] stopped\n\n",
-                        uuid_dup, switch_channel_get_name(channel));
-		        switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_session), SWITCH_LOG_INFO,
-			        "Avmd on channel [%s] stopped!\n", switch_channel_get_name(channel));
+			    stream->write_function(stream, "+OK\n [%s] [%s] stopped\n\n", uuid_dup, switch_channel_get_name(channel));
+		        switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_session), SWITCH_LOG_INFO, "Avmd on channel [%s] stopped!\n", switch_channel_get_name(channel));
             }
 			goto end;
 		}
@@ -1529,7 +1562,7 @@ SWITCH_STANDARD_API(avmd_api_main)
 
 	switch_channel_set_private(channel, "_avmd_", bug); /* Set the vmd tag to detect an existing vmd media bug */
 
-    avmd_fire_event(AVMD_EVENT_SESSION_START, fs_session, 0, 0, 0, 0, 0, 0);
+    avmd_fire_event(AVMD_EVENT_SESSION_START, fs_session, 0, 0, 0, 0, 0, 0, 0, 0, avmd_session->start_time, 0);
     if (avmd_globals.settings.report_status == 1) {
 	    stream->write_function(stream, "+OK\n [%s] [%s] started!\n\n",
                 uuid, switch_channel_get_name(channel));
@@ -1556,6 +1589,7 @@ end:
  */
 static void avmd_process(avmd_session_t *s, switch_frame_t *frame) {
     switch_channel_t    *channel;
+    switch_time_t       detection_time;
     circ_buffer_t       *b;
     size_t              pos;
     double      omega, amplitude;
@@ -1570,6 +1604,9 @@ static void avmd_process(avmd_session_t *s, switch_frame_t *frame) {
 
     /* If beep has already been detected skip the CPU heavy stuff */
     if (s->state.beep_state == BEEP_DETECTED) return;
+    if (s->detection_start_time == 0) {
+        s->detection_start_time = switch_micro_time_now();  /* start detection timer */
+    }
 
     /* Precompute values used heavily in the inner loop */
     sine_len_i = (uint32_t) SINE_LEN(s->rate);
@@ -1678,11 +1715,13 @@ static void avmd_process(avmd_session_t *s, switch_frame_t *frame) {
                 sma_digital_freq =  0.5 * acos(s->sma_b.sma);
 #endif /* !WIN32 && AVMD_FAST_MATH */
 
-				switch_channel_set_variable_printf(channel, "avmd_total_time", "[%d]", (int)(switch_micro_time_now() - s->start_time) / 1000);
+                s->detection_stop_time = switch_micro_time_now();  /* stop detection timer */
+                detection_time = s->detection_stop_time - s->detection_start_time;  /* detection time length */
+				switch_channel_set_variable_printf(channel, "avmd_total_time", "[%" PRId64 "]", detection_time / 1000);
 				switch_channel_execute_on(channel, "execute_on_avmd_beep");
-				avmd_fire_event(AVMD_EVENT_BEEP, s->session, TO_HZ(s->rate, sma_digital_freq), v, s->sma_amp_b.sma, v_amp, 0, 0);
+				avmd_fire_event(AVMD_EVENT_BEEP, s->session, TO_HZ(s->rate, sma_digital_freq), v, s->sma_amp_b.sma, v_amp, 0, 0, s->detection_start_time, s->detection_stop_time, 0, 0);
                 if (s->settings.report_status == 1) {
-                    switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(s->session), SWITCH_LOG_INFO, "<<< AVMD - Beep Detected: f = [%f] variance = [%f], amplitude = [%f] variance = [%f] >>>\n", TO_HZ(s->rate, sma_digital_freq), v, s->sma_amp_b.sma, v_amp);
+                    switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(s->session), SWITCH_LOG_INFO, "<<< AVMD - Beep Detected: f = [%f] variance = [%f], amplitude = [%f] variance = [%f], detection time [%" PRId64 "] [us] >>>\n", TO_HZ(s->rate, sma_digital_freq), v, s->sma_amp_b.sma, v_amp, detection_time);
                 }
 				switch_channel_set_variable(channel, "avmd_detect", "TRUE");
 				RESET_SMA_BUFFER(&s->sma_b);
