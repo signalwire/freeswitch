@@ -644,7 +644,7 @@ void sofia_glue_set_extra_headers(switch_core_session_t *session, sip_t const *s
 	}
 
 	for (un = sip->sip_unknown; un; un = un->un_next) {
-		if ((!strncasecmp(un->un_name, "X-", 2) && strncasecmp(un->un_name, "X-FS-", 5)) || !strncasecmp(un->un_name, "P-", 2) || !strncasecmp(un->un_name, "On", 2)) {
+		if (sofia_test_extra_headers(un->un_name)) {
 			if (!zstr(un->un_value)) {
 				switch_snprintf(name, sizeof(name), "%s%s", prefix, un->un_name);
 				switch_channel_set_variable(channel, name, un->un_value);
@@ -683,6 +683,33 @@ char *sofia_glue_get_extra_headers_from_event(switch_event_t *event, const char 
 	}
 
 	return extra_headers;
+}
+
+char *sofia_glue_get_non_extra_unknown_headers(sip_t const *sip)
+{
+	char *unknown = NULL;
+	switch_stream_handle_t stream = { 0 };
+	sip_unknown_t *un;
+
+	if (!sip) {
+		return NULL;
+	}
+
+	SWITCH_STANDARD_STREAM(stream);
+	for (un = sip->sip_unknown; un; un = un->un_next) {
+		if (!sofia_test_extra_headers(un->un_name)) {
+			if (!zstr(un->un_value)) {
+				stream.write_function(&stream, "%s: %s\r\n",un->un_name,un->un_value);
+			}
+		}
+	}
+	if (!zstr((char *) stream.data)) {
+		unknown = stream.data;
+	} else {
+		switch_safe_free(stream.data);
+	}
+
+	return unknown;
 }
 
 switch_status_t sofia_glue_do_invite(switch_core_session_t *session)

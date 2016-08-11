@@ -764,6 +764,8 @@ struct sofia_profile {
 	ka_type_t keepalive;
 	int bind_attempts;
 	int bind_attempt_interval;
+	char *proxy_notify_events;
+	char *proxy_info_content_types;
 };
 
 
@@ -1066,6 +1068,8 @@ void sofia_reg_release_gateway__(const char *file, const char *func, int line, s
 
 #define sofia_use_soa(_t) sofia_test_flag(_t, TFLAG_ENABLE_SOA)
 
+#define sofia_test_extra_headers(val) (((!strncasecmp(val, "X-", 2) && strncasecmp(val, "X-FS-", 5)) || !strncasecmp(val, "P-", 2) || !strncasecmp(val, "On", 2)) ? 1 : 0)
+
 #define check_decode(_var, _session) do {								\
 		assert(_session);												\
 		if (!zstr(_var)) {								\
@@ -1162,6 +1166,7 @@ switch_status_t sofia_glue_send_notify(sofia_profile_t *profile, const char *use
 char *sofia_glue_get_extra_headers(switch_channel_t *channel, const char *prefix);
 void sofia_glue_set_extra_headers(switch_core_session_t *session, sip_t const *sip, const char *prefix);
 char *sofia_glue_get_extra_headers_from_event(switch_event_t *event, const char *prefix);
+char *sofia_glue_get_non_extra_unknown_headers(sip_t const *sip);
 void sofia_update_callee_id(switch_core_session_t *session, sofia_profile_t *profile, sip_t const *sip, switch_bool_t send);
 void sofia_send_callee_id(switch_core_session_t *session, const char *name, const char *number);
 int sofia_sla_supported(sip_t const *sip);
