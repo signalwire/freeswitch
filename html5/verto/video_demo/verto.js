@@ -21,7 +21,7 @@ var master = null;
 var canvas_id = null;
 var second_screen = null;
 var save_settings = true;
-
+var vertoHandle = null;
 var video_screen = "webcam"
 
 $( ".selector" ).pagecontainer({ "theme": "a" });

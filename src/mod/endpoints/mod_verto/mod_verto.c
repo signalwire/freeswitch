@@ -3819,7 +3819,7 @@ static switch_bool_t verto__broadcast_func(const char *method, cJSON *params, js
 	}
 
 	jevent = cJSON_Duplicate(params, 1);
-	verto_broadcast(event_channel, jevent, modname, globals.event_channel_id);
+	write_event(event_channel, NULL, jevent);
 	switch_event_channel_broadcast(event_channel, &jevent, modname, globals.event_channel_id);
 
 
