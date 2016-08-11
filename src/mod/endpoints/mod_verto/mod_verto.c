@@ -161,7 +161,7 @@ static void close_socket(ws_socket_t *sock)
 	}
 }
 
-
+void verto_broadcast(const char *event_channel, cJSON *json, const char *key, switch_event_channel_id_t id);
 static int ssl_init = 0;
 
 static int verto_init_ssl(verto_profile_t *profile) 
@@ -3819,7 +3819,9 @@ static switch_bool_t verto__broadcast_func(const char *method, cJSON *params, js
 	}
 
 	jevent = cJSON_Duplicate(params, 1);
+	verto_broadcast(event_channel, jevent, modname, globals.event_channel_id);
 	switch_event_channel_broadcast(event_channel, &jevent, modname, globals.event_channel_id);
+
 
 	if (jsock->profile->mcast_pub.sock != ws_sock_invalid) {
 		if ((json_text = cJSON_PrintUnformatted(params))) {
