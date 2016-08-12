@@ -1213,7 +1213,6 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 	case SWITCH_MESSAGE_INDICATE_MEDIA_RENEG:
 		{
 			if (msg->string_arg) {
-				sofia_set_media_flag(tech_pvt->profile, SCMF_RENEG_ON_REINVITE);
 				sofia_clear_flag(tech_pvt, TFLAG_ENABLE_SOA);
 			}
 

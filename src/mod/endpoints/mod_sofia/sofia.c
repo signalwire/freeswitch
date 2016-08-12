@@ -4330,7 +4330,6 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 					sofia_set_pflag(profile, PFLAG_ENABLE_CHAT);
 					profile->auto_restart = 1;
 					sofia_set_media_flag(profile, SCMF_AUTOFIX_TIMING);
-					sofia_set_media_flag(profile, SCMF_RENEG_ON_REINVITE);
 					sofia_set_media_flag(profile, SCMF_RTP_AUTOFLUSH_DURING_BRIDGE);
 					profile->contact_user = SOFIA_DEFAULT_CONTACT_USER;
 					sofia_set_pflag(profile, PFLAG_PASS_CALLEE_ID);
@@ -4608,18 +4607,6 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 							sofia_set_pflag(profile, PFLAG_IGNORE_183NOSDP);
 						} else {
 							sofia_clear_pflag(profile, PFLAG_IGNORE_183NOSDP);
-						}
-					} else if (!strcasecmp(var, "renegotiate-codec-on-hold")) {
-						if (switch_true(val)) {
-							sofia_set_media_flag(profile, SCMF_RENEG_ON_HOLD);
-						} else {
-							sofia_clear_media_flag(profile, SCMF_RENEG_ON_HOLD);
-						}
-					} else if (!strcasecmp(var, "renegotiate-codec-on-reinvite")) {
-						if (switch_true(val)) {
-							sofia_set_media_flag(profile, SCMF_RENEG_ON_REINVITE);
-						} else {
-							sofia_clear_media_flag(profile, SCMF_RENEG_ON_REINVITE);
 						}
 					} else if (!strcasecmp(var, "presence-probe-on-register")) {
 						if (switch_true(val)) {

@@ -1868,7 +1868,6 @@ SWITCH_DECLARE(void) switch_core_media_prepare_codecs(switch_core_session_t *ses
 	switch_channel_set_variable(session->channel, "rtp_use_codec_string", codec_string);
 	smh->codec_order_last = switch_separate_string(tmp_codec_string, ',', smh->codec_order, SWITCH_MAX_CODECS);
 	smh->mparams->num_codecs = switch_loadable_module_get_codecs_sorted(smh->codecs, smh->fmtp, SWITCH_MAX_CODECS, smh->codec_order, smh->codec_order_last);
-
 }
 
 static void check_jb(switch_core_session_t *session, const char *input, int32_t jb_msec, int32_t maxlen, switch_bool_t silent)
@@ -3716,7 +3715,6 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 	int scrooge = 0;
 	sdp_parser_t *parser = NULL;
 	sdp_session_t *sdp;
-	int reneg = 1;
 	const switch_codec_implementation_t **codec_array;
 	int total_codecs;
 	switch_rtp_engine_t *a_engine, *v_engine;
@@ -4104,48 +4102,15 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 					  && switch_true(val)))
 				&& !smh->mparams->hold_laps) {
 				smh->mparams->hold_laps++;
-				if (switch_core_media_toggle_hold(session, sendonly)) {
-					reneg = switch_media_handle_test_media_flag(smh, SCMF_RENEG_ON_HOLD);
-					if ((val = switch_channel_get_variable(session->channel, "rtp_renegotiate_codec_on_hold"))) {
-						reneg = switch_true(val);
-					}
-				}
-			}
-
-			if (reneg) {
-				reneg = switch_media_handle_test_media_flag(smh, SCMF_RENEG_ON_REINVITE);
-				
-				if ((val = switch_channel_get_variable(session->channel, "rtp_renegotiate_codec_on_reinvite"))) {
-					reneg = switch_true(val);
-				}
-			}
-
-			if (session->bugs) {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, 
-								  "Session is connected to a media bug. "
-								  "Re-Negotiation implicitly disabled.\n");
-				reneg = 0;
-			}
-			
-			if (switch_channel_test_flag(session->channel, CF_RECOVERING)) {
-				reneg = 0;
-			}
-			
-			if (sdp_type == SDP_TYPE_RESPONSE && smh->num_negotiated_codecs) {
-				/* response to re-invite or update, only negotiated codecs are valid */
-				reneg = 0;
+				switch_core_media_toggle_hold(session, sendonly);
 			}
 
 
-			if (!reneg && smh->num_negotiated_codecs) {
-				codec_array = smh->negotiated_codecs;
-				total_codecs = smh->num_negotiated_codecs;
-			} else if (reneg) {
-				smh->mparams->num_codecs = 0;
-				switch_core_media_prepare_codecs(session, SWITCH_FALSE);
-				codec_array = smh->codecs;
-				total_codecs = smh->mparams->num_codecs;
-			}
+			smh->mparams->num_codecs = 0;
+			smh->num_negotiated_codecs = 0;
+			switch_core_media_prepare_codecs(session, SWITCH_FALSE);
+			codec_array = smh->codecs;
+			total_codecs = smh->mparams->num_codecs;
 			
 
 			if (switch_rtp_has_dtls() && dtls_ok(session)) {
@@ -4207,7 +4172,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 			}
 
 			x = 0;
-
+			
 			for (map = m->m_rtpmaps; map; map = map->rm_next) {
 				int32_t i;
 				const char *rm_encoding;
@@ -4439,7 +4404,6 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 
 				match = 1;
 				a_engine->codec_negotiated = 1;
-				smh->num_negotiated_codecs = 0;
 
 				for(j = 0; j < m_idx; j++) {
 					payload_map_t *pmap = switch_core_media_add_payload_map(session, 
@@ -4498,6 +4462,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 					pmap->rm_fmtp = switch_core_session_strdup(session, (char *) mmap->rm_fmtp);
 						
 					pmap->agreed_pt = (switch_payload_t) mmap->rm_pt;
+
 					smh->negotiated_codecs[smh->num_negotiated_codecs++] = mimp;
 					pmap->recv_pt = (switch_payload_t)mmap->rm_pt;
 						
@@ -4531,14 +4496,6 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 
 
 
-#if 0
-				if (!switch_true(mirror) && 
-					switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND && 
-					(!switch_channel_test_flag(session->channel, CF_REINVITE) || switch_media_handle_test_media_flag(smh, SCMF_RENEG_ON_REINVITE))) {
-					switch_core_media_get_offered_pt(session, matches[0].imp, &a_engine->cur_payload_map->recv_pt);
-				}
-#endif
-				
 				switch_snprintf(tmp, sizeof(tmp), "%d", a_engine->cur_payload_map->recv_pt);
 				switch_channel_set_variable(session->channel, "rtp_audio_recv_pt", tmp);
 
@@ -4786,10 +4743,11 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 				if (!(rm_encoding = map->rm_encoding)) {
 					rm_encoding = "";
 				}
+				printf("WTF TOT %d\n", total_codecs);
 
 				for (i = 0; i < total_codecs; i++) {
 					const switch_codec_implementation_t *imp = codec_array[i];
-
+					
 					if (imp->codec_type != SWITCH_CODEC_TYPE_VIDEO) {
 						continue;
 					}
@@ -4825,7 +4783,8 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Video Codec Compare [%s:%d] +++ is saved as a match\n",
 										  imp->iananame, map->rm_pt);
-						m_idx++;
+
+						m_idx++;						
 					}
 
 					vmatch = 0;
@@ -9852,8 +9811,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_receive_message(switch_core_se
 				switch_core_media_gen_local_sdp(session, SDP_TYPE_REQUEST, NULL, 0, NULL, 1);
 			}
 
-			switch_media_handle_set_media_flag(smh, SCMF_RENEG_ON_REINVITE);
-			
 			if (msg->numeric_arg && switch_core_session_get_partner(session, &nsession) == SWITCH_STATUS_SUCCESS) {
 				msg->numeric_arg = 0;
 				switch_core_session_receive_message(nsession, msg);

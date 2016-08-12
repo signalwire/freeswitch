@@ -2389,8 +2389,6 @@ static void verto_set_media_options(verto_pvt_t *tech_pvt, verto_profile_t *prof
 	tech_pvt->mparams->jb_msec = "-1";
 	switch_media_handle_set_media_flag(tech_pvt->smh, SCMF_SUPPRESS_CNG);
 
-	switch_media_handle_set_media_flag(tech_pvt->smh, SCMF_RENEG_ON_REINVITE);
-
 	//tech_pvt->mparams->auto_rtp_bugs = profile->auto_rtp_bugs;
 	tech_pvt->mparams->timer_name =  profile->timer_name;
 	//tech_pvt->mparams->vflags = profile->vflags;
