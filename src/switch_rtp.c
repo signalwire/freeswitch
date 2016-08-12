@@ -2072,13 +2072,13 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 		rtp_session->rtcp_send_msg.header.length = htons((uint16_t)(rtcp_bytes / 4) - 1);
 		
 		if (rtp_session->flags[SWITCH_RTP_FLAG_VIDEO]) {
-			//if (rtp_session->remote_ssrc == 0) {
-			//	rtp_session->remote_ssrc = rtp_session->stats.rtcp.peer_ssrc;
-			//}
+			if (rtp_session->remote_ssrc == 0 && rtp_session->stats.rtcp.peer_ssrc) {
+				rtp_session->remote_ssrc = rtp_session->stats.rtcp.peer_ssrc;
+			}
 			
-			//if (rtp_session->remote_ssrc == 0) {
-			//	rtp_session->remote_ssrc = ntohl(rtp_session->last_rtp_hdr.ssrc);
-			//}
+			if (rtp_session->remote_ssrc == 0 && rtp_session->last_rtp_hdr.ssrc) {
+				rtp_session->remote_ssrc = ntohl(rtp_session->last_rtp_hdr.ssrc);
+			}
 			
 
 			if (rtp_session->pli_count) {
@@ -2095,7 +2095,8 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 				ext_hdr->send_ssrc = htonl(rtp_session->ssrc);
 				ext_hdr->recv_ssrc = htonl(rtp_session->remote_ssrc);
 			
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "Sending RTCP PLI\n");
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "Sending RTCP PLI %u %u\n", 
+								  rtp_session->ssrc, rtp_session->remote_ssrc);
 			
 				ext_hdr->length = htons((uint8_t)(sizeof(switch_rtcp_ext_hdr_t) / 4) - 1); 
 				rtcp_bytes += sizeof(switch_rtcp_ext_hdr_t);
