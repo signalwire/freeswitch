@@ -4108,7 +4108,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 
 			smh->mparams->num_codecs = 0;
 			smh->num_negotiated_codecs = 0;
-			switch_core_media_prepare_codecs(session, SWITCH_FALSE);
+			switch_core_media_prepare_codecs(session, SWITCH_TRUE);
 			codec_array = smh->codecs;
 			total_codecs = smh->mparams->num_codecs;
 			

@@ -1590,20 +1590,25 @@ static void our_sofia_event_callback(nua_event_t event,
 			if (channel && sip) {
 				const char *r_sdp = NULL;
 
-				if (sofia_test_flag(tech_pvt, TFLAG_PASS_ACK) && sip->sip_payload && sip->sip_payload->pl_data) {
-					r_sdp = sip->sip_payload->pl_data;
+				if (sip->sip_payload && sip->sip_payload->pl_data) {
+					if (sofia_test_flag(tech_pvt, TFLAG_PASS_ACK)) {
+						r_sdp = sip->sip_payload->pl_data;
 
-					if (tech_pvt->mparams.last_sdp_str) {
-						tech_pvt->mparams.prev_sdp_str = tech_pvt->mparams.last_sdp_str;
-					}
-					tech_pvt->mparams.last_sdp_str = NULL;
+						if (tech_pvt->mparams.last_sdp_str) {
+							tech_pvt->mparams.prev_sdp_str = tech_pvt->mparams.last_sdp_str;
+						}
+						tech_pvt->mparams.last_sdp_str = NULL;
 
 
-					if (!zstr(tech_pvt->mparams.prev_sdp_str) && strcmp(tech_pvt->mparams.prev_sdp_str, sip->sip_payload->pl_data)) {
+						if (!zstr(tech_pvt->mparams.prev_sdp_str) && strcmp(tech_pvt->mparams.prev_sdp_str, sip->sip_payload->pl_data)) {
+							switch_channel_set_variable(channel, "sip_reinvite_sdp", sip->sip_payload->pl_data);
+							tech_pvt->mparams.last_sdp_str = switch_core_session_strdup(session, sip->sip_payload->pl_data);
+						} else {
+							tech_pvt->mparams.last_sdp_str = tech_pvt->mparams.prev_sdp_str;
+						}
+					} else {
 						switch_channel_set_variable(channel, "sip_reinvite_sdp", sip->sip_payload->pl_data);
 						tech_pvt->mparams.last_sdp_str = switch_core_session_strdup(session, sip->sip_payload->pl_data);
-					} else {
-						tech_pvt->mparams.last_sdp_str = tech_pvt->mparams.prev_sdp_str;
 					}
 				}
 
@@ -6872,7 +6877,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 				if (tech_pvt->mparams.last_sdp_response) {
 					r_sdp = tech_pvt->mparams.last_sdp_response;
 				}
-			} else if (ss_state == nua_callstate_received) {
+			} else if (ss_state == nua_callstate_received || ss_state == nua_callstate_ready) {
 				if (tech_pvt->mparams.last_sdp_str) {
 					r_sdp = tech_pvt->mparams.last_sdp_str;
 				}
