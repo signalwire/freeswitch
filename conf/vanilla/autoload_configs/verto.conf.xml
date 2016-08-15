@@ -2,6 +2,12 @@
 
   <settings>
     <param name="debug" value="0"/>
+    <!-- seconds to wait before hanging up a disconnected channel -->
+    <!-- <param name="detach-timeout-sec" value="120"/> -->
+    <!-- enable broadcasting all FreeSWITCH events in Verto -->
+    <!-- <param name="enable-fs-events" value="false"/> -->
+    <!-- enable broadcasting FreeSWITCH presence events in Verto -->
+    <!-- <param name="enable-presence" value="true"/> -->
   </settings>
 
   <profiles>
