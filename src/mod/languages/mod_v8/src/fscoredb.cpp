@@ -232,6 +232,14 @@ JS_COREDB_FUNCTION_IMPL(Step)
 	StepEx(info, SWITCH_CORE_DB_DONE);
 }
 
+JS_COREDB_FUNCTION_IMPL(Finalize)
+{
+	if (_stmt) {
+		switch_core_db_finalize(_stmt);
+		_stmt = NULL;
+	}
+}
+
 JS_COREDB_FUNCTION_IMPL(Fetch)
 {
 	HandleScope handle_scope(info.GetIsolate());
@@ -415,6 +423,7 @@ static const js_function_t db_methods[] = {
 	{"prepare", FSCoreDB::Prepare},
 	{"bindText", FSCoreDB::BindText},
 	{"bindInt", FSCoreDB::BindInt},
+	{"finalize", FSCoreDB::Finalize},
 	{0}
 };
 
