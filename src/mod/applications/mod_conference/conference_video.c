@@ -1930,6 +1930,10 @@ void conference_video_pop_next_image(conference_member_t *member, switch_image_t
 	int size = 0;
 	void *pop;
 
+	if (member->avatar_png_img && switch_channel_test_flag(member->channel, CF_VIDEO_READY) && conference_utils_member_test_flag(member, MFLAG_ACK_VIDEO)) {
+		switch_img_free(&member->avatar_png_img);
+	}
+	
 	if (!member->avatar_png_img && switch_channel_test_flag(member->channel, CF_VIDEO_READY)) {
 		do {
 			if (switch_queue_trypop(member->video_queue, &pop) == SWITCH_STATUS_SUCCESS && pop) {
@@ -3863,6 +3867,7 @@ switch_status_t conference_video_thread_callback(switch_core_session_t *session,
 			if (switch_queue_trypush(member->video_queue, img_copy) != SWITCH_STATUS_SUCCESS) {
 				switch_img_free(&img_copy);
 			}
+
 		}
 
 		switch_thread_rwlock_unlock(member->conference->rwlock);

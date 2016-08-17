@@ -707,6 +707,7 @@ void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, void *ob
 
 		if (switch_channel_test_flag(channel, CF_VIDEO) && !conference_utils_member_test_flag(member, MFLAG_ACK_VIDEO)) {
 			conference_utils_member_set_flag_locked(member, MFLAG_ACK_VIDEO);
+			switch_img_free(&member->avatar_png_img);
 			conference_video_check_avatar(member, SWITCH_FALSE);
 			switch_core_session_video_reinit(member->session);
 			conference_video_set_floor_holder(member->conference, member, SWITCH_FALSE);
