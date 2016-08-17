@@ -2070,17 +2070,8 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 		rtcp_generate_report_block(rtp_session, rtcp_report_block);
 
 		rtp_session->rtcp_send_msg.header.length = htons((uint16_t)(rtcp_bytes / 4) - 1);
-		
-		if (rtp_session->flags[SWITCH_RTP_FLAG_VIDEO]) {
-			if (rtp_session->remote_ssrc == 0 && rtp_session->stats.rtcp.peer_ssrc) {
-				rtp_session->remote_ssrc = rtp_session->stats.rtcp.peer_ssrc;
-			}
-			
-			if (rtp_session->remote_ssrc == 0 && rtp_session->last_rtp_hdr.ssrc) {
-				rtp_session->remote_ssrc = ntohl(rtp_session->last_rtp_hdr.ssrc);
-			}
-			
 
+		if (rtp_session->flags[SWITCH_RTP_FLAG_VIDEO]) {
 			if (rtp_session->pli_count) {
 				switch_rtcp_ext_hdr_t *ext_hdr;
 
@@ -3736,7 +3727,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_set_ssrc(switch_rtp_t *rtp_session, u
 SWITCH_DECLARE(switch_status_t) switch_rtp_set_remote_ssrc(switch_rtp_t *rtp_session, uint32_t ssrc) 
 {
 	rtp_session->remote_ssrc = ssrc;
-
+	rtp_session->flags[SWITCH_RTP_FLAG_DETECT_SSRC] = 0;
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -4007,6 +3998,7 @@ SWITCH_DECLARE(switch_rtp_t *) switch_rtp_new(const char *rx_host,
 		rtp_session->rx_host = switch_core_strdup(rtp_session->pool, rx_host);
 		rtp_session->rx_port = rx_port;
 		switch_rtp_set_flag(rtp_session, SWITCH_RTP_FLAG_FLUSH);
+		switch_rtp_set_flag(rtp_session, SWITCH_RTP_FLAG_DETECT_SSRC);
 	} else {
 		switch_rtp_release_port(rx_host, rx_port);
 	}
@@ -5259,6 +5251,17 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 			rtp_session->missed_count = 0;
 			switch_cp_addr(rtp_session->rtp_from_addr, rtp_session->from_addr);	
 			rtp_session->last_rtp_hdr = rtp_session->recv_msg.header;
+
+			
+			if (rtp_session->flags[SWITCH_RTP_FLAG_DETECT_SSRC]) {
+				//if (rtp_session->remote_ssrc != rtp_session->stats.rtcp.peer_ssrc && rtp_session->stats.rtcp.peer_ssrc) {
+				//	rtp_session->remote_ssrc = rtp_session->stats.rtcp.peer_ssrc;
+				//}
+				
+				if (rtp_session->remote_ssrc != rtp_session->last_rtp_hdr.ssrc && rtp_session->last_rtp_hdr.ssrc) {
+					rtp_session->remote_ssrc = ntohl(rtp_session->last_rtp_hdr.ssrc);
+				}
+			}
 		}
 	}
 
