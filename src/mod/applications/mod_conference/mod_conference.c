@@ -2761,10 +2761,10 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 					}
 				}
 
-				if (scale_h264_canvas_width < 320 || scale_h264_canvas_width < 180) {
+				if (scale_h264_canvas_width < 320 || scale_h264_canvas_height < 180) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid scale-h264-canvas-size, falling back to 320x180\n");
 					scale_h264_canvas_width = 320;
-					scale_h264_canvas_width = 180;
+					scale_h264_canvas_height = 180;
 				}
 			} else if (!strcasecmp(var, "scale-h264-canvas-fps-divisor") && !zstr(val)) {
 				scale_h264_canvas_fps_divisor = atoi(val);
