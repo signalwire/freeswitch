@@ -562,7 +562,7 @@ static void avmd_set_xml_default_configuration(switch_mutex_t *mutex)
     avmd_globals.settings.fast_math = 0;
     avmd_globals.settings.require_continuous_streak = 1;
     avmd_globals.settings.sample_n_continuous_streak = 15;
-    avmd_globals.settings.sample_n_to_skip = 6;
+    avmd_globals.settings.sample_n_to_skip = 15;
     avmd_globals.settings.simplified_estimation = 1;
     avmd_globals.settings.inbound_channnel = 0;
     avmd_globals.settings.outbound_channnel = 1;
