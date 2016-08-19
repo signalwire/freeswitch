@@ -8903,6 +8903,7 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 		switch_core_session_t *b_session;
 
 		switch_channel_set_variable_printf(channel, "transfer_to", "blind:%s", br ? br : exten);
+		switch_channel_set_variable_printf(channel, "transfer_destination", "blind:%s", exten);
 
 		if (!zstr(br) && (b_session = switch_core_session_locate(br))) {
 			const char *var;
