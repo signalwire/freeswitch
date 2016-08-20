@@ -776,6 +776,7 @@ static switch_status_t find_non_loopback_bridge(switch_core_session_t *session, 
 	const char *a_uuid = NULL;
 	switch_core_session_t *sp = NULL;
 
+
 	*br_session = NULL;
 	*br_uuid = NULL;
 
@@ -787,7 +788,9 @@ static switch_status_t find_non_loopback_bridge(switch_core_session_t *session, 
 			switch_channel_t *spchan = switch_core_session_get_channel(sp);
 
 			switch_channel_wait_for_state_or_greater(spchan, channel, CS_ROUTING);
-			
+
+			if (switch_false(switch_channel_get_variable(spchan, "loopback_bowout"))) break;
+
 			tech_pvt = switch_core_session_get_private(sp);
 
 			if (tech_pvt->other_channel) {
