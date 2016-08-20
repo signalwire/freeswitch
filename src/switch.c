@@ -504,8 +504,8 @@ int main(int argc, char *argv[])
 	char *arg_argv[128] = { 0 };
 	int alt_dirs = 0, alt_base = 0, log_set = 0, run_set = 0, do_kill = 0;
 	int priority = 0;
-#ifdef __sun
-	switch_core_flag_t flags = SCF_USE_SQL;
+#if (defined(__SVR4) && defined(__sun))
+	switch_core_flag_t flags = SCF_USE_SQL | SCF_CALIBRATE_CLOCK | SCF_USE_CLOCK_RT;
 #else
 	switch_core_flag_t flags = SCF_USE_SQL | SCF_USE_AUTO_NAT | SCF_USE_NAT_MAPPING | SCF_CALIBRATE_CLOCK | SCF_USE_CLOCK_RT;
 #endif
