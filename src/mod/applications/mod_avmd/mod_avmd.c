@@ -38,6 +38,7 @@
 
 #ifdef WIN32
 #include <float.h>
+#include <inttypes.h>
 #define ISNAN(x) (!!(_isnan(x)))
 #define ISINF(x) (isinf(x))
 #else
@@ -1126,7 +1127,7 @@ SWITCH_STANDARD_APP(avmd_stop_app)
 	switch_channel_t    *channel;
     avmd_session_t      *avmd_session;
     switch_time_t       start_time, stop_time, total_time;
-    uint8_t             report_status = 0, avmd_found = 1;
+    uint8_t             report_status = 0;
     avmd_beep_state_t   beep_status = BEEP_NOTDETECTED;
 
 	if (session == NULL) {
@@ -1157,9 +1158,8 @@ SWITCH_STANDARD_APP(avmd_stop_app)
 
     avmd_session = switch_core_media_bug_get_user_data(bug);
     if (avmd_session == NULL) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Stop failed - no avmd session object"
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Stop failed - no avmd session object, stop event not fired"
                 " on this channel [%s]!\n", switch_channel_get_name(channel));
-        avmd_found = 0;
     } else {
         switch_mutex_lock(avmd_session->mutex);
         report_status = avmd_session->settings.report_status;
@@ -1169,16 +1169,14 @@ SWITCH_STANDARD_APP(avmd_stop_app)
         stop_time = avmd_session->stop_time;
         total_time = stop_time - start_time;
         switch_mutex_unlock(avmd_session->mutex);
+		avmd_fire_event(AVMD_EVENT_SESSION_STOP, session, 0, 0, 0, 0, beep_status, 1, 0, 0, start_time, stop_time);
+		if (report_status == 1) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Avmd on channel [%s] stopped, beep status: [%s], total running time [%" PRId64 "] [us]\n",
+				switch_channel_get_name(channel), beep_status == BEEP_DETECTED ? "DETECTED" : "NOTDETECTED", total_time);
+		}
     }
     switch_channel_set_private(channel, "_avmd_", NULL);
     switch_core_media_bug_remove(session, &bug);
-    if (avmd_found == 1) {
-        avmd_fire_event(AVMD_EVENT_SESSION_STOP, session, 0, 0, 0, 0, beep_status, 1, 0, 0, start_time, stop_time);
-        if (report_status == 1) {
-            switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Avmd on channel [%s] stopped, beep status: [%s], total running time [%" PRId64 "] [us]\n",
-                    switch_channel_get_name(channel), beep_status == BEEP_DETECTED ? "DETECTED" : "NOTDETECTED", total_time);
-        }
-    }
     return;
 }
 
