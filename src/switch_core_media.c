@@ -7037,8 +7037,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 
 					if (v_engine->ice_in.cands[v_engine->ice_in.chosen[1]][1].ready) {
 
-						if (v_engine->rtcp_mux > 0 && !strcmp(v_engine->ice_in.cands[v_engine->ice_in.chosen[1]][1].con_addr, v_engine->ice_in.cands[v_engine->ice_in.chosen[0]][0].con_addr)
-							&& v_engine->ice_in.cands[v_engine->ice_in.chosen[1]][1].con_port == v_engine->ice_in.cands[v_engine->ice_in.chosen[0]][0].con_port) {
+						if (v_engine->rtcp_mux > 0 && v_engine->ice_in.cands[v_engine->ice_in.chosen[0]][0].ready &&
+							!strcmp(v_engine->ice_in.cands[v_engine->ice_in.chosen[1]][1].con_addr, 
+									v_engine->ice_in.cands[v_engine->ice_in.chosen[0]][0].con_addr) && 
+							v_engine->ice_in.cands[v_engine->ice_in.chosen[1]][1].con_port == v_engine->ice_in.cands[v_engine->ice_in.chosen[0]][0].con_port) {
 							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Skipping VIDEO RTCP ICE (Same as VIDEO RTP)\n");
 						} else {
 
