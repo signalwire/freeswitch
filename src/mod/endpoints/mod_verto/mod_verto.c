@@ -4677,7 +4677,7 @@ static switch_status_t parse_config(const char *cf)
 							vhost->alias = switch_core_strdup(vhost->pool, val);
 						} else if (!strcasecmp(var, "root")) {
 							vhost->root = switch_core_strdup(vhost->pool, val);
-						} else if (!strcasecmp(var, "script_root")) {
+						} else if (!strcasecmp(var, "script-root")) {
 							vhost->script_root = switch_core_strdup(vhost->pool, val);
 						} else if (!strcasecmp(var, "index")) {
 							vhost->index = switch_core_strdup(vhost->pool, val);
