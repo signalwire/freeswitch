@@ -32,6 +32,7 @@ supported_debian_distros="wheezy jessie stretch sid"
 supported_ubuntu_distros="trusty utopic"
 supported_distros="$supported_debian_distros $supported_ubuntu_distros"
 avoid_mods=(
+  applications/mod_sms_flowroute
   applications/mod_limit
   applications/mod_mongo
   applications/mod_mp4
