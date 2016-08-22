@@ -843,7 +843,7 @@ if [ ${use_sysvinit} = "true" ]; then
     cat <<EOF
 Package: freeswitch-sysvinit
 Architecture: all
-Depends: \${misc:Depends}, lsb-base (>= 3.0-6), sysvinit
+Depends: \${misc:Depends}, lsb-base (>= 3.0-6), sysvinit | sysvinit-utils
 Conflicts: freeswitch-init
 Provides: freeswitch-init
 Description: FreeSWITCH SysV init script
