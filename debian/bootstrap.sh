@@ -707,6 +707,33 @@ Description: Cross-Platform Scalable Multi-Protocol Soft Switch
  This is a metapackage which depends on the packages needed to install
  most FreeSWITCH codecs.
 
+Package: freeswitch-meta-codecs-dbg
+Architecture: any
+Depends: \${misc:Depends}, freeswitch (= \${binary:Version}),
+ freeswitch-mod-amr-dbg (= \${binary:Version}),
+ freeswitch-mod-amrwb-dbg (= \${binary:Version}),
+ freeswitch-mod-b64-dbg (= \${binary:Version}),
+ freeswitch-mod-bv-dbg (= \${binary:Version}),
+ freeswitch-mod-codec2-dbg (= \${binary:Version}),
+ freeswitch-mod-dahdi-codec-dbg (= \${binary:Version}),
+ freeswitch-mod-g723-1-dbg (= \${binary:Version}),
+ freeswitch-mod-g729-dbg (= \${binary:Version}),
+ freeswitch-mod-h26x-dbg (= \${binary:Version}),
+ freeswitch-mod-isac-dbg (= \${binary:Version}),
+ freeswitch-mod-mp4v-dbg (= \${binary:Version}),
+ freeswitch-mod-opus-dbg (= \${binary:Version}),
+ freeswitch-mod-silk-dbg (= \${binary:Version}),
+ freeswitch-mod-spandsp-dbg (= \${binary:Version}),
+ freeswitch-mod-theora-dbg (= \${binary:Version}),
+Suggests:
+ freeswitch-mod-ilbc-dbg (= \${binary:Version}),
+ freeswitch-mod-siren-dbg (= \${binary:Version})
+Description: Cross-Platform Scalable Multi-Protocol Soft Switch
+ $(debian_wrap "${fs_description}")
+ .
+ This is a metapackage which depends on the packages needed to install
+ most FreeSWITCH codecs.
+
 Package: freeswitch-meta-conf
 Architecture: all
 Depends: \${misc:Depends},
@@ -731,6 +758,22 @@ Depends: \${misc:Depends},
  freeswitch-lang-he (= \${binary:Version}),
  freeswitch-lang-pt (= \${binary:Version}),
  freeswitch-lang-ru (= \${binary:Version}),
+Description: Cross-Platform Scalable Multi-Protocol Soft Switch
+ $(debian_wrap "${fs_description}")
+ .
+ This is a metapackage which depends on all language files for
+ FreeSWITCH.
+
+Package: freeswitch-meta-lang-dbg
+Architecture: all
+Depends: \${misc:Depends},
+ freeswitch-lang-de-dbg (= \${binary:Version}),
+ freeswitch-lang-en-dbg (= \${binary:Version}),
+ freeswitch-lang-es-dbg (= \${binary:Version}),
+ freeswitch-lang-fr-dbg (= \${binary:Version}),
+ freeswitch-lang-he-dbg (= \${binary:Version}),
+ freeswitch-lang-pt-dbg (= \${binary:Version}),
+ freeswitch-lang-ru-dbg (= \${binary:Version}),
 Description: Cross-Platform Scalable Multi-Protocol Soft Switch
  $(debian_wrap "${fs_description}")
  .
@@ -762,11 +805,141 @@ Description: Cross-Platform Scalable Multi-Protocol Soft Switch
  This is a metapackage which depends on all mod_say languages for
  FreeSWITCH.
 
+Package: freeswitch-meta-mod-say-dbg
+Architecture: any
+Depends: \${misc:Depends},
+ freeswitch-mod-say-de-dbg (= \${binary:Version}),
+ freeswitch-mod-say-en-dbg (= \${binary:Version}),
+ freeswitch-mod-say-es-dbg (= \${binary:Version}),
+ freeswitch-mod-say-fa-dbg (= \${binary:Version}),
+ freeswitch-mod-say-fr-dbg (= \${binary:Version}),
+ freeswitch-mod-say-he-dbg (= \${binary:Version}),
+ freeswitch-mod-say-hr-dbg (= \${binary:Version}),
+ freeswitch-mod-say-hu-dbg (= \${binary:Version}),
+ freeswitch-mod-say-it-dbg (= \${binary:Version}),
+ freeswitch-mod-say-ja-dbg (= \${binary:Version}),
+ freeswitch-mod-say-nl-dbg (= \${binary:Version}),
+ freeswitch-mod-say-pl-dbg (= \${binary:Version}),
+ freeswitch-mod-say-pt-dbg (= \${binary:Version}),
+ freeswitch-mod-say-ru-dbg (= \${binary:Version}),
+ freeswitch-mod-say-th-dbg (= \${binary:Version}),
+ freeswitch-mod-say-zh-dbg (= \${binary:Version}),
+Description: Cross-Platform Scalable Multi-Protocol Soft Switch
+ $(debian_wrap "${fs_description}")
+ .
+ This is a metapackage which depends on all mod_say languages for
+ FreeSWITCH.
+
+Package: freeswitch-meta-all-dbg
+Architecture: any
+Depends: \${misc:Depends}, freeswitch (= \${binary:Version}),
+ freeswitch-meta-codecs-dbg (= \${binary:Version}),
+ freeswitch-meta-lang-dbg (= \${binary:Version}),
+ freeswitch-meta-mod-say (= \${binary:Version}),
+ freeswitch-mod-abstraction-dbg (= \${binary:Version}),
+ freeswitch-mod-avmd-dbg (= \${binary:Version}),
+ freeswitch-mod-av-dbg (= \${binary:Version}),
+ freeswitch-mod-blacklist-dbg (= \${binary:Version}),
+ freeswitch-mod-callcenter-dbg (= \${binary:Version}),
+ freeswitch-mod-cidlookup-dbg (= \${binary:Version}),
+ freeswitch-mod-commands-dbg (= \${binary:Version}),
+ freeswitch-mod-conference-dbg (= \${binary:Version}),
+ freeswitch-mod-curl-dbg (= \${binary:Version}),
+ freeswitch-mod-db-dbg (= \${binary:Version}),
+ freeswitch-mod-directory-dbg (= \${binary:Version}),
+ freeswitch-mod-distributor-dbg (= \${binary:Version}),
+ freeswitch-mod-dptools-dbg (= \${binary:Version}),
+ freeswitch-mod-easyroute-dbg (= \${binary:Version}),
+ freeswitch-mod-enum-dbg (= \${binary:Version}),
+ freeswitch-mod-esf-dbg (= \${binary:Version}),
+ freeswitch-mod-esl-dbg (= \${binary:Version}),
+ freeswitch-mod-expr-dbg (= \${binary:Version}),
+ freeswitch-mod-fifo-dbg (= \${binary:Version}),
+ freeswitch-mod-fsk-dbg (= \${binary:Version}),
+ freeswitch-mod-fsv-dbg (= \${binary:Version}),
+ freeswitch-mod-hash-dbg (= \${binary:Version}),
+ freeswitch-mod-httapi-dbg (= \${binary:Version}),
+ freeswitch-mod-http-cache-dbg (= \${binary:Version}),
+ freeswitch-mod-lcr-dbg (= \${binary:Version}),
+ freeswitch-mod-memcache-dbg (= \${binary:Version}),
+ freeswitch-mod-nibblebill-dbg (= \${binary:Version}),
+ freeswitch-mod-oreka-dbg (= \${binary:Version}),
+ freeswitch-mod-png-dbg (= \${binary:Version}),
+ freeswitch-mod-redis-dbg (= \${binary:Version}),
+ freeswitch-mod-rss-dbg (= \${binary:Version}),
+ freeswitch-mod-sms-dbg (= \${binary:Version}),
+ freeswitch-mod-snapshot-dbg (= \${binary:Version}),
+ freeswitch-mod-snom-dbg (= \${binary:Version}),
+ freeswitch-mod-sonar-dbg (= \${binary:Version}),
+ freeswitch-mod-soundtouch-dbg (= \${binary:Version}),
+ freeswitch-mod-spandsp-dbg (= \${binary:Version}),
+ freeswitch-mod-spy-dbg (= \${binary:Version}),
+ freeswitch-mod-stress-dbg (= \${binary:Version}),
+ freeswitch-mod-translate-dbg (= \${binary:Version}),
+ freeswitch-mod-valet-parking-dbg (= \${binary:Version}),
+ freeswitch-mod-voicemail-dbg (= \${binary:Version}),
+ freeswitch-mod-voicemail-ivr-dbg (= \${binary:Version}),
+ freeswitch-mod-flite-dbg (= \${binary:Version}),
+ freeswitch-mod-pocketsphinx-dbg (= \${binary:Version}),
+ freeswitch-mod-tts-commandline-dbg (= \${binary:Version}),
+ freeswitch-mod-unimrcp-dbg (= \${binary:Version}),
+ freeswitch-mod-dialplan-asterisk-dbg (= \${binary:Version}),
+ freeswitch-mod-dialplan-directory-dbg (= \${binary:Version}),
+ freeswitch-mod-dialplan-xml-dbg (= \${binary:Version}),
+ freeswitch-mod-ldap-dbg (= \${binary:Version}),
+ freeswitch-mod-dingaling-dbg (= \${binary:Version}),
+ freeswitch-mod-loopback-dbg (= \${binary:Version}),
+ freeswitch-mod-portaudio-dbg (= \${binary:Version}),
+ freeswitch-mod-rtc-dbg (= \${binary:Version}),
+ freeswitch-mod-rtmp-dbg (= \${binary:Version}),
+ freeswitch-mod-skinny-dbg (= \${binary:Version}),
+ freeswitch-mod-skypopen-dbg (= \${binary:Version}),
+ freeswitch-mod-sofia-dbg (= \${binary:Version}),
+ freeswitch-mod-verto-dbg (= \${binary:Version}),
+ freeswitch-mod-cdr-csv-dbg (= \${binary:Version}),
+ freeswitch-mod-cdr-mongodb-dbg (= \${binary:Version}),
+ freeswitch-mod-cdr-sqlite-dbg (= \${binary:Version}),
+ freeswitch-mod-erlang-event-dbg (= \${binary:Version}),
+ freeswitch-mod-event-multicast-dbg (= \${binary:Version}),
+ freeswitch-mod-event-socket-dbg (= \${binary:Version}),
+ freeswitch-mod-json-cdr-dbg (= \${binary:Version}),
+ freeswitch-mod-kazoo-dbg (= \${binary:Version}),
+ freeswitch-mod-snmp-dbg (= \${binary:Version}),
+ freeswitch-mod-local-stream-dbg (= \${binary:Version}),
+ freeswitch-mod-native-file-dbg (= \${binary:Version}),
+ freeswitch-mod-portaudio-stream-dbg (= \${binary:Version}),
+ freeswitch-mod-shell-stream-dbg (= \${binary:Version}),
+ freeswitch-mod-sndfile-dbg (= \${binary:Version}),
+ freeswitch-mod-tone-stream-dbg (= \${binary:Version}),
+ freeswitch-mod-java-dbg (= \${binary:Version}),
+ freeswitch-mod-lua-dbg (= \${binary:Version}),
+ freeswitch-mod-perl-dbg (= \${binary:Version}),
+ freeswitch-mod-python-dbg (= \${binary:Version}),
+ freeswitch-mod-yaml-dbg (= \${binary:Version}),
+ freeswitch-mod-console-dbg (= \${binary:Version}),
+ freeswitch-mod-logfile-dbg (= \${binary:Version}),
+ freeswitch-mod-syslog-dbg (= \${binary:Version}),
+ freeswitch-mod-posix-timer-dbg (= \${binary:Version}),
+ freeswitch-mod-timerfd-dbg (= \${binary:Version}),
+ freeswitch-mod-xml-cdr-dbg (= \${binary:Version}),
+ freeswitch-mod-xml-curl-dbg (= \${binary:Version}),
+ freeswitch-mod-xml-rpc-dbg (= \${binary:Version}),
+ freeswitch-mod-xml-scgi-dbg (= \${binary:Version}),
+Recommends:
+Suggests:
+ freeswitch-mod-vmd-dbg (= \${binary:Version}),
+ freeswitch-mod-vlc-dbg (= \${binary:Version}),
+Description: Cross-Platform Scalable Multi-Protocol Soft Switch
+ $(debian_wrap "${fs_description}")
+ .
+ This is a metapackage which recommends or suggests all packaged
+ FreeSWITCH modules.
+
 Package: freeswitch-all-dbg
 Section: debug
 Priority: extra
 Architecture: any
-Depends: \${misc:Depends}, freeswitch-meta-all (= \${binary:Version})
+Depends: \${misc:Depends}, freeswitch-meta-all (= \${binary:Version}), freeswitch-meta-all-dbg (= \${binary:Version})
 Description: debugging symbols for FreeSWITCH
  $(debian_wrap "${fs_description}")
  .
