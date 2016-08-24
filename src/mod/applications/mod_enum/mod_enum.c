@@ -141,8 +141,6 @@ static switch_status_t load_config(void)
 					globals.nameserver[inameserver] = (char *) val;
 					inameserver++;
 				}
-			} else if (!strcasecmp(var, "log-level-trace")) {
-
 			}
 		}
 	}

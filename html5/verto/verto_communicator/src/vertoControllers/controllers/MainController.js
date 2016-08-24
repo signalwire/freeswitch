@@ -292,7 +292,10 @@
 
       $scope.closeSettings = function() {
         var settingsEl = angular.element(document.querySelector('#settings'));
-        settingsEl.removeClass('toggled');
+        if (settingsEl.hasClass('toggled')) {
+          settingsEl.removeClass('toggled');
+          $rootScope.$emit('toggledSettings', settingsEl.hasClass('toggled'));
+        }
       };
 
       $scope.goFullscreen = function() {

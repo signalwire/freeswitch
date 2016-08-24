@@ -691,35 +691,6 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 		}
 	}
 
-
-	/* Close Unused Handles */
-	if (conference->fnode) {
-		conference_file_node_t *fnode, *cur;
-		switch_memory_pool_t *pool;
-
-		fnode = conference->fnode;
-		while (fnode) {
-			cur = fnode;
-			fnode = fnode->next;
-
-			if (cur->type != NODE_TYPE_SPEECH) {
-				conference_file_close(conference, cur);
-			}
-
-			pool = cur->pool;
-			switch_core_destroy_memory_pool(&pool);
-		}
-		conference->fnode = NULL;
-	}
-
-	if (conference->async_fnode) {
-		switch_memory_pool_t *pool;
-		conference_file_close(conference, conference->async_fnode);
-		pool = conference->async_fnode->pool;
-		conference->async_fnode = NULL;
-		switch_core_destroy_memory_pool(&pool);
-	}
-
 	switch_mutex_lock(conference->member_mutex);
 	for (imember = conference->members; imember; imember = imember->next) {
 		switch_channel_t *channel;
@@ -768,7 +739,6 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 	}
 	switch_mutex_unlock(conference_globals.hash_mutex);
 
-
 	conference_utils_clear_flag(conference, CFLAG_VIDEO_MUXING);
 
 	for (x = 0; x <= conference->canvas_count; x++) {
@@ -777,6 +747,34 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 			switch_thread_join(&st, conference->canvases[x]->video_muxing_thread);
 			conference->canvases[x]->video_muxing_thread = NULL;
 		}
+	}
+
+	/* Close Unused Handles */
+	if (conference->fnode) {
+		conference_file_node_t *fnode, *cur;
+		switch_memory_pool_t *pool;
+
+		fnode = conference->fnode;
+		while (fnode) {
+			cur = fnode;
+			fnode = fnode->next;
+
+			if (cur->type != NODE_TYPE_SPEECH) {
+				conference_file_close(conference, cur);
+			}
+
+			pool = cur->pool;
+			switch_core_destroy_memory_pool(&pool);
+		}
+		conference->fnode = NULL;
+	}
+
+	if (conference->async_fnode) {
+		switch_memory_pool_t *pool;
+		conference_file_close(conference, conference->async_fnode);
+		pool = conference->async_fnode->pool;
+		conference->async_fnode = NULL;
+		switch_core_destroy_memory_pool(&pool);
 	}
 
 	/* Wait till everybody is out */
@@ -2252,7 +2250,7 @@ SWITCH_STANDARD_APP(conference_function)
 
 	if (conference) {
 		switch_mutex_lock(conference->mutex);
-		if (conference_utils_test_flag(conference, CFLAG_DYNAMIC) && conference->count == 0) {
+		if (conference_utils_test_flag(conference, CFLAG_DYNAMIC) && conference->count == 0 && conference->count_ghosts == 0) {
 			conference_utils_set_flag_locked(conference, CFLAG_DESTRUCT);
 		}
 		switch_mutex_unlock(conference->mutex);
@@ -2401,6 +2399,7 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 	char *video_letterbox_bgcolor = NULL;
 	char *video_codec_bandwidth = NULL;
 	char *no_video_avatar = NULL;
+	char *video_mute_banner = NULL;
 	conference_video_mode_t conference_video_mode = CONF_VIDEO_MODE_PASSTHROUGH;
 	int conference_video_quality = 1;
 	int auto_kps_debounce = 30000;
@@ -2588,6 +2587,8 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 				video_codec_bandwidth = val;
 			} else if (!strcasecmp(var, "video-no-video-avatar") && !zstr(val)) {
 				no_video_avatar = val;
+			} else if (!strcasecmp(var, "video-mute-banner") && !zstr(val)) {
+				video_mute_banner = val;
 			} else if (!strcasecmp(var, "exit-sound") && !zstr(val)) {
 				exit_sound = val;
 			} else if (!strcasecmp(var, "alone-sound") && !zstr(val)) {
@@ -2760,10 +2761,10 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 					}
 				}
 
-				if (scale_h264_canvas_width < 320 || scale_h264_canvas_width < 180) {
+				if (scale_h264_canvas_width < 320 || scale_h264_canvas_height < 180) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid scale-h264-canvas-size, falling back to 320x180\n");
 					scale_h264_canvas_width = 320;
-					scale_h264_canvas_width = 180;
+					scale_h264_canvas_height = 180;
 				}
 			} else if (!strcasecmp(var, "scale-h264-canvas-fps-divisor") && !zstr(val)) {
 				scale_h264_canvas_fps_divisor = atoi(val);
@@ -2887,6 +2888,10 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 
 		if (!video_letterbox_bgcolor) {
 			video_letterbox_bgcolor = "#000000";
+		}
+
+		if (video_mute_banner) {
+		    conference->video_mute_banner = switch_core_strdup(conference->pool, video_mute_banner);
 		}
 
 		if (no_video_avatar) {

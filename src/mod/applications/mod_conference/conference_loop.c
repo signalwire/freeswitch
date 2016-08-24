@@ -707,6 +707,7 @@ void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, void *ob
 
 		if (switch_channel_test_flag(channel, CF_VIDEO) && !conference_utils_member_test_flag(member, MFLAG_ACK_VIDEO)) {
 			conference_utils_member_set_flag_locked(member, MFLAG_ACK_VIDEO);
+			switch_img_free(&member->avatar_png_img);
 			conference_video_check_avatar(member, SWITCH_FALSE);
 			switch_core_session_video_reinit(member->session);
 			conference_video_set_floor_holder(member->conference, member, SWITCH_FALSE);
@@ -1121,6 +1122,7 @@ void conference_loop_output(conference_member_t *member)
 		const char *prefix = switch_channel_get_variable(channel, "conference_auto_outcall_prefix");
 		const char *maxwait = switch_channel_get_variable(channel, "conference_auto_outcall_maxwait");
 		const char *delimiter_val = switch_channel_get_variable(channel, "conference_auto_outcall_delimiter");
+		const char *skip_member_beep = switch_channel_get_variable(channel, "conference_auto_outcall_skip_member_beep");
 		int to = 60;
 		int wait_sec = 2;
 		int loops = 0;
@@ -1184,7 +1186,8 @@ void conference_loop_output(conference_member_t *member)
 			goto end;
 		}
 
-		conference_member_play_file(member, "tone_stream://%(500,0,640)", 0, SWITCH_TRUE);
+		if (!skip_member_beep || !switch_true(skip_member_beep))
+			conference_member_play_file(member, "tone_stream://%(500,0,640)", 0, SWITCH_TRUE);
 	}
 
 	if (!conference_utils_test_flag(member->conference, CFLAG_ANSWERED)) {

@@ -159,7 +159,7 @@ check_lt_ver() {
 check_libtoolize() {
   # check libtoolize availability
   if [ -n "${LIBTOOL}" ]; then
-    libtoolize=${LIBTOOLIZE:-`dirname "${libtool}"`/libtoolize}
+    libtoolize=${LIBTOOLIZE:-`dirname "${LIBTOOL}"`/libtoolize}
   else
     libtoolize=${LIBTOOLIZE:-`${LIBDIR}/apr/build/PrintPath glibtoolize libtoolize libtoolize22 libtoolize15 libtoolize14`}
   fi
@@ -190,7 +190,7 @@ check_make() {
   
   make=`which make`
   if [ -x "$make" ]; then
-     make_version=`$make --version | grep GNU`
+     make_version=`$make --version || true | grep GNU`
      if [ $? -ne 0 ]; then
         make=`which gmake`
         if [ -x "$make" ]; then

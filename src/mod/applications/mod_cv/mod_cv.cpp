@@ -720,7 +720,7 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
             switch_assert(context->rawImage->width * 3 == context->rawImage->widthStep);
         }
 
-        switch_img_to_raw(frame->img, context->rawImage->imageData, context->rawImage->widthStep * context->h, SWITCH_IMG_FMT_RGB24);
+        switch_img_to_raw(frame->img, context->rawImage->imageData, context->rawImage->widthStep, SWITCH_IMG_FMT_RGB24);
         detectAndDraw(context);
 
         if (context->detected.simo_count > 20) {
@@ -1167,7 +1167,7 @@ SWITCH_STANDARD_APP(cv_bug_start_function)
     int x, n;
     char *argv[25] = { 0 };
     int argc;
-	switch_media_bug_flag_t flags = SMBF_READ_VIDEO_PING;
+	switch_media_bug_flag_t flags = SMBF_READ_VIDEO_PING | SMBF_READ_VIDEO_PATCH;
 	const char *function = "mod_cv";
 
     if ((bug = (switch_media_bug_t *) switch_channel_get_private(channel, "_cv_bug_"))) {
@@ -1228,7 +1228,7 @@ SWITCH_STANDARD_API(cv_bug_api_function)
     char *nested_cascade_path = NULL;
     char *lbuf = NULL;
     int x, n, i;
-	switch_media_bug_flag_t flags = SMBF_READ_VIDEO_PING;
+	switch_media_bug_flag_t flags = SMBF_READ_VIDEO_PING | SMBF_READ_VIDEO_PATCH;
 	const char *function = "mod_cv";
 
     if (zstr(cmd)) {

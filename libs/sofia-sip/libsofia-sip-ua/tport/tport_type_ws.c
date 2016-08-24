@@ -461,6 +461,7 @@ int tport_ws_init_secondary(tport_t *self, int socket, int accepted,
   tport_ws_t *wstp = (tport_ws_t *)self;
 
   self->tp_has_connection = 1;
+  self->tp_params->tpp_keepalive = 5000;
 
   /* override the default 30 minute timeout on tport connections */
   self->tp_params->tpp_idle = UINT_MAX;
@@ -493,10 +494,12 @@ int tport_ws_init_secondary(tport_t *self, int socket, int accepted,
 	  return *return_reason = "WS_INIT", -1;
   }
 
+  wstp->connected = time(NULL);
+
   wstp->ws_initialized = 1;
   self->tp_pre_framed = 1;
   
-
+  tport_set_secondary_timer(self);
 
   return 0;
 }
@@ -592,6 +595,32 @@ int tport_ws_next_timer(tport_t *self,
 			 su_time_t *return_target,
 			 char const **return_why)
 {
+	tport_ws_t *wstp = (tport_ws_t *)self;
+	int ll = establish_logical_layer(&wstp->ws);
+	int punt = 0;
+
+	if (ll == -1) {
+		punt = 1;
+	} else if (ll < 0) {
+		time_t now = time(NULL);
+		if (now - wstp->connected > 5) {
+			punt = 2;
+		}
+	} else {
+		self->tp_params->tpp_keepalive = 0;
+	}
+
+	if (punt) {
+		tport_close(self);
+
+		SU_DEBUG_7(("%s(%p): %s to " TPN_FORMAT "%s\n",
+					__func__, (void *)self,
+					(punt == 2 ? "Timeout establishing SSL" : "Error establishing SSL"), TPN_ARGS(self->tp_name), ""));
+
+		return -1;
+	}
+
+
   return
     tport_next_recv_timeout(self, return_target, return_why) |
     tport_next_keepalive(self, return_target, return_why);

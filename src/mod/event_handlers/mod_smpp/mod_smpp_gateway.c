@@ -201,6 +201,7 @@ switch_status_t mod_smpp_gateway_connection_read(mod_smpp_gateway_t *gateway, sw
 	switch_event_t *evt = NULL;
 	generic_nack_t *gennack = NULL;
     char data[2048] = {0}; /* local buffer for unpacked PDU */
+	int err = 0;
 
 	/* Read from socket */
 	/* TODO: Add/Expand support for partial reads */
@@ -227,8 +228,7 @@ switch_status_t mod_smpp_gateway_connection_read(mod_smpp_gateway_t *gateway, sw
 	}
 
 	if ( smpp34_unpack2((void *)data, local_buffer, read_len + 4) ) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,  "smpp: error decoding the receive buffer:%d:%s\n", smpp34_errno, smpp34_strerror);
-		switch_goto_status(SWITCH_STATUS_GENERR, done);
+		err++;
 	}
 
 	if ( mod_smpp_globals.debug || gateway->debug ) {
@@ -237,6 +237,12 @@ switch_status_t mod_smpp_gateway_connection_read(mod_smpp_gateway_t *gateway, sw
 
 	gennack = (generic_nack_t *) data;
 	*command_id = gennack->command_id;
+
+	if (err && *command_id != SUBMIT_SM_RESP) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,  "smpp: error decoding the receive buffer:%d:%s\n", smpp34_errno, smpp34_strerror);
+		switch_goto_status(SWITCH_STATUS_GENERR, done);
+	}
+
 	switch(*command_id) {
 	case BIND_TRANSCEIVER_RESP:
 		if ( gennack->command_status != ESME_ROK ) {
@@ -256,6 +262,21 @@ switch_status_t mod_smpp_gateway_connection_read(mod_smpp_gateway_t *gateway, sw
 	case ENQUIRE_LINK: 
 	case ENQUIRE_LINK_RESP:
 	case SUBMIT_SM_RESP:
+		switch (gennack->command_status) {
+		case ESME_ROK:
+			//AOK
+			break;
+		case ESME_RINVSRCADR:
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Source Addr ID: %u\n", *command_id);
+			break;
+		case ESME_RINVDSTADR:
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Dest Addr ID: %u\n", *command_id);
+			break;
+		default:
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Undocumented Error 0X%.8x ID: %u\n", gennack->command_status, *command_id);
+			break;
+		}
+
 		break;
 	default:
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unrecognized Command ID: %u\n", *command_id);

@@ -1288,7 +1288,6 @@ static size_t file_callback(void *ptr, size_t size, size_t nmemb, void *data)
 {
 	register unsigned int realsize = (unsigned int) (size * nmemb);
 	client_t *client = data;
-	char *zero = "\0";
 
 	client->bytes += realsize;
 
@@ -1299,7 +1298,6 @@ static size_t file_callback(void *ptr, size_t size, size_t nmemb, void *data)
 	}
 
 	switch_buffer_write(client->buffer, ptr, realsize);
-	switch_buffer_write(client->buffer, zero, 1);
 	
 	return realsize;
 }
@@ -2313,6 +2311,9 @@ SWITCH_STANDARD_APP(httapi_function)
 				const char *ct = switch_event_get_header(client->headers, "content-type");
 
 				if (switch_stristr("text/xml", ct)) {
+					char *zero = "\0";
+					switch_buffer_write(client->buffer, zero, 1);
+
 					status = parse_xml(client);
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Received unsupported content-type %s\n", ct);
@@ -2967,11 +2968,17 @@ static switch_status_t file_open(switch_file_handle_t *handle, const char *path,
 											context->cache_file, 
 											handle->channels, 
 											handle->samplerate, 
-											SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, NULL)) != SWITCH_STATUS_SUCCESS) {
+											handle->flags, NULL)) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid cache file %s opening url %s Discarding file.\n", context->cache_file, path);
 			unlink(context->cache_file);
 			unlink(context->meta_file);
 			return status;
+		}
+
+		if (switch_test_flag(&context->fh, SWITCH_FILE_FLAG_VIDEO)) {
+			switch_set_flag(handle, SWITCH_FILE_FLAG_VIDEO);
+		} else {
+			switch_set_flag(handle, SWITCH_FILE_FLAG_VIDEO);
 		}
 	}
 
@@ -3057,6 +3064,20 @@ static switch_status_t http_file_file_close(switch_file_handle_t *handle)
 }
 
 
+static switch_status_t http_file_read_video(switch_file_handle_t *handle, switch_frame_t *frame, switch_video_read_flag_t flags)
+{
+	http_file_context_t *context = handle->private_info;
+	
+	return switch_core_file_read_video(&context->fh, frame, flags);
+}
+
+static switch_status_t http_file_write_video(switch_file_handle_t *handle, switch_frame_t *frame)
+{
+	http_file_context_t *context = handle->private_info;
+
+	return switch_core_file_write_video(&context->fh, frame);
+}
+
 static switch_status_t http_file_write(switch_file_handle_t *handle, void *data, size_t *len)
 {
 	http_file_context_t *context = handle->private_info;
@@ -3121,6 +3142,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_httapi_load)
 	http_file_interface->file_read = http_file_file_read;
 	http_file_interface->file_write = http_file_write;
 	http_file_interface->file_seek = http_file_file_seek;
+	http_file_interface->file_read_video = http_file_read_video;
+	http_file_interface->file_write_video = http_file_write_video;
 
 	https_file_supported_formats[0] = "https";
 
@@ -3132,6 +3155,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_httapi_load)
 	https_file_interface->file_read = http_file_file_read;
 	https_file_interface->file_write = http_file_write;
 	https_file_interface->file_seek = http_file_file_seek;
+	https_file_interface->file_read_video = http_file_read_video;
+	https_file_interface->file_write_video = http_file_write_video;
 	
 	switch_snprintf(globals.cache_path, sizeof(globals.cache_path), "%s%shttp_file_cache", SWITCH_GLOBAL_dirs.storage_dir, SWITCH_PATH_SEPARATOR);
 	switch_dir_make_recursive(globals.cache_path, SWITCH_DEFAULT_DIR_PERMS, pool);

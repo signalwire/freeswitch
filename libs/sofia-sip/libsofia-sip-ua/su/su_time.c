@@ -398,7 +398,7 @@ uint64_t su_nanocounter(void)
   static int init = 0;
   static clockid_t cpu = CLOCK_REALTIME;
 
-# define CLOCK_GETTIMEOFDAY 0xdedbeefUL
+# define CLOCK_GETTIMEOFDAY ((clockid_t)-1)
 
   if (init == 0) {
     init = 1;

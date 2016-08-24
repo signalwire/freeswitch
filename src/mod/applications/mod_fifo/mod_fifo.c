@@ -2756,6 +2756,7 @@ SWITCH_STANDARD_APP(fifo_function)
 		switch_strftime_nocheck(date, &retsize, sizeof(date), "%Y-%m-%d %T", &tm);
 		switch_channel_set_variable(channel, "fifo_status", "WAITING");
 		switch_channel_set_variable(channel, "fifo_timestamp", date);
+		switch_channel_set_variable(channel, "fifo_push_timestamp", date);
 		switch_channel_set_variable(channel, "fifo_serviced_uuid", NULL);
 
 		switch_channel_set_app_flag_key(FIFO_APP_KEY, channel, FIFO_APP_BRIDGE_TAG);

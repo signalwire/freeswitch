@@ -60,11 +60,6 @@ void conference_record_launch_thread(conference_obj_t *conference, char *path, i
 		return;
 	}
 
-	if (conference->conference_video_mode == CONF_VIDEO_MODE_PASSTHROUGH) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Video Passthru enabled, recording not permitted.\n");
-		return;
-	}
-
 	rec->conference = conference;
 	rec->path = switch_core_strdup(pool, path);
 	rec->pool = pool;

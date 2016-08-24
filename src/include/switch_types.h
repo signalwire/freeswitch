@@ -766,6 +766,7 @@ typedef enum {
 	SWITCH_RTP_FLAG_NACK,
 	SWITCH_RTP_FLAG_TMMBR,
 	SWITCH_RTP_FLAG_GEN_TS_DELTA,
+	SWITCH_RTP_FLAG_DETECT_SSRC,
 	SWITCH_RTP_FLAG_INVALID
 } switch_rtp_flag_t;
 
@@ -1509,6 +1510,7 @@ typedef enum {
 	CF_3P_MEDIA_REQUESTED,
 	CF_3P_NOMEDIA_REQUESTED,
 	CF_3P_NOMEDIA_REQUESTED_BLEG,
+	CF_IMAGE_SDP,
 	CF_VIDEO_SDP_RECVD,
 	/* WARNING: DO NOT ADD ANY FLAGS BELOW THIS LINE */
 	/* IF YOU ADD NEW ONES CHECK IF THEY SHOULD PERSIST OR ZERO THEM IN switch_core_session.c switch_core_session_request_xml() */
@@ -1627,7 +1629,8 @@ typedef enum {
 	SWITCH_CODEC_FLAG_AAL2 = (1 << 6),
 	SWITCH_CODEC_FLAG_PASSTHROUGH = (1 << 7),
 	SWITCH_CODEC_FLAG_READY = (1 << 8),
-	SWITCH_CODEC_FLAG_HAS_PLC = (1 << 15)
+	SWITCH_CODEC_FLAG_HAS_PLC = (1 << 15),
+	SWITCH_CODEC_FLAG_VIDEO_PATCHING = (1 << 16)
 } switch_codec_flag_enum_t;
 typedef uint32_t switch_codec_flag_t;
 
@@ -1769,7 +1772,8 @@ typedef enum {
 	SMBF_WRITE_VIDEO_STREAM = (1 << 20),
 	SMBF_VIDEO_PATCH = (1 << 21),
 	SMBF_SPY_VIDEO_STREAM = (1 << 22),
-	SMBF_SPY_VIDEO_STREAM_BLEG = (1 << 23)
+	SMBF_SPY_VIDEO_STREAM_BLEG = (1 << 23),
+	SMBF_READ_VIDEO_PATCH = (1 << 24)
 } switch_media_bug_flag_enum_t;
 typedef uint32_t switch_media_bug_flag_t;
 

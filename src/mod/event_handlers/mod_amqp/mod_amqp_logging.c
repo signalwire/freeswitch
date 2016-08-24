@@ -94,12 +94,13 @@ switch_status_t mod_amqp_logging_recv(const switch_log_node_t *node, switch_log_
 
 			if (switch_queue_trypush(logging->send_queue, msg) != SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "AMQP logging message queue full. Messages will be dropped!\n");
-				return SWITCH_STATUS_SUCCESS;
+				switch_safe_free(hi);
+				goto done;
 			}
 		}
 	}
 
-
+ done:
 	switch_safe_free(json);
 	return SWITCH_STATUS_SUCCESS;
 }

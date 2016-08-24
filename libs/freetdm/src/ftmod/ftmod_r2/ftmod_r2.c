@@ -1021,7 +1021,6 @@ static void ftdm_r2_on_chan_log(openr2_chan_t *r2chan, const char *file, const c
 static int ftdm_r2_on_dnis_digit_received(openr2_chan_t *r2chan, char digit)
 {
 	ftdm_sigmsg_t sigev;
-	ftdm_r2_data_t *r2data;
 	ftdm_channel_t *ftdmchan = openr2_chan_get_client_data(r2chan);
 	ftdm_size_t collected_len = R2CALL(ftdmchan)->dnis_index;
 
@@ -1039,7 +1038,6 @@ static int ftdm_r2_on_dnis_digit_received(openr2_chan_t *r2chan, char digit)
 	sigev.span_id = ftdmchan->span_id;
 	sigev.channel = ftdmchan;
 	sigev.event_id = FTDM_SIGEVENT_COLLECTED_DIGIT;
-	r2data = ftdmchan->span->signal_data;
 	if (ftdm_span_send_signal(ftdmchan->span, &sigev) == FTDM_BREAK) {
 		ftdm_log_chan(ftdmchan, FTDM_LOG_NOTICE, "Requested to stop getting DNIS. Current DNIS = %s\n", ftdmchan->caller_data.dnis.digits);
 		return OR2_STOP_DNIS_REQUEST; 

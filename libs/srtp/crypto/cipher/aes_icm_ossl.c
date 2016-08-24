@@ -263,11 +263,14 @@ err_status_t aes_icm_openssl_context_init (aes_icm_ctx_t *c, const uint8_t *key)
 err_status_t aes_icm_openssl_set_iv (aes_icm_ctx_t *c, void *iv, int dir)
 {
     const EVP_CIPHER *evp;
-    v128_t *nonce = (v128_t*)iv;
+    v128_t nonce;
 
-    debug_print(mod_aes_icm, "setting iv: %s", v128_hex_string(nonce));
+    /* set nonce (for alignment) */
+    v128_copy_octet_string(&nonce, iv);
 
-    v128_xor(&c->counter, &c->offset, nonce);
+    debug_print(mod_aes_icm, "setting iv: %s", v128_hex_string(&nonce));
+
+    v128_xor(&c->counter, &c->offset, &nonce);
 
     debug_print(mod_aes_icm, "set_counter: %s", v128_hex_string(&c->counter));
 

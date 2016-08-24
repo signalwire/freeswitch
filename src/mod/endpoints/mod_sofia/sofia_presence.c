@@ -384,6 +384,7 @@ switch_status_t sofia_presence_chat_send(switch_event_t *message_event)
 
 		sofia_glue_free_destination(dst);
 		switch_safe_free(dup_dest);
+		switch_safe_free(user_via);
 		switch_safe_free(remote_host);
 	}
 

@@ -1373,6 +1373,10 @@ SWITCH_DECLARE(switch_bool_t) switch_check_network_list_ip_token(const char *ip_
 	switch_bool_t ok = SWITCH_FALSE;
 	char *ipv4 = NULL;
 
+	if (!list_name) {
+		return SWITCH_FALSE;
+	}
+
 	if ((ipv4 = switch_network_ipv4_mapped_ipv6_addr(ip_str))) {
 		ip_str = ipv4;
 		ipv6 = NULL;

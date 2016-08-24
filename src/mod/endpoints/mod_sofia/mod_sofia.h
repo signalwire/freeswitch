@@ -293,6 +293,7 @@ typedef enum {
 	PFLAG_CHANNEL_XML_FETCH_ON_NIGHTMARE_TRANSFER,
 	PFLAG_FIRE_TRANFER_EVENTS,
 	PFLAG_BLIND_AUTH_ENFORCE_RESULT,
+	PFLAG_PROXY_HOLD,
 
 	/* No new flags below this line */
 	PFLAG_MAX
@@ -763,6 +764,8 @@ struct sofia_profile {
 	ka_type_t keepalive;
 	int bind_attempts;
 	int bind_attempt_interval;
+	char *proxy_notify_events;
+	char *proxy_info_content_types;
 };
 
 
@@ -1027,6 +1030,7 @@ void sofia_presence_set_chat_hash(private_object_t *tech_pvt, sip_t const *sip);
 switch_status_t sofia_on_hangup(switch_core_session_t *session);
 char *sofia_glue_get_url_from_contact(char *buf, uint8_t to_dup);
 char *sofia_glue_get_path_from_contact(char *buf);
+char *sofia_glue_get_profile_url(sofia_profile_t *profile, char *remote_ip, const sofia_transport_t transport);
 void sofia_presence_set_hash_key(char *hash_key, int32_t len, sip_t const *sip);
 void sofia_glue_sql_close(sofia_profile_t *profile, time_t prune);
 int sofia_glue_init_sql(sofia_profile_t *profile);
@@ -1063,6 +1067,8 @@ void sofia_reg_release_gateway__(const char *file, const char *func, int line, s
 #define sofia_reg_release_gateway(x) sofia_reg_release_gateway__(__FILE__, __SWITCH_FUNC__, __LINE__, x);
 
 #define sofia_use_soa(_t) sofia_test_flag(_t, TFLAG_ENABLE_SOA)
+
+#define sofia_test_extra_headers(val) (((!strncasecmp(val, "X-", 2) && strncasecmp(val, "X-FS-", 5)) || !strncasecmp(val, "P-", 2) || !strncasecmp(val, "On", 2)) ? 1 : 0)
 
 #define check_decode(_var, _session) do {								\
 		assert(_session);												\
@@ -1160,6 +1166,7 @@ switch_status_t sofia_glue_send_notify(sofia_profile_t *profile, const char *use
 char *sofia_glue_get_extra_headers(switch_channel_t *channel, const char *prefix);
 void sofia_glue_set_extra_headers(switch_core_session_t *session, sip_t const *sip, const char *prefix);
 char *sofia_glue_get_extra_headers_from_event(switch_event_t *event, const char *prefix);
+char *sofia_glue_get_non_extra_unknown_headers(sip_t const *sip);
 void sofia_update_callee_id(switch_core_session_t *session, sofia_profile_t *profile, sip_t const *sip, switch_bool_t send);
 void sofia_send_callee_id(switch_core_session_t *session, const char *name, const char *number);
 int sofia_sla_supported(sip_t const *sip);

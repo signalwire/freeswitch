@@ -597,7 +597,7 @@ AC_SUBST(SYS_XMLRPC_CFLAGS)
 AC_SUBST(SYS_XMLRPC_LDFLAGS)
 AM_CONDITIONAL([SYSTEM_XMLRPCC],[test "${enable_xmlrpcc}" = "yes"])
 
-for luaversion in lua5.2 lua-5.2 lua5.1 lua-5.1 lua; do
+for luaversion in lua5.2 lua-5.2 lua52 lua5.1 lua-5.1 lua; do
   PKG_CHECK_MODULES([LUA],[${luaversion}],[have_lua=yes],[have_lua=no])
   if test ${have_lua} = yes; then
     break
@@ -793,7 +793,7 @@ case "$host" in
     ;;
     *openbsd*)
         APR_ADDTO(CPPFLAGS, -I/usr/local/include)
-        APR_ADDTO(LDFLAGS, -L/usr/local/lib)
+        APR_ADDTO(LDFLAGS, -L/usr/local/lib -ltermcap)
         APR_ADDTO(SWITCH_AM_CFLAGS, -I/usr/local/include)
     ;;
     *netbsd*)
@@ -1413,6 +1413,18 @@ PKG_CHECK_MODULES([AMQP], [librabbitmq >= 0.5.2],[
   AM_CONDITIONAL([HAVE_AMQP],[true])],[
   AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_AMQP],[false])])
 
+PKG_CHECK_MODULES([H2O], [libh2o-evloop >= 0.11.0],[
+  AM_CONDITIONAL([HAVE_H2O],[true])],[
+  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_H2O],[false])])
+
+PKG_CHECK_MODULES([BROTLIENC], [libbrotlienc >= 0.1.0],[
+  AM_CONDITIONAL([HAVE_BROTLIENC],[true])],[
+  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_BROTLIENC],[false])])
+
+PKG_CHECK_MODULES([BROTLIDEC], [libbrotlidec >= 0.1.0],[
+  AM_CONDITIONAL([HAVE_BROTLIDEC],[true])],[
+  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_BROTLIDEC],[false])])
+
 PKG_CHECK_MODULES([TAP], [tap >= 0.1.0],[
   AM_CONDITIONAL([HAVE_TAP],[true])],[
   AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_TAP],[false])])
@@ -1693,6 +1705,22 @@ else
 	AC_MSG_WARN([python support disabled, building mod_python will fail!])
 fi
 
+#
+# SNMP checks for mod_snmp
+#
+AC_PATH_PROG([NET_SNMP_CONFIG], [net-snmp-config], [no])
+if test "$NET_SNMP_CONFIG" != "no"; then
+	AC_MSG_CHECKING([for Net-SNMP libraries via net-snmp-config])
+	SNMP_LIBS="`$NET_SNMP_CONFIG --base-agent-libs`"
+else
+	# net-snmp-config not in path, fallback to sensible defaults
+	SNMP_LIBS="-lnetsnmpmibs -lnetsnmpagent -lnetsnmp"
+fi
+
+# fix linking error on Solaris patched Net-SNMP
+AS_CASE([$host], [*-solaris2*], [AC_CHECK_LIB([dladm], [dladm_open], [SNMP_LIBS="$SNMP_LIBS -ldladm"])])
+AC_SUBST(SNMP_LIBS)
+
 CHECK_ERLANG
 
 # we never use this, and hard setting it will make cross compile work better
@@ -1746,6 +1774,7 @@ AC_CONFIG_FILES([Makefile
 		src/mod/applications/mod_rss/Makefile
 		src/mod/applications/mod_skel/Makefile
 		src/mod/applications/mod_sms/Makefile
+		src/mod/applications/mod_sms_flowroute/Makefile
 		src/mod/applications/mod_snapshot/Makefile
 		src/mod/applications/mod_snom/Makefile
 		src/mod/applications/mod_sonar/Makefile
@@ -1961,22 +1990,6 @@ esac
 
 
 AC_OUTPUT
-
-##
-## Registering for ClueCon
-##
-if ! test -f noreg -o -f /noreg; then
-echo ""
-echo ""
-echo $ECHO_N "Registering you for ClueCon http://www.cluecon.com $ECHO_C" 1>&6
-sleep 1
-echo $ECHO_N ".$ECHO_C" 1>&6
-sleep 1
-echo $ECHO_N ".$ECHO_C" 1>&6
-sleep 1
-AC_MSG_RESULT([ See you in August. ;-)])
-echo ""
-fi
 
 ##
 ## Configuration summary

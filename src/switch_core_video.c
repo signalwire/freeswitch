@@ -2031,7 +2031,7 @@ static inline uint32_t switch_img_fmt2fourcc(switch_img_fmt_t fmt)
 }
 #endif
 
-SWITCH_DECLARE(switch_status_t) switch_img_to_raw(switch_image_t *src, void *dest, switch_size_t size, switch_img_fmt_t fmt)
+SWITCH_DECLARE(switch_status_t) switch_img_to_raw(switch_image_t *src, void *dest, int stride, switch_img_fmt_t fmt)
 {
 #ifdef SWITCH_HAVE_YUV
 	uint32_t fourcc;
@@ -2050,7 +2050,7 @@ SWITCH_DECLARE(switch_status_t) switch_img_to_raw(switch_image_t *src, void *des
 	ret = ConvertFromI420(src->planes[0], src->stride[0],
 					src->planes[1], src->stride[1],
 					src->planes[2], src->stride[2],
-					dest, size,
+					dest, stride,
 					src->d_w, src->d_h,
 					fourcc);
 

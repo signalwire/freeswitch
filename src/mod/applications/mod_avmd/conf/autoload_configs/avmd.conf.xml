@@ -8,12 +8,14 @@
 
         <!-- Global settings -->
 
-            <!-- define/undefine this to enable/disable printing of avmd
+            <!-- define/undefine this to enable/disable logging of avmd
                  intermediate computations to log -->
             <param name="debug" value="0"/>
 
-            <!-- define/undef this to enable/disable reporting of beep
-                 detection status after session ended -->
+            <!-- define/undef this to enable/disable verbose logging (and reporting to the console)
+                 of detection status and other diagnostics like parameters avmd session has been started with,
+                 change of configuration parameters, beep detection status after session ended
+                 (stop event is fired independently of this setting and beep status included there) -->
             <param name="report_status" value="1"/>
 
             <!-- define/undefine this to enable/disable faster computation
@@ -33,12 +35,15 @@
             <param name="require_continuous_streak" value="1"/>
 
             <!-- required number of consecutive elements in the SMA buffer
-                 without reset -->
+                 without reset. This parameter helps to avoid false beeps, bigger this value is
+                smaller the probability of getting false detection -->
             <param name="sample_n_continuous_streak" value="15"/>
 
             <!-- define number of samples to skip starting from the beginning
-                 of the frame and after reset -->
-            <param name="sample_n_to_skip" value="6"/>
+                 of the frame and/or after reset  has happened. This serves the purpose of skipping first few
+                estimations on each frame, as these estimations may be inaccurate. This parameter also helps
+                to give more robust detections when it's value is increased (up to scertain limit of about 60). -->
+            <param name="sample_n_to_skip" value="15"/>
 
             <!-- define/undefine this to enable/disable simplified estimation
                  of frequency based on approximation of sin(x) with (x)

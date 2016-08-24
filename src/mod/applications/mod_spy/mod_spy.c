@@ -168,7 +168,7 @@ static switch_status_t process_event(switch_event_t *event)
 	char *username[5] = { NULL };
 	char *domain[5] = { NULL };
 	char key[512];
-	char *uuid = NULL, *my_uuid = NULL;
+	char *my_uuid = NULL;
 	int i;
 	int found = 0;
 
@@ -203,7 +203,7 @@ static switch_status_t process_event(switch_event_t *event)
 		}
 	}
 
-	for (i = 0; i < 4; i++) {
+	for (i = 0; i < 5; i++) {
 
 		if (username[i] && domain[i]) {
 			spy_t *spy = NULL;
@@ -215,7 +215,7 @@ static switch_status_t process_event(switch_event_t *event)
 						switch_channel_t *channel = switch_core_session_get_channel(session);
 						
 						my_uuid = switch_event_get_header(event, "Unique-ID");
-						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "UserSpy retrieved uuid %s for key %s, activating eavesdrop\n", uuid, key);
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "UserSpy retrieved uuid %s for key %s, activating eavesdrop\n", my_uuid, key);
 						
 						switch_channel_set_variable(channel, "spy_uuid", my_uuid);
 						found++;

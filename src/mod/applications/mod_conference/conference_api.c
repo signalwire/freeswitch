@@ -1564,6 +1564,8 @@ switch_status_t conference_api_sub_clear_vid_floor(conference_obj_t *conference,
 	//conference_video_set_floor_holder(conference, NULL);
 	switch_mutex_unlock(conference->mutex);
 
+	stream->write_function(stream, "OK floor Cleared\n", SWITCH_VA_NONE);
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -1624,20 +1626,22 @@ switch_status_t conference_api_sub_vid_logo_img(conference_member_t *member, swi
 		goto end;
 	}
 
-	if (!strcasecmp(text, "allclear")) {
-		switch_channel_set_variable(member->channel, "video_logo_path", NULL);
-		member->video_logo = NULL;
-	} else if (!strcasecmp(text, "clear")) {
-		member->video_logo = NULL;
-	} else {
-		member->video_logo = switch_core_strdup(member->pool, text);
-	}
+	if (!zstr(text)) {
+		if (!strcasecmp(text, "allclear")) {
+			switch_channel_set_variable(member->channel, "video_logo_path", NULL);
+			member->video_logo = NULL;
+		} else if (!strcasecmp(text, "clear")) {
+			member->video_logo = NULL;
+		} else {
+			member->video_logo = switch_core_strdup(member->pool, text);
+		}
 
-	conference_video_layer_set_logo(member, layer, text);
+		conference_video_layer_set_logo(member, layer, text);
+	}
 
  end:
 
-	stream->write_function(stream, "+OK\n");
+	stream->write_function(stream, "%s\n", member->video_logo ? member->video_logo : "_undef_");
 
 	conference_video_release_layer(&layer);
 
@@ -2506,11 +2510,6 @@ switch_status_t conference_api_sub_record(conference_obj_t *conference, switch_s
 		return SWITCH_STATUS_GENERR;
 	}
 
-	if (conference->conference_video_mode == CONF_VIDEO_MODE_PASSTHROUGH) {
-		stream->write_function(stream, "-ERR Video Passthru enabled, recording not permitted.\n");
-		return SWITCH_STATUS_SUCCESS;
-	}
-
 	if (argv[3]) {
 
 		if (argv[3]) {
@@ -2529,6 +2528,10 @@ switch_status_t conference_api_sub_record(conference_obj_t *conference, switch_s
 
 	if (id == 0 && conference->canvases[0]) id = 1;
 	
+	if (id > conference->canvas_count) {
+		id = 1;
+	}
+
 	if (id > 0) {
 		stream->write_function(stream, "Record file %s canvas %d\n", argv[2], id);
 	} else {

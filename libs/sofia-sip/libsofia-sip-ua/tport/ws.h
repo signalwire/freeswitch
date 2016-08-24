@@ -119,7 +119,7 @@ typedef struct wsh_s {
 ssize_t ws_send_buf(wsh_t *wsh, ws_opcode_t oc);
 ssize_t ws_feed_buf(wsh_t *wsh, void *data, size_t bytes);
 
-
+int establish_logical_layer(wsh_t *wsh);
 ssize_t ws_raw_read(wsh_t *wsh, void *data, size_t bytes, int block);
 ssize_t ws_raw_write(wsh_t *wsh, void *data, size_t bytes);
 ssize_t ws_read_frame(wsh_t *wsh, ws_opcode_t *oc, uint8_t **data);

@@ -161,7 +161,7 @@ static void close_socket(ws_socket_t *sock)
 	}
 }
 
-
+void verto_broadcast(const char *event_channel, cJSON *json, const char *key, switch_event_channel_id_t id);
 static int ssl_init = 0;
 
 static int verto_init_ssl(verto_profile_t *profile) 
@@ -2389,8 +2389,6 @@ static void verto_set_media_options(verto_pvt_t *tech_pvt, verto_profile_t *prof
 	tech_pvt->mparams->jb_msec = "-1";
 	switch_media_handle_set_media_flag(tech_pvt->smh, SCMF_SUPPRESS_CNG);
 
-	switch_media_handle_set_media_flag(tech_pvt->smh, SCMF_RENEG_ON_REINVITE);
-
 	//tech_pvt->mparams->auto_rtp_bugs = profile->auto_rtp_bugs;
 	tech_pvt->mparams->timer_name =  profile->timer_name;
 	//tech_pvt->mparams->vflags = profile->vflags;
@@ -3819,7 +3817,9 @@ static switch_bool_t verto__broadcast_func(const char *method, cJSON *params, js
 	}
 
 	jevent = cJSON_Duplicate(params, 1);
+	write_event(event_channel, NULL, jevent);
 	switch_event_channel_broadcast(event_channel, &jevent, modname, globals.event_channel_id);
+
 
 	if (jsock->profile->mcast_pub.sock != ws_sock_invalid) {
 		if ((json_text = cJSON_PrintUnformatted(params))) {
@@ -4677,7 +4677,7 @@ static switch_status_t parse_config(const char *cf)
 							vhost->alias = switch_core_strdup(vhost->pool, val);
 						} else if (!strcasecmp(var, "root")) {
 							vhost->root = switch_core_strdup(vhost->pool, val);
-						} else if (!strcasecmp(var, "script_root")) {
+						} else if (!strcasecmp(var, "script-root")) {
 							vhost->script_root = switch_core_strdup(vhost->pool, val);
 						} else if (!strcasecmp(var, "index")) {
 							vhost->index = switch_core_strdup(vhost->pool, val);

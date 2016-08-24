@@ -6900,6 +6900,38 @@ SWITCH_STANDARD_JSON_API(json_execute_function)
 	return status;
 }
 
+SWITCH_STANDARD_API(event_channel_broadcast_api_function)
+{
+	cJSON *jdata = NULL;
+	const char *channel;
+	
+	if (!cmd) {
+		stream->write_function(stream, "-ERR parsing channel\n", SWITCH_VA_NONE);
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	if (!(jdata = cJSON_Parse(cmd))) {
+		stream->write_function(stream, "-ERR parsing json\n");
+	}
+
+
+	if (jdata) {
+		if (!(channel = cJSON_GetObjectCstr(jdata, "eventChannel"))) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "NO EVENT CHANNEL SPECIFIED\n");
+		} else {
+			switch_event_channel_broadcast(channel, &jdata, modname, NO_EVENT_CHANNEL_ID);
+			stream->write_function(stream, "+OK message sent\n", SWITCH_VA_NONE);
+		}
+
+		if (jdata) {
+			cJSON_Delete(jdata);
+		}
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+	
+}
+
 SWITCH_STANDARD_JSON_API(json_api_function)
 {
 	cJSON *data, *cmd, *arg, *reply;
@@ -7090,6 +7122,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "db_cache", "Manage db cache", db_cache_function, "status");
 	SWITCH_ADD_API(commands_api_interface, "domain_exists", "Check if a domain exists", domain_exists_function, "<domain>");
 	SWITCH_ADD_API(commands_api_interface, "echo", "Echo", echo_function, "<data>");
+	SWITCH_ADD_API(commands_api_interface, "event_channel_broadcast", "Broadcast", event_channel_broadcast_api_function, "<channel> <json>");
 	SWITCH_ADD_API(commands_api_interface, "escape", "Escape a string", escape_function, "<data>");
 	SWITCH_ADD_API(commands_api_interface, "eval", "eval (noop)", eval_function, "[uuid:<uuid> ]<expression>");
 	SWITCH_ADD_API(commands_api_interface, "expand", "Execute an api with variable expansion", expand_function, "[uuid:<uuid> ]<cmd> <args>");

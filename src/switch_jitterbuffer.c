@@ -902,10 +902,10 @@ SWITCH_DECLARE(switch_status_t) switch_jb_peek_frame(switch_jb_t *jb, uint32_t t
 		frame->seq = ntohs(node->packet.header.seq);
 		frame->timestamp = ntohl(node->packet.header.ts);
 		frame->m = node->packet.header.m;
-		frame->datalen = node->len;
+		frame->datalen = node->len - 12;
 
-		if (frame->data && frame->buflen > node->len) {
-			memcpy(frame->data, node->packet.body, node->len);
+		if (frame->data && frame->buflen > node->len - 12) {
+			memcpy(frame->data, node->packet.body, node->len - 12);
 		}
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -1039,7 +1039,7 @@ SWITCH_DECLARE(uint32_t) switch_jb_pop_nack(switch_jb_t *jb)
 
  top:
 
-	for (hi = switch_core_hash_first(jb->missing_seq_hash); hi; hi = switch_core_hash_next(&hi)) {
+	for (hi = switch_core_hash_first_iter(jb->missing_seq_hash, hi); hi; hi = switch_core_hash_next(&hi)) {
 		uint16_t seq;
 		//const char *token;
 		switch_time_t then = 0;
@@ -1075,6 +1075,8 @@ SWITCH_DECLARE(uint32_t) switch_jb_pop_nack(switch_jb_t *jb)
 			least = seq;
 		}
 	}
+
+	switch_safe_free(hi);
 
 	if (least && switch_core_inthash_delete(jb->missing_seq_hash, (uint32_t)htons(least))) {
 		jb_debug(jb, 3, "Found NACKABLE seq %u\n", least);

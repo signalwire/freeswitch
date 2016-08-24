@@ -4356,6 +4356,62 @@ SWITCH_STANDARD_APP(wait_for_silence_function)
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Usage: %s\n", WAIT_FOR_SILENCE_SYNTAX);
 }
 
+#define DETECT_AUDIO_SYNTAX "<threshold> <audio_hits> <timeout_ms> [<file>]"
+SWITCH_STANDARD_APP(detect_audio_function)
+{
+	char *argv[5] = { 0 };
+	uint32_t thresh, audio_hits, timeout_ms = 0;
+	int argc;
+	char *lbuf = NULL;
+
+	if (!zstr(data) && (lbuf = switch_core_session_strdup(session, data))
+		&& (argc = switch_separate_string(lbuf, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) >= 3) {
+		thresh = atoi(argv[0]);
+		audio_hits = atoi(argv[1]);
+		timeout_ms = atoi(argv[2]);
+
+		if (argv[3]) {
+			timeout_ms = switch_atoui(argv[3]);
+		}
+
+		if (thresh > 0 && audio_hits > 0) {
+			switch_ivr_detect_audio(session, thresh, audio_hits, timeout_ms, argv[4]);
+			return;
+		}
+
+	}
+
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Usage: %s\n", DETECT_AUDIO_SYNTAX);
+}
+
+#define DETECT_SILENCE_SYNTAX "<threshold> <silence_hits> <timeout_ms> [<file>]"
+SWITCH_STANDARD_APP(detect_silence_function)
+{
+	char *argv[5] = { 0 };
+	uint32_t thresh, silence_hits, timeout_ms = 0;
+	int argc;
+	char *lbuf = NULL;
+
+	if (!zstr(data) && (lbuf = switch_core_session_strdup(session, data))
+		&& (argc = switch_separate_string(lbuf, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) >= 3) {
+		thresh = atoi(argv[0]);
+		silence_hits = atoi(argv[1]);
+		timeout_ms = atoi(argv[2]);
+
+		if (argv[3]) {
+			timeout_ms = switch_atoui(argv[3]);
+		}
+
+		if (thresh > 0 && silence_hits > 0) {
+			switch_ivr_detect_silence(session, thresh, silence_hits, timeout_ms, argv[4]);
+			return;
+		}
+
+	}
+
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Usage: %s\n", DETECT_SILENCE_SYNTAX);
+}
+
 static switch_status_t event_chat_send(switch_event_t *message_event)
 									   
 {
@@ -6270,6 +6326,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 				   SAF_SUPPORT_NOMEDIA | SAF_ZOMBIE_EXEC);
 	SWITCH_ADD_APP(app_interface, "say", "say", "say", say_function, SAY_SYNTAX, SAF_NONE);
 
+	SWITCH_ADD_APP(app_interface, "detect_audio", "detect_audio", "detect_audio", detect_audio_function, DETECT_AUDIO_SYNTAX,
+				   SAF_NONE);
+	SWITCH_ADD_APP(app_interface, "detect_silence", "detect_silence", "detect_silence", detect_silence_function, DETECT_SILENCE_SYNTAX,
+				   SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "wait_for_silence", "wait_for_silence", "wait_for_silence", wait_for_silence_function, WAIT_FOR_SILENCE_SYNTAX,
 				   SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "session_loglevel", "session_loglevel", "session_loglevel", session_loglevel_function, SESSION_LOGLEVEL_SYNTAX,
