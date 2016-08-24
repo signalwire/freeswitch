@@ -1556,6 +1556,7 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 	switch_time_t t_agent_answered = 0;
 	switch_time_t t_member_called = atoi(h->member_joined_epoch);
 	switch_event_t *event = NULL;
+	int bridged = 1;
 
 	switch_mutex_lock(globals.mutex);
 	globals.threads++;
@@ -1786,21 +1787,6 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Member-DNIS", member_dnis);
 			switch_event_fire(&event);
 		}
-		/* for xml_cdr needs */
-		switch_channel_set_variable(member_channel, "cc_agent", h->agent_name);
-		switch_channel_set_variable_printf(member_channel, "cc_queue_answered_epoch", "%" SWITCH_TIME_T_FMT, local_epoch_time_now(NULL)); 
-
-		/* Set UUID of the Agent channel */
-		sql = switch_mprintf("UPDATE agents SET uuid = '%q', last_bridge_start = '%" SWITCH_TIME_T_FMT "', calls_answered = calls_answered + 1, no_answer_count = 0"
-				" WHERE name = '%q' AND system = '%q'",
-				agent_uuid, local_epoch_time_now(NULL),
-				h->agent_name, h->agent_system);
-		cc_execute_sql(NULL, sql, NULL);
-		switch_safe_free(sql);
-
-		/* Change the agents Status in the tiers */
-		cc_tier_update("state", cc_tier_state2str(CC_TIER_STATE_ACTIVE_INBOUND), h->queue_name, h->agent_name);
-		cc_agent_update("state", cc_agent_state2str(CC_AGENT_STATE_IN_A_QUEUE_CALL), h->agent_name);
 
 		/* Record session if record-template is provided */
 		if (h->record_template) {
@@ -1825,11 +1811,56 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 		if (switch_true(switch_channel_get_variable(member_channel, SWITCH_BYPASS_MEDIA_AFTER_BRIDGE_VARIABLE))) {
 			switch_channel_set_flag(member_channel, CF_BYPASS_MEDIA_AFTER_BRIDGE);
 		}
-		switch_ivr_uuid_bridge(h->member_session_uuid, switch_core_session_get_uuid(agent_session));
-		switch_channel_wait_for_flag(agent_channel, CF_BRIDGED, SWITCH_TRUE, 1000, NULL);
 
+		if (switch_ivr_uuid_bridge(h->member_session_uuid, switch_core_session_get_uuid(agent_session)) != SWITCH_STATUS_SUCCESS) {
+			bridged = 0;
+		}
+
+		if (bridged && (switch_channel_wait_for_flag(agent_channel, CF_BRIDGED, SWITCH_TRUE, 3000, NULL) != SWITCH_STATUS_SUCCESS)) {
+			bridged = 0;
+		}
+
+		if (!bridged && !switch_channel_up(member_channel)) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_DEBUG, "Failed to bridge, member \"%s\" <%s> has gone just before we called agent %s\n",
+										   h->member_cid_name, h->member_cid_number, h->agent_name);
+			switch_channel_set_variable(agent_channel, "cc_agent_bridged", "false");
+			switch_channel_set_variable(member_channel, "cc_agent_bridged", "false");
+
+			if ((o_announce = switch_channel_get_variable(member_channel, "cc_bridge_failed_outbound_announce"))) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_DEBUG, "Playing bridge failed audio to agent %s, audio: %s\n", h->agent_name, o_announce);
+				playback_array(agent_session, o_announce);
+			}
+
+			if (!strcasecmp(h->agent_type, CC_AGENT_TYPE_CALLBACK)) {
+				switch_channel_hangup(agent_channel, SWITCH_CAUSE_ORIGINATOR_CANCEL);
+			}
+		} else {
+			bridged = 1;
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_DEBUG, "Member \"%s\" %s is bridged to agent %s\n",
+										   h->member_cid_name, h->member_cid_number, h->agent_name);
+			switch_channel_set_variable(member_channel, "cc_agent_bridged", "true");
+			switch_channel_set_variable(agent_channel, "cc_agent_bridged", "true");
+			switch_channel_set_variable(member_channel, "cc_agent_uuid", agent_uuid);
+		}
+
+		if (bridged) {
+			/* for xml_cdr needs */
+			switch_channel_set_variable(member_channel, "cc_agent", h->agent_name);
+			switch_channel_set_variable_printf(member_channel, "cc_queue_answered_epoch", "%" SWITCH_TIME_T_FMT, local_epoch_time_now(NULL));
+			/* Set UUID of the Agent channel */
+			sql = switch_mprintf("UPDATE agents SET uuid = '%q', last_bridge_start = '%" SWITCH_TIME_T_FMT "', calls_answered = calls_answered + 1, no_answer_count = 0"
+										 " WHERE name = '%q' AND system = '%q'",
+								 agent_uuid, local_epoch_time_now(NULL),
+								 h->agent_name, h->agent_system);
+			cc_execute_sql(NULL, sql, NULL);
+			switch_safe_free(sql);
+			/* Change the agents Status in the tiers */
+			cc_tier_update("state", cc_tier_state2str(CC_TIER_STATE_ACTIVE_INBOUND), h->queue_name, h->agent_name);
+			cc_agent_update("state", cc_agent_state2str(CC_AGENT_STATE_IN_A_QUEUE_CALL), h->agent_name);
+
+		}
 		/* Wait until the agent hangup.  This will quit also if the agent transfer the call */
-		while(switch_channel_up(agent_channel) && globals.running) {
+		while(bridged && switch_channel_up(agent_channel) && globals.running) {
 			if (!strcasecmp(h->agent_type, CC_AGENT_TYPE_UUID_STANDBY)) {
 				if (!switch_channel_test_flag(agent_channel, CF_BRIDGED)) {
 					break;
@@ -1839,7 +1870,7 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 		}
 		tiers_state = CC_TIER_STATE_READY;
 
-		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CALLCENTER_EVENT) == SWITCH_STATUS_SUCCESS) {
+		if (bridged && switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CALLCENTER_EVENT) == SWITCH_STATUS_SUCCESS) {
 			switch_channel_event_set_data(agent_channel, event);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Queue", h->queue_name);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Action", "bridge-agent-end");
@@ -1847,6 +1878,7 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent", h->agent_name);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent-System", h->agent_system);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent-UUID", agent_uuid);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent-Bridged", bridged ? "true" : "false");
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Agent-Called-Time", "%" SWITCH_TIME_T_FMT, t_agent_called);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Agent-Answered-Time", "%" SWITCH_TIME_T_FMT, t_agent_answered);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Member-Joined-Time", "%" SWITCH_TIME_T_FMT,  t_member_called);
@@ -1857,15 +1889,17 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Member-CID-Number", h->member_cid_number);
 			switch_event_fire(&event);
 		}
-		/* for xml_cdr needs */
-		switch_channel_set_variable_printf(member_channel, "cc_queue_terminated_epoch", "%" SWITCH_TIME_T_FMT, local_epoch_time_now(NULL));
+		if (bridged) {
+			/* for xml_cdr needs */
+			switch_channel_set_variable_printf(member_channel, "cc_queue_terminated_epoch", "%" SWITCH_TIME_T_FMT, local_epoch_time_now(NULL));
 
-		/* Update Agents Items */
-		/* Do not remove uuid of the agent if we are a standby agent */
-		sql = switch_mprintf("UPDATE agents SET %s last_bridge_end = %" SWITCH_TIME_T_FMT ", talk_time = talk_time + (%" SWITCH_TIME_T_FMT "-last_bridge_start) WHERE name = '%q' AND system = '%q';"
-				, (strcasecmp(h->agent_type, CC_AGENT_TYPE_UUID_STANDBY)?"uuid = '',":""), local_epoch_time_now(NULL), local_epoch_time_now(NULL), h->agent_name, h->agent_system);
-		cc_execute_sql(NULL, sql, NULL);
-		switch_safe_free(sql);
+			/* Update Agents Items */
+			/* Do not remove uuid of the agent if we are a standby agent */
+			sql = switch_mprintf("UPDATE agents SET %s last_bridge_end = %" SWITCH_TIME_T_FMT ", talk_time = talk_time + (%" SWITCH_TIME_T_FMT "-last_bridge_start) WHERE name = '%q' AND system = '%q';"
+					, (strcasecmp(h->agent_type, CC_AGENT_TYPE_UUID_STANDBY)?"uuid = '',":""), local_epoch_time_now(NULL), local_epoch_time_now(NULL), h->agent_name, h->agent_system);
+			cc_execute_sql(NULL, sql, NULL);
+			switch_safe_free(sql);
+		}
 
 		/* Remove the member entry from the db (Could become optional to support latter processing) */
 		sql = switch_mprintf("DELETE FROM members WHERE system = 'single_box' AND uuid = '%q'", h->member_uuid);
