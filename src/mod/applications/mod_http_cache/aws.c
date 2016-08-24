@@ -38,26 +38,6 @@
 #define SHA1_LENGTH 20
 
 /**
- * @param url to check
- * @return true if this is an S3 url
- */
-int aws_s3_is_s3_url(const char *url, const char *base_domain)
-{
-	if (!zstr(base_domain)) {
-		char *base_domain_escaped;
-		char regex[1024];
-		int result;
-		base_domain_escaped = switch_string_replace(base_domain, ".", "\\.");
-		switch_snprintf(regex, 1024, "^https?://\\w[-\\w.]{1,61}\\w\\.%s/.*$", base_domain_escaped);
-		result = !zstr(url) && switch_regex_match(url, regex) == SWITCH_STATUS_SUCCESS;
-		switch_safe_free(base_domain_escaped);
-		return result;
-	}
-	/* AWS bucket naming rules are complex... this match only supports virtual hosting of buckets */
-	return !zstr(url) && switch_regex_match(url, "^https?://\\w[-\\w.]{1,61}\\w\\.s3([-\\w]+)?\\.amazonaws\\.com/.*$") == SWITCH_STATUS_SUCCESS;
-}
-
-/**
  * Create the string to sign for a AWS signature calculation
  * @param verb (PUT/GET)
  * @param bucket bucket object is stored in
@@ -116,100 +96,6 @@ char *aws_s3_signature(char *signature, int signature_length, const char *string
 }
 
 /**
- * Reverse string substring search
- */
-static char *my_strrstr(const char *haystack, const char *needle)
-{
-	char *s;
-	size_t needle_len;
-	size_t haystack_len;
-
-	if (zstr(haystack)) {
-		return NULL;
-	}
-
-	if (zstr(needle)) {
-		return (char *)haystack;
-	}
-
-	needle_len = strlen(needle);
-	haystack_len = strlen(haystack);
-	if (needle_len > haystack_len) {
-		return NULL;
-	}
-
-	s = (char *)(haystack + haystack_len - needle_len);
-	do {
-		if (!strncmp(s, needle, needle_len)) {
-			return s;
-		}
-	} while (s-- != haystack);
-
-	return NULL;
-}
-
-/**
- * Parse bucket and object from URL
- * @param url to parse.  This value is modified.
- * @param base_domain of URL (assumes s3.amazonaws.com if not specified)
- * @param bucket to store result in
- * @param bucket_length of result buffer
- */
-void aws_s3_parse_url(char *url, const char *base_domain, char **bucket, char **object)
-{
-	char *bucket_start = NULL;
-	char *bucket_end;
-	char *object_start;
-
-	*bucket = NULL;
-	*object = NULL;
-
-	if (!aws_s3_is_s3_url(url, base_domain)) {
-		return;
-	}
-
-	/* expect: http(s)://bucket.foo-bar.s3.amazonaws.com/object */
-	if (!strncasecmp(url, "https://", 8)) {
-		bucket_start = url + 8;
-	} else if (!strncasecmp(url, "http://", 7)) {
-		bucket_start = url + 7;
-	}
-	if (zstr(bucket_start)) {
-		/* invalid URL */
-		return;
-	}
-
-	{
-		char base_domain_match[1024];
-		if (zstr(base_domain)) {
-			base_domain = "s3";
-		}
-		switch_snprintf(base_domain_match, 1024, ".%s", base_domain);
-		bucket_end = my_strrstr(bucket_start, base_domain_match);
-	}
-	if (!bucket_end) {
-		/* invalid URL */
-		return;
-	}
-	*bucket_end = '\0';
-
-	object_start = strchr(bucket_end + 1, '/');
-	if (!object_start) {
-		/* invalid URL */
-		return;
-	}
-	object_start++;
-
-	if (zstr(bucket_start) || zstr(object_start)) {
-		/* invalid URL */
-		return;
-	}
-
-	*bucket = bucket_start;
-	*object = object_start;
-}
-
-/**
  * Create a pre-signed URL for AWS S3
  * @param verb (PUT/GET)
  * @param url address (virtual-host-style)
@@ -231,7 +117,7 @@ char *aws_s3_presigned_url_create(const char *verb, const char *url, const char 
 	char *object;
 
 	/* create URL encoded signature */
-	aws_s3_parse_url(url_dup, base_domain, &bucket, &object);
+	parse_url(url_dup, base_domain, "s3", &bucket, &object);
 	string_to_sign = aws_s3_string_to_sign(verb, bucket, object, content_type, content_md5, expires);
 	signature[0] = '\0';
 	aws_s3_signature(signature, S3_SIGNATURE_LENGTH_MAX, string_to_sign, aws_secret_access_key);
@@ -266,7 +152,7 @@ char *aws_s3_authentication_create(const char *verb, const char *url, const char
 	char *object;
 
 	/* create base64 encoded signature */
-	aws_s3_parse_url(url_dup, base_domain, &bucket, &object);
+	parse_url(url_dup, base_domain, "s3", &bucket, &object);
 	string_to_sign = aws_s3_string_to_sign(verb, bucket, object, content_type, content_md5, date);
 	signature[0] = '\0';
 	aws_s3_signature(signature, S3_SIGNATURE_LENGTH_MAX, string_to_sign, aws_secret_access_key);
@@ -275,6 +161,80 @@ char *aws_s3_authentication_create(const char *verb, const char *url, const char
 
 	return switch_mprintf("AWS %s:%s", aws_access_key_id, signature);
 }
+
+switch_status_t aws_s3_config_profile(switch_xml_t xml, http_profile_t *profile) {
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+
+	profile->append_headers_ptr = aws_s3_append_headers;
+
+	switch_xml_t base_domain_xml = switch_xml_child(xml, "base-domain");
+	/* check if environment variables set the keys */
+	profile->aws_s3_access_key_id = getenv("AWS_ACCESS_KEY_ID");
+	profile->secret_access_key = getenv("AWS_SECRET_ACCESS_KEY");
+	if (!zstr(profile->aws_s3_access_key_id) && !zstr(profile->secret_access_key)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Using AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY environment variables for s3 access on profile \"%s\"\n", profile->name);
+		profile->aws_s3_access_key_id = strdup(profile->aws_s3_access_key_id);
+		profile->secret_access_key = strdup(profile->secret_access_key);
+	} else {
+		/* use configuration for keys */
+		switch_xml_t id = switch_xml_child(xml, "access-key-id");
+		switch_xml_t secret = switch_xml_child(xml, "secret-access-key");
+
+		if (id && secret) {
+			profile->aws_s3_access_key_id = switch_strip_whitespace(switch_xml_txt(id));
+			profile->secret_access_key = switch_strip_whitespace(switch_xml_txt(secret));
+			if (zstr(profile->aws_s3_access_key_id) || zstr(profile->secret_access_key)) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Missing Azure Blob credentials for profile \"%s\"\n", profile->name);
+				switch_safe_free(profile->aws_s3_access_key_id);
+				profile->aws_s3_access_key_id = NULL;
+				switch_safe_free(profile->secret_access_key);
+				profile->secret_access_key = NULL;
+			}
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Missing key id or secret\n");
+			status = SWITCH_STATUS_FALSE;
+		}
+	}
+	if (base_domain_xml) {
+		profile->base_domain = switch_strip_whitespace(switch_xml_txt(base_domain_xml));
+		if (zstr(profile->base_domain)) {
+			switch_safe_free(profile->base_domain);
+			profile->base_domain = NULL;
+		}
+	}
+	return status;
+}
+
+/**
+ * Append Amazon S3 headers to request if necessary
+ * @param headers to add to.  If NULL, new headers are created.
+ * @param profile with S3 credentials
+ * @param content_type of object (PUT only)
+ * @param verb (GET/PUT)
+ * @param url
+ * @return updated headers
+ */
+switch_curl_slist_t *aws_s3_append_headers(http_profile_t *profile, switch_curl_slist_t *headers,
+		const char *verb, unsigned int content_length, const char *content_type, const char *url, const unsigned int block_num, char **query_string)
+{
+	char date[256];
+	char header[1024];
+	char *authenticate;
+
+	/* Date: */
+	switch_rfc822_date(date, switch_time_now());
+	snprintf(header, 1024, "Date: %s", date);
+	headers = switch_curl_slist_append(headers, header);
+
+	/* Authorization: */
+	authenticate = aws_s3_authentication_create(verb, url, profile->base_domain, content_type, "", profile->aws_s3_access_key_id, profile->secret_access_key, date);
+	snprintf(header, 1024, "Authorization: %s", authenticate);
+	free(authenticate);
+	headers = switch_curl_slist_append(headers, header);
+
+	return headers;
+}
+
 
 /* For Emacs:
  * Local Variables:

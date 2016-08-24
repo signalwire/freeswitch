@@ -1,7 +1,7 @@
 BASE=../../../../..
 
 LOCAL_CFLAGS += -I../ -I./
-LOCAL_OBJS= main.o ../aws.o
+LOCAL_OBJS= main.o ../aws.o ../common.o
 LOCAL_SOURCES= main.c
 include $(BASE)/build/modmake.rules
 
