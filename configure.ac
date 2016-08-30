@@ -814,6 +814,12 @@ esac
 
 APR_REMOVEFROM(SWITCH_AM_CXXFLAGS, -std=c99)
 
+# check for usable system MD5 library
+AS_CASE([$host],
+  [*-solaris2*], [AC_CHECK_LIB(md5, MD5Init)],
+  [*-freebsd*], [AC_CHECK_LIB(md, MD5Init)],
+  [*-openbsd*|*-netbsd*], [AC_CHECK_FUNCS([MD5Init])])
+
 AC_CHECK_LIB(z, inflateReset, have_libz=yes, AC_MSG_ERROR([no usable zlib; please install zlib devel package or equivalent]))
 if test "x$have_libz" = "xyes"  ; then
 APR_ADDTO([PLATFORM_CORE_LIBS], [-lz])

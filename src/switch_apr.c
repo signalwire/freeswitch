@@ -65,7 +65,13 @@
 /* apr-util headers */
 #include <apr_queue.h>
 #include <apr_uuid.h>
+#if (defined(HAVE_LIBMD5) || defined(HAVE_LIBMD) || defined(HAVE_MD5INIT))
+#include <md5.h>
+#elif defined(HAVE_LIBCRYPTO)
+#include <openssl/md5.h>
+#else
 #include <apr_md5.h>
+#endif
 
 /* apr stubs */
 
@@ -1086,20 +1092,43 @@ SWITCH_DECLARE(switch_status_t) switch_uuid_parse(switch_uuid_t *uuid, const cha
 
 SWITCH_DECLARE(switch_status_t) switch_md5(unsigned char digest[SWITCH_MD5_DIGESTSIZE], const void *input, switch_size_t inputLen)
 {
+#if (defined(HAVE_LIBMD5) || defined(HAVE_LIBMD) || defined(HAVE_MD5INIT))
+	MD5_CTX md5_context;
+
+	MD5Init(&md5_context);
+	MD5Update(&md5_context, input, inputLen);
+	MD5Final(digest, &md5_context);
+
+	return SWITCH_STATUS_SUCCESS;
+#elif defined(HAVE_LIBCRYPTO)
+	MD5_CTX md5_context;
+
+	MD5_Init(&md5_context);
+	MD5_Update(&md5_context, input, inputLen);
+	MD5_Final(digest, &md5_context);
+
+	return SWITCH_STATUS_SUCCESS;
+#else
 	return apr_md5(digest, input, inputLen);
+#endif
 }
 
 SWITCH_DECLARE(switch_status_t) switch_md5_string(char digest_str[SWITCH_MD5_DIGEST_STRING_SIZE], const void *input, switch_size_t inputLen)
 {
 	unsigned char digest[SWITCH_MD5_DIGESTSIZE];
-	apr_status_t status = apr_md5(digest, input, inputLen);
-	int x;
+	switch_status_t status = switch_md5(digest, input, inputLen);
+	short i, x;
+	uint8_t b;
 
 	digest_str[SWITCH_MD5_DIGEST_STRING_SIZE - 1] = '\0';
 
-	for (x = 0; x < SWITCH_MD5_DIGESTSIZE; x++) {
-		switch_snprintf(digest_str + (x * 2), 3, "%02x", digest[x]);
+	for (x = i = 0; x < SWITCH_MD5_DIGESTSIZE; x++) {
+		b = (digest[x] >> 4) & 15;
+		digest_str[i++] = b + (b > 9 ? 'a' - 10 : '0');
+		b = digest[x] & 15;
+		digest_str[i++] = b + (b > 9 ? 'a' - 10 : '0');
 	}
+	digest_str[i] = '\0';
 
 	return status;
 }
