@@ -381,7 +381,7 @@
         <step type="STATUS" value="OK"/>
     </test>
     <test name="ECM-DCN-clipped">
-        <!-- Tester calls DUT and sends one 31k byte STAIRSTEP page and one 15k byte STAIRSTEP page. -->
+        <!-- Tester calls DUT and send a WHITE page. The find DCN is missing. -->
         <step type="CALL"/>
 
         <!--<step dir="T" type="CNG"/>-->
@@ -402,23 +402,11 @@
 
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.27ter/4800"/>
-        <step dir="T" type="PP" value="etsi_300_242_a4_stairstep.tif" min_bits="141"/>
+        <step dir="T" type="PP" value="etsi_300_242_a4_white.tif" min_bits="141"/>
         <step dir="T" type="POSTAMBLE"/>
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.21"/>
-        <step dir="T" type="HDLC" tag="PPS-NULL" value="FF C8 7D 00 00 00 08"/>
-        <step dir="T" type="POSTAMBLE"/>
-
-        <step dir="R" type="HDLC" modem="V.21" tag="MCF" value="FF C8 31"/>
-        <step dir="R" type="SILENCE"/>
-
-        <step type="WAIT" value="75"/>
-        <step dir="T" type="PREAMBLE" modem="V.27ter/4800"/>
-        <step dir="T" type="PP" value="etsi_300_242_a4_stairstep.tif"/>
-        <step dir="T" type="POSTAMBLE"/>
-        <step type="WAIT" value="75"/>
-        <step dir="T" type="PREAMBLE" modem="V.21"/>
-        <step dir="T" type="HDLC" tag="PPS-EOP" value="FF C8 7D 74 00 80 08"/>
+        <step dir="T" type="HDLC" tag="PPS-EOP" value="FF C8 7D 74 00 00 08"/>
         <step dir="T" type="POSTAMBLE"/>
 
         <step dir="R" type="HDLC" modem="V.21" tag="MCF" value="FF C8 31"/>
@@ -437,7 +425,7 @@
         <step type="STATUS" value="OK"/>
     </test>
     <test name="Non-ECM-DCN-clipped">
-        <!-- Tester calls DUT and sends 2 WHITE pages. DUT should send CSI for this test procedure. -->
+        <!-- Tester calls DUT and send a WHITE page. The find DCN is missing. -->
         <step type="CALL"/>
         <step dir="T" type="SET" tag="IDENT" value="+0123456789"/>
 
@@ -461,7 +449,7 @@
         <step dir="T" type="MSG" modem="V.27ter/4800" value="etsi_300_242_a4_white.tif"/>
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.21"/>
-        <step dir="T" type="HDLC" tag="EOP" value="FF C8 72"/>
+        <step dir="T" type="HDLC" tag="EOP" value="FF C8 74"/>
         <step dir="T" type="POSTAMBLE"/>
 
         <step dir="R" type="HDLC" modem="V.21" tag="MCF" value="FF C8 31"/>
@@ -644,7 +632,7 @@
         <step type="STATUS" value="T0_EXPIRED"/>
     </test>
     <test name="T1-after-EOM">
-        <!-- After and EOM exchange the far end no longer responds. -->
+        <!-- After an EOM exchange the far end no longer responds. -->
         <step type="CALL" value="etsi_300_242_a4_white.tif"/>
 
         <step dir="R" type="CED"/>
@@ -686,7 +674,7 @@
         <step type="STATUS" value="T1_EXPIRED"/>
     </test>
     <test name="T1-after-EOMx">
-        <!-- After and EOM exchange the far end no longer responds. -->
+        <!-- After an EOM exchange the far end no longer responds. -->
         <step type="ANSWER" value="etsi_300_242_a4_white.tif"/>
 
         <step dir="R" type="CNG"/>
