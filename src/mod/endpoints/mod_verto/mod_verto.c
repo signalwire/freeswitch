@@ -3464,8 +3464,10 @@ static switch_bool_t verto__invite_func(const char *method, cJSON *params, jsock
 		} else if (bandwidth->valueint) {
 			bwval = bandwidth->valueint;
 		}
-
-		if (bwval <= 0 || (core_bw && bwval < core_bw)) {
+		
+		if (bwval < 0) bwval = 0;
+		
+		if (core_bw && bwval && bwval < core_bw) {
 			switch_channel_set_variable_printf(channel, "rtp_video_max_bandwidth_in", "%d", bwval);
 		}
 	}
@@ -3484,7 +3486,9 @@ static switch_bool_t verto__invite_func(const char *method, cJSON *params, jsock
 			bwval = bandwidth->valueint;
 		}
 
-		if (bwval <= 0 || (core_bw && bwval < core_bw)) {
+		if (bwval < 0) bwval = 0;
+
+		if (core_bw && bwval && bwval < core_bw) {
 			switch_channel_set_variable_printf(channel, "rtp_video_max_bandwidth_out", "%d", bwval);
 		}
 	}
