@@ -38,7 +38,7 @@
         </li>
         <li>
           <a href="" class="incall-number" ng-show="storage.data.called_number">
-              {{ storage.data.called_number && storage.data.userStatus != 'connected' ?  'LAST_CALL' : 'IN_CALL' | translate  }} {{ verto.data.call ? "(" + verto.data.call.params.remote_caller_id_name + ") - " + verto.data.call.params.remote_caller_id_number : storage.data.called_number  }}
+              {{ storage.data.called_number && storage.data.userStatus != 'connected' ?  'LAST_CALL' : '' | translate }} {{ verto.data.call ? verto.data.call.params.remote_caller_id_name + " - " + verto.data.call.params.remote_caller_id_number : storage.data.called_number  }}
           </a>
         </li>
         <li class="navbar-item-icon" ng-show="verto.data.connected">
