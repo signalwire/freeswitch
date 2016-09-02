@@ -717,6 +717,8 @@ int sofia_reg_del_callback(void *pArg, int argc, char **argv, char **columnNames
 			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "expires", argv[6]);
 			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "user-agent", argv[7]);
 			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "realm", argv[14]);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "network-ip", argv[11]);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "network-port", argv[12]);
 			sofia_event_fire(profile, &s_event);
 		}
 
@@ -1332,6 +1334,8 @@ uint8_t sofia_reg_handle_register_token(nua_t *nua, sofia_profile_t *profile, nu
 	contact = sip->sip_contact;
 	to = sip->sip_to;
 	from = sip->sip_from;
+	call_id = sip->sip_call_id->i_id;
+	switch_assert(call_id);
 
 	if (sip->sip_user_agent) {
 		agent = sip->sip_user_agent->g_string;
@@ -1853,8 +1857,6 @@ uint8_t sofia_reg_handle_register_token(nua_t *nua, sofia_profile_t *profile, nu
 		switch_goto_int(r, 0, end);
 	}
 
-	call_id = sip->sip_call_id->i_id;
-	switch_assert(call_id);
 
 	/* Does this profile supports multiple registrations ? */
 	multi_reg = (sofia_test_pflag(profile, PFLAG_MULTIREG)) ? 1 : 0;
@@ -2159,6 +2161,9 @@ uint8_t sofia_reg_handle_register_token(nua_t *nua, sofia_profile_t *profile, nu
 					switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "call-id", call_id);
 					switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "rpid", rpid);
 					switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "realm", realm);
+					switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "network-ip", network_ip);
+					switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "network-port", network_port_c);
+					switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "user-agent", agent);
 					switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "expires", "%ld", (long) exptime);
 				}
 			}
