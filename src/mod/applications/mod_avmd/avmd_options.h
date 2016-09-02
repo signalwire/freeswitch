@@ -5,8 +5,7 @@
  *
  * Contributor(s):
  *
- * Piotr Gregor <piotrek.gregor gmail.com>:
- * Eric des Courtis <eric.des.courtis@benbria.com>
+ * Piotr Gregor     <piotrgregor@rsyncme.org>
  */
 
 

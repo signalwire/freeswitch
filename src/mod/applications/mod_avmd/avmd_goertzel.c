@@ -1,9 +1,19 @@
-#ifndef __AVMD_GOERTZEL_H__
+/* 
+ * Contributor(s):
+ *
+ * Eric des Courtis <eric.des.courtis@benbria.com>
+ */
 
 
 #include <math.h>
-#include "avmd_goertzel.h"
-#include "avmd_buffer.h"
+
+#ifndef __AVMD_GOERTZEL_H__
+    #include "avmd_goertzel.h"
+#endif
+
+#ifndef __AVMD_BUFFER_H__
+    #include "avmd_buffer.h"
+#endif
 
 
 extern double avmd_goertzel(circ_buffer_t *b, size_t pos, double f, size_t num)
@@ -25,6 +35,3 @@ extern double avmd_goertzel(circ_buffer_t *b, size_t pos, double f, size_t num)
 
     return (p2 * p2) + (p * p) - (coeff * p2 * p);
 }
-
-
-#endif /* __AVMD_GOERTZEL_H__ */

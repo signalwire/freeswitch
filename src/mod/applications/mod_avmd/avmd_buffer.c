@@ -1,3 +1,10 @@
+/*
+ * Contributor(s):
+ *
+ * Eric des Courtis <eric.des.courtis@benbria.com>
+ */
+
+
 #ifndef __BUFFER_H__
 #include "avmd_buffer.h"
 #endif

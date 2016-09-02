@@ -1,10 +1,11 @@
 #ifndef WIN32   /* currently we support fast acosf computation only on UNIX/Linux */
 /*
  * @brief   Fast arithmetic using precomputed arc cosine table.
+ *
  * Contributor(s):
  *
  * Eric des Courtis <eric.des.courtis@benbria.com>
- * Piotr Gregor <piotrek.gregor gmail.com>
+ * Piotr Gregor     <piotrgregor@rsyncme.org>
  */
 
 
