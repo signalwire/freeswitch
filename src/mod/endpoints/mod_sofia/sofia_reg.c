@@ -2692,9 +2692,8 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 {
 	int indexnum;
 	const char *cur;
-	su_md5_t ctx;
-	char uridigest[2 * SU_MD5_DIGEST_SIZE + 1];
-	char bigdigest[2 * SU_MD5_DIGEST_SIZE + 1];
+	char uridigest[SWITCH_MD5_DIGEST_STRING_SIZE];
+	char bigdigest[SWITCH_MD5_DIGEST_STRING_SIZE];
 	char *username, *realm, *nonce, *uri, *qop, *cnonce, *nc, *response, *input = NULL, *input2 = NULL;
 	auth_res_t ret = AUTH_FORBIDDEN;
 	int first = 0;
@@ -2706,7 +2705,7 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 	char *sql;
 	char *number_alias = NULL;
 	switch_xml_t user = NULL, param, uparams;
-	char hexdigest[2 * SU_MD5_DIGEST_SIZE + 1] = "";
+	char hexdigest[SWITCH_MD5_DIGEST_STRING_SIZE] = "";
 	char *domain_name = NULL;
 	switch_event_t *params = NULL;
 	const char *auth_acl = NULL;
@@ -3028,10 +3027,7 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 
 	if (!a1_hash) {
 		input = switch_mprintf("%s:%s:%s", username, realm, passwd);
-		su_md5_init(&ctx);
-		su_md5_strupdate(&ctx, input);
-		su_md5_hexdigest(&ctx, hexdigest);
-		su_md5_deinit(&ctx);
+		switch_md5_string(hexdigest, (void *) input, strlen(input));
 		switch_safe_free(input);
 		a1_hash = hexdigest;
 
@@ -3081,10 +3077,7 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
   for_the_sake_of_interop:
 
 	if ((input = switch_mprintf("%s:%q", regstr, uri))) {
-		su_md5_init(&ctx);
-		su_md5_strupdate(&ctx, input);
-		su_md5_hexdigest(&ctx, uridigest);
-		su_md5_deinit(&ctx);
+		switch_md5_string(uridigest, (void *) input, strlen(input));
 	}
 
 	if (nc && cnonce && qop) {
@@ -3094,11 +3087,7 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 	}
 
 	if (input2) {
-		memset(&ctx, 0, sizeof(ctx));
-		su_md5_init(&ctx);
-		su_md5_strupdate(&ctx, input2);
-		su_md5_hexdigest(&ctx, bigdigest);
-		su_md5_deinit(&ctx);
+		switch_md5_string(bigdigest, (void *) input2, strlen(input2));
 	}
 
 	if (input2 && !strcasecmp(bigdigest, response)) {
