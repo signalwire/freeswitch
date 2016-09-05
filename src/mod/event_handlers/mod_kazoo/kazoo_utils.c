@@ -32,12 +32,6 @@
  * ei_helpers.c -- helper functions for ei
  *
  */
-#include <switch.h>
-#include <ei.h>
-#include <sys/types.h>
-#include <netinet/in.h>
-#include <arpa/nameser.h>
-#include <resolv.h>
 #include "mod_kazoo.h"
 
 /* Stolen from code added to ei in R12B-5.
@@ -633,6 +627,66 @@ switch_hash_t *create_default_filter() {
 
 	return filter;
 }
+
+static void *SWITCH_THREAD_FUNC fetch_config_filters_exec(switch_thread_t *thread, void *obj)
+{
+	char *cf = "kazoo.conf";
+	switch_xml_t cfg, xml, child, param;
+	switch_event_t *params;
+	switch_memory_pool_t *pool = (switch_memory_pool_t *)obj;
+
+	switch_event_create(&params, SWITCH_EVENT_REQUEST_PARAMS);
+	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "Action", "request-filter");
+
+	if (!(xml = switch_xml_open_cfg(cf, &cfg, params))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to open configuration file %s\n", cf);
+	} else if ((child = switch_xml_child(cfg, "event-filter"))) {
+			switch_hash_t *filter;
+			switch_hash_t *old_filter;
+
+			switch_core_hash_init(&filter);
+			for (param = switch_xml_child(child, "header"); param; param = param->next) {
+				char *var = (char *) switch_xml_attr_soft(param, "name");
+				switch_core_hash_insert(filter, var, "1");
+			}
+
+			old_filter = globals.event_filter;
+			globals.config_filters_fetched = 1;
+			globals.event_filter = filter;
+			if (old_filter) {
+				switch_core_hash_destroy(&old_filter);
+			}
+
+			switch_xml_free(xml);
+	}
+
+	if (params) switch_event_destroy(&params);
+	switch_core_destroy_memory_pool(&pool);
+
+	return NULL;
+}
+
+void fetch_config_filters() {
+	switch_memory_pool_t *pool;
+	switch_thread_t *thread;
+	switch_threadattr_t *thd_attr = NULL;
+	switch_uuid_t uuid;
+
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "fetching kazoo filters\n");
+
+	switch_core_new_memory_pool(&pool);
+
+	switch_threadattr_create(&thd_attr, pool);
+	switch_threadattr_detach_set(thd_attr, 1);
+	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
+
+	switch_uuid_get(&uuid);
+	switch_thread_create(&thread, thd_attr, fetch_config_filters_exec, pool, pool);
+
+}
+
+
 
 /* For Emacs:
  * Local Variables:
