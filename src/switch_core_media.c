@@ -3733,6 +3733,11 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 
 	switch_assert(session);
 
+	if (!r_sdp) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Tried to negotiate a blank SDP?\n");
+		return 0;
+	}
+
 	if (!(smh = session->media_handle)) {
 		return 0;
 	}
