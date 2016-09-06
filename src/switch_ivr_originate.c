@@ -1929,10 +1929,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	char *chan_type = NULL, *chan_data;
 	switch_channel_t *peer_channel = NULL;
 	ringback_t ringback = { 0 };
-	time_t start;
+	time_t start, global_start;
+	switch_time_t last_retry_start = 0;
 	switch_frame_t *read_frame = NULL;
 	int r = 0, i, and_argc = 0, or_argc = 0;
-	int32_t sleep_ms = 1000, try = 0, retries = 1;
+	int32_t sleep_ms = 1000, try = 0, retries = 1, retry_timelimit_sec = 0;
+	int32_t min_retry_period_ms = sleep_ms;
 	switch_codec_t write_codec = { 0 };
 	switch_frame_t write_frame = { 0 };
 	char *odata, *var;
@@ -2399,10 +2401,22 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		}
 	}
 
+	if ((var_val = switch_event_get_header(var_event, "originate_retry_timeout")) && switch_true(var_val)) {
+		int32_t tmp;
+		tmp = atoi(var_val);
+		if (tmp > 0) {
+			retry_timelimit_sec = tmp;
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING,
+				"Invalid originate_retry_timeout setting of %s ignored, value must be > 0\n", var_val);
+		}
+	}
+
 	if ((var_val = switch_event_get_header(var_event, "originate_retries")) && switch_true(var_val)) {
 		int32_t tmp;
 		tmp = atoi(var_val);
-		if (tmp > 0 && tmp < 101) {
+		/* allow large number of retries if timeout is set */
+		if (tmp > 0 && (retry_timelimit_sec > 0 || tmp < 101)) {
 			retries = tmp;
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING,
@@ -2418,6 +2432,17 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING,
 							  "Invalid originate_retry_sleep_ms setting of %d ignored, value must be between 500 and 60000\n", tmp);
+		}
+	}
+
+	if ((var_val = switch_event_get_header(var_event, "originate_retry_min_period_ms")) && switch_true(var_val)) {
+		int32_t tmp;
+		tmp = atoi(var_val);
+		if (tmp >= 500 && tmp <= 300000) {
+			min_retry_period_ms = tmp;
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING,
+							  "Invalid originate_retry_min_period_ms setting of %d ignored, value must be between 500 and 300000\n", tmp);
 		}
 	}
 
@@ -2473,7 +2498,45 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		progress_timelimit_sec = timelimit_sec;
 	}
 
+	switch_epoch_time_now(&global_start);
+	last_retry_start = switch_micro_time_now();
+
 	for (try = 0; try < retries; try++) {
+
+		if (try > 0) {
+			time_t elapsed = switch_epoch_time_now(NULL) - global_start;
+
+			/* check if retry time limit has been exceeded */
+			if (retry_timelimit_sec > 0) {
+				if (elapsed > (time_t)retry_timelimit_sec) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Elapsed = %"SWITCH_TIME_T_FMT", originate retry timeout.\n", elapsed);
+					break;
+				} else if (cancel_cause && *cancel_cause != 0) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Originate cancelled\n");
+					break;
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Elapsed = %"SWITCH_TIME_T_FMT", originate retry not timed out yet\n", elapsed);
+				}
+			}
+
+			/* don't allow retry to start too quickly since last attempt */
+			if (min_retry_period_ms > sleep_ms) {
+				int64_t retry_sleep_ms = min_retry_period_ms - sleep_ms - ((switch_micro_time_now() - last_retry_start) / 1000);
+				if (retry_sleep_ms > 0 && retry_sleep_ms <= 300000) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Minimum retry period has not elapsed yet, waiting %"SWITCH_INT64_T_FMT" ms\n", retry_sleep_ms);
+					if (caller_channel) {
+						switch_ivr_sleep(oglobals.session, retry_sleep_ms, SWITCH_TRUE, NULL);
+						if (!switch_channel_ready(caller_channel)) {
+							status = SWITCH_STATUS_FALSE;
+							goto done;
+						}
+					} else {
+						switch_yield(retry_sleep_ms * 1000);
+					}
+				}
+			}
+		}
+
 		switch_safe_free(loop_data);
 		loop_data = strdup(data);
 		switch_assert(loop_data);
@@ -2483,6 +2546,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Only calling the first element in the list in this mode.\n");
 			or_argc = 1;
 		}
+
 
 		for (r = 0; r < or_argc && (!cancel_cause || *cancel_cause == 0); r++) {
 			char *p, *end = NULL;
@@ -2527,7 +2591,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					switch_yield(sleep_ms * 1000);
 				}
 			}
-			
+
+			if (r == 0) {
+				last_retry_start = switch_micro_time_now();
+			}
+
 			p = pipe_names[r];
 			
 			while (p && *p) {
