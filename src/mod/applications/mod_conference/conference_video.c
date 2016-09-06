@@ -1731,6 +1731,7 @@ void conference_video_check_avatar(conference_member_t *member, switch_bool_t fo
 	if (!force && switch_channel_test_flag(member->channel, CF_VIDEO_READY) && 
 		switch_core_session_media_flow(member->session, SWITCH_MEDIA_TYPE_VIDEO) != SWITCH_MEDIA_FLOW_SENDONLY && switch_core_session_media_flow(member->session, SWITCH_MEDIA_TYPE_VIDEO) != SWITCH_MEDIA_FLOW_INACTIVE) {
 		conference_utils_member_set_flag_locked(member, MFLAG_ACK_VIDEO);
+		switch_core_session_request_video_refresh(member->session);
 	} else {
 		if (member->conference->no_video_avatar) {
 			avatar = member->conference->no_video_avatar;
