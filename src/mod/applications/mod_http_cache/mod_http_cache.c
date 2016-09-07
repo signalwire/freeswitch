@@ -363,7 +363,7 @@ static switch_status_t http_put(url_cache_t *cache, http_profile_t *profile, swi
 		switch_curl_easy_setopt(curl_handle, CURLOPT_READFUNCTION, read_callback);
 		switch_curl_easy_setopt(curl_handle, CURLOPT_READDATA, &block_info);
 
-		switch_curl_easy_setopt(curl_handle, CURLOPT_INFILESIZE_LARGE, content_length);
+		switch_curl_easy_setopt(curl_handle, CURLOPT_INFILESIZE_LARGE,(curl_off_t) content_length);
 		switch_curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1);
 		switch_curl_easy_setopt(curl_handle, CURLOPT_MAXREDIRS, 10);
 		switch_curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "freeswitch-http-cache/1.0");

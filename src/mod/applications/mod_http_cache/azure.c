@@ -287,7 +287,7 @@ switch_status_t azure_blob_finalise_put(http_profile_t *profile, const char *url
 	upload_info.size_left = strlen(xmlDoc);
 	switch_curl_easy_setopt(curl_handle, CURLOPT_READFUNCTION, curl_memory_read_callback);
 	switch_curl_easy_setopt(curl_handle, CURLOPT_READDATA, &upload_info);
-	switch_curl_easy_setopt(curl_handle, CURLOPT_INFILESIZE_LARGE, strlen(xmlDoc));
+	switch_curl_easy_setopt(curl_handle, CURLOPT_INFILESIZE_LARGE, (curl_off_t)strlen(xmlDoc));
 
 	//NB. we ignore connect_timeout, ssl_verifypeer, ssl_cacert, ssl_verifyhost cache options
 
