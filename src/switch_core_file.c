@@ -142,6 +142,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 			}
 		}
 
+		if ((val = switch_event_get_header(fh->params, "cbr"))) {
+			tmp = switch_true(val);
+			fh->mm.cbr = tmp;
+		}
 
 		if ((val = switch_event_get_header(fh->params, "vb"))) {
 			tmp = atoi(val);
