@@ -115,11 +115,14 @@ static char *azure_blob_string_to_sign(const char *verb, const char *account, co
  */
 static char *azure_blob_signature(char *signature, int signature_length, const char *string_to_sign, const char *secret_access_key)
 {
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "azure_blob_signature to '%s'\n", string_to_sign);
-
 #if defined(HAVE_OPENSSL)
 	unsigned int signature_raw_length = SHA256_LENGTH;
 	char signature_raw[SHA256_LENGTH];
+#endif
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "azure_blob_signature to '%s'\n", string_to_sign);
+
+#if defined(HAVE_OPENSSL)
 	signature_raw[0] = '\0';
 	if (!signature || signature_length <= 0) {
 		return NULL;
@@ -192,6 +195,7 @@ static size_t curl_memory_read_callback(void *ptr, size_t size, size_t nmemb, vo
 {
 	curl_memory_read_t *info = (curl_memory_read_t *) userp;
 	size_t bytes_requested = size * nmemb;
+	size_t items;
 
 	if (info->read_ptr == NULL) {
 		return 0;
@@ -203,7 +207,7 @@ static size_t curl_memory_read_callback(void *ptr, size_t size, size_t nmemb, vo
 	} else {
 		memcpy(ptr, info->read_ptr, info->size_left);
 		info->read_ptr = NULL;
-		size_t items = info->size_left / size;
+		items = info->size_left / size;
 		info->size_left = 0;
 		return items;
 	}
@@ -245,6 +249,7 @@ switch_status_t azure_blob_finalise_put(http_profile_t *profile, const char *url
 	char *p = &xmlDoc[strlen(xmlDoc)];
 	char *query_string = NULL;
 	char *full_url = NULL;
+	curl_memory_read_t upload_info;
 
 	for (int i = 1; i < num_blocks; i ++) {
 		char *block_id = azure_blob_block_num_to_id(i);
@@ -278,7 +283,8 @@ switch_status_t azure_blob_finalise_put(http_profile_t *profile, const char *url
 	switch_curl_easy_setopt(curl_handle, CURLOPT_MAXREDIRS, 10);
 	switch_curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "freeswitch-http-cache/1.0");
 
-	curl_memory_read_t upload_info = { xmlDoc, strlen(xmlDoc) };
+	upload_info.read_ptr = xmlDoc;
+	upload_info.size_left = strlen(xmlDoc);
 	switch_curl_easy_setopt(curl_handle, CURLOPT_READFUNCTION, curl_memory_read_callback);
 	switch_curl_easy_setopt(curl_handle, CURLOPT_READDATA, &upload_info);
 	switch_curl_easy_setopt(curl_handle, CURLOPT_INFILESIZE_LARGE, strlen(xmlDoc));
