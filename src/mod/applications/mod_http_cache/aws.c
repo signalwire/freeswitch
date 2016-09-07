@@ -162,17 +162,19 @@ char *aws_s3_authentication_create(const char *verb, const char *url, const char
 	return switch_mprintf("AWS %s:%s", aws_access_key_id, signature);
 }
 
-switch_status_t aws_s3_config_profile(switch_xml_t xml, http_profile_t *profile) {
+switch_status_t aws_s3_config_profile(switch_xml_t xml, http_profile_t *profile)
+{
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	switch_xml_t base_domain_xml = switch_xml_child(xml, "base-domain");
 
 	profile->append_headers_ptr = aws_s3_append_headers;
 
-	switch_xml_t base_domain_xml = switch_xml_child(xml, "base-domain");
 	/* check if environment variables set the keys */
 	profile->aws_s3_access_key_id = getenv("AWS_ACCESS_KEY_ID");
 	profile->secret_access_key = getenv("AWS_SECRET_ACCESS_KEY");
 	if (!zstr(profile->aws_s3_access_key_id) && !zstr(profile->secret_access_key)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Using AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY environment variables for s3 access on profile \"%s\"\n", profile->name);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,
+						  "Using AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY environment variables for s3 access on profile \"%s\"\n", profile->name);
 		profile->aws_s3_access_key_id = strdup(profile->aws_s3_access_key_id);
 		profile->secret_access_key = strdup(profile->secret_access_key);
 	} else {
@@ -195,6 +197,7 @@ switch_status_t aws_s3_config_profile(switch_xml_t xml, http_profile_t *profile)
 			status = SWITCH_STATUS_FALSE;
 		}
 	}
+
 	if (base_domain_xml) {
 		profile->base_domain = switch_strip_whitespace(switch_xml_txt(base_domain_xml));
 		if (zstr(profile->base_domain)) {
