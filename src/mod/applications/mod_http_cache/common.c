@@ -68,6 +68,8 @@ void parse_url(char *url, const char *base_domain, const char *default_base_doma
 	char *bucket_start = NULL;
 	char *bucket_end;
 	char *object_start;
+	char *p;
+	char base_domain_match[1024];
 
 	*bucket = NULL;
 	*object = NULL;
@@ -82,47 +84,43 @@ void parse_url(char *url, const char *base_domain, const char *default_base_doma
 	} else if (!strncasecmp(url, "http://", 7)) {
 		bucket_start = url + 7;
 	}
-	if (zstr(bucket_start)) {
-		/* invalid URL */
+
+	if (zstr(bucket_start)) { /* invalid URL */
 		return;
 	}
 
-	{
-		char base_domain_match[1024];
-		if (zstr(base_domain)) {
-			base_domain = default_base_domain;
-		}
-		switch_snprintf(base_domain_match, 1024, ".%s", base_domain);
-		bucket_end = my_strrstr(bucket_start, base_domain_match);
+	if (zstr(base_domain)) {
+		base_domain = default_base_domain;
 	}
-	if (!bucket_end) {
-		/* invalid URL */
+	switch_snprintf(base_domain_match, 1024, ".%s", base_domain);
+	bucket_end = my_strrstr(bucket_start, base_domain_match);
+
+	if (!bucket_end) { /* invalid URL */
 		return;
 	}
+
 	*bucket_end = '\0';
 
 	object_start = strchr(bucket_end + 1, '/');
-	if (!object_start) {
-		/* invalid URL */
+
+	if (!object_start) { /* invalid URL */
 		return;
 	}
+
 	object_start++;
 
-	if (zstr(bucket_start) || zstr(object_start)) {
-		/* invalid URL */
+	if (zstr(bucket_start) || zstr(object_start)) { /* invalid URL */
 		return;
 	}
 
-	//	ignore the query string from the end of the URL
-	char *p = strchr(object_start, '&');
-	if (p) {
+	/* ignore the query string from the end of the URL */
+	if ((p = strchr(object_start, '&'))) {
 		*p = '\0';
 	}
 
 	*bucket = bucket_start;
 	*object = object_start;
 }
-
 
 
 /* For Emacs:
