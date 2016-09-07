@@ -213,7 +213,8 @@ static size_t curl_memory_read_callback(void *ptr, size_t size, size_t nmemb, vo
  * @param num the number to encode
  * @result the base64 string (must be freed)
  */
-static char *azure_blob_block_num_to_id(const unsigned int num) {
+static char *azure_blob_block_num_to_id(const unsigned int num)
+{
 	char num_str[BLOCK_STR_LENGTH], num_len;
 	char *out_str;
 
@@ -370,18 +371,20 @@ switch_curl_slist_t *azure_blob_append_headers(http_profile_t *profile, switch_c
  * @param bytes_per_block returned value of bytes_per_block in the configuration
  * @return SWITCH_STATUS_SUCCESS on success
  */
-switch_status_t azure_blob_config_profile(switch_xml_t xml, http_profile_t *profile) {
+switch_status_t azure_blob_config_profile(switch_xml_t xml, http_profile_t *profile)
+{
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-
 	char *key = NULL;
+	switch_xml_t base_domain_xml = switch_xml_child(xml, "base-domain");
+
 	profile->append_headers_ptr = azure_blob_append_headers;
 	profile->finalise_put_ptr = azure_blob_finalise_put;
 
-	switch_xml_t base_domain_xml = switch_xml_child(xml, "base-domain");
 	/* check if environment variables set the keys */
 	key = getenv("AZURE_STORAGE_ACCESS_KEY");
 	if (!zstr(key)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Using AZURE_STORAGE_ACCESS_KEY environment variables for Azure access on profile \"%s\"\n", profile->name);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,
+						  "Using AZURE_STORAGE_ACCESS_KEY environment variables for Azure access on profile \"%s\"\n", profile->name);
 		key = switch_safe_strdup(key);
 	} else {
 		/* use configuration for keys */
@@ -413,6 +416,7 @@ switch_status_t azure_blob_config_profile(switch_xml_t xml, http_profile_t *prof
 			switch_safe_free(profile->base_domain);
 		}
 	}
+
 	return status;
 }
 
