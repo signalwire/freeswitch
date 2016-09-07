@@ -323,6 +323,7 @@ static switch_status_t http_put(url_cache_t *cache, http_profile_t *profile, swi
 
 	while (sent_bytes < file_info.st_size) {
 		switch_size_t content_length = file_info.st_size - sent_bytes < bytes_per_block ? file_info.st_size - sent_bytes : bytes_per_block;
+		block_info_t block_info = { file_to_put, content_length };
 		// make a copy of the URL so we can add the query string to ir
 		char *query_string = NULL;
 		char *full_url = NULL;
@@ -360,7 +361,6 @@ static switch_status_t http_put(url_cache_t *cache, http_profile_t *profile, swi
 
 		/* we want to use our own read function so we can send a portion of the file */ 
 		switch_curl_easy_setopt(curl_handle, CURLOPT_READFUNCTION, read_callback);
-		block_info_t block_info = { file_to_put, content_length };
 		switch_curl_easy_setopt(curl_handle, CURLOPT_READDATA, &block_info);
 
 		switch_curl_easy_setopt(curl_handle, CURLOPT_INFILESIZE_LARGE, content_length);
