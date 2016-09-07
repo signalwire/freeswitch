@@ -35,6 +35,7 @@
 #include <switch.h>
 #include <switch_curl.h>
 #include "aws.h"
+#include "azure.h"
 
 #include <stdlib.h>
 
@@ -58,17 +59,11 @@ SWITCH_STANDARD_API(http_cache_prefetch);
 
 typedef struct url_cache url_cache_t;
 
-/**
- * An http profile.  Defines optional credentials
- * for access to Amazon S3.
- */
-struct http_profile {
-	const char *name;
-	const char *aws_s3_access_key_id;
-	const char *aws_s3_secret_access_key;
-	const char *aws_s3_base_domain;
+struct block_info {
+	FILE *f;
+	size_t bytes_to_read;
 };
-typedef struct http_profile http_profile_t;
+typedef struct block_info block_info_t;
 
 /**
  * status if the cache entry
@@ -218,9 +213,6 @@ static void url_cache_unlock(url_cache_t *cache, switch_core_session_t *session)
 static void url_cache_clear(url_cache_t *cache, switch_core_session_t *session);
 static http_profile_t *url_cache_http_profile_find(url_cache_t *cache, const char *name);
 static http_profile_t *url_cache_http_profile_find_by_fqdn(url_cache_t *cache, const char *url);
-static http_profile_t *url_cache_http_profile_add(url_cache_t *cache, const char *name, const char *aws_s3_access_key_id, const char *aws_s3_secret_access_key, const char *aws_s3_base_domain);
-
-static switch_curl_slist_t *append_aws_s3_headers(switch_curl_slist_t *headers, http_profile_t *profile, const char *verb, const char *content_type, const char *url);
 
 
 /**
@@ -252,6 +244,20 @@ static void parse_domain(const char *url, char *domain_buf, int domain_buf_len)
 	}
 }
 
+static size_t read_callback(void *ptr, size_t size, size_t nmemb, void *userp)
+{
+	block_info_t *block_info = (block_info_t *) userp;
+
+	if (size * nmemb <= block_info->bytes_to_read) {
+		block_info->bytes_to_read -= size * nmemb;
+		return fread(ptr, size, nmemb, block_info->f);
+	} else {
+		int i = block_info->bytes_to_read;
+		block_info->bytes_to_read = 0;
+		return fread(ptr, 1, i, block_info->f);
+	}
+}
+
 /**
  * Put a file to the URL
  * @param cache the cache
@@ -275,7 +281,10 @@ static switch_status_t http_put(url_cache_t *cache, http_profile_t *profile, swi
 	long httpRes = 0;
 	struct stat file_info = {0};
 	FILE *file_to_put = NULL;
-	int fd;
+
+	switch_size_t sent_bytes = 0;
+	switch_size_t bytes_per_block;
+	unsigned int block_num = 1;
 
 	/* guess what type of mime content this is going to be */
 	if ((ext = strrchr(filename, '.'))) {
@@ -285,74 +294,124 @@ static switch_status_t http_put(url_cache_t *cache, http_profile_t *profile, swi
 		}
 	}
 
-	buf = switch_mprintf("Content-Type: %s", mime_type);
-
 	/* find profile for domain */
 	if (!profile) {
 		profile = url_cache_http_profile_find_by_fqdn(cache, url);
 	}
 
-	headers = switch_curl_slist_append(headers, buf);
-	headers = append_aws_s3_headers(headers, profile, "PUT", mime_type, url);
-
 	/* open file and get the file size */
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "opening %s for upload to %s\n", filename, url);
-	fd = open(filename, O_RDONLY);
-	if (fd == -1) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "open() error: %s\n", strerror(errno));
-		status = SWITCH_STATUS_FALSE;
-		goto done;
-	}
-	if (fstat(fd, &file_info) == -1) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "fstat() error: %s\n", strerror(errno));
-	}
-	close(fd);
 
-	/* libcurl requires FILE* */
- 	file_to_put = fopen(filename, "rb");
+	file_to_put = fopen(filename, "rb");
 	if (!file_to_put) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "fopen() error: %s\n", strerror(errno));
-		status = SWITCH_STATUS_FALSE;
-		goto done;
+		return SWITCH_STATUS_FALSE;
 	}
 
-	curl_handle = switch_curl_easy_init();
-	if (!curl_handle) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "switch_curl_easy_init() failure\n");
-		status = SWITCH_STATUS_FALSE;
-		goto done;
+	if (fstat(fileno(file_to_put), &file_info) == -1) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "fstat() error: %s\n", strerror(errno));
+		fclose(file_to_put);
+		return SWITCH_STATUS_FALSE;
 	}
-	switch_curl_easy_setopt(curl_handle, CURLOPT_UPLOAD, 1);
-	switch_curl_easy_setopt(curl_handle, CURLOPT_PUT, 1);
-	switch_curl_easy_setopt(curl_handle, CURLOPT_NOSIGNAL, 1);
-	switch_curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, headers);
-	switch_curl_easy_setopt(curl_handle, CURLOPT_URL, url);
-	switch_curl_easy_setopt(curl_handle, CURLOPT_READDATA, file_to_put);
-	switch_curl_easy_setopt(curl_handle, CURLOPT_INFILESIZE_LARGE, (curl_off_t)file_info.st_size);
-	switch_curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1);
-	switch_curl_easy_setopt(curl_handle, CURLOPT_MAXREDIRS, 10);
-	switch_curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "freeswitch-http-cache/1.0");
-	if (cache->connect_timeout > 0) {
-		switch_curl_easy_setopt(curl_handle, CURLOPT_CONNECTTIMEOUT, cache->connect_timeout);
-	}
-	if (!cache->ssl_verifypeer) {
-		switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0L);
-	} else {
-		/* this is the file with all the trusted certificate authorities */
-		if (!zstr(cache->ssl_cacert)) {
-			switch_curl_easy_setopt(curl_handle, CURLOPT_CAINFO, cache->ssl_cacert);
-		}
-		/* verify that the host name matches the cert */
-		if (!cache->ssl_verifyhost) {
-			switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 0L);
-		}
-	}
-	switch_curl_easy_perform(curl_handle);
-	switch_curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &httpRes);
-	switch_curl_easy_cleanup(curl_handle);
 
-	if (httpRes == 200 || httpRes == 201 || httpRes == 202 || httpRes == 204) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s saved to %s\n", filename, url);
+	buf = switch_mprintf("Content-Type: %s", mime_type);
+
+	bytes_per_block = profile && profile->bytes_per_block ? profile->bytes_per_block : file_info.st_size;
+
+	// for Azure - will re-upload all of the file on error we could just upload the blocks
+	// that failed.  Also, we could do it all in parallel.
+
+	while (sent_bytes < file_info.st_size) {
+		switch_size_t content_length = file_info.st_size - sent_bytes < bytes_per_block ? file_info.st_size - sent_bytes : bytes_per_block;
+		// make a copy of the URL so we can add the query string to ir
+		char *query_string = NULL;
+		char *full_url = NULL;
+
+		headers = switch_curl_slist_append(NULL, buf);
+		if (profile && profile->append_headers_ptr) {
+			profile->append_headers_ptr(profile, headers, "PUT", content_length, mime_type, url, block_num, &query_string);
+		}
+
+		if (query_string) {
+			full_url = switch_mprintf("%s?%s", url, query_string);
+			free(query_string);
+		} else {
+			switch_strdup(full_url, url);
+		}
+
+		// seek to the correct position in the file
+		if (fseek(file_to_put, sent_bytes, SEEK_SET) != 0) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Failed to seek file - errno=%d\n", errno);
+			status = SWITCH_STATUS_FALSE;
+			goto done;
+		}
+
+		curl_handle = switch_curl_easy_init();
+		if (!curl_handle) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "switch_curl_easy_init() failure\n");
+			status = SWITCH_STATUS_FALSE;
+			goto done;
+		}
+		switch_curl_easy_setopt(curl_handle, CURLOPT_UPLOAD, 1);
+		switch_curl_easy_setopt(curl_handle, CURLOPT_PUT, 1);
+		switch_curl_easy_setopt(curl_handle, CURLOPT_NOSIGNAL, 1);
+		switch_curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, headers);
+		switch_curl_easy_setopt(curl_handle, CURLOPT_URL, full_url);
+
+		/* we want to use our own read function so we can send a portion of the file */ 
+		switch_curl_easy_setopt(curl_handle, CURLOPT_READFUNCTION, read_callback);
+		block_info_t block_info = { file_to_put, content_length };
+		switch_curl_easy_setopt(curl_handle, CURLOPT_READDATA, &block_info);
+
+		switch_curl_easy_setopt(curl_handle, CURLOPT_INFILESIZE_LARGE, content_length);
+		switch_curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1);
+		switch_curl_easy_setopt(curl_handle, CURLOPT_MAXREDIRS, 10);
+		switch_curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "freeswitch-http-cache/1.0");
+		if (cache->connect_timeout > 0) {
+			switch_curl_easy_setopt(curl_handle, CURLOPT_CONNECTTIMEOUT, cache->connect_timeout);
+		}
+		if (!cache->ssl_verifypeer) {
+			switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0L);
+		} else {
+			/* this is the file with all the trusted certificate authorities */
+			if (!zstr(cache->ssl_cacert)) {
+				switch_curl_easy_setopt(curl_handle, CURLOPT_CAINFO, cache->ssl_cacert);
+			}
+			/* verify that the host name matches the cert */
+			if (!cache->ssl_verifyhost) {
+				switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 0L);
+			}
+		}
+		switch_curl_easy_perform(curl_handle);
+		switch_curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &httpRes);
+		switch_curl_easy_cleanup(curl_handle);
+
+		if (httpRes == 200 || httpRes == 201 || httpRes == 202 || httpRes == 204) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s saved to %s\n", filename, full_url);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Received HTTP error %ld trying to save %s to %s\n", httpRes, filename, url);
+			status = SWITCH_STATUS_GENERR;
+		}
+
+	done:
+		switch_safe_free(full_url);
+
+		if (headers) {
+			switch_curl_slist_free_all(headers);
+		}
+
+		if (status == SWITCH_STATUS_SUCCESS) {
+			sent_bytes += content_length;
+			block_num ++;
+		} else {
+			// there's no point doing the rest of the blocks if one failed
+			break;
+		}
+	}	//while
+
+	fclose(file_to_put);
+
+	if (status == SWITCH_STATUS_SUCCESS) {
 		if (cache_local_file) {
 			cached_url_t *u = NULL;
 			/* save to cache */
@@ -367,18 +426,10 @@ static switch_status_t http_put(url_cache_t *cache, http_profile_t *profile, swi
 			}
 			url_cache_unlock(cache, session);
 		}
-	} else {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Received HTTP error %ld trying to save %s to %s\n", httpRes, filename, url);
-		status = SWITCH_STATUS_GENERR;
-	}
 
-done:
-	if (file_to_put) {
-		fclose(file_to_put);
-	}
-
-	if (headers) {
-		switch_curl_slist_free_all(headers);
+		if (profile && profile->finalise_put_ptr) {
+			profile->finalise_put_ptr(profile, url, block_num);
+		}
 	}
 
 	switch_safe_free(buf);
@@ -845,27 +896,6 @@ static http_profile_t *url_cache_http_profile_find_by_fqdn(url_cache_t *cache, c
 }
 
 /**
- * Add a profile to the cache
- */
-static http_profile_t *url_cache_http_profile_add(url_cache_t *cache, const char *name, const char *aws_s3_access_key_id, const char *aws_s3_secret_access_key, const char *aws_s3_base_domain)
-{
-	http_profile_t *profile = switch_core_alloc(cache->pool, sizeof(*profile));
-	profile->name = switch_core_strdup(cache->pool, name);
-	if (aws_s3_access_key_id) {
-		profile->aws_s3_access_key_id = switch_core_strdup(cache->pool, aws_s3_access_key_id);
-	}
-	if (aws_s3_secret_access_key) {
-		profile->aws_s3_secret_access_key = switch_core_strdup(cache->pool, aws_s3_secret_access_key);
-	}
-	if (aws_s3_base_domain) {
-		profile->aws_s3_base_domain = switch_core_strdup(cache->pool, aws_s3_base_domain);
-	}
-
-	switch_core_hash_insert(cache->profiles, profile->name, profile);
-	return profile;
-}
-
-/**
  * Find file extension at end of URL.
  * @param url to search
  * @param found_extension
@@ -1014,37 +1044,6 @@ static void cached_url_destroy(cached_url_t *url, switch_memory_pool_t *pool)
 }
 
 /**
- * Append Amazon S3 headers to request if necessary
- * @param headers to add to.  If NULL, new headers are created.
- * @param profile with S3 credentials
- * @param content_type of object (PUT only)
- * @param verb (GET/PUT)
- * @param url
- * @return updated headers
- */
-static switch_curl_slist_t *append_aws_s3_headers(switch_curl_slist_t *headers, http_profile_t *profile, const char *verb, const char *content_type, const char *url)
-{
-	/* check if Amazon headers are needed */
-	if (profile && profile->aws_s3_access_key_id && aws_s3_is_s3_url(url, profile->aws_s3_base_domain)) {
-		char date[256];
-		char header[1024];
-		char *authenticate;
-
-		/* Date: */
-		switch_rfc822_date(date, switch_time_now());
-		snprintf(header, 1024, "Date: %s", date);
-		headers = switch_curl_slist_append(headers, header);
-
-		/* Authorization: */
-		authenticate = aws_s3_authentication_create(verb, url, profile->aws_s3_base_domain, content_type, "", profile->aws_s3_access_key_id, profile->aws_s3_secret_access_key, date);
-		snprintf(header, 1024, "Authorization: %s", authenticate);
-		free(authenticate);
-		headers = switch_curl_slist_append(headers, header);
-	}
-	return headers;
-}
-
-/**
  * Fetch a file via HTTP
  * @param cache the cache
  * @param profile the HTTP profile
@@ -1070,8 +1069,9 @@ static switch_status_t http_get(url_cache_t *cache, http_profile_t *profile, cac
 		profile = url_cache_http_profile_find_by_fqdn(cache, url->url);
 	}
 
-	/* add optional AWS S3 headers if necessary */
-	headers = append_aws_s3_headers(headers, profile, "GET", "", url->url);
+	if (profile && profile->append_headers_ptr) {
+		headers = profile->append_headers_ptr(profile, headers, "GET", 0, "", url->url, 0, NULL);
+	}
 
 	curl_handle = switch_curl_easy_init();
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "opening %s for URL cache\n", get_data.url->filename);
@@ -1565,57 +1565,34 @@ static switch_status_t do_config(url_cache_t *cache)
 		for (profile = switch_xml_child(profiles, "profile"); profile; profile = profile->next) {
 			const char *name = switch_xml_attr_soft(profile, "name");
 			if (!zstr(name)) {
-				http_profile_t *profile_obj;
+				http_profile_t *profile_obj = switch_core_alloc(cache->pool, sizeof(*profile_obj));
+				switch_xml_t profile_xml;
 				switch_xml_t domains;
-				switch_xml_t s3 = switch_xml_child(profile, "aws-s3");
-				char *access_key_id = NULL;
-				char *secret_access_key = NULL;
-				char *base_domain = NULL;
-				if (s3) {
-					switch_xml_t base_domain_xml = switch_xml_child(s3, "base-domain");
 
-					/* check if environment variables set the keys */
-					access_key_id = getenv("AWS_ACCESS_KEY_ID");
-					secret_access_key = getenv("AWS_SECRET_ACCESS_KEY");
-					if (!zstr(access_key_id) && !zstr(secret_access_key)) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Using AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY environment variables for s3 access on profile \"%s\"\n", name);
-						access_key_id = strdup(access_key_id);
-						secret_access_key = strdup(secret_access_key);
-					} else {
-						/* use configuration for keys */
-						switch_xml_t id = switch_xml_child(s3, "access-key-id");
-						switch_xml_t secret = switch_xml_child(s3, "secret-access-key");
-						access_key_id = NULL;
-						secret_access_key = NULL;
+				switch_strdup(profile_obj->name, name);
+				profile_obj->aws_s3_access_key_id = NULL;
+				profile_obj->secret_access_key = NULL;
+				profile_obj->base_domain = NULL;
+				profile_obj->bytes_per_block = 0;
+				profile_obj->append_headers_ptr = NULL;
+				profile_obj->finalise_put_ptr = NULL;
 
-						if (id && secret) {
-							access_key_id = switch_strip_whitespace(switch_xml_txt(id));
-							secret_access_key = switch_strip_whitespace(switch_xml_txt(secret));
-							if (zstr(access_key_id) || zstr(secret_access_key)) {
-								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Missing aws s3 credentials for profile \"%s\"\n", name);
-								switch_safe_free(access_key_id);
-								access_key_id = NULL;
-								switch_safe_free(secret_access_key);
-								secret_access_key = NULL;
-							}
-						} else {
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Missing key id or secret\n");
+				profile_xml = switch_xml_child(profile, "aws-s3");
+				if (profile_xml) {
+					if (aws_s3_config_profile(profile_xml, profile_obj) == SWITCH_STATUS_FALSE) {
+						continue;
+					}
+				} else {
+					profile_xml = switch_xml_child(profile, "azure-blob");
+					if (profile_xml) {
+						if (azure_blob_config_profile(profile_xml, profile_obj) == SWITCH_STATUS_FALSE) {
 							continue;
 						}
 					}
-					if (base_domain_xml) {
-						base_domain = switch_strip_whitespace(switch_xml_txt(base_domain_xml));
-						if (zstr(base_domain)) {
-							switch_safe_free(base_domain);
-							base_domain = NULL;
-						}
-					}
 				}
+
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Adding profile \"%s\" to cache\n", name);
-				profile_obj = url_cache_http_profile_add(cache, name, access_key_id, secret_access_key, base_domain);
-				switch_safe_free(access_key_id);
-				switch_safe_free(secret_access_key);
-				switch_safe_free(base_domain);
+				switch_core_hash_insert(cache->profiles, profile_obj->name, profile_obj);
 
 				domains = switch_xml_child(profile, "domains");
 				if (domains) {
