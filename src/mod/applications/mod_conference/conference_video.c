@@ -2900,7 +2900,7 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 				switch_frame_t *dupframe;
 
 				if (!imember->rec && 
-					(!imember->session || !switch_channel_test_flag(imember->channel, CF_VIDEO_READY) ||
+					(!imember->session || !switch_channel_test_flag(imember->channel, CF_VIDEO_READY) || !imember->canvas ||
 					 switch_core_session_read_lock(imember->session) != SWITCH_STATUS_SUCCESS)) {
 					continue;
 				}
