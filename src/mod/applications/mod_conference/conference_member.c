@@ -1201,7 +1201,7 @@ switch_status_t conference_member_del(conference_obj_t *conference, conference_m
 			conference->count--;
 		}
 
-		conference_video_check_flush(member);
+		conference_video_check_flush(member, SWITCH_FALSE);
 
 		if (conference_utils_member_test_flag(member, MFLAG_ENDCONF)) {
 			if (!--conference->end_count) {
