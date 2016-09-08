@@ -2504,18 +2504,20 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	for (try = 0; try < retries; try++) {
 
 		if (try > 0) {
-			time_t elapsed = switch_epoch_time_now(NULL) - global_start;
+			int64_t elapsed = switch_epoch_time_now(NULL) - global_start;
 
 			/* check if retry time limit has been exceeded */
 			if (retry_timelimit_sec > 0) {
-				if (elapsed > (time_t)retry_timelimit_sec) {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Elapsed = %"SWITCH_TIME_T_FMT", originate retry timeout.\n", elapsed);
+				if (elapsed > retry_timelimit_sec) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE,
+									  "Elapsed = %"SWITCH_INT64_T_FMT", originate retry timeout.\n", elapsed);
 					break;
 				} else if (cancel_cause && *cancel_cause != 0) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Originate cancelled\n");
 					break;
 				} else {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Elapsed = %"SWITCH_TIME_T_FMT", originate retry not timed out yet\n", elapsed);
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
+									  "Elapsed = %"SWITCH_INT64_T_FMT", originate retry not timed out yet\n", elapsed);
 				}
 			}
 
