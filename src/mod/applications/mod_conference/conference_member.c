@@ -743,7 +743,7 @@ switch_status_t conference_member_add(conference_obj_t *conference, conference_m
 		conference_video_check_avatar(member, SWITCH_FALSE);
 
 		if ((var = switch_channel_get_variable_dup(member->channel, "conference_join_volume_in", SWITCH_FALSE, -1))) {
-			uint32_t id = atoi(var) - 1;
+			uint32_t id = atoi(var);
 
 			if (id > -5 && id < 5) {
 				member->volume_in_level = id;
@@ -751,10 +751,19 @@ switch_status_t conference_member_add(conference_obj_t *conference, conference_m
 		}
 
 		if ((var = switch_channel_get_variable_dup(member->channel, "conference_join_volume_out", SWITCH_FALSE, -1))) {
-			uint32_t id = atoi(var) - 1;
+			uint32_t id = atoi(var);
 
 			if (id > -5 && id < 5) {
 				member->volume_out_level = id;
+			}
+		}
+
+
+		if ((var = switch_channel_get_variable_dup(member->channel, "conference_join_energy_level", SWITCH_FALSE, -1))) {
+			uint32_t id = atoi(var);
+
+			if (id > -5 && id < 5) {
+				member->energy_level = id;
 			}
 		}
 		
