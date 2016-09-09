@@ -1670,11 +1670,11 @@ static void avmd_process(avmd_session_t *s, switch_frame_t *frame) {
                 detection_time = s->detection_stop_time - s->detection_start_time;  /* detection time length */
 				switch_channel_set_variable_printf(channel, "avmd_total_time", "[%" PRId64 "]", detection_time / 1000);
 				switch_channel_execute_on(channel, "execute_on_avmd_beep");
+				switch_channel_set_variable(channel, "avmd_detect", "TRUE");
 				avmd_fire_event(AVMD_EVENT_BEEP, s->session, TO_HZ(s->rate, sma_digital_freq), v, s->sma_amp_b.sma, v_amp, 0, 0, s->detection_start_time, s->detection_stop_time, 0, 0);
                 if (s->settings.report_status == 1) {
                     switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(s->session), SWITCH_LOG_INFO, "<<< AVMD - Beep Detected: f = [%f] variance = [%f], amplitude = [%f] variance = [%f], detection time [%" PRId64 "] [us] >>>\n", TO_HZ(s->rate, sma_digital_freq), v, s->sma_amp_b.sma, v_amp, detection_time);
                 }
-				switch_channel_set_variable(channel, "avmd_detect", "TRUE");
 				RESET_SMA_BUFFER(&s->sma_b);
 				RESET_SMA_BUFFER(&s->sqa_b);
 				RESET_SMA_BUFFER(&s->sma_amp_b);
