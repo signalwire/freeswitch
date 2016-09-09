@@ -896,7 +896,7 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
           return false;
         }
 
-        data.call.dtmf(number);
+        data.call.dtmf(number.toString());
         console.debug('The DTMF was sent for the call.');
 
         if (angular.isFunction(callback)) {
