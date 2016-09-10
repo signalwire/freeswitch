@@ -1516,8 +1516,9 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_write_thread_run(switch_thread_
 	conference_member_t *member = (conference_member_t *) obj;
 	void *pop;
 	switch_frame_t *frame;
-	int loops = 0;
+	int loops = 0, patched = 0;
 	switch_time_t last = 0;
+	switch_status_t pop_status;
 
 	if (switch_thread_rwlock_tryrdlock(member->rwlock) != SWITCH_STATUS_SUCCESS) {
 		return NULL;
@@ -1526,7 +1527,13 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_write_thread_run(switch_thread_
 	//switch_core_autobind_cpu();
 
 	while(conference_utils_member_test_flag(member, MFLAG_RUNNING)) {
-		if (switch_queue_pop(member->mux_out_queue, &pop) == SWITCH_STATUS_SUCCESS) {
+		if (patched) {
+			pop_status = switch_queue_trypop(member->mux_out_queue, &pop);
+		} else {
+			pop_status = switch_queue_pop(member->mux_out_queue, &pop);
+		}
+
+		if (pop_status == SWITCH_STATUS_SUCCESS) {
 			mcu_layer_t *layer = NULL;
 			mcu_canvas_t *canvas = NULL;
 
@@ -1569,7 +1576,8 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_write_thread_run(switch_thread_
 
 			canvas = NULL;                                                                                                                              
 			layer = NULL;
-			
+			patched = 0;
+
 			switch_mutex_lock(member->conference->canvas_mutex);
 			if (member->video_layer_id > -1 && member->canvas_id > -1) {
 				canvas = member->conference->canvases[member->canvas_id];
@@ -1578,14 +1586,13 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_write_thread_run(switch_thread_
 				if (layer->need_patch && switch_thread_rwlock_tryrdlock(canvas->video_rwlock) == SWITCH_STATUS_SUCCESS) {
 					if (layer->need_patch) {
 						conference_video_scale_and_patch(layer, NULL, SWITCH_FALSE);
+						patched++;
 						layer->need_patch = 0;
 					}
 					switch_thread_rwlock_unlock(canvas->video_rwlock);
 				}
 			}
 			switch_mutex_unlock(member->conference->canvas_mutex);
-			
-			
 		}
 	}
 
