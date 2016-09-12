@@ -6126,10 +6126,11 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 
 		if (status < 200) {
 			if (switch_core_session_get_partner(session, &other_session) == SWITCH_STATUS_SUCCESS) {
-				private_object_t *other_tech_pvt = switch_core_session_get_private(other_session);
-
-				if (sofia_test_flag(other_tech_pvt, TFLAG_3PCC)) {
-					sofia_set_flag_locked(tech_pvt, TFLAG_SKIP_EARLY);
+				if(switch_core_session_compare(session, other_session)) {
+					private_object_t *other_tech_pvt = switch_core_session_get_private(other_session);
+					if (sofia_test_flag(other_tech_pvt, TFLAG_3PCC)) {
+						sofia_set_flag_locked(tech_pvt, TFLAG_SKIP_EARLY);
+					}
 				}
 				switch_core_session_rwunlock(other_session);
 			}
