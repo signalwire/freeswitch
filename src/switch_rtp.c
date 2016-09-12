@@ -1693,7 +1693,11 @@ static void check_jitter(switch_rtp_t *rtp_session)
 	rtp_session->stats.inbound.jitter_n++;
 	rtp_session->stats.inbound.jitter_add += diff_time;
 
-	cur_diff = (int64_t)(diff_time - rtp_session->stats.inbound.mean_interval);
+	if (rtp_session->stats.inbound.mean_interval) {
+		cur_diff = (int64_t)(diff_time - rtp_session->stats.inbound.mean_interval);
+	} else {
+		cur_diff = 0;
+	}
 	
 	rtp_session->stats.inbound.jitter_addsq += (cur_diff * cur_diff);
 	rtp_session->stats.inbound.last_proc_time = current_time;
