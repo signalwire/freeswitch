@@ -352,14 +352,16 @@ ssize_t ws_raw_read(wsh_t *wsh, void *data, size_t bytes, int block)
 			if (r == -1) {
 				err = SSL_get_error(wsh->ssl, r);
 				
-				if (!block && err == SSL_ERROR_WANT_READ) {
-					r = -2;
-					goto end;
-				}
-
-				if (block) {
+				if (err == SSL_ERROR_WANT_READ) {
+					if (!block) {
+						r = -2;
+						goto end;
+					}
 					wsh->x++;
 					ms_sleep(10);
+				} else {
+					r = -1;
+					goto end;
 				}
 			}
 
@@ -385,11 +387,11 @@ ssize_t ws_raw_read(wsh_t *wsh, void *data, size_t bytes, int block)
 		}
 	} while (r == -1 && xp_is_blocking(xp_errno()) && wsh->x < 1000);
 	
+ end:
+
 	if (wsh->x >= 10000 || (block && wsh->x >= 1000)) {
 		r = -1;
 	}
-
- end:
 
 	if (r > 0) {
 		*((char *)data + r) = '\0';
@@ -500,7 +502,7 @@ static int restore_socket(ws_socket_t sock)
 #endif
 
 
-static int establish_logical_layer(wsh_t *wsh)
+int establish_logical_layer(wsh_t *wsh)
 {
 
 	if (!wsh->sanity) {
@@ -928,38 +930,6 @@ ssize_t ws_read_frame(wsh_t *wsh, ws_opcode_t *oc, uint8_t **data)
 		break;
 	}
 }
-
-
-ssize_t ws_feed_buf(wsh_t *wsh, void *data, size_t bytes)
-{
-
-	if (bytes + wsh->wdatalen > wsh->buflen) {
-		return -1;
-	}
-
-	memcpy((unsigned char *)wsh->write_buffer + wsh->write_buffer_len, data, bytes);
-	
-	wsh->write_buffer_len += bytes;
-
-	return bytes;
-}
-
-
-ssize_t ws_send_buf(wsh_t *wsh, ws_opcode_t oc)
-{
-	ssize_t r = 0;
-
-	if (!wsh->wdatalen) {
-		return -1;
-	}
-	
-	r = ws_write_frame(wsh, oc, wsh->write_buffer, wsh->write_buffer_len);
-	
-	wsh->wdatalen = 0;
-
-	return r;
-}
-
 
 ssize_t ws_write_frame(wsh_t *wsh, ws_opcode_t oc, void *data, size_t bytes)
 {
