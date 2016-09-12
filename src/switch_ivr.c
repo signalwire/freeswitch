@@ -3136,7 +3136,7 @@ SWITCH_DECLARE(void) switch_ivr_set_json_call_stats(cJSON *json, switch_core_ses
 			cJSON_AddItemToObject(j_err, "start", cJSON_CreateNumber(ep->start));
 			cJSON_AddItemToObject(j_err, "stop", cJSON_CreateNumber(ep->stop));
 			cJSON_AddItemToObject(j_err, "flaws", cJSON_CreateNumber(ep->flaws));
-			cJSON_AddItemToObject(j_err, "Consecutiveflaws", cJSON_CreateNumber(ep->consecutive_flaws));
+			cJSON_AddItemToObject(j_err, "consecutiveFlaws", cJSON_CreateNumber(ep->consecutive_flaws));
 			cJSON_AddItemToObject(j_err, "durationMS", cJSON_CreateNumber((ep->stop - ep->start) / 1000));
 			cJSON_AddItemToArray(j_err_log, j_err);
 		}
