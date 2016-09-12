@@ -621,6 +621,8 @@ typedef uint32_t switch_vad_flag_t;
 typedef struct error_period {
 	int64_t start;
 	int64_t stop;
+	uint32_t flaws;
+	uint32_t consecutive_flaws;
 	struct error_period *next;
 } switch_error_period_t;
 

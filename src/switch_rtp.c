@@ -1544,6 +1544,11 @@ static void do_mos(switch_rtp_t *rtp_session, int force) {
 							  rtp_session->consecutive_flaws, penalty);
 			rtp_session->bad_stream++;
 			rtp_session->stats.inbound.flaws += penalty;
+			
+			if (rtp_session->stats.inbound.error_log) {
+				rtp_session->stats.inbound.error_log->flaws += penalty;
+				rtp_session->stats.inbound.error_log->consecutive_flaws++;
+			}
 		}
 
 		R = (int)((double)((double)(rtp_session->stats.inbound.recved - rtp_session->stats.inbound.flaws) / (double)rtp_session->stats.inbound.recved) * 100.0);
@@ -1643,6 +1648,11 @@ static void check_jitter(switch_rtp_t *rtp_session)
 
 		rtp_session->bad_stream++;
 		rtp_session->stats.inbound.flaws += lost;
+
+		if (rtp_session->stats.inbound.error_log) {
+			rtp_session->stats.inbound.error_log->flaws += lost;
+		}
+
 	} else {
 		rtp_session->stats.inbound.last_loss = 0;
 	}
@@ -6291,6 +6301,10 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 
 						rtp_session->bad_stream++;
 						rtp_session->stats.inbound.flaws += rtp_session->sync_packets;
+
+						if (rtp_session->stats.inbound.error_log) {
+							rtp_session->stats.inbound.error_log->flaws += rtp_session->sync_packets;
+						}
 					}
 
 					switch_core_timer_sync(&rtp_session->timer);
@@ -6857,6 +6871,9 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "%s %s timeout\n", 
 									  rtp_session_name(rtp_session), rtp_type(rtp_session));
 
+					if (rtp_session->stats.inbound.error_log) {
+						rtp_session->stats.inbound.error_log->flaws++;
+					}
 					rtp_session->stats.inbound.flaws++;
 					do_mos(rtp_session, SWITCH_FALSE);
 				}

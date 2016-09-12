@@ -2645,6 +2645,14 @@ SWITCH_DECLARE(int) switch_ivr_set_xml_call_stats(switch_xml_t xml, switch_core_
 			x_tmp = switch_xml_add_child_d(x_err, "stop", 1);
 			switch_xml_set_txt_d(x_tmp, var_val);
 
+			switch_snprintf(var_val, sizeof(var_val), "%" SWITCH_TIME_T_FMT, ep->flaws);
+			x_tmp = switch_xml_add_child_d(x_err, "flaws", 1);
+			switch_xml_set_txt_d(x_tmp, var_val);
+
+			switch_snprintf(var_val, sizeof(var_val), "%" SWITCH_TIME_T_FMT, ep->consecutive_flaws);
+			x_tmp = switch_xml_add_child_d(x_err, "consecutive-flaws", 1);
+			switch_xml_set_txt_d(x_tmp, var_val);
+
 			switch_snprintf(var_val, sizeof(var_val), "%" SWITCH_TIME_T_FMT, (ep->stop - ep->start) / 1000);
 			x_tmp = switch_xml_add_child_d(x_err, "duration-msec", 2);
 			switch_xml_set_txt_d(x_tmp, var_val);
@@ -3127,6 +3135,8 @@ SWITCH_DECLARE(void) switch_ivr_set_json_call_stats(cJSON *json, switch_core_ses
 
 			cJSON_AddItemToObject(j_err, "start", cJSON_CreateNumber(ep->start));
 			cJSON_AddItemToObject(j_err, "stop", cJSON_CreateNumber(ep->stop));
+			cJSON_AddItemToObject(j_err, "flaws", cJSON_CreateNumber(ep->flaws));
+			cJSON_AddItemToObject(j_err, "Consecutiveflaws", cJSON_CreateNumber(ep->consecutive_flaws));
 			cJSON_AddItemToObject(j_err, "durationMS", cJSON_CreateNumber((ep->stop - ep->start) / 1000));
 			cJSON_AddItemToArray(j_err_log, j_err);
 		}
