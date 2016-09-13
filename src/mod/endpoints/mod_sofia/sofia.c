@@ -7549,7 +7549,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 				if (switch_channel_test_flag(channel, CF_PROXY_MODE) || switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
 					if ((sofia_test_media_flag(profile, SCMF_DISABLE_HOLD)
 						 || ((var = switch_channel_get_variable(channel, "rtp_disable_hold")) && switch_true(var)))
-						&& ((switch_stristr("sendonly", r_sdp) || switch_stristr("0.0.0.0", r_sdp)) || tech_pvt->mparams.hold_laps)) {
+						&& ((switch_stristr("sendonly", r_sdp) || switch_stristr("0.0.0.0", r_sdp) || switch_stristr("inactive", r_sdp)) || tech_pvt->mparams.hold_laps)) {
 						nua_respond(tech_pvt->nh, SIP_200_OK, TAG_END());
 
 						if (tech_pvt->mparams.hold_laps) {
@@ -7571,7 +7571,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 						
 						if (switch_channel_test_flag(channel, CF_PROXY_MODE) && !is_t38 && 
 							((profile->media_options & MEDIA_OPT_MEDIA_ON_HOLD) || media_on_hold)) {
-							if (switch_stristr("sendonly", r_sdp) || switch_stristr("0.0.0.0", r_sdp)) {
+							if (switch_stristr("sendonly", r_sdp) || switch_stristr("0.0.0.0", r_sdp) || switch_stristr("inactive", r_sdp)) {
 								tech_pvt->mparams.hold_laps = 1;
 								switch_channel_set_variable(channel, SWITCH_R_SDP_VARIABLE, r_sdp);
 								switch_channel_clear_flag(channel, CF_PROXY_MODE);
@@ -7656,12 +7656,12 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Passing SDP to other leg.\n%s\n", r_sdp);
 
 						if (sofia_test_flag(tech_pvt, TFLAG_SIP_HOLD)) {
-							if (!switch_stristr("sendonly", r_sdp)) {
+							if (!switch_stristr("sendonly", r_sdp) && !switch_stristr("inactive", r_sdp)) {
 								sofia_clear_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
 								switch_channel_clear_flag(channel, CF_LEG_HOLDING);
 								switch_channel_presence(tech_pvt->channel, "unknown", "unhold", NULL);
 							}
-						} else if (switch_stristr("sendonly", r_sdp)) {
+						} else if (switch_stristr("sendonly", r_sdp) && !switch_stristr("inactive", r_sdp)) {
 							const char *msg = "hold";
 
 							if (sofia_test_pflag(profile, PFLAG_MANAGE_SHARED_APPEARANCE)) {
@@ -7700,35 +7700,48 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 							goto done;
 						}
 						if (switch_core_session_get_partner(session, &other_session) == SWITCH_STATUS_SUCCESS) {
-							switch_core_session_message_t *msg;
-
-							msg = switch_core_session_alloc(other_session, sizeof(*msg));
-							if (switch_stristr("sendonly", r_sdp) || switch_stristr("0.0.0.0", r_sdp)) {
+							if (switch_core_session_compare(session, other_session)) {
+								switch_core_session_message_t *msg;
 								const char *hold_msg = "hold";
+								private_object_t *other_tech_pvt = switch_core_session_get_private(other_session);
+								
+								msg = switch_core_session_alloc(other_session, sizeof(*msg));
 
-								msg->message_id = SWITCH_MESSAGE_INDICATE_HOLD;
-								if (sofia_test_pflag(profile, PFLAG_MANAGE_SHARED_APPEARANCE)) {
-									const char *info = switch_channel_get_variable(channel, "presence_call_info");
+								if (switch_stristr("inactive", r_sdp)) {
+									sofia_set_flag_locked(other_tech_pvt, TFLAG_SIP_HOLD_INACTIVE);
+									//switch_channel_set_variable(channel, "sofia_hold_inactive", "true");
+								} else {
+									sofia_clear_flag_locked(other_tech_pvt, TFLAG_SIP_HOLD_INACTIVE);
+								}
 
-									if (info) {
-										if (switch_stristr("private", info)) {
-											hold_msg = "hold-private";
+								if (switch_stristr("sendonly", r_sdp) || switch_stristr("0.0.0.0", r_sdp) || switch_stristr("inactive", r_sdp)) {
+
+
+									msg->message_id = SWITCH_MESSAGE_INDICATE_HOLD;
+									if (sofia_test_pflag(profile, PFLAG_MANAGE_SHARED_APPEARANCE)) {
+										const char *info = switch_channel_get_variable(channel, "presence_call_info");
+
+										if (info) {
+											if (switch_stristr("private", info)) {
+												hold_msg = "hold-private";
+											}
 										}
 									}
+									sofia_set_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
+									switch_channel_set_flag(channel, CF_LEG_HOLDING);
+									switch_channel_presence(tech_pvt->channel, "unknown", hold_msg, NULL);
+								} else {
+									hold_msg = "unhold";
+									msg->message_id = SWITCH_MESSAGE_INDICATE_UNHOLD;
+									sofia_clear_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
+									switch_channel_clear_flag(channel, CF_LEG_HOLDING);
+									switch_channel_presence(tech_pvt->channel, "unknown", hold_msg, NULL);
 								}
-								sofia_set_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
-								switch_channel_set_flag(channel, CF_LEG_HOLDING);
-								switch_channel_presence(tech_pvt->channel, "unknown", hold_msg, NULL);
-							} else {
-								msg->message_id = SWITCH_MESSAGE_INDICATE_UNHOLD;
-								sofia_clear_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
-								switch_channel_clear_flag(channel, CF_LEG_HOLDING);
-								switch_channel_presence(tech_pvt->channel, "unknown", "unhold", NULL);
-							}
-							msg->from = __FILE__;
-							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Indicating Hold to other leg.\n%s\n", r_sdp);
+								msg->from = __FILE__;
+								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Indicating %s to other leg.\n%s\n", hold_msg, r_sdp);
 
-							switch_core_session_queue_message(other_session, msg);
+								switch_core_session_queue_message(other_session, msg);
+							}
 							switch_core_session_rwunlock(other_session);
 						}
 						switch_core_media_gen_local_sdp(session, SDP_TYPE_RESPONSE, NULL, 0, NULL, 0);
