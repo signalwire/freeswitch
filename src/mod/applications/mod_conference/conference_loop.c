@@ -67,7 +67,10 @@ struct _mapping control_mappings[] = {
 	{"execute_application", conference_loop_exec_app},
 	{"floor", conference_loop_floor_toggle},
 	{"vid-floor", conference_loop_vid_floor_toggle},
-	{"vid-floor-force", conference_loop_vid_floor_force}
+	{"vid-floor-force", conference_loop_vid_floor_force},
+	{"deaf", conference_loop_deaf_toggle},
+	{"deaf on", conference_loop_deaf_on},
+	{"deaf off", conference_loop_deaf_off}
 };
 
 int conference_loop_mapping_len()
@@ -226,6 +229,38 @@ void conference_loop_lock_toggle(conference_member_t *member, caller_control_act
 		}
 	}
 
+}
+
+void conference_loop_deaf_toggle(conference_member_t *member, caller_control_action_t *action)
+{
+	if (member == NULL)
+		return;
+
+	if (conference_utils_member_test_flag(member, MFLAG_CAN_HEAR)) {
+		conference_api_sub_deaf(member, NULL, NULL);
+	} else {
+		conference_api_sub_undeaf(member, NULL, NULL);
+	}
+}
+
+void conference_loop_deaf_on(conference_member_t *member, caller_control_action_t *action)
+{
+	if (member == NULL)
+		return;
+
+	if (conference_utils_member_test_flag(member, MFLAG_CAN_HEAR)) {
+		conference_api_sub_deaf(member, NULL, NULL);
+	}
+}
+
+void conference_loop_deaf_off(conference_member_t *member, caller_control_action_t *action)
+{
+	if (member == NULL)
+		return;
+
+	if (!conference_utils_member_test_flag(member, MFLAG_CAN_HEAR)) {
+		conference_api_sub_undeaf(member, NULL, NULL);
+	}
 }
 
 void conference_loop_deafmute_toggle(conference_member_t *member, caller_control_action_t *action)
