@@ -1632,6 +1632,80 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 
 		dialstr = switch_channel_expand_variables(member_channel, h->originate_string);
 		status = switch_ivr_originate(NULL, &agent_session, &cause, dialstr, 60, NULL, cid_name ? cid_name : h->member_cid_name, cid_number ? cid_number : h->member_cid_number, NULL, ovars, SOF_NONE, NULL);
+
+		/* Search for loopback agent */
+		if (status == SWITCH_STATUS_SUCCESS) {
+			switch_channel_t *agent_channel = switch_core_session_get_channel(agent_session);
+			const char *other_loopback_leg_uuid = switch_channel_get_variable(agent_channel, "other_loopback_leg_uuid");
+
+			/* Our agent channel is a loopback. Try to find if a real channel is bridged to it in order
+			   to use it as our new agent channel.
+			   - Locate the loopback-b channel using 'other_loopback_leg_uuid' variable
+			   - Locate the real agent channel using 'switch_channel_get_partner_uuid()' function on loopback-b
+			*/
+			if (other_loopback_leg_uuid) {
+				switch_core_session_t *loopback_a_session = agent_session;
+				switch_core_session_t *loopback_b_session = NULL;
+				switch_channel_t *loopback_a_channel = agent_channel;
+				switch_channel_t *loopback_b_channel = NULL;
+				const char *real_uuid = NULL;
+
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_DEBUG, "Agent '%s' is a loopback channel. Searching for real channel...\n", h->agent_name);
+
+				/* Locate loopback-b channel */
+				if (!(loopback_b_session = switch_core_session_locate(other_loopback_leg_uuid))) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_DEBUG, "Failed to locate loopback-b channel of agent '%s'\n", h->agent_name);
+					switch_channel_hangup(loopback_a_channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+					status = SWITCH_STATUS_FALSE;
+				} else {
+					loopback_b_channel = switch_core_session_get_channel(loopback_b_session);
+
+
+					/* Wait for loopback-b to be fully bridged */
+					if (switch_channel_wait_for_flag(loopback_b_channel, CF_BRIDGED, SWITCH_TRUE, 5000, member_channel) != SWITCH_STATUS_SUCCESS) {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_DEBUG, "Timeout while waiting for the loopback-b channel to be bridged (agent '%s')\n", h->agent_name);
+						switch_channel_hangup(loopback_a_channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+						status = SWITCH_STATUS_FALSE;
+					} else {
+						/* Get real agent channel uuid */
+						real_uuid = switch_channel_get_partner_uuid(loopback_b_channel);
+						if (!real_uuid) {
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_DEBUG, "Failed to find a real channel behind loopback agent '%s'\n", h->agent_name);
+							switch_channel_hangup(loopback_a_channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+							status = SWITCH_STATUS_FALSE;
+						} else {
+							/* Locate real agent session */
+							if (!(agent_session = switch_core_session_locate(real_uuid))) {
+								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_DEBUG, "Real session is already gone (agent '%s')\n", h->agent_name);
+								switch_channel_hangup(loopback_a_channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+								status = SWITCH_STATUS_FALSE;
+							} else {
+								/* Found! Switch agent channel and set variables */
+								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_DEBUG, "Real channel found behind loopback agent '%s'\n", h->agent_name);
+								agent_channel = switch_core_session_get_channel(agent_session);
+								switch_channel_set_variable(agent_channel, "cc_side", "agent");
+								switch_channel_set_variable(agent_channel, "cc_queue", h->queue_name);
+								switch_channel_set_variable(agent_channel, "cc_agent", h->agent_name);
+								switch_channel_set_variable(agent_channel, "cc_agent_type", h->agent_type);
+								switch_channel_set_variable(agent_channel, "cc_member_uuid", h->member_uuid);
+								switch_channel_set_variable(agent_channel, "cc_member_session_uuid", h->member_session_uuid);
+
+								switch_channel_process_export(member_channel, agent_channel, NULL, "cc_export_vars");
+
+								/* Mark loopback to not be hungup in case of ring-all */
+								switch_channel_set_variable(loopback_a_channel, "cc_member_pre_answer_uuid", NULL);
+								switch_channel_set_variable(loopback_b_channel, "cc_member_pre_answer_uuid", NULL);
+
+								switch_core_session_rwunlock(loopback_a_session);
+							}
+						}
+					}
+
+					switch_core_session_rwunlock(loopback_b_session);
+				}
+			}
+		}
+
 		if (dialstr != h->originate_string) {
 			switch_safe_free(dialstr);
 		}
@@ -1677,67 +1751,9 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 		const char *agent_uuid = switch_core_session_get_uuid(agent_session);
 		switch_channel_t *member_channel = switch_core_session_get_channel(member_session);
 		switch_channel_t *agent_channel = switch_core_session_get_channel(agent_session);
-		const char *other_loopback_leg_uuid = switch_channel_get_variable(agent_channel, "other_loopback_leg_uuid");
 		const char *o_announce = NULL;
 
 		switch_channel_set_variable(agent_channel, "cc_member_pre_answer_uuid", NULL);
-
-		/* Our agent channel is a loopback. Try to find if a real channel is bridged to it in order
-		   to use it as our new agent channel.
-		   - Locate the loopback-b channel using 'other_loopback_leg_uuid' variable
-		   - Locate the real agent channel using 'signal_bond' variable from loopback-b
-		*/
-		if (other_loopback_leg_uuid) {
-			switch_core_session_t *other_loopback_session = NULL;
-
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_DEBUG, "Agent '%s' is a loopback channel. Searching for real channel...\n", h->agent_name);
-
-			if ((other_loopback_session = switch_core_session_locate(other_loopback_leg_uuid))) {
-				switch_channel_t *other_loopback_channel = switch_core_session_get_channel(other_loopback_session);
-				const char *real_uuid = NULL;
-
-				/* Wait for the real channel to be fully bridged */
-				switch_channel_wait_for_flag(other_loopback_channel, CF_BRIDGED, SWITCH_TRUE, 5000, member_channel);
-
-				real_uuid = switch_channel_get_partner_uuid(other_loopback_channel);
-				switch_channel_set_variable(other_loopback_channel, "cc_member_pre_answer_uuid", NULL);
-
-				/* Switch the agent session */
-				if (real_uuid) {
-					switch_core_session_rwunlock(agent_session);
-					if (!(agent_session = switch_core_session_locate(real_uuid))) {
-						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_DEBUG, "Real session is already gone (agent '%s')\n", h->agent_name);
-						sql = switch_mprintf("UPDATE members SET state = '%q', serving_agent = '', serving_system = ''"
-											 " WHERE serving_agent = '%q' AND serving_system = '%q' AND uuid = '%q' AND system = 'single_box'",
-											 cc_member_state2str(CC_MEMBER_STATE_WAITING), h->agent_name, h->agent_system, h->member_uuid);
-						cc_execute_sql(NULL, sql, NULL);
-						switch_safe_free(sql);
-						goto done;
-					}
-					agent_uuid = switch_core_session_get_uuid(agent_session);
-					agent_channel = switch_core_session_get_channel(agent_session);
-
-					if (!switch_channel_test_flag(agent_channel, CF_BRIDGED)) {
-						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_DEBUG, "Timeout waiting for real channel to be bridged (agent '%s')\n", h->agent_name);
-					} else {
-						switch_channel_set_variable(agent_channel, "cc_queue", h->queue_name);
-						switch_channel_set_variable(agent_channel, "cc_agent", h->agent_name);
-						switch_channel_set_variable(agent_channel, "cc_agent_type", h->agent_type);
-						switch_channel_set_variable(agent_channel, "cc_member_uuid", h->member_uuid);
-						switch_channel_set_variable(agent_channel, "cc_member_session_uuid", h->member_session_uuid);
-
-						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_DEBUG, "Real channel found behind loopback agent '%s'\n", h->agent_name);
-					}
-				} else {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_DEBUG, "Failed to find a real channel behind loopback agent '%s'\n", h->agent_name);
-				}
-
-				switch_core_session_rwunlock(other_loopback_session);
-			} else {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_DEBUG, "Failed to locate loopback-b channel of agent '%s'\n", h->agent_name);
-			}
-		}
-
 
 		if (!strcasecmp(h->queue_strategy,"ring-all") || !strcasecmp(h->queue_strategy,"ring-progressively")) {
 			char res[256];
@@ -2003,7 +2019,6 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Member-Joined-Time", "%" SWITCH_TIME_T_FMT, t_member_called);
 			switch_event_fire(&event);
 		}
-
 	}
 
 done:
