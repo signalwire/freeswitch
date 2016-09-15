@@ -1151,6 +1151,9 @@ void conference_loop_mute_off(conference_member_t *member, caller_control_action
 void conference_loop_event(conference_member_t *member, caller_control_action_t *action);
 void conference_loop_transfer(conference_member_t *member, caller_control_action_t *action);
 void conference_loop_exec_app(conference_member_t *member, caller_control_action_t *action);
+void conference_loop_deaf_toggle(conference_member_t *member, caller_control_action_t *action);
+void conference_loop_deaf_on(conference_member_t *member, caller_control_action_t *action);
+void conference_loop_deaf_off(conference_member_t *member, caller_control_action_t *action);
 
 
 
