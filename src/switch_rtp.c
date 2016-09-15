@@ -4174,7 +4174,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_activate_jitter_buffer(switch_rtp_t *
 	}
 
 	if (max_queue_frames < queue_frames) {
-		max_queue_frames = queue_frames * 3;
+		max_queue_frames = queue_frames * 6;
 	}
 
 
