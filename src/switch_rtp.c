@@ -5871,8 +5871,8 @@ static switch_status_t process_rtcp_report(switch_rtp_t *rtp_session, rtcp_msg_t
 	if (rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] && (msg->header.type == _RTCP_PT_RTPFB || msg->header.type == _RTCP_PT_PSFB)) {
 		rtcp_ext_msg_t *extp = (rtcp_ext_msg_t *) msg;			
 
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "PICKED UP XRTCP type: %d fmt: %d\n", 
-						  msg->header.type, extp->header.fmt);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "PICKED UP %s XRTCP type: %d fmt: %d\n", 
+						  rtp_type(rtp_session), msg->header.type, extp->header.fmt);
 		
 		if (msg->header.type == _RTCP_PT_PSFB && (extp->header.fmt == _RTCP_PSFB_FIR || extp->header.fmt == _RTCP_PSFB_PLI)) {
 			switch_core_media_gen_key_frame(rtp_session->session);

@@ -3732,6 +3732,9 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 	int m_idx = 0;
 	int nm_idx = 0;
 	int vmatch_pt = 0;
+	int counteract = 0;
+	int got_audio_rtcp = 0, got_video_rtcp = 0;
+	switch_port_t audio_port = 0, video_port = 0;
 
 	switch_assert(session);
 
@@ -3764,6 +3767,16 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 	if (dtls_ok(session) && (tmp = switch_channel_get_variable(smh->session->channel, "webrtc_enable_dtls")) && switch_false(tmp)) {
 		switch_channel_clear_flag(smh->session->channel, CF_DTLS_OK);
 		switch_channel_clear_flag(smh->session->channel, CF_DTLS);
+	}
+
+	if (sdp->sdp_subject) {
+		if (switch_stristr("Bria", sdp->sdp_subject)) {
+			counteract = 1;
+		}
+	}
+
+	if (switch_true(switch_channel_get_variable_dup(session->channel, "rtp_assume_rtcp", SWITCH_FALSE, -1))) {
+		counteract = 1;
 	}
 
 	v_engine->new_dtls = 1;
@@ -4010,6 +4023,8 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 			memset(matches, 0, sizeof(matches[0]) * MAX_MATCHES);
 			memset(near_matches, 0, sizeof(near_matches[0]) * MAX_MATCHES);
 
+			audio_port = m->m_port;
+
 			if (!sendonly && (m->m_mode == sdp_sendonly || m->m_mode == sdp_inactive)) {
 				sendonly = 1;
 				if (m->m_mode == sdp_inactive) {
@@ -4137,6 +4152,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 					if (!smh->mparams->rtcp_audio_interval_msec) {
 						smh->mparams->rtcp_audio_interval_msec = SWITCH_RTCP_AUDIO_INTERVAL_MSEC;
 					}
+					got_audio_rtcp = 1;
 				} else if (!strcasecmp(attr->a_name, "ptime") && attr->a_value) {
 					ptime = atoi(attr->a_value);
 				} else if (!strcasecmp(attr->a_name, "maxptime") && attr->a_value) {
@@ -4725,6 +4741,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 						if (!smh->mparams->rtcp_video_interval_msec) {
 							smh->mparams->rtcp_video_interval_msec = SWITCH_RTCP_VIDEO_INTERVAL_MSEC;
 						}
+						got_video_rtcp = 1;
 					} else if (!got_video_crypto && !strcasecmp(attr->a_name, "crypto") && !zstr(attr->a_value)) {
 						int crypto_tag;
 						
@@ -4879,16 +4896,38 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 				if (switch_core_codec_ready(&v_engine->read_codec) && strcasecmp(matches[0].imp->iananame, v_engine->read_codec.implementation->iananame)) {
 					v_engine->reset_codec = 1;
 				}
-
+				
 				if (switch_core_media_set_video_codec(session, 0) == SWITCH_STATUS_SUCCESS) {
 					if (check_ice(smh, SWITCH_MEDIA_TYPE_VIDEO, sdp, m) == SWITCH_STATUS_FALSE) {
 						vmatch = 0;
 					}
 				}
 			}
+
+			video_port = m->m_port;
 		}
 	}
 
+	if (counteract) {
+		if (!got_audio_rtcp && audio_port) {
+			switch_channel_set_variable_printf(session->channel, "rtp_remote_audio_rtcp_port", "%d", audio_port);
+			a_engine->remote_rtcp_port = audio_port;
+
+			if (!smh->mparams->rtcp_audio_interval_msec) {
+				smh->mparams->rtcp_audio_interval_msec = SWITCH_RTCP_AUDIO_INTERVAL_MSEC;
+			}
+		}
+		if (!got_video_rtcp && video_port) {
+			switch_channel_set_variable_printf(session->channel, "rtp_remote_video_rtcp_port", "%d", video_port);
+			v_engine->remote_rtcp_port = video_port;
+
+			if (!smh->mparams->rtcp_video_interval_msec) {
+				smh->mparams->rtcp_video_interval_msec = SWITCH_RTCP_VIDEO_INTERVAL_MSEC;
+			}
+		}
+	}
+
+	
 	if (!saw_audio) {
 		payload_map_t *pmap;
 
@@ -7661,7 +7700,8 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 	a_engine = &smh->engines[SWITCH_MEDIA_TYPE_AUDIO];
 	v_engine = &smh->engines[SWITCH_MEDIA_TYPE_VIDEO];
 
-	if (sdp_type == SDP_TYPE_REQUEST || switch_true(switch_channel_get_variable(session->channel, "rtcp_mux"))) {
+	if ((!a_engine->rtcp_mux && !v_engine->rtcp_mux) && 
+		(sdp_type == SDP_TYPE_REQUEST || switch_true(switch_channel_get_variable(session->channel, "rtcp_mux")))) {
 		a_engine->rtcp_mux = 1;
 		v_engine->rtcp_mux = 1;
 	}
