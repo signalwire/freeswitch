@@ -2374,6 +2374,8 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 	char *is_unlocked_sound = NULL;
 	char *kicked_sound = NULL;
 	char *join_only_sound = NULL;
+	char *deaf_sound = NULL;
+	char *undeaf_sound = NULL;
 	char *pin = NULL;
 	char *mpin = NULL;
 	char *pin_sound = NULL;
@@ -2609,6 +2611,10 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 				is_locked_sound = val;
 			} else if (!strcasecmp(var, "is-unlocked-sound") && !zstr(val)) {
 				is_unlocked_sound = val;
+			} else if (!strcasecmp(var, "deaf-sound") && !zstr(val)) {
+				deaf_sound = val;
+			} else if (!strcasecmp(var, "undeaf-sound") && !zstr(val)) {
+				undeaf_sound = val;
 			} else if (!strcasecmp(var, "member-flags") && !zstr(val)) {
 				member_flags = val;
 			} else if (!strcasecmp(var, "conference-flags") && !zstr(val)) {
@@ -3063,6 +3069,14 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 
 	if (!zstr(bad_pin_sound)) {
 		conference->bad_pin_sound = switch_core_strdup(conference->pool, bad_pin_sound);
+	}
+
+	if (!zstr(deaf_sound)) {
+		conference->deaf_sound = switch_core_strdup(conference->pool, deaf_sound);
+	}
+
+	if (!zstr(undeaf_sound)) {
+		conference->undeaf_sound = switch_core_strdup(conference->pool, undeaf_sound);
 	}
 
 	if (!zstr(pin)) {
