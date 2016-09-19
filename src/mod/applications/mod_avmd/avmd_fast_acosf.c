@@ -169,13 +169,7 @@ extern int init_fast_acosf(void)
     acos_fd = fileno(acos_fp);
     acos_table = (float *) mmap(
             NULL,                               /* kernel chooses the address at which to create the mapping */
-            ACOS_TABLE_LENGTH * sizeof(float),
-            PROT_READ,
-            MAP_SHARED | MAP_POPULATE,          /* read-ahead on the file.  Later accesses  to  the  mapping
-                                                 * will not be blocked by page faults */
-            acos_fd,
-            0
-            );
+            ACOS_TABLE_LENGTH * sizeof(float), PROT_READ, MAP_SHARED, acos_fd, 0);
     if (acos_table == MAP_FAILED) return -4;
 
     return 0;
