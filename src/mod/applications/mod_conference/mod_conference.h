@@ -536,6 +536,7 @@ typedef struct conference_obj {
 	char *timer_name;
 	char *tts_engine;
 	char *tts_voice;
+	char *member_enter_sound;
 	char *enter_sound;
 	char *exit_sound;
 	char *alone_sound;
