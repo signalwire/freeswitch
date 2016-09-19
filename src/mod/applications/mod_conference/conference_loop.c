@@ -1401,6 +1401,20 @@ void conference_loop_output(conference_member_t *member)
 			conference_utils_member_clear_flag(member, MFLAG_INDICATE_UNMUTE);
 		}
 
+		if (conference_utils_member_test_flag(member, MFLAG_INDICATE_DEAF)) {
+			if (!zstr(member->conference->deaf_sound)) {
+				conference_member_play_file(member, member->conference->deaf_sound, 0, SWITCH_TRUE);
+			}
+			conference_utils_member_clear_flag(member, MFLAG_INDICATE_DEAF);
+		}
+
+		if (conference_utils_member_test_flag(member, MFLAG_INDICATE_UNDEAF)) {
+			if (!zstr(member->conference->undeaf_sound)) {
+				conference_member_play_file(member, member->conference->undeaf_sound, 0, SWITCH_TRUE);
+			}
+			conference_utils_member_clear_flag(member, MFLAG_INDICATE_UNDEAF);
+		}
+
 		if (switch_core_session_private_event_count(member->session)) {
 			switch_channel_set_app_flag(channel, CF_APP_TAGGED);
 			switch_ivr_parse_all_events(member->session);

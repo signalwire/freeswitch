@@ -563,6 +563,11 @@ switch_status_t conference_api_sub_deaf(conference_member_t *member, switch_stre
 		return SWITCH_STATUS_GENERR;
 
 	conference_utils_member_clear_flag_locked(member, MFLAG_CAN_HEAR);
+
+	if (!(data) || !strstr((char *) data, "quiet")) {
+		conference_utils_member_set_flag(member, MFLAG_INDICATE_DEAF);
+	}
+
 	if (stream != NULL) {
 		stream->write_function(stream, "OK deaf %u\n", member->id);
 	}
@@ -587,6 +592,11 @@ switch_status_t conference_api_sub_undeaf(conference_member_t *member, switch_st
 		return SWITCH_STATUS_GENERR;
 
 	conference_utils_member_set_flag_locked(member, MFLAG_CAN_HEAR);
+
+	if (!(data) || !strstr((char *) data, "quiet")) {
+		conference_utils_member_set_flag(member, MFLAG_INDICATE_UNDEAF);
+	}
+
 	if (stream != NULL) {
 		stream->write_function(stream, "OK undeaf %u\n", member->id);
 	}

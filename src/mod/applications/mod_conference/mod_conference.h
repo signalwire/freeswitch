@@ -210,6 +210,8 @@ typedef enum {
 	MFLAG_SILENT,
 	MFLAG_FLIP_VIDEO,
 	MFLAG_ROTATE_VIDEO,
+	MFLAG_INDICATE_DEAF,
+	MFLAG_INDICATE_UNDEAF,
 	///////////////////////////
 	MFLAG_MAX
 } member_flag_t;
@@ -545,6 +547,8 @@ typedef struct conference_obj {
 	char *muted_sound;
 	char *mute_detect_sound;
 	char *unmuted_sound;
+	char *deaf_sound;
+	char *undeaf_sound;
 	char *locked_sound;
 	char *is_locked_sound;
 	char *is_unlocked_sound;
