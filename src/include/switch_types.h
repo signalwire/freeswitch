@@ -2149,7 +2149,8 @@ typedef enum {
 } switch_session_ctl_t;
 
 typedef enum {
-	SSH_FLAG_STICKY = (1 << 0)
+	SSH_FLAG_STICKY = (1 << 0),
+	SSH_FLAG_PRE_EXEC = (1 << 1)
 } switch_state_handler_flag_t;
 
 #ifdef WIN32

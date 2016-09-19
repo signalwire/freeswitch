@@ -433,10 +433,48 @@ void switch_core_state_machine_init(switch_memory_pool_t *pool)
 		}																\
 		switch_core_session_request_video_refresh(session);				\
 		switch_core_media_gen_key_frame(session);						\
-		if (!driver_state_handler->on_##__STATE || (driver_state_handler->on_##__STATE(session) == SWITCH_STATUS_SUCCESS \
-													)) {				\
+		proceed = 1;													\
+		while (do_extra_handlers && (application_state_handler = switch_channel_get_state_handler(session->channel, index++)) != 0) { \
+			if (!switch_test_flag(application_state_handler, SSH_FLAG_PRE_EXEC)) {\
+				continue;												\
+			}															\
+			if (!application_state_handler->on_##__STATE				\
+				|| (application_state_handler->on_##__STATE				\
+					&& application_state_handler->on_##__STATE(session) == SWITCH_STATUS_SUCCESS \
+					)) {												\
+				proceed++;												\
+				continue;												\
+			} else {													\
+				proceed = 0;											\
+				break;													\
+			}															\
+		}																\
+		index = 0;														\
+		if (!proceed) global_proceed = 0;								\
+		proceed = 1;													\
+		while (do_extra_handlers && proceed && (application_state_handler = switch_core_get_state_handler(index++)) != 0) { \
+			if (!switch_test_flag(application_state_handler, SSH_FLAG_PRE_EXEC)) { \
+				continue;												\
+			}															\
+			if (!application_state_handler->on_##__STATE ||				\
+				(application_state_handler->on_##__STATE &&				\
+				 application_state_handler->on_##__STATE(session) == SWITCH_STATUS_SUCCESS \
+				 )) {													\
+				proceed++;												\
+				continue;												\
+			} else {													\
+				proceed = 0;											\
+				break;													\
+			}															\
+		}																\
+		index = 0;														\
+		if (!proceed) global_proceed = 0;								\
+		if (!driver_state_handler->on_##__STATE || (driver_state_handler->on_##__STATE(session) == SWITCH_STATUS_SUCCESS )) { \
 			while (do_extra_handlers && (application_state_handler = switch_channel_get_state_handler(session->channel, index++)) != 0) { \
-				if (!application_state_handler || !application_state_handler->on_##__STATE \
+				if (switch_test_flag(application_state_handler, SSH_FLAG_PRE_EXEC)) { \
+					continue;											\
+				}														\
+				if (!application_state_handler->on_##__STATE			\
 					|| (application_state_handler->on_##__STATE			\
 						&& application_state_handler->on_##__STATE(session) == SWITCH_STATUS_SUCCESS \
 						)) {											\
@@ -451,7 +489,10 @@ void switch_core_state_machine_init(switch_memory_pool_t *pool)
 			if (!proceed) global_proceed = 0;							\
 			proceed = 1;												\
 			while (do_extra_handlers && proceed && (application_state_handler = switch_core_get_state_handler(index++)) != 0) { \
-				if (!application_state_handler || !application_state_handler->on_##__STATE || \
+				if (switch_test_flag(application_state_handler, SSH_FLAG_PRE_EXEC)) { \
+					continue;											\
+				}														\
+				if (!application_state_handler->on_##__STATE || \
 					(application_state_handler->on_##__STATE &&			\
 					 application_state_handler->on_##__STATE(session) == SWITCH_STATUS_SUCCESS \
 					 )) {												\
