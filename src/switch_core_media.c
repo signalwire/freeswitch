@@ -6052,6 +6052,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_choose_port(switch_core_sessio
 
 	lookup_rtpip = smh->mparams->rtpip;
 
+	if (!lookup_rtpip) {
+		return SWITCH_STATUS_FALSE;
+	}
+
 	/* Don't do anything if we're in proxy mode or if a (remote) port already has been found */
 	if (!force) {
 		if (switch_channel_test_flag(session->channel, CF_PROXY_MODE) ||
