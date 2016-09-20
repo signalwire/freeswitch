@@ -3232,6 +3232,31 @@ static switch_bool_t verto__attach_func(const char *method, cJSON *params, jsock
 	return SWITCH_FALSE;	
 }
 
+static void parse_user_vars(cJSON *obj, switch_core_session_t *session)
+{
+	cJSON *json_ptr;
+
+	switch_assert(obj);
+	switch_assert(session);
+
+	if ((json_ptr = cJSON_GetObjectItem(obj, "userVariables"))) {
+		cJSON * i;
+		switch_channel_t *channel = switch_core_session_get_channel(session);
+
+		for(i = json_ptr->child; i; i = i->next) {
+			char *varname = switch_core_session_sprintf(session, "verto_dvar_%s", i->string);
+
+			if (i->type == cJSON_True) {
+				switch_channel_set_variable(channel, varname, "true");
+			} else if (i->type == cJSON_False) {
+				switch_channel_set_variable(channel, varname, "false");
+			} else if (!zstr(i->string) && !zstr(i->valuestring)) {
+				switch_channel_set_variable(channel, varname, i->valuestring);
+			}
+		}
+	}
+}
+
 static switch_bool_t verto__info_func(const char *method, cJSON *params, jsock_t *jsock, cJSON **response)
 {
 	cJSON *msg = NULL, *dialog = NULL;
@@ -3246,6 +3271,8 @@ static switch_bool_t verto__info_func(const char *method, cJSON *params, jsock_t
 		switch_core_session_t *session = NULL;
 		
 		if ((session = switch_core_session_locate(call_id))) {
+
+			parse_user_vars(dialog, session);
 
 			if ((dtmf = cJSON_GetObjectCstr(params, "dtmf"))) {  
 				verto_pvt_t *tech_pvt = switch_core_session_get_private_class(session, SWITCH_PVT_SECONDARY);
@@ -3353,7 +3380,7 @@ static switch_bool_t verto__info_func(const char *method, cJSON *params, jsock_t
 
 static switch_bool_t verto__invite_func(const char *method, cJSON *params, jsock_t *jsock, cJSON **response)
 {
-	cJSON *obj = cJSON_CreateObject(), *screenShare = NULL, *dedEnc = NULL, *mirrorInput, *json_ptr = NULL, *bandwidth = NULL, *canvas = NULL;
+	cJSON *obj = cJSON_CreateObject(), *screenShare = NULL, *dedEnc = NULL, *mirrorInput, *bandwidth = NULL, *canvas = NULL;
 	switch_core_session_t *session = NULL;
 	switch_channel_t *channel;
 	switch_event_t *var_event;
@@ -3493,21 +3520,7 @@ static switch_bool_t verto__invite_func(const char *method, cJSON *params, jsock
 		}
 	}
 
-	if ((json_ptr = cJSON_GetObjectItem(dialog, "userVariables"))) {
-		cJSON * i;
-
-		for(i = json_ptr->child; i; i = i->next) {
-			char *varname = switch_core_session_sprintf(session, "verto_dvar_%s", i->string);
-
-			if (i->type == cJSON_True) {
-				switch_channel_set_variable(channel, varname, "true");
-			} else if (i->type == cJSON_False) {
-				switch_channel_set_variable(channel, varname, "false");
-			} else if (!zstr(i->string) && !zstr(i->valuestring)) {
-				switch_channel_set_variable(channel, varname, i->valuestring);
-			}
-		}
-	}
+	parse_user_vars(dialog, session);
 
 	switch_snprintf(name, sizeof(name), "verto.rtc/%s", destination_number);
 	switch_channel_set_name(channel, name);
