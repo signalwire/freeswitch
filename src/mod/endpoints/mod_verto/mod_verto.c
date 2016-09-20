@@ -1264,10 +1264,10 @@ static void set_session_id(jsock_t *jsock, const char *uuid)
 	
 	if (!zstr(uuid)) {
 		switch_set_string(jsock->uuid_str, uuid);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s re-connecting session %s\n", jsock->name, jsock->uuid_str);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s re-connecting session %s\n", jsock->name, jsock->uuid_str);
 	} else {
 		switch_uuid_str(jsock->uuid_str, sizeof(jsock->uuid_str));
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s new RPC session %s\n", jsock->name, jsock->uuid_str);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s new RPC session %s\n", jsock->name, jsock->uuid_str);
 	}
 
 	attach_jsock(jsock);
@@ -1975,7 +1975,7 @@ static void *SWITCH_THREAD_FUNC client_thread(switch_thread_t *thread, void *obj
 
 	add_jsock(jsock);
 
-    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s Starting client thread.\n", jsock->name);
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Starting client thread.\n", jsock->name);
 	
 	if ((jsock->ptype & PTYPE_CLIENT) || (jsock->ptype & PTYPE_CLIENT_SSL)) {
 		client_run(jsock);
@@ -2002,7 +2002,7 @@ static void *SWITCH_THREAD_FUNC client_thread(switch_thread_t *thread, void *obj
 
 	jsock_flush(jsock);
 
-    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s Ending client thread.\n", jsock->name);
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Ending client thread.\n", jsock->name);
 	if (switch_event_create_subclass(&s_event, SWITCH_EVENT_CUSTOM, MY_EVENT_CLIENT_DISCONNECT) == SWITCH_STATUS_SUCCESS) {
 		switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "verto_profile_name", jsock->profile->name);
 		switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "verto_client_address", jsock->name);
@@ -2010,7 +2010,7 @@ static void *SWITCH_THREAD_FUNC client_thread(switch_thread_t *thread, void *obj
 		switch_event_fire(&s_event);
 	}
 	switch_thread_rwlock_wrlock(jsock->rwlock);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s Thread ended\n", jsock->name);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Thread ended\n", jsock->name);
 	switch_thread_rwlock_unlock(jsock->rwlock);
 	
 	return NULL;
@@ -4039,7 +4039,17 @@ static int start_jsock(verto_profile_t *profile, ws_socket_t sock, int family)
 	
 	jsock->ptype = ptype;
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s Client Connect.\n", jsock->name);
+	for(i = 0; i < profile->conn_acl_count; i++) {
+		if (!switch_check_network_list_ip(jsock->remote_host, profile->conn_acl[i])) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Client Connect from %s:%d refused by ACL %s\n", 
+							  jsock->name, jsock->remote_host, jsock->remote_port, profile->conn_acl[i]);
+			goto error;
+		}
+	}
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Client Connect from %s:%d accepted\n", 
+					  jsock->name, jsock->remote_host, jsock->remote_port);
+
 	if (switch_event_create_subclass(&s_event, SWITCH_EVENT_CUSTOM, MY_EVENT_CLIENT_CONNECT) == SWITCH_STATUS_SUCCESS) {
 		switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "verto_profile_name", profile->name);
 		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "verto_client_address", "%s", jsock->name);
@@ -4317,9 +4327,9 @@ static int runtime(verto_profile_t *profile)
 		}
 
 		if (ok) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "MCAST Bound to %s:%d/%d\n", profile->mcast_ip, profile->mcast_port, profile->mcast_port + 1);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "MCAST Bound to %s:%d/%d\n", profile->mcast_ip, profile->mcast_port, profile->mcast_port + 1);
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "MCAST Disabled\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "MCAST Disabled\n");
 		}
 	}
 	
@@ -4352,13 +4362,13 @@ static void do_shutdown(void)
 {
 	globals.running = 0;
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Shutting down (SIG %d)\n", globals.sig);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Shutting down (SIG %d)\n", globals.sig);
 
 	kill_profiles();
 
 	unsub_all_jsock();
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Done\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Done\n");
 }
 
 
@@ -4589,6 +4599,12 @@ static switch_status_t parse_config(const char *cf)
 					} else {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Max acl records of %d reached\n", SWITCH_MAX_CAND_ACL);
 					}
+				} else if (!strcasecmp(var, "apply-connection-acl")) {
+					if (profile->conn_acl_count < SWITCH_MAX_CAND_ACL) {
+						profile->conn_acl[profile->conn_acl_count++] = switch_core_strdup(profile->pool, val);
+					} else {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Max acl records of %d reached\n", SWITCH_MAX_CAND_ACL);
+					}
 				} else if (!strcasecmp(var, "rtp-ip")) {
 					if (zstr(val)) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid RTP IP.\n");
@@ -4650,7 +4666,7 @@ static switch_status_t parse_config(const char *cf)
 				int i;
 
 				for (i = 0; i < profile->i; i++) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
 									  strchr(profile->ip[i].local_ip, ':') ? "%s Bound to [%s]:%d\n" : "%s Bound to %s:%d\n", 
 									  profile->name, profile->ip[i].local_ip, profile->ip[i].local_port);
 				}
@@ -4959,7 +4975,7 @@ static void *SWITCH_THREAD_FUNC profile_thread(switch_thread_t *thread, void *ob
 	runtime(profile);
 	profile->running = 0;
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "profile %s shutdown, Waiting for %d threads\n", profile->name, profile->jsock_count);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "profile %s shutdown, Waiting for %d threads\n", profile->name, profile->jsock_count);
 	
 	while(--sanity > 0 && profile->jsock_count > 0) {
 		switch_yield(100000);
@@ -4970,7 +4986,7 @@ static void *SWITCH_THREAD_FUNC profile_thread(switch_thread_t *thread, void *ob
 	del_profile(profile);
 
 	switch_thread_rwlock_wrlock(profile->rwlock);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s Thread ending\n", profile->name);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Thread ending\n", profile->name);
 	switch_thread_rwlock_unlock(profile->rwlock);
 	profile->in_thread = 0;
 

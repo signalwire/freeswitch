@@ -252,6 +252,9 @@ struct verto_profile_s {
 	char *cand_acl[SWITCH_MAX_CAND_ACL];
 	uint32_t cand_acl_count;
 
+	char *conn_acl[SWITCH_MAX_CAND_ACL];
+	uint32_t conn_acl_count;
+
 	char *inbound_codec_string;
 	char *outbound_codec_string;
 
