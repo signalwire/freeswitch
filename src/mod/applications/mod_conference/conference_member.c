@@ -189,6 +189,7 @@ void conference_member_update_status_field(conference_member_t *member)
 		json = cJSON_CreateObject();
 		audio = cJSON_CreateObject();
 		cJSON_AddItemToObject(audio, "muted", cJSON_CreateBool(!conference_utils_member_test_flag(member, MFLAG_CAN_SPEAK)));
+		cJSON_AddItemToObject(audio, "deaf", cJSON_CreateBool(!conference_utils_member_test_flag(member, MFLAG_CAN_HEAR)));
 		cJSON_AddItemToObject(audio, "onHold", cJSON_CreateBool(switch_channel_test_flag(member->channel, CF_HOLD)));
 		cJSON_AddItemToObject(audio, "talking", cJSON_CreateBool(conference_utils_member_test_flag(member, MFLAG_TALKING)));
 		cJSON_AddItemToObject(audio, "floor", cJSON_CreateBool(member == member->conference->floor_holder));
