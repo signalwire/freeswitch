@@ -2666,6 +2666,8 @@ static switch_bool_t verto__answer_func(const char *method, cJSON *params, jsock
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Remote SDP %s:\n%s\n", switch_channel_get_name(tech_pvt->channel), sdp);
 		switch_core_media_set_sdp_codec_string(session, sdp, SDP_TYPE_RESPONSE);
 
+		switch_ivr_set_user(session, jsock->uid);
+
 		if (switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MODE)) {
 			pass_sdp(tech_pvt);
 		} else {
