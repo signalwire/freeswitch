@@ -3240,6 +3240,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_generate_json_cdr(switch_core_session
 
 			cJSON_AddItemToObject(j_application, "app_name", cJSON_CreateString(ap->app));
 			cJSON_AddItemToObject(j_application, "app_data", cJSON_CreateString(ap->arg));
+			switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, ap->stamp);
+			cJSON_AddItemToObject(j_application, "app_stamp", cJSON_CreateString(tmp));
 
 			cJSON_AddItemToArray(j_apps, j_application);
 		}
