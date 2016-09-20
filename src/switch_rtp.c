@@ -5771,7 +5771,6 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 				status = SWITCH_STATUS_BREAK;
 				break;
 			case SWITCH_STATUS_BREAK:
-				switch_core_session_request_video_refresh(rtp_session->session);
 			default:
 				break;
 			}
