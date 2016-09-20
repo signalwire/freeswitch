@@ -37,13 +37,16 @@
             <!-- required number of consecutive elements in the SMA buffer
                  without reset. This parameter helps to avoid false beeps, bigger this value is
                 smaller the probability of getting false detection -->
-            <param name="sample_n_continuous_streak" value="15"/>
+            <param name="sample_n_continuous_streak" value="5"/>
 
             <!-- define number of samples to skip starting from the beginning
                  of the frame and/or after reset  has happened. This serves the purpose of skipping first few
                 estimations on each frame, as these estimations may be inaccurate. This parameter also helps
                 to give more robust detections when it's value is increased (up to scertain limit of about 60). -->
-            <param name="sample_n_to_skip" value="15"/>
+            <param name="sample_n_to_skip" value="0"/>
+
+            <param name="require_continuous_streak_amp" value="1"/>
+            <param name="sample_n_continuous_streak_amp" value="5"/>
 
             <!-- define/undefine this to enable/disable simplified estimation
                  of frequency based on approximation of sin(x) with (x)
@@ -55,6 +58,10 @@
 
             <!-- define/undefine to enable/disable avmd on external channel -->
             <param name="outbound_channel" value="1"/>
+
+            <!-- determines the mode of detection, default is both amplitude and frequency -->
+            <param name="detection_mode" value="2"/>
+
         <!-- Per call settings end -->
     </settings>
 </configuration>

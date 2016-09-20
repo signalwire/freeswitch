@@ -63,14 +63,14 @@ avmd_desa2_tweaked(circ_buffer_t *b, size_t i, double *amplitude) {
  we do simplified, modified for speed version : */
 
     result = n/d;
-    if (ISINF(result)) {
+/*    if (ISINF(result)) {
         *amplitude = 0.0;
         if (n < 0.0) {
             return -10.0;
         } else {
             return 10.0;
         }
-    }
+    }*/
     *amplitude = 2.0 * PSI_Xn / sqrt(PSI_Yn);
     return result;
 }

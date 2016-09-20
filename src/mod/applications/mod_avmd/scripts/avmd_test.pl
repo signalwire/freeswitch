@@ -4,8 +4,10 @@
 #brief      Test module avmd by calling all voicemails available
 #           in avmd test suite and print detection results to the console.
 #author     Piotr Gregor <piotrgregor@rsyncme.org>
-#details    If you are testing locally - remember to set avmd to inbound mode,
-#           "avmd set inbound" in fs_cli.
+#details    If you are testing serving voicemails from dialplan then avmd
+#           must be set to inbound mode, either globally (by avmd set inbound
+#           in fs_cli) or in dialplan settings (<action application="avmd_start"
+#           data="inbound_channel=1,outbound_channel=0").
 #date       15 Sept 2016 03:00 PM
 
 
@@ -19,23 +21,99 @@ use Time::HiRes;
 
 # Hashtable of <destination number : test result expectation> pairs
 my %numbers = (
-    400 => "DETECTED",
-    401 => "DETECTED",
-    402 => "DETECTED",
-    403 => "DETECTED",
-    404 => "DETECTED",
-    405 => "DETECTED",
-    406 => "DETECTED",
-    407 => "DETECTED",
-    408 => "DETECTED",
-    409 => "DETECTED",
-    410 => "DETECTED",
-    411 => "DETECTED",
-    412 => "DETECTED",
-    413 => "DETECTED",
-    414 => "DETECTED",
-    500 => "NOTDETECTED",
-    501 => "NOTDETECTED"
+    503 => "NOTDETECTED",  # dual frequency (similar to single freq with varying amplitude), mode [0] AVMD_DETECT_AMP
+    504 => "NOTDETECTED",
+    505 => "NOTDETECTED",
+    506 => "NOTDETECTED",
+    507 => "NOTDETECTED",
+    508 => "NOTDETECTED",
+    509 => "NOTDETECTED",
+    510 => "NOTDETECTED",
+    511 => "NOTDETECTED",
+    512 => "NOTDETECTED",
+    513 => "NOTDETECTED",
+    514 => "NOTDETECTED",
+    515 => "NOTDETECTED",
+    516 => "NOTDETECTED",
+    517 => "NOTDETECTED",
+    518 => "NOTDETECTED",
+    519 => "NOTDETECTED",
+    520 => "NOTDETECTED",
+    521 => "NOTDETECTED",
+    522 => "NOTDETECTED",
+    523 => "NOTDETECTED",
+    603 => "DETECTED",  # dual frequency (similar to single freq with varying amplitude), mode [1] AVMD_DETECT_FREQ
+    604 => "DETECTED",
+    605 => "DETECTED",
+    606 => "DETECTED",
+    607 => "DETECTED",
+    608 => "DETECTED",
+    609 => "DETECTED",
+    610 => "DETECTED",
+    611 => "DETECTED",
+    612 => "DETECTED",
+    613 => "DETECTED",
+    614 => "DETECTED",
+    615 => "DETECTED",
+    616 => "DETECTED",
+    617 => "DETECTED",
+    618 => "DETECTED",
+    619 => "DETECTED",
+    620 => "DETECTED",
+    621 => "DETECTED",
+    622 => "DETECTED",
+    623 => "DETECTED",
+    703 => "NOTDETECTED",   # dual frequency (similar to single freq with varying amplitude), mode [2] AVMD_DETECT_BOTH
+    704 => "NOTDETECTED",
+    705 => "NOTDETECTED",
+    706 => "NOTDETECTED",
+    707 => "NOTDETECTED",
+    708 => "NOTDETECTED",
+    709 => "NOTDETECTED",
+    710 => "NOTDETECTED",
+    711 => "NOTDETECTED",
+    712 => "NOTDETECTED",
+    713 => "NOTDETECTED",
+    714 => "NOTDETECTED",
+    715 => "NOTDETECTED",
+    716 => "NOTDETECTED",
+    717 => "NOTDETECTED",
+    718 => "NOTDETECTED",
+    719 => "NOTDETECTED",
+    720 => "NOTDETECTED",
+    721 => "NOTDETECTED",
+    722 => "NOTDETECTED",
+    723 => "NOTDETECTED",
+    840531000 => "DETECTED",    # obscure voicemails, mode AVMD_DETECT_BOTH
+    840531001 => "DETECTED",
+    840531002 => "DETECTED",
+    840531003 => "DETECTED",
+    840531004 => "DETECTED",
+    840531005 => "DETECTED",
+    840531006 => "DETECTED",
+    840531007 => "DETECTED",
+    840531008 => "DETECTED",
+    840531009 => "DETECTED",
+    840531010 => "DETECTED",
+    840531011 => "DETECTED",
+    840531012 => "DETECTED",
+    840531013 => "DETECTED",
+    840531014 => "DETECTED",
+    840531200 => "DETECTED",    # obscure voicemails, mode AVMD_DETECT_FREQ
+    840531201 => "DETECTED",
+    840531202 => "DETECTED",
+    840531203 => "DETECTED",
+    840531204 => "DETECTED",
+    840531205 => "DETECTED",
+    840531206 => "DETECTED",
+    840531207 => "DETECTED",
+    840531208 => "DETECTED",
+    840531209 => "DETECTED",
+    840531210 => "DETECTED",
+    840531211 => "DETECTED",
+    840531212 => "DETECTED",
+    840531213 => "DETECTED",
+    840531214 => "DETECTED",
 );
 
 my $host = "127.0.0.1";
@@ -72,7 +150,7 @@ if (!$con) {
 if ($con->connected()) {
     print "OK.\n";
 } else {
-    die "Conenction failure.\n";
+    die "Connection failure.\n";
 }
 
 print "Subscribing to avmd events...\t";
@@ -108,10 +186,12 @@ sub test_once {
     'originate_timeout=60,' .
     'origination_caller_id_number=' . $callerid . ',' .
     'origination_caller_id_name=' . $callerid . '}';
-    my $outcome;
-    my $result;
-    my $event_uuid;
+    my $outcome = "";
+    my $result = "";
+    my $event_uuid = "N/A";
     my $uuid_in = "";
+    my $freq = "N/A";
+    my $freq_var = "N/A";
 
     if(defined($endpoint)) {
         $originate_string .= $endpoint;
@@ -137,6 +217,10 @@ sub test_once {
                 } elsif (!($uuid_in eq "") && (($avmd_event_type eq 'avmd::beep') || ($avmd_event_type eq 'avmd::stop'))) {
                     $event_uuid = $e->getHeader("Unique-ID");
                     if ($event_uuid eq $uuid_in) {
+                        if ($avmd_event_type eq 'avmd::beep') {
+                            $freq = $e->getHeader("Frequency");
+                            $freq_var = $e->getHeader("Frequency-variance");
+                        }
                         $outcome = $e->getHeader("Beep-Status");
                         if ($outcome eq $expectation) {
                             $result = "PASS";
@@ -150,7 +234,7 @@ sub test_once {
                 }
             } elsif ($event_name eq 'CHANNEL_HANGUP') {
                 $event_uuid = $e->getHeader("variable_origination_uuid");
-                if ($event_uuid eq $uuid_out) {
+                if ((defined $event_uuid) && ($event_uuid eq $uuid_out)) {
                     $outcome = "HANGUP";
                     $result = "HANGUP";
                     $hanguped++;
@@ -159,5 +243,6 @@ sub test_once {
             }
         }
     }
-    printf("\t[%s]\t[%s]\t\t[%s]\n", POSIX::strftime('%Y-%m-%d %H:%M:%S', localtime($time_epoch)), $expectation, $result);
+    printf("\t[%s]\t[%s]\t\t[%s]\t[%s]HZ\t[%s]\n", POSIX::strftime('%Y-%m-%d %H:%M:%S', localtime($time_epoch)), $expectation, $result, $freq, $freq_var);
+    Time::HiRes::sleep(0.5);    # avoid switch_core_session.c:2265 Throttle Error! 33, switch_time.c:1227 Over Session Rate of 30!
 }
