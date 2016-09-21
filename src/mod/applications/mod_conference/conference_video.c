@@ -1527,12 +1527,13 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_write_thread_run(switch_thread_
 	//switch_core_autobind_cpu();
 
 	while(conference_utils_member_test_flag(member, MFLAG_RUNNING)) {
+
 		if (patched) {
 			pop_status = switch_queue_trypop(member->mux_out_queue, &pop);
 		} else {
 			pop_status = switch_queue_pop(member->mux_out_queue, &pop);
 		}
-
+		
 		if (pop_status == SWITCH_STATUS_SUCCESS) {
 			mcu_layer_t *layer = NULL;
 			mcu_canvas_t *canvas = NULL;
@@ -1593,6 +1594,8 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_write_thread_run(switch_thread_
 				}
 			}
 			switch_mutex_unlock(member->conference->canvas_mutex);
+		} else {
+			patched = 0;
 		}
 	}
 
