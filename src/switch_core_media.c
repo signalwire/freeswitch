@@ -3732,7 +3732,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 	int m_idx = 0;
 	int nm_idx = 0;
 	int vmatch_pt = 0;
-	int counteract = 0;
+	int rtcp_auto_audio = 0, rtcp_auto_video = 0;
 	int got_audio_rtcp = 0, got_video_rtcp = 0;
 	switch_port_t audio_port = 0, video_port = 0;
 
@@ -3769,14 +3769,9 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 		switch_channel_clear_flag(smh->session->channel, CF_DTLS);
 	}
 
-	if (sdp->sdp_subject) {
-		if (switch_stristr("Bria", sdp->sdp_subject)) {
-			counteract = 1;
-		}
-	}
-
 	if (switch_true(switch_channel_get_variable_dup(session->channel, "rtp_assume_rtcp", SWITCH_FALSE, -1))) {
-		counteract = 1;
+		rtcp_auto_video = 1;
+		rtcp_auto_audio = 1;
 	}
 
 	v_engine->new_dtls = 1;
@@ -4733,9 +4728,9 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 								v_engine->tmmbr++;
 							}
 							
-							smh->mparams->rtcp_video_interval_msec = SWITCH_RTCP_VIDEO_INTERVAL_MSEC;
+							rtcp_auto_video = 1;
 						}
-					} else if (!strcasecmp(attr->a_name, "rtcp") && attr->a_value && !strcmp(attr->a_value, "1")) {
+					} else if (!strcasecmp(attr->a_name, "rtcp") && attr->a_value) {
 						switch_channel_set_variable(session->channel, "rtp_remote_video_rtcp_port", attr->a_value);
 						v_engine->remote_rtcp_port = (switch_port_t)atoi(attr->a_value);
 						if (!smh->mparams->rtcp_video_interval_msec) {
@@ -4908,19 +4903,18 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 		}
 	}
 
-	if (counteract) {
-		if (!got_audio_rtcp && audio_port) {
-			switch_channel_set_variable_printf(session->channel, "rtp_remote_audio_rtcp_port", "%d", audio_port);
-			a_engine->remote_rtcp_port = audio_port;
-
+	if (rtcp_auto_audio || rtcp_auto_video) {
+		if (rtcp_auto_audio && !got_audio_rtcp && audio_port) {
+			switch_channel_set_variable_printf(session->channel, "rtp_remote_audio_rtcp_port", "%d", audio_port + 1);
+			a_engine->remote_rtcp_port = audio_port + 1;
+			
 			if (!smh->mparams->rtcp_audio_interval_msec) {
 				smh->mparams->rtcp_audio_interval_msec = SWITCH_RTCP_AUDIO_INTERVAL_MSEC;
 			}
 		}
-		if (!got_video_rtcp && video_port) {
-			switch_channel_set_variable_printf(session->channel, "rtp_remote_video_rtcp_port", "%d", video_port);
-			v_engine->remote_rtcp_port = video_port;
-
+		if (rtcp_auto_video && !got_video_rtcp && video_port) {
+			switch_channel_set_variable_printf(session->channel, "rtp_remote_video_rtcp_port", "%d", video_port + 1);
+			v_engine->remote_rtcp_port = video_port + 1;
 			if (!smh->mparams->rtcp_video_interval_msec) {
 				smh->mparams->rtcp_video_interval_msec = SWITCH_RTCP_VIDEO_INTERVAL_MSEC;
 			}
