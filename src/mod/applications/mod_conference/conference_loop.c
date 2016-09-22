@@ -1108,18 +1108,19 @@ void conference_loop_output(conference_member_t *member)
 	uint32_t flush_len;
 	uint32_t low_count, bytes;
 	call_list_t *call_list, *cp;
-	switch_codec_implementation_t read_impl = { 0 };
+	switch_codec_implementation_t read_impl = { 0 }, real_read_impl = { 0 };
 	int sanity;
 	switch_status_t st;
 
 	switch_core_session_get_read_impl(member->session, &read_impl);
+	switch_core_session_get_real_read_impl(member->session, &real_read_impl);
 
 
 	channel = switch_core_session_get_channel(member->session);
 	interval = read_impl.microseconds_per_packet / 1000;
 	samples = switch_samples_per_packet(member->conference->rate, interval);
 	//csamples = samples;
-	tsamples = member->orig_read_impl.samples_per_packet;
+	tsamples = real_read_impl.samples_per_packet;
 	low_count = 0;
 	bytes = samples * 2 * member->conference->channels;
 	call_list = NULL;
@@ -1136,8 +1137,8 @@ void conference_loop_output(conference_member_t *member)
 		return;
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session), SWITCH_LOG_DEBUG, "Setup timer %s success interval: %u  samples: %u\n",
-					  member->conference->timer_name, interval, tsamples);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session), SWITCH_LOG_DEBUG, "Setup timer %s success interval: %u  samples: %u from codec %s\n",
+					  member->conference->timer_name, interval, tsamples, real_read_impl.iananame);
 
 
 	write_frame.data = data = switch_core_session_alloc(member->session, SWITCH_RECOMMENDED_BUFFER_SIZE);
