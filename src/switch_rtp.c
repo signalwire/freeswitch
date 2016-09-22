@@ -5012,7 +5012,7 @@ static switch_size_t do_flush(switch_rtp_t *rtp_session, int force, switch_size_
 			rtp_session->flags[SWITCH_RTP_FLAG_UDPTL] ||
 			rtp_session->flags[SWITCH_RTP_FLAG_DTMF_ON]
 			) {
-			return 0;
+			return bytes_in;
 		}
 	}
 	
@@ -5634,9 +5634,9 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 		rtp_session->stats.inbound.packet_count++;
 	}
 
-	if (rtp_session->last_rtp_hdr.pt == rtp_session->recv_te || 
-		(*bytes < rtp_header_len && *bytes > 0) ||
-		rtp_session->flags[SWITCH_RTP_FLAG_PROXY_MEDIA] || rtp_session->flags[SWITCH_RTP_FLAG_UDPTL]) {
+	if (!rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] && 
+		((rtp_session->recv_te && rtp_session->last_rtp_hdr.pt == rtp_session->recv_te) || 
+		 (*bytes < rtp_header_len && *bytes > 0 && !(rtp_session->flags[SWITCH_RTP_FLAG_PROXY_MEDIA] || rtp_session->flags[SWITCH_RTP_FLAG_UDPTL])))) {
 		return SWITCH_STATUS_BREAK;
 	}
 
@@ -5662,6 +5662,10 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 
 	if (rtp_session->has_rtp && *bytes) {
 		uint32_t read_ssrc = ntohl(rtp_session->last_rtp_hdr.ssrc);
+
+		if (rtp_session->flags[SWITCH_RTP_FLAG_PROXY_MEDIA] || rtp_session->flags[SWITCH_RTP_FLAG_UDPTL]) {
+			return SWITCH_STATUS_SUCCESS;
+		}
 
 		if (rtp_session->vb && jb_valid(rtp_session)) {
 			status = switch_jb_put_packet(rtp_session->vb, (switch_rtp_packet_t *) &rtp_session->recv_msg, *bytes);			
@@ -7806,6 +7810,29 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_fra
 		
 			send_msg->header.ssrc = htonl(rtp_session->ssrc);
 			send_msg->header.seq = htons(++rtp_session->seq);
+		}
+
+		if (rtp_session->flags[SWITCH_RTP_FLAG_DEBUG_RTP_WRITE]) {
+			const char *tx_host;
+			const char *old_host;
+			const char *my_host;
+
+			char bufa[50], bufb[50], bufc[50];
+
+
+			tx_host = switch_get_addr(bufa, sizeof(bufa), rtp_session->rtp_from_addr);
+			old_host = switch_get_addr(bufb, sizeof(bufb), rtp_session->remote_addr);
+			my_host = switch_get_addr(bufc, sizeof(bufc), rtp_session->local_addr);
+
+			printf(
+							  "W %s b=%4ld %s:%u %s:%u %s:%u pt=%d ts=%u seq=%u m=%d\n",
+							  rtp_session->session ? switch_channel_get_name(switch_core_session_get_channel(rtp_session->session)) : "NoName",
+							  (long) bytes,
+							  my_host, switch_sockaddr_get_port(rtp_session->local_addr),
+							  old_host, rtp_session->remote_port,
+							  tx_host, switch_sockaddr_get_port(rtp_session->rtp_from_addr),
+							  send_msg->header.pt, ntohl(send_msg->header.ts), ntohs(send_msg->header.seq), send_msg->header.m);
+
 		}
 
 		if (switch_socket_sendto(rtp_session->sock_output, rtp_session->remote_addr, 0, frame->packet, &bytes) != SWITCH_STATUS_SUCCESS) {
