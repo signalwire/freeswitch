@@ -148,5 +148,6 @@
   "CHAT_VOL_PLUS": "Vol +",
   "CHAT_GAIN_MINUS": "Ganho -",
   "CHAT_GAIN_PLUS": "Ganho +",
-  "FACTORY_RESET_SETTINGS": "Redefinir configurações"
+  "FACTORY_RESET_SETTINGS": "Redefinir configurações",
+  "AUTOGAIN_CONTROL": "Controle de Ganho Automático (AGC)"
 }
