@@ -6643,7 +6643,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			switch_rtp_clear_flag(rtp_session, SWITCH_RTP_FLAG_FLUSH);
 		}
 		
-		if (rtp_session->flags[SWITCH_RTP_FLAG_BREAK] || (bytes && bytes == 4 && *((int *) &rtp_session->recv_msg) == UINT_MAX)) {
+		if ((!bytes && rtp_session->flags[SWITCH_RTP_FLAG_BREAK]) || (bytes && bytes == 4 && *((int *) &rtp_session->recv_msg) == UINT_MAX)) {
 			switch_rtp_clear_flag(rtp_session, SWITCH_RTP_FLAG_BREAK);
 
 			if (!rtp_session->flags[SWITCH_RTP_FLAG_NOBLOCK] || !rtp_session->flags[SWITCH_RTP_FLAG_USE_TIMER] || 
