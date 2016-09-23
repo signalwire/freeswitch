@@ -150,5 +150,6 @@
   "CHAT_GAIN_PLUS": "Gain +",
   "LANGUAGE": "Language:",
   "BROWSER_LANGUAGE": "Browser Language",
-  "FACTORY_RESET_SETTINGS": "Factory Reset Settings"
+  "FACTORY_RESET_SETTINGS": "Factory Reset Settings",
+  "AUTOGAIN_CONTROL": "Auto Gain Control"
 }

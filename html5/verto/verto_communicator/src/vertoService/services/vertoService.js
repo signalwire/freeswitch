@@ -711,9 +711,11 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
             ringFile: "sounds/bell_ring2.wav",
             // TODO: Add options for this.
             audioParams: {
-                googEchoCancellation: storage.data.googEchoCancellation || true,
-                googNoiseSuppression: storage.data.googNoiseSuppression || true,
-                googHighpassFilter: storage.data.googHighpassFilter || true
+                googEchoCancellation: storage.data.googEchoCancellation === undefined ? true : storage.data.googEchoCancellation,
+                googNoiseSuppression: storage.data.googNoiseSuppression === undefined ? true : storage.data.googNoiseSuppression,
+                googHighpassFilter: storage.data.googHighpassFilter === undefined ? true : storage.data.googHighpassFilter,
+                googAutoGainControl: storage.data.googAutoGainControl === undefined ? true : storage.data.googAutoGainControl,
+                googAutoGainControl2: storage.data.googAutoGainControl === undefined ? true : storage.data.googAutoGainControl
             },
             sessid: sessid,
             iceServers: storage.data.useSTUN
