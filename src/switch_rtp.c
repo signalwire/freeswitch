@@ -3696,7 +3696,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_change_interval(switch_rtp_t *rtp_ses
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	int change_timer = 0;
 
-	if (rtp_session->ms_per_packet && rtp_session->ms_per_packet != ms_per_packet) {
+	if (rtp_session->ms_per_packet != ms_per_packet || rtp_session->samples_per_interval != samples_per_interval) {
 		change_timer = 1;
 	}
 
