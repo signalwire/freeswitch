@@ -333,6 +333,18 @@
         });
       };
 
+      $scope.confToggleDeaf = function(member) {
+        if(verto.data.confRole == 'moderator') {
+          console.log('$scope.confToggleDeaf');
+
+          if (member.status.audio.deaf) {
+            verto.data.conf.undeaf(member.id);
+          } else {
+            verto.data.conf.deaf(member.id);
+          }
+        }
+      };
+
       function shortPrompt(text, cb) {
         prompt({
           title: text,

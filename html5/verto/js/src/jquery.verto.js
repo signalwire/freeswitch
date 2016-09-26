@@ -1298,6 +1298,14 @@
             this.modCommand("stop", null, "all");
         };
 
+        $.verto.conf.prototype.deaf = function(memberID) {
+            this.modCommand("deaf", parseInt(memberID));
+        };
+
+        $.verto.conf.prototype.undeaf = function(memberID) {
+            this.modCommand("undeaf", parseInt(memberID));
+        };
+
         $.verto.conf.prototype.record = function(file) {
             this.modCommand("recording", null, ["start", file]);
         };
