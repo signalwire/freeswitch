@@ -332,10 +332,20 @@ EOF
 }
 
 check_cflags() {
- log check_cflags "$@"
- check_cc -Werror "$@" <<EOF
+  log check_cflags "$@"
+
+  case "$CC" in
+    *gcc*|*clang)
+      check_cc -Werror "$@" <<EOF
 int x;
 EOF
+      ;;
+    *)
+      check_cc "$@" <<EOF
+int x;
+EOF
+      ;;
+    esac
 }
 
 check_cxxflags() {
