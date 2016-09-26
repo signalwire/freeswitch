@@ -13,7 +13,6 @@
 SECTION_RODATA
 
 pb_1: times 16 db 1
-sh_b01234577: db 0, 1, 2, 3, 4, 5, 7, 7, 0, 0, 0, 0, 0, 0, 0, 0
 sh_b12345677: db 1, 2, 3, 4, 5, 6, 7, 7, 0, 0, 0, 0, 0, 0, 0, 0
 sh_b23456777: db 2, 3, 4, 5, 6, 7, 7, 7, 0, 0, 0, 0, 0, 0, 0, 0
 sh_b0123456777777777: db 0, 1, 2, 3, 4, 5, 6, 7, 7, 7, 7, 7, 7, 7, 7, 7
@@ -28,76 +27,8 @@ sh_b65432108: db 6, 5, 4, 3, 2, 1, 0, 8, 0, 0, 0, 0, 0, 0, 0, 0
 sh_b54321089: db 5, 4, 3, 2, 1, 0, 8, 9, 0, 0, 0, 0, 0, 0, 0, 0
 sh_b89abcdef: db 8, 9, 10, 11, 12, 13, 14, 15, 0, 0, 0, 0, 0, 0, 0, 0
 sh_bfedcba9876543210: db 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0
-sh_b1233: db 1, 2, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-sh_b2333: db 2, 3, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 
 SECTION .text
-
-INIT_MMX ssse3
-cglobal d45_predictor_4x4, 3, 4, 4, dst, stride, above, goffset
-  GET_GOT     goffsetq
-
-  movq                m0, [aboveq]
-  pshufb              m2, m0, [GLOBAL(sh_b23456777)]
-  pshufb              m1, m0, [GLOBAL(sh_b01234577)]
-  pshufb              m0, [GLOBAL(sh_b12345677)]
-  pavgb               m3, m2, m1
-  pxor                m2, m1
-  pand                m2, [GLOBAL(pb_1)]
-  psubb               m3, m2
-  pavgb               m0, m3
-
-  ; store 4 lines
-  movd    [dstq        ], m0
-  psrlq               m0, 8
-  movd    [dstq+strideq], m0
-  lea               dstq, [dstq+strideq*2]
-  psrlq               m0, 8
-  movd    [dstq        ], m0
-  psrlq               m0, 8
-  movd    [dstq+strideq], m0
-
-  RESTORE_GOT
-  RET
-
-INIT_MMX ssse3
-cglobal d45_predictor_8x8, 3, 4, 4, dst, stride, above, goffset
-  GET_GOT     goffsetq
-
-  movq                m0, [aboveq]
-  mova                m1, [GLOBAL(sh_b12345677)]
-  DEFINE_ARGS dst, stride, stride3
-  lea           stride3q, [strideq*3]
-  pshufb              m2, m0, [GLOBAL(sh_b23456777)]
-  pavgb               m3, m2, m0
-  pxor                m2, m0
-  pshufb              m0, m1
-  pand                m2, [GLOBAL(pb_1)]
-  psubb               m3, m2
-  pavgb               m0, m3
-
-  ; store 4 lines
-  movq  [dstq          ], m0
-  pshufb              m0, m1
-  movq  [dstq+strideq  ], m0
-  pshufb              m0, m1
-  movq  [dstq+strideq*2], m0
-  pshufb              m0, m1
-  movq  [dstq+stride3q ], m0
-  pshufb              m0, m1
-  lea               dstq, [dstq+strideq*4]
-
-  ; store next 4 lines
-  movq  [dstq          ], m0
-  pshufb              m0, m1
-  movq  [dstq+strideq  ], m0
-  pshufb              m0, m1
-  movq  [dstq+strideq*2], m0
-  pshufb              m0, m1
-  movq  [dstq+stride3q ], m0
-
-  RESTORE_GOT
-  RET
 
 INIT_XMM ssse3
 cglobal d45_predictor_16x16, 3, 6, 4, dst, stride, above, dst8, line, goffset
@@ -712,28 +643,6 @@ cglobal d153_predictor_32x32, 4, 5, 8, dst, stride, above, left, goffset
   mova  [dstq+stride3q    ], m2
   mova  [dstq+stride3q+16 ], m3
 
-  RESTORE_GOT
-  RET
-
-INIT_MMX ssse3
-cglobal d207_predictor_4x4, 4, 5, 4, dst, stride, unused, left, goffset
-  GET_GOT     goffsetq
-  movd                m0, [leftq]                ; abcd [byte]
-  pshufb              m1, m0, [GLOBAL(sh_b1233)] ; bcdd [byte]
-  pshufb              m3, m0, [GLOBAL(sh_b2333)] ; cddd
-
-  X_PLUS_2Y_PLUS_Z_PLUS_2_RSH_2 m0, m1, m3, m2
-  pavgb               m1, m0             ; ab, bc, cd, d [byte]
-
-  punpcklbw           m1, m2             ; ab, a2bc, bc, b2cd, cd, c3d, d, d
-  movd    [dstq        ], m1
-  psrlq               m1, 16             ; bc, b2cd, cd, c3d, d, d
-  movd    [dstq+strideq], m1
-  lea               dstq, [dstq+strideq*2]
-  psrlq               m1, 16             ; cd, c3d, d, d
-  movd    [dstq        ], m1
-  pshufw              m1, m1, q1111      ; d, d, d, d
-  movd    [dstq+strideq], m1
   RESTORE_GOT
   RET
 

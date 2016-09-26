@@ -27,15 +27,6 @@
 extern "C" {
 #endif
 
-// TODO(hkuang): combine this with TileWorkerData.
-typedef struct TileData {
-  VP9_COMMON *cm;
-  vpx_reader bit_reader;
-  DECLARE_ALIGNED(16, MACROBLOCKD, xd);
-  /* dqcoeff are shared by all the planes. So planes must be decoded serially */
-  DECLARE_ALIGNED(16, tran_low_t, dqcoeff[32 * 32]);
-} TileData;
-
 typedef struct TileBuffer {
   const uint8_t *data;
   size_t size;
@@ -66,16 +57,14 @@ typedef struct VP9Decoder {
 
   // TODO(hkuang): Combine this with cur_buf in macroblockd as they are
   // the same.
-  RefCntBuffer *cur_buf;   //  Current decoding frame buffer.
+  RefCntBuffer *cur_buf;  //  Current decoding frame buffer.
 
-  VPxWorker *frame_worker_owner;   // frame_worker that owns this pbi.
+  VPxWorker *frame_worker_owner;  // frame_worker that owns this pbi.
   VPxWorker lf_worker;
   VPxWorker *tile_workers;
   TileWorkerData *tile_worker_data;
   TileBuffer tile_buffers[64];
   int num_tile_workers;
-
-  TileData *tile_data;
   int total_tiles;
 
   VP9LfSync lf_row_sync;
@@ -85,12 +74,12 @@ typedef struct VP9Decoder {
 
   int max_threads;
   int inv_tile_order;
-  int need_resync;  // wait for key/intra-only frame.
+  int need_resync;   // wait for key/intra-only frame.
   int hold_ref_buf;  // hold the reference buffer.
 } VP9Decoder;
 
-int vp9_receive_compressed_data(struct VP9Decoder *pbi,
-                                size_t size, const uint8_t **dest);
+int vp9_receive_compressed_data(struct VP9Decoder *pbi, size_t size,
+                                const uint8_t **dest);
 
 int vp9_get_raw_frame(struct VP9Decoder *pbi, YV12_BUFFER_CONFIG *sd,
                       vp9_ppflags_t *flags);
@@ -104,8 +93,7 @@ vpx_codec_err_t vp9_set_reference_dec(VP9_COMMON *cm,
                                       YV12_BUFFER_CONFIG *sd);
 
 static INLINE uint8_t read_marker(vpx_decrypt_cb decrypt_cb,
-                                  void *decrypt_state,
-                                  const uint8_t *data) {
+                                  void *decrypt_state, const uint8_t *data) {
   if (decrypt_cb) {
     uint8_t marker;
     decrypt_cb(decrypt_state, data, &marker, 1);
@@ -116,8 +104,7 @@ static INLINE uint8_t read_marker(vpx_decrypt_cb decrypt_cb,
 
 // This function is exposed for use in tests, as well as the inlined function
 // "read_marker".
-vpx_codec_err_t vp9_parse_superframe_index(const uint8_t *data,
-                                           size_t data_sz,
+vpx_codec_err_t vp9_parse_superframe_index(const uint8_t *data, size_t data_sz,
                                            uint32_t sizes[8], int *count,
                                            vpx_decrypt_cb decrypt_cb,
                                            void *decrypt_state);

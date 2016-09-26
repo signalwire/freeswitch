@@ -131,14 +131,14 @@ void vpx_fdct8x8_neon(const int16_t *input, int16_t *final_output, int stride) {
       // 14 15 16 17 54 55 56 57
       // 24 25 26 27 64 65 66 67
       // 34 35 36 37 74 75 76 77
-      const int32x4x2_t r02_s32 = vtrnq_s32(vreinterpretq_s32_s16(out_0),
-                                            vreinterpretq_s32_s16(out_2));
-      const int32x4x2_t r13_s32 = vtrnq_s32(vreinterpretq_s32_s16(out_1),
-                                            vreinterpretq_s32_s16(out_3));
-      const int32x4x2_t r46_s32 = vtrnq_s32(vreinterpretq_s32_s16(out_4),
-                                            vreinterpretq_s32_s16(out_6));
-      const int32x4x2_t r57_s32 = vtrnq_s32(vreinterpretq_s32_s16(out_5),
-                                            vreinterpretq_s32_s16(out_7));
+      const int32x4x2_t r02_s32 =
+          vtrnq_s32(vreinterpretq_s32_s16(out_0), vreinterpretq_s32_s16(out_2));
+      const int32x4x2_t r13_s32 =
+          vtrnq_s32(vreinterpretq_s32_s16(out_1), vreinterpretq_s32_s16(out_3));
+      const int32x4x2_t r46_s32 =
+          vtrnq_s32(vreinterpretq_s32_s16(out_4), vreinterpretq_s32_s16(out_6));
+      const int32x4x2_t r57_s32 =
+          vtrnq_s32(vreinterpretq_s32_s16(out_5), vreinterpretq_s32_s16(out_7));
       const int16x8x2_t r01_s16 =
           vtrnq_s16(vreinterpretq_s16_s32(r02_s32.val[0]),
                     vreinterpretq_s16_s32(r13_s32.val[0]));

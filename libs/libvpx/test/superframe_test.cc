@@ -17,31 +17,27 @@
 namespace {
 
 const int kTestMode = 0;
-const int kSuperframeSyntax = 1;
 
-typedef std::tr1::tuple<libvpx_test::TestMode,int> SuperframeTestParam;
+typedef std::tr1::tuple<libvpx_test::TestMode, int> SuperframeTestParam;
 
-class SuperframeTest : public ::libvpx_test::EncoderTest,
-    public ::libvpx_test::CodecTestWithParam<SuperframeTestParam> {
+class SuperframeTest
+    : public ::libvpx_test::EncoderTest,
+      public ::libvpx_test::CodecTestWithParam<SuperframeTestParam> {
  protected:
-  SuperframeTest() : EncoderTest(GET_PARAM(0)), modified_buf_(NULL),
-      last_sf_pts_(0) {}
+  SuperframeTest()
+      : EncoderTest(GET_PARAM(0)), modified_buf_(NULL), last_sf_pts_(0) {}
   virtual ~SuperframeTest() {}
 
   virtual void SetUp() {
     InitializeConfig();
     const SuperframeTestParam input = GET_PARAM(1);
     const libvpx_test::TestMode mode = std::tr1::get<kTestMode>(input);
-    const int syntax = std::tr1::get<kSuperframeSyntax>(input);
     SetMode(mode);
     sf_count_ = 0;
     sf_count_max_ = INT_MAX;
-    is_vp10_style_superframe_ = syntax;
   }
 
-  virtual void TearDown() {
-    delete[] modified_buf_;
-  }
+  virtual void TearDown() { delete[] modified_buf_; }
 
   virtual void PreEncodeFrameHook(libvpx_test::VideoSource *video,
                                   libvpx_test::Encoder *encoder) {
@@ -50,26 +46,21 @@ class SuperframeTest : public ::libvpx_test::EncoderTest,
     }
   }
 
-  virtual const vpx_codec_cx_pkt_t * MutateEncoderOutputHook(
+  virtual const vpx_codec_cx_pkt_t *MutateEncoderOutputHook(
       const vpx_codec_cx_pkt_t *pkt) {
-    if (pkt->kind != VPX_CODEC_CX_FRAME_PKT)
-      return pkt;
+    if (pkt->kind != VPX_CODEC_CX_FRAME_PKT) return pkt;
 
-    const uint8_t *buffer = reinterpret_cast<uint8_t*>(pkt->data.frame.buf);
+    const uint8_t *buffer = reinterpret_cast<uint8_t *>(pkt->data.frame.buf);
     const uint8_t marker = buffer[pkt->data.frame.sz - 1];
     const int frames = (marker & 0x7) + 1;
     const int mag = ((marker >> 3) & 3) + 1;
-    const unsigned int index_sz =
-        2 + mag * (frames - is_vp10_style_superframe_);
-    if ((marker & 0xe0) == 0xc0 &&
-        pkt->data.frame.sz >= index_sz &&
+    const unsigned int index_sz = 2 + mag * frames;
+    if ((marker & 0xe0) == 0xc0 && pkt->data.frame.sz >= index_sz &&
         buffer[pkt->data.frame.sz - index_sz] == marker) {
       // frame is a superframe. strip off the index.
-      if (modified_buf_)
-        delete[] modified_buf_;
+      if (modified_buf_) delete[] modified_buf_;
       modified_buf_ = new uint8_t[pkt->data.frame.sz - index_sz];
-      memcpy(modified_buf_, pkt->data.frame.buf,
-             pkt->data.frame.sz - index_sz);
+      memcpy(modified_buf_, pkt->data.frame.buf, pkt->data.frame.sz - index_sz);
       modified_pkt_ = *pkt;
       modified_pkt_.data.frame.buf = modified_buf_;
       modified_pkt_.data.frame.sz -= index_sz;
@@ -80,12 +71,11 @@ class SuperframeTest : public ::libvpx_test::EncoderTest,
     }
 
     // Make sure we do a few frames after the last SF
-    abort_ |= sf_count_ > sf_count_max_ &&
-              pkt->data.frame.pts - last_sf_pts_ >= 5;
+    abort_ |=
+        sf_count_ > sf_count_max_ && pkt->data.frame.pts - last_sf_pts_ >= 5;
     return pkt;
   }
 
-  int is_vp10_style_superframe_;
   int sf_count_;
   int sf_count_max_;
   vpx_codec_cx_pkt_t modified_pkt_;
@@ -103,11 +93,8 @@ TEST_P(SuperframeTest, TestSuperframeIndexIsOptional) {
   EXPECT_EQ(sf_count_, 1);
 }
 
-VP9_INSTANTIATE_TEST_CASE(SuperframeTest, ::testing::Combine(
-    ::testing::Values(::libvpx_test::kTwoPassGood),
-    ::testing::Values(0)));
-
-VP10_INSTANTIATE_TEST_CASE(SuperframeTest, ::testing::Combine(
-    ::testing::Values(::libvpx_test::kTwoPassGood),
-    ::testing::Values(CONFIG_MISC_FIXES)));
+VP9_INSTANTIATE_TEST_CASE(
+    SuperframeTest,
+    ::testing::Combine(::testing::Values(::libvpx_test::kTwoPassGood),
+                       ::testing::Values(0)));
 }  // namespace

@@ -24,6 +24,7 @@ CONFIGURE_ARGS="--disable-docs
                 --disable-unit-tests"
 DIST_DIR="_dist"
 FRAMEWORK_DIR="VPX.framework"
+FRAMEWORK_LIB="VPX.framework/VPX"
 HEADER_DIR="${FRAMEWORK_DIR}/Headers/vpx"
 SCRIPT_DIR=$(dirname "$0")
 LIBVPX_SOURCE_DIR=$(cd ${SCRIPT_DIR}/../..; pwd)
@@ -137,6 +138,44 @@ create_vpx_framework_config_shim() {
   printf "#endif  // ${include_guard}" >> "${config_file}"
 }
 
+# Verifies that $FRAMEWORK_LIB fat library contains requested builds.
+verify_framework_targets() {
+  local requested_cpus=""
+  local cpu=""
+
+  # Extract CPU from full target name.
+  for target; do
+    cpu="${target%%-*}"
+    if [ "${cpu}" = "x86" ]; then
+      # lipo -info outputs i386 for libvpx x86 targets.
+      cpu="i386"
+    fi
+    requested_cpus="${requested_cpus}${cpu} "
+  done
+
+  # Get target CPUs present in framework library.
+  local targets_built=$(${LIPO} -info ${FRAMEWORK_LIB})
+
+  # $LIPO -info outputs a string like the following:
+  #   Architectures in the fat file: $FRAMEWORK_LIB <architectures>
+  # Capture only the architecture strings.
+  targets_built=${targets_built##*: }
+
+  # Sort CPU strings to make the next step a simple string compare.
+  local actual=$(echo ${targets_built} | tr " " "\n" | sort | tr "\n" " ")
+  local requested=$(echo ${requested_cpus} | tr " " "\n" | sort | tr "\n" " ")
+
+  vlog "Requested ${FRAMEWORK_LIB} CPUs: ${requested}"
+  vlog "Actual ${FRAMEWORK_LIB} CPUs: ${actual}"
+
+  if [ "${requested}" != "${actual}" ]; then
+    elog "Actual ${FRAMEWORK_LIB} targets do not match requested target list."
+    elog "  Requested target CPUs: ${requested}"
+    elog "  Actual target CPUs: ${actual}"
+    return 1
+  fi
+}
+
 # Configures and builds each target specified by $1, and then builds
 # VPX.framework.
 build_framework() {
@@ -157,7 +196,12 @@ build_framework() {
   for target in ${targets}; do
     build_target "${target}"
     target_dist_dir="${BUILD_ROOT}/${target}/${DIST_DIR}"
-    lib_list="${lib_list} ${target_dist_dir}/lib/libvpx.a"
+    if [ "${ENABLE_SHARED}" = "yes" ]; then
+      local suffix="dylib"
+    else
+      local suffix="a"
+    fi
+    lib_list="${lib_list} ${target_dist_dir}/lib/libvpx.${suffix}"
   done
 
   cd "${ORIG_PWD}"
@@ -176,13 +220,25 @@ build_framework() {
   # Copy in vpx_version.h.
   cp -p "${BUILD_ROOT}/${target}/vpx_version.h" "${HEADER_DIR}"
 
-  vlog "Created fat library ${FRAMEWORK_DIR}/VPX containing:"
+  if [ "${ENABLE_SHARED}" = "yes" ]; then
+    # Adjust the dylib's name so dynamic linking in apps works as expected.
+    install_name_tool -id '@rpath/VPX.framework/VPX' ${FRAMEWORK_DIR}/VPX
+
+    # Copy in Info.plist.
+    cat "${SCRIPT_DIR}/ios-Info.plist" \
+      | sed "s/\${FULLVERSION}/${FULLVERSION}/g" \
+      | sed "s/\${VERSION}/${VERSION}/g" \
+      | sed "s/\${IOS_VERSION_MIN}/${IOS_VERSION_MIN}/g" \
+      > "${FRAMEWORK_DIR}/Info.plist"
+  fi
+
+  # Confirm VPX.framework/VPX contains the targets requested.
+  verify_framework_targets ${targets}
+
+  vlog "Created fat library ${FRAMEWORK_LIB} containing:"
   for lib in ${lib_list}; do
     vlog "  $(echo ${lib} | awk -F / '{print $2, $NF}')"
   done
-
-  # TODO(tomfinegan): Verify that expected targets are included within
-  # VPX.framework/VPX via lipo -info.
 }
 
 # Trap function. Cleans up the subtree used to build all targets contained in
@@ -213,6 +269,7 @@ iosbuild_usage() {
 cat << EOF
   Usage: ${0##*/} [arguments]
     --help: Display this message and exit.
+    --enable-shared: Build a dynamic framework for use on iOS 8 or later.
     --extra-configure-args <args>: Extra args to pass when configuring libvpx.
     --macosx: Uses darwin15 targets instead of iphonesimulator targets for x86
               and x86_64. Allows linking to framework when builds target MacOSX
@@ -251,6 +308,9 @@ while [ -n "$1" ]; do
       iosbuild_usage
       exit
       ;;
+    --enable-shared)
+      ENABLE_SHARED=yes
+      ;;
     --preserve-build-output)
       PRESERVE_BUILD_OUTPUT=yes
       ;;
@@ -278,6 +338,21 @@ while [ -n "$1" ]; do
   shift
 done
 
+if [ "${ENABLE_SHARED}" = "yes" ]; then
+  CONFIGURE_ARGS="--enable-shared ${CONFIGURE_ARGS}"
+fi
+
+FULLVERSION=$("${SCRIPT_DIR}"/version.sh --bare "${LIBVPX_SOURCE_DIR}")
+VERSION=$(echo "${FULLVERSION}" | sed -E 's/^v([0-9]+\.[0-9]+\.[0-9]+).*$/\1/')
+
+if [ "$ENABLE_SHARED" = "yes" ]; then
+  IOS_VERSION_OPTIONS="--enable-shared"
+  IOS_VERSION_MIN="8.0"
+else
+  IOS_VERSION_OPTIONS=""
+  IOS_VERSION_MIN="6.0"
+fi
+
 if [ "${VERBOSE}" = "yes" ]; then
 cat << EOF
   BUILD_ROOT=${BUILD_ROOT}
@@ -285,6 +360,7 @@ cat << EOF
   CONFIGURE_ARGS=${CONFIGURE_ARGS}
   EXTRA_CONFIGURE_ARGS=${EXTRA_CONFIGURE_ARGS}
   FRAMEWORK_DIR=${FRAMEWORK_DIR}
+  FRAMEWORK_LIB=${FRAMEWORK_LIB}
   HEADER_DIR=${HEADER_DIR}
   LIBVPX_SOURCE_DIR=${LIBVPX_SOURCE_DIR}
   LIPO=${LIPO}
@@ -292,8 +368,13 @@ cat << EOF
   ORIG_PWD=${ORIG_PWD}
   PRESERVE_BUILD_OUTPUT=${PRESERVE_BUILD_OUTPUT}
   TARGETS="$(print_list "" ${TARGETS})"
+  ENABLE_SHARED=${ENABLE_SHARED}
   OSX_TARGETS="${OSX_TARGETS}"
   SIM_TARGETS="${SIM_TARGETS}"
+  SCRIPT_DIR="${SCRIPT_DIR}"
+  FULLVERSION="${FULLVERSION}"
+  VERSION="${VERSION}"
+  IOS_VERSION_MIN="${IOS_VERSION_MIN}"
 EOF
 fi
 

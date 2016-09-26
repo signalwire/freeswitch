@@ -21,10 +21,12 @@ struct VP9_COMP;
 
 // #define OUTPUT_YUV_SKINMAP
 
-int vp9_skin_pixel(const uint8_t y, const uint8_t cb, const uint8_t cr);
+int vp9_skin_pixel(const uint8_t y, const uint8_t cb, const uint8_t cr,
+                   int motion);
 
 int vp9_compute_skin_block(const uint8_t *y, const uint8_t *u, const uint8_t *v,
-                           int stride, int strideuv, int bsize);
+                           int stride, int strideuv, int bsize,
+                           int consec_zeromv, int curr_motion_magn);
 
 #ifdef OUTPUT_YUV_SKINMAP
 // For viewing skin map on input source.

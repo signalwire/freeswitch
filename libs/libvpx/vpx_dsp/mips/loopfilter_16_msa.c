@@ -11,8 +11,7 @@
 #include "vpx_ports/mem.h"
 #include "vpx_dsp/mips/loopfilter_msa.h"
 
-int32_t vpx_hz_lpf_t4_and_t8_16w(uint8_t *src, int32_t pitch,
-                                 uint8_t *filter48,
+int32_t vpx_hz_lpf_t4_and_t8_16w(uint8_t *src, int32_t pitch, uint8_t *filter48,
                                  const uint8_t *b_limit_ptr,
                                  const uint8_t *limit_ptr,
                                  const uint8_t *thresh_ptr) {
@@ -33,8 +32,8 @@ int32_t vpx_hz_lpf_t4_and_t8_16w(uint8_t *src, int32_t pitch,
   limit = (v16u8)__msa_fill_b(*limit_ptr);
 
   /* mask and hev */
-  LPF_MASK_HEV(p3, p2, p1, p0, q0, q1, q2, q3, limit, b_limit, thresh,
-               hev, mask, flat);
+  LPF_MASK_HEV(p3, p2, p1, p0, q0, q1, q2, q3, limit, b_limit, thresh, hev,
+               mask, flat);
   VP9_FLAT4(p3, p2, p0, q0, q2, q3, flat);
   VP9_LPF_FILTER4_4W(p1, p0, q0, q1, mask, hev, p1_out, p0_out, q0_out, q1_out);
 
@@ -43,9 +42,8 @@ int32_t vpx_hz_lpf_t4_and_t8_16w(uint8_t *src, int32_t pitch,
 
     return 1;
   } else {
-    ILVR_B8_UH(zero, p3, zero, p2, zero, p1, zero, p0, zero, q0, zero, q1,
-               zero, q2, zero, q3, p3_r, p2_r, p1_r, p0_r, q0_r, q1_r,
-               q2_r, q3_r);
+    ILVR_B8_UH(zero, p3, zero, p2, zero, p1, zero, p0, zero, q0, zero, q1, zero,
+               q2, zero, q3, p3_r, p2_r, p1_r, p0_r, q0_r, q1_r, q2_r, q3_r);
     VP9_FILTER8(p3_r, p2_r, p1_r, p0_r, q0_r, q1_r, q2_r, q3_r, p2_filt8_r,
                 p1_filt8_r, p0_filt8_r, q0_filt8_r, q1_filt8_r, q2_filt8_r);
 
@@ -107,8 +105,8 @@ void vpx_hz_lpf_t16_16w(uint8_t *src, int32_t pitch, uint8_t *filter48) {
   } else {
     src -= 7 * pitch;
 
-    ILVR_B8_UH(zero, p7, zero, p6, zero, p5, zero, p4, zero, p3, zero, p2,
-               zero, p1, zero, p0, p7_r_in, p6_r_in, p5_r_in, p4_r_in, p3_r_in,
+    ILVR_B8_UH(zero, p7, zero, p6, zero, p5, zero, p4, zero, p3, zero, p2, zero,
+               p1, zero, p0, p7_r_in, p6_r_in, p5_r_in, p4_r_in, p3_r_in,
                p2_r_in, p1_r_in, p0_r_in);
 
     q0_r_in = (v8u16)__msa_ilvr_b(zero, (v16i8)q0);
@@ -408,8 +406,7 @@ void vpx_hz_lpf_t16_16w(uint8_t *src, int32_t pitch, uint8_t *filter48) {
 void vpx_lpf_horizontal_16_dual_msa(uint8_t *src, int32_t pitch,
                                     const uint8_t *b_limit_ptr,
                                     const uint8_t *limit_ptr,
-                                    const uint8_t *thresh_ptr,
-                                    int32_t count) {
+                                    const uint8_t *thresh_ptr, int32_t count) {
   DECLARE_ALIGNED(32, uint8_t, filter48[16 * 8]);
   uint8_t early_exit = 0;
 
@@ -423,11 +420,10 @@ void vpx_lpf_horizontal_16_dual_msa(uint8_t *src, int32_t pitch,
   }
 }
 
-void vpx_lpf_horizontal_16_msa(uint8_t *src, int32_t pitch,
-                               const uint8_t *b_limit_ptr,
-                               const uint8_t *limit_ptr,
-                               const uint8_t *thresh_ptr,
-                               int32_t count) {
+static void mb_lpf_horizontal_edge(uint8_t *src, int32_t pitch,
+                                   const uint8_t *b_limit_ptr,
+                                   const uint8_t *limit_ptr,
+                                   const uint8_t *thresh_ptr, int32_t count) {
   if (1 == count) {
     uint64_t p2_d, p1_d, p0_d, q0_d, q1_d, q2_d;
     uint64_t dword0, dword1;
@@ -449,8 +445,8 @@ void vpx_lpf_horizontal_16_msa(uint8_t *src, int32_t pitch,
     b_limit = (v16u8)__msa_fill_b(*b_limit_ptr);
     limit = (v16u8)__msa_fill_b(*limit_ptr);
 
-    LPF_MASK_HEV(p3, p2, p1, p0, q0, q1, q2, q3, limit, b_limit, thresh,
-                 hev, mask, flat);
+    LPF_MASK_HEV(p3, p2, p1, p0, q0, q1, q2, q3, limit, b_limit, thresh, hev,
+                 mask, flat);
     VP9_FLAT4(p3, p2, p0, q0, q2, q3, flat);
     VP9_LPF_FILTER4_8W(p1, p0, q0, q1, mask, hev, p1_out, p0_out, q0_out,
                        q1_out);
@@ -472,9 +468,8 @@ void vpx_lpf_horizontal_16_msa(uint8_t *src, int32_t pitch,
                   p1_filter8, p0_filter8, q0_filter8, q1_filter8, q2_filter8);
 
       /* convert 16 bit output data into 8 bit */
-      PCKEV_B4_SH(zero, p2_filter8, zero, p1_filter8, zero, p0_filter8,
-                  zero, q0_filter8, p2_filter8, p1_filter8, p0_filter8,
-                  q0_filter8);
+      PCKEV_B4_SH(zero, p2_filter8, zero, p1_filter8, zero, p0_filter8, zero,
+                  q0_filter8, p2_filter8, p1_filter8, p0_filter8, q0_filter8);
       PCKEV_B2_SH(zero, q1_filter8, zero, q2_filter8, q1_filter8, q2_filter8);
 
       /* store pixel values */
@@ -648,14 +643,28 @@ void vpx_lpf_horizontal_16_msa(uint8_t *src, int32_t pitch,
   }
 }
 
+void vpx_lpf_horizontal_edge_8_msa(uint8_t *src, int32_t pitch,
+                                   const uint8_t *b_limit_ptr,
+                                   const uint8_t *limit_ptr,
+                                   const uint8_t *thresh_ptr) {
+  mb_lpf_horizontal_edge(src, pitch, b_limit_ptr, limit_ptr, thresh_ptr, 1);
+}
+
+void vpx_lpf_horizontal_edge_16_msa(uint8_t *src, int32_t pitch,
+                                    const uint8_t *b_limit_ptr,
+                                    const uint8_t *limit_ptr,
+                                    const uint8_t *thresh_ptr) {
+  mb_lpf_horizontal_edge(src, pitch, b_limit_ptr, limit_ptr, thresh_ptr, 2);
+}
+
 static void transpose_16x8_to_8x16(uint8_t *input, int32_t in_pitch,
                                    uint8_t *output, int32_t out_pitch) {
   v16u8 p7_org, p6_org, p5_org, p4_org, p3_org, p2_org, p1_org, p0_org;
   v16i8 tmp0, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7;
   v16u8 p7, p6, p5, p4, p3, p2, p1, p0, q0, q1, q2, q3, q4, q5, q6, q7;
 
-  LD_UB8(input, in_pitch,
-         p7_org, p6_org, p5_org, p4_org, p3_org, p2_org, p1_org, p0_org);
+  LD_UB8(input, in_pitch, p7_org, p6_org, p5_org, p4_org, p3_org, p2_org,
+         p1_org, p0_org);
   /* 8x8 transpose */
   TRANSPOSE8x8_UB_UB(p7_org, p6_org, p5_org, p4_org, p3_org, p2_org, p1_org,
                      p0_org, p7, p6, p5, p4, p3, p2, p1, p0);
@@ -685,8 +694,8 @@ static void transpose_8x16_to_16x8(uint8_t *input, int32_t in_pitch,
   ST_UB8(p7_o, p6_o, p5_o, p4_o, p3_o, p2_o, p1_o, p0_o, output, out_pitch);
 }
 
-static void transpose_16x16(uint8_t *input, int32_t in_pitch,
-                            uint8_t *output, int32_t out_pitch) {
+static void transpose_16x16(uint8_t *input, int32_t in_pitch, uint8_t *output,
+                            int32_t out_pitch) {
   v16u8 row0, row1, row2, row3, row4, row5, row6, row7;
   v16u8 row8, row9, row10, row11, row12, row13, row14, row15;
   v16u8 p7, p6, p5, p4, p3, p2, p1, p0, q0, q1, q2, q3, q4, q5, q6, q7;
@@ -695,12 +704,11 @@ static void transpose_16x16(uint8_t *input, int32_t in_pitch,
 
   LD_UB8(input, in_pitch, row0, row1, row2, row3, row4, row5, row6, row7);
   input += (8 * in_pitch);
-  LD_UB8(input, in_pitch,
-         row8, row9, row10, row11, row12, row13, row14, row15);
+  LD_UB8(input, in_pitch, row8, row9, row10, row11, row12, row13, row14, row15);
 
-  TRANSPOSE16x8_UB_UB(row0, row1, row2, row3, row4, row5, row6, row7,
-                      row8, row9, row10, row11, row12, row13, row14, row15,
-                      p7, p6, p5, p4, p3, p2, p1, p0);
+  TRANSPOSE16x8_UB_UB(row0, row1, row2, row3, row4, row5, row6, row7, row8,
+                      row9, row10, row11, row12, row13, row14, row15, p7, p6,
+                      p5, p4, p3, p2, p1, p0);
 
   /* transpose 16x8 matrix into 8x16 */
   /* total 8 intermediate register and 32 instructions */
@@ -765,8 +773,8 @@ int32_t vpx_vt_lpf_t4_and_t8_8w(uint8_t *src, uint8_t *filter48,
   limit = (v16u8)__msa_fill_b(*limit_ptr);
 
   /* mask and hev */
-  LPF_MASK_HEV(p3, p2, p1, p0, q0, q1, q2, q3, limit, b_limit, thresh,
-               hev, mask, flat);
+  LPF_MASK_HEV(p3, p2, p1, p0, q0, q1, q2, q3, limit, b_limit, thresh, hev,
+               mask, flat);
   /* flat4 */
   VP9_FLAT4(p3, p2, p0, q0, q2, q3, flat);
   /* filter4 */
@@ -780,9 +788,8 @@ int32_t vpx_vt_lpf_t4_and_t8_8w(uint8_t *src, uint8_t *filter48,
     ST4x8_UB(vec2, vec3, (src_org - 2), pitch_org);
     return 1;
   } else {
-    ILVR_B8_UH(zero, p3, zero, p2, zero, p1, zero, p0, zero, q0, zero, q1,
-               zero, q2, zero, q3, p3_r, p2_r, p1_r, p0_r, q0_r, q1_r, q2_r,
-               q3_r);
+    ILVR_B8_UH(zero, p3, zero, p2, zero, p1, zero, p0, zero, q0, zero, q1, zero,
+               q2, zero, q3, p3_r, p2_r, p1_r, p0_r, q0_r, q1_r, q2_r, q3_r);
     VP9_FILTER8(p3_r, p2_r, p1_r, p0_r, q0_r, q1_r, q2_r, q3_r, p2_filt8_r,
                 p1_filt8_r, p0_filt8_r, q0_filt8_r, q1_filt8_r, q2_filt8_r);
 
@@ -850,9 +857,9 @@ int32_t vpx_vt_lpf_t16_8w(uint8_t *src, uint8_t *src_org, int32_t pitch,
   } else {
     src -= 7 * 16;
 
-    ILVR_B8_UH(zero, p7, zero, p6, zero, p5, zero, p4, zero, p3, zero, p2,
-               zero, p1, zero, p0, p7_r_in, p6_r_in, p5_r_in, p4_r_in,
-               p3_r_in, p2_r_in, p1_r_in, p0_r_in);
+    ILVR_B8_UH(zero, p7, zero, p6, zero, p5, zero, p4, zero, p3, zero, p2, zero,
+               p1, zero, p0, p7_r_in, p6_r_in, p5_r_in, p4_r_in, p3_r_in,
+               p2_r_in, p1_r_in, p0_r_in);
     q0_r_in = (v8u16)__msa_ilvr_b(zero, (v16i8)q0);
 
     tmp0_r = p7_r_in << 3;
@@ -1042,9 +1049,9 @@ void vpx_lpf_vertical_16_msa(uint8_t *src, int32_t pitch,
 
   transpose_16x8_to_8x16(src - 8, pitch, transposed_input, 16);
 
-  early_exit = vpx_vt_lpf_t4_and_t8_8w((transposed_input + 16 * 8),
-                                       &filter48[0], src, pitch, b_limit_ptr,
-                                       limit_ptr, thresh_ptr);
+  early_exit =
+      vpx_vt_lpf_t4_and_t8_8w((transposed_input + 16 * 8), &filter48[0], src,
+                              pitch, b_limit_ptr, limit_ptr, thresh_ptr);
 
   if (0 == early_exit) {
     early_exit = vpx_vt_lpf_t16_8w((transposed_input + 16 * 8), src, pitch,
@@ -1079,8 +1086,8 @@ int32_t vpx_vt_lpf_t4_and_t8_16w(uint8_t *src, uint8_t *filter48,
   limit = (v16u8)__msa_fill_b(*limit_ptr);
 
   /* mask and hev */
-  LPF_MASK_HEV(p3, p2, p1, p0, q0, q1, q2, q3, limit, b_limit, thresh,
-               hev, mask, flat);
+  LPF_MASK_HEV(p3, p2, p1, p0, q0, q1, q2, q3, limit, b_limit, thresh, hev,
+               mask, flat);
   /* flat4 */
   VP9_FLAT4(p3, p2, p0, q0, q2, q3, flat);
   /* filter4 */
@@ -1099,9 +1106,8 @@ int32_t vpx_vt_lpf_t4_and_t8_16w(uint8_t *src, uint8_t *filter48,
 
     return 1;
   } else {
-    ILVR_B8_UH(zero, p3, zero, p2, zero, p1, zero, p0, zero, q0, zero, q1,
-               zero, q2, zero, q3, p3_r, p2_r, p1_r, p0_r, q0_r, q1_r, q2_r,
-               q3_r);
+    ILVR_B8_UH(zero, p3, zero, p2, zero, p1, zero, p0, zero, q0, zero, q1, zero,
+               q2, zero, q3, p3_r, p2_r, p1_r, p0_r, q0_r, q1_r, q2_r, q3_r);
     VP9_FILTER8(p3_r, p2_r, p1_r, p0_r, q0_r, q1_r, q2_r, q3_r, p2_filt8_r,
                 p1_filt8_r, p0_filt8_r, q0_filt8_r, q1_filt8_r, q2_filt8_r);
     ILVL_B4_UH(zero, p3, zero, p2, zero, p1, zero, p0, p3_l, p2_l, p1_l, p0_l);
@@ -1182,9 +1188,9 @@ int32_t vpx_vt_lpf_t16_16w(uint8_t *src, uint8_t *src_org, int32_t pitch,
   } else {
     src -= 7 * 16;
 
-    ILVR_B8_UH(zero, p7, zero, p6, zero, p5, zero, p4, zero, p3, zero, p2,
-               zero, p1, zero, p0, p7_r_in, p6_r_in, p5_r_in, p4_r_in,
-               p3_r_in, p2_r_in, p1_r_in, p0_r_in);
+    ILVR_B8_UH(zero, p7, zero, p6, zero, p5, zero, p4, zero, p3, zero, p2, zero,
+               p1, zero, p0, p7_r_in, p6_r_in, p5_r_in, p4_r_in, p3_r_in,
+               p2_r_in, p1_r_in, p0_r_in);
     q0_r_in = (v8u16)__msa_ilvr_b(zero, (v16i8)q0);
 
     tmp0_r = p7_r_in << 3;
@@ -1465,9 +1471,9 @@ void vpx_lpf_vertical_16_dual_msa(uint8_t *src, int32_t pitch,
 
   transpose_16x16((src - 8), pitch, &transposed_input[0], 16);
 
-  early_exit = vpx_vt_lpf_t4_and_t8_16w((transposed_input + 16 * 8),
-                                        &filter48[0], src, pitch, b_limit_ptr,
-                                        limit_ptr, thresh_ptr);
+  early_exit =
+      vpx_vt_lpf_t4_and_t8_16w((transposed_input + 16 * 8), &filter48[0], src,
+                               pitch, b_limit_ptr, limit_ptr, thresh_ptr);
 
   if (0 == early_exit) {
     early_exit = vpx_vt_lpf_t16_16w((transposed_input + 16 * 8), src, pitch,

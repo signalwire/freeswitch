@@ -8,12 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef VPX_DSP_COMMON_H_
-#define VPX_DSP_COMMON_H_
+#ifndef VPX_DSP_VPX_DSP_COMMON_H_
+#define VPX_DSP_VPX_DSP_COMMON_H_
 
 #include "./vpx_config.h"
 #include "vpx/vpx_integer.h"
-#include "vpx_dsp/vpx_dsp_common.h"
 #include "vpx_ports/mem.h"
 
 #ifdef __cplusplus
@@ -22,6 +21,13 @@ extern "C" {
 
 #define VPXMIN(x, y) (((x) < (y)) ? (x) : (y))
 #define VPXMAX(x, y) (((x) > (y)) ? (x) : (y))
+
+#define VPX_SWAP(type, a, b) \
+  do {                       \
+    type c = (b);            \
+    b = a;                   \
+    a = c;                   \
+  } while (0)
 
 #if CONFIG_VP9_HIGHBITDEPTH
 // Note:
@@ -53,12 +59,9 @@ static INLINE double fclamp(double value, double low, double high) {
 static INLINE uint16_t clip_pixel_highbd(int val, int bd) {
   switch (bd) {
     case 8:
-    default:
-      return (uint16_t)clamp(val, 0, 255);
-    case 10:
-      return (uint16_t)clamp(val, 0, 1023);
-    case 12:
-      return (uint16_t)clamp(val, 0, 4095);
+    default: return (uint16_t)clamp(val, 0, 255);
+    case 10: return (uint16_t)clamp(val, 0, 1023);
+    case 12: return (uint16_t)clamp(val, 0, 4095);
   }
 }
 #endif  // CONFIG_VP9_HIGHBITDEPTH
@@ -67,4 +70,4 @@ static INLINE uint16_t clip_pixel_highbd(int val, int bd) {
 }  // extern "C"
 #endif
 
-#endif  // VPX_DSP_COMMON_H_
+#endif  // VPX_DSP_VPX_DSP_COMMON_H_

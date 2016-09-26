@@ -8,7 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-
 /*!\defgroup vp8_decoder WebM VP8/VP9 Decoder
  * \ingroup vp8
  *
@@ -33,7 +32,7 @@ extern "C" {
  * This interface provides the capability to decode VP8 streams.
  * @{
  */
-extern vpx_codec_iface_t  vpx_codec_vp8_dx_algo;
+extern vpx_codec_iface_t vpx_codec_vp8_dx_algo;
 extern vpx_codec_iface_t *vpx_codec_vp8_dx(void);
 /*!@} - end algorithm interface member group*/
 
@@ -42,17 +41,8 @@ extern vpx_codec_iface_t *vpx_codec_vp8_dx(void);
  * This interface provides the capability to decode VP9 streams.
  * @{
  */
-extern vpx_codec_iface_t  vpx_codec_vp9_dx_algo;
+extern vpx_codec_iface_t vpx_codec_vp9_dx_algo;
 extern vpx_codec_iface_t *vpx_codec_vp9_dx(void);
-/*!@} - end algorithm interface member group*/
-
-/*!\name Algorithm interface for VP10
- *
- * This interface provides the capability to decode VP10 streams.
- * @{
- */
-extern vpx_codec_iface_t  vpx_codec_vp10_dx_algo;
-extern vpx_codec_iface_t *vpx_codec_vp10_dx(void);
 /*!@} - end algorithm interface member group*/
 
 /*!\enum vp8_dec_control_id
@@ -135,17 +125,16 @@ typedef void (*vpx_decrypt_cb)(void *decrypt_state, const unsigned char *input,
  * Defines a structure to hold the decryption state and access function.
  */
 typedef struct vpx_decrypt_init {
-    /*! Decrypt callback. */
-    vpx_decrypt_cb decrypt_cb;
+  /*! Decrypt callback. */
+  vpx_decrypt_cb decrypt_cb;
 
-    /*! Decryption state. */
-    void *decrypt_state;
+  /*! Decryption state. */
+  void *decrypt_state;
 } vpx_decrypt_init;
 
 /*!\brief A deprecated alias for vpx_decrypt_init.
  */
 typedef vpx_decrypt_init vp8_decrypt_init;
-
 
 /*!\cond */
 /*!\brief VP8 decoder control function parameter type
@@ -155,22 +144,21 @@ typedef vpx_decrypt_init vp8_decrypt_init;
  *
  */
 
-
-VPX_CTRL_USE_TYPE(VP8D_GET_LAST_REF_UPDATES,    int *)
+VPX_CTRL_USE_TYPE(VP8D_GET_LAST_REF_UPDATES, int *)
 #define VPX_CTRL_VP8D_GET_LAST_REF_UPDATES
-VPX_CTRL_USE_TYPE(VP8D_GET_FRAME_CORRUPTED,     int *)
+VPX_CTRL_USE_TYPE(VP8D_GET_FRAME_CORRUPTED, int *)
 #define VPX_CTRL_VP8D_GET_FRAME_CORRUPTED
-VPX_CTRL_USE_TYPE(VP8D_GET_LAST_REF_USED,       int *)
+VPX_CTRL_USE_TYPE(VP8D_GET_LAST_REF_USED, int *)
 #define VPX_CTRL_VP8D_GET_LAST_REF_USED
-VPX_CTRL_USE_TYPE(VPXD_SET_DECRYPTOR,           vpx_decrypt_init *)
+VPX_CTRL_USE_TYPE(VPXD_SET_DECRYPTOR, vpx_decrypt_init *)
 #define VPX_CTRL_VPXD_SET_DECRYPTOR
-VPX_CTRL_USE_TYPE(VP8D_SET_DECRYPTOR,           vpx_decrypt_init *)
+VPX_CTRL_USE_TYPE(VP8D_SET_DECRYPTOR, vpx_decrypt_init *)
 #define VPX_CTRL_VP8D_SET_DECRYPTOR
-VPX_CTRL_USE_TYPE(VP9D_GET_DISPLAY_SIZE,        int *)
+VPX_CTRL_USE_TYPE(VP9D_GET_DISPLAY_SIZE, int *)
 #define VPX_CTRL_VP9D_GET_DISPLAY_SIZE
-VPX_CTRL_USE_TYPE(VP9D_GET_BIT_DEPTH,           unsigned int *)
+VPX_CTRL_USE_TYPE(VP9D_GET_BIT_DEPTH, unsigned int *)
 #define VPX_CTRL_VP9D_GET_BIT_DEPTH
-VPX_CTRL_USE_TYPE(VP9D_GET_FRAME_SIZE,          int *)
+VPX_CTRL_USE_TYPE(VP9D_GET_FRAME_SIZE, int *)
 #define VPX_CTRL_VP9D_GET_FRAME_SIZE
 VPX_CTRL_USE_TYPE(VP9_INVERT_TILE_DECODE_ORDER, int)
 #define VPX_CTRL_VP9_INVERT_TILE_DECODE_ORDER

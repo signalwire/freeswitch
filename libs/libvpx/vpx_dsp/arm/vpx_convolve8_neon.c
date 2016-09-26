@@ -16,16 +16,11 @@
 #include "vpx/vpx_integer.h"
 #include "vpx_ports/mem.h"
 
-static INLINE int32x4_t MULTIPLY_BY_Q0(
-    int16x4_t dsrc0,
-    int16x4_t dsrc1,
-    int16x4_t dsrc2,
-    int16x4_t dsrc3,
-    int16x4_t dsrc4,
-    int16x4_t dsrc5,
-    int16x4_t dsrc6,
-    int16x4_t dsrc7,
-    int16x8_t q0s16) {
+static INLINE int32x4_t MULTIPLY_BY_Q0(int16x4_t dsrc0, int16x4_t dsrc1,
+                                       int16x4_t dsrc2, int16x4_t dsrc3,
+                                       int16x4_t dsrc4, int16x4_t dsrc5,
+                                       int16x4_t dsrc6, int16x4_t dsrc7,
+                                       int16x8_t q0s16) {
   int32x4_t qdst;
   int16x4_t d0s16, d1s16;
 
@@ -43,17 +38,12 @@ static INLINE int32x4_t MULTIPLY_BY_Q0(
   return qdst;
 }
 
-void vpx_convolve8_horiz_neon(
-    const uint8_t *src,
-    ptrdiff_t src_stride,
-    uint8_t *dst,
-    ptrdiff_t dst_stride,
-    const int16_t *filter_x,
-    int x_step_q4,
-    const int16_t *filter_y,  // unused
-    int y_step_q4,            // unused
-    int w,
-    int h) {
+void vpx_convolve8_horiz_neon(const uint8_t *src, ptrdiff_t src_stride,
+                              uint8_t *dst, ptrdiff_t dst_stride,
+                              const int16_t *filter_x, int x_step_q4,
+                              const int16_t *filter_y,  // unused
+                              int y_step_q4,            // unused
+                              int w, int h) {
   int width;
   const uint8_t *s, *psrc;
   uint8_t *d, *pdst;
@@ -77,9 +67,8 @@ void vpx_convolve8_horiz_neon(
   q0s16 = vld1q_s16(filter_x);
 
   src -= 3;  // adjust for taps
-  for (; h > 0; h -= 4,
-    src += src_stride * 4,
-    dst += dst_stride * 4) {  // loop_horiz_v
+  for (; h > 0; h -= 4, src += src_stride * 4,
+                dst += dst_stride * 4) {  // loop_horiz_v
     s = src;
     d24u8 = vld1_u8(s);
     s += src_stride;
@@ -92,8 +81,8 @@ void vpx_convolve8_horiz_neon(
     q12u8 = vcombine_u8(d24u8, d25u8);
     q13u8 = vcombine_u8(d26u8, d27u8);
 
-    q0x2u16 = vtrnq_u16(vreinterpretq_u16_u8(q12u8),
-                        vreinterpretq_u16_u8(q13u8));
+    q0x2u16 =
+        vtrnq_u16(vreinterpretq_u16_u8(q12u8), vreinterpretq_u16_u8(q13u8));
     d24u8 = vreinterpret_u8_u16(vget_low_u16(q0x2u16.val[0]));
     d25u8 = vreinterpret_u8_u16(vget_high_u16(q0x2u16.val[0]));
     d26u8 = vreinterpret_u8_u16(vget_low_u16(q0x2u16.val[1]));
@@ -105,8 +94,8 @@ void vpx_convolve8_horiz_neon(
     __builtin_prefetch(src + src_stride * 5);
     __builtin_prefetch(src + src_stride * 6);
 
-    q8u16  = vmovl_u8(d0x2u8.val[0]);
-    q9u16  = vmovl_u8(d0x2u8.val[1]);
+    q8u16 = vmovl_u8(d0x2u8.val[0]);
+    q9u16 = vmovl_u8(d0x2u8.val[1]);
     q10u16 = vmovl_u8(d1x2u8.val[0]);
     q11u16 = vmovl_u8(d1x2u8.val[1]);
 
@@ -119,8 +108,7 @@ void vpx_convolve8_horiz_neon(
 
     d20s16 = vreinterpret_s16_u16(vget_low_u16(q10u16));
     d23s16 = vreinterpret_s16_u16(vget_high_u16(q10u16));  // vmov 23 21
-    for (width = w, psrc = src + 7, pdst = dst;
-         width > 0;
+    for (width = w, psrc = src + 7, pdst = dst; width > 0;
          width -= 4, psrc += 4, pdst += 4) {  // loop_horiz
       s = psrc;
       d28u32 = vld1_dup_u32((const uint32_t *)s);
@@ -133,10 +121,10 @@ void vpx_convolve8_horiz_neon(
 
       __builtin_prefetch(psrc + 64);
 
-      d0x2u16 = vtrn_u16(vreinterpret_u16_u32(d28u32),
-                         vreinterpret_u16_u32(d31u32));
-      d1x2u16 = vtrn_u16(vreinterpret_u16_u32(d29u32),
-                         vreinterpret_u16_u32(d30u32));
+      d0x2u16 =
+          vtrn_u16(vreinterpret_u16_u32(d28u32), vreinterpret_u16_u32(d31u32));
+      d1x2u16 =
+          vtrn_u16(vreinterpret_u16_u32(d29u32), vreinterpret_u16_u32(d30u32));
       d0x2u8 = vtrn_u8(vreinterpret_u8_u16(d0x2u16.val[0]),   // d28
                        vreinterpret_u8_u16(d1x2u16.val[0]));  // d29
       d1x2u8 = vtrn_u8(vreinterpret_u8_u16(d0x2u16.val[1]),   // d31
@@ -146,8 +134,8 @@ void vpx_convolve8_horiz_neon(
 
       q14u8 = vcombine_u8(d0x2u8.val[0], d0x2u8.val[1]);
       q15u8 = vcombine_u8(d1x2u8.val[1], d1x2u8.val[0]);
-      q0x2u32 = vtrnq_u32(vreinterpretq_u32_u8(q14u8),
-                          vreinterpretq_u32_u8(q15u8));
+      q0x2u32 =
+          vtrnq_u32(vreinterpretq_u32_u8(q14u8), vreinterpretq_u32_u8(q15u8));
 
       d28u8 = vreinterpret_u8_u32(vget_low_u32(q0x2u32.val[0]));
       d29u8 = vreinterpret_u8_u32(vget_high_u32(q0x2u32.val[0]));
@@ -166,14 +154,14 @@ void vpx_convolve8_horiz_neon(
       d26s16 = vreinterpret_s16_u16(vget_low_u16(q13u16));
       d27s16 = vreinterpret_s16_u16(vget_high_u16(q13u16));
 
-      q1s32  = MULTIPLY_BY_Q0(d16s16, d17s16, d20s16, d22s16,
-                              d18s16, d19s16, d23s16, d24s16, q0s16);
-      q2s32  = MULTIPLY_BY_Q0(d17s16, d20s16, d22s16, d18s16,
-                              d19s16, d23s16, d24s16, d26s16, q0s16);
-      q14s32 = MULTIPLY_BY_Q0(d20s16, d22s16, d18s16, d19s16,
-                              d23s16, d24s16, d26s16, d27s16, q0s16);
-      q15s32 = MULTIPLY_BY_Q0(d22s16, d18s16, d19s16, d23s16,
-                              d24s16, d26s16, d27s16, d25s16, q0s16);
+      q1s32 = MULTIPLY_BY_Q0(d16s16, d17s16, d20s16, d22s16, d18s16, d19s16,
+                             d23s16, d24s16, q0s16);
+      q2s32 = MULTIPLY_BY_Q0(d17s16, d20s16, d22s16, d18s16, d19s16, d23s16,
+                             d24s16, d26s16, q0s16);
+      q14s32 = MULTIPLY_BY_Q0(d20s16, d22s16, d18s16, d19s16, d23s16, d24s16,
+                              d26s16, d27s16, q0s16);
+      q15s32 = MULTIPLY_BY_Q0(d22s16, d18s16, d19s16, d23s16, d24s16, d26s16,
+                              d27s16, d25s16, q0s16);
 
       __builtin_prefetch(psrc + 60 + src_stride * 3);
 
@@ -188,8 +176,7 @@ void vpx_convolve8_horiz_neon(
       d2u8 = vqmovn_u16(q1u16);
       d3u8 = vqmovn_u16(q2u16);
 
-      d0x2u16 = vtrn_u16(vreinterpret_u16_u8(d2u8),
-                         vreinterpret_u16_u8(d3u8));
+      d0x2u16 = vtrn_u16(vreinterpret_u16_u8(d2u8), vreinterpret_u16_u8(d3u8));
       d0x2u32 = vtrn_u32(vreinterpret_u32_u16(d0x2u16.val[0]),
                          vreinterpret_u32_u16(d0x2u16.val[1]));
       d0x2u8 = vtrn_u8(vreinterpret_u8_u32(d0x2u32.val[0]),
@@ -217,17 +204,12 @@ void vpx_convolve8_horiz_neon(
   return;
 }
 
-void vpx_convolve8_vert_neon(
-    const uint8_t *src,
-    ptrdiff_t src_stride,
-    uint8_t *dst,
-    ptrdiff_t dst_stride,
-    const int16_t *filter_x,  // unused
-    int x_step_q4,            // unused
-    const int16_t *filter_y,
-    int y_step_q4,
-    int w,
-    int h) {
+void vpx_convolve8_vert_neon(const uint8_t *src, ptrdiff_t src_stride,
+                             uint8_t *dst, ptrdiff_t dst_stride,
+                             const int16_t *filter_x,  // unused
+                             int x_step_q4,            // unused
+                             const int16_t *filter_y, int y_step_q4, int w,
+                             int h) {
   int height;
   const uint8_t *s;
   uint8_t *d;
@@ -261,8 +243,8 @@ void vpx_convolve8_vert_neon(
     d22u32 = vld1_lane_u32((const uint32_t *)s, d22u32, 0);
     s += src_stride;
 
-    q8u16  = vmovl_u8(vreinterpret_u8_u32(d16u32));
-    q9u16  = vmovl_u8(vreinterpret_u8_u32(d18u32));
+    q8u16 = vmovl_u8(vreinterpret_u8_u32(d16u32));
+    q9u16 = vmovl_u8(vreinterpret_u8_u32(d18u32));
     q10u16 = vmovl_u8(vreinterpret_u8_u32(d20u32));
     q11u16 = vmovl_u8(vreinterpret_u8_u32(d22u32));
 
@@ -294,20 +276,20 @@ void vpx_convolve8_vert_neon(
 
       __builtin_prefetch(d);
       __builtin_prefetch(d + dst_stride);
-      q1s32  = MULTIPLY_BY_Q0(d16s16, d17s16, d18s16, d19s16,
-                              d20s16, d21s16, d22s16, d24s16, q0s16);
+      q1s32 = MULTIPLY_BY_Q0(d16s16, d17s16, d18s16, d19s16, d20s16, d21s16,
+                             d22s16, d24s16, q0s16);
       __builtin_prefetch(d + dst_stride * 2);
       __builtin_prefetch(d + dst_stride * 3);
-      q2s32  = MULTIPLY_BY_Q0(d17s16, d18s16, d19s16, d20s16,
-                              d21s16, d22s16, d24s16, d26s16, q0s16);
+      q2s32 = MULTIPLY_BY_Q0(d17s16, d18s16, d19s16, d20s16, d21s16, d22s16,
+                             d24s16, d26s16, q0s16);
       __builtin_prefetch(s);
       __builtin_prefetch(s + src_stride);
-      q14s32 = MULTIPLY_BY_Q0(d18s16, d19s16, d20s16, d21s16,
-                              d22s16, d24s16, d26s16, d27s16, q0s16);
+      q14s32 = MULTIPLY_BY_Q0(d18s16, d19s16, d20s16, d21s16, d22s16, d24s16,
+                              d26s16, d27s16, q0s16);
       __builtin_prefetch(s + src_stride * 2);
       __builtin_prefetch(s + src_stride * 3);
-      q15s32 = MULTIPLY_BY_Q0(d19s16, d20s16, d21s16, d22s16,
-                              d24s16, d26s16, d27s16, d25s16, q0s16);
+      q15s32 = MULTIPLY_BY_Q0(d19s16, d20s16, d21s16, d22s16, d24s16, d26s16,
+                              d27s16, d25s16, q0s16);
 
       d2u16 = vqrshrun_n_s32(q1s32, 7);
       d3u16 = vqrshrun_n_s32(q2s32, 7);

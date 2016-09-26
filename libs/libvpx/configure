@@ -40,7 +40,6 @@ Advanced options:
                                   hardware decoder compatibility
   ${toggle_vp8}                   VP8 codec support
   ${toggle_vp9}                   VP9 codec support
-  ${toggle_vp10}                  VP10 codec support
   ${toggle_internal_stats}        output of encoder internal stats for debug, if supported (encoders)
   ${toggle_postproc}              postprocessing
   ${toggle_vp9_postproc}          vp9 specific postprocessing
@@ -98,11 +97,9 @@ EOF
 
 # all_platforms is a list of all supported target platforms. Maintain
 # alphabetically by architecture, generic-gnu last.
-all_platforms="${all_platforms} armv6-darwin-gcc"
-all_platforms="${all_platforms} armv6-linux-rvct"
-all_platforms="${all_platforms} armv6-linux-gcc"
-all_platforms="${all_platforms} armv6-none-rvct"
+all_platforms="${all_platforms} arm64-android-gcc"
 all_platforms="${all_platforms} arm64-darwin-gcc"
+all_platforms="${all_platforms} arm64-linux-gcc"
 all_platforms="${all_platforms} armv7-android-gcc"   #neon Cortex-A8
 all_platforms="${all_platforms} armv7-darwin-gcc"    #neon Cortex-A8
 all_platforms="${all_platforms} armv7-linux-rvct"    #neon Cortex-A8
@@ -112,6 +109,7 @@ all_platforms="${all_platforms} armv7-win32-vs11"
 all_platforms="${all_platforms} armv7-win32-vs12"
 all_platforms="${all_platforms} armv7-win32-vs14"
 all_platforms="${all_platforms} armv7s-darwin-gcc"
+all_platforms="${all_platforms} armv8-linux-gcc"
 all_platforms="${all_platforms} mips32-linux-gcc"
 all_platforms="${all_platforms} mips64-linux-gcc"
 all_platforms="${all_platforms} sparc-solaris-gcc"
@@ -132,9 +130,6 @@ all_platforms="${all_platforms} x86-linux-icc"
 all_platforms="${all_platforms} x86-os2-gcc"
 all_platforms="${all_platforms} x86-solaris-gcc"
 all_platforms="${all_platforms} x86-win32-gcc"
-all_platforms="${all_platforms} x86-win32-vs7"
-all_platforms="${all_platforms} x86-win32-vs8"
-all_platforms="${all_platforms} x86-win32-vs9"
 all_platforms="${all_platforms} x86-win32-vs10"
 all_platforms="${all_platforms} x86-win32-vs11"
 all_platforms="${all_platforms} x86-win32-vs12"
@@ -152,8 +147,6 @@ all_platforms="${all_platforms} x86_64-linux-gcc"
 all_platforms="${all_platforms} x86_64-linux-icc"
 all_platforms="${all_platforms} x86_64-solaris-gcc"
 all_platforms="${all_platforms} x86_64-win64-gcc"
-all_platforms="${all_platforms} x86_64-win64-vs8"
-all_platforms="${all_platforms} x86_64-win64-vs9"
 all_platforms="${all_platforms} x86_64-win64-vs10"
 all_platforms="${all_platforms} x86_64-win64-vs11"
 all_platforms="${all_platforms} x86_64-win64-vs12"
@@ -195,12 +188,8 @@ if [ ${doxy_major:-0} -ge 1 ]; then
 fi
 
 # disable codecs when their source directory does not exist
-[ -d "${source_path}/vp8" ] || disable_feature vp8
-[ -d "${source_path}/vp9" ] || disable_feature vp9
-[ -d "${source_path}/vp10" ] || disable_feature vp10
-
-# disable vp10 codec by default
-disable_feature vp10
+[ -d "${source_path}/vp8" ] || disable_codec vp8
+[ -d "${source_path}/vp9" ] || disable_codec vp9
 
 # install everything except the sources, by default. sources will have
 # to be enabled when doing dist builds, since that's no longer a common
@@ -222,13 +211,10 @@ CODECS="
     vp8_decoder
     vp9_encoder
     vp9_decoder
-    vp10_encoder
-    vp10_decoder
 "
 CODEC_FAMILIES="
     vp8
     vp9
-    vp10
 "
 
 ARCH_LIST="
@@ -248,8 +234,6 @@ ARCH_EXT_LIST_X86="
     avx2
 "
 ARCH_EXT_LIST="
-    edsp
-    media
     neon
     neon_asm
 
@@ -279,7 +263,6 @@ CONFIG_LIST="
     install_bins
     install_libs
     install_srcs
-    use_x86inc
     debug
     gprof
     gcov
@@ -341,7 +324,6 @@ CMDLINE_SELECT="
     gprof
     gcov
     pic
-    use_x86inc
     optimizations
     ccache
     runtime_cpu_detect
@@ -391,15 +373,19 @@ process_cmdline() {
     for opt do
         optval="${opt#*=}"
         case "$opt" in
-        --disable-codecs) for c in ${CODECS}; do disable_feature $c; done ;;
+        --disable-codecs)
+          for c in ${CODEC_FAMILIES}; do disable_codec $c; done
+          ;;
         --enable-?*|--disable-?*)
         eval `echo "$opt" | sed 's/--/action=/;s/-/ option=/;s/-/_/g'`
-        if echo "${EXPERIMENT_LIST}" | grep "^ *$option\$" >/dev/null; then
+        if is_in ${option} ${EXPERIMENT_LIST}; then
             if enabled experimental; then
                 ${action}_feature $option
             else
                 log_echo "Ignoring $opt -- not in experimental mode."
             fi
+        elif is_in ${option} "${CODECS} ${CODEC_FAMILIES}"; then
+            ${action}_codec ${option}
         else
             process_common_cmdline $opt
         fi
@@ -412,14 +398,6 @@ process_cmdline() {
 
 post_process_cmdline() {
     c=""
-
-    # If the codec family is disabled, disable all components of that family.
-    # If the codec family is enabled, enable all components of that family.
-    log_echo "Configuring selected codecs"
-    for c in ${CODECS}; do
-        disabled ${c%%_*} && disable_feature ${c}
-        enabled ${c%%_*} && enable_feature ${c}
-    done
 
     # Enable all detected codecs, if they haven't been disabled
     for c in ${CODECS}; do soft_enable $c; done
@@ -515,13 +493,18 @@ process_detect() {
         # Can only build shared libs on a subset of platforms. Doing this check
         # here rather than at option parse time because the target auto-detect
         # magic happens after the command line has been parsed.
-        if ! enabled linux && ! enabled os2; then
+        case "${tgt_os}" in
+        linux|os2|darwin*|iphonesimulator*)
+            # Supported platforms
+            ;;
+        *)
             if enabled gnu; then
                 echo "--enable-shared is only supported on ELF; assuming this is OK"
             else
-                die "--enable-shared only supported on ELF and OS/2 for now"
+                die "--enable-shared only supported on ELF, OS/2, and Darwin for now"
             fi
-        fi
+            ;;
+        esac
     fi
     if [ -z "$CC" ] || enabled external_build; then
         echo "Bypassing toolchain for environment detection."
@@ -584,26 +567,19 @@ process_toolchain() {
         check_add_cflags -Wall
         check_add_cflags -Wdeclaration-after-statement
         check_add_cflags -Wdisabled-optimization
+        check_add_cflags -Wfloat-conversion
         check_add_cflags -Wpointer-arith
         check_add_cflags -Wtype-limits
         check_add_cflags -Wcast-qual
         check_add_cflags -Wvla
         check_add_cflags -Wimplicit-function-declaration
         check_add_cflags -Wuninitialized
-        check_add_cflags -Wunused-variable
-        case ${CC} in
-          *clang*)
-              # libvpx and/or clang have issues with aliasing:
-              # https://code.google.com/p/webm/issues/detail?id=603
-              # work around them until they are fixed
-              check_add_cflags -fno-strict-aliasing
-          ;;
-          *) check_add_cflags -Wunused-but-set-variable ;;
-        esac
+        check_add_cflags -Wunused
+        # check_add_cflags also adds to cxxflags. gtest does not do well with
+        # -Wundef so add it explicitly to CFLAGS only.
+        check_cflags -Wundef && add_cflags_only -Wundef
         if enabled mips || [ -z "${INLINE}" ]; then
           enabled extra_warnings || check_add_cflags -Wno-unused-function
-        else
-          check_add_cflags -Wunused-function
         fi
     fi
 
@@ -652,17 +628,9 @@ process_toolchain() {
         vs*) enable_feature msvs
              enable_feature solution
              vs_version=${tgt_cc##vs}
-             case $vs_version in
-             [789])
-                 VCPROJ_SFX=vcproj
-                 gen_vcproj_cmd=${source_path}/build/make/gen_msvs_proj.sh
-                 ;;
-             10|11|12|14)
-                 VCPROJ_SFX=vcxproj
-                 gen_vcproj_cmd=${source_path}/build/make/gen_msvs_vcxproj.sh
-                 enabled werror && gen_vcproj_cmd="${gen_vcproj_cmd} --enable-werror"
-                 ;;
-             esac
+             VCPROJ_SFX=vcxproj
+             gen_vcproj_cmd=${source_path}/build/make/gen_msvs_vcxproj.sh
+             enabled werror && gen_vcproj_cmd="${gen_vcproj_cmd} --enable-werror"
              all_targets="${all_targets} solution"
              INLINE="__forceinline"
         ;;

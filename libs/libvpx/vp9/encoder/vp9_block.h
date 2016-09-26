@@ -52,6 +52,13 @@ typedef struct {
   uint8_t mode_context[MAX_REF_FRAMES];
 } MB_MODE_INFO_EXT;
 
+typedef struct {
+  int col_min;
+  int col_max;
+  int row_min;
+  int row_max;
+} MvLimits;
+
 typedef struct macroblock MACROBLOCK;
 struct macroblock {
   struct macroblock_plane plane[MAX_MB_PLANE];
@@ -64,6 +71,8 @@ struct macroblock {
   int skip_recode;
   int skip_optimize;
   int q_index;
+  int block_qcoeff_opt;
+  int block_tx_domain;
 
   // The equivalent error at the current rdmult of one whole bit (not one
   // bitcost unit).
@@ -77,8 +86,8 @@ struct macroblock {
   int rddiv;
   int rdmult;
   int mb_energy;
-  int * m_search_count_ptr;
-  int * ex_search_count_ptr;
+  int *m_search_count_ptr;
+  int *ex_search_count_ptr;
 
   // These are set to their default values at the beginning, and then adjusted
   // further in the encoding process.
@@ -103,10 +112,7 @@ struct macroblock {
 
   // These define limits to motion vector components to prevent them
   // from extending outside the UMV borders
-  int mv_col_min;
-  int mv_col_max;
-  int mv_row_min;
-  int mv_row_max;
+  MvLimits mv_limits;
 
   // Notes transform blocks where no coefficents are coded.
   // Set during mode selection. Read during block encoding.
@@ -130,9 +136,9 @@ struct macroblock {
 
   // skip forward transform and quantization
   uint8_t skip_txfm[MAX_MB_PLANE << 2];
-  #define SKIP_TXFM_NONE 0
-  #define SKIP_TXFM_AC_DC 1
-  #define SKIP_TXFM_AC_ONLY 2
+#define SKIP_TXFM_NONE 0
+#define SKIP_TXFM_AC_DC 1
+#define SKIP_TXFM_AC_ONLY 2
 
   int64_t bsse[MAX_MB_PLANE << 2];
 
@@ -144,6 +150,11 @@ struct macroblock {
   uint8_t color_sensitivity[2];
 
   uint8_t sb_is_skin;
+
+  // Used to save the status of whether a block has a low variance in
+  // choose_partitioning. 0 for 64x64, 1~2 for 64x32, 3~4 for 32x64, 5~8 for
+  // 32x32, 9~24 for 16x16.
+  uint8_t variance_low[25];
 
   void (*fwd_txm4x4)(const int16_t *input, tran_low_t *output, int stride);
   void (*itxm_add)(const tran_low_t *input, uint8_t *dest, int stride, int eob);
