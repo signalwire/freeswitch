@@ -107,7 +107,7 @@ ifeq ($(CONFIG_VP9_DECODER),yes)
 endif
 
 VP9_PREFIX=vp9/
-$(BUILD_PFX)$(VP9_PREFIX)%.c.o: CFLAGS += -Wextra
+$(BUILD_PFX)$(VP9_PREFIX)%.c.o:
 
 ifeq ($(CONFIG_ENCODERS),yes)
   CODEC_DOC_SECTIONS += encoder
