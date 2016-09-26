@@ -340,7 +340,7 @@ SWITCH_DECLARE(uint32_t) switch_core_media_get_video_fps(switch_core_session_t *
 {
 	switch_media_handle_t *smh;
 	time_t now;
-	uint32_t fps;
+	uint32_t fps, elapsed = 0;
 	
 	switch_assert(session);
 	
@@ -354,11 +354,13 @@ SWITCH_DECLARE(uint32_t) switch_core_media_get_video_fps(switch_core_session_t *
 
 	now = switch_epoch_time_now(NULL);
 
-	if (!(smh->vid_started && smh->vid_frames && smh->vid_started < now)) {
+	elapsed = now - smh->vid_started;
+
+	if (!(smh->vid_started && smh->vid_frames && elapsed > 0)) {
 		return 0;
 	}
 	
-	fps = switch_round_to_step(smh->vid_frames / (now - smh->vid_started), 5);	
+	fps = switch_round_to_step(smh->vid_frames / (elapsed), 5);	
 
 	if (smh->vid_frames > 1000) {
 		smh->vid_started = switch_epoch_time_now(NULL);
@@ -2050,7 +2052,7 @@ static void check_jb_sync(switch_core_session_t *session)
 	
 	switch_rtp_get_video_buffer_size(v_engine->rtp_session, &min_frames, &max_frames, &cur_frames, NULL);
 
-	fps = switch_core_media_get_video_fps(session);
+	fps = video_globals.fps;
 
 	if (!fps) return;
 
@@ -2207,22 +2209,22 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 			goto end;
 		}
 
-		if (type == SWITCH_MEDIA_TYPE_VIDEO && engine->read_frame.m) {
-			
-			if (!smh->vid_started) {
-				smh->vid_started = switch_epoch_time_now(NULL);
-			}
-			smh->vid_frames++;
-
-			if ((smh->vid_frames % 15) == 0) {
-				switch_core_media_get_video_fps(session);
-			}
-			
-			if (smh->vid_frames == 1 || ((smh->vid_frames % 300) == 0)) {
-				check_jb_sync(session);
+		if (type == SWITCH_MEDIA_TYPE_VIDEO) {
+			if (engine->read_frame.m) {
+				if (!smh->vid_started) {
+					smh->vid_started = switch_epoch_time_now(NULL);
+				}
+				smh->vid_frames++;
+				
+				if ((smh->vid_frames % 5) == 0) {
+					switch_core_media_get_video_fps(session);
+				}
+				
+				if (video_globals.fps && (!video_globals.synced || ((smh->vid_frames % 300) == 0))) {
+					check_jb_sync(session);
+				}
 			}
 		}
-
 
 		/* re-set codec if necessary */
 		if (engine->reset_codec > 0) {
@@ -7028,7 +7030,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 				switch_rtp_set_payload_map(v_engine->rtp_session, &v_engine->payload_map);
 				switch_channel_set_flag(session->channel, CF_VIDEO);
 				switch_core_session_start_video_thread(session);
-
+				
+				switch_rtp_set_video_buffer_size(v_engine->rtp_session, 1, 0);
 				if ((ssrc = switch_channel_get_variable(session->channel, "rtp_use_video_ssrc"))) {
 					uint32_t ssrc_ul = (uint32_t) strtoul(ssrc, NULL, 10);
 					switch_rtp_set_ssrc(v_engine->rtp_session, ssrc_ul);
