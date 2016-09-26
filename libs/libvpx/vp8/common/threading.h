@@ -171,15 +171,11 @@ static inline int sem_destroy(sem_t *sem) {
 #define sem_wait(sem) (semaphore_wait(*sem))
 #define sem_post(sem) semaphore_signal(*sem)
 #define sem_destroy(sem) semaphore_destroy(mach_task_self(), *sem)
-#define thread_sleep(nms)
-/* { struct timespec ts;ts.tv_sec=0; ts.tv_nsec =
-   1000*nms;nanosleep(&ts, NULL);} */
+#define thread_sleep(nms) { struct timespec ts;ts.tv_sec=0; ts.tv_nsec = 1000*nms;nanosleep(&ts, NULL);} 
 #else
 #include <unistd.h>
 #include <sched.h>
-#define thread_sleep(nms) sched_yield();
-/* {struct timespec ts;ts.tv_sec=0;
-    ts.tv_nsec = 1000*nms;nanosleep(&ts, NULL);} */
+#define thread_sleep(nms) {struct timespec ts;ts.tv_sec=0; ts.tv_nsec = 1000*nms;nanosleep(&ts, NULL);}
 #endif
 /* Not Windows. Assume pthreads */
 

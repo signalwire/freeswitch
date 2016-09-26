@@ -361,7 +361,7 @@ static void mt_decode_mb_rows(VP8D_COMP *pbi, MACROBLOCKD *xd,
       if ((mb_col & (nsync - 1)) == 0) {
         while (mb_col > (*last_row_current_mb_col - nsync)) {
           x86_pause_hint();
-          thread_sleep(0);
+          thread_sleep(1);
         }
       }
 
