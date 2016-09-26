@@ -55,7 +55,7 @@
 
       <div class="admin-controls" ng-if="verto.data.confRole == 'moderator'" ng-show="$index == $parent.openId">
         <div>
-          <div class="col-md-6 ctrl-section">
+          <div class="col-md-12 ctrl-section">
             <h3>{{ 'CHAT_GENERAL' | translate }}</h3>
             <div class="group btn-group-justified">
               <a href="" class="btn btn-xs" ng-click="confKick(member.id)" title="{{ 'CHAT_TITLE_KICK' | translate }}">
@@ -69,6 +69,11 @@
               <a href="" class="btn btn-xs" ng-click="confTransfer(member.id)" title="{{ 'CHAT_TITLE_TRANSFER' | translate }}">
                 <i class="mdi-fw mdi-communication-call-made"></i>
                 <span style="margin-left: -9px">{{ 'CHAT_TRANSFER' | translate }}</span>
+              </a>
+
+              <a href="" class="btn btn-xs" ng-click="confToggleDeaf(member)" title="{{ 'CHAT_TITLE_DEAF_UNDEAF' | translate }}">
+                <i class="mdi-fw" ng-class="member.status.audio.deaf ? 'mdi-content-clear' : 'mdi-av-hearing'"></i>
+                {{ member.status.audio.deaf ? 'CHAT_UNDEAF' : 'CHAT_DEAF' | translate }}
               </a>
             </div>
           </div>

@@ -145,10 +145,13 @@
   "CHAT_TITLE_VOL_PLUS": "Volume +",
   "CHAT_TITLE_GAIN_MINUS": "Ganho -",
   "CHAT_TITLE_GAIN_PLUS": "Ganho +",
+  "CHAT_TITLE_DEAF_UNDEAF": "Ligar/Desligar Áudio",
   "CHAT_VOL_MINUS": "Vol -",
   "CHAT_VOL_PLUS": "Vol +",
   "CHAT_GAIN_MINUS": "Ganho -",
   "CHAT_GAIN_PLUS": "Ganho +",
+  "CHAT_DEAF": "Ligar Áudio",
+  "CHAT_UNDEAF": "Desligar Áudio",
   "FACTORY_RESET_SETTINGS": "Redefinir configurações",
   "AUTOGAIN_CONTROL": "Controle de Ganho Automático (AGC)"
 }
