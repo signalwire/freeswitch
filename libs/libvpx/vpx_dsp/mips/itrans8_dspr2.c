@@ -20,8 +20,8 @@ void idct8_rows_dspr2(const int16_t *input, int16_t *output, uint32_t no_rows) {
   int Temp0, Temp1, Temp2, Temp3, Temp4;
   int i;
 
-  for (i = no_rows; i--; ) {
-    __asm__ __volatile__ (
+  for (i = no_rows; i--;) {
+    __asm__ __volatile__(
         /*
           temp_1 = (input[0] + input[4]) * cospi_16_64;
           step2_0 = dct_const_round_shift(temp_1);
@@ -174,20 +174,18 @@ void idct8_rows_dspr2(const int16_t *input, int16_t *output, uint32_t no_rows) {
         "sub      %[Temp1],             %[step1_0],     %[step1_7]      \n\t"
         "sh       %[Temp1],             112(%[output])                  \n\t"
 
-        : [step1_0] "=&r" (step1_0), [step1_1] "=&r" (step1_1),
-          [step1_2] "=&r" (step1_2), [step1_3] "=&r" (step1_3),
-          [step1_4] "=&r" (step1_4), [step1_5] "=&r" (step1_5),
-          [step1_6] "=&r" (step1_6), [step1_7] "=&r" (step1_7),
-          [Temp0] "=&r" (Temp0), [Temp1] "=&r" (Temp1),
-          [Temp2] "=&r" (Temp2), [Temp3] "=&r" (Temp3),
-          [Temp4] "=&r" (Temp4)
-        : [const_2_power_13] "r" (const_2_power_13),
-          [cospi_16_64] "r" (cospi_16_64), [cospi_28_64] "r" (cospi_28_64),
-          [cospi_4_64] "r" (cospi_4_64), [cospi_12_64] "r" (cospi_12_64),
-          [cospi_20_64] "r" (cospi_20_64), [cospi_8_64] "r" (cospi_8_64),
-          [cospi_24_64] "r" (cospi_24_64),
-          [output] "r" (output), [input] "r" (input)
-    );
+        : [step1_0] "=&r"(step1_0), [step1_1] "=&r"(step1_1),
+          [step1_2] "=&r"(step1_2), [step1_3] "=&r"(step1_3),
+          [step1_4] "=&r"(step1_4), [step1_5] "=&r"(step1_5),
+          [step1_6] "=&r"(step1_6), [step1_7] "=&r"(step1_7),
+          [Temp0] "=&r"(Temp0), [Temp1] "=&r"(Temp1), [Temp2] "=&r"(Temp2),
+          [Temp3] "=&r"(Temp3), [Temp4] "=&r"(Temp4)
+        : [const_2_power_13] "r"(const_2_power_13),
+          [cospi_16_64] "r"(cospi_16_64), [cospi_28_64] "r"(cospi_28_64),
+          [cospi_4_64] "r"(cospi_4_64), [cospi_12_64] "r"(cospi_12_64),
+          [cospi_20_64] "r"(cospi_20_64), [cospi_8_64] "r"(cospi_8_64),
+          [cospi_24_64] "r"(cospi_24_64), [output] "r"(output),
+          [input] "r"(input));
 
     input += 8;
     output += 1;
@@ -205,18 +203,18 @@ void idct8_columns_add_blk_dspr2(int16_t *input, uint8_t *dest,
 
   /* prefetch vpx_ff_cropTbl */
   prefetch_load(vpx_ff_cropTbl);
-  prefetch_load(vpx_ff_cropTbl +  32);
-  prefetch_load(vpx_ff_cropTbl +  64);
-  prefetch_load(vpx_ff_cropTbl +  96);
+  prefetch_load(vpx_ff_cropTbl + 32);
+  prefetch_load(vpx_ff_cropTbl + 64);
+  prefetch_load(vpx_ff_cropTbl + 96);
   prefetch_load(vpx_ff_cropTbl + 128);
   prefetch_load(vpx_ff_cropTbl + 160);
   prefetch_load(vpx_ff_cropTbl + 192);
   prefetch_load(vpx_ff_cropTbl + 224);
 
   for (i = 0; i < 8; ++i) {
-      dest_pix = (dest + i);
+    dest_pix = (dest + i);
 
-    __asm__ __volatile__ (
+    __asm__ __volatile__(
         /*
           temp_1 = (input[0] + input[4]) * cospi_16_64;
           step2_0 = dct_const_round_shift(temp_1);
@@ -423,20 +421,18 @@ void idct8_columns_add_blk_dspr2(int16_t *input, uint8_t *dest,
         "lbux     %[Temp2],             %[Temp1](%[cm])                 \n\t"
         "sb       %[Temp2],             0(%[dest_pix])                  \n\t"
 
-        : [step1_0] "=&r" (step1_0), [step1_1] "=&r" (step1_1),
-          [step1_2] "=&r" (step1_2), [step1_3] "=&r" (step1_3),
-          [step1_4] "=&r" (step1_4), [step1_5] "=&r" (step1_5),
-          [step1_6] "=&r" (step1_6), [step1_7] "=&r" (step1_7),
-          [Temp0] "=&r" (Temp0), [Temp1] "=&r" (Temp1),
-          [Temp2] "=&r" (Temp2), [Temp3] "=&r" (Temp3),
-          [dest_pix] "+r" (dest_pix)
-        : [const_2_power_13] "r" (const_2_power_13),
-          [cospi_16_64] "r" (cospi_16_64), [cospi_28_64] "r" (cospi_28_64),
-          [cospi_4_64] "r" (cospi_4_64), [cospi_12_64] "r" (cospi_12_64),
-          [cospi_20_64] "r" (cospi_20_64), [cospi_8_64] "r" (cospi_8_64),
-          [cospi_24_64] "r" (cospi_24_64),
-          [input] "r" (input), [cm] "r" (cm), [dest_stride] "r" (dest_stride)
-    );
+        : [step1_0] "=&r"(step1_0), [step1_1] "=&r"(step1_1),
+          [step1_2] "=&r"(step1_2), [step1_3] "=&r"(step1_3),
+          [step1_4] "=&r"(step1_4), [step1_5] "=&r"(step1_5),
+          [step1_6] "=&r"(step1_6), [step1_7] "=&r"(step1_7),
+          [Temp0] "=&r"(Temp0), [Temp1] "=&r"(Temp1), [Temp2] "=&r"(Temp2),
+          [Temp3] "=&r"(Temp3), [dest_pix] "+r"(dest_pix)
+        : [const_2_power_13] "r"(const_2_power_13),
+          [cospi_16_64] "r"(cospi_16_64), [cospi_28_64] "r"(cospi_28_64),
+          [cospi_4_64] "r"(cospi_4_64), [cospi_12_64] "r"(cospi_12_64),
+          [cospi_20_64] "r"(cospi_20_64), [cospi_8_64] "r"(cospi_8_64),
+          [cospi_24_64] "r"(cospi_24_64), [input] "r"(input), [cm] "r"(cm),
+          [dest_stride] "r"(dest_stride));
 
     input += 8;
   }
@@ -449,11 +445,7 @@ void vpx_idct8x8_64_add_dspr2(const int16_t *input, uint8_t *dest,
   uint32_t pos = 45;
 
   /* bit positon for extract from acc */
-  __asm__ __volatile__ (
-    "wrdsp    %[pos],    1    \n\t"
-    :
-    : [pos] "r" (pos)
-  );
+  __asm__ __volatile__("wrdsp    %[pos],    1    \n\t" : : [pos] "r"(pos));
 
   // First transform rows
   idct8_rows_dspr2(input, outptr, 8);
@@ -469,18 +461,14 @@ void vpx_idct8x8_12_add_dspr2(const int16_t *input, uint8_t *dest,
   uint32_t pos = 45;
 
   /* bit positon for extract from acc */
-  __asm__ __volatile__ (
-    "wrdsp    %[pos],    1    \n\t"
-    :
-    : [pos] "r" (pos)
-  );
+  __asm__ __volatile__("wrdsp    %[pos],    1    \n\t" : : [pos] "r"(pos));
 
   // First transform rows
   idct8_rows_dspr2(input, outptr, 4);
 
   outptr += 4;
 
-  __asm__ __volatile__ (
+  __asm__ __volatile__(
       "sw  $zero,   0(%[outptr])  \n\t"
       "sw  $zero,   4(%[outptr])  \n\t"
       "sw  $zero,  16(%[outptr])  \n\t"
@@ -499,9 +487,7 @@ void vpx_idct8x8_12_add_dspr2(const int16_t *input, uint8_t *dest,
       "sw  $zero, 116(%[outptr])  \n\t"
 
       :
-      : [outptr] "r" (outptr)
-  );
-
+      : [outptr] "r"(outptr));
 
   // Then transform columns and add to dest
   idct8_columns_add_blk_dspr2(&out[0], dest, dest_stride);
@@ -516,35 +502,31 @@ void vpx_idct8x8_1_add_dspr2(const int16_t *input, uint8_t *dest,
   int32_t t1, t2, vector_a1, vector_1, vector_2;
 
   /* bit positon for extract from acc */
-  __asm__ __volatile__ (
-    "wrdsp      %[pos],     1           \n\t"
+  __asm__ __volatile__("wrdsp      %[pos],     1           \n\t"
 
-    :
-    : [pos] "r" (pos)
-  );
+                       :
+                       : [pos] "r"(pos));
 
   out = DCT_CONST_ROUND_SHIFT_TWICE_COSPI_16_64(input[0]);
-  __asm__ __volatile__ (
+  __asm__ __volatile__(
       "addi     %[out],     %[out],     16      \n\t"
       "sra      %[a1],      %[out],     5       \n\t"
 
-      : [out] "+r" (out), [a1] "=r" (a1)
-      :
-  );
+      : [out] "+r"(out), [a1] "=r"(a1)
+      :);
 
   if (a1 < 0) {
     /* use quad-byte
      * input and output memory are four byte aligned */
-    __asm__ __volatile__ (
+    __asm__ __volatile__(
         "abs        %[absa1],       %[a1]       \n\t"
         "replv.qb   %[vector_a1],   %[absa1]    \n\t"
 
-        : [absa1] "=r" (absa1), [vector_a1] "=r" (vector_a1)
-        : [a1] "r" (a1)
-    );
+        : [absa1] "=r"(absa1), [vector_a1] "=r"(vector_a1)
+        : [a1] "r"(a1));
 
     for (r = 8; r--;) {
-      __asm__ __volatile__ (
+      __asm__ __volatile__(
           "lw           %[t1],          0(%[dest])                      \n\t"
           "lw           %[t2],          4(%[dest])                      \n\t"
           "subu_s.qb    %[vector_1],    %[t1],          %[vector_a1]    \n\t"
@@ -553,24 +535,20 @@ void vpx_idct8x8_1_add_dspr2(const int16_t *input, uint8_t *dest,
           "sw           %[vector_2],    4(%[dest])                      \n\t"
           "add          %[dest],        %[dest],        %[dest_stride]  \n\t"
 
-          : [t1] "=&r" (t1), [t2] "=&r" (t2),
-            [vector_1] "=&r" (vector_1), [vector_2] "=&r" (vector_2),
-            [dest] "+&r" (dest)
-          : [dest_stride] "r" (dest_stride), [vector_a1] "r" (vector_a1)
-      );
+          : [t1] "=&r"(t1), [t2] "=&r"(t2), [vector_1] "=&r"(vector_1),
+            [vector_2] "=&r"(vector_2), [dest] "+&r"(dest)
+          : [dest_stride] "r"(dest_stride), [vector_a1] "r"(vector_a1));
     }
   } else {
     /* use quad-byte
      * input and output memory are four byte aligned */
-    __asm__ __volatile__ (
-        "replv.qb   %[vector_a1],   %[a1]   \n\t"
+    __asm__ __volatile__("replv.qb   %[vector_a1],   %[a1]   \n\t"
 
-        : [vector_a1] "=r" (vector_a1)
-        : [a1] "r" (a1)
-    );
+                         : [vector_a1] "=r"(vector_a1)
+                         : [a1] "r"(a1));
 
     for (r = 8; r--;) {
-      __asm__ __volatile__ (
+      __asm__ __volatile__(
           "lw           %[t1],          0(%[dest])                      \n\t"
           "lw           %[t2],          4(%[dest])                      \n\t"
           "addu_s.qb    %[vector_1],    %[t1],          %[vector_a1]    \n\t"
@@ -579,11 +557,9 @@ void vpx_idct8x8_1_add_dspr2(const int16_t *input, uint8_t *dest,
           "sw           %[vector_2],    4(%[dest])                      \n\t"
           "add          %[dest],        %[dest],        %[dest_stride]  \n\t"
 
-          : [t1] "=&r" (t1), [t2] "=&r" (t2),
-            [vector_1] "=&r" (vector_1), [vector_2] "=&r" (vector_2),
-            [dest] "+r" (dest)
-          : [dest_stride] "r" (dest_stride), [vector_a1] "r" (vector_a1)
-      );
+          : [t1] "=&r"(t1), [t2] "=&r"(t2), [vector_1] "=&r"(vector_1),
+            [vector_2] "=&r"(vector_2), [dest] "+r"(dest)
+          : [dest_stride] "r"(dest_stride), [vector_a1] "r"(vector_a1));
     }
   }
 }
@@ -602,20 +578,20 @@ void iadst8_dspr2(const int16_t *input, int16_t *output) {
   x7 = input[6];
 
   if (!(x0 | x1 | x2 | x3 | x4 | x5 | x6 | x7)) {
-    output[0] = output[1] = output[2] = output[3] = output[4]
-              = output[5] = output[6] = output[7] = 0;
+    output[0] = output[1] = output[2] = output[3] = output[4] = output[5] =
+        output[6] = output[7] = 0;
     return;
   }
 
   // stage 1
-  s0 = cospi_2_64  * x0 + cospi_30_64 * x1;
-  s1 = cospi_30_64 * x0 - cospi_2_64  * x1;
+  s0 = cospi_2_64 * x0 + cospi_30_64 * x1;
+  s1 = cospi_30_64 * x0 - cospi_2_64 * x1;
   s2 = cospi_10_64 * x2 + cospi_22_64 * x3;
   s3 = cospi_22_64 * x2 - cospi_10_64 * x3;
   s4 = cospi_18_64 * x4 + cospi_14_64 * x5;
   s5 = cospi_14_64 * x4 - cospi_18_64 * x5;
-  s6 = cospi_26_64 * x6 + cospi_6_64  * x7;
-  s7 = cospi_6_64  * x6 - cospi_26_64 * x7;
+  s6 = cospi_26_64 * x6 + cospi_6_64 * x7;
+  s7 = cospi_6_64 * x6 - cospi_26_64 * x7;
 
   x0 = ROUND_POWER_OF_TWO((s0 + s4), DCT_CONST_BITS);
   x1 = ROUND_POWER_OF_TWO((s1 + s5), DCT_CONST_BITS);
@@ -631,10 +607,10 @@ void iadst8_dspr2(const int16_t *input, int16_t *output) {
   s1 = x1;
   s2 = x2;
   s3 = x3;
-  s4 =  cospi_8_64  * x4 + cospi_24_64 * x5;
-  s5 =  cospi_24_64 * x4 - cospi_8_64  * x5;
-  s6 = -cospi_24_64 * x6 + cospi_8_64  * x7;
-  s7 =  cospi_8_64  * x6 + cospi_24_64 * x7;
+  s4 = cospi_8_64 * x4 + cospi_24_64 * x5;
+  s5 = cospi_24_64 * x4 - cospi_8_64 * x5;
+  s6 = -cospi_24_64 * x6 + cospi_8_64 * x7;
+  s7 = cospi_8_64 * x6 + cospi_24_64 * x7;
 
   x0 = s0 + s2;
   x1 = s1 + s3;
@@ -656,13 +632,13 @@ void iadst8_dspr2(const int16_t *input, int16_t *output) {
   x6 = ROUND_POWER_OF_TWO((s6), DCT_CONST_BITS);
   x7 = ROUND_POWER_OF_TWO((s7), DCT_CONST_BITS);
 
-  output[0] =  x0;
+  output[0] = x0;
   output[1] = -x4;
-  output[2] =  x6;
+  output[2] = x6;
   output[3] = -x2;
-  output[4] =  x3;
+  output[4] = x3;
   output[5] = -x7;
-  output[6] =  x5;
+  output[6] = x5;
   output[7] = -x1;
 }
 #endif  // HAVE_DSPR2

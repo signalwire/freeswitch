@@ -31,9 +31,9 @@ typedef void (*VpxPredFunc)(uint8_t *dst, ptrdiff_t y_stride,
 
 const int kNumVp9IntraPredFuncs = 13;
 const char *kVp9IntraPredNames[kNumVp9IntraPredFuncs] = {
-  "DC_PRED", "DC_LEFT_PRED", "DC_TOP_PRED", "DC_128_PRED", "V_PRED", "H_PRED",
-  "D45_PRED", "D135_PRED", "D117_PRED", "D153_PRED", "D207_PRED", "D63_PRED",
-  "TM_PRED"
+  "DC_PRED",   "DC_LEFT_PRED", "DC_TOP_PRED", "DC_128_PRED", "V_PRED",
+  "H_PRED",    "D45_PRED",     "D135_PRED",   "D117_PRED",   "D153_PRED",
+  "D207_PRED", "D63_PRED",     "TM_PRED"
 };
 
 void TestIntraPred(const char name[], VpxPredFunc const *pred_funcs,
@@ -82,18 +82,12 @@ void TestIntraPred(const char name[], VpxPredFunc const *pred_funcs,
 void TestIntraPred4(VpxPredFunc const *pred_funcs) {
   static const int kNumVp9IntraFuncs = 13;
   static const char *const kSignatures[kNumVp9IntraFuncs] = {
-    "4334156168b34ab599d9b5b30f522fe9",
-    "bc4649d5ba47c7ff178d92e475960fb0",
-    "8d316e5933326dcac24e1064794b5d12",
-    "a27270fed024eafd762c95de85f4da51",
-    "c33dff000d4256c2b8f3bf9e9bab14d2",
-    "44d8cddc2ad8f79b8ed3306051722b4f",
-    "eb54839b2bad6699d8946f01ec041cd0",
-    "ecb0d56ae5f677ea45127ce9d5c058e4",
-    "0b7936841f6813da818275944895b574",
-    "9117972ef64f91a58ff73e1731c81db2",
-    "c56d5e8c729e46825f46dd5d3b5d508a",
-    "c0889e2039bcf7bcb5d2f33cdca69adc",
+    "4334156168b34ab599d9b5b30f522fe9", "bc4649d5ba47c7ff178d92e475960fb0",
+    "8d316e5933326dcac24e1064794b5d12", "a27270fed024eafd762c95de85f4da51",
+    "c33dff000d4256c2b8f3bf9e9bab14d2", "44d8cddc2ad8f79b8ed3306051722b4f",
+    "eb54839b2bad6699d8946f01ec041cd0", "ecb0d56ae5f677ea45127ce9d5c058e4",
+    "0b7936841f6813da818275944895b574", "9117972ef64f91a58ff73e1731c81db2",
+    "c56d5e8c729e46825f46dd5d3b5d508a", "c0889e2039bcf7bcb5d2f33cdca69adc",
     "309a618577b27c648f9c5ee45252bc8f",
   };
   TestIntraPred("Intra4", pred_funcs, kVp9IntraPredNames, kNumVp9IntraFuncs,
@@ -103,18 +97,12 @@ void TestIntraPred4(VpxPredFunc const *pred_funcs) {
 void TestIntraPred8(VpxPredFunc const *pred_funcs) {
   static const int kNumVp9IntraFuncs = 13;
   static const char *const kSignatures[kNumVp9IntraFuncs] = {
-    "7694ddeeefed887faf9d339d18850928",
-    "7d726b1213591b99f736be6dec65065b",
-    "19c5711281357a485591aaf9c96c0a67",
-    "ba6b66877a089e71cd938e3b8c40caac",
-    "802440c93317e0f8ba93fab02ef74265",
-    "9e09a47a15deb0b9d8372824f9805080",
-    "b7c2d8c662268c0c427da412d7b0311d",
-    "78339c1c60bb1d67d248ab8c4da08b7f",
-    "5c97d70f7d47de1882a6cd86c165c8a9",
-    "8182bf60688b42205acd95e59e967157",
-    "08323400005a297f16d7e57e7fe1eaac",
-    "95f7bfc262329a5849eda66d8f7c68ce",
+    "7694ddeeefed887faf9d339d18850928", "7d726b1213591b99f736be6dec65065b",
+    "19c5711281357a485591aaf9c96c0a67", "ba6b66877a089e71cd938e3b8c40caac",
+    "802440c93317e0f8ba93fab02ef74265", "9e09a47a15deb0b9d8372824f9805080",
+    "b7c2d8c662268c0c427da412d7b0311d", "78339c1c60bb1d67d248ab8c4da08b7f",
+    "5c97d70f7d47de1882a6cd86c165c8a9", "8182bf60688b42205acd95e59e967157",
+    "08323400005a297f16d7e57e7fe1eaac", "95f7bfc262329a5849eda66d8f7c68ce",
     "815b75c8e0d91cc1ae766dc5d3e445a3",
   };
   TestIntraPred("Intra8", pred_funcs, kVp9IntraPredNames, kNumVp9IntraFuncs,
@@ -124,18 +112,12 @@ void TestIntraPred8(VpxPredFunc const *pred_funcs) {
 void TestIntraPred16(VpxPredFunc const *pred_funcs) {
   static const int kNumVp9IntraFuncs = 13;
   static const char *const kSignatures[kNumVp9IntraFuncs] = {
-    "b40dbb555d5d16a043dc361e6694fe53",
-    "fb08118cee3b6405d64c1fd68be878c6",
-    "6c190f341475c837cc38c2e566b64875",
-    "db5c34ccbe2c7f595d9b08b0dc2c698c",
-    "a62cbfd153a1f0b9fed13e62b8408a7a",
-    "143df5b4c89335e281103f610f5052e4",
-    "d87feb124107cdf2cfb147655aa0bb3c",
-    "7841fae7d4d47b519322e6a03eeed9dc",
-    "f6ebed3f71cbcf8d6d0516ce87e11093",
-    "3cc480297dbfeed01a1c2d78dd03d0c5",
-    "b9f69fa6532b372c545397dcb78ef311",
-    "a8fe1c70432f09d0c20c67bdb6432c4d",
+    "b40dbb555d5d16a043dc361e6694fe53", "fb08118cee3b6405d64c1fd68be878c6",
+    "6c190f341475c837cc38c2e566b64875", "db5c34ccbe2c7f595d9b08b0dc2c698c",
+    "a62cbfd153a1f0b9fed13e62b8408a7a", "143df5b4c89335e281103f610f5052e4",
+    "d87feb124107cdf2cfb147655aa0bb3c", "7841fae7d4d47b519322e6a03eeed9dc",
+    "f6ebed3f71cbcf8d6d0516ce87e11093", "3cc480297dbfeed01a1c2d78dd03d0c5",
+    "b9f69fa6532b372c545397dcb78ef311", "a8fe1c70432f09d0c20c67bdb6432c4d",
     "b8a41aa968ec108af447af4217cba91b",
   };
   TestIntraPred("Intra16", pred_funcs, kVp9IntraPredNames, kNumVp9IntraFuncs,
@@ -145,18 +127,12 @@ void TestIntraPred16(VpxPredFunc const *pred_funcs) {
 void TestIntraPred32(VpxPredFunc const *pred_funcs) {
   static const int kNumVp9IntraFuncs = 13;
   static const char *const kSignatures[kNumVp9IntraFuncs] = {
-    "558541656d84f9ae7896db655826febe",
-    "b3587a1f9a01495fa38c8cd3c8e2a1bf",
-    "4c6501e64f25aacc55a2a16c7e8f0255",
-    "b3b01379ba08916ef6b1b35f7d9ad51c",
-    "0f1eb38b6cbddb3d496199ef9f329071",
-    "911c06efb9ed1c3b4c104b232b55812f",
-    "9225beb0ddfa7a1d24eaa1be430a6654",
-    "0a6d584a44f8db9aa7ade2e2fdb9fc9e",
-    "b01c9076525216925f3456f034fb6eee",
-    "d267e20ad9e5cd2915d1a47254d3d149",
-    "ed012a4a5da71f36c2393023184a0e59",
-    "f162b51ed618d28b936974cff4391da5",
+    "558541656d84f9ae7896db655826febe", "b3587a1f9a01495fa38c8cd3c8e2a1bf",
+    "4c6501e64f25aacc55a2a16c7e8f0255", "b3b01379ba08916ef6b1b35f7d9ad51c",
+    "0f1eb38b6cbddb3d496199ef9f329071", "911c06efb9ed1c3b4c104b232b55812f",
+    "9225beb0ddfa7a1d24eaa1be430a6654", "0a6d584a44f8db9aa7ade2e2fdb9fc9e",
+    "b01c9076525216925f3456f034fb6eee", "d267e20ad9e5cd2915d1a47254d3d149",
+    "ed012a4a5da71f36c2393023184a0e59", "f162b51ed618d28b936974cff4391da5",
     "9e1370c6d42e08d357d9612c93a71cfc",
   };
   TestIntraPred("Intra32", pred_funcs, kVp9IntraPredNames, kNumVp9IntraFuncs,
@@ -167,13 +143,13 @@ void TestIntraPred32(VpxPredFunc const *pred_funcs) {
 
 // Defines a test case for |arch| (e.g., C, SSE2, ...) passing the predictors
 // to |test_func|. The test name is 'arch.test_func', e.g., C.TestIntraPred4.
-#define INTRA_PRED_TEST(arch, test_func, dc, dc_left, dc_top, dc_128, v, h, \
-                        d45, d135, d117, d153, d207, d63, tm)               \
-  TEST(arch, test_func) {                                                   \
-    static const VpxPredFunc vpx_intra_pred[] = {                           \
-        dc,   dc_left, dc_top, dc_128, v,   h, d45,                         \
-        d135, d117,    d153,   d207,   d63, tm};                            \
-    test_func(vpx_intra_pred);                                              \
+#define INTRA_PRED_TEST(arch, test_func, dc, dc_left, dc_top, dc_128, v, h,   \
+                        d45, d135, d117, d153, d207, d63, tm)                 \
+  TEST(arch, test_func) {                                                     \
+    static const VpxPredFunc vpx_intra_pred[] = {                             \
+      dc, dc_left, dc_top, dc_128, v, h, d45, d135, d117, d153, d207, d63, tm \
+    };                                                                        \
+    test_func(vpx_intra_pred);                                                \
   }
 
 // -----------------------------------------------------------------------------
@@ -187,20 +163,20 @@ INTRA_PRED_TEST(C, TestIntraPred4, vpx_dc_predictor_4x4_c,
                 vpx_d153_predictor_4x4_c, vpx_d207_predictor_4x4_c,
                 vpx_d63_predictor_4x4_c, vpx_tm_predictor_4x4_c)
 
-#if HAVE_SSE2 && CONFIG_USE_X86INC
+#if HAVE_SSE2
 INTRA_PRED_TEST(SSE2, TestIntraPred4, vpx_dc_predictor_4x4_sse2,
                 vpx_dc_left_predictor_4x4_sse2, vpx_dc_top_predictor_4x4_sse2,
                 vpx_dc_128_predictor_4x4_sse2, vpx_v_predictor_4x4_sse2,
-                vpx_h_predictor_4x4_sse2, NULL, NULL, NULL, NULL, NULL, NULL,
+                vpx_h_predictor_4x4_sse2, vpx_d45_predictor_4x4_sse2, NULL,
+                NULL, NULL, vpx_d207_predictor_4x4_sse2, NULL,
                 vpx_tm_predictor_4x4_sse2)
-#endif  // HAVE_SSE2 && CONFIG_USE_X86INC
+#endif  // HAVE_SSE2
 
-#if HAVE_SSSE3 && CONFIG_USE_X86INC
-INTRA_PRED_TEST(SSSE3, TestIntraPred4, NULL, NULL, NULL, NULL, NULL,
-                NULL, vpx_d45_predictor_4x4_ssse3, NULL, NULL,
-                vpx_d153_predictor_4x4_ssse3, vpx_d207_predictor_4x4_ssse3,
+#if HAVE_SSSE3
+INTRA_PRED_TEST(SSSE3, TestIntraPred4, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+                NULL, NULL, vpx_d153_predictor_4x4_ssse3, NULL,
                 vpx_d63_predictor_4x4_ssse3, NULL)
-#endif  // HAVE_SSSE3 && CONFIG_USE_X86INC
+#endif  // HAVE_SSSE3
 
 #if HAVE_DSPR2
 INTRA_PRED_TEST(DSPR2, TestIntraPred4, vpx_dc_predictor_4x4_dspr2, NULL, NULL,
@@ -221,8 +197,8 @@ INTRA_PRED_TEST(NEON, TestIntraPred4, vpx_dc_predictor_4x4_neon,
 INTRA_PRED_TEST(MSA, TestIntraPred4, vpx_dc_predictor_4x4_msa,
                 vpx_dc_left_predictor_4x4_msa, vpx_dc_top_predictor_4x4_msa,
                 vpx_dc_128_predictor_4x4_msa, vpx_v_predictor_4x4_msa,
-                vpx_h_predictor_4x4_msa, NULL, NULL, NULL, NULL, NULL,
-                NULL, vpx_tm_predictor_4x4_msa)
+                vpx_h_predictor_4x4_msa, NULL, NULL, NULL, NULL, NULL, NULL,
+                vpx_tm_predictor_4x4_msa)
 #endif  // HAVE_MSA
 
 // -----------------------------------------------------------------------------
@@ -236,20 +212,19 @@ INTRA_PRED_TEST(C, TestIntraPred8, vpx_dc_predictor_8x8_c,
                 vpx_d153_predictor_8x8_c, vpx_d207_predictor_8x8_c,
                 vpx_d63_predictor_8x8_c, vpx_tm_predictor_8x8_c)
 
-#if HAVE_SSE2 && CONFIG_USE_X86INC
+#if HAVE_SSE2
 INTRA_PRED_TEST(SSE2, TestIntraPred8, vpx_dc_predictor_8x8_sse2,
                 vpx_dc_left_predictor_8x8_sse2, vpx_dc_top_predictor_8x8_sse2,
                 vpx_dc_128_predictor_8x8_sse2, vpx_v_predictor_8x8_sse2,
-                vpx_h_predictor_8x8_sse2, NULL, NULL, NULL, NULL, NULL,
-                NULL, vpx_tm_predictor_8x8_sse2)
-#endif  // HAVE_SSE2 && CONFIG_USE_X86INC
+                vpx_h_predictor_8x8_sse2, vpx_d45_predictor_8x8_sse2, NULL,
+                NULL, NULL, NULL, NULL, vpx_tm_predictor_8x8_sse2)
+#endif  // HAVE_SSE2
 
-#if HAVE_SSSE3 && CONFIG_USE_X86INC
-INTRA_PRED_TEST(SSSE3, TestIntraPred8, NULL, NULL, NULL, NULL, NULL,
-                NULL, vpx_d45_predictor_8x8_ssse3, NULL, NULL,
-                vpx_d153_predictor_8x8_ssse3, vpx_d207_predictor_8x8_ssse3,
-                vpx_d63_predictor_8x8_ssse3, NULL)
-#endif  // HAVE_SSSE3 && CONFIG_USE_X86INC
+#if HAVE_SSSE3
+INTRA_PRED_TEST(SSSE3, TestIntraPred8, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+                NULL, NULL, vpx_d153_predictor_8x8_ssse3,
+                vpx_d207_predictor_8x8_ssse3, vpx_d63_predictor_8x8_ssse3, NULL)
+#endif  // HAVE_SSSE3
 
 #if HAVE_DSPR2
 INTRA_PRED_TEST(DSPR2, TestIntraPred8, vpx_dc_predictor_8x8_dspr2, NULL, NULL,
@@ -270,8 +245,8 @@ INTRA_PRED_TEST(NEON, TestIntraPred8, vpx_dc_predictor_8x8_neon,
 INTRA_PRED_TEST(MSA, TestIntraPred8, vpx_dc_predictor_8x8_msa,
                 vpx_dc_left_predictor_8x8_msa, vpx_dc_top_predictor_8x8_msa,
                 vpx_dc_128_predictor_8x8_msa, vpx_v_predictor_8x8_msa,
-                vpx_h_predictor_8x8_msa, NULL, NULL, NULL, NULL, NULL,
-                NULL, vpx_tm_predictor_8x8_msa)
+                vpx_h_predictor_8x8_msa, NULL, NULL, NULL, NULL, NULL, NULL,
+                vpx_tm_predictor_8x8_msa)
 #endif  // HAVE_MSA
 
 // -----------------------------------------------------------------------------
@@ -285,22 +260,21 @@ INTRA_PRED_TEST(C, TestIntraPred16, vpx_dc_predictor_16x16_c,
                 vpx_d153_predictor_16x16_c, vpx_d207_predictor_16x16_c,
                 vpx_d63_predictor_16x16_c, vpx_tm_predictor_16x16_c)
 
-#if HAVE_SSE2 && CONFIG_USE_X86INC
+#if HAVE_SSE2
 INTRA_PRED_TEST(SSE2, TestIntraPred16, vpx_dc_predictor_16x16_sse2,
                 vpx_dc_left_predictor_16x16_sse2,
                 vpx_dc_top_predictor_16x16_sse2,
                 vpx_dc_128_predictor_16x16_sse2, vpx_v_predictor_16x16_sse2,
                 vpx_h_predictor_16x16_sse2, NULL, NULL, NULL, NULL, NULL, NULL,
                 vpx_tm_predictor_16x16_sse2)
-#endif  // HAVE_SSE2 && CONFIG_USE_X86INC
+#endif  // HAVE_SSE2
 
-#if HAVE_SSSE3 && CONFIG_USE_X86INC
-INTRA_PRED_TEST(SSSE3, TestIntraPred16, NULL, NULL, NULL, NULL, NULL,
-                NULL, vpx_d45_predictor_16x16_ssse3,
-                NULL, NULL, vpx_d153_predictor_16x16_ssse3,
-                vpx_d207_predictor_16x16_ssse3, vpx_d63_predictor_16x16_ssse3,
-                NULL)
-#endif  // HAVE_SSSE3 && CONFIG_USE_X86INC
+#if HAVE_SSSE3
+INTRA_PRED_TEST(SSSE3, TestIntraPred16, NULL, NULL, NULL, NULL, NULL, NULL,
+                vpx_d45_predictor_16x16_ssse3, NULL, NULL,
+                vpx_d153_predictor_16x16_ssse3, vpx_d207_predictor_16x16_ssse3,
+                vpx_d63_predictor_16x16_ssse3, NULL)
+#endif  // HAVE_SSSE3
 
 #if HAVE_DSPR2
 INTRA_PRED_TEST(DSPR2, TestIntraPred16, vpx_dc_predictor_16x16_dspr2, NULL,
@@ -321,8 +295,8 @@ INTRA_PRED_TEST(NEON, TestIntraPred16, vpx_dc_predictor_16x16_neon,
 INTRA_PRED_TEST(MSA, TestIntraPred16, vpx_dc_predictor_16x16_msa,
                 vpx_dc_left_predictor_16x16_msa, vpx_dc_top_predictor_16x16_msa,
                 vpx_dc_128_predictor_16x16_msa, vpx_v_predictor_16x16_msa,
-                vpx_h_predictor_16x16_msa, NULL, NULL, NULL, NULL, NULL,
-                NULL, vpx_tm_predictor_16x16_msa)
+                vpx_h_predictor_16x16_msa, NULL, NULL, NULL, NULL, NULL, NULL,
+                vpx_tm_predictor_16x16_msa)
 #endif  // HAVE_MSA
 
 // -----------------------------------------------------------------------------
@@ -336,21 +310,21 @@ INTRA_PRED_TEST(C, TestIntraPred32, vpx_dc_predictor_32x32_c,
                 vpx_d153_predictor_32x32_c, vpx_d207_predictor_32x32_c,
                 vpx_d63_predictor_32x32_c, vpx_tm_predictor_32x32_c)
 
-#if HAVE_SSE2 && CONFIG_USE_X86INC
+#if HAVE_SSE2
 INTRA_PRED_TEST(SSE2, TestIntraPred32, vpx_dc_predictor_32x32_sse2,
                 vpx_dc_left_predictor_32x32_sse2,
                 vpx_dc_top_predictor_32x32_sse2,
                 vpx_dc_128_predictor_32x32_sse2, vpx_v_predictor_32x32_sse2,
-                vpx_h_predictor_32x32_sse2, NULL, NULL, NULL, NULL, NULL,
-                NULL, vpx_tm_predictor_32x32_sse2)
-#endif  // HAVE_SSE2 && CONFIG_USE_X86INC
+                vpx_h_predictor_32x32_sse2, NULL, NULL, NULL, NULL, NULL, NULL,
+                vpx_tm_predictor_32x32_sse2)
+#endif  // HAVE_SSE2
 
-#if HAVE_SSSE3 && CONFIG_USE_X86INC
-INTRA_PRED_TEST(SSSE3, TestIntraPred32, NULL, NULL, NULL, NULL, NULL,
-                NULL, vpx_d45_predictor_32x32_ssse3, NULL, NULL,
+#if HAVE_SSSE3
+INTRA_PRED_TEST(SSSE3, TestIntraPred32, NULL, NULL, NULL, NULL, NULL, NULL,
+                vpx_d45_predictor_32x32_ssse3, NULL, NULL,
                 vpx_d153_predictor_32x32_ssse3, vpx_d207_predictor_32x32_ssse3,
                 vpx_d63_predictor_32x32_ssse3, NULL)
-#endif  // HAVE_SSSE3 && CONFIG_USE_X86INC
+#endif  // HAVE_SSSE3
 
 #if HAVE_NEON
 INTRA_PRED_TEST(NEON, TestIntraPred32, vpx_dc_predictor_32x32_neon,
@@ -365,8 +339,8 @@ INTRA_PRED_TEST(NEON, TestIntraPred32, vpx_dc_predictor_32x32_neon,
 INTRA_PRED_TEST(MSA, TestIntraPred32, vpx_dc_predictor_32x32_msa,
                 vpx_dc_left_predictor_32x32_msa, vpx_dc_top_predictor_32x32_msa,
                 vpx_dc_128_predictor_32x32_msa, vpx_v_predictor_32x32_msa,
-                vpx_h_predictor_32x32_msa, NULL, NULL, NULL, NULL, NULL,
-                NULL, vpx_tm_predictor_32x32_msa)
+                vpx_h_predictor_32x32_msa, NULL, NULL, NULL, NULL, NULL, NULL,
+                vpx_tm_predictor_32x32_msa)
 #endif  // HAVE_MSA
 
 #include "test/test_libvpx.cc"

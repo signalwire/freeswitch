@@ -29,81 +29,69 @@ $vp8_clear_system_state_mmx=vpx_reset_mmx_state;
 # Dequant
 #
 add_proto qw/void vp8_dequantize_b/, "struct blockd*, short *dqc";
-specialize qw/vp8_dequantize_b mmx media neon msa/;
-$vp8_dequantize_b_media=vp8_dequantize_b_v6;
+specialize qw/vp8_dequantize_b mmx neon msa/;
 
 add_proto qw/void vp8_dequant_idct_add/, "short *input, short *dq, unsigned char *output, int stride";
-specialize qw/vp8_dequant_idct_add mmx media neon dspr2 msa/;
-$vp8_dequant_idct_add_media=vp8_dequant_idct_add_v6;
+specialize qw/vp8_dequant_idct_add mmx neon dspr2 msa/;
 $vp8_dequant_idct_add_dspr2=vp8_dequant_idct_add_dspr2;
 
 add_proto qw/void vp8_dequant_idct_add_y_block/, "short *q, short *dq, unsigned char *dst, int stride, char *eobs";
-specialize qw/vp8_dequant_idct_add_y_block mmx sse2 media neon dspr2 msa/;
-$vp8_dequant_idct_add_y_block_media=vp8_dequant_idct_add_y_block_v6;
+specialize qw/vp8_dequant_idct_add_y_block mmx sse2 neon dspr2 msa/;
 $vp8_dequant_idct_add_y_block_dspr2=vp8_dequant_idct_add_y_block_dspr2;
 
 add_proto qw/void vp8_dequant_idct_add_uv_block/, "short *q, short *dq, unsigned char *dst_u, unsigned char *dst_v, int stride, char *eobs";
-specialize qw/vp8_dequant_idct_add_uv_block mmx sse2 media neon dspr2 msa/;
-$vp8_dequant_idct_add_uv_block_media=vp8_dequant_idct_add_uv_block_v6;
+specialize qw/vp8_dequant_idct_add_uv_block mmx sse2 neon dspr2 msa/;
 $vp8_dequant_idct_add_y_block_dspr2=vp8_dequant_idct_add_y_block_dspr2;
 
 #
 # Loopfilter
 #
 add_proto qw/void vp8_loop_filter_mbv/, "unsigned char *y, unsigned char *u, unsigned char *v, int ystride, int uv_stride, struct loop_filter_info *lfi";
-specialize qw/vp8_loop_filter_mbv mmx sse2 media neon dspr2 msa/;
-$vp8_loop_filter_mbv_media=vp8_loop_filter_mbv_armv6;
+specialize qw/vp8_loop_filter_mbv mmx sse2 neon dspr2 msa/;
 $vp8_loop_filter_mbv_dspr2=vp8_loop_filter_mbv_dspr2;
 
 add_proto qw/void vp8_loop_filter_bv/, "unsigned char *y, unsigned char *u, unsigned char *v, int ystride, int uv_stride, struct loop_filter_info *lfi";
-specialize qw/vp8_loop_filter_bv mmx sse2 media neon dspr2 msa/;
-$vp8_loop_filter_bv_media=vp8_loop_filter_bv_armv6;
+specialize qw/vp8_loop_filter_bv mmx sse2 neon dspr2 msa/;
 $vp8_loop_filter_bv_dspr2=vp8_loop_filter_bv_dspr2;
 
 add_proto qw/void vp8_loop_filter_mbh/, "unsigned char *y, unsigned char *u, unsigned char *v, int ystride, int uv_stride, struct loop_filter_info *lfi";
-specialize qw/vp8_loop_filter_mbh mmx sse2 media neon dspr2 msa/;
-$vp8_loop_filter_mbh_media=vp8_loop_filter_mbh_armv6;
+specialize qw/vp8_loop_filter_mbh mmx sse2 neon dspr2 msa/;
 $vp8_loop_filter_mbh_dspr2=vp8_loop_filter_mbh_dspr2;
 
 add_proto qw/void vp8_loop_filter_bh/, "unsigned char *y, unsigned char *u, unsigned char *v, int ystride, int uv_stride, struct loop_filter_info *lfi";
-specialize qw/vp8_loop_filter_bh mmx sse2 media neon dspr2 msa/;
-$vp8_loop_filter_bh_media=vp8_loop_filter_bh_armv6;
+specialize qw/vp8_loop_filter_bh mmx sse2 neon dspr2 msa/;
 $vp8_loop_filter_bh_dspr2=vp8_loop_filter_bh_dspr2;
 
 
 add_proto qw/void vp8_loop_filter_simple_mbv/, "unsigned char *y, int ystride, const unsigned char *blimit";
-specialize qw/vp8_loop_filter_simple_mbv mmx sse2 media neon msa/;
+specialize qw/vp8_loop_filter_simple_mbv mmx sse2 neon msa/;
 $vp8_loop_filter_simple_mbv_c=vp8_loop_filter_simple_vertical_edge_c;
 $vp8_loop_filter_simple_mbv_mmx=vp8_loop_filter_simple_vertical_edge_mmx;
 $vp8_loop_filter_simple_mbv_sse2=vp8_loop_filter_simple_vertical_edge_sse2;
-$vp8_loop_filter_simple_mbv_media=vp8_loop_filter_simple_vertical_edge_armv6;
 $vp8_loop_filter_simple_mbv_neon=vp8_loop_filter_mbvs_neon;
 $vp8_loop_filter_simple_mbv_msa=vp8_loop_filter_simple_vertical_edge_msa;
 
 add_proto qw/void vp8_loop_filter_simple_mbh/, "unsigned char *y, int ystride, const unsigned char *blimit";
-specialize qw/vp8_loop_filter_simple_mbh mmx sse2 media neon msa/;
+specialize qw/vp8_loop_filter_simple_mbh mmx sse2 neon msa/;
 $vp8_loop_filter_simple_mbh_c=vp8_loop_filter_simple_horizontal_edge_c;
 $vp8_loop_filter_simple_mbh_mmx=vp8_loop_filter_simple_horizontal_edge_mmx;
 $vp8_loop_filter_simple_mbh_sse2=vp8_loop_filter_simple_horizontal_edge_sse2;
-$vp8_loop_filter_simple_mbh_media=vp8_loop_filter_simple_horizontal_edge_armv6;
 $vp8_loop_filter_simple_mbh_neon=vp8_loop_filter_mbhs_neon;
 $vp8_loop_filter_simple_mbh_msa=vp8_loop_filter_simple_horizontal_edge_msa;
 
 add_proto qw/void vp8_loop_filter_simple_bv/, "unsigned char *y, int ystride, const unsigned char *blimit";
-specialize qw/vp8_loop_filter_simple_bv mmx sse2 media neon msa/;
+specialize qw/vp8_loop_filter_simple_bv mmx sse2 neon msa/;
 $vp8_loop_filter_simple_bv_c=vp8_loop_filter_bvs_c;
 $vp8_loop_filter_simple_bv_mmx=vp8_loop_filter_bvs_mmx;
 $vp8_loop_filter_simple_bv_sse2=vp8_loop_filter_bvs_sse2;
-$vp8_loop_filter_simple_bv_media=vp8_loop_filter_bvs_armv6;
 $vp8_loop_filter_simple_bv_neon=vp8_loop_filter_bvs_neon;
 $vp8_loop_filter_simple_bv_msa=vp8_loop_filter_bvs_msa;
 
 add_proto qw/void vp8_loop_filter_simple_bh/, "unsigned char *y, int ystride, const unsigned char *blimit";
-specialize qw/vp8_loop_filter_simple_bh mmx sse2 media neon msa/;
+specialize qw/vp8_loop_filter_simple_bh mmx sse2 neon msa/;
 $vp8_loop_filter_simple_bh_c=vp8_loop_filter_bhs_c;
 $vp8_loop_filter_simple_bh_mmx=vp8_loop_filter_bhs_mmx;
 $vp8_loop_filter_simple_bh_sse2=vp8_loop_filter_bhs_sse2;
-$vp8_loop_filter_simple_bh_media=vp8_loop_filter_bhs_armv6;
 $vp8_loop_filter_simple_bh_neon=vp8_loop_filter_bhs_neon;
 $vp8_loop_filter_simple_bh_msa=vp8_loop_filter_bhs_msa;
 
@@ -112,8 +100,7 @@ $vp8_loop_filter_simple_bh_msa=vp8_loop_filter_bhs_msa;
 #
 #idct16
 add_proto qw/void vp8_short_idct4x4llm/, "short *input, unsigned char *pred, int pitch, unsigned char *dst, int dst_stride";
-specialize qw/vp8_short_idct4x4llm mmx media neon dspr2 msa/;
-$vp8_short_idct4x4llm_media=vp8_short_idct4x4llm_v6_dual;
+specialize qw/vp8_short_idct4x4llm mmx neon dspr2 msa/;
 $vp8_short_idct4x4llm_dspr2=vp8_short_idct4x4llm_dspr2;
 
 #iwalsh1
@@ -124,52 +111,33 @@ $vp8_short_inv_walsh4x4_1_dspr2=vp8_short_inv_walsh4x4_1_dspr2;
 
 #iwalsh16
 add_proto qw/void vp8_short_inv_walsh4x4/, "short *input, short *output";
-specialize qw/vp8_short_inv_walsh4x4 mmx sse2 media neon dspr2 msa/;
-$vp8_short_inv_walsh4x4_media=vp8_short_inv_walsh4x4_v6;
+specialize qw/vp8_short_inv_walsh4x4 mmx sse2 neon dspr2 msa/;
 $vp8_short_inv_walsh4x4_dspr2=vp8_short_inv_walsh4x4_dspr2;
 
 #idct1_scalar_add
 add_proto qw/void vp8_dc_only_idct_add/, "short input, unsigned char *pred, int pred_stride, unsigned char *dst, int dst_stride";
-specialize qw/vp8_dc_only_idct_add	mmx media neon dspr2 msa/;
-$vp8_dc_only_idct_add_media=vp8_dc_only_idct_add_v6;
+specialize qw/vp8_dc_only_idct_add mmx neon dspr2 msa/;
 $vp8_dc_only_idct_add_dspr2=vp8_dc_only_idct_add_dspr2;
 
 #
 # RECON
 #
 add_proto qw/void vp8_copy_mem16x16/, "unsigned char *src, int src_pitch, unsigned char *dst, int dst_pitch";
-specialize qw/vp8_copy_mem16x16 mmx sse2 media neon dspr2 msa/;
-$vp8_copy_mem16x16_media=vp8_copy_mem16x16_v6;
+specialize qw/vp8_copy_mem16x16 mmx sse2 neon dspr2 msa/;
 $vp8_copy_mem16x16_dspr2=vp8_copy_mem16x16_dspr2;
 
 add_proto qw/void vp8_copy_mem8x8/, "unsigned char *src, int src_pitch, unsigned char *dst, int dst_pitch";
-specialize qw/vp8_copy_mem8x8 mmx media neon dspr2 msa/;
-$vp8_copy_mem8x8_media=vp8_copy_mem8x8_v6;
+specialize qw/vp8_copy_mem8x8 mmx neon dspr2 msa/;
 $vp8_copy_mem8x8_dspr2=vp8_copy_mem8x8_dspr2;
 
 add_proto qw/void vp8_copy_mem8x4/, "unsigned char *src, int src_pitch, unsigned char *dst, int dst_pitch";
-specialize qw/vp8_copy_mem8x4 mmx media neon dspr2 msa/;
-$vp8_copy_mem8x4_media=vp8_copy_mem8x4_v6;
+specialize qw/vp8_copy_mem8x4 mmx neon dspr2 msa/;
 $vp8_copy_mem8x4_dspr2=vp8_copy_mem8x4_dspr2;
 
 #
 # Postproc
 #
 if (vpx_config("CONFIG_POSTPROC") eq "yes") {
-    add_proto qw/void vp8_mbpost_proc_down/, "unsigned char *dst, int pitch, int rows, int cols,int flimit";
-    specialize qw/vp8_mbpost_proc_down mmx sse2 msa/;
-    $vp8_mbpost_proc_down_sse2=vp8_mbpost_proc_down_xmm;
-
-    add_proto qw/void vp8_mbpost_proc_across_ip/, "unsigned char *dst, int pitch, int rows, int cols,int flimit";
-    specialize qw/vp8_mbpost_proc_across_ip sse2 msa/;
-    $vp8_mbpost_proc_across_ip_sse2=vp8_mbpost_proc_across_ip_xmm;
-
-    add_proto qw/void vp8_post_proc_down_and_across_mb_row/, "unsigned char *src, unsigned char *dst, int src_pitch, int dst_pitch, int cols, unsigned char *flimits, int size";
-    specialize qw/vp8_post_proc_down_and_across_mb_row sse2 msa/;
-
-    add_proto qw/void vp8_plane_add_noise/, "unsigned char *s, char *noise, char blackclamp[16], char whiteclamp[16], char bothclamp[16], unsigned int w, unsigned int h, int pitch";
-    specialize qw/vp8_plane_add_noise mmx sse2 msa/;
-    $vp8_plane_add_noise_sse2=vp8_plane_add_noise_wmt;
 
     add_proto qw/void vp8_blend_mb_inner/, "unsigned char *y, unsigned char *u, unsigned char *v, int y1, int u1, int v1, int alpha, int stride";
     # no asm yet
@@ -194,42 +162,34 @@ if (vpx_config("CONFIG_POSTPROC") eq "yes") {
 # Subpixel
 #
 add_proto qw/void vp8_sixtap_predict16x16/, "unsigned char *src, int src_pitch, int xofst, int yofst, unsigned char *dst, int dst_pitch";
-specialize qw/vp8_sixtap_predict16x16 mmx sse2 ssse3 media neon dspr2 msa/;
-$vp8_sixtap_predict16x16_media=vp8_sixtap_predict16x16_armv6;
+specialize qw/vp8_sixtap_predict16x16 mmx sse2 ssse3 neon dspr2 msa/;
 $vp8_sixtap_predict16x16_dspr2=vp8_sixtap_predict16x16_dspr2;
 
 add_proto qw/void vp8_sixtap_predict8x8/, "unsigned char *src, int src_pitch, int xofst, int yofst, unsigned char *dst, int dst_pitch";
-specialize qw/vp8_sixtap_predict8x8 mmx sse2 ssse3 media neon dspr2 msa/;
-$vp8_sixtap_predict8x8_media=vp8_sixtap_predict8x8_armv6;
+specialize qw/vp8_sixtap_predict8x8 mmx sse2 ssse3 neon dspr2 msa/;
 $vp8_sixtap_predict8x8_dspr2=vp8_sixtap_predict8x8_dspr2;
 
 add_proto qw/void vp8_sixtap_predict8x4/, "unsigned char *src, int src_pitch, int xofst, int yofst, unsigned char *dst, int dst_pitch";
-specialize qw/vp8_sixtap_predict8x4 mmx sse2 ssse3 media neon dspr2 msa/;
-$vp8_sixtap_predict8x4_media=vp8_sixtap_predict8x4_armv6;
+specialize qw/vp8_sixtap_predict8x4 mmx sse2 ssse3 neon dspr2 msa/;
 $vp8_sixtap_predict8x4_dspr2=vp8_sixtap_predict8x4_dspr2;
 
+# TODO(johannkoenig): Add neon implementation
+# https://bugs.chromium.org/p/webm/issues/detail?id=1273
 add_proto qw/void vp8_sixtap_predict4x4/, "unsigned char *src, int src_pitch, int xofst, int yofst, unsigned char *dst, int dst_pitch";
-#TODO(johannkoenig): fix the neon version https://code.google.com/p/webm/issues/detail?id=817
-specialize qw/vp8_sixtap_predict4x4 mmx ssse3 media dspr2 msa/;
-$vp8_sixtap_predict4x4_media=vp8_sixtap_predict4x4_armv6;
+specialize qw/vp8_sixtap_predict4x4 mmx ssse3 dspr2 msa/;
 $vp8_sixtap_predict4x4_dspr2=vp8_sixtap_predict4x4_dspr2;
 
 add_proto qw/void vp8_bilinear_predict16x16/, "unsigned char *src, int src_pitch, int xofst, int yofst, unsigned char *dst, int dst_pitch";
-specialize qw/vp8_bilinear_predict16x16 mmx sse2 ssse3 media neon msa/;
-$vp8_bilinear_predict16x16_media=vp8_bilinear_predict16x16_armv6;
+specialize qw/vp8_bilinear_predict16x16 mmx sse2 ssse3 neon msa/;
 
 add_proto qw/void vp8_bilinear_predict8x8/, "unsigned char *src, int src_pitch, int xofst, int yofst, unsigned char *dst, int dst_pitch";
-specialize qw/vp8_bilinear_predict8x8 mmx sse2 ssse3 media neon msa/;
-$vp8_bilinear_predict8x8_media=vp8_bilinear_predict8x8_armv6;
+specialize qw/vp8_bilinear_predict8x8 mmx sse2 ssse3 neon msa/;
 
 add_proto qw/void vp8_bilinear_predict8x4/, "unsigned char *src, int src_pitch, int xofst, int yofst, unsigned char *dst, int dst_pitch";
-specialize qw/vp8_bilinear_predict8x4 mmx media neon msa/;
-$vp8_bilinear_predict8x4_media=vp8_bilinear_predict8x4_armv6;
+specialize qw/vp8_bilinear_predict8x4 mmx neon msa/;
 
 add_proto qw/void vp8_bilinear_predict4x4/, "unsigned char *src, int src_pitch, int xofst, int yofst, unsigned char *dst, int dst_pitch";
-#TODO(johannkoenig): fix the neon version https://code.google.com/p/webm/issues/detail?id=892
-specialize qw/vp8_bilinear_predict4x4 mmx media msa/;
-$vp8_bilinear_predict4x4_media=vp8_bilinear_predict4x4_armv6;
+specialize qw/vp8_bilinear_predict4x4 mmx neon msa/;
 
 #
 # Encoder functions below this point.
@@ -248,16 +208,13 @@ if ($opts{arch} =~ /x86/) {
 # Forward DCT
 #
 add_proto qw/void vp8_short_fdct4x4/, "short *input, short *output, int pitch";
-specialize qw/vp8_short_fdct4x4 mmx sse2 media neon msa/;
-$vp8_short_fdct4x4_media=vp8_short_fdct4x4_armv6;
+specialize qw/vp8_short_fdct4x4 mmx sse2 neon msa/;
 
 add_proto qw/void vp8_short_fdct8x4/, "short *input, short *output, int pitch";
-specialize qw/vp8_short_fdct8x4 mmx sse2 media neon msa/;
-$vp8_short_fdct8x4_media=vp8_short_fdct8x4_armv6;
+specialize qw/vp8_short_fdct8x4 mmx sse2 neon msa/;
 
 add_proto qw/void vp8_short_walsh4x4/, "short *input, short *output, int pitch";
-specialize qw/vp8_short_walsh4x4 sse2 media neon msa/;
-$vp8_short_walsh4x4_media=vp8_short_walsh4x4_armv6;
+specialize qw/vp8_short_walsh4x4 sse2 neon msa/;
 
 #
 # Quantizer

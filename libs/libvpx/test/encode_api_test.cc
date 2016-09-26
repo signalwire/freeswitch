@@ -26,11 +26,8 @@ TEST(EncodeAPI, InvalidParams) {
 #if CONFIG_VP9_ENCODER
     &vpx_codec_vp9_cx_algo,
 #endif
-#if CONFIG_VP10_ENCODER
-    &vpx_codec_vp10_cx_algo,
-#endif
   };
-  uint8_t buf[1] = {0};
+  uint8_t buf[1] = { 0 };
   vpx_image_t img;
   vpx_codec_ctx_t enc;
   vpx_codec_enc_cfg_t cfg;

@@ -13,7 +13,6 @@
 
 #include "vpx/vpx_integer.h"
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif

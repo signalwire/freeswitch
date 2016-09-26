@@ -27,11 +27,8 @@ TEST(DecodeAPI, InvalidParams) {
 #if CONFIG_VP9_DECODER
     &vpx_codec_vp9_dx_algo,
 #endif
-#if CONFIG_VP10_DECODER
-    &vpx_codec_vp10_dx_algo,
-#endif
   };
-  uint8_t buf[1] = {0};
+  uint8_t buf[1] = { 0 };
   vpx_codec_ctx_t dec;
 
   EXPECT_EQ(VPX_CODEC_INVALID_PARAM, vpx_codec_dec_init(NULL, NULL, NULL, 0));
@@ -54,8 +51,7 @@ TEST(DecodeAPI, InvalidParams) {
               vpx_codec_decode(&dec, buf, NELEMENTS(buf), NULL, 0));
     EXPECT_EQ(VPX_CODEC_INVALID_PARAM,
               vpx_codec_decode(&dec, NULL, NELEMENTS(buf), NULL, 0));
-    EXPECT_EQ(VPX_CODEC_INVALID_PARAM,
-              vpx_codec_decode(&dec, buf, 0, NULL, 0));
+    EXPECT_EQ(VPX_CODEC_INVALID_PARAM, vpx_codec_decode(&dec, buf, 0, NULL, 0));
 
     EXPECT_EQ(VPX_CODEC_OK, vpx_codec_destroy(&dec));
   }
@@ -80,12 +76,9 @@ TEST(DecodeAPI, OptionalParams) {
 // Test VP9 codec controls after a decode error to ensure the code doesn't
 // misbehave.
 void TestVp9Controls(vpx_codec_ctx_t *dec) {
-  static const int kControls[] = {
-    VP8D_GET_LAST_REF_UPDATES,
-    VP8D_GET_FRAME_CORRUPTED,
-    VP9D_GET_DISPLAY_SIZE,
-    VP9D_GET_FRAME_SIZE
-  };
+  static const int kControls[] = { VP8D_GET_LAST_REF_UPDATES,
+                                   VP8D_GET_FRAME_CORRUPTED,
+                                   VP9D_GET_DISPLAY_SIZE, VP9D_GET_FRAME_SIZE };
   int val[2];
 
   for (int i = 0; i < NELEMENTS(kControls); ++i) {
@@ -94,9 +87,7 @@ void TestVp9Controls(vpx_codec_ctx_t *dec) {
       case VP8D_GET_FRAME_CORRUPTED:
         EXPECT_EQ(VPX_CODEC_ERROR, res) << kControls[i];
         break;
-      default:
-        EXPECT_EQ(VPX_CODEC_OK, res) << kControls[i];
-        break;
+      default: EXPECT_EQ(VPX_CODEC_OK, res) << kControls[i]; break;
     }
     EXPECT_EQ(VPX_CODEC_INVALID_PARAM,
               vpx_codec_control_(dec, kControls[i], NULL));
@@ -145,6 +136,39 @@ TEST(DecodeAPI, Vp9InvalidDecode) {
 
   TestVp9Controls(&dec);
   EXPECT_EQ(VPX_CODEC_OK, vpx_codec_destroy(&dec));
+}
+
+TEST(DecodeAPI, Vp9PeekSI) {
+  const vpx_codec_iface_t *const codec = &vpx_codec_vp9_dx_algo;
+  // The first 9 bytes are valid and the rest of the bytes are made up. Until
+  // size 10, this should return VPX_CODEC_UNSUP_BITSTREAM and after that it
+  // should return VPX_CODEC_CORRUPT_FRAME.
+  const uint8_t data[32] = {
+    0x85, 0xa4, 0xc1, 0xa1, 0x38, 0x81, 0xa3, 0x49, 0x83, 0xff, 0xff,
+    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+  };
+
+  for (uint32_t data_sz = 1; data_sz <= 32; ++data_sz) {
+    // Verify behavior of vpx_codec_decode. vpx_codec_decode doesn't even get
+    // to decoder_peek_si_internal on frames of size < 8.
+    if (data_sz >= 8) {
+      vpx_codec_ctx_t dec;
+      EXPECT_EQ(VPX_CODEC_OK, vpx_codec_dec_init(&dec, codec, NULL, 0));
+      EXPECT_EQ(
+          (data_sz < 10) ? VPX_CODEC_UNSUP_BITSTREAM : VPX_CODEC_CORRUPT_FRAME,
+          vpx_codec_decode(&dec, data, data_sz, NULL, 0));
+      vpx_codec_iter_t iter = NULL;
+      EXPECT_EQ(NULL, vpx_codec_get_frame(&dec, &iter));
+      EXPECT_EQ(VPX_CODEC_OK, vpx_codec_destroy(&dec));
+    }
+
+    // Verify behavior of vpx_codec_peek_stream_info.
+    vpx_codec_stream_info_t si;
+    si.sz = sizeof(si);
+    EXPECT_EQ((data_sz < 10) ? VPX_CODEC_UNSUP_BITSTREAM : VPX_CODEC_OK,
+              vpx_codec_peek_stream_info(codec, data, data_sz, &si));
+  }
 }
 #endif  // CONFIG_VP9_DECODER
 

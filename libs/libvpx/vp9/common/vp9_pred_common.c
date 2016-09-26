@@ -13,61 +13,13 @@
 #include "vp9/common/vp9_pred_common.h"
 #include "vp9/common/vp9_seg_common.h"
 
-// Returns a context number for the given MB prediction signal
-int vp9_get_pred_context_switchable_interp(const MACROBLOCKD *xd) {
-  // Note:
-  // The mode info data structure has a one element border above and to the
-  // left of the entries corresponding to real macroblocks.
-  // The prediction flags in these dummy entries are initialized to 0.
-  const MODE_INFO *const left_mi = xd->left_mi;
-  const int left_type = xd->left_available && is_inter_block(left_mi) ?
-                            left_mi->interp_filter : SWITCHABLE_FILTERS;
-  const MODE_INFO *const above_mi = xd->above_mi;
-  const int above_type = xd->up_available && is_inter_block(above_mi) ?
-                             above_mi->interp_filter : SWITCHABLE_FILTERS;
-
-  if (left_type == above_type)
-    return left_type;
-  else if (left_type == SWITCHABLE_FILTERS && above_type != SWITCHABLE_FILTERS)
-    return above_type;
-  else if (left_type != SWITCHABLE_FILTERS && above_type == SWITCHABLE_FILTERS)
-    return left_type;
-  else
-    return SWITCHABLE_FILTERS;
-}
-
-// The mode info data structure has a one element border above and to the
-// left of the entries corresponding to real macroblocks.
-// The prediction flags in these dummy entries are initialized to 0.
-// 0 - inter/inter, inter/--, --/inter, --/--
-// 1 - intra/inter, inter/intra
-// 2 - intra/--, --/intra
-// 3 - intra/intra
-int vp9_get_intra_inter_context(const MACROBLOCKD *xd) {
-  const MODE_INFO *const above_mi = xd->above_mi;
-  const MODE_INFO *const left_mi = xd->left_mi;
-  const int has_above = xd->up_available;
-  const int has_left = xd->left_available;
-
-  if (has_above && has_left) {  // both edges available
-    const int above_intra = !is_inter_block(above_mi);
-    const int left_intra = !is_inter_block(left_mi);
-    return left_intra && above_intra ? 3
-                                     : left_intra || above_intra;
-  } else if (has_above || has_left) {  // one edge available
-    return 2 * !is_inter_block(has_above ? above_mi : left_mi);
-  } else {
-    return 0;
-  }
-}
-
 int vp9_get_reference_mode_context(const VP9_COMMON *cm,
                                    const MACROBLOCKD *xd) {
   int ctx;
   const MODE_INFO *const above_mi = xd->above_mi;
   const MODE_INFO *const left_mi = xd->left_mi;
-  const int has_above = xd->up_available;
-  const int has_left = xd->left_available;
+  const int has_above = !!above_mi;
+  const int has_left = !!left_mi;
   // Note:
   // The mode info data structure has a one element border above and to the
   // left of the entries corresponding to real macroblocks.
@@ -109,8 +61,8 @@ int vp9_get_pred_context_comp_ref_p(const VP9_COMMON *cm,
   int pred_context;
   const MODE_INFO *const above_mi = xd->above_mi;
   const MODE_INFO *const left_mi = xd->left_mi;
-  const int above_in_image = xd->up_available;
-  const int left_in_image = xd->left_available;
+  const int above_in_image = !!above_mi;
+  const int left_in_image = !!left_mi;
 
   // Note:
   // The mode info data structure has a one element border above and to the
@@ -131,15 +83,15 @@ int vp9_get_pred_context_comp_ref_p(const VP9_COMMON *cm,
       if (!has_second_ref(edge_mi))  // single pred (1/3)
         pred_context = 1 + 2 * (edge_mi->ref_frame[0] != cm->comp_var_ref[1]);
       else  // comp pred (1/3)
-        pred_context = 1 + 2 * (edge_mi->ref_frame[var_ref_idx]
-                                    != cm->comp_var_ref[1]);
+        pred_context =
+            1 + 2 * (edge_mi->ref_frame[var_ref_idx] != cm->comp_var_ref[1]);
     } else {  // inter/inter
       const int l_sg = !has_second_ref(left_mi);
       const int a_sg = !has_second_ref(above_mi);
-      const MV_REFERENCE_FRAME vrfa = a_sg ? above_mi->ref_frame[0]
-                                           : above_mi->ref_frame[var_ref_idx];
-      const MV_REFERENCE_FRAME vrfl = l_sg ? left_mi->ref_frame[0]
-                                           : left_mi->ref_frame[var_ref_idx];
+      const MV_REFERENCE_FRAME vrfa =
+          a_sg ? above_mi->ref_frame[0] : above_mi->ref_frame[var_ref_idx];
+      const MV_REFERENCE_FRAME vrfl =
+          l_sg ? left_mi->ref_frame[0] : left_mi->ref_frame[var_ref_idx];
 
       if (vrfa == vrfl && cm->comp_var_ref[1] == vrfa) {
         pred_context = 0;
@@ -173,8 +125,8 @@ int vp9_get_pred_context_comp_ref_p(const VP9_COMMON *cm,
       pred_context = 2;
     } else {
       if (has_second_ref(edge_mi))
-        pred_context = 4 * (edge_mi->ref_frame[var_ref_idx]
-                              != cm->comp_var_ref[1]);
+        pred_context =
+            4 * (edge_mi->ref_frame[var_ref_idx] != cm->comp_var_ref[1]);
       else
         pred_context = 3 * (edge_mi->ref_frame[0] != cm->comp_var_ref[1]);
     }
@@ -190,8 +142,8 @@ int vp9_get_pred_context_single_ref_p1(const MACROBLOCKD *xd) {
   int pred_context;
   const MODE_INFO *const above_mi = xd->above_mi;
   const MODE_INFO *const left_mi = xd->left_mi;
-  const int has_above = xd->up_available;
-  const int has_left = xd->left_available;
+  const int has_above = !!above_mi;
+  const int has_left = !!left_mi;
   // Note:
   // The mode info data structure has a one element border above and to the
   // left of the entries corresponding to real macroblocks.
@@ -256,8 +208,8 @@ int vp9_get_pred_context_single_ref_p2(const MACROBLOCKD *xd) {
   int pred_context;
   const MODE_INFO *const above_mi = xd->above_mi;
   const MODE_INFO *const left_mi = xd->left_mi;
-  const int has_above = xd->up_available;
-  const int has_left = xd->left_available;
+  const int has_above = !!above_mi;
+  const int has_left = !!left_mi;
 
   // Note:
   // The mode info data structure has a one element border above and to the
@@ -277,8 +229,9 @@ int vp9_get_pred_context_single_ref_p2(const MACROBLOCKD *xd) {
         else
           pred_context = 4 * (edge_mi->ref_frame[0] == GOLDEN_FRAME);
       } else {
-        pred_context = 1 + 2 * (edge_mi->ref_frame[0] == GOLDEN_FRAME ||
-                                edge_mi->ref_frame[1] == GOLDEN_FRAME);
+        pred_context = 1 +
+                       2 * (edge_mi->ref_frame[0] == GOLDEN_FRAME ||
+                            edge_mi->ref_frame[1] == GOLDEN_FRAME);
       }
     } else {  // inter/inter
       const int above_has_second = has_second_ref(above_mi);
@@ -290,10 +243,9 @@ int vp9_get_pred_context_single_ref_p2(const MACROBLOCKD *xd) {
 
       if (above_has_second && left_has_second) {
         if (above0 == left0 && above1 == left1)
-          pred_context = 3 * (above0 == GOLDEN_FRAME ||
-                              above1 == GOLDEN_FRAME ||
-                              left0 == GOLDEN_FRAME ||
-                              left1 == GOLDEN_FRAME);
+          pred_context =
+              3 * (above0 == GOLDEN_FRAME || above1 == GOLDEN_FRAME ||
+                   left0 == GOLDEN_FRAME || left1 == GOLDEN_FRAME);
         else
           pred_context = 2;
       } else if (above_has_second || left_has_second) {
@@ -311,12 +263,12 @@ int vp9_get_pred_context_single_ref_p2(const MACROBLOCKD *xd) {
         if (above0 == LAST_FRAME && left0 == LAST_FRAME) {
           pred_context = 3;
         } else if (above0 == LAST_FRAME || left0 == LAST_FRAME) {
-          const MV_REFERENCE_FRAME edge0 = (above0 == LAST_FRAME) ? left0
-                                                                  : above0;
+          const MV_REFERENCE_FRAME edge0 =
+              (above0 == LAST_FRAME) ? left0 : above0;
           pred_context = 4 * (edge0 == GOLDEN_FRAME);
         } else {
-          pred_context = 2 * (above0 == GOLDEN_FRAME) +
-                             2 * (left0 == GOLDEN_FRAME);
+          pred_context =
+              2 * (above0 == GOLDEN_FRAME) + 2 * (left0 == GOLDEN_FRAME);
         }
       }
     }

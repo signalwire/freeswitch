@@ -12,7 +12,4 @@
 #include "./vpx_scale_rtcd.h"
 #include "vpx_ports/vpx_once.h"
 
-void vpx_scale_rtcd()
-{
-    once(setup_rtcd_internal);
-}
+void vpx_scale_rtcd() { once(setup_rtcd_internal); }
