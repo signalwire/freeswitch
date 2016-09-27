@@ -2785,6 +2785,7 @@ SWITCH_DECLARE(void) switch_rtp_reset_jb(switch_rtp_t *rtp_session)
 
 SWITCH_DECLARE(void) switch_rtp_reset_vb(switch_rtp_t *rtp_session)
 {
+
 	if (rtp_session->vb) {
 		switch_jb_reset(rtp_session->vb);
 	}

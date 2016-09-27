@@ -3729,7 +3729,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 	int codec_ms = 0;
 	uint32_t remote_codec_rate = 0, fmtp_remote_codec_rate = 0;
 	const char *tmp;
-	int m_idx = 0;
+	int m_idx = 0, skip_rtcp = 0, skip_video_rtcp = 0;
 	int nm_idx = 0;
 	int vmatch_pt = 0;
 	int rtcp_auto_audio = 0, rtcp_auto_video = 0;
@@ -4139,11 +4139,18 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 				}
 			}
 
+			skip_rtcp = 0;
 			for (attr = m->m_attributes; attr; attr = attr->a_next) {
+				if (!strcasecmp(attr->a_name, "rtcp-mux") || !strcasecmp(attr->a_name, "ice-ufrag")) {
+					skip_rtcp = 1;
+				}
+			}
 
-				if (!strcasecmp(attr->a_name, "rtcp") && attr->a_value) {
-					switch_channel_set_variable(session->channel, "rtp_remote_audio_rtcp_port", attr->a_value);
+			for (attr = m->m_attributes; attr; attr = attr->a_next) {
+				if (!strcasecmp(attr->a_name, "rtcp") && attr->a_value && !skip_rtcp) {
 					a_engine->remote_rtcp_port = (switch_port_t)atoi(attr->a_value);
+					switch_channel_set_variable_printf(session->channel, "rtp_remote_audio_rtcp_port", "%d", a_engine->remote_rtcp_port);
+
 					if (!smh->mparams->rtcp_audio_interval_msec) {
 						smh->mparams->rtcp_audio_interval_msec = SWITCH_RTCP_AUDIO_INTERVAL_MSEC;
 					}
@@ -4691,6 +4698,67 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 				}
 			}
 
+			skip_video_rtcp = 0;
+			for (attr = m->m_attributes; attr; attr = attr->a_next) {
+				if (!strcasecmp(attr->a_name, "rtcp-mux") || !strcasecmp(attr->a_name, "ice-ufrag")) {
+					skip_video_rtcp = 1;
+				}
+			}
+
+			for (attr = m->m_attributes; attr; attr = attr->a_next) {
+				if (!strcasecmp(attr->a_name, "framerate") && attr->a_value) {
+					//framerate = atoi(attr->a_value);
+				} else if (!strcasecmp(attr->a_name, "rtcp-fb")) {
+					if (!zstr(attr->a_value)) {
+						if (switch_stristr("fir", attr->a_value)) {
+							v_engine->fir++;
+						}
+							
+						if (switch_stristr("pli", attr->a_value)) {
+							v_engine->pli++;
+						}
+
+						if (switch_stristr("nack", attr->a_value)) {
+							v_engine->nack++;
+						}
+
+						if (switch_stristr("tmmbr", attr->a_value)) {
+							v_engine->tmmbr++;
+						}
+							
+						rtcp_auto_video = 1;
+						smh->mparams->rtcp_video_interval_msec = SWITCH_RTCP_VIDEO_INTERVAL_MSEC;
+					}
+				} else if (!strcasecmp(attr->a_name, "rtcp") && attr->a_value && !skip_video_rtcp) {
+					v_engine->remote_rtcp_port = (switch_port_t)atoi(attr->a_value);
+					switch_channel_set_variable_printf(session->channel, "rtp_remote_video_rtcp_port", "%d", v_engine->remote_rtcp_port);
+					if (!smh->mparams->rtcp_video_interval_msec) {
+						smh->mparams->rtcp_video_interval_msec = SWITCH_RTCP_VIDEO_INTERVAL_MSEC;
+					}
+					got_video_rtcp = 1;
+				} else if (!got_video_crypto && !strcasecmp(attr->a_name, "crypto") && !zstr(attr->a_value)) {
+					int crypto_tag;
+						
+					if (!(smh->mparams->ndlb & SM_NDLB_ALLOW_CRYPTO_IN_AVP) && 
+						!switch_true(switch_channel_get_variable(session->channel, "rtp_allow_crypto_in_avp"))) {
+						if (m->m_proto != sdp_proto_srtp && !got_webrtc) {
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "a=crypto in RTP/AVP, refer to rfc3711\n");
+							match = 0;
+							goto done;
+						}
+					}
+						
+					crypto = attr->a_value;
+					crypto_tag = atoi(crypto);
+						
+					got_video_crypto = switch_core_session_check_incoming_crypto(session, 
+																				 "rtp_has_video_crypto", 
+																				 SWITCH_MEDIA_TYPE_VIDEO, crypto, crypto_tag, sdp_type);
+					
+				}
+			}
+
+
 			if (switch_true(switch_channel_get_variable_dup(session->channel, "inherit_codec", SWITCH_FALSE, -1))) {
 				vmatch_pt = 1;
 			}
@@ -4707,58 +4775,6 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 					}
 				}
 				
-				for (attr = m->m_attributes; attr; attr = attr->a_next) {
-					if (!strcasecmp(attr->a_name, "framerate") && attr->a_value) {
-						//framerate = atoi(attr->a_value);
-					} else if (!strcasecmp(attr->a_name, "rtcp-fb")) {
-						if (!zstr(attr->a_value)) {
-							if (switch_stristr("fir", attr->a_value)) {
-								v_engine->fir++;
-							}
-							
-							if (switch_stristr("pli", attr->a_value)) {
-								v_engine->pli++;
-							}
-
-							if (switch_stristr("nack", attr->a_value)) {
-								v_engine->nack++;
-							}
-
-							if (switch_stristr("tmmbr", attr->a_value)) {
-								v_engine->tmmbr++;
-							}
-							
-							rtcp_auto_video = 1;
-						}
-					} else if (!strcasecmp(attr->a_name, "rtcp") && attr->a_value) {
-						switch_channel_set_variable(session->channel, "rtp_remote_video_rtcp_port", attr->a_value);
-						v_engine->remote_rtcp_port = (switch_port_t)atoi(attr->a_value);
-						if (!smh->mparams->rtcp_video_interval_msec) {
-							smh->mparams->rtcp_video_interval_msec = SWITCH_RTCP_VIDEO_INTERVAL_MSEC;
-						}
-						got_video_rtcp = 1;
-					} else if (!got_video_crypto && !strcasecmp(attr->a_name, "crypto") && !zstr(attr->a_value)) {
-						int crypto_tag;
-						
-						if (!(smh->mparams->ndlb & SM_NDLB_ALLOW_CRYPTO_IN_AVP) && 
-							!switch_true(switch_channel_get_variable(session->channel, "rtp_allow_crypto_in_avp"))) {
-							if (m->m_proto != sdp_proto_srtp && !got_webrtc) {
-								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "a=crypto in RTP/AVP, refer to rfc3711\n");
-								match = 0;
-								goto done;
-							}
-						}
-						
-						crypto = attr->a_value;
-						crypto_tag = atoi(crypto);
-						
-						got_video_crypto = switch_core_session_check_incoming_crypto(session, 
-																					 "rtp_has_video_crypto", 
-																					 SWITCH_MEDIA_TYPE_VIDEO, crypto, crypto_tag, sdp_type);
-					
-					}
-				}
-
 				if (!(rm_encoding = map->rm_encoding)) {
 					rm_encoding = "";
 				}
@@ -4904,7 +4920,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 	}
 
 	if (rtcp_auto_audio || rtcp_auto_video) {
-		if (rtcp_auto_audio && !got_audio_rtcp && audio_port) {
+		if (rtcp_auto_audio && !skip_rtcp && !got_audio_rtcp && audio_port) {
 			switch_channel_set_variable_printf(session->channel, "rtp_remote_audio_rtcp_port", "%d", audio_port + 1);
 			a_engine->remote_rtcp_port = audio_port + 1;
 			
@@ -4912,7 +4928,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 				smh->mparams->rtcp_audio_interval_msec = SWITCH_RTCP_AUDIO_INTERVAL_MSEC;
 			}
 		}
-		if (rtcp_auto_video && !got_video_rtcp && video_port) {
+		if (rtcp_auto_video && !skip_video_rtcp && !got_video_rtcp && video_port) {
 			switch_channel_set_variable_printf(session->channel, "rtp_remote_video_rtcp_port", "%d", video_port + 1);
 			v_engine->remote_rtcp_port = video_port + 1;
 			if (!smh->mparams->rtcp_video_interval_msec) {
