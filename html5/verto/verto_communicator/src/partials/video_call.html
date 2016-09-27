@@ -99,6 +99,9 @@
           </div>
         </div>
         <div class="col-md-6 col-xs-6 text-right">
+          <button ng-if="!verto.data.conf" tooltips="" tooltip-title="Hold" tooltip-side="bottom" tooltip-lazy="false" class="btn btn-material-900" ng-click="hold()">
+            <i class="big-icon" ng-class="{'mdi-av-pause':!storage.data.onHold, 'mdi-av-play-arrow': storage.data.onHold}"></i>
+          </button>
           <button class="btn btn-danger" ng-click="hangup()" translate>
             <i class="mdi-communication-call-end"></i>
             {{ watcher ? 'BUTTON_CLOSE' : 'BUTTON_END_CALL' }}

@@ -42,6 +42,7 @@
 #include <switch_nat.h>
 #include "private/switch_core_pvt.h"
 #include <switch_curl.h>
+#include <switch_msrp.h>
 #ifndef WIN32
 #include <switch_private.h>
 #ifdef HAVE_SETRLIMIT
@@ -2391,6 +2392,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(switch_core_flag_t 
 	switch_core_set_signal_handlers();
 	switch_load_network_lists(SWITCH_FALSE);
 
+	switch_msrp_init();
+
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Bringing up environment.\n");
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Loading Modules.\n");
 	if (switch_loadable_module_init(SWITCH_TRUE) != SWITCH_STATUS_SUCCESS) {
@@ -2905,6 +2908,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_destroy(void)
 	switch_scheduler_task_thread_stop();
 
 	switch_rtp_shutdown();
+	switch_msrp_destroy();
 
 	if (switch_test_flag((&runtime), SCF_USE_AUTO_NAT)) {
 		switch_nat_shutdown();

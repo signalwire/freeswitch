@@ -119,6 +119,8 @@ typedef switch_status_t (*switch_io_state_change_t) (switch_core_session_t *);
 typedef switch_status_t (*switch_io_state_run_t) (switch_core_session_t *);
 typedef switch_status_t (*switch_io_read_video_frame_t) (switch_core_session_t *, switch_frame_t **, switch_io_flag_t, int);
 typedef switch_status_t (*switch_io_write_video_frame_t) (switch_core_session_t *, switch_frame_t *, switch_io_flag_t, int);
+typedef switch_status_t (*switch_io_read_text_frame_t) (switch_core_session_t *, switch_frame_t **, switch_io_flag_t, int);
+typedef switch_status_t (*switch_io_write_text_frame_t) (switch_core_session_t *, switch_frame_t *, switch_io_flag_t, int);
 typedef switch_jb_t *(*switch_io_get_jb_t) (switch_core_session_t *, switch_media_type_t);
 
 typedef enum {
@@ -132,6 +134,8 @@ typedef enum {
 	SWITCH_IO_STATE_CHANGE,
 	SWITCH_IO_READ_VIDEO_FRAME,
 	SWITCH_IO_WRITE_VIDEO_FRAME,
+	SWITCH_IO_READ_TEXT_FRAME,
+	SWITCH_IO_WRITE_TEXT_FRAME,
 	SWITCH_IO_GET_JB,
 } switch_io_routine_name_t;
 
@@ -157,6 +161,10 @@ struct switch_io_routines {
 	switch_io_read_video_frame_t read_video_frame;
 	/*! write a video frame to a session */
 	switch_io_write_video_frame_t write_video_frame;
+	/*! read a video frame from a session */
+	switch_io_read_text_frame_t read_text_frame;
+	/*! write a video frame to a session */
+	switch_io_write_text_frame_t write_text_frame;
 	/*! change a sessions channel run state */
 	switch_io_state_run_t state_run;
 	/*! get sessions jitterbuffer */

@@ -663,6 +663,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_echo(switch_core_session_t *s
 	}
 
 	switch_channel_set_flag(channel, CF_VIDEO_ECHO);
+	switch_channel_set_flag(channel, CF_TEXT_ECHO);
 
 	while (switch_channel_ready(channel)) {
 		status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
@@ -717,6 +718,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_echo(switch_core_session_t *s
 
 	switch_core_session_video_reset(session);
 	switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
+	switch_channel_clear_flag(channel, CF_TEXT_ECHO);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -1524,6 +1526,84 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 
 	return SWITCH_TRUE;
 }
+
+
+static switch_bool_t text_callback(switch_media_bug_t *bug, void *user_data, switch_abc_type_t type)
+{
+
+	switch (type) {
+	case SWITCH_ABC_TYPE_READ_TEXT:
+		{
+			const char *text = switch_core_media_bug_get_text(bug);
+			
+
+			if (!zstr(text)) {
+				switch_event_t *event = NULL;
+				switch_core_session_t *session = switch_core_media_bug_get_session(bug);
+				//switch_channel_t *channel = switch_core_session_get_channel(session);
+
+				if (switch_event_create(&event, SWITCH_EVENT_REAL_TIME_TEXT) == SWITCH_STATUS_SUCCESS) {
+					switch_event_add_body(event, text, SWITCH_VA_NONE);
+					
+					if (switch_true(switch_core_get_variable("fire_text_events"))) {
+						switch_event_t *clone = NULL;
+
+						switch_event_dup(&clone, event);
+						switch_event_fire(&clone);
+					}
+					
+					switch_core_session_queue_event(session, &event);
+				}
+			}
+		}
+		break;
+	default:
+		break;
+	}
+
+	return SWITCH_TRUE;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_ivr_capture_text(switch_core_session_t *session, switch_bool_t on)
+{
+	switch_media_bug_t *bug;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+
+	bug = (switch_media_bug_t *) switch_channel_get_private(channel, "capture_text");
+
+	if (on) {
+
+		if (bug) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "text bug already attached\n");
+			return SWITCH_STATUS_FALSE;
+		}
+
+
+		if (switch_core_media_bug_add(session, "capture_text", switch_core_session_get_uuid(session),
+									  text_callback, NULL, 0,
+									  SMBF_READ_TEXT_STREAM,
+									  &bug) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot attach bug\n");
+			return SWITCH_STATUS_FALSE;
+		}
+
+		switch_channel_set_private(channel, "capture_text", bug);
+		return SWITCH_STATUS_SUCCESS;
+
+	} else {
+
+		if (bug) {
+			switch_channel_set_private(channel, "capture_text", NULL);
+			switch_core_media_bug_remove(session, &bug);
+			return SWITCH_STATUS_SUCCESS;
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "text bug not attached\n");
+			return SWITCH_STATUS_FALSE;
+		}
+
+	}
+}
+
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_record_session_mask(switch_core_session_t *session, const char *file, switch_bool_t on)
 {

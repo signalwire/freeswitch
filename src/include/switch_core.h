@@ -351,6 +351,8 @@ SWITCH_DECLARE(void) switch_core_media_bug_set_read_demux_frame(_In_ switch_medi
 */
 SWITCH_DECLARE(switch_core_session_t *) switch_core_media_bug_get_session(_In_ switch_media_bug_t *bug);
 
+SWITCH_DECLARE(const char *) switch_core_media_bug_get_text(switch_media_bug_t *bug);
+
 /*!
   \brief Test for the existance of a flag on an media bug
   \param bug the object to test
@@ -1162,6 +1164,8 @@ SWITCH_DECLARE(void *) switch_core_session_get_stream(_In_ switch_core_session_t
   \return the total number of logical streams
 */
 SWITCH_DECLARE(int) switch_core_session_get_stream_count(_In_ switch_core_session_t *session);
+
+SWITCH_DECLARE(const char *) switch_core_session_get_text_buffer(switch_core_session_t *session);
 
 /*! 
   \brief Launch a thread designed to exist within the scope of a given session
@@ -2741,6 +2745,8 @@ SWITCH_DECLARE(int) switch_stream_system(const char *cmd, switch_stream_handle_t
 SWITCH_DECLARE(switch_call_direction_t) switch_ice_direction(switch_core_session_t *session);
 SWITCH_DECLARE(void) switch_core_session_debug_pool(switch_stream_handle_t *stream);
 
+SWITCH_DECLARE(switch_status_t) switch_core_session_override_io_routines(switch_core_session_t *session, switch_io_routines_t *ior);
+
 SWITCH_DECLARE(const char *)switch_version_major(void);
 SWITCH_DECLARE(const char *)switch_version_minor(void);
 SWITCH_DECLARE(const char *)switch_version_micro(void);
@@ -2751,6 +2757,9 @@ SWITCH_DECLARE(const char *)switch_version_full(void);
 SWITCH_DECLARE(const char *)switch_version_full_human(void);
 
 SWITCH_DECLARE(void) switch_core_autobind_cpu(void);
+
+SWITCH_DECLARE(switch_status_t) switch_core_session_start_text_thread(switch_core_session_t *session);
+
 
 SWITCH_END_EXTERN_C
 #endif

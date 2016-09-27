@@ -219,6 +219,7 @@ static char *EVENT_NAMES[] = {
 	"CALL_SETUP_RESULT",
 	"CALL_DETAIL",
 	"DEVICE_STATE",
+	"REAL_TIME_TEXT",
 	"ALL"
 };
 

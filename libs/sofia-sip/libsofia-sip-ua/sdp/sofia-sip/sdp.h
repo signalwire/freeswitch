@@ -232,7 +232,8 @@ typedef enum
   sdp_media_message,			/**< Messaging sessions*/
   sdp_media_image,			/**< Image browsing sessions,
 					 *   e.g., JPIP or T.38. */
-  sdp_media_red				/**< Redundancy. @NEW_1_12_4. */
+  sdp_media_red,			/**< Redundancy. @NEW_1_12_4. */
+  sdp_media_text,			/**< Realtime Text */
 } sdp_media_e;
 
 /** Media transport protocol. */

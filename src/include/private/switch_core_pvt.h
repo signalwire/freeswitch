@@ -189,7 +189,13 @@ struct switch_core_session {
 	uint32_t decoder_errors;
 	switch_core_video_thread_callback_func_t video_read_callback;
 	void *video_read_user_data;
+	switch_core_video_thread_callback_func_t text_read_callback;
+	void *text_read_user_data;
+	switch_io_routines_t *io_override;
 	switch_slin_data_t *sdata;
+
+	switch_buffer_t *text_buffer;
+	switch_mutex_t *text_mutex;
 };
 
 struct switch_media_bug {
@@ -228,6 +234,11 @@ struct switch_media_bug {
 	switch_image_t *spy_img[2];
 	switch_vid_spy_fmt_t spy_fmt;
 	switch_thread_t *video_bug_thread;
+	
+	switch_buffer_t *text_buffer;
+	char *text_framedata;
+	uint32_t text_framesize;
+	
 	struct switch_media_bug *next;
 };
 

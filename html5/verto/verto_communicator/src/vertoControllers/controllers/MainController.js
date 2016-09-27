@@ -4,9 +4,11 @@
   angular
     .module('vertoControllers')
     .controller('MainController',
-      function($scope, $rootScope, $location, $modal, $timeout, $q, verto, storage, CallHistory, toastr, Fullscreen, prompt, eventQueue, $translate) {
+      function($scope, $rootScope, $location, $modal, $timeout, $q, verto, storage, CallHistory, toastr, Fullscreen, prompt, eventQueue, $translate, $window) {
 
       console.debug('Executing MainController.');
+      $rootScope.dtmfHistory = { value: '' };
+      $rootScope.onKeydownDtmfEnabled = true;
 
       if (storage.data.language && storage.data.language !== 'browser') {
         $translate.use(storage.data.language);
@@ -239,7 +241,8 @@
        * @param {String} number - New touched number.
        */
       $rootScope.dtmf = function(number) {
-        $rootScope.dialpadNumber = $scope.dialpadNumber + number;
+        console.log('dtmf', number);
+        $rootScope.dialpadNumber = $rootScope.dialpadNumber + number;
         if (verto.data.call) {
           verto.dtmf(number);
         }
@@ -552,6 +555,38 @@
           toastr.info('Speaker is now <span class="install">' + deviceName + '</a>', 'Success', { allowHtml: true });
         } else {
           toastr.error('Your browser doesn\'t seem to support this feature', 'Error');
+        }
+      }
+
+      $rootScope.dtmfWidget = function(number) {
+        $rootScope.dtmfHistory.value = $rootScope.dtmfHistory.value + number;
+        if (verto.data.call) {
+          verto.dtmf(number);
+        }
+      }
+
+      $rootScope.disableOnKeydownDtmf = function() {
+        $rootScope.onKeydownDtmfEnabled = false;
+      };
+
+      $rootScope.enableOnKeydownDtmf = function() {
+        $rootScope.onKeydownDtmfEnabled = true;
+      };
+
+      $rootScope.$on("$routeChangeStart", function(event, next, current) {
+        if (next.$$route.originalPath === '/incall') {
+          $rootScope.dtmfHistory.value = '';
+          angular.element($window).bind('keydown', onKeydownDtmfHistory);
+        } else {
+          angular.element($window).unbind('keydown', onKeydownDtmfHistory);
+        }
+      });
+
+      function onKeydownDtmfHistory(event) {
+        var caracter = event.key;
+        if ($rootScope.onKeydownDtmfEnabled && caracter.match(/^(\*|\#|[0-9a-dA-D])$/g)) {
+          $rootScope.dtmfWidget(caracter);
+          $scope.$applyAsync();
         }
       }
 

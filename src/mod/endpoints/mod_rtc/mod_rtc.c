@@ -287,6 +287,8 @@ switch_io_routines_t rtc_io_routines = {
 	/*.state_change */ NULL,
 	/*.read_video_frame */ rtc_read_video_frame,
 	/*.write_video_frame */ rtc_write_video_frame,
+	/*.read_text_frame */ NULL,
+	/*.write_text_frame */ NULL,
 	/*.state_run*/ NULL,
 	/*.get_jb*/ rtc_get_jb
 };
@@ -330,6 +332,7 @@ void rtc_attach_private(switch_core_session_t *session, private_object_t *tech_p
 	switch_core_media_check_dtmf_type(session);
 	switch_channel_set_cap(tech_pvt->channel, CC_JITTERBUFFER);
 	switch_channel_set_cap(tech_pvt->channel, CC_FS_RTP);
+	switch_channel_set_cap(tech_pvt->channel, CC_IO_OVERRIDE);
 	switch_media_handle_create(&tech_pvt->media_handle, session, &tech_pvt->mparams);
 	switch_core_session_set_private(session, tech_pvt);
 

@@ -297,6 +297,7 @@ library_include_HEADERS = \
 	src/include/switch_curl.h \
 	src/include/switch_json.h \
 	src/include/switch_utf8.h \
+	src/include/switch_msrp.h \
 	src/include/switch_vpx.h \
 	libs/libteletone/src/libteletone_detect.h \
 	libs/libteletone/src/libteletone_generate.h \
@@ -378,6 +379,7 @@ libfreeswitch_la_SOURCES = \
 	src/switch_curl.c \
 	src/switch_hashtable.c\
 	src/switch_utf8.c \
+	src/switch_msrp.c \
 	src/switch_vpx.c \
 	libs/libtpl-1.5/src/tpl.c \
 	libs/libteletone/src/libteletone_detect.c \

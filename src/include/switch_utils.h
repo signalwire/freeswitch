@@ -373,6 +373,33 @@ SWITCH_DECLARE(switch_status_t) switch_b64_encode(unsigned char *in, switch_size
 SWITCH_DECLARE(switch_size_t) switch_b64_decode(char *in, char *out, switch_size_t olen);
 SWITCH_DECLARE(char *) switch_amp_encode(char *s, char *buf, switch_size_t len);
 
+
+
+static inline char *switch_print_bits(const unsigned char *byte, char *buf, switch_size_t buflen)
+{
+
+	int i, j = 0, k = 0, l = 0;
+
+	while(k < buflen) {
+		l = 0;
+		for (i = 7; i >= 0; i--) {
+			buf[j++] = (*byte & (1 << i)) ? '1' : '0';
+			if (++l % 4 == 0) {
+				buf[j++] = ' ';
+			}
+		}
+		k++;
+		byte++;
+	}
+	
+	if (buf[j-1] == ' ') j--;
+	buf[j++] = '\0';
+	return buf;
+}
+
+
+
+
 static inline switch_bool_t switch_is_digit_string(const char *s)
 {
 

@@ -162,6 +162,8 @@ SWITCH_DECLARE(void) switch_buffer_destroy(switch_buffer_t **buffer);
 SWITCH_DECLARE(switch_size_t) switch_buffer_zwrite(_In_ switch_buffer_t *buffer, _In_bytecount_(datalen)
 												   const void *data, _In_ switch_size_t datalen);
 
+SWITCH_DECLARE(void *) switch_buffer_get_head_pointer(switch_buffer_t *buffer);
+
 /** @} */
 
 SWITCH_END_EXTERN_C

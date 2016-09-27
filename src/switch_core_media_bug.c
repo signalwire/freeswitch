@@ -88,6 +88,11 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_media_bug_get_session(switch
 	return bug->session;
 }
 
+SWITCH_DECLARE(const char *) switch_core_media_bug_get_text(switch_media_bug_t *bug)
+{
+	return bug->text_framedata;
+}
+
 SWITCH_DECLARE(switch_frame_t *) switch_core_media_bug_get_video_ping_frame(switch_media_bug_t *bug)
 {
 	return bug->video_ping_frame;
@@ -791,6 +796,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_add(switch_core_session_t 
 		switch_queue_create(&bug->spy_video_queue[1], SWITCH_CORE_QUEUE_LEN, switch_core_session_get_pool(session));
 	}
 
+	if ((switch_test_flag(bug, SMBF_READ_TEXT_STREAM))) {
+
+		switch_buffer_create_dynamic(&bug->text_buffer, 512, 1024, 0);
+		switch_zmalloc(bug->text_framedata, 1024);
+		bug->text_framesize = 1024;
+		
+	}
+
 	if ((switch_test_flag(bug, SMBF_READ_VIDEO_STREAM) || switch_test_flag(bug, SMBF_WRITE_VIDEO_STREAM))) {
 		switch_memory_pool_t *pool = switch_core_session_get_pool(session);
 
@@ -1148,6 +1161,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_close(switch_media_bug_t *
 
 		if (bp->callback) {
 			bp->callback(bp, bp->user_data, SWITCH_ABC_TYPE_CLOSE);
+		}
+
+		if (bp->text_buffer) {
+			switch_buffer_destroy(&bp->text_buffer);
+			switch_safe_free(bp->text_framedata);
 		}
 
 		if (switch_test_flag(bp, SMBF_READ_VIDEO_STREAM) || switch_test_flag(bp, SMBF_WRITE_VIDEO_STREAM) || switch_test_flag(bp, SMBF_READ_VIDEO_PING) || switch_test_flag(bp, SMBF_WRITE_VIDEO_PING)) {

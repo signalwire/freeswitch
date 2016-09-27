@@ -173,6 +173,7 @@ typedef enum {
 } tflag_t;
 
 typedef struct verto_pvt_s {
+	switch_memory_pool_t *pool;
 	char *jsock_uuid;
 	char *call_id;
 	char *r_sdp;
@@ -184,6 +185,17 @@ typedef struct verto_pvt_s {
 	switch_call_cause_t remote_hangup_cause;
 	time_t detach_time;
 	struct verto_pvt_s *next;
+	switch_byte_t text_read_frame_data[SWITCH_RTP_MAX_BUF_LEN];
+	switch_frame_t text_read_frame;
+
+	switch_thread_cond_t *text_cond;
+	switch_mutex_t *text_cond_mutex; 
+	switch_mutex_t *text_read_mutex; 
+	switch_mutex_t *text_write_mutex; 
+
+	switch_buffer_t *text_read_buffer;
+	switch_buffer_t *text_write_buffer;
+
 } verto_pvt_t;
 
 typedef struct verto_vhost_s {

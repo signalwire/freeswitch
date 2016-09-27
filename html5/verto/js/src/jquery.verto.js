@@ -2062,12 +2062,18 @@
         obj.dialogParams = {};
 
         for (var i in dialog.params) {
-            if (i == "sdp" && method != "verto.invite" && method != "verto.attach") {
+	    if (i == "sdp" && method != "verto.invite" && method != "verto.attach") {
                 continue;
-            }
+	    }
+	    
+	    if ((obj.noDialogParams && i != "callID")) {
+		continue;
+	    }
 
-            obj.dialogParams[i] = dialog.params[i];
+	    obj.dialogParams[i] = dialog.params[i];
         }
+	
+	delete obj.noDialogParams;
 
         dialog.verto.rpcClient.call(method, obj,
 
@@ -2371,6 +2377,26 @@
         }
     };
 
+    $.verto.dialog.prototype.rtt = function(obj) {
+        var dialog = this;
+	var pobj = {};
+
+	if (!obj) {
+	    return false;
+	}
+
+	pobj.code = obj.code;
+	pobj.chars = obj.chars;
+
+
+        if (pobj.chars || pobj.code) {
+            dialog.sendMethod("verto.info", {
+                txt: obj,
+		noDialogParams: true
+            });
+        }
+    };
+
     $.verto.dialog.prototype.transfer = function(dest, params) {
         var dialog = this;
         if (dest) {
@@ -2517,7 +2543,8 @@
     $.verto.dialog.prototype.handleInfo = function(params) {
         var dialog = this;
 
-        dialog.sendMessage($.verto.enum.message.info, params.msg);
+        dialog.sendMessage($.verto.enum.message.info, params);
+
     };
 
     $.verto.dialog.prototype.handleDisplay = function(params) {

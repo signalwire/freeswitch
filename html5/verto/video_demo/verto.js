@@ -101,14 +101,14 @@ function full_screen(name) {
 }
 
 $("#" + video_screen).resize(function(e) { 
-    console.log("video size changed to " + $("#" + video_screen).width() + "x" + $("#" + video_screen).height());
+    //console.log("video size changed to " + $("#" + video_screen).width() + "x" + $("#" + video_screen).height());
 
-    if ($("#" + video_screen).width() > $(window).width()) {
+    //if ($("#" + video_screen).width() > $(window).width()) {
 	//resize(false);
-	$("#" + video_screen).width("100%");
-	$("#" + video_screen).height("100%"); 
-    }
-
+	//$("#" + video_screen).width("100%");
+	//$("#" + video_screen).height("100%"); 
+    //}
+    real_size();
 });
 		   
 
@@ -128,13 +128,41 @@ function resize(up) {
 
 }
 
+
+$( window ).resize(function() {
+    real_size();
+});
+
 function real_size() {
 
+    
 
-    $("#" + video_screen).width("");
-    $("#" + video_screen).height("");
+    /* temasys hack */
+    setTimeout(function() {
+	$("#" + video_screen).width("");
+	$("#" + video_screen).height("");
 
-    console.log("video size changed to natural default");
+	var w = $("#" + video_screen).width();
+	var h = $("#" + video_screen).height();
+
+	var new_w;
+	var new_h;
+	var aspect = 1920 / 1080; /*temasys doesn't provide video width hack aspect to wide screen*/
+	
+	if (w > h) {
+	    new_w = window.innerWidth;
+	    new_h = Math.round(window.innerWidth / aspect);
+	} else {
+	    new_h = window.innerHeight;
+	    new_w = Math.round(window.innerHeight / aspect);
+	}
+
+	$("#" + video_screen).width(new_w);
+	$("#" + video_screen).height(new_h);
+    }, 500);
+	
+    console.log("video size changed to fit screen");
+
 
 }
 
@@ -202,8 +230,19 @@ function check_vid() {
     return use_vid;
 }
 
+var DISABLE_SPEED_TEST = true;
+
 function do_speed_test(fn)
 {
+
+  
+    if (DISABLE_SPEED_TEST) {
+	if (fn) {
+	    fn();
+	}
+	return;
+    }
+
     goto_page("bwtest");
 
     vertoHandle.rpcClient.speedTest(1024 * 256, function(e, obj) {
@@ -403,41 +442,67 @@ var callbacks = {
             }
             break;
         case $.verto.enum.message.info:
-	    var body = data.body;
-
+	    if (data.msg) {
+		data = data.msg;
+		var body = data.body;
+		
 		/*
 		// This section has been replaced with messageTextToJQ function
 
-	    if (body.match(/\.gif|\.jpg|\.jpeg|\.png/)) {
+		if (body.match(/\.gif|\.jpg|\.jpeg|\.png/)) {
 		var mod = "";
 		if (body.match(/dropbox.com/)) {
-		    mod = "?dl=1";
+		mod = "?dl=1";
 		}
 		body = body.replace(/(http[s]{0,1}:\/\/\S+)/g, "<a target='_blank' href='$1'>$1<br><img border='0' class='chatimg' src='$1'" + mod + "><\/a>");
-	    } else {
+		} else {
 		body = body.replace(/(http[s]{0,1}:\/\/\S+)/g, "<a target='_blank' href='$1'>$1<\/a>");
-	    }
+		}
 
-	    if (body.slice(-1) !== "\n") {
+		if (body.slice(-1) !== "\n") {
 		body += "\n";
-	    }
-	    body = body.replace(/(?:\r\n|\r|\n)/g, '<br />');
-	    
-    	    var from = data.from_msg_name || data.from;
+		}
+		body = body.replace(/(?:\r\n|\r|\n)/g, '<br />');
+		
+    		var from = data.from_msg_name || data.from;
 
-            $("#chatwin").append("<span class=chatuid>" + from + ":</span><br>" + body);
-	    $('#chatwin').animate({"scrollTop": $('#chatwin')[0].scrollHeight}, "fast");
+		$("#chatwin").append("<span class=chatuid>" + from + ":</span><br>" + body);
+		$('#chatwin').animate({"scrollTop": $('#chatwin')[0].scrollHeight}, "fast");
 		*/
 		
-			var from = data.from_msg_name || data.from;
-			
-			$('#chatwin')
-				.append($('<span class="chatuid" />').text(from + ':'))
-				.append($('<br />'))
-				.append(messageTextToJQ(body))
-				.append($('<br />'));
-			$('#chatwin').animate({"scrollTop": $('#chatwin')[0].scrollHeight}, "fast");
+		var from = data.from_msg_name || data.from;
 		
+		$('#chatwin')
+		    .append($('<span class="chatuid" />').text(from + ':'))
+		    .append($('<br />'))
+		    .append(messageTextToJQ(body))
+		    .append($('<br />'));
+		$('#chatwin').animate({"scrollTop": $('#chatwin')[0].scrollHeight}, "fast");
+	    }
+
+	    if (data.txt) {
+		console.log(data.txt);
+		if (data.txt.chars) {
+		    var a = [...data.txt.chars];
+		    //console.log(a);
+		    for (var x in a) {
+			if(a[x] == "\r") {
+			    $("#rtt_in").append("\n");
+			    continue;
+			} else if (a[x] == "\b") {
+			    $("#rtt_in").text($("#rtt_in").text().slice(0, -1));
+			    continue;
+			}
+			console.log("[" + a[x] + "]");
+			$("#rtt_in").append(a[x]);
+		    }
+
+		    var psconsole = $('#rtt_in');
+		    if(psconsole.length)
+			psconsole.scrollTop(psconsole[0].scrollHeight - psconsole.height());
+		}
+	    }
+
             break;
         case $.verto.enum.message.display:
             var party = dialog.params.remote_caller_id_name + "<" + dialog.params.remote_caller_id_number + ">";
@@ -486,6 +551,7 @@ var callbacks = {
 	    check_vid_res();
 
             $("#ansbtn").click(function() {
+		console.error("WTF", cur_call, d);
                 cur_call.answer({
 		    useStereo: $("#use_stereo").is(':checked'),
 		    callee_id_name: $("#cidname").val(),
@@ -548,7 +614,7 @@ var callbacks = {
 	    }
 
             goto_page("incall");
-
+	    real_size();
             break;
         case $.verto.enum.state.hangup:
 	    $("#main_info").html("Call ended with cause: " + d.cause);
@@ -1049,6 +1115,13 @@ function refresh_devices()
     if (tmp) {
         $('#usecamera option[value=' + tmp + ']').prop('selected', 'selected').change();
         pop_select("#usecamera","verto_demo_camera_selected", tmp);
+    }
+
+    var tmp;
+    tmp = $.cookie("verto_demo_share_selected") || "false";
+    if (tmp) {
+        $('#useshare option[value=' + tmp + ']').prop('selected', 'selected').change();
+        pop_select("#useshare","verto_demo_share_selected", tmp);
     }
 
     tmp = $.cookie("verto_demo_mic_selected") || "false";
@@ -1557,6 +1630,30 @@ function init() {
     online(false);
 
     setupChat();
+
+    $("#rtt").val("");
+    $("#rtt_in").text("");
+
+
+    $("#rtt").keyup(function (event) {
+	console.error(event);
+	console.log("KEY (" + event.which + ")\n");
+
+	if (event.which == 8) {
+	    cur_call.rtt({code: event.which});
+	}
+
+	if (event.which == 13) {
+	    $("#rtt").val("");
+	}
+
+    });
+
+    $("#rtt").keypress(function (event) {
+	console.error(event);
+	console.log("TEXT (" + event.which + ")\n");
+	cur_call.rtt({code: event.which});
+    });
 
     $("#ext").keyup(function (event) {
 	if (event.keyCode == 13) {

@@ -13,17 +13,35 @@
   .module('vertoDirectives')
   .directive('videoTag',
   function() {
+
     function link(scope, element, attrs) {
       // Moving the video tag to the new place inside the incall page.
       console.log('Moving the video to element.');
-      jQuery('video').removeClass('hide').appendTo(element);
-      jQuery('video').css('display', 'block');
+      var videoElem = jQuery('#webcam');
+
+      var newParent = document.getElementsByClassName('video-tag-wrapper');
+	newParent[0].appendChild(document.getElementById('webcam'));
+
+	$("#webcam").resize(function() {
+	    updateVideoSize();
+	});
+
+	$(window).resize(function() {
+	    updateVideoSize();
+	});
+
+	updateVideoSize();
+	
+	videoElem.removeClass('hide');
+	videoElem.css('display', 'block');
+
       scope.callActive("", {useVideo: true});
 
       element.on('$destroy', function() {
         // Move the video back to the body.
         console.log('Moving the video back to body.');
-        jQuery('video').addClass('hide').appendTo(jQuery('body'));
+        videoElem.addClass('hide').appendTo(jQuery('body'));
+        $(window).unbind('resize');
       });
     }
 

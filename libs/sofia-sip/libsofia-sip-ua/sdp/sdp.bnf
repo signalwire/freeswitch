@@ -85,7 +85,7 @@
 
    media =               1*(alpha-numeric)
                          ;typically "audio", "video", "application"
-                         ;or "data"
+                         ;or "data" or "text"
 
    fmt =                 1*(alpha-numeric)
                          ;typically an RTP payload type for audio

@@ -39,12 +39,38 @@ static void cleanup_proxy_mode_b(switch_core_session_t *session);
 /* Bridge Related Stuff*/
 /*********************************************************************************/
 
-#ifdef SWITCH_VIDEO_IN_THREADS
 struct vid_helper {
 	switch_core_session_t *session_a;
 	switch_core_session_t *session_b;
 	int up;
 };
+
+
+static void text_bridge_thread(switch_core_session_t *session, void *obj)
+{
+	struct vid_helper *vh = obj;
+	switch_status_t status;
+	switch_frame_t *read_frame = 0;
+	switch_channel_t *channel = switch_core_session_get_channel(vh->session_a);
+	switch_channel_t *b_channel = switch_core_session_get_channel(vh->session_b);
+
+	vh->up = 1;
+
+	while (switch_channel_up_nosig(channel) && switch_channel_up_nosig(b_channel) && vh->up == 1) {
+		status = switch_core_session_read_text_frame(vh->session_a, &read_frame, SWITCH_IO_FLAG_NONE, 0);
+
+		if (SWITCH_READ_ACCEPTABLE(status) && !switch_test_flag(read_frame, SFF_CNG)) {
+			switch_core_session_write_text_frame(vh->session_b, read_frame, 0, 0);
+		}
+
+		switch_core_session_write_text_frame(vh->session_a, NULL, 0, 0);
+	}
+
+	vh->up = 0;
+}
+
+
+#ifdef SWITCH_VIDEO_IN_THREADS
 
 static void video_bridge_thread(switch_core_session_t *session, void *obj)
 {
@@ -156,7 +182,7 @@ static void video_bridge_thread(switch_core_session_t *session, void *obj)
 
 static void launch_video(struct vid_helper *vh)
 {
-	switch_core_media_start_video_function(vh->session_a, video_bridge_thread, vh);
+	switch_core_media_start_engine_function(vh->session_a, SWITCH_MEDIA_TYPE_VIDEO, video_bridge_thread, vh);
 }
 #endif
 
@@ -267,6 +293,8 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 	const char *exec_app = NULL;
 	const char *exec_data = NULL;
 	switch_codec_implementation_t read_impl = { 0 };
+	uint32_t txt_launch = 0;
+	struct vid_helper th = { 0 };
 
 #ifdef SWITCH_VIDEO_IN_THREADS
 	struct vid_helper vh = { 0 };
@@ -382,6 +410,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 
 	bridge_filter_dtmf = switch_true(switch_channel_get_variable(chan_a, "bridge_filter_dtmf"));
 
+
 	for (;;) {
 		switch_channel_state_t b_state;
 		switch_status_t status;
@@ -445,6 +474,16 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 			}
 			continue;
 		}
+
+		if (switch_channel_test_flag(chan_a, CF_TEXT) && switch_channel_test_flag(chan_b, CF_TEXT) && !txt_launch) {
+			txt_launch++;
+			
+			th.session_a = session_a;
+			th.session_b = session_b;
+			switch_core_media_start_engine_function(th.session_a, SWITCH_MEDIA_TYPE_TEXT, text_bridge_thread, &th);
+
+		}
+
 #ifdef SWITCH_VIDEO_IN_THREADS
 		if (switch_channel_test_flag(chan_a, CF_VIDEO) && switch_channel_test_flag(chan_b, CF_VIDEO) && !vid_launch) {
 			vid_launch++;
@@ -649,6 +688,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 
   end_of_bridge_loop:
 
+
 #ifdef SWITCH_VIDEO_IN_THREADS
 	if (vh.up > 0) {
 		vh.up = -1;
@@ -693,8 +733,18 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 
   end:
 
+
+	if (switch_core_media_check_engine_function(session_a, SWITCH_MEDIA_TYPE_TEXT)) {
+		if (th.up == 1) {
+			th.up = -1;
+		}
+
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_DEBUG, "Ending text thread.\n");
+		switch_core_media_end_engine_function(session_a, SWITCH_MEDIA_TYPE_TEXT);
+	}
+
 #ifdef SWITCH_VIDEO_IN_THREADS
-	if (switch_core_media_check_video_function(session_a)) {
+	if (switch_core_media_check_engine_function(session_a, SWITCH_MEDIA_TYPE_VIDEO)) {
 		if (vh.up == 1) {
 			vh.up = -1;
 		}
@@ -705,7 +755,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 		switch_core_session_kill_channel(session_b, SWITCH_SIG_BREAK);
 
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_DEBUG, "Ending video thread.\n");
-		switch_core_media_end_video_function(session_a);
+		switch_core_media_end_engine_function(session_a, SWITCH_MEDIA_TYPE_VIDEO);
 		switch_channel_clear_flag(chan_a, CF_NOT_READY);
 		switch_channel_clear_flag(chan_b, CF_NOT_READY);
 	}

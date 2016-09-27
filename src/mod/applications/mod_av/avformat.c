@@ -1140,7 +1140,7 @@ SWITCH_STANDARD_APP(record_av_function)
 		switch_core_timer_destroy(&timer);
 	}
 
-	switch_core_media_end_video_function(session);
+	switch_core_media_end_engine_function(session, SWITCH_MEDIA_TYPE_VIDEO);
 	switch_core_session_set_read_codec(session, NULL);
 	switch_core_codec_destroy(&codec);
 

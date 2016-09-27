@@ -2728,7 +2728,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_generate_xml_cdr(switch_core_session_
 	char tmp[512], *f;
 	int cdr_off = 0, v_off = 0, cd_off = 0;
 	switch_hold_record_t *hold_record = switch_channel_get_hold_record(channel), *hr;
-	
+	const char *text_buffer = NULL;
+
 	if (*xml_cdr) {
 		cdr = *xml_cdr;
 	} else {
@@ -2749,6 +2750,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_generate_xml_cdr(switch_core_session_
 
 	x_field = switch_xml_add_child_d(x_channel_data, "direction", cd_off++);
 	switch_xml_set_txt_d(x_field, switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND ? "outbound" : "inbound");
+
+
+	if ((text_buffer = switch_core_session_get_text_buffer(session))) {
+		x_field = switch_xml_add_child_d(x_channel_data, "textlog", cd_off++);
+		switch_xml_set_txt_d(x_field, text_buffer);
+	}
 
 	x_field = switch_xml_add_child_d(x_channel_data, "state_number", cd_off++);
 	switch_snprintf(tmp, sizeof(tmp), "%d", switch_channel_get_state(channel));

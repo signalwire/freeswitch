@@ -317,6 +317,11 @@ SWITCH_DECLARE(switch_status_t) switch_channel_get_variables(switch_channel_t *c
 
 SWITCH_DECLARE(switch_status_t) switch_channel_pass_callee_id(switch_channel_t *channel, switch_channel_t *other_channel);
 
+
+static inline int switch_channel_var_true(switch_channel_t *channel, const char *variable) {
+	return switch_true(switch_channel_get_variable_dup(channel, variable, SWITCH_FALSE, -1));
+}
+
 /*!
  * \brief Start iterating over the entries in the channel variable list.
  * \param channel the channel to iterate the variables for

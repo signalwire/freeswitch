@@ -1012,6 +1012,10 @@ SWITCH_STANDARD_APP(set_mute_function)
 
 }
 
+SWITCH_STANDARD_APP(capture_text_function)
+{
+	switch_ivr_capture_text(session, switch_true((char *)data));
+}
 
 SWITCH_STANDARD_APP(ring_ready_function)
 {
@@ -6127,6 +6131,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	SWITCH_ADD_CHAT(chat_interface, "event", event_chat_send);
 	SWITCH_ADD_CHAT(chat_interface, "api", api_chat_send);
 
+
 	SWITCH_ADD_API(api_interface, "strepoch", "Convert a date string into epoch time", strepoch_api_function, "<string>");
 	SWITCH_ADD_API(api_interface, "page", "Send a file as a page", page_api_function, "(var1=val1,var2=val2)<var1=val1,var2=val2><chan1>[:_:<chanN>]");
 	SWITCH_ADD_API(api_interface, "strmicroepoch", "Convert a date string into micoepoch time", strmicroepoch_api_function, "<string>");
@@ -6216,6 +6221,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	SWITCH_ADD_APP(app_interface, "multiunset", "Unset many channel variables", SET_LONG_DESC, multiunset_function, "[^^<delim>]<varname> <var2> <var3>",
 				   SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC | SAF_ZOMBIE_EXEC);
 
+	SWITCH_ADD_APP(app_interface, "capture_text", "capture text", "capture text", capture_text_function, "", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "ring_ready", "Indicate Ring_Ready", "Indicate Ring_Ready on a channel.", ring_ready_function, "", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "remove_bugs", "Remove media bugs", "Remove all media bugs from a channel.", remove_bugs_function, "[<function>]", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "break", "Break", "Set the break flag.", break_function, "", SAF_SUPPORT_NOMEDIA);

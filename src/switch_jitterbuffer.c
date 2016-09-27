@@ -37,7 +37,7 @@
 #define PERIOD_LEN 250
 #define MAX_FRAME_PADDING 2
 #define MAX_MISSING_SEQ 20
-#define jb_debug(_jb, _level, _format, ...) if (_jb->debug_level >= _level) switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(_jb->session), SWITCH_LOG_ALERT, "JB:%p:%s lv:%d ln:%.4d sz:%.3u/%.3u/%.3u/%.3u c:%.3u %.3u/%.3u/%.3u/%.3u %.2f%% ->" _format, (void *) _jb, (jb->type == SJB_AUDIO ? "aud" : "vid"), _level, __LINE__,  _jb->min_frame_len, _jb->max_frame_len, _jb->frame_len, _jb->complete_frames, _jb->period_count, _jb->consec_good_count, _jb->period_good_count, _jb->consec_miss_count, _jb->period_miss_count, _jb->period_miss_pct, __VA_ARGS__)
+#define jb_debug(_jb, _level, _format, ...) if (_jb->debug_level >= _level) switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(_jb->session), SWITCH_LOG_ALERT, "JB:%p:%s lv:%d ln:%.4d sz:%.3u/%.3u/%.3u/%.3u c:%.3u %.3u/%.3u/%.3u/%.3u %.2f%% ->" _format, (void *) _jb, (jb->type == SJB_TEXT ? "txt" : (jb->type == SJB_AUDIO ? "aud" : "vid")), _level, __LINE__,  _jb->min_frame_len, _jb->max_frame_len, _jb->frame_len, _jb->complete_frames, _jb->period_count, _jb->consec_good_count, _jb->period_good_count, _jb->consec_miss_count, _jb->period_miss_count, _jb->period_miss_pct, __VA_ARGS__)
 
 //const char *TOKEN_1 = "ONE";
 //const char *TOKEN_2 = "TWO";
@@ -101,6 +101,8 @@ struct switch_jb_s {
 	switch_jb_type_t type;
 	switch_core_session_t *session;
 	switch_channel_t *channel;
+	uint32_t buffer_lag;
+	uint32_t flush;
 };
 
 
@@ -1117,7 +1119,7 @@ SWITCH_DECLARE(switch_status_t) switch_jb_put_packet(switch_jb_t *jb, switch_rtp
 
 	if (!want) want = got;
 
-	if (switch_test_flag(jb, SJB_QUEUE_ONLY) || jb->type == SJB_AUDIO) {
+	if (switch_test_flag(jb, SJB_QUEUE_ONLY) || jb->type == SJB_AUDIO || jb->type == SJB_TEXT) {
 		jb->next_seq = htons(got + 1);
 	} else {
 
@@ -1203,12 +1205,26 @@ SWITCH_DECLARE(switch_status_t) switch_jb_get_packet(switch_jb_t *jb, switch_rtp
 	switch_mutex_lock(jb->mutex);
 
 	if (jb->complete_frames == 0) {
+		jb->flush = 0;
 		switch_goto_status(SWITCH_STATUS_BREAK, end);
 	}
 
 	if (jb->complete_frames < jb->frame_len) {
-		jb_debug(jb, 2, "BUFFERING %u/%u\n", jb->complete_frames , jb->frame_len);
-		switch_goto_status(SWITCH_STATUS_MORE_DATA, end);
+		
+		if (jb->type == SJB_TEXT) {
+			if (jb->complete_frames && !jb->buffer_lag) {
+				jb->buffer_lag = 10;
+			}
+
+			if (jb->buffer_lag && --jb->buffer_lag == 0) {
+				jb->flush = 1;
+			}
+		}
+
+		if (!jb->flush) {
+			jb_debug(jb, 2, "BUFFERING %u/%u\n", jb->complete_frames , jb->frame_len);
+			switch_goto_status(SWITCH_STATUS_MORE_DATA, end);
+		}
 	}
 
 	jb_debug(jb, 2, "GET PACKET %u/%u n:%d\n", jb->complete_frames , jb->frame_len, jb->visible_nodes);
@@ -1254,8 +1270,8 @@ SWITCH_DECLARE(switch_status_t) switch_jb_get_packet(switch_jb_t *jb, switch_rtp
 				}
 			}
 		}
-
 	}
+	
 
 	jb->period_miss_pct = ((double)jb->period_miss_count / jb->period_count) * 100;
 
@@ -1263,7 +1279,7 @@ SWITCH_DECLARE(switch_status_t) switch_jb_get_packet(switch_jb_t *jb, switch_rtp
 		jb_debug(jb, 2, "Miss percent %02f too high, resetting buffer.\n", jb->period_miss_pct);
 		switch_jb_reset(jb);
 	}
-
+	
 	if ((status = jb_next_packet(jb, &node)) == SWITCH_STATUS_SUCCESS) {
 		jb_debug(jb, 2, "Found next frame cur ts: %u seq: %u\n", htonl(node->packet.header.ts), htons(node->packet.header.seq));
 
@@ -1272,7 +1288,7 @@ SWITCH_DECLARE(switch_status_t) switch_jb_get_packet(switch_jb_t *jb, switch_rtp
 			jb->highest_read_seq = node->packet.header.seq;
 		}
 		
-		if (jb->read_init && htons(node->packet.header.seq) >= htons(jb->highest_read_seq) && (ntohl(node->packet.header.ts) > ntohl(jb->highest_read_ts))) {
+		if (jb->type == SJB_TEXT || (jb->read_init && htons(node->packet.header.seq) >= htons(jb->highest_read_seq) && (ntohl(node->packet.header.ts) > ntohl(jb->highest_read_ts)))) {
 			jb->complete_frames--;
 			jb_debug(jb, 2, "READ frame ts: %u complete=%u/%u n:%u\n", ntohl(node->packet.header.ts), jb->complete_frames , jb->frame_len, jb->visible_nodes);
 			jb->highest_read_ts = node->packet.header.ts;

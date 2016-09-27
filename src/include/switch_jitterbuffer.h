@@ -39,7 +39,8 @@ typedef enum {
 
 typedef enum {
 	SJB_VIDEO = 0,
-	SJB_AUDIO
+	SJB_AUDIO,
+	SJB_TEXT
 } switch_jb_type_t;
 
 

@@ -183,7 +183,7 @@ SWITCH_STANDARD_APP(record_fsv_function)
 		switch_mutex_init(&mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
 		eh.mutex = mutex;
 		eh.fd = fd;
-		switch_core_media_start_video_function(session, record_video_thread, &eh);
+		switch_core_media_start_engine_function(session, SWITCH_MEDIA_TYPE_VIDEO, record_video_thread, &eh);
 	}
 
 
@@ -257,7 +257,7 @@ SWITCH_STANDARD_APP(record_fsv_function)
 		close(fd);
 	}
 
-	switch_core_media_end_video_function(session);
+	switch_core_media_end_engine_function(session, SWITCH_MEDIA_TYPE_VIDEO);
 	switch_core_session_set_read_codec(session, NULL);
 	switch_core_codec_destroy(&codec);
 
@@ -751,7 +751,7 @@ SWITCH_STANDARD_APP(decode_video_function)
 
 	switch_channel_set_flag(channel, CF_VIDEO_DECODED_READ);
 
-	switch_core_media_start_video_function(session, decode_video_thread, &max_pictures);
+	switch_core_media_start_engine_function(session, SWITCH_MEDIA_TYPE_VIDEO, decode_video_thread, &max_pictures);
 
 	switch_ivr_play_file(session, NULL, moh, NULL);
 
@@ -762,7 +762,7 @@ SWITCH_STANDARD_APP(decode_video_function)
 	switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "OK");
 
 
-	switch_core_media_end_video_function(session);
+	switch_core_media_end_engine_function(session, SWITCH_MEDIA_TYPE_VIDEO);
 	switch_core_session_video_reset(session);
 }
 

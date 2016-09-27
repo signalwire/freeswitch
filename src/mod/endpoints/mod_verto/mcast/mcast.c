@@ -53,7 +53,7 @@
 #include <poll.h>
 #define closesocket(x) close(x)
 #endif
-#include <switch_utils.h>
+#include <switch.h>
 #include "mcast.h"
 
 
