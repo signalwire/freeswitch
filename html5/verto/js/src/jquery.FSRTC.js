@@ -520,8 +520,17 @@
 
 	if (obj.options.screenShare) {
 	    // fix for chrome to work for now, will need to change once we figure out how to do this in a non-mandatory style constraint.
+	    var opt = [];
+	    opt.push({sourceId: obj.options.useCamera});
+
+	    if (bestFrameRate) {
+		opt.push({minFrameRate: bestFrameRate});
+		opt.push({maxFrameRate: bestFrameRate});
+	    }
+
 	    video = {
-		mandatory: obj.options.videoParams
+		mandatory: obj.options.videoParams,
+		optional: opt		
 	    };
 	} else {
 
