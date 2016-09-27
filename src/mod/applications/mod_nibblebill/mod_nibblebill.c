@@ -387,7 +387,7 @@ static switch_bool_t bill_event(double billamount, const char *billaccount, swit
 			sql = globals.custom_sql_save;
 		}
 	} else {
-		sql = dsql = switch_mprintf("UPDATE %s SET %s=%s-%f WHERE %s='%s'", globals.db_table, globals.db_column_cash, 
+		sql = dsql = switch_mprintf("UPDATE %s SET %s=%s- %f WHERE %s='%s'", globals.db_table, globals.db_column_cash,
 									globals.db_column_cash, billamount, globals.db_column_account, billaccount);
 		
 	}
