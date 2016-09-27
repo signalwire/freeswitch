@@ -55,6 +55,7 @@ Then run:
     gclient sync
 
 Caveat: Theres an error with Google Play services updates.  If you get the error "Your version of the Google Play services library is not up to date", run the following:
+
     cd chromium/src
     ./build/android/play_services/update.py download
     cd ../..
@@ -64,6 +65,7 @@ For Windows the gclient sync must be done from an Administrator command prompt.
 The sync will generate native build files for your environment using gyp (Windows: Visual Studio, OSX: XCode, Linux: make). This generation can also be forced manually: `gclient runhooks`
 
 To get just the source (not buildable):
+
     git clone https://chromium.googlesource.com/libyuv/libyuv
 
 
@@ -82,8 +84,7 @@ To get just the source (not buildable):
     ninja -C out\Release_x64
 
 #### Building with clangcl
-    set GYP_DEFINES=clang=1 target_arch=ia32 libyuv_enable_svn=1
-    set LLVM_REPO_URL=svn://svn.chromium.org/llvm-project
+    set GYP_DEFINES=clang=1 target_arch=ia32
     call python tools\clang\scripts\update.py
     call python gyp_libyuv -fninja libyuv_test.gyp
     ninja -C out\Debug
@@ -138,29 +139,29 @@ Add to .gclient last line: `target_os=['android'];`
 armv7
 
     GYP_DEFINES="OS=android" GYP_CROSSCOMPILE=1 ./gyp_libyuv
-    ninja -j7 -C out/Debug libyuv_unittest_apk
-    ninja -j7 -C out/Release libyuv_unittest_apk
+    ninja -j7 -C out/Debug yuv_unittest_apk
+    ninja -j7 -C out/Release yuv_unittest_apk
 
 arm64
 
     GYP_DEFINES="OS=android target_arch=arm64 target_subarch=arm64" GYP_CROSSCOMPILE=1 ./gyp_libyuv
-    ninja -j7 -C out/Debug libyuv_unittest_apk
-    ninja -j7 -C out/Release libyuv_unittest_apk
+    ninja -j7 -C out/Debug yuv_unittest_apk
+    ninja -j7 -C out/Release yuv_unittest_apk
 
 ia32
 
     GYP_DEFINES="OS=android target_arch=ia32" GYP_CROSSCOMPILE=1 ./gyp_libyuv
-    ninja -j7 -C out/Debug libyuv_unittest_apk
-    ninja -j7 -C out/Release libyuv_unittest_apk
+    ninja -j7 -C out/Debug yuv_unittest_apk
+    ninja -j7 -C out/Release yuv_unittest_apk
 
     GYP_DEFINES="OS=android target_arch=ia32 android_full_debug=1" GYP_CROSSCOMPILE=1 ./gyp_libyuv
-    ninja -j7 -C out/Debug libyuv_unittest_apk
+    ninja -j7 -C out/Debug yuv_unittest_apk
 
 mipsel
 
     GYP_DEFINES="OS=android target_arch=mipsel" GYP_CROSSCOMPILE=1 ./gyp_libyuv
-    ninja -j7 -C out/Debug libyuv_unittest_apk
-    ninja -j7 -C out/Release libyuv_unittest_apk
+    ninja -j7 -C out/Debug yuv_unittest_apk
+    ninja -j7 -C out/Release yuv_unittest_apk
 
 arm32 disassembly:
 
@@ -180,7 +181,7 @@ Running test as benchmark:
 
 Running test with C code:
 
-    util/android/test_runner.py gtest -s libyuv_unittest -t 7200 --verbose --release --gtest_filter=* -a "--libyuv_width=1280 --libyuv_height=720 --libyuv_repeat=999 --libyuv_flags=0 --libyuv_cpu_info=0"
+    util/android/test_runner.py gtest -s libyuv_unittest -t 7200 --verbose --release --gtest_filter=* -a "--libyuv_width=1280 --libyuv_height=720 --libyuv_repeat=999 --libyuv_flags=1 --libyuv_cpu_info=1"
 
 #### Building with GN
 
@@ -193,6 +194,16 @@ Running test with C code:
 
     gn gen out/Official "--args=is_debug=false is_official_build=true is_chrome_branded=true"
     ninja -C out/Official
+
+#### Building mips with GN
+
+mipsel
+    gn gen out/Default "--args=is_debug=false target_cpu=\"mipsel\" target_os = \"android\" mips_arch_variant = \"r6\" mips_use_msa = true is_component_build = true is_clang = false"
+    ninja -C out/Default
+
+mips64el
+    gn gen out/Default "--args=is_debug=false target_cpu=\"mips64el\" target_os = \"android\" mips_arch_variant = \"r6\" mips_use_msa = true is_component_build = true is_clang = false"
+    ninja -C out/Default
 
 ### Linux
 

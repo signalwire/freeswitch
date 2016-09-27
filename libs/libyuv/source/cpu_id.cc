@@ -161,6 +161,38 @@ int ArmCpuCaps(const char* cpuinfo_name) {
   return 0;
 }
 
+LIBYUV_API SAFEBUFFERS
+int MipsCpuCaps(const char* cpuinfo_name, const char ase[]) {
+  char cpuinfo_line[512];
+  int len = (int)strlen(ase);
+  FILE* f = fopen(cpuinfo_name, "r");
+  if (!f) {
+    // ase enabled if /proc/cpuinfo is unavailable.
+    if (strcmp(ase, " msa") == 0) {
+      return kCpuHasMSA;
+    }
+    if (strcmp(ase, " dspr2") == 0) {
+      return kCpuHasDSPR2;
+    }
+  }
+  while (fgets(cpuinfo_line, sizeof(cpuinfo_line) - 1, f)) {
+    if (memcmp(cpuinfo_line, "ASEs implemented", 16) == 0) {
+      char* p = strstr(cpuinfo_line, ase);
+      if (p && (p[len] == ' ' || p[len] == '\n')) {
+        fclose(f);
+        if (strcmp(ase, " msa") == 0) {
+          return kCpuHasMSA;
+        }
+        if (strcmp(ase, " dspr2") == 0) {
+          return kCpuHasDSPR2;
+        }
+      }
+    }
+  }
+  fclose(f);
+  return 0;
+}
+
 // CPU detect function for SIMD instruction sets.
 LIBYUV_API
 int cpu_info_ = 0;  // cpu_info is not initialized yet.
@@ -254,9 +286,15 @@ int InitCpuFlags(void) {
 #if defined(__mips_dspr2)
   cpu_info |= kCpuHasDSPR2;
 #endif
+#if defined(__mips_msa)
+  cpu_info = MipsCpuCaps("/proc/cpuinfo", " msa");
+#endif
   cpu_info |= kCpuHasMIPS;
   if (getenv("LIBYUV_DISABLE_DSPR2")) {
     cpu_info &= ~kCpuHasDSPR2;
+  }
+  if (getenv("LIBYUV_DISABLE_MSA")) {
+    cpu_info &= ~kCpuHasMSA;
   }
 #endif
 #if defined(__arm__) || defined(__aarch64__)

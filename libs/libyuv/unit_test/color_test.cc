@@ -10,12 +10,12 @@
 
 #include <stdlib.h>
 
+#include "libyuv/basic_types.h"
 #include "libyuv/convert.h"
 #include "libyuv/convert_argb.h"
 #include "libyuv/convert_from.h"
 #include "libyuv/convert_from_argb.h"
 #include "libyuv/cpu_id.h"
-#include "libyuv/row.h"  // For Sobel
 #include "../unit_test/unit_test.h"
 
 namespace libyuv {
@@ -41,15 +41,15 @@ namespace libyuv {
   const int kPixels = benchmark_width_ * benchmark_height_;                    \
   const int kHalfPixels = ((benchmark_width_ + 1) / 2) *                       \
       ((benchmark_height_ + HS1) / HS);                                        \
-  align_buffer_64(orig_y, kPixels);                                            \
-  align_buffer_64(orig_u, kHalfPixels);                                        \
-  align_buffer_64(orig_v, kHalfPixels);                                        \
-  align_buffer_64(orig_pixels, kPixels * 4);                                   \
-  align_buffer_64(temp_y, kPixels);                                            \
-  align_buffer_64(temp_u, kHalfPixels);                                        \
-  align_buffer_64(temp_v, kHalfPixels);                                        \
-  align_buffer_64(dst_pixels_opt, kPixels * 4);                                \
-  align_buffer_64(dst_pixels_c, kPixels * 4);                                  \
+  align_buffer_page_end(orig_y, kPixels);                                      \
+  align_buffer_page_end(orig_u, kHalfPixels);                                  \
+  align_buffer_page_end(orig_v, kHalfPixels);                                  \
+  align_buffer_page_end(orig_pixels, kPixels * 4);                             \
+  align_buffer_page_end(temp_y, kPixels);                                      \
+  align_buffer_page_end(temp_u, kHalfPixels);                                  \
+  align_buffer_page_end(temp_v, kHalfPixels);                                  \
+  align_buffer_page_end(dst_pixels_opt, kPixels * 4);                          \
+  align_buffer_page_end(dst_pixels_c, kPixels * 4);                            \
                                                                                \
   MemRandomize(orig_pixels, kPixels * 4);                                      \
   MemRandomize(orig_y, kPixels);                                               \
@@ -132,21 +132,21 @@ namespace libyuv {
                 static_cast<int>(dst_pixels_opt[i]), DIFF);                    \
   }                                                                            \
                                                                                \
-  free_aligned_buffer_64(orig_pixels);                                         \
-  free_aligned_buffer_64(orig_y);                                              \
-  free_aligned_buffer_64(orig_u);                                              \
-  free_aligned_buffer_64(orig_v);                                              \
-  free_aligned_buffer_64(temp_y);                                              \
-  free_aligned_buffer_64(temp_u);                                              \
-  free_aligned_buffer_64(temp_v);                                              \
-  free_aligned_buffer_64(dst_pixels_opt);                                      \
-  free_aligned_buffer_64(dst_pixels_c);                                        \
+  free_aligned_buffer_page_end(orig_pixels);                                   \
+  free_aligned_buffer_page_end(orig_y);                                        \
+  free_aligned_buffer_page_end(orig_u);                                        \
+  free_aligned_buffer_page_end(orig_v);                                        \
+  free_aligned_buffer_page_end(temp_y);                                        \
+  free_aligned_buffer_page_end(temp_u);                                        \
+  free_aligned_buffer_page_end(temp_v);                                        \
+  free_aligned_buffer_page_end(dst_pixels_opt);                                \
+  free_aligned_buffer_page_end(dst_pixels_c);                                  \
 }                                                                              \
 
 TESTCS(TestI420, I420ToARGB, ARGBToI420, 1, 2, benchmark_width_, ERROR_FULL)
 TESTCS(TestI422, I422ToARGB, ARGBToI422, 0, 1, 0, ERROR_FULL)
 TESTCS(TestJ420, J420ToARGB, ARGBToJ420, 1, 2, benchmark_width_, ERROR_J420)
-TESTCS(TestJ422, J422ToARGB, ARGBToJ422, 0, 1, 0, 3)
+TESTCS(TestJ422, J422ToARGB, ARGBToJ422, 0, 1, 0, ERROR_J420)
 
 static void YUVToRGB(int y, int u, int v, int* r, int* g, int* b) {
   const int kWidth = 16;

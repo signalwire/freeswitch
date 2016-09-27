@@ -53,6 +53,12 @@ ifeq ($(TARGET_ARCH_ABI),armeabi-v7a)
         source/scale_neon.cc.neon
 endif
 
+ifeq ($(TARGET_ARCH_ABI),mips)
+    LOCAL_CFLAGS += -DLIBYUV_MSA
+    LOCAL_SRC_FILES += \
+        source/row_msa.cc
+endif
+
 LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/include
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/include
 

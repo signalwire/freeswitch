@@ -988,8 +988,8 @@ void J400ToARGBRow_C(const uint8* src_y, uint8* dst_argb, int width) {
 #define BG (UG * 128 + VG * 128 + YGB)
 #define BR            (VR * 128 + YGB)
 
-#if defined(__aarch64__)
-const YuvConstants SIMD_ALIGNED(kYuvI601Constants) = {
+#if defined(__aarch64__)  // 64 bit arm
+const struct YuvConstants SIMD_ALIGNED(kYuvI601Constants) = {
   { -UB, -VR, -UB, -VR, -UB, -VR, -UB, -VR },
   { -UB, -VR, -UB, -VR, -UB, -VR, -UB, -VR },
   { UG, VG, UG, VG, UG, VG, UG, VG },
@@ -997,7 +997,7 @@ const YuvConstants SIMD_ALIGNED(kYuvI601Constants) = {
   { BB, BG, BR, 0, 0, 0, 0, 0 },
   { 0x0101 * YG, 0, 0, 0 }
 };
-const YuvConstants SIMD_ALIGNED(kYvuI601Constants) = {
+const struct YuvConstants SIMD_ALIGNED(kYvuI601Constants) = {
   { -VR, -UB, -VR, -UB, -VR, -UB, -VR, -UB },
   { -VR, -UB, -VR, -UB, -VR, -UB, -VR, -UB },
   { VG, UG, VG, UG, VG, UG, VG, UG },
@@ -1005,21 +1005,21 @@ const YuvConstants SIMD_ALIGNED(kYvuI601Constants) = {
   { BR, BG, BB, 0, 0, 0, 0, 0 },
   { 0x0101 * YG, 0, 0, 0 }
 };
-#elif defined(__arm__)
-const YuvConstants SIMD_ALIGNED(kYuvI601Constants) = {
+#elif defined(__arm__)  // 32 bit arm
+const struct YuvConstants SIMD_ALIGNED(kYuvI601Constants) = {
   { -UB, -UB, -UB, -UB, -VR, -VR, -VR, -VR, 0, 0, 0, 0, 0, 0, 0, 0 },
   { UG, UG, UG, UG, VG, VG, VG, VG, 0, 0, 0, 0, 0, 0, 0, 0 },
   { BB, BG, BR, 0, 0, 0, 0, 0 },
   { 0x0101 * YG, 0, 0, 0 }
 };
-const YuvConstants SIMD_ALIGNED(kYvuI601Constants) = {
+const struct YuvConstants SIMD_ALIGNED(kYvuI601Constants) = {
   { -VR, -VR, -VR, -VR, -UB, -UB, -UB, -UB, 0, 0, 0, 0, 0, 0, 0, 0 },
   { VG, VG, VG, VG, UG, UG, UG, UG, 0, 0, 0, 0, 0, 0, 0, 0 },
   { BR, BG, BB, 0, 0, 0, 0, 0 },
   { 0x0101 * YG, 0, 0, 0 }
 };
 #else
-const YuvConstants SIMD_ALIGNED(kYuvI601Constants) = {
+const struct YuvConstants SIMD_ALIGNED(kYuvI601Constants) = {
   { UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0,
     UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0 },
   { UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG,
@@ -1031,7 +1031,7 @@ const YuvConstants SIMD_ALIGNED(kYuvI601Constants) = {
   { BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR },
   { YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG }
 };
-const YuvConstants SIMD_ALIGNED(kYvuI601Constants) = {
+const struct YuvConstants SIMD_ALIGNED(kYvuI601Constants) = {
   { VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0,
     VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0 },
   { VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG,
@@ -1076,7 +1076,7 @@ const YuvConstants SIMD_ALIGNED(kYvuI601Constants) = {
 #define BR            (VR * 128 + YGB)
 
 #if defined(__aarch64__)
-const YuvConstants SIMD_ALIGNED(kYuvJPEGConstants) = {
+const struct YuvConstants SIMD_ALIGNED(kYuvJPEGConstants) = {
   { -UB, -VR, -UB, -VR, -UB, -VR, -UB, -VR },
   { -UB, -VR, -UB, -VR, -UB, -VR, -UB, -VR },
   { UG, VG, UG, VG, UG, VG, UG, VG },
@@ -1084,7 +1084,7 @@ const YuvConstants SIMD_ALIGNED(kYuvJPEGConstants) = {
   { BB, BG, BR, 0, 0, 0, 0, 0 },
   { 0x0101 * YG, 0, 0, 0 }
 };
-const YuvConstants SIMD_ALIGNED(kYvuJPEGConstants) = {
+const struct YuvConstants SIMD_ALIGNED(kYvuJPEGConstants) = {
   { -VR, -UB, -VR, -UB, -VR, -UB, -VR, -UB },
   { -VR, -UB, -VR, -UB, -VR, -UB, -VR, -UB },
   { VG, UG, VG, UG, VG, UG, VG, UG },
@@ -1093,20 +1093,20 @@ const YuvConstants SIMD_ALIGNED(kYvuJPEGConstants) = {
   { 0x0101 * YG, 0, 0, 0 }
 };
 #elif defined(__arm__)
-const YuvConstants SIMD_ALIGNED(kYuvJPEGConstants) = {
+const struct YuvConstants SIMD_ALIGNED(kYuvJPEGConstants) = {
   { -UB, -UB, -UB, -UB, -VR, -VR, -VR, -VR, 0, 0, 0, 0, 0, 0, 0, 0 },
   { UG, UG, UG, UG, VG, VG, VG, VG, 0, 0, 0, 0, 0, 0, 0, 0 },
   { BB, BG, BR, 0, 0, 0, 0, 0 },
   { 0x0101 * YG, 0, 0, 0 }
 };
-const YuvConstants SIMD_ALIGNED(kYvuJPEGConstants) = {
+const struct YuvConstants SIMD_ALIGNED(kYvuJPEGConstants) = {
   { -VR, -VR, -VR, -VR, -UB, -UB, -UB, -UB, 0, 0, 0, 0, 0, 0, 0, 0 },
   { VG, VG, VG, VG, UG, UG, UG, UG, 0, 0, 0, 0, 0, 0, 0, 0 },
   { BR, BG, BB, 0, 0, 0, 0, 0 },
   { 0x0101 * YG, 0, 0, 0 }
 };
 #else
-const YuvConstants SIMD_ALIGNED(kYuvJPEGConstants) = {
+const struct YuvConstants SIMD_ALIGNED(kYuvJPEGConstants) = {
   { UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0,
     UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0 },
   { UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG,
@@ -1118,7 +1118,7 @@ const YuvConstants SIMD_ALIGNED(kYuvJPEGConstants) = {
   { BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR },
   { YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG }
 };
-const YuvConstants SIMD_ALIGNED(kYvuJPEGConstants) = {
+const struct YuvConstants SIMD_ALIGNED(kYvuJPEGConstants) = {
   { VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0,
     VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0 },
   { VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG,
@@ -1164,7 +1164,7 @@ const YuvConstants SIMD_ALIGNED(kYvuJPEGConstants) = {
 #define BR            (VR * 128 + YGB)
 
 #if defined(__aarch64__)
-const YuvConstants SIMD_ALIGNED(kYuvH709Constants) = {
+const struct YuvConstants SIMD_ALIGNED(kYuvH709Constants) = {
   { -UB, -VR, -UB, -VR, -UB, -VR, -UB, -VR },
   { -UB, -VR, -UB, -VR, -UB, -VR, -UB, -VR },
   { UG, VG, UG, VG, UG, VG, UG, VG },
@@ -1172,7 +1172,7 @@ const YuvConstants SIMD_ALIGNED(kYuvH709Constants) = {
   { BB, BG, BR, 0, 0, 0, 0, 0 },
   { 0x0101 * YG, 0, 0, 0 }
 };
-const YuvConstants SIMD_ALIGNED(kYvuH709Constants) = {
+const struct YuvConstants SIMD_ALIGNED(kYvuH709Constants) = {
   { -VR, -UB, -VR, -UB, -VR, -UB, -VR, -UB },
   { -VR, -UB, -VR, -UB, -VR, -UB, -VR, -UB },
   { VG, UG, VG, UG, VG, UG, VG, UG },
@@ -1181,20 +1181,20 @@ const YuvConstants SIMD_ALIGNED(kYvuH709Constants) = {
   { 0x0101 * YG, 0, 0, 0 }
 };
 #elif defined(__arm__)
-const YuvConstants SIMD_ALIGNED(kYuvH709Constants) = {
+const struct YuvConstants SIMD_ALIGNED(kYuvH709Constants) = {
   { -UB, -UB, -UB, -UB, -VR, -VR, -VR, -VR, 0, 0, 0, 0, 0, 0, 0, 0 },
   { UG, UG, UG, UG, VG, VG, VG, VG, 0, 0, 0, 0, 0, 0, 0, 0 },
   { BB, BG, BR, 0, 0, 0, 0, 0 },
   { 0x0101 * YG, 0, 0, 0 }
 };
-const YuvConstants SIMD_ALIGNED(kYvuH709Constants) = {
+const struct YuvConstants SIMD_ALIGNED(kYvuH709Constants) = {
   { -VR, -VR, -VR, -VR, -UB, -UB, -UB, -UB, 0, 0, 0, 0, 0, 0, 0, 0 },
   { VG, VG, VG, VG, UG, UG, UG, UG, 0, 0, 0, 0, 0, 0, 0, 0 },
   { BR, BG, BB, 0, 0, 0, 0, 0 },
   { 0x0101 * YG, 0, 0, 0 }
 };
 #else
-const YuvConstants SIMD_ALIGNED(kYuvH709Constants) = {
+const struct YuvConstants SIMD_ALIGNED(kYuvH709Constants) = {
   { UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0,
     UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0 },
   { UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG,
@@ -1206,7 +1206,7 @@ const YuvConstants SIMD_ALIGNED(kYuvH709Constants) = {
   { BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR },
   { YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG }
 };
-const YuvConstants SIMD_ALIGNED(kYvuH709Constants) = {
+const struct YuvConstants SIMD_ALIGNED(kYvuH709Constants) = {
   { VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0,
     VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0 },
   { VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG,
@@ -1264,9 +1264,9 @@ static __inline void YuvPixel(uint8 y, uint8 u, uint8 v,
 #endif
 
   uint32 y1 = (uint32)(y * 0x0101 * yg) >> 16;
-  *b = Clamp((int32)(-(u * ub         ) + y1 + bb) >> 6);
+  *b = Clamp((int32)(-(u * ub)          + y1 + bb) >> 6);
   *g = Clamp((int32)(-(u * ug + v * vg) + y1 + bg) >> 6);
-  *r = Clamp((int32)(-(         v * vr) + y1 + br) >> 6);
+  *r = Clamp((int32)         (-(v * vr) + y1 + br) >> 6);
 }
 
 // Y contribution to R,G,B.  Scale and bias.
@@ -2167,7 +2167,7 @@ static void HalfRow_16_C(const uint16* src_uv, ptrdiff_t src_uv_stride,
 void InterpolateRow_C(uint8* dst_ptr, const uint8* src_ptr,
                       ptrdiff_t src_stride,
                       int width, int source_y_fraction) {
-  int y1_fraction = source_y_fraction ;
+  int y1_fraction = source_y_fraction;
   int y0_fraction = 256 - y1_fraction;
   const uint8* src_ptr1 = src_ptr + src_stride;
   int x;
@@ -2381,6 +2381,19 @@ void ARGBCopyAlphaRow_C(const uint8* src, uint8* dst, int width) {
   }
 }
 
+void ARGBExtractAlphaRow_C(const uint8* src_argb, uint8* dst_a, int width) {
+  int i;
+  for (i = 0; i < width - 1; i += 2) {
+    dst_a[0] = src_argb[3];
+    dst_a[1] = src_argb[7];
+    dst_a += 2;
+    src_argb += 8;
+  }
+  if (width & 1) {
+    dst_a[0] = src_argb[3];
+  }
+}
+
 void ARGBCopyYToAlphaRow_C(const uint8* src, uint8* dst, int width) {
   int i;
   for (i = 0; i < width - 1; i += 2) {
@@ -2491,7 +2504,7 @@ void I422ToRGB565Row_AVX2(const uint8* src_y,
                           uint8* dst_rgb565,
                           const struct YuvConstants* yuvconstants,
                           int width) {
-  SIMD_ALIGNED32(uint8 row[MAXTWIDTH * 4]);
+  SIMD_ALIGNED(uint8 row[MAXTWIDTH * 4]);
   while (width > 0) {
     int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
     I422ToARGBRow_AVX2(src_y, src_u, src_v, row, yuvconstants, twidth);
@@ -2517,7 +2530,7 @@ void I422ToARGB1555Row_AVX2(const uint8* src_y,
                             const struct YuvConstants* yuvconstants,
                             int width) {
   // Row buffer for intermediate ARGB pixels.
-  SIMD_ALIGNED32(uint8 row[MAXTWIDTH * 4]);
+  SIMD_ALIGNED(uint8 row[MAXTWIDTH * 4]);
   while (width > 0) {
     int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
     I422ToARGBRow_AVX2(src_y, src_u, src_v, row, yuvconstants, twidth);
@@ -2543,7 +2556,7 @@ void I422ToARGB4444Row_AVX2(const uint8* src_y,
                             const struct YuvConstants* yuvconstants,
                             int width) {
   // Row buffer for intermediate ARGB pixels.
-  SIMD_ALIGNED32(uint8 row[MAXTWIDTH * 4]);
+  SIMD_ALIGNED(uint8 row[MAXTWIDTH * 4]);
   while (width > 0) {
     int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
     I422ToARGBRow_AVX2(src_y, src_u, src_v, row, yuvconstants, twidth);
@@ -2569,7 +2582,7 @@ void I422ToRGB24Row_AVX2(const uint8* src_y,
                             const struct YuvConstants* yuvconstants,
                             int width) {
   // Row buffer for intermediate ARGB pixels.
-  SIMD_ALIGNED32(uint8 row[MAXTWIDTH * 4]);
+  SIMD_ALIGNED(uint8 row[MAXTWIDTH * 4]);
   while (width > 0) {
     int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
     I422ToARGBRow_AVX2(src_y, src_u, src_v, row, yuvconstants, twidth);
@@ -2591,7 +2604,7 @@ void NV12ToRGB565Row_AVX2(const uint8* src_y,
                           const struct YuvConstants* yuvconstants,
                           int width) {
   // Row buffer for intermediate ARGB pixels.
-  SIMD_ALIGNED32(uint8 row[MAXTWIDTH * 4]);
+  SIMD_ALIGNED(uint8 row[MAXTWIDTH * 4]);
   while (width > 0) {
     int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
     NV12ToARGBRow_AVX2(src_y, src_uv, row, yuvconstants, twidth);

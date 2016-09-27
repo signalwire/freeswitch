@@ -12,7 +12,6 @@
 
 #include "libyuv/cpu_id.h"
 #include "libyuv/rotate.h"
-#include "libyuv/row.h"
 #include "../unit_test/unit_test.h"
 
 namespace libyuv {
@@ -37,7 +36,7 @@ static void I420TestRotate(int src_width, int src_height,
   int src_i420_y_size = src_width * Abs(src_height);
   int src_i420_uv_size = ((src_width + 1) / 2) * ((Abs(src_height) + 1) / 2);
   int src_i420_size = src_i420_y_size + src_i420_uv_size * 2;
-  align_buffer_64(src_i420, src_i420_size);
+  align_buffer_page_end(src_i420, src_i420_size);
   for (int i = 0; i < src_i420_size; ++i) {
     src_i420[i] = fastrand() & 0xff;
   }
@@ -45,8 +44,8 @@ static void I420TestRotate(int src_width, int src_height,
   int dst_i420_y_size = dst_width * dst_height;
   int dst_i420_uv_size = ((dst_width + 1) / 2) * ((dst_height + 1) / 2);
   int dst_i420_size = dst_i420_y_size + dst_i420_uv_size * 2;
-  align_buffer_64(dst_i420_c, dst_i420_size);
-  align_buffer_64(dst_i420_opt, dst_i420_size);
+  align_buffer_page_end(dst_i420_c, dst_i420_size);
+  align_buffer_page_end(dst_i420_opt, dst_i420_size);
   memset(dst_i420_c, 2, dst_i420_size);
   memset(dst_i420_opt, 3, dst_i420_size);
 
@@ -78,9 +77,9 @@ static void I420TestRotate(int src_width, int src_height,
     EXPECT_EQ(dst_i420_c[i], dst_i420_opt[i]);
   }
 
-  free_aligned_buffer_64(dst_i420_c);
-  free_aligned_buffer_64(dst_i420_opt);
-  free_aligned_buffer_64(src_i420);
+  free_aligned_buffer_page_end(dst_i420_c);
+  free_aligned_buffer_page_end(dst_i420_opt);
+  free_aligned_buffer_page_end(src_i420);
 }
 
 TEST_F(LibYUVRotateTest, I420Rotate0_Opt) {
@@ -163,7 +162,7 @@ static void NV12TestRotate(int src_width, int src_height,
   int src_nv12_uv_size =
       ((src_width + 1) / 2) * ((Abs(src_height) + 1) / 2) * 2;
   int src_nv12_size = src_nv12_y_size + src_nv12_uv_size;
-  align_buffer_64(src_nv12, src_nv12_size);
+  align_buffer_page_end(src_nv12, src_nv12_size);
   for (int i = 0; i < src_nv12_size; ++i) {
     src_nv12[i] = fastrand() & 0xff;
   }
@@ -171,8 +170,8 @@ static void NV12TestRotate(int src_width, int src_height,
   int dst_i420_y_size = dst_width * dst_height;
   int dst_i420_uv_size = ((dst_width + 1) / 2) * ((dst_height + 1) / 2);
   int dst_i420_size = dst_i420_y_size + dst_i420_uv_size * 2;
-  align_buffer_64(dst_i420_c, dst_i420_size);
-  align_buffer_64(dst_i420_opt, dst_i420_size);
+  align_buffer_page_end(dst_i420_c, dst_i420_size);
+  align_buffer_page_end(dst_i420_opt, dst_i420_size);
   memset(dst_i420_c, 2, dst_i420_size);
   memset(dst_i420_opt, 3, dst_i420_size);
 
@@ -201,9 +200,9 @@ static void NV12TestRotate(int src_width, int src_height,
     EXPECT_EQ(dst_i420_c[i], dst_i420_opt[i]);
   }
 
-  free_aligned_buffer_64(dst_i420_c);
-  free_aligned_buffer_64(dst_i420_opt);
-  free_aligned_buffer_64(src_nv12);
+  free_aligned_buffer_page_end(dst_i420_c);
+  free_aligned_buffer_page_end(dst_i420_opt);
+  free_aligned_buffer_page_end(src_nv12);
 }
 
 TEST_F(LibYUVRotateTest, NV12Rotate0_Opt) {

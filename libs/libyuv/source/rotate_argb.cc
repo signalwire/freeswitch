@@ -118,6 +118,14 @@ void ARGBRotate180(const uint8* src, int src_stride,
     }
   }
 #endif
+#if defined(HAS_ARGBMIRRORROW_MSA)
+  if (TestCpuFlag(kCpuHasMSA)) {
+    ARGBMirrorRow = ARGBMirrorRow_Any_MSA;
+    if (IS_ALIGNED(width, 16)) {
+      ARGBMirrorRow = ARGBMirrorRow_MSA;
+    }
+  }
+#endif
 #if defined(HAS_COPYROW_SSE2)
   if (TestCpuFlag(kCpuHasSSE2)) {
     CopyRow = IS_ALIGNED(width * 4, 32) ? CopyRow_SSE2 : CopyRow_Any_SSE2;

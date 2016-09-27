@@ -12,7 +12,6 @@
 
 #include "libyuv/cpu_id.h"
 #include "libyuv/rotate_argb.h"
-#include "libyuv/row.h"
 #include "../unit_test/unit_test.h"
 
 namespace libyuv {
@@ -38,15 +37,15 @@ void TestRotateBpp(int src_width, int src_height,
   }
   int src_stride_argb = src_width * kBpp;
   int src_argb_plane_size = src_stride_argb * abs(src_height);
-  align_buffer_64(src_argb, src_argb_plane_size);
+  align_buffer_page_end(src_argb, src_argb_plane_size);
   for (int i = 0; i < src_argb_plane_size; ++i) {
     src_argb[i] = fastrand() & 0xff;
   }
 
   int dst_stride_argb = dst_width * kBpp;
   int dst_argb_plane_size = dst_stride_argb * dst_height;
-  align_buffer_64(dst_argb_c, dst_argb_plane_size);
-  align_buffer_64(dst_argb_opt, dst_argb_plane_size);
+  align_buffer_page_end(dst_argb_c, dst_argb_plane_size);
+  align_buffer_page_end(dst_argb_opt, dst_argb_plane_size);
   memset(dst_argb_c, 2, dst_argb_plane_size);
   memset(dst_argb_opt, 3, dst_argb_plane_size);
 
@@ -81,9 +80,9 @@ void TestRotateBpp(int src_width, int src_height,
     EXPECT_EQ(dst_argb_c[i], dst_argb_opt[i]);
   }
 
-  free_aligned_buffer_64(dst_argb_c);
-  free_aligned_buffer_64(dst_argb_opt);
-  free_aligned_buffer_64(src_argb);
+  free_aligned_buffer_page_end(dst_argb_c);
+  free_aligned_buffer_page_end(dst_argb_opt);
+  free_aligned_buffer_page_end(src_argb);
 }
 
 static void ARGBTestRotate(int src_width, int src_height,

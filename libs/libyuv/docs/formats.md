@@ -102,6 +102,15 @@ The following is extracted from video_common.h as a complete list of formats sup
       // 1 Auxiliary compressed YUV format set aside for capturer.
       FOURCC_H264 = FOURCC('H', '2', '6', '4'),
 
+# Planar YUV
+      The following formats contains a full size Y plane followed by 1 or 2
+        planes for UV: I420, I422, I444, I411, I400, NV21, NV12, I400
+      The size (subsampling) of the UV varies.
+        I420, NV12 and NV21 are half width, half height
+        I422, NV16 and NV61 are half width, full height
+        I444, NV24 and NV42 are full width, full height
+        I400 and J400 have no chroma channel.
+
 # The ARGB FOURCC
 
 There are 4 ARGB layouts - ARGB, BGRA, ABGR and RGBA.  ARGB is most common by far, used for screen formats, and windows webcam drivers.
