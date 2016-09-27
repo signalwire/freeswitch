@@ -824,9 +824,63 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
       },
 
       screenshare: function(destination, callback) {
-        console.log('share screen video');
 
-        var that = this;
+	  
+          var that = this;
+	  
+	  if (storage.data.selectedShare !== "screen") {
+
+              console.log('share screen from device ' + storage.data.selectedShare);
+
+	      var call = data.instance.newCall({
+		  destination_number: destination + "-screen",
+		  caller_id_name: data.name + " (Screen)",
+		  caller_id_number: data.login + " (screen)",
+		  outgoingBandwidth: storage.data.outgoingBandwidth,
+		  incomingBandwidth: storage.data.incomingBandwidth,
+		  useCamera: storage.data.selectedShare,
+		  useVideo: true,
+		  screenShare: true,
+		  dedEnc: storage.data.useDedenc,
+		  mirrorInput: storage.data.mirrorInput,
+		  userVariables: {
+		      email : storage.data.email,
+		      avatar: "http://gravatar.com/avatar/" + md5(storage.data.email) + ".png?s=600"
+		  }
+	      });
+
+              // Override onStream callback in $.FSRTC instance
+              call.rtc.options.callbacks.onStream = function(rtc, stream) {
+		  if(stream) {
+		      var StreamTrack = stream.getVideoTracks()[0];
+		      StreamTrack.addEventListener('ended', stopSharing);
+		      // (stream.getVideoTracks()[0]).onended = stopSharing;
+		  }
+		  
+		  console.log("screenshare started");
+		  
+		  function stopSharing() {
+		      if(that.data.shareCall) {
+			  that.screenshareHangup();
+			  console.log("screenshare ended");
+		      }
+		  }
+              };
+	      
+              data.shareCall = call;
+	      
+              console.log('shareCall', data);
+	      
+              data.mutedMic = false;
+              data.mutedVideo = false;
+	      
+              that.refreshDevices();
+	      
+	      return;
+	  }
+
+
+        console.log('share screen from plugin');
 
         getScreenId(function(error, sourceId, screen_constraints) {
 
@@ -842,7 +896,7 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
             outgoingBandwidth: storage.data.outgoingBandwidth,
             incomingBandwidth: storage.data.incomingBandwidth,
             videoParams: screen_constraints.video.mandatory,
-            useVideo: storage.data.useVideo,
+            useVideo: true,
             screenShare: true,
             dedEnc: storage.data.useDedenc,
             mirrorInput: storage.data.mirrorInput,

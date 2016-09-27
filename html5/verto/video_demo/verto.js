@@ -1091,6 +1091,13 @@ function refresh_devices()
         pop_select("#usecamera","verto_demo_camera_selected", tmp);
     }
 
+    var tmp;
+    tmp = $.cookie("verto_demo_share_selected") || "false";
+    if (tmp) {
+        $('#useshare option[value=' + tmp + ']').prop('selected', 'selected').change();
+        pop_select("#useshare","verto_demo_share_selected", tmp);
+    }
+
     tmp = $.cookie("verto_demo_mic_selected") || "false";
     if (tmp) {
         $('#usemic option[value=' + tmp + ']').prop('selected', 'selected').change();
