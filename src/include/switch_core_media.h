@@ -325,6 +325,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_codec_control(switch_core_sess
 																switch_codec_control_type_t *rtype,
 																void **ret_data);
 
+SWITCH_DECLARE(switch_bool_t) switch_core_media_codec_get_cap(switch_core_session_t *session, 
+																switch_media_type_t mtype,
+																switch_codec_flag_t flag);
+
 
 #define switch_core_media_gen_key_frame(_session) switch_core_media_codec_control(_session, SWITCH_MEDIA_TYPE_VIDEO, SWITCH_IO_WRITE, \
 																				  SCC_VIDEO_GEN_KEYFRAME, SCCT_NONE, NULL, SCCT_NONE, NULL, NULL, NULL) \

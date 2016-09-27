@@ -7,6 +7,5 @@ FORCE_HTTPS_COMMIT_URL: True
 PROJECT: libyuv
 TRY_ON_UPLOAD: False
 TRYSERVER_ROOT: src
-TRYSERVER_SVN_URL: svn://svn.chromium.org/chrome-try/try-libyuv
 #GITCL_PREUPLOAD:
 #GITCL_PREDCOMMIT:

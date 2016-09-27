@@ -40,8 +40,22 @@ typedef struct vp9_denoiser {
   YV12_BUFFER_CONFIG last_source;
   int increase_denoising;
   int frame_buffer_initialized;
+  int reset;
   VP9_DENOISER_LEVEL denoising_level;
+  VP9_DENOISER_LEVEL prev_denoising_level;
 } VP9_DENOISER;
+
+typedef struct {
+  int64_t zero_last_cost_orig;
+  int *ref_frame_cost;
+  int_mv (*frame_mv)[MAX_REF_FRAMES];
+  int reuse_inter_pred;
+  TX_SIZE best_tx_size;
+  PREDICTION_MODE best_mode;
+  MV_REFERENCE_FRAME best_ref_frame;
+  INTERP_FILTER best_pred_filter;
+  uint8_t best_mode_skip_txfm;
+} VP9_PICKMODE_CTX_DEN;
 
 struct VP9_COMP;
 
@@ -50,22 +64,20 @@ void vp9_denoiser_update_frame_info(VP9_DENOISER *denoiser,
                                     FRAME_TYPE frame_type,
                                     int refresh_alt_ref_frame,
                                     int refresh_golden_frame,
-                                    int refresh_last_frame,
-                                    int resized);
+                                    int refresh_last_frame, int resized);
 
-void vp9_denoiser_denoise(VP9_DENOISER *denoiser, MACROBLOCK *mb,
-                          int mi_row, int mi_col, BLOCK_SIZE bs,
-                          PICK_MODE_CONTEXT *ctx ,
+void vp9_denoiser_denoise(struct VP9_COMP *cpi, MACROBLOCK *mb, int mi_row,
+                          int mi_col, BLOCK_SIZE bs, PICK_MODE_CONTEXT *ctx,
                           VP9_DENOISER_DECISION *denoiser_decision);
 
 void vp9_denoiser_reset_frame_stats(PICK_MODE_CONTEXT *ctx);
 
-void vp9_denoiser_update_frame_stats(MODE_INFO *mi,
-                                     unsigned int sse, PREDICTION_MODE mode,
+void vp9_denoiser_update_frame_stats(MODE_INFO *mi, unsigned int sse,
+                                     PREDICTION_MODE mode,
                                      PICK_MODE_CONTEXT *ctx);
 
-int vp9_denoiser_alloc(VP9_DENOISER *denoiser, int width, int height,
-                       int ssx, int ssy,
+int vp9_denoiser_alloc(VP9_DENOISER *denoiser, int width, int height, int ssx,
+                       int ssy,
 #if CONFIG_VP9_HIGHBITDEPTH
                        int use_highbitdepth,
 #endif
@@ -83,8 +95,7 @@ static INLINE int total_adj_strong_thresh(BLOCK_SIZE bs,
 
 void vp9_denoiser_free(VP9_DENOISER *denoiser);
 
-void vp9_denoiser_set_noise_level(VP9_DENOISER *denoiser,
-                                  int noise_level);
+void vp9_denoiser_set_noise_level(VP9_DENOISER *denoiser, int noise_level);
 
 #ifdef __cplusplus
 }  // extern "C"

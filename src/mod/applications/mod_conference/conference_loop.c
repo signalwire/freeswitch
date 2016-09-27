@@ -1336,7 +1336,7 @@ void conference_loop_output(conference_member_t *member)
 						switch_change_sln_volume(write_frame.data, write_frame.samples * member->conference->channels, member->volume_out_level);
 					}
 
-					write_frame.timestamp = timer.samplecount;
+					//write_frame.timestamp = timer.samplecount;
 
 					if (member->fnode) {
 						conference_member_add_file_data(member, write_frame.data, write_frame.datalen);

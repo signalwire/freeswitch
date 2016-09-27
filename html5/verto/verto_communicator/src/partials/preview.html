@@ -7,7 +7,7 @@
       <div class="panel-body">
         <div class="preview-wrapper">
           <video id="videopreview" muted autoplay style="width: 100%;"></video>
-          <div id="mic-meter">
+          <div id="mic-meter" ng-if="audioContext">
             <div class="volumes">
               <div class="volume-segment"></div>
               <div class="volume-segment"></div>

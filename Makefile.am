@@ -286,6 +286,7 @@ library_include_HEADERS = \
 	src/include/switch_utils.h \
 	src/include/switch_rtp.h \
 	src/include/switch_jitterbuffer.h \
+	src/include/switch_estimators.h \
 	src/include/switch_rtcp_frame.h \
 	src/include/switch_stun.h \
 	src/include/switch_nat.h \
@@ -352,6 +353,7 @@ libfreeswitch_la_SOURCES = \
 	src/switch_regex.c \
 	src/switch_rtp.c \
 	src/switch_jitterbuffer.c \
+	src/switch_estimators.c \
 	src/switch_ivr_bridge.c \
 	src/switch_ivr_originate.c \
 	src/switch_ivr_async.c \

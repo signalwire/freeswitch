@@ -10,7 +10,7 @@
 
 // Get SSIM for video sequence. Assuming RAW 4:2:0 Y:Cb:Cr format
 
-#ifndef UTIL_SSIM_H_  // NOLINT
+#ifndef UTIL_SSIM_H_
 #define UTIL_SSIM_H_
 
 #include <math.h>  // For log10()
@@ -33,4 +33,4 @@ double CalcLSSIM(double ssim);
 }  // extern "C"
 #endif
 
-#endif  // UTIL_SSIM_H_  // NOLINT
+#endif  // UTIL_SSIM_H_

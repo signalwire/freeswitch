@@ -144,6 +144,7 @@
 #include "switch_core_media.h"
 #include "switch_core_video.h"
 #include "switch_jitterbuffer.h"
+#include "switch_estimators.h"
 #include <libteletone.h>
 
 

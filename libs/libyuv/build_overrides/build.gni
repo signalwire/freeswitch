@@ -13,3 +13,10 @@
 # remove this when Chromium drops 10.6 support and also requires 10.7.
 mac_sdk_min_build_override = "10.11"
 mac_deployment_target_build_override = "10.7"
+
+# Variable that can be used to support multiple build scenarios, like having
+# Chromium specific targets in a client project's GN file etc.
+build_with_chromium = false
+
+# Some non-Chromium builds don't support building java targets.
+enable_java_templates = true

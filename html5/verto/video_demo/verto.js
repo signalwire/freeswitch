@@ -101,14 +101,14 @@ function full_screen(name) {
 }
 
 $("#" + video_screen).resize(function(e) { 
-    console.log("video size changed to " + $("#" + video_screen).width() + "x" + $("#" + video_screen).height());
+    //console.log("video size changed to " + $("#" + video_screen).width() + "x" + $("#" + video_screen).height());
 
-    if ($("#" + video_screen).width() > $(window).width()) {
+    //if ($("#" + video_screen).width() > $(window).width()) {
 	//resize(false);
-	$("#" + video_screen).width("100%");
-	$("#" + video_screen).height("100%"); 
-    }
-
+	//$("#" + video_screen).width("100%");
+	//$("#" + video_screen).height("100%"); 
+    //}
+    real_size();
 });
 		   
 
@@ -128,13 +128,41 @@ function resize(up) {
 
 }
 
+
+$( window ).resize(function() {
+    real_size();
+});
+
 function real_size() {
 
+    
 
-    $("#" + video_screen).width("");
-    $("#" + video_screen).height("");
+    /* temasys hack */
+    setTimeout(function() {
+	$("#" + video_screen).width("");
+	$("#" + video_screen).height("");
 
-    console.log("video size changed to natural default");
+	var w = $("#" + video_screen).width();
+	var h = $("#" + video_screen).height();
+
+	var new_w;
+	var new_h;
+	var aspect = 1920 / 1080; /*temasys doesn't provide video width hack aspect to wide screen*/
+	
+	if (w > h) {
+	    new_w = window.innerWidth;
+	    new_h = Math.round(window.innerWidth / aspect);
+	} else {
+	    new_h = window.innerHeight;
+	    new_w = Math.round(window.innerHeight / aspect);
+	}
+
+	$("#" + video_screen).width(new_w);
+	$("#" + video_screen).height(new_h);
+    }, 500);
+	
+    console.log("video size changed to fit screen");
+
 
 }
 
@@ -202,8 +230,19 @@ function check_vid() {
     return use_vid;
 }
 
+var DISABLE_SPEED_TEST = true;
+
 function do_speed_test(fn)
 {
+
+  
+    if (DISABLE_SPEED_TEST) {
+	if (fn) {
+	    fn();
+	}
+	return;
+    }
+
     goto_page("bwtest");
 
     vertoHandle.rpcClient.speedTest(1024 * 256, function(e, obj) {
@@ -512,6 +551,7 @@ var callbacks = {
 	    check_vid_res();
 
             $("#ansbtn").click(function() {
+		console.error("WTF", cur_call, d);
                 cur_call.answer({
 		    useStereo: $("#use_stereo").is(':checked'),
 		    callee_id_name: $("#cidname").val(),
@@ -574,7 +614,7 @@ var callbacks = {
 	    }
 
             goto_page("incall");
-
+	    real_size();
             break;
         case $.verto.enum.state.hangup:
 	    $("#main_info").html("Call ended with cause: " + d.cause);
@@ -1075,6 +1115,13 @@ function refresh_devices()
     if (tmp) {
         $('#usecamera option[value=' + tmp + ']').prop('selected', 'selected').change();
         pop_select("#usecamera","verto_demo_camera_selected", tmp);
+    }
+
+    var tmp;
+    tmp = $.cookie("verto_demo_share_selected") || "false";
+    if (tmp) {
+        $('#useshare option[value=' + tmp + ']').prop('selected', 'selected').change();
+        pop_select("#useshare","verto_demo_share_selected", tmp);
     }
 
     tmp = $.cookie("verto_demo_mic_selected") || "false";

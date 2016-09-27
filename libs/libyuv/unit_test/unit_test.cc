@@ -25,16 +25,17 @@ unsigned int fastrand_seed = 0xfb;
 DEFINE_int32(libyuv_width, 0, "width of test image.");
 DEFINE_int32(libyuv_height, 0, "height of test image.");
 DEFINE_int32(libyuv_repeat, 0, "number of times to repeat test.");
-DEFINE_int32(libyuv_flags, 0, "cpu flags for reference code. 0 = C -1 = asm");
-DEFINE_int32(libyuv_cpu_info, -1,
-             "cpu flags for benchmark code. -1 = SIMD, 1 = C");
+DEFINE_int32(libyuv_flags, 0,
+             "cpu flags for reference code. 1 = C, -1 = SIMD");
+DEFINE_int32(libyuv_cpu_info, 0,
+             "cpu flags for benchmark code. 1 = C, -1 = SIMD");
 
 // For quicker unittests, default is 128 x 72.  But when benchmarking,
 // default to 720p.  Allow size to specify.
 // Set flags to -1 for benchmarking to avoid slower C code.
 
 LibYUVConvertTest::LibYUVConvertTest() :
-    benchmark_iterations_(BENCHMARK_ITERATIONS), benchmark_width_(130),
+    benchmark_iterations_(BENCHMARK_ITERATIONS), benchmark_width_(128),
     benchmark_height_(72), disable_cpu_flags_(1), benchmark_cpu_info_(-1) {
   const char* repeat = getenv("LIBYUV_REPEAT");
   if (repeat) {

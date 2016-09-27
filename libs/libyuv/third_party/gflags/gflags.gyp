@@ -25,9 +25,9 @@
       'target_name': 'gflags',
       'type': 'static_library',
       'include_dirs': [
+        '<(gflags_gen_arch_root)/include/gflags',  # For configured files.
         '<(gflags_gen_arch_root)/include/private',  # For config.h
-        '<(gflags_gen_arch_root)/include',  # For configured files.
-        '<(gflags_root)/src',  # For everything else.
+        '<(gflags_root)/src/src',  # For everything else.
       ],
       'defines': [
         # These macros exist so flags and symbols are properly
@@ -40,7 +40,7 @@
       'direct_dependent_settings': {
         'include_dirs': [
           '<(gflags_gen_arch_root)/include',  # For configured files.
-          '<(gflags_root)/src',  # For everything else.
+          '<(gflags_root)/src/src',  # For everything else.
         ],
         'defines': [
           'GFLAGS_DLL_DECL=',
@@ -49,42 +49,44 @@
         ],
       },
       'sources': [
-        'src/gflags.cc',
-        'src/gflags_completions.cc',
-        'src/gflags_reporting.cc',
+        'src/src/gflags.cc',
+        'src/src/gflags_completions.cc',
+        'src/src/gflags_reporting.cc',
       ],
       'conditions': [
         ['OS=="win"', {
           'sources': [
-            'src/windows/port.cc',
+            'src/src/windows_port.cc',
           ],
-          # Suppress warnings about WIN32_LEAN_AND_MEAN and size_t truncation.
-          'msvs_disabled_warnings': [4005, 4267],
+          'msvs_disabled_warnings': [
+            4005,  # WIN32_LEAN_AND_MEAN redefinition.
+            4267,  # Conversion from size_t to "type".
+          ],
+          'configurations': {
+            'Common_Base': {
+              'msvs_configuration_attributes': {
+                'CharacterSet': '2',  # Use Multi-byte Character Set.
+              },
+            },
+          },
         }],
         # TODO(andrew): Look into fixing this warning upstream:
         # http://code.google.com/p/webrtc/issues/detail?id=760
         ['OS=="win" and clang==1', {
           'msvs_settings': {
             'VCCLCompilerTool': {
-              'AdditionalOptions!': [
-                '-Wheader-hygiene',  # Suppress warning about using namespace.
-              ],
               'AdditionalOptions': [
-                '-Wno-unused-local-typedef',  # Suppress unused private typedef.
+                '-Wno-microsoft-include',
               ],
             },
           },
         }],
         ['clang==1', {
-          'cflags': ['-Wno-unused-local-typedef',],
-          'cflags!': ['-Wheader-hygiene',],
-          'xcode_settings': {
-            'WARNING_CFLAGS': ['-Wno-unused-local-typedef',],
-            'WARNING_CFLAGS!': ['-Wheader-hygiene',],
-          },
+          'cflags': [
+            '-Wno-microsoft-include',
+          ],
         }],
       ],
     },
   ],
 }
-

@@ -43,6 +43,7 @@ static bool TestValidFourCC(uint32 fourcc, int bpp) {
 
 TEST_F(LibYUVBaseTest, TestCanonicalFourCC) {
   EXPECT_EQ(FOURCC_I420, CanonicalFourCC(FOURCC_IYUV));
+  EXPECT_EQ(FOURCC_I420, CanonicalFourCC(FOURCC_YU12));
   EXPECT_EQ(FOURCC_I422, CanonicalFourCC(FOURCC_YU16));
   EXPECT_EQ(FOURCC_I444, CanonicalFourCC(FOURCC_YU24));
   EXPECT_EQ(FOURCC_YUY2, CanonicalFourCC(FOURCC_YUYV));

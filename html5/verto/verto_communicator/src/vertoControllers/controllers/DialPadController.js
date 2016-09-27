@@ -4,8 +4,8 @@
   angular
     .module('vertoControllers')
     .controller('DialPadController', ['$rootScope', '$scope',
-      '$http', '$location', 'toastr', 'verto', 'storage', 'CallHistory', 'eventQueue',
-      function($rootScope, $scope, $http, $location, toastr, verto, storage, CallHistory, eventQueue) {
+      '$http', '$location', 'toastr', 'verto', 'storage', 'CallHistory', 'eventQueue', '$timeout',
+      function($rootScope, $scope, $http, $location, toastr, verto, storage, CallHistory, eventQueue, $timeout) {
         console.debug('Executing DialPadController.');
 
         eventQueue.process();

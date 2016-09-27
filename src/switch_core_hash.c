@@ -111,7 +111,7 @@ SWITCH_DECLARE(void *) switch_core_hash_delete_locked(switch_hash_t *hash, const
 		switch_mutex_lock(mutex);
 	}
 
-	switch_core_hash_delete(hash, key);
+	ret = switch_core_hash_delete(hash, key);
 
 	if (mutex) {
 		switch_mutex_unlock(mutex);

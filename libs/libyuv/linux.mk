@@ -74,6 +74,8 @@ psnr: util/psnr.cc
 	$(CXX) $(CXXFLAGS) -Iutil/ -o $@ util/psnr.cc util/psnr_main.cc util/ssim.cc
 
 # A C test utility that uses libyuv conversion from C.
+# gcc 4.4 and older require -fno-exceptions to avoid link error on __gxx_personality_v0
+# CC=gcc-4.4 CXXFLAGS=-fno-exceptions CXX=g++-4.4 make -f linux.mk
 cpuid: util/cpuid.c libyuv.a
 	$(CC) $(CFLAGS) -o $@ util/cpuid.c libyuv.a
 

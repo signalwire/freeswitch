@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef INCLUDE_LIBYUV_CPU_ID_H_  // NOLINT
+#ifndef INCLUDE_LIBYUV_CPU_ID_H_
 #define INCLUDE_LIBYUV_CPU_ID_H_
 
 #include "libyuv/basic_types.h"
@@ -42,6 +42,7 @@ static const int kCpuHasAVX3 = 0x2000;
 // These flags are only valid on MIPS processors.
 static const int kCpuHasMIPS = 0x10000;
 static const int kCpuHasDSPR2 = 0x20000;
+static const int kCpuHasMSA = 0x40000;
 
 // Internal function used to auto-init.
 LIBYUV_API
@@ -62,7 +63,7 @@ static __inline int TestCpuFlag(int test_flag) {
 // For testing, allow CPU flags to be disabled.
 // ie MaskCpuFlags(~kCpuHasSSSE3) to disable SSSE3.
 // MaskCpuFlags(-1) to enable all cpu specific optimizations.
-// MaskCpuFlags(0) to disable all cpu specific optimizations.
+// MaskCpuFlags(1) to disable all cpu specific optimizations.
 LIBYUV_API
 void MaskCpuFlags(int enable_flags);
 
@@ -77,4 +78,4 @@ void CpuId(uint32 eax, uint32 ecx, uint32* cpu_info);
 }  // namespace libyuv
 #endif
 
-#endif  // INCLUDE_LIBYUV_CPU_ID_H_  NOLINT
+#endif  // INCLUDE_LIBYUV_CPU_ID_H_

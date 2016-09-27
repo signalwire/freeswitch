@@ -4840,11 +4840,13 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 						} else {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid ext-rtp-ip\n");
 						}
-					} else if (!strcasecmp(var, "rtp-ip") && val) {
+					} else if (!strcasecmp(var, "rtp-ip")) {
 						char *ip = mod_sofia_globals.guess_ip;
 						char buf[64];
 
-						if (!strcmp(val, "0.0.0.0")) {
+						if (zstr(val)) {
+							ip = mod_sofia_globals.guess_ip;
+						} else if (!strcmp(val, "0.0.0.0")) {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid IP 0.0.0.0 replaced with %s\n", mod_sofia_globals.guess_ip);
 						} else if (!strncasecmp(val, "interface:", 10)) {
 							char *ifname = val+10;

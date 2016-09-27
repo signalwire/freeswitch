@@ -211,7 +211,7 @@ for opt in "$@"; do
 done
 
 # Make one call to fix_path for file_list to improve performance.
-fix_file_list
+fix_file_list file_list
 
 outfile=${outfile:-/dev/stdout}
 guid=${guid:-`generate_uuid`}

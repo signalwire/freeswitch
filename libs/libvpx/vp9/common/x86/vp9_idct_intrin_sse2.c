@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "./vp9_rtcd.h"
 #include "vpx_dsp/x86/inv_txfm_sse2.h"
 #include "vpx_dsp/x86/txfm_common_sse2.h"
 #include "vpx_ports/mem.h"
@@ -38,9 +39,7 @@ void vp9_iht4x4_16_add_sse2(const tran_low_t *input, uint8_t *dest, int stride,
       iadst4_sse2(in);
       iadst4_sse2(in);
       break;
-    default:
-      assert(0);
-      break;
+    default: assert(0); break;
   }
 
   // Final round and shift
@@ -110,9 +109,7 @@ void vp9_iht8x8_64_add_sse2(const tran_low_t *input, uint8_t *dest, int stride,
       iadst8_sse2(in);
       iadst8_sse2(in);
       break;
-    default:
-      assert(0);
-      break;
+    default: assert(0); break;
   }
 
   // Final rounding and shift
@@ -169,9 +166,7 @@ void vp9_iht16x16_256_add_sse2(const tran_low_t *input, uint8_t *dest,
       iadst16_sse2(in0, in1);
       iadst16_sse2(in0, in1);
       break;
-    default:
-      assert(0);
-      break;
+    default: assert(0); break;
   }
 
   write_buffer_8x16(dest, in0, stride);

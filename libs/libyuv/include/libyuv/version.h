@@ -8,9 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef INCLUDE_LIBYUV_VERSION_H_  // NOLINT
+#ifndef INCLUDE_LIBYUV_VERSION_H_
 #define INCLUDE_LIBYUV_VERSION_H_
 
-#define LIBYUV_VERSION 1586
+#define LIBYUV_VERSION 1620
 
-#endif  // INCLUDE_LIBYUV_VERSION_H_  NOLINT
+#endif  // INCLUDE_LIBYUV_VERSION_H_
