@@ -275,6 +275,7 @@
         }
         angular.element('#wrapper').toggleClass('toggled');
         $rootScope.chatStatus = angular.element('#wrapper').hasClass('toggled');
+        updateVideoSize();
       };
 
       $rootScope.openChat = function() {
