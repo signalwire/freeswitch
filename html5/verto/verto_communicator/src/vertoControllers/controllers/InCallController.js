@@ -71,8 +71,8 @@
           storage.data.mutedMic = !storage.data.mutedMic;
         }
 
-        $scope.confChangeVideoLayout = function(layout) {
-          verto.data.conf.setVideoLayout(layout);
+        $scope.confChangeVideoLayout = function(layout, canvasID) {
+          verto.data.conf.setVideoLayout(layout, canvasID);
           $scope.videoLayout = layout;
           $rootScope.$emit('changedVideoLayout', layout);
         };
