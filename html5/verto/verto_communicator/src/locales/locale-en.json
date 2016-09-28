@@ -92,6 +92,7 @@
   "LOGIN_INFORMATION": "Login Information",
   "SAVE_LOGIN_INFORMATION": "Save Login Information",
   "INVALID_LOGIN_FIELDS": "Verify the fields below and try again.",
+  "INVALID_SETTINGS_FIELDS": "Verify the settings below and try again.",
   "NAME": "Name",
   "YOUR_NAME": "Your name",
   "EMAIL": "Email",

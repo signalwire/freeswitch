@@ -9,6 +9,10 @@
           <p>{{ 'INVALID_LOGIN_FIELDS' | translate }}</p>
         </div>
 
+        <div ng-show="loginFailed" class="alert alert-danger">
+          <p>{{ 'INVALID_SETTINGS_FIELDS' | translate }}</p>
+        </div>
+
         <form name="form" class="css-form" novalidate ng-init="advanced = false">
           <div class="form-group {{ (((!form.name.$pristine || form.$submitted) && !form.name.$valid) ? 'has-error': '') }}">
             <label class="control-label" for="login-name">{{ 'NAME' | translate}}</label>
@@ -19,25 +23,25 @@
             <input type="email" name="email" class="form-control" id="login-email" placeholder="{{ 'YOUR_EMAIL' | translate}}" required="" ng-model="verto.data.email" ng-model-options="{debounce: 250}">
           </div>
 
-          <div class="form-group" ng-hide="!advanced">
+          <div class="form-group" ng-show="advanced || loginFailed">
               <label class="control-label" for="login-user">{{ 'USER' | translate}}</label>
             <input type="text" class="form-control" id="login-user" placeholder="{{ 'USER' | translate}}" ng-model="verto.data.login">
           </div>
-          <div class="form-group" ng-hide="!advanced">
+          <div class="form-group" ng-show="advanced || loginFailed">
             <label class="control-label" for="login-password">{{ 'PASSWORD' | translate}}</label>
             <input type="password" class="form-control" id="login-password" placeholder={{ 'PASSWORD' | translate}} ng-model="verto.data.password">
           </div>
 
-          <div class="form-group" ng-hide="!advanced">
+          <div class="form-group" ng-show="advanced || loginFailed">
             <label class="control-label" for="login-callerid">{{ 'CALLER_ID' | translate}}</label>
             <input type="text" class="form-control" id="login-callerid" placeholder="{{ 'CALLER_ID' | translate}}" ng-model="verto.data.callerid">
           </div>
 
-          <div class="form-group" ng-hide="!advanced">
+          <div class="form-group" ng-show="advanced || loginFailed">
             <label class="control-label" for="login-hostname">{{ 'HOSTNAME' | translate}}</label>
             <input type="text" class="form-control" id="login-hostname" placeholder="{{ 'HOSTNAME' | translate}}" ng-model="verto.data.hostname">
           </div>
-          <div class="form-group" ng-hide="!advanced">
+          <div class="form-group" ng-show="advanced || loginFailed">
             <label class="control-label" for="login-wsurl">{{ 'WEBSOCKET_URL' | translate}}</label>
             <input type="text" class="form-control" id="login-wsurl" placeholder="{{ 'WEBSOCKET_URL' | translate}}" ng-model="verto.data.wsURL">
           </div>
