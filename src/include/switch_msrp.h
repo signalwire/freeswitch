@@ -123,8 +123,8 @@ typedef struct {
 	uint8_t frame_data[SWITCH_RTP_MAX_BUF_LEN];
 } switch_msrp_session_t;
 
-SWITCH_DECLARE(switch_status_t) switch_msrp_init();
-SWITCH_DECLARE(switch_status_t) switch_msrp_destroy();
+SWITCH_DECLARE(switch_status_t) switch_msrp_init(void);
+SWITCH_DECLARE(switch_status_t) switch_msrp_destroy(void);
 SWITCH_DECLARE(switch_msrp_session_t *)switch_msrp_session_new(switch_memory_pool_t *pool, switch_bool_t secure);
 SWITCH_DECLARE(switch_status_t) switch_msrp_session_destroy(switch_msrp_session_t **ms);
 // switch_status_t switch_msrp_session_push_msg(switch_msrp_session_t *ms, msrp_msg_t *msg);
