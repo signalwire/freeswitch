@@ -117,13 +117,13 @@ var updateReq;
 
 var updateVideoSize = function(ms) {
     if (!ms) ms = 500;
-    
+
     clearTimeout(updateReq);
     updateReq = setTimeout(function () {
         var videoElem = jQuery('#webcam');
         videoElem.width("");
         videoElem.height("");
-	
+
         var w = videoElem.width();
         var h = videoElem.height();
         var new_w, new_h;
@@ -577,6 +577,7 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
         var callbacks = {
           onWSLogin: function(v, success) {
             data.connected = success;
+            $rootScope.loginFailed = !success;
             $rootScope.$emit('ws.login', success);
             console.debug('Connected to verto server:', success);
 
@@ -679,7 +680,6 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
 
           onWSClose: function(v, success) {
             console.debug('onWSClose:', success);
-
             $rootScope.$emit('ws.close', success);
           },
 
@@ -825,9 +825,9 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
 
       screenshare: function(destination, callback) {
 
-	  
+
           var that = this;
-	  
+
 	  if (storage.data.selectedShare !== "screen") {
 
               console.log('share screen from device ' + storage.data.selectedShare);
@@ -856,9 +856,9 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
 		      StreamTrack.addEventListener('ended', stopSharing);
 		      // (stream.getVideoTracks()[0]).onended = stopSharing;
 		  }
-		  
+
 		  console.log("screenshare started");
-		  
+
 		  function stopSharing() {
 		      if(that.data.shareCall) {
 			  that.screenshareHangup();
@@ -866,16 +866,16 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
 		      }
 		  }
               };
-	      
+
               data.shareCall = call;
-	      
+
               console.log('shareCall', data);
-	      
+
               data.mutedMic = false;
               data.mutedVideo = false;
-	      
+
               that.refreshDevices();
-	      
+
 	      return;
 	  }
 
