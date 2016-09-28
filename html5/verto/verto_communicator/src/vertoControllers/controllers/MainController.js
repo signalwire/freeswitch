@@ -10,6 +10,12 @@
       $rootScope.dtmfHistory = { value: '' };
       $rootScope.onKeydownDtmfEnabled = true;
 
+      $.verto.haltClosure = function() {
+        if (verto.data.callState == 'active') {
+          return true;
+        }
+      };
+
       if (storage.data.language && storage.data.language !== 'browser') {
         $translate.use(storage.data.language);
       } else {
