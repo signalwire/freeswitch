@@ -339,6 +339,10 @@ struct switch_rtp {
 	uint32_t autoadj_threshold;
 	uint32_t autoadj_tally;
 
+	uint32_t rtcp_autoadj_window;
+	uint32_t rtcp_autoadj_threshold;
+	uint32_t rtcp_autoadj_tally;
+
 	srtp_ctx_t *send_ctx[2];
 	srtp_ctx_t *recv_ctx[2];
 
@@ -445,6 +449,7 @@ struct switch_rtp {
 
 	switch_time_t send_time;
 	switch_byte_t auto_adj_used;
+	switch_byte_t rtcp_auto_adj_used;
 	uint8_t pause_jb;
 	uint16_t last_seq;
 	switch_time_t last_read_time;
@@ -2998,7 +3003,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_set_remote_address(switch_rtp_t *rtp_
 		if (rtp_session->flags[SWITCH_RTP_FLAG_RTCP_MUX]) {	
 			rtp_session->rtcp_remote_addr = rtp_session->remote_addr;
 			rtp_session->rtcp_sock_output = rtp_session->sock_output;
-		} else {
+		}/* else {
 			if (remote_rtcp_port) {
 				rtp_session->remote_rtcp_port = remote_rtcp_port;
 			} else {
@@ -3011,7 +3016,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_set_remote_address(switch_rtp_t *rtp_
 				rtp_session->rtcp_dtls->remote_addr = rtp_session->rtcp_remote_addr;
 				rtp_session->rtcp_dtls->sock_output = rtp_session->rtcp_sock_output;
 			}
-		}
+			}*/
 	}
 
 	switch_mutex_unlock(rtp_session->write_mutex);
@@ -4725,6 +4730,16 @@ SWITCH_DECLARE(void) switch_rtp_set_flags(switch_rtp_t *rtp_session, switch_rtp_
 						}
 					}
 				}
+
+
+				rtp_session->flags[SWITCH_RTP_FLAG_RTCP_AUTOADJ] = 1;
+
+
+				rtp_session->rtcp_autoadj_window = 20;
+				rtp_session->rtcp_autoadj_threshold = 1;
+				rtp_session->rtcp_autoadj_tally = 0;
+
+				
 				rtp_flush_read_buffer(rtp_session, SWITCH_RTP_FLUSH_ONCE);
 			} else if (i == SWITCH_RTP_FLAG_NOBLOCK && rtp_session->sock_input) {
 				switch_socket_opt_set(rtp_session->sock_input, SWITCH_SO_NONBLOCK, TRUE);
@@ -4759,6 +4774,15 @@ SWITCH_DECLARE(void) switch_rtp_set_flag(switch_rtp_t *rtp_session, switch_rtp_f
 		rtp_session->autoadj_window = 20;
 		rtp_session->autoadj_threshold = 10;
 		rtp_session->autoadj_tally = 0;
+
+		switch_mutex_lock(rtp_session->flag_mutex);
+		rtp_session->flags[SWITCH_RTP_FLAG_RTCP_AUTOADJ] = 1;
+		switch_mutex_unlock(rtp_session->flag_mutex);
+
+		rtp_session->rtcp_autoadj_window = 20;
+		rtp_session->rtcp_autoadj_threshold = 1;
+		rtp_session->rtcp_autoadj_tally = 0;
+		
 		if (rtp_session->session) {
 			switch_channel_t *channel = switch_core_session_get_channel(rtp_session->session);
 			const char *x = switch_channel_get_variable(channel, "rtp_auto_adjust_threshold");
@@ -6306,7 +6330,49 @@ static switch_status_t read_rtcp_packet(switch_rtp_t *rtp_session, switch_size_t
 	}
 #endif
 
+	/* RTCP Auto ADJ */
+	if (*bytes && rtp_session->flags[SWITCH_RTP_FLAG_RTCP_AUTOADJ] &&  switch_sockaddr_get_port(rtp_session->rtcp_from_addr)) {
+			if (!switch_cmp_addr(rtp_session->rtcp_from_addr, rtp_session->rtcp_remote_addr)) {
+				if (++rtp_session->rtcp_autoadj_tally >= rtp_session->rtcp_autoadj_threshold) {
+					const char *err;
+					uint32_t old = rtp_session->remote_rtcp_port;
+					const char *tx_host;
+					const char *old_host;
+					char bufa[50], bufb[50];
+					
+					tx_host = switch_get_addr(bufa, sizeof(bufa), rtp_session->rtcp_from_addr);
+					old_host = switch_get_addr(bufb, sizeof(bufb), rtp_session->rtcp_remote_addr);
 
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_INFO,
+									  "Auto Changing %s RTCP port from %s:%u to %s:%u\n", rtp_type(rtp_session), old_host, old, tx_host,
+									  switch_sockaddr_get_port(rtp_session->rtcp_from_addr));
+
+					
+					rtp_session->eff_remote_host_str = switch_core_strdup(rtp_session->pool, tx_host);
+					rtp_session->remote_rtcp_port = switch_sockaddr_get_port(rtp_session->rtcp_from_addr);
+					status = enable_remote_rtcp_socket(rtp_session, &err);
+					rtp_session->rtcp_auto_adj_used = 1;
+					
+					if ((rtp_session->rtp_bugs & RTP_BUG_ALWAYS_AUTO_ADJUST)) {
+						switch_rtp_set_flag(rtp_session, SWITCH_RTP_FLAG_RTCP_AUTOADJ);
+					} else {
+						switch_rtp_clear_flag(rtp_session, SWITCH_RTP_FLAG_RTCP_AUTOADJ);
+					}
+				}
+			} else {
+				
+				if ((rtp_session->rtp_bugs & RTP_BUG_ALWAYS_AUTO_ADJUST)) {
+					switch_rtp_set_flag(rtp_session, SWITCH_RTP_FLAG_RTCP_AUTOADJ);
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session),
+									  SWITCH_LOG_DEBUG, "Correct %s RTCP ip/port confirmed.\n", rtp_type(rtp_session));
+					switch_rtp_clear_flag(rtp_session, SWITCH_RTP_FLAG_RTCP_AUTOADJ);
+				}
+				rtp_session->rtcp_auto_adj_used = 0;
+				
+			}
+	}
+	
 	if (*bytes) {
 		return process_rtcp_packet(rtp_session, bytes);
 	}
@@ -6873,6 +6939,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 					switch_rtp_set_remote_address(rtp_session, tx_host, switch_sockaddr_get_port(rtp_session->rtp_from_addr), 0, SWITCH_FALSE, &err);
 					if ((rtp_session->rtp_bugs & RTP_BUG_ALWAYS_AUTO_ADJUST)) {
 						switch_rtp_set_flag(rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
+						switch_rtp_set_flag(rtp_session, SWITCH_RTP_FLAG_RTCP_AUTOADJ);
 					} else {
 						switch_rtp_clear_flag(rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
 					}
@@ -6883,6 +6950,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			} else {
 				if ((rtp_session->rtp_bugs & RTP_BUG_ALWAYS_AUTO_ADJUST)) {
 					switch_rtp_set_flag(rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
+					switch_rtp_set_flag(rtp_session, SWITCH_RTP_FLAG_RTCP_AUTOADJ);
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG, "Correct %s ip/port confirmed.\n", rtp_type(rtp_session));
 					switch_rtp_clear_flag(rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
