@@ -7,6 +7,10 @@
         <!--<param name="packet-loss-percent" value="10"/>-->
 	<!-- Support asymmetric sample rates -->
         <!--<param name="asymmetric-sample-rates" value="1"/>-->
+
+	<!-- Enable bitrate negotiation -->
+        <!--<param name="bitrate-negotiation" value="1"/>-->
+
 	<!-- Keep FEC Enabled -->
         <param name="keep-fec-enabled" value="1"/>
 	<!--<param name="use-jb-lookahead" value="true"/> -->
