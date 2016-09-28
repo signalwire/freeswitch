@@ -836,7 +836,7 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
             int shape_w, shape_h;
             int cx, cy;
 
-            if (context->overlay[i]->abs == POS_NONE && !context->detect_event && !context->shape[0].cx) {
+            if (!overlay->png || context->overlay[i]->abs == POS_NONE && !context->detect_event && !context->shape[0].cx) {
                 continue;
             }
 
