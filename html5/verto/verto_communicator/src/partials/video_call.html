@@ -1,6 +1,6 @@
 <div class="panel panel-default shadow-z-0">
   <div class="video-wrapper">
-    <div class="video-hover-buttons" ng-show="verto.data.callState == 'active' && !watcher">
+    <div class="video-hover-buttons" ng-show="verto.data.callState == 'active'">
       <div id="moderator-tools" ng-show="verto.data.confRole == 'moderator'">
         <button tooltip-placement="bottom" tooltip-title="{{'MESSAGE_PLAY' | translate}}"  uib-tooltip="{{'MESSAGE_PLAY' | translate}}"
                 class="btn btn-material-blue-900" ng-click="play()">
@@ -31,7 +31,7 @@
         </button>
         <ul class="dropdown-menu">
           <li ng-repeat="layout in verto.data.confLayouts">
-            <a ng-click="confChangeVideoLayout(layout)" ng-class="{ 'selected': layout == videoLayout }">{{ layout }}</a>
+            <a ng-click="confChangeVideoLayout(layout, canvasID)" ng-class="{ 'selected': layout == videoLayout }">{{ layout }}</a>
           </li>
         </ul>
       </div>
@@ -71,7 +71,7 @@
         <button tooltips="" tooltip-title="Dialpad" tooltip-side="bottom" tooltip-lazy="false" class="btn btn-material-900" ng-click="toggleDialpad()">
           <i class="big-icon mdi-communication-dialpad"></i>
         </button>
-        <div class="btn-group" ng-show="conf.canvasCount > 1">
+        <div class="btn-group" ng-show="conf.canvasCount > 1 && !watcher">
           <button tooltip-placement="bottom" tooltip-title="{{'MESSAGE_POPUP' | translate}}" uib-tooltips="{{'MESSAGE_POPUP' | translate}}" type="button" class="btn btn-material-blue-900 dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
             <i class="mdi-image-filter-none"></i>
             <span class="caret"></span>
