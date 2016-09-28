@@ -189,6 +189,7 @@ void conference_member_update_status_field(conference_member_t *member)
 		json = cJSON_CreateObject();
 		audio = cJSON_CreateObject();
 		cJSON_AddItemToObject(audio, "muted", cJSON_CreateBool(!conference_utils_member_test_flag(member, MFLAG_CAN_SPEAK)));
+		cJSON_AddItemToObject(audio, "deaf", cJSON_CreateBool(!conference_utils_member_test_flag(member, MFLAG_CAN_HEAR)));
 		cJSON_AddItemToObject(audio, "onHold", cJSON_CreateBool(switch_channel_test_flag(member->channel, CF_HOLD)));
 		cJSON_AddItemToObject(audio, "talking", cJSON_CreateBool(conference_utils_member_test_flag(member, MFLAG_TALKING)));
 		cJSON_AddItemToObject(audio, "floor", cJSON_CreateBool(member == member->conference->floor_holder));
@@ -742,6 +743,31 @@ switch_status_t conference_member_add(conference_obj_t *conference, conference_m
 
 		conference_video_check_avatar(member, SWITCH_FALSE);
 
+		if ((var = switch_channel_get_variable_dup(member->channel, "conference_join_volume_in", SWITCH_FALSE, -1))) {
+			uint32_t id = atoi(var);
+
+			if (id > -5 && id < 5) {
+				member->volume_in_level = id;
+			}
+		}
+
+		if ((var = switch_channel_get_variable_dup(member->channel, "conference_join_volume_out", SWITCH_FALSE, -1))) {
+			uint32_t id = atoi(var);
+
+			if (id > -5 && id < 5) {
+				member->volume_out_level = id;
+			}
+		}
+
+
+		if ((var = switch_channel_get_variable_dup(member->channel, "conference_join_energy_level", SWITCH_FALSE, -1))) {
+			uint32_t id = atoi(var);
+
+			if (id > -5 && id < 5) {
+				member->energy_level = id;
+			}
+		}
+		
 		if ((var = switch_channel_get_variable_dup(member->channel, "video_initial_canvas", SWITCH_FALSE, -1))) {
 			uint32_t id = atoi(var) - 1;
 			if (id < conference->canvas_count) {
@@ -1185,7 +1211,7 @@ switch_status_t conference_member_del(conference_obj_t *conference, conference_m
 			conference->count--;
 		}
 
-		conference_video_check_flush(member);
+		conference_video_check_flush(member, SWITCH_FALSE);
 
 		if (conference_utils_member_test_flag(member, MFLAG_ENDCONF)) {
 			if (!--conference->end_count) {

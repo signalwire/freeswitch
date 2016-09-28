@@ -4880,7 +4880,7 @@ static switch_status_t file_string_file_seek(switch_file_handle_t *handle, unsig
 
 	if (samples == 0 && whence == SEEK_SET) {
 		context->index = -1;
-		return SWITCH_STATUS_SUCCESS;
+		return next_file(handle);
 	}
 	
 	if (!handle->seekable) {

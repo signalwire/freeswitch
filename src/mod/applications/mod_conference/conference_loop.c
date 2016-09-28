@@ -67,7 +67,10 @@ struct _mapping control_mappings[] = {
 	{"execute_application", conference_loop_exec_app},
 	{"floor", conference_loop_floor_toggle},
 	{"vid-floor", conference_loop_vid_floor_toggle},
-	{"vid-floor-force", conference_loop_vid_floor_force}
+	{"vid-floor-force", conference_loop_vid_floor_force},
+	{"deaf", conference_loop_deaf_toggle},
+	{"deaf on", conference_loop_deaf_on},
+	{"deaf off", conference_loop_deaf_off}
 };
 
 int conference_loop_mapping_len()
@@ -226,6 +229,38 @@ void conference_loop_lock_toggle(conference_member_t *member, caller_control_act
 		}
 	}
 
+}
+
+void conference_loop_deaf_toggle(conference_member_t *member, caller_control_action_t *action)
+{
+	if (member == NULL)
+		return;
+
+	if (conference_utils_member_test_flag(member, MFLAG_CAN_HEAR)) {
+		conference_api_sub_deaf(member, NULL, NULL);
+	} else {
+		conference_api_sub_undeaf(member, NULL, NULL);
+	}
+}
+
+void conference_loop_deaf_on(conference_member_t *member, caller_control_action_t *action)
+{
+	if (member == NULL)
+		return;
+
+	if (conference_utils_member_test_flag(member, MFLAG_CAN_HEAR)) {
+		conference_api_sub_deaf(member, NULL, NULL);
+	}
+}
+
+void conference_loop_deaf_off(conference_member_t *member, caller_control_action_t *action)
+{
+	if (member == NULL)
+		return;
+
+	if (!conference_utils_member_test_flag(member, MFLAG_CAN_HEAR)) {
+		conference_api_sub_undeaf(member, NULL, NULL);
+	}
 }
 
 void conference_loop_deafmute_toggle(conference_member_t *member, caller_control_action_t *action)
@@ -711,6 +746,8 @@ void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, void *ob
 			conference_video_check_avatar(member, SWITCH_FALSE);
 			switch_core_session_video_reinit(member->session);
 			conference_video_set_floor_holder(member->conference, member, SWITCH_FALSE);
+			conference_video_check_flush(member, SWITCH_TRUE);
+			switch_core_session_request_video_refresh(member->session);
 		} else if (conference_utils_member_test_flag(member, MFLAG_ACK_VIDEO) && !switch_channel_test_flag(channel, CF_VIDEO)) {
 			conference_video_check_avatar(member, SWITCH_FALSE);
 		}
@@ -1071,18 +1108,19 @@ void conference_loop_output(conference_member_t *member)
 	uint32_t flush_len;
 	uint32_t low_count, bytes;
 	call_list_t *call_list, *cp;
-	switch_codec_implementation_t read_impl = { 0 };
+	switch_codec_implementation_t read_impl = { 0 }, real_read_impl = { 0 };
 	int sanity;
 	switch_status_t st;
 
 	switch_core_session_get_read_impl(member->session, &read_impl);
+	switch_core_session_get_real_read_impl(member->session, &real_read_impl);
 
 
 	channel = switch_core_session_get_channel(member->session);
 	interval = read_impl.microseconds_per_packet / 1000;
 	samples = switch_samples_per_packet(member->conference->rate, interval);
 	//csamples = samples;
-	tsamples = member->orig_read_impl.samples_per_packet;
+	tsamples = real_read_impl.samples_per_packet;
 	low_count = 0;
 	bytes = samples * 2 * member->conference->channels;
 	call_list = NULL;
@@ -1099,8 +1137,8 @@ void conference_loop_output(conference_member_t *member)
 		return;
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session), SWITCH_LOG_DEBUG, "Setup timer %s success interval: %u  samples: %u\n",
-					  member->conference->timer_name, interval, tsamples);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session), SWITCH_LOG_DEBUG, "Setup timer %s success interval: %u  samples: %u from codec %s\n",
+					  member->conference->timer_name, interval, tsamples, real_read_impl.iananame);
 
 
 	write_frame.data = data = switch_core_session_alloc(member->session, SWITCH_RECOMMENDED_BUFFER_SIZE);
@@ -1298,7 +1336,7 @@ void conference_loop_output(conference_member_t *member)
 						switch_change_sln_volume(write_frame.data, write_frame.samples * member->conference->channels, member->volume_out_level);
 					}
 
-					write_frame.timestamp = timer.samplecount;
+					//write_frame.timestamp = timer.samplecount;
 
 					if (member->fnode) {
 						conference_member_add_file_data(member, write_frame.data, write_frame.datalen);
@@ -1362,6 +1400,20 @@ void conference_loop_output(conference_member_t *member)
 				conference_member_say(member, msg, 0);
 			}
 			conference_utils_member_clear_flag(member, MFLAG_INDICATE_UNMUTE);
+		}
+
+		if (conference_utils_member_test_flag(member, MFLAG_INDICATE_DEAF)) {
+			if (!zstr(member->conference->deaf_sound)) {
+				conference_member_play_file(member, member->conference->deaf_sound, 0, SWITCH_TRUE);
+			}
+			conference_utils_member_clear_flag(member, MFLAG_INDICATE_DEAF);
+		}
+
+		if (conference_utils_member_test_flag(member, MFLAG_INDICATE_UNDEAF)) {
+			if (!zstr(member->conference->undeaf_sound)) {
+				conference_member_play_file(member, member->conference->undeaf_sound, 0, SWITCH_TRUE);
+			}
+			conference_utils_member_clear_flag(member, MFLAG_INDICATE_UNDEAF);
 		}
 
 		if (switch_core_session_private_event_count(member->session)) {

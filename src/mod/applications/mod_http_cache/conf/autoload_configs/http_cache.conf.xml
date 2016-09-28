@@ -30,6 +30,17 @@
           <domain name="bucket2.s3.amazonaws.com"/>
        </domains>
     </profile>
+
+    <profile name="blob">
+      <azure-blob>
+        <!-- key identifier, can override with AZURE_STORAGE_ACCESS_KEY environment variable -->
+        <secret-access-key>kOOY4Y/sqZU9bsLjmN+9McVwTry+UIn1Owt4Zs/2S2FQT0eAWLKsk
+Z0V6/gGFqCAKVvwXoGjqUn7PNbVjhZiNA==</secret-access-key>
+      </azure-blob>
+      <domains>
+        <domain name="account.blob.core.windows.net"/>
+      </domains>
+    </profile>
   </profiles>
 
 </configuration>

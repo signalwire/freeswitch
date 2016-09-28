@@ -21,7 +21,7 @@
 extern "C" {
 #endif
 
-static INLINE tran_low_t check_range(tran_high_t input) {
+static INLINE tran_high_t check_range(tran_high_t input) {
 #if CONFIG_COEFFICIENT_RANGE_CHECKING
   // For valid VP9 input streams, intermediate stage coefficients should always
   // stay within the range of a signed 16 bit integer. Coefficients can go out
@@ -32,17 +32,16 @@ static INLINE tran_low_t check_range(tran_high_t input) {
   assert(INT16_MIN <= input);
   assert(input <= INT16_MAX);
 #endif  // CONFIG_COEFFICIENT_RANGE_CHECKING
-  return (tran_low_t)input;
+  return input;
 }
 
-static INLINE tran_low_t dct_const_round_shift(tran_high_t input) {
+static INLINE tran_high_t dct_const_round_shift(tran_high_t input) {
   tran_high_t rv = ROUND_POWER_OF_TWO(input, DCT_CONST_BITS);
-  return check_range(rv);
+  return (tran_high_t)rv;
 }
 
 #if CONFIG_VP9_HIGHBITDEPTH
-static INLINE tran_low_t highbd_check_range(tran_high_t input,
-                                            int bd) {
+static INLINE tran_high_t highbd_check_range(tran_high_t input, int bd) {
 #if CONFIG_COEFFICIENT_RANGE_CHECKING
   // For valid highbitdepth VP9 streams, intermediate stage coefficients will
   // stay within the ranges:
@@ -53,16 +52,15 @@ static INLINE tran_low_t highbd_check_range(tran_high_t input,
   const int32_t int_min = -int_max - 1;
   assert(int_min <= input);
   assert(input <= int_max);
-  (void) int_min;
+  (void)int_min;
 #endif  // CONFIG_COEFFICIENT_RANGE_CHECKING
-  (void) bd;
-  return (tran_low_t)input;
+  (void)bd;
+  return input;
 }
 
-static INLINE tran_low_t highbd_dct_const_round_shift(tran_high_t input,
-                                                      int bd) {
+static INLINE tran_high_t highbd_dct_const_round_shift(tran_high_t input) {
   tran_high_t rv = ROUND_POWER_OF_TWO(input, DCT_CONST_BITS);
-  return highbd_check_range(rv, bd);
+  return (tran_high_t)rv;
 }
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
@@ -83,9 +81,19 @@ static INLINE tran_low_t highbd_dct_const_round_shift(tran_high_t input,
 // bd of 10 uses trans_low with 18bits, need to remove 14bits
 // bd of 12 uses trans_low with 20bits, need to remove 12bits
 // bd of x uses trans_low with 8+x bits, need to remove 24-x bits
-#define WRAPLOW(x, bd) ((((int32_t)(x)) << (24 - bd)) >> (24 - bd))
-#else
-#define WRAPLOW(x, bd) ((int32_t)(x))
+
+#define WRAPLOW(x) ((((int32_t)check_range(x)) << 16) >> 16)
+#if CONFIG_VP9_HIGHBITDEPTH
+#define HIGHBD_WRAPLOW(x, bd) \
+  ((((int32_t)highbd_check_range((x), bd)) << (24 - bd)) >> (24 - bd))
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+
+#else  // CONFIG_EMULATE_HARDWARE
+
+#define WRAPLOW(x) ((int32_t)check_range(x))
+#if CONFIG_VP9_HIGHBITDEPTH
+#define HIGHBD_WRAPLOW(x, bd) ((int32_t)highbd_check_range((x), bd))
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 #endif  // CONFIG_EMULATE_HARDWARE
 
 void idct4_c(const tran_low_t *input, tran_low_t *output);
@@ -107,14 +115,14 @@ void vpx_highbd_iadst16_c(const tran_low_t *input, tran_low_t *output, int bd);
 
 static INLINE uint16_t highbd_clip_pixel_add(uint16_t dest, tran_high_t trans,
                                              int bd) {
-  trans = WRAPLOW(trans, bd);
-  return clip_pixel_highbd(WRAPLOW(dest + trans, bd), bd);
+  trans = HIGHBD_WRAPLOW(trans, bd);
+  return clip_pixel_highbd(dest + (int)trans, bd);
 }
 #endif
 
 static INLINE uint8_t clip_pixel_add(uint8_t dest, tran_high_t trans) {
-  trans = WRAPLOW(trans, 8);
-  return clip_pixel(WRAPLOW(dest + trans, 8));
+  trans = WRAPLOW(trans);
+  return clip_pixel(dest + (int)trans);
 }
 #ifdef __cplusplus
 }  // extern "C"

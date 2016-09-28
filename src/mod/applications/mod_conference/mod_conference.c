@@ -2087,6 +2087,10 @@ SWITCH_STANDARD_APP(conference_function)
 			goto done;
 		}
 
+		if (conference->member_enter_sound && !switch_channel_test_app_flag_key("conference_silent", channel, CONF_SILENT_REQ)) {
+			conference_file_local_play(conference, session, conference->member_enter_sound, CONF_DEFAULT_LEADIN, NULL, 0);
+		}
+
 	}
 
 	/* Release the config registry handle */
@@ -2362,6 +2366,7 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 	char *name_domain = NULL;
 	char *tts_engine = NULL;
 	char *tts_voice = NULL;
+	char *member_enter_sound = NULL;
 	char *enter_sound = NULL;
 	char *sound_prefix = NULL;
 	char *exit_sound = NULL;
@@ -2374,6 +2379,8 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 	char *is_unlocked_sound = NULL;
 	char *kicked_sound = NULL;
 	char *join_only_sound = NULL;
+	char *deaf_sound = NULL;
+	char *undeaf_sound = NULL;
 	char *pin = NULL;
 	char *mpin = NULL;
 	char *pin_sound = NULL;
@@ -2557,6 +2564,8 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 				tts_engine = val;
 			} else if (!strcasecmp(var, "tts-voice") && !zstr(val)) {
 				tts_voice = val;
+			} else if (!strcasecmp(var, "member-enter-sound") && !zstr(val)) {
+				member_enter_sound = val;
 			} else if (!strcasecmp(var, "enter-sound") && !zstr(val)) {
 				enter_sound = val;
 			} else if (!strcasecmp(var, "outcall-templ") && !zstr(val)) {
@@ -2609,6 +2618,10 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 				is_locked_sound = val;
 			} else if (!strcasecmp(var, "is-unlocked-sound") && !zstr(val)) {
 				is_unlocked_sound = val;
+			} else if (!strcasecmp(var, "deaf-sound") && !zstr(val)) {
+				deaf_sound = val;
+			} else if (!strcasecmp(var, "undeaf-sound") && !zstr(val)) {
+				undeaf_sound = val;
 			} else if (!strcasecmp(var, "member-flags") && !zstr(val)) {
 				member_flags = val;
 			} else if (!strcasecmp(var, "conference-flags") && !zstr(val)) {
@@ -3029,6 +3042,10 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 		conference->enter_sound = switch_core_strdup(conference->pool, enter_sound);
 	}
 
+	if (!zstr(member_enter_sound)) {
+		conference->member_enter_sound = switch_core_strdup(conference->pool, member_enter_sound);
+	}
+
 	if (!zstr(exit_sound)) {
 		conference->exit_sound = switch_core_strdup(conference->pool, exit_sound);
 	}
@@ -3063,6 +3080,14 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 
 	if (!zstr(bad_pin_sound)) {
 		conference->bad_pin_sound = switch_core_strdup(conference->pool, bad_pin_sound);
+	}
+
+	if (!zstr(deaf_sound)) {
+		conference->deaf_sound = switch_core_strdup(conference->pool, deaf_sound);
+	}
+
+	if (!zstr(undeaf_sound)) {
+		conference->undeaf_sound = switch_core_strdup(conference->pool, undeaf_sound);
 	}
 
 	if (!zstr(pin)) {
@@ -3240,6 +3265,9 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 
 	switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT);
 	conference_event_add_data(conference, event);
+	if(conference->verbose_events && channel) {
+		switch_channel_event_set_data(channel, event);
+	}
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "conference-create");
 	switch_event_fire(&event);
 

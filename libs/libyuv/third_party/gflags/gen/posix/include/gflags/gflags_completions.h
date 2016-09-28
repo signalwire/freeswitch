@@ -28,7 +28,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // ---
-// Author: Dave Nicponski
+
 //
 // Implement helpful bash-style command line flag completions
 //
@@ -88,8 +88,8 @@
 // file would be (your path to gflags_completions.sh file may differ):
 
 /*
-$ complete -o bashdefault -o default -o nospace -C                        \
- '/usr/local/bin/gflags_completions.sh --tab_completion_columns $COLUMNS' \
+$ complete -o bashdefault -o default -o nospace -C                            \
+ '/home/build/eng/bash/bash_completions.sh --tab_completion_columns $COLUMNS' \
   time  env  binary_name  another_binary  [...]
 */
 
@@ -109,13 +109,13 @@ $ complete -o bashdefault -o default -o nospace -C                        \
 // produce the expected completion output.
 
 
-#ifndef GOOGLE_GFLAGS_COMPLETIONS_H_
-#define GOOGLE_GFLAGS_COMPLETIONS_H_
+#ifndef GFLAGS_COMPLETIONS_H_
+#define GFLAGS_COMPLETIONS_H_
 
 namespace google {
 
-void HandleCommandLineCompletions(void);
+extern void HandleCommandLineCompletions(void);
 
 }
 
-#endif  // GOOGLE_GFLAGS_COMPLETIONS_H_
+#endif  // GFLAGS_COMPLETIONS_H_

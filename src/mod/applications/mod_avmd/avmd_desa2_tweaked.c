@@ -1,22 +1,32 @@
+/* 
+ * Contributor(s):
+ *
+ * Piotr Gregor     <piotrgregor@rsyncme.org>
+ */
+
 #ifndef __AVMD_DESA2_TWEAKED_H__
+    #include "avmd_desa2_tweaked.h"
+#endif
 
 #include <switch.h>
 #include <stdio.h>
+
 #ifdef WIN32
-#include <float.h>
-#define ISNAN(x) (!!(_isnan(x)))
-#define ISINF(x) (isinf(x))
+    #include <float.h>
+    #define ISNAN(x) (!!(_isnan(x)))
+    #define ISINF(x) (isinf(x))
 #else
-int __isnan(double);
-#define ISNAN(x) (__isnan(x))
-#define ISINF(x) (__isinf(x))
+    int __isnan(double);
+    #define ISNAN(x) (__isnan(x))
+    #define ISINF(x) (__isinf(x))
 #endif
+
 #include "avmd_buffer.h"
 #include "avmd_desa2_tweaked.h"
 #include "avmd_options.h"
 
-#ifdef AVMD_FAST_MATH
-#include "avmd_fast_acosf.h"
+#ifndef AVMD_FAST_MATH
+    #include "avmd_fast_acosf.h"
 #endif
 
 
@@ -64,5 +74,3 @@ avmd_desa2_tweaked(circ_buffer_t *b, size_t i, double *amplitude) {
     *amplitude = 2.0 * PSI_Xn / sqrt(PSI_Yn);
     return result;
 }
-
-#endif  /* __AVMD_DESA2_TWEAKED_H__ */

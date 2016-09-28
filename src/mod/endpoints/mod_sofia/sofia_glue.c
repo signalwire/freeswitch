@@ -748,7 +748,13 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 	const char *recover_via = NULL;
 	int require_timer = 1;
 	uint8_t is_t38 = 0;
+	const char *hold_char = "*";
 
+	if (sofia_test_flag(tech_pvt, TFLAG_SIP_HOLD_INACTIVE) ||
+		switch_true(switch_channel_get_variable_dup(tech_pvt->channel, "sofia_hold_inactive", SWITCH_FALSE, -1))) {
+		hold_char = "#";
+	}
+	
 	if (switch_channel_test_flag(tech_pvt->channel, CF_RECOVERING)) {
 		const char *recover_contact = switch_channel_get_variable(tech_pvt->channel, "sip_recover_contact");
 		recover_via = switch_channel_get_variable(tech_pvt->channel, "sip_recover_via");
@@ -1201,7 +1207,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		free(e_dest);
 	}
 
-	holdstr = sofia_test_flag(tech_pvt, TFLAG_SIP_HOLD) ? "*" : "";
+	holdstr = sofia_test_flag(tech_pvt, TFLAG_SIP_HOLD) ? hold_char : "";
 
 	if (!switch_channel_get_variable(channel, "sofia_profile_name")) {
 		switch_channel_set_variable(channel, "sofia_profile_name", tech_pvt->profile->name);
@@ -1280,9 +1286,8 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 
 
 	if ((switch_channel_get_private(tech_pvt->channel, "t38_options")) ||  
-		((sofia_test_flag(tech_pvt, TFLAG_INB_NOMEDIA) ||
-		  sofia_test_flag(tech_pvt, TFLAG_PROXY_MEDIA) ||
-		  switch_true(switch_channel_get_variable(tech_pvt->channel, SWITCH_BYPASS_MEDIA_VARIABLE)) )
+		((switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MODE) ||
+		  switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MEDIA) )
 			&& switch_stristr("m=image", tech_pvt->mparams.local_sdp_str))) {
 		sofia_clear_flag(tech_pvt, TFLAG_ENABLE_SOA);
 		is_t38 = 1;

@@ -321,6 +321,7 @@ typedef struct switch_mm_s {
 	int vb;
 	int vw;
 	int vh;
+	int cbr;
 	float fps;
 	float source_fps;
 	int vbuf;

@@ -132,6 +132,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_real_read_codec(switch_c
 				cur_codec = cur_codec->next;
 			}
 			session->real_read_codec = codec;
+			session->real_read_impl = *codec->implementation;
+			
 			/* set read_codec with real_read_codec if it no longer is ready */
 			if (!switch_core_codec_ready(session->read_codec)) {
 				session->read_codec = codec;

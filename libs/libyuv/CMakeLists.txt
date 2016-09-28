@@ -40,6 +40,7 @@ set(ly_source_files
   ${ly_src_dir}/row_any.cc
   ${ly_src_dir}/row_common.cc
   ${ly_src_dir}/row_mips.cc
+  ${ly_src_dir}/row_msa.cc
   ${ly_src_dir}/row_neon.cc
   ${ly_src_dir}/row_neon64.cc
   ${ly_src_dir}/row_gcc.cc
@@ -80,6 +81,7 @@ set(ly_header_files
   ${ly_inc_dir}/libyuv/convert_from.h
   ${ly_inc_dir}/libyuv/convert_from_argb.h
   ${ly_inc_dir}/libyuv/cpu_id.h
+  ${ly_inc_dir}/libyuv/macros_msa.h
   ${ly_inc_dir}/libyuv/planar_functions.h
   ${ly_inc_dir}/libyuv/rotate.h
   ${ly_inc_dir}/libyuv/rotate_argb.h

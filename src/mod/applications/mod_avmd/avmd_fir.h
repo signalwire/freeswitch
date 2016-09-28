@@ -1,6 +1,10 @@
 /*
  * @brief   Filters.
- * @author  Piotr Gregor < piotrek.gregor gmail.com >
+ *
+ * Contributor(s):
+ *
+ * Piotr Gregor     <piotrgregor@rsyncme.org>
+ *
  * @date    23 Mar 2016
  */
 

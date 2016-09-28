@@ -1,12 +1,17 @@
 #include <switch.h>
+#include <switch_event.h>
 #include <ei.h>
+#include <sys/types.h>
+#include <netinet/in.h>
+#include <arpa/nameser.h>
+#include <resolv.h>
 
 #define MAX_ACL 100
 #define CMD_BUFLEN 1024 * 1000
 #define MAX_QUEUE_LEN 25000
 #define MAX_MISSED 500
 #define MAX_PID_CHARS 255
-#define VERSION "mod_kazoo v1.2.10-14"
+#define VERSION "mod_kazoo v1.3.0-1"
 
 #define API_COMMAND_DISCONNECT 0
 #define API_COMMAND_REMOTE_IP 1
@@ -112,6 +117,7 @@ struct globals_s {
 	int send_msg_batch;
 	short event_stream_framing;
 	switch_port_t port;
+	int config_filters_fetched;
 };
 typedef struct globals_s globals_t;
 extern globals_t globals;
@@ -161,6 +167,8 @@ void add_kz_commands(switch_loadable_module_interface_t **module_interface, swit
 void add_kz_dptools(switch_loadable_module_interface_t **module_interface, switch_application_interface_t *app_interface);
 
 #define _ei_x_encode_string(buf, string) { ei_x_encode_binary(buf, string, strlen(string)); }
+
+void fetch_config_filters();
 
 /* For Emacs:
  * Local Variables:

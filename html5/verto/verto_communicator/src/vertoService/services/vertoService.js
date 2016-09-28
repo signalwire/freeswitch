@@ -583,6 +583,9 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
                   body: body
                 });
                 break;
+              case $.verto.enum.message.display:
+                    $rootScope.$apply(function() {});
+                    break;
               default:
                 console.warn('Got a not implemented message:', msg, dialog, params);
                 break;
@@ -893,7 +896,7 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
           return false;
         }
 
-        data.call.dtmf(number);
+        data.call.dtmf(number.toString());
         console.debug('The DTMF was sent for the call.');
 
         if (angular.isFunction(callback)) {

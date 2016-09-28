@@ -8,7 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-
 #include "./vp9_rtcd.h"
 #include "./vpx_config.h"
 #include "./vpx_dsp_rtcd.h"
@@ -50,37 +49,30 @@ void vp9_subtract_plane(MACROBLOCK *x, BLOCK_SIZE bsize, int plane) {
                      pd->dst.buf, pd->dst.stride);
 }
 
-#define RDTRUNC(RM, DM, R, D)                        \
-  (((1 << (VP9_PROB_COST_SHIFT - 1)) + (R) * (RM)) & \
-   ((1 << VP9_PROB_COST_SHIFT) - 1))
-
 typedef struct vp9_token_state {
-  int           rate;
-  int           error;
-  int           next;
-  int16_t       token;
-  int16_t       qc;
+  int64_t error;
+  int rate;
+  int16_t next;
+  int16_t token;
+  tran_low_t qc;
+  tran_low_t dqc;
+  uint8_t best_index;
 } vp9_token_state;
 
-// TODO(jimbankoski): experiment to find optimal RD numbers.
-static const int plane_rd_mult[PLANE_TYPES] = { 4, 2 };
+static const int plane_rd_mult[REF_TYPES][PLANE_TYPES] = {
+  { 10, 6 }, { 8, 5 },
+};
 
-#define UPDATE_RD_COST()\
-{\
-  rd_cost0 = RDCOST(rdmult, rddiv, rate0, error0);\
-  rd_cost1 = RDCOST(rdmult, rddiv, rate1, error1);\
-  if (rd_cost0 == rd_cost1) {\
-    rd_cost0 = RDTRUNC(rdmult, rddiv, rate0, error0);\
-    rd_cost1 = RDTRUNC(rdmult, rddiv, rate1, error1);\
-  }\
-}
+#define UPDATE_RD_COST()                             \
+  {                                                  \
+    rd_cost0 = RDCOST(rdmult, rddiv, rate0, error0); \
+    rd_cost1 = RDCOST(rdmult, rddiv, rate1, error1); \
+  }
 
 // This function is a place holder for now but may ultimately need
 // to scan previous tokens to work out the correct context.
-static int trellis_get_coeff_context(const int16_t *scan,
-                                     const int16_t *nb,
-                                     int idx, int token,
-                                     uint8_t *token_cache) {
+static int trellis_get_coeff_context(const int16_t *scan, const int16_t *nb,
+                                     int idx, int token, uint8_t *token_cache) {
   int bak = token_cache[scan[idx]], pt;
   token_cache[scan[idx]] = vp9_pt_energy_class[token];
   pt = get_coef_context(nb, token_cache, idx + 1);
@@ -88,14 +80,13 @@ static int trellis_get_coeff_context(const int16_t *scan,
   return pt;
 }
 
-static int optimize_b(MACROBLOCK *mb, int plane, int block,
-                      TX_SIZE tx_size, int ctx) {
+int vp9_optimize_b(MACROBLOCK *mb, int plane, int block, TX_SIZE tx_size,
+                   int ctx) {
   MACROBLOCKD *const xd = &mb->e_mbd;
   struct macroblock_plane *const p = &mb->plane[plane];
   struct macroblockd_plane *const pd = &xd->plane[plane];
   const int ref = is_inter_block(xd->mi[0]);
   vp9_token_state tokens[1025][2];
-  unsigned best_index[1025][2];
   uint8_t token_cache[1024];
   const tran_low_t *const coeff = BLOCK_OFFSET(mb->plane[plane].coeff, block);
   tran_low_t *const qcoeff = BLOCK_OFFSET(p->qcoeff, block);
@@ -103,16 +94,19 @@ static int optimize_b(MACROBLOCK *mb, int plane, int block,
   const int eob = p->eobs[block];
   const PLANE_TYPE type = get_plane_type(plane);
   const int default_eob = 16 << (tx_size << 1);
-  const int mul = 1 + (tx_size == TX_32X32);
-  const int16_t *dequant_ptr = pd->dequant;
+  const int shift = (tx_size == TX_32X32);
+  const int16_t *const dequant_ptr = pd->dequant;
   const uint8_t *const band_translate = get_band_translate(tx_size);
   const scan_order *const so = get_scan(xd, tx_size, type, block);
   const int16_t *const scan = so->scan;
   const int16_t *const nb = so->neighbors;
+  const int dq_step[2] = { dequant_ptr[0] >> shift, dequant_ptr[1] >> shift };
   int next = eob, sz = 0;
-  int64_t rdmult = mb->rdmult * plane_rd_mult[type], rddiv = mb->rddiv;
+  const int64_t rdmult = (mb->rdmult * plane_rd_mult[ref][type]) >> 1;
+  const int64_t rddiv = mb->rddiv;
   int64_t rd_cost0, rd_cost1;
-  int rate0, rate1, error0, error1;
+  int rate0, rate1;
+  int64_t error0, error1;
   int16_t t0, t1;
   EXTRABIT e0;
   int best, band, pt, i, final_eob;
@@ -126,9 +120,6 @@ static int optimize_b(MACROBLOCK *mb, int plane, int block,
   assert(eob <= default_eob);
 
   /* Now set up a Viterbi trellis to evaluate alternative roundings. */
-  if (!ref)
-    rdmult = (rdmult * 9) >> 4;
-
   /* Initialize the sentinel node of the trellis. */
   tokens[eob][0].rate = 0;
   tokens[eob][0].error = 0;
@@ -138,8 +129,7 @@ static int optimize_b(MACROBLOCK *mb, int plane, int block,
   tokens[eob][1] = tokens[eob][0];
 
   for (i = 0; i < eob; i++)
-    token_cache[scan[i]] =
-        vp9_pt_energy_class[vp9_get_token(qcoeff[scan[i]])];
+    token_cache[scan[i]] = vp9_pt_energy_class[vp9_get_token(qcoeff[scan[i]])];
 
   for (i = eob; i-- > 0;) {
     int base_bits, d2, dx;
@@ -167,7 +157,7 @@ static int optimize_b(MACROBLOCK *mb, int plane, int block,
       /* And pick the best. */
       best = rd_cost1 < rd_cost0;
       base_bits = vp9_get_cost(t0, e0, cat6_high_cost);
-      dx = mul * (dqcoeff[rc] - coeff[rc]);
+      dx = (dqcoeff[rc] - coeff[rc]) * (1 << shift);
 #if CONFIG_VP9_HIGHBITDEPTH
       if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
         dx >>= xd->bd - 8;
@@ -179,15 +169,16 @@ static int optimize_b(MACROBLOCK *mb, int plane, int block,
       tokens[i][0].next = next;
       tokens[i][0].token = t0;
       tokens[i][0].qc = x;
-      best_index[i][0] = best;
+      tokens[i][0].dqc = dqcoeff[rc];
+      tokens[i][0].best_index = best;
 
       /* Evaluate the second possibility for this state. */
       rate0 = tokens[next][0].rate;
       rate1 = tokens[next][1].rate;
 
-      if ((abs(x) * dequant_ptr[rc != 0] > abs(coeff[rc]) * mul) &&
-          (abs(x) * dequant_ptr[rc != 0] < abs(coeff[rc]) * mul +
-                                               dequant_ptr[rc != 0]))
+      if ((abs(x) * dequant_ptr[rc != 0] > (abs(coeff[rc]) << shift)) &&
+          (abs(x) * dequant_ptr[rc != 0] <
+           (abs(coeff[rc]) << shift) + dequant_ptr[rc != 0]))
         shortcut = 1;
       else
         shortcut = 0;
@@ -195,6 +186,10 @@ static int optimize_b(MACROBLOCK *mb, int plane, int block,
       if (shortcut) {
         sz = -(x < 0);
         x -= 2 * sz + 1;
+      } else {
+        tokens[i][1] = tokens[i][0];
+        next = i;
+        continue;
       }
 
       /* Consider both possible successor states. */
@@ -245,7 +240,24 @@ static int optimize_b(MACROBLOCK *mb, int plane, int block,
       tokens[i][1].next = next;
       tokens[i][1].token = best ? t1 : t0;
       tokens[i][1].qc = x;
-      best_index[i][1] = best;
+
+      if (x) {
+        tran_low_t offset = dq_step[rc != 0];
+        // The 32x32 transform coefficient uses half quantization step size.
+        // Account for the rounding difference in the dequantized coefficeint
+        // value when the quantization index is dropped from an even number
+        // to an odd number.
+        if (shift & x) offset += (dequant_ptr[rc != 0] & 0x01);
+
+        if (sz == 0)
+          tokens[i][1].dqc = dqcoeff[rc] - offset;
+        else
+          tokens[i][1].dqc = dqcoeff[rc] + offset;
+      } else {
+        tokens[i][1].dqc = 0;
+      }
+
+      tokens[i][1].best_index = best;
       /* Finally, make this the new head of the trellis. */
       next = i;
     } else {
@@ -253,20 +265,21 @@ static int optimize_b(MACROBLOCK *mb, int plane, int block,
        *  add a new trellis node, but we do need to update the costs.
        */
       band = band_translate[i + 1];
+      pt = get_coef_context(nb, token_cache, i + 1);
       t0 = tokens[next][0].token;
       t1 = tokens[next][1].token;
       /* Update the cost of each path if we're past the EOB token. */
       if (t0 != EOB_TOKEN) {
         tokens[next][0].rate +=
-            mb->token_costs[tx_size][type][ref][band][1][0][t0];
+            mb->token_costs[tx_size][type][ref][band][1][pt][t0];
         tokens[next][0].token = ZERO_TOKEN;
       }
       if (t1 != EOB_TOKEN) {
         tokens[next][1].rate +=
-            mb->token_costs[tx_size][type][ref][band][1][0][t1];
+            mb->token_costs[tx_size][type][ref][band][1][pt][t1];
         tokens[next][1].token = ZERO_TOKEN;
       }
-      best_index[i][0] = best_index[i][1] = 0;
+      tokens[i][0].best_index = tokens[i][1].best_index = 0;
       /* Don't update next, because we didn't add a new node. */
     }
   }
@@ -284,20 +297,15 @@ static int optimize_b(MACROBLOCK *mb, int plane, int block,
   UPDATE_RD_COST();
   best = rd_cost1 < rd_cost0;
   final_eob = -1;
-  memset(qcoeff, 0, sizeof(*qcoeff) * (16 << (tx_size * 2)));
-  memset(dqcoeff, 0, sizeof(*dqcoeff) * (16 << (tx_size * 2)));
+
   for (i = next; i < eob; i = next) {
     const int x = tokens[i][best].qc;
     const int rc = scan[i];
-    if (x) {
-      final_eob = i;
-    }
-
+    if (x) final_eob = i;
     qcoeff[rc] = x;
-    dqcoeff[rc] = (x * dequant_ptr[rc != 0]) / mul;
-
+    dqcoeff[rc] = tokens[i][best].dqc;
     next = tokens[i][best].next;
-    best = best_index[i][best];
+    best = tokens[i][best].best_index;
   }
   final_eob++;
 
@@ -305,9 +313,8 @@ static int optimize_b(MACROBLOCK *mb, int plane, int block,
   return final_eob;
 }
 
-static INLINE void fdct32x32(int rd_transform,
-                             const int16_t *src, tran_low_t *dst,
-                             int src_stride) {
+static INLINE void fdct32x32(int rd_transform, const int16_t *src,
+                             tran_low_t *dst, int src_stride) {
   if (rd_transform)
     vpx_fdct32x32_rd(src, dst, src_stride);
   else
@@ -324,7 +331,7 @@ static INLINE void highbd_fdct32x32(int rd_transform, const int16_t *src,
 }
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
-void vp9_xform_quant_fp(MACROBLOCK *x, int plane, int block,
+void vp9_xform_quant_fp(MACROBLOCK *x, int plane, int block, int row, int col,
                         BLOCK_SIZE plane_bsize, TX_SIZE tx_size) {
   MACROBLOCKD *const xd = &x->e_mbd;
   const struct macroblock_plane *const p = &x->plane[plane];
@@ -335,10 +342,8 @@ void vp9_xform_quant_fp(MACROBLOCK *x, int plane, int block,
   tran_low_t *const dqcoeff = BLOCK_OFFSET(pd->dqcoeff, block);
   uint16_t *const eob = &p->eobs[block];
   const int diff_stride = 4 * num_4x4_blocks_wide_lookup[plane_bsize];
-  int i, j;
   const int16_t *src_diff;
-  txfrm_block_to_raster_xy(plane_bsize, tx_size, block, &i, &j);
-  src_diff = &p->src_diff[4 * (j * diff_stride + i)];
+  src_diff = &p->src_diff[4 * (row * diff_stride + col)];
 
 #if CONFIG_VP9_HIGHBITDEPTH
   if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
@@ -347,33 +352,31 @@ void vp9_xform_quant_fp(MACROBLOCK *x, int plane, int block,
         highbd_fdct32x32(x->use_lp32x32fdct, src_diff, coeff, diff_stride);
         vp9_highbd_quantize_fp_32x32(coeff, 1024, x->skip_block, p->zbin,
                                      p->round_fp, p->quant_fp, p->quant_shift,
-                                     qcoeff, dqcoeff, pd->dequant,
-                                     eob, scan_order->scan,
-                                     scan_order->iscan);
+                                     qcoeff, dqcoeff, pd->dequant, eob,
+                                     scan_order->scan, scan_order->iscan);
         break;
       case TX_16X16:
         vpx_highbd_fdct16x16(src_diff, coeff, diff_stride);
         vp9_highbd_quantize_fp(coeff, 256, x->skip_block, p->zbin, p->round_fp,
                                p->quant_fp, p->quant_shift, qcoeff, dqcoeff,
-                               pd->dequant, eob,
-                               scan_order->scan, scan_order->iscan);
+                               pd->dequant, eob, scan_order->scan,
+                               scan_order->iscan);
         break;
       case TX_8X8:
         vpx_highbd_fdct8x8(src_diff, coeff, diff_stride);
         vp9_highbd_quantize_fp(coeff, 64, x->skip_block, p->zbin, p->round_fp,
                                p->quant_fp, p->quant_shift, qcoeff, dqcoeff,
-                               pd->dequant, eob,
-                               scan_order->scan, scan_order->iscan);
+                               pd->dequant, eob, scan_order->scan,
+                               scan_order->iscan);
         break;
       case TX_4X4:
         x->fwd_txm4x4(src_diff, coeff, diff_stride);
         vp9_highbd_quantize_fp(coeff, 16, x->skip_block, p->zbin, p->round_fp,
                                p->quant_fp, p->quant_shift, qcoeff, dqcoeff,
-                               pd->dequant, eob,
-                               scan_order->scan, scan_order->iscan);
+                               pd->dequant, eob, scan_order->scan,
+                               scan_order->iscan);
         break;
-      default:
-        assert(0);
+      default: assert(0);
     }
     return;
   }
@@ -390,31 +393,26 @@ void vp9_xform_quant_fp(MACROBLOCK *x, int plane, int block,
     case TX_16X16:
       vpx_fdct16x16(src_diff, coeff, diff_stride);
       vp9_quantize_fp(coeff, 256, x->skip_block, p->zbin, p->round_fp,
-                      p->quant_fp, p->quant_shift, qcoeff, dqcoeff,
-                      pd->dequant, eob,
-                      scan_order->scan, scan_order->iscan);
+                      p->quant_fp, p->quant_shift, qcoeff, dqcoeff, pd->dequant,
+                      eob, scan_order->scan, scan_order->iscan);
       break;
     case TX_8X8:
-      vp9_fdct8x8_quant(src_diff, diff_stride, coeff, 64,
-                        x->skip_block, p->zbin, p->round_fp,
-                        p->quant_fp, p->quant_shift, qcoeff, dqcoeff,
-                        pd->dequant, eob,
-                        scan_order->scan, scan_order->iscan);
+      vp9_fdct8x8_quant(src_diff, diff_stride, coeff, 64, x->skip_block,
+                        p->zbin, p->round_fp, p->quant_fp, p->quant_shift,
+                        qcoeff, dqcoeff, pd->dequant, eob, scan_order->scan,
+                        scan_order->iscan);
       break;
     case TX_4X4:
       x->fwd_txm4x4(src_diff, coeff, diff_stride);
       vp9_quantize_fp(coeff, 16, x->skip_block, p->zbin, p->round_fp,
-                      p->quant_fp, p->quant_shift, qcoeff, dqcoeff,
-                      pd->dequant, eob,
-                      scan_order->scan, scan_order->iscan);
+                      p->quant_fp, p->quant_shift, qcoeff, dqcoeff, pd->dequant,
+                      eob, scan_order->scan, scan_order->iscan);
       break;
-    default:
-      assert(0);
-      break;
+    default: assert(0); break;
   }
 }
 
-void vp9_xform_quant_dc(MACROBLOCK *x, int plane, int block,
+void vp9_xform_quant_dc(MACROBLOCK *x, int plane, int block, int row, int col,
                         BLOCK_SIZE plane_bsize, TX_SIZE tx_size) {
   MACROBLOCKD *const xd = &x->e_mbd;
   const struct macroblock_plane *const p = &x->plane[plane];
@@ -424,12 +422,8 @@ void vp9_xform_quant_dc(MACROBLOCK *x, int plane, int block,
   tran_low_t *const dqcoeff = BLOCK_OFFSET(pd->dqcoeff, block);
   uint16_t *const eob = &p->eobs[block];
   const int diff_stride = 4 * num_4x4_blocks_wide_lookup[plane_bsize];
-  int i, j;
   const int16_t *src_diff;
-
-  txfrm_block_to_raster_xy(plane_bsize, tx_size, block, &i, &j);
-  src_diff = &p->src_diff[4 * (j * diff_stride + i)];
-
+  src_diff = &p->src_diff[4 * (row * diff_stride + col)];
 #if CONFIG_VP9_HIGHBITDEPTH
   if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
     switch (tx_size) {
@@ -442,23 +436,22 @@ void vp9_xform_quant_dc(MACROBLOCK *x, int plane, int block,
       case TX_16X16:
         vpx_highbd_fdct16x16_1(src_diff, coeff, diff_stride);
         vpx_highbd_quantize_dc(coeff, 256, x->skip_block, p->round,
-                               p->quant_fp[0], qcoeff, dqcoeff,
-                               pd->dequant[0], eob);
+                               p->quant_fp[0], qcoeff, dqcoeff, pd->dequant[0],
+                               eob);
         break;
       case TX_8X8:
         vpx_highbd_fdct8x8_1(src_diff, coeff, diff_stride);
         vpx_highbd_quantize_dc(coeff, 64, x->skip_block, p->round,
-                               p->quant_fp[0], qcoeff, dqcoeff,
-                               pd->dequant[0], eob);
+                               p->quant_fp[0], qcoeff, dqcoeff, pd->dequant[0],
+                               eob);
         break;
       case TX_4X4:
         x->fwd_txm4x4(src_diff, coeff, diff_stride);
         vpx_highbd_quantize_dc(coeff, 16, x->skip_block, p->round,
-                               p->quant_fp[0], qcoeff, dqcoeff,
-                               pd->dequant[0], eob);
+                               p->quant_fp[0], qcoeff, dqcoeff, pd->dequant[0],
+                               eob);
         break;
-      default:
-        assert(0);
+      default: assert(0);
     }
     return;
   }
@@ -467,35 +460,29 @@ void vp9_xform_quant_dc(MACROBLOCK *x, int plane, int block,
   switch (tx_size) {
     case TX_32X32:
       vpx_fdct32x32_1(src_diff, coeff, diff_stride);
-      vpx_quantize_dc_32x32(coeff, x->skip_block, p->round,
-                            p->quant_fp[0], qcoeff, dqcoeff,
-                            pd->dequant[0], eob);
+      vpx_quantize_dc_32x32(coeff, x->skip_block, p->round, p->quant_fp[0],
+                            qcoeff, dqcoeff, pd->dequant[0], eob);
       break;
     case TX_16X16:
       vpx_fdct16x16_1(src_diff, coeff, diff_stride);
-      vpx_quantize_dc(coeff, 256, x->skip_block, p->round,
-                     p->quant_fp[0], qcoeff, dqcoeff,
-                     pd->dequant[0], eob);
+      vpx_quantize_dc(coeff, 256, x->skip_block, p->round, p->quant_fp[0],
+                      qcoeff, dqcoeff, pd->dequant[0], eob);
       break;
     case TX_8X8:
       vpx_fdct8x8_1(src_diff, coeff, diff_stride);
-      vpx_quantize_dc(coeff, 64, x->skip_block, p->round,
-                      p->quant_fp[0], qcoeff, dqcoeff,
-                      pd->dequant[0], eob);
+      vpx_quantize_dc(coeff, 64, x->skip_block, p->round, p->quant_fp[0],
+                      qcoeff, dqcoeff, pd->dequant[0], eob);
       break;
     case TX_4X4:
       x->fwd_txm4x4(src_diff, coeff, diff_stride);
-      vpx_quantize_dc(coeff, 16, x->skip_block, p->round,
-                      p->quant_fp[0], qcoeff, dqcoeff,
-                      pd->dequant[0], eob);
+      vpx_quantize_dc(coeff, 16, x->skip_block, p->round, p->quant_fp[0],
+                      qcoeff, dqcoeff, pd->dequant[0], eob);
       break;
-    default:
-      assert(0);
-      break;
+    default: assert(0); break;
   }
 }
 
-void vp9_xform_quant(MACROBLOCK *x, int plane, int block,
+void vp9_xform_quant(MACROBLOCK *x, int plane, int block, int row, int col,
                      BLOCK_SIZE plane_bsize, TX_SIZE tx_size) {
   MACROBLOCKD *const xd = &x->e_mbd;
   const struct macroblock_plane *const p = &x->plane[plane];
@@ -506,44 +493,41 @@ void vp9_xform_quant(MACROBLOCK *x, int plane, int block,
   tran_low_t *const dqcoeff = BLOCK_OFFSET(pd->dqcoeff, block);
   uint16_t *const eob = &p->eobs[block];
   const int diff_stride = 4 * num_4x4_blocks_wide_lookup[plane_bsize];
-  int i, j;
   const int16_t *src_diff;
-  txfrm_block_to_raster_xy(plane_bsize, tx_size, block, &i, &j);
-  src_diff = &p->src_diff[4 * (j * diff_stride + i)];
+  src_diff = &p->src_diff[4 * (row * diff_stride + col)];
 
 #if CONFIG_VP9_HIGHBITDEPTH
   if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
-     switch (tx_size) {
+    switch (tx_size) {
       case TX_32X32:
         highbd_fdct32x32(x->use_lp32x32fdct, src_diff, coeff, diff_stride);
         vpx_highbd_quantize_b_32x32(coeff, 1024, x->skip_block, p->zbin,
                                     p->round, p->quant, p->quant_shift, qcoeff,
-                                    dqcoeff, pd->dequant, eob,
-                                    scan_order->scan, scan_order->iscan);
+                                    dqcoeff, pd->dequant, eob, scan_order->scan,
+                                    scan_order->iscan);
         break;
       case TX_16X16:
         vpx_highbd_fdct16x16(src_diff, coeff, diff_stride);
         vpx_highbd_quantize_b(coeff, 256, x->skip_block, p->zbin, p->round,
                               p->quant, p->quant_shift, qcoeff, dqcoeff,
-                              pd->dequant, eob,
-                              scan_order->scan, scan_order->iscan);
+                              pd->dequant, eob, scan_order->scan,
+                              scan_order->iscan);
         break;
       case TX_8X8:
         vpx_highbd_fdct8x8(src_diff, coeff, diff_stride);
         vpx_highbd_quantize_b(coeff, 64, x->skip_block, p->zbin, p->round,
                               p->quant, p->quant_shift, qcoeff, dqcoeff,
-                              pd->dequant, eob,
-                              scan_order->scan, scan_order->iscan);
+                              pd->dequant, eob, scan_order->scan,
+                              scan_order->iscan);
         break;
       case TX_4X4:
         x->fwd_txm4x4(src_diff, coeff, diff_stride);
         vpx_highbd_quantize_b(coeff, 16, x->skip_block, p->zbin, p->round,
                               p->quant, p->quant_shift, qcoeff, dqcoeff,
-                              pd->dequant, eob,
-                              scan_order->scan, scan_order->iscan);
+                              pd->dequant, eob, scan_order->scan,
+                              scan_order->iscan);
         break;
-      default:
-        assert(0);
+      default: assert(0);
     }
     return;
   }
@@ -559,47 +543,39 @@ void vp9_xform_quant(MACROBLOCK *x, int plane, int block,
       break;
     case TX_16X16:
       vpx_fdct16x16(src_diff, coeff, diff_stride);
-      vpx_quantize_b(coeff, 256, x->skip_block, p->zbin, p->round,
-                     p->quant, p->quant_shift, qcoeff, dqcoeff,
-                     pd->dequant, eob,
+      vpx_quantize_b(coeff, 256, x->skip_block, p->zbin, p->round, p->quant,
+                     p->quant_shift, qcoeff, dqcoeff, pd->dequant, eob,
                      scan_order->scan, scan_order->iscan);
       break;
     case TX_8X8:
       vpx_fdct8x8(src_diff, coeff, diff_stride);
-      vpx_quantize_b(coeff, 64, x->skip_block, p->zbin, p->round,
-                     p->quant, p->quant_shift, qcoeff, dqcoeff,
-                     pd->dequant, eob,
+      vpx_quantize_b(coeff, 64, x->skip_block, p->zbin, p->round, p->quant,
+                     p->quant_shift, qcoeff, dqcoeff, pd->dequant, eob,
                      scan_order->scan, scan_order->iscan);
       break;
     case TX_4X4:
       x->fwd_txm4x4(src_diff, coeff, diff_stride);
-      vpx_quantize_b(coeff, 16, x->skip_block, p->zbin, p->round,
-                     p->quant, p->quant_shift, qcoeff, dqcoeff,
-                     pd->dequant, eob,
+      vpx_quantize_b(coeff, 16, x->skip_block, p->zbin, p->round, p->quant,
+                     p->quant_shift, qcoeff, dqcoeff, pd->dequant, eob,
                      scan_order->scan, scan_order->iscan);
       break;
-    default:
-      assert(0);
-      break;
+    default: assert(0); break;
   }
 }
 
-static void encode_block(int plane, int block, BLOCK_SIZE plane_bsize,
-                         TX_SIZE tx_size, void *arg) {
+static void encode_block(int plane, int block, int row, int col,
+                         BLOCK_SIZE plane_bsize, TX_SIZE tx_size, void *arg) {
   struct encode_b_args *const args = arg;
   MACROBLOCK *const x = args->x;
   MACROBLOCKD *const xd = &x->e_mbd;
-  struct optimize_ctx *const ctx = args->ctx;
   struct macroblock_plane *const p = &x->plane[plane];
   struct macroblockd_plane *const pd = &xd->plane[plane];
   tran_low_t *const dqcoeff = BLOCK_OFFSET(pd->dqcoeff, block);
-  int i, j;
   uint8_t *dst;
   ENTROPY_CONTEXT *a, *l;
-  txfrm_block_to_raster_xy(plane_bsize, tx_size, block, &i, &j);
-  dst = &pd->dst.buf[4 * j * pd->dst.stride + 4 * i];
-  a = &ctx->ta[plane][i];
-  l = &ctx->tl[plane][j];
+  dst = &pd->dst.buf[4 * row * pd->dst.stride + 4 * col];
+  a = &args->ta[col];
+  l = &args->tl[row];
 
   // TODO(jingning): per transformed block zero forcing only enabled for
   // luma component. will integrate chroma components as well.
@@ -618,17 +594,17 @@ static void encode_block(int plane, int block, BLOCK_SIZE plane_bsize,
         *a = *l = 0;
         return;
       } else {
-        vp9_xform_quant_fp(x, plane, block, plane_bsize, tx_size);
+        vp9_xform_quant_fp(x, plane, block, row, col, plane_bsize, tx_size);
       }
     } else {
       if (max_txsize_lookup[plane_bsize] == tx_size) {
         int txfm_blk_index = (plane << 2) + (block >> (tx_size << 1));
         if (x->skip_txfm[txfm_blk_index] == SKIP_TXFM_NONE) {
           // full forward transform and quantization
-          vp9_xform_quant(x, plane, block, plane_bsize, tx_size);
+          vp9_xform_quant(x, plane, block, row, col, plane_bsize, tx_size);
         } else if (x->skip_txfm[txfm_blk_index] == SKIP_TXFM_AC_ONLY) {
           // fast path forward transform and quantization
-          vp9_xform_quant_dc(x, plane, block, plane_bsize, tx_size);
+          vp9_xform_quant_dc(x, plane, block, row, col, plane_bsize, tx_size);
         } else {
           // skip forward transform
           p->eobs[block] = 0;
@@ -636,47 +612,44 @@ static void encode_block(int plane, int block, BLOCK_SIZE plane_bsize,
           return;
         }
       } else {
-        vp9_xform_quant(x, plane, block, plane_bsize, tx_size);
+        vp9_xform_quant(x, plane, block, row, col, plane_bsize, tx_size);
       }
     }
   }
 
   if (x->optimize && (!x->skip_recode || !x->skip_optimize)) {
     const int ctx = combine_entropy_contexts(*a, *l);
-    *a = *l = optimize_b(x, plane, block, tx_size, ctx) > 0;
+    *a = *l = vp9_optimize_b(x, plane, block, tx_size, ctx) > 0;
   } else {
     *a = *l = p->eobs[block] > 0;
   }
 
-  if (p->eobs[block])
-    *(args->skip) = 0;
+  if (p->eobs[block]) *(args->skip) = 0;
 
-  if (x->skip_encode || p->eobs[block] == 0)
-    return;
+  if (x->skip_encode || p->eobs[block] == 0) return;
 #if CONFIG_VP9_HIGHBITDEPTH
   if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
     switch (tx_size) {
       case TX_32X32:
-        vp9_highbd_idct32x32_add(dqcoeff, dst, pd->dst.stride,
-                                 p->eobs[block], xd->bd);
+        vp9_highbd_idct32x32_add(dqcoeff, dst, pd->dst.stride, p->eobs[block],
+                                 xd->bd);
         break;
       case TX_16X16:
-        vp9_highbd_idct16x16_add(dqcoeff, dst, pd->dst.stride,
-                                 p->eobs[block], xd->bd);
+        vp9_highbd_idct16x16_add(dqcoeff, dst, pd->dst.stride, p->eobs[block],
+                                 xd->bd);
         break;
       case TX_8X8:
-        vp9_highbd_idct8x8_add(dqcoeff, dst, pd->dst.stride,
-                               p->eobs[block], xd->bd);
+        vp9_highbd_idct8x8_add(dqcoeff, dst, pd->dst.stride, p->eobs[block],
+                               xd->bd);
         break;
       case TX_4X4:
         // this is like vp9_short_idct4x4 but has a special case around eob<=1
         // which is significant (not just an optimization) for the lossless
         // case.
-        x->highbd_itxm_add(dqcoeff, dst, pd->dst.stride,
-                           p->eobs[block], xd->bd);
+        x->highbd_itxm_add(dqcoeff, dst, pd->dst.stride, p->eobs[block],
+                           xd->bd);
         break;
-      default:
-        assert(0 && "Invalid transform size");
+      default: assert(0 && "Invalid transform size");
     }
     return;
   }
@@ -698,31 +671,28 @@ static void encode_block(int plane, int block, BLOCK_SIZE plane_bsize,
       // case.
       x->itxm_add(dqcoeff, dst, pd->dst.stride, p->eobs[block]);
       break;
-    default:
-      assert(0 && "Invalid transform size");
-      break;
+    default: assert(0 && "Invalid transform size"); break;
   }
 }
 
-static void encode_block_pass1(int plane, int block, BLOCK_SIZE plane_bsize,
-                               TX_SIZE tx_size, void *arg) {
+static void encode_block_pass1(int plane, int block, int row, int col,
+                               BLOCK_SIZE plane_bsize, TX_SIZE tx_size,
+                               void *arg) {
   MACROBLOCK *const x = (MACROBLOCK *)arg;
   MACROBLOCKD *const xd = &x->e_mbd;
   struct macroblock_plane *const p = &x->plane[plane];
   struct macroblockd_plane *const pd = &xd->plane[plane];
   tran_low_t *const dqcoeff = BLOCK_OFFSET(pd->dqcoeff, block);
-  int i, j;
   uint8_t *dst;
-  txfrm_block_to_raster_xy(plane_bsize, tx_size, block, &i, &j);
-  dst = &pd->dst.buf[4 * j * pd->dst.stride + 4 * i];
+  dst = &pd->dst.buf[4 * row * pd->dst.stride + 4 * col];
 
-  vp9_xform_quant(x, plane, block, plane_bsize, tx_size);
+  vp9_xform_quant(x, plane, block, row, col, plane_bsize, tx_size);
 
   if (p->eobs[block] > 0) {
 #if CONFIG_VP9_HIGHBITDEPTH
     if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
-       x->highbd_itxm_add(dqcoeff, dst, pd->dst.stride, p->eobs[block], xd->bd);
-       return;
+      x->highbd_itxm_add(dqcoeff, dst, pd->dst.stride, p->eobs[block], xd->bd);
+      return;
     }
 #endif  // CONFIG_VP9_HIGHBITDEPTH
     x->itxm_add(dqcoeff, dst, pd->dst.stride, p->eobs[block]);
@@ -739,33 +709,37 @@ void vp9_encode_sb(MACROBLOCK *x, BLOCK_SIZE bsize) {
   MACROBLOCKD *const xd = &x->e_mbd;
   struct optimize_ctx ctx;
   MODE_INFO *mi = xd->mi[0];
-  struct encode_b_args arg = {x, &ctx, &mi->skip};
+  struct encode_b_args arg = { x, 1, NULL, NULL, &mi->skip };
   int plane;
 
   mi->skip = 1;
 
-  if (x->skip)
-    return;
+  if (x->skip) return;
 
   for (plane = 0; plane < MAX_MB_PLANE; ++plane) {
-    if (!x->skip_recode)
-      vp9_subtract_plane(x, bsize, plane);
+    if (!x->skip_recode) vp9_subtract_plane(x, bsize, plane);
 
     if (x->optimize && (!x->skip_recode || !x->skip_optimize)) {
-      const struct macroblockd_plane* const pd = &xd->plane[plane];
+      const struct macroblockd_plane *const pd = &xd->plane[plane];
       const TX_SIZE tx_size = plane ? get_uv_tx_size(mi, pd) : mi->tx_size;
-      vp9_get_entropy_contexts(bsize, tx_size, pd,
-                               ctx.ta[plane], ctx.tl[plane]);
+      vp9_get_entropy_contexts(bsize, tx_size, pd, ctx.ta[plane],
+                               ctx.tl[plane]);
+      arg.enable_coeff_opt = 1;
+    } else {
+      arg.enable_coeff_opt = 0;
     }
+    arg.ta = ctx.ta[plane];
+    arg.tl = ctx.tl[plane];
 
     vp9_foreach_transformed_block_in_plane(xd, bsize, plane, encode_block,
                                            &arg);
   }
 }
 
-void vp9_encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
-                            TX_SIZE tx_size, void *arg) {
-  struct encode_b_args* const args = arg;
+void vp9_encode_block_intra(int plane, int block, int row, int col,
+                            BLOCK_SIZE plane_bsize, TX_SIZE tx_size,
+                            void *arg) {
+  struct encode_b_args *const args = arg;
   MACROBLOCK *const x = args->x;
   MACROBLOCKD *const xd = &x->e_mbd;
   MODE_INFO *mi = xd->mi[0];
@@ -784,11 +758,17 @@ void vp9_encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
   uint16_t *eob = &p->eobs[block];
   const int src_stride = p->src.stride;
   const int dst_stride = pd->dst.stride;
-  int i, j;
-  txfrm_block_to_raster_xy(plane_bsize, tx_size, block, &i, &j);
-  dst = &pd->dst.buf[4 * (j * dst_stride + i)];
-  src = &p->src.buf[4 * (j * src_stride + i)];
-  src_diff = &p->src_diff[4 * (j * diff_stride + i)];
+  ENTROPY_CONTEXT *a = NULL;
+  ENTROPY_CONTEXT *l = NULL;
+  int entropy_ctx = 0;
+  dst = &pd->dst.buf[4 * (row * dst_stride + col)];
+  src = &p->src.buf[4 * (row * src_stride + col)];
+  src_diff = &p->src_diff[4 * (row * diff_stride + col)];
+  if (args->enable_coeff_opt) {
+    a = &args->ta[col];
+    l = &args->tl[row];
+    entropy_ctx = combine_entropy_contexts(*a, *l);
+  }
 
   if (tx_size == TX_4X4) {
     tx_type = get_tx_type_4x4(get_plane_type(plane), xd, block);
@@ -805,16 +785,16 @@ void vp9_encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
   }
 
   vp9_predict_intra_block(xd, bwl, tx_size, mode, x->skip_encode ? src : dst,
-                          x->skip_encode ? src_stride : dst_stride,
-                          dst, dst_stride, i, j, plane);
+                          x->skip_encode ? src_stride : dst_stride, dst,
+                          dst_stride, col, row, plane);
 
 #if CONFIG_VP9_HIGHBITDEPTH
   if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
     switch (tx_size) {
       case TX_32X32:
         if (!x->skip_recode) {
-          vpx_highbd_subtract_block(32, 32, src_diff, diff_stride,
-                                    src, src_stride, dst, dst_stride, xd->bd);
+          vpx_highbd_subtract_block(32, 32, src_diff, diff_stride, src,
+                                    src_stride, dst, dst_stride, xd->bd);
           highbd_fdct32x32(x->use_lp32x32fdct, src_diff, coeff, diff_stride);
           vpx_highbd_quantize_b_32x32(coeff, 1024, x->skip_block, p->zbin,
                                       p->round, p->quant, p->quant_shift,
@@ -827,34 +807,34 @@ void vp9_encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
         break;
       case TX_16X16:
         if (!x->skip_recode) {
-          vpx_highbd_subtract_block(16, 16, src_diff, diff_stride,
-                                    src, src_stride, dst, dst_stride, xd->bd);
+          vpx_highbd_subtract_block(16, 16, src_diff, diff_stride, src,
+                                    src_stride, dst, dst_stride, xd->bd);
           if (tx_type == DCT_DCT)
             vpx_highbd_fdct16x16(src_diff, coeff, diff_stride);
           else
             vp9_highbd_fht16x16(src_diff, coeff, diff_stride, tx_type);
           vpx_highbd_quantize_b(coeff, 256, x->skip_block, p->zbin, p->round,
                                 p->quant, p->quant_shift, qcoeff, dqcoeff,
-                                pd->dequant, eob,
-                                scan_order->scan, scan_order->iscan);
+                                pd->dequant, eob, scan_order->scan,
+                                scan_order->iscan);
         }
         if (!x->skip_encode && *eob) {
-          vp9_highbd_iht16x16_add(tx_type, dqcoeff, dst, dst_stride,
-                                  *eob, xd->bd);
+          vp9_highbd_iht16x16_add(tx_type, dqcoeff, dst, dst_stride, *eob,
+                                  xd->bd);
         }
         break;
       case TX_8X8:
         if (!x->skip_recode) {
-          vpx_highbd_subtract_block(8, 8, src_diff, diff_stride,
-                                    src, src_stride, dst, dst_stride, xd->bd);
+          vpx_highbd_subtract_block(8, 8, src_diff, diff_stride, src,
+                                    src_stride, dst, dst_stride, xd->bd);
           if (tx_type == DCT_DCT)
             vpx_highbd_fdct8x8(src_diff, coeff, diff_stride);
           else
             vp9_highbd_fht8x8(src_diff, coeff, diff_stride, tx_type);
           vpx_highbd_quantize_b(coeff, 64, x->skip_block, p->zbin, p->round,
                                 p->quant, p->quant_shift, qcoeff, dqcoeff,
-                                pd->dequant, eob,
-                                scan_order->scan, scan_order->iscan);
+                                pd->dequant, eob, scan_order->scan,
+                                scan_order->iscan);
         }
         if (!x->skip_encode && *eob) {
           vp9_highbd_iht8x8_add(tx_type, dqcoeff, dst, dst_stride, *eob,
@@ -863,16 +843,16 @@ void vp9_encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
         break;
       case TX_4X4:
         if (!x->skip_recode) {
-          vpx_highbd_subtract_block(4, 4, src_diff, diff_stride,
-                                    src, src_stride, dst, dst_stride, xd->bd);
+          vpx_highbd_subtract_block(4, 4, src_diff, diff_stride, src,
+                                    src_stride, dst, dst_stride, xd->bd);
           if (tx_type != DCT_DCT)
             vp9_highbd_fht4x4(src_diff, coeff, diff_stride, tx_type);
           else
             x->fwd_txm4x4(src_diff, coeff, diff_stride);
           vpx_highbd_quantize_b(coeff, 16, x->skip_block, p->zbin, p->round,
                                 p->quant, p->quant_shift, qcoeff, dqcoeff,
-                                pd->dequant, eob,
-                                scan_order->scan, scan_order->iscan);
+                                pd->dequant, eob, scan_order->scan,
+                                scan_order->iscan);
         }
 
         if (!x->skip_encode && *eob) {
@@ -886,12 +866,9 @@ void vp9_encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
           }
         }
         break;
-      default:
-        assert(0);
-        return;
+      default: assert(0); return;
     }
-    if (*eob)
-      *(args->skip) = 0;
+    if (*eob) *(args->skip) = 0;
     return;
   }
 #endif  // CONFIG_VP9_HIGHBITDEPTH
@@ -899,57 +876,65 @@ void vp9_encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
   switch (tx_size) {
     case TX_32X32:
       if (!x->skip_recode) {
-        vpx_subtract_block(32, 32, src_diff, diff_stride,
-                           src, src_stride, dst, dst_stride);
+        vpx_subtract_block(32, 32, src_diff, diff_stride, src, src_stride, dst,
+                           dst_stride);
         fdct32x32(x->use_lp32x32fdct, src_diff, coeff, diff_stride);
         vpx_quantize_b_32x32(coeff, 1024, x->skip_block, p->zbin, p->round,
                              p->quant, p->quant_shift, qcoeff, dqcoeff,
                              pd->dequant, eob, scan_order->scan,
                              scan_order->iscan);
       }
+      if (args->enable_coeff_opt && !x->skip_recode) {
+        *a = *l = vp9_optimize_b(x, plane, block, tx_size, entropy_ctx) > 0;
+      }
       if (!x->skip_encode && *eob)
         vp9_idct32x32_add(dqcoeff, dst, dst_stride, *eob);
       break;
     case TX_16X16:
       if (!x->skip_recode) {
-        vpx_subtract_block(16, 16, src_diff, diff_stride,
-                           src, src_stride, dst, dst_stride);
+        vpx_subtract_block(16, 16, src_diff, diff_stride, src, src_stride, dst,
+                           dst_stride);
         vp9_fht16x16(src_diff, coeff, diff_stride, tx_type);
-        vpx_quantize_b(coeff, 256, x->skip_block, p->zbin, p->round,
-                       p->quant, p->quant_shift, qcoeff, dqcoeff,
-                       pd->dequant, eob, scan_order->scan,
-                       scan_order->iscan);
+        vpx_quantize_b(coeff, 256, x->skip_block, p->zbin, p->round, p->quant,
+                       p->quant_shift, qcoeff, dqcoeff, pd->dequant, eob,
+                       scan_order->scan, scan_order->iscan);
+      }
+      if (args->enable_coeff_opt && !x->skip_recode) {
+        *a = *l = vp9_optimize_b(x, plane, block, tx_size, entropy_ctx) > 0;
       }
       if (!x->skip_encode && *eob)
         vp9_iht16x16_add(tx_type, dqcoeff, dst, dst_stride, *eob);
       break;
     case TX_8X8:
       if (!x->skip_recode) {
-        vpx_subtract_block(8, 8, src_diff, diff_stride,
-                           src, src_stride, dst, dst_stride);
+        vpx_subtract_block(8, 8, src_diff, diff_stride, src, src_stride, dst,
+                           dst_stride);
         vp9_fht8x8(src_diff, coeff, diff_stride, tx_type);
         vpx_quantize_b(coeff, 64, x->skip_block, p->zbin, p->round, p->quant,
-                       p->quant_shift, qcoeff, dqcoeff,
-                       pd->dequant, eob, scan_order->scan,
-                       scan_order->iscan);
+                       p->quant_shift, qcoeff, dqcoeff, pd->dequant, eob,
+                       scan_order->scan, scan_order->iscan);
+      }
+      if (args->enable_coeff_opt && !x->skip_recode) {
+        *a = *l = vp9_optimize_b(x, plane, block, tx_size, entropy_ctx) > 0;
       }
       if (!x->skip_encode && *eob)
         vp9_iht8x8_add(tx_type, dqcoeff, dst, dst_stride, *eob);
       break;
     case TX_4X4:
       if (!x->skip_recode) {
-        vpx_subtract_block(4, 4, src_diff, diff_stride,
-                           src, src_stride, dst, dst_stride);
+        vpx_subtract_block(4, 4, src_diff, diff_stride, src, src_stride, dst,
+                           dst_stride);
         if (tx_type != DCT_DCT)
           vp9_fht4x4(src_diff, coeff, diff_stride, tx_type);
         else
           x->fwd_txm4x4(src_diff, coeff, diff_stride);
         vpx_quantize_b(coeff, 16, x->skip_block, p->zbin, p->round, p->quant,
-                       p->quant_shift, qcoeff, dqcoeff,
-                       pd->dequant, eob, scan_order->scan,
-                       scan_order->iscan);
+                       p->quant_shift, qcoeff, dqcoeff, pd->dequant, eob,
+                       scan_order->scan, scan_order->iscan);
       }
-
+      if (args->enable_coeff_opt && !x->skip_recode) {
+        *a = *l = vp9_optimize_b(x, plane, block, tx_size, entropy_ctx) > 0;
+      }
       if (!x->skip_encode && *eob) {
         if (tx_type == DCT_DCT)
           // this is like vp9_short_idct4x4 but has a special case around eob<=1
@@ -960,17 +945,27 @@ void vp9_encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
           vp9_iht4x4_16_add(dqcoeff, dst, dst_stride, tx_type);
       }
       break;
-    default:
-      assert(0);
-      break;
+    default: assert(0); break;
   }
-  if (*eob)
-    *(args->skip) = 0;
+  if (*eob) *(args->skip) = 0;
 }
 
-void vp9_encode_intra_block_plane(MACROBLOCK *x, BLOCK_SIZE bsize, int plane) {
+void vp9_encode_intra_block_plane(MACROBLOCK *x, BLOCK_SIZE bsize, int plane,
+                                  int enable_optimize_b) {
   const MACROBLOCKD *const xd = &x->e_mbd;
-  struct encode_b_args arg = {x, NULL, &xd->mi[0]->skip};
+  struct optimize_ctx ctx;
+  struct encode_b_args arg = { x, enable_optimize_b, ctx.ta[plane],
+                               ctx.tl[plane], &xd->mi[0]->skip };
+
+  if (enable_optimize_b && x->optimize &&
+      (!x->skip_recode || !x->skip_optimize)) {
+    const struct macroblockd_plane *const pd = &xd->plane[plane];
+    const TX_SIZE tx_size =
+        plane ? get_uv_tx_size(xd->mi[0], pd) : xd->mi[0]->tx_size;
+    vp9_get_entropy_contexts(bsize, tx_size, pd, ctx.ta[plane], ctx.tl[plane]);
+  } else {
+    arg.enable_coeff_opt = 0;
+  }
 
   vp9_foreach_transformed_block_in_plane(xd, bsize, plane,
                                          vp9_encode_block_intra, &arg);

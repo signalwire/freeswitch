@@ -13,7 +13,6 @@
 
 #include "libyuv/basic_types.h"
 #include "libyuv/cpu_id.h"
-#include "libyuv/row.h"  // For HAS_ARGBSHUFFLEROW_AVX2.
 #include "libyuv/version.h"
 #include "../unit_test/unit_test.h"
 
@@ -68,16 +67,9 @@ printf("_MSC_VER %d\n", _MSC_VER);
 #if !defined(LIBYUV_DISABLE_X86) && (defined(GCC_HAS_AVX2) || \
     defined(CLANG_HAS_AVX2) || defined(VISUALC_HAS_AVX2))
   printf("Has AVX2 1\n");
-  // If compiler supports AVX2, the following function is expected to exist:
-#if !defined(HAS_ARGBSHUFFLEROW_AVX2)
-  EXPECT_TRUE(0);  // HAS_ARGBSHUFFLEROW_AVX2 was expected.
-#endif
 #else
   printf("Has AVX2 0\n");
   // If compiler does not support AVX2, the following function not expected:
-#if defined(HAS_ARGBSHUFFLEROW_AVX2)
-  EXPECT_TRUE(0);  // HAS_ARGBSHUFFLEROW_AVX2 was not expected.
-#endif
 #endif
 }
 

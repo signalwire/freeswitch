@@ -140,7 +140,10 @@ typedef int gid_t;
 #ifdef SWITCH_BYTE_ORDER
 #define __BYTE_ORDER SWITCH_BYTE_ORDER
 /* solaris */
-#elif defined(_BIG_ENDIAN)
+#elif defined(__SVR4) && defined(__sun) && defined(_BIG_ENDIAN)
+#define __BYTE_ORDER __BIG_ENDIAN
+/* BSD */
+#elif defined(BYTE_ORDER) && (BYTE_ORDER == BIG_ENDIAN)
 #define __BYTE_ORDER __BIG_ENDIAN
 #else
 #define __BYTE_ORDER __LITTLE_ENDIAN

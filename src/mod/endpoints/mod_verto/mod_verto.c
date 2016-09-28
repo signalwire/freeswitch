@@ -1264,10 +1264,10 @@ static void set_session_id(jsock_t *jsock, const char *uuid)
 	
 	if (!zstr(uuid)) {
 		switch_set_string(jsock->uuid_str, uuid);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s re-connecting session %s\n", jsock->name, jsock->uuid_str);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s re-connecting session %s\n", jsock->name, jsock->uuid_str);
 	} else {
 		switch_uuid_str(jsock->uuid_str, sizeof(jsock->uuid_str));
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s new RPC session %s\n", jsock->name, jsock->uuid_str);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s new RPC session %s\n", jsock->name, jsock->uuid_str);
 	}
 
 	attach_jsock(jsock);
@@ -1822,7 +1822,7 @@ static void client_run(jsock_t *jsock)
 			ws_close(&jsock->ws, WS_NONE);
 			goto error;
 		} else {
-			die("%s WS SETUP FAILED [%s]\n", jsock->name, jsock->ws.buffer);
+			die("%s WS SETUP FAILED\n", jsock->name);
 		}
 	}
 
@@ -1975,7 +1975,7 @@ static void *SWITCH_THREAD_FUNC client_thread(switch_thread_t *thread, void *obj
 
 	add_jsock(jsock);
 
-    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s Starting client thread.\n", jsock->name);
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Starting client thread.\n", jsock->name);
 	
 	if ((jsock->ptype & PTYPE_CLIENT) || (jsock->ptype & PTYPE_CLIENT_SSL)) {
 		client_run(jsock);
@@ -2002,7 +2002,7 @@ static void *SWITCH_THREAD_FUNC client_thread(switch_thread_t *thread, void *obj
 
 	jsock_flush(jsock);
 
-    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s Ending client thread.\n", jsock->name);
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Ending client thread.\n", jsock->name);
 	if (switch_event_create_subclass(&s_event, SWITCH_EVENT_CUSTOM, MY_EVENT_CLIENT_DISCONNECT) == SWITCH_STATUS_SUCCESS) {
 		switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "verto_profile_name", jsock->profile->name);
 		switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "verto_client_address", jsock->name);
@@ -2010,7 +2010,7 @@ static void *SWITCH_THREAD_FUNC client_thread(switch_thread_t *thread, void *obj
 		switch_event_fire(&s_event);
 	}
 	switch_thread_rwlock_wrlock(jsock->rwlock);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s Thread ended\n", jsock->name);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Thread ended\n", jsock->name);
 	switch_thread_rwlock_unlock(jsock->rwlock);
 	
 	return NULL;
@@ -2666,6 +2666,8 @@ static switch_bool_t verto__answer_func(const char *method, cJSON *params, jsock
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Remote SDP %s:\n%s\n", switch_channel_get_name(tech_pvt->channel), sdp);
 		switch_core_media_set_sdp_codec_string(session, sdp, SDP_TYPE_RESPONSE);
 
+		switch_ivr_set_user(session, jsock->uid);
+
 		if (switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MODE)) {
 			pass_sdp(tech_pvt);
 		} else {
@@ -3232,6 +3234,31 @@ static switch_bool_t verto__attach_func(const char *method, cJSON *params, jsock
 	return SWITCH_FALSE;	
 }
 
+static void parse_user_vars(cJSON *obj, switch_core_session_t *session)
+{
+	cJSON *json_ptr;
+
+	switch_assert(obj);
+	switch_assert(session);
+
+	if ((json_ptr = cJSON_GetObjectItem(obj, "userVariables"))) {
+		cJSON * i;
+		switch_channel_t *channel = switch_core_session_get_channel(session);
+
+		for(i = json_ptr->child; i; i = i->next) {
+			char *varname = switch_core_session_sprintf(session, "verto_dvar_%s", i->string);
+
+			if (i->type == cJSON_True) {
+				switch_channel_set_variable(channel, varname, "true");
+			} else if (i->type == cJSON_False) {
+				switch_channel_set_variable(channel, varname, "false");
+			} else if (!zstr(i->string) && !zstr(i->valuestring)) {
+				switch_channel_set_variable(channel, varname, i->valuestring);
+			}
+		}
+	}
+}
+
 static switch_bool_t verto__info_func(const char *method, cJSON *params, jsock_t *jsock, cJSON **response)
 {
 	cJSON *msg = NULL, *dialog = NULL;
@@ -3246,6 +3273,8 @@ static switch_bool_t verto__info_func(const char *method, cJSON *params, jsock_t
 		switch_core_session_t *session = NULL;
 		
 		if ((session = switch_core_session_locate(call_id))) {
+
+			parse_user_vars(dialog, session);
 
 			if ((dtmf = cJSON_GetObjectCstr(params, "dtmf"))) {  
 				verto_pvt_t *tech_pvt = switch_core_session_get_private_class(session, SWITCH_PVT_SECONDARY);
@@ -3353,7 +3382,7 @@ static switch_bool_t verto__info_func(const char *method, cJSON *params, jsock_t
 
 static switch_bool_t verto__invite_func(const char *method, cJSON *params, jsock_t *jsock, cJSON **response)
 {
-	cJSON *obj = cJSON_CreateObject(), *screenShare = NULL, *dedEnc = NULL, *mirrorInput, *json_ptr = NULL, *bandwidth = NULL, *canvas = NULL;
+	cJSON *obj = cJSON_CreateObject(), *screenShare = NULL, *dedEnc = NULL, *mirrorInput, *bandwidth = NULL, *canvas = NULL;
 	switch_core_session_t *session = NULL;
 	switch_channel_t *channel;
 	switch_event_t *var_event;
@@ -3464,8 +3493,10 @@ static switch_bool_t verto__invite_func(const char *method, cJSON *params, jsock
 		} else if (bandwidth->valueint) {
 			bwval = bandwidth->valueint;
 		}
-
-		if (bwval <= 0 || (core_bw && bwval < core_bw)) {
+		
+		if (bwval < 0) bwval = 0;
+		
+		if (core_bw && bwval && bwval < core_bw) {
 			switch_channel_set_variable_printf(channel, "rtp_video_max_bandwidth_in", "%d", bwval);
 		}
 	}
@@ -3484,26 +3515,14 @@ static switch_bool_t verto__invite_func(const char *method, cJSON *params, jsock
 			bwval = bandwidth->valueint;
 		}
 
-		if (bwval <= 0 || (core_bw && bwval < core_bw)) {
+		if (bwval < 0) bwval = 0;
+
+		if (core_bw && bwval && bwval < core_bw) {
 			switch_channel_set_variable_printf(channel, "rtp_video_max_bandwidth_out", "%d", bwval);
 		}
 	}
 
-	if ((json_ptr = cJSON_GetObjectItem(dialog, "userVariables"))) {
-		cJSON * i;
-
-		for(i = json_ptr->child; i; i = i->next) {
-			char *varname = switch_core_session_sprintf(session, "verto_dvar_%s", i->string);
-
-			if (i->type == cJSON_True) {
-				switch_channel_set_variable(channel, varname, "true");
-			} else if (i->type == cJSON_False) {
-				switch_channel_set_variable(channel, varname, "false");
-			} else if (!zstr(i->string) && !zstr(i->valuestring)) {
-				switch_channel_set_variable(channel, varname, i->valuestring);
-			}
-		}
-	}
+	parse_user_vars(dialog, session);
 
 	switch_snprintf(name, sizeof(name), "verto.rtc/%s", destination_number);
 	switch_channel_set_name(channel, name);
@@ -4022,7 +4041,17 @@ static int start_jsock(verto_profile_t *profile, ws_socket_t sock, int family)
 	
 	jsock->ptype = ptype;
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s Client Connect.\n", jsock->name);
+	for(i = 0; i < profile->conn_acl_count; i++) {
+		if (!switch_check_network_list_ip(jsock->remote_host, profile->conn_acl[i])) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Client Connect from %s:%d refused by ACL %s\n", 
+							  jsock->name, jsock->remote_host, jsock->remote_port, profile->conn_acl[i]);
+			goto error;
+		}
+	}
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Client Connect from %s:%d accepted\n", 
+					  jsock->name, jsock->remote_host, jsock->remote_port);
+
 	if (switch_event_create_subclass(&s_event, SWITCH_EVENT_CUSTOM, MY_EVENT_CLIENT_CONNECT) == SWITCH_STATUS_SUCCESS) {
 		switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "verto_profile_name", profile->name);
 		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "verto_client_address", "%s", jsock->name);
@@ -4300,9 +4329,9 @@ static int runtime(verto_profile_t *profile)
 		}
 
 		if (ok) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "MCAST Bound to %s:%d/%d\n", profile->mcast_ip, profile->mcast_port, profile->mcast_port + 1);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "MCAST Bound to %s:%d/%d\n", profile->mcast_ip, profile->mcast_port, profile->mcast_port + 1);
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "MCAST Disabled\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "MCAST Disabled\n");
 		}
 	}
 	
@@ -4335,13 +4364,13 @@ static void do_shutdown(void)
 {
 	globals.running = 0;
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Shutting down (SIG %d)\n", globals.sig);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Shutting down (SIG %d)\n", globals.sig);
 
 	kill_profiles();
 
 	unsub_all_jsock();
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Done\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Done\n");
 }
 
 
@@ -4572,6 +4601,12 @@ static switch_status_t parse_config(const char *cf)
 					} else {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Max acl records of %d reached\n", SWITCH_MAX_CAND_ACL);
 					}
+				} else if (!strcasecmp(var, "apply-connection-acl")) {
+					if (profile->conn_acl_count < SWITCH_MAX_CAND_ACL) {
+						profile->conn_acl[profile->conn_acl_count++] = switch_core_strdup(profile->pool, val);
+					} else {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Max acl records of %d reached\n", SWITCH_MAX_CAND_ACL);
+					}
 				} else if (!strcasecmp(var, "rtp-ip")) {
 					if (zstr(val)) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid RTP IP.\n");
@@ -4633,7 +4668,7 @@ static switch_status_t parse_config(const char *cf)
 				int i;
 
 				for (i = 0; i < profile->i; i++) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
 									  strchr(profile->ip[i].local_ip, ':') ? "%s Bound to [%s]:%d\n" : "%s Bound to %s:%d\n", 
 									  profile->name, profile->ip[i].local_ip, profile->ip[i].local_port);
 				}
@@ -4942,7 +4977,7 @@ static void *SWITCH_THREAD_FUNC profile_thread(switch_thread_t *thread, void *ob
 	runtime(profile);
 	profile->running = 0;
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "profile %s shutdown, Waiting for %d threads\n", profile->name, profile->jsock_count);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "profile %s shutdown, Waiting for %d threads\n", profile->name, profile->jsock_count);
 	
 	while(--sanity > 0 && profile->jsock_count > 0) {
 		switch_yield(100000);
@@ -4953,7 +4988,7 @@ static void *SWITCH_THREAD_FUNC profile_thread(switch_thread_t *thread, void *ob
 	del_profile(profile);
 
 	switch_thread_rwlock_wrlock(profile->rwlock);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s Thread ending\n", profile->name);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Thread ending\n", profile->name);
 	switch_thread_rwlock_unlock(profile->rwlock);
 	profile->in_thread = 0;
 

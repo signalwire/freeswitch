@@ -24,11 +24,11 @@ typedef uint8_t vpx_prob;
 
 #define MAX_PROB 255
 
-#define vpx_prob_half ((vpx_prob) 128)
+#define vpx_prob_half ((vpx_prob)128)
 
 typedef int8_t vpx_tree_index;
 
-#define TREE_SIZE(leaf_count) (2 * (leaf_count) - 2)
+#define TREE_SIZE(leaf_count) (2 * (leaf_count)-2)
 
 #define vpx_complement(x) (255 - x)
 
@@ -47,11 +47,12 @@ static INLINE vpx_prob clip_prob(int p) {
   return (p > 255) ? 255 : (p < 1) ? 1 : p;
 }
 
-static INLINE vpx_prob get_prob(int num, int den) {
-  return (den == 0) ? 128u : clip_prob(((int64_t)num * 256 + (den >> 1)) / den);
+static INLINE vpx_prob get_prob(unsigned int num, unsigned int den) {
+  if (den == 0) return 128u;
+  return clip_prob((int)(((int64_t)num * 256 + (den >> 1)) / den));
 }
 
-static INLINE vpx_prob get_binary_prob(int n0, int n1) {
+static INLINE vpx_prob get_binary_prob(unsigned int n0, unsigned int n1) {
   return get_prob(n0, n0 + n1);
 }
 
@@ -60,8 +61,7 @@ static INLINE vpx_prob weighted_prob(int prob1, int prob2, int factor) {
   return ROUND_POWER_OF_TWO(prob1 * (256 - factor) + prob2 * factor, 8);
 }
 
-static INLINE vpx_prob merge_probs(vpx_prob pre_prob,
-                                   const unsigned int ct[2],
+static INLINE vpx_prob merge_probs(vpx_prob pre_prob, const unsigned int ct[2],
                                    unsigned int count_sat,
                                    unsigned int max_update_factor) {
   const vpx_prob prob = get_binary_prob(ct[0], ct[1]);
@@ -72,7 +72,7 @@ static INLINE vpx_prob merge_probs(vpx_prob pre_prob,
 
 // MODE_MV_MAX_UPDATE_FACTOR (128) * count / MODE_MV_COUNT_SAT;
 static const int count_to_update_factor[MODE_MV_COUNT_SAT + 1] = {
-  0, 6, 12, 19, 25, 32, 38, 44, 51, 57, 64,
+  0,  6,  12, 19, 25, 32,  38,  44,  51,  57, 64,
   70, 76, 83, 89, 96, 102, 108, 115, 121, 128
 };
 
@@ -84,15 +84,13 @@ static INLINE vpx_prob mode_mv_merge_probs(vpx_prob pre_prob,
   } else {
     const unsigned int count = VPXMIN(den, MODE_MV_COUNT_SAT);
     const unsigned int factor = count_to_update_factor[count];
-    const vpx_prob prob =
-        clip_prob(((int64_t)(ct[0]) * 256 + (den >> 1)) / den);
+    const vpx_prob prob = get_prob(ct[0], den);
     return weighted_prob(pre_prob, prob, factor);
   }
 }
 
 void vpx_tree_merge_probs(const vpx_tree_index *tree, const vpx_prob *pre_probs,
                           const unsigned int *counts, vpx_prob *probs);
-
 
 DECLARE_ALIGNED(16, extern const uint8_t, vpx_norm[256]);
 

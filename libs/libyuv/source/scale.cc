@@ -1411,8 +1411,7 @@ void ScalePlane(const uint8* src, int src_stride,
   }
   if (dst_width <= Abs(src_width) && dst_height <= src_height) {
     // Scale down.
-    if (4 * dst_width == 3 * src_width &&
-        4 * dst_height == 3 * src_height) {
+    if (4 * dst_width == 3 * src_width && 4 * dst_height == 3 * src_height) {
       // optimized, 3/4
       ScalePlaneDown34(src_width, src_height, dst_width, dst_height,
                        src_stride, dst_stride, src, dst, filtering);
@@ -1425,8 +1424,7 @@ void ScalePlane(const uint8* src, int src_stride,
       return;
     }
     // 3/8 rounded up for odd sized chroma height.
-    if (8 * dst_width == 3 * src_width &&
-        dst_height == ((src_height * 3 + 7) / 8)) {
+    if (8 * dst_width == 3 * src_width && 8 * dst_height == 3 * src_height) {
       // optimized, 3/8
       ScalePlaneDown38(src_width, src_height, dst_width, dst_height,
                        src_stride, dst_stride, src, dst, filtering);
@@ -1508,8 +1506,7 @@ void ScalePlane_16(const uint16* src, int src_stride,
       return;
     }
     // 3/8 rounded up for odd sized chroma height.
-    if (8 * dst_width == 3 * src_width &&
-        dst_height == ((src_height * 3 + 7) / 8)) {
+    if (8 * dst_width == 3 * src_width && 8 * dst_height == 3 * src_height) {
       // optimized, 3/8
       ScalePlaneDown38_16(src_width, src_height, dst_width, dst_height,
                           src_stride, dst_stride, src, dst, filtering);

@@ -109,40 +109,6 @@ endif
 VP9_PREFIX=vp9/
 $(BUILD_PFX)$(VP9_PREFIX)%.c.o:
 
-#  VP10 make file
-ifeq ($(CONFIG_VP10),yes)
-  VP10_PREFIX=vp10/
-  include $(SRC_PATH_BARE)/$(VP10_PREFIX)vp10_common.mk
-endif
-
-ifeq ($(CONFIG_VP10_ENCODER),yes)
-  VP10_PREFIX=vp10/
-  include $(SRC_PATH_BARE)/$(VP10_PREFIX)vp10cx.mk
-  CODEC_SRCS-yes += $(addprefix $(VP10_PREFIX),$(call enabled,VP10_CX_SRCS))
-  CODEC_EXPORTS-yes += $(addprefix $(VP10_PREFIX),$(VP10_CX_EXPORTS))
-  CODEC_SRCS-yes += $(VP10_PREFIX)vp10cx.mk vpx/vp8.h vpx/vp8cx.h
-  INSTALL-LIBS-yes += include/vpx/vp8.h include/vpx/vp8cx.h
-  INSTALL-LIBS-$(CONFIG_SPATIAL_SVC) += include/vpx/svc_context.h
-  INSTALL_MAPS += include/vpx/% $(SRC_PATH_BARE)/$(VP10_PREFIX)/%
-  CODEC_DOC_SRCS += vpx/vp8.h vpx/vp8cx.h
-  CODEC_DOC_SECTIONS += vp9 vp9_encoder
-endif
-
-ifeq ($(CONFIG_VP10_DECODER),yes)
-  VP10_PREFIX=vp10/
-  include $(SRC_PATH_BARE)/$(VP10_PREFIX)vp10dx.mk
-  CODEC_SRCS-yes += $(addprefix $(VP10_PREFIX),$(call enabled,VP10_DX_SRCS))
-  CODEC_EXPORTS-yes += $(addprefix $(VP10_PREFIX),$(VP10_DX_EXPORTS))
-  CODEC_SRCS-yes += $(VP10_PREFIX)vp10dx.mk vpx/vp8.h vpx/vp8dx.h
-  INSTALL-LIBS-yes += include/vpx/vp8.h include/vpx/vp8dx.h
-  INSTALL_MAPS += include/vpx/% $(SRC_PATH_BARE)/$(VP10_PREFIX)/%
-  CODEC_DOC_SRCS += vpx/vp8.h vpx/vp8dx.h
-  CODEC_DOC_SECTIONS += vp9 vp9_decoder
-endif
-
-VP10_PREFIX=vp10/
-$(BUILD_PFX)$(VP10_PREFIX)%.c.o:
-
 ifeq ($(CONFIG_ENCODERS),yes)
   CODEC_DOC_SECTIONS += encoder
 endif
@@ -183,6 +149,9 @@ INSTALL-SRCS-$(CONFIG_CODEC_SRCS) += third_party/x86inc/x86inc.asm
 endif
 CODEC_EXPORTS-yes += vpx/exports_com
 CODEC_EXPORTS-$(CONFIG_ENCODERS) += vpx/exports_enc
+ifeq ($(CONFIG_SPATIAL_SVC),yes)
+CODEC_EXPORTS-$(CONFIG_ENCODERS) += vpx/exports_spatial_svc
+endif
 CODEC_EXPORTS-$(CONFIG_DECODERS) += vpx/exports_dec
 
 INSTALL-LIBS-yes += include/vpx/vpx_codec.h
@@ -260,7 +229,7 @@ OBJS-yes += $(LIBVPX_OBJS)
 LIBS-$(if yes,$(CONFIG_STATIC)) += $(BUILD_PFX)libvpx.a $(BUILD_PFX)libvpx_g.a
 $(BUILD_PFX)libvpx_g.a: $(LIBVPX_OBJS)
 
-SO_VERSION_MAJOR := 3
+SO_VERSION_MAJOR := 4
 SO_VERSION_MINOR := 0
 SO_VERSION_PATCH := 0
 ifeq ($(filter darwin%,$(TGT_OS)),$(TGT_OS))
@@ -269,6 +238,12 @@ SHARED_LIB_SUF          := .dylib
 EXPORT_FILE             := libvpx.syms
 LIBVPX_SO_SYMLINKS      := $(addprefix $(LIBSUBDIR)/, \
                              libvpx.dylib  )
+else
+ifeq ($(filter iphonesimulator%,$(TGT_OS)),$(TGT_OS))
+LIBVPX_SO               := libvpx.$(SO_VERSION_MAJOR).dylib
+SHARED_LIB_SUF          := .dylib
+EXPORT_FILE             := libvpx.syms
+LIBVPX_SO_SYMLINKS      := $(addprefix $(LIBSUBDIR)/, libvpx.dylib)
 else
 ifeq ($(filter os2%,$(TGT_OS)),$(TGT_OS))
 LIBVPX_SO               := libvpx$(SO_VERSION_MAJOR).dll
@@ -283,6 +258,7 @@ EXPORT_FILE             := libvpx.ver
 LIBVPX_SO_SYMLINKS      := $(addprefix $(LIBSUBDIR)/, \
                              libvpx.so libvpx.so.$(SO_VERSION_MAJOR) \
                              libvpx.so.$(SO_VERSION_MAJOR).$(SO_VERSION_MINOR))
+endif
 endif
 endif
 
@@ -394,6 +370,12 @@ $(filter %$(ASM).o,$(OBJS-yes)): $(BUILD_PFX)vpx_config.asm
 $(shell $(SRC_PATH_BARE)/build/make/version.sh "$(SRC_PATH_BARE)" $(BUILD_PFX)vpx_version.h)
 CLEAN-OBJS += $(BUILD_PFX)vpx_version.h
 
+#
+# Add include path for libwebm sources.
+#
+ifeq ($(CONFIG_WEBM_IO),yes)
+  CXXFLAGS += -I$(SRC_PATH_BARE)/third_party/libwebm
+endif
 
 ##
 ## libvpx test directives
@@ -469,6 +451,7 @@ test_libvpx.$(VCPROJ_SFX): $(LIBVPX_TEST_SRCS) vpx.$(VCPROJ_SFX) gtest.$(VCPROJ_
             $(if $(CONFIG_STATIC_MSVCRT),--static-crt) \
             --out=$@ $(INTERNAL_CFLAGS) $(CFLAGS) \
             -I. -I"$(SRC_PATH_BARE)/third_party/googletest/src/include" \
+            $(if $(CONFIG_WEBM_IO),-I"$(SRC_PATH_BARE)/third_party/libwebm") \
             -L. -l$(CODEC_LIB) -l$(GTEST_LIB) $^
 
 PROJECTS-$(CONFIG_MSVS) += test_libvpx.$(VCPROJ_SFX)

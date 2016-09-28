@@ -1143,7 +1143,7 @@ static switch_status_t switch_vpx_decode(switch_codec_t *codec, switch_frame_t *
 		//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "no keyframe, %d\n", context->no_key_frame);
 		if (context->no_key_frame > 50) {
 			if ((is_keyframe = is_start)) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "no keyframe, treating start as key. frames=%d\n", context->no_key_frame);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "no keyframe, treating start as key. frames=%d\n", context->no_key_frame);
 			}
 		}
     }

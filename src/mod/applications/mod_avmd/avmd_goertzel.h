@@ -1,6 +1,9 @@
 /*
  * @brief   Goertzel algorithm.
- * @author  Eric des Courtis
+ *
+ * Contributor(s):
+ *
+ * Eric des Courtis <eric.des.courtis@benbria.com>
  */
 
 
@@ -9,13 +12,14 @@
 
 
 #ifndef _MSC_VER
-#include <stdint.h>
+    #include <stdint.h>
 #endif
+
 #include "avmd_buffer.h"
 
 #if !defined(M_PI)
-/* C99 systems may not define M_PI */
-#define M_PI 3.14159265358979323846264338327
+    /* C99 systems may not define M_PI */
+    #define M_PI 3.14159265358979323846264338327
 #endif
 
 

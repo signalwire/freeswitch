@@ -4840,11 +4840,13 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 						} else {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid ext-rtp-ip\n");
 						}
-					} else if (!strcasecmp(var, "rtp-ip") && val) {
+					} else if (!strcasecmp(var, "rtp-ip")) {
 						char *ip = mod_sofia_globals.guess_ip;
 						char buf[64];
 
-						if (!strcmp(val, "0.0.0.0")) {
+						if (zstr(val)) {
+							ip = mod_sofia_globals.guess_ip;
+						} else if (!strcmp(val, "0.0.0.0")) {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid IP 0.0.0.0 replaced with %s\n", mod_sofia_globals.guess_ip);
 						} else if (!strncasecmp(val, "interface:", 10)) {
 							char *ifname = val+10;
@@ -6126,10 +6128,11 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 
 		if (status < 200) {
 			if (switch_core_session_get_partner(session, &other_session) == SWITCH_STATUS_SUCCESS) {
-				private_object_t *other_tech_pvt = switch_core_session_get_private(other_session);
-
-				if (sofia_test_flag(other_tech_pvt, TFLAG_3PCC)) {
-					sofia_set_flag_locked(tech_pvt, TFLAG_SKIP_EARLY);
+				if(switch_core_session_compare(session, other_session)) {
+					private_object_t *other_tech_pvt = switch_core_session_get_private(other_session);
+					if (sofia_test_flag(other_tech_pvt, TFLAG_3PCC)) {
+						sofia_set_flag_locked(tech_pvt, TFLAG_SKIP_EARLY);
+					}
 				}
 				switch_core_session_rwunlock(other_session);
 			}
@@ -7548,7 +7551,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 				if (switch_channel_test_flag(channel, CF_PROXY_MODE) || switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
 					if ((sofia_test_media_flag(profile, SCMF_DISABLE_HOLD)
 						 || ((var = switch_channel_get_variable(channel, "rtp_disable_hold")) && switch_true(var)))
-						&& ((switch_stristr("sendonly", r_sdp) || switch_stristr("0.0.0.0", r_sdp)) || tech_pvt->mparams.hold_laps)) {
+						&& ((switch_stristr("sendonly", r_sdp) || switch_stristr("0.0.0.0", r_sdp) || switch_stristr("inactive", r_sdp)) || tech_pvt->mparams.hold_laps)) {
 						nua_respond(tech_pvt->nh, SIP_200_OK, TAG_END());
 
 						if (tech_pvt->mparams.hold_laps) {
@@ -7570,7 +7573,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 						
 						if (switch_channel_test_flag(channel, CF_PROXY_MODE) && !is_t38 && 
 							((profile->media_options & MEDIA_OPT_MEDIA_ON_HOLD) || media_on_hold)) {
-							if (switch_stristr("sendonly", r_sdp) || switch_stristr("0.0.0.0", r_sdp)) {
+							if (switch_stristr("sendonly", r_sdp) || switch_stristr("0.0.0.0", r_sdp) || switch_stristr("inactive", r_sdp)) {
 								tech_pvt->mparams.hold_laps = 1;
 								switch_channel_set_variable(channel, SWITCH_R_SDP_VARIABLE, r_sdp);
 								switch_channel_clear_flag(channel, CF_PROXY_MODE);
@@ -7655,12 +7658,12 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Passing SDP to other leg.\n%s\n", r_sdp);
 
 						if (sofia_test_flag(tech_pvt, TFLAG_SIP_HOLD)) {
-							if (!switch_stristr("sendonly", r_sdp)) {
+							if (!switch_stristr("sendonly", r_sdp) && !switch_stristr("inactive", r_sdp)) {
 								sofia_clear_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
 								switch_channel_clear_flag(channel, CF_LEG_HOLDING);
 								switch_channel_presence(tech_pvt->channel, "unknown", "unhold", NULL);
 							}
-						} else if (switch_stristr("sendonly", r_sdp)) {
+						} else if (switch_stristr("sendonly", r_sdp) && !switch_stristr("inactive", r_sdp)) {
 							const char *msg = "hold";
 
 							if (sofia_test_pflag(profile, PFLAG_MANAGE_SHARED_APPEARANCE)) {
@@ -7688,64 +7691,91 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 					}
 					goto done;
 				} else {					
-					if (sofia_test_pflag(profile, PFLAG_PROXY_HOLD)) {
-						switch_channel_set_flag(tech_pvt->channel, CF_REINVITE);
-						if (tech_pvt->mparams.num_codecs){
-							match = sofia_media_negotiate_sdp(session, r_sdp, SDP_TYPE_REQUEST);
-						}
-						if (!match) {
-							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Reinvite Codec Error!\n");
-							nua_respond(tech_pvt->nh, SIP_488_NOT_ACCEPTABLE, TAG_END());
-							goto done;
-						}
-						if (switch_core_session_get_partner(session, &other_session) == SWITCH_STATUS_SUCCESS) {
+					int hold_related = 0;
+
+					if (sofia_test_flag(tech_pvt, TFLAG_SIP_HOLD)) {
+						hold_related = 2;
+					} else if (switch_stristr("sendonly", r_sdp) || switch_stristr("0.0.0.0", r_sdp) || switch_stristr("inactive", r_sdp)) {
+						hold_related = 1;
+					}
+					
+					if (!is_t38 && hold_related && switch_core_session_get_partner(session, &other_session) == SWITCH_STATUS_SUCCESS) {
+						if (switch_core_session_compare(session, other_session)) {
 							switch_core_session_message_t *msg;
+							const char *hold_msg = "hold";
+							private_object_t *other_tech_pvt = switch_core_session_get_private(other_session);
 
-							msg = switch_core_session_alloc(other_session, sizeof(*msg));
-							if (switch_stristr("sendonly", r_sdp) || switch_stristr("0.0.0.0", r_sdp)) {
-								const char *hold_msg = "hold";
+							if (sofia_test_pflag(profile, PFLAG_PROXY_HOLD)) {
+								switch_channel_set_flag(tech_pvt->channel, CF_REINVITE);
 
-								msg->message_id = SWITCH_MESSAGE_INDICATE_HOLD;
-								if (sofia_test_pflag(profile, PFLAG_MANAGE_SHARED_APPEARANCE)) {
-									const char *info = switch_channel_get_variable(channel, "presence_call_info");
+								if (tech_pvt->mparams.num_codecs){
+									match = sofia_media_negotiate_sdp(session, r_sdp, SDP_TYPE_REQUEST);
+								}
 
-									if (info) {
-										if (switch_stristr("private", info)) {
-											hold_msg = "hold-private";
+								if (!match) {
+									switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Reinvite Codec Error!\n");
+									nua_respond(tech_pvt->nh, SIP_488_NOT_ACCEPTABLE, TAG_END());
+									goto done;
+								}
+								
+								msg = switch_core_session_alloc(other_session, sizeof(*msg));
+								
+								if (switch_stristr("inactive", r_sdp)) {
+									sofia_set_flag_locked(other_tech_pvt, TFLAG_SIP_HOLD_INACTIVE);
+									//switch_channel_set_variable(channel, "sofia_hold_inactive", "true");
+								} else {
+									sofia_clear_flag_locked(other_tech_pvt, TFLAG_SIP_HOLD_INACTIVE);
+								}
+
+								if (hold_related == 1) {
+									msg->message_id = SWITCH_MESSAGE_INDICATE_HOLD;
+									if (sofia_test_pflag(profile, PFLAG_MANAGE_SHARED_APPEARANCE)) {
+										const char *info = switch_channel_get_variable(channel, "presence_call_info");
+
+										if (info) {
+											if (switch_stristr("private", info)) {
+												hold_msg = "hold-private";
+											}
 										}
 									}
+									sofia_set_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
+									switch_channel_set_flag(channel, CF_LEG_HOLDING);
+									switch_channel_presence(tech_pvt->channel, "unknown", hold_msg, NULL);
+								} else {
+									hold_msg = "unhold";
+									msg->message_id = SWITCH_MESSAGE_INDICATE_UNHOLD;
+									sofia_clear_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
+									switch_channel_clear_flag(channel, CF_LEG_HOLDING);
+									switch_channel_presence(tech_pvt->channel, "unknown", hold_msg, NULL);
 								}
-								sofia_set_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
-								switch_channel_set_flag(channel, CF_LEG_HOLDING);
-								switch_channel_presence(tech_pvt->channel, "unknown", hold_msg, NULL);
-							} else {
-								msg->message_id = SWITCH_MESSAGE_INDICATE_UNHOLD;
-								sofia_clear_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
-								switch_channel_clear_flag(channel, CF_LEG_HOLDING);
-								switch_channel_presence(tech_pvt->channel, "unknown", "unhold", NULL);
-							}
-							msg->from = __FILE__;
-							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Indicating Hold to other leg.\n%s\n", r_sdp);
+								msg->from = __FILE__;
+								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Indicating %s to other leg.\n%s\n", hold_msg, r_sdp);
 
-							switch_core_session_queue_message(other_session, msg);
-							switch_core_session_rwunlock(other_session);
+								switch_core_session_queue_message(other_session, msg);
+								
+							
+								
+								switch_core_media_gen_local_sdp(session, SDP_TYPE_RESPONSE, NULL, 0, NULL, 0);
+								if (sofia_use_soa(tech_pvt)){
+									nua_respond(tech_pvt->nh, SIP_200_OK,
+												SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
+												SOATAG_USER_SDP_STR(tech_pvt->mparams.local_sdp_str),
+												SOATAG_REUSE_REJECTED(1),
+												SOATAG_AUDIO_AUX("cn telephone-event"),
+												TAG_IF(sofia_test_pflag(profile, PFLAG_DISABLE_100REL), NUTAG_INCLUDE_EXTRA_SDP(1)), TAG_END());
+								} else {
+									nua_respond(tech_pvt->nh, SIP_200_OK,
+												NUTAG_MEDIA_ENABLE(0),
+												SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
+												SIPTAG_CONTENT_TYPE_STR("application/sdp"), SIPTAG_PAYLOAD_STR(tech_pvt->mparams.local_sdp_str), TAG_END());
+								}
+								goto done;
+							}							
 						}
-						switch_core_media_gen_local_sdp(session, SDP_TYPE_RESPONSE, NULL, 0, NULL, 0);
-						if (sofia_use_soa(tech_pvt)){
-							nua_respond(tech_pvt->nh, SIP_200_OK,
-								SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
-								SOATAG_USER_SDP_STR(tech_pvt->mparams.local_sdp_str),
-								SOATAG_REUSE_REJECTED(1),
-								SOATAG_AUDIO_AUX("cn telephone-event"),
-								TAG_IF(sofia_test_pflag(profile, PFLAG_DISABLE_100REL), NUTAG_INCLUDE_EXTRA_SDP(1)), TAG_END());
-						} else {
-							nua_respond(tech_pvt->nh, SIP_200_OK,
-								NUTAG_MEDIA_ENABLE(0),
-								SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
-								SIPTAG_CONTENT_TYPE_STR("application/sdp"), SIPTAG_PAYLOAD_STR(tech_pvt->mparams.local_sdp_str), TAG_END());
-						}
-                                                goto done;
+
+						switch_core_session_rwunlock(other_session);
 					}
+
 					if (switch_channel_test_app_flag_key("T38", tech_pvt->channel, CF_APP_T38_NEGOTIATED)) {
 						nua_respond(tech_pvt->nh, SIP_200_OK, TAG_END());
 						goto done;

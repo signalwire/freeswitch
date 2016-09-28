@@ -353,7 +353,7 @@ static switch_status_t add_stream(MediaStream *mst, AVFormatContext *fc, AVCodec
 		/* Resolution must be a multiple of two. */
 		c->width    = mst->width;
 		c->height   = mst->height;
-		c->bit_rate = switch_calc_bitrate(c->width, c->height, 2, fps) * 1024;
+		c->bit_rate = mm->vb;
 		mst->st->time_base.den = 1000;
 		mst->st->time_base.num = 1;
 		c->time_base.den = 1000;
@@ -409,15 +409,22 @@ static switch_status_t add_stream(MediaStream *mst, AVFormatContext *fc, AVCodec
 			}
 		}
 
-		c->gop_size = 250;  // g=250
-		c->keyint_min = 25; // keyint_min=25
-		c->i_quant_factor = 0.71; // i_qfactor=0.71
-		c->qcompress = 0.6; // qcomp=0.6
-		c->qmin = 10;   // qmin=10
-		c->qmax = 31;   // qmax=31
-		c->max_qdiff = 4;   // qdiff=4
-		av_opt_set_int(c->priv_data, "crf", 18, 0);
 
+		if (mm->cbr) {
+			c->rc_min_rate = c->bit_rate;
+			c->rc_max_rate = c->bit_rate;
+			c->rc_buffer_size = c->bit_rate;
+			c->qcompress = 0;
+		} else {
+			c->gop_size = 250;  // g=250
+			c->keyint_min = 25; // keyint_min=25
+			c->i_quant_factor = 0.71; // i_qfactor=0.71
+			c->qcompress = 0.6; // qcomp=0.6
+			c->qmin = 10;   // qmin=10
+			c->qmax = 31;   // qmax=31
+			c->max_qdiff = 4;   // qdiff=4
+			av_opt_set_int(c->priv_data, "crf", 18, 0);
+		}
 
 		if (codec_id == AV_CODEC_ID_VP8) {
 			av_set_options_string(c, "quality=realtime", "=", ":");
@@ -608,7 +615,7 @@ static void *SWITCH_THREAD_FUNC video_thread_run(switch_thread_t *thread, void *
 	switch_image_t *img = NULL, *tmp_img = NULL;
 	int d_w = eh->video_st->width, d_h = eh->video_st->height;
 	int size = 0, skip = 0, skip_freq = 0, skip_count = 0, skip_total = 0, skip_total_count = 0;
-	uint64_t hard_delta = 0, delta = 0, last_ts = 0;
+	uint64_t delta_avg = 0, delta_sum = 0, delta_i = 0, delta = 0, last_ts = 0;
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "video thread start\n");
 
@@ -618,10 +625,6 @@ static void *SWITCH_THREAD_FUNC video_thread_run(switch_thread_t *thread, void *
 		int ret = -1;
 
 	top:
-
-		if (eh->mm->fps) {
-			hard_delta = 1000 / eh->mm->fps;
-		}
 
 		if (switch_queue_pop(eh->video_queue, &pop) == SWITCH_STATUS_SUCCESS) {
             switch_img_free(&img);
@@ -656,7 +659,7 @@ static void *SWITCH_THREAD_FUNC video_thread_run(switch_thread_t *thread, void *
 		} else {
 		
 			size = switch_queue_size(eh->video_queue);
-			
+
 			if (size > 5 && !eh->finalize) {
 				skip = size;
 
@@ -686,25 +689,38 @@ static void *SWITCH_THREAD_FUNC video_thread_run(switch_thread_t *thread, void *
 
 		fill_avframe(eh->video_st->frame, img);
 		
-		if (hard_delta) {
-			delta = hard_delta;
-		}
+		if (eh->finalize) {
+			if (delta_i && !delta_avg) {
+				delta_avg = (int)(double)(delta_sum / delta_i);
+				delta_i = 0;
+				delta_sum = delta_avg;
+			}
 
-		if ((eh->finalize && delta) || hard_delta) {
+			if (delta_avg) {
+				delta = delta_avg;
+			} else if (eh->mm->fps) {
+				delta = 1000 / eh->mm->fps;
+			} else {
+				delta = 33;
+			}
+
 			eh->video_st->frame->pts += delta;
 		} else {
+			uint64_t delta_tmp;
+
 			switch_core_timer_sync(eh->timer);
+			delta_tmp = eh->timer->samplecount - last_ts;
 
-			if (eh->video_st->frame->pts == eh->timer->samplecount) {
-				// never use the same pts, or the encoder coughs
-				eh->video_st->frame->pts++;
-			} else {
-				uint64_t delta_tmp = eh->timer->samplecount - last_ts;
-
-				if (delta_tmp > 10) {
-					delta = delta_tmp;
+			if (delta_tmp != last_ts) {
+				delta_sum += delta_tmp;
+				delta_i++;
+				
+				if (delta_i >= 60) {
+					delta_avg = (int)(double)(delta_sum / delta_i);
+					delta_i = 0;
+					delta_sum = delta_avg;
 				}
-
+				
 				eh->video_st->frame->pts = eh->timer->samplecount;
 			}
 		}
@@ -1753,7 +1769,9 @@ static switch_status_t av_file_open(switch_file_handle_t *handle, const char *pa
 		handle->mm.ab = 128;
 	}
 
-	handle->mm.vb = switch_calc_bitrate(handle->mm.vw, handle->mm.vh, 1, handle->mm.fps);
+	if (!handle->mm.vb) {
+		handle->mm.vb = switch_calc_bitrate(handle->mm.vw, handle->mm.vh, 1, handle->mm.fps);
+	}
 
 	if (fmt->video_codec != AV_CODEC_ID_NONE) {
 		const AVCodecDescriptor *desc;

@@ -1,17 +1,7 @@
-<div class="panel panel-default shadow-z-2" ng-class="{'shadow-z-4': call_history, 'shadow-z-2': !call_history}">
+<div class="panel panel-default shadow-z-2" ng-class="{'shadow-z-2': !call_history}">
       <form name="form">
         <div class="input-group dialpad-display">
-          <span ng-show="!incall" class="input-group-btn-left">
-            <a href="" ng-click="toggleCallHistory()">
-              <i class="mdi-action-settings-phone"></i>
-            </a>
-          </span>
-          <input name="dialpadnumber" type="text" class="form-control text-center" placeholder="Enter an extension" ng-model="dialpadNumber" />
-          <span class="input-group-btn">
-            <a href="" ng-click="backspace()">
-              <i class="mdi-content-backspace"></i>
-            </a>
-          </span>
+          <input name="dialpadnumber" type="text" class="form-control text-center" placeholder="" ng-model="dialpadNumber" />
         </div>
         <div class="panel-body">
           <div class="dialpad-numbers">
@@ -95,16 +85,6 @@
                 </a>
               </div>
             </div>
-          </div>
-          <div class="form-group text-center">
-            <button type="submit" class="btn btn-success btn-fab" ng-click="call(); ok()" title="Call Extension">
-              <i class="mdi-communication-call"></i>
-            </button>
-            &nbsp;&nbsp;
-            <button type="submit" class="btn btn-primary btn-fab" ng-click="transfer(); ok()" title="Transfer">
-              <i class="mdi-notification-phone-forwarded"></i>
-            </button>
-
           </div>
         </div>
       </form>

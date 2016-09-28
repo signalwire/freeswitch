@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef INCLUDE_LIBYUV_SCALE_ROW_H_  // NOLINT
+#ifndef INCLUDE_LIBYUV_SCALE_ROW_H_
 #define INCLUDE_LIBYUV_SCALE_ROW_H_
 
 #include "libyuv/basic_types.h"
@@ -500,4 +500,4 @@ void ScaleRowDown38_3_Box_DSPR2(const uint8* src_ptr, ptrdiff_t src_stride,
 }  // namespace libyuv
 #endif
 
-#endif  // INCLUDE_LIBYUV_SCALE_ROW_H_  NOLINT
+#endif  // INCLUDE_LIBYUV_SCALE_ROW_H_

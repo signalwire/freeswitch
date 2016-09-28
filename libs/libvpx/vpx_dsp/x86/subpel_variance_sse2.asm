@@ -57,8 +57,8 @@ SECTION .text
   paddd                %6, %1
 %endmacro
 
-%macro STORE_AND_RET 0
-%if mmsize == 16
+%macro STORE_AND_RET 1
+%if %1 > 4
   ; if H=64 and W=16, we have 8 words of each 2(1bit)x64(6bit)x9bit=16bit
   ; in m6, i.e. it _exactly_ fits in a signed word per word in the xmm reg.
   ; We have to sign-extend it before adding the words within the register
@@ -78,16 +78,16 @@ SECTION .text
   movd               [r1], m7           ; store sse
   paddd                m6, m4
   movd               raxd, m6           ; store sum as return value
-%else ; mmsize == 8
-  pshufw               m4, m6, 0xe
-  pshufw               m3, m7, 0xe
+%else ; 4xh
+  pshuflw              m4, m6, 0xe
+  pshuflw              m3, m7, 0xe
   paddw                m6, m4
   paddd                m7, m3
   pcmpgtw              m5, m6           ; mask for 0 > x
   mov                  r1, ssem         ; r1 = unsigned int *sse
   punpcklwd            m6, m5           ; sign-extend m6 word->dword
   movd               [r1], m7           ; store sse
-  pshufw               m4, m6, 0xe
+  pshuflw              m4, m6, 0xe
   paddd                m6, m4
   movd               raxd, m6           ; store sum as return value
 %endif
@@ -196,6 +196,12 @@ SECTION .text
   %endif
 %endif
 
+%if %1 == 4
+  %define movx movd
+%else
+  %define movx movh
+%endif
+
   ASSERT               %1 <= 16         ; m6 overflows if w > 16
   pxor                 m6, m6           ; sum
   pxor                 m7, m7           ; sse
@@ -228,6 +234,7 @@ SECTION .text
 %endif
   punpckhbw            m2, m0, m5
   punpcklbw            m0, m5
+
 %if %2 == 0 ; !avg
   punpckhbw            m3, m1, m5
   punpcklbw            m1, m5
@@ -237,24 +244,37 @@ SECTION .text
   add                srcq, src_strideq
   add                dstq, dst_strideq
 %else ; %1 < 16
-  movh                 m0, [srcq]
+  movx                 m0, [srcq]
 %if %2 == 1 ; avg
-%if mmsize == 16
+%if %1 > 4
   movhps               m0, [srcq+src_strideq]
-%else ; mmsize == 8
-  punpckldq            m0, [srcq+src_strideq]
+%else ; 4xh
+  movx                 m1, [srcq+src_strideq]
+  punpckldq            m0, m1
 %endif
 %else ; !avg
-  movh                 m2, [srcq+src_strideq]
+  movx                 m2, [srcq+src_strideq]
 %endif
-  movh                 m1, [dstq]
-  movh                 m3, [dstq+dst_strideq]
+
+  movx                 m1, [dstq]
+  movx                 m3, [dstq+dst_strideq]
+
 %if %2 == 1 ; avg
+%if %1 > 4
   pavgb                m0, [secq]
+%else
+  movh                 m2, [secq]
+  pavgb                m0, m2
+%endif
   punpcklbw            m3, m5
   punpcklbw            m1, m5
+%if %1 > 4
   punpckhbw            m2, m0, m5
   punpcklbw            m0, m5
+%else ; 4xh
+  punpcklbw            m0, m5
+  movhlps              m2, m0
+%endif
 %else ; !avg
   punpcklbw            m0, m5
   punpcklbw            m2, m5
@@ -271,10 +291,10 @@ SECTION .text
 %endif
   dec                   block_height
   jg .x_zero_y_zero_loop
-  STORE_AND_RET
+  STORE_AND_RET %1
 
 .x_zero_y_nonzero:
-  cmp           y_offsetd, 8
+  cmp           y_offsetd, 4
   jne .x_zero_y_nonhalf
 
   ; x_offset == 0 && y_offset == 0.5
@@ -296,37 +316,41 @@ SECTION .text
   add                srcq, src_strideq
   add                dstq, dst_strideq
 %else ; %1 < 16
-  movh                 m0, [srcq]
-  movh                 m2, [srcq+src_strideq]
+  movx                 m0, [srcq]
+  movx                 m2, [srcq+src_strideq]
 %if %2 == 1 ; avg
-%if mmsize == 16
+%if %1 > 4
   movhps               m2, [srcq+src_strideq*2]
-%else ; mmsize == 8
-%if %1 == 4
-  movh                 m1, [srcq+src_strideq*2]
+%else ; 4xh
+  movx                 m1, [srcq+src_strideq*2]
   punpckldq            m2, m1
-%else
-  punpckldq            m2, [srcq+src_strideq*2]
 %endif
-%endif
-  movh                 m1, [dstq]
-%if mmsize == 16
+  movx                 m1, [dstq]
+%if %1 > 4
   movlhps              m0, m2
-%else ; mmsize == 8
+%else ; 4xh
   punpckldq            m0, m2
 %endif
-  movh                 m3, [dstq+dst_strideq]
+  movx                 m3, [dstq+dst_strideq]
   pavgb                m0, m2
   punpcklbw            m1, m5
+%if %1 > 4
   pavgb                m0, [secq]
   punpcklbw            m3, m5
   punpckhbw            m2, m0, m5
   punpcklbw            m0, m5
+%else ; 4xh
+  movh                 m4, [secq]
+  pavgb                m0, m4
+  punpcklbw            m3, m5
+  punpcklbw            m0, m5
+  movhlps              m2, m0
+%endif
 %else ; !avg
-  movh                 m4, [srcq+src_strideq*2]
-  movh                 m1, [dstq]
+  movx                 m4, [srcq+src_strideq*2]
+  movx                 m1, [dstq]
   pavgb                m0, m2
-  movh                 m3, [dstq+dst_strideq]
+  movx                 m3, [dstq+dst_strideq]
   pavgb                m2, m4
   punpcklbw            m0, m5
   punpcklbw            m2, m5
@@ -343,7 +367,7 @@ SECTION .text
 %endif
   dec                   block_height
   jg .x_zero_y_half_loop
-  STORE_AND_RET
+  STORE_AND_RET %1
 
 .x_zero_y_nonhalf:
   ; x_offset == 0 && y_offset == bilin interpolation
@@ -351,7 +375,7 @@ SECTION .text
   lea        bilin_filter, [bilin_filter_m]
 %endif
   shl           y_offsetd, filter_idx_shift
-%if ARCH_X86_64 && mmsize == 16
+%if ARCH_X86_64 && %1 > 4
   mova                 m8, [bilin_filter+y_offsetq]
 %if notcpuflag(ssse3) ; FIXME(rbultje) don't scatter registers on x86-64
   mova                 m9, [bilin_filter+y_offsetq+16]
@@ -424,12 +448,12 @@ SECTION .text
   add                srcq, src_strideq
   add                dstq, dst_strideq
 %else ; %1 < 16
-  movh                 m0, [srcq]
-  movh                 m2, [srcq+src_strideq]
-  movh                 m4, [srcq+src_strideq*2]
-  movh                 m3, [dstq+dst_strideq]
+  movx                 m0, [srcq]
+  movx                 m2, [srcq+src_strideq]
+  movx                 m4, [srcq+src_strideq*2]
+  movx                 m3, [dstq+dst_strideq]
 %if cpuflag(ssse3)
-  movh                 m1, [dstq]
+  movx                 m1, [dstq]
   punpcklbw            m0, m2
   punpcklbw            m2, m4
   pmaddubsw            m0, filter_y_a
@@ -449,17 +473,27 @@ SECTION .text
   pmullw               m4, filter_y_b
   paddw                m0, m1
   paddw                m2, filter_rnd
-  movh                 m1, [dstq]
+  movx                 m1, [dstq]
   paddw                m2, m4
 %endif
   psraw                m0, 4
   psraw                m2, 4
 %if %2 == 1 ; avg
   ; FIXME(rbultje) pipeline
+%if %1 == 4
+  movlhps              m0, m2
+%endif
   packuswb             m0, m2
+%if %1 > 4
   pavgb                m0, [secq]
   punpckhbw            m2, m0, m5
   punpcklbw            m0, m5
+%else ; 4xh
+  movh                 m2, [secq]
+  pavgb                m0, m2
+  punpcklbw            m0, m5
+  movhlps              m2, m0
+%endif
 %endif
   punpcklbw            m1, m5
   SUM_SSE              m0, m1, m2, m3, m6, m7
@@ -475,10 +509,10 @@ SECTION .text
 %undef filter_y_a
 %undef filter_y_b
 %undef filter_rnd
-  STORE_AND_RET
+  STORE_AND_RET %1
 
 .x_nonzero:
-  cmp           x_offsetd, 8
+  cmp           x_offsetd, 4
   jne .x_nonhalf
   ; x_offset == 0.5
   test          y_offsetd, y_offsetd
@@ -503,30 +537,40 @@ SECTION .text
   add                srcq, src_strideq
   add                dstq, dst_strideq
 %else ; %1 < 16
-  movh                 m0, [srcq]
-  movh                 m4, [srcq+1]
+  movx                 m0, [srcq]
+  movx                 m4, [srcq+1]
 %if %2 == 1 ; avg
-%if mmsize == 16
+%if %1 > 4
   movhps               m0, [srcq+src_strideq]
   movhps               m4, [srcq+src_strideq+1]
-%else ; mmsize == 8
-  punpckldq            m0, [srcq+src_strideq]
-  punpckldq            m4, [srcq+src_strideq+1]
+%else ; 4xh
+  movx                 m1, [srcq+src_strideq]
+  punpckldq            m0, m1
+  movx                 m2, [srcq+src_strideq+1]
+  punpckldq            m4, m2
 %endif
-  movh                 m1, [dstq]
-  movh                 m3, [dstq+dst_strideq]
+  movx                 m1, [dstq]
+  movx                 m3, [dstq+dst_strideq]
   pavgb                m0, m4
   punpcklbw            m3, m5
+%if %1 > 4
   pavgb                m0, [secq]
   punpcklbw            m1, m5
   punpckhbw            m2, m0, m5
   punpcklbw            m0, m5
+%else ; 4xh
+  movh                 m2, [secq]
+  pavgb                m0, m2
+  punpcklbw            m1, m5
+  punpcklbw            m0, m5
+  movhlps              m2, m0
+%endif
 %else ; !avg
-  movh                 m2, [srcq+src_strideq]
-  movh                 m1, [dstq]
+  movx                 m2, [srcq+src_strideq]
+  movx                 m1, [dstq]
   pavgb                m0, m4
-  movh                 m4, [srcq+src_strideq+1]
-  movh                 m3, [dstq+dst_strideq]
+  movx                 m4, [srcq+src_strideq+1]
+  movx                 m3, [dstq+dst_strideq]
   pavgb                m2, m4
   punpcklbw            m0, m5
   punpcklbw            m2, m5
@@ -543,10 +587,10 @@ SECTION .text
 %endif
   dec                   block_height
   jg .x_half_y_zero_loop
-  STORE_AND_RET
+  STORE_AND_RET %1
 
 .x_half_y_nonzero:
-  cmp           y_offsetd, 8
+  cmp           y_offsetd, 4
   jne .x_half_y_nonhalf
 
   ; x_offset == 0.5 && y_offset == 0.5
@@ -578,53 +622,58 @@ SECTION .text
   add                srcq, src_strideq
   add                dstq, dst_strideq
 %else ; %1 < 16
-  movh                 m0, [srcq]
-  movh                 m3, [srcq+1]
+  movx                 m0, [srcq]
+  movx                 m3, [srcq+1]
   add                srcq, src_strideq
   pavgb                m0, m3
 .x_half_y_half_loop:
-  movh                 m2, [srcq]
-  movh                 m3, [srcq+1]
+  movx                 m2, [srcq]
+  movx                 m3, [srcq+1]
 %if %2 == 1 ; avg
-%if mmsize == 16
+%if %1 > 4
   movhps               m2, [srcq+src_strideq]
   movhps               m3, [srcq+src_strideq+1]
 %else
-%if %1 == 4
-  movh                 m1, [srcq+src_strideq]
+  movx                 m1, [srcq+src_strideq]
   punpckldq            m2, m1
-  movh                 m1, [srcq+src_strideq+1]
+  movx                 m1, [srcq+src_strideq+1]
   punpckldq            m3, m1
-%else
-  punpckldq            m2, [srcq+src_strideq]
-  punpckldq            m3, [srcq+src_strideq+1]
-%endif
 %endif
   pavgb                m2, m3
-%if mmsize == 16
+%if %1 > 4
   movlhps              m0, m2
   movhlps              m4, m2
-%else ; mmsize == 8
+%else ; 4xh
   punpckldq            m0, m2
-  pshufw               m4, m2, 0xe
+  pshuflw              m4, m2, 0xe
 %endif
-  movh                 m1, [dstq]
+  movx                 m1, [dstq]
   pavgb                m0, m2
-  movh                 m3, [dstq+dst_strideq]
+  movx                 m3, [dstq+dst_strideq]
+%if %1 > 4
   pavgb                m0, [secq]
+%else
+  movh                 m2, [secq]
+  pavgb                m0, m2
+%endif
   punpcklbw            m3, m5
   punpcklbw            m1, m5
+%if %1 > 4
   punpckhbw            m2, m0, m5
   punpcklbw            m0, m5
+%else
+  punpcklbw            m0, m5
+  movhlps              m2, m0
+%endif
 %else ; !avg
-  movh                 m4, [srcq+src_strideq]
-  movh                 m1, [srcq+src_strideq+1]
+  movx                 m4, [srcq+src_strideq]
+  movx                 m1, [srcq+src_strideq+1]
   pavgb                m2, m3
   pavgb                m4, m1
   pavgb                m0, m2
   pavgb                m2, m4
-  movh                 m1, [dstq]
-  movh                 m3, [dstq+dst_strideq]
+  movx                 m1, [dstq]
+  movx                 m3, [dstq+dst_strideq]
   punpcklbw            m0, m5
   punpcklbw            m2, m5
   punpcklbw            m3, m5
@@ -641,7 +690,7 @@ SECTION .text
 %endif
   dec                   block_height
   jg .x_half_y_half_loop
-  STORE_AND_RET
+  STORE_AND_RET %1
 
 .x_half_y_nonhalf:
   ; x_offset == 0.5 && y_offset == bilin interpolation
@@ -649,7 +698,7 @@ SECTION .text
   lea        bilin_filter, [bilin_filter_m]
 %endif
   shl           y_offsetd, filter_idx_shift
-%if ARCH_X86_64 && mmsize == 16
+%if ARCH_X86_64 && %1 > 4
   mova                 m8, [bilin_filter+y_offsetq]
 %if notcpuflag(ssse3) ; FIXME(rbultje) don't scatter registers on x86-64
   mova                 m9, [bilin_filter+y_offsetq+16]
@@ -724,23 +773,23 @@ SECTION .text
   add                srcq, src_strideq
   add                dstq, dst_strideq
 %else ; %1 < 16
-  movh                 m0, [srcq]
-  movh                 m3, [srcq+1]
+  movx                 m0, [srcq]
+  movx                 m3, [srcq+1]
   add                srcq, src_strideq
   pavgb                m0, m3
 %if notcpuflag(ssse3)
   punpcklbw            m0, m5
 %endif
 .x_half_y_other_loop:
-  movh                 m2, [srcq]
-  movh                 m1, [srcq+1]
-  movh                 m4, [srcq+src_strideq]
-  movh                 m3, [srcq+src_strideq+1]
+  movx                 m2, [srcq]
+  movx                 m1, [srcq+1]
+  movx                 m4, [srcq+src_strideq]
+  movx                 m3, [srcq+src_strideq+1]
   pavgb                m2, m1
   pavgb                m4, m3
-  movh                 m3, [dstq+dst_strideq]
+  movx                 m3, [dstq+dst_strideq]
 %if cpuflag(ssse3)
-  movh                 m1, [dstq]
+  movx                 m1, [dstq]
   punpcklbw            m0, m2
   punpcklbw            m2, m4
   pmaddubsw            m0, filter_y_a
@@ -760,16 +809,26 @@ SECTION .text
   pmullw               m1, m4, filter_y_b
   paddw                m2, filter_rnd
   paddw                m2, m1
-  movh                 m1, [dstq]
+  movx                 m1, [dstq]
 %endif
   psraw                m0, 4
   psraw                m2, 4
 %if %2 == 1 ; avg
   ; FIXME(rbultje) pipeline
+%if %1 == 4
+  movlhps              m0, m2
+%endif
   packuswb             m0, m2
+%if %1 > 4
   pavgb                m0, [secq]
   punpckhbw            m2, m0, m5
   punpcklbw            m0, m5
+%else
+  movh                 m2, [secq]
+  pavgb                m0, m2
+  punpcklbw            m0, m5
+  movhlps              m2, m0
+%endif
 %endif
   punpcklbw            m1, m5
   SUM_SSE              m0, m1, m2, m3, m6, m7
@@ -786,7 +845,7 @@ SECTION .text
 %undef filter_y_a
 %undef filter_y_b
 %undef filter_rnd
-  STORE_AND_RET
+  STORE_AND_RET %1
 
 .x_nonhalf:
   test          y_offsetd, y_offsetd
@@ -797,7 +856,7 @@ SECTION .text
   lea        bilin_filter, [bilin_filter_m]
 %endif
   shl           x_offsetd, filter_idx_shift
-%if ARCH_X86_64 && mmsize == 16
+%if ARCH_X86_64 && %1 > 4
   mova                 m8, [bilin_filter+x_offsetq]
 %if notcpuflag(ssse3) ; FIXME(rbultje) don't scatter registers on x86-64
   mova                 m9, [bilin_filter+x_offsetq+16]
@@ -865,14 +924,14 @@ SECTION .text
   add                srcq, src_strideq
   add                dstq, dst_strideq
 %else ; %1 < 16
-  movh                 m0, [srcq]
-  movh                 m1, [srcq+1]
-  movh                 m2, [srcq+src_strideq]
-  movh                 m4, [srcq+src_strideq+1]
-  movh                 m3, [dstq+dst_strideq]
+  movx                 m0, [srcq]
+  movx                 m1, [srcq+1]
+  movx                 m2, [srcq+src_strideq]
+  movx                 m4, [srcq+src_strideq+1]
+  movx                 m3, [dstq+dst_strideq]
 %if cpuflag(ssse3)
   punpcklbw            m0, m1
-  movh                 m1, [dstq]
+  movx                 m1, [dstq]
   punpcklbw            m2, m4
   pmaddubsw            m0, filter_x_a
   pmaddubsw            m2, filter_x_a
@@ -892,17 +951,27 @@ SECTION .text
   pmullw               m4, filter_x_b
   paddw                m0, m1
   paddw                m2, filter_rnd
-  movh                 m1, [dstq]
+  movx                 m1, [dstq]
   paddw                m2, m4
 %endif
   psraw                m0, 4
   psraw                m2, 4
 %if %2 == 1 ; avg
   ; FIXME(rbultje) pipeline
+%if %1 == 4
+  movlhps              m0, m2
+%endif
   packuswb             m0, m2
+%if %1 > 4
   pavgb                m0, [secq]
   punpckhbw            m2, m0, m5
   punpcklbw            m0, m5
+%else
+  movh                 m2, [secq]
+  pavgb                m0, m2
+  punpcklbw            m0, m5
+  movhlps              m2, m0
+%endif
 %endif
   punpcklbw            m1, m5
   SUM_SSE              m0, m1, m2, m3, m6, m7
@@ -918,10 +987,10 @@ SECTION .text
 %undef filter_x_a
 %undef filter_x_b
 %undef filter_rnd
-  STORE_AND_RET
+  STORE_AND_RET %1
 
 .x_nonhalf_y_nonzero:
-  cmp           y_offsetd, 8
+  cmp           y_offsetd, 4
   jne .x_nonhalf_y_nonhalf
 
   ; x_offset == bilin interpolation && y_offset == 0.5
@@ -929,7 +998,7 @@ SECTION .text
   lea        bilin_filter, [bilin_filter_m]
 %endif
   shl           x_offsetd, filter_idx_shift
-%if ARCH_X86_64 && mmsize == 16
+%if ARCH_X86_64 && %1 > 4
   mova                 m8, [bilin_filter+x_offsetq]
 %if notcpuflag(ssse3) ; FIXME(rbultje) don't scatter registers on x86-64
   mova                 m9, [bilin_filter+x_offsetq+16]
@@ -1037,8 +1106,8 @@ SECTION .text
   add                srcq, src_strideq
   add                dstq, dst_strideq
 %else ; %1 < 16
-  movh                 m0, [srcq]
-  movh                 m1, [srcq+1]
+  movx                 m0, [srcq]
+  movx                 m1, [srcq+1]
 %if cpuflag(ssse3)
   punpcklbw            m0, m1
   pmaddubsw            m0, filter_x_a
@@ -1054,17 +1123,17 @@ SECTION .text
   add                srcq, src_strideq
   psraw                m0, 4
 .x_other_y_half_loop:
-  movh                 m2, [srcq]
-  movh                 m1, [srcq+1]
-  movh                 m4, [srcq+src_strideq]
-  movh                 m3, [srcq+src_strideq+1]
+  movx                 m2, [srcq]
+  movx                 m1, [srcq+1]
+  movx                 m4, [srcq+src_strideq]
+  movx                 m3, [srcq+src_strideq+1]
 %if cpuflag(ssse3)
   punpcklbw            m2, m1
   punpcklbw            m4, m3
   pmaddubsw            m2, filter_x_a
   pmaddubsw            m4, filter_x_a
-  movh                 m1, [dstq]
-  movh                 m3, [dstq+dst_strideq]
+  movx                 m1, [dstq]
+  movx                 m3, [dstq+dst_strideq]
   paddw                m2, filter_rnd
   paddw                m4, filter_rnd
 %else
@@ -1079,9 +1148,9 @@ SECTION .text
   pmullw               m3, filter_x_b
   paddw                m4, filter_rnd
   paddw                m2, m1
-  movh                 m1, [dstq]
+  movx                 m1, [dstq]
   paddw                m4, m3
-  movh                 m3, [dstq+dst_strideq]
+  movx                 m3, [dstq+dst_strideq]
 %endif
   psraw                m2, 4
   psraw                m4, 4
@@ -1089,10 +1158,20 @@ SECTION .text
   pavgw                m2, m4
 %if %2 == 1 ; avg
   ; FIXME(rbultje) pipeline - also consider going to bytes here
+%if %1 == 4
+  movlhps              m0, m2
+%endif
   packuswb             m0, m2
+%if %1 > 4
   pavgb                m0, [secq]
   punpckhbw            m2, m0, m5
   punpcklbw            m0, m5
+%else
+  movh                 m2, [secq]
+  pavgb                m0, m2
+  punpcklbw            m0, m5
+  movhlps              m2, m0
+%endif
 %endif
   punpcklbw            m3, m5
   punpcklbw            m1, m5
@@ -1110,7 +1189,7 @@ SECTION .text
 %undef filter_x_a
 %undef filter_x_b
 %undef filter_rnd
-  STORE_AND_RET
+  STORE_AND_RET %1
 
 .x_nonhalf_y_nonhalf:
 %ifdef PIC
@@ -1118,7 +1197,7 @@ SECTION .text
 %endif
   shl           x_offsetd, filter_idx_shift
   shl           y_offsetd, filter_idx_shift
-%if ARCH_X86_64 && mmsize == 16
+%if ARCH_X86_64 && %1 > 4
   mova                 m8, [bilin_filter+x_offsetq]
 %if notcpuflag(ssse3) ; FIXME(rbultje) don't scatter registers on x86-64
   mova                 m9, [bilin_filter+x_offsetq+16]
@@ -1261,8 +1340,8 @@ SECTION .text
   INC_SRC_BY_SRC_STRIDE
   add                dstq, dst_strideq
 %else ; %1 < 16
-  movh                 m0, [srcq]
-  movh                 m1, [srcq+1]
+  movx                 m0, [srcq]
+  movx                 m1, [srcq+1]
 %if cpuflag(ssse3)
   punpcklbw            m0, m1
   pmaddubsw            m0, filter_x_a
@@ -1283,20 +1362,20 @@ SECTION .text
   INC_SRC_BY_SRC_STRIDE
 
 .x_other_y_other_loop:
-  movh                 m2, [srcq]
-  movh                 m1, [srcq+1]
+  movx                 m2, [srcq]
+  movx                 m1, [srcq+1]
 
   INC_SRC_BY_SRC_STRIDE
-  movh                 m4, [srcq]
-  movh                 m3, [srcq+1]
+  movx                 m4, [srcq]
+  movx                 m3, [srcq+1]
 
 %if cpuflag(ssse3)
   punpcklbw            m2, m1
   punpcklbw            m4, m3
   pmaddubsw            m2, filter_x_a
   pmaddubsw            m4, filter_x_a
-  movh                 m3, [dstq+dst_strideq]
-  movh                 m1, [dstq]
+  movx                 m3, [dstq+dst_strideq]
+  movx                 m1, [dstq]
   paddw                m2, filter_rnd
   paddw                m4, filter_rnd
   psraw                m2, 4
@@ -1335,9 +1414,9 @@ SECTION .text
   pmullw               m1, m4, filter_y_b
   paddw                m2, filter_rnd
   paddw                m0, m3
-  movh                 m3, [dstq+dst_strideq]
+  movx                 m3, [dstq+dst_strideq]
   paddw                m2, m1
-  movh                 m1, [dstq]
+  movx                 m1, [dstq]
   psraw                m0, 4
   psraw                m2, 4
   punpcklbw            m3, m5
@@ -1345,10 +1424,20 @@ SECTION .text
 %endif
 %if %2 == 1 ; avg
   ; FIXME(rbultje) pipeline
+%if %1 == 4
+  movlhps              m0, m2
+%endif
   packuswb             m0, m2
+%if %1 > 4
   pavgb                m0, [secq]
   punpckhbw            m2, m0, m5
   punpcklbw            m0, m5
+%else
+  movh                 m2, [secq]
+  pavgb                m0, m2
+  punpcklbw            m0, m5
+  movhlps              m2, m0
+%endif
 %endif
   SUM_SSE              m0, m1, m2, m3, m6, m7
   mova                 m0, m4
@@ -1366,7 +1455,8 @@ SECTION .text
 %undef filter_y_a
 %undef filter_y_b
 %undef filter_rnd
-  STORE_AND_RET
+%undef movx
+  STORE_AND_RET %1
 %endmacro
 
 ; FIXME(rbultje) the non-bilinear versions (i.e. x=0,8&&y=0,8) are identical
@@ -1375,26 +1465,22 @@ SECTION .text
 ; location in the sse/2 version, rather than duplicating that code in the
 ; binary.
 
-INIT_MMX sse
-SUBPEL_VARIANCE  4
 INIT_XMM sse2
+SUBPEL_VARIANCE  4
 SUBPEL_VARIANCE  8
 SUBPEL_VARIANCE 16
 
-INIT_MMX ssse3
-SUBPEL_VARIANCE  4
 INIT_XMM ssse3
+SUBPEL_VARIANCE  4
 SUBPEL_VARIANCE  8
 SUBPEL_VARIANCE 16
 
-INIT_MMX sse
-SUBPEL_VARIANCE  4, 1
 INIT_XMM sse2
+SUBPEL_VARIANCE  4, 1
 SUBPEL_VARIANCE  8, 1
 SUBPEL_VARIANCE 16, 1
 
-INIT_MMX ssse3
-SUBPEL_VARIANCE  4, 1
 INIT_XMM ssse3
+SUBPEL_VARIANCE  4, 1
 SUBPEL_VARIANCE  8, 1
 SUBPEL_VARIANCE 16, 1

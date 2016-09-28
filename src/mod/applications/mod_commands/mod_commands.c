@@ -3112,6 +3112,9 @@ SWITCH_STANDARD_API(uuid_drop_dtmf)
 			int is_on = 0;
 			const char *file, *digits;
 
+			switch_channel_set_variable(channel, "drop_dtmf_masking_digits", NULL);
+			switch_channel_set_variable(channel, "drop_dtmf_masking_file", NULL);
+
 			if (!zstr(mask_action) && !zstr(mask_arg)) {
 				if (!strcasecmp(mask_action, "mask_digits")) {
 					switch_channel_set_variable(channel, "drop_dtmf_masking_digits", mask_arg);

@@ -30,16 +30,23 @@
 #define AWS_H
 
 #include <switch.h>
+#include <switch_curl.h>
+#include "common.h"
 
 /* (SHA1_LENGTH * 1.37 base64 bytes per byte * 3 url-encoded bytes per byte) */
 #define S3_SIGNATURE_LENGTH_MAX 83
 
-int aws_s3_is_s3_url(const char *url, const char *base_domain);
-void aws_s3_parse_url(char *url, const char *base_domain, char **bucket, char **object);
+switch_curl_slist_t *aws_s3_append_headers(http_profile_t *profile, switch_curl_slist_t *headers,
+	const char *verb, unsigned int content_length, const char *content_type, const char *url, const unsigned int block_num, char **query_string);
+switch_status_t aws_s3_config_profile(switch_xml_t xml, http_profile_t *profile);
+
+// the following functions are exposed only so that the unit tests still work
 char *aws_s3_string_to_sign(const char *verb, const char *bucket, const char *object, const char *content_type, const char *content_md5, const char *date);
 char *aws_s3_signature(char *signature, int signature_length, const char *string_to_sign, const char *aws_secret_access_key);
+void aws_s3_parse_url(char *url, const char *base_domain, char **bucket, char **object);
 char *aws_s3_presigned_url_create(const char *verb, const char *url, const char *base_domain, const char *content_type, const char *content_md5, const char *aws_access_key_id, const char *aws_secret_access_key, const char *expires);
 char *aws_s3_authentication_create(const char *verb, const char *url, const char *base_domain, const char *content_type, const char *content_md5, const char *aws_access_key_id, const char *aws_secret_access_key, const char *date);
+
 
 #endif
 

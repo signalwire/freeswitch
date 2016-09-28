@@ -860,6 +860,16 @@ void ScaleAddRow_AVX2(const uint8* src_ptr, uint16* dst_ptr, int src_width) {
 }
 #endif  // HAS_SCALEADDROW_AVX2
 
+// Constant for making pixels signed to avoid pmaddubsw
+// saturation.
+static uvec8 kFsub80 =
+  { 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+    0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80 };
+
+// Constant for making pixels unsigned and adding .5 for rounding.
+static uvec16 kFadd40 =
+  { 0x4040, 0x4040, 0x4040, 0x4040, 0x4040, 0x4040, 0x4040, 0x4040 };
+
 // Bilinear column filtering. SSSE3 version.
 __declspec(naked)
 void ScaleFilterCols_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
@@ -877,6 +887,8 @@ void ScaleFilterCols_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
     movd       xmm5, eax
     pcmpeqb    xmm6, xmm6           // generate 0x007f for inverting fraction.
     psrlw      xmm6, 9
+    pcmpeqb    xmm7, xmm7           // generate 0x0001
+    psrlw      xmm7, 15
     pextrw     eax, xmm2, 1         // get x0 integer. preroll
     sub        ecx, 2
     jl         xloop29
@@ -899,20 +911,22 @@ void ScaleFilterCols_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
     movd       xmm4, ebx
     pshufb     xmm1, xmm5           // 0011
     punpcklwd  xmm0, xmm4
+    psubb      xmm0, xmmword ptr kFsub80  // make pixels signed.
     pxor       xmm1, xmm6           // 0..7f and 7f..0
-    pmaddubsw  xmm0, xmm1           // 16 bit, 2 pixels.
+    paddusb    xmm1, xmm7           // +1 so 0..7f and 80..1
+    pmaddubsw  xmm1, xmm0           // 16 bit, 2 pixels.
     pextrw     eax, xmm2, 1         // get x0 integer. next iteration.
     pextrw     edx, xmm2, 3         // get x1 integer. next iteration.
-    psrlw      xmm0, 7              // 8.7 fixed point to low 8 bits.
-    packuswb   xmm0, xmm0           // 8 bits, 2 pixels.
-    movd       ebx, xmm0
+    paddw      xmm1, xmmword ptr kFadd40  // make pixels unsigned and round.
+    psrlw      xmm1, 7              // 8.7 fixed point to low 8 bits.
+    packuswb   xmm1, xmm1           // 8 bits, 2 pixels.
+    movd       ebx, xmm1
     mov        [edi], bx
     lea        edi, [edi + 2]
     sub        ecx, 2               // 2 pixels
     jge        xloop2
 
  xloop29:
-
     add        ecx, 2 - 1
     jl         xloop99
 
@@ -921,11 +935,14 @@ void ScaleFilterCols_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
     movd       xmm0, ebx
     psrlw      xmm2, 9              // 7 bit fractions.
     pshufb     xmm2, xmm5           // 0011
+    psubb      xmm0, xmmword ptr kFsub80  // make pixels signed.
     pxor       xmm2, xmm6           // 0..7f and 7f..0
-    pmaddubsw  xmm0, xmm2           // 16 bit
-    psrlw      xmm0, 7              // 8.7 fixed point to low 8 bits.
-    packuswb   xmm0, xmm0           // 8 bits
-    movd       ebx, xmm0
+    paddusb    xmm2, xmm7           // +1 so 0..7f and 80..1
+    pmaddubsw  xmm2, xmm0           // 16 bit
+    paddw      xmm2, xmmword ptr kFadd40  // make pixels unsigned and round.
+    psrlw      xmm2, 7              // 8.7 fixed point to low 8 bits.
+    packuswb   xmm2, xmm2           // 8 bits
+    movd       ebx, xmm2
     mov        [edi], bl
 
  xloop99:

@@ -22,7 +22,7 @@ By default the cpu is detected and the most advanced form of SIMD is used.  But 
 
 # Test Width/Height/Repeat
 
-The unittests default to a small image (32x18) to run fast.  This can be set by environment variable to test a specific resolutions.
+The unittests default to a small image (128x72) to run fast.  This can be set by environment variable to test a specific resolutions.
 You can also repeat the test a specified number of iterations, allowing benchmarking and profiling.
 
     set LIBYUV_WIDTH=1280

@@ -352,14 +352,16 @@ ssize_t ws_raw_read(wsh_t *wsh, void *data, size_t bytes, int block)
 			if (r == -1) {
 				err = SSL_get_error(wsh->ssl, r);
 				
-				if (!block && err == SSL_ERROR_WANT_READ) {
-					r = -2;
-					goto end;
-				}
-
-				if (block) {
+				if (err == SSL_ERROR_WANT_READ) {
+					if (!block) {
+						r = -2;
+						goto end;
+					}
 					wsh->x++;
 					ms_sleep(10);
+				} else {
+					r = -1;
+					goto end;
 				}
 			}
 
@@ -385,11 +387,11 @@ ssize_t ws_raw_read(wsh_t *wsh, void *data, size_t bytes, int block)
 		}
 	} while (r == -1 && xp_is_blocking(xp_errno()) && wsh->x < 1000);
 	
+ end:
+
 	if (wsh->x >= 10000 || (block && wsh->x >= 1000)) {
 		r = -1;
 	}
-
- end:
 
 	if (r > 0) {
 		*((char *)data + r) = '\0';

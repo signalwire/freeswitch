@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "./vpx_dsp_rtcd.h"
 #include "vpx_dsp/fwd_txfm.h"
 
 void vpx_fdct4x4_c(const int16_t *input, tran_low_t *output, int stride) {
@@ -71,8 +72,7 @@ void vpx_fdct4x4_c(const int16_t *input, tran_low_t *output, int stride) {
   {
     int i, j;
     for (i = 0; i < 4; ++i) {
-      for (j = 0; j < 4; ++j)
-        output[j + i * 4] = (output[j + i * 4] + 1) >> 2;
+      for (j = 0; j < 4; ++j) output[j + i * 4] = (output[j + i * 4] + 1) >> 2;
     }
   }
 }
@@ -81,11 +81,9 @@ void vpx_fdct4x4_1_c(const int16_t *input, tran_low_t *output, int stride) {
   int r, c;
   tran_low_t sum = 0;
   for (r = 0; r < 4; ++r)
-    for (c = 0; c < 4; ++c)
-      sum += input[r * stride + c];
+    for (c = 0; c < 4; ++c) sum += input[r * stride + c];
 
   output[0] = sum << 1;
-  output[1] = 0;
 }
 
 void vpx_fdct8x8_c(const int16_t *input, tran_low_t *final_output, int stride) {
@@ -133,8 +131,8 @@ void vpx_fdct8x8_c(const int16_t *input, tran_low_t *final_output, int stride) {
       x3 = s0 - s3;
       t0 = (x0 + x1) * cospi_16_64;
       t1 = (x0 - x1) * cospi_16_64;
-      t2 =  x2 * cospi_24_64 + x3 *  cospi_8_64;
-      t3 = -x2 * cospi_8_64  + x3 * cospi_24_64;
+      t2 = x2 * cospi_24_64 + x3 * cospi_8_64;
+      t3 = -x2 * cospi_8_64 + x3 * cospi_24_64;
       output[0] = (tran_low_t)fdct_round_shift(t0);
       output[2] = (tran_low_t)fdct_round_shift(t2);
       output[4] = (tran_low_t)fdct_round_shift(t1);
@@ -153,24 +151,23 @@ void vpx_fdct8x8_c(const int16_t *input, tran_low_t *final_output, int stride) {
       x3 = s7 + t3;
 
       // Stage 4
-      t0 = x0 * cospi_28_64 + x3 *   cospi_4_64;
-      t1 = x1 * cospi_12_64 + x2 *  cospi_20_64;
+      t0 = x0 * cospi_28_64 + x3 * cospi_4_64;
+      t1 = x1 * cospi_12_64 + x2 * cospi_20_64;
       t2 = x2 * cospi_12_64 + x1 * -cospi_20_64;
-      t3 = x3 * cospi_28_64 + x0 *  -cospi_4_64;
+      t3 = x3 * cospi_28_64 + x0 * -cospi_4_64;
       output[1] = (tran_low_t)fdct_round_shift(t0);
       output[3] = (tran_low_t)fdct_round_shift(t2);
       output[5] = (tran_low_t)fdct_round_shift(t1);
       output[7] = (tran_low_t)fdct_round_shift(t3);
       output += 8;
     }
-    in  = intermediate;
+    in = intermediate;
     output = final_output;
   }
 
   // Rows
   for (i = 0; i < 8; ++i) {
-    for (j = 0; j < 8; ++j)
-      final_output[j + i * 8] /= 2;
+    for (j = 0; j < 8; ++j) final_output[j + i * 8] /= 2;
   }
 }
 
@@ -178,11 +175,9 @@ void vpx_fdct8x8_1_c(const int16_t *input, tran_low_t *output, int stride) {
   int r, c;
   tran_low_t sum = 0;
   for (r = 0; r < 8; ++r)
-    for (c = 0; c < 8; ++c)
-      sum += input[r * stride + c];
+    for (c = 0; c < 8; ++c) sum += input[r * stride + c];
 
   output[0] = sum;
-  output[1] = 0;
 }
 
 void vpx_fdct16x16_c(const int16_t *input, tran_low_t *output, int stride) {
@@ -215,11 +210,11 @@ void vpx_fdct16x16_c(const int16_t *input, tran_low_t *output, int stride) {
         input[3] = (in_pass0[3 * stride] + in_pass0[12 * stride]) * 4;
         input[4] = (in_pass0[4 * stride] + in_pass0[11 * stride]) * 4;
         input[5] = (in_pass0[5 * stride] + in_pass0[10 * stride]) * 4;
-        input[6] = (in_pass0[6 * stride] + in_pass0[ 9 * stride]) * 4;
-        input[7] = (in_pass0[7 * stride] + in_pass0[ 8 * stride]) * 4;
+        input[6] = (in_pass0[6 * stride] + in_pass0[9 * stride]) * 4;
+        input[7] = (in_pass0[7 * stride] + in_pass0[8 * stride]) * 4;
         // Calculate input for the next 8 results.
-        step1[0] = (in_pass0[7 * stride] - in_pass0[ 8 * stride]) * 4;
-        step1[1] = (in_pass0[6 * stride] - in_pass0[ 9 * stride]) * 4;
+        step1[0] = (in_pass0[7 * stride] - in_pass0[8 * stride]) * 4;
+        step1[1] = (in_pass0[6 * stride] - in_pass0[9 * stride]) * 4;
         step1[2] = (in_pass0[5 * stride] - in_pass0[10 * stride]) * 4;
         step1[3] = (in_pass0[4 * stride] - in_pass0[11 * stride]) * 4;
         step1[4] = (in_pass0[3 * stride] - in_pass0[12 * stride]) * 4;
@@ -234,11 +229,11 @@ void vpx_fdct16x16_c(const int16_t *input, tran_low_t *output, int stride) {
         input[3] = ((in[3 * 16] + 1) >> 2) + ((in[12 * 16] + 1) >> 2);
         input[4] = ((in[4 * 16] + 1) >> 2) + ((in[11 * 16] + 1) >> 2);
         input[5] = ((in[5 * 16] + 1) >> 2) + ((in[10 * 16] + 1) >> 2);
-        input[6] = ((in[6 * 16] + 1) >> 2) + ((in[ 9 * 16] + 1) >> 2);
-        input[7] = ((in[7 * 16] + 1) >> 2) + ((in[ 8 * 16] + 1) >> 2);
+        input[6] = ((in[6 * 16] + 1) >> 2) + ((in[9 * 16] + 1) >> 2);
+        input[7] = ((in[7 * 16] + 1) >> 2) + ((in[8 * 16] + 1) >> 2);
         // Calculate input for the next 8 results.
-        step1[0] = ((in[7 * 16] + 1) >> 2) - ((in[ 8 * 16] + 1) >> 2);
-        step1[1] = ((in[6 * 16] + 1) >> 2) - ((in[ 9 * 16] + 1) >> 2);
+        step1[0] = ((in[7 * 16] + 1) >> 2) - ((in[8 * 16] + 1) >> 2);
+        step1[1] = ((in[6 * 16] + 1) >> 2) - ((in[9 * 16] + 1) >> 2);
         step1[2] = ((in[5 * 16] + 1) >> 2) - ((in[10 * 16] + 1) >> 2);
         step1[3] = ((in[4 * 16] + 1) >> 2) - ((in[11 * 16] + 1) >> 2);
         step1[4] = ((in[3 * 16] + 1) >> 2) - ((in[12 * 16] + 1) >> 2);
@@ -269,7 +264,7 @@ void vpx_fdct16x16_c(const int16_t *input, tran_low_t *output, int stride) {
         x3 = s0 - s3;
         t0 = (x0 + x1) * cospi_16_64;
         t1 = (x0 - x1) * cospi_16_64;
-        t2 = x3 * cospi_8_64  + x2 * cospi_24_64;
+        t2 = x3 * cospi_8_64 + x2 * cospi_24_64;
         t3 = x3 * cospi_24_64 - x2 * cospi_8_64;
         out[0] = (tran_low_t)fdct_round_shift(t0);
         out[4] = (tran_low_t)fdct_round_shift(t2);
@@ -289,10 +284,10 @@ void vpx_fdct16x16_c(const int16_t *input, tran_low_t *output, int stride) {
         x3 = s7 + t3;
 
         // Stage 4
-        t0 = x0 * cospi_28_64 + x3 *   cospi_4_64;
-        t1 = x1 * cospi_12_64 + x2 *  cospi_20_64;
+        t0 = x0 * cospi_28_64 + x3 * cospi_4_64;
+        t1 = x1 * cospi_12_64 + x2 * cospi_20_64;
         t2 = x2 * cospi_12_64 + x1 * -cospi_20_64;
-        t3 = x3 * cospi_28_64 + x0 *  -cospi_4_64;
+        t3 = x3 * cospi_28_64 + x0 * -cospi_4_64;
         out[2] = (tran_low_t)fdct_round_shift(t0);
         out[6] = (tran_low_t)fdct_round_shift(t2);
         out[10] = (tran_low_t)fdct_round_shift(t1);
@@ -319,12 +314,12 @@ void vpx_fdct16x16_c(const int16_t *input, tran_low_t *output, int stride) {
         step3[6] = step1[6] + step2[5];
         step3[7] = step1[7] + step2[4];
         // step 4
-        temp1 = step3[1] *  -cospi_8_64 + step3[6] * cospi_24_64;
-        temp2 = step3[2] * cospi_24_64 + step3[5] *  cospi_8_64;
+        temp1 = step3[1] * -cospi_8_64 + step3[6] * cospi_24_64;
+        temp2 = step3[2] * cospi_24_64 + step3[5] * cospi_8_64;
         step2[1] = fdct_round_shift(temp1);
         step2[2] = fdct_round_shift(temp2);
         temp1 = step3[2] * cospi_8_64 - step3[5] * cospi_24_64;
-        temp2 = step3[1] * cospi_24_64 + step3[6] *  cospi_8_64;
+        temp2 = step3[1] * cospi_24_64 + step3[6] * cospi_8_64;
         step2[5] = fdct_round_shift(temp1);
         step2[6] = fdct_round_shift(temp2);
         // step 5
@@ -337,20 +332,20 @@ void vpx_fdct16x16_c(const int16_t *input, tran_low_t *output, int stride) {
         step1[6] = step3[7] - step2[6];
         step1[7] = step3[7] + step2[6];
         // step 6
-        temp1 = step1[0] * cospi_30_64 + step1[7] *  cospi_2_64;
+        temp1 = step1[0] * cospi_30_64 + step1[7] * cospi_2_64;
         temp2 = step1[1] * cospi_14_64 + step1[6] * cospi_18_64;
         out[1] = (tran_low_t)fdct_round_shift(temp1);
         out[9] = (tran_low_t)fdct_round_shift(temp2);
         temp1 = step1[2] * cospi_22_64 + step1[5] * cospi_10_64;
-        temp2 = step1[3] *  cospi_6_64 + step1[4] * cospi_26_64;
+        temp2 = step1[3] * cospi_6_64 + step1[4] * cospi_26_64;
         out[5] = (tran_low_t)fdct_round_shift(temp1);
         out[13] = (tran_low_t)fdct_round_shift(temp2);
-        temp1 = step1[3] * -cospi_26_64 + step1[4] *  cospi_6_64;
+        temp1 = step1[3] * -cospi_26_64 + step1[4] * cospi_6_64;
         temp2 = step1[2] * -cospi_10_64 + step1[5] * cospi_22_64;
         out[3] = (tran_low_t)fdct_round_shift(temp1);
         out[11] = (tran_low_t)fdct_round_shift(temp2);
         temp1 = step1[1] * -cospi_18_64 + step1[6] * cospi_14_64;
-        temp2 = step1[0] *  -cospi_2_64 + step1[7] * cospi_30_64;
+        temp2 = step1[0] * -cospi_2_64 + step1[7] * cospi_30_64;
         out[7] = (tran_low_t)fdct_round_shift(temp1);
         out[15] = (tran_low_t)fdct_round_shift(temp2);
       }
@@ -367,13 +362,11 @@ void vpx_fdct16x16_c(const int16_t *input, tran_low_t *output, int stride) {
 
 void vpx_fdct16x16_1_c(const int16_t *input, tran_low_t *output, int stride) {
   int r, c;
-  tran_low_t sum = 0;
+  int sum = 0;
   for (r = 0; r < 16; ++r)
-    for (c = 0; c < 16; ++c)
-      sum += input[r * stride + c];
+    for (c = 0; c < 16; ++c) sum += input[r * stride + c];
 
-  output[0] = sum >> 1;
-  output[1] = 0;
+  output[0] = (tran_low_t)(sum >> 1);
 }
 
 static INLINE tran_high_t dct_32_round(tran_high_t input) {
@@ -677,36 +670,36 @@ void vpx_fdct32(const tran_high_t *input, tran_high_t *output, int round) {
   step[31] = output[31] + output[30];
 
   // Final stage --- outputs indices are bit-reversed.
-  output[0]  = step[0];
+  output[0] = step[0];
   output[16] = step[1];
-  output[8]  = step[2];
+  output[8] = step[2];
   output[24] = step[3];
-  output[4]  = step[4];
+  output[4] = step[4];
   output[20] = step[5];
   output[12] = step[6];
   output[28] = step[7];
-  output[2]  = step[8];
+  output[2] = step[8];
   output[18] = step[9];
   output[10] = step[10];
   output[26] = step[11];
-  output[6]  = step[12];
+  output[6] = step[12];
   output[22] = step[13];
   output[14] = step[14];
   output[30] = step[15];
 
-  output[1]  = dct_32_round(step[16] * cospi_31_64 + step[31] * cospi_1_64);
+  output[1] = dct_32_round(step[16] * cospi_31_64 + step[31] * cospi_1_64);
   output[17] = dct_32_round(step[17] * cospi_15_64 + step[30] * cospi_17_64);
-  output[9]  = dct_32_round(step[18] * cospi_23_64 + step[29] * cospi_9_64);
+  output[9] = dct_32_round(step[18] * cospi_23_64 + step[29] * cospi_9_64);
   output[25] = dct_32_round(step[19] * cospi_7_64 + step[28] * cospi_25_64);
-  output[5]  = dct_32_round(step[20] * cospi_27_64 + step[27] * cospi_5_64);
+  output[5] = dct_32_round(step[20] * cospi_27_64 + step[27] * cospi_5_64);
   output[21] = dct_32_round(step[21] * cospi_11_64 + step[26] * cospi_21_64);
   output[13] = dct_32_round(step[22] * cospi_19_64 + step[25] * cospi_13_64);
   output[29] = dct_32_round(step[23] * cospi_3_64 + step[24] * cospi_29_64);
-  output[3]  = dct_32_round(step[24] * cospi_3_64 + step[23] * -cospi_29_64);
+  output[3] = dct_32_round(step[24] * cospi_3_64 + step[23] * -cospi_29_64);
   output[19] = dct_32_round(step[25] * cospi_19_64 + step[22] * -cospi_13_64);
   output[11] = dct_32_round(step[26] * cospi_11_64 + step[21] * -cospi_21_64);
   output[27] = dct_32_round(step[27] * cospi_27_64 + step[20] * -cospi_5_64);
-  output[7]  = dct_32_round(step[28] * cospi_7_64 + step[19] * -cospi_25_64);
+  output[7] = dct_32_round(step[28] * cospi_7_64 + step[19] * -cospi_25_64);
   output[23] = dct_32_round(step[29] * cospi_23_64 + step[18] * -cospi_9_64);
   output[15] = dct_32_round(step[30] * cospi_15_64 + step[17] * -cospi_17_64);
   output[31] = dct_32_round(step[31] * cospi_31_64 + step[16] * -cospi_1_64);
@@ -719,8 +712,7 @@ void vpx_fdct32x32_c(const int16_t *input, tran_low_t *out, int stride) {
   // Columns
   for (i = 0; i < 32; ++i) {
     tran_high_t temp_in[32], temp_out[32];
-    for (j = 0; j < 32; ++j)
-      temp_in[j] = input[j * stride + i] * 4;
+    for (j = 0; j < 32; ++j) temp_in[j] = input[j * stride + i] * 4;
     vpx_fdct32(temp_in, temp_out, 0);
     for (j = 0; j < 32; ++j)
       output[j * 32 + i] = (temp_out[j] + 1 + (temp_out[j] > 0)) >> 2;
@@ -729,8 +721,7 @@ void vpx_fdct32x32_c(const int16_t *input, tran_low_t *out, int stride) {
   // Rows
   for (i = 0; i < 32; ++i) {
     tran_high_t temp_in[32], temp_out[32];
-    for (j = 0; j < 32; ++j)
-      temp_in[j] = output[j + i * 32];
+    for (j = 0; j < 32; ++j) temp_in[j] = output[j + i * 32];
     vpx_fdct32(temp_in, temp_out, 0);
     for (j = 0; j < 32; ++j)
       out[j + i * 32] =
@@ -748,8 +739,7 @@ void vpx_fdct32x32_rd_c(const int16_t *input, tran_low_t *out, int stride) {
   // Columns
   for (i = 0; i < 32; ++i) {
     tran_high_t temp_in[32], temp_out[32];
-    for (j = 0; j < 32; ++j)
-      temp_in[j] = input[j * stride + i] * 4;
+    for (j = 0; j < 32; ++j) temp_in[j] = input[j * stride + i] * 4;
     vpx_fdct32(temp_in, temp_out, 0);
     for (j = 0; j < 32; ++j)
       // TODO(cd): see quality impact of only doing
@@ -761,23 +751,19 @@ void vpx_fdct32x32_rd_c(const int16_t *input, tran_low_t *out, int stride) {
   // Rows
   for (i = 0; i < 32; ++i) {
     tran_high_t temp_in[32], temp_out[32];
-    for (j = 0; j < 32; ++j)
-      temp_in[j] = output[j + i * 32];
+    for (j = 0; j < 32; ++j) temp_in[j] = output[j + i * 32];
     vpx_fdct32(temp_in, temp_out, 1);
-    for (j = 0; j < 32; ++j)
-      out[j + i * 32] = (tran_low_t)temp_out[j];
+    for (j = 0; j < 32; ++j) out[j + i * 32] = (tran_low_t)temp_out[j];
   }
 }
 
 void vpx_fdct32x32_1_c(const int16_t *input, tran_low_t *output, int stride) {
   int r, c;
-  tran_low_t sum = 0;
+  int sum = 0;
   for (r = 0; r < 32; ++r)
-    for (c = 0; c < 32; ++c)
-      sum += input[r * stride + c];
+    for (c = 0; c < 32; ++c) sum += input[r * stride + c];
 
-  output[0] = sum >> 3;
-  output[1] = 0;
+  output[0] = (tran_low_t)(sum >> 3);
 }
 
 #if CONFIG_VP9_HIGHBITDEPTH

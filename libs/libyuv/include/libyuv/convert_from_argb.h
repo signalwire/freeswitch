@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef INCLUDE_LIBYUV_CONVERT_FROM_ARGB_H_  // NOLINT
+#ifndef INCLUDE_LIBYUV_CONVERT_FROM_ARGB_H_
 #define INCLUDE_LIBYUV_CONVERT_FROM_ARGB_H_
 
 #include "libyuv/basic_types.h"
@@ -187,4 +187,4 @@ int ARGBToUYVY(const uint8* src_argb, int src_stride_argb,
 }  // namespace libyuv
 #endif
 
-#endif  // INCLUDE_LIBYUV_CONVERT_FROM_ARGB_H_  NOLINT
+#endif  // INCLUDE_LIBYUV_CONVERT_FROM_ARGB_H_

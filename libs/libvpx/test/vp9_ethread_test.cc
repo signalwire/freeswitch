@@ -23,22 +23,12 @@ class VPxEncoderThreadTest
       public ::libvpx_test::CodecTestWith2Params<libvpx_test::TestMode, int> {
  protected:
   VPxEncoderThreadTest()
-      : EncoderTest(GET_PARAM(0)),
-        encoder_initialized_(false),
-        tiles_(2),
-        encoding_mode_(GET_PARAM(1)),
-        set_cpu_used_(GET_PARAM(2)) {
+      : EncoderTest(GET_PARAM(0)), encoder_initialized_(false), tiles_(2),
+        encoding_mode_(GET_PARAM(1)), set_cpu_used_(GET_PARAM(2)) {
     init_flags_ = VPX_CODEC_USE_PSNR;
-    vpx_codec_dec_cfg_t cfg = vpx_codec_dec_cfg_t();
-    cfg.w = 1280;
-    cfg.h = 720;
-    decoder_ = codec_->CreateDecoder(cfg, 0);
-
     md5_.clear();
   }
-  virtual ~VPxEncoderThreadTest() {
-    delete decoder_;
-  }
+  virtual ~VPxEncoderThreadTest() {}
 
   virtual void SetUp() {
     InitializeConfig();
@@ -48,7 +38,7 @@ class VPxEncoderThreadTest
       cfg_.g_lag_in_frames = 3;
       cfg_.rc_end_usage = VPX_VBR;
       cfg_.rc_2pass_vbr_minsection_pct = 5;
-      cfg_.rc_2pass_vbr_minsection_pct = 2000;
+      cfg_.rc_2pass_vbr_maxsection_pct = 2000;
     } else {
       cfg_.g_lag_in_frames = 0;
       cfg_.rc_end_usage = VPX_CBR;
@@ -81,27 +71,28 @@ class VPxEncoderThreadTest
     }
   }
 
-  virtual void FramePktHook(const vpx_codec_cx_pkt_t *pkt) {
-    const vpx_codec_err_t res = decoder_->DecodeFrame(
-        reinterpret_cast<uint8_t*>(pkt->data.frame.buf), pkt->data.frame.sz);
-    if (res != VPX_CODEC_OK) {
-      abort_ = true;
-      ASSERT_EQ(VPX_CODEC_OK, res);
-    }
-    const vpx_image_t *img = decoder_->GetDxData().Next();
+  virtual void DecompressedFrameHook(const vpx_image_t &img,
+                                     vpx_codec_pts_t /*pts*/) {
+    ::libvpx_test::MD5 md5_res;
+    md5_res.Add(&img);
+    md5_.push_back(md5_res.Get());
+  }
 
-    if (img) {
-      ::libvpx_test::MD5 md5_res;
-      md5_res.Add(img);
-      md5_.push_back(md5_res.Get());
+  virtual bool HandleDecodeResult(const vpx_codec_err_t res,
+                                  const libvpx_test::VideoSource & /*video*/,
+                                  libvpx_test::Decoder * /*decoder*/) {
+    if (res != VPX_CODEC_OK) {
+      EXPECT_EQ(VPX_CODEC_OK, res);
+      return false;
     }
+
+    return true;
   }
 
   bool encoder_initialized_;
   int tiles_;
   ::libvpx_test::TestMode encoding_mode_;
   int set_cpu_used_;
-  ::libvpx_test::Decoder *decoder_;
   std::vector<std::string> md5_;
 };
 
@@ -129,14 +120,9 @@ TEST_P(VPxEncoderThreadTest, EncoderResultTest) {
   ASSERT_EQ(single_thr_md5, multi_thr_md5);
 }
 
-VP9_INSTANTIATE_TEST_CASE(
-    VPxEncoderThreadTest,
-    ::testing::Values(::libvpx_test::kTwoPassGood, ::libvpx_test::kOnePassGood,
-                      ::libvpx_test::kRealTime),
-    ::testing::Range(1, 9));
-
-VP10_INSTANTIATE_TEST_CASE(
-    VPxEncoderThreadTest,
-    ::testing::Values(::libvpx_test::kTwoPassGood, ::libvpx_test::kOnePassGood),
-    ::testing::Range(1, 3));
+VP9_INSTANTIATE_TEST_CASE(VPxEncoderThreadTest,
+                          ::testing::Values(::libvpx_test::kTwoPassGood,
+                                            ::libvpx_test::kOnePassGood,
+                                            ::libvpx_test::kRealTime),
+                          ::testing::Range(1, 9));
 }  // namespace

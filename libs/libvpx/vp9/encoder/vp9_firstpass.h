@@ -39,19 +39,19 @@ typedef struct {
 } FIRSTPASS_MB_STATS;
 #endif
 
-#define VLOW_MOTION_THRESHOLD 950
-
 typedef struct {
   double frame;
   double weight;
   double intra_error;
   double coded_error;
   double sr_coded_error;
+  double frame_noise_energy;
   double pcnt_inter;
   double pcnt_motion;
   double pcnt_second_ref;
   double pcnt_neutral;
   double intra_skip_pct;
+  double intra_smooth_pct;    // % of blocks that are smooth
   double inactive_zone_rows;  // Image mask rows top and bottom.
   double inactive_zone_cols;  // Image mask columns at left and right edges.
   double MVr;
@@ -85,6 +85,7 @@ typedef enum {
 
 typedef struct {
   unsigned char index;
+  unsigned char first_inter_index;
   RATE_FACTOR_LEVEL rf_level[(MAX_LAG_BUFFERS * 2) + 1];
   FRAME_UPDATE_TYPE update_type[(MAX_LAG_BUFFERS * 2) + 1];
   unsigned char arf_src_offset[(MAX_LAG_BUFFERS * 2) + 1];
@@ -107,6 +108,7 @@ typedef struct {
   double modified_error_max;
   double modified_error_left;
   double mb_av_energy;
+  double mb_smooth_pct;
 
 #if CONFIG_FP_MB_STATS
   uint8_t *frame_mb_stats_buf;
@@ -122,19 +124,19 @@ typedef struct {
   // Error score of frames still to be coded in kf group
   int64_t kf_group_error_left;
 
-  // The fraction for a kf groups total bits allocated to the inter frames
-  double kfgroup_inter_fraction;
+  double bpm_factor;
+  int rolling_arf_group_target_bits;
+  int rolling_arf_group_actual_bits;
 
   int sr_update_lag;
-
   int kf_zeromotion_pct;
   int last_kfgroup_zeromotion_pct;
-  int gf_zeromotion_pct;
   int active_worst_quality;
   int baseline_active_worst_quality;
   int extend_minq;
   int extend_maxq;
   int extend_minq_fast;
+  int arnr_strength_adjustment;
 
   GF_GROUP gf_group;
 } TWO_PASS;
@@ -153,8 +155,7 @@ void vp9_twopass_postencode_update(struct VP9_COMP *cpi);
 // Post encode update of the rate control parameters for 2-pass
 void vp9_twopass_postencode_update(struct VP9_COMP *cpi);
 
-void calculate_coded_size(struct VP9_COMP *cpi,
-                          int *scaled_frame_width,
+void calculate_coded_size(struct VP9_COMP *cpi, int *scaled_frame_width,
                           int *scaled_frame_height);
 
 #ifdef __cplusplus

@@ -210,6 +210,8 @@ typedef enum {
 	MFLAG_SILENT,
 	MFLAG_FLIP_VIDEO,
 	MFLAG_ROTATE_VIDEO,
+	MFLAG_INDICATE_DEAF,
+	MFLAG_INDICATE_UNDEAF,
 	///////////////////////////
 	MFLAG_MAX
 } member_flag_t;
@@ -536,6 +538,7 @@ typedef struct conference_obj {
 	char *timer_name;
 	char *tts_engine;
 	char *tts_voice;
+	char *member_enter_sound;
 	char *enter_sound;
 	char *exit_sound;
 	char *alone_sound;
@@ -544,6 +547,8 @@ typedef struct conference_obj {
 	char *muted_sound;
 	char *mute_detect_sound;
 	char *unmuted_sound;
+	char *deaf_sound;
+	char *undeaf_sound;
 	char *locked_sound;
 	char *is_locked_sound;
 	char *is_unlocked_sound;
@@ -949,7 +954,7 @@ void conference_video_layer_set_banner(conference_member_t *member, mcu_layer_t 
 void conference_video_layer_set_logo(conference_member_t *member, mcu_layer_t *layer, const char *path);
 void conference_video_detach_video_layer(conference_member_t *member);
 void conference_video_check_used_layers(mcu_canvas_t *canvas);
-void conference_video_check_flush(conference_member_t *member);
+void conference_video_check_flush(conference_member_t *member, switch_bool_t force);
 void conference_video_set_canvas_letterbox_bgcolor(mcu_canvas_t *canvas, char *color);
 void conference_video_set_canvas_bgcolor(mcu_canvas_t *canvas, char *color);
 void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, switch_bool_t freeze);
@@ -1151,6 +1156,9 @@ void conference_loop_mute_off(conference_member_t *member, caller_control_action
 void conference_loop_event(conference_member_t *member, caller_control_action_t *action);
 void conference_loop_transfer(conference_member_t *member, caller_control_action_t *action);
 void conference_loop_exec_app(conference_member_t *member, caller_control_action_t *action);
+void conference_loop_deaf_toggle(conference_member_t *member, caller_control_action_t *action);
+void conference_loop_deaf_on(conference_member_t *member, caller_control_action_t *action);
+void conference_loop_deaf_off(conference_member_t *member, caller_control_action_t *action);
 
 
 

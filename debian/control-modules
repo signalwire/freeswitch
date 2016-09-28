@@ -11,7 +11,7 @@ Description: Abstraction layer for APIs
 Module: applications/mod_av
 Description: mod_av
  Adds mod_av.
-Build-Depends: libavformat-dev, libswscale-dev
+Build-Depends: libavformat-dev, libswscale-dev, libavresample-dev
 
 Module: applications/mod_avmd
 Description: Advanced voicemail detection
@@ -645,7 +645,7 @@ Build-Depends: libperl-dev
 Module: languages/mod_python
 Description: mod_python
  Adds mod_python.
-Build-Depends: python-dev
+Build-Depends: python-dev 
 
 Module: languages/mod_v8
 Description: mod_v8
@@ -790,4 +790,3 @@ Description: mod_xml_rpc
 Module: xml_int/mod_xml_scgi
 Description: mod_xml_scgi
  Adds mod_xml_scgi.
-

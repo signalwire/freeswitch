@@ -16,37 +16,28 @@
 
 ; Currently vpx only works on iterations 8 at a time. The vp8 loop filter
 ; works on 16 iterations at a time.
-; TODO(fgalligan): See about removing the count code as this function is only
-; called with a count of 1.
 ;
 ; void vpx_lpf_horizontal_4_neon(uint8_t *s,
 ;                                int p /* pitch */,
 ;                                const uint8_t *blimit,
 ;                                const uint8_t *limit,
-;                                const uint8_t *thresh,
-;                                int count)
+;                                const uint8_t *thresh)
 ;
 ; r0    uint8_t *s,
 ; r1    int p, /* pitch */
 ; r2    const uint8_t *blimit,
 ; r3    const uint8_t *limit,
 ; sp    const uint8_t *thresh,
-; sp+4  int count
 |vpx_lpf_horizontal_4_neon| PROC
     push        {lr}
 
     vld1.8      {d0[]}, [r2]               ; duplicate *blimit
-    ldr         r12, [sp, #8]              ; load count
     ldr         r2, [sp, #4]               ; load thresh
     add         r1, r1, r1                 ; double pitch
-
-    cmp         r12, #0
-    beq         end_vpx_lf_h_edge
 
     vld1.8      {d1[]}, [r3]               ; duplicate *limit
     vld1.8      {d2[]}, [r2]               ; duplicate *thresh
 
-count_lf_h_loop
     sub         r2, r0, r1, lsl #1         ; move src pointer down by 4 lines
     add         r3, r2, r1, lsr #1         ; set to 3 lines down
 
@@ -69,47 +60,34 @@ count_lf_h_loop
     vst1.u8     {d6}, [r2@64], r1          ; store oq0
     vst1.u8     {d7}, [r3@64], r1          ; store oq1
 
-    add         r0, r0, #8
-    subs        r12, r12, #1
-    bne         count_lf_h_loop
-
-end_vpx_lf_h_edge
     pop         {pc}
     ENDP        ; |vpx_lpf_horizontal_4_neon|
 
 ; Currently vpx only works on iterations 8 at a time. The vp8 loop filter
 ; works on 16 iterations at a time.
-; TODO(fgalligan): See about removing the count code as this function is only
-; called with a count of 1.
 ;
 ; void vpx_lpf_vertical_4_neon(uint8_t *s,
 ;                              int p /* pitch */,
 ;                              const uint8_t *blimit,
 ;                              const uint8_t *limit,
-;                              const uint8_t *thresh,
-;                              int count)
+;                              const uint8_t *thresh)
 ;
 ; r0    uint8_t *s,
 ; r1    int p, /* pitch */
 ; r2    const uint8_t *blimit,
 ; r3    const uint8_t *limit,
 ; sp    const uint8_t *thresh,
-; sp+4  int count
 |vpx_lpf_vertical_4_neon| PROC
     push        {lr}
 
     vld1.8      {d0[]}, [r2]              ; duplicate *blimit
-    ldr         r12, [sp, #8]             ; load count
     vld1.8      {d1[]}, [r3]              ; duplicate *limit
 
     ldr         r3, [sp, #4]              ; load thresh
     sub         r2, r0, #4                ; move s pointer down by 4 columns
-    cmp         r12, #0
-    beq         end_vpx_lf_v_edge
 
     vld1.8      {d2[]}, [r3]              ; duplicate *thresh
 
-count_lf_v_loop
     vld1.u8     {d3}, [r2], r1             ; load s data
     vld1.u8     {d4}, [r2], r1
     vld1.u8     {d5}, [r2], r1
@@ -149,12 +127,6 @@ count_lf_v_loop
     vst4.8      {d4[6], d5[6], d6[6], d7[6]}, [r0], r1
     vst4.8      {d4[7], d5[7], d6[7], d7[7]}, [r0]
 
-    add         r0, r0, r1, lsl #3         ; s += pitch * 8
-    subs        r12, r12, #1
-    subne       r2, r0, #4                 ; move s pointer down by 4 columns
-    bne         count_lf_v_loop
-
-end_vpx_lf_v_edge
     pop         {pc}
     ENDP        ; |vpx_lpf_vertical_4_neon|
 

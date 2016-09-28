@@ -1,3 +1,11 @@
+/*
+ * Contributor(s):
+ *
+ * Eric des Courtis <eric.des.courtis@benbria.com>
+ * Piotr Gregor     <piotrgregor@rsyncme.org>
+ */
+
+
 #ifndef __AVMD_PSI_H__
 #define __AVMD_PSI_H__
 

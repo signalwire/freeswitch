@@ -25,13 +25,19 @@
     'clang%': 0,
     # Link-Time Optimizations.
     'use_lto%': 0,
+    'mips_msa%': 0,  # Default to msa off.
     'build_neon': 0,
+    'build_msa': 0,
     'conditions': [
        ['(target_arch == "armv7" or target_arch == "armv7s" or \
        (target_arch == "arm" and arm_version >= 7) or target_arch == "arm64")\
-       and (arm_neon == 1 or arm_neon_optional == 1)',
-       {
+       and (arm_neon == 1 or arm_neon_optional == 1)', {
          'build_neon': 1,
+       }],
+       ['(target_arch == "mipsel" or target_arch == "mips64el")\
+       and (mips_msa == 1)',
+       {
+         'build_msa': 1,
        }],
     ],
   },
@@ -61,6 +67,7 @@
             '-mfpu=vfp',
             '-mfpu=vfpv3',
             '-mfpu=vfpv3-d16',
+            # '-mthumb',  # arm32 not thumb
           ],
           'conditions': [
             # Disable LTO in libyuv_neon target due to gcc 4.9 compiler bug.
@@ -74,8 +81,14 @@
             ['target_arch != "arm64"', {
               'cflags': [
                 '-mfpu=neon',
+                # '-marm',  # arm32 not thumb
               ],
             }],
+          ],
+        }],
+        ['build_msa != 0', {
+          'defines': [
+            'LIBYUV_MSA',
           ],
         }],
         ['OS != "ios" and libyuv_disable_jpeg != 1', {
