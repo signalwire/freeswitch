@@ -129,6 +129,7 @@ struct {
 	int sprop_maxcapturerate;
 	int plpct;
 	int asymmetric_samplerates;
+	int bitrate_negotiation;
 	int keep_fec;
 	int fec_decode;
 	int adjust_bitrate;
@@ -490,30 +491,32 @@ static switch_status_t switch_opus_init(switch_codec_t *codec, switch_codec_flag
 	memset(&codec_fmtp, '\0', sizeof(struct switch_codec_fmtp));
 	codec_fmtp.private_info = &opus_codec_settings;
 	switch_opus_fmtp_parse(codec->fmtp_in, &codec_fmtp);
-	if (opus_prefs.asymmetric_samplerates) {
+	if (opus_prefs.asymmetric_samplerates || opus_prefs.bitrate_negotiation) {
 		/* save the remote fmtp values, before processing */
 		codec_fmtp_only_remote.private_info = &opus_codec_settings_remote;
 		switch_opus_fmtp_parse(codec->fmtp_in, &codec_fmtp_only_remote);
 	}
 	context->codec_settings = opus_codec_settings;
 
-	/* Verify if the local or remote configuration are lowering maxaveragebitrate and/or maxplaybackrate */
+	/* If bitrate negotiation is allowed, verify whether remote is asking for a smaller maxaveragebitrate */
 	if (opus_prefs.maxaveragebitrate &&
-		 (opus_prefs.maxaveragebitrate < opus_codec_settings_remote.maxaveragebitrate || !opus_codec_settings_remote.maxaveragebitrate)) {
+		 (!opus_prefs.bitrate_negotiation || (opus_prefs.maxaveragebitrate < opus_codec_settings_remote.maxaveragebitrate) || !opus_codec_settings_remote.maxaveragebitrate)) {
 		opus_codec_settings.maxaveragebitrate = opus_prefs.maxaveragebitrate;
 	} else {
 		opus_codec_settings.maxaveragebitrate = opus_codec_settings_remote.maxaveragebitrate;
 	}
 
+	/* If asymmetric sample rates are allowed, verify whether remote is asking for a smaller maxplaybackrate */
 	if (opus_prefs.maxplaybackrate &&
-		 (opus_prefs.maxplaybackrate < opus_codec_settings_remote.maxplaybackrate || !opus_codec_settings_remote.maxplaybackrate)) {
+		 (!opus_prefs.asymmetric_samplerates || (opus_prefs.maxplaybackrate < opus_codec_settings_remote.maxplaybackrate) || !opus_codec_settings_remote.maxplaybackrate)) {
 		opus_codec_settings.maxplaybackrate = opus_prefs.maxplaybackrate;
 	} else {
 		opus_codec_settings.maxplaybackrate=opus_codec_settings_remote.maxplaybackrate;
 	}
 
+	/* If asymmetric sample rates are allowed, verify whether remote is asking for a smaller sprop_maxcapturerate */
 	if (opus_prefs.sprop_maxcapturerate &&
-		 (opus_prefs.sprop_maxcapturerate < opus_codec_settings_remote.sprop_maxcapturerate || !opus_codec_settings_remote.sprop_maxcapturerate)) {
+		 (!opus_prefs.asymmetric_samplerates || (opus_prefs.sprop_maxcapturerate < opus_codec_settings_remote.sprop_maxcapturerate) || !opus_codec_settings_remote.sprop_maxcapturerate)) {
 		opus_codec_settings.sprop_maxcapturerate = opus_prefs.sprop_maxcapturerate;
 	} else {
 		opus_codec_settings.sprop_maxcapturerate = opus_codec_settings_remote.sprop_maxcapturerate;
@@ -987,6 +990,8 @@ static switch_status_t opus_load_config(switch_bool_t reload)
 				opus_prefs.plpct = atoi(val);
 			} else if (!strcasecmp(key, "asymmetric-sample-rates")) {
 				opus_prefs.asymmetric_samplerates = atoi(val);
+			} else if (!strcasecmp(key, "bitrate-negotiation")) {
+				opus_prefs.bitrate_negotiation = atoi(val);
 			} else if (!strcasecmp(key, "use-jb-lookahead")) {
 				opus_prefs.use_jb_lookahead = switch_true(val);
 			} else if (!strcasecmp(key, "keep-fec-enabled")) { /* encoder */
