@@ -71,6 +71,7 @@ struct local_stream_context {
 	int newres;
 	int serno;
 	int pop_count;
+	int video_flushes;
 	switch_size_t blank;
 	switch_image_t *banner_img;
 	switch_time_t banner_timeout;
@@ -635,7 +636,17 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 						switch_mutex_lock(source->mutex);
 						if (source->context_list) {
 							if (source->total == 1) {
-								switch_queue_push(source->context_list->video_q, img);
+								if (switch_queue_trypush(source->context_list->video_q, img) != SWITCH_STATUS_SUCCESS) {
+									flush_video_queue(source->context_list->video_q);
+
+									switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Flushing video queue\n");
+									if (++source->context_list->video_flushes > 1) {
+										switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Disconnecting file\n");
+										source->context_list->ready = 0;
+									}
+								} else {
+									source->context_list->video_flushes = 0;
+								}
 							} else {
 								for (cp = source->context_list; cp && RUNNING; cp = cp->next) {
 
@@ -649,6 +660,13 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 										if (imgcp) {
 											if (switch_queue_trypush(cp->video_q, imgcp) != SWITCH_STATUS_SUCCESS) {
 												flush_video_queue(cp->video_q);
+												switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Flushing video queue\n");
+												if (++cp->video_flushes > 1) {
+													switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Disconnecting file\n");
+													cp->ready = 0;
+												}
+											} else {
+												cp->video_flushes = 0;
 											}
 										}
 									}
