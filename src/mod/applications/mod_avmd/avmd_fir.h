@@ -13,9 +13,9 @@
 #define __AVMD_FIR_H__
 
 
-#define DESA_MAX(a, b) (a) > (b) ? (a) : (b)
-#define MEDIAN_FILTER(a, b, c) (a) > (b) ? ((a) > (c) ? \
-                DESA_MAX((b), (c)) : a) : ((b) > (c) ? DESA_MAX((a), (c)) : (b))
+#define AVMD_MAX(a, b) (a) > (b) ? (a) : (b)
+#define AVMD_MEDIAN_FILTER(a, b, c) (a) > (b) ? ((a) > (c) ? \
+                AVMD_MAX((b), (c)) : a) : ((b) > (c) ? AVMD_MAX((a), (c)) : (b))
 
 
 #endif

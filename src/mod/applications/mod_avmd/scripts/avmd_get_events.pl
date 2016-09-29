@@ -1,12 +1,16 @@
+#!/usr/bin/perl -w
+
+
 #brief  Subscribe to avmd events and print them to the console.
 #author Piotr Gregor <piotrgregor@rsyncme.org>
 #date   13 Sept 2016 09:44 PM
 
 
-#!/usr/bin/perl                                                                                
+$|++;   # turn on autoflush
 use strict;
 use warnings;
 require ESL;
+
 
 my $host = "127.0.0.1";
 my $port = "8021";
