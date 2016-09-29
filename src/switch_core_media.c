@@ -11695,7 +11695,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_video_frame(switch_core
 
 	if (switch_channel_test_flag(session->channel, CF_VIDEO_PAUSE_READ)) {
 		*frame = &runtime.dummy_cng_frame;
-		switch_channel_video_sync(session->channel);
 		switch_cond_next();
 		return SWITCH_STATUS_SUCCESS;
 	}
