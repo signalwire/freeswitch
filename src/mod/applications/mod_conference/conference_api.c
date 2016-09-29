@@ -581,6 +581,8 @@ switch_status_t conference_api_sub_deaf(conference_member_t *member, switch_stre
 		conference_al_gen_arc(member->conference, NULL);
 	}
 
+	conference_member_update_status_field(member);
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -609,6 +611,8 @@ switch_status_t conference_api_sub_undeaf(conference_member_t *member, switch_st
 	if (conference_utils_test_flag(member->conference, CFLAG_POSITIONAL)) {
 		conference_al_gen_arc(member->conference, NULL);
 	}
+
+	conference_member_update_status_field(member);
 
 	return SWITCH_STATUS_SUCCESS;
 }
