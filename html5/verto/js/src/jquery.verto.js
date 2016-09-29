@@ -2667,6 +2667,9 @@
 	    $.verto.unloadJobs[f]();
 	}
 
+        if ($.verto.haltClosure)
+          return $.verto.haltClosure();
+
         for (var i in $.verto.saved) {
             var verto = $.verto.saved[i];
             if (verto) {
