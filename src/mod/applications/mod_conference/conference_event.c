@@ -120,6 +120,8 @@ void conference_event_mod_channel_handler(const char *event_channel, cJSON *json
 	} else if (!strcasecmp(action, "mute") ||
 		!strcasecmp(action, "unmute") ||
 		!strcasecmp(action, "tmute") ||
+		!strcasecmp(action, "deaf") ||
+		!strcasecmp(action, "undeaf") ||
 		!strcasecmp(action, "vmute") ||
 		!strcasecmp(action, "unvmute") ||
 		!strcasecmp(action, "tvmute")) {
