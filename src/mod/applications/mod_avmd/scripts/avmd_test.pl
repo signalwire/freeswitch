@@ -1,13 +1,13 @@
 #!/usr/bin/perl -w
 
 
-#brief      Test module avmd by calling all voicemails available
-#           in avmd test suite and print detection results to the console.
+#brief      Test module avmd by calling voicemails from avmd test suite
+#           and print detection results to the console.
 #author     Piotr Gregor <piotrgregor@rsyncme.org>
 #details    If you are testing serving voicemails from dialplan then avmd
 #           must be set to inbound mode, either globally (by avmd set inbound
 #           in fs_cli) or in dialplan settings (<action application="avmd_start"
-#           data="inbound_channel=1,outbound_channel=0").
+#           data="inbound_channel=1,outbound_channel=0") or dynamically per call.
 #date       15 Sept 2016 03:00 PM
 
 
@@ -114,6 +114,13 @@ my %numbers = (
     840531212 => "DETECTED",
     840531213 => "DETECTED",
     840531214 => "DETECTED",
+    840531400 => "DETECTED",    # obscure voicemails ATT pack
+    840531401 => "DETECTED",
+    840531402 => "DETECTED",
+    840531403 => "DETECTED",
+    840531404 => "DETECTED",
+    840531405 => "DETECTED",
+    840531051 => "NOTDETECTED", # fragment of "Save tonight" by Eagle-Eye Cherry covered by D-Lete-Funk-K
 );
 
 my $host = "127.0.0.1";
@@ -122,7 +129,7 @@ my $pass = "ClueCon";
 my $extension_base = "sofia/internal/1000\@192.168.1.60";
 
 my $playback = 'local_stream://moh';
-my $context = 'default'; 
+my $context = 'default';
 my $endpoint;
 my $dest;
 my $expectation;
@@ -162,7 +169,7 @@ $con->events("plain", "CHANNEL_HANGUP");
 print "OK.\n\n";
 printf("\nRunning [" .keys(%numbers) ."] tests.\n\n");
 
-printf("outbound uuid | destination number | timestamp | expectation | test result\n\n");
+printf("outbound uuid | destination number | timestamp | expectation | test result | freq | f-variance | amplitude | a-variance\n\n");
 foreach $dest (sort keys %numbers) {
     if (!$con->connected()) {
         last;
@@ -182,7 +189,7 @@ sub test_once {
     my $originate_string =
     'originate ' .
     '{ignore_early_media=true,' .
-    'origination_uuid=%s,' . 
+    'origination_uuid=%s,' .
     'originate_timeout=60,' .
     'origination_caller_id_number=' . $callerid . ',' .
     'origination_caller_id_name=' . $callerid . '}';
@@ -192,6 +199,11 @@ sub test_once {
     my $uuid_in = "";
     my $freq = "N/A";
     my $freq_var = "N/A";
+    my $amp = "N/A";
+    my $amp_var = "N/A";
+    my $resolution = "N/A";
+    my $offset = "N/A";
+    my $idx = "N/A";
 
     if(defined($endpoint)) {
         $originate_string .= $endpoint;
@@ -220,6 +232,11 @@ sub test_once {
                         if ($avmd_event_type eq 'avmd::beep') {
                             $freq = $e->getHeader("Frequency");
                             $freq_var = $e->getHeader("Frequency-variance");
+                            $amp = $e->getHeader("Amplitude");
+                            $amp_var = $e->getHeader("Amplitude-variance");
+                            $resolution = $e->getHeader("Detector-resolution");
+                            $offset = $e->getHeader("Detector-offset");
+                            $idx = $e->getHeader("Detector-index");
                         }
                         $outcome = $e->getHeader("Beep-Status");
                         if ($outcome eq $expectation) {
@@ -243,6 +260,6 @@ sub test_once {
             }
         }
     }
-    printf("\t[%s]\t[%s]\t\t[%s]\t[%s]HZ\t[%s]\n", POSIX::strftime('%Y-%m-%d %H:%M:%S', localtime($time_epoch)), $expectation, $result, $freq, $freq_var);
+    printf("\t[%s]\t[%s]\t\t[%s]\t[%s]HZ\t[%s]\t[%s]\t[%s]\t[%s][%s][%s]\n", POSIX::strftime('%Y-%m-%d %H:%M:%S', localtime($time_epoch)), $expectation, $result, $freq, $freq_var, $amp, $amp_var, $resolution, $offset, $idx);
     Time::HiRes::sleep(0.5);    # avoid switch_core_session.c:2265 Throttle Error! 33, switch_time.c:1227 Over Session Rate of 30!
 }

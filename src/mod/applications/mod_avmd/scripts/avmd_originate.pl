@@ -1,8 +1,7 @@
 #!/usr/bin/perl -w
 
 
-#brief  Call single voicemail available in default dialplan
-#       and print detection result to the console.
+#brief  Call single voicemail and print detection result to the console.
 #author Piotr Gregor <piotrgregor@rsyncme.org>
 #date   15 Sept 2016 02:44 PM
 
@@ -74,7 +73,7 @@ sub test_once {
 
     my $uuid = $con->api('create_uuid')->getBody();
     my ($time_epoch, $time_hires) = Time::HiRes::gettimeofday();
-    printf("Calling with uuid [%s] [%s]...\n", $uuid, POSIX::strftime('%Y-%m-%d %H:%M:%S', localtime($time_epoch)), $time_hires);
+    printf("Calling with uuid [%s] [%s]...\n", $uuid, POSIX::strftime('%Y-%m-%d %H:%M:%S', localtime($time_epoch)));
 
     $con->bgapi(sprintf($originate_string, $uuid));
 
