@@ -9577,6 +9577,22 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_receive_message(switch_core_se
 		}
 		break;
 		
+	case SWITCH_MESSAGE_INDICATE_HOLD:
+		{
+			if (a_engine && a_engine->rtp_session) {
+				switch_rtp_set_max_missed_packets(a_engine->rtp_session, a_engine->max_missed_hold_packets);
+			}
+		}
+		break;
+
+	case SWITCH_MESSAGE_INDICATE_UNHOLD:
+		{
+			if (a_engine && a_engine->rtp_session) {
+				switch_rtp_set_max_missed_packets(a_engine->rtp_session, a_engine->max_missed_packets);
+			}
+		}
+		break;
+
 	case SWITCH_MESSAGE_INDICATE_VIDEO_REFRESH_REQ:
 		{
 			if (v_engine->rtp_session) {
