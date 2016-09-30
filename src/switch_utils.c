@@ -1654,7 +1654,7 @@ SWITCH_DECLARE(switch_status_t) switch_resolve_host(const char *host, char *buf,
 		return SWITCH_STATUS_FALSE;
 	}
 
-	get_addr(buf, buflen, ai->ai_addr, sizeof(*ai->ai_addr));
+	get_addr(buf, buflen, ai->ai_addr, sizeof(struct sockaddr_storage));
 
 	freeaddrinfo(ai);
 
@@ -1785,7 +1785,7 @@ SWITCH_DECLARE(switch_status_t) switch_find_local_ip(char *buf, int len, int *ma
 				goto doh;
 			}
 
-			switch_copy_string(buf, get_addr(abuf, sizeof(abuf), (struct sockaddr *) &iface_out, sizeof(iface_out)), len);
+			switch_copy_string(buf, get_addr(abuf, sizeof(abuf), (struct sockaddr *) &iface_out, sizeof(struct sockaddr_storage)), len);
 			if (mask) {
 				get_netmask((struct sockaddr_in *) &iface_out, mask);
 			}
