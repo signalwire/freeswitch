@@ -32,6 +32,7 @@
 #include <switch.h>
 #include <switch_ssl.h>
 #include <switch_msrp.h>
+#include <switch_stun.h>
 
 #define MSRP_BUFF_SIZE SWITCH_RTP_MAX_BUF_LEN
 #define DEBUG_MSRP 0
@@ -1118,20 +1119,15 @@ static void *SWITCH_THREAD_FUNC msrp_listener(switch_thread_t *thread, void *obj
 	return NULL;
 }
 
-void random_string(char *buf, switch_size_t size)
+void random_string(char *buf, uint16_t size)
 {
-	long val[4];
-	int x;
-
-	for (x = 0; x < 4; x++)
-		val[x] = random();
-	snprintf(buf, size, "%08lx%08lx%08lx%08lx", val[0], val[1], val[2], val[3]);
-	*(buf+size) = '\0';
+	switch_stun_random_string(buf, size, NULL);
 }
 
+#define MSRP_TRANS_ID_LEN 16
 SWITCH_DECLARE(switch_status_t) switch_msrp_send(switch_msrp_session_t *ms, msrp_msg_t *msrp_msg)
 {
-	char transaction_id[32];
+	char transaction_id[MSRP_TRANS_ID_LEN + 1] = { 0 };
 	char buf[MSRP_BUFF_SIZE];
 	switch_size_t len;
 	char *to_path = msrp_msg->headers[MSRP_H_TO_PATH] ? msrp_msg->headers[MSRP_H_TO_PATH] : ms->remote_path;
@@ -1139,7 +1135,7 @@ SWITCH_DECLARE(switch_status_t) switch_msrp_send(switch_msrp_session_t *ms, msrp
 
 	if (!from_path) return SWITCH_STATUS_SUCCESS;
 
-	random_string(transaction_id, 16);
+	random_string(transaction_id, MSRP_TRANS_ID_LEN);
 
 	sprintf(buf, "MSRP %s SEND\r\nTo-Path: %s\r\nFrom-Path: %s\r\n"
 		"Content-Type: %s\r\n"
