@@ -169,7 +169,7 @@ $con->events("plain", "CHANNEL_HANGUP");
 print "OK.\n\n";
 printf("\nRunning [" .keys(%numbers) ."] tests.\n\n");
 
-printf("outbound uuid | destination number | timestamp | expectation | test result | freq | f-variance | amplitude | a-variance\n\n");
+printf("outbound uuid | destination number | timestamp | expectation | test result | freq | f-variance | amplitude | a-variance | resolution | offset | idx\n\n");
 foreach $dest (sort keys %numbers) {
     if (!$con->connected()) {
         last;
