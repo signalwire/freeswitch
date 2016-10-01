@@ -53,7 +53,7 @@ if ($con->connected()) {
 while($con->connected() && ($idx < $thread_n)) {
     call_once($dest, $callerid, $idx);
     $idx++;
-    Time::HiRes::sleep(0.15);    # avoid switch_core_session.c:2265 Throttle Error! 33, switch_time.c:1227 Over Session Rate of 30!
+    Time::HiRes::sleep(0.11);    # avoid switch_core_session.c:2265 Throttle Error! 33, switch_time.c:1227 Over Session Rate of 30!
 }
 
 print "Disconnected.\n\n";

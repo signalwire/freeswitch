@@ -102,7 +102,7 @@ int __isnan(double);
 #define AVMD_MAX_FREQUENCY_R(r) ((2.0 * M_PI * AVMD_MAX_FREQUENCY) / (r))
 #define AVMD_VARIANCE_RSD_THRESHOLD (0.000025)
 #define AVMD_AMPLITUDE_RSD_THRESHOLD (0.0148)
-#define AVMD_DETECTORS_N 45
+#define AVMD_DETECTORS_N 35
 #define AVMD_DETECTORS_LAGGED_N 3
 
 
@@ -321,6 +321,49 @@ static switch_status_t avmd_launch_threads(avmd_session_t *s) {
     return SWITCH_STATUS_SUCCESS;
 }
 
+static void avmd_join_threads(avmd_session_t *s) {
+    uint8_t                 idx;
+    struct avmd_detector    *d;
+    switch_status_t         status;
+
+    idx = 0;
+    while (idx < AVMD_DETECTORS_N) {
+        d = &s->detectors[idx];
+        switch_mutex_lock(d->mutex);
+        if (d->thread != NULL) {
+            d->flag_should_exit = 1;
+            d->samples = 0;
+            switch_thread_cond_signal(d->cond_start_processing);
+            switch_mutex_unlock(d->mutex);
+            switch_thread_join(&status, d->thread);
+            d->thread = NULL;
+            switch_mutex_destroy(d->mutex);
+            switch_thread_cond_destroy(d->cond_start_processing);
+        } else {
+            switch_mutex_unlock(d->mutex);
+        }
+        ++idx;
+    }
+    idx = 0;
+    while (idx < AVMD_DETECTORS_LAGGED_N) {
+        d = &s->detectors[AVMD_DETECTORS_N + idx];
+        switch_mutex_lock(d->mutex);
+        if (d->thread != NULL) {
+            d->flag_should_exit = 1;
+            d->samples = 0;
+            switch_thread_cond_signal(d->cond_start_processing);
+            switch_mutex_unlock(d->mutex);
+            switch_thread_join(&status, d->thread);
+            d->thread = NULL;
+            switch_mutex_destroy(d->mutex);
+            switch_thread_cond_destroy(d->cond_start_processing);
+        } else {
+            switch_mutex_unlock(d->mutex);
+        }
+        ++idx;
+    }
+}
+
 static switch_status_t avmd_init_buffer(struct avmd_buffer *b, size_t buf_sz, uint8_t resolution, uint8_t offset, switch_core_session_t *fs_session) {
     INIT_SMA_BUFFER(&b->sma_b, buf_sz, fs_session);
     if (b->sma_b.data == NULL) {
@@ -423,6 +466,7 @@ static switch_status_t init_avmd_session_data(avmd_session_t *avmd_session, swit
             d->flag_processing_done = 1;
             d->flag_should_exit = 1;
             d->idx = idx;
+            d->thread = NULL;
             switch_mutex_init(&d->mutex, SWITCH_MUTEX_DEFAULT, switch_core_session_get_pool(fs_session));
             switch_thread_cond_create(&d->cond_start_processing, switch_core_session_get_pool(fs_session));
             ++offset;
@@ -442,6 +486,7 @@ static switch_status_t init_avmd_session_data(avmd_session_t *avmd_session, swit
             d->flag_processing_done = 1;
             d->flag_should_exit = 1;
             d->idx = AVMD_DETECTORS_N + idx;
+            d->thread = NULL;
             switch_mutex_init(&d->mutex, SWITCH_MUTEX_DEFAULT, switch_core_session_get_pool(fs_session));
             switch_thread_cond_create(&d->cond_start_processing, switch_core_session_get_pool(fs_session));
             ++idx;
@@ -458,8 +503,9 @@ end:
 }
 
 static void avmd_session_close(avmd_session_t *s) {
-    uint8_t     idx;
-    struct avmd_detector *d;
+    uint8_t                 idx;
+    struct avmd_detector    *d;
+    switch_status_t         status;
 
     switch_mutex_lock(s->mutex);
 
@@ -479,6 +525,10 @@ static void avmd_session_close(avmd_session_t *s) {
         d->samples = 0;
         switch_thread_cond_signal(d->cond_start_processing);
         switch_mutex_unlock(d->mutex);
+
+        switch_thread_join(&status, d->thread);
+        d->thread = NULL;
+
         switch_mutex_destroy(d->mutex);
         switch_thread_cond_destroy(d->cond_start_processing);
         ++idx;
@@ -1212,15 +1262,14 @@ fail:
 }
 
 SWITCH_STANDARD_APP(avmd_start_app) {
-    switch_media_bug_t  *bug;
-    switch_status_t     status;
-    switch_channel_t    *channel;
-    avmd_session_t      *avmd_session;
+    switch_media_bug_t  *bug = NULL;
+    switch_status_t     status = SWITCH_STATUS_FALSE;
+    switch_channel_t    *channel = NULL;
+    avmd_session_t      *avmd_session = NULL;
     switch_core_media_flag_t flags = 0;
 
     if (session == NULL) {
-        switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR,
-                "FreeSWITCH is NULL! Please report to developers\n");
+        switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "FreeSWITCH is NULL! Please report to developers\n");
         return;
     }
 
@@ -1228,16 +1277,13 @@ SWITCH_STANDARD_APP(avmd_start_app) {
      * At this moment this cannot return NULL, it will either succeed or assert failed, but we make ourself secure anyway */
     channel = switch_core_session_get_channel(session);
     if (channel == NULL) {
-        switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR,
-                "No channel for FreeSWITCH session! Please report this "
-                "to the developers.\n");
-        return;
+        switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "BUGGG. No channel for FreeSWITCH session! Please report this to the developers.\n");
+        goto end;
     }
 
     bug = (switch_media_bug_t *) switch_channel_get_private(channel, "_avmd_"); /* Is this channel already set? */
     if (bug != NULL) { /* We have already started */
-        switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session),
-                SWITCH_LOG_ERROR, "Avmd already started!\n");
+        switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Avmd already started!\n");
         return;
     }
 
@@ -1273,15 +1319,14 @@ SWITCH_STANDARD_APP(avmd_start_app) {
         case SWITCH_STATUS_SUCCESS:
             break;
         case SWITCH_STATUS_NOOP:
-            switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failed to set dynamic parameters for avmd session. Session is NULL! Default settings are loaded\n");
-            goto end;
+            switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failed to set dynamic parameters for avmd session. Session is NULL!\n");
+            goto end_unlock;
         case SWITCH_STATUS_FALSE:
-            switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failed to set dynamic parameters for avmd session. Parsing error, please check the parameters passed to this APP."
-                    " Default settings are loaded\n");
-            goto end;
+            switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failed to set dynamic parameters for avmd session. Parsing error, please check the parameters passed to this APP.\n");
+            goto end_unlock;
         default:
-            switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failed to set dynamic parameteres for avmd session. Unknown error. Default settings are loaded\n");
-            goto end;
+            switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failed to set dynamic parameteres for avmd session. Unknown error\n");
+            goto end_unlock;
     }
 
     if (avmd_session->settings.report_status == 1) { /* dump dynamic parameters */
@@ -1290,7 +1335,7 @@ SWITCH_STANDARD_APP(avmd_start_app) {
     if (avmd_session->settings.outbound_channnel == 1) {
         if (SWITCH_CALL_DIRECTION_OUTBOUND != switch_channel_direction(channel)) {
             switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Channel [%s] is not outbound!\n", switch_channel_get_name(channel));
-            goto end;
+            goto end_unlock;
         } else {
             flags |= SMBF_READ_REPLACE;
         }
@@ -1298,46 +1343,56 @@ SWITCH_STANDARD_APP(avmd_start_app) {
     if (avmd_session->settings.inbound_channnel == 1) {
         if (SWITCH_CALL_DIRECTION_INBOUND != switch_channel_direction(channel)) {
             switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Channel [%s] is not inbound!\n", switch_channel_get_name(channel));
-            goto end;
+            goto end_unlock;
         } else {
             flags |= SMBF_WRITE_REPLACE;
         }
     }
     if (flags == 0) {
         switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Can't set direction for channel [%s]\n", switch_channel_get_name(channel));
-        goto end;
+        goto end_unlock;
     }
     if (avmd_session->settings.outbound_channnel == 1) {
         if (switch_channel_test_flag(channel, CF_MEDIA_SET) == 0) {
             switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failed to start session. Channel [%s] has no codec assigned yet."
                     " Please try again\n", switch_channel_get_name(channel));
-            goto end;
+            goto end_unlock;
         }
-    }
-
-    status = switch_core_media_bug_add(session, "avmd", NULL, avmd_callback, avmd_session, 0, flags, &bug); /* Add a media bug that allows me to intercept the reading leg of the audio stream */
-    if (status != SWITCH_STATUS_SUCCESS) { /* If adding a media bug fails exit */
-        switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failed to add media bug!\n");
-        goto end;
-    }
-    switch_channel_set_private(channel, "_avmd_", bug); /* Set the avmd tag to detect an existing avmd media bug */
-    avmd_fire_event(AVMD_EVENT_SESSION_START, session, 0, 0, 0, 0, 0, 0, 0, 0, avmd_session->start_time, 0, 0, 0, 0);
-    if (avmd_session->settings.report_status == 1) {
-        switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Avmd on channel [%s] started!\n", switch_channel_get_name(channel));
     }
 
     status = avmd_launch_threads(avmd_session);
     if (status != SWITCH_STATUS_SUCCESS) {
-        switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failed to start detection threads!\n");
-        goto end;
+        switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failed to start detection threads\n");
+        avmd_join_threads(avmd_session);
+        switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Joined detection threads\n");
+        goto end_unlock;
+    }
+
+    status = switch_core_media_bug_add(session, "avmd", NULL, avmd_callback, avmd_session, 0, flags, &bug); /* Add a media bug that allows me to intercept the audio stream */
+    if (status != SWITCH_STATUS_SUCCESS) { /* If adding a media bug fails exit */
+        switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failed to add media bug!\n");
+        goto end_unlock;
     }
     
     switch_mutex_lock(avmd_globals.mutex);
     ++avmd_globals.session_n;
     switch_mutex_unlock(avmd_globals.mutex);
 
-end:
+    switch_channel_set_private(channel, "_avmd_", bug); /* Set the avmd tag to detect an existing avmd media bug */
+    avmd_fire_event(AVMD_EVENT_SESSION_START, session, 0, 0, 0, 0, 0, 0, 0, 0, avmd_session->start_time, 0, 0, 0, 0);
+    if (avmd_session->settings.report_status == 1) {
+        switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Avmd on channel [%s] started!\n", switch_channel_get_name(channel));
+    }
+
+end_unlock:
     switch_mutex_unlock(avmd_session->mutex);
+
+end:
+    if (status != SWITCH_STATUS_SUCCESS) {
+        if (avmd_session == NULL || avmd_session->settings.report_status == 1) {
+            switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Avmd on channel [%s] NOT started\n", switch_channel_get_name(channel));
+        }
+    }
     return;
 }
 
@@ -2053,7 +2108,7 @@ avmd_detector_func(switch_thread_t *thread, void *arg) {
         while ((d->flag_processing_done == 1) && (d->flag_should_exit == 0)) {
             switch_thread_cond_wait(d->cond_start_processing, d->mutex);
         }
-        /* master set processing_done flag to 0 */
+        /* master set processing_done flag to 0 or thread should exit */
         if (d->flag_should_exit == 1) {
             d->flag_processing_done = 1;
             goto end;
