@@ -496,7 +496,6 @@ static switch_status_t switch_opus_init(switch_codec_t *codec, switch_codec_flag
 		codec_fmtp_only_remote.private_info = &opus_codec_settings_remote;
 		switch_opus_fmtp_parse(codec->fmtp_in, &codec_fmtp_only_remote);
 	}
-	context->codec_settings = opus_codec_settings;
 
 	/* If bitrate negotiation is allowed, verify whether remote is asking for a smaller maxaveragebitrate */
 	if (opus_prefs.maxaveragebitrate &&
@@ -619,8 +618,8 @@ static switch_status_t switch_opus_init(switch_codec_t *codec, switch_codec_flag
 					opus_encoder_ctl(context->encoder_object, OPUS_SET_BITRATE(fec_bitrate)); 
 					/* will override the maxaveragebitrate set in opus.conf.xml  */ 
 					opus_codec_settings.maxaveragebitrate = fec_bitrate;
-					context->control_state.keep_fec = opus_prefs.keep_fec ; 
 				}
+				context->control_state.keep_fec = opus_prefs.keep_fec;
 			}
 		}
 
@@ -669,6 +668,7 @@ static switch_status_t switch_opus_init(switch_codec_t *codec, switch_codec_flag
 		}
 	}
 
+	context->codec_settings = opus_codec_settings;
 	codec->private_info = context;
 
 	return SWITCH_STATUS_SUCCESS;
@@ -1164,6 +1164,21 @@ static switch_status_t switch_opus_control(switch_codec_t *codec,
 									  context->old_plpct, plpct);
 				}
 			}
+			if (opus_prefs.adjust_bitrate) {
+				/* make bitrate adjust the step , but keep it as a  multiple of 400 (see OpusFAQ). 
+				 * usual RTCP interval is 5 seconds  which is long time - the step should be bigger. */
+				/* step's value should depend on packet loss too, to decrease more abrubtly 
+				 * at high packet loss. */
+				int base_step = 400; /*bps*/
+				int range = context->codec_settings.maxaveragebitrate - SWITCH_OPUS_MIN_BITRATE;
+				float steps = (float)((float)(range / 100) / base_step);
+				int br_step = (int)(round(steps) * base_step) * plpct; 
+				if (globals.debug || context->debug) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, 
+							SWITCH_LOG_DEBUG, "Opus encoder: bitrate increase/decrease step now is: %d bps, range:%d\n", br_step, range); 
+				}
+				context->control_state.increase_step = context->control_state.decrease_step = br_step; 
+			}
 			context->old_plpct = plpct;
 		}
 		break;
@@ -1192,8 +1207,10 @@ static switch_status_t switch_opus_control(switch_codec_t *codec,
 					int br_step = context->control_state.decrease_step?context->control_state.decrease_step:400;
 					opus_encoder_ctl(context->encoder_object, OPUS_GET_BITRATE(&current_bitrate));
 					if (current_bitrate > SWITCH_OPUS_MIN_BITRATE) {
-						if ((context->control_state.keep_fec) && (current_bitrate < SWITCH_OPUS_MIN_FEC_BITRATE)) {
-							opus_prefs.keep_fec = 0; /* no point to try to keep FEC enabled anymore, we're low on network bandwidth (that's why we ended up here) */
+						if (context->control_state.keep_fec) {
+							/* no point to try to keep FEC enabled anymore, 
+							 * we're low on network bandwidth (that's why we ended up here) */
+							opus_prefs.keep_fec = 0;
 						}
 						opus_encoder_ctl(context->encoder_object, OPUS_SET_BITRATE(current_bitrate-br_step));
 						if (globals.debug || context->debug) {
