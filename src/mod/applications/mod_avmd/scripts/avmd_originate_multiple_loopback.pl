@@ -20,9 +20,6 @@ my $extension_base = "sofia/internal/1000\@192.168.1.1";
 
 my $playback = 'local_stream://moh';
 my $context = 'default'; 
-#Example:
-#my $endpoint = "originate {originator_codec=PCMA,origination_uuid=%s}sofia/gateway/box_b/840534002  \&park()";
-my $endpoint = "originate {originator_codec=PCMA,origination_uuid=%s}sofia/gateway/%s/%s  \&park()";
 my $gateway;
 my $dest;
 my $callerid;
@@ -30,14 +27,13 @@ my $thread_n;
 my $idx = 0;
 
 
-if ($#ARGV + 1 eq 4) {
-    $gateway = $ARGV[0];
-    $dest = $ARGV[1];
-    $callerid = $ARGV[2];
-    $thread_n = $ARGV[3];
-    print "Dialing [" .$thread_n ."] calls simultaneously to [" .$gateway ."][" .$dest ."] as [" .$callerid ."]\n";
+if ($#ARGV + 1 eq 3) {
+    $dest = $ARGV[0];
+    $callerid = $ARGV[1];
+    $thread_n = $ARGV[2];
+    print "Dialing [" .$thread_n ."] calls simultaneously to [loopback][" .$dest ."] as [" .$callerid ."]\n";
 } else {
-    die "Please specify gateway, destination number, caller id and number of calls to make\n";
+    die "Please specify destination number, caller id and number of calls to make\n";
 }
 
 my $con  = new ESL::ESLconnection($host, $port, $pass);
@@ -53,7 +49,7 @@ if ($con->connected()) {
 while($con->connected() && ($idx < $thread_n)) {
     call_once($dest, $callerid, $idx);
     $idx++;
-    Time::HiRes::sleep(0.15);    # avoid switch_core_session.c:2265 Throttle Error! 33, switch_time.c:1227 Over Session Rate of 30!
+    Time::HiRes::sleep(0.11);    # avoid switch_core_session.c:2265 Throttle Error! 33, switch_time.c:1227 Over Session Rate of 30!
 }
 
 print "Disconnected.\n\n";
@@ -70,18 +66,13 @@ sub call_once {
     'origination_caller_id_number=' . $callerid . ',' .
     'origination_caller_id_name=' . $callerid . '}';
 
-    if(defined($endpoint)) {
-        $originate_string = '';
-        $originate_string .= $endpoint;
-    } else {
-        $originate_string .= 'loopback/' . $dest . '/' . $context;
-        $originate_string .=  ' ' . '&playback(' . $playback . ')';
-    }
+    $originate_string .= 'loopback/' . $dest . '/' . $context;
+    $originate_string .=  ' ' . '&playback(' . $playback . ')';
 
     my $uuid = $con->api('create_uuid')->getBody();
     my ($time_epoch, $time_hires) = Time::HiRes::gettimeofday();
     printf("[%s]\tCalling with uuid [%s] [%s]... [%s]\n", $idx + 1, $uuid, POSIX::strftime('%Y-%m-%d %H:%M:%S', localtime($time_epoch)), $originate_string);
 
-    $con->bgapi(sprintf($originate_string, $uuid, $gateway, $dest));
+    $con->bgapi(sprintf($originate_string, $uuid));
     $con->api('uuid_setvar ' . $uuid .' execute_on_answer avmd_start');
 }

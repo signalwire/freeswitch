@@ -943,6 +943,7 @@ static void avmd_show(switch_stream_handle_t *stream, switch_mutex_t *mutex) {
     stream->write_function(stream, "inbound channel                \t%u\n", avmd_globals.settings.inbound_channnel);
     stream->write_function(stream, "outbound channel               \t%u\n", avmd_globals.settings.outbound_channnel);
     stream->write_function(stream, "detection mode                 \t%u\n", avmd_globals.settings.mode);
+    stream->write_function(stream, "sessions                       \t%"PRId64"\n", avmd_globals.session_n);
     stream->write_function(stream, "\n\n");
 
     if (mutex != NULL) {
