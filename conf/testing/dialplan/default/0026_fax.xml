@@ -55,3 +55,27 @@
     <action application="txfax" data="/root/fax.tif"/>  
   </condition>
 </extension>
+
+<!-- expand bgapi originate {absolute_codec_string=pcmu}sofia/external/9107@${local_ip_v4}:5080 9108 -->
+<extension name="rxfax_t38_a">
+  <condition field="destination_number" expression="^9107$">
+    <action application="answer"/>
+    <action application="rxfax" data="/tmp/${uuid}.tif"/>  
+  </condition>
+</extension>
+
+<extension name="t38_gateway">
+  <condition field="destination_number" expression="^9108$">
+    <action application="bridge" data="{sip_execute_on_image='t38_gateway self nocng',absolute_codec_string=PCMU}sofia/external/sip:9109@${local_ip_v4}:5080"/>  
+  </condition>
+</extension>
+
+<extension name="txfax_t38_b">
+  <condition field="destination_number" expression="^9109$">
+    <action application="set" data="fax_enable_t38_request=true"/>
+    <action application="set" data="fax_enable_t38=true"/>
+    <action application="answer"/>
+    <action application="txfax" data="/root/fax.tif"/>  
+  </condition>
+</extension>
+
