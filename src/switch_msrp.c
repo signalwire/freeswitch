@@ -30,6 +30,7 @@
  */
 
 #include <switch.h>
+#include <switch_ssl.h>
 #include <switch_msrp.h>
 
 #define MSRP_BUFF_SIZE SWITCH_RTP_MAX_BUF_LEN

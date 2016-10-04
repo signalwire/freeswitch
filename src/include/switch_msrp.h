@@ -33,7 +33,6 @@
 #define _MSRP_H
 
 #include <switch.h>
-#include <switch_ssl.h>
 
 #define MSRP_LISTEN_PORT 2855
 #define MSRP_SSL_LISTEN_PORT 2856
