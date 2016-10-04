@@ -320,6 +320,7 @@
 
       $scope.confTransfer = function(memberID) {
         console.log('$scope.confTransfer');
+        $rootScope.disableOnKeydownDtmf();
         prompt({
           title: $translate.instant('TITLE_TRANSFER'),
           message: $translate.instant('MESSAGE_TRANSFER'),
@@ -327,10 +328,14 @@
           label: $translate.instant('LABEL_TRANSFER'),
           value: '',
         }).then(function(exten) {
+          $rootScope.enableOnKeydownDtmf();
           if (exten) {
             verto.data.conf.transfer(memberID, exten);
           }
+        }).catch(function(){
+          $rootScope.enableOnKeydownDtmf();
         });
+
       };
 
       $scope.confToggleDeaf = function(member) {
