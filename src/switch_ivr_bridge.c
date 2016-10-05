@@ -465,7 +465,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 			continue;
 		}
 
-		if (switch_channel_test_flag(chan_a, CF_TEXT) && switch_channel_test_flag(chan_b, CF_TEXT) && !txt_launch) {
+		if (switch_channel_test_flag(chan_a, CF_TEXT_RTT) && switch_channel_test_flag(chan_b, CF_TEXT_RTT) && !txt_launch) {
 			txt_launch++;
 			
 			th.session_a = session_a;
