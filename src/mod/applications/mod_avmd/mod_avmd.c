@@ -102,9 +102,6 @@ int __isnan(double);
 #define AVMD_MAX_FREQUENCY_R(r) ((2.0 * M_PI * AVMD_MAX_FREQUENCY) / (r))
 #define AVMD_VARIANCE_RSD_THRESHOLD (0.000025)
 #define AVMD_AMPLITUDE_RSD_THRESHOLD (0.0148)
-#define AVMD_DETECTORS_N 35
-#define AVMD_DETECTORS_LAGGED_N 3
-
 
 /*! Syntax of the API call. */
 #define AVMD_SYNTAX "<uuid> < start | stop | set [inbound|outbound|default] | load [inbound|outbound] | reload | show >"
@@ -171,6 +168,8 @@ struct avmd_settings {
     uint8_t     inbound_channnel;
     uint8_t     outbound_channnel;
     enum avmd_detection_mode mode;
+    uint8_t     detectors_n;
+    uint8_t     detectors_lagged_n;
 };
 
 /*! Status of the beep detection */
@@ -234,7 +233,7 @@ struct avmd_session {
 
     switch_mutex_t          *mutex_detectors_done;
     switch_thread_cond_t    *cond_detectors_done;
-    struct avmd_detector    detectors[AVMD_DETECTORS_N + AVMD_DETECTORS_LAGGED_N];
+    struct avmd_detector    *detectors;
 };
 
 struct avmd_globals
@@ -289,7 +288,7 @@ static switch_status_t avmd_launch_threads(avmd_session_t *s) {
     switch_threadattr_t     *thd_attr = NULL;
 
     idx = 0;
-    while (idx < AVMD_DETECTORS_N) {
+    while (idx < s->settings.detectors_n) {
         d = &s->detectors[idx];
         d->flag_processing_done = 1;
         d->flag_should_exit = 0;
@@ -304,8 +303,8 @@ static switch_status_t avmd_launch_threads(avmd_session_t *s) {
         ++idx;
     }
     idx = 0;
-    while (idx < AVMD_DETECTORS_LAGGED_N) {
-        d = &s->detectors[AVMD_DETECTORS_N + idx];
+    while (idx < s->settings.detectors_lagged_n) {
+        d = &s->detectors[s->settings.detectors_n + idx];
         d->flag_processing_done = 1;
         d->flag_should_exit = 0;
         d->result = AVMD_DETECT_NONE;
@@ -327,7 +326,7 @@ static void avmd_join_threads(avmd_session_t *s) {
     switch_status_t         status;
 
     idx = 0;
-    while (idx < AVMD_DETECTORS_N) {
+    while (idx < s->settings.detectors_n) {
         d = &s->detectors[idx];
         switch_mutex_lock(d->mutex);
         if (d->thread != NULL) {
@@ -345,8 +344,8 @@ static void avmd_join_threads(avmd_session_t *s) {
         ++idx;
     }
     idx = 0;
-    while (idx < AVMD_DETECTORS_LAGGED_N) {
-        d = &s->detectors[AVMD_DETECTORS_N + idx];
+    while (idx < s->settings.detectors_lagged_n) {
+        d = &s->detectors[s->settings.detectors_n + idx];
         switch_mutex_lock(d->mutex);
         if (d->thread != NULL) {
             d->flag_should_exit = 1;
@@ -451,12 +450,18 @@ static switch_status_t init_avmd_session_data(avmd_session_t *avmd_session, swit
         status = SWITCH_STATUS_MORE_DATA;
         goto end;
     }
+    avmd_session->detectors = (struct avmd_detector*) switch_core_session_alloc(fs_session, (avmd_session->settings.detectors_n + avmd_session->settings.detectors_lagged_n) * sizeof(struct avmd_detector));
+    if (avmd_session->detectors == NULL) {
+        switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_session), SWITCH_LOG_ERROR, "Can't allocate memory for avmd detectors!\n");
+        status = SWITCH_STATUS_NOT_INITALIZED;
+        goto end;
+    }
     idx = 0;
     resolution = 0;
-    while (idx < AVMD_DETECTORS_N) {
+    while (idx < avmd_session->settings.detectors_n) {
         ++resolution;
         offset = 0;
-        while ((offset < resolution) && (idx < AVMD_DETECTORS_N)) {
+        while ((offset < resolution) && (idx < avmd_session->settings.detectors_n)) {
             d = &avmd_session->detectors[idx];
             if (avmd_init_buffer(&d->buffer, buf_sz, resolution, offset, fs_session) != SWITCH_STATUS_SUCCESS) {
                 status = SWITCH_STATUS_FALSE;
@@ -476,8 +481,8 @@ static switch_status_t init_avmd_session_data(avmd_session_t *avmd_session, swit
     idx = 0;
     resolution = 1;
     offset = 0;
-    while (idx < AVMD_DETECTORS_LAGGED_N) {
-            d = &avmd_session->detectors[AVMD_DETECTORS_N + idx];
+    while (idx < avmd_session->settings.detectors_lagged_n) {
+            d = &avmd_session->detectors[avmd_session->settings.detectors_n + idx];
             if (avmd_init_buffer(&d->buffer, buf_sz, resolution, offset, fs_session) != SWITCH_STATUS_SUCCESS) {
                 status = SWITCH_STATUS_FALSE;
                 goto end;
@@ -485,7 +490,7 @@ static switch_status_t init_avmd_session_data(avmd_session_t *avmd_session, swit
             d->s = avmd_session;
             d->flag_processing_done = 1;
             d->flag_should_exit = 1;
-            d->idx = AVMD_DETECTORS_N + idx;
+            d->idx = avmd_session->settings.detectors_n + idx;
             d->thread = NULL;
             switch_mutex_init(&d->mutex, SWITCH_MUTEX_DEFAULT, switch_core_session_get_pool(fs_session));
             switch_thread_cond_create(&d->cond_start_processing, switch_core_session_get_pool(fs_session));
@@ -516,7 +521,7 @@ static void avmd_session_close(avmd_session_t *s) {
     switch_mutex_unlock(s->mutex_detectors_done);
 
     idx = 0;
-    while (idx < AVMD_DETECTORS_N + AVMD_DETECTORS_LAGGED_N) {
+    while (idx < (s->settings.detectors_n + s->settings.detectors_lagged_n)) {
         d = &s->detectors[idx];
         switch_mutex_lock(d->mutex);
         d = &s->detectors[idx];
@@ -819,6 +824,8 @@ static void avmd_set_xml_default_configuration(switch_mutex_t *mutex) {
     avmd_globals.settings.inbound_channnel = 0;
     avmd_globals.settings.outbound_channnel = 1;
     avmd_globals.settings.mode = AVMD_DETECT_BOTH;
+    avmd_globals.settings.detectors_n = 36;
+    avmd_globals.settings.detectors_lagged_n = 1;
 
     if (mutex != NULL) {
         switch_mutex_unlock(avmd_globals.mutex);
@@ -916,6 +923,16 @@ static switch_status_t avmd_load_xml_configuration(switch_mutex_t *mutex) {
                         status = SWITCH_STATUS_TERM;
                         goto done;
                     }
+                } else if (!strcmp(name, "detectors_n")) {
+                    if(avmd_parse_u8_user_input(value, &avmd_globals.settings.detectors_n, 0, UINT8_MAX) == -1) {
+                        status = SWITCH_STATUS_TERM;
+                        goto done;
+                    }
+                } else if (!strcmp(name, "detectors_lagged_n")) {
+                    if(avmd_parse_u8_user_input(value, &avmd_globals.settings.detectors_lagged_n, 0, UINT8_MAX) == -1) {
+                        status = SWITCH_STATUS_TERM;
+                        goto done;
+                    }
                 }
             }
         }
@@ -994,6 +1011,8 @@ static void avmd_show(switch_stream_handle_t *stream, switch_mutex_t *mutex) {
     stream->write_function(stream, "outbound channel               \t%u\n", avmd_globals.settings.outbound_channnel);
     stream->write_function(stream, "detection mode                 \t%u\n", avmd_globals.settings.mode);
     stream->write_function(stream, "sessions                       \t%"PRId64"\n", avmd_globals.session_n);
+    stream->write_function(stream, "detectors n                    \t%u\n", avmd_globals.settings.detectors_n);
+    stream->write_function(stream, "detectors lagged n             \t%u\n", avmd_globals.settings.detectors_lagged_n);
     stream->write_function(stream, "\n\n");
 
     if (mutex != NULL) {
@@ -1094,10 +1113,10 @@ void avmd_config_dump(avmd_session_t *s) {
     settings = &s->settings;
     switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(s->session), SWITCH_LOG_INFO, "Avmd dynamic configuration: debug [%u], report_status [%u], fast_math [%u],"
             " require_continuous_streak [%u], sample_n_continuous_streak [%u], sample_n_to_skip [%u], require_continuous_streak_amp [%u], sample_n_continuous_streak_amp [%u],"
-           " simplified_estimation [%u], inbound_channel [%u], outbound_channel [%u], detection_mode [%u]\n",
+           " simplified_estimation [%u], inbound_channel [%u], outbound_channel [%u], detection_mode [%u], detectors_n [%u], detectors_lagged_n [%u]\n",
             settings->debug, settings->report_status, settings->fast_math, settings->require_continuous_streak, settings->sample_n_continuous_streak,
             settings->sample_n_to_skip, settings->require_continuous_streak_amp, settings->sample_n_continuous_streak_amp,
-            settings->simplified_estimation, settings->inbound_channnel, settings->outbound_channnel, settings->mode);
+            settings->simplified_estimation, settings->inbound_channnel, settings->outbound_channnel, settings->mode, settings->detectors_n, settings->detectors_lagged_n);
     return;
 }
 
@@ -1160,6 +1179,14 @@ static switch_status_t avmd_parse_cmd_data_one_entry(char *candidate, struct avm
         settings->outbound_channnel = (uint8_t) switch_true(val);
     } else if (!strcmp(key, "detection_mode")) {
         if(avmd_parse_u8_user_input(val, (uint8_t*)&settings->mode, 0, 2) == -1) {
+            return SWITCH_STATUS_FALSE;
+        }
+    } else if (!strcmp(key, "detectors_n")) {
+        if(avmd_parse_u8_user_input(val, &settings->detectors_n, 0, UINT8_MAX) == -1) {
+            return SWITCH_STATUS_FALSE;
+        }
+    } else if (!strcmp(key, "detectors_lagged_n")) {
+        if(avmd_parse_u8_user_input(val, &settings->detectors_lagged_n, 0, UINT8_MAX) == -1) {
             return SWITCH_STATUS_FALSE;
         }
     } else {
@@ -1248,8 +1275,7 @@ static switch_status_t avmd_parse_cmd_data(avmd_session_t *s, const char *cmd_da
             /* OK */
             goto end_copy;
         default:
-            switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(s->session), SWITCH_LOG_ERROR,
-                    "There is no app with index [%u] for avmd\n", app);
+            switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(s->session), SWITCH_LOG_ERROR, "There is no app with index [%u] for avmd\n", app);
             switch_goto_status(SWITCH_STATUS_NOTFOUND, fail);
     }
 
@@ -1269,7 +1295,7 @@ SWITCH_STANDARD_APP(avmd_start_app) {
     switch_core_media_flag_t flags = 0;
 
     if (session == NULL) {
-        switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "FreeSWITCH is NULL! Please report to developers\n");
+        switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "BUGGG. FreeSWITCH session is NULL! Please report to developers\n");
         return;
     }
 
@@ -1873,7 +1899,7 @@ static void avmd_report_detection(avmd_session_t *s, enum avmd_detection_mode mo
 static uint8_t
 avmd_detection_in_progress(avmd_session_t *s) {
     uint8_t idx = 0;
-    while (idx < AVMD_DETECTORS_N +AVMD_DETECTORS_LAGGED_N) {
+    while (idx < (s->settings.detectors_n + s->settings.detectors_lagged_n)) {
         switch_mutex_lock(s->detectors[idx].mutex);
         if (s->detectors[idx].flag_processing_done == 0) {
             switch_mutex_unlock(s->detectors[idx].mutex);
@@ -1889,7 +1915,7 @@ static enum avmd_detection_mode
 avmd_detection_result(avmd_session_t *s) {
     enum avmd_detection_mode res;
     uint8_t idx = 0;
-    while (idx < AVMD_DETECTORS_N + AVMD_DETECTORS_LAGGED_N) {
+    while (idx < (s->settings.detectors_n + s->settings.detectors_lagged_n)) {
         res = s->detectors[idx].result;
         if (res != AVMD_DETECT_NONE) {
             avmd_report_detection(s, res, &s->detectors[idx]);
@@ -1932,7 +1958,7 @@ static void avmd_process(avmd_session_t *s, switch_frame_t *frame) {
     INSERT_INT16_FRAME(b, (int16_t *)(frame->data), frame->samples);    /* Insert frame of 16 bit samples into buffer */
 
     idx = 0;
-    while (idx < AVMD_DETECTORS_N + AVMD_DETECTORS_LAGGED_N) {
+    while (idx < (s->settings.detectors_n + s->settings.detectors_lagged_n)) {
         d = &s->detectors[idx];
         switch_mutex_lock(d->mutex);
         d = &s->detectors[idx];
