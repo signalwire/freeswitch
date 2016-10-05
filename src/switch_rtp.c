@@ -35,7 +35,7 @@
 //#define DEBUG_MISSED_SEQ
 //#define DEBUG_EXTRA
 //#define DEBUG_RTCP
-#define DEBUG_ESTIMATORS
+#define DEBUG_ESTIMATORS_
 
 #include <switch.h>
 #ifndef _MSC_VER
@@ -6102,7 +6102,7 @@ static switch_status_t process_rtcp_report(switch_rtp_t *rtp_session, rtcp_msg_t
 					if (rtp_session->flags[SWITCH_RTP_FLAG_ADJ_BITRATE_CAP] && rtp_session->flags[SWITCH_RTP_FLAG_ESTIMATORS] && !rtp_session->flags[SWITCH_RTP_FLAG_VIDEO]) {
 						
 						/* SWITCH_RTP_FLAG_ADJ_BITRATE_CAP : Can the codec change its bitrate on the fly per API command ? */
-#ifdef DEBUG_ESTIMATORS
+#ifdef DEBUG_ESTIMATORS_
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG3, "Current packet loss: [%d %%] Current RTT: [%f ms]\n", percent_fraction, rtt_now);
 #endif
 
@@ -6110,7 +6110,7 @@ static switch_status_t process_rtcp_report(switch_rtp_t *rtp_session, rtcp_msg_t
 
 						if (switch_kalman_cusum_detect_change(rtp_session->detectors[EST_RTT], rtt_now, rtp_session->estimators[EST_RTT]->val_estimate_last)) {
 							/* sudden change in the mean value of RTT */
-#ifdef DEBUG_ESTIMATORS
+#ifdef DEBUG_ESTIMATORS_
 							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG3,"Sudden change in the mean value of RTT !\n");
 #endif
 							rtt_increase = 1;
@@ -6120,12 +6120,12 @@ static switch_status_t process_rtcp_report(switch_rtp_t *rtp_session, rtcp_msg_t
 
 						if (switch_kalman_cusum_detect_change(rtp_session->detectors[EST_LOSS], percent_fraction, rtp_session->estimators[EST_LOSS]->val_estimate_last)){
 							/* sudden change in the mean value of packet loss */
-#ifdef DEBUG_ESTIMATORS
+#ifdef DEBUG_ESTIMATORS_
 							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG3,"Sudden change in the mean value of packet loss!\n");
 #endif
 							packet_loss_increase = 1;
 						}
-#ifdef DEBUG_ESTIMATORS
+#ifdef DEBUG_ESTIMATORS_
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG3, "ESTIMATORS: Packet loss will be: [%f] RTT will be: [%f ms]\n", 
 																	rtp_session->estimators[EST_LOSS]->val_estimate_last, rtp_session->estimators[EST_RTT]->val_estimate_last);
 #endif 
@@ -6135,7 +6135,7 @@ static switch_status_t process_rtcp_report(switch_rtp_t *rtp_session, rtcp_msg_t
 							if (switch_kalman_is_slow_link(rtp_session->estimators[EST_LOSS],
 										rtp_session->estimators[EST_RTT])) {
 								/* going to minimum bitrate */
-#ifdef DEBUG_ESTIMATORS
+#ifdef DEBUG_ESTIMATORS_
 								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG3, "Slow link conditions: Loss average: [%d %%], Previous loss: [%d %%]. \
 																	Going to minimum bitrate!",rtp_session->rtcp_frame.reports[i].loss_avg, old_avg);
 #endif 
@@ -6149,7 +6149,7 @@ static switch_status_t process_rtcp_report(switch_rtp_t *rtp_session, rtcp_msg_t
 								SWITCH_IO_WRITE, SCC_AUDIO_ADJUST_BITRATE, 
 								SCCT_STRING, "decrease", 
 								SCCT_NONE, NULL, NULL, NULL);
-#ifdef DEBUG_ESTIMATORS
+#ifdef DEBUG_ESTIMATORS_
 								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG3,"Sudden change in the mean value of packet loss percentage !\n");
 #endif
 								switch_core_media_codec_control(rtp_session->session, SWITCH_MEDIA_TYPE_AUDIO, 
@@ -6159,7 +6159,7 @@ static switch_status_t process_rtcp_report(switch_rtp_t *rtp_session, rtcp_msg_t
 
 							} else if (!rtt_increase && rtp_session->estimators[EST_LOSS]->val_estimate_last >= rtp_session->rtcp_frame.reports[i].loss_avg ) {
 								/* lossy because of congestion (queues full somewhere -> some packets are dropped , but RTT is good ), packet loss with many small gaps */
-#ifdef DEBUG_ESTIMATORS
+#ifdef DEBUG_ESTIMATORS_
 								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG3, "packet loss, but RTT is not bad\n");
 #endif 
 								switch_core_media_codec_control(rtp_session->session, SWITCH_MEDIA_TYPE_AUDIO, 
@@ -6168,7 +6168,7 @@ static switch_status_t process_rtcp_report(switch_rtp_t *rtp_session, rtcp_msg_t
 										SCCT_NONE, NULL, NULL, NULL);
 
 							} else if ((rtp_session->estimators[EST_LOSS]->val_estimate_last < 1) && packet_loss_increase) {
-#ifdef DEBUG_ESTIMATORS
+#ifdef DEBUG_ESTIMATORS_
 								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG3, "small packet loss average\n");
 #endif
 								/*small loss_avg*/
@@ -6198,7 +6198,7 @@ static switch_status_t process_rtcp_report(switch_rtp_t *rtp_session, rtcp_msg_t
 
 							} else {
 								/* *do nothing about bitrate, just pass the packet loss to the codec */
-#ifdef DEBUG_ESTIMATORS
+#ifdef DEBUG_ESTIMATORS_
 								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG3,"do nothing about bitrate, just pass the packet loss to the codec\n");
 #endif 
 								switch_core_media_codec_control(rtp_session->session, SWITCH_MEDIA_TYPE_AUDIO, 
