@@ -2907,19 +2907,20 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_udptl_mode(switch_rtp_t *rtp_session)
 
 	rtp_session->flags[SWITCH_RTP_FLAG_ENABLE_RTCP] = 0;
 
-	if (rtp_session->rtcp_sock_input) {
-		ping_socket(rtp_session);
-		switch_socket_shutdown(rtp_session->rtcp_sock_input, SWITCH_SHUTDOWN_READWRITE);
-	}
-
-	if (rtp_session->rtcp_sock_output && rtp_session->rtcp_sock_output != rtp_session->rtcp_sock_input) {
-		switch_socket_shutdown(rtp_session->rtcp_sock_output, SWITCH_SHUTDOWN_READWRITE);
-	}
-
 	if (rtp_session->flags[SWITCH_RTP_FLAG_RTCP_MUX]) {
 		rtp_session->rtcp_sock_input = NULL;
 		rtp_session->rtcp_sock_output = NULL;
 	} else {
+		if (rtp_session->rtcp_sock_input && rtp_session->rtcp_sock_input != rtp_session->sock_input) {
+			ping_socket(rtp_session);
+			switch_socket_shutdown(rtp_session->rtcp_sock_input, SWITCH_SHUTDOWN_READWRITE);
+		}
+
+		if (rtp_session->rtcp_sock_output && rtp_session->rtcp_sock_output != rtp_session->rtcp_sock_input && 
+			rtp_session->rtcp_sock_output != rtp_session->sock_input) {
+			switch_socket_shutdown(rtp_session->rtcp_sock_output, SWITCH_SHUTDOWN_READWRITE);
+		}
+
 		if ((sock = rtp_session->rtcp_sock_input)) {
 			rtp_session->rtcp_sock_input = NULL;
 			switch_socket_close(sock);
