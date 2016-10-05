@@ -5315,9 +5315,12 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 			}
 		}
 
-		if (rtp_session->has_rtp) {
+		if (rtp_session->has_rtp || rtp_session->flags[SWITCH_RTP_FLAG_UDPTL]) {
 			rtp_session->missed_count = 0;
 			switch_cp_addr(rtp_session->rtp_from_addr, rtp_session->from_addr);	
+		}
+		
+		if (rtp_session->has_rtp) {
 			rtp_session->last_rtp_hdr = rtp_session->recv_msg.header;
 
 			
