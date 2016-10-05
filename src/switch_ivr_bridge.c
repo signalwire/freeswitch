@@ -73,6 +73,7 @@ static void video_bridge_thread(switch_core_session_t *session, void *obj)
 
 
 			if (switch_channel_test_flag(channel, CF_VIDEO_REFRESH_REQ)) {
+				switch_channel_clear_flag(channel, CF_VIDEO_REFRESH_REQ);
 				refresh_timer = refresh_cnt;
 			}
 
@@ -100,10 +101,7 @@ static void video_bridge_thread(switch_core_session_t *session, void *obj)
 
 			if (refresh_timer) {
 				if (refresh_timer > 0 && (refresh_timer % 100) == 0) {
-					switch_core_session_request_video_refresh(vh->session_a);
 					switch_core_session_request_video_refresh(vh->session_b);
-					switch_core_media_gen_key_frame(vh->session_a);
-					switch_core_media_gen_key_frame(vh->session_b);
 				}
 				refresh_timer--;
 			}
@@ -114,20 +112,12 @@ static void video_bridge_thread(switch_core_session_t *session, void *obj)
 				switch_cond_next();
 				continue;
 			}
-
-
-			if (switch_test_flag(read_frame, SFF_CNG)) {
-				switch_core_session_request_video_refresh(vh->session_a);
-				continue;
-			}
 		}
 		
-		if (switch_channel_test_flag(channel, CF_LEG_HOLDING) || switch_channel_test_flag(b_channel, CF_VIDEO_READ_FILE_ATTACHED)) {
-			switch_channel_video_sync(channel);
-			switch_core_session_write_video_frame(session, read_frame, SWITCH_IO_FLAG_NONE, 0);
+		if (switch_test_flag(read_frame, SFF_CNG) || 
+			switch_channel_test_flag(channel, CF_LEG_HOLDING) || switch_channel_test_flag(b_channel, CF_VIDEO_READ_FILE_ATTACHED)) {
 			continue;
 		}
-
 		
 		if (switch_channel_media_up(b_channel)) {
 			if (switch_core_session_write_video_frame(vh->session_b, read_frame, SWITCH_IO_FLAG_NONE, 0) != SWITCH_STATUS_SUCCESS) {
