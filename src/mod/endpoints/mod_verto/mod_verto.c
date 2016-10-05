@@ -1,5 +1,5 @@
 /* 
- * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
+ * Freeswitch Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
@@ -5195,7 +5195,7 @@ static void set_text_funcs(switch_core_session_t *session)
 		switch_buffer_create_dynamic(&tech_pvt->text_read_buffer, 512, 1024, 0);
 		switch_buffer_create_dynamic(&tech_pvt->text_write_buffer, 512, 1024, 0);
 
-		switch_channel_set_flag(switch_core_session_get_channel(session), CF_TEXT_RTT);
+		switch_channel_set_flag(switch_core_session_get_channel(session), CF_HAS_TEXT);
 		switch_core_session_start_text_thread(session);
 	}
 }

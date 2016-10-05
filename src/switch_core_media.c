@@ -4353,7 +4353,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 			smh->msrp_session->local_accept_wrapped_types = smh->msrp_session->remote_accept_types;
 			smh->msrp_session->local_setup = smh->msrp_session->remote_setup;
 
-			switch_channel_set_flag(session->channel, CF_TEXT_RTT);
+			switch_channel_set_flag(session->channel, CF_HAS_TEXT);
 			switch_channel_set_flag(session->channel, CF_TEXT_POSSIBLE);
 			switch_channel_set_flag(session->channel, CF_MSRP);
 
@@ -6200,7 +6200,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_start_text_thread(switch_cor
 	switch_rtp_engine_t *t_engine = NULL;
 	switch_media_handle_t *smh;
 
-	if (!switch_channel_test_flag(session->channel, CF_TEXT_RTT)) {
+	if (!switch_channel_test_flag(session->channel, CF_HAS_TEXT)) {
 		return SWITCH_STATUS_NOTIMPL;
 	}
 
@@ -6666,7 +6666,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_proxy_remote_addr(switch_core_
 	if (*rtp) {
 		t_engine->cur_payload_map->remote_sdp_ip = switch_core_session_strdup(session, rip);
 		t_engine->cur_payload_map->remote_sdp_port = (switch_port_t) atoi(rtp);
-		switch_channel_set_flag(session->channel, CF_TEXT_RTT);
+		switch_channel_set_flag(session->channel, CF_HAS_TEXT);
 		switch_channel_set_flag(session->channel, CF_TEXT_POSSIBLE);
 	}
 
@@ -6713,7 +6713,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_proxy_remote_addr(switch_core_
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Remote text address:port [%s:%d] has not changed.\n",
 							  t_engine->cur_payload_map->remote_sdp_ip, t_engine->cur_payload_map->remote_sdp_port);
 		} else {
-			switch_channel_set_flag(session->channel, CF_TEXT_RTT);
+			switch_channel_set_flag(session->channel, CF_HAS_TEXT);
 			switch_channel_set_flag(session->channel, CF_TEXT_POSSIBLE);
 			if (switch_rtp_ready(t_engine->rtp_session)) {
 				const char *rport = NULL;
@@ -7913,7 +7913,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 				switch_rtp_set_video_buffer_size(t_engine->rtp_session, 2, 2048);
 
 				switch_rtp_set_payload_map(t_engine->rtp_session, &t_engine->payload_map);
-				switch_channel_set_flag(session->channel, CF_TEXT_RTT);
+				switch_channel_set_flag(session->channel, CF_HAS_TEXT);
 				switch_core_session_start_text_thread(session);
 
 				if ((ssrc = switch_channel_get_variable(session->channel, "rtp_use_text_ssrc"))) {
@@ -10044,7 +10044,7 @@ msrp:
 
 		smh->msrp_session->call_id = switch_core_session_get_uuid(session);
 
-		switch_channel_set_flag(session->channel, CF_TEXT_RTT);
+		switch_channel_set_flag(session->channel, CF_HAS_TEXT);
 		switch_channel_set_flag(session->channel, CF_TEXT_POSSIBLE);
 		switch_channel_set_flag(session->channel, CF_MSRP);
 
@@ -13970,7 +13970,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_print(switch_core_session_t 
 	//}
 
 
-	if (!switch_channel_test_flag(session->channel, CF_TEXT_RTT)) {
+	if (!switch_channel_test_flag(session->channel, CF_HAS_TEXT)) {
 		return SWITCH_STATUS_NOTIMPL;
 	}
 
