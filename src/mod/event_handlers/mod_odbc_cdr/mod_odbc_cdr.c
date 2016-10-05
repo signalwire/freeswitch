@@ -308,22 +308,22 @@ static switch_status_t odbc_cdr_reporting(switch_core_session_t *session)
 				if (globals.debug_sql == SWITCH_TRUE) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "sql %s\n", sql);
 				}
-				if (odbc_cdr_execute_sql_no_callback(sql) == SWITCH_STATUS_FALSE) {
+				if (odbc_cdr_execute_sql_no_callback(sql) != SWITCH_STATUS_SUCCESS) {
 					insert_fail = SWITCH_TRUE;
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error executing query %s\n", sql);
 				}
 
 				if (globals.write_csv == ODBC_CDR_CSV_ALWAYS) {
 					if (insert_fail == SWITCH_TRUE) {
-						full_path = switch_mprintf("%s%s%s.csv", globals.csv_fail_path, SWITCH_PATH_SEPARATOR, uuid);
+						full_path = switch_mprintf("%s%s%s_%s.csv", globals.csv_fail_path, SWITCH_PATH_SEPARATOR, uuid, table_name);
 					} else {
-						full_path = switch_mprintf("%s%s%s.csv", globals.csv_path, SWITCH_PATH_SEPARATOR, uuid);
+						full_path = switch_mprintf("%s%s%s_%s.csv", globals.csv_path, SWITCH_PATH_SEPARATOR, uuid, table_name);
 					}
 					assert(full_path);
 					write_cdr(full_path, stream_value.data);
 					switch_safe_free(full_path);
 				} else if (globals.write_csv == ODBC_CDR_CSV_ON_FAIL && insert_fail == SWITCH_TRUE) {
-					full_path = switch_mprintf("%s%s%s.csv", globals.csv_fail_path, SWITCH_PATH_SEPARATOR, uuid);
+					full_path = switch_mprintf("%s%s%s_%s.csv", globals.csv_fail_path, SWITCH_PATH_SEPARATOR, uuid, table_name);
 					assert(full_path);
 					write_cdr(full_path, stream_value.data);
 					switch_safe_free(full_path);
