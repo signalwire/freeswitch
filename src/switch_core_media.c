@@ -5705,8 +5705,11 @@ SWITCH_DECLARE(int) switch_core_media_toggle_hold(switch_core_session_t *session
 
 
  end:
+	switch_core_session_request_video_refresh(session);
+
 
 	if (b_session) {
+		switch_core_session_request_video_refresh(b_session);
 		switch_core_session_rwunlock(b_session);
 	}
 
@@ -5792,8 +5795,11 @@ static void switch_core_session_write_blank_video(switch_core_session_t *session
 	frame_ms = (uint32_t) 1000 / fps;
 	frames = (uint32_t) ms / frame_ms;
 	
+
+
 	switch_core_media_gen_key_frame(session);
 	for (i = 0; i < frames; i++) {
+		fr.img = blank_img;
 		switch_core_session_write_video_frame(session, &fr, SWITCH_IO_FLAG_NONE, 0);
 		switch_yield(frame_ms * 1000);
 	}
@@ -6025,10 +6031,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_set_video_file(switch_core_ses
 		}
 
 		switch_core_media_gen_key_frame(session);
+		switch_core_session_request_video_refresh(session);
 
 		if (fh) {
 			switch_threadattr_t *thd_attr = NULL;
-			switch_core_session_write_blank_video(session, 200);
+			switch_core_session_write_blank_video(session, 500);
 			switch_threadattr_create(&thd_attr, switch_core_session_get_pool(session));
 			switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
 			smh->video_write_thread_running = 1;
@@ -6045,7 +6052,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_set_video_file(switch_core_ses
 			switch_thread_join(&st, smh->video_write_thread);
 			switch_mutex_lock(v_engine->mh.file_write_mutex);
 			smh->video_write_thread = NULL;
-			switch_core_session_write_blank_video(session, 200);
+			switch_core_session_write_blank_video(session, 500);
 		}
 		
 		smh->video_write_fh = fh;
@@ -12867,17 +12874,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_codec_control(switch_core_sess
 	}
 
 	if (codec) {
-		if (cmd == SCC_VIDEO_GEN_KEYFRAME) {
-			switch_time_t now = switch_micro_time_now();
-
-			if (smh->last_codec_refresh && (now - smh->last_codec_refresh) < VIDEO_REFRESH_FREQ) {
-				return SWITCH_STATUS_BREAK;
-			}
-
-			smh->last_codec_refresh = now;
-			switch_channel_set_flag(session->channel, CF_VIDEO_REFRESH_REQ);
-		}
-
 		return switch_core_codec_control(codec, cmd, ctype, cmd_data, atype, cmd_arg, rtype, ret_data);
 	}
 
