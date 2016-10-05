@@ -143,7 +143,7 @@ static switch_status_t switch_amrwb_init(switch_codec_t *codec, switch_codec_fla
 						context->max_ptime = (switch_byte_t) atoi(arg);
 					} else if (!strcasecmp(data, "mode-set")) {
 						int y, m_argc;
-						char *m_argv[8];
+						char *m_argv[9]; /* AMR-WB has 9 modes, AMR has 8 */
 						m_argc = switch_separate_string(arg, ',', m_argv, (sizeof(m_argv) / sizeof(m_argv[0])));
 						for (y = 0; y < m_argc; y++) {
 							context->enc_modes |= (1 << atoi(m_argv[y]));
@@ -153,8 +153,12 @@ static switch_status_t switch_amrwb_init(switch_codec_t *codec, switch_codec_fla
 			}
 		}
 
+		/* init to default if there's no "mode-set" param */
+		context->enc_mode = globals.default_bitrate;
+		/* choose the highest mode (bitrate) for high audio quality from fmtp "mode-set" param */
+		/* Note: mode-set = 0 is a valid mode */
 		if (context->enc_modes) {
-			for (i = 8; i > -1; i++) {
+			for (i = 8; i > -1; i--) {
 				if (context->enc_modes & (1 << i)) {
 					context->enc_mode = (switch_byte_t) i;
 					break;
@@ -162,15 +166,11 @@ static switch_status_t switch_amrwb_init(switch_codec_t *codec, switch_codec_fla
 			}
 		}
 
-		if (!context->enc_mode) {
-			context->enc_mode = globals.default_bitrate;
-		}
 
 		switch_snprintf(fmtptmp, sizeof(fmtptmp), "octet-align=%d; mode-set=%d", switch_test_flag(context, AMRWB_OPT_OCTET_ALIGN) ? 1 : 0,
 						context->enc_mode);
 		codec->fmtp_out = switch_core_strdup(codec->memory_pool, fmtptmp);
 
-		context->enc_mode = AMRWB_DEFAULT_BITRATE;
 		context->encoder_state = NULL;
 		context->decoder_state = NULL;
 
