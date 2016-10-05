@@ -49,8 +49,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_callcenter_load);
  */
 SWITCH_MODULE_DEFINITION(mod_callcenter, mod_callcenter_load, mod_callcenter_shutdown, NULL);
 
-static switch_status_t load_agent(const char *agent_name, switch_event_t *params);
-static switch_status_t load_tiers(switch_bool_t load_all, const char *queue_name, const char *agent_name, switch_event_t *params);
+static switch_status_t load_agent(const char *agent_name, switch_event_t *params, switch_xml_t x_agents_cfg);
+static switch_status_t load_tiers(switch_bool_t load_all, const char *queue_name, const char *agent_name, switch_event_t *params, switch_xml_t x_tiers_cfg);
 static const char *global_cf = "callcenter.conf";
 
 struct cc_status_table {
@@ -163,7 +163,8 @@ typedef enum {
 	CC_MEMBER_CANCEL_REASON_NONE,
 	CC_MEMBER_CANCEL_REASON_TIMEOUT,
 	CC_MEMBER_CANCEL_REASON_NO_AGENT_TIMEOUT,
-	CC_MEMBER_CANCEL_REASON_BREAK_OUT
+	CC_MEMBER_CANCEL_REASON_BREAK_OUT,
+	CC_MEMBER_CANCEL_REASON_EXIT_WITH_KEY
 } cc_member_cancel_reason_t;
 
 static struct cc_member_cancel_reason_table MEMBER_CANCEL_REASON_CHART[] = {
@@ -171,6 +172,7 @@ static struct cc_member_cancel_reason_table MEMBER_CANCEL_REASON_CHART[] = {
 	{"TIMEOUT", CC_MEMBER_CANCEL_REASON_TIMEOUT},
 	{"NO_AGENT_TIMEOUT", CC_MEMBER_CANCEL_REASON_NO_AGENT_TIMEOUT},
 	{"BREAK_OUT", CC_MEMBER_CANCEL_REASON_BREAK_OUT},
+	{"EXIT_WITH_KEY", CC_MEMBER_CANCEL_REASON_EXIT_WITH_KEY},
 	{NULL, 0}
 };
 
@@ -229,7 +231,8 @@ static char agents_sql[] =
 "   no_answer_count INTEGER NOT NULL DEFAULT 0,\n"
 "   calls_answered  INTEGER NOT NULL DEFAULT 0,\n"
 "   talk_time  INTEGER NOT NULL DEFAULT 0,\n"
-"   ready_time INTEGER NOT NULL DEFAULT 0\n"
+"   ready_time INTEGER NOT NULL DEFAULT 0,\n"
+"   external_calls_count INTEGER NOT NULL DEFAULT 0\n"
 ");\n";
 
 static char tiers_sql[] =
@@ -423,6 +426,7 @@ static struct {
 	int32_t running;
 	switch_mutex_t *mutex;
 	switch_memory_pool_t *pool;
+	switch_event_node_t *node;
 } globals;
 
 #define CC_QUEUE_CONFIGITEM_COUNT 100
@@ -449,6 +453,7 @@ struct cc_queue {
 	uint32_t max_wait_time;
 	uint32_t max_wait_time_with_no_agent;
 	uint32_t max_wait_time_with_no_agent_time_reached;
+	char *agent_no_answer_status;
 	uint32_t calls_answered;
 	uint32_t calls_abandoned;
 
@@ -461,11 +466,15 @@ struct cc_queue {
 	switch_time_t last_agent_exist;
 	switch_time_t last_agent_exist_check;
 
+	switch_bool_t skip_agents_with_external_calls;
+
 	switch_xml_config_item_t config[CC_QUEUE_CONFIGITEM_COUNT];
 	switch_xml_config_string_options_t config_str_pool;
 
 };
 typedef struct cc_queue cc_queue_t;
+
+static void cc_send_presence(cc_queue_t *queue);
 
 static void free_queue(cc_queue_t *queue)
 {
@@ -559,6 +568,10 @@ cc_queue_t *queue_set_config(cc_queue_t *queue)
 	SWITCH_CONFIG_SET_ITEM(queue->config[i++], "max-wait-time", SWITCH_CONFIG_INT, 0, &queue->max_wait_time, 0, &config_int_0_86400, NULL, NULL);
 	SWITCH_CONFIG_SET_ITEM(queue->config[i++], "max-wait-time-with-no-agent", SWITCH_CONFIG_INT, 0, &queue->max_wait_time_with_no_agent, 0, &config_int_0_86400, NULL, NULL);
 	SWITCH_CONFIG_SET_ITEM(queue->config[i++], "max-wait-time-with-no-agent-time-reached", SWITCH_CONFIG_INT, 0, &queue->max_wait_time_with_no_agent_time_reached, 5, &config_int_0_86400, NULL, NULL);
+
+	SWITCH_CONFIG_SET_ITEM(queue->config[i++], "agent-no-answer-status", SWITCH_CONFIG_STRING, 0, &queue->agent_no_answer_status, cc_agent_status2str(CC_AGENT_STATUS_ON_BREAK), &queue->config_str_pool, NULL, NULL);
+
+	SWITCH_CONFIG_SET_ITEM(queue->config[i++], "skip-agents-with-external-calls", SWITCH_CONFIG_BOOL, 0, &queue->skip_agents_with_external_calls, SWITCH_TRUE, NULL, NULL, NULL);
 
 	switch_assert(i < CC_QUEUE_CONFIGITEM_COUNT);
 
@@ -678,10 +691,11 @@ end:
 	return ret;
 }
 
-static cc_queue_t *load_queue(const char *queue_name, switch_bool_t request_agents, switch_bool_t request_tiers)
+static cc_queue_t *load_queue(const char *queue_name, switch_bool_t request_agents, switch_bool_t request_tiers, switch_xml_t x_queues_cfg)
 {
 	cc_queue_t *queue = NULL;
-	switch_xml_t x_queues, x_queue, cfg, xml, x_agents, x_agent;
+	switch_xml_t x_queues, x_queue, cfg, x_agents, x_agent, x_tiers;
+	switch_xml_t xml = NULL;
 	switch_event_t *event = NULL;
 	switch_event_t *params = NULL;
 
@@ -689,13 +703,16 @@ static cc_queue_t *load_queue(const char *queue_name, switch_bool_t request_agen
 	switch_assert(params);
 	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "CC-Queue", queue_name);
 
-	if (!(xml = switch_xml_open_cfg(global_cf, &cfg, params))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", global_cf);
-		goto end;
-	}
-
-	if (!(x_queues = switch_xml_child(cfg, "queues"))) {
-		goto end;
+	if (x_queues_cfg) {
+		x_queues = x_queues_cfg;
+	} else {
+		if (!(xml = switch_xml_open_cfg(global_cf, &cfg, params))) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", global_cf);
+			goto end;
+		}
+		if (!(x_queues = switch_xml_child(cfg, "queues"))) {
+			goto end;
+		}
 	}
 
 	if ((x_queue = switch_xml_find_child(x_queues, "queue", "name", queue_name))) {
@@ -733,6 +750,11 @@ static cc_queue_t *load_queue(const char *queue_name, switch_bool_t request_agen
 		queue->calls_answered = 0;
 		queue->calls_abandoned = 0;
 
+		if (cc_agent_str2status(queue->agent_no_answer_status) == CC_AGENT_STATUS_UNKNOWN) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Queue %s has invalid agent-no-answer-status, setting to %s", queue->name, cc_agent_status2str(CC_AGENT_STATUS_ON_BREAK));
+			queue->agent_no_answer_status = switch_core_strdup(pool, cc_agent_status2str(CC_AGENT_STATUS_ON_BREAK));
+		}
+
 		switch_mutex_init(&queue->mutex, SWITCH_MUTEX_NESTED, queue->pool);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Added queue %s\n", queue->name);
 		switch_core_hash_insert(globals.queue_hash, queue->name, queue);
@@ -744,13 +766,13 @@ static cc_queue_t *load_queue(const char *queue_name, switch_bool_t request_agen
 		for (x_agent = switch_xml_child(x_agents, "agent"); x_agent; x_agent = x_agent->next) {
 			const char *agent = switch_xml_attr(x_agent, "name");
 			if (agent) {
-				load_agent(agent, params);
+				load_agent(agent, params, x_agents);
 			}
 		}
 	}
 	/* Importing from XML config Agent Tiers */
-	if (queue && request_tiers) {
-		load_tiers(SWITCH_TRUE, NULL, NULL, params);
+	if (queue && request_tiers && (x_tiers = switch_xml_child(cfg, "tiers"))) {
+		load_tiers(SWITCH_TRUE, queue_name, NULL, params, x_tiers);
 	}
 
 end:
@@ -773,7 +795,7 @@ static cc_queue_t *get_queue(const char *queue_name)
 
 	switch_mutex_lock(globals.mutex);
 	if (!(queue = switch_core_hash_find(globals.queue_hash, queue_name))) {
-		queue = load_queue(queue_name, SWITCH_FALSE, SWITCH_FALSE);
+		queue = load_queue(queue_name, SWITCH_FALSE, SWITCH_FALSE, NULL);
 	}
 	if (queue) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "[%s] rwlock\n", queue->name);
@@ -805,6 +827,7 @@ struct call_helper {
 	int reject_delay_time;
 	int busy_delay_time;
 	int no_answer_delay_time;
+	cc_agent_status_t agent_no_answer_status;
 
 	switch_memory_pool_t *pool;
 };
@@ -1273,15 +1296,21 @@ cc_status_t cc_tier_del(const char *queue_name, const char *agent)
 	return result;
 }
 
-static switch_status_t load_agent(const char *agent_name, switch_event_t *params)
+static switch_status_t load_agent(const char *agent_name, switch_event_t *params, switch_xml_t x_agents_cfg)
 {
-	switch_xml_t x_agents, x_agent, cfg, xml;
-	if (!(xml = switch_xml_open_cfg(global_cf, &cfg, params))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", global_cf);
-		return SWITCH_STATUS_FALSE;
-	}
-	if (!(x_agents = switch_xml_child(cfg, "agents"))) {
-		goto end;
+	switch_xml_t x_agents, x_agent, cfg;
+	switch_xml_t xml = NULL;
+
+	if (x_agents_cfg) {
+		x_agents = x_agents_cfg;
+	} else {
+		if (!(xml = switch_xml_open_cfg(global_cf, &cfg, params))) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", global_cf);
+			return SWITCH_STATUS_FALSE;
+		}
+		if (!(x_agents = switch_xml_child(cfg, "agents"))) {
+			goto end;
+		}
 	}
 
 	if ((x_agent = switch_xml_find_child(x_agents, "agent", "name", agent_name))) {
@@ -1365,18 +1394,23 @@ static switch_status_t load_tier(const char *queue, const char *agent, const cha
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t load_tiers(switch_bool_t load_all, const char *queue_name, const char *agent_name, switch_event_t *params)
+static switch_status_t load_tiers(switch_bool_t load_all, const char *queue_name, const char *agent_name, switch_event_t *params, switch_xml_t x_tiers_cfg)
 {
-	switch_xml_t x_tiers, x_tier, cfg, xml;
+	switch_xml_t x_tiers, x_tier, cfg;
+	switch_xml_t xml = NULL;
 	switch_status_t result = SWITCH_STATUS_FALSE;
 
-	if (!(xml = switch_xml_open_cfg(global_cf, &cfg, params))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", global_cf);
-		return SWITCH_STATUS_FALSE;
-	}
+	if (x_tiers_cfg) {
+		x_tiers = x_tiers_cfg;
+	} else {
+		if (!(xml = switch_xml_open_cfg(global_cf, &cfg, params))) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", global_cf);
+			return SWITCH_STATUS_FALSE;
+		}
 
-	if (!(x_tiers = switch_xml_child(cfg, "tiers"))) {
-		goto end;
+		if (!(x_tiers = switch_xml_child(cfg, "tiers"))) {
+			goto end;
+		}
 	}
 
 	/* Importing from XML config Agent Tiers */
@@ -1408,7 +1442,7 @@ end:
 static switch_status_t load_config(void)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	switch_xml_t cfg, xml, settings, param, x_queues, x_queue, x_agents, x_agent;
+	switch_xml_t cfg, xml, settings, param, x_queues, x_queue, x_agents, x_agent, x_tiers;
 	switch_cache_db_handle_t *dbh = NULL;
 	char *sql = NULL;
 
@@ -1459,6 +1493,7 @@ static switch_status_t load_config(void)
 									   "alter table agents add busy_delay_time  integer not null default 0;");
 	switch_cache_db_test_reactive(dbh, "select count(no_answer_delay_time) from agents", NULL, "alter table agents add no_answer_delay_time integer not null default 0;");
 	switch_cache_db_test_reactive(dbh, "select count(ready_time) from agents", "drop table agents", agents_sql);
+	switch_cache_db_test_reactive(dbh, "select external_calls_count from agents", NULL, "alter table agents add external_calls_count integer not null default 0;");
 	switch_cache_db_test_reactive(dbh, "select count(queue) from tiers", "drop table tiers" , tiers_sql);
 
 	switch_cache_db_release_db_handle(&dbh);
@@ -1466,7 +1501,8 @@ static switch_status_t load_config(void)
 	/* Reset a unclean shutdown */
 	sql = switch_mprintf("update agents set state = 'Waiting', uuid = '' where system = 'single_box';"
 						 "update tiers set state = 'Ready' where agent IN (select name from agents where system = 'single_box');"
-						 "update members set state = '%q', session_uuid = '' where system = 'single_box';",
+						 "update members set state = '%q', session_uuid = '' where system = 'single_box';"
+						 "update agents set external_calls_count = 0 where system = 'single_box';",
 						 cc_member_state2str(CC_MEMBER_STATE_ABANDONED));
 	cc_execute_sql(NULL, sql, NULL);
 	switch_safe_free(sql);
@@ -1488,7 +1524,8 @@ static switch_status_t load_config(void)
 	/* Loading queue into memory struct */
 	if ((x_queues = switch_xml_child(cfg, "queues"))) {
 		for (x_queue = switch_xml_child(x_queues, "queue"); x_queue; x_queue = x_queue->next) {
-			load_queue(switch_xml_attr_soft(x_queue, "name"), SWITCH_FALSE, SWITCH_FALSE);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Loading queue %s\n", switch_xml_attr_soft(x_queue, "name"));
+			load_queue(switch_xml_attr_soft(x_queue, "name"), SWITCH_FALSE, SWITCH_FALSE, x_queues);
 		}
 	}
 
@@ -1497,13 +1534,17 @@ static switch_status_t load_config(void)
 		for (x_agent = switch_xml_child(x_agents, "agent"); x_agent; x_agent = x_agent->next) {
 			const char *agent = switch_xml_attr(x_agent, "name");
 			if (agent) {
-				load_agent(agent, NULL);
+				load_agent(agent, NULL, x_agents);
 			}
 		}
 	}
 
 	/* Importing from XML config Agent Tiers */
-	load_tiers(SWITCH_TRUE, NULL, NULL, NULL);
+	if ((x_tiers = switch_xml_child(cfg, "tiers"))) {
+		load_tiers(SWITCH_TRUE, NULL, NULL, NULL, x_tiers);
+	} else {
+		load_tiers(SWITCH_TRUE, NULL, NULL, NULL, NULL);
+	}
 
 end:
 	switch_mutex_unlock(globals.mutex);
@@ -1970,11 +2011,11 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 				cc_execute_sql(NULL, sql, NULL);
 				switch_safe_free(sql);
 
-				/* Put Agent on break because he didn't answer often */
+				/* Change Agent Status because he didn't answer often */
 				if (h->max_no_answer > 0 && (h->no_answer_count + 1) >= h->max_no_answer) {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_DEBUG, "Agent %s reach maximum no answer of %d, Putting agent on break\n",
-							h->agent_name, h->max_no_answer);
-					cc_agent_update("status", cc_agent_status2str(CC_AGENT_STATUS_ON_BREAK), h->agent_name);
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_DEBUG, "Agent %s reach maximum no answer of %d, setting agent status to %s\n",
+							h->agent_name, h->max_no_answer, cc_agent_status2str(h->agent_no_answer_status));
+					cc_agent_update("status", cc_agent_status2str(h->agent_no_answer_status), h->agent_name);
 				}
 				break;
 		}
@@ -2055,6 +2096,8 @@ struct agent_callback {
 	switch_bool_t tier_rule_wait_multiply_level;
 	switch_bool_t tier_rule_no_agent_no_wait;
 	switch_bool_t agent_found;
+	switch_bool_t skip_agents_with_external_calls;
+	cc_agent_status_t agent_no_answer_status;
 
 	int tier;
 	int tier_agent_available;
@@ -2084,6 +2127,7 @@ static int agents_callback(void *pArg, int argc, char **argv, char **columnNames
 	const char *agent_tier_level = argv[15];
 	const char *agent_type = argv[16];
 	const char *agent_uuid = argv[17];
+	const char *agent_external_calls_count = argv[18];
 
 	switch_bool_t contact_agent = SWITCH_TRUE;
 
@@ -2126,7 +2170,10 @@ static int agents_callback(void *pArg, int argc, char **argv, char **columnNames
 	if (! (strcasecmp(agent_status, cc_agent_status2str(CC_AGENT_STATUS_ON_BREAK)))) {
 		contact_agent = SWITCH_FALSE;
 	}
-
+	/* XXX callcenter_track app can update this counter after we selected this agent on database */
+	if (cbt->skip_agents_with_external_calls && atoi(agent_external_calls_count) > 0) {
+		contact_agent = SWITCH_FALSE;
+	}
 	if (contact_agent == SWITCH_FALSE) {
 		return 0; /* Continue to next Agent */
 	}
@@ -2207,6 +2254,7 @@ static int agents_callback(void *pArg, int argc, char **argv, char **columnNames
 				h->reject_delay_time = atoi(agent_reject_delay_time);
 				h->busy_delay_time = atoi(agent_busy_delay_time);
 				h->no_answer_delay_time = atoi(agent_no_answer_delay_time);
+				h->agent_no_answer_status = cbt->agent_no_answer_status;
 
 				if (!strcasecmp(cbt->strategy, "ring-progressively")) {
 					switch_core_session_t *member_session = switch_core_session_locate(cbt->member_session_uuid);
@@ -2302,6 +2350,9 @@ static int members_callback(void *pArg, int argc, char **argv, char **columnName
 		if (queue->record_template) {
 			queue_record_template = strdup(queue->record_template);
 		}
+
+		cbt.skip_agents_with_external_calls = queue->skip_agents_with_external_calls;
+		cbt.agent_no_answer_status = cc_agent_str2status(queue->agent_no_answer_status);
 
 		queue_rwunlock(queue);
 	}
@@ -2406,13 +2457,13 @@ static int members_callback(void *pArg, int argc, char **argv, char **columnName
 			switch_core_session_rwunlock(member_session);
 		}
 
-		sql = switch_mprintf("SELECT system, name, status, contact, no_answer_count, max_no_answer, reject_delay_time, busy_delay_time, no_answer_delay_time, tiers.state, agents.last_bridge_end, agents.wrap_up_time, agents.state, agents.ready_time, tiers.position as tiers_position, tiers.level as tiers_level, agents.type, agents.uuid, agents.last_offered_call as agents_last_offered_call, 1 as dyn_order FROM agents LEFT JOIN tiers ON (agents.name = tiers.agent)"
+		sql = switch_mprintf("SELECT system, name, status, contact, no_answer_count, max_no_answer, reject_delay_time, busy_delay_time, no_answer_delay_time, tiers.state, agents.last_bridge_end, agents.wrap_up_time, agents.state, agents.ready_time, tiers.position as tiers_position, tiers.level as tiers_level, agents.type, agents.uuid, agents.last_offered_call as agents_last_offered_call, 1 as dyn_order, external_calls_count FROM agents LEFT JOIN tiers ON (agents.name = tiers.agent)"
 				" WHERE tiers.queue = '%q'"
 				" AND (agents.status = '%q' OR agents.status = '%q' OR agents.status = '%q')"
 				" AND tiers.position > %d"
 				" AND tiers.level = %d"
 				" UNION "
-				"SELECT system, name, status, contact, no_answer_count, max_no_answer, reject_delay_time, busy_delay_time, no_answer_delay_time, tiers.state, agents.last_bridge_end, agents.wrap_up_time, agents.state, agents.ready_time, tiers.position as tiers_position, tiers.level as tiers_level, agents.type, agents.uuid, agents.last_offered_call as agents_last_offered_call, 2 as dyn_order FROM agents LEFT JOIN tiers ON (agents.name = tiers.agent)"
+				"SELECT system, name, status, contact, no_answer_count, max_no_answer, reject_delay_time, busy_delay_time, no_answer_delay_time, tiers.state, agents.last_bridge_end, agents.wrap_up_time, agents.state, agents.ready_time, tiers.position as tiers_position, tiers.level as tiers_level, agents.type, agents.uuid, agents.last_offered_call as agents_last_offered_call, 2 as dyn_order, external_calls_count FROM agents LEFT JOIN tiers ON (agents.name = tiers.agent)"
 				" WHERE tiers.queue = '%q'"
 				" AND (agents.status = '%q' OR agents.status = '%q' OR agents.status = '%q')"
 				" ORDER BY dyn_order asc, tiers_level, tiers_position, agents_last_offered_call",
@@ -2424,13 +2475,13 @@ static int members_callback(void *pArg, int argc, char **argv, char **columnName
 				cc_agent_status2str(CC_AGENT_STATUS_AVAILABLE), cc_agent_status2str(CC_AGENT_STATUS_ON_BREAK), cc_agent_status2str(CC_AGENT_STATUS_AVAILABLE_ON_DEMAND)
 				);
 	} else if (!strcasecmp(queue->strategy, "round-robin")) {
-		sql = switch_mprintf("SELECT system, name, status, contact, no_answer_count, max_no_answer, reject_delay_time, busy_delay_time, no_answer_delay_time, tiers.state, agents.last_bridge_end, agents.wrap_up_time, agents.state, agents.ready_time, tiers.position as tiers_position, tiers.level as tiers_level, agents.type, agents.uuid, agents.last_offered_call as agents_last_offered_call, 1 as dyn_order FROM agents LEFT JOIN tiers ON (agents.name = tiers.agent)"
+		sql = switch_mprintf("SELECT system, name, status, contact, no_answer_count, max_no_answer, reject_delay_time, busy_delay_time, no_answer_delay_time, tiers.state, agents.last_bridge_end, agents.wrap_up_time, agents.state, agents.ready_time, tiers.position as tiers_position, tiers.level as tiers_level, agents.type, agents.uuid, agents.last_offered_call as agents_last_offered_call, 1 as dyn_order, external_calls_count FROM agents LEFT JOIN tiers ON (agents.name = tiers.agent)"
 				" WHERE tiers.queue = '%q'"
 				" AND (agents.status = '%q' OR agents.status = '%q' OR agents.status = '%q')"
 				" AND tiers.position > (SELECT tiers.position FROM agents LEFT JOIN tiers ON (agents.name = tiers.agent) WHERE tiers.queue = '%q' AND agents.last_offered_call > 0 ORDER BY agents.last_offered_call DESC LIMIT 1)"
 				" AND tiers.level = (SELECT tiers.level FROM agents LEFT JOIN tiers ON (agents.name = tiers.agent) WHERE tiers.queue = '%q' AND agents.last_offered_call > 0 ORDER BY agents.last_offered_call DESC LIMIT 1)"
 				" UNION "
-				"SELECT system, name, status, contact, no_answer_count, max_no_answer, reject_delay_time, busy_delay_time, no_answer_delay_time, tiers.state, agents.last_bridge_end, agents.wrap_up_time, agents.state, agents.ready_time, tiers.position as tiers_position, tiers.level as tiers_level, agents.type, agents.uuid, agents.last_offered_call as agents_last_offered_call, 2 as dyn_order FROM agents LEFT JOIN tiers ON (agents.name = tiers.agent)"
+				"SELECT system, name, status, contact, no_answer_count, max_no_answer, reject_delay_time, busy_delay_time, no_answer_delay_time, tiers.state, agents.last_bridge_end, agents.wrap_up_time, agents.state, agents.ready_time, tiers.position as tiers_position, tiers.level as tiers_level, agents.type, agents.uuid, agents.last_offered_call as agents_last_offered_call, 2 as dyn_order, external_calls_count FROM agents LEFT JOIN tiers ON (agents.name = tiers.agent)"
 				" WHERE tiers.queue = '%q'"
 				" AND (agents.status = '%q' OR agents.status = '%q' OR agents.status = '%q')"
 				" ORDER BY dyn_order asc, tiers_level, tiers_position, agents_last_offered_call",
@@ -2465,7 +2516,7 @@ static int members_callback(void *pArg, int argc, char **argv, char **columnName
 			sql_order_by = switch_mprintf("level, position, agents.last_offered_call");
 		}
 
-		sql = switch_mprintf("SELECT system, name, status, contact, no_answer_count, max_no_answer, reject_delay_time, busy_delay_time, no_answer_delay_time, tiers.state, agents.last_bridge_end, agents.wrap_up_time, agents.state, agents.ready_time, tiers.position, tiers.level, agents.type, agents.uuid FROM agents LEFT JOIN tiers ON (agents.name = tiers.agent)"
+		sql = switch_mprintf("SELECT system, name, status, contact, no_answer_count, max_no_answer, reject_delay_time, busy_delay_time, no_answer_delay_time, tiers.state, agents.last_bridge_end, agents.wrap_up_time, agents.state, agents.ready_time, tiers.position, tiers.level, agents.type, agents.uuid, external_calls_count FROM agents LEFT JOIN tiers ON (agents.name = tiers.agent)"
 				" WHERE tiers.queue = '%q'"
 				" AND (agents.status = '%q' OR agents.status = '%q' OR agents.status = '%q')"
 				" ORDER BY %q",
@@ -2902,6 +2953,7 @@ SWITCH_STANDARD_APP(callcenter_function)
 
 	/* Send Event with queue count */
 	cc_queue_count(queue_name);
+	cc_send_presence(queue);
 
 	/* Start Thread that will playback different prompt to the channel */
 	switch_core_new_memory_pool(&pool);
@@ -2961,6 +3013,7 @@ SWITCH_STANDARD_APP(callcenter_function)
 			} else if (status == SWITCH_STATUS_BREAK) {
 				char buf[2] = { ht.dtmf, 0 };
 				switch_channel_set_variable(member_channel, "cc_exit_key", buf);
+				h->member_cancel_reason = CC_MEMBER_CANCEL_REASON_EXIT_WITH_KEY;
 				break;
 			} else if (!SWITCH_READ_ACCEPTABLE(status)) {
 				break;
@@ -2969,6 +3022,7 @@ SWITCH_STANDARD_APP(callcenter_function)
 			if ((switch_ivr_collect_digits_callback(member_session, &args, 0, 0)) == SWITCH_STATUS_BREAK) {
 				char buf[2] = { ht.dtmf, 0 };
 				switch_channel_set_variable(member_channel, "cc_exit_key", buf);
+				h->member_cancel_reason = CC_MEMBER_CANCEL_REASON_EXIT_WITH_KEY;
 				break;
 			}
 		}
@@ -3052,9 +3106,136 @@ SWITCH_STANDARD_APP(callcenter_function)
 
 	/* Send Event with queue count */
 	cc_queue_count(queue_name);
+	cc_send_presence(queue);
 
 end:
 
+	return;
+}
+
+switch_application_interface_t *app_interface = NULL;
+
+static switch_status_t cc_hook_state_run(switch_core_session_t *session)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_channel_state_t state = switch_channel_get_state(channel);
+	const char *agent_name = NULL;
+	char *sql = NULL;
+
+	agent_name = switch_channel_get_variable(channel, "cc_tracked_agent");
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Called cc_hook_hanguphook channel %s with state %s", switch_channel_get_name(channel), switch_channel_state_name(state));
+
+	if (state == CS_HANGUP) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Tracked call for agent %s ended, decreasing external_calls_count", agent_name);
+		sql = switch_mprintf("UPDATE agents SET external_calls_count = external_calls_count - 1 WHERE name = '%q'", agent_name);
+		cc_execute_sql(NULL, sql, NULL);
+		switch_safe_free(sql);
+		switch_core_event_hook_remove_state_run(session, cc_hook_state_run);
+		UNPROTECT_INTERFACE(app_interface);
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_STANDARD_APP(callcenter_track)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	char agent_status[255];
+	char *agent_name = NULL;
+	char *sql = NULL;
+
+	if (zstr(data)) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Missing agent name\n");
+		return;
+	}
+
+	if (cc_agent_get("status", data, agent_status, sizeof(agent_status)) != CC_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Invalid agent %s", data);
+		return;
+	}
+
+	agent_name = switch_safe_strdup(data);
+
+	switch_channel_set_variable(channel, "cc_tracked_agent", agent_name);
+
+	sql = switch_mprintf("UPDATE agents SET external_calls_count = external_calls_count + 1 WHERE name = '%q'", agent_name);
+	cc_execute_sql(NULL, sql, NULL);
+	switch_safe_free(sql);
+
+	switch_core_event_hook_add_state_run(session, cc_hook_state_run);
+	PROTECT_INTERFACE(app_interface);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Tracking this call for agent %s", data);
+	switch_safe_free(agent_name);
+
+	return;
+}
+
+static void cc_send_presence(cc_queue_t *queue) {
+	char *sql;
+	char res[256] = "";
+	int count = 0;
+	switch_event_t *send_event;
+
+	sql = switch_mprintf("SELECT COUNT(*) FROM members WHERE queue = '%q' AND state = '%q'", queue->name, cc_member_state2str(CC_MEMBER_STATE_WAITING));
+	cc_execute_sql2str(NULL, NULL, sql, res, sizeof(res));
+	count = atoi(res);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Queue has %d waiting calls.\n", count);
+
+	if (switch_event_create(&send_event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
+		switch_event_add_header_string(send_event, SWITCH_STACK_BOTTOM, "proto", "callcenter");
+		switch_event_add_header(send_event, SWITCH_STACK_BOTTOM, "login", "%s", queue->name);
+		switch_event_add_header_string(send_event, SWITCH_STACK_BOTTOM, "from", queue->name);
+
+		if (count > 0) {
+			switch_event_add_header(send_event, SWITCH_STACK_BOTTOM, "force-status", "Active (%d waiting)", count);
+		} else {
+			switch_event_add_header_string(send_event, SWITCH_STACK_BOTTOM, "force-status", "Idle");
+		}
+
+		switch_event_add_header_string(send_event, SWITCH_STACK_BOTTOM, "rpid", "unknown");
+		switch_event_add_header_string(send_event, SWITCH_STACK_BOTTOM, "event_type", "presence");
+		switch_event_add_header_string(send_event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
+		switch_event_add_header(send_event, SWITCH_STACK_BOTTOM, "event_count", "%d", 0);
+
+		switch_event_add_header_string(send_event, SWITCH_STACK_BOTTOM, "channel-state", count > 0 ? "CS_ROUTING" : "CS_HANGUP");
+		switch_event_add_header_string(send_event, SWITCH_STACK_BOTTOM, "unique-id", queue->name);
+		switch_event_add_header_string(send_event, SWITCH_STACK_BOTTOM, "answer-state", count > 0 ? "confirmed" : "terminated");
+		switch_event_add_header_string(send_event, SWITCH_STACK_BOTTOM, "presence-call-direction", "inbound");
+		switch_event_fire(&send_event);
+
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to create presence in event\n");
+	}
+	switch_safe_free(sql);
+}
+
+static void cc_presence_event_handler(switch_event_t *event) {
+	char *to = switch_event_get_header(event, "to");
+	char *dup_to = NULL, *queue_name;
+	cc_queue_t *queue;
+
+	if (!globals.running) {
+		return;
+	}
+//	DUMP_EVENT(event);
+	if (!to || strncasecmp(to, "callcenter+", 11) || !strchr(to, '@')) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Not interested!\n");
+		return;
+	}
+
+	dup_to = strdup(to);
+	queue_name = dup_to + 11;
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Searching queue %s\n", queue_name);
+	queue = get_queue(queue_name);
+
+	if (!queue) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Queue not found, exit!\n");
+		return;
+	}
+	cc_send_presence(queue);
+	queue_rwunlock(queue);
+	switch_safe_free(dup_to);
 	return;
 }
 
@@ -3227,7 +3408,7 @@ SWITCH_STANDARD_API(cc_config_api_function)
 				goto done;
 			} else {
 				const char *agent = argv[0 + initial_argc];
-				switch (load_agent(agent, NULL)) {
+				switch (load_agent(agent, NULL, NULL)) {
 					case SWITCH_STATUS_SUCCESS:
 						stream->write_function(stream, "%s", "+OK\n");
 						break;
@@ -3420,7 +3601,7 @@ SWITCH_STANDARD_API(cc_config_api_function)
 				if (!strcasecmp(queue, "all")) {
 					load_all = SWITCH_TRUE;
 				}
-				switch (load_tiers(load_all, queue, agent, NULL)) {
+				switch (load_tiers(load_all, queue, agent, NULL, NULL)) {
 					case SWITCH_STATUS_SUCCESS:
 						stream->write_function(stream, "%s", "+OK\n");
 						break;
@@ -3448,7 +3629,7 @@ SWITCH_STANDARD_API(cc_config_api_function)
 			} else {
 				const char *queue_name = argv[0 + initial_argc];
 				cc_queue_t *queue = NULL;
-				if ((queue = load_queue(queue_name, SWITCH_TRUE, SWITCH_TRUE))) {
+				if ((queue = load_queue(queue_name, SWITCH_TRUE, SWITCH_TRUE, NULL))) {
 					stream->write_function(stream, "%s", "+OK\n");
 				} else {
 					stream->write_function(stream, "%s", "-ERR Invalid Queue not found!\n");
@@ -3474,7 +3655,7 @@ SWITCH_STANDARD_API(cc_config_api_function)
 				const char *queue_name = argv[0 + initial_argc];
 				cc_queue_t *queue = NULL;
 				destroy_queue(queue_name);
-				if ((queue = load_queue(queue_name, SWITCH_TRUE, SWITCH_TRUE))) {
+				if ((queue = load_queue(queue_name, SWITCH_TRUE, SWITCH_TRUE, NULL))) {
 					stream->write_function(stream, "%s", "+OK\n");
 				} else {
 					stream->write_function(stream, "%s", "-ERR Invalid Queue not found!\n");
@@ -3490,7 +3671,7 @@ SWITCH_STANDARD_API(cc_config_api_function)
 				                       "tier_rule_wait_second|tier_rule_wait_multiply_level|"\
 				                       "tier_rule_no_agent_no_wait|discard_abandoned_after|"\
 				                       "abandoned_resume_allowed|max_wait_time|max_wait_time_with_no_agent|"\
-				                       "max_wait_time_with_no_agent_time_reached|record_template|calls_answered|calls_abandoned|ring_progressively_delay\n");
+				                       "max_wait_time_with_no_agent_time_reached|record_template|calls_answered|calls_abandoned|ring_progressively_delay|skip_agents_with_external_calls|agent_no_answer_status\n");
 				switch_mutex_lock(globals.mutex);
 				for (hi = switch_core_hash_first(globals.queue_hash); hi; hi = switch_core_hash_next(&hi)) {
 					void *val = NULL;
@@ -3499,7 +3680,7 @@ SWITCH_STANDARD_API(cc_config_api_function)
 					cc_queue_t *queue;
 					switch_core_hash_this(hi, &key, &keylen, &val);
 					queue = (cc_queue_t *) val;
-					stream->write_function(stream, "%s|%s|%s|%s|%s|%d|%s|%s|%d|%s|%d|%d|%d|%s|%d|%d|%d\n",
+					stream->write_function(stream, "%s|%s|%s|%s|%s|%d|%s|%s|%d|%s|%d|%d|%d|%s|%d|%d|%d|%s|%s\n",
 					                       queue->name,
 					                       queue->strategy,
 					                       queue->moh,
@@ -3516,7 +3697,9 @@ SWITCH_STANDARD_API(cc_config_api_function)
 					                       queue->record_template,
 					                       queue->calls_answered,
 					                       queue->calls_abandoned,
-					                       queue->ring_progressively_delay);
+					                       queue->ring_progressively_delay,
+										   (queue->skip_agents_with_external_calls?"true":"false"),
+										   queue->agent_no_answer_status);
 					queue = NULL;
 				}
 				switch_mutex_unlock(globals.mutex);
@@ -3657,29 +3840,31 @@ SWITCH_STANDARD_JSON_API(json_callcenter_config_function)
         switch_mutex_lock(globals.mutex);
         
         for (hi = switch_core_hash_first(globals.queue_hash); hi; hi = switch_core_hash_next(&hi)) {
-        	cJSON *o = cJSON_CreateObject();
-            void *val = NULL;
-            const void *key;
-            switch_ssize_t keylen;
-            cc_queue_t *queue;
-            switch_core_hash_this(hi, &key, &keylen, &val);
-            queue = (cc_queue_t *) val;
-            cJSON_AddItemToObject(o, "name", cJSON_CreateString(queue->name));
-            cJSON_AddItemToObject(o, "strategy", cJSON_CreateString(queue->strategy));
-            cJSON_AddItemToObject(o, "moh_sound", cJSON_CreateString(queue->moh));
-            cJSON_AddItemToObject(o, "time_base_score", cJSON_CreateString(queue->time_base_score));
-            cJSON_AddItemToObject(o, "tier_rules_apply", cJSON_CreateString(queue->tier_rules_apply ? "true" : "false"));
-            cJSON_AddItemToObject(o, "tier_rule_wait_second", cJSON_CreateNumber(queue->tier_rule_wait_second));
-            cJSON_AddItemToObject(o, "tier_rule_wait_multiply_level", cJSON_CreateString(queue->tier_rule_wait_multiply_level ? "true": "false"));
-            cJSON_AddItemToObject(o, "tier_rule_no_agent_no_wait", cJSON_CreateString(queue->tier_rule_no_agent_no_wait ? "true": "false"));
-            cJSON_AddItemToObject(o, "discard_abandoned_after", cJSON_CreateNumber(queue->discard_abandoned_after));
-            cJSON_AddItemToObject(o, "abandoned_resume_allowed", cJSON_CreateString(queue->abandoned_resume_allowed ? "true": "false"));
-            cJSON_AddItemToObject(o, "max_wait_time", cJSON_CreateNumber(queue->max_wait_time));
-            cJSON_AddItemToObject(o, "max_wait_time_with_no_agent", cJSON_CreateNumber(queue->max_wait_time_with_no_agent));
-            cJSON_AddItemToObject(o, "max_wait_time_with_no_agent_time_reached", cJSON_CreateNumber(queue->max_wait_time_with_no_agent_time_reached));
-            cJSON_AddItemToObject(o, "record_template", cJSON_CreateString(queue->record_template));
-        	cJSON_AddItemToArray(reply, o);
-            queue = NULL;
+			cJSON *o = cJSON_CreateObject();
+			void *val = NULL;
+			const void *key;
+			switch_ssize_t keylen;
+			cc_queue_t *queue;
+			switch_core_hash_this(hi, &key, &keylen, &val);
+			queue = (cc_queue_t *) val;
+			cJSON_AddItemToObject(o, "name", cJSON_CreateString(queue->name));
+			cJSON_AddItemToObject(o, "strategy", cJSON_CreateString(queue->strategy));
+			cJSON_AddItemToObject(o, "moh_sound", cJSON_CreateString(queue->moh));
+			cJSON_AddItemToObject(o, "time_base_score", cJSON_CreateString(queue->time_base_score));
+			cJSON_AddItemToObject(o, "tier_rules_apply", cJSON_CreateString(queue->tier_rules_apply ? "true" : "false"));
+			cJSON_AddItemToObject(o, "tier_rule_wait_second", cJSON_CreateNumber(queue->tier_rule_wait_second));
+			cJSON_AddItemToObject(o, "tier_rule_wait_multiply_level", cJSON_CreateString(queue->tier_rule_wait_multiply_level ? "true": "false"));
+			cJSON_AddItemToObject(o, "tier_rule_no_agent_no_wait", cJSON_CreateString(queue->tier_rule_no_agent_no_wait ? "true": "false"));
+			cJSON_AddItemToObject(o, "discard_abandoned_after", cJSON_CreateNumber(queue->discard_abandoned_after));
+			cJSON_AddItemToObject(o, "abandoned_resume_allowed", cJSON_CreateString(queue->abandoned_resume_allowed ? "true": "false"));
+			cJSON_AddItemToObject(o, "max_wait_time", cJSON_CreateNumber(queue->max_wait_time));
+			cJSON_AddItemToObject(o, "max_wait_time_with_no_agent", cJSON_CreateNumber(queue->max_wait_time_with_no_agent));
+			cJSON_AddItemToObject(o, "max_wait_time_with_no_agent_time_reached", cJSON_CreateNumber(queue->max_wait_time_with_no_agent_time_reached));
+			cJSON_AddItemToObject(o, "record_template", cJSON_CreateString(queue->record_template));
+			cJSON_AddItemToObject(o, "skip_agents_with_external_calls", cJSON_CreateString(queue->skip_agents_with_external_calls ? "true" : "false"));
+			cJSON_AddItemToObject(o, "agent_no_answer_status", cJSON_CreateString(queue->agent_no_answer_status));
+			cJSON_AddItemToArray(reply, o);
+			queue = NULL;
         }
         switch_mutex_unlock(globals.mutex);
 		*json_reply = reply;
@@ -3786,7 +3971,6 @@ SWITCH_STANDARD_JSON_API(json_callcenter_config_function)
 /* Macro expands to: switch_status_t mod_callcenter_load(switch_loadable_module_interface_t **module_interface, switch_memory_pool_t *pool) */
 SWITCH_MODULE_LOAD_FUNCTION(mod_callcenter_load)
 {
-	switch_application_interface_t *app_interface;
 	switch_api_interface_t *api_interface;
 	switch_json_api_interface_t *json_api_interface;
 	switch_status_t status;
@@ -3807,6 +3991,12 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_callcenter_load)
 		return status;
 	}
 
+	if (switch_event_bind_removable(modname, SWITCH_EVENT_PRESENCE_PROBE, SWITCH_EVENT_SUBCLASS_ANY,
+									cc_presence_event_handler, NULL, &globals.node) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to subscribe for presence events!\n");
+		return SWITCH_STATUS_GENERR;
+	}
+
 	switch_mutex_lock(globals.mutex);
 	globals.running = 1;
 	switch_mutex_unlock(globals.mutex);
@@ -3819,6 +4009,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_callcenter_load)
 	}
 
 	SWITCH_ADD_APP(app_interface, "callcenter", "CallCenter", CC_DESC, callcenter_function, CC_USAGE, SAF_NONE);
+	SWITCH_ADD_APP(app_interface, "callcenter_track", "CallCenter Track Call", "Track external mod_callcenter calls to avoid place new calls", callcenter_track, CC_USAGE, SAF_NONE);
 	SWITCH_ADD_API(api_interface, "callcenter_config", "Config of callcenter", cc_config_api_function, CC_CONFIG_API_SYNTAX);
 
 	SWITCH_ADD_JSON_API(json_api_interface, "callcenter_config", "JSON Callcenter API", json_callcenter_config_function, "");
@@ -3875,7 +4066,8 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_callcenter_shutdown)
 
 
 	switch_event_free_subclass(CALLCENTER_EVENT);
-	
+	switch_event_unbind(&globals.node);
+
 	switch_mutex_lock(globals.mutex);
 	if (globals.running == 1) {
 		globals.running = 0;
