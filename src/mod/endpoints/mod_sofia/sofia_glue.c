@@ -152,8 +152,7 @@ void sofia_glue_attach_private(switch_core_session_t *session, sofia_profile_t *
 	if (sofia_test_pflag(tech_pvt->profile, PFLAG_T38_PASSTHRU)) {
 		switch_channel_set_flag(tech_pvt->channel, CF_T38_PASSTHRU);
 	}
-	
-	switch_core_media_check_dtmf_type(session);
+
 	switch_channel_set_cap(tech_pvt->channel, CC_MEDIA_ACK);
 	switch_channel_set_cap(tech_pvt->channel, CC_BYPASS_MEDIA);
 	switch_channel_set_cap(tech_pvt->channel, CC_PROXY_MEDIA);
@@ -192,6 +191,7 @@ void sofia_glue_attach_private(switch_core_session_t *session, sofia_profile_t *
 	switch_media_handle_create(&tech_pvt->media_handle, session, &tech_pvt->mparams);
 	switch_media_handle_set_media_flags(tech_pvt->media_handle, tech_pvt->profile->media_flags);
 
+	switch_core_media_check_dtmf_type(session);
 
 	for(i = 0; i < profile->cand_acl_count; i++) {
 		switch_core_media_add_ice_acl(session, SWITCH_MEDIA_TYPE_AUDIO, profile->cand_acl[i]);
