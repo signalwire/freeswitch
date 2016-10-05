@@ -3731,7 +3731,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 	int codec_ms = 0;
 	uint32_t remote_codec_rate = 0, fmtp_remote_codec_rate = 0;
 	const char *tmp;
-	int m_idx = 0, skip_rtcp = 0, skip_video_rtcp = 0;
+	int m_idx = 0, skip_rtcp = 0, skip_video_rtcp = 0, got_rtcp_mux = 0, got_video_rtcp_mux = 0;
 	int nm_idx = 0;
 	int vmatch_pt = 0;
 	int rtcp_auto_audio = 0, rtcp_auto_video = 0;
@@ -4142,12 +4142,20 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 			}
 
 			skip_rtcp = 0;
+			got_rtcp_mux = 0;
 			for (attr = m->m_attributes; attr; attr = attr->a_next) {
-				if (!strcasecmp(attr->a_name, "rtcp-mux") || !strcasecmp(attr->a_name, "ice-ufrag")) {
+				if (!strcasecmp(attr->a_name, "rtcp-mux")) {
+					got_rtcp_mux = 1;
+					skip_rtcp = 1;
+				} else if (!strcasecmp(attr->a_name, "ice-ufrag")) {
 					skip_rtcp = 1;
 				}
 			}
 
+			if (!got_rtcp_mux) {
+				a_engine->rtcp_mux = -1;
+			}
+			
 			for (attr = m->m_attributes; attr; attr = attr->a_next) {
 				if (!strcasecmp(attr->a_name, "rtcp") && attr->a_value && !skip_rtcp) {
 					a_engine->remote_rtcp_port = (switch_port_t)atoi(attr->a_value);
@@ -4701,10 +4709,18 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 			}
 
 			skip_video_rtcp = 0;
+			got_video_rtcp_mux = 0;
 			for (attr = m->m_attributes; attr; attr = attr->a_next) {
-				if (!strcasecmp(attr->a_name, "rtcp-mux") || !strcasecmp(attr->a_name, "ice-ufrag")) {
+				if (!strcasecmp(attr->a_name, "rtcp-mux")) {
+					got_video_rtcp_mux = 1;
+					skip_video_rtcp = 1;
+				} else if (!strcasecmp(attr->a_name, "ice-ufrag")) {
 					skip_video_rtcp = 1;
 				}
+			}
+
+			if (!got_video_rtcp_mux) {
+				v_engine->rtcp_mux = -1;
 			}
 
 			for (attr = m->m_attributes; attr; attr = attr->a_next) {
