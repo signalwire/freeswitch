@@ -475,27 +475,17 @@
 	    audio = false;
 	} else {
 	    audio = {
-		//mandatory: {},
-		//optional: []
-            advanced: []
 	    };
+
+	    if (obj.options.audioParams) {
+	        audio = obj.options.audioParams;
+        }
 
 	    if (obj.options.useMic !== "any") {
 		//audio.optional = [{sourceId: obj.options.useMic}]
 		audio.deviceId = {exact: obj.options.useMic};
 	    }
 
-	    //FIXME
-	    if (obj.options.audioParams) {
-		for (var key in obj.options.audioParams) {
-		    var con = {};
-		    //con[key] = obj.options.audioParams[key];
-		    if (obj.options.audioParams[key]) {
-			con.exact = key;
-			audio.advanced.push(con);
-		    }
-		}
-	    }
 
 
 	}

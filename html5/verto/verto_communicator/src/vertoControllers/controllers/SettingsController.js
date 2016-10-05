@@ -51,6 +51,16 @@
           if (storage.data.autoBand) {
             $scope.testSpeed();
           }
+
+          var audioParams = {
+            googEchoCancellation: storage.data.googEchoCancellation === undefined ? true : storage.data.googEchoCancellation,
+            googNoiseSuppression: storage.data.googNoiseSuppression === undefined ? true : storage.data.googNoiseSuppression,
+            googHighpassFilter: storage.data.googHighpassFilter === undefined ? true : storage.data.googHighpassFilter,
+            googAutoGainControl: storage.data.googAutoGainControl === undefined ? true : storage.data.googAutoGainControl,
+            googAutoGainControl2: storage.data.googAutoGainControl === undefined ? true : storage.data.googAutoGainControl
+          };
+          verto.data.instance.options.audioParams = audioParams;
+
         };
 
         $scope.changedLanguage = function(langKey){

@@ -709,7 +709,6 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
             socketUrl: data.wsURL,
             tag: "webcam",
             ringFile: "sounds/bell_ring2.wav",
-            // TODO: Add options for this.
             audioParams: {
                 googEchoCancellation: storage.data.googEchoCancellation === undefined ? true : storage.data.googEchoCancellation,
                 googNoiseSuppression: storage.data.googNoiseSuppression === undefined ? true : storage.data.googNoiseSuppression,
