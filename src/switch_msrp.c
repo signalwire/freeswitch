@@ -429,7 +429,7 @@ void dump_buffer(char *buf, switch_size_t len, int line)
 	}
 
 	buff[j] = '\0';
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%d:%ldDUMP:%s:DUMP\n", line, len, buff);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%d:%" SWITCH_SIZE_T_FMT "DUMP:%s:DUMP\n", line, len, buff);
 }
 
 char *find_delim(char *buf, int len, char *delim)
@@ -757,7 +757,7 @@ msrp_msg_t *msrp_parse_buffer(char *buf, int len, msrp_msg_t *msrp_msg, switch_m
 
 				return msrp_msg; /*Fixme: assuming \r\ndelimiter$\r\n present*/
 			}
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%ld %d %d\n", msrp_msg->payload_bytes, len, dlen);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%" SWITCH_SIZE_T_FMT " %d %d\n", msrp_msg->payload_bytes, len, dlen);
 
 			msrp_msg->state = MSRP_ST_ERROR;
 			return msrp_msg;
