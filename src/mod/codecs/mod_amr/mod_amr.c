@@ -275,8 +275,12 @@ static switch_status_t switch_amr_init(switch_codec_t *codec, switch_codec_flag_
 			}
 		}
 
+		/*init to default if there's no "mode-set" param */
+		context->enc_mode = globals.default_bitrate;
+		/* choose the highest mode (bitrate) for high audio quality from fmtp "mode-set" param */
+		/* Note: mode-set = 0 is a valid mode */
 		if (context->enc_modes) {
-			for (i = 7; i > -1; i++) {
+			for (i = 7; i > -1; i--) {
 				if (context->enc_modes & (1 << i)) {
 					context->enc_mode = (switch_byte_t) i;
 					break;
@@ -284,15 +288,10 @@ static switch_status_t switch_amr_init(switch_codec_t *codec, switch_codec_flag_
 			}
 		}
 
-		if (!context->enc_mode) {
-			context->enc_mode = globals.default_bitrate;
-		}
-
 		switch_snprintf(fmtptmp, sizeof(fmtptmp), "octet-align=%d; mode-set=%d", switch_test_flag(context, AMR_OPT_OCTET_ALIGN) ? 1 : 0,
 						context->enc_mode);
 		codec->fmtp_out = switch_core_strdup(codec->memory_pool, fmtptmp);
 
-		context->enc_mode = AMR_DEFAULT_BITRATE;
 		context->encoder_state = NULL;
 		context->decoder_state = NULL;
 
