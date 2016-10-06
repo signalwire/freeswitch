@@ -409,6 +409,7 @@ if not exist "$(OutDir)htdocs" xcopy "$(SolutionDir)htdocs\*.*" "$(OutDir)htdocs
     </ClCompile>
     <ClCompile Include="..\..\src\switch_curl.c" />
     <ClCompile Include="..\..\src\switch_dso.c" />
+    <ClCompile Include="..\..\src\switch_estimators.c" />
     <ClCompile Include="..\..\src\switch_event.c" />
     <ClCompile Include="..\..\src\switch_hashtable.c" />
     <ClCompile Include="..\..\src\switch_ivr.c" />
@@ -436,6 +437,7 @@ if not exist "$(OutDir)htdocs" xcopy "$(SolutionDir)htdocs\*.*" "$(OutDir)htdocs
     <ClCompile Include="..\..\src\switch_loadable_module.c" />
     <ClCompile Include="..\..\src\switch_log.c" />
     <ClCompile Include="..\..\src\switch_mprintf.c" />
+    <ClCompile Include="..\..\src\switch_msrp.c" />
     <ClCompile Include="..\..\src\switch_nat.c">
       <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">4389;4127;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">4389;4127;%(DisableSpecificWarnings)</DisableSpecificWarnings>
