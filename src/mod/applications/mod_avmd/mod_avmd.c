@@ -217,7 +217,7 @@ struct avmd_detector {
     uint8_t                     lagged, lag;
 };
 
-/*! Type that holds session information pertinent to the avmd module. */
+/*! Type that holds avmd detection session information. */
 struct avmd_session {
     switch_core_session_t   *session;
     switch_mutex_t          *mutex;
@@ -276,7 +276,7 @@ static void avmd_reloadxml_event_handler(switch_event_t *event);
 /* API command */
 static void avmd_show(switch_stream_handle_t *stream, switch_mutex_t *mutex);
 
-static void*
+static void* SWITCH_THREAD_FUNC
 avmd_detector_func(switch_thread_t *thread, void *arg);
 
 static uint8_t
@@ -297,7 +297,7 @@ static switch_status_t avmd_launch_threads(avmd_session_t *s) {
         d->lag = 0;
         switch_threadattr_create(&thd_attr, avmd_globals.pool);
         switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
-        if (switch_thread_create(&d->thread, thd_attr, avmd_detector_func, (void *)d, switch_core_session_get_pool(s->session)) != SWITCH_STATUS_SUCCESS) {
+        if (switch_thread_create(&d->thread, thd_attr, avmd_detector_func, d, switch_core_session_get_pool(s->session)) != SWITCH_STATUS_SUCCESS) {
             return SWITCH_STATUS_FALSE;
         }
         ++idx;
@@ -312,7 +312,7 @@ static switch_status_t avmd_launch_threads(avmd_session_t *s) {
         d->lag = idx + 1;
         switch_threadattr_create(&thd_attr, avmd_globals.pool);
         switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
-        if (switch_thread_create(&d->thread, thd_attr, avmd_detector_func, (void *)d, switch_core_session_get_pool(s->session)) != SWITCH_STATUS_SUCCESS) {
+        if (switch_thread_create(&d->thread, thd_attr, avmd_detector_func, d, switch_core_session_get_pool(s->session)) != SWITCH_STATUS_SUCCESS) {
             return SWITCH_STATUS_FALSE;
         }
         ++idx;
@@ -2116,7 +2116,7 @@ static enum avmd_detection_mode avmd_process_sample(avmd_session_t *s, circ_buff
     return AVMD_DETECT_NONE;
 }
 
-static void*
+static void* SWITCH_THREAD_FUNC
 avmd_detector_func(switch_thread_t *thread, void *arg) {
     size_t      sample_n = 0, samples = AVMD_P;
     size_t      pos;
