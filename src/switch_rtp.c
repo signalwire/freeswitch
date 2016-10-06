@@ -30,13 +30,6 @@
  * switch_rtp.c -- RTP
  *
  */
-//#define DEBUG_2833
-//#define RTP_DEBUG_WRITE_DELTA
-//#define DEBUG_MISSED_SEQ
-//#define DEBUG_EXTRA
-//#define DEBUG_RTCP
-#define DEBUG_ESTIMATORS_
-
 #include <switch.h>
 #ifndef _MSC_VER
 #include <switch_private.h>
@@ -57,6 +50,13 @@
 #include <switch_ssl.h>
 #include <switch_jitterbuffer.h>
 #include <switch_estimators.h>
+
+//#define DEBUG_2833
+//#define RTP_DEBUG_WRITE_DELTA
+//#define DEBUG_MISSED_SEQ
+//#define DEBUG_EXTRA
+//#define DEBUG_RTCP
+#define DEBUG_ESTIMATORS_
 
 
 #define JITTER_LEAD_FRAMES 10
