@@ -1471,7 +1471,7 @@ static void *SWITCH_THREAD_FUNC outbound_ringall_thread_run(switch_thread_t *thr
 
 	switch_mutex_lock(node->update_mutex);
 	node->busy = 0;
-	node->ring_consumer_count = 1;
+	node->ring_consumer_count++;
 	switch_mutex_unlock(node->update_mutex);
 
 	SWITCH_STANDARD_STREAM(stream);
@@ -1734,7 +1734,9 @@ static void *SWITCH_THREAD_FUNC outbound_ringall_thread_run(switch_thread_t *thr
 
 	if (node) {
 		switch_mutex_lock(node->update_mutex);
-		node->ring_consumer_count = 0;
+		if (--node->ring_consumer_count < 0) {
+			node->ring_consumer_count = 0;
+		}
 		node->busy = 0;
 		switch_mutex_unlock(node->update_mutex);
 		switch_thread_rwlock_unlock(node->rwlock);
@@ -1911,7 +1913,7 @@ static void *SWITCH_THREAD_FUNC outbound_enterprise_thread_run(switch_thread_t *
 	switch_event_destroy(&ovars);
 	if (node) {
 		switch_mutex_lock(node->update_mutex);
-		if (node->ring_consumer_count-- < 0) {
+		if (--node->ring_consumer_count < 0) {
 			node->ring_consumer_count = 0;
 		}
 		node->busy = 0;
