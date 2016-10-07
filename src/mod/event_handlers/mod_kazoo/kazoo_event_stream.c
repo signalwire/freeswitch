@@ -154,7 +154,7 @@ static void *SWITCH_THREAD_FUNC event_stream_loop(switch_thread_t *thread, void 
 	ei_event_binding_t *event_binding;
 	switch_sockaddr_t *sa;
 	uint16_t port;
-    char ipbuf[25];
+    char ipbuf[48];
     const char *ip_addr;
 	void *pop;
 	short event_stream_framing = globals.event_stream_framing;
