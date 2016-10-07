@@ -31,7 +31,7 @@ static struct ws_globals_s ws_globals;
 
 void init_ssl(void)
 {
-	SSL_library_init();
+	//	SSL_library_init();
 }
 void deinit_ssl(void)
 {
