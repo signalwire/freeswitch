@@ -24,6 +24,7 @@
  * Contributor(s):
  *
  * Emmanuel Schmidbauer <eschmidbauer@gmail.com>
+ * ding ding <cdevelop@qq.com>
  *
  * mod_odbc_cdr.c
  *
@@ -64,6 +65,12 @@ static struct {
 	switch_mutex_t *mutex;
 	switch_memory_pool_t *pool;
 } globals;
+
+typedef struct {
+	char *chan_var_name;
+	char *default_value;
+	switch_bool_t quote;
+} cdr_field_t;
 
 struct table_profile {
 	char *name;
@@ -130,12 +137,30 @@ static table_profile_t *load_table(const char *table_name)
 		for (x_field = switch_xml_child(x_table, "field"); x_field; x_field = x_field->next) {
 			char *var = (char *) switch_xml_attr_soft(x_field, "name");
 			char *val = (char *) switch_xml_attr_soft(x_field, "chan-var-name");
-			char *value = NULL;
+			cdr_field_t *field = NULL;
+			const char *attr;
+
 			if (zstr(var) || zstr(val)) {
 				continue; // Ignore empty entries
 			}
-			value = switch_core_strdup(pool, val);
-			switch_core_hash_insert_locked(table->field_hash, var, value, table->mutex);
+
+			field = switch_core_alloc(pool, sizeof(cdr_field_t));
+			field->chan_var_name = switch_core_strdup(pool, val);
+
+			/* Assume all fields should be quoted (treated as strings), unless specified otherwise */
+			if (switch_false(switch_xml_attr(x_field, "quote"))) {
+				field->quote = SWITCH_FALSE;
+			} else {
+				field->quote = SWITCH_TRUE;
+			}
+
+			if ((attr = switch_xml_attr(x_field, "default-value"))) {
+				field->default_value = switch_core_strdup(pool,attr);
+			} else {
+				field->default_value = NULL;
+			}
+
+			switch_core_hash_insert_locked(table->field_hash, var, field, table->mutex);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Field [%s] (%s) added to [%s]\n", var, val, table->name);
 		}
 
@@ -274,7 +299,7 @@ static switch_status_t odbc_cdr_reporting(switch_core_session_t *session)
 				const void *i_var;
 				void *i_val;
 				char *field_hash_key;
-				char *field_hash_val;
+				cdr_field_t *field_hash_val;
 				char *sql = NULL;
 				char *full_path = NULL;
 				switch_stream_handle_t stream_field = { 0 };
@@ -288,16 +313,27 @@ static switch_status_t odbc_cdr_reporting(switch_core_session_t *session)
 					const char *tmp;
 					switch_core_hash_this(i_hi, &i_var, NULL, &i_val);
 					field_hash_key = (char *) i_var;
-					field_hash_val = (char *) i_val;
+					field_hash_val = (cdr_field_t *) i_val;
+					tmp = switch_channel_get_variable(channel, field_hash_val->chan_var_name);
 
-					if ((tmp = switch_channel_get_variable(channel, field_hash_val))) {
-						if (started == SWITCH_FALSE) {
-							stream_field.write_function(&stream_field, "%s", field_hash_key);
-							stream_value.write_function(&stream_value, "'%s'", tmp);
-						} else {
-							stream_field.write_function(&stream_field, ", %s", field_hash_key);
-							stream_value.write_function(&stream_value, ", '%s'", tmp);
+					if (!tmp && field_hash_val->default_value) {
+						tmp = field_hash_val->default_value;
+					}
+
+					if (tmp) {
+						if (started == SWITCH_TRUE) {
+							stream_field.write_function(&stream_field, ", ");
+							stream_value.write_function(&stream_value, ", ");
 						}
+
+						stream_field.write_function(&stream_field, "%q", field_hash_key);
+
+						if (field_hash_val->quote) {
+							stream_value.write_function(&stream_value, "'%q'", tmp);
+						} else {
+							stream_value.write_function(&stream_value, "%q", tmp);
+						}
+
 						started = SWITCH_TRUE;
 					}
 
