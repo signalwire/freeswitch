@@ -1613,7 +1613,7 @@ new_req:
 			goto request_err;
 		}
 
-		if ((bytes = request.bytes_buffered - (request.bytes_read - request.bytes_header)) > 0) {
+		if ((bytes = request.bytes_buffered - request.bytes_read) > 0) {
 			memcpy(buffer, jsock->ws.buffer + request.bytes_read, bytes);
 		}
 
