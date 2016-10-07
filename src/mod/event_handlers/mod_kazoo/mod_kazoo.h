@@ -103,6 +103,7 @@ struct globals_s {
 	switch_bool_t ei_shortname;
 	int ei_compat_rel;
 	char *ip;
+	char *hostname;
 	char *ei_cookie;
 	char *ei_nodename;
 	char *kazoo_var_prefix;
