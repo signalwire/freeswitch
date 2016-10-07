@@ -845,11 +845,11 @@ static void *SWITCH_THREAD_FUNC msrp_worker(switch_thread_t *thread, void *obj)
 	if (csock->secure) { // tls?
 		int secure_established = 0;
 		int sanity = 10;
-		switch_os_socket_t sockdes = -1;
+		switch_os_socket_t sockdes = SWITCH_SOCK_INVALID;
 
 		switch_os_sock_get(&sockdes, csock->sock);
 		// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "socket: %d\n", sockdes);
-		switch_assert(sockdes > -1);
+		switch_assert(sockdes != SWITCH_SOCK_INVALID);
 
 		ssl = SSL_new(globals.ssl_ctx);
 		assert(ssl);
