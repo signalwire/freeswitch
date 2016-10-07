@@ -69,7 +69,7 @@
  * (Phil Kim book)
  *
  */
-void switch_kalman_init(kalman_estimator_t *est, float Q, float R) 
+SWITCH_DECLARE(void) switch_kalman_init(kalman_estimator_t *est, float Q, float R)
 {
 	est -> val_estimate_last = 0 ;
 	est -> P_last = 0;
@@ -112,7 +112,7 @@ constants:
 epsilon = 0.005 
 h = 0.05 
 */
-switch_bool_t switch_kalman_cusum_init (cusum_kalman_detector_t *detect_change, float epsilon, float h) 
+SWITCH_DECLARE(switch_bool_t) switch_kalman_cusum_init(cusum_kalman_detector_t *detect_change, float epsilon,float h)
 {
 	cusum_kalman_detector_t *detector_change = detect_change;
 
@@ -141,7 +141,7 @@ switch_bool_t switch_kalman_cusum_init (cusum_kalman_detector_t *detect_change, 
 	return TRUE;
 } 
 
-switch_bool_t switch_kalman_cusum_detect_change(cusum_kalman_detector_t * detector, float measurement, float avg) 
+SWITCH_DECLARE (switch_bool_t) switch_kalman_cusum_detect_change(cusum_kalman_detector_t * detector, float measurement, float rtt_avg)
 {
 	float K=0;
 	float P=0;
@@ -155,8 +155,8 @@ switch_bool_t switch_kalman_cusum_detect_change(cusum_kalman_detector_t * detect
 
 	detector->N++;
 	current_average = detector->last_average + (measurement - detector->last_average)/detector->N ;
-	if (avg > current_average) {
-		current_average = avg;
+	if (rtt_avg > current_average) {
+		current_average = rtt_avg;
 	}
 	current_q =  detector-> last_q +  (measurement - detector->last_average) * (measurement - current_average);
 	if (detector->N != 0)
@@ -194,7 +194,7 @@ switch_bool_t switch_kalman_cusum_detect_change(cusum_kalman_detector_t * detect
 /* Kalman filter abstract ( measure and estimate 1 single value per system model )
  * Given the measurment and the system model  together with the current state , 
  * the function puts an estimate in the estimator struct */
-switch_bool_t switch_kalman_estimate (kalman_estimator_t * est, float measurement, int system_model) 
+SWITCH_DECLARE(switch_bool_t) switch_kalman_estimate(kalman_estimator_t * est, float measurement, int system_model)
 {
 	/*system model can be about: loss, jitter, rtt*/
 	float val_estimate;
@@ -237,7 +237,7 @@ switch_bool_t switch_kalman_estimate (kalman_estimator_t * est, float measuremen
 	return SWITCH_TRUE;
 }
 
-switch_bool_t switch_kalman_is_slow_link(kalman_estimator_t * est_loss, kalman_estimator_t * est_rtt) 
+SWITCH_DECLARE(switch_bool_t) switch_kalman_is_slow_link(kalman_estimator_t * est_loss, kalman_estimator_t * est_rtt)
 {
 	float thresh_packet_loss = 5; /* % */
 	float thresh_rtt = 0.8 ; /*seconds*/
