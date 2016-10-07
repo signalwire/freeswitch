@@ -50,7 +50,7 @@ SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_pref_kazoo_var_prefix, globals.kazoo_var_p
 static switch_status_t api_erlang_status(switch_stream_handle_t *stream) {
 	switch_sockaddr_t *sa;
 	uint16_t port;
-	char ipbuf[25];
+	char ipbuf[48];
 	const char *ip_addr;
 	ei_node_t *ei_node;
 
@@ -177,7 +177,7 @@ static switch_status_t handle_node_api_event_stream(ei_event_stream_t *event_str
 	if (event_stream->connected == SWITCH_FALSE) {
 		switch_sockaddr_t *sa;
 		uint16_t port;
-		char ipbuf[25] = {0};
+		char ipbuf[48] = {0};
 		const char *ip_addr;
 
 		switch_socket_addr_get(&sa, SWITCH_TRUE, event_stream->acceptor);
@@ -511,7 +511,7 @@ static switch_status_t config(void) {
 static switch_status_t create_acceptor() {
 	switch_sockaddr_t *sa;
 	uint16_t port;
-    char ipbuf[25];
+    char ipbuf[48];
     const char *ip_addr;
 
 	/* if the config has specified an erlang release compatibility then pass that along to the erlang interface */

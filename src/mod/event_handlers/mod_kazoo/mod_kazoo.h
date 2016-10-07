@@ -75,9 +75,9 @@ struct ei_node_s {
 	char *peer_nodename;
 	switch_time_t created_time;
 	switch_socket_t *socket;
-	char remote_ip[25];
+	char remote_ip[48];
 	uint16_t remote_port;
-	char local_ip[25];
+	char local_ip[48];
 	uint16_t local_port;
 	uint32_t flags;
 	struct ei_node_s *next;
