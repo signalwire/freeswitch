@@ -83,7 +83,7 @@ static hiredis_context_t *hiredis_connection_get_context(hiredis_connection_t *c
 				return NULL;
 			}
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "hiredis: recycled from pool[%s, %d]\n", conn->host, conn->port);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "hiredis: recycled from pool[%s, %d]\n", conn->host, conn->port);
 			return context;
 		}
 	} else {
