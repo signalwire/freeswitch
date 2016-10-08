@@ -616,15 +616,16 @@ static inline void add_node(switch_jb_t *jb, switch_rtp_packet_t *packet, switch
 	if (jb->type == SJB_VIDEO) {
 		if (jb->write_init && ((htons(packet->header.seq) >= htons(jb->highest_wrote_seq) && (ntohl(node->packet.header.ts) > ntohl(jb->highest_wrote_ts))) ||
 							   (ntohl(jb->highest_wrote_ts) > (UINT_MAX - 1000) && ntohl(node->packet.header.ts) < 1000))) {
-			jb->complete_frames++;
+
 			jb_debug(jb, 2, "WRITE frame ts: %u complete=%u/%u n:%u\n", ntohl(node->packet.header.ts), jb->complete_frames , jb->frame_len, jb->visible_nodes);
+			jb->complete_frames++;
 			jb->highest_wrote_ts = packet->header.ts;
 			//verify_oldest_frame(jb);
 		} else if (!jb->write_init) {
 			jb->highest_wrote_ts = packet->header.ts;
 		}
 	} else {
-		if (jb->write_init) {
+		if (jb->write_init || jb->type == SJB_TEXT || jb->type == SJB_AUDIO) {
 			jb_debug(jb, 2, "WRITE frame ts: %u complete=%u/%u n:%u\n", ntohl(node->packet.header.ts), jb->complete_frames , jb->frame_len, jb->visible_nodes);
 			jb->complete_frames++;
 		} else {
@@ -832,7 +833,18 @@ SWITCH_DECLARE(void) switch_jb_clear_flag(switch_jb_t *jb, switch_jb_flag_t flag
 
 SWITCH_DECLARE(int) switch_jb_poll(switch_jb_t *jb)
 {
-	return (jb->complete_frames >= jb->frame_len);
+	if (jb->type == SJB_TEXT) {
+		if (jb->complete_frames < jb->frame_len) {
+			if (jb->complete_frames && !jb->buffer_lag) {
+				jb->buffer_lag = 10;
+			}
+			if (jb->buffer_lag && --jb->buffer_lag == 0) {
+				jb->flush = 1;
+			}
+		}
+	}
+	
+	return (jb->complete_frames >= jb->frame_len) || jb->flush;
 }
 
 SWITCH_DECLARE(int) switch_jb_frame_count(switch_jb_t *jb)
@@ -1211,16 +1223,8 @@ SWITCH_DECLARE(switch_status_t) switch_jb_get_packet(switch_jb_t *jb, switch_rtp
 
 	if (jb->complete_frames < jb->frame_len) {
 		
-		if (jb->type == SJB_TEXT) {
-			if (jb->complete_frames && !jb->buffer_lag) {
-				jb->buffer_lag = 10;
-			}
-
-			if (jb->buffer_lag && --jb->buffer_lag == 0) {
-				jb->flush = 1;
-			}
-		}
-
+		switch_jb_poll(jb);
+		
 		if (!jb->flush) {
 			jb_debug(jb, 2, "BUFFERING %u/%u\n", jb->complete_frames , jb->frame_len);
 			switch_goto_status(SWITCH_STATUS_MORE_DATA, end);
@@ -1288,7 +1292,8 @@ SWITCH_DECLARE(switch_status_t) switch_jb_get_packet(switch_jb_t *jb, switch_rtp
 			jb->highest_read_seq = node->packet.header.seq;
 		}
 		
-		if (jb->type == SJB_TEXT || (jb->read_init && htons(node->packet.header.seq) >= htons(jb->highest_read_seq) && (ntohl(node->packet.header.ts) > ntohl(jb->highest_read_ts)))) {
+		if (jb->type == SJB_TEXT || jb->type == SJB_AUDIO ||
+			(jb->read_init && htons(node->packet.header.seq) >= htons(jb->highest_read_seq) && (ntohl(node->packet.header.ts) >= ntohl(jb->highest_read_ts)))) {
 			jb->complete_frames--;
 			jb_debug(jb, 2, "READ frame ts: %u complete=%u/%u n:%u\n", ntohl(node->packet.header.ts), jb->complete_frames , jb->frame_len, jb->visible_nodes);
 			jb->highest_read_ts = node->packet.header.ts;
