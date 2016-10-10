@@ -961,7 +961,7 @@
 	var w = 0, h = 0;
 
 	for (var i in $.FSRTC.validRes) {
-	    if ($.FSRTC.validRes[i][0] > w && $.FSRTC.validRes[i][1] > h) {
+	    if ($.FSRTC.validRes[i][0] >= w && $.FSRTC.validRes[i][1] >= h) {
 		w = $.FSRTC.validRes[i][0];
 		h = $.FSRTC.validRes[i][1];
 	    }
