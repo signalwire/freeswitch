@@ -28,10 +28,10 @@ var element=self.options.useAudio;console.log("REMOTE STREAM",stream,element);FS
 function onOfferSDP(self,sdp){self.mediaData.SDP=self.stereoHack(sdp.sdp);console.log("Offer SDP");doCallback(self,"onOfferSDP");}
 $.FSRTC.prototype.answer=function(sdp,onSuccess,onError){this.peer.addAnswerSDP({type:"answer",sdp:sdp},onSuccess,onError);};$.FSRTC.prototype.stopPeer=function(){if(self.peer){console.log("stopping peer");self.peer.stop();}}
 $.FSRTC.prototype.stop=function(){var self=this;if(self.options.useVideo){self.options.useVideo.style.display='none';self.options.useVideo['src']='';}
-if(self.localStream){if(typeof self.localStream.stop=='function'){self.localStream.stop();}else{if(self.localStream.active){var tracks=self.localStream.getTracks();console.error(tracks);tracks.forEach(function(track,index){console.log(track);track.stop();})}}
+if(self.localStream){if(typeof self.localStream.stop=='function'){self.localStream.stop();}else{if(self.localStream.active){var tracks=self.localStream.getTracks();console.log(tracks);tracks.forEach(function(track,index){console.log(track);track.stop();})}}
 self.localStream=null;}
 if(self.options.localVideo){self.options.localVideo.style.display='none';self.options.localVideo['src']='';}
-if(self.options.localVideoStream){if(typeof self.options.localVideoStream.stop=='function'){self.options.localVideoStream.stop();}else{if(self.options.localVideoStream.active){var tracks=self.options.localVideoStream.getTracks();console.error(tracks);tracks.forEach(function(track,index){console.log(track);track.stop();})}}}
+if(self.options.localVideoStream){if(typeof self.options.localVideoStream.stop=='function'){self.options.localVideoStream.stop();}else{if(self.options.localVideoStream.active){var tracks=self.options.localVideoStream.getTracks();console.log(tracks);tracks.forEach(function(track,index){console.log(track);track.stop();})}}}
 if(self.peer){console.log("stopping peer");self.peer.stop();}};$.FSRTC.prototype.getMute=function(){var self=this;return self.audioEnabled;}
 $.FSRTC.prototype.setMute=function(what){var self=this;var audioTracks=self.localStream.getAudioTracks();for(var i=0,len=audioTracks.length;i<len;i++){switch(what){case"on":audioTracks[i].enabled=true;break;case"off":audioTracks[i].enabled=false;break;case"toggle":audioTracks[i].enabled=!audioTracks[i].enabled;default:break;}
 self.audioEnabled=audioTracks[i].enabled;}
@@ -88,7 +88,7 @@ return[w,h];}
 var resList=[[160,120],[320,180],[320,240],[640,360],[640,480],[1280,720],[1920,1080]];var resI=0;var ttl=0;var checkRes=function(cam,func){if(resI>=resList.length){var res={'validRes':$.FSRTC.validRes,'bestResSupported':$.FSRTC.bestResSupported()};localStorage.setItem("res_"+cam,$.toJSON(res));if(func)return func(res);return;}
 var video={}
 if(cam){video.deviceId={exact:cam};}
-w=resList[resI][0];h=resList[resI][1];resI++;video={width:w,height:h};getUserMedia({constraints:{audio:ttl++==0,video:video},onsuccess:function(e){e.getTracks().forEach(function(track){track.stop();});console.info(w+"x"+h+" supported.");$.FSRTC.validRes.push([w,h]);checkRes(cam,func);},onerror:function(e){console.error(w+"x"+h+" not supported.");checkRes(cam,func);}});}
+w=resList[resI][0];h=resList[resI][1];resI++;video={width:w,height:h};getUserMedia({constraints:{audio:ttl++==0,video:video},onsuccess:function(e){e.getTracks().forEach(function(track){track.stop();});console.info(w+"x"+h+" supported.");$.FSRTC.validRes.push([w,h]);checkRes(cam,func);},onerror:function(e){console.warn(w+"x"+h+" not supported.");checkRes(cam,func);}});}
 $.FSRTC.getValidRes=function(cam,func){var used=[];var cached=localStorage.getItem("res_"+cam);if(cached){var cache=$.parseJSON(cached);if(cache){$.FSRTC.validRes=cache.validRes;console.log("CACHED RES FOR CAM "+cam,cache);}else{console.error("INVALID CACHE");}
 return func?func(cache):null;}
 $.FSRTC.validRes=[];resI=0;checkRes(cam,func);}
