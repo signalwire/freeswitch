@@ -739,7 +739,7 @@
             var remoteMediaStream = event.stream;
 
             // onRemoteStreamEnded(MediaStream)
-            remoteMediaStream.onended = function() {
+            remoteMediaStream.oninactive = function () {
                 if (options.onRemoteStreamEnded) options.onRemoteStreamEnded(remoteMediaStream);
             };
 
