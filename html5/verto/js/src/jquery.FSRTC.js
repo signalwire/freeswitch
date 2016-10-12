@@ -293,7 +293,7 @@
             } else {
 		if (self.localStream.active){
                     var tracks = self.localStream.getTracks();
-                    console.error(tracks);
+                    console.log(tracks);
 		    tracks.forEach(function(track, index){
 			console.log(track);
 			track.stop();
@@ -314,7 +314,7 @@
             } else {
 		if (self.options.localVideoStream.active){
                     var tracks = self.options.localVideoStream.getTracks();
-                    console.error(tracks);
+                    console.log(tracks);
 		    tracks.forEach(function(track, index){
 			console.log(track);
 			track.stop();
@@ -1019,7 +1019,7 @@
 	    onsuccess: function(e) {
 		e.getTracks().forEach(function(track) {track.stop();});
 		console.info(w + "x" + h + " supported."); $.FSRTC.validRes.push([w, h]); checkRes(cam, func);},
-	    onerror: function(e) {console.error( w + "x" + h + " not supported."); checkRes(cam, func);}
+	    onerror: function(e) {console.warn( w + "x" + h + " not supported."); checkRes(cam, func);}
         });
     }
     
