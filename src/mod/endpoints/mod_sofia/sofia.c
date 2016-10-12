@@ -4344,6 +4344,7 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 					//sofia_set_pflag(profile, PFLAG_PRESENCE_ON_FIRST_REGISTER);
 
 					sofia_clear_pflag(profile, PFLAG_CHANNEL_XML_FETCH_ON_NIGHTMARE_TRANSFER);
+					sofia_clear_pflag(profile, PFLAG_MAKE_EVERY_TRANSFER_A_NIGHTMARE);
 					sofia_clear_pflag(profile, PFLAG_FIRE_TRANFER_EVENTS);
 					sofia_clear_pflag(profile, PFLAG_BLIND_AUTH_ENFORCE_RESULT);
 					profile->shutdown_type = "false";
@@ -5619,6 +5620,12 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 							sofia_set_pflag(profile, PFLAG_CHANNEL_XML_FETCH_ON_NIGHTMARE_TRANSFER);
 						}  else {
 							sofia_clear_pflag(profile, PFLAG_CHANNEL_XML_FETCH_ON_NIGHTMARE_TRANSFER);
+						}
+					} else if (!strcasecmp(var, "make-every-transfer-a-nightmare")) {
+						if(switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_MAKE_EVERY_TRANSFER_A_NIGHTMARE);
+						}  else {
+							sofia_clear_pflag(profile, PFLAG_MAKE_EVERY_TRANSFER_A_NIGHTMARE);
 						}
 					} else if (!strcasecmp(var, "fire-transfer-events")) {
 						if(switch_true(val)) {
@@ -8386,7 +8393,7 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 					}
 				}
 
-				if (bnh) {
+				if (bnh && !sofia_test_pflag(profile, PFLAG_MAKE_EVERY_TRANSFER_A_NIGHTMARE)) {
 					sofia_private_t *b_private = NULL;
 					private_object_t *b_tech_pvt = NULL;
 					switch_core_session_t *b_session = NULL;
