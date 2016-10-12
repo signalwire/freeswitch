@@ -1700,8 +1700,7 @@ switch_status_t conference_text_thread_callback(switch_core_session_t *session, 
 	inuse = switch_buffer_inuse(member->text_buffer);
 
 	if (zstr(member->text_framedata) && inuse && (switch_channel_test_flag(channel, CF_TEXT_IDLE) || switch_test_flag(frame, SFF_TEXT_LINE_BREAK))) {
-		int bytes = 0, ok = 0;
-		char *p;
+		int bytes = 0;//, ok = 0;
 
 		if (inuse + 1 > member->text_framesize) {
 			void *tmp = malloc(inuse + 1024);
@@ -1718,7 +1717,8 @@ switch_status_t conference_text_thread_callback(switch_core_session_t *session, 
 
 		bytes = switch_buffer_read(member->text_buffer, member->text_framedata, inuse);
 		*(member->text_framedata + bytes) = '\0'; 
-
+		
+		/*
 		for(p = member->text_framedata; p && *p; p++) {
 			if (*p > 32 && *p < 127) {
 				ok++;
@@ -1728,7 +1728,7 @@ switch_status_t conference_text_thread_callback(switch_core_session_t *session, 
 		if (!ok) {
 			member->text_framedata[0] = '\0';
 		}
-
+		*/
 	}
 	
 	switch_mutex_unlock(member->text_mutex);
@@ -2326,7 +2326,7 @@ SWITCH_STANDARD_APP(conference_function)
 	switch_core_session_set_video_read_callback(session, conference_video_thread_callback, (void *)&member);
 	switch_core_session_set_text_read_callback(session, conference_text_thread_callback, (void *)&member);
 
-	if (switch_channel_test_flag(channel, CF_VIDEO_ONLY)) {
+	if (switch_channel_test_flag(channel, CF_VIDEO_ONLY) || !switch_channel_test_flag(channel, CF_AUDIO)) {
 		while(conference_utils_member_test_flag((&member), MFLAG_RUNNING) && switch_channel_ready(channel)) {
 			switch_yield(100000);
 		}
@@ -3603,7 +3603,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_conference_load)
 	}
 
 	SWITCH_ADD_API(api_interface, "conference", "Conference module commands", conference_api_main, p);
-	SWITCH_ADD_APP(app_interface, mod_conference_app_name, mod_conference_app_name, NULL, conference_function, NULL, SAF_NONE);
+	SWITCH_ADD_APP(app_interface, mod_conference_app_name, mod_conference_app_name, NULL, conference_function, NULL, SAF_SUPPORT_TEXT_ONLY);
 	SWITCH_ADD_APP(app_interface, "conference_set_auto_outcall", "conference_set_auto_outcall", NULL, conference_auto_function, NULL, SAF_NONE);
 	SWITCH_ADD_CHAT(chat_interface, CONF_CHAT_PROTO, chat_send);
 

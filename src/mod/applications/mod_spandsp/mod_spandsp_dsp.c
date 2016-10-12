@@ -135,6 +135,12 @@ static void put_text_msg(void *user_data, const uint8_t *msg, int len)
 			}
 
 			switch_core_session_rwunlock(other_session);
+
+		} else if (switch_channel_test_flag(channel, CF_QUEUE_TEXT_EVENTS)) {
+
+			if (switch_event_dup(&clone, event) == SWITCH_STATUS_SUCCESS) {
+				switch_core_session_queue_event(pvt->session, &clone);
+			}
 		}
 
 		switch_event_fire(&event);

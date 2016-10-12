@@ -2418,7 +2418,7 @@ static void *get_rtt_payload(void *data, switch_size_t datalen, switch_payload_t
 	*new_datalen = datalen - bytes - 1 - (count *4);
 	*new_payload = pt;
 	buf += bytes + 1;
-	
+
 	if (buf > e) {
 		*new_datalen = 0;
 		return NULL;
@@ -2447,49 +2447,21 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (type == SWITCH_MEDIA_TYPE_TEXT && smh->msrp_session) {
-		switch_msrp_session_t *msrp_session = smh->msrp_session;
-		switch_frame_t *rframe = &msrp_session->frame;
-
-		msrp_msg_t *msrp_msg = switch_msrp_session_pop_msg(msrp_session);
-
-		if (0 && msrp_msg && msrp_msg->method == MSRP_METHOD_SEND) { /*echo back*/
-			char *p;
-			p = msrp_msg->headers[MSRP_H_TO_PATH];
-			msrp_msg->headers[MSRP_H_TO_PATH] = msrp_msg->headers[MSRP_H_FROM_PATH];
-			msrp_msg->headers[MSRP_H_FROM_PATH] = p;
-			switch_msrp_send(msrp_session, msrp_msg);
-		}
-
-		if (msrp_msg && msrp_msg->method == MSRP_METHOD_SEND) {
-			rframe->data = msrp_session->frame_data;
-			rframe->datalen = msrp_msg->payload_bytes;
-			rframe->packetlen = msrp_msg->payload_bytes;
-			memcpy(rframe->data, msrp_msg->payload, msrp_msg->payload_bytes);
-			rframe->m = 1;
-
-			*frame = rframe;
-
-			switch_safe_free(msrp_msg);
-			msrp_msg = NULL;
-			status = SWITCH_STATUS_SUCCESS;
-
-			return status;
-		}
-
-		*frame = NULL;
-		status = SWITCH_STATUS_FALSE;
-
-		return status;
-	}
-
 	engine = &smh->engines[type];
 
+	if (type == SWITCH_MEDIA_TYPE_AUDIO && ! switch_channel_test_flag(session->channel, CF_AUDIO)) {
+		//switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Reading audio from a non-audio session.\n");
+		switch_yield(50000);
+		return SWITCH_STATUS_INUSE;
+	}
+
 	if (type != SWITCH_MEDIA_TYPE_TEXT && (!engine->read_codec.implementation || !switch_core_codec_ready(&engine->read_codec))) {
+		switch_yield(50000);
 		return SWITCH_STATUS_FALSE;
 	}
 
 	if (!switch_channel_up_nosig(session->channel) || !switch_rtp_ready(engine->rtp_session) || switch_channel_test_flag(session->channel, CF_NOT_READY)) {
+		switch_yield(50000);
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -2510,6 +2482,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 	while (smh->media_flags[SCMF_RUNNING] && engine->read_frame.datalen == 0) {
 		engine->read_frame.flags = SFF_NONE;
 		status = switch_rtp_zerocopy_read_frame(engine->rtp_session, &engine->read_frame, flags);
+
 
 		if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) {
 			if (status == SWITCH_STATUS_TIMEOUT) {
@@ -4108,8 +4081,7 @@ static void clear_pmaps(switch_rtp_engine_t *engine)
 //?
 SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *session, const char *r_sdp, uint8_t *proceed, switch_sdp_type_t sdp_type)
 {
-	uint8_t match = 0;
-	uint8_t vmatch = 0;
+	uint8_t match = 0, vmatch = 0, tmatch = 0, fmatch = 0;
 	switch_payload_t best_te = 0, cng_pt = 0;
 	unsigned long best_te_rate = 8000, cng_rate = 8000;
 	sdp_media_t *m;
@@ -4308,14 +4280,12 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 			got_msrp++;
 		}
 
-		if(got_msrp && m->m_type == sdp_media_message) {
+		if (got_msrp && m->m_type == sdp_media_message) {
 			if (!smh->msrp_session) {
 				smh->msrp_session = switch_msrp_session_new(switch_core_session_get_pool(session), m->m_proto == sdp_proto_msrps);
 			}
 
-			if (!smh->msrp_session) {
-				goto endmsrp;
-			}
+			switch_assert(smh->msrp_session);
 
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "MSRP session created\n");
 
@@ -4390,11 +4360,13 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 
 			switch_channel_set_flag(session->channel, CF_HAS_TEXT);
 			switch_channel_set_flag(session->channel, CF_TEXT_POSSIBLE);
+			switch_channel_set_flag(session->channel, CF_TEXT_LINE_BASED);
 			switch_channel_set_flag(session->channel, CF_MSRP);
-
+			if (m->m_proto == sdp_proto_msrps) {
+				switch_channel_set_flag(session->channel, CF_MSRPS);
+			}
 			switch_core_session_start_text_thread(session);
-
-			endmsrp:;
+			tmatch = 1;
 		}
 
 		if (got_udptl && m->m_type == sdp_media_image) {
@@ -4404,7 +4376,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 				switch_t38_options_t *t38_options = switch_core_media_process_udptl(session, sdp, m);
 
 				if (switch_channel_test_app_flag_key("T38", session->channel, CF_APP_T38_NEGOTIATED)) {
-					match = 1;
+					fmatch = 1;
 					goto done;
 				}
 
@@ -4508,7 +4480,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 
 
 				/* do nothing here, mod_fax will trigger a response (if it's listening =/) */
-				match = 1;
+				fmatch = 1;
 				goto done;
 			}
 		} else if (m->m_type == sdp_media_audio && m->m_port && got_audio && got_savp) {
@@ -5148,11 +5120,12 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 					smh->mparams->recv_te = smh->mparams->te = 0;
 				}
 			}
-
-		} else if (switch_channel_var_true(session->channel, "rtp_enable_text") && !got_text && m->m_type == sdp_media_text && m->m_port) {
+			
+		} else if (!got_text && m->m_type == sdp_media_text && m->m_port) {
 			sdp_rtpmap_t *map;
 			payload_map_t *red_pmap = NULL;
 
+			switch_channel_set_flag(session->channel, CF_RTT);
 
 			connection = sdp->sdp_connection;
 			if (m->m_connections) {
@@ -5189,7 +5162,9 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 
 				pmap->remote_sdp_ip = switch_core_session_strdup(session, (char *) connection->c_address);
 				pmap->remote_sdp_port = (switch_port_t) m->m_port;
-				pmap->rm_fmtp = switch_core_session_strdup(session, (char *) mmap->rm_fmtp);
+				if (map->rm_fmtp) {
+					pmap->rm_fmtp = switch_core_session_strdup(session, (char *) map->rm_fmtp);
+				}
 				
 
 				t_engine->cur_payload_map = pmap;
@@ -5234,6 +5209,8 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 			//t_engine->cur_payload_map = pmap;
 
 			t_engine->codec_negotiated = 1;
+			tmatch = 1;
+
 
 			if (!t_engine->local_sdp_port) {
 				switch_core_media_choose_port(session, SWITCH_MEDIA_TYPE_TEXT, 1);
@@ -5595,10 +5572,33 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 		switch_channel_set_flag(channel, CF_AUDIO_PAUSE_WRITE);
 	}
 
-
-	if (!match && vmatch) match = 1;
-
  done:
+
+	if (match) {
+		switch_channel_set_flag(channel, CF_AUDIO);
+	} else {
+		switch_channel_clear_flag(channel, CF_AUDIO);
+	}
+
+	if (vmatch) {
+		switch_channel_set_flag(channel, CF_VIDEO);
+	} else {
+		switch_channel_clear_flag(channel, CF_VIDEO);
+		switch_channel_clear_flag(channel, CF_VIDEO_READY);
+		switch_channel_clear_flag(channel, CF_VIDEO_DECODED_READ);
+	}
+
+	if (tmatch) {
+		switch_channel_set_flag(channel, CF_HAS_TEXT);
+	} else {
+		switch_channel_clear_flag(channel, CF_HAS_TEXT);
+	}
+
+	if (fmatch) {
+		switch_channel_set_flag(channel, CF_IMAGE_SDP);
+	} else {
+		switch_channel_clear_flag(channel, CF_IMAGE_SDP);
+	}
 
 	if (parser) {
 		sdp_parser_free(parser);
@@ -5607,7 +5607,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 	smh->mparams->cng_pt = cng_pt;
 	smh->mparams->cng_rate = cng_rate;
 
-	return match;
+	return match || vmatch || tmatch || fmatch;
 }
 
 //?
@@ -7811,9 +7811,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 		
 	text:
 
-		if (switch_channel_test_flag(session->channel, CF_MSRP)) { // skip RTP RTT
-			goto video;
-		}
+		//if (switch_channel_test_flag(session->channel, CF_MSRP)) { // skip RTP RTT
+		//	goto video;
+		//}
 
 		if (switch_channel_test_flag(session->channel, CF_TEXT_POSSIBLE) && t_engine->cur_payload_map->rm_encoding && t_engine->cur_payload_map->remote_sdp_port) {
 			/******************************************************************************************/
@@ -10050,8 +10050,40 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 
 	}
 
-msrp:
+	if (switch_channel_test_cap(session->channel, CC_MSRP) && !smh->msrp_session) {
+		int want_msrp = switch_channel_var_true(session->channel, "sip_enable_msrp");
+		int want_msrps = switch_channel_var_true(session->channel, "sip_enable_msrps");
 
+		if (!want_msrp) {
+			want_msrp = switch_channel_test_flag(session->channel, CF_WANT_MSRP);
+		}
+
+		if (!want_msrps) {
+			want_msrps = switch_channel_test_flag(session->channel, CF_WANT_MSRPS);
+		}
+	
+		if (want_msrp || want_msrps) {
+			smh->msrp_session = switch_msrp_session_new(switch_core_session_get_pool(session), want_msrps);
+
+			switch_assert(smh->msrp_session);
+
+
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "MSRP session created\n");
+
+			smh->msrp_session->call_id = switch_core_session_get_uuid(session);
+
+			switch_channel_set_flag(session->channel, CF_HAS_TEXT);
+			switch_channel_set_flag(session->channel, CF_TEXT_POSSIBLE);
+			switch_channel_set_flag(session->channel, CF_MSRP);
+
+			if (want_msrps) {
+				switch_channel_set_flag(session->channel, CF_MSRPS);
+			}
+
+			switch_core_session_start_text_thread(session);
+		}
+	}
+	
 	if (smh->msrp_session) {
 		switch_msrp_session_t *msrp_session = smh->msrp_session;
 
@@ -10100,37 +10132,11 @@ msrp:
 					"a=sendonly\na=file-selector:%s\n", file_selector);
 			}
 		}
-
-		goto no_rtt;
-	} else if (switch_channel_test_cap(session->channel, CC_RTP_RTT) && (
-		// switch_channel_test_flag(session->channel, CF_TEXT_POSSIBLE) ||
-		switch_channel_var_true(session->channel, "sip_enable_msrp") ||
-		switch_channel_var_true(session->channel, "sip_enable_msrps"))) {
-
-		smh->msrp_session = switch_msrp_session_new(switch_core_session_get_pool(session), switch_channel_var_true(session->channel, "sip_enable_msrps"));
-
-		if (!smh->msrp_session) {
-			goto endmsrp;
-		}
-
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "MSRP session created\n");
-
-		smh->msrp_session->call_id = switch_core_session_get_uuid(session);
-
-		switch_channel_set_flag(session->channel, CF_HAS_TEXT);
-		switch_channel_set_flag(session->channel, CF_TEXT_POSSIBLE);
-		switch_channel_set_flag(session->channel, CF_MSRP);
-
-		switch_core_session_start_text_thread(session);
-
-		goto msrp;
-
-		endmsrp: ;
-	}
+	} 
 
 	// RTP TEXT
 
-	if (sdp_type == SDP_TYPE_RESPONSE && !switch_channel_test_flag(session->channel, CF_TEXT_POSSIBLE)) {
+	if (sdp_type == SDP_TYPE_RESPONSE && !switch_channel_test_flag(session->channel, CF_RTT)) {
 		if (switch_channel_test_flag(session->channel, CF_TEXT_SDP_RECVD)) {
 			switch_channel_clear_flag(session->channel, CF_TEXT_SDP_RECVD);
 			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "m=text 0 %s 19\r\n", 
@@ -10139,11 +10145,11 @@ msrp:
 													&& switch_channel_direction(session->channel) == SWITCH_CALL_DIRECTION_OUTBOUND) || 
 												   a_engine->crypto_type != CRYPTO_INVALID || switch_channel_test_flag(session->channel, CF_DTLS)));
 		}
-	} else if ((switch_channel_test_flag(session->channel, CF_TEXT_POSSIBLE) || switch_channel_var_true(session->channel, "rtp_enable_text")) &&
+	} else if ((switch_channel_test_flag(session->channel, CF_WANT_RTT) || switch_channel_test_flag(session->channel, CF_RTT) || 
+				switch_channel_var_true(session->channel, "rtp_enable_text")) &&
 			   switch_channel_test_cap(session->channel, CC_RTP_RTT)) {
 		t_engine->t140_pt = 0;
 		t_engine->red_pt = 0;
-		
 
 		if (sdp_type == SDP_TYPE_REQUEST) {
 			t_engine->t140_pt = 96;
@@ -10388,8 +10394,6 @@ msrp:
 		}
 
 	}
-
-	no_rtt:
 
 	if (map) {
 		switch_event_destroy(&map);
@@ -13780,7 +13784,44 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_text_frame(switch_core_
 		}
 	}
 
-	if (status == SWITCH_STATUS_SUCCESS || status == SWITCH_STATUS_BREAK) {
+	if (status == SWITCH_STATUS_SUCCESS || status == SWITCH_STATUS_BREAK) {		
+		if (switch_channel_test_flag(session->channel, CF_QUEUE_TEXT_EVENTS) && (*frame)->datalen && !switch_test_flag((*frame), SFF_CNG)) {
+			int ok = 1;
+			switch_event_t *event;
+			void *data = (*frame)->data;
+			char eof[1] = {'\0'};
+
+			//uint32_t datalen = (*frame)->datalen;
+
+			if (!switch_channel_test_flag(session->channel, CF_TEXT_LINE_BASED)) {
+				if (!session->text_line_buffer) {
+					switch_buffer_create_dynamic(&session->text_line_buffer, 512, 1024, 0);
+				}
+				switch_buffer_write(session->text_line_buffer, (*frame)->data, (*frame)->datalen);
+				
+				
+				if (switch_channel_test_flag(session->channel, CF_TEXT_IDLE) || switch_test_flag((*frame), SFF_TEXT_LINE_BREAK)) {
+					switch_buffer_write(session->text_line_buffer, eof, 1);
+					data = switch_buffer_get_head_pointer(session->text_line_buffer);
+					//datalen = strlen((char *)smh->line_text_frame.data);
+				} else {
+					ok = 0;
+				}
+			}
+
+
+			if (ok) {
+				if (switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
+					switch_channel_event_set_extended_data(session->channel, event);
+
+					switch_event_add_body(event, (char *)data);
+					switch_core_session_queue_event(session, &event);
+				}
+				if (session->text_line_buffer) {
+					switch_buffer_zero(session->text_line_buffer);
+				}
+			}
+		}
 		switch_core_session_text_read_callback(session, *frame);
 	}
 
@@ -13788,7 +13829,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_text_frame(switch_core_
 
 	return status;
 }
-
 
 static void build_red_packet(switch_rtp_engine_t *t_engine)
 {
@@ -13833,10 +13873,8 @@ static void build_red_packet(switch_rtp_engine_t *t_engine)
 		if (pos == t_engine->tf->red_max) pos = 0;
 	}
 
-
+	
 	plen = ((loops - 1) * 4) + 1;
-
-
 	pos = t_engine->tf->red_pos + 1;
 	
 	if (pos == t_engine->tf->red_max) pos = 0;
@@ -13942,8 +13980,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_text_frame(switch_core
 			*(t_engine->tf->red_buf[t_engine->tf->red_pos] + t_engine->tf->red_buflen[t_engine->tf->red_pos]) = '\0';
 
 			build_red_packet(t_engine);
-		
-		
 		} else {
 			frame->datalen = switch_buffer_read(t_engine->tf->write_buffer, t_engine->tf->text_write_frame.data, RED_PACKET_SIZE);
 			frame->payload = t_engine->t140_pt;
@@ -13991,20 +14027,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_printf(switch_core_session_t
 	int ret = 0;
 	va_list ap;
 	switch_frame_t frame = { 0 };
-	switch_rtp_engine_t *t_engine;
-	switch_media_handle_t *smh;
 	unsigned char CR[] = TEXT_UNICODE_LINEFEED;
-
-	if (!(smh = session->media_handle)) {
-		return SWITCH_STATUS_FALSE;
-	}               
-
-	t_engine = &smh->engines[SWITCH_MEDIA_TYPE_TEXT];
-	
-	if (!switch_rtp_ready(t_engine->rtp_session)) {
-		return SWITCH_STATUS_NOTIMPL;
-	}
-
 
 	va_start(ap, fmt);
 	ret = switch_vasprintf(&data, fmt, ap);
@@ -14013,7 +14036,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_printf(switch_core_session_t
 	if (ret == -1) {
 		abort();
 	}
-
 
 	frame.data = data;
 	frame.datalen = strlen(data);
@@ -14034,19 +14056,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_printf(switch_core_session_t
 SWITCH_DECLARE(switch_status_t) switch_core_session_print(switch_core_session_t *session, const char *data)
 {
 	switch_frame_t frame = { 0 };
-	//switch_rtp_engine_t *t_engine;
-	//switch_media_handle_t *smh;
-
-	//if (!(smh = session->media_handle)) {
-	//	return SWITCH_STATUS_FALSE;
-	//}               
-
-	//t_engine = &smh->engines[SWITCH_MEDIA_TYPE_TEXT];
-	
-	//if (!switch_rtp_ready(t_engine->rtp_session)) {
-	//	return SWITCH_STATUS_NOTIMPL;
-	//}
-
 
 	if (!switch_channel_test_flag(session->channel, CF_HAS_TEXT)) {
 		return SWITCH_STATUS_NOTIMPL;
@@ -14054,7 +14063,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_print(switch_core_session_t 
 
 	frame.data = (char *) data;
 	frame.datalen = strlen(data);
-	
+
 	switch_core_session_write_text_frame(session, &frame, 0, 0);
 
 	return SWITCH_STATUS_SUCCESS;

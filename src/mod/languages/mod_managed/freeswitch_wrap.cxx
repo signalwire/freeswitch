@@ -18192,6 +18192,36 @@ result = (char *)("\r\n #%&+:;<=>?@[\\]^`{|}\"");
 }
 
 
+SWIGEXPORT char * SWIGSTDCALL CSharp_switch_get_hex_bytes(void * jarg1, void * jarg2, char * jarg3, void * jarg4) {
+  char * jresult ;
+  switch_byte_t *arg1 = (switch_byte_t *) 0 ;
+  switch_size_t arg2 ;
+  char *arg3 = (char *) 0 ;
+  switch_size_t arg4 ;
+  switch_size_t *argp2 ;
+  switch_size_t *argp4 ;
+  char *result = 0 ;
+  
+  arg1 = (switch_byte_t *)jarg1; 
+  argp2 = (switch_size_t *)jarg2; 
+  if (!argp2) {
+    SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentNullException, "Attempt to dereference null switch_size_t", 0);
+    return 0;
+  }
+  arg2 = *argp2; 
+  arg3 = (char *)jarg3; 
+  argp4 = (switch_size_t *)jarg4; 
+  if (!argp4) {
+    SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentNullException, "Attempt to dereference null switch_size_t", 0);
+    return 0;
+  }
+  arg4 = *argp4; 
+  result = (char *)switch_get_hex_bytes(arg1,arg2,arg3,arg4);
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
 SWIGEXPORT unsigned long SWIGSTDCALL CSharp_switch_round_to_step(unsigned long jarg1, unsigned long jarg2) {
   unsigned long jresult ;
   uint32_t arg1 ;
@@ -20855,6 +20885,18 @@ SWIGEXPORT void SWIGSTDCALL CSharp_switch_getcputime(void * jarg1) {
   
   arg1 = (switch_cputime *)jarg1; 
   switch_getcputime(arg1);
+}
+
+
+SWIGEXPORT char * SWIGSTDCALL CSharp_switch_html_strip(char * jarg1) {
+  char * jresult ;
+  char *arg1 = (char *) 0 ;
+  char *result = 0 ;
+  
+  arg1 = (char *)jarg1; 
+  result = (char *)switch_html_strip((char const *)arg1);
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
 }
 
 
@@ -47294,6 +47336,20 @@ SWIGEXPORT int SWIGSTDCALL CSharp_CoreSession_Answer(void * jarg1) {
   
   arg1 = (CoreSession *)jarg1; 
   result = (int)(arg1)->answer();
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_CoreSession_print(void * jarg1, char * jarg2) {
+  int jresult ;
+  CoreSession *arg1 = (CoreSession *) 0 ;
+  char *arg2 = (char *) 0 ;
+  int result;
+  
+  arg1 = (CoreSession *)jarg1; 
+  arg2 = (char *)jarg2; 
+  result = (int)(arg1)->print(arg2);
   jresult = result; 
   return jresult;
 }

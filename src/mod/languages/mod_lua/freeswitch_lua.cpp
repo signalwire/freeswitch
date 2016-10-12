@@ -47,6 +47,8 @@ void Session::destroy(const char *err)
 	switch_safe_free(cb_function);
 	switch_safe_free(cb_arg);
 
+	unsetInputCallback();
+
 	CoreSession::destroy();
 
 
@@ -240,6 +242,7 @@ void Session::unsetInputCallback(void)
 	switch_safe_free(cb_arg);
 	args.input_callback = NULL;
 	ap = NULL;
+	switch_channel_clear_flag_recursive(channel, CF_QUEUE_TEXT_EVENTS);
 }
 
 void Session::setInputCallback(char *cbfunc, char *funcargs)
@@ -262,6 +265,9 @@ void Session::setInputCallback(char *cbfunc, char *funcargs)
 
 	args.input_callback = dtmf_callback;
 	ap = &args;
+
+	switch_channel_set_flag_recursive(channel, CF_QUEUE_TEXT_EVENTS);
+
 }
 
 switch_status_t Session::run_dtmf_callback(void *input, switch_input_type_t itype)

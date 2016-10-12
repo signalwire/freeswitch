@@ -671,6 +671,18 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 				switch_channel_set_variable(peer_channel, SWITCH_ORIGINATOR_CODEC_VARIABLE, ep);
 			}
 
+			
+			if (switch_channel_test_flag(channel, CF_MSRPS)) {
+				switch_channel_set_flag(peer_channel, CF_WANT_MSRPS);
+			} else if (switch_channel_test_flag(channel, CF_MSRP)) {
+				switch_channel_set_flag(peer_channel, CF_WANT_MSRP);
+			}
+
+			if (switch_channel_test_flag(channel, CF_RTT)) {
+				switch_channel_set_flag(peer_channel, CF_WANT_RTT);
+			}
+
+
 			switch_channel_set_variable(peer_channel, SWITCH_ORIGINATOR_VARIABLE, switch_core_session_get_uuid(session));
 			switch_channel_set_variable(peer_channel, SWITCH_SIGNAL_BOND_VARIABLE, switch_core_session_get_uuid(session));
 			// Needed by 3PCC proxy so that aleg can find bleg to pass SDP to, when final ACK arrives.
@@ -1497,6 +1509,10 @@ SWITCH_DECLARE(void) switch_core_session_perform_destroy(switch_core_session_t *
 
 	if ((*session)->text_buffer) {
 		switch_buffer_destroy(&(*session)->text_buffer);
+	}
+
+	if ((*session)->text_line_buffer) {
+		switch_buffer_destroy(&(*session)->text_line_buffer);
 	}
 
 	switch_core_session_reset(*session, SWITCH_TRUE, SWITCH_TRUE);
@@ -2657,6 +2673,15 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_execute_application_get_flag
 
 	if (flags && application_interface->flags) {
 		*flags = application_interface->flags;
+	}
+
+	if (switch_channel_text_only(session->channel) && 
+		!switch_test_flag(application_interface, SAF_SUPPORT_NOMEDIA) && 
+		!switch_test_flag(application_interface, SAF_SUPPORT_TEXT_ONLY)) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Application %s does not support text-only mode on channel %s!\n",
+						  app, switch_channel_get_name(session->channel));
+		switch_channel_hangup(session->channel, SWITCH_CAUSE_SERVICE_NOT_IMPLEMENTED);
+		switch_goto_status(SWITCH_STATUS_FALSE, done);
 	}
 
 	if (!switch_test_flag(application_interface, SAF_SUPPORT_NOMEDIA) && (switch_channel_test_flag(session->channel, CF_VIDEO))) {

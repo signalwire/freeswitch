@@ -53,20 +53,90 @@ static void text_bridge_thread(switch_core_session_t *session, void *obj)
 	switch_frame_t *read_frame = 0;
 	switch_channel_t *channel = switch_core_session_get_channel(vh->session_a);
 	switch_channel_t *b_channel = switch_core_session_get_channel(vh->session_b);
+	switch_buffer_t *text_buffer = NULL;
+	switch_size_t text_framesize = 1024, inuse = 0;
+	unsigned char *text_framedata = NULL;
+	switch_frame_t frame = { 0 };
+
+	switch_buffer_create_dynamic(&text_buffer, 512, 1024, 0);
+	switch_zmalloc(text_framedata, 1024);
+	text_framesize = 1024;
 
 	vh->up = 1;
 
 	while (switch_channel_up_nosig(channel) && switch_channel_up_nosig(b_channel) && vh->up == 1) {
 		status = switch_core_session_read_text_frame(vh->session_a, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 
-		if (SWITCH_READ_ACCEPTABLE(status) && !switch_test_flag(read_frame, SFF_CNG)) {
-			switch_core_session_write_text_frame(vh->session_b, read_frame, 0, 0);
+		if (!SWITCH_READ_ACCEPTABLE(status)) {
+			switch_core_session_write_text_frame(vh->session_a, NULL, 0, 0);
+			continue;
 		}
 
+		if (!switch_channel_test_flag(channel, CF_TEXT_LINE_BASED) && switch_channel_test_flag(b_channel, CF_TEXT_LINE_BASED)) {
+			if (read_frame->data && read_frame->datalen && !switch_test_flag(read_frame, SFF_CNG)) {
+				switch_buffer_write(text_buffer, read_frame->data, read_frame->datalen);
+			}
+			
+			inuse = switch_buffer_inuse(text_buffer);
+
+			if (inuse && (switch_channel_test_flag(channel, CF_TEXT_IDLE) || switch_test_flag(read_frame, SFF_TEXT_LINE_BREAK))) {
+				int bytes = 0;
+				
+				if (inuse + 4 > text_framesize) {
+					void *tmp = malloc(inuse + 1024);
+
+					memcpy(tmp, text_framedata, text_framesize);
+
+					switch_assert(tmp);
+			
+					text_framesize = inuse + 1024;
+					
+					free(text_framedata);
+					text_framedata = tmp;
+				}
+
+				bytes = switch_buffer_read(text_buffer, text_framedata, inuse);
+
+				/* need to strip the unicode line feed because Blink ignores the message, need to see if that is a thing with other msrp clients */
+				if (switch_test_flag(read_frame, SFF_TEXT_LINE_BREAK)) {
+					int x;
+
+					for (x = 0; x < bytes - 2; x++) {
+						if (text_framedata[x] == 0xe2 && text_framedata[x+1] == 0x80 && text_framedata[x+2] == 0xa8) {
+							text_framedata[x] = '\0';
+							bytes = strlen((char *)text_framedata);
+							break;
+						} 
+					}
+				}
+
+				if (!bytes) continue;
+
+				*(text_framedata + bytes) = '\r'; 
+				*(text_framedata + bytes + 1) = '\n'; 
+				*(text_framedata + bytes + 2) = '\0'; 
+				bytes += 2;
+				
+				frame.data = text_framedata;
+				frame.datalen = strlen((char *)frame.data);
+				read_frame = &frame;
+
+			} else {
+				continue;
+			}
+
+		}
+		
+		if (!switch_test_flag(read_frame, SFF_CNG)) {
+			switch_core_session_write_text_frame(vh->session_b, read_frame, 0, 0);
+		}
 		switch_core_session_write_text_frame(vh->session_a, NULL, 0, 0);
 	}
 
 	vh->up = 0;
+
+	switch_buffer_destroy(&text_buffer);
+	switch_safe_free(text_framedata);
 }
 
 
@@ -687,6 +757,12 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 			switch_core_session_write_video_frame(session_b, read_frame, SWITCH_IO_FLAG_NONE, 0);
 		}
 #endif
+
+		if (!switch_channel_test_flag(chan_a, CF_AUDIO)) {
+			switch_ivr_sleep(session_a, 5000, SWITCH_FALSE, NULL);
+			continue;
+		}
+			
 
 		/* read audio from 1 channel and write it to the other */
 		status = switch_core_session_read_frame(session_a, &read_frame, SWITCH_IO_FLAG_NONE, stream_id);
@@ -1614,6 +1690,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 			
 			switch_channel_set_private(peer_channel, "_bridge_", b_leg);
 			switch_channel_set_state(peer_channel, CS_EXCHANGE_MEDIA);
+
 
 			audio_bridge_thread(NULL, (void *) a_leg);
 

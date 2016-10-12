@@ -1535,7 +1535,15 @@ typedef enum {
 	CF_TEXT_ECHO,
 	CF_TEXT_ACTIVE,
 	CF_TEXT_IDLE,
+	CF_TEXT_LINE_BASED,
+	CF_QUEUE_TEXT_EVENTS,
 	CF_MSRP,
+	CF_MSRPS,
+	CF_WANT_MSRP,
+	CF_WANT_MSRPS,
+	CF_RTT,
+	CF_WANT_RTT,
+	CF_AUDIO,
 	/* WARNING: DO NOT ADD ANY FLAGS BELOW THIS LINE */
 	/* IF YOU ADD NEW ONES CHECK IF THEY SHOULD PERSIST OR ZERO THEM IN switch_core_session.c switch_core_session_request_xml() */
 	CF_FLAG_MAX
@@ -1604,7 +1612,8 @@ typedef enum {
 	SAF_ROUTING_EXEC = (1 << 1),
 	SAF_MEDIA_TAP = (1 << 2),
 	SAF_ZOMBIE_EXEC = (1 << 3),
-	SAF_NO_LOOPBACK = (1 << 4)
+	SAF_NO_LOOPBACK = (1 << 4),
+	SAF_SUPPORT_TEXT_ONLY = (1 << 5)
 } switch_application_flag_enum_t;
 typedef uint32_t switch_application_flag_t;
 

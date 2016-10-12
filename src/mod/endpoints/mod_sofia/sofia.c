@@ -8098,9 +8098,9 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 				} else {
 					uint8_t match = 0;
 
-					if (tech_pvt->mparams.num_codecs) {
-						match = sofia_media_negotiate_sdp(session, r_sdp, SDP_TYPE_RESPONSE);
-					}
+					
+					match = sofia_media_negotiate_sdp(session, r_sdp, SDP_TYPE_RESPONSE);
+					
 
 					sofia_set_flag_locked(tech_pvt, TFLAG_ANS);
 
@@ -8129,7 +8129,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 							goto done;
 						}
 					}
-
+					
 					switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "NO CODECS");
 					switch_channel_hangup(channel, SWITCH_CAUSE_INCOMPATIBLE_DESTINATION);
 				}

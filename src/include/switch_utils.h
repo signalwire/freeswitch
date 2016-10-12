@@ -47,6 +47,25 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_URL_UNSAFE "\r\n #%&+:;<=>?@[\\]^`{|}\""
 
 
+static inline char *switch_get_hex_bytes(switch_byte_t *buf, switch_size_t datalen, char *new_buf, switch_size_t new_datalen)
+{
+	switch_byte_t *p, *e;
+	char *pp, *ee;
+
+	e = buf + datalen;
+	ee = new_buf + new_datalen;
+	pp = new_buf;
+
+	for (p = buf; p < e && pp < ee - 4; p++) {
+		snprintf(pp, 4, "%.2x ", (int)*p);
+		pp += 3;
+	}
+	*(pp-1) = '\0';
+
+	return new_buf;
+}
+
+
 static inline uint32_t switch_round_to_step(uint32_t num, uint32_t step)
 {
 	uint32_t r;
@@ -1320,6 +1339,8 @@ typedef struct {
 / Return used CPU time in this process for user and kernel code
 **/
 SWITCH_DECLARE(void) switch_getcputime(switch_cputime *t);
+
+SWITCH_DECLARE(char *)switch_html_strip(const char *str);
 
 SWITCH_END_EXTERN_C
 #endif
