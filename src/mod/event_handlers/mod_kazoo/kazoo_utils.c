@@ -157,6 +157,8 @@ switch_socket_t *create_socket_with_port(switch_memory_pool_t *pool, switch_port
 		return NULL;
 	}
 
+	switch_getnameinfo(&globals.hostname, sa, 0);
+
 	//	if (globals.nat_map && switch_nat_get_type()) {
 	//		switch_nat_add_mapping(port, SWITCH_NAT_TCP, NULL, SWITCH_FALSE);
 	//	}
@@ -170,7 +172,6 @@ switch_socket_t *create_socket(switch_memory_pool_t *pool) {
 }
 
 switch_status_t create_ei_cnode(const char *ip_addr, const char *name, struct ei_cnode_s *ei_cnode) {
-    struct hostent *nodehost;
     char hostname[EI_MAXHOSTNAMELEN + 1] = "";
     char nodename[MAXNODELEN + 1];
     char cnodename[EI_MAXALIVELEN + 1];
@@ -186,12 +187,10 @@ switch_status_t create_ei_cnode(const char *ip_addr, const char *name, struct ei
         /* truncate the alivename at the @ */
         *atsign = '\0';
     } else {
-        if ((nodehost = gethostbyaddr(ip_addr, sizeof (ip_addr), AF_INET))) {
-            memcpy(hostname, nodehost->h_name, EI_MAXHOSTNAMELEN);
-        }
-
-        if (zstr_buf(hostname) || !strncasecmp(globals.ip, "0.0.0.0", 7)) {
-            gethostname(hostname, EI_MAXHOSTNAMELEN);
+        if (zstr(globals.hostname) || !strncasecmp(globals.ip, "0.0.0.0", 7) || !strncasecmp(globals.ip, "::", 2)) {
+            memcpy(hostname, switch_core_get_hostname(), EI_MAXHOSTNAMELEN);
+        } else {
+            memcpy(hostname, globals.hostname, EI_MAXHOSTNAMELEN);
         }
 
         snprintf(nodename, MAXNODELEN + 1, "%s@%s", globals.ei_nodename, hostname);
