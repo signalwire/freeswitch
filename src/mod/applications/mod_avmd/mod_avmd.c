@@ -438,7 +438,6 @@ static switch_status_t init_avmd_session_data(avmd_session_t *avmd_session, swit
     avmd_session->f = 0.0;
     avmd_session->state.last_beep = 0;
     avmd_session->state.beep_state = BEEP_NOTDETECTED;
-    memcpy(&avmd_session->settings, &avmd_globals.settings, sizeof(struct avmd_settings));
     switch_mutex_init(&avmd_session->mutex, SWITCH_MUTEX_DEFAULT, switch_core_session_get_pool(fs_session));
     avmd_session->frame_n = 0;
     avmd_session->detection_start_time = 0;
@@ -1209,14 +1208,14 @@ static switch_status_t avmd_parse_cmd_data(avmd_session_t *s, const char *cmd_da
     if (s == NULL) {
         return SWITCH_STATUS_NOOP;
     }
+
+    memcpy(&settings, &avmd_globals.settings, sizeof (struct avmd_settings));   /* copy globally set settings first */
     if (zstr(cmd_data)) {
-        return SWITCH_STATUS_SUCCESS;
+        goto end_copy;
     }
 
-    /* copy current settings first */
-    memcpy(&settings, &s->settings, sizeof (struct avmd_settings));
-    switch (app)
-    {
+    switch (app) {
+
         case AVMD_APP_START_APP:
             /* try to parse settings */
             mydata = switch_core_session_strdup(s->session, cmd_data);
@@ -1280,8 +1279,7 @@ static switch_status_t avmd_parse_cmd_data(avmd_session_t *s, const char *cmd_da
     }
 
 end_copy:
-    /* commit the change */
-    memcpy(&s->settings, &settings, sizeof (struct avmd_settings));
+    memcpy(&s->settings, &settings, sizeof (struct avmd_settings)); /* commit the change */
     return SWITCH_STATUS_SUCCESS;
 fail:
     return status;
@@ -1317,7 +1315,24 @@ SWITCH_STANDARD_APP(avmd_start_app) {
     avmd_session = (avmd_session_t *) switch_core_session_alloc(session, sizeof(avmd_session_t));
     if (avmd_session == NULL) {
         switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Can't allocate memory for avmd session!\n");
+        status = SWITCH_STATUS_FALSE;
         goto end;
+    }
+    avmd_session->session = session;
+
+    status = avmd_parse_cmd_data(avmd_session, data, AVMD_APP_START_APP);   /* dynamic configuation */
+    switch (status) {
+        case SWITCH_STATUS_SUCCESS:
+            break;
+        case SWITCH_STATUS_NOOP:
+            switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failed to set dynamic parameters for avmd session. Session is NULL!\n");
+            goto end;
+        case SWITCH_STATUS_FALSE:
+            switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failed to set dynamic parameters for avmd session. Parsing error, please check the parameters passed to this APP.\n");
+            goto end;
+        default:
+            switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failed to set dynamic parameteres for avmd session. Unknown error\n");
+            goto end;
     }
 
     status = init_avmd_session_data(avmd_session, session, avmd_globals.mutex);
@@ -1340,21 +1355,6 @@ SWITCH_STANDARD_APP(avmd_start_app) {
     }
 
     switch_mutex_lock(avmd_session->mutex);
-    status = avmd_parse_cmd_data(avmd_session, data, AVMD_APP_START_APP);   /* dynamic configuation */
-    switch (status) {
-        case SWITCH_STATUS_SUCCESS:
-            break;
-        case SWITCH_STATUS_NOOP:
-            switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failed to set dynamic parameters for avmd session. Session is NULL!\n");
-            goto end_unlock;
-        case SWITCH_STATUS_FALSE:
-            switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failed to set dynamic parameters for avmd session. Parsing error, please check the parameters passed to this APP.\n");
-            goto end_unlock;
-        default:
-            switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failed to set dynamic parameteres for avmd session. Unknown error\n");
-            goto end_unlock;
-    }
-
     if (avmd_session->settings.report_status == 1) { /* dump dynamic parameters */
         avmd_config_dump(avmd_session);
     }
@@ -1376,12 +1376,13 @@ SWITCH_STANDARD_APP(avmd_start_app) {
     }
     if (flags == 0) {
         switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Can't set direction for channel [%s]\n", switch_channel_get_name(channel));
+        status = SWITCH_STATUS_FALSE;
         goto end_unlock;
     }
     if (avmd_session->settings.outbound_channnel == 1) {
         if (switch_channel_test_flag(channel, CF_MEDIA_SET) == 0) {
-            switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failed to start session. Channel [%s] has no codec assigned yet."
-                    " Please try again\n", switch_channel_get_name(channel));
+            switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Channel [%s] has no codec assigned yet. Please try again\n", switch_channel_get_name(channel));
+            status = SWITCH_STATUS_FALSE;
             goto end_unlock;
         }
     }
@@ -1543,12 +1544,12 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_avmd_shutdown) {
 
 /*! \brief FreeSWITCH API handler function. */
 SWITCH_STANDARD_API(avmd_api_main) {
-    switch_media_bug_t  *bug;
-    avmd_session_t      *avmd_session;
-    switch_channel_t    *channel;
+    switch_media_bug_t  *bug = NULL;
+    avmd_session_t      *avmd_session = NULL;
+    switch_channel_t    *channel = NULL;
     int         argc;
-    const char  *uuid, *uuid_dup;
-    const char  *command;
+    const char  *uuid = NULL, *uuid_dup = NULL;
+    const char  *command = NULL;
     char        *dupped = NULL, *argv[AVMD_PARAMS_API_MAX + 1] = { 0 };
     switch_core_media_flag_t    flags = 0;
     switch_status_t             status = SWITCH_STATUS_SUCCESS;
@@ -1725,12 +1726,14 @@ SWITCH_STANDARD_API(avmd_api_main) {
     if (flags == 0) {
         stream->write_function(stream, "-ERR, can't set direction for channel [%s]\n for FreeSWITCH session [%s]. Please check avmd configuration\n\n", switch_channel_get_name(channel), uuid);
         switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_session), SWITCH_LOG_ERROR, "Can't set direction for channel [%s]\n", switch_channel_get_name(channel));
+        status = SWITCH_STATUS_FALSE;
         goto end;
     }
     if (avmd_globals.settings.outbound_channnel == 1) {
         if (switch_channel_test_flag(channel, CF_MEDIA_SET) == 0) {
             stream->write_function(stream, "-ERR, channel [%s] for FreeSWITCH session [%s]\n has no read codec assigned yet. Please try again.\n\n", switch_channel_get_name(channel), uuid);
-            switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_session), SWITCH_LOG_ERROR, "Failed to start session. Channel [%s] has no codec assigned yet. Please try again\n", switch_channel_get_name(channel));
+            switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_session), SWITCH_LOG_ERROR, "Channel [%s] has no codec assigned yet. Please try again\n", switch_channel_get_name(channel));
+            status = SWITCH_STATUS_FALSE;
             goto end;
         }
     }
@@ -1782,6 +1785,16 @@ SWITCH_STANDARD_API(avmd_api_main) {
     }
 end:
 
+    if (status != SWITCH_STATUS_SUCCESS) {
+            switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_session), SWITCH_LOG_INFO, "AVMD session NOT started\n");
+            if (avmd_globals.settings.report_status == 1) {
+                if ((uuid != NULL) && (channel != NULL)) {
+                    stream->write_function(stream, "+ERR\n [%s] [%s] NOT started!\n\n", uuid, switch_channel_get_name(channel));
+                } else {
+                    stream->write_function(stream, "+ERR\n AVMD session NOT started!\n\n", switch_channel_get_name(channel));
+                }
+            }
+    }
     if (fs_session) {
         switch_core_session_rwunlock(fs_session);
     }
