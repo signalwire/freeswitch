@@ -2020,7 +2020,7 @@
         RTCcallbacks.onStream = function(rtc, stream) {
             if (dialog.verto.options.permissionCallback &&
                 typeof dialog.verto.options.permissionCallback.onGranted === 'function'){
-                dialog.verto.options.permissionCallback.onGranted();
+                dialog.verto.options.permissionCallback.onGranted(stream);
             }
             console.log("stream started");
         };
