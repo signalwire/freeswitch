@@ -422,7 +422,7 @@
                 }
             });
 
-            onStreamSuccess(self);
+            onStreamSuccess(self, stream);
         }
 
         function onError(e) {
