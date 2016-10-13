@@ -712,6 +712,7 @@ int sofia_reg_del_callback(void *pArg, int argc, char **argv, char **columnNames
 			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "profile-name", argv[10]);
 			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "call-id", argv[0]);
 			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "user", argv[1]);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "username", argv[1]);
 			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "host", argv[2]);
 			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "contact", argv[3]);
 			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "expires", argv[6]);
