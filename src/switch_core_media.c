@@ -6468,6 +6468,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 	const char *var;
 	switch_rtp_engine_t *a_engine, *v_engine;
 	switch_media_handle_t *smh;
+	int is_reinvite = 0;
 
 	switch_assert(session);
 	
@@ -6478,6 +6479,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 	a_engine = &smh->engines[SWITCH_MEDIA_TYPE_AUDIO];
 	v_engine = &smh->engines[SWITCH_MEDIA_TYPE_VIDEO];
 
+	if (a_engine->rtp_session || v_engine->rtp_session || switch_channel_test_flag(session->channel, CF_REINVITE)) {
+		is_reinvite = 1;
+	}
+	
 
 	if (switch_channel_down(session->channel)) {
 		return SWITCH_STATUS_FALSE;
@@ -6498,7 +6503,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 		goto end;
 	}
 
-	if (!switch_channel_test_flag(session->channel, CF_REINVITE)) {
+	if (!is_reinvite) {
 		if (switch_rtp_ready(a_engine->rtp_session)) {
 			if (switch_channel_test_flag(session->channel, CF_VIDEO_POSSIBLE) && !switch_rtp_ready(v_engine->rtp_session)) {
 				goto video;
@@ -6560,7 +6565,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 		flags[SWITCH_RTP_FLAG_GEN_TS_DELTA] = 1;
 	}
 
-	if (a_engine->rtp_session && switch_channel_test_flag(session->channel, CF_REINVITE)) {
+	if (a_engine->rtp_session && is_reinvite) {
 		//const char *ip = switch_channel_get_variable(session->channel, SWITCH_LOCAL_MEDIA_IP_VARIABLE);
 		//const char *port = switch_channel_get_variable(session->channel, SWITCH_LOCAL_MEDIA_PORT_VARIABLE);
 		char *remote_host = switch_rtp_get_remote_host(a_engine->rtp_session);
@@ -6600,7 +6605,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 	switch_channel_set_variable(session->channel, SWITCH_LOCAL_MEDIA_PORT_VARIABLE, tmp);
 	switch_channel_set_variable(session->channel, SWITCH_ADVERTISED_MEDIA_IP_VARIABLE, a_engine->adv_sdp_ip);
 
-	if (a_engine->rtp_session && switch_channel_test_flag(session->channel, CF_REINVITE)) {
+	if (a_engine->rtp_session && is_reinvite) {
 		const char *rport = NULL;
 		switch_port_t remote_rtcp_port = a_engine->remote_rtcp_port;
 				
@@ -6952,7 +6957,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 
 		if (switch_channel_test_flag(session->channel, CF_VIDEO_POSSIBLE) && v_engine->cur_payload_map->rm_encoding && v_engine->cur_payload_map->remote_sdp_port) {
 			/******************************************************************************************/
-			if (v_engine->rtp_session && switch_channel_test_flag(session->channel, CF_REINVITE)) {
+			if (v_engine->rtp_session && is_reinvite) {
 				//const char *ip = switch_channel_get_variable(session->channel, SWITCH_LOCAL_MEDIA_IP_VARIABLE);
 				//const char *port = switch_channel_get_variable(session->channel, SWITCH_LOCAL_MEDIA_PORT_VARIABLE);
 				char *remote_host = switch_rtp_get_remote_host(v_engine->rtp_session);
@@ -6988,7 +6993,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 			switch_channel_set_variable(session->channel, SWITCH_LOCAL_VIDEO_PORT_VARIABLE, tmp);
 
 
-			if (v_engine->rtp_session && switch_channel_test_flag(session->channel, CF_REINVITE)) {
+			if (v_engine->rtp_session && is_reinvite) {
 				const char *rport = NULL;
 				switch_port_t remote_rtcp_port = v_engine->remote_rtcp_port;
 
