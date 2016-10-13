@@ -3853,6 +3853,9 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 		}
 	}
 
+	/* check dtmf_type variable */
+	switch_core_media_check_dtmf_type(session);
+
 	if ((val = switch_channel_get_variable(session->channel, "rtp_liberal_dtmf")) && switch_true(val)) {
 		switch_channel_set_flag(session->channel, CF_LIBERAL_DTMF);
 	}
