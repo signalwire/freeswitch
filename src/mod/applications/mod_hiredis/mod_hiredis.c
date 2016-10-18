@@ -158,8 +158,11 @@ SWITCH_LIMIT_INCR(hiredis_limit_incr)
 	hashkey = switch_mprintf("incr %s", limit_key);
 
 	if ( (status = hiredis_profile_execute_sync(profile, hashkey, &response, session)) != SWITCH_STATUS_SUCCESS ) {
-		if ( status == SWITCH_STATUS_SOCKERR && profile->ignore_connect_fail ) {
+		if ( status == SWITCH_STATUS_SOCKERR && profile->ignore_connect_fail) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "hiredis: ignoring profile[%s] connection error executing [%s]\n", realm, hashkey);
+			switch_goto_status(SWITCH_STATUS_SUCCESS, done);
+		} else if ( profile->ignore_error ) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "hiredis: ignoring profile[%s] general error executing [%s]\n", realm, hashkey);
 			switch_goto_status(SWITCH_STATUS_SUCCESS, done);
 		}
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "hiredis: profile[%s] error executing [%s] because [%s]\n", realm, hashkey, response ? response : "");
@@ -252,6 +255,9 @@ SWITCH_LIMIT_RELEASE(hiredis_limit_release)
 		if ( ( status = hiredis_profile_execute_sync(profile, hashkey, &response, session) ) != SWITCH_STATUS_SUCCESS ) {
 			if ( status == SWITCH_STATUS_SOCKERR && profile->ignore_connect_fail ) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "hiredis: ignoring profile[%s] connection error executing [%s]\n", realm, hashkey);
+				switch_goto_status(SWITCH_STATUS_SUCCESS, done);
+			} else if ( profile->ignore_error ) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "hiredis: ignoring profile[%s] general error executing [%s]\n", realm, hashkey);
 				switch_goto_status(SWITCH_STATUS_SUCCESS, done);
 			}
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "hiredis: profile[%s] error executing [%s] because [%s]\n", realm, hashkey, response ? response : "");
