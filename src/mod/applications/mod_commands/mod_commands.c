@@ -6283,37 +6283,48 @@ SWITCH_STANDARD_API(strftime_tz_api_function)
 
 SWITCH_STANDARD_API(hupall_api_function)
 {
-	char *mycmd = NULL, *argv[3] = { 0 };
-	char *var = NULL;
-	char *val = NULL;
+	char *mycmd = NULL, *argv[11] = { 0 };
 	switch_call_cause_t cause = SWITCH_CAUSE_MANAGER_REQUEST;
+	switch_event_t *vars = NULL;
+	int vars_count = 0;
 
 	if (!zstr(cmd) && (mycmd = strdup(cmd))) {
-		switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+		int argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+		int i;
 		switch_assert(argv[0]);
 		if ((cause = switch_channel_str2cause(argv[0])) == SWITCH_CAUSE_NONE) {
 			cause = SWITCH_CAUSE_MANAGER_REQUEST;
 		}
-		var = argv[1];
-		val = argv[2];
+		for (i = 1; i < argc - 1; i += 2) {
+			char *var = argv[i];
+			char *val = argv[i + 1];
+			if (!zstr(var) && !zstr(val)) {
+				if (!vars) {
+					switch_event_create(&vars, SWITCH_EVENT_CLONE);
+				}
+				switch_event_add_header_string(vars, SWITCH_STACK_BOTTOM, var, val);
+				vars_count++;
+			}
+		}
 	}
 
-	if (!val) {
-		var = NULL;
-	}
-
-	if (zstr(var)) {
+	if (!vars_count) {
 		switch_core_session_hupall(cause);
 	} else {
-		switch_core_session_hupall_matching_var(var, val, cause);
+		switch_core_session_hupall_matching_vars(vars, cause);
 	}
 
-	if (zstr(var)) {
+	if (!vars_count) {
 		stream->write_function(stream, "+OK hangup all channels with cause %s\n", switch_channel_cause2str(cause));
+	} else if (vars_count == 1) {
+		stream->write_function(stream, "+OK hangup all channels matching [%s]=[%s] with cause: %s\n", argv[1], argv[2], switch_channel_cause2str(cause));
 	} else {
-		stream->write_function(stream, "+OK hangup all channels matching [%s]=[%s] with cause: %s\n", var, val, switch_channel_cause2str(cause));
+		stream->write_function(stream, "+OK hangup all channels matching [%s]=[%s]... with cause: %s\n", argv[1], argv[2], switch_channel_cause2str(cause));
 	}
 
+	if (vars) {
+		switch_event_destroy(&vars);
+	}
 	switch_safe_free(mycmd);
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -7199,7 +7210,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "switchname", "Return the switch name", switchname_api_function, "");
 	SWITCH_ADD_API(commands_api_interface, "gethost", "gethostbyname", gethost_api_function, "");
 	SWITCH_ADD_API(commands_api_interface, "getenv", "getenv", getenv_function, GETENV_SYNTAX);
-	SWITCH_ADD_API(commands_api_interface, "hupall", "hupall", hupall_api_function, "<cause> [<var> <value>]");
+	SWITCH_ADD_API(commands_api_interface, "hupall", "hupall", hupall_api_function, "<cause> [<var> <value>] [<var2> <value2>]");
 	SWITCH_ADD_API(commands_api_interface, "in_group", "Determine if a user is in a group", in_group_function, "<user>[@<domain>] <group_name>");
 	SWITCH_ADD_API(commands_api_interface, "is_lan_addr", "See if an ip is a lan addr", lan_addr_function, "<ip>");
 	SWITCH_ADD_API(commands_api_interface, "limit_usage", "Get the usage count of a limited resource", limit_usage_function, "<backend> <realm> <id>");

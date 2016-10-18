@@ -207,8 +207,7 @@ struct str_node {
 	struct str_node *next;
 };
 
-SWITCH_DECLARE(uint32_t) switch_core_session_hupall_matching_var_ans(const char *var_name, const char *var_val, switch_call_cause_t cause, 
-																	 switch_hup_type_t type)
+SWITCH_DECLARE(uint32_t) switch_core_session_hupall_matching_vars_ans(switch_event_t *vars, switch_call_cause_t cause, switch_hup_type_t type)
 {
 	switch_hash_index_t *hi;
 	void *val;
@@ -219,7 +218,7 @@ SWITCH_DECLARE(uint32_t) switch_core_session_hupall_matching_var_ans(const char 
 
 	switch_core_new_memory_pool(&pool);
 
-	if (!var_val)
+	if (!vars || !vars->headers)
 		return r;
 
 	switch_mutex_lock(runtime.session_hash_mutex);
@@ -243,11 +242,23 @@ SWITCH_DECLARE(uint32_t) switch_core_session_hupall_matching_var_ans(const char 
 
 	for(np = head; np; np = np->next) {
 		if ((session = switch_core_session_locate(np->str))) {
-			const char *this_val;
-			if (switch_channel_up_nosig(session->channel) &&
-				(this_val = switch_channel_get_variable(session->channel, var_name)) && (!strcmp(this_val, var_val))) {			
-				switch_channel_hangup(session->channel, cause);
-				r++;
+			const char *this_value;
+			if (switch_channel_up_nosig(session->channel)) {
+				/* check if all conditions are satisfied */
+				int do_hangup = 1;
+				switch_event_header_t *hp;
+				for (hp = vars->headers; hp; hp = hp->next) {
+					const char *var_name = hp->name;
+					const char *var_value = hp->value;
+					if (!(this_value = switch_channel_get_variable(session->channel, var_name)) || (strcmp(this_value, var_value))) {
+						do_hangup = 0;
+						break;
+					}
+				}
+				if (do_hangup) {
+					switch_channel_hangup(session->channel, cause);
+					r++;
+				}
 			}
 			switch_core_session_rwunlock(session);
 		}
@@ -258,6 +269,21 @@ SWITCH_DECLARE(uint32_t) switch_core_session_hupall_matching_var_ans(const char 
 	return r;
 }
 
+SWITCH_DECLARE(uint32_t) switch_core_session_hupall_matching_var_ans(const char *var_name, const char *var_val, switch_call_cause_t cause,
+																	 switch_hup_type_t type)
+{
+	switch_event_t *vars;
+	int r = 0;
+
+	if (!var_val || !var_name)
+		return r;
+
+	switch_event_create(&vars, SWITCH_EVENT_CLONE);
+	switch_event_add_header_string(vars, SWITCH_STACK_BOTTOM, var_name, var_val);
+	r = switch_core_session_hupall_matching_vars_ans(vars, cause, type);
+	switch_event_destroy(&vars);
+	return r;
+}
 
 SWITCH_DECLARE(switch_console_callback_match_t *) switch_core_session_findall_matching_var(const char *var_name, const char *var_val)
 {
