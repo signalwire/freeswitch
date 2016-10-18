@@ -33,6 +33,7 @@ typedef struct hiredis_profile_s {
   switch_memory_pool_t *pool;
   char *name;
   uint8_t ignore_connect_fail;
+  uint8_t ignore_error;
 
   hiredis_connection_t *conn_head;
 } hiredis_profile_t;
@@ -47,7 +48,7 @@ typedef struct hiredis_limit_pvt_s {
 } hiredis_limit_pvt_t;
 
 switch_status_t mod_hiredis_do_config(void);
-switch_status_t hiredis_profile_create(hiredis_profile_t **new_profile, char *name, uint8_t ignore_connect_fail);
+switch_status_t hiredis_profile_create(hiredis_profile_t **new_profile, char *name, uint8_t ignore_connect_fail, uint8_t ignore_error);
 switch_status_t hiredis_profile_destroy(hiredis_profile_t **old_profile);
 switch_status_t hiredis_profile_connection_add(hiredis_profile_t *profile, char *host, char *password, uint32_t port, uint32_t timeout_ms, uint32_t max_connections);
 

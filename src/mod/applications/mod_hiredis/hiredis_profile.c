@@ -32,12 +32,28 @@
 
 #include <mod_hiredis.h>
 
+/* auth if password is set */
+static switch_status_t hiredis_context_auth(hiredis_context_t *context)
+{
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	if ( !zstr(context->connection->password) ) {
+		redisReply *response = redisCommand(context->context, "AUTH %s", context->connection->password);
+		if ( !response || response->type == REDIS_REPLY_ERROR ) {
+			status = SWITCH_STATUS_FALSE;
+		}
+		if ( response ) {
+			freeReplyObject(response);
+		}
+	}
+	return status;
+}
+
 /* reconnect to redis server */
 static switch_status_t hiredis_context_reconnect(hiredis_context_t *context)
 {
 	redisFree(context->context);
 	context->context = redisConnectWithTimeout(context->connection->host, context->connection->port, context->connection->timeout);
-	if ( context->context && !context->context->err ) {
+	if ( context->context && !context->context->err && hiredis_context_auth(context) == SWITCH_STATUS_SUCCESS ) {
 		return SWITCH_STATUS_SUCCESS;
 	}
 	return SWITCH_STATUS_FALSE;
@@ -64,7 +80,7 @@ static hiredis_context_t *hiredis_connection_get_context(hiredis_connection_t *c
 		if ( !context->context ) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "hiredis: attempting[%s, %d]\n", conn->host, conn->port);
 			context->context = redisConnectWithTimeout(conn->host, conn->port, conn->timeout);
-			if ( context->context && !context->context->err ) {
+			if ( context->context && !context->context->err && hiredis_context_auth(context) == SWITCH_STATUS_SUCCESS ) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "hiredis: connection success[%s, %d]\n", conn->host, conn->port);
 				return context;
 			} else {
@@ -93,7 +109,7 @@ static hiredis_context_t *hiredis_connection_get_context(hiredis_connection_t *c
 	return NULL;
 }
 
-switch_status_t hiredis_profile_create(hiredis_profile_t **new_profile, char *name, uint8_t ignore_connect_fail)
+switch_status_t hiredis_profile_create(hiredis_profile_t **new_profile, char *name, uint8_t ignore_connect_fail, uint8_t ignore_error)
 {
 	hiredis_profile_t *profile = NULL;
 	switch_memory_pool_t *pool = NULL;
@@ -106,6 +122,7 @@ switch_status_t hiredis_profile_create(hiredis_profile_t **new_profile, char *na
 	profile->name = name ? switch_core_strdup(profile->pool, name) : "default";
 	profile->conn_head = NULL;
 	profile->ignore_connect_fail = ignore_connect_fail;
+	profile->ignore_error = ignore_error;
 
 	switch_core_hash_insert(mod_hiredis_globals.profiles, name, (void *) profile);
 
@@ -218,11 +235,16 @@ static switch_status_t hiredis_context_execute_sync(hiredis_context_t *context, 
 	case REDIS_REPLY_INTEGER:
 		*resp = switch_mprintf("%lld", response->integer);
 		break;
-	default:
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "hiredis: response error[%s][%d]\n", response->str, response->type);
+	case REDIS_REPLY_ERROR:
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "hiredis: error response[%s][%d]\n", response->str, response->type);
 		freeReplyObject(response);
 		*resp = NULL;
 		return SWITCH_STATUS_GENERR;
+	default:
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "hiredis: unsupported response[%s][%d]\n", response->str, response->type);
+		freeReplyObject(response);
+		*resp = NULL;
+		return SWITCH_STATUS_IGNORE;
 	}
 
 	freeReplyObject(response);
