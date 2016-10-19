@@ -1769,7 +1769,7 @@ void conference_video_check_avatar(conference_member_t *member, switch_bool_t fo
 		switch_img_copy(member->video_mute_img, &member->avatar_png_img);
 	}
 
-	if (avatar && novid) {
+	if (member->avatar_png_img && novid) {
 		member->auto_avatar = 1;
 	}
 
@@ -1969,16 +1969,21 @@ void conference_video_pop_next_image(conference_member_t *member, switch_image_t
 			switch_core_session_media_flow(member->session, SWITCH_MEDIA_TYPE_VIDEO) != SWITCH_MEDIA_FLOW_SENDONLY &&
 			switch_core_session_media_flow(member->session, SWITCH_MEDIA_TYPE_VIDEO) != SWITCH_MEDIA_FLOW_INACTIVE
 			) {
+			switch_vid_params_t vid_params = { 0 };
 			
+			switch_core_media_get_vid_params(member->session, &vid_params);
 
+			if (!vid_params.fps) {
+				vid_params.fps = member->conference->video_fps.fps;
+			}
 
 			if (img) {
 				member->good_img++;
-				if ((member->good_img % (int)(member->conference->video_fps.fps * 10)) == 0) {
+				if ((member->good_img % (int)(vid_params.fps * 10)) == 0) {
 					conference_video_reset_video_bitrate_counters(member);
 				}
 				
-				if (member->auto_avatar && member->good_img > member->conference->video_fps.fps * 3) {
+				if (member->auto_avatar && member->good_img > vid_params.fps * 3) {
 					conference_video_check_flush(member, SWITCH_TRUE);
 				}
 
