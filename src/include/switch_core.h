@@ -980,11 +980,21 @@ typedef enum {
   \param var_val The value to look for 
   \param cause the hangup cause to apply to the hungup channels
 */
-SWITCH_DECLARE(uint32_t) switch_core_session_hupall_matching_var_ans(_In_ const char *var_name, _In_ const char *var_val, _In_ 
+SWITCH_DECLARE(uint32_t) switch_core_session_hupall_matching_var_ans(_In_ const char *var_name, _In_ const char *var_val, _In_
 																	 switch_call_cause_t cause, switch_hup_type_t type);
 SWITCH_DECLARE(switch_console_callback_match_t *) switch_core_session_findall_matching_var(const char *var_name, const char *var_val);
 #define switch_core_session_hupall_matching_var(_vn, _vv, _c) switch_core_session_hupall_matching_var_ans(_vn, _vv, _c, SHT_UNANSWERED | SHT_ANSWERED)
 SWITCH_DECLARE(switch_console_callback_match_t *) switch_core_session_findall(void);
+/*!
+  \brief Hangup all sessions which match specific channel variable(s)
+  \param var_name The variable name to look for
+  \param var_val The value to look for
+  \param cause the hangup cause to apply to the hungup channels
+*/
+SWITCH_DECLARE(uint32_t) switch_core_session_hupall_matching_vars_ans(_In_ switch_event_t *vars, _In_
+																	 switch_call_cause_t cause, switch_hup_type_t type);
+#define switch_core_session_hupall_matching_vars(_vs, _c) switch_core_session_hupall_matching_vars_ans(_vs, _c, SHT_UNANSWERED | SHT_ANSWERED)
+
 /*! 
   \brief Hangup all sessions that belong to an endpoint
   \param endpoint_interface The endpoint interface 
