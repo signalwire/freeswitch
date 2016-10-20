@@ -490,7 +490,7 @@ static void *SWITCH_THREAD_FUNC switch_core_service_thread(switch_thread_t *thre
 {
 	switch_core_session_t *session = obj;
 	switch_channel_t *channel;
-	switch_frame_t *read_frame;
+	switch_frame_t *read_frame = NULL;
 
 //  switch_assert(thread != NULL);
 //  switch_assert(session != NULL);
