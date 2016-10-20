@@ -2542,7 +2542,6 @@ typedef struct payload_map_s {
 
 	char *rm_fmtp;
 
-	switch_payload_t agreed_pt;
 	switch_payload_t recv_pt;
 
 	char *fmtp_out;
