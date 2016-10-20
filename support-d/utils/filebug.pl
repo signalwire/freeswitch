@@ -10,6 +10,7 @@ my $default_versions = "1.9 1.8";
 my $default_components = "freeswitch-core";
 my $desc_head = "; Enter the description lines beginning with a ; will be ignored.\n";
 
+chomp($editor);
 
 sub getpass {
   ReadMode( "noecho");
