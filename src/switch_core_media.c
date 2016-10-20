@@ -5461,7 +5461,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_set_video_file(switch_core_ses
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (!smh->video_read_fh && !smh->video_read_fh && !switch_channel_test_flag(session->channel, CF_VIDEO)) {
+	if (!smh->video_read_fh && !smh->video_write_fh && !switch_channel_test_flag(session->channel, CF_VIDEO)) {
 		return SWITCH_STATUS_FALSE;
 	}
 
