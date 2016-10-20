@@ -826,7 +826,6 @@ Package: freeswitch-meta-all-dbg
 Architecture: any
 Depends: \${misc:Depends}, freeswitch (= \${binary:Version}),
  freeswitch-meta-codecs-dbg (= \${binary:Version}),
- freeswitch-meta-lang-dbg (= \${binary:Version}),
  freeswitch-meta-mod-say (= \${binary:Version}),
  freeswitch-mod-abstraction-dbg (= \${binary:Version}),
  freeswitch-mod-avmd-dbg (= \${binary:Version}),
