@@ -1910,6 +1910,11 @@ else
     return ret;
   }
 
+  public static uint switch_core_session_hupall_matching_vars_ans(switch_event vars, switch_call_cause_t cause, switch_hup_type_t type) {
+    uint ret = freeswitchPINVOKE.switch_core_session_hupall_matching_vars_ans(switch_event.getCPtr(vars), (int)cause, (int)type);
+    return ret;
+  }
+
   public static void switch_core_session_hupall_endpoint(switch_endpoint_interface endpoint_interface, switch_call_cause_t cause) {
     freeswitchPINVOKE.switch_core_session_hupall_endpoint(switch_endpoint_interface.getCPtr(endpoint_interface), (int)cause);
   }
@@ -9747,12 +9752,6 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_payload_map_t_rm_fmtp_get")]
   public static extern string payload_map_t_rm_fmtp_get(HandleRef jarg1);
 
-  [DllImport("mod_managed", EntryPoint="CSharp_payload_map_t_agreed_pt_set")]
-  public static extern void payload_map_t_agreed_pt_set(HandleRef jarg1, byte jarg2);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_payload_map_t_agreed_pt_get")]
-  public static extern byte payload_map_t_agreed_pt_get(HandleRef jarg1);
-
   [DllImport("mod_managed", EntryPoint="CSharp_payload_map_t_recv_pt_set")]
   public static extern void payload_map_t_recv_pt_set(HandleRef jarg1, byte jarg2);
 
@@ -11087,6 +11086,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_session_findall")]
   public static extern IntPtr switch_core_session_findall();
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_session_hupall_matching_vars_ans")]
+  public static extern uint switch_core_session_hupall_matching_vars_ans(HandleRef jarg1, int jarg2, int jarg3);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_session_hupall_endpoint")]
   public static extern void switch_core_session_hupall_endpoint(HandleRef jarg1, int jarg2);
@@ -20307,16 +20309,6 @@ public class payload_map_t : IDisposable {
     } 
     get {
       string ret = freeswitchPINVOKE.payload_map_t_rm_fmtp_get(swigCPtr);
-      return ret;
-    } 
-  }
-
-  public byte agreed_pt {
-    set {
-      freeswitchPINVOKE.payload_map_t_agreed_pt_set(swigCPtr, value);
-    } 
-    get {
-      byte ret = freeswitchPINVOKE.payload_map_t_agreed_pt_get(swigCPtr);
       return ret;
     } 
   }

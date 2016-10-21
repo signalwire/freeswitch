@@ -6952,28 +6952,6 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_payload_map_t_rm_fmtp_get(void * jarg1) {
 }
 
 
-SWIGEXPORT void SWIGSTDCALL CSharp_payload_map_t_agreed_pt_set(void * jarg1, unsigned char jarg2) {
-  payload_map_s *arg1 = (payload_map_s *) 0 ;
-  switch_payload_t arg2 ;
-  
-  arg1 = (payload_map_s *)jarg1; 
-  arg2 = (switch_payload_t)jarg2; 
-  if (arg1) (arg1)->agreed_pt = arg2;
-}
-
-
-SWIGEXPORT unsigned char SWIGSTDCALL CSharp_payload_map_t_agreed_pt_get(void * jarg1) {
-  unsigned char jresult ;
-  payload_map_s *arg1 = (payload_map_s *) 0 ;
-  switch_payload_t result;
-  
-  arg1 = (payload_map_s *)jarg1; 
-  result = (switch_payload_t) ((arg1)->agreed_pt);
-  jresult = result; 
-  return jresult;
-}
-
-
 SWIGEXPORT void SWIGSTDCALL CSharp_payload_map_t_recv_pt_set(void * jarg1, unsigned char jarg2) {
   payload_map_s *arg1 = (payload_map_s *) 0 ;
   switch_payload_t arg2 ;
@@ -12390,6 +12368,22 @@ SWIGEXPORT void * SWIGSTDCALL CSharp_switch_core_session_findall() {
   
   result = (switch_console_callback_match_t *)switch_core_session_findall();
   jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT unsigned long SWIGSTDCALL CSharp_switch_core_session_hupall_matching_vars_ans(void * jarg1, int jarg2, int jarg3) {
+  unsigned long jresult ;
+  switch_event_t *arg1 = (switch_event_t *) 0 ;
+  switch_call_cause_t arg2 ;
+  switch_hup_type_t arg3 ;
+  uint32_t result;
+  
+  arg1 = (switch_event_t *)jarg1; 
+  arg2 = (switch_call_cause_t)jarg2; 
+  arg3 = (switch_hup_type_t)jarg3; 
+  result = (uint32_t)switch_core_session_hupall_matching_vars_ans(arg1,arg2,arg3);
+  jresult = (unsigned long)result; 
   return jresult;
 }
 
