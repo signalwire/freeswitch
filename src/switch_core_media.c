@@ -3408,6 +3408,10 @@ static switch_status_t check_ice(switch_media_handle_t *smh, switch_media_type_t
 				engine->rtcp_mux = SWITCH_TRUE;
 				engine->remote_rtcp_port = engine->cur_payload_map->remote_sdp_port;
 				got_rtcp_mux++;
+
+				if (!smh->mparams->rtcp_audio_interval_msec) {
+					smh->mparams->rtcp_audio_interval_msec = SWITCH_RTCP_AUDIO_INTERVAL_MSEC;
+				}				
 #endif
 			} else if (!strcasecmp(attr->a_name, "candidate")) {
 				switch_channel_set_flag(smh->session->channel, CF_ICE);
@@ -4172,6 +4176,9 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 				if (!strcasecmp(attr->a_name, "rtcp-mux")) {
 					got_rtcp_mux = 1;
 					skip_rtcp = 1;
+					if (!smh->mparams->rtcp_video_interval_msec) {
+						smh->mparams->rtcp_video_interval_msec = SWITCH_RTCP_VIDEO_INTERVAL_MSEC;
+					}					
 				} else if (!strcasecmp(attr->a_name, "ice-ufrag")) {
 					skip_rtcp = 1;
 				}
@@ -7842,6 +7849,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 	const char *vbw;
 	int bw = 256;
 	uint8_t fir = 0, nack = 0, pli = 0, tmmbr = 0, has_vid = 0;
+	const char *use_rtcp_mux = NULL;
 
 	switch_assert(session);
 
@@ -7852,8 +7860,14 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 	a_engine = &smh->engines[SWITCH_MEDIA_TYPE_AUDIO];
 	v_engine = &smh->engines[SWITCH_MEDIA_TYPE_VIDEO];
 
-	if ((!a_engine->rtcp_mux && !v_engine->rtcp_mux) && 
-		(sdp_type == SDP_TYPE_REQUEST || switch_true(switch_channel_get_variable(session->channel, "rtcp_mux")))) {
+	use_rtcp_mux = switch_channel_get_variable(session->channel, "rtcp_mux");
+
+	if (use_rtcp_mux && switch_false(use_rtcp_mux)) {
+		a_engine->rtcp_mux = -1;
+		v_engine->rtcp_mux = -1;
+	}
+
+	if ((a_engine->rtcp_mux != -1 && !v_engine->rtcp_mux != -1) && (sdp_type == SDP_TYPE_REQUEST)) {
 		a_engine->rtcp_mux = 1;
 		v_engine->rtcp_mux = 1;
 	}
