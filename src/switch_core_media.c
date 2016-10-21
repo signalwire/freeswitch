@@ -4710,7 +4710,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 				
 				for (bw = m->m_bandwidths; bw; bw = bw->b_next) {
 					if (bw->b_modifier == sdp_bw_as && !tias) {
-						v_engine->sdp_bw = bw->b_value / 1024;
+						v_engine->sdp_bw = bw->b_value;
 					} else if (bw->b_modifier == sdp_bw_tias) {
 						tias = 1;
 						v_engine->sdp_bw = bw->b_value / 1024;
