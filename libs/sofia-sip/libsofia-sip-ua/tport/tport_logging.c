@@ -805,7 +805,8 @@ int tport_capt_msg_hepv3 (tport_t const *self, msg_t *msg, size_t n,
       buflen +=len;
       n -= len;
    }
-   
+
+   free(hg);
    return buflen;
  
 done:
