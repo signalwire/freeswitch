@@ -5940,6 +5940,16 @@ else
     return ret;
   }
 
+  public static switch_status_t switch_ivr_detect_audio(SWIGTYPE_p_switch_core_session session, uint thresh, uint audio_hits, uint timeout_ms, string file) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_ivr_detect_audio(SWIGTYPE_p_switch_core_session.getCPtr(session), thresh, audio_hits, timeout_ms, file);
+    return ret;
+  }
+
+  public static switch_status_t switch_ivr_detect_silence(SWIGTYPE_p_switch_core_session session, uint thresh, uint silence_hits, uint timeout_ms, string file) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_ivr_detect_silence(SWIGTYPE_p_switch_core_session.getCPtr(session), thresh, silence_hits, timeout_ms, file);
+    return ret;
+  }
+
   public static switch_status_t switch_ivr_wait_for_silence(SWIGTYPE_p_switch_core_session session, uint thresh, uint silence_hits, uint listen_hits, uint timeout_ms, string file) {
     switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_ivr_wait_for_silence(SWIGTYPE_p_switch_core_session.getCPtr(session), thresh, silence_hits, listen_hits, timeout_ms, file);
     return ret;
@@ -8713,6 +8723,18 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_error_period_t_stop_get")]
   public static extern long switch_error_period_t_stop_get(HandleRef jarg1);
 
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_error_period_t_flaws_set")]
+  public static extern void switch_error_period_t_flaws_set(HandleRef jarg1, uint jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_error_period_t_flaws_get")]
+  public static extern uint switch_error_period_t_flaws_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_error_period_t_consecutive_flaws_set")]
+  public static extern void switch_error_period_t_consecutive_flaws_set(HandleRef jarg1, uint jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_error_period_t_consecutive_flaws_get")]
+  public static extern uint switch_error_period_t_consecutive_flaws_get(HandleRef jarg1);
+
   [DllImport("mod_managed", EntryPoint="CSharp_switch_error_period_t_next_set")]
   public static extern void switch_error_period_t_next_set(HandleRef jarg1, HandleRef jarg2);
 
@@ -9654,12 +9676,6 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_payload_map_t_rm_fmtp_get")]
   public static extern string payload_map_t_rm_fmtp_get(HandleRef jarg1);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_payload_map_t_agreed_pt_set")]
-  public static extern void payload_map_t_agreed_pt_set(HandleRef jarg1, byte jarg2);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_payload_map_t_agreed_pt_get")]
-  public static extern byte payload_map_t_agreed_pt_get(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_payload_map_t_recv_pt_set")]
   public static extern void payload_map_t_recv_pt_set(HandleRef jarg1, byte jarg2);
@@ -14038,6 +14054,12 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_mm_t_vh_get")]
   public static extern int switch_mm_t_vh_get(HandleRef jarg1);
 
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_mm_t_cbr_set")]
+  public static extern void switch_mm_t_cbr_set(HandleRef jarg1, int jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_mm_t_cbr_get")]
+  public static extern int switch_mm_t_cbr_get(HandleRef jarg1);
+
   [DllImport("mod_managed", EntryPoint="CSharp_switch_mm_t_fps_set")]
   public static extern void switch_mm_t_fps_set(HandleRef jarg1, float jarg2);
 
@@ -17239,6 +17261,12 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_ivr_play_file")]
   public static extern int switch_ivr_play_file(HandleRef jarg1, HandleRef jarg2, string jarg3, HandleRef jarg4);
 
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_ivr_detect_audio")]
+  public static extern int switch_ivr_detect_audio(HandleRef jarg1, uint jarg2, uint jarg3, uint jarg4, string jarg5);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_ivr_detect_silence")]
+  public static extern int switch_ivr_detect_silence(HandleRef jarg1, uint jarg2, uint jarg3, uint jarg4, string jarg5);
+
   [DllImport("mod_managed", EntryPoint="CSharp_switch_ivr_wait_for_silence")]
   public static extern int switch_ivr_wait_for_silence(HandleRef jarg1, uint jarg2, uint jarg3, uint jarg4, uint jarg5, string jarg6);
 
@@ -20107,16 +20135,6 @@ public class payload_map_t : IDisposable {
     } 
     get {
       string ret = freeswitchPINVOKE.payload_map_t_rm_fmtp_get(swigCPtr);
-      return ret;
-    } 
-  }
-
-  public byte agreed_pt {
-    set {
-      freeswitchPINVOKE.payload_map_t_agreed_pt_set(swigCPtr, value);
-    } 
-    get {
-      byte ret = freeswitchPINVOKE.payload_map_t_agreed_pt_get(swigCPtr);
       return ret;
     } 
   }
@@ -29574,6 +29592,7 @@ public enum switch_channel_flag_t {
   CF_3P_MEDIA_REQUESTED,
   CF_3P_NOMEDIA_REQUESTED,
   CF_3P_NOMEDIA_REQUESTED_BLEG,
+  CF_IMAGE_SDP,
   CF_VIDEO_SDP_RECVD,
   CF_FLAG_MAX
 }
@@ -30117,6 +30136,7 @@ public enum switch_codec_control_command_t {
   SCC_VIDEO_BANDWIDTH,
   SCC_VIDEO_RESET,
   SCC_AUDIO_PACKET_LOSS,
+  SCC_AUDIO_ADJUST_BITRATE,
   SCC_DEBUG,
   SCC_CODEC_SPECIFIC
 }
@@ -30336,7 +30356,9 @@ namespace FreeSWITCH.Native {
   SWITCH_CODEC_FLAG_AAL2 = (1 << 6),
   SWITCH_CODEC_FLAG_PASSTHROUGH = (1 << 7),
   SWITCH_CODEC_FLAG_READY = (1 << 8),
-  SWITCH_CODEC_FLAG_HAS_PLC = (1 << 15)
+  SWITCH_CODEC_FLAG_HAS_ADJ_BITRATE = (1 << 14),
+  SWITCH_CODEC_FLAG_HAS_PLC = (1 << 15),
+  SWITCH_CODEC_FLAG_VIDEO_PATCHING = (1 << 16)
 }
 
 }
@@ -33725,6 +33747,26 @@ public class switch_error_period_t : IDisposable {
     } 
     get {
       long ret = freeswitchPINVOKE.switch_error_period_t_stop_get(swigCPtr);
+      return ret;
+    } 
+  }
+
+  public uint flaws {
+    set {
+      freeswitchPINVOKE.switch_error_period_t_flaws_set(swigCPtr, value);
+    } 
+    get {
+      uint ret = freeswitchPINVOKE.switch_error_period_t_flaws_get(swigCPtr);
+      return ret;
+    } 
+  }
+
+  public uint consecutive_flaws {
+    set {
+      freeswitchPINVOKE.switch_error_period_t_consecutive_flaws_set(swigCPtr, value);
+    } 
+    get {
+      uint ret = freeswitchPINVOKE.switch_error_period_t_consecutive_flaws_get(swigCPtr);
       return ret;
     } 
   }
@@ -38358,7 +38400,8 @@ namespace FreeSWITCH.Native {
   SMBF_WRITE_VIDEO_STREAM = (1 << 20),
   SMBF_VIDEO_PATCH = (1 << 21),
   SMBF_SPY_VIDEO_STREAM = (1 << 22),
-  SMBF_SPY_VIDEO_STREAM_BLEG = (1 << 23)
+  SMBF_SPY_VIDEO_STREAM_BLEG = (1 << 23),
+  SMBF_READ_VIDEO_PATCH = (1 << 24)
 }
 
 }
@@ -38532,6 +38575,16 @@ public class switch_mm_t : IDisposable {
     } 
     get {
       int ret = freeswitchPINVOKE.switch_mm_t_vh_get(swigCPtr);
+      return ret;
+    } 
+  }
+
+  public int cbr {
+    set {
+      freeswitchPINVOKE.switch_mm_t_cbr_set(swigCPtr, value);
+    } 
+    get {
+      int ret = freeswitchPINVOKE.switch_mm_t_cbr_get(swigCPtr);
       return ret;
     } 
   }
@@ -39413,6 +39466,7 @@ public enum switch_rtp_flag_t {
   SWITCH_RTP_FLAG_SECURE_SEND,
   SWITCH_RTP_FLAG_SECURE_RECV,
   SWITCH_RTP_FLAG_AUTOADJ,
+  SWITCH_RTP_FLAG_RTCP_AUTOADJ,
   SWITCH_RTP_FLAG_RAW_WRITE,
   SWITCH_RTP_FLAG_GOOGLEHACK,
   SWITCH_RTP_FLAG_VAD,
@@ -39435,6 +39489,8 @@ public enum switch_rtp_flag_t {
   SWITCH_ZRTP_FLAG_SECURE_MITM_RECV,
   SWITCH_RTP_FLAG_DEBUG_RTP_READ,
   SWITCH_RTP_FLAG_DEBUG_RTP_WRITE,
+  SWITCH_RTP_FLAG_ESTIMATORS,
+  SWITCH_RTP_FLAG_ADJ_BITRATE_CAP,
   SWITCH_RTP_FLAG_VIDEO,
   SWITCH_RTP_FLAG_ENABLE_RTCP,
   SWITCH_RTP_FLAG_RTCP_MUX,
@@ -39448,6 +39504,7 @@ public enum switch_rtp_flag_t {
   SWITCH_RTP_FLAG_NACK,
   SWITCH_RTP_FLAG_TMMBR,
   SWITCH_RTP_FLAG_GEN_TS_DELTA,
+  SWITCH_RTP_FLAG_DETECT_SSRC,
   SWITCH_RTP_FLAG_INVALID
 }
 
@@ -41624,7 +41681,8 @@ public enum switch_stack_t {
 namespace FreeSWITCH.Native {
 
 public enum switch_state_handler_flag_t {
-  SSH_FLAG_STICKY = (1 << 0)
+  SSH_FLAG_STICKY = (1 << 0),
+  SSH_FLAG_PRE_EXEC = (1 << 1)
 }
 
 }
