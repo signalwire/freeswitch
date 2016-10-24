@@ -181,6 +181,7 @@ static switch_status_t png_file_read_video(switch_file_handle_t *handle, switch_
 {
 	png_file_context_t *context = (png_file_context_t *)handle->private_info;
 	switch_image_t *dup = NULL;
+	int have_frame = 0;
 
 	if ((flags & SVR_CHECK)) {
 		return SWITCH_STATUS_BREAK;
@@ -190,18 +191,21 @@ static switch_status_t png_file_read_video(switch_file_handle_t *handle, switch_
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if ((context->reads++ % 20) == 0) {
+	if ((flags && SVR_BLOCK)) {
+		switch_yield(33000);
+		have_frame = 1;
+	} else if ((context->reads++ % 20) == 0) {
+		have_frame = 1;
+	}
+
+	if (have_frame) {
 		switch_img_copy(context->img, &dup);
 		frame->img = dup;
 		context->sent++;
+		return SWITCH_STATUS_SUCCESS;
 	} else {
-		if ((flags && SVR_BLOCK)) {
-			switch_yield(5000);
-		}
 		return SWITCH_STATUS_BREAK;
 	}
-
-	return SWITCH_STATUS_SUCCESS;
 }
 
 typedef struct {
