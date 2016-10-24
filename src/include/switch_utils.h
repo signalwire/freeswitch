@@ -377,8 +377,8 @@ SWITCH_DECLARE(char *) switch_amp_encode(char *s, char *buf, switch_size_t len);
 
 static inline char *switch_print_bits(const unsigned char *byte, char *buf, switch_size_t buflen)
 {
-
-	int i, j = 0, k = 0, l = 0;
+	int i;
+	switch_size_t j = 0, k = 0, l = 0;
 
 	while(k < buflen) {
 		l = 0;
