@@ -7867,7 +7867,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 		v_engine->rtcp_mux = -1;
 	}
 
-	if ((a_engine->rtcp_mux != -1 && !v_engine->rtcp_mux != -1) && (sdp_type == SDP_TYPE_REQUEST)) {
+	if ((a_engine->rtcp_mux != -1 && v_engine->rtcp_mux != -1) && (sdp_type == SDP_TYPE_REQUEST)) {
 		a_engine->rtcp_mux = 1;
 		v_engine->rtcp_mux = 1;
 	}
