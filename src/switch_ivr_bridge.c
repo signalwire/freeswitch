@@ -55,7 +55,7 @@ static void video_bridge_thread(switch_core_session_t *session, void *obj)
 	switch_frame_t *read_frame = 0;
 	int set_decoded_read = 0, refresh_timer = 0;
 	int refresh_cnt = 300;
-	
+
 	vh->up = 1;
 
 	switch_core_session_read_lock(vh->session_a);
@@ -107,13 +107,14 @@ static void video_bridge_thread(switch_core_session_t *session, void *obj)
 			}
 
 			status = switch_core_session_read_video_frame(vh->session_a, &read_frame, SWITCH_IO_FLAG_NONE, 0);
-
+			
 			if (!SWITCH_READ_ACCEPTABLE(status)) {
 				switch_cond_next();
 				continue;
 			}
 		}
 		
+
 		if (switch_test_flag(read_frame, SFF_CNG) || 
 			switch_channel_test_flag(channel, CF_LEG_HOLDING) || switch_channel_test_flag(b_channel, CF_VIDEO_READ_FILE_ATTACHED)) {
 			continue;
@@ -257,6 +258,8 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 	const char *exec_app = NULL;
 	const char *exec_data = NULL;
 	switch_codec_implementation_t read_impl = { 0 };
+	const char *banner_file = NULL;
+	int played_banner = 0, banner_counter = 0;
 
 #ifdef SWITCH_VIDEO_IN_THREADS
 	struct vid_helper vh = { 0 };
@@ -270,7 +273,6 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 	}
 
 	switch_core_session_get_read_impl(session_a, &read_impl);
-
 
 	input_callback = data->input_callback;
 	user_data = data->session_data;
@@ -317,6 +319,17 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 		}
 		goto end_of_bridge_loop;
 	}
+
+
+	if (switch_channel_test_flag(chan_a, CF_BRIDGE_ORIGINATOR) && (banner_file = switch_channel_get_variable(chan_a, "video_pre_call_banner"))) {
+		switch_channel_set_flag(chan_a, CF_AUDIO_PAUSE_READ);
+		switch_channel_set_flag(chan_b, CF_AUDIO_PAUSE_READ);
+		switch_channel_set_flag(chan_a, CF_AUDIO_PAUSE_WRITE);
+		switch_channel_set_flag(chan_b, CF_AUDIO_PAUSE_WRITE);
+		switch_channel_set_flag(chan_a, CF_VIDEO_PAUSE_READ);
+		switch_channel_set_flag(chan_b, CF_VIDEO_PAUSE_READ);
+	}
+
 
 	if (bypass_media_after_bridge) {
 		const char *source_a = switch_channel_get_variable(chan_a, "source");
@@ -455,6 +468,37 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 #endif
 
 		if (read_frame_count >= DEFAULT_LEAD_FRAMES && switch_channel_media_ack(chan_a)) {
+			if (!played_banner && switch_channel_test_flag(chan_a, CF_VIDEO) && switch_channel_test_flag(chan_b, CF_VIDEO) &&
+				switch_channel_test_flag(chan_a, CF_ANSWERED) && switch_channel_test_flag(chan_b, CF_ANSWERED) &&
+				++banner_counter > 100 &&
+				switch_channel_test_flag(chan_a, CF_VIDEO_READY) && switch_channel_test_flag(chan_b, CF_VIDEO_READY) && 
+				switch_channel_test_flag(chan_a, CF_BRIDGE_ORIGINATOR) && banner_file) {
+				const char *b_banner_file = switch_channel_get_variable(chan_b, "video_pre_call_banner");
+
+				if (!b_banner_file) {
+					b_banner_file = switch_channel_get_variable(chan_a, "video_pre_call_banner_bleg");
+				}
+
+				
+				switch_channel_clear_flag(chan_a, CF_VIDEO_PAUSE_READ);
+				switch_channel_clear_flag(chan_b, CF_VIDEO_PAUSE_READ);
+
+				if (b_banner_file) {
+					switch_ivr_broadcast(switch_core_session_get_uuid(session_a), banner_file, SMF_ECHO_ALEG);
+					switch_ivr_broadcast(switch_core_session_get_uuid(session_b), b_banner_file, SMF_ECHO_ALEG);
+				} else {
+					switch_ivr_broadcast(switch_core_session_get_uuid(session_a), banner_file, SMF_ECHO_ALEG | SMF_ECHO_BLEG);
+				}
+
+				played_banner = 1;
+				
+				switch_channel_clear_flag(chan_a, CF_AUDIO_PAUSE_READ);
+				switch_channel_clear_flag(chan_b, CF_AUDIO_PAUSE_READ);
+				switch_channel_clear_flag(chan_a, CF_AUDIO_PAUSE_WRITE);
+				switch_channel_clear_flag(chan_b, CF_AUDIO_PAUSE_WRITE);
+			}
+			
+
 
 			if (!exec_check) {
 				switch_channel_execute_on(chan_a, SWITCH_CHANNEL_EXECUTE_ON_PRE_BRIDGE_VARIABLE);

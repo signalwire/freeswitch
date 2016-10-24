@@ -3790,7 +3790,8 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 		return 0;
 	}
 
-	switch_channel_clear_flag(channel, CF_AUDIO_PAUSE);
+	switch_channel_clear_flag(channel, CF_AUDIO_PAUSE_READ);
+	switch_channel_clear_flag(channel, CF_AUDIO_PAUSE_WRITE);
 
 	if (dtls_ok(session) && (tmp = switch_channel_get_variable(smh->session->channel, "webrtc_enable_dtls")) && switch_false(tmp)) {
 		switch_channel_clear_flag(smh->session->channel, CF_DTLS_OK);
@@ -5025,7 +5026,8 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 		pmap->recv_pt = 97;
 		pmap->codec_ms = 20;
 		a_engine->cur_payload_map = pmap;
-		switch_channel_set_flag(channel, CF_AUDIO_PAUSE);
+		switch_channel_set_flag(channel, CF_AUDIO_PAUSE_READ);
+		switch_channel_set_flag(channel, CF_AUDIO_PAUSE_WRITE);
 	}
 
 
