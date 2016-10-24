@@ -39,7 +39,7 @@
 #endif
 
 #if !OPAL_CHECK_VERSION(3,12,8)
-  #error OPAL is too old to use, must be >= 2.12.8
+  #error OPAL is too old to use, must be >= 3.12.8
 #endif
 
 #include <ep/localep.h>
