@@ -1,0 +1,22 @@
+Tested with mobile devices (VOLTE) : 
+Samsung S6 Edge, iPhone, Samsung Note4, Samsung S6
+
+
+INSTALL
+
+1. install the AMR library debs 
+
+libopencore-amrnb-dev - Adaptive Multi Rate speech codec - development files
+libopencore-amrnb0 - Adaptive Multi Rate speech codec - shared library
+libopencore-amrnb0-dbg - Adaptive Multi Rate speech codec - debugging symbols
+
+apt-get install libopencore-amrnb-dev libopencore-amrnb0 libopencore-amrnb0-dbg
+
+This was tested on Debian 8
+
+2. copy these two files in the current directory (mod_amr)
+
+cp ./usr/include/opencore-amrnb/interf_enc.h .
+cp ./usr/include/opencore-amrnb/interf_dec.h .
+
+3. run make, make install
