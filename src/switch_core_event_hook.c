@@ -40,8 +40,8 @@ NEW_HOOK_DECL(read_frame)
 NEW_HOOK_DECL(write_frame)
 NEW_HOOK_DECL(video_read_frame)
 NEW_HOOK_DECL(video_write_frame)
-NEW_HOOK_DECL(text_read_frame);
-NEW_HOOK_DECL(text_write_frame);
+NEW_HOOK_DECL(text_read_frame)
+NEW_HOOK_DECL(text_write_frame)
 NEW_HOOK_DECL(kill_channel)
 NEW_HOOK_DECL(send_dtmf)
 NEW_HOOK_DECL(recv_dtmf)
