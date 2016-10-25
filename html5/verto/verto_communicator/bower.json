@@ -46,7 +46,7 @@
     "bootstrap-material-design": "~0.3.0",
     "angular-translate": "~2.10.0",
     "angular-translate-loader-static-files": "~2.10.0",
-    "angular-click-outside": "^2.8.3"
+    "angular-click-outside": "~2.9.2"
   },
   "resolutions": {
     "angular": "~1.3.15",
