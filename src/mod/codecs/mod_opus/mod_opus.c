@@ -96,6 +96,14 @@ struct dec_stats {
 };
 typedef struct dec_stats dec_stats_t;
 
+struct enc_stats {
+	uint32_t frame_counter;
+	uint32_t encoded_bytes;
+	uint32_t encoded_msec;
+	uint32_t fec_counter;
+};
+typedef struct enc_stats enc_stats_t;
+
 struct codec_control_state {
 	int keep_fec;
 	opus_int32 current_bitrate;
@@ -117,6 +125,7 @@ struct opus_context {
 	int look_check;
 	int look_ts;
 	dec_stats_t decoder_stats;
+	enc_stats_t encoder_stats;
 	codec_control_state_t control_state;
 };
 
@@ -689,6 +698,17 @@ static switch_status_t switch_opus_destroy(switch_codec_t *codec)
 			context->decoder_object = NULL;
 		}
 		if (context->encoder_object) {
+			switch_core_session_t *session = codec->session;
+			int avg_encoded_bitrate = 0;
+			if (session) {
+
+				if (context->encoder_stats.frame_counter > 0) {
+					avg_encoded_bitrate = (context->encoder_stats.encoded_bytes * 8) / (context->encoder_stats.encoded_msec / 1000);
+				}
+
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,"Opus encoder stats: Frames[%d] Bytes encoded[%d] Encoded length ms[%d] Average encoded bitrate bps[%d] FEC frames (only for debug mode) [%d]\n",
+										context->encoder_stats.frame_counter, context->encoder_stats.encoded_bytes, context->encoder_stats.encoded_msec, avg_encoded_bitrate, context->encoder_stats.fec_counter);
+			}
 			opus_encoder_destroy(context->encoder_object);
 			context->encoder_object = NULL;
 		}
@@ -722,6 +742,20 @@ static switch_status_t switch_opus_encode(switch_codec_t *codec,
 
 	if (bytes > 0) {
 		*encoded_data_len = (uint32_t) bytes;
+
+		context->encoder_stats.frame_counter++;
+		if (context->enc_frame_size > 0) {
+			context->encoder_stats.encoded_msec += codec->implementation->microseconds_per_packet / 1000;
+		}
+		context->encoder_stats.encoded_bytes += (uint32_t)bytes;
+
+		if (globals.debug || context->debug > 1) {
+			// This stat is expensive, so get it only when in debug mode
+			if (switch_opus_has_fec((uint8_t *)encoded_data, bytes)) {
+				context->encoder_stats.fec_counter++;
+			}
+		}
+
 		return SWITCH_STATUS_SUCCESS;
 	}
 
