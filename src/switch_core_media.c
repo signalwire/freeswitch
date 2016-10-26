@@ -769,8 +769,19 @@ SWITCH_DECLARE(payload_map_t *) switch_core_media_add_payload_map(switch_core_se
 				exists = (type == pmap->type && !strcasecmp(name, pmap->iananame));
 				break;
 			}
+			
+			if (exists) {
 
-			if (exists) break;
+				if (!zstr(fmtp) && !zstr(pmap->rm_fmtp)) {
+					if (strcmp(pmap->rm_fmtp, fmtp)) {
+						exists = 0;
+						local_pt = pmap->pt;
+						continue;
+					}
+				}
+
+				break;
+			}
 
 		} else {
 			exists = (type == pmap->type && !strcasecmp(name, pmap->iananame) && pmap->pt == pt && (!pmap->rate || rate == pmap->rate) && (!pmap->ptime || pmap->ptime == ptime));
@@ -4826,12 +4837,30 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 						vmatch = strcasecmp(rm_encoding, imp->iananame) ? 0 : 1;
 					}
 
+					if (sdp_type == SDP_TYPE_RESPONSE && vmatch && map->rm_fmtp) {
+						int fmatch = 0;
+						int fcount = 0;
+						payload_map_t *pmap;
+						
+						for (pmap = v_engine->payload_map; pmap && pmap->allocated; pmap = pmap->next) {
+							if (pmap->rm_fmtp) {
+								fcount++;
+								if ((fmatch = !strcasecmp(pmap->rm_fmtp, map->rm_fmtp))) {
+									break;
+								}
+							}
+						}
+
+						if (fcount && !fmatch) {
+							vmatch = 0;
+						}
+					}
+
 					if (vmatch && vmatch_pt) {
 						const char *other_pt = switch_channel_get_variable_partner(channel, "rtp_video_pt");
 
 						if (other_pt) {
 							int opt = atoi(other_pt);
-
 							if (map->rm_pt != opt) {
 								vmatch = 0;
 							}
@@ -4907,9 +4936,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 
 					pmap->remote_sdp_ip = switch_core_session_strdup(session, (char *) connection->c_address);
 					pmap->remote_sdp_port = (switch_port_t) m->m_port;
-						
 					pmap->rm_fmtp = switch_core_session_strdup(session, (char *) map->rm_fmtp);
-
 					smh->negotiated_codecs[smh->num_negotiated_codecs++] = mimp;					
 						
 #if 0
@@ -7968,7 +7995,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 												  imp->codec_type == SWITCH_CODEC_TYPE_AUDIO ? SWITCH_MEDIA_TYPE_AUDIO : SWITCH_MEDIA_TYPE_VIDEO,
 												  imp->iananame,
 												  imp->modname,
-												  NULL,
+												  smh->fmtps[i],
 												  sdp_type,
 												  smh->ianacodes[i],
 												  imp->samples_per_second,
