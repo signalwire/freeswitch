@@ -1710,7 +1710,25 @@ static void our_sofia_event_callback(nua_event_t event,
 		sofia_handle_sip_i_state(session, status, phrase, nua, profile, nh, sofia_private, sip, de, tags);
 		break;
 	case nua_i_message:
-		sofia_presence_handle_sip_i_message(status, phrase, nua, profile, nh, session, sofia_private, sip, de, tags);
+		{
+			int handle_message = 1;
+			int proxy_message = sofia_test_pflag(profile, PFLAG_PROXY_MESSAGE);
+
+			if (!proxy_message && session) {
+				switch_channel_t *channel = switch_core_session_get_channel(session);
+				proxy_message = switch_channel_var_true(channel, "sip_proxy_message");
+			}
+
+			if (proxy_message) {
+				if (sofia_proxy_sip_i_message(nua, profile, nh, session, sip, de, tags) == SWITCH_STATUS_SUCCESS) {
+					handle_message = 0;
+				}
+			}
+
+			if (handle_message) {
+				sofia_presence_handle_sip_i_message(status, phrase, nua, profile, nh, session, sofia_private, sip, de, tags);
+			}
+		}
 		break;
 	case nua_i_info:
 		{
@@ -5663,6 +5681,12 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 						}  else {
 							sofia_clear_pflag(profile, PFLAG_PROXY_INFO);
 						}
+					} else if (!strcasecmp(var, "proxy-message")) {
+						if(switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_PROXY_MESSAGE);
+						}  else {
+							sofia_clear_pflag(profile, PFLAG_PROXY_MESSAGE);
+						}
 					} else if (!strcasecmp(var, "proxy-notify-events")) {
 						profile->proxy_notify_events = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "proxy-info-content-types")) {
@@ -9115,6 +9139,45 @@ static switch_status_t create_info_event(sip_t const *sip,
 	*revent = event;
 
 	return SWITCH_STATUS_SUCCESS;
+}
+
+switch_status_t sofia_proxy_sip_i_message(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, switch_core_session_t *session, sip_t const *sip,
+									   sofia_dispatch_event_t *de, tagi_t tags[])
+{
+	switch_core_session_t *other_session = NULL;
+
+	if (session && switch_core_session_get_partner(session, &other_session) == SWITCH_STATUS_SUCCESS) {
+		if (switch_core_session_compare(session, other_session)) {
+			private_object_t *other_tech_pvt = NULL;
+			const char *ct = NULL;
+			char *pl = NULL;
+
+
+			if (sip && sip->sip_payload && sip->sip_payload->pl_data) {
+				pl = sip->sip_payload->pl_data;
+			}
+
+			other_tech_pvt = (private_object_t *) switch_core_session_get_private(other_session);
+			
+			if (sip->sip_content_type->c_type && sip->sip_content_type->c_subtype) {
+				ct = sip->sip_content_type->c_type;
+			}
+			
+			nua_message(other_tech_pvt->nh,
+					 TAG_IF(ct, SIPTAG_CONTENT_TYPE_STR(su_strdup(other_tech_pvt->nh->nh_home, ct))),
+					 TAG_IF(!zstr(other_tech_pvt->user_via), SIPTAG_VIA_STR(other_tech_pvt->user_via)),
+					 TAG_IF(pl, SIPTAG_PAYLOAD_STR(su_strdup(other_tech_pvt->nh->nh_home, pl))),
+					 TAG_END());
+		}
+
+		switch_core_session_rwunlock(other_session);
+
+		nua_respond(nh, SIP_202_ACCEPTED, NUTAG_WITH_THIS_MSG(de->data->e_msg), TAG_END());
+
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	return SWITCH_STATUS_FALSE;
 }
 
 switch_status_t sofia_proxy_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, switch_core_session_t *session, sip_t const *sip,
