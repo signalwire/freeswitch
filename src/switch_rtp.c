@@ -6830,7 +6830,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 						continue;
 					}
 
-					if (rtp_session->last_rtp_hdr.pt == pmap->pt) {
+					if (rtp_session->last_rtp_hdr.pt == pmap->recv_pt) {
 						accept_packet = 1;
 						if (pmapP) {
 							*pmapP = pmap;
