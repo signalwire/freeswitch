@@ -291,6 +291,7 @@ Description: mod_unimrcp
 Module: codecs/mod_amr
 Description: mod_amr
  Adds mod_amr.
+Build-Depends: libopencore-amrnb-dev
 
 Module: codecs/mod_amrwb
 Description: mod_amrwb
