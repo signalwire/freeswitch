@@ -1926,7 +1926,17 @@ AM_CONDITIONAL(ISMAC, [test `uname -s` = Darwin])
 AM_CONDITIONAL(ISFREEBSD, [test `uname -s` = FreeBSD])
 AM_CONDITIONAL(IS64BITLINUX, [test `uname -m` = x86_64])
 
-AM_CONDITIONAL(HAVE_AMR, [ test -d ${switch_srcdir}/libs/amr ])
+AC_ARG_ENABLE(amr,
+[AC_HELP_STRING([--disable-amr],[build without opencore-amrnb])],[enable_amr="$enable_amr"],[enable_amr="yes"])
+
+if test x"$enable_amr" = x"yes" ; then
+	PKG_CHECK_MODULES([AMR], [opencore-amrnb >= 0.1.0],[
+		AM_CONDITIONAL([HAVE_AMR],[true])],[
+		AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_AMR],[false])])
+else
+	AM_CONDITIONAL([HAVE_AMR],[false])
+fi
+
 AM_CONDITIONAL(HAVE_AMRWB, [ test -d ${switch_srcdir}/libs/amrwb ])
 AM_CONDITIONAL(HAVE_G723_1, [ test -d ${switch_srcdir}/libs/libg723_1 ])
 AM_CONDITIONAL(HAVE_G729, [ test -d ${switch_srcdir}/libs/libg729 ])

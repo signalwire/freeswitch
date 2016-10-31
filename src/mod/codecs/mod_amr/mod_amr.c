@@ -27,6 +27,7 @@
  * Brian K. West <brian@freeswitch.org>
  * Dragos Oancea <dragos.oancea@athonet.com>
  * Federico Favaro <federico.favaro@athonet.com>
+ * Marco Sinibaldi <marco.sinibaldi@athonet.com>
  *
  * The amr codec itself is not distributed with this module.
  *
@@ -40,8 +41,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_amr_load);
 SWITCH_MODULE_DEFINITION(mod_amr, mod_amr_load, NULL, NULL);
 
 #ifndef AMR_PASSTHROUGH
-#include "interf_enc.h"
-#include "interf_dec.h"
+#include "opencore-amrnb/interf_enc.h"
+#include "opencore-amrnb/interf_dec.h"
 
 #include "bitshift.h"
 #include "amr_be.h"
