@@ -3686,6 +3686,8 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 	char buf[1025] = "";
 	char *orig_to_user = NULL;
 	char *p;
+	uint32_t callsequence;
+    sip_cseq_t * cseq;
 
 	if (!sip) {
 		return;
@@ -4110,9 +4112,12 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 
 			if (zstr(full_agent) || (*full_agent != 'z' && *full_agent != 'Z')) {
 				/* supress endless loop bug with zoiper */
+				callsequence = sofia_presence_get_cseq(profile);
+				cseq = sip_cseq_create(nh->nh_home, callsequence, SIP_METHOD_NOTIFY);
 				nua_notify(nh,
 						   SIPTAG_EXPIRES_STR("0"),
 						   SIPTAG_SUBSCRIPTION_STATE_STR(sstr),
+						   SIPTAG_CSEQ(cseq),
 						   TAG_END());
 			}
 
@@ -4170,11 +4175,13 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 				if ((p = strchr(full_call_info, ';'))) {
 					p++;
 				}
-
+				callsequence = sofia_presence_get_cseq(profile);
+				cseq = sip_cseq_create(nh->nh_home, callsequence, SIP_METHOD_NOTIFY);
 				nua_notify(nh,
 						   SIPTAG_FROM(sip->sip_to),
 						   SIPTAG_TO(sip->sip_from),
 						   SIPTAG_EXPIRES_STR(exp_delta_str),
+						   SIPTAG_CSEQ(cseq),
 						   SIPTAG_SUBSCRIPTION_STATE_STR(sstr),
 						   SIPTAG_EVENT_STR("line-seize"), TAG_IF(full_call_info, SIPTAG_CALL_INFO_STR(full_call_info)), TAG_END());
 
