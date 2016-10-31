@@ -1202,6 +1202,10 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		goto end;
 	}
 
+	if (switch_channel_test_flag(channel, CF_CONFERENCE)) {
+		tech_pvt->reply_contact = switch_core_session_sprintf(session, "%s;isfocus", tech_pvt->reply_contact);
+	}
+
 	/* ones that do not need to lock sofia mutex */
 	switch (msg->message_id) {
 	case SWITCH_MESSAGE_INDICATE_KEEPALIVE:
