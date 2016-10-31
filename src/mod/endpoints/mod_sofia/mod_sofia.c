@@ -652,7 +652,7 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 	char *sticky = NULL;
 	const char *call_info = switch_channel_get_variable(channel, "presence_call_info_full");
 
-	if (switch_channel_test_flag(channel, CF_CONFERENCE)) {
+	if (switch_channel_test_flag(channel, CF_CONFERENCE) && !switch_stristr(";isfocus", tech_pvt->reply_contact)) {
 		tech_pvt->reply_contact = switch_core_session_sprintf(session, "%s;isfocus", tech_pvt->reply_contact);
 	}
 
@@ -1171,6 +1171,10 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 	if (switch_channel_down(channel) || !tech_pvt || sofia_test_flag(tech_pvt, TFLAG_BYE)) {
 		status = SWITCH_STATUS_FALSE;
 		goto end;
+	}
+
+	if (switch_channel_test_flag(channel, CF_CONFERENCE) && !switch_stristr(";isfocus", tech_pvt->reply_contact)) {
+		tech_pvt->reply_contact = switch_core_session_sprintf(session, "%s;isfocus", tech_pvt->reply_contact);
 	}
 
 	/* ones that do not need to lock sofia mutex */

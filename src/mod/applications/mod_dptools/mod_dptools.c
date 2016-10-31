@@ -1341,6 +1341,14 @@ SWITCH_STANDARD_APP(presence_function)
 SWITCH_STANDARD_APP(pre_answer_function)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
+	const char *arg = (char *) data;
+	
+	if (!zstr(arg)) {
+		if (switch_stristr("is_conference", arg)) {
+			switch_channel_set_flag(channel, CF_CONFERENCE);
+		}
+	}
+
 	switch_channel_pre_answer(channel);
 }
 
