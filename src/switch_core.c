@@ -1186,7 +1186,6 @@ SWITCH_DECLARE(void) switch_core_runtime_loop(int bg)
 			WaitForSingleObject(shutdown_event, INFINITE);
 		}
 #else
-		runtime.running = 1;
 		while (runtime.running) {
 			switch_yield(1000000);
 		}
