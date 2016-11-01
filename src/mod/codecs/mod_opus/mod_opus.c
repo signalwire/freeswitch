@@ -702,7 +702,7 @@ static switch_status_t switch_opus_destroy(switch_codec_t *codec)
 			int avg_encoded_bitrate = 0;
 			if (session) {
 
-				if (context->encoder_stats.frame_counter > 0) {
+				if (context->encoder_stats.encoded_bytes > 0 && (context->encoder_stats.encoded_msec > 1000)) {
 					avg_encoded_bitrate = (context->encoder_stats.encoded_bytes * 8) / (context->encoder_stats.encoded_msec / 1000);
 				}
 
