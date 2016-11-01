@@ -10466,11 +10466,10 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 				p++;
 			}
 
-			sql =
-				switch_mprintf
-				("select call_id from sip_dialogs where call_info='%q' and ((sip_from_user='%q' and sip_from_host='%q') or presence_id='%q@%q') "
-				 "and call_id is not null",
-				 switch_str_nil(p), user, host, user, host);
+			sql = switch_mprintf(
+		      "select call_id from sip_dialogs where (call_info='%q' or call_info='%q;appearance-state=held') and "
+			  "((sip_from_user='%q' and sip_from_host='%q') or presence_id='%q@%q') and call_id is not null",
+				 switch_str_nil(p), switch_str_nil(p), user, host, user, host);
 
 			if ((str = sofia_glue_execute_sql2str(profile, profile->dbh_mutex, sql, cid, sizeof(cid)))) {
 				bnh = nua_handle_by_call_id(nua, str);
