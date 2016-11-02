@@ -2275,6 +2275,7 @@ SWITCH_STANDARD_APP(httapi_function)
 	}
 
 	if ((client = (client_t *) switch_channel_get_private(channel, "_HTTAPI_CLIENT_"))) {
+		client_reset(client);
 		if (params) {
 			switch_event_merge(client->params, params);
 			switch_event_destroy(&params);
