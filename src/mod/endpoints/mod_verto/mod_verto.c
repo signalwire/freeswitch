@@ -3809,7 +3809,7 @@ static switch_bool_t verto__broadcast_func(const char *method, cJSON *params, js
 	char *json_text = NULL;
 	switch_bool_t r = SWITCH_FALSE;
 	const char *event_channel = cJSON_GetObjectCstr(params, "eventChannel");
-	cJSON *jevent;
+	cJSON *jevent, *broadcast;
 	const char *display = NULL;
 
 	*response = cJSON_CreateObject();
@@ -3836,9 +3836,14 @@ static switch_bool_t verto__broadcast_func(const char *method, cJSON *params, js
 	}
 
 	jevent = cJSON_Duplicate(params, 1);
-	write_event(event_channel, NULL, jevent);
-	switch_event_channel_broadcast(event_channel, &jevent, modname, globals.event_channel_id);
+	
+	broadcast = cJSON_GetObjectItem(params, "localBroadcast");
 
+	if (broadcast && broadcast->type == cJSON_True) {
+		write_event(event_channel, NULL, jevent);
+	} else {
+		switch_event_channel_broadcast(event_channel, &jevent, modname, globals.event_channel_id);
+	}
 
 	if (jsock->profile->mcast_pub.sock != ws_sock_invalid) {
 		if ((json_text = cJSON_PrintUnformatted(params))) {
