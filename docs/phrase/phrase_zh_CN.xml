@@ -22,6 +22,17 @@
 			<prompt phrase="分号" filename="59.wav"/>
 			<prompt phrase="脱字符" filename="94.wav"/>
 			<prompt phrase="竖线" filename="124.wav"/>
+			<prompt phrase="加号" filename="43.wav"/>
+			<prompt phrase="左括号" filename="40.wav"/>
+			<prompt phrase="右括号" filename="41.wav"/>
+			<prompt phrase="左大括号" filename="123.wav"/>
+			<prompt phrase="右大括号" filename="125.wav"/>
+			<prompt phrase="左方括号" filename="91.wav"/>
+			<prompt phrase="右方括号" filename="93.wav"/>
+			<prompt phrase="逗号" filename="44.wav"/>
+			<prompt phrase="反撇号" filename="96.wav"/>
+			<prompt phrase="小于号" filename="60.wav"/>
+			<prompt phrase="大于号" filename="62.wav"/>
 			<prompt phrase="A" filename="97.wav"/>
 			<prompt phrase="B" filename="98.wav"/>
 			<prompt phrase="C" filename="99.wav"/>
@@ -142,7 +153,7 @@
 			<prompt phrase="And" filename="and.wav"/>
 			<prompt phrase="分" filename="cent.wav"/>
 			<prompt phrase="Central" filename="central.wav"/>
-			<prompt phrase="分每分钟" filename="cents-per-minute.wav"/>
+			<prompt phrase="美分每分钟" filename="cents-per-minute.wav"/>
 			<prompt phrase="分" filename="cents.wav"/>
 			<prompt phrase="元" filename="dollar.wav"/>
 			<prompt phrase="元" filename="dollars.wav"/>
@@ -163,7 +174,7 @@
 			<prompt phrase="星期四" filename="day-4.wav"/>
 			<prompt phrase="星期五" filename="day-5.wav"/>
 			<prompt phrase="星期六" filename="day-6.wav"/>
-			<prompt phrase="时" filename="hour.wav"/>
+			<prompt phrase="小时" filename="hour.wav"/>
 			<prompt phrase="小时" filename="hours.wav"/>
 			<prompt phrase="分" filename="minute.wav"/>
 			<prompt phrase="分" filename="minutes.wav"/>
@@ -180,7 +191,7 @@
 			<prompt phrase="十一月" filename="mon-10.wav"/>
 			<prompt phrase="十二月" filename="mon-11.wav"/>
 			<prompt phrase="点" filename="oclock.wav"/>
-			<prompt phrase="oh" filename="oh.wav"/>
+			<prompt phrase="零" filename="oh.wav"/>
 			<prompt phrase="下午" filename="p-m.wav"/>
 			<prompt phrase="秒" filename="second.wav"/>
 			<prompt phrase="秒" filename="seconds.wav"/>
@@ -191,8 +202,10 @@
 		<voicemail>
 			<prompt phrase="分机" filename="vm-person.wav"/>
 			<prompt phrase="设置紧急" filename="vm-marked-urgent.wav"/>
+			<prompt phrase="标记新" filename="vm-marked_new.wav"/>
 			<prompt phrase="已发送邮件" filename="vm-emailed.wav"/>
 			<prompt phrase="您有" filename="vm-you_have.wav"/>
+			<prompt phrase="信息来自" filename="vm-from.wav"/>
 			<prompt phrase="请输入您的ID，然后按" filename="vm-enter_id.wav"/>
 			<prompt phrase="请输入您的密码，然后按" filename="vm-enter_pass.wav"/>
 			<prompt phrase="登录错误" filename="vm-fail_auth.wav"/>
@@ -210,15 +223,35 @@
 			<prompt phrase="新" filename="vm-new.wav"/>
 			<prompt phrase="紧急留言已保存" filename="vm-urgent-saved.wav"/>
 			<prompt phrase="已保存" filename="vm-saved.wav"/>
-			<prompt phrase="信息" filename="vm-message.wav"/>
-			<prompt phrase="信息" filename="vm-messages.wav"/>
+			<prompt phrase="留言" filename="vm-message.wav"/>
+			<prompt phrase="留言" filename="vm-message_alt.wav"/>
+			<prompt phrase="留言" filename="vm-messages.wav"/>
+			<prompt phrase="留言" filename="vm-messages_alt.wav"/>
+			<prompt phrase="没有留言" filename="vm-no_more_messages.wav"/>
+			<prompt phrase="重复此留言" filename="vm-repeat_message.wav"/>
+			<prompt phrase="删除此留言" filename="vm-delete_message.wav"/>
+			<prompt phrase="保存此留言" filename="vm-save_message.wav"/>
+			<prompt phrase="播放下一个留言" filename="vm-play_next_message.wav"/>
+			<prompt phrase="播放上一个留言" filename="vm-play_previous_message.wav"/>
+			<prompt phrase="删除留言" filename="vm-undelete_message.wav"/>
+			<prompt phrase="现在发送此留言" filename="vm-send_message_now.wav"/>
+			<prompt phrase="听到留言信息" filename="vm-message_envelope.wav"/>
+			<prompt phrase="已更改为" filename="vm-has_been_changed_to.wav"/>
 			<prompt phrase="按" filename="vm-press.wav"/>
+			<prompt phrase="收到" filename="vm-received.wav"/>
+			<prompt phrase="然后" filename="vm-followed_by.wav"/>
+			<prompt phrase="这是个无效的分机" filename="vm-that_was_an_invalid_ext.wav"/>
+			<prompt phrase="取消删除" filename="vm-undeleted.wav"/>
+			<prompt phrase="然后按#号" filename="vm-followed_by_pound.wav"/>
+			<prompt phrase="下一个" filename="vm-next.wav"/>
 			<prompt phrase="听取新留言" filename="vm-listen_new.wav"/>
-			<prompt phrase="听取已保存的留言" filename="vm-listen_saved.wav"/>
+			<prompt phrase="听取已保存的留言" filename="vm-listen_saved.vmwav"/>
 			<prompt phrase="高级选项" filename="vm-advanced.wav"/>
-			<prompt phrase="转发留言" filename="vm-to_forward.wav"/>
+			<prompt phrase="高级选项" filename="vm-advanced_alt.wav"/>
 			<prompt phrase="退出" filename="vm-to_exit.wav"/>
+			<prompt phrase="退出" filename="vm-to_exit_alt.wav"/>
 			<prompt phrase="录制欢迎音" filename="vm-record_greeting.wav"/>
+			<prompt phrase="录制欢迎音" filename="vm-to_record_greeting.wav"/>
 			<prompt phrase="选择一个欢迎音" filename="vm-choose_greeting.wav"/>
 			<prompt phrase="录制您的名字" filename="vm-record_name2.wav"/>
 			<prompt phrase="主菜单" filename="vm-main_menu.wav"/>
@@ -226,10 +259,14 @@
 			<prompt phrase="保存录音" filename="vm-save_recording.wav"/>
 			<prompt phrase="重新录音" filename="vm-rerecord.wav"/>
 			<prompt phrase="将该留言设置为紧急" filename="vm-mark-urgent.wav"/>
+			<prompt phrase="标记为新留言" filename="vm-mark_message_new.wav"/>
 			<prompt phrase="继续" filename="vm-continue.wav"/>
 			<prompt phrase="重听" filename="vm-listen_to_recording_again.wav"/>
 			<prompt phrase="删除录音" filename="vm-delete_recording.wav"/>
 			<prompt phrase="将录音转发到您的电子邮箱" filename="vm-forward_to_email.wav"/>
+			<prompt phrase="转发留言" filename="vm-to_forward.wav"/>
+			<prompt phrase="请输入分机号码转发此留言" filename="vm-forward_enter_ext.wav"/>
+			<prompt phrase="给留言添加介绍" filename="vm-forward_add_intro.wav"/>
 			<prompt phrase="欢迎" filename="vm-greeting.wav"/>
 			<prompt phrase="已选择" filename="vm-selected.wav"/>
 			<prompt phrase="不存在" filename="vm-not_available.wav"/>
@@ -246,6 +283,15 @@
 			<prompt phrase="您所拨号的用户不可达，他也没有语音邮箱" filename="vm-not_available_no_voicemail.wav"/>
 			<prompt phrase="您输入的密码长度不够" filename="voicemail/vm-pin_below_minimum_length.wav"/>
 			<prompt phrase="最小的密码长度是..." filename="voicemail/vm-minimum_pin_length_is.wav"/>
+			<prompt phrase="您的密码已更改" filename="vm-password_has_been_changed.wav"/>
+			<prompt phrase="请输入您的新密码并按#键结束" filename="vm-enter_new_pin.wav"/>
+			<prompt phrase="您输入的密码无效" filename="vm-password_not_valid.wav"/>
+			<prompt phrase="诸如1111或1234这样的密码是不安全的" filename="vm-password_is_not_secure.wav"/>
+			<prompt phrase="请选择不包含所有重复或连续数字的密码" filename="vm-choose_password.wav"/>
+			<prompt phrase="请记住，您的语音信箱密码也是您的网页界面密码" filename="vm-voicemail_password_is_web_password.wav"/>
+			<prompt phrase="留言来自." filename="vm-message_from.wav"/>
+			<prompt phrase="当前语音信箱没有新留言" filename="vm-nobody_leaving_message.wav"/>
+			<prompt phrase="最后" filename="vm-last.wav"/>
 		</voicemail>
 		<directory>
 			<prompt phrase="请输入姓名拼音的前几位字母" filename="dir-enter_person.wav"/>
@@ -296,10 +342,15 @@
 			<prompt phrase="...名听众参与本次会议" filename="conf-listeners_in_conference.wav"/>
 			<prompt phrase="...名听众参与本次会议" filename="conf-listener_in_conference.wav"/>
 			<prompt phrase="...名与会者参与本次会议" filename="conf-members_in_conference.wav"/>
-			<prompt phrase="本会议现在是 Q and A 模式" filename="conference/conf-conference_is_in_qna_mode.wav"/>
-			<prompt phrase="Q and A 模式..." filename="conference/conf-qna_mode.wav"/>
-			<prompt phrase="进入声音..." filename="conference/conf-entry_sound.wav"/>
-			<prompt phrase="退出声音..." filename="conference/conf-exit_sound.wav"/>
+			<prompt phrase="本会议现在是 Q and A 模式" filename="conf-conference_is_in_qna_mode.wav"/>
+			<prompt phrase="Q and A 模式..." filename="conf-qna_mode.wav"/>
+			<prompt phrase="进入声音..." filename="conf-entry_sound.wav"/>
+			<prompt phrase="退出声音..." filename="conf-exit_sound.wav"/>
+			<prompt phrase="会议室已满，请联系管理员" filename="conf-conference_is_full.wav"/>
+			<prompt phrase="您的会议将很快开始，请保持在线" filename="conf-conference_will_start_shortly.wav"/>
+			<prompt phrase="... 本次会议的其他人." filename="conf-other_persons_conference.wav"/>
+			<prompt phrase="在本次会议还有一个人" filename="conf-one_other_person_conference.wav"/>
+			<prompt phrase="此会议中还有一名成员" filename="conf-one_other_member_conference.wav"/>
 		</conference>
 		<ivr>
 			<prompt phrase="账号" filename="ivr-account_number.wav"/>
@@ -494,7 +545,6 @@
 			<prompt phrase="会议室已满，请联系管理员" filename="conf-conference_is_full.wav"/>
 			<prompt phrase="操作受限" filename="ivr-not_have_permission.wav"/>
 		</ivr>
-
 		<misc>
 			<prompt phrase="已进入安全通信" filename="call_secured.wav"/>
 			<prompt phrase="然后按#号" filename="followed.wav"/>
