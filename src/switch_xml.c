@@ -3049,7 +3049,7 @@ SWITCH_DECLARE(int) switch_xml_std_datetime_check(switch_xml_t xcond, int *offse
 		char tmpdate[80];
 		switch_size_t retsize;
 		switch_strftime(tmpdate, &retsize, sizeof(tmpdate), "%Y-%m-%d %H:%M:%S", &tm);
-		time_match = switch_fulldate_cmp(xdt, &tm);
+		time_match = switch_fulldate_cmp(xdt, &ts);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
 				"XML DateTime Check: date time[%s] =~ %s (%s)\n", tmpdate, xdt, time_match ? "PASS" : "FAIL");
 	}
