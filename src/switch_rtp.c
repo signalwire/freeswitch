@@ -5930,7 +5930,7 @@ static switch_status_t process_rtcp_report(switch_rtp_t *rtp_session, rtcp_msg_t
 					  "RTCP packet bytes %" SWITCH_SIZE_T_FMT " type %d pad %d\n", 
 					  bytes, msg->header.type, msg->header.p);
 	
-	if (rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] && (msg->header.type == _RTCP_PT_RTPFB || msg->header.type == _RTCP_PT_PSFB)) {
+	if (rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] && (msg->header.type == _RTCP_PT_RTPFB || msg->header.type == _RTCP_PT_PSFB || msg->header.type < 200)) {
 		rtcp_ext_msg_t *extp = (rtcp_ext_msg_t *) msg;			
 
 		if (extp->header.fmt != 15) { // <---- REMOVE WHEN BRIA STOPS SENDING UNSOLICITED REMB
@@ -5938,7 +5938,12 @@ static switch_status_t process_rtcp_report(switch_rtp_t *rtp_session, rtcp_msg_t
 							  rtp_type(rtp_session), msg->header.type, extp->header.fmt);
 		}
 		
-		if (msg->header.type == _RTCP_PT_PSFB && (extp->header.fmt == _RTCP_PSFB_FIR || extp->header.fmt == _RTCP_PSFB_PLI)) {
+		if (msg->header.type == _RTCP_PT_FIR ||
+			(msg->header.type == _RTCP_PT_PSFB && (extp->header.fmt == _RTCP_PSFB_FIR || extp->header.fmt == _RTCP_PSFB_PLI))) {
+
+			if (msg->header.type == _RTCP_PT_FIR) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING, "Ancient FIR Received. Hello from 1996!\n");
+			}
 			switch_core_media_gen_key_frame(rtp_session->session);
 			if (rtp_session->vbw) {
 				switch_jb_reset(rtp_session->vbw);
@@ -6213,7 +6218,7 @@ static switch_status_t process_rtcp_packet(switch_rtp_t *rtp_session, switch_siz
 	do {
 		len = ((switch_size_t)ntohs(msg->header.length) * 4) + 4;
 
-		if (msg->header.version != 2 || !(msg->header.type > 199 && msg->header.type < 208)) {
+		if (msg->header.version != 2 || !(msg->header.type > 191 && msg->header.type < 210)) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING, 
 							  "INVALID RTCP PACKET TYPE %d VER %d LEN %" SWITCH_SIZE_T_FMT "\n", msg->header.type, 
 							  msg->header.version, len);

@@ -5273,8 +5273,8 @@ static void switch_core_session_write_blank_video(switch_core_session_t *session
 	width = smh->vid_params.width;
 	height = smh->vid_params.height;
 
-	if (!width) width = 640;
-	if (!height) height = 480;
+	if (!width) width = 352;
+	if (!height) height = 288;
 	if (!fps) fps = 15;
 	
 	if (!(width && height && fps)) {
