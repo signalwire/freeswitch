@@ -9190,8 +9190,8 @@ switch_status_t sofia_proxy_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua
 			private_object_t *other_tech_pvt = NULL;
 			const char *ct = NULL;
 			char *pl = NULL;
-
-
+			switch_channel_t *channel = switch_core_session_get_channel(session);
+			
 			if (sip && sip->sip_payload && sip->sip_payload->pl_data) {
 				pl = sip->sip_payload->pl_data;
 			}
@@ -9201,7 +9201,14 @@ switch_status_t sofia_proxy_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua
 			if (sip->sip_content_type->c_type && sip->sip_content_type->c_subtype) {
 				ct = sip->sip_content_type->c_type;
 			}
-			
+
+			if (!strncasecmp(sip->sip_content_type->c_type, "application", 11) && !strcasecmp(sip->sip_content_type->c_subtype, "media_control+xml")) {
+				if (switch_channel_test_flag(channel, CF_VIDEO)) {
+					switch_core_media_gen_key_frame(session);
+					switch_channel_set_flag(channel, CF_VIDEO_REFRESH_REQ);
+				}
+			}
+
 			nua_info(other_tech_pvt->nh,
 					 TAG_IF(ct, SIPTAG_CONTENT_TYPE_STR(su_strdup(other_tech_pvt->nh->nh_home, ct))),
 					 TAG_IF(!zstr(other_tech_pvt->user_via), SIPTAG_VIA_STR(other_tech_pvt->user_via)),
