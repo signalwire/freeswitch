@@ -113,6 +113,7 @@ typedef struct ice_s {
 } ice_t;
 
 typedef enum { /* RTCP Control Packet types (PT) http://www.iana.org/assignments/rtp-parameters/rtp-parameters.xhtml#rtp-parameters-4 */
+	_RTCP_PT_FIR   = 192, /* [RFC 2032] RTP Payload Format for H.261 Video Streams. types 192 (FIR) section 5.2.1 */
 	_RTCP_PT_IJ    = 195, /* IJ: Extended inter-arrival jitter report RFC5450*/
 	_RTCP_PT_SR    = 200, /* SR: sender report RFC3550 */
 	_RTCP_PT_RR    = 201, /* RR: receiver report RFC3550 */
