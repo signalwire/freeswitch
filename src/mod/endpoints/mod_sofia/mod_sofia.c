@@ -3811,6 +3811,8 @@ SWITCH_STANDARD_API(sofia_contact_function)
 		sofia_glue_release_profile(profile);
 
 	} else if (!zstr(domain)) {
+		sofia_profile_t *profiles[1024] = {0};
+		uint8_t i = 0, j;
 		switch_mutex_lock(mod_sofia_globals.hash_mutex);
 		if (mod_sofia_globals.profile_hash) {
 			switch_hash_index_t *hi;
@@ -3820,12 +3822,19 @@ SWITCH_STANDARD_API(sofia_contact_function)
 			for (hi = switch_core_hash_first(mod_sofia_globals.profile_hash); hi; hi = switch_core_hash_next(&hi)) {
 				switch_core_hash_this(hi, &var, NULL, &val);
 				if ((profile = (sofia_profile_t *) val) && !strcmp((char *)var, profile->name)) {
-					select_from_profile(profile, user, domain, concat, exclude_contact, &mystream, SWITCH_TRUE);
+					sofia_glue_profile_rdlock(profile);
+					profiles[i++] = profile;
 					profile = NULL;
 				}
 			}
 		}
 		switch_mutex_unlock(mod_sofia_globals.hash_mutex);
+		if (i) {
+			for (j = 0; j < i; j++) {
+				select_from_profile(profiles[j], user, domain, concat, exclude_contact, &mystream, SWITCH_TRUE);
+				sofia_glue_release_profile(profiles[j]);
+			}
+		}
 	}
 
 	reply = (char *) mystream.data;
