@@ -104,6 +104,8 @@ typedef struct private_object private_object_t;
 #define MY_EVENT_REPLACED "sofia::replaced"
 #define MY_EVENT_INTERCEPTED "sofia::intercepted"
 
+#define MY_EVENT_BYE_RESPONSE "sofia::bye_response"
+
 #define MULTICAST_EVENT "multicast::event"
 #define SOFIA_REPLACES_HEADER "_sofia_replaces_"
 #define SOFIA_CHAT_PROTO "sip"
@@ -169,7 +171,8 @@ typedef struct sofia_dispatch_event_s {
 } sofia_dispatch_event_t;
 
 struct sofia_private {
-	char uuid[SWITCH_UUID_FORMATTED_LENGTH + 1];
+	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
+	char *uuid;
 	char gateway_name[256];
 	char auth_gateway_name[256];
 	char *call_id;
@@ -297,6 +300,7 @@ typedef enum {
 	PFLAG_PROXY_HOLD,
 	PFLAG_PROXY_INFO,
 	PFLAG_PROXY_MESSAGE,
+	PFLAG_FIRE_BYE_RESPONSE_EVENTS,
 
 	/* No new flags below this line */
 	PFLAG_MAX

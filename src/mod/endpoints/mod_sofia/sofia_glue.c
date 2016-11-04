@@ -1181,7 +1181,8 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		}
 
 		tech_pvt->sofia_private = sofia_private;
-		switch_copy_string(tech_pvt->sofia_private->uuid, switch_core_session_get_uuid(session), sizeof(tech_pvt->sofia_private->uuid));
+		switch_copy_string(tech_pvt->sofia_private->uuid_str, switch_core_session_get_uuid(session), sizeof(tech_pvt->sofia_private->uuid_str));
+		tech_pvt->sofia_private->uuid = tech_pvt->sofia_private->uuid_str;
 		nua_handle_bind(tech_pvt->nh, tech_pvt->sofia_private);
 	}
 
