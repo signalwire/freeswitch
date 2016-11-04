@@ -620,7 +620,9 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 	sofia_clear_flag(tech_pvt, TFLAG_IO);
 
 	if (tech_pvt->sofia_private) {
-		*tech_pvt->sofia_private->uuid = '\0';
+		/* set to NULL so that switch_core_session_locate no longer succeeds, but don't lose the UUID in uuid_str so we
+		 * can fire events with session UUID */
+		tech_pvt->sofia_private->uuid = NULL;
 	}
 
 	switch_mutex_unlock(tech_pvt->sofia_mutex);
@@ -5893,6 +5895,11 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 
 	if (switch_event_reserve_subclass(MY_EVENT_GATEWAY_ADD) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", MY_EVENT_GATEWAY_ADD);
+		switch_goto_status(SWITCH_STATUS_TERM, err);
+	}
+
+	if (switch_event_reserve_subclass(MY_EVENT_BYE_RESPONSE) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", MY_EVENT_BYE_RESPONSE);
 		switch_goto_status(SWITCH_STATUS_TERM, err);
 	}
 
