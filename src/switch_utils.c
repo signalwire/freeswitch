@@ -3341,6 +3341,9 @@ SWITCH_DECLARE(int) switch_fulldate_cmp(const char *exp, switch_time_t *ts)
 	char *sEnd;
 	char *cur;
 	char *p;
+	switch_time_t tsStart = 0;
+	switch_time_t tsEnd = 0;
+	int ret = 0;
 
 	switch_assert(dup);
 
@@ -3351,70 +3354,33 @@ SWITCH_DECLARE(int) switch_fulldate_cmp(const char *exp, switch_time_t *ts)
 
 	while (cur) {
 		sStart = cur;
-		if ((sEnd=strchr(cur, '~'))) {
-			char *sDate = sStart;
-			char *sTime;
+		if ((sEnd = strchr(cur, '~'))) {
 			*sEnd++ = '\0';
-			if ((sTime=strchr(sStart, ' '))) {
-				switch_time_t tsStart;
-				struct tm tmTmp;
-				int year = 1970, month = 1, day = 1;
-				int hour = 0, min = 0, sec = 0;
-				*sTime++ = '\0';
 
-				memset(&tmTmp, 0, sizeof(tmTmp));
-				switch_split_date(sDate, &year, &month, &day);
-				switch_split_time(sTime, &hour, &min, &sec);
-				tmTmp.tm_year = year-1900;
-				tmTmp.tm_mon = month-1;
-				tmTmp.tm_mday = day;
+			tsStart = switch_str_time(sStart);
+			tsEnd = switch_str_time(sEnd);
 
-				tmTmp.tm_hour = hour;
-				tmTmp.tm_min = min;
-				tmTmp.tm_sec = sec;
-				tmTmp.tm_isdst = 0;
-				tsStart = mktime(&tmTmp);
 
-				sDate = sEnd;
-				if ((sTime=strchr(sEnd, ' '))) {
-					switch_time_t tsEnd;
-					struct tm tmTmp;
-					int year = 1970, month = 1, day = 1;
-					int hour = 0, min = 0, sec = 0;
-					*sTime++ = '\0';
+			if (tsStart == 0 || tsEnd == 0) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Parse error for date time range (%s~%s)\n", sStart, sEnd);
+				break;
+			}
 
-					memset(&tmTmp, 0, sizeof(tmTmp));
-					switch_split_date(sDate, &year, &month, &day);
-					switch_split_time(sTime, &hour, &min, &sec);
-					tmTmp.tm_year = year-1900;
-					tmTmp.tm_mon = month-1;
-					tmTmp.tm_mday = day;
-
-					tmTmp.tm_hour = hour;
-					tmTmp.tm_min = min;
-					tmTmp.tm_sec = sec;
-					tmTmp.tm_isdst = 0;
-					tsEnd = mktime(&tmTmp);
-
-					if (tsStart <= *ts/1000000 && tsEnd > *ts/1000000) {
-						switch_safe_free(dup);
-						return 1;
-					}
-				}
+			if (tsStart <= *ts && tsEnd > *ts) {
+				ret = 1;
+				break;
 			}
 		}
 
-		cur = p;
-		if (p) {
+		if ((cur = p)) {
 			if ((p = strchr(p, ','))) {
 				*p++ = '\0';
 			}
 		}
-
 	}
-	switch_safe_free(dup);
-	return 0;
 
+	switch_safe_free(dup);
+	return ret;
 }
 
 
