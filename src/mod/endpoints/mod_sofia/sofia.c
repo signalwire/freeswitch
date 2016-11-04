@@ -7578,7 +7578,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 			}
 
 
-			switch_core_media_gen_local_sdp(session, SDP_TYPE_RESPONSE, NULL, 0, NULL, 0);
+			switch_core_media_gen_local_sdp(session, SDP_TYPE_RESPONSE, NULL, 0, NULL, 1);
 
 			nua_respond(tech_pvt->nh, SIP_200_OK,
 						NUTAG_MEDIA_ENABLE(0),
