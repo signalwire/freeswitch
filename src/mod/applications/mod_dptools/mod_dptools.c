@@ -3825,7 +3825,9 @@ static switch_call_cause_t pickup_outgoing_channel(switch_core_session_t *sessio
 
 	flags |= SOF_NO_LIMITS;
 
-	if (!(nsession = switch_core_session_request(pickup_endpoint_interface, SWITCH_CALL_DIRECTION_OUTBOUND, flags, pool))) {
+	if (!(nsession = switch_core_session_request_uuid(pickup_endpoint_interface, SWITCH_CALL_DIRECTION_OUTBOUND,
+                                                      flags, pool, switch_event_get_header(var_event, "origination_uuid")))) {
+
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Error Creating Session\n");
 		goto error;
 	}
@@ -3888,7 +3890,7 @@ SWITCH_STANDARD_APP(pickup_function)
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 
 	if (zstr(data)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Missing data.  Usage: pickup %s\n", PICKUP_SYNTAX);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Missing data.  Usage: pickup %s\n", PICKUP_SYNTAX);
 		return;
 	}
 
