@@ -7489,12 +7489,19 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 			}
 
 
-			switch_core_media_gen_local_sdp(session, SDP_TYPE_RESPONSE, NULL, 0, NULL, 0);
+			switch_core_media_gen_local_sdp(session, SDP_TYPE_RESPONSE, NULL, 0, NULL,
+											zstr(tech_pvt->mparams.local_sdp_str) || !switch_channel_test_flag(channel, CF_PROXY_MODE));
 
-			nua_respond(tech_pvt->nh, SIP_200_OK,
-						NUTAG_MEDIA_ENABLE(0),
-						SIPTAG_CONTACT_STR(tech_pvt->profile->url),
-						SIPTAG_CONTENT_TYPE_STR("application/sdp"), SIPTAG_PAYLOAD_STR(tech_pvt->mparams.local_sdp_str), TAG_END());
+
+			if (zstr(tech_pvt->mparams.local_sdp_str)) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Cannot find a SDP\n");
+				switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+			} else {
+				nua_respond(tech_pvt->nh, SIP_200_OK,
+							NUTAG_MEDIA_ENABLE(0),
+							SIPTAG_CONTACT_STR(tech_pvt->profile->url),
+							SIPTAG_CONTENT_TYPE_STR("application/sdp"), SIPTAG_PAYLOAD_STR(tech_pvt->mparams.local_sdp_str), TAG_END());
+			}
 
 			goto done;
 			
