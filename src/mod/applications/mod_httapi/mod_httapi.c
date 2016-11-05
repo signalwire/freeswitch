@@ -25,6 +25,7 @@
  * 
  * Anthony Minessale II <anthm@freeswitch.org>
  * Raymond Chandler <intralanman@freeswitch.org>
+ * Seven Du <dujinfang@gmail.com>
  *
  * mod_httapi.c -- HT-TAPI Hypertext Telephony API
  *
@@ -710,6 +711,8 @@ static switch_status_t parse_conference(const char *tag_name, client_t *client, 
 	char *str;
 	char *dup, *p;
 	const char *profile_name = switch_xml_attr(tag, "profile");
+	const char *pin = switch_xml_attr(tag, "pin");
+	const char *flags = switch_xml_attr(tag, "flags");
 	
 	if (!client->profile->perms.conference.enabled) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Permission Denied!\n");
@@ -728,6 +731,10 @@ static switch_status_t parse_conference(const char *tag_name, client_t *client, 
 	}
 
 	str = switch_core_session_sprintf(client->session, "%s@%s", dup, profile_name);
+
+	if (!zstr(pin)) str = switch_core_session_sprintf(client->session, "%s+%s", str, pin);
+	if (!zstr(flags)) str = switch_core_session_sprintf(client->session, "%s+flags{%s}", str, flags);
+
 	switch_core_session_execute_application(client->session, "conference", str);
 
 	return SWITCH_STATUS_SUCCESS;
