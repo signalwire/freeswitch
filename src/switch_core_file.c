@@ -399,6 +399,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_read(switch_file_handle_t *fh, 
 
 	if (switch_test_flag(fh, SWITCH_FILE_DONE)) {
 		switch_clear_flag_locked(fh, SWITCH_FILE_DONE);
+		switch_clear_flag_locked(fh, SWITCH_FILE_BUFFER_DONE);
 		*len = 0;
 		return SWITCH_STATUS_FALSE;
 	}
