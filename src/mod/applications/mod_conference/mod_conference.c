@@ -410,6 +410,7 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 					}
 				} else if (conference->fnode->type == NODE_TYPE_FILE) {
 					switch_core_file_read(&conference->fnode->fh, file_frame, &file_sample_len);
+					
 					if (conference->fnode->fh.vol) {
 						switch_change_sln_volume_granular((void *)file_frame, (uint32_t)file_sample_len * conference->fnode->fh.channels,
 														  conference->fnode->fh.vol);
@@ -420,7 +421,20 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 				}
 
 				if (file_sample_len <= 0) {
-					conference->fnode->done++;
+					if (conference->fnode->loops) {
+						if (--conference->fnode->loops < 0) {
+							conference->fnode->loops = -1;
+						}
+						
+						if (conference->fnode->loops) {
+							uint32_t pos = 0;
+							switch_core_file_seek(&conference->fnode->fh, &pos, 0, SEEK_SET);
+						}
+					}
+					
+					if (!conference->fnode->loops) {
+						conference->fnode->done++;
+					}
 				} else {
 					has_file_data = 1;
 				}
@@ -438,7 +452,20 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 					conference_al_process(conference->async_fnode->al, file_frame, file_sample_len * 2, conference->async_fnode->fh.samplerate);
 				}
 				if (file_sample_len <= 0) {
-					conference->async_fnode->done++;
+					if (conference->async_fnode->loops) {
+						if (--conference->async_fnode->loops < 0) {
+							conference->async_fnode->loops = -1;
+						}
+						
+						if (conference->async_fnode->loops) {
+							uint32_t pos = 0;
+							switch_core_file_seek(&conference->async_fnode->fh, &pos, 0, SEEK_SET);
+						}
+					}
+					
+					if (!conference->async_fnode->loops) {
+						conference->async_fnode->done++;
+					}
 				} else {
 					if (has_file_data) {
 						switch_size_t x;
