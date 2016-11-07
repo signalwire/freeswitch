@@ -2075,6 +2075,15 @@ static switch_status_t av_file_seek(switch_file_handle_t *handle, unsigned int *
 	context->seek_ts = samples / handle->native_rate * AV_TIME_BASE;
 	*cur_sample = context->seek_ts;
 
+
+	if (!context->file_read_thread_running) {
+		switch_threadattr_t *thd_attr = NULL;
+
+		switch_threadattr_create(&thd_attr, handle->memory_pool);
+		switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
+		switch_thread_create(&context->file_read_thread, thd_attr, file_read_thread_run, context, handle->memory_pool);
+	}
+
 	return SWITCH_STATUS_FALSE;
 }
 
