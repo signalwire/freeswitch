@@ -392,7 +392,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_read(switch_file_handle_t *fh, 
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (fh->buffer && switch_buffer_inuse(fh->buffer) >= *len * 2 * fh->channels) {
+	if (*len && fh->buffer && switch_buffer_inuse(fh->buffer) >= *len * 2 * fh->channels) {
 		*len = switch_buffer_read(fh->buffer, data, orig_len * 2 * fh->channels) / 2 / fh->channels;
 		return *len == 0 ? SWITCH_STATUS_FALSE : SWITCH_STATUS_SUCCESS;
 	}
@@ -407,7 +407,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_read(switch_file_handle_t *fh, 
 
   more:
 
-	if (fh->pre_buffer) {
+	if (fh->pre_buffer && switch_buffer_inuse(fh->pre_buffer)) {
 		switch_size_t rlen;
 		int asis = switch_test_flag(fh, SWITCH_FILE_NATIVE);
 
