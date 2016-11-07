@@ -386,6 +386,7 @@ typedef struct conference_file_node {
 	int canvas_id;
 	struct conference_obj *conference;
 	char *res_id;
+	int loops;
 } conference_file_node_t;
 
 typedef enum {
