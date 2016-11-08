@@ -1124,6 +1124,8 @@ static switch_status_t switch_loadable_module_unprocess(switch_loadable_module_t
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "name", ptr->interface_name);
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "description", switch_str_nil(ptr->desc));
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "syntax", switch_str_nil(ptr->syntax));
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "key", old_module->key);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "filename", old_module->filename);
 					switch_event_fire(&event);
 					removed++;
 				}
