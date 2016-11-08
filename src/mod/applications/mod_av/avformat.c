@@ -1411,6 +1411,10 @@ static switch_status_t open_input_file(av_file_context_t *context, switch_file_h
 		}
 	}
 
+	if (!context->has_video) {
+		switch_clear_flag(handle, SWITCH_FILE_FLAG_VIDEO);
+	}
+
 	return status;
 
 err:
@@ -1842,7 +1846,6 @@ static switch_status_t av_file_open(switch_file_handle_t *handle, const char *pa
 	handle->seekable = 0;
 	handle->speed = 0;
 	handle->pos = 0;
-
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Opening File [%s] %dhz %s\n",
 		file, handle->samplerate, switch_test_flag(handle, SWITCH_FILE_FLAG_VIDEO) ? " with VIDEO" : "");
@@ -2489,6 +2492,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_avformat_load)
 	supported_formats[i++] = "av";
 	supported_formats[i++] = "rtmp";
 	supported_formats[i++] = "mp4";
+	supported_formats[i++] = "m4a";
 	supported_formats[i++] = "mov";
 
 
