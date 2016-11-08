@@ -989,6 +989,7 @@ SWITCH_DECLARE(void) switch_ivr_dmachine_destroy(switch_ivr_dmachine_t **dmachin
 SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_bind(switch_ivr_dmachine_t *dmachine, 
 														 const char *realm,
 														 const char *digits, 
+                             switch_byte_t is_priority, 
 														 int32_t key,
 														 switch_ivr_dmachine_callback_t callback,
 														 void *user_data);

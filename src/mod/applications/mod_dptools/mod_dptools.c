@@ -346,6 +346,7 @@ static void bind_to_session(switch_core_session_t *session,
 	switch_ivr_dmachine_t *dmachine;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	const char *terminators = NULL;
+	switch_byte_t is_priority = 0;
 
 	if (!(dmachine = switch_core_session_get_dmachine(session, target))) {
 		uint32_t digit_timeout = 1500;
@@ -372,8 +373,27 @@ static void bind_to_session(switch_core_session_t *session,
 	act->value = switch_core_session_strdup(session, arg3);
 	act->target = bind_target;
 	act->session = session;
-	switch_ivr_dmachine_bind(dmachine, act->realm, act->input, 0, digit_action_callback, act);
 
+	if (!strncasecmp(act->string, "exec", 4) || !strncasecmp(act->string, "api:", 4)) {
+		char *flags, *e;
+		char *string = switch_core_session_strdup(session, act->string);
+
+		string += 4;
+		if (*string == '[') {
+			flags = string;
+			if ((e = switch_find_end_paren(flags, '[', ']'))) {
+				if (e && *(e+1) == ':') {
+					flags++;
+					*e = '\0';
+					if (strchr(flags, 'P'))
+						is_priority = 1;
+				}
+			}
+		}
+	}
+
+	switch_ivr_dmachine_bind(dmachine, act->realm, act->input, is_priority, 0, digit_action_callback, act);
+	
 	if ((terminators = switch_channel_get_variable(channel, "bda_terminators"))) {
 		switch_ivr_dmachine_set_terminators(dmachine, terminators);
 	}
