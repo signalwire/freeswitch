@@ -3343,6 +3343,7 @@ SWITCH_DECLARE(int) switch_fulldate_cmp(const char *exp, switch_time_t *ts)
 	char *p;
 	switch_time_t tsStart = 0;
 	switch_time_t tsEnd = 0;
+	int ret = 0;
 
 	switch_assert(dup);
 
@@ -3358,11 +3359,17 @@ SWITCH_DECLARE(int) switch_fulldate_cmp(const char *exp, switch_time_t *ts)
 
 			tsStart = switch_str_time(sStart);
 			tsEnd = switch_str_time(sEnd);
-			switch_safe_free(dup);
 
-			if (tsStart == 0) return 0;
-			if (tsEnd == 0) return 0;
-			if (tsStart <= *ts && tsEnd > *ts) return 1;
+
+			if (tsStart == 0 || tsEnd == 0) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Parse error for date time range (%s~%s)\n", sStart, sEnd);
+				break;
+			}
+
+			if (tsStart <= *ts && tsEnd > *ts) {
+				ret = 1;
+				break;
+			}
 		}
 
 		if ((cur = p)) {
@@ -3371,8 +3378,9 @@ SWITCH_DECLARE(int) switch_fulldate_cmp(const char *exp, switch_time_t *ts)
 			}
 		}
 	}
+
 	switch_safe_free(dup);
-	return 0;
+	return ret;
 }
 
 
