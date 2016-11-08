@@ -780,9 +780,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_close(switch_file_handle_t *fh)
 	switch_status_t status;
 
 	switch_assert(fh != NULL);
-	switch_assert(fh->file_interface != NULL);
 
-	if (!switch_test_flag(fh, SWITCH_FILE_OPEN)) {
+	if (!fh->file_interface || !switch_test_flag(fh, SWITCH_FILE_OPEN)) {
 		return SWITCH_STATUS_FALSE;
 	}
 
