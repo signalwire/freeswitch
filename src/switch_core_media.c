@@ -7416,7 +7416,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 		flags[SWITCH_RTP_FLAG_BYTESWAP] = 0;
 	}
 
-	if ((val = switch_channel_get_variable(session->channel, "rtp_gen_ts_delta")) && switch_true(val)) {
+	if ((val = switch_channel_get_variable(session->channel, "rtp_gen_ts_delta_audio")) && switch_true(val)) {
 		flags[SWITCH_RTP_FLAG_GEN_TS_DELTA] = 1;
 	}
 
@@ -7508,6 +7508,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 			!((val = switch_channel_get_variable(session->channel, "disable_rtp_auto_adjust")) && switch_true(val))) {
 			flags[SWITCH_RTP_FLAG_AUTOADJ]++;
 		}
+
+		if ((val = switch_channel_get_variable(session->channel, "rtp_gen_ts_delta_video")) && switch_true(val)) {
+			flags[SWITCH_RTP_FLAG_GEN_TS_DELTA] = 1;
+		}
+
 		timer_name = NULL;
 
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
