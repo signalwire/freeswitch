@@ -1847,10 +1847,6 @@ static switch_status_t av_file_open(switch_file_handle_t *handle, const char *pa
 	handle->speed = 0;
 	handle->pos = 0;
 
-	if (!context->has_video) {
-		switch_clear_flag(handle, SWITCH_FILE_FLAG_VIDEO);
-	}
-
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Opening File [%s] %dhz %s\n",
 		file, handle->samplerate, switch_test_flag(handle, SWITCH_FILE_FLAG_VIDEO) ? " with VIDEO" : "");
 
