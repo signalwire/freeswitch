@@ -5167,7 +5167,7 @@ static int check_recv_payload(switch_rtp_t *rtp_session)
 				continue;
 			}
 
-			if (rtp_session->last_rtp_hdr.pt == pmap->pt) {
+			if (rtp_session->last_rtp_hdr.pt == pmap->recv_pt) {
 				ok = 1;
 			}
 		}
@@ -5201,7 +5201,7 @@ static int get_recv_payload(switch_rtp_t *rtp_session)
 #define return_cng_frame() do_cng = 1; goto timer_check
 
 static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t *bytes, switch_frame_flag_t *flags, 
-									   switch_status_t poll_status, switch_bool_t return_jb_packet)
+									   payload_map_t **pmapP, switch_status_t poll_status, switch_bool_t return_jb_packet)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	uint32_t ts = 0;
@@ -5324,7 +5324,43 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 		if (rtp_session->has_rtp) {
 			rtp_session->last_rtp_hdr = rtp_session->recv_msg.header;
 
+		
+			if (bytes && !rtp_session->flags[SWITCH_RTP_FLAG_PROXY_MEDIA] && !rtp_session->flags[SWITCH_RTP_FLAG_UDPTL] &&
+				rtp_session->last_rtp_hdr.pt != 13 && 
+				rtp_session->last_rtp_hdr.pt != rtp_session->recv_te && 
+				rtp_session->last_rtp_hdr.pt != rtp_session->cng_pt) {
+				int accept_packet = 1;
 			
+
+				if (rtp_session->pmaps && *rtp_session->pmaps) {
+					payload_map_t *pmap;
+					accept_packet = 0;
+
+					switch_mutex_lock(rtp_session->flag_mutex);
+					for (pmap = *rtp_session->pmaps; pmap && pmap->allocated; pmap = pmap->next) {					
+					
+						if (!pmap->negotiated) {
+							continue;
+						}
+
+						if (rtp_session->last_rtp_hdr.pt == pmap->recv_pt) {
+							accept_packet = 1;
+							if (pmapP) {
+								*pmapP = pmap;
+							}
+							break;
+						}
+					}
+					switch_mutex_unlock(rtp_session->flag_mutex);
+				}
+			
+				if (!accept_packet && !(rtp_session->rtp_bugs & RTP_BUG_ACCEPT_ANY_PAYLOAD) && !(rtp_session->rtp_bugs & RTP_BUG_ACCEPT_ANY_PACKETS)) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, 
+									  "Invalid Packet PT:%d ignored\n", rtp_session->last_rtp_hdr.pt);
+					*bytes = 0;
+				}
+			}
+	
 			if (rtp_session->flags[SWITCH_RTP_FLAG_DETECT_SSRC]) {
 				//if (rtp_session->remote_ssrc != rtp_session->stats.rtcp.peer_ssrc && rtp_session->stats.rtcp.peer_ssrc) {
 				//	rtp_session->remote_ssrc = rtp_session->stats.rtcp.peer_ssrc;
@@ -6445,7 +6481,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			
 			if (rtp_session->jb && !rtp_session->pause_jb && jb_valid(rtp_session)) {
 				while (switch_poll(rtp_session->read_pollfd, 1, &fdr, 0) == SWITCH_STATUS_SUCCESS) {
-					status = read_rtp_packet(rtp_session, &bytes, flags, SWITCH_STATUS_SUCCESS, SWITCH_FALSE);
+					status = read_rtp_packet(rtp_session, &bytes, flags, pmapP, SWITCH_STATUS_SUCCESS, SWITCH_FALSE);
 
 					if (status == SWITCH_STATUS_GENERR) {
 						ret = -1;
@@ -6468,7 +6504,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			} else if ((rtp_session->flags[SWITCH_RTP_FLAG_AUTOFLUSH] || rtp_session->flags[SWITCH_RTP_FLAG_STICKY_FLUSH])) {
 				
 				if (switch_poll(rtp_session->read_pollfd, 1, &fdr, 0) == SWITCH_STATUS_SUCCESS) {
-					status = read_rtp_packet(rtp_session, &bytes, flags, SWITCH_STATUS_SUCCESS, SWITCH_FALSE);
+					status = read_rtp_packet(rtp_session, &bytes, flags, pmapP, SWITCH_STATUS_SUCCESS, SWITCH_FALSE);
 					if (status == SWITCH_STATUS_GENERR) {
 						ret = -1;
 						goto end;
@@ -6617,8 +6653,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			if (read_pretriggered) {
 				read_pretriggered = 0;
 			} else {
-
-				status = read_rtp_packet(rtp_session, &bytes, flags, poll_status, SWITCH_TRUE);
+				status = read_rtp_packet(rtp_session, &bytes, flags, pmapP, poll_status, SWITCH_TRUE);
 
 				if (status == SWITCH_STATUS_GENERR) {
 					ret = -1;
@@ -6813,45 +6848,6 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		if ((!(io_flags & SWITCH_IO_FLAG_NOBLOCK)) && 
 			(rtp_session->dtmf_data.out_digit_dur == 0) && !got_rtp_poll) {
 			return_cng_frame();
-		}
-
-
-		if (bytes && rtp_session->has_rtp && 
-			!rtp_session->flags[SWITCH_RTP_FLAG_PROXY_MEDIA] && !rtp_session->flags[SWITCH_RTP_FLAG_UDPTL] &&
-			rtp_session->last_rtp_hdr.pt != 13 && 
-			rtp_session->last_rtp_hdr.pt != rtp_session->recv_te && 
-			rtp_session->last_rtp_hdr.pt != rtp_session->cng_pt) {
-			int accept_packet = 1;
-			
-
-			if (rtp_session->pmaps && *rtp_session->pmaps) {
-				payload_map_t *pmap;
-				accept_packet = 0;
-
-				switch_mutex_lock(rtp_session->flag_mutex);
-				for (pmap = *rtp_session->pmaps; pmap && pmap->allocated; pmap = pmap->next) {					
-					
-					if (!pmap->negotiated) {
-						continue;
-					}
-
-					if (rtp_session->last_rtp_hdr.pt == pmap->recv_pt) {
-						accept_packet = 1;
-						if (pmapP) {
-							*pmapP = pmap;
-						}
-						break;
-					}
-				}
-				switch_mutex_unlock(rtp_session->flag_mutex);
-			}
-			
-			if (!accept_packet &&
-				!(rtp_session->rtp_bugs & RTP_BUG_ACCEPT_ANY_PAYLOAD) && !(rtp_session->rtp_bugs & RTP_BUG_ACCEPT_ANY_PACKETS)) {
-				/* drop frames of incorrect payload number and return CNG frame instead */
-
-				return_cng_frame();
-			}
 		}
 
 		if (!bytes && (io_flags & SWITCH_IO_FLAG_NOBLOCK)) {
