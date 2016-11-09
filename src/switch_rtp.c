@@ -2174,6 +2174,16 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 				switch_rtcp_ext_hdr_t *ext_hdr;
 				rtcp_fir_t *fir;
 
+				if (switch_rtp_test_flag(rtp_session, SWITCH_RTP_FLAG_OLD_FIR)) {
+					p = (uint8_t *) (&rtp_session->rtcp_send_msg) + rtcp_bytes;
+					ext_hdr = (switch_rtcp_ext_hdr_t *) p;
+					
+					ext_hdr->version = 2;
+					ext_hdr->pt = _RTCP_PT_FIR;
+					rtcp_bytes += sizeof(switch_rtcp_ext_hdr_t);
+				}
+
+
 				p = (uint8_t *) (&rtp_session->rtcp_send_msg) + rtcp_bytes;
 				ext_hdr = (switch_rtcp_ext_hdr_t *) p;
 
@@ -4417,7 +4427,7 @@ SWITCH_DECLARE(void) switch_rtp_video_refresh(switch_rtp_t *rtp_session)
 		return;
 	}
 
-	if (rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] && (rtp_session->ice.ice_user || rtp_session->flags[SWITCH_RTP_FLAG_FIR])) {
+	if (rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] && (rtp_session->ice.ice_user || rtp_session->flags[SWITCH_RTP_FLAG_FIR] || rtp_session->flags[SWITCH_RTP_FLAG_OLD_FIR])) {
 		rtp_session->fir_count = 1;
 	}
 }
@@ -5992,6 +6002,11 @@ static switch_status_t process_rtcp_report(switch_rtp_t *rtp_session, rtcp_msg_t
 
 			if (msg->header.type == _RTCP_PT_FIR) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING, "Ancient FIR Received. Hello from 1996!\n");
+
+				if (!switch_rtp_test_flag(rtp_session, SWITCH_RTP_FLAG_OLD_FIR)) {
+					switch_rtp_set_flag(rtp_session, SWITCH_RTP_FLAG_OLD_FIR);
+					switch_core_session_request_video_refresh(rtp_session->session);
+				}
 			}
 			switch_core_media_gen_key_frame(rtp_session->session);
 			if (rtp_session->vbw) {
