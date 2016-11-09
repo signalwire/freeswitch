@@ -127,6 +127,7 @@ struct amr_context {
 	switch_byte_t flags;
 	int dtx_mode;
 	int max_red;
+	int debug;
 };
 
 #define SWITCH_AMR_DEFAULT_BITRATE AMR_BITRATE_1220
@@ -134,6 +135,7 @@ struct amr_context {
 static struct {
 	switch_byte_t default_bitrate;
 	switch_byte_t volte; /* enable special fmtp for VoLTE compliance */
+	switch_byte_t adjust_bitrate;
 	int debug;
 } globals;
 
@@ -335,6 +337,10 @@ static switch_status_t switch_amr_init(switch_codec_t *codec, switch_codec_flag_
 			}
 		}
 
+		if (globals.adjust_bitrate) {
+			switch_set_flag(codec, SWITCH_CODEC_FLAG_HAS_ADJ_BITRATE);
+		}
+
 		if (!globals.volte) {
 			switch_snprintf(fmtptmp, sizeof(fmtptmp), "octet-align=%d; mode-set=%d", switch_test_flag(context, AMR_OPT_OCTET_ALIGN) ? 1 : 0,
 							context->enc_mode);
@@ -479,6 +485,69 @@ static switch_status_t switch_amr_decode(switch_codec_t *codec,
 #endif
 }
 
+static switch_status_t switch_amr_control(switch_codec_t *codec,
+										   switch_codec_control_command_t cmd,
+										   switch_codec_control_type_t ctype,
+										   void *cmd_data,
+										   switch_codec_control_type_t atype,
+										   void *cmd_arg,
+										   switch_codec_control_type_t *rtype,
+										   void **ret_data)
+{
+	struct amr_context *context = codec->private_info;
+
+	switch(cmd) {
+	case SCC_DEBUG:
+		{
+			int32_t level = *((uint32_t *) cmd_data);
+			context->debug = level;
+		}
+		break;
+	case SCC_AUDIO_ADJUST_BITRATE:
+		{
+			const char *cmd = (const char *)cmd_data;
+
+			if (!strcasecmp(cmd, "increase")) {
+				if (context->enc_mode < SWITCH_AMR_MODES - 1) {
+					int mode_step = 2; /*this is the mode, not the actual bitrate*/
+					context->enc_mode = context->enc_mode + mode_step; 
+					if (globals.debug || context->debug) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+								"AMR encoder: Adjusting mode to %d (increase)\n", context->enc_mode);
+					}
+				} 
+			} else if (!strcasecmp(cmd, "decrease")) {
+				if (context->enc_mode > 0) {
+					int mode_step = 2; /*this is the mode, not the actual bitrate*/
+					context->enc_mode = context->enc_mode - mode_step; 
+					if (globals.debug || context->debug) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+								"AMR encoder: Adjusting mode to %d (decrease)\n", context->enc_mode);
+					}
+				}
+			} else if (!strcasecmp(cmd, "default")) {
+					context->enc_mode = globals.default_bitrate;
+					if (globals.debug || context->debug) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+								"AMR encoder: Adjusting mode to %d (default)\n", context->enc_mode);
+					}
+			} else {
+				/*minimum bitrate (AMR mode)*/
+				context->enc_mode = 0;
+				if (globals.debug || context->debug) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+							"AMR encoder: Adjusting mode to %d (minimum)\n", context->enc_mode);
+				}
+			}
+		}
+		break;
+	default:
+		break;
+	} 
+	
+	return SWITCH_STATUS_SUCCESS;
+}
+
 static char *generate_fmtp(switch_memory_pool_t *pool , int octet_align)
 { 
 	char buf[256] = { 0 };
@@ -550,6 +619,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_amr_load)
 					/* ETSI TS 126 236 compatibility:  http://www.etsi.org/deliver/etsi_ts/126200_126299/126236/10.00.00_60/ts_126236v100000p.pdf */
 					globals.volte = (switch_byte_t) atoi(val);
 				}
+				if (!strcasecmp(var, "adjust-bitrate")) {
+					globals.adjust_bitrate = (switch_byte_t) atoi(val);
+				}
 			}
 		}
 	}
@@ -615,6 +687,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_amr_load)
 										 switch_amr_decode,	/* function to decode encoded data into raw data */
 										 switch_amr_destroy);	/* deinitalize a codec handle using this implementation */
 
+	codec_interface->implementations->codec_control = switch_amr_control;
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
