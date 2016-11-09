@@ -494,6 +494,10 @@ static switch_status_t switch_amr_control(switch_codec_t *codec,
 										   switch_codec_control_type_t *rtype,
 										   void **ret_data)
 {
+#ifdef AMR_PASSTHROUGH
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "This codec is only usable in passthrough mode!\n");
+	return SWITCH_STATUS_FALSE;
+#else
 	struct amr_context *context = codec->private_info;
 
 	switch(cmd) {
@@ -546,6 +550,7 @@ static switch_status_t switch_amr_control(switch_codec_t *codec,
 	} 
 	
 	return SWITCH_STATUS_SUCCESS;
+#endif
 }
 
 static char *generate_fmtp(switch_memory_pool_t *pool , int octet_align)
