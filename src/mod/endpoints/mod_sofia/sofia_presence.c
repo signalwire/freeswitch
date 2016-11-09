@@ -3017,11 +3017,11 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 											  !zstr(clean_to_user) ? clean_to_user : "unknown", host);
 						stream.write_function(&stream, "<target uri=\"sip:%s@%s;proto=fifo\">\n", !zstr(clean_to_user) ? clean_to_user : "unknown", host);
 						stream.write_function(&stream, "<param pname=\"+sip.rendering\" pvalue=\"no\"/>\n</target>\n</local>\n");
-						stream.write_function(&stream, "<remote>\n<identity display=\"queue\">sip:%s</identity>\n", uuid);
+						stream.write_function(&stream, "<remote>\n<identity display=\"queue\">sip:%s@%s</identity>\n", uuid, host);
 						if (skip_proto) {
-							stream.write_function(&stream, "<target uri=\"sip:%s\"/>\n", uuid);
+							stream.write_function(&stream, "<target uri=\"sip:%s@%s\"/>\n", uuid, host);
 						} else {
-							stream.write_function(&stream, "<target uri=\"sip:queue+%s\"/>\n", uuid);
+							stream.write_function(&stream, "<target uri=\"sip:queue+%s@%s\"/>\n", uuid, host);
 						}
 
 						stream.write_function(&stream, "</remote>\n");
@@ -3032,9 +3032,9 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 						stream.write_function(&stream, "<param pname=\"+sip.rendering\" pvalue=\"no\"/>\n</target>\n</local>\n");
 						stream.write_function(&stream, "<remote>\n<identity display=\"park\">sip:%s</identity>\n", uuid);
 						if (skip_proto) {
-							stream.write_function(&stream, "<target uri=\"sip:%s\"/>\n", uuid);
+							stream.write_function(&stream, "<target uri=\"sip:%s@%s\"/>\n", uuid, host);
 						} else {
-							stream.write_function(&stream, "<target uri=\"sip:park+%s\"/>\n", uuid);
+							stream.write_function(&stream, "<target uri=\"sip:park+%s@%s\"/>\n", uuid, host);
 						}
 						stream.write_function(&stream, "</remote>\n");
 					} else if (!strcasecmp(proto, "pickup")) {
@@ -3042,11 +3042,11 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 											  !zstr(clean_to_user) ? clean_to_user : "unknown", host);
 						stream.write_function(&stream, "<target uri=\"sip:%s@%s;proto=pickup\">\n", !zstr(clean_to_user) ? clean_to_user : "unknown", host);
 						stream.write_function(&stream, "<param pname=\"+sip.rendering\" pvalue=\"no\"/>\n</target>\n</local>\n");
-						stream.write_function(&stream, "<remote>\n<identity display=\"pickup\">sip:%s</identity>\n", uuid);
+						stream.write_function(&stream, "<remote>\n<identity display=\"pickup\">sip:%s@%s</identity>\n", uuid, host);
 						if (skip_proto) {
-							stream.write_function(&stream, "<target uri=\"sip:%s\"/>\n", uuid);
+							stream.write_function(&stream, "<target uri=\"sip:%s@%s\"/>\n", uuid, host);
 						} else {
-							stream.write_function(&stream, "<target uri=\"sip:pickup+%s\"/>\n", uuid);
+							stream.write_function(&stream, "<target uri=\"sip:pickup+%s@%s\"/>\n", uuid, host);
 						}
 						stream.write_function(&stream, "</remote>\n");
 					} else if (!strcasecmp(proto, "conf")) {
