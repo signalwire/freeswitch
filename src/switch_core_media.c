@@ -6607,10 +6607,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 		flags[SWITCH_RTP_FLAG_BYTESWAP] = 0;
 	}
 
-	if ((val = switch_channel_get_variable(session->channel, "rtp_gen_ts_delta")) && switch_true(val)) {
-		flags[SWITCH_RTP_FLAG_GEN_TS_DELTA] = 1;
-	}
-
 	if (a_engine->rtp_session && is_reinvite) {
 		//const char *ip = switch_channel_get_variable(session->channel, SWITCH_LOCAL_MEDIA_IP_VARIABLE);
 		//const char *port = switch_channel_get_variable(session->channel, SWITCH_LOCAL_MEDIA_PORT_VARIABLE);
@@ -6699,6 +6695,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 			!((val = switch_channel_get_variable(session->channel, "disable_rtp_auto_adjust")) && switch_true(val))) {
 			flags[SWITCH_RTP_FLAG_AUTOADJ]++;
 		}
+
 		timer_name = NULL;
 
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
@@ -6719,6 +6716,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 		if ((var = switch_channel_get_variable(session->channel, "rtp_timer_name"))) {
 			timer_name = (char *) var;
 		}
+	}
+
+
+	if ((val = switch_channel_get_variable(session->channel, "rtp_gen_ts_delta_audio")) && switch_true(val)) {
+		flags[SWITCH_RTP_FLAG_GEN_TS_MANUAL] = 1;
+		flags[SWITCH_RTP_FLAG_GEN_TS_DELTA] = 1;
 	}
 
 	if (switch_channel_up(session->channel)) {
@@ -7119,6 +7122,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 				!((val = switch_channel_get_variable(session->channel, "disable_rtp_auto_adjust")) && switch_true(val)) && 
 				!switch_channel_test_flag(session->channel, CF_AVPF)) {
 				flags[SWITCH_RTP_FLAG_AUTOADJ]++;				
+			}
+
+			if ((val = switch_channel_get_variable(session->channel, "rtp_gen_ts_delta_video")) && switch_true(val)) {
+				flags[SWITCH_RTP_FLAG_GEN_TS_MANUAL] = 1;
+				flags[SWITCH_RTP_FLAG_GEN_TS_DELTA] = 1;
 			}
 
 			if (switch_channel_test_flag(session->channel, CF_PROXY_MEDIA)) {
@@ -11501,7 +11509,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_video_frame(switch_cor
 	switch_image_t *dup_img = NULL, *img = frame->img;
 	switch_status_t encode_status;
 	switch_frame_t write_frame = {0};
-	//switch_rtp_engine_t *v_engine;
+	switch_rtp_engine_t *v_engine;
 
 	switch_assert(session);
 
@@ -11535,7 +11543,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_video_frame(switch_cor
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	//v_engine = &smh->engines[SWITCH_MEDIA_TYPE_VIDEO];	
+	v_engine = &smh->engines[SWITCH_MEDIA_TYPE_VIDEO];	
 	if (smh->write_mutex[SWITCH_MEDIA_TYPE_VIDEO] && switch_mutex_trylock(smh->write_mutex[SWITCH_MEDIA_TYPE_VIDEO]) != SWITCH_STATUS_SUCCESS) {
 		/* return CNG, another thread is already writing  */
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG1, "%s is already being written to for %s\n", 
@@ -11559,8 +11567,18 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_video_frame(switch_cor
 	}	
 
 	if (!img) {
-		switch_status_t vstatus = switch_core_session_write_encoded_video_frame(session, frame, flags, stream_id);
+		switch_status_t vstatus;
+
+		if (!switch_rtp_test_flag(v_engine->rtp_session, SWITCH_RTP_FLAG_GEN_TS_MANUAL)) {
+			switch_rtp_set_flag(v_engine->rtp_session, SWITCH_RTP_FLAG_GEN_TS_DELTA);
+		}
+		
+		vstatus = switch_core_session_write_encoded_video_frame(session, frame, flags, stream_id);
 		switch_goto_status(vstatus, done);
+	} else {
+		if (!switch_rtp_test_flag(v_engine->rtp_session, SWITCH_RTP_FLAG_GEN_TS_MANUAL)) {
+			switch_rtp_clear_flag(v_engine->rtp_session, SWITCH_RTP_FLAG_GEN_TS_DELTA);
+		}
 	}
 
 

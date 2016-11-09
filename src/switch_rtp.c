@@ -7578,17 +7578,24 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 		
 
 		if (ntohl(send_msg->header.ts) != rtp_session->ts_norm.last_frame) {
-			if (switch_rtp_test_flag(rtp_session, SWITCH_RTP_FLAG_GEN_TS_DELTA)) {
-				int32_t delta = (int32_t) (ntohl(send_msg->header.ts) - rtp_session->ts_norm.last_frame);
+			int32_t delta = (int32_t) (ntohl(send_msg->header.ts) - rtp_session->ts_norm.last_frame);
 			
-				if (switch_rtp_test_flag(rtp_session, SWITCH_RTP_FLAG_VIDEO) && delta > 0 && delta < 90000) {
-					rtp_session->ts_norm.delta = delta;
-				}
-				
+			if (switch_rtp_test_flag(rtp_session, SWITCH_RTP_FLAG_VIDEO) && delta > 0 && delta < 90000) {
+				rtp_session->ts_norm.delta = delta;
+			}
+
+			if (switch_rtp_test_flag(rtp_session, SWITCH_RTP_FLAG_GEN_TS_DELTA)) {
 				rtp_session->ts_norm.ts += rtp_session->ts_norm.delta;
 			} else {
 				switch_core_timer_sync(&rtp_session->timer);
-				rtp_session->ts_norm.ts = rtp_session->timer.samplecount;
+				if (rtp_session->ts_norm.ts == rtp_session->timer.samplecount) {
+					rtp_session->ts_norm.ts = rtp_session->timer.samplecount + 1;
+				} else {
+					rtp_session->ts_norm.ts = rtp_session->timer.samplecount;
+				}
+				if (send_msg->header.m) {
+					rtp_session->ts_norm.last_frame++;
+				}
 			}
 		}
 		
