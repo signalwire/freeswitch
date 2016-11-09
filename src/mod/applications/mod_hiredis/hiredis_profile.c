@@ -73,38 +73,42 @@ static void hiredis_context_release(hiredis_context_t *context, switch_core_sess
 static hiredis_context_t *hiredis_connection_get_context(hiredis_connection_t *conn, switch_core_session_t *session)
 {
 	void *val = NULL;
+	switch_time_t now = switch_time_now();
+	switch_time_t timeout = now + conn->timeout_us;
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "hiredis: waiting for [%s, %d]\n", conn->host, conn->port);
-	if ( switch_queue_pop_timeout(conn->context_pool, &val, conn->timeout_us ) == SWITCH_STATUS_SUCCESS ) {
-		hiredis_context_t *context = (hiredis_context_t *)val;
-		if ( !context->context ) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "hiredis: attempting[%s, %d]\n", conn->host, conn->port);
-			context->context = redisConnectWithTimeout(conn->host, conn->port, conn->timeout);
-			if ( context->context && !context->context->err && hiredis_context_auth(context) == SWITCH_STATUS_SUCCESS ) {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "hiredis: connection success[%s, %d]\n", conn->host, conn->port);
-				return context;
+	while (now < timeout) {
+		if ( switch_queue_pop_timeout(conn->context_pool, &val, timeout - now) == SWITCH_STATUS_SUCCESS ) {
+			hiredis_context_t *context = (hiredis_context_t *)val;
+			if ( !context->context ) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "hiredis: attempting[%s, %d]\n", conn->host, conn->port);
+				context->context = redisConnectWithTimeout(conn->host, conn->port, conn->timeout);
+				if ( context->context && !context->context->err && hiredis_context_auth(context) == SWITCH_STATUS_SUCCESS ) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "hiredis: connection success[%s, %d]\n", conn->host, conn->port);
+					return context;
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "hiredis: connection error[%s, %d] (%s)\n", conn->host, conn->port, context->context->errstr);
+					hiredis_context_release(context, session);
+					return NULL;
+				}
+			} else if ( context->context->err ) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "hiredis: reconnecting[%s, %d]\n", conn->host, conn->port);
+				if (hiredis_context_reconnect(context) == SWITCH_STATUS_SUCCESS) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "hiredis: reconnection success[%s, %d]\n", conn->host, conn->port);
+					return context;
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "hiredis: reconnection error[%s, %d] (%s)\n", conn->host, conn->port, context->context->errstr);
+					hiredis_context_release(context, session);
+					return NULL;
+				}
 			} else {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "hiredis: connection error[%s, %d] (%s)\n", conn->host, conn->port, context->context->errstr);
-				hiredis_context_release(context, session);
-				return NULL;
-			}
-		} else if ( context->context->err ) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "hiredis: reconnecting[%s, %d]\n", conn->host, conn->port);
-			if (hiredis_context_reconnect(context) == SWITCH_STATUS_SUCCESS) {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "hiredis: reconnection success[%s, %d]\n", conn->host, conn->port);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "hiredis: recycled from pool[%s, %d]\n", conn->host, conn->port);
 				return context;
-			} else {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "hiredis: reconnection error[%s, %d] (%s)\n", conn->host, conn->port, context->context->errstr);
-				hiredis_context_release(context, session);
-				return NULL;
 			}
-		} else {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "hiredis: recycled from pool[%s, %d]\n", conn->host, conn->port);
-			return context;
 		}
-	} else {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "hiredis: timed out waiting for [%s, %d]\n", conn->host, conn->port);
+		now = switch_time_now();
 	}
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "hiredis: timed out waiting for [%s, %d]\n", conn->host, conn->port);
 
 	return NULL;
 }
