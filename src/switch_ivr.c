@@ -664,6 +664,16 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 			}
 			
 			switch_channel_audio_sync(channel);
+
+			if (switch_channel_var_true(channel, "media_reneg_after_broadcast")) {
+				switch_core_session_message_t msg = { 0 };
+				
+				msg.message_id = SWITCH_MESSAGE_INDICATE_MEDIA_RENEG;
+				msg.from = __FILE__;
+				
+				switch_core_session_receive_message(session, &msg);
+			}
+
 		}
 	} else if (cmd_hash == CMD_UNICAST) {
 		char *local_ip = switch_event_get_header(event, "local-ip");

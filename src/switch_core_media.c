@@ -11560,13 +11560,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_receive_message(switch_core_se
 
 			if (msg->string_arg) {
 				switch_channel_set_variable(session->channel, "absolute_codec_string", NULL);
+
 				if (*msg->string_arg == '=') {
 					switch_channel_set_variable(session->channel, "codec_string", msg->string_arg);
 				} else {
-					switch_channel_set_variable_printf(session->channel, "codec_string", "=%s%s%s,%s", 
-													   v_engine->cur_payload_map->rm_encoding ? v_engine->cur_payload_map->rm_encoding : "",
-													   v_engine->cur_payload_map->rm_encoding ? "," : "",
-													   a_engine->cur_payload_map->rm_encoding, msg->string_arg);					
+					switch_channel_set_variable_printf(session->channel, 
+													   "codec_string", "=%s", switch_channel_get_variable(session->channel, "ep_codec_string"));
 				}
 
 
