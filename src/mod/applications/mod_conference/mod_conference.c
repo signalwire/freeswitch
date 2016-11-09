@@ -776,6 +776,8 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 		}
 	}
 
+	switch_mutex_lock(conference->mutex);
+
 	/* Close Unused Handles */
 	if (conference->fnode) {
 		conference_file_node_t *fnode, *cur;
@@ -803,6 +805,8 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 		conference->async_fnode = NULL;
 		switch_core_destroy_memory_pool(&pool);
 	}
+
+	switch_mutex_unlock(conference->mutex);
 
 	/* Wait till everybody is out */
 	conference_utils_clear_flag_locked(conference, CFLAG_RUNNING);
