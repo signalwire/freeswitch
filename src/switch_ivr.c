@@ -509,8 +509,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 	char *event_lock = switch_event_get_header(event, "event-lock");
 	char *event_lock_pri = switch_event_get_header(event, "event-lock-pri");
 	switch_status_t status = SWITCH_STATUS_FALSE;
-	int el = 0, elp = 0;
-
+	int el = 0, elp = 0, reneg_sec = 0;
+	const char *var = NULL;
+	
 	if (zstr(cmd)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid Command!\n");
 		return SWITCH_STATUS_FALSE;
@@ -665,13 +666,31 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 			
 			switch_channel_audio_sync(channel);
 
-			if (switch_channel_var_true(channel, "media_reneg_after_broadcast")) {
-				switch_core_session_message_t msg = { 0 };
+			if ((var = switch_channel_get_variable(channel, "media_reneg_after_broadcast"))) {
+				reneg_sec = atoi(var);
+				if (reneg_sec < 0) reneg_sec = 0;
+
+				if (!reneg_sec && switch_true(var)) {
+					reneg_sec = -1;
+				}
+			}
+			
+			if (reneg_sec) {
+				switch_stream_handle_t stream = { 0 };
+				char *api, *api_arg;
 				
-				msg.message_id = SWITCH_MESSAGE_INDICATE_MEDIA_RENEG;
-				msg.from = __FILE__;
-				
-				switch_core_session_receive_message(session, &msg);
+				SWITCH_STANDARD_STREAM(stream);
+				if (reneg_sec > 0) {
+					api = "sched_api";
+					api_arg = switch_mprintf("+%d %s uuid_media_reneg %s", reneg_sec, switch_core_session_get_uuid(session), switch_core_session_get_uuid(session));
+				} else {
+					api = "uuid_media_reneg";
+					api_arg = strdup(switch_core_session_get_uuid(session));
+				}
+				switch_api_execute(api, api_arg, NULL, &stream);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "sending command sched_api %s [%s]\n", api, (char *)stream.data);
+				free(stream.data);
+				free(api_arg);
 			}
 
 		}
