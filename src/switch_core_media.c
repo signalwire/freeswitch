@@ -6303,6 +6303,7 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 	switch_rtp_engine_t *v_engine = NULL;
 	const char *var;
 	int buflen = SWITCH_RTP_MAX_BUF_LEN;
+	int blank_enabled = 1;
 
 	if (!(smh = session->media_handle)) {
 		return NULL;
@@ -6311,7 +6312,11 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 	switch_core_autobind_cpu();
 
 	if ((var = switch_channel_get_variable(session->channel, "core_video_blank_image"))) {
-		blank_img = switch_img_read_png(var, SWITCH_IMG_FMT_I420);
+		if (switch_false(var)) {
+			blank_enabled = 0;
+		} else {
+			blank_img = switch_img_read_png(var, SWITCH_IMG_FMT_I420);
+		}
 	}
 
 	if (!blank_img) {
@@ -6406,7 +6411,7 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 
 		vloops++;
 		
-		send_blank = 1;
+		send_blank = blank_enabled;
 		
 		if (switch_channel_test_flag(channel, CF_VIDEO_READY) && !switch_test_flag(read_frame, SFF_CNG)) {
 			switch_mutex_lock(mh->file_read_mutex);
