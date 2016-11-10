@@ -1858,7 +1858,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 										  switch_stristr("cisco/spa30", ua) || switch_stristr("Grandstream GXP", ua) ||
 										  switch_stristr("Yealink", ua) || switch_stristr("Mitel", ua) ||
 										  switch_stristr("Panasonic", ua))) {
-							snprintf(message, sizeof(message), "P-Asserted-Identity: \"%s\" <sip:%s@%s>", name, number, tech_pvt->profile->printable_sipip);
+							snprintf(message, sizeof(message), "P-Asserted-Identity: \"%s\" <sip:%s@%s>", name, number, tech_pvt->profile->sipip);
 
 							sofia_set_flag_locked(tech_pvt, TFLAG_UPDATING_DISPLAY);
 							nua_update(tech_pvt->nh,
