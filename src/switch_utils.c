@@ -110,6 +110,7 @@ typedef struct switch_frame_node_s {
 struct switch_frame_buffer_s {
 	switch_frame_node_t *head;
 	switch_memory_pool_t *pool;
+	switch_queue_t *queue;
 	switch_mutex_t *mutex;
 	uint32_t total;
 };
@@ -164,8 +165,8 @@ static switch_frame_t *find_free_frame(switch_frame_buffer_t *fb, switch_frame_t
 	np->frame->ssrc = orig->ssrc;
 	np->frame->m = orig->m;
 	np->frame->flags = orig->flags;
-	np->frame->codec = NULL;
-	np->frame->pmap = NULL;
+	np->frame->codec = orig->codec;
+	np->frame->pmap = orig->pmap;
 	np->frame->img = NULL;
 	np->frame->extra_data = np;
 	np->inuse = 1;
@@ -243,6 +244,26 @@ SWITCH_DECLARE(switch_status_t) switch_frame_buffer_dup(switch_frame_buffer_t *f
 	return SWITCH_STATUS_SUCCESS;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_frame_buffer_push(switch_frame_buffer_t *fb, void *ptr)
+{
+	return switch_queue_push(fb->queue, ptr);
+}
+
+SWITCH_DECLARE(switch_status_t) switch_frame_buffer_trypush(switch_frame_buffer_t *fb, void *ptr)
+{
+	return switch_queue_trypush(fb->queue, ptr);
+}
+
+SWITCH_DECLARE(switch_status_t) switch_frame_buffer_pop(switch_frame_buffer_t *fb, void **ptr)
+{
+	return switch_queue_pop(fb->queue, ptr);
+}
+
+SWITCH_DECLARE(switch_status_t) switch_frame_buffer_trypop(switch_frame_buffer_t *fb, void **ptr)
+{
+	return switch_queue_trypop(fb->queue, ptr);
+}
+
 SWITCH_DECLARE(switch_status_t) switch_frame_buffer_destroy(switch_frame_buffer_t **fbP)
 {
 	switch_frame_buffer_t *fb = *fbP;
@@ -254,14 +275,17 @@ SWITCH_DECLARE(switch_status_t) switch_frame_buffer_destroy(switch_frame_buffer_
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_frame_buffer_create(switch_frame_buffer_t **fbP)
+SWITCH_DECLARE(switch_status_t) switch_frame_buffer_create(switch_frame_buffer_t **fbP, switch_size_t qlen)
 {
 	switch_frame_buffer_t *fb;
 	switch_memory_pool_t *pool;
 
+	if (!qlen) qlen = 500;
+
 	switch_core_new_memory_pool(&pool);
 	fb = switch_core_alloc(pool, sizeof(*fb));
 	fb->pool = pool;
+	switch_queue_create(&fb->queue, qlen, fb->pool);
 	switch_mutex_init(&fb->mutex, SWITCH_MUTEX_NESTED, pool);
 	*fbP = fb;
 
@@ -297,9 +321,11 @@ SWITCH_DECLARE(switch_status_t) switch_frame_dup(switch_frame_t *orig, switch_fr
 	}
 
 
-	new_frame->codec = NULL;
-	new_frame->pmap = NULL;
+	new_frame->codec = orig->codec;
+	new_frame->pmap = orig->pmap;
 	new_frame->img = NULL;
+
+
 	if (orig->img && !switch_test_flag(orig, SFF_ENCODED)) {
 		switch_img_copy(orig->img, &new_frame->img);
 	}

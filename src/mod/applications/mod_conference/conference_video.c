@@ -1326,7 +1326,7 @@ void conference_video_write_canvas_image_to_codec_group(conference_obj_t *confer
 				switch_set_flag(frame, SFF_ENCODED);
 
 				if (switch_frame_buffer_dup(imember->fb, frame, &dupframe) == SWITCH_STATUS_SUCCESS) {
-					if (switch_queue_trypush(imember->mux_out_queue, dupframe) != SWITCH_STATUS_SUCCESS) {
+					if (switch_frame_buffer_trypush(imember->fb, dupframe) != SWITCH_STATUS_SUCCESS) {
 						switch_frame_buffer_free(imember->fb, &dupframe);
 					}
 					dupframe = NULL;
@@ -1529,9 +1529,9 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_write_thread_run(switch_thread_
 	while(conference_utils_member_test_flag(member, MFLAG_RUNNING)) {
 
 		if (patched) {
-			pop_status = switch_queue_trypop(member->mux_out_queue, &pop);
+			pop_status = switch_frame_buffer_trypop(member->fb, &pop);
 		} else {
-			pop_status = switch_queue_pop(member->mux_out_queue, &pop);
+			pop_status = switch_frame_buffer_pop(member->fb, &pop);
 		}
 		
 		if (pop_status == SWITCH_STATUS_SUCCESS) {
@@ -1599,7 +1599,7 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_write_thread_run(switch_thread_
 		}
 	}
 
-	while (switch_queue_trypop(member->mux_out_queue, &pop) == SWITCH_STATUS_SUCCESS) {
+	while (switch_frame_buffer_trypop(member->fb, &pop) == SWITCH_STATUS_SUCCESS) {
 		if (pop) {
 			if ((switch_size_t)pop != 1) {
 				frame = (switch_frame_t *) pop;
@@ -2198,7 +2198,7 @@ static void wait_for_canvas(mcu_canvas_t *canvas)
 					
 			if (layer->need_patch) {
 				if (layer->member) {
-					switch_queue_trypush(layer->member->mux_out_queue, (void *) 1);
+					switch_frame_buffer_trypush(layer->member->fb, (void *) 1);
 					x++;
 				} else {
 					layer->need_patch = 0;
@@ -2949,7 +2949,9 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 					write_frame.packetlen = 0;
 
 					if (switch_frame_buffer_dup(imember->fb, &write_frame, &dupframe) == SWITCH_STATUS_SUCCESS) {
-						switch_queue_push(imember->mux_out_queue, dupframe);
+						if (switch_frame_buffer_trypush(imember->fb, dupframe) != SWITCH_STATUS_SUCCESS) {
+							switch_frame_buffer_free(imember->fb, &dupframe);
+						}
 						dupframe = NULL;
 					}
 				}
@@ -3139,7 +3141,7 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 				//switch_core_session_write_video_frame(imember->session, &write_frame, SWITCH_IO_FLAG_NONE, 0);
 
 				if (switch_frame_buffer_dup(imember->fb, &write_frame, &dupframe) == SWITCH_STATUS_SUCCESS) {
-					if (switch_queue_trypush(imember->mux_out_queue, dupframe) != SWITCH_STATUS_SUCCESS) {
+					if (switch_frame_buffer_trypush(imember->fb, dupframe) != SWITCH_STATUS_SUCCESS) {
 						switch_frame_buffer_free(imember->fb, &dupframe);
 					}
 					dupframe = NULL;
@@ -3487,7 +3489,7 @@ void *SWITCH_THREAD_FUNC conference_video_super_muxing_thread_run(switch_thread_
 			//switch_core_session_write_video_frame(imember->session, &write_frame, SWITCH_IO_FLAG_NONE, 0);
 
 			if (switch_frame_buffer_dup(imember->fb, &write_frame, &dupframe) == SWITCH_STATUS_SUCCESS) {
-				if (switch_queue_trypush(imember->mux_out_queue, dupframe) != SWITCH_STATUS_SUCCESS) {
+				if (switch_frame_buffer_trypush(imember->fb, dupframe) != SWITCH_STATUS_SUCCESS) {
 					switch_frame_buffer_free(imember->fb, &dupframe);
 				}
 				dupframe = NULL;

@@ -750,7 +750,6 @@ struct conference_member {
 	char *kicked_sound;
 	switch_queue_t *dtmf_queue;
 	switch_queue_t *video_queue;
-	switch_queue_t *mux_out_queue;
 	switch_thread_t *video_muxing_write_thread;
 	switch_thread_t *input_thread;
 	cJSON *json;

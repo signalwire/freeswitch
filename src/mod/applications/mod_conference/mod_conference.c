@@ -2297,8 +2297,7 @@ SWITCH_STANDARD_APP(conference_function)
 
 	if (conference->conference_video_mode == CONF_VIDEO_MODE_MUX) {
 		switch_queue_create(&member.video_queue, 200, member.pool);
-		switch_queue_create(&member.mux_out_queue, 500, member.pool);
-		switch_frame_buffer_create(&member.fb);
+		switch_frame_buffer_create(&member.fb, 500);
 	}
 
 	/* Add the caller to the conference */
@@ -2349,7 +2348,7 @@ SWITCH_STANDARD_APP(conference_function)
 
 	if (member.video_muxing_write_thread) {
 		switch_status_t st = SWITCH_STATUS_SUCCESS;
-		switch_queue_push(member.mux_out_queue, NULL);
+		switch_frame_buffer_push(member.fb, NULL);
 		switch_thread_join(&st, member.video_muxing_write_thread);
 		member.video_muxing_write_thread = NULL;
 	}
