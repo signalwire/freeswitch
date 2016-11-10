@@ -42,7 +42,9 @@
 #endif
 #include "private/switch_core_pvt.h"
 #define ESCAPE_META '\\'
+#ifdef SWITCH_HAVE_GUMBO
 #include "gumbo.h"
+#endif
 
 struct switch_network_node {
 	ip_t ip;
