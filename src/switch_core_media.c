@@ -6284,7 +6284,7 @@ static void *SWITCH_THREAD_FUNC audio_write_thread(switch_thread_t *thread, void
 			
 		}
 
-		if (switch_frame_buffer_pop(a_engine->write_fb, &pop) == SWITCH_STATUS_SUCCESS && pop) {
+		if (switch_frame_buffer_trypop(a_engine->write_fb, &pop) == SWITCH_STATUS_SUCCESS && pop) {
 			switch_frame_t *frame = (switch_frame_t *)pop;
 			
 			if ((switch_size_t)pop == 1) {
