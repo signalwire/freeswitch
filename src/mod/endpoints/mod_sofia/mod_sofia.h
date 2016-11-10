@@ -610,7 +610,6 @@ struct sofia_profile {
 
 	char *sdp_username;
 	char *sipip;
-	char *printable_sipip;
 	char *extsipip;
 	char *url;
 	char *public_url;
