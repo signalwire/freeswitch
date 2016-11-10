@@ -3773,6 +3773,10 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_answered(switch_chan
 	
 	switch_core_media_check_autoadj(channel->session);
 
+	if (switch_channel_test_flag(channel, CF_RTT)) {
+		switch_channel_set_flag_partner(channel, CF_RTT);
+	}
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -3810,7 +3814,8 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_answer(switch_channel_t *
 	}
 
 
-	if (switch_core_session_in_thread(channel->session) && !switch_channel_test_flag(channel, CF_PROXY_MODE)) {
+	if (switch_core_session_in_thread(channel->session) && !switch_channel_test_flag(channel, CF_PROXY_MODE) && 
+		!switch_channel_test_flag(channel, CF_HAS_TEXT)) {
 		const char *delay;
 
 		if ((delay = switch_channel_get_variable(channel, "answer_delay"))) {

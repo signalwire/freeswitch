@@ -42,6 +42,7 @@
 #endif
 #include "private/switch_core_pvt.h"
 #define ESCAPE_META '\\'
+#include "gumbo.h"
 
 struct switch_network_node {
 	ip_t ip;
@@ -4205,6 +4206,102 @@ SWITCH_DECLARE(void) switch_getcputime(switch_cputime *t)
 	t->kernelms = -1;
 #endif
 }
+
+
+#ifdef SWITCH_HAVE_GUMBO
+static void process(GumboNode *node, switch_stream_handle_t *stream)
+{
+	if (node->type == GUMBO_NODE_TEXT) {
+		stream->write_function(stream, "%s", node->v.text.text);
+		return;
+	} else if (node->type == GUMBO_NODE_ELEMENT && node->v.element.tag != GUMBO_TAG_SCRIPT && node->v.element.tag != GUMBO_TAG_STYLE) {
+		GumboVector *children = &node->v.element.children;
+		int i;
+		
+		if (node->v.element.tag != GUMBO_TAG_UNKNOWN && node->v.element.tag <= GUMBO_TAG_LAST) {
+			GumboAttribute* attr = NULL;
+			const char *aval = NULL;
+			
+			if (node->v.element.tag == GUMBO_TAG_SPAN) {
+				if ((attr = gumbo_get_attribute(&node->v.element.attributes, "class"))) {
+					aval = attr->value;
+				}
+			}
+
+			if (aval && !strcasecmp(aval, "Apple-converted-space")) {
+				const char *txt = ((GumboNode*)children->data[0])->v.text.text;
+				int x, len = 0;
+
+				for (x = 0; txt[x]; x++) {
+					if (txt[x] == ' ') {
+						len++;
+					}
+				}
+				
+				for (x = 0; x < len*2; x++) {
+					stream->write_function(stream, "%s", " ");
+				}
+			} else {
+				for (i = 0; i < children->length; ++i) {
+					process((GumboNode*) children->data[i], stream);				
+				}
+			}
+
+			if (node->v.element.tag == GUMBO_TAG_P || node->v.element.tag == GUMBO_TAG_BR) {
+				stream->write_function(stream, "%s", "\n");
+			}
+
+		}
+	}
+}
+#endif
+
+SWITCH_DECLARE(char *)switch_html_strip(const char *str)
+{
+	char *p, *html = NULL, *text = NULL;
+	int x = 0, got_ct = 0;
+#ifdef SWITCH_HAVE_GUMBO
+	GumboOutput *output;
+	switch_stream_handle_t stream;
+
+	SWITCH_STANDARD_STREAM(stream);
+#endif
+
+	for(p = (char *)str; p && *p; p++) {
+
+		if (!strncasecmp(p, "Content-Type:", 13)) {
+			got_ct++;
+		}
+		
+		if (!got_ct) continue;
+
+		if (*p == '\n') {
+			x++;
+			if (x == 2) {
+				break;
+			}
+		} else if (x && (*p != '\r')) {
+			x = 0;
+		}
+	}
+
+	html = p;
+
+#ifdef SWITCH_HAVE_GUMBO
+	if ((output = gumbo_parse_with_options(&kGumboDefaultOptions, html, strlen(html)))) {
+		process(output->root, &stream);
+		gumbo_destroy_output(&kGumboDefaultOptions, output);
+	}
+
+	text = (char *)stream.data;
+#else
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Support for html parser is not compiled.\n");
+	text = strdup(html);
+#endif
+
+	return text;
+}
+
 
 
 /* For Emacs:

@@ -195,6 +195,7 @@ struct switch_core_session {
 	switch_slin_data_t *sdata;
 
 	switch_buffer_t *text_buffer;
+	switch_buffer_t *text_line_buffer;
 	switch_mutex_t *text_mutex;
 };
 

@@ -379,7 +379,7 @@ SWITCH_DECLARE(const char *)Event::serialize(const char *format)
 		return serialized_string;
 	} else {
 		if (switch_event_serialize(event, &serialized_string, SWITCH_TRUE) == SWITCH_STATUS_SUCCESS) {
-			char *new_serialized_string = switch_mprintf("'%s'", serialized_string);
+			char *new_serialized_string = switch_mprintf("%s", serialized_string);
 			free(serialized_string);
 			serialized_string = new_serialized_string;
 			return serialized_string;
@@ -684,6 +684,16 @@ SWITCH_DECLARE(int) CoreSession::answer()
 	this_check(-1);
 	sanity_check(-1);
     status = switch_channel_answer(channel);
+    return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
+}
+
+
+SWITCH_DECLARE(int) CoreSession::print(char *txt)
+{
+    switch_status_t status;
+	status = switch_core_session_print(session, switch_str_nil(txt));
+	this_check(-1);
+	sanity_check(-1);
     return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
 }
 
@@ -1357,6 +1367,7 @@ SWITCH_DECLARE(void) console_log(char *level_str, char *msg)
 			level = SWITCH_LOG_DEBUG;
 		}
     }
+
     switch_log_printf(SWITCH_CHANNEL_LOG, level, "%s", switch_str_nil(msg));
 }
 

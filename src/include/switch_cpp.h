@@ -235,6 +235,7 @@ SWITCH_DECLARE(bool) email(char *to, char *from, char *headers = NULL, char *bod
 
 		 SWITCH_DECLARE(int) insertFile(const char *file, const char *insert_file, int sample_point);
 		 SWITCH_DECLARE(int) answer();
+		 SWITCH_DECLARE(int) print(char *txt);
 		 SWITCH_DECLARE(int) preAnswer();
 		 SWITCH_DECLARE(void) hangup(const char *cause = "normal_clearing");
 		 SWITCH_DECLARE(void) hangupState(void);

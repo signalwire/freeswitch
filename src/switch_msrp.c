@@ -319,6 +319,12 @@ SWITCH_DECLARE(switch_status_t) switch_msrp_session_destroy(switch_msrp_session_
 switch_status_t switch_msrp_session_push_msg(switch_msrp_session_t *ms, msrp_msg_t *msg)
 {
 	switch_mutex_lock(ms->mutex);
+
+	if (msg->payload && msg->payload_bytes) { /* add NULL byte */
+		*((char *)msg->payload + msg->payload_bytes) = '\0';
+		msg->payload_bytes++;
+	}
+	
 	if (ms->last_msg == NULL) {
 		ms->last_msg = msg;
 		ms->msrp_msg = msg;

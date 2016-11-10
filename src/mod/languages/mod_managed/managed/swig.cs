@@ -303,6 +303,11 @@ public class CoreSession : IDisposable {
     return ret;
   }
 
+  public int print(string txt) {
+    int ret = freeswitchPINVOKE.CoreSession_print(swigCPtr, txt);
+    return ret;
+  }
+
   public int preAnswer() {
     int ret = freeswitchPINVOKE.CoreSession_preAnswer(swigCPtr);
     return ret;
@@ -3745,6 +3750,12 @@ else
     return ret;
   }
 
+  public static string switch_get_hex_bytes(SWIGTYPE_p_unsigned_char buf, SWIGTYPE_p_switch_size_t datalen, string new_buf, SWIGTYPE_p_switch_size_t new_datalen) {
+    string ret = freeswitchPINVOKE.switch_get_hex_bytes(SWIGTYPE_p_unsigned_char.getCPtr(buf), SWIGTYPE_p_switch_size_t.getCPtr(datalen), new_buf, SWIGTYPE_p_switch_size_t.getCPtr(new_datalen));
+    if (freeswitchPINVOKE.SWIGPendingException.Pending) throw freeswitchPINVOKE.SWIGPendingException.Retrieve();
+    return ret;
+  }
+
   public static uint switch_round_to_step(uint num, uint step) {
     uint ret = freeswitchPINVOKE.switch_round_to_step(num, step);
     return ret;
@@ -4437,6 +4448,11 @@ else
 
   public static void switch_getcputime(switch_cputime t) {
     freeswitchPINVOKE.switch_getcputime(switch_cputime.getCPtr(t));
+  }
+
+  public static string switch_html_strip(string str) {
+    string ret = freeswitchPINVOKE.switch_html_strip(str);
+    return ret;
   }
 
   public static switch_caller_extension switch_caller_extension_new(SWIGTYPE_p_switch_core_session session, string extension_name, string extension_number) {
@@ -12416,6 +12432,9 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_SWITCH_URL_UNSAFE_get")]
   public static extern string SWITCH_URL_UNSAFE_get();
 
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_get_hex_bytes")]
+  public static extern string switch_get_hex_bytes(HandleRef jarg1, HandleRef jarg2, string jarg3, HandleRef jarg4);
+
   [DllImport("mod_managed", EntryPoint="CSharp_switch_round_to_step")]
   public static extern uint switch_round_to_step(uint jarg1, uint jarg2);
 
@@ -12979,6 +12998,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_getcputime")]
   public static extern void switch_getcputime(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_html_strip")]
+  public static extern string switch_html_strip(string jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_profile_node_t_var_set")]
   public static extern void profile_node_t_var_set(HandleRef jarg1, string jarg2);
@@ -19354,6 +19376,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_CoreSession_Answer")]
   public static extern int CoreSession_Answer(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_CoreSession_print")]
+  public static extern int CoreSession_print(HandleRef jarg1, string jarg2);
 
   [DllImport("mod_managed", EntryPoint="CSharp_CoreSession_preAnswer")]
   public static extern int CoreSession_preAnswer(HandleRef jarg1);
@@ -27112,7 +27137,8 @@ namespace FreeSWITCH.Native {
   SAF_ROUTING_EXEC = (1 << 1),
   SAF_MEDIA_TAP = (1 << 2),
   SAF_ZOMBIE_EXEC = (1 << 3),
-  SAF_NO_LOOPBACK = (1 << 4)
+  SAF_NO_LOOPBACK = (1 << 4),
+  SAF_SUPPORT_TEXT_ONLY = (1 << 5)
 }
 
 }
@@ -29780,7 +29806,15 @@ public enum switch_channel_flag_t {
   CF_TEXT_ECHO,
   CF_TEXT_ACTIVE,
   CF_TEXT_IDLE,
+  CF_TEXT_LINE_BASED,
+  CF_QUEUE_TEXT_EVENTS,
   CF_MSRP,
+  CF_MSRPS,
+  CF_WANT_MSRP,
+  CF_WANT_MSRPS,
+  CF_RTT,
+  CF_WANT_RTT,
+  CF_AUDIO,
   CF_FLAG_MAX
 }
 

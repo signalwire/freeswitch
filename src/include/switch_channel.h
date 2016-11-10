@@ -93,6 +93,9 @@ SWITCH_DECLARE(int) switch_channel_test_ready(switch_channel_t *channel, switch_
 
 #define switch_channel_media_ack(_channel) (!switch_channel_test_cap(_channel, CC_MEDIA_ACK) || switch_channel_test_flag(_channel, CF_MEDIA_ACK))
 
+#define switch_channel_text_only(_channel) (switch_channel_test_flag(_channel, CF_HAS_TEXT) && !switch_channel_test_flag(_channel, CF_AUDIO))
+
+
 SWITCH_DECLARE(void) switch_channel_wait_for_state(switch_channel_t *channel, switch_channel_t *other_channel, switch_channel_state_t want_state);
 SWITCH_DECLARE(void) switch_channel_wait_for_state_timeout(switch_channel_t *other_channel, switch_channel_state_t want_state, uint32_t timeout);
 SWITCH_DECLARE(switch_status_t) switch_channel_wait_for_flag(switch_channel_t *channel,
