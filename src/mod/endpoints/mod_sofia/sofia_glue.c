@@ -1297,6 +1297,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
     }
 
 	if (sofia_use_soa(tech_pvt)) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_CRIT, "INVITE WITH SOA:\n%s\n", tech_pvt->mparams.local_sdp_str);
 		nua_invite(tech_pvt->nh,
 				   NUTAG_AUTOANSWER(0),
 				   //TAG_IF(zstr(tech_pvt->mparams.local_sdp_str), NUTAG_AUTOACK(0)),
@@ -1336,6 +1337,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 				   TAG_IF(!require_timer, NUTAG_TIMER_AUTOREQUIRE(0)),
 				   TAG_IF(!zstr(tech_pvt->mparams.local_sdp_str), SOATAG_HOLD(holdstr)), TAG_END());
 	} else {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_CRIT, "INVITE WITHOUT SOA:\n%s\n", tech_pvt->mparams.local_sdp_str);
 		nua_invite(tech_pvt->nh,
 				   NUTAG_AUTOANSWER(0),
 				   NUTAG_AUTOACK(0),
