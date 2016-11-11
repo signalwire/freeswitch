@@ -14022,7 +14022,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_text_frame(switch_core_
 				if (switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
 					switch_channel_event_set_extended_data(session->channel, event);
 
-					switch_event_add_body(event, (char *)data);
+					switch_event_add_body(event, "%s", (char *)data);
 					switch_core_session_queue_event(session, &event);
 				}
 				if (session->text_line_buffer) {
