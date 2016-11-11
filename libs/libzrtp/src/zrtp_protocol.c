@@ -65,6 +65,54 @@ static zrtp_status_t _attach_secret( zrtp_session_t *session,
 	return zrtp_status_ok;
 }
 
+static zrtp_status_t _attach_auxs_secret(zrtp_stream_t *stream,
+										 zrtp_proto_secret_t* psec,
+										 zrtp_shared_secret_t* sec,
+										 uint8_t is_initiator)
+{
+	zrtp_uchar32_t buff;
+
+	zrtp_string32_t myH3;
+	ZSTR_SET_EMPTY(myH3);
+	zrtp_zstrncpyc(ZSTR_GV(myH3), stream->messages.hello.hash, sizeof(stream->messages.hello.hash));
+
+	zrtp_string32_t peerH3;
+	ZSTR_SET_EMPTY(peerH3);
+	zrtp_zstrncpyc(ZSTR_GV(peerH3), stream->messages.peer_hello.hash, sizeof(stream->messages.peer_hello.hash));
+
+	ZSTR_SET_EMPTY(psec->id);
+	ZSTR_SET_EMPTY(psec->peer_id);
+	psec->secret = sec;
+
+	if (psec->secret) {
+		stream->session->hash->hmac_truncated(stream->session->hash,
+			ZSTR_GV(sec->value),
+			ZSTR_GV(myH3),
+			ZRTP_RSID_SIZE,
+			ZSTR_GV(psec->id));
+
+		stream->session->hash->hmac_truncated(stream->session->hash,
+			ZSTR_GV(sec->value),
+			ZSTR_GV(peerH3),
+			ZRTP_RSID_SIZE,
+			ZSTR_GV(psec->peer_id));
+	}
+	else {
+		psec->id.length = ZRTP_RSID_SIZE;
+		zrtp_memset(psec->id.buffer, 0, psec->id.length);
+
+		psec->peer_id.length = ZRTP_RSID_SIZE;
+		zrtp_memset(psec->peer_id.buffer, 0, psec->peer_id.length);
+	}
+
+	ZRTP_LOG(3, (_ZTU_, "\tAttach RS/auxs id=%s.\n",
+		hex2str((const char*)psec->id.buffer, psec->id.length, (char*)buff, sizeof(buff))));
+	ZRTP_LOG(3, (_ZTU_, "\tAttach RS/auxs peer_id=%s.\n",
+		hex2str((const char*)psec->peer_id.buffer, psec->peer_id.length, (char*)buff, sizeof(buff))));
+
+	return zrtp_status_ok;
+}
+
 zrtp_status_t _zrtp_protocol_init(zrtp_stream_t *stream, uint8_t is_initiator, zrtp_protocol_t **protocol)
 {
 	zrtp_protocol_t	*new_proto = NULL;
@@ -118,7 +166,7 @@ zrtp_status_t _zrtp_protocol_init(zrtp_stream_t *stream, uint8_t is_initiator, z
 		if (ZRTP_IS_STREAM_DH(stream)) {
 			_attach_secret(stream->session, &new_proto->cc->rs1, stream->session->secrets.rs1, is_initiator);
 			_attach_secret(stream->session, &new_proto->cc->rs2, stream->session->secrets.rs2, is_initiator);		
-			_attach_secret(stream->session, &new_proto->cc->auxs, stream->session->secrets.auxs, is_initiator);
+			_attach_auxs_secret(stream, &new_proto->cc->auxs, stream->session->secrets.auxs, is_initiator);
 			_attach_secret(stream->session, &new_proto->cc->pbxs, stream->session->secrets.pbxs, is_initiator);
 		}
 		
@@ -299,6 +347,10 @@ static zrtp_status_t _derive_s0(zrtp_stream_t* stream, int is_initiator)
 		ZRTP_LOG(3,(_ZTU_,"\t      my pbxsID:%s\n", hex2str(cc->pbxs.id.buffer, cc->pbxs.id.length, print_buff, sizeof(print_buff))));
 		ZRTP_LOG(3,(_ZTU_,"\t     his pbxsID:%s\n", hex2str((const char*)stream->messages.peer_dhpart.pbxsID, ZRTP_RSID_SIZE, print_buff, sizeof(print_buff))));
 		ZRTP_LOG(3,(_ZTU_,"\this pbxsID comp:%s\n", hex2str(cc->pbxs.peer_id.buffer, cc->pbxs.peer_id.length, print_buff, sizeof(print_buff))));
+
+		ZRTP_LOG(3, (_ZTU_, "\t      my auxsID:%s\n", hex2str(cc->auxs.id.buffer, cc->auxs.id.length, print_buff, sizeof(print_buff))));
+		ZRTP_LOG(3, (_ZTU_, "\t     his auxsID:%s\n", hex2str((const char*)stream->messages.peer_dhpart.auxsID, ZRTP_RSID_SIZE, print_buff, sizeof(print_buff))));
+		ZRTP_LOG(3, (_ZTU_, "\this auxsID comp:%s\n", hex2str(cc->auxs.peer_id.buffer, cc->auxs.peer_id.length, print_buff, sizeof(print_buff))));
 
 		hash_ctx = session->hash->hash_begin(session->hash);
 		if (0 == hash_ctx) {
