@@ -44,6 +44,7 @@ struct switch_ivr_dmachine_binding {
 	uint8_t rmatch;
 	switch_ivr_dmachine_callback_t callback;
 	switch_byte_t is_regex;
+	switch_byte_t is_priority;
 	void *user_data;
 	struct switch_ivr_dmachine_binding *next;
 };
@@ -247,7 +248,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_clear_realm(switch_ivr_dmach
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_bind(switch_ivr_dmachine_t *dmachine, 
 														 const char *realm,
-														 const char *digits, 
+														 const char *digits,
+														 switch_byte_t is_priority,														 
 														 int32_t key,
 														 switch_ivr_dmachine_callback_t callback,
 														 void *user_data)
@@ -291,6 +293,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_bind(switch_ivr_dmachine_t *
 
 	binding->key = key;
 	binding->digits = switch_core_strdup(dmachine->pool, digits);
+	binding->is_priority = is_priority;
 	binding->callback = callback;
 	binding->user_data = user_data;
 
@@ -348,11 +351,7 @@ static dm_match_t switch_ivr_dmachine_check_match(switch_ivr_dmachine_t *dmachin
 		if (bp->is_regex) {
 			switch_status_t r_status = switch_regex_match(dmachine->digits, bp->digits);
 			
-			if (r_status == SWITCH_STATUS_SUCCESS) {
-				bp->rmatch++;
-			} else {
-				bp->rmatch = 0;
-			}
+			bp->rmatch = r_status == SWITCH_STATUS_SUCCESS;
 
 			rmatches++;
 			pmatches++;
@@ -360,7 +359,9 @@ static dm_match_t switch_ivr_dmachine_check_match(switch_ivr_dmachine_t *dmachin
 		} else {
 			if (!strncmp(dmachine->digits, bp->digits, strlen(dmachine->digits))) {
 				pmatches++;
-				ematches = 1;
+				if (dmachine->cur_digit_len == strlen(bp->digits)) {
+					ematches++;
+				}
 			}
 		}
 	}
@@ -382,7 +383,7 @@ static dm_match_t switch_ivr_dmachine_check_match(switch_ivr_dmachine_t *dmachin
 	for(bp = dmachine->realm->binding_list; bp; bp = bp->next) {
 		if (bp->is_regex) {
 			if (bp->rmatch) {
-				if (is_timeout || (bp == dmachine->realm->binding_list && !bp->next)) {
+				if ((bp->is_priority && ! ematches) || is_timeout || (bp == dmachine->realm->binding_list && !bp->next)) {					
 					best = DM_MATCH_EXACT;
 					exact_bp = bp;
 					break;
@@ -392,10 +393,10 @@ static dm_match_t switch_ivr_dmachine_check_match(switch_ivr_dmachine_t *dmachin
 		} else {
 			int pmatch = !strncmp(dmachine->digits, bp->digits, strlen(dmachine->digits));
 
-			if (!exact_bp && pmatch && (((pmatches == 1 || ematches == 1) && !rmatches) || is_timeout) && !strcmp(bp->digits, dmachine->digits)) {
+			if (!exact_bp && pmatch && (!rmatches || bp->is_priority || is_timeout) && !strcmp(bp->digits, dmachine->digits)) {				
 				best = DM_MATCH_EXACT;
 				exact_bp = bp;
-				if (dmachine->cur_digit_len == dmachine->max_digit_len) break;
+				if (bp->is_priority || dmachine->cur_digit_len == dmachine->max_digit_len) break;				
 			} 
 
 			if (!(both_bp && partial_bp) && strlen(bp->digits) != strlen(dmachine->digits) && pmatch) {

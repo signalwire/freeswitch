@@ -85,8 +85,7 @@ void conference_member_do_binding(conference_member_t *member, conference_key_ca
 	}
 
 	binding->handler = handler;
-	switch_ivr_dmachine_bind(member->dmachine, "conf", digits, 0, conference_loop_dmachine_dispatcher, binding);
-
+	switch_ivr_dmachine_bind(member->dmachine, "conf", digits, 0, 0, conference_loop_dmachine_dispatcher, binding);
 }
 
 void conference_member_bind_controls(conference_member_t *member, const char *controls)

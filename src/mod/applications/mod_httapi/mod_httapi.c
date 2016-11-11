@@ -563,7 +563,7 @@ static switch_status_t parse_playback(const char *tag_name, client_t *client, sw
 			action_binding->error_file = (char *) error_file;
 			action_binding->parent = top_action_binding;
 			
-			switch_ivr_dmachine_bind(dmachine, action_binding->realm, action_binding->input, 0, digit_action_callback, action_binding);
+			switch_ivr_dmachine_bind(dmachine, action_binding->realm, action_binding->input, 0, 0, digit_action_callback, action_binding);
 			bind = bind->next;
 		}
 		
@@ -1067,7 +1067,7 @@ static switch_status_t parse_record(const char *tag_name, client_t *client, swit
 			action_binding->error_file = (char *) error_file;
 			action_binding->parent = top_action_binding;
 			
-			switch_ivr_dmachine_bind(dmachine, action_binding->realm, action_binding->input, 0, digit_action_callback, action_binding);
+			switch_ivr_dmachine_bind(dmachine, action_binding->realm, action_binding->input, 0, 0, digit_action_callback, action_binding);
 			bind = bind->next;
 		}
 		
