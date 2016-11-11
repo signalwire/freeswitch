@@ -5,6 +5,8 @@
     <param name="listen-ssl-port" value="2856"/>
     <!-- <param name="message-buffer-size" value="50"/> -->
     <!-- <param name="debug" value="true"/> -->
+    <!-- <param name="secure-cert" value="$${certs_dir}/wss.pem"/> -->
+    <!-- <param name="secure-key" value="$${certs_dir}/wss.pem"/> -->
   </settings>
 </configuration>
 

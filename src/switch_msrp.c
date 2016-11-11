@@ -40,10 +40,13 @@
 static struct {
 	int running;
 	int debug;
+	switch_memory_pool_t *pool;
 	// switch_mutex_t *mutex;
 	char *ip;
 	int message_buffer_size;
 
+	char *cert;
+	char *key;
 	const SSL_METHOD *ssl_method;
 	SSL_CTX *ssl_ctx;
 	SSL *ssl;
@@ -70,9 +73,6 @@ static void msrp_deinit_ssl()
 static int msrp_init_ssl()
 {
 	const char *err = "";
-	char *cert = "/usr/local/freeswitch/certs/wss.pem";
-	char *key = cert;
-
 
 	SSL_library_init();
 
@@ -103,24 +103,24 @@ static int msrp_init_ssl()
 	// 	}
 	// }
 
-	if (switch_file_exists(cert, NULL) != SWITCH_STATUS_SUCCESS) {
+	if (switch_file_exists(globals.cert, NULL) != SWITCH_STATUS_SUCCESS) {
 		err = "SUPPLIED CERT FILE NOT FOUND\n";
 		goto fail;
 	}
 
-	if (!SSL_CTX_use_certificate_file(globals.ssl_ctx, cert, SSL_FILETYPE_PEM)) {
+	if (!SSL_CTX_use_certificate_file(globals.ssl_ctx, globals.cert, SSL_FILETYPE_PEM)) {
 		err = "CERT FILE ERROR";
 		goto fail;
 	}
 
 	/* set the private key from KeyFile */
 
-	if (switch_file_exists(key, NULL) != SWITCH_STATUS_SUCCESS) {
+	if (switch_file_exists(globals.key, NULL) != SWITCH_STATUS_SUCCESS) {
 		err = "SUPPLIED KEY FILE NOT FOUND\n";
 		goto fail;
 	}
 
-	if (!SSL_CTX_use_PrivateKey_file(globals.ssl_ctx, key, SSL_FILETYPE_PEM)) {
+	if (!SSL_CTX_use_PrivateKey_file(globals.ssl_ctx, globals.key, SSL_FILETYPE_PEM)) {
 		err = "PRIVATE KEY FILE ERROR";
 		goto fail;
 	}
@@ -140,7 +140,7 @@ static int msrp_init_ssl()
 
 	globals.ssl_ready = 0;
 	msrp_deinit_ssl();
-
+	
 	return 0;
 }
 
@@ -170,11 +170,27 @@ static switch_status_t load_config()
 				globals.msock_ssl.port = atoi(val);
 			} else if (!strcasecmp(var, "debug")) {
 				globals.debug = switch_true(val);
+			} else if (!strcasecmp(var, "secure-cert")) {
+				globals.cert = switch_core_strdup(globals.pool, val);
+			} else if (!strcasecmp(var, "secure-key")) {
+				globals.key = switch_core_strdup(globals.pool, val);
 			} else if (!strcasecmp(var, "message-buffer-size") && val) {
 				globals.message_buffer_size = atoi(val);
 				if (globals.message_buffer_size == 0) globals.message_buffer_size = 50;
 			}
 		}
+	}
+
+	if (!globals.cert) {
+		globals.cert = switch_core_sprintf(globals.pool, "%s%swss.pem", SWITCH_GLOBAL_dirs.certs_dir, SWITCH_PATH_SEPARATOR);
+	}
+
+	if (!globals.key) {
+		globals.key = globals.cert;
+	}
+
+	if ( switch_file_exists(globals.key, globals.pool) != SWITCH_STATUS_SUCCESS ) {
+		switch_core_gen_certs(globals.key);
 	}
 
 	switch_xml_free(xml);
@@ -237,6 +253,7 @@ SWITCH_DECLARE(switch_status_t) switch_msrp_init()
 
 	memset(&globals, 0, sizeof(globals));
 	set_global_ip("0.0.0.0");
+	globals.pool = pool;
 	globals.msock.port = (switch_port_t)MSRP_LISTEN_PORT;
 	globals.msock_ssl.port = (switch_port_t)MSRP_SSL_LISTEN_PORT;
 	globals.msock_ssl.secure = 1;
