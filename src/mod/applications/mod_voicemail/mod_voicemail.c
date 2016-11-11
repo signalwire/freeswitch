@@ -1778,7 +1778,7 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
 				}
 
 			} else if (!strcmp(input, profile->delete_file_key) || (!strcmp(input, profile->email_key) && !zstr(cbt->email))) {
-				char *sql = switch_mprintf("update voicemail_msgs set flags='delete' where uuid='%s'", cbt->uuid);
+				char *sql = switch_mprintf("update voicemail_msgs set flags='delete' where uuid='%q'", cbt->uuid);
 				vm_execute_sql(profile, sql, profile->mutex);
 				switch_safe_free(sql);
 				if (!strcmp(input, profile->email_key) && !zstr(cbt->email)) {
@@ -1891,7 +1891,7 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
 					TRY_CODE(switch_ivr_phrase_macro(session, VM_ACK_MACRO, "deleted", NULL, NULL));
 				}
 			} else {
-				char *sql = switch_mprintf("update voicemail_msgs set flags='save' where uuid='%s'", cbt->uuid);
+				char *sql = switch_mprintf("update voicemail_msgs set flags='save' where uuid='%q'", cbt->uuid);
 				vm_execute_sql(profile, sql, profile->mutex);
 				switch_safe_free(sql);
 				TRY_CODE(switch_ivr_phrase_macro(session, VM_ACK_MACRO, "saved", NULL, NULL));
@@ -2119,7 +2119,7 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 				switch (play_msg_type) {
 				case MSG_NEW:
 					{
-						switch_snprintf(sql, sizeof(sql),
+						switch_snprintfv(sql, sizeof(sql),
 										"select created_epoch, read_epoch, username, domain, uuid, cid_name, cid_number, in_folder, file_path, message_len, flags, read_flags, forwarded_by from voicemail_msgs where username='%s' and domain='%s' and read_epoch=0"
 										" order by read_flags, created_epoch %s", myid, domain_name,
 										profile->play_new_messages_lifo ? "desc" : "asc");
@@ -2130,7 +2130,7 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 				case MSG_SAVED:
 				default:
 					{
-						switch_snprintf(sql, sizeof(sql),
+						switch_snprintfv(sql, sizeof(sql),
 										"select created_epoch, read_epoch, username, domain, uuid, cid_name, cid_number, in_folder, file_path, message_len, flags, read_flags, forwarded_by from voicemail_msgs where username='%s' and domain='%s' and read_epoch !=0"
 										" order by read_flags, created_epoch %s", myid, domain_name,
 										profile->play_saved_messages_lifo ? "desc" : "asc");
@@ -2163,8 +2163,8 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 						break;
 					}
 				}
-				switch_snprintf(sql, sizeof(sql), "update voicemail_msgs set read_epoch=%ld where read_epoch=0 and "
-								"username='%s' and domain='%s' and flags='save'",
+				switch_snprintfv(sql, sizeof(sql), "update voicemail_msgs set read_epoch=%ld where read_epoch=0 and "
+								"username='%q' and domain='%q' and flags='save'",
 								(long) switch_epoch_time_now(NULL), myid, domain_name);
 				vm_execute_sql(profile, sql, profile->mutex);
 				switch_snprintfv(sql, sizeof(sql), "select file_path from voicemail_msgs where username='%q' and domain='%q' and flags='delete'", myid,
@@ -2242,11 +2242,11 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 						TRY_CODE(switch_ivr_phrase_macro(session, VM_CHOOSE_GREETING_SELECTED_MACRO, input, NULL, NULL));
 						if (file_path == NULL) {
 							sql =
-								switch_mprintf("update voicemail_prefs set greeting_path=NULL where username='%s' and domain='%s'", myid,
+								switch_mprintf("update voicemail_prefs set greeting_path=NULL where username='%q' and domain='%q'", myid,
 										   domain_name);
 						} else {
 							sql =
-								switch_mprintf("update voicemail_prefs set greeting_path='%s' where username='%s' and domain='%s'",
+								switch_mprintf("update voicemail_prefs set greeting_path='%q' where username='%q' and domain='%q'",
 										   file_path, myid, domain_name);
 						}
 						vm_execute_sql(profile, sql, profile->mutex);
@@ -2282,7 +2282,7 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 						switch_file_rename(tmp_file_path, file_path, switch_core_session_get_pool(session));
 						
 						sql =
-							switch_mprintf("update voicemail_prefs set greeting_path='%s' where username='%s' and domain='%s'", file_path, myid,
+							switch_mprintf("update voicemail_prefs set greeting_path='%q' where username='%q' and domain='%q'", file_path, myid,
 										   domain_name);
 						vm_execute_sql(profile, sql, profile->mutex);
 						switch_safe_free(sql);
@@ -2341,7 +2341,7 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 							switch_ivr_phrase_macro(session, VM_CHANGE_PASS_FAIL_MACRO, NULL, NULL, NULL);
 							switch_event_destroy(&params);
 						} else {
-							sql = switch_mprintf("update voicemail_prefs set password='%s' where username='%s' and domain='%s'", buf, myid, domain_name);
+							sql = switch_mprintf("update voicemail_prefs set password='%q' where username='%q' and domain='%q'", buf, myid, domain_name);
 							vm_execute_sql(profile, sql, profile->mutex);
 							switch_safe_free(file_path);
 							switch_safe_free(sql);
@@ -2359,7 +2359,7 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 					unlink(tmp_file_path);
 					TRY_CODE(create_file(session, profile, VM_RECORD_NAME_MACRO, file_path, &message_len, SWITCH_FALSE, NULL, NULL));
 					switch_file_rename(tmp_file_path, file_path, switch_core_session_get_pool(session));
-					sql = switch_mprintf("update voicemail_prefs set name_path='%s' where username='%s' and domain='%s'", file_path, myid, domain_name);
+					sql = switch_mprintf("update voicemail_prefs set name_path='%q' where username='%q' and domain='%q'", file_path, myid, domain_name);
 					vm_execute_sql(profile, sql, profile->mutex);
 					switch_safe_free(tmp_file_path);
 					switch_safe_free(sql);
@@ -4240,13 +4240,13 @@ static void do_play(vm_profile_t *profile, char *user_in, char *domain, char *fi
 
 	user = resolve_id(user_in, domain, "web-vm");
 
-	sql = switch_mprintf("update voicemail_msgs set read_epoch=%ld where username='%s' and domain='%s' and file_path like '%%%s'",
+	sql = switch_mprintf("update voicemail_msgs set read_epoch=%ld where username='%q' and domain='%q' and file_path like '%%%q'",
 						 (long) switch_epoch_time_now(NULL), user, domain, file);
 
 	vm_execute_sql(profile, sql, profile->mutex);
 	free(sql);
 
-	sql = switch_mprintf("select created_epoch, read_epoch, username, domain, uuid, cid_name, cid_number, in_folder, file_path, message_len, flags, read_flags, forwarded_by from voicemail_msgs where username='%s' and domain='%s' and file_path like '%%%s' order by created_epoch",
+	sql = switch_mprintf("select created_epoch, read_epoch, username, domain, uuid, cid_name, cid_number, in_folder, file_path, message_len, flags, read_flags, forwarded_by from voicemail_msgs where username='%q' and domain='%q' and file_path like '%%%q' order by created_epoch",
 						 user, domain, file);
 	memset(&holder, 0, sizeof(holder));
 	holder.profile = profile;
@@ -4272,7 +4272,7 @@ static void do_del(vm_profile_t *profile, char *user_in, char *domain, char *fil
 		ref = switch_event_get_header(stream->param_event, "http-referer");
 	}
 
-	sql = switch_mprintf("select created_epoch, read_epoch, username, domain, uuid, cid_name, cid_number, in_folder, file_path, message_len, flags, read_flags, forwarded_by from voicemail_msgs where username='%s' and domain='%s' and file_path like '%%%s' order by created_epoch",
+	sql = switch_mprintf("select created_epoch, read_epoch, username, domain, uuid, cid_name, cid_number, in_folder, file_path, message_len, flags, read_flags, forwarded_by from voicemail_msgs where username='%q' and domain='%q' and file_path like '%%%q' order by created_epoch",
 						 user, domain, file);
 	memset(&holder, 0, sizeof(holder));
 	holder.profile = profile;
@@ -4280,7 +4280,7 @@ static void do_del(vm_profile_t *profile, char *user_in, char *domain, char *fil
 	vm_execute_sql_callback(profile, profile->mutex, sql, del_callback, &holder);
 
 	switch_safe_free(sql);
-	sql = switch_mprintf("delete from voicemail_msgs where username='%s' and domain='%s' and file_path like '%%%s'", user, domain, file);
+	sql = switch_mprintf("delete from voicemail_msgs where username='%q' and domain='%q' and file_path like '%%%q'", user, domain, file);
 	vm_execute_sql(profile, sql, profile->mutex);
 	free(sql);
 
@@ -4537,7 +4537,7 @@ static void do_rss(vm_profile_t *profile, char *user, char *domain, char *host, 
 	x_tmp = switch_xml_add_child_d(holder.x_channel, "ttl", 0);
 	switch_xml_set_txt_d(x_tmp, "15");
 
-	sql = switch_mprintf("select created_epoch, read_epoch, username, domain, uuid, cid_name, cid_number, in_folder, file_path, message_len, flags, read_flags, forwarded_by from voicemail_msgs where username='%s' and domain='%s' order by read_flags, created_epoch", user, domain);
+	sql = switch_mprintf("select created_epoch, read_epoch, username, domain, uuid, cid_name, cid_number, in_folder, file_path, message_len, flags, read_flags, forwarded_by from voicemail_msgs where username='%q' and domain='%q' order by read_flags, created_epoch", user, domain);
 	vm_execute_sql_callback(profile, profile->mutex, sql, rss_callback, &holder);
 
 	xmlstr = switch_xml_toxml(holder.xml, SWITCH_TRUE);
@@ -4580,11 +4580,11 @@ static void do_web(vm_profile_t *profile, const char *user_in, const char *domai
 	cbt.buf = buf;
 	cbt.len = sizeof(buf);
 
-	sql = switch_mprintf("select created_epoch, read_epoch, username, domain, uuid, cid_name, cid_number, in_folder, file_path, message_len, flags, read_flags, forwarded_by from voicemail_msgs where username='%s' and domain='%s' order by read_flags, created_epoch", user, domain);
+	sql = switch_mprintf("select created_epoch, read_epoch, username, domain, uuid, cid_name, cid_number, in_folder, file_path, message_len, flags, read_flags, forwarded_by from voicemail_msgs where username='%q' and domain='%q' order by read_flags, created_epoch", user, domain);
 	vm_execute_sql_callback(profile, profile->mutex, sql, web_callback, &holder);
 	switch_safe_free(sql);
 
-	sql = switch_mprintf("select count(*) from voicemail_msgs where username='%s' and domain='%s' order by read_flags", user, domain);
+	sql = switch_mprintf("select count(*) from voicemail_msgs where username='%q' and domain='%q' order by read_flags", user, domain);
 	vm_execute_sql_callback(profile, profile->mutex, sql, sql2str_callback, &cbt);
 	switch_safe_free(sql);
 

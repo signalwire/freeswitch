@@ -172,7 +172,7 @@ SWITCH_STANDARD_API(snom_command_api_function)
 			goto end;
 		}
 
-		sql = switch_mprintf("select network_ip from registrations where url = '%s'", apiresp);
+		sql = switch_mprintf("select network_ip from registrations where url = '%q'", apiresp);
 
 		ret = switch_cache_db_execute_sql2str(db, sql, host, sizeof(host), NULL);
 		switch_safe_free(sql);

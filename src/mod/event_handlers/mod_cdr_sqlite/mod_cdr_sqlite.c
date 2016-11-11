@@ -159,7 +159,7 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 		return SWITCH_STATUS_FALSE;
 	}
 
-	sql = switch_mprintf("INSERT INTO %s VALUES (%s)", globals.db_table, expanded_vars);
+	sql = switch_mprintf("INSERT INTO %q VALUES (%s)", globals.db_table, expanded_vars);
 	assert(sql);
 	write_cdr(sql);
 	switch_safe_free(sql);
@@ -262,7 +262,7 @@ static switch_status_t load_config(switch_memory_pool_t *pool)
 	dbh = cdr_get_db_handle();
 
 	if (dbh) {
-		select_sql = switch_mprintf("SELECT * FROM %s LIMIT 1", globals.db_table);
+		select_sql = switch_mprintf("SELECT * FROM %q LIMIT 1", globals.db_table);
 		assert(select_sql);
 
 		create_sql = switch_mprintf(default_create_sql, globals.db_table);

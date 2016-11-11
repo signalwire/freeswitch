@@ -1070,7 +1070,7 @@ switch_status_t skinny_hold_active_calls(listener_t *listener)
 					"ON skinny_active_lines.device_name = skinny_lines.device_name "
 					"AND skinny_active_lines.device_instance = skinny_lines.device_instance "
 					"AND skinny_active_lines.line_instance = skinny_lines.line_instance "
-					"WHERE skinny_lines.device_name='%s' AND skinny_lines.device_instance=%d AND (call_state=%d OR call_state=%d)",
+					"WHERE skinny_lines.device_name='%q' AND skinny_lines.device_instance=%d AND (call_state=%d OR call_state=%d)",
 					listener->device_name, listener->device_instance, SKINNY_PROCEED, SKINNY_CONNECTED))) {
 		skinny_execute_sql_callback(listener->profile, listener->profile->sql_mutex, sql, skinny_hold_active_calls_callback, &helper);
 		switch_safe_free(sql);
@@ -1673,7 +1673,7 @@ switch_status_t skinny_handle_on_hook_message(listener_t *listener, skinny_messa
 		"ON skinny_active_lines.device_name = skinny_lines.device_name "
 		"AND skinny_active_lines.device_instance = skinny_lines.device_instance "
 		"AND skinny_active_lines.line_instance = skinny_lines.line_instance "
-		"WHERE skinny_lines.device_name='%s' AND skinny_lines.device_instance=%d",
+		"WHERE skinny_lines.device_name='%q' AND skinny_lines.device_instance=%d",
 		listener->device_name, listener->device_instance))) 
 	{
 		skinny_execute_sql_callback(listener->profile, listener->profile->sql_mutex, sql, skinny_hangup_active_calls_callback, &helper);
@@ -1778,9 +1778,9 @@ switch_status_t skinny_handle_config_stat_request(listener_t *listener, skinny_m
 
 	if ((sql = switch_mprintf(
 					"SELECT name, user_id, instance, '' AS user_name, '' AS server_name, "
-					"(SELECT COUNT(*) FROM skinny_lines WHERE device_name='%s' AND device_instance=%d) AS number_lines, "
-					"(SELECT COUNT(*) FROM skinny_buttons WHERE device_name='%s' AND device_instance=%d AND type=%d) AS number_speed_dials "
-					"FROM skinny_devices WHERE name='%s' ",
+					"(SELECT COUNT(*) FROM skinny_lines WHERE device_name='%q' AND device_instance=%d) AS number_lines, "
+					"(SELECT COUNT(*) FROM skinny_buttons WHERE device_name='%q' AND device_instance=%d AND type=%d) AS number_speed_dials "
+					"FROM skinny_devices WHERE name='%q' ",
 					listener->device_name,
 					listener->device_instance,
 					listener->device_name,
@@ -1854,7 +1854,7 @@ switch_status_t skinny_handle_button_template_request(listener_t *listener, skin
 	if ((sql = switch_mprintf(
 					"SELECT device_name, device_instance, position, type "
 					"FROM skinny_buttons "
-					"WHERE device_name='%s' AND device_instance=%d "
+					"WHERE device_name='%q' AND device_instance=%d "
 					"ORDER BY position",
 					listener->device_name, listener->device_instance
 				 ))) {
@@ -1866,7 +1866,7 @@ switch_status_t skinny_handle_button_template_request(listener_t *listener, skin
 	if ((sql = switch_mprintf(
 					"SELECT device_name, device_instance, position, %d AS type "
 					"FROM skinny_lines "
-					"WHERE device_name='%s' AND device_instance=%d "
+					"WHERE device_name='%q' AND device_instance=%d "
 					"ORDER BY position",
 					SKINNY_BUTTON_LINE,
 					listener->device_name, listener->device_instance
@@ -1979,7 +1979,7 @@ switch_status_t skinny_handle_capabilities_response(listener_t *listener, skinny
 	}
 	codec_string[string_len] = '\0';
 	if ((sql = switch_mprintf(
-					"UPDATE skinny_devices SET codec_string='%q' WHERE name='%s'",
+					"UPDATE skinny_devices SET codec_string='%q' WHERE name='%q'",
 					codec_string,
 					listener->device_name
 				 ))) {

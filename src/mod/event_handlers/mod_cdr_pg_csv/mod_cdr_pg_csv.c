@@ -366,9 +366,9 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 			pq_var = switch_mprintf("null,", var);
 		} else {
 			if (cdr_field->quote) {
-				pq_var = switch_mprintf("'%s',", var);
+				pq_var = switch_mprintf("'%q',", var);
 			} else {
-				pq_var = switch_mprintf("%s,", var);
+				pq_var = switch_mprintf("%q,", var);
 			}
 		}
 
