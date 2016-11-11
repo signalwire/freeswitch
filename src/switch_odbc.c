@@ -611,13 +611,17 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_callback_exec_detailed(c
 			SQLDescribeCol(stmt, x, (SQLCHAR *) names[y], (SQLSMALLINT) name_len, &NameLength, &DataType, &ColumnSize, &DecimalDigits, &Nullable);
 
 			if (!ColumnSize) {
-				ColumnSize = 255;
-			}
-			ColumnSize++;
+				SQLCHAR val[16384] = { 0 };
+				ColumnSize = 16384;
+				SQLGetData(stmt, x, SQL_C_CHAR, val, ColumnSize, NULL);
+				vals[y] = strdup((char *)val);
+			} else {
+				ColumnSize++;
 
-			vals[y] = malloc(ColumnSize);
-			memset(vals[y], 0, ColumnSize);
-			SQLGetData(stmt, x, SQL_C_CHAR, (SQLCHAR *) vals[y], ColumnSize, NULL);
+				vals[y] = malloc(ColumnSize);
+				memset(vals[y], 0, ColumnSize);
+				SQLGetData(stmt, x, SQL_C_CHAR, (SQLCHAR *) vals[y], ColumnSize, NULL);
+			}
 			y++;
 		}
 
