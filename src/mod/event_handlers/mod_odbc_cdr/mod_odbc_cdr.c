@@ -304,7 +304,7 @@ static switch_status_t odbc_cdr_reporting(switch_core_session_t *session)
 				}
 				switch_safe_free(i_hi);
 
-				sql = switch_mprintf("INSERT INTO %s (%s) VALUES (%s)", table_name, stream_field.data, stream_value.data);
+				sql = switch_mprintf("INSERT INTO %q (%s) VALUES (%s)", table_name, stream_field.data, stream_value.data);
 				if (globals.debug_sql == SWITCH_TRUE) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "sql %s\n", sql);
 				}

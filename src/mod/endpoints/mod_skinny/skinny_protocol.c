@@ -237,9 +237,9 @@ switch_status_t skinny_device_event(listener_t *listener, switch_event_t **ev, s
 
 	switch_event_create_subclass(&event, event_id, subclass_name);
 	switch_assert(event);
-	if ((sql = switch_mprintf("SELECT '%s', name, user_id, instance, ip, type, max_streams, port, codec_string "
+	if ((sql = switch_mprintf("SELECT '%q', name, user_id, instance, ip, type, max_streams, port, codec_string "
 					"FROM skinny_devices "
-					"WHERE name='%s' AND instance=%d",
+					"WHERE name='%q' AND instance=%d",
 					listener->profile->name,
 					listener->device_name, listener->device_instance))) {
 		skinny_execute_sql_callback(profile, profile->sql_mutex, sql, skinny_device_event_callback, event);
@@ -263,7 +263,7 @@ switch_status_t skinny_session_walk_lines(skinny_profile_t *profile, char *chann
 					"ON skinny_active_lines.device_name = skinny_lines.device_name "
 					"AND skinny_active_lines.device_instance = skinny_lines.device_instance "
 					"AND skinny_active_lines.line_instance = skinny_lines.line_instance "
-					"WHERE channel_uuid='%s'",
+					"WHERE channel_uuid='%q'",
 					channel_uuid))) {
 		skinny_execute_sql_callback(profile, profile->sql_mutex, sql, callback, data);
 		switch_safe_free(sql);
@@ -325,7 +325,7 @@ void skinny_line_get(listener_t *listener, uint32_t instance, struct line_stat_r
 	if ((sql = switch_mprintf(
 					"SELECT '%d' AS wanted_position, position, label, value, caller_name "
 					"FROM skinny_lines "
-					"WHERE device_name='%s' AND device_instance=%d "
+					"WHERE device_name='%q' AND device_instance=%d "
 					"ORDER BY position",
 					instance,
 					listener->device_name, listener->device_instance
@@ -368,7 +368,7 @@ void skinny_speed_dial_get(listener_t *listener, uint32_t instance, struct speed
 	if ((sql = switch_mprintf(
 					"SELECT '%d' AS wanted_position, position, label, value, settings "
 					"FROM skinny_buttons "
-					"WHERE device_name='%s' AND device_instance=%d AND type=%d "
+					"WHERE device_name='%q' AND device_instance=%d AND type=%d "
 					"ORDER BY position",
 					instance,
 					listener->device_name, listener->device_instance,
@@ -412,7 +412,7 @@ void skinny_service_url_get(listener_t *listener, uint32_t instance, struct serv
 	if ((sql = switch_mprintf(
 					"SELECT '%d' AS wanted_position, position, label, value, settings "
 					"FROM skinny_buttons "
-					"WHERE device_name='%s' AND device_instance=%d AND type=%d "
+					"WHERE device_name='%q' AND device_instance=%d AND type=%d "
 					"ORDER BY position",
 					instance,
 					listener->device_name,
@@ -458,7 +458,7 @@ void skinny_feature_get(listener_t *listener, uint32_t instance, struct feature_
 	if ((sql = switch_mprintf(
 					"SELECT '%d' AS wanted_position, position, label, value, settings "
 					"FROM skinny_buttons "
-					"WHERE device_name='%s' AND device_instance=%d AND NOT (type=%d OR type=%d) "
+					"WHERE device_name='%q' AND device_instance=%d AND NOT (type=%d OR type=%d) "
 					"ORDER BY position",
 					instance,
 					listener->device_name,

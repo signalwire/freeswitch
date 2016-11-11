@@ -1619,7 +1619,7 @@ static void *SWITCH_THREAD_FUNC outbound_ringall_thread_run(switch_thread_t *thr
 
 	for (i = 0; i < cbh->rowcount; i++) {
 		struct call_helper *h = cbh->rows[i];
-		char *sql = switch_mprintf("update fifo_outbound set ring_count=ring_count+1 where uuid='%s'", h->uuid);
+		char *sql = switch_mprintf("update fifo_outbound set ring_count=ring_count+1 where uuid='%q'", h->uuid);
 
 		fifo_execute_sql_queued(&sql, SWITCH_TRUE, SWITCH_TRUE);
 	}
@@ -1842,7 +1842,7 @@ static void *SWITCH_THREAD_FUNC outbound_enterprise_thread_run(switch_thread_t *
 		switch_event_fire(&event);
 	}
 
-	sql = switch_mprintf("update fifo_outbound set ring_count=ring_count+1 where uuid='%s'", h->uuid);
+	sql = switch_mprintf("update fifo_outbound set ring_count=ring_count+1 where uuid='%q'", h->uuid);
 	fifo_execute_sql_queued(&sql, SWITCH_TRUE, SWITCH_TRUE);
 
 	status = switch_ivr_originate(NULL, &session, &cause, originate_string, h->timeout, NULL, NULL, NULL, NULL, ovars, SOF_NONE, NULL);
@@ -3349,7 +3349,7 @@ SWITCH_STANDARD_APP(fifo_function)
 					cancel_consumer_outbound_call(outbound_id, SWITCH_CAUSE_ORIGINATOR_CANCEL);
 					add_bridge_call(outbound_id);
 
-					sql = switch_mprintf("update fifo_outbound set stop_time=0,start_time=%ld,use_count=use_count+1,outbound_fail_count=0 where uuid='%s'",
+					sql = switch_mprintf("update fifo_outbound set stop_time=0,start_time=%ld,use_count=use_count+1,outbound_fail_count=0 where uuid='%q'",
 										 switch_epoch_time_now(NULL), outbound_id);
 
 					fifo_execute_sql_queued(&sql, SWITCH_TRUE, SWITCH_TRUE);
@@ -3430,7 +3430,7 @@ SWITCH_STANDARD_APP(fifo_function)
 
 					sql = switch_mprintf("update fifo_outbound set stop_time=%ld, use_count=use_count-1, "
 										 "outbound_call_total_count=outbound_call_total_count+1, "
-										 "outbound_call_count=outbound_call_count+1, next_avail=%ld + lag + 1 where uuid='%s' and use_count > 0",
+										 "outbound_call_count=outbound_call_count+1, next_avail=%ld + lag + 1 where uuid='%q' and use_count > 0",
 										 now, now, outbound_id);
 
 					fifo_execute_sql_queued(&sql, SWITCH_TRUE, SWITCH_TRUE);
@@ -3779,7 +3779,7 @@ static int xml_outbound(switch_xml_t xml, fifo_node_t *node, char *container, ch
 	char *sql;
 
 	if (!strcmp(node->name, MANUAL_QUEUE_NAME)) {
-		sql = switch_mprintf("select uuid, '%s', originate_string, simo_count, use_count, timeout,"
+		sql = switch_mprintf("select uuid, '%q', originate_string, simo_count, use_count, timeout,"
 							 "lag, next_avail, expires, static, outbound_call_count, outbound_fail_count,"
 							 "hostname, taking_calls, status, outbound_call_total_count, outbound_fail_total_count, active_time, inactive_time,"
 							 "manual_calls_out_count, manual_calls_in_count, manual_calls_out_total_count, manual_calls_in_total_count from fifo_outbound "

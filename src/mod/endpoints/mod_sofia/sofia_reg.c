@@ -817,7 +817,7 @@ void sofia_reg_check_expire(sofia_profile_t *profile, time_t now, int reboot)
 
 	if (now) {
 		sql = switch_mprintf("select call_id from sip_shared_appearance_dialogs where hostname='%q' "
-						"and profile_name='%s' and expires <= %ld", mod_sofia_globals.hostname, profile->name, (long) now);
+						"and profile_name='%q' and expires <= %ld", mod_sofia_globals.hostname, profile->name, (long) now);
 
 		sofia_glue_execute_sql_callback(profile, profile->dbh_mutex, sql, sofia_sla_dialog_del_callback, profile);
 		free(sql);
@@ -888,8 +888,8 @@ void sofia_reg_check_ping_expire(sofia_profile_t *profile, time_t now, int inter
 		if (sofia_test_pflag(profile, PFLAG_ALL_REG_OPTIONS_PING)) {
 			sql = switch_mprintf("select call_id,sip_user,sip_host,contact,status,rpid,"
 								 "expires,user_agent,server_user,server_host,profile_name "
-								 "from sip_registrations where hostname='%s' and "
-								 "profile_name='%s' and orig_hostname='%s' and "
+								 "from sip_registrations where hostname='%q' and "
+								 "profile_name='%q' and orig_hostname='%q' and "
 								 "ping_expires > 0 and ping_expires <= %ld",
 								 mod_sofia_globals.hostname, profile->name, mod_sofia_globals.hostname, (long) now);
 			
@@ -899,7 +899,7 @@ void sofia_reg_check_ping_expire(sofia_profile_t *profile, time_t now, int inter
 			sql = switch_mprintf(" select call_id,sip_user,sip_host,contact,status,rpid, "
 								 " expires,user_agent,server_user,server_host,profile_name "
 								 " from sip_registrations where (status like '%%UDP-NAT%%' or force_ping=1)"
-								 " and hostname='%s' and profile_name='%s' and ping_expires > 0 and ping_expires <= %ld ",
+								 " and hostname='%q' and profile_name='%q' and ping_expires > 0 and ping_expires <= %ld ",
 								 mod_sofia_globals.hostname, profile->name, (long) now);
 			
 			sofia_glue_execute_sql_callback(profile, profile->dbh_mutex, sql, sofia_reg_nat_callback, profile);
@@ -908,8 +908,8 @@ void sofia_reg_check_ping_expire(sofia_profile_t *profile, time_t now, int inter
 			sql = switch_mprintf("select call_id,sip_user,sip_host,contact,status,rpid,"
 								 "expires,user_agent,server_user,server_host,profile_name "
 								 "from sip_registrations where (status like '%%NAT%%' "
-								 "or contact like '%%fs_nat=yes%%' or force_ping=1) and hostname='%s' "
-								 "and profile_name='%s' and orig_hostname='%s' and "
+								 "or contact like '%%fs_nat=yes%%' or force_ping=1) and hostname='%q' "
+								 "and profile_name='%q' and orig_hostname='%q' and "
 								 "ping_expires > 0 and ping_expires <= %ld",
 								 mod_sofia_globals.hostname, profile->name, mod_sofia_globals.hostname, (long) now);
 			
@@ -918,8 +918,8 @@ void sofia_reg_check_ping_expire(sofia_profile_t *profile, time_t now, int inter
 		} else {
 			sql = switch_mprintf("select call_id,sip_user,sip_host,contact,status,rpid,"
 								 "expires,user_agent,server_user,server_host,profile_name "
-								 "from sip_registrations where force_ping=1 and hostname='%s' "
-								 "and profile_name='%s' and orig_hostname='%s' and "
+								 "from sip_registrations where force_ping=1 and hostname='%q' "
+								 "and profile_name='%q' and orig_hostname='%q' and "
 								 "ping_expires > 0 and ping_expires <= %ld",
 								 mod_sofia_globals.hostname, profile->name, mod_sofia_globals.hostname, (long) now);
 
@@ -3230,7 +3230,7 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 	if (nc && cnonce && qop) {
 		ncl = strtoul(nc, 0, 16);
 
-		sql = switch_mprintf("update sip_authentication set expires='%ld',last_nc=%lu where nonce='%s'",
+		sql = switch_mprintf("update sip_authentication set expires='%ld',last_nc=%lu where nonce='%q'",
 							 (long)switch_epoch_time_now(NULL) + (profile->nonce_ttl ? profile->nonce_ttl : DEFAULT_NONCE_TTL) + exptime, ncl, nonce);
 
 		switch_assert(sql != NULL);

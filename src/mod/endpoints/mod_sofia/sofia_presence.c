@@ -527,7 +527,7 @@ static void actual_sofia_presence_mwi_event_handler(switch_event_t *event)
 			char buf[512] = "";
 			switch_console_callback_match_t *matches;
 
-			sql = switch_mprintf("select profile_name from sip_registrations where hostname='%q' and (sip_host='%s' or mwi_host='%s')",
+			sql = switch_mprintf("select profile_name from sip_registrations where hostname='%q' and (sip_host='%q' or mwi_host='%q')",
 								 mod_sofia_globals.hostname, host, host);
 
 			if (list_profiles_full(NULL, NULL, &matches, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
@@ -3081,7 +3081,7 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 
 		if (!zstr(astate) && !zstr(uuid) &&
 			helper && helper->stream.data && strcmp(helper->last_uuid, uuid) && strcasecmp(astate, "terminated") && strchr(uuid, '-')) {
-			helper->stream.write_function(&helper->stream, "update sip_dialogs set state='%s' where hostname='%q' and profile_name='%q' and uuid='%s';",
+			helper->stream.write_function(&helper->stream, "update sip_dialogs set state='%q' where hostname='%q' and profile_name='%q' and uuid='%q';",
 										  astate, mod_sofia_globals.hostname, profile->name, uuid);
 			switch_copy_string(helper->last_uuid, uuid, sizeof(helper->last_uuid));
 		}

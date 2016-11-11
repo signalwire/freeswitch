@@ -828,7 +828,7 @@ SWITCH_DECLARE(unsigned char) switch_console_complete(const char *line, const ch
 		argc = switch_separate_string(dupdup, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 
 		if (h.words == 0) {
-			stream.write_function(&stream, "select distinct a1 from complete where " "a1 not in (select name from interfaces where hostname='%s') %s ",
+			stream.write_function(&stream, "select distinct a1 from complete where " "a1 not in (select name from interfaces where hostname='%q') %s ",
 								  switch_core_get_hostname(), argc ? "and" : "");
 		} else {
 			if (switch_cache_db_get_type(db) == SCDB_TYPE_CORE_DB) {
@@ -1889,7 +1889,7 @@ SWITCH_DECLARE(switch_status_t) switch_console_set_complete(const char *string)
 					switch_safe_free(mydata); 
 					return SWITCH_STATUS_FALSE;
 				} else if (!strcasecmp(what, "*")) {
-					mystream.write_function(&mystream, "delete from complete where hostname='%s'", switch_core_get_hostname());
+					mystream.write_function(&mystream, "delete from complete where hostname='%q'", switch_core_get_hostname());
 					switch_core_sql_exec(mystream.data);
 				} else {
 					mystream.write_function(&mystream, "delete from complete where ");
@@ -1900,7 +1900,7 @@ SWITCH_DECLARE(switch_status_t) switch_console_set_complete(const char *string)
 							mystream.write_function(&mystream, "a%d = '%w'%w", x + 1, switch_str_nil(argv[x + 1]), x == argc - 2 ? "" : " and ");
 						}
 					}
-					mystream.write_function(&mystream, " and hostname='%s'", switch_core_get_hostname());
+					mystream.write_function(&mystream, " and hostname='%q'", switch_core_get_hostname());
 					switch_core_sql_exec(mystream.data);
 				}
 				status = SWITCH_STATUS_SUCCESS;

@@ -387,7 +387,7 @@ static switch_bool_t bill_event(double billamount, const char *billaccount, swit
 			sql = globals.custom_sql_save;
 		}
 	} else {
-		sql = dsql = switch_mprintf("UPDATE %s SET %s=%s-%f WHERE %s='%s'", globals.db_table, globals.db_column_cash, 
+		sql = dsql = switch_mprintf("UPDATE %q SET %q=%q- %f WHERE %q='%q'", globals.db_table, globals.db_column_cash,
 									globals.db_column_cash, billamount, globals.db_column_account, billaccount);
 		
 	}
@@ -415,7 +415,7 @@ static double get_balance(const char *billaccount, switch_channel_t *channel)
 			sql = globals.custom_sql_lookup;
 		}
 	} else {
-		sql = dsql = switch_mprintf("SELECT %s AS nibble_balance FROM %s WHERE %s='%s'", 
+		sql = dsql = switch_mprintf("SELECT %q AS nibble_balance FROM %q WHERE %q='%q'", 
 									globals.db_column_cash, globals.db_table, globals.db_column_account, billaccount);
 	}
 

@@ -103,7 +103,7 @@ static switch_status_t select_url(const char *user,
 	if (exclude_contact) {
 		sql = switch_mprintf("select url, '%q' "
 							 "from registrations where reg_user='%q' and realm='%q' "
-							 "and url not like '%%%s%%'", (concat != NULL) ? concat : "", user, domain, exclude_contact);
+							 "and url not like '%%%q%%'", (concat != NULL) ? concat : "", user, domain, exclude_contact);
 	} else {
 		sql = switch_mprintf("select url, '%q' "
 							 "from registrations where reg_user='%q' and realm='%q'",
@@ -5354,33 +5354,33 @@ SWITCH_STANDARD_API(show_function)
 		if (end_of(command) == 's') {
 			end_of(command) = '\0';
 		}
-		sprintf(sql, "select type, name, ikey from interfaces where hostname='%s' and type = '%s' order by type,name", switch_core_get_hostname(), command);
+		switch_snprintfv(sql, sizeof(sql), "select type, name, ikey from interfaces where hostname='%q' and type = '%q' order by type,name", switch_core_get_hostname(), command);
 	} else if (!strncasecmp(command, "module", 6)) {
 		if (argv[1] && strcasecmp(argv[1], "as")) {
-			sprintf(sql, "select distinct type, name, ikey, filename from interfaces where hostname='%s' and ikey = '%s' order by type,name",
+			switch_snprintfv(sql, sizeof(sql), "select distinct type, name, ikey, filename from interfaces where hostname='%q' and ikey = '%q' order by type,name",
 					switch_core_get_hostname(), argv[1]);
 		} else {
-			sprintf(sql, "select distinct type, name, ikey, filename from interfaces where hostname='%s' order by type,name", switch_core_get_hostname());
+			switch_snprintfv(sql, sizeof(sql), "select distinct type, name, ikey, filename from interfaces where hostname='%q' order by type,name", switch_core_get_hostname());
 		}
 	} else if (!strcasecmp(command, "interfaces")) {
-		sprintf(sql, "select type, name, ikey from interfaces where hostname='%s' order by type,name", switch_core_get_hostname());
+		switch_snprintfv(sql, sizeof(sql), "select type, name, ikey from interfaces where hostname='%q' order by type,name", switch_core_get_hostname());
 	} else if (!strcasecmp(command, "interface_types")) {
-		sprintf(sql, "select type,count(type) as total from interfaces where hostname='%s' group by type order by type", switch_core_get_switchname());
+		switch_snprintfv(sql, sizeof(sql), "select type,count(type) as total from interfaces where hostname='%q' group by type order by type", switch_core_get_switchname());
 	} else if (!strcasecmp(command, "tasks")) {
-		sprintf(sql, "select * from %s where hostname='%s'", command, switch_core_get_hostname());
+		switch_snprintfv(sql, sizeof(sql), "select * from %q where hostname='%q'", command, switch_core_get_hostname());
 	} else if (!strcasecmp(command, "application") || !strcasecmp(command, "api")) {
 		if (argv[1] && strcasecmp(argv[1], "as")) {
-			sprintf(sql,
-					"select name, description, syntax, ikey from interfaces where hostname='%s' and type = '%s' and description != '' and name = '%s' order by type,name",
+			switch_snprintfv(sql, sizeof(sql),
+					"select name, description, syntax, ikey from interfaces where hostname='%q' and type = '%q' and description != '' and name = '%q' order by type,name",
 					switch_core_get_hostname(), command, argv[1]);
 		} else {
-			sprintf(sql, "select name, description, syntax, ikey from interfaces where hostname='%s' and type = '%s' and description != '' order by type,name", switch_core_get_hostname(), command);
+			switch_snprintfv(sql, sizeof(sql), "select name, description, syntax, ikey from interfaces where hostname='%q' and type = '%q' and description != '' order by type,name", switch_core_get_hostname(), command);
 		}
 	/* moved refreshable webpage show commands i.e. show calls|registrations|channels||detailed_calls|bridged_calls|detailed_bridged_calls */
 	} else if (!strcasecmp(command, "aliases")) {
-		sprintf(sql, "select * from aliases where hostname='%s' order by alias", switch_core_get_switchname());
+		switch_snprintfv(sql, sizeof(sql), "select * from aliases where hostname='%q' order by alias", switch_core_get_switchname());
 	} else if (!strcasecmp(command, "complete")) {
-		sprintf(sql, "select * from complete where hostname='%s' order by a1,a2,a3,a4,a5,a6,a7,a8,a9,a10", switch_core_get_switchname());
+		switch_snprintfv(sql, sizeof(sql), "select * from complete where hostname='%q' order by a1,a2,a3,a4,a5,a6,a7,a8,a9,a10", switch_core_get_switchname());
 	} else if (!strncasecmp(command, "help", 4)) {
 		char *cmdname = NULL;
 
@@ -5389,18 +5389,18 @@ SWITCH_STANDARD_API(show_function)
 		if ((cmdname = strchr(command, ' ')) && strcasecmp(cmdname, "as")) {
 			*cmdname++ = '\0';
 			switch_snprintfv(sql, sizeof(sql),
-							"select name, syntax, description, ikey from interfaces where hostname='%s' and type = 'api' and name = '%q' order by name",
+							"select name, syntax, description, ikey from interfaces where hostname='%q' and type = 'api' and name = '%q' order by name",
 							switch_core_get_hostname(), cmdname);
 		} else {
 			switch_snprintfv(sql, sizeof(sql), "select name, syntax, description, ikey from interfaces where hostname='%q' and type = 'api' order by name", switch_core_get_hostname());
 		}
 	} else if (!strcasecmp(command, "nat_map")) {
-		switch_snprintf(sql, sizeof(sql) - 1,
+		switch_snprintfv(sql, sizeof(sql) - 1,
 						"SELECT port, "
 						"  CASE proto "
 						"	WHEN 0 THEN 'udp' "
 						"	WHEN 1 THEN 'tcp' "
-						"	ELSE 'unknown' " "  END AS proto, " "  proto AS proto_num, " "  sticky " " FROM nat where hostname='%s' ORDER BY port, proto", switch_core_get_hostname());
+						"	ELSE 'unknown' " "  END AS proto, " "  proto AS proto_num, " "  sticky " " FROM nat where hostname='%q' ORDER BY port, proto", switch_core_get_hostname());
 	} else {
 		/* from here on refreshable commands: calls|registrations|channels||detailed_calls|bridged_calls|detailed_bridged_calls */
 		if (holder.format->api) {
@@ -5419,18 +5419,18 @@ SWITCH_STANDARD_API(show_function)
 		}
 
 		if (!strcasecmp(command, "calls")) {
-			sprintf(sql, "select * from basic_calls where hostname='%s' order by call_created_epoch", switch_core_get_switchname());
+			switch_snprintfv(sql, sizeof(sql), "select * from basic_calls where hostname='%q' order by call_created_epoch", switch_core_get_switchname());
 			if (argv[1] && !strcasecmp(argv[1], "count")) {
-				sprintf(sql, "select count(*) from basic_calls where hostname='%s'", switch_core_get_switchname());
+				switch_snprintfv(sql, sizeof(sql), "select count(*) from basic_calls where hostname='%q'", switch_core_get_switchname());
 				holder.justcount = 1;
 				if (argv[3] && !strcasecmp(argv[2], "as")) {
 					as = argv[3];
 				}
 			}
 		} else if (!strcasecmp(command, "registrations")) {
-			sprintf(sql, "select * from registrations where hostname='%s'", switch_core_get_switchname());
+			switch_snprintfv(sql, sizeof(sql), "select * from registrations where hostname='%q'", switch_core_get_switchname());
 			if (argv[1] && !strcasecmp(argv[1], "count")) {
-				sprintf(sql, "select count(*) from registrations where hostname='%s'", switch_core_get_switchname());
+				switch_snprintfv(sql, sizeof(sql), "select count(*) from registrations where hostname='%q'", switch_core_get_switchname());
 				holder.justcount = 1;
 				if (argv[3] && !strcasecmp(argv[2], "as")) {
 					as = argv[3];
@@ -5445,41 +5445,41 @@ SWITCH_STANDARD_API(show_function)
 					}
 				}
 				if (strchr(argv[2], '%')) {
-					sprintf(sql,
-						"select * from channels where hostname='%s' and uuid like '%s' or name like '%s' or cid_name like '%s' or cid_num like '%s' or presence_data like '%s' or accountcode like '%s' order by created_epoch",
+					switch_snprintfv(sql, sizeof(sql),
+						"select * from channels where hostname='%q' and uuid like '%q' or name like '%q' or cid_name like '%q' or cid_num like '%q' or presence_data like '%q' or accountcode like '%q' order by created_epoch",
 						switch_core_get_switchname(), argv[2], argv[2], argv[2], argv[2], argv[2], argv[2]);
 				} else {
-					sprintf(sql,
-						"select * from channels where hostname='%s' and uuid like '%%%s%%' or name like '%%%s%%' or cid_name like '%%%s%%' or cid_num like '%%%s%%' or presence_data like '%%%s%%' or accountcode like '%%%s%%' order by created_epoch",
+					switch_snprintfv(sql, sizeof(sql),
+						"select * from channels where hostname='%q' and uuid like '%%%q%%' or name like '%%%q%%' or cid_name like '%%%q%%' or cid_num like '%%%q%%' or presence_data like '%%%q%%' or accountcode like '%%%q%%' order by created_epoch",
 						switch_core_get_switchname(), argv[2], argv[2], argv[2], argv[2], argv[2], argv[2]);
 				}
 				if (argv[4] && !strcasecmp(argv[3], "as")) {
 					as = argv[4];
 				}
 			} else {
-				sprintf(sql, "select * from channels where hostname='%s' order by created_epoch", switch_core_get_switchname());
+				switch_snprintfv(sql, sizeof(sql), "select * from channels where hostname='%q' order by created_epoch", switch_core_get_switchname());
 			}
 		} else if (!strcasecmp(command, "channels")) {
-			sprintf(sql, "select * from channels where hostname='%s' order by created_epoch", switch_core_get_switchname());
+			switch_snprintfv(sql, sizeof(sql), "select * from channels where hostname='%q' order by created_epoch", switch_core_get_switchname());
 			if (argv[1] && !strcasecmp(argv[1], "count")) {
-				sprintf(sql, "select count(*) from channels where hostname='%s'", switch_core_get_switchname());
+				switch_snprintfv(sql, sizeof(sql), "select count(*) from channels where hostname='%q'", switch_core_get_switchname());
 				holder.justcount = 1;
 				if (argv[3] && !strcasecmp(argv[2], "as")) {
 					as = argv[3];
 				}
 			}
 		} else if (!strcasecmp(command, "detailed_calls")) {
-			sprintf(sql, "select * from detailed_calls where hostname='%s' order by created_epoch", switch_core_get_switchname());
+			switch_snprintfv(sql, sizeof(sql), "select * from detailed_calls where hostname='%q' order by created_epoch", switch_core_get_switchname());
 			if (argv[2] && !strcasecmp(argv[1], "as")) {
 				as = argv[2];
 			}
 		} else if (!strcasecmp(command, "bridged_calls")) {
-			sprintf(sql, "select * from basic_calls where b_uuid is not null and hostname='%s' order by created_epoch", switch_core_get_switchname());
+			switch_snprintfv(sql, sizeof(sql), "select * from basic_calls where b_uuid is not null and hostname='%q' order by created_epoch", switch_core_get_switchname());
 			if (argv[2] && !strcasecmp(argv[1], "as")) {
 				as = argv[2];
 			}
 		} else if (!strcasecmp(command, "detailed_bridged_calls")) {
-			sprintf(sql, "select * from detailed_calls where b_uuid is not null and hostname='%s' order by created_epoch", switch_core_get_switchname());
+			switch_snprintfv(sql, sizeof(sql), "select * from detailed_calls where b_uuid is not null and hostname='%q' order by created_epoch", switch_core_get_switchname());
 			if (argv[2] && !strcasecmp(argv[1], "as")) {
 				as = argv[2];
 			}

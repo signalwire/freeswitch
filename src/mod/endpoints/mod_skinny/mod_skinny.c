@@ -285,7 +285,7 @@ char * skinny_profile_find_session_uuid(skinny_profile_t *profile, listener_t *l
 	helper.channel_uuid = NULL;
 
 	if(listener) {
-		device_condition = switch_mprintf("device_name='%s' AND device_instance=%d",
+		device_condition = switch_mprintf("device_name='%q' AND device_instance=%d",
 				listener->device_name, listener->device_instance);
 	} else {
 		device_condition = switch_mprintf("1=1");
@@ -496,7 +496,7 @@ uint32_t skinny_line_get_state(listener_t *listener, uint32_t line_instance, uin
 	helper.call_state = -1;
 	if ((sql = switch_mprintf(
 					"SELECT call_state FROM skinny_active_lines "
-					"WHERE device_name='%s' AND device_instance=%d "
+					"WHERE device_name='%q' AND device_instance=%d "
 					"AND %s AND %s "
 					"ORDER BY call_state, channel_uuid", /* off hook first */
 					listener->device_name, listener->device_instance,
@@ -532,7 +532,7 @@ uint32_t skinny_line_count_active(listener_t *listener)
 	helper.count = 0;
 	if ((sql = switch_mprintf(
 			"SELECT call_state FROM skinny_active_lines "
-			"WHERE device_name='%s' AND device_instance=%d "
+			"WHERE device_name='%q' AND device_instance=%d "
 			"AND call_state not in (%d,%d,%d)",
 			listener->device_name, listener->device_instance, 
 			SKINNY_ON_HOOK, SKINNY_IN_USE_REMOTELY, SKINNY_HOLD
@@ -987,7 +987,7 @@ switch_status_t skinny_ring_active_calls(listener_t *listener)
                     "ON skinny_active_lines.device_name = skinny_lines.device_name "
                     "AND skinny_active_lines.device_instance = skinny_lines.device_instance "
                     "AND skinny_active_lines.line_instance = skinny_lines.line_instance "
-                    "WHERE skinny_lines.device_name='%s' AND skinny_lines.device_instance=%d "
+                    "WHERE skinny_lines.device_name='%q' AND skinny_lines.device_instance=%d "
                     "AND (call_state=%d)",
                     listener->device_name, listener->device_instance, SKINNY_RING_IN))) {
 		skinny_execute_sql_callback(listener->profile, listener->profile->sql_mutex, sql, skinny_ring_active_calls_callback, &helper);
@@ -1370,9 +1370,9 @@ switch_call_cause_t channel_outgoing_channel(switch_core_session_t *session, swi
 	if ((sql = switch_mprintf(
 					"INSERT INTO skinny_active_lines "
 					"(device_name, device_instance, line_instance, channel_uuid, call_id, call_state) "
-					"SELECT device_name, device_instance, line_instance, '%s', %d, %d "
+					"SELECT device_name, device_instance, line_instance, '%q', %d, %d "
 					"FROM skinny_lines "
-					"WHERE value='%s'",
+					"WHERE value='%q'",
 					switch_core_session_get_uuid(nsession), tech_pvt->call_id, SKINNY_ON_HOOK, dest
 				 ))) {
 		skinny_execute_sql(profile, sql, profile->sql_mutex);
@@ -1731,7 +1731,7 @@ static void flush_listener(listener_t *listener)
 		if ((sql = switch_mprintf(
 						"SELECT '%q', value, '%q', '%q', '%d' "
 						"FROM skinny_lines "
-						"WHERE device_name='%s' AND device_instance=%d "
+						"WHERE device_name='%q' AND device_instance=%d "
 						"ORDER BY position",
 						profile->name, profile->domain, listener->device_name, listener->device_instance,
 						listener->device_name, listener->device_instance
@@ -1796,7 +1796,7 @@ switch_status_t dump_device(skinny_profile_t *profile, const char *device_name, 
 {
 	char *sql;
 	if ((sql = switch_mprintf("SELECT name, user_id, instance, ip, type, max_streams, port, codec_string, headset, handset, speaker "
-					"FROM skinny_devices WHERE name='%s'",
+					"FROM skinny_devices WHERE name='%q'",
 					device_name))) {
 		skinny_execute_sql_callback(profile, profile->sql_mutex, sql, dump_device_callback, stream);
 		switch_safe_free(sql);
@@ -2657,7 +2657,7 @@ static void skinny_message_waiting_event_handler(switch_event_t *event)
 
 	if ((sql = switch_mprintf(
 					"SELECT device_name, device_instance FROM skinny_lines "
-					"WHERE value='%s' AND line_instance=1", user))) {
+					"WHERE value='%q' AND line_instance=1", user))) {
 		struct skinny_message_waiting_event_handler_helper helper = {0};
 		helper.profile = profile;
 		helper.yn = switch_true(yn);

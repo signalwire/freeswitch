@@ -2328,9 +2328,9 @@ static int members_callback(void *pArg, int argc, char **argv, char **columnName
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Queue '%s' changed strategy, adjusting member parameters", queue_name);
 		/* member was ring-all, becomes ring-progressively (no state change because of strategy similarities) */
 		if (!strcasecmp(queue_strategy, "ring-progressively")) {
-			sql = switch_mprintf("UPDATE members SET serving_agent = 'ring-progressively' WHERE uuid = '%s' AND state = '%s' AND serving_agent = 'ring-all'", cbt.member_uuid, cc_member_state2str(CC_MEMBER_STATE_TRYING));
+			sql = switch_mprintf("UPDATE members SET serving_agent = 'ring-progressively' WHERE uuid = '%q' AND state = '%q' AND serving_agent = 'ring-all'", cbt.member_uuid, cc_member_state2str(CC_MEMBER_STATE_TRYING));
 		} else {
-			sql = switch_mprintf("UPDATE members SET serving_agent = '', state = '%s' WHERE uuid = '%s' AND state = '%s' AND serving_agent = 'ring-all'", cc_member_state2str(CC_MEMBER_STATE_WAITING), cbt.member_uuid, cc_member_state2str(CC_MEMBER_STATE_TRYING));
+			sql = switch_mprintf("UPDATE members SET serving_agent = '', state = '%q' WHERE uuid = '%q' AND state = '%q' AND serving_agent = 'ring-all'", cc_member_state2str(CC_MEMBER_STATE_WAITING), cbt.member_uuid, cc_member_state2str(CC_MEMBER_STATE_TRYING));
 		}
 		cc_execute_sql(NULL, sql, NULL);
 		switch_safe_free(sql);
@@ -2340,9 +2340,9 @@ static int members_callback(void *pArg, int argc, char **argv, char **columnName
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Queue '%s' changed strategy, adjusting member parameters", queue_name);
 		/* member was ring-progressively, becomes ring-all (no state change because of strategy similarities) */
 		if (!strcasecmp(queue_strategy, "ring-all")) {
-			sql = switch_mprintf("UPDATE members SET serving_agent = 'ring-all' WHERE uuid = '%s' AND state = '%s' AND serving_agent = 'ring-progressively'", cbt.member_uuid, cc_member_state2str(CC_MEMBER_STATE_TRYING));
+			sql = switch_mprintf("UPDATE members SET serving_agent = 'ring-all' WHERE uuid = '%q' AND state = '%q' AND serving_agent = 'ring-progressively'", cbt.member_uuid, cc_member_state2str(CC_MEMBER_STATE_TRYING));
 		} else {
-			sql = switch_mprintf("UPDATE members SET serving_agent = '', state = '%s' WHERE uuid = '%s' AND state = '%s' AND serving_agent = 'ring-progressively'", cc_member_state2str(CC_MEMBER_STATE_WAITING), cbt.member_uuid, cc_member_state2str(CC_MEMBER_STATE_TRYING));
+			sql = switch_mprintf("UPDATE members SET serving_agent = '', state = '%q' WHERE uuid = '%q' AND state = '%q' AND serving_agent = 'ring-progressively'", cc_member_state2str(CC_MEMBER_STATE_WAITING), cbt.member_uuid, cc_member_state2str(CC_MEMBER_STATE_TRYING));
 		}
 		cc_execute_sql(NULL, sql, NULL);
 		switch_safe_free(sql);
@@ -2352,9 +2352,9 @@ static int members_callback(void *pArg, int argc, char **argv, char **columnName
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Queue '%s' changed strategy, adjusting member parameters", queue_name);
 		/* member was ring-progressively, its state is already set to TRYING */
 		if (!strcasecmp(serving_agent, "ring-progressively")) {
-			sql = switch_mprintf("UPDATE members SET serving_agent = 'ring-all' WHERE uuid = '%s' AND state = '%s' AND serving_agent = 'ring-progressively'", cbt.member_uuid, cc_member_state2str(CC_MEMBER_STATE_TRYING));
+			sql = switch_mprintf("UPDATE members SET serving_agent = 'ring-all' WHERE uuid = '%q' AND state = '%q' AND serving_agent = 'ring-progressively'", cbt.member_uuid, cc_member_state2str(CC_MEMBER_STATE_TRYING));
 		} else {
-			sql = switch_mprintf("UPDATE members SET serving_agent = 'ring-all', state = '%s' WHERE uuid = '%s' AND state = '%s' AND serving_agent = ''", cc_member_state2str(CC_MEMBER_STATE_TRYING), cbt.member_uuid, cc_member_state2str(CC_MEMBER_STATE_WAITING));
+			sql = switch_mprintf("UPDATE members SET serving_agent = 'ring-all', state = '%q' WHERE uuid = '%q' AND state = '%q' AND serving_agent = ''", cc_member_state2str(CC_MEMBER_STATE_TRYING), cbt.member_uuid, cc_member_state2str(CC_MEMBER_STATE_WAITING));
 		}
 		cc_execute_sql(NULL, sql, NULL);
 		switch_safe_free(sql);
@@ -2364,9 +2364,9 @@ static int members_callback(void *pArg, int argc, char **argv, char **columnName
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Queue '%s' changed strategy, adjusting member parameters", queue_name);
 		/* member was ring-all, its state is already set to TRYING */
 		if (!strcasecmp(serving_agent, "ring-all")) {
-			sql = switch_mprintf("UPDATE members SET serving_agent = 'ring-progressively' WHERE uuid = '%s' AND state = '%s' AND serving_agent = 'ring-all'", cbt.member_uuid, cc_member_state2str(CC_MEMBER_STATE_TRYING));
+			sql = switch_mprintf("UPDATE members SET serving_agent = 'ring-progressively' WHERE uuid = '%q' AND state = '%q' AND serving_agent = 'ring-all'", cbt.member_uuid, cc_member_state2str(CC_MEMBER_STATE_TRYING));
 		} else {
-			sql = switch_mprintf("UPDATE members SET serving_agent = 'ring-progressively', state = '%s' WHERE uuid = '%s' AND state = '%s' AND serving_agent = ''", cc_member_state2str(CC_MEMBER_STATE_TRYING), cbt.member_uuid, cc_member_state2str(CC_MEMBER_STATE_WAITING));
+			sql = switch_mprintf("UPDATE members SET serving_agent = 'ring-progressively', state = '%q' WHERE uuid = '%q' AND state = '%q' AND serving_agent = ''", cc_member_state2str(CC_MEMBER_STATE_TRYING), cbt.member_uuid, cc_member_state2str(CC_MEMBER_STATE_WAITING));
 		}
 		cc_execute_sql(NULL, sql, NULL);
 		switch_safe_free(sql);

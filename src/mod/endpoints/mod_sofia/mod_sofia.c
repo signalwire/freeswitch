@@ -1318,7 +1318,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 
 			if (presence_id || presence_data) {
 				char *sql = switch_mprintf("update sip_dialogs set presence_id='%q',presence_data='%q' "
-										   "where uuid='%s';\n", switch_str_nil(presence_id), switch_str_nil(presence_data),
+										   "where uuid='%q';\n", switch_str_nil(presence_id), switch_str_nil(presence_data),
 										   switch_core_session_get_uuid(session));
 				switch_assert(sql);
 				sofia_glue_execute_sql_now(tech_pvt->profile, &sql, SWITCH_TRUE);
@@ -3716,7 +3716,7 @@ static void select_from_profile(sofia_profile_t *profile,
 							 "from sip_registrations where profile_name='%q' "
 							 "and upper(sip_user)=upper('%q') " 
 							 "and (sip_host='%q' or presence_hosts like '%%%q%%') "
-							 "and contact not like '%%%s%%'", (concat != NULL) ? concat : "", profile->name, user, domain, domain, exclude_contact);
+							 "and contact not like '%%%q%%'", (concat != NULL) ? concat : "", profile->name, user, domain, domain, exclude_contact);
 	} else {
 		sql = switch_mprintf("select contact, profile_name, '%q' "
 							 "from sip_registrations where profile_name='%q' "
@@ -5167,12 +5167,12 @@ void general_event_handler(switch_event_t *event)
 				} else {
 					if (!strcasecmp(es, "message-summary")) {
 						sql = switch_mprintf("select sip_user,sip_host,contact,profile_name,'%q','%q','%q' "
-											 "from sip_registrations where mwi_user='%s' and mwi_host='%q'",
+											 "from sip_registrations where mwi_user='%q' and mwi_host='%q'",
 											 ct, es, switch_str_nil(body), switch_str_nil(user), switch_str_nil(host)
 							);
 					} else {
 						sql = switch_mprintf("select sip_user,sip_host,contact,profile_name,'%q','%q','%q' "
-											 "from sip_registrations where sip_user='%s' and sip_host='%q'",
+											 "from sip_registrations where sip_user='%q' and sip_host='%q'",
 											 ct, es, switch_str_nil(body), switch_str_nil(user), switch_str_nil(host)
 							);
 
@@ -5274,7 +5274,7 @@ void general_event_handler(switch_event_t *event)
 										 "from sip_subscriptions where event='as-feature-event' and call_id='%q'", stream.data, ct, call_id);
 				} else {
 					sql = switch_mprintf("select sip_user,sip_host,contact,profile_name,call_id,full_from,full_to,expires,'%q', '%q' "
-										 "from sip_subscriptions where event='as-feature-event' and sip_user='%s' and sip_host='%q'", stream.data, ct, switch_str_nil(user), switch_str_nil(host)
+										 "from sip_subscriptions where event='as-feature-event' and sip_user='%q' and sip_host='%q'", stream.data, ct, switch_str_nil(user), switch_str_nil(host)
 										 );
 				}
 

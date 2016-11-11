@@ -2754,10 +2754,10 @@ void event_handler(switch_event_t *event)
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Profile\n");
 		} else {
 			if (!strcmp(ping_status, "REACHABLE")) {
-				sql = switch_mprintf("update sip_registrations set ping_status='%s' where sip_user='%s' and sip_host='%s' and call_id='%q'",
+				sql = switch_mprintf("update sip_registrations set ping_status='%q' where sip_user='%q' and sip_host='%q' and call_id='%q'",
 								 	"Reachable", from_user, from_host, call_id);
 			} else {
-				sql = switch_mprintf("update sip_registrations set ping_status='%s' where sip_user='%s' and sip_host='%s' and call_id='%q'",
+				sql = switch_mprintf("update sip_registrations set ping_status='%q' where sip_user='%q' and sip_host='%q' and call_id='%q'",
 								 	"Unreachable", from_user, from_host, call_id);
 			}
 			if (sql) {
@@ -6089,7 +6089,7 @@ static void sofia_handle_sip_r_options(switch_core_session_t *session, int statu
 		sip_user_status.status_len = sizeof(ping_status);
 		sip_user_status.contact = sip_contact;
 		sip_user_status.contact_len = sizeof(sip_contact);
-		sql = switch_mprintf("select ping_status, ping_count, contact from sip_registrations where sip_user='%s' and sip_host='%s' and call_id='%q'",
+		sql = switch_mprintf("select ping_status, ping_count, contact from sip_registrations where sip_user='%q' and sip_host='%q' and call_id='%q'",
 				     sip->sip_to->a_url->url_user, sip->sip_to->a_url->url_host, call_id);
 		sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, sofia_sip_user_status_callback, &sip_user_status);
 		switch_safe_free(sql);
@@ -6099,7 +6099,7 @@ static void sofia_handle_sip_r_options(switch_core_session_t *session, int statu
 			if (sip_user_status.count >= 0) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Ping to sip user '%s@%s' failed with code %d - count %d, state %s\n",
 						  sip->sip_to->a_url->url_user, sip->sip_to->a_url->url_host, status, sip_user_status.count, sip_user_status.status);
-				sql = switch_mprintf("update sip_registrations set ping_count=%d, ping_time=%d where sip_user='%s' and sip_host='%s' and call_id='%q'",
+				sql = switch_mprintf("update sip_registrations set ping_count=%d, ping_time=%d where sip_user='%q' and sip_host='%q' and call_id='%q'",
 									 sip_user_status.count, ping_time, sip->sip_to->a_url->url_user, sip->sip_to->a_url->url_host, call_id);
 				sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
 				switch_safe_free(sql);
@@ -6108,7 +6108,7 @@ static void sofia_handle_sip_r_options(switch_core_session_t *session, int statu
 				if (strcmp(sip_user_status.status, "Unreachable")) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Sip user '%s@%s' is now Unreachable\n",
 							  sip->sip_to->a_url->url_user, sip->sip_to->a_url->url_host);
-					sql = switch_mprintf("update sip_registrations set ping_status='Unreachable', ping_time=%d where sip_user='%s' and sip_host='%s' and call_id='%q'",
+					sql = switch_mprintf("update sip_registrations set ping_status='Unreachable', ping_time=%d where sip_user='%q' and sip_host='%q' and call_id='%q'",
 										 ping_time, sip->sip_to->a_url->url_user, sip->sip_to->a_url->url_host, call_id);
 					sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
 					switch_safe_free(sql);
@@ -6120,7 +6120,7 @@ static void sofia_handle_sip_r_options(switch_core_session_t *session, int statu
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Expire sip user '%s@%s' due to options failure\n",
 								  sip->sip_to->a_url->url_user, sip->sip_to->a_url->url_host);
 
-						sql = switch_mprintf("update sip_registrations set expires=%ld, ping_time=%d where sip_user='%s' and sip_host='%s' and call_id='%q'",
+						sql = switch_mprintf("update sip_registrations set expires=%ld, ping_time=%d where sip_user='%q' and sip_host='%q' and call_id='%q'",
 											 (long) now, ping_time, sip->sip_to->a_url->url_user, sip->sip_to->a_url->url_host, call_id);
 						sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
 						switch_safe_free(sql);
@@ -6132,7 +6132,7 @@ static void sofia_handle_sip_r_options(switch_core_session_t *session, int statu
 			if (sip_user_status.count <= sip_user_ping_max) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Ping to sip user '%s@%s' succeeded with code %d - count %d, state %s\n",
 						  sip->sip_to->a_url->url_user, sip->sip_to->a_url->url_host, status, sip_user_status.count, sip_user_status.status);
-				sql = switch_mprintf("update sip_registrations set ping_count=%d, ping_time=%d where sip_user='%s' and sip_host='%s' and call_id='%q'",
+				sql = switch_mprintf("update sip_registrations set ping_count=%d, ping_time=%d where sip_user='%q' and sip_host='%q' and call_id='%q'",
 									 sip_user_status.count, ping_time, sip->sip_to->a_url->url_user, sip->sip_to->a_url->url_host, call_id);
 				sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
 				switch_safe_free(sql);
@@ -6141,7 +6141,7 @@ static void sofia_handle_sip_r_options(switch_core_session_t *session, int statu
 				if (strcmp(sip_user_status.status, "Reachable")) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Sip user '%s@%s' is now Reachable\n",
 							  sip->sip_to->a_url->url_user, sip->sip_to->a_url->url_host);
-					sql = switch_mprintf("update sip_registrations set ping_status='Reachable' where sip_user='%s' and sip_host='%s' and call_id='%q'",
+					sql = switch_mprintf("update sip_registrations set ping_status='Reachable' where sip_user='%q' and sip_host='%q' and call_id='%q'",
 							     sip->sip_to->a_url->url_user, sip->sip_to->a_url->url_host, call_id);
 					sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
 					switch_safe_free(sql);
@@ -6736,7 +6736,7 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 				const char *presence_id = switch_channel_get_variable(channel, "presence_id");
 
 				sql = switch_mprintf("update sip_dialogs set state='%q',presence_id='%q',presence_data='%q' "
-									 "where uuid='%s';\n", astate, switch_str_nil(presence_id), switch_str_nil(presence_data),
+									 "where uuid='%q';\n", astate, switch_str_nil(presence_id), switch_str_nil(presence_data),
 									 switch_core_session_get_uuid(session));
 				switch_assert(sql);
 				sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
