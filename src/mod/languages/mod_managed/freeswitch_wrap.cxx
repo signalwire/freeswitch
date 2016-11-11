@@ -40132,23 +40132,25 @@ SWIGEXPORT void SWIGSTDCALL CSharp_switch_ivr_dmachine_destroy(void * jarg1) {
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_switch_ivr_dmachine_bind(void * jarg1, char * jarg2, char * jarg3, int jarg4, void * jarg5, void * jarg6) {
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_ivr_dmachine_bind(void * jarg1, char * jarg2, char * jarg3, unsigned char jarg4, int jarg5, void * jarg6, void * jarg7) {
   int jresult ;
   switch_ivr_dmachine_t *arg1 = (switch_ivr_dmachine_t *) 0 ;
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) 0 ;
-  int32_t arg4 ;
-  switch_ivr_dmachine_callback_t arg5 = (switch_ivr_dmachine_callback_t) 0 ;
-  void *arg6 = (void *) 0 ;
+  switch_byte_t arg4 ;
+  int32_t arg5 ;
+  switch_ivr_dmachine_callback_t arg6 = (switch_ivr_dmachine_callback_t) 0 ;
+  void *arg7 = (void *) 0 ;
   switch_status_t result;
   
   arg1 = (switch_ivr_dmachine_t *)jarg1; 
   arg2 = (char *)jarg2; 
   arg3 = (char *)jarg3; 
-  arg4 = (int32_t)jarg4; 
-  arg5 = (switch_ivr_dmachine_callback_t)jarg5; 
-  arg6 = (void *)jarg6; 
-  result = (switch_status_t)switch_ivr_dmachine_bind(arg1,(char const *)arg2,(char const *)arg3,arg4,arg5,arg6);
+  arg4 = (switch_byte_t)jarg4; 
+  arg5 = (int32_t)jarg5; 
+  arg6 = (switch_ivr_dmachine_callback_t)jarg6; 
+  arg7 = (void *)jarg7; 
+  result = (switch_status_t)switch_ivr_dmachine_bind(arg1,(char const *)arg2,(char const *)arg3,arg4,arg5,arg6,arg7);
   jresult = result; 
   return jresult;
 }

@@ -6424,8 +6424,8 @@ else
     freeswitchPINVOKE.switch_ivr_dmachine_destroy(SWIGTYPE_p_p_switch_ivr_dmachine.getCPtr(dmachine));
   }
 
-  public static switch_status_t switch_ivr_dmachine_bind(SWIGTYPE_p_switch_ivr_dmachine dmachine, string realm, string digits, int key, SWIGTYPE_p_f_p_switch_ivr_dmachine_match__switch_status_t callback, SWIGTYPE_p_void user_data) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_ivr_dmachine_bind(SWIGTYPE_p_switch_ivr_dmachine.getCPtr(dmachine), realm, digits, key, SWIGTYPE_p_f_p_switch_ivr_dmachine_match__switch_status_t.getCPtr(callback), SWIGTYPE_p_void.getCPtr(user_data));
+  public static switch_status_t switch_ivr_dmachine_bind(SWIGTYPE_p_switch_ivr_dmachine dmachine, string realm, string digits, byte is_priority, int key, SWIGTYPE_p_f_p_switch_ivr_dmachine_match__switch_status_t callback, SWIGTYPE_p_void user_data) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_ivr_dmachine_bind(SWIGTYPE_p_switch_ivr_dmachine.getCPtr(dmachine), realm, digits, is_priority, key, SWIGTYPE_p_f_p_switch_ivr_dmachine_match__switch_status_t.getCPtr(callback), SWIGTYPE_p_void.getCPtr(user_data));
     return ret;
   }
 
@@ -17674,7 +17674,7 @@ class freeswitchPINVOKE {
   public static extern void switch_ivr_dmachine_destroy(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_ivr_dmachine_bind")]
-  public static extern int switch_ivr_dmachine_bind(HandleRef jarg1, string jarg2, string jarg3, int jarg4, HandleRef jarg5, HandleRef jarg6);
+  public static extern int switch_ivr_dmachine_bind(HandleRef jarg1, string jarg2, string jarg3, byte jarg4, int jarg5, HandleRef jarg6, HandleRef jarg7);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_ivr_dmachine_feed")]
   public static extern int switch_ivr_dmachine_feed(HandleRef jarg1, string jarg2, HandleRef jarg3);
