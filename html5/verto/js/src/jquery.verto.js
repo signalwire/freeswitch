@@ -1898,11 +1898,6 @@
     $.verto.dialog = function(direction, verto, params) {
         var dialog = this;
 
-        var tag = verto.options.tag;
-        if (typeof(tag) === "function") {
-            tag = tag();
-        }
-
         dialog.params = $.extend({
             useVideo: verto.options.useVideo,
             useStereo: verto.options.useStereo,
@@ -1910,7 +1905,7 @@
 	    useCamera: verto.options.deviceParams.useCamera,
 	    useMic: verto.options.deviceParams.useMic,
 	    useSpeak: verto.options.deviceParams.useSpeak,
-            tag: tag,
+            tag: verto.options.tag,
             localTag: verto.options.localTag,
             login: verto.options.login,
 	    videoParams: verto.options.videoParams
@@ -1933,6 +1928,10 @@
         } else {
             dialog.callID = dialog.params.callID = generateGUID();
         }
+
+	if (typeof(dialog.params.tag) === "function") {
+		dialog.params.tag = dialog.params.tag();
+	}
 	
         if (dialog.params.tag) {
             dialog.audioStream = document.getElementById(dialog.params.tag);
