@@ -166,7 +166,7 @@ static switch_status_t digit_action_callback(switch_ivr_dmachine_match_t *match)
 	int x = 0;
 	char *flags = "";
 
-	if (switch_ivr_dmachine_get_target(match->dmachine) == DIGIT_TARGET_PEER || act->target == DIGIT_TARGET_PEER || act->target == DIGIT_TARGET_BOTH) {
+	if (act->target == DIGIT_TARGET_PEER || act->target == DIGIT_TARGET_BOTH) {		
 		if (switch_core_session_get_partner(act->session, &use_session) != SWITCH_STATUS_SUCCESS) {
 			use_session = act->session;
 		}
