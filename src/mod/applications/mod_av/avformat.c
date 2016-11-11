@@ -2494,7 +2494,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_avformat_load)
 	supported_formats[i++] = "mp4";
 	supported_formats[i++] = "m4a";
 	supported_formats[i++] = "mov";
-
+	supported_formats[i++] = "mkv";
+	supported_formats[i++] = "webm";
 
 	file_interface = (switch_file_interface_t *)switch_loadable_module_create_interface(*module_interface, SWITCH_FILE_INTERFACE);
 	file_interface->interface_name = modname;
