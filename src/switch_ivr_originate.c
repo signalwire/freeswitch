@@ -432,7 +432,7 @@ static uint8_t check_channel_status(originate_global_t *oglobals, originate_stat
 	char bug_key[256] = "";
 	int send_ringback = 0;
 	uint8_t ring_ready_val = 0;
-	int pickups = 0;
+	int pickups_without_timelimit = 0;
 
 	oglobals->hups = 0;
 	oglobals->idx = IDX_NADA;
@@ -499,7 +499,9 @@ static uint8_t check_channel_status(originate_global_t *oglobals, originate_stat
 
 
 		if (originate_status[i].peer_channel && switch_channel_test_flag(originate_status[i].peer_channel, CF_PICKUP)) {
-			pickups++;
+			if (originate_status[i].per_channel_timelimit_sec == 0) {
+				pickups_without_timelimit++;
+			}
 		}
 
 		if (!(originate_status[i].peer_channel && originate_status[i].peer_session)) {
@@ -722,7 +724,9 @@ static uint8_t check_channel_status(originate_global_t *oglobals, originate_stat
 			) {
 			(oglobals->hups)++;
 			if (switch_channel_test_flag(originate_status[i].peer_channel, CF_PICKUP)) {
-				pickups--;
+				if (originate_status[i].per_channel_timelimit_sec == 0) {
+					pickups_without_timelimit--;
+				}
 			}
 		} else if ((switch_channel_test_flag(originate_status[i].peer_channel, CF_ANSWERED) ||
 					(oglobals->early_ok && switch_channel_test_flag(originate_status[i].peer_channel, CF_EARLY_MEDIA)) ||
@@ -778,7 +782,8 @@ static uint8_t check_channel_status(originate_global_t *oglobals, originate_stat
 		}
 	}
 
-	if (oglobals->hups > 0 && oglobals->hups + pickups == len) {
+	if (oglobals->hups > 0 && oglobals->hups + pickups_without_timelimit == len) {
+		/* only pickup channels with no timelimit remain */
 		rval = 0;
 	} else {
 		rval = 1;
@@ -786,7 +791,7 @@ static uint8_t check_channel_status(originate_global_t *oglobals, originate_stat
 
   end:
 
-	if (rval == 0 && pickups) {
+	if (rval == 0 && pickups_without_timelimit) {
 		for (i = 0; i < len; i++) {
 			if (originate_status[i].peer_channel && switch_channel_test_flag(originate_status[i].peer_channel, CF_PICKUP) && 
 				switch_channel_up(originate_status[i].peer_channel)) {
