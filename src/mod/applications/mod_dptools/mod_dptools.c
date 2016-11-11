@@ -286,7 +286,7 @@ SWITCH_STANDARD_APP(clear_digit_action_function)
 	switch_ivr_dmachine_t *dmachine;
 	char *realm = NULL;
 	char *target_str;
-	switch_digit_action_target_t target = DIGIT_TARGET_SELF;
+	switch_digit_action_target_t t, target = DIGIT_TARGET_SELF;
 
 	if (zstr((char *)data)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "clear_digit_action called with no args");
@@ -300,15 +300,26 @@ SWITCH_STANDARD_APP(clear_digit_action_function)
 		target = str2target(target_str);
 	}
 
+clear_next:
+	if (target == DIGIT_TARGET_BOTH) {
+		t = DIGIT_TARGET_PEER;
+	} else {
+		t = target;
+	}
 
-	if ((dmachine = switch_core_session_get_dmachine(session, target))) {
+	if ((dmachine = switch_core_session_get_dmachine(session, t))) {
 		if (zstr(realm) || !strcasecmp(realm, "all")) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Digit parser %s: Clearing all realms\n", switch_ivr_dmachine_get_name(dmachine));
-			switch_core_session_set_dmachine(session, NULL, target);
+			switch_core_session_set_dmachine(session, NULL, t);
 			switch_ivr_dmachine_destroy(&dmachine);
 		} else {
 			switch_ivr_dmachine_clear_realm(dmachine, realm);
 		}
+	}
+
+	if (target == DIGIT_TARGET_BOTH) {
+			target = DIGIT_TARGET_SELF;
+			goto clear_next;
 	}
 }
 
