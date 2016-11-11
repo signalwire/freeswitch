@@ -2233,8 +2233,8 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_running_state(
 	switch_channel_clear_flag(channel, CF_TAGGED);
 	
 
-	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, switch_channel_get_uuid(channel), SWITCH_LOG_DEBUG, "(%s) Running State Change %s\n",
-					  channel->name, state_names[state]);
+	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, switch_channel_get_uuid(channel), SWITCH_LOG_DEBUG, "(%s) Running State Change %s (Cur %d Tot %" SWITCH_SIZE_T_FMT ")\n",
+					  channel->name, state_names[state], switch_core_session_count(), switch_core_session_id() - 1);
 
 	switch_mutex_lock(channel->state_mutex);
 
