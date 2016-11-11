@@ -4441,8 +4441,29 @@ else
     return ret;
   }
 
-  public static switch_status_t switch_frame_buffer_create(SWIGTYPE_p_p_switch_frame_buffer_s fbP) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_frame_buffer_create(SWIGTYPE_p_p_switch_frame_buffer_s.getCPtr(fbP));
+  public static switch_status_t switch_frame_buffer_create(SWIGTYPE_p_p_switch_frame_buffer_s fbP, SWIGTYPE_p_switch_size_t qlen) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_frame_buffer_create(SWIGTYPE_p_p_switch_frame_buffer_s.getCPtr(fbP), SWIGTYPE_p_switch_size_t.getCPtr(qlen));
+    if (freeswitchPINVOKE.SWIGPendingException.Pending) throw freeswitchPINVOKE.SWIGPendingException.Retrieve();
+    return ret;
+  }
+
+  public static switch_status_t switch_frame_buffer_push(SWIGTYPE_p_switch_frame_buffer_s fb, SWIGTYPE_p_void ptr) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_frame_buffer_push(SWIGTYPE_p_switch_frame_buffer_s.getCPtr(fb), SWIGTYPE_p_void.getCPtr(ptr));
+    return ret;
+  }
+
+  public static switch_status_t switch_frame_buffer_trypush(SWIGTYPE_p_switch_frame_buffer_s fb, SWIGTYPE_p_void ptr) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_frame_buffer_trypush(SWIGTYPE_p_switch_frame_buffer_s.getCPtr(fb), SWIGTYPE_p_void.getCPtr(ptr));
+    return ret;
+  }
+
+  public static switch_status_t switch_frame_buffer_pop(SWIGTYPE_p_switch_frame_buffer_s fb, SWIGTYPE_p_p_void ptr) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_frame_buffer_pop(SWIGTYPE_p_switch_frame_buffer_s.getCPtr(fb), SWIGTYPE_p_p_void.getCPtr(ptr));
+    return ret;
+  }
+
+  public static switch_status_t switch_frame_buffer_trypop(SWIGTYPE_p_switch_frame_buffer_s fb, SWIGTYPE_p_p_void ptr) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_frame_buffer_trypop(SWIGTYPE_p_switch_frame_buffer_s.getCPtr(fb), SWIGTYPE_p_p_void.getCPtr(ptr));
     return ret;
   }
 
@@ -12976,7 +12997,19 @@ class freeswitchPINVOKE {
   public static extern int switch_frame_buffer_destroy(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_frame_buffer_create")]
-  public static extern int switch_frame_buffer_create(HandleRef jarg1);
+  public static extern int switch_frame_buffer_create(HandleRef jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_frame_buffer_push")]
+  public static extern int switch_frame_buffer_push(HandleRef jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_frame_buffer_trypush")]
+  public static extern int switch_frame_buffer_trypush(HandleRef jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_frame_buffer_pop")]
+  public static extern int switch_frame_buffer_pop(HandleRef jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_frame_buffer_trypop")]
+  public static extern int switch_frame_buffer_trypop(HandleRef jarg1, HandleRef jarg2);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_cputime_userms_set")]
   public static extern void switch_cputime_userms_set(HandleRef jarg1, long jarg2);
@@ -20529,6 +20562,7 @@ public enum rtcp_psfb_t {
 namespace FreeSWITCH.Native {
 
 public enum rtcp_pt_t {
+  _RTCP_PT_FIR = 192,
   _RTCP_PT_IJ = 195,
   _RTCP_PT_SR = 200,
   _RTCP_PT_RR = 201,
@@ -37341,7 +37375,8 @@ namespace FreeSWITCH.Native {
   SWITCH_IO_FLAG_NONE = 0,
   SWITCH_IO_FLAG_NOBLOCK = (1 << 0),
   SWITCH_IO_FLAG_SINGLE_READ = (1 << 1),
-  SWITCH_IO_FLAG_FORCE = (1 << 2)
+  SWITCH_IO_FLAG_FORCE = (1 << 2),
+  SWITCH_IO_FLAG_QUEUED = (1 << 3)
 }
 
 }
@@ -39917,8 +39952,10 @@ public enum switch_rtp_flag_t {
   SWITCH_RTP_FLAG_NACK,
   SWITCH_RTP_FLAG_TMMBR,
   SWITCH_RTP_FLAG_GEN_TS_DELTA,
+  SWITCH_RTP_FLAG_GEN_TS_MANUAL,
   SWITCH_RTP_FLAG_DETECT_SSRC,
   SWITCH_RTP_FLAG_TEXT,
+  SWITCH_RTP_FLAG_OLD_FIR,
   SWITCH_RTP_FLAG_INVALID
 }
 

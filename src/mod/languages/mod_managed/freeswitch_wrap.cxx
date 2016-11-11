@@ -20806,13 +20806,77 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_frame_buffer_destroy(void * jarg1) {
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_switch_frame_buffer_create(void * jarg1) {
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_frame_buffer_create(void * jarg1, void * jarg2) {
   int jresult ;
   switch_frame_buffer_t **arg1 = (switch_frame_buffer_t **) 0 ;
+  switch_size_t arg2 ;
+  switch_size_t *argp2 ;
   switch_status_t result;
   
   arg1 = (switch_frame_buffer_t **)jarg1; 
-  result = (switch_status_t)switch_frame_buffer_create(arg1);
+  argp2 = (switch_size_t *)jarg2; 
+  if (!argp2) {
+    SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentNullException, "Attempt to dereference null switch_size_t", 0);
+    return 0;
+  }
+  arg2 = *argp2; 
+  result = (switch_status_t)switch_frame_buffer_create(arg1,arg2);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_frame_buffer_push(void * jarg1, void * jarg2) {
+  int jresult ;
+  switch_frame_buffer_t *arg1 = (switch_frame_buffer_t *) 0 ;
+  void *arg2 = (void *) 0 ;
+  switch_status_t result;
+  
+  arg1 = (switch_frame_buffer_t *)jarg1; 
+  arg2 = (void *)jarg2; 
+  result = (switch_status_t)switch_frame_buffer_push(arg1,arg2);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_frame_buffer_trypush(void * jarg1, void * jarg2) {
+  int jresult ;
+  switch_frame_buffer_t *arg1 = (switch_frame_buffer_t *) 0 ;
+  void *arg2 = (void *) 0 ;
+  switch_status_t result;
+  
+  arg1 = (switch_frame_buffer_t *)jarg1; 
+  arg2 = (void *)jarg2; 
+  result = (switch_status_t)switch_frame_buffer_trypush(arg1,arg2);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_frame_buffer_pop(void * jarg1, void * jarg2) {
+  int jresult ;
+  switch_frame_buffer_t *arg1 = (switch_frame_buffer_t *) 0 ;
+  void **arg2 = (void **) 0 ;
+  switch_status_t result;
+  
+  arg1 = (switch_frame_buffer_t *)jarg1; 
+  arg2 = (void **)jarg2; 
+  result = (switch_status_t)switch_frame_buffer_pop(arg1,arg2);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_frame_buffer_trypop(void * jarg1, void * jarg2) {
+  int jresult ;
+  switch_frame_buffer_t *arg1 = (switch_frame_buffer_t *) 0 ;
+  void **arg2 = (void **) 0 ;
+  switch_status_t result;
+  
+  arg1 = (switch_frame_buffer_t *)jarg1; 
+  arg2 = (void **)jarg2; 
+  result = (switch_status_t)switch_frame_buffer_trypop(arg1,arg2);
   jresult = result; 
   return jresult;
 }
