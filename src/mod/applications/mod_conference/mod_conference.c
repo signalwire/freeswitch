@@ -272,7 +272,7 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 				frame.datalen = framedatalen;
 
 				for (omember = conference->members; omember; omember = omember->next) {
-					if (omember != imember) {
+					if (omember != imember && omember->session) {
 						switch_core_session_write_text_frame(omember->session, &frame, 0, 0);
 					}
 				}
