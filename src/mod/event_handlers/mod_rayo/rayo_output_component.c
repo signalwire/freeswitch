@@ -79,6 +79,7 @@ static struct rayo_component *create_output_component(struct rayo_actor *actor, 
 		output_component->max_time_ms = iks_find_int_attrib(output, "max-time");
 		output_component->start_paused = iks_find_bool_attrib(output, "start-paused");
 		output_component->renderer = switch_core_strdup(RAYO_POOL(output_component), iks_find_attrib_soft(output, "renderer"));
+		output_component->headers = NULL;
 		/* get custom headers */
 		{
 			switch_stream_handle_t headers = { 0 };
@@ -95,11 +96,11 @@ static struct rayo_component *create_output_component(struct rayo_actor *actor, 
 					}
 				}
 			}
-			if (headers.data) {
+			if (headers.data && !first) {
 				headers.write_function(&headers, "}");
 				output_component->headers = switch_core_strdup(RAYO_POOL(output_component), (char *)headers.data);
-				free(headers.data);
 			}
+			switch_safe_free(headers.data);
 		}
 	} else {
 		switch_core_destroy_memory_pool(&pool);
