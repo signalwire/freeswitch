@@ -1,6 +1,6 @@
 /*
  * mod_ssml for FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2013-2014, Grasshopper
+ * Copyright (C) 2013-2014,2016 Grasshopper
  *
  * Version: MPL 1.1
  *
@@ -1030,6 +1030,71 @@ static void do_config_voices(switch_memory_pool_t *pool, switch_xml_t voices, sw
 }
 
 /**
+ * Set default configuration when no XML configuration is present.
+ * @param pool memory pool to use
+ * @return SWITCH_STATUS_SUCCESS if module is configured
+ */
+static switch_status_t do_default_config(switch_memory_pool_t *pool)
+{
+	struct voice *v = NULL;
+	struct language *l = NULL;
+	struct macro *m = NULL;
+	const char *sounds_dir = switch_core_get_variable("sounds_dir");
+
+	/* add TTS voice */
+	v = switch_core_alloc(pool, sizeof(*v));
+	v->name = "slt";
+	v->language = "en-US";
+	v->gender = "female";
+	v->prefix = "tts://flite|slt|";
+	v->priority = MAX_VOICE_PRIORITY;
+	switch_core_hash_insert(globals.tts_voice_map, "slt", v);
+
+	/* add Say voice */
+	v = switch_core_alloc(pool, sizeof(*v));
+	v->name = "callie";
+	v->language = "en-US";
+	v->gender = "female";
+	v->prefix = switch_core_sprintf(pool, "%s/en/us/callie/", sounds_dir ? sounds_dir : "");
+	switch_core_hash_insert(globals.say_voice_map, "callie", v);
+
+	/* Add ISO language to Say language mapping */
+	l = switch_core_alloc(pool, sizeof(*l));
+	l->iso = "en-US";
+	l->say_module = "en";
+	l->language = "en";
+	switch_core_hash_insert(globals.language_map, "en-US", l);
+
+	/* Map interpret-as to Say */
+	m = switch_core_alloc(pool, sizeof(*m));
+	m->name = "ordinal";
+	m->method = "counted";
+	m->type = "number";
+	switch_core_hash_insert(globals.interpret_as_map, "ordinal", m);
+
+	m = switch_core_alloc(pool, sizeof(*m));
+	m->name = "cardinal";
+	m->method = "pronounced";
+	m->type = "number";
+	switch_core_hash_insert(globals.interpret_as_map, "cardinal", m);
+
+	m = switch_core_alloc(pool, sizeof(*m));
+	m->name = "characters";
+	m->method = "pronounced";
+	m->type = "name_spelled";
+	switch_core_hash_insert(globals.interpret_as_map, "characters", m);
+
+	m = switch_core_alloc(pool, sizeof(*m));
+	m->name = "telephone";
+	m->method = "pronounced";
+	m->type = "telephone_number";
+	switch_core_hash_insert(globals.interpret_as_map, "telephone", m);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
+/**
  * Configure module
  * @param pool memory pool to use
  * @return SWITCH_STATUS_SUCCESS if module is configured
@@ -1040,8 +1105,8 @@ static switch_status_t do_config(switch_memory_pool_t *pool)
 	switch_xml_t cfg, xml;
 
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", cf);
-		return SWITCH_STATUS_TERM;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "open of %s failed, using default configuration\n", cf);
+		return do_default_config(pool);
 	}
 
 	/* get voices */
