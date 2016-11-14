@@ -2031,6 +2031,17 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 				if (h->max_no_answer > 0 && (h->no_answer_count + 1) >= h->max_no_answer) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_DEBUG, "Agent %s reach maximum no answer of %d, setting agent status to %s\n",
 							h->agent_name, h->max_no_answer, cc_agent_status2str(h->agent_no_answer_status));
+
+					if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CALLCENTER_EVENT) == SWITCH_STATUS_SUCCESS) {
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent", h->agent_name);
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Action", "agent-max-no-answer");
+						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Agent-No-Answer-Count", "%d", h->max_no_answer);
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent-No-Answer-Status", cc_agent_status2str(h->agent_no_answer_status));
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Member-UUID", h->member_uuid);
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Member-Session-UUID", h->member_session_uuid);
+						switch_event_fire(&event);
+					}
+
 					cc_agent_update("status", cc_agent_status2str(h->agent_no_answer_status), h->agent_name);
 				}
 				break;
