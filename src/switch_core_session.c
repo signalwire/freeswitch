@@ -647,13 +647,15 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 		if (channel) {
 			const char *val;
 			switch_codec_t *vid_read_codec = NULL, *read_codec = switch_core_session_get_read_codec(session);
-			const char *ep, *max_forwards = switch_core_session_sprintf(session, "%d", forwardval);
+			const char *ep = NULL, *max_forwards = switch_core_session_sprintf(session, "%d", forwardval);
 
 			switch_channel_set_variable(peer_channel, SWITCH_MAX_FORWARDS_VARIABLE, max_forwards);
 
 			profile = switch_channel_get_caller_profile(channel);
 
 			vid_read_codec = switch_core_session_get_video_read_codec(session);
+
+			ep = switch_channel_get_variable(channel, "ep_codec_string");
 
 			if (read_codec && read_codec->implementation && switch_core_codec_ready(read_codec)) {
 				char rc[80] = "", vrc[80] = "", tmp[160] = "";
@@ -667,18 +669,18 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 
 				switch_snprintf(tmp, sizeof(tmp), "%s%s", rc, vrc);
 				switch_channel_set_variable(peer_channel, SWITCH_ORIGINATOR_CODEC_VARIABLE, tmp);
-			} else if ((ep = switch_channel_get_variable(channel, "ep_codec_string"))) {
+			} else if (ep) {
 				switch_channel_set_variable(peer_channel, SWITCH_ORIGINATOR_CODEC_VARIABLE, ep);
 			}
 
 			
-			if (switch_channel_test_flag(channel, CF_MSRPS)) {
+			if (switch_channel_test_flag(channel, CF_MSRPS) || switch_channel_test_flag(channel, CF_WANT_MSRPS)) {
 				switch_channel_set_flag(peer_channel, CF_WANT_MSRPS);
-			} else if (switch_channel_test_flag(channel, CF_MSRP)) {
+			} else if (switch_channel_test_flag(channel, CF_MSRP) || switch_channel_test_flag(channel, CF_WANT_MSRP)) {
 				switch_channel_set_flag(peer_channel, CF_WANT_MSRP);
 			}
 
-			if (switch_channel_test_flag(channel, CF_RTT)) {
+			if (switch_channel_test_flag(channel, CF_RTT) || switch_channel_test_flag(channel, CF_WANT_RTT)) {
 				switch_channel_set_flag(peer_channel, CF_WANT_RTT);
 			}
 

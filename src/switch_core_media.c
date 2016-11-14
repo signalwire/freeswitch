@@ -12426,6 +12426,12 @@ static void switch_core_media_set_r_sdp_codec_string(switch_core_session_t *sess
 					}
 				}
 			}
+		} else if (m->m_proto == sdp_proto_msrp) {
+			switch_channel_set_flag(channel, CF_WANT_MSRP);
+		} else if (m->m_proto == sdp_proto_msrps) {
+			switch_channel_set_flag(channel, CF_WANT_MSRPS);
+		} else if (m->m_type == sdp_media_text) {
+			switch_channel_set_flag(channel, CF_WANT_RTT);
 		}
 	}
 
