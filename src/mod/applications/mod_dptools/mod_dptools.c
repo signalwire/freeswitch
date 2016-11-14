@@ -2387,17 +2387,37 @@ static switch_status_t xfer_on_dtmf(switch_core_session_t *session, void *input,
 			switch_channel_t *channel = switch_core_session_get_channel(session);
 			switch_channel_t *peer_channel = switch_core_session_get_channel(peer_session);
 
-			if (dtmf->digit == '*') {
+			const char *attxfer_cancel_key = NULL, *attxfer_hangup_key = NULL, *attxfer_conf_key = NULL;
+
+			if (!(attxfer_cancel_key = switch_channel_get_variable(channel, "attxfer_cancel_key"))) {
+				if (!(attxfer_cancel_key = switch_channel_get_variable_partner(channel, "attxfer_cancel_key"))) {
+					attxfer_cancel_key = "#";
+				}
+			}
+
+			if (!(attxfer_hangup_key = switch_channel_get_variable(channel, "attxfer_hangup_key"))) {
+				if (!(attxfer_hangup_key = switch_channel_get_variable_partner(channel, "attxfer_hangup_key"))) {
+					attxfer_hangup_key = "*";
+				}
+			}
+
+			if (!(attxfer_conf_key = switch_channel_get_variable(channel, "attxfer_conf_key"))) {
+				if (!(attxfer_conf_key = switch_channel_get_variable_partner(channel, "attxfer_conf_key"))) {
+					attxfer_conf_key = "0";
+				}
+			}
+
+			if (dtmf->digit == *attxfer_hangup_key) {
 				switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
 				return SWITCH_STATUS_FALSE;
 			}
 
-			if (dtmf->digit == '#') {
+			if (dtmf->digit == *attxfer_cancel_key) {
 				switch_channel_hangup(peer_channel, SWITCH_CAUSE_NORMAL_CLEARING);
 				return SWITCH_STATUS_FALSE;
 			}
 
-			if (dtmf->digit == '0') {
+			if (dtmf->digit == *attxfer_conf_key) {
 				switch_caller_extension_t *extension = NULL;
 				const char *app = "three_way";
 				const char *app_arg = switch_core_session_get_uuid(session);
