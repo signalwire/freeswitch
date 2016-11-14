@@ -80,12 +80,30 @@ switch_status_t mod_amqp_command_destroy(mod_amqp_command_profile_t **prof)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+
+static char *mod_amqp_expand_header(switch_memory_pool_t *pool, switch_event_t *event, char *val)
+{
+        char *expanded;
+        char *dup = NULL;
+
+        expanded = switch_event_expand_headers(event, val);
+        dup = switch_core_strdup(pool, expanded);
+
+        if (expanded != val) {
+                free(expanded);
+        }
+
+        return dup;
+}
+
+
 switch_status_t mod_amqp_command_create(char *name, switch_xml_t cfg)
 {
 	mod_amqp_command_profile_t *profile = NULL;
 	switch_xml_t params, param, connections, connection;
 	switch_threadattr_t *thd_attr = NULL;
 	switch_memory_pool_t *pool;
+	switch_event_t *event;
 	char *exchange = NULL, *binding_key = NULL, *queue = NULL;
 
 	if (switch_core_new_memory_pool(&pool) != SWITCH_STATUS_SUCCESS) {
@@ -98,6 +116,10 @@ switch_status_t mod_amqp_command_create(char *name, switch_xml_t cfg)
 	profile->name = switch_core_strdup(profile->pool, name);
 	profile->running = 1;
 	profile->reconnect_interval_ms = 1000;
+
+        if (switch_event_create(&event, SWITCH_EVENT_GENERAL) != SWITCH_STATUS_SUCCESS) {
+                goto err;
+	}
 
 	if ((params = switch_xml_child(cfg, "params")) != NULL) {
 		for (param = switch_xml_child(params, "param"); param; param = param->next) {
@@ -120,14 +142,16 @@ switch_status_t mod_amqp_command_create(char *name, switch_xml_t cfg)
 					profile->reconnect_interval_ms = interval;
 				}
 			} else if (!strncmp(var, "exchange-name", 13)) {
-				exchange = switch_core_strdup(profile->pool, val);
+				exchange = mod_amqp_expand_header(profile->pool, event, val);
 			} else if (!strncmp(var, "queue-name", 10)) {
-				queue = switch_core_strdup(profile->pool, val);
+				queue = mod_amqp_expand_header(profile->pool, event, val);
 			} else if (!strncmp(var, "binding_key", 11)) {
-				binding_key = switch_core_strdup(profile->pool, val);
+				binding_key = mod_amqp_expand_header(profile->pool, event, val);
 			}
 		}
 	}
+
+        switch_event_destroy(&event);
 
 	/* Handle defaults of string types */
 	profile->exchange = exchange ? exchange : switch_core_strdup(profile->pool, "TAP.Commands");
