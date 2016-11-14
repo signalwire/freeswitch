@@ -1151,7 +1151,10 @@ SWITCH_DECLARE(switch_status_t) switch_msrp_send(switch_msrp_session_t *ms, msrp
 	char *to_path = msrp_msg->headers[MSRP_H_TO_PATH] ? msrp_msg->headers[MSRP_H_TO_PATH] : ms->remote_path;
 	char *from_path = msrp_msg->headers[MSRP_H_FROM_PATH] ? msrp_msg->headers[MSRP_H_FROM_PATH] : ms->local_path;
 
-	if (!from_path) return SWITCH_STATUS_SUCCESS;
+	if (!from_path) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "NO FROM PATH\n");
+		return SWITCH_STATUS_SUCCESS;
+	}
 
 	random_string(transaction_id, MSRP_TRANS_ID_LEN);
 
@@ -1179,7 +1182,6 @@ SWITCH_DECLARE(switch_status_t) switch_msrp_send(switch_msrp_session_t *ms, msrp
 	sprintf(buf + len, "\r\n-------%s$\r\n", transaction_id);
 	len += (12 + strlen(transaction_id));
 	if (globals.debug) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "---------------------send: %" SWITCH_SIZE_T_FMT " bytes\n%s\n", len, buf);
-
 	return ms->csock ? msrp_socket_send(ms->csock, buf, &len) : SWITCH_STATUS_FALSE;
 }
 

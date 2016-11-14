@@ -128,7 +128,11 @@ static void text_bridge_thread(switch_core_session_t *session, void *obj)
 		}
 		
 		if (!switch_test_flag(read_frame, SFF_CNG)) {
-			switch_core_session_write_text_frame(vh->session_b, read_frame, 0, 0);
+			switch_status_t tstatus = switch_core_session_write_text_frame(vh->session_b, read_frame, 0, 0);
+
+			if (tstatus != SWITCH_STATUS_SUCCESS) {
+				switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+			}
 		}
 		switch_core_session_write_text_frame(vh->session_a, NULL, 0, 0);
 	}
