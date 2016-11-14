@@ -152,6 +152,13 @@ static switch_status_t load_config()
 	switch_xml_t cfg, xml = NULL, settings, param;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
+	globals.cert = switch_core_sprintf(globals.pool, "%s%swss.pem", SWITCH_GLOBAL_dirs.certs_dir, SWITCH_PATH_SEPARATOR);
+	globals.key = globals.cert;
+
+	if ( switch_file_exists(globals.key, globals.pool) != SWITCH_STATUS_SUCCESS ) {
+		switch_core_gen_certs(globals.key);
+	}
+
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Open of %s failed\n", cf);
 		status = SWITCH_STATUS_FALSE;
@@ -179,18 +186,6 @@ static switch_status_t load_config()
 				if (globals.message_buffer_size == 0) globals.message_buffer_size = 50;
 			}
 		}
-	}
-
-	if (!globals.cert) {
-		globals.cert = switch_core_sprintf(globals.pool, "%s%swss.pem", SWITCH_GLOBAL_dirs.certs_dir, SWITCH_PATH_SEPARATOR);
-	}
-
-	if (!globals.key) {
-		globals.key = globals.cert;
-	}
-
-	if ( switch_file_exists(globals.key, globals.pool) != SWITCH_STATUS_SUCCESS ) {
-		switch_core_gen_certs(globals.key);
 	}
 
 	switch_xml_free(xml);
