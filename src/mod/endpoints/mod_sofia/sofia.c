@@ -9941,7 +9941,12 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 
 		if (sip && sip->sip_from) {
 			user = switch_core_session_sprintf(session, "%s@%s", sip->sip_from->a_url->url_user, sip->sip_from->a_url->url_host);
-			blind_result = switch_ivr_set_user(session, user);
+			switch_event_create(&v_event, SWITCH_EVENT_REQUEST_PARAMS);
+			for (un = sip->sip_unknown; un; un = un->un_next) {
+				switch_event_add_header_string(v_event, SWITCH_STACK_BOTTOM, un->un_name, un->un_value);
+			};
+			blind_result = switch_ivr_set_user_extended(session, user, v_event);
+			switch_event_destroy(&v_event);
 		}
 		if(!sofia_test_pflag(profile, PFLAG_BLIND_AUTH_ENFORCE_RESULT) || blind_result == SWITCH_STATUS_SUCCESS) {
 			is_auth++;

@@ -3827,6 +3827,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_set_user_xml(switch_core_session_t *s
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_set_user(switch_core_session_t *session, const char *data)
 {
+	return switch_ivr_set_user_extended(session, data, NULL);
+}
+
+SWITCH_DECLARE(switch_status_t) switch_ivr_set_user_extended(switch_core_session_t *session, const char *data, switch_event_t *params)
+{
 	switch_xml_t x_user = 0;
 	char *user, *domain;
 	switch_status_t status = SWITCH_STATUS_FALSE;
@@ -3849,8 +3854,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_set_user(switch_core_session_t *sessi
 
 	*domain++ = '\0';
 
-
-	if (switch_xml_locate_user_merged("id", user, domain, NULL, &x_user, NULL) != SWITCH_STATUS_SUCCESS) {
+	if (switch_xml_locate_user_merged("id", user, domain, NULL, &x_user, params) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "can't find user [%s@%s]\n", user, domain);
 		goto done;
 	}
