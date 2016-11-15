@@ -855,11 +855,11 @@ void conference_video_layer_set_banner(conference_member_t *member, mcu_layer_t 
 		}
 	}
 
-	if (layer->screen_h < layer->screen_w) {
-		font_size = (uint16_t)((double)(font_scale / 100.0f) * layer->screen_h);
-	} else {
-		font_size = (uint16_t)((double)(font_scale / 100.0f) * layer->screen_w);
-	}
+	if (!text) text = "N/A";
+	font_size = (uint16_t)((double)(font_scale / 100.0f) * (layer->screen_w - (strlen(text) * 10)));
+
+	if (font_size <= 5) font_size = 5;
+	if (font_size >= 24) font_size = 24;
 
 	switch_color_set_rgb(&fgcolor, fg);
 	switch_color_set_rgb(&bgcolor, bg);
@@ -884,7 +884,6 @@ void conference_video_layer_set_banner(conference_member_t *member, mcu_layer_t 
 	//switch_img_free(&layer->logo_img);
 	//switch_img_free(&layer->logo_text_img);
 	layer->banner_img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, layer->screen_w, font_size * 2, 1);
-
 	conference_video_reset_image(layer->banner_img, &bgcolor);
 	switch_img_txt_handle_render(layer->txthandle, layer->banner_img, font_size / 2, font_size / 2, text, NULL, fg, bg, 0, 0);
 
