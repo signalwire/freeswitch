@@ -6269,7 +6269,6 @@ static void *SWITCH_THREAD_FUNC audio_write_thread(switch_thread_t *thread, void
 	
 	switch_frame_buffer_create(&a_engine->write_fb, 500);
 
-
 	while(switch_channel_up_nosig(session->channel) && mh->up == 1) {
 		void *pop;
 
@@ -6283,6 +6282,8 @@ static void *SWITCH_THREAD_FUNC audio_write_thread(switch_thread_t *thread, void
 								   write_impl.samples_per_packet, switch_core_session_get_pool(session));
 			
 		}
+		
+		switch_core_timer_next(&timer);
 
 		if (switch_frame_buffer_trypop(a_engine->write_fb, &pop) == SWITCH_STATUS_SUCCESS && pop) {
 			switch_frame_t *frame = (switch_frame_t *)pop;
@@ -6294,9 +6295,6 @@ static void *SWITCH_THREAD_FUNC audio_write_thread(switch_thread_t *thread, void
 			perform_write(session, frame, SWITCH_IO_FLAG_QUEUED, 0);
 			switch_frame_buffer_free(a_engine->write_fb, &frame);
 		}
-
-		switch_core_timer_next(&timer);
-
 	}
 
 	switch_mutex_lock(smh->control_mutex);
