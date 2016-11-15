@@ -403,8 +403,15 @@ static switch_status_t msrp_socket_recv(msrp_client_socket_t *csock, char *buf, 
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
 	if (csock->secure) {
-		*len = SSL_read(globals.ssl, buf, *len);
-		if (*len) status = SWITCH_STATUS_SUCCESS;
+		ssize_t r;
+		r = SSL_read(globals.ssl, buf, *len);
+		if (r < 0) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "TLS read error: %" SWITCH_SSIZE_T_FMT "\n", r);
+			*len = 0;
+		} else {
+			*len = r;
+			status = SWITCH_STATUS_SUCCESS;
+		}
 	} else {
 		status = switch_socket_recv(csock->sock, buf, len);
 	}
@@ -959,8 +966,8 @@ static void *SWITCH_THREAD_FUNC msrp_worker(switch_thread_t *thread, void *obj)
 	switch_safe_free(msrp_msg);
 	msrp_msg = NULL;
 
-	while(msrp_socket_recv(csock, p, &len) == SWITCH_STATUS_SUCCESS) {
-		// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "read bytes:%ld\n", len);
+	while (msrp_socket_recv(csock, p, &len) == SWITCH_STATUS_SUCCESS) {
+		// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "read bytes:%" SWITCH_SIZE_T_FMT "\n", len);
 
 		if (helper->debug) dump_buffer(buf, (p - buf) + len, __LINE__);
 
