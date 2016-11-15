@@ -33445,6 +33445,20 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_channel_pass_callee_id(void * jarg1, vo
 }
 
 
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_channel_var_true(void * jarg1, char * jarg2) {
+  int jresult ;
+  switch_channel_t *arg1 = (switch_channel_t *) 0 ;
+  char *arg2 = (char *) 0 ;
+  int result;
+  
+  arg1 = (switch_channel_t *)jarg1; 
+  arg2 = (char *)jarg2; 
+  result = (int)switch_channel_var_true(arg1,(char const *)arg2);
+  jresult = result; 
+  return jresult;
+}
+
+
 SWIGEXPORT void * SWIGSTDCALL CSharp_switch_channel_variable_first(void * jarg1) {
   void * jresult ;
   switch_channel_t *arg1 = (switch_channel_t *) 0 ;

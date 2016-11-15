@@ -4702,6 +4702,11 @@ else
     return ret;
   }
 
+  public static int switch_channel_var_true(SWIGTYPE_p_switch_channel channel, string variable) {
+    int ret = freeswitchPINVOKE.switch_channel_var_true(SWIGTYPE_p_switch_channel.getCPtr(channel), variable);
+    return ret;
+  }
+
   public static switch_event_header switch_channel_variable_first(SWIGTYPE_p_switch_channel channel) {
     IntPtr cPtr = freeswitchPINVOKE.switch_channel_variable_first(SWIGTYPE_p_switch_channel.getCPtr(channel));
     switch_event_header ret = (cPtr == IntPtr.Zero) ? null : new switch_event_header(cPtr, false);
@@ -16139,6 +16144,9 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_pass_callee_id")]
   public static extern int switch_channel_pass_callee_id(HandleRef jarg1, HandleRef jarg2);
 
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_var_true")]
+  public static extern int switch_channel_var_true(HandleRef jarg1, string jarg2);
+
   [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_variable_first")]
   public static extern IntPtr switch_channel_variable_first(HandleRef jarg1);
 
@@ -20330,6 +20338,7 @@ public enum rtcp_psfb_t {
 namespace FreeSWITCH.Native {
 
 public enum rtcp_pt_t {
+  _RTCP_PT_FIR = 192,
   _RTCP_PT_IJ = 195,
   _RTCP_PT_SR = 200,
   _RTCP_PT_RR = 201,
@@ -29575,7 +29584,8 @@ public enum switch_channel_flag_t {
   CF_VIDEO_WRITING,
   CF_SLA_INTERCEPT,
   CF_VIDEO_BREAK,
-  CF_AUDIO_PAUSE,
+  CF_AUDIO_PAUSE_READ,
+  CF_AUDIO_PAUSE_WRITE,
   CF_VIDEO_PAUSE_READ,
   CF_VIDEO_PAUSE_WRITE,
   CF_BYPASS_MEDIA_AFTER_HOLD,
@@ -39504,6 +39514,7 @@ public enum switch_rtp_flag_t {
   SWITCH_RTP_FLAG_NACK,
   SWITCH_RTP_FLAG_TMMBR,
   SWITCH_RTP_FLAG_GEN_TS_DELTA,
+  SWITCH_RTP_FLAG_GEN_TS_MANUAL,
   SWITCH_RTP_FLAG_DETECT_SSRC,
   SWITCH_RTP_FLAG_INVALID
 }
