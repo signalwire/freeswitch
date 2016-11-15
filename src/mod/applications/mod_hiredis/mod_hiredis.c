@@ -277,7 +277,7 @@ SWITCH_LIMIT_USAGE(hiredis_limit_usage)
 	int64_t count = 0; /* Redis defines the incr action as to be performed on a 64 bit signed integer */
 	char *hashkey = NULL, *response = NULL;
 
-	if ( !zstr(realm) ) {
+	if ( zstr(realm) ) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "hiredis: realm must be defined\n");
 		goto err;
 	}
