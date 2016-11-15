@@ -460,6 +460,7 @@ typedef struct mcu_layer_s {
 	struct mcu_canvas_s *canvas;
 	int need_patch;
 	conference_member_t *member;
+	switch_frame_t bug_frame;
 } mcu_layer_t;
 
 typedef struct video_layout_s {

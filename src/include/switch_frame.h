@@ -39,6 +39,16 @@
 #include <switch.h>
 
 SWITCH_BEGIN_EXTERN_C
+
+struct switch_frame_geometry {
+	uint32_t w;
+	uint32_t h;
+	uint32_t x;
+	uint32_t y;
+	uint32_t z;
+	uint32_t m;
+};
+
 /*! \brief An abstraction of a data frame */
 	struct switch_frame {
 	/*! a pointer to the codec information */
@@ -75,6 +85,7 @@ SWITCH_BEGIN_EXTERN_C
 	void *user_data;
 	payload_map_t *pmap;
 	switch_image_t *img;
+	struct switch_frame_geometry geometry;
 };
 
 SWITCH_END_EXTERN_C

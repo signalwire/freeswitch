@@ -132,6 +132,7 @@ typedef struct cv_context_s {
     switch_mutex_t *mutex;
     char *png_prefix;
     int tick_speed;
+	int confidence_level;
 } cv_context_t;
 
 
@@ -481,6 +482,7 @@ static void init_context(cv_context_t *context)
         context->png_prefix = switch_core_get_variable_pdup("cv_png_prefix", context->pool);
         context->cascade_path = switch_core_get_variable_pdup("cv_default_cascade", context->pool);
         context->nested_cascade_path = switch_core_get_variable_pdup("cv_default_nested_cascade", context->pool);
+		context->confidence_level = 20;
 
         for (int i = 0; i < MAX_OVERLAY; i++) {
             context->overlay[i] = (struct overlay *) switch_core_alloc(context->pool, sizeof(struct overlay));
@@ -619,7 +621,7 @@ void detectAndDraw(cv_context_t *context)
             center.y = switch_round_to_step(cvRound((r->y + r->height*0.5)*scale), 20);
             radius = switch_round_to_step(cvRound((r->width + r->height)*0.25*scale), 20);
 
-            if (context->debug || !context->overlay_count) {
+            if (context->debug) {
                 circle( img, center, radius, color, 3, 8, 0 );
             }
 
@@ -641,7 +643,7 @@ void detectAndDraw(cv_context_t *context)
             context->shape[context->shape_idx].cx = context->shape[context->shape_idx].x + (context->shape[context->shape_idx].w / 2);
             context->shape[context->shape_idx].cy = context->shape[context->shape_idx].y + (context->shape[context->shape_idx].h / 2);
 
-            if (context->debug || !context->overlay_count) {
+            if (context->debug) {
                 rectangle( img, cvPoint(context->shape[context->shape_idx].x, context->shape[context->shape_idx].y),
                            cvPoint(context->shape[context->shape_idx].x2, context->shape[context->shape_idx].y2),
                            color, 3, 8, 0);
@@ -723,7 +725,7 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
         switch_img_to_raw(frame->img, context->rawImage->imageData, context->rawImage->widthStep, SWITCH_IMG_FMT_RGB24);
         detectAndDraw(context);
 
-        if (context->detected.simo_count > 20) {
+        if (context->detected.simo_count > context->confidence_level) {
             if (!context->detect_event) {
                 context->detect_event = 1;
 
@@ -743,7 +745,7 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
 
             }
         } else {
-            if (context->detected.simo_miss_count >= 20) {
+            if (context->detected.simo_miss_count >= context->confidence_level) {
                 if (context->detect_event) {
                     if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, MY_EVENT_VIDEO_DETECT) == SWITCH_STATUS_SUCCESS) {
                         switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Detect-Type", "primary");
@@ -825,6 +827,16 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
             abs++;
         }
     }
+
+	if (context->detect_event) {
+		frame->geometry.x = context->shape[0].cx;
+		frame->geometry.y = context->shape[0].cy;
+		frame->geometry.w = context->shape[0].w;
+		frame->geometry.h = context->shape[0].h;
+		frame->geometry.m = 1;
+	} else {
+		frame->geometry.m = 0;
+	}
 
     if (context->overlay_count && (abs || (context->detect_event && context->shape[0].cx))) {
         for (i = 0; i < context->overlay_count; i++) {
@@ -989,6 +1001,8 @@ static void parse_params(cv_context_t *context, int start, int argc, char **argv
                 context->skip = atoi(val);
             } else if (!strcasecmp(name, "debug")) {
                 context->debug = atoi(val);
+            } else if (!strcasecmp(name, "confidence")) {
+                context->confidence_level = atoi(val);
             } else if (!strcasecmp(name, "cascade")) {
                 context->cascade_path = switch_core_strdup(context->pool, val);
                 changed++;
