@@ -579,6 +579,9 @@ static handle_rfc2833_result_t handle_rfc2833(switch_rtp_t *rtp_session, switch_
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Failed DTMF sanity check.\n");
 	}
 
+	if (!bytes) return RESULT_CONTINUE;
+
+
 	/* RFC2833 ... like all RFC RE: VoIP, guaranteed to drive you to insanity! 
 	   We know the real rules here, but if we enforce them, it's an interop nightmare so,
 	   we put up with as much as we can so we don't have to deal with being punished for
@@ -5064,7 +5067,8 @@ static switch_size_t do_flush(switch_rtp_t *rtp_session, int force, switch_size_
 	reset_jitter_seq(rtp_session);
 
 	if (!force) {
-		if (rtp_session->flags[SWITCH_RTP_FLAG_PROXY_MEDIA] || 
+		if ((rtp_session->jb && !rtp_session->pause_jb && jb_valid(rtp_session)) ||
+			rtp_session->flags[SWITCH_RTP_FLAG_PROXY_MEDIA] || 
 			rtp_session->flags[SWITCH_RTP_FLAG_UDPTL] ||
 			rtp_session->flags[SWITCH_RTP_FLAG_DTMF_ON]
 			) {
@@ -5114,7 +5118,8 @@ static switch_size_t do_flush(switch_rtp_t *rtp_session, int force, switch_size_
 					int do_cng = 0;
 
 					/* Make sure to handle RFC2833 packets, even if we're flushing the packets */
-					if (bytes > rtp_header_len && rtp_session->last_rtp_hdr.pt == rtp_session->recv_te) {
+					if (bytes > rtp_header_len && rtp_session->recv_msg.header.version == 2 && rtp_session->recv_msg.header.pt == rtp_session->recv_te) {
+						rtp_session->last_rtp_hdr = rtp_session->recv_msg.header;
 						handle_rfc2833(rtp_session, bytes, &do_cng);
 #ifdef DEBUG_2833
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "*** RTP packet handled in flush loop %d ***\n", do_cng);
@@ -5356,7 +5361,8 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 			
 				if (!accept_packet && !(rtp_session->rtp_bugs & RTP_BUG_ACCEPT_ANY_PAYLOAD) && !(rtp_session->rtp_bugs & RTP_BUG_ACCEPT_ANY_PACKETS)) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, 
-									  "Invalid Packet PT:%d ignored\n", rtp_session->last_rtp_hdr.pt);
+									  "Invalid Packet SEQ: %d TS: %d PT:%d ignored\n", 
+									  ntohs(rtp_session->recv_msg.header.seq), ntohl(rtp_session->last_rtp_hdr.ts), rtp_session->last_rtp_hdr.pt);
 					*bytes = 0;
 				}
 			}
