@@ -7639,7 +7639,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 
 
 			switch_core_media_gen_local_sdp(session, SDP_TYPE_RESPONSE, NULL, 0, NULL,
-											zstr(tech_pvt->mparams.local_sdp_str) && !switch_channel_test_flag(channel, CF_PROXY_MODE));
+											zstr(tech_pvt->mparams.local_sdp_str) || !switch_channel_test_flag(channel, CF_PROXY_MODE));
 
 
 			if (zstr(tech_pvt->mparams.local_sdp_str)) {
