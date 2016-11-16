@@ -421,7 +421,7 @@ void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, 
 
 		if (layer->last_img_addr != img_addr && layer->geometry.zoom) {
 			uint32_t new_w = 0, new_h = 0;
-			unsigned int cropsize = 0;
+			int cropsize = 0;
 			double scale = 1;
 
 			if (screen_aspect < img_aspect) {
@@ -433,24 +433,17 @@ void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, 
 				new_w = (uint32_t)((double)layer->screen_w / scale);
 				new_h = (uint32_t)((double)layer->screen_h / scale);
 
-				if (layer->bug_frame.geometry.x) {
-					if (layer->bug_frame.geometry.x < layer->bug_frame.geometry.w) {
-						cropsize = 1;
-					} else {
-						cropsize = layer->bug_frame.geometry.x - (new_w / 2);
-						if (cropsize > img->d_w - new_w) {
-							cropsize = img->d_w - new_w;
-						}
-					}
+				if (layer->bug_frame.geometry.w) {
+					cropsize = layer->bug_frame.geometry.x - (new_w / 2);
 				} else {
 					cropsize = (img->d_w - new_w) / 2;
 				}
 
 				if (cropsize < 1) {
 					cropsize = 1;
-				}				
-				
-				if (cropsize) {
+				}
+
+				if (cropsize > 0) {
 					switch_img_set_rect(img, cropsize, 0, new_w, new_h);
 					img_aspect = (double) img->d_w / img->d_h;
 				}
@@ -466,14 +459,7 @@ void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, 
 				new_h = (uint32_t)((double)layer->screen_h / scale);
 
 				if (layer->bug_frame.geometry.y) {
-					if (layer->bug_frame.geometry.y < layer->bug_frame.geometry.h) {
-						cropsize = 1;
-					} else {
-						cropsize = layer->bug_frame.geometry.y - (new_h / 2);
-						if (cropsize > img->d_h - new_h) {
-							cropsize = img->d_h - new_h;
-						}
-					}
+					cropsize = layer->bug_frame.geometry.y - (new_h / 2);
 				} else {
 					cropsize = (img->d_h - new_h) / 2;
 				}
@@ -482,7 +468,7 @@ void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, 
 					cropsize = 1;
 				}
 
-				if (cropsize) {
+				if (cropsize > 0) {
 					switch_img_set_rect(img, 0, cropsize, (unsigned int)(layer->screen_w/scale), (unsigned int)(layer->screen_h/scale));
 					img_aspect = (double) img->d_w / img->d_h;
 				}
