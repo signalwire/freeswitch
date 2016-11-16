@@ -2153,7 +2153,7 @@ static iks *join_call(struct rayo_call *call, switch_core_session_t *session, st
 	iks *node = msg->payload;
 	iks *response = NULL;
 	/* take call out of media path if media = "direct" */
-	const char *bypass = !strcmp("direct", media) ? "true" : "false";
+	int do_direct = !strcmp("direct", media);
 
 	/* check if joining to rayo call */
 	struct rayo_call *b_call = RAYO_CALL_LOCATE(call_uri);
@@ -2172,8 +2172,10 @@ static iks *join_call(struct rayo_call *call, switch_core_session_t *session, st
 			response = iks_new_error_detailed(node, STANZA_ERROR_CONFLICT, "multiple joined calls not supported");
 		} else {
 			/* bridge this call to call-uri */
-			switch_channel_set_variable(switch_core_session_get_channel(session), "bypass_media", bypass);
-			if (switch_false(bypass)) {
+			if (do_direct) {
+				switch_channel_set_flag(switch_core_session_get_channel(session), CF_BYPASS_MEDIA_AFTER_BRIDGE);
+			} else {
+				switch_channel_clear_flag(switch_core_session_get_channel(session), CF_BYPASS_MEDIA_AFTER_BRIDGE);
 				switch_channel_pre_answer(switch_core_session_get_channel(session));
 			}
 			call->pending_join_request = iks_copy(node);
