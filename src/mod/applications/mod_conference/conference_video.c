@@ -438,19 +438,18 @@ void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, 
 						cropsize = 1;
 					} else {
 						cropsize = layer->bug_frame.geometry.x - (new_w / 2);
+						if (cropsize > img->d_w - new_w) {
+							cropsize = img->d_w - new_w;
+						}
 					}
 				} else {
 					cropsize = (img->d_w - new_w) / 2;
 				}
 
-				if (cropsize > img->d_w - new_w) {
-					cropsize = img->d_w - new_w;
-				}
-				
 				if (cropsize < 1) {
 					cropsize = 1;
-				}
-
+				}				
+				
 				if (cropsize) {
 					switch_img_set_rect(img, cropsize, 0, new_w, new_h);
 					img_aspect = (double) img->d_w / img->d_h;
@@ -471,15 +470,14 @@ void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, 
 						cropsize = 1;
 					} else {
 						cropsize = layer->bug_frame.geometry.y - (new_h / 2);
+						if (cropsize > img->d_h - new_h) {
+							cropsize = img->d_h - new_h;
+						}
 					}
 				} else {
 					cropsize = (img->d_h - new_h) / 2;
 				}
 
-				if (cropsize > img->d_h - new_h) {
-					cropsize = img->d_h - new_h;
-				}
-				
 				if (cropsize < 1) {
 					cropsize = 1;
 				}

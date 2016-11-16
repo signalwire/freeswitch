@@ -113,6 +113,7 @@ typedef struct cv_context_s {
     int detect_event;
     int nest_detect_event;
     struct shape shape[MAX_SHAPES];
+	struct shape last_shape[MAX_SHAPES];
     int shape_idx;
     int32_t skip;
     int32_t skip_count;
@@ -599,6 +600,10 @@ void detectAndDraw(cv_context_t *context)
 
     //printf("SCORE: %d %f %d\n", context->detected.simo_count, context->detected.avg, context->detected.last_score);
 
+	for (i = 0; i < context->shape_idx; i++) {
+		context->last_shape[i] = context->shape[i];
+	}
+
     context->shape_idx = 0;
     //memset(context->shape, 0, sizeof(context->shape[0]) * MAX_SHAPES);
 
@@ -724,6 +729,12 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
 
         switch_img_to_raw(frame->img, context->rawImage->imageData, context->rawImage->widthStep, SWITCH_IMG_FMT_RGB24);
         detectAndDraw(context);
+		
+		if (context->detect_event && context->shape_idx &&
+			abs(context->shape[0].cx - context->last_shape[0].cx) > 200 || abs(context->shape[0].w - context->last_shape[0].w) > 200) {
+			context->detected.simo_count = 0;
+			context->detected.simo_miss_count = context->confidence_level;
+		}
 
         if (context->detected.simo_count > context->confidence_level) {
             if (!context->detect_event) {
