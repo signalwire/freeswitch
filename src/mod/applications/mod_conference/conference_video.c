@@ -441,8 +441,10 @@ void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, 
 
 				if (cropsize < 1) {
 					cropsize = 1;
+				} else if (cropsize > img->d_w - new_w) {
+					cropsize = img->d_w - new_w;
 				}
-
+				
 				if (cropsize > 0) {
 					switch_img_set_rect(img, cropsize, 0, new_w, new_h);
 					img_aspect = (double) img->d_w / img->d_h;
@@ -466,6 +468,8 @@ void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, 
 
 				if (cropsize < 1) {
 					cropsize = 1;
+				} else if (cropsize > img->d_h - new_h) {
+					cropsize = img->d_h - new_h;
 				}
 
 				if (cropsize > 0) {
