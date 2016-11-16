@@ -825,7 +825,7 @@ void conference_video_layer_set_logo(conference_member_t *member, mcu_layer_t *l
 void conference_video_layer_set_banner(conference_member_t *member, mcu_layer_t *layer, const char *text)
 {
 	switch_rgb_color_t fgcolor, bgcolor;
-	int font_scale = 4;
+	int font_scale = 1;
 	uint16_t font_size = 0;
 	const char *fg = "#cccccc";
 	const char *bg = "#142e55";
@@ -894,14 +894,15 @@ void conference_video_layer_set_banner(conference_member_t *member, mcu_layer_t 
 		if ((var = switch_event_get_header(params, "font_scale"))) {
 			int tmp = atoi(var);
 
-			if (tmp >= 5 && tmp <= 50) {
+			if (tmp >= 0 && tmp <= 50) {
 				font_scale = tmp;
 			}
 		}
 	}
 
 	if (!text) text = "N/A";
-	font_size = (uint16_t)((double)(font_scale / 100.0f) * (layer->screen_w - (strlen(text) * 10)));
+
+	font_size =  (uint16_t)(((double)layer->screen_w / ((double)strlen(text) / 1.2f)) * font_scale);
 
 	if (font_size <= 5) font_size = 5;
 	if (font_size >= 24) font_size = 24;
