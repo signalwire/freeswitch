@@ -365,6 +365,33 @@ void conference_video_reset_layer(mcu_layer_t *layer)
 	switch_img_free(&layer->cur_img);
 }
 
+static void set_pan(mcu_layer_t *layer, int crop_point, int max_width)
+{
+	if (layer->crop_point <= 0 || layer->crop_point > max_width) {
+		layer->crop_point = crop_point;
+	} else if (crop_point > layer->crop_point) {
+		if (crop_point - layer->crop_point > 25) {
+			layer->crop_point += 5;
+		} else {
+			layer->crop_point++;
+		}
+
+		if (crop_point < layer->crop_point) {
+			layer->crop_point = crop_point;
+		}
+	} else if (crop_point < layer->crop_point) {
+		if (layer->crop_point - crop_point > 25) {
+			layer->crop_point -= 5;
+		} else {
+			layer->crop_point--;
+		}
+
+		if (crop_point > layer->crop_point) {
+			layer->crop_point = crop_point;
+		}
+	}
+}
+
 void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, switch_bool_t freeze)
 {
 	switch_image_t *IMG, *img;
@@ -421,7 +448,7 @@ void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, 
 
 		if (layer->last_img_addr != img_addr && layer->geometry.zoom) {
 			uint32_t new_w = 0, new_h = 0;
-			int cropsize = 0;
+			int crop_point = 0;
 			double scale = 1;
 
 			if (screen_aspect < img_aspect) {
@@ -434,19 +461,23 @@ void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, 
 				new_h = (uint32_t)((double)layer->screen_h / scale);
 
 				if (layer->bug_frame.geometry.w) {
-					cropsize = layer->bug_frame.geometry.x - (new_w / 2);
+					//new_w = layer->bug_frame.geometry.w * 2;
+					//new_h = new_w / screen_aspect;
+					crop_point = switch_round_to_step(layer->bug_frame.geometry.x - (new_w / 2), 25);
 				} else {
-					cropsize = (img->d_w - new_w) / 2;
+					crop_point = (img->d_w - new_w) / 2;
 				}
 
-				if (cropsize < 1) {
-					cropsize = 1;
-				} else if (cropsize > img->d_w - new_w) {
-					cropsize = img->d_w - new_w;
+				if (crop_point < 1) {
+					crop_point = 1;
+				} else if (crop_point > img->d_w - new_w) {
+					crop_point = img->d_w - new_w;
 				}
-				
-				if (cropsize > 0) {
-					switch_img_set_rect(img, cropsize, 0, new_w, new_h);
+
+				set_pan(layer, crop_point, img->d_w - new_w);
+
+				if (layer->crop_point > 0) {
+					switch_img_set_rect(img, layer->crop_point, 0, new_w, new_h);
 					img_aspect = (double) img->d_w / img->d_h;
 				}
 
@@ -460,20 +491,22 @@ void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, 
 				new_w = (uint32_t)((double)layer->screen_w / scale);
 				new_h = (uint32_t)((double)layer->screen_h / scale);
 
-				if (layer->bug_frame.geometry.y) {
-					cropsize = layer->bug_frame.geometry.y - (new_h / 2);
+				if (layer->bug_frame.geometry.w) {
+					crop_point = layer->bug_frame.geometry.y - (new_h / 2);
 				} else {
-					cropsize = (img->d_h - new_h) / 2;
+					crop_point = (img->d_h - new_h) / 2;
 				}
 
-				if (cropsize < 1) {
-					cropsize = 1;
-				} else if (cropsize > img->d_h - new_h) {
-					cropsize = img->d_h - new_h;
+				if (crop_point < 1) {
+					crop_point = 1;
+				} else if (crop_point > img->d_h - new_h) {
+					crop_point = img->d_h - new_h;
 				}
 
-				if (cropsize > 0) {
-					switch_img_set_rect(img, 0, cropsize, (unsigned int)(layer->screen_w/scale), (unsigned int)(layer->screen_h/scale));
+				set_pan(layer, crop_point, img->d_h - new_h);
+
+				if (crop_point > 0) {
+					switch_img_set_rect(img, 0, crop_point, (unsigned int)(layer->screen_w/scale), (unsigned int)(layer->screen_h/scale));
 					img_aspect = (double) img->d_w / img->d_h;
 				}
 			}

@@ -693,7 +693,6 @@ void detectAndDraw(cv_context_t *context)
     switch_mutex_unlock(context->mutex);
 }
 
-
 static switch_status_t video_thread_callback(switch_core_session_t *session, switch_frame_t *frame, void *user_data)
 {
     cv_context_t *context = (cv_context_t *) user_data;
@@ -730,10 +729,27 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
         switch_img_to_raw(frame->img, context->rawImage->imageData, context->rawImage->widthStep, SWITCH_IMG_FMT_RGB24);
         detectAndDraw(context);
 		
-		if (context->detect_event && context->shape_idx &&
-			abs(context->shape[0].cx - context->last_shape[0].cx) > 200 || abs(context->shape[0].w - context->last_shape[0].w) > 200) {
-			context->detected.simo_count = 0;
-			context->detected.simo_miss_count = context->confidence_level;
+		if (context->shape_idx && context->shape[0].w && context->last_shape[0].w) {
+			int max, min;
+			int pct;
+			
+			if (context->shape[0].w > context->last_shape[0].w) {
+				max = context->shape[0].w;
+				min = context->last_shape[0].w;
+			} else {
+				max = context->last_shape[0].w;
+				min = context->shape[0].w;
+			}
+
+			pct = 100 - (((double)min / (double)max) * 100.0f );
+			
+			if (pct > 25) {
+				context->detected.simo_count = 0;
+				memset(context->last_shape, 0, sizeof(context->last_shape[0]) * MAX_SHAPES);
+				if (context->detect_event) {
+					context->detected.simo_miss_count = context->confidence_level;
+				}
+			}
 		}
 
         if (context->detected.simo_count > context->confidence_level) {
@@ -772,6 +788,7 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
 
 
                     memset(context->shape, 0, sizeof(context->shape[0]) * MAX_SHAPES);
+                    memset(context->last_shape, 0, sizeof(context->last_shape[0]) * MAX_SHAPES);
 
                     switch_channel_execute_on(channel, "execute_on_cv_detect_off_primary");
                     reset_stats(&context->nestDetected);

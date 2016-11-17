@@ -446,6 +446,7 @@ typedef struct mcu_layer_s {
 	int refresh;
 	int clear;
 	int is_avatar;
+	int crop_point;
 	switch_size_t last_img_addr;
 	switch_img_position_t logo_pos;
 	switch_image_t *img;
