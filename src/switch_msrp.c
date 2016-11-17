@@ -403,7 +403,7 @@ static switch_status_t msrp_socket_recv(msrp_client_socket_t *csock, char *buf, 
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
 	if (csock->secure) {
-		ssize_t r;
+		switch_ssize_t r;
 		r = SSL_read(globals.ssl, buf, *len);
 		if (r < 0) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "TLS read error: %" SWITCH_SSIZE_T_FMT "\n", r);
