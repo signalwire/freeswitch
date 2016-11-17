@@ -681,6 +681,7 @@ typedef struct conference_obj {
 	int scale_h264_canvas_height;
 	int scale_h264_canvas_fps_divisor;
 	char *scale_h264_canvas_bandwidth;
+	uint32_t moh_wait;
 } conference_obj_t;
 
 /* Relationship with another member */

@@ -237,6 +237,7 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 		uint32_t conference_energy = 0;
 		int nomoh = 0;
 		conference_member_t *floor_holder;
+		switch_status_t moh_status = SWITCH_STATUS_SUCCESS;
 
 		/* Sync the conference to a single timing source */
 		if (switch_core_timer_next(&timer) != SWITCH_STATUS_SUCCESS) {
@@ -324,13 +325,21 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 			conference_member_set_floor_holder(conference, floor_holder);
 		}
 
-		if (conference->perpetual_sound && !conference->async_fnode) {
-			conference_file_play(conference, conference->perpetual_sound, CONF_DEFAULT_LEADIN, NULL, 1);
-		} else if (conference->moh_sound && ((nomoh == 0 && conference->count == 1)
-											 || conference_utils_test_flag(conference, CFLAG_WAIT_MOD)) && !conference->async_fnode && !conference->fnode) {
-			conference_file_play(conference, conference->moh_sound, CONF_DEFAULT_LEADIN, NULL, 1);
+		if (conference->moh_wait > 0) {
+			conference->moh_wait--;
+		} else {
+			if (conference->perpetual_sound && !conference->async_fnode) {
+				moh_status = conference_file_play(conference, conference->perpetual_sound, CONF_DEFAULT_LEADIN, NULL, 1);
+			} else if (conference->moh_sound && ((nomoh == 0 && conference->count == 1)
+												 || conference_utils_test_flag(conference, CFLAG_WAIT_MOD)) &&
+					   !conference->async_fnode && !conference->fnode) {
+				moh_status = conference_file_play(conference, conference->moh_sound, CONF_DEFAULT_LEADIN, NULL, 1);
+			}
 		}
 
+		if (!conference->moh_wait && moh_status != SWITCH_STATUS_SUCCESS) {
+			conference->moh_wait = 2000 / conference->interval;
+		}
 
 		/* Find if no one talked for more than x number of second */
 		if (conference->terminate_on_silence && conference->count > 1) {
