@@ -237,7 +237,6 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 		uint32_t conference_energy = 0;
 		int nomoh = 0;
 		conference_member_t *floor_holder;
-		switch_status_t moh_status = SWITCH_STATUS_SUCCESS;
 
 		/* Sync the conference to a single timing source */
 		if (switch_core_timer_next(&timer) != SWITCH_STATUS_SUCCESS) {
