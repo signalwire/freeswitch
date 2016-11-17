@@ -717,7 +717,7 @@ static switch_status_t shout_file_open(switch_file_handle_t *handle, const char 
 		if (handle->handler) {
 			int sanity = 1000;
 
-			while(--sanity > 0 && !switch_buffer_inuse(context->audio_buffer)) {
+			while(--sanity > 0 && !switch_buffer_inuse(context->audio_buffer) && !context->eof && !context->err) {
 				switch_yield(20000);
 			}
 
