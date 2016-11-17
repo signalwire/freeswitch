@@ -506,7 +506,11 @@ void conference_cdr_add(conference_member_t *member)
 	switch_caller_profile_t *cp;
 	switch_channel_t *channel;
 
-	if (zstr(member->conference->log_dir) && (member->conference->cdr_event_mode == CDRE_NONE)) return;
+	if (zstr(member->conference->log_dir) &&
+		(member->conference->cdr_event_mode == CDRE_NONE) &&
+		!conference_utils_test_flag(member->conference, CFLAG_RFC4579)) {
+		return;
+	}
 
 	np = switch_core_alloc(member->conference->pool, sizeof(*np));
 
