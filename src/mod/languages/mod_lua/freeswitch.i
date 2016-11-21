@@ -90,6 +90,7 @@ class Session : public CoreSession {
 class Dbh {
   private:
     switch_cache_db_handle_t *dbh;
+    char *err;
     bool m_connected;
     static int query_callback(void *pArg, int argc, char **argv, char **cargv);
   public:
@@ -100,6 +101,8 @@ class Dbh {
     bool test_reactive(char *test_sql, char *drop_sql = NULL, char *reactive_sql = NULL);
     bool query(char *sql, SWIGLUA_FN lua_fun);
     int affected_rows();
+    char *last_error();
+    void clear_error();
     int load_extension(const char *extension);
 };
 

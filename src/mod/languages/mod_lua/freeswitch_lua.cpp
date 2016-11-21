@@ -354,6 +354,7 @@ switch_status_t Session::run_dtmf_callback(void *input, switch_input_type_t ityp
 Dbh::Dbh(char *dsn, char *user, char *pass)
 {
 	dbh = NULL;
+	err = NULL;
 	char *tmp = NULL;
 	
 	if (!zstr(user) || !zstr(pass)) {
@@ -380,6 +381,18 @@ Dbh::Dbh(char *dsn, char *user, char *pass)
 Dbh::~Dbh()
 {
 	if (dbh) release();
+
+	clear_error();
+}
+
+void Dbh::clear_error()
+{
+	switch_safe_free(err);
+}
+
+char *Dbh::last_error()
+{
+	return err;
 }
 
 bool Dbh::release()
@@ -446,6 +459,8 @@ int Dbh::query_callback(void *pArg, int argc, char **argv, char **cargv)
 
 bool Dbh::query(char *sql, SWIGLUA_FN lua_fun)
 {
+  clear_error();
+
   if (zstr(sql)) {
     switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing SQL query.\n");
     return false;
@@ -453,17 +468,17 @@ bool Dbh::query(char *sql, SWIGLUA_FN lua_fun)
 
   if (dbh) {
     if (lua_fun.L) {
-      if (switch_cache_db_execute_sql_callback(dbh, sql, query_callback, &lua_fun, NULL) == SWITCH_STATUS_SUCCESS) {
+      if (switch_cache_db_execute_sql_callback(dbh, sql, query_callback, &lua_fun, &err) == SWITCH_STATUS_SUCCESS) {
         return true;
       }
     } else { /* if no lua_fun arg is passed from Lua, an empty initialized struct will be sent - see freeswitch.i */
-      if (switch_cache_db_execute_sql(dbh, sql, NULL) == SWITCH_STATUS_SUCCESS) {
+      if (switch_cache_db_execute_sql(dbh, sql, &err) == SWITCH_STATUS_SUCCESS) {
         return true;
       }
     }
+  } else {
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "DBH NOT Connected.\n");
   }
-
-  switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "DBH NOT Connected.\n");
   return false;
 }
 
