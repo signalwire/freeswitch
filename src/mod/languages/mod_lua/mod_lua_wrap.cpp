@@ -8263,6 +8263,53 @@ fail:
 }
 
 
+static int _wrap_Dbh_last_error(lua_State* L) {
+  int SWIG_arg = 0;
+  LUA::Dbh *arg1 = (LUA::Dbh *) 0 ;
+  char *result = 0 ;
+  
+  SWIG_check_num_args("LUA::Dbh::last_error",1,1)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("LUA::Dbh::last_error",1,"LUA::Dbh *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_LUA__Dbh,0))){
+    SWIG_fail_ptr("Dbh_last_error",1,SWIGTYPE_p_LUA__Dbh);
+  }
+  
+  result = (char *)(arg1)->last_error();
+  lua_pushstring(L,(const char *)result); SWIG_arg++;
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_Dbh_clear_error(lua_State* L) {
+  int SWIG_arg = 0;
+  LUA::Dbh *arg1 = (LUA::Dbh *) 0 ;
+  
+  SWIG_check_num_args("LUA::Dbh::clear_error",1,1)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("LUA::Dbh::clear_error",1,"LUA::Dbh *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_LUA__Dbh,0))){
+    SWIG_fail_ptr("Dbh_clear_error",1,SWIGTYPE_p_LUA__Dbh);
+  }
+  
+  (arg1)->clear_error();
+  
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
 static int _wrap_Dbh_load_extension(lua_State* L) {
   int SWIG_arg = 0;
   LUA::Dbh *arg1 = (LUA::Dbh *) 0 ;
@@ -8300,6 +8347,8 @@ static swig_lua_method swig_LUA_Dbh_methods[] = {
     {"test_reactive", _wrap_Dbh_test_reactive}, 
     {"query", _wrap_Dbh_query}, 
     {"affected_rows", _wrap_Dbh_affected_rows}, 
+    {"last_error", _wrap_Dbh_last_error}, 
+    {"clear_error", _wrap_Dbh_clear_error}, 
     {"load_extension", _wrap_Dbh_load_extension}, 
     {0,0}
 };
