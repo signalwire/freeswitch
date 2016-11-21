@@ -961,6 +961,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_say_ip(switch_core_session_t *session
 												  switch_input_args_t *args);
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_set_user(switch_core_session_t *session, const char *data);
+SWITCH_DECLARE(switch_status_t) switch_ivr_set_user_extended(switch_core_session_t *session, const char *data, switch_event_t *params);
 SWITCH_DECLARE(switch_status_t) switch_ivr_set_user_xml(switch_core_session_t *session, const char *prefix,
 														const char *user, const char *domain, switch_xml_t x_user);
 
