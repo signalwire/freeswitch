@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2016, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Marc Olivier Chouinard <mochouinard@moctel.com>
  * Emmanuel Schmidbauer <e.schmidbauer@gmail.com>
  * Ítalo Rossi <italorossib@gmail.com>
@@ -44,7 +44,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_callcenter_shutdown);
 SWITCH_MODULE_RUNTIME_FUNCTION(mod_callcenter_runtime);
 SWITCH_MODULE_LOAD_FUNCTION(mod_callcenter_load);
 
-/* SWITCH_MODULE_DEFINITION(name, load, shutdown, runtime) 
+/* SWITCH_MODULE_DEFINITION(name, load, shutdown, runtime)
  * Defines a switch_loadable_module_function_table_t and a static const char[] modname
  */
 SWITCH_MODULE_DEFINITION(mod_callcenter, mod_callcenter_load, mod_callcenter_shutdown, NULL);
@@ -192,7 +192,7 @@ static char members_sql[] =
 "   serving_agent    VARCHAR(255),\n"
 "   serving_system   VARCHAR(255),\n"
 "   state	     VARCHAR(255)\n" ");\n";
-/* Member State 
+/* Member State
    Waiting
    Answered
  */
@@ -224,7 +224,7 @@ static char agents_sql[] =
 "   no_answer_delay_time INTEGER NOT NULL DEFAULT 0,\n"
 "   last_bridge_start INTEGER NOT NULL DEFAULT 0,\n"
 "   last_bridge_end INTEGER NOT NULL DEFAULT 0,\n"
-"   last_offered_call INTEGER NOT NULL DEFAULT 0,\n" 
+"   last_offered_call INTEGER NOT NULL DEFAULT 0,\n"
 "   last_status_change INTEGER NOT NULL DEFAULT 0,\n"
 "   no_answer_count INTEGER NOT NULL DEFAULT 0,\n"
 "   calls_answered  INTEGER NOT NULL DEFAULT 0,\n"
@@ -238,7 +238,7 @@ static char tiers_sql[] =
 "   agent    VARCHAR(255),\n"
 "   state    VARCHAR(255),\n"
 /*
-   Agent State: 
+   Agent State:
    Ready
    Active inbound
    Wrap-up inbound
@@ -514,7 +514,7 @@ switch_cache_db_handle_t *cc_get_db_handle(void)
 {
 	switch_cache_db_handle_t *dbh = NULL;
 	char *dsn;
-	
+
 	if (!zstr(globals.odbc_dsn)) {
 		dsn = globals.odbc_dsn;
 	} else {
@@ -524,12 +524,12 @@ switch_cache_db_handle_t *cc_get_db_handle(void)
 	if (switch_cache_db_get_db_handle_dsn(&dbh, dsn) != SWITCH_STATUS_SUCCESS) {
 		dbh = NULL;
 	}
-	
+
 	return dbh;
 
 }
 /*!
- * \brief Sets the queue's configuration instructions 
+ * \brief Sets the queue's configuration instructions
  */
 cc_queue_t *queue_set_config(cc_queue_t *queue)
 {
@@ -538,7 +538,7 @@ cc_queue_t *queue_set_config(cc_queue_t *queue)
 	queue->config_str_pool.pool = queue->pool;
 
 	/*
-	   SWITCH _CONFIG_SET_ITEM(item, "key", type, flags, 
+	   SWITCH _CONFIG_SET_ITEM(item, "key", type, flags,
 	   pointer, default, options, help_syntax, help_description)
 	 */
 	SWITCH_CONFIG_SET_ITEM(queue->config[i++], "strategy", SWITCH_CONFIG_STRING, 0, &queue->strategy, "longest-idle-agent", &queue->config_str_pool, NULL, NULL);
@@ -837,7 +837,7 @@ int cc_queue_count(const char *queue)
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Selection", event_name);
 			switch_event_fire(&event);
 		}
-	}	
+	}
 
 	return count;
 }
@@ -860,13 +860,13 @@ cc_status_t cc_agent_add(const char *agent, const char *type)
 			goto done;
 		}
 		/* Add Agent */
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Adding Agent %s with type %s with default status %s\n", 
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Adding Agent %s with type %s with default status %s\n",
 				agent, type, cc_agent_status2str(CC_AGENT_STATUS_LOGGED_OUT));
-		sql = switch_mprintf("INSERT INTO agents (name, system, type, status, state) VALUES('%q', 'single_box', '%q', '%q', '%q');", 
+		sql = switch_mprintf("INSERT INTO agents (name, system, type, status, state) VALUES('%q', 'single_box', '%q', '%q', '%q');",
 				agent, type, cc_agent_status2str(CC_AGENT_STATUS_LOGGED_OUT), cc_agent_state2str(CC_AGENT_STATE_WAITING));
 		cc_execute_sql(NULL, sql, NULL);
 		switch_safe_free(sql);
-		
+
 		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CALLCENTER_EVENT) == SWITCH_STATUS_SUCCESS) {
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent", agent);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent-Type", type);
@@ -878,7 +878,7 @@ cc_status_t cc_agent_add(const char *agent, const char *type)
 		result = CC_STATUS_AGENT_INVALID_TYPE;
 		goto done;
 	}
-done:		
+done:
 	return result;
 }
 
@@ -914,7 +914,7 @@ cc_status_t cc_agent_get(const char *key, const char *agent, char *ret_result, s
 		goto done;
 	}
 
-	if (!strcasecmp(key, "status") || !strcasecmp(key, "state") || !strcasecmp(key, "uuid") ) { 
+	if (!strcasecmp(key, "status") || !strcasecmp(key, "state") || !strcasecmp(key, "uuid") ) {
 		/* Check to see if agent already exists */
 		sql = switch_mprintf("SELECT %q FROM agents WHERE name = '%q'", key, agent);
 		cc_execute_sql2str(NULL, NULL, sql, res, sizeof(res));
@@ -925,7 +925,7 @@ cc_status_t cc_agent_get(const char *key, const char *agent, char *ret_result, s
 		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CALLCENTER_EVENT) == SWITCH_STATUS_SUCCESS) {
 			char tmpname[256];
 			if (!strcasecmp(key, "uuid")) {
-				switch_snprintf(tmpname, sizeof(tmpname), "CC-Agent-UUID");	
+				switch_snprintf(tmpname, sizeof(tmpname), "CC-Agent-UUID");
 			} else {
 				switch_snprintf(tmpname, sizeof(tmpname), "CC-Agent-%c%s", (char) switch_toupper(key[0]), key+1);
 			}
@@ -941,7 +941,7 @@ cc_status_t cc_agent_get(const char *key, const char *agent, char *ret_result, s
 
 	}
 
-done:   
+done:
 	if (result == CC_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Get Info Agent %s %s = %s\n", agent, key, res);
 	}
@@ -1186,7 +1186,7 @@ cc_status_t cc_tier_add(const char *queue_name, const char *agent, const char *s
 
 	}
 
-done:		
+done:
 	return result;
 }
 
@@ -1250,7 +1250,7 @@ cc_status_t cc_tier_update(const char *key, const char *value, const char *queue
 	} else {
 		result = CC_STATUS_INVALID_KEY;
 		goto done;
-	}	
+	}
 done:
 	if (result == CC_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Updated tier: Agent %s in Queue %s set %s = %s\n", agent, queue_name, key, value);
@@ -1286,7 +1286,7 @@ static switch_status_t load_agent(const char *agent_name, switch_event_t *params
 
 	if ((x_agent = switch_xml_find_child(x_agents, "agent", "name", agent_name))) {
 		const char *type = switch_xml_attr(x_agent, "type");
-		const char *contact = switch_xml_attr(x_agent, "contact"); 
+		const char *contact = switch_xml_attr(x_agent, "contact");
 		const char *status = switch_xml_attr(x_agent, "status");
 		const char *max_no_answer = switch_xml_attr(x_agent, "max-no-answer");
 		const char *wrap_up_time = switch_xml_attr(x_agent, "wrap-up-time");
@@ -1565,8 +1565,8 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 	/* member is gone before we could process it */
 	if (!member_session) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Member %s <%s> with uuid %s in queue %s is gone just before we assigned an agent\n", h->member_cid_name, h->member_cid_number, h->member_session_uuid, h->queue_name);
-	
-	
+
+
 		 sql = switch_mprintf("UPDATE members SET state = '%q', session_uuid = '', abandoned_epoch = '%" SWITCH_TIME_T_FMT "' WHERE system = 'single_box' AND uuid = '%q' AND state != '%q'",
 				cc_member_state2str(CC_MEMBER_STATE_ABANDONED), local_epoch_time_now(NULL), h->member_uuid, cc_member_state2str(CC_MEMBER_STATE_ABANDONED));
 
@@ -1795,7 +1795,7 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 			switch_ivr_record_session(member_session, expanded, 0, NULL);
 			if (expanded != h->record_template) {
 				switch_safe_free(expanded);
-			}					
+			}
 		}
 
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_DEBUG, "Agent %s answered \"%s\" <%s> from queue %s%s\n",
@@ -1954,7 +1954,7 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 			case SWITCH_CAUSE_CALL_REJECTED:
 				delay_next_agent_call = (h->reject_delay_time > delay_next_agent_call? h->reject_delay_time : delay_next_agent_call);
 				break;
-			/* Protection againts super fast loop due to unregistrer */			
+			/* Protection againts super fast loop due to unregistrer */
 			case SWITCH_CAUSE_USER_NOT_REGISTERED:
 				delay_next_agent_call = 5;
 				break;
@@ -2161,7 +2161,7 @@ static int agents_callback(void *pArg, int argc, char **argv, char **columnNames
 	} else {
 		/* Map the Agent to the member */
 		sql = switch_mprintf("UPDATE members SET serving_agent = '%q', serving_system = 'single_box', state = '%q'"
-				" WHERE state = '%q' AND uuid = '%q' AND system = 'single_box'", 
+				" WHERE state = '%q' AND uuid = '%q' AND system = 'single_box'",
 				agent_name, cc_member_state2str(CC_MEMBER_STATE_TRYING),
 				cc_member_state2str(CC_MEMBER_STATE_WAITING), cbt->member_uuid);
 		cc_execute_sql(NULL, sql, NULL);
@@ -2197,7 +2197,7 @@ static int agents_callback(void *pArg, int argc, char **argv, char **columnNames
 				h->agent_status = switch_core_strdup(h->pool, agent_status);
 				h->agent_type = switch_core_strdup(h->pool, agent_type);
 				h->agent_uuid = switch_core_strdup(h->pool, agent_uuid);
-				h->member_joined_epoch = switch_core_strdup(h->pool, cbt->member_joined_epoch); 
+				h->member_joined_epoch = switch_core_strdup(h->pool, cbt->member_joined_epoch);
 				h->member_cid_name = switch_core_strdup(h->pool, cbt->member_cid_name);
 				h->member_cid_number = switch_core_strdup(h->pool, cbt->member_cid_number);
 				h->queue_name = switch_core_strdup(h->pool, cbt->queue_name);
@@ -2478,18 +2478,18 @@ static int members_callback(void *pArg, int argc, char **argv, char **columnName
 
 	if (!strcasecmp(queue->strategy, "ring-progressively")) {
 		switch_core_session_t *member_session = switch_core_session_locate(cbt.member_session_uuid);
-		
+
 		if (member_session) {
 			switch_channel_t *member_channel = switch_core_session_get_channel(member_session);
 			last_originated_call = switch_channel_get_variable(member_channel, "cc_last_originated_call");
-			
+
 			if (last_originated_call && switch_channel_ready(member_channel) && ((long) local_epoch_time_now(NULL) < atoi(last_originated_call) + ring_progressively_delay) && !switch_true(switch_channel_get_variable(member_channel, "cc_agent_found"))) {
 				/* We wait for 500 ms here */
 				switch_yield(500000);
 				switch_core_session_rwunlock(member_session);
 				goto end;
 			}
-			
+
 			switch_core_session_rwunlock(member_session);
 		}
 	}
@@ -2654,7 +2654,7 @@ void *SWITCH_THREAD_FUNC cc_member_thread_run(switch_thread_t *thread, void *obj
 					m->member_cancel_reason = CC_MEMBER_CANCEL_REASON_NO_AGENT_TIMEOUT;
 					switch_channel_set_flag_value(member_channel, CF_BREAK, 2);
 
-				} 
+				}
 			}
 		}
 
@@ -2702,7 +2702,7 @@ void *SWITCH_THREAD_FUNC cc_member_thread_run(switch_thread_t *thread, void *obj
 	globals.threads--;
 	switch_mutex_unlock(globals.mutex);
 
-	return NULL; 
+	return NULL;
 }
 
 struct moh_dtmf_helper {
@@ -2798,7 +2798,7 @@ SWITCH_STANDARD_APP(callcenter_function)
 		cc_execute_sql2str(NULL, NULL, sql, res, sizeof(res));
 		switch_safe_free(sql);
 		strncpy(member_uuid, res, sizeof(member_uuid));
-		
+
 		if (!zstr(member_uuid)) {
 			sql = switch_mprintf("SELECT abandoned_epoch FROM members WHERE uuid = '%q'", member_uuid);
 			cc_execute_sql2str(NULL, NULL, sql, res, sizeof(res));
@@ -2884,7 +2884,7 @@ SWITCH_STANDARD_APP(callcenter_function)
 		}
 		sql = switch_mprintf("INSERT INTO members"
 				" (queue,system,uuid,session_uuid,system_epoch,joined_epoch,base_score,skill_score,cid_number,cid_name,serving_agent,serving_system,state)"
-				" VALUES('%q','single_box','%q','%q','%q','%" SWITCH_TIME_T_FMT "','%d','%d','%q','%q','%q','','%q')", 
+				" VALUES('%q','single_box','%q','%q','%q','%" SWITCH_TIME_T_FMT "','%d','%d','%q','%q','%q','','%q')",
 				queue_name,
 				member_uuid,
 				member_session_uuid,
@@ -2954,7 +2954,7 @@ SWITCH_STANDARD_APP(callcenter_function)
 
 		if (moh_valid && moh_expanded) {
 			switch_status_t status = switch_ivr_play_file(member_session, NULL, moh_expanded, &args);
-			if (status == SWITCH_STATUS_FALSE /* Invalid Recording */ && SWITCH_READ_ACCEPTABLE(status)) { 
+			if (status == SWITCH_STATUS_FALSE /* Invalid Recording */ && SWITCH_READ_ACCEPTABLE(status)) {
 				/* Sadly, there doesn't seem to be a return to switch_ivr_play_file that tell you the file wasn't found.  FALSE also mean that the channel got switch to BRAKE state, so we check for read acceptable */
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_WARNING, "Couldn't play file '%s', continuing wait with no audio\n", cur_moh);
 				moh_valid = SWITCH_FALSE;
@@ -3078,7 +3078,7 @@ static int list_result_callback(void *pArg, int argc, char **argv, char **column
 			if (i < argc - 1) {
 				cbt->stream->write_function(cbt->stream,"|");
 			}
-		}  
+		}
 		cbt->stream->write_function(cbt->stream,"\n");
 
 	}
@@ -3262,7 +3262,7 @@ SWITCH_STANDARD_API(cc_config_api_function)
 					case CC_STATUS_INVALID_KEY:
 						stream->write_function(stream, "%s", "-ERR Invalid Agent Update KEY!\n");
 						goto done;
-					case CC_STATUS_AGENT_NOT_FOUND:	
+					case CC_STATUS_AGENT_NOT_FOUND:
 						stream->write_function(stream, "%s", "-ERR Agent not found!\n");
 						goto done;
 					default:
@@ -3314,7 +3314,7 @@ SWITCH_STANDARD_API(cc_config_api_function)
 			switch_safe_free(sql);
 			stream->write_function(stream, "%s", "+OK\n");
 		}
-		
+
 	} else if (section && !strcasecmp(section, "tier")) {
 		if (action && !strcasecmp(action, "add")) {
 			if (argc-initial_argc < 2) {
@@ -3394,7 +3394,7 @@ SWITCH_STANDARD_API(cc_config_api_function)
 		} else if (action && !strcasecmp(action, "del")) {
 			if (argc-initial_argc < 2) {
 				stream->write_function(stream, "%s", "-ERR Invalid!\n");
-				goto done; 
+				goto done;
 			} else {
 				const char *queue = argv[0 + initial_argc];
 				const char *agent = argv[1 + initial_argc];
@@ -3627,7 +3627,7 @@ done:
 
 SWITCH_STANDARD_JSON_API(json_callcenter_config_function)
 {
-	
+
 	cJSON *data = cJSON_GetObjectItem(json, "data");
 	const char *error = NULL;
 	const char *arguments = cJSON_GetObjectCstr(data, "arguments");
@@ -3655,7 +3655,7 @@ SWITCH_STANDARD_JSON_API(json_callcenter_config_function)
 		cJSON *reply = cJSON_CreateArray();
 		switch_hash_index_t *hi;
         switch_mutex_lock(globals.mutex);
-        
+
         for (hi = switch_core_hash_first(globals.queue_hash); hi; hi = switch_core_hash_next(&hi)) {
         	cJSON *o = cJSON_CreateObject();
             void *val = NULL;
@@ -3780,7 +3780,7 @@ SWITCH_STANDARD_JSON_API(json_callcenter_config_function)
 
 	/* if nothing was executed from above, it should return error */
 	return SWITCH_STATUS_FALSE;
-	
+
 }
 
 /* Macro expands to: switch_status_t mod_callcenter_load(switch_loadable_module_interface_t **module_interface, switch_memory_pool_t *pool) */
