@@ -134,6 +134,7 @@ loggers/mod_console
 #loggers/mod_graylog2
 loggers/mod_logfile
 loggers/mod_syslog
+#loggers/mod_raven
 #say/mod_say_de
 say/mod_say_en
 #say/mod_say_es
