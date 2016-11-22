@@ -1710,6 +1710,11 @@ SWITCH_DECLARE(switch_status_t) switch_sql_queue_manager_destroy(switch_sql_queu
 
 	switch_assert(qmp);
 	qm = *qmp;
+	if (!qm) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "No SQL queue to destroy.\n");
+		return SWITCH_STATUS_NOOP;
+	}
+
 	*qmp = NULL;
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s Destroying SQL queue.\n", qm->name);
