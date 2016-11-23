@@ -1667,7 +1667,7 @@ size_t ben_encoded_size(const struct bencode *b)
 void *ben_encode(size_t *len, const struct bencode *b)
 {
 	size_t size = get_size(b);
-	void *data = malloc(size);
+	void *data = malloc(size + 1);
 	struct ben_encode_ctx ctx = {.data = data, .size = size};
 	if (data == NULL) {
 		//warn("No memory to encode\n");
@@ -1678,6 +1678,7 @@ void *ben_encode(size_t *len, const struct bencode *b)
 		return NULL;
 	}
 	assert(ctx.pos == size);
+    ctx.data[size] = '\0';
 	*len = ctx.pos;
 	return data;
 }
