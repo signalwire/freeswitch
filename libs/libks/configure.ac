@@ -237,11 +237,9 @@ AC_ARG_ENABLE(address_sanitizer,
   [enable_address_sanitizer="no"])
 
 if test "${enable_address_sanitizer}" = "yes"; then
-  if test "x${ax_cv_c_compiler_vendor}"  =  "xclang" ; then
-    AM_CFLAGS="${AM_CFLAGS} -fsanitize=address -fno-omit-frame-pointer"
-    AM_CXXFLAGS="${AM_CXXFLAGS} -fsanitize=address -fno-omit-frame-pointer"
-    AM_LDFLAGS="${AM_LDFLAGS} -fsanitize=address"
-  fi
+  AM_CFLAGS="${AM_CFLAGS} -fsanitize=address -fno-omit-frame-pointer"
+  AM_CXXFLAGS="${AM_CXXFLAGS} -fsanitize=address -fno-omit-frame-pointer"
+  AM_LDFLAGS="${AM_LDFLAGS} -fsanitize=address"
 fi
 
 PKG_CHECK_MODULES([SODIUM], [libsodium >= 1.0.0],[AC_MSG_RESULT([yes])],[AC_MSG_ERROR([libsodium is required])])
