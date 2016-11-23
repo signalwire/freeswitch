@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2012, Anthony Minessale II
+ * Copyright (c) 2010-2015, Anthony Minessale II
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -30,9 +30,14 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#include "ks.h"
+
 #ifndef KS_BUFFER_H
 #define KS_BUFFER_H
+
+#include "ks.h"
+
+KS_BEGIN_EXTERN_C
+
 /**
  * @defgroup ks_buffer Buffer Routines
  * @ingroup buffer
@@ -133,6 +138,7 @@ KS_DECLARE(ks_size_t) ks_buffer_seek(ks_buffer_t *buffer, ks_size_t datalen);
 
 KS_DECLARE(ks_size_t) ks_buffer_zwrite(ks_buffer_t *buffer, const void *data, ks_size_t datalen);
 
+KS_END_EXTERN_C
 #endif
 /* For Emacs:
  * Local Variables:

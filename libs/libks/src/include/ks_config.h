@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2014, Anthony Minessale II
+ * Copyright (c) 2007-2015, Anthony Minessale II
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -52,15 +52,11 @@
 #ifndef KS_CONFIG_H
 #define KS_CONFIG_H
 
+KS_BEGIN_EXTERN_C
+
 #include "ks.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif /* defined(__cplusplus) */
-
-
 #define KS_URL_SEPARATOR "://"
-
 
 #ifdef WIN32
 #define KS_PATH_SEPARATOR "\\"
@@ -107,26 +103,26 @@ atoi(expr))) ? 1 : 0
 typedef struct ks_config ks_config_t;
 
 /*! \brief A simple file handle representing an open configuration file **/
-struct ks_config {
-	/*! FILE stream buffer to the opened file */
-	FILE *file;
-	/*! path to the file */
-	char path[512];
-	/*! current category */
-	char category[256];
-	/*! current section */
-	char section[256];
-	/*! buffer of current line being read */
-	char buf[1024];
-	/*! current line number in file */
-	int lineno;
-	/*! current category number in file */
-	int catno;
-	/*! current section number in file */
-	int sectno;
+	struct ks_config {
+		/*! FILE stream buffer to the opened file */
+		FILE *file;
+		/*! path to the file */
+		char path[512];
+		/*! current category */
+		char category[256];
+		/*! current section */
+		char section[256];
+		/*! buffer of current line being read */
+		char buf[1024];
+		/*! current line number in file */
+		int lineno;
+		/*! current category number in file */
+		int catno;
+		/*! current section number in file */
+		int sectno;
 
-	int lockto;
-};
+		int lockto;
+	};
 
 /*!
   \brief Open a configuration file
@@ -134,13 +130,13 @@ struct ks_config {
   \param file_path path to the file
   \return 1 (true) on success 0 (false) on failure
 */
-KS_DECLARE(int) ks_config_open_file(ks_config_t * cfg, const char *file_path);
+	          KS_DECLARE(int) ks_config_open_file(ks_config_t *cfg, const char *file_path);
 
 /*!
   \brief Close a previously opened configuration file
   \param cfg (ks_config_t *) config handle to use
 */
-KS_DECLARE(void) ks_config_close_file(ks_config_t * cfg);
+	     KS_DECLARE(void) ks_config_close_file(ks_config_t *cfg);
 
 /*!
   \brief Retrieve next name/value pair from configuration file
@@ -148,24 +144,20 @@ KS_DECLARE(void) ks_config_close_file(ks_config_t * cfg);
   \param var pointer to aim at the new variable name
   \param val pointer to aim at the new value
 */
-KS_DECLARE(int) ks_config_next_pair(ks_config_t * cfg, char **var, char **val);
+	            KS_DECLARE(int) ks_config_next_pair(ks_config_t *cfg, char **var, char **val);
 
 /*!
   \brief Retrieve the CAS bits from a configuration string value
   \param strvalue pointer to the configuration string value (expected to be in format whatever:xxxx)
   \param outbits pointer to aim at the CAS bits
 */
-KS_DECLARE(int) ks_config_get_cas_bits(char *strvalue, unsigned char *outbits);
+	     KS_DECLARE(int) ks_config_get_cas_bits(char *strvalue, unsigned char *outbits);
 
 
 /** @} */
 
-#ifdef __cplusplus
-}
-#endif /* defined(__cplusplus) */
-
-#endif /* defined(KS_CONFIG_H) */
-
+KS_END_EXTERN_C
+#endif							/* defined(KS_CONFIG_H) */
 /* For Emacs:
  * Local Variables:
  * mode:c

@@ -32,20 +32,20 @@ extern "C" {
 #include <sys/types.h>
 
 #ifndef SIMCLIST_NO_DUMPRESTORE
-#   ifndef _WIN32
-#       include <sys/time.h>    /* list_dump_info_t's struct timeval */
-#   else
-#       include <time.h>
-#   endif
+#ifndef _WIN32
+#include <sys/time.h>			/* list_dump_info_t's struct timeval */
+#else
+#include <time.h>
+#endif
 #endif
 
 
 	/* Be friend of both C90 and C99 compilers */
 #if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L
-    /* "inline" and "restrict" are keywords */
+	/* "inline" and "restrict" are keywords */
 #else
-#   define inline           /* inline */
-#   define restrict         /* restrict */
+#define inline					/* inline */
+#define restrict				/* restrict */
 #endif
 
 
@@ -58,13 +58,13 @@ extern "C" {
 
 #ifndef SIMCLIST_NO_DUMPRESTORE
 	typedef struct {
-		uint16_t version;           /* dump version */
-		struct timeval timestamp;   /* when the list has been dumped, seconds since UNIX epoch */
+		uint16_t version;		/* dump version */
+		struct timeval timestamp;	/* when the list has been dumped, seconds since UNIX epoch */
 		uint32_t list_size;
 		uint32_t list_numels;
-		list_hash_t list_hash;      /* hash of the list when dumped, or 0 if invalid */
+		list_hash_t list_hash;	/* hash of the list when dumped, or 0 if invalid */
 		uint32_t dumpsize;
-		int consistent;             /* 1 if the dump is verified complete/consistent; 0 otherwise */
+		int consistent;			/* 1 if the dump is verified complete/consistent; 0 otherwise */
 	} list_dump_info_t;
 #endif
 
@@ -77,7 +77,7 @@ extern "C" {
 	 *
 	 * It is responsability of the function to handle possible NULL values.
 	 */
-	typedef int (*element_comparator)(const void *a, const void *b);
+	typedef int (*element_comparator) (const void *a, const void *b);
 
 	/**
 	 * a seeker of elements.
@@ -90,7 +90,7 @@ extern "C" {
 	 * It is responsability of the function to handle possible NULL values in any
 	 * argument.
 	 */
-	typedef int (*element_seeker)(const void *el, const void *indicator);
+	typedef int (*element_seeker) (const void *el, const void *indicator);
 
 	/**
 	 * an element lenght meter.
@@ -101,7 +101,7 @@ extern "C" {
 	 *
 	 * It is responsability of the function to handle possible NULL values.
 	 */
-	typedef size_t (*element_meter)(const void *el);
+	typedef size_t (*element_meter) (const void *el);
 
 	/**
 	 * a function computing the hash of elements.
@@ -112,7 +112,7 @@ extern "C" {
 	 *
 	 * It is responsability of the function to handle possible NULL values.
 	 */
-	typedef list_hash_t (*element_hash_computer)(const void *el);
+	typedef list_hash_t (*element_hash_computer) (const void *el);
 
 	/**
 	 * a function for serializing an element.
@@ -132,7 +132,7 @@ extern "C" {
 	 * @param serialize_buffer  reference to fill with the length of the buffer
 	 * @return                  reference to the buffer with the serialized data
 	 */
-	typedef void *(*element_serializer)(const void *restrict el, uint32_t *restrict serializ_len);
+	typedef void *(*element_serializer) (const void *restrict el, uint32_t *restrict serializ_len);
 
 	/**
 	 * a function for un-serializing an element.
@@ -149,7 +149,7 @@ extern "C" {
 	 * @param data_len          reference to the location where to store the length of the data in the buffer returned
 	 * @return                  reference to a buffer with the original, unserialized representation of the element
 	 */
-	typedef void *(*element_unserializer)(const void *restrict data, uint32_t *restrict data_len);
+	typedef void *(*element_unserializer) (const void *restrict data, uint32_t *restrict data_len);
 
 	/* [private-use] list entry -- olds actual user datum */
 	struct list_entry_s {
@@ -776,49 +776,49 @@ extern "C" {
 	 * ready-made comparator for int8_t elements.
 	 * @see list_attributes_comparator()
 	 */
-	int list_comparator_int8_t(const void *a, const void *b);
+	int list_comparator_int8_t (const void *a, const void *b);
 
 	/**
 	 * ready-made comparator for int16_t elements.
 	 * @see list_attributes_comparator()
 	 */
-	int list_comparator_int16_t(const void *a, const void *b);
+	int list_comparator_int16_t (const void *a, const void *b);
 
 	/**
 	 * ready-made comparator for int32_t elements.
 	 * @see list_attributes_comparator()
 	 */
-	int list_comparator_int32_t(const void *a, const void *b);
+	int list_comparator_int32_t (const void *a, const void *b);
 
 	/**
 	 * ready-made comparator for int64_t elements.
 	 * @see list_attributes_comparator()
 	 */
-	int list_comparator_int64_t(const void *a, const void *b);
+	int list_comparator_int64_t (const void *a, const void *b);
 
 	/**
 	 * ready-made comparator for uint8_t elements.
 	 * @see list_attributes_comparator()
 	 */
-	int list_comparator_uint8_t(const void *a, const void *b);
+	int list_comparator_uint8_t (const void *a, const void *b);
 
 	/**
 	 * ready-made comparator for uint16_t elements.
 	 * @see list_attributes_comparator()
 	 */
-	int list_comparator_uint16_t(const void *a, const void *b);
+	int list_comparator_uint16_t (const void *a, const void *b);
 
 	/**
 	 * ready-made comparator for uint32_t elements.
 	 * @see list_attributes_comparator()
 	 */
-	int list_comparator_uint32_t(const void *a, const void *b);
+	int list_comparator_uint32_t (const void *a, const void *b);
 
 	/**
 	 * ready-made comparator for uint64_t elements.
 	 * @see list_attributes_comparator()
 	 */
-	int list_comparator_uint64_t(const void *a, const void *b);
+	int list_comparator_uint64_t (const void *a, const void *b);
 
 	/**
 	 * ready-made comparator for float elements.
@@ -843,49 +843,49 @@ extern "C" {
 	 * ready-made metric function for int8_t elements.
 	 * @see list_attributes_copy()
 	 */
-	size_t list_meter_int8_t(const void *el);
+	size_t list_meter_int8_t (const void *el);
 
 	/**
 	 * ready-made metric function for int16_t elements.
 	 * @see list_attributes_copy()
 	 */
-	size_t list_meter_int16_t(const void *el);
+	size_t list_meter_int16_t (const void *el);
 
 	/**
 	 * ready-made metric function for int32_t elements.
 	 * @see list_attributes_copy()
 	 */
-	size_t list_meter_int32_t(const void *el);
+	size_t list_meter_int32_t (const void *el);
 
 	/**
 	 * ready-made metric function for int64_t elements.
 	 * @see list_attributes_copy()
 	 */
-	size_t list_meter_int64_t(const void *el);
+	size_t list_meter_int64_t (const void *el);
 
 	/**
 	 * ready-made metric function for uint8_t elements.
 	 * @see list_attributes_copy()
 	 */
-	size_t list_meter_uint8_t(const void *el);
+	size_t list_meter_uint8_t (const void *el);
 
 	/**
 	 * ready-made metric function for uint16_t elements.
 	 * @see list_attributes_copy()
 	 */
-	size_t list_meter_uint16_t(const void *el);
+	size_t list_meter_uint16_t (const void *el);
 
 	/**
 	 * ready-made metric function for uint32_t elements.
 	 * @see list_attributes_copy()
 	 */
-	size_t list_meter_uint32_t(const void *el);
+	size_t list_meter_uint32_t (const void *el);
 
 	/**
 	 * ready-made metric function for uint64_t elements.
 	 * @see list_attributes_copy()
 	 */
-	size_t list_meter_uint64_t(const void *el);
+	size_t list_meter_uint64_t (const void *el);
 
 	/**
 	 * ready-made metric function for float elements.
@@ -975,9 +975,7 @@ extern "C" {
 #ifdef __cplusplus
 }
 #endif
-
 #endif
-
 /* For Emacs:
  * Local Variables:
  * mode:c

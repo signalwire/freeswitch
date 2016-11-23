@@ -27,11 +27,11 @@
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
-#include <float.h>
 #include <limits.h>
 #include <ctype.h>
-#include "ks_json.h"
 #include "ks.h"
+#include "ks_json.h"
+#include <float.h>
 
 static const char *ep;
 
@@ -40,7 +40,7 @@ KS_DECLARE(const char *)cJSON_GetErrorPtr() {return ep;}
 static int cJSON_strcasecmp(const char *s1,const char *s2)
 {
 	if (!s1) return (s1==s2)?0:1;if (!s2) return 1;
-	for(; tolower(*s1) == tolower(*s2); ++s1, ++s2)	if(*s1 == 0)	return 0;
+	for(; tolower(*(const unsigned char *)s1) == tolower(*(const unsigned char *)s2); ++s1, ++s2)	if(*s1 == 0)	return 0;
 	return tolower(*(const unsigned char *)s1) - tolower(*(const unsigned char *)s2);
 }
 
@@ -59,23 +59,23 @@ static void (*cJSON_free)(void *ptr) = glue_free;
 
 static char* cJSON_strdup(const char* str)
 {
-      size_t len;
-      char* copy;
-      const char *s = str ? str : "";
+	size_t len;
+	char* copy;
+	const char *s = str ? str : "";
 
-      len = strlen(s) + 1;
-      if (!(copy = (char*)cJSON_malloc(len))) return 0;
-      memcpy(copy,s,len);
-      return copy;
+	len = strlen(s) + 1;
+	if (!(copy = (char*)cJSON_malloc(len))) return 0;
+	memcpy(copy,s,len);
+	return copy;
 }
 
 KS_DECLARE(void)cJSON_InitHooks(cJSON_Hooks* hooks)
 {
-    if (!hooks) { /* Reset hooks */
-        cJSON_malloc = malloc;
-        cJSON_free = free;
-        return;
-    }
+	if (!hooks) { /* Reset hooks */
+		cJSON_malloc = malloc;
+		cJSON_free = free;
+		return;
+	}
 
 	cJSON_malloc = (hooks->malloc_fn)?hooks->malloc_fn:malloc;
 	cJSON_free	 = (hooks->free_fn)?hooks->free_fn:free;
@@ -281,8 +281,8 @@ KS_DECLARE(cJSON *)cJSON_Parse(const char *value)
 }
 
 /* Render a cJSON item/entity/structure to text. */
-KS_DECLARE(char *) cJSON_Print(cJSON *item)				{return print_value(item,0,1);}
-KS_DECLARE(char *) cJSON_PrintUnformatted(cJSON *item)	{return print_value(item,0,0);}
+KS_DECLARE(char *)cJSON_Print(cJSON *item)				{return print_value(item,0,1);}
+KS_DECLARE(char *)cJSON_PrintUnformatted(cJSON *item)	{return print_value(item,0,0);}
 
 /* Parser core - when encountering text, process appropriately. */
 static const char *parse_value(cJSON *item,const char *value)
@@ -349,7 +349,8 @@ static const char *parse_array(cJSON *item,const char *value)
 static char *print_array(cJSON *item,int depth,int fmt)
 {
 	char **entries;
-	char *out=0,*ptr,*ret;int len=5;
+	char *out=0,*ptr,*ret;
+	size_t len=5;
 	cJSON *child=item->child;
 	int numentries=0,i=0,fail=0;
 	
@@ -436,7 +437,8 @@ static const char *parse_object(cJSON *item,const char *value)
 static char *print_object(cJSON *item,int depth,int fmt)
 {
 	char **entries=0,**names=0;
-	char *out=0,*ptr,*ret,*str;int len=7,i=0,j;
+	char *out=0,*ptr,*ret,*str;int i=0,j;
+	size_t len=7;
 	cJSON *child=item->child;
 	int numentries=0,fail=0;
 	/* Count the number of entries. */
@@ -493,7 +495,20 @@ static char *print_object(cJSON *item,int depth,int fmt)
 /* Get Array size/item / object item. */
 KS_DECLARE(int)   cJSON_GetArraySize(cJSON *array)							{cJSON *c=array->child;int i=0;while(c)i++,c=c->next;return i;}
 KS_DECLARE(cJSON *)cJSON_GetArrayItem(cJSON *array,int item)				{cJSON *c=array->child;  while (c && item>0) item--,c=c->next; return c;}
-KS_DECLARE(cJSON *)cJSON_GetObjectItem(cJSON *object,const char *string)	{cJSON *c=object->child; while (c && cJSON_strcasecmp(c->string,string)) c=c->next; return c;}
+KS_DECLARE(cJSON *)cJSON_GetObjectItem(const cJSON *object,const char *string)	{cJSON *c=object->child; while (c && cJSON_strcasecmp(c->string,string)) c=c->next; return c;}
+
+
+KS_DECLARE(const char *)cJSON_GetObjectCstr(const cJSON *object, const char *string)	
+{
+	cJSON *cj = cJSON_GetObjectItem(object, string);
+
+	if (!cj || cj->type != cJSON_String || !cj->valuestring) return NULL;
+
+	return cj->valuestring;
+}
+
+
+
 
 /* Utility for array list handling. */
 static void suffix_object(cJSON *prev,cJSON *item) {prev->next=item;item->prev=prev;}
@@ -529,7 +544,68 @@ KS_DECLARE(cJSON *)cJSON_CreateArray()						{cJSON *item=cJSON_New_Item();if(ite
 KS_DECLARE(cJSON *)cJSON_CreateObject()						{cJSON *item=cJSON_New_Item();if(item)item->type=cJSON_Object;return item;}
 
 /* Create Arrays: */
-KS_DECLARE(cJSON *)cJSON_CreateIntArray(int *numbers,int count)				{int i;cJSON *n=0,*p=0,*a=cJSON_CreateArray();for(i=0;a!=0 && i<count;i++){n=cJSON_CreateNumber(numbers[i]);if(!i)a->child=n;else suffix_object(p,n);p=n;}return a;}
-KS_DECLARE(cJSON *)cJSON_CreateFloatArray(float *numbers,int count)			{int i;cJSON *n=0,*p=0,*a=cJSON_CreateArray();for(i=0;a!=0 && i<count;i++){n=cJSON_CreateNumber(numbers[i]);if(!i)a->child=n;else suffix_object(p,n);p=n;}return a;}
-KS_DECLARE(cJSON *)cJSON_CreateDoubleArray(double *numbers,int count)		{int i;cJSON *n=0,*p=0,*a=cJSON_CreateArray();for(i=0;a!=0 && i<count;i++){n=cJSON_CreateNumber(numbers[i]);if(!i)a->child=n;else suffix_object(p,n);p=n;}return a;}
-KS_DECLARE(cJSON *)cJSON_CreateStringArray(const char **strings,int count)	{int i;cJSON *n=0,*p=0,*a=cJSON_CreateArray();for(i=0;a!=0 && i<count;i++){n=cJSON_CreateString(strings[i]);if(!i)a->child=n;else suffix_object(p,n);p=n;}return a;}
+KS_DECLARE(cJSON *)cJSON_CreateIntArray(int *numbers,int count)				{int i;cJSON *n=0,*p=0,*a=cJSON_CreateArray();for(i=0;a && i<count;i++){n=cJSON_CreateNumber(numbers[i]);if(!i)a->child=n;else suffix_object(p,n);p=n;}return a;}
+KS_DECLARE(cJSON *)cJSON_CreateFloatArray(float *numbers,int count)			{int i;cJSON *n=0,*p=0,*a=cJSON_CreateArray();for(i=0;a && i<count;i++){n=cJSON_CreateNumber(numbers[i]);if(!i)a->child=n;else suffix_object(p,n);p=n;}return a;}
+KS_DECLARE(cJSON *)cJSON_CreateDoubleArray(double *numbers,int count)		{int i;cJSON *n=0,*p=0,*a=cJSON_CreateArray();for(i=0;a && i<count;i++){n=cJSON_CreateNumber(numbers[i]);if(!i)a->child=n;else suffix_object(p,n);p=n;}return a;}
+KS_DECLARE(cJSON *)cJSON_CreateStringArray(const char **strings,int count)	{int i;cJSON *n=0,*p=0,*a=cJSON_CreateArray();for(i=0;a && i<count;i++){n=cJSON_CreateString(strings[i]);if(!i)a->child=n;else suffix_object(p,n);p=n;}return a;}
+
+/* Duplication */
+KS_DECLARE(cJSON *) cJSON_Duplicate(cJSON *item,int recurse)
+{
+	cJSON *newitem,*cptr,*nptr=0,*newchild;
+	/* Bail on bad ptr */
+	if (!item) return 0;
+	/* Create new item */
+	newitem=cJSON_New_Item();
+	if (!newitem) return 0;
+	/* Copy over all vars */
+	newitem->type=item->type&(~cJSON_IsReference),newitem->valueint=item->valueint,newitem->valuedouble=item->valuedouble;
+	if (item->valuestring)  {newitem->valuestring=cJSON_strdup(item->valuestring);  if (!newitem->valuestring)      {cJSON_Delete(newitem);return 0;}}
+	if (item->string)               {newitem->string=cJSON_strdup(item->string);                    if (!newitem->string)           {cJSON_Delete(newitem);return 0;}}
+	/* If non-recursive, then we're done! */
+	if (!recurse) return newitem;
+	/* Walk the ->next chain for the child. */
+	cptr=item->child;
+	while (cptr) {
+		newchild=cJSON_Duplicate(cptr,1);               /* Duplicate (with recurse) each item in the ->next chain */
+		if (!newchild) {cJSON_Delete(newitem);return 0;}
+		if (nptr)       {nptr->next=newchild,newchild->prev=nptr;nptr=newchild;}        /* If newitem->child already set, then crosswire ->prev and ->next and move on */
+		else            {newitem->child=newchild;nptr=newchild;}                                        /* Set newitem->child and move to it */
+		cptr=cptr->next;
+	}
+	return newitem;
+}
+
+
+KS_DECLARE(cJSON *) cJSON_CreateStringPrintf(const char *fmt, ...)
+{
+	va_list ap;
+	char *str;
+	cJSON *item;
+
+	va_start(ap, fmt);
+	str = ks_vmprintf(fmt, ap);
+	va_end(ap);
+
+	if (!str) return NULL;
+
+	if ((item = cJSON_New_Item())) {
+		item->type=cJSON_String;
+		item->valuestring = str;
+	} else {
+		free(str);
+	}
+
+	return item;
+}
+
+/* For Emacs:
+ * Local Variables:
+ * mode:c
+ * indent-tabs-mode:t
+ * tab-width:4
+ * c-basic-offset:4
+ * End:
+ * For VIM:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet:
+ */

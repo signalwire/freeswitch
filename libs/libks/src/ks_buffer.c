@@ -32,7 +32,7 @@
  */
 
 
-#include "ks_buffer.h"
+#include "ks.h"
 
 static unsigned buffer_id = 0;
 
@@ -61,7 +61,7 @@ KS_DECLARE(ks_status_t) ks_buffer_create(ks_buffer_t **buffer, ks_size_t blocksi
 			new_buffer->data = malloc(start_len);
 			if (!new_buffer->data) {
 				free(new_buffer);
-				return KS_FAIL;
+				return KS_STATUS_FAIL;
 			}
 			memset(new_buffer->data, 0, start_len);
 		}
@@ -73,10 +73,10 @@ KS_DECLARE(ks_status_t) ks_buffer_create(ks_buffer_t **buffer, ks_size_t blocksi
 		new_buffer->head = new_buffer->data;
 
 		*buffer = new_buffer;
-		return KS_SUCCESS;
+		return KS_STATUS_SUCCESS;
 	}
 
-	return KS_FAIL;
+	return KS_STATUS_FAIL;
 }
 
 KS_DECLARE(ks_size_t) ks_buffer_len(ks_buffer_t *buffer)
@@ -163,7 +163,7 @@ KS_DECLARE(ks_size_t) ks_buffer_read_loop(ks_buffer_t *buffer, void *data, ks_si
 		}
 		buffer->head = buffer->data;
 		buffer->used = buffer->actually_used;
-		len = ks_buffer_read(buffer, (char*)data + len, datalen - len);
+		len = ks_buffer_read(buffer, (char *) data + len, datalen - len);
 		buffer->loops--;
 	}
 	return len;
@@ -199,22 +199,23 @@ KS_DECLARE(ks_size_t) ks_buffer_packet_count(ks_buffer_t *buffer)
 {
 	char *pe, *p, *e, *head = (char *) buffer->head;
 	ks_size_t x = 0;
-	
+
 	ks_assert(buffer != NULL);
 
 	e = (head + buffer->used);
 
 	for (p = head; p && *p && p < e; p++) {
 		if (*p == '\n') {
-			pe = p+1;
-			if (*pe == '\r') pe++;
+			pe = p + 1;
+			if (*pe == '\r')
+				pe++;
 			if (pe <= e && *pe == '\n') {
 				p = pe++;
 				x++;
 			}
 		}
 	}
-	
+
 	return x;
 }
 
@@ -230,8 +231,9 @@ KS_DECLARE(ks_size_t) ks_buffer_read_packet(ks_buffer_t *buffer, void *data, ks_
 
 	for (p = head; p && *p && p < e; p++) {
 		if (*p == '\n') {
-			pe = p+1;
-			if (*pe == '\r') pe++;
+			pe = p + 1;
+			if (*pe == '\r')
+				pe++;
 			if (pe <= e && *pe == '\n') {
 				pe++;
 				datalen = pe - head;
@@ -242,7 +244,7 @@ KS_DECLARE(ks_size_t) ks_buffer_read_packet(ks_buffer_t *buffer, void *data, ks_
 			}
 		}
 	}
-	
+
 	return ks_buffer_read(buffer, data, datalen);
 }
 
@@ -268,16 +270,16 @@ KS_DECLARE(ks_size_t) ks_buffer_write(ks_buffer_t *buffer, const void *data, ks_
 	freespace = buffer->datalen - buffer->used;
 
 	/*
-	  if (buffer->data != buffer->head) {
-	  memmove(buffer->data, buffer->head, buffer->used);
-	  buffer->head = buffer->data;
-	  }
-	*/
-	
+	   if (buffer->data != buffer->head) {
+	   memmove(buffer->data, buffer->head, buffer->used);
+	   buffer->head = buffer->data;
+	   }
+	 */
+
 	if (freespace < datalen) {
 		ks_size_t new_size, new_block_size;
 		void *data1;
-		
+
 		new_size = buffer->datalen + datalen;
 		new_block_size = buffer->datalen + buffer->blocksize;
 
@@ -293,7 +295,7 @@ KS_DECLARE(ks_size_t) ks_buffer_write(ks_buffer_t *buffer, const void *data, ks_
 		buffer->head = buffer->data;
 		buffer->datalen = new_size;
 	}
-	
+
 
 	freespace = buffer->datalen - buffer->used;
 
@@ -322,7 +324,7 @@ KS_DECLARE(void) ks_buffer_zero(ks_buffer_t *buffer)
 KS_DECLARE(ks_size_t) ks_buffer_zwrite(ks_buffer_t *buffer, const void *data, ks_size_t datalen)
 {
 	ks_size_t w;
-	
+
 	if (!(w = ks_buffer_write(buffer, data, datalen))) {
 		ks_buffer_zero(buffer);
 		return ks_buffer_write(buffer, data, datalen);

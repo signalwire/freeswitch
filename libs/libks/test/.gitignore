@@ -1,0 +1,16 @@
+*.log
+*.trs
+table_file
+testpools
+testtable
+testthreadmutex
+testtime
+testhash
+testq
+testsock
+testsock2
+testwebsock
+testdht
+testdht_net
+testdht_msg
+dht_example

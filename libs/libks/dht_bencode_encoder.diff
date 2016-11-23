@@ -1,0 +1,407 @@
+diff --git a/libs/libks/src/ks_dht.c b/libs/libks/src/ks_dht.c
+index 27bafd0..126686e 100644
+--- a/libs/libks/src/ks_dht.c
++++ b/libs/libks/src/ks_dht.c
+@@ -2438,96 +2438,84 @@ static int dht_send(dht_handle_t *h, const void *buf, size_t len, int flags, con
+     return sendto(s, buf, len, flags, sa, salen);
+ }
+ 
++/* Sample ping packet '{"t":"aa", "y":"q", "q":"ping", "a":{"id":"abcdefghij0123456789"}}' */
++/* http://www.bittorrent.org/beps/bep_0005.html */
+ int send_ping(dht_handle_t *h, const struct sockaddr *sa, int salen, const unsigned char *tid, int tid_len)
+ {
+     char buf[512];
+-    int i = 0;//, rc;
+-	struct bencode *bencode_p = NULL;
+-	struct bencode *bencode_a_p = NULL;
+-
+-	/* Sets some default values for message, then encodes 20 characters worth of local node id */
+-	/* also adds the transaction id tid, then a few final key values. */
+-
+-	/* Sample encoded ping 'd1:ad2:id20:Td2????#?)y1:q4:ping1:t4:pn' */
+-	/*                     'd1:ad2:id20:Td2????#?)y1:q4:ping1:t4:pn' */
+-	/* https://en.wikipedia.org/wiki/Bencode */
+-	/* Sample ping packet '{"t":"aa", "y":"q", "q":"ping", "a":{"id":"abcdefghij0123456789"}}' */
+-	/* http://www.bittorrent.org/beps/bep_0005.html */
++    int i = 0;
++	struct bencode *bencode_p = ben_dict();
++	struct bencode *bencode_a_p = ben_dict();
+ 	
+-	bencode_a_p = ben_dict(); /* Initialize empty bencode dictionary */
++	ben_dict_set(bencode_p, ben_blob("t", 1), ben_blob(tid, tid_len));
++	ben_dict_set(bencode_p, ben_blob("y", 1), ben_blob("q", 1));	
++	ben_dict_set(bencode_p, ben_blob("q", 1), ben_blob("ping", 4));
+ 	ben_dict_set(bencode_a_p, ben_blob("id", 2), ben_blob(h->myid, 20));
+-
+-	bencode_p = ben_dict();
+ 	ben_dict_set(bencode_p, ben_blob("a", 1), bencode_a_p);
+-	ben_dict_set(bencode_p, ben_blob("q", 1), ben_blob("ping", 4));
+-	ben_dict_set(bencode_p, ben_blob("t", 1), ben_blob(tid, tid_len));
+-	ben_dict_set(bencode_p, ben_blob("y", 1), ben_blob("q", 1));
+ 
+-	/* 
+-    rc = ks_snprintf(buf + i, 512 - i, "d1:ad2:id20:"); INC(i, rc, 512);
+-    COPY(buf, i, h->myid, 20, 512);
+-    rc = ks_snprintf(buf + i, 512 - i, "e1:q4:ping1:t%d:", tid_len);
+-    INC(i, rc, 512);
+-    COPY(buf, i, tid, tid_len, 512);
+-    ADD_V(buf, i, 512);
+-    rc = ks_snprintf(buf + i, 512 - i, "1:y1:qe"); INC(i, rc, 512);
+-	*/
+ 	ben_encode2(buf, 512, bencode_p);
+ 	ben_free(bencode_p); /* This SHOULD free the bencode_a_p as well */
+ 	
+ 	ks_log(KS_LOG_DEBUG, "Encoded PING: %s\n\n", buf);
+     return dht_send(h, buf, i, 0, sa, salen);
+-
+-	/*
+-	  // Need to fix, not just disable error handling.
+- fail:
+-    errno = ENOSPC;
+-    return -1; */
+ }
+ 
++/* Sample pong packet '{"t":"aa", "y":"r", "r": {"id":"mnopqrstuvwxyz123456"}}' */
++/* http://www.bittorrent.org/beps/bep_0005.html */
+ int send_pong(dht_handle_t *h, const struct sockaddr *sa, int salen, const unsigned char *tid, int tid_len)
+ {
+     char buf[512];
+-    int i = 0, rc;
+-    rc = ks_snprintf(buf + i, 512 - i, "d1:rd2:id20:"); INC(i, rc, 512);
+-    COPY(buf, i, h->myid, 20, 512);
+-    rc = ks_snprintf(buf + i, 512 - i, "e1:t%d:", tid_len); INC(i, rc, 512);
+-    COPY(buf, i, tid, tid_len, 512);
+-    ADD_V(buf, i, 512);
+-    rc = ks_snprintf(buf + i, 512 - i, "1:y1:re"); INC(i, rc, 512);
+-    return dht_send(h, buf, i, 0, sa, salen);
++    int i = 0;
++	struct bencode *bencode_p = ben_dict();
++	struct bencode *bencode_a_p = ben_dict();
+ 
+- fail:
+-    errno = ENOSPC;
+-    return -1;
++	ben_dict_set(bencode_p, ben_blob("t", 1), ben_blob(tid, tid_len));
++	ben_dict_set(bencode_p, ben_blob("y", 1), ben_blob("r", 1));
++	ben_dict_set(bencode_a_p, ben_blob("id", 2), ben_blob(h->myid, 20));
++	ben_dict_set(bencode_p, ben_blob("r", 1), bencode_a_p);
++
++	ben_encode2(buf, 512, bencode_p);
++	ben_free(bencode_p); /* This SHOULD free the bencode_a_p as well */
++	
++	ks_log(KS_LOG_DEBUG, "Encoded PONG: %s\n\n", buf);
++    return dht_send(h, buf, i, 0, sa, salen);
+ }
+ 
++/* Sample find_node packet '{"t":"aa", "y":"q", "q":"find_node", "a": {"id":"abcdefghij0123456789", "target":"mnopqrstuvwxyz123456"}}' */
++/* Sample find_node packet w/ want '{"t":"aa", "y":"q", "q":"find_node", "a": {"id":"abcdefghij0123456789", "target":"mnopqrstuvwxyz123456", "want":"n4"}}' */
++/* http://www.bittorrent.org/beps/bep_0005.html */
++/* http://www.bittorrent.org/beps/bep_0032.html for want parameter */
+ int send_find_node(dht_handle_t *h, const struct sockaddr *sa, int salen,
+                const unsigned char *tid, int tid_len,
+                const unsigned char *target, int want, int confirm)
+ {
+     char buf[512];
+-    int i = 0, rc;
+-    rc = ks_snprintf(buf + i, 512 - i, "d1:ad2:id20:"); INC(i, rc, 512);
+-    COPY(buf, i, h->myid, 20, 512);
+-    rc = ks_snprintf(buf + i, 512 - i, "6:target20:"); INC(i, rc, 512);
+-    COPY(buf, i, target, 20, 512);
+-    if (want > 0) {
+-        rc = ks_snprintf(buf + i, 512 - i, "4:wantl%s%se", (want & WANT4) ? "2:n4" : "", (want & WANT6) ? "2:n6" : "");
+-        INC(i, rc, 512);
+-    }
+-    rc = ks_snprintf(buf + i, 512 - i, "e1:q9:find_node1:t%d:", tid_len);
+-    INC(i, rc, 512);
+-    COPY(buf, i, tid, tid_len, 512);
+-    ADD_V(buf, i, 512);
+-    rc = ks_snprintf(buf + i, 512 - i, "1:y1:qe"); INC(i, rc, 512);
+-    return dht_send(h, buf, i, confirm ? MSG_CONFIRM : 0, sa, salen);
++    int i = 0;
++	struct bencode *bencode_p = ben_dict();
++	struct bencode *bencode_a_p = ben_dict();
++	int target_len = target ? strlen((const char*)target) : 0;
+ 
+- fail:
+-    errno = ENOSPC;
+-    return -1;
+-}
++	ben_dict_set(bencode_p, ben_blob("t", 1), ben_blob(tid, tid_len));
++	ben_dict_set(bencode_p, ben_blob("y", 1), ben_blob("q", 1));
++	ben_dict_set(bencode_p, ben_blob("q", 1), ben_blob("find_node", 9));
++	ben_dict_set(bencode_a_p, ben_blob("id", 2), ben_blob(h->myid, 20));
++	if (target) ben_dict_set(bencode_a_p, ben_blob("target", 6), ben_blob(target, target_len));
++	if (want > 0) {
++		char *w = NULL;
++		if (want & WANT4) w = "n4";
++		if (want & WANT6) w = "n6";
++		if (w) ben_dict_set(bencode_a_p, ben_blob("want", 4), ben_blob(w, 2));
++	}
++	ben_dict_set(bencode_p, ben_blob("a", 1), bencode_a_p);
+ 
++	ben_encode2(buf, 512, bencode_p);
++	ben_free(bencode_p); /* This SHOULD free the bencode_a_p as well */
++	
++	ks_log(KS_LOG_DEBUG, "Encoded FIND_NODE: %s\n\n", buf);
++    return dht_send(h, buf, i, confirm ? MSG_CONFIRM : 0, sa, salen);
++}
++/* sample find_node response '{"t":"aa", "y":"r", "r": {"id":"0123456789abcdefghij", "nodes": "def456..."}}'*/
++/* http://www.bittorrent.org/beps/bep_0005.html */
+ int send_nodes_peers(dht_handle_t *h, const struct sockaddr *sa, int salen,
+                  const unsigned char *tid, int tid_len,
+                  const unsigned char *nodes, int nodes_len,
+@@ -2536,30 +2524,28 @@ int send_nodes_peers(dht_handle_t *h, const struct sockaddr *sa, int salen,
+                  const unsigned char *token, int token_len)
+ {
+     char buf[2048];
+-    int i = 0, rc, j0, j, k, len;
++    int i = 0;//, rc, j0, j, k, len;
++	struct bencode *bencode_p = ben_dict();
++	struct bencode *bencode_a_p = ben_dict();
++	struct bencode *ben_array = ben_list();
+ 
+-    rc = ks_snprintf(buf + i, 2048 - i, "d1:rd2:id20:"); INC(i, rc, 2048);
+-    COPY(buf, i, h->myid, 20, 2048);
+-    if (nodes_len > 0) {
+-        rc = ks_snprintf(buf + i, 2048 - i, "5:nodes%d:", nodes_len);
+-        INC(i, rc, 2048);
+-        COPY(buf, i, nodes, nodes_len, 2048);
+-    }
+-    if (nodes6_len > 0) {
+-         rc = ks_snprintf(buf + i, 2048 - i, "6:nodes6%d:", nodes6_len);
+-         INC(i, rc, 2048);
+-         COPY(buf, i, nodes6, nodes6_len, 2048);
+-    }
+-    if (token_len > 0) {
+-        rc = ks_snprintf(buf + i, 2048 - i, "5:token%d:", token_len);
+-        INC(i, rc, 2048);
+-        COPY(buf, i, token, token_len, 2048);
+-    }
++	ben_dict_set(bencode_p, ben_blob("t", 1), ben_blob(tid, tid_len));
++	ben_dict_set(bencode_p, ben_blob("y", 1), ben_blob("r", 1));
++	ben_dict_set(bencode_a_p, ben_blob("id", 2), ben_blob(h->myid, 20));
++	if (token_len)  ben_dict_set(bencode_a_p, ben_blob("token",  5), ben_blob(token, token_len));
++	if (nodes_len)  ben_dict_set(bencode_a_p, ben_blob("nodes",  5), ben_blob(token, nodes_len));
++	if (nodes6_len) ben_dict_set(bencode_a_p, ben_blob("nodes6", 6), ben_blob(token, nodes6_len));
+ 
++	/* its an array, how do i do this??
++
++Response with peers = {"t":"aa", "y":"r", "r": {"id":"abcdefghij0123456789", "token":"aoeusnth", "values": ["axje.u", "idhtnm"]}}
++	*/
++	
++	/* TODO XXXXXX find docs and add "values" stuff into this encode
+     if (st && st->numpeers > 0) {
+-        /* We treat the storage as a circular list, and serve a randomly
+-           chosen slice.  In order to make sure we fit within 1024 octets,
+-           we limit ourselves to 50 peers. */
++        // We treat the storage as a circular list, and serve a randomly
++        //   chosen slice.  In order to make sure we fit within 1024 octets,
++        //   we limit ourselves to 50 peers.
+ 
+         len = af == AF_INET ? 4 : 16;
+         j0 = random() % st->numpeers;
+@@ -2582,19 +2568,13 @@ int send_nodes_peers(dht_handle_t *h, const struct sockaddr *sa, int salen,
+         rc = ks_snprintf(buf + i, 2048 - i, "e");
+ 		INC(i, rc, 2048);
+     }
+-
+-    rc = ks_snprintf(buf + i, 2048 - i, "e1:t%d:", tid_len);
+-	INC(i, rc, 2048);
+-    COPY(buf, i, tid, tid_len, 2048);
+-    ADD_V(buf, i, 2048);
+-    rc = ks_snprintf(buf + i, 2048 - i, "1:y1:re");
+-	INC(i, rc, 2048);
+-
+-    return dht_send(h, buf, i, 0, sa, salen);
+-
+- fail:
+-    errno = ENOSPC;
+-    return -1;
++*/
++	ben_dict_set(bencode_p, ben_blob("r", 1), bencode_a_p);
++	ben_encode2(buf, 512, bencode_p);
++	ben_free(bencode_p); /* This SHOULD free the bencode_a_p as well */
++	
++	ks_log(KS_LOG_DEBUG, "Encoded FIND_NODE: %s\n\n", buf);
++	return dht_send(h, buf, i, 0, sa, salen);
+ }
+ 
+ static int insert_closest_node(unsigned char *nodes, int numnodes,
+@@ -2706,104 +2686,107 @@ int send_closest_nodes(dht_handle_t *h, const struct sockaddr *sa, int salen,
+                             af, st, token, token_len);
+ }
+ 
++/* sample get_peers request '{"t":"aa", "y":"q", "q":"get_peers", "a": {"id":"abcdefghij0123456789", "info_hash":"mnopqrstuvwxyz123456"}}'*/
++/* sample get_peers w/ want '{"t":"aa", "y":"q", "q":"get_peers", "a": {"id":"abcdefghij0123456789", "info_hash":"mnopqrstuvwxyz123456": "want":"n4"}}'*/
++/* http://www.bittorrent.org/beps/bep_0005.html */
++/* http://www.bittorrent.org/beps/bep_0032.html for want parameter */
+ int send_get_peers(dht_handle_t *h, const struct sockaddr *sa, int salen,
+ 				   unsigned char *tid, int tid_len, unsigned char *infohash,
+ 				   int want, int confirm)
+ {
+     char buf[512];
+-    int i = 0, rc;
+-
+-    rc = ks_snprintf(buf + i, 512 - i, "d1:ad2:id20:"); INC(i, rc, 512);
+-    COPY(buf, i, h->myid, 20, 512);
+-    rc = ks_snprintf(buf + i, 512 - i, "9:info_hash20:"); INC(i, rc, 512);
+-    COPY(buf, i, infohash, 20, 512);
+-    if (want > 0) {
+-        rc = ks_snprintf(buf + i, 512 - i, "4:wantl%s%se", (want & WANT4) ? "2:n4" : "", (want & WANT6) ? "2:n6" : "");
+-        INC(i, rc, 512);
+-    }
+-    rc = ks_snprintf(buf + i, 512 - i, "e1:q9:get_peers1:t%d:", tid_len);
+-    INC(i, rc, 512);
+-    COPY(buf, i, tid, tid_len, 512);
+-    ADD_V(buf, i, 512);
+-    rc = ks_snprintf(buf + i, 512 - i, "1:y1:qe"); INC(i, rc, 512);
+-    return dht_send(h, buf, i, confirm ? MSG_CONFIRM : 0, sa, salen);
++    int i = 0;
++	struct bencode *bencode_p = ben_dict();
++	struct bencode *bencode_a_p = ben_dict();
++	int infohash_len = infohash ? strlen((const char*)infohash) : 0;
+ 
+- fail:
+-    errno = ENOSPC;
+-    return -1;
+-}
++	ben_dict_set(bencode_p, ben_blob("t", 1), ben_blob(tid, tid_len));
++	ben_dict_set(bencode_p, ben_blob("y", 1), ben_blob("q", 1));
++	ben_dict_set(bencode_p, ben_blob("q", 1), ben_blob("get_peers", 9));
++	ben_dict_set(bencode_a_p, ben_blob("id", 2), ben_blob(h->myid, 20));
++	if (want > 0) {
++		char *w = NULL;
++		if (want & WANT4) w = "n4";
++		if (want & WANT6) w = "n6";
++		if (w) ben_dict_set(bencode_a_p, ben_blob("want", 4), ben_blob(w, 2));
++	}
++	ben_dict_set(bencode_a_p, ben_blob("info_hash", 9), ben_blob(infohash, infohash_len));
++	ben_dict_set(bencode_p, ben_blob("a", 1), bencode_a_p);
+ 
++	ben_encode2(buf, 512, bencode_p);
++	ben_free(bencode_p); /* This SHOULD free the bencode_a_p as well */
++	
++	ks_log(KS_LOG_DEBUG, "Encoded GET_PEERS: %s\n\n", buf);
++    return dht_send(h, buf, i, confirm ? MSG_CONFIRM : 0, sa, salen);
++}
++/* '{"t":"aa", "y":"q", "q":"announce_peer", "a": {"id":"abcdefghij0123456789", "implied_port": 1, "info_hash":"mnopqrstuvwxyz123456", "port": 6881, "token": "aoeusnth"}}'*/
+ int send_announce_peer(dht_handle_t *h, const struct sockaddr *sa, int salen,
+ 					   unsigned char *tid, int tid_len,
+ 					   unsigned char *infohash, unsigned short port,
+ 					   unsigned char *token, int token_len, int confirm)
+ {
+     char buf[512];
+-    int i = 0, rc;
+-
+-    rc = ks_snprintf(buf + i, 512 - i, "d1:ad2:id20:"); INC(i, rc, 512);
+-    COPY(buf, i, h->myid, 20, 512);
+-    rc = ks_snprintf(buf + i, 512 - i, "9:info_hash20:"); INC(i, rc, 512);
+-    COPY(buf, i, infohash, 20, 512);
+-    rc = ks_snprintf(buf + i, 512 - i, "4:porti%ue5:token%d:", (unsigned)port, token_len);
+-    INC(i, rc, 512);
+-    COPY(buf, i, token, token_len, 512);
+-    rc = ks_snprintf(buf + i, 512 - i, "e1:q13:announce_peer1:t%d:", tid_len);
+-    INC(i, rc, 512);
+-    COPY(buf, i, tid, tid_len, 512);
+-    ADD_V(buf, i, 512);
+-    rc = ks_snprintf(buf + i, 512 - i, "1:y1:qe"); INC(i, rc, 512);
++    int i = 0;
++	struct bencode *bencode_p = ben_dict();
++	struct bencode *bencode_a_p = ben_dict();
++	int infohash_len = infohash ? strlen((const char*)infohash) : 0;
+ 
+-    return dht_send(h, buf, i, confirm ? MSG_CONFIRM : 0, sa, salen);
++	ben_dict_set(bencode_p, ben_blob("t", 1), ben_blob(tid, tid_len));
++	ben_dict_set(bencode_p, ben_blob("y", 1), ben_blob("q", 1));
++	ben_dict_set(bencode_p, ben_blob("q", 1), ben_blob("announce_peer", 13));
++	ben_dict_set(bencode_a_p, ben_blob("id", 2), ben_blob(h->myid, 20));
++	ben_dict_set(bencode_a_p, ben_blob("info_hash", 9), ben_blob(infohash, infohash_len));
++	ben_dict_set(bencode_a_p, ben_blob("port", 5), ben_int(port));
++	ben_dict_set(bencode_a_p, ben_blob("token", 5), ben_blob(token, token_len));
++	ben_dict_set(bencode_p, ben_blob("a", 1), bencode_a_p);
+ 
+- fail:
+-    errno = ENOSPC;
+-    return -1;
++	ben_encode2(buf, 512, bencode_p);
++	ben_free(bencode_p); /* This SHOULD free the bencode_a_p as well */
++	
++	ks_log(KS_LOG_DEBUG, "Encoded ANNOUNCE_PEERS: %s\n\n", buf);
++    return dht_send(h, buf, i, confirm ? MSG_CONFIRM : 0, sa, salen);
+ }
+-
++/* '{"t":"aa", "y":"r", "r": {"id":"mnopqrstuvwxyz123456"}}'*/
+ static int send_peer_announced(dht_handle_t *h, const struct sockaddr *sa, int salen, unsigned char *tid, int tid_len)
+ {
+     char buf[512];
+-    int i = 0, rc;
+-
+-    rc = ks_snprintf(buf + i, 512 - i, "d1:rd2:id20:");
+-	INC(i, rc, 512);
+-    COPY(buf, i, h->myid, 20, 512);
+-    rc = ks_snprintf(buf + i, 512 - i, "e1:t%d:", tid_len);
+-    INC(i, rc, 512);
+-    COPY(buf, i, tid, tid_len, 512);
+-    ADD_V(buf, i, 512);
+-    rc = ks_snprintf(buf + i, 512 - i, "1:y1:re");
+-	INC(i, rc, 512);
+-    return dht_send(h, buf, i, 0, sa, salen);
++    int i = 0;
++	struct bencode *bencode_p = ben_dict();
++	struct bencode *bencode_a_p = ben_dict();
+ 
+- fail:
+-    errno = ENOSPC;
+-    return -1;
++	ben_dict_set(bencode_p, ben_blob("t", 1), ben_blob(tid, tid_len));
++	ben_dict_set(bencode_p, ben_blob("y", 1), ben_blob("r", 1));
++	ben_dict_set(bencode_a_p, ben_blob("id", 2), ben_blob(h->myid, 20));
++	ben_dict_set(bencode_p, ben_blob("r", 1), bencode_a_p);
++
++	ben_encode2(buf, 512, bencode_p);
++	ben_free(bencode_p); /* This SHOULD free the bencode_a_p as well */
++	
++	ks_log(KS_LOG_DEBUG, "Encoded peer_announced: %s\n\n", buf);
++    return dht_send(h, buf, i, 0, sa, salen);
+ }
+ 
++/* '{"t":"aa", "y":"e", "e":[201, "A Generic Error Ocurred"]}'*/
+ static int send_error(dht_handle_t *h, const struct sockaddr *sa, int salen,
+ 					  unsigned char *tid, int tid_len,
+ 					  int code, const char *message)
+ {
+     char buf[512];
+-    int i = 0, rc, message_len;
+-
+-    message_len = strlen(message);
+-    rc = ks_snprintf(buf + i, 512 - i, "d1:eli%de%d:", code, message_len);
+-    INC(i, rc, 512);
+-    COPY(buf, i, message, message_len, 512);
+-    rc = ks_snprintf(buf + i, 512 - i, "e1:t%d:", tid_len);
+-	INC(i, rc, 512);
+-    COPY(buf, i, tid, tid_len, 512);
+-    ADD_V(buf, i, 512);
+-    rc = ks_snprintf(buf + i, 512 - i, "1:y1:ee");
+-	INC(i, rc, 512);
+-    return dht_send(h, buf, i, 0, sa, salen);
++    int i = 0;
++	struct bencode *bencode_p = ben_dict();
++	struct bencode *ben_array = ben_list();
+ 
+- fail:
+-    errno = ENOSPC;
+-    return -1;
++	ben_dict_set(bencode_p, ben_blob("t", 1), ben_blob(tid, tid_len));
++	ben_dict_set(bencode_p, ben_blob("y", 1), ben_blob("e", 1));
++	ben_list_append(ben_array, ben_int(code));
++	ben_list_append(ben_array, ben_blob(message, strlen(message)));
++	ben_dict_set(bencode_p, ben_blob("e", 1), ben_array);
++
++	ben_encode2(buf, 512, bencode_p);
++	ben_free(bencode_p);
++	
++	ks_log(KS_LOG_DEBUG, "Encoded error: %s\n\n", buf);
++    return dht_send(h, buf, i, 0, sa, salen);
+ }
+ 
+ #undef CHECK

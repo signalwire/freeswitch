@@ -76,20 +76,21 @@ KS_DECLARE(int)	  cJSON_GetArraySize(cJSON *array);
 /* Retrieve item number "item" from array "array". Returns NULL if unsuccessful. */
 KS_DECLARE(cJSON *)cJSON_GetArrayItem(cJSON *array,int item);
 /* Get item "string" from object. Case insensitive. */
-KS_DECLARE(cJSON *)cJSON_GetObjectItem(cJSON *object,const char *string);
+KS_DECLARE(cJSON *)cJSON_GetObjectItem(const cJSON *object,const char *string);
+KS_DECLARE(const char *)cJSON_GetObjectCstr(const cJSON *object, const char *string);
 
 /* For analysing failed parses. This returns a pointer to the parse error. You'll probably need to look a few chars back to make sense of it. Defined when cJSON_Parse() returns 0. 0 when cJSON_Parse() succeeds. */
-KS_DECLARE(const char *)cJSON_GetErrorPtr();
+KS_DECLARE(const char *)cJSON_GetErrorPtr(void);
 	
 /* These calls create a cJSON item of the appropriate type. */
-KS_DECLARE(cJSON *)cJSON_CreateNull();
-KS_DECLARE(cJSON *)cJSON_CreateTrue();
-KS_DECLARE(cJSON *)cJSON_CreateFalse();
+KS_DECLARE(cJSON *)cJSON_CreateNull(void);
+KS_DECLARE(cJSON *)cJSON_CreateTrue(void);
+KS_DECLARE(cJSON *)cJSON_CreateFalse(void);
 KS_DECLARE(cJSON *)cJSON_CreateBool(int b);
 KS_DECLARE(cJSON *)cJSON_CreateNumber(double num);
 KS_DECLARE(cJSON *)cJSON_CreateString(const char *string);
-KS_DECLARE(cJSON *)cJSON_CreateArray();
-KS_DECLARE(cJSON *)cJSON_CreateObject();
+KS_DECLARE(cJSON *)cJSON_CreateArray(void);
+KS_DECLARE(cJSON *)cJSON_CreateObject(void);
 
 /* These utilities create an Array of count items. */
 KS_DECLARE(cJSON *)cJSON_CreateIntArray(int *numbers,int count);
@@ -114,11 +115,67 @@ KS_DECLARE(void)   cJSON_DeleteItemFromObject(cJSON *object,const char *string);
 KS_DECLARE(void) cJSON_ReplaceItemInArray(cJSON *array,int which,cJSON *newitem);
 KS_DECLARE(void) cJSON_ReplaceItemInObject(cJSON *object,const char *string,cJSON *newitem);
 
+/* Duplicate a cJSON item */
+KS_DECLARE(cJSON *) cJSON_Duplicate(cJSON *item,int recurse);
+/* Duplicate will create a new, identical cJSON item to the one you pass, in new memory that will
+   need to be released. With recurse!=0, it will duplicate any children connected to the item.
+   The item->next and ->prev pointers are always zero on return from Duplicate. */
+
+
 #define cJSON_AddNullToObject(object,name)	cJSON_AddItemToObject(object, name, cJSON_CreateNull())
 #define cJSON_AddTrueToObject(object,name)	cJSON_AddItemToObject(object, name, cJSON_CreateTrue())
 #define cJSON_AddFalseToObject(object,name)		cJSON_AddItemToObject(object, name, cJSON_CreateFalse())
 #define cJSON_AddNumberToObject(object,name,n)	cJSON_AddItemToObject(object, name, cJSON_CreateNumber(n))
 #define cJSON_AddStringToObject(object,name,s)	cJSON_AddItemToObject(object, name, cJSON_CreateString(s))
+
+KS_DECLARE(cJSON *) cJSON_CreateStringPrintf(const char *fmt, ...);
+
+static inline cJSON *json_add_child_obj(cJSON *json, const char *name, cJSON *obj)
+{
+	cJSON *new_json = NULL;
+
+	ks_assert(json);
+
+	if (obj) {
+		new_json = obj;
+	} else {
+		new_json = cJSON_CreateObject();
+	}
+
+	ks_assert(new_json);
+
+	cJSON_AddItemToObject(json, name, new_json);
+
+	return new_json;
+}
+
+static inline cJSON *json_add_child_array(cJSON *json, const char *name)
+{
+	cJSON *new_json = NULL;
+
+	ks_assert(json);
+
+	new_json = cJSON_CreateArray();
+	ks_assert(new_json);
+
+	cJSON_AddItemToObject(json, name, new_json);
+
+	return new_json;
+}
+
+static inline cJSON *json_add_child_string(cJSON *json, const char *name, const char *val)
+{
+	cJSON *new_json = NULL;
+
+	ks_assert(json);
+
+	new_json = cJSON_CreateString(val);
+	ks_assert(new_json);
+
+	cJSON_AddItemToObject(json, name, new_json);
+
+	return new_json;
+}
 
 #ifdef __cplusplus
 }

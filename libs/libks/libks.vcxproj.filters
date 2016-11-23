@@ -18,6 +18,12 @@
     <ClCompile Include="src\ks.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\ks_string.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ks_socket.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="src\ks_buffer.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -27,29 +33,44 @@
     <ClCompile Include="src\ks_json.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\ks_threadmutex.c">
+    <ClCompile Include="src\ks_log.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\mpool.c">
+    <ClCompile Include="src\ks_mutex.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\simclist.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\table.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\table_util.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\win\mman.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ks_pool.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ks_rng.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ks_thread.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ks_dso.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ks_hash.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ks_printf.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ks_q.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ks_time.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\include\cc.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\include\ks.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -65,10 +86,10 @@
     <ClInclude Include="src\include\ks_threadmutex.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\include\mpool.h">
+    <ClInclude Include="src\include\ks_pool.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\include\mpool_loc.h">
+    <ClInclude Include="src\include\ks_rng.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\include\simclist.h">
