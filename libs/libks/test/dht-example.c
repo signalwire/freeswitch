@@ -99,8 +99,8 @@ main(int argc, char **argv)
     static ks_thread_t *threads[1]; /* Main dht event thread */
     ks_pool_t *pool;
 	int err = 0;
-    unsigned char alice_publickey[crypto_box_PUBLICKEYBYTES] = {0};
-    unsigned char alice_secretkey[crypto_box_SECRETKEYBYTES] = {0};
+    unsigned char alice_publickey[crypto_sign_PUBLICKEYBYTES] = {0};
+    unsigned char alice_secretkey[crypto_sign_SECRETKEYBYTES] = {0};
 
     ks_init();
 
@@ -285,11 +285,21 @@ main(int argc, char **argv)
 				/* usage: print_identity_key [identity key] */
 			} else if (!strncmp(line, "message_mutable", 15)) {
 			  char *input = strdup(line);
-			  char *message_id = input + 16;
+			  char *identity_key = input + 16;
+			  char *identities[2] = { identity_key, NULL };
+			  char *message_id = NULL;
 			  char *message = NULL;
 			  cJSON *output = NULL;
 			  int idx = 17; /* this should be the start of the message_id */
 			  for ( idx = 17; idx < 100 && input[idx] != '\0'; idx++ ) {
+			    if ( input[idx] == ' ' ) {
+			      input[idx] = '\0';
+			      message_id = input + 1 + idx;
+			      break;
+			    }
+			  }
+
+			  for ( idx++; idx < 100 && input[idx] != '\0'; idx++ ) {
 			    if ( input[idx] == ' ' ) {
 			      input[idx] = '\0';
 			      message = input + 1 + idx;
@@ -310,7 +320,7 @@ main(int argc, char **argv)
 			  output = cJSON_CreateString(message);
 			  
 			  ks_dht_send_message_mutable_cjson(h, alice_secretkey, alice_publickey,
-												NULL, message_id, 1, output, 600);
+												identities, message_id, 1, output, 600);
 			  free(input);
 			  cJSON_Delete(output);
 			} else if (!strncmp(line, "message_immutable", 15)) {
