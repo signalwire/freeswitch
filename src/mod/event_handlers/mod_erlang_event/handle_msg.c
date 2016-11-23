@@ -737,13 +737,18 @@ static switch_status_t handle_msg_api(listener_t *listener, erlang_msg * msg, in
 	}
 }
 
-#define ARGLEN 2048
 static switch_status_t handle_msg_bgapi(listener_t *listener, erlang_msg * msg, int arity, ei_x_buff * buf, ei_x_buff * rbuf)
 {
 	char api_cmd[MAXATOMLEN];
-	char arg[ARGLEN];
+	char *arg = NULL;
+	int size, type;
 
-	if (arity < 3 || ei_decode_atom(buf->buff, &buf->index, api_cmd) || ei_decode_string_or_binary(buf->buff, &buf->index, ARGLEN - 1, arg)) {
+	if (arity < 3 ||
+		ei_decode_atom(buf->buff, &buf->index, api_cmd) ||
+		ei_get_type(buf->buff, &buf->index, &type, &size) ||
+		!(arg = malloc(size + 1)) ||
+		ei_decode_string_or_binary(buf->buff, &buf->index, size, arg)) {
+
 		ei_x_encode_tuple_header(rbuf, 2);
 		ei_x_encode_atom(rbuf, "error");
 		ei_x_encode_atom(rbuf, "badarg");
@@ -776,6 +781,9 @@ static switch_status_t handle_msg_bgapi(listener_t *listener, erlang_msg * msg, 
 		ei_x_encode_atom(rbuf, "ok");
 		_ei_x_encode_string(rbuf, acs->uuid_str);
 	}
+
+	switch_safe_free(arg);
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
