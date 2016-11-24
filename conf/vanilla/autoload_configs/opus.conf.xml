@@ -27,6 +27,7 @@
         <param name="maxplaybackrate" value="0"/>
 	<!-- Max capture rate, 8000, 12000, 16000, 24000 and 48000 are valid options -->
         <!--<param name="sprop-maxcapturerate" value="0"/>-->
-
+	<!-- Enable automatic bitrate variation during the call based on RTCP feedback -->
+        <!--<param name="adjust-bitrate" value="1"/>-->
     </settings>
 </configuration>
