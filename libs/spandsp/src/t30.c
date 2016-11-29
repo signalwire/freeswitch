@@ -97,7 +97,7 @@
 #include "t30_local.h"
 
 /*! The maximum permitted number of retries of a single command allowed. */
-#define MAX_COMMAND_TRIES   3
+#define MAX_COMMAND_TRIES   6
 
 /*! The maximum permitted number of retries of a single response request allowed. This
     is not specified in T.30. However, if you don't apply some limit a messed up FAX
