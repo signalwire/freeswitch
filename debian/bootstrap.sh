@@ -80,16 +80,19 @@ avoid_mods_wheezy=(
 avoid_mods_trusty=(
   event_handlers/mod_amqp
   codecs/mod_sangoma_codec
+  loggers/mod_raven
 )
 avoid_mods_utopic=(
   directories/mod_ldap
   codecs/mod_sangoma_codec
+  loggers/mod_raven
 )
 avoid_mods_xenial=(
   event_handlers/mod_ldap
   event_handlers/mod_amqp
   codecs/mod_sangoma_codec
   asr_tts/mod_flite
+  loggers/mod_raven
 )
 manual_pkgs=(
 freeswitch-all
