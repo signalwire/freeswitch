@@ -1950,7 +1950,7 @@ int sofia_recover_callback(switch_core_session_t *session)
 		}
 	}
 
-	if (rr) {
+	if (rr && !switch_channel_get_variable(channel, "sip_invite_route_uri")) {
 		switch_channel_set_variable(channel, "sip_invite_route_uri", rr);
 	}
 

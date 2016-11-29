@@ -223,21 +223,30 @@ static void extract_header_vars(sofia_profile_t *profile, sip_t const *sip,
 			if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
 				char *tmp[128] = { 0 };
 				int y = 0;
+				switch_stream_handle_t route_stream = { 0 };
+				SWITCH_STANDARD_STREAM(route_stream);
 
 				for(rrp = sip->sip_record_route; rrp; rrp = rrp->r_next) {
 					char *rr = sip_header_as_string(nh->nh_home, (void *) rrp);
+					stream.write_function(&stream, x == 0 ? "%s" : ",%s", rr);
 					tmp[y++] = rr;
 					if (y == 127) break;
+					x++;
 				}
 
 				y--;
 
+				x = 0;
+
 				while(y >= 0) {
-					stream.write_function(&stream, x == 0 ? "%s" : ",%s", tmp[y]);
+					route_stream.write_function(&route_stream, x == 0 ? "%s" : ",%s", tmp[y]);
 					su_free(nh->nh_home, tmp[y]);
 					y--;
 					x++;
 				}
+
+			switch_channel_set_variable(channel, "sip_invite_route_uri", (char *)route_stream.data);
+			free(route_stream.data);
 
 			} else {
 				for(rrp = sip->sip_record_route; rrp; rrp = rrp->r_next) {
