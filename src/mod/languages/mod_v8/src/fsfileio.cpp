@@ -42,9 +42,17 @@ FSFileIO::~FSFileIO(void)
 	if (_fd) {
 		switch_file_close(_fd);
 	}
+
 	switch_core_destroy_memory_pool(&_pool);
 }
 
+JS_FILEIO_FUNCTION_IMPL(Close)
+{
+        if (_fd) {
+                switch_file_close(_fd);
+		_fd = NULL;
+        }
+}
 string FSFileIO::GetJSClassName()
 {
 	return js_class_name;
@@ -213,6 +221,7 @@ static const js_function_t fileio_proc[] = {
 	{"read", FSFileIO::Read},
 	{"write", FSFileIO::Write},
 	{"data", FSFileIO::GetData},
+	{"close", FSFileIO::Close},
 	{0}
 };
 
