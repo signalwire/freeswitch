@@ -215,52 +215,44 @@ static void extract_header_vars(sofia_profile_t *profile, sip_t const *sip,
 
 		if (sip->sip_record_route) {
 			sip_record_route_t *rrp;
-			switch_stream_handle_t stream = { 0 };
+			switch_stream_handle_t forward_stream = { 0 };
+			switch_stream_handle_t reverse_stream = { 0 };
 			int x = 0;
+			char *tmp[128] = { 0 };
+			int y = 0;
 
-			SWITCH_STANDARD_STREAM(stream);
+			SWITCH_STANDARD_STREAM(forward_stream);
+			SWITCH_STANDARD_STREAM(reverse_stream);
 
-			if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
-				char *tmp[128] = { 0 };
-				int y = 0;
-				switch_stream_handle_t route_stream = { 0 };
-				SWITCH_STANDARD_STREAM(route_stream);
-
-				for(rrp = sip->sip_record_route; rrp; rrp = rrp->r_next) {
-					char *rr = sip_header_as_string(nh->nh_home, (void *) rrp);
-					stream.write_function(&stream, x == 0 ? "%s" : ",%s", rr);
-					tmp[y++] = rr;
-					if (y == 127) break;
-					x++;
-				}
-
-				y--;
-
-				x = 0;
-
-				while(y >= 0) {
-					route_stream.write_function(&route_stream, x == 0 ? "%s" : ",%s", tmp[y]);
-					su_free(nh->nh_home, tmp[y]);
-					y--;
-					x++;
-				}
-
-			switch_channel_set_variable(channel, "sip_invite_route_uri", (char *)route_stream.data);
-			free(route_stream.data);
-
-			} else {
-				for(rrp = sip->sip_record_route; rrp; rrp = rrp->r_next) {
-					char *rr = sip_header_as_string(nh->nh_home, (void *) rrp);
-
-					stream.write_function(&stream, x == 0 ? "%s" : ",%s", rr);
-					su_free(nh->nh_home, rr);
-
-					x++;
-				}
+			for(rrp = sip->sip_record_route; rrp; rrp = rrp->r_next) {
+				char *rr = sip_header_as_string(nh->nh_home, (void *) rrp);
+				forward_stream.write_function(&forward_stream, x == 0 ? "%s" : ",%s", rr);
+				tmp[y++] = rr;
+				if (y == 127) break;
+				x++;
 			}
 
-			switch_channel_set_variable(channel, "sip_invite_record_route", (char *)stream.data);
-			free(stream.data);
+			y--;
+
+			x = 0;
+
+			while(y >= 0) {
+				reverse_stream.write_function(&reverse_stream, x == 0 ? "%s" : ",%s", tmp[y]);
+				su_free(nh->nh_home, tmp[y]);
+				y--;
+				x++;
+			}
+
+			if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND || switch_channel_test_flag(channel, CF_RECOVERED)) {
+				switch_channel_set_variable(channel, "sip_invite_route_uri", (char *)reverse_stream.data);
+				switch_channel_set_variable(channel, "sip_invite_record_route", (char *)forward_stream.data);
+			} else {
+				switch_channel_set_variable(channel, "sip_invite_route_uri", (char *)forward_stream.data);
+				switch_channel_set_variable(channel, "sip_invite_record_route", (char *)reverse_stream.data);
+			}
+
+			free(reverse_stream.data);
+			free(forward_stream.data);
 		}
 
 		if (sip->sip_via) {
