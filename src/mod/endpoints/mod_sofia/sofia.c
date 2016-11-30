@@ -85,6 +85,36 @@ static void sofia_handle_sip_r_options(switch_core_session_t *session, int statu
 									   nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip,
 								sofia_dispatch_event_t *de, tagi_t tags[]);
 
+static void sofia_set_accept_language_channel_variable(switch_channel_t *channel, sip_t const *sip)
+{
+	if (sip->sip_accept_language) {
+		sip_accept_language_t *sip_accept_language = NULL;
+		int count = 0;
+
+		for(sip_accept_language = sip->sip_accept_language; sip_accept_language; sip_accept_language = sip_accept_language->aa_next) {
+			char var_name[64] = "";
+
+			if (zstr(sip_accept_language->aa_value)) {
+				continue;
+
+			}
+			if (count == 0) {
+				switch_channel_set_variable(channel, "sip_accept_language", sip_accept_language->aa_value);
+			}
+
+			switch_snprintf(var_name, sizeof(var_name), "sip_accept_language_%d_value", count);
+			switch_channel_set_variable(channel, var_name, sip_accept_language->aa_value);
+
+			if (!zstr(sip_accept_language->aa_q)) {
+				switch_snprintf(var_name, sizeof(var_name), "sip_accept_language_%d_q", count);
+				switch_channel_set_variable(channel, var_name, sip_accept_language->aa_q);
+			}
+
+			count++;
+		}
+		switch_channel_set_variable_printf(channel, "sip_accept_language_count", "%d", count);
+	}
+}
 
 void sofia_handle_sip_r_notify(switch_core_session_t *session, int status,
 							   char const *phrase,
@@ -1060,6 +1090,8 @@ void sofia_handle_sip_i_bye(switch_core_session_t *session, int status,
 	} else if (sip->sip_server && !zstr(sip->sip_server->g_string)) {
 		switch_channel_set_variable(channel, "sip_user_agent", sip->sip_server->g_string);
 	}
+
+	sofia_set_accept_language_channel_variable(channel, sip);
 
 	if ((tmp = sofia_glue_get_unknown_header(sip, "rtp-txstat"))) {
 		switch_channel_set_variable(channel, "sip_rtp_txstat", tmp);
@@ -6416,6 +6448,8 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 		if ((status == 180 || status == 183 || status > 199)) {
 			const char *vval;
 
+			sofia_set_accept_language_channel_variable(channel, sip);
+
 			if (status > 199) {
 				sofia_glue_set_extra_headers(session, sip, SOFIA_SIP_RESPONSE_HEADER_PREFIX);
 			} else {
@@ -10494,6 +10528,8 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 	if (sip->sip_user_agent && !zstr(sip->sip_user_agent->g_string)) {
 		switch_channel_set_variable(channel, "sip_user_agent", sip->sip_user_agent->g_string);
 	}
+
+	sofia_set_accept_language_channel_variable(channel, sip);
 
 	if (sip->sip_via) {
 		if (sip->sip_via->v_host) {
