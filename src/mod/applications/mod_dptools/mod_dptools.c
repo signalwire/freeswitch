@@ -2520,30 +2520,6 @@ void *SWITCH_THREAD_FUNC att_thread_run(switch_thread_t *thread, void *obj)
 		return NULL;
 	}
 
-	if (!(attxfer_cancel_key = switch_channel_get_variable(channel, "attxfer_cancel_key"))) {
-		if (!(attxfer_cancel_key = switch_channel_get_variable_partner(channel, "attxfer_cancel_key"))) {
-			attxfer_cancel_key = "#";
-		}
-	}
-
-	if (!(attxfer_hangup_key = switch_channel_get_variable(channel, "attxfer_hangup_key"))) {
-		if (!(attxfer_hangup_key = switch_channel_get_variable_partner(channel, "attxfer_hangup_key"))) {
-			attxfer_hangup_key = "*";
-		}
-	}
-
-	if (!(attxfer_conf_key = switch_channel_get_variable(channel, "attxfer_conf_key"))) {
-		if (!(attxfer_conf_key = switch_channel_get_variable_partner(channel, "attxfer_conf_key"))) {
-			attxfer_conf_key = "0";
-		}
-	}
-
-	keys = switch_core_session_alloc(session, sizeof(*keys));
-	keys->attxfer_cancel_key = switch_core_session_strdup(session, attxfer_cancel_key);
-	keys->attxfer_hangup_key = switch_core_session_strdup(session, attxfer_hangup_key);
-	keys->attxfer_conf_key = switch_core_session_strdup(session, attxfer_conf_key);
-	switch_channel_set_private(channel, "__keys", keys);
-
 	bond = switch_channel_get_partner_uuid(channel);
 	switch_channel_set_variable(channel, SWITCH_SOFT_HOLDING_UUID_VARIABLE, bond);
 	switch_core_event_hook_add_state_change(session, tmp_hanguphook);
@@ -2562,6 +2538,30 @@ void *SWITCH_THREAD_FUNC att_thread_run(switch_thread_t *thread, void *obj)
 	peer_channel = switch_core_session_get_channel(peer_session);
 	switch_channel_set_flag(peer_channel, CF_INNER_BRIDGE);
 	switch_channel_set_flag(channel, CF_INNER_BRIDGE);
+
+	if (!(attxfer_cancel_key = switch_channel_get_variable(channel, "attxfer_cancel_key"))) {
+		if (!(attxfer_cancel_key = switch_channel_get_variable(peer_channel, "attxfer_cancel_key"))) {
+			attxfer_cancel_key = "#";
+		}
+	}
+
+	if (!(attxfer_hangup_key = switch_channel_get_variable(channel, "attxfer_hangup_key"))) {
+		if (!(attxfer_hangup_key = switch_channel_get_variable(peer_channel, "attxfer_hangup_key"))) {
+			attxfer_hangup_key = "*";
+		}
+	}
+
+	if (!(attxfer_conf_key = switch_channel_get_variable(channel, "attxfer_conf_key"))) {
+		if (!(attxfer_conf_key = switch_channel_get_variable(peer_channel, "attxfer_conf_key"))) {
+			attxfer_conf_key = "0";
+		}
+	}
+
+	keys = switch_core_session_alloc(session, sizeof(*keys));
+	keys->attxfer_cancel_key = switch_core_session_strdup(session, attxfer_cancel_key);
+	keys->attxfer_hangup_key = switch_core_session_strdup(session, attxfer_hangup_key);
+	keys->attxfer_conf_key = switch_core_session_strdup(session, attxfer_conf_key);
+	switch_channel_set_private(channel, "__keys", keys);
 
 	switch_ivr_multi_threaded_bridge(session, peer_session, xfer_on_dtmf, peer_session, NULL);
 
