@@ -36,7 +36,6 @@ KS_DECLARE(ks_status_t) ks_dht2_nodeid_free(ks_dht2_nodeid_t *nodeid)
 KS_DECLARE(ks_status_t) ks_dht2_nodeid_init(ks_dht2_nodeid_t *nodeid, const uint8_t *id)
 {
 	ks_assert(nodeid);
-	ks_assert(id);
 
 	if (!id) {
 		randombytes_buf(nodeid->id, KS_DHT_NODEID_LENGTH);

@@ -35,6 +35,7 @@ struct ks_dht2_s {
 
 
 KS_DECLARE(ks_status_t) ks_dht2_alloc(ks_dht2_t **dht, ks_pool_t *pool);
+KS_DECLARE(ks_status_t) ks_dht2_salloc(ks_dht2_t *dht, ks_pool_t *pool);
 KS_DECLARE(ks_status_t) ks_dht2_free(ks_dht2_t *dht);
 
 						
