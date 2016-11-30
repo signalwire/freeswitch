@@ -3408,7 +3408,10 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 	if (fail) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Originate Failed.  Cause: %s\n", switch_channel_cause2str(cause));
 
+		switch_channel_set_variable(caller_channel, "originate_failed_cause", switch_channel_cause2str(cause));
+
 		switch_channel_handle_cause(caller_channel, cause);
+
 		return;
 	} else {
 
