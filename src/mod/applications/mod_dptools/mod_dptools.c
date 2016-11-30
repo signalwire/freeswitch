@@ -2372,10 +2372,15 @@ SWITCH_STANDARD_APP(speak_function)
 	switch_ivr_speak_text(session, engine, voice, text, &args);
 }
 
+struct att_keys {
+	const char *attxfer_cancel_key;
+	const char *attxfer_hangup_key;
+	const char *attxfer_conf_key;
+};
+
 static switch_status_t xfer_on_dtmf(switch_core_session_t *session, void *input, switch_input_type_t itype, void *buf, unsigned int buflen)
 {
 	switch_core_session_t *peer_session = (switch_core_session_t *) buf;
-
 	if (!buf || !peer_session) {
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -2386,38 +2391,19 @@ static switch_status_t xfer_on_dtmf(switch_core_session_t *session, void *input,
 			switch_dtmf_t *dtmf = (switch_dtmf_t *) input;
 			switch_channel_t *channel = switch_core_session_get_channel(session);
 			switch_channel_t *peer_channel = switch_core_session_get_channel(peer_session);
+			struct att_keys *keys = switch_channel_get_private(channel, "__keys");
 
-			const char *attxfer_cancel_key = NULL, *attxfer_hangup_key = NULL, *attxfer_conf_key = NULL;
-
-			if (!(attxfer_cancel_key = switch_channel_get_variable(channel, "attxfer_cancel_key"))) {
-				if (!(attxfer_cancel_key = switch_channel_get_variable_partner(channel, "attxfer_cancel_key"))) {
-					attxfer_cancel_key = "#";
-				}
-			}
-
-			if (!(attxfer_hangup_key = switch_channel_get_variable(channel, "attxfer_hangup_key"))) {
-				if (!(attxfer_hangup_key = switch_channel_get_variable_partner(channel, "attxfer_hangup_key"))) {
-					attxfer_hangup_key = "*";
-				}
-			}
-
-			if (!(attxfer_conf_key = switch_channel_get_variable(channel, "attxfer_conf_key"))) {
-				if (!(attxfer_conf_key = switch_channel_get_variable_partner(channel, "attxfer_conf_key"))) {
-					attxfer_conf_key = "0";
-				}
-			}
-
-			if (dtmf->digit == *attxfer_hangup_key) {
+			if (dtmf->digit == *keys->attxfer_hangup_key) {
 				switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
 				return SWITCH_STATUS_FALSE;
 			}
 
-			if (dtmf->digit == *attxfer_cancel_key) {
+			if (dtmf->digit == *keys->attxfer_cancel_key) {
 				switch_channel_hangup(peer_channel, SWITCH_CAUSE_NORMAL_CLEARING);
 				return SWITCH_STATUS_FALSE;
 			}
 
-			if (dtmf->digit == *attxfer_conf_key) {
+			if (dtmf->digit == *keys->attxfer_conf_key) {
 				switch_caller_extension_t *extension = NULL;
 				const char *app = "three_way";
 				const char *app_arg = switch_core_session_get_uuid(session);
@@ -2517,6 +2503,7 @@ struct att_obj {
 void *SWITCH_THREAD_FUNC att_thread_run(switch_thread_t *thread, void *obj)
 {
 	struct att_obj *att = (struct att_obj *) obj;
+	struct att_keys *keys = NULL;
 	switch_core_session_t *session = att->session;
 	switch_core_session_t *peer_session = NULL;
 	const char *data = att->data;
@@ -2525,13 +2512,38 @@ void *SWITCH_THREAD_FUNC att_thread_run(switch_thread_t *thread, void *obj)
 	const char *bond = NULL;
 	switch_core_session_t *b_session = NULL;
 	switch_bool_t follow_recording = switch_true(switch_channel_get_variable(channel, "recording_follow_attxfer"));
+	const char *attxfer_cancel_key = NULL, *attxfer_hangup_key = NULL, *attxfer_conf_key = NULL;
 
 	att->running = 1;
 
 	if (switch_core_session_read_lock(session) != SWITCH_STATUS_SUCCESS) {
 		return NULL;
 	}
-		
+
+	if (!(attxfer_cancel_key = switch_channel_get_variable(channel, "attxfer_cancel_key"))) {
+		if (!(attxfer_cancel_key = switch_channel_get_variable_partner(channel, "attxfer_cancel_key"))) {
+			attxfer_cancel_key = "#";
+		}
+	}
+
+	if (!(attxfer_hangup_key = switch_channel_get_variable(channel, "attxfer_hangup_key"))) {
+		if (!(attxfer_hangup_key = switch_channel_get_variable_partner(channel, "attxfer_hangup_key"))) {
+			attxfer_hangup_key = "*";
+		}
+	}
+
+	if (!(attxfer_conf_key = switch_channel_get_variable(channel, "attxfer_conf_key"))) {
+		if (!(attxfer_conf_key = switch_channel_get_variable_partner(channel, "attxfer_conf_key"))) {
+			attxfer_conf_key = "0";
+		}
+	}
+
+	keys = switch_core_session_alloc(session, sizeof(*keys));
+	keys->attxfer_cancel_key = switch_core_session_strdup(session, attxfer_cancel_key);
+	keys->attxfer_hangup_key = switch_core_session_strdup(session, attxfer_hangup_key);
+	keys->attxfer_conf_key = switch_core_session_strdup(session, attxfer_conf_key);
+	switch_channel_set_private(channel, "__keys", keys);
+
 	bond = switch_channel_get_partner_uuid(channel);
 	switch_channel_set_variable(channel, SWITCH_SOFT_HOLDING_UUID_VARIABLE, bond);
 	switch_core_event_hook_add_state_change(session, tmp_hanguphook);
