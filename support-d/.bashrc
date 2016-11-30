@@ -12,7 +12,7 @@ if [ "`id -u`" = "0" ]; then
 	if [ -d /usr/src/freeswitch.git/support-d/utils ]; then
 	    export PATH="/usr/src/freeswitch.git/support-d/utils:$PATH"
 	fi
-	export PCVAR=`find /usr -name freeswitch.pc| grep -v build/freeswitch.pc`
+	export PCVAR=`find /usr -name freeswitch.pc | grep -v build/freeswitch.pc | sed -e ':a' -e 'N' -e 's/\n/:/g'`
 	if [ -n "$PCVAR" ]; then
 	    export PCDIR=${PCVAR%/*}
 	    export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:$PCDIR:/usr/lib/x86_64-linux-gnu/pkgconfig:/usr/local/lib/pkgconfig
