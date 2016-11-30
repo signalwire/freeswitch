@@ -950,6 +950,7 @@ void conference_list_pretty(conference_obj_t *conference, switch_stream_handle_t
 switch_status_t conference_record_stop(conference_obj_t *conference, switch_stream_handle_t *stream, char *path);
 switch_status_t conference_record_action(conference_obj_t *conference, char *path, recording_action_type_t action);
 void conference_xlist(conference_obj_t *conference, switch_xml_t x_conference, int off);
+void conference_jlist(conference_obj_t *conference, cJSON *json_conferences);
 void conference_event_send_json(conference_obj_t *conference);
 void conference_event_send_rfc(conference_obj_t *conference);
 void conference_member_update_status_field(conference_member_t *member);
@@ -1122,6 +1123,7 @@ switch_status_t conference_api_sub_recording(conference_obj_t *conference, switc
 switch_status_t conference_api_sub_vid_layout(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv);
 switch_status_t conference_api_sub_list(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv);
 switch_status_t conference_api_sub_xml_list(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv);
+switch_status_t conference_api_sub_json_list(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv);
 switch_status_t conference_api_sub_energy(conference_member_t *member, switch_stream_handle_t *stream, void *data);
 switch_status_t conference_api_sub_watching_canvas(conference_member_t *member, switch_stream_handle_t *stream, void *data);
 switch_status_t conference_api_sub_canvas(conference_member_t *member, switch_stream_handle_t *stream, void *data);

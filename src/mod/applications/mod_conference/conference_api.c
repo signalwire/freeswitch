@@ -45,6 +45,7 @@
 api_command_t conference_api_sub_commands[] = {
 	{"list", (void_fn_t) & conference_api_sub_list, CONF_API_SUB_ARGS_SPLIT, "list", "[delim <string>]|[count]"},
 	{"xml_list", (void_fn_t) & conference_api_sub_xml_list, CONF_API_SUB_ARGS_SPLIT, "xml_list", ""},
+	{"json_list", (void_fn_t) & conference_api_sub_json_list, CONF_API_SUB_ARGS_SPLIT, "json_list", "[compact]"},
 	{"energy", (void_fn_t) & conference_api_sub_energy, CONF_API_SUB_MEMBER_TARGET, "energy", "<member_id|all|last|non_moderator> [<newval>]"},
 	{"vid-canvas", (void_fn_t) & conference_api_sub_canvas, CONF_API_SUB_MEMBER_TARGET, "vid-canvas", "<member_id|all|last|non_moderator> [<newval>]"},
 	{"vid-watching-canvas", (void_fn_t) & conference_api_sub_watching_canvas, CONF_API_SUB_MEMBER_TARGET, "vid-watching-canvas", "<member_id|all|last|non_moderator> [<newval>]"},
@@ -214,6 +215,8 @@ switch_status_t conference_api_main_real(const char *cmd, switch_core_session_t 
 				conference_api_sub_list(NULL, stream, argc, argv);
 			} else if (strcasecmp(argv[0], "xml_list") == 0) {
 				conference_api_sub_xml_list(NULL, stream, argc, argv);
+			} else if (strcasecmp(argv[0], "json_list") == 0) {
+				conference_api_sub_json_list(NULL, stream, argc, argv);
 			} else if (strcasecmp(argv[0], "help") == 0 || strcasecmp(argv[0], "commands") == 0) {
 				stream->write_function(stream, "%s\n", api_syntax);
 			} else if (argv[1] && strcasecmp(argv[1], "dial") == 0) {
@@ -2878,8 +2881,37 @@ switch_status_t conference_api_sub_xml_list(conference_obj_t *conference, switch
 	return SWITCH_STATUS_SUCCESS;
 }
 
+switch_status_t conference_api_sub_json_list(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv)
+{
+	switch_hash_index_t *hi;
+	void *val;
+	char *ebuf;
+	cJSON *conferences = cJSON_CreateArray();
+	switch_bool_t compact = SWITCH_FALSE;
 
+	switch_assert(conferences);
 
+	if (conference == NULL) {
+		switch_mutex_lock(conference_globals.hash_mutex);
+		for (hi = switch_core_hash_first(conference_globals.conference_hash); hi; hi = switch_core_hash_next(&hi)) {
+			switch_core_hash_this(hi, NULL, NULL, &val);
+			conference = (conference_obj_t *) val;
+			conference_jlist(conference, conferences);
+		}
+		switch_mutex_unlock(conference_globals.hash_mutex);
+		compact = (argc == 2 && !strcmp(argv[1], "compact"));
+	} else {
+		conference_jlist(conference, conferences);
+		compact = (argc == 3 && !strcmp(argv[2], "compact"));
+	}
+
+	ebuf = compact ? cJSON_PrintUnformatted(conferences) : cJSON_Print(conferences);
+	switch_assert(ebuf);
+	stream->write_function(stream, "%s", ebuf);
+	free(ebuf);
+
+	return SWITCH_STATUS_SUCCESS;
+}
 
 switch_status_t conference_api_dispatch(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv, const char *cmdline, int argn)
 {

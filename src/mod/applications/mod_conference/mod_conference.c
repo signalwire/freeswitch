@@ -1333,6 +1333,104 @@ void conference_xlist(conference_obj_t *conference, switch_xml_t x_conference, i
 	switch_mutex_unlock(conference->member_mutex);
 }
 
+void conference_jlist(conference_obj_t *conference, cJSON *json_conferences)
+{
+	conference_member_t *member = NULL;
+	static cJSON *json_conference, *json_conference_members, *json_conference_member, *json_conference_member_flags;
+
+	switch_assert(conference != NULL);
+	json_conference = cJSON_CreateObject();
+	switch_assert(json_conference);
+
+	cJSON_AddItemToObject(json_conferences, "conference", json_conference);
+	cJSON_AddStringToObject(json_conference, "conference_name", conference->name);
+	cJSON_AddNumberToObject(json_conference,"member_count", conference->count);
+	cJSON_AddNumberToObject(json_conference,"ghost_count", conference->count_ghosts);
+	cJSON_AddNumberToObject(json_conference,"rate", conference->rate);
+	cJSON_AddNumberToObject(json_conference,"run_time", switch_epoch_time_now(NULL) - conference->run_time);
+	cJSON_AddStringToObject(json_conference, "conference_uuid", conference->uuid_str);
+	cJSON_AddNumberToObject(json_conference, "canvas_count", conference->canvas_count);
+	cJSON_AddNumberToObject(json_conference, "max_bw_in", conference->max_bw_in);
+	cJSON_AddNumberToObject(json_conference, "force_bw_in", conference->force_bw_in);
+	cJSON_AddNumberToObject(json_conference, "video_floor_packets", conference->video_floor_packets);
+
+#define ADDBOOL(obj, name, b) cJSON_AddItemToObject(obj, name, (b) ? cJSON_CreateTrue() : cJSON_CreateFalse())
+
+	ADDBOOL(json_conference, "locked", conference_utils_test_flag(conference, CFLAG_LOCKED));
+	ADDBOOL(json_conference, "destruct", conference_utils_test_flag(conference, CFLAG_DESTRUCT));
+	ADDBOOL(json_conference, "wait_mod", conference_utils_test_flag(conference, CFLAG_WAIT_MOD));
+	ADDBOOL(json_conference, "audio_always", conference_utils_test_flag(conference, CFLAG_AUDIO_ALWAYS));
+	ADDBOOL(json_conference, "running", conference_utils_test_flag(conference, CFLAG_RUNNING));
+	ADDBOOL(json_conference, "answered", conference_utils_test_flag(conference, CFLAG_ANSWERED));
+	ADDBOOL(json_conference, "enforce_min", conference_utils_test_flag(conference, CFLAG_ENFORCE_MIN));
+	ADDBOOL(json_conference, "bridge_to", conference_utils_test_flag(conference, CFLAG_BRIDGE_TO));
+	ADDBOOL(json_conference, "dynamic", conference_utils_test_flag(conference, CFLAG_DYNAMIC));
+	ADDBOOL(json_conference, "exit_sound", conference_utils_test_flag(conference, CFLAG_EXIT_SOUND));
+	ADDBOOL(json_conference, "enter_sound", conference_utils_test_flag(conference, CFLAG_ENTER_SOUND));
+	ADDBOOL(json_conference, "recording", conference->record_count > 0);
+	ADDBOOL(json_conference, "video_bridge", conference_utils_test_flag(conference, CFLAG_VIDEO_BRIDGE_FIRST_TWO));
+	ADDBOOL(json_conference, "video_floor_only", conference_utils_test_flag(conference, CFLAG_VID_FLOOR));
+	ADDBOOL(json_conference, "video_rfc4579", conference_utils_test_flag(conference, CFLAG_RFC4579));
+
+	if (conference->max_members > 0) {
+		cJSON_AddNumberToObject(json_conference, "max_members", conference->max_members);
+	}
+
+	if (conference->agc_level) {
+		cJSON_AddNumberToObject(json_conference, "agc", conference->agc_level);
+	}
+
+	cJSON_AddItemToObject(json_conference, "members", json_conference_members = cJSON_CreateArray());
+	switch_mutex_lock(conference->member_mutex);
+	for (member = conference->members; member; member = member->next) {
+		switch_channel_t *channel;
+		switch_caller_profile_t *profile;
+		char *uuid;
+		cJSON_AddItemToObject(json_conference_members, "member", json_conference_member = cJSON_CreateObject());
+
+		if (conference_utils_member_test_flag(member, MFLAG_NOCHANNEL)) {
+			if (member->rec_path) {
+				cJSON_AddStringToObject(json_conference_member, "type", "recording_node");
+				cJSON_AddStringToObject(json_conference_member, "record_path", member->rec_path);
+				if (conference_utils_member_test_flag(member, MFLAG_PAUSE_RECORDING)) {
+					cJSON_AddStringToObject(json_conference_member, "status", "paused");
+				}
+				cJSON_AddNumberToObject(json_conference_member, "join_time", member->rec_time);
+			}
+			continue;
+		}
+
+		uuid = switch_core_session_get_uuid(member->session);
+		channel = switch_core_session_get_channel(member->session);
+		profile = switch_channel_get_caller_profile(channel);
+
+		cJSON_AddStringToObject(json_conference_member, "type", "caller");
+		cJSON_AddNumberToObject(json_conference_member, "id", member->id);
+		cJSON_AddItemToObject(json_conference_member, "flags", json_conference_member_flags = cJSON_CreateObject());
+		cJSON_AddStringToObject(json_conference_member, "uuid", uuid);
+		cJSON_AddStringToObject(json_conference_member, "caller_id_name", profile->caller_id_name);
+		cJSON_AddStringToObject(json_conference_member,"caller_id_number", profile->caller_id_number);
+		cJSON_AddNumberToObject(json_conference_member, "join_time", switch_epoch_time_now(NULL) - member->join_time);
+		cJSON_AddNumberToObject(json_conference_member, "last_talking", member->last_talking ? switch_epoch_time_now(NULL) - member->last_talking : 0);
+		cJSON_AddNumberToObject(json_conference_member, "energy", member->energy_level);
+		cJSON_AddNumberToObject(json_conference_member, "volume_in", member->volume_in_level);
+		cJSON_AddNumberToObject(json_conference_member, "volume_out", member->volume_out_level);
+		cJSON_AddNumberToObject(json_conference_member, "output-volume", member->volume_out_level);
+		cJSON_AddNumberToObject(json_conference_member, "input-volume", member->agc_volume_in_level ? member->agc_volume_in_level : member->volume_in_level);
+		cJSON_AddNumberToObject(json_conference_member, "auto-adjusted-input-volume", member->agc_volume_in_level);
+		ADDBOOL(json_conference_member_flags, "can_hear", conference_utils_member_test_flag(member, MFLAG_CAN_HEAR));
+		ADDBOOL(json_conference_member_flags, "can_speak", conference_utils_member_test_flag(member, MFLAG_CAN_SPEAK));
+		ADDBOOL(json_conference_member_flags, "mute_detect", conference_utils_member_test_flag(member, MFLAG_MUTE_DETECT));
+		ADDBOOL(json_conference_member_flags, "talking", conference_utils_member_test_flag(member, MFLAG_TALKING));
+		ADDBOOL(json_conference_member_flags, "has_video", switch_channel_test_flag(switch_core_session_get_channel(member->session), CF_VIDEO));
+		ADDBOOL(json_conference_member_flags, "video_bridge", conference_utils_member_test_flag(member, MFLAG_VIDEO_BRIDGE));
+		ADDBOOL(json_conference_member_flags, "has_floor", member == member->conference->floor_holder);
+		ADDBOOL(json_conference_member_flags, "is_moderator", conference_utils_member_test_flag(member, MFLAG_MOD));
+		ADDBOOL(json_conference_member_flags, "end_conference", conference_utils_member_test_flag(member, MFLAG_ENDCONF));
+	}
+	switch_mutex_unlock(conference->member_mutex);
+}
+
 void conference_fnode_toggle_pause(conference_file_node_t *fnode, switch_stream_handle_t *stream)
 {
 	if (fnode) {
