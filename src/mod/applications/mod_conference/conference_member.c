@@ -1243,7 +1243,6 @@ switch_status_t conference_member_del(conference_obj_t *conference, conference_m
 		if (test_eflag(conference, EFLAG_DEL_MEMBER) &&
 			switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 			conference_member_add_event_data(member, event);
-			conference_event_add_data(conference, event);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "del-member");
 			switch_event_fire(&event);
 		}
