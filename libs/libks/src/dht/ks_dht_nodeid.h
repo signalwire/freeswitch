@@ -14,7 +14,7 @@ struct ks_dht2_nodeid_s {
 };
 
 KS_DECLARE(ks_status_t) ks_dht2_nodeid_alloc(ks_dht2_nodeid_t **nodeid, ks_pool_t *pool);
-KS_DECLARE(ks_status_t) ks_dht2_nodeid_salloc(ks_dht2_nodeid_t *nodeid, ks_pool_t *pool);
+KS_DECLARE(ks_status_t) ks_dht2_nodeid_prealloc(ks_dht2_nodeid_t *nodeid, ks_pool_t *pool);
 KS_DECLARE(ks_status_t) ks_dht2_nodeid_free(ks_dht2_nodeid_t *nodeid);
 
 KS_DECLARE(ks_status_t) ks_dht2_nodeid_init(ks_dht2_nodeid_t *nodeid, const uint8_t *id);

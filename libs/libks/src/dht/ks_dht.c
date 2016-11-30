@@ -25,7 +25,7 @@ KS_DECLARE(ks_status_t) ks_dht2_alloc(ks_dht2_t **dht, ks_pool_t *pool)
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht2_salloc(ks_dht2_t *dht, ks_pool_t *pool)
+KS_DECLARE(ks_status_t) ks_dht2_prealloc(ks_dht2_t *dht, ks_pool_t *pool)
 {
 	ks_assert(dht);
 	ks_assert(pool);
@@ -61,7 +61,7 @@ KS_DECLARE(ks_status_t) ks_dht2_init(ks_dht2_t *dht, const uint8_t *nodeid)
 	ks_assert(dht);
 	ks_assert(dht->pool);
 
-	if (ks_dht2_nodeid_salloc(&dht->nodeid, dht->pool) != KS_STATUS_SUCCESS) {
+	if (ks_dht2_nodeid_prealloc(&dht->nodeid, dht->pool) != KS_STATUS_SUCCESS) {
 		return KS_STATUS_FAIL;
 	}
 	

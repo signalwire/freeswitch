@@ -20,7 +20,7 @@ KS_DECLARE(ks_status_t) ks_dht2_nodeid_alloc(ks_dht2_nodeid_t **nodeid, ks_pool_
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht2_nodeid_salloc(ks_dht2_nodeid_t *nodeid, ks_pool_t *pool)
+KS_DECLARE(ks_status_t) ks_dht2_nodeid_prealloc(ks_dht2_nodeid_t *nodeid, ks_pool_t *pool)
 {
 	ks_assert(nodeid);
 	ks_assert(pool);

@@ -20,7 +20,7 @@ KS_DECLARE(ks_status_t) ks_dht2_endpoint_alloc(ks_dht2_endpoint_t **endpoint, ks
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht2_endpoint_salloc(ks_dht2_endpoint_t *endpoint, ks_pool_t *pool)
+KS_DECLARE(ks_status_t) ks_dht2_endpoint_prealloc(ks_dht2_endpoint_t *endpoint, ks_pool_t *pool)
 {
 	ks_assert(endpoint);
 	ks_assert(pool);
