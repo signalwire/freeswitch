@@ -20,6 +20,19 @@ KS_DECLARE(ks_status_t) ks_dht2_endpoint_alloc(ks_dht2_endpoint_t **endpoint, ks
 /**
  *
  */
+KS_DECLARE(ks_status_t) ks_dht2_endpoint_salloc(ks_dht2_endpoint_t *endpoint, ks_pool_t *pool)
+{
+	ks_assert(endpoint);
+	ks_assert(pool);
+
+	endpoint->pool = pool;
+
+	return KS_STATUS_SUCCESS;
+}
+
+/**
+ *
+ */
 KS_DECLARE(ks_status_t) ks_dht2_endpoint_free(ks_dht2_endpoint_t *endpoint)
 {
 	ks_assert(endpoint);
@@ -28,7 +41,7 @@ KS_DECLARE(ks_status_t) ks_dht2_endpoint_free(ks_dht2_endpoint_t *endpoint)
 
 	return KS_STATUS_SUCCESS;
 }
-												
+
 
 /**
  *
@@ -36,6 +49,7 @@ KS_DECLARE(ks_status_t) ks_dht2_endpoint_free(ks_dht2_endpoint_t *endpoint)
 KS_DECLARE(ks_status_t) ks_dht2_endpoint_init(ks_dht2_endpoint_t *endpoint, const ks_sockaddr_t *addr, ks_socket_t sock)
 {
 	ks_assert(endpoint);
+	ks_assert(endpoint->pool);
 	ks_assert(addr);
 	ks_assert(addr->family == AF_INET || addr->family == AF_INET6);
 

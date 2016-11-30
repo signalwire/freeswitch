@@ -61,6 +61,10 @@ KS_DECLARE(ks_status_t) ks_dht2_init(ks_dht2_t *dht, const uint8_t *nodeid)
 	ks_assert(dht);
 	ks_assert(dht->pool);
 
+	if (ks_dht2_nodeid_salloc(&dht->nodeid, dht->pool) != KS_STATUS_SUCCESS) {
+		return KS_STATUS_FAIL;
+	}
+	
 	if (ks_dht2_nodeid_init(&dht->nodeid, nodeid) != KS_STATUS_SUCCESS) {
 		return KS_STATUS_FAIL;
 	}

@@ -20,6 +20,19 @@ KS_DECLARE(ks_status_t) ks_dht2_nodeid_alloc(ks_dht2_nodeid_t **nodeid, ks_pool_
 /**
  *
  */
+KS_DECLARE(ks_status_t) ks_dht2_nodeid_salloc(ks_dht2_nodeid_t *nodeid, ks_pool_t *pool)
+{
+	ks_assert(nodeid);
+	ks_assert(pool);
+	
+	nodeid->pool = pool;
+
+	return KS_STATUS_SUCCESS;
+}
+
+/**
+ *
+ */
 KS_DECLARE(ks_status_t) ks_dht2_nodeid_free(ks_dht2_nodeid_t *nodeid)
 {
 	ks_assert(nodeid);
@@ -36,6 +49,7 @@ KS_DECLARE(ks_status_t) ks_dht2_nodeid_free(ks_dht2_nodeid_t *nodeid)
 KS_DECLARE(ks_status_t) ks_dht2_nodeid_init(ks_dht2_nodeid_t *nodeid, const uint8_t *id)
 {
 	ks_assert(nodeid);
+	ks_assert(nodeid->pool);
 
 	if (!id) {
 		randombytes_buf(nodeid->id, KS_DHT_NODEID_LENGTH);

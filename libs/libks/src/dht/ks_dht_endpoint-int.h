@@ -6,6 +6,7 @@
 KS_BEGIN_EXTERN_C
 
 KS_DECLARE(ks_status_t) ks_dht2_endpoint_alloc(ks_dht2_endpoint_t **endpoint, ks_pool_t *pool);
+KS_DECLARE(ks_status_t) ks_dht2_endpoint_salloc(ks_dht2_endpoint_t *endpoint, ks_pool_t *pool);
 KS_DECLARE(ks_status_t) ks_dht2_endpoint_free(ks_dht2_endpoint_t *endpoint);
 
 KS_DECLARE(ks_status_t) ks_dht2_endpoint_init(ks_dht2_endpoint_t *endpoint, const ks_sockaddr_t *addr, ks_socket_t sock);
