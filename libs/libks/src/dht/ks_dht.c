@@ -220,9 +220,70 @@ KS_DECLARE(ks_status_t) ks_dht2_idle(ks_dht2_t *dht)
  */
 KS_DECLARE(ks_status_t) ks_dht2_process(ks_dht2_t *dht, ks_sockaddr_t *raddr)
 {
+	struct bencode *message;
+	struct bencode *t;
+	struct bencode *y;
+	const char *tv;
+	const char *yv;
+	ks_size_t tv_len;
+	ks_size_t yv_len;
+	uint16_t transactionid;
+	char messagetype;
+
 	ks_assert(dht);
 	ks_assert(raddr);
 
+	ks_log(KS_LOG_DEBUG, "Received message from %s %d\n", raddr->host, raddr->port);
+	if (raddr->family != AF_INET && raddr->family != AF_INET6) {
+		ks_log(KS_LOG_DEBUG, "Message from unsupported address family\n");
+		return KS_STATUS_FAIL;
+	}
+
+	// @todo blacklist check for bad actor nodes
+
+	message = ben_decode((const void *)dht->recv_buffer, dht->recv_buffer_length);
+	if (!message) {
+		ks_log(KS_LOG_DEBUG, "Message cannot be decoded\n");
+		return KS_STATUS_FAIL;
+	}
+
+	ks_log(KS_LOG_DEBUG, "Message decoded\n");
+	ks_log(KS_LOG_DEBUG, "%s\n", ben_print(message));
+
+	t = ben_dict_get_by_str(message, "t");
+	if (!t) {
+		ks_log(KS_LOG_DEBUG, "Message missing required key 't'\n");
+		return KS_STATUS_FAIL;
+	}
+
+	tv = ben_str_val(t);
+	tv_len = ben_str_len(t);
+	if (tv_len != sizeof(uint16_t)) {
+		ks_log(KS_LOG_DEBUG, "Message 't' value has an unexpected size of %d\n", tv_len);
+		return KS_STATUS_FAIL;
+	}
+
+	transactionid = ntohs(*((uint16_t *)tv));
+	ks_log(KS_LOG_DEBUG, "Message transaction id is %d\n", transactionid);
+
+	y = ben_dict_get_by_str(message, "y");
+	if (!y) {
+		ks_log(KS_LOG_DEBUG, "Message missing required key 'y'\n");
+		return KS_STATUS_FAIL;
+	}
+
+	yv = ben_str_val(y);
+	yv_len = ben_str_len(y);
+	if (yv_len != 1) {
+		ks_log(KS_LOG_DEBUG, "Message 'y' value has an unexpected size of %d\n", yv_len);
+		return KS_STATUS_FAIL;
+	}
+
+	messagetype = (char)yv[0];
+	ks_log(KS_LOG_DEBUG, "Message type is '%c'\n", messagetype);
+
+	// @todo dispatch callback from the 'y' registry
+	
 	return KS_STATUS_SUCCESS;
 }
 
