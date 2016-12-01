@@ -476,7 +476,7 @@
       <prompt phrase="Este teléfono no está autorizado para realizar llamadas hacia fuera." filename="phone_not_auth.wav"/>
       <prompt phrase="Lo siento." filename="sorry.wav"/>
     </misc>
-    <zrtp>
+    <base256>
       <!-- base256 prompts for SAS -->
       <prompt phrase="Algol" filename="Algol.wav"/>
       <prompt phrase="Apollo" filename="Apollo.wav"/>
@@ -990,6 +990,8 @@
       <prompt phrase="willow" filename="willow.wav"/>
       <prompt phrase="woodlark" filename="woodlark.wav"/>
       <prompt phrase="yesteryear" filename="yesteryear.wav"/>
+    </base256>
+    <zrtp>
       <!-- Event prompts -->
       <prompt phrase="Bienvenidos al servicio de inscripción ZRTP." filename="zrtp-enroll_welcome.wav"/>
       <prompt phrase="Usted debe verificar la cadena de caracteres con su destino. Si no coincide, indica la presencia de una escucha telefónica." filename="zrtp-check_sas.wav"/>
