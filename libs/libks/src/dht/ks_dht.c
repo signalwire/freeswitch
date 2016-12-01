@@ -57,7 +57,7 @@ KS_DECLARE(ks_status_t) ks_dht2_free(ks_dht2_t *dht)
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht2_init(ks_dht2_t *dht, const uint8_t *nodeid)
+KS_DECLARE(ks_status_t) ks_dht2_init(ks_dht2_t *dht, const ks_dht2_nodeid_raw_t *nodeid)
 {
 	ks_assert(dht);
 	ks_assert(dht->pool);
@@ -392,7 +392,7 @@ KS_DECLARE(ks_status_t) ks_dht2_process_query_ping(ks_dht2_t *dht, ks_sockaddr_t
 		return KS_STATUS_FAIL;
 	}
 
-	if (ks_dht2_nodeid_init(&nid, (const uint8_t *)idv) != KS_STATUS_SUCCESS) {
+	if (ks_dht2_nodeid_init(&nid, (const ks_dht2_nodeid_raw_t *)idv) != KS_STATUS_SUCCESS) {
 		return KS_STATUS_FAIL;
 	}
 

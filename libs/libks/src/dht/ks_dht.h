@@ -43,8 +43,8 @@ KS_DECLARE(ks_status_t) ks_dht2_alloc(ks_dht2_t **dht, ks_pool_t *pool);
 KS_DECLARE(ks_status_t) ks_dht2_prealloc(ks_dht2_t *dht, ks_pool_t *pool);
 KS_DECLARE(ks_status_t) ks_dht2_free(ks_dht2_t *dht);
 
-						
-KS_DECLARE(ks_status_t) ks_dht2_init(ks_dht2_t *dht, const uint8_t *nodeid);
+
+KS_DECLARE(ks_status_t) ks_dht2_init(ks_dht2_t *dht, const ks_dht2_nodeid_raw_t *nodeid);
 KS_DECLARE(ks_status_t) ks_dht2_deinit(ks_dht2_t *dht);
 
 
