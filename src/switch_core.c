@@ -2528,6 +2528,35 @@ SWITCH_DECLARE(uint32_t) switch_core_debug_level(void)
 	return runtime.debug_level;
 }
 
+SWITCH_DECLARE(int32_t) switch_core_sps(void)
+{
+	return runtime.sps;
+}
+
+SWITCH_DECLARE(int32_t) switch_core_sps_last(void)
+{
+	return runtime.sps_last;
+}
+
+SWITCH_DECLARE(int32_t) switch_core_sps_peak(void)
+{
+	return runtime.sps_peak;
+}
+
+SWITCH_DECLARE(int32_t) switch_core_sps_peak_fivemin(void)
+{
+	return runtime.sps_peak_fivemin;
+}
+
+SWITCH_DECLARE(int32_t) switch_core_sessions_peak(void)
+{
+	return runtime.sessions_peak;
+}
+
+SWITCH_DECLARE(int32_t) switch_core_sessions_peak_fivemin(void)
+{
+	return runtime.sessions_peak_fivemin;
+}
 
 SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, void *val)
 {

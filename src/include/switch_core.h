@@ -2617,6 +2617,12 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_persistant_execute_trans_full(sw
 
 SWITCH_DECLARE(void) switch_core_set_signal_handlers(void);
 SWITCH_DECLARE(uint32_t) switch_core_debug_level(void);
+SWITCH_DECLARE(int32_t) switch_core_sps(void);
+SWITCH_DECLARE(int32_t) switch_core_sps_last(void);
+SWITCH_DECLARE(int32_t) switch_core_sps_peak(void);
+SWITCH_DECLARE(int32_t) switch_core_sps_peak_fivemin(void);
+SWITCH_DECLARE(int32_t) switch_core_sessions_peak(void);
+SWITCH_DECLARE(int32_t) switch_core_sessions_peak_fivemin(void);
 SWITCH_DECLARE(void) switch_cache_db_flush_handles(void);
 SWITCH_DECLARE(const char *) switch_core_banner(void);
 SWITCH_DECLARE(switch_bool_t) switch_core_session_in_thread(switch_core_session_t *session);
