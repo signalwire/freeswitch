@@ -170,6 +170,7 @@
     <ClCompile Include=".\src\jsmain.cpp" />
     <ClCompile Include=".\src\jsbase.cpp" />
     <ClCompile Include=".\src\fscoredb.cpp" />
+    <ClCompile Include=".\src\fsdbh.cpp" />
     <ClCompile Include=".\src\fscurl.cpp" />
     <ClCompile Include=".\src\fsdtmf.cpp" />
     <ClCompile Include=".\src\fsevent.cpp" />
@@ -189,6 +190,7 @@
   <ItemGroup>
     <ClInclude Include=".\include\javascript.hpp" />
     <ClInclude Include=".\include\fscoredb.hpp" />
+    <ClInclude Include=".\include\fsdbh.hpp" />
     <ClInclude Include=".\include\fscurl.hpp" />
     <ClInclude Include=".\include\fsdtmf.hpp" />
     <ClInclude Include=".\include\fsevent.hpp" />
