@@ -119,7 +119,7 @@ static switch_status_t raven_capture(const char *userdata, const char *message, 
 {
     cJSON* json, *fingerprint;
     char *raw_body;
-    char *encoded_body;
+    char *encoded_body = NULL;
     switch_time_t timestamp = switch_micro_time_now();
     switch_status_t status = SWITCH_STATUS_SUCCESS;
 	char uuid[SWITCH_UUID_FORMATTED_LENGTH + 1];
