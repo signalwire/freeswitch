@@ -9,7 +9,9 @@ KS_BEGIN_EXTERN_C
 KS_DECLARE(ks_status_t) ks_dht2_idle(ks_dht2_t *dht);
 KS_DECLARE(ks_status_t) ks_dht2_process(ks_dht2_t *dht, ks_sockaddr_t *raddr);
 
-						
+KS_DECLARE(ks_status_t) ks_dht2_process_query(ks_dht2_t *dht, ks_sockaddr_t *raddr, ks_dht2_message_t *message);
+KS_DECLARE(ks_status_t) ks_dht2_process_query_ping(ks_dht2_t *dht, ks_sockaddr_t *raddr, ks_dht2_message_t *message);
+
 KS_END_EXTERN_C
 
 #endif /* KS_DHT_INT_H */

@@ -59,6 +59,8 @@ KS_DECLARE(ks_status_t) ks_dht2_message_init(ks_dht2_message_t *message, const u
 	ks_assert(message->pool);
 	ks_assert(buffer);
 
+	message->args = NULL;
+
     message->data = ben_decode((const void *)buffer, buffer_length);
 	if (!message->data) {
 		ks_log(KS_LOG_DEBUG, "Message cannot be decoded\n");
@@ -117,6 +119,7 @@ KS_DECLARE(ks_status_t) ks_dht2_message_deinit(ks_dht2_message_t *message)
 {
 	ks_assert(message);
 
+	message->args = NULL;
 	message->type[0] = '\0';
 	message->transactionid_length = 0;
 	if (message->data) {

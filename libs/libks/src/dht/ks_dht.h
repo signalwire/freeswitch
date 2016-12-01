@@ -21,7 +21,8 @@ struct ks_dht2_s {
 
 	ks_dht2_nodeid_t nodeid;
 
-	ks_hash_t *registry_y;
+	ks_hash_t *registry_type;
+	ks_hash_t *registry_query;
 
 	ks_bool_t bind_ipv4;
 	ks_bool_t bind_ipv6;
@@ -51,7 +52,8 @@ KS_DECLARE(ks_status_t) ks_dht2_bind(ks_dht2_t *dht, const ks_sockaddr_t *addr);
 KS_DECLARE(ks_status_t) ks_dht2_pulse(ks_dht2_t *dht, int32_t timeout);
 
 
-KS_DECLARE(ks_status_t) ks_dht2_register_y(ks_dht2_t *dht, const char *value, ks_dht2_registry_callback_t callback);
+KS_DECLARE(ks_status_t) ks_dht2_register_type(ks_dht2_t *dht, const char *value, ks_dht2_registry_callback_t callback);
+KS_DECLARE(ks_status_t) ks_dht2_register_query(ks_dht2_t *dht, const char *value, ks_dht2_registry_callback_t callback);
 
 
 KS_END_EXTERN_C

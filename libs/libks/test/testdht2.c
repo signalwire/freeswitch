@@ -4,8 +4,8 @@
 #include <../dht/ks_dht_endpoint-int.h>
 #include <tap.h>
 
-#define TEST_DHT1_REGISTER_Y_BUFFER "d1:ad2:id20:12345678901234567890e1:q4:ping1:t2:421:y1:ze"
-#define TEST_DHT1_PROCESS_BUFFER "d1:ad2:id20:12345678901234567890e1:q4:ping1:t2:421:y1:qe"
+#define TEST_DHT1_REGISTER_TYPE_BUFFER "d1:ad2:id20:12345678901234567890e1:q4:ping1:t2:421:y1:ze"
+#define TEST_DHT1_PROCESS_QUERY_PING_BUFFER "d1:ad2:id20:12345678901234567890e1:q4:ping1:t2:421:y1:qe"
 
 ks_status_t dht_z_callback(ks_dht2_t *dht, ks_sockaddr_t *raddr, ks_dht2_message_t *message)
 {
@@ -59,7 +59,7 @@ int main() {
   err = ks_dht2_init(&dht2, NULL);
   ok(err == KS_STATUS_SUCCESS);
 
-  ks_dht2_register_y(dht1, "z", dht_z_callback);
+  ks_dht2_register_type(dht1, "z", dht_z_callback);
   
   if (have_v4) {
     err = ks_addr_set(&addr, v4, KS_DHT_DEFAULT_PORT, AF_INET);
@@ -91,8 +91,16 @@ int main() {
 	ok(err == KS_STATUS_SUCCESS);
   }
 
-  buflen = strlen(TEST_DHT1_REGISTER_Y_BUFFER);
-  memcpy(dht1->recv_buffer, TEST_DHT1_REGISTER_Y_BUFFER, buflen);
+  buflen = strlen(TEST_DHT1_REGISTER_TYPE_BUFFER);
+  memcpy(dht1->recv_buffer, TEST_DHT1_REGISTER_TYPE_BUFFER, buflen);
+  dht1->recv_buffer_length = buflen;
+
+  err = ks_dht2_process(dht1, &raddr);
+  ok(err == KS_STATUS_SUCCESS);
+
+
+  buflen = strlen(TEST_DHT1_PROCESS_QUERY_PING_BUFFER);
+  memcpy(dht1->recv_buffer, TEST_DHT1_PROCESS_QUERY_PING_BUFFER, buflen);
   dht1->recv_buffer_length = buflen;
 
   err = ks_dht2_process(dht1, &raddr);

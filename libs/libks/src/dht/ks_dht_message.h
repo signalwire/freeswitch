@@ -7,6 +7,7 @@ KS_BEGIN_EXTERN_C
 
 #define KS_DHT_MESSAGE_TRANSACTIONID_MAX_SIZE 20
 #define KS_DHT_MESSAGE_TYPE_MAX_SIZE 20
+#define KS_DHT_MESSAGE_QUERY_MAX_SIZE 20
 
 typedef struct ks_dht2_message_s ks_dht2_message_t;
 struct ks_dht2_message_s {
@@ -15,6 +16,7 @@ struct ks_dht2_message_s {
     uint8_t transactionid[KS_DHT_MESSAGE_TRANSACTIONID_MAX_SIZE];
 	ks_size_t transactionid_length;
 	char type[KS_DHT_MESSAGE_TYPE_MAX_SIZE];
+	struct bencode *args;
 };
 
 KS_DECLARE(ks_status_t) ks_dht2_message_alloc(ks_dht2_message_t **message, ks_pool_t *pool);
