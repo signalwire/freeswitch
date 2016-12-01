@@ -12,7 +12,8 @@ KS_BEGIN_EXTERN_C
 
 #define KS_DHT_DEFAULT_PORT 5309
 #define KS_DHT_RECV_BUFFER_SIZE 0xFFFF
-
+#define KS_DHT_TRANSACTIONID_MAX_SIZE 20
+#define KS_DHT_MESSAGETYPE_MAX_SIZE 20
 
 typedef struct ks_dht2_s ks_dht2_t;
 struct ks_dht2_s {
@@ -20,6 +21,8 @@ struct ks_dht2_s {
 	ks_bool_t pool_alloc;
 
 	ks_dht2_nodeid_t nodeid;
+
+	ks_hash_t *registry_y;
 
 	ks_bool_t bind_ipv4;
 	ks_bool_t bind_ipv6;
@@ -33,6 +36,12 @@ struct ks_dht2_s {
 	ks_size_t recv_buffer_length;
 };
 
+typedef ks_status_t (*ks_dht2_registry_callback_t)(ks_dht2_t *dht,
+												   ks_sockaddr_t *raddr,
+												   uint8_t *transactionid,
+												   ks_size_t transactionid_len,
+												   struct bencode *message);
+
 
 KS_DECLARE(ks_status_t) ks_dht2_alloc(ks_dht2_t **dht, ks_pool_t *pool);
 KS_DECLARE(ks_status_t) ks_dht2_prealloc(ks_dht2_t *dht, ks_pool_t *pool);
@@ -45,6 +54,10 @@ KS_DECLARE(ks_status_t) ks_dht2_deinit(ks_dht2_t *dht);
 
 KS_DECLARE(ks_status_t) ks_dht2_bind(ks_dht2_t *dht, const ks_sockaddr_t *addr);
 KS_DECLARE(ks_status_t) ks_dht2_pulse(ks_dht2_t *dht, int32_t timeout);
+
+
+KS_DECLARE(ks_status_t) ks_dht2_register_y(ks_dht2_t *dht, const char *value, ks_dht2_registry_callback_t callback);
+
 
 KS_END_EXTERN_C
 

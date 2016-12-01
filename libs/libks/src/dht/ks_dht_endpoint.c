@@ -66,6 +66,8 @@ KS_DECLARE(ks_status_t) ks_dht2_endpoint_deinit(ks_dht2_endpoint_t *endpoint)
 {
 	ks_assert(endpoint);
 
+	ks_socket_close(&endpoint->sock);
+
 	return KS_STATUS_SUCCESS;
 }
 
