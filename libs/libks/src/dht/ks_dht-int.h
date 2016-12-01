@@ -8,11 +8,7 @@ KS_BEGIN_EXTERN_C
 
 KS_DECLARE(ks_status_t) ks_dht2_idle(ks_dht2_t *dht);
 KS_DECLARE(ks_status_t) ks_dht2_process(ks_dht2_t *dht, ks_sockaddr_t *raddr);
-KS_DECLARE(ks_status_t) ks_dht2_parse(ks_dht2_t *dht,
-									  struct bencode **message,
-									  uint8_t *transactionid,
-									  ks_size_t *transactionid_len,
-									  char *messagetype);
+
 						
 KS_END_EXTERN_C
 

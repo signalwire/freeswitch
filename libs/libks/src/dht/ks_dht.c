@@ -44,6 +44,7 @@ KS_DECLARE(ks_status_t) ks_dht2_free(ks_dht2_t *dht)
 	ks_pool_t *pool = dht->pool;
 	ks_bool_t pool_alloc = dht->pool_alloc;
 
+	ks_dht2_deinit(dht);
 	ks_pool_free(pool, dht);
 	if (pool_alloc) {
 		ks_pool_close(&pool);
@@ -99,6 +100,7 @@ KS_DECLARE(ks_status_t) ks_dht2_deinit(ks_dht2_t *dht)
 		ks_dht2_endpoint_deinit(ep);
 		ks_dht2_endpoint_free(ep);
 	}
+	dht->endpoints_size = 0;
 	if (dht->endpoints) {
 		ks_pool_free(dht->pool, dht->endpoints);
 		dht->endpoints = NULL;
@@ -107,11 +109,17 @@ KS_DECLARE(ks_status_t) ks_dht2_deinit(ks_dht2_t *dht)
 		ks_pool_free(dht->pool, dht->endpoints_poll);
 		dht->endpoints_poll = NULL;
 	}
-	ks_hash_destroy(&dht->endpoints_hash);
+	if (dht->endpoints_hash) {
+		ks_hash_destroy(&dht->endpoints_hash);
+		dht->endpoints_hash = NULL;
+	}
 	dht->bind_ipv4 = KS_FALSE;
 	dht->bind_ipv6 = KS_FALSE;
 
-	ks_hash_destroy(&dht->registry_y);
+	if (dht->registry_y) {
+		ks_hash_destroy(&dht->registry_y);
+		dht->registry_y = NULL;
+	}
 
 	ks_dht2_nodeid_deinit(&dht->nodeid);
 	
@@ -250,10 +258,7 @@ KS_DECLARE(ks_status_t) ks_dht2_idle(ks_dht2_t *dht)
  */
 KS_DECLARE(ks_status_t) ks_dht2_process(ks_dht2_t *dht, ks_sockaddr_t *raddr)
 {
-	struct bencode *message = NULL;
-	uint8_t transactionid[KS_DHT_TRANSACTIONID_MAX_SIZE];
-	ks_size_t transactionid_len;
-	char messagetype[KS_DHT_MESSAGETYPE_MAX_SIZE];
+	ks_dht2_message_t message;
 	ks_dht2_registry_callback_t callback;
 	ks_status_t ret = KS_STATUS_FAIL;
 
@@ -267,98 +272,24 @@ KS_DECLARE(ks_status_t) ks_dht2_process(ks_dht2_t *dht, ks_sockaddr_t *raddr)
 	}
 
 	// @todo blacklist check for bad actor nodes
+	
+	if (ks_dht2_message_prealloc(&message, dht->pool) != KS_STATUS_SUCCESS) {
+		return KS_STATUS_FAIL;
+	}
 
-	if (ks_dht2_parse(dht, &message, transactionid, &transactionid_len, messagetype) != KS_STATUS_SUCCESS) {
+	if (ks_dht2_message_init(&message, dht->recv_buffer, dht->recv_buffer_length) != KS_STATUS_SUCCESS) {
 		return KS_STATUS_FAIL;
 	}
 	
-	if (!(callback = (ks_dht2_registry_callback_t)(intptr_t)ks_hash_search(dht->registry_y, messagetype, KS_UNLOCKED))) {
-		ks_log(KS_LOG_DEBUG, "Message type '%s' is not registered\n", messagetype);
+	if (!(callback = (ks_dht2_registry_callback_t)(intptr_t)ks_hash_search(dht->registry_y, message.type, KS_UNLOCKED))) {
+		ks_log(KS_LOG_DEBUG, "Message type '%s' is not registered\n", message.type);
 	} else {
-		ret = callback(dht, raddr, transactionid, transactionid_len, message);
+		ret = callback(dht, raddr, &message);
 	}
 
-	ben_free(message);
+	ks_dht2_message_deinit(&message);
+	
 	return ret;
-}
-
-/**
- *
- */
-KS_DECLARE(ks_status_t) ks_dht2_parse(ks_dht2_t *dht,
-									  struct bencode **message,
-									  uint8_t *transactionid,
-									  ks_size_t *transactionid_len,
-									  char *messagetype)
-{
-	struct bencode *msg = NULL;
-	struct bencode *t;
-	struct bencode *y;
-	const char *tv;
-	const char *yv;
-	ks_size_t tv_len;
-	ks_size_t yv_len;
-
-	ks_assert(dht);
-	ks_assert(message);
-	ks_assert(transactionid);
-	ks_assert(messagetype);
-
-	msg = ben_decode((const void *)dht->recv_buffer, dht->recv_buffer_length);
-	if (!msg) {
-		ks_log(KS_LOG_DEBUG, "Message cannot be decoded\n");
-	    goto failure;
-	}
-
-	ks_log(KS_LOG_DEBUG, "Message decoded\n");
-	ks_log(KS_LOG_DEBUG, "%s\n", ben_print(msg));
-
-	t = ben_dict_get_by_str(msg, "t");
-	if (!t) {
-		ks_log(KS_LOG_DEBUG, "Message missing required key 't'\n");
-		goto failure;
-	}
-
-	tv = ben_str_val(t);
-	tv_len = ben_str_len(t);
-	if (tv_len > KS_DHT_TRANSACTIONID_MAX_SIZE) {
-		ks_log(KS_LOG_DEBUG, "Message 't' value has an unexpectedly large size of %d\n", tv_len);
-		goto failure;
-	}
-
-	memcpy(transactionid, tv, tv_len);
-	*transactionid_len = tv_len;
-	// @todo hex output of transactionid
-	//ks_log(KS_LOG_DEBUG, "Message transaction id is %d\n", *transactionid);
-
-	y = ben_dict_get_by_str(msg, "y");
-	if (!y) {
-		ks_log(KS_LOG_DEBUG, "Message missing required key 'y'\n");
-		goto failure;
-	}
-
-	yv = ben_str_val(y);
-	yv_len = ben_str_len(y);
-	if (yv_len >= KS_DHT_MESSAGETYPE_MAX_SIZE) {
-		ks_log(KS_LOG_DEBUG, "Message 'y' value has an unexpectedly large size of %d\n", yv_len);
-		goto failure;
-	}
-
-	memcpy(messagetype, yv, yv_len);
-	messagetype[yv_len] = '\0';
-	ks_log(KS_LOG_DEBUG, "Message type is '%s'\n", messagetype);
-	
-	*message = msg;
-	return KS_STATUS_SUCCESS;
-	
- failure:
-	if (msg) {
-		ben_free(msg);
-	}
-	*message = NULL;
-	*transactionid_len = 0;
-	messagetype[0] = '\0';
-	return KS_STATUS_FAIL;
 }
 
 /* For Emacs:

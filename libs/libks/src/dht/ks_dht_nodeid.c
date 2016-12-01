@@ -36,7 +36,8 @@ KS_DECLARE(ks_status_t) ks_dht2_nodeid_prealloc(ks_dht2_nodeid_t *nodeid, ks_poo
 KS_DECLARE(ks_status_t) ks_dht2_nodeid_free(ks_dht2_nodeid_t *nodeid)
 {
 	ks_assert(nodeid);
-	
+
+	ks_dht2_nodeid_deinit(nodeid);
 	ks_pool_free(nodeid->pool, nodeid);
 
 	return KS_STATUS_SUCCESS;

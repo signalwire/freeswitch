@@ -5,6 +5,7 @@
 #include "ks_bencode.h"
 
 #include "ks_dht_endpoint.h"
+#include "ks_dht_message.h"
 #include "ks_dht_nodeid.h"
 
 KS_BEGIN_EXTERN_C
@@ -12,8 +13,6 @@ KS_BEGIN_EXTERN_C
 
 #define KS_DHT_DEFAULT_PORT 5309
 #define KS_DHT_RECV_BUFFER_SIZE 0xFFFF
-#define KS_DHT_TRANSACTIONID_MAX_SIZE 20
-#define KS_DHT_MESSAGETYPE_MAX_SIZE 20
 
 typedef struct ks_dht2_s ks_dht2_t;
 struct ks_dht2_s {
@@ -36,11 +35,7 @@ struct ks_dht2_s {
 	ks_size_t recv_buffer_length;
 };
 
-typedef ks_status_t (*ks_dht2_registry_callback_t)(ks_dht2_t *dht,
-												   ks_sockaddr_t *raddr,
-												   uint8_t *transactionid,
-												   ks_size_t transactionid_len,
-												   struct bencode *message);
+typedef ks_status_t (*ks_dht2_registry_callback_t)(ks_dht2_t *dht, ks_sockaddr_t *raddr, ks_dht2_message_t *message);
 
 
 KS_DECLARE(ks_status_t) ks_dht2_alloc(ks_dht2_t **dht, ks_pool_t *pool);

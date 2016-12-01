@@ -7,10 +7,10 @@
 #define TEST_DHT1_REGISTER_Y_BUFFER "d1:ad2:id20:12345678901234567890e1:q4:ping1:t2:421:y1:ze"
 #define TEST_DHT1_PROCESS_BUFFER "d1:ad2:id20:12345678901234567890e1:q4:ping1:t2:421:y1:qe"
 
-ks_status_t dht_z_callback(ks_dht2_t *dht, ks_sockaddr_t *raddr, uint8_t *transactionid, ks_size_t transactionid_len, struct bencode *message)
+ks_status_t dht_z_callback(ks_dht2_t *dht, ks_sockaddr_t *raddr, ks_dht2_message_t *message)
 {
 	diag("dht_z_callback\n");
-	ok(transactionid[0] == '4' && transactionid[1] == '2');
+	ok(message->transactionid[0] == '4' && message->transactionid[1] == '2');
 	return KS_STATUS_SUCCESS;
 }
 

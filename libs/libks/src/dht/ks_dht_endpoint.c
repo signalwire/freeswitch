@@ -13,6 +13,7 @@ KS_DECLARE(ks_status_t) ks_dht2_endpoint_alloc(ks_dht2_endpoint_t **endpoint, ks
 	
 	*endpoint = ep = ks_pool_alloc(pool, sizeof(ks_dht2_endpoint_t));
 	ep->pool = pool;
+	ep->sock = KS_SOCK_INVALID;
 
 	return KS_STATUS_SUCCESS;
 }
@@ -26,6 +27,7 @@ KS_DECLARE(ks_status_t) ks_dht2_endpoint_prealloc(ks_dht2_endpoint_t *endpoint, 
 	ks_assert(pool);
 
 	endpoint->pool = pool;
+	endpoint->sock = KS_SOCK_INVALID;
 
 	return KS_STATUS_SUCCESS;
 }
@@ -36,7 +38,8 @@ KS_DECLARE(ks_status_t) ks_dht2_endpoint_prealloc(ks_dht2_endpoint_t *endpoint, 
 KS_DECLARE(ks_status_t) ks_dht2_endpoint_free(ks_dht2_endpoint_t *endpoint)
 {
 	ks_assert(endpoint);
-	
+
+	ks_dht2_endpoint_deinit(endpoint);
 	ks_pool_free(endpoint->pool, endpoint);
 
 	return KS_STATUS_SUCCESS;
@@ -66,7 +69,10 @@ KS_DECLARE(ks_status_t) ks_dht2_endpoint_deinit(ks_dht2_endpoint_t *endpoint)
 {
 	ks_assert(endpoint);
 
-	ks_socket_close(&endpoint->sock);
+	if (endpoint->sock != KS_SOCK_INVALID) {
+		ks_socket_close(&endpoint->sock);
+		endpoint->sock = KS_SOCK_INVALID;
+	}
 
 	return KS_STATUS_SUCCESS;
 }
