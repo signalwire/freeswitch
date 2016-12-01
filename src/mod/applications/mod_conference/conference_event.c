@@ -237,14 +237,22 @@ void conference_event_mod_channel_handler(const char *event_channel, cJSON *json
 		const void *vvar;
 		cJSON *array = cJSON_CreateArray();
 		conference_obj_t *conference = NULL;
+		int i;
+
 		if ((conference = conference_find(conference_name, NULL))) {
 			switch_mutex_lock(conference_globals.setup_mutex);
+
+			for (i = 0; i <= conference->canvas_count; i++) {
+				if (conference->canvases[i]) {
+					conference_event_adv_layout(conference, conference->canvases[i], conference->canvases[i]->vlayout);
+				}
+			}
+
 			if (conference->layout_hash) {
 				for (hi = switch_core_hash_first(conference->layout_hash); hi; hi = switch_core_hash_next(&hi)) {
 					video_layout_t *vlayout;
 					cJSON *obj = cJSON_CreateObject();
 					cJSON *resarray = cJSON_CreateArray();
-					int i;
 
 					switch_core_hash_this(hi, &vvar, NULL, &val);
 					vlayout = (video_layout_t *)val;
@@ -292,6 +300,83 @@ void conference_event_mod_channel_handler(const char *event_channel, cJSON *json
 			switch_thread_rwlock_unlock(conference->rwlock);
 		}
 		addobj = array;
+	} else if (!strcasecmp(action, "click-layer")) {
+	} else if (!strcasecmp(action, "shift-click-layer")) {
+	} else if (!strcasecmp(action, "reset-layer") || !strcasecmp(action, "layer-pan-x") || !strcasecmp(action, "layer-pan-y")) {
+		cJSON *v;
+		int layer_id = 0, canvas_id = 0, metric = 0, absolute = 0;
+		const char *i = "i", *xy = "";
+
+		if ((v = cJSON_GetObjectItem(data, "layerID"))) {
+			layer_id = v->valueint;
+		}
+
+		if ((v = cJSON_GetObjectItem(data, "canvasID"))) {
+			canvas_id = v->valueint;
+		}
+
+		if ((v = cJSON_GetObjectItem(data, "metric"))) {
+			metric = v->valueint;
+		}
+
+		if ((v = cJSON_GetObjectItem(data, "absolute"))) {
+			if ((absolute = v->valueint)) {
+				i = "";
+			}
+		}
+
+		if (canvas_id > -1 && layer_id > -1) {
+			if (!strcasecmp(action, "layer-pan-x")) {
+				xy = "x";
+			} else if (!strcasecmp(action, "layer-pan-y")) {
+				xy = "y";
+			}
+
+			if (!strcasecmp(action, "reset-layer")) {
+				exec = switch_mprintf("%s cam %d %d reset", conference_name, canvas_id, layer_id);
+			} else {
+				exec = switch_mprintf("%s cam %d %d pan=%s:%d%s", conference_name, canvas_id, layer_id, xy, metric, i);
+			}
+		}
+		
+
+	} else if (!strcasecmp(action, "zoom-layer")) {
+		cJSON *v;
+		int layer_id = -1, canvas_id = -1, x = -1, y = -1, w = -1, h = -1;
+
+		if ((v = cJSON_GetObjectItem(data, "layerID"))) {
+			layer_id = v->valueint;
+		}
+
+		if ((v = cJSON_GetObjectItem(data, "canvasID"))) {
+			canvas_id = v->valueint;
+		}
+		
+		
+		if ((v = cJSON_GetObjectItem(data, "dimensions"))) {
+			cJSON *d;
+
+			if ((d = cJSON_GetObjectItem(v, "w"))) {
+				w = d->valueint;
+			}
+
+			if ((d = cJSON_GetObjectItem(v, "h"))) {
+				h = d->valueint;
+			}
+
+			if ((d = cJSON_GetObjectItem(v, "x"))) {
+				x = d->valueint;
+			}
+
+			if ((d = cJSON_GetObjectItem(v, "y"))) {
+				y = d->valueint;
+			}
+		}
+
+		if (canvas_id > -1 && layer_id > -1 && x > -1 && y > -1 && w > -1 && h > -1) {
+			exec = switch_mprintf("%s cam %d %d zoom=%d:%d:%d:%d snap_factor=1 zoom_factor=1", conference_name, canvas_id, layer_id, x, y, w, h);
+		}
+		
 	}
 
 	if (exec) {
@@ -486,6 +571,59 @@ void conference_event_la_command_handler(switch_live_array_t *la, const char *cm
 {
 }
 
+void conference_event_adv_layout(conference_obj_t *conference, mcu_canvas_t *canvas, video_layout_t *vlayout)
+{
+	cJSON *msg, *data, *obj;
+	int i = 0;
+
+	msg = cJSON_CreateObject();
+	data = json_add_child_obj(msg, "eventData", NULL);
+
+	cJSON_AddItemToObject(msg, "eventChannel", cJSON_CreateString(conference->info_event_channel));
+	cJSON_AddItemToObject(data, "contentType", cJSON_CreateString("layout-info"));
+	
+	switch_thread_rwlock_rdlock(canvas->video_rwlock);
+	switch_mutex_lock(canvas->mutex);
+	
+	if ((obj = get_canvas_info(canvas))) {
+		cJSON *array = cJSON_CreateArray();
+
+		for (i = 0; i < vlayout->layers; i++) {
+			cJSON *layout = cJSON_CreateObject();
+			int scale = vlayout->images[i].scale;
+			int hscale = vlayout->images[i].hscale ? vlayout->images[i].hscale : scale;
+			
+			cJSON_AddItemToObject(layout, "x", cJSON_CreateNumber(vlayout->images[i].x));
+			cJSON_AddItemToObject(layout, "y", cJSON_CreateNumber(vlayout->images[i].y));
+			cJSON_AddItemToObject(layout, "scale", cJSON_CreateNumber(vlayout->images[i].scale));
+			cJSON_AddItemToObject(layout, "hscale", cJSON_CreateNumber(hscale));
+			cJSON_AddItemToObject(layout, "scale", cJSON_CreateNumber(scale));
+			cJSON_AddItemToObject(layout, "zoom", cJSON_CreateNumber(vlayout->images[i].zoom));
+			cJSON_AddItemToObject(layout, "border", cJSON_CreateNumber(vlayout->images[i].border));
+			cJSON_AddItemToObject(layout, "floor", cJSON_CreateNumber(vlayout->images[i].floor));
+			cJSON_AddItemToObject(layout, "overlap", cJSON_CreateNumber(vlayout->images[i].overlap));
+			cJSON_AddItemToObject(layout, "screenWidth", cJSON_CreateNumber((uint32_t)(canvas->img->d_w * scale / VIDEO_LAYOUT_SCALE)));
+			cJSON_AddItemToObject(layout, "screenHeight", cJSON_CreateNumber((uint32_t)(canvas->img->d_h * hscale / VIDEO_LAYOUT_SCALE)));
+			cJSON_AddItemToObject(layout, "xPOS", cJSON_CreateNumber((int)(canvas->img->d_w * vlayout->images[i].x / VIDEO_LAYOUT_SCALE)));
+			cJSON_AddItemToObject(layout, "yPOS", cJSON_CreateNumber((int)(canvas->img->d_h * vlayout->images[i].y / VIDEO_LAYOUT_SCALE)));
+			cJSON_AddItemToObject(layout, "resID", cJSON_CreateString(vlayout->images[i].res_id));
+			cJSON_AddItemToObject(layout, "audioPOS", cJSON_CreateString(vlayout->images[i].audio_position));
+			cJSON_AddItemToArray(array, layout);
+		}
+		
+
+		cJSON_AddItemToObject(obj, "canvasLayouts", array);
+
+		cJSON_AddItemToObject(obj, "scale", cJSON_CreateNumber(VIDEO_LAYOUT_SCALE));
+		cJSON_AddItemToObject(data, "canvasInfo", obj);
+	}
+	
+	switch_mutex_unlock(canvas->mutex);
+	switch_thread_rwlock_unlock(canvas->video_rwlock);
+
+	switch_event_channel_broadcast(conference->info_event_channel, &msg, "mod_conference", conference_globals.event_channel_id);
+
+}
 
 void conference_event_adv_la(conference_obj_t *conference, conference_member_t *member, switch_bool_t join)
 {
@@ -501,6 +639,7 @@ void conference_event_adv_la(conference_obj_t *conference, conference_member_t *
 		switch_event_t *variables;
 		switch_event_header_t *hp;
 		char idstr[128] = "";
+		int i;
 
 		snprintf(idstr, sizeof(idstr), "%d", member->id);
 		msg = cJSON_CreateObject();
@@ -526,6 +665,7 @@ void conference_event_adv_la(conference_obj_t *conference, conference_member_t *
 		}
 
 		cJSON_AddItemToObject(data, "chatChannel", cJSON_CreateString(conference->chat_event_channel));
+		cJSON_AddItemToObject(data, "infoChannel", cJSON_CreateString(conference->info_event_channel));
 
 		switch_core_get_variables(&variables);
 		for (hp = variables->headers; hp; hp = hp->next) {
@@ -538,12 +678,19 @@ void conference_event_adv_la(conference_obj_t *conference, conference_member_t *
 		}
 		switch_event_destroy(&variables);
 
-		switch_event_channel_broadcast(event_channel, &msg, "mod_conference", conference_globals.event_channel_id);
-
 		if (cookie) {
 			switch_event_channel_permission_modify(cookie, conference->la_event_channel, join);
 			switch_event_channel_permission_modify(cookie, conference->mod_event_channel, join);
 			switch_event_channel_permission_modify(cookie, conference->chat_event_channel, join);
+			switch_event_channel_permission_modify(cookie, conference->info_event_channel, join);
+		}
+
+		switch_event_channel_broadcast(event_channel, &msg, "mod_conference", conference_globals.event_channel_id);
+
+		for (i = 0; i <= conference->canvas_count; i++) {
+			if (conference->canvases[i]) {
+				conference_event_adv_layout(conference, conference->canvases[i], conference->canvases[i]->vlayout);
+			}
 		}
 	}
 }

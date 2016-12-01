@@ -3898,7 +3898,6 @@ static switch_bool_t verto__unsubscribe_func(const char *method, cJSON *params, 
 static switch_bool_t verto__broadcast_func(const char *method, cJSON *params, jsock_t *jsock, cJSON **response)
 {
 	char *json_text = NULL;
-	switch_bool_t r = SWITCH_FALSE;
 	const char *event_channel = cJSON_GetObjectCstr(params, "eventChannel");
 	cJSON *jevent, *broadcast;
 	const char *display = NULL;
@@ -3941,11 +3940,12 @@ static switch_bool_t verto__broadcast_func(const char *method, cJSON *params, js
 
 			if (mcast_socket_send(&jsock->profile->mcast_pub, json_text, strlen(json_text) + 1) <= 0) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "multicast socket send error! %s\n", strerror(errno));
-				r = SWITCH_FALSE;
-				cJSON_AddItemToObject(*response, "message", cJSON_CreateString("MCAST Data Send failure!"));
+				//r = SWITCH_FALSE;
+				//cJSON_AddItemToObject(*response, "message", cJSON_CreateString("MCAST Data Send failure!"));
 			} else {
-				r = SWITCH_TRUE;
-				cJSON_AddItemToObject(*response, "message", cJSON_CreateString("MCAST Data Sent"));
+				//r = SWITCH_TRUE;
+				//cJSON_AddItemToObject(*response, "message", cJSON_CreateString("MCAST Data Sent"));
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "MCAST Data Sent\n");
 			}
 			free(json_text);
 			json_text = NULL;
@@ -3956,7 +3956,7 @@ static switch_bool_t verto__broadcast_func(const char *method, cJSON *params, js
 
  end:
 
-	return r;
+	return SWITCH_TRUE;
 }
 
 static switch_bool_t login_func(const char *method, cJSON *params, jsock_t *jsock, cJSON **response)

@@ -60,6 +60,7 @@ api_command_t conference_api_sub_commands[] = {
 	{"file_seek", (void_fn_t) & conference_api_sub_file_seek, CONF_API_SUB_ARGS_SPLIT, "file_seek", "[+-]<val> [<member_id>]"},
 	{"say", (void_fn_t) & conference_api_sub_say, CONF_API_SUB_ARGS_AS_ONE, "say", "<text>"},
 	{"saymember", (void_fn_t) & conference_api_sub_saymember, CONF_API_SUB_ARGS_AS_ONE, "saymember", "<member_id> <text>"},
+	{"cam", (void_fn_t) & conference_api_sub_cam, CONF_API_SUB_ARGS_SPLIT, "cam", ""},
 	{"stop", (void_fn_t) & conference_api_sub_stop, CONF_API_SUB_ARGS_SPLIT, "stop", "<[current|all|async|last]> [<member_id>]"},
 	{"dtmf", (void_fn_t) & conference_api_sub_dtmf, CONF_API_SUB_MEMBER_TARGET, "dtmf", "<[member_id|all|last|non_moderator]> <digits>"},
 	{"kick", (void_fn_t) & conference_api_sub_kick, CONF_API_SUB_MEMBER_TARGET, "kick", "<[member_id|all|last|non_moderator]> [<optional sound file>]"},
@@ -2007,6 +2008,262 @@ switch_status_t conference_api_sub_saymember(conference_obj_t *conference, switc
 	switch_safe_free(workspace);
 	switch_safe_free(expanded);
 	return ret_status;
+}
+
+switch_status_t conference_api_sub_cam(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv)
+{
+	int x;
+	int canvas_id = -1;
+	int layer_id = -1;
+	int ok = 0;
+	mcu_canvas_t *canvas = NULL;
+	mcu_layer_t *layer = NULL;
+
+	if (!conference->canvases[0]) {
+		stream->write_function(stream, "Conference is not in mixing mode\n");
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	if (argc > 4) {
+		canvas_id = atoi(argv[2]);
+		layer_id = atoi(argv[3]);
+
+		if (canvas_id > -1 && layer_id > -1 && canvas_id < conference->canvas_count) {
+			switch_mutex_lock(conference->canvas_mutex);
+			canvas = conference->canvases[canvas_id];
+			switch_mutex_lock(canvas->mutex);
+			if (layer_id < canvas->total_layers) {
+				layer = &canvas->layers[layer_id];
+				ok = 1;
+				for (x = 4; x < argc; x++) {
+					char *p = strchr(argv[x], '=');
+					int val = -1, isfalse = 0;
+					char *str_arg = NULL;
+					
+					if (p) {
+						*p++ = '\0';
+						if (!p) p = "";
+						
+						if (!strcasecmp(argv[x], "zoom") || !strcasecmp(argv[x], "pan")) {
+							str_arg = p;
+							if (switch_false(p)) {
+								isfalse = 1;
+							}
+						} else {
+							if (switch_is_number(p)) {
+								val = atoi(p);
+							} else if (switch_true(p)) {
+								val = 1;
+							} else {
+								val = 0;
+								isfalse = 1;
+							}
+						}
+					} else if (!strcasecmp(argv[x], "reset")) {
+						str_arg = "true";
+					}
+
+					if (val < 0 && !str_arg) {
+						stream->write_function(stream, "-ERR invalid val for option [%s]\n", argv[x]);
+						continue;
+					}
+
+					if (!strcasecmp(argv[x], "autozoom")) {
+						if ((layer->cam_opts.autozoom = val)) {
+							layer->cam_opts.manual_zoom = 0;
+						}
+						
+					} else if (!strcasecmp(argv[x], "autopan")) {
+						if ((layer->cam_opts.autopan = val)) {
+							layer->cam_opts.manual_pan = 0;
+						}
+					} else if (!strcasecmp(argv[x], "zoom_factor")) {
+						if (val > 0 && val < 5) {
+							layer->cam_opts.zoom_factor = val;
+						} else {
+							stream->write_function(stream, "-ERR invalid val for option [%s] must be 1-4\n", argv[x]);
+						}
+					} else if (!strcasecmp(argv[x], "snap_factor")) {
+						if (val > 0 && val < layer->screen_w / 2) {
+							layer->cam_opts.snap_factor = val;
+						} else {
+							stream->write_function(stream, "-ERR invalid val for option [%s] must be 1-%d\n", argv[x], layer->screen_w / 2);
+						}
+					} else if (!strcasecmp(argv[x], "zoom_move_factor")) {
+						if (val > 0 && val < layer->screen_w / 2) {
+							layer->cam_opts.zoom_move_factor = val;
+						} else {
+							stream->write_function(stream, "-ERR invalid val for option [%s] must be 1-4\n", argv[x], layer->screen_w / 2);
+						}
+					} else if (!strcasecmp(argv[x], "pan_speed")) {
+						if (val > 0 && val < 100) {
+							layer->cam_opts.pan_speed = val;
+						} else {
+							stream->write_function(stream, "-ERR invalid val for option [%s] must be 1-100\n");
+						}
+					} else if (!strcasecmp(argv[x], "pan_accel_speed")) {
+						if (val > 0 && val < 100) {
+							layer->cam_opts.pan_accel_speed = val;
+						} else {
+							stream->write_function(stream, "-ERR invalid val for option [%s] must be 1-100\n");
+						}
+					} else if (!strcasecmp(argv[x], "pan_accel_min")) {
+						if (val > 0 && val < 100) {
+							layer->cam_opts.pan_accel_min = val;
+						} else {
+							stream->write_function(stream, "-ERR invalid val for option [%s] must be 1-100\n");
+						}
+					} else if (!strcasecmp(argv[x], "zoom_speed")) {
+						if (val > 0 && val < 100) {
+							layer->cam_opts.zoom_speed = val;
+						} else {
+							stream->write_function(stream, "-ERR invalid val for option [%s] must be 1-100\n");
+						}
+					} else if (!strcasecmp(argv[x], "zoom_accel_speed")) {
+						if (val > 0 && val < 100) {
+							layer->cam_opts.zoom_accel_speed = val;
+						} else {
+							stream->write_function(stream, "-ERR invalid val for option [%s] must be 1-100\n");
+						}
+					} else if (!strcasecmp(argv[x], "zoom_accel_min")) {
+						if (val > 0 && val < 100) {
+							layer->cam_opts.zoom_accel_min = val;
+						} else {
+							stream->write_function(stream, "-ERR invalid val for option [%s] must be 1-100\n");
+						}
+					} else if (!strcasecmp(argv[x], "reset")) {
+						conference_video_reset_layer_cam(layer);
+					} else if (!strcasecmp(argv[x], "pan")) {
+						char *x_val = NULL, *y_val = NULL;
+						int x = -1, y = -1;
+						int on = 0;
+
+						if (isfalse) {
+							layer->pan_geometry.x = 0;
+							layer->pan_geometry.y = 0;
+							layer->cam_opts.manual_pan = 0;
+						} else {
+							
+							if (str_arg) {
+								char *p = strchr(str_arg, ':');
+								
+								if (p) {
+									*p++ = '\0';
+
+									if (*str_arg == 'x') {
+										x_val = p;
+									} else if (*str_arg == 'y') {
+										y_val = p;
+									}
+								}
+							}
+
+							if (!x_val && !y_val) {
+								stream->write_function(stream, "-ERR invalid val for pan\n");
+							}
+
+							if (x_val) x = atoi(x_val);
+							if (y_val) y = atoi(y_val);
+							
+							if (x_val && strrchr(x_val, 'i')) {
+								int nx = (int)layer->pan_geometry.x + x;
+
+								if (nx < 0) nx = 0;
+								if (nx + layer->pan_geometry.w > layer->img->d_w) nx = layer->img->d_w - layer->pan_geometry.w;
+								
+								layer->pan_geometry.x = nx;
+								on++;
+							} else if (x > -1) {
+								layer->pan_geometry.x = x;
+								on++;
+							}
+							
+							if (y_val && strrchr(y_val, 'i')) {
+								int ny = (int)layer->pan_geometry.y + y;
+
+								if (ny < 0) ny = 0;
+								if (ny + layer->pan_geometry.h > layer->img->d_h) ny = layer->img->d_h - layer->pan_geometry.h;
+								
+								layer->pan_geometry.y = ny;
+								on++;
+							} else if (y > -1) {
+								layer->pan_geometry.y = y;
+								on++;
+							}	
+							
+
+							if (on) {
+								layer->cam_opts.manual_pan = 1;
+								layer->cam_opts.autopan = 0;
+								stream->write_function(stream, "+OK PAN %d,%d\n", layer->pan_geometry.x, layer->pan_geometry.y);
+							}
+						}
+
+						
+					} else if (!strcasecmp(argv[x], "zoom")) {
+						if (str_arg && !isfalse) {
+							char *array[4] = {0};
+							int iray[4] = {0};
+							int ac;
+							
+							if ((ac = switch_split(str_arg, ':', array)) >= 3) {
+								int i;
+
+								for (i = 0; i < ac; i++) {
+									int tmp = atoi(array[i]);
+
+									if (tmp < 0) break;
+									iray[i] = tmp;
+								}
+
+								if (i == ac) {
+									layer->cam_opts.manual_zoom = 1;
+									layer->cam_opts.autozoom = 0;
+
+									layer->zoom_geometry.x = iray[0];
+									layer->zoom_geometry.y = iray[1];
+									layer->zoom_geometry.w = iray[2];
+									if (iray[3]) {
+										layer->zoom_geometry.h = iray[3];
+									} else {
+										layer->zoom_geometry.h = iray[2];
+									}
+									
+									layer->crop_x = iray[0];
+									layer->crop_y = iray[1];
+									layer->crop_w = iray[2];
+									layer->crop_h = iray[2];
+									layer->pan_geometry = layer->zoom_geometry;
+								} else {
+									ok = 0;
+								}
+							}
+						} else {
+							layer->zoom_geometry.x = 0;
+							layer->zoom_geometry.y = 0;
+							layer->zoom_geometry.w = 0;
+							layer->zoom_geometry.h = 0;
+							layer->cam_opts.manual_zoom = 0;
+						}
+					} else {
+						stream->write_function(stream, "-ERR invalid option [%s]\n", argv[x]);
+					}
+				}
+			}
+			switch_mutex_unlock(canvas->mutex);
+			switch_mutex_unlock(conference->canvas_mutex);
+
+		}
+	}
+
+	if (ok) {
+		stream->write_function(stream, "+OK\n");
+	} else {
+		stream->write_function(stream, "-ERR invalid args\n");
+	}
+
+
+	return SWITCH_STATUS_SUCCESS;
 }
 
 switch_status_t conference_api_sub_stop(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv)

@@ -429,6 +429,23 @@ typedef struct mcu_layer_def_s {
 	mcu_layer_geometry_t layers[MCU_MAX_LAYERS];
 } mcu_layer_def_t;
 
+
+typedef struct mcu_layer_cam_opts_s {
+	int manual_pan;
+	int manual_zoom;
+	int autozoom;
+	int autopan;
+	int zoom_factor;
+	int snap_factor;
+	int zoom_move_factor;
+	int pan_speed;
+	int pan_accel_speed;
+	int pan_accel_min;
+	int zoom_speed;
+	int zoom_accel_speed;
+	int zoom_accel_min;
+} mcu_layer_cam_opts_t;
+
 struct mcu_canvas_s;
 
 typedef struct mcu_layer_s {
@@ -447,7 +464,13 @@ typedef struct mcu_layer_s {
 	int refresh;
 	int clear;
 	int is_avatar;
-	int crop_point;
+	int crop_x;
+	int crop_y;
+	int crop_w;
+	int crop_h;
+	int last_w;
+	int last_h;
+	uint32_t img_count;
 	switch_size_t last_img_addr;
 	switch_image_t *img;
 	switch_image_t *cur_img;
@@ -463,6 +486,12 @@ typedef struct mcu_layer_s {
 	int need_patch;
 	conference_member_t *member;
 	switch_frame_t bug_frame;
+	switch_frame_geometry_t last_geometry;
+	switch_frame_geometry_t auto_geometry;
+	switch_frame_geometry_t zoom_geometry;
+	switch_frame_geometry_t pan_geometry;
+	switch_frame_geometry_t manual_geometry;
+	mcu_layer_cam_opts_t cam_opts;
 } mcu_layer_t;
 
 typedef struct video_layout_s {
@@ -540,6 +569,7 @@ typedef struct conference_obj {
 	char *la_event_channel;
 	char *chat_event_channel;
 	char *mod_event_channel;
+	char *info_event_channel;
 	char *desc;
 	char *timer_name;
 	char *tts_engine;
@@ -809,6 +839,7 @@ struct conference_member {
 	char *text_framedata;
 	uint32_t text_framesize;
 
+	mcu_layer_cam_opts_t cam_opts;
 
 };
 
@@ -967,6 +998,7 @@ void conference_event_send_rfc(conference_obj_t *conference);
 void conference_member_update_status_field(conference_member_t *member);
 void conference_event_la_command_handler(switch_live_array_t *la, const char *cmd, const char *sessid, cJSON *jla, void *user_data);
 void conference_event_adv_la(conference_obj_t *conference, conference_member_t *member, switch_bool_t join);
+void conference_event_adv_layout(conference_obj_t *conference, mcu_canvas_t *canvas, video_layout_t *vlayout);
 switch_status_t conference_video_init_canvas(conference_obj_t *conference, video_layout_t *vlayout, mcu_canvas_t **canvasP);
 switch_status_t conference_video_attach_canvas(conference_obj_t *conference, mcu_canvas_t *canvas, int super);
 void conference_video_init_canvas_layers(conference_obj_t *conference, mcu_canvas_t *canvas, video_layout_t *vlayout);
@@ -980,6 +1012,7 @@ void conference_video_set_canvas_letterbox_bgcolor(mcu_canvas_t *canvas, char *c
 void conference_video_set_canvas_bgcolor(mcu_canvas_t *canvas, char *color);
 void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, switch_bool_t freeze);
 void conference_video_reset_layer(mcu_layer_t *layer);
+void conference_video_reset_layer_cam(mcu_layer_t *layer);
 void conference_video_clear_layer(mcu_layer_t *layer);
 void conference_video_reset_image(switch_image_t *img, switch_rgb_color_t *color);
 void conference_video_parse_layouts(conference_obj_t *conference, int WIDTH, int HEIGHT);
@@ -1111,6 +1144,7 @@ switch_status_t conference_api_sub_check_record(conference_obj_t *conference, sw
 switch_status_t conference_api_sub_check_record(conference_obj_t *conference, switch_stream_handle_t *stream, int arc, char **argv);
 switch_status_t conference_api_sub_volume_in(conference_member_t *member, switch_stream_handle_t *stream, void *data);
 switch_status_t conference_api_sub_file_seek(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv);
+switch_status_t conference_api_sub_cam(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv);
 switch_status_t conference_api_sub_stop(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv);
 switch_status_t conference_api_sub_hup(conference_member_t *member, switch_stream_handle_t *stream, void *data);
 switch_status_t conference_api_sub_pauserec(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv);

@@ -349,6 +349,45 @@ void conference_video_clear_layer(mcu_layer_t *layer)
 
 }
 
+static void set_default_cam_opts(mcu_layer_t *layer)
+{
+	//layer->cam_opts.autozoom = 1;
+	//layer->cam_opts.autopan = 1;
+	layer->cam_opts.manual_pan = 0;
+	layer->cam_opts.manual_zoom = 0;
+	layer->cam_opts.zoom_factor = 3;
+	layer->cam_opts.snap_factor = 25;
+	layer->cam_opts.zoom_move_factor = 125;
+	layer->cam_opts.pan_speed = 3;
+	layer->cam_opts.pan_accel_speed = 10;
+	layer->cam_opts.pan_accel_min = 50;
+	layer->cam_opts.zoom_speed = 3;
+	layer->cam_opts.zoom_accel_speed = 10;
+	layer->cam_opts.zoom_accel_min = 50;
+}
+
+
+void conference_video_reset_layer_cam(mcu_layer_t *layer)
+{
+	layer->crop_x = 0;
+	layer->crop_y = 0;
+	layer->crop_w = 0;
+	layer->crop_h = 0;
+	layer->last_w = 0;
+	layer->last_h = 0;
+	layer->img_count = 0;
+
+	memset(&layer->bug_frame, 0, sizeof(layer->bug_frame));
+	memset(&layer->auto_geometry, 0, sizeof(layer->auto_geometry));
+	memset(&layer->pan_geometry, 0, sizeof(layer->pan_geometry));
+	memset(&layer->zoom_geometry, 0, sizeof(layer->zoom_geometry));
+	memset(&layer->last_geometry, 0, sizeof(layer->last_geometry));
+
+	set_default_cam_opts(layer);
+
+
+}
+
 void conference_video_reset_layer(mcu_layer_t *layer)
 {
 	switch_img_free(&layer->banner_img);
@@ -361,7 +400,7 @@ void conference_video_reset_layer(mcu_layer_t *layer)
 	layer->is_avatar = 0;
 	layer->need_patch = 0;
 
-	memset(&layer->bug_frame, 0, sizeof(layer->bug_frame));
+	conference_video_reset_layer_cam(layer);
 
 	if (layer->geometry.overlap) {
 		layer->canvas->refresh = 1;
@@ -375,36 +414,73 @@ void conference_video_reset_layer(mcu_layer_t *layer)
 	switch_img_free(&layer->cur_img);
 }
 
-static void set_pan(mcu_layer_t *layer, int crop_point, int max_width)
+static void set_pan(int crop_point, int *target_point, int accel_speed, int accel_min, int speed)
 {
-	if (layer->crop_point <= 0 || layer->crop_point > max_width) {
-		layer->crop_point = crop_point;
-	} else if (crop_point > layer->crop_point) {
-		if (crop_point - layer->crop_point > 25) {
-			layer->crop_point += 5;
+
+	if (crop_point > *target_point) {
+		if ((crop_point - *target_point) > accel_min) {
+			*target_point += accel_speed;
 		} else {
-			layer->crop_point++;
+			*target_point += speed;
 		}
 
-		if (crop_point < layer->crop_point) {
-			layer->crop_point = crop_point;
+		if (*target_point > crop_point) {
+			*target_point = crop_point;
 		}
-	} else if (crop_point < layer->crop_point) {
-		if (layer->crop_point - crop_point > 25) {
-			layer->crop_point -= 5;
+	} else if (crop_point < *target_point) {
+
+		if ((*target_point - crop_point) > accel_min) {
+			*target_point -= accel_speed;
 		} else {
-			layer->crop_point--;
+			*target_point -= speed;
 		}
 
-		if (crop_point > layer->crop_point) {
-			layer->crop_point = crop_point;
+		if (*target_point < crop_point) {
+			*target_point = crop_point;
 		}
 	}
 }
 
+static void set_bounds(int *x, int *y, int img_w, int img_h, int crop_w, int crop_h)
+{
+	int crop_x = *x;
+	int crop_y = *y;
+	
+	if (crop_x < 0) {
+		crop_x = 0;
+	}
+
+	if (crop_y < 0) {
+		crop_y = 0;
+	}
+	
+	if (crop_x + crop_w > img_w) {
+		crop_x = img_w - crop_w;
+	}
+	
+	if (crop_y + crop_h > img_h) {
+		crop_y = img_h - crop_h;
+	}
+
+	if (crop_x < 0) {
+		crop_x = 0;
+	}
+
+	if (crop_y < 0) {
+		crop_y = 0;
+	}
+
+	*x = crop_x;
+	*y = crop_y;
+
+
+}
+ 
+
 void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, switch_bool_t freeze)
 {
 	switch_image_t *IMG, *img;
+	int img_changed = 0;
 
 	switch_mutex_lock(layer->canvas->mutex);
 
@@ -417,6 +493,47 @@ void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, 
 		switch_mutex_unlock(layer->canvas->mutex);
 		return;
 	}
+	//printf("RAW %dx%d\n", img->d_w, img->d_h);
+
+	if (layer->img_count++ == 0 || layer->last_w != img->d_w || layer->last_h != img->d_h) {
+		double change_scale;
+
+		if (img->d_w && layer->last_w) {
+			if (img->d_w < layer->last_w) {
+				change_scale = layer->last_w / img->d_w;
+			} else {
+				change_scale = img->d_w / layer->last_w;
+			}
+
+			layer->crop_x = (int)(layer->crop_x * change_scale);
+			layer->crop_y = (int)(layer->crop_y * change_scale);
+			layer->crop_w = (int)(layer->crop_w * change_scale);
+			layer->crop_h = (int)(layer->crop_h * change_scale);
+
+			layer->zoom_geometry.x = (int)(layer->zoom_geometry.x * change_scale);
+			layer->zoom_geometry.y = (int)(layer->zoom_geometry.y * change_scale);
+			layer->zoom_geometry.w = (int)(layer->zoom_geometry.w * change_scale);
+			layer->zoom_geometry.h = (int)(layer->zoom_geometry.h * change_scale);
+
+
+			layer->pan_geometry.x = (int)(layer->pan_geometry.x * change_scale);
+			layer->pan_geometry.y = (int)(layer->pan_geometry.y * change_scale);
+			layer->pan_geometry.w = (int)(layer->pan_geometry.w * change_scale);
+			layer->pan_geometry.h = (int)(layer->pan_geometry.h * change_scale);
+
+		}
+
+		memset(&layer->auto_geometry, 0, sizeof(layer->auto_geometry));
+		//memset(&layer->zoom_geometry, 0, sizeof(layer->zoom_geometry));
+		//memset(&layer->pan_geometry, 0, sizeof(layer->pan_geometry));
+		memset(&layer->last_geometry, 0, sizeof(layer->last_geometry));
+
+		img_changed = 1;
+	}
+
+	layer->last_w = img->d_w;
+	layer->last_h = img->d_h;
+
 
 	if (layer->bugged) {
 		if (layer->member_id > -1 && layer->member && switch_thread_rwlock_tryrdlock(layer->member->rwlock) == SWITCH_STATUS_SUCCESS) {
@@ -427,7 +544,39 @@ void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, 
 			switch_thread_rwlock_unlock(layer->member->rwlock);
 		}
 
+		if ((!layer->manual_geometry.w || 
+			 (layer->last_geometry.x && abs(layer->manual_geometry.x - layer->last_geometry.x) > layer->cam_opts.zoom_move_factor) ||
+			 (layer->last_geometry.y && abs(layer->manual_geometry.y - layer->last_geometry.y) > layer->cam_opts.zoom_move_factor) ||
+			 (layer->last_geometry.w && abs(layer->manual_geometry.w - layer->last_geometry.w) > layer->cam_opts.zoom_move_factor / 2))) {
+			switch_event_t *event;
+
+			if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "action", "movement-detection");
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "member_id", "%d", layer->member_id);
+
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "last_x", "%d", layer->manual_geometry.x);
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "last_y", "%d", layer->manual_geometry.y);
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "last_w", "%d", layer->manual_geometry.w);
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "last_h", "%d", layer->manual_geometry.h);
+
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "new_x", "%d", layer->bug_frame.geometry.x);
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "new_y", "%d", layer->bug_frame.geometry.y);
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "new_w", "%d", layer->bug_frame.geometry.w);
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "new_h", "%d", layer->bug_frame.geometry.h);
+
+				switch_event_fire(&event);
+			}
+			
+			layer->manual_geometry = layer->bug_frame.geometry;
+		}
+		
 		layer->bugged = 0;
+	} else {
+		if (layer->bug_frame.geometry.w) {
+			memset(&layer->bug_frame, 0, sizeof(layer->bug_frame));
+		}
+		layer->cam_opts.autozoom = 0;
+		layer->cam_opts.autopan = 0;
 	}
 
 	if (layer->clear) {
@@ -446,7 +595,7 @@ void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, 
 		int x_pos = layer->x_pos;
 		int y_pos = layer->y_pos;
 		switch_size_t img_addr = 0;
-
+		switch_frame_geometry_t *use_geometry = &layer->auto_geometry;
 		img_w = layer->screen_w = (uint32_t)(IMG->d_w * layer->geometry.scale / VIDEO_LAYOUT_SCALE);
 		img_h = layer->screen_h = (uint32_t)(IMG->d_h * layer->geometry.hscale / VIDEO_LAYOUT_SCALE);
 
@@ -456,76 +605,184 @@ void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, 
 
 		img_addr = (switch_size_t)img;
 
-		if (layer->last_img_addr != img_addr && layer->geometry.zoom) {
-			uint32_t new_w = 0, new_h = 0;
-			int crop_point = 0;
+		
+		if (layer->last_img_addr != img_addr && (layer->geometry.zoom || layer->cam_opts.autozoom || 
+												 layer->cam_opts.autopan || layer->cam_opts.manual_pan || layer->cam_opts.manual_zoom)) {
+
 			double scale = 1;
+			int crop_x = 0, crop_y = 0, crop_w = 0, crop_h = 0, zoom_w = 0, zoom_h = 0;
+			int can_pan = 0;
+			int can_zoom = 0;
+			int did_zoom = 0;
 
 			if (screen_aspect < img_aspect) {
-
 				if (img->d_h != layer->screen_h) {
 					scale = (double)layer->screen_h / img->d_h;
 				}
-
-				new_w = (uint32_t)((double)layer->screen_w / scale);
-				new_h = (uint32_t)((double)layer->screen_h / scale);
-
-				if (layer->bug_frame.geometry.w) {
-					//new_w = layer->bug_frame.geometry.w * 2;
-					//new_h = new_w / screen_aspect;
-					crop_point = switch_round_to_step(layer->bug_frame.geometry.x - (new_w / 2), 25);
-				} else {
-					crop_point = (img->d_w - new_w) / 2;
-				}
-
-				if (crop_point < 1) {
-					crop_point = 1;
-				} else if (crop_point > img->d_w - new_w) {
-					crop_point = img->d_w - new_w;
-				}
-
-				set_pan(layer, crop_point, img->d_w - new_w);
-
-				if (layer->crop_point > 0) {
-					switch_img_set_rect(img, layer->crop_point, 0, new_w, new_h);
-					img_aspect = (double) img->d_w / img->d_h;
-				}
-
 			} else if (screen_aspect > img_aspect) {
-
 				if (img->d_w != layer->screen_w) {
 					scale = (double)layer->screen_w / img->d_w;
 				}
+			}
 
+			if (scale == 1) {
+				crop_w = img->d_w;
+				crop_h = img->d_h;
+			} else {
+				crop_w = (uint32_t)((double)layer->screen_w / scale);
+				crop_h = (uint32_t)((double)layer->screen_h / scale);
+			}
 
-				new_w = (uint32_t)((double)layer->screen_w / scale);
-				new_h = (uint32_t)((double)layer->screen_h / scale);
+			//if (layer->bug_frame.geometry.X > 90) {
+			//	memset(&layer->auto_geometry, 0, sizeof(layer->auto_geometry));
+			//}
+			
+			if (layer->cam_opts.autopan) {
+				can_pan = layer->bug_frame.geometry.w && (layer->geometry.zoom || layer->cam_opts.manual_zoom);
+			} else {
+				can_pan = layer->cam_opts.manual_pan && (layer->geometry.zoom || layer->cam_opts.manual_zoom);
+			}
 
-				if (layer->bug_frame.geometry.w) {
-					crop_point = layer->bug_frame.geometry.y - (new_h / 2);
+			if (layer->cam_opts.autozoom) {
+				can_zoom = layer->bug_frame.geometry.w;
+			} else {
+				can_zoom = layer->cam_opts.manual_zoom && layer->zoom_geometry.w;
+			}
+
+			//printf("CHECK %d %d,%d %d,%d %d/%d\n", layer->auto_geometry.w, 
+			//	   layer->last_geometry.x, layer->last_geometry.y,
+			//	   layer->auto_geometry.x, layer->auto_geometry.y,
+			//	   abs(layer->auto_geometry.x - layer->last_geometry.x), 
+			//	   abs(layer->auto_geometry.y - layer->last_geometry.y));
+
+			if ((layer->cam_opts.autozoom || layer->cam_opts.autopan) &&
+				(!layer->auto_geometry.w || 
+				 (layer->last_geometry.x && abs(layer->auto_geometry.x - layer->last_geometry.x) > layer->cam_opts.zoom_move_factor) ||
+				 (layer->last_geometry.y && abs(layer->auto_geometry.y - layer->last_geometry.y) > layer->cam_opts.zoom_move_factor) ||
+				 (layer->last_geometry.w && abs(layer->auto_geometry.w - layer->last_geometry.w) > layer->cam_opts.zoom_move_factor / 2))) {
+				
+				layer->auto_geometry = layer->bug_frame.geometry;
+			}
+
+			if (can_zoom) {
+
+				if (layer->cam_opts.autozoom) {
+					use_geometry = &layer->auto_geometry;
 				} else {
-					crop_point = (img->d_h - new_h) / 2;
+					use_geometry = &layer->zoom_geometry;
 				}
 
-				if (crop_point < 1) {
-					crop_point = 1;
-				} else if (crop_point > img->d_h - new_h) {
-					crop_point = img->d_h - new_h;
-				}
+				zoom_w = use_geometry->w * layer->cam_opts.zoom_factor;
+				zoom_h = zoom_w / screen_aspect; 
+				
+				if (zoom_w < crop_w && zoom_h < crop_h) {
+					int c_x = use_geometry->x;
+					int c_y = use_geometry->y;
+					
+					crop_w = zoom_w;
+					crop_h = zoom_h;
+					
+					//crop_w = switch_round_to_step(crop_w, layer->cam_opts.snap_factor);
+					//crop_h = switch_round_to_step(crop_h, layer->cam_opts.snap_factor);
 
-				set_pan(layer, crop_point, img->d_h - new_h);
+					if (layer->cam_opts.autozoom) {
+						did_zoom = 1;
+					}
+					
 
-				if (crop_point > 0) {
-					switch_img_set_rect(img, 0, crop_point, (unsigned int)(layer->screen_w/scale), (unsigned int)(layer->screen_h/scale));
-					img_aspect = (double) img->d_w / img->d_h;
+					if (layer->cam_opts.autozoom) {
+						c_x = switch_round_to_step(c_x, layer->cam_opts.snap_factor);
+						c_y = switch_round_to_step(c_y, layer->cam_opts.snap_factor);
+						
+						crop_x = c_x - (crop_w / 2);
+						crop_y = c_y - (crop_h / 2);
+					} else {
+						crop_x = c_x;
+						crop_y = c_y;
+					}
+					
+					set_bounds(&crop_x, &crop_y, img->d_w, img->d_h, crop_w, crop_h);
+
+					//printf("ZOOM %d,%d %d,%d %dx%d\n", crop_x, crop_y, c_x, c_y, zoom_w, zoom_h);
 				}
 			}
+				
+
+			if (!did_zoom) {
+
+				if (layer->cam_opts.autopan) {
+					use_geometry = &layer->auto_geometry;
+				} else {
+					use_geometry = &layer->pan_geometry;
+				}
+
+				if (can_pan) {
+					if (layer->cam_opts.autopan) {
+						crop_x = use_geometry->x - (crop_w / 2);
+					} else {
+						crop_x = use_geometry->x;
+					}
+				} else if (screen_aspect > img_aspect) {
+					crop_x = img->d_w / 4;
+				}
+
+				if (can_pan) {
+					if (layer->cam_opts.autopan) {
+						crop_y = use_geometry->y - (crop_h / 2);
+					} else {
+						crop_y = use_geometry->y;
+					}
+				} else if (screen_aspect < img_aspect) {
+					crop_y = img->d_h / 4;
+				}
+
+				crop_x = switch_round_to_step(crop_x, layer->cam_opts.snap_factor);
+				crop_y = switch_round_to_step(crop_y, layer->cam_opts.snap_factor);
+			}
+
+			//printf("BOUNDS B4 %d,%d %dx%d %dx%d\n", crop_x, crop_y, img->d_w, img->d_h, crop_w, crop_h);
+			set_bounds(&crop_x, &crop_y, img->d_w, img->d_h, crop_w, crop_h);
+			//printf("BOUNDS AF %d,%d %dx%d %dx%d\n", crop_x, crop_y, img->d_w, img->d_h, crop_w, crop_h);
+				
+			if (img_changed) {
+				layer->crop_x = crop_x;
+				layer->crop_y = crop_y;
+				layer->crop_w = crop_w;
+				layer->crop_h = crop_h;
+			}
+
+			//printf("B4 %d,%d %d,%d\n", crop_x, crop_y, layer->crop_x, layer->crop_y);
+
+
+			set_pan(crop_x, &layer->crop_x, layer->cam_opts.pan_accel_speed, layer->cam_opts.pan_accel_min, layer->cam_opts.pan_speed);
+			set_pan(crop_y, &layer->crop_y, layer->cam_opts.pan_accel_speed, layer->cam_opts.pan_accel_min, layer->cam_opts.pan_speed);
+
+			//printf("AF %d,%d\n", layer->crop_x, layer->crop_y);
+
+
+			//printf("B4 %dx%d %dx%d\n", crop_w, crop_h, layer->crop_w, layer->crop_h);
+			set_pan(crop_w, &layer->crop_w, layer->cam_opts.zoom_accel_speed, layer->cam_opts.zoom_accel_min, layer->cam_opts.zoom_speed);
+			layer->crop_h = layer->crop_w / screen_aspect;
+
+			set_bounds(&layer->crop_x, &layer->crop_y, img->d_w, img->d_h, layer->crop_w, layer->crop_h);
+
+			assert(layer->crop_w > 0);
+
+			//printf("RECT %d,%d %dx%d (%dx%d) [%dx%d] [%dx%d]\n", layer->crop_x, layer->crop_y, layer->crop_w, layer->crop_h, layer->crop_w + layer->crop_x, layer->crop_h + layer->crop_y, img->d_w, img->d_h, layer->screen_w, layer->screen_h);
+			
+			switch_img_set_rect(img, layer->crop_x, layer->crop_y, layer->crop_w, layer->crop_h);
+			switch_assert(img->d_w == layer->crop_w);
+				
+			img_aspect = (double) img->d_w / img->d_h;
+
 		}
+
+		layer->last_geometry = layer->bug_frame.geometry;
 
 		if (freeze) {
 			switch_img_free(&layer->img);
 		}
-
+		
 		if (screen_aspect > img_aspect) {
 			img_w = (uint32_t)ceil((double)img_aspect * layer->screen_h);
 			x_pos += (layer->screen_w - img_w) / 2;
@@ -565,9 +822,12 @@ void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, 
 		img_w -= (layer->geometry.border * 2);
 		img_h -= (layer->geometry.border * 2);
 
+		//printf("SCALE %d,%d %dx%d\n", x_pos, y_pos, img_w, img_h);
+
 		switch_img_scale(img, &layer->img, img_w, img_h);
 
 		if (layer->img) {
+			//switch_img_copy(img, &layer->img);
 			switch_img_patch(IMG, layer->img, x_pos + layer->geometry.border, y_pos + layer->geometry.border);
 		}
 
@@ -734,6 +994,8 @@ void conference_video_detach_video_layer(conference_member_t *member)
 		switch_img_txt_handle_destroy(&layer->txthandle);
 	}
 
+	member->cam_opts = layer->cam_opts;
+	
 	conference_video_reset_layer(layer);
 	layer->member_id = 0;
 	layer->member = NULL;
@@ -1121,6 +1383,9 @@ void conference_video_init_canvas_layers(conference_obj_t *conference, mcu_canva
 
 	for (i = 0; i < vlayout->layers; i++) {
 		mcu_layer_t *layer = &canvas->layers[i];
+
+		conference_video_reset_layer(layer);
+
 		layer->geometry.x = vlayout->images[i].x;
 		layer->geometry.y = vlayout->images[i].y;
 		layer->geometry.hscale = vlayout->images[i].scale;
@@ -1137,7 +1402,6 @@ void conference_video_init_canvas_layers(conference_obj_t *conference, mcu_canva
 		layer->idx = i;
 		layer->refresh = 1;
 
-
 		layer->screen_w = (uint32_t)(canvas->img->d_w * layer->geometry.scale / VIDEO_LAYOUT_SCALE);
 		layer->screen_h = (uint32_t)(canvas->img->d_h * layer->geometry.hscale / VIDEO_LAYOUT_SCALE);
 
@@ -1146,6 +1410,8 @@ void conference_video_init_canvas_layers(conference_obj_t *conference, mcu_canva
 
 		layer->x_pos = (int)(canvas->img->d_w * layer->geometry.x / VIDEO_LAYOUT_SCALE);
 		layer->y_pos = (int)(canvas->img->d_h * layer->geometry.y / VIDEO_LAYOUT_SCALE);
+
+		set_default_cam_opts(layer);
 
 
 		if (layer->geometry.floor) {
@@ -1198,6 +1464,8 @@ void conference_video_init_canvas_layers(conference_obj_t *conference, mcu_canva
 
 	switch_mutex_unlock(canvas->mutex);
 	switch_thread_rwlock_unlock(canvas->video_rwlock);
+
+	conference_event_adv_layout(conference, canvas, vlayout);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Canvas position %d applied layout %s\n", canvas->canvas_id + 1, vlayout->name);
 

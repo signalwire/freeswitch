@@ -3447,6 +3447,34 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 	conference->super_canvas_label_layers = video_super_canvas_label_layers;
 	conference->super_canvas_show_all_layers = video_super_canvas_show_all_layers;
 
+
+	if (conference_utils_test_flag(conference, CFLAG_LIVEARRAY_SYNC)) {
+		char *p;
+
+		if (strchr(conference->name, '@')) {
+			conference->la_event_channel = switch_core_sprintf(conference->pool, "conference-liveArray.%s", conference->name);
+			conference->chat_event_channel = switch_core_sprintf(conference->pool, "conference-chat.%s", conference->name);
+			conference->info_event_channel = switch_core_sprintf(conference->pool, "conference-info.%s", conference->name);
+			conference->mod_event_channel = switch_core_sprintf(conference->pool, "conference-mod.%s", conference->name);
+		} else {
+			conference->la_event_channel = switch_core_sprintf(conference->pool, "conference-liveArray.%s@%s", conference->name, conference->domain);
+			conference->chat_event_channel = switch_core_sprintf(conference->pool, "conference-chat.%s@%s", conference->name, conference->domain);
+			conference->info_event_channel = switch_core_sprintf(conference->pool, "conference-info.%s@%s", conference->name, conference->domain);
+			conference->mod_event_channel = switch_core_sprintf(conference->pool, "conference-mod.%s@%s", conference->name, conference->domain);
+		}
+
+		conference->la_name = switch_core_strdup(conference->pool, conference->name);
+		if ((p = strchr(conference->la_name, '@'))) {
+			*p = '\0';
+		}
+
+		switch_live_array_create(conference->la_event_channel, conference->la_name, conference_globals.event_channel_id, &conference->la);
+		switch_live_array_set_user_data(conference->la, conference);
+		switch_live_array_set_command_handler(conference->la, conference_event_la_command_handler);
+	}
+
+
+
 	if (video_canvas_count < 1) video_canvas_count = 1;
 
 	if (conference_utils_test_flag(conference, CFLAG_PERSONAL_CANVAS) && video_canvas_count > 1) {
@@ -3498,30 +3526,6 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 	}
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "conference-create");
 	switch_event_fire(&event);
-
-	if (conference_utils_test_flag(conference, CFLAG_LIVEARRAY_SYNC)) {
-		char *p;
-
-		if (strchr(conference->name, '@')) {
-			conference->la_event_channel = switch_core_sprintf(conference->pool, "conference-liveArray.%s", conference->name);
-			conference->chat_event_channel = switch_core_sprintf(conference->pool, "conference-chat.%s", conference->name);
-			conference->mod_event_channel = switch_core_sprintf(conference->pool, "conference-mod.%s", conference->name);
-		} else {
-			conference->la_event_channel = switch_core_sprintf(conference->pool, "conference-liveArray.%s@%s", conference->name, conference->domain);
-			conference->chat_event_channel = switch_core_sprintf(conference->pool, "conference-chat.%s@%s", conference->name, conference->domain);
-			conference->mod_event_channel = switch_core_sprintf(conference->pool, "conference-mod.%s@%s", conference->name, conference->domain);
-		}
-
-		conference->la_name = switch_core_strdup(conference->pool, conference->name);
-		if ((p = strchr(conference->la_name, '@'))) {
-			*p = '\0';
-		}
-
-		switch_live_array_create(conference->la_event_channel, conference->la_name, conference_globals.event_channel_id, &conference->la);
-		switch_live_array_set_user_data(conference->la, conference);
-		switch_live_array_set_command_handler(conference->la, conference_event_la_command_handler);
-	}
-
 
  end:
 
