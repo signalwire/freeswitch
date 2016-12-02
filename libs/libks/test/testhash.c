@@ -120,16 +120,56 @@ int test2(void)
 	return 1;
 }
 
+#include "sodium.h"
+#define TEST3_SIZE 20
+int test3(void)
+{
+	ks_pool_t *pool;
+	ks_hash_t *hash;
+	ks_byte_t data[TEST3_SIZE];
+	ks_byte_t data2[TEST3_SIZE];
+	ks_byte_t data3[TEST3_SIZE];
+	char *A, *B, *C;
+
+	ks_pool_open(&pool);
+	ks_hash_create(&hash, KS_HASH_MODE_ARBITRARY, KS_HASH_FLAG_NONE, pool);
+	ks_hash_set_keysize(hash, TEST3_SIZE);
+
+	randombytes_buf(data, sizeof(data));
+	randombytes_buf(data2, sizeof(data2));
+
+	ks_hash_insert(hash, data, "FOO");
+	ks_hash_insert(hash, data2, "BAR");
+	ks_hash_insert(hash, data3, "BAZ");
+
+
+	A = (char *)ks_hash_search(hash, data, KS_UNLOCKED);
+	B = (char *)ks_hash_search(hash, data2, KS_UNLOCKED);
+	C = (char *)ks_hash_search(hash, data3, KS_UNLOCKED);
+
+
+	printf("RESULT [%s][%s][%s]\n", A, B, C);
+
+	ks_hash_destroy(&hash);
+
+	ks_pool_close(&pool);
+
+	return !strcmp(A, "FOO") && !strcmp(B, "BAR") && !strcmp(C, "BAZ");
+	
+}
+
+
 int main(int argc, char **argv)
 {
 
 	ks_init();
 	srand((unsigned)(time(NULL) - (unsigned)(intptr_t)ks_thread_self()));
 
-	plan(2);
+	plan(3);
 
 	ok(test1());
 	ok(test2());
+	ok(test3());
 
 	ks_shutdown();
 

@@ -56,6 +56,22 @@ KS_BEGIN_EXTERN_C
 #define KS_64BIT 1
 #endif
 
+#if (defined(__BYTE_ORDER) && defined(__LITTLE_ENDIAN) && \
+     __BYTE_ORDER == __LITTLE_ENDIAN) || \
+    (defined(i386) || defined(__i386__) || defined(__i486__) || \
+     defined(__i586__) || defined(__i686__) || defined(vax) || defined(MIPSEL))
+# define KS_LITTLE_ENDIAN 1
+# define KS_BIG_ENDIAN 0
+#elif (defined(__BYTE_ORDER) && defined(__BIG_ENDIAN) && \
+       __BYTE_ORDER == __BIG_ENDIAN) || \
+      (defined(sparc) || defined(POWERPC) || defined(mc68000) || defined(sel))
+# define KS_LITTLE_ENDIAN 0
+# define KS_BIG_ENDIAN 1
+#else
+# define KS_LITTLE_ENDIAN 0
+# define KS_BIG_ENDIAN 0
+#endif
+
 #include <stdarg.h>
 #include <time.h>
 #include <stdarg.h>

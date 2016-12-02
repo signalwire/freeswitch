@@ -64,6 +64,8 @@ struct ks_hash {
 	ks_rwl_t *rwl;
 	ks_mutex_t *mutex;
 	uint32_t readers;
+	ks_size_t keysize;
+	ks_hash_mode_t mode;
 };
 
 /*****************************************************************************/
@@ -72,13 +74,22 @@ struct ks_hash {
 static inline unsigned int
 hash(ks_hash_t *h, void *k)
 {
-    /* Aim to protect against poor hash functions by adding logic here
-     * - logic taken from java 1.4 ks_hash source */
-    unsigned int i = h->hashfn(k);
-    i += ~(i << 9);
-    i ^=  ((i >> 14) | (i << 18)); /* >>> */
-    i +=  (i << 4);
-    i ^=  ((i >> 10) | (i << 22)); /* >>> */
+    unsigned int i;
+
+	if (h->mode == KS_HASH_MODE_ARBITRARY) {
+		i = ks_hash_default_arbitrary(k, h->keysize, 13);
+	} else {
+		i = h->hashfn(k);
+	}
+
+		/* Aim to protect against poor hash functions by adding logic here
+		 * - logic taken from java 1.4 hash source */
+		
+		i += ~(i << 9);
+		i ^=  ((i >> 14) | (i << 18)); /* >>> */
+		i +=  (i << 4);
+		i ^=  ((i >> 10) | (i << 22)); /* >>> */
+
     return i;
 }
 
@@ -146,6 +157,11 @@ KS_DECLARE(void) ks_hash_set_flags(ks_hash_t *h, ks_hash_flag_t flags)
 	h->flags = flags;
 }
 
+KS_DECLARE(void) ks_hash_set_keysize(ks_hash_t *h, ks_size_t keysize)
+{
+	h->keysize = keysize;
+}
+
 KS_DECLARE(void) ks_hash_set_destructor(ks_hash_t *h, ks_hash_destructor_t destructor)
 {
 	h->destructor = destructor;
@@ -159,6 +175,7 @@ ks_hash_create_ex(ks_hash_t **hp, unsigned int minsize,
 {
     ks_hash_t *h;
     unsigned int pindex, size = primes[0];
+	ks_size_t keysize = 0;
 
 	switch(mode) {
 	case KS_HASH_MODE_CASE_INSENSITIVE:
@@ -170,18 +187,24 @@ ks_hash_create_ex(ks_hash_t **hp, unsigned int minsize,
 		ks_assert(eqf == NULL);
 		hashf = ks_hash_default_int;
 		eqf = ks_hash_equalkeys_int;
+		keysize = 4;
 		break;
 	case KS_HASH_MODE_INT64:
 		ks_assert(hashf == NULL);
 		ks_assert(eqf == NULL);
 		hashf = ks_hash_default_int64;
 		eqf = ks_hash_equalkeys_int64;
+		keysize = 8;
 		break;
 	case KS_HASH_MODE_PTR:
 		ks_assert(hashf == NULL);
 		ks_assert(eqf == NULL);
 		hashf = ks_hash_default_ptr;
 		eqf = ks_hash_equalkeys_ptr;
+		keysize = sizeof(void *);
+		break;
+	case KS_HASH_MODE_ARBITRARY:
+		keysize = sizeof(void *);
 		break;
 	default:
 		break;
@@ -210,6 +233,8 @@ ks_hash_create_ex(ks_hash_t **hp, unsigned int minsize,
 	h->pool = pool;
 	h->flags = flags;
 	h->destructor = destructor;
+	h->keysize = keysize;
+	h->mode = mode;
 
 	if ((flags & KS_HASH_FLAG_RWLOCK)) {
 		ks_rwl_create(&h->rwl, h->pool);
@@ -303,6 +328,15 @@ ks_hash_count(ks_hash_t *h)
     return h->entrycount;
 }
 
+static int key_equals(ks_hash_t *h, void *k1, void *k2) 
+{
+	if (h->mode == KS_HASH_MODE_ARBITRARY) {
+		return !memcmp(k1, k2, h->keysize);
+	} else {
+		return h->eqfn(k1, k2);
+	}
+}
+
 static void * _ks_hash_remove(ks_hash_t *h, void *k, unsigned int hashvalue, unsigned int index) {
     /* TODO: consider compacting the table when the load factor drops enough,
      *       or provide a 'compact' method. */
@@ -316,7 +350,7 @@ static void * _ks_hash_remove(ks_hash_t *h, void *k, unsigned int hashvalue, uns
     e = *pE;
     while (NULL != e) {
 		/* Check hash value to short circuit heavier comparison */
-		if ((hashvalue == e->h) && (h->eqfn(k, e->k))) {
+		if ((hashvalue == e->h) && (key_equals(h, k, e->k))) {
 			*pE = e->next;
 			h->entrycount--;
 			v = e->v;
@@ -457,7 +491,7 @@ ks_hash_search(ks_hash_t *h, void *k, ks_locked_t locked)
     e = h->table[index];
     while (NULL != e) {
 		/* Check hash value to short circuit heavier comparison */
-		if ((hashvalue == e->h) && (h->eqfn(k, e->k))) {
+		if ((hashvalue == e->h) && (key_equals(h, k, e->k))) {
 			v = e->v;
 			break;
 		}
