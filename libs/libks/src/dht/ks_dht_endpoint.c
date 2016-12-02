@@ -1,5 +1,5 @@
-#include "ks_dht_endpoint.h"
-#include "ks_dht_endpoint-int.h"
+#include "ks_dht.h"
+#include "ks_dht-int.h"
 
 /**
  *

@@ -1,4 +1,5 @@
-#include "ks_dht_nodeid.h"
+#include "ks_dht.h"
+#include "ks_dht-int.h"
 #include "sodium.h"
 
 /**

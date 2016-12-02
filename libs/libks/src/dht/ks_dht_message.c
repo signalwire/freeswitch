@@ -1,4 +1,5 @@
 #include "ks_dht.h"
+#include "ks_dht-int.h"
 
 /**
  *
@@ -46,7 +47,44 @@ KS_DECLARE(ks_status_t) ks_dht2_message_free(ks_dht2_message_t *message)
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht2_message_init(ks_dht2_message_t *message, const uint8_t *buffer, ks_size_t buffer_length)
+KS_DECLARE(ks_status_t) ks_dht2_message_init(ks_dht2_message_t *message, ks_bool_t alloc_data)
+{
+	ks_assert(message);
+	ks_assert(message->pool);
+
+	message->data = NULL;
+	message->args = NULL;
+	message->transactionid_length = 0;
+	message->type[0] = '\0';
+	if (alloc_data) {
+		message->data = ben_dict();
+	}
+
+	return KS_STATUS_SUCCESS;
+}
+
+/**
+ *
+ */
+KS_DECLARE(ks_status_t) ks_dht2_message_deinit(ks_dht2_message_t *message)
+{
+	ks_assert(message);
+
+	message->args = NULL;
+	message->type[0] = '\0';
+	message->transactionid_length = 0;
+	if (message->data) {
+		ben_free(message->data);
+		message->data = NULL;
+	}
+
+	return KS_STATUS_SUCCESS;
+}
+
+/**
+ *
+ */
+KS_DECLARE(ks_status_t) ks_dht2_message_parse(ks_dht2_message_t *message, const uint8_t *buffer, ks_size_t buffer_length)
 {
 	struct bencode *t;
 	struct bencode *y;
@@ -58,8 +96,7 @@ KS_DECLARE(ks_status_t) ks_dht2_message_init(ks_dht2_message_t *message, const u
 	ks_assert(message);
 	ks_assert(message->pool);
 	ks_assert(buffer);
-
-	message->args = NULL;
+	ks_assert(!message->data);
 
     message->data = ben_decode((const void *)buffer, buffer_length);
 	if (!message->data) {
@@ -115,16 +152,56 @@ KS_DECLARE(ks_status_t) ks_dht2_message_init(ks_dht2_message_t *message, const u
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht2_message_deinit(ks_dht2_message_t *message)
+KS_DECLARE(ks_status_t) ks_dht2_message_query(ks_dht2_message_t *message,
+											  uint16_t transactionid,
+											  const char *query,
+											  struct bencode **args)
 {
+	struct bencode *a;
+	uint16_t tid;
+	
 	ks_assert(message);
+	ks_assert(query);
 
-	message->args = NULL;
-	message->type[0] = '\0';
-	message->transactionid_length = 0;
-	if (message->data) {
-		ben_free(message->data);
-		message->data = NULL;
+	tid = htons(transactionid);
+	
+    ben_dict_set(message->data, ben_blob("t", 1), ben_blob((uint8_t *)&tid, 2));
+	ben_dict_set(message->data, ben_blob("y", 1), ben_blob("q", 1));
+	ben_dict_set(message->data, ben_blob("q", 1), ben_blob(query, strlen(query)));
+
+	// @note r joins message->data and will be freed with it
+	a = ben_dict();
+	ben_dict_set(message->data, ben_blob("a", 1), a);
+
+	if (args) {
+		*args = a;
+	}
+
+	return KS_STATUS_SUCCESS;
+}
+
+/**
+ *
+ */
+KS_DECLARE(ks_status_t) ks_dht2_message_response(ks_dht2_message_t *message,
+												 uint8_t *transactionid,
+												 ks_size_t transactionid_length,
+												 struct bencode **args)
+{
+	struct bencode *r;
+	
+	ks_assert(message);
+	ks_assert(transactionid);
+	
+    ben_dict_set(message->data, ben_blob("t", 1), ben_blob(transactionid, transactionid_length));
+	ben_dict_set(message->data, ben_blob("y", 1), ben_blob("r", 1));
+	
+	// @note r joins message->data and will be freed with it
+	r = ben_dict();
+	ben_dict_set(message->data, ben_blob("r", 1), r);
+
+	if (args) {
+		*args = r;
 	}
 
 	return KS_STATUS_SUCCESS;

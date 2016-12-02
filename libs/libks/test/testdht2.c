@@ -1,7 +1,6 @@
 #include <ks.h>
 #include <../dht/ks_dht.h>
 #include <../dht/ks_dht-int.h>
-#include <../dht/ks_dht_endpoint-int.h>
 #include <tap.h>
 
 #define TEST_DHT1_REGISTER_TYPE_BUFFER "d1:ad2:id20:12345678901234567890e1:q4:ping1:t2:421:y1:ze"
@@ -65,13 +64,13 @@ int main() {
     err = ks_addr_set(&addr, v4, KS_DHT_DEFAULT_PORT, AF_INET);
 	ok(err == KS_STATUS_SUCCESS);
 	
-    err = ks_dht2_bind(dht1, &addr);
+    err = ks_dht2_bind(dht1, &addr, NULL);
     ok(err == KS_STATUS_SUCCESS);
 
 	err = ks_addr_set(&addr, v4, KS_DHT_DEFAULT_PORT + 1, AF_INET);
 	ok(err == KS_STATUS_SUCCESS);
 	
-	err = ks_dht2_bind(&dht2, &addr);
+	err = ks_dht2_bind(&dht2, &addr, NULL);
 	ok(err == KS_STATUS_SUCCESS);
 
 	raddr = addr;
@@ -81,13 +80,13 @@ int main() {
 	err = ks_addr_set(&addr, v6, KS_DHT_DEFAULT_PORT, AF_INET6);
 	ok(err == KS_STATUS_SUCCESS);
 	  
-    err = ks_dht2_bind(dht1, &addr);
+    err = ks_dht2_bind(dht1, &addr, NULL);
     ok(err == KS_STATUS_SUCCESS);
 
 	err = ks_addr_set(&addr, v6, KS_DHT_DEFAULT_PORT + 1, AF_INET6);
 	ok(err == KS_STATUS_SUCCESS);
 
-	err = ks_dht2_bind(&dht2, &addr);
+	err = ks_dht2_bind(&dht2, &addr, NULL);
 	ok(err == KS_STATUS_SUCCESS);
   }
 
@@ -105,8 +104,11 @@ int main() {
 
   err = ks_dht2_process(dht1, &raddr);
   ok(err == KS_STATUS_SUCCESS);
-  
 
+  err = ks_dht2_pulse(&dht2, 1000);
+  ok(err == KS_STATUS_SUCCESS);
+
+  diag("Cleanup\n");
   /* Cleanup and shutdown */
 
   err = ks_dht2_deinit(&dht2);
