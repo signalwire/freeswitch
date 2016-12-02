@@ -89,6 +89,8 @@
       <prompt phrase="Xray" filename="120.wav"/>
       <prompt phrase="Yankee" filename="121.wav"/>
       <prompt phrase="Zulu" filename="122.wav"/>
+      <prompt phrase="Star" filename="42.wav"/>
+      <prompt phrase="Pound" filename="35.wav"/>
     </phonetic-ascii>
     <digits>
       <prompt phrase="Zero" filename="0.wav"/>
@@ -288,6 +290,11 @@
       <prompt phrase="Message from..." filename="vm-message_from.wav"/>
       <prompt phrase="Nobody is currently leaving a message in this voicemail box." filename="vm-nobody_leaving_message.wav"/>
       <prompt phrase="last" filename="vm-last.wav"/>
+      <prompt phrase="To delete greeting" filename="vm-delete_greeting.wav"/>
+      <prompt phrase="To listen to greeting..." filename="vm-listen_to_greeting.wav"/>
+      <prompt phrase="For the main menu..." filename="vm-main_menu_alt.wav"/>
+      <prompt phrase="message forwarded" filename="vm-message_forwarded.wav"/>
+      <prompt phrase="The extension you have dialed does not answer and there is no voicemail box set up for this extension." filename="vm-no_answer_no_vm.wav"/>
     </voicemail>
     <directory>
       <prompt phrase="Please enter the first few letters of the persons" filename="dir-enter_person.wav"/>
@@ -310,6 +317,12 @@
       <prompt phrase="press" filename="dir-press.wav" info="we can copy vm/vm-press.wav"/>
       <prompt phrase="For the next entry..." filename="dir-for_next.wav" note="re-recorded because original was wrong"/>
       <prompt phrase="Please enter the first few letters of the person's first or last name" filename="dir-enter_person_first_or_last.wav"/>
+      <prompt phrase="Please enter the first few letters of the person's" filename="dir-enter-person.wav"/>
+      <prompt phrase="Your search matched no results, try again." filename="dir-no_match_entry.wav"/>
+      <prompt phrase="No more results" filename="dir-no_more_result.wav"/>
+      <prompt phrase="You need to specify a minimum of..." filename="dir-specify_mininum_first.wav"/>
+      <prompt phrase="To start a new search" filename="dir-to_make_new_search.wav"/>
+      <prompt phrase="Your search returned too many results, please try again." filename="dir-to_many_result.wav"/>
     </directory>
     <conference>
       <prompt phrase="NULL" filename="conf-ack.wav" type="tone"/>
@@ -347,6 +360,8 @@
       <prompt phrase="...other persons in this conference." filename="conf-other_persons_conference.wav"/>
       <prompt phrase="There is one other person in this conference." filename="conf-one_other_person_conference.wav"/>
       <prompt phrase="There is one other member in this conference." filename="conf-one_other_member_conference.wav"/>
+      <prompt phrase="This conference is being recorded." filename="conf-being_recorded.wav"/>
+      <prompt phrase="This conference is no longer being recorded." filename="conf-no_longer_being_recorded.wav"/>
     </conference>
     <ivr>
       <prompt phrase="Account number" filename="ivr-account_number.wav"/>
@@ -670,12 +685,16 @@
       <prompt phrase="This is a reminder for..." filename="ivr-reminder_for.wav"/>
       <prompt phrase="You have an appointment scheduled for..." filename="ivr-appointment_schedule_for.wav"/>
       <prompt phrase="Your verification PIN is..." filename="ivr-Your_verification_PIN_is.wav"/>
+      <prompt phrase="To hear the hotseat menu, please enter your extension followed by the pound or hash key." filename="ivr-hotseat_intro.wav"/>
+      <prompt phrase="To modify main prompt..." filename="ivr-modify_main_prompt.wav"/>
+      <prompt phrase="Please enter your pin number followed by the pound or hash key." filename="ivr-hotseat_pin.wav"/>
+      <prompt phrase="To hotseat this phone to your extension, press 1. To remove hotseat on this phone, press 2." filename="ivr-hotseat_options.wav"/>
       <!-- The following phrases still need to be recorded -->
       <prompt phrase="You have reached the maximum number of channels." filename="ivr-maximum_number_of_channels.wav"/>
       <prompt phrase="" filename=""/>
       <prompt phrase="" filename=""/>
       <prompt phrase="" filename=""/>
-
+      <prompt phrase="To do an echo test" filename="ivr-to_do_a_echo_test.wav"/>
     </ivr>
     <misc>
       <prompt phrase="This call has been secured" filename="call_secured.wav"/>
@@ -712,6 +731,12 @@
       <prompt phrase="More information is available online at wiki dot FreeSWITCH dot org." filename="misc-more_info_wiki.wav"/>
       <prompt phrase="Welcome to the FreeSWITCH community conference call!" filename="misc-welcome_freeswitch_conf_call.wav"/>
       <prompt phrase="E one sixty-four dot org." filename="misc-e164_dot_org.wav"/>
+      <prompt phrase="This phone is not authorized to make outside calls." filename="phone_not_auth.wav"/>
+      <prompt phrase="I'm sorry." filename="sorry.wav"/>
+      <prompt phrase="This call may be monitored or recorded for quality and training purposes." filename="call_monitoring_blurb.wav"/>
+      <prompt phrase="Spanish" filename="es.wav"/>
+      <prompt phrase="That is an invalid extension." filename="invalid_extension.wav"/>
+      <prompt phrase="English" filename="en.wav"/>
     </misc>
     <base256>
       <!-- base256 prompts for SAS -->
@@ -808,6 +833,7 @@
       <prompt phrase="beehive" filename="beehive.wav"/>
       <prompt phrase="beeswax" filename="beeswax.wav"/>
       <prompt phrase="befriend" filename="befriend.wav"/>
+      <prompt phrase="being" filename="being.wav"/>
       <prompt phrase="belowground" filename="belowground.wav"/>
       <prompt phrase="berserk" filename="berserk.wav"/>
       <prompt phrase="bifocals" filename="bifocals.wav"/>
@@ -865,6 +891,7 @@
       <prompt phrase="concert" filename="concert.wav"/>
       <prompt phrase="concurrent" filename="concurrent.wav"/>
       <prompt phrase="confidence" filename="confidence.wav"/>
+      <prompt phrase="conference" filename="conference.wav"/>
       <prompt phrase="conformist" filename="conformist.wav"/>
       <prompt phrase="congregate" filename="congregate.wav"/>
       <prompt phrase="consensus" filename="consensus.wav"/>
@@ -992,6 +1019,7 @@
       <prompt phrase="inventive" filename="inventive.wav"/>
       <prompt phrase="inverse" filename="inverse.wav"/>
       <prompt phrase="involve" filename="involve.wav"/>
+      <prompt phrase="is" filename="is.wav"/>
       <prompt phrase="island" filename="island.wav"/>
       <prompt phrase="jawbone" filename="jawbone.wav"/>
       <prompt phrase="keyboard" filename="keyboard.wav"/>
@@ -1001,6 +1029,7 @@
       <prompt phrase="leprosy" filename="leprosy.wav"/>
       <prompt phrase="letterhead" filename="letterhead.wav"/>
       <prompt phrase="liberty" filename="liberty.wav"/>
+      <prompt phrase="longer" filename="longer.wav"/>
       <prompt phrase="locale" filename="locale.wav"/>
       <prompt phrase="lockup" filename="lockup.wav"/>
       <prompt phrase="maritime" filename="maritime.wav"/>
@@ -1028,6 +1057,7 @@
       <prompt phrase="newborn" filename="newborn.wav"/>
       <prompt phrase="newsletter" filename="newsletter.wav"/>
       <prompt phrase="nightbird" filename="nightbird.wav"/>
+      <prompt phrase="no" filename="no.wav"/>
       <prompt phrase="obtuse" filename="obtuse.wav"/>
       <prompt phrase="offload" filename="offload.wav"/>
       <prompt phrase="onlooker" filename="onlooker.wav"/>
@@ -1087,6 +1117,7 @@
       <prompt phrase="regain" filename="regain.wav"/>
       <prompt phrase="reindeer" filename="reindeer.wav"/>
       <prompt phrase="rematch" filename="rematch.wav"/>
+      <prompt phrase="recorded" filename="recorded.wav"/>
       <prompt phrase="repay" filename="repay.wav"/>
       <prompt phrase="repellent" filename="repellent.wav"/>
       <prompt phrase="replica" filename="replica.wav"/>
@@ -1174,6 +1205,7 @@
       <prompt phrase="telephone" filename="telephone.wav"/>
       <prompt phrase="tempest" filename="tempest.wav"/>
       <prompt phrase="therapist" filename="therapist.wav"/>
+      <prompt phrase="this" filename="this.wav"/>
       <prompt phrase="tiger" filename="tiger.wav"/>
       <prompt phrase="tissue" filename="tissue.wav"/>
       <prompt phrase="tobacco" filename="tobacco.wav"/>
