@@ -90,7 +90,7 @@ KS_DECLARE(ks_status_t) ks_dht2_init(ks_dht2_t *dht, const ks_dht2_nodeid_raw_t 
 	
 	dht->recv_buffer_length = 0;
 
-	dht->transactionid_next = rand() % 0xFFFF;
+	dht->transactionid_next = 1; //rand();
 	ks_hash_create(&dht->transactions_hash, KS_HASH_MODE_INT, KS_HASH_FLAG_RWLOCK, dht->pool);
 	
 	return KS_STATUS_SUCCESS;
@@ -471,8 +471,8 @@ KS_DECLARE(ks_status_t) ks_dht2_process_response(ks_dht2_t *dht, ks_sockaddr_t *
 {
 	struct bencode *r;
 	ks_dht2_transaction_t *transaction;
+	uint32_t *tid;
 	uint32_t transactionid;
-	uint16_t *tid;
 	ks_status_t ret = KS_STATUS_FAIL;
 
 	ks_assert(dht);
@@ -489,8 +489,8 @@ KS_DECLARE(ks_status_t) ks_dht2_process_response(ks_dht2_t *dht, ks_sockaddr_t *
 
 	message->args = r;
 
-	tid = (uint16_t *)message->transactionid;
-	transactionid = ntohs(*tid);
+	tid = (uint32_t *)message->transactionid;
+	transactionid = ntohl(*tid);
 
 	transaction = ks_hash_search(dht->transactions_hash, (void *)&transactionid, KS_READLOCKED);
 	ks_hash_read_unlock(dht->transactions_hash);
@@ -541,7 +541,6 @@ KS_DECLARE(ks_status_t) ks_dht2_process_query_ping(ks_dht2_t *dht, ks_sockaddr_t
 		return KS_STATUS_FAIL;
 	}
 
-	//ks_log(KS_LOG_DEBUG, "Message query ping id is '%s'\n", id->id);
 	ks_log(KS_LOG_DEBUG, "Message query ping is valid\n");
 
 	ret = ks_dht2_send_response_ping(dht, raddr, message->transactionid, message->transactionid_length);
@@ -559,6 +558,8 @@ KS_DECLARE(ks_status_t) ks_dht2_process_response_ping(ks_dht2_t *dht, ks_sockadd
 	ks_assert(dht);
 	ks_assert(raddr);
 	ks_assert(message);
+
+	ks_log(KS_LOG_DEBUG, "Message response ping is reached\n");
 
 	return KS_STATUS_SUCCESS;
 }
@@ -600,15 +601,14 @@ KS_DECLARE(ks_status_t) ks_dht2_send_query_ping(ks_dht2_t *dht, ks_sockaddr_t *r
 		goto done;
 	}
 
-	// @todo transaction expiration and raddr
-
-	// @todo transactions_hash mutex?
-	ks_hash_insert(dht->transactions_hash, (void *)&transactionid, transaction);
-
+	// @todo transaction expiration and raddr for validation
+	
+	ks_hash_insert(dht->transactions_hash, (void *)&transaction->transactionid, transaction);
+	
 	// @note a joins response.data and will be freed with it
 	ben_dict_set(a, ben_blob("id", 2), ben_blob(dht->nodeid.id, KS_DHT_NODEID_LENGTH));
 
-	ks_log(KS_LOG_DEBUG, "Sending message query ping\n");
+	ks_log(KS_LOG_DEBUG, "Sending message query ping with transaction id %d\n", transactionid);
 	ret = ks_dht2_send(dht, raddr, &query);
 
  done:

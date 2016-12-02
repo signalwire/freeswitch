@@ -48,7 +48,7 @@ KS_DECLARE(ks_status_t) ks_dht2_transaction_free(ks_dht2_transaction_t *transact
  *
  */
 KS_DECLARE(ks_status_t) ks_dht2_transaction_init(ks_dht2_transaction_t *transaction,
-												 uint16_t transactionid,
+												 uint32_t transactionid,
 												 ks_dht2_message_callback_t callback)
 {
 	ks_assert(transaction);

@@ -98,14 +98,20 @@ int main() {
   ok(err == KS_STATUS_SUCCESS);
 
 
-  buflen = strlen(TEST_DHT1_PROCESS_QUERY_PING_BUFFER);
-  memcpy(dht1->recv_buffer, TEST_DHT1_PROCESS_QUERY_PING_BUFFER, buflen);
-  dht1->recv_buffer_length = buflen;
+  //buflen = strlen(TEST_DHT1_PROCESS_QUERY_PING_BUFFER);
+  //memcpy(dht1->recv_buffer, TEST_DHT1_PROCESS_QUERY_PING_BUFFER, buflen);
+  //dht1->recv_buffer_length = buflen;
 
-  err = ks_dht2_process(dht1, &raddr);
+  //err = ks_dht2_process(dht1, &raddr);
+  //ok(err == KS_STATUS_SUCCESS);
+  
+  err = ks_dht2_send_query_ping(dht1, &raddr);
   ok(err == KS_STATUS_SUCCESS);
 
   err = ks_dht2_pulse(&dht2, 1000);
+  ok(err == KS_STATUS_SUCCESS);
+
+  err = ks_dht2_pulse(dht1, 1000);
   ok(err == KS_STATUS_SUCCESS);
 
   diag("Cleanup\n");

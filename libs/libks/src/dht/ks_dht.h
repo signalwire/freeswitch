@@ -54,7 +54,7 @@ struct ks_dht2_endpoint_s {
 
 struct ks_dht2_transaction_s {
 	ks_pool_t *pool;
-	uint16_t transactionid;
+	uint32_t transactionid;
 	ks_dht2_message_callback_t callback;
 	// @todo expiration data
 };
@@ -83,7 +83,7 @@ struct ks_dht2_s {
 	uint8_t recv_buffer[KS_DHT_RECV_BUFFER_SIZE];
 	ks_size_t recv_buffer_length;
 
-	uint16_t transactionid_next;
+	uint32_t transactionid_next;
 	ks_hash_t *transactions_hash;
 };
 
@@ -130,7 +130,7 @@ KS_DECLARE(ks_status_t) ks_dht2_message_deinit(ks_dht2_message_t *message);
 KS_DECLARE(ks_status_t) ks_dht2_message_parse(ks_dht2_message_t *message, const uint8_t *buffer, ks_size_t buffer_length);
 
 KS_DECLARE(ks_status_t) ks_dht2_message_query(ks_dht2_message_t *message,
-											  uint16_t transactionid,
+											  uint32_t transactionid,
 											  const char *query,
 											  struct bencode **args);
 KS_DECLARE(ks_status_t) ks_dht2_message_response(ks_dht2_message_t *message,
@@ -150,7 +150,7 @@ KS_DECLARE(ks_status_t) ks_dht2_transaction_prealloc(ks_dht2_transaction_t *tras
 KS_DECLARE(ks_status_t) ks_dht2_transaction_free(ks_dht2_transaction_t *transaction);
 
 KS_DECLARE(ks_status_t) ks_dht2_transaction_init(ks_dht2_transaction_t *transaction,
-												 uint16_t transactionid,
+												 uint32_t transactionid,
 												 ks_dht2_message_callback_t callback);
 KS_DECLARE(ks_status_t) ks_dht2_transaction_deinit(ks_dht2_transaction_t *transaction);
 																																				

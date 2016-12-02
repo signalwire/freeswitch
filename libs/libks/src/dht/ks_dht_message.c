@@ -153,19 +153,19 @@ KS_DECLARE(ks_status_t) ks_dht2_message_parse(ks_dht2_message_t *message, const 
  *
  */
 KS_DECLARE(ks_status_t) ks_dht2_message_query(ks_dht2_message_t *message,
-											  uint16_t transactionid,
+											  uint32_t transactionid,
 											  const char *query,
 											  struct bencode **args)
 {
 	struct bencode *a;
-	uint16_t tid;
-	
+	uint32_t tid;
+
 	ks_assert(message);
 	ks_assert(query);
 
-	tid = htons(transactionid);
+	tid = htonl(transactionid);
 	
-    ben_dict_set(message->data, ben_blob("t", 1), ben_blob((uint8_t *)&tid, 2));
+    ben_dict_set(message->data, ben_blob("t", 1), ben_blob((uint8_t *)&tid, sizeof(uint32_t)));
 	ben_dict_set(message->data, ben_blob("y", 1), ben_blob("q", 1));
 	ben_dict_set(message->data, ben_blob("q", 1), ben_blob(query, strlen(query)));
 
