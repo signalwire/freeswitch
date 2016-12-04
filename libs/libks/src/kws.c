@@ -42,6 +42,9 @@
 #define WS_BLOCK 1
 #define WS_NOBLOCK 0
 
+#define WS_INIT_SANITY 5000
+#define WS_WRITE_SANITY 2000
+
 #define SHA1_HASH_SIZE 20
 
 static const char c64[65] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
@@ -412,7 +415,7 @@ KS_DECLARE(ks_ssize_t) kws_raw_read(kws_t *kws, void *data, ks_size_t bytes, int
 KS_DECLARE(ks_ssize_t) kws_raw_write(kws_t *kws, void *data, ks_size_t bytes)
 {
 	ks_ssize_t r;
-	int sanity = 2000;
+	int sanity = WS_WRITE_SANITY;
 	int ssl_err = 0;
 	ks_size_t wrote = 0;
 
@@ -424,8 +427,17 @@ KS_DECLARE(ks_ssize_t) kws_raw_write(kws_t *kws, void *data, ks_size_t bytes)
 				wrote += r;
 			}
 
-			if (sanity < 2000) {
-				ks_sleep_ms(1);
+			if (sanity < WS_WRITE_SANITY) {
+				int ms = 1;
+
+				if (kws->block) {
+					if (sanity < WS_WRITE_SANITY * 3 / 4) {
+						ms = 60;
+					} else if (sanity < WS_WRITE_SANITY / 2) {
+						ms = 10;
+					}
+				}
+				ks_sleep_ms(ms);
 			}
 
 			if (r == -1) {
@@ -448,8 +460,17 @@ KS_DECLARE(ks_ssize_t) kws_raw_write(kws_t *kws, void *data, ks_size_t bytes)
 			wrote += r;
 		}
 
-		if (sanity < 2000) {
-			ks_sleep_ms(1);
+		if (sanity < WS_WRITE_SANITY) {
+			int ms = 1;
+
+			if (kws->block) {
+				if (sanity < WS_WRITE_SANITY * 3 / 4) {
+					ms = 60;
+				} else if (sanity < WS_WRITE_SANITY / 2) {
+					ms = 10;
+				}
+			}
+			ks_sleep_ms(ms);
 		}
 		
 	} while (--sanity > 0 && ((r == -1 && ks_errno_is_blocking(ks_errno())) || (kws->block && wrote < bytes)));
@@ -674,7 +695,7 @@ KS_DECLARE(ks_status_t) kws_init(kws_t **kwsP, ks_socket_t sock, SSL_CTX *ssl_ct
 	}
 
 	kws->sock = sock;
-	kws->sanity = 5000;
+	kws->sanity = WS_INIT_SANITY;
 	kws->ssl_ctx = ssl_ctx;
 
 	kws->buflen = 1024 * 64;
