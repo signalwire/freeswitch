@@ -80,6 +80,7 @@ mod_v8_la_SOURCES  = \
 	src/jsmain.cpp \
 	src/jsbase.cpp \
 	src/fscoredb.cpp \
+	src/fsdbh.cpp \
 	src/fscurl.cpp \
 	src/fsdtmf.cpp \
 	src/fsevent.cpp \

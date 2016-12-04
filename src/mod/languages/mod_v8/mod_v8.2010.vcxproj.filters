@@ -11,6 +11,9 @@
     <ClCompile Include=".\src\fscoredb.cpp">
       <Filter>FSClasses</Filter>
     </ClCompile>
+    <ClCompile Include=".\src\fsdbh.cpp">
+      <Filter>FSClasses</Filter>
+    </ClCompile>
     <ClCompile Include=".\src\fscurl.cpp">
       <Filter>FSClasses</Filter>
     </ClCompile>
@@ -60,6 +63,9 @@
       <Filter>BaseClasses\include</Filter>
     </ClInclude>
     <ClInclude Include=".\include\fscoredb.hpp">
+      <Filter>FSClasses\include</Filter>
+    </ClInclude>
+    <ClInclude Include=".\include\fsdbh.hpp">
       <Filter>FSClasses\include</Filter>
     </ClInclude>
     <ClInclude Include=".\include\fscurl.hpp">

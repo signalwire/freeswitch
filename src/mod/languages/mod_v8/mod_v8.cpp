@@ -83,6 +83,7 @@
 
 /* Optional JavaScript classes (loaded on demand) */
 #include "fscoredb.hpp"
+#include "fsdbh.hpp"
 #include "fscurl.hpp"
 #include "fsteletone.hpp"
 #include "fssocket.hpp"
@@ -840,6 +841,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_v8_load)
 
 	/* Make all "built in" modules available to load on demand */
 	v8_mod_init_built_in(FSCoreDB::GetModuleInterface());
+	v8_mod_init_built_in(FSDBH::GetModuleInterface());
 	v8_mod_init_built_in(FSCURL::GetModuleInterface());
 #ifdef HAVE_ODBC
 	/* Only add ODBC class if ODBC is available in the system */
