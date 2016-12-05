@@ -8,12 +8,21 @@ KS_BEGIN_EXTERN_C
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht2_send(ks_dht2_t *dht, ks_sockaddr_t *raddr, ks_dht2_message_t *message);
 KS_DECLARE(ks_status_t) ks_dht2_idle(ks_dht2_t *dht);
+KS_DECLARE(ks_status_t) ks_dht2_idle_expirations(ks_dht2_t *dht);
+
 KS_DECLARE(ks_status_t) ks_dht2_process(ks_dht2_t *dht, ks_sockaddr_t *raddr);
+KS_DECLARE(ks_status_t) ks_dht2_send(ks_dht2_t *dht, ks_sockaddr_t *raddr, ks_dht2_message_t *message);
+KS_DECLARE(ks_status_t) ks_dht2_send_error(ks_dht2_t *dht,
+										   ks_sockaddr_t *raddr,
+										   uint8_t *transactionid,
+										   ks_size_t transactionid_length,
+										   long long errorcode,
+										   const char *errorstr);
 
 KS_DECLARE(ks_status_t) ks_dht2_process_query(ks_dht2_t *dht, ks_sockaddr_t *raddr, ks_dht2_message_t *message);
 KS_DECLARE(ks_status_t) ks_dht2_process_response(ks_dht2_t *dht, ks_sockaddr_t *raddr, ks_dht2_message_t *message);
+KS_DECLARE(ks_status_t) ks_dht2_process_error(ks_dht2_t *dht, ks_sockaddr_t *raddr, ks_dht2_message_t *message);
 
 KS_DECLARE(ks_status_t) ks_dht2_process_query_ping(ks_dht2_t *dht, ks_sockaddr_t *raddr, ks_dht2_message_t *message);
 KS_DECLARE(ks_status_t) ks_dht2_process_response_ping(ks_dht2_t *dht, ks_sockaddr_t *raddr, ks_dht2_message_t *message);

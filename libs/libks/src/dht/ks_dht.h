@@ -16,7 +16,9 @@ KS_BEGIN_EXTERN_C
 #define KS_DHT_MESSAGE_TRANSACTIONID_MAX_SIZE 20
 #define KS_DHT_MESSAGE_TYPE_MAX_SIZE 20
 #define KS_DHT_MESSAGE_QUERY_MAX_SIZE 20
+#define KS_DHT_MESSAGE_ERROR_MAX_SIZE 256
 
+#define KS_DHT_TRANSACTION_EXPIRATION_DELAY 30
 
 typedef struct ks_dht2_s ks_dht2_t;
 typedef struct ks_dht2_nodeid_s ks_dht2_nodeid_t;
@@ -54,9 +56,11 @@ struct ks_dht2_endpoint_s {
 
 struct ks_dht2_transaction_s {
 	ks_pool_t *pool;
+	ks_sockaddr_t raddr;
 	uint32_t transactionid;
 	ks_dht2_message_callback_t callback;
-	// @todo expiration data
+	ks_time_t expiration;
+	ks_bool_t finished;
 };
 
 
@@ -71,6 +75,7 @@ struct ks_dht2_s {
 
 	ks_hash_t *registry_type;
 	ks_hash_t *registry_query;
+	ks_hash_t *registry_error;
 
 	ks_bool_t bind_ipv4;
 	ks_bool_t bind_ipv6;
@@ -137,6 +142,10 @@ KS_DECLARE(ks_status_t) ks_dht2_message_response(ks_dht2_message_t *message,
 												 uint8_t *transactionid,
 												 ks_size_t transactionid_length,
 												 struct bencode **args);
+KS_DECLARE(ks_status_t) ks_dht2_message_error(ks_dht2_message_t *message,
+											  uint8_t *transactionid,
+											  ks_size_t transactionid_length,
+											  struct bencode **args);
 
 /**
  *
@@ -150,6 +159,7 @@ KS_DECLARE(ks_status_t) ks_dht2_transaction_prealloc(ks_dht2_transaction_t *tras
 KS_DECLARE(ks_status_t) ks_dht2_transaction_free(ks_dht2_transaction_t *transaction);
 
 KS_DECLARE(ks_status_t) ks_dht2_transaction_init(ks_dht2_transaction_t *transaction,
+												 ks_sockaddr_t *raddr,
 												 uint32_t transactionid,
 												 ks_dht2_message_callback_t callback);
 KS_DECLARE(ks_status_t) ks_dht2_transaction_deinit(ks_dht2_transaction_t *transaction);

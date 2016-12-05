@@ -10,6 +10,7 @@ ks_status_t dht_z_callback(ks_dht2_t *dht, ks_sockaddr_t *raddr, ks_dht2_message
 {
 	diag("dht_z_callback\n");
 	ok(message->transactionid[0] == '4' && message->transactionid[1] == '2');
+	ks_dht2_send_error(dht, raddr, message->transactionid, message->transactionid_length, 201, "Generic test error");
 	return KS_STATUS_SUCCESS;
 }
 
@@ -97,6 +98,8 @@ int main() {
   err = ks_dht2_process(dht1, &raddr);
   ok(err == KS_STATUS_SUCCESS);
 
+  err = ks_dht2_pulse(&dht2, 1000);
+  ok(err == KS_STATUS_SUCCESS);
 
   //buflen = strlen(TEST_DHT1_PROCESS_QUERY_PING_BUFFER);
   //memcpy(dht1->recv_buffer, TEST_DHT1_PROCESS_QUERY_PING_BUFFER, buflen);

@@ -48,15 +48,20 @@ KS_DECLARE(ks_status_t) ks_dht2_transaction_free(ks_dht2_transaction_t *transact
  *
  */
 KS_DECLARE(ks_status_t) ks_dht2_transaction_init(ks_dht2_transaction_t *transaction,
+												 ks_sockaddr_t *raddr,
 												 uint32_t transactionid,
 												 ks_dht2_message_callback_t callback)
 {
 	ks_assert(transaction);
+	ks_assert(raddr);
 	ks_assert(transaction->pool);
 	ks_assert(callback);
 
+	transaction->raddr = *raddr;
 	transaction->transactionid = transactionid;
 	transaction->callback = callback;
+	transaction->expiration = ks_time_now_sec() + KS_DHT_TRANSACTION_EXPIRATION_DELAY;
+	transaction->finished = KS_FALSE;
 
 	return KS_STATUS_SUCCESS;
 }
@@ -68,8 +73,11 @@ KS_DECLARE(ks_status_t) ks_dht2_transaction_deinit(ks_dht2_transaction_t *transa
 {
 	ks_assert(transaction);
 
+	transaction->raddr = (const ks_sockaddr_t){ 0 };
 	transaction->transactionid = 0;
 	transaction->callback = NULL;
+	transaction->expiration = 0;
+	transaction->finished = KS_FALSE;
 
 	return KS_STATUS_SUCCESS;
 }
