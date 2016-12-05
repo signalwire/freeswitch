@@ -11,7 +11,7 @@
 #define MAX_QUEUE_LEN 25000
 #define MAX_MISSED 500
 #define MAX_PID_CHARS 255
-#define VERSION "mod_kazoo v1.3.0-1"
+#define VERSION "mod_kazoo v1.4.0-1"
 
 #define API_COMMAND_DISCONNECT 0
 #define API_COMMAND_REMOTE_IP 1
@@ -153,6 +153,7 @@ switch_socket_t *create_socket(switch_memory_pool_t *pool);
 switch_status_t create_ei_cnode(const char *ip_addr, const char *name, struct ei_cnode_s *ei_cnode);
 switch_status_t ei_compare_pids(const erlang_pid *pid1, const erlang_pid *pid2);
 void ei_encode_switch_event_headers(ei_x_buff *ebuf, switch_event_t *event);
+void ei_encode_switch_event_headers_2(ei_x_buff *ebuf, switch_event_t *event, int decode);
 void ei_link(ei_node_t *ei_node, erlang_pid * from, erlang_pid * to);
 void ei_encode_switch_event(ei_x_buff * ebuf, switch_event_t *event);
 int ei_helper_send(ei_node_t *ei_node, erlang_pid* to, ei_x_buff *buf);
