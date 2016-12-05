@@ -31,12 +31,16 @@
  *
  */
 #include "mod_kazoo.h"
+#include <switch_curl.h>
 
 #define UUID_SET_DESC "Set a variable"
 #define UUID_SET_SYNTAX "<uuid> <var> [value]"
 
 #define UUID_MULTISET_DESC "Set multiple variables"
 #define UUID_MULTISET_SYNTAX "<uuid> <var>=<value>;<var>=<value>..."
+
+#define KZ_HTTP_PUT_DESC "upload a local freeswitch file to a url"
+#define KZ_HTTP_PUT_SYNTAX "localfile url"
 
 SWITCH_STANDARD_API(uuid_setvar_function) {
 	switch_core_session_t *psession = NULL;
@@ -144,9 +148,177 @@ SWITCH_STANDARD_API(uuid_setvar_multi_function) {
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static size_t header_callback(char *buffer, size_t size, size_t nitems, void *userdata)
+{
+	switch_event_t* event = (switch_event_t*)userdata;
+	int len = strlen(buffer);
+	char buf[1024];
+	if(len > 2 && len < 1024) {
+		strncpy(buf, buffer, len-2);
+		buf[len-2] = '\0';
+		switch_event_add_header_string(event, SWITCH_STACK_PUSH | SWITCH_STACK_BOTTOM, "Reply-Headers", buf);
+	}
+	return nitems * size;
+}
+
+SWITCH_STANDARD_API(kz_http_put)
+{
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	switch_memory_pool_t *lpool = NULL;
+	switch_memory_pool_t *pool = NULL;
+	char *args = NULL;
+	char *argv[10] = { 0 };
+	int argc = 0;
+	switch_event_t *params = NULL;
+	char *url = NULL;
+	char *filename = NULL;
+
+	switch_curl_slist_t *headers = NULL;  /* optional linked-list of HTTP headers */
+	char *ext;  /* file extension, used for MIME type identification */
+	const char *mime_type = "application/octet-stream";
+	char *buf = NULL;
+	char *error = NULL;
+
+	CURL *curl_handle = NULL;
+	long httpRes = 0;
+	struct stat file_info = {0};
+	FILE *file_to_put = NULL;
+	int fd;
+
+	if (session) {
+		pool = switch_core_session_get_pool(session);
+	} else {
+		switch_core_new_memory_pool(&lpool);
+		pool = lpool;
+	}
+
+	if (zstr(cmd)) {
+		stream->write_function(stream, "USAGE: %s\n", KZ_HTTP_PUT_SYNTAX);
+		status = SWITCH_STATUS_SUCCESS;
+		goto done;
+	}
+
+	args = strdup(cmd);
+	argc = switch_separate_string(args, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+	if (argc != 2) {
+		stream->write_function(stream, "USAGE: %s\n", KZ_HTTP_PUT_SYNTAX);
+		status = SWITCH_STATUS_SUCCESS;
+		goto done;
+	}
+
+	/* parse params and get profile */
+	url = switch_core_strdup(pool, argv[0]);
+	if (*url == '{') {
+		switch_event_create_brackets(url, '{', '}', ',', &params, &url, SWITCH_FALSE);
+	}
+
+	filename = switch_core_strdup(pool, argv[1]);
+
+	/* guess what type of mime content this is going to be */
+	if ((ext = strrchr(filename, '.'))) {
+		ext++;
+		if (!(mime_type = switch_core_mime_ext2type(ext))) {
+			mime_type = "application/octet-stream";
+		}
+	}
+
+	buf = switch_mprintf("Content-Type: %s", mime_type);
+
+	headers = switch_curl_slist_append(headers, buf);
+
+	/* open file and get the file size */
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "opening %s for upload to %s\n", filename, url);
+	fd = open(filename, O_RDONLY);
+	if (fd == -1) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open() error: %s\n", strerror(errno));
+		status = SWITCH_STATUS_FALSE;
+		stream->write_function(stream, "-ERR error opening file\n");
+		goto done;
+	}
+	if (fstat(fd, &file_info) == -1) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "fstat() error: %s\n", strerror(errno));
+		stream->write_function(stream, "-ERR fstat error\n");
+		goto done;
+	}
+	close(fd);
+
+	/* libcurl requires FILE* */
+ 	file_to_put = fopen(filename, "rb");
+	if (!file_to_put) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "fopen() error: %s\n", strerror(errno));
+		status = SWITCH_STATUS_FALSE;
+		goto done;
+	}
+
+	curl_handle = switch_curl_easy_init();
+	if (!curl_handle) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "switch_curl_easy_init() failure\n");
+		status = SWITCH_STATUS_FALSE;
+		stream->write_function(stream, "-ERR switch_curl_easy init failure\n");
+		goto done;
+	}
+	switch_curl_easy_setopt(curl_handle, CURLOPT_UPLOAD, 1);
+	switch_curl_easy_setopt(curl_handle, CURLOPT_PUT, 1);
+	switch_curl_easy_setopt(curl_handle, CURLOPT_NOSIGNAL, 1);
+	switch_curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, headers);
+	switch_curl_easy_setopt(curl_handle, CURLOPT_URL, url);
+	switch_curl_easy_setopt(curl_handle, CURLOPT_READDATA, file_to_put);
+	switch_curl_easy_setopt(curl_handle, CURLOPT_INFILESIZE_LARGE, (curl_off_t)file_info.st_size);
+	switch_curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1);
+	switch_curl_easy_setopt(curl_handle, CURLOPT_MAXREDIRS, 10);
+	switch_curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "freeswitch-http-cache/1.0");
+	switch_curl_easy_setopt(curl_handle, CURLOPT_HEADERDATA, stream->param_event);
+	switch_curl_easy_setopt(curl_handle, CURLOPT_HEADERFUNCTION, header_callback);
+	switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0L);
+	switch_curl_easy_perform(curl_handle);
+	switch_curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &httpRes);
+	switch_curl_easy_cleanup(curl_handle);
+
+	if (httpRes == 200 || httpRes == 201 || httpRes == 202 || httpRes == 204) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s saved to %s\n", filename, url);
+		switch_event_add_header(stream->param_event, SWITCH_STACK_BOTTOM, "API-Output", "%s saved to %s\n", filename, url);
+		stream->write_function(stream, "+OK\n");
+	} else {
+		error = switch_mprintf("Received HTTP error %ld trying to save %s to %s", httpRes, filename, url);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s\n", error);
+		switch_event_add_header(stream->param_event, SWITCH_STACK_BOTTOM, "API-Error", "%s", error);
+		switch_event_add_header(stream->param_event, SWITCH_STACK_BOTTOM, "API-HTTP-Error", "%ld", httpRes);
+		stream->write_function(stream, "-ERR ");
+		stream->write_function(stream, error);
+		stream->write_function(stream, "\n");
+		status = SWITCH_STATUS_GENERR;
+	}
+
+done:
+	if (file_to_put) {
+		fclose(file_to_put);
+	}
+
+	if (headers) {
+		switch_curl_slist_free_all(headers);
+	}
+
+	switch_safe_free(buf);
+	switch_safe_free(error);
+
+	switch_safe_free(args);
+
+	if (lpool) {
+		switch_core_destroy_memory_pool(&lpool);
+	}
+
+	if (params) {
+		switch_event_destroy(&params);
+	}
+
+	return status;
+}
+
 void add_kz_commands(switch_loadable_module_interface_t **module_interface, switch_api_interface_t *api_interface) {
 	SWITCH_ADD_API(api_interface, "kz_uuid_setvar_multi", UUID_SET_DESC, uuid_setvar_multi_function, UUID_MULTISET_SYNTAX);
 	switch_console_set_complete("add kz_uuid_setvar_multi ::console::list_uuid");
 	SWITCH_ADD_API(api_interface, "kz_uuid_setvar", UUID_MULTISET_DESC, uuid_setvar_function, UUID_SET_SYNTAX);
 	switch_console_set_complete("add kz_uuid_setvar ::console::list_uuid");
+	SWITCH_ADD_API(api_interface, "kz_http_put", KZ_HTTP_PUT_DESC, kz_http_put, KZ_HTTP_PUT_SYNTAX);
 }
+

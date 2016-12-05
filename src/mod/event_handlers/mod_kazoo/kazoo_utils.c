@@ -84,6 +84,10 @@ static void ei_x_print_msg(ei_x_buff *buf, erlang_pid *pid, int send) {
 #endif
 
 void ei_encode_switch_event_headers(ei_x_buff *ebuf, switch_event_t *event) {
+	ei_encode_switch_event_headers_2(ebuf, event, 1);
+}
+
+void ei_encode_switch_event_headers_2(ei_x_buff *ebuf, switch_event_t *event, int encode) {
     switch_event_header_t *hp;
     char *uuid = switch_event_get_header(event, "unique-id");
     int i;
@@ -105,7 +109,8 @@ void ei_encode_switch_event_headers(ei_x_buff *ebuf, switch_event_t *event) {
     for (hp = event->headers; hp; hp = hp->next) {
         ei_x_encode_tuple_header(ebuf, 2);
         ei_x_encode_binary(ebuf, hp->name, strlen(hp->name));
-        switch_url_decode(hp->value);
+	if(encode)
+	        switch_url_decode(hp->value);
         ei_x_encode_binary(ebuf, hp->value, strlen(hp->value));
     }
 
