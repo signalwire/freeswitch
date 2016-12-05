@@ -144,12 +144,12 @@
       <prompt phrase="Twentieth" filename="h-20.wav"/>
       <prompt phrase="Thirtieth" filename="h-30.wav"/>
       <prompt phrase="Hundred" filename="hundred.wav"/>
+      <prompt phrase="Thousand" filename="thousand.wav"/>
       <prompt phrase="Million" filename="million.wav"/>
       <prompt phrase="Period" filename="period.wav"/>
       <prompt phrase="Point" filename="point.wav"/>
       <prompt phrase="Pound" filename="pound.wav"/>
       <prompt phrase="Star" filename="star.wav"/>
-      <prompt phrase="Thousand" filename="thousand.wav"/>
     </digits>
     <currency>
       <prompt phrase="And" filename="and.wav"/>
@@ -176,6 +176,8 @@
       <prompt phrase="Hours" filename="hours.wav"/>
       <prompt phrase="Minute" filename="minute.wav"/>
       <prompt phrase="Minutes" filename="minutes.wav"/>
+      <prompt phrase="Second" filename="second.wav"/>
+      <prompt phrase="Seconds" filename="seconds.wav"/>
       <prompt phrase="January" filename="mon-0.wav"/>
       <prompt phrase="Febuary" filename="mon-1.wav"/>
       <prompt phrase="March" filename="mon-2.wav"/>
@@ -191,8 +193,6 @@
       <prompt phrase="O'Clock" filename="oclock.wav"/>
       <prompt phrase="oh" filename="oh.wav"/>
       <prompt phrase="P.M." filename="p-m.wav"/>
-      <prompt phrase="Second" filename="second.wav"/>
-      <prompt phrase="Seconds" filename="seconds.wav"/>
       <prompt phrase="Today" filename="today.wav"/>
       <prompt phrase="Tomorrow" filename="tomorrow.wav"/>
       <prompt phrase="Yesterday" filename="yesterday.wav"/>
