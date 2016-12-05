@@ -8375,8 +8375,9 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_write_raw(switch_rtp_t *rtp_session, 
 	}
 
 	status = switch_socket_sendto(rtp_session->sock_output, rtp_session->remote_addr, 0, data, bytes);
-
+#if defined(ENABLE_SRTP) || defined(ENABLE_ZRTP)
  end:
+#endif
 
 	WRITE_DEC(rtp_session);
 
