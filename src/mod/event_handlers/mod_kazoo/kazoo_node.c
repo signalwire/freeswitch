@@ -377,7 +377,7 @@ static void *SWITCH_THREAD_FUNC bgapi4_exec(switch_thread_t *thread, void *obj) 
 	_ei_x_encode_string(&send_msg->buf, reply);
 
         if (stream.param_event) {
-		ei_encode_switch_event_headers(&send_msg->buf, stream.param_event);
+		ei_encode_switch_event_headers_2(&send_msg->buf, stream.param_event, 0);
         }
 
 	if (switch_queue_trypush(ei_node->send_msgs, send_msg) != SWITCH_STATUS_SUCCESS) {
