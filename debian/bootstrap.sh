@@ -360,8 +360,7 @@ Description: Cross-Platform Scalable Multi-Protocol Soft Switch
 
 Package: libfreeswitch1
 Architecture: any
-Depends: \${shlibs:Depends}, \${misc:Depends},
- yasm
+Depends: \${shlibs:Depends}, \${misc:Depends}
 Recommends:
 Suggests: libfreeswitch1-dbg
 Conflicts: freeswitch-all (<= 1.6.7)
