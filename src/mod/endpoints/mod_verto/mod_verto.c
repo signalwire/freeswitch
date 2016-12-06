@@ -1441,7 +1441,7 @@ static uint8_t *http_stream_read(switch_stream_handle_t *handle, int *len)
 	}
 
 	*len = (int)(r->content_length - (r->bytes_read - r->bytes_header));
-	*len = *len > sizeof(wsh->buffer) ? sizeof(wsh->buffer) : *len;
+	*len = *len > sizeof(wsh->buffer) ? wsh->buflen : *len;
 
 	if ((*len = (int)ws_raw_read(wsh, wsh->buffer, *len, wsh->block)) < 0) {
 		*len = 0;
