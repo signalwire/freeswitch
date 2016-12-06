@@ -180,8 +180,8 @@ KS_DECLARE(ks_status_t) ks_dht2_autoroute(ks_dht2_t *dht, ks_bool_t autoroute, k
 
 	if (!autoroute) {
 		port = 0;
-	} else if (port == 0) {
-		return KS_STATUS_FAIL;
+	} else if (port <= 0) {
+		port = KS_DHT_DEFAULT_PORT;
 	}
 	
 	dht->autoroute = autoroute;
@@ -331,11 +331,79 @@ KS_DECLARE(void) ks_dht2_pulse(ks_dht2_t *dht, int32_t timeout)
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht2_maketid(ks_dht2_t *dht)
+KS_DECLARE(ks_status_t) ks_dht2_utility_compact_address(ks_sockaddr_t *address,
+														uint8_t *buffer,
+														ks_size_t *buffer_length,
+														ks_size_t buffer_size)
 {
-	ks_assert(dht);
+	ks_size_t required = sizeof(uint16_t);
+	uint16_t port = 0;
+	
+	ks_assert(address);
+	ks_assert(buffer);
+	ks_assert(buffer_length);
+	ks_assert(buffer_size);
+	ks_assert(address->family == AF_INET || address->family == AF_INET6);
 
+	if (address->family == AF_INET) {
+		required += sizeof(uint32_t);
+	} else {
+		required += 8 * sizeof(uint16_t);
+	}
+
+	if (*buffer_length + required > buffer_size) {
+		ks_log(KS_LOG_DEBUG, "Insufficient space remaining for compacting\n");
+		return KS_STATUS_FAIL;
+	}
+
+	if (address->family == AF_INET) {
+		uint32_t *paddr = (uint32_t *)&address->v.v4.sin_addr;
+		uint32_t addr = htonl(*paddr);
+		port = htons(address->v.v4.sin_port);
+
+		memcpy(buffer + (*buffer_length), (void *)&addr, sizeof(uint32_t));
+		*buffer_length += sizeof(uint32_t);
+	} else {
+		uint16_t *paddr = (uint16_t *)&address->v.v6.sin6_addr;
+		port = htons(address->v.v6.sin6_port);
+
+		for (int32_t i = 0; i < 8; ++i) {
+			uint16_t addr = htons(paddr[i]);
+			memcpy(buffer + (*buffer_length), (void *)&addr, sizeof(uint16_t));
+			*buffer_length += sizeof(uint16_t);
+		}
+	}
+
+	memcpy(buffer + (*buffer_length), (void *)&port, sizeof(uint16_t));
+	*buffer_length += sizeof(uint16_t);
+	
 	return KS_STATUS_SUCCESS;
+}
+
+/**
+ *
+ */
+KS_DECLARE(ks_status_t) ks_dht2_utility_compact_node(ks_dht2_nodeid_raw_t *nodeid,
+													 ks_sockaddr_t *address,
+													 uint8_t *buffer,
+													 ks_size_t *buffer_length,
+													 ks_size_t buffer_size)
+{
+	ks_assert(address);
+	ks_assert(buffer);
+	ks_assert(buffer_length);
+	ks_assert(buffer_size);
+	ks_assert(address->family == AF_INET || address->family == AF_INET6);
+
+	if (*buffer_length + KS_DHT_NODEID_LENGTH > buffer_size) {
+		ks_log(KS_LOG_DEBUG, "Insufficient space remaining for compacting\n");
+		return KS_STATUS_FAIL;
+	}
+
+	memcpy(buffer + (*buffer_length), (void *)nodeid, KS_DHT_NODEID_LENGTH);
+	*buffer_length += KS_DHT_NODEID_LENGTH;
+
+	return ks_dht2_utility_compact_address(address, buffer, buffer_length, buffer_size);
 }
 
 /**
@@ -904,37 +972,44 @@ KS_DECLARE(ks_status_t) ks_dht2_process_query_findnode(ks_dht2_t *dht, ks_dht2_m
 {
 	struct bencode *id;
 	struct bencode *target;
-	//const char *idv;
+	struct bencode *want;
+	const char *idv;
 	//const char *targetv;
 	ks_size_t idv_len;
 	ks_size_t targetv_len;
+	ks_bool_t want4 = KS_FALSE;
+	ks_bool_t want6 = KS_FALSE;
 	ks_dht2_message_t *response = NULL;
 	struct bencode *r = NULL;
+	uint8_t buffer[1000];
+	ks_size_t buffer_length = 0;
 	ks_status_t ret = KS_STATUS_FAIL;
 
 	ks_assert(dht);
 	ks_assert(message);
 	ks_assert(message->args);
 
+	
     id = ben_dict_get_by_str(message->args, "id");
     if (!id) {
 		ks_log(KS_LOG_DEBUG, "Message args missing required key 'id'\n");
 		return KS_STATUS_FAIL;
 	}
 	
-    //idv = ben_str_val(id);
+    idv = ben_str_val(id);
 	idv_len = ben_str_len(id);
     if (idv_len != KS_DHT_NODEID_LENGTH) {
 		ks_log(KS_LOG_DEBUG, "Message args 'id' value has an unexpected size of %d\n", idv_len);
 		return KS_STATUS_FAIL;
 	}
 
+	
 	target = ben_dict_get_by_str(message->args, "target");
     if (!target) {
 		ks_log(KS_LOG_DEBUG, "Message args missing required key 'target'\n");
 		return KS_STATUS_FAIL;
 	}
-	
+
     //targetv = ben_str_val(target);
     targetv_len = ben_str_len(target);
     if (targetv_len != KS_DHT_NODEID_LENGTH) {
@@ -943,9 +1018,37 @@ KS_DECLARE(ks_status_t) ks_dht2_process_query_findnode(ks_dht2_t *dht, ks_dht2_m
 	}
 
 	
+	want = ben_dict_get_by_str(message->args, "want");
+	if (want) {
+		size_t want_len = ben_list_len(want);
+		for (size_t i = 0; i < want_len; ++i) {
+			struct bencode *iv = ben_list_get(want, i);
+			if (!ben_cmp_with_str(iv, "n4")) {
+				want4 = KS_TRUE;
+			}
+			if (!ben_cmp_with_str(iv, "n6")) {
+				want6 = KS_TRUE;
+			}
+		}
+	}
+
+	if (!want4 && !want6) {
+		want4 = message->raddr.family == AF_INET;
+		want6 = message->raddr.family == AF_INET6;
+	}
+
+	// @todo add/touch bucket entry for remote node
+	
 	ks_log(KS_LOG_DEBUG, "Message query find_node is valid\n");
 
-	
+	// @todo get closest nodes to target from route table
+
+	// @todo compact into buffer
+	if (ks_dht2_utility_compact_node((ks_dht2_nodeid_raw_t *)idv, &message->raddr, buffer, &buffer_length, sizeof(buffer)) != KS_STATUS_SUCCESS) {
+		return KS_STATUS_FAIL;
+	}
+
+
 	if (ks_dht2_message_alloc(&response, dht->pool) != KS_STATUS_SUCCESS) {
 		goto done;
 	}
@@ -959,6 +1062,8 @@ KS_DECLARE(ks_status_t) ks_dht2_process_query_findnode(ks_dht2_t *dht, ks_dht2_m
 	}
 	
 	ben_dict_set(r, ben_blob("id", 2), ben_blob(dht->nodeid.id, KS_DHT_NODEID_LENGTH));
+	// @todo populate nodes/nodes6
+	ben_dict_set(r, ben_blob("nodes", 5), ben_blob(buffer, buffer_length));
 
 	ks_log(KS_LOG_DEBUG, "Sending message response find_node\n");
 	ks_q_push(dht->send_q, (void *)response);

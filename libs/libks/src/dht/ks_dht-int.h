@@ -8,6 +8,19 @@ KS_BEGIN_EXTERN_C
 /**
  *
  */
+KS_DECLARE(ks_status_t) ks_dht2_utility_compact_address(ks_sockaddr_t *address,
+														uint8_t *buffer,
+														ks_size_t *buffer_length,
+														ks_size_t buffer_size);
+KS_DECLARE(ks_status_t) ks_dht2_utility_compact_node(ks_dht2_nodeid_raw_t *nodeid,
+													 ks_sockaddr_t *address,
+													 uint8_t *buffer,
+													 ks_size_t *buffer_length,
+													 ks_size_t buffer_size);
+
+/**
+ *
+ */
 KS_DECLARE(void) ks_dht2_idle(ks_dht2_t *dht);
 KS_DECLARE(void) ks_dht2_idle_expirations(ks_dht2_t *dht);
 KS_DECLARE(void) ks_dht2_idle_send(ks_dht2_t *dht);
