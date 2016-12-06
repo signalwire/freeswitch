@@ -393,10 +393,14 @@ KS_DECLARE(ks_status_t) ks_cond_timedwait(ks_cond_t *cond, ks_time_t ms)
 #else
 	struct timespec ts;
 	ks_time_t n = ks_time_now() + (ms * 1000);
+	int r = 0;
+
 	ts.tv_sec   = ks_time_sec(n);
 	ts.tv_nsec  = ks_time_nsec(n);
-	if (pthread_cond_timedwait(&cond->cond, &cond->mutex->mutex, &ts)) {
-		switch(errno) {
+	r = pthread_cond_timedwait(&cond->cond, &cond->mutex->mutex, &ts);
+
+	if (r) {
+		switch(r) {
 		case ETIMEDOUT:
 			return KS_STATUS_TIMEOUT;
 		default:

@@ -29,11 +29,18 @@ int qtest1(int loops)
 	ks_q_t *q;
 	ks_pool_t *pool;
 	int i;
+	int r = 1;
+	void *pop;
 
 	ks_pool_open(&pool);
 	ks_q_create(&q, pool, loops);
 	
 	ks_thread_create(&thread, test1_thread, q, pool);
+
+	if (ks_q_pop_timeout(q, &pop, 500) != KS_STATUS_TIMEOUT) {
+		r = 0;
+		goto end;
+	}
 
 	for (i = 0; i < 10000; i++) {
 		int *val = (int *)ks_pool_alloc(pool, sizeof(int));
@@ -57,11 +64,13 @@ int qtest1(int loops)
 		ks_q_push(q, val);
 	}
 
+ end:
+
 	ks_q_destroy(&q);
 
 	ks_pool_close(&pool);
 
-	return 1;
+	return r;
 
 }
 

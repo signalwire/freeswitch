@@ -115,6 +115,7 @@ KS_DECLARE(void) ks_random_string(char *buf, uint16_t len, char *set);
 #include "ks_printf.h"
 #include "ks_json.h"
 #include "ks_threadmutex.h"
+#include "ks_thread_pool.h"
 #include "ks_hash.h"
 #include "ks_config.h"
 #include "ks_q.h"

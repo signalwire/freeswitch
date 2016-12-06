@@ -210,6 +210,8 @@ struct ks_q_s;
 typedef struct ks_q_s ks_q_t;
 typedef void (*ks_flush_fn_t)(ks_q_t *q, void *ptr, void *flush_data);
 
+typedef struct ks_thread_pool_s ks_thread_pool_t;
+
 KS_END_EXTERN_C
 
 #endif							/* defined(_KS_TYPES_H_) */

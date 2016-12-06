@@ -9,6 +9,11 @@ testpools_SOURCES = testpools.c tap.c
 testpools_CFLAGS = $(AM_CFLAGS)
 testpools_LDADD = $(TEST_LDADD)
 
+check_PROGRAMS += test_thread_pools
+test_thread_pools_SOURCES = test_thread_pools.c tap.c
+test_thread_pools_CFLAGS = $(AM_CFLAGS)
+test_thread_pools_LDADD = $(TEST_LDADD)
+
 check_PROGRAMS += testthreadmutex
 testthreadmutex_SOURCES = testthreadmutex.c tap.c
 testthreadmutex_CFLAGS = $(AM_CFLAGS)
