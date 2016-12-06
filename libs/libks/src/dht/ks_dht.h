@@ -28,7 +28,7 @@ typedef struct ks_dht2_endpoint_s ks_dht2_endpoint_t;
 typedef struct ks_dht2_transaction_s ks_dht2_transaction_t;
 
 
-typedef ks_status_t (*ks_dht2_message_callback_t)(ks_dht2_t *dht, ks_sockaddr_t *raddr, ks_dht2_message_t *message);
+typedef ks_status_t (*ks_dht2_message_callback_t)(ks_dht2_t *dht, ks_dht2_message_t *message);
 
 struct ks_dht2_nodeid_raw_s {
 	uint8_t id[KS_DHT_NODEID_LENGTH];
@@ -41,6 +41,7 @@ struct ks_dht2_nodeid_s {
 
 struct ks_dht2_message_s {
 	ks_pool_t *pool;
+	ks_sockaddr_t raddr;
 	struct bencode *data;
 	uint8_t transactionid[KS_DHT_MESSAGE_TRANSACTIONID_MAX_SIZE];
 	ks_size_t transactionid_length;
@@ -85,6 +86,8 @@ struct ks_dht2_s {
 	ks_hash_t *endpoints_hash;
 	struct pollfd *endpoints_poll;
 
+	ks_q_t *send_q;
+	ks_dht2_message_t *send_q_unsent;
 	uint8_t recv_buffer[KS_DHT_RECV_BUFFER_SIZE];
 	ks_size_t recv_buffer_length;
 
@@ -106,7 +109,7 @@ KS_DECLARE(ks_status_t) ks_dht2_deinit(ks_dht2_t *dht);
 KS_DECLARE(ks_status_t) ks_dht2_autoroute(ks_dht2_t *dht, ks_bool_t autoroute, ks_port_t port);
 
 KS_DECLARE(ks_status_t) ks_dht2_bind(ks_dht2_t *dht, const ks_sockaddr_t *addr, ks_dht2_endpoint_t **endpoint);
-KS_DECLARE(ks_status_t) ks_dht2_pulse(ks_dht2_t *dht, int32_t timeout);
+KS_DECLARE(void) ks_dht2_pulse(ks_dht2_t *dht, int32_t timeout);
 
 
 KS_DECLARE(ks_status_t) ks_dht2_register_type(ks_dht2_t *dht, const char *value, ks_dht2_message_callback_t callback);
@@ -129,7 +132,7 @@ KS_DECLARE(ks_status_t) ks_dht2_message_alloc(ks_dht2_message_t **message, ks_po
 KS_DECLARE(ks_status_t) ks_dht2_message_prealloc(ks_dht2_message_t *message, ks_pool_t *pool);
 KS_DECLARE(ks_status_t) ks_dht2_message_free(ks_dht2_message_t *message);
 
-KS_DECLARE(ks_status_t) ks_dht2_message_init(ks_dht2_message_t *message, ks_bool_t alloc_data);
+KS_DECLARE(ks_status_t) ks_dht2_message_init(ks_dht2_message_t *message, ks_sockaddr_t *raddr, ks_bool_t alloc_data);
 KS_DECLARE(ks_status_t) ks_dht2_message_deinit(ks_dht2_message_t *message);
 
 KS_DECLARE(ks_status_t) ks_dht2_message_parse(ks_dht2_message_t *message, const uint8_t *buffer, ks_size_t buffer_length);

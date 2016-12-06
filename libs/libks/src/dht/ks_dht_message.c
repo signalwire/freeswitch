@@ -47,11 +47,12 @@ KS_DECLARE(ks_status_t) ks_dht2_message_free(ks_dht2_message_t *message)
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht2_message_init(ks_dht2_message_t *message, ks_bool_t alloc_data)
+KS_DECLARE(ks_status_t) ks_dht2_message_init(ks_dht2_message_t *message, ks_sockaddr_t *raddr, ks_bool_t alloc_data)
 {
 	ks_assert(message);
 	ks_assert(message->pool);
 
+	message->raddr = *raddr;
 	message->data = NULL;
 	message->args = NULL;
 	message->transactionid_length = 0;
@@ -70,6 +71,7 @@ KS_DECLARE(ks_status_t) ks_dht2_message_deinit(ks_dht2_message_t *message)
 {
 	ks_assert(message);
 
+	message->raddr = (const ks_sockaddr_t){ 0 };
 	message->args = NULL;
 	message->type[0] = '\0';
 	message->transactionid_length = 0;

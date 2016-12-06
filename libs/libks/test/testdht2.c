@@ -6,11 +6,11 @@
 #define TEST_DHT1_REGISTER_TYPE_BUFFER "d1:ad2:id20:12345678901234567890e1:q4:ping1:t2:421:y1:ze"
 #define TEST_DHT1_PROCESS_QUERY_PING_BUFFER "d1:ad2:id20:12345678901234567890e1:q4:ping1:t2:421:y1:qe"
 
-ks_status_t dht_z_callback(ks_dht2_t *dht, ks_sockaddr_t *raddr, ks_dht2_message_t *message)
+ks_status_t dht_z_callback(ks_dht2_t *dht, ks_dht2_message_t *message)
 {
 	diag("dht_z_callback\n");
 	ok(message->transactionid[0] == '4' && message->transactionid[1] == '2');
-	ks_dht2_send_error(dht, raddr, message->transactionid, message->transactionid_length, 201, "Generic test error");
+	ks_dht2_send_error(dht, &message->raddr, message->transactionid, message->transactionid_length, 201, "Generic test error");
 	return KS_STATUS_SUCCESS;
 }
 
@@ -91,6 +91,8 @@ int main() {
 	ok(err == KS_STATUS_SUCCESS);
   }
 
+  diag("Custom type tests\n");
+  
   buflen = strlen(TEST_DHT1_REGISTER_TYPE_BUFFER);
   memcpy(dht1->recv_buffer, TEST_DHT1_REGISTER_TYPE_BUFFER, buflen);
   dht1->recv_buffer_length = buflen;
@@ -98,25 +100,30 @@ int main() {
   err = ks_dht2_process(dht1, &raddr);
   ok(err == KS_STATUS_SUCCESS);
 
-  err = ks_dht2_pulse(&dht2, 1000);
-  ok(err == KS_STATUS_SUCCESS);
+  ks_dht2_pulse(dht1, 100);
 
+  ks_dht2_pulse(&dht2, 100);
+
+  
   //buflen = strlen(TEST_DHT1_PROCESS_QUERY_PING_BUFFER);
   //memcpy(dht1->recv_buffer, TEST_DHT1_PROCESS_QUERY_PING_BUFFER, buflen);
   //dht1->recv_buffer_length = buflen;
 
   //err = ks_dht2_process(dht1, &raddr);
   //ok(err == KS_STATUS_SUCCESS);
+
   
-  err = ks_dht2_send_query_ping(dht1, &raddr);
-  ok(err == KS_STATUS_SUCCESS);
+  diag("Ping tests\n");
+  
+  ks_dht2_send_ping(dht1, &raddr);
+  
+  ks_dht2_pulse(dht1, 100);
+  
+  ks_dht2_pulse(&dht2, 100);
 
-  err = ks_dht2_pulse(&dht2, 1000);
-  ok(err == KS_STATUS_SUCCESS);
+  ks_dht2_pulse(dht1, 100);
 
-  err = ks_dht2_pulse(dht1, 1000);
-  ok(err == KS_STATUS_SUCCESS);
-
+  
   diag("Cleanup\n");
   /* Cleanup and shutdown */
 
