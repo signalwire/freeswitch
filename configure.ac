@@ -831,6 +831,10 @@ PKG_CHECK_MODULES([AMR], [opencore-amrnb >= 0.1.0],[
 		AM_CONDITIONAL([HAVE_AMR],[true])],[
 		AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_AMR],[false])])
 
+PKG_CHECK_MODULES([AMRWB], [opencore-amrwb >= 0.1.0 vo-amrwbenc >= 0.1.0],[
+		AM_CONDITIONAL([HAVE_AMRWB],[true])],[
+		AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_AMRWB],[false])])
+
 AC_CHECK_LIB(apr-1, apr_pool_mutex_set, use_system_apr=yes, use_system_apr=no)
 AM_CONDITIONAL([SYSTEM_APR],[test "${use_system_apr}" = "yes"])
 AC_CHECK_LIB(aprutil-1, apr_queue_pop_timeout, use_system_aprutil=yes, use_system_aprutil=no)
@@ -1934,7 +1938,6 @@ AM_CONDITIONAL(ISMAC, [test `uname -s` = Darwin])
 AM_CONDITIONAL(ISFREEBSD, [test `uname -s` = FreeBSD])
 AM_CONDITIONAL(IS64BITLINUX, [test `uname -m` = x86_64])
 
-AM_CONDITIONAL(HAVE_AMRWB, [ test -d ${switch_srcdir}/libs/amrwb ])
 AM_CONDITIONAL(HAVE_G723_1, [ test -d ${switch_srcdir}/libs/libg723_1 ])
 AM_CONDITIONAL(HAVE_G729, [ test -d ${switch_srcdir}/libs/libg729 ])
 
