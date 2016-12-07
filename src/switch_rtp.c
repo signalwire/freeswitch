@@ -5783,13 +5783,15 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 			}
 		}
 
-		if (rtp_session->jb && !rtp_session->pause_jb && jb_valid(rtp_session)) {
-
+		if (rtp_session->jb && jb_valid(rtp_session)) {
 			if (rtp_session->last_jb_read_ssrc && rtp_session->last_jb_read_ssrc != read_ssrc) {
 				switch_jb_reset(rtp_session->jb);
 			}
 
 			rtp_session->last_jb_read_ssrc = read_ssrc;
+		}
+
+		if (rtp_session->jb && !rtp_session->pause_jb && jb_valid(rtp_session)) {
 
 			if (!rtp_session->flags[SWITCH_RTP_FLAG_USE_TIMER] && rtp_session->timer.interval) {
 				switch_core_timer_sync(&rtp_session->timer);
