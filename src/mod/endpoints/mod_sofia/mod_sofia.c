@@ -6205,6 +6205,7 @@ void mod_sofia_shutdown_cleanup() {
 	switch_event_free_subclass(MY_EVENT_PRE_REGISTER);
 	switch_event_free_subclass(MY_EVENT_REGISTER);
 	switch_event_free_subclass(MY_EVENT_GATEWAY_ADD);
+	switch_event_free_subclass(MY_EVENT_BYE_RESPONSE);
 	
 	switch_console_del_complete_func("::sofia::list_profiles");
 	switch_console_set_complete("del sofia");
