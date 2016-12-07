@@ -239,6 +239,9 @@ static switch_status_t hiredis_context_execute_sync(hiredis_context_t *context, 
 	case REDIS_REPLY_INTEGER:
 		*resp = switch_mprintf("%lld", response->integer);
 		break;
+	case REDIS_REPLY_NIL:
+		*resp = NULL;
+		break;
 	case REDIS_REPLY_ERROR:
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "hiredis: error response[%s][%d]\n", response->str, response->type);
 		freeReplyObject(response);
