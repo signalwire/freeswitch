@@ -237,9 +237,10 @@ static switch_xml_t lua_fetch(const char *section,
 
 	switch_xml_t xml = NULL;
 	char *mycmd = NULL;
+	lua_State *L = NULL;
 
 	if (!zstr(globals.xml_handler)) {
-		lua_State *L = lua_init();
+		L = lua_init();
 		const char *str;
 		int error;
 
@@ -285,13 +286,15 @@ static switch_xml_t lua_fetch(const char *section,
 			}
 		}
 
-		lua_uninit(L);
-
 	}
 
  end:
 
 	switch_safe_free(mycmd);
+
+	if (L) {
+		lua_uninit(L);
+	}
 
 	return xml;
 }
@@ -519,14 +522,13 @@ SWITCH_STANDARD_CHAT_APP(lua_chat_function)
 SWITCH_STANDARD_API(lua_api_function)
 {
 
-	lua_State *L = lua_init();
 	char *mycmd;
 	int error;
 
 	if (zstr(cmd)) {
 		stream->write_function(stream, "");
 	} else {
-
+		lua_State *L = lua_init();
 		mycmd = strdup(cmd);
 		switch_assert(mycmd);
 
