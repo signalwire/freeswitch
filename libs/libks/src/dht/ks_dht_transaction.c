@@ -13,6 +13,11 @@ KS_DECLARE(ks_status_t) ks_dht_transaction_alloc(ks_dht_transaction_t **transact
 	
 	*transaction = tran = ks_pool_alloc(pool, sizeof(ks_dht_transaction_t));
 	tran->pool = pool;
+	tran->raddr = (const ks_sockaddr_t){ 0 };
+	tran->transactionid = 0;
+	tran->callback = NULL;
+	tran->expiration = 0;
+	tran->finished = KS_FALSE;
 
 	return KS_STATUS_SUCCESS;
 }
@@ -26,6 +31,11 @@ KS_DECLARE(ks_status_t) ks_dht_transaction_prealloc(ks_dht_transaction_t *transa
 	ks_assert(pool);
 	
 	transaction->pool = pool;
+	transaction->raddr = (const ks_sockaddr_t){ 0 };
+	transaction->transactionid = 0;
+	transaction->callback = NULL;
+	transaction->expiration = 0;
+	transaction->finished = KS_FALSE;
 
 	return KS_STATUS_SUCCESS;
 }

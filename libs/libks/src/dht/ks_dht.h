@@ -30,17 +30,10 @@ typedef struct ks_dht_transaction_s ks_dht_transaction_t;
 
 typedef ks_status_t (*ks_dht_message_callback_t)(ks_dht_t *dht, ks_dht_message_t *message);
 
-struct ks_dht_node_s {
-	ks_pool_t *pool;
-	ks_dht_nodeid_t id;
-	ks_sockaddr_t *addr4;
-	ks_sockaddr_t *addr6;
-	ks_size_t addr4_length;
-	ks_size_t addr6_length;
-};
 
 struct ks_dht_message_s {
 	ks_pool_t *pool;
+	ks_dht_endpoint_t *endpoint;
 	ks_sockaddr_t raddr;
 	struct bencode *data;
 	uint8_t transactionid[KS_DHT_MESSAGE_TRANSACTIONID_MAX_SIZE];
@@ -51,6 +44,7 @@ struct ks_dht_message_s {
 
 struct ks_dht_endpoint_s {
 	ks_pool_t *pool;
+	ks_dht_nodeid_t nodeid;
 	ks_sockaddr_t addr;
 	ks_socket_t sock;
 };
@@ -72,8 +66,6 @@ struct ks_dht_s {
 	ks_bool_t autoroute;
 	ks_port_t autoroute_port;
 	
-	ks_dht_nodeid_t nodeid;
-
 	ks_hash_t *registry_type;
 	ks_hash_t *registry_query;
 	ks_hash_t *registry_error;
@@ -103,12 +95,12 @@ KS_DECLARE(ks_status_t) ks_dht_prealloc(ks_dht_t *dht, ks_pool_t *pool);
 KS_DECLARE(ks_status_t) ks_dht_free(ks_dht_t *dht);
 
 
-KS_DECLARE(ks_status_t) ks_dht_init(ks_dht_t *dht, const ks_dht_nodeid_t *nodeid);
+KS_DECLARE(ks_status_t) ks_dht_init(ks_dht_t *dht);
 KS_DECLARE(ks_status_t) ks_dht_deinit(ks_dht_t *dht);
 
 KS_DECLARE(ks_status_t) ks_dht_autoroute(ks_dht_t *dht, ks_bool_t autoroute, ks_port_t port);
 
-KS_DECLARE(ks_status_t) ks_dht_bind(ks_dht_t *dht, const ks_sockaddr_t *addr, ks_dht_endpoint_t **endpoint);
+KS_DECLARE(ks_status_t) ks_dht_bind(ks_dht_t *dht, const ks_dht_nodeid_t *nodeid, const ks_sockaddr_t *addr, ks_dht_endpoint_t **endpoint);
 KS_DECLARE(void) ks_dht_pulse(ks_dht_t *dht, int32_t timeout);
 
 
@@ -122,7 +114,7 @@ KS_DECLARE(ks_status_t) ks_dht_message_alloc(ks_dht_message_t **message, ks_pool
 KS_DECLARE(ks_status_t) ks_dht_message_prealloc(ks_dht_message_t *message, ks_pool_t *pool);
 KS_DECLARE(ks_status_t) ks_dht_message_free(ks_dht_message_t *message);
 
-KS_DECLARE(ks_status_t) ks_dht_message_init(ks_dht_message_t *message, ks_sockaddr_t *raddr, ks_bool_t alloc_data);
+KS_DECLARE(ks_status_t) ks_dht_message_init(ks_dht_message_t *message, ks_dht_endpoint_t *ep, ks_sockaddr_t *raddr, ks_bool_t alloc_data);
 KS_DECLARE(ks_status_t) ks_dht_message_deinit(ks_dht_message_t *message);
 
 KS_DECLARE(ks_status_t) ks_dht_message_parse(ks_dht_message_t *message, const uint8_t *buffer, ks_size_t buffer_length);

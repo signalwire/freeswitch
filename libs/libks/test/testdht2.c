@@ -10,7 +10,7 @@ ks_status_t dht_z_callback(ks_dht_t *dht, ks_dht_message_t *message)
 {
 	diag("dht_z_callback\n");
 	ok(message->transactionid[0] == '4' && message->transactionid[1] == '2');
-	ks_dht_send_error(dht, &message->raddr, message->transactionid, message->transactionid_length, 201, "Generic test error");
+	ks_dht_send_error(dht, message->endpoint, &message->raddr, message->transactionid, message->transactionid_length, 201, "Generic test error");
 	return KS_STATUS_SUCCESS;
 }
 
@@ -20,6 +20,8 @@ int main() {
   int mask = 0;
   ks_dht_t *dht1 = NULL;
   ks_dht_t dht2;
+  ks_dht_endpoint_t *ep1;
+  ks_dht_endpoint_t *ep2;
   ks_bool_t have_v4, have_v6;
   char v4[48] = {0}, v6[48] = {0};
   ks_sockaddr_t addr;
@@ -50,13 +52,13 @@ int main() {
   err = ks_dht_alloc(&dht1, NULL);
   ok(err == KS_STATUS_SUCCESS);
   
-  err = ks_dht_init(dht1, NULL);
+  err = ks_dht_init(dht1);
   ok(err == KS_STATUS_SUCCESS);
 
   err = ks_dht_prealloc(&dht2, dht1->pool);
   ok(err == KS_STATUS_SUCCESS);
   
-  err = ks_dht_init(&dht2, NULL);
+  err = ks_dht_init(&dht2);
   ok(err == KS_STATUS_SUCCESS);
 
   ks_dht_register_type(dht1, "z", dht_z_callback);
@@ -65,13 +67,13 @@ int main() {
     err = ks_addr_set(&addr, v4, KS_DHT_DEFAULT_PORT, AF_INET);
 	ok(err == KS_STATUS_SUCCESS);
 	
-    err = ks_dht_bind(dht1, &addr, NULL);
+    err = ks_dht_bind(dht1, NULL, &addr, &ep1);
     ok(err == KS_STATUS_SUCCESS);
 
 	err = ks_addr_set(&addr, v4, KS_DHT_DEFAULT_PORT + 1, AF_INET);
 	ok(err == KS_STATUS_SUCCESS);
 	
-	err = ks_dht_bind(&dht2, &addr, NULL);
+	err = ks_dht_bind(&dht2, NULL, &addr, &ep2);
 	ok(err == KS_STATUS_SUCCESS);
 
 	raddr = addr;
@@ -81,13 +83,13 @@ int main() {
 	err = ks_addr_set(&addr, v6, KS_DHT_DEFAULT_PORT, AF_INET6);
 	ok(err == KS_STATUS_SUCCESS);
 	  
-    err = ks_dht_bind(dht1, &addr, NULL);
+    err = ks_dht_bind(dht1, NULL, &addr, NULL);
     ok(err == KS_STATUS_SUCCESS);
 
 	err = ks_addr_set(&addr, v6, KS_DHT_DEFAULT_PORT + 1, AF_INET6);
 	ok(err == KS_STATUS_SUCCESS);
 
-	err = ks_dht_bind(&dht2, &addr, NULL);
+	err = ks_dht_bind(&dht2, NULL, &addr, NULL);
 	ok(err == KS_STATUS_SUCCESS);
   }
 
@@ -97,7 +99,7 @@ int main() {
   memcpy(dht1->recv_buffer, TEST_DHT1_REGISTER_TYPE_BUFFER, buflen);
   dht1->recv_buffer_length = buflen;
 
-  err = ks_dht_process(dht1, &raddr);
+  err = ks_dht_process(dht1, ep1, &raddr);
   ok(err == KS_STATUS_SUCCESS);
 
   ks_dht_pulse(dht1, 100);
@@ -115,8 +117,8 @@ int main() {
   
   diag("Ping tests\n");
   
-  ks_dht_send_ping(dht1, &raddr);
-  
+  ks_dht_send_ping(dht1, ep1, &raddr);
+
   ks_dht_pulse(dht1, 100);
   
   ks_dht_pulse(&dht2, 100);

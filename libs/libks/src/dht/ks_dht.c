@@ -18,6 +18,23 @@ KS_DECLARE(ks_status_t) ks_dht_alloc(ks_dht_t **dht, ks_pool_t *pool)
 	d->pool = pool;
 	d->pool_alloc = pool_alloc;
 
+	d->autoroute = KS_FALSE;
+	d->autoroute_port = 0;
+	d->registry_type = NULL;
+	d->registry_query = NULL;
+	d->registry_error = NULL;
+	d->bind_ipv4 = KS_FALSE;
+	d->bind_ipv6 = KS_FALSE;
+	d->endpoints = NULL;
+	d->endpoints_size = 0;
+	d->endpoints_hash = NULL;
+	d->endpoints_poll = NULL;
+	d->send_q = NULL;
+	d->send_q_unsent = NULL;
+	d->recv_buffer_length = 0;
+	d->transactionid_next = 0;
+	d->transactions_hash = NULL;
+
 	return KS_STATUS_SUCCESS;
 }
 
@@ -32,6 +49,23 @@ KS_DECLARE(ks_status_t) ks_dht_prealloc(ks_dht_t *dht, ks_pool_t *pool)
 	dht->pool = pool;
 	dht->pool_alloc = KS_FALSE;
 
+	dht->autoroute = KS_FALSE;
+	dht->autoroute_port = 0;
+	dht->registry_type = NULL;
+	dht->registry_query = NULL;
+	dht->registry_error = NULL;
+	dht->bind_ipv4 = KS_FALSE;
+	dht->bind_ipv6 = KS_FALSE;
+	dht->endpoints = NULL;
+	dht->endpoints_size = 0;
+	dht->endpoints_hash = NULL;
+	dht->endpoints_poll = NULL;
+	dht->send_q = NULL;
+	dht->send_q_unsent = NULL;
+	dht->recv_buffer_length = 0;
+	dht->transactionid_next = 0;
+	dht->transactions_hash = NULL;
+	
 	return KS_STATUS_SUCCESS;
 }
 
@@ -56,19 +90,13 @@ KS_DECLARE(ks_status_t) ks_dht_free(ks_dht_t *dht)
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht_init(ks_dht_t *dht, const ks_dht_nodeid_t *nodeid)
+KS_DECLARE(ks_status_t) ks_dht_init(ks_dht_t *dht)
 {
 	ks_assert(dht);
 	ks_assert(dht->pool);
 
 	dht->autoroute = KS_FALSE;
 	dht->autoroute_port = 0;
-	
-    if (!nodeid) {
-		randombytes_buf(dht->nodeid, KS_DHT_NODEID_SIZE);
-	} else {
-		memcpy(dht->nodeid, nodeid, KS_DHT_NODEID_SIZE);
-	}
 	
 	ks_hash_create(&dht->registry_type, KS_HASH_MODE_DEFAULT, KS_HASH_FLAG_RWLOCK | KS_HASH_FLAG_DUP_CHECK, dht->pool);
 	ks_dht_register_type(dht, "q", ks_dht_process_query);
@@ -225,7 +253,7 @@ KS_DECLARE(ks_status_t) ks_dht_register_error(ks_dht_t *dht, const char *value, 
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht_bind(ks_dht_t *dht, const ks_sockaddr_t *addr, ks_dht_endpoint_t **endpoint)
+KS_DECLARE(ks_status_t) ks_dht_bind(ks_dht_t *dht, const ks_dht_nodeid_t *nodeid, const ks_sockaddr_t *addr, ks_dht_endpoint_t **endpoint)
 {
 	ks_dht_endpoint_t *ep;
 	ks_socket_t sock;
@@ -259,7 +287,7 @@ KS_DECLARE(ks_status_t) ks_dht_bind(ks_dht_t *dht, const ks_sockaddr_t *addr, ks
 		return KS_STATUS_FAIL;
 	}
 	
-	if (ks_dht_endpoint_init(ep, addr, sock) != KS_STATUS_SUCCESS) {
+	if (ks_dht_endpoint_init(ep, nodeid, addr, sock) != KS_STATUS_SUCCESS) {
 		ks_dht_endpoint_free(ep);
 		ks_socket_close(&sock);
 		return KS_STATUS_FAIL;
@@ -315,7 +343,7 @@ KS_DECLARE(void) ks_dht_pulse(ks_dht_t *dht, int32_t timeout)
 			
 				raddr.family = dht->endpoints[i]->addr.family;
 				if (ks_socket_recvfrom(dht->endpoints_poll[i].fd, dht->recv_buffer, &dht->recv_buffer_length, &raddr) == KS_STATUS_SUCCESS) {
-					ks_dht_process(dht, &raddr);
+					ks_dht_process(dht, dht->endpoints[i], &raddr);
 				}
 			}
 		}
@@ -502,7 +530,7 @@ KS_DECLARE(ks_status_t) ks_dht_send(ks_dht_t *dht, ks_dht_message_t *message)
 	if (!(ep = ks_hash_search(dht->endpoints_hash, ip, KS_UNLOCKED)) && dht->autoroute) {
 		ks_sockaddr_t addr;
 		ks_addr_set(&addr, ip, dht->autoroute_port, message->raddr.family);
-		if (ks_dht_bind(dht, &addr, &ep) != KS_STATUS_SUCCESS) {
+		if (ks_dht_bind(dht, NULL, &addr, &ep) != KS_STATUS_SUCCESS) {
 			return KS_STATUS_FAIL;
 		}
 	}
@@ -524,6 +552,7 @@ KS_DECLARE(ks_status_t) ks_dht_send(ks_dht_t *dht, ks_dht_message_t *message)
  *
  */
 KS_DECLARE(ks_status_t) ks_dht_send_error(ks_dht_t *dht,
+										  ks_dht_endpoint_t *ep,
 										  ks_sockaddr_t *raddr,
 										  uint8_t *transactionid,
 										  ks_size_t transactionid_length,
@@ -543,7 +572,7 @@ KS_DECLARE(ks_status_t) ks_dht_send_error(ks_dht_t *dht,
 		return KS_STATUS_FAIL;
 	}
 
-	if (ks_dht_message_init(error, raddr, KS_TRUE) != KS_STATUS_SUCCESS) {
+	if (ks_dht_message_init(error, ep, raddr, KS_TRUE) != KS_STATUS_SUCCESS) {
 		goto done;
 	}
 
@@ -571,6 +600,7 @@ KS_DECLARE(ks_status_t) ks_dht_send_error(ks_dht_t *dht,
  *
  */
 KS_DECLARE(ks_status_t) ks_dht_setup_query(ks_dht_t *dht,
+										   ks_dht_endpoint_t *ep,
 										   ks_sockaddr_t *raddr,
 										   const char *query,
 										   ks_dht_message_callback_t callback,
@@ -605,7 +635,7 @@ KS_DECLARE(ks_status_t) ks_dht_setup_query(ks_dht_t *dht,
 		goto done;
 	}
 
-	if (ks_dht_message_init(msg, raddr, KS_TRUE) != KS_STATUS_SUCCESS) {
+	if (ks_dht_message_init(msg, ep, raddr, KS_TRUE) != KS_STATUS_SUCCESS) {
 	    goto done;
 	}
 
@@ -637,19 +667,19 @@ KS_DECLARE(ks_status_t) ks_dht_setup_query(ks_dht_t *dht,
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht_send_ping(ks_dht_t *dht, ks_sockaddr_t *raddr)
+KS_DECLARE(ks_status_t) ks_dht_send_ping(ks_dht_t *dht, ks_dht_endpoint_t *ep, ks_sockaddr_t *raddr)
 {
 	ks_dht_message_t *message = NULL;
 	struct bencode *a = NULL;
-	
+
 	ks_assert(dht);
 	ks_assert(raddr);
 
-	if (ks_dht_setup_query(dht, raddr, "ping", ks_dht_process_response_ping, &message, &a) != KS_STATUS_SUCCESS) {
+	if (ks_dht_setup_query(dht, ep, raddr, "ping", ks_dht_process_response_ping, &message, &a) != KS_STATUS_SUCCESS) {
 		return KS_STATUS_FAIL;
 	}
-	
-	ben_dict_set(a, ben_blob("id", 2), ben_blob(dht->nodeid, KS_DHT_NODEID_SIZE));
+
+	ben_dict_set(a, ben_blob("id", 2), ben_blob(ep->nodeid, KS_DHT_NODEID_SIZE));
 
 	ks_log(KS_LOG_DEBUG, "Sending message query ping\n");
 	ks_q_push(dht->send_q, (void *)message);
@@ -660,7 +690,7 @@ KS_DECLARE(ks_status_t) ks_dht_send_ping(ks_dht_t *dht, ks_sockaddr_t *raddr)
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht_send_findnode(ks_dht_t *dht, ks_sockaddr_t *raddr, ks_dht_nodeid_t *targetid)
+KS_DECLARE(ks_status_t) ks_dht_send_findnode(ks_dht_t *dht, ks_dht_endpoint_t *ep, ks_sockaddr_t *raddr, ks_dht_nodeid_t *targetid)
 {
 	ks_dht_message_t *message = NULL;
 	struct bencode *a = NULL;
@@ -669,11 +699,11 @@ KS_DECLARE(ks_status_t) ks_dht_send_findnode(ks_dht_t *dht, ks_sockaddr_t *raddr
 	ks_assert(raddr);
 	ks_assert(targetid);
 
-	if (ks_dht_setup_query(dht, raddr, "find_node", ks_dht_process_response_findnode, &message, &a) != KS_STATUS_SUCCESS) {
+	if (ks_dht_setup_query(dht, ep, raddr, "find_node", ks_dht_process_response_findnode, &message, &a) != KS_STATUS_SUCCESS) {
 		return KS_STATUS_FAIL;
 	}
 	
-	ben_dict_set(a, ben_blob("id", 2), ben_blob(dht->nodeid, KS_DHT_NODEID_SIZE));
+	ben_dict_set(a, ben_blob("id", 2), ben_blob(ep->nodeid, KS_DHT_NODEID_SIZE));
 	ben_dict_set(a, ben_blob("target", 6), ben_blob(targetid, KS_DHT_NODEID_SIZE));
 
 	ks_log(KS_LOG_DEBUG, "Sending message query find_node\n");
@@ -686,7 +716,7 @@ KS_DECLARE(ks_status_t) ks_dht_send_findnode(ks_dht_t *dht, ks_sockaddr_t *raddr
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht_process(ks_dht_t *dht, ks_sockaddr_t *raddr)
+KS_DECLARE(ks_status_t) ks_dht_process(ks_dht_t *dht, ks_dht_endpoint_t *ep, ks_sockaddr_t *raddr)
 {
 	ks_dht_message_t message;
 	ks_dht_message_callback_t callback;
@@ -707,7 +737,7 @@ KS_DECLARE(ks_status_t) ks_dht_process(ks_dht_t *dht, ks_sockaddr_t *raddr)
 		return KS_STATUS_FAIL;
 	}
 
-	if (ks_dht_message_init(&message, raddr, KS_FALSE) != KS_STATUS_SUCCESS) {
+	if (ks_dht_message_init(&message, ep, raddr, KS_FALSE) != KS_STATUS_SUCCESS) {
 		return KS_STATUS_FAIL;
 	}
 
@@ -938,7 +968,7 @@ KS_DECLARE(ks_status_t) ks_dht_process_query_ping(ks_dht_t *dht, ks_dht_message_
 		goto done;
 	}
 
-	if (ks_dht_message_init(response, &message->raddr, KS_TRUE) != KS_STATUS_SUCCESS) {
+	if (ks_dht_message_init(response, message->endpoint, &message->raddr, KS_TRUE) != KS_STATUS_SUCCESS) {
 		goto done;
 	}
 
@@ -946,7 +976,7 @@ KS_DECLARE(ks_status_t) ks_dht_process_query_ping(ks_dht_t *dht, ks_dht_message_
 		goto done;
 	}
 	
-	ben_dict_set(r, ben_blob("id", 2), ben_blob(dht->nodeid, KS_DHT_NODEID_SIZE));
+	ben_dict_set(r, ben_blob("id", 2), ben_blob(message->endpoint->nodeid, KS_DHT_NODEID_SIZE));
 
 	ks_log(KS_LOG_DEBUG, "Sending message response ping\n");
 	ks_q_push(dht->send_q, (void *)response);
@@ -1049,7 +1079,7 @@ KS_DECLARE(ks_status_t) ks_dht_process_query_findnode(ks_dht_t *dht, ks_dht_mess
 		goto done;
 	}
 
-	if (ks_dht_message_init(response, &message->raddr, KS_TRUE) != KS_STATUS_SUCCESS) {
+	if (ks_dht_message_init(response, message->endpoint, &message->raddr, KS_TRUE) != KS_STATUS_SUCCESS) {
 		goto done;
 	}
 
@@ -1057,7 +1087,7 @@ KS_DECLARE(ks_status_t) ks_dht_process_query_findnode(ks_dht_t *dht, ks_dht_mess
 		goto done;
 	}
 	
-	ben_dict_set(r, ben_blob("id", 2), ben_blob(dht->nodeid, KS_DHT_NODEID_SIZE));
+	ben_dict_set(r, ben_blob("id", 2), ben_blob(message->endpoint->nodeid, KS_DHT_NODEID_SIZE));
 	// @todo populate nodes/nodes6
 	ben_dict_set(r, ben_blob("nodes", 5), ben_blob(buffer, buffer_length));
 

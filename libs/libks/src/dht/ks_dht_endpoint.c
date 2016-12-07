@@ -1,5 +1,6 @@
 #include "ks_dht.h"
 #include "ks_dht-int.h"
+#include "sodium.h"
 
 /**
  *
@@ -49,16 +50,22 @@ KS_DECLARE(ks_status_t) ks_dht_endpoint_free(ks_dht_endpoint_t *endpoint)
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht_endpoint_init(ks_dht_endpoint_t *endpoint, const ks_sockaddr_t *addr, ks_socket_t sock)
+KS_DECLARE(ks_status_t) ks_dht_endpoint_init(ks_dht_endpoint_t *endpoint, const ks_dht_nodeid_t *nodeid, const ks_sockaddr_t *addr, ks_socket_t sock)
 {
 	ks_assert(endpoint);
 	ks_assert(endpoint->pool);
 	ks_assert(addr);
 	ks_assert(addr->family == AF_INET || addr->family == AF_INET6);
+	
+    if (!nodeid) {
+		randombytes_buf(endpoint->nodeid, KS_DHT_NODEID_SIZE);
+	} else {
+		memcpy(endpoint->nodeid, nodeid, KS_DHT_NODEID_SIZE);
+	}
 
 	endpoint->addr = *addr;
 	endpoint->sock = sock;
-	
+
 	return KS_STATUS_SUCCESS;
 }
 

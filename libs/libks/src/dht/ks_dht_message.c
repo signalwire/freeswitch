@@ -13,6 +13,12 @@ KS_DECLARE(ks_status_t) ks_dht_message_alloc(ks_dht_message_t **message, ks_pool
 	
 	*message = msg = ks_pool_alloc(pool, sizeof(ks_dht_message_t));
 	msg->pool = pool;
+	msg->endpoint = NULL;
+	msg->raddr = (const ks_sockaddr_t){ 0 };
+	msg->args = NULL;
+	msg->type[0] = '\0';
+	msg->transactionid_length = 0;
+	msg->data = NULL;
 
 	return KS_STATUS_SUCCESS;
 }
@@ -26,6 +32,12 @@ KS_DECLARE(ks_status_t) ks_dht_message_prealloc(ks_dht_message_t *message, ks_po
 	ks_assert(pool);
 	
 	message->pool = pool;
+	message->endpoint = NULL;
+	message->raddr = (const ks_sockaddr_t){ 0 };
+	message->args = NULL;
+	message->type[0] = '\0';
+	message->transactionid_length = 0;
+	message->data = NULL;
 
 	return KS_STATUS_SUCCESS;
 }
@@ -42,16 +54,17 @@ KS_DECLARE(ks_status_t) ks_dht_message_free(ks_dht_message_t *message)
 
 	return KS_STATUS_SUCCESS;
 }
-												
+
 
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht_message_init(ks_dht_message_t *message, ks_sockaddr_t *raddr, ks_bool_t alloc_data)
+KS_DECLARE(ks_status_t) ks_dht_message_init(ks_dht_message_t *message, ks_dht_endpoint_t *ep, ks_sockaddr_t *raddr, ks_bool_t alloc_data)
 {
 	ks_assert(message);
 	ks_assert(message->pool);
 
+	message->endpoint = ep;
 	message->raddr = *raddr;
 	message->data = NULL;
 	message->args = NULL;
@@ -71,6 +84,7 @@ KS_DECLARE(ks_status_t) ks_dht_message_deinit(ks_dht_message_t *message)
 {
 	ks_assert(message);
 
+	message->endpoint = NULL;
 	message->raddr = (const ks_sockaddr_t){ 0 };
 	message->args = NULL;
 	message->type[0] = '\0';
