@@ -1,0 +1,29 @@
+Tested with mobile devices (VOLTE) : 
+Samsung S6 Edge, iPhone, Samsung Note4, Samsung S6
+
+Tested with SIP clients : 
+Linphone, pjsip
+
+INSTALL 
+
+1. install AMRWB libraries
+
+libopencore-amrwb-dev - Adaptive Multi-Rate - Wideband speech codec - development files
+libopencore-amrwb0 - Adaptive Multi-Rate - Wideband speech codec - shared library
+libopencore-amrwb0-dbg - Adaptive Multi-Rate - Wideband speech codec - debugging symbols
+libvo-amrwbenc-dev - VisualOn AMR-WB encoder library (development files)
+libvo-amrwbenc0 - VisualOn AMR-WB encoder library
+vo-amrwbenc-dbg - VisualOn AMR-WB encoder library (debugging symbols)
+
+apt-get install libopencore-amrwb-dev libopencore-amrwb0 libopencore-amrwb0-dbg libvo-amrwbenc-dev libvo-amrwbenc0 vo-amrwbenc-dbg
+
+This was tested on Debian 8.
+
+2. copy files dec_if.h and enc_if.h in the directory with the sourcecode  (mod_amrwb). 
+
+cp /usr/include/opencore-amrwb/dec_if.h  .
+cp /usr/include/vo-amrwbenc/enc_if.h .
+
+3.  make, make install 
+
+
