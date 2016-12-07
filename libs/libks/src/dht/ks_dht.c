@@ -56,7 +56,7 @@ KS_DECLARE(ks_status_t) ks_dht2_free(ks_dht2_t *dht)
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht2_init(ks_dht2_t *dht, const ks_dht2_nodeid_raw_t *nodeid)
+KS_DECLARE(ks_status_t) ks_dht2_init(ks_dht2_t *dht, const ks_dht2_nodeid_t *nodeid)
 {
 	ks_assert(dht);
 	ks_assert(dht->pool);
@@ -64,14 +64,12 @@ KS_DECLARE(ks_status_t) ks_dht2_init(ks_dht2_t *dht, const ks_dht2_nodeid_raw_t 
 	dht->autoroute = KS_FALSE;
 	dht->autoroute_port = 0;
 	
-	if (ks_dht2_nodeid_prealloc(&dht->nodeid, dht->pool) != KS_STATUS_SUCCESS) {
-		return KS_STATUS_FAIL;
+    if (!nodeid) {
+		randombytes_buf(dht->nodeid, KS_DHT_NODEID_SIZE);
+	} else {
+		memcpy(dht->nodeid, nodeid, KS_DHT_NODEID_SIZE);
 	}
 	
-	if (ks_dht2_nodeid_init(&dht->nodeid, nodeid) != KS_STATUS_SUCCESS) {
-		return KS_STATUS_FAIL;
-	}
-
 	ks_hash_create(&dht->registry_type, KS_HASH_MODE_DEFAULT, KS_HASH_FLAG_RWLOCK | KS_HASH_FLAG_DUP_CHECK, dht->pool);
 	ks_dht2_register_type(dht, "q", ks_dht2_process_query);
 	ks_dht2_register_type(dht, "r", ks_dht2_process_response);
@@ -162,8 +160,6 @@ KS_DECLARE(ks_status_t) ks_dht2_deinit(ks_dht2_t *dht)
 		ks_hash_destroy(&dht->registry_error);
 		dht->registry_error = NULL;
 	}
-
-	ks_dht2_nodeid_deinit(&dht->nodeid);
 
 	dht->autoroute = KS_FALSE;
 	dht->autoroute_port = 0;
@@ -383,7 +379,7 @@ KS_DECLARE(ks_status_t) ks_dht2_utility_compact_address(ks_sockaddr_t *address,
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht2_utility_compact_node(ks_dht2_nodeid_raw_t *nodeid,
+KS_DECLARE(ks_status_t) ks_dht2_utility_compact_node(ks_dht2_nodeid_t *nodeid,
 													 ks_sockaddr_t *address,
 													 uint8_t *buffer,
 													 ks_size_t *buffer_length,
@@ -395,13 +391,13 @@ KS_DECLARE(ks_status_t) ks_dht2_utility_compact_node(ks_dht2_nodeid_raw_t *nodei
 	ks_assert(buffer_size);
 	ks_assert(address->family == AF_INET || address->family == AF_INET6);
 
-	if (*buffer_length + KS_DHT_NODEID_LENGTH > buffer_size) {
+	if (*buffer_length + KS_DHT_NODEID_SIZE > buffer_size) {
 		ks_log(KS_LOG_DEBUG, "Insufficient space remaining for compacting\n");
 		return KS_STATUS_FAIL;
 	}
 
-	memcpy(buffer + (*buffer_length), (void *)nodeid, KS_DHT_NODEID_LENGTH);
-	*buffer_length += KS_DHT_NODEID_LENGTH;
+	memcpy(buffer + (*buffer_length), (void *)nodeid, KS_DHT_NODEID_SIZE);
+	*buffer_length += KS_DHT_NODEID_SIZE;
 
 	return ks_dht2_utility_compact_address(address, buffer, buffer_length, buffer_size);
 }
@@ -653,7 +649,7 @@ KS_DECLARE(ks_status_t) ks_dht2_send_ping(ks_dht2_t *dht, ks_sockaddr_t *raddr)
 		return KS_STATUS_FAIL;
 	}
 	
-	ben_dict_set(a, ben_blob("id", 2), ben_blob(dht->nodeid.id, KS_DHT_NODEID_LENGTH));
+	ben_dict_set(a, ben_blob("id", 2), ben_blob(dht->nodeid, KS_DHT_NODEID_SIZE));
 
 	ks_log(KS_LOG_DEBUG, "Sending message query ping\n");
 	ks_q_push(dht->send_q, (void *)message);
@@ -664,7 +660,7 @@ KS_DECLARE(ks_status_t) ks_dht2_send_ping(ks_dht2_t *dht, ks_sockaddr_t *raddr)
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht2_send_findnode(ks_dht2_t *dht, ks_sockaddr_t *raddr, ks_dht2_nodeid_raw_t *targetid)
+KS_DECLARE(ks_status_t) ks_dht2_send_findnode(ks_dht2_t *dht, ks_sockaddr_t *raddr, ks_dht2_nodeid_t *targetid)
 {
 	ks_dht2_message_t *message = NULL;
 	struct bencode *a = NULL;
@@ -677,8 +673,8 @@ KS_DECLARE(ks_status_t) ks_dht2_send_findnode(ks_dht2_t *dht, ks_sockaddr_t *rad
 		return KS_STATUS_FAIL;
 	}
 	
-	ben_dict_set(a, ben_blob("id", 2), ben_blob(dht->nodeid.id, KS_DHT_NODEID_LENGTH));
-	ben_dict_set(a, ben_blob("target", 6), ben_blob(targetid->id, KS_DHT_NODEID_LENGTH));
+	ben_dict_set(a, ben_blob("id", 2), ben_blob(dht->nodeid, KS_DHT_NODEID_SIZE));
+	ben_dict_set(a, ben_blob("target", 6), ben_blob(targetid, KS_DHT_NODEID_SIZE));
 
 	ks_log(KS_LOG_DEBUG, "Sending message query find_node\n");
 	ks_q_push(dht->send_q, (void *)message);
@@ -928,7 +924,7 @@ KS_DECLARE(ks_status_t) ks_dht2_process_query_ping(ks_dht2_t *dht, ks_dht2_messa
 	
     //idv = ben_str_val(id);
 	idv_len = ben_str_len(id);
-    if (idv_len != KS_DHT_NODEID_LENGTH) {
+    if (idv_len != KS_DHT_NODEID_SIZE) {
 		ks_log(KS_LOG_DEBUG, "Message args 'id' value has an unexpected size of %d\n", idv_len);
 		return KS_STATUS_FAIL;
 	}
@@ -950,7 +946,7 @@ KS_DECLARE(ks_status_t) ks_dht2_process_query_ping(ks_dht2_t *dht, ks_dht2_messa
 		goto done;
 	}
 	
-	ben_dict_set(r, ben_blob("id", 2), ben_blob(dht->nodeid.id, KS_DHT_NODEID_LENGTH));
+	ben_dict_set(r, ben_blob("id", 2), ben_blob(dht->nodeid, KS_DHT_NODEID_SIZE));
 
 	ks_log(KS_LOG_DEBUG, "Sending message response ping\n");
 	ks_q_push(dht->send_q, (void *)response);
@@ -998,7 +994,7 @@ KS_DECLARE(ks_status_t) ks_dht2_process_query_findnode(ks_dht2_t *dht, ks_dht2_m
 	
     idv = ben_str_val(id);
 	idv_len = ben_str_len(id);
-    if (idv_len != KS_DHT_NODEID_LENGTH) {
+    if (idv_len != KS_DHT_NODEID_SIZE) {
 		ks_log(KS_LOG_DEBUG, "Message args 'id' value has an unexpected size of %d\n", idv_len);
 		return KS_STATUS_FAIL;
 	}
@@ -1012,7 +1008,7 @@ KS_DECLARE(ks_status_t) ks_dht2_process_query_findnode(ks_dht2_t *dht, ks_dht2_m
 
     //targetv = ben_str_val(target);
     targetv_len = ben_str_len(target);
-    if (targetv_len != KS_DHT_NODEID_LENGTH) {
+    if (targetv_len != KS_DHT_NODEID_SIZE) {
 		ks_log(KS_LOG_DEBUG, "Message args 'target' value has an unexpected size of %d\n", targetv_len);
 		return KS_STATUS_FAIL;
 	}
@@ -1044,7 +1040,7 @@ KS_DECLARE(ks_status_t) ks_dht2_process_query_findnode(ks_dht2_t *dht, ks_dht2_m
 	// @todo get closest nodes to target from route table
 
 	// @todo compact into buffer
-	if (ks_dht2_utility_compact_node((ks_dht2_nodeid_raw_t *)idv, &message->raddr, buffer, &buffer_length, sizeof(buffer)) != KS_STATUS_SUCCESS) {
+	if (ks_dht2_utility_compact_node((ks_dht2_nodeid_t *)idv, &message->raddr, buffer, &buffer_length, sizeof(buffer)) != KS_STATUS_SUCCESS) {
 		return KS_STATUS_FAIL;
 	}
 
@@ -1061,7 +1057,7 @@ KS_DECLARE(ks_status_t) ks_dht2_process_query_findnode(ks_dht2_t *dht, ks_dht2_m
 		goto done;
 	}
 	
-	ben_dict_set(r, ben_blob("id", 2), ben_blob(dht->nodeid.id, KS_DHT_NODEID_LENGTH));
+	ben_dict_set(r, ben_blob("id", 2), ben_blob(dht->nodeid, KS_DHT_NODEID_SIZE));
 	// @todo populate nodes/nodes6
 	ben_dict_set(r, ben_blob("nodes", 5), ben_blob(buffer, buffer_length));
 

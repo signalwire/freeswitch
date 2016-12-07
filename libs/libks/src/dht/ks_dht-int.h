@@ -12,7 +12,7 @@ KS_DECLARE(ks_status_t) ks_dht2_utility_compact_address(ks_sockaddr_t *address,
 														uint8_t *buffer,
 														ks_size_t *buffer_length,
 														ks_size_t buffer_size);
-KS_DECLARE(ks_status_t) ks_dht2_utility_compact_node(ks_dht2_nodeid_raw_t *nodeid,
+KS_DECLARE(ks_status_t) ks_dht2_utility_compact_node(ks_dht2_nodeid_t *nodeid,
 													 ks_sockaddr_t *address,
 													 uint8_t *buffer,
 													 ks_size_t *buffer_length,
@@ -33,7 +33,7 @@ KS_DECLARE(ks_status_t) ks_dht2_send_error(ks_dht2_t *dht,
 										   long long errorcode,
 										   const char *errorstr);
 KS_DECLARE(ks_status_t) ks_dht2_send_ping(ks_dht2_t *dht, ks_sockaddr_t *raddr);
-KS_DECLARE(ks_status_t) ks_dht2_send_findnode(ks_dht2_t *dht, ks_sockaddr_t *raddr, ks_dht2_nodeid_raw_t *targetid);
+KS_DECLARE(ks_status_t) ks_dht2_send_findnode(ks_dht2_t *dht, ks_sockaddr_t *raddr, ks_dht2_nodeid_t *targetid);
 
 KS_DECLARE(ks_status_t) ks_dht2_process(ks_dht2_t *dht, ks_sockaddr_t *raddr);
 
@@ -56,6 +56,16 @@ KS_DECLARE(ks_status_t) ks_dht2_endpoint_free(ks_dht2_endpoint_t *endpoint);
 
 KS_DECLARE(ks_status_t) ks_dht2_endpoint_init(ks_dht2_endpoint_t *endpoint, const ks_sockaddr_t *addr, ks_socket_t sock);
 KS_DECLARE(ks_status_t) ks_dht2_endpoint_deinit(ks_dht2_endpoint_t *endpoint);
+
+/**
+ *
+ */
+KS_DECLARE(ks_status_t) ks_dht2_node_alloc(ks_dht2_node_t **node, ks_pool_t *pool);
+KS_DECLARE(ks_status_t) ks_dht2_node_prealloc(ks_dht2_node_t *node, ks_pool_t *pool);
+KS_DECLARE(ks_status_t) ks_dht2_node_free(ks_dht2_node_t *node);
+
+KS_DECLARE(ks_status_t) ks_dht2_node_init(ks_dht2_node_t *node, const ks_dht2_nodeid_t *id, const ks_sockaddr_t *addr);
+KS_DECLARE(ks_status_t) ks_dht2_node_deinit(ks_dht2_node_t *node);
 
 
 KS_END_EXTERN_C
