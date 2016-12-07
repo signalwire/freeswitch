@@ -172,7 +172,8 @@ int main(int argc, char *argv[])
 
  end:
 
-	switch_core_destroy();
+	switch_safe_free(SWITCH_GLOBAL_dirs.mod_dir);
+	//switch_core_destroy();
 
 	return r;
 
