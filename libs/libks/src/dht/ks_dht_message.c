@@ -4,14 +4,14 @@
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht2_message_alloc(ks_dht2_message_t **message, ks_pool_t *pool)
+KS_DECLARE(ks_status_t) ks_dht_message_alloc(ks_dht_message_t **message, ks_pool_t *pool)
 {
-	ks_dht2_message_t *msg;
+	ks_dht_message_t *msg;
 
 	ks_assert(message);
 	ks_assert(pool);
 	
-	*message = msg = ks_pool_alloc(pool, sizeof(ks_dht2_message_t));
+	*message = msg = ks_pool_alloc(pool, sizeof(ks_dht_message_t));
 	msg->pool = pool;
 
 	return KS_STATUS_SUCCESS;
@@ -20,7 +20,7 @@ KS_DECLARE(ks_status_t) ks_dht2_message_alloc(ks_dht2_message_t **message, ks_po
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht2_message_prealloc(ks_dht2_message_t *message, ks_pool_t *pool)
+KS_DECLARE(ks_status_t) ks_dht_message_prealloc(ks_dht_message_t *message, ks_pool_t *pool)
 {
 	ks_assert(message);
 	ks_assert(pool);
@@ -33,11 +33,11 @@ KS_DECLARE(ks_status_t) ks_dht2_message_prealloc(ks_dht2_message_t *message, ks_
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht2_message_free(ks_dht2_message_t *message)
+KS_DECLARE(ks_status_t) ks_dht_message_free(ks_dht_message_t *message)
 {
 	ks_assert(message);
 
-	ks_dht2_message_deinit(message);
+	ks_dht_message_deinit(message);
 	ks_pool_free(message->pool, message);
 
 	return KS_STATUS_SUCCESS;
@@ -47,7 +47,7 @@ KS_DECLARE(ks_status_t) ks_dht2_message_free(ks_dht2_message_t *message)
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht2_message_init(ks_dht2_message_t *message, ks_sockaddr_t *raddr, ks_bool_t alloc_data)
+KS_DECLARE(ks_status_t) ks_dht_message_init(ks_dht_message_t *message, ks_sockaddr_t *raddr, ks_bool_t alloc_data)
 {
 	ks_assert(message);
 	ks_assert(message->pool);
@@ -67,7 +67,7 @@ KS_DECLARE(ks_status_t) ks_dht2_message_init(ks_dht2_message_t *message, ks_sock
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht2_message_deinit(ks_dht2_message_t *message)
+KS_DECLARE(ks_status_t) ks_dht_message_deinit(ks_dht_message_t *message)
 {
 	ks_assert(message);
 
@@ -86,7 +86,7 @@ KS_DECLARE(ks_status_t) ks_dht2_message_deinit(ks_dht2_message_t *message)
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht2_message_parse(ks_dht2_message_t *message, const uint8_t *buffer, ks_size_t buffer_length)
+KS_DECLARE(ks_status_t) ks_dht_message_parse(ks_dht_message_t *message, const uint8_t *buffer, ks_size_t buffer_length)
 {
 	struct bencode *t;
 	struct bencode *y;
@@ -147,17 +147,17 @@ KS_DECLARE(ks_status_t) ks_dht2_message_parse(ks_dht2_message_t *message, const 
 	return KS_STATUS_SUCCESS;
 
  failure:
-	ks_dht2_message_deinit(message);
+	ks_dht_message_deinit(message);
 	return KS_STATUS_FAIL;
 }
 
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht2_message_query(ks_dht2_message_t *message,
-											  uint32_t transactionid,
-											  const char *query,
-											  struct bencode **args)
+KS_DECLARE(ks_status_t) ks_dht_message_query(ks_dht_message_t *message,
+											 uint32_t transactionid,
+											 const char *query,
+											 struct bencode **args)
 {
 	struct bencode *a;
 	uint32_t tid;
@@ -185,10 +185,10 @@ KS_DECLARE(ks_status_t) ks_dht2_message_query(ks_dht2_message_t *message,
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht2_message_response(ks_dht2_message_t *message,
-												 uint8_t *transactionid,
-												 ks_size_t transactionid_length,
-												 struct bencode **args)
+KS_DECLARE(ks_status_t) ks_dht_message_response(ks_dht_message_t *message,
+												uint8_t *transactionid,
+												ks_size_t transactionid_length,
+												struct bencode **args)
 {
 	struct bencode *r;
 	
@@ -212,10 +212,10 @@ KS_DECLARE(ks_status_t) ks_dht2_message_response(ks_dht2_message_t *message,
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht2_message_error(ks_dht2_message_t *message,
-											  uint8_t *transactionid,
-											  ks_size_t transactionid_length,
-											  struct bencode **args)
+KS_DECLARE(ks_status_t) ks_dht_message_error(ks_dht_message_t *message,
+											 uint8_t *transactionid,
+											 ks_size_t transactionid_length,
+											 struct bencode **args)
 {
 	struct bencode *e;
 	

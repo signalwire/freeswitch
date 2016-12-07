@@ -20,28 +20,26 @@ KS_BEGIN_EXTERN_C
 
 #define KS_DHT_TRANSACTION_EXPIRATION_DELAY 30
 
-typedef struct ks_dht2_s ks_dht2_t;
-//typedef struct ks_dht2_nodeid_s ks_dht2_nodeid_t;
-//typedef struct ks_dht2_nodeid_raw_s ks_dht2_nodeid_raw_t;
-typedef uint8_t ks_dht2_nodeid_t[KS_DHT_NODEID_SIZE];
-typedef struct ks_dht2_node_s ks_dht2_node_t;
-typedef struct ks_dht2_message_s ks_dht2_message_t;
-typedef struct ks_dht2_endpoint_s ks_dht2_endpoint_t;
-typedef struct ks_dht2_transaction_s ks_dht2_transaction_t;
+typedef struct ks_dht_s ks_dht_t;
+typedef uint8_t ks_dht_nodeid_t[KS_DHT_NODEID_SIZE];
+typedef struct ks_dht_node_s ks_dht_node_t;
+typedef struct ks_dht_message_s ks_dht_message_t;
+typedef struct ks_dht_endpoint_s ks_dht_endpoint_t;
+typedef struct ks_dht_transaction_s ks_dht_transaction_t;
 
 
-typedef ks_status_t (*ks_dht2_message_callback_t)(ks_dht2_t *dht, ks_dht2_message_t *message);
+typedef ks_status_t (*ks_dht_message_callback_t)(ks_dht_t *dht, ks_dht_message_t *message);
 
-struct ks_dht2_node_s {
+struct ks_dht_node_s {
 	ks_pool_t *pool;
-	ks_dht2_nodeid_t id;
+	ks_dht_nodeid_t id;
 	ks_sockaddr_t *addr4;
 	ks_sockaddr_t *addr6;
 	ks_size_t addr4_length;
 	ks_size_t addr6_length;
 };
 
-struct ks_dht2_message_s {
+struct ks_dht_message_s {
 	ks_pool_t *pool;
 	ks_sockaddr_t raddr;
 	struct bencode *data;
@@ -51,30 +49,30 @@ struct ks_dht2_message_s {
 	struct bencode *args;
 };
 
-struct ks_dht2_endpoint_s {
+struct ks_dht_endpoint_s {
 	ks_pool_t *pool;
 	ks_sockaddr_t addr;
 	ks_socket_t sock;
 };
 
-struct ks_dht2_transaction_s {
+struct ks_dht_transaction_s {
 	ks_pool_t *pool;
 	ks_sockaddr_t raddr;
 	uint32_t transactionid;
-	ks_dht2_message_callback_t callback;
+	ks_dht_message_callback_t callback;
 	ks_time_t expiration;
 	ks_bool_t finished;
 };
 
 
-struct ks_dht2_s {
+struct ks_dht_s {
 	ks_pool_t *pool;
 	ks_bool_t pool_alloc;
 
 	ks_bool_t autoroute;
 	ks_port_t autoroute_port;
 	
-	ks_dht2_nodeid_t nodeid;
+	ks_dht_nodeid_t nodeid;
 
 	ks_hash_t *registry_type;
 	ks_hash_t *registry_query;
@@ -83,13 +81,13 @@ struct ks_dht2_s {
 	ks_bool_t bind_ipv4;
 	ks_bool_t bind_ipv6;
 
-	ks_dht2_endpoint_t **endpoints;
+	ks_dht_endpoint_t **endpoints;
 	int32_t endpoints_size;
 	ks_hash_t *endpoints_hash;
 	struct pollfd *endpoints_poll;
 
 	ks_q_t *send_q;
-	ks_dht2_message_t *send_q_unsent;
+	ks_dht_message_t *send_q_unsent;
 	uint8_t recv_buffer[KS_DHT_RECV_BUFFER_SIZE];
 	ks_size_t recv_buffer_length;
 
@@ -100,64 +98,64 @@ struct ks_dht2_s {
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht2_alloc(ks_dht2_t **dht, ks_pool_t *pool);
-KS_DECLARE(ks_status_t) ks_dht2_prealloc(ks_dht2_t *dht, ks_pool_t *pool);
-KS_DECLARE(ks_status_t) ks_dht2_free(ks_dht2_t *dht);
+KS_DECLARE(ks_status_t) ks_dht_alloc(ks_dht_t **dht, ks_pool_t *pool);
+KS_DECLARE(ks_status_t) ks_dht_prealloc(ks_dht_t *dht, ks_pool_t *pool);
+KS_DECLARE(ks_status_t) ks_dht_free(ks_dht_t *dht);
 
 
-KS_DECLARE(ks_status_t) ks_dht2_init(ks_dht2_t *dht, const ks_dht2_nodeid_t *nodeid);
-KS_DECLARE(ks_status_t) ks_dht2_deinit(ks_dht2_t *dht);
+KS_DECLARE(ks_status_t) ks_dht_init(ks_dht_t *dht, const ks_dht_nodeid_t *nodeid);
+KS_DECLARE(ks_status_t) ks_dht_deinit(ks_dht_t *dht);
 
-KS_DECLARE(ks_status_t) ks_dht2_autoroute(ks_dht2_t *dht, ks_bool_t autoroute, ks_port_t port);
+KS_DECLARE(ks_status_t) ks_dht_autoroute(ks_dht_t *dht, ks_bool_t autoroute, ks_port_t port);
 
-KS_DECLARE(ks_status_t) ks_dht2_bind(ks_dht2_t *dht, const ks_sockaddr_t *addr, ks_dht2_endpoint_t **endpoint);
-KS_DECLARE(void) ks_dht2_pulse(ks_dht2_t *dht, int32_t timeout);
+KS_DECLARE(ks_status_t) ks_dht_bind(ks_dht_t *dht, const ks_sockaddr_t *addr, ks_dht_endpoint_t **endpoint);
+KS_DECLARE(void) ks_dht_pulse(ks_dht_t *dht, int32_t timeout);
 
 
-KS_DECLARE(ks_status_t) ks_dht2_register_type(ks_dht2_t *dht, const char *value, ks_dht2_message_callback_t callback);
-KS_DECLARE(ks_status_t) ks_dht2_register_query(ks_dht2_t *dht, const char *value, ks_dht2_message_callback_t callback);
-
-/**
- *
- */
-KS_DECLARE(ks_status_t) ks_dht2_message_alloc(ks_dht2_message_t **message, ks_pool_t *pool);
-KS_DECLARE(ks_status_t) ks_dht2_message_prealloc(ks_dht2_message_t *message, ks_pool_t *pool);
-KS_DECLARE(ks_status_t) ks_dht2_message_free(ks_dht2_message_t *message);
-
-KS_DECLARE(ks_status_t) ks_dht2_message_init(ks_dht2_message_t *message, ks_sockaddr_t *raddr, ks_bool_t alloc_data);
-KS_DECLARE(ks_status_t) ks_dht2_message_deinit(ks_dht2_message_t *message);
-
-KS_DECLARE(ks_status_t) ks_dht2_message_parse(ks_dht2_message_t *message, const uint8_t *buffer, ks_size_t buffer_length);
-
-KS_DECLARE(ks_status_t) ks_dht2_message_query(ks_dht2_message_t *message,
-											  uint32_t transactionid,
-											  const char *query,
-											  struct bencode **args);
-KS_DECLARE(ks_status_t) ks_dht2_message_response(ks_dht2_message_t *message,
-												 uint8_t *transactionid,
-												 ks_size_t transactionid_length,
-												 struct bencode **args);
-KS_DECLARE(ks_status_t) ks_dht2_message_error(ks_dht2_message_t *message,
-											  uint8_t *transactionid,
-											  ks_size_t transactionid_length,
-											  struct bencode **args);
+KS_DECLARE(ks_status_t) ks_dht_register_type(ks_dht_t *dht, const char *value, ks_dht_message_callback_t callback);
+KS_DECLARE(ks_status_t) ks_dht_register_query(ks_dht_t *dht, const char *value, ks_dht_message_callback_t callback);
 
 /**
  *
  */
+KS_DECLARE(ks_status_t) ks_dht_message_alloc(ks_dht_message_t **message, ks_pool_t *pool);
+KS_DECLARE(ks_status_t) ks_dht_message_prealloc(ks_dht_message_t *message, ks_pool_t *pool);
+KS_DECLARE(ks_status_t) ks_dht_message_free(ks_dht_message_t *message);
+
+KS_DECLARE(ks_status_t) ks_dht_message_init(ks_dht_message_t *message, ks_sockaddr_t *raddr, ks_bool_t alloc_data);
+KS_DECLARE(ks_status_t) ks_dht_message_deinit(ks_dht_message_t *message);
+
+KS_DECLARE(ks_status_t) ks_dht_message_parse(ks_dht_message_t *message, const uint8_t *buffer, ks_size_t buffer_length);
+
+KS_DECLARE(ks_status_t) ks_dht_message_query(ks_dht_message_t *message,
+											 uint32_t transactionid,
+											 const char *query,
+											 struct bencode **args);
+KS_DECLARE(ks_status_t) ks_dht_message_response(ks_dht_message_t *message,
+												uint8_t *transactionid,
+												ks_size_t transactionid_length,
+												struct bencode **args);
+KS_DECLARE(ks_status_t) ks_dht_message_error(ks_dht_message_t *message,
+											 uint8_t *transactionid,
+											 ks_size_t transactionid_length,
+											 struct bencode **args);
 
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht2_transaction_alloc(ks_dht2_transaction_t **transaction, ks_pool_t *pool);
-KS_DECLARE(ks_status_t) ks_dht2_transaction_prealloc(ks_dht2_transaction_t *trasnaction, ks_pool_t *pool);
-KS_DECLARE(ks_status_t) ks_dht2_transaction_free(ks_dht2_transaction_t *transaction);
 
-KS_DECLARE(ks_status_t) ks_dht2_transaction_init(ks_dht2_transaction_t *transaction,
+/**
+ *
+ */
+KS_DECLARE(ks_status_t) ks_dht_transaction_alloc(ks_dht_transaction_t **transaction, ks_pool_t *pool);
+KS_DECLARE(ks_status_t) ks_dht_transaction_prealloc(ks_dht_transaction_t *trasnaction, ks_pool_t *pool);
+KS_DECLARE(ks_status_t) ks_dht_transaction_free(ks_dht_transaction_t *transaction);
+
+KS_DECLARE(ks_status_t) ks_dht_transaction_init(ks_dht_transaction_t *transaction,
 												 ks_sockaddr_t *raddr,
 												 uint32_t transactionid,
-												 ks_dht2_message_callback_t callback);
-KS_DECLARE(ks_status_t) ks_dht2_transaction_deinit(ks_dht2_transaction_t *transaction);
+												 ks_dht_message_callback_t callback);
+KS_DECLARE(ks_status_t) ks_dht_transaction_deinit(ks_dht_transaction_t *transaction);
 																																				
 KS_END_EXTERN_C
 

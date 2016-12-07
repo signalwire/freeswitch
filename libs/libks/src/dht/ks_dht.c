@@ -5,15 +5,15 @@
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht2_alloc(ks_dht2_t **dht, ks_pool_t *pool)
+KS_DECLARE(ks_status_t) ks_dht_alloc(ks_dht_t **dht, ks_pool_t *pool)
 {
 	ks_bool_t pool_alloc = !pool;
-	ks_dht2_t *d;
+	ks_dht_t *d;
 
 	ks_assert(dht);
 	
 	if (pool_alloc) ks_pool_open(&pool);
-	*dht = d = ks_pool_alloc(pool, sizeof(ks_dht2_t));
+	*dht = d = ks_pool_alloc(pool, sizeof(ks_dht_t));
 
 	d->pool = pool;
 	d->pool_alloc = pool_alloc;
@@ -24,7 +24,7 @@ KS_DECLARE(ks_status_t) ks_dht2_alloc(ks_dht2_t **dht, ks_pool_t *pool)
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht2_prealloc(ks_dht2_t *dht, ks_pool_t *pool)
+KS_DECLARE(ks_status_t) ks_dht_prealloc(ks_dht_t *dht, ks_pool_t *pool)
 {
 	ks_assert(dht);
 	ks_assert(pool);
@@ -38,12 +38,12 @@ KS_DECLARE(ks_status_t) ks_dht2_prealloc(ks_dht2_t *dht, ks_pool_t *pool)
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht2_free(ks_dht2_t *dht)
+KS_DECLARE(ks_status_t) ks_dht_free(ks_dht_t *dht)
 {
 	ks_pool_t *pool = dht->pool;
 	ks_bool_t pool_alloc = dht->pool_alloc;
 
-	ks_dht2_deinit(dht);
+	ks_dht_deinit(dht);
 	ks_pool_free(pool, dht);
 	if (pool_alloc) {
 		ks_pool_close(&pool);
@@ -56,7 +56,7 @@ KS_DECLARE(ks_status_t) ks_dht2_free(ks_dht2_t *dht)
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht2_init(ks_dht2_t *dht, const ks_dht2_nodeid_t *nodeid)
+KS_DECLARE(ks_status_t) ks_dht_init(ks_dht_t *dht, const ks_dht_nodeid_t *nodeid)
 {
 	ks_assert(dht);
 	ks_assert(dht->pool);
@@ -71,13 +71,13 @@ KS_DECLARE(ks_status_t) ks_dht2_init(ks_dht2_t *dht, const ks_dht2_nodeid_t *nod
 	}
 	
 	ks_hash_create(&dht->registry_type, KS_HASH_MODE_DEFAULT, KS_HASH_FLAG_RWLOCK | KS_HASH_FLAG_DUP_CHECK, dht->pool);
-	ks_dht2_register_type(dht, "q", ks_dht2_process_query);
-	ks_dht2_register_type(dht, "r", ks_dht2_process_response);
-	ks_dht2_register_type(dht, "e", ks_dht2_process_error);
+	ks_dht_register_type(dht, "q", ks_dht_process_query);
+	ks_dht_register_type(dht, "r", ks_dht_process_response);
+	ks_dht_register_type(dht, "e", ks_dht_process_error);
 
 	ks_hash_create(&dht->registry_query, KS_HASH_MODE_DEFAULT, KS_HASH_FLAG_RWLOCK | KS_HASH_FLAG_DUP_CHECK, dht->pool);
-	ks_dht2_register_query(dht, "ping", ks_dht2_process_query_ping);
-	ks_dht2_register_query(dht, "find_node", ks_dht2_process_query_findnode);
+	ks_dht_register_query(dht, "ping", ks_dht_process_query_ping);
+	ks_dht_register_query(dht, "find_node", ks_dht_process_query_findnode);
 
 	ks_hash_create(&dht->registry_error, KS_HASH_MODE_DEFAULT, KS_HASH_FLAG_RWLOCK | KS_HASH_FLAG_DUP_CHECK, dht->pool);
 	// @todo register 301 error for internal get/put CAS hash mismatch retry handler
@@ -103,7 +103,7 @@ KS_DECLARE(ks_status_t) ks_dht2_init(ks_dht2_t *dht, const ks_dht2_nodeid_t *nod
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht2_deinit(ks_dht2_t *dht)
+KS_DECLARE(ks_status_t) ks_dht_deinit(ks_dht_t *dht)
 {
 	ks_assert(dht);
 
@@ -114,23 +114,23 @@ KS_DECLARE(ks_status_t) ks_dht2_deinit(ks_dht2_t *dht)
 	}
 	dht->recv_buffer_length = 0;
 	if (dht->send_q) {
-		ks_dht2_message_t *msg;
+		ks_dht_message_t *msg;
 		while (ks_q_pop_timeout(dht->send_q, (void **)&msg, 1) == KS_STATUS_SUCCESS && msg) {
-			ks_dht2_message_deinit(msg);
-			ks_dht2_message_free(msg);
+			ks_dht_message_deinit(msg);
+			ks_dht_message_free(msg);
 		}
 		ks_q_destroy(&dht->send_q);
 		dht->send_q = NULL;
 	}
 	if (dht->send_q_unsent) {
-		ks_dht2_message_deinit(dht->send_q_unsent);
-		ks_dht2_message_free(dht->send_q_unsent);
+		ks_dht_message_deinit(dht->send_q_unsent);
+		ks_dht_message_free(dht->send_q_unsent);
 		dht->send_q_unsent = NULL;
 	}
 	for (int32_t i = 0; i < dht->endpoints_size; ++i) {
-		ks_dht2_endpoint_t *ep = dht->endpoints[i];
-		ks_dht2_endpoint_deinit(ep);
-		ks_dht2_endpoint_free(ep);
+		ks_dht_endpoint_t *ep = dht->endpoints[i];
+		ks_dht_endpoint_deinit(ep);
+		ks_dht_endpoint_free(ep);
 	}
 	dht->endpoints_size = 0;
 	if (dht->endpoints) {
@@ -170,7 +170,7 @@ KS_DECLARE(ks_status_t) ks_dht2_deinit(ks_dht2_t *dht)
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht2_autoroute(ks_dht2_t *dht, ks_bool_t autoroute, ks_port_t port)
+KS_DECLARE(ks_status_t) ks_dht_autoroute(ks_dht_t *dht, ks_bool_t autoroute, ks_port_t port)
 {
 	ks_assert(dht);
 
@@ -189,7 +189,7 @@ KS_DECLARE(ks_status_t) ks_dht2_autoroute(ks_dht2_t *dht, ks_bool_t autoroute, k
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht2_register_type(ks_dht2_t *dht, const char *value, ks_dht2_message_callback_t callback)
+KS_DECLARE(ks_status_t) ks_dht_register_type(ks_dht_t *dht, const char *value, ks_dht_message_callback_t callback)
 {
 	ks_assert(dht);
 	ks_assert(value);
@@ -201,7 +201,7 @@ KS_DECLARE(ks_status_t) ks_dht2_register_type(ks_dht2_t *dht, const char *value,
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht2_register_query(ks_dht2_t *dht, const char *value, ks_dht2_message_callback_t callback)
+KS_DECLARE(ks_status_t) ks_dht_register_query(ks_dht_t *dht, const char *value, ks_dht_message_callback_t callback)
 {
 	ks_assert(dht);
 	ks_assert(value);
@@ -213,7 +213,7 @@ KS_DECLARE(ks_status_t) ks_dht2_register_query(ks_dht2_t *dht, const char *value
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht2_register_error(ks_dht2_t *dht, const char *value, ks_dht2_message_callback_t callback)
+KS_DECLARE(ks_status_t) ks_dht_register_error(ks_dht_t *dht, const char *value, ks_dht_message_callback_t callback)
 {
 	ks_assert(dht);
 	ks_assert(value);
@@ -225,9 +225,9 @@ KS_DECLARE(ks_status_t) ks_dht2_register_error(ks_dht2_t *dht, const char *value
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht2_bind(ks_dht2_t *dht, const ks_sockaddr_t *addr, ks_dht2_endpoint_t **endpoint)
+KS_DECLARE(ks_status_t) ks_dht_bind(ks_dht_t *dht, const ks_sockaddr_t *addr, ks_dht_endpoint_t **endpoint)
 {
-	ks_dht2_endpoint_t *ep;
+	ks_dht_endpoint_t *ep;
 	ks_socket_t sock;
 	int32_t epindex;
 	
@@ -243,7 +243,7 @@ KS_DECLARE(ks_status_t) ks_dht2_bind(ks_dht2_t *dht, const ks_sockaddr_t *addr, 
 	dht->bind_ipv4 |= addr->family == AF_INET;
 	dht->bind_ipv6 |= addr->family == AF_INET6;
 
-	// @todo start of ks_dht2_endpoint_bind
+	// @todo start of ks_dht_endpoint_bind
 	if ((sock = socket(addr->family, SOCK_DGRAM, IPPROTO_UDP)) == KS_SOCK_INVALID) {
 		return KS_STATUS_FAIL;
 	}
@@ -254,13 +254,13 @@ KS_DECLARE(ks_status_t) ks_dht2_bind(ks_dht2_t *dht, const ks_sockaddr_t *addr, 
 		return KS_STATUS_FAIL;
 	}
 	
-	if (ks_dht2_endpoint_alloc(&ep, dht->pool) != KS_STATUS_SUCCESS) {
+	if (ks_dht_endpoint_alloc(&ep, dht->pool) != KS_STATUS_SUCCESS) {
 		ks_socket_close(&sock);
 		return KS_STATUS_FAIL;
 	}
 	
-	if (ks_dht2_endpoint_init(ep, addr, sock) != KS_STATUS_SUCCESS) {
-		ks_dht2_endpoint_free(ep);
+	if (ks_dht_endpoint_init(ep, addr, sock) != KS_STATUS_SUCCESS) {
+		ks_dht_endpoint_free(ep);
 		ks_socket_close(&sock);
 		return KS_STATUS_FAIL;
 	}
@@ -268,12 +268,12 @@ KS_DECLARE(ks_status_t) ks_dht2_bind(ks_dht2_t *dht, const ks_sockaddr_t *addr, 
 	ks_socket_option(ep->sock, SO_REUSEADDR, KS_TRUE);
 	ks_socket_option(ep->sock, KS_SO_NONBLOCK, KS_TRUE);
 
-	// @todo end of ks_dht2_endpoint_bind
+	// @todo end of ks_dht_endpoint_bind
 	
 	epindex = dht->endpoints_size++;
-	dht->endpoints = (ks_dht2_endpoint_t **)ks_pool_resize(dht->pool,
+	dht->endpoints = (ks_dht_endpoint_t **)ks_pool_resize(dht->pool,
 														   (void *)dht->endpoints,
-														   sizeof(ks_dht2_endpoint_t *) * dht->endpoints_size);
+														   sizeof(ks_dht_endpoint_t *) * dht->endpoints_size);
 	dht->endpoints[epindex] = ep;
 	ks_hash_insert(dht->endpoints_hash, ep->addr.host, ep);
 	
@@ -293,7 +293,7 @@ KS_DECLARE(ks_status_t) ks_dht2_bind(ks_dht2_t *dht, const ks_sockaddr_t *addr, 
 /**
  *
  */
-KS_DECLARE(void) ks_dht2_pulse(ks_dht2_t *dht, int32_t timeout)
+KS_DECLARE(void) ks_dht_pulse(ks_dht_t *dht, int32_t timeout)
 {
 	int32_t result;
 		
@@ -315,22 +315,22 @@ KS_DECLARE(void) ks_dht2_pulse(ks_dht2_t *dht, int32_t timeout)
 			
 				raddr.family = dht->endpoints[i]->addr.family;
 				if (ks_socket_recvfrom(dht->endpoints_poll[i].fd, dht->recv_buffer, &dht->recv_buffer_length, &raddr) == KS_STATUS_SUCCESS) {
-					ks_dht2_process(dht, &raddr);
+					ks_dht_process(dht, &raddr);
 				}
 			}
 		}
 	}
 
-	ks_dht2_idle(dht);
+	ks_dht_idle(dht);
 }
 
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht2_utility_compact_address(ks_sockaddr_t *address,
-														uint8_t *buffer,
-														ks_size_t *buffer_length,
-														ks_size_t buffer_size)
+KS_DECLARE(ks_status_t) ks_dht_utility_compact_address(ks_sockaddr_t *address,
+													   uint8_t *buffer,
+													   ks_size_t *buffer_length,
+													   ks_size_t buffer_size)
 {
 	ks_size_t required = sizeof(uint16_t);
 	uint16_t port = 0;
@@ -379,11 +379,11 @@ KS_DECLARE(ks_status_t) ks_dht2_utility_compact_address(ks_sockaddr_t *address,
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht2_utility_compact_node(ks_dht2_nodeid_t *nodeid,
-													 ks_sockaddr_t *address,
-													 uint8_t *buffer,
-													 ks_size_t *buffer_length,
-													 ks_size_t buffer_size)
+KS_DECLARE(ks_status_t) ks_dht_utility_compact_node(ks_dht_nodeid_t *nodeid,
+													ks_sockaddr_t *address,
+													uint8_t *buffer,
+													ks_size_t *buffer_length,
+													ks_size_t buffer_size)
 {
 	ks_assert(address);
 	ks_assert(buffer);
@@ -399,25 +399,25 @@ KS_DECLARE(ks_status_t) ks_dht2_utility_compact_node(ks_dht2_nodeid_t *nodeid,
 	memcpy(buffer + (*buffer_length), (void *)nodeid, KS_DHT_NODEID_SIZE);
 	*buffer_length += KS_DHT_NODEID_SIZE;
 
-	return ks_dht2_utility_compact_address(address, buffer, buffer_length, buffer_size);
+	return ks_dht_utility_compact_address(address, buffer, buffer_length, buffer_size);
 }
 
 /**
  *
  */
-KS_DECLARE(void) ks_dht2_idle(ks_dht2_t *dht)
+KS_DECLARE(void) ks_dht_idle(ks_dht_t *dht)
 {
 	ks_assert(dht);
 
-	ks_dht2_idle_expirations(dht);
+	ks_dht_idle_expirations(dht);
 
-	ks_dht2_idle_send(dht);
+	ks_dht_idle_send(dht);
 }
 
 /**
  *
  */
-KS_DECLARE(void) ks_dht2_idle_expirations(ks_dht2_t *dht)
+KS_DECLARE(void) ks_dht_idle_expirations(ks_dht_t *dht)
 {
 	ks_hash_iterator_t *it = NULL;
 	ks_time_t now = ks_time_now_sec();
@@ -429,7 +429,7 @@ KS_DECLARE(void) ks_dht2_idle_expirations(ks_dht2_t *dht)
 	ks_hash_write_lock(dht->transactions_hash);
 	for (it = ks_hash_first(dht->transactions_hash, KS_UNLOCKED); it; it = ks_hash_next(&it)) {
 		const void *key = NULL;
-		ks_dht2_transaction_t *value = NULL;
+		ks_dht_transaction_t *value = NULL;
 		ks_bool_t remove = KS_FALSE;
 
 		ks_hash_this(it, &key, NULL, (void **)&value);
@@ -450,9 +450,9 @@ KS_DECLARE(void) ks_dht2_idle_expirations(ks_dht2_t *dht)
 /**
  *
  */
-KS_DECLARE(void) ks_dht2_idle_send(ks_dht2_t *dht)
+KS_DECLARE(void) ks_dht_idle_send(ks_dht_t *dht)
 {
-	ks_dht2_message_t *message;
+	ks_dht_message_t *message;
 	ks_bool_t bail = KS_FALSE;
 	ks_status_t ret = KS_STATUS_SUCCESS;
 
@@ -468,12 +468,12 @@ KS_DECLARE(void) ks_dht2_idle_send(ks_dht2_t *dht)
 			bail = ks_q_pop_timeout(dht->send_q, (void **)&message, 1) != KS_STATUS_SUCCESS || !message;
 		}
 		if (!bail) {
-			bail = (ret = ks_dht2_send(dht, message)) != KS_STATUS_SUCCESS;
+			bail = (ret = ks_dht_send(dht, message)) != KS_STATUS_SUCCESS;
 			if (ret == KS_STATUS_BREAK) {
 				dht->send_q_unsent = message;
 			} else if (ret == KS_STATUS_SUCCESS) {
-				ks_dht2_message_deinit(message);
-				ks_dht2_message_free(message);
+				ks_dht_message_deinit(message);
+				ks_dht_message_free(message);
 			}
 		}
 	}
@@ -482,11 +482,11 @@ KS_DECLARE(void) ks_dht2_idle_send(ks_dht2_t *dht)
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht2_send(ks_dht2_t *dht, ks_dht2_message_t *message)
+KS_DECLARE(ks_status_t) ks_dht_send(ks_dht_t *dht, ks_dht_message_t *message)
 {
 	// @todo lookup standard def for IPV6 max size
 	char ip[48];
-	ks_dht2_endpoint_t *ep;
+	ks_dht_endpoint_t *ep;
 	// @todo calculate max IPV6 payload size?
 	char buf[1000];
 	ks_size_t buf_len;
@@ -502,7 +502,7 @@ KS_DECLARE(ks_status_t) ks_dht2_send(ks_dht2_t *dht, ks_dht2_message_t *message)
 	if (!(ep = ks_hash_search(dht->endpoints_hash, ip, KS_UNLOCKED)) && dht->autoroute) {
 		ks_sockaddr_t addr;
 		ks_addr_set(&addr, ip, dht->autoroute_port, message->raddr.family);
-		if (ks_dht2_bind(dht, &addr, &ep) != KS_STATUS_SUCCESS) {
+		if (ks_dht_bind(dht, &addr, &ep) != KS_STATUS_SUCCESS) {
 			return KS_STATUS_FAIL;
 		}
 	}
@@ -523,14 +523,14 @@ KS_DECLARE(ks_status_t) ks_dht2_send(ks_dht2_t *dht, ks_dht2_message_t *message)
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht2_send_error(ks_dht2_t *dht,
-										   ks_sockaddr_t *raddr,
-										   uint8_t *transactionid,
-										   ks_size_t transactionid_length,
-										   long long errorcode,
-										   const char *errorstr)
+KS_DECLARE(ks_status_t) ks_dht_send_error(ks_dht_t *dht,
+										  ks_sockaddr_t *raddr,
+										  uint8_t *transactionid,
+										  ks_size_t transactionid_length,
+										  long long errorcode,
+										  const char *errorstr)
 {
-	ks_dht2_message_t *error = NULL;
+	ks_dht_message_t *error = NULL;
 	struct bencode *e = NULL;
 	ks_status_t ret = KS_STATUS_FAIL;
 
@@ -539,15 +539,15 @@ KS_DECLARE(ks_status_t) ks_dht2_send_error(ks_dht2_t *dht,
 	ks_assert(transactionid);
 	ks_assert(errorstr);
 
-	if (ks_dht2_message_alloc(&error, dht->pool) != KS_STATUS_SUCCESS) {
+	if (ks_dht_message_alloc(&error, dht->pool) != KS_STATUS_SUCCESS) {
 		return KS_STATUS_FAIL;
 	}
 
-	if (ks_dht2_message_init(error, raddr, KS_TRUE) != KS_STATUS_SUCCESS) {
+	if (ks_dht_message_init(error, raddr, KS_TRUE) != KS_STATUS_SUCCESS) {
 		goto done;
 	}
 
-	if (ks_dht2_message_error(error, transactionid, transactionid_length, &e) != KS_STATUS_SUCCESS) {
+	if (ks_dht_message_error(error, transactionid, transactionid_length, &e) != KS_STATUS_SUCCESS) {
 		goto done;
 	}
 
@@ -561,8 +561,8 @@ KS_DECLARE(ks_status_t) ks_dht2_send_error(ks_dht2_t *dht,
 
  done:
 	if (ret != KS_STATUS_SUCCESS && error) {
-		ks_dht2_message_deinit(error);
-		ks_dht2_message_free(error);
+		ks_dht_message_deinit(error);
+		ks_dht_message_free(error);
 	}
 	return ret;
 }
@@ -570,16 +570,16 @@ KS_DECLARE(ks_status_t) ks_dht2_send_error(ks_dht2_t *dht,
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht2_setup_query(ks_dht2_t *dht,
-											ks_sockaddr_t *raddr,
-											const char *query,
-											ks_dht2_message_callback_t callback,
-											ks_dht2_message_t **message,
-											struct bencode **args)
+KS_DECLARE(ks_status_t) ks_dht_setup_query(ks_dht_t *dht,
+										   ks_sockaddr_t *raddr,
+										   const char *query,
+										   ks_dht_message_callback_t callback,
+										   ks_dht_message_t **message,
+										   struct bencode **args)
 {
 	uint32_t transactionid;
-	ks_dht2_transaction_t *trans = NULL;
-	ks_dht2_message_t *msg = NULL;
+	ks_dht_transaction_t *trans = NULL;
+	ks_dht_message_t *msg = NULL;
 	ks_status_t ret = KS_STATUS_FAIL;
 
 	ks_assert(dht);
@@ -593,23 +593,23 @@ KS_DECLARE(ks_status_t) ks_dht2_setup_query(ks_dht2_t *dht,
     // @todo atomic increment or mutex
 	transactionid = dht->transactionid_next++;
 
-	if (ks_dht2_transaction_alloc(&trans, dht->pool) != KS_STATUS_SUCCESS) {
+	if (ks_dht_transaction_alloc(&trans, dht->pool) != KS_STATUS_SUCCESS) {
 		goto done;
 	}
 
-	if (ks_dht2_transaction_init(trans, raddr, transactionid, callback) != KS_STATUS_SUCCESS) {
+	if (ks_dht_transaction_init(trans, raddr, transactionid, callback) != KS_STATUS_SUCCESS) {
 		goto done;
 	}
 
-	if (ks_dht2_message_alloc(&msg, dht->pool) != KS_STATUS_SUCCESS) {
+	if (ks_dht_message_alloc(&msg, dht->pool) != KS_STATUS_SUCCESS) {
 		goto done;
 	}
 
-	if (ks_dht2_message_init(msg, raddr, KS_TRUE) != KS_STATUS_SUCCESS) {
+	if (ks_dht_message_init(msg, raddr, KS_TRUE) != KS_STATUS_SUCCESS) {
 	    goto done;
 	}
 
-	if (ks_dht2_message_query(msg, transactionid, query, args) != KS_STATUS_SUCCESS) {
+	if (ks_dht_message_query(msg, transactionid, query, args) != KS_STATUS_SUCCESS) {
 		goto done;
 	}
 
@@ -622,12 +622,12 @@ KS_DECLARE(ks_status_t) ks_dht2_setup_query(ks_dht2_t *dht,
  done:
 	if (ret != KS_STATUS_SUCCESS) {
 		if (trans) {
-			ks_dht2_transaction_deinit(trans);
-			ks_dht2_transaction_free(trans);
+			ks_dht_transaction_deinit(trans);
+			ks_dht_transaction_free(trans);
 		}
 		if (msg) {
-			ks_dht2_message_deinit(msg);
-			ks_dht2_message_free(msg);
+			ks_dht_message_deinit(msg);
+			ks_dht_message_free(msg);
 		}
 		*message = NULL;
 	}
@@ -637,15 +637,15 @@ KS_DECLARE(ks_status_t) ks_dht2_setup_query(ks_dht2_t *dht,
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht2_send_ping(ks_dht2_t *dht, ks_sockaddr_t *raddr)
+KS_DECLARE(ks_status_t) ks_dht_send_ping(ks_dht_t *dht, ks_sockaddr_t *raddr)
 {
-	ks_dht2_message_t *message = NULL;
+	ks_dht_message_t *message = NULL;
 	struct bencode *a = NULL;
 	
 	ks_assert(dht);
 	ks_assert(raddr);
 
-	if (ks_dht2_setup_query(dht, raddr, "ping", ks_dht2_process_response_ping, &message, &a) != KS_STATUS_SUCCESS) {
+	if (ks_dht_setup_query(dht, raddr, "ping", ks_dht_process_response_ping, &message, &a) != KS_STATUS_SUCCESS) {
 		return KS_STATUS_FAIL;
 	}
 	
@@ -660,16 +660,16 @@ KS_DECLARE(ks_status_t) ks_dht2_send_ping(ks_dht2_t *dht, ks_sockaddr_t *raddr)
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht2_send_findnode(ks_dht2_t *dht, ks_sockaddr_t *raddr, ks_dht2_nodeid_t *targetid)
+KS_DECLARE(ks_status_t) ks_dht_send_findnode(ks_dht_t *dht, ks_sockaddr_t *raddr, ks_dht_nodeid_t *targetid)
 {
-	ks_dht2_message_t *message = NULL;
+	ks_dht_message_t *message = NULL;
 	struct bencode *a = NULL;
 	
 	ks_assert(dht);
 	ks_assert(raddr);
 	ks_assert(targetid);
 
-	if (ks_dht2_setup_query(dht, raddr, "find_node", ks_dht2_process_response_findnode, &message, &a) != KS_STATUS_SUCCESS) {
+	if (ks_dht_setup_query(dht, raddr, "find_node", ks_dht_process_response_findnode, &message, &a) != KS_STATUS_SUCCESS) {
 		return KS_STATUS_FAIL;
 	}
 	
@@ -678,7 +678,7 @@ KS_DECLARE(ks_status_t) ks_dht2_send_findnode(ks_dht2_t *dht, ks_sockaddr_t *rad
 
 	ks_log(KS_LOG_DEBUG, "Sending message query find_node\n");
 	ks_q_push(dht->send_q, (void *)message);
-	//ks_dht2_send(dht, raddr, message);
+	//ks_dht_send(dht, raddr, message);
 
 	return KS_STATUS_SUCCESS;
 }
@@ -686,10 +686,10 @@ KS_DECLARE(ks_status_t) ks_dht2_send_findnode(ks_dht2_t *dht, ks_sockaddr_t *rad
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht2_process(ks_dht2_t *dht, ks_sockaddr_t *raddr)
+KS_DECLARE(ks_status_t) ks_dht_process(ks_dht_t *dht, ks_sockaddr_t *raddr)
 {
-	ks_dht2_message_t message;
-	ks_dht2_message_callback_t callback;
+	ks_dht_message_t message;
+	ks_dht_message_callback_t callback;
 	ks_status_t ret = KS_STATUS_FAIL;
 
 	ks_assert(dht);
@@ -703,26 +703,26 @@ KS_DECLARE(ks_status_t) ks_dht2_process(ks_dht2_t *dht, ks_sockaddr_t *raddr)
 
 	// @todo blacklist check for bad actor nodes
 	
-	if (ks_dht2_message_prealloc(&message, dht->pool) != KS_STATUS_SUCCESS) {
+	if (ks_dht_message_prealloc(&message, dht->pool) != KS_STATUS_SUCCESS) {
 		return KS_STATUS_FAIL;
 	}
 
-	if (ks_dht2_message_init(&message, raddr, KS_FALSE) != KS_STATUS_SUCCESS) {
+	if (ks_dht_message_init(&message, raddr, KS_FALSE) != KS_STATUS_SUCCESS) {
 		return KS_STATUS_FAIL;
 	}
 
-	if (ks_dht2_message_parse(&message, dht->recv_buffer, dht->recv_buffer_length) != KS_STATUS_SUCCESS) {
+	if (ks_dht_message_parse(&message, dht->recv_buffer, dht->recv_buffer_length) != KS_STATUS_SUCCESS) {
 		goto done;
 	}
 	
-	if (!(callback = (ks_dht2_message_callback_t)(intptr_t)ks_hash_search(dht->registry_type, message.type, KS_UNLOCKED))) {
+	if (!(callback = (ks_dht_message_callback_t)(intptr_t)ks_hash_search(dht->registry_type, message.type, KS_UNLOCKED))) {
 		ks_log(KS_LOG_DEBUG, "Message type '%s' is not registered\n", message.type);
 	} else {
 		ret = callback(dht, &message);
 	}
 
  done:
-	ks_dht2_message_deinit(&message);
+	ks_dht_message_deinit(&message);
 	
 	return ret;
 }
@@ -730,20 +730,20 @@ KS_DECLARE(ks_status_t) ks_dht2_process(ks_dht2_t *dht, ks_sockaddr_t *raddr)
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht2_process_query(ks_dht2_t *dht, ks_dht2_message_t *message)
+KS_DECLARE(ks_status_t) ks_dht_process_query(ks_dht_t *dht, ks_dht_message_t *message)
 {
 	struct bencode *q;
 	struct bencode *a;
 	const char *qv;
 	ks_size_t qv_len;
 	char query[KS_DHT_MESSAGE_QUERY_MAX_SIZE];
-	ks_dht2_message_callback_t callback;
+	ks_dht_message_callback_t callback;
 	ks_status_t ret = KS_STATUS_FAIL;
 
 	ks_assert(dht);
 	ks_assert(message);
 
-	// @todo start of ks_dht2_message_parse_query
+	// @todo start of ks_dht_message_parse_query
     q = ben_dict_get_by_str(message->data, "q");
     if (!q) {
 		ks_log(KS_LOG_DEBUG, "Message query missing required key 'q'\n");
@@ -766,11 +766,11 @@ KS_DECLARE(ks_status_t) ks_dht2_process_query(ks_dht2_t *dht, ks_dht2_message_t 
 		ks_log(KS_LOG_DEBUG, "Message query missing required key 'a'\n");
 		return KS_STATUS_FAIL;
 	}
-	// @todo end of ks_dht2_message_parse_query
+	// @todo end of ks_dht_message_parse_query
 
 	message->args = a;
 
-	if (!(callback = (ks_dht2_message_callback_t)(intptr_t)ks_hash_search(dht->registry_query, query, KS_UNLOCKED))) {
+	if (!(callback = (ks_dht_message_callback_t)(intptr_t)ks_hash_search(dht->registry_query, query, KS_UNLOCKED))) {
 		ks_log(KS_LOG_DEBUG, "Message query '%s' is not registered\n", query);
 	} else {
 		ret = callback(dht, message);
@@ -782,10 +782,10 @@ KS_DECLARE(ks_status_t) ks_dht2_process_query(ks_dht2_t *dht, ks_dht2_message_t 
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht2_process_response(ks_dht2_t *dht, ks_dht2_message_t *message)
+KS_DECLARE(ks_status_t) ks_dht_process_response(ks_dht_t *dht, ks_dht_message_t *message)
 {
 	struct bencode *r;
-	ks_dht2_transaction_t *transaction;
+	ks_dht_transaction_t *transaction;
 	uint32_t *tid;
 	uint32_t transactionid;
 	ks_status_t ret = KS_STATUS_FAIL;
@@ -793,13 +793,13 @@ KS_DECLARE(ks_status_t) ks_dht2_process_response(ks_dht2_t *dht, ks_dht2_message
 	ks_assert(dht);
 	ks_assert(message);
 
-	// @todo start of ks_dht2_message_parse_response
+	// @todo start of ks_dht_message_parse_response
 	r = ben_dict_get_by_str(message->data, "r");
 	if (!r) {
 		ks_log(KS_LOG_DEBUG, "Message response missing required key 'r'\n");
 		return KS_STATUS_FAIL;
 	}
-	// todo end of ks_dht2_message_parse_response
+	// todo end of ks_dht_message_parse_response
 
 	message->args = r;
 
@@ -830,7 +830,7 @@ KS_DECLARE(ks_status_t) ks_dht2_process_response(ks_dht2_t *dht, ks_dht2_message
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht2_process_error(ks_dht2_t *dht, ks_dht2_message_t *message)
+KS_DECLARE(ks_status_t) ks_dht_process_error(ks_dht_t *dht, ks_dht_message_t *message)
 {
 	struct bencode *e;
 	struct bencode *ec;
@@ -839,7 +839,7 @@ KS_DECLARE(ks_status_t) ks_dht2_process_error(ks_dht2_t *dht, ks_dht2_message_t 
 	ks_size_t es_len;
 	long long errorcode;
 	char error[KS_DHT_MESSAGE_ERROR_MAX_SIZE];
-	ks_dht2_transaction_t *transaction;
+	ks_dht_transaction_t *transaction;
 	uint32_t *tid;
 	uint32_t transactionid;
 	ks_status_t ret = KS_STATUS_FAIL;
@@ -847,7 +847,7 @@ KS_DECLARE(ks_status_t) ks_dht2_process_error(ks_dht2_t *dht, ks_dht2_message_t 
 	ks_assert(dht);
 	ks_assert(message);
 
-	// @todo start of ks_dht2_message_parse_error
+	// @todo start of ks_dht_message_parse_error
 	e = ben_dict_get_by_str(message->data, "e");
 	if (!e) {
 		ks_log(KS_LOG_DEBUG, "Message error missing required key 'e'\n");
@@ -865,7 +865,7 @@ KS_DECLARE(ks_status_t) ks_dht2_process_error(ks_dht2_t *dht, ks_dht2_message_t 
 	
 	memcpy(error, et, es_len);
 	error[es_len] = '\0';
-	// todo end of ks_dht2_message_parse_error
+	// todo end of ks_dht_message_parse_error
 
 	message->args = e;
 
@@ -886,10 +886,10 @@ KS_DECLARE(ks_status_t) ks_dht2_process_error(ks_dht2_t *dht, ks_dht2_message_t 
 			   transaction->raddr.port);
 	} else {
 		// @todo mark transaction for later removal
-		ks_dht2_message_callback_t callback;
+		ks_dht_message_callback_t callback;
 		transaction->finished = KS_TRUE;
 
-		if ((callback = (ks_dht2_message_callback_t)(intptr_t)ks_hash_search(dht->registry_error, error, KS_UNLOCKED))) {
+		if ((callback = (ks_dht_message_callback_t)(intptr_t)ks_hash_search(dht->registry_error, error, KS_UNLOCKED))) {
 			ret = callback(dht, message);
 		} else {
 			ks_log(KS_LOG_DEBUG, "Message error received for transaction id %d, error %d: %s\n", transactionid, errorcode, error);
@@ -903,12 +903,12 @@ KS_DECLARE(ks_status_t) ks_dht2_process_error(ks_dht2_t *dht, ks_dht2_message_t 
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht2_process_query_ping(ks_dht2_t *dht, ks_dht2_message_t *message)
+KS_DECLARE(ks_status_t) ks_dht_process_query_ping(ks_dht_t *dht, ks_dht_message_t *message)
 {
 	struct bencode *id;
 	//const char *idv;
 	ks_size_t idv_len;
-	ks_dht2_message_t *response = NULL;
+	ks_dht_message_t *response = NULL;
 	struct bencode *r = NULL;
 	ks_status_t ret = KS_STATUS_FAIL;
 
@@ -934,15 +934,15 @@ KS_DECLARE(ks_status_t) ks_dht2_process_query_ping(ks_dht2_t *dht, ks_dht2_messa
 	ks_log(KS_LOG_DEBUG, "Message query ping is valid\n");
 
 	
-	if (ks_dht2_message_alloc(&response, dht->pool) != KS_STATUS_SUCCESS) {
+	if (ks_dht_message_alloc(&response, dht->pool) != KS_STATUS_SUCCESS) {
 		goto done;
 	}
 
-	if (ks_dht2_message_init(response, &message->raddr, KS_TRUE) != KS_STATUS_SUCCESS) {
+	if (ks_dht_message_init(response, &message->raddr, KS_TRUE) != KS_STATUS_SUCCESS) {
 		goto done;
 	}
 
-	if (ks_dht2_message_response(response, message->transactionid, message->transactionid_length, &r) != KS_STATUS_SUCCESS) {
+	if (ks_dht_message_response(response, message->transactionid, message->transactionid_length, &r) != KS_STATUS_SUCCESS) {
 		goto done;
 	}
 	
@@ -955,8 +955,8 @@ KS_DECLARE(ks_status_t) ks_dht2_process_query_ping(ks_dht2_t *dht, ks_dht2_messa
 
  done:
 	if (ret != KS_STATUS_SUCCESS && response) {
-		ks_dht2_message_deinit(response);
-		ks_dht2_message_free(response);
+		ks_dht_message_deinit(response);
+		ks_dht_message_free(response);
 	}
 	return ret;
 }
@@ -964,7 +964,7 @@ KS_DECLARE(ks_status_t) ks_dht2_process_query_ping(ks_dht2_t *dht, ks_dht2_messa
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht2_process_query_findnode(ks_dht2_t *dht, ks_dht2_message_t *message)
+KS_DECLARE(ks_status_t) ks_dht_process_query_findnode(ks_dht_t *dht, ks_dht_message_t *message)
 {
 	struct bencode *id;
 	struct bencode *target;
@@ -975,7 +975,7 @@ KS_DECLARE(ks_status_t) ks_dht2_process_query_findnode(ks_dht2_t *dht, ks_dht2_m
 	ks_size_t targetv_len;
 	ks_bool_t want4 = KS_FALSE;
 	ks_bool_t want6 = KS_FALSE;
-	ks_dht2_message_t *response = NULL;
+	ks_dht_message_t *response = NULL;
 	struct bencode *r = NULL;
 	uint8_t buffer[1000];
 	ks_size_t buffer_length = 0;
@@ -1040,20 +1040,20 @@ KS_DECLARE(ks_status_t) ks_dht2_process_query_findnode(ks_dht2_t *dht, ks_dht2_m
 	// @todo get closest nodes to target from route table
 
 	// @todo compact into buffer
-	if (ks_dht2_utility_compact_node((ks_dht2_nodeid_t *)idv, &message->raddr, buffer, &buffer_length, sizeof(buffer)) != KS_STATUS_SUCCESS) {
+	if (ks_dht_utility_compact_node((ks_dht_nodeid_t *)idv, &message->raddr, buffer, &buffer_length, sizeof(buffer)) != KS_STATUS_SUCCESS) {
 		return KS_STATUS_FAIL;
 	}
 
 
-	if (ks_dht2_message_alloc(&response, dht->pool) != KS_STATUS_SUCCESS) {
+	if (ks_dht_message_alloc(&response, dht->pool) != KS_STATUS_SUCCESS) {
 		goto done;
 	}
 
-	if (ks_dht2_message_init(response, &message->raddr, KS_TRUE) != KS_STATUS_SUCCESS) {
+	if (ks_dht_message_init(response, &message->raddr, KS_TRUE) != KS_STATUS_SUCCESS) {
 		goto done;
 	}
 
-	if (ks_dht2_message_response(response, message->transactionid, message->transactionid_length, &r) != KS_STATUS_SUCCESS) {
+	if (ks_dht_message_response(response, message->transactionid, message->transactionid_length, &r) != KS_STATUS_SUCCESS) {
 		goto done;
 	}
 	
@@ -1068,8 +1068,8 @@ KS_DECLARE(ks_status_t) ks_dht2_process_query_findnode(ks_dht2_t *dht, ks_dht2_m
 
  done:
 	if (ret != KS_STATUS_SUCCESS && response) {
-		ks_dht2_message_deinit(response);
-		ks_dht2_message_free(response);
+		ks_dht_message_deinit(response);
+		ks_dht_message_free(response);
 	}
 	return ret;
 }
@@ -1077,7 +1077,7 @@ KS_DECLARE(ks_status_t) ks_dht2_process_query_findnode(ks_dht2_t *dht, ks_dht2_m
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht2_process_response_ping(ks_dht2_t *dht, ks_dht2_message_t *message)
+KS_DECLARE(ks_status_t) ks_dht_process_response_ping(ks_dht_t *dht, ks_dht_message_t *message)
 {
 	ks_assert(dht);
 	ks_assert(message);
@@ -1092,7 +1092,7 @@ KS_DECLARE(ks_status_t) ks_dht2_process_response_ping(ks_dht2_t *dht, ks_dht2_me
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht2_process_response_findnode(ks_dht2_t *dht, ks_dht2_message_t *message)
+KS_DECLARE(ks_status_t) ks_dht_process_response_findnode(ks_dht_t *dht, ks_dht_message_t *message)
 {
 	ks_assert(dht);
 	ks_assert(message);

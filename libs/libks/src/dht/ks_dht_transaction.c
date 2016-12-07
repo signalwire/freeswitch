@@ -4,14 +4,14 @@
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht2_transaction_alloc(ks_dht2_transaction_t **transaction, ks_pool_t *pool)
+KS_DECLARE(ks_status_t) ks_dht_transaction_alloc(ks_dht_transaction_t **transaction, ks_pool_t *pool)
 {
-	ks_dht2_transaction_t *tran;
+	ks_dht_transaction_t *tran;
 
 	ks_assert(transaction);
 	ks_assert(pool);
 	
-	*transaction = tran = ks_pool_alloc(pool, sizeof(ks_dht2_transaction_t));
+	*transaction = tran = ks_pool_alloc(pool, sizeof(ks_dht_transaction_t));
 	tran->pool = pool;
 
 	return KS_STATUS_SUCCESS;
@@ -20,7 +20,7 @@ KS_DECLARE(ks_status_t) ks_dht2_transaction_alloc(ks_dht2_transaction_t **transa
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht2_transaction_prealloc(ks_dht2_transaction_t *transaction, ks_pool_t *pool)
+KS_DECLARE(ks_status_t) ks_dht_transaction_prealloc(ks_dht_transaction_t *transaction, ks_pool_t *pool)
 {
 	ks_assert(transaction);
 	ks_assert(pool);
@@ -33,11 +33,11 @@ KS_DECLARE(ks_status_t) ks_dht2_transaction_prealloc(ks_dht2_transaction_t *tran
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht2_transaction_free(ks_dht2_transaction_t *transaction)
+KS_DECLARE(ks_status_t) ks_dht_transaction_free(ks_dht_transaction_t *transaction)
 {
 	ks_assert(transaction);
 
-	ks_dht2_transaction_deinit(transaction);
+	ks_dht_transaction_deinit(transaction);
 	ks_pool_free(transaction->pool, transaction);
 
 	return KS_STATUS_SUCCESS;
@@ -47,10 +47,10 @@ KS_DECLARE(ks_status_t) ks_dht2_transaction_free(ks_dht2_transaction_t *transact
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht2_transaction_init(ks_dht2_transaction_t *transaction,
-												 ks_sockaddr_t *raddr,
-												 uint32_t transactionid,
-												 ks_dht2_message_callback_t callback)
+KS_DECLARE(ks_status_t) ks_dht_transaction_init(ks_dht_transaction_t *transaction,
+												ks_sockaddr_t *raddr,
+												uint32_t transactionid,
+												ks_dht_message_callback_t callback)
 {
 	ks_assert(transaction);
 	ks_assert(raddr);
@@ -69,7 +69,7 @@ KS_DECLARE(ks_status_t) ks_dht2_transaction_init(ks_dht2_transaction_t *transact
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht2_transaction_deinit(ks_dht2_transaction_t *transaction)
+KS_DECLARE(ks_status_t) ks_dht_transaction_deinit(ks_dht_transaction_t *transaction)
 {
 	ks_assert(transaction);
 

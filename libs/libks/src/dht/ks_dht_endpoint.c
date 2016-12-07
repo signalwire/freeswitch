@@ -4,14 +4,14 @@
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht2_endpoint_alloc(ks_dht2_endpoint_t **endpoint, ks_pool_t *pool)
+KS_DECLARE(ks_status_t) ks_dht_endpoint_alloc(ks_dht_endpoint_t **endpoint, ks_pool_t *pool)
 {
-	ks_dht2_endpoint_t *ep;
+	ks_dht_endpoint_t *ep;
 
 	ks_assert(endpoint);
 	ks_assert(pool);
 	
-	*endpoint = ep = ks_pool_alloc(pool, sizeof(ks_dht2_endpoint_t));
+	*endpoint = ep = ks_pool_alloc(pool, sizeof(ks_dht_endpoint_t));
 	ep->pool = pool;
 	ep->sock = KS_SOCK_INVALID;
 
@@ -21,7 +21,7 @@ KS_DECLARE(ks_status_t) ks_dht2_endpoint_alloc(ks_dht2_endpoint_t **endpoint, ks
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht2_endpoint_prealloc(ks_dht2_endpoint_t *endpoint, ks_pool_t *pool)
+KS_DECLARE(ks_status_t) ks_dht_endpoint_prealloc(ks_dht_endpoint_t *endpoint, ks_pool_t *pool)
 {
 	ks_assert(endpoint);
 	ks_assert(pool);
@@ -35,11 +35,11 @@ KS_DECLARE(ks_status_t) ks_dht2_endpoint_prealloc(ks_dht2_endpoint_t *endpoint, 
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht2_endpoint_free(ks_dht2_endpoint_t *endpoint)
+KS_DECLARE(ks_status_t) ks_dht_endpoint_free(ks_dht_endpoint_t *endpoint)
 {
 	ks_assert(endpoint);
 
-	ks_dht2_endpoint_deinit(endpoint);
+	ks_dht_endpoint_deinit(endpoint);
 	ks_pool_free(endpoint->pool, endpoint);
 
 	return KS_STATUS_SUCCESS;
@@ -49,7 +49,7 @@ KS_DECLARE(ks_status_t) ks_dht2_endpoint_free(ks_dht2_endpoint_t *endpoint)
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht2_endpoint_init(ks_dht2_endpoint_t *endpoint, const ks_sockaddr_t *addr, ks_socket_t sock)
+KS_DECLARE(ks_status_t) ks_dht_endpoint_init(ks_dht_endpoint_t *endpoint, const ks_sockaddr_t *addr, ks_socket_t sock)
 {
 	ks_assert(endpoint);
 	ks_assert(endpoint->pool);
@@ -65,7 +65,7 @@ KS_DECLARE(ks_status_t) ks_dht2_endpoint_init(ks_dht2_endpoint_t *endpoint, cons
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht2_endpoint_deinit(ks_dht2_endpoint_t *endpoint)
+KS_DECLARE(ks_status_t) ks_dht_endpoint_deinit(ks_dht_endpoint_t *endpoint)
 {
 	ks_assert(endpoint);
 

@@ -5,14 +5,14 @@
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht2_node_alloc(ks_dht2_node_t **node, ks_pool_t *pool)
+KS_DECLARE(ks_status_t) ks_dht_node_alloc(ks_dht_node_t **node, ks_pool_t *pool)
 {
-	ks_dht2_node_t *n;
+	ks_dht_node_t *n;
 
 	ks_assert(node);
 	ks_assert(pool);
 
-	*node = n = ks_pool_alloc(pool, sizeof(ks_dht2_node_t));
+	*node = n = ks_pool_alloc(pool, sizeof(ks_dht_node_t));
 	n->pool = pool;
 
 	return KS_STATUS_SUCCESS;
@@ -21,7 +21,7 @@ KS_DECLARE(ks_status_t) ks_dht2_node_alloc(ks_dht2_node_t **node, ks_pool_t *poo
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht2_node_prealloc(ks_dht2_node_t *node, ks_pool_t *pool)
+KS_DECLARE(ks_status_t) ks_dht_node_prealloc(ks_dht_node_t *node, ks_pool_t *pool)
 {
 	ks_assert(node);
 	ks_assert(pool);
@@ -34,11 +34,11 @@ KS_DECLARE(ks_status_t) ks_dht2_node_prealloc(ks_dht2_node_t *node, ks_pool_t *p
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht2_node_free(ks_dht2_node_t *node)
+KS_DECLARE(ks_status_t) ks_dht_node_free(ks_dht_node_t *node)
 {
 	ks_assert(node);
 
-	ks_dht2_node_deinit(node);
+	ks_dht_node_deinit(node);
 	ks_pool_free(node->pool, node);
 
 	return KS_STATUS_SUCCESS;
@@ -48,7 +48,7 @@ KS_DECLARE(ks_status_t) ks_dht2_node_free(ks_dht2_node_t *node)
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht2_node_init(ks_dht2_node_t *node, const ks_dht2_nodeid_t *id, const ks_sockaddr_t *addr)
+KS_DECLARE(ks_status_t) ks_dht_node_init(ks_dht_node_t *node, const ks_dht_nodeid_t *id, const ks_sockaddr_t *addr)
 {
 	ks_assert(node);
 	ks_assert(node->pool);
@@ -61,7 +61,7 @@ KS_DECLARE(ks_status_t) ks_dht2_node_init(ks_dht2_node_t *node, const ks_dht2_no
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht2_node_deinit(ks_dht2_node_t *node)
+KS_DECLARE(ks_status_t) ks_dht_node_deinit(ks_dht_node_t *node)
 {
 	ks_assert(node);
 
