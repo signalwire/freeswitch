@@ -22,7 +22,6 @@ KS_BEGIN_EXTERN_C
 
 typedef struct ks_dht_s ks_dht_t;
 typedef uint8_t ks_dht_nodeid_t[KS_DHT_NODEID_SIZE];
-typedef struct ks_dht_node_s ks_dht_node_t;
 typedef struct ks_dht_message_s ks_dht_message_t;
 typedef struct ks_dht_endpoint_s ks_dht_endpoint_t;
 typedef struct ks_dht_transaction_s ks_dht_transaction_t;

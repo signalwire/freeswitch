@@ -613,6 +613,7 @@ KS_DECLARE(ks_status_t) ks_dht_setup_query(ks_dht_t *dht,
 	ks_status_t ret = KS_STATUS_FAIL;
 
 	ks_assert(dht);
+	ks_assert(ep);
 	ks_assert(raddr);
 	ks_assert(query);
 	ks_assert(callback);
@@ -659,6 +660,53 @@ KS_DECLARE(ks_status_t) ks_dht_setup_query(ks_dht_t *dht,
 			ks_dht_message_deinit(msg);
 			ks_dht_message_free(msg);
 		}
+		*message = NULL;
+	}
+	return ret;
+}
+
+/**
+ *
+ */
+KS_DECLARE(ks_status_t) ks_dht_setup_response(ks_dht_t *dht,
+											  ks_dht_endpoint_t *ep,
+											  ks_sockaddr_t *raddr,
+											  uint8_t *transactionid,
+											  ks_size_t transactionid_length,
+											  ks_dht_message_t **message,
+											  struct bencode **args)
+{
+	ks_dht_message_t *msg = NULL;
+	ks_status_t ret = KS_STATUS_FAIL;
+
+	ks_assert(dht);
+	ks_assert(ep);
+	ks_assert(raddr);
+	ks_assert(transactionid);
+	ks_assert(message);
+	
+	*message = NULL;
+	
+	if (ks_dht_message_alloc(&msg, dht->pool) != KS_STATUS_SUCCESS) {
+		goto done;
+	}
+
+	if (ks_dht_message_init(msg, ep, raddr, KS_TRUE) != KS_STATUS_SUCCESS) {
+		goto done;
+	}
+
+	if (ks_dht_message_response(msg, transactionid, transactionid_length, args) != KS_STATUS_SUCCESS) {
+		goto done;
+	}
+	
+	*message = msg;
+
+	ret = KS_STATUS_SUCCESS;
+
+ done:
+	if (ret != KS_STATUS_SUCCESS && msg) {
+		ks_dht_message_deinit(msg);
+		ks_dht_message_free(msg);
 		*message = NULL;
 	}
 	return ret;
@@ -940,7 +988,6 @@ KS_DECLARE(ks_status_t) ks_dht_process_query_ping(ks_dht_t *dht, ks_dht_message_
 	ks_size_t idv_len;
 	ks_dht_message_t *response = NULL;
 	struct bencode *r = NULL;
-	ks_status_t ret = KS_STATUS_FAIL;
 
 	ks_assert(dht);
 	ks_assert(message);
@@ -963,32 +1010,34 @@ KS_DECLARE(ks_status_t) ks_dht_process_query_ping(ks_dht_t *dht, ks_dht_message_
 
 	ks_log(KS_LOG_DEBUG, "Message query ping is valid\n");
 
+	if (ks_dht_setup_response(dht,
+							  message->endpoint,
+							  &message->raddr,
+							  message->transactionid,
+							  message->transactionid_length,
+							  &response,
+							  &r) != KS_STATUS_SUCCESS) {
+		return KS_STATUS_FAIL;
+	}
 	
-	if (ks_dht_message_alloc(&response, dht->pool) != KS_STATUS_SUCCESS) {
-		goto done;
-	}
+	//if (ks_dht_message_alloc(&response, dht->pool) != KS_STATUS_SUCCESS) {
+	//	goto done;
+	//}
 
-	if (ks_dht_message_init(response, message->endpoint, &message->raddr, KS_TRUE) != KS_STATUS_SUCCESS) {
-		goto done;
-	}
+	//if (ks_dht_message_init(response, message->endpoint, &message->raddr, KS_TRUE) != KS_STATUS_SUCCESS) {
+	//	goto done;
+	//}
 
-	if (ks_dht_message_response(response, message->transactionid, message->transactionid_length, &r) != KS_STATUS_SUCCESS) {
-		goto done;
-	}
+	//if (ks_dht_message_response(response, message->transactionid, message->transactionid_length, &r) != KS_STATUS_SUCCESS) {
+	//	goto done;
+	//}
 	
 	ben_dict_set(r, ben_blob("id", 2), ben_blob(message->endpoint->nodeid, KS_DHT_NODEID_SIZE));
 
 	ks_log(KS_LOG_DEBUG, "Sending message response ping\n");
 	ks_q_push(dht->send_q, (void *)response);
 
-	ret = KS_STATUS_SUCCESS;
-
- done:
-	if (ret != KS_STATUS_SUCCESS && response) {
-		ks_dht_message_deinit(response);
-		ks_dht_message_free(response);
-	}
-	return ret;
+	return KS_STATUS_SUCCESS;
 }
 
 /**
@@ -1009,7 +1058,6 @@ KS_DECLARE(ks_status_t) ks_dht_process_query_findnode(ks_dht_t *dht, ks_dht_mess
 	struct bencode *r = NULL;
 	uint8_t buffer[1000];
 	ks_size_t buffer_length = 0;
-	ks_status_t ret = KS_STATUS_FAIL;
 
 	ks_assert(dht);
 	ks_assert(message);
@@ -1074,18 +1122,27 @@ KS_DECLARE(ks_status_t) ks_dht_process_query_findnode(ks_dht_t *dht, ks_dht_mess
 		return KS_STATUS_FAIL;
 	}
 
-
-	if (ks_dht_message_alloc(&response, dht->pool) != KS_STATUS_SUCCESS) {
-		goto done;
+	if (ks_dht_setup_response(dht,
+							  message->endpoint,
+							  &message->raddr,
+							  message->transactionid,
+							  message->transactionid_length,
+							  &response,
+							  &r) != KS_STATUS_SUCCESS) {
+		return KS_STATUS_FAIL;
 	}
 
-	if (ks_dht_message_init(response, message->endpoint, &message->raddr, KS_TRUE) != KS_STATUS_SUCCESS) {
-		goto done;
-	}
+	//if (ks_dht_message_alloc(&response, dht->pool) != KS_STATUS_SUCCESS) {
+	//	goto done;
+	//}
 
-	if (ks_dht_message_response(response, message->transactionid, message->transactionid_length, &r) != KS_STATUS_SUCCESS) {
-		goto done;
-	}
+	//if (ks_dht_message_init(response, message->endpoint, &message->raddr, KS_TRUE) != KS_STATUS_SUCCESS) {
+	//	goto done;
+	//}
+
+	//if (ks_dht_message_response(response, message->transactionid, message->transactionid_length, &r) != KS_STATUS_SUCCESS) {
+	//	goto done;
+	//}
 	
 	ben_dict_set(r, ben_blob("id", 2), ben_blob(message->endpoint->nodeid, KS_DHT_NODEID_SIZE));
 	// @todo populate nodes/nodes6
@@ -1094,14 +1151,7 @@ KS_DECLARE(ks_status_t) ks_dht_process_query_findnode(ks_dht_t *dht, ks_dht_mess
 	ks_log(KS_LOG_DEBUG, "Sending message response find_node\n");
 	ks_q_push(dht->send_q, (void *)response);
 
-	ret = KS_STATUS_SUCCESS;
-
- done:
-	if (ret != KS_STATUS_SUCCESS && response) {
-		ks_dht_message_deinit(response);
-		ks_dht_message_free(response);
-	}
-	return ret;
+	return KS_STATUS_SUCCESS;
 }
 
 /**
