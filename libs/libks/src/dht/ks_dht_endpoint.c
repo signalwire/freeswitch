@@ -58,9 +58,9 @@ KS_DECLARE(ks_status_t) ks_dht_endpoint_init(ks_dht_endpoint_t *endpoint, const 
 	ks_assert(addr->family == AF_INET || addr->family == AF_INET6);
 	
     if (!nodeid) {
-		randombytes_buf(endpoint->nodeid, KS_DHT_NODEID_SIZE);
+		randombytes_buf(endpoint->nodeid.id, KS_DHT_NODEID_SIZE);
 	} else {
-		memcpy(endpoint->nodeid, nodeid, KS_DHT_NODEID_SIZE);
+		memcpy(endpoint->nodeid.id, nodeid->id, KS_DHT_NODEID_SIZE);
 	}
 
 	endpoint->addr = *addr;

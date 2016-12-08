@@ -3,7 +3,7 @@
 
 #include "ks.h"
 #include "ks_bencode.h"
-
+#include "ks_dht_bucket.h"
 
 KS_BEGIN_EXTERN_C
 
@@ -21,7 +21,7 @@ KS_BEGIN_EXTERN_C
 #define KS_DHT_TRANSACTION_EXPIRATION_DELAY 30
 
 typedef struct ks_dht_s ks_dht_t;
-typedef uint8_t ks_dht_nodeid_t[KS_DHT_NODEID_SIZE];
+typedef struct ks_dht_nodeid_s ks_dht_nodeid_t;
 typedef struct ks_dht_message_s ks_dht_message_t;
 typedef struct ks_dht_endpoint_s ks_dht_endpoint_t;
 typedef struct ks_dht_transaction_s ks_dht_transaction_t;
@@ -29,6 +29,12 @@ typedef struct ks_dht_transaction_s ks_dht_transaction_t;
 
 typedef ks_status_t (*ks_dht_message_callback_t)(ks_dht_t *dht, ks_dht_message_t *message);
 
+/**
+ * Note: This must remain a structure for casting from raw data
+ */
+struct ks_dht_nodeid_s {
+	uint8_t id[KS_DHT_NODEID_SIZE];
+};
 
 struct ks_dht_message_s {
 	ks_pool_t *pool;
@@ -82,8 +88,11 @@ struct ks_dht_s {
 	uint8_t recv_buffer[KS_DHT_RECV_BUFFER_SIZE];
 	ks_size_t recv_buffer_length;
 
-	uint32_t transactionid_next;
+	volatile uint32_t transactionid_next;
 	ks_hash_t *transactions_hash;
+
+	ks_dhtrt_routetable *rt_ipv4;
+	ks_dhtrt_routetable *rt_ipv6;
 };
 
 /**
@@ -139,7 +148,7 @@ KS_DECLARE(ks_status_t) ks_dht_message_error(ks_dht_message_t *message,
  *
  */
 KS_DECLARE(ks_status_t) ks_dht_transaction_alloc(ks_dht_transaction_t **transaction, ks_pool_t *pool);
-KS_DECLARE(ks_status_t) ks_dht_transaction_prealloc(ks_dht_transaction_t *trasnaction, ks_pool_t *pool);
+KS_DECLARE(ks_status_t) ks_dht_transaction_prealloc(ks_dht_transaction_t *transaction, ks_pool_t *pool);
 KS_DECLARE(ks_status_t) ks_dht_transaction_free(ks_dht_transaction_t *transaction);
 
 KS_DECLARE(ks_status_t) ks_dht_transaction_init(ks_dht_transaction_t *transaction,
