@@ -3347,6 +3347,22 @@ static switch_status_t cmd_profile(char **argv, int argc, switch_stream_handle_t
 		}
 
 		goto done;
+	} else if (!strcasecmp(argv[1], "startgw")) {
+		if (argc < 3) {
+			stream->write_function(stream, "-ERR missing gw name\n");
+			goto done;
+		}
+
+		switch_xml_reload(&err);
+		stream->write_function(stream, "Reload XML [%s]\n", err);
+
+		if (config_gateway(profile->name, argv[2]) == SWITCH_STATUS_SUCCESS) {
+			stream->write_function(stream, "+OK start gateway %s complete\n", argv[2]);
+		} else {
+			stream->write_function(stream, "-ERR cannot add gateway %s for profile %s\n", argv[2], profile->name);
+		}
+
+		goto done;
 	}
 
 	if (!strcasecmp(argv[1], "rescan")) {
@@ -6148,8 +6164,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 	switch_console_set_complete("add sofia profile ::sofia::list_profiles stop wait");
 	switch_console_set_complete("add sofia profile ::sofia::list_profiles flush_inbound_reg reboot");
 	switch_console_set_complete("add sofia profile ::sofia::list_profiles ::[register:unregister all");
-	switch_console_set_complete("add sofia profile ::sofia::list_profiles ::[register:unregister:killgw ::sofia::list_profile_gateway");
+	switch_console_set_complete("add sofia profile ::sofia::list_profiles ::[register:unregister:killgw:startgw ::sofia::list_profile_gateway");
 	switch_console_set_complete("add sofia profile ::sofia::list_profiles killgw _all_");
+	switch_console_set_complete("add sofia profile ::sofia::list_profiles startgw _all_");
 	switch_console_set_complete("add sofia profile ::sofia::list_profiles ::[siptrace:capture:watchdog ::[on:off");
 	switch_console_set_complete("add sofia profile ::sofia::list_profiles gwlist ::[up:down");
 

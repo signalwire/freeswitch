@@ -58,7 +58,7 @@ extern su_log_t stun_log[];
 extern su_log_t su_log_default[];
 
 static void config_sofia_profile_urls(sofia_profile_t * profile);
-static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag);
+static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag, const char *gwname);
 static void parse_domain_tag(sofia_profile_t *profile, switch_xml_t x_domain_tag, const char *dname, const char *parse, const char *alias);
 
 void sofia_handle_sip_i_reinvite(switch_core_session_t *session,
@@ -2967,7 +2967,7 @@ switch_thread_t *launch_sofia_worker_thread(sofia_profile_t *profile)
 		if ((xprofile = switch_xml_find_child(xprofiles, "profile", "name", profile->name))) {
 
 			if ((gateways_tag = switch_xml_child(xprofile, "gateways"))) {
-				parse_gateways(profile, gateways_tag);
+				parse_gateways(profile, gateways_tag, NULL);
 			}
 
 			if ((domains_tag = switch_xml_child(xprofile, "domains"))) {
@@ -3643,7 +3643,7 @@ static void parse_gateway_subscriptions(sofia_profile_t *profile, sofia_gateway_
 	}
 }
 
-static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
+static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag, const char *gwname)
 {
 	switch_xml_t gateway_tag, param = NULL, x_params, gw_subs_tag;
 	sofia_gateway_t *gp;
@@ -3655,6 +3655,11 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 
 		if (zstr(name) || switch_regex_match(name, "^[\\w\\.\\-\\_]+$") != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Ignoring invalid name '%s'\n", name ? name : "NULL");
+			free(pkey);
+			goto skip;
+		}
+
+		if (gwname && strcmp(gwname, name)) {
 			free(pkey);
 			goto skip;
 		}
@@ -4100,7 +4105,7 @@ static void parse_domain_tag(sofia_profile_t *profile, switch_xml_t x_domain_tag
 		/* Backwards Compatibility */
 		for (ut = switch_xml_child(x_domain_tag, "user"); ut; ut = ut->next) {
 			if (((gateways_tag = switch_xml_child(ut, "gateways")))) {
-				parse_gateways(profile, gateways_tag);
+				parse_gateways(profile, gateways_tag, NULL);
 			}
 		}
 		/* New Method with <groups> tags and users are now inside a <users> tag */
@@ -4109,7 +4114,7 @@ static void parse_domain_tag(sofia_profile_t *profile, switch_xml_t x_domain_tag
 				for (uts = switch_xml_child(gt, "users"); uts; uts = uts->next) {
 					for (ut = switch_xml_child(uts, "user"); ut; ut = ut->next) {
 						if (((gateways_tag = switch_xml_child(ut, "gateways")))) {
-							parse_gateways(profile, gateways_tag);
+							parse_gateways(profile, gateways_tag, NULL);
 						}
 					}
 				}
@@ -4280,6 +4285,51 @@ switch_status_t sofia_init(void)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+switch_status_t config_gateway(const char *profile_name, const char *gateway_name)
+{
+	switch_xml_t cfg, xml = NULL, xprofiles, xprofile, gateways_tag;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	sofia_profile_t *profile = NULL;
+	switch_event_t *params = NULL;
+	const char *cf = "sofia.conf";
+
+	if (zstr(profile_name) || !(profile = sofia_glue_find_profile(profile_name))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Profile [%s] does not exist.\n", profile_name);
+		status = SWITCH_STATUS_FALSE;
+		return status;
+	}
+
+	switch_event_create(&params, SWITCH_EVENT_REQUEST_PARAMS);
+	switch_assert(params);
+	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "profile", profile_name);
+	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "reconfig", "true");
+	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "gateway", gateway_name);
+
+	if (!(xml = switch_xml_open_cfg(cf, &cfg, params))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", gateway_name);
+		status = SWITCH_STATUS_FALSE;
+		goto done;
+	}
+
+	if ((xprofiles = switch_xml_child(cfg, "profiles"))) {
+		if ((xprofile = switch_xml_find_child(xprofiles, "profile", "name", profile->name))) {
+			if ((gateways_tag = switch_xml_child(xprofile, "gateways"))) {
+				parse_gateways(profile, gateways_tag, strcmp(gateway_name, "_all_") ? gateway_name : NULL);
+			}
+		}
+	}
+
+	status = SWITCH_STATUS_SUCCESS;
+
+done:
+
+	if (profile) sofia_glue_release_profile(profile);
+	if (xml) switch_xml_free(xml);
+
+	switch_event_destroy(&params);
+
+	return status;
+}
 
 switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 {
@@ -5923,7 +5973,7 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 					}
 
 					if ((gateways_tag = switch_xml_child(xprofile, "gateways"))) {
-						parse_gateways(profile, gateways_tag);
+						parse_gateways(profile, gateways_tag, NULL);
 					}
 
 					status = SWITCH_STATUS_SUCCESS;
