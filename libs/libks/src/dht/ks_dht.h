@@ -3,7 +3,6 @@
 
 #include "ks.h"
 #include "ks_bencode.h"
-#include "ks_dht_bucket.h"
 
 KS_BEGIN_EXTERN_C
 
@@ -25,7 +24,9 @@ typedef struct ks_dht_nodeid_s ks_dht_nodeid_t;
 typedef struct ks_dht_message_s ks_dht_message_t;
 typedef struct ks_dht_endpoint_s ks_dht_endpoint_t;
 typedef struct ks_dht_transaction_s ks_dht_transaction_t;
-
+typedef struct ks_dht_node_s ks_dht_node_t;
+typedef struct ks_dhtrt_routetable_s ks_dhtrt_routetable_t;
+typedef struct ks_dhtrt_querynodes_s ks_dhtrt_querynodes_t;
 
 typedef ks_status_t (*ks_dht_message_callback_t)(ks_dht_t *dht, ks_dht_message_t *message);
 
@@ -34,6 +35,29 @@ typedef ks_status_t (*ks_dht_message_callback_t)(ks_dht_t *dht, ks_dht_message_t
  */
 struct ks_dht_nodeid_s {
 	uint8_t id[KS_DHT_NODEID_SIZE];
+};
+
+enum ipfamily { ifv4=AF_INET, ifv6=AF_INET6, ifboth=AF_INET+AF_INET6};
+
+struct ks_dht_node_s {
+    ks_dht_nodeid_t  nodeid;
+    ks_sockaddr_t    addr;
+    enum ipfamily    family;                  /* in: AF_INET or AF_INET6 or both   */
+    ks_dhtrt_routetable_t* table;
+};
+
+struct ks_dhtrt_routetable_s {
+    void*       internal;                       
+    ks_pool_t*  pool;                           
+    ks_logger_t logger;
+};
+
+struct ks_dhtrt_querynodes_s {
+    ks_dht_nodeid_t nodeid;                   /* in: id to query                   */
+    enum ipfamily  family;                    /* in: AF_INET or AF_INET6 or both   */
+    uint8_t        max;                       /* in: maximum to return             */
+    uint8_t        count;                     /* out: number returned              */
+    ks_dht_node_t* nodes[ KS_DHT_MESSAGE_QUERY_MAX_SIZE]; /* out: array of peers (ks_dht_node_t* nodes[incount]) */
 };
 
 struct ks_dht_message_s {
@@ -91,8 +115,8 @@ struct ks_dht_s {
 	volatile uint32_t transactionid_next;
 	ks_hash_t *transactions_hash;
 
-	ks_dhtrt_routetable *rt_ipv4;
-	ks_dhtrt_routetable *rt_ipv6;
+	ks_dhtrt_routetable_t *rt_ipv4;
+	ks_dhtrt_routetable_t *rt_ipv6;
 };
 
 /**
@@ -156,6 +180,33 @@ KS_DECLARE(ks_status_t) ks_dht_transaction_init(ks_dht_transaction_t *transactio
 												 uint32_t transactionid,
 												 ks_dht_message_callback_t callback);
 KS_DECLARE(ks_status_t) ks_dht_transaction_deinit(ks_dht_transaction_t *transaction);
+
+
+/**
+ * route table methods
+ *
+ */
+KS_DECLARE(ks_dhtrt_routetable_t*) ks_dhtrt_initroute( ks_pool_t *pool, ks_dht_nodeid_t nodeid);
+KS_DECLARE(void)              ks_dhtrt_deinitroute(ks_dhtrt_routetable_t* table );
+
+KS_DECLARE(ks_status_t)        ks_dhtrt_create_node(ks_dhtrt_routetable_t* table,
+                                  ks_dht_nodeid_t nodeid,
+                                  char* ip, unsigned short port,
+                                  ks_dht_node_t** node);
+
+KS_DECLARE(ks_status_t)        ks_dhtrt_delete_node(ks_dhtrt_routetable_t* table, ks_dht_node_t* node);
+
+KS_DECLARE(ks_status_t)        ks_dhtrt_touch_node(ks_dhtrt_routetable_t* table,  ks_dht_nodeid_t nodeid);
+KS_DECLARE(ks_status_t)        ks_dhtrt_expire_node(ks_dhtrt_routetable_t* table,  ks_dht_nodeid_t nodeid);
+
+KS_DECLARE(uint8_t)            ks_dhtrt_findclosest_nodes(ks_dhtrt_routetable_t* table, ks_dhtrt_querynodes_t* query);
+KS_DECLARE(ks_dht_node_t*)     ks_dhtrt_find_node(ks_dhtrt_routetable_t* table, ks_dht_nodeid_t id);
+
+KS_DECLARE(void)               ks_dhtrt_process_table(ks_dhtrt_routetable_t* table);
+
+/* debugging aids */
+KS_DECLARE(void)               ks_dhtrt_dump(ks_dhtrt_routetable_t* table, int level);
+
 																																				
 KS_END_EXTERN_C
 

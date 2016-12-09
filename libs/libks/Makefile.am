@@ -30,7 +30,7 @@ library_include_HEADERS += src/include/ks_dso.h src/include/ks_platform.h src/in
 library_include_HEADERS += src/include/ks_printf.h src/include/ks_hash.h src/include/ks_ssl.h src/include/kws.h
 library_include_HEADERS += src/utp/utp_internal.h src/utp/utp.h src/utp/utp_types.h src/utp/utp_callbacks.h src/utp/utp_templates.h
 library_include_HEADERS += src/utp/utp_hash.h src/utp/utp_packedsockaddr.h src/utp/utp_utils.h src/include/ks_utp.h
-library_include_HEADERS += src/dht/ks_dht.h src/dht/ks_dht-int.h src/dht/ks_dht_bucket.h
+library_include_HEADERS += src/dht/ks_dht.h src/dht/ks_dht-int.h 
 
 tests: libks.la
 	$(MAKE) -C test tests
