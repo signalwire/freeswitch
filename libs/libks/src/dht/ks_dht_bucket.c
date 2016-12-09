@@ -207,6 +207,7 @@ KS_DECLARE(void) ks_dhtrt_deinitroute(ks_dhtrt_routetable_t **table)
 	ks_pool_t *pool = (*table)->pool;
 
 	ks_pool_free(pool, *table);
+	*table = NULL;
 
 	return;
 }
