@@ -230,8 +230,8 @@ KS_DECLARE(ks_status_t) ks_dht_transaction_deinit(ks_dht_transaction_t *transact
  * route table methods
  *
  */
-KS_DECLARE(ks_dhtrt_routetable_t*) ks_dhtrt_initroute( ks_pool_t *pool, ks_dht_nodeid_t nodeid);
-KS_DECLARE(void)              ks_dhtrt_deinitroute(ks_dhtrt_routetable_t* table );
+KS_DECLARE(ks_status_t) ks_dhtrt_initroute(ks_dhtrt_routetable_t **tableP, ks_pool_t *pool, ks_dht_nodeid_t nodeid);
+KS_DECLARE(void) ks_dhtrt_deinitroute(ks_dhtrt_routetable_t **table);
 
 KS_DECLARE(ks_status_t)        ks_dhtrt_create_node(ks_dhtrt_routetable_t* table,
                                   ks_dht_nodeid_t nodeid,

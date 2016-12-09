@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, FreeSWITCH
+ * Copyright (c) 2016, FreeSWITCH Solutions LLC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -21,7 +21,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER
+ * A PARTICULAR PURPOSE ARE DISCLAIMED.	 IN NO EVENT SHALL THE COPYRIGHT OWNER
  * OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
  * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
  * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
@@ -39,11 +39,11 @@
 
 /* change for testing */
 #define KS_DHT_BUCKETSIZE 20
-#define KS_DHTRT_INACTIVETIME  (5*60)    
+#define KS_DHTRT_INACTIVETIME  (5*60)	 
 #define KS_DHTRT_MAXPING  3
 
 /* peer flags */
-#define DHTPEER_ACTIVE  1
+#define DHTPEER_ACTIVE	1
 #define DHTPEER_SUSPECT 2
 #define DHTPEER_EXPIRED 3
 
@@ -51,109 +51,109 @@ typedef uint8_t ks_dhtrt_nodeid_t[KS_DHT_NODEID_SIZE];
 
 /* internal structures */
 typedef struct ks_dhtrt_bucket_entry_s {
-    ks_time_t  tyme;
-    uint8_t    id[KS_DHT_NODEID_SIZE];
-    ks_dht_node_t* gptr;                    /* ptr to peer */      
-    uint8_t    inuse;
-    uint8_t    outstanding_pings;
-    uint8_t    flags;                     /* active, suspect, expired */
+	ks_time_t  tyme;
+	uint8_t	   id[KS_DHT_NODEID_SIZE];
+	ks_dht_node_t *gptr;					/* ptr to peer */	   
+	uint8_t	   inuse;
+	uint8_t	   outstanding_pings;
+	uint8_t	   flags;					  /* active, suspect, expired */
 } ks_dhtrt_bucket_entry_t;
 
 typedef struct ks_dhtrt_bucket_s {
-    ks_dhtrt_bucket_entry_t  entries[KS_DHT_BUCKETSIZE];
-    uint8_t       count;
-    uint8_t       expired_count;
-    ks_rwl_t*     lock;
-    uint8_t       locked; 
+	ks_dhtrt_bucket_entry_t	 entries[KS_DHT_BUCKETSIZE];
+	uint8_t		  count;
+	uint8_t		  expired_count;
+	ks_rwl_t *	  lock;
+	uint8_t		  locked; 
 } ks_dhtrt_bucket_t; 
 
 
 #define BHF_LEFT 0x80
 
 typedef struct ks_dhtrt_bucket_header_s {
-    struct ks_dhtrt_bucket_header_s* parent;
-    struct ks_dhtrt_bucket_header_s* left;
-    struct ks_dhtrt_bucket_header_s* right;
-    ks_dhtrt_bucket_t*   bucket;
-    ks_time_t        tyme;                 /* last processed time */
-    unsigned char    mask[KS_DHT_NODEID_SIZE];  /* node id mask        */
-    unsigned char    flags;           
+	struct ks_dhtrt_bucket_header_s* parent;
+	struct ks_dhtrt_bucket_header_s* left;
+	struct ks_dhtrt_bucket_header_s* right;
+	ks_dhtrt_bucket_t *	 bucket;
+	ks_time_t		 tyme;				   /* last processed time */
+	unsigned char	 mask[KS_DHT_NODEID_SIZE];	/* node id mask		   */
+	unsigned char	 flags;			  
 } ks_dhtrt_bucket_header_t;
 
 
 typedef struct ks_dhtrt_internal_s {
-   uint8_t   localid[KS_DHT_NODEID_SIZE];
-   ks_dhtrt_bucket_header_t* buckets;       /* root bucketheader */
-   ks_rwl_t*               lock;          /* lock for safe traversal of the tree */ 
-   uint8_t                 locked;
+	uint8_t	 localid[KS_DHT_NODEID_SIZE];
+	ks_dhtrt_bucket_header_t *buckets;		/* root bucketheader */
+	ks_rwl_t *			   lock;		  /* lock for safe traversal of the tree */ 
+	uint8_t				   locked;
 } ks_dhtrt_internal_t;
 
 typedef struct ks_dhtrt_xort_s {
-     unsigned int   ix;                   /* index of bucket array */	 
-     unsigned char  xor[KS_DHT_NODEID_SIZE];  /* corresponding xor value */
-     unsigned int   nextix;   
+	unsigned int	ix;					  /* index of bucket array */	 
+	unsigned char	xor[KS_DHT_NODEID_SIZE];  /* corresponding xor value */
+	unsigned int	nextix;	  
 } ks_dhtrt_xort_t;
 
 typedef struct ks_dhtrt_sortedxors_s {
-     ks_dhtrt_bucket_header_t* bheader;
-     ks_dhtrt_xort_t    xort[KS_DHT_BUCKETSIZE];
-     unsigned char  hixor[KS_DHT_NODEID_SIZE];
-	 unsigned int   startix;
-     unsigned int   count;
-     struct ks_dhtrt_sortedxors_s* next;	 
+	ks_dhtrt_bucket_header_t *bheader;
+	ks_dhtrt_xort_t	xort[KS_DHT_BUCKETSIZE];
+	unsigned char	hixor[KS_DHT_NODEID_SIZE];
+	unsigned int	startix;
+	unsigned int	count;
+	struct ks_dhtrt_sortedxors_s* next;	 
 } ks_dhtrt_sortedxors_t;
 
 
 /* --- static functions ---- */
 
 static 
-ks_dhtrt_bucket_header_t* ks_dhtrt_create_bucketheader(
-                                    ks_pool_t *pool, 
-                                    ks_dhtrt_bucket_header_t* parent, 
-                                    unsigned char* mask);
+ks_dhtrt_bucket_header_t *ks_dhtrt_create_bucketheader(
+													   ks_pool_t *pool, 
+													   ks_dhtrt_bucket_header_t *parent, 
+													   unsigned char *mask);
 static
-ks_dhtrt_bucket_t* ks_dhtrt_create_bucket(ks_pool_t* pool);
+ks_dhtrt_bucket_t *ks_dhtrt_create_bucket(ks_pool_t *pool);
 static
-ks_dhtrt_bucket_header_t* ks_dhtrt_find_bucketheader(ks_dhtrt_routetable_t* table, ks_dhtrt_nodeid_t id);
+ks_dhtrt_bucket_header_t *ks_dhtrt_find_bucketheader(ks_dhtrt_routetable_t *table, ks_dhtrt_nodeid_t id);
 static
-ks_dhtrt_bucket_entry_t* ks_dhtrt_find_bucketentry(ks_dhtrt_bucket_header_t* header, ks_dhtrt_nodeid_t id);
+ks_dhtrt_bucket_entry_t *ks_dhtrt_find_bucketentry(ks_dhtrt_bucket_header_t *header, ks_dhtrt_nodeid_t id);
 
 static
-void ks_dhtrt_split_bucket(ks_dhtrt_bucket_header_t* original, ks_dhtrt_bucket_header_t* left, ks_dhtrt_bucket_header_t* right);
+void ks_dhtrt_split_bucket(ks_dhtrt_bucket_header_t *original, ks_dhtrt_bucket_header_t *left, ks_dhtrt_bucket_header_t *right);
 static
-ks_dht_node_t* ks_dhtrt_find_nodeid(ks_dhtrt_bucket_t* bucket, ks_dhtrt_nodeid_t nodeid);
+ks_dht_node_t *ks_dhtrt_find_nodeid(ks_dhtrt_bucket_t *bucket, ks_dhtrt_nodeid_t nodeid);
 
 
 static void 
-ks_dhtrt_shiftright(uint8_t* id); 
+ks_dhtrt_shiftright(uint8_t *id); 
 static
-void ks_dhtrt_shiftleft(uint8_t* id);
+void ks_dhtrt_shiftleft(uint8_t *id);
 static void 
-ks_dhtrt_xor(const uint8_t* id1, const uint8_t* id2, uint8_t* xor);
+ks_dhtrt_xor(const uint8_t *id1, const uint8_t *id2, uint8_t *xor);
 static int 
-ks_dhtrt_ismasked(const uint8_t* id1, const uint8_t* mask);
+ks_dhtrt_ismasked(const uint8_t *id1, const uint8_t *mask);
 
 static
-ks_status_t ks_dhtrt_insert_node(ks_dhtrt_routetable_t* table, ks_dht_node_t* node);
+ks_status_t ks_dhtrt_insert_node(ks_dhtrt_routetable_t *table, ks_dht_node_t *node);
 static
-ks_status_t ks_dhtrt_insert_id(ks_dhtrt_bucket_t* bucket, ks_dht_node_t* node);
+ks_status_t ks_dhtrt_insert_id(ks_dhtrt_bucket_t *bucket, ks_dht_node_t *node);
 static
-void ks_dhtrt_delete_id(ks_dhtrt_bucket_t* bucket, ks_dhtrt_nodeid_t id);
+void ks_dhtrt_delete_id(ks_dhtrt_bucket_t *bucket, ks_dhtrt_nodeid_t id);
 static
-char* ks_dhtrt_printableid(uint8_t* id, char* buffer);
+char *ks_dhtrt_printableid(uint8_t *id, char *buffer);
 static
-unsigned char ks_dhtrt_isactive(ks_dhtrt_bucket_entry_t* entry);
+unsigned char ks_dhtrt_isactive(ks_dhtrt_bucket_entry_t *entry);
 static
-uint8_t ks_dhtrt_load_query(ks_dhtrt_querynodes_t* query, ks_dhtrt_sortedxors_t* xort);
+uint8_t ks_dhtrt_load_query(ks_dhtrt_querynodes_t *query, ks_dhtrt_sortedxors_t *xort);
 static
 uint8_t ks_dhtrt_findclosest_bucketnodes(unsigned char *nodeid,
-                                            ks_dhtrt_bucket_header_t* header,
-                                            ks_dhtrt_sortedxors_t* xors,
-											unsigned char* hixor,
-											unsigned int max);
+										 ks_dhtrt_bucket_header_t *header,
+										 ks_dhtrt_sortedxors_t *xors,
+										 unsigned char *hixor,
+										 unsigned int max);
 
 static
-void ks_dhtrt_ping(ks_dhtrt_bucket_entry_t* entry);
+void ks_dhtrt_ping(ks_dhtrt_bucket_entry_t *entry);
 
 
 
@@ -163,99 +163,119 @@ void ks_dhtrt_ping(ks_dhtrt_bucket_entry_t* entry);
 
 
 /*
-    Public interface            
-    ---------------
-    ks_dhtrt_initroute
-    ks_dhtrt_drinitroute
+  Public interface			
+  ---------------
+  ks_dhtrt_initroute
+  ks_dhtrt_drinitroute
 
-    ks_dhtrt_insertnode
+  ks_dhtrt_insertnode
  
 */
 
-KS_DECLARE(ks_dhtrt_routetable_t*) ks_dhtrt_initroute( ks_pool_t *pool, ks_dht_nodeid_t nodeid) 
+KS_DECLARE(ks_status_t) ks_dhtrt_initroute(ks_dhtrt_routetable_t **tableP, ks_pool_t *pool, ks_dht_nodeid_t nodeid) 
 {
-    unsigned char initmask[KS_DHT_NODEID_SIZE];
-    memset(initmask, 0xff, sizeof(initmask));
+	unsigned char initmask[KS_DHT_NODEID_SIZE];
+	memset(initmask, 0xff, sizeof(initmask));
 
-    ks_dhtrt_routetable_t* table =   ks_pool_alloc(pool, sizeof(ks_dhtrt_routetable_t));
-    memset(table, 0, sizeof(ks_dhtrt_routetable_t));
+	ks_dhtrt_routetable_t *table =	 ks_pool_alloc(pool, sizeof(ks_dhtrt_routetable_t));
+	memset(table, 0, sizeof(ks_dhtrt_routetable_t));
 
-    ks_dhtrt_internal_t* internal =   ks_pool_alloc(pool, sizeof(ks_dhtrt_internal_t));
-    memset(internal, 0, sizeof(ks_dhtrt_internal_t));
-    /*ks_rwl_create(&internal->lock, pool);*/
-    if (nodeid.id != 0)  memcpy(internal->localid, nodeid.id, KS_DHT_NODEID_SIZE);
-    table->internal = internal;
+	ks_dhtrt_internal_t *internal =	  ks_pool_alloc(pool, sizeof(ks_dhtrt_internal_t));
+	memset(internal, 0, sizeof(ks_dhtrt_internal_t));
 
-    /* initialize root bucket */
-    ks_dhtrt_bucket_header_t* initial_header = ks_dhtrt_create_bucketheader(pool, 0, initmask);
-    initial_header->flags = BHF_LEFT;    /* fake left to allow splitting */ 
-    internal->buckets = initial_header;
-    initial_header->bucket =  ks_dhtrt_create_bucket(pool);
-    table->pool = pool;
-    return table;
+	/*ks_rwl_create(&internal->lock, pool);*/
+	if (nodeid.id != 0)	 memcpy(internal->localid, nodeid.id, KS_DHT_NODEID_SIZE);
+	table->internal = internal;
+
+	/* initialize root bucket */
+	ks_dhtrt_bucket_header_t *initial_header = ks_dhtrt_create_bucketheader(pool, 0, initmask);
+
+	initial_header->flags = BHF_LEFT;	 /* fake left to allow splitting */ 
+	internal->buckets = initial_header;
+	initial_header->bucket =  ks_dhtrt_create_bucket(pool);
+	table->pool = pool;
+
+	*tableP = table;
+
+	return KS_STATUS_SUCCESS;
 }
 
-KS_DECLARE(void) ks_dhtrt_deinitroute(  ks_dhtrt_routetable_t* table ) 
+KS_DECLARE(void) ks_dhtrt_deinitroute(ks_dhtrt_routetable_t **table) 
 {
-    /* @todo*/
-    ks_pool_free(table->pool, table);
-    return;
+	/* @todo*/
+
+	ks_pool_t *pool = (*table)->pool;
+
+	ks_pool_free(pool, *table);
+
+	return;
 }
 
-KS_DECLARE(ks_status_t)  ks_dhtrt_create_node( ks_dhtrt_routetable_t* table, 
-                                               ks_dht_nodeid_t nodeid, 
-                                               char* ip,
-                                               unsigned short port,
-                                               ks_dht_node_t** node) 
+KS_DECLARE(ks_status_t)	 ks_dhtrt_create_node( ks_dhtrt_routetable_t *table, 
+											   ks_dht_nodeid_t nodeid, 
+											   char *ip,
+											   unsigned short port,
+											   ks_dht_node_t **node) 
 {
-    ks_dht_node_t* tnode = ks_dhtrt_find_node(table, nodeid);
-    if (tnode != 0)  return KS_STATUS_FAIL;    /* protect against duplicates */
-    /* @todo - replace with reusable memory pool */
-    tnode = ks_pool_alloc(table->pool, sizeof(ks_dht_node_t));
+	ks_dht_node_t *tnode = ks_dhtrt_find_node(table, nodeid);
 
-    tnode->table = table;
-    for(int i=0; i<5; ++i) {
-      if (ip[i] == ':')      { tnode->family =  AF_INET6; break;}
-      else if (ip[i] == '.') { tnode->family =  AF_INET; break; }
+	if (tnode != 0)	 return KS_STATUS_FAIL;	   /* protect against duplicates */
+	/* @todo - replace with reusable memory pool */
+	tnode = ks_pool_alloc(table->pool, sizeof(ks_dht_node_t));
+	tnode->table = table;
+
+	for (int i = 0; i < 5; ++i) {
+		if (ip[i] == ':') { 
+			tnode->family =  AF_INET6; break;
+		} else if (ip[i] == '.') { 
+			tnode->family =  AF_INET; break; 
+		}
     }
+
     memcpy(tnode->nodeid.id, nodeid.id, KS_DHT_NODEID_SIZE);
 
-    if ( (ks_addr_set(&tnode->addr, ip, port, tnode->family) != KS_STATUS_SUCCESS) ||
-         (ks_dhtrt_insert_node(table, tnode)  != KS_STATUS_SUCCESS) )  { 
+    if ((ks_addr_set(&tnode->addr, ip, port, tnode->family) != KS_STATUS_SUCCESS) || 
+		(ks_dhtrt_insert_node(table, tnode) != KS_STATUS_SUCCESS))  { 
         ks_pool_free(table->pool, tnode); 
         return KS_STATUS_FAIL;
     }
-
+	
     (*node) = tnode;
+
     return KS_STATUS_SUCCESS;
 }
 
-KS_DECLARE(ks_status_t) ks_dhtrt_delete_node(ks_dhtrt_routetable_t* table, ks_dht_node_t* node)
+KS_DECLARE(ks_status_t) ks_dhtrt_delete_node(ks_dhtrt_routetable_t *table, ks_dht_node_t *node)
 {
-     ks_dhtrt_bucket_header_t* header = ks_dhtrt_find_bucketheader(table, node->nodeid.id);
-     if (header != 0) {
-        ks_dhtrt_bucket_t* bucket = header->bucket;
+	ks_dhtrt_bucket_header_t *header = ks_dhtrt_find_bucketheader(table, node->nodeid.id);
+
+	if (header != 0) {
+        ks_dhtrt_bucket_t *bucket = header->bucket;
+
         if (bucket != 0) {           /* we were not able to find a bucket*/
             ks_dhtrt_delete_id(bucket, node->nodeid.id);
         }
-     }
-     ks_pool_free(table->pool, node);
-     return KS_STATUS_SUCCESS;
+	}
+
+	ks_pool_free(table->pool, node);
+	return KS_STATUS_SUCCESS;
 }
 
 static
-ks_status_t ks_dhtrt_insert_node(ks_dhtrt_routetable_t* table, ks_dht_node_t* node)
+ks_status_t ks_dhtrt_insert_node(ks_dhtrt_routetable_t *table, ks_dht_node_t *node)
 {
-    ks_dhtrt_bucket_t* bucket = 0;
+    ks_dhtrt_bucket_t *bucket = 0;
     int insanity = 0;
 
-     /* first see if it exists */
-     ks_dht_node_t* peer = ks_dhtrt_find_node(table, node->nodeid);
-     if (peer != 0)  {
-         return KS_STATUS_FAIL;
-     }
+	/* first see if it exists */
+	ks_dht_node_t *peer = ks_dhtrt_find_node(table, node->nodeid);
+
+	if (peer != 0)  {
+		return KS_STATUS_FAIL;
+	}
  
-    ks_dhtrt_bucket_header_t* header = ks_dhtrt_find_bucketheader(table, node->nodeid.id); 
+    ks_dhtrt_bucket_header_t *header = ks_dhtrt_find_bucketheader(table, node->nodeid.id); 
+
 	bucket = header->bucket;
 
     assert(bucket != 0);  /* we were not able to find a bucket*/
@@ -265,8 +285,9 @@ ks_status_t ks_dhtrt_insert_node(ks_dhtrt_routetable_t* table, ks_dht_node_t* no
 
 	    /* first - seek a stale entry to eject */
         if (bucket->expired_count) {
-           ks_status_t s = ks_dhtrt_insert_id(bucket, node);
-           if (s == KS_STATUS_SUCCESS) return KS_STATUS_SUCCESS;
+			ks_status_t s = ks_dhtrt_insert_id(bucket, node);
+
+			if (s == KS_STATUS_SUCCESS) return KS_STATUS_SUCCESS;
         }
 
 	    /* 
@@ -277,32 +298,36 @@ ks_status_t ks_dhtrt_insert_node(ks_dhtrt_routetable_t* table, ks_dht_node_t* no
 
         if ( !(header->flags & BHF_LEFT) )  {   /* only the left handside node can be split */
 #ifdef  KS_DHT_DEBUGPRINTF_
-           char buffer[100];
-           printf(" nodeid %s was not inserted\n",  ks_dhtrt_printableid(node->nodeid.id, buffer));
+			char buffer[100];
+			printf(" nodeid %s was not inserted\n",  ks_dhtrt_printableid(node->nodeid.id, buffer));
 #endif
-           return KS_STATUS_FAIL;
+			return KS_STATUS_FAIL;
         }
         	
 	    /* bucket must be split */
 		/* work out new mask */
 		unsigned char newmask[KS_DHT_NODEID_SIZE];
 		memcpy(newmask, header->mask, KS_DHT_NODEID_SIZE);
+
         if (newmask[KS_DHT_NODEID_SIZE-1] == 0) {  /* no more bits to shift - is this possible */
 #ifdef  KS_DHT_DEBUGPRINTF_
-           char buffer[100];
-           printf(" nodeid %s was not inserted\n",  ks_dhtrt_printableid(peer->nodeid.id, buffer));
+			char buffer[100];
+			printf(" nodeid %s was not inserted\n",  ks_dhtrt_printableid(peer->nodeid.id, buffer));
 #endif
-           return KS_STATUS_FAIL;
+			return KS_STATUS_FAIL;
         }
 
 		/* shift right x bits : todo 1 bit for the moment */
 	    ks_dhtrt_shiftright(newmask);
 
 		/* create the new bucket structures */
-        ks_dhtrt_bucket_header_t* newleft  = ks_dhtrt_create_bucketheader(table->pool, header, newmask);
+        ks_dhtrt_bucket_header_t *newleft  = ks_dhtrt_create_bucketheader(table->pool, header, newmask);
+
         newleft->bucket = ks_dhtrt_create_bucket(table->pool); 
         newleft->flags = BHF_LEFT;                       /* flag as left hand side - therefore splitable */
-	    ks_dhtrt_bucket_header_t* newright = ks_dhtrt_create_bucketheader(table->pool, header, header->mask);
+
+	    ks_dhtrt_bucket_header_t *newright = ks_dhtrt_create_bucketheader(table->pool, header, header->mask);
+
 		ks_dhtrt_split_bucket(header, newleft, newright);
 
 		/* ok now we need to try again to see if the bucket has capacity */
@@ -310,8 +335,7 @@ ks_status_t ks_dhtrt_insert_node(ks_dhtrt_routetable_t* table, ks_dht_node_t* no
 		if (ks_dhtrt_ismasked(node->nodeid.id, newleft->mask)) {
             bucket = newleft->bucket;
             header = newleft;
-        }
-		else {
+        } else {
             bucket = newright->bucket;
             header = newright;
         }
@@ -328,52 +352,64 @@ ks_status_t ks_dhtrt_insert_node(ks_dhtrt_routetable_t* table, ks_dht_node_t* no
     return ks_dhtrt_insert_id(bucket, node);
 }
 
-KS_DECLARE(ks_dht_node_t*) ks_dhtrt_find_node(ks_dhtrt_routetable_t* table, ks_dht_nodeid_t nodeid) {
-     ks_dhtrt_bucket_header_t* header = ks_dhtrt_find_bucketheader(table, nodeid.id);
-     if (header == 0) return 0;
-     ks_dhtrt_bucket_t* bucket = header->bucket;
-     if (bucket == 0) return 0;    /* probably a logic error ?*/
-     return ks_dhtrt_find_nodeid(bucket, nodeid.id);
+KS_DECLARE(ks_dht_node_t *) ks_dhtrt_find_node(ks_dhtrt_routetable_t *table, ks_dht_nodeid_t nodeid) {
+	ks_dhtrt_bucket_header_t *header = ks_dhtrt_find_bucketheader(table, nodeid.id);
+
+	if (header == 0) return NULL;
+
+	ks_dhtrt_bucket_t *bucket = header->bucket;
+
+	if (bucket == 0) return NULL;    /* probably a logic error ?*/
+
+	return ks_dhtrt_find_nodeid(bucket, nodeid.id);
 }
 
-KS_DECLARE(ks_status_t) ks_dhtrt_touch_node(ks_dhtrt_routetable_t* table,  ks_dht_nodeid_t nodeid) 
+KS_DECLARE(ks_status_t) ks_dhtrt_touch_node(ks_dhtrt_routetable_t *table,  ks_dht_nodeid_t nodeid) 
 {
-   ks_dhtrt_bucket_header_t* header = ks_dhtrt_find_bucketheader(table, nodeid.id);
-   if (header == 0) return KS_STATUS_FAIL;
-   if (header->bucket == 0)  return KS_STATUS_FAIL;
-   ks_dhtrt_bucket_entry_t* e = ks_dhtrt_find_bucketentry(header, nodeid.id);
-   if (e != 0) { 
-      e->tyme = ks_time_now();
-      e->outstanding_pings = 0;
-      if (e->flags ==  DHTPEER_EXPIRED)  --header->bucket->expired_count;
-      e->flags = DHTPEER_ACTIVE;
-      return KS_STATUS_SUCCESS;
-   }
-   return KS_STATUS_FAIL;
+	ks_dhtrt_bucket_header_t *header = ks_dhtrt_find_bucketheader(table, nodeid.id);
+
+	if (header == 0) return KS_STATUS_FAIL;
+	if (header->bucket == 0)  return KS_STATUS_FAIL;
+
+	ks_dhtrt_bucket_entry_t *e = ks_dhtrt_find_bucketentry(header, nodeid.id);
+
+	if (e != 0) { 
+		e->tyme = ks_time_now();
+		e->outstanding_pings = 0;
+		if (e->flags ==  DHTPEER_EXPIRED)  --header->bucket->expired_count;
+		e->flags = DHTPEER_ACTIVE;
+		return KS_STATUS_SUCCESS;
+	}
+
+	return KS_STATUS_FAIL;
 }
 
-KS_DECLARE(ks_status_t) ks_dhtrt_expire_node(ks_dhtrt_routetable_t* table,  ks_dht_nodeid_t nodeid)
+KS_DECLARE(ks_status_t) ks_dhtrt_expire_node(ks_dhtrt_routetable_t *table,  ks_dht_nodeid_t nodeid)
 {
-   ks_dhtrt_bucket_header_t* header = ks_dhtrt_find_bucketheader(table, nodeid.id);
-   if (header == 0) return KS_STATUS_FAIL;
-   ks_dhtrt_bucket_entry_t* e = ks_dhtrt_find_bucketentry(header, nodeid.id);
-   if (e != 0) {
-      e->flags = DHTPEER_EXPIRED;
-      return KS_STATUS_SUCCESS;
-   }
-   return KS_STATUS_FAIL;
+	ks_dhtrt_bucket_header_t *header = ks_dhtrt_find_bucketheader(table, nodeid.id);
+
+	if (header == 0) return KS_STATUS_FAIL;
+
+	ks_dhtrt_bucket_entry_t *e = ks_dhtrt_find_bucketentry(header, nodeid.id);
+
+	if (e != 0) {
+		e->flags = DHTPEER_EXPIRED;
+		return KS_STATUS_SUCCESS;
+	}
+	return KS_STATUS_FAIL;
 }
 
-KS_DECLARE(uint8_t) ks_dhtrt_findclosest_nodes(ks_dhtrt_routetable_t* table, ks_dhtrt_querynodes_t* query) 
+KS_DECLARE(uint8_t) ks_dhtrt_findclosest_nodes(ks_dhtrt_routetable_t *table, ks_dhtrt_querynodes_t *query) 
 {
-     query->count = 0;
-     uint8_t max = query->max;
-     uint8_t total = 0;
-     uint8_t cnt;
+	uint8_t max = query->max;
+	uint8_t total = 0;
+	uint8_t cnt;
 
-     if (max == 0)  return 0;         /* sanity check */
+	if (max == 0) return 0;         /* sanity check */
 
-     ks_dhtrt_bucket_header_t* header = ks_dhtrt_find_bucketheader(table, query->nodeid.id);
+	query->count = 0;
+
+	ks_dhtrt_bucket_header_t *header = ks_dhtrt_find_bucketheader(table, query->nodeid.id);
 
 #ifdef  KS_DHT_DEBUGPRINTF_
     char buffer[100];
@@ -382,135 +418,150 @@ KS_DECLARE(uint8_t) ks_dhtrt_findclosest_nodes(ks_dhtrt_routetable_t* table, ks_
 #endif
 
 
-     ks_dhtrt_sortedxors_t xort0;
-     memset(&xort0, 0 , sizeof(xort0));
-     ks_dhtrt_nodeid_t initid;
-     memset(initid, 0xff, KS_DHT_NODEID_SIZE);
-     xort0.bheader = header;
+	ks_dhtrt_sortedxors_t xort0;
 
-     /* step 1 - look at immediate bucket */
-     /* --------------------------------- */
-     cnt = ks_dhtrt_findclosest_bucketnodes(query->nodeid.id, header, &xort0, initid ,max);
-     max -= cnt;
-     total += cnt;
+	memset(&xort0, 0 , sizeof(xort0));
+
+	ks_dhtrt_nodeid_t initid;
+
+	memset(initid, 0xff, KS_DHT_NODEID_SIZE);
+	xort0.bheader = header;
+
+	/* step 1 - look at immediate bucket */
+	/* --------------------------------- */
+	cnt = ks_dhtrt_findclosest_bucketnodes(query->nodeid.id, header, &xort0, initid ,max);
+	max -= cnt;
+	total += cnt;
 
 #ifdef  KS_DHT_DEBUGPRINTF_
     printf(" bucket header %s yielded %d nodes; total=%d\n",  buffer, cnt, total);
 #endif
 
-     if (total >= query->max) {   /* is query answered ?  */
-         return ks_dhtrt_load_query(query, &xort0);
-     }
+	if (total >= query->max) {   /* is query answered ?  */
+		return ks_dhtrt_load_query(query, &xort0);
+	}
 
-     /* step2 - look at sibling */
-     /* ----------------------- */
-     ks_dhtrt_sortedxors_t xort1;
-     xort0.next = &xort1;
-     memset(&xort1, 0 , sizeof(xort1));
-     memcpy(initid, &xort0.hixor, KS_DHT_NODEID_SIZE);
-     ks_dhtrt_bucket_header_t* parent = header->parent;
-     if (header == parent->left) { 
+	/* step2 - look at sibling */
+	/* ----------------------- */
+	ks_dhtrt_sortedxors_t xort1;
+
+	xort0.next = &xort1;
+	memset(&xort1, 0 , sizeof(xort1));
+	memcpy(initid, &xort0.hixor, KS_DHT_NODEID_SIZE);
+
+	ks_dhtrt_bucket_header_t *parent = header->parent;
+
+	if (header == parent->left) { 
         xort1.bheader = header = parent->right;
-     }
-     else {
+	} else {
         if (!parent->left->bucket) {   /* left hand might no have a bucket - if so choose left->right */ 
             xort1.bheader = header = parent->left->right;
-        }  
-        else {
+		} else {
             xort1.bheader = header = parent->left;
         }
-     }
+	}
 
-     cnt = ks_dhtrt_findclosest_bucketnodes(query->nodeid.id, header, &xort1, initid ,max);
-     max -= cnt;
-     total += cnt;
+	cnt = ks_dhtrt_findclosest_bucketnodes(query->nodeid.id, header, &xort1, initid ,max);
+	max -= cnt;
+	total += cnt;
 
 #ifdef  KS_DHT_DEBUGPRINTF_
-     printf(" stage2: sibling bucket header %s yielded %d nodes, total=%d\n",
-                     ks_dhtrt_printableid(header->mask, buffer), cnt, total);
+	printf(" stage2: sibling bucket header %s yielded %d nodes, total=%d\n",
+		   ks_dhtrt_printableid(header->mask, buffer), cnt, total);
 #endif
 
-     if (total >= query->max) {   /* is query answered ?  */
-         return ks_dhtrt_load_query(query, &xort0);
-     }
+	if (total >= query->max) {   /* is query answered ?  */
+		return ks_dhtrt_load_query(query, &xort0);
+	}
 
-     /* step3 and beyond ... work left and right until the count is satisfied */
-     /* ---------------------------------------------------------------------- */
-     memcpy(initid, &xort0.hixor, KS_DHT_NODEID_SIZE);
+	/* step3 and beyond ... work left and right until the count is satisfied */
+	/* ---------------------------------------------------------------------- */
+	memcpy(initid, &xort0.hixor, KS_DHT_NODEID_SIZE);
  
-     unsigned char leftid[KS_DHT_NODEID_SIZE];
-     unsigned char rightid[KS_DHT_NODEID_SIZE];
-     memcpy(leftid, xort0.bheader->mask, KS_DHT_NODEID_SIZE);
-     memcpy(rightid, xort1.bheader->mask, KS_DHT_NODEID_SIZE);
+	unsigned char leftid[KS_DHT_NODEID_SIZE];
+	unsigned char rightid[KS_DHT_NODEID_SIZE];
 
-     int insanity = 0;
-     ks_dhtrt_bucket_header_t* lheader; 
-     ks_dhtrt_bucket_header_t* rheader;
-     ks_dhtrt_sortedxors_t* prev = &xort1;
-     ks_dhtrt_sortedxors_t* tofree = 0;
-     ks_dhtrt_sortedxors_t* xortn;
-     ks_dhtrt_sortedxors_t* xortn1;
+	memcpy(leftid, xort0.bheader->mask, KS_DHT_NODEID_SIZE);
+	memcpy(rightid, xort1.bheader->mask, KS_DHT_NODEID_SIZE);
 
-     do {
-        lheader = 0;
-        rheader = 0;
-        xortn = 0;
-        xortn1 = 0;
+	int insanity = 0;
+	ks_dhtrt_bucket_header_t *lheader; 
+	ks_dhtrt_bucket_header_t *rheader;
+	ks_dhtrt_sortedxors_t *prev = &xort1;
+	ks_dhtrt_sortedxors_t *tofree = 0;
+	ks_dhtrt_sortedxors_t *xortn;
+	ks_dhtrt_sortedxors_t *xortn1;
+
+	do {
+		lheader = 0;
+		rheader = 0;
+		xortn = 0;
+		xortn1 = 0;
+
         if (leftid[0] != 0xff) { 
-           ks_dhtrt_shiftleft(leftid);
-           lheader = ks_dhtrt_find_bucketheader(table, leftid);
-           if (lheader) {        
-              xortn = ks_pool_alloc(table->pool, sizeof(ks_dhtrt_sortedxors_t));
-              memset(xortn, 0, sizeof(ks_dhtrt_sortedxors_t));
-              if (tofree == 0)   tofree = xortn;
-              prev->next = xortn;
-              prev = xortn;
-              cnt += ks_dhtrt_findclosest_bucketnodes(query->nodeid.id, lheader, xortn, leftid ,max);
-              max -= cnt;
+			ks_dhtrt_shiftleft(leftid);
+			lheader = ks_dhtrt_find_bucketheader(table, leftid);
+
+			if (lheader) {        
+				xortn = ks_pool_alloc(table->pool, sizeof(ks_dhtrt_sortedxors_t));
+				memset(xortn, 0, sizeof(ks_dhtrt_sortedxors_t));
+
+				if (tofree == 0)   tofree = xortn;
+
+				prev->next = xortn;
+				prev = xortn;
+				cnt += ks_dhtrt_findclosest_bucketnodes(query->nodeid.id, lheader, xortn, leftid ,max);
+				max -= cnt;
 #ifdef  KS_DHT_DEBUGPRINTF_
-              printf(" stage3: seaching left bucket header %s yielded %d nodes, total=%d\n",
-                     ks_dhtrt_printableid(lheader->mask, buffer), cnt, total);
+				printf(" stage3: seaching left bucket header %s yielded %d nodes, total=%d\n",
+					   ks_dhtrt_printableid(lheader->mask, buffer), cnt, total);
 #endif
-           }
+			}
         }
 
         if (max > 0 && rightid[KS_DHT_NODEID_SIZE-1] != 0x00) {
-           ks_dhtrt_shiftright(rightid);
-           rheader = ks_dhtrt_find_bucketheader(table, rightid);
-           if (rheader) {
-              xortn1 = ks_pool_alloc(table->pool, sizeof(ks_dhtrt_sortedxors_t));
-              memset(xortn1, 0, sizeof(ks_dhtrt_sortedxors_t));
-              prev->next = xortn1;
-              prev = xortn1;
-              cnt = ks_dhtrt_findclosest_bucketnodes(query->nodeid.id, rheader, xortn1, rightid , max);
-              max -= cnt;
+			ks_dhtrt_shiftright(rightid);
+			rheader = ks_dhtrt_find_bucketheader(table, rightid);
+
+			if (rheader) {
+				xortn1 = ks_pool_alloc(table->pool, sizeof(ks_dhtrt_sortedxors_t));
+				memset(xortn1, 0, sizeof(ks_dhtrt_sortedxors_t));
+				prev->next = xortn1;
+				prev = xortn1;
+				cnt = ks_dhtrt_findclosest_bucketnodes(query->nodeid.id, rheader, xortn1, rightid , max);
+				max -= cnt;
 #ifdef  KS_DHT_DEBUGPRINTF_
-              printf(" stage3: seaching right bucket header %s yielded %d nodes, total=%d\n", 
+				printf(" stage3: seaching right bucket header %s yielded %d nodes, total=%d\n", 
                        ks_dhtrt_printableid(rheader->mask, buffer), cnt, total);
 #endif
-           }
+			}
         }
        
         if (!lheader && !rheader) break;
+
         ++insanity;
+
         if (insanity > 159) {
             assert(insanity <= 159);
         }
 
-     } while(max < query->count);
+	} while (max < query->count);
 
 
-     ks_dhtrt_load_query(query, &xort0);
-     /* free up the xort structs on heap */
-     while(tofree) {
-         ks_dhtrt_sortedxors_t* x = tofree->next;
-         ks_pool_free(table->pool, tofree);
-         tofree = x->next;
-     }
-     return query->count;
+	ks_dhtrt_load_query(query, &xort0);
+
+	/* free up the xort structs on heap */
+	while (tofree) {
+		ks_dhtrt_sortedxors_t *x = tofree->next;
+
+		ks_pool_free(table->pool, tofree);
+		tofree = x->next;
+	}
+
+	return query->count;
 }
 
-KS_DECLARE(void)  ks_dhtrt_process_table(ks_dhtrt_routetable_t* table)
+KS_DECLARE(void)  ks_dhtrt_process_table(ks_dhtrt_routetable_t *table)
 {
     /* walk the table and update the status of all known knodes */
     /* anything that is suspect automatically becomes expired   */
@@ -524,86 +575,101 @@ KS_DECLARE(void)  ks_dhtrt_process_table(ks_dhtrt_routetable_t* table)
     /* inactive again it is considered inactive         */
     /*                                                  */
 
-    ks_dhtrt_internal_t* internal = table->internal;
-    ks_dhtrt_bucket_header_t* header = internal->buckets;
-    ks_dhtrt_bucket_header_t* stack[KS_DHT_NODEID_SIZE * 8];
+    ks_dhtrt_internal_t *internal = table->internal;
+    ks_dhtrt_bucket_header_t *header = internal->buckets;
+    ks_dhtrt_bucket_header_t *stack[KS_DHT_NODEID_SIZE * 8];
     int stackix=0;
     ks_time_t t0 = ks_time_now(); 
 
-    while(header) {
-         stack[stackix++] = header;
-         if (header->bucket) {
-             ks_dhtrt_bucket_t* b = header->bucket;
-             for (int ix=0; ix<KS_DHT_BUCKETSIZE; ++ix) {
-                ks_dhtrt_bucket_entry_t* e =  &b->entries[ix];
-                  if (e->inuse == 1) {
-                  /* more than n pings outstanding? */
-                  if (e->outstanding_pings >= KS_DHTRT_MAXPING) {
-                     e->flags =  DHTPEER_EXPIRED; 
-                     ++b->expired_count;
-                     continue;
-                  }
-                  if (e->flags == DHTPEER_SUSPECT) {
-                     ks_dhtrt_ping(e); 
-                     continue;
-                  }
-                  ks_time_t tdiff = t0 - e->tyme;
-                  if (tdiff > KS_DHTRT_INACTIVETIME) {
-                     e->flags = DHTPEER_SUSPECT;
-                     ks_dhtrt_ping(e);
-                  }
+    while (header) {
+		stack[stackix++] = header;
+
+		if (header->bucket) {
+			ks_dhtrt_bucket_t *b = header->bucket;
+
+			for (int ix=0; ix<KS_DHT_BUCKETSIZE; ++ix) {
+                ks_dhtrt_bucket_entry_t *e =  &b->entries[ix];
+
+				if (e->inuse == 1) {
+					/* more than n pings outstanding? */
+
+					if (e->outstanding_pings >= KS_DHTRT_MAXPING) {
+						e->flags =  DHTPEER_EXPIRED; 
+						++b->expired_count;
+						continue;
+					}
+
+					if (e->flags == DHTPEER_SUSPECT) {
+						ks_dhtrt_ping(e); 
+						continue;
+					}
+
+					ks_time_t tdiff = t0 - e->tyme;
+
+					if (tdiff > KS_DHTRT_INACTIVETIME) {
+						e->flags = DHTPEER_SUSPECT;
+						ks_dhtrt_ping(e);
+					}
                 }
-             }   /* end for each bucket_entry */
-         }
-         header = header->left;
-         if (header == 0 && stackix > 1) {
-             stackix -= 2;
-             header =  stack[stackix];
-             header = header->right;
-         }
+			}   /* end for each bucket_entry */
+		}
+
+		header = header->left;
+
+		if (header == 0 && stackix > 1) {
+			stackix -= 2;
+			header =  stack[stackix];
+			header = header->right;
+		}
     }
     return;
 }
 
 
-KS_DECLARE(void) ks_dhtrt_dump(ks_dhtrt_routetable_t* table, int level) {
-     /* dump buffer headers */
-     char buffer[100];
-     memset(buffer, 0, 100);
-     ks_dhtrt_internal_t* internal = table->internal;
-     ks_dhtrt_bucket_header_t* header = internal->buckets;
-     ks_dhtrt_bucket_header_t* stack[KS_DHT_NODEID_SIZE * 8];
-     int stackix = 0;
+KS_DECLARE(void) ks_dhtrt_dump(ks_dhtrt_routetable_t *table, int level) {
+	/* dump buffer headers */
+	char buffer[100];
+	memset(buffer, 0, 100);
+	ks_dhtrt_internal_t *internal = table->internal;
+	ks_dhtrt_bucket_header_t *header = internal->buckets;
+	ks_dhtrt_bucket_header_t *stack[KS_DHT_NODEID_SIZE * 8];
+	int stackix = 0;
 
-     while(header) {
-         stack[stackix++] = header;
-         /* walk and report left handsize */
-         memset(buffer, 0, 100);
-         /*ks_log*/ printf("bucket header: [%s]\n", ks_dhtrt_printableid(header->mask, buffer) );
-         if (header->bucket) {
-             ks_dhtrt_bucket_t* b = header->bucket;
-             printf("   bucket holds %d entries\n", b->count);
+	while (header) {
+		stack[stackix++] = header;
+		/* walk and report left handsize */
+		memset(buffer, 0, 100);
+		/*ks_log*/ printf("bucket header: [%s]\n", ks_dhtrt_printableid(header->mask, buffer) );
+
+		if (header->bucket) {
+			ks_dhtrt_bucket_t *b = header->bucket;
+			printf("   bucket holds %d entries\n", b->count);
              
-             if (level == 7) {
+			if (level == 7) {
                 printf("   --------------------------\n");
-                for(int ix=0; ix<KS_DHT_BUCKETSIZE; ++ix) {
-                   memset(buffer, 0, 100);
-                   if (b->entries[ix].inuse == 1) ks_dhtrt_printableid(b->entries[ix].id, buffer);
-                   else strcpy(buffer, "<free>");
-                   printf("       slot %d: %s\n", ix, buffer);
+
+                for (int ix=0; ix<KS_DHT_BUCKETSIZE; ++ix) {
+					memset(buffer, 0, 100);
+					if (b->entries[ix].inuse == 1) ks_dhtrt_printableid(b->entries[ix].id, buffer);
+					else strcpy(buffer, "<free>");
+					printf("       slot %d: %s\n", ix, buffer);
                 }
+
                 printf("   --------------------------\n\n");
-             }
+			}
     
-         }   
-         header = header->left;
-         if (header == 0 && stackix > 1) {
-             stackix -= 2; 
-             header =  stack[stackix];
-             header = header->right;
-         }
-     }            
-     return;
+		}   
+
+		header = header->left;
+
+		if (header == 0 && stackix > 1) {
+			stackix -= 2; 
+			header =  stack[stackix];
+			header = header->right;
+		}
+	}            
+
+	return;
 }
 
 /* 
@@ -611,9 +677,10 @@ KS_DECLARE(void) ks_dhtrt_dump(ks_dhtrt_routetable_t* table, int level) {
 */
 
 static
-ks_dhtrt_bucket_header_t* ks_dhtrt_create_bucketheader(ks_pool_t *pool, ks_dhtrt_bucket_header_t* parent, uint8_t* mask) 
+ks_dhtrt_bucket_header_t *ks_dhtrt_create_bucketheader(ks_pool_t *pool, ks_dhtrt_bucket_header_t *parent, uint8_t *mask) 
 {
-    ks_dhtrt_bucket_header_t* header = ks_pool_alloc(pool, sizeof(ks_dhtrt_bucket_header_t));
+    ks_dhtrt_bucket_header_t *header = ks_pool_alloc(pool, sizeof(ks_dhtrt_bucket_header_t));
+
     memset(header, 0, sizeof(ks_dhtrt_bucket_header_t));
     memcpy(header->mask, mask, sizeof(header->mask));  
     header->parent = parent;   
@@ -628,64 +695,71 @@ ks_dhtrt_bucket_header_t* ks_dhtrt_create_bucketheader(ks_pool_t *pool, ks_dhtrt
 }
 
 static
-ks_dhtrt_bucket_t* ks_dhtrt_create_bucket(ks_pool_t *pool)
+ks_dhtrt_bucket_t *ks_dhtrt_create_bucket(ks_pool_t *pool)
 {
-    ks_dhtrt_bucket_t* bucket = ks_pool_alloc(pool, sizeof(ks_dhtrt_bucket_t));
+    ks_dhtrt_bucket_t *bucket = ks_pool_alloc(pool, sizeof(ks_dhtrt_bucket_t));
+
     memset(bucket, 0, sizeof(ks_dhtrt_bucket_t));
     /*ks_rwl_create(&bucket->lock, pool);*/
     return bucket;
 }
 
 static
-ks_dhtrt_bucket_header_t* ks_dhtrt_find_bucketheader(ks_dhtrt_routetable_t* table, ks_dhtrt_nodeid_t id) 
+ks_dhtrt_bucket_header_t *ks_dhtrt_find_bucketheader(ks_dhtrt_routetable_t *table, ks_dhtrt_nodeid_t id) 
 {
     /* find the right bucket.  
-	  if a bucket header has a bucket, it does not  children
-      so it must be the bucket to use	  
+	   if a bucket header has a bucket, it does not  children
+	   so it must be the bucket to use	  
 	*/
-    ks_dhtrt_internal_t* internal = table->internal;
-    ks_dhtrt_bucket_header_t* header = internal->buckets;
-    while(header) {
-	   if ( header->bucket ) {
+    ks_dhtrt_internal_t *internal = table->internal;
+    ks_dhtrt_bucket_header_t *header = internal->buckets;
+
+    while (header) {
+		if ( header->bucket ) {
 			return header;
-	   }	
-	   /* left hand side is more restrictive (closer) so should be tried first */
-       if (header->left != 0 && (ks_dhtrt_ismasked(id, header->left->mask))) 
+		}	
+
+		/* left hand side is more restrictive (closer) so should be tried first */
+		if (header->left != 0 && (ks_dhtrt_ismasked(id, header->left->mask))) {
 	        header = header->left;  
-		else
-            header = header->right;		
+		} else {
+            header = header->right;
+		}
     } 
-	return 0;
+
+	return NULL;
 }
 
 static
-ks_dhtrt_bucket_entry_t* ks_dhtrt_find_bucketentry(ks_dhtrt_bucket_header_t* header, ks_dhtrt_nodeid_t nodeid) 
+ks_dhtrt_bucket_entry_t *ks_dhtrt_find_bucketentry(ks_dhtrt_bucket_header_t *header, ks_dhtrt_nodeid_t nodeid) 
 {
-     ks_dhtrt_bucket_t* bucket = header->bucket;
-     if (bucket == 0)  return 0;
+	ks_dhtrt_bucket_t *bucket = header->bucket;
 
-     for (int ix=0; ix<KS_DHT_BUCKETSIZE; ++ix) {
+	if (bucket == 0)  return NULL;
+
+	for (int ix=0; ix<KS_DHT_BUCKETSIZE; ++ix) {
 #ifdef  KS_DHT_DEBUGPRINTF_
 #endif
         if ( bucket->entries[ix].inuse == 1   &&
              (!memcmp(nodeid, bucket->entries[ix].id, KS_DHT_NODEID_SIZE)) ) {
             return &(bucket->entries[ix]);
         }
-     }
-     return 0;
+	}
+
+	return NULL;
 }
 
  
 static
-void ks_dhtrt_split_bucket(ks_dhtrt_bucket_header_t* original,
-                           ks_dhtrt_bucket_header_t* left, 
-                           ks_dhtrt_bucket_header_t* right) 
+void ks_dhtrt_split_bucket(ks_dhtrt_bucket_header_t *original,
+                           ks_dhtrt_bucket_header_t *left, 
+                           ks_dhtrt_bucket_header_t *right) 
 {
     /* so split the bucket in two based on the masks in the new header */
     /* the existing bucket - with the remaining ids will be taken by the right hand side */
 
-	ks_dhtrt_bucket_t* source = original->bucket;
-	ks_dhtrt_bucket_t* dest   = left->bucket;
+	ks_dhtrt_bucket_t *source = original->bucket;
+	ks_dhtrt_bucket_t *dest   = left->bucket;
 	
 	int lix = 0;
 	int rix = 0;
@@ -696,7 +770,7 @@ void ks_dhtrt_split_bucket(ks_dhtrt_bucket_header_t* original,
     /*ks_rwl_write_lock(source->lock);*/
     source->locked=1;
 	
-	for( ; rix<KS_DHT_BUCKETSIZE; ++rix) {
+	for ( ; rix<KS_DHT_BUCKETSIZE; ++rix) {
 	    if (ks_dhtrt_ismasked(source->entries[rix].id, left->mask)) {
             /* move it to the left */
 			memcpy(dest->entries[lix].id, source->entries[rix].id, KS_DHT_NODEID_SIZE);
@@ -737,21 +811,23 @@ void ks_dhtrt_split_bucket(ks_dhtrt_bucket_header_t* original,
  *    so at least the static array does away with the need for locking.
  */
 static 
-ks_status_t ks_dhtrt_insert_id(ks_dhtrt_bucket_t* bucket, ks_dht_node_t* node)
+ks_status_t ks_dhtrt_insert_id(ks_dhtrt_bucket_t *bucket, ks_dht_node_t *node)
 {
     /* sanity checks */
 	if (!bucket || bucket->count >= KS_DHT_BUCKETSIZE) {
 	    assert(0);
 	}
+
     uint8_t free = KS_DHT_BUCKETSIZE;
     uint8_t expiredix = KS_DHT_BUCKETSIZE;
 	
 	/* find free .. but also check that it is not already here! */
     uint8_t ix = 0;
-	for(; ix<KS_DHT_BUCKETSIZE; ++ix)  {
+
+	for (; ix<KS_DHT_BUCKETSIZE; ++ix)  {
  	    if (bucket->entries[ix].inuse == 0) {
             if (free == KS_DHT_BUCKETSIZE) {
-               free = ix; /* use this one   */
+				free = ix; /* use this one   */
             }
         }
         else if (free == KS_DHT_BUCKETSIZE && bucket->entries[ix].flags == DHTPEER_EXPIRED) {
@@ -773,6 +849,7 @@ ks_status_t ks_dhtrt_insert_id(ks_dhtrt_bucket_t* bucket, ks_dht_node_t* node)
     /* ****************** */
     /*ks_rwl_write_lock(bucket->lock);*/
     bucket->locked = 1;
+
     if (free == KS_DHT_BUCKETSIZE && expiredix<KS_DHT_BUCKETSIZE ) {
         /* bump this one - but only if we have no other option */
         free =  expiredix;
@@ -795,6 +872,7 @@ ks_status_t ks_dhtrt_insert_id(ks_dhtrt_bucket_t* bucket, ks_dht_node_t* node)
 #endif	
         return KS_STATUS_SUCCESS;
 	}
+
     bucket->locked = 0;
     /*ks_rwl_write_unlock(bucket->lock);*/
     /* ********************** */
@@ -805,7 +883,7 @@ ks_status_t ks_dhtrt_insert_id(ks_dhtrt_bucket_t* bucket, ks_dht_node_t* node)
 }
 	 
 static
-ks_dht_node_t* ks_dhtrt_find_nodeid(ks_dhtrt_bucket_t* bucket, ks_dhtrt_nodeid_t id) 
+ks_dht_node_t *ks_dhtrt_find_nodeid(ks_dhtrt_bucket_t *bucket, ks_dhtrt_nodeid_t id) 
 {
 #ifdef  KS_DHT_DEBUGPRINTF_
     char buffer[100];
@@ -813,7 +891,7 @@ ks_dht_node_t* ks_dhtrt_find_nodeid(ks_dhtrt_bucket_t* bucket, ks_dhtrt_nodeid_t
 #endif
 
     
-     for (int ix=0; ix<KS_DHT_BUCKETSIZE; ++ix) {
+	for (int ix=0; ix<KS_DHT_BUCKETSIZE; ++ix) {
 #ifdef  KS_DHT_DEBUGPRINTFX_
         char bufferx[100];
         if ( bucket->entries[ix].inuse == 1) {
@@ -824,14 +902,14 @@ ks_dht_node_t* ks_dhtrt_find_nodeid(ks_dhtrt_bucket_t* bucket, ks_dhtrt_nodeid_t
 #endif    
         if ( bucket->entries[ix].inuse == 1   &&
              (!memcmp(id, bucket->entries[ix].id, KS_DHT_NODEID_SIZE)) ) {
-           return bucket->entries[ix].gptr;
+			return bucket->entries[ix].gptr;
         }
-     }
-     return 0;
+	}
+	return NULL;
 }
 
 static
-void ks_dhtrt_delete_id(ks_dhtrt_bucket_t* bucket, ks_dhtrt_nodeid_t id)
+void ks_dhtrt_delete_id(ks_dhtrt_bucket_t *bucket, ks_dhtrt_nodeid_t id)
 {
 #ifdef  KS_DHT_DEBUGPRINTF_
 
@@ -839,60 +917,60 @@ void ks_dhtrt_delete_id(ks_dhtrt_bucket_t* bucket, ks_dhtrt_nodeid_t id)
     printf("\ndeleting node for: %s\n",  ks_dhtrt_printableid(id, buffer));
 #endif
 
-     for (int ix=0; ix<KS_DHT_BUCKETSIZE; ++ix) {
+	for (int ix=0; ix<KS_DHT_BUCKETSIZE; ++ix) {
 #ifdef  KS_DHT_DEBUGPRINTF_
         printf("\nbucket->entries[%d].id = %s inuse=%c\n", ix,
-                   ks_dhtrt_printableid(bucket->entries[ix].id, buffer),
-                   bucket->entries[ix].inuse  );
+			   ks_dhtrt_printableid(bucket->entries[ix].id, buffer),
+			   bucket->entries[ix].inuse  );
 #endif
         if ( bucket->entries[ix].inuse == 1   &&
              (!memcmp(id, bucket->entries[ix].id, KS_DHT_NODEID_SIZE)) ) {
-           bucket->entries[ix].inuse = 0;
-           bucket->entries[ix].gptr = 0;
-           bucket->entries[ix].flags = 0;
-           return;
+			bucket->entries[ix].inuse = 0;
+			bucket->entries[ix].gptr = 0;
+			bucket->entries[ix].flags = 0;
+			return;
         }
-     }
-     return;
+	}
+	return;
 }
 
 
 static
 uint8_t ks_dhtrt_findclosest_bucketnodes(ks_dhtrt_nodeid_t id,
-                                            ks_dhtrt_bucket_header_t* header,
-                                            ks_dhtrt_sortedxors_t* xors,
-											unsigned char* hixor,    /*todo: remove */
-											unsigned int max) {
+										 ks_dhtrt_bucket_header_t *header,
+										 ks_dhtrt_sortedxors_t *xors,
+										 unsigned char *hixor,    /*todo: remove */
+										 unsigned int max) {
      
-	 uint8_t count = 0;   /* count of nodes added this time */
-	 xors->startix = KS_DHT_BUCKETSIZE;
-     xors->count = 0;
-     unsigned char xorvalue[KS_DHT_NODEID_SIZE];
+	uint8_t count = 0;   /* count of nodes added this time */
+	xors->startix = KS_DHT_BUCKETSIZE;
+	xors->count = 0;
+	unsigned char xorvalue[KS_DHT_NODEID_SIZE];
 	 
-	 /* just ugh! - there must be a better way to do this */
-	 /* walk the entire bucket calculating the xor value on the way */
-	 /* add valid & relevant entries to the xor values   */
-	 ks_dhtrt_bucket_t* bucket = header->bucket;
+	/* just ugh! - there must be a better way to do this */
+	/* walk the entire bucket calculating the xor value on the way */
+	/* add valid & relevant entries to the xor values   */
+	ks_dhtrt_bucket_t *bucket = header->bucket;
 
-     if (bucket == 0)  {        /* sanity */
+	if (bucket == 0)  {        /* sanity */
 #ifdef  KS_DHT_DEBUGPRINTF_
         char buf[100];
         printf("closestbucketnodes: intermediate tree node found %s\n", 
-                   ks_dhtrt_printableid(header->mask, buf));
+			   ks_dhtrt_printableid(header->mask, buf));
 #endif
         
-     }
+	}
 
-	 for(uint8_t ix=0; ix<KS_DHT_BUCKETSIZE; ++ix) {
+	for (uint8_t ix=0; ix<KS_DHT_BUCKETSIZE; ++ix) {
 	    if ( bucket->entries[ix].inuse == 1   &&
              ks_dhtrt_isactive( &(bucket->entries[ix])) ) {
 		  
-		   /* calculate xor value */
-		   ks_dhtrt_xor(bucket->entries[ix].id, id, xorvalue );
+			/* calculate xor value */
+			ks_dhtrt_xor(bucket->entries[ix].id, id, xorvalue );
 		   
-		   /* do we need to hold this one */
-		   if ( count < max    ||                                 /* yes: we have not filled the quota yet */
-		        (memcmp(xorvalue, hixor, KS_DHT_NODEID_SIZE) < 0)) {   /* or is closer node than one already selected */
+			/* do we need to hold this one */
+			if ( count < max    ||                                 /* yes: we have not filled the quota yet */
+				 (memcmp(xorvalue, hixor, KS_DHT_NODEID_SIZE) < 0)) {   /* or is closer node than one already selected */
 			   
 				/* now sort the new xorvalue into the results structure  */
 				/* this now becomes worst case O(n*2) logic - is there a better way */
@@ -900,7 +978,7 @@ uint8_t ks_dhtrt_findclosest_bucketnodes(ks_dhtrt_nodeid_t id,
 				unsigned int xorix = xors->startix;       /* start of ordered list */
 				unsigned int prev_xorix = KS_DHT_BUCKETSIZE;
                  
-				for(int ix2=0; ix2<count; ++ix2) {
+				for (int ix2=0; ix2<count; ++ix2) {
 					if (memcmp(xorvalue, xors->xort[xorix].xor, KS_DHT_NODEID_SIZE) > 0) {
                           
 						break;            /* insert before xorix, after prev_xoris */
@@ -918,121 +996,121 @@ uint8_t ks_dhtrt_findclosest_bucketnodes(ks_dhtrt_nodeid_t id,
 				
 				xors->xort[count].nextix = xorix;            /* correct forward chain */
 				if (prev_xorix < KS_DHT_BUCKETSIZE) {        /* correct backward chain */
-				   xors->xort[prev_xorix].nextix = count;
-				}
-				else {
-				   xors->startix = count;
+					xors->xort[prev_xorix].nextix = count;
+				} else {
+					xors->startix = count;
 				}
 				++count;
             }
 		}
-	 }
-     xors->count = count; 
-	 return count;   /* return count of added nodes */
+	}
+
+	xors->count = count; 
+	return count;   /* return count of added nodes */
 }
 
 static
-uint8_t ks_dhtrt_load_query(ks_dhtrt_querynodes_t* query, ks_dhtrt_sortedxors_t* xort) 
+uint8_t ks_dhtrt_load_query(ks_dhtrt_querynodes_t *query, ks_dhtrt_sortedxors_t *xort) 
 {
-	 ks_dhtrt_sortedxors_t* current = xort;
-	 uint8_t loaded = 0;
- 	 while(current) {
+	ks_dhtrt_sortedxors_t *current = xort;
+	uint8_t loaded = 0;
+	while (current) {
 #ifdef  KS_DHT_DEBUGPRINTF_
-         char buf[100];
-         printf("  loadquery from bucket %s count %d\n",  
-                   ks_dhtrt_printableid(current->bheader->mask,buf), current->count);
+		char buf[100];
+		printf("  loadquery from bucket %s count %d\n",  
+			   ks_dhtrt_printableid(current->bheader->mask,buf), current->count);
 #endif
-	     int xorix = current->startix; 
-         for (uint8_t ix = 0; ix<= current->count && loaded < query->max; ++ix ) {
-		     unsigned int z =  current->xort[xorix].ix;
-		     query->nodes[ix] = current->bheader->bucket->entries[z].gptr;
-			 ++loaded;
-		 }		    
-		 if (loaded >= query->max) break;
-	     current = current->next;
-	 }
-	 query->count = loaded;
-	 return loaded;
+		int xorix = current->startix; 
+		for (uint8_t ix = 0; ix<= current->count && loaded < query->max; ++ix ) {
+			unsigned int z =  current->xort[xorix].ix;
+			query->nodes[ix] = current->bheader->bucket->entries[z].gptr;
+			++loaded;
+		}		    
+		if (loaded >= query->max) break;
+		current = current->next;
+	}
+	query->count = loaded;
+	return loaded;
 }
 
-void ks_dhtrt_ping(ks_dhtrt_bucket_entry_t* entry) {
+void ks_dhtrt_ping(ks_dhtrt_bucket_entry_t *entry) {
     ++entry->outstanding_pings;
     /* @todo */
     /* set the appropriate command in the node and queue if for processing */
-     /*ks_dht_node_t* node = entry->gptr; */
+	/*ks_dht_node_t *node = entry->gptr; */
 #ifdef  KS_DHT_DEBUGPRINTF_
-         char buf[100];
-         printf("  ping queued for nodeid %s count %d\n",
-                   ks_dhtrt_printableid(entry->id,buf), entry->outstanding_pings);
+	char buf[100];
+	printf("  ping queued for nodeid %s count %d\n",
+		   ks_dhtrt_printableid(entry->id,buf), entry->outstanding_pings);
 #endif
     return;
 }
 
 
 /*
-   strictly for shifting the bucketheader mask 
-   so format must be a right filled mask (hex: ..ffffffff)
+  strictly for shifting the bucketheader mask 
+  so format must be a right filled mask (hex: ..ffffffff)
 */
 static
-void ks_dhtrt_shiftright(uint8_t* id) 
+void ks_dhtrt_shiftright(uint8_t *id) 
 {
-   unsigned char b0 = 0;
-   unsigned char b1 = 0;
+	unsigned char b0 = 0;
+	unsigned char b1 = 0;
 
-   for(int i = KS_DHT_NODEID_SIZE-1; i >= 0; --i) {
-     if (id[i] == 0) break;    /* beyond mask- we are done */
-     b1 = id[i] & 0x01;
-     id[i] >>= 1;
-     if (i != (KS_DHT_NODEID_SIZE-1)) {
-        id[i+1] |= (b0 << 7);
-     }
-     b0 = b1;
-   }
-   return;
+	for (int i = KS_DHT_NODEID_SIZE-1; i >= 0; --i) {
+		if (id[i] == 0) break;    /* beyond mask- we are done */
+		b1 = id[i] & 0x01;
+		id[i] >>= 1;
+		if (i != (KS_DHT_NODEID_SIZE-1)) {
+			id[i+1] |= (b0 << 7);
+		}
+		b0 = b1;
+	}
+	return;
 }
 
 static
-void ks_dhtrt_shiftleft(uint8_t* id) {
+void ks_dhtrt_shiftleft(uint8_t *id) {
 
-   for(int i = KS_DHT_NODEID_SIZE-1; i >= 0; --i) {
-      if (id[i] == 0xff) continue;
-      id[i] <<= 1;
-      id[i] |= 0x01;
-      break;
-   }
-   return;
+	for (int i = KS_DHT_NODEID_SIZE-1; i >= 0; --i) {
+		if (id[i] == 0xff) continue;
+		id[i] <<= 1;
+		id[i] |= 0x01;
+		break;
+	}
+	return;
 }
 
 /* Determine whether id1 or id2 is closer to ref */
 
 /*
-@todo: remove ?  simple memcpy seems to do the job ?
+  @todo: remove ?  simple memcpy seems to do the job ?
 
-static int
-ks_dhtrt_xorcmp(const uint8_t* id1, const uint8_t* id2, const uint8_t* ref);
+  static int
+  ks_dhtrt_xorcmp(const uint8_t *id1, const uint8_t *id2, const uint8_t *ref);
 
-static int ks_dhtrt_xorcmp(const uint8_t* id1, const uint8_t* id2, const uint8_t* ref)
-{
-    int i;
-    for (i = 0; i < KS_DHT_NODEID_SIZE; i++) {
-        uint8_t xor1, xor2;
-        if (id1[i] == id2[i]) {
-            continue;
-        }
-        xor1 = id1[i] ^ ref[i];
-        xor2 = id2[i] ^ ref[i];
-        if (xor1 < xor2) {
-            return -1;          / * id1 is closer * /
-        }
-        return 1;               / * id2 is closer * /
-    }
-    return 0;     / * id2 and id2 are identical ! * /
-}
+  static int ks_dhtrt_xorcmp(const uint8_t *id1, const uint8_t *id2, const uint8_t *ref)
+  {
+  int i;
+  for (i = 0; i < KS_DHT_NODEID_SIZE; i++) {
+  uint8_t xor1, xor2;
+  if (id1[i] == id2[i]) {
+  continue;
+  }
+  xor1 = id1[i] ^ ref[i];
+  xor2 = id2[i] ^ ref[i];
+  if (xor1 < xor2) {
+  return -1;          / * id1 is closer * /
+  }
+  return 1;               / * id2 is closer * /
+  }
+  return 0;     / * id2 and id2 are identical ! * /
+  }
 */
 
 
 /* create an xor value from two ids */
-static void ks_dhtrt_xor(const uint8_t* id1, const uint8_t* id2, uint8_t* xor)
+static void ks_dhtrt_xor(const uint8_t *id1, const uint8_t *id2, uint8_t *xor)
 {
     for (int i = 0; i < KS_DHT_NODEID_SIZE; ++i) {
         if (id1[i] == id2[i]) {
@@ -1044,7 +1122,7 @@ static void ks_dhtrt_xor(const uint8_t* id1, const uint8_t* id2, uint8_t* xor)
 }
 
 /* is id masked by mask 1 => yes, 0=> no */
-static int ks_dhtrt_ismasked(const uint8_t* id, const unsigned char *mask) 
+static int ks_dhtrt_ismasked(const uint8_t *id, const unsigned char *mask) 
 {
     for (int i = 0; i < KS_DHT_NODEID_SIZE; ++i) {
         if (mask[i] == 0 && id[i] != 0) return 0;
@@ -1054,20 +1132,20 @@ static int ks_dhtrt_ismasked(const uint8_t* id, const unsigned char *mask)
     return 1;
 }
 
-static char* ks_dhtrt_printableid(uint8_t* id, char* buffer)
+static char *ks_dhtrt_printableid(uint8_t *id, char *buffer)
 {
-   char* t = buffer;
-   memset(buffer, 0, KS_DHT_NODEID_SIZE*2); 
-   for (int i = 0; i < KS_DHT_NODEID_SIZE; ++i, buffer+=2) {
-      sprintf(buffer, "%02x", id[i]);
-   }
-   return t;
+	char *t = buffer;
+	memset(buffer, 0, KS_DHT_NODEID_SIZE*2); 
+	for (int i = 0; i < KS_DHT_NODEID_SIZE; ++i, buffer+=2) {
+		sprintf(buffer, "%02x", id[i]);
+	}
+	return t;
 }
 
-unsigned char ks_dhtrt_isactive(ks_dhtrt_bucket_entry_t* entry) 
+unsigned char ks_dhtrt_isactive(ks_dhtrt_bucket_entry_t *entry) 
 {
-     /* todo */
-	 return 1;
+	/* todo */
+	return 1;
 }
 
 

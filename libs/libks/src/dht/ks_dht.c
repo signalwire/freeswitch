@@ -167,11 +167,11 @@ KS_DECLARE(ks_status_t) ks_dht_deinit(ks_dht_t *dht)
 	dht->token_secret_previous = 0;
 	dht->token_secret_expiration = 0;
 	if (dht->rt_ipv4) {
-		ks_dhtrt_deinitroute(dht->rt_ipv4);
+		ks_dhtrt_deinitroute(&dht->rt_ipv4);
 		dht->rt_ipv4 = NULL;
 	}
 	if (dht->rt_ipv6) {
-		ks_dhtrt_deinitroute(dht->rt_ipv6);
+		ks_dhtrt_deinitroute(&dht->rt_ipv6);
 		dht->rt_ipv6 = NULL;
 	}
 	dht->transactionid_next = 0;
@@ -385,11 +385,11 @@ KS_DECLARE(ks_status_t) ks_dht_bind(ks_dht_t *dht, const ks_dht_nodeid_t *nodeid
 	// @todo initialize or add local nodeid to appropriate route table
 	if (ep->addr.family == AF_INET) {
 		if (!dht->rt_ipv4) {
-			//ks_dhtrt_initroute(&dht->rt_ipv4, dht->pool, &ep->nodeid);
+			ks_dhtrt_initroute(&dht->rt_ipv4, dht->pool, ep->nodeid);
 		}
 	} else {
 		if (!dht->rt_ipv6) {
-			//ks_dhtrt_initroute(&dht->rt_ipv6, dht->pool, &ep->nodeid);
+			ks_dhtrt_initroute(&dht->rt_ipv6, dht->pool, ep->nodeid);
 		}
 	}
 	
