@@ -474,7 +474,7 @@ struct cc_queue {
 };
 typedef struct cc_queue cc_queue_t;
 
-static void cc_send_presence(cc_queue_t *queue);
+static void cc_send_presence(const char *queue_name);
 
 static void free_queue(cc_queue_t *queue)
 {
@@ -2979,7 +2979,7 @@ SWITCH_STANDARD_APP(callcenter_function)
 
 	/* Send Event with queue count */
 	cc_queue_count(queue_name);
-	cc_send_presence(queue);
+	cc_send_presence(queue_name);
 
 	/* Start Thread that will playback different prompt to the channel */
 	switch_core_new_memory_pool(&pool);
@@ -3132,7 +3132,7 @@ SWITCH_STANDARD_APP(callcenter_function)
 
 	/* Send Event with queue count */
 	cc_queue_count(queue_name);
-	cc_send_presence(queue);
+	cc_send_presence(queue_name);
 
 end:
 
@@ -3196,21 +3196,21 @@ SWITCH_STANDARD_APP(callcenter_track)
 	return;
 }
 
-static void cc_send_presence(cc_queue_t *queue) {
+static void cc_send_presence(const char *queue_name) {
 	char *sql;
 	char res[256] = "";
 	int count = 0;
 	switch_event_t *send_event;
 
-	sql = switch_mprintf("SELECT COUNT(*) FROM members WHERE queue = '%q' AND state = '%q'", queue->name, cc_member_state2str(CC_MEMBER_STATE_WAITING));
+	sql = switch_mprintf("SELECT COUNT(*) FROM members WHERE queue = '%q' AND state = '%q'", queue_name, cc_member_state2str(CC_MEMBER_STATE_WAITING));
 	cc_execute_sql2str(NULL, NULL, sql, res, sizeof(res));
 	count = atoi(res);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Queue has %d waiting calls.\n", count);
 
 	if (switch_event_create(&send_event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
 		switch_event_add_header_string(send_event, SWITCH_STACK_BOTTOM, "proto", "callcenter");
-		switch_event_add_header(send_event, SWITCH_STACK_BOTTOM, "login", "%s", queue->name);
-		switch_event_add_header_string(send_event, SWITCH_STACK_BOTTOM, "from", queue->name);
+		switch_event_add_header(send_event, SWITCH_STACK_BOTTOM, "login", "%s", queue_name);
+		switch_event_add_header_string(send_event, SWITCH_STACK_BOTTOM, "from", queue_name);
 
 		if (count > 0) {
 			switch_event_add_header(send_event, SWITCH_STACK_BOTTOM, "force-status", "Active (%d waiting)", count);
@@ -3224,7 +3224,7 @@ static void cc_send_presence(cc_queue_t *queue) {
 		switch_event_add_header(send_event, SWITCH_STACK_BOTTOM, "event_count", "%d", 0);
 
 		switch_event_add_header_string(send_event, SWITCH_STACK_BOTTOM, "channel-state", count > 0 ? "CS_ROUTING" : "CS_HANGUP");
-		switch_event_add_header_string(send_event, SWITCH_STACK_BOTTOM, "unique-id", queue->name);
+		switch_event_add_header_string(send_event, SWITCH_STACK_BOTTOM, "unique-id", queue_name);
 		switch_event_add_header_string(send_event, SWITCH_STACK_BOTTOM, "answer-state", count > 0 ? "confirmed" : "terminated");
 		switch_event_add_header_string(send_event, SWITCH_STACK_BOTTOM, "presence-call-direction", "inbound");
 		switch_event_fire(&send_event);
@@ -3258,7 +3258,7 @@ static void cc_presence_event_handler(switch_event_t *event) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Queue not found, exit!\n");
 		return;
 	}
-	cc_send_presence(queue);
+	cc_send_presence(queue_name);
 	queue_rwunlock(queue);
 	switch_safe_free(dup_to);
 	return;
