@@ -54,7 +54,7 @@ KS_DECLARE(ks_status_t) function_example(somedata_t **data, ks_pool_t *pool)
 	if (!pool) return KS_STATUS_FAIL;
 
 	for (x = 0; x < 100; x++) {
-		var = += x;
+		var += x;
 	}
 
 	if (var > 20) {
