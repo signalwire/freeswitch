@@ -5596,6 +5596,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 
 	if (fmatch) {
 		switch_channel_set_flag(channel, CF_IMAGE_SDP);
+		switch_channel_set_flag(channel, CF_AUDIO);
 	} else {
 		switch_channel_clear_flag(channel, CF_IMAGE_SDP);
 	}
