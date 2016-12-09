@@ -3,6 +3,7 @@
 
 #include "ks.h"
 #include "ks_bencode.h"
+#include "sodium.h"
 
 KS_BEGIN_EXTERN_C
 
@@ -19,14 +20,26 @@ KS_BEGIN_EXTERN_C
 
 #define KS_DHT_TRANSACTION_EXPIRATION_DELAY 30
 
+#define KS_DHT_STORAGEITEM_KEY_SIZE crypto_sign_PUBLICKEYBYTES
+#define KS_DHT_STORAGEITEM_SALT_MAX_SIZE 64
+#define KS_DHT_STORAGEITEM_SIGNATURE_SIZE crypto_sign_BYTES
+
+#define KS_DHT_TOKEN_SIZE SHA_DIGEST_LENGTH
+#define KS_DHT_TOKENSECRET_EXPIRATION 300
+
 typedef struct ks_dht_s ks_dht_t;
 typedef struct ks_dht_nodeid_s ks_dht_nodeid_t;
+typedef struct ks_dht_token_s ks_dht_token_t;
+typedef struct ks_dht_storageitem_key_s ks_dht_storageitem_key_t;
+typedef struct ks_dht_storageitem_signature_s ks_dht_storageitem_signature_t;
 typedef struct ks_dht_message_s ks_dht_message_t;
 typedef struct ks_dht_endpoint_s ks_dht_endpoint_t;
 typedef struct ks_dht_transaction_s ks_dht_transaction_t;
 typedef struct ks_dht_node_s ks_dht_node_t;
 typedef struct ks_dhtrt_routetable_s ks_dhtrt_routetable_t;
 typedef struct ks_dhtrt_querynodes_s ks_dhtrt_querynodes_t;
+typedef struct ks_dht_storageitem_s ks_dht_storageitem_t;
+
 
 typedef ks_status_t (*ks_dht_message_callback_t)(ks_dht_t *dht, ks_dht_message_t *message);
 
@@ -60,6 +73,18 @@ struct ks_dhtrt_querynodes_s {
     ks_dht_node_t* nodes[ KS_DHT_MESSAGE_QUERY_MAX_SIZE]; /* out: array of peers (ks_dht_node_t* nodes[incount]) */
 };
 
+struct ks_dht_token_s {
+	uint8_t token[KS_DHT_TOKEN_SIZE];
+};
+
+struct ks_dht_storageitem_key_s {
+	uint8_t key[KS_DHT_STORAGEITEM_KEY_SIZE];
+};
+
+struct ks_dht_storageitem_signature_s {
+	uint8_t sig[KS_DHT_STORAGEITEM_SIGNATURE_SIZE];
+};
+
 struct ks_dht_message_s {
 	ks_pool_t *pool;
 	ks_dht_endpoint_t *endpoint;
@@ -87,6 +112,20 @@ struct ks_dht_transaction_s {
 	ks_bool_t finished;
 };
 
+struct ks_dht_storageitem_s {
+	ks_pool_t *pool;
+	ks_dht_nodeid_t id;
+
+	struct bencode *v;
+	
+	ks_bool_t mutable;
+	ks_dht_storageitem_key_t pk;
+	ks_dht_storageitem_key_t sk;
+	uint8_t salt[KS_DHT_STORAGEITEM_SALT_MAX_SIZE];
+	ks_size_t salt_length;
+	int64_t seq;
+	ks_dht_storageitem_signature_t sig;
+};
 
 struct ks_dht_s {
 	ks_pool_t *pool;
@@ -117,6 +156,11 @@ struct ks_dht_s {
 
 	ks_dhtrt_routetable_t *rt_ipv4;
 	ks_dhtrt_routetable_t *rt_ipv6;
+
+	volatile uint32_t token_secret_current;
+	volatile uint32_t token_secret_previous;
+	ks_time_t token_secret_expiration;
+	ks_hash_t *storage_hash;
 };
 
 /**

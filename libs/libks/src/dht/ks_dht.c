@@ -36,6 +36,10 @@ KS_DECLARE(ks_status_t) ks_dht_alloc(ks_dht_t **dht, ks_pool_t *pool)
 	d->transactions_hash = NULL;
 	d->rt_ipv4 = NULL;
 	d->rt_ipv6 = NULL;
+	d->token_secret_current = 0;
+	d->token_secret_previous = 0;
+	d->token_secret_expiration = 0;
+	d->storage_hash = NULL;
 
 	return KS_STATUS_SUCCESS;
 }
@@ -69,6 +73,10 @@ KS_DECLARE(ks_status_t) ks_dht_prealloc(ks_dht_t *dht, ks_pool_t *pool)
 	dht->transactions_hash = NULL;
 	dht->rt_ipv4 = NULL;
 	dht->rt_ipv6 = NULL;
+	dht->token_secret_current = 0;
+	dht->token_secret_previous = 0;
+	dht->token_secret_expiration = 0;
+	dht->storage_hash = NULL;
 	
 	return KS_STATUS_SUCCESS;
 }
@@ -110,6 +118,8 @@ KS_DECLARE(ks_status_t) ks_dht_init(ks_dht_t *dht)
 	ks_hash_create(&dht->registry_query, KS_HASH_MODE_DEFAULT, KS_HASH_FLAG_RWLOCK | KS_HASH_FLAG_DUP_CHECK, dht->pool);
 	ks_dht_register_query(dht, "ping", ks_dht_process_query_ping);
 	ks_dht_register_query(dht, "find_node", ks_dht_process_query_findnode);
+	ks_dht_register_query(dht, "get", ks_dht_process_query_get);
+	ks_dht_register_query(dht, "put", ks_dht_process_query_put);
 
 	ks_hash_create(&dht->registry_error, KS_HASH_MODE_DEFAULT, KS_HASH_FLAG_RWLOCK | KS_HASH_FLAG_DUP_CHECK, dht->pool);
 	// @todo register 301 error for internal get/put CAS hash mismatch retry handler
@@ -131,6 +141,12 @@ KS_DECLARE(ks_status_t) ks_dht_init(ks_dht_t *dht)
 
 	dht->rt_ipv4 = NULL;
 	dht->rt_ipv6 = NULL;
+
+	dht->token_secret_current = dht->token_secret_previous = rand();
+	dht->token_secret_expiration = ks_time_now_sec() + KS_DHT_TOKENSECRET_EXPIRATION;
+
+	ks_hash_create(&dht->storage_hash, KS_HASH_MODE_ARBITRARY, KS_HASH_FLAG_RWLOCK | KS_HASH_FLAG_DUP_CHECK, dht->pool);
+	ks_hash_set_keysize(dht->storage_hash, KS_DHT_NODEID_SIZE);
 	
 	return KS_STATUS_SUCCESS;
 }
@@ -142,6 +158,14 @@ KS_DECLARE(ks_status_t) ks_dht_deinit(ks_dht_t *dht)
 {
 	ks_assert(dht);
 
+	// @todo free storage_hash entries
+	if (dht->storage_hash) {
+		ks_hash_destroy(&dht->storage_hash);
+		dht->storage_hash = NULL;
+	}
+	dht->token_secret_current = 0;
+	dht->token_secret_previous = 0;
+	dht->token_secret_expiration = 0;
 	if (dht->rt_ipv4) {
 		ks_dhtrt_deinitroute(dht->rt_ipv4);
 		dht->rt_ipv4 = NULL;
@@ -492,6 +516,117 @@ KS_DECLARE(ks_status_t) ks_dht_utility_compact_node(ks_dht_nodeid_t *nodeid,
 /**
  *
  */
+KS_DECLARE(ks_status_t) ks_dht_utility_extract_nodeid(struct bencode *args, const char *key, ks_dht_nodeid_t **nodeid)
+{
+	struct bencode *id;
+	const char *idv;
+	ks_size_t idv_len;
+
+	ks_assert(args);
+	ks_assert(key);
+	ks_assert(nodeid);
+
+	*nodeid = NULL;
+	
+    id = ben_dict_get_by_str(args, key);
+    if (!id) {
+		ks_log(KS_LOG_DEBUG, "Message args missing key '%s'\n", key);
+		return KS_STATUS_FAIL;
+	}
+	
+    idv = ben_str_val(id);
+	idv_len = ben_str_len(id);
+    if (idv_len != KS_DHT_NODEID_SIZE) {
+		ks_log(KS_LOG_DEBUG, "Message args '%s' value has an unexpected size of %d\n", key, idv_len);
+		return KS_STATUS_FAIL;
+	}
+
+	*nodeid = (ks_dht_nodeid_t *)idv;
+
+	return KS_STATUS_SUCCESS;
+}
+
+/**
+ *
+ */
+KS_DECLARE(ks_status_t) ks_dht_utility_extract_token(struct bencode *args, const char *key, ks_dht_token_t **token)
+{
+	struct bencode *tok;
+	const char *tokv;
+	ks_size_t tokv_len;
+
+	ks_assert(args);
+	ks_assert(key);
+	ks_assert(token);
+
+	*token = NULL;
+	
+    tok = ben_dict_get_by_str(args, key);
+    if (!tok) {
+		ks_log(KS_LOG_DEBUG, "Message args missing key '%s'\n", key);
+		return KS_STATUS_FAIL;
+	}
+
+    tokv = ben_str_val(tok);
+	tokv_len = ben_str_len(tok);
+    if (tokv_len != KS_DHT_TOKEN_SIZE) {
+		ks_log(KS_LOG_DEBUG, "Message args '%s' value has an unexpected size of %d\n", key, tokv_len);
+		return KS_STATUS_FAIL;
+	}
+
+	*token = (ks_dht_token_t *)tokv;
+
+	return KS_STATUS_SUCCESS;
+}
+
+
+/**
+ *
+ */
+KS_DECLARE(ks_status_t) ks_dht_token_generate(uint32_t secret, ks_sockaddr_t *raddr, ks_dht_nodeid_t *target, ks_dht_token_t *token)
+{
+	SHA_CTX sha;
+	uint16_t port = 0;
+
+	ks_assert(raddr);
+	ks_assert(raddr->family == AF_INET || raddr->family == AF_INET6);
+	ks_assert(target);
+	ks_assert(token);
+
+	secret = htonl(secret);
+	port = htons(raddr->port);
+	
+	SHA1_Init(&sha);
+	SHA1_Update(&sha, &secret, sizeof(uint32_t));
+	SHA1_Update(&sha, raddr->host, strlen(raddr->host));
+	SHA1_Update(&sha, &port, sizeof(uint16_t));
+	SHA1_Update(&sha, target->id, KS_DHT_NODEID_SIZE);
+	SHA1_Final(token->token, &sha);
+
+	return KS_STATUS_SUCCESS;
+}
+
+/**
+ *
+ */
+KS_DECLARE(ks_bool_t) ks_dht_token_verify(ks_dht_t *dht, ks_sockaddr_t *raddr, ks_dht_nodeid_t *target, ks_dht_token_t *token)
+{
+	ks_dht_token_t tok;
+
+	ks_dht_token_generate(dht->token_secret_current, raddr, target, &tok);
+
+	if (!memcmp(tok.token, token->token, KS_DHT_TOKEN_SIZE)) {
+		return KS_TRUE;
+	}
+
+	ks_dht_token_generate(dht->token_secret_previous, raddr, target, &tok);
+
+	return memcmp(tok.token, token->token, KS_DHT_TOKEN_SIZE) == 0;
+}
+
+/**
+ *
+ */
 KS_DECLARE(void) ks_dht_idle(ks_dht_t *dht)
 {
 	ks_assert(dht);
@@ -532,6 +667,12 @@ KS_DECLARE(void) ks_dht_idle_expirations(ks_dht_t *dht)
 		}
 	}
 	ks_hash_write_unlock(dht->transactions_hash);
+
+	if (dht->token_secret_expiration && dht->token_secret_expiration <= now) {
+		dht->token_secret_expiration = ks_time_now_sec() + KS_DHT_TOKENSECRET_EXPIRATION;
+		dht->token_secret_previous = dht->token_secret_current;
+		dht->token_secret_current = rand();
+	}
 }
 
 /**
@@ -815,6 +956,32 @@ KS_DECLARE(ks_status_t) ks_dht_send_findnode(ks_dht_t *dht, ks_dht_endpoint_t *e
 /**
  *
  */
+KS_DECLARE(ks_status_t) ks_dht_send_get(ks_dht_t *dht, ks_dht_endpoint_t *ep, ks_sockaddr_t *raddr, ks_dht_nodeid_t *targetid)
+{
+	ks_dht_message_t *message = NULL;
+	struct bencode *a = NULL;
+	
+	ks_assert(dht);
+	ks_assert(raddr);
+	ks_assert(targetid);
+
+	if (ks_dht_setup_query(dht, ep, raddr, "get", ks_dht_process_response_get, &message, &a) != KS_STATUS_SUCCESS) {
+		return KS_STATUS_FAIL;
+	}
+
+	ben_dict_set(a, ben_blob("id", 2), ben_blob(message->endpoint->nodeid.id, KS_DHT_NODEID_SIZE));
+	// @todo check for target item locally, set seq to item seq to prevent getting back what we already have if a newer seq is not available
+	ben_dict_set(a, ben_blob("target", 6), ben_blob(targetid->id, KS_DHT_NODEID_SIZE));
+
+	ks_log(KS_LOG_DEBUG, "Sending message query get\n");
+	ks_q_push(dht->send_q, (void *)message);
+
+	return KS_STATUS_SUCCESS;
+}
+
+/**
+ *
+ */
 KS_DECLARE(ks_status_t) ks_dht_process(ks_dht_t *dht, ks_dht_endpoint_t *ep, ks_sockaddr_t *raddr)
 {
 	ks_dht_message_t message;
@@ -1035,9 +1202,7 @@ KS_DECLARE(ks_status_t) ks_dht_process_error(ks_dht_t *dht, ks_dht_message_t *me
  */
 KS_DECLARE(ks_status_t) ks_dht_process_query_ping(ks_dht_t *dht, ks_dht_message_t *message)
 {
-	struct bencode *id;
-	//const char *idv;
-	ks_size_t idv_len;
+	ks_dht_nodeid_t *id;
 	ks_dht_message_t *response = NULL;
 	struct bencode *r = NULL;
 
@@ -1045,16 +1210,7 @@ KS_DECLARE(ks_status_t) ks_dht_process_query_ping(ks_dht_t *dht, ks_dht_message_
 	ks_assert(message);
 	ks_assert(message->args);
 
-    id = ben_dict_get_by_str(message->args, "id");
-    if (!id) {
-		ks_log(KS_LOG_DEBUG, "Message args missing required key 'id'\n");
-		return KS_STATUS_FAIL;
-	}
-	
-    //idv = ben_str_val(id);
-	idv_len = ben_str_len(id);
-    if (idv_len != KS_DHT_NODEID_SIZE) {
-		ks_log(KS_LOG_DEBUG, "Message args 'id' value has an unexpected size of %d\n", idv_len);
+	if (ks_dht_utility_extract_nodeid(message->args, "id", &id) != KS_STATUS_SUCCESS) {
 		return KS_STATUS_FAIL;
 	}
 
@@ -1085,13 +1241,9 @@ KS_DECLARE(ks_status_t) ks_dht_process_query_ping(ks_dht_t *dht, ks_dht_message_
  */
 KS_DECLARE(ks_status_t) ks_dht_process_query_findnode(ks_dht_t *dht, ks_dht_message_t *message)
 {
-	struct bencode *id;
-	struct bencode *target;
+	ks_dht_nodeid_t *id;
+	ks_dht_nodeid_t *target;
 	struct bencode *want;
-	const char *idv;
-	//const char *targetv;
-	ks_size_t idv_len;
-	ks_size_t targetv_len;
 	ks_bool_t want4 = KS_FALSE;
 	ks_bool_t want6 = KS_FALSE;
 	ks_dht_message_t *response = NULL;
@@ -1105,35 +1257,14 @@ KS_DECLARE(ks_status_t) ks_dht_process_query_findnode(ks_dht_t *dht, ks_dht_mess
 	ks_assert(message);
 	ks_assert(message->args);
 
-	
-    id = ben_dict_get_by_str(message->args, "id");
-    if (!id) {
-		ks_log(KS_LOG_DEBUG, "Message args missing required key 'id'\n");
-		return KS_STATUS_FAIL;
-	}
-	
-    idv = ben_str_val(id);
-	idv_len = ben_str_len(id);
-    if (idv_len != KS_DHT_NODEID_SIZE) {
-		ks_log(KS_LOG_DEBUG, "Message args 'id' value has an unexpected size of %d\n", idv_len);
+	if (ks_dht_utility_extract_nodeid(message->args, "id", &id) != KS_STATUS_SUCCESS) {
 		return KS_STATUS_FAIL;
 	}
 
-	
-	target = ben_dict_get_by_str(message->args, "target");
-    if (!target) {
-		ks_log(KS_LOG_DEBUG, "Message args missing required key 'target'\n");
+	if (ks_dht_utility_extract_nodeid(message->args, "target", &target) != KS_STATUS_SUCCESS) {
 		return KS_STATUS_FAIL;
 	}
 
-    //targetv = ben_str_val(target);
-    targetv_len = ben_str_len(target);
-    if (targetv_len != KS_DHT_NODEID_SIZE) {
-		ks_log(KS_LOG_DEBUG, "Message args 'target' value has an unexpected size of %d\n", targetv_len);
-		return KS_STATUS_FAIL;
-	}
-
-	
 	want = ben_dict_get_by_str(message->args, "want");
 	if (want) {
 		size_t want_len = ben_list_len(want);
@@ -1168,7 +1299,7 @@ KS_DECLARE(ks_status_t) ks_dht_process_query_findnode(ks_dht_t *dht, ks_dht_mess
 	}
 
 	// @todo remove this, testing only
-	if (ks_dht_utility_compact_node((ks_dht_nodeid_t *)idv,
+	if (ks_dht_utility_compact_node(id,
 									&message->raddr,
 									message->raddr.family == AF_INET ? buffer4 : buffer6,
 									message->raddr.family == AF_INET ? &buffer4_length : &buffer6_length,
@@ -1203,6 +1334,121 @@ KS_DECLARE(ks_status_t) ks_dht_process_query_findnode(ks_dht_t *dht, ks_dht_mess
 /**
  *
  */
+KS_DECLARE(ks_status_t) ks_dht_process_query_get(ks_dht_t *dht, ks_dht_message_t *message)
+{
+	ks_dht_nodeid_t *id;
+	ks_dht_nodeid_t *target;
+	struct bencode *seq;
+	int64_t sequence = -1;
+	ks_bool_t sequence_snuffed = KS_FALSE;
+	ks_dht_token_t token;
+	ks_dht_storageitem_t *item = NULL;
+	ks_dht_message_t *response = NULL;
+	struct bencode *r = NULL;
+
+	ks_assert(dht);
+	ks_assert(message);
+	ks_assert(message->args);
+
+	if (ks_dht_utility_extract_nodeid(message->args, "id", &id) != KS_STATUS_SUCCESS) {
+		return KS_STATUS_FAIL;
+	}
+
+	if (ks_dht_utility_extract_nodeid(message->args, "target", &target) != KS_STATUS_SUCCESS) {
+		return KS_STATUS_FAIL;
+	}
+	
+	seq = ben_dict_get_by_str(message->args, "seq");
+	if (seq) {
+		sequence = ben_int_val(seq);
+	}
+
+	// @todo add/touch bucket entry for remote node
+
+	ks_log(KS_LOG_DEBUG, "Message query get is valid\n");
+
+	ks_dht_token_generate(dht->token_secret_current, &message->raddr, target, &token);
+	
+	item = ks_hash_search(dht->storage_hash, (void *)target, KS_READLOCKED);
+	ks_hash_read_unlock(dht->storage_hash);
+
+	sequence_snuffed = item && sequence >= 0 && item->seq <= sequence;
+	// @todo if sequence is provided then requester has the data so if the local sequence is lower, maybe create job to update local data from the requester?
+
+	// @todo find closest ipv4 and ipv6 nodes to target
+
+	// @todo compact ipv4 and ipv6 nodes into separate buffers
+	
+	if (ks_dht_setup_response(dht,
+							  message->endpoint,
+							  &message->raddr,
+							  message->transactionid,
+							  message->transactionid_length,
+							  &response,
+							  &r) != KS_STATUS_SUCCESS) {
+		return KS_STATUS_FAIL;
+	}
+
+	ben_dict_set(r, ben_blob("id", 2), ben_blob(response->endpoint->nodeid.id, KS_DHT_NODEID_SIZE));
+	ben_dict_set(r, ben_blob("token", 5), ben_blob(token.token, KS_DHT_TOKEN_SIZE));
+	if (item) {
+		if (item->mutable) {
+			if (!sequence_snuffed) {
+				ben_dict_set(r, ben_blob("k", 1), ben_blob(item->pk.key, KS_DHT_STORAGEITEM_KEY_SIZE));
+				ben_dict_set(r, ben_blob("sig", 3), ben_blob(item->sig.sig, KS_DHT_STORAGEITEM_SIGNATURE_SIZE));
+			}
+			ben_dict_set(r, ben_blob("seq", 3), ben_int(item->seq));
+		}
+		if (!sequence_snuffed) {
+			ben_dict_set(r, ben_blob("v", 1), ben_clone(item->v));
+		}
+	}
+	// @todo nodes, nodes6
+
+	ks_log(KS_LOG_DEBUG, "Sending message response get\n");
+	ks_q_push(dht->send_q, (void *)response);
+
+	return KS_STATUS_SUCCESS;
+}
+
+/**
+ *
+ */
+KS_DECLARE(ks_status_t) ks_dht_process_query_put(ks_dht_t *dht, ks_dht_message_t *message)
+{
+	ks_dht_message_t *response = NULL;
+	struct bencode *r = NULL;
+
+	ks_assert(dht);
+	ks_assert(message);
+	ks_assert(message->args);
+
+	// @todo add/touch bucket entry for remote node
+
+	ks_log(KS_LOG_DEBUG, "Message query put is valid\n");
+
+	if (ks_dht_setup_response(dht,
+							  message->endpoint,
+							  &message->raddr,
+							  message->transactionid,
+							  message->transactionid_length,
+							  &response,
+							  &r) != KS_STATUS_SUCCESS) {
+		return KS_STATUS_FAIL;
+	}
+
+	//ben_dict_set(r, ben_blob("id", 2), ben_blob(response->endpoint->nodeid.id, KS_DHT_NODEID_SIZE));
+
+	ks_log(KS_LOG_DEBUG, "Sending message response put\n");
+	ks_q_push(dht->send_q, (void *)response);
+
+	return KS_STATUS_SUCCESS;
+}
+
+
+/**
+ *
+ */
 KS_DECLARE(ks_status_t) ks_dht_process_response_ping(ks_dht_t *dht, ks_dht_message_t *message)
 {
 	ks_assert(dht);
@@ -1226,6 +1472,36 @@ KS_DECLARE(ks_status_t) ks_dht_process_response_findnode(ks_dht_t *dht, ks_dht_m
 	// @todo add/touch bucket entry for remote node and other nodes returned
 
 	ks_log(KS_LOG_DEBUG, "Message response find_node is reached\n");
+
+	return KS_STATUS_SUCCESS;
+}
+
+/**
+ *
+ */
+KS_DECLARE(ks_status_t) ks_dht_process_response_get(ks_dht_t *dht, ks_dht_message_t *message)
+{
+	ks_dht_nodeid_t *id;
+	ks_dht_token_t *token;
+	
+	ks_assert(dht);
+	ks_assert(message);
+
+	// @todo use ks_dht_storageitem_mutable or ks_dht_storageitem_immutable if v is provided
+	if (ks_dht_utility_extract_nodeid(message->args, "id", &id) != KS_STATUS_SUCCESS) {
+		return KS_STATUS_FAIL;
+	}
+	
+	if (ks_dht_utility_extract_token(message->args, "token", &token) != KS_STATUS_SUCCESS) {
+		return KS_STATUS_FAIL;
+	}
+
+	// @todo add extract function for mutable ks_dht_storageitem_key_t
+	// @todo add extract function for mutable ks_dht_storageitem_signature_t
+	
+	// @todo add/touch bucket entry for remote node and other nodes returned
+
+	ks_log(KS_LOG_DEBUG, "Message response get is reached\n");
 
 	return KS_STATUS_SUCCESS;
 }
