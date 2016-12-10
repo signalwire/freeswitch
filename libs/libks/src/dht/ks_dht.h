@@ -173,7 +173,7 @@ struct ks_dht_s {
  */
 KS_DECLARE(ks_status_t) ks_dht_alloc(ks_dht_t **dht, ks_pool_t *pool);
 KS_DECLARE(ks_status_t) ks_dht_prealloc(ks_dht_t *dht, ks_pool_t *pool);
-KS_DECLARE(ks_status_t) ks_dht_free(ks_dht_t *dht);
+KS_DECLARE(ks_status_t) ks_dht_free(ks_dht_t **dht);
 
 
 KS_DECLARE(ks_status_t) ks_dht_init(ks_dht_t *dht);
@@ -193,7 +193,7 @@ KS_DECLARE(ks_status_t) ks_dht_register_query(ks_dht_t *dht, const char *value, 
  */
 KS_DECLARE(ks_status_t) ks_dht_message_alloc(ks_dht_message_t **message, ks_pool_t *pool);
 KS_DECLARE(ks_status_t) ks_dht_message_prealloc(ks_dht_message_t *message, ks_pool_t *pool);
-KS_DECLARE(ks_status_t) ks_dht_message_free(ks_dht_message_t *message);
+KS_DECLARE(ks_status_t) ks_dht_message_free(ks_dht_message_t **message);
 
 KS_DECLARE(ks_status_t) ks_dht_message_init(ks_dht_message_t *message, ks_dht_endpoint_t *ep, ks_sockaddr_t *raddr, ks_bool_t alloc_data);
 KS_DECLARE(ks_status_t) ks_dht_message_deinit(ks_dht_message_t *message);
@@ -222,7 +222,7 @@ KS_DECLARE(ks_status_t) ks_dht_message_error(ks_dht_message_t *message,
  */
 KS_DECLARE(ks_status_t) ks_dht_transaction_alloc(ks_dht_transaction_t **transaction, ks_pool_t *pool);
 KS_DECLARE(ks_status_t) ks_dht_transaction_prealloc(ks_dht_transaction_t *transaction, ks_pool_t *pool);
-KS_DECLARE(ks_status_t) ks_dht_transaction_free(ks_dht_transaction_t *transaction);
+KS_DECLARE(ks_status_t) ks_dht_transaction_free(ks_dht_transaction_t **transaction);
 
 KS_DECLARE(ks_status_t) ks_dht_transaction_init(ks_dht_transaction_t *transaction,
 												 ks_sockaddr_t *raddr,

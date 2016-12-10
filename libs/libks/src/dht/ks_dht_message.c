@@ -10,15 +10,9 @@ KS_DECLARE(ks_status_t) ks_dht_message_alloc(ks_dht_message_t **message, ks_pool
 
 	ks_assert(message);
 	ks_assert(pool);
-	
+
 	*message = msg = ks_pool_alloc(pool, sizeof(ks_dht_message_t));
 	msg->pool = pool;
-	msg->endpoint = NULL;
-	msg->raddr = (const ks_sockaddr_t){ 0 };
-	msg->args = NULL;
-	msg->type[0] = '\0';
-	msg->transactionid_length = 0;
-	msg->data = NULL;
 
 	return KS_STATUS_SUCCESS;
 }
@@ -30,14 +24,10 @@ KS_DECLARE(ks_status_t) ks_dht_message_prealloc(ks_dht_message_t *message, ks_po
 {
 	ks_assert(message);
 	ks_assert(pool);
-	
+
+	memset(message, 0, sizeof(ks_dht_message_t));
+
 	message->pool = pool;
-	message->endpoint = NULL;
-	message->raddr = (const ks_sockaddr_t){ 0 };
-	message->args = NULL;
-	message->type[0] = '\0';
-	message->transactionid_length = 0;
-	message->data = NULL;
 
 	return KS_STATUS_SUCCESS;
 }
@@ -45,12 +35,15 @@ KS_DECLARE(ks_status_t) ks_dht_message_prealloc(ks_dht_message_t *message, ks_po
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht_message_free(ks_dht_message_t *message)
+KS_DECLARE(ks_status_t) ks_dht_message_free(ks_dht_message_t **message)
 {
 	ks_assert(message);
+	ks_assert(*message);
 
-	ks_dht_message_deinit(message);
-	ks_pool_free(message->pool, message);
+	ks_dht_message_deinit(*message);
+	ks_pool_free((*message)->pool, *message);
+
+	*message = NULL;
 
 	return KS_STATUS_SUCCESS;
 }

@@ -18,29 +18,6 @@ KS_DECLARE(ks_status_t) ks_dht_alloc(ks_dht_t **dht, ks_pool_t *pool)
 	d->pool = pool;
 	d->pool_alloc = pool_alloc;
 
-	d->autoroute = KS_FALSE;
-	d->autoroute_port = 0;
-	d->registry_type = NULL;
-	d->registry_query = NULL;
-	d->registry_error = NULL;
-	d->bind_ipv4 = KS_FALSE;
-	d->bind_ipv6 = KS_FALSE;
-	d->endpoints = NULL;
-	d->endpoints_size = 0;
-	d->endpoints_hash = NULL;
-	d->endpoints_poll = NULL;
-	d->send_q = NULL;
-	d->send_q_unsent = NULL;
-	d->recv_buffer_length = 0;
-	d->transactionid_next = 0;
-	d->transactions_hash = NULL;
-	d->rt_ipv4 = NULL;
-	d->rt_ipv6 = NULL;
-	d->token_secret_current = 0;
-	d->token_secret_previous = 0;
-	d->token_secret_expiration = 0;
-	d->storage_hash = NULL;
-
 	return KS_STATUS_SUCCESS;
 }
 
@@ -52,48 +29,35 @@ KS_DECLARE(ks_status_t) ks_dht_prealloc(ks_dht_t *dht, ks_pool_t *pool)
 	ks_assert(dht);
 	ks_assert(pool);
 
+	memset(dht, 0, sizeof(ks_dht_t));
+
 	dht->pool = pool;
 	dht->pool_alloc = KS_FALSE;
 
-	dht->autoroute = KS_FALSE;
-	dht->autoroute_port = 0;
-	dht->registry_type = NULL;
-	dht->registry_query = NULL;
-	dht->registry_error = NULL;
-	dht->bind_ipv4 = KS_FALSE;
-	dht->bind_ipv6 = KS_FALSE;
-	dht->endpoints = NULL;
-	dht->endpoints_size = 0;
-	dht->endpoints_hash = NULL;
-	dht->endpoints_poll = NULL;
-	dht->send_q = NULL;
-	dht->send_q_unsent = NULL;
-	dht->recv_buffer_length = 0;
-	dht->transactionid_next = 0;
-	dht->transactions_hash = NULL;
-	dht->rt_ipv4 = NULL;
-	dht->rt_ipv6 = NULL;
-	dht->token_secret_current = 0;
-	dht->token_secret_previous = 0;
-	dht->token_secret_expiration = 0;
-	dht->storage_hash = NULL;
-	
 	return KS_STATUS_SUCCESS;
 }
 
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht_free(ks_dht_t *dht)
+KS_DECLARE(ks_status_t) ks_dht_free(ks_dht_t **dht)
 {
-	ks_pool_t *pool = dht->pool;
-	ks_bool_t pool_alloc = dht->pool_alloc;
+	ks_pool_t *pool;
+	ks_bool_t pool_alloc;
+	
+	ks_assert(dht);
+	ks_assert(*dht);
+	
+	pool = (*dht)->pool;
+	pool_alloc = (*dht)->pool_alloc;
 
-	ks_dht_deinit(dht);
-	ks_pool_free(pool, dht);
+	ks_dht_deinit(*dht);
+	ks_pool_free(pool, *dht);
 	if (pool_alloc) {
 		ks_pool_close(&pool);
 	}
+
+	*dht = NULL;
 
 	return KS_STATUS_SUCCESS;
 }
@@ -184,20 +148,19 @@ KS_DECLARE(ks_status_t) ks_dht_deinit(ks_dht_t *dht)
 		ks_dht_message_t *msg;
 		while (ks_q_pop_timeout(dht->send_q, (void **)&msg, 1) == KS_STATUS_SUCCESS && msg) {
 			ks_dht_message_deinit(msg);
-			ks_dht_message_free(msg);
+			ks_dht_message_free(&msg);
 		}
 		ks_q_destroy(&dht->send_q);
 		dht->send_q = NULL;
 	}
 	if (dht->send_q_unsent) {
 		ks_dht_message_deinit(dht->send_q_unsent);
-		ks_dht_message_free(dht->send_q_unsent);
-		dht->send_q_unsent = NULL;
+		ks_dht_message_free(&dht->send_q_unsent);
 	}
 	for (int32_t i = 0; i < dht->endpoints_size; ++i) {
 		ks_dht_endpoint_t *ep = dht->endpoints[i];
 		ks_dht_endpoint_deinit(ep);
-		ks_dht_endpoint_free(ep);
+		ks_dht_endpoint_free(&ep);
 	}
 	dht->endpoints_size = 0;
 	if (dht->endpoints) {
@@ -360,7 +323,7 @@ KS_DECLARE(ks_status_t) ks_dht_bind(ks_dht_t *dht, const ks_dht_nodeid_t *nodeid
 	}
 	
 	if (ks_dht_endpoint_init(ep, nodeid, addr, sock) != KS_STATUS_SUCCESS) {
-		ks_dht_endpoint_free(ep);
+		ks_dht_endpoint_free(&ep);
 		ks_socket_close(&sock);
 		return KS_STATUS_FAIL;
 	}
@@ -701,7 +664,7 @@ KS_DECLARE(void) ks_dht_idle_send(ks_dht_t *dht)
 				dht->send_q_unsent = message;
 			} else if (ret == KS_STATUS_SUCCESS) {
 				ks_dht_message_deinit(message);
-				ks_dht_message_free(message);
+				ks_dht_message_free(&message);
 			}
 		}
 	}
@@ -778,7 +741,7 @@ KS_DECLARE(ks_status_t) ks_dht_send_error(ks_dht_t *dht,
  done:
 	if (ret != KS_STATUS_SUCCESS && error) {
 		ks_dht_message_deinit(error);
-		ks_dht_message_free(error);
+		ks_dht_message_free(&error);
 	}
 	return ret;
 }
@@ -844,11 +807,11 @@ KS_DECLARE(ks_status_t) ks_dht_setup_query(ks_dht_t *dht,
 	if (ret != KS_STATUS_SUCCESS) {
 		if (trans) {
 			ks_dht_transaction_deinit(trans);
-			ks_dht_transaction_free(trans);
+			ks_dht_transaction_free(&trans);
 		}
 		if (msg) {
 			ks_dht_message_deinit(msg);
-			ks_dht_message_free(msg);
+			ks_dht_message_free(&msg);
 		}
 		*message = NULL;
 	}
@@ -899,7 +862,7 @@ KS_DECLARE(ks_status_t) ks_dht_setup_response(ks_dht_t *dht,
  done:
 	if (ret != KS_STATUS_SUCCESS && msg) {
 		ks_dht_message_deinit(msg);
-		ks_dht_message_free(msg);
+		ks_dht_message_free(&msg);
 		*message = NULL;
 	}
 	return ret;

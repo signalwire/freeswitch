@@ -57,7 +57,7 @@ KS_DECLARE(ks_status_t) ks_dht_process_response_get(ks_dht_t *dht, ks_dht_messag
  */
 KS_DECLARE(ks_status_t) ks_dht_endpoint_alloc(ks_dht_endpoint_t **endpoint, ks_pool_t *pool);
 KS_DECLARE(ks_status_t) ks_dht_endpoint_prealloc(ks_dht_endpoint_t *endpoint, ks_pool_t *pool);
-KS_DECLARE(ks_status_t) ks_dht_endpoint_free(ks_dht_endpoint_t *endpoint);
+KS_DECLARE(ks_status_t) ks_dht_endpoint_free(ks_dht_endpoint_t **endpoint);
 
 KS_DECLARE(ks_status_t) ks_dht_endpoint_init(ks_dht_endpoint_t *endpoint,
 											 const ks_dht_nodeid_t *nodeid,
@@ -70,7 +70,7 @@ KS_DECLARE(ks_status_t) ks_dht_endpoint_deinit(ks_dht_endpoint_t *endpoint);
  */
 KS_DECLARE(ks_status_t) ks_dht_storageitem_alloc(ks_dht_storageitem_t **item, ks_pool_t *pool);
 KS_DECLARE(ks_status_t) ks_dht_storageitem_prealloc(ks_dht_storageitem_t *item, ks_pool_t *pool);
-KS_DECLARE(ks_status_t) ks_dht_storageitem_free(ks_dht_storageitem_t *item);
+KS_DECLARE(ks_status_t) ks_dht_storageitem_free(ks_dht_storageitem_t **item);
 
 KS_DECLARE(ks_status_t) ks_dht_storageitem_init(ks_dht_storageitem_t *item, struct bencode *v);
 KS_DECLARE(ks_status_t) ks_dht_storageitem_deinit(ks_dht_storageitem_t *item);

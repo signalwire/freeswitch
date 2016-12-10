@@ -27,6 +27,8 @@ KS_DECLARE(ks_status_t) ks_dht_endpoint_prealloc(ks_dht_endpoint_t *endpoint, ks
 	ks_assert(endpoint);
 	ks_assert(pool);
 
+	memset(endpoint, 0, sizeof(ks_dht_endpoint_t));
+	
 	endpoint->pool = pool;
 	endpoint->sock = KS_SOCK_INVALID;
 
@@ -36,12 +38,15 @@ KS_DECLARE(ks_status_t) ks_dht_endpoint_prealloc(ks_dht_endpoint_t *endpoint, ks
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht_endpoint_free(ks_dht_endpoint_t *endpoint)
+KS_DECLARE(ks_status_t) ks_dht_endpoint_free(ks_dht_endpoint_t **endpoint)
 {
 	ks_assert(endpoint);
+	ks_assert(*endpoint);
 
-	ks_dht_endpoint_deinit(endpoint);
-	ks_pool_free(endpoint->pool, endpoint);
+	ks_dht_endpoint_deinit(*endpoint);
+	ks_pool_free((*endpoint)->pool, *endpoint);
+
+	*endpoint = NULL;
 
 	return KS_STATUS_SUCCESS;
 }

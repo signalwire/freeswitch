@@ -11,13 +11,9 @@ KS_DECLARE(ks_status_t) ks_dht_storageitem_alloc(ks_dht_storageitem_t **item, ks
 
 	ks_assert(item);
 	ks_assert(pool);
-	
+
 	*item = si = ks_pool_alloc(pool, sizeof(ks_dht_storageitem_t));
 	si->pool = pool;
-	si->v = NULL;
-	si->mutable = KS_FALSE;
-	si->salt_length = 0;
-	si->seq = 0;
 
 	return KS_STATUS_SUCCESS;
 }
@@ -30,11 +26,9 @@ KS_DECLARE(ks_status_t) ks_dht_storageitem_prealloc(ks_dht_storageitem_t *item, 
 	ks_assert(item);
 	ks_assert(pool);
 
+	memset(item, 0, sizeof(ks_dht_storageitem_t));
+
 	item->pool = pool;
-	item->v = NULL;
-	item->mutable = KS_FALSE;
-	item->salt_length = 0;
-	item->seq = 0;
 
 	return KS_STATUS_SUCCESS;
 }
@@ -42,12 +36,15 @@ KS_DECLARE(ks_status_t) ks_dht_storageitem_prealloc(ks_dht_storageitem_t *item, 
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht_storageitem_free(ks_dht_storageitem_t *item)
+KS_DECLARE(ks_status_t) ks_dht_storageitem_free(ks_dht_storageitem_t **item)
 {
 	ks_assert(item);
+	ks_assert(*item);
 
-	ks_dht_storageitem_deinit(item);
-	ks_pool_free(item->pool, item);
+	ks_dht_storageitem_deinit(*item);
+	ks_pool_free((*item)->pool, *item);
+
+	*item = NULL;
 
 	return KS_STATUS_SUCCESS;
 }

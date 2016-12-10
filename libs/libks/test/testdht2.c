@@ -135,7 +135,7 @@ int main() {
   err = ks_dht_deinit(dht1);
   ok(err == KS_STATUS_SUCCESS);
 
-  err = ks_dht_free(dht1);
+  err = ks_dht_free(&dht1);
   ok(err == KS_STATUS_SUCCESS);
   
   err = ks_shutdown();
