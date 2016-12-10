@@ -54,7 +54,8 @@ typedef struct ks_dhtrt_bucket_entry_s {
 	ks_time_t  tyme;
 	uint8_t	   id[KS_DHT_NODEID_SIZE];
 	ks_dht_node_t *gptr;					/* ptr to peer */	
-    enum ks_dht_nodetype_t type;   
+    enum ks_dht_nodetype_t type; 
+    enum ipfamily  family;  
 	uint8_t	   inuse;
 	uint8_t	   outstanding_pings;
 	uint8_t	   flags;					  /* active, suspect, expired */
@@ -149,7 +150,8 @@ static
 uint8_t ks_dhtrt_load_query(ks_dhtrt_querynodes_t *query, ks_dhtrt_sortedxors_t *xort);
 static
 uint8_t ks_dhtrt_findclosest_bucketnodes(unsigned char *nodeid,
-                                         enum ks_dht_nodetype_t type, 
+                                         enum ks_dht_nodetype_t type,
+                                         enum ipfamily family,
 										 ks_dhtrt_bucket_header_t *header,
 										 ks_dhtrt_sortedxors_t *xors,
 										 unsigned char *hixor,
@@ -414,7 +416,7 @@ KS_DECLARE(uint8_t) ks_dhtrt_findclosest_nodes(ks_dhtrt_routetable_t *table, ks_
 
 	/* step 1 - look at immediate bucket */
 	/* --------------------------------- */
-	cnt = ks_dhtrt_findclosest_bucketnodes(query->nodeid.id, query->type, header, &xort0, initid ,max);
+	cnt = ks_dhtrt_findclosest_bucketnodes(query->nodeid.id, query->type, query->family, header, &xort0, initid ,max);
 	max -= cnt;
 	total += cnt;
 
@@ -447,7 +449,7 @@ KS_DECLARE(uint8_t) ks_dhtrt_findclosest_nodes(ks_dhtrt_routetable_t *table, ks_
 		}
 	}
 
-	cnt = ks_dhtrt_findclosest_bucketnodes(query->nodeid.id, query->type, header, &xort1, initid ,max);
+	cnt = ks_dhtrt_findclosest_bucketnodes(query->nodeid.id, query->type, query->family, header, &xort1, initid ,max);
 	max -= cnt;
 	total += cnt;
 
@@ -496,7 +498,8 @@ KS_DECLARE(uint8_t) ks_dhtrt_findclosest_nodes(ks_dhtrt_routetable_t *table, ks_
 
 				prev->next = xortn;
 				prev = xortn;
-				cnt += ks_dhtrt_findclosest_bucketnodes(query->nodeid.id, query->type, lheader, xortn, leftid ,max);
+				cnt += ks_dhtrt_findclosest_bucketnodes(query->nodeid.id, query->type, query->family, 
+															lheader, xortn, leftid ,max);
 				max -= cnt;
 #ifdef	KS_DHT_DEBUGPRINTF_
 				printf(" stage3: seaching left bucket header %s yielded %d nodes, total=%d\n",
@@ -514,7 +517,8 @@ KS_DECLARE(uint8_t) ks_dhtrt_findclosest_nodes(ks_dhtrt_routetable_t *table, ks_
 				memset(xortn1, 0, sizeof(ks_dhtrt_sortedxors_t));
 				prev->next = xortn1;
 				prev = xortn1;
-				cnt = ks_dhtrt_findclosest_bucketnodes(query->nodeid.id, query->type, rheader, xortn1, rightid , max);
+				cnt = ks_dhtrt_findclosest_bucketnodes(query->nodeid.id, query->type, query->family,
+															rheader, xortn1, rightid , max);
 				max -= cnt;
 #ifdef	KS_DHT_DEBUGPRINTF_
 				printf(" stage3: seaching right bucket header %s yielded %d nodes, total=%d\n", 
@@ -760,7 +764,9 @@ void ks_dhtrt_split_bucket(ks_dhtrt_bucket_header_t *original,
 		if (ks_dhtrt_ismasked(source->entries[rix].id, left->mask)) {
 			/* move it to the left */
 			memcpy(dest->entries[lix].id, source->entries[rix].id, KS_DHT_NODEID_SIZE);
-			dest->entries[lix].gptr = source->entries[rix].gptr;
+			dest->entries[lix].gptr   = source->entries[rix].gptr;
+			dest->entries[lix].family = source->entries[rix].family;
+            dest->entries[lix].type   = source->entries[rix].type;
 			dest->entries[lix].inuse = 1;
 			++lix;
 			++dest->count;
@@ -846,6 +852,7 @@ ks_status_t ks_dhtrt_insert_id(ks_dhtrt_bucket_t *bucket, ks_dht_node_t *node)
 		bucket->entries[free].inuse = 1;
 		bucket->entries[free].gptr = node;
         bucket->entries[free].type = node->type;
+        bucket->entries[free].family = node->family;  
         bucket->entries[free].tyme = ks_time_now();
         bucket->entries[free].flags &= DHTPEER_ACTIVE;
 
@@ -925,6 +932,7 @@ void ks_dhtrt_delete_id(ks_dhtrt_bucket_t *bucket, ks_dhtrt_nodeid_t id)
 static
 uint8_t ks_dhtrt_findclosest_bucketnodes(ks_dhtrt_nodeid_t id,
                                          enum ks_dht_nodetype_t type,
+                                         enum ipfamily family,
 										 ks_dhtrt_bucket_header_t *header,
 										 ks_dhtrt_sortedxors_t *xors,
 										 unsigned char *hixor,	  /*todo: remove */
@@ -933,6 +941,7 @@ uint8_t ks_dhtrt_findclosest_bucketnodes(ks_dhtrt_nodeid_t id,
 	uint8_t count = 0;	 /* count of nodes added this time */
 	xors->startix = KS_DHT_BUCKETSIZE;
 	xors->count = 0;
+	xors->bheader = header;
 	unsigned char xorvalue[KS_DHT_NODEID_SIZE];
 	 
 	/* just ugh! - there must be a better way to do this */
@@ -950,8 +959,9 @@ uint8_t ks_dhtrt_findclosest_bucketnodes(ks_dhtrt_nodeid_t id,
 	}
 
 	for (uint8_t ix=0; ix<KS_DHT_BUCKETSIZE; ++ix) {
-	    if ( bucket->entries[ix].inuse == 1   &&
-             bucket->entries[ix].type & type  &&
+	    if ( bucket->entries[ix].inuse == 1                              &&
+             (family == ifboth || bucket->entries[ix].family == family)  &&
+             (bucket->entries[ix].type & type)                           &&
              ks_dhtrt_isactive( &(bucket->entries[ix])) ) {
 		  
 			/* calculate xor value */
