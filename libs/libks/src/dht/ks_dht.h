@@ -51,11 +51,15 @@ struct ks_dht_nodeid_s {
 };
 
 enum ipfamily { ifv4=AF_INET, ifv6=AF_INET6, ifboth=AF_INET+AF_INET6};
+enum ks_dht_nodetype_t { ks_dht_remote_t=0x01, 
+                         ks_dht_local_t=0x02, 
+                         ks_dht_both_t=ks_dht_remote_t+ks_dht_local_t };
 
 struct ks_dht_node_s {
     ks_dht_nodeid_t  nodeid;
     ks_sockaddr_t    addr;
-    enum ipfamily    family;                  /* in: AF_INET or AF_INET6 or both   */
+    enum ipfamily    family;                  /* AF_INET or AF_INET6 */
+    enum ks_dht_nodetype_t type;              /* local or remote */
     ks_dhtrt_routetable_t* table;
 };
 
@@ -68,6 +72,7 @@ struct ks_dhtrt_routetable_s {
 struct ks_dhtrt_querynodes_s {
     ks_dht_nodeid_t nodeid;                   /* in: id to query                   */
     enum ipfamily  family;                    /* in: AF_INET or AF_INET6 or both   */
+    enum ks_dht_nodetype_t type;              /* remote, local, or  both           */
     uint8_t        max;                       /* in: maximum to return             */
     uint8_t        count;                     /* out: number returned              */
     ks_dht_node_t* nodes[ KS_DHT_MESSAGE_QUERY_MAX_SIZE]; /* out: array of peers (ks_dht_node_t* nodes[incount]) */
@@ -230,11 +235,12 @@ KS_DECLARE(ks_status_t) ks_dht_transaction_deinit(ks_dht_transaction_t *transact
  * route table methods
  *
  */
-KS_DECLARE(ks_status_t) ks_dhtrt_initroute(ks_dhtrt_routetable_t **tableP, ks_pool_t *pool, ks_dht_nodeid_t nodeid);
+KS_DECLARE(ks_status_t) ks_dhtrt_initroute(ks_dhtrt_routetable_t **tableP, ks_pool_t *pool);
 KS_DECLARE(void) ks_dhtrt_deinitroute(ks_dhtrt_routetable_t **table);
 
 KS_DECLARE(ks_status_t)        ks_dhtrt_create_node(ks_dhtrt_routetable_t* table,
                                   ks_dht_nodeid_t nodeid,
+                                  enum ks_dht_nodetype_t type,
                                   char* ip, unsigned short port,
                                   ks_dht_node_t** node);
 

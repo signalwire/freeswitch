@@ -385,11 +385,11 @@ KS_DECLARE(ks_status_t) ks_dht_bind(ks_dht_t *dht, const ks_dht_nodeid_t *nodeid
 	// @todo initialize or add local nodeid to appropriate route table
 	if (ep->addr.family == AF_INET) {
 		if (!dht->rt_ipv4) {
-			ks_dhtrt_initroute(&dht->rt_ipv4, dht->pool, ep->nodeid);
+			ks_dhtrt_initroute(&dht->rt_ipv4, dht->pool);
 		}
 	} else {
 		if (!dht->rt_ipv6) {
-			ks_dhtrt_initroute(&dht->rt_ipv6, dht->pool, ep->nodeid);
+			ks_dhtrt_initroute(&dht->rt_ipv6, dht->pool);
 		}
 	}
 	
