@@ -29,6 +29,8 @@ KS_BEGIN_EXTERN_C
 #define KS_DHT_TOKEN_SIZE SHA_DIGEST_LENGTH
 #define KS_DHT_TOKENSECRET_EXPIRATION 300
 
+#define  KS_DHTRT_MAXQUERYSIZE 20
+
 typedef struct ks_dht_s ks_dht_t;
 typedef struct ks_dht_nodeid_s ks_dht_nodeid_t;
 typedef struct ks_dht_token_s ks_dht_token_t;
@@ -77,7 +79,7 @@ struct ks_dhtrt_querynodes_s {
     enum ks_dht_nodetype_t type;              /* remote, local, or  both           */
     uint8_t        max;                       /* in: maximum to return             */
     uint8_t        count;                     /* out: number returned              */
-    ks_dht_node_t* nodes[ KS_DHT_MESSAGE_QUERY_MAX_SIZE]; /* out: array of peers (ks_dht_node_t* nodes[incount]) */
+    ks_dht_node_t* nodes[ KS_DHTRT_MAXQUERYSIZE ]; /* out: array of peers (ks_dht_node_t* nodes[incount]) */
 };
 
 struct ks_dht_token_s {
