@@ -5721,7 +5721,7 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 
 		vloops++;
 		
-		send_blank = blank_enabled;
+		send_blank = blank_enabled || switch_channel_test_flag(channel, CF_VIDEO_ECHO);
 		
 		if (switch_channel_test_flag(channel, CF_VIDEO_READY) && !switch_test_flag(read_frame, SFF_CNG)) {
 			switch_mutex_lock(mh->file_read_mutex);
