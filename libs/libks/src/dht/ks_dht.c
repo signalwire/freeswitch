@@ -534,7 +534,7 @@ KS_DECLARE(ks_status_t) ks_dht_bind(ks_dht_t *dht, const ks_dht_nodeid_t *nodeid
 		if (!dht->rt_ipv4 && (ret = ks_dhtrt_initroute(&dht->rt_ipv4, dht->pool)) != KS_STATUS_SUCCESS) goto done;
 		if ((ret = ks_dhtrt_create_node(dht->rt_ipv4,
 										ep->nodeid,
-										ks_dht_local_t,
+										KS_DHT_LOCAL,
 										ep->addr.host,
 										ep->addr.port,
 										&ep->node)) != KS_STATUS_SUCCESS) goto done;
@@ -542,7 +542,7 @@ KS_DECLARE(ks_status_t) ks_dht_bind(ks_dht_t *dht, const ks_dht_nodeid_t *nodeid
 		if (!dht->rt_ipv6 && (ret = ks_dhtrt_initroute(&dht->rt_ipv6, dht->pool)) != KS_STATUS_SUCCESS) goto done;
 		if ((ret = ks_dhtrt_create_node(dht->rt_ipv6,
 										ep->nodeid,
-										ks_dht_local_t,
+										KS_DHT_LOCAL,
 										ep->addr.host,
 										ep->addr.port,
 										&ep->node)) != KS_STATUS_SUCCESS) goto done;
@@ -1326,7 +1326,7 @@ KS_DECLARE(ks_status_t) ks_dht_process_query_ping(ks_dht_t *dht, ks_dht_message_
 
 	// @todo touch here, or only create if not exists?
 	if (ks_dhtrt_touch_node(routetable, *id) != KS_STATUS_SUCCESS) {
-		ks_dhtrt_create_node(routetable, *id, ks_dht_remote_t, message->raddr.host, message->raddr.port, &node);
+		ks_dhtrt_create_node(routetable, *id, KS_DHT_REMOTE, message->raddr.host, message->raddr.port, &node);
 	}
 
 	ks_log(KS_LOG_DEBUG, "Message query ping is valid\n");
@@ -1363,7 +1363,7 @@ KS_DECLARE(ks_status_t) ks_dht_process_response_ping(ks_dht_t *dht, ks_dht_messa
 	routetable = message->endpoint->node->table;
 
 	if (ks_dhtrt_touch_node(routetable, *id) != KS_STATUS_SUCCESS) {
-		ks_dhtrt_create_node(routetable, *id, ks_dht_remote_t, message->raddr.host, message->raddr.port, &node);
+		ks_dhtrt_create_node(routetable, *id, KS_DHT_REMOTE, message->raddr.host, message->raddr.port, &node);
 	}
 
 	ks_log(KS_LOG_DEBUG, "Message response ping is reached\n");
@@ -1436,14 +1436,14 @@ KS_DECLARE(ks_status_t) ks_dht_process_query_findnode(ks_dht_t *dht, ks_dht_mess
 	routetable = message->endpoint->node->table;
 
 	if (ks_dhtrt_touch_node(routetable, *id) != KS_STATUS_SUCCESS) {
-		ks_dhtrt_create_node(routetable, *id, ks_dht_remote_t, message->raddr.host, message->raddr.port, &node);
+		ks_dhtrt_create_node(routetable, *id, KS_DHT_REMOTE, message->raddr.host, message->raddr.port, &node);
 	}
 
 	ks_log(KS_LOG_DEBUG, "Message query find_node is valid\n");
 
 
 	query.nodeid = *target;
-	query.type = ks_dht_remote_t;
+	query.type = KS_DHT_REMOTE;
 	query.max = 8; // should be like KS_DHTRT_BUCKET_SIZE
 	if (want4) {
 		query.family = AF_INET;
@@ -1537,7 +1537,7 @@ KS_DECLARE(ks_status_t) ks_dht_process_response_findnode(ks_dht_t *dht, ks_dht_m
 	routetable = message->endpoint->node->table;
 
 	if (ks_dhtrt_touch_node(routetable, *id) != KS_STATUS_SUCCESS) {
-		ks_dhtrt_create_node(routetable, *id, ks_dht_remote_t, message->raddr.host, message->raddr.port, &node);
+		ks_dhtrt_create_node(routetable, *id, KS_DHT_REMOTE, message->raddr.host, message->raddr.port, &node);
 	}
 
 	while (nodes_len < nodes_size) {
@@ -1554,7 +1554,7 @@ KS_DECLARE(ks_status_t) ks_dht_process_response_findnode(ks_dht_t *dht, ks_dht_m
 			   addr.port);
 
 		if (ks_dhtrt_touch_node(dht->rt_ipv4, nid) != KS_STATUS_SUCCESS) {
-			ks_dhtrt_create_node(dht->rt_ipv4, nid, ks_dht_remote_t, addr.host, addr.port, &node);
+			ks_dhtrt_create_node(dht->rt_ipv4, nid, KS_DHT_REMOTE, addr.host, addr.port, &node);
 		}
 	}
 
@@ -1572,7 +1572,7 @@ KS_DECLARE(ks_status_t) ks_dht_process_response_findnode(ks_dht_t *dht, ks_dht_m
 			   addr.port);
 
 		if (ks_dhtrt_touch_node(dht->rt_ipv6, nid) != KS_STATUS_SUCCESS) {
-			ks_dhtrt_create_node(dht->rt_ipv6, nid, ks_dht_remote_t, addr.host, addr.port, &node);
+			ks_dhtrt_create_node(dht->rt_ipv6, nid, KS_DHT_REMOTE, addr.host, addr.port, &node);
 		}
 	}
 	// @todo repeat above for ipv6 table
@@ -1632,7 +1632,7 @@ KS_DECLARE(ks_status_t) ks_dht_process_query_get(ks_dht_t *dht, ks_dht_message_t
 	routetable = message->endpoint->node->table;
 
 	if (ks_dhtrt_touch_node(routetable, *id) != KS_STATUS_SUCCESS) {
-		ks_dhtrt_create_node(routetable, *id, ks_dht_remote_t, message->raddr.host, message->raddr.port, &node);
+		ks_dhtrt_create_node(routetable, *id, KS_DHT_REMOTE, message->raddr.host, message->raddr.port, &node);
 	}
 
 	ks_log(KS_LOG_DEBUG, "Message query get is valid\n");
@@ -1700,7 +1700,7 @@ KS_DECLARE(ks_status_t) ks_dht_process_response_get(ks_dht_t *dht, ks_dht_messag
 	routetable = message->endpoint->node->table;
 
 	if (ks_dhtrt_touch_node(routetable, *id) != KS_STATUS_SUCCESS) {
-		ks_dhtrt_create_node(routetable, *id, ks_dht_remote_t, message->raddr.host, message->raddr.port, &node);
+		ks_dhtrt_create_node(routetable, *id, KS_DHT_REMOTE, message->raddr.host, message->raddr.port, &node);
 	}
 	// @todo add/touch bucket entries for other nodes/nodes6 returned
 
@@ -1729,7 +1729,7 @@ KS_DECLARE(ks_status_t) ks_dht_process_query_put(ks_dht_t *dht, ks_dht_message_t
 	routetable = message->endpoint->node->table;
 
 	if (ks_dhtrt_touch_node(routetable, *id) != KS_STATUS_SUCCESS) {
-		ks_dhtrt_create_node(routetable, *id, ks_dht_remote_t, message->raddr.host, message->raddr.port, &node);
+		ks_dhtrt_create_node(routetable, *id, KS_DHT_REMOTE, message->raddr.host, message->raddr.port, &node);
 	}
 
 	ks_log(KS_LOG_DEBUG, "Message query put is valid\n");
@@ -1766,7 +1766,7 @@ KS_DECLARE(ks_status_t) ks_dht_process_response_put(ks_dht_t *dht, ks_dht_messag
 	routetable = message->endpoint->node->table;
 
 	if (ks_dhtrt_touch_node(routetable, *id) != KS_STATUS_SUCCESS) {
-		ks_dhtrt_create_node(routetable, *id, ks_dht_remote_t, message->raddr.host, message->raddr.port, &node);
+		ks_dhtrt_create_node(routetable, *id, KS_DHT_REMOTE, message->raddr.host, message->raddr.port, &node);
 	}
 
 	ks_log(KS_LOG_DEBUG, "Message response put is reached\n");

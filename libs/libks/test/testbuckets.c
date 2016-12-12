@@ -8,7 +8,7 @@ ks_dhtrt_routetable_t* rt;
 ks_pool_t* pool;
 
 
-int doquery(ks_dhtrt_routetable_t* rt, uint8_t* id, enum ks_dht_nodetype_t type, enum ipfamily family)
+int doquery(ks_dhtrt_routetable_t* rt, uint8_t* id, enum ks_dht_nodetype_t type, enum ks_afflags_t family)
 {
    ks_dhtrt_querynodes_t query;
    memset(&query, 0, sizeof(query));
@@ -35,9 +35,10 @@ void test01()
    char ip[] = "192.168.100.100";
    unsigned short port = 7000;
    ks_dht_node_t* peer;
+   ks_dht_node_t* peer1;
    
    ks_status_t status;  
-   status = ks_dhtrt_create_node(rt, homeid, ks_dht_local_t, ip, port, &peer);
+   status = ks_dhtrt_create_node(rt, homeid, KS_DHT_LOCAL, ip, port, &peer);
    if (status == KS_STATUS_FAIL) {
        printf("*** ks_dhtrt_create_node test01 failed\n");
        exit(101);
@@ -49,10 +50,14 @@ void test01()
       exit(102);
    }
 
-   status = ks_dhtrt_create_node(rt, homeid, ks_dht_local_t, ip, port, &peer);
-   if (status != KS_STATUS_FAIL) {
-       printf("*** ks_dhtrt_create_node test01 allowed duplicate!!\n");
+   status = ks_dhtrt_create_node(rt, homeid, KS_DHT_LOCAL, ip, port, &peer1);
+   if (status == KS_STATUS_FAIL) {
+       printf("*** ks_dhtrt_create_node test01 did allow duplicate createnodes!!\n");
        exit(103);
+   }
+   if (peer != peer1) {
+       printf("*** ks_dhtrt_create_node duplicate createnode did not return the same node!\n");
+       exit(104);
    }
    
    status = ks_dhtrt_delete_node(rt, peer);
@@ -73,52 +78,52 @@ void test02()
    char ipv6[] = "1234:1234:1234:1234";
    char ipv4[] = "123.123.123.123";
    unsigned short port = 7000;
-   enum ipfamily both = ifboth;
+   enum ks_afflags_t both = ifboth;
 
    ks_status_t status;
 
    nodeid.id[0] = 1;
-   status = ks_dhtrt_create_node(rt, nodeid, ks_dht_local_t, ipv6, port, &peer);
+   status = ks_dhtrt_create_node(rt, nodeid, KS_DHT_LOCAL, ipv6, port, &peer);
    nodeid.id[0] = 2;
-   status = ks_dhtrt_create_node(rt,  nodeid,  ks_dht_remote_t, ipv6, port, &peer);
+   status = ks_dhtrt_create_node(rt,  nodeid,  KS_DHT_REMOTE, ipv6, port, &peer);
    nodeid.id[0] = 3;
-   status = ks_dhtrt_create_node(rt,  nodeid, ks_dht_remote_t, ipv6, port, &peer);
+   status = ks_dhtrt_create_node(rt,  nodeid, KS_DHT_REMOTE, ipv6, port, &peer);
    nodeid.id[0] = 4;
-   status = ks_dhtrt_create_node(rt,  nodeid, ks_dht_local_t, ipv6, port, &peer);
+   status = ks_dhtrt_create_node(rt,  nodeid, KS_DHT_LOCAL, ipv6, port, &peer);
    nodeid.id[1] = 1;
-   status = ks_dhtrt_create_node(rt,  nodeid, ks_dht_remote_t, ipv6, port, &peer);
+   status = ks_dhtrt_create_node(rt,  nodeid, KS_DHT_REMOTE, ipv6, port, &peer);
 
 
    nodeid.id[19] = 1;
-   status = ks_dhtrt_create_node(rt,  nodeid, ks_dht_remote_t, ipv4, port, &peer);
+   status = ks_dhtrt_create_node(rt,  nodeid, KS_DHT_REMOTE, ipv4, port, &peer);
    nodeid.id[19] = 2;
-   status = ks_dhtrt_create_node(rt,  nodeid, ks_dht_remote_t, ipv4, port, &peer);
+   status = ks_dhtrt_create_node(rt,  nodeid, KS_DHT_REMOTE, ipv4, port, &peer);
    nodeid.id[19] = 3;
-   status = ks_dhtrt_create_node(rt,  nodeid, ks_dht_remote_t, ipv4, port, &peer);
+   status = ks_dhtrt_create_node(rt,  nodeid, KS_DHT_REMOTE, ipv4, port, &peer);
    nodeid.id[19] = 4;
-   status = ks_dhtrt_create_node(rt,  nodeid,  ks_dht_local_t, ipv4, port, &peer);
+   status = ks_dhtrt_create_node(rt,  nodeid,  KS_DHT_LOCAL, ipv4, port, &peer);
 
-   int qcount = doquery(rt, nodeid.id, ks_dht_local_t, both);
+   int qcount = doquery(rt, nodeid.id, KS_DHT_LOCAL, both);
    printf("\n*** local query count expected 3, actual %d\n", qcount); fflush(stdout);
-   qcount = doquery(rt, nodeid.id, ks_dht_remote_t, both);
+   qcount = doquery(rt, nodeid.id, KS_DHT_REMOTE, both);
    printf("\n*** remote query count expected 6, actual %d\n", qcount); fflush(stdout);
-   qcount = doquery(rt, nodeid.id, ks_dht_both_t, both);
+   qcount = doquery(rt, nodeid.id, KS_DHT_BOTH, both);
    printf("\n*** both query count expected 9, actual %d\n", qcount); fflush(stdout);
 
-   qcount = doquery(rt, nodeid.id, ks_dht_local_t, ifv4);
+   qcount = doquery(rt, nodeid.id, KS_DHT_LOCAL, ifv4);
    printf("\n*** local AF_INET  query count expected 1, actual %d\n", qcount); fflush(stdout);
-   qcount = doquery(rt, nodeid.id, ks_dht_local_t, ifv6);
+   qcount = doquery(rt, nodeid.id, KS_DHT_LOCAL, ifv6);
    printf("\n*** local AF_INET6 query count expected 2, actual %d\n", qcount); fflush(stdout);
 
-   qcount = doquery(rt, nodeid.id, ks_dht_both_t, ifv6);
+   qcount = doquery(rt, nodeid.id, KS_DHT_BOTH, ifv6);
    printf("\n*** AF_INET6 count expected 5, actual %d\n", qcount); fflush(stdout);
 
-   qcount = doquery(rt, nodeid.id, ks_dht_remote_t, ifv4);
+   qcount = doquery(rt, nodeid.id, KS_DHT_REMOTE, ifv4);
    printf("\n*** remote AF_INET  query count expected 3, actual %d\n", qcount); fflush(stdout);
-   qcount = doquery(rt, nodeid.id, ks_dht_remote_t, ifv6);
+   qcount = doquery(rt, nodeid.id, KS_DHT_REMOTE, ifv6);
    printf("\n*** remote AF_INET6 query count expected 3, actual %d\n", qcount); fflush(stdout);
 
-   qcount = doquery(rt, nodeid.id, ks_dht_both_t, ifv4);
+   qcount = doquery(rt, nodeid.id, KS_DHT_BOTH, ifv4);
    printf("\n*** AF_INET count expected 4, actual %d\n", qcount); fflush(stdout);
 
    return;
@@ -135,7 +140,7 @@ void test03()
    char ipv6[] = "1234:1234:1234:1234";
    char ipv4[] = "123.123.123.123";
    unsigned short port = 7000;
-   enum ipfamily both = ifboth;
+   enum ks_afflags_t both = ifboth;
 
    ks_status_t status;
 
@@ -146,7 +151,7 @@ void test03()
      else {
            ++nodeid.id[1];
      } 
-     ks_dhtrt_create_node(rt, nodeid, ks_dht_remote_t, ipv4, port, &peer);
+     ks_dhtrt_create_node(rt, nodeid, KS_DHT_REMOTE, ipv4, port, &peer);
    }
 
    for (int i=0; i<2; ++i) {
@@ -157,7 +162,7 @@ void test03()
            ++nodeid.id[1];
      }
 
-     ks_dhtrt_create_node(rt, nodeid, ks_dht_local_t, ipv4, port, &peer);
+     ks_dhtrt_create_node(rt, nodeid, KS_DHT_LOCAL, ipv4, port, &peer);
    }
 
    for (int i=0; i<201; ++i) {
@@ -167,31 +172,31 @@ void test03()
      else {
            ++nodeid.id[1];
      }
-     ks_dhtrt_create_node(rt, nodeid, ks_dht_remote_t, ipv6, port, &peer);
+     ks_dhtrt_create_node(rt, nodeid, KS_DHT_REMOTE, ipv6, port, &peer);
    }
 
 
-   int qcount = doquery(rt, nodeid.id, ks_dht_local_t, both);
+   int qcount = doquery(rt, nodeid.id, KS_DHT_LOCAL, both);
    printf("\n** local query count expected 3, actual %d\n", qcount); fflush(stdout);
-   qcount = doquery(rt, nodeid.id, ks_dht_remote_t, both);
+   qcount = doquery(rt, nodeid.id, KS_DHT_REMOTE, both);
    printf("\n*** remote query count expected 6, actual %d\n", qcount); fflush(stdout);
-   qcount = doquery(rt, nodeid.id, ks_dht_both_t, both);
+   qcount = doquery(rt, nodeid.id, KS_DHT_BOTH, both);
    printf("\n*** both query count expected 9, actual %d\n", qcount); fflush(stdout);
 
-   qcount = doquery(rt, nodeid.id, ks_dht_local_t, ifv4);
+   qcount = doquery(rt, nodeid.id, KS_DHT_LOCAL, ifv4);
    printf("\n*** local AF_INET  query count expected 1, actual %d\n", qcount); fflush(stdout);
-   qcount = doquery(rt, nodeid.id, ks_dht_local_t, ifv6);
+   qcount = doquery(rt, nodeid.id, KS_DHT_LOCAL, ifv6);
    printf("\n*** local AF_INET6 query count expected 2, actual %d\n", qcount); fflush(stdout);
 
-   qcount = doquery(rt, nodeid.id, ks_dht_both_t, ifv6);
+   qcount = doquery(rt, nodeid.id, KS_DHT_BOTH, ifv6);
    printf("\n*** AF_INET6 count expected 5, actual %d\n", qcount); fflush(stdout);
 
-   qcount = doquery(rt, nodeid.id, ks_dht_remote_t, ifv4);
+   qcount = doquery(rt, nodeid.id, KS_DHT_REMOTE, ifv4);
    printf("\n** remote AF_INET  query count expected 3, actual %d\n", qcount); fflush(stdout);
-   qcount = doquery(rt, nodeid.id, ks_dht_remote_t, ifv6);
+   qcount = doquery(rt, nodeid.id, KS_DHT_REMOTE, ifv6);
    printf("\n*** remote AF_INET6 query count expected 3, actual %d\n", qcount); fflush(stdout);
 
-   qcount = doquery(rt, nodeid.id, ks_dht_both_t, ifv4);
+   qcount = doquery(rt, nodeid.id, KS_DHT_BOTH, ifv4);
    printf("\n*** AF_INET count expected 4, actual %d\n", qcount); fflush(stdout);
 
    return;
@@ -206,7 +211,7 @@ void test04()
    char ipv6[] = "1234:1234:1234:1234";
    char ipv4[] = "123.123.123.123";
    unsigned short port = 7000;
-   enum ipfamily both = ifboth;
+   enum ks_afflags_t both = ifboth;
 
    ks_status_t status;
 
@@ -223,13 +228,13 @@ void test04()
      else {
            ++nodeid.id[1];
      }
-     ks_dhtrt_create_node(rt, nodeid, ks_dht_remote_t, ipv4, port, &peer);
+     ks_dhtrt_create_node(rt, nodeid, KS_DHT_REMOTE, ipv4, port, &peer);
    }
 
    
     memset(nodeid.id,  0x2f, KS_DHT_NODEID_SIZE);
     ks_time_t t0 = ks_time_now();
-    int qcount = doquery(rt, nodeid.id, ks_dht_both_t, ifv4);
+    int qcount = doquery(rt, nodeid.id, KS_DHT_BOTH, ifv4);
     ks_time_t t1 = ks_time_now();
 
      int tx = t1 - t0;
