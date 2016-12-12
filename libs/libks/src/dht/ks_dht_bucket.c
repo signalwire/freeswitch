@@ -1030,9 +1030,12 @@ uint8_t ks_dhtrt_load_query(ks_dhtrt_querynodes_t *query, ks_dhtrt_sortedxors_t 
 			   ks_dhtrt_printableid(current->bheader->mask,buf), current->count);
 #endif
 		int xorix = current->startix; 
-		for (uint8_t ix = 0; ix< current->count && loaded < query->max; ++ix ) {
+		for (uint8_t ix = 0;
+				ix< current->count && loaded < query->max && xorix !=  KS_DHT_BUCKETSIZE;
+				++ix )	 {
 			unsigned int z =  current->xort[xorix].ix;
 			query->nodes[ix] = current->bheader->bucket->entries[z].gptr;
+            xorix =  current->xort[xorix].nextix;
 			++loaded;
 		}			
 		if (loaded >= query->max) break;
