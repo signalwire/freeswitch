@@ -143,15 +143,28 @@ int main() {
   
   diag("Ping test\n");
   
-  ks_dht_send_ping(&dht2, ep2, &raddr1); // Queue ping from dht2 to dht1
+  ks_dht_send_ping(&dht2, ep2, &raddr1); // Queue bootstrap ping from dht2 to dht1
 
   ks_dht_pulse(&dht2, 100); // Send queued ping from dht2 to dht1
   
   ks_dht_pulse(dht1, 100); // Receive and process ping query from dht2, queue and send ping response
 
+  ok(ks_dhtrt_find_node(dht1->rt_ipv4, ep2->nodeid) == NULL); // The node should be dubious, and thus not be returned as good yet
+
   ks_dht_pulse(&dht2, 100); // Receive and process ping response from dht1
 
-  // Test blind find_node from dht3 to dht1 to find dht2 nodeid
+  ok(ks_dhtrt_find_node(dht2.rt_ipv4, ep1->nodeid) != NULL); // The node should be good, and thus be returned as good
+
+  diag("Pulsing for route table pings\n"); // Wait a second for route table pinging to catch up
+  for (int i = 0; i < 10; ++i) {
+	  diag("DHT 1\n");
+	  ks_dht_pulse(dht1, 100);
+	  diag("DHT 2\n");
+	  ks_dht_pulse(&dht2, 100);
+  }
+  ok(ks_dhtrt_find_node(dht1->rt_ipv4, ep2->nodeid) != NULL); // The node should be good by now, and thus be returned as good
+  
+  // Test bootstrap find_node from dht3 to dht1 to find dht2 nodeid
 
   diag("Find_Node test\n");
 
@@ -163,8 +176,17 @@ int main() {
 
   ks_dht_pulse(dht3, 100); // Receive and process findnode response from dht1
 
-  ok(ks_dhtrt_find_node(dht3->rt_ipv4, ep2->nodeid) != NULL);
+  ok(ks_dhtrt_find_node(dht3->rt_ipv4, ep2->nodeid) == NULL); // The node should be dubious, and thus not be returned as good yet
   
+  diag("Pulsing for route table pings\n"); // Wait a second for route table pinging to catch up
+  for (int i = 0; i < 10; ++i) {
+	  diag("DHT 1\n");
+	  ks_dht_pulse(dht1, 100);
+	  diag("DHT 2\n");
+	  ks_dht_pulse(&dht2, 100);
+  }
+  ok(ks_dhtrt_find_node(dht3->rt_ipv4, ep2->nodeid) != NULL); // The node should be good by now, and thus be returned as good
+
   diag("Cleanup\n");
   /* Cleanup and shutdown */
 

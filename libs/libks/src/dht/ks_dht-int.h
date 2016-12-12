@@ -251,6 +251,27 @@ KS_DECLARE(ks_status_t) ks_dht_endpoint_deinit(ks_dht_endpoint_t *endpoint);
 /**
  *
  */
+KS_DECLARE(ks_status_t) ks_dht_search_alloc(ks_dht_search_t **search, ks_pool_t *pool);
+KS_DECLARE(void) ks_dht_search_prealloc(ks_dht_search_t *search, ks_pool_t *pool);
+KS_DECLARE(ks_status_t) ks_dht_search_free(ks_dht_search_t **search);
+
+KS_DECLARE(ks_status_t) ks_dht_search_init(ks_dht_search_t *search,
+										   const ks_dht_nodeid_t *target,
+										   ks_dht_search_callback_t callback);
+KS_DECLARE(ks_status_t) ks_dht_search_deinit(ks_dht_search_t *search);
+
+KS_DECLARE(ks_status_t) ks_dht_search_callback_add(ks_dht_search_t *search, ks_dht_search_callback_t callback);
+
+KS_DECLARE(ks_status_t) ks_dht_search_pending_alloc(ks_dht_search_pending_t **pending, ks_pool_t *pool);
+KS_DECLARE(void) ks_dht_search_pending_prealloc(ks_dht_search_pending_t *pending, ks_pool_t *pool);
+KS_DECLARE(ks_status_t) ks_dht_search_pending_free(ks_dht_search_pending_t **pending);
+
+KS_DECLARE(ks_status_t) ks_dht_search_pending_init(ks_dht_search_pending_t *pending, ks_dht_node_t *node, ks_time_t expiration);
+KS_DECLARE(ks_status_t) ks_dht_search_pending_deinit(ks_dht_search_pending_t *pending);
+
+/**
+ *
+ */
 KS_DECLARE(ks_status_t) ks_dht_storageitem_alloc(ks_dht_storageitem_t **item, ks_pool_t *pool);
 KS_DECLARE(ks_status_t) ks_dht_storageitem_prealloc(ks_dht_storageitem_t *item, ks_pool_t *pool);
 KS_DECLARE(ks_status_t) ks_dht_storageitem_free(ks_dht_storageitem_t **item);
