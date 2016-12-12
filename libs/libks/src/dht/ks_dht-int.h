@@ -8,22 +8,30 @@ KS_BEGIN_EXTERN_C
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht_utility_compact_address(ks_sockaddr_t *address,
-													   uint8_t *buffer,
+KS_DECLARE(ks_status_t) ks_dht_utility_compact_addressinfo(const ks_sockaddr_t *address,
+														   uint8_t *buffer,
+														   ks_size_t *buffer_length,
+														   ks_size_t buffer_size);
+KS_DECLARE(ks_status_t) ks_dht_utility_expand_addressinfo(const uint8_t *buffer,
+														  ks_size_t *buffer_length,
+														  ks_size_t buffer_size,
+														  ks_sockaddr_t *address);
+KS_DECLARE(ks_status_t) ks_dht_utility_compact_nodeinfo(const ks_dht_nodeid_t *nodeid,
+														const ks_sockaddr_t *address,
+														uint8_t *buffer,
+														ks_size_t *buffer_length,
+														ks_size_t buffer_size);
+KS_DECLARE(ks_status_t) ks_dht_utility_expand_nodeinfo(const uint8_t *buffer,
 													   ks_size_t *buffer_length,
-													   ks_size_t buffer_size);
-KS_DECLARE(ks_status_t) ks_dht_utility_compact_node(ks_dht_nodeid_t *nodeid,
-													ks_sockaddr_t *address,
-													uint8_t *buffer,
-													ks_size_t *buffer_length,
-													ks_size_t buffer_size);
+													   ks_size_t buffer_size,
+													   ks_dht_nodeid_t *nodeid,
+													   ks_sockaddr_t *address);
 
 /**
  *
  */
-KS_DECLARE(void) ks_dht_idle(ks_dht_t *dht);
-KS_DECLARE(void) ks_dht_idle_expirations(ks_dht_t *dht);
-KS_DECLARE(void) ks_dht_idle_send(ks_dht_t *dht);
+KS_DECLARE(void) ks_dht_pulse_expirations(ks_dht_t *dht);
+KS_DECLARE(void) ks_dht_pulse_send(ks_dht_t *dht);
 
 KS_DECLARE(ks_status_t) ks_dht_send(ks_dht_t *dht, ks_dht_message_t *message);
 KS_DECLARE(ks_status_t) ks_dht_send_error(ks_dht_t *dht,
@@ -44,13 +52,16 @@ KS_DECLARE(ks_status_t) ks_dht_process_response(ks_dht_t *dht, ks_dht_message_t 
 KS_DECLARE(ks_status_t) ks_dht_process_error(ks_dht_t *dht, ks_dht_message_t *message);
 
 KS_DECLARE(ks_status_t) ks_dht_process_query_ping(ks_dht_t *dht, ks_dht_message_t *message);
-KS_DECLARE(ks_status_t) ks_dht_process_query_findnode(ks_dht_t *dht, ks_dht_message_t *message);
-KS_DECLARE(ks_status_t) ks_dht_process_query_get(ks_dht_t *dht, ks_dht_message_t *message);
-KS_DECLARE(ks_status_t) ks_dht_process_query_put(ks_dht_t *dht, ks_dht_message_t *message);
-
 KS_DECLARE(ks_status_t) ks_dht_process_response_ping(ks_dht_t *dht, ks_dht_message_t *message);
+
+KS_DECLARE(ks_status_t) ks_dht_process_query_findnode(ks_dht_t *dht, ks_dht_message_t *message);
 KS_DECLARE(ks_status_t) ks_dht_process_response_findnode(ks_dht_t *dht, ks_dht_message_t *message);
+
+KS_DECLARE(ks_status_t) ks_dht_process_query_get(ks_dht_t *dht, ks_dht_message_t *message);
 KS_DECLARE(ks_status_t) ks_dht_process_response_get(ks_dht_t *dht, ks_dht_message_t *message);
+
+KS_DECLARE(ks_status_t) ks_dht_process_query_put(ks_dht_t *dht, ks_dht_message_t *message);
+KS_DECLARE(ks_status_t) ks_dht_process_response_put(ks_dht_t *dht, ks_dht_message_t *message);
 
 /**
  *

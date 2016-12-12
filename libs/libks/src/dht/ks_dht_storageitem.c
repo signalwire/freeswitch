@@ -185,9 +185,7 @@ KS_DECLARE(ks_status_t) ks_dht_storageitem_mutable(ks_dht_storageitem_t *item,
 
 	SHA1_Init(&sha);
 	SHA1_Update(&sha, item->pk.key, KS_DHT_STORAGEITEM_KEY_SIZE);
-	if (item->salt && item->salt_length > 0) {
-		SHA1_Update(&sha, item->salt, item->salt_length);
-	}
+	if (item->salt && item->salt_length > 0) SHA1_Update(&sha, item->salt, item->salt_length);
 	SHA1_Final(item->id.id, &sha);
 
 	return KS_STATUS_SUCCESS;

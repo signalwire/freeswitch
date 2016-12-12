@@ -59,13 +59,7 @@ KS_DECLARE(ks_status_t) ks_dht_message_init(ks_dht_message_t *message, ks_dht_en
 
 	message->endpoint = ep;
 	message->raddr = *raddr;
-	message->data = NULL;
-	message->args = NULL;
-	message->transactionid_length = 0;
-	message->type[0] = '\0';
-	if (alloc_data) {
-		message->data = ben_dict();
-	}
+	if (alloc_data) message->data = ben_dict();
 
 	return KS_STATUS_SUCCESS;
 }
@@ -173,7 +167,7 @@ KS_DECLARE(ks_status_t) ks_dht_message_query(ks_dht_message_t *message,
 	ks_assert(query);
 
 	tid = htonl(transactionid);
-	
+
     ben_dict_set(message->data, ben_blob("t", 1), ben_blob((uint8_t *)&tid, sizeof(uint32_t)));
 	ben_dict_set(message->data, ben_blob("y", 1), ben_blob("q", 1));
 	ben_dict_set(message->data, ben_blob("q", 1), ben_blob(query, strlen(query)));
@@ -182,9 +176,7 @@ KS_DECLARE(ks_status_t) ks_dht_message_query(ks_dht_message_t *message,
 	a = ben_dict();
 	ben_dict_set(message->data, ben_blob("a", 1), a);
 
-	if (args) {
-		*args = a;
-	}
+	if (args) *args = a;
 
 	return KS_STATUS_SUCCESS;
 }
@@ -198,20 +190,18 @@ KS_DECLARE(ks_status_t) ks_dht_message_response(ks_dht_message_t *message,
 												struct bencode **args)
 {
 	struct bencode *r;
-	
+
 	ks_assert(message);
 	ks_assert(transactionid);
-	
+
     ben_dict_set(message->data, ben_blob("t", 1), ben_blob(transactionid, transactionid_length));
 	ben_dict_set(message->data, ben_blob("y", 1), ben_blob("r", 1));
-	
+
 	// @note r joins message->data and will be freed with it
 	r = ben_dict();
 	ben_dict_set(message->data, ben_blob("r", 1), r);
 
-	if (args) {
-		*args = r;
-	}
+	if (args) *args = r;
 
 	return KS_STATUS_SUCCESS;
 }
@@ -225,20 +215,18 @@ KS_DECLARE(ks_status_t) ks_dht_message_error(ks_dht_message_t *message,
 											 struct bencode **args)
 {
 	struct bencode *e;
-	
+
 	ks_assert(message);
 	ks_assert(transactionid);
-	
+
     ben_dict_set(message->data, ben_blob("t", 1), ben_blob(transactionid, transactionid_length));
 	ben_dict_set(message->data, ben_blob("y", 1), ben_blob("e", 1));
-	
+
 	// @note r joins message->data and will be freed with it
 	e = ben_list();
 	ben_dict_set(message->data, ben_blob("e", 1), e);
 
-	if (args) {
-		*args = e;
-	}
+	if (args) *args = e;
 
 	return KS_STATUS_SUCCESS;
 }

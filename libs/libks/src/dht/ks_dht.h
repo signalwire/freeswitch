@@ -10,6 +10,7 @@ KS_BEGIN_EXTERN_C
 
 #define KS_DHT_DEFAULT_PORT 5309
 #define KS_DHT_RECV_BUFFER_SIZE 0xFFFF
+#define KS_DHT_PULSE_EXPIRATIONS 10
 
 #define KS_DHT_NODEID_SIZE 20
 
@@ -19,6 +20,7 @@ KS_BEGIN_EXTERN_C
 #define KS_DHT_MESSAGE_ERROR_MAX_SIZE 256
 
 #define KS_DHT_TRANSACTION_EXPIRATION_DELAY 30
+#define KS_DHT_SEARCH_EXPIRATION 10
 
 #define KS_DHT_STORAGEITEM_KEY_SIZE crypto_sign_PUBLICKEYBYTES
 #define KS_DHT_STORAGEITEM_SALT_MAX_SIZE 64
@@ -106,6 +108,7 @@ struct ks_dht_endpoint_s {
 	ks_dht_nodeid_t nodeid;
 	ks_sockaddr_t addr;
 	ks_socket_t sock;
+	ks_dht_node_t *node;
 };
 
 struct ks_dht_transaction_s {
@@ -150,6 +153,8 @@ struct ks_dht_s {
 	int32_t endpoints_size;
 	ks_hash_t *endpoints_hash;
 	struct pollfd *endpoints_poll;
+
+	ks_time_t pulse_expirations;
 
 	ks_q_t *send_q;
 	ks_dht_message_t *send_q_unsent;

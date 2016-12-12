@@ -62,11 +62,8 @@ KS_DECLARE(ks_status_t) ks_dht_endpoint_init(ks_dht_endpoint_t *endpoint, const 
 	ks_assert(addr);
 	ks_assert(addr->family == AF_INET || addr->family == AF_INET6);
 	
-    if (!nodeid) {
-		randombytes_buf(endpoint->nodeid.id, KS_DHT_NODEID_SIZE);
-	} else {
-		memcpy(endpoint->nodeid.id, nodeid->id, KS_DHT_NODEID_SIZE);
-	}
+    if (!nodeid) randombytes_buf(endpoint->nodeid.id, KS_DHT_NODEID_SIZE);
+	else memcpy(endpoint->nodeid.id, nodeid->id, KS_DHT_NODEID_SIZE);
 
 	endpoint->addr = *addr;
 	endpoint->sock = sock;
@@ -81,10 +78,9 @@ KS_DECLARE(ks_status_t) ks_dht_endpoint_deinit(ks_dht_endpoint_t *endpoint)
 {
 	ks_assert(endpoint);
 
-	if (endpoint->sock != KS_SOCK_INVALID) {
-		ks_socket_close(&endpoint->sock);
-		endpoint->sock = KS_SOCK_INVALID;
-	}
+	endpoint->node = NULL;
+	if (endpoint->sock != KS_SOCK_INVALID) ks_socket_close(&endpoint->sock);
+	endpoint->addr = (const ks_sockaddr_t){ 0 };
 
 	return KS_STATUS_SUCCESS;
 }
