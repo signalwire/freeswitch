@@ -59,8 +59,7 @@ int main() {
   err = ks_dht_init(dht1);
   ok(err == KS_STATUS_SUCCESS);
 
-  err = ks_dht_prealloc(&dht2, dht1->pool);
-  ok(err == KS_STATUS_SUCCESS);
+  ks_dht_prealloc(&dht2, dht1->pool);
   
   err = ks_dht_init(&dht2);
   ok(err == KS_STATUS_SUCCESS);

@@ -174,45 +174,176 @@ struct ks_dht_s {
 };
 
 /**
- *
+ * Allocator function for ks_dht_t.
+ * Should be used when a ks_dht_t is allocated on the heap, and may provide an external memory pool or allocate one internally.
+ * @param dht dereferenced out pointer to the allocated dht instance
+ * @param pool pointer to the memory pool used by the dht instance, may be NULL to create a new pool internally
+ * @param The ks_status_t result: KS_STATUS_SUCCESS, KS_STATUS_NO_MEM
  */
 KS_DECLARE(ks_status_t) ks_dht_alloc(ks_dht_t **dht, ks_pool_t *pool);
-KS_DECLARE(ks_status_t) ks_dht_prealloc(ks_dht_t *dht, ks_pool_t *pool);
+						
+/**
+ * Preallocator function for ks_dht_t.
+ * Should be used when a ks_dht_t is preallocated on the stack or within another structure, and must provide an external memory pool.
+ * @param dht pointer to the dht instance
+ * @param pool pointer to the memory pool used by the dht instance
+ */
+KS_DECLARE(void) ks_dht_prealloc(ks_dht_t *dht, ks_pool_t *pool);
+
+/**
+ * Deallocator function for ks_dht_t.
+ * Must be used when a ks_dht_t is allocated using ks_dht_alloc, will also destroy memory pool if it was created internally.
+ * @param dht dereferenced in/out pointer to the dht instance, NULL upon return
+ * @return The ks_status_t result: KS_STATUS_SUCCESS, ...
+ * @see ks_dht_deinit
+ * @see ks_pool_free
+ * @see ks_pool_close
+ */
 KS_DECLARE(ks_status_t) ks_dht_free(ks_dht_t **dht);
 
-
+/**
+ * Constructor function for ks_dht_t.
+ * Must be used regardless of how ks_dht_t is allocated, will allocate and initialize internal state including registration of message handlers.
+ * @param dht pointer to the dht instance
+ * @return The ks_status_t result: KS_STATUS_SUCCESS, ...
+ * @see ks_hash_create
+ * @see ks_dht_register_type
+ * @see ks_q_create
+ */
 KS_DECLARE(ks_status_t) ks_dht_init(ks_dht_t *dht);
+
+/**
+ * Destructor function for ks_dht_t.
+ * Must be used regardless of how ks_dht_t is allocated, will deallocate and deinitialize internal state.
+ * @param dht pointer to the dht instance
+ * @return The ks_status_t result: KS_STATUS_SUCCESS, ...
+ * @see ks_dht_storageitem_deinit
+ * @see ks_dht_storageitem_free
+ * @see ks_hash_destroy
+ * @see ks_dht_message_deinit
+ * @see ks_dht_message_free
+ * @see ks_q_destroy
+ * @see ks_dht_endpoint_deinit
+ * @see ks_dht_endpoint_free
+ * @see ks_pool_free
+ */
 KS_DECLARE(ks_status_t) ks_dht_deinit(ks_dht_t *dht);
 
-KS_DECLARE(ks_status_t) ks_dht_autoroute(ks_dht_t *dht, ks_bool_t autoroute, ks_port_t port);
+/**
+ * Enable or disable (default) autorouting support.
+ * When enabled, autorouting will allow sending to remote addresses on interfaces which are not yet bound.
+ * The address will be bound with the provided autoroute port when this occurs.
+ * @param dht pointer to the dht instance
+ * @param autoroute enable or disable autorouting
+ * @param port when enabling autorouting this port will be used to bind new addresses, may be 0 to use the default DHT port
+ */
+KS_DECLARE(void) ks_dht_autoroute(ks_dht_t *dht, ks_bool_t autoroute, ks_port_t port);
 
+/**
+ * Register a callback for a specific message type.
+ * Will overwrite any duplicate handlers.
+ * @param dht pointer to the dht instance
+ * @param value string of the type text under the 'y' key of a message
+ * @param callback the callback to be called when a message matches
+ * @return The ks_status_t result: KS_STATUS_SUCCESS, KS_STATUS_FAIL
+ */
+KS_DECLARE(ks_status_t) ks_dht_register_type(ks_dht_t *dht, const char *value, ks_dht_message_callback_t callback);
+
+/**
+ * Register a callback for a specific message query.
+ * Will overwrite any duplicate handlers.
+ * @param dht pointer to the dht instance
+ * @param value string of the type text under the 'q' key of a message
+ * @param callback the callback to be called when a message matches
+ * @return The ks_status_t result: KS_STATUS_SUCCESS, KS_STATUS_FAIL
+ */
+KS_DECLARE(ks_status_t) ks_dht_register_query(ks_dht_t *dht, const char *value, ks_dht_message_callback_t callback);
+
+/**
+ * Register a callback for a specific message error.
+ * Will overwrite any duplicate handlers.
+ * @param dht pointer to the dht instance
+ * @param value string of the errorcode under the first item of the 'e' key of a message
+ * @param callback the callback to be called when a message matches
+ * @return The ks_status_t result: KS_STATUS_SUCCESS, KS_STATUS_FAIL
+ */
+KS_DECLARE(ks_status_t) ks_dht_register_error(ks_dht_t *dht, const char *value, ks_dht_message_callback_t callback);
+
+/**
+ * Bind a local address and port for receiving UDP datagrams.
+ * @param dht pointer to the dht instance
+ * @param nodeid pointer to a nodeid for this endpoint, may be NULL to generate one randomly
+ * @param addr pointer to the remote address information
+ * @param dereferenced out pointer to the allocated endpoint, may be NULL to ignore endpoint
+ * @return The ks_status_t result: KS_STATUS_SUCCESS, KS_STATUS_FAIL, ...
+ * @see ks_socket_option
+ * @see ks_addr_bind
+ * @see ks_dht_endpoint_alloc
+ * @see ks_dht_endpoint_init
+ * @see ks_hash_insert
+ * @see ks_dhtrt_initroute
+ * @see ks_dhtrt_create_node
+ */
 KS_DECLARE(ks_status_t) ks_dht_bind(ks_dht_t *dht, const ks_dht_nodeid_t *nodeid, const ks_sockaddr_t *addr, ks_dht_endpoint_t **endpoint);
+
+/**
+ * Pulse the internals of dht.
+ * Handles receiving UDP datagrams, dispatching processing, handles expirations, throttled message sending, route table pulsing, etc.
+ * @param dht pointer to the dht instance
+ * @param timeout timeout value used when polling sockets for new UDP datagrams
+ */
 KS_DECLARE(void) ks_dht_pulse(ks_dht_t *dht, int32_t timeout);
 
-
-KS_DECLARE(ks_status_t) ks_dht_register_type(ks_dht_t *dht, const char *value, ks_dht_message_callback_t callback);
-KS_DECLARE(ks_status_t) ks_dht_register_query(ks_dht_t *dht, const char *value, ks_dht_message_callback_t callback);
 
 /**
  *
  */
 KS_DECLARE(ks_status_t) ks_dht_message_alloc(ks_dht_message_t **message, ks_pool_t *pool);
+
+/**
+ *
+ */
 KS_DECLARE(ks_status_t) ks_dht_message_prealloc(ks_dht_message_t *message, ks_pool_t *pool);
+
+/**
+ *
+ */
 KS_DECLARE(ks_status_t) ks_dht_message_free(ks_dht_message_t **message);
 
+/**
+ *
+ */
 KS_DECLARE(ks_status_t) ks_dht_message_init(ks_dht_message_t *message, ks_dht_endpoint_t *ep, ks_sockaddr_t *raddr, ks_bool_t alloc_data);
+
+/**
+ *
+ */
 KS_DECLARE(ks_status_t) ks_dht_message_deinit(ks_dht_message_t *message);
 
+/**
+ *
+ */
 KS_DECLARE(ks_status_t) ks_dht_message_parse(ks_dht_message_t *message, const uint8_t *buffer, ks_size_t buffer_length);
 
+/**
+ *
+ */
 KS_DECLARE(ks_status_t) ks_dht_message_query(ks_dht_message_t *message,
 											 uint32_t transactionid,
 											 const char *query,
 											 struct bencode **args);
+
+/**
+ *
+ */
 KS_DECLARE(ks_status_t) ks_dht_message_response(ks_dht_message_t *message,
 												uint8_t *transactionid,
 												ks_size_t transactionid_length,
 												struct bencode **args);
+
+/**
+ *
+ */
 KS_DECLARE(ks_status_t) ks_dht_message_error(ks_dht_message_t *message,
 											 uint8_t *transactionid,
 											 ks_size_t transactionid_length,
@@ -221,19 +352,28 @@ KS_DECLARE(ks_status_t) ks_dht_message_error(ks_dht_message_t *message,
 /**
  *
  */
+KS_DECLARE(ks_status_t) ks_dht_transaction_alloc(ks_dht_transaction_t **transaction, ks_pool_t *pool);
 
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht_transaction_alloc(ks_dht_transaction_t **transaction, ks_pool_t *pool);
 KS_DECLARE(ks_status_t) ks_dht_transaction_prealloc(ks_dht_transaction_t *transaction, ks_pool_t *pool);
+
+/**
+ *
+ */
 KS_DECLARE(ks_status_t) ks_dht_transaction_free(ks_dht_transaction_t **transaction);
 
 KS_DECLARE(ks_status_t) ks_dht_transaction_init(ks_dht_transaction_t *transaction,
 												 ks_sockaddr_t *raddr,
 												 uint32_t transactionid,
 												 ks_dht_message_callback_t callback);
+
+/**
+ *
+ */
 KS_DECLARE(ks_status_t) ks_dht_transaction_deinit(ks_dht_transaction_t *transaction);
+
 
 
 /**
@@ -244,10 +384,10 @@ KS_DECLARE(ks_status_t) ks_dhtrt_initroute(ks_dhtrt_routetable_t **tableP, ks_po
 KS_DECLARE(void) ks_dhtrt_deinitroute(ks_dhtrt_routetable_t **table);
 
 KS_DECLARE(ks_status_t)        ks_dhtrt_create_node(ks_dhtrt_routetable_t* table,
-                                  ks_dht_nodeid_t nodeid,
-                                  enum ks_dht_nodetype_t type,
-                                  char* ip, unsigned short port,
-                                  ks_dht_node_t** node);
+													ks_dht_nodeid_t nodeid,
+													enum ks_dht_nodetype_t type,
+													char* ip, unsigned short port,
+													ks_dht_node_t** node);
 
 KS_DECLARE(ks_status_t)        ks_dhtrt_delete_node(ks_dhtrt_routetable_t* table, ks_dht_node_t* node);
 
