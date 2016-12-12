@@ -45,7 +45,21 @@ Only use // style-comments on tempory comments that will probably be removed eve
 Add the emacs/vi comment to the bottom of every file.
 Use Doxygen for function args.
 Tabs not spaces.
+Use flags as bitwise when possible, use arrays if going beyond 32
+Typedef all enums using UPPER_CASE notation for the values
 */
+
+typedef enum {
+	SOME_FLAG_X = (1 << 0),
+	SOME_FLAG_Y = (1 << 1)
+} some_flag_type_t;
+
+typedef enum {
+	SOME_TYPE_X = 1,
+	SOME_TYPE_Y,
+	SOME_TYPE_Z
+} some_type_t;
+
 
 KS_DECLARE(ks_status_t) function_example(somedata_t **data, ks_pool_t *pool)
 {
