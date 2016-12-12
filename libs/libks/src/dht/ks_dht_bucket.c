@@ -55,7 +55,7 @@ typedef struct ks_dhtrt_bucket_entry_s {
 	uint8_t	   id[KS_DHT_NODEID_SIZE];
 	ks_dht_node_t *gptr;					/* ptr to peer */	
     enum ks_dht_nodetype_t type; 
-    enum ipfamily  family;  
+    enum ks_afflags_t  family;  
 	uint8_t	   inuse;
 	uint8_t	   outstanding_pings;
 	uint8_t	   flags;					  /* active, suspect, expired */
@@ -151,7 +151,7 @@ uint8_t ks_dhtrt_load_query(ks_dhtrt_querynodes_t *query, ks_dhtrt_sortedxors_t 
 static
 uint8_t ks_dhtrt_findclosest_bucketnodes(unsigned char *nodeid,
                                          enum ks_dht_nodetype_t type,
-                                         enum ipfamily family,
+                                         enum ks_afflags_t family,
 										 ks_dhtrt_bucket_header_t *header,
 										 ks_dhtrt_sortedxors_t *xors,
 										 unsigned char *hixor,
@@ -210,11 +210,18 @@ KS_DECLARE(ks_status_t)	 ks_dhtrt_create_node( ks_dhtrt_routetable_t *table,
 											   unsigned short port,
 											   ks_dht_node_t **node) 
 {
-	ks_dht_node_t *tnode = ks_dhtrt_find_node(table, nodeid);
+    ks_dhtrt_bucket_header_t *header = ks_dhtrt_find_bucketheader(table, nodeid.id);
+    assert(header != NULL);             /* should always find a header */
 
-	if (tnode != 0)	 return KS_STATUS_FAIL;	   /* protect against duplicates */
+    ks_dhtrt_bucket_entry_t *bentry = ks_dhtrt_find_bucketentry(header, nodeid.id);
+    if (bentry != 0) {
+       bentry->type = ks_time_now_sec();
+       (*node) = bentry->gptr;
+       return KS_STATUS_SUCCESS;
+    }
+
 	/* @todo - replace with reusable memory pool */
-	tnode = ks_pool_alloc(table->pool, sizeof(ks_dht_node_t));
+    ks_dht_node_t *tnode = ks_pool_alloc(table->pool, sizeof(ks_dht_node_t));
 	tnode->table = table;
 
 	for (int i = 0; i < 5; ++i) {
@@ -262,10 +269,13 @@ ks_status_t ks_dhtrt_insert_node(ks_dhtrt_routetable_t *table, ks_dht_node_t *no
 	int insanity = 0;
 
 	ks_dhtrt_bucket_header_t *header = ks_dhtrt_find_bucketheader(table, node->nodeid.id); 
+    assert(header != NULL);             /* should always find a header */ 
 
 	bucket = header->bucket;
 
-	assert(bucket != 0);  /* we were not able to find a bucket*/
+	if (bucket == 0) {
+       return  KS_STATUS_FAIL;  /* we were not able to find a bucket*/
+    }
 	
 	while (bucket->count == KS_DHT_BUCKETSIZE) {
 		if (insanity > 3200) assert(insanity < 3200);
@@ -932,7 +942,7 @@ void ks_dhtrt_delete_id(ks_dhtrt_bucket_t *bucket, ks_dhtrt_nodeid_t id)
 static
 uint8_t ks_dhtrt_findclosest_bucketnodes(ks_dhtrt_nodeid_t id,
                                          enum ks_dht_nodetype_t type,
-                                         enum ipfamily family,
+                                         enum ks_afflags_t family,
 										 ks_dhtrt_bucket_header_t *header,
 										 ks_dhtrt_sortedxors_t *xors,
 										 unsigned char *hixor,	  /*todo: remove */

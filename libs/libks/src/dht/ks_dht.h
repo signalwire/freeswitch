@@ -52,15 +52,15 @@ struct ks_dht_nodeid_s {
 	uint8_t id[KS_DHT_NODEID_SIZE];
 };
 
-enum ipfamily { ifv4=AF_INET, ifv6=AF_INET6, ifboth=AF_INET+AF_INET6};
-enum ks_dht_nodetype_t { ks_dht_remote_t=0x01, 
-                         ks_dht_local_t=0x02, 
-                         ks_dht_both_t=ks_dht_remote_t+ks_dht_local_t };
+enum ks_afflags_t { ifv4=AF_INET, ifv6=AF_INET6, ifboth=AF_INET+AF_INET6};
+enum ks_dht_nodetype_t { KS_DHT_REMOTE=0x01, 
+                         KS_DHT_LOCAL=0x02, 
+                         KS_DHT_BOTH=KS_DHT_REMOTE+KS_DHT_LOCAL };
 
 struct ks_dht_node_s {
     ks_dht_nodeid_t  nodeid;
     ks_sockaddr_t    addr;
-    enum ipfamily    family;                  /* AF_INET or AF_INET6 */
+    enum ks_afflags_t family;                  /* AF_INET or AF_INET6 */
     enum ks_dht_nodetype_t type;              /* local or remote */
     ks_dhtrt_routetable_t* table;
 };
@@ -73,7 +73,7 @@ struct ks_dhtrt_routetable_s {
 
 struct ks_dhtrt_querynodes_s {
     ks_dht_nodeid_t nodeid;                   /* in: id to query                   */
-    enum ipfamily  family;                    /* in: AF_INET or AF_INET6 or both   */
+    enum ks_afflags_t family;                 /* in: AF_INET or AF_INET6 or both   */
     enum ks_dht_nodetype_t type;              /* remote, local, or  both           */
     uint8_t        max;                       /* in: maximum to return             */
     uint8_t        count;                     /* out: number returned              */
