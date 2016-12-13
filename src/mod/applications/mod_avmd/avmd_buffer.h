@@ -14,6 +14,11 @@
 
 #include <stdlib.h>
 
+#ifdef WIN32
+    #include <float.h>
+    #include <inttypes.h>
+#endif
+
 #ifndef INT16_MIN
 #define INT16_MIN              (-32767-1)
 #endif
