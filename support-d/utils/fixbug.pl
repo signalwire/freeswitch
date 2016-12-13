@@ -45,6 +45,14 @@ my $r = $xs->XMLin($xml);
 my $sum = $r->{channel}->{item}->{summary};
 $sum =~ s/\"/\\"/g;
 
+my $component = $r->{channel}->{item}->{component};
+
+if(ref($component) eq 'ARRAY') {
+  $component = join(",", @{$component});
+}
+
+$component =~ s/\"/\\"/g;
+
 if ($opts{msg} eq "edit") {
   $auto = 0;
   $opts{msg} = undef;
@@ -68,9 +76,10 @@ if ($auto) {
     if ($opts{msg}) {
 	$opts{msg} =~ s/%s/$sum/;
 	$opts{msg} =~ s/%b/$opts{bug}/;
+	$opts{msg} =~ s/%c/$component/;
 	$gitcmd = "git commit $args -m \"$opts{msg}$opts{append}\"";
     } else {
-	$gitcmd = "git commit $args -m \"$opts{bug} #resolve [$sum]$opts{append}\"";
+	$gitcmd = "git commit $args -m \"$opts{bug}: [$componet] $sum$opts{append} #resolve\"";
     }
 } else {
   $gitcmd = "git commit $args -t /tmp/$opts{bug}.tmp";
