@@ -235,11 +235,12 @@ KS_DECLARE(ks_status_t)	 ks_dhtrt_create_node( ks_dhtrt_routetable_t *table,
     memcpy(tnode->nodeid.id, nodeid.id, KS_DHT_NODEID_SIZE);
     tnode->type = type;
 
-	if ((ks_addr_set(&tnode->addr, ip, port, tnode->family) != KS_STATUS_SUCCESS) || 
-		(ks_dhtrt_insert_node(table, tnode) != KS_STATUS_SUCCESS))	{ 
-		ks_pool_free(table->pool, tnode); 
-		return KS_STATUS_FAIL;
-	}
+    if (( ks_addr_set(&tnode->addr, ip, port, tnode->family) != KS_STATUS_SUCCESS) ||
+        ( ks_dhtrt_insert_node(table, tnode) != KS_STATUS_SUCCESS)                 ||
+        ( ks_rwl_create(&tnode->reflock, table->pool) !=  KS_STATUS_SUCCESS))   {
+        ks_pool_free(table->pool, tnode);
+        return KS_STATUS_FAIL;
+    }
 	
 	(*node) = tnode;
 
@@ -258,6 +259,7 @@ KS_DECLARE(ks_status_t) ks_dhtrt_delete_node(ks_dhtrt_routetable_t *table, ks_dh
 		}
 	}
 
+    ks_rwl_destroy(&node->reflock);
 	ks_pool_free(table->pool, node);
 	return KS_STATUS_SUCCESS;
 }
@@ -560,6 +562,14 @@ KS_DECLARE(uint8_t) ks_dhtrt_findclosest_nodes(ks_dhtrt_routetable_t *table, ks_
 
 	return query->count;
 }
+
+KS_DECLARE(ks_status_t) ks_dhtrt_release_node(ks_dht_node_t* node)
+{
+    return KS_STATUS_SUCCESS; 
+    /* return ks_rwl_read_unlock(node->reflock);*/
+}
+
+
 
 KS_DECLARE(void)  ks_dhtrt_process_table(ks_dhtrt_routetable_t *table)
 {

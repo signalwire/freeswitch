@@ -67,8 +67,9 @@ struct ks_dht_node_s {
     ks_dht_nodeid_t  nodeid;
     ks_sockaddr_t    addr;
     enum ks_afflags_t family;                  /* AF_INET or AF_INET6 */
-    enum ks_dht_nodetype_t type;              /* local or remote */
+    enum ks_dht_nodetype_t type;               /* local or remote */
     ks_dhtrt_routetable_t* table;
+    ks_rwl_t        *reflock;          
 };
 
 struct ks_dhtrt_routetable_s {
@@ -433,6 +434,7 @@ KS_DECLARE(ks_status_t)        ks_dhtrt_expire_node(ks_dhtrt_routetable_t* table
 
 KS_DECLARE(uint8_t)            ks_dhtrt_findclosest_nodes(ks_dhtrt_routetable_t* table, ks_dhtrt_querynodes_t* query);
 KS_DECLARE(ks_dht_node_t*)     ks_dhtrt_find_node(ks_dhtrt_routetable_t* table, ks_dht_nodeid_t id);
+KS_DECLARE(ks_status_t)        ks_dhtrt_release_node(ks_dht_node_t* node);
 
 KS_DECLARE(void)               ks_dhtrt_process_table(ks_dhtrt_routetable_t* table);
 
