@@ -5515,7 +5515,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_set_video_file(switch_core_ses
 		switch_mutex_unlock(v_engine->mh.file_read_mutex);
 
 	} else {
+		if (!fh && smh->video_write_thread) {
+			if (smh->video_write_thread_running > 0) {
+				smh->video_write_thread_running = -1;
+			}
+		}
+
 		switch_mutex_lock(v_engine->mh.file_write_mutex);
+
 		if (fh && smh->video_write_fh) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "File is already open\n");
 			smh->video_write_fh = fh;

@@ -50,6 +50,7 @@ struct png_file_context {
 	int max;
 	int samples;
 	switch_file_handle_t *audio_fh;
+	int done;
 };
 
 typedef struct png_file_context png_file_context_t;
@@ -144,6 +145,8 @@ static switch_status_t png_file_close(switch_file_handle_t *handle)
 	
 	if (context->audio_fh) switch_core_file_close(context->audio_fh);
 
+	context->done = 1;
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -151,6 +154,10 @@ static switch_status_t png_file_read(switch_file_handle_t *handle, void *data, s
 {
 
 	png_file_context_t *context = (png_file_context_t *)handle->private_info;
+
+	if (context->done) {
+		return SWITCH_STATUS_FALSE;
+	}
 
 	if (context->audio_fh) {
 		return switch_core_file_read(context->audio_fh, data, len);
@@ -182,6 +189,10 @@ static switch_status_t png_file_read_video(switch_file_handle_t *handle, switch_
 	png_file_context_t *context = (png_file_context_t *)handle->private_info;
 	switch_image_t *dup = NULL;
 	int have_frame = 0;
+
+	if (context->done) {
+		return SWITCH_STATUS_FALSE;
+	}
 
 	if ((flags & SVR_CHECK)) {
 		return SWITCH_STATUS_BREAK;
