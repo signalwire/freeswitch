@@ -53,7 +53,7 @@ KS_DECLARE(ks_status_t) ks_dht_search_free(ks_dht_search_t **search)
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht_search_init(ks_dht_search_t *search, const ks_dht_nodeid_t *target, ks_dht_search_callback_t callback)
+KS_DECLARE(ks_status_t) ks_dht_search_init(ks_dht_search_t *search, const ks_dht_nodeid_t *target)
 {
 	ks_status_t ret = KS_STATUS_SUCCESS;
 
@@ -63,8 +63,6 @@ KS_DECLARE(ks_status_t) ks_dht_search_init(ks_dht_search_t *search, const ks_dht
 
 	if ((ret = ks_mutex_create(&search->mutex, KS_MUTEX_FLAG_DEFAULT, search->pool)) != KS_STATUS_SUCCESS) return ret;
 	memcpy(search->target.id, target->id, KS_DHT_NODEID_SIZE);
-
-	if (callback) ks_dht_search_callback_add(search, callback);
 
 	if ((ret = ks_hash_create(&search->pending,
 							  KS_HASH_MODE_ARBITRARY,
@@ -112,11 +110,14 @@ KS_DECLARE(ks_status_t) ks_dht_search_callback_add(ks_dht_search_t *search, ks_d
 	ks_assert(search);
 
 	if (callback) {
-		int32_t index = search->callbacks_size++;
+		int32_t index;
+		// @todo lock mutex
+		index = search->callbacks_size++;
 		search->callbacks = (ks_dht_search_callback_t *)ks_pool_resize(search->pool,
 																	   (void *)search->callbacks,
 																	   sizeof(ks_dht_search_callback_t) * search->callbacks_size);
 		search->callbacks[index] = callback;
+		// @todo unlock mutex
 	}
 	return KS_STATUS_SUCCESS;
 }
@@ -159,14 +160,14 @@ KS_DECLARE(ks_status_t) ks_dht_search_pending_free(ks_dht_search_pending_t **pen
 	return KS_STATUS_SUCCESS;
 }
 
-KS_DECLARE(ks_status_t) ks_dht_search_pending_init(ks_dht_search_pending_t *pending, ks_dht_node_t *node, ks_time_t expiration)
+KS_DECLARE(ks_status_t) ks_dht_search_pending_init(ks_dht_search_pending_t *pending, ks_dht_node_t *node)
 {
 	ks_assert(pending);
 	ks_assert(pending->pool);
 	ks_assert(node);
 
 	pending->node = node;
-	pending->expiration = expiration;
+	pending->expiration = ks_time_now_sec() + KS_DHT_SEARCH_EXPIRATION;
 	pending->finished = KS_FALSE;
 
 	return KS_STATUS_SUCCESS;

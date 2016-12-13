@@ -56,18 +56,18 @@ int main() {
   err = ks_dht_alloc(&dht1, NULL);
   ok(err == KS_STATUS_SUCCESS);
   
-  err = ks_dht_init(dht1);
+  err = ks_dht_init(dht1, NULL);
   ok(err == KS_STATUS_SUCCESS);
 
   ks_dht_prealloc(&dht2, dht1->pool);
   
-  err = ks_dht_init(&dht2);
+  err = ks_dht_init(&dht2, NULL);
   ok(err == KS_STATUS_SUCCESS);
 
   err = ks_dht_alloc(&dht3, NULL);
   ok(err == KS_STATUS_SUCCESS);
   
-  err = ks_dht_init(dht3);
+  err = ks_dht_init(dht3, NULL);
   ok(err == KS_STATUS_SUCCESS);
 
   
@@ -173,6 +173,8 @@ int main() {
   ks_dht_pulse(dht3, 100); // Send queued findnode from dht3 to dht1
 
   ks_dht_pulse(dht1, 100); // Receive and process findnode query from dht3, queue and send findnode response
+
+  ok(ks_dhtrt_find_node(dht1->rt_ipv4, ep3->nodeid) == NULL); // The node should be dubious, and thus not be returned as good yet
 
   ks_dht_pulse(dht3, 100); // Receive and process findnode response from dht1
 

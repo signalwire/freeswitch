@@ -9,7 +9,15 @@ KS_BEGIN_EXTERN_C
 
 
 #define KS_DHT_DEFAULT_PORT 5309
-#define KS_DHT_RECV_BUFFER_SIZE 0xFFFF
+
+#define KS_DHT_TPOOL_MIN 2
+#define KS_DHT_TPOOL_MAX 8
+#define KS_DHT_TPOOL_STACK (1024 * 256)
+#define KS_DHT_TPOOL_IDLE 10
+
+#define KS_DHT_DATAGRAM_BUFFER_SIZE 1000
+
+//#define KS_DHT_RECV_BUFFER_SIZE 0xFFFF
 #define KS_DHT_PULSE_EXPIRATIONS 10
 
 #define KS_DHT_NODEID_SIZE 20
@@ -33,6 +41,7 @@ KS_BEGIN_EXTERN_C
 #define  KS_DHTRT_MAXQUERYSIZE 20
 
 typedef struct ks_dht_s ks_dht_t;
+typedef struct ks_dht_datagram_s ks_dht_datagram_t;
 typedef struct ks_dht_nodeid_s ks_dht_nodeid_t;
 typedef struct ks_dht_token_s ks_dht_token_t;
 typedef struct ks_dht_storageitem_key_s ks_dht_storageitem_key_t;
@@ -50,6 +59,15 @@ typedef struct ks_dht_storageitem_s ks_dht_storageitem_t;
 
 typedef ks_status_t (*ks_dht_message_callback_t)(ks_dht_t *dht, ks_dht_message_t *message);
 typedef ks_status_t (*ks_dht_search_callback_t)(ks_dht_t *dht, ks_dht_search_t *search);
+
+struct ks_dht_datagram_s {
+	ks_pool_t *pool;
+	ks_dht_t *dht;
+	ks_dht_endpoint_t *endpoint;
+	ks_sockaddr_t raddr;
+	uint8_t buffer[KS_DHT_DATAGRAM_BUFFER_SIZE];
+	ks_size_t buffer_length;
+};
 
 /**
  * Note: This must remain a structure for casting from raw data
@@ -115,6 +133,8 @@ struct ks_dht_endpoint_s {
 	ks_dht_nodeid_t nodeid;
 	ks_sockaddr_t addr;
 	ks_socket_t sock;
+	// @todo make sure this node is unlocked, and never gets destroyed, should also never use local nodes in search results as they can be internal
+	// network addresses, not what others have contacted through
 	ks_dht_node_t *node;
 };
 
@@ -122,6 +142,7 @@ struct ks_dht_transaction_s {
 	ks_pool_t *pool;
 	ks_sockaddr_t raddr;
 	uint32_t transactionid;
+	ks_dht_nodeid_t target;
 	ks_dht_message_callback_t callback;
 	ks_time_t expiration;
 	ks_bool_t finished;
@@ -145,13 +166,13 @@ struct ks_dht_search_s {
 	ks_dht_search_callback_t *callbacks;
 	ks_size_t callbacks_size;
 	ks_hash_t *pending;
-	ks_dht_node_t *results[KS_DHT_SEARCH_RESULTS_MAX_SIZE];
+	ks_dht_node_t *results[KS_DHT_SEARCH_RESULTS_MAX_SIZE]; // @todo change this to track the nodeid only, and obtain the nodes only if/when needed
 	ks_size_t results_length;
 };
 
 struct ks_dht_search_pending_s {
 	ks_pool_t *pool;
-	ks_dht_node_t *node;
+	ks_dht_node_t *node; // @todo change this to track the nodeid only, and obtain the node only if/when needed
 	ks_time_t expiration;
 	ks_bool_t finished;
 };
@@ -175,6 +196,9 @@ struct ks_dht_s {
 	ks_pool_t *pool;
 	ks_bool_t pool_alloc;
 
+	ks_thread_pool_t *tpool;
+	ks_bool_t tpool_alloc;
+
 	ks_bool_t autoroute;
 	ks_port_t autoroute_port;
 	
@@ -194,7 +218,7 @@ struct ks_dht_s {
 
 	ks_q_t *send_q;
 	ks_dht_message_t *send_q_unsent;
-	uint8_t recv_buffer[KS_DHT_RECV_BUFFER_SIZE];
+	uint8_t recv_buffer[KS_DHT_DATAGRAM_BUFFER_SIZE + 1]; // Add 1, if we receive it then overflow error
 	ks_size_t recv_buffer_length;
 
 	volatile uint32_t transactionid_next;
@@ -243,12 +267,13 @@ KS_DECLARE(ks_status_t) ks_dht_free(ks_dht_t **dht);
  * Constructor function for ks_dht_t.
  * Must be used regardless of how ks_dht_t is allocated, will allocate and initialize internal state including registration of message handlers.
  * @param dht pointer to the dht instance
+ * @param tpool pointer to a thread pool, may be NULL to create a new thread pool internally
  * @return The ks_status_t result: KS_STATUS_SUCCESS, ...
  * @see ks_hash_create
  * @see ks_dht_register_type
  * @see ks_q_create
  */
-KS_DECLARE(ks_status_t) ks_dht_init(ks_dht_t *dht);
+KS_DECLARE(ks_status_t) ks_dht_init(ks_dht_t *dht, ks_thread_pool_t *tpool);
 
 /**
  * Destructor function for ks_dht_t.
