@@ -6,6 +6,10 @@
 #include <fcntl.h>
 #endif
 
+#if defined(__linux__) || defined(__GLIBC__)
+#include <byteswap.h>
+#endif
+
 #ifndef _MSC_VER
 #define ms_sleep(x)	usleep( x * 1000);
 #else
