@@ -6,21 +6,19 @@
  */
 
 #include <stdio.h>
+
 #ifdef WIN32
-#include <float.h>
-#define ISNAN(x) (!!(_isnan(x)))
-#define ISINF(x) (isinf(x))
-#else
-int __isnan(double);
-#define ISNAN(x) (__isnan(x))
-#define ISINF(x) (__isinf(x))
+    #include <float.h>
+    #define ISNAN(x) (!!(_isnan(x)))
+    #define ISINF(x) (isinf(x))
 #endif
+
 #include "avmd_buffer.h"
 #include "avmd_desa2.h"
 #include "avmd_options.h"
 
 #ifdef AVMD_FAST_MATH
-#include "avmd_fast_acosf.h"
+    #include "avmd_fast_acosf.h"
 #endif
 
 

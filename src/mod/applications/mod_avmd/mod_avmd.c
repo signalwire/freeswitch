@@ -37,16 +37,14 @@
 #include <math.h>
 
 #ifdef WIN32
-#include <float.h>
-#include <inttypes.h>
-#define ISNAN(x) (!!(_isnan(x)))
-#define ISINF(x) (isinf(x))
+    #include <float.h>
+    #define ISNAN(x) (!!(_isnan(x)))
+    #define ISINF(x) (isinf(x))
 #else
-int __isnan(double);
-#define ISNAN(x) (__isnan(x))
-#define ISINF(x) (__isinf(x))
+    int __isnan(double);
+    #define ISNAN(x) (__isnan(x))
+    #define ISINF(x) (__isinf(x))
 #endif
-
 
 #include "avmd_buffer.h"
 #include "avmd_desa2_tweaked.h"
