@@ -219,6 +219,10 @@ public class CoreSession {
     return freeswitchJNI.CoreSession_getDigits__SWIG_1(swigCPtr, this, maxdigits, terminators, timeout, interdigit);
   }
 
+  public String getDigits(int maxdigits, String terminators, int timeout, int interdigit, int abstimeout) {
+    return freeswitchJNI.CoreSession_getDigits__SWIG_2(swigCPtr, this, maxdigits, terminators, timeout, interdigit, abstimeout);
+  }
+
   public int transfer(String extension, String dialplan, String context) {
     return freeswitchJNI.CoreSession_transfer(swigCPtr, this, extension, dialplan, context);
   }

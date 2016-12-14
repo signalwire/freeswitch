@@ -47189,6 +47189,28 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_CoreSession_GetDigits__SWIG_1(void * jarg1,
 }
 
 
+SWIGEXPORT char * SWIGSTDCALL CSharp_CoreSession_GetDigits__SWIG_2(void * jarg1, int jarg2, char * jarg3, int jarg4, int jarg5, int jarg6) {
+  char * jresult ;
+  CoreSession *arg1 = (CoreSession *) 0 ;
+  int arg2 ;
+  char *arg3 = (char *) 0 ;
+  int arg4 ;
+  int arg5 ;
+  int arg6 ;
+  char *result = 0 ;
+  
+  arg1 = (CoreSession *)jarg1; 
+  arg2 = (int)jarg2; 
+  arg3 = (char *)jarg3; 
+  arg4 = (int)jarg4; 
+  arg5 = (int)jarg5; 
+  arg6 = (int)jarg6; 
+  result = (char *)(arg1)->getDigits(arg2,arg3,arg4,arg5,arg6);
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
 SWIGEXPORT int SWIGSTDCALL CSharp_CoreSession_Transfer(void * jarg1, char * jarg2, char * jarg3, char * jarg4) {
   int jresult ;
   CoreSession *arg1 = (CoreSession *) 0 ;

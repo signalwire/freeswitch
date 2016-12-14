@@ -400,6 +400,11 @@ public class CoreSession : IDisposable {
     return ret;
   }
 
+  public string GetDigits(int maxdigits, string terminators, int timeout, int interdigit, int abstimeout) {
+    string ret = freeswitchPINVOKE.CoreSession_GetDigits__SWIG_2(swigCPtr, maxdigits, terminators, timeout, interdigit, abstimeout);
+    return ret;
+  }
+
   public int Transfer(string extension, string dialplan, string context) {
     int ret = freeswitchPINVOKE.CoreSession_Transfer(swigCPtr, extension, dialplan, context);
     return ret;
@@ -19251,6 +19256,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_CoreSession_GetDigits__SWIG_1")]
   public static extern string CoreSession_GetDigits__SWIG_1(HandleRef jarg1, int jarg2, string jarg3, int jarg4, int jarg5);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_CoreSession_GetDigits__SWIG_2")]
+  public static extern string CoreSession_GetDigits__SWIG_2(HandleRef jarg1, int jarg2, string jarg3, int jarg4, int jarg5, int jarg6);
 
   [DllImport("mod_managed", EntryPoint="CSharp_CoreSession_Transfer")]
   public static extern int CoreSession_Transfer(HandleRef jarg1, string jarg2, string jarg3, string jarg4);

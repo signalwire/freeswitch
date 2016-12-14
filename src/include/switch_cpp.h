@@ -308,6 +308,7 @@ SWITCH_DECLARE(bool) email(char *to, char *from, char *headers = NULL, char *bod
 	 */
 		 SWITCH_DECLARE(char *) getDigits(int maxdigits, char *terminators, int timeout);
 		 SWITCH_DECLARE(char *) getDigits(int maxdigits, char *terminators, int timeout, int interdigit);
+		 SWITCH_DECLARE(char *) getDigits(int maxdigits, char *terminators, int timeout, int interdigit, int abstimeout);
 		 SWITCH_DECLARE(int) transfer(char *extension, char *dialplan = NULL, char *context = NULL);
 
 

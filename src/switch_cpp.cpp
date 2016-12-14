@@ -868,10 +868,16 @@ SWITCH_DECLARE(char *) CoreSession::getDigits(int maxdigits, char *terminators, 
     return getDigits(maxdigits, terminators, timeout, 0);
 }
 
+SWITCH_DECLARE(char *) CoreSession::getDigits(int maxdigits, char *terminators, int timeout, int interdigit)
+{
+    return getDigits(maxdigits, terminators, timeout, interdigit, 0);
+}
+
 SWITCH_DECLARE(char *) CoreSession::getDigits(int maxdigits, 
 											  char *terminators, 
 											  int timeout,
-											  int interdigit)
+											  int interdigit,
+											  int abstimeout)
 {
 	this_check((char *)"");
 	sanity_check((char *)"");
@@ -885,7 +891,7 @@ SWITCH_DECLARE(char *) CoreSession::getDigits(int maxdigits,
 									maxdigits, 
 									terminators, 
 									&terminator, 
-									(uint32_t) timeout, (uint32_t)interdigit, 0);
+									(uint32_t) timeout, (uint32_t)interdigit, (uint32_t)abstimeout);
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "getDigits dtmf_buf: %s\n", dtmf_buf);
 	end_allow_threads();
