@@ -405,6 +405,11 @@ public class CoreSession : IDisposable {
     return ret;
   }
 
+  public string GetDigits(int maxdigits, string terminators, int timeout, int interdigit, int abstimeout) {
+    string ret = freeswitchPINVOKE.CoreSession_GetDigits__SWIG_2(swigCPtr, maxdigits, terminators, timeout, interdigit, abstimeout);
+    return ret;
+  }
+
   public int Transfer(string extension, string dialplan, string context) {
     int ret = freeswitchPINVOKE.CoreSession_Transfer(swigCPtr, extension, dialplan, context);
     return ret;
@@ -3160,6 +3165,36 @@ else
 
   public static uint switch_core_debug_level() {
     uint ret = freeswitchPINVOKE.switch_core_debug_level();
+    return ret;
+  }
+
+  public static int switch_core_sps() {
+    int ret = freeswitchPINVOKE.switch_core_sps();
+    return ret;
+  }
+
+  public static int switch_core_sps_last() {
+    int ret = freeswitchPINVOKE.switch_core_sps_last();
+    return ret;
+  }
+
+  public static int switch_core_sps_peak() {
+    int ret = freeswitchPINVOKE.switch_core_sps_peak();
+    return ret;
+  }
+
+  public static int switch_core_sps_peak_fivemin() {
+    int ret = freeswitchPINVOKE.switch_core_sps_peak_fivemin();
+    return ret;
+  }
+
+  public static int switch_core_sessions_peak() {
+    int ret = freeswitchPINVOKE.switch_core_sessions_peak();
+    return ret;
+  }
+
+  public static int switch_core_sessions_peak_fivemin() {
+    int ret = freeswitchPINVOKE.switch_core_sessions_peak_fivemin();
     return ret;
   }
 
@@ -6365,6 +6400,11 @@ else
 
   public static switch_status_t switch_ivr_set_user(SWIGTYPE_p_switch_core_session session, string data) {
     switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_ivr_set_user(SWIGTYPE_p_switch_core_session.getCPtr(session), data);
+    return ret;
+  }
+
+  public static switch_status_t switch_ivr_set_user_extended(SWIGTYPE_p_switch_core_session session, string data, switch_event arg2) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_ivr_set_user_extended(SWIGTYPE_p_switch_core_session.getCPtr(session), data, switch_event.getCPtr(arg2));
     return ret;
   }
 
@@ -11973,6 +12013,24 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_debug_level")]
   public static extern uint switch_core_debug_level();
 
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_sps")]
+  public static extern int switch_core_sps();
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_sps_last")]
+  public static extern int switch_core_sps_last();
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_sps_peak")]
+  public static extern int switch_core_sps_peak();
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_sps_peak_fivemin")]
+  public static extern int switch_core_sps_peak_fivemin();
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_sessions_peak")]
+  public static extern int switch_core_sessions_peak();
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_sessions_peak_fivemin")]
+  public static extern int switch_core_sessions_peak_fivemin();
+
   [DllImport("mod_managed", EntryPoint="CSharp_switch_cache_db_flush_handles")]
   public static extern void switch_cache_db_flush_handles();
 
@@ -13422,6 +13480,48 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_caller_profile_event_set_data")]
   public static extern void switch_caller_profile_event_set_data(HandleRef jarg1, string jarg2, HandleRef jarg3);
 
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_frame_geometry_w_set")]
+  public static extern void switch_frame_geometry_w_set(HandleRef jarg1, uint jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_frame_geometry_w_get")]
+  public static extern uint switch_frame_geometry_w_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_frame_geometry_h_set")]
+  public static extern void switch_frame_geometry_h_set(HandleRef jarg1, uint jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_frame_geometry_h_get")]
+  public static extern uint switch_frame_geometry_h_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_frame_geometry_x_set")]
+  public static extern void switch_frame_geometry_x_set(HandleRef jarg1, uint jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_frame_geometry_x_get")]
+  public static extern uint switch_frame_geometry_x_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_frame_geometry_y_set")]
+  public static extern void switch_frame_geometry_y_set(HandleRef jarg1, uint jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_frame_geometry_y_get")]
+  public static extern uint switch_frame_geometry_y_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_frame_geometry_z_set")]
+  public static extern void switch_frame_geometry_z_set(HandleRef jarg1, uint jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_frame_geometry_z_get")]
+  public static extern uint switch_frame_geometry_z_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_frame_geometry_m_set")]
+  public static extern void switch_frame_geometry_m_set(HandleRef jarg1, uint jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_frame_geometry_m_get")]
+  public static extern uint switch_frame_geometry_m_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_new_switch_frame_geometry")]
+  public static extern IntPtr new_switch_frame_geometry();
+
+  [DllImport("mod_managed", EntryPoint="CSharp_delete_switch_frame_geometry")]
+  public static extern void delete_switch_frame_geometry(HandleRef jarg1);
+
   [DllImport("mod_managed", EntryPoint="CSharp_switch_frame_codec_set")]
   public static extern void switch_frame_codec_set(HandleRef jarg1, HandleRef jarg2);
 
@@ -13541,6 +13641,12 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_frame_img_get")]
   public static extern IntPtr switch_frame_img_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_frame_geometry_set")]
+  public static extern void switch_frame_geometry_set(HandleRef jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_frame_geometry_get")]
+  public static extern IntPtr switch_frame_geometry_get(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_new_switch_frame")]
   public static extern IntPtr new_switch_frame();
@@ -17637,6 +17743,9 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_ivr_set_user")]
   public static extern int switch_ivr_set_user(HandleRef jarg1, string jarg2);
 
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_ivr_set_user_extended")]
+  public static extern int switch_ivr_set_user_extended(HandleRef jarg1, string jarg2, HandleRef jarg3);
+
   [DllImport("mod_managed", EntryPoint="CSharp_switch_ivr_set_user_xml")]
   public static extern int switch_ivr_set_user_xml(HandleRef jarg1, string jarg2, string jarg3, string jarg4, HandleRef jarg5);
 
@@ -19475,6 +19584,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_CoreSession_GetDigits__SWIG_1")]
   public static extern string CoreSession_GetDigits__SWIG_1(HandleRef jarg1, int jarg2, string jarg3, int jarg4, int jarg5);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_CoreSession_GetDigits__SWIG_2")]
+  public static extern string CoreSession_GetDigits__SWIG_2(HandleRef jarg1, int jarg2, string jarg3, int jarg4, int jarg5, int jarg6);
 
   [DllImport("mod_managed", EntryPoint="CSharp_CoreSession_Transfer")]
   public static extern int CoreSession_Transfer(HandleRef jarg1, string jarg2, string jarg3, string jarg4);
@@ -35624,6 +35736,17 @@ public class switch_frame : IDisposable {
     } 
   }
 
+  public switch_frame_geometry geometry {
+    set {
+      freeswitchPINVOKE.switch_frame_geometry_set(swigCPtr, switch_frame_geometry.getCPtr(value));
+    } 
+    get {
+      IntPtr cPtr = freeswitchPINVOKE.switch_frame_geometry_get(swigCPtr);
+      switch_frame_geometry ret = (cPtr == IntPtr.Zero) ? null : new switch_frame_geometry(cPtr, false);
+      return ret;
+    } 
+  }
+
   public switch_frame() : this(freeswitchPINVOKE.new_switch_frame(), true) {
   }
 
@@ -35661,6 +35784,115 @@ namespace FreeSWITCH.Native {
   SFF_USE_VIDEO_TIMESTAMP = (1 << 16),
   SFF_ENCODED = (1 << 17),
   SFF_TEXT_LINE_BREAK = (1 << 18)
+}
+
+}
+/* ----------------------------------------------------------------------------
+ * This file was automatically generated by SWIG (http://www.swig.org).
+ * Version 2.0.12
+ *
+ * Do not make changes to this file unless you know what you are doing--modify
+ * the SWIG interface file instead.
+ * ----------------------------------------------------------------------------- */
+
+namespace FreeSWITCH.Native {
+
+using System;
+using System.Runtime.InteropServices;
+
+public class switch_frame_geometry : IDisposable {
+  private HandleRef swigCPtr;
+  protected bool swigCMemOwn;
+
+  internal switch_frame_geometry(IntPtr cPtr, bool cMemoryOwn) {
+    swigCMemOwn = cMemoryOwn;
+    swigCPtr = new HandleRef(this, cPtr);
+  }
+
+  internal static HandleRef getCPtr(switch_frame_geometry obj) {
+    return (obj == null) ? new HandleRef(null, IntPtr.Zero) : obj.swigCPtr;
+  }
+
+  ~switch_frame_geometry() {
+    Dispose();
+  }
+
+  public virtual void Dispose() {
+    lock(this) {
+      if (swigCPtr.Handle != IntPtr.Zero) {
+        if (swigCMemOwn) {
+          swigCMemOwn = false;
+          freeswitchPINVOKE.delete_switch_frame_geometry(swigCPtr);
+        }
+        swigCPtr = new HandleRef(null, IntPtr.Zero);
+      }
+      GC.SuppressFinalize(this);
+    }
+  }
+
+  public uint w {
+    set {
+      freeswitchPINVOKE.switch_frame_geometry_w_set(swigCPtr, value);
+    } 
+    get {
+      uint ret = freeswitchPINVOKE.switch_frame_geometry_w_get(swigCPtr);
+      return ret;
+    } 
+  }
+
+  public uint h {
+    set {
+      freeswitchPINVOKE.switch_frame_geometry_h_set(swigCPtr, value);
+    } 
+    get {
+      uint ret = freeswitchPINVOKE.switch_frame_geometry_h_get(swigCPtr);
+      return ret;
+    } 
+  }
+
+  public uint x {
+    set {
+      freeswitchPINVOKE.switch_frame_geometry_x_set(swigCPtr, value);
+    } 
+    get {
+      uint ret = freeswitchPINVOKE.switch_frame_geometry_x_get(swigCPtr);
+      return ret;
+    } 
+  }
+
+  public uint y {
+    set {
+      freeswitchPINVOKE.switch_frame_geometry_y_set(swigCPtr, value);
+    } 
+    get {
+      uint ret = freeswitchPINVOKE.switch_frame_geometry_y_get(swigCPtr);
+      return ret;
+    } 
+  }
+
+  public uint z {
+    set {
+      freeswitchPINVOKE.switch_frame_geometry_z_set(swigCPtr, value);
+    } 
+    get {
+      uint ret = freeswitchPINVOKE.switch_frame_geometry_z_get(swigCPtr);
+      return ret;
+    } 
+  }
+
+  public uint m {
+    set {
+      freeswitchPINVOKE.switch_frame_geometry_m_set(swigCPtr, value);
+    } 
+    get {
+      uint ret = freeswitchPINVOKE.switch_frame_geometry_m_get(swigCPtr);
+      return ret;
+    } 
+  }
+
+  public switch_frame_geometry() : this(freeswitchPINVOKE.new_switch_frame_geometry(), true) {
+  }
+
 }
 
 }
