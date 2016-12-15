@@ -3,7 +3,7 @@
  *
  * Copyright 1996 by Gray Watson.
  *
- * This file is part of the ks_mpool package.
+ * This file is part of the ks_pool package.
  *
  * Permission to use, copy, modify, and distribute this software for
  * any purpose and without fee is hereby granted, provided that the
@@ -1465,6 +1465,12 @@ KS_DECLARE(void *) ks_pool_alloc_ex(ks_pool_t *mp_p, const unsigned long byte_si
 		mp_p->mp_log_func(mp_p, KS_POOL_FUNC_ALLOC, byte_size, 0, addr, NULL, 0);
 	}
 
+	ks_assert(addr || (mp_p->mp_flags & KS_POOL_FLAG_NO_ASSERT));
+
+	if (!(mp_p->mp_flags & KS_POOL_FLAG_NO_ZERO)) {
+		memset(addr, 0, byte_size);
+	}
+
 	return addr;
 }
 
@@ -1552,6 +1558,12 @@ KS_DECLARE(void *) ks_pool_calloc_ex(ks_pool_t *mp_p, const unsigned long ele_n,
 
 	if (mp_p->mp_log_func != NULL) {
 		mp_p->mp_log_func(mp_p, KS_POOL_FUNC_CALLOC, ele_size, ele_n, addr, NULL, 0);
+	}
+
+	ks_assert(addr || (mp_p->mp_flags & KS_POOL_FLAG_NO_ASSERT));
+
+	if (!(mp_p->mp_flags & KS_POOL_FLAG_NO_ZERO)) {
+		memset(addr, 0, ele_n * ele_size);
 	}
 
 	return addr;
@@ -1784,6 +1796,8 @@ KS_DECLARE(void *) ks_pool_resize_ex(ks_pool_t *mp_p, void *old_addr, const unsi
  end:
 
 	ks_mutex_unlock(mp_p->mutex);
+
+	ks_assert(new_addr || (mp_p->mp_flags & KS_POOL_FLAG_NO_ASSERT));
 
 	return new_addr;
 }

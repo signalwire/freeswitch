@@ -34,8 +34,9 @@ KS_BEGIN_EXTERN_C
 
 typedef enum {
 	KS_POOL_FLAG_DEFAULT = 0,
-
 	KS_POOL_FLAG_BEST_FIT = (1 << 0),
+	KS_POOL_FLAG_NO_ASSERT = (1 << 1),
+	KS_POOL_FLAG_NO_ZERO = (1 << 2),
 /*
  * Choose a best fit algorithm not first fit.  This takes more CPU
  * time but will result in a tighter heap.
