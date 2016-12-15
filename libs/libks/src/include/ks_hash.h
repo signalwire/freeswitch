@@ -95,7 +95,8 @@ typedef enum {
 	KS_HASH_FLAG_FREE_KEY = (1 << 1),
 	KS_HASH_FLAG_FREE_VALUE = (1 << 2),
 	KS_HASH_FLAG_RWLOCK = (1 << 3),
-	KS_HASH_FLAG_DUP_CHECK = (1 << 4)
+	KS_HASH_FLAG_DUP_CHECK = (1 << 4),
+	KS_HASH_FLAG_NOLOCK = (1 << 5)
 } ks_hash_flag_t;
 
 #define KS_HASH_FREE_BOTH KS_HASH_FLAG_FREE_KEY | KS_HASH_FLAG_FREE_VALUE
@@ -134,7 +135,7 @@ ks_hash_create_ex(ks_hash_t **hp, unsigned int minsize,
  * @param   h   the ks_hash to insert into
  * @param   k   the key - ks_hash claims ownership and will free on removal
  * @param   v   the value - does not claim ownership
- * @return      non-zero for successful insertion
+ * @return      KS_STATUS_SUCCESS for successful insertion
  *
  * This function will cause the table to expand if the insertion would take
  * the ratio of entries to table size over the maximum load factor.
@@ -147,7 +148,7 @@ ks_hash_create_ex(ks_hash_t **hp, unsigned int minsize,
  */
 
 
-KS_DECLARE(int) ks_hash_insert_ex(ks_hash_t *h, void *k, void *v, ks_hash_flag_t flags, ks_hash_destructor_t destructor);
+KS_DECLARE(ks_status_t) ks_hash_insert_ex(ks_hash_t *h, void *k, void *v, ks_hash_flag_t flags, ks_hash_destructor_t destructor);
 #define ks_hash_insert(_h, _k, _v) ks_hash_insert_ex(_h, _k, _v, 0, NULL)
 
 #define DEFINE_KS_HASH_INSERT(fnname, keytype, valuetype)		\
