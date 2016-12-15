@@ -19,7 +19,7 @@ int main() {
   ks_status_t err;
   int mask = 0;
   ks_dht_t *dht1 = NULL;
-  ks_dht_t dht2;
+  ks_dht_t *dht2 = NULL;
   ks_dht_t *dht3 = NULL;
   ks_dht_endpoint_t *ep1;
   ks_dht_endpoint_t *ep2;
@@ -53,23 +53,15 @@ int main() {
 	  diag("Binding to %s on ipv6\n", v6);
   }
 
-  err = ks_dht_alloc(&dht1, NULL);
+  err = ks_dht_create(&dht1, NULL, NULL);
   ok(err == KS_STATUS_SUCCESS);
   
-  err = ks_dht_init(dht1, NULL);
+  err = ks_dht_create(&dht2, NULL, NULL);
   ok(err == KS_STATUS_SUCCESS);
 
-  ks_dht_prealloc(&dht2, dht1->pool);
-  
-  err = ks_dht_init(&dht2, NULL);
-  ok(err == KS_STATUS_SUCCESS);
-
-  err = ks_dht_alloc(&dht3, NULL);
+  err = ks_dht_create(&dht3, NULL, NULL);
   ok(err == KS_STATUS_SUCCESS);
   
-  err = ks_dht_init(dht3, NULL);
-  ok(err == KS_STATUS_SUCCESS);
-
   
   ks_dht_register_type(dht1, "z", dht_z_callback);
   
@@ -85,7 +77,7 @@ int main() {
 	err = ks_addr_set(&addr, v4, KS_DHT_DEFAULT_PORT + 1, AF_INET);
 	ok(err == KS_STATUS_SUCCESS);
 	
-	err = ks_dht_bind(&dht2, NULL, &addr, &ep2);
+	err = ks_dht_bind(dht2, NULL, &addr, &ep2);
 	ok(err == KS_STATUS_SUCCESS);
 
 	//raddr2 = addr;
@@ -109,7 +101,7 @@ int main() {
 	err = ks_addr_set(&addr, v6, KS_DHT_DEFAULT_PORT + 1, AF_INET6);
 	ok(err == KS_STATUS_SUCCESS);
 
-	err = ks_dht_bind(&dht2, NULL, &addr, NULL);
+	err = ks_dht_bind(dht2, NULL, &addr, NULL);
 	ok(err == KS_STATUS_SUCCESS);
 
 	err = ks_addr_set(&addr, v6, KS_DHT_DEFAULT_PORT + 2, AF_INET6);
@@ -143,24 +135,24 @@ int main() {
   
   diag("Ping test\n");
   
-  ks_dht_send_ping(&dht2, ep2, &raddr1); // Queue bootstrap ping from dht2 to dht1
+  ks_dht_send_ping(dht2, ep2, &raddr1); // Queue bootstrap ping from dht2 to dht1
 
-  ks_dht_pulse(&dht2, 100); // Send queued ping from dht2 to dht1
+  ks_dht_pulse(dht2, 100); // Send queued ping from dht2 to dht1
   
   ks_dht_pulse(dht1, 100); // Receive and process ping query from dht2, queue and send ping response
 
   ok(ks_dhtrt_find_node(dht1->rt_ipv4, ep2->nodeid) == NULL); // The node should be dubious, and thus not be returned as good yet
 
-  ks_dht_pulse(&dht2, 100); // Receive and process ping response from dht1
+  ks_dht_pulse(dht2, 100); // Receive and process ping response from dht1
 
-  ok(ks_dhtrt_find_node(dht2.rt_ipv4, ep1->nodeid) != NULL); // The node should be good, and thus be returned as good
+  ok(ks_dhtrt_find_node(dht2->rt_ipv4, ep1->nodeid) != NULL); // The node should be good, and thus be returned as good
 
-  diag("Pulsing for route table pings\n"); // Wait a second for route table pinging to catch up
+  diag("Pulsing for route table pings\n"); // Wait for route table pinging to catch up
   for (int i = 0; i < 10; ++i) {
 	  diag("DHT 1\n");
 	  ks_dht_pulse(dht1, 100);
 	  diag("DHT 2\n");
-	  ks_dht_pulse(&dht2, 100);
+	  ks_dht_pulse(dht2, 100);
   }
   ok(ks_dhtrt_find_node(dht1->rt_ipv4, ep2->nodeid) != NULL); // The node should be good by now, and thus be returned as good
   
@@ -180,35 +172,26 @@ int main() {
 
   ok(ks_dhtrt_find_node(dht3->rt_ipv4, ep2->nodeid) == NULL); // The node should be dubious, and thus not be returned as good yet
   
-  diag("Pulsing for route table pings\n"); // Wait a second for route table pinging to catch up
+  diag("Pulsing for route table pings\n"); // Wait for route table pinging to catch up
   for (int i = 0; i < 10; ++i) {
 	  diag("DHT 1\n");
 	  ks_dht_pulse(dht1, 100);
 	  diag("DHT 2\n");
-	  ks_dht_pulse(&dht2, 100);
+	  ks_dht_pulse(dht2, 100);
   }
   ok(ks_dhtrt_find_node(dht3->rt_ipv4, ep2->nodeid) != NULL); // The node should be good by now, and thus be returned as good
 
-  diag("Cleanup\n");
+
   /* Cleanup and shutdown */
+  diag("Cleanup\n");
 
-  err = ks_dht_deinit(dht3);
-  ok(err == KS_STATUS_SUCCESS);
+  ks_dht_destroy(&dht3);
 
-  err = ks_dht_free(&dht3);
-  ok(err == KS_STATUS_SUCCESS);
+  ks_dht_destroy(&dht2);
 
-  err = ks_dht_deinit(&dht2);
-  ok(err == KS_STATUS_SUCCESS);
+  ks_dht_destroy(&dht1);
 
-  err = ks_dht_deinit(dht1);
-  ok(err == KS_STATUS_SUCCESS);
-
-  err = ks_dht_free(&dht1);
-  ok(err == KS_STATUS_SUCCESS);
-  
-  err = ks_shutdown();
-  ok(err == KS_STATUS_SUCCESS);
+  ks_shutdown();
   
   done_testing();
 }

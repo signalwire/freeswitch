@@ -220,7 +220,6 @@ KS_DECLARE(ks_status_t) ks_dht_send_findnode(ks_dht_t *dht, ks_dht_endpoint_t *e
 KS_DECLARE(ks_status_t) ks_dht_send_get(ks_dht_t *dht, ks_dht_endpoint_t *ep, ks_sockaddr_t *raddr, ks_dht_nodeid_t *targetid);
 
 KS_DECLARE(void *)ks_dht_process(ks_thread_t *thread, void *data);
-KS_DECLARE(ks_status_t) ks_dht_process_(ks_dht_t *dht, ks_dht_endpoint_t *ep, ks_sockaddr_t *raddr);
 
 KS_DECLARE(ks_status_t) ks_dht_process_query(ks_dht_t *dht, ks_dht_message_t *message);
 KS_DECLARE(ks_status_t) ks_dht_process_response(ks_dht_t *dht, ks_dht_message_t *message);
@@ -242,80 +241,60 @@ KS_DECLARE(ks_status_t) ks_dht_process_response_put(ks_dht_t *dht, ks_dht_messag
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht_datagram_alloc(ks_dht_datagram_t **datagram, ks_pool_t *pool);
-KS_DECLARE(void) ks_dht_datagram_prealloc(ks_dht_datagram_t *datagram, ks_pool_t *pool);
-KS_DECLARE(ks_status_t) ks_dht_datagram_free(ks_dht_datagram_t **datagram);
+KS_DECLARE(ks_status_t) ks_dht_datagram_create(ks_dht_datagram_t **datagram,
+											   ks_pool_t *pool,
+											   ks_dht_t *dht,
+											   ks_dht_endpoint_t *endpoint,
+											   const ks_sockaddr_t *raddr);
+KS_DECLARE(void) ks_dht_datagram_destroy(ks_dht_datagram_t **datagram);
 
-KS_DECLARE(ks_status_t) ks_dht_datagram_init(ks_dht_datagram_t *datagram,
-											 ks_dht_t *dht,
-											 ks_dht_endpoint_t *endpoint,
-											 const ks_sockaddr_t *raddr);
-KS_DECLARE(ks_status_t) ks_dht_datagram_deinit(ks_dht_datagram_t *datagram);
 
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht_endpoint_alloc(ks_dht_endpoint_t **endpoint, ks_pool_t *pool);
-KS_DECLARE(ks_status_t) ks_dht_endpoint_prealloc(ks_dht_endpoint_t *endpoint, ks_pool_t *pool);
-KS_DECLARE(ks_status_t) ks_dht_endpoint_free(ks_dht_endpoint_t **endpoint);
+KS_DECLARE(ks_status_t) ks_dht_endpoint_create(ks_dht_endpoint_t **endpoint,
+											   ks_pool_t *pool,
+											   const ks_dht_nodeid_t *nodeid,
+											   const ks_sockaddr_t *addr,
+											   ks_socket_t sock);
+KS_DECLARE(void) ks_dht_endpoint_destroy(ks_dht_endpoint_t **endpoint);
 
-KS_DECLARE(ks_status_t) ks_dht_endpoint_init(ks_dht_endpoint_t *endpoint,
-											 const ks_dht_nodeid_t *nodeid,
-											 const ks_sockaddr_t *addr,
-											 ks_socket_t sock);
-KS_DECLARE(ks_status_t) ks_dht_endpoint_deinit(ks_dht_endpoint_t *endpoint);
 
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht_search_alloc(ks_dht_search_t **search, ks_pool_t *pool);
-KS_DECLARE(void) ks_dht_search_prealloc(ks_dht_search_t *search, ks_pool_t *pool);
-KS_DECLARE(ks_status_t) ks_dht_search_free(ks_dht_search_t **search);
-
-KS_DECLARE(ks_status_t) ks_dht_search_init(ks_dht_search_t *search, const ks_dht_nodeid_t *target);
-KS_DECLARE(ks_status_t) ks_dht_search_deinit(ks_dht_search_t *search);
+KS_DECLARE(ks_status_t) ks_dht_search_create(ks_dht_search_t **search, ks_pool_t *pool, const ks_dht_nodeid_t *target);
+KS_DECLARE(void) ks_dht_search_destroy(ks_dht_search_t **search);
 
 KS_DECLARE(ks_status_t) ks_dht_search_callback_add(ks_dht_search_t *search, ks_dht_search_callback_t callback);
 
-KS_DECLARE(ks_status_t) ks_dht_search_pending_alloc(ks_dht_search_pending_t **pending, ks_pool_t *pool);
-KS_DECLARE(void) ks_dht_search_pending_prealloc(ks_dht_search_pending_t *pending, ks_pool_t *pool);
-KS_DECLARE(ks_status_t) ks_dht_search_pending_free(ks_dht_search_pending_t **pending);
+KS_DECLARE(ks_status_t) ks_dht_search_pending_create(ks_dht_search_pending_t **pending, ks_pool_t *pool, const ks_dht_nodeid_t *nodeid);
+KS_DECLARE(void) ks_dht_search_pending_destroy(ks_dht_search_pending_t **pending);
 
-KS_DECLARE(ks_status_t) ks_dht_search_pending_init(ks_dht_search_pending_t *pending, ks_dht_node_t *node);
-KS_DECLARE(ks_status_t) ks_dht_search_pending_deinit(ks_dht_search_pending_t *pending);
 
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht_storageitem_alloc(ks_dht_storageitem_t **item, ks_pool_t *pool);
-KS_DECLARE(ks_status_t) ks_dht_storageitem_prealloc(ks_dht_storageitem_t *item, ks_pool_t *pool);
-KS_DECLARE(ks_status_t) ks_dht_storageitem_free(ks_dht_storageitem_t **item);
+KS_DECLARE(ks_status_t) ks_dht_storageitem_create_immutable(ks_dht_storageitem_t **item, ks_pool_t *pool, struct bencode *v);
+KS_DECLARE(ks_status_t) ks_dht_storageitem_create_mutable(ks_dht_storageitem_t **item,
+														  ks_pool_t *pool,
+														  struct bencode *v,
+														  ks_dht_storageitem_key_t *k,
+														  uint8_t *salt,
+														  ks_size_t salt_length,
+														  int64_t sequence,
+														  ks_dht_storageitem_signature_t *signature);
+KS_DECLARE(void) ks_dht_storageitem_destroy(ks_dht_storageitem_t **item);
 
-KS_DECLARE(ks_status_t) ks_dht_storageitem_init(ks_dht_storageitem_t *item, struct bencode *v);
-KS_DECLARE(ks_status_t) ks_dht_storageitem_deinit(ks_dht_storageitem_t *item);
-
-KS_DECLARE(ks_status_t) ks_dht_storageitem_create(ks_dht_storageitem_t *item, ks_bool_t mutable);
-KS_DECLARE(ks_status_t) ks_dht_storageitem_immutable(ks_dht_storageitem_t *item);
-KS_DECLARE(ks_status_t) ks_dht_storageitem_mutable(ks_dht_storageitem_t *item,
-												   ks_dht_storageitem_key_t *k,
-												   uint8_t *salt,
-												   ks_size_t salt_length,
-												   int64_t sequence,
-												   ks_dht_storageitem_signature_t *signature);
 /**
  *
  */
-//KS_DECLARE(ks_status_t) ks_dht_node_alloc(ks_dht_node_t **node, ks_pool_t *pool);
-//KS_DECLARE(ks_status_t) ks_dht_node_prealloc(ks_dht_node_t *node, ks_pool_t *pool);
-//KS_DECLARE(ks_status_t) ks_dht_node_free(ks_dht_node_t *node);
-
-//KS_DECLARE(ks_status_t) ks_dht_node_init(ks_dht_node_t *node, const ks_dht_nodeid_t *id, const ks_sockaddr_t *addr);
-//KS_DECLARE(ks_status_t) ks_dht_node_deinit(ks_dht_node_t *node);
-
-//KS_DECLARE(ks_status_t) ks_dht_node_address_check(ks_dht_node_t *node, const ks_sockaddr_t *addr);
-//KS_DECLARE(ks_bool_t) ks_dht_node_address_exists(ks_dht_node_t *node, const ks_sockaddr_t *addr);
-//KS_DECLARE(ks_status_t) ks_dht_node_address_add(ks_dht_node_t *node, const ks_sockaddr_t *addr);
-
+KS_DECLARE(ks_status_t) ks_dht_transaction_create(ks_dht_transaction_t **transaction,
+												  ks_pool_t *pool,
+												  ks_sockaddr_t *raddr,
+												  uint32_t transactionid,
+												  ks_dht_message_callback_t callback);
+KS_DECLARE(void) ks_dht_transaction_destroy(ks_dht_transaction_t **transaction);
 
 KS_END_EXTERN_C
 

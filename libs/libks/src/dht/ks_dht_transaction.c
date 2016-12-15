@@ -1,92 +1,52 @@
 #include "ks_dht.h"
 #include "ks_dht-int.h"
 
-/**
- *
- */
-KS_DECLARE(ks_status_t) ks_dht_transaction_alloc(ks_dht_transaction_t **transaction, ks_pool_t *pool)
+KS_DECLARE(ks_status_t) ks_dht_transaction_create(ks_dht_transaction_t **transaction,
+												  ks_pool_t *pool,
+												  ks_sockaddr_t *raddr,
+												  uint32_t transactionid,
+												  ks_dht_message_callback_t callback)
 {
-	ks_dht_transaction_t *tran;
+	ks_dht_transaction_t *t;
+	ks_status_t ret = KS_STATUS_SUCCESS;
 
 	ks_assert(transaction);
 	ks_assert(pool);
+	ks_assert(raddr);
 
-	*transaction = tran = ks_pool_alloc(pool, sizeof(ks_dht_transaction_t));
-	tran->pool = pool;
+	*transaction = t = ks_pool_alloc(pool, sizeof(ks_dht_transaction_t));
+	if (!t) {
+		ret = KS_STATUS_NO_MEM;
+		goto done;
+	}
+	t->pool = pool;
 
-	return KS_STATUS_SUCCESS;
+	t->raddr = *raddr;
+	t->transactionid = transactionid;
+	t->callback = callback;
+	t->expiration = ks_time_now_sec() + KS_DHT_TRANSACTION_EXPIRATION_DELAY;
+
+ done:
+	if (ret != KS_STATUS_SUCCESS) {
+		if (t) ks_dht_transaction_destroy(&t);
+		*transaction = NULL;
+	}
+	return ret;
 }
 
-/**
- *
- */
-KS_DECLARE(ks_status_t) ks_dht_transaction_prealloc(ks_dht_transaction_t *transaction, ks_pool_t *pool)
+KS_DECLARE(void) ks_dht_transaction_destroy(ks_dht_transaction_t **transaction)
 {
-	ks_assert(transaction);
-	ks_assert(pool);
+	ks_dht_transaction_t *t;
 
-	memset(transaction, 0, sizeof(ks_dht_transaction_t));
-
-	transaction->pool = pool;
-
-	return KS_STATUS_SUCCESS;
-}
-
-/**
- *
- */
-KS_DECLARE(ks_status_t) ks_dht_transaction_free(ks_dht_transaction_t **transaction)
-{
 	ks_assert(transaction);
 	ks_assert(*transaction);
 
-	ks_dht_transaction_deinit(*transaction);
-	ks_pool_free((*transaction)->pool, *transaction);
+	t = *transaction;
+
+	ks_pool_free(t->pool, t);
 
 	*transaction = NULL;
-
-	return KS_STATUS_SUCCESS;
 }
-												
-
-/**
- *
- */
-KS_DECLARE(ks_status_t) ks_dht_transaction_init(ks_dht_transaction_t *transaction,
-												ks_sockaddr_t *raddr,
-												uint32_t transactionid,
-												ks_dht_message_callback_t callback)
-{
-	ks_assert(transaction);
-	ks_assert(raddr);
-	ks_assert(transaction->pool);
-	ks_assert(callback);
-
-	transaction->raddr = *raddr;
-	transaction->transactionid = transactionid;
-	transaction->callback = callback;
-	transaction->expiration = ks_time_now_sec() + KS_DHT_TRANSACTION_EXPIRATION_DELAY;
-	transaction->finished = KS_FALSE;
-
-	return KS_STATUS_SUCCESS;
-}
-
-/**
- *
- */
-KS_DECLARE(ks_status_t) ks_dht_transaction_deinit(ks_dht_transaction_t *transaction)
-{
-	ks_assert(transaction);
-
-	transaction->raddr = (const ks_sockaddr_t){ 0 };
-	transaction->transactionid = 0;
-	transaction->callback = NULL;
-	transaction->expiration = 0;
-	transaction->finished = KS_FALSE;
-
-	return KS_STATUS_SUCCESS;
-}
-
 
 /* For Emacs:
  * Local Variables:

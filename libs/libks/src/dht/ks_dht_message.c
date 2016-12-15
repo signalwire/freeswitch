@@ -4,85 +4,58 @@
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht_message_alloc(ks_dht_message_t **message, ks_pool_t *pool)
+KS_DECLARE(ks_status_t) ks_dht_message_create(ks_dht_message_t **message,
+											  ks_pool_t *pool,
+											  ks_dht_endpoint_t *endpoint,
+											  ks_sockaddr_t *raddr,
+											  ks_bool_t alloc_data)
 {
-	ks_dht_message_t *msg;
+	ks_dht_message_t *m;
+	ks_status_t ret = KS_STATUS_SUCCESS;
 
 	ks_assert(message);
 	ks_assert(pool);
 
-	*message = msg = ks_pool_alloc(pool, sizeof(ks_dht_message_t));
-	msg->pool = pool;
+	*message = m = ks_pool_alloc(pool, sizeof(ks_dht_message_t));
+	if (!m) {
+		ret = KS_STATUS_NO_MEM;
+		goto done;
+	}
+	m->pool = pool;
 
-	return KS_STATUS_SUCCESS;
+	m->endpoint = endpoint;
+	m->raddr = *raddr;
+	if (alloc_data) m->data = ben_dict();
+
+ done:
+	if (ret != KS_STATUS_SUCCESS) {
+		if (m) ks_dht_message_destroy(&m);
+		*message = NULL;
+	}
+	return ret;
 }
 
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht_message_prealloc(ks_dht_message_t *message, ks_pool_t *pool)
+KS_DECLARE(void) ks_dht_message_destroy(ks_dht_message_t **message)
 {
-	ks_assert(message);
-	ks_assert(pool);
+	ks_dht_message_t *m;
 
-	memset(message, 0, sizeof(ks_dht_message_t));
-
-	message->pool = pool;
-
-	return KS_STATUS_SUCCESS;
-}
-
-/**
- *
- */
-KS_DECLARE(ks_status_t) ks_dht_message_free(ks_dht_message_t **message)
-{
 	ks_assert(message);
 	ks_assert(*message);
 
-	ks_dht_message_deinit(*message);
-	ks_pool_free((*message)->pool, *message);
+	m = *message;
+
+    if (m->data) {
+		ben_free(m->data);
+		m->data = NULL;
+	}
+	ks_pool_free(m->pool, *message);
 
 	*message = NULL;
-
-	return KS_STATUS_SUCCESS;
 }
 
-
-/**
- *
- */
-KS_DECLARE(ks_status_t) ks_dht_message_init(ks_dht_message_t *message, ks_dht_endpoint_t *ep, ks_sockaddr_t *raddr, ks_bool_t alloc_data)
-{
-	ks_assert(message);
-	ks_assert(message->pool);
-
-	message->endpoint = ep;
-	message->raddr = *raddr;
-	if (alloc_data) message->data = ben_dict();
-
-	return KS_STATUS_SUCCESS;
-}
-
-/**
- *
- */
-KS_DECLARE(ks_status_t) ks_dht_message_deinit(ks_dht_message_t *message)
-{
-	ks_assert(message);
-
-	message->endpoint = NULL;
-	message->raddr = (const ks_sockaddr_t){ 0 };
-	message->args = NULL;
-	message->type[0] = '\0';
-	message->transactionid_length = 0;
-	if (message->data) {
-		ben_free(message->data);
-		message->data = NULL;
-	}
-
-	return KS_STATUS_SUCCESS;
-}
 
 /**
  *
@@ -104,7 +77,7 @@ KS_DECLARE(ks_status_t) ks_dht_message_parse(ks_dht_message_t *message, const ui
     message->data = ben_decode((const void *)buffer, buffer_length);
 	if (!message->data) {
 		ks_log(KS_LOG_DEBUG, "Message cannot be decoded\n");
-		goto failure;
+		return KS_STATUS_FAIL;
 	}
 
 	ks_log(KS_LOG_DEBUG, "Message decoded\n");
@@ -113,14 +86,14 @@ KS_DECLARE(ks_status_t) ks_dht_message_parse(ks_dht_message_t *message, const ui
     t = ben_dict_get_by_str(message->data, "t");
 	if (!t) {
 		ks_log(KS_LOG_DEBUG, "Message missing required key 't'\n");
-		goto failure;
+		return KS_STATUS_FAIL;
 	}
 
 	tv = ben_str_val(t);
 	tv_len = ben_str_len(t);
 	if (tv_len > KS_DHT_MESSAGE_TRANSACTIONID_MAX_SIZE) {
 		ks_log(KS_LOG_DEBUG, "Message 't' value has an unexpectedly large size of %d\n", tv_len);
-		goto failure;
+		return KS_STATUS_FAIL;
 	}
 
 	memcpy(message->transactionid, tv, tv_len);
@@ -131,14 +104,14 @@ KS_DECLARE(ks_status_t) ks_dht_message_parse(ks_dht_message_t *message, const ui
     y = ben_dict_get_by_str(message->data, "y");
 	if (!y) {
 		ks_log(KS_LOG_DEBUG, "Message missing required key 'y'\n");
-		goto failure;
+		return KS_STATUS_FAIL;
 	}
 
 	yv = ben_str_val(y);
 	yv_len = ben_str_len(y);
 	if (yv_len >= KS_DHT_MESSAGE_TYPE_MAX_SIZE) {
 		ks_log(KS_LOG_DEBUG, "Message 'y' value has an unexpectedly large size of %d\n", yv_len);
-		goto failure;
+		return KS_STATUS_FAIL;
 	}
 
 	memcpy(message->type, yv, yv_len);
@@ -146,10 +119,6 @@ KS_DECLARE(ks_status_t) ks_dht_message_parse(ks_dht_message_t *message, const ui
 	ks_log(KS_LOG_DEBUG, "Message type is '%s'\n", message->type);
 
 	return KS_STATUS_SUCCESS;
-
- failure:
-	ks_dht_message_deinit(message);
-	return KS_STATUS_FAIL;
 }
 
 /**

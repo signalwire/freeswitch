@@ -124,6 +124,7 @@ struct ks_dht_message_s {
 	struct bencode *data;
 	uint8_t transactionid[KS_DHT_MESSAGE_TRANSACTIONID_MAX_SIZE];
 	ks_size_t transactionid_length;
+	ks_dht_transaction_t *transaction;
 	char type[KS_DHT_MESSAGE_TYPE_MAX_SIZE];
 	struct bencode *args;
 };
@@ -166,13 +167,14 @@ struct ks_dht_search_s {
 	ks_dht_search_callback_t *callbacks;
 	ks_size_t callbacks_size;
 	ks_hash_t *pending;
-	ks_dht_node_t *results[KS_DHT_SEARCH_RESULTS_MAX_SIZE]; // @todo change this to track the nodeid only, and obtain the nodes only if/when needed
+	ks_dht_nodeid_t results[KS_DHT_SEARCH_RESULTS_MAX_SIZE];
+	ks_dht_nodeid_t distances[KS_DHT_SEARCH_RESULTS_MAX_SIZE];
 	ks_size_t results_length;
 };
 
 struct ks_dht_search_pending_s {
 	ks_pool_t *pool;
-	ks_dht_node_t *node; // @todo change this to track the nodeid only, and obtain the node only if/when needed
+	ks_dht_nodeid_t nodeid;
 	ks_time_t expiration;
 	ks_bool_t finished;
 };
@@ -221,6 +223,7 @@ struct ks_dht_s {
 	uint8_t recv_buffer[KS_DHT_DATAGRAM_BUFFER_SIZE + 1]; // Add 1, if we receive it then overflow error
 	ks_size_t recv_buffer_length;
 
+	ks_mutex_t *tid_mutex;
 	volatile uint32_t transactionid_next;
 	ks_hash_t *transactions_hash;
 
@@ -236,61 +239,21 @@ struct ks_dht_s {
 };
 
 /**
- * Allocator function for ks_dht_t.
- * Should be used when a ks_dht_t is allocated on the heap, and may provide an external memory pool or allocate one internally.
+ * Constructor function for ks_dht_t.
+ * Will allocate and initialize internal state including registration of message handlers.
  * @param dht dereferenced out pointer to the allocated dht instance
- * @param pool pointer to the memory pool used by the dht instance, may be NULL to create a new pool internally
- * @param The ks_status_t result: KS_STATUS_SUCCESS, KS_STATUS_NO_MEM
+ * @param pool pointer to the memory pool used by the dht instance, may be NULL to create a new memory pool internally
+ * @param tpool pointer to a thread pool used by the dht instance, may be NULL to create a new thread pool internally
+ * @return The ks_status_t result: KS_STATUS_SUCCESS, KS_STATUS_NO_MEM
  */
-KS_DECLARE(ks_status_t) ks_dht_alloc(ks_dht_t **dht, ks_pool_t *pool);
+KS_DECLARE(ks_status_t) ks_dht_create(ks_dht_t **dht, ks_pool_t *pool, ks_thread_pool_t *tpool);
 						
 /**
- * Preallocator function for ks_dht_t.
- * Should be used when a ks_dht_t is preallocated on the stack or within another structure, and must provide an external memory pool.
- * @param dht pointer to the dht instance
- * @param pool pointer to the memory pool used by the dht instance
- */
-KS_DECLARE(void) ks_dht_prealloc(ks_dht_t *dht, ks_pool_t *pool);
-
-/**
- * Deallocator function for ks_dht_t.
- * Must be used when a ks_dht_t is allocated using ks_dht_alloc, will also destroy memory pool if it was created internally.
- * @param dht dereferenced in/out pointer to the dht instance, NULL upon return
- * @return The ks_status_t result: KS_STATUS_SUCCESS, ...
- * @see ks_dht_deinit
- * @see ks_pool_free
- * @see ks_pool_close
- */
-KS_DECLARE(ks_status_t) ks_dht_free(ks_dht_t **dht);
-
-/**
- * Constructor function for ks_dht_t.
- * Must be used regardless of how ks_dht_t is allocated, will allocate and initialize internal state including registration of message handlers.
- * @param dht pointer to the dht instance
- * @param tpool pointer to a thread pool, may be NULL to create a new thread pool internally
- * @return The ks_status_t result: KS_STATUS_SUCCESS, ...
- * @see ks_hash_create
- * @see ks_dht_register_type
- * @see ks_q_create
- */
-KS_DECLARE(ks_status_t) ks_dht_init(ks_dht_t *dht, ks_thread_pool_t *tpool);
-
-/**
  * Destructor function for ks_dht_t.
- * Must be used regardless of how ks_dht_t is allocated, will deallocate and deinitialize internal state.
- * @param dht pointer to the dht instance
- * @return The ks_status_t result: KS_STATUS_SUCCESS, ...
- * @see ks_dht_storageitem_deinit
- * @see ks_dht_storageitem_free
- * @see ks_hash_destroy
- * @see ks_dht_message_deinit
- * @see ks_dht_message_free
- * @see ks_q_destroy
- * @see ks_dht_endpoint_deinit
- * @see ks_dht_endpoint_free
- * @see ks_pool_free
+ * Will deinitialize and deallocate internal state.
+ * @param dht dereferenced in/out pointer to the dht instance, NULL upon return
  */
-KS_DECLARE(ks_status_t) ks_dht_deinit(ks_dht_t *dht);
+KS_DECLARE(void) ks_dht_destroy(ks_dht_t **dht);
 
 /**
  * Enable or disable (default) autorouting support.
@@ -361,27 +324,15 @@ KS_DECLARE(void) ks_dht_pulse(ks_dht_t *dht, int32_t timeout);
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht_message_alloc(ks_dht_message_t **message, ks_pool_t *pool);
-
+KS_DECLARE(ks_status_t) ks_dht_message_create(ks_dht_message_t **message,
+											  ks_pool_t *pool,
+											  ks_dht_endpoint_t *endpoint,
+											  ks_sockaddr_t *raddr,
+											  ks_bool_t alloc_data);
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht_message_prealloc(ks_dht_message_t *message, ks_pool_t *pool);
-
-/**
- *
- */
-KS_DECLARE(ks_status_t) ks_dht_message_free(ks_dht_message_t **message);
-
-/**
- *
- */
-KS_DECLARE(ks_status_t) ks_dht_message_init(ks_dht_message_t *message, ks_dht_endpoint_t *ep, ks_sockaddr_t *raddr, ks_bool_t alloc_data);
-
-/**
- *
- */
-KS_DECLARE(ks_status_t) ks_dht_message_deinit(ks_dht_message_t *message);
+KS_DECLARE(void) ks_dht_message_destroy(ks_dht_message_t **message);
 
 /**
  *
@@ -411,32 +362,6 @@ KS_DECLARE(ks_status_t) ks_dht_message_error(ks_dht_message_t *message,
 											 uint8_t *transactionid,
 											 ks_size_t transactionid_length,
 											 struct bencode **args);
-
-/**
- *
- */
-KS_DECLARE(ks_status_t) ks_dht_transaction_alloc(ks_dht_transaction_t **transaction, ks_pool_t *pool);
-
-/**
- *
- */
-KS_DECLARE(ks_status_t) ks_dht_transaction_prealloc(ks_dht_transaction_t *transaction, ks_pool_t *pool);
-
-/**
- *
- */
-KS_DECLARE(ks_status_t) ks_dht_transaction_free(ks_dht_transaction_t **transaction);
-
-KS_DECLARE(ks_status_t) ks_dht_transaction_init(ks_dht_transaction_t *transaction,
-												 ks_sockaddr_t *raddr,
-												 uint32_t transactionid,
-												 ks_dht_message_callback_t callback);
-
-/**
- *
- */
-KS_DECLARE(ks_status_t) ks_dht_transaction_deinit(ks_dht_transaction_t *transaction);
-
 
 
 /**

@@ -2,24 +2,29 @@
 #include "ks_dht-int.h"
 #include "sodium.h"
 
-KS_DECLARE(ks_status_t) ks_dht_alloc(ks_dht_t **dht, ks_pool_t *pool)
+KS_DECLARE(ks_status_t) ks_dht_create(ks_dht_t **dht, ks_pool_t *pool, ks_thread_pool_t *tpool)
 {
 	ks_bool_t pool_alloc = !pool;
-	ks_dht_t *d;
+	ks_dht_t *d = NULL;
+	ks_status_t ret = KS_STATUS_SUCCESS;
 
 	ks_assert(dht);
+
+	*dht = NULL;
 
 	/**
 	 * Create a new internally managed pool if one wasn't provided, and returns KS_STATUS_NO_MEM if pool was not created.
 	 */
-	if (pool_alloc) ks_pool_open(&pool);
-	if (!pool) return KS_STATUS_NO_MEM;
-	
+	if (pool_alloc && (ret = ks_pool_open(&pool)) != KS_STATUS_SUCCESS) goto done;
+
 	/**
 	 * Allocate the dht instance from the pool, and returns KS_STATUS_NO_MEM if the dht was not created.
 	 */
 	*dht = d = ks_pool_alloc(pool, sizeof(ks_dht_t));
-	if (!d) return KS_STATUS_NO_MEM;
+	if (!d) {
+		ret = KS_STATUS_NO_MEM;
+		goto done;
+	}
 
 	/**
 	 * Keep track of the pool used for future allocations and cleanup.
@@ -28,350 +33,339 @@ KS_DECLARE(ks_status_t) ks_dht_alloc(ks_dht_t **dht, ks_pool_t *pool)
 	d->pool = pool;
 	d->pool_alloc = pool_alloc;
 
-	return KS_STATUS_SUCCESS;
-}
-
-KS_DECLARE(void) ks_dht_prealloc(ks_dht_t *dht, ks_pool_t *pool)
-{
-	ks_assert(dht);
-	ks_assert(pool);
-
-	/**
-	 * Treat preallocate function like allocate, zero the memory like pool allocations do.
-	 */
-	memset(dht, 0, sizeof(ks_dht_t));
-
-	/**
-	 * Keep track of the pool used for future allocations, pool must
-	 */
-	dht->pool = pool;
-	dht->pool_alloc = KS_FALSE;
-}
-
-KS_DECLARE(ks_status_t) ks_dht_free(ks_dht_t **dht)
-{
-	ks_pool_t *pool = NULL;
-	ks_bool_t pool_alloc = KS_FALSE;
-	ks_status_t ret = KS_STATUS_SUCCESS;
-	
-	ks_assert(dht);
-	ks_assert(*dht);
-
-	/**
-	 * Call ks_dht_deinit to ensure everything has been cleaned up internally.
-	 * The pool member variables must not be messed with in deinit, they are managed at the allocator layer.
-	 */
-	if ((ret = ks_dht_deinit(*dht)) != KS_STATUS_SUCCESS) return ret;
-	
-	/**
-	 * Temporarily store the allocator level variables because freeing the dht instance will invalidate it.
-	 */
-	pool = (*dht)->pool;
-	pool_alloc = (*dht)->pool_alloc;
-	
-	/**
-	 * Free the dht instance from the pool, after this the dht instance memory is invalid.
-	 */
-	if ((ret = ks_pool_free((*dht)->pool, *dht)) != KS_STATUS_SUCCESS) return ret;
-
-	/**
-	 * At this point dht instance is invalidated so NULL the pointer.
-	 */
-	*dht = NULL;
-
-	/**
-	 * If the pool was allocated internally, destroy it using the temporary variables stored earlier.
-	 * If this fails, something catastrophically bad happened like memory corruption.
-	 */
-	if (pool_alloc && (ret = ks_pool_close(&pool)) != KS_STATUS_SUCCESS) return ret;
-	
-
-	return KS_STATUS_SUCCESS;
-}
-												
-
-KS_DECLARE(ks_status_t) ks_dht_init(ks_dht_t *dht, ks_thread_pool_t *tpool)
-{
-	ks_status_t ret = KS_STATUS_SUCCESS;
-	
-	ks_assert(dht);
-	ks_assert(dht->pool);
-
 	/**
 	 * Create a new internally managed thread pool if one wasn't provided.
 	 */
+	d->tpool = tpool;
 	if (!tpool) {
-		if ((ret = ks_thread_pool_create(&tpool,
+		d->tpool_alloc = KS_TRUE;
+		if ((ret = ks_thread_pool_create(&d->tpool,
 										 KS_DHT_TPOOL_MIN,
 										 KS_DHT_TPOOL_MAX,
 										 KS_DHT_TPOOL_STACK,
 										 KS_PRI_NORMAL,
-										 KS_DHT_TPOOL_IDLE)) != KS_STATUS_SUCCESS) return ret;
-		dht->tpool_alloc = KS_TRUE;
+										 KS_DHT_TPOOL_IDLE)) != KS_STATUS_SUCCESS) goto done;
 	}
-	dht->tpool = tpool;
 
 	/**
 	 * Default autorouting to disabled.
 	 */
-	dht->autoroute = KS_FALSE;
-	dht->autoroute_port = 0;
+	d->autoroute = KS_FALSE;
+	d->autoroute_port = 0;
 
 	/**
 	 * Create the message type registry.
 	 */
-	if ((ret = ks_hash_create(&dht->registry_type,
+	if ((ret = ks_hash_create(&d->registry_type,
 							  KS_HASH_MODE_DEFAULT,
 							  KS_HASH_FLAG_RWLOCK | KS_HASH_FLAG_DUP_CHECK,
-							  dht->pool)) != KS_STATUS_SUCCESS) return ret;
+							  d->pool)) != KS_STATUS_SUCCESS) goto done;
 
 	/**
 	 * Register the message type callbacks for query (q), response (r), and error (e)
 	 */
-	ks_dht_register_type(dht, "q", ks_dht_process_query);
-	ks_dht_register_type(dht, "r", ks_dht_process_response);
-	ks_dht_register_type(dht, "e", ks_dht_process_error);
+	ks_dht_register_type(d, "q", ks_dht_process_query);
+	ks_dht_register_type(d, "r", ks_dht_process_response);
+	ks_dht_register_type(d, "e", ks_dht_process_error);
 
 	/**
 	 * Create the message query registry.
 	 */
-	if ((ret = ks_hash_create(&dht->registry_query,
+	if ((ret = ks_hash_create(&d->registry_query,
 							  KS_HASH_MODE_DEFAULT,
 							  KS_HASH_FLAG_RWLOCK | KS_HASH_FLAG_DUP_CHECK,
-							  dht->pool)) != KS_STATUS_SUCCESS) return ret;
+							  d->pool)) != KS_STATUS_SUCCESS) goto done;
 
 	/**
 	 * Register the message query callbacks for ping, find_node, etc.
 	 */
-	ks_dht_register_query(dht, "ping", ks_dht_process_query_ping);
-	ks_dht_register_query(dht, "find_node", ks_dht_process_query_findnode);
-	ks_dht_register_query(dht, "get", ks_dht_process_query_get);
-	ks_dht_register_query(dht, "put", ks_dht_process_query_put);
+	ks_dht_register_query(d, "ping", ks_dht_process_query_ping);
+	ks_dht_register_query(d, "find_node", ks_dht_process_query_findnode);
+	ks_dht_register_query(d, "get", ks_dht_process_query_get);
+	ks_dht_register_query(d, "put", ks_dht_process_query_put);
 
 	/**
 	 * Create the message error registry.
 	 */
-	if ((ret = ks_hash_create(&dht->registry_error,
+	if ((ret = ks_hash_create(&d->registry_error,
 							  KS_HASH_MODE_DEFAULT,
 							  KS_HASH_FLAG_RWLOCK | KS_HASH_FLAG_DUP_CHECK,
-							  dht->pool)) != KS_STATUS_SUCCESS) return ret;
+							  d->pool)) != KS_STATUS_SUCCESS) goto done;
 	// @todo register 301 error for internal get/put CAS hash mismatch retry handler
 
 	/**
 	 * Default these to FALSE, binding will set them TRUE when a respective address is bound.
 	 * @todo these may not be useful anymore they are from legacy code
 	 */
-    dht->bind_ipv4 = KS_FALSE;
-	dht->bind_ipv6 = KS_FALSE;
+    d->bind_ipv4 = KS_FALSE;
+	d->bind_ipv6 = KS_FALSE;
 
 	/**
 	 * Initialize the data used to track endpoints to NULL, binding will handle latent allocations.
 	 * The endpoints and endpoints_poll arrays are maintained in parallel to optimize polling.
 	 */
-	dht->endpoints = NULL;
-	dht->endpoints_size = 0;
-	dht->endpoints_poll = NULL;
+	d->endpoints = NULL;
+	d->endpoints_size = 0;
+	d->endpoints_poll = NULL;
 
 	/**
 	 * Create the endpoints hash for fast lookup, this is used to route externally provided remote addresses when the local endpoint is unknown.
 	 * This also provides the basis for autorouting to find unbound interfaces and bind them at runtime.
 	 * This hash uses the host ip string concatenated with a colon and the port, ie: "123.123.123.123:123" or ipv6 equivilent
 	 */
-	if ((ret = ks_hash_create(&dht->endpoints_hash,
+	if ((ret = ks_hash_create(&d->endpoints_hash,
 							  KS_HASH_MODE_DEFAULT,
 							  KS_HASH_FLAG_RWLOCK,
-							  dht->pool)) != KS_STATUS_SUCCESS) return ret;
+							  d->pool)) != KS_STATUS_SUCCESS) goto done;
 
 	/**
 	 * Default expirations to not be checked for one pulse.
 	 */
-	dht->pulse_expirations = ks_time_now_sec() + KS_DHT_PULSE_EXPIRATIONS;
+	d->pulse_expirations = ks_time_now_sec() + KS_DHT_PULSE_EXPIRATIONS;
 
 	/**
 	 * Create the queue for outgoing messages, this ensures sending remains async and can be throttled when system buffers are full.
 	 */
-	if ((ret = ks_q_create(&dht->send_q, dht->pool, 0)) != KS_STATUS_SUCCESS) return ret;
+	if ((ret = ks_q_create(&d->send_q, d->pool, 0)) != KS_STATUS_SUCCESS) goto done;
 	
 	/**
 	 * If a message is popped from the queue for sending but the system buffers are too full, this is used to temporarily store the message.
 	 */
-	dht->send_q_unsent = NULL;
+	d->send_q_unsent = NULL;
 
 	/**
 	 * The dht uses a single internal large receive buffer for receiving all frames, this may change in the future to offload processing to a threadpool.
 	 */
-	dht->recv_buffer_length = 0;
+	d->recv_buffer_length = 0;
+
+	/**
+	 * Initialize the transaction id mutex, should use atomic increment instead
+	 */
+	if ((ret = ks_mutex_create(&d->tid_mutex, KS_MUTEX_FLAG_DEFAULT, d->pool)) != KS_STATUS_SUCCESS) goto done;
 
 	/**
 	 * Initialize the first transaction id randomly, this doesn't really matter.
 	 */
-	dht->transactionid_next = 1; //rand();
+	d->transactionid_next = 1; //rand();
 
 	/**
 	 * Create the hash to track pending transactions on queries that are pending responses.
 	 * It should be impossible to receive a duplicate transaction id in the hash before it expires, but if it does an error is preferred.
 	 */
-	if ((ret = ks_hash_create(&dht->transactions_hash,
+	if ((ret = ks_hash_create(&d->transactions_hash,
 							  KS_HASH_MODE_INT,
 							  KS_HASH_FLAG_RWLOCK,
-							  dht->pool)) != KS_STATUS_SUCCESS) return ret;
+							  d->pool)) != KS_STATUS_SUCCESS) goto done;
 
 	/**
 	 * The internal route tables will be latent allocated when binding.
 	 */
-	dht->rt_ipv4 = NULL;
-	dht->rt_ipv6 = NULL;
+	d->rt_ipv4 = NULL;
+	d->rt_ipv6 = NULL;
 
+	/**
+	 * Create the hash to store searches.
+	 */
+	if ((ret = ks_hash_create(&d->search_hash,
+							  KS_HASH_MODE_ARBITRARY,
+							  KS_HASH_FLAG_RWLOCK | KS_HASH_FLAG_DUP_CHECK,
+							  d->pool)) != KS_STATUS_SUCCESS) goto done;
+	/**
+	 * The search hash uses arbitrary key size, which requires the key size be provided.
+	 */
+	ks_hash_set_keysize(d->search_hash, KS_DHT_NODEID_SIZE);
+	
 	/**
 	 * The opaque write tokens require some entropy for generating which needs to change periodically but accept tokens using the last two secrets.
 	 */
-	dht->token_secret_current = dht->token_secret_previous = rand();
-	dht->token_secret_expiration = ks_time_now_sec() + KS_DHT_TOKENSECRET_EXPIRATION;
+	d->token_secret_current = d->token_secret_previous = rand();
+	d->token_secret_expiration = ks_time_now_sec() + KS_DHT_TOKENSECRET_EXPIRATION;
 
 	/**
 	 * Create the hash to store arbitrary data for BEP44.
 	 */
-	if ((ret = ks_hash_create(&dht->storage_hash,
+	if ((ret = ks_hash_create(&d->storage_hash,
 							  KS_HASH_MODE_ARBITRARY,
 							  KS_HASH_FLAG_RWLOCK | KS_HASH_FLAG_DUP_CHECK,
-							  dht->pool)) != KS_STATUS_SUCCESS) return ret;
+							  d->pool)) != KS_STATUS_SUCCESS) goto done;
 	/**
 	 * The storage hash uses arbitrary key size, which requires the key size be provided, they are the same size as nodeid's.
 	 */
-	ks_hash_set_keysize(dht->storage_hash, KS_DHT_NODEID_SIZE);
+	ks_hash_set_keysize(d->storage_hash, KS_DHT_NODEID_SIZE);
 
-	return KS_STATUS_SUCCESS;
+ done:
+	if (ret != KS_STATUS_SUCCESS) {
+		if (d) ks_dht_destroy(&d);
+		else if (pool_alloc && pool) ks_pool_close(&pool);
+
+		*dht = NULL;
+	}
+	return ret;
 }
 
-KS_DECLARE(ks_status_t) ks_dht_deinit(ks_dht_t *dht)
+KS_DECLARE(void) ks_dht_destroy(ks_dht_t **dht)
 {
-	ks_hash_iterator_t *it;
-	ks_status_t ret = KS_STATUS_SUCCESS;
-
+	ks_dht_t *d = NULL;
+	ks_pool_t *pool = NULL;
+	ks_bool_t pool_alloc = KS_FALSE;
+	ks_hash_iterator_t *it = NULL;
+	
 	ks_assert(dht);
+	ks_assert(*dht);
+
+	d = *dht;
 
 	/**
 	 * Cleanup the storage hash and it's contents if it is allocated.
 	 */
-	if (dht->storage_hash) {
-		for (it = ks_hash_first(dht->storage_hash, KS_UNLOCKED); it; it = ks_hash_next(&it)) {
-			const void *key;
+	if (d->storage_hash) {
+		for (it = ks_hash_first(d->storage_hash, KS_UNLOCKED); it; it = ks_hash_next(&it)) {
 			ks_dht_storageitem_t *val;
-			ks_hash_this(it, &key, NULL, (void **)&val);
-			if ((ret = ks_dht_storageitem_deinit(val)) != KS_STATUS_SUCCESS) return ret;
-			if ((ret = ks_dht_storageitem_free(&val)) != KS_STATUS_SUCCESS) return ret;
+
+			ks_hash_this_val(it, (void **)&val);
+
+			ks_dht_storageitem_destroy(&val);
 		}
-		ks_hash_destroy(&dht->storage_hash);
+		ks_hash_destroy(&d->storage_hash);
 	}
 
 	/**
 	 * Zero out the opaque write token variables.
 	 */
-	dht->token_secret_current = 0;
-	dht->token_secret_previous = 0;
-	dht->token_secret_expiration = 0;
+	d->token_secret_current = 0;
+	d->token_secret_previous = 0;
+	d->token_secret_expiration = 0;
+
+	/**
+	 * Cleanup the search hash and it's contents if it is allocated.
+	 */
+	if (d->search_hash) {
+		for (it = ks_hash_first(d->search_hash, KS_UNLOCKED); it; it = ks_hash_next(&it)) {
+			ks_dht_search_t *val;
+
+			ks_hash_this_val(it, (void **)&val);
+			ks_dht_search_destroy(&val);
+		}
+		ks_hash_destroy(&d->search_hash);
+	}
 
 	/**
 	 * Cleanup the route tables if they are allocated.
+	 * @todo check if endpoints need to be destroyed first to release the readlock on their node
 	 */
-	if (dht->rt_ipv4) ks_dhtrt_deinitroute(&dht->rt_ipv4);
-	if (dht->rt_ipv6) ks_dhtrt_deinitroute(&dht->rt_ipv6);
+	if (d->rt_ipv4) ks_dhtrt_deinitroute(&d->rt_ipv4);
+	if (d->rt_ipv6) ks_dhtrt_deinitroute(&d->rt_ipv6);
 
 	/**
-	 * Cleanup the transactions hash if it is allocated.
+	 * Cleanup the transactions mutex and hash if they are allocated.
 	 */
-	dht->transactionid_next = 0;
-	if (dht->transactions_hash) ks_hash_destroy(&dht->transactions_hash);
+	d->transactionid_next = 0;
+	if (d->tid_mutex) ks_mutex_destroy(&d->tid_mutex);
+	if (d->transactions_hash) ks_hash_destroy(&d->transactions_hash);
 
 	/**
 	 * Probably don't need this, recv_buffer_length is temporary and may change
 	 */
-	dht->recv_buffer_length = 0;
+	d->recv_buffer_length = 0;
 
 	/**
 	 * Cleanup the send queue and it's contents if it is allocated.
 	 */
-	if (dht->send_q) {
+	if (d->send_q) {
 		ks_dht_message_t *msg;
-		while (ks_q_pop_timeout(dht->send_q, (void **)&msg, 1) == KS_STATUS_SUCCESS && msg) {
-			if ((ret = ks_dht_message_deinit(msg)) != KS_STATUS_SUCCESS) return ret;
-			if ((ret = ks_dht_message_free(&msg)) != KS_STATUS_SUCCESS) return ret;
-		}
-		if ((ret = ks_q_destroy(&dht->send_q)) != KS_STATUS_SUCCESS) return ret;
+		while (ks_q_pop_timeout(d->send_q, (void **)&msg, 1) == KS_STATUS_SUCCESS && msg) ks_dht_message_destroy(&msg);
+		ks_q_destroy(&d->send_q);
 	}
 	
 	/**
 	 * Cleanup the cached popped message if it is set.
 	 */
-	if (dht->send_q_unsent) {
-		if ((ret = ks_dht_message_deinit(dht->send_q_unsent)) != KS_STATUS_SUCCESS) return ret;
-		if ((ret = ks_dht_message_free(&dht->send_q_unsent)) != KS_STATUS_SUCCESS) return ret;
-	}
+	if (d->send_q_unsent) ks_dht_message_destroy(&d->send_q_unsent);
 
 	/**
 	 * Probably don't need this
 	 */
-	dht->pulse_expirations = 0;
+	d->pulse_expirations = 0;
 
 	/**
 	 * Cleanup any endpoints that have been allocated.
 	 */
-	for (int32_t i = 0; i < dht->endpoints_size; ++i) {
-		ks_dht_endpoint_t *ep = dht->endpoints[i];
-		if ((ret = ks_dht_endpoint_deinit(ep)) != KS_STATUS_SUCCESS) return ret;
-		if ((ret = ks_dht_endpoint_free(&ep)) != KS_STATUS_SUCCESS) return ret;
+	for (int32_t i = 0; i < d->endpoints_size; ++i) {
+		ks_dht_endpoint_t *ep = d->endpoints[i];
+		ks_dht_endpoint_destroy(&ep);
 	}
-	dht->endpoints_size = 0;
+	d->endpoints_size = 0;
 
 	/**
 	 * Cleanup the array of endpoint pointers if it is allocated.
 	 */
-	if (dht->endpoints) {
-		if ((ret = ks_pool_free(dht->pool, dht->endpoints)) != KS_STATUS_SUCCESS) return ret;
-		dht->endpoints = NULL;
+	if (d->endpoints) {
+		ks_pool_free(d->pool, d->endpoints);
+		d->endpoints = NULL;
 	}
 
 	/**
 	 * Cleanup the array of endpoint polling data if it is allocated.
 	 */
-	if (dht->endpoints_poll) {
-		if ((ret = ks_pool_free(dht->pool, dht->endpoints_poll)) != KS_STATUS_SUCCESS) return ret;
-		dht->endpoints_poll = NULL;
+	if (d->endpoints_poll) {
+		ks_pool_free(d->pool, d->endpoints_poll);
+		d->endpoints_poll = NULL;
 	}
 
 	/**
 	 * Cleanup the endpoints hash if it is allocated.
 	 */
-	if (dht->endpoints_hash) ks_hash_destroy(&dht->endpoints_hash);
+	if (d->endpoints_hash) ks_hash_destroy(&d->endpoints_hash);
 
 	/**
 	 * Probably don't need this
 	 */
-	dht->bind_ipv4 = KS_FALSE;
-	dht->bind_ipv6 = KS_FALSE;
+	d->bind_ipv4 = KS_FALSE;
+	d->bind_ipv6 = KS_FALSE;
 
 	/**
 	 * Cleanup the type, query, and error registries if they have been allocated.
 	 */
-	if (dht->registry_type) ks_hash_destroy(&dht->registry_type);
-	if (dht->registry_query) ks_hash_destroy(&dht->registry_query);
-	if (dht->registry_error) ks_hash_destroy(&dht->registry_error);
+	if (d->registry_type) ks_hash_destroy(&d->registry_type);
+	if (d->registry_query) ks_hash_destroy(&d->registry_query);
+	if (d->registry_error) ks_hash_destroy(&d->registry_error);
 
 	/**
 	 * Probably don't need this
 	 */
-	dht->autoroute = KS_FALSE;
-	dht->autoroute_port = 0;
+	d->autoroute = KS_FALSE;
+	d->autoroute_port = 0;
 
 	/**
 	 * If the thread pool was allocated internally, destroy it.
 	 * If this fails, something catastrophically bad happened like memory corruption.
 	 */
-	if (dht->tpool_alloc && (ret = ks_thread_pool_destroy(&dht->tpool)) != KS_STATUS_SUCCESS) return ret;
-	dht->tpool_alloc = KS_FALSE;
+	if (d->tpool_alloc) ks_thread_pool_destroy(&d->tpool);
+	d->tpool_alloc = KS_FALSE;
 
-	return KS_STATUS_SUCCESS;
+	/**
+	 * Temporarily store the allocator level variables because freeing the dht instance will invalidate it.
+	 */
+	pool = d->pool;
+	pool_alloc = d->pool_alloc;
+	
+	/**
+	 * Free the dht instance from the pool, after this the dht instance memory is invalid.
+	 */
+	ks_pool_free(d->pool, d);
+
+	/**
+	 * At this point dht instance is invalidated so NULL the pointer.
+	 */
+	*dht = d = NULL;
+
+	/**
+	 * If the pool was allocated internally, destroy it using the temporary variables stored earlier.
+	 * If this fails, something catastrophically bad happened like memory corruption.
+	 */
+	if (pool_alloc) ks_pool_close(&pool);
 }
+												
 
 KS_DECLARE(void) ks_dht_autoroute(ks_dht_t *dht, ks_bool_t autoroute, ks_port_t port)
 {
@@ -520,12 +514,7 @@ KS_DECLARE(ks_status_t) ks_dht_bind(ks_dht_t *dht, const ks_dht_nodeid_t *nodeid
 	/**
 	 * Allocate the endpoint to track the local socket.
 	 */
-	if ((ret = ks_dht_endpoint_alloc(&ep, dht->pool)) != KS_STATUS_SUCCESS) goto done;
-
-	/**
-	 * Initialize the node, may provide NULL nodeid to have one generated internally.
-	 */
-	if ((ret = ks_dht_endpoint_init(ep, nodeid, addr, sock)) != KS_STATUS_SUCCESS) goto done;
+	if ((ret = ks_dht_endpoint_create(&ep, dht->pool, nodeid, addr, sock)) != KS_STATUS_SUCCESS) goto done;
 
 	/**
 	 * Resize the endpoints array to take another endpoint pointer.
@@ -591,14 +580,13 @@ KS_DECLARE(ks_status_t) ks_dht_bind(ks_dht_t *dht, const ks_dht_nodeid_t *nodeid
 	if (ret != KS_STATUS_SUCCESS) {
 		/**
 		 * If any failures occur, we need to make sure the socket is properly closed.
-		 * This will be done in ks_dht_endpoint_deinit only if the socket was assigned during a successful ks_dht_endpoint_init.
+		 * This will be done in ks_dht_endpoint_destroy only if the socket was assigned during a successful ks_dht_endpoint_create.
 		 * Then return whatever failure condition resulted in landed here.
 		 */
-		if (sock != KS_SOCK_INVALID && ep && ep->sock == KS_SOCK_INVALID) ks_socket_close(&sock);
-		if (ep) {
-			ks_dht_endpoint_deinit(ep);
-			ks_dht_endpoint_free(&ep);
-		}
+		if (ep) ks_dht_endpoint_destroy(&ep);
+		else if (sock != KS_SOCK_INVALID) ks_socket_close(&sock);
+
+		if (endpoint) *endpoint = NULL;
 	}
 	return ret;
 }
@@ -607,48 +595,36 @@ KS_DECLARE(void) ks_dht_pulse(ks_dht_t *dht, int32_t timeout)
 {
 	ks_dht_datagram_t *datagram = NULL;
 	int32_t result;
+	ks_sockaddr_t raddr;
 
 	ks_assert(dht);
-	ks_assert (timeout >= 0);
+	ks_assert (timeout > 0);
 
-	// @todo why was old DHT code checking for poll descriptor resizing here?
-
-	if (timeout == 0) {
-		// @todo deal with default timeout, should return quickly but not hog the CPU polling
-	}
+	if (dht->send_q_unsent || ks_q_size(dht->send_q) > 0) timeout = 0;
 
 	result = ks_poll(dht->endpoints_poll, dht->endpoints_size, timeout);
 	if (result > 0) {
 		for (int32_t i = 0; i < dht->endpoints_size; ++i) {
-			if (dht->endpoints_poll[i].revents & POLLIN) {
-				ks_sockaddr_t raddr = KS_SA_INIT;
-				dht->recv_buffer_length = sizeof(dht->recv_buffer);
-
-				raddr.family = dht->endpoints[i]->addr.family;
-				if (ks_socket_recvfrom(dht->endpoints_poll[i].fd, dht->recv_buffer, &dht->recv_buffer_length, &raddr) == KS_STATUS_SUCCESS) {
-					if (dht->recv_buffer_length == sizeof(dht->recv_buffer)) {
-						ks_log(KS_LOG_DEBUG, "Dropped oversize datagram from %s %d\n", raddr.host, raddr.port);
-					} else {
-						// @todo check for recycled datagrams
-						if (ks_dht_datagram_alloc(&datagram, dht->pool) == KS_STATUS_SUCCESS) {
-							if (ks_dht_datagram_init(datagram, dht, dht->endpoints[i], &raddr) != KS_STATUS_SUCCESS) {
-								// @todo add to recycled datagrams
-								ks_dht_datagram_free(&datagram);
-							} else if (ks_thread_pool_add_job(dht->tpool, ks_dht_process, datagram) != KS_STATUS_SUCCESS) {
-								// @todo add to recycled datagrams
-								ks_dht_datagram_deinit(datagram);
-								ks_dht_datagram_free(&datagram);
-							}
-						}
-					}
-				}
+			if (!(dht->endpoints_poll[i].revents & POLLIN)) continue;
+			
+			raddr = (const ks_sockaddr_t){ 0 };
+			dht->recv_buffer_length = sizeof(dht->recv_buffer);
+			raddr.family = dht->endpoints[i]->addr.family;
+			if (ks_socket_recvfrom(dht->endpoints_poll[i].fd, dht->recv_buffer, &dht->recv_buffer_length, &raddr) != KS_STATUS_SUCCESS) continue;
+			
+			if (dht->recv_buffer_length == sizeof(dht->recv_buffer)) {
+				ks_log(KS_LOG_DEBUG, "Dropped oversize datagram from %s %d\n", raddr.host, raddr.port);
+				continue;
 			}
+			
+			if (ks_dht_datagram_create(&datagram, dht->pool, dht, dht->endpoints[i], &raddr) == KS_STATUS_SUCCESS &&
+				ks_thread_pool_add_job(dht->tpool, ks_dht_process, datagram) != KS_STATUS_SUCCESS) ks_dht_datagram_destroy(&datagram);
 		}
 	}
 
-	ks_dht_pulse_expirations(dht);
-
 	ks_dht_pulse_send(dht);
+
+	ks_dht_pulse_expirations(dht);
 
 	if (dht->rt_ipv4) ks_dhtrt_process_table(dht->rt_ipv4);
 	if (dht->rt_ipv6) ks_dhtrt_process_table(dht->rt_ipv6);
@@ -678,8 +654,8 @@ KS_DECLARE(void) ks_dht_pulse_expirations(ks_dht_t *dht)
 			remove = KS_TRUE;
 		}
 		if (remove) {
-			ks_hash_remove(dht->transactions_hash, (char *)key);
-			ks_pool_free(value->pool, value);
+			ks_hash_remove(dht->transactions_hash, (void *)key);
+			ks_dht_transaction_destroy(&value);
 		}
 	}
 	ks_hash_write_unlock(dht->transactions_hash);
@@ -709,10 +685,7 @@ KS_DECLARE(void) ks_dht_pulse_send(ks_dht_t *dht)
 		if (!bail) {
 			bail = (ret = ks_dht_send(dht, message)) != KS_STATUS_SUCCESS;
 			if (ret == KS_STATUS_BREAK) dht->send_q_unsent = message;
-			else if (ret == KS_STATUS_SUCCESS) {
-				ks_dht_message_deinit(message);
-				ks_dht_message_free(&message);
-			}
+			else ks_dht_message_destroy(&message);
 		}
 	}
 }
@@ -729,6 +702,15 @@ KS_DECLARE(char *) ks_dht_hexid(ks_dht_nodeid_t *id, char *buffer)
 	for (int i = 0; i < KS_DHT_NODEID_SIZE; ++i, t += 2) sprintf(t, "%02X", id->id[i]);
 
 	return buffer;
+}
+
+KS_DECLARE(void) ks_dht_utility_nodeid_xor(ks_dht_nodeid_t *dest, ks_dht_nodeid_t *src1, ks_dht_nodeid_t *src2)
+{
+	ks_assert(dest);
+	ks_assert(src1);
+	ks_assert(src2);
+
+	for (int32_t i = 0; i < KS_DHT_NODEID_SIZE; ++i) dest->id[i] = src1->id[i] ^ src2->id[i];
 }
 
 KS_DECLARE(ks_status_t) ks_dht_utility_compact_addressinfo(const ks_sockaddr_t *address,
@@ -992,16 +974,14 @@ KS_DECLARE(ks_status_t) ks_dht_setup_query(ks_dht_t *dht,
 
 	if (!ep && (ret = ks_dht_autoroute_check(dht, raddr, &ep)) != KS_STATUS_SUCCESS) return ret;
 
-    // @todo atomic increment or mutex
+    // @todo atomic increment
+	ks_mutex_lock(dht->tid_mutex);
 	transactionid = dht->transactionid_next++;
+	ks_mutex_unlock(dht->tid_mutex);
 
-	if ((ret = ks_dht_transaction_alloc(&trans, dht->pool)) != KS_STATUS_SUCCESS) goto done;
+	if ((ret = ks_dht_transaction_create(&trans, dht->pool, raddr, transactionid, callback)) != KS_STATUS_SUCCESS) goto done;
 
-	if ((ret = ks_dht_transaction_init(trans, raddr, transactionid, callback)) != KS_STATUS_SUCCESS) goto done;
-
-	if ((ret = ks_dht_message_alloc(&msg, dht->pool)) != KS_STATUS_SUCCESS) goto done;
-
-	if ((ret = ks_dht_message_init(msg, ep, raddr, KS_TRUE)) != KS_STATUS_SUCCESS) goto done;
+	if ((ret = ks_dht_message_create(&msg, dht->pool, ep, raddr, KS_TRUE)) != KS_STATUS_SUCCESS) goto done;
 
 	if ((ret = ks_dht_message_query(msg, transactionid, query, args)) != KS_STATUS_SUCCESS) goto done;
 
@@ -1018,14 +998,8 @@ KS_DECLARE(ks_status_t) ks_dht_setup_query(ks_dht_t *dht,
 
  done:
 	if (ret != KS_STATUS_SUCCESS) {
-		if (trans) {
-			ks_dht_transaction_deinit(trans);
-			ks_dht_transaction_free(&trans);
-		}
-		if (msg) {
-			ks_dht_message_deinit(msg);
-			ks_dht_message_free(&msg);
-		}
+		if (trans) ks_dht_transaction_destroy(&trans);
+		if (msg) ks_dht_message_destroy(&msg);
 		*message = NULL;
 	}
 	return ret;
@@ -1051,9 +1025,7 @@ KS_DECLARE(ks_status_t) ks_dht_setup_response(ks_dht_t *dht,
 
 	if (!ep && (ret = ks_dht_autoroute_check(dht, raddr, &ep)) != KS_STATUS_SUCCESS) return ret;
 
-	if ((ret = ks_dht_message_alloc(&msg, dht->pool)) != KS_STATUS_SUCCESS) goto done;
-
-	if ((ret = ks_dht_message_init(msg, ep, raddr, KS_TRUE)) != KS_STATUS_SUCCESS) goto done;
+	if ((ret = ks_dht_message_create(&msg, dht->pool, ep, raddr, KS_TRUE)) != KS_STATUS_SUCCESS) goto done;
 
 	if ((ret = ks_dht_message_response(msg, transactionid, transactionid_length, args)) != KS_STATUS_SUCCESS) goto done;
 
@@ -1062,9 +1034,8 @@ KS_DECLARE(ks_status_t) ks_dht_setup_response(ks_dht_t *dht,
 	ret = KS_STATUS_SUCCESS;
 
  done:
-	if (ret != KS_STATUS_SUCCESS && msg) {
-		ks_dht_message_deinit(msg);
-		ks_dht_message_free(&msg);
+	if (ret != KS_STATUS_SUCCESS) {
+		if (msg) ks_dht_message_destroy(&msg);
 		*message = NULL;
 	}
 	return ret;
@@ -1074,7 +1045,7 @@ KS_DECLARE(ks_status_t) ks_dht_setup_response(ks_dht_t *dht,
 KS_DECLARE(void *) ks_dht_process(ks_thread_t *thread, void *data)
 {
 	ks_dht_datagram_t *datagram = (ks_dht_datagram_t *)data;
-	ks_dht_message_t message;
+	ks_dht_message_t *message = NULL;
 	ks_dht_message_callback_t callback;
 
 	ks_assert(thread);
@@ -1083,67 +1054,27 @@ KS_DECLARE(void *) ks_dht_process(ks_thread_t *thread, void *data)
 	ks_log(KS_LOG_DEBUG, "Received message from %s %d\n", datagram->raddr.host, datagram->raddr.port);
 	if (datagram->raddr.family != AF_INET && datagram->raddr.family != AF_INET6) {
 		ks_log(KS_LOG_DEBUG, "Message from unsupported address family\n");
-		return NULL;
+		goto done;
 	}
 
 	// @todo blacklist check for bad actor nodes
 
-	if (ks_dht_message_prealloc(&message, datagram->dht->pool) != KS_STATUS_SUCCESS) return NULL;
+	if (ks_dht_message_create(&message, datagram->dht->pool, datagram->endpoint, &datagram->raddr, KS_FALSE) != KS_STATUS_SUCCESS) goto done;
 
-	if (ks_dht_message_init(&message, datagram->endpoint, &datagram->raddr, KS_FALSE) != KS_STATUS_SUCCESS) return NULL;
+	if (ks_dht_message_parse(message, datagram->buffer, datagram->buffer_length) != KS_STATUS_SUCCESS) goto done;
 
-	if (ks_dht_message_parse(&message, datagram->buffer, datagram->buffer_length) != KS_STATUS_SUCCESS) goto done;
-
-	callback = (ks_dht_message_callback_t)(intptr_t)ks_hash_search(datagram->dht->registry_type, message.type, KS_READLOCKED);
+	callback = (ks_dht_message_callback_t)(intptr_t)ks_hash_search(datagram->dht->registry_type, message->type, KS_READLOCKED);
 	ks_hash_read_unlock(datagram->dht->registry_type);
 
-	if (!callback) ks_log(KS_LOG_DEBUG, "Message type '%s' is not registered\n", message.type);
-	else callback(datagram->dht, &message);
+	if (!callback) ks_log(KS_LOG_DEBUG, "Message type '%s' is not registered\n", message->type);
+	else callback(datagram->dht, message);
 
  done:
-	ks_dht_message_deinit(&message);
-	
-	// @todo recycle datagram
-	ks_dht_datagram_deinit(datagram);
-	ks_dht_datagram_free(&datagram);
-
+	if (message) ks_dht_message_destroy(&message);
+	if (datagram) ks_dht_datagram_destroy(&datagram);
 	return NULL;
 }
 
-KS_DECLARE(ks_status_t) ks_dht_process_(ks_dht_t *dht, ks_dht_endpoint_t *ep, ks_sockaddr_t *raddr)
-{
-	ks_dht_message_t message;
-	ks_dht_message_callback_t callback;
-	ks_status_t ret = KS_STATUS_FAIL;
-
-	ks_assert(dht);
-	ks_assert(raddr);
-
-	ks_log(KS_LOG_DEBUG, "Received message from %s %d\n", raddr->host, raddr->port);
-	if (raddr->family != AF_INET && raddr->family != AF_INET6) {
-		ks_log(KS_LOG_DEBUG, "Message from unsupported address family\n");
-		return KS_STATUS_FAIL;
-	}
-
-	// @todo blacklist check for bad actor nodes
-
-	if (ks_dht_message_prealloc(&message, dht->pool) != KS_STATUS_SUCCESS) return KS_STATUS_FAIL;
-
-	if (ks_dht_message_init(&message, ep, raddr, KS_FALSE) != KS_STATUS_SUCCESS) return KS_STATUS_FAIL;
-
-	if (ks_dht_message_parse(&message, dht->recv_buffer, dht->recv_buffer_length) != KS_STATUS_SUCCESS) goto done;
-
-	callback = (ks_dht_message_callback_t)(intptr_t)ks_hash_search(dht->registry_type, message.type, KS_READLOCKED);
-	ks_hash_read_unlock(dht->registry_type);
-
-	if (!callback) ks_log(KS_LOG_DEBUG, "Message type '%s' is not registered\n", message.type);
-	else ret = callback(dht, &message);
-
- done:
-	ks_dht_message_deinit(&message);
-
-	return ret;
-}
 
 KS_DECLARE(ks_status_t) ks_dht_process_query(ks_dht_t *dht, ks_dht_message_t *message)
 {
@@ -1230,6 +1161,7 @@ KS_DECLARE(ks_status_t) ks_dht_process_response(ks_dht_t *dht, ks_dht_message_t 
 			   transaction->raddr.host,
 			   transaction->raddr.port);
 	} else {
+		message->transaction = transaction;
 		ret = transaction->callback(dht, message);
 		transaction->finished = KS_TRUE;
 	}
@@ -1258,12 +1190,11 @@ KS_DECLARE(ks_status_t) ks_dht_search(ks_dht_t *dht,
 
 	// check hash for target to see if search already exists
 	s = ks_hash_search(dht->search_hash, target->id, KS_READLOCKED);
-	ks_hash_read_unlock(dht->search_hash);
+	ks_hash_read_unlock(dht->search_hash); // @todo hold lock until finished adding new entry?
 
 	// if search does not exist, create new search and store in hash by target
 	if (!s) {
-		if ((ret = ks_dht_search_alloc(&s, dht->pool)) != KS_STATUS_SUCCESS) goto done;
-		if ((ret = ks_dht_search_init(s, target)) != KS_STATUS_SUCCESS) goto done;
+		if ((ret = ks_dht_search_create(&s, dht->pool, target)) != KS_STATUS_SUCCESS) goto done;
 		allocated = KS_TRUE;
 	} else inserted = KS_TRUE;
 
@@ -1278,26 +1209,27 @@ KS_DECLARE(ks_status_t) ks_dht_search(ks_dht_t *dht,
 	query.type = KS_DHT_REMOTE;
 	query.max = KS_DHT_SEARCH_RESULTS_MAX_SIZE;
 	query.family = family;
+	query.count = 0;
 	ks_dhtrt_findclosest_nodes(family == AF_INET ? dht->rt_ipv4 : dht->rt_ipv6, &query);
 	for (int32_t i = 0; i < query.count; ++i) {
 		ks_dht_node_t *n = query.nodes[i];
 		ks_dht_search_pending_t *pending = NULL;
-		s->results[i] = n;
+		
+		s->results[i] = n->nodeid;
+		ks_dht_utility_nodeid_xor(&s->distances[i], &n->nodeid, &s->target);
 		// add to pending with expiration
-		if ((ret = ks_dht_search_pending_alloc(&pending, s->pool)) != KS_STATUS_SUCCESS) goto done;
-		if ((ret = ks_dht_search_pending_init(pending, n)) != KS_STATUS_SUCCESS) {
-			ks_dht_search_pending_free(&pending);
+		if ((ret = ks_dht_search_pending_create(&pending, s->pool, &n->nodeid)) != KS_STATUS_SUCCESS) goto done;
+		if (!ks_hash_insert(s->pending, n->nodeid.id, pending)) {
+			ks_dht_search_pending_destroy(&pending);
+			ret = KS_STATUS_FAIL;
 			goto done;
 		}
-		if (!ks_hash_insert(s->pending, n->nodeid.id, n)) {
-			ks_dht_search_pending_deinit(pending);
-			ks_dht_search_pending_free(&pending);
-			goto done;
-		}
-		// @todo call send_findnode, but transactions need to track the target id from a find_node query since find_node response does not contain it
+		if ((ret = ks_dht_send_findnode(dht, NULL, &n->addr, target)) != KS_STATUS_SUCCESS) goto done;
 	}
 	s->results_length = query.count;
-	
+	// @todo release query nodes
+
+	// @todo if entry has been added since we checked above this may fail, try adding callback instead of failing? or retain lock from earlier
 	if (!ks_hash_insert(dht->search_hash, s->target.id, s)) {
 		ret = KS_STATUS_FAIL;
 		goto done;
@@ -1305,13 +1237,9 @@ KS_DECLARE(ks_status_t) ks_dht_search(ks_dht_t *dht,
 	inserted = KS_TRUE;
 
 	if (search) *search = s;
-	ret = KS_STATUS_SUCCESS;
 
  done:
-	if (ret != KS_STATUS_SUCCESS && !inserted && s) {
-		ks_dht_search_deinit(s);
-		ks_dht_search_free(&s);
-	}
+	if (ret != KS_STATUS_SUCCESS && !inserted && s) ks_dht_search_destroy(&s);
 	return ret;
 }
 
@@ -1335,9 +1263,7 @@ KS_DECLARE(ks_status_t) ks_dht_send_error(ks_dht_t *dht,
 
 	if (!ep && ks_dht_autoroute_check(dht, raddr, &ep) != KS_STATUS_SUCCESS) return KS_STATUS_FAIL;
 
-	if (ks_dht_message_alloc(&error, dht->pool) != KS_STATUS_SUCCESS) return KS_STATUS_FAIL;
-
-	if (ks_dht_message_init(error, ep, raddr, KS_TRUE) != KS_STATUS_SUCCESS) goto done;
+	if (ks_dht_message_create(&error, dht->pool, ep, raddr, KS_TRUE) != KS_STATUS_SUCCESS) return KS_STATUS_FAIL;
 
 	if (ks_dht_message_error(error, transactionid, transactionid_length, &e) != KS_STATUS_SUCCESS) goto done;
 
@@ -1350,10 +1276,7 @@ KS_DECLARE(ks_status_t) ks_dht_send_error(ks_dht_t *dht,
 	ret = KS_STATUS_SUCCESS;
 
  done:
-	if (ret != KS_STATUS_SUCCESS && error) {
-		ks_dht_message_deinit(error);
-		ks_dht_message_free(&error);
-	}
+	if (ret != KS_STATUS_SUCCESS && error) ks_dht_message_destroy(&error);
 	return ret;
 }
 
@@ -1671,14 +1594,11 @@ KS_DECLARE(ks_status_t) ks_dht_process_response_findnode(ks_dht_t *dht, ks_dht_m
 	ks_dhtrt_routetable_t *routetable = NULL;
 	ks_dht_node_t *node = NULL;
 	char id_buf[KS_DHT_NODEID_SIZE * 2 + 1];
+	ks_dht_search_t *search = NULL;
 
 	ks_assert(dht);
 	ks_assert(message);
-
-	// @todo pass in the ks_dht_transaction_t from the original query, available one call higher, to get the target id for search updating
-	// @todo make a utility function to produce a xor of two nodeid's for distance checks based on memcmp on the existing results and new response nodes
-	// @todo lookup search by target from transaction, lookup responding node id in search pending hash, set entry to finished for purging
-	// @todo check response nodes for closer nodes than results contain, skip duplicates, add pending and call send_findnode for new closer results
+	ks_assert(message->transaction);
 
 	if (ks_dht_utility_extract_nodeid(message->args, "id", &id) != KS_STATUS_SUCCESS) return KS_STATUS_FAIL;
 
@@ -1702,6 +1622,14 @@ KS_DECLARE(ks_status_t) ks_dht_process_response_findnode(ks_dht_t *dht, ks_dht_m
 	ks_log(KS_LOG_DEBUG, "Touching node %s\n", ks_dht_hexid(id, id_buf));
 	if (ks_dhtrt_touch_node(routetable, *id) != KS_STATUS_SUCCESS) return KS_STATUS_FAIL;
 
+	search = ks_hash_search(dht->search_hash, message->transaction->target.id, KS_READLOCKED);
+	ks_hash_read_unlock(dht->search_hash);
+	if (search) {
+		ks_dht_search_pending_t *pending = ks_hash_search(search->pending, id->id, KS_READLOCKED);
+		ks_hash_read_unlock(search->pending);
+		if (pending) pending->finished = KS_TRUE;
+	}
+
 	while (nodes_len < nodes_size) {
 		ks_dht_nodeid_t nid;
 		ks_sockaddr_t addr;
@@ -1718,6 +1646,49 @@ KS_DECLARE(ks_status_t) ks_dht_process_response_findnode(ks_dht_t *dht, ks_dht_m
 		ks_log(KS_LOG_DEBUG, "Creating node %s\n", ks_dht_hexid(&nid, id_buf));
 		ks_dhtrt_create_node(dht->rt_ipv4, nid, KS_DHT_REMOTE, addr.host, addr.port, &node);
 		ks_dhtrt_release_node(node);
+
+		if (search) {
+			ks_dht_nodeid_t distance;
+			int32_t results_index = -1;
+			
+			ks_dht_utility_nodeid_xor(&distance, &nid, &search->target);
+			if (search->results_length < KS_DHT_SEARCH_RESULTS_MAX_SIZE) {
+				results_index = search->results_length;
+				search->results_length++;
+			} else {
+				for (int32_t index = 0; index < search->results_length; ++index) {
+					// Check if new node is closer than this existing result
+					if (memcmp(distance.id, search->distances[index].id, KS_DHT_NODEID_SIZE) < 0) {
+						// If this is the first node that is further then keep it
+						// Else if two or more nodes are further, and this existing result is further than the previous one then keep it
+						if (results_index < 0) results_index = index;
+						else if (memcmp(search->distances[index].id, search->distances[results_index].id, KS_DHT_NODEID_SIZE) > 0) results_index = index;
+					}
+				}
+			}
+
+			if (results_index >= 0) {
+				char id2_buf[KS_DHT_NODEID_SIZE * 2 + 1];
+				char id3_buf[KS_DHT_NODEID_SIZE * 2 + 1];
+				ks_dht_search_pending_t *pending = NULL;
+
+				ks_log(KS_LOG_DEBUG,
+					   "Set closer node id %s (%s) in search of target id %s at results index %d\n",
+					   ks_dht_hexid(&nid, id_buf),
+					   ks_dht_hexid(&distance, id2_buf),
+					   ks_dht_hexid(&search->target, id3_buf),
+					   results_index);
+				search->results[results_index] = nid;
+				search->distances[results_index] = distance;
+
+				if (ks_dht_search_pending_create(&pending, search->pool, &nid) != KS_STATUS_SUCCESS) return KS_STATUS_FAIL;
+				if (!ks_hash_insert(search->pending, nid.id, pending)) {
+					ks_dht_search_pending_destroy(&pending);
+					return KS_STATUS_FAIL;
+				}
+				if (ks_dht_send_findnode(dht, NULL, &addr, &search->target) != KS_STATUS_SUCCESS) return KS_STATUS_FAIL;
+			}
+		}
 	}
 
 	while (nodes6_len < nodes6_size) {
