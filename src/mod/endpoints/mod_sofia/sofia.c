@@ -1313,7 +1313,6 @@ static void tech_send_ack(nua_handle_t *nh, private_object_t *tech_pvt, const ch
 		const char *invite_full_via = switch_channel_get_variable(tech_pvt->channel, "sip_invite_full_via");
 		const char *invite_route_uri = switch_channel_get_variable(tech_pvt->channel, "sip_invite_route_uri");
 
-
 		nua_ack(nh,
 				TAG_IF(invite_full_from, SIPTAG_FROM_STR(invite_full_from)),
 				TAG_IF(invite_full_to, SIPTAG_TO_STR(invite_full_to)),
@@ -7254,6 +7253,8 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 							//switch_channel_t *other_channel = switch_core_session_get_channel(other_session);
 							private_object_t *other_tech_pvt = switch_core_session_get_private(other_session);
 
+							sofia_glue_clear_soa(other_session, SWITCH_TRUE);
+
 							nua_ack(other_tech_pvt->nh,
 									NUTAG_MEDIA_ENABLE(0),
 									TAG_IF(!zstr(other_tech_pvt->user_via), SIPTAG_VIA_STR(other_tech_pvt->user_via)),
@@ -7564,10 +7565,19 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Cannot find a SDP\n");
 				switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 			} else {
-				nua_respond(tech_pvt->nh, SIP_200_OK,
-							NUTAG_MEDIA_ENABLE(0),
-							SIPTAG_CONTACT_STR(tech_pvt->profile->url),
-							SIPTAG_CONTENT_TYPE_STR("application/sdp"), SIPTAG_PAYLOAD_STR(tech_pvt->mparams.local_sdp_str), TAG_END());
+				if (sofia_use_soa(tech_pvt)) {
+					nua_respond(tech_pvt->nh, SIP_200_OK,
+								SIPTAG_CONTACT_STR(tech_pvt->profile->url),
+								SOATAG_USER_SDP_STR(tech_pvt->mparams.local_sdp_str),
+								SOATAG_REUSE_REJECTED(1),
+								SOATAG_AUDIO_AUX("cn telephone-event"),
+								TAG_IF(sofia_test_pflag(profile, PFLAG_DISABLE_100REL), NUTAG_INCLUDE_EXTRA_SDP(1)), TAG_END());
+				} else {
+					nua_respond(tech_pvt->nh, SIP_200_OK,
+								NUTAG_MEDIA_ENABLE(0),
+								SIPTAG_CONTACT_STR(tech_pvt->profile->url),
+								SIPTAG_CONTENT_TYPE_STR("application/sdp"), SIPTAG_PAYLOAD_STR(tech_pvt->mparams.local_sdp_str), TAG_END());
+				}
 			}
 
 			goto done;

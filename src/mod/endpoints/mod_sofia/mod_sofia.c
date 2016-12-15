@@ -2113,11 +2113,19 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 								switch_core_media_proxy_remote_addr(session, NULL);
 							}
 
-							nua_respond(tech_pvt->nh, code, su_strdup(nua_handle_home(tech_pvt->nh), reason), SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
-										NUTAG_MEDIA_ENABLE(0),
-										SIPTAG_CONTENT_TYPE_STR("application/sdp"),
-										SIPTAG_PAYLOAD_STR(tech_pvt->mparams.local_sdp_str),
-										TAG_IF(!zstr(extra_headers), SIPTAG_HEADER_STR(extra_headers)), TAG_END());
+							if (sofia_use_soa(tech_pvt)) {
+								nua_respond(tech_pvt->nh, code, su_strdup(nua_handle_home(tech_pvt->nh), reason), SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
+											SOATAG_USER_SDP_STR(tech_pvt->mparams.local_sdp_str),
+											SOATAG_REUSE_REJECTED(1),
+											SOATAG_AUDIO_AUX("cn telephone-event"), NUTAG_INCLUDE_EXTRA_SDP(1),
+											TAG_IF(!zstr(extra_headers), SIPTAG_HEADER_STR(extra_headers)), TAG_END());
+							} else {
+								nua_respond(tech_pvt->nh, code, su_strdup(nua_handle_home(tech_pvt->nh), reason), SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
+											NUTAG_MEDIA_ENABLE(0),
+											SIPTAG_CONTENT_TYPE_STR("application/sdp"),
+											SIPTAG_PAYLOAD_STR(tech_pvt->mparams.local_sdp_str),
+											TAG_IF(!zstr(extra_headers), SIPTAG_HEADER_STR(extra_headers)), TAG_END());
+							}
 
 							if (sofia_test_pflag(tech_pvt->profile, PFLAG_3PCC_PROXY) && sofia_test_flag(tech_pvt, TFLAG_3PCC)) {
 								/* Unlock the session signal to allow the ack to make it in */
