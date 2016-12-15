@@ -210,10 +210,6 @@ ks_hash_create_ex(ks_hash_t **hp, unsigned int minsize,
 		break;
 	}
 
-	if (flags == KS_HASH_FLAG_DEFAULT) {
-		flags = KS_HASH_FLAG_FREE_KEY | KS_HASH_FLAG_DUP_CHECK | KS_HASH_FLAG_NOLOCK;
-	}
-
 	if ((flags & KS_HASH_FLAG_NOLOCK)) {
 		flags &= ~KS_HASH_FLAG_RWLOCK;
 	}
