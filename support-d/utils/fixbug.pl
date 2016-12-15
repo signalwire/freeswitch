@@ -79,7 +79,7 @@ if ($auto) {
 	$opts{msg} =~ s/%c/$component/;
 	$gitcmd = "git commit $args -m \"$opts{msg}$opts{append}\"";
     } else {
-	$gitcmd = "git commit $args -m \"$opts{bug}: [$componet] $sum$opts{append} #resolve\"";
+	$gitcmd = "git commit $args -m \"$opts{bug}: [$component] $sum$opts{append} #resolve\"";
     }
 } else {
   $gitcmd = "git commit $args -t /tmp/$opts{bug}.tmp";
