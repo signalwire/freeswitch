@@ -428,7 +428,7 @@ KS_DECLARE(ks_dht_node_t *) ks_dhtrt_find_node(ks_dhtrt_routetable_t *table, ks_
 		if (bucket != 0) {			 /* probably a logic error ?*/
 
 			ks_rwl_read_lock(bucket->lock);
-			ks_dht_node_t* node = ks_dhtrt_find_nodeid(bucket, nodeid.id);
+			node = ks_dhtrt_find_nodeid(bucket, nodeid.id);
     
 			if (node != NULL) {
 				ks_rwl_read_lock(node->reflock);
@@ -510,7 +510,11 @@ uint8_t ks_dhtrt_findclosest_locked_nodes(ks_dhtrt_routetable_t *table, ks_dhtrt
 	uint8_t total = 0;
 	uint8_t cnt;
 
-	if (max == 0) return 0;			/* sanity check */
+	if (max == 0) return 0;		    	/* sanity checks */
+    if (max > KS_DHTRT_MAXQUERYSIZE) {  /* enforce the maximum */
+		max = KS_DHTRT_MAXQUERYSIZE; 
+        query->max = KS_DHTRT_MAXQUERYSIZE;
+	}
 
 	query->count = 0;
 
@@ -659,7 +663,7 @@ uint8_t ks_dhtrt_findclosest_locked_nodes(ks_dhtrt_routetable_t *table, ks_dhtrt
 		ks_dhtrt_sortedxors_t *x = tofree->next;
 
 		ks_pool_free(table->pool, tofree);
-		tofree = x->next;
+		tofree = x;
 	}
 
 	return query->count;
@@ -667,11 +671,16 @@ uint8_t ks_dhtrt_findclosest_locked_nodes(ks_dhtrt_routetable_t *table, ks_dhtrt
 
 KS_DECLARE(ks_status_t) ks_dhtrt_release_node(ks_dht_node_t* node)
 {
-    return KS_STATUS_SUCCESS; 
     return ks_rwl_read_unlock(node->reflock);
 }
 
-
+KS_DECLARE(ks_status_t) ks_dhtrt_release_querynodes(ks_dhtrt_querynodes_t *query)
+{
+    for(int ix=0; ix<query->count; ++ix) {
+       ks_rwl_read_unlock(query->nodes[ix]->reflock);
+    }
+    return KS_STATUS_SUCCESS;
+}
 
 KS_DECLARE(void)  ks_dhtrt_process_table(ks_dhtrt_routetable_t *table)
 {
@@ -717,25 +726,30 @@ KS_DECLARE(void)  ks_dhtrt_process_table(ks_dhtrt_routetable_t *table)
 					ks_dhtrt_bucket_entry_t *e =  &b->entries[ix];
 
 					if (e->inuse == 1) {
-						/* more than n pings outstanding? */
 
-						if (e->outstanding_pings >= KS_DHTRT_MAXPING) {
-							e->flags =	DHTPEER_EXPIRED; 
-							++b->expired_count;
-							continue;
-						}
+						if (e->gptr->type != KS_DHT_LOCAL) {   /* 'local' nodes do not get expired */
 
-						if (e->flags == DHTPEER_SUSPECT) {
-							ks_dhtrt_ping(e); 
-							continue;
-						}
+							/* more than n pings outstanding? */
 
-						ks_time_t tdiff = t0 - e->tyme;
+							if (e->outstanding_pings >= KS_DHTRT_MAXPING) {
+								e->flags =	DHTPEER_EXPIRED; 
+								++b->expired_count;
+								continue;
+							}
 
-						if (tdiff > KS_DHTRT_INACTIVETIME) {
-							e->flags = DHTPEER_SUSPECT;
-							ks_dhtrt_ping(e);
-						}
+							if (e->flags == DHTPEER_SUSPECT) {
+								ks_dhtrt_ping(e); 
+								continue;
+							}
+
+							ks_time_t tdiff = t0 - e->tyme;
+
+							if (tdiff > KS_DHTRT_INACTIVETIME) {
+								e->flags = DHTPEER_SUSPECT;
+								ks_dhtrt_ping(e);
+							}
+
+						} /* end if not local */
 
 					}  /* end if e->inuse */
 
