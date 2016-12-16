@@ -558,7 +558,9 @@ ks_hash_destroy(ks_hash_t **h)
     ks_pool_safe_free(pool, (*h)->table);
 	ks_hash_write_unlock(*h);
 	if ((*h)->rwl) ks_pool_free(pool, (*h)->rwl);
-	ks_pool_free(pool, (*h)->mutex);
+	if ((*h)->mutex) {
+		ks_pool_free(pool, (*h)->mutex);
+	}
 	ks_pool_free(pool, *h);
 	pool = NULL;
 	*h = NULL;
