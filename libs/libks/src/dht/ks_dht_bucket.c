@@ -701,15 +701,17 @@ uint8_t ks_dhtrt_findclosest_locked_nodes(ks_dhtrt_routetable_t *table, ks_dhtrt
 			}
 		}
 	   
-		if (!lheader && !rheader) break;
-
+		if (!lheader && !rheader) {
+			break;
+		}
+	
 		++insanity;
 
 		if (insanity > 159) {
 			assert(insanity <= 159);
 		}
 
-	} while (max < query->count);
+	} while (max < query->max);
 
 
 	ks_dhtrt_load_query(query, &xort0);
@@ -796,7 +798,7 @@ KS_DECLARE(void)  ks_dhtrt_process_table(ks_dhtrt_routetable_t *table)
 							}
 
 							if (e->flags == DHTPEER_SUSPECT) {
-								ks_dhtrt_ping(e); 
+								ks_dhtrt_ping(e);
 								continue;
 							}
 
@@ -1217,9 +1219,10 @@ uint8_t ks_dhtrt_findclosest_bucketnodes(ks_dhtrt_nodeid_t id,
 
 	for (uint8_t ix=0; ix<KS_DHT_BUCKETSIZE; ++ix) {
 
-	    if ( bucket->entries[ix].inuse == 1                              &&
-             (family == ifboth || bucket->entries[ix].family == family)  &&
-             (bucket->entries[ix].type & type)                           &&
+	    if ( bucket->entries[ix].inuse == 1                              &&    /* in use      */
+             bucket->entries[ix].flags != DHTPEER_EXPIRED                &&    /* not expired */
+             (family == ifboth || bucket->entries[ix].family == family)  &&    /* match if family */
+             (bucket->entries[ix].type & type)                           &&    /* match type   */
              ks_dhtrt_isactive( &(bucket->entries[ix])) ) {
 		  
 			/* calculate xor value */
@@ -1323,6 +1326,8 @@ void ks_dhtrt_ping(ks_dhtrt_bucket_entry_t *entry) {
 	/* @todo */
 	/* set the appropriate command in the node and queue if for processing */
 	/*ks_dht_node_t *node = entry->gptr; */
+	/* ++entry->outstanding_pings; */
+
 #ifdef	KS_DHT_DEBUGPRINTF_
 	char buf[100];
 	printf("  ping queued for nodeid %s count %d\n",
