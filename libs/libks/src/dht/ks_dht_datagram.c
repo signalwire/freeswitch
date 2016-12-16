@@ -17,14 +17,11 @@ KS_DECLARE(ks_status_t) ks_dht_datagram_create(ks_dht_datagram_t **datagram,
 	ks_assert(endpoint);
 	ks_assert(raddr);
 	ks_assert(raddr->family == AF_INET || raddr->family == AF_INET6);
-	
-	*datagram = dg = ks_pool_alloc(pool, sizeof(ks_dht_datagram_t));
-	if (!dg) {
-		ret = KS_STATUS_NO_MEM;
-		goto done;
-	}
-	dg->pool = pool;
 
+	*datagram = dg = ks_pool_alloc(pool, sizeof(ks_dht_datagram_t));
+	ks_assert(dg);
+
+	dg->pool = pool;
 	dg->dht = dht;
 	dg->endpoint = endpoint;
 	dg->raddr = *raddr;
@@ -32,7 +29,7 @@ KS_DECLARE(ks_status_t) ks_dht_datagram_create(ks_dht_datagram_t **datagram,
 	memcpy(dg->buffer, dht->recv_buffer, dht->recv_buffer_length);
 	dg->buffer_length = dht->recv_buffer_length;
 
- done:
+	// done:
 	if (ret != KS_STATUS_SUCCESS) {
 		if (dg) ks_dht_datagram_destroy(&dg);
 		*datagram = NULL;

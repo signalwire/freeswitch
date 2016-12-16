@@ -15,18 +15,15 @@ KS_DECLARE(ks_status_t) ks_dht_transaction_create(ks_dht_transaction_t **transac
 	ks_assert(raddr);
 
 	*transaction = t = ks_pool_alloc(pool, sizeof(ks_dht_transaction_t));
-	if (!t) {
-		ret = KS_STATUS_NO_MEM;
-		goto done;
-	}
-	t->pool = pool;
+	ks_assert(t);
 
+	t->pool = pool;
 	t->raddr = *raddr;
 	t->transactionid = transactionid;
 	t->callback = callback;
-	t->expiration = ks_time_now_sec() + KS_DHT_TRANSACTION_EXPIRATION_DELAY;
+	t->expiration = ks_time_now() + (KS_DHT_TRANSACTION_EXPIRATION * 1000);
 
- done:
+	// done:
 	if (ret != KS_STATUS_SUCCESS) {
 		if (t) ks_dht_transaction_destroy(&t);
 		*transaction = NULL;

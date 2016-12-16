@@ -2,9 +2,6 @@
 #include "ks_dht-int.h"
 #include "sodium.h"
 
-/**
- *
- */
 KS_DECLARE(ks_status_t) ks_dht_search_create(ks_dht_search_t **search, ks_pool_t *pool, const ks_dht_nodeid_t *target)
 {
 	ks_dht_search_t *s;
@@ -15,32 +12,27 @@ KS_DECLARE(ks_status_t) ks_dht_search_create(ks_dht_search_t **search, ks_pool_t
 	ks_assert(target);
 
 	*search = s = ks_pool_alloc(pool, sizeof(ks_dht_search_t));
-	if (!s) {
-		ret = KS_STATUS_NO_MEM;
-		goto done;
-	}
+	ks_assert(s);
+
 	s->pool = pool;
 
-	if ((ret = ks_mutex_create(&s->mutex, KS_MUTEX_FLAG_DEFAULT, s->pool)) != KS_STATUS_SUCCESS) goto done;
+	ks_mutex_create(&s->mutex, KS_MUTEX_FLAG_DEFAULT, s->pool);
+	ks_assert(s->mutex);
+
 	memcpy(s->target.id, target->id, KS_DHT_NODEID_SIZE);
 
-	if ((ret = ks_hash_create(&s->pending,
-							  KS_HASH_MODE_ARBITRARY,
-							  KS_HASH_FLAG_RWLOCK,
-							  s->pool)) != KS_STATUS_SUCCESS) goto done;
+	ks_hash_create(&s->pending, KS_HASH_MODE_ARBITRARY, KS_HASH_FLAG_RWLOCK, s->pool);
+	ks_assert(s->pending);
 	ks_hash_set_keysize(s->pending, KS_DHT_NODEID_SIZE);
 
- done:
+	// done:
 	if (ret != KS_STATUS_SUCCESS) {
 		if (s) ks_dht_search_destroy(&s);
 		*search = NULL;
 	}
-	return KS_STATUS_SUCCESS;
+	return ret;
 }
 
-/**
- *
- */
 KS_DECLARE(void) ks_dht_search_destroy(ks_dht_search_t **search)
 {
 	ks_dht_search_t *s;
@@ -83,7 +75,7 @@ KS_DECLARE(ks_status_t) ks_dht_search_callback_add(ks_dht_search_t *search, ks_d
 		search->callbacks = (ks_dht_search_callback_t *)ks_pool_resize(search->pool,
 																	   (void *)search->callbacks,
 																	   sizeof(ks_dht_search_callback_t) * search->callbacks_size);
-		if (!search->callbacks) return KS_STATUS_NO_MEM;
+		ks_assert(search->callbacks);
 		search->callbacks[index] = callback;
 		ks_mutex_unlock(search->mutex);
 	}
@@ -97,19 +89,16 @@ KS_DECLARE(ks_status_t) ks_dht_search_pending_create(ks_dht_search_pending_t **p
 
 	ks_assert(pending);
 	ks_assert(pool);
-	
-	*pending = p = ks_pool_alloc(pool, sizeof(ks_dht_search_pending_t));
-	if (!p) {
-		ret = KS_STATUS_NO_MEM;
-		goto done;
-	}
-	p->pool = pool;
 
+	*pending = p = ks_pool_alloc(pool, sizeof(ks_dht_search_pending_t));
+	ks_assert(p);
+
+	p->pool = pool;
 	p->nodeid = *nodeid;
-	p->expiration = ks_time_now_sec() + KS_DHT_SEARCH_EXPIRATION;
+	p->expiration = ks_time_now() + (KS_DHT_SEARCH_EXPIRATION * 1000);
 	p->finished = KS_FALSE;
 
- done:
+	// done:
 	if (ret != KS_STATUS_SUCCESS) {
 		if (p) ks_dht_search_pending_destroy(&p);
 		*pending = NULL;

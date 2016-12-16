@@ -2,9 +2,6 @@
 #include "ks_dht-int.h"
 #include "sodium.h"
 
-/**
- *
- */
 KS_DECLARE(ks_status_t) ks_dht_storageitem_create_immutable(ks_dht_storageitem_t **item, ks_pool_t *pool, struct bencode *v)
 {
 	ks_dht_storageitem_t *si;
@@ -19,27 +16,21 @@ KS_DECLARE(ks_status_t) ks_dht_storageitem_create_immutable(ks_dht_storageitem_t
 	ks_assert(SHA_DIGEST_LENGTH == KS_DHT_NODEID_SIZE);
 
 	*item = si = ks_pool_alloc(pool, sizeof(ks_dht_storageitem_t));
-	if (!si) {
-		ret = KS_STATUS_NO_MEM;
-		goto done;
-	}
-	si->pool = pool;
+	ks_assert(si);
 
+	si->pool = pool;
 	si->mutable = KS_FALSE;
-	
 	si->v = ben_clone(v);
-	if (!si->v) {
-		ret = KS_STATUS_NO_MEM;
-		goto done;
-	}
+	ks_assert(si->v);
 	
 	enc = ben_encode(&enc_len, si->v);
+	ks_assert(enc);
 	SHA1_Init(&sha);
 	SHA1_Update(&sha, enc, enc_len);
 	SHA1_Final(si->id.id, &sha);
 	free(enc);
 
- done:
+	// done:
 	if (ret != KS_STATUS_SUCCESS) {
 		if (si) ks_dht_storageitem_destroy(&si);
 		*item = NULL;
@@ -70,15 +61,12 @@ KS_DECLARE(ks_status_t) ks_dht_storageitem_create_mutable(ks_dht_storageitem_t *
 	ks_assert(signature);
 
 	*item = si = ks_pool_alloc(pool, sizeof(ks_dht_storageitem_t));
-	if (!si) {
-		ret = KS_STATUS_NO_MEM;
-		goto done;
-	}
+	ks_assert(si);
+
 	si->pool = pool;
-
-	si->v = ben_clone(v);
-
 	si->mutable = KS_TRUE;
+	si->v = ben_clone(v);
+	ks_assert(si->v);
 
 	memcpy(si->pk.key, k->key, KS_DHT_STORAGEITEM_KEY_SIZE);
 	if (salt && salt_length > 0) {
@@ -93,7 +81,7 @@ KS_DECLARE(ks_status_t) ks_dht_storageitem_create_mutable(ks_dht_storageitem_t *
 	if (si->salt && si->salt_length > 0) SHA1_Update(&sha, si->salt, si->salt_length);
 	SHA1_Final(si->id.id, &sha);
 
- done:
+	// done:
 	if (ret != KS_STATUS_SUCCESS) {
 		if (si) ks_dht_storageitem_destroy(&si);
 		*item = NULL;

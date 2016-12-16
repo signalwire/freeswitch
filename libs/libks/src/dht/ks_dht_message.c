@@ -1,9 +1,6 @@
 #include "ks_dht.h"
 #include "ks_dht-int.h"
 
-/**
- *
- */
 KS_DECLARE(ks_status_t) ks_dht_message_create(ks_dht_message_t **message,
 											  ks_pool_t *pool,
 											  ks_dht_endpoint_t *endpoint,
@@ -17,17 +14,17 @@ KS_DECLARE(ks_status_t) ks_dht_message_create(ks_dht_message_t **message,
 	ks_assert(pool);
 
 	*message = m = ks_pool_alloc(pool, sizeof(ks_dht_message_t));
-	if (!m) {
-		ret = KS_STATUS_NO_MEM;
-		goto done;
-	}
-	m->pool = pool;
+	ks_assert(m);
 
+	m->pool = pool;
 	m->endpoint = endpoint;
 	m->raddr = *raddr;
-	if (alloc_data) m->data = ben_dict();
+	if (alloc_data) {
+		m->data = ben_dict();
+		ks_assert(m->data);
+	}
 
- done:
+	// done:
 	if (ret != KS_STATUS_SUCCESS) {
 		if (m) ks_dht_message_destroy(&m);
 		*message = NULL;
@@ -35,9 +32,6 @@ KS_DECLARE(ks_status_t) ks_dht_message_create(ks_dht_message_t **message,
 	return ret;
 }
 
-/**
- *
- */
 KS_DECLARE(void) ks_dht_message_destroy(ks_dht_message_t **message)
 {
 	ks_dht_message_t *m;
@@ -57,9 +51,6 @@ KS_DECLARE(void) ks_dht_message_destroy(ks_dht_message_t **message)
 }
 
 
-/**
- *
- */
 KS_DECLARE(ks_status_t) ks_dht_message_parse(ks_dht_message_t *message, const uint8_t *buffer, ks_size_t buffer_length)
 {
 	struct bencode *t;
@@ -121,9 +112,6 @@ KS_DECLARE(ks_status_t) ks_dht_message_parse(ks_dht_message_t *message, const ui
 	return KS_STATUS_SUCCESS;
 }
 
-/**
- *
- */
 KS_DECLARE(ks_status_t) ks_dht_message_query(ks_dht_message_t *message,
 											 uint32_t transactionid,
 											 const char *query,
@@ -143,6 +131,7 @@ KS_DECLARE(ks_status_t) ks_dht_message_query(ks_dht_message_t *message,
 
 	// @note r joins message->data and will be freed with it
 	a = ben_dict();
+	ks_assert(a);
 	ben_dict_set(message->data, ben_blob("a", 1), a);
 
 	if (args) *args = a;
@@ -150,9 +139,6 @@ KS_DECLARE(ks_status_t) ks_dht_message_query(ks_dht_message_t *message,
 	return KS_STATUS_SUCCESS;
 }
 
-/**
- *
- */
 KS_DECLARE(ks_status_t) ks_dht_message_response(ks_dht_message_t *message,
 												uint8_t *transactionid,
 												ks_size_t transactionid_length,
@@ -168,6 +154,7 @@ KS_DECLARE(ks_status_t) ks_dht_message_response(ks_dht_message_t *message,
 
 	// @note r joins message->data and will be freed with it
 	r = ben_dict();
+	ks_assert(r);
 	ben_dict_set(message->data, ben_blob("r", 1), r);
 
 	if (args) *args = r;
@@ -193,6 +180,7 @@ KS_DECLARE(ks_status_t) ks_dht_message_error(ks_dht_message_t *message,
 
 	// @note r joins message->data and will be freed with it
 	e = ben_list();
+	ks_assert(e);
 	ben_dict_set(message->data, ben_blob("e", 1), e);
 
 	if (args) *args = e;

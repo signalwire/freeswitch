@@ -18,19 +18,17 @@ KS_DECLARE(ks_status_t) ks_dht_endpoint_create(ks_dht_endpoint_t **endpoint,
 	ks_assert(pool);
 	ks_assert(addr);
 	ks_assert(addr->family == AF_INET || addr->family == AF_INET6);
-	
+
 	*endpoint = ep = ks_pool_alloc(pool, sizeof(ks_dht_endpoint_t));
-	if (!ep) {
-		ret = KS_STATUS_NO_MEM;
-		goto done;
-	}
+	ks_assert(ep);
+
 	ep->pool = pool;
     if (!nodeid) randombytes_buf(ep->nodeid.id, KS_DHT_NODEID_SIZE);
 	else memcpy(ep->nodeid.id, nodeid->id, KS_DHT_NODEID_SIZE);
 	ep->addr = *addr;
 	ep->sock = sock;
 
- done:
+	// done:
 	if (ret != KS_STATUS_SUCCESS) {
 		if (ep) ks_dht_endpoint_destroy(&ep);
 		*endpoint = NULL;
@@ -50,9 +48,6 @@ KS_DECLARE(void) ks_dht_endpoint_destroy(ks_dht_endpoint_t **endpoint)
 
 	ep = *endpoint;
 
-	if (ep->node) {
-		// @todo release the node?
-	}
 	if (ep->sock != KS_SOCK_INVALID) ks_socket_close(&ep->sock);
 	ks_pool_free(ep->pool, ep);
 
