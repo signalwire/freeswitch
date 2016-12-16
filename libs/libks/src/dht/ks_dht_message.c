@@ -45,7 +45,7 @@ KS_DECLARE(void) ks_dht_message_destroy(ks_dht_message_t **message)
 		ben_free(m->data);
 		m->data = NULL;
 	}
-	ks_pool_free(m->pool, *message);
+	ks_pool_free(m->pool, &(*message));
 
 	*message = NULL;
 }

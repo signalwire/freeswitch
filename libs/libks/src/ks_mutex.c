@@ -93,7 +93,7 @@ KS_DECLARE(ks_status_t) ks_mutex_destroy(ks_mutex_t **mutexP)
 #endif
 		free(mutex);
 	} else {
-		ks_pool_free(mutex->pool, (void *)mutex);
+		ks_pool_free(mutex->pool, &mutex);
 	}
 
 	return KS_STATUS_SUCCESS;
@@ -422,7 +422,7 @@ KS_DECLARE(ks_status_t) ks_cond_destroy(ks_cond_t **cond)
 
 	*cond = NULL;
 
-	return ks_pool_free(condp->pool, condp);
+	return ks_pool_free(condp->pool, &condp);
 }
 
 
@@ -655,7 +655,7 @@ KS_DECLARE(ks_status_t) ks_rwl_destroy(ks_rwl_t **rwlock)
 
 	*rwlock = NULL;
 
-	return ks_pool_free(rwlockp->pool, rwlockp);
+	return ks_pool_free(rwlockp->pool, &rwlockp);
 }
 
 

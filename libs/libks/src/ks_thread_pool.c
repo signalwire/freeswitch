@@ -170,7 +170,7 @@ static void *worker_thread(ks_thread_t *thread, void *data)
 		idle_sec = 0;
 		job->func(thread, job->data);
 		
-		ks_pool_free(tp->pool, job);
+		ks_pool_free(tp->pool, &job);
 
 		ks_mutex_lock(tp->mutex);
 		tp->busy_thread_count--;

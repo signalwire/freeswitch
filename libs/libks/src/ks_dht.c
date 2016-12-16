@@ -943,7 +943,7 @@ static int expire_buckets(dht_handle_t *h, struct bucket *b)
             b->nodes = n->next;
             b->count--;
             changed = 1;
-            ks_pool_free(h->pool, n);
+            ks_pool_free(h->pool, &n);
         }
 
         p = b->nodes;
@@ -953,7 +953,7 @@ static int expire_buckets(dht_handle_t *h, struct bucket *b)
                 p->next = n->next;
                 b->count--;
                 changed = 1;
-                ks_pool_free(h->pool, n);
+                ks_pool_free(h->pool, &n);
             }
             p = p->next;
         }
@@ -1073,7 +1073,7 @@ static void expire_searches(dht_handle_t *h)
             } else {
                 h->searches = next;
 			}
-            ks_pool_free(h->pool, sr);
+            ks_pool_free(h->pool, &sr);
             h->numsearches--;
         } else {
             previous = sr;
@@ -1425,11 +1425,11 @@ static int expire_storage(dht_handle_t *h)
             free(st->peers);
             if (previous) {
                 previous->next = st->next;
-				ks_pool_free(h->pool, st);
+				ks_pool_free(h->pool, &st);
                 st = previous->next;
 			} else {
                 h->storage = st->next;
-				ks_pool_free(h->pool, st);
+				ks_pool_free(h->pool, &st);
                 st = h->storage;
 			}
 
@@ -1670,7 +1670,7 @@ static void ks_dht_store_entry_destroy(struct ks_dht_store_entry_s **old_entry)
 		entry->body = NULL;
 	}
 	
-	ks_pool_free(pool, entry);	
+	ks_pool_free(pool, &entry);	
 	return;
 }
 
@@ -1848,7 +1848,7 @@ static void ks_dht_store_destroy(struct ks_dht_store_s **old_store)
 
 	ks_hash_destroy(&store->hash);
 
-	ks_pool_free(pool, store);
+	ks_pool_free(pool, &store);
 	
 	return;
 }
@@ -1954,7 +1954,7 @@ static void clear_all_ip(dht_handle_t *h)
 		ipt = (ks_ip_t *) val;
 
 		ks_socket_close(&ipt->sock);
-		ks_pool_free(h->pool, ipt);
+		ks_pool_free(h->pool, &ipt);
 
 		if (ipt->addr.family == AF_INET) {
 			h->ip4s--;
@@ -2008,14 +2008,14 @@ static ks_ip_t *add_ip(dht_handle_t *h, const char *ip, int port, int family)
 
 	if ((ipt->sock = socket(family, SOCK_DGRAM, IPPROTO_UDP)) == KS_SOCK_INVALID) {
 		ks_log(KS_LOG_ERROR, "Socket Error\n");
-		ks_pool_free(h->pool, ipt);
+		ks_pool_free(h->pool, &ipt);
 		return NULL;
 	}
 
 	if (ks_addr_bind(ipt->sock, &ipt->addr) != KS_STATUS_SUCCESS) {
 		ks_log(KS_LOG_ERROR, "Error Adding bind ip: %s port: %d sock: %d (%s)\n", ip, port, ipt->sock, strerror(errno));
 		ks_socket_close(&ipt->sock);
-		ks_pool_free(h->pool, ipt);
+		ks_pool_free(h->pool, &ipt);
 		return NULL;
 	}
 
@@ -2168,9 +2168,9 @@ KS_DECLARE(ks_status_t) ks_dht_init(dht_handle_t **handle, ks_dht_af_flag_t af_f
     return KS_STATUS_SUCCESS;
 
  fail:
-    ks_pool_free(h->pool, h->buckets);
+    ks_pool_free(h->pool, &h->buckets);
     h->buckets = NULL;
-    ks_pool_free(h->pool, h->buckets6);
+    ks_pool_free(h->pool, &h->buckets6);
     h->buckets6 = NULL;
     return KS_STATUS_FAIL;
 }
@@ -2193,9 +2193,9 @@ KS_DECLARE(int) dht_uninit(dht_handle_t **handle)
         while (b->nodes) {
             struct node *n = b->nodes;
             b->nodes = n->next;
-            ks_pool_free(h->pool, n);
+            ks_pool_free(h->pool, &n);
         }
-        ks_pool_free(h->pool, b);
+        ks_pool_free(h->pool, &b);
     }
 
     while (h->buckets6) {
@@ -2204,28 +2204,28 @@ KS_DECLARE(int) dht_uninit(dht_handle_t **handle)
         while (b->nodes) {
             struct node *n = b->nodes;
             b->nodes = n->next;
-            ks_pool_free(h->pool, n);
+            ks_pool_free(h->pool, &n);
         }
-        ks_pool_free(h->pool, b);
+        ks_pool_free(h->pool, &b);
     }
 
     while (h->storage) {
         struct storage *st = h->storage;
         h->storage = h->storage->next;
-        ks_pool_free(h->pool, st->peers);
-        ks_pool_free(h->pool, st);
+        ks_pool_free(h->pool, &st->peers);
+        ks_pool_free(h->pool, &st);
     }
 
     while (h->searches) {
         struct search *sr = h->searches;
         h->searches = h->searches->next;
-        ks_pool_free(h->pool, sr);
+        ks_pool_free(h->pool, &sr);
     }
 
 	ks_dht_store_destroy(&h->store);
 	pool = h->pool;
 	h->pool = NULL;
-	ks_pool_free(pool, h);
+	ks_pool_free(pool, &h);
 	ks_pool_close(&pool);
 
     return 1;

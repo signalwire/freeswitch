@@ -286,7 +286,7 @@ KS_DECLARE(void) ks_dht_destroy(ks_dht_t **dht)
 	 * Cleanup the array of endpoint pointers if it is allocated.
 	 */
 	if (d->endpoints) {
-		ks_pool_free(d->pool, d->endpoints);
+		ks_pool_free(d->pool, &d->endpoints);
 		d->endpoints = NULL;
 	}
 
@@ -294,7 +294,7 @@ KS_DECLARE(void) ks_dht_destroy(ks_dht_t **dht)
 	 * Cleanup the array of endpoint polling data if it is allocated.
 	 */
 	if (d->endpoints_poll) {
-		ks_pool_free(d->pool, d->endpoints_poll);
+		ks_pool_free(d->pool, &d->endpoints_poll);
 		d->endpoints_poll = NULL;
 	}
 
@@ -338,7 +338,7 @@ KS_DECLARE(void) ks_dht_destroy(ks_dht_t **dht)
 	/**
 	 * Free the dht instance from the pool, after this the dht instance memory is invalid.
 	 */
-	ks_pool_free(d->pool, d);
+	ks_pool_free(d->pool, &d);
 
 	/**
 	 * At this point dht instance is invalidated so NULL the pointer.

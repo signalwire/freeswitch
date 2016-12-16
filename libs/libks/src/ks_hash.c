@@ -293,7 +293,7 @@ ks_hash_expand(ks_hash_t *h)
 					newtable[index] = e;
 				}
 			}
-			ks_pool_safe_free(h->pool, h->table);
+			ks_pool_free(h->pool, &h->table);
 			h->table = newtable;
 		}
     /* Plan B: realloc instead */
@@ -357,10 +357,10 @@ static void * _ks_hash_remove(ks_hash_t *h, void *k, unsigned int hashvalue, uns
 			h->entrycount--;
 			v = e->v;
 			if (e->flags & KS_HASH_FLAG_FREE_KEY) {
-				ks_pool_free(h->pool, e->k);
+				ks_pool_free(h->pool, &e->k);
 			}
 			if (e->flags & KS_HASH_FLAG_FREE_VALUE) {
-				ks_pool_safe_free(h->pool, e->v); 
+				ks_pool_free(h->pool, &e->v); 
 				v = NULL;
 			} else if (e->destructor) {
 				e->destructor(e->v);
@@ -369,7 +369,7 @@ static void * _ks_hash_remove(ks_hash_t *h, void *k, unsigned int hashvalue, uns
 				h->destructor(e->v);
 				v = e->v = NULL;
 			}
-			ks_pool_safe_free(h->pool, e);
+			ks_pool_free(h->pool, &e);
 			return v;
 		}
 		pE = &(e->next);
@@ -538,11 +538,11 @@ ks_hash_destroy(ks_hash_t **h)
 			f = e; e = e->next; 
 
 			if (f->flags & KS_HASH_FLAG_FREE_KEY) {
-				ks_pool_free((*h)->pool, f->k); 
+				ks_pool_free((*h)->pool, &f->k); 
 			}
 			
 			if (f->flags & KS_HASH_FLAG_FREE_VALUE) {
-				ks_pool_safe_free((*h)->pool, f->v); 
+				ks_pool_free((*h)->pool, &f->v); 
 			} else if (f->destructor) {
 				f->destructor(f->v);
 				f->v = NULL;
@@ -550,18 +550,18 @@ ks_hash_destroy(ks_hash_t **h)
 				(*h)->destructor(f->v);
 				f->v = NULL;
 			}
-			ks_pool_safe_free((*h)->pool, f); 
+			ks_pool_free((*h)->pool, &f); 
 		}
 	}
 
 	pool = (*h)->pool;
-    ks_pool_safe_free(pool, (*h)->table);
+    ks_pool_free(pool, &(*h)->table);
 	ks_hash_write_unlock(*h);
-	if ((*h)->rwl) ks_pool_free(pool, (*h)->rwl);
+	if ((*h)->rwl) ks_pool_free(pool, &(*h)->rwl);
 	if ((*h)->mutex) {
-		ks_pool_free(pool, (*h)->mutex);
+		ks_pool_free(pool, &(*h)->mutex);
 	}
-	ks_pool_free(pool, *h);
+	ks_pool_free(pool, &(*h));
 	pool = NULL;
 	*h = NULL;
 
@@ -580,7 +580,7 @@ KS_DECLARE(void) ks_hash_last(ks_hash_iterator_t **iP)
 		ks_rwl_read_unlock(i->h->rwl);
 	}
 
-	ks_pool_free(i->h->pool, i);
+	ks_pool_free(i->h->pool, &i);
 	
 	*iP = NULL;
 }

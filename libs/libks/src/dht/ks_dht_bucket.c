@@ -214,7 +214,7 @@ KS_DECLARE(void) ks_dhtrt_deinitroute(ks_dhtrt_routetable_t **table)
 
 	ks_pool_t *pool = (*table)->pool;
 
-	ks_pool_free(pool, *table);
+	ks_pool_free(pool, &(*table));
 
 	return;
 }
@@ -259,7 +259,7 @@ KS_DECLARE(ks_status_t)	 ks_dhtrt_create_node( ks_dhtrt_routetable_t *table,
 
     if (( ks_addr_set(&tnode->addr, ip, port, tnode->family) != KS_STATUS_SUCCESS) ||
         ( ks_rwl_create(&tnode->reflock, table->pool) !=  KS_STATUS_SUCCESS))       {
-        ks_pool_free(table->pool, tnode);
+        ks_pool_free(table->pool, &tnode);
 		ks_rwl_read_unlock(internal->lock);
         return KS_STATUS_FAIL;
     }
@@ -308,7 +308,7 @@ KS_DECLARE(ks_status_t) ks_dhtrt_delete_node(ks_dhtrt_routetable_t *table, ks_dh
 
     if (ks_rwl_try_write_lock(node->reflock) ==  KS_STATUS_SUCCESS) {      /* grab exclusive lock on node */
 		ks_rwl_destroy(&(node->reflock));
-		ks_pool_free(table->pool, node);
+		ks_pool_free(table->pool, &node);
     }
     else {
         ks_dhtrt_queue_node_fordelete(table, node);
@@ -718,7 +718,7 @@ uint8_t ks_dhtrt_findclosest_locked_nodes(ks_dhtrt_routetable_t *table, ks_dhtrt
 	while (tofree) {
 		ks_dhtrt_sortedxors_t *x = tofree->next;
 
-		ks_pool_free(table->pool, tofree);
+		ks_pool_free(table->pool, &tofree);
 		tofree = x;
 	}
 
@@ -859,10 +859,10 @@ void ks_dhtrt_process_deleted(ks_dhtrt_routetable_t *table)
 
 		if (ks_rwl_try_write_lock(node->reflock) == KS_STATUS_SUCCESS) {        
 	        ks_rwl_destroy(&(node->reflock));
-	        ks_pool_free(table->pool, node);
+	        ks_pool_free(table->pool, &node);
             temp = deleted;
             deleted = deleted->next;
-            ks_pool_free(table->pool, temp);
+            ks_pool_free(table->pool, &temp);
             --internal->deleted_count;
 			if (prev != NULL) {
 				prev->next = deleted;

@@ -105,7 +105,7 @@ KS_DECLARE(void) ks_dht_storageitem_destroy(ks_dht_storageitem_t **item)
 		ben_free(si->v);
 		si->v = NULL;
 	}
-	ks_pool_free(si->pool, si);
+	ks_pool_free(si->pool, &si);
 
 	*item = NULL;
 }

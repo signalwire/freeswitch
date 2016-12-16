@@ -49,7 +49,7 @@ KS_DECLARE(void) ks_dht_endpoint_destroy(ks_dht_endpoint_t **endpoint)
 	ep = *endpoint;
 
 	if (ep->sock != KS_SOCK_INVALID) ks_socket_close(&ep->sock);
-	ks_pool_free(ep->pool, ep);
+	ks_pool_free(ep->pool, &ep);
 
 	*endpoint = NULL;
 }

@@ -40,7 +40,7 @@ KS_DECLARE(void) ks_dht_transaction_destroy(ks_dht_transaction_t **transaction)
 
 	t = *transaction;
 
-	ks_pool_free(t->pool, t);
+	ks_pool_free(t->pool, &t);
 
 	*transaction = NULL;
 }

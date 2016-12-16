@@ -84,7 +84,7 @@ int main(int argc, char **argv)
 
 	printf("FREE:\n");
 
-	status = ks_pool_safe_free(pool, str);
+	status = ks_pool_free(pool, &str);
 	if (status != KS_STATUS_SUCCESS) {
 		fprintf(stderr, "FREE ERR: [%s]\n", ks_pool_strerror(err));
 		exit(255);
@@ -122,7 +122,7 @@ int main(int argc, char **argv)
 
 	printf("FREE OBJ:\n");
 
-	status = ks_pool_safe_free(pool, foo);
+	status = ks_pool_free(pool, &foo);
 	ok(status == KS_STATUS_SUCCESS);
 	if (status != KS_STATUS_SUCCESS) {
 		fprintf(stderr, "FREE OBJ ERR: [%s]\n", ks_pool_strerror(status));
@@ -181,7 +181,7 @@ int main(int argc, char **argv)
 
 	printf("FREE 2:\n");
 
-	status = ks_pool_free(pool, str);
+	status = ks_pool_free(pool, &str);
 	ok(status == KS_STATUS_SUCCESS);
 	if (status != KS_STATUS_SUCCESS) {
 		fprintf(stderr, "FREE2 ERR: [%s]\n", ks_pool_strerror(status));

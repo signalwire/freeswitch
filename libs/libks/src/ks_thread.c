@@ -261,7 +261,7 @@ KS_DECLARE(ks_status_t) ks_thread_create_ex(ks_thread_t **rthread, ks_thread_fun
 	if (thread) {
 		thread->running = 0;
 		if (pool) {
-			ks_pool_safe_free(pool, thread);
+			ks_pool_free(pool, &thread);
 		}
 	}
   done:

@@ -291,7 +291,7 @@ KS_DECLARE(void *) ks_pool_calloc_ex(ks_pool_t *mp_p, const unsigned long ele_n,
  *
  */
 
-KS_DECLARE(ks_status_t) ks_pool_free(ks_pool_t *mp_p, void *addr);
+KS_DECLARE(ks_status_t) ks_pool_free_ex(ks_pool_t *mp_p, void **addrP);
 
 /*
  * void *ks_pool_resize
@@ -453,7 +453,7 @@ KS_DECLARE(const char *) ks_pool_strerror(const ks_status_t error);
 
 KS_DECLARE(ks_status_t) ks_pool_set_cleanup(ks_pool_t *mp_p, void *ptr, void *arg, int type, ks_pool_cleanup_fn_t fn);
 
-#define ks_pool_safe_free(_p, _a) ks_pool_free(_p, _a); (_a) = NULL
+#define ks_pool_free(_p, _x) ks_pool_free_ex(_p, (void **)_x)
 
 /*<<<<<<<<<<   This is end of the auto-generated output from fillproto. */
 

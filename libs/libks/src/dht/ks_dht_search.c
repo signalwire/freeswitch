@@ -53,12 +53,12 @@ KS_DECLARE(void) ks_dht_search_destroy(ks_dht_search_t **search)
 		ks_hash_destroy(&s->pending);
 	}
 	if (s->callbacks) {
-		ks_pool_free(s->pool, s->callbacks);
+		ks_pool_free(s->pool, &s->callbacks);
 		s->callbacks = NULL;
 	}
 	if (s->mutex) ks_mutex_destroy(&s->mutex);
 
-	ks_pool_free(s->pool, s);
+	ks_pool_free(s->pool, &s);
 
 	*search = NULL;
 }
@@ -115,7 +115,7 @@ KS_DECLARE(void) ks_dht_search_pending_destroy(ks_dht_search_pending_t **pending
 
 	p = *pending;
 
-	ks_pool_free(p->pool, p);
+	ks_pool_free(p->pool, &p);
 
 	*pending = NULL;
 }

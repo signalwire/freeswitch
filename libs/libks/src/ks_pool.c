@@ -1616,13 +1616,18 @@ KS_DECLARE(void *) ks_pool_calloc(ks_pool_t *mp_p, const unsigned long ele_n, co
  * mp_p <-> Pointer to the memory pool.
  *
  *
- * addr <-> Address to free.
+ * addr <-> pointer to pointer of Address to free.
  *
  */
-KS_DECLARE(ks_status_t) ks_pool_free(ks_pool_t *mp_p, void *addr)
+KS_DECLARE(ks_status_t) ks_pool_free_ex(ks_pool_t *mp_p, void **addrP)
 {
 	ks_status_t r;
+	void *addr;
 
+	ks_assert(addrP);
+
+	addr = *addrP;
+	
 	ks_assert(mp_p);
 	ks_assert(addr);
 
@@ -1648,6 +1653,10 @@ KS_DECLARE(ks_status_t) ks_pool_free(ks_pool_t *mp_p, void *addr)
  end:
 
 	ks_mutex_unlock(mp_p->mutex);
+
+	if (r == KS_STATUS_SUCCESS) {
+		*addrP = NULL;
+	}
 
 	return r;
 

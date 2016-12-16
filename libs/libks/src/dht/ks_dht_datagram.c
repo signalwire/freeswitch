@@ -46,7 +46,7 @@ KS_DECLARE(void) ks_dht_datagram_destroy(ks_dht_datagram_t **datagram)
 
 	dg = *datagram;
 
-	ks_pool_free(dg->pool, dg);
+	ks_pool_free(dg->pool, &dg);
 
 	*datagram = NULL;
 }
