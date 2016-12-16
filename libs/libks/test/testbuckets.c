@@ -90,23 +90,37 @@ void test02()
 
    nodeid.id[0] = 1;
    status = ks_dhtrt_create_node(rt, nodeid, KS_DHT_LOCAL, ipv6, port, &peer);
+   ks_dhtrt_touch_node(rt, nodeid);
    nodeid.id[0] = 2;
    status = ks_dhtrt_create_node(rt,  nodeid,  KS_DHT_REMOTE, ipv6, port, &peer);
+   ks_dhtrt_touch_node(rt, nodeid);
    nodeid.id[0] = 3;
    status = ks_dhtrt_create_node(rt,  nodeid, KS_DHT_REMOTE, ipv6, port, &peer);
+   ks_dhtrt_touch_node(rt, nodeid);
    nodeid.id[0] = 4;
    status = ks_dhtrt_create_node(rt,  nodeid, KS_DHT_LOCAL, ipv6, port, &peer);
+   ks_dhtrt_touch_node(rt, nodeid);
    nodeid.id[1] = 1;
    status = ks_dhtrt_create_node(rt,  nodeid, KS_DHT_REMOTE, ipv6, port, &peer);
+   ks_dhtrt_touch_node(rt, nodeid);
 
 
    nodeid.id[19] = 1;
    status = ks_dhtrt_create_node(rt,  nodeid, KS_DHT_REMOTE, ipv4, port, &peer);
+   ks_dhtrt_touch_node(rt, nodeid);
    nodeid.id[19] = 2;
    status = ks_dhtrt_create_node(rt,  nodeid, KS_DHT_REMOTE, ipv4, port, &peer);
+   ks_dhtrt_touch_node(rt, nodeid);
    nodeid.id[19] = 3;
    status = ks_dhtrt_create_node(rt,  nodeid, KS_DHT_REMOTE, ipv4, port, &peer);
+   ks_dhtrt_touch_node(rt, nodeid);
    nodeid.id[19] = 4;
+   status = ks_dhtrt_create_node(rt,  nodeid,  KS_DHT_LOCAL, ipv4, port, &peer);
+   ks_dhtrt_touch_node(rt, nodeid);
+
+   nodeid.id[19] = 5;
+   status = ks_dhtrt_create_node(rt,  nodeid, KS_DHT_REMOTE, ipv4, port, &peer);
+   nodeid.id[19] = 6;
    status = ks_dhtrt_create_node(rt,  nodeid,  KS_DHT_LOCAL, ipv4, port, &peer);
 
    int qcount = doquery(rt, nodeid.id, KS_DHT_LOCAL, both);
@@ -131,6 +145,14 @@ void test02()
 
    qcount = doquery(rt, nodeid.id, KS_DHT_BOTH, ifv4);
    printf("\n*** AF_INET count expected 4, actual %d\n", qcount); fflush(stdout);
+
+   nodeid.id[19] = 5;
+   ks_dhtrt_touch_node(rt, nodeid);
+   nodeid.id[19] = 6;
+   ks_dhtrt_touch_node(rt, nodeid);
+
+   qcount = doquery(rt, nodeid.id, KS_DHT_BOTH, ifv4);
+   printf("\n*** AF_INET (after touch) count expected 6, actual %d\n", qcount); fflush(stdout);
 
    printf("*** testbuckets - test02 finished\n"); fflush(stdout);
 
@@ -162,6 +184,7 @@ void test03()
            ++nodeid.id[1];
      } 
      ks_dhtrt_create_node(rt, nodeid, KS_DHT_REMOTE, ipv4, port, &peer);
+     ks_dhtrt_touch_node(rt, nodeid);
    }
 
    for (int i=0; i<2; ++i) {
@@ -173,6 +196,7 @@ void test03()
      }
 
      ks_dhtrt_create_node(rt, nodeid, KS_DHT_LOCAL, ipv4, port, &peer);
+     ks_dhtrt_touch_node(rt, nodeid);
    }
 
    for (int i=0; i<201; ++i) {
@@ -183,6 +207,7 @@ void test03()
            ++nodeid.id[1];
      }
      ks_dhtrt_create_node(rt, nodeid, KS_DHT_REMOTE, ipv6, port, &peer);
+     ks_dhtrt_touch_node(rt, nodeid);
    }
 
 
@@ -242,6 +267,7 @@ void test04()
            ++nodeid.id[1];
      }
      ks_dhtrt_create_node(rt, nodeid, KS_DHT_REMOTE, ipv4, port, &peer);
+     ks_dhtrt_touch_node(rt, nodeid);
    }
 
    
@@ -368,6 +394,7 @@ static void *test06ex(ks_thread_t *thread, void *data)
 		 ++nodeid.id[19];
 		ks_dhtrt_create_node(rt, nodeid, KS_DHT_LOCAL, ipv4, port, &peer);
         ks_sleep(1000);
+        ks_dhtrt_touch_node(rt, nodeid);
 	}
 
 	for (int i=0; i<test06nodes; ++i) {
@@ -443,6 +470,8 @@ int main(int argc, char* argv[]) {
 	}
 
    ks_init();
+   ks_global_set_default_logger(7);
+
 
    ks_status_t status;
    char *str = NULL;
