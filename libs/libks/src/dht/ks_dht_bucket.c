@@ -39,8 +39,10 @@
 
 /* change for testing */
 #define KS_DHT_BUCKETSIZE 20
-#define KS_DHTRT_INACTIVETIME  (5*60)	 
+#define KS_DHTRT_INACTIVETIME  (15*60)	 
 #define KS_DHTRT_MAXPING  3
+#define KS_DHTRT_PROCESSTABLE_INTERVAL (5*60)  
+
 
 /* peer flags */
 #define DHTPEER_ACTIVE	1
@@ -91,8 +93,10 @@ typedef struct ks_dhtrt_internal_s {
 	uint8_t	 localid[KS_DHT_NODEID_SIZE];
 	ks_dhtrt_bucket_header_t *buckets;		/* root bucketheader */
 	ks_rwl_t 			   *lock;  		    /* lock for safe traversal of the tree */
+	ks_time_t              last_process_table;
     ks_mutex_t             *deleted_node_lock;
     ks_dhtrt_deletednode_t *deleted_node;
+    uint32_t               deleted_count;
 } ks_dhtrt_internal_t;
 
 typedef struct ks_dhtrt_xort_s {
@@ -176,7 +180,7 @@ void ks_dhtrt_ping(ks_dhtrt_bucket_entry_t *entry);
 /* debugging */
 #define KS_DHT_DEBUGPRINTF_
 /* # define KS_DHT_DEBUGPRINTFX_  very verbose */
-
+/* # define KS_DHT_DEBUGLOCKPRINTF_  debug locking */
 
 KS_DECLARE(ks_status_t) ks_dhtrt_initroute(ks_dhtrt_routetable_t **tableP, ks_pool_t *pool) 
 {
@@ -230,7 +234,8 @@ KS_DECLARE(ks_status_t)	 ks_dhtrt_create_node( ks_dhtrt_routetable_t *table,
 
     ks_dhtrt_bucket_entry_t *bentry = ks_dhtrt_find_bucketentry(header, nodeid.id);
     if (bentry != 0) {
-		bentry->type = ks_time_now_sec();
+		bentry->tyme = ks_time_now_sec();
+        bentry->type = type;
 		(*node) = bentry->gptr;
 		ks_rwl_read_unlock(internal->lock);
 		return KS_STATUS_SUCCESS;
@@ -255,6 +260,7 @@ KS_DECLARE(ks_status_t)	 ks_dhtrt_create_node( ks_dhtrt_routetable_t *table,
     if (( ks_addr_set(&tnode->addr, ip, port, tnode->family) != KS_STATUS_SUCCESS) ||
         ( ks_rwl_create(&tnode->reflock, table->pool) !=  KS_STATUS_SUCCESS))       {
         ks_pool_free(table->pool, tnode);
+		ks_rwl_read_unlock(internal->lock);
         return KS_STATUS_FAIL;
     }
 
@@ -276,8 +282,18 @@ KS_DECLARE(ks_status_t) ks_dhtrt_delete_node(ks_dhtrt_routetable_t *table, ks_dh
 		ks_dhtrt_bucket_t *bucket = header->bucket;
 
 		if (bucket != 0) {			 /* we found a bucket*/
+#ifdef  KS_DHT_DEBUGLOCKPRINTF_
+			char buf[100];
+			printf("delete node: LOCKING bucket %s\n",  ks_dhtrt_printableid(header->mask, buf));
+			fflush(stdout);
+#endif
 			ks_rwl_write_lock(bucket->lock);
 			s = ks_dhtrt_delete_id(bucket, node->nodeid.id);
+#ifdef  KS_DHT_DEBUGLOCKPRINTF_
+			printf("delete node: UNLOCKING bucket %s\n", ks_dhtrt_printableid(header->mask, buf));
+			fflush(stdout);
+#endif
+
 			ks_rwl_write_unlock(bucket->lock);
 		}
 
@@ -317,6 +333,11 @@ ks_status_t ks_dhtrt_insert_node(ks_dhtrt_routetable_t *table, ks_dht_node_t *no
        ks_rwl_write_unlock(internal->lock);       
        return  KS_STATUS_FAIL;  /* we were not able to find a bucket*/
     }
+#ifdef  KS_DHT_DEBUGLOCKPRINTF_
+        char buf[100];
+        printf("insert node: LOCKING bucket %s\n", ks_dhtrt_printableid(header->mask, buf));
+        fflush(stdout);
+#endif
 
 	ks_rwl_write_lock(bucket->lock);
 	
@@ -327,6 +348,10 @@ ks_status_t ks_dhtrt_insert_node(ks_dhtrt_routetable_t *table, ks_dht_node_t *no
 		if (bucket->expired_count) {
 			ks_status_t s = ks_dhtrt_insert_id(bucket, node);
 			if (s == KS_STATUS_SUCCESS) {
+#ifdef  KS_DHT_DEBUGLOCKPRINTF_
+				 printf("insert node: UNLOCKING bucket %s\n", ks_dhtrt_printableid(header->mask, buf));
+				 fflush(stdout);
+#endif
 				 ks_rwl_write_unlock(bucket->lock);
                  ks_rwl_write_unlock(internal->lock);
 				 return KS_STATUS_SUCCESS;
@@ -341,8 +366,12 @@ ks_status_t ks_dhtrt_insert_node(ks_dhtrt_routetable_t *table, ks_dht_node_t *no
 
 		if ( !(header->flags & BHF_LEFT) )	{	/* only the left handside node can be split */
 #ifdef	KS_DHT_DEBUGPRINTF_
-			char buffer[100];
-			printf(" nodeid %s was not inserted\n",	 ks_dhtrt_printableid(node->nodeid.id, buffer));
+			char bufx[100];
+			printf(" nodeid %s was not inserted\n",	 ks_dhtrt_printableid(node->nodeid.id, bufx));
+#endif
+#ifdef  KS_DHT_DEBUGLOCKPRINTF_
+			printf("insert node: UNLOCKING bucket %s\n",  ks_dhtrt_printableid(header->mask, buf));
+			fflush(stdout);
 #endif
 	        ks_rwl_write_unlock(bucket->lock);
             ks_rwl_write_unlock(internal->lock);
@@ -356,8 +385,12 @@ ks_status_t ks_dhtrt_insert_node(ks_dhtrt_routetable_t *table, ks_dht_node_t *no
 
 		if (newmask[KS_DHT_NODEID_SIZE-1] == 0) {  /* no more bits to shift - is this possible */
 #ifdef	KS_DHT_DEBUGPRINTF_
-			char buffer[100];
-			printf(" nodeid %s was not inserted\n",	 ks_dhtrt_printableid(node->nodeid.id, buffer));
+			char bufx[100];
+			printf(" nodeid %s was not inserted\n",	 ks_dhtrt_printableid(node->nodeid.id, bufx));
+#endif
+#ifdef  KS_DHT_DEBUGLOCKPRINTF_
+            printf("insert node: UNLOCKING bucket %s\n", ks_dhtrt_printableid(header->mask, buf));
+            fflush(stdout);
 #endif
 			ks_rwl_write_unlock(bucket->lock);
             ks_rwl_write_unlock(internal->lock);
@@ -381,6 +414,12 @@ ks_status_t ks_dhtrt_insert_node(ks_dhtrt_routetable_t *table, ks_dht_node_t *no
 		/* which bucket do care about */
 		if (ks_dhtrt_ismasked(node->nodeid.id, newleft->mask)) {
 			bucket = newleft->bucket;
+#ifdef  KS_DHT_DEBUGLOCKPRINTF_
+            printf("insert node: UNLOCKING bucket %s\n", ks_dhtrt_printableid(header->right->mask, buf));
+            printf("insert node: LOCKING bucket %s\n", ks_dhtrt_printableid(newleft->mask, buf));
+            fflush(stdout);
+#endif
+
             ks_rwl_write_lock(bucket->lock);                   /* lock new bucket */
             ks_rwl_write_unlock(header->right->bucket->lock);   /* unlock old bucket */
 			header = newleft;
@@ -398,15 +437,13 @@ ks_status_t ks_dhtrt_insert_node(ks_dhtrt_routetable_t *table, ks_dht_node_t *no
 	printf("into bucket %s\n",	ks_dhtrt_printableid(header->mask, buffer));
 #endif
 
-	/* by this point we have a viable & locked bucket
-       so downgrade the internal lock to read.  safe as we hold the bucket write lock
-       preventing it being sptlit under us.
-    */
-    ks_rwl_write_unlock(internal->lock);    
-    ks_rwl_read_lock(internal->lock);
-
 	ks_status_t s = ks_dhtrt_insert_id(bucket, node);
-    ks_rwl_read_unlock(internal->lock);
+    ks_rwl_write_unlock(internal->lock);
+#ifdef  KS_DHT_DEBUGLOCKPRINTF_
+    printf("insert node: UNLOCKING bucket %s\n",
+                       ks_dhtrt_printableid(header->mask, buf));
+    fflush(stdout);
+#endif
     ks_rwl_write_unlock(bucket->lock);
     return s;
 }
@@ -427,13 +464,22 @@ KS_DECLARE(ks_dht_node_t *) ks_dhtrt_find_node(ks_dhtrt_routetable_t *table, ks_
 
 		if (bucket != 0) {			 /* probably a logic error ?*/
 
+#ifdef  KS_DHT_DEBUGLOCKPRINTF_
+            char buf[100];
+            printf("insert node: read LOCKING bucket %s\n",  ks_dhtrt_printableid(header->mask, buf));
+            fflush(stdout);
+#endif
+
 			ks_rwl_read_lock(bucket->lock);
 			node = ks_dhtrt_find_nodeid(bucket, nodeid.id);
     
 			if (node != NULL) {
 				ks_rwl_read_lock(node->reflock);
 			}
-
+#ifdef  KS_DHT_DEBUGLOCKPRINTF_
+            printf("insert node: read UNLOCKING bucket %s\n",  ks_dhtrt_printableid(header->mask, buf));
+            fflush(stdout);
+#endif
 			ks_rwl_read_unlock(bucket->lock);
 		}
 
@@ -453,10 +499,16 @@ KS_DECLARE(ks_status_t) ks_dhtrt_touch_node(ks_dhtrt_routetable_t *table,  ks_dh
 
 	if (header != 0 && header->bucket != 0) {
 		ks_rwl_write_lock(header->bucket->lock);
+#ifdef  KS_DHT_DEBUGLOCKPRINTF_
+		char buf[100];
+		printf("insert node: write bucket %s\n",  ks_dhtrt_printableid(header->mask, buf));
+		fflush(stdout);
+#endif
+
 		ks_dhtrt_bucket_entry_t *e = ks_dhtrt_find_bucketentry(header, nodeid.id);
 
 		if (e != 0) { 
-			e->tyme = ks_time_now();
+			e->tyme = ks_time_now_sec();
 			e->outstanding_pings = 0;
 
 			if (e->flags ==	 DHTPEER_EXPIRED) {
@@ -466,6 +518,10 @@ KS_DECLARE(ks_status_t) ks_dhtrt_touch_node(ks_dhtrt_routetable_t *table,  ks_dh
 			e->flags = DHTPEER_ACTIVE;
 		    s = KS_STATUS_SUCCESS;
 		}
+#ifdef  KS_DHT_DEBUGLOCKPRINTF_
+		printf("insert node: UNLOCKING bucket %s\n",  ks_dhtrt_printableid(header->mask, buf));
+		fflush(stdout);
+#endif
 		ks_rwl_write_unlock(header->bucket->lock);
 	}
 	ks_rwl_read_unlock(internal->lock);      /* release read lock */
@@ -698,12 +754,16 @@ KS_DECLARE(void)  ks_dhtrt_process_table(ks_dhtrt_routetable_t *table)
 
 	ks_dhtrt_internal_t *internal = table->internal;
 
+    ks_time_t t0 = ks_time_now_sec();
+    if (t0 - internal->last_process_table < KS_DHTRT_PROCESSTABLE_INTERVAL) {
+		return;  
+    } 
+
 	ks_rwl_read_lock(internal->lock);      /* grab read lock */
 
 	ks_dhtrt_bucket_header_t *header = internal->buckets;
 	ks_dhtrt_bucket_header_t *stack[KS_DHT_NODEID_SIZE * 8];
 	int stackix=0;
-	ks_time_t t0 = ks_time_now(); 
 
 	while (header) {
 		stack[stackix++] = header;
@@ -715,12 +775,10 @@ KS_DECLARE(void)  ks_dhtrt_process_table(ks_dhtrt_routetable_t *table)
 			if (ks_rwl_try_write_lock(b->lock) == KS_STATUS_SUCCESS) {
 
 #ifdef  KS_DHT_DEBUGLOCKPRINTF_
-        char buf[100];
-        printf("process_table: LOCKING bucket %s\n",
-               ks_dhtrt_printableid(header->mask, buf));
-        fflush(stdout);
+				char buf[100];
+				printf("process_table: LOCKING bucket %s\n", ks_dhtrt_printableid(header->mask, buf));
+				fflush(stdout);
 #endif
-
 
 				for (int ix=0; ix<KS_DHT_BUCKETSIZE; ++ix) {
 					ks_dhtrt_bucket_entry_t *e =  &b->entries[ix];
@@ -757,8 +815,7 @@ KS_DECLARE(void)  ks_dhtrt_process_table(ks_dhtrt_routetable_t *table)
 
 #ifdef  KS_DHT_DEBUGLOCKPRINTF_
         char buf1[100];
-        printf("process_table: UNLOCKING bucket %s\n",
-               ks_dhtrt_printableid(header->mask, buf1));
+        printf("process_table: UNLOCKING bucket %s\n", ks_dhtrt_printableid(header->mask, buf1));
         fflush(stdout);
 #endif
 
@@ -767,12 +824,10 @@ KS_DECLARE(void)  ks_dhtrt_process_table(ks_dhtrt_routetable_t *table)
 			}   /* end of if trywrite_lock successful */
             else {
 #ifdef  KS_DHT_DEBUGPRINTF_
-        char buf2[100];
-        printf("process_table: unble to LOCK bucket %s\n",
-               ks_dhtrt_printableid(header->mask, buf2));
-        fflush(stdout);
+				char buf2[100];
+				printf("process_table: unble to LOCK bucket %s\n", ks_dhtrt_printableid(header->mask, buf2));
+				fflush(stdout);
 #endif
-
             }
 		}
 
@@ -808,6 +863,7 @@ void ks_dhtrt_process_deleted(ks_dhtrt_routetable_t *table)
             temp = deleted;
             deleted = deleted->next;
             ks_pool_free(table->pool, temp);
+            --internal->deleted_count;
 			if (prev != NULL) {
 				prev->next = deleted;
 			}
@@ -936,8 +992,7 @@ ks_dhtrt_bucket_entry_t *ks_dhtrt_find_bucketentry(ks_dhtrt_bucket_header_t *hea
 	if (bucket == 0)  return NULL;
 
 	for (int ix=0; ix<KS_DHT_BUCKETSIZE; ++ix) {
-#ifdef	KS_DHT_DEBUGPRINTF_
-#endif
+
 		if ( bucket->entries[ix].inuse == 1	  &&
 			 (!memcmp(nodeid, bucket->entries[ix].id, KS_DHT_NODEID_SIZE)) ) {
 			return &(bucket->entries[ix]);
@@ -963,7 +1018,9 @@ void ks_dhtrt_split_bucket(ks_dhtrt_bucket_header_t *original,
 	int rix = 0;
 
 	for ( ; rix<KS_DHT_BUCKETSIZE; ++rix) {
+
 		if (ks_dhtrt_ismasked(source->entries[rix].id, left->mask)) {
+
 			/* move it to the left */
 			memcpy(dest->entries[lix].id, source->entries[rix].id, KS_DHT_NODEID_SIZE);
 			dest->entries[lix].gptr   = source->entries[rix].gptr;
@@ -1014,20 +1071,24 @@ ks_status_t ks_dhtrt_insert_id(ks_dhtrt_bucket_t *bucket, ks_dht_node_t *node)
 	uint8_t ix = 0;
 
 	for (; ix<KS_DHT_BUCKETSIZE; ++ix)	{
+
 		if (bucket->entries[ix].inuse == 0) {
+
 			if (free == KS_DHT_BUCKETSIZE) {
 				free = ix; /* use this one	 */
 			}
+
 		}
 		else if (free == KS_DHT_BUCKETSIZE && bucket->entries[ix].flags == DHTPEER_EXPIRED) {
 			expiredix = ix;
 		}
+
 		else if (!memcmp(bucket->entries[ix].id, node->nodeid.id, KS_DHT_NODEID_SIZE)) {
 #ifdef	KS_DHT_DEBUGPRINTF_
 			char buffer[100];
 			printf("duplicate peer %s found at %d\n", ks_dhtrt_printableid(node->nodeid.id, buffer), ix);
 #endif
-			bucket->entries[ix].tyme = ks_time_now();
+			bucket->entries[ix].tyme = ks_time_now_sec();
 			bucket->entries[ix].flags &= DHTPEER_ACTIVE;
 			return KS_STATUS_SUCCESS;  /* already exists */
 		}
@@ -1044,7 +1105,7 @@ ks_status_t ks_dhtrt_insert_id(ks_dhtrt_bucket_t *bucket, ks_dht_node_t *node)
 		bucket->entries[free].gptr = node;
         bucket->entries[free].type = node->type;
         bucket->entries[free].family = node->family;  
-        bucket->entries[free].tyme = ks_time_now();
+        bucket->entries[free].tyme = ks_time_now_sec();
         bucket->entries[free].flags &= DHTPEER_ACTIVE;
 
 		if (free !=  expiredix) {  /* are we are taking a free slot rather than replacing an expired node? */
@@ -1092,14 +1153,13 @@ static
 ks_status_t ks_dhtrt_delete_id(ks_dhtrt_bucket_t *bucket, ks_dhtrt_nodeid_t id)
 {
 #ifdef	KS_DHT_DEBUGPRINTF_
-
 	char buffer[100];
 	printf("\ndeleting node for: %s\n",	 ks_dhtrt_printableid(id, buffer));
 #endif
 
 	for (int ix=0; ix<KS_DHT_BUCKETSIZE; ++ix) {
 #ifdef	KS_DHT_DEBUGPRINTFX_
-         char bufferx[100];_
+		char bufferx[100];_
 		printf("\nbucket->entries[%d].id = %s inuse=%c\n", ix,
 			   ks_dhtrt_printableid(bucket->entries[ix].id, bufferx),
 			   bucket->entries[ix].inuse  );
@@ -1156,6 +1216,7 @@ uint8_t ks_dhtrt_findclosest_bucketnodes(ks_dhtrt_nodeid_t id,
     
 
 	for (uint8_t ix=0; ix<KS_DHT_BUCKETSIZE; ++ix) {
+
 	    if ( bucket->entries[ix].inuse == 1                              &&
              (family == ifboth || bucket->entries[ix].family == family)  &&
              (bucket->entries[ix].type & type)                           &&
@@ -1210,6 +1271,7 @@ uint8_t ks_dhtrt_load_query(ks_dhtrt_querynodes_t *query, ks_dhtrt_sortedxors_t 
 {
 	ks_dhtrt_sortedxors_t *current = xort;
 	uint8_t loaded = 0;
+
 	while (current) {
 #ifdef	KS_DHT_DEBUGPRINTF_
 		char buf[100];
@@ -1217,6 +1279,7 @@ uint8_t ks_dhtrt_load_query(ks_dhtrt_querynodes_t *query, ks_dhtrt_sortedxors_t 
 			   ks_dhtrt_printableid(current->bheader->mask,buf), current->count);
 #endif
 		int xorix = current->startix; 
+
 		for (uint8_t ix = 0;
 				ix< current->count && loaded < query->max && xorix !=  KS_DHT_BUCKETSIZE;
 				++ix )	 {
@@ -1225,6 +1288,7 @@ uint8_t ks_dhtrt_load_query(ks_dhtrt_querynodes_t *query, ks_dhtrt_sortedxors_t 
             xorix =  current->xort[xorix].nextix;
 			++loaded;
 		}
+
 #ifdef  KS_DHT_DEBUGLOCKPRINTF_
         char buf1[100];
         printf("load_query: UNLOCKING bucket %s\n",
@@ -1249,6 +1313,7 @@ void ks_dhtrt_queue_node_fordelete(ks_dhtrt_routetable_t* table, ks_dht_node_t* 
     ks_mutex_lock(internal->deleted_node_lock);
     deleted->next = internal->deleted_node;
     internal->deleted_node = deleted;
+    ++internal->deleted_count;
     ks_mutex_unlock(internal->deleted_node_lock);
 }
 
@@ -1299,34 +1364,6 @@ void ks_dhtrt_shiftleft(uint8_t *id) {
 	}
 	return;
 }
-
-/* Determine whether id1 or id2 is closer to ref */
-
-/*
-  @todo: remove ?  simple memcpy seems to do the job ?
-
-  static int
-  ks_dhtrt_xorcmp(const uint8_t *id1, const uint8_t *id2, const uint8_t *ref);
-
-  static int ks_dhtrt_xorcmp(const uint8_t *id1, const uint8_t *id2, const uint8_t *ref)
-  {
-  int i;
-  for (i = 0; i < KS_DHT_NODEID_SIZE; i++) {
-  uint8_t xor1, xor2;
-  if (id1[i] == id2[i]) {
-  continue;
-  }
-  xor1 = id1[i] ^ ref[i];
-  xor2 = id2[i] ^ ref[i];
-  if (xor1 < xor2) {
-  return -1;		  / * id1 is closer * /
-  }
-  return 1;				  / * id2 is closer * /
-  }
-  return 0;		/ * id2 and id2 are identical ! * /
-  }
-*/
-
 
 /* create an xor value from two ids */
 static void ks_dhtrt_xor(const uint8_t *id1, const uint8_t *id2, uint8_t *xor)
