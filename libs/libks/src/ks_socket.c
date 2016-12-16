@@ -213,7 +213,7 @@ KS_DECLARE(ks_socket_t) ks_socket_connect(int type, int protocol, ks_sockaddr_t 
 	return sock;
 }
 
-KS_DECLARE(ks_status_t) ks_addr_bind(ks_socket_t server_sock, ks_sockaddr_t *addr)
+KS_DECLARE(ks_status_t) ks_addr_bind(ks_socket_t server_sock, const ks_sockaddr_t *addr)
 {
 	ks_status_t status = KS_STATUS_SUCCESS;
 
@@ -353,7 +353,7 @@ KS_DECLARE(ks_status_t) ks_addr_set(ks_sockaddr_t *addr, const char *host, ks_po
 }
 
 
-KS_DECLARE(ks_status_t) ks_addr_set_raw(ks_sockaddr_t *addr, void *data, ks_port_t port, int family)
+KS_DECLARE(ks_status_t) ks_addr_set_raw(ks_sockaddr_t *addr, const void *data, ks_port_t port, int family)
 {
 	ks_status_t status = KS_STATUS_SUCCESS;
 
