@@ -7,6 +7,8 @@
 
 ks_dhtrt_routetable_t* rt;
 ks_pool_t* pool;
+ks_thread_pool_t* tpool;
+
 
 static ks_thread_t *threads[10];
 
@@ -28,10 +30,10 @@ void test01()
 	printf("*** testbuckets - test01 start\n"); fflush(stdout);
 
    ks_dhtrt_routetable_t* rt;
-   ks_dhtrt_initroute(&rt, pool);
+   ks_dhtrt_initroute(&rt, pool, tpool);
    ks_dhtrt_deinitroute(&rt);
  
-   ks_dhtrt_initroute(&rt, pool);
+   ks_dhtrt_initroute(&rt, pool, tpool);
    ks_dht_nodeid_t nodeid, homeid;
    memset(homeid.id,  0xdd, KS_DHT_NODEID_SIZE);
    homeid.id[19] = 0;
@@ -472,6 +474,7 @@ int main(int argc, char* argv[]) {
    ks_init();
    ks_global_set_default_logger(7);
 
+   ks_thread_pool_create(&tpool, KS_DHT_TPOOL_MIN, KS_DHT_TPOOL_MAX, KS_DHT_TPOOL_STACK, KS_PRI_NORMAL, KS_DHT_TPOOL_IDLE);
 
    ks_status_t status;
    char *str = NULL;
@@ -488,41 +491,41 @@ int main(int argc, char* argv[]) {
 
    printf("init/deinit routeable\n"); fflush(stdout);
 
-   ks_dhtrt_initroute(&rt, pool);
+   ks_dhtrt_initroute(&rt, pool, tpool);
    ks_dhtrt_deinitroute(&rt);
 
    if (tests[1] == 1) {
-	ks_dhtrt_initroute(&rt, pool);
+	ks_dhtrt_initroute(&rt, pool, tpool);
 	test01();
 	ks_dhtrt_deinitroute(&rt);
    }
 
    if (tests[2] == 1) {
-	ks_dhtrt_initroute(&rt, pool);
+	ks_dhtrt_initroute(&rt, pool, tpool);
 	test02();
 	ks_dhtrt_deinitroute(&rt);
    }
 
    if (tests[3] == 1) {  
-    ks_dhtrt_initroute(&rt, pool);
+    ks_dhtrt_initroute(&rt, pool, tpool);
 	test03();
 	ks_dhtrt_deinitroute(&rt);
    }
 
    if (tests[4] == 1) {
-	ks_dhtrt_initroute(&rt, pool);
+	ks_dhtrt_initroute(&rt, pool, tpool);
 	test04();
 	ks_dhtrt_deinitroute(&rt);
    }
 
    if (tests[5] == 1) {
-	ks_dhtrt_initroute(&rt, pool);
+	ks_dhtrt_initroute(&rt, pool, tpool);
 	test05();
 	ks_dhtrt_deinitroute(&rt);
    }
 
    if (tests[6] == 1) {
-	ks_dhtrt_initroute(&rt, pool);
+	ks_dhtrt_initroute(&rt, pool, tpool);
     test06();
     ks_dhtrt_deinitroute(&rt);
    }
