@@ -31,8 +31,7 @@ KS_DECLARE(ks_status_t) ks_dht_datagram_create(ks_dht_datagram_t **datagram,
 
 	// done:
 	if (ret != KS_STATUS_SUCCESS) {
-		if (dg) ks_dht_datagram_destroy(&dg);
-		*datagram = NULL;
+		ks_dht_datagram_destroy(datagram);
 	}
 	return ret;
 }
@@ -46,9 +45,7 @@ KS_DECLARE(void) ks_dht_datagram_destroy(ks_dht_datagram_t **datagram)
 
 	dg = *datagram;
 
-	ks_pool_free(dg->pool, &dg);
-
-	*datagram = NULL;
+	ks_pool_free(dg->pool, datagram);
 }
 
 /* For Emacs:

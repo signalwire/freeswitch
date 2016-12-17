@@ -149,17 +149,6 @@ struct ks_dht_transaction_s {
 	ks_bool_t finished;
 };
 
-// Check if search already exists for the target id, if so add another callback, must be a popular target id
-// Otherwise create new search, set target id, add callback, and insert the search into the dht search_hash with target id key
-// Get closest local nodes to target id, check against results, send_findnode for closer nodes and add to pending hash with queried node id
-// Upon receiving find_node response, check target id against dht search_hash, check responding node id against pending hash, set finished for purging
-// Update results if responding node id is closer than any current result, or the results are not full
-// Check response nodes against results, send_findnode for closer nodes and add to pending hash with an expiration
-// Pulse expirations purges expired and finished from pending hash, once hash is empty callbacks are called providing results array
-// Note:
-// During the lifetime of a search, the ks_dht_node_t's must be kept alive
-// Do a query touch on nodes prior to being added to pending, this should reset timeout and keep the nodes alive long enough even if they are dubious
-// Nodes which land in results are known good with recent response to find_nodes and should be around for a while before route table worries about cleanup
 struct ks_dht_search_s {
 	ks_pool_t *pool;
 	ks_mutex_t *mutex;
@@ -208,9 +197,6 @@ struct ks_dht_s {
 	ks_hash_t *registry_query;
 	ks_hash_t *registry_error;
 
-	ks_bool_t bind_ipv4;
-	ks_bool_t bind_ipv6;
-
 	ks_dht_endpoint_t **endpoints;
 	int32_t endpoints_size;
 	ks_hash_t *endpoints_hash;
@@ -230,7 +216,8 @@ struct ks_dht_s {
 	ks_dhtrt_routetable_t *rt_ipv4;
 	ks_dhtrt_routetable_t *rt_ipv6;
 
-	ks_hash_t *search_hash;
+	ks_hash_t *searches4_hash;
+	ks_hash_t *searches6_hash;
 
 	volatile uint32_t token_secret_current;
 	volatile uint32_t token_secret_previous;
@@ -300,7 +287,7 @@ KS_DECLARE(ks_status_t) ks_dht_register_error(ks_dht_t *dht, const char *value, 
  * @param dht pointer to the dht instance
  * @param nodeid pointer to a nodeid for this endpoint, may be NULL to generate one randomly
  * @param addr pointer to the local address information
- * @param dereferenced out pointer to the allocated endpoint, may be NULL to ignore endpoint output
+ * @param endpoint dereferenced out pointer to the allocated endpoint, may be NULL to ignore endpoint output
  * @return The ks_status_t result: KS_STATUS_SUCCESS, KS_STATUS_FAIL, ...
  * @see ks_socket_option
  * @see ks_addr_bind
@@ -320,6 +307,25 @@ KS_DECLARE(ks_status_t) ks_dht_bind(ks_dht_t *dht, const ks_dht_nodeid_t *nodeid
  */
 KS_DECLARE(void) ks_dht_pulse(ks_dht_t *dht, int32_t timeout);
 
+/**
+ * Create a network search of the closest nodes to a target.
+ * @param dht pointer to the dht instance
+ * @param family either AF_INET or AF_INET6 for the appropriate network to search
+ * @param target pointer to the nodeid for the target to be searched
+ * @param callback an optional callback to add to the search when it is finished
+ * @param search dereferenced out pointer to the allocated search, may be NULL to ignore search output
+ * @return The ks_status_t result: KS_STATUS_SUCCESS, KS_STATUS_FAIL
+ * @see ks_dht_search_create
+ * @see ks_dht_search_callback_add
+ * @see ks_hash_insert
+ * @see ks_dht_search_pending_create
+ * @see ks_dht_send_findnode
+ */
+KS_DECLARE(ks_status_t) ks_dht_search(ks_dht_t *dht,
+									  int32_t family,
+									  ks_dht_nodeid_t *target,
+									  ks_dht_search_callback_t callback,
+									  ks_dht_search_t **search);
 
 /**
  *

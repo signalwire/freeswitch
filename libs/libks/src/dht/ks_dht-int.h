@@ -267,6 +267,7 @@ KS_DECLARE(ks_status_t) ks_dht_search_create(ks_dht_search_t **search, ks_pool_t
 KS_DECLARE(void) ks_dht_search_destroy(ks_dht_search_t **search);
 
 KS_DECLARE(ks_status_t) ks_dht_search_callback_add(ks_dht_search_t *search, ks_dht_search_callback_t callback);
+KS_DECLARE(void) ks_dht_search_expire(ks_dht_search_t *search, ks_hash_t *pending, int32_t *active);
 
 KS_DECLARE(ks_status_t) ks_dht_search_pending_create(ks_dht_search_pending_t **pending, ks_pool_t *pool, const ks_dht_nodeid_t *nodeid);
 KS_DECLARE(void) ks_dht_search_pending_destroy(ks_dht_search_pending_t **pending);

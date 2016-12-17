@@ -30,8 +30,7 @@ KS_DECLARE(ks_status_t) ks_dht_endpoint_create(ks_dht_endpoint_t **endpoint,
 
 	// done:
 	if (ret != KS_STATUS_SUCCESS) {
-		if (ep) ks_dht_endpoint_destroy(&ep);
-		*endpoint = NULL;
+		if (ep) ks_dht_endpoint_destroy(endpoint);
 	}
 	return ret;
 }
@@ -49,9 +48,8 @@ KS_DECLARE(void) ks_dht_endpoint_destroy(ks_dht_endpoint_t **endpoint)
 	ep = *endpoint;
 
 	if (ep->sock != KS_SOCK_INVALID) ks_socket_close(&ep->sock);
-	ks_pool_free(ep->pool, &ep);
 
-	*endpoint = NULL;
+	ks_pool_free(ep->pool, endpoint);
 }
 
 /* For Emacs:

@@ -26,8 +26,7 @@ KS_DECLARE(ks_status_t) ks_dht_message_create(ks_dht_message_t **message,
 
 	// done:
 	if (ret != KS_STATUS_SUCCESS) {
-		if (m) ks_dht_message_destroy(&m);
-		*message = NULL;
+		ks_dht_message_destroy(message);
 	}
 	return ret;
 }
@@ -45,9 +44,8 @@ KS_DECLARE(void) ks_dht_message_destroy(ks_dht_message_t **message)
 		ben_free(m->data);
 		m->data = NULL;
 	}
-	ks_pool_free(m->pool, &(*message));
 
-	*message = NULL;
+	ks_pool_free(m->pool, message);
 }
 
 

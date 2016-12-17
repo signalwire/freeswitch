@@ -25,8 +25,7 @@ KS_DECLARE(ks_status_t) ks_dht_transaction_create(ks_dht_transaction_t **transac
 
 	// done:
 	if (ret != KS_STATUS_SUCCESS) {
-		if (t) ks_dht_transaction_destroy(&t);
-		*transaction = NULL;
+		if (t) ks_dht_transaction_destroy(transaction);
 	}
 	return ret;
 }
@@ -40,9 +39,7 @@ KS_DECLARE(void) ks_dht_transaction_destroy(ks_dht_transaction_t **transaction)
 
 	t = *transaction;
 
-	ks_pool_free(t->pool, &t);
-
-	*transaction = NULL;
+	ks_pool_free(t->pool, transaction);
 }
 
 /* For Emacs:

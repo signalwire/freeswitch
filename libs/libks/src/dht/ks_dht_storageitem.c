@@ -32,8 +32,7 @@ KS_DECLARE(ks_status_t) ks_dht_storageitem_create_immutable(ks_dht_storageitem_t
 
 	// done:
 	if (ret != KS_STATUS_SUCCESS) {
-		if (si) ks_dht_storageitem_destroy(&si);
-		*item = NULL;
+		if (si) ks_dht_storageitem_destroy(item);
 	}
 	return ret;
 }
@@ -83,8 +82,7 @@ KS_DECLARE(ks_status_t) ks_dht_storageitem_create_mutable(ks_dht_storageitem_t *
 
 	// done:
 	if (ret != KS_STATUS_SUCCESS) {
-		if (si) ks_dht_storageitem_destroy(&si);
-		*item = NULL;
+		if (si) ks_dht_storageitem_destroy(item);
 	}
 	return ret;
 }
@@ -105,9 +103,8 @@ KS_DECLARE(void) ks_dht_storageitem_destroy(ks_dht_storageitem_t **item)
 		ben_free(si->v);
 		si->v = NULL;
 	}
-	ks_pool_free(si->pool, &si);
 
-	*item = NULL;
+	ks_pool_free(si->pool, item);
 }
 
 /* For Emacs:

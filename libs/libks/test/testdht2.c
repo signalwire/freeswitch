@@ -149,9 +149,9 @@ int main() {
 
   diag("Pulsing for route table pings\n"); // Wait for route table pinging to catch up
   for (int i = 0; i < 10; ++i) {
-	  diag("DHT 1\n");
+	  //diag("DHT 1\n");
 	  ks_dht_pulse(dht1, 100);
-	  diag("DHT 2\n");
+	  //diag("DHT 2\n");
 	  ks_dht_pulse(dht2, 100);
   }
   ok(ks_dhtrt_find_node(dht1->rt_ipv4, ep2->nodeid) != NULL); // The node should be good by now, and thus be returned as good
@@ -174,9 +174,9 @@ int main() {
   
   diag("Pulsing for route table pings\n"); // Wait for route table pinging to catch up
   for (int i = 0; i < 10; ++i) {
-	  diag("DHT 1\n");
+	  //diag("DHT 1\n");
 	  ks_dht_pulse(dht1, 100);
-	  diag("DHT 2\n");
+	  //diag("DHT 2\n");
 	  ks_dht_pulse(dht2, 100);
   }
   ok(ks_dhtrt_find_node(dht3->rt_ipv4, ep2->nodeid) != NULL); // The node should be good by now, and thus be returned as good

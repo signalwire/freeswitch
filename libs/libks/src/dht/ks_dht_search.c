@@ -27,8 +27,7 @@ KS_DECLARE(ks_status_t) ks_dht_search_create(ks_dht_search_t **search, ks_pool_t
 
 	// done:
 	if (ret != KS_STATUS_SUCCESS) {
-		if (s) ks_dht_search_destroy(&s);
-		*search = NULL;
+		if (s) ks_dht_search_destroy(search);
 	}
 	return ret;
 }
@@ -58,9 +57,7 @@ KS_DECLARE(void) ks_dht_search_destroy(ks_dht_search_t **search)
 	}
 	if (s->mutex) ks_mutex_destroy(&s->mutex);
 
-	ks_pool_free(s->pool, &s);
-
-	*search = NULL;
+	ks_pool_free(s->pool, search);
 }
 
 KS_DECLARE(ks_status_t) ks_dht_search_callback_add(ks_dht_search_t *search, ks_dht_search_callback_t callback)
@@ -100,10 +97,9 @@ KS_DECLARE(ks_status_t) ks_dht_search_pending_create(ks_dht_search_pending_t **p
 
 	// done:
 	if (ret != KS_STATUS_SUCCESS) {
-		if (p) ks_dht_search_pending_destroy(&p);
-		*pending = NULL;
+		if (p) ks_dht_search_pending_destroy(pending);
 	}
-	return KS_STATUS_SUCCESS;
+	return ret;
 }
 
 KS_DECLARE(void) ks_dht_search_pending_destroy(ks_dht_search_pending_t **pending)
@@ -115,9 +111,7 @@ KS_DECLARE(void) ks_dht_search_pending_destroy(ks_dht_search_pending_t **pending
 
 	p = *pending;
 
-	ks_pool_free(p->pool, &p);
-
-	*pending = NULL;
+	ks_pool_free(p->pool, pending);
 }
 
 /* For Emacs:
