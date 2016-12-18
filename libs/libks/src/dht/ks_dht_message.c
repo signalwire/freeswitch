@@ -4,7 +4,7 @@
 KS_DECLARE(ks_status_t) ks_dht_message_create(ks_dht_message_t **message,
 											  ks_pool_t *pool,
 											  ks_dht_endpoint_t *endpoint,
-											  ks_sockaddr_t *raddr,
+											  const ks_sockaddr_t *raddr,
 											  ks_bool_t alloc_data)
 {
 	ks_dht_message_t *m;
@@ -110,33 +110,6 @@ KS_DECLARE(ks_status_t) ks_dht_message_parse(ks_dht_message_t *message, const ui
 	return KS_STATUS_SUCCESS;
 }
 
-KS_DECLARE(ks_status_t) ks_dht_message_query(ks_dht_message_t *message,
-											 uint32_t transactionid,
-											 const char *query,
-											 struct bencode **args)
-{
-	struct bencode *a;
-	uint32_t tid;
-
-	ks_assert(message);
-	ks_assert(query);
-
-	tid = htonl(transactionid);
-
-    ben_dict_set(message->data, ben_blob("t", 1), ben_blob((uint8_t *)&tid, sizeof(uint32_t)));
-	ben_dict_set(message->data, ben_blob("y", 1), ben_blob("q", 1));
-	ben_dict_set(message->data, ben_blob("q", 1), ben_blob(query, strlen(query)));
-
-	// @note r joins message->data and will be freed with it
-	a = ben_dict();
-	ks_assert(a);
-	ben_dict_set(message->data, ben_blob("a", 1), a);
-
-	if (args) *args = a;
-
-	return KS_STATUS_SUCCESS;
-}
-
 KS_DECLARE(ks_status_t) ks_dht_message_response(ks_dht_message_t *message,
 												uint8_t *transactionid,
 												ks_size_t transactionid_length,
@@ -159,33 +132,6 @@ KS_DECLARE(ks_status_t) ks_dht_message_response(ks_dht_message_t *message,
 
 	return KS_STATUS_SUCCESS;
 }
-
-/**
- *
- */
-KS_DECLARE(ks_status_t) ks_dht_message_error(ks_dht_message_t *message,
-											 uint8_t *transactionid,
-											 ks_size_t transactionid_length,
-											 struct bencode **args)
-{
-	struct bencode *e;
-
-	ks_assert(message);
-	ks_assert(transactionid);
-
-    ben_dict_set(message->data, ben_blob("t", 1), ben_blob(transactionid, transactionid_length));
-	ben_dict_set(message->data, ben_blob("y", 1), ben_blob("e", 1));
-
-	// @note r joins message->data and will be freed with it
-	e = ben_list();
-	ks_assert(e);
-	ben_dict_set(message->data, ben_blob("e", 1), e);
-
-	if (args) *args = e;
-
-	return KS_STATUS_SUCCESS;
-}
-
 
 /* For Emacs:
  * Local Variables:

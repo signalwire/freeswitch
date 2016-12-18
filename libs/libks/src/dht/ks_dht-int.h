@@ -19,7 +19,7 @@ KS_BEGIN_EXTERN_C
  * @see ks_addr_set
  * @see ks_dht_bind
  */
-KS_DECLARE(ks_status_t) ks_dht_autoroute_check(ks_dht_t *dht, ks_sockaddr_t *raddr, ks_dht_endpoint_t **endpoint);
+KS_DECLARE(ks_status_t) ks_dht_autoroute_check(ks_dht_t *dht, const ks_sockaddr_t *raddr, ks_dht_endpoint_t **endpoint);
 
 /**
  * Called internally to expire various data.
@@ -131,7 +131,7 @@ KS_DECLARE(ks_status_t) ks_dht_utility_extract_token(struct bencode *args, const
  * @param token pointer to the output token being generated
  * @return The ks_status_t result: KS_STATUS_SUCCESS, KS_STATUS_FAIL
  */
-KS_DECLARE(ks_status_t) ks_dht_token_generate(uint32_t secret, ks_sockaddr_t *raddr, ks_dht_nodeid_t *target, ks_dht_token_t *token);
+KS_DECLARE(ks_status_t) ks_dht_token_generate(uint32_t secret, const ks_sockaddr_t *raddr, ks_dht_nodeid_t *target, ks_dht_token_t *token);
 
 /**
  * Verify an opaque write token matches the provided remote address and target nodeid.
@@ -142,7 +142,7 @@ KS_DECLARE(ks_status_t) ks_dht_token_generate(uint32_t secret, ks_sockaddr_t *ra
  * @param token pointer to the input token being compared
  * @return Either KS_TRUE if verification passes, otherwise KS_FALSE
  */
-KS_DECLARE(ks_bool_t) ks_dht_token_verify(ks_dht_t *dht, ks_sockaddr_t *raddr, ks_dht_nodeid_t *target, ks_dht_token_t *token);
+KS_DECLARE(ks_bool_t) ks_dht_token_verify(ks_dht_t *dht, const ks_sockaddr_t *raddr, ks_dht_nodeid_t *target, ks_dht_token_t *token);
 
 /**
  * Encodes a message for transmission as a UDP datagram and sends it.
@@ -158,8 +158,7 @@ KS_DECLARE(ks_status_t) ks_dht_send(ks_dht_t *dht, ks_dht_message_t *message);
  * Sets up the common parts of a query message.
  * Determines the local endpoint aware of autorouting, assigns the remote address, generates a transaction, and queues a callback.
  * @param dht pointer to the dht instance
- * @param ep pointer to the endpoint, may be NULL to find an endpoint or autoroute one
- * @param raddr pointer to the remote address
+ * @param job pointer to the job
  * @param query string value of the query type, for example "ping"
  * @param callback callback to be called when response to transaction is received
  * @param transaction dereferenced out pointer to the allocated transaction, may be NULL to ignore output
@@ -174,11 +173,10 @@ KS_DECLARE(ks_status_t) ks_dht_send(ks_dht_t *dht, ks_dht_message_t *message);
  * @see ks_dht_message_query
  * @see ks_hash_insert
  */
-KS_DECLARE(ks_status_t) ks_dht_setup_query(ks_dht_t *dht,
-										   ks_dht_endpoint_t *ep,
-										   ks_sockaddr_t *raddr,
+KS_DECLARE(ks_status_t) ks_dht_query_setup(ks_dht_t *dht,
+										   ks_dht_job_t *job,
 										   const char *query,
-										   ks_dht_message_callback_t callback,
+										   ks_dht_job_callback_t callback,
 										   ks_dht_transaction_t **transaction,
 										   ks_dht_message_t **message,
 										   struct bencode **args);
@@ -199,25 +197,27 @@ KS_DECLARE(ks_status_t) ks_dht_setup_query(ks_dht_t *dht,
  * @see ks_dht_message_init
  * @see ks_dht_message_response
  */
-KS_DECLARE(ks_status_t) ks_dht_setup_response(ks_dht_t *dht,
+KS_DECLARE(ks_status_t) ks_dht_response_setup(ks_dht_t *dht,
 											  ks_dht_endpoint_t *ep,
-											  ks_sockaddr_t *raddr,
+											  const ks_sockaddr_t *raddr,
 											  uint8_t *transactionid,
 											  ks_size_t transactionid_length,
 											  ks_dht_message_t **message,
 											  struct bencode **args);
 												
 						
-KS_DECLARE(ks_status_t) ks_dht_send_error(ks_dht_t *dht,
-										  ks_dht_endpoint_t *ep,
-										  ks_sockaddr_t *raddr,
-										  uint8_t *transactionid,
-										  ks_size_t transactionid_length,
-										  long long errorcode,
-										  const char *errorstr);
-KS_DECLARE(ks_status_t) ks_dht_send_ping(ks_dht_t *dht, ks_dht_endpoint_t *ep, ks_sockaddr_t *raddr);
-KS_DECLARE(ks_status_t) ks_dht_send_findnode(ks_dht_t *dht, ks_dht_endpoint_t *ep, ks_sockaddr_t *raddr, ks_dht_nodeid_t *targetid);
-KS_DECLARE(ks_status_t) ks_dht_send_get(ks_dht_t *dht, ks_dht_endpoint_t *ep, ks_sockaddr_t *raddr, ks_dht_nodeid_t *targetid);
+KS_DECLARE(ks_status_t) ks_dht_error(ks_dht_t *dht,
+									 ks_dht_endpoint_t *ep,
+									 const ks_sockaddr_t *raddr,
+									 uint8_t *transactionid,
+									 ks_size_t transactionid_length,
+									 long long errorcode,
+									 const char *errorstr);
+
+KS_DECLARE(void) ks_dht_pulse_jobs(ks_dht_t *dht);
+KS_DECLARE(ks_status_t) ks_dht_query_ping(ks_dht_t *dht, ks_dht_job_t *job);
+KS_DECLARE(ks_status_t) ks_dht_query_findnode(ks_dht_t *dht, ks_dht_job_t *job);
+KS_DECLARE(ks_status_t) ks_dht_query_get(ks_dht_t *dht, ks_dht_job_t *job);
 
 KS_DECLARE(void *)ks_dht_process(ks_thread_t *thread, void *data);
 
@@ -226,16 +226,16 @@ KS_DECLARE(ks_status_t) ks_dht_process_response(ks_dht_t *dht, ks_dht_message_t 
 KS_DECLARE(ks_status_t) ks_dht_process_error(ks_dht_t *dht, ks_dht_message_t *message);
 
 KS_DECLARE(ks_status_t) ks_dht_process_query_ping(ks_dht_t *dht, ks_dht_message_t *message);
-KS_DECLARE(ks_status_t) ks_dht_process_response_ping(ks_dht_t *dht, ks_dht_message_t *message);
+KS_DECLARE(ks_status_t) ks_dht_process_response_ping(ks_dht_t *dht, ks_dht_job_t *job);
 
 KS_DECLARE(ks_status_t) ks_dht_process_query_findnode(ks_dht_t *dht, ks_dht_message_t *message);
-KS_DECLARE(ks_status_t) ks_dht_process_response_findnode(ks_dht_t *dht, ks_dht_message_t *message);
+KS_DECLARE(ks_status_t) ks_dht_process_response_findnode(ks_dht_t *dht, ks_dht_job_t *job);
 
 KS_DECLARE(ks_status_t) ks_dht_process_query_get(ks_dht_t *dht, ks_dht_message_t *message);
-KS_DECLARE(ks_status_t) ks_dht_process_response_get(ks_dht_t *dht, ks_dht_message_t *message);
+KS_DECLARE(ks_status_t) ks_dht_process_response_get(ks_dht_t *dht, ks_dht_job_t *job);
 
 KS_DECLARE(ks_status_t) ks_dht_process_query_put(ks_dht_t *dht, ks_dht_message_t *message);
-KS_DECLARE(ks_status_t) ks_dht_process_response_put(ks_dht_t *dht, ks_dht_message_t *message);
+KS_DECLARE(ks_status_t) ks_dht_process_response_put(ks_dht_t *dht, ks_dht_job_t *job);
 
 
 /**
@@ -247,6 +247,20 @@ KS_DECLARE(ks_status_t) ks_dht_datagram_create(ks_dht_datagram_t **datagram,
 											   ks_dht_endpoint_t *endpoint,
 											   const ks_sockaddr_t *raddr);
 KS_DECLARE(void) ks_dht_datagram_destroy(ks_dht_datagram_t **datagram);
+
+/**
+ *
+ */
+KS_DECLARE(ks_status_t) ks_dht_job_create(ks_dht_job_t **job,
+										  ks_pool_t *pool,
+										  const ks_sockaddr_t *raddr,
+										  int32_t attempts);
+KS_DECLARE(void) ks_dht_job_build_ping(ks_dht_job_t *job, ks_dht_job_callback_t query_callback, ks_dht_job_callback_t finish_callback);
+KS_DECLARE(void) ks_dht_job_build_findnode(ks_dht_job_t *job,
+										   ks_dht_job_callback_t query_callback,
+										   ks_dht_job_callback_t finish_callback,
+										   ks_dht_nodeid_t *target);
+KS_DECLARE(void) ks_dht_job_destroy(ks_dht_job_t **job);
 
 
 /**
@@ -292,9 +306,9 @@ KS_DECLARE(void) ks_dht_storageitem_destroy(ks_dht_storageitem_t **item);
  */
 KS_DECLARE(ks_status_t) ks_dht_transaction_create(ks_dht_transaction_t **transaction,
 												  ks_pool_t *pool,
-												  ks_sockaddr_t *raddr,
+												  ks_dht_job_t *job,
 												  uint32_t transactionid,
-												  ks_dht_message_callback_t callback);
+												  ks_dht_job_callback_t callback);
 KS_DECLARE(void) ks_dht_transaction_destroy(ks_dht_transaction_t **transaction);
 
 KS_END_EXTERN_C

@@ -42,6 +42,7 @@ KS_BEGIN_EXTERN_C
 
 typedef struct ks_dht_s ks_dht_t;
 typedef struct ks_dht_datagram_s ks_dht_datagram_t;
+typedef struct ks_dht_job_s ks_dht_job_t;
 typedef struct ks_dht_nodeid_s ks_dht_nodeid_t;
 typedef struct ks_dht_token_s ks_dht_token_t;
 typedef struct ks_dht_storageitem_key_s ks_dht_storageitem_key_t;
@@ -57,6 +58,7 @@ typedef struct ks_dhtrt_querynodes_s ks_dhtrt_querynodes_t;
 typedef struct ks_dht_storageitem_s ks_dht_storageitem_t;
 
 
+typedef ks_status_t (*ks_dht_job_callback_t)(ks_dht_t *dht, ks_dht_job_t *job);
 typedef ks_status_t (*ks_dht_message_callback_t)(ks_dht_t *dht, ks_dht_message_t *message);
 typedef ks_status_t (*ks_dht_search_callback_t)(ks_dht_t *dht, ks_dht_search_t *search);
 
@@ -88,6 +90,41 @@ struct ks_dht_node_s {
     enum ks_dht_nodetype_t type;               /* local or remote */
     ks_dhtrt_routetable_t* table;
     ks_rwl_t        *reflock;          
+};
+
+enum ks_dht_job_state_t {
+	KS_DHT_JOB_STATE_QUERYING,
+	KS_DHT_JOB_STATE_RESPONDING,
+	KS_DHT_JOB_STATE_EXPIRING,
+	KS_DHT_JOB_STATE_PROCESSING,
+	KS_DHT_JOB_STATE_COMPLETING,
+};
+
+//enum ks_dht_job_type_t {
+//	KS_DHT_JOB_TYPE_NONE = 0,
+//	KS_DHT_JOB_TYPE_PING,
+//	KS_DHT_JOB_TYPE_FINDNODE,
+//};
+
+struct ks_dht_job_s {
+	ks_pool_t *pool;
+	ks_dht_t *dht;
+	ks_dht_job_t *next;
+
+	enum ks_dht_job_state_t state;
+
+	ks_sockaddr_t raddr; // will obtain local endpoint node id when creating message using raddr
+	int32_t attempts;
+
+	//enum ks_dht_job_type_t type;
+	ks_dht_job_callback_t query_callback;
+	ks_dht_job_callback_t finish_callback;
+
+	ks_dht_message_t *response;
+	//ks_dht_nodeid_t response_id;
+
+	// job specific query parameters
+	ks_dht_nodeid_t target;
 };
 
 struct ks_dhtrt_routetable_s {
@@ -127,6 +164,7 @@ struct ks_dht_message_s {
 	ks_dht_transaction_t *transaction;
 	char type[KS_DHT_MESSAGE_TYPE_MAX_SIZE];
 	struct bencode *args;
+	ks_dht_nodeid_t args_id;
 };
 
 struct ks_dht_endpoint_s {
@@ -141,10 +179,10 @@ struct ks_dht_endpoint_s {
 
 struct ks_dht_transaction_s {
 	ks_pool_t *pool;
-	ks_sockaddr_t raddr;
+	ks_dht_job_t *job;
 	uint32_t transactionid;
-	ks_dht_nodeid_t target;
-	ks_dht_message_callback_t callback;
+	ks_dht_nodeid_t target; // @todo look at moving this into job now
+	ks_dht_job_callback_t callback;
 	ks_time_t expiration;
 	ks_bool_t finished;
 };
@@ -209,6 +247,10 @@ struct ks_dht_s {
 	uint8_t recv_buffer[KS_DHT_DATAGRAM_BUFFER_SIZE + 1]; // Add 1, if we receive it then overflow error
 	ks_size_t recv_buffer_length;
 
+	ks_mutex_t *jobs_mutex;
+	ks_dht_job_t *jobs_first;
+	ks_dht_job_t *jobs_last;
+
 	ks_mutex_t *tid_mutex;
 	volatile uint32_t transactionid_next;
 	ks_hash_t *transactions_hash;
@@ -222,7 +264,8 @@ struct ks_dht_s {
 	volatile uint32_t token_secret_current;
 	volatile uint32_t token_secret_previous;
 	ks_time_t token_secret_expiration;
-	ks_hash_t *storage_hash;
+
+	ks_hash_t *storageitems_hash;
 };
 
 /**
@@ -307,6 +350,9 @@ KS_DECLARE(ks_status_t) ks_dht_bind(ks_dht_t *dht, const ks_dht_nodeid_t *nodeid
  */
 KS_DECLARE(void) ks_dht_pulse(ks_dht_t *dht, int32_t timeout);
 
+KS_DECLARE(ks_status_t) ks_dht_ping(ks_dht_t *dht, const ks_sockaddr_t *raddr, ks_dht_job_callback_t callback);
+KS_DECLARE(ks_status_t) ks_dht_findnode(ks_dht_t *dht, const ks_sockaddr_t *raddr, ks_dht_job_callback_t callback, ks_dht_nodeid_t *target);
+						
 /**
  * Create a network search of the closest nodes to a target.
  * @param dht pointer to the dht instance
@@ -327,13 +373,15 @@ KS_DECLARE(ks_status_t) ks_dht_search(ks_dht_t *dht,
 									  ks_dht_search_callback_t callback,
 									  ks_dht_search_t **search);
 
+
+
 /**
  *
  */
 KS_DECLARE(ks_status_t) ks_dht_message_create(ks_dht_message_t **message,
 											  ks_pool_t *pool,
 											  ks_dht_endpoint_t *endpoint,
-											  ks_sockaddr_t *raddr,
+											  const ks_sockaddr_t *raddr,
 											  ks_bool_t alloc_data);
 /**
  *
@@ -348,26 +396,10 @@ KS_DECLARE(ks_status_t) ks_dht_message_parse(ks_dht_message_t *message, const ui
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht_message_query(ks_dht_message_t *message,
-											 uint32_t transactionid,
-											 const char *query,
-											 struct bencode **args);
-
-/**
- *
- */
 KS_DECLARE(ks_status_t) ks_dht_message_response(ks_dht_message_t *message,
 												uint8_t *transactionid,
 												ks_size_t transactionid_length,
 												struct bencode **args);
-
-/**
- *
- */
-KS_DECLARE(ks_status_t) ks_dht_message_error(ks_dht_message_t *message,
-											 uint8_t *transactionid,
-											 ks_size_t transactionid_length,
-											 struct bencode **args);
 
 
 /**

@@ -3,22 +3,22 @@
 
 KS_DECLARE(ks_status_t) ks_dht_transaction_create(ks_dht_transaction_t **transaction,
 												  ks_pool_t *pool,
-												  ks_sockaddr_t *raddr,
+												  ks_dht_job_t *job,
 												  uint32_t transactionid,
-												  ks_dht_message_callback_t callback)
+												  ks_dht_job_callback_t callback)
 {
 	ks_dht_transaction_t *t;
 	ks_status_t ret = KS_STATUS_SUCCESS;
 
 	ks_assert(transaction);
 	ks_assert(pool);
-	ks_assert(raddr);
+	ks_assert(job);
 
 	*transaction = t = ks_pool_alloc(pool, sizeof(ks_dht_transaction_t));
 	ks_assert(t);
 
 	t->pool = pool;
-	t->raddr = *raddr;
+	t->job = job;
 	t->transactionid = transactionid;
 	t->callback = callback;
 	t->expiration = ks_time_now() + (KS_DHT_TRANSACTION_EXPIRATION * 1000);
