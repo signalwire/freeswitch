@@ -447,27 +447,108 @@ void test06()
 }
 
 
+/* test resue of node memory */
+void test50()
+{
+   printf("*** testbuckets - test50 start\n"); fflush(stdout);
+
+   ks_dht_node_t*  peer;
+   ks_dht_nodeid_t nodeid, nodeid2;
+   memset(nodeid.id,  0xef, KS_DHT_NODEID_SIZE);
+   memset(nodeid2.id,  0xef, KS_DHT_NODEID_SIZE);
+
+   char ipv6[] = "1234:1234:1234:1234";
+   char ipv4[] = "123.123.123.123";
+   unsigned short port = 7000;
+   enum ks_afflags_t both = ifboth;
+
+   ks_status_t status;
+
+   for (int i=0,i2=0; i<200; ++i, ++i2) {
+     if (i%20 == 0) {
+           nodeid.id[0] =  nodeid.id[0] / 2;
+           if(i2%20 == 0) {
+               i2 = 0;
+               nodeid.id[1] =  nodeid.id[1] / 2;
+           }
+           else {
+               ++nodeid.id[2];
+           }
+     }
+     else {
+           ++nodeid.id[1];
+     }
+     ks_dhtrt_create_node(rt, nodeid, KS_DHT_REMOTE, ipv4, port, &peer);
+     ks_dhtrt_touch_node(rt, nodeid);
+   }
+
+   memset(nodeid.id,  0xef, KS_DHT_NODEID_SIZE);
+   for (int i=0,i2=0; i<200; ++i, ++i2) {
+     if (i%20 == 0) { 
+           nodeid.id[0] =  nodeid.id[0] / 2;
+           if(i2%20 == 0) {
+               i2 = 0; 
+               nodeid.id[1] =  nodeid.id[1] / 2;
+           }
+           else {
+               ++nodeid.id[2];
+           }
+     }
+     else {
+           ++nodeid.id[1];
+     }
+     ks_dht_node_t *n = ks_dhtrt_find_node(rt, nodeid);
+     if (n != NULL) {
+        ks_dhtrt_release_node(n);
+		ks_dhtrt_delete_node(rt, n);
+	 }
+   }
+
+   ks_dhtrt_process_table(rt);
+
+   memset(nodeid.id,  0xef, KS_DHT_NODEID_SIZE);
+
+   for (int i=0,i2=0; i<200; ++i, ++i2) {
+     if (i%20 == 0) {
+           nodeid.id[0] =  nodeid.id[0] / 2;
+           if(i2%20 == 0) {
+               i2 = 0;
+               nodeid.id[1] =  nodeid.id[1] / 2;
+           }
+           else {
+               ++nodeid.id[2];
+           }
+     }
+     else {
+           ++nodeid.id[1];
+     }
+     ks_dhtrt_create_node(rt, nodeid, KS_DHT_REMOTE, ipv4, port, &peer);
+     ks_dhtrt_touch_node(rt, nodeid);
+   }
+
+	printf("*** testbuckets - test50 start\n"); fflush(stdout);
+	return;
+}
+
+
+
 int main(int argc, char* argv[]) {
 
    printf("testdhtbuckets - start\n");
 
-   int tests[10];
+   int tests[100];
   
 	if (argc == 0) {
+      tests[0] = 1;
       tests[1] = 1;
       tests[2] = 1;
       tests[3] = 1;
       tests[4] = 1;
-      tests[5] = 1;
-      tests[6] = 0;
-      tests[7] = 0;
-      tests[8] = 0;
-      tests[9] = 0;
 	}
 	else {
-		for(int tix=1; tix<10 && tix<argc; ++tix) {
+		for(int tix=1; tix<100 && tix<argc; ++tix) {
 			long i = strtol(argv[tix], NULL, 0);
-			tests[i] = 1;
+			tests[tix] = i;
 		}
 	}
 
@@ -494,41 +575,65 @@ int main(int argc, char* argv[]) {
    ks_dhtrt_initroute(&rt, pool, tpool);
    ks_dhtrt_deinitroute(&rt);
 
-   if (tests[1] == 1) {
-	ks_dhtrt_initroute(&rt, pool, tpool);
-	test01();
-	ks_dhtrt_deinitroute(&rt);
+
+   for(int tix=0; tix<argc; ++tix) {
+
+	  if (tests[tix] == 1) {
+		ks_dhtrt_initroute(&rt, pool, tpool);
+		test01();
+		ks_dhtrt_deinitroute(&rt);
+        continue;
+	 }
+
+	 if (tests[tix] == 2) {
+		ks_dhtrt_initroute(&rt, pool, tpool);
+		test02();
+		ks_dhtrt_deinitroute(&rt);
+        continue;
+     }
+
+     if (tests[tix] == 3) {  
+		 ks_dhtrt_initroute(&rt, pool, tpool);
+		test03();
+		ks_dhtrt_deinitroute(&rt);
+        continue; 
+     }
+
+     if (tests[tix] == 4) {
+		ks_dhtrt_initroute(&rt, pool, tpool);
+		test04();
+		ks_dhtrt_deinitroute(&rt);
+        continue;
+     }
+
+     if (tests[tix] == 5) {
+		ks_dhtrt_initroute(&rt, pool, tpool);
+		test05();
+		ks_dhtrt_deinitroute(&rt);
+        continue;
+     }
+
+     if (tests[tix] == 6) {
+		ks_dhtrt_initroute(&rt, pool, tpool);
+		test06();
+		ks_dhtrt_deinitroute(&rt);
+        continue;
+     }
+
+     if (tests[tix] == 50) {
+        ks_dhtrt_initroute(&rt, pool, tpool);
+        test50();
+        ks_dhtrt_deinitroute(&rt);
+        continue;
+     }
+
+
+
+
    }
 
-   if (tests[2] == 1) {
-	ks_dhtrt_initroute(&rt, pool, tpool);
-	test02();
-	ks_dhtrt_deinitroute(&rt);
-   }
 
-   if (tests[3] == 1) {  
-    ks_dhtrt_initroute(&rt, pool, tpool);
-	test03();
-	ks_dhtrt_deinitroute(&rt);
-   }
 
-   if (tests[4] == 1) {
-	ks_dhtrt_initroute(&rt, pool, tpool);
-	test04();
-	ks_dhtrt_deinitroute(&rt);
-   }
-
-   if (tests[5] == 1) {
-	ks_dhtrt_initroute(&rt, pool, tpool);
-	test05();
-	ks_dhtrt_deinitroute(&rt);
-   }
-
-   if (tests[6] == 1) {
-	ks_dhtrt_initroute(&rt, pool, tpool);
-    test06();
-    ks_dhtrt_deinitroute(&rt);
-   }
    return 0;
 
 }
