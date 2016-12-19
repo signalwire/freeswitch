@@ -5333,10 +5333,8 @@ static void *SWITCH_THREAD_FUNC video_write_thread(switch_thread_t *thread, void
 	switch_core_session_get_partner(session, &b_session);
 
 	switch_channel_set_flag(session->channel, CF_VIDEO_WRITING);
-	switch_channel_set_flag(session->channel, CF_VIDEO_PAUSE_READ);
 	
 	if (b_session) {
-		switch_channel_set_flag(b_session->channel, CF_VIDEO_PAUSE_READ);
 		switch_channel_set_flag(b_session->channel, CF_VIDEO_BLANK);
 	}
 
@@ -5394,12 +5392,10 @@ static void *SWITCH_THREAD_FUNC video_write_thread(switch_thread_t *thread, void
 	switch_core_session_rwunlock(session);
 
 	if (b_session) {
-		switch_channel_clear_flag(b_session->channel, CF_VIDEO_PAUSE_READ);
 		switch_channel_clear_flag(b_session->channel, CF_VIDEO_BLANK);
 		switch_core_session_rwunlock(b_session);
 	}
 
-	switch_channel_clear_flag(session->channel, CF_VIDEO_PAUSE_READ);
 	switch_channel_clear_flag(session->channel, CF_VIDEO_WRITING);
 	smh->video_write_thread_running = 0;
 
