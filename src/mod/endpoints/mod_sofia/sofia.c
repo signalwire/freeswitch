@@ -5709,6 +5709,16 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "send-display-update=true is set, but we can't comply because allow-update=false\n");
 					sofia_clear_pflag(profile, PFLAG_SEND_DISPLAY_UPDATE);
 				}
+				if (sofia_test_pflag(profile, PFLAG_PROXY_HOLD)) {
+					if (profile->media_options & MEDIA_OPT_MEDIA_ON_HOLD) {
+						profile->media_options &= ~MEDIA_OPT_MEDIA_ON_HOLD;
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "proxy-hold=true is set, incompatible with media-option=resume-media-on-hold\n");
+					}
+					if (profile->media_options & MEDIA_OPT_BYPASS_AFTER_HOLD) {
+						profile->media_options &= ~MEDIA_OPT_BYPASS_AFTER_HOLD;
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "proxy-hold=true is set, incompatible with media-option=bypass-media-after-hold\n");
+					}
+				}
 
 				if ((!profile->cng_pt) && (!sofia_test_media_flag(profile, SCMF_SUPPRESS_CNG))) {
 					profile->cng_pt = SWITCH_RTP_CNG_PAYLOAD;
