@@ -218,6 +218,7 @@ KS_DECLARE(void) ks_dht_pulse_jobs(ks_dht_t *dht);
 KS_DECLARE(ks_status_t) ks_dht_query_ping(ks_dht_t *dht, ks_dht_job_t *job);
 KS_DECLARE(ks_status_t) ks_dht_query_findnode(ks_dht_t *dht, ks_dht_job_t *job);
 KS_DECLARE(ks_status_t) ks_dht_query_get(ks_dht_t *dht, ks_dht_job_t *job);
+KS_DECLARE(ks_status_t) ks_dht_query_put(ks_dht_t *dht, ks_dht_job_t *job);
 
 KS_DECLARE(void *)ks_dht_process(ks_thread_t *thread, void *data);
 
@@ -260,6 +261,18 @@ KS_DECLARE(void) ks_dht_job_build_findnode(ks_dht_job_t *job,
 										   ks_dht_job_callback_t query_callback,
 										   ks_dht_job_callback_t finish_callback,
 										   ks_dht_nodeid_t *target);
+KS_DECLARE(void) ks_dht_job_build_get(ks_dht_job_t *job,
+									  ks_dht_job_callback_t query_callback,
+									  ks_dht_job_callback_t finish_callback,
+									  ks_dht_nodeid_t *target,
+									  uint8_t *salt,
+									  ks_size_t salt_length);
+KS_DECLARE(void) ks_dht_job_build_put(ks_dht_job_t *job,
+									  ks_dht_job_callback_t query_callback,
+									  ks_dht_job_callback_t finish_callback,
+									  ks_dht_nodeid_t *target,
+									  uint8_t *salt,
+									  ks_size_t salt_length);
 KS_DECLARE(void) ks_dht_job_destroy(ks_dht_job_t **job);
 
 
@@ -290,13 +303,13 @@ KS_DECLARE(void) ks_dht_search_pending_destroy(ks_dht_search_pending_t **pending
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht_storageitem_create_immutable(ks_dht_storageitem_t **item, ks_pool_t *pool, struct bencode *v);
+KS_DECLARE(ks_status_t) ks_dht_storageitem_create_immutable(ks_dht_storageitem_t **item, ks_pool_t *pool, ks_dht_nodeid_t *target, struct bencode *v);
 KS_DECLARE(ks_status_t) ks_dht_storageitem_create_mutable(ks_dht_storageitem_t **item,
 														  ks_pool_t *pool,
+														  ks_dht_nodeid_t *target,
 														  struct bencode *v,
 														  ks_dht_storageitem_key_t *k,
-														  uint8_t *salt,
-														  ks_size_t salt_length,
+														  struct bencode *salt,
 														  int64_t sequence,
 														  ks_dht_storageitem_signature_t *signature);
 KS_DECLARE(void) ks_dht_storageitem_destroy(ks_dht_storageitem_t **item);

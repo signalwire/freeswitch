@@ -3,7 +3,7 @@ EXTRA_DIST =
 SUBDIRS = . test
 AUTOMAKE_OPTIONS = subdir-objects
 
-AM_CFLAGS    += -I$(top_srcdir)/src -I$(top_srcdir)/src/include -I$(top_srcdir)/crypt
+AM_CFLAGS    += -I$(top_srcdir)/src -I$(top_srcdir)/src/include -I$(top_srcdir)/crypt -O0
 AM_CPPFLAGS  = $(AM_CFLAGS)
 
 lib_LTLIBRARIES	  = libks.la

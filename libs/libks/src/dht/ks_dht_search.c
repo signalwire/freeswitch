@@ -92,7 +92,7 @@ KS_DECLARE(ks_status_t) ks_dht_search_pending_create(ks_dht_search_pending_t **p
 
 	p->pool = pool;
 	p->nodeid = *nodeid;
-	p->expiration = ks_time_now() + (KS_DHT_SEARCH_EXPIRATION * 1000);
+	p->expiration = ks_time_now() + ((ks_time_t)KS_DHT_SEARCH_EXPIRATION * KS_USEC_PER_SEC);
 	p->finished = KS_FALSE;
 
 	// done:

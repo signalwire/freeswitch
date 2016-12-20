@@ -38,6 +38,7 @@ KS_DECLARE(ks_status_t) ks_dht_job_create(ks_dht_job_t **job,
 KS_DECLARE(void) ks_dht_job_build_ping(ks_dht_job_t *job, ks_dht_job_callback_t query_callback, ks_dht_job_callback_t finish_callback)
 {
 	ks_assert(job);
+	ks_assert(query_callback);
 
 	job->query_callback = query_callback;
 	job->finish_callback = finish_callback;
@@ -49,11 +50,46 @@ KS_DECLARE(void) ks_dht_job_build_findnode(ks_dht_job_t *job,
 										   ks_dht_nodeid_t *target)
 {
 	ks_assert(job);
+	ks_assert(query_callback);
 	ks_assert(target);
 
 	job->query_callback = query_callback;
 	job->finish_callback = finish_callback;
-	job->target = *target;
+	job->query_target = *target;
+}
+
+KS_DECLARE(void) ks_dht_job_build_get(ks_dht_job_t *job,
+									  ks_dht_job_callback_t query_callback,
+									  ks_dht_job_callback_t finish_callback,
+									  ks_dht_nodeid_t *target,
+									  uint8_t *salt,
+									  ks_size_t salt_length)
+{
+	ks_assert(job);
+	ks_assert(query_callback);
+	ks_assert(target);
+
+	job->query_callback = query_callback;
+	job->finish_callback = finish_callback;
+	job->query_target = *target;
+	if (salt && salt_length > 0) job->query_salt = ben_blob(salt, salt_length);
+}
+
+KS_DECLARE(void) ks_dht_job_build_put(ks_dht_job_t *job,
+									  ks_dht_job_callback_t query_callback,
+									  ks_dht_job_callback_t finish_callback,
+									  ks_dht_nodeid_t *target,
+									  uint8_t *salt,
+									  ks_size_t salt_length)
+{
+	ks_assert(job);
+	ks_assert(query_callback);
+	ks_assert(target);
+
+	job->query_callback = query_callback;
+	job->finish_callback = finish_callback;
+	job->query_target = *target;
+	if (salt && salt_length > 0) job->query_salt = ben_blob(salt, salt_length);
 }
 
 KS_DECLARE(void) ks_dht_job_destroy(ks_dht_job_t **job)
@@ -64,6 +100,10 @@ KS_DECLARE(void) ks_dht_job_destroy(ks_dht_job_t **job)
 	ks_assert(*job);
 
 	j = *job;
+
+	if (j->query_salt) ben_free(j->query_salt);
+	for (int32_t i = 0; i < j->response_nodes_count; ++i) ks_dhtrt_release_node(j->response_nodes[i]);
+	for (int32_t i = 0; i < j->response_nodes6_count; ++i) ks_dhtrt_release_node(j->response_nodes6[i]);
 
 	ks_pool_free(j->pool, job);
 }

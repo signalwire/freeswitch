@@ -1469,6 +1469,7 @@ void ks_dhtrt_ping(ks_dhtrt_internal_t *internal, ks_dhtrt_bucket_entry_t *entry
 		   ks_dhtrt_printableid(entry->id,buf), entry->outstanding_pings);
 #endif
     ks_dht_node_t* node = entry->gptr;
+	ks_log(KS_LOG_DEBUG, "Node addr %s %d\n", node->addr.host, node->addr.port);
     ks_dht_ping(internal->dht, &node->addr, NULL);
 
 	return;

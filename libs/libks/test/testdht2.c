@@ -132,7 +132,6 @@ int main() {
   //err = ks_dht_process(dht1, &raddr);
   //ok(err == KS_STATUS_SUCCESS);
 
-  
   diag("Ping test\n");
   
   //ks_dht_send_ping(dht2, ep2, &raddr1); // Queue bootstrap ping from dht2 to dht1
@@ -163,7 +162,6 @@ int main() {
 
   diag("Find_Node test\n");
 
-  //ks_dht_send_findnode(dht3, ep3, &raddr1, &ep2->nodeid); // Queue findnode from dht3 to dht1
   ks_dht_findnode(dht3, &raddr1, NULL, &ep2->nodeid);
 
   ks_dht_pulse(dht3, 100); // Send queued findnode from dht3 to dht1

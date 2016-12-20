@@ -88,7 +88,7 @@ KS_DECLARE(ks_status_t) ks_dht_message_parse(ks_dht_message_t *message, const ui
 	memcpy(message->transactionid, tv, tv_len);
 	message->transactionid_length = tv_len;
 	// @todo hex output of transactionid
-	//ks_log(KS_LOG_DEBUG, "Message transaction id is %d\n", *transactionid);
+	//ks_log(KS_LOG_DEBUG, "Message transaction id is %d\n", message->transactionid);
 
     y = ben_dict_get_by_str(message->data, "y");
 	if (!y) {

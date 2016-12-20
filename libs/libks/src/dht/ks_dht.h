@@ -22,6 +22,8 @@ KS_BEGIN_EXTERN_C
 
 #define KS_DHT_NODEID_SIZE 20
 
+#define KS_DHT_RESPONSE_NODES_MAX_SIZE 8
+
 #define KS_DHT_MESSAGE_TRANSACTIONID_MAX_SIZE 20
 #define KS_DHT_MESSAGE_TYPE_MAX_SIZE 20
 #define KS_DHT_MESSAGE_QUERY_MAX_SIZE 20
@@ -34,6 +36,7 @@ KS_BEGIN_EXTERN_C
 #define KS_DHT_STORAGEITEM_KEY_SIZE crypto_sign_PUBLICKEYBYTES
 #define KS_DHT_STORAGEITEM_SALT_MAX_SIZE 64
 #define KS_DHT_STORAGEITEM_SIGNATURE_SIZE crypto_sign_BYTES
+#define KS_DHT_STORAGEITEM_EXPIRATION 7200
 
 #define KS_DHT_TOKEN_SIZE SHA_DIGEST_LENGTH
 #define KS_DHT_TOKENSECRET_EXPIRATION 300
@@ -92,6 +95,10 @@ struct ks_dht_node_s {
     ks_rwl_t        *reflock;          
 };
 
+struct ks_dht_token_s {
+	uint8_t token[KS_DHT_TOKEN_SIZE];
+};
+
 enum ks_dht_job_state_t {
 	KS_DHT_JOB_STATE_QUERYING,
 	KS_DHT_JOB_STATE_RESPONDING,
@@ -124,7 +131,16 @@ struct ks_dht_job_s {
 	//ks_dht_nodeid_t response_id;
 
 	// job specific query parameters
-	ks_dht_nodeid_t target;
+	ks_dht_nodeid_t query_target;
+	struct bencode *query_salt;
+
+	// job specific response parameters
+	ks_dht_node_t *response_nodes[KS_DHT_RESPONSE_NODES_MAX_SIZE];
+	ks_size_t response_nodes_count;
+	ks_dht_node_t *response_nodes6[KS_DHT_RESPONSE_NODES_MAX_SIZE];
+	ks_size_t response_nodes6_count;
+	ks_dht_token_t response_token;
+	ks_dht_storageitem_t *response_storageitem;
 };
 
 struct ks_dhtrt_routetable_s {
@@ -140,10 +156,6 @@ struct ks_dhtrt_querynodes_s {
     uint8_t        max;                       /* in: maximum to return             */
     uint8_t        count;                     /* out: number returned              */
     ks_dht_node_t* nodes[ KS_DHTRT_MAXQUERYSIZE ]; /* out: array of peers (ks_dht_node_t* nodes[incount]) */
-};
-
-struct ks_dht_token_s {
-	uint8_t token[KS_DHT_TOKEN_SIZE];
 };
 
 struct ks_dht_storageitem_key_s {
@@ -181,7 +193,7 @@ struct ks_dht_transaction_s {
 	ks_pool_t *pool;
 	ks_dht_job_t *job;
 	uint32_t transactionid;
-	ks_dht_nodeid_t target; // @todo look at moving this into job now
+	//ks_dht_nodeid_t target; // @todo look at moving this into job now
 	ks_dht_job_callback_t callback;
 	ks_time_t expiration;
 	ks_bool_t finished;
@@ -209,14 +221,13 @@ struct ks_dht_search_pending_s {
 struct ks_dht_storageitem_s {
 	ks_pool_t *pool;
 	ks_dht_nodeid_t id;
-	// @todo ks_time_t expiration;
+	ks_time_t expiration;
 	struct bencode *v;
 	
 	ks_bool_t mutable;
 	ks_dht_storageitem_key_t pk;
 	ks_dht_storageitem_key_t sk;
-	uint8_t salt[KS_DHT_STORAGEITEM_SALT_MAX_SIZE];
-	ks_size_t salt_length;
+	struct bencode *salt;
 	int64_t seq;
 	ks_dht_storageitem_signature_t sig;
 };
@@ -352,6 +363,12 @@ KS_DECLARE(void) ks_dht_pulse(ks_dht_t *dht, int32_t timeout);
 
 KS_DECLARE(ks_status_t) ks_dht_ping(ks_dht_t *dht, const ks_sockaddr_t *raddr, ks_dht_job_callback_t callback);
 KS_DECLARE(ks_status_t) ks_dht_findnode(ks_dht_t *dht, const ks_sockaddr_t *raddr, ks_dht_job_callback_t callback, ks_dht_nodeid_t *target);
+KS_DECLARE(ks_status_t) ks_dht_get(ks_dht_t *dht,
+								   const ks_sockaddr_t *raddr,
+								   ks_dht_job_callback_t callback,
+								   ks_dht_nodeid_t *target,
+								   uint8_t *salt,
+								   ks_size_t salt_length);
 						
 /**
  * Create a network search of the closest nodes to a target.

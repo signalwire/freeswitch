@@ -21,7 +21,7 @@ KS_DECLARE(ks_status_t) ks_dht_transaction_create(ks_dht_transaction_t **transac
 	t->job = job;
 	t->transactionid = transactionid;
 	t->callback = callback;
-	t->expiration = ks_time_now() + (KS_DHT_TRANSACTION_EXPIRATION * 1000);
+	t->expiration = ks_time_now() + ((ks_time_t)KS_DHT_TRANSACTION_EXPIRATION * KS_USEC_PER_SEC);
 
 	// done:
 	if (ret != KS_STATUS_SUCCESS) {
