@@ -2659,6 +2659,7 @@ static switch_bool_t verto__answer_func(const char *method, cJSON *params, jsock
 
 	if ((session = switch_core_session_locate(call_id))) {
 		verto_pvt_t *tech_pvt = switch_core_session_get_private_class(session, SWITCH_PVT_SECONDARY);
+		switch_core_session_t *other_session = NULL;
 
 		tech_pvt->r_sdp = switch_core_session_strdup(session, sdp);
 		switch_channel_set_variable(tech_pvt->channel, SWITCH_R_SDP_VARIABLE, sdp);		
@@ -2667,6 +2668,12 @@ static switch_bool_t verto__answer_func(const char *method, cJSON *params, jsock
 		switch_core_media_set_sdp_codec_string(session, sdp, SDP_TYPE_RESPONSE);
 
 		switch_ivr_set_user(session, jsock->uid);
+
+		if (switch_core_session_get_partner(tech_pvt->session, &other_session) == SWITCH_STATUS_SUCCESS) {
+			switch_channel_t *other_channel = switch_core_session_get_channel(other_session);
+			switch_channel_set_variable(other_channel, SWITCH_B_SDP_VARIABLE, sdp);
+			switch_core_session_rwunlock(other_session);
+		}
 
 		if (switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MODE)) {
 			pass_sdp(tech_pvt);
