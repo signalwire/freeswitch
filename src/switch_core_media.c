@@ -10863,7 +10863,9 @@ SWITCH_DECLARE(void) switch_core_media_patch_sdp(switch_core_session_t *session)
 		}
 
 		clear_pmaps(a_engine);
-		
+
+		switch_channel_set_flag(session->channel, CF_AUDIO);
+
 		pmap = switch_core_media_add_payload_map(session,
 												 SWITCH_MEDIA_TYPE_AUDIO,
 												 "PROXY",
