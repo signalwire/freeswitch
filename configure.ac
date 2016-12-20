@@ -1273,17 +1273,36 @@ module_enabled() {
   grep -v -e "\#" -e "^\$" modules.conf | sed -e "s|^.*/||" | grep "^${1}\$" >/dev/null
 }
 
+AC_ARG_WITH(png,
+  [AS_HELP_STRING([--without-png],
+    [disable support for libpng])],
+  [with_png="$withval"],
+  [with_png="yes"])
+if test "$with_png" = "yes"; then
+  PKG_CHECK_MODULES([LIBPNG], [libpng >= 1.6.16],[
+    AM_CONDITIONAL([HAVE_PNG],[true])],[
+      PKG_CHECK_MODULES([LIBPNG], [libpng16 >= 1.6.16],[
+        AM_CONDITIONAL([HAVE_PNG],[true])],[
+          PKG_CHECK_MODULES([LIBPNG], [libpng >= 1.2.49],[
+            AM_CONDITIONAL([HAVE_PNG],[true])],[
+            AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_PNG],[false])])])])
+else
+  AM_CONDITIONAL([HAVE_PNG],[false])
+fi
 
-PKG_CHECK_MODULES([LIBPNG], [libpng >= 1.6.16],[
-  AM_CONDITIONAL([HAVE_PNG],[true])],[
-    PKG_CHECK_MODULES([LIBPNG], [libpng16 >= 1.6.16],[
-      AM_CONDITIONAL([HAVE_PNG],[true])],[
-        PKG_CHECK_MODULES([LIBPNG], [libpng >= 1.2.49],[
-          AM_CONDITIONAL([HAVE_PNG],[true])],[
-          AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_PNG],[false])])])])
-PKG_CHECK_MODULES([FREETYPE], [freetype2 >= 2.4.9],[
-  AM_CONDITIONAL([HAVE_FREETYPE],[true])],[
-  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_FREETYPE],[false])])
+AC_ARG_WITH(freetype,
+  [AS_HELP_STRING([--without-freetype],
+    [disable support for freetype])],
+  [with_freetype="$withval"],
+  [with_freetype="yes"])
+if test "$with_freetype" = "yes"; then
+  PKG_CHECK_MODULES([FREETYPE], [freetype2 >= 2.4.9],[
+    AM_CONDITIONAL([HAVE_FREETYPE],[true])],[
+    AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_FREETYPE],[false])])
+else
+  AM_CONDITIONAL([HAVE_FREETYPE],[false])
+fi
+
 PKG_CHECK_MODULES([SQLITE], [sqlite3 >= 3.6.20])
 PKG_CHECK_MODULES([CURL], [libcurl >= 7.19])
 PKG_CHECK_MODULES([PCRE], [libpcre >= 7.8])
