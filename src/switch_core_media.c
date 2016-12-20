@@ -6162,24 +6162,21 @@ static switch_status_t perform_write(switch_core_session_t *session, switch_fram
 {
 	switch_io_event_hook_write_frame_t *ptr;
 	switch_status_t status = SWITCH_STATUS_FALSE;
-	switch_rtp_engine_t *a_engine;
 	switch_media_handle_t *smh;
 
 	switch_assert(session != NULL);
 
-	if (!(smh = session->media_handle)) {
-		return SWITCH_STATUS_FALSE;
-	}
+	if ((smh = session->media_handle)) {
+		switch_rtp_engine_t *a_engine = &smh->engines[SWITCH_MEDIA_TYPE_AUDIO];
 
-	a_engine = &smh->engines[SWITCH_MEDIA_TYPE_AUDIO];
-
-	if (a_engine && a_engine->write_fb && !(flags & SWITCH_IO_FLAG_QUEUED)) {
-		switch_frame_t *dupframe = NULL;
-
-		if (switch_frame_buffer_dup(a_engine->write_fb, frame, &dupframe) == SWITCH_STATUS_SUCCESS) {
-			switch_frame_buffer_push(a_engine->write_fb, dupframe);
-			dupframe = NULL;
-			return SWITCH_STATUS_SUCCESS;
+		if (a_engine && a_engine->write_fb && !(flags & SWITCH_IO_FLAG_QUEUED)) {
+			switch_frame_t *dupframe = NULL;
+			
+			if (switch_frame_buffer_dup(a_engine->write_fb, frame, &dupframe) == SWITCH_STATUS_SUCCESS) {
+				switch_frame_buffer_push(a_engine->write_fb, dupframe);
+				dupframe = NULL;
+				return SWITCH_STATUS_SUCCESS;
+			}
 		}
 	}
 
@@ -14305,7 +14302,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 	switch_assert(session != NULL);
 	switch_assert(frame != NULL);
 
-	if (!switch_channel_ready(session->channel)) {
+	if (!switch_channel_up_nosig(session->channel)) {
 		return SWITCH_STATUS_FALSE;
 	}
 

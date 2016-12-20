@@ -293,6 +293,7 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 
 
 		switch_channel_set_flag(channel, CF_ACCEPT_CNG);
+		switch_channel_set_flag(channel, CF_AUDIO);
 
 		if ((vars = (switch_event_t *) switch_channel_get_private(channel, "__loopback_vars__"))) {
 			switch_event_header_t *h;
@@ -1085,7 +1086,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		switch_event_t *clone = NULL;
 
 		switch_core_session_add_stream(*new_session, NULL);
-
+		
 		if ((tech_pvt = (loopback_private_t *) switch_core_session_alloc(*new_session, sizeof(loopback_private_t))) != 0) {
 			channel = switch_core_session_get_channel(*new_session);
 			switch_snprintf(name, sizeof(name), "loopback/%s-a", outbound_profile->destination_number);
@@ -1172,7 +1173,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		}
 
 		switch_channel_set_state(channel, CS_INIT);
-
+		switch_channel_set_flag(channel, CF_AUDIO);
 		return SWITCH_CAUSE_SUCCESS;
 	}
 
