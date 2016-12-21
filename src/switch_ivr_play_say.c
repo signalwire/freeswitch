@@ -1889,6 +1889,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 					} else {
 						status = SWITCH_STATUS_TIMEOUT;
 					}
+					done = 1;
 					break;
 				}
 			}
