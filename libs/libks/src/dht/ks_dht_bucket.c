@@ -44,7 +44,7 @@
 #define KS_DHTRT_MAXPING  3
 #define KS_DHTRT_PROCESSTABLE_INTERVAL (5*60)  
 #define KS_DHTRT_PROCESSTABLE_SHORTINTERVAL (120)
-#define KS_DHTRT_RECYCLE_NODE_THRESHOLD  100
+#define KS_DHTRT_RECYCLE_NODE_THRESHOLD 0
 
 /* peer flags */
 #define DHTPEER_DUBIOUS 0
@@ -795,6 +795,11 @@ KS_DECLARE(ks_status_t) ks_dhtrt_release_node(ks_dht_node_t* node)
     return ks_rwl_read_unlock(node->reflock);
 }
 
+KS_DECLARE(ks_status_t) ks_dhtrt_sharelock_node(ks_dht_node_t* node)
+{
+    return ks_rwl_read_lock(node->reflock);
+}
+
 KS_DECLARE(ks_status_t) ks_dhtrt_release_querynodes(ks_dhtrt_querynodes_t *query)
 {
     for(int ix=0; ix<query->count; ++ix) {
@@ -959,10 +964,12 @@ void ks_dhtrt_process_deleted(ks_dhtrt_routetable_t *table)
 
 
     /* reclaim excess memory */
+    printf("%d  %d   %p\n", internal->deleted_count, KS_DHTRT_RECYCLE_NODE_THRESHOLD, (void*)deleted); fflush(stdout);
+
 	while(internal->deleted_count > KS_DHTRT_RECYCLE_NODE_THRESHOLD && deleted) {
 		ks_dht_node_t* node = deleted->node;
 
-#ifdef  KS_DHT_DEBUGPRINTFX__
+#ifdef  KS_DHT_DEBUGPRINTF_
 	    ks_log(KS_LOG_DEBUG, "ALLOC process_deleted entry: try write lock\n");
 #endif
 
@@ -973,7 +980,7 @@ void ks_dhtrt_process_deleted(ks_dhtrt_routetable_t *table)
             deleted = deleted->next;
             ks_pool_free(table->pool, &temp);
             --internal->deleted_count;
-#ifdef  KS_DHT_DEBUGPRINTFX_
+#ifdef  KS_DHT_DEBUGPRINTF_
 			ks_log(KS_LOG_DEBUG, "ALLOC process_deleted: internal->deleted_count %d\n", internal->deleted_count);			
 #endif
 			if (prev != NULL) {
@@ -985,7 +992,7 @@ void ks_dhtrt_process_deleted(ks_dhtrt_routetable_t *table)
      
 		}
         else {
-#ifdef  KS_DHT_DEBUGPRINTFX__
+#ifdef  KS_DHT_DEBUGPRINTF_
             ks_log(KS_LOG_DEBUG, "ALLOC process_deleted entry: try write lock failed\n");
 #endif
             prev = deleted;

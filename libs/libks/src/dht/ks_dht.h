@@ -443,6 +443,7 @@ KS_DECLARE(ks_status_t)        ks_dhtrt_expire_node(ks_dhtrt_routetable_t* table
 KS_DECLARE(uint8_t)            ks_dhtrt_findclosest_nodes(ks_dhtrt_routetable_t* table, ks_dhtrt_querynodes_t* query);
 KS_DECLARE(ks_dht_node_t*)     ks_dhtrt_find_node(ks_dhtrt_routetable_t* table, ks_dht_nodeid_t id);
 
+KS_DECLARE(ks_status_t)        ks_dhtrt_sharelock_node(ks_dht_node_t* node);
 KS_DECLARE(ks_status_t)        ks_dhtrt_release_node(ks_dht_node_t* node);
 KS_DECLARE(ks_status_t)        ks_dhtrt_release_querynodes(ks_dhtrt_querynodes_t* query);
 
