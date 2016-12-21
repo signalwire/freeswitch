@@ -714,7 +714,14 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 				switch_channel_set_flag(channel, CF_3PCC);
 			}
 
-			switch_core_media_set_local_sdp(session, b_sdp, SWITCH_TRUE);
+			if (b_sdp && !switch_channel_var_true(channel, "3pcc_always_gen_sdp")) {
+				switch_core_media_set_local_sdp(session, b_sdp, SWITCH_TRUE);
+			} else {
+				switch_core_media_choose_port(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO, 0);
+				switch_core_media_prepare_codecs(session, 1);
+				switch_core_media_gen_local_sdp(session, SDP_TYPE_REQUEST, NULL, 0, NULL, 1);
+				sofia_set_flag_locked(tech_pvt, TFLAG_3PCC);
+			}
 
 			if (switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
 				switch_core_media_patch_sdp(tech_pvt->session);
