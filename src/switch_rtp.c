@@ -4859,12 +4859,16 @@ static void do_2833(switch_rtp_t *rtp_session)
 	switch_frame_flag_t flags = 0;
 	uint32_t samples = rtp_session->samples_per_interval;
 
-	if (!rtp_session->last_write_ts) {
-		return;
-	}
-	
 	if (rtp_session->dtmf_data.out_digit_dur > 0) {
 		int x, loops = 1;
+
+		if (!rtp_session->last_write_ts) {
+			if (rtp_session->timer.timer_interface) {
+				rtp_session->last_write_ts = rtp_session->timer.samplecount;
+			} else {
+				rtp_session->last_write_ts = rtp_session->samples_per_interval;
+			}
+		}
 
 		rtp_session->dtmf_data.out_digit_sofar += samples;
 		rtp_session->dtmf_data.out_digit_sub_sofar += samples;
