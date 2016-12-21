@@ -247,7 +247,26 @@ void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *thread, v
 
 		}
 	}
-	
+
+	/* auto-create path */
+	if (rec->path && !strstr(rec->path, SWITCH_URL_SEPARATOR)) {
+		char *p;
+		char *path = switch_core_strdup(conference->pool, rec->path);
+
+		if ((p = strrchr(path, *SWITCH_PATH_SEPARATOR))) {
+			*p = '\0';
+
+			while(*path == '{') {
+				if ((p = switch_find_end_paren(path, '{', '}'))) {
+					path = p + 1;
+					while(*path == ' ') path++;
+				}
+			}
+
+			switch_dir_make_recursive(path, SWITCH_DEFAULT_DIR_PERMS, conference->pool);
+		}
+	}
+
 	if (switch_core_file_open(&member->rec->fh, rec->path, (uint8_t) conference->channels, conference->rate, flags, rec->pool) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening File [%s]\n", rec->path);
 
