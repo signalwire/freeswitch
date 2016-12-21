@@ -178,33 +178,45 @@ void test03()
    enum ks_afflags_t both = ifboth;
 
    ks_status_t status;
+   int ipv4_remote = 0;
+	int ipv4_local = 0;
 
    for (int i=0; i<200; ++i) {
      if (i%10 == 0) {
            ++nodeid.id[0];
+           nodeid.id[1] = 0;
      }
      else {
            ++nodeid.id[1];
      } 
-     ks_dhtrt_create_node(rt, nodeid, KS_DHT_REMOTE, ipv4, port, &peer);
-     ks_dhtrt_touch_node(rt, nodeid);
+     ks_status_t s0 = ks_dhtrt_create_node(rt, nodeid, KS_DHT_REMOTE, ipv4, port, &peer);
+     if (s0 == KS_STATUS_SUCCESS) {
+        ks_dhtrt_touch_node(rt, nodeid);
+        ++ipv4_remote;
+     }
    }
 
+ 
    for (int i=0; i<2; ++i) {
      if (i%10 == 0) {
            ++nodeid.id[0];
+           nodeid.id[1] = 0;
      }
      else {
            ++nodeid.id[1];
      }
 
-     ks_dhtrt_create_node(rt, nodeid, KS_DHT_LOCAL, ipv4, port, &peer);
-     ks_dhtrt_touch_node(rt, nodeid);
+     ks_status_t s0 = ks_dhtrt_create_node(rt, nodeid, KS_DHT_LOCAL, ipv4, port, &peer);
+	 if (s0 == KS_STATUS_SUCCESS) {
+		ks_dhtrt_touch_node(rt, nodeid);
+		++ipv4_local;
+	 }
    }
 
    for (int i=0; i<201; ++i) {
      if (i%10 == 0) {
            ++nodeid.id[0];
+           nodeid.id[1] = 0;
      }
      else {
            ++nodeid.id[1];
@@ -214,8 +226,12 @@ void test03()
    }
 
 
+   ks_dhtrt_dump(rt, 7);
+
+
    int qcount = doquery(rt, nodeid.id, KS_DHT_LOCAL, both);
-   printf("\n** local query count expected 2, actual %d\n", qcount); fflush(stdout);
+   printf("\n** local query count expected 2, actual %d, max %d\n", qcount, ipv4_local); fflush(stdout);
+
    qcount = doquery(rt, nodeid.id, KS_DHT_REMOTE, both);
    printf("\n*** remote query count expected 20, actual %d\n", qcount); fflush(stdout);
    qcount = doquery(rt, nodeid.id, KS_DHT_BOTH, both);
@@ -230,7 +246,7 @@ void test03()
    printf("\n*** AF_INET6 count expected 20, actual %d\n", qcount); fflush(stdout);
 
    qcount = doquery(rt, nodeid.id, KS_DHT_REMOTE, ifv4);
-   printf("\n*** remote AF_INET  query count expected 20, actual %d\n", qcount); fflush(stdout);
+   printf("\n*** remote AF_INET  query count expected 20, actual %d max %d\n", qcount, ipv4_remote); fflush(stdout);
    qcount = doquery(rt, nodeid.id, KS_DHT_REMOTE, ifv6);
    printf("\n*** remote AF_INET6 query count expected 20, actual %d\n", qcount); fflush(stdout);
 
@@ -452,6 +468,88 @@ void test06()
 }
 
 
+void test30()
+{
+ printf("*** testbuckets - test03 start\n"); fflush(stdout);
+
+   ks_dht_node_t*  peer;
+   ks_dht_nodeid_t nodeid;
+   memset(nodeid.id,  0xef, KS_DHT_NODEID_SIZE);
+
+   char ipv6[] = "1234:1234:1234:1234";
+   char ipv4[] = "123.123.123.123";
+   unsigned short port = 7000;
+   enum ks_afflags_t both = ifboth;
+
+   ks_status_t status;
+   int ipv4_remote = 0;
+    int ipv4_local = 0;
+
+   for (int i=0; i<200; ++i) {
+     if (i%10 == 0) {
+           ++nodeid.id[0];
+           nodeid.id[1] = 0;
+     }
+     else {
+           ++nodeid.id[1];
+     }
+     ks_status_t s0 = ks_dhtrt_create_node(rt, nodeid, KS_DHT_REMOTE, ipv4, port, &peer);
+     if (s0 == KS_STATUS_SUCCESS) {
+        ks_dhtrt_touch_node(rt, nodeid);
+        ++ipv4_remote;
+     }
+   }
+
+   for (int i=0; i<2; ++i) {
+     if (i%10 == 0) {
+           ++nodeid.id[0];
+           nodeid.id[1] = 0;
+     }
+     else {
+           ++nodeid.id[1];
+     }
+
+     ks_status_t s0 = ks_dhtrt_create_node(rt, nodeid, KS_DHT_LOCAL, ipv4, port, &peer);
+     if (s0 == KS_STATUS_SUCCESS) {
+        ks_dhtrt_touch_node(rt, nodeid);
+        ++ipv4_local;
+     }
+   }
+
+   for (int i=0; i<201; ++i) {
+     if (i%10 == 0) {
+           ++nodeid.id[0];
+           nodeid.id[1] = 0;
+     }
+     else {
+           ++nodeid.id[1];
+     }
+     ks_dhtrt_create_node(rt, nodeid, KS_DHT_REMOTE, ipv6, port, &peer);
+     ks_dhtrt_touch_node(rt, nodeid);
+   }
+
+
+   ks_dhtrt_dump(rt, 7);
+
+
+   int qcount = doquery(rt, nodeid.id, KS_DHT_LOCAL, both);
+   printf("\n** local query count expected 2, actual %d, max %d\n", qcount, ipv4_local); fflush(stdout);
+
+   qcount = doquery(rt, nodeid.id, KS_DHT_LOCAL, both);
+   printf("\n** local query count expected 2, actual %d, max %d\n", qcount, ipv4_local); fflush(stdout);
+
+   qcount = doquery(rt, nodeid.id, KS_DHT_BOTH, both);
+   printf("\n** local query count expected 20, actual %d, max %d\n", qcount, ipv4_local); fflush(stdout);
+
+   return;
+}
+
+
+
+
+
+
+
 /* test resue of node memory */
 void test50()
 {
@@ -610,8 +708,11 @@ int main(int argc, char* argv[]) {
 	 ks_dht_create(&dht, NULL, NULL);
 
 
-   ks_thread_pool_create(&tpool, 0, KS_DHT_TPOOL_MAX, KS_DHT_TPOOL_STACK, KS_PRI_NORMAL, KS_DHT_TPOOL_IDLE);
+  // ks_thread_pool_create(&tpool, 0, KS_DHT_TPOOL_MAX, KS_DHT_TPOOL_STACK, KS_PRI_NORMAL, KS_DHT_TPOOL_IDLE);
+	
+	tpool = 0;
 
+	
    ks_status_t status;
    char *str = NULL;
    int bytes = 1024;
@@ -674,6 +775,15 @@ int main(int argc, char* argv[]) {
 		ks_dhtrt_deinitroute(&rt);
         continue;
      }
+
+
+     if (tests[tix] == 30) {
+        ks_dhtrt_initroute(&rt, dht, pool, tpool);
+        test30();
+        ks_dhtrt_deinitroute(&rt);
+        continue;
+     }
+
 
      if (tests[tix] == 50) {
         ks_dhtrt_initroute(&rt, dht, pool, tpool);
