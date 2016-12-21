@@ -357,6 +357,8 @@ ks_dht_node_t*  g_peer;
 
 static void *testnodelocking_ex1(ks_thread_t *thread, void *data)
 {
+   //lock=3 on entry
+   ks_dhtrt_release_node(g_peer);                                //lock=2
    ks_dhtrt_release_node(g_peer);                                //lock=1
    ks_dhtrt_release_node(g_peer);                                //lock=0
   return NULL;
@@ -364,9 +366,17 @@ static void *testnodelocking_ex1(ks_thread_t *thread, void *data)
 
 static void *testnodelocking_ex2(ks_thread_t *thread, void *data)
 {
-    ks_dht_node_t*  peer2 = ks_dhtrt_find_node(rt, g_nodeid1);   //lock=4
+    // lock=4 on entry                                       
+    ks_dht_node_t*  peer2 = ks_dhtrt_find_node(rt, g_nodeid1);   //lock=5
+    ks_dhtrt_release_node(peer2);                                //lock=4
+    ks_dhtrt_sharelock_node(peer2);                              //lock=5
+    ks_dhtrt_release_node(peer2);                                //lock=4
+    ks_dhtrt_sharelock_node(peer2);                              //lock=5
+    ks_dhtrt_release_node(peer2);                                //lock=4                           
     ks_dhtrt_release_node(peer2);                                //lock=3
-    ks_dhtrt_release_node(peer2);                                //lock=2
+    ks_dhtrt_find_node(rt, g_nodeid1);                           //lock=4
+    ks_dhtrt_release_node(peer2);                                //lock=3
+
     return NULL;
 }
 
@@ -391,6 +401,7 @@ void test06()
                     peer2 = ks_dhtrt_find_node(rt, g_nodeid1);   //lock=4
 
     ks_dhtrt_release_node(peer2);                                //lock=3
+	ks_dhtrt_sharelock_node(peer2);                              //lock=4                            
 
     g_peer =  peer2;
 
