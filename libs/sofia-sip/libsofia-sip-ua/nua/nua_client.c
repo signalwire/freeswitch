@@ -880,6 +880,11 @@ int nua_client_request_sendmsg(nua_client_request_t *cr)
     if (ds->ds_ltarget && !cr->cr_has_contact)
       sip_add_dup(msg, sip, (sip_header_t *)ds->ds_ltarget);
 
+	/*
+	  FS-4102 
+	  It was decided to comment out this code because it does not appear to make sense
+	  Dec 22, 2016
+
     if (nua_registration_add_contact_to_request(nh, msg, sip,
 						cr->cr_contactize &&
 						!cr->cr_has_contact &&
@@ -888,6 +893,8 @@ int nua_client_request_sendmsg(nua_client_request_t *cr)
       msg_destroy(msg);
       return -1;
     }
+	*/
+
   }
 
   cr->cr_wait_for_cred = 0;
