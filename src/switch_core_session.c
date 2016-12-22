@@ -2677,15 +2677,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_execute_application_get_flag
 		*flags = application_interface->flags;
 	}
 
-	if (switch_channel_text_only(session->channel) && 
-		!switch_test_flag(application_interface, SAF_SUPPORT_NOMEDIA) && 
-		!switch_test_flag(application_interface, SAF_SUPPORT_TEXT_ONLY)) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Application %s does not support text-only mode on channel %s!\n",
-						  app, switch_channel_get_name(session->channel));
-		switch_channel_hangup(session->channel, SWITCH_CAUSE_SERVICE_NOT_IMPLEMENTED);
-		switch_goto_status(SWITCH_STATUS_FALSE, done);
-	}
-
 	if (!switch_test_flag(application_interface, SAF_SUPPORT_NOMEDIA) && (switch_channel_test_flag(session->channel, CF_VIDEO))) {
 		switch_core_session_request_video_refresh(session);
 	}
@@ -2717,6 +2708,15 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_execute_application_get_flag
 				switch_goto_status(SWITCH_STATUS_FALSE, done);
 			}
 		}
+	}
+
+	if (switch_channel_text_only(session->channel) && 
+		!switch_test_flag(application_interface, SAF_SUPPORT_NOMEDIA) && 
+		!switch_test_flag(application_interface, SAF_SUPPORT_TEXT_ONLY)) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Application %s does not support text-only mode on channel %s!\n",
+						  app, switch_channel_get_name(session->channel));
+		switch_channel_hangup(session->channel, SWITCH_CAUSE_SERVICE_NOT_IMPLEMENTED);
+		switch_goto_status(SWITCH_STATUS_FALSE, done);
 	}
 
  exec:
