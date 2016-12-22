@@ -59,8 +59,6 @@ typedef struct ks_dhtrt_bucket_entry_s {
 	ks_time_t  tyme;
 	uint8_t	   id[KS_DHT_NODEID_SIZE];
 	ks_dht_node_t *gptr;					/* ptr to peer */	
-    enum ks_dht_nodetype_t type; 
-    enum ks_afflags_t  family;  
 	uint8_t	   inuse;
 	uint8_t	   outstanding_pings;
 	uint8_t	   flags;					  /* active, suspect, expired */
@@ -98,7 +96,6 @@ typedef struct ks_dhtrt_internal_s {
 	uint8_t	 localid[KS_DHT_NODEID_SIZE];
 	ks_dhtrt_bucket_header_t *buckets;		/* root bucketheader */
 	ks_dht_t               *dht; 
-	ks_thread_pool_t       *tpool;
 	ks_rwl_t 			   *lock;  		    /* lock for safe traversal of the tree */
 	ks_time_t              last_process_table;
 	ks_time_t              next_process_table_delta;
@@ -169,8 +166,6 @@ static
 ks_status_t ks_dhtrt_delete_id(ks_dhtrt_bucket_t *bucket, ks_dhtrt_nodeid_t id);
 static
 char *ks_dhtrt_printableid(uint8_t *id, char *buffer);
-static
-unsigned char ks_dhtrt_isactive(ks_dhtrt_bucket_entry_t *entry);
 
 static
 uint8_t ks_dhtrt_findclosest_locked_nodes(ks_dhtrt_routetable_t *table, ks_dhtrt_querynodes_t *query);
@@ -199,8 +194,7 @@ void ks_dhtrt_ping(ks_dhtrt_internal_t *table, ks_dhtrt_bucket_entry_t *entry);
 
 KS_DECLARE(ks_status_t) ks_dhtrt_initroute(ks_dhtrt_routetable_t **tableP,
 											ks_dht_t *dht,
-											ks_pool_t *pool, 
-											ks_thread_pool_t* tpool) 
+											ks_pool_t *pool) 
 {
 (void)ks_dhtrt_find_relatedbucketheader;
 
@@ -212,7 +206,6 @@ KS_DECLARE(ks_status_t) ks_dhtrt_initroute(ks_dhtrt_routetable_t **tableP,
 	ks_dhtrt_internal_t *internal =	  ks_pool_alloc(pool, sizeof(ks_dhtrt_internal_t));
 
 	ks_rwl_create(&internal->lock, pool);
-    internal->tpool = tpool;
 	internal->dht   = dht;  
     internal->next_process_table_delta = KS_DHTRT_PROCESSTABLE_INTERVAL; 
     ks_mutex_create(&internal->deleted_node_lock, KS_MUTEX_FLAG_DEFAULT, pool);
@@ -301,6 +294,7 @@ KS_DECLARE(ks_status_t)	 ks_dhtrt_create_node( ks_dhtrt_routetable_t *table,
     assert(header != NULL);             /* should always find a header */
 
     ks_dhtrt_bucket_entry_t *bentry = ks_dhtrt_find_bucketentry(header, nodeid.id);
+
     if (bentry != 0) {
 		bentry->tyme = ks_time_now_sec();
         
@@ -319,18 +313,20 @@ KS_DECLARE(ks_status_t)	 ks_dhtrt_create_node( ks_dhtrt_routetable_t *table,
     tnode = ks_dhtrt_make_node(table);
 	tnode->table = table;
 
+    enum ks_afflags_t family;
+
 	for (int i = 0; i < 5; ++i) {
 		if (ip[i] == ':') { 
-			tnode->family =	 AF_INET6; break;
+			family =	 AF_INET6; break;
 		} else if (ip[i] == '.') { 
-			tnode->family =	 AF_INET; break; 
+			family =	 AF_INET; break; 
 		}
 	}
 
     memcpy(tnode->nodeid.id, nodeid.id, KS_DHT_NODEID_SIZE);
     tnode->type = type;
 
-    if (( ks_addr_set(&tnode->addr, ip, port, tnode->family) != KS_STATUS_SUCCESS) ||
+    if (( ks_addr_set(&tnode->addr, ip, port, family) != KS_STATUS_SUCCESS) ||
         ( ks_rwl_create(&tnode->reflock, table->pool) !=  KS_STATUS_SUCCESS))       {
         ks_pool_free(table->pool, &tnode);
 		ks_rwl_read_unlock(internal->lock);
@@ -1031,7 +1027,7 @@ void ks_dhtrt_process_deleted(ks_dhtrt_routetable_t *table, int8_t all)
 	ks_dhtrt_deletednode_t *deleted = internal->deleted_node;
 	ks_dhtrt_deletednode_t *prev = NULL, *temp=NULL;
 
-#ifdef  KS_DHT_DEBUGPRINTFX_
+#ifdef  KS_DHT_DEBUGPRINTF_
 	ks_log(KS_LOG_DEBUG, "ALLOC process_deleted entry: internal->deleted_count %d\n", internal->deleted_count);
 #endif
 
@@ -1040,14 +1036,14 @@ void ks_dhtrt_process_deleted(ks_dhtrt_routetable_t *table, int8_t all)
 	uint32_t threshold = KS_DHTRT_RECYCLE_NODE_THRESHOLD;
 
 	if (all) {
-		 threshold = 1;
+		 threshold = 0;
 	}
 
 	while(internal->deleted_count > threshold  && deleted) {
 		ks_dht_node_t* node = deleted->node;
 
 #ifdef  KS_DHT_DEBUGPRINTFX_
-		ks_log(KS_LOG_DEBUG, "ALLOC process_deleted entry: try write lock\n");
+		ks_log(KS_LOG_DEBUG, "ALLOC process_deleted : try write lock\n");
 #endif
 
 		if (ks_rwl_try_write_lock(node->reflock) == KS_STATUS_SUCCESS) {        
@@ -1057,8 +1053,8 @@ void ks_dhtrt_process_deleted(ks_dhtrt_routetable_t *table, int8_t all)
 			deleted = deleted->next;
 			ks_pool_free(table->pool, &temp);
 			--internal->deleted_count;
-#ifdef  KS_DHT_DEBUGPRINTF_
-			ks_log(KS_LOG_DEBUG, "ALLOC process_deleted: internal->deleted_count %d\n", internal->deleted_count);			
+#ifdef  KS_DHT_DEBUGPRINTFX__
+			ks_log(KS_LOG_DEBUG, "ALLOC process_deleted: internal->deleted_count reduced to %d\n", internal->deleted_count);
 #endif
 			if (prev != NULL) {
 				prev->next = deleted;
@@ -1069,8 +1065,8 @@ void ks_dhtrt_process_deleted(ks_dhtrt_routetable_t *table, int8_t all)
      
 		}
 		else {
-#ifdef  KS_DHT_DEBUGPRINTFX_
-			ks_log(KS_LOG_DEBUG, "ALLOC process_deleted entry: try write lock failed\n");
+#ifdef  KS_DHT_DEBUGPRINTF_
+			ks_log(KS_LOG_DEBUG, "ALLOC process_deleted : try write lock failed\n");
 #endif
 			prev = deleted;
 			deleted = prev->next;
@@ -1117,7 +1113,7 @@ KS_DECLARE(void) ks_dhtrt_dump(ks_dhtrt_routetable_t *table, int level) {
 												b->entries[ix].flags,
 												b->entries[ix].outstanding_pings,
 												n->type,
-												n->family,
+												n->addr.family,
 												buffer);
 					}
 					else {
@@ -1263,8 +1259,6 @@ void ks_dhtrt_split_bucket(ks_dhtrt_bucket_header_t *original,
 			/* move it to the left */
 			memcpy(dest->entries[lix].id, source->entries[rix].id, KS_DHT_NODEID_SIZE);
 			dest->entries[lix].gptr   = source->entries[rix].gptr;
-			dest->entries[lix].family = source->entries[rix].family;
-			dest->entries[lix].type   = source->entries[rix].type;
 			dest->entries[lix].inuse = 1;
 			++lix;
 			++dest->count;
@@ -1341,8 +1335,6 @@ ks_status_t ks_dhtrt_insert_id(ks_dhtrt_bucket_t *bucket, ks_dht_node_t *node)
 	if ( free<KS_DHT_BUCKETSIZE ) {
 		bucket->entries[free].inuse = 1;
 		bucket->entries[free].gptr = node;
-		bucket->entries[free].type = node->type;
-		bucket->entries[free].family = node->family;  
 		bucket->entries[free].tyme = ks_time_now_sec();
 		bucket->entries[free].flags = DHTPEER_DUBIOUS;
 
@@ -1454,11 +1446,10 @@ uint8_t ks_dhtrt_findclosest_bucketnodes(ks_dhtrt_nodeid_t id,
 
 	for (uint8_t ix=0; ix<KS_DHT_BUCKETSIZE; ++ix) {
 
-		if ( bucket->entries[ix].inuse == 1                              &&    /* in use      */
-			bucket->entries[ix].flags == DHTPEER_ACTIVE                 &&    /* not dubious or expired */
-			(family == ifboth || bucket->entries[ix].family == family)  &&    /* match if family */
-			(bucket->entries[ix].type & type)                           &&    /* match type   */
-			ks_dhtrt_isactive( &(bucket->entries[ix])) ) {
+		if ( bucket->entries[ix].inuse == 1                                       &&    /* in use      */
+			bucket->entries[ix].flags == DHTPEER_ACTIVE                           &&    /* not dubious or expired */
+			(family == ifboth || bucket->entries[ix].gptr->addr.family == family) &&    /* match if family */
+			(bucket->entries[ix].gptr->type & type) )                             {     /* match type   */
 		  
 			/* calculate xor value */
 			ks_dhtrt_xor(bucket->entries[ix].id, id, xorvalue );
@@ -1561,7 +1552,7 @@ void ks_dhtrt_queue_node_fordelete(ks_dhtrt_routetable_t* table, ks_dht_node_t* 
 	deleted->next = internal->deleted_node;  
 	internal->deleted_node = deleted;                         /* add to deleted queue */
 	++internal->deleted_count;
-#ifdef  KS_DHT_DEBUGPRINTFX_
+#ifdef  KS_DHT_DEBUGPRINTF_
 	ks_log(KS_LOG_DEBUG, "ALLOC: Queue for delete %d\n", internal->deleted_count);
 #endif
 	ks_mutex_unlock(internal->deleted_node_lock);

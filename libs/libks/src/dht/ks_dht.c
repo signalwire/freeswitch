@@ -537,7 +537,7 @@ KS_DECLARE(ks_status_t) ks_dht_bind(ks_dht_t *dht, const ks_dht_nodeid_t *nodeid
 	 * If the route table for the family doesn't exist yet, initialize a new route table and create a local node for the endpoint.
 	 */
 	if (ep->addr.family == AF_INET) {
-		if (!dht->rt_ipv4 && (ret = ks_dhtrt_initroute(&dht->rt_ipv4, dht, dht->pool, dht->tpool)) != KS_STATUS_SUCCESS) goto done;
+		if (!dht->rt_ipv4 && (ret = ks_dhtrt_initroute(&dht->rt_ipv4, dht, dht->pool)) != KS_STATUS_SUCCESS) goto done;
 		if ((ret = ks_dhtrt_create_node(dht->rt_ipv4,
 										ep->nodeid,
 										KS_DHT_LOCAL,
@@ -545,7 +545,7 @@ KS_DECLARE(ks_status_t) ks_dht_bind(ks_dht_t *dht, const ks_dht_nodeid_t *nodeid
 										ep->addr.port,
 										&ep->node)) != KS_STATUS_SUCCESS) goto done;
 	} else {
-		if (!dht->rt_ipv6 && (ret = ks_dhtrt_initroute(&dht->rt_ipv6, dht, dht->pool, dht->tpool)) != KS_STATUS_SUCCESS) goto done;
+		if (!dht->rt_ipv6 && (ret = ks_dhtrt_initroute(&dht->rt_ipv6, dht, dht->pool)) != KS_STATUS_SUCCESS) goto done;
 		if ((ret = ks_dhtrt_create_node(dht->rt_ipv6,
 										ep->nodeid,
 										KS_DHT_LOCAL,

@@ -89,7 +89,7 @@ enum ks_dht_nodetype_t { KS_DHT_REMOTE=0x01,
 struct ks_dht_node_s {
     ks_dht_nodeid_t  nodeid;
     ks_sockaddr_t    addr;
-    enum ks_afflags_t family;                  /* AF_INET or AF_INET6 */
+//    enum ks_afflags_t family;                  /* AF_INET or AF_INET6 */
     enum ks_dht_nodetype_t type;               /* local or remote */
     ks_dhtrt_routetable_t* table;
     ks_rwl_t        *reflock;          
@@ -425,8 +425,7 @@ KS_DECLARE(ks_status_t) ks_dht_message_response(ks_dht_message_t *message,
  */
 KS_DECLARE(ks_status_t) ks_dhtrt_initroute(ks_dhtrt_routetable_t **tableP, 
 											ks_dht_t *dht, 
-											ks_pool_t *pool, 
-											ks_thread_pool_t* tpool);
+											ks_pool_t *pool); 
 KS_DECLARE(void) ks_dhtrt_deinitroute(ks_dhtrt_routetable_t **table);
 
 KS_DECLARE(ks_status_t)        ks_dhtrt_create_node(ks_dhtrt_routetable_t* table,
