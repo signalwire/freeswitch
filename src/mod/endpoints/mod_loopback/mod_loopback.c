@@ -274,6 +274,7 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 		switch_channel_set_caller_profile(b_channel, caller_profile);
 		b_tech_pvt->caller_profile = caller_profile;
 		switch_channel_set_state(b_channel, CS_INIT);
+		switch_channel_set_flag(b_channel, CF_AUDIO);
 
 		switch_mutex_lock(tech_pvt->mutex);
 		tech_pvt->other_session = b_session;
