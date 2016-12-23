@@ -52,10 +52,18 @@ void test01()
 	}
 	
 	peer = ks_dhtrt_find_node(rt, homeid);
-	if (peer == 0)  {
-		printf("*** ks_dhtrt_find_node test01  failed \n"); fflush(stdout);
+	if (peer != 0)  {
+		printf("*** ks_dhtrt_find_node test01  failed. find should fail\n"); fflush(stdout);
 		exit(102);
 	}
+
+	ks_dhtrt_touch_node(rt, homeid); 
+
+    peer = ks_dhtrt_find_node(rt, homeid);
+    if (peer == 0)  {
+        printf("*** ks_dhtrt_find_node test01  failed. find should succeed\n"); fflush(stdout);
+        exit(102);
+    }
 
 	status = ks_dhtrt_create_node(rt, homeid, KS_DHT_LOCAL, ip, port, &peer1);
 	if (status == KS_STATUS_FAIL) {
@@ -325,6 +333,7 @@ void test05()
 	unsigned short port = 7001;
 
 	ks_dhtrt_create_node(rt, nodeid, KS_DHT_REMOTE, ipv4, port, &peer);
+    ks_dhtrt_touch_node(rt, nodeid);
 	
 	peer1 = ks_dhtrt_find_node(rt, nodeid);
 	printf("test05 - first find compelete\n"); fflush(stdout);
@@ -340,6 +349,10 @@ void test05()
 
 	s = ks_dhtrt_release_node(peer2);
 	if (s == KS_STATUS_FAIL) printf("release 1 failed\n"); 
+
+    s = ks_dhtrt_release_node(peer2);
+    if (s == KS_STATUS_FAIL) printf("release 1 failed\n");
+
 
 	printf("* **testbuckets - test05 finished\n\n\n"); fflush(stdout);
 
@@ -440,6 +453,7 @@ void test07()
 	for(int i0=0, i1=0; i0<150; ++i0, ++i1) {
 		if (i0%20 == 0) {
 			g_nodeid2.id[0]>>=1;
+			ks_dhtrt_dump(rt, 7);
 	    }
 	    else {
 			++ g_nodeid2.id[19];
@@ -448,6 +462,8 @@ void test07()
 		ks_dhtrt_touch_node(rt, g_nodeid2);
 		ks_dhtrt_release_node(peer);
 	 }
+
+	ks_dhtrt_dump(rt, 7);
 
 	 memset(g_nodeid2.id,  0xef, KS_DHT_NODEID_SIZE);
 	 for (int i0=0, i1=0; i0<150; ++i0, ++i1) {

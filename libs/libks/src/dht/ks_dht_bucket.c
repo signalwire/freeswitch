@@ -377,6 +377,11 @@ KS_DECLARE(ks_status_t) ks_dhtrt_delete_node(ks_dhtrt_routetable_t *table, ks_dh
 	ks_rwl_read_unlock(internal->lock);   /* release write lock */
 	/* at this point no subsequent find/query will return the node */
 
+	if (s == KS_STATUS_FAIL) {
+		ks_log(KS_LOG_DEBUG, "Delete node: node not found\n");
+		return KS_STATUS_FAIL;  /* cannot delete what we cannot find */
+	}
+
 	ks_dhtrt_queue_node_fordelete(table, node);
 	return s;
 }
@@ -856,11 +861,13 @@ uint8_t ks_dhtrt_findclosest_locked_nodes(ks_dhtrt_routetable_t *table, ks_dhtrt
 
 KS_DECLARE(ks_status_t) ks_dhtrt_release_node(ks_dht_node_t* node)
 {
+	assert(node);
 	return ks_rwl_read_unlock(node->reflock);
 }
 
 KS_DECLARE(ks_status_t) ks_dhtrt_sharelock_node(ks_dht_node_t* node)
 {
+	assert(node);
 	return ks_rwl_read_lock(node->reflock);
 }
 
@@ -1257,9 +1264,7 @@ void ks_dhtrt_split_bucket(ks_dhtrt_bucket_header_t *original,
 		if (ks_dhtrt_ismasked(source->entries[rix].id, left->mask)) {
 
 			/* move it to the left */
-			memcpy(dest->entries[lix].id, source->entries[rix].id, KS_DHT_NODEID_SIZE);
-			dest->entries[lix].gptr   = source->entries[rix].gptr;
-			dest->entries[lix].inuse = 1;
+			memcpy(&dest->entries[lix], &source->entries[rix], sizeof(ks_dhtrt_bucket_entry_t));
 			++lix;
 			++dest->count;
 			
@@ -1371,7 +1376,8 @@ ks_dht_node_t *ks_dhtrt_find_nodeid(ks_dhtrt_bucket_t *bucket, ks_dhtrt_nodeid_t
 						bucket->entries[ix].inuse  );
 		}
 #endif	  
-		if ( bucket->entries[ix].inuse == 1	  &&
+		if ( bucket->entries[ix].inuse == 1              	&& 
+             bucket->entries[ix].flags == DHTPEER_ACTIVE    &&
 			 (!memcmp(id, bucket->entries[ix].id, KS_DHT_NODEID_SIZE)) ) {
 			return bucket->entries[ix].gptr;
 		}
