@@ -989,6 +989,7 @@ void sofia_presence_event_handler(switch_event_t *event);
 
 void sofia_presence_cancel(void);
 switch_status_t config_sofia(sofia_config_t reload, char *profile_name);
+switch_status_t config_gateway(const char *profile_name, const char *gateway_name);
 void sofia_reg_auth_challenge(sofia_profile_t *profile, nua_handle_t *nh, sofia_dispatch_event_t *de,
 							  sofia_regtype_t regtype, const char *realm, int stale, long exptime);
 auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t const *authorization,
