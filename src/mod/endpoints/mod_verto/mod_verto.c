@@ -890,6 +890,9 @@ static switch_bool_t check_auth(jsock_t *jsock, cJSON *params, int *code, char *
 	const char *passwd = NULL;
 	const char *login = NULL;
 	cJSON *json_ptr = NULL;
+	char *input = NULL;
+	char *a1_hash = NULL;
+	char a1_hash_buff[33] = "";
 
 	if (!params) {
 		*code = CODE_AUTH_FAILED;
@@ -1008,6 +1011,13 @@ static switch_bool_t check_auth(jsock_t *jsock, cJSON *params, int *code, char *
 						use_passwd = val;
 					} else if (!strcasecmp(var, "jsonrpc-password")) {
 						use_passwd = val;
+					} else if (!strcasecmp(var, "a1-hash")) {
+						use_passwd = val;
+						input = switch_mprintf("%s:%s:%s", id, domain, passwd);
+						switch_md5_string(a1_hash_buff, (void *) input, strlen(input));
+						a1_hash = a1_hash_buff;
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"a1-hash-plain = '%s' a1-hash-md5 = '%s'\n", input, a1_hash);
+						switch_safe_free(input);
 					} else if (!strcasecmp(var, "verto-context")) {
 						verto_context = val;
 					} else if (!strcasecmp(var, "verto-dialplan")) {
@@ -1035,16 +1045,20 @@ static switch_bool_t check_auth(jsock_t *jsock, cJSON *params, int *code, char *
 				jsock->context = switch_core_strdup(jsock->pool, verto_context);
 			}
 
-			if (zstr(use_passwd) || strcmp(passwd, use_passwd)) {
+
+			if (zstr(use_passwd) || strcmp(a1_hash ? a1_hash : passwd, use_passwd)) {
 				r = SWITCH_FALSE;
 				*code = CODE_AUTH_FAILED;
 				switch_snprintf(message, mlen, "Authentication Failure");
 				jsock->uid = NULL;
 				login_fire_custom_event(jsock, params, 0, "Authentication Failure");
 			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"auth using %s\n",a1_hash ? "a1-hash" : "username & password");
 				r = SWITCH_TRUE;
 				check_permissions(jsock, x_user, params);
 			}
+
+
 
 			switch_xml_free(x_user);
 		}
