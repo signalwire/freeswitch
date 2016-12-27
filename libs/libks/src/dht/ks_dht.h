@@ -85,13 +85,18 @@ struct ks_dht_nodeid_s {
 
 enum ks_afflags_t { ifv4=AF_INET, ifv6=AF_INET6, ifboth=AF_INET+AF_INET6};
 enum ks_dht_nodetype_t { KS_DHT_REMOTE=0x01, 
-                         KS_DHT_LOCAL=0x02, 
-                         KS_DHT_BOTH=KS_DHT_REMOTE+KS_DHT_LOCAL };
+						 KS_DHT_LOCAL=0x02, 
+						 KS_DHT_BOTH=KS_DHT_REMOTE+KS_DHT_LOCAL };
 
+enum ks_create_node_flags_t { 
+						 KS_DHTRT_CREATE_DEFAULT=0,
+						 KS_DHTRT_CREATE_PING,
+						 KS_DHTRT_CREATE_TOUCH 
+};		
+				
 struct ks_dht_node_s {
     ks_dht_nodeid_t  nodeid;
     ks_sockaddr_t    addr;
-//    enum ks_afflags_t family;                  /* AF_INET or AF_INET6 */
     enum ks_dht_nodetype_t type;               /* local or remote */
     ks_dhtrt_routetable_t* table;
     ks_rwl_t        *reflock;          
@@ -487,6 +492,7 @@ KS_DECLARE(ks_status_t)        ks_dhtrt_create_node(ks_dhtrt_routetable_t* table
 													ks_dht_nodeid_t nodeid,
 													enum ks_dht_nodetype_t type,
 													char* ip, unsigned short port,
+                                                    enum ks_create_node_flags_t flags,
 													ks_dht_node_t** node);
 
 KS_DECLARE(ks_status_t)        ks_dhtrt_delete_node(ks_dhtrt_routetable_t* table, ks_dht_node_t* node);

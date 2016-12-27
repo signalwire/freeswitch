@@ -542,6 +542,7 @@ KS_DECLARE(ks_status_t) ks_dht_bind(ks_dht_t *dht, const ks_dht_nodeid_t *nodeid
 										KS_DHT_LOCAL,
 										ep->addr.host,
 										ep->addr.port,
+										KS_DHTRT_CREATE_DEFAULT,
 										&ep->node)) != KS_STATUS_SUCCESS) goto done;
 	} else {
 		if (!dht->rt_ipv6 && (ret = ks_dhtrt_initroute(&dht->rt_ipv6, dht, dht->pool)) != KS_STATUS_SUCCESS) goto done;
@@ -550,6 +551,7 @@ KS_DECLARE(ks_status_t) ks_dht_bind(ks_dht_t *dht, const ks_dht_nodeid_t *nodeid
 										KS_DHT_LOCAL,
 										ep->addr.host,
 										ep->addr.port,
+										KS_DHTRT_CREATE_DEFAULT,
 										&ep->node)) != KS_STATUS_SUCCESS) goto done;
 	}
 	/**
@@ -1473,6 +1475,7 @@ KS_DECLARE(ks_status_t) ks_dht_process_query(ks_dht_t *dht, ks_dht_message_t *me
 									KS_DHT_REMOTE,
 									message->raddr.host,
 									message->raddr.port,
+									KS_DHTRT_CREATE_DEFAULT,
 									&node)) != KS_STATUS_SUCCESS) goto done;
 	if ((ret = ks_dhtrt_release_node(node)) != KS_STATUS_SUCCESS) goto done;
 
@@ -1518,6 +1521,7 @@ KS_DECLARE(ks_status_t) ks_dht_process_response(ks_dht_t *dht, ks_dht_message_t 
 									KS_DHT_REMOTE,
 									message->raddr.host,
 									message->raddr.port,
+									KS_DHTRT_CREATE_DEFAULT,
 									&node)) != KS_STATUS_SUCCESS) goto done;
 	if ((ret = ks_dhtrt_release_node(node)) != KS_STATUS_SUCCESS) goto done;
 	
@@ -2177,7 +2181,7 @@ KS_DECLARE(ks_status_t) ks_dht_process_response_findnode(ks_dht_t *dht, ks_dht_j
 			   addr.port);
 
 		ks_log(KS_LOG_DEBUG, "Creating node %s\n", ks_dht_hex(nid.id, id_buf, KS_DHT_NODEID_SIZE));
-		ks_dhtrt_create_node(dht->rt_ipv4, nid, KS_DHT_REMOTE, addr.host, addr.port, &node);
+		ks_dhtrt_create_node(dht->rt_ipv4, nid, KS_DHT_REMOTE, addr.host, addr.port, KS_DHTRT_CREATE_DEFAULT, &node);
 		job->response_nodes[job->response_nodes_count++] = node;
 
 		// @todo move search to it's own job, and make reusable for find_node and get, and others that return nodes/nodes6
@@ -2239,7 +2243,7 @@ KS_DECLARE(ks_status_t) ks_dht_process_response_findnode(ks_dht_t *dht, ks_dht_j
 			   addr.port);
 
 		ks_log(KS_LOG_DEBUG, "Creating node %s\n", ks_dht_hex(nid.id, id_buf, KS_DHT_NODEID_SIZE));
-		ks_dhtrt_create_node(dht->rt_ipv6, nid, KS_DHT_REMOTE, addr.host, addr.port, &node);
+		ks_dhtrt_create_node(dht->rt_ipv6, nid, KS_DHT_REMOTE, addr.host, addr.port, KS_DHTRT_CREATE_DEFAULT, &node);
 		job->response_nodes6[job->response_nodes6_count++] = node;
 
 		// @todo move search to it's own job, and make reusable for find_node and get, and others that return nodes/nodes6
@@ -2521,7 +2525,7 @@ KS_DECLARE(ks_status_t) ks_dht_process_response_get(ks_dht_t *dht, ks_dht_job_t 
 			   addr.port);
 
 		ks_log(KS_LOG_DEBUG, "Creating node %s\n", ks_dht_hex(nid.id, id_buf, KS_DHT_NODEID_SIZE));
-		ks_dhtrt_create_node(dht->rt_ipv4, nid, KS_DHT_REMOTE, addr.host, addr.port, &node);
+		ks_dhtrt_create_node(dht->rt_ipv4, nid, KS_DHT_REMOTE, addr.host, addr.port, KS_DHTRT_CREATE_DEFAULT, &node);
 		job->response_nodes[job->response_nodes_count++] = node;
 	}
 	while (nodes6_len < nodes6_size) {
@@ -2538,7 +2542,7 @@ KS_DECLARE(ks_status_t) ks_dht_process_response_get(ks_dht_t *dht, ks_dht_job_t 
 			   addr.port);
 
 		ks_log(KS_LOG_DEBUG, "Creating node %s\n", ks_dht_hex(nid.id, id_buf, KS_DHT_NODEID_SIZE));
-		ks_dhtrt_create_node(dht->rt_ipv6, nid, KS_DHT_REMOTE, addr.host, addr.port, &node);
+		ks_dhtrt_create_node(dht->rt_ipv6, nid, KS_DHT_REMOTE, addr.host, addr.port, KS_DHTRT_CREATE_DEFAULT, &node);
 		job->response_nodes6[job->response_nodes6_count++] = node;
 	}
 	

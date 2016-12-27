@@ -45,7 +45,7 @@ void test01()
 	ks_dht_node_t *peer1;
 	
 	ks_status_t status;  
-	status = ks_dhtrt_create_node(rt, homeid, KS_DHT_LOCAL, ip, port, &peer);
+	status = ks_dhtrt_create_node(rt, homeid, KS_DHT_LOCAL, ip, port, KS_DHTRT_CREATE_DEFAULT, &peer);
 	if (status == KS_STATUS_FAIL) {
 		printf("* **ks_dhtrt_create_node test01 failed\n");
 		exit(101);
@@ -65,9 +65,9 @@ void test01()
         exit(102);
     }
 
-	status = ks_dhtrt_create_node(rt, homeid, KS_DHT_LOCAL, ip, port, &peer1);
+	status = ks_dhtrt_create_node(rt, homeid, KS_DHT_LOCAL, ip, port, KS_DHTRT_CREATE_DEFAULT, &peer1);
 	if (status == KS_STATUS_FAIL) {
-		printf("**** ks_dhtrt_create_node test01 did allow duplicate createnodes!!\n");
+		printf("**** ks_dhtrt_create_node test01 did not  allow duplicate createnodes!!\n");
 		exit(103);
 	}
 	if (peer != peer1) {
@@ -80,6 +80,44 @@ void test01()
 		printf("****  ks_dhtrt_delete_node test01 failed\n");
 		exit(104);
 	}
+
+    /* test create_node flags */
+	/* ---------------------- */
+
+    memset(homeid.id,  0xab, KS_DHT_NODEID_SIZE);	
+    status = ks_dhtrt_create_node(rt, homeid, KS_DHT_LOCAL, ip, port, KS_DHTRT_CREATE_PING, &peer);
+
+    peer = ks_dhtrt_find_node(rt, homeid);
+    if (peer != 0)  {
+        printf("*** ks_dhtrt_find_node test01  failed. find@2 should fail\n"); fflush(stdout);
+        exit(106);
+    }
+
+    status = ks_dhtrt_create_node(rt, homeid, KS_DHT_LOCAL, ip, port, KS_DHTRT_CREATE_TOUCH, &peer);
+    peer1 = ks_dhtrt_find_node(rt, homeid);
+    if (peer1 == 0)  {
+        printf("*** ks_dhtrt_find_node test01  failed. find@3 should succeed after create w/touch\n"); fflush(stdout);
+        exit(106);
+    }
+    if (peer1 != peer) {
+        printf("*** peer != peer1 @4 - both creates should return the same node\n"); fflush(stdout);
+        exit(107);
+	}
+
+    /* ok now delete both and see what happens */
+    ks_dhtrt_delete_node(rt, peer);
+    ks_dhtrt_delete_node(rt, peer1);
+
+    memset(nodeid.id,  0xab, KS_DHT_NODEID_SIZE);
+    status = ks_dhtrt_create_node(rt, homeid, KS_DHT_LOCAL, ip, port, KS_DHTRT_CREATE_TOUCH, &peer);
+
+    peer = ks_dhtrt_find_node(rt, nodeid);
+    if (peer == 0)  {
+        printf("*** ks_dhtrt_find_node test01  failed. find@5 should succeed after create_node w/touch\n"); fflush(stdout);
+        exit(108);
+    }
+
+    ks_dhtrt_delete_node(rt, peer);
 
 	printf("**** testbuckets - test01 complete\n\n\n"); fflush(stdout);
 }
@@ -100,39 +138,39 @@ void test02()
 	ks_status_t status;
 
 	nodeid.id[0] = 1;
-	status = ks_dhtrt_create_node(rt, nodeid, KS_DHT_LOCAL, ipv6, port, &peer);
+	status = ks_dhtrt_create_node(rt, nodeid, KS_DHT_LOCAL, ipv6, port, KS_DHTRT_CREATE_DEFAULT, &peer);
 	ks_dhtrt_touch_node(rt, nodeid);
 	nodeid.id[0] = 2;
-	status = ks_dhtrt_create_node(rt,  nodeid,  KS_DHT_REMOTE, ipv6, port, &peer);
+	status = ks_dhtrt_create_node(rt,  nodeid,  KS_DHT_REMOTE, ipv6, port, KS_DHTRT_CREATE_DEFAULT, &peer);
 	ks_dhtrt_touch_node(rt, nodeid);
 	nodeid.id[0] = 3;
-	status = ks_dhtrt_create_node(rt,  nodeid, KS_DHT_REMOTE, ipv6, port, &peer);
+	status = ks_dhtrt_create_node(rt,  nodeid, KS_DHT_REMOTE, ipv6, port, KS_DHTRT_CREATE_DEFAULT, &peer);
 	ks_dhtrt_touch_node(rt, nodeid);
 	nodeid.id[0] = 4;
-	status = ks_dhtrt_create_node(rt,  nodeid, KS_DHT_LOCAL, ipv6, port, &peer);
+	status = ks_dhtrt_create_node(rt,  nodeid, KS_DHT_LOCAL, ipv6, port, KS_DHTRT_CREATE_DEFAULT, &peer);
 	ks_dhtrt_touch_node(rt, nodeid);
 	nodeid.id[1] = 1;
-	status = ks_dhtrt_create_node(rt,  nodeid, KS_DHT_REMOTE, ipv6, port, &peer);
+	status = ks_dhtrt_create_node(rt,  nodeid, KS_DHT_REMOTE, ipv6, port, KS_DHTRT_CREATE_DEFAULT, &peer);
 	ks_dhtrt_touch_node(rt, nodeid);
 
 
 	nodeid.id[19] = 1;
-	status = ks_dhtrt_create_node(rt,  nodeid, KS_DHT_REMOTE, ipv4, port, &peer);
+	status = ks_dhtrt_create_node(rt,  nodeid, KS_DHT_REMOTE, ipv4, port, KS_DHTRT_CREATE_DEFAULT, &peer);
 	ks_dhtrt_touch_node(rt, nodeid);
 	nodeid.id[19] = 2;
-	status = ks_dhtrt_create_node(rt,  nodeid, KS_DHT_REMOTE, ipv4, port, &peer);
+	status = ks_dhtrt_create_node(rt,  nodeid, KS_DHT_REMOTE, ipv4, port, KS_DHTRT_CREATE_DEFAULT, &peer);
 	ks_dhtrt_touch_node(rt, nodeid);
 	nodeid.id[19] = 3;
-	status = ks_dhtrt_create_node(rt,  nodeid, KS_DHT_REMOTE, ipv4, port, &peer);
+	status = ks_dhtrt_create_node(rt,  nodeid, KS_DHT_REMOTE, ipv4, port, KS_DHTRT_CREATE_DEFAULT, &peer);
 	ks_dhtrt_touch_node(rt, nodeid);
 	nodeid.id[19] = 4;
-	status = ks_dhtrt_create_node(rt,  nodeid,  KS_DHT_LOCAL, ipv4, port, &peer);
+	status = ks_dhtrt_create_node(rt,  nodeid,  KS_DHT_LOCAL, ipv4, port, KS_DHTRT_CREATE_DEFAULT, &peer);
 	ks_dhtrt_touch_node(rt, nodeid);
 
 	nodeid.id[19] = 5;
-	status = ks_dhtrt_create_node(rt,  nodeid, KS_DHT_REMOTE, ipv4, port, &peer);
+	status = ks_dhtrt_create_node(rt,  nodeid, KS_DHT_REMOTE, ipv4, port, KS_DHTRT_CREATE_DEFAULT, &peer);
 	nodeid.id[19] = 6;
-	status = ks_dhtrt_create_node(rt,  nodeid,  KS_DHT_LOCAL, ipv4, port, &peer);
+	status = ks_dhtrt_create_node(rt,  nodeid,  KS_DHT_LOCAL, ipv4, port, KS_DHTRT_CREATE_DEFAULT, &peer);
 
 	int qcount = doquery(rt, nodeid.id, KS_DHT_LOCAL, both);
 	printf("\n* **local query count expected 3, actual %d\n", qcount); fflush(stdout);
@@ -191,45 +229,45 @@ void test03()
 
 	for (int i=0; i<200; ++i) {
 		if (i%10 == 0) {
-	++nodeid.id[0];
-	nodeid.id[1] = 0;
+			++nodeid.id[0];
+			nodeid.id[1] = 0;
 		}
 		else {
-	 ++nodeid.id[1];
+			++nodeid.id[1];
 		} 
-		ks_status_t s0 = ks_dhtrt_create_node(rt, nodeid, KS_DHT_REMOTE, ipv4, port, &peer);
-	if (s0 == KS_STATUS_SUCCESS) {
-	ks_dhtrt_touch_node(rt, nodeid);
-	++ipv4_remote;
+		ks_status_t s0 = ks_dhtrt_create_node(rt, nodeid, KS_DHT_REMOTE, ipv4, port, KS_DHTRT_CREATE_DEFAULT, &peer);
+		if (s0 == KS_STATUS_SUCCESS) {
+			ks_dhtrt_touch_node(rt, nodeid);
+			++ipv4_remote;
 		}
 	}
 
  
 	for (int i=0; i<2; ++i) {
-	if (i%10 == 0) {
-	++nodeid.id[0];
-	nodeid.id[1] = 0;
+		if (i%10 == 0) {
+			++nodeid.id[0];
+			nodeid.id[1] = 0;
 		}
 		else {
-	++nodeid.id[1];
+			++nodeid.id[1];
 		}
 
-		ks_status_t s0 = ks_dhtrt_create_node(rt, nodeid, KS_DHT_LOCAL, ipv4, port, &peer);
+		ks_status_t s0 = ks_dhtrt_create_node(rt, nodeid, KS_DHT_LOCAL, ipv4, port, KS_DHTRT_CREATE_DEFAULT,  &peer);
 		if (s0 == KS_STATUS_SUCCESS) {
-	ks_dhtrt_touch_node(rt, nodeid);
-	++ipv4_local;
+			ks_dhtrt_touch_node(rt, nodeid);
+			++ipv4_local;
 		}
 	}
 
 	for (int i=0; i<201; ++i) {
 		if (i%10 == 0) {
-	++nodeid.id[0];
-	nodeid.id[1] = 0;
+			++nodeid.id[0];
+			nodeid.id[1] = 0;
 		}
 		else {
-	++nodeid.id[1];
+			++nodeid.id[1];
 		}
-		ks_dhtrt_create_node(rt, nodeid, KS_DHT_REMOTE, ipv6, port, &peer);
+		ks_dhtrt_create_node(rt, nodeid, KS_DHT_REMOTE, ipv6, port, KS_DHTRT_CREATE_DEFAULT, &peer);
 		ks_dhtrt_touch_node(rt, nodeid);
 	}
 
@@ -297,7 +335,7 @@ void test04()
 		else {
 	++nodeid.id[1];
 		}
-		ks_dhtrt_create_node(rt, nodeid, KS_DHT_REMOTE, ipv4, port, &peer);
+		ks_dhtrt_create_node(rt, nodeid, KS_DHT_REMOTE, ipv4, port, KS_DHTRT_CREATE_DEFAULT, &peer);
 		ks_dhtrt_touch_node(rt, nodeid);
 	}
 
@@ -332,7 +370,7 @@ void test05()
 	char ipv4[] = "123.123.123.123";
 	unsigned short port = 7001;
 
-	ks_dhtrt_create_node(rt, nodeid, KS_DHT_REMOTE, ipv4, port, &peer);
+	ks_dhtrt_create_node(rt, nodeid, KS_DHT_REMOTE, ipv4, port, KS_DHTRT_CREATE_DEFAULT, &peer);
     ks_dhtrt_touch_node(rt, nodeid);
 	
 	peer1 = ks_dhtrt_find_node(rt, nodeid);
@@ -404,7 +442,7 @@ void test06()
 	char ipv4[] = "123.123.123.123";
 	unsigned short port = 7000;
 
-	ks_dhtrt_create_node(rt, g_nodeid1, KS_DHT_REMOTE, ipv4, port, &peer);  // lock=1
+	ks_dhtrt_create_node(rt, g_nodeid1, KS_DHT_REMOTE, ipv4, port, KS_DHTRT_CREATE_DEFAULT, &peer);  // lock=1
 	ks_dhtrt_touch_node(rt, g_nodeid1);
 
 	ks_dht_node_t  *peer2 = ks_dhtrt_find_node(rt, g_nodeid1);   //lock=2
@@ -458,7 +496,7 @@ void test07()
 	    else {
 			++ g_nodeid2.id[19];
 		}
-		ks_dhtrt_create_node(rt, g_nodeid2, KS_DHT_REMOTE, ipv4, port, &peer);
+		ks_dhtrt_create_node(rt, g_nodeid2, KS_DHT_REMOTE, ipv4, port, KS_DHTRT_CREATE_DEFAULT, &peer);
 		ks_dhtrt_touch_node(rt, g_nodeid2);
 		ks_dhtrt_release_node(peer);
 	 }
@@ -521,8 +559,8 @@ static void *test60ex2(ks_thread_t *thread, void *data)
 		ks_sleep(10000);
 	
 		for (int i=0; i<query.count; ++i) {
-	ks_dhtrt_release_node(query.nodes[i]);
-	ks_sleep(10000);
+			ks_dhtrt_release_node(query.nodes[i]);
+			ks_sleep(10000);
 		} 
 		ks_sleep(2000000);
 
@@ -552,19 +590,19 @@ static void *test60ex(ks_thread_t *thread, void *data)
 	for (int loop=0; loop<test60loops; ++loop) {
 
 		for (int i=0; i<test60nodes; ++i) {
-	++nodeid.id[19];
-	ks_dhtrt_create_node(rt, nodeid, KS_DHT_LOCAL, ipv4, port, &peer);
-	ks_sleep(1000);
-	ks_dhtrt_touch_node(rt, nodeid);
+			++nodeid.id[19];
+			ks_dhtrt_create_node(rt, nodeid, KS_DHT_LOCAL, ipv4, port, KS_DHTRT_CREATE_DEFAULT, &peer);
+			ks_sleep(1000);
+			ks_dhtrt_touch_node(rt, nodeid);
 		}
 
 		for (int i=0; i<test60nodes; ++i) {
-	peer = ks_dhtrt_find_node(rt, nodeid);
-	if (peer) {
-		ks_dhtrt_delete_node(rt, peer);
-		ks_sleep(400);
-	}
-	--nodeid.id[19];
+			peer = ks_dhtrt_find_node(rt, nodeid);
+			if (peer) {
+				ks_dhtrt_delete_node(rt, peer);
+				ks_sleep(400);
+			}
+			--nodeid.id[19];
 		}
 
 	}
@@ -628,44 +666,44 @@ void test30()
 
 	for (int i=0; i<200; ++i) {
 		if (i%10 == 0) {
-	++nodeid.id[0];
-	nodeid.id[1] = 0;
+			++nodeid.id[0];
+			nodeid.id[1] = 0;
 		}
 		else {
-	++nodeid.id[1];
+			++nodeid.id[1];
 		}
-		ks_status_t s0 = ks_dhtrt_create_node(rt, nodeid, KS_DHT_REMOTE, ipv4, port, &peer);
+		ks_status_t s0 = ks_dhtrt_create_node(rt, nodeid, KS_DHT_REMOTE, ipv4, port, KS_DHTRT_CREATE_DEFAULT, &peer);
 		if (s0 == KS_STATUS_SUCCESS) {
-	ks_dhtrt_touch_node(rt, nodeid);
-	++ipv4_remote;
+			ks_dhtrt_touch_node(rt, nodeid);
+			++ipv4_remote;
 		}
 	}
 
 	for (int i=0; i<2; ++i) {
 		if (i%10 == 0) {
-	++nodeid.id[0];
-	nodeid.id[1] = 0;
+			++nodeid.id[0];
+			nodeid.id[1] = 0;
 		}
 		else {
-	++nodeid.id[1];
+			++nodeid.id[1];
 		}
 
-		ks_status_t s0 = ks_dhtrt_create_node(rt, nodeid, KS_DHT_LOCAL, ipv4, port, &peer);
+		ks_status_t s0 = ks_dhtrt_create_node(rt, nodeid, KS_DHT_LOCAL, ipv4, port, KS_DHTRT_CREATE_DEFAULT, &peer);
 		if (s0 == KS_STATUS_SUCCESS) {
-	ks_dhtrt_touch_node(rt, nodeid);
-	++ipv4_local;
+			ks_dhtrt_touch_node(rt, nodeid);
+			++ipv4_local;
 		}
 	}
 
 	for (int i=0; i<201; ++i) {
 		if (i%10 == 0) {
-	++nodeid.id[0];
-	nodeid.id[1] = 0;
+			++nodeid.id[0];
+			nodeid.id[1] = 0;
 		}
 		else {
-	++nodeid.id[1];
+			++nodeid.id[1];
 		}
-		ks_dhtrt_create_node(rt, nodeid, KS_DHT_REMOTE, ipv6, port, &peer);
+		ks_dhtrt_create_node(rt, nodeid, KS_DHT_REMOTE, ipv6, port, KS_DHTRT_CREATE_DEFAULT, &peer);
 		ks_dhtrt_touch_node(rt, nodeid);
 	}
 
@@ -710,41 +748,41 @@ void test50()
 
 	for (int i=0,i2=0; i<200; ++i, ++i2) {
 		if (i%20 == 0) {
-	nodeid.id[0] =  nodeid.id[0] / 2;
-	if (i2%20 == 0) {
-		i2 = 0;
-		nodeid.id[1] =  nodeid.id[1] / 2;
-	}
-	else {
-		++nodeid.id[2];
-	}
+			nodeid.id[0] =  nodeid.id[0] / 2;
+			if (i2%20 == 0) {
+				i2 = 0;
+				nodeid.id[1] =  nodeid.id[1] / 2;
+			}
+			else {
+				++nodeid.id[2];
+			}
 		}
 		else {
-	++nodeid.id[1];
+			++nodeid.id[1];
 		}
-		ks_dhtrt_create_node(rt, nodeid, KS_DHT_REMOTE, ipv4, port, &peer);
+		ks_dhtrt_create_node(rt, nodeid, KS_DHT_REMOTE, ipv4, port, KS_DHTRT_CREATE_DEFAULT, &peer);
 		ks_dhtrt_touch_node(rt, nodeid);
 	}
 
 	memset(nodeid.id,  0xef, KS_DHT_NODEID_SIZE);
 	for (int i=0,i2=0; i<200; ++i, ++i2) {
-	if (i%20 == 0) { 
-	nodeid.id[0] =  nodeid.id[0] / 2;
-	if (i2%20 == 0) {
-		i2 = 0; 
-		nodeid.id[1] =  nodeid.id[1] / 2;
-	}
-	else {
-		++nodeid.id[2];
-	}
+		if (i%20 == 0) { 
+			nodeid.id[0] =  nodeid.id[0] / 2;
+			if (i2%20 == 0) {
+				i2 = 0; 
+				nodeid.id[1] =  nodeid.id[1] / 2;
+			}
+			else {
+				++nodeid.id[2];
+			}
 		}
 		else {
-	++nodeid.id[1];
+			++nodeid.id[1];
 		}
 		ks_dht_node_t *n = ks_dhtrt_find_node(rt, nodeid);
 		if (n != NULL) {
-	ks_dhtrt_release_node(n);
-	ks_dhtrt_delete_node(rt, n);
+			ks_dhtrt_release_node(n);
+			ks_dhtrt_delete_node(rt, n);
 		}
 	}
 
@@ -754,19 +792,19 @@ void test50()
 
 	for (int i=0,i2=0; i<200; ++i, ++i2) {
 		if (i%20 == 0) {
-	nodeid.id[0] =  nodeid.id[0] / 2;
-	if (i2%20 == 0) {
-		i2 = 0;
-		nodeid.id[1] =  nodeid.id[1] / 2;
-	}
-	else {
-		++nodeid.id[2];
-	}
+			nodeid.id[0] =  nodeid.id[0] / 2;
+			if (i2%20 == 0) {
+				i2 = 0;
+				nodeid.id[1] =  nodeid.id[1] / 2;
+			}
+			else {
+				++nodeid.id[2];
+			}
 		}
 		else {
-	++nodeid.id[1];
+			++nodeid.id[1];
 		}
-		ks_dhtrt_create_node(rt, nodeid, KS_DHT_REMOTE, ipv4, port, &peer);
+		ks_dhtrt_create_node(rt, nodeid, KS_DHT_REMOTE, ipv4, port, KS_DHTRT_CREATE_DEFAULT, &peer);
 		ks_dhtrt_touch_node(rt, nodeid);
 	}
 
@@ -794,19 +832,19 @@ void test51()
 
 	for (int i=0,i2=0; i<2; ++i, ++i2) {
 		if (i%20 == 0) {
-	nodeid.id[0] =  nodeid.id[0] / 2;
-	if (i2%20 == 0) {
-		i2 = 0;
-		nodeid.id[1] =  nodeid.id[1] / 2;
-	}
-	else {
-		++nodeid.id[2];
-	}
+			nodeid.id[0] =  nodeid.id[0] / 2;
+			if (i2%20 == 0) {
+				i2 = 0;
+				nodeid.id[1] =  nodeid.id[1] / 2;
+			}
+			else {
+				++nodeid.id[2];
+			}
 		}
 		else {
-	++nodeid.id[1];
+			++nodeid.id[1];
 		}
-		ks_dhtrt_create_node(rt, nodeid, KS_DHT_REMOTE, ipv4, port, &peer);
+		ks_dhtrt_create_node(rt, nodeid, KS_DHT_REMOTE, ipv4, port, KS_DHTRT_CREATE_DEFAULT, &peer);
 		ks_dhtrt_touch_node(rt, nodeid);
 	}
 
@@ -875,45 +913,45 @@ int main(int argc, char *argv[]) {
 	for (int tix=0; tix<argc; ++tix) {
 
 		if (tests[tix] == 1) {
-	ks_dhtrt_initroute(&rt, dht, pool);
-	test01();
-	ks_dhtrt_deinitroute(&rt);
-	continue;
+			ks_dhtrt_initroute(&rt, dht, pool);
+			test01();
+			ks_dhtrt_deinitroute(&rt);
+			continue;
 		}
 
 		if (tests[tix] == 2) {
-	ks_dhtrt_initroute(&rt, dht, pool);
-	test02();
-	ks_dhtrt_deinitroute(&rt);
-	continue;
+			ks_dhtrt_initroute(&rt, dht, pool);
+			test02();
+			ks_dhtrt_deinitroute(&rt);
+			continue;
 		}
 
 		if (tests[tix] == 3) {  
-	ks_dhtrt_initroute(&rt, dht, pool);
-	test03();
-	ks_dhtrt_deinitroute(&rt);
-	continue; 
+			ks_dhtrt_initroute(&rt, dht, pool);
+			test03();
+			ks_dhtrt_deinitroute(&rt);
+			continue; 
 		}
 
 		if (tests[tix] == 4) {
-	ks_dhtrt_initroute(&rt, dht, pool);
-	test04();
-	ks_dhtrt_deinitroute(&rt);
-	continue;
+			ks_dhtrt_initroute(&rt, dht, pool);
+			test04();
+			ks_dhtrt_deinitroute(&rt);
+			continue;
 		}
 
 		if (tests[tix] == 5) {
-	ks_dhtrt_initroute(&rt, dht, pool);
-	test05();
-	ks_dhtrt_deinitroute(&rt);
-	continue;
+			ks_dhtrt_initroute(&rt, dht, pool);
+			test05();
+			ks_dhtrt_deinitroute(&rt);
+			continue;
 		}
 
 		if (tests[tix] == 6) {
-	ks_dhtrt_initroute(&rt, dht, pool);
-	test06();
-	ks_dhtrt_deinitroute(&rt);
-	continue;
+			ks_dhtrt_initroute(&rt, dht, pool);
+			test06();
+			ks_dhtrt_deinitroute(&rt);
+			continue;
 		}
 
 
@@ -925,39 +963,39 @@ int main(int argc, char *argv[]) {
 	     }
 
 		if (tests[tix] == 30) {
-	ks_dhtrt_initroute(&rt, dht, pool);
-	test30();
-	ks_dhtrt_deinitroute(&rt);
-	continue;
+			ks_dhtrt_initroute(&rt, dht, pool);
+			test30();
+			ks_dhtrt_deinitroute(&rt);
+			continue;
 		}
 
 
 		if (tests[tix] == 50) {
-	ks_dhtrt_initroute(&rt, dht, pool);
-	test50();
-	ks_dhtrt_deinitroute(&rt);
-	continue;
+			ks_dhtrt_initroute(&rt, dht, pool);
+			test50();
+			ks_dhtrt_deinitroute(&rt);
+			continue;
 		}
 
 		if (tests[tix] == 51) {
-	ks_dhtrt_initroute(&rt, dht, pool);
-	test51();
-	ks_dhtrt_deinitroute(&rt);
-	continue;
+			ks_dhtrt_initroute(&rt, dht, pool);
+			test51();
+			ks_dhtrt_deinitroute(&rt);
+			continue;
 		}
 
 		if (tests[tix] == 60) {
-	ks_dhtrt_initroute(&rt, dht, pool);
-	test60();
-	ks_dhtrt_deinitroute(&rt);
-	continue;
+			ks_dhtrt_initroute(&rt, dht, pool);
+			test60();
+			ks_dhtrt_deinitroute(&rt);
+			continue;
 		}
 
 		if (tests[tix] == 99) {
-	ks_dhtrt_initroute(&rt, dht, pool);
-	//testnodelocking();
-	ks_dhtrt_deinitroute(&rt);
-	continue;
+			ks_dhtrt_initroute(&rt, dht, pool);
+			//testnodelocking();
+			ks_dhtrt_deinitroute(&rt);
+			continue;
 		}
 
 

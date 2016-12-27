@@ -31,7 +31,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#pragma GCC optimize ("O0")
+/* # pragma GCC optimize ("O0") */
 
 
 #include "ks_dht.h"
@@ -159,9 +159,9 @@ void ks_dhtrt_process_deleted(ks_dhtrt_routetable_t *table, int8_t all);
 static
 ks_dht_node_t *ks_dhtrt_make_node(ks_dhtrt_routetable_t *table);
 static
-ks_status_t ks_dhtrt_insert_node(ks_dhtrt_routetable_t *table, ks_dht_node_t *node);
+ks_status_t ks_dhtrt_insert_node(ks_dhtrt_routetable_t *table, ks_dht_node_t *node, enum ks_create_node_flags_t flags);
 static
-ks_status_t ks_dhtrt_insert_id(ks_dhtrt_bucket_t *bucket, ks_dht_node_t *node);
+ks_dhtrt_bucket_entry_t* ks_dhtrt_insert_id(ks_dhtrt_bucket_t *bucket, ks_dht_node_t *node);
 static
 ks_status_t ks_dhtrt_delete_id(ks_dhtrt_bucket_t *bucket, ks_dhtrt_nodeid_t id);
 static
@@ -279,6 +279,7 @@ KS_DECLARE(ks_status_t)	 ks_dhtrt_create_node( ks_dhtrt_routetable_t *table,
 											   enum ks_dht_nodetype_t type,	
 											   char *ip,
 											   unsigned short port,
+											   enum ks_create_node_flags_t flags,
 											   ks_dht_node_t **node) 
 {
     if (!table || !table->internal) {
@@ -295,16 +296,36 @@ KS_DECLARE(ks_status_t)	 ks_dhtrt_create_node( ks_dhtrt_routetable_t *table,
 
     ks_dhtrt_bucket_entry_t *bentry = ks_dhtrt_find_bucketentry(header, nodeid.id);
 
-    if (bentry != 0) {
+    if (bentry != 0) { 
+
+        ks_rwl_read_lock(header->bucket->lock);
+
 		bentry->tyme = ks_time_now_sec();
+
+		/* touch */
+		if (flags == KS_DHTRT_CREATE_TOUCH) {
+			bentry->outstanding_pings = 0;
+			bentry->touched = 1;	
+			if (bentry->flags == DHTPEER_EXPIRED) {
+				--header->bucket->expired_count;
+			}		
+		}
         
         if (bentry->touched) {
             bentry->flags = DHTPEER_ACTIVE;
         }
 
+		/* ping */
+        if (!bentry->touched && !bentry->outstanding_pings) {
+			ks_dhtrt_ping(internal, bentry);	
+		}
+
 		tnode = bentry->gptr;
+
+		ks_rwl_read_unlock(header->bucket->lock);
         ks_rwl_read_lock( tnode->reflock);
 		ks_rwl_read_unlock(internal->lock);
+
         (*node) = tnode;
 		return KS_STATUS_SUCCESS;
     }
@@ -313,13 +334,15 @@ KS_DECLARE(ks_status_t)	 ks_dhtrt_create_node( ks_dhtrt_routetable_t *table,
     tnode = ks_dhtrt_make_node(table);
 	tnode->table = table;
 
-    enum ks_afflags_t family;
+    enum ks_afflags_t family =  AF_INET;
 
 	for (int i = 0; i < 5; ++i) {
 		if (ip[i] == ':') { 
-			family =	 AF_INET6; break;
+			family =	 AF_INET6; 
+			break;
 		} else if (ip[i] == '.') { 
-			family =	 AF_INET; break; 
+			family =	 AF_INET; 
+			break; 
 		}
 	}
 
@@ -333,7 +356,7 @@ KS_DECLARE(ks_status_t)	 ks_dhtrt_create_node( ks_dhtrt_routetable_t *table,
         return KS_STATUS_FAIL;
     }
 
-    ks_status_t s = ks_dhtrt_insert_node(table, tnode);
+    ks_status_t s = ks_dhtrt_insert_node(table, tnode, flags);
 
     if (tnode && s == KS_STATUS_SUCCESS) {
 		ks_rwl_read_lock( tnode->reflock);
@@ -387,7 +410,7 @@ KS_DECLARE(ks_status_t) ks_dhtrt_delete_node(ks_dhtrt_routetable_t *table, ks_dh
 }
 
 static
-ks_status_t ks_dhtrt_insert_node(ks_dhtrt_routetable_t *table, ks_dht_node_t *node)
+ks_status_t ks_dhtrt_insert_node(ks_dhtrt_routetable_t *table, ks_dht_node_t *node, enum ks_create_node_flags_t flags)
 {
 	if (!table || !table->internal) {
 		return KS_STATUS_FAIL;
@@ -420,9 +443,9 @@ ks_status_t ks_dhtrt_insert_node(ks_dhtrt_routetable_t *table, ks_dht_node_t *no
 
 		/* first - seek a stale entry to eject */
 		if (bucket->expired_count) {
-			ks_status_t s = ks_dhtrt_insert_id(bucket, node);
+			ks_dhtrt_bucket_entry_t* entry = ks_dhtrt_insert_id(bucket, node);
 
-			if (s == KS_STATUS_SUCCESS) {
+			if (entry != NULL) {
 #ifdef  KS_DHT_DEBUGLOCKPRINTF_
 				 ks_log(KS_LOG_DEBUG, "insert node: UNLOCKING bucket %s\n", ks_dhtrt_printableid(header->mask, buf));
 #endif
@@ -503,7 +526,20 @@ ks_status_t ks_dhtrt_insert_node(ks_dhtrt_routetable_t *table, ks_dht_node_t *no
 	ks_log(KS_LOG_DEBUG, "  ...into bucket %s\n", ks_dhtrt_printableid(header->mask, buffer));
 #endif
 
-	ks_status_t s = ks_dhtrt_insert_id(bucket, node);
+	ks_status_t s = KS_STATUS_FAIL;
+
+	ks_dhtrt_bucket_entry_t* entry = ks_dhtrt_insert_id(bucket, node);
+    if (entry != NULL) {
+        s = KS_STATUS_SUCCESS;
+		/* touch */
+		if (flags == KS_DHTRT_CREATE_TOUCH) {
+			 entry->flags = DHTPEER_ACTIVE;
+			 entry->touched = 1;
+		}
+		else if (flags == KS_DHTRT_CREATE_PING ) {
+			 ks_dhtrt_ping(internal, entry);
+		}
+	}
 	ks_rwl_write_unlock(internal->lock);
 #ifdef  KS_DHT_DEBUGLOCKPRINTF_
 	ks_log(KS_LOG_DEBUG, "Insert node: UNLOCKING bucket %s\n",
@@ -1295,7 +1331,7 @@ void ks_dhtrt_split_bucket(ks_dhtrt_bucket_header_t *original,
  *	  so at least the static array does away with the need for locking.
  */
 static 
-ks_status_t ks_dhtrt_insert_id(ks_dhtrt_bucket_t *bucket, ks_dht_node_t *node)
+ks_dhtrt_bucket_entry_t* ks_dhtrt_insert_id(ks_dhtrt_bucket_t *bucket, ks_dht_node_t *node)
 {
 	/* sanity checks */
 	if (!bucket || bucket->count > KS_DHT_BUCKETSIZE) {
@@ -1327,7 +1363,7 @@ ks_status_t ks_dhtrt_insert_id(ks_dhtrt_bucket_t *bucket, ks_dht_node_t *node)
 			ks_log(KS_LOG_DEBUG, "duplicate peer %s found at %d\n", ks_dhtrt_printableid(node->nodeid.id, buffer), ix);
 #endif
 			bucket->entries[ix].tyme = ks_time_now_sec();
-			return KS_STATUS_SUCCESS;  /* already exists : leave flags unchanged */
+			return &bucket->entries[ix];  /* already exists : leave flags unchanged */
 		}
 	}
 
@@ -1352,10 +1388,10 @@ ks_status_t ks_dhtrt_insert_id(ks_dhtrt_bucket_t *bucket, ks_dht_node_t *node)
 		char buffer[100];
 		ks_log(KS_LOG_DEBUG, "Inserting node %s at %d\n",  ks_dhtrt_printableid(node->nodeid.id, buffer), free);
 #endif	
-		return KS_STATUS_SUCCESS;
+		return &bucket->entries[free];
 	}
 
-	return KS_STATUS_FAIL;
+	return NULL;
 }
 	 
 static
