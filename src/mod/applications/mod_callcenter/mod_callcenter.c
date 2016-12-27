@@ -1644,7 +1644,6 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 		agent_session = switch_core_session_locate(h->agent_uuid);
 		if (agent_session) {
 			switch_channel_t *agent_channel = switch_core_session_get_channel(agent_session);
-			switch_event_t *e;
 			const char *cc_warning_tone = switch_channel_get_variable(agent_channel, "cc_warning_tone");
 
 			switch_channel_set_variable(agent_channel, "cc_side", "agent");
@@ -1655,11 +1654,8 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 			switch_channel_set_variable(agent_channel, "cc_member_session_uuid", h->member_session_uuid);
 
 			/* Playback this to the agent */
-			if (cc_warning_tone && switch_event_create(&e, SWITCH_EVENT_COMMAND) == SWITCH_STATUS_SUCCESS) {
-				switch_event_add_header_string(e, SWITCH_STACK_BOTTOM, "call-command", "execute");
-				switch_event_add_header_string(e, SWITCH_STACK_BOTTOM, "execute-app-name", "playback");
-				switch_event_add_header_string(e, SWITCH_STACK_BOTTOM, "execute-app-arg", cc_warning_tone);
-				switch_core_session_queue_private_event(agent_session, &e, SWITCH_TRUE);
+			if (cc_warning_tone) {
+				playback_array(agent_session, cc_warning_tone);
 			}
 
 			status = SWITCH_STATUS_SUCCESS;
