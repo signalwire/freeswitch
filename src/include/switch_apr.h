@@ -1234,6 +1234,19 @@ SWITCH_DECLARE(switch_status_t) switch_socket_recv(switch_socket_t *sock, char *
 SWITCH_DECLARE(switch_status_t) switch_socket_opt_set(switch_socket_t *sock, int32_t opt, int32_t on);
 
 /**
+ * Query socket timeout for the specified socket
+ * @param sock The socket to query
+ * @param t Socket timeout returned from the query.
+ * <PRE>
+ *   t > 0  -- read and write calls return APR_TIMEUP if specified time
+ *             elapsess with no data read or written
+ *   t == 0 -- read and write calls never block
+ *   t < 0  -- read and write calls block
+ * </PRE>
+ */
+SWITCH_DECLARE(switch_status_t) switch_socket_timeout_get(switch_socket_t *sock, switch_interval_time_t *t);
+
+/**
  * Setup socket timeout for the specified socket
  * @param sock The socket to set up.
  * @param t Value for the timeout.

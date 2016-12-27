@@ -67,6 +67,7 @@ public:
 	JS_SOCKET_FUNCTION_DEF(ReadBytes);
 	JS_SOCKET_FUNCTION_DEF(Read);
 	JS_SOCKET_GET_PROPERTY_DEF(GetProperty);
+	JS_SOCKET_SET_PROPERTY_DEF(SetPropertyTimeOut);
 };
 
 #endif /* FS_SOCKET_H */
