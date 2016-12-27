@@ -143,6 +143,8 @@
                * not connecting prevent two connects
                */
               if (storage.data.ui_connected && storage.data.ws_connected && !verto.data.connecting) {
+                verto.data.hostname = storage.data.hostname || verto.data.hostname;
+                verto.data.wsURL = storage.data.wsURL || verto.data.wsURL;
                 verto.data.name = storage.data.name;
                 verto.data.email = storage.data.email;
                 verto.data.login = storage.data.login;

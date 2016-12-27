@@ -359,6 +359,11 @@
         return self._ws_socket ? true : false;
     };
 
+    $.JsonRpcClient.prototype.stopRetrying = function() {
+      if (self.to)
+        clearTimeout(self.to);
+    }
+
     $.JsonRpcClient.prototype._getSocket = function(onmessage_cb) {
         // If there is no ws url set, we don't have a socket.
         // Likewise, if there is no window.WebSocket.
