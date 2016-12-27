@@ -85,6 +85,8 @@
           $scope.$apply(function() {
           verto.data.connecting = false;
           if (connected) {
+            storage.data.hostname = verto.data.hostname;
+            storage.data.wsURL = verto.data.wsURL;
             storage.data.ui_connected = verto.data.connected;
             storage.data.ws_connected = verto.data.connected;
             storage.data.name = verto.data.name;
@@ -206,10 +208,10 @@
       $rootScope.$on('ws.close', onWSClose);
       $rootScope.$on('ws.login', onWSLogin);
 
-      var ws_modalInstance;
+      $rootScope.ws_modalInstance;
 
       function onWSClose(ev, data) {
-        if(ws_modalInstance) {
+        if($rootScope.ws_modalInstance) {
           return;
         };
         var options = {
@@ -217,7 +219,7 @@
           keyboard: false
         };
           if ($scope.showReconnectModal) {
-            ws_modalInstance = $scope.openModal('partials/ws_reconnect.html', 'ModalWsReconnectController', options);
+            $rootScope.ws_modalInstance = $scope.openModal('partials/ws_reconnect.html', 'ModalWsReconnectController', options);
           };
       };
 
@@ -225,12 +227,12 @@
         if(storage.data.autoBand) {
           verto.testSpeed();
         }
-        if(!ws_modalInstance) {
+        if(!$rootScope.ws_modalInstance) {
           return;
         };
 
-        ws_modalInstance.close();
-        ws_modalInstance = null;
+        $rootScope.ws_modalInstance.close();
+        $rootScope.ws_modalInstance = null;
       };
 
       $scope.showAbout = function() {

@@ -698,7 +698,7 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
           // Checking if we have a failed connection attempt before
           // connecting again.
           if (data.instance && !data.instance.rpcClient.socketReady()) {
-            clearTimeout(data.instance.rpcClient.to);
+            data.instance.rpcClient.stopRetrying();
             data.instance.logout();
             data.instance.login();
             return;
@@ -735,7 +735,6 @@ vertoService.service('verto', ['$rootScope', '$cookieStore', '$location', 'stora
             onResCheck: that.refreshVideoResolution
           });
         }
-
         if (data.mediaPerm) {
           ourBootstrap();
         } else {
