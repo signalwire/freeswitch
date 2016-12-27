@@ -78,18 +78,20 @@ KS_DECLARE(void) ks_dht_job_build_get(ks_dht_job_t *job,
 KS_DECLARE(void) ks_dht_job_build_put(ks_dht_job_t *job,
 									  ks_dht_job_callback_t query_callback,
 									  ks_dht_job_callback_t finish_callback,
-									  ks_dht_nodeid_t *target,
-									  uint8_t *salt,
-									  ks_size_t salt_length)
+									  ks_dht_token_t *token,
+									  int64_t cas,
+									  ks_dht_storageitem_t *item)
 {
 	ks_assert(job);
 	ks_assert(query_callback);
-	ks_assert(target);
+	ks_assert(token);
+	ks_assert(item);
 
 	job->query_callback = query_callback;
 	job->finish_callback = finish_callback;
-	job->query_target = *target;
-	if (salt && salt_length > 0) job->query_salt = ben_blob(salt, salt_length);
+	job->query_token = *token;
+	job->query_cas = cas;
+	job->query_storageitem = item;
 }
 
 KS_DECLARE(void) ks_dht_job_destroy(ks_dht_job_t **job)

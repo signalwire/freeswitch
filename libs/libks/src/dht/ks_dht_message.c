@@ -105,7 +105,7 @@ KS_DECLARE(ks_status_t) ks_dht_message_parse(ks_dht_message_t *message, const ui
 
 	memcpy(message->type, yv, yv_len);
 	message->type[yv_len] = '\0';
-	ks_log(KS_LOG_DEBUG, "Message type is '%s'\n", message->type);
+	//ks_log(KS_LOG_DEBUG, "Message type is '%s'\n", message->type);
 
 	return KS_STATUS_SUCCESS;
 }

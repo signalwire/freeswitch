@@ -41,7 +41,7 @@ KS_DECLARE(void) ks_dht_pulse_send(ks_dht_t *dht);
  * @param buffer pointer to the buffer able to contain at least (KS_DHT_NODEID_SIZE * 2) + 1 characters
  * @return The pointer to the front of the populated string buffer
  */
-KS_DECLARE(char *) ks_dht_hexid(ks_dht_nodeid_t *id, char *buffer);
+KS_DECLARE(char *) ks_dht_hex(const uint8_t *data, char *buffer, ks_size_t len);
 
 /**
  * Compacts address information as per the DHT specifications.
@@ -270,9 +270,9 @@ KS_DECLARE(void) ks_dht_job_build_get(ks_dht_job_t *job,
 KS_DECLARE(void) ks_dht_job_build_put(ks_dht_job_t *job,
 									  ks_dht_job_callback_t query_callback,
 									  ks_dht_job_callback_t finish_callback,
-									  ks_dht_nodeid_t *target,
-									  uint8_t *salt,
-									  ks_size_t salt_length);
+									  ks_dht_token_t *token,
+									  int64_t cas,
+									  ks_dht_storageitem_t *item);
 KS_DECLARE(void) ks_dht_job_destroy(ks_dht_job_t **job);
 
 
@@ -286,7 +286,33 @@ KS_DECLARE(ks_status_t) ks_dht_endpoint_create(ks_dht_endpoint_t **endpoint,
 											   ks_socket_t sock);
 KS_DECLARE(void) ks_dht_endpoint_destroy(ks_dht_endpoint_t **endpoint);
 
+/**
+ *
+ */
+KS_DECLARE(ks_status_t) ks_dht_message_create(ks_dht_message_t **message,
+											  ks_pool_t *pool,
+											  ks_dht_endpoint_t *endpoint,
+											  const ks_sockaddr_t *raddr,
+											  ks_bool_t alloc_data);
+/**
+ *
+ */
+KS_DECLARE(void) ks_dht_message_destroy(ks_dht_message_t **message);
 
+/**
+ *
+ */
+KS_DECLARE(ks_status_t) ks_dht_message_parse(ks_dht_message_t *message, const uint8_t *buffer, ks_size_t buffer_length);
+
+/**
+ *
+ */
+KS_DECLARE(ks_status_t) ks_dht_message_response(ks_dht_message_t *message,
+												uint8_t *transactionid,
+												ks_size_t transactionid_length,
+												struct bencode **args);
+
+																								
 /**
  *
  */
@@ -299,19 +325,50 @@ KS_DECLARE(void) ks_dht_search_expire(ks_dht_search_t *search, ks_hash_t *pendin
 KS_DECLARE(ks_status_t) ks_dht_search_pending_create(ks_dht_search_pending_t **pending, ks_pool_t *pool, const ks_dht_nodeid_t *nodeid);
 KS_DECLARE(void) ks_dht_search_pending_destroy(ks_dht_search_pending_t **pending);
 
+/**
+ *
+ */
+KS_DECLARE(ks_status_t) ks_dht_storageitem_target_immutable_internal(struct bencode *value, ks_dht_nodeid_t *target);
 
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht_storageitem_create_immutable(ks_dht_storageitem_t **item, ks_pool_t *pool, ks_dht_nodeid_t *target, struct bencode *v);
+KS_DECLARE(ks_status_t) ks_dht_storageitem_target_mutable_internal(ks_dht_storageitem_pkey_t *pk, struct bencode *salt, ks_dht_nodeid_t *target);
+
+/**
+ *
+ */
+KS_DECLARE(ks_status_t) ks_dht_storageitem_create_immutable_internal(ks_dht_storageitem_t **item,
+																	 ks_pool_t *pool,
+																	 ks_dht_nodeid_t *target,
+																	 struct bencode *v,
+																	 ks_bool_t clone_v);
+KS_DECLARE(ks_status_t) ks_dht_storageitem_create_immutable(ks_dht_storageitem_t **item,
+															ks_pool_t *pool,
+															ks_dht_nodeid_t *target,
+															const uint8_t *value,
+															ks_size_t value_length);
+KS_DECLARE(ks_status_t) ks_dht_storageitem_create_mutable_internal(ks_dht_storageitem_t **item,
+																   ks_pool_t *pool,
+																   ks_dht_nodeid_t *target,
+																   struct bencode *v,
+																   ks_bool_t clone_v,
+																   ks_dht_storageitem_pkey_t *pk,
+																   struct bencode *salt,
+																   ks_bool_t clone_salt,
+																   int64_t sequence,
+																   ks_dht_storageitem_signature_t *signature);
 KS_DECLARE(ks_status_t) ks_dht_storageitem_create_mutable(ks_dht_storageitem_t **item,
 														  ks_pool_t *pool,
 														  ks_dht_nodeid_t *target,
-														  struct bencode *v,
-														  ks_dht_storageitem_key_t *k,
-														  struct bencode *salt,
+														  const uint8_t *value,
+														  ks_size_t value_length,
+														  ks_dht_storageitem_pkey_t *pk,
+														  const uint8_t *salt,
+														  ks_size_t salt_length,
 														  int64_t sequence,
 														  ks_dht_storageitem_signature_t *signature);
+KS_DECLARE(void) ks_dht_storageitem_update_mutable(ks_dht_storageitem_t *item, struct bencode *v, int64_t sequence, ks_dht_storageitem_signature_t *signature);
 KS_DECLARE(void) ks_dht_storageitem_destroy(ks_dht_storageitem_t **item);
 
 /**

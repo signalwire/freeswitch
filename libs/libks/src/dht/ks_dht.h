@@ -29,11 +29,12 @@ KS_BEGIN_EXTERN_C
 #define KS_DHT_MESSAGE_QUERY_MAX_SIZE 20
 #define KS_DHT_MESSAGE_ERROR_MAX_SIZE 256
 
-#define KS_DHT_TRANSACTION_EXPIRATION 30
+#define KS_DHT_TRANSACTION_EXPIRATION 10
 #define KS_DHT_SEARCH_EXPIRATION 10
 #define KS_DHT_SEARCH_RESULTS_MAX_SIZE 8 // @todo replace with KS_DHTRT_BUCKET_SIZE
 
-#define KS_DHT_STORAGEITEM_KEY_SIZE crypto_sign_PUBLICKEYBYTES
+#define KS_DHT_STORAGEITEM_PKEY_SIZE crypto_sign_PUBLICKEYBYTES
+#define KS_DHT_STORAGEITEM_SKEY_SIZE crypto_sign_SECRETKEYBYTES
 #define KS_DHT_STORAGEITEM_SALT_MAX_SIZE 64
 #define KS_DHT_STORAGEITEM_SIGNATURE_SIZE crypto_sign_BYTES
 #define KS_DHT_STORAGEITEM_EXPIRATION 7200
@@ -48,7 +49,8 @@ typedef struct ks_dht_datagram_s ks_dht_datagram_t;
 typedef struct ks_dht_job_s ks_dht_job_t;
 typedef struct ks_dht_nodeid_s ks_dht_nodeid_t;
 typedef struct ks_dht_token_s ks_dht_token_t;
-typedef struct ks_dht_storageitem_key_s ks_dht_storageitem_key_t;
+typedef struct ks_dht_storageitem_pkey_s ks_dht_storageitem_pkey_t;
+typedef struct ks_dht_storageitem_skey_s ks_dht_storageitem_skey_t;
 typedef struct ks_dht_storageitem_signature_s ks_dht_storageitem_signature_t;
 typedef struct ks_dht_message_s ks_dht_message_t;
 typedef struct ks_dht_endpoint_s ks_dht_endpoint_t;
@@ -103,7 +105,6 @@ enum ks_dht_job_state_t {
 	KS_DHT_JOB_STATE_QUERYING,
 	KS_DHT_JOB_STATE_RESPONDING,
 	KS_DHT_JOB_STATE_EXPIRING,
-	KS_DHT_JOB_STATE_PROCESSING,
 	KS_DHT_JOB_STATE_COMPLETING,
 };
 
@@ -133,6 +134,9 @@ struct ks_dht_job_s {
 	// job specific query parameters
 	ks_dht_nodeid_t query_target;
 	struct bencode *query_salt;
+	int64_t query_cas;
+	ks_dht_token_t query_token;
+	ks_dht_storageitem_t *query_storageitem;
 
 	// job specific response parameters
 	ks_dht_node_t *response_nodes[KS_DHT_RESPONSE_NODES_MAX_SIZE];
@@ -158,8 +162,12 @@ struct ks_dhtrt_querynodes_s {
     ks_dht_node_t* nodes[ KS_DHTRT_MAXQUERYSIZE ]; /* out: array of peers (ks_dht_node_t* nodes[incount]) */
 };
 
-struct ks_dht_storageitem_key_s {
-	uint8_t key[KS_DHT_STORAGEITEM_KEY_SIZE];
+struct ks_dht_storageitem_pkey_s {
+	uint8_t key[KS_DHT_STORAGEITEM_PKEY_SIZE];
+};
+
+struct ks_dht_storageitem_skey_s {
+	uint8_t key[KS_DHT_STORAGEITEM_SKEY_SIZE];
 };
 
 struct ks_dht_storageitem_signature_s {
@@ -225,8 +233,9 @@ struct ks_dht_storageitem_s {
 	struct bencode *v;
 	
 	ks_bool_t mutable;
-	ks_dht_storageitem_key_t pk;
-	ks_dht_storageitem_key_t sk;
+	ks_mutex_t *mutex;
+	ks_dht_storageitem_pkey_t pk;
+	ks_dht_storageitem_skey_t sk;
 	struct bencode *salt;
 	int64_t seq;
 	ks_dht_storageitem_signature_t sig;
@@ -361,14 +370,88 @@ KS_DECLARE(ks_status_t) ks_dht_bind(ks_dht_t *dht, const ks_dht_nodeid_t *nodeid
  */
 KS_DECLARE(void) ks_dht_pulse(ks_dht_t *dht, int32_t timeout);
 
+
+KS_DECLARE(char *) ks_dht_hex(const uint8_t *data, char *buffer, ks_size_t len);
+/**
+ *
+ */
+KS_DECLARE(ks_status_t) ks_dht_storageitem_target_immutable(const uint8_t *value, ks_size_t value_length, ks_dht_nodeid_t *target);
+
+/**
+ *
+ */
+KS_DECLARE(ks_status_t) ks_dht_storageitem_target_mutable(ks_dht_storageitem_pkey_t *pk, const uint8_t *salt, ks_size_t salt_length, ks_dht_nodeid_t *target);
+
+/**
+ *
+ */
+KS_DECLARE(ks_status_t) ks_dht_storageitem_signature_generate(ks_dht_storageitem_signature_t *sig,
+															  ks_dht_storageitem_skey_t *sk,
+															  const uint8_t *salt,
+															  ks_size_t salt_length,
+															  int64_t sequence,
+															  const uint8_t *value,
+															  ks_size_t value_length);
+												
+/**
+ *
+ */
+KS_DECLARE(void) ks_dht_storageitems_read_lock(ks_dht_t *dht);
+
+/**
+ *
+ */
+KS_DECLARE(void) ks_dht_storageitems_read_unlock(ks_dht_t *dht);
+
+/**
+ *
+ */
+KS_DECLARE(void) ks_dht_storageitems_write_lock(ks_dht_t *dht);
+
+/**
+ *
+ */
+KS_DECLARE(void) ks_dht_storageitems_write_unlock(ks_dht_t *dht);
+
+/**
+ *
+ */
+KS_DECLARE(ks_dht_storageitem_t *) ks_dht_storageitems_find(ks_dht_t *dht, ks_dht_nodeid_t *target);
+
+/**
+ *
+ */
+KS_DECLARE(ks_status_t) ks_dht_storageitems_insert(ks_dht_t *dht, ks_dht_storageitem_t *item);
+						
+/**
+ *
+ */
 KS_DECLARE(ks_status_t) ks_dht_ping(ks_dht_t *dht, const ks_sockaddr_t *raddr, ks_dht_job_callback_t callback);
+
+/**
+ *
+ */
 KS_DECLARE(ks_status_t) ks_dht_findnode(ks_dht_t *dht, const ks_sockaddr_t *raddr, ks_dht_job_callback_t callback, ks_dht_nodeid_t *target);
+
+/**
+ *
+ */
 KS_DECLARE(ks_status_t) ks_dht_get(ks_dht_t *dht,
 								   const ks_sockaddr_t *raddr,
 								   ks_dht_job_callback_t callback,
 								   ks_dht_nodeid_t *target,
 								   uint8_t *salt,
 								   ks_size_t salt_length);
+
+/**
+ *
+ */
+KS_DECLARE(ks_status_t) ks_dht_put(ks_dht_t *dht,
+								   const ks_sockaddr_t *raddr,
+								   ks_dht_job_callback_t callback,
+								   ks_dht_token_t *token,
+								   int64_t cas,
+								   ks_dht_storageitem_t *item);
 						
 /**
  * Create a network search of the closest nodes to a target.
@@ -389,34 +472,6 @@ KS_DECLARE(ks_status_t) ks_dht_search(ks_dht_t *dht,
 									  ks_dht_nodeid_t *target,
 									  ks_dht_search_callback_t callback,
 									  ks_dht_search_t **search);
-
-
-
-/**
- *
- */
-KS_DECLARE(ks_status_t) ks_dht_message_create(ks_dht_message_t **message,
-											  ks_pool_t *pool,
-											  ks_dht_endpoint_t *endpoint,
-											  const ks_sockaddr_t *raddr,
-											  ks_bool_t alloc_data);
-/**
- *
- */
-KS_DECLARE(void) ks_dht_message_destroy(ks_dht_message_t **message);
-
-/**
- *
- */
-KS_DECLARE(ks_status_t) ks_dht_message_parse(ks_dht_message_t *message, const uint8_t *buffer, ks_size_t buffer_length);
-
-/**
- *
- */
-KS_DECLARE(ks_status_t) ks_dht_message_response(ks_dht_message_t *message,
-												uint8_t *transactionid,
-												ks_size_t transactionid_length,
-												struct bencode **args);
 
 
 /**

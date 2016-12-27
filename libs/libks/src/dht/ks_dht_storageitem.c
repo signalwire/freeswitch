@@ -2,7 +2,11 @@
 #include "ks_dht-int.h"
 #include "sodium.h"
 
-KS_DECLARE(ks_status_t) ks_dht_storageitem_create_immutable(ks_dht_storageitem_t **item, ks_pool_t *pool, ks_dht_nodeid_t *target, struct bencode *v)
+KS_DECLARE(ks_status_t) ks_dht_storageitem_create_immutable_internal(ks_dht_storageitem_t **item,
+																	 ks_pool_t *pool,
+																	 ks_dht_nodeid_t *target,
+																	 struct bencode *v,
+																	 ks_bool_t clone_v)
 {
 	ks_dht_storageitem_t *si;
 	ks_status_t ret = KS_STATUS_SUCCESS;
@@ -19,15 +23,77 @@ KS_DECLARE(ks_status_t) ks_dht_storageitem_create_immutable(ks_dht_storageitem_t
 	si->id = *target;
 	si->mutable = KS_FALSE;
 	si->expiration = ks_time_now() + ((ks_time_t)KS_DHT_STORAGEITEM_EXPIRATION * KS_USEC_PER_SEC);
-	si->v = ben_clone(v);
+	si->v = clone_v ? ben_clone(v) : v;
 	ks_assert(si->v);
 
-	//enc = ben_encode(&enc_len, si->v);
-	//ks_assert(enc);
-	//SHA1_Init(&sha);
-	//SHA1_Update(&sha, enc, enc_len);
-	//SHA1_Final(si->id.id, &sha);
-	//free(enc);
+	// done:
+	if (ret != KS_STATUS_SUCCESS) {
+		if (si) ks_dht_storageitem_destroy(item);
+	}
+	return ret;
+}
+
+KS_DECLARE(ks_status_t) ks_dht_storageitem_create_immutable(ks_dht_storageitem_t **item,
+															ks_pool_t *pool,
+															ks_dht_nodeid_t *target,
+															const uint8_t *value,
+															ks_size_t value_length)
+{
+	struct bencode *v = NULL;
+
+	ks_assert(item);
+	ks_assert(pool);
+	ks_assert(value);
+	ks_assert(value_length > 0);
+	ks_assert(SHA_DIGEST_LENGTH == KS_DHT_NODEID_SIZE);
+
+	v = ben_blob(value, value_length);
+	ks_assert(v);
+	
+	return ks_dht_storageitem_create_immutable_internal(item, pool, target, v, KS_FALSE);
+}
+
+KS_DECLARE(ks_status_t) ks_dht_storageitem_create_mutable_internal(ks_dht_storageitem_t **item,
+																   ks_pool_t *pool,
+																   ks_dht_nodeid_t *target,
+																   struct bencode *v,
+																   ks_bool_t clone_v,
+																   ks_dht_storageitem_pkey_t *pk,
+																   struct bencode *salt,
+																   ks_bool_t clone_salt,
+																   int64_t sequence,
+																   ks_dht_storageitem_signature_t *signature)
+{
+	ks_dht_storageitem_t *si;
+	ks_status_t ret = KS_STATUS_SUCCESS;
+
+	ks_assert(item);
+	ks_assert(pool);
+	ks_assert(v);
+	ks_assert(SHA_DIGEST_LENGTH == KS_DHT_NODEID_SIZE);
+	ks_assert(pk);
+	ks_assert(signature);
+
+	*item = si = ks_pool_alloc(pool, sizeof(ks_dht_storageitem_t));
+	ks_assert(si);
+
+	si->pool = pool;
+	si->id = *target;
+	si->mutable = KS_TRUE;
+	si->expiration = ks_time_now() + ((ks_time_t)KS_DHT_STORAGEITEM_EXPIRATION * KS_USEC_PER_SEC);
+	si->v = clone_v ? ben_clone(v) : v;
+	ks_assert(si->v);
+
+	ks_mutex_create(&si->mutex, KS_MUTEX_FLAG_DEFAULT, si->pool);
+	ks_assert(si->mutex);
+	
+	si->pk = *pk;
+	if (salt) {
+		si->salt = clone_salt ? ben_clone(salt) : salt;
+		ks_assert(si->salt);
+	}
+	si->seq = sequence;
+	si->sig = *signature;
 
 	// done:
 	if (ret != KS_STATUS_SUCCESS) {
@@ -39,45 +105,43 @@ KS_DECLARE(ks_status_t) ks_dht_storageitem_create_immutable(ks_dht_storageitem_t
 KS_DECLARE(ks_status_t) ks_dht_storageitem_create_mutable(ks_dht_storageitem_t **item,
 														  ks_pool_t *pool,
 														  ks_dht_nodeid_t *target,
-														  struct bencode *v,
-														  ks_dht_storageitem_key_t *k,
-														  struct bencode *salt,
+														  const uint8_t *value,
+														  ks_size_t value_length,
+														  ks_dht_storageitem_pkey_t *pk,
+														  const uint8_t *salt,
+														  ks_size_t salt_length,
 														  int64_t sequence,
 														  ks_dht_storageitem_signature_t *signature)
 {
-	ks_dht_storageitem_t *si;
-	ks_status_t ret = KS_STATUS_SUCCESS;
+	struct bencode *v = NULL;
+	struct bencode *s = NULL;
 
 	ks_assert(item);
 	ks_assert(pool);
-	ks_assert(v);
+	ks_assert(value);
+	ks_assert(value_length > 0);
 	ks_assert(SHA_DIGEST_LENGTH == KS_DHT_NODEID_SIZE);
-	ks_assert(k);
+	ks_assert(pk);
 	ks_assert(signature);
 
-	*item = si = ks_pool_alloc(pool, sizeof(ks_dht_storageitem_t));
-	ks_assert(si);
+	v = ben_blob(value, value_length);
+	if (salt && salt_length > 0) s = ben_blob(salt, salt_length);
+	return ks_dht_storageitem_create_mutable_internal(item, pool, target, v, KS_FALSE, pk, s, KS_FALSE, sequence, signature);
+}
 
-	si->pool = pool;
-	si->id = *target;
-	si->mutable = KS_TRUE;
-	si->expiration = ks_time_now() + ((ks_time_t)KS_DHT_STORAGEITEM_EXPIRATION * KS_USEC_PER_SEC);
-	si->v = ben_clone(v);
-	ks_assert(si->v);
+KS_DECLARE(void) ks_dht_storageitem_update_mutable(ks_dht_storageitem_t *item, struct bencode *v, int64_t sequence, ks_dht_storageitem_signature_t *signature)
+{
+	ks_assert(item);
+	ks_assert(v);
+	ks_assert(sequence);
+	ks_assert(signature);
 
-	si->pk = *k;
-	if (salt) {
-		si->salt = ben_clone(salt);
-		ks_assert(si->salt);
-	}
-	si->seq = sequence;
-	si->sig = *signature;
-
-	// done:
-	if (ret != KS_STATUS_SUCCESS) {
-		if (si) ks_dht_storageitem_destroy(item);
-	}
-	return ret;
+	ks_mutex_lock(item->mutex);
+	ben_free(item->v);
+	item->v = ben_clone(v);
+	item->seq = sequence;
+	item->sig = *signature;
+	ks_mutex_unlock(item->mutex);
 }
 
 /**
@@ -96,6 +160,7 @@ KS_DECLARE(void) ks_dht_storageitem_destroy(ks_dht_storageitem_t **item)
 		ben_free(si->v);
 		si->v = NULL;
 	}
+	if (si->mutex) ks_mutex_destroy(&si->mutex);
 	if (si->salt) {
 		ben_free(si->salt);
 		si->salt = NULL;

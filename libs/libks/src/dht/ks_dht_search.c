@@ -44,9 +44,9 @@ KS_DECLARE(void) ks_dht_search_destroy(ks_dht_search_t **search)
 
 	if (s->pending) {
 		for (it = ks_hash_first(s->pending, KS_UNLOCKED); it; it = ks_hash_next(&it)) {
-			ks_dht_search_pending_t *val;
-			
-			ks_hash_this_val(it, (void **)&val);
+			const void *key = NULL;
+			ks_dht_search_pending_t *val = NULL;
+			ks_hash_this(it, &key, NULL, (void **)&val);
 			ks_dht_search_pending_destroy(&val);
 		}
 		ks_hash_destroy(&s->pending);
