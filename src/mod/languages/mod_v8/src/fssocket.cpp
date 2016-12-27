@@ -175,7 +175,7 @@ JS_SOCKET_FUNCTION_IMPL(ReadBytes)
 
 		ret = switch_socket_recv(this->_socket, this->_read_buffer, &len);
 		if (ret != SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "switch_socket_send failed: %d.\n", ret);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "switch_socket_recv failed: %d.\n", ret);
 			info.GetReturnValue().Set(false);
 			return;
 		} else {
@@ -282,9 +282,25 @@ JS_SOCKET_GET_PROPERTY_IMPL(GetProperty)
 		} else {
 			info.GetReturnValue().Set(Integer::New(info.GetIsolate(), 0));
 		}
+	} else if (!strcmp(js_safe_str(*str), "timeout")) {
+		switch_interval_time_t timeout;
+
+		switch_socket_timeout_get(this->_socket, &timeout);
+
+		info.GetReturnValue().Set(Int32::New(info.GetIsolate(), (int32_t)timeout));
 	} else {
 		info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Bad property"));
 	}
+}
+
+JS_SOCKET_SET_PROPERTY_IMPL(SetPropertyTimeOut)
+{
+	if (!this->_socket) {
+		info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Socket is not active"));
+		return;
+	}
+
+	switch_socket_timeout_set(this->_socket, value->Int32Value());
 }
 
 static const js_function_t socket_methods[] = {
@@ -299,6 +315,7 @@ static const js_function_t socket_methods[] = {
 static const js_property_t socket_props[] = {
 	{"address", FSSocket::GetProperty, JSBase::DefaultSetProperty},
 	{"port", FSSocket::GetProperty, JSBase::DefaultSetProperty},
+	{"timeout", FSSocket::GetProperty, FSSocket::SetPropertyTimeOut},
 	{0}
 };
 

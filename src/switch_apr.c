@@ -859,6 +859,11 @@ SWITCH_DECLARE(switch_status_t) switch_socket_opt_set(switch_socket_t *sock, int
 	return apr_socket_opt_set(sock, opt, on);
 }
 
+SWITCH_DECLARE(switch_status_t) switch_socket_timeout_get(switch_socket_t *sock, switch_interval_time_t *t)
+{
+	return apr_socket_timeout_get(sock, t);
+}
+
 SWITCH_DECLARE(switch_status_t) switch_socket_timeout_set(switch_socket_t *sock, switch_interval_time_t t)
 {
 	return apr_socket_timeout_set(sock, t);
