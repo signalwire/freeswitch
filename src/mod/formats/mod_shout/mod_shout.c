@@ -195,7 +195,9 @@ static inline void free_context(shout_context_t *context)
 			}
 
 			lame_mp3_tags_fid(context->gfp, context->fp);
+		}
 
+		if (context->fp) {
 			fclose(context->fp);
 			context->fp = NULL;
 		}
