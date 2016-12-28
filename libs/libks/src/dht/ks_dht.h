@@ -18,7 +18,7 @@ KS_BEGIN_EXTERN_C
 #define KS_DHT_DATAGRAM_BUFFER_SIZE 1000
 
 //#define KS_DHT_RECV_BUFFER_SIZE 0xFFFF
-#define KS_DHT_PULSE_EXPIRATIONS 10
+#define KS_DHT_PULSE_EXPIRATIONS 1
 
 #define KS_DHT_NODEID_SIZE 20
 
@@ -126,6 +126,8 @@ struct ks_dht_job_s {
 
 	enum ks_dht_job_state_t state;
 
+	ks_dht_search_t *search;
+
 	ks_sockaddr_t raddr; // will obtain local endpoint node id when creating message using raddr
 	int32_t attempts;
 
@@ -134,7 +136,6 @@ struct ks_dht_job_s {
 	ks_dht_job_callback_t finish_callback;
 
 	ks_dht_message_t *response;
-	//ks_dht_nodeid_t response_id;
 
 	// job specific query parameters
 	ks_dht_nodeid_t query_target;
@@ -144,6 +145,7 @@ struct ks_dht_job_s {
 	ks_dht_storageitem_t *query_storageitem;
 
 	// job specific response parameters
+	ks_dht_nodeid_t response_id;
 	ks_dht_node_t *response_nodes[KS_DHT_RESPONSE_NODES_MAX_SIZE];
 	ks_size_t response_nodes_count;
 	ks_dht_node_t *response_nodes6[KS_DHT_RESPONSE_NODES_MAX_SIZE];
@@ -214,21 +216,15 @@ struct ks_dht_transaction_s {
 
 struct ks_dht_search_s {
 	ks_pool_t *pool;
-	ks_mutex_t *mutex;
+	ks_dht_search_t *next;
 	ks_dht_nodeid_t target;
-	ks_dht_search_callback_t *callbacks;
-	ks_size_t callbacks_size;
-	ks_hash_t *pending;
-	ks_dht_nodeid_t results[KS_DHT_SEARCH_RESULTS_MAX_SIZE];
+	ks_dht_search_callback_t callback;
+	ks_mutex_t *mutex;
+	ks_hash_t *searched;
+	ks_hash_t *searching;
+	ks_dht_node_t *results[KS_DHT_SEARCH_RESULTS_MAX_SIZE];
 	ks_dht_nodeid_t distances[KS_DHT_SEARCH_RESULTS_MAX_SIZE];
 	ks_size_t results_length;
-};
-
-struct ks_dht_search_pending_s {
-	ks_pool_t *pool;
-	ks_dht_nodeid_t nodeid;
-	ks_time_t expiration;
-	ks_bool_t finished;
 };
 
 struct ks_dht_storageitem_s {
@@ -283,8 +279,9 @@ struct ks_dht_s {
 	ks_dhtrt_routetable_t *rt_ipv4;
 	ks_dhtrt_routetable_t *rt_ipv6;
 
-	ks_hash_t *searches4_hash;
-	ks_hash_t *searches6_hash;
+	ks_mutex_t *searches_mutex;
+	ks_dht_search_t *searches_first;
+	ks_dht_search_t *searches_last;
 
 	volatile uint32_t token_secret_current;
 	volatile uint32_t token_secret_previous;
@@ -436,12 +433,17 @@ KS_DECLARE(ks_status_t) ks_dht_ping(ks_dht_t *dht, const ks_sockaddr_t *raddr, k
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht_findnode(ks_dht_t *dht, const ks_sockaddr_t *raddr, ks_dht_job_callback_t callback, ks_dht_nodeid_t *target);
+KS_DECLARE(ks_status_t) ks_dht_findnode(ks_dht_t *dht,
+										ks_dht_search_t *search,
+										const ks_sockaddr_t *raddr,
+										ks_dht_job_callback_t callback,
+										ks_dht_nodeid_t *target);
 
 /**
  *
  */
 KS_DECLARE(ks_status_t) ks_dht_get(ks_dht_t *dht,
+								   ks_dht_search_t *search,
 								   const ks_sockaddr_t *raddr,
 								   ks_dht_job_callback_t callback,
 								   ks_dht_nodeid_t *target,
@@ -472,11 +474,11 @@ KS_DECLARE(ks_status_t) ks_dht_put(ks_dht_t *dht,
  * @see ks_dht_search_pending_create
  * @see ks_dht_send_findnode
  */
-KS_DECLARE(ks_status_t) ks_dht_search(ks_dht_t *dht,
-									  int32_t family,
-									  ks_dht_nodeid_t *target,
-									  ks_dht_search_callback_t callback,
-									  ks_dht_search_t **search);
+KS_DECLARE(ks_status_t) ks_dht_search_findnode(ks_dht_t *dht,
+											   int32_t family,
+											   ks_dht_nodeid_t *target,
+											   ks_dht_search_callback_t callback,
+											   ks_dht_search_t **search);
 
 
 /**

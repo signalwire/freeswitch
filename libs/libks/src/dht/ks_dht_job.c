@@ -45,6 +45,7 @@ KS_DECLARE(void) ks_dht_job_build_ping(ks_dht_job_t *job, ks_dht_job_callback_t 
 }
 
 KS_DECLARE(void) ks_dht_job_build_findnode(ks_dht_job_t *job,
+										   ks_dht_search_t *search,
 										   ks_dht_job_callback_t query_callback,
 										   ks_dht_job_callback_t finish_callback,
 										   ks_dht_nodeid_t *target)
@@ -53,12 +54,14 @@ KS_DECLARE(void) ks_dht_job_build_findnode(ks_dht_job_t *job,
 	ks_assert(query_callback);
 	ks_assert(target);
 
+	job->search = search;
 	job->query_callback = query_callback;
 	job->finish_callback = finish_callback;
 	job->query_target = *target;
 }
 
 KS_DECLARE(void) ks_dht_job_build_get(ks_dht_job_t *job,
+									  ks_dht_search_t *search,
 									  ks_dht_job_callback_t query_callback,
 									  ks_dht_job_callback_t finish_callback,
 									  ks_dht_nodeid_t *target,
@@ -69,6 +72,7 @@ KS_DECLARE(void) ks_dht_job_build_get(ks_dht_job_t *job,
 	ks_assert(query_callback);
 	ks_assert(target);
 
+	job->search = search;
 	job->query_callback = query_callback;
 	job->finish_callback = finish_callback;
 	job->query_target = *target;

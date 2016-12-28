@@ -32,6 +32,12 @@ ks_status_t dht2_get_token_callback(ks_dht_t *dht, ks_dht_job_t *job)
 	return KS_STATUS_SUCCESS;
 }
 
+ks_status_t dht2_search_findnode_callback(ks_dht_t *dht, ks_dht_search_t *search)
+{
+	diag("dht2_search_findnode_callback %d\n", search->results_length);
+	return KS_STATUS_SUCCESS;
+}
+
 int main() {
 	//ks_size_t buflen;
   ks_status_t err;
@@ -48,7 +54,7 @@ int main() {
   ks_sockaddr_t raddr1;
   //ks_sockaddr_t raddr2;
   //ks_sockaddr_t raddr3;
-  ks_dht_nodeid_t target;
+  //ks_dht_nodeid_t target;
   //ks_dht_storageitem_t *immutable = NULL;
   //ks_dht_storageitem_t *mutable = NULL;
   //const char *v = "Hello World!";
@@ -147,7 +153,6 @@ int main() {
 	ok(err == KS_STATUS_SUCCESS);
   }
 
-  /*
   diag("Ping test\n");
   
   ks_dht_ping(dht2, &raddr1, NULL); // (QUERYING)
@@ -166,14 +171,35 @@ int main() {
 
   diag("Pulsing for route table pings\n"); // Wait for route table pinging to catch up
   for (int i = 0; i < 10; ++i) {
-	  //diag("DHT 1\n");
 	  ks_dht_pulse(dht1, 100);
-	  //diag("DHT 2\n");
 	  ks_dht_pulse(dht2, 100);
+	  ks_dht_pulse(dht3, 100);
   }
   ok(ks_dhtrt_find_node(dht1->rt_ipv4, ep2->nodeid) != NULL); // The node should be good by now, and thus be returned as good
-  */
+
   
+  ks_dht_ping(dht3, &raddr1, NULL); // (QUERYING)
+
+  ks_dht_pulse(dht3, 100); // Send queued ping from dht3 to dht1 (RESPONDING)
+  
+  ks_dht_pulse(dht1, 100); // Receive and process ping query from dht3, queue and send ping response
+
+  ok(ks_dhtrt_find_node(dht1->rt_ipv4, ep3->nodeid) == NULL); // The node should be dubious, and thus not be returned as good yet
+
+  ks_dht_pulse(dht3, 100); // Receive and process ping response from dht1 (PROCESSING then COMPLETING)
+
+  ok(ks_dhtrt_find_node(dht3->rt_ipv4, ep1->nodeid) != NULL); // The node should be good, and thus be returned as good
+
+  ks_dht_pulse(dht3, 100); // Call finish callback and purge the job (COMPLETING)
+
+  diag("Pulsing for route table pings\n"); // Wait for route table pinging to catch up
+  for (int i = 0; i < 20; ++i) {
+	  ks_dht_pulse(dht1, 100);
+	  ks_dht_pulse(dht2, 100);
+	  ks_dht_pulse(dht3, 100);
+  }
+  ok(ks_dhtrt_find_node(dht1->rt_ipv4, ep2->nodeid) != NULL); // The node should be good by now, and thus be returned as good
+
   //diag("Get test\n");
   
 
@@ -205,13 +231,14 @@ int main() {
   ks_dht_pulse(dht2, 100); // Call finish callback and purge the job (COMPLETING)
   */
 
+  /*
   diag("Put test\n");
 
   crypto_sign_keypair(pk.key, sk.key);
 
   ks_dht_storageitem_target_mutable(&pk, NULL, 0, &target);
 
-  ks_dht_get(dht2, &raddr1, dht2_get_token_callback, &target, NULL, 0); // create job
+  ks_dht_get(dht2, NULL, &raddr1, dht2_get_token_callback, &target, NULL, 0); // create job
   
   ks_dht_pulse(dht2, 100); // send get query
 
@@ -225,40 +252,51 @@ int main() {
 
   ks_dht_pulse(dht2, 100); // receive put response
 
-  ks_dht_pulse(dht2, 100); // Call finish callback and purse the job (COMPLETING)
+  ks_dht_pulse(dht2, 100); // Call finish callback and purge the job (COMPLETING)
 
   for (int i = 0; i < 10; ++i) {
-	  //diag("DHT 1\n");
 	  ks_dht_pulse(dht1, 100);
-	  //diag("DHT 2\n");
 	  ks_dht_pulse(dht2, 100);
+	  ks_dht_pulse(dht3, 100);
   }
+  */
 
   // Test bootstrap find_node from dht3 to dht1 to find dht2 nodeid
 
-  //diag("Find_Node test\n");
+  /*
+  diag("Find_Node test\n");
 
-  //ks_dht_findnode(dht3, &raddr1, NULL, &ep2->nodeid);
+  ks_dht_findnode(dht3, NULL, &raddr1, NULL, &ep2->nodeid);
 
-  //ks_dht_pulse(dht3, 100); // Send queued findnode from dht3 to dht1
+  ks_dht_pulse(dht3, 100); // Send queued findnode from dht3 to dht1
 
-  //ks_dht_pulse(dht1, 100); // Receive and process findnode query from dht3, queue and send findnode response
+  ks_dht_pulse(dht1, 100); // Receive and process findnode query from dht3, queue and send findnode response
 
-  //ok(ks_dhtrt_find_node(dht1->rt_ipv4, ep3->nodeid) == NULL); // The node should be dubious, and thus not be returned as good yet
+  ok(ks_dhtrt_find_node(dht1->rt_ipv4, ep3->nodeid) == NULL); // The node should be dubious, and thus not be returned as good yet
 
-  //ks_dht_pulse(dht3, 100); // Receive and process findnode response from dht1
-
-  //ok(ks_dhtrt_find_node(dht3->rt_ipv4, ep2->nodeid) == NULL); // The node should be dubious, and thus not be returned as good yet
+  ks_dht_pulse(dht3, 100); // Receive and process findnode response from dht1
   
-  //diag("Pulsing for route table pings\n"); // Wait for route table pinging to catch up
-  //for (int i = 0; i < 10; ++i) {
-	  //diag("DHT 1\n");
-	  //ks_dht_pulse(dht1, 100);
-	  //diag("DHT 2\n");
-	  //ks_dht_pulse(dht2, 100);
-  //}
-  //ok(ks_dhtrt_find_node(dht3->rt_ipv4, ep2->nodeid) != NULL); // The node should be good by now, and thus be returned as good
+  ks_dht_pulse(dht3, 100); // Call finish callback and purge the job (COMPLETING)
 
+  ok(ks_dhtrt_find_node(dht3->rt_ipv4, ep2->nodeid) == NULL); // The node should be dubious, and thus not be returned as good yet
+  
+  diag("Pulsing for route table pings\n"); // Wait for route table pinging to catch up
+  for (int i = 0; i < 10; ++i) {
+	  ks_dht_pulse(dht1, 100);
+	  ks_dht_pulse(dht2, 100);
+	  ks_dht_pulse(dht3, 100);
+  }
+  ok(ks_dhtrt_find_node(dht3->rt_ipv4, ep2->nodeid) != NULL); // The node should be good by now, and thus be returned as good
+  */
+
+  diag("Search test\n");
+  ks_dht_search_findnode(dht3, AF_INET, &ep2->nodeid, dht2_search_findnode_callback, NULL);
+  diag("Pulsing for route table pings\n"); // Wait for route table pinging to catch up
+  for (int i = 0; i < 30; ++i) {
+	  ks_dht_pulse(dht1, 100);
+	  ks_dht_pulse(dht2, 100);
+	  ks_dht_pulse(dht3, 100);
+  }
 
   /* Cleanup and shutdown */
   diag("Cleanup\n");

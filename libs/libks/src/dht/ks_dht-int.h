@@ -258,10 +258,12 @@ KS_DECLARE(ks_status_t) ks_dht_job_create(ks_dht_job_t **job,
 										  int32_t attempts);
 KS_DECLARE(void) ks_dht_job_build_ping(ks_dht_job_t *job, ks_dht_job_callback_t query_callback, ks_dht_job_callback_t finish_callback);
 KS_DECLARE(void) ks_dht_job_build_findnode(ks_dht_job_t *job,
+										   ks_dht_search_t *search,
 										   ks_dht_job_callback_t query_callback,
 										   ks_dht_job_callback_t finish_callback,
 										   ks_dht_nodeid_t *target);
 KS_DECLARE(void) ks_dht_job_build_get(ks_dht_job_t *job,
+									  ks_dht_search_t *search,
 									  ks_dht_job_callback_t query_callback,
 									  ks_dht_job_callback_t finish_callback,
 									  ks_dht_nodeid_t *target,
@@ -316,14 +318,9 @@ KS_DECLARE(ks_status_t) ks_dht_message_response(ks_dht_message_t *message,
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht_search_create(ks_dht_search_t **search, ks_pool_t *pool, const ks_dht_nodeid_t *target);
+KS_DECLARE(ks_status_t) ks_dht_search_create(ks_dht_search_t **search, ks_pool_t *pool, const ks_dht_nodeid_t *target, ks_dht_search_callback_t callback);
 KS_DECLARE(void) ks_dht_search_destroy(ks_dht_search_t **search);
 
-KS_DECLARE(ks_status_t) ks_dht_search_callback_add(ks_dht_search_t *search, ks_dht_search_callback_t callback);
-KS_DECLARE(void) ks_dht_search_expire(ks_dht_search_t *search, ks_hash_t *pending, int32_t *active);
-
-KS_DECLARE(ks_status_t) ks_dht_search_pending_create(ks_dht_search_pending_t **pending, ks_pool_t *pool, const ks_dht_nodeid_t *nodeid);
-KS_DECLARE(void) ks_dht_search_pending_destroy(ks_dht_search_pending_t **pending);
 
 /**
  *
