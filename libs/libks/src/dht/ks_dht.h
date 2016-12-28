@@ -18,7 +18,6 @@ KS_BEGIN_EXTERN_C
 #define KS_DHT_DATAGRAM_BUFFER_SIZE 1000
 
 //#define KS_DHT_RECV_BUFFER_SIZE 0xFFFF
-#define KS_DHT_PULSE_EXPIRATIONS 1
 
 #define KS_DHT_NODEID_SIZE 20
 
@@ -30,6 +29,8 @@ KS_BEGIN_EXTERN_C
 #define KS_DHT_MESSAGE_ERROR_MAX_SIZE 256
 
 #define KS_DHT_TRANSACTION_EXPIRATION 10
+#define KS_DHT_TRANSACTIONS_PULSE 1
+
 #define KS_DHT_SEARCH_EXPIRATION 10
 #define KS_DHT_SEARCH_RESULTS_MAX_SIZE 8 // @todo replace with KS_DHTRT_BUCKET_SIZE
 
@@ -40,7 +41,8 @@ KS_BEGIN_EXTERN_C
 #define KS_DHT_STORAGEITEM_EXPIRATION 7200
 
 #define KS_DHT_TOKEN_SIZE SHA_DIGEST_LENGTH
-#define KS_DHT_TOKENSECRET_EXPIRATION 300
+#define KS_DHT_TOKEN_EXPIRATION 300
+#define KS_DHT_TOKENS_PULSE 1
 
 #define  KS_DHTRT_MAXQUERYSIZE 20
 
@@ -257,11 +259,10 @@ struct ks_dht_s {
 	ks_hash_t *registry_error;
 
 	ks_dht_endpoint_t **endpoints;
+	int32_t endpoints_length;
 	int32_t endpoints_size;
 	ks_hash_t *endpoints_hash;
 	struct pollfd *endpoints_poll;
-
-	ks_time_t pulse_expirations;
 
 	ks_q_t *send_q;
 	ks_dht_message_t *send_q_unsent;
@@ -272,7 +273,8 @@ struct ks_dht_s {
 	ks_dht_job_t *jobs_first;
 	ks_dht_job_t *jobs_last;
 
-	ks_mutex_t *tid_mutex;
+	ks_time_t transactions_pulse;
+	ks_mutex_t *transactionid_mutex;
 	volatile uint32_t transactionid_next;
 	ks_hash_t *transactions_hash;
 
@@ -283,6 +285,7 @@ struct ks_dht_s {
 	ks_dht_search_t *searches_first;
 	ks_dht_search_t *searches_last;
 
+	ks_time_t tokens_pulse;
 	volatile uint32_t token_secret_current;
 	volatile uint32_t token_secret_previous;
 	ks_time_t token_secret_expiration;
@@ -323,9 +326,8 @@ KS_DECLARE(void) ks_dht_autoroute(ks_dht_t *dht, ks_bool_t autoroute, ks_port_t 
  * @param dht pointer to the dht instance
  * @param value string of the type text under the 'y' key of a message
  * @param callback the callback to be called when a message matches
- * @return The ks_status_t result: KS_STATUS_SUCCESS, KS_STATUS_FAIL
  */
-KS_DECLARE(ks_status_t) ks_dht_register_type(ks_dht_t *dht, const char *value, ks_dht_message_callback_t callback);
+KS_DECLARE(void) ks_dht_register_type(ks_dht_t *dht, const char *value, ks_dht_message_callback_t callback);
 
 /**
  * Register a callback for a specific message query.
@@ -333,9 +335,8 @@ KS_DECLARE(ks_status_t) ks_dht_register_type(ks_dht_t *dht, const char *value, k
  * @param dht pointer to the dht instance
  * @param value string of the type text under the 'q' key of a message
  * @param callback the callback to be called when a message matches
- * @return The ks_status_t result: KS_STATUS_SUCCESS, KS_STATUS_FAIL
  */
-KS_DECLARE(ks_status_t) ks_dht_register_query(ks_dht_t *dht, const char *value, ks_dht_message_callback_t callback);
+KS_DECLARE(void) ks_dht_register_query(ks_dht_t *dht, const char *value, ks_dht_message_callback_t callback);
 
 /**
  * Register a callback for a specific message error.
@@ -343,9 +344,8 @@ KS_DECLARE(ks_status_t) ks_dht_register_query(ks_dht_t *dht, const char *value, 
  * @param dht pointer to the dht instance
  * @param value string of the errorcode under the first item of the 'e' key of a message
  * @param callback the callback to be called when a message matches
- * @return The ks_status_t result: KS_STATUS_SUCCESS, KS_STATUS_FAIL
  */
-KS_DECLARE(ks_status_t) ks_dht_register_error(ks_dht_t *dht, const char *value, ks_dht_message_callback_t callback);
+KS_DECLARE(void) ks_dht_register_error(ks_dht_t *dht, const char *value, ks_dht_message_callback_t callback);
 
 /**
  * Bind a local address and port for receiving UDP datagrams.

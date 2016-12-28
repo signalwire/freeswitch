@@ -22,11 +22,18 @@ KS_BEGIN_EXTERN_C
 KS_DECLARE(ks_status_t) ks_dht_autoroute_check(ks_dht_t *dht, const ks_sockaddr_t *raddr, ks_dht_endpoint_t **endpoint);
 
 /**
- * Called internally to expire various data.
- * Handles purging of expired and finished transactions, rotating token secrets, etc.
+ * Called internally to expire search data.
+ * Handles completing and purging of finished searches.
  * @param dht pointer to the dht instance
  */
-KS_DECLARE(void) ks_dht_pulse_expirations(ks_dht_t *dht);
+KS_DECLARE(void) ks_dht_pulse_searches(ks_dht_t *dht);
+
+/**
+ * Called internally to process job state machine.
+ * Handles completing and purging of finished jobs.
+ * @param dht pointer to the dht instance
+ */
+KS_DECLARE(void) ks_dht_pulse_jobs(ks_dht_t *dht);
 
 /**
  * Called internally to send queued messages.
@@ -34,6 +41,20 @@ KS_DECLARE(void) ks_dht_pulse_expirations(ks_dht_t *dht);
  * @param dht pointer to the dht instance
  */
 KS_DECLARE(void) ks_dht_pulse_send(ks_dht_t *dht);
+
+/**
+ * Called internally to expire transactions.
+ * Handles purging of expired and finished transactions.
+ * @param dht pointer to the dht instance
+ */
+KS_DECLARE(void) ks_dht_pulse_transactions(ks_dht_t *dht);
+
+/**
+ * Called internally to expire and cycle tokens.
+ * Handles cycling new secret entropy for token generation.
+ * @param dht pointer to the dht instance
+ */
+KS_DECLARE(void) ks_dht_pulse_tokens(ks_dht_t *dht);
 
 /**
  * Converts a ks_dht_nodeid_t into it's hex string representation.
