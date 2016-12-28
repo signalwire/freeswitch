@@ -8616,7 +8616,7 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 
 								if (moh) {
 									char *xdest;
-									xdest = switch_core_session_sprintf(a_session, "endless_playback:%s,park", moh);
+									xdest = switch_core_session_sprintf(a_session, "m:\":endless_playback:%s\"park", moh);
 									switch_ivr_session_transfer(a_session, xdest, "inline", NULL);
 								} else {
 									switch_ivr_session_transfer(a_session, "park", "inline", NULL);

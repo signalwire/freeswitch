@@ -2937,7 +2937,7 @@ static switch_bool_t attended_transfer(switch_core_session_t *session, switch_co
 
 			if (moh) {
 				char *xdest;
-				xdest = switch_core_session_sprintf(a_session, "endless_playback:%s,park", moh);
+				xdest = switch_core_session_sprintf(a_session, "m:\":endless_playback:%s\"park", moh);
 				switch_ivr_session_transfer(a_session, xdest, "inline", NULL);
 			} else {
 				switch_ivr_session_transfer(a_session, "park", "inline", NULL);
