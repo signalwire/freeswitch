@@ -3042,8 +3042,9 @@ SWITCH_STANDARD_APP(callcenter_function)
 						  switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_name")),
 						  switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_number")),
 						  queue_name, cc_member_cancel_reason2str(h->member_cancel_reason));
+		queue = get_queue(queue_name);
 		queue->calls_abandoned++;
-
+		queue_rwunlock(queue);
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_DEBUG, "Member %s <%s> is answered by an agent in queue %s\n", switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_name")), switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_number")), queue_name);
 
@@ -3055,7 +3056,9 @@ SWITCH_STANDARD_APP(callcenter_function)
 
 		/* Update some channel variables for xml_cdr needs */
 		switch_channel_set_variable_printf(member_channel, "cc_cause", "%s", "answered");
+		queue = get_queue(queue_name);
 		queue->calls_answered++;
+		queue_rwunlock(queue);
 
 	}
 
