@@ -1831,6 +1831,12 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 			if (!strcasecmp(h->agent_type, CC_AGENT_TYPE_CALLBACK)) {
 				switch_channel_hangup(agent_channel, SWITCH_CAUSE_ORIGINATOR_CANCEL);
 			}
+		} else if (!bridged && !switch_channel_up(agent_channel)) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_DEBUG, "Failed to bridge, agent %s has no session\n", h->agent_name);
+			/* Put back member on Waiting state, previous Trying */
+			sql = switch_mprintf("UPDATE members SET state = 'Waiting' WHERE system = 'single_box' AND uuid = '%q'", h->member_uuid);
+			cc_execute_sql(NULL, sql, NULL);
+			switch_safe_free(sql);
 		} else {
 			bridged = 1;
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_DEBUG, "Member \"%s\" %s is bridged to agent %s\n",
@@ -1896,34 +1902,40 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 					, (strcasecmp(h->agent_type, CC_AGENT_TYPE_UUID_STANDBY)?"uuid = '',":""), local_epoch_time_now(NULL), local_epoch_time_now(NULL), h->agent_name, h->agent_system);
 			cc_execute_sql(NULL, sql, NULL);
 			switch_safe_free(sql);
+
+			/* Remove the member entry from the db (Could become optional to support latter processing) */
+			sql = switch_mprintf("DELETE FROM members WHERE system = 'single_box' AND uuid = '%q'", h->member_uuid);
+			cc_execute_sql(NULL, sql, NULL);
+			switch_safe_free(sql);
+
+			/* Caller off event */
+			if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CALLCENTER_EVENT) == SWITCH_STATUS_SUCCESS) {
+				switch_channel_event_set_data(member_channel, event);
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Queue", h->queue_name);
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Action", "member-queue-end");
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Hangup-Cause",
+											   switch_channel_cause2str(cause));
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Cause", "Terminated");
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent", h->agent_name);
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent-System", h->agent_system);
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent-UUID", agent_uuid);
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Agent-Called-Time", "%" SWITCH_TIME_T_FMT,
+										t_agent_called);
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Agent-Answered-Time", "%" SWITCH_TIME_T_FMT,
+										t_agent_answered);
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Member-Leaving-Time", "%" SWITCH_TIME_T_FMT,
+										local_epoch_time_now(NULL));
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Member-Joined-Time", "%" SWITCH_TIME_T_FMT,
+										t_member_called);
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Member-UUID", h->member_uuid);
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Member-Session-UUID",
+											   h->member_session_uuid);
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Member-CID-Name", h->member_cid_name);
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Member-CID-Number",
+											   h->member_cid_number);
+				switch_event_fire(&event);
+			}
 		}
-
-		/* Remove the member entry from the db (Could become optional to support latter processing) */
-		sql = switch_mprintf("DELETE FROM members WHERE system = 'single_box' AND uuid = '%q'", h->member_uuid);
-		cc_execute_sql(NULL, sql, NULL);
-		switch_safe_free(sql);
-
-		/* Caller off event */
-		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CALLCENTER_EVENT) == SWITCH_STATUS_SUCCESS) {
-			switch_channel_event_set_data(member_channel, event);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Queue", h->queue_name);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Action", "member-queue-end");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Hangup-Cause", switch_channel_cause2str(cause));
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Cause", "Terminated");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent", h->agent_name);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent-System", h->agent_system);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent-UUID", agent_uuid);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Agent-Called-Time", "%" SWITCH_TIME_T_FMT, t_agent_called);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Agent-Answered-Time", "%" SWITCH_TIME_T_FMT, t_agent_answered);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Member-Leaving-Time", "%" SWITCH_TIME_T_FMT,  local_epoch_time_now(NULL));
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Member-Joined-Time", "%" SWITCH_TIME_T_FMT, t_member_called);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Member-UUID", h->member_uuid);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Member-Session-UUID", h->member_session_uuid);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Member-CID-Name", h->member_cid_name);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Member-CID-Number", h->member_cid_number);
-			switch_event_fire(&event);
-		}
-
 
 	} else {
 		/* Agent didn't answer or originate failed */
