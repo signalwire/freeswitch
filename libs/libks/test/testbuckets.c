@@ -13,6 +13,19 @@ ks_thread_pool_t *tpool;
 
 static ks_thread_t *threads[10];
 
+static char idbuffer[51];
+
+static char *printableid(uint8_t *id)
+{
+    char *buffer = idbuffer;
+    memset(idbuffer, 0, sizeof(idbuffer));
+    for (int i = 0; i < 20; ++i, buffer+=2) {
+        sprintf(buffer, "%02x", id[i]);
+    }
+    return idbuffer;
+}
+
+
 
 int doquery(ks_dhtrt_routetable_t *rt, uint8_t *id, enum ks_dht_nodetype_t type, enum ks_afflags_t family)
 {
@@ -227,13 +240,16 @@ void test03()
 	int ipv4_remote = 0;
 	int ipv4_local = 0;
 
+	int cix=0;
+    
 	for (int i=0; i<200; ++i) {
-		if (i%10 == 0) {
-			++nodeid.id[0];
-			nodeid.id[1] = 0;
+		if (i%20 == 0) {
+			nodeid.id[cix] >>= 1;
+            if (nodeid.id[cix] == 0) ++cix; 
+			nodeid.id[19] = 0;
 		}
 		else {
-			++nodeid.id[1];
+			++nodeid.id[19];
 		} 
 		ks_status_t s0 = ks_dhtrt_create_node(rt, nodeid, KS_DHT_REMOTE, ipv4, port, KS_DHTRT_CREATE_DEFAULT, &peer);
 		if (s0 == KS_STATUS_SUCCESS) {
@@ -242,35 +258,37 @@ void test03()
 		}
 	}
 
- 
-	for (int i=0; i<2; ++i) {
-		if (i%10 == 0) {
-			++nodeid.id[0];
-			nodeid.id[1] = 0;
-		}
-		else {
-			++nodeid.id[1];
-		}
-
+    for (int i=0; i<2; ++i) {
+        if (i%20 == 0) {
+            nodeid.id[cix] >>= 1;
+            if (nodeid.id[cix] == 0) ++cix;
+            nodeid.id[19] = 0;
+        }
+        else {
+            ++nodeid.id[19];
+        }
 		ks_status_t s0 = ks_dhtrt_create_node(rt, nodeid, KS_DHT_LOCAL, ipv4, port, KS_DHTRT_CREATE_DEFAULT,  &peer);
-		if (s0 == KS_STATUS_SUCCESS) {
-			ks_dhtrt_touch_node(rt, nodeid);
-			++ipv4_local;
-		}
-	}
+        if (s0 == KS_STATUS_SUCCESS) {
+            ks_dhtrt_touch_node(rt, nodeid);
+            ++ipv4_remote;
+        }
+    }
 
-	for (int i=0; i<201; ++i) {
-		if (i%10 == 0) {
-			++nodeid.id[0];
-			nodeid.id[1] = 0;
-		}
-		else {
-			++nodeid.id[1];
-		}
-		ks_dhtrt_create_node(rt, nodeid, KS_DHT_REMOTE, ipv6, port, KS_DHTRT_CREATE_DEFAULT, &peer);
-		ks_dhtrt_touch_node(rt, nodeid);
-	}
-
+    for (int i=0; i<200; ++i) {
+        if (i%20 == 0) {
+            nodeid.id[cix] >>= 1;
+            if (nodeid.id[cix] == 0) ++cix;
+            nodeid.id[19] = 0;
+        }
+        else {
+            ++nodeid.id[19];
+        }
+		ks_status_t s0 = ks_dhtrt_create_node(rt, nodeid, KS_DHT_REMOTE, ipv6, port, KS_DHTRT_CREATE_DEFAULT, &peer);
+        if (s0 == KS_STATUS_SUCCESS) {
+            ks_dhtrt_touch_node(rt, nodeid);
+            ++ipv4_remote;
+        }
+    }
 
 	ks_dhtrt_dump(rt, 7);
 
@@ -320,20 +338,20 @@ void test04()
 
 	for (int i=0,i2=0,i3=0; i<10000; ++i, ++i2,  ++i3) {
 		if (i%20 == 0) {
-	nodeid.id[0] =  nodeid.id[0] / 2;
-	if (i2%20 == 0) {
-		nodeid.id[1] = nodeid.id[1] / 2;
-		i2 = 0;
-		if (i3%20 == 0) {
-			nodeid.id[2] = nodeid.id[2] / 2;
-		}
-	}
-	else {
-		++nodeid.id[3];
-	}
+			nodeid.id[0] =  nodeid.id[0] / 2;
+			if (i2%20 == 0) {
+				nodeid.id[1] = nodeid.id[1] / 2;
+				i2 = 0;
+				if (i3%20 == 0) {
+					nodeid.id[2] = nodeid.id[2] / 2;
+				}
+			}
+			else {
+				++nodeid.id[3];
+			}
 		}
 		else {
-	++nodeid.id[1];
+			++nodeid.id[1];
 		}
 		ks_dhtrt_create_node(rt, nodeid, KS_DHT_REMOTE, ipv4, port, KS_DHTRT_CREATE_DEFAULT, &peer);
 		ks_dhtrt_touch_node(rt, nodeid);
@@ -488,13 +506,17 @@ void test07()
 
 	/* build a delete queue */
 
+    int cix=0;   
+
 	for(int i0=0, i1=0; i0<150; ++i0, ++i1) {
 		if (i0%20 == 0) {
-			g_nodeid2.id[0]>>=1;
-			ks_dhtrt_dump(rt, 7);
+			g_nodeid2.id[cix]>>=1;
+			//ks_dhtrt_dump(rt, 7);
+            if ( g_nodeid2.id[cix] == 0) ++cix;
+            g_nodeid2.id[19] = 0;
 	    }
 	    else {
-			++ g_nodeid2.id[19];
+			++g_nodeid2.id[19];
 		}
 		ks_dhtrt_create_node(rt, g_nodeid2, KS_DHT_REMOTE, ipv4, port, KS_DHTRT_CREATE_DEFAULT, &peer);
 		ks_dhtrt_touch_node(rt, g_nodeid2);
@@ -502,14 +524,17 @@ void test07()
 	 }
 
 	ks_dhtrt_dump(rt, 7);
+    cix = 0;
 
 	 memset(g_nodeid2.id,  0xef, KS_DHT_NODEID_SIZE);
 	 for (int i0=0, i1=0; i0<150; ++i0, ++i1) {
 		 if (i0%20 == 0) {
-			g_nodeid2.id[0]>>=1;
+			g_nodeid2.id[cix]>>=1;
+            if ( g_nodeid2.id[cix] == 0) ++cix;
+            g_nodeid2.id[19] = 0;
 	     }
 		 else {
-			++ g_nodeid2.id[19];
+			++g_nodeid2.id[19];
 	     }
 		ks_dht_node_t* n = ks_dhtrt_find_node(rt, g_nodeid2);
 		ks_dhtrt_release_node(n);
@@ -587,22 +612,44 @@ static void *test60ex(ks_thread_t *thread, void *data)
 
 	printf("starting thread with i of %d\n", gindex); fflush(stdout);
 
-	for (int loop=0; loop<test60loops; ++loop) {
+	for (int loop=0, cix=0; loop<test60loops; ++loop) {
 
 		for (int i=0; i<test60nodes; ++i) {
-			++nodeid.id[19];
+			if (i%20 == 0) {
+				nodeid.id[cix] >>= 1;
+				if (nodeid.id[cix] == 0) {
+					++cix;
+				}
+				nodeid.id[19] = 0;
+			}
+			else {
+				++nodeid.id[19];
+			}
 			ks_dhtrt_create_node(rt, nodeid, KS_DHT_LOCAL, ipv4, port, KS_DHTRT_CREATE_DEFAULT, &peer);
 			ks_sleep(1000);
 			ks_dhtrt_touch_node(rt, nodeid);
 		}
 
-		for (int i=0; i<test60nodes; ++i) {
+		memset(nodeid.id,  0xef, KS_DHT_NODEID_SIZE);
+		cix = 0;
+
+		for (int i=0, cix=0; i<test60nodes; ++i) {
+            if (i%20 == 0) {
+                nodeid.id[cix] >>= 1;
+                if (nodeid.id[cix] == 0) {
+                    ++cix;
+                }
+                nodeid.id[19] = 0;
+            }
+            else {
+                ++nodeid.id[19];
+            }
+
 			peer = ks_dhtrt_find_node(rt, nodeid);
 			if (peer) {
 				ks_dhtrt_delete_node(rt, peer);
 				ks_sleep(400);
 			}
-			--nodeid.id[19];
 		}
 
 	}
@@ -664,13 +711,16 @@ void test30()
 	int ipv4_remote = 0;
 	int ipv4_local = 0;
 
+	int cix =0;
+
 	for (int i=0; i<200; ++i) {
 		if (i%10 == 0) {
-			++nodeid.id[0];
-			nodeid.id[1] = 0;
+			++nodeid.id[cix];
+            if (nodeid.id[cix] == 0) ++cix;
+			nodeid.id[19] = 0;
 		}
 		else {
-			++nodeid.id[1];
+			++nodeid.id[19];
 		}
 		ks_status_t s0 = ks_dhtrt_create_node(rt, nodeid, KS_DHT_REMOTE, ipv4, port, KS_DHTRT_CREATE_DEFAULT, &peer);
 		if (s0 == KS_STATUS_SUCCESS) {
@@ -681,11 +731,12 @@ void test30()
 
 	for (int i=0; i<2; ++i) {
 		if (i%10 == 0) {
-			++nodeid.id[0];
-			nodeid.id[1] = 0;
+			++nodeid.id[cix];
+            if (nodeid.id[cix] == 0) ++cix;
+			nodeid.id[19] = 0;
 		}
 		else {
-			++nodeid.id[1];
+			++nodeid.id[19];
 		}
 
 		ks_status_t s0 = ks_dhtrt_create_node(rt, nodeid, KS_DHT_LOCAL, ipv4, port, KS_DHTRT_CREATE_DEFAULT, &peer);
@@ -697,11 +748,12 @@ void test30()
 
 	for (int i=0; i<201; ++i) {
 		if (i%10 == 0) {
-			++nodeid.id[0];
-			nodeid.id[1] = 0;
+			++nodeid.id[cix];
+            if (nodeid.id[cix] == 0) ++cix;
+			nodeid.id[19] = 0;
 		}
 		else {
-			++nodeid.id[1];
+			++nodeid.id[19];
 		}
 		ks_dhtrt_create_node(rt, nodeid, KS_DHT_REMOTE, ipv6, port, KS_DHTRT_CREATE_DEFAULT, &peer);
 		ks_dhtrt_touch_node(rt, nodeid);
@@ -746,38 +798,32 @@ void test50()
 
 	ks_status_t status;
 
+	int cix=0;
+
 	for (int i=0,i2=0; i<200; ++i, ++i2) {
 		if (i%20 == 0) {
-			nodeid.id[0] =  nodeid.id[0] / 2;
-			if (i2%20 == 0) {
-				i2 = 0;
-				nodeid.id[1] =  nodeid.id[1] / 2;
-			}
-			else {
-				++nodeid.id[2];
-			}
+			nodeid.id[cix] =  nodeid.id[cix] / 2;
+			if (nodeid.id[cix] == 0)  ++cix;
+			nodeid.id[19] =  0;
 		}
 		else {
-			++nodeid.id[1];
+			++nodeid.id[19];
 		}
 		ks_dhtrt_create_node(rt, nodeid, KS_DHT_REMOTE, ipv4, port, KS_DHTRT_CREATE_DEFAULT, &peer);
 		ks_dhtrt_touch_node(rt, nodeid);
 	}
 
 	memset(nodeid.id,  0xef, KS_DHT_NODEID_SIZE);
+    cix = 0;
+
 	for (int i=0,i2=0; i<200; ++i, ++i2) {
 		if (i%20 == 0) { 
 			nodeid.id[0] =  nodeid.id[0] / 2;
-			if (i2%20 == 0) {
-				i2 = 0; 
-				nodeid.id[1] =  nodeid.id[1] / 2;
-			}
-			else {
-				++nodeid.id[2];
-			}
+            if (nodeid.id[cix] == 0)  ++cix;
+            nodeid.id[19] =  0;
 		}
 		else {
-			++nodeid.id[1];
+			++nodeid.id[19];
 		}
 		ks_dht_node_t *n = ks_dhtrt_find_node(rt, nodeid);
 		if (n != NULL) {
@@ -789,21 +835,18 @@ void test50()
 	ks_dhtrt_process_table(rt);
 
 	memset(nodeid.id,  0xef, KS_DHT_NODEID_SIZE);
+    cix = 0;
 
 	for (int i=0,i2=0; i<200; ++i, ++i2) {
-		if (i%20 == 0) {
-			nodeid.id[0] =  nodeid.id[0] / 2;
-			if (i2%20 == 0) {
-				i2 = 0;
-				nodeid.id[1] =  nodeid.id[1] / 2;
-			}
-			else {
-				++nodeid.id[2];
-			}
-		}
-		else {
-			++nodeid.id[1];
-		}
+        if (i%20 == 0) {
+            nodeid.id[0] =  nodeid.id[0] / 2;
+            if (nodeid.id[cix] == 0)  ++cix;
+            nodeid.id[19] =  0;
+        }
+        else {
+            ++nodeid.id[19];
+        }
+
 		ks_dhtrt_create_node(rt, nodeid, KS_DHT_REMOTE, ipv4, port, KS_DHTRT_CREATE_DEFAULT, &peer);
 		ks_dhtrt_touch_node(rt, nodeid);
 	}
@@ -830,20 +873,17 @@ void test51()
 
 	ks_status_t status;
 
+    int cix =0;
+
 	for (int i=0,i2=0; i<2; ++i, ++i2) {
-		if (i%20 == 0) {
-			nodeid.id[0] =  nodeid.id[0] / 2;
-			if (i2%20 == 0) {
-				i2 = 0;
-				nodeid.id[1] =  nodeid.id[1] / 2;
-			}
-			else {
-				++nodeid.id[2];
-			}
-		}
-		else {
-			++nodeid.id[1];
-		}
+        if (i%20 == 0) {
+            nodeid.id[0] =  nodeid.id[0] / 2;
+            if (nodeid.id[cix] == 0)  ++cix;
+            nodeid.id[19] =  0;
+        }
+        else {
+            ++nodeid.id[19];
+        }
 		ks_dhtrt_create_node(rt, nodeid, KS_DHT_REMOTE, ipv4, port, KS_DHTRT_CREATE_DEFAULT, &peer);
 		ks_dhtrt_touch_node(rt, nodeid);
 	}
@@ -859,6 +899,32 @@ void test51()
 
 	return;  
 }
+
+
+void testid(int max) {
+   
+	int cix=0;
+    unsigned char id[20];
+
+    memset(id, 0xff, 20);
+
+    for (int i=0; i<max; ++i) {
+		if (i%20 == 0) {
+			id[cix] >>= 1;
+            if (id[cix] == 0) {
+               ++cix;
+			}
+            id[19] = 0;
+		}
+		else {
+            ++id[19];
+		}
+        printf("id:%s\n", printableid(id));
+	}
+
+}
+
+
 
 
 
@@ -998,6 +1064,9 @@ int main(int argc, char *argv[]) {
 			continue;
 		}
 
+		if (tests[tix] == 100) {
+			testid(340);
+		}
 
 	}
 
