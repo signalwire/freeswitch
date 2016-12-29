@@ -29,6 +29,9 @@ IF "%VisualStudioVersion%" == "11.0" (
 ) ELSE IF "%VisualStudioVersion%" == "12.0" (
 	SET VS_VERSION=-Gmsvs_version=2013
 	ECHO Forcing build to use Visual Studio 2013
+) ELSE IF "%VisualStudioVersion%" == "14.0" (
+	SET VS_VERSION=-Gmsvs_version=2015
+	ECHO Forcing build to use Visual Studio 2015
 ) ELSE IF NOT "%4" == "" (
 	SET VS_VERSION=-Gmsvs_version=%4
 	ECHO Forcing build to use Visual Studio %4
