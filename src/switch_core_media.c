@@ -472,7 +472,7 @@ static void switch_core_media_find_zrtp_hash(switch_core_session_t *session, sdp
 
 	audio_engine = &session->media_handle->engines[SWITCH_MEDIA_TYPE_AUDIO];
 	video_engine = &session->media_handle->engines[SWITCH_MEDIA_TYPE_VIDEO];
-	text_engine = &session->media_handle->engines[SWITCH_MEDIA_TYPE_VIDEO];
+	text_engine = &session->media_handle->engines[SWITCH_MEDIA_TYPE_TEXT];
 
 
 	switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG1, "Looking for zrtp-hash\n");
@@ -1836,7 +1836,7 @@ SWITCH_DECLARE(switch_status_t) switch_media_handle_create(switch_media_handle_t
 
 
 		session->media_handle->engines[SWITCH_MEDIA_TYPE_TEXT].payload_map = switch_core_alloc(session->pool, sizeof(payload_map_t));
-		session->media_handle->engines[SWITCH_MEDIA_TYPE_TEXT].cur_payload_map = session->media_handle->engines[SWITCH_MEDIA_TYPE_AUDIO].payload_map;
+		session->media_handle->engines[SWITCH_MEDIA_TYPE_TEXT].cur_payload_map = session->media_handle->engines[SWITCH_MEDIA_TYPE_TEXT].payload_map;
 		session->media_handle->engines[SWITCH_MEDIA_TYPE_TEXT].cur_payload_map->current = 1;
 
 		switch_channel_set_flag(session->channel, CF_DTLS_OK);
@@ -6862,33 +6862,39 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_proxy_remote_addr(switch_core_
 		}
 	}
 
-	p = port_ptr;
-	x = 0;
-	while (x < sizeof(rp) - 1 && p && *p && (*p >= '0' && *p <= '9')) {
-		rp[x++] = *p;
-		p++;
-		if (p >= pe) {
-			goto end;
+	if (port_ptr) {
+		p = port_ptr;
+		x = 0;
+		while (x < sizeof(rp) - 1 && p && *p && (*p >= '0' && *p <= '9')) {
+			rp[x++] = *p;
+			p++;
+			if (p >= pe) {
+				goto end;
+			}
 		}
 	}
 
-	p = vid_port_ptr;
-	x = 0;
-	while (x < sizeof(rvp) - 1 && p && *p && (*p >= '0' && *p <= '9')) {
-		rvp[x++] = *p;
-		p++;
-		if (p >= pe) {
-			goto end;
+	if (vid_port_ptr) {
+		p = vid_port_ptr;
+		x = 0;
+		while (x < sizeof(rvp) - 1 && p && *p && (*p >= '0' && *p <= '9')) {
+			rvp[x++] = *p;
+			p++;
+			if (p >= pe) {
+				goto end;
+			}
 		}
 	}
 
-	p = text_port_ptr;
-	x = 0;
-	while (x < sizeof(rtp) - 1 && p && *p && (*p >= '0' && *p <= '9')) {
-		rtp[x++] = *p;
-		p++;
-		if (p >= pe) {
-			goto end;
+	if (text_port_ptr) {
+		p = text_port_ptr;
+		x = 0;
+		while (x < sizeof(rtp) - 1 && p && *p && (*p >= '0' && *p <= '9')) {
+			rtp[x++] = *p;
+			p++;
+			if (p >= pe) {
+				goto end;
+			}
 		}
 	}
 
@@ -6914,7 +6920,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_proxy_remote_addr(switch_core_
 		switch_channel_set_flag(session->channel, CF_TEXT_POSSIBLE);
 	}
 
-	if (v_engine->cur_payload_map->remote_sdp_ip && v_engine->cur_payload_map->remote_sdp_port) {
+	if (v_engine->cur_payload_map && v_engine->cur_payload_map->remote_sdp_ip && v_engine->cur_payload_map->remote_sdp_port) {
 		if (!strcmp(v_engine->cur_payload_map->remote_sdp_ip, rip) && atoi(rvp) == v_engine->cur_payload_map->remote_sdp_port) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Remote video address:port [%s:%d] has not changed.\n",
 							  v_engine->cur_payload_map->remote_sdp_ip, v_engine->cur_payload_map->remote_sdp_port);
@@ -6952,7 +6958,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_proxy_remote_addr(switch_core_
 		}
 	}
 
-	if (t_engine->cur_payload_map->remote_sdp_ip && t_engine->cur_payload_map->remote_sdp_port) {
+	if (t_engine->cur_payload_map && t_engine->cur_payload_map->remote_sdp_ip && t_engine->cur_payload_map->remote_sdp_port) {
 		if (!strcmp(t_engine->cur_payload_map->remote_sdp_ip, rip) && atoi(rvp) == t_engine->cur_payload_map->remote_sdp_port) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Remote text address:port [%s:%d] has not changed.\n",
 							  t_engine->cur_payload_map->remote_sdp_ip, t_engine->cur_payload_map->remote_sdp_port);
@@ -11082,13 +11088,13 @@ SWITCH_DECLARE(void) switch_core_media_patch_sdp(switch_core_session_t *session)
 			}
 
 			has_video++;
-				} else if (!strncmp("m=text ", p, 8) && *(p + 8) != '0') {
+		} else if (!strncmp("m=text ", p, 8) && *(p + 8) != '0') {
 			if (!has_text) {
 				switch_core_media_choose_port(session, SWITCH_MEDIA_TYPE_TEXT, 1);
 				clear_pmaps(t_engine);
 				pmap = switch_core_media_add_payload_map(session,
 														 SWITCH_MEDIA_TYPE_TEXT,
-														 "PROXY-VID",
+														 "PROXY-TXT",
 														 NULL,
 														 NULL,
 														 SDP_TYPE_RESPONSE,
@@ -12552,7 +12558,7 @@ SWITCH_DECLARE(void) switch_core_session_stop_media(switch_core_session_t *sessi
 //?
 SWITCH_DECLARE(void) switch_core_media_check_outgoing_proxy(switch_core_session_t *session, switch_core_session_t *o_session)
 {
-	switch_rtp_engine_t *a_engine, *v_engine;
+	switch_rtp_engine_t *a_engine, *v_engine, *t_engine;
 	switch_media_handle_t *smh;
 	const char *r_sdp = NULL;
 	payload_map_t *pmap;
@@ -12571,6 +12577,7 @@ SWITCH_DECLARE(void) switch_core_media_check_outgoing_proxy(switch_core_session_
 	
 	a_engine = &smh->engines[SWITCH_MEDIA_TYPE_AUDIO];
 	v_engine = &smh->engines[SWITCH_MEDIA_TYPE_VIDEO];
+	t_engine = &smh->engines[SWITCH_MEDIA_TYPE_TEXT];
 
 	switch_channel_set_flag(session->channel, CF_PROXY_MEDIA);
 
@@ -12609,6 +12616,27 @@ SWITCH_DECLARE(void) switch_core_media_check_outgoing_proxy(switch_core_session_
 
 		switch_channel_set_flag(session->channel, CF_VIDEO);
 		switch_channel_set_flag(session->channel, CF_VIDEO_POSSIBLE);
+	}
+
+
+	if (switch_stristr("m=text", r_sdp)) {
+		switch_core_media_choose_port(session, SWITCH_MEDIA_TYPE_VIDEO, 1);
+		pmap = switch_core_media_add_payload_map(session,
+												 SWITCH_MEDIA_TYPE_AUDIO,
+												 "PROXY-TXT",
+												 NULL,
+												 NULL,
+												 SDP_TYPE_RESPONSE,
+												 0,
+												 1000,
+												 1000,
+												 1,
+												 SWITCH_TRUE);
+		
+		t_engine->cur_payload_map = pmap;
+
+		switch_channel_set_flag(session->channel, CF_HAS_TEXT);
+		switch_channel_set_flag(session->channel, CF_TEXT_POSSIBLE);
 	}
 }
 
