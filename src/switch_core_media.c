@@ -5991,7 +5991,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_proxy_remote_addr(switch_core_
 		switch_channel_set_flag(session->channel, CF_VIDEO);
 	}
 
-	if (v_engine->cur_payload_map->remote_sdp_ip && v_engine->cur_payload_map->remote_sdp_port) {
+	if (v_engine->cur_payload_map && v_engine->cur_payload_map->remote_sdp_ip && v_engine->cur_payload_map->remote_sdp_port) {
 		if (!strcmp(v_engine->cur_payload_map->remote_sdp_ip, rip) && atoi(rvp) == v_engine->cur_payload_map->remote_sdp_port) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Remote video address:port [%s:%d] has not changed.\n",
 							  v_engine->cur_payload_map->remote_sdp_ip, v_engine->cur_payload_map->remote_sdp_port);

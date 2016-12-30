@@ -664,17 +664,36 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 		b_sdp = switch_channel_get_variable(channel, SWITCH_B_SDP_VARIABLE);
 		switch_core_media_set_local_sdp(session, b_sdp, SWITCH_TRUE);
 
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "3PCC-PROXY nomedia - sending ack, SDP:\n%s\n", tech_pvt->mparams.local_sdp_str);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, 
+						  "3PCC-PROXY nomedia - sending ack, SDP:\n%s\n", tech_pvt->mparams.local_sdp_str);
 
-		nua_ack(tech_pvt->nh,
-				TAG_IF(!zstr(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)),
-				SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
-				SOATAG_USER_SDP_STR(tech_pvt->mparams.local_sdp_str),
-				SOATAG_REUSE_REJECTED(1),
-				SOATAG_RTP_SELECT(1), 
-				SOATAG_AUDIO_AUX("cn telephone-event"),
-				TAG_IF(sofia_test_pflag(tech_pvt->profile, PFLAG_DISABLE_100REL), NUTAG_INCLUDE_EXTRA_SDP(1)),
-				TAG_END());
+		if (switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MEDIA)) {
+			switch_core_media_patch_sdp(tech_pvt->session);
+			switch_core_media_proxy_remote_addr(tech_pvt->session, NULL);
+		}
+
+		if (sofia_use_soa(tech_pvt)) {
+			nua_ack(tech_pvt->nh,
+					TAG_IF(!zstr(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)),
+					SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
+					SOATAG_USER_SDP_STR(tech_pvt->mparams.local_sdp_str),
+					SOATAG_REUSE_REJECTED(1),
+					SOATAG_RTP_SELECT(1), 
+					SOATAG_AUDIO_AUX("cn telephone-event"),
+					TAG_IF(sofia_test_pflag(tech_pvt->profile, PFLAG_DISABLE_100REL), NUTAG_INCLUDE_EXTRA_SDP(1)),
+					TAG_END());
+		} else {
+			nua_ack(tech_pvt->nh,
+					NUTAG_MEDIA_ENABLE(0),
+					TAG_IF(!zstr(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)),
+					SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
+					TAG_IF(tech_pvt->mparams.local_sdp_str, SIPTAG_CONTENT_TYPE_STR("application/sdp")),
+					TAG_IF(tech_pvt->mparams.local_sdp_str, SIPTAG_PAYLOAD_STR(tech_pvt->mparams.local_sdp_str)),
+					SOATAG_AUDIO_AUX("cn telephone-event"),
+					TAG_END());			
+		}
+
+
 		sofia_clear_flag(tech_pvt, TFLAG_3PCC_INVITE); // all done
 		sofia_set_flag_locked(tech_pvt, TFLAG_ANS);
 		sofia_set_flag_locked(tech_pvt, TFLAG_SDP);
@@ -2134,7 +2153,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 
 								while (switch_channel_ready(channel) && !sofia_test_flag(tech_pvt, TFLAG_3PCC_HAS_ACK)) {
 									switch_ivr_parse_all_events(session);
-									switch_cond_next();
+									switch_yield(10000);
 								}
 
 								/*  Regain lock on sofia */

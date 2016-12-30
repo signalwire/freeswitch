@@ -1634,6 +1634,16 @@ static void our_sofia_event_callback(nua_event_t event,
 				switch_core_recovery_track(session);
 				sofia_set_flag(tech_pvt, TFLAG_GOT_ACK);
 
+				if (switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MEDIA) && r_sdp) {
+					if (sofia_test_pflag(tech_pvt->profile, PFLAG_3PCC_PROXY)) {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "3PCC-PROXY, Got my ACK\n");
+						sofia_set_flag(tech_pvt, TFLAG_3PCC_HAS_ACK);
+						sofia_clear_flag(tech_pvt, TFLAG_PASS_ACK);
+					}
+					
+				}
+				
+				
 				if (sofia_test_flag(tech_pvt, TFLAG_PASS_ACK)) {
 					switch_core_session_t *other_session;
 
@@ -7254,15 +7264,27 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 							private_object_t *other_tech_pvt = switch_core_session_get_private(other_session);
 
 							sofia_glue_clear_soa(other_session, SWITCH_TRUE);
-
-							nua_ack(other_tech_pvt->nh,
-									NUTAG_MEDIA_ENABLE(0),
-									TAG_IF(!zstr(other_tech_pvt->user_via), SIPTAG_VIA_STR(other_tech_pvt->user_via)),
-									SIPTAG_CONTACT_STR(other_tech_pvt->reply_contact),
-									SIPTAG_CONTENT_TYPE_STR("application/sdp"),
-									SIPTAG_PAYLOAD_STR(r_sdp),
-									TAG_END());
-
+							
+							if (sofia_use_soa(other_tech_pvt)) {
+								nua_ack(other_tech_pvt->nh,
+										TAG_IF(!zstr(other_tech_pvt->user_via), SIPTAG_VIA_STR(other_tech_pvt->user_via)),
+										SIPTAG_CONTACT_STR(other_tech_pvt->reply_contact),
+										SOATAG_USER_SDP_STR(r_sdp),
+										SOATAG_REUSE_REJECTED(1),
+										SOATAG_RTP_SELECT(1), 
+										SOATAG_AUDIO_AUX("cn telephone-event"),
+										TAG_IF(sofia_test_pflag(other_tech_pvt->profile, PFLAG_DISABLE_100REL), NUTAG_INCLUDE_EXTRA_SDP(1)),
+										TAG_END());
+							} else {
+								nua_ack(other_tech_pvt->nh,
+										NUTAG_MEDIA_ENABLE(0),
+										TAG_IF(!zstr(other_tech_pvt->user_via), SIPTAG_VIA_STR(other_tech_pvt->user_via)),
+										SIPTAG_CONTACT_STR(other_tech_pvt->reply_contact),
+										TAG_IF(r_sdp, SIPTAG_CONTENT_TYPE_STR("application/sdp")),
+										TAG_IF(r_sdp, SIPTAG_PAYLOAD_STR(r_sdp)),
+										SOATAG_AUDIO_AUX("cn telephone-event"),
+										TAG_END());
+							}
 
 							nua_ack(tech_pvt->nh,
 									TAG_IF(!zstr(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)),
@@ -7309,17 +7331,27 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 
 					switch_core_media_activate_rtp(session);
 
-					nua_ack(tech_pvt->nh,
-							TAG_IF(!zstr(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)),
-							SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
-							//SOATAG_USER_SDP_STR(tech_pvt->mparams.local_sdp_str),
-							TAG_IF(tech_pvt->mparams.local_sdp_str, SIPTAG_CONTENT_TYPE_STR("application/sdp")),
-							TAG_IF(tech_pvt->mparams.local_sdp_str, SIPTAG_PAYLOAD_STR(tech_pvt->mparams.local_sdp_str)),
-							//SOATAG_REUSE_REJECTED(1),
-							//SOATAG_RTP_SELECT(1), 
-							SOATAG_AUDIO_AUX("cn telephone-event"),
-							//TAG_IF(sofia_test_pflag(tech_pvt->profile, PFLAG_DISABLE_100REL), NUTAG_INCLUDE_EXTRA_SDP(1)),
-							TAG_END());
+
+					if (sofia_use_soa(tech_pvt)) {
+						nua_ack(tech_pvt->nh,
+								TAG_IF(!zstr(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)),
+								SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
+								SOATAG_USER_SDP_STR(tech_pvt->mparams.local_sdp_str),
+								SOATAG_REUSE_REJECTED(1),
+								SOATAG_RTP_SELECT(1), 
+								SOATAG_AUDIO_AUX("cn telephone-event"),
+								TAG_IF(sofia_test_pflag(tech_pvt->profile, PFLAG_DISABLE_100REL), NUTAG_INCLUDE_EXTRA_SDP(1)),
+								TAG_END());
+					} else {
+						nua_ack(tech_pvt->nh,
+								NUTAG_MEDIA_ENABLE(0),
+								TAG_IF(!zstr(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)),
+								SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
+								TAG_IF(tech_pvt->mparams.local_sdp_str, SIPTAG_CONTENT_TYPE_STR("application/sdp")),
+								TAG_IF(tech_pvt->mparams.local_sdp_str, SIPTAG_PAYLOAD_STR(tech_pvt->mparams.local_sdp_str)),
+								SOATAG_AUDIO_AUX("cn telephone-event"),
+								TAG_END());
+					}
 					
 					switch_channel_clear_flag(channel, CF_3P_MEDIA_REQUESTED);
 					goto done;
