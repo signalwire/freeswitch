@@ -3148,6 +3148,36 @@ else
     return ret;
   }
 
+  public static int switch_core_sps() {
+    int ret = freeswitchPINVOKE.switch_core_sps();
+    return ret;
+  }
+
+  public static int switch_core_sps_last() {
+    int ret = freeswitchPINVOKE.switch_core_sps_last();
+    return ret;
+  }
+
+  public static int switch_core_sps_peak() {
+    int ret = freeswitchPINVOKE.switch_core_sps_peak();
+    return ret;
+  }
+
+  public static int switch_core_sps_peak_fivemin() {
+    int ret = freeswitchPINVOKE.switch_core_sps_peak_fivemin();
+    return ret;
+  }
+
+  public static int switch_core_sessions_peak() {
+    int ret = freeswitchPINVOKE.switch_core_sessions_peak();
+    return ret;
+  }
+
+  public static int switch_core_sessions_peak_fivemin() {
+    int ret = freeswitchPINVOKE.switch_core_sessions_peak_fivemin();
+    return ret;
+  }
+
   public static void switch_cache_db_flush_handles() {
     freeswitchPINVOKE.switch_cache_db_flush_handles();
   }
@@ -6296,6 +6326,11 @@ else
 
   public static switch_status_t switch_ivr_set_user(SWIGTYPE_p_switch_core_session session, string data) {
     switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_ivr_set_user(SWIGTYPE_p_switch_core_session.getCPtr(session), data);
+    return ret;
+  }
+
+  public static switch_status_t switch_ivr_set_user_extended(SWIGTYPE_p_switch_core_session session, string data, switch_event arg2) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_ivr_set_user_extended(SWIGTYPE_p_switch_core_session.getCPtr(session), data, switch_event.getCPtr(arg2));
     return ret;
   }
 
@@ -11861,6 +11896,24 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_debug_level")]
   public static extern uint switch_core_debug_level();
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_sps")]
+  public static extern int switch_core_sps();
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_sps_last")]
+  public static extern int switch_core_sps_last();
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_sps_peak")]
+  public static extern int switch_core_sps_peak();
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_sps_peak_fivemin")]
+  public static extern int switch_core_sps_peak_fivemin();
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_sessions_peak")]
+  public static extern int switch_core_sessions_peak();
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_sessions_peak_fivemin")]
+  public static extern int switch_core_sessions_peak_fivemin();
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_cache_db_flush_handles")]
   public static extern void switch_cache_db_flush_handles();
@@ -17483,6 +17536,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_ivr_set_user")]
   public static extern int switch_ivr_set_user(HandleRef jarg1, string jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_ivr_set_user_extended")]
+  public static extern int switch_ivr_set_user_extended(HandleRef jarg1, string jarg2, HandleRef jarg3);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_ivr_set_user_xml")]
   public static extern int switch_ivr_set_user_xml(HandleRef jarg1, string jarg2, string jarg3, string jarg4, HandleRef jarg5);

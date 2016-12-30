@@ -4967,6 +4967,33 @@ fail:
 }
 
 
+static int _wrap_CoreSession_print(lua_State* L) {
+  int SWIG_arg = 0;
+  CoreSession *arg1 = (CoreSession *) 0 ;
+  char *arg2 = (char *) 0 ;
+  int result;
+  
+  SWIG_check_num_args("CoreSession::print",2,2)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("CoreSession::print",1,"CoreSession *");
+  if(!SWIG_lua_isnilstring(L,2)) SWIG_fail_arg("CoreSession::print",2,"char *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_CoreSession,0))){
+    SWIG_fail_ptr("CoreSession_print",1,SWIGTYPE_p_CoreSession);
+  }
+  
+  arg2 = (char *)lua_tostring(L, 2);
+  result = (int)(arg1)->print(arg2);
+  lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
 static int _wrap_CoreSession_preAnswer(lua_State* L) {
   int SWIG_arg = 0;
   CoreSession *arg1 = (CoreSession *) 0 ;
@@ -5718,49 +5745,10 @@ fail:
 }
 
 
-static int _wrap_CoreSession_getDigits__SWIG_2(lua_State* L) {
-  int SWIG_arg = 0;
-  CoreSession *arg1 = (CoreSession *) 0 ;
-  int arg2 ;
-  char *arg3 = (char *) 0 ;
-  int arg4 ;
-  int arg5 ;
-  int arg6 ;
-  char *result = 0 ;
-  
-  SWIG_check_num_args("CoreSession::getDigits",6,6)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("CoreSession::getDigits",1,"CoreSession *");
-  if(!lua_isnumber(L,2)) SWIG_fail_arg("CoreSession::getDigits",2,"int");
-  if(!SWIG_lua_isnilstring(L,3)) SWIG_fail_arg("CoreSession::getDigits",3,"char *");
-  if(!lua_isnumber(L,4)) SWIG_fail_arg("CoreSession::getDigits",4,"int");
-  if(!lua_isnumber(L,5)) SWIG_fail_arg("CoreSession::getDigits",5,"int");
-  if(!lua_isnumber(L,6)) SWIG_fail_arg("CoreSession::getDigits",6,"int");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_CoreSession,0))){
-    SWIG_fail_ptr("CoreSession_getDigits",1,SWIGTYPE_p_CoreSession);
-  }
-  
-  arg2 = (int)lua_tonumber(L, 2);
-  arg3 = (char *)lua_tostring(L, 3);
-  arg4 = (int)lua_tonumber(L, 4);
-  arg5 = (int)lua_tonumber(L, 5);
-  arg6 = (int)lua_tonumber(L, 6);
-  result = (char *)(arg1)->getDigits(arg2,arg3,arg4,arg5,arg6);
-  lua_pushstring(L,(const char *)result); SWIG_arg++;
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
-fail:
-  lua_error(L);
-  return SWIG_arg;
-}
-
-
 static int _wrap_CoreSession_getDigits(lua_State* L) {
   int argc;
-  int argv[7]={
-    1,2,3,4,5,6,7
+  int argv[6]={
+    1,2,3,4,5,6
   };
   
   argc = lua_gettop(L);
@@ -5827,51 +5815,11 @@ static int _wrap_CoreSession_getDigits(lua_State* L) {
       }
     }
   }
-  if (argc == 6) {
-    int _v;
-    {
-      void *ptr;
-      if (SWIG_isptrtype(L,argv[0])==0 || SWIG_ConvertPtr(L,argv[0], (void **) &ptr, SWIGTYPE_p_CoreSession, 0)) {
-        _v = 0;
-      } else {
-        _v = 1;
-      }
-    }
-    if (_v) {
-      {
-        _v = lua_isnumber(L,argv[1]);
-      }
-      if (_v) {
-        {
-          _v = SWIG_lua_isnilstring(L,argv[2]);
-        }
-        if (_v) {
-          {
-            _v = lua_isnumber(L,argv[3]);
-          }
-          if (_v) {
-            {
-              _v = lua_isnumber(L,argv[4]);
-            }
-            if (_v) {
-              {
-                _v = lua_isnumber(L,argv[5]);
-              }
-              if (_v) {
-                return _wrap_CoreSession_getDigits__SWIG_2(L);
-              }
-            }
-          }
-        }
-      }
-    }
-  }
   
   SWIG_Lua_pusherrstring(L,"Wrong arguments for overloaded function 'CoreSession_getDigits'\n"
     "  Possible C/C++ prototypes are:\n"
     "    CoreSession::getDigits(int,char *,int)\n"
-    "    CoreSession::getDigits(int,char *,int,int)\n"
-    "    CoreSession::getDigits(int,char *,int,int,int)\n");
+    "    CoreSession::getDigits(int,char *,int,int)\n");
   lua_error(L);return 0;
 }
 
@@ -6658,6 +6606,7 @@ delete arg1;
 static swig_lua_method swig_CoreSession_methods[] = {
     {"insertFile", _wrap_CoreSession_insertFile}, 
     {"answer", _wrap_CoreSession_answer}, 
+    {"print", _wrap_CoreSession_print}, 
     {"preAnswer", _wrap_CoreSession_preAnswer}, 
     {"hangup", _wrap_CoreSession_hangup}, 
     {"hangupState", _wrap_CoreSession_hangupState}, 

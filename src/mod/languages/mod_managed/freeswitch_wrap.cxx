@@ -16124,6 +16124,66 @@ SWIGEXPORT unsigned long SWIGSTDCALL CSharp_switch_core_debug_level() {
 }
 
 
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_sps() {
+  int jresult ;
+  int32_t result;
+  
+  result = (int32_t)switch_core_sps();
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_sps_last() {
+  int jresult ;
+  int32_t result;
+  
+  result = (int32_t)switch_core_sps_last();
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_sps_peak() {
+  int jresult ;
+  int32_t result;
+  
+  result = (int32_t)switch_core_sps_peak();
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_sps_peak_fivemin() {
+  int jresult ;
+  int32_t result;
+  
+  result = (int32_t)switch_core_sps_peak_fivemin();
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_sessions_peak() {
+  int jresult ;
+  int32_t result;
+  
+  result = (int32_t)switch_core_sessions_peak();
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_sessions_peak_fivemin() {
+  int jresult ;
+  int32_t result;
+  
+  result = (int32_t)switch_core_sessions_peak_fivemin();
+  jresult = result; 
+  return jresult;
+}
+
+
 SWIGEXPORT void SWIGSTDCALL CSharp_switch_cache_db_flush_handles() {
   switch_cache_db_flush_handles();
 }
@@ -39697,6 +39757,22 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_ivr_set_user(void * jarg1, char * jarg2
   arg1 = (switch_core_session_t *)jarg1; 
   arg2 = (char *)jarg2; 
   result = (switch_status_t)switch_ivr_set_user(arg1,(char const *)arg2);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_ivr_set_user_extended(void * jarg1, char * jarg2, void * jarg3) {
+  int jresult ;
+  switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
+  char *arg2 = (char *) 0 ;
+  switch_event_t *arg3 = (switch_event_t *) 0 ;
+  switch_status_t result;
+  
+  arg1 = (switch_core_session_t *)jarg1; 
+  arg2 = (char *)jarg2; 
+  arg3 = (switch_event_t *)jarg3; 
+  result = (switch_status_t)switch_ivr_set_user_extended(arg1,(char const *)arg2,arg3);
   jresult = result; 
   return jresult;
 }
