@@ -98,6 +98,23 @@ KS_DECLARE(void) ks_dht_job_build_put(ks_dht_job_t *job,
 	job->query_storageitem = item;
 }
 
+KS_DECLARE(void) ks_dht_job_build_search_findnode(ks_dht_job_t *job,
+										   ks_dht_nodeid_t *target,
+										   uint32_t family,
+                                           ks_dht_job_callback_t query_callback,
+                                           ks_dht_job_callback_t finish_callback)
+{
+	ks_assert(job);
+	ks_assert(target);
+	ks_assert(family);
+
+	job->search = NULL;
+	job->query_callback = query_callback;
+	job->finish_callback = finish_callback;
+	job->query_target = *target;
+	job->query_family = family;
+}
+
 KS_DECLARE(void) ks_dht_job_destroy(ks_dht_job_t **job)
 {
 	ks_dht_job_t *j;

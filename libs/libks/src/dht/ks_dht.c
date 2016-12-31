@@ -3046,6 +3046,43 @@ KS_DECLARE(ks_status_t) ks_dht_process_response_put(ks_dht_t *dht, ks_dht_job_t 
 	return ret;
 }
 
+KS_DECLARE(ks_status_t) ks_dht_exec_search_findnode(ks_dht_t *dht, ks_dht_job_t *job) 
+{
+	 return	ks_dht_search_findnode(dht,
+									job->query_family,
+									&job->query_target,
+									NULL, 
+									NULL);
+}
+
+KS_DECLARE(ks_status_t) ks_dht_queue_search_findnode(ks_dht_t* dht,
+										ks_dhtrt_routetable_t *rt, 
+										ks_dht_nodeid_t *target, 
+										ks_dht_job_callback_t callback)
+{
+	ks_dht_job_t *job = NULL;
+	ks_status_t ret = KS_STATUS_SUCCESS;
+
+	ks_assert(dht);
+	ks_assert(rt);
+	ks_assert(target);
+
+	ks_sockaddr_t taddr;   /* just to satisfy the api */
+
+	if ((ret = ks_dht_job_create(&job, dht->pool, &taddr, 3)) == KS_STATUS_SUCCESS) {
+
+		int32_t family = AF_INET;
+	
+		if (rt == dht->rt_ipv6) {
+			family = AF_INET6;
+		}
+
+		ks_dht_job_build_search_findnode(job, target, family, ks_dht_exec_search_findnode, callback);
+	}
+
+	return ret;
+}
+
 /* For Emacs:
  * Local Variables:
  * mode:c

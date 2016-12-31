@@ -145,6 +145,7 @@ struct ks_dht_job_s {
 	int64_t query_cas;
 	ks_dht_token_t query_token;
 	ks_dht_storageitem_t *query_storageitem;
+    uint32_t query_family;
 
 	// job specific response parameters
 	ks_dht_nodeid_t response_id;
@@ -479,6 +480,14 @@ KS_DECLARE(ks_status_t) ks_dht_search_findnode(ks_dht_t *dht,
 											   ks_dht_nodeid_t *target,
 											   ks_dht_search_callback_t callback,
 											   ks_dht_search_t **search);
+
+KS_DECLARE(ks_status_t) ks_dht_queue_search_findnode(ks_dht_t* dht,
+											ks_dhtrt_routetable_t *rt,
+											ks_dht_nodeid_t *target,
+											ks_dht_job_callback_t callback);
+										
+KS_DECLARE(ks_status_t) ks_dht_exec_search_findnode(ks_dht_t *dht, ks_dht_job_t *job);
+
 
 
 /**

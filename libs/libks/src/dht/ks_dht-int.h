@@ -296,6 +296,11 @@ KS_DECLARE(void) ks_dht_job_build_put(ks_dht_job_t *job,
 									  ks_dht_token_t *token,
 									  int64_t cas,
 									  ks_dht_storageitem_t *item);
+KS_DECLARE(void) ks_dht_job_build_search_findnode(ks_dht_job_t *job,
+									ks_dht_nodeid_t *target,
+									uint32_t family,
+									ks_dht_job_callback_t query_callback,
+									ks_dht_job_callback_t finish_callback);
 KS_DECLARE(void) ks_dht_job_destroy(ks_dht_job_t **job);
 
 

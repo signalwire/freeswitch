@@ -548,6 +548,117 @@ void test07()
 }
 
 
+void test08()
+{
+     printf("**** testbuckets - test08 start\n"); fflush(stdout);
+
+     ks_dht_node_t  *peer;
+     memset(g_nodeid1.id,  0xef, KS_DHT_NODEID_SIZE);
+     memset(g_nodeid2.id,  0xef, KS_DHT_NODEID_SIZE);
+
+     char ipv6[] = "1234:1234:1234:1234";
+     char ipv4[] = "123.123.123.123";
+    unsigned short port = 7000;
+
+    /* build a delete queue */
+
+    int cix=0;
+
+    for(int i0=0, i1=0; i0<150; ++i0, ++i1) {
+        if (i0%20 == 0) {
+            g_nodeid2.id[cix]>>=1;
+            //ks_dhtrt_dump(rt, 7);
+            if ( g_nodeid2.id[cix] == 0) ++cix;
+            g_nodeid2.id[19] = 0;
+        }
+        else {
+            ++g_nodeid2.id[19];
+        }
+        ks_dhtrt_create_node(rt, g_nodeid2, KS_DHT_REMOTE, ipv4, port, KS_DHTRT_CREATE_DEFAULT, &peer);
+        ks_dhtrt_touch_node(rt, g_nodeid2);
+        ks_dhtrt_release_node(peer);
+     }
+
+    cix = 0;
+
+     memset(g_nodeid2.id,  0xef, KS_DHT_NODEID_SIZE);
+     for (int i0=0, i1=0; i0<150; ++i0, ++i1) {
+         if (i0%20 == 0) {
+            g_nodeid2.id[cix]>>=1;
+            if ( g_nodeid2.id[cix] == 0) ++cix;
+            g_nodeid2.id[19] = 0;
+         }
+         else {
+            ++g_nodeid2.id[19];
+         }
+        ks_dht_node_t* n = ks_dhtrt_find_node(rt, g_nodeid2);
+        ks_dhtrt_release_node(n);
+        ks_dhtrt_delete_node(rt, n);
+     }
+
+	/* this should drive the search_findnode */
+
+   for(int i=0; i<45; ++i) {
+     printf("firing process table\n");
+     ks_dhtrt_process_table(rt);
+     ks_sleep(1000 * 1000 * 60);   /* sleep one minutes */
+   }
+
+    printf("**** testbuckets - test08 ended\n"); fflush(stdout);
+}
+
+
+void test09()
+{
+     printf("**** testbuckets - test09 start\n"); fflush(stdout);
+
+     ks_dht_node_t  *peer;
+     memset(g_nodeid1.id,  0xef, KS_DHT_NODEID_SIZE);
+     memset(g_nodeid2.id,  0xef, KS_DHT_NODEID_SIZE);
+
+     char ipv6[] = "1234:1234:1234:1234";
+     char ipv4[] = "123.123.123.123";
+    unsigned short port = 7000;
+
+    /* build a delete queue */
+
+    int cix=0;
+
+    for(int i0=0, i1=0; i0<150; ++i0, ++i1) {
+        if (i0%20 == 0) {
+            g_nodeid2.id[cix]>>=1;
+            //ks_dhtrt_dump(rt, 7);
+            if ( g_nodeid2.id[cix] == 0) ++cix;
+            g_nodeid2.id[19] = 0;
+        }
+        else {
+            ++g_nodeid2.id[19];
+        }
+        ks_dhtrt_create_node(rt, g_nodeid2, KS_DHT_REMOTE, ipv4, port, KS_DHTRT_CREATE_DEFAULT, &peer);
+        ks_dhtrt_touch_node(rt, g_nodeid2);
+        ks_dhtrt_release_node(peer);
+     }
+
+    /* this should expire all nodes after 15 minutes and 3 pings */
+
+   printf("\n\n\n\n");
+
+   for(int i=0; i<45; ++i) {
+     printf("firing process table\n");
+     ks_dhtrt_process_table(rt);
+     ks_sleep(1000 * 1000 * 30);   /* sleep 30 seconds */
+   }
+
+    printf("**** testbuckets - test09 ended\n"); fflush(stdout);
+}
+
+
+
+
+
+
+
+
 static int gindex = 1;
 static ks_mutex_t *glock;
 static int gstop = 0;
@@ -1020,13 +1131,28 @@ int main(int argc, char *argv[]) {
 			continue;
 		}
 
-
 	     if (tests[tix] == 7) {
 	         ks_dhtrt_initroute(&rt, dht, pool);
 	         test07();
 	         ks_dhtrt_deinitroute(&rt);
 	         continue;
 	     }
+
+         if (tests[tix] == 8) {
+             ks_dhtrt_initroute(&rt, dht, pool);
+             test08();
+             ks_dhtrt_deinitroute(&rt);
+             continue;
+         }
+
+         if (tests[tix] == 9) {
+             ks_dhtrt_initroute(&rt, dht, pool);
+             test09();
+             ks_dhtrt_deinitroute(&rt);
+             continue;
+         }
+
+
 
 		if (tests[tix] == 30) {
 			ks_dhtrt_initroute(&rt, dht, pool);
