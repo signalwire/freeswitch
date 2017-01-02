@@ -48,10 +48,9 @@ enum {
 	MSRP_METHOD_SEND,
 	MSRP_METHOD_AUTH,
 	MSRP_METHOD_REPORT,
-
 };
 
-enum {
+typedef enum {
 	MSRP_H_FROM_PATH,
 	MSRP_H_TO_PATH,
 	MSRP_H_MESSAGE_ID,
@@ -60,8 +59,14 @@ enum {
 	MSRP_H_FAILURE_REPORT,
 	MSRP_H_STATUS,
 	MSRP_H_KEEPALIVE,
+
+	/* Fake headers */
+	MSRP_H_TRASACTION_ID,
+	MSRP_H_DELIMITER,
+	MSRP_H_CODE_DESCRIPTION,
+
 	MSRP_H_UNKNOWN
-};
+} switch_msrp_header_type_t;
 
 typedef struct switch_msrp_session_s switch_msrp_session_t;
 typedef struct msrp_client_socket_s switch_msrp_client_socket_t;
@@ -70,16 +75,16 @@ typedef struct msrp_socket_s switch_msrp_socket_t;
 typedef struct msrp_msg_s {
 	int state;
 	int method;
-	char *headers[12];
-	int last_header;
-	char *transaction_id;
-	char *delimiter;
+	switch_event_t *headers;
+	const char *transaction_id;
+	const char *delimiter;
 	int code_number;
-	char *code_description;
+	const char *code_description;
 	switch_size_t byte_start;
 	switch_size_t byte_end;
 	switch_size_t bytes;
 	switch_size_t payload_bytes;
+	switch_size_t accumulated_bytes;
 	int range_star; /* range-end is '*' */
 	char *last_p;
 	char *payload;
@@ -125,7 +130,15 @@ SWITCH_DECLARE(switch_status_t) switch_msrp_perform_send(switch_msrp_session_t *
 SWITCH_DECLARE(switch_status_t) switch_msrp_start_client(switch_msrp_session_t *msrp_session);
 SWITCH_DECLARE(const char *) switch_msrp_listen_ip(void);
 
+SWITCH_DECLARE(switch_msrp_msg_t*) switch_msrp_msg_create();
+SWITCH_DECLARE(void) switch_msrp_msg_destroy(switch_msrp_msg_t **msg);
+
 SWITCH_DECLARE(void) switch_msrp_load_apis_and_applications(switch_loadable_module_interface_t **moudle_interface);
+SWITCH_DECLARE(const char*) switch_msrp_msg_get_header(switch_msrp_msg_t *msrp_msg, switch_msrp_header_type_t htype);
+SWITCH_DECLARE(switch_status_t) switch_msrp_msg_add_header(switch_msrp_msg_t *msrp_msg, switch_msrp_header_type_t htype, char *fmt, ...);
+SWITCH_DECLARE(void) switch_msrp_msg_set_payload(switch_msrp_msg_t *msrp_msg, const char *buf, switch_size_t payload_bytes);
+SWITCH_DECLARE(char*) switch_msrp_header_name(switch_msrp_header_type_t htype);
+SWITCH_DECLARE(switch_msrp_msg_t *) switch_msrp_msg_dup(switch_msrp_msg_t *msg);
 
 #define switch_msrp_send(ms, msg) switch_msrp_perform_send(ms, msg, __FILE__, __SWITCH_FUNC__, __LINE__)
 

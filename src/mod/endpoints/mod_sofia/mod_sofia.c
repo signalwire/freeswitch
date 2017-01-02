@@ -958,46 +958,40 @@ static switch_status_t sofia_read_text_frame(switch_core_session_t *session, swi
 		switch_msrp_session_t *msrp_session = switch_core_media_get_msrp_session(session);
 		switch_frame_t *rframe = &msrp_session->frame;
 		switch_msrp_msg_t *msrp_msg = switch_msrp_session_pop_msg(msrp_session);
+		const char *msrp_h_content_type = NULL;
+
+		if (msrp_msg) {
+			msrp_h_content_type = switch_msrp_msg_get_header(msrp_msg, MSRP_H_CONTENT_TYPE);
+		}
 
 		rframe->flags = 0;
-
-#if 0
-		if (msrp_msg && msrp_msg->method == MSRP_METHOD_SEND) { /*echo back*/
-			char *p;
-			p = msrp_msg->headers[MSRP_H_TO_PATH];
-			msrp_msg->headers[MSRP_H_TO_PATH] = msrp_msg->headers[MSRP_H_FROM_PATH];
-			msrp_msg->headers[MSRP_H_FROM_PATH] = p;
-			switch_msrp_send(msrp_session, msrp_msg);
-		}
-#endif
-
 		rframe->data = msrp_session->frame_data;
 		rframe->buflen = sizeof(msrp_session->frame_data);
 
 		if (msrp_msg && msrp_msg->method == MSRP_METHOD_SEND &&
+			msrp_msg->payload &&
 			!switch_stristr("?OTRv3?", msrp_msg->payload) &&
 			!switch_stristr("application/im-iscomposing", msrp_msg->payload) &&
-			msrp_msg->headers[MSRP_H_CONTENT_TYPE] &&
-			(switch_stristr("text/plain", msrp_msg->headers[MSRP_H_CONTENT_TYPE]) ||
-			 switch_stristr("text/html", msrp_msg->headers[MSRP_H_CONTENT_TYPE]) ||
-			 switch_stristr("message/cpim", msrp_msg->headers[MSRP_H_CONTENT_TYPE]))) {
+			msrp_h_content_type &&
+			(switch_stristr("text/plain", msrp_h_content_type) ||
+			 switch_stristr("text/html", msrp_h_content_type) ||
+			 switch_stristr("message/cpim", msrp_h_content_type))) {
+
 			rframe->datalen = msrp_msg->payload_bytes;
-			rframe->packetlen = msrp_msg->payload_bytes;
-			memcpy(rframe->data, msrp_msg->payload, msrp_msg->payload_bytes);
-			
+			rframe->packetlen = msrp_msg->payload_bytes + 12;
+			memcpy(rframe->data, msrp_msg->payload, msrp_msg->payload_bytes + 1); /* include the last NULL byte */
+
 			rframe->m = 1;
-			
 			*frame = rframe;
-			
-			if (msrp_msg->headers[MSRP_H_CONTENT_TYPE] && !strcasecmp(msrp_msg->headers[MSRP_H_CONTENT_TYPE], "message/cpim")) {
+
+			if (msrp_h_content_type && !strcasecmp(msrp_h_content_type, "message/cpim")) {
 				char *stripped_text = switch_html_strip((char *)rframe->data);
 				memcpy(rframe->data, stripped_text, strlen(stripped_text)+1);
 				rframe->datalen = strlen(stripped_text)+1;
 				free(stripped_text);
 			}
 
-			switch_safe_free(msrp_msg);
-			msrp_msg = NULL;
+			switch_msrp_msg_destroy(&msrp_msg);
 			status = SWITCH_STATUS_SUCCESS;
 		} else {
 			rframe->datalen = 2;
@@ -1009,8 +1003,6 @@ static switch_status_t sofia_read_text_frame(switch_core_session_t *session, swi
 		return status;
 	}
 
-
-
 	return switch_core_media_read_frame(session, frame, flags, stream_id, SWITCH_MEDIA_TYPE_TEXT);
 }
 
@@ -1020,13 +1012,15 @@ static switch_status_t sofia_write_text_frame(switch_core_session_t *session, sw
 		switch_msrp_session_t *msrp_session = switch_core_media_get_msrp_session(session);
 
 		if (frame && msrp_session) {
-			switch_msrp_msg_t msrp_msg = { 0 };
+			switch_msrp_msg_t *msrp_msg = switch_msrp_msg_create();
+			switch_status_t status = SWITCH_STATUS_SUCCESS;
 
-			//msrp_msg.headers[MSRP_H_CONTENT_TYPE] = "message/cpim";
-			msrp_msg.headers[MSRP_H_CONTENT_TYPE] = "text/plain";
-			msrp_msg.payload = frame->data;
-			msrp_msg.payload_bytes = frame->datalen;
-			return switch_msrp_send(msrp_session, &msrp_msg);
+			// switch_msrp_msg_add_header(&msrp_msg, MSRP_H_CONTENT_TYPE, "message/cpim");
+			switch_msrp_msg_add_header(msrp_msg, MSRP_H_CONTENT_TYPE, "text/plain");
+			switch_msrp_msg_set_payload(msrp_msg, frame->data, frame->datalen);
+			status = switch_msrp_send(msrp_session, msrp_msg);
+			switch_msrp_msg_destroy(&msrp_msg);
+			return status;
 		}
 
 		return SWITCH_STATUS_FALSE;

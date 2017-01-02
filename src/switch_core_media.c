@@ -10509,7 +10509,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 				msrp_session->active ? "active" : "passive");
 
 			if (!zstr(file_selector)) {
-				switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf),
+				switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf),
 					"a=sendonly\na=file-selector:%s\n", file_selector);
 			}
 		}
