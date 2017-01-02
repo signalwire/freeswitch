@@ -91,14 +91,17 @@ typedef struct msrp_socket_s {
 	int secure;
 } msrp_socket_t;
 
-typedef struct msrp_client_socket_s {
+struct msrp_client_socket_s {
 	switch_socket_t *sock;
 	int secure;
-} msrp_client_socket_t;
+	int client_mode;
+	struct switch_msrp_session_s *msrp_session;
+};
 
-typedef struct {
+struct switch_msrp_session_s{
 	switch_memory_pool_t *pool;
 	int secure;
+	int active;
 	char *remote_path;
 	char *remote_accept_types;
 	char *remote_accept_wrapped_types;
@@ -117,20 +120,30 @@ typedef struct {
 	switch_size_t msrp_msg_buffer_size;
 	switch_size_t msrp_msg_count;
 	msrp_socket_t *msock;
-	msrp_client_socket_t *csock;
+	struct msrp_client_socket_s *csock;
 	switch_frame_t frame;
 	uint8_t frame_data[SWITCH_RTP_MAX_BUF_LEN];
-} switch_msrp_session_t;
+	int running;
+	void *user_data;
+};
+
+typedef struct msrp_client_socket_s msrp_client_socket_t;
+typedef struct switch_msrp_session_s switch_msrp_session_t;
 
 SWITCH_DECLARE(switch_status_t) switch_msrp_init(void);
 SWITCH_DECLARE(switch_status_t) switch_msrp_destroy(void);
-SWITCH_DECLARE(switch_msrp_session_t *)switch_msrp_session_new(switch_memory_pool_t *pool, switch_bool_t secure);
+SWITCH_DECLARE(switch_msrp_session_t *)switch_msrp_session_new(switch_memory_pool_t *pool, const char *call_id, switch_bool_t secure);
 SWITCH_DECLARE(switch_status_t) switch_msrp_session_destroy(switch_msrp_session_t **ms);
 // switch_status_t switch_msrp_session_push_msg(switch_msrp_session_t *ms, msrp_msg_t *msg);
 SWITCH_DECLARE(switch_msrp_msg_t *)switch_msrp_session_pop_msg(switch_msrp_session_t *ms);
-SWITCH_DECLARE(switch_status_t) switch_msrp_send(switch_msrp_session_t *ms, msrp_msg_t *msg);
+SWITCH_DECLARE(switch_status_t) switch_msrp_perform_send(switch_msrp_session_t *ms, msrp_msg_t *msg, const char *file, const char *func, int line);
+SWITCH_DECLARE(switch_status_t) switch_msrp_start_client(switch_msrp_session_t *msrp_session);
+SWITCH_DECLARE(const char *) switch_msrp_listen_ip(void);
 
 SWITCH_DECLARE(void) switch_msrp_load_apis_and_applications(switch_loadable_module_interface_t **moudle_interface);
+
+#define switch_msrp_send(ms, msg) switch_msrp_perform_send(ms, msg, __FILE__, __SWITCH_FUNC__, __LINE__)
+
 #endif
 
 /* For Emacs:
