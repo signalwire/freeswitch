@@ -1,6 +1,6 @@
 /*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2011-2016, Seven Du <dujinfang@gmail.com>
+ * Copyright (C) 2011-2017, Seven Du <dujinfang@gmail.com>
  *
  * Version: MPL 1.1
  *
@@ -33,6 +33,8 @@
 #define _MSRP_H
 
 #include <switch.h>
+#include <switch_ssl.h>
+
 
 #define MSRP_LISTEN_PORT 2855
 #define MSRP_SSL_LISTEN_PORT 2856
@@ -93,6 +95,7 @@ typedef struct msrp_socket_s {
 
 struct msrp_client_socket_s {
 	switch_socket_t *sock;
+	SSL *ssl;
 	int secure;
 	int client_mode;
 	struct switch_msrp_session_s *msrp_session;
