@@ -673,12 +673,12 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 			conference_file_node_t *fnode;
 			switch_memory_pool_t *pool;
 
-			if (conference->canvases[0] && conference->fnode->layer_id > -1 ) {
-				conference_video_canvas_del_fnode_layer(conference, conference->fnode);
-			}
-
 			if (conference->fnode->type != NODE_TYPE_SPEECH) {
 				conference_file_close(conference, conference->fnode);
+			}
+
+			if (conference->canvases[0] && conference->fnode->layer_id > -1 ) {
+				conference_video_canvas_del_fnode_layer(conference, conference->fnode);
 			}
 
 			fnode = conference->fnode;
