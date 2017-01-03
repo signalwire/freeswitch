@@ -147,7 +147,7 @@ void conference_video_parse_layouts(conference_obj_t *conference, int WIDTH, int
 					if ((val = switch_xml_attr(x_image, "x"))) {
 						x = atoi(val);
 					}
-
+					
 					if ((val = switch_xml_attr(x_image, "y"))) {
 						y = atoi(val);
 					}
@@ -171,9 +171,9 @@ void conference_video_parse_layouts(conference_obj_t *conference, int WIDTH, int
 					if ((val = switch_xml_attr(x_image, "floor-only"))) {
 						flooronly = floor = switch_true(val);
 					}
-
+					
 					if ((val = switch_xml_attr(x_image, "file-only"))) {
-						fileonly = floor = switch_true(val);
+						fileonly = switch_true(val);
 					}
 
 					if ((val = switch_xml_attr(x_image, "overlap"))) {
@@ -206,6 +206,10 @@ void conference_video_parse_layouts(conference_obj_t *conference, int WIDTH, int
 					
 					if (!border) border = conference->video_border_size;
 					
+					if (fileonly) {
+						floor = flooronly = 0;
+					}
+
 					vlayout->images[vlayout->layers].border = border;
 					vlayout->images[vlayout->layers].x = x;
 					vlayout->images[vlayout->layers].y = y;
@@ -216,7 +220,8 @@ void conference_video_parse_layouts(conference_obj_t *conference, int WIDTH, int
 					vlayout->images[vlayout->layers].flooronly = flooronly;
 					vlayout->images[vlayout->layers].fileonly = fileonly;
 					vlayout->images[vlayout->layers].overlap = overlap;
-
+					
+					
 					if (res_id) {
 						vlayout->images[vlayout->layers].res_id = switch_core_strdup(conference->pool, res_id);
 					}
@@ -251,7 +256,7 @@ void conference_video_parse_layouts(conference_obj_t *conference, int WIDTH, int
 							vlayout->images[vlayout->layers].audio_position = switch_core_strdup(conference->pool, audio_position);
 						}
 					}
-
+					
 					vlayout->layers++;
 				}
 
@@ -1048,6 +1053,8 @@ void conference_video_init_canvas_layers(conference_obj_t *conference, mcu_canva
 		layer->geometry.zoom = vlayout->images[i].zoom;
 		layer->geometry.border = vlayout->images[i].border;
 		layer->geometry.floor = vlayout->images[i].floor;
+		layer->geometry.flooronly = vlayout->images[i].flooronly;
+		layer->geometry.fileonly = vlayout->images[i].fileonly;
 		layer->geometry.overlap = vlayout->images[i].overlap;
 		layer->idx = i;
 		layer->refresh = 1;
@@ -1806,7 +1813,7 @@ void conference_video_patch_fnode(mcu_canvas_t *canvas, conference_file_node_t *
 		mcu_layer_t *layer = &canvas->layers[fnode->layer_id];
 		switch_frame_t file_frame = { 0 };
 		switch_status_t status = switch_core_file_read_video(&fnode->fh, &file_frame, SVR_FLUSH);
-
+		
 		if (status == SWITCH_STATUS_SUCCESS) {
 			switch_img_free(&layer->cur_img);
 			layer->cur_img = file_frame.img;
@@ -1898,7 +1905,7 @@ switch_status_t conference_video_find_layer(conference_obj_t *conference, mcu_ca
 					conference_video_attach_video_layer(member, canvas, i);
 					break;
 				}
-			} else if (xlayer->geometry.flooronly && !xlayer->fnode) {
+			} else if (xlayer->geometry.flooronly && !xlayer->fnode && !xlayer->geometry.fileonly) {
 				if (member->id == conference->video_floor_holder) {
 					layer = xlayer;
 					conference_video_attach_video_layer(member, canvas, i);
@@ -1909,7 +1916,6 @@ switch_status_t conference_video_find_layer(conference_obj_t *conference, mcu_ca
 											   (conference->canvas_count > 1 || xlayer->member_id != (int)conference->video_floor_holder))) &&
 					   !xlayer->fnode && !xlayer->geometry.fileonly) {
 				switch_status_t lstatus;
-
 				lstatus = conference_video_attach_video_layer(member, canvas, i);
 
 				if (lstatus == SWITCH_STATUS_SUCCESS || lstatus == SWITCH_STATUS_BREAK) {
