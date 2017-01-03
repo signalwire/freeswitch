@@ -1,6 +1,6 @@
 /*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2011-2016, Seven Du <dujinfang@gmail.com>
+ * Copyright (C) 2011-2017, Seven Du <dujinfang@gmail.com>
  *
  * Version: MPL 1.1
  *
@@ -30,7 +30,6 @@
  */
 
 #include <switch.h>
-#include <switch_ssl.h>
 #include <switch_msrp.h>
 #include <switch_stun.h>
 
@@ -49,8 +48,9 @@ static struct {
 	char *key;
 	const SSL_METHOD *ssl_method;
 	SSL_CTX *ssl_ctx;
-	SSL *ssl;
 	int ssl_ready;
+	const SSL_METHOD *ssl_client_method;
+	SSL_CTX *ssl_client_ctx;
 
 	msrp_socket_t msock;
 	msrp_socket_t msock_ssl;
@@ -75,7 +75,10 @@ static int msrp_init_ssl()
 {
 	const char *err = "";
 
-	SSL_library_init();
+	globals.ssl_client_method = SSLv23_client_method();
+	globals.ssl_client_ctx = SSL_CTX_new(globals.ssl_client_method);
+	assert(globals.ssl_client_ctx);
+	SSL_CTX_set_options(globals.ssl_client_ctx, SSL_OP_NO_SSLv2);
 
 	globals.ssl_method = SSLv23_server_method();   /* create server instance */
 	globals.ssl_ctx = SSL_CTX_new(globals.ssl_method);    /* create context */
@@ -430,9 +433,12 @@ static switch_status_t msrp_socket_recv(msrp_client_socket_t *csock, char *buf, 
 
 	if (csock->secure) {
 		switch_ssize_t r;
-		r = SSL_read(globals.ssl, buf, *len);
+		r = SSL_read(csock->ssl, buf, *len);
 		if (r < 0) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "TLS read error: %" SWITCH_SSIZE_T_FMT "\n", r);
+			int error = SSL_get_error(csock->ssl, r);
+			if (!(SSL_ERROR_SYSCALL == error && errno == 9)) {// socket closed
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "TLS read error: ret=%" SWITCH_SSIZE_T_FMT " error=%d errno=%d\n", r, error, errno);
+			}
 			*len = 0;
 		} else {
 			*len = r;
@@ -448,7 +454,7 @@ static switch_status_t msrp_socket_recv(msrp_client_socket_t *csock, char *buf, 
 static switch_status_t msrp_socket_send(msrp_client_socket_t *csock, char *buf, switch_size_t *len)
 {
 	if (csock->secure) {
-		*len = SSL_write(globals.ssl, buf, *len);
+		*len = SSL_write(csock->ssl, buf, *len);
 		return *len ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
 	} else {
 		return switch_socket_send(csock->sock, buf, len);
@@ -961,7 +967,41 @@ static void *SWITCH_THREAD_FUNC msrp_worker(switch_thread_t *thread, void *obj)
 		switch_socket_timeout_set(csock->sock, -1);
 
 		if (msrp_session->secure) {
-			// todo setup tls ...
+			X509 *cert = NULL;
+			switch_os_socket_t sockdes = SWITCH_SOCK_INVALID;
+			int ret;
+
+			switch_os_sock_get(&sockdes, csock->sock);
+			switch_assert(sockdes != SWITCH_SOCK_INVALID);
+
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "MSRP setup TLS %s\n", msrp_session->call_id);
+
+			ssl = SSL_new(globals.ssl_client_ctx);
+			assert(ssl);
+			csock->ssl = ssl;
+			SSL_set_fd(ssl, sockdes);
+
+			if ((ret = SSL_connect(ssl)) != 1 ) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error: Could not build a SSL session to: %s error=%d\n", msrp_session->remote_path, SSL_get_error(ssl, ret));
+				goto end;
+			}
+
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Successfully enabled SSL/TLS session to: %s\n", msrp_session->remote_path);
+
+			cert = SSL_get_peer_certificate(ssl);
+
+			if (cert == NULL) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error: Could not get a certificate from: %s\n", msrp_session->remote_path);
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Got SSL Cert from %s\n", msrp_session->remote_path);
+#if 0
+				certname = X509_NAME_new();
+				certname = X509_get_subject_name(cert);
+
+				X509_NAME_print_ex(outbio, certname, 0, 0);
+				BIO_printf(outbio, "\n");
+#endif
+			}
 		}
 
 		helper->msrp_session->csock = csock;
@@ -982,6 +1022,7 @@ static void *SWITCH_THREAD_FUNC msrp_worker(switch_thread_t *thread, void *obj)
 			int secure_established = 0;
 			int sanity = 10;
 			switch_os_socket_t sockdes = SWITCH_SOCK_INVALID;
+			int code = 0;
 
 			switch_os_sock_get(&sockdes, csock->sock);
 			// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "socket: %d\n", sockdes);
@@ -989,23 +1030,19 @@ static void *SWITCH_THREAD_FUNC msrp_worker(switch_thread_t *thread, void *obj)
 
 			ssl = SSL_new(globals.ssl_ctx);
 			assert(ssl);
-			globals.ssl = ssl;
+			csock->ssl = ssl;
 
 			SSL_set_fd(ssl, sockdes);
 
 			do {
-				int code = SSL_accept(ssl);
+				code = SSL_accept(ssl);
 
 				if (code == 1) {
 					secure_established = 1;
 					goto done;
-				}
-
-				if (code == 0) {
+				} else if (code == 0) {
 					goto err;
-				}
-
-				if (code < 0) {
+				} else if (code < 0) {
 					if (code == -1 && SSL_get_error(ssl, code) != SSL_ERROR_WANT_READ) {
 						goto err;
 					}
@@ -1013,7 +1050,7 @@ static void *SWITCH_THREAD_FUNC msrp_worker(switch_thread_t *thread, void *obj)
 			} while(sanity--);
 
 			err:
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SSL ERR\n");
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SSL ERR code=%d error=%d\n", code, SSL_get_error(ssl, code));
 				goto end;
 
 			done:
@@ -1084,7 +1121,7 @@ static void *SWITCH_THREAD_FUNC msrp_worker(switch_thread_t *thread, void *obj)
 	switch_safe_free(msrp_msg);
 	msrp_msg = NULL;
 
-	while (msrp_socket_recv(csock, p, &len) == SWITCH_STATUS_SUCCESS) {
+	while (msrp_socket_recv(csock, p, &len) == SWITCH_STATUS_SUCCESS && len > 0) {
 		// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "read bytes:%" SWITCH_SIZE_T_FMT "\n", len);
 
 		if (helper->debug) dump_buffer(buf, (p - buf) + len, __LINE__);
@@ -1123,9 +1160,8 @@ static void *SWITCH_THREAD_FUNC msrp_worker(switch_thread_t *thread, void *obj)
 			last_p = msrp_msg->last_p;
 		}
 
-		while (msrp_session && msrp_session->msrp_msg_count > msrp_session->msrp_msg_buffer_size) {
-			if (!msrp_session->running) break;
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "%s reading too fast, relax...\n", uuid);
+		while (msrp_session && msrp_session->running && msrp_session->msrp_msg_count > msrp_session->msrp_msg_buffer_size) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "%s reading too fast, relax...\n", msrp_session->call_id);
 			switch_yield(100000);
 		}
 
@@ -1200,14 +1236,20 @@ static void *SWITCH_THREAD_FUNC msrp_worker(switch_thread_t *thread, void *obj)
 	}
 
 end:
-	switch_mutex_lock(msrp_session->mutex);
-	close_socket(&csock->sock);
-	switch_mutex_unlock(msrp_session->mutex);
+
+	if (msrp_session) {
+		switch_mutex_lock(msrp_session->mutex);
+		close_socket(&csock->sock);
+		switch_mutex_unlock(msrp_session->mutex);
+	}
 
 	if (!client_mode) switch_core_destroy_memory_pool(&pool);
 
-	msrp_session->running = 0;
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "MSRP worker down %s\n", msrp_session->call_id);
+	if (client_mode && ssl) SSL_free(ssl);
+
+	if (msrp_session) msrp_session->running = 0;
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "MSRP worker down %s\n", msrp_session ? msrp_session->call_id : "!");
 
 	return NULL;
 }
