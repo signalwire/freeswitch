@@ -60,10 +60,23 @@ typedef struct {
 
 extern module_manager_t module_manager;
 
+/* Struct that stores XML handler information */
+typedef struct {
+	const char *section;
+	const char *tag_name;
+	const char *key_name;
+	const char *key_value;
+	switch_event_t *params;
+	void *user_data;
+	char* XML_STRING;
+} v8_xml_handler_t;
+
 SWITCH_END_EXTERN_C
 
 void v8_add_event_handler(void *event_handler);
 void v8_remove_event_handler(void *event_handler);
+static switch_xml_t v8_fetch(const char *section,
+	const char *tag_name, const char *key_name, const char *key_value, switch_event_t *params, void *user_data);
 
 #endif /* MOD_V8_H */
 

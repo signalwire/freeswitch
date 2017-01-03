@@ -25,6 +25,7 @@
  * Peter Olsson <peter@olssononline.se>
  * Anthony Minessale II <anthm@freeswitch.org>
  * William King <william.king@quentustech.com>
+ * Andrey Volk <andywolk@gmail.com>
  *
  * mod_v8.cpp -- JavaScript FreeSWITCH module
  *
@@ -35,6 +36,7 @@
  *
  * It extends the available JavaScript classes with the following FS related classes;
  * CoreDB		Adds features to access the core DB (SQLite) in FreeSWITCH. (on request only)
+ * DBH			Database Handler. Makes use of connection pooling provided by FreeSWITCH. (on request only)
  * CURL			Adds some extra methods for CURL access. (on request only)
  * DTMF			Object that holds information about a DTMF event.
  * Event		Object that holds information about a FreeSWITCH event.
@@ -117,6 +119,7 @@ typedef struct {
 	switch_mutex_t *event_mutex;
 	switch_event_node_t *event_node;
 	set<FSEventHandler *> *event_handlers;
+	char *xml_handler;
 } mod_v8_global_t;
 
 mod_v8_global_t globals = { 0 };
@@ -273,7 +276,24 @@ static switch_status_t load_modules(void)
 	switch_core_hash_init(&module_manager.load_hash);
 
 	if ((xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
-		switch_xml_t mods, ld;
+		switch_xml_t mods, ld, settings, param;
+
+		if ((settings = switch_xml_child(cfg, "settings"))) {
+			for (param = switch_xml_child(settings, "param"); param; param = param->next) {
+				char *var = (char *)switch_xml_attr_soft(param, "name");
+				char *val = (char *)switch_xml_attr_soft(param, "value");
+
+				if (!strcmp(var, "xml-handler-script")) {
+					globals.xml_handler = switch_core_strdup(globals.pool, val);
+				}
+				else if (!strcmp(var, "xml-handler-bindings")) {
+					if (!zstr(globals.xml_handler)) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "binding '%s' to '%s'\n", globals.xml_handler, val);
+						switch_xml_bind_search_function(v8_fetch, switch_xml_parse_section_string(val), NULL);
+					}
+				}
+			}
+		}
 
 		if ((mods = switch_xml_child(cfg, "modules"))) {
 			for (ld = switch_xml_child(mods, "load"); ld; ld = ld->next) {
@@ -383,7 +403,7 @@ static char *v8_get_script_path(const char *script_file)
 	}
 }
 
-static int v8_parse_and_execute(switch_core_session_t *session, const char *input_code, switch_stream_handle_t *api_stream, switch_event_t *message)
+static int v8_parse_and_execute(switch_core_session_t *session, const char *input_code, switch_stream_handle_t *api_stream, switch_event_t *message, v8_xml_handler_t* xml_handler)
 {
 	string res;
 	JSMain *js;
@@ -502,6 +522,24 @@ static int v8_parse_and_execute(switch_core_session_t *session, const char *inpu
 						ptr->RegisterInstance(isolate, "request", true);
 					}
 
+					if (xml_handler)
+					{
+						/* Add xml handler global variables */
+
+						Handle<Array> XML_REQUEST = Array::New(isolate, 4);
+						
+						XML_REQUEST->Set(String::NewFromUtf8(isolate, "key_name"), String::NewFromUtf8(isolate, js_safe_str(xml_handler->key_name)));
+						XML_REQUEST->Set(String::NewFromUtf8(isolate, "key_value"), String::NewFromUtf8(isolate, js_safe_str(xml_handler->key_value)));
+						XML_REQUEST->Set(String::NewFromUtf8(isolate, "section"), String::NewFromUtf8(isolate, js_safe_str(xml_handler->section)));
+						XML_REQUEST->Set(String::NewFromUtf8(isolate, "tag_name"), String::NewFromUtf8(isolate, js_safe_str(xml_handler->tag_name)));
+
+						context->Global()->Set(String::NewFromUtf8(isolate, "XML_REQUEST"), XML_REQUEST);
+
+						if (xml_handler->params) {
+							FSEvent::New(xml_handler->params, "params", js);
+						}
+					}
+
 					script = input_code;
 
 					if (*script != '~') {
@@ -589,6 +627,16 @@ static int v8_parse_and_execute(switch_core_session_t *session, const char *inpu
 										res = *ascii;
 									}
 								}
+
+								if (xml_handler)
+								{									
+									Local<Value> value = context->Global()->Get(String::NewFromUtf8(isolate, "XML_STRING"));
+									String::Utf8Value str(value);
+									if (strcmp(js_safe_str(*str), "undefined"))
+									{
+										xml_handler->XML_STRING = strdup(js_safe_str(*str));
+									}
+								}
 							}
 						}
 
@@ -635,16 +683,57 @@ static int v8_parse_and_execute(switch_core_session_t *session, const char *inpu
 	return result;
 }
 
+static switch_xml_t v8_fetch(const char *section,
+	const char *tag_name, const char *key_name, const char *key_value, switch_event_t *params, void *user_data)
+{
+	switch_xml_t xml = NULL;
+	char *mycmd = NULL;
+
+	if (!zstr(globals.xml_handler)) {
+
+		mycmd = strdup(globals.xml_handler);
+		switch_assert(mycmd);
+
+		v8_xml_handler_t xml_handler;
+		xml_handler.section = section;
+		xml_handler.tag_name = tag_name;
+		xml_handler.key_name = key_name;
+		xml_handler.key_value = key_value;
+		xml_handler.params = params;
+		xml_handler.user_data = user_data;
+		xml_handler.XML_STRING = NULL; //Init as NULL. A script's global var XML_STRING will be duplicated to it!
+
+		v8_parse_and_execute(NULL, mycmd, NULL, NULL, &xml_handler);
+
+		if (xml_handler.XML_STRING) {
+			if (zstr(xml_handler.XML_STRING)) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No Result\n");
+			}
+			else if (!(xml = switch_xml_parse_str_dynamic(xml_handler.XML_STRING, SWITCH_TRUE))) {				
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Parsing XML Result!\n");
+			}
+		}
+
+		// Don't forget to free XML_STRING
+		switch_safe_free(xml_handler.XML_STRING);
+		
+	}
+	
+	switch_safe_free(mycmd);
+
+	return xml;
+}
+
 SWITCH_BEGIN_EXTERN_C
 
 SWITCH_STANDARD_APP(v8_dp_function)
 {
-	v8_parse_and_execute(session, data, NULL, NULL);
+	v8_parse_and_execute(session, data, NULL, NULL, NULL);
 }
 
 SWITCH_STANDARD_CHAT_APP(v8_chat_function)
 {
-	v8_parse_and_execute(NULL, data, NULL, message);
+	v8_parse_and_execute(NULL, data, NULL, message, NULL);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -661,7 +750,7 @@ static void *SWITCH_THREAD_FUNC v8_thread_run(switch_thread_t *thread, void *obj
 	v8_task_t *task = (v8_task_t *) obj;
 	switch_memory_pool_t *pool;
 
-	v8_parse_and_execute(NULL, task->code, NULL, NULL);
+	v8_parse_and_execute(NULL, task->code, NULL, NULL, NULL);
 
 	if ((pool = task->pool)) {
 		switch_core_destroy_memory_pool(&pool);
@@ -761,7 +850,7 @@ SWITCH_STANDARD_API(jsapi_function)
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	v8_parse_and_execute(session, (char *) cmd, stream, NULL);
+	v8_parse_and_execute(session, (char *) cmd, stream, NULL, NULL);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -788,7 +877,7 @@ SWITCH_STANDARD_JSON_API(json_function)
 	switch_event_add_header_string(stream.param_event, SWITCH_STACK_BOTTOM, "JSON", json_text);
 	switch_safe_free(json_text);
 
-	v8_parse_and_execute(session, (char *) path->valuestring, &stream, NULL);
+	v8_parse_and_execute(session, (char *) path->valuestring, &stream, NULL, NULL);
 	
 	*json_reply = cJSON_Parse((char *)stream.data);
 
