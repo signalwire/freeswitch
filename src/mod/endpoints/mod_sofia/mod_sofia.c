@@ -955,7 +955,7 @@ static switch_status_t sofia_read_text_frame(switch_core_session_t *session, swi
 	if (switch_channel_test_flag(switch_core_session_get_channel(session), CF_MSRP)) {
 		switch_msrp_session_t *msrp_session = switch_core_media_get_msrp_session(session);
 		switch_frame_t *rframe = &msrp_session->frame;
-		msrp_msg_t *msrp_msg = switch_msrp_session_pop_msg(msrp_session);
+		switch_msrp_msg_t *msrp_msg = switch_msrp_session_pop_msg(msrp_session);
 
 		rframe->flags = 0;
 
