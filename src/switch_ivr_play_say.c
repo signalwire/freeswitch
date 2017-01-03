@@ -1194,6 +1194,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 	uint32_t test_native = 0, last_native = 0;
 	uint32_t buflen = 0;
 	int flags;
+	int cumulative = 0;
 
 	if (switch_channel_pre_answer(channel) != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_FALSE;
@@ -1201,7 +1202,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 
 	switch_core_session_get_read_impl(session, &read_impl);
 
-	if ((var = switch_channel_get_variable(channel, "playback_timeout_sec"))) {
+	if ((var = switch_channel_get_variable(channel, "playback_timeout_sec_cumulative"))) {
+		int tmp = atoi(var);
+		if (tmp > 1) {
+			timeout_samples = read_impl.actual_samples_per_second * tmp;
+			cumulative = 1;
+		}
+	
+	} else if ((var = switch_channel_get_variable(channel, "playback_timeout_sec"))) {
 		int tmp = atoi(var);
 		if (tmp > 1) {
 			timeout_samples = read_impl.actual_samples_per_second * tmp;
@@ -1969,6 +1977,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 	switch_core_session_reset(session, SWITCH_FALSE, SWITCH_FALSE);
 
 	arg_recursion_check_stop(args);
+
+	if (timeout_samples && cumulative) {
+		switch_channel_set_variable_printf(channel, "playback_timeout_sec_cumulative", "%d", timeout_samples / read_impl.actual_samples_per_second);
+	}
+
 
 	return status;
 }
