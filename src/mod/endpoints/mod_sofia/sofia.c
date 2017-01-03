@@ -7831,6 +7831,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 								if (!match) {
 									switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Reinvite Codec Error!\n");
 									nua_respond(tech_pvt->nh, SIP_488_NOT_ACCEPTABLE, TAG_END());
+									switch_core_session_rwunlock(other_session);
 									goto done;
 								}
 								
@@ -7885,6 +7886,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 												SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
 												SIPTAG_CONTENT_TYPE_STR("application/sdp"), SIPTAG_PAYLOAD_STR(tech_pvt->mparams.local_sdp_str), TAG_END());
 								}
+								switch_core_session_rwunlock(other_session);
 								goto done;
 							}							
 						}
