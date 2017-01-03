@@ -1970,6 +1970,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 
 	arg_recursion_check_stop(args);
 
+	if (timeout_samples && switch_channel_var_true(channel, "playback_timeout_cumulative")) {
+		switch_channel_set_variable_printf(channel, "playback_timeout_sec", "%d", timeout_samples / read_impl.actual_samples_per_second);
+	}
+
+
 	return status;
 }
 
