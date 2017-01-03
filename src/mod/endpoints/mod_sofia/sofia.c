@@ -1011,6 +1011,7 @@ void sofia_handle_sip_i_bye(switch_core_session_t *session, int status,
 		char *reason_header = sip_header_as_string(nh->nh_home, (void *) sip->sip_reason);
 
 		if (!zstr(reason_header)) {
+			switch_channel_set_variable(channel, "sip_reason", reason_header);
 			switch_channel_set_variable_partner(channel, "sip_reason", reason_header);
 		}
 	}
@@ -1627,6 +1628,7 @@ static void our_sofia_event_callback(nua_event_t event,
 				char *reason_header = sip_header_as_string(nh->nh_home, (void *) sip->sip_reason);
 
 				if (!zstr(reason_header)) {
+					switch_channel_set_variable(channel, "sip_reason", reason_header);
 					switch_channel_set_variable_partner(channel, "sip_reason", reason_header);
 				}
 			}
