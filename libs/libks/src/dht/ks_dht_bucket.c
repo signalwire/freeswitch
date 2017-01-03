@@ -1673,7 +1673,7 @@ void ks_dhtrt_ping(ks_dhtrt_internal_t *internal, ks_dhtrt_bucket_entry_t *entry
 #endif
 	ks_dht_node_t* node = entry->gptr;
 	ks_log(KS_LOG_DEBUG, "Node addr %s %d\n", node->addr.host, node->addr.port);
-	ks_dht_ping(internal->dht, &node->addr, NULL);
+	ks_dht_ping(internal->dht, &node->addr, NULL, NULL);
 
 	return;
 }
@@ -1683,7 +1683,7 @@ void ks_dhtrt_find(ks_dhtrt_routetable_t *table, ks_dhtrt_internal_t *internal, 
 
 	char buf[100];
 	ks_log(KS_LOG_DEBUG, "Find queued for target %s\n", ks_dhtrt_printableid(target->id, buf));
-	ks_dht_queue_search_findnode(internal->dht, table, target, NULL);
+	ks_dht_search(internal->dht, NULL, NULL, table, target);
     return;
 }
 

@@ -22,11 +22,11 @@ KS_BEGIN_EXTERN_C
 KS_DECLARE(ks_status_t) ks_dht_autoroute_check(ks_dht_t *dht, const ks_sockaddr_t *raddr, ks_dht_endpoint_t **endpoint);
 
 /**
- * Called internally to expire search data.
- * Handles completing and purging of finished searches.
+ * Called internally to expire or reannounce storage item data.
+ * Handles reannouncing and purging of expiring storage items.
  * @param dht pointer to the dht instance
  */
-KS_DECLARE(void) ks_dht_pulse_searches(ks_dht_t *dht);
+KS_DECLARE(void) ks_dht_pulse_storageitems(ks_dht_t *dht);
 
 /**
  * Called internally to process job state machine.
@@ -276,19 +276,18 @@ KS_DECLARE(void) ks_dht_datagram_destroy(ks_dht_datagram_t **datagram);
 KS_DECLARE(ks_status_t) ks_dht_job_create(ks_dht_job_t **job,
 										  ks_pool_t *pool,
 										  const ks_sockaddr_t *raddr,
-										  int32_t attempts);
+										  int32_t attempts,
+										  void *data);
 KS_DECLARE(void) ks_dht_job_build_ping(ks_dht_job_t *job, ks_dht_job_callback_t query_callback, ks_dht_job_callback_t finish_callback);
 KS_DECLARE(void) ks_dht_job_build_findnode(ks_dht_job_t *job,
-										   ks_dht_search_t *search,
 										   ks_dht_job_callback_t query_callback,
 										   ks_dht_job_callback_t finish_callback,
 										   ks_dht_nodeid_t *target);
 KS_DECLARE(void) ks_dht_job_build_get(ks_dht_job_t *job,
-									  ks_dht_search_t *search,
 									  ks_dht_job_callback_t query_callback,
 									  ks_dht_job_callback_t finish_callback,
 									  ks_dht_nodeid_t *target,
-									  uint8_t *salt,
+									  const uint8_t *salt,
 									  ks_size_t salt_length);
 KS_DECLARE(void) ks_dht_job_build_put(ks_dht_job_t *job,
 									  ks_dht_job_callback_t query_callback,
@@ -296,6 +295,9 @@ KS_DECLARE(void) ks_dht_job_build_put(ks_dht_job_t *job,
 									  ks_dht_token_t *token,
 									  int64_t cas,
 									  ks_dht_storageitem_t *item);
+KS_DECLARE(void) ks_dht_job_build_search(ks_dht_job_t *job,
+										 ks_dht_job_callback_t query_callback,
+										 ks_dht_job_callback_t finish_callback);
 KS_DECLARE(void) ks_dht_job_build_search_findnode(ks_dht_job_t *job,
 									ks_dht_nodeid_t *target,
 									uint32_t family,
@@ -344,9 +346,35 @@ KS_DECLARE(ks_status_t) ks_dht_message_response(ks_dht_message_t *message,
 /**
  *
  */
-KS_DECLARE(ks_status_t) ks_dht_search_create(ks_dht_search_t **search, ks_pool_t *pool, const ks_dht_nodeid_t *target, ks_dht_search_callback_t callback);
+KS_DECLARE(ks_status_t) ks_dht_search_create(ks_dht_search_t **search,
+											 ks_pool_t *pool,
+											 ks_dhtrt_routetable_t *table,
+											 const ks_dht_nodeid_t *target,
+											 ks_dht_job_callback_t callback,
+											 void *data);
 KS_DECLARE(void) ks_dht_search_destroy(ks_dht_search_t **search);
 
+/**
+ *
+ */
+KS_DECLARE(ks_status_t) ks_dht_publish_create(ks_dht_publish_t **publish,
+											  ks_pool_t *pool,
+											  ks_dht_job_callback_t callback,
+											  void *data,
+											  int64_t cas,
+											  ks_dht_storageitem_t *item);
+KS_DECLARE(void) ks_dht_publish_destroy(ks_dht_publish_t **publish);
+
+/**
+ *
+ */
+KS_DECLARE(ks_status_t) ks_dht_distribute_create(ks_dht_distribute_t **distribute,
+												 ks_pool_t *pool,
+												 ks_dht_storageitem_callback_t callback,
+												 void *data,
+												 int64_t cas,
+												 ks_dht_storageitem_t *item);
+KS_DECLARE(void) ks_dht_distribute_destroy(ks_dht_distribute_t **distribute);
 
 /**
  *

@@ -6,6 +6,18 @@
 ks_dht_storageitem_skey_t sk;
 ks_dht_storageitem_pkey_t pk;
 
+ks_status_t dht2_updated_callback(ks_dht_t *dht, ks_dht_storageitem_t *item)
+{
+	diag("dht2_updated_callback\n");
+	return KS_STATUS_SUCCESS;
+}
+
+ks_status_t dht2_distribute_callback(ks_dht_t *dht, ks_dht_storageitem_t *item)
+{
+	diag("dht2_distribute_callback\n");
+	return KS_STATUS_SUCCESS;
+}
+
 ks_status_t dht2_put_callback(ks_dht_t *dht, ks_dht_job_t *job)
 {
 	diag("dht2_put_callback\n");
@@ -28,13 +40,14 @@ ks_status_t dht2_get_token_callback(ks_dht_t *dht, ks_dht_job_t *job)
 	mutable->sk = sk;
 	ks_dht_storageitems_insert(dht, mutable);
 	
-	ks_dht_put(dht, &job->raddr, dht2_put_callback, &job->response_token, 0, mutable);
+	ks_dht_put(dht, &job->raddr, dht2_put_callback, NULL, &job->response_token, 0, mutable);
 	return KS_STATUS_SUCCESS;
 }
 
-ks_status_t dht2_search_findnode_callback(ks_dht_t *dht, ks_dht_search_t *search)
+ks_status_t dht2_search_callback(ks_dht_t *dht, ks_dht_job_t *job)
 {
-	diag("dht2_search_findnode_callback %d\n", search->results_length);
+	ks_dht_search_t *search = (ks_dht_search_t *)job->data;
+	diag("dht2_search_callback %d\n", search->results_length);
 	return KS_STATUS_SUCCESS;
 }
 
@@ -54,11 +67,12 @@ int main() {
   ks_sockaddr_t raddr1;
   //ks_sockaddr_t raddr2;
   //ks_sockaddr_t raddr3;
-  //ks_dht_nodeid_t target;
+  ks_dht_nodeid_t target;
   //ks_dht_storageitem_t *immutable = NULL;
-  //ks_dht_storageitem_t *mutable = NULL;
-  //const char *v = "Hello World!";
-  //size_t v_len = strlen(v);
+  ks_dht_storageitem_t *mutable1 = NULL;
+  ks_dht_storageitem_t *mutable2 = NULL;
+  const char *v = "Hello World!";
+  size_t v_len = strlen(v);
   //ks_dht_storageitem_skey_t sk; //= { { 0xe0, 0x6d, 0x31, 0x83, 0xd1, 0x41, 0x59, 0x22, 0x84, 0x33, 0xed, 0x59, 0x92, 0x21, 0xb8, 0x0b,
   //0xd0, 0xa5, 0xce, 0x83, 0x52, 0xe4, 0xbd, 0xf0, 0x26, 0x2f, 0x76, 0x78, 0x6e, 0xf1, 0xc7, 0x4d,
   //0xb7, 0xe7, 0xa9, 0xfe, 0xa2, 0xc0, 0xeb, 0x26, 0x9d, 0x61, 0xe3, 0xb3, 0x8e, 0x45, 0x0a, 0x22,
@@ -67,7 +81,7 @@ int main() {
   //0x24, 0x32, 0xfc, 0xd9, 0x04, 0xa4, 0x35, 0x11, 0x87, 0x6d, 0xf5, 0xcd, 0xf3, 0xe7, 0xe5, 0x48 } };
   //uint8_t sk1[KS_DHT_STORAGEITEM_SKEY_SIZE];
   //uint8_t pk1[KS_DHT_STORAGEITEM_PKEY_SIZE];
-  //ks_dht_storageitem_signature_t sig;
+  ks_dht_storageitem_signature_t sig;
   //char sk_buf[KS_DHT_STORAGEITEM_SKEY_SIZE * 2 + 1];
   //char pk_buf[KS_DHT_STORAGEITEM_PKEY_SIZE * 2 + 1];
   //const char *test1vector = "3:seqi1e1:v12:Hello World!";
@@ -155,7 +169,7 @@ int main() {
 
   diag("Ping test\n");
   
-  ks_dht_ping(dht2, &raddr1, NULL); // (QUERYING)
+  ks_dht_ping(dht2, &raddr1, NULL, NULL); // (QUERYING)
 
   ks_dht_pulse(dht2, 100); // Send queued ping from dht2 to dht1 (RESPONDING)
   
@@ -178,7 +192,7 @@ int main() {
   ok(ks_dhtrt_find_node(dht1->rt_ipv4, ep2->nodeid) != NULL); // The node should be good by now, and thus be returned as good
 
   
-  ks_dht_ping(dht3, &raddr1, NULL); // (QUERYING)
+  ks_dht_ping(dht3, &raddr1, NULL, NULL); // (QUERYING)
 
   ks_dht_pulse(dht3, 100); // Send queued ping from dht3 to dht1 (RESPONDING)
   
@@ -193,80 +207,19 @@ int main() {
   ks_dht_pulse(dht3, 100); // Call finish callback and purge the job (COMPLETING)
 
   diag("Pulsing for route table pings\n"); // Wait for route table pinging to catch up
-  for (int i = 0; i < 20; ++i) {
+  for (int i = 0; i < 10; ++i) {
 	  ks_dht_pulse(dht1, 100);
 	  ks_dht_pulse(dht2, 100);
 	  ks_dht_pulse(dht3, 100);
   }
   ok(ks_dhtrt_find_node(dht1->rt_ipv4, ep2->nodeid) != NULL); // The node should be good by now, and thus be returned as good
 
-  //diag("Get test\n");
-  
-
-  /*
-  ks_dht_storageitem_target_immutable((uint8_t *)v, v_len, &target);
-  ks_dht_storageitem_create_immutable(&immutable, dht1->pool, &target, (uint8_t *)v, v_len);
-  ks_dht_storageitems_insert(dht1, immutable);
-  */
-  
-  /*
-  crypto_sign_keypair(pk.key, sk.key);
-
-  ks_dht_storageitem_signature_generate(&sig, &sk, NULL, 0, 1, (uint8_t *)v, v_len);
-  ks_dht_storageitem_target_mutable(&pk, NULL, 0, &target);
-  ks_dht_storageitem_create_mutable(&mutable, dht1->pool, &target, (uint8_t *)v, v_len, &pk, NULL, 0, 1, &sig);
-  mutable->sk = sk;
-  ks_dht_storageitems_insert(dht1, mutable);
-
-  ks_dht_get(dht2, &raddr1, dht2_get_callback, &target, NULL, 0);
- 
-  ks_dht_pulse(dht2, 100); // send get query
-
-  ks_dht_pulse(dht1, 100); // receive get query and send get response
-
-  ks_dht_pulse(dht2, 100); // receive get response
-
-  ok(ks_dht_storageitems_find(dht2, &target) != NULL); // item should be verified and stored
-
-  ks_dht_pulse(dht2, 100); // Call finish callback and purge the job (COMPLETING)
-  */
-
-  /*
-  diag("Put test\n");
-
-  crypto_sign_keypair(pk.key, sk.key);
-
-  ks_dht_storageitem_target_mutable(&pk, NULL, 0, &target);
-
-  ks_dht_get(dht2, NULL, &raddr1, dht2_get_token_callback, &target, NULL, 0); // create job
-  
-  ks_dht_pulse(dht2, 100); // send get query
-
-  ks_dht_pulse(dht1, 100); // receive get query and send get response
-
-  ks_dht_pulse(dht2, 100); // receive get response
-
-  ks_dht_pulse(dht2, 100); // Call finish callback and purge the job (COMPLETING), send put query
-
-  ks_dht_pulse(dht1, 100); // receive put query and send put response
-
-  ks_dht_pulse(dht2, 100); // receive put response
-
-  ks_dht_pulse(dht2, 100); // Call finish callback and purge the job (COMPLETING)
-
-  for (int i = 0; i < 10; ++i) {
-	  ks_dht_pulse(dht1, 100);
-	  ks_dht_pulse(dht2, 100);
-	  ks_dht_pulse(dht3, 100);
-  }
-  */
-
   // Test bootstrap find_node from dht3 to dht1 to find dht2 nodeid
 
   /*
   diag("Find_Node test\n");
 
-  ks_dht_findnode(dht3, NULL, &raddr1, NULL, &ep2->nodeid);
+  ks_dht_findnode(dht3, NULL, &raddr1, NULL, NULL, &ep2->nodeid);
 
   ks_dht_pulse(dht3, 100); // Send queued findnode from dht3 to dht1
 
@@ -290,14 +243,129 @@ int main() {
   */
 
   diag("Search test\n");
-  ks_dht_search_findnode(dht3, AF_INET, &ep2->nodeid, dht2_search_findnode_callback, NULL);
+  
+  ks_dht_search(dht3, dht2_search_callback, NULL, dht3->rt_ipv4, &ep2->nodeid);
   diag("Pulsing for route table pings\n"); // Wait for route table pinging to catch up
+  for (int i = 0; i < 20; ++i) {
+	  ks_dht_pulse(dht1, 100);
+	  ks_dht_pulse(dht2, 100);
+	  ks_dht_pulse(dht3, 100);
+  }
+  
+  //diag("Get test\n");
+  
+
+  /*
+  ks_dht_storageitem_target_immutable((uint8_t *)v, v_len, &target);
+  ks_dht_storageitem_create_immutable(&immutable, dht1->pool, &target, (uint8_t *)v, v_len);
+  ks_dht_storageitems_insert(dht1, immutable);
+  */
+  
+  /*
+  crypto_sign_keypair(pk.key, sk.key);
+
+  ks_dht_storageitem_signature_generate(&sig, &sk, NULL, 0, 1, (uint8_t *)v, v_len);
+  ks_dht_storageitem_target_mutable(&pk, NULL, 0, &target);
+  ks_dht_storageitem_create_mutable(&mutable, dht1->pool, &target, (uint8_t *)v, v_len, &pk, NULL, 0, 1, &sig);
+  mutable->sk = sk;
+  ks_dht_storageitems_insert(dht1, mutable);
+
+  ks_dht_get(dht2, &raddr1, dht2_get_callback, NULL, &target, NULL, 0);
+ 
+  ks_dht_pulse(dht2, 100); // send get query
+
+  ks_dht_pulse(dht1, 100); // receive get query and send get response
+
+  ks_dht_pulse(dht2, 100); // receive get response
+
+  ok(ks_dht_storageitems_find(dht2, &target) != NULL); // item should be verified and stored
+
+  ks_dht_pulse(dht2, 100); // Call finish callback and purge the job (COMPLETING)
+  */
+
+  /*
+  diag("Put test\n");
+
+  crypto_sign_keypair(pk.key, sk.key);
+
+  ks_dht_storageitem_target_mutable(&pk, NULL, 0, &target);
+
+  ks_dht_get(dht2, &raddr1, dht2_get_token_callback, NULL, &target, NULL, 0); // create job
+  
+  for (int i = 0; i < 20; ++i) {
+	  ks_dht_pulse(dht1, 100);
+	  ks_dht_pulse(dht2, 100);
+	  ks_dht_pulse(dht3, 100);
+  }
+  */
+
+  /*
+  diag("Publish test\n");
+  
+  crypto_sign_keypair(pk.key, sk.key);
+
+  ks_dht_storageitem_target_mutable(&pk, NULL, 0, &target);
+  
+  ks_dht_storageitem_signature_generate(&sig, &sk, NULL, 0, 1, (uint8_t *)v, v_len);
+  
+  ks_dht_storageitem_create_mutable(&mutable, dht2->pool, &target, (uint8_t *)v, v_len, &pk, NULL, 0, 1, &sig);
+  mutable->sk = sk;
+  ks_dht_storageitems_insert(dht2, mutable);
+  
+  ks_dht_publish(dht2, &raddr1, dht2_put_callback, NULL, 0, mutable); // create job
+  
+  for (int i = 0; i < 20; ++i) {
+	  ks_dht_pulse(dht1, 100);
+	  ks_dht_pulse(dht2, 100);
+	  ks_dht_pulse(dht3, 100);
+  }
+  */
+
+  
+  diag("Distribute test\n");
+  
+  crypto_sign_keypair(pk.key, sk.key);
+
+  ks_dht_storageitem_target_mutable(&pk, NULL, 0, &target);
+  
+  ks_dht_storageitem_signature_generate(&sig, &sk, NULL, 0, 1, (uint8_t *)v, v_len);
+  
+  ks_dht_storageitem_create_mutable(&mutable2, dht2->pool, &target, (uint8_t *)v, v_len, &pk, NULL, 0, 1, &sig);
+  mutable2->sk = sk;
+  ks_dht_storageitems_insert(dht2, mutable2);
+  
+  ks_dht_distribute(dht2, dht2_distribute_callback, NULL, dht2->rt_ipv4, 0, mutable2); // create job
+  
   for (int i = 0; i < 30; ++i) {
 	  ks_dht_pulse(dht1, 100);
 	  ks_dht_pulse(dht2, 100);
 	  ks_dht_pulse(dht3, 100);
   }
+  ks_dht_storageitem_dereference(mutable2);
+  ok(mutable2->refc == 0);
 
+  mutable1 = ks_dht_storageitems_find(dht1, &target);
+  ok(mutable1 != NULL);
+  
+  ks_dht_storageitem_callback(mutable1, dht2_updated_callback);
+  ks_dht_storageitem_callback(mutable2, dht2_updated_callback);
+
+  ks_dht_storageitem_signature_generate(&sig, &sk, NULL, 0, 2, (uint8_t *)v, v_len);
+  mutable1->seq = 2;
+  mutable1->sig = sig;
+  
+  //ks_dht_storageitem_signature_generate(&sig, &sk, NULL, 0, 2, (uint8_t *)v, v_len);
+  //mutable2->seq = 2;
+  //mutable2->sig = sig;
+
+  ks_dht_distribute(dht2, dht2_distribute_callback, NULL, dht2->rt_ipv4, 0, mutable2);
+  for (int i = 0; i < 30; ++i) {
+	  ks_dht_pulse(dht1, 100);
+	  ks_dht_pulse(dht2, 100);
+	  ks_dht_pulse(dht3, 100);
+  }
+  ks_dht_storageitem_dereference(mutable1);
+  
   /* Cleanup and shutdown */
   diag("Cleanup\n");
 

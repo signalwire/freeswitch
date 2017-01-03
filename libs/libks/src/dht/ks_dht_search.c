@@ -2,13 +2,19 @@
 #include "ks_dht-int.h"
 #include "sodium.h"
 
-KS_DECLARE(ks_status_t) ks_dht_search_create(ks_dht_search_t **search, ks_pool_t *pool, const ks_dht_nodeid_t *target, ks_dht_search_callback_t callback)
+KS_DECLARE(ks_status_t) ks_dht_search_create(ks_dht_search_t **search,
+											 ks_pool_t *pool,
+											 ks_dhtrt_routetable_t *table,
+											 const ks_dht_nodeid_t *target,
+											 ks_dht_job_callback_t callback,
+											 void *data)
 {
 	ks_dht_search_t *s;
 	ks_status_t ret = KS_STATUS_SUCCESS;
 
 	ks_assert(search);
 	ks_assert(pool);
+	ks_assert(table);
 	ks_assert(target);
 
 	*search = s = ks_pool_alloc(pool, sizeof(ks_dht_search_t));
@@ -19,17 +25,17 @@ KS_DECLARE(ks_status_t) ks_dht_search_create(ks_dht_search_t **search, ks_pool_t
 	ks_mutex_create(&s->mutex, KS_MUTEX_FLAG_DEFAULT, s->pool);
 	ks_assert(s->mutex);
 
+	s->table = table;
 	memcpy(s->target.id, target->id, KS_DHT_NODEID_SIZE);
 
 	s->callback = callback;
+	s->data = data;
 
 	ks_hash_create(&s->searched, KS_HASH_MODE_ARBITRARY, KS_HASH_FLAG_NOLOCK | KS_HASH_FLAG_DUP_CHECK, s->pool);
 	ks_assert(s->searched);
 	ks_hash_set_keysize(s->searched, KS_DHT_NODEID_SIZE);
 
-	ks_hash_create(&s->searching, KS_HASH_MODE_ARBITRARY, KS_HASH_FLAG_NOLOCK | KS_HASH_FLAG_DUP_CHECK, s->pool);
-	ks_assert(s->searching);
-	ks_hash_set_keysize(s->searching, KS_DHT_NODEID_SIZE);
+	s->searching = 0;
 
 	// done:
 	if (ret != KS_STATUS_SUCCESS) {
@@ -47,7 +53,6 @@ KS_DECLARE(void) ks_dht_search_destroy(ks_dht_search_t **search)
 
 	s = *search;
 
-	if (s->searching) ks_hash_destroy(&s->searching);
 	if (s->searched) ks_hash_destroy(&s->searched);
 	if (s->mutex) ks_mutex_destroy(&s->mutex);
 

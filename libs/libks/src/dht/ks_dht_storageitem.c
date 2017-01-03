@@ -23,8 +23,11 @@ KS_DECLARE(ks_status_t) ks_dht_storageitem_create_immutable_internal(ks_dht_stor
 	si->id = *target;
 	si->mutable = KS_FALSE;
 	si->expiration = ks_time_now() + ((ks_time_t)KS_DHT_STORAGEITEM_EXPIRATION * KS_USEC_PER_SEC);
+	si->keepalive = ks_time_now() + ((ks_time_t)KS_DHT_STORAGEITEM_KEEPALIVE * KS_USEC_PER_SEC);
 	si->v = clone_v ? ben_clone(v) : v;
 	ks_assert(si->v);
+
+	si->refc = 1;
 
 	// done:
 	if (ret != KS_STATUS_SUCCESS) {
@@ -81,8 +84,11 @@ KS_DECLARE(ks_status_t) ks_dht_storageitem_create_mutable_internal(ks_dht_storag
 	si->id = *target;
 	si->mutable = KS_TRUE;
 	si->expiration = ks_time_now() + ((ks_time_t)KS_DHT_STORAGEITEM_EXPIRATION * KS_USEC_PER_SEC);
+	si->keepalive = ks_time_now() + ((ks_time_t)KS_DHT_STORAGEITEM_KEEPALIVE * KS_USEC_PER_SEC);
 	si->v = clone_v ? ben_clone(v) : v;
 	ks_assert(si->v);
+
+	si->refc = 1;
 
 	ks_mutex_create(&si->mutex, KS_MUTEX_FLAG_DEFAULT, si->pool);
 	ks_assert(si->mutex);
@@ -167,6 +173,33 @@ KS_DECLARE(void) ks_dht_storageitem_destroy(ks_dht_storageitem_t **item)
 	}
 
 	ks_pool_free(si->pool, item);
+}
+
+KS_DECLARE(void) ks_dht_storageitem_reference(ks_dht_storageitem_t *item)
+{
+	ks_assert(item);
+
+	ks_mutex_lock(item->mutex);
+	item->refc++;
+	ks_mutex_unlock(item->mutex);
+}
+
+KS_DECLARE(void) ks_dht_storageitem_dereference(ks_dht_storageitem_t *item)
+{
+	ks_assert(item);
+
+	ks_mutex_lock(item->mutex);
+	item->refc--;
+	ks_mutex_unlock(item->mutex);
+
+	ks_assert(item->refc >= 0);
+}
+
+KS_DECLARE(void) ks_dht_storageitem_callback(ks_dht_storageitem_t *item, ks_dht_storageitem_callback_t callback)
+{
+	ks_assert(item);
+
+	item->callback = callback;
 }
 
 /* For Emacs:
