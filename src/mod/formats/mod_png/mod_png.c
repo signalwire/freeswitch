@@ -50,6 +50,7 @@ struct png_file_context {
 	int max;
 	int samples;
 	switch_file_handle_t *audio_fh;
+	switch_mutex_t *mutex;
 	int done;
 };
 
@@ -81,6 +82,7 @@ static switch_status_t png_file_open(switch_file_handle_t *handle, const char *p
 
 	memset(context, 0, sizeof(png_file_context_t));
 	context->max = 10000;
+	switch_mutex_init(&context->mutex, SWITCH_MUTEX_NESTED, handle->memory_pool);
 
 	if (handle->params) {
 		const char *audio_file = switch_event_get_header(handle->params, "audio_file");
@@ -141,11 +143,14 @@ static switch_status_t png_file_close(switch_file_handle_t *handle)
 {
 	png_file_context_t *context = (png_file_context_t *)handle->private_info;
 
+	switch_mutex_lock(context->mutex);
+	context->done = 1;
+
 	switch_img_free(&context->img);
-	
+
 	if (context->audio_fh) switch_core_file_close(context->audio_fh);
 
-	context->done = 1;
+	switch_mutex_unlock(context->mutex);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -154,17 +159,22 @@ static switch_status_t png_file_read(switch_file_handle_t *handle, void *data, s
 {
 
 	png_file_context_t *context = (png_file_context_t *)handle->private_info;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+
+	switch_mutex_lock(context->mutex);
 
 	if (context->done) {
-		return SWITCH_STATUS_FALSE;
+		switch_goto_status(SWITCH_STATUS_FALSE, end);
 	}
 
 	if (context->audio_fh) {
-		return switch_core_file_read(context->audio_fh, data, len);
+		status = switch_core_file_read(context->audio_fh, data, len);
+		switch_goto_status(status, end);
 	}
 
 	if (!context->img || !context->samples) {
-		return SWITCH_STATUS_FALSE;
+		status = SWITCH_STATUS_FALSE;
+		switch_goto_status(status, end);
 	}
 
 	if (context->samples > 0) {
@@ -175,31 +185,39 @@ static switch_status_t png_file_read(switch_file_handle_t *handle, void *data, s
 		context->samples -= *len;
 	}
 
-	if (!context->samples) {
-		return SWITCH_STATUS_FALSE;
+	if (context->samples <= 0) {
+		context->done = 1;
+		status = SWITCH_STATUS_FALSE;
+		switch_goto_status(status, end);
 	}
-
+	
 	memset(data, 0, *len * 2 * handle->channels);
 
-	return SWITCH_STATUS_SUCCESS;
-}
+ end:
 
+	switch_mutex_unlock(context->mutex);
+
+	return status;
+}
 static switch_status_t png_file_read_video(switch_file_handle_t *handle, switch_frame_t *frame, switch_video_read_flag_t flags)
 {
 	png_file_context_t *context = (png_file_context_t *)handle->private_info;
 	switch_image_t *dup = NULL;
 	int have_frame = 0;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+
+	switch_mutex_lock(context->mutex);
 
 	if (context->done) {
-		return SWITCH_STATUS_FALSE;
+		switch_goto_status(SWITCH_STATUS_FALSE, end);
 	}
 
 	if ((flags & SVR_CHECK)) {
-		return SWITCH_STATUS_BREAK;
+		switch_goto_status(SWITCH_STATUS_BREAK, end);
 	}
 
 	if (!context->img || !context->samples) {
-		return SWITCH_STATUS_FALSE;
+		switch_goto_status(SWITCH_STATUS_FALSE, end);
 	}
 
 	if ((flags && SVR_BLOCK)) {
@@ -213,10 +231,16 @@ static switch_status_t png_file_read_video(switch_file_handle_t *handle, switch_
 		switch_img_copy(context->img, &dup);
 		frame->img = dup;
 		context->sent++;
-		return SWITCH_STATUS_SUCCESS;
+		status = SWITCH_STATUS_SUCCESS;
 	} else {
-		return SWITCH_STATUS_BREAK;
+		status = SWITCH_STATUS_BREAK;
 	}
+
+ end:
+
+	switch_mutex_unlock(context->mutex);
+
+	return status;
 }
 
 typedef struct {
