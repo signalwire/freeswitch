@@ -31,10 +31,6 @@
 #ifndef __SWITCH_SSL_H
 #define __SWITCH_SSL_H
 
-#ifndef HAVE_OPENSSL
-#define HAVE_OPENSSL
-#endif
-
 #if defined(HAVE_OPENSSL)
 #if defined (MACOSX) || defined(DARWIN)
 /* Disable depricated-declarations on OS X */

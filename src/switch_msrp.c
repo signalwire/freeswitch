@@ -30,11 +30,29 @@
  */
 
 #include <switch.h>
+#include <switch_ssl.h>
 #include <switch_msrp.h>
 #include <switch_stun.h>
 
 #define MSRP_BUFF_SIZE SWITCH_RTP_MAX_BUF_LEN
 #define DEBUG_MSRP 0
+#define MSRP_LISTEN_PORT 2855
+#define MSRP_SSL_LISTEN_PORT 2856
+
+struct msrp_socket_s {
+	switch_port_t port;
+	switch_socket_t *sock;
+	switch_thread_t *thread;
+	int secure;
+};
+
+struct msrp_client_socket_s {
+	switch_socket_t *sock;
+	SSL *ssl;
+	int secure;
+	int client_mode;
+	struct switch_msrp_session_s *msrp_session;
+};
 
 static struct {
 	int running;
@@ -52,14 +70,14 @@ static struct {
 	const SSL_METHOD *ssl_client_method;
 	SSL_CTX *ssl_client_ctx;
 
-	msrp_socket_t msock;
-	msrp_socket_t msock_ssl;
+	switch_msrp_socket_t msock;
+	switch_msrp_socket_t msock_ssl;
 } globals;
 
 typedef struct worker_helper{
 	int debug;
 	switch_memory_pool_t *pool;
-	msrp_client_socket_t csock;
+	switch_msrp_client_socket_t csock;
 	switch_msrp_session_t *msrp_session;
 } worker_helper_t;
 
@@ -357,7 +375,7 @@ SWITCH_DECLARE(switch_status_t) switch_msrp_session_destroy(switch_msrp_session_
 	return SWITCH_STATUS_SUCCESS;
 }
 
-switch_status_t switch_msrp_session_push_msg(switch_msrp_session_t *ms, msrp_msg_t *msg)
+switch_status_t switch_msrp_session_push_msg(switch_msrp_session_t *ms, switch_msrp_msg_t *msg)
 {
 	switch_mutex_lock(ms->mutex);
 
@@ -378,9 +396,9 @@ switch_status_t switch_msrp_session_push_msg(switch_msrp_session_t *ms, msrp_msg
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(msrp_msg_t *)switch_msrp_session_pop_msg(switch_msrp_session_t *ms)
+SWITCH_DECLARE(switch_msrp_msg_t *)switch_msrp_session_pop_msg(switch_msrp_session_t *ms)
 {
-	msrp_msg_t *m = ms->msrp_msg;
+	switch_msrp_msg_t *m = ms->msrp_msg;
 	if (m == NULL) {
 		switch_yield(20000);
 		return NULL;
@@ -394,7 +412,7 @@ SWITCH_DECLARE(msrp_msg_t *)switch_msrp_session_pop_msg(switch_msrp_session_t *m
 	return m;
 }
 
-switch_status_t msrp_msg_serialize(msrp_msg_t *msrp_msg, char *buf)
+switch_status_t msrp_msg_serialize(switch_msrp_msg_t *msrp_msg, char *buf)
 {
 	char *code_number_str = switch_mprintf("%d", msrp_msg->code_number);
 	char method[10];
@@ -427,7 +445,7 @@ switch_status_t msrp_msg_serialize(msrp_msg_t *msrp_msg, char *buf)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t msrp_socket_recv(msrp_client_socket_t *csock, char *buf, switch_size_t *len)
+static switch_status_t msrp_socket_recv(switch_msrp_client_socket_t *csock, char *buf, switch_size_t *len)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
@@ -451,7 +469,7 @@ static switch_status_t msrp_socket_recv(msrp_client_socket_t *csock, char *buf, 
 	return status;
 }
 
-static switch_status_t msrp_socket_send(msrp_client_socket_t *csock, char *buf, switch_size_t *len)
+static switch_status_t msrp_socket_send(switch_msrp_client_socket_t *csock, char *buf, switch_size_t *len)
 {
 	if (csock->secure) {
 		*len = SSL_write(csock->ssl, buf, *len);
@@ -527,7 +545,7 @@ Byte-Range: 1-0/0
 -------d4c667b2351e958f$
 */
 
-char *msrp_parse_header(char *start, int skip, const char *end, msrp_msg_t *msrp_msg, int index, switch_memory_pool_t *pool)
+char *msrp_parse_header(char *start, int skip, const char *end, switch_msrp_msg_t *msrp_msg, int index, switch_memory_pool_t *pool)
 {
 	char *p = start + skip;
 	char *q;
@@ -544,7 +562,7 @@ char *msrp_parse_header(char *start, int skip, const char *end, msrp_msg_t *msrp
 	return start;
 }
 
-msrp_msg_t *msrp_parse_headers(const char *start, int len, msrp_msg_t *msrp_msg, switch_memory_pool_t *pool)
+switch_msrp_msg_t *msrp_parse_headers(const char *start, int len, switch_msrp_msg_t *msrp_msg, switch_memory_pool_t *pool)
 {
 	char *p = (char *)start;
 	char *q = p;
@@ -719,12 +737,12 @@ done:
 	return msrp_msg;
 }
 
-msrp_msg_t *msrp_parse_buffer(char *buf, int len, msrp_msg_t *msrp_msg, switch_memory_pool_t *pool)
+switch_msrp_msg_t *msrp_parse_buffer(char *buf, int len, switch_msrp_msg_t *msrp_msg, switch_memory_pool_t *pool)
 {
 	const char *start;
 
 	if (!msrp_msg) {
-		switch_zmalloc(msrp_msg, sizeof(msrp_msg_t));
+		switch_zmalloc(msrp_msg, sizeof(switch_msrp_msg_t));
 		switch_assert(msrp_msg);
 		msrp_msg->state = MSRP_ST_WAIT_HEADER;
 	}
@@ -828,7 +846,7 @@ msrp_msg_t *msrp_parse_buffer(char *buf, int len, msrp_msg_t *msrp_msg, switch_m
 }
 
 
-switch_status_t msrp_reply(msrp_client_socket_t *csock, msrp_msg_t *msrp_msg)
+switch_status_t msrp_reply(switch_msrp_client_socket_t *csock, switch_msrp_msg_t *msrp_msg)
 {
 	char buf[2048];
 	switch_size_t len;
@@ -843,7 +861,7 @@ switch_status_t msrp_reply(msrp_client_socket_t *csock, msrp_msg_t *msrp_msg)
 	return msrp_socket_send(csock, buf, &len);
 }
 
-switch_status_t msrp_report(msrp_client_socket_t *csock, msrp_msg_t *msrp_msg, char *status_code)
+switch_status_t msrp_report(switch_msrp_client_socket_t *csock, switch_msrp_msg_t *msrp_msg, char *status_code)
 {
 	char buf[2048];
 	switch_size_t len;
@@ -883,14 +901,14 @@ static switch_bool_t msrp_find_uuid(char *uuid, char *to_path)
 static void *SWITCH_THREAD_FUNC msrp_worker(switch_thread_t *thread, void *obj)
 {
 	worker_helper_t *helper = (worker_helper_t *) obj;
-	msrp_client_socket_t *csock = &helper->csock;
+	switch_msrp_client_socket_t *csock = &helper->csock;
 	switch_memory_pool_t *pool = helper->pool;
 	char buf[MSRP_BUFF_SIZE];
 	char *p;
 	char *last_p;
 	switch_size_t len = MSRP_BUFF_SIZE;
 	switch_status_t status;
-	msrp_msg_t *msrp_msg = NULL;
+	switch_msrp_msg_t *msrp_msg = NULL;
 	char uuid[128] = { 0 };
 	switch_msrp_session_t *msrp_session = NULL;
 	int sanity = 10;
@@ -1139,7 +1157,7 @@ static void *SWITCH_THREAD_FUNC msrp_worker(switch_thread_t *thread, void *obj)
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "state:%d, len:%" SWITCH_SIZE_T_FMT " payload_bytes:%" SWITCH_SIZE_T_FMT "\n", msrp_msg->state, len, msrp_msg->payload_bytes);
 			// {
 			// 	char bbb[MSRP_BUFF_SIZE * 2];
-			// 	msrp_msg_serialize(msrp_msg_tmp, bbb),
+			// 	msrp_msg_serialize(switch_msrp_msg_tmp, bbb),
 			// }
 		}
 
@@ -1194,10 +1212,10 @@ static void *SWITCH_THREAD_FUNC msrp_worker(switch_thread_t *thread, void *obj)
 
 				{
 					int i;
-					msrp_msg_t *msrp_msg_old = msrp_msg;
+					switch_msrp_msg_t *msrp_msg_old = msrp_msg;
 					msrp_msg = NULL;
 					/*dup msrp_msg*/
-					switch_zmalloc(msrp_msg, sizeof(msrp_msg_t));
+					switch_zmalloc(msrp_msg, sizeof(switch_msrp_msg_t));
 					switch_assert(msrp_msg);
 					msrp_msg->state = msrp_msg_old->state;
 					msrp_msg->byte_start = msrp_msg_old->byte_end + 1;
@@ -1256,7 +1274,7 @@ end:
 
 static void *SWITCH_THREAD_FUNC msrp_listener(switch_thread_t *thread, void *obj)
 {
-	msrp_socket_t *msock = (msrp_socket_t *)obj;
+	switch_msrp_socket_t *msock = (switch_msrp_socket_t *)obj;
 	switch_status_t rv;
 	switch_memory_pool_t *pool = NULL;
 	switch_threadattr_t *thd_attr = NULL;
@@ -1349,7 +1367,7 @@ void random_string(char *buf, uint16_t size)
 }
 
 #define MSRP_TRANS_ID_LEN 16
-SWITCH_DECLARE(switch_status_t) switch_msrp_perform_send(switch_msrp_session_t *ms, msrp_msg_t *msrp_msg, const char *file, const char *func, int line)
+SWITCH_DECLARE(switch_status_t) switch_msrp_perform_send(switch_msrp_session_t *ms, switch_msrp_msg_t *msrp_msg, const char *file, const char *func, int line)
 {
 	char transaction_id[MSRP_TRANS_ID_LEN + 1] = { 0 };
 	char buf[MSRP_BUFF_SIZE];
@@ -1400,7 +1418,7 @@ SWITCH_DECLARE(switch_status_t) switch_msrp_perform_send(switch_msrp_session_t *
 SWITCH_STANDARD_APP(msrp_echo_function)
 {
 	msrp_session_t *msrp_session = NULL;
-	msrp_msg_t *msrp_msg = NULL;
+	switch_msrp_msg_t *msrp_msg = NULL;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	// private_object_t *tech_pvt = switch_core_session_get_private(session);
 
@@ -1441,7 +1459,7 @@ SWITCH_STANDARD_APP(msrp_echo_function)
 SWITCH_STANDARD_APP(msrp_recv_function)
 {
 	msrp_session_t *msrp_session = NULL;
-	msrp_msg_t *msrp_msg = NULL;
+	switch_msrp_msg_t *msrp_msg = NULL;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	private_object_t *tech_pvt = switch_core_session_get_private(session);
 	switch_memory_pool_t *pool = switch_core_session_get_pool(session);
@@ -1507,7 +1525,7 @@ SWITCH_STANDARD_APP(msrp_recv_function)
 SWITCH_STANDARD_APP(msrp_send_function)
 {
 	msrp_session_t *msrp_session = NULL;
-	msrp_msg_t *msrp_msg = NULL;
+	switch_msrp_msg_t *msrp_msg = NULL;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	private_object_t *tech_pvt = switch_core_session_get_private(session);
 	switch_memory_pool_t *pool = switch_core_session_get_pool(session);
@@ -1539,7 +1557,7 @@ SWITCH_STANDARD_APP(msrp_send_function)
 
 	switch_assert(pool);
 
-	switch_zmalloc(msrp_msg, sizeof(msrp_msg_t));
+	switch_zmalloc(msrp_msg, sizeof(switch_msrp_msg_t));
 	switch_assert(msrp_msg);
 
 	msrp_msg->headers[MSRP_H_FROM_PATH] = switch_mprintf("msrp://%s:%d/%s;tcp",
@@ -1600,7 +1618,7 @@ SWITCH_STANDARD_APP(msrp_bridge_function)
 	msrp_session_t *peer_msrp_session = NULL;
 	private_object_t *tech_pvt = NULL;
 	private_object_t *ptech_pvt = NULL;
-	msrp_msg_t *msrp_msg = NULL;
+	switch_msrp_msg_t *msrp_msg = NULL;
 	switch_call_cause_t cause = SWITCH_CAUSE_NORMAL_CLEARING;
 	switch_status_t status;
 
@@ -1683,7 +1701,7 @@ SWITCH_STANDARD_API(uuid_msrp_send_function)
 	int argc;
 	switch_core_session_t *msession = NULL;
 	// msrp_session_t *msrp_session = NULL;
-	msrp_msg_t *msrp_msg = NULL;
+	switch_msrp_msg_t *msrp_msg = NULL;
 	private_object_t *tech_pvt = NULL;
 	switch_memory_pool_t *pool = NULL;
 
@@ -1718,7 +1736,7 @@ SWITCH_STANDARD_API(uuid_msrp_send_function)
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	switch_zmalloc(msrp_msg, sizeof(msrp_msg_t));
+	switch_zmalloc(msrp_msg, sizeof(switch_msrp_msg_t));
 	switch_assert(msrp_msg);
 
 	msrp_msg->headers[MSRP_H_FROM_PATH] = switch_mprintf("msrp://%s:%d/%s;tcp",

@@ -33,8 +33,6 @@
 #define _MSRP_H
 
 #include <switch.h>
-#include <switch_ssl.h>
-
 
 #define MSRP_LISTEN_PORT 2855
 #define MSRP_SSL_LISTEN_PORT 2856
@@ -65,6 +63,10 @@ enum {
 	MSRP_H_UNKNOWN
 };
 
+typedef struct switch_msrp_session_s switch_msrp_session_t;
+typedef struct msrp_client_socket_s switch_msrp_client_socket_t;
+typedef struct msrp_socket_s switch_msrp_socket_t;
+
 typedef struct msrp_msg_s {
 	int state;
 	int method;
@@ -82,24 +84,7 @@ typedef struct msrp_msg_s {
 	char *last_p;
 	char *payload;
 	struct msrp_msg_s *next;
-} msrp_msg_t;
-
-typedef struct msrp_msg_s switch_msrp_msg_t;
-
-typedef struct msrp_socket_s {
-	switch_port_t port;
-	switch_socket_t *sock;
-	switch_thread_t *thread;
-	int secure;
-} msrp_socket_t;
-
-struct msrp_client_socket_s {
-	switch_socket_t *sock;
-	SSL *ssl;
-	int secure;
-	int client_mode;
-	struct switch_msrp_session_s *msrp_session;
-};
+} switch_msrp_msg_t;
 
 struct switch_msrp_session_s{
 	switch_memory_pool_t *pool;
@@ -117,29 +102,26 @@ struct switch_msrp_session_s{
 	char *local_file_selector;
 	int local_port;
 	char *call_id;
-	msrp_msg_t *msrp_msg;
-	msrp_msg_t *last_msg;
+	switch_msrp_msg_t *msrp_msg;
+	switch_msrp_msg_t *last_msg;
 	switch_mutex_t *mutex;
 	switch_size_t msrp_msg_buffer_size;
 	switch_size_t msrp_msg_count;
-	msrp_socket_t *msock;
-	struct msrp_client_socket_s *csock;
+	switch_msrp_socket_t *msock;
+	switch_msrp_client_socket_t *csock;
 	switch_frame_t frame;
 	uint8_t frame_data[SWITCH_RTP_MAX_BUF_LEN];
 	int running;
 	void *user_data;
 };
 
-typedef struct msrp_client_socket_s msrp_client_socket_t;
-typedef struct switch_msrp_session_s switch_msrp_session_t;
-
 SWITCH_DECLARE(switch_status_t) switch_msrp_init(void);
 SWITCH_DECLARE(switch_status_t) switch_msrp_destroy(void);
 SWITCH_DECLARE(switch_msrp_session_t *)switch_msrp_session_new(switch_memory_pool_t *pool, const char *call_id, switch_bool_t secure);
 SWITCH_DECLARE(switch_status_t) switch_msrp_session_destroy(switch_msrp_session_t **ms);
-// switch_status_t switch_msrp_session_push_msg(switch_msrp_session_t *ms, msrp_msg_t *msg);
+// switch_status_t switch_msrp_session_push_msg(switch_msrp_session_t *ms, switch_msrp_msg_t *msg);
 SWITCH_DECLARE(switch_msrp_msg_t *)switch_msrp_session_pop_msg(switch_msrp_session_t *ms);
-SWITCH_DECLARE(switch_status_t) switch_msrp_perform_send(switch_msrp_session_t *ms, msrp_msg_t *msg, const char *file, const char *func, int line);
+SWITCH_DECLARE(switch_status_t) switch_msrp_perform_send(switch_msrp_session_t *ms, switch_msrp_msg_t *msg, const char *file, const char *func, int line);
 SWITCH_DECLARE(switch_status_t) switch_msrp_start_client(switch_msrp_session_t *msrp_session);
 SWITCH_DECLARE(const char *) switch_msrp_listen_ip(void);
 
