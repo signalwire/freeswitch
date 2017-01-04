@@ -664,14 +664,15 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 		b_sdp = switch_channel_get_variable(channel, SWITCH_B_SDP_VARIABLE);
 		switch_core_media_set_local_sdp(session, b_sdp, SWITCH_TRUE);
 
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, 
-						  "3PCC-PROXY nomedia - sending ack, SDP:\n%s\n", tech_pvt->mparams.local_sdp_str);
-
 		if (switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MEDIA)) {
-			switch_core_media_patch_sdp(tech_pvt->session);
+			switch_core_media_patch_sdp(tech_pvt->session);			
 			switch_core_media_proxy_remote_addr(tech_pvt->session, NULL);
 		}
 
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, 
+						  "3PCC-PROXY nomedia - sending ack, SDP:\n%s\n", tech_pvt->mparams.local_sdp_str);
+
+		
 		if (sofia_use_soa(tech_pvt)) {
 			nua_ack(tech_pvt->nh,
 					TAG_IF(!zstr(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)),

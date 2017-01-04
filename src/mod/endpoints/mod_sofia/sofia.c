@@ -1636,9 +1636,13 @@ static void our_sofia_event_callback(nua_event_t event,
 
 				if (switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MEDIA) && r_sdp) {
 					if (sofia_test_pflag(tech_pvt->profile, PFLAG_3PCC_PROXY)) {
+						switch_channel_set_variable_partner(tech_pvt->channel, SWITCH_B_SDP_VARIABLE, r_sdp);
+						
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "3PCC-PROXY, Got my ACK\n");
+						switch_core_media_proxy_remote_addr(tech_pvt->session, r_sdp);
 						sofia_set_flag(tech_pvt, TFLAG_3PCC_HAS_ACK);
 						sofia_clear_flag(tech_pvt, TFLAG_PASS_ACK);
+
 					}
 					
 				}
