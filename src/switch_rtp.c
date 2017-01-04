@@ -5113,6 +5113,15 @@ static switch_size_t do_flush(switch_rtp_t *rtp_session, int force, switch_size_
 			switch_socket_opt_set(rtp_session->sock_input, SWITCH_SO_NONBLOCK, TRUE);
 		}
 
+		// before processing/flushing packets, if current packet is rfc2833, handle it (else it would be lost)
+		if (bytes_in > rtp_header_len && rtp_session->last_rtp_hdr.version == 2 && rtp_session->last_rtp_hdr.pt == rtp_session->recv_te) {
+		    int do_cng = 0;
+#ifdef DEBUG_2833
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "*** Handling current RTP packet before flushing. seq=%u ***\n", ntohs(rtp_session->last_rtp_hdr.seq));
+#endif
+		    handle_rfc2833(rtp_session, bytes_in, &do_cng);
+		}
+
 		do {
 			if (switch_rtp_ready(rtp_session)) {
 				bytes = sizeof(rtp_msg_t);
@@ -5140,6 +5149,13 @@ static switch_size_t do_flush(switch_rtp_t *rtp_session, int force, switch_size_
 				break;
 			}
 		} while (bytes > 0);
+
+#ifdef DEBUG_2833
+        if (flushed) {
+            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "*** do_flush: total flushed packets: %ld ***\n",(long)flushed);
+        }
+#endif
+
 
 		if (was_blocking && switch_rtp_ready(rtp_session)) {
 			switch_rtp_clear_flag(rtp_session, SWITCH_RTP_FLAG_NOBLOCK);
