@@ -1349,12 +1349,13 @@ void conference_video_write_canvas_image_to_codec_group(conference_obj_t *confer
 	} while(encode_status == SWITCH_STATUS_MORE_DATA);
 }
 
-video_layout_t *conference_video_find_best_layout(conference_obj_t *conference, layout_group_t *lg, uint32_t count)
+video_layout_t *conference_video_find_best_layout(conference_obj_t *conference, layout_group_t *lg, uint32_t count, uint32_t file_count)
 {
 	video_layout_node_t *vlnode = NULL, *last = NULL;
 
 	if (!count) {
 		count = conference->members_with_video;
+		file_count = 0;
 
 		if (!conference_utils_test_flag(conference, CFLAG_VIDEO_REQUIRED_FOR_CANVAS)) {
 			count += conference->members_with_avatar;
@@ -1366,7 +1367,15 @@ video_layout_t *conference_video_find_best_layout(conference_obj_t *conference, 
 	}
 
 	for (vlnode = lg->layouts; vlnode; vlnode = vlnode->next) {
-		if (vlnode->vlayout->layers >= (int)count) {
+		int x, file_layers = 0, member_count = (int)count - file_count, total = vlnode->vlayout->layers;
+		
+		for (x = total; x >= 0; x--) {
+			if (vlnode->vlayout->images[x].fileonly) {
+				file_layers++;
+			}
+		}
+
+		if ((vlnode->vlayout->layers - file_layers >= member_count && file_layers >= file_count) || vlnode->vlayout->layers - file_layers > (int)count) {
 			break;
 		}
 
@@ -1383,7 +1392,7 @@ video_layout_t *conference_video_get_layout(conference_obj_t *conference, const 
 
 	if (video_layout_group) {
 		lg = switch_core_hash_find(conference->layout_group_hash, video_layout_group);
-		vlayout = conference_video_find_best_layout(conference, lg, 0);
+		vlayout = conference_video_find_best_layout(conference, lg, 0, 0);
 	} else {
 		vlayout = switch_core_hash_find(conference->layout_hash, video_layout_name);
 	}
@@ -2398,7 +2407,7 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 			video_layout_t *vlayout = NULL;
 			
 			if (canvas->video_layout_group && (lg = switch_core_hash_find(conference->layout_group_hash, canvas->video_layout_group))) {
-				if ((vlayout = conference_video_find_best_layout(conference, lg, canvas->video_count))) {
+				if ((vlayout = conference_video_find_best_layout(conference, lg, canvas->video_count, file_count)) && vlayout != canvas->vlayout) {
 					switch_mutex_lock(conference->member_mutex);
 					canvas->new_vlayout = vlayout;
 					switch_mutex_unlock(conference->member_mutex);
@@ -2734,7 +2743,7 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 					}
 					
 					if (canvas->video_layout_group && (lg = switch_core_hash_find(conference->layout_group_hash, canvas->video_layout_group))) {
-						if ((vlayout = conference_video_find_best_layout(conference, lg, total + file_count))) {
+						if ((vlayout = conference_video_find_best_layout(conference, lg, total + file_count, file_count))) {
 							conference_video_init_canvas_layers(conference, imember->canvas, vlayout);
 						}
 					}
@@ -3305,7 +3314,7 @@ void *SWITCH_THREAD_FUNC conference_video_super_muxing_thread_run(switch_thread_
 			if (total < 1) total = 1;
 
 			if ((lg = switch_core_hash_find(conference->layout_group_hash, CONFERENCE_MUX_DEFAULT_SUPER_LAYOUT))) {
-				if ((vlayout = conference_video_find_best_layout(conference, lg, total))) {
+				if ((vlayout = conference_video_find_best_layout(conference, lg, total, 0))) {
 					conference_video_init_canvas_layers(conference, canvas, vlayout);
 				}
 			}

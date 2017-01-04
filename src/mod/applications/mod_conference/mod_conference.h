@@ -926,7 +926,7 @@ int conference_member_setup_media(conference_member_t *member, conference_obj_t 
 
 al_handle_t *conference_al_create(switch_memory_pool_t *pool);
 switch_status_t conference_member_parse_position(conference_member_t *member, const char *data);
-video_layout_t *conference_video_find_best_layout(conference_obj_t *conference, layout_group_t *lg, uint32_t count);
+video_layout_t *conference_video_find_best_layout(conference_obj_t *conference, layout_group_t *lg, uint32_t count, uint32_t file_count);
 void conference_list_count_only(conference_obj_t *conference, switch_stream_handle_t *stream);
 void conference_member_set_floor_holder(conference_obj_t *conference, conference_member_t *member);
 void conference_utils_member_clear_flag(conference_member_t *member, member_flag_t flag);
