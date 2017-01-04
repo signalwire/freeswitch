@@ -15,6 +15,11 @@
     #include <float.h>
     #define ISNAN(x) (!!(_isnan(x)))
     #define ISINF(x) (isinf(x))
+#else
+    int __isnan(double);
+	int __isinf(double);
+    #define ISNAN(x) (__isnan(x))
+    #define ISINF(x) (__isinf(x))
 #endif
 
 #include "avmd_buffer.h"
