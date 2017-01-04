@@ -1009,8 +1009,6 @@ static switch_status_t sofia_write_video_frame(switch_core_session_t *session, s
 static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_frame_t **frame, switch_io_flag_t flags, int stream_id)
 {
 	private_object_t *tech_pvt = switch_core_session_get_private(session);
-	switch_channel_t *channel = switch_core_session_get_channel(session);
-	uint32_t sanity = 1000;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
 	switch_assert(tech_pvt != NULL);
@@ -1024,17 +1022,9 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 		return SWITCH_STATUS_FALSE;
 	}
 
-	while (!(switch_core_media_ready(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO))){// && !switch_channel_test_flag(channel, CF_REQ_MEDIA))) {
-		switch_ivr_parse_all_messages(tech_pvt->session);
-
-		if (--sanity && switch_channel_up(channel)) {
-			switch_yield(10000);
-		} else {
-			switch_channel_hangup(tech_pvt->channel, SWITCH_CAUSE_RECOVERY_ON_TIMER_EXPIRE);
-			return SWITCH_STATUS_GENERR;
-		}
+	if (!(switch_core_media_ready(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO))){
+		return SWITCH_STATUS_INUSE;
 	}
-
 
 	sofia_set_flag_locked(tech_pvt, TFLAG_READING);
 
@@ -1057,14 +1047,26 @@ static switch_status_t sofia_write_frame(switch_core_session_t *session, switch_
 
 	switch_assert(tech_pvt != NULL);
 
-	while (!(switch_core_media_ready(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO) && !switch_channel_test_flag(channel, CF_REQ_MEDIA))) {
-		if (switch_channel_ready(channel)) {
-			switch_yield(10000);
+
+	if (!switch_core_media_ready(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO)) {
+		if (switch_channel_up_nosig(channel)) {
+			return SWITCH_STATUS_SUCCESS;
 		} else {
 			return SWITCH_STATUS_GENERR;
 		}
 	}
 
+	if (switch_channel_test_flag(channel, CF_REQ_MEDIA)) {
+		if (++tech_pvt->req_media_counter > 2000) {
+			switch_channel_clear_flag(channel, CF_REQ_MEDIA);
+			switch_channel_hangup(channel, SWITCH_CAUSE_RECOVERY_ON_TIMER_EXPIRE);
+			return SWITCH_STATUS_FALSE;
+		} else {
+			return SWITCH_STATUS_SUCCESS;
+		}
+	} else {
+		tech_pvt->req_media_counter = 0;
+	}
 
 	if (sofia_test_flag(tech_pvt, TFLAG_HUP)) {
 		return SWITCH_STATUS_FALSE;
