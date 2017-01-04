@@ -258,8 +258,10 @@ SWITCH_STANDARD_DIALPLAN(translate_dialplan_hunt)
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	char *translated_dest = NULL;
 	char *translated_cid_num = NULL;
+	char *translated_ani = NULL;
 	char *translate_profile = NULL;
 	char *areacode = NULL;
+
 
 	if (!caller_profile) {
 		if (!(caller_profile = switch_channel_get_caller_profile(channel))) {
@@ -271,7 +273,12 @@ SWITCH_STANDARD_DIALPLAN(translate_dialplan_hunt)
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Processing %s <%s>->%s in translate\n",
 					  caller_profile->caller_id_name, caller_profile->caller_id_number, caller_profile->destination_number);
 
-	if ((translate_profile = (char *) switch_channel_get_variable(channel, "translate_profile"))) {
+
+
+	if ((translate_profile = (char *) arg)) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
+						  "using translate:<profile> [%s] for translate profile\n",translate_profile);
+	} else 	if ((translate_profile = (char *) switch_channel_get_variable(channel, "translate_profile"))) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
 						  "using translate_profile variable [%s] for translate profile\n", translate_profile);
 	} else 	if ((translate_profile = (char *) switch_channel_get_variable(channel, "country"))) {
@@ -295,13 +302,20 @@ SWITCH_STANDARD_DIALPLAN(translate_dialplan_hunt)
 
 	translate_number((char *) caller_profile->destination_number, translate_profile, &translated_dest, session, NULL, NULL);
 	translate_number((char *) caller_profile->caller_id_number, translate_profile, &translated_cid_num, session, NULL, NULL);
-	/* maybe we should translate ani/aniii here too? */
+	translate_number((char *) caller_profile->ani, translate_profile, &translated_ani, session, NULL, NULL);
+
+	/* maybe we should translate aniii here too? */ 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO,
-					  "Profile: [%s] Translated Destination: [%s] Translated CID: [%s]\n", translate_profile, translated_dest, translated_cid_num);
+					  "Profile: [%s], Translated Destination: [%s], Translated CID: [%s], Translated ANI: [%s]\n", translate_profile, translated_dest, translated_cid_num, translated_ani);
 
 	if (!zstr(translated_cid_num)) {
 		caller_profile->caller_id_number = translated_cid_num;
 	}
+
+	if (!zstr(translated_ani)) {
+		caller_profile->ani = translated_ani;
+	}
+
 
 	if (!zstr(translated_dest)) {
 		caller_profile->destination_number = translated_dest;
