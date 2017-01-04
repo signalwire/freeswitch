@@ -185,7 +185,7 @@ static switch_status_t png_file_read(switch_file_handle_t *handle, void *data, s
 		context->samples -= *len;
 	}
 
-	if (context->samples <= 0) {
+	if (context->samples == 0) {
 		context->done = 1;
 		status = SWITCH_STATUS_FALSE;
 		switch_goto_status(status, end);
