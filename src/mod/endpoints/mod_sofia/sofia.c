@@ -1544,6 +1544,12 @@ static void our_sofia_event_callback(nua_event_t event,
 		goto done;
 	}
 
+	if (sip && sip->sip_payload && sip->sip_payload->pl_data) {
+		if (sip->sip_payload->pl_len != strlen(sip->sip_payload->pl_data)) {
+			sip->sip_payload->pl_data = su_strndup(nh->nh_home, sip->sip_payload->pl_data, sip->sip_payload->pl_len);
+		}
+	}
+
 	switch (event) {
 	case nua_r_get_params:
 	case nua_i_fork:
