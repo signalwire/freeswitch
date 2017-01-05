@@ -1537,7 +1537,8 @@ typedef enum {
 	CF_APP_T38 = (1 << 1),
 	CF_APP_T38_REQ = (1 << 2),
 	CF_APP_T38_FAIL = (1 << 3),
-	CF_APP_T38_NEGOTIATED = (1 << 4)
+	CF_APP_T38_NEGOTIATED = (1 << 4),
+	CF_APP_T38_POSSIBLE = (1 << 5)
 } switch_channel_app_flag_t;
 
 

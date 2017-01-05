@@ -3726,6 +3726,17 @@ static void clear_pmaps(switch_rtp_engine_t *engine)
 	}
 }
 
+static void restore_pmaps(switch_rtp_engine_t *engine)
+{
+	payload_map_t *pmap;
+	int top = 0;
+	
+	for (pmap = engine->payload_map; pmap && pmap->allocated; pmap = pmap->next) {
+		pmap->negotiated = 1;
+		if (!top++) pmap->current = 1;
+	}
+}
+
 //?
 SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *session, const char *r_sdp, uint8_t *proceed, switch_sdp_type_t sdp_type)
 {
@@ -3929,22 +3940,30 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 			switch_channel_set_flag(session->channel, CF_IMAGE_SDP);
 
 			if (m->m_port) {
-				switch_t38_options_t *t38_options = switch_core_media_process_udptl(session, sdp, m);
-
 				if (switch_channel_test_app_flag_key("T38", session->channel, CF_APP_T38_NEGOTIATED)) {
 					match = 1;
 					goto done;
 				}
 
-				if (switch_true(switch_channel_get_variable(channel, "refuse_t38"))) {
+				if (switch_channel_var_true(channel, "refuse_t38")) {
 					switch_channel_clear_app_flag_key("T38", session->channel, CF_APP_T38);
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s T38 REFUSE on %s\n",
+									  switch_channel_get_name(channel),
+									  sdp_type == SDP_TYPE_RESPONSE ? "response" : "request");
+
+					restore_pmaps(a_engine);
 					match = 0;
-					goto done;
+					
+					goto t38_done;
 				} else {
+					switch_t38_options_t *t38_options = switch_core_media_process_udptl(session, sdp, m);
 					const char *var = switch_channel_get_variable(channel, "t38_passthru");
 					int pass = switch_channel_test_flag(smh->session->channel, CF_T38_PASSTHRU);
-
-
+					
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s T38 ACCEPT on %s\n",
+									  switch_channel_get_name(channel),
+									  sdp_type == SDP_TYPE_RESPONSE ? "response" : "request");
+					
 					if (switch_channel_test_app_flag_key("T38", session->channel, CF_APP_T38)) {
 						if (proceed) *proceed = 0;
 					}
@@ -3982,10 +4001,13 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 
 							pass = 0;
 							match = 0;
+							match = 0;
 							goto done;
 						}
 
-
+						switch_channel_set_app_flag_key("T38", channel, CF_APP_T38_POSSIBLE);
+						switch_channel_set_app_flag_key("T38", other_channel, CF_APP_T38_POSSIBLE);
+						
 						if (switch_true(switch_channel_get_variable(session->channel, "t38_broken_boolean")) && 
 							switch_true(switch_channel_get_variable(session->channel, "t38_pass_broken_boolean"))) {
 							switch_channel_set_variable(other_channel, "t38_broken_boolean", "true");
@@ -4036,7 +4058,19 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 
 
 				/* do nothing here, mod_fax will trigger a response (if it's listening =/) */
-				match = 1;
+				if (switch_channel_test_app_flag_key("T38", channel, CF_APP_T38_POSSIBLE)) {
+					match = 1;
+				} else {
+
+					match = 0;
+				}
+
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s T38 %s POSSIBLE on %s\n",
+								  switch_channel_get_name(channel),
+								  match ? "IS" : "IS NOT",
+								  sdp_type == SDP_TYPE_RESPONSE ? "response" : "request");
+
+				
 				goto done;
 			}
 		} else if (m->m_type == sdp_media_audio && m->m_port && got_audio && got_savp) {
@@ -5035,6 +5069,8 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 
  done:
 
+ t38_done:
+	
 	if (parser) {
 		sdp_parser_free(parser);
 	}
@@ -5043,6 +5079,30 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 	smh->mparams->cng_rate = cng_rate;
 
 	return match;
+}
+
+//?
+SWITCH_DECLARE(void) switch_core_media_reset_t38(switch_core_session_t *session)
+{
+	switch_rtp_engine_t *a_engine;
+	switch_media_handle_t *smh;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	
+	switch_assert(session);
+
+	if (!(smh = session->media_handle)) {
+		return;
+	}
+
+	a_engine = &smh->engines[SWITCH_MEDIA_TYPE_AUDIO];
+
+	restore_pmaps(a_engine);
+
+	switch_channel_set_private(channel, "t38_options", NULL);
+	switch_channel_clear_flag(channel, CF_T38_PASSTHRU);
+	switch_channel_clear_app_flag_key("T38", channel, CF_APP_T38);
+	switch_channel_clear_app_flag_key("T38", channel, CF_APP_T38_REQ);
+	switch_channel_set_app_flag_key("T38", channel, CF_APP_T38_FAIL);
 }
 
 //?

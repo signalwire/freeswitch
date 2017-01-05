@@ -6585,7 +6585,7 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 					const char *r_sdp = NULL;
 					switch_core_session_message_t *msg;
 					private_object_t *other_tech_pvt = switch_core_session_get_private(other_session);
-					switch_channel_t *other_channel = switch_core_session_get_channel(other_session);
+					//switch_channel_t *other_channel = switch_core_session_get_channel(other_session);
 
 					if (sip->sip_payload && sip->sip_payload->pl_data &&
 						sip->sip_content_type && sip->sip_content_type->c_subtype && switch_stristr("sdp", sip->sip_content_type->c_subtype)) {
@@ -6614,13 +6614,8 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 						switch_core_session_rwunlock(other_session);
 						goto end;
 					} else if (status > 299) {
-						switch_channel_set_private(channel, "t38_options", NULL);
-						switch_channel_set_private(other_channel, "t38_options", NULL);
-						switch_channel_clear_flag(channel, CF_T38_PASSTHRU);
-						switch_channel_clear_flag(other_channel, CF_T38_PASSTHRU);
-						switch_channel_clear_app_flag_key("T38", channel, CF_APP_T38);
-						switch_channel_clear_app_flag_key("T38", channel, CF_APP_T38_REQ);
-						switch_channel_set_app_flag_key("T38", channel, CF_APP_T38_FAIL);
+						switch_core_media_reset_t38(session);
+						switch_core_media_reset_t38(other_session);
 					} else if (status == 200 && switch_channel_test_flag(channel, CF_T38_PASSTHRU) && 
 							   has_t38 && sip->sip_payload && sip->sip_payload->pl_data) {
 						switch_t38_options_t *t38_options = switch_core_media_extract_t38_options(session, sip->sip_payload->pl_data);
@@ -7939,8 +7934,8 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 							goto done;
 						}
 
-						switch_channel_set_flag(tech_pvt->channel, CF_REINVITE);
-						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Reinvite Codec Error!\n");
+						switch_channel_clear_flag(tech_pvt->channel, CF_REINVITE);
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Reinvite resulted in codec negotiation failure.\n");
 						is_ok = 0;
 					}
 				}

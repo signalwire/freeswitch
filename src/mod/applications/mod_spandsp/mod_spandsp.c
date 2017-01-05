@@ -221,6 +221,8 @@ SWITCH_STANDARD_APP(t38_gateway_function)
 		}
 	}
 
+	switch_channel_set_app_flag_key("T38", channel, CF_APP_T38_POSSIBLE);
+		
 	if (zstr(direction) || strcasecmp(direction, "self")) {
 		direction = "peer";
 	}
