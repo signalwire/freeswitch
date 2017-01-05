@@ -22,6 +22,14 @@ KS_BEGIN_EXTERN_C
 KS_DECLARE(ks_status_t) ks_dht_autoroute_check(ks_dht_t *dht, const ks_sockaddr_t *raddr, ks_dht_endpoint_t **endpoint);
 
 /**
+ * Called internally to receive datagrams from endpoints.
+ * Handles datagrams by dispatching each through a threadpool.
+ * @param dht pointer to the dht instance
+ * @param timeout time in ms to wait for an incoming datagram on any endpoint
+ */
+KS_DECLARE(void) ks_dht_pulse_endpoints(ks_dht_t *dht, int32_t timeout);
+
+/**
  * Called internally to expire or reannounce storage item data.
  * Handles reannouncing and purging of expiring storage items.
  * @param dht pointer to the dht instance
@@ -333,14 +341,6 @@ KS_DECLARE(void) ks_dht_message_destroy(ks_dht_message_t **message);
  *
  */
 KS_DECLARE(ks_status_t) ks_dht_message_parse(ks_dht_message_t *message, const uint8_t *buffer, ks_size_t buffer_length);
-
-/**
- *
- */
-KS_DECLARE(ks_status_t) ks_dht_message_response(ks_dht_message_t *message,
-												uint8_t *transactionid,
-												ks_size_t transactionid_length,
-												struct bencode **args);
 
 																								
 /**

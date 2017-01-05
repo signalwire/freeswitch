@@ -110,29 +110,6 @@ KS_DECLARE(ks_status_t) ks_dht_message_parse(ks_dht_message_t *message, const ui
 	return KS_STATUS_SUCCESS;
 }
 
-KS_DECLARE(ks_status_t) ks_dht_message_response(ks_dht_message_t *message,
-												uint8_t *transactionid,
-												ks_size_t transactionid_length,
-												struct bencode **args)
-{
-	struct bencode *r;
-
-	ks_assert(message);
-	ks_assert(transactionid);
-
-    ben_dict_set(message->data, ben_blob("t", 1), ben_blob(transactionid, transactionid_length));
-	ben_dict_set(message->data, ben_blob("y", 1), ben_blob("r", 1));
-
-	// @note r joins message->data and will be freed with it
-	r = ben_dict();
-	ks_assert(r);
-	ben_dict_set(message->data, ben_blob("r", 1), r);
-
-	if (args) *args = r;
-
-	return KS_STATUS_SUCCESS;
-}
-
 /* For Emacs:
  * Local Variables:
  * mode:c

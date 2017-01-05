@@ -93,7 +93,7 @@ int main() {
   err = ks_init();
   ok(!err);
 
-  ks_global_set_default_logger(7);
+  ks_global_set_default_logger(KS_LOG_LEVEL_INFO);
 
   err = ks_find_local_ip(v4, sizeof(v4), &mask, AF_INET, NULL);
   ok(err == KS_STATUS_SUCCESS);
@@ -172,7 +172,7 @@ int main() {
   ks_dht_ping(dht2, &raddr1, NULL, NULL); // (QUERYING)
 
   ks_dht_pulse(dht2, 100); // Send queued ping from dht2 to dht1 (RESPONDING)
-  
+
   ks_dht_pulse(dht1, 100); // Receive and process ping query from dht2, queue and send ping response
 
   ok(ks_dhtrt_find_node(dht1->rt_ipv4, ep2->nodeid) == NULL); // The node should be dubious, and thus not be returned as good yet

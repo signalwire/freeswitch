@@ -150,7 +150,6 @@ struct ks_dht_job_s {
 	int64_t query_cas;
 	ks_dht_token_t query_token;
 	ks_dht_storageitem_t *query_storageitem;
-    int32_t query_family;
 
 	// error response parameters
 	int64_t error_code;
