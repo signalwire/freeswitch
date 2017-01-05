@@ -60,7 +60,7 @@ KS_DECLARE(ks_status_t) blade_peer_destroy(blade_peer_t **bpP)
 	flags = bp->flags;
 	pool = bp->pool;
 
-	ks_pool_free(bp->pool, bp);
+	ks_pool_free(bp->pool, &bp);
 
 	if (pool && (flags & BP_MYPOOL)) {
 		ks_pool_close(&pool);
