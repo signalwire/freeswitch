@@ -2795,6 +2795,7 @@ SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, void *
 			switch_set_flag((&runtime), SCF_RESTART);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Restarting\n");
 		} else {
+			assert(0);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Shutting down\n");
 #ifdef _MSC_VER
 			fclose(stdin);

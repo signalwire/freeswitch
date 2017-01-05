@@ -1354,7 +1354,12 @@ void mod_spandsp_fax_process_fax(switch_core_session_t *session, const char *dat
 
 	counter_increment();
 
-
+	if (app_mode == FUNCTION_GW ||
+		switch_channel_var_true(channel, "fax_enable_t38") ||
+		switch_channel_var_true(channel, "fax_enable_t38_insist")) {
+		switch_channel_set_app_flag_key("T38", channel, CF_APP_T38_POSSIBLE);
+	}
+	
 	pvt = pvt_init(session, app_mode);
 	switch_channel_set_private(channel, "_fax_pvt", pvt);
 
@@ -1599,6 +1604,8 @@ void mod_spandsp_fax_process_fax(switch_core_session_t *session, const char *dat
 	/* Destroy the SpanDSP structures */
 	spanfax_destroy(pvt);
 
+	switch_channel_clear_app_flag_key("T38", channel, CF_APP_T38_POSSIBLE);
+	
 	/* restore the original codecs over the channel */
 
 	switch_core_session_set_read_codec(session, NULL);
@@ -2071,6 +2078,9 @@ switch_bool_t t38_gateway_start(switch_core_session_t *session, const char *app,
 		switch_channel_set_app_flag_key("T38", peer ? channel : other_channel, CF_APP_TAGGED);
 		switch_channel_clear_app_flag_key("T38", peer ? other_channel : channel, CF_APP_TAGGED);
 
+		switch_channel_set_app_flag_key("T38", channel, CF_APP_T38_POSSIBLE);
+		switch_channel_set_app_flag_key("T38", other_channel, CF_APP_T38_POSSIBLE);
+		
 		switch_channel_set_flag(channel, CF_REDIRECT);
 		switch_channel_set_state(channel, CS_RESET);
 
@@ -2268,6 +2278,7 @@ switch_status_t spandsp_fax_detect_session(switch_core_session_t *session,
 	switch_codec_implementation_t read_impl = { 0 };
 	switch_core_session_get_read_impl(session, &read_impl);
 
+	
 	if (timeout) {
 		to = switch_epoch_time_now(NULL) + timeout;
 	}
@@ -2281,6 +2292,8 @@ switch_status_t spandsp_fax_detect_session(switch_core_session_t *session,
 		return SWITCH_STATUS_MEMERR;
 	}
 
+	switch_channel_set_app_flag_key("T38", channel, CF_APP_T38_POSSIBLE);
+	
 	if (app) {
 		cont->app = switch_core_session_strdup(session, app);
 	}

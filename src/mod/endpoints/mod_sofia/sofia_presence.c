@@ -3465,6 +3465,8 @@ static int broadsoft_sla_gather_state_callback(void *pArg, int argc, char **argv
 			callee_name = "unknown";
 		}
 
+		//callee_number = "666";
+		
 		if (data) {
 			tmp = switch_core_sprintf(sh->pool,
 									  "%s,<sip:%s>;%s;appearance-state=%s;appearance-uri=\"\\\"%s\\\" <sip:%s@%s>\"",
