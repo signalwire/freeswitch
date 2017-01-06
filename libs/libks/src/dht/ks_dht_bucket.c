@@ -106,6 +106,8 @@ typedef struct ks_dhtrt_internal_s {
 	ks_dhtrt_deletednode_t *deleted_node;
 	ks_dhtrt_deletednode_t *free_node_ex;
 	uint32_t               deleted_count;
+    uint32_t               bucket_count;
+    uint32_t               header_count;
 } ks_dhtrt_internal_t;
 
 typedef struct ks_dhtrt_xort_s {
@@ -203,7 +205,6 @@ KS_DECLARE(ks_status_t) ks_dhtrt_initroute(ks_dhtrt_routetable_t **tableP,
 											ks_dht_t *dht,
 											ks_pool_t *pool) 
 {
-(void)ks_dhtrt_find_relatedbucketheader;
 
 	unsigned char initmask[KS_DHT_NODEID_SIZE];
 	memset(initmask, 0xff, sizeof(initmask));
@@ -224,6 +225,8 @@ KS_DECLARE(ks_status_t) ks_dhtrt_initroute(ks_dhtrt_routetable_t **tableP,
 	initial_header->flags = BHF_LEFT;	 /* fake left to allow splitting */ 
 	internal->buckets = initial_header;
 	initial_header->bucket =  ks_dhtrt_create_bucket(pool);
+	internal->header_count = 1;
+	internal->bucket_count = 1;
 	table->pool = pool;
 
 	*tableP = table;
@@ -280,6 +283,8 @@ KS_DECLARE(void) ks_dhtrt_deinitroute(ks_dhtrt_routetable_t **tableP)
 
 	return;
 }
+
+
 
 KS_DECLARE(ks_status_t)	 ks_dhtrt_create_node( ks_dhtrt_routetable_t *table, 
 											   ks_dht_nodeid_t nodeid,
@@ -500,6 +505,8 @@ ks_status_t ks_dhtrt_insert_node(ks_dhtrt_routetable_t *table, ks_dht_node_t *no
         newleft->left1bit = newright;
 
 		ks_dhtrt_split_bucket(header, newleft, newright);
+		internal->header_count += 2;
+		++internal->bucket_count;
 
 		/* ok now we need to try again to see if the bucket has capacity */
 		/* which bucket do care about */
@@ -1793,6 +1800,194 @@ static char *ks_dhtrt_printableid(uint8_t *id, char *buffer)
 		sprintf(buffer, "%02x", id[i]);
 	}
 	return t;
+}
+
+
+/*
+ *
+ * serialization and deserialization
+ * ---------------------------------
+*/
+
+typedef struct ks_dhtrt_serialized_bucket_s 
+{
+	uint16_t            count;
+	char               eye[4];
+	ks_dhtrt_nodeid_t  id;
+} ks_dhtrt_serialized_bucket_t;
+
+typedef struct ks_dhtrt_serialized_routetable_s
+{
+	uint32_t           size;
+	uint8_t            version;
+	uint8_t            count;
+	char               eye[4];
+} ks_dhtrt_serialized_routetable_t;
+
+#define DHTRT_SERIALIZATION_VERSION 1
+
+static void ks_dhtrt_serialize_node(ks_dht_node_t *source, ks_dht_node_t *dest) 
+{
+	memcpy(dest, source, sizeof(ks_dht_node_t));
+	memset(&dest->table, 0, sizeof(void*));
+	memset(&dest->reflock, 0, sizeof(void*));      
+}
+
+static void ks_dhtrt_serialize_bucket(ks_dhtrt_routetable_t *table, 
+										ks_dhtrt_serialized_routetable_t *stable,
+										ks_dhtrt_bucket_header_t* header, 
+										unsigned char* buffer) 
+{
+	uint8_t tzero = 0;
+	ks_dhtrt_serialized_bucket_t *s = (ks_dhtrt_serialized_bucket_t*)buffer;
+
+	memcpy(s->eye, "HEAD", 4);
+	memcpy(s->id, header->mask, KS_DHT_NODEID_SIZE);
+	buffer += sizeof(ks_dhtrt_serialized_bucket_t);
+	stable->size  += sizeof(ks_dhtrt_serialized_bucket_t);
+
+	if (header->bucket != 0) {
+		ks_dhtrt_bucket_t* bucket = header->bucket;
+
+		memcpy(&s->count, &bucket->count, sizeof(uint8_t));
+
+		for (int i=0; i< KS_DHT_BUCKETSIZE; ++i) {
+			if (bucket->entries[i].inuse == 1) {
+				ks_dhtrt_serialize_node(bucket->entries[i].gptr, (ks_dht_node_t*)buffer);
+				buffer += sizeof(ks_dht_node_t);
+				stable->size  += sizeof(ks_dht_node_t);
+			}
+		}
+	}
+    else {
+		memcpy(&s->count, &tzero, sizeof(uint8_t));
+	}
+}
+
+static void ks_dhtrt_serialize_table(ks_dhtrt_routetable_t *table, 
+										ks_dhtrt_serialized_routetable_t *stable,  
+										unsigned char *buffer)
+{
+	ks_dhtrt_bucket_header_t *stack[KS_DHT_NODEID_SIZE * 8];
+	int stackix=0;
+
+	ks_dhtrt_internal_t *internal = table->internal;
+	ks_dhtrt_bucket_header_t *header = internal->buckets;
+
+	while (header) {
+		stack[stackix++] = header;
+
+		++stable->count;
+
+		ks_dhtrt_serialize_bucket(table, stable, header, buffer);
+        buffer = (unsigned char*)stable + stable->size;       
+ 
+		header = header->left;
+
+		if (header == 0 && stackix > 1) {
+			stackix -= 2;
+			header =  stack[stackix];
+			header = header->right;
+		}
+	}
+    return;
+}
+
+KS_DECLARE(uint32_t) ks_dhtrt_serialize(ks_dhtrt_routetable_t *table, void **ptr)
+{
+	ks_dhtrt_internal_t *internal = table->internal;    
+	ks_rwl_write_lock(internal->lock);      /* grab write lock */
+
+	uint32_t buffer_size = 3200 * sizeof(ks_dht_node_t);
+	buffer_size +=  internal->header_count * sizeof(ks_dhtrt_serialized_bucket_t);
+	buffer_size +=   sizeof(ks_dhtrt_serialized_routetable_t);
+	unsigned char *buffer = (*ptr) = ks_pool_alloc(table->pool, buffer_size);
+
+	ks_dhtrt_serialized_routetable_t *stable = (ks_dhtrt_serialized_routetable_t*)buffer;
+	stable->size = sizeof(ks_dhtrt_serialized_routetable_t);
+	stable->version = DHTRT_SERIALIZATION_VERSION;
+	memcpy(stable->eye, "DHRT", 4);
+    
+	buffer +=  sizeof(ks_dhtrt_serialized_routetable_t);
+
+	ks_dhtrt_serialize_table(table, stable, buffer); 
+	ks_rwl_write_unlock(internal->lock);      /* write unlock */
+	return stable->size;  
+}
+
+
+static void ks_dhtrt_deserialize_node(ks_dhtrt_routetable_t *table, 
+										ks_dht_node_t *source, 
+										ks_dht_node_t *dest) 
+{
+	memcpy(dest, source, sizeof(ks_dht_node_t));
+	dest->table = table;
+	ks_rwl_create(&dest->reflock, table->pool);
+}
+
+
+KS_DECLARE(ks_status_t) ks_dhtrt_deserialize(ks_dhtrt_routetable_t *table, void* buffer)
+{
+	ks_dhtrt_internal_t *internal = table->internal;
+	ks_rwl_write_lock(internal->lock);      /* grab write lock */
+	unsigned char *ptr = (unsigned char*)buffer; 
+
+	ks_dhtrt_serialized_routetable_t *stable = (ks_dhtrt_serialized_routetable_t*)buffer;
+	ptr += sizeof(ks_dhtrt_serialized_routetable_t);
+
+	/* unpack and chain the buckets */
+	for (int i=0; i<stable->count; ++i) {
+
+		ks_dhtrt_serialized_bucket_t *s = (ks_dhtrt_serialized_bucket_t*)ptr;
+
+		if (memcmp(s->eye, "HEAD", 4)) {
+			assert(0);
+			ks_rwl_write_unlock(internal->lock);      /* write unlock */
+			return KS_STATUS_FAIL;
+		}
+
+		ptr += sizeof(ks_dhtrt_serialized_bucket_t);
+
+		/* currently adding the nodes individually   
+         * need a better way to do this that is compatible with the pending
+		 * changes for supernode support
+        */
+
+		char buf[51];
+		ks_log(KS_LOG_DEBUG, "deserialize bucket [%s] count %d\n", ks_dhtrt_printableid(s->id, buf), s->count);
+
+		int mid = s->count >>1;    
+		ks_dht_node_t *fnode = NULL;
+		ks_dht_node_t *node = NULL;
+
+		for(int i0=0; i0<s->count; ++i0) {
+			/* recreate the node */
+			ks_dht_node_t *node = ks_pool_alloc(table->pool, sizeof(ks_dht_node_t));  
+			if (i0 == mid) fnode = node;
+			ks_dhtrt_deserialize_node(table, (ks_dht_node_t*)ptr, node);
+			ptr +=  sizeof(ks_dht_node_t);
+			ks_dhtrt_insert_node(table, node, 0); 
+		}
+
+		/* 
+		*	now the bucket is complete - now trigger a find.
+		*	This staggers the series of finds.  We only do this for populated tables here. 
+		*	Once the table is loaded, process_table will as normal start the ping/find process to
+		*	update and populate the table.
+		*/
+
+		if (s->count > 0) {
+			if (fnode) {
+				ks_dhtrt_find(table, internal, &fnode->nodeid);
+			}
+			else if (node) {
+				ks_dhtrt_find(table, internal, &node->nodeid);
+			}
+		} 
+	}
+
+	ks_rwl_write_unlock(internal->lock);      /* write unlock */
+	return KS_STATUS_SUCCESS;
 }
 
 

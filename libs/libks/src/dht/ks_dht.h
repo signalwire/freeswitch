@@ -570,6 +570,10 @@ KS_DECLARE(ks_status_t)        ks_dhtrt_release_querynodes(ks_dhtrt_querynodes_t
 
 KS_DECLARE(void)               ks_dhtrt_process_table(ks_dhtrt_routetable_t* table);
 
+KS_DECLARE(uint32_t)	       ks_dhtrt_serialize(ks_dhtrt_routetable_t* table, void** ptr);
+KS_DECLARE(ks_status_t)        ks_dhtrt_deserialize(ks_dhtrt_routetable_t* table, void* ptr);
+
+
 /* debugging aids */
 KS_DECLARE(void)               ks_dhtrt_dump(ks_dhtrt_routetable_t* table, int level);
 

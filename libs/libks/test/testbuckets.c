@@ -620,8 +620,6 @@ void test09()
      char ipv4[] = "123.123.123.123";
     unsigned short port = 7000;
 
-    /* build a delete queue */
-
     int cix=0;
 
     for(int i0=0, i1=0; i0<150; ++i0, ++i1) {
@@ -653,6 +651,88 @@ void test09()
 }
 
 
+
+
+typedef struct ks_dhtrt_serialized_routetable_s
+{
+    uint32_t           size;
+    uint8_t            version;
+    uint8_t            count;
+    char               eye[4];
+} ks_dhtrt_serialized_routetable_t;
+
+
+void test10()
+{
+     printf("**** testbuckets - test10 start\n"); fflush(stdout);
+
+     ks_dht_node_t  *peer;
+     memset(g_nodeid1.id,  0xef, KS_DHT_NODEID_SIZE);
+     memset(g_nodeid2.id,  0xef, KS_DHT_NODEID_SIZE);
+
+     char ipv6[] = "1234:1234:1234:1234";
+     char ipv4[] = "123.123.123.123";
+    unsigned short port = 7000;
+
+    int cix=0;
+
+    for(int i0=0, i1=0; i0<2500; ++i0, ++i1) {
+        if (i0%20 == 0) {
+            g_nodeid2.id[cix]>>=1;
+            //ks_dhtrt_dump(rt, 7);
+            if ( g_nodeid2.id[cix] == 0) ++cix;
+            g_nodeid2.id[19] = 0;
+        }
+        else {
+            ++g_nodeid2.id[19];
+        }
+        ks_dhtrt_create_node(rt, g_nodeid2, KS_DHT_REMOTE, ipv4, port, KS_DHTRT_CREATE_DEFAULT, &peer);
+        ks_dhtrt_touch_node(rt, g_nodeid2);
+        ks_dhtrt_release_node(peer);
+     }
+
+    /* this should expire all nodes after 15 minutes and 3 pings */
+	void *buffer = NULL;
+    uint32_t size = ks_dhtrt_serialize(rt, &buffer);
+
+    
+    if (size > 0) {
+        ks_dhtrt_serialized_routetable_t* p =  (ks_dhtrt_serialized_routetable_t*)buffer;
+        printf("\n\ntest10: version %d   bucket count %d   size %d\n\n", p->version, p->count, p->size);
+        ks_dhtrt_dump(rt, 7);
+    }
+    else {
+        printf("test10: error on serialize\n");
+        return;
+	}
+
+
+    ks_dhtrt_routetable_t* rt2;
+    ks_dhtrt_initroute(&rt2, dht, pool);
+    ks_dhtrt_deserialize(rt2, buffer);
+    ks_dhtrt_dump(rt2, 7);
+
+    ks_dht_nodeid_t  id;
+    memset(id.id, 0xef, 20);
+    id.id[0] = 0x0e;
+    id.id[19] = 0x05;
+
+    ks_dhtrt_touch_node(rt2, id);
+    ks_dht_node_t* n = ks_dhtrt_find_node(rt2, id);
+
+    if (n == NULL) {
+		printf("test10: failed  Unable to find reloaded node \n");
+        exit(200);
+	}
+ 
+    
+    ks_dhtrt_deinitroute(&rt2);
+
+    printf("test10: complete\n");
+
+    return;
+
+}
 
 
 
@@ -1148,6 +1228,13 @@ int main(int argc, char *argv[]) {
          if (tests[tix] == 9) {
              ks_dhtrt_initroute(&rt, dht, pool);
              test09();
+             ks_dhtrt_deinitroute(&rt);
+             continue;
+         }
+
+         if (tests[tix] == 10) {
+             ks_dhtrt_initroute(&rt, dht, pool);
+             test10();
              ks_dhtrt_deinitroute(&rt);
              continue;
          }
