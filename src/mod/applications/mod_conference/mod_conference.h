@@ -212,6 +212,7 @@ typedef enum {
 	MFLAG_ROTATE_VIDEO,
 	MFLAG_INDICATE_DEAF,
 	MFLAG_INDICATE_UNDEAF,
+	MFLAG_TALK_DATA_EVENTS,
 	///////////////////////////
 	MFLAG_MAX
 } member_flag_t;
@@ -652,6 +653,16 @@ typedef struct conference_obj {
 	switch_thread_rwlock_t *rwlock;
 	uint32_t count;
 	int32_t energy_level;
+	int32_t auto_energy_level;
+	int32_t max_energy_level;
+	uint32_t agc_level;
+	uint32_t agc_low_energy_level;
+	uint32_t agc_margin;
+	uint32_t agc_change_factor;
+	uint32_t agc_period_len;
+	uint32_t max_energy_hit_trigger;
+	uint32_t auto_energy_sec;
+	uint32_t burst_mute_count;
 	uint8_t min;
 	switch_speech_handle_t lsh;
 	switch_speech_handle_t *sh;
@@ -677,11 +688,6 @@ typedef struct conference_obj {
 	uint32_t score;
 	int mux_loop_count;
 	int member_loop_count;
-	int agc_level;
-
-	uint32_t avg_score;
-	uint32_t avg_itt;
-	uint32_t avg_tally;
 	switch_time_t run_time;
 	char *uuid_str;
 	uint32_t originating;
@@ -762,14 +768,35 @@ struct conference_member {
 	uint32_t read;
 	uint32_t vol_period;
 	int32_t energy_level;
-	int32_t agc_volume_in_level;
+	int32_t auto_energy_level;
+	int32_t max_energy_level;
+	uint32_t agc_level;
+	uint32_t agc_low_energy_level;
+	uint32_t agc_margin;
+	uint32_t agc_change_factor;
+	uint32_t agc_period_len;
+	switch_agc_t *agc;
+	uint32_t mute_counter;
+	uint32_t burst_mute_count;
+	uint32_t score_avg;
+	uint32_t max_energy_hits;
+	uint32_t max_energy_hit_trigger;
 	int32_t volume_in_level;
 	int32_t volume_out_level;
-	int32_t agc_concur;
-	int32_t nt_tally;
 	switch_time_t join_time;
-	switch_time_t last_talking;
+	time_t last_talking;
+	switch_time_t first_talk_detect;
+	uint32_t talk_detects;
+	uint32_t auto_energy_track;
+	uint32_t talk_track;
+	uint32_t score_count;
+	uint32_t score_accum;
+	uint32_t score_delta_accum;
 	uint32_t native_rate;
+	uint32_t gate_open;
+	uint32_t gate_count;
+	uint32_t nogate_count;
+	uint32_t talking_count;
 	switch_audio_resampler_t *read_resampler;
 	int16_t *resample_out;
 	uint32_t resample_out_len;
@@ -778,9 +805,6 @@ struct conference_member {
 	switch_speech_handle_t lsh;
 	switch_speech_handle_t *sh;
 	uint32_t verbose_events;
-	uint32_t avg_score;
-	uint32_t avg_itt;
-	uint32_t avg_tally;
 	struct conference_member *next;
 	switch_ivr_dmachine_t *dmachine;
 	conference_cdr_node_t *cdr_node;
@@ -1030,8 +1054,7 @@ switch_status_t conference_text_thread_callback(switch_core_session_t *session, 
 void *SWITCH_THREAD_FUNC conference_video_muxing_write_thread_run(switch_thread_t *thread, void *obj);
 void conference_video_launch_layer_thread(conference_member_t *member);
 void conference_video_wake_layer_thread(conference_member_t *member);
-void conference_member_check_agc_levels(conference_member_t *member);
-void conference_member_clear_avg(conference_member_t *member);
+
 int conference_member_noise_gate_check(conference_member_t *member);
 void conference_member_check_channels(switch_frame_t *frame, conference_member_t *member, switch_bool_t in);
 
@@ -1065,6 +1088,7 @@ void conference_video_canvas_set_fnode_layer(mcu_canvas_t *canvas, conference_fi
 void conference_list(conference_obj_t *conference, switch_stream_handle_t *stream, char *delim);
 const char *conference_utils_combine_flag_var(switch_core_session_t *session, const char *var_name);
 int conference_loop_mapping_len();
+void conference_api_set_agc(conference_member_t *member, const char *data);
 
 switch_status_t conference_outcall(conference_obj_t *conference,
 								   char *conference_name,
@@ -1136,7 +1160,6 @@ switch_status_t conference_api_sub_play_status(conference_obj_t *conference, swi
 switch_status_t conference_api_sub_play(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv);
 switch_status_t conference_api_sub_say(conference_obj_t *conference, switch_stream_handle_t *stream, const char *text);
 switch_status_t conference_api_sub_dial(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv);
-switch_status_t conference_api_sub_agc(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv);
 switch_status_t conference_api_sub_bgdial(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv);
 switch_status_t conference_api_sub_auto_position(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv);
 switch_status_t conference_api_sub_saymember(conference_obj_t *conference, switch_stream_handle_t *stream, const char *text);
@@ -1172,6 +1195,9 @@ switch_status_t conference_api_sub_list(conference_obj_t *conference, switch_str
 switch_status_t conference_api_sub_xml_list(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv);
 switch_status_t conference_api_sub_json_list(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv);
 switch_status_t conference_api_sub_energy(conference_member_t *member, switch_stream_handle_t *stream, void *data);
+switch_status_t conference_api_sub_auto_energy(conference_member_t *member, switch_stream_handle_t *stream, void *data);
+switch_status_t conference_api_sub_agc(conference_member_t *member, switch_stream_handle_t *stream, void *data);
+switch_status_t conference_api_sub_max_energy(conference_member_t *member, switch_stream_handle_t *stream, void *data);
 switch_status_t conference_api_sub_watching_canvas(conference_member_t *member, switch_stream_handle_t *stream, void *data);
 switch_status_t conference_api_sub_canvas(conference_member_t *member, switch_stream_handle_t *stream, void *data);
 switch_status_t conference_api_sub_layer(conference_member_t *member, switch_stream_handle_t *stream, void *data);

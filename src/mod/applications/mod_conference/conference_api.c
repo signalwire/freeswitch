@@ -47,6 +47,9 @@ api_command_t conference_api_sub_commands[] = {
 	{"xml_list", (void_fn_t) & conference_api_sub_xml_list, CONF_API_SUB_ARGS_SPLIT, "xml_list", ""},
 	{"json_list", (void_fn_t) & conference_api_sub_json_list, CONF_API_SUB_ARGS_SPLIT, "json_list", "[compact]"},
 	{"energy", (void_fn_t) & conference_api_sub_energy, CONF_API_SUB_MEMBER_TARGET, "energy", "<member_id|all|last|non_moderator> [<newval>]"},
+	{"auto-energy", (void_fn_t) & conference_api_sub_auto_energy, CONF_API_SUB_MEMBER_TARGET, "auto-energy", "<member_id|all|last|non_moderator> [<newval>]"},
+	{"max-energy", (void_fn_t) & conference_api_sub_max_energy, CONF_API_SUB_MEMBER_TARGET, "max-energy", "<member_id|all|last|non_moderator> [<newval>]"},
+	{"agc", (void_fn_t) & conference_api_sub_agc, CONF_API_SUB_MEMBER_TARGET, "agc", "<member_id|all|last|non_moderator> [<newval>]"},
 	{"vid-canvas", (void_fn_t) & conference_api_sub_canvas, CONF_API_SUB_MEMBER_TARGET, "vid-canvas", "<member_id|all|last|non_moderator> [<newval>]"},
 	{"vid-watching-canvas", (void_fn_t) & conference_api_sub_watching_canvas, CONF_API_SUB_MEMBER_TARGET, "vid-watching-canvas", "<member_id|all|last|non_moderator> [<newval>]"},
 	{"vid-layer", (void_fn_t) & conference_api_sub_layer, CONF_API_SUB_MEMBER_TARGET, "vid-layer", "<member_id|all|last|non_moderator> [<newval>]"},
@@ -78,7 +81,6 @@ api_command_t conference_api_sub_commands[] = {
 	{"relate", (void_fn_t) & conference_api_sub_relate, CONF_API_SUB_ARGS_SPLIT, "relate", "<member_id>[,<member_id>] <other_member_id>[,<other_member_id>] [nospeak|nohear|clear]"},
 	{"lock", (void_fn_t) & conference_api_sub_lock, CONF_API_SUB_ARGS_SPLIT, "lock", ""},
 	{"unlock", (void_fn_t) & conference_api_sub_unlock, CONF_API_SUB_ARGS_SPLIT, "unlock", ""},
-	{"agc", (void_fn_t) & conference_api_sub_agc, CONF_API_SUB_ARGS_SPLIT, "agc", ""},
 	{"dial", (void_fn_t) & conference_api_sub_dial, CONF_API_SUB_ARGS_SPLIT, "dial", "<endpoint_module_name>/<destination> <callerid number> <callerid name>"},
 	{"bgdial", (void_fn_t) & conference_api_sub_bgdial, CONF_API_SUB_ARGS_SPLIT, "bgdial", "<endpoint_module_name>/<destination> <callerid number> <callerid name>"},
 	{"transfer", (void_fn_t) & conference_api_sub_transfer, CONF_API_SUB_ARGS_SPLIT, "transfer", "<conference_name> <member id> [...<member id>]"},
@@ -289,53 +291,6 @@ switch_status_t conference_api_sub_syntax(char **syntax)
 	*syntax = p;
 
 	return SWITCH_STATUS_SUCCESS;
-}
-
-
-switch_status_t conference_api_sub_agc(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv)
-{
-	int level;
-	int on = 0;
-
-	if (argc == 2) {
-		stream->write_function(stream, "+OK CURRENT AGC LEVEL IS %d\n", conference->agc_level);
-		return SWITCH_STATUS_SUCCESS;
-	}
-
-
-	if (!(on = !strcasecmp(argv[2], "on"))) {
-		stream->write_function(stream, "+OK AGC DISABLED\n");
-		conference->agc_level = 0;
-		return SWITCH_STATUS_SUCCESS;
-	}
-
-	if (argc > 3) {
-		level = atoi(argv[3]);
-	} else {
-		level = DEFAULT_AGC_LEVEL;
-	}
-
-	if (level > conference->energy_level) {
-		conference->avg_score = 0;
-		conference->avg_itt = 0;
-		conference->avg_tally = 0;
-		conference->agc_level = level;
-
-		if (stream) {
-			stream->write_function(stream, "OK AGC ENABLED %d\n", conference->agc_level);
-		}
-
-	} else {
-		if (stream) {
-			stream->write_function(stream, "-ERR invalid level\n");
-		}
-	}
-
-
-
-
-	return SWITCH_STATUS_SUCCESS;
-
 }
 
 switch_status_t conference_api_sub_mute(conference_member_t *member, switch_stream_handle_t *stream, void *data)
@@ -911,11 +866,244 @@ switch_status_t conference_api_sub_energy(conference_member_t *member, switch_st
 	if (stream != NULL) {
 		stream->write_function(stream, "Energy %u = %d\n", member->id, member->energy_level);
 	}
+
+	if (member->auto_energy_level && member->energy_level > member->auto_energy_level) {
+		member->auto_energy_level  = 0;
+		stream->write_function(stream, "Auto-Energy level exceeded, Auto-Energy mode disabled\n", SWITCH_VA_NONE);
+	}
+
+
 	if (test_eflag(member->conference, EFLAG_ENERGY_LEVEL_MEMBER) &&
 		data && switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_member_add_event_data(member, event);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "energy-level-member");
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Energy-Level", "%d", member->energy_level);
+		switch_event_fire(&event);
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+void conference_api_set_agc(conference_member_t *member, const char *data)
+{
+	int tmp = 0;
+	char *argv[4] = { 0 };
+	char *conf;
+
+	if (data) {
+		conf = switch_core_strdup(member->pool, data);
+		switch_split(conf, ':', argv);
+	} else {
+		member->agc_level = member->conference->agc_level;
+		member->agc_low_energy_level = member->conference->agc_low_energy_level;
+		member->agc_change_factor = member->conference->agc_change_factor;
+		member->agc_margin = member->conference->agc_margin;
+		member->agc_period_len = member->conference->agc_period_len;
+	}
+
+	if (argv[0]) {
+		tmp = atoi(argv[0]);
+
+		if (tmp > 0) {
+			member->agc_level = tmp;
+		}
+	}
+
+	if (argv[1]) {
+		tmp = atoi(argv[1]);
+
+		if (tmp > 0) {
+			member->agc_low_energy_level = tmp;
+		}
+	}
+
+
+	if (argv[2]) {
+		tmp = atoi(argv[2]);
+
+		if (tmp > 0) {
+			member->agc_change_factor = tmp;
+		}
+	}
+
+
+	if (argv[2]) {
+		tmp = atoi(argv[0]);
+
+		if (tmp > 0) {
+			member->agc_period_len = (1000 / member->conference->interval) * tmp;
+		}
+	}
+
+
+	if (!member->agc) {
+		switch_agc_create(&member->agc, member->agc_level, member->agc_low_energy_level, member->agc_margin,
+						  member->agc_change_factor, member->agc_period_len);
+	} else {
+		switch_agc_set(member->agc, member->agc_level, member->agc_low_energy_level, member->agc_margin,
+					   member->agc_change_factor, member->agc_period_len);
+	}
+
+}
+
+
+switch_status_t conference_api_sub_agc(conference_member_t *member, switch_stream_handle_t *stream, void *data)
+{
+	switch_event_t *event;
+
+	if (member == NULL) {
+		return SWITCH_STATUS_GENERR;
+	}
+
+	if (data) {
+		lock_member(member);
+		if (!strcasecmp(data, "up")) {
+			member->agc_level += 200;
+			if (member->agc_level > 1800) {
+				member->agc_level = 1800;
+			}
+		} else if (!strcasecmp(data, "down")) {
+			member->agc_level -= 200;
+			if (member->agc_level < 0) {
+				member->agc_level = 0;
+			}
+		} else {
+			conference_api_set_agc(member, (char *)data);
+		}
+		unlock_member(member);
+	}
+	if (stream != NULL) {
+		stream->write_function(stream, "Agc %u = %d\n", member->id, member->agc_level);
+	}
+
+
+	//	if (test_eflag(member->conference, EFLAG_AGC_LEVEL_MEMBER) &&
+	if (data && switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+		conference_member_add_event_data(member, event);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "agc-level-member");
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Agc-Level", "%d", member->agc_level);
+		switch_event_fire(&event);
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
+switch_status_t conference_api_sub_auto_energy(conference_member_t *member, switch_stream_handle_t *stream, void *data)
+{
+	switch_event_t *event;
+
+	if (member == NULL) {
+		return SWITCH_STATUS_GENERR;
+	}
+
+	if (data) {
+		lock_member(member);
+		if (!strcasecmp(data, "up")) {
+			member->auto_energy_level += 200;
+			if (member->auto_energy_level > 1800) {
+				member->auto_energy_level = 1800;
+			}
+		} else if (!strcasecmp(data, "down")) {
+			member->auto_energy_level -= 200;
+			if (member->auto_energy_level < 0) {
+				member->auto_energy_level = 0;
+			}
+		} else {
+			member->auto_energy_level = atoi((char *) data);
+		}
+		unlock_member(member);
+	}
+	if (stream != NULL) {
+		stream->write_function(stream, "%u = Auto-Energy: %d Energy: %d\n", member->id, member->auto_energy_level, member->energy_level);
+	}
+
+	if (!member->energy_level) {
+		member->energy_level = member->auto_energy_level / 2;
+	}
+
+
+	if (test_eflag(member->conference, EFLAG_ENERGY_LEVEL_MEMBER) &&
+		data && switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+		conference_member_add_event_data(member, event);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "auto-energy-level-member");
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Auto-Energy-Level", "%d", member->auto_energy_level);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Energy-Level", "%d", member->energy_level);
+		switch_event_fire(&event);
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+switch_status_t conference_api_sub_max_energy(conference_member_t *member, switch_stream_handle_t *stream, void *data)
+{
+	switch_event_t *event;
+
+	if (member == NULL) {
+		return SWITCH_STATUS_GENERR;
+	}
+
+	if (data) {
+		lock_member(member);
+		if (!strcasecmp(data, "up")) {
+			member->max_energy_level += 200;
+			if (member->max_energy_level > 1800) {
+				member->max_energy_level = 1800;
+			}
+		} else if (!strcasecmp(data, "down")) {
+			member->max_energy_level -= 200;
+			if (member->max_energy_level < 0) {
+				member->max_energy_level = 0;
+			}
+		} else {
+			member->max_energy_level = atoi((char *) data);
+		}
+		unlock_member(member);
+	}
+
+	if (member->max_energy_level && member->max_energy_level < member->energy_level) {
+		member->max_energy_level = 0;
+		stream->write_function(stream, "-ERR %u Max-Energy cannot exceed energy level.\n", member->id);
+	} else if (data) {
+		char *p, *q;
+		if ((p = strchr(data, ':'))) {
+			p++;
+			if (*p) {
+				int tmp = atoi(p);
+				if (tmp >= 0) {
+					member->burst_mute_count = tmp / member->conference->interval;
+				}
+
+				if ((q = strchr(p, ':'))) {
+					q++;
+					if (*q) {
+						int tmp = atoi(q);
+						
+						if (tmp >= 0) {
+							member->max_energy_hit_trigger = tmp;
+						}
+					}
+				}
+			}
+		}
+	}
+
+
+	if (stream != NULL) {
+		stream->write_function(stream, "%u = Max-Energy: %d Energy: %d Max-Energy-Mute: %dms Max-Energy-Hit-Trigger %d\n", 
+							   member->id, member->energy_level, member->max_energy_level, member->burst_mute_count * member->conference->interval, member->max_energy_hit_trigger);
+	}
+
+
+	if (test_eflag(member->conference, EFLAG_ENERGY_LEVEL_MEMBER) &&
+		data && switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+		conference_member_add_event_data(member, event);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "max-energy-level-member");
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Max-Energy-Level", "%d", member->max_energy_level);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Max-Energy-Mute", "%d", member->burst_mute_count * member->conference->interval);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Max-Energy-Hit-Trigger", "%d", member->max_energy_hit_trigger);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Energy-Level", "%d", member->max_energy_level);
+
 		switch_event_fire(&event);
 	}
 

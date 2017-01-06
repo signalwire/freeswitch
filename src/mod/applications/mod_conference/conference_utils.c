@@ -130,6 +130,8 @@ void conference_utils_set_mflags(const char *flags, member_flag_t *f)
 				f[MFLAG_ENDCONF] = 1;
 			} else if (!strcasecmp(argv[i], "mintwo")) {
 				f[MFLAG_MINTWO] = 1;
+			} else if (!strcasecmp(argv[i], "talk-data-events")) {
+				f[MFLAG_TALK_DATA_EVENTS] = 1;
 			} else if (!strcasecmp(argv[i], "video-bridge")) {
 				f[MFLAG_VIDEO_BRIDGE] = 1;
 			} else if (!strcasecmp(argv[i], "ghost")) {

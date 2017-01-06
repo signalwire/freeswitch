@@ -417,6 +417,15 @@ struct switch_agc_s {
 };
 
 
+SWITCH_DECLARE(void) switch_agc_set(switch_agc_t *agc, uint32_t energy_avg, 
+											   uint32_t low_energy_point, uint32_t margin, uint32_t change_factor, uint32_t period_len)
+{
+	agc->energy_avg = energy_avg;
+	agc->margin = margin;
+	agc->change_factor = change_factor;
+	agc->period_len = period_len;
+	agc->low_energy_point = low_energy_point;
+}
 
 SWITCH_DECLARE(switch_status_t) switch_agc_create(switch_agc_t **agcP, uint32_t energy_avg, 
 												  uint32_t low_energy_point, uint32_t margin, uint32_t change_factor, uint32_t period_len)
@@ -430,11 +439,8 @@ SWITCH_DECLARE(switch_status_t) switch_agc_create(switch_agc_t **agcP, uint32_t 
 	
 	agc = switch_core_alloc(pool, sizeof(*agc));
 	agc->pool = pool;
-	agc->energy_avg = energy_avg;
-	agc->margin = margin;
-	agc->change_factor = change_factor;
-	agc->period_len = period_len;
-	agc->low_energy_point = low_energy_point;
+
+	switch_agc_set(agc, energy_avg, low_energy_point, margin, change_factor, period_len);
 
 	*agcP = agc;
 

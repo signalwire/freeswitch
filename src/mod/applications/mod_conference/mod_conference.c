@@ -137,10 +137,8 @@ void conference_list(conference_obj_t *conference, switch_stream_handle_t *strea
 			count++;
 		}
 
-		stream->write_function(stream, "%s%d%s%d%s%d%s%d\n", delim,
+		stream->write_function(stream, "%s%d%s%d%s%d\n", delim,
 							   member->volume_in_level,
-							   delim,
-							   member->agc_volume_in_level,
 							   delim, member->volume_out_level, delim, member->energy_level);
 	}
 
@@ -205,7 +203,6 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 	int16_t *bptr;
 	uint32_t x = 0;
 	int32_t z = 0;
-	int member_score_sum = 0;
 	int divisor = 0;
 	conference_cdr_node_t *np;
 
@@ -234,7 +231,6 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 		switch_size_t file_sample_len = samples;
 		switch_size_t file_data_len = samples * 2 * conference->channels;
 		int has_file_data = 0, members_with_video = 0, members_with_avatar = 0, members_seeing_video = 0;
-		uint32_t conference_energy = 0;
 		int nomoh = 0;
 		conference_member_t *floor_holder;
 		switch_status_t moh_status = SWITCH_STATUS_SUCCESS;
@@ -553,7 +549,6 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 				}
 			}
 
-			member_score_sum = 0;
 			conference->mux_loop_count = 0;
 			conference->member_loop_count = 0;
 
@@ -566,32 +561,10 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 					continue;
 				}
 
-				if (conference->agc_level) {
-					if (conference_utils_member_test_flag(omember, MFLAG_TALKING) && conference_utils_member_test_flag(omember, MFLAG_CAN_SPEAK)) {
-						member_score_sum += omember->score;
-						conference->mux_loop_count++;
-					}
-				}
-
 				bptr = (int16_t *) omember->frame;
 				for (x = 0; x < omember->read / 2; x++) {
 					main_frame[x] += (int32_t) bptr[x];
 				}
-			}
-
-			if (conference->agc_level && conference->member_loop_count) {
-				conference_energy = 0;
-
-				for (x = 0; x < bytes / 2; x++) {
-					z = abs(main_frame[x]);
-					switch_normalize_to_16bit(z);
-					conference_energy += (int16_t) z;
-				}
-
-				conference->score = conference_energy / ((bytes / 2) / divisor) / conference->member_loop_count;
-				conference->avg_tally += conference->score;
-				conference->avg_score = conference->avg_tally / ++conference->avg_itt;
-				if (!conference->avg_itt) conference->avg_tally = conference->score;
 			}
 
 			/* Create write frame once per member who is not deaf for each sample in the main frame
@@ -671,7 +644,7 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 			int16_t write_frame[SWITCH_RECOMMENDED_BUFFER_SIZE] = { 0 };
 
 			if (conference->comfort_noise_level) {
-				switch_generate_sln_silence(write_frame, samples, conference->channels, conference->comfort_noise_level);
+				switch_generate_sln_silence(write_frame, samples, conference->channels, conference->comfort_noise_level * (conference->rate / 8000));
 			} else {
 				memset(write_frame, 255, bytes);
 			}
@@ -1186,12 +1159,6 @@ void conference_xlist(conference_obj_t *conference, switch_xml_t x_conference, i
 	switch_snprintf(i, sizeof(i), "%d", switch_epoch_time_now(NULL) - conference->run_time);
 	switch_xml_set_attr_d(x_conference, "run_time", ival);
 
-	if (conference->agc_level) {
-		char tmp[30] = "";
-		switch_snprintf(tmp, sizeof(tmp), "%d", conference->agc_level);
-		switch_xml_set_attr_d_buf(x_conference, "agc", tmp);
-	}
-
 	x_members = switch_xml_add_child_d(x_conference, "members", 0);
 	switch_assert(x_members);
 
@@ -1298,13 +1265,6 @@ void conference_xlist(conference_obj_t *conference, switch_xml_t x_conference, i
 
 		switch_snprintf(tmp, sizeof(tmp), "%d", member->volume_out_level);
 		add_x_tag(x_member, "output-volume", tmp, toff++);
-
-		switch_snprintf(tmp, sizeof(tmp), "%d", member->agc_volume_in_level ? member->agc_volume_in_level : member->volume_in_level);
-		add_x_tag(x_member, "input-volume", tmp, toff++);
-
-		switch_snprintf(tmp, sizeof(tmp), "%d", member->agc_volume_in_level);
-		add_x_tag(x_member, "auto-adjusted-input-volume", tmp, toff++);
-
 	}
 
 	switch_mutex_unlock(conference->member_mutex);
@@ -1353,10 +1313,6 @@ void conference_jlist(conference_obj_t *conference, cJSON *json_conferences)
 		cJSON_AddNumberToObject(json_conference, "max_members", conference->max_members);
 	}
 
-	if (conference->agc_level) {
-		cJSON_AddNumberToObject(json_conference, "agc", conference->agc_level);
-	}
-
 	cJSON_AddItemToObject(json_conference, "members", json_conference_members = cJSON_CreateArray());
 	switch_mutex_lock(conference->member_mutex);
 	for (member = conference->members; member; member = member->next) {
@@ -1393,8 +1349,7 @@ void conference_jlist(conference_obj_t *conference, cJSON *json_conferences)
 		cJSON_AddNumberToObject(json_conference_member, "volume_in", member->volume_in_level);
 		cJSON_AddNumberToObject(json_conference_member, "volume_out", member->volume_out_level);
 		cJSON_AddNumberToObject(json_conference_member, "output-volume", member->volume_out_level);
-		cJSON_AddNumberToObject(json_conference_member, "input-volume", member->agc_volume_in_level ? member->agc_volume_in_level : member->volume_in_level);
-		cJSON_AddNumberToObject(json_conference_member, "auto-adjusted-input-volume", member->agc_volume_in_level);
+		cJSON_AddNumberToObject(json_conference_member, "input-volume", member->volume_in_level);
 		ADDBOOL(json_conference_member_flags, "can_hear", conference_utils_member_test_flag(member, MFLAG_CAN_HEAR));
 		ADDBOOL(json_conference_member_flags, "can_speak", conference_utils_member_test_flag(member, MFLAG_CAN_SPEAK));
 		ADDBOOL(json_conference_member_flags, "mute_detect", conference_utils_member_test_flag(member, MFLAG_MUTE_DETECT));
@@ -2613,7 +2568,16 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 	char *pin_sound = NULL;
 	char *bad_pin_sound = NULL;
 	char *energy_level = NULL;
-	char *auto_gain_level = NULL;
+	char *auto_energy_level = NULL;
+	char *max_energy_level = NULL;
+	char *max_energy_hit_trigger = NULL;
+	char *max_energy_level_mute_ms = NULL;
+	char *auto_energy_sec = NULL;
+	char *agc_level = NULL;
+	char *agc_low_energy_level = NULL;
+	char *agc_margin = NULL;
+	char *agc_change_factor = NULL;
+	char *agc_period_len = NULL;
 	char *caller_id_name = NULL;
 	char *caller_id_number = NULL;
 	char *caller_controls = NULL;
@@ -2672,6 +2636,7 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 	int scale_h264_canvas_height = 0;
 	int scale_h264_canvas_fps_divisor = 0;
 	char *scale_h264_canvas_bandwidth = NULL;
+	int tmp;
 
 	/* Validate the conference name */
 	if (zstr(name)) {
@@ -2876,8 +2841,26 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 				bad_pin_sound = val;
 			} else if (!strcasecmp(var, "energy-level") && !zstr(val)) {
 				energy_level = val;
+			} else if (!strcasecmp(var, "auto-energy-level") && !zstr(val)) {
+				auto_energy_level = val;
+			} else if (!strcasecmp(var, "max-energy-level") && !zstr(val)) {
+				max_energy_level = val;
+			} else if (!strcasecmp(var, "max-energy-hit-trigger") && !zstr(val)) {
+				max_energy_hit_trigger = val;
+			} else if (!strcasecmp(var, "max-energy-level-mute-ms") && !zstr(val)) {
+				max_energy_level_mute_ms = val;
+			} else if (!strcasecmp(var, "auto-energy-seconds") && !zstr(val)) {
+				auto_energy_sec = val;
 			} else if (!strcasecmp(var, "auto-gain-level") && !zstr(val)) {
-				auto_gain_level = val;
+				agc_level = val;
+			} else if (!strcasecmp(var, "auto-gain-low-energy-level") && !zstr(val)) {
+				agc_low_energy_level = val;
+			} else if (!strcasecmp(var, "auto-gain-margin") && !zstr(val)) {
+				agc_margin = val;
+			} else if (!strcasecmp(var, "auto-gain-change-factor") && !zstr(val)) {
+				agc_change_factor = val;
+			} else if (!strcasecmp(var, "auto-gain-period-len") && !zstr(val)) {
+				agc_period_len = val;
 			} else if (!strcasecmp(var, "caller-id-name") && !zstr(val)) {
 				caller_id_name = val;
 			} else if (!strcasecmp(var, "caller-id-number") && !zstr(val)) {
@@ -3348,17 +3331,54 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 		}
 	}
 
-	if (!zstr(auto_gain_level)) {
-		int level = 0;
+	if (!zstr(max_energy_level_mute_ms)) {
+		int mute_ms = atoi(max_energy_level_mute_ms);
 
-		if (switch_true(auto_gain_level) && !switch_is_number(auto_gain_level)) {
-			level = DEFAULT_AGC_LEVEL;
-		} else {
-			level = atoi(auto_gain_level);
+		if (mute_ms > 0) {
+			conference->burst_mute_count = mute_ms / conference->interval;
+		}
+	}
+
+	conference->max_energy_hit_trigger = 5;
+
+	if (!zstr(max_energy_level)) {
+		conference->max_energy_hit_trigger = atoi(max_energy_hit_trigger);
+		if (conference->max_energy_hit_trigger < 0) {
+			conference->max_energy_hit_trigger = 0;
+		}
+	}
+
+	if (!zstr(max_energy_level)) {
+		conference->max_energy_level = atoi(max_energy_level);
+		if (conference->max_energy_level < 0) {
+			conference->max_energy_level = 0;
 		}
 
-		if (level > 0 && level > conference->energy_level) {
-			conference->agc_level = level;
+
+		if (conference->energy_level && conference->max_energy_level < conference->energy_level) {
+			conference->max_energy_level = 0;
+		}
+	}
+
+	if (!zstr(auto_energy_sec)) {
+		conference->auto_energy_sec = atoi(auto_energy_sec);
+		if (conference->auto_energy_sec < 0) {
+			conference->auto_energy_sec = 0;
+		}
+	}
+
+	if (!conference->auto_energy_sec) {
+		conference->auto_energy_sec = 5;
+	}
+
+	if (!zstr(auto_energy_level)) {
+		conference->auto_energy_level = atoi(auto_energy_level);
+		if (conference->auto_energy_level < 0) {
+			conference->auto_energy_level = 0;
+		}
+		
+		if (!conference->energy_level) {
+			conference->energy_level = conference->auto_energy_level / 2;
 		}
 	}
 
@@ -3390,6 +3410,49 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 	conference->interval = interval;
 	conference->ivr_dtmf_timeout = ivr_dtmf_timeout;
 	conference->ivr_input_timeout = ivr_input_timeout;
+
+
+	conference->agc_level = 0;
+	conference->agc_low_energy_level = 0;
+	conference->agc_margin = 500;
+	conference->agc_change_factor = 3;
+	conference->agc_period_len = (1000 / conference->interval) * 2;
+
+
+	if (agc_level) {
+		tmp = atoi(agc_level);
+		if (tmp > 0) {
+			conference->agc_level = tmp;
+		}
+	}
+
+	if (agc_low_energy_level) {
+		tmp = atoi(agc_low_energy_level);
+		if (tmp > 0) {
+			conference->agc_low_energy_level = tmp;
+		}
+	}
+
+	if (agc_margin) {
+		tmp = atoi(agc_margin);
+		if (tmp > 0) {
+			conference->agc_margin = tmp;
+		}
+	}
+
+	if (agc_change_factor) {
+		tmp = atoi(agc_change_factor);
+		if (tmp > 0) {
+			conference->agc_change_factor = tmp;
+		}
+	}
+
+	if (agc_period_len) {
+		tmp = atoi(agc_period_len);
+		if (tmp > 0) {
+			conference->agc_period_len = (1000 / conference->interval) * tmp;
+		}
+	}
 
 	if (video_auto_floor_msec) {
 		conference->video_floor_packets = video_auto_floor_msec / conference->interval;

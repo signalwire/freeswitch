@@ -490,7 +490,6 @@ void conference_cdr_del(conference_member_t *member)
 {
 	switch_mutex_lock(member->conference->member_mutex);
 	if (member->cdr_node) {
-
 		if (member->channel) {
 			switch_channel_get_variables(member->channel, &member->cdr_node->var_event);
 		}
