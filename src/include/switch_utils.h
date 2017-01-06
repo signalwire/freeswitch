@@ -1061,6 +1061,13 @@ static inline int switch_needs_url_encode(const char *s)
 SWITCH_DECLARE(char *) switch_url_encode_opt(const char *url, char *buf, size_t len, switch_bool_t double_encode);
 SWITCH_DECLARE(char *) switch_url_encode(const char *url, char *buf, size_t len);
 SWITCH_DECLARE(char *) switch_url_decode(char *s);
+
+SWITCH_DECLARE(char *) switch_core_url_encode_opt(switch_memory_pool_t *pool, const char *url, switch_bool_t double_encode);
+SWITCH_DECLARE(char *) switch_core_url_encode(switch_memory_pool_t *pool, const char *url);
+SWITCH_DECLARE(char *) switch_core_session_url_encode_opt(switch_core_session_t *session, const char *url, switch_bool_t double_encode);
+SWITCH_DECLARE(char *) switch_core_session_url_encode(switch_core_session_t *session, const char *url);
+
+
 SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to,
 												  const char *from,
 												  const char *headers,

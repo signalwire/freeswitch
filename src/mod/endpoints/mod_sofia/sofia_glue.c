@@ -858,6 +858,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		if (!tech_pvt->from_str) {
 			const char *sipip;
 			const char *format;
+			char *use_cid_num = switch_core_session_url_encode(tech_pvt->session, cid_num);
 
 			sipip = tech_pvt->profile->sipip;
 
@@ -871,7 +872,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 
 			format = strchr(sipip, ':') ? "\"%s\" <sip:%s%s[%s]>" : "\"%s\" <sip:%s%s%s>";
 
-			tech_pvt->from_str = switch_core_session_sprintf(tech_pvt->session, format, cid_name, cid_num, !zstr(cid_num) ? "@" : "", sipip);
+			tech_pvt->from_str = switch_core_session_sprintf(tech_pvt->session, format, cid_name, use_cid_num, !zstr(cid_num) ? "@" : "", sipip);
 		}
 
 		if (from_var) {

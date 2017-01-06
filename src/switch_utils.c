@@ -3199,6 +3199,58 @@ SWITCH_DECLARE(int) switch_socket_waitfor(switch_pollfd_t *poll, int ms)
 	return nsds;
 }
 
+SWITCH_DECLARE(char *) switch_core_session_url_encode(switch_core_session_t *session, const char *url)
+{
+	return switch_core_url_encode_opt(switch_core_session_get_pool(session), url, SWITCH_FALSE);
+}
+
+SWITCH_DECLARE(char *) switch_core_session_url_encode_opt(switch_core_session_t *session, const char *url, switch_bool_t double_encode)
+{
+	return switch_core_url_encode_opt(switch_core_session_get_pool(session), url, double_encode);
+}
+
+SWITCH_DECLARE(char *) switch_core_url_encode(switch_memory_pool_t *pool, const char *url)
+{
+	return switch_core_url_encode_opt(pool, url, SWITCH_FALSE);
+}
+
+SWITCH_DECLARE(char *) switch_core_url_encode_opt(switch_memory_pool_t *pool, const char *url, switch_bool_t double_encode)
+{
+	const char hex[] = "0123456789ABCDEF";
+	switch_size_t len = 0;
+	switch_size_t slen = 0;
+	const char *p, *e = end_of_p(url);
+
+	if (!url) return NULL;
+	if (!pool) return NULL;
+
+	for (p = url; *p; p++) {
+		int ok = 0;
+
+		len++;
+		slen++;
+
+		if (!double_encode && *p == '%' && e-p > 1) {
+			if (strchr(hex, *(p+1)) && strchr(hex, *(p+2))) {
+				ok = 1;
+			}
+		}
+
+		if (!ok && (*p < ' ' || *p > '~' || strchr(SWITCH_URL_UNSAFE, *p))) {
+			len += 2;
+		}
+	}
+
+	slen++;
+	len++; /* NULL Terminatior */
+
+	if (slen == len) {
+		return switch_core_strdup(pool, url);
+	} else {
+		return switch_url_encode_opt(url, switch_core_alloc(pool, sizeof(char) * len), len, double_encode);
+	}
+}
+
 SWITCH_DECLARE(char *) switch_url_encode_opt(const char *url, char *buf, size_t len, switch_bool_t double_encode)
 {
 	const char *p, *e = end_of_p(url);
