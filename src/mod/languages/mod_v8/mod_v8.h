@@ -24,6 +24,7 @@
  * Contributor(s):
  * Peter Olsson <peter@olssononline.se>
  * Anthony Minessale II <anthm@freeswitch.org>
+ * Andrey Volk <andywolk@gmail.com>
  *
  * mod_v8.h -- JavaScript FreeSWITCH module header file
  *
@@ -71,12 +72,20 @@ typedef struct {
 	char* XML_STRING;
 } v8_xml_handler_t;
 
+/* Struct that stores a javascript variable's name for an event */
+typedef struct {
+	const char* var_name;
+	switch_event_t *event;
+}
+v8_event_t;
+
 SWITCH_END_EXTERN_C
 
 void v8_add_event_handler(void *event_handler);
 void v8_remove_event_handler(void *event_handler);
 static switch_xml_t v8_fetch(const char *section,
 	const char *tag_name, const char *key_name, const char *key_value, switch_event_t *params, void *user_data);
+static void v8_event_handler(switch_event_t *event);
 
 #endif /* MOD_V8_H */
 

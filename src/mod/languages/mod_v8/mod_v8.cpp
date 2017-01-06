@@ -276,7 +276,7 @@ static switch_status_t load_modules(void)
 	switch_core_hash_init(&module_manager.load_hash);
 
 	if ((xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
-		switch_xml_t mods, ld, settings, param;
+		switch_xml_t mods, ld, settings, param, hook;
 
 		if ((settings = switch_xml_child(cfg, "settings"))) {
 			for (param = switch_xml_child(settings, "param"); param; param = param->next) {
@@ -291,6 +291,37 @@ static switch_status_t load_modules(void)
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "binding '%s' to '%s'\n", globals.xml_handler, val);
 						switch_xml_bind_search_function(v8_fetch, switch_xml_parse_section_string(val), NULL);
 					}
+				}
+			}
+
+			for (hook = switch_xml_child(settings, "hook"); hook; hook = hook->next) {
+				char *event = (char *)switch_xml_attr_soft(hook, "event");
+				char *subclass = (char *)switch_xml_attr_soft(hook, "subclass");
+				char *script = (char *)switch_xml_attr_soft(hook, "script");
+				switch_event_types_t evtype;
+
+				if (!zstr(script)) {
+					script = switch_core_strdup(globals.pool, script);
+				}
+
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "hook params: '%s' | '%s' | '%s'\n", event, subclass, script);
+
+				if (switch_name_event(event, &evtype) == SWITCH_STATUS_SUCCESS) {
+					if (!zstr(script)) {
+						if (switch_event_bind(modname, evtype, !zstr(subclass) ? subclass : SWITCH_EVENT_SUBCLASS_ANY,
+							v8_event_handler, script) == SWITCH_STATUS_SUCCESS) {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "event handler for '%s' set to '%s'\n", switch_event_name(evtype), script);
+						}
+						else {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "cannot set event handler: unsuccessful bind\n");
+						}
+					}
+					else {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "cannot set event handler: no script name for event type '%s'\n", event);
+					}
+				}
+				else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "cannot set event handler: unknown event type '%s'\n", event);
 				}
 			}
 		}
@@ -403,7 +434,7 @@ static char *v8_get_script_path(const char *script_file)
 	}
 }
 
-static int v8_parse_and_execute(switch_core_session_t *session, const char *input_code, switch_stream_handle_t *api_stream, switch_event_t *message, v8_xml_handler_t* xml_handler)
+static int v8_parse_and_execute(switch_core_session_t *session, const char *input_code, switch_stream_handle_t *api_stream, v8_event_t *v8_event, v8_xml_handler_t* xml_handler)
 {
 	string res;
 	JSMain *js;
@@ -509,8 +540,9 @@ static int v8_parse_and_execute(switch_core_session_t *session, const char *inpu
 						context->Global()->Set(String::NewFromUtf8(isolate, "session"), Boolean::New(isolate, false));
 					}
 
-					if (message) {
-						FSEvent::New(message, "message", js);
+					if (v8_event) {
+						if (v8_event->event && v8_event->var_name)
+						    FSEvent::New(v8_event->event, v8_event->var_name, js);
 					}
 
 					if (api_stream) {
@@ -724,6 +756,25 @@ static switch_xml_t v8_fetch(const char *section,
 	return xml;
 }
 
+static void v8_event_handler(switch_event_t *event)
+{
+	char *script = NULL;
+
+	if (event->bind_user_data) {
+		script = strdup((char *)event->bind_user_data);
+	}
+
+	v8_event_t v8_event;
+
+	v8_event.event = event;
+	v8_event.var_name = "event";
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "v8 event hook: execute '%s'\n", (char *)script);
+	v8_parse_and_execute(NULL, script, NULL, &v8_event, NULL);
+
+	switch_safe_free(script);
+}
+
 SWITCH_BEGIN_EXTERN_C
 
 SWITCH_STANDARD_APP(v8_dp_function)
@@ -733,7 +784,12 @@ SWITCH_STANDARD_APP(v8_dp_function)
 
 SWITCH_STANDARD_CHAT_APP(v8_chat_function)
 {
-	v8_parse_and_execute(NULL, data, NULL, message, NULL);
+	v8_event_t v8_event;
+
+	v8_event.event = message;
+	v8_event.var_name = "message";
+
+	v8_parse_and_execute(NULL, data, NULL, &v8_event, NULL);
 
 	return SWITCH_STATUS_SUCCESS;
 }
